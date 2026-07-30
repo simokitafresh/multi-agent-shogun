@@ -11,7 +11,8 @@
 # logs/karo_workarounds.yaml cmd_karo_hotfix_recalculate_sync_end_date_20260729
 # (2 manual WA in report_yaml_format category, same root cause).
 # test_necessity: hook_failures.details.post_verification_result canonicalization
-# (exact path only, unknown values pass through unchanged) is a permanent contract
+# through exact-field, hook_failures parent, details parent, and batch parent writes
+# (known values only; unknown values pass through unchanged) is a permanent contract
 # with review_bundle.py's _HOOK_POST_RESULTS enum, not implementation-detail scaffolding.
 
 setup_file() {
@@ -128,4 +129,65 @@ _hook_result() {
     [ "$status" -eq 0 ]
     result="$(python3 -c "import yaml, sys; print(yaml.safe_load(open(sys.argv[1]))['hook_failures']['post_verification_result'])" "$TEST_BATCH_REPORT")"
     [ "$result" = "PASS" ]
+}
+
+# --- parent-mapping lanes must match the exact-field contract ---
+
+@test "hook_failures parent mapping canonicalizes all 3 known tokens" {
+    local input expected
+    while read -r input expected; do
+        run bash "$SCRIPT" "$TEST_REPORT" hook_failures \
+            "details: {post_verification_result: $input}"
+        [ "$status" -eq 0 ]
+        [ "$(_hook_result "$TEST_REPORT")" = "$expected" ]
+    done <<'EOF'
+PASS all_pass
+NO_NEW_FAILURE no_new_failure
+REGRESSION_DETECTED regression_detected
+EOF
+}
+
+@test "hook_failures.details parent mapping canonicalizes all 3 known tokens" {
+    local input expected
+    while read -r input expected; do
+        run bash "$SCRIPT" "$TEST_REPORT" hook_failures.details \
+            "{post_verification_result: $input}"
+        [ "$status" -eq 0 ]
+        [ "$(_hook_result "$TEST_REPORT")" = "$expected" ]
+    done <<'EOF'
+PASS all_pass
+NO_NEW_FAILURE no_new_failure
+REGRESSION_DETECTED regression_detected
+EOF
+}
+
+@test "batch hook_failures parent mapping canonicalizes all 3 known tokens" {
+    local input expected
+    while read -r input expected; do
+        run bash "$SCRIPT" --batch "$TEST_BATCH_REPORT" <<< \
+            "hook_failures: {details: {post_verification_result: $input}}"
+        [ "$status" -eq 0 ]
+        [ "$(_hook_result "$TEST_BATCH_REPORT")" = "$expected" ]
+    done <<'EOF'
+PASS all_pass
+NO_NEW_FAILURE no_new_failure
+REGRESSION_DETECTED regression_detected
+EOF
+}
+
+@test "parent mappings preserve unknown token for downstream review BLOCK" {
+    run bash "$SCRIPT" "$TEST_REPORT" hook_failures \
+        "details: {post_verification_result: UNKNOWN_RESULT}"
+    [ "$status" -eq 0 ]
+    [ "$(_hook_result "$TEST_REPORT")" = "UNKNOWN_RESULT" ]
+
+    run bash "$SCRIPT" "$TEST_REPORT" hook_failures.details \
+        "{post_verification_result: UNKNOWN_RESULT}"
+    [ "$status" -eq 0 ]
+    [ "$(_hook_result "$TEST_REPORT")" = "UNKNOWN_RESULT" ]
+
+    run bash "$SCRIPT" --batch "$TEST_BATCH_REPORT" <<< \
+        "hook_failures: {details: {post_verification_result: UNKNOWN_RESULT}}"
+    [ "$status" -eq 0 ]
+    [ "$(_hook_result "$TEST_BATCH_REPORT")" = "UNKNOWN_RESULT" ]
 }

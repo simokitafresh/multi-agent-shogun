@@ -151,14 +151,29 @@ _HOOK_POST_RESULT_CANON = {
     "REGRESSION_DETECTED": "regression_detected", "regression_detected": "regression_detected",
 }
 
+def canonicalize_hook_result(key, value):
+    target = None
+    if key == "hook_failures" and isinstance(value, dict):
+        details = value.get("details")
+        if isinstance(details, dict):
+            target = details
+    elif key == "hook_failures.details" and isinstance(value, dict):
+        target = value
+    if target is not None:
+        current = target.get("post_verification_result")
+        if isinstance(current, str):
+            target["post_verification_result"] = _HOOK_POST_RESULT_CANON.get(current, current)
+    elif key == "hook_failures.details.post_verification_result" and isinstance(value, str):
+        value = _HOOK_POST_RESULT_CANON.get(value, value)
+    return value
+
 try:
     for key, value in updates.items():
         if not isinstance(key, str) or not key.strip():
             raise ValueError("batch field names must be non-empty strings")
         if key.startswith("binary_checks.") and key.endswith(".result") and isinstance(value, bool):
             value = "yes" if value else "no"
-        if key == "hook_failures.details.post_verification_result" and isinstance(value, str):
-            value = _HOOK_POST_RESULT_CANON.get(value, value)
+        value = canonicalize_hook_result(key, value)
         set_dot(data, key, value)
 except ValueError as exc:
     raise SystemExit(f"BLOCK: {exc}")
@@ -1151,7 +1166,7 @@ if found_s == 'true':
 " <<< "$val" || return 1
             elif [[ "$dot_key" == "assumption_invalidation.found" ]] && [[ "$val" =~ ^([Tt][Rr][Uu][Ee]|true|TRUE|yes|YES)$ ]]; then
                 REPORT_PATH="$REPORT_PATH" python3 -c "
-import os, sys, yaml
+import json, os, sys, yaml
 rp = os.environ.get('REPORT_PATH', '')
 if not rp or not os.path.exists(rp):
     print('BLOCK: assumption_invalidation.found=true は detail/affected_cmds 記入後に実行せよ', file=sys.stderr)
@@ -1696,27 +1711,58 @@ print(yaml_text(data, sort_keys=False), end='')
             fi
             ;;
         hook_failures)
-            # exact path only: hook_failures.details.post_verification_result.
+            # Canonicalize the leaf whether it is written directly or inside
+            # either accepted parent mapping.
             # review_bundle.py enforces {all_pass,no_new_failure,regression_detected}
             # (lowercase snake_case); ninjas keep writing the uppercase/PASS form
             # they see in tool output, which round-trips through gunshi APPROVE
             # rejection. Canonicalize known spellings here; leave anything else
             # untouched so the existing downstream BLOCK still catches real
             # unknown values (no silent-fix of genuine mistakes).
-            if [[ "$dot_key" == "hook_failures.details.post_verification_result" ]]; then
-                local canonical=""
-                case "$val" in
-                    PASS|all_pass) canonical="all_pass" ;;
-                    NO_NEW_FAILURE|no_new_failure) canonical="no_new_failure" ;;
-                    REGRESSION_DETECTED|regression_detected) canonical="regression_detected" ;;
-                esac
-                if [[ -n "$canonical" ]]; then
-                    if [[ "$canonical" != "$val" ]]; then
-                        echo "[autofix] hook_failures.details.post_verification_result ${val}→${canonical} canonical化" >&2
-                    fi
-                    echo "$canonical"
-                    return 0
-                fi
+            if [[ "$dot_key" == "hook_failures" ||
+                  "$dot_key" == "hook_failures.details" ||
+                  "$dot_key" == "hook_failures.details.post_verification_result" ]]; then
+                local fixed
+                fixed=$(PYTHONPATH="$SCRIPT_DIR" DOT_KEY="$dot_key" python3 -c '
+import os, sys, yaml
+
+canon = {
+    "PASS": "all_pass", "all_pass": "all_pass",
+    "NO_NEW_FAILURE": "no_new_failure", "no_new_failure": "no_new_failure",
+    "REGRESSION_DETECTED": "regression_detected",
+    "regression_detected": "regression_detected",
+}
+key = os.environ["DOT_KEY"]
+raw = sys.stdin.read().strip()
+try:
+    value = yaml.safe_load(raw)
+except yaml.YAMLError:
+    value = raw
+
+target = None
+if key == "hook_failures" and isinstance(value, dict):
+    details = value.get("details")
+    if isinstance(details, dict):
+        target = details
+elif key == "hook_failures.details" and isinstance(value, dict):
+    target = value
+
+if target is not None:
+    current = target.get("post_verification_result")
+    if isinstance(current, str):
+        target["post_verification_result"] = canon.get(current, current)
+elif key == "hook_failures.details.post_verification_result" and isinstance(value, str):
+    value = canon.get(value, value)
+
+if isinstance(value, (dict, list)):
+    # Flow style keeps even a one-key parent mapping structurally explicit
+    # after command substitution strips the trailing newline.
+    print(json.dumps(value, ensure_ascii=False), end="")
+else:
+    print(value, end="")
+' <<< "$val")
+                echo "$fixed"
+                return 0
             fi
             ;;
     esac
