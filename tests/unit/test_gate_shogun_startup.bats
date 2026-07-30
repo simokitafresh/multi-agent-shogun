@@ -223,6 +223,33 @@ EOF
     chmod +x "$TEST_ROOT/promotion-harness.sh"
 }
 
+# test_necessity: lord-authorized pause markerはpromotion単独ALERTだけを汎用エスカレーションから
+# 除外し、markerなしpromotionと他channel混在を従来どおり警告対象に保つ不変量を守る。
+@test "loop ledger classifies only lord-paused promotion-only alert as frozen" {
+    awk '
+        /^loop_ledger_is_lord_paused_promotion_only\(\)/ {inside=1}
+        inside {print}
+        inside && /^}/ {exit}
+    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$TEST_ROOT/loop-ledger-classifier.sh"
+    source "$TEST_ROOT/loop-ledger-classifier.sh"
+    local marker="$TEST_ROOT/reflux_promotion.paused"
+    cat > "$marker" <<'EOF'
+authority: "lord"
+EOF
+
+    run loop_ledger_is_lord_paused_promotion_only \
+        'ALERT: promotion: 在庫超過(24h以上前400→今回440)' "$marker"
+    [ "$status" -eq 0 ]
+
+    run loop_ledger_is_lord_paused_promotion_only \
+        'ALERT: promotion: 在庫超過(24h以上前400→今回440)' "$TEST_ROOT/missing-marker"
+    [ "$status" -eq 1 ]
+
+    run loop_ledger_is_lord_paused_promotion_only \
+        $'ALERT: promotion: 在庫超過(24h以上前400→今回440)\nALERT: lesson: 空転' "$marker"
+    [ "$status" -eq 1 ]
+}
+
 # test_necessity: promotion在庫超過が殿裁定authority=lordの意図的凍結マーカーによる時、
 # 検出バグではなく一次証跡(reason/resume_condition)と解消手順を必ず表示する不変量を守る
 # (cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730: マーカー未提示のまま繰り返しWARNのみ

@@ -2574,6 +2574,20 @@ else
     echo "  SKIP: scripts/weekly_metrics_trend.sh 未配備"
 fi
 
+loop_ledger_is_lord_paused_promotion_only() {
+    local ledger_output="$1"
+    local pause_marker="$2"
+    local authority alert_total promotion_total
+
+    [ -f "$pause_marker" ] || return 1
+    authority=$(grep -m1 '^authority:' "$pause_marker" | sed -e 's/^authority:[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')
+    [ "$authority" = "lord" ] || return 1
+
+    alert_total=$(printf '%s\n' "$ledger_output" | awk '/^ALERT:/{n++} END{print n+0}')
+    promotion_total=$(printf '%s\n' "$ledger_output" | awk '/^ALERT:/ && /promotion.*在庫超過|ALERT.*promotion/{n++} END{print n+0}')
+    [ "$alert_total" -gt 0 ] && [ "$promotion_total" -eq "$alert_total" ]
+}
+
 # --- Gate 10.3: 学習ループ台帳(loop_ledger, T7) ---
 echo "■ 学習ループ台帳(loop_ledger)"
 if [ -n "${_PID_LOOP_LEDGER:-}" ]; then
@@ -2590,13 +2604,21 @@ if [ -n "${_PID_LOOP_LEDGER:-}" ]; then
         done <<< "$_loop_ledger_output"
     fi
     if [ "$_loop_ledger_rc" -eq 1 ]; then
-        if [ "$overall" != "ALERT" ]; then
-            overall="WARN"
-        fi
         _loop_ledger_sig=$(printf '%s\n' "$_loop_ledger_output" | awk '/^ALERT:/' | cksum | awk '{print $1 ":" $2}')
-        alerts+=("学習ループ台帳: 空転/在庫超過あり (${_loop_ledger_sig:-unknown})")
+        _reflux_pause_marker="$SCRIPT_DIR/queue/gates/reflux_promotion.paused"
+        _loop_ledger_frozen_promotion_only=false
+        if loop_ledger_is_lord_paused_promotion_only "$_loop_ledger_output" "$_reflux_pause_marker"; then
+            _loop_ledger_frozen_promotion_only=true
+            echo "  INFO: 学習ループ台帳のpromotion在庫超過は殿裁定により凍結中（汎用alerts/先送り自動エスカレーション対象外）"
+        else
+            if [ "$overall" != "ALERT" ]; then
+                overall="WARN"
+            fi
+            alerts+=("学習ループ台帳: 空転/在庫超過あり (${_loop_ledger_sig:-unknown})")
+        fi
         # promotion在庫超過時: reflux消費路の直近状態を自動表示(自動化ターゲット2026-07-16)
         if printf '%s\n' "$_loop_ledger_output" | grep -q "promotion.*在庫超過\|ALERT.*promotion"; then
+            _reflux_pause_marker="$SCRIPT_DIR/queue/gates/reflux_promotion.paused"
             _reflux_log="$SCRIPT_DIR/logs/ninja_monitor.log"
             if [ -f "$_reflux_log" ]; then
                 _reflux_last=$(grep "REFLUX-AUTO-DEPLOY" "$_reflux_log" | tail -3)
@@ -2611,7 +2633,6 @@ if [ -n "${_PID_LOOP_LEDGER:-}" ]; then
             # マーカー未提示のまま繰り返しWARNだけ出すと「先送り判断」に見え続け毎回の再調査コストが発生する
             # (cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730で実測: 2026-07-28 13:21付
             #  authority=lordの凍結中に438件まで積み上がった状態は検出バグではなく既知の一次証跡がある)。
-            _reflux_pause_marker="$SCRIPT_DIR/queue/gates/reflux_promotion.paused"
             if [ -f "$_reflux_pause_marker" ]; then
                 _reflux_pause_since=$(grep -m1 '^paused_at:' "$_reflux_pause_marker" | sed -e 's/^paused_at:[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')
                 _reflux_pause_authority=$(grep -m1 '^authority:' "$_reflux_pause_marker" | sed -e 's/^authority:[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')
@@ -2622,6 +2643,7 @@ if [ -n "${_PID_LOOP_LEDGER:-}" ]; then
                 echo "    ★ 解消手順: 殿へ凍結継続要否を確認し、明示裁可を得てから ${_reflux_pause_marker} を削除せよ(将軍D0削除禁止)"
             fi
         fi
+        unset _loop_ledger_frozen_promotion_only
     elif [ "$_loop_ledger_rc" -ne 0 ]; then
         overall="ALERT"
         alerts+=("学習ループ台帳: 集計失敗")
