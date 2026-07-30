@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-30 cmd_4195 reviewed source boundary -->
-<!-- dm_signal_research_reflux: fingerprint=c61039dff5a8e5050ee52419628ddd86e382683f1df9a13a644187014d2aac13; mode=non-target; evidence_b64=Y21kXzQxOTUgcmVhZC1vbmx5IHJlY3VycmVuY2UgcmVjb25uYWlzc2FuY2U7IEFDIHJlcXVpcmVzIHJlcG9ydCBldmlkZW5jZSBhbmQgbm8gY29udGV4dCBpbmRleCBtdXRhdGlvbg== -->
+<!-- dm_signal_research_reflux: fingerprint=12f4cd1e5343f3b630682479e687dd559db3db3c3a145cc8284205dd53c6ffaf; mode=synced; evidence_b64=5q6/5oyH56S6MjAyNi0wNy0zMCAxMjo1NOOBruaKleizh+i+nuabuOeZu+mMsuOAgnNob2d1buWBtOS4ieWxpOiomOaGtuOBuG1lbW9yeV9kYl9rbm93bGVkZ2Vfd3JpdGXjgaflkIzmnJ/mm7jovrzjgb8oY29tbWl055u05b6M5a6f6KGMKQ== -->
 <!-- source_commit:e8d19957 reason:cmd_4195 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=e8d19957 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
