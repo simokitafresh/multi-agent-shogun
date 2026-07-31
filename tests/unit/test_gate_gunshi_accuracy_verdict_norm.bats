@@ -3,16 +3,12 @@
 # (cmd_karo_impl_gunshi_accuracy_verdict_norm_20260726)
 #
 # 検出対象(この検知器が何を検出するか、1行):
-#   gate_gunshi_accuracy.sh が verdict の表記ゆれ(REQ_CHANGES)を正典(REQUEST_CHANGES)へ
-#   正規化して公正計算ルールへ乗せること、かつ LGTM/APPROVE という段階(report/draft)に
-#   束縛された別概念を同一視して寄せないこと、かつ cmd_idのみの空エントリを
-#   silentに落とさず skipped=N として明示カウントすることを検証する。
+#   gate_gunshi_accuracy.sh がverdictの表記に依存せず最終cmd entryの予測/結果だけを比較し、
+#   cmd_idのみの空エントリをsilentに落とさずskipped=Nとして明示することを検証する。
 #
 # test_necessity(3件、各1不変量):
 #   1. path=scripts/gates/gate_gunshi_accuracy.sh
-#      defense_target: "verdict=REQ_CHANGES(表記ゆれ)はREQUEST_CHANGESへ正規化されRC正解分岐
-#        (BLOCK→CLEAR)に乗る。同時にAPPROVEはLGTM+WARN→CLEARの特例分岐へは決して乗らない
-#        (report×LGTM/draft×APPROVEは交差0件の別概念のため)。"
+#      defense_target: "同cmd_idの最終entryだけが母数となり、verdict表記は予測/結果の一致判定を変えない。"
 #      overlap_evidence: "test_gate_gunshi_accuracy.bats は検知器本体(LGTM+BLOCK→CLEARの
 #        偽陽性列挙)の陽性/陰性対照であり、本ファイルが検証するverdict語彙正規化・
 #        段階非混同・skipped明示カウントの3不変量とは重複しない"
@@ -26,14 +22,17 @@ setup() {
     TEST_ROOT="${BATS_TEST_DIRNAME}/../.."
     GATE="$TEST_ROOT/scripts/gates/gate_gunshi_accuracy.sh"
 
-    # AC1/AC3(i): REQ_CHANGES(表記ゆれ) + BLOCK + CLEAR は正規化後、
-    # REQUEST_CHANGESの「RC指摘→忍者修正→CLEAR」正解分岐に乗る
-    # (修正前は誤答計上されていた表記ゆれ)。
+    # AC1: REQ_CHANGES途中entryは同cmdの後続LGTMに置き換えられる。
     cat > "$BATS_TEST_TMPDIR/reqchanges_typo.yaml" <<'YAML'
 - cmd_id: control_reqchanges_typo_block_clear
   review_type: report
   verdict: REQ_CHANGES
   gate_prediction: BLOCK
+  gate_result: CLEAR
+- cmd_id: control_reqchanges_typo_block_clear
+  review_type: report
+  verdict: LGTM
+  gate_prediction: CLEAR
   gate_result: CLEAR
 YAML
 
@@ -79,29 +78,27 @@ YAML
 YAML
 }
 
-@test "AC1/AC3(i): REQ_CHANGES (typo) + BLOCK + CLEAR normalizes to REQUEST_CHANGES and is counted correct" {
+@test "AC1: an intermediate REQ_CHANGES entry is superseded by the final verdict" {
     run bash "$GATE" "$BATS_TEST_TMPDIR/reqchanges_typo.yaml"
     [ "$status" -eq 0 ]
-    [[ "$output" != *"偽陽性"* ]]
+    [[ "$output" != *"最終cmd不一致"* ]]
     [[ "$output" == *"全体: 1/1 (100%)"* ]]
-    [[ "$output" == *"verdict=REQUEST_CHANGES"* ]]
+    [[ "$output" == *"verdict=LGTM"* ]]
 }
 
 @test "AC3(ii) negative: the 3 existing REQUEST_CHANGES (correct spelling) patterns are unchanged" {
     run bash "$GATE" "$BATS_TEST_TMPDIR/requestchanges_unchanged.yaml"
     [ "$status" -eq 0 ]
-    # control_rc_block_clear: RC正解分岐 -> correct
-    # control_rc_block_block: else pred==result (BLOCK==BLOCK) -> correct
-    # control_rc_clear_block: else pred==result (CLEAR==BLOCK) -> incorrect
-    [[ "$output" == *"全体: 2/3"* ]]
-    [[ "$output" == *"偽陽性1件"* ]]
+    [[ "$output" == *"全体: 1/3"* ]]
+    [[ "$output" == *"最終cmd不一致2件"* ]]
+    [[ "$output" == *"control_rc_block_clear"* ]]
     [[ "$output" == *"control_rc_clear_block"* ]]
 }
 
 @test "AC3(iii) negative: APPROVE is not merged into the LGTM+WARN->CLEAR special-case branch" {
     run bash "$GATE" "$BATS_TEST_TMPDIR/approve_not_merged.yaml"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"偽陽性1件"* ]]
+    [[ "$output" == *"最終cmd不一致1件"* ]]
     [[ "$output" == *"control_approve_warn_clear"* ]]
     [[ "$output" == *"全体: 0/1"* ]]
 }

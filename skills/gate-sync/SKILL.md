@@ -7,7 +7,7 @@ description: |
   inbox受信→review_log該当エントリ更新→accuracy計算の3ステップを自動化。
   TRIGGER: /gate-sync、gate結果同期、review_log更新、accuracy計算
   DO NOT TRIGGER: レビュー完了処理（→/review-bundle）、idle分析（→/idle-persist）
-quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
+quality_metric: "当該スキル同期後のcmd単位最終verdictの予測精度（gate_prediction==gate_resultの割合）"
 allowed-tools:
   - Bash
   - Read
@@ -52,24 +52,12 @@ bash scripts/gunshi_gate_reflux.sh "<cmd_id>" "<gate_result>"
 
 ### Step 2: accuracy計算
 ```bash
-# review_logの全エントリでgate_prediction vs gate_resultを突合
-python3 -c "
-import yaml
-with open('logs/gunshi_review_log.yaml') as f:
-    data = yaml.safe_load(f)
-entries = [e for e in data.get('reviews', []) if e.get('gate_prediction') and e.get('gate_result')]
-correct = sum(1 for e in entries if e['gate_prediction'] == e['gate_result'])
-total = len(entries)
-print(f'Accuracy: {correct}/{total} ({correct*100//total if total else 0}%)')
-# 直近10件
-recent = entries[-10:]
-rc = sum(1 for e in recent if e['gate_prediction'] == e['gate_result'])
-print(f'Recent 10: {rc}/{len(recent)} ({rc*100//len(recent) if recent else 0}%)')
-"
+# RC/FAIL往復entryを母数に重複算入せず、cmd単位の最終verdictだけを比較する
+bash scripts/gates/gate_gunshi_accuracy.sh
 ```
 
 ### Step 3: 掲示板投稿（精度低下時のみ）
-直近10件のaccuracyが70%未満の場合:
+出力の`RECENT_FINAL_CMD_ACCURACY` が70%未満の場合のみ:
 ```bash
 BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度低下: <accuracy>%。要因分析必要" false action_required
 ```
@@ -84,7 +72,7 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度�
 
 ## 制約
 - review_logのEdit直接編集禁止（`gunshi_gate_reflux.sh`経由）
-- accuracy計算はreview_logのgate_prediction+gate_result両方存在するエントリのみ
+- accuracy計算はreview_logのgate_prediction+gate_result両方存在するcmdごとの最終entryのみ
 - gate_sync.shが一括処理する場合と競合しない（両者とも`lock_path.sh`由来の同一flockで排他）
 - Script refs verified: 2026-07-15 ab302df7b. review_logのgate同期はfirst-matchの`yaml_field_set.sh`ではなく、全matching entryを更新する`gunshi_gate_reflux.sh`を正本とする。
 - Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` WSL2最適化済み(lock_path純bash化、Windows path用/tmp lock、検証込み)。
