@@ -113,21 +113,35 @@ def atomic_json(path, value):
         finally:
             if temp.exists(): temp.unlink()
 
-def _resolve_report(root, report_ref, *, allow_archived=False):
-    """Resolve a direct report while preserving the live/archive boundary."""
+def _review_registry(root, cmd_id):
+    """Return the canonical (realpath, logical path) identities from the shell SSOT."""
+    library = Path(__file__).resolve().parent / "lib/review_approval.sh"
+    script = f'''source "{library}"
+review_resolve_reports "$1" | while IFS= read -r report; do
+    logical=$(review_report_logical_path "$report") || exit 1
+    printf '%s\\t%s\\n' "$(realpath "$report")" "$logical"
+done
+'''
+    result = subprocess.run(
+        ["bash", "-c", script, "review-registry", cmd_id], cwd=root,
+        env={**os.environ, "PROJECT_ROOT": str(root)}, text=True,
+        capture_output=True, check=True,
+    )
+    return {tuple(line.split("\t", 1)) for line in result.stdout.splitlines() if "\t" in line}
+
+
+def _resolve_report(root, report_ref, cmd_id, *, allow_archived=False):
+    """Resolve only an identity selected by the shared canonical report registry."""
     report_arg = Path(report_ref)
     if not report_arg.is_absolute():
         report_arg = root / report_arg
-    report_arg = Path(os.path.abspath(report_arg))
-    if report_arg.is_symlink():
-        raise ValueError("report must not be a symlink")
-    report = report_arg.resolve()
-    reports = (root / "queue/reports").resolve()
+    report_arg = Path(os.path.abspath(report_arg)); report = report_arg.resolve()
+    logical = f"queue/reports/{report_arg.name}"
+    identity = (str(report), logical)
+    registry = _review_registry(root, cmd_id)
     archived = (root / "queue/archive/reports").resolve()
-    current_direct = report_arg.parent == reports and report.parent == reports
-    archived_direct = allow_archived and report_arg.parent == archived and report.parent == archived
-    if not (current_direct or archived_direct) or not report.is_file():
-        raise ValueError("report must be a current direct report (or archived with --allow-archived)")
+    if (report.parent == archived and not allow_archived) or identity not in registry or not report.is_file():
+        raise ValueError("report identity is not in the canonical report registry")
     return report_arg, report
 
 def validate(bundle, expected_cmd=None, expected_verdict=None):
@@ -205,7 +219,7 @@ def _require_hook_failures_resolved(hook_failures):
 
 def generate(args):
     root = Path(args.root).resolve()
-    report_arg, report = _resolve_report(root, args.report, allow_archived=args.allow_archived)
+    report_arg, report = _resolve_report(root, args.report, args.cmd, allow_archived=args.allow_archived)
     report_data = load(report)
     if str(report_data.get("parent_cmd") or "") != args.cmd: raise ValueError("report parent_cmd contradicts requested cmd")
     report_ref = report_arg if report_arg.is_relative_to(root) else report
@@ -238,7 +252,7 @@ def notify(args):
     review = validate(load(path), args.cmd, "APPROVE")
     report_ref = str(review["report"])
     allow_archived = Path(report_ref).parent == Path("queue/archive/reports")
-    _, report = _resolve_report(root, report_ref, allow_archived=allow_archived)
+    _, report = _resolve_report(root, report_ref, args.cmd, allow_archived=allow_archived)
     if hashlib.sha256(report.read_bytes()).hexdigest() != review.get("report_fingerprint"): raise ValueError("bundle report fingerprint is stale")
     # Step 1.5 observations and Step 2 review_log happen before the skill calls
     # formal review_approval.  This final boundary merely verifies that exact

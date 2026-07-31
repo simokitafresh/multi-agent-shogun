@@ -2,13 +2,13 @@
 
 ## 結論
 
-archive済みreportの再承認経路を6段で一次走査した。修正前の残存非対称は1件（notifyのみlive直下固定）、修正後は0件。`cmd_4200`の現況はterminal manifest logical identity 6/6、物理approval YAML 0/6、個別通知marker 6/6、完了通知marker 1/1である。
+archive済みreportの再承認経路を6段で一次走査した。現HEAD旧resolverでsame-directory symlink alias受理は0件（AC想定1件との差1）だが、物理境界判定がcanonical registryと独立する非対称は1件あった。修正後は既存`review_resolve_reports`＋`review_report_logical_path`の(realpath, logical identity) allowlistだけを受理し、残存非対称0件。追加契約のfailed report→FAIL bundleもcompleted/PASSを要求せず正規生成する。
 
 ## 6段監査表
 
 | 段 | writer | reader / boundary | archive入力 | cmd_4200実測 | 修正後判定 |
 |---|---|---|---|---|---|
-| generate | `scripts/review_bundle.py generate` → `queue/gates/<cmd>/sg7_bundle.json` | `_resolve_report`: lexical direct parent + realpath direct parent + `parent_cmd` + fingerprint | `--allow-archived`時のみ許可 | bundle実在1/1 | 対称 |
+| generate | `scripts/review_bundle.py generate` → `queue/gates/<cmd>/sg7_bundle.json` | `_resolve_report`: shared registryの(realpath, logical identity)完全一致 + fingerprint | `--allow-archived`時のみ許可 | APPROVE/FAIL bundle各1/1 | 対称 |
 | review | `scripts/review_approval.sh` → logical approval/terminal manifest | archive logical keyを`review_resolve_reports`とfingerprintで照合。Gunshi LGTM時はarchiveなら`--allow-archived`をgenerateへ渡す | 許可 | manifest LGTM 6/6・Karo ACCEPT 6/6 | 対称 |
 | notify | `scripts/review_bundle.py notify` → `inbox_write.sh` | bundleのlogical report keyを同じ`_resolve_report`で検証しfingerprint・two-phase readyを照合 | bundle keyがarchive直下の時のみ許可 | 個別通知marker 6/6 | 対称（修正前はlive直下固定の1障壁） |
 | SG7 | generateのatomic JSON writer | `review_bundle.py consume` / `cmd_complete.sh` / `cmd_complete_gate.sh`がcmd・verdict・specを検証 | report実体を再解決せずbundleを消費 | `sg7_bundle.json` 1/1 | 対称 |
@@ -29,13 +29,14 @@ archive済みreportの再承認経路を6段で一次走査した。修正前の
 | archive missing | 1 | block | PASS |
 | bundle cmd mismatch | 1 | block | PASS |
 | 正式CLI archive generate→notify | 1 | 通知1・重複0・logical key一致 | PASS |
+| failed archive report→FAIL bundle | 1 | completed/PASS不要・FAIL reason保持 | PASS |
 
-`tests/unit/test_review_bundle.py`は上記の具体的不変量を宣言したcontract testで、9/9 PASS・SKIP 0。候補自身のsymlinkを解決前に拒否し、内部aliasでもfail-closeする。
+`tests/unit/test_review_bundle.py`は上記の具体的不変量を宣言したcontract testで、11/11 PASS・SKIP 0。alias種別ではなくshared registry identity不一致として一律fail-closeする。
 
 ## 残存障壁の全数
 
 - 修正前: 1件。`notify()`が`queue/reports`直下だけを許可し、`generate --allow-archived`が保存したarchive logical keyを拒否した。
-- 修正後: 0件。generate/notifyが共通`_resolve_report`を使用し、live/archiveとも同一の候補symlink拒否・direct-parent・realpath・存在境界を共有する。
+- 修正後: 0件。generate/notifyが共通`_resolve_report`を使用し、live/archiveともshell SSOTのcanonical identity集合だけを共有する。Python独自台帳は0件。
 - 前提差異: AC1記載の「自動notify未完了」は監査時点で`notify_karo.done` 1/1へ変化していた。修正要否の根拠はmarkerの古い想定ではなく、修正前コードのnotify境界非対称とisolated再現である。
 
 origin: `[[cmd_4200]] -> [[archive_notify_boundary_asymmetry]] -> [[automatic_review_notification_gap]]`

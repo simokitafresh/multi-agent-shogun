@@ -14,20 +14,26 @@ from scripts import review_bundle
 
 
 def _root(tmp_path: Path) -> Path:
-    for relative in ("queue/reports", "queue/archive/reports", "queue/gates/cmd_ok"):
+    for relative in ("queue/reports", "queue/archive/reports", "queue/gates/cmd_ok", "queue/tasks"):
         (tmp_path / relative).mkdir(parents=True)
     return tmp_path
 
 
-def test_resolve_report_accepts_direct_live_and_archive(tmp_path):
-    root = _root(tmp_path)
-    live = root / "queue/reports/worker_report_cmd_ok.yaml"
-    archived = root / "queue/archive/reports/worker_report_cmd_ok.yaml"
-    live.write_text("parent_cmd: cmd_ok\n", encoding="utf-8")
-    archived.write_text("parent_cmd: cmd_ok\n", encoding="utf-8")
+def _register(root: Path, report: Path, report_id="rpt-ok"):
+    report.write_text(f"parent_cmd: cmd_ok\nreport_id: {report_id}\n", encoding="utf-8")
+    if report.parent == root / "queue/reports":
+        (root / "queue/tasks/worker.yaml").write_text(
+            f"task:\n  parent_cmd: cmd_ok\n  report_filename: {report.name}\n", encoding="utf-8"
+        )
 
-    assert review_bundle._resolve_report(root, live)[1] == live
-    assert review_bundle._resolve_report(root, archived, allow_archived=True)[1] == archived
+
+@pytest.mark.parametrize("archived", [False, True])
+def test_resolve_report_accepts_direct_live_and_archive(tmp_path, archived):
+    root = _root(tmp_path)
+    base = "queue/archive/reports" if archived else "queue/reports"
+    report = root / base / "worker_report_cmd_ok.yaml"
+    _register(root, report)
+    assert review_bundle._resolve_report(root, report, "cmd_ok", allow_archived=archived)[1] == report
 
 
 @pytest.mark.parametrize(
@@ -68,7 +74,7 @@ def test_resolve_report_rejects_archive_boundary_escapes(tmp_path, kind):
         candidate = archive / "missing.yaml"
 
     with pytest.raises(ValueError):
-        review_bundle._resolve_report(root, candidate, allow_archived=True)
+        review_bundle._resolve_report(root, candidate, "cmd_ok", allow_archived=True)
 
 
 def test_notify_uses_archive_logical_key_and_checks_parent_cmd(tmp_path, monkeypatch):
@@ -107,7 +113,7 @@ def test_cli_archive_generate_then_notify_once_with_same_logical_identity(tmp_pa
     )
     report = root / "queue/archive/reports/worker_report_cmd_ok.yaml"
     report.write_text(
-        "parent_cmd: cmd_ok\nstatus: completed\nverdict: PASS\n"
+        "parent_cmd: cmd_ok\nreport_id: rpt-ok\nstatus: completed\nverdict: PASS\n"
         "binary_checks: {AC1: [{result: yes}]}\nresult: {summary: done}\n",
         encoding="utf-8",
     )
@@ -120,3 +126,20 @@ def test_cli_archive_generate_then_notify_once_with_same_logical_identity(tmp_pa
     stored = json.loads(bundle.read_text(encoding="utf-8"))["review"]["report"]
     assert stored == "queue/archive/reports/worker_report_cmd_ok.yaml"
     assert (root / "inbox.calls").read_text(encoding="utf-8").count("report_review_result") == 1
+
+
+def test_cli_failed_archive_report_generates_fail_bundle(tmp_path):
+    root = _root(tmp_path)
+    (root / "queue/shogun_to_karo.yaml").write_text(
+        "commands:\n  cmd_ok:\n    acceptance_criteria: [one]\n    target_path: scripts/review_bundle.py\n    project: infra\n",
+        encoding="utf-8",
+    )
+    report = root / "queue/archive/reports/worker_report_cmd_ok.yaml"
+    report.write_text(
+        "parent_cmd: cmd_ok\nreport_id: rpt-failed\nstatus: failed\nverdict: FAIL\n"
+        "result: {summary: failed as measured}\n",
+        encoding="utf-8",
+    )
+    args = SimpleNamespace(root=str(root), report=str(report), cmd="cmd_ok", verdict="FAIL",
+                           allow_archived=True, fail_reason="measured failure")
+    assert review_bundle.generate(args) == 0
