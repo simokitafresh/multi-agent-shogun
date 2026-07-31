@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# semantic-links: [[リンク密度計測不在]], [[殿指示_偏り修正]], [[training-cycle]]
+# semantic-links: [[リンク密度計測不在]], [[殿指示_偏り修正]], [[training-cycle]], [[因果リンク]], [[deepdive_why_chain_20260321]], [[Recovery]]
 # causal_backlink_counts.sh — file-level backlink density for knowledge files.
+# Measures 因果リンク (causal link) density: path refs + [[wiki]] links + origin chains.
+# Also scans origin fields in lessons/reports for deepdive/Recovery tracing.
 #
 # Usage:
 #   bash scripts/causal_backlink_counts.sh [--zero] [--limit N]
 #
-# Counts incoming references to each knowledge file using both path references
-# and Obsidian-style [[stem]] links. Self-references are excluded.
+# Counts incoming references to each knowledge file using both path references,
+# Obsidian-style [[stem]] links, and origin field chains. Self-references excluded.
+# --zero mode flags action_required: files with 0 backlinks need link integration.
 
 set -euo pipefail
 
@@ -51,6 +54,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 from collections import defaultdict
@@ -78,6 +82,8 @@ def _collect(proc) -> list[str]:
     if proc is None:
         return []
     out, _ = proc.communicate()
+    if proc.returncode not in (0, 1):
+        raise RuntimeError(f"search subprocess failed with rc={proc.returncode}")
     return [l for l in out.splitlines() if l]
 
 
@@ -85,8 +91,8 @@ def _grep_file(path: str) -> list[str]:
     """Pure Python equivalent of `rg -n -o <pattern> <path>`: one 'path:line:match' per match."""
     try:
         text = Path(path).read_text(encoding="utf-8", errors="ignore")
-    except OSError:
-        return []
+    except OSError as exc:
+        raise RuntimeError(f"cannot read search file: {path}: {exc}") from exc
     lines = []
     for lineno, line in enumerate(text.splitlines(), start=1):
         for m in combined_re.finditer(line):
@@ -98,73 +104,61 @@ def _walk_files(dir_path: str) -> list[str]:
     """Pure Python equivalent of `rg --no-ignore --files <dir_path>`: every file on disk."""
     base = Path(dir_path)
     if not base.is_dir():
-        return []
+        raise RuntimeError(f"required directory is missing: {dir_path}")
+    mode = base.stat().st_mode
+    if not os.access(base, os.R_OK | os.X_OK) or not (
+        mode & (stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+    ):
+        raise RuntimeError(f"required directory is not readable: {dir_path}")
     return sorted(str(p) for p in base.rglob("*") if p.is_file())
 
 
 def _list_files_gitignore_aware(dir_path: str) -> list[str]:
     """Pure Python equivalent of `rg --files <dir_path>` (gitignore respected): tracked
-    files plus untracked-but-not-ignored files, via git (present in this repo). Falls
-    back to an unfiltered walk only if git itself is unavailable or errors."""
+    files plus untracked-but-not-ignored files, via git (present in this repo).
+    Fails closed if git itself is unavailable or errors."""
     try:
         result = subprocess.run(
-            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", dir_path],
+            ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", dir_path],
             text=True, capture_output=True, check=False,
         )
-    except OSError:
-        return _walk_files(dir_path)
+    except OSError as exc:
+        raise RuntimeError(f"git file enumeration failed: {exc}") from exc
     if result.returncode != 0:
-        return _walk_files(dir_path)
-    return sorted(dict.fromkeys(l for l in result.stdout.splitlines() if l))
+        raise RuntimeError(
+            f"git file enumeration failed for {dir_path}: rc={result.returncode}"
+        )
+    return sorted(dict.fromkeys(l for l in result.stdout.split("\0") if l))
 
+
+git_dirs = ["context", "docs/research", "skills"]
+noignore_dirs = ["docs/semantic-index", "memory", "instructions", "projects"]
+git_dir_files = {d: _list_files_gitignore_aware(d) for d in git_dirs}
+noignore_dir_files = {d: _walk_files(d) for d in noignore_dirs}
+
+out_ctx = [f for f in git_dir_files["context"] if f.endswith(".md")]
+out_docs = [f for f in git_dir_files["docs/research"] if f.endswith(".md")]
+out_skills = [f for f in git_dir_files["skills"] if f.endswith("SKILL.md")]
+targets = sorted(dict.fromkeys(out_ctx + out_docs + out_skills))
+search_files = sorted(dict.fromkeys(
+    f
+    for files in [*git_dir_files.values(), *noignore_dir_files.values()]
+    for f in files
+))
 
 if RG_AVAILABLE:
-    # Launch all subprocesses concurrently
-    RG_SEARCH_ARGS = ["rg", "-n", "-o", combined_pattern]
     try:
-        p_ctx    = subprocess.Popen(["rg", "--files", "context",      "-g", "*.md"],      text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        p_docs   = subprocess.Popen(["rg", "--files", "docs/research", "-g", "*.md"],     text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        p_skills = subprocess.Popen(["rg", "--files", "skills",        "-g", "SKILL.md"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        p_srch_ctx    = subprocess.Popen(RG_SEARCH_ARGS + ["context"],           text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        p_srch_docs   = subprocess.Popen(RG_SEARCH_ARGS + ["docs/research"],    text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        p_srch_skills = subprocess.Popen(RG_SEARCH_ARGS + ["skills"],           text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        p_srch_semidx = subprocess.Popen(RG_SEARCH_ARGS + ["--no-ignore", "docs/semantic-index"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        p_srch_mem    = subprocess.Popen(RG_SEARCH_ARGS + ["--no-ignore", "memory"],             text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        p_srch_inst   = subprocess.Popen(RG_SEARCH_ARGS + ["--no-ignore", "instructions"],       text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    except OSError:
-        p_ctx = p_docs = p_skills = p_srch_ctx = p_srch_docs = p_srch_skills = None
-        p_srch_semidx = p_srch_mem = p_srch_inst = None
-
-    # Gather rg_files results
-    out_ctx    = _collect(p_ctx)
-    out_docs   = _collect(p_docs)
-    out_skills = _collect(p_skills)
-    targets = sorted(dict.fromkeys(out_ctx + out_docs + out_skills))
-
-    # Gather search results (merge from 6 parallel searches)
-    search_lines = (_collect(p_srch_ctx) + _collect(p_srch_docs) + _collect(p_srch_skills)
-                    + _collect(p_srch_semidx) + _collect(p_srch_mem) + _collect(p_srch_inst))
+        search_proc = subprocess.Popen(
+            ["rg", "-n", "-o", combined_pattern, "--", *search_files],
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+    except OSError as exc:
+        raise RuntimeError(f"search subprocess launch failed: {exc}") from exc
+    search_lines = _collect(search_proc)
 else:
-    # Pure Python fallback: git-aware listing for the gitignore-respecting dirs,
-    # unfiltered filesystem walk for the --no-ignore dirs. Same targets/search_lines
-    # shape as the rg branch so the merge logic below is untouched.
-    git_dirs = ["context", "docs/research", "skills"]
-    noignore_dirs = ["docs/semantic-index", "memory", "instructions"]
-
-    git_dir_files = {d: _list_files_gitignore_aware(d) for d in git_dirs}
-
-    out_ctx    = [f for f in git_dir_files["context"] if f.endswith(".md")]
-    out_docs   = [f for f in git_dir_files["docs/research"] if f.endswith(".md")]
-    out_skills = [f for f in git_dir_files["skills"] if f.endswith("SKILL.md")]
-    targets = sorted(dict.fromkeys(out_ctx + out_docs + out_skills))
-
     search_lines = []
-    for d in git_dirs:
-        for f in git_dir_files[d]:
-            search_lines.extend(_grep_file(f))
-    for d in noignore_dirs:
-        for f in _walk_files(d):
-            search_lines.extend(_grep_file(f))
+    for f in search_files:
+        search_lines.extend(_grep_file(f))
 
 wiki_sources: dict[str, set[str]] = defaultdict(set)
 path_sources: dict[str, set[str]] = defaultdict(set)
