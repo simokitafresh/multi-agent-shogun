@@ -4,8 +4,8 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-07-31 23:50 家老 |
-| 版 | v3.3 As-Is / To-Be 5W1H + reviewed multi-runtime compatibility contract |
+| 進捗更新 | 2026-07-31 23:59 家老 |
+| 版 | v3.4 As-Is / To-Be 5W1H + causal-preservation / universal-benefit contract |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
 | canonical manifest | `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml` |
@@ -71,6 +71,26 @@
 ## §0 Executive Decision
 
 旧設計の方向は正しいが、個別hook追加から開始してはならない。17 findingは4根因へ収束するため、**共通durable primitive → shadow → caller単位canary → 旧経路撤去**の順で直す。
+
+### §0.0 旧系が成り立っていた因果と、保存を優先する理由
+
+新しい抽象化は、旧系の結論だけを上書きしない。まず「なぜその仕組みで長期運用が成立したか」を歴史・現物・実績から復元する。
+
+| 因果の段階 | 一次・準一次証跡 | 成り立っていた理由 | 今回保存する不変量 |
+|---|---|---|---|
+| Claude主編成の成立 | `context/infrastructure.md` tmux編成、`config/settings.yaml`、Claude実機pane | Claude native hookと既存手順が同じlifecycleで長期に運用され、ロールと復帰手順がそれを前提に蓄積した | Claudeをprimaryとし、event・prompt・reset・inbox・report・completeの使い勝手を不変とする |
+| native hookが優先された因果 | `.claude/settings.json`、`.claude/hooks/*`、`config/cli_events.yaml` | `SessionStart` / `UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Stop`がターンlifecycleの正規境界で動き、早期検出と追加contextを小さい運用税で与えた | Claude native hookを等価性未証明のdaemon/polling/wrapperで置換しない |
+| CLI外共通層が必要になった因果 | `docs/research/multi-cli-hook-event-commonization-design_20260602.md`、`context/infrastructure.md` §Codex multi-CLI統合 | CodexにClaude Stop blockを単純移植すると再生成loopが起き、同eventでも実行意味論が異なった | 共通化は「同じhook実装」ではなく「同じ軍規event」。CLIごとのcapability adapterを維持する |
+| 環境強制がモデルより優先された因果 | `context/training-cycle.md` §24-§25 | Opus 4.6は2条件で2/2安定、GPTはテンプレート有無で0/2→2/2、Sonnetは失敗箇所が移動した。モデル性質で回避すると別モデルで破綻する | 安全性はモデル非依存のgate/template/stateへ置くが、CLI nativeの有利な境界は消さない |
+| Codex補完が許された因果 | `.codex/hooks.json`、Codex adapter、daemon/gate receipts | Claudeの主系を変更せず、Claude非対応時・一時配置時の穴をCLI別に埋められた | Codexの便益は補完範囲に限定し、Claude主系へ運用税・遅延・手順増を逆流させない |
+
+したがって採否順序は次で固定する。
+
+1. 旧Claude主系の導入理由・事故回避・成功実績を対象fileの`git log` / `git blame`、教訓、運用文書から復元する。
+2. 変更がその因果辺のどれを切るかを、`old_reason -> changed_boundary -> user/runtime effect`で3行記録する。
+3. 切る因果辺が0、または同一fixtureで等価性と純便益を証明した場合だけ採用する。
+4. Claudeを含む任意のsupport tupleで1件でも使い勝手・latency・安全性・復帰性が悪化する、または純便益が未証明なら**NO-CHANGE CLOSE**とする。既にcanaryを入れた場合は保存したold-pathへrollbackする。
+5. 「CodexでPASSした」「共通化できる」「新しい方が整っている」は単独で採用根拠にならない。旧系の成立因果を保存した上で、全対象に純便益があることを要する。
 
 1. identityを`subject_id + generation + phase + terminal_receipt`へ統一する。
 2. 複数file mutationを原子的と称さず、WALとstartup reconcilerで旧/新いずれかへ収束させる。
@@ -154,7 +174,16 @@ As-Isでは`cli_profiles.yaml`に`type: codex`とClaude起動binaryが混在す�
 
 ### §0.4 Claude primary非退行契約
 
-Claude primary baselineは次の6 eventとする: `SessionStart`、`UserPromptSubmit`、`PreToolUse(Bash)`、`PreToolUse(Write|Edit)`、`PostToolUse(Bash)`、`Stop`。`config/cli_events.yaml`のClaude cell 6/6を正本とし、各cellで次を固定する。
+Claude primary baselineは抽象event 6 cellではなく、**現行`.claude/settings.json`から再帰展開した実event/action graph全数**とする。現行直接manifestは6 event type / 12 top-level handlerであり、`SessionEnd`、Stop 5 handler、UserPromptSubmit 3 handlerを含む。`pretool-dispatch.sh` / `posttool-dispatch.sh`、その先のcombined/child hookもleaf actionまで展開し、すべてをbaselineに入れる。`config/cli_events.yaml`の抽象cellは意味論の索引であり、現行Claude actionを消す根拠にしない。
+
+| discovery layer | As-Is最小数 | terminal契約 |
+|---|---:|---|
+| `.claude/settings.json` event type | 6 | `SessionStart` / `PreToolUse` / `PostToolUse` / `Stop` / `SessionEnd` / `UserPromptSubmit` 全数 |
+| top-level handler | 12 | command、matcher、timeout、順序、出力意味論をhash化し12/12 receipt |
+| dispatcher / combined child | generated N | shell構文と実fixtureの両方からleaf actionを展開。discovered=selected=executed=N、未展開0 |
+| lifecycle side effect | generated N | state/last_active、log、lint、alert、inbox、clear-checkを独立actionとし、合成済みの1 handlerで帳消ししない |
+
+baseline artifactは`queue/gates/cmd_4200/claude_primary_baseline/` に固定する。`source_commit` / `git_blob` / file SHA-256 / mode / handler graph / child SHA-256 / fixture receiptを持つ。現行起点の`.claude/settings.json` blobは`be93a9ff5706a7d79eebedfeb52a668310bc1e8b`、working content SHA-256は`4b1945c8477afdba71d6fe7fdf7a10b8a49a0e6f43e3a5c6476a1b0bae79ca52`である。最終実装checkpointでは開始時HEADを改めて固定し、古い設計書記載値を流用しない。
 
 | invariant | binary check |
 |---|---|
@@ -163,9 +192,17 @@ Claude primary baselineは次の6 eventとする: `SessionStart`、`UserPromptSu
 | lifecycle | `/clear`、idle flag、inbox nudge、report handoff、cmd completionがbefore/after同結果 |
 | latency | event別p95が既定budget以内。Codex都合のtimeout増加をClaudeへ波及させない |
 | ownership | Claude hook ownerは各action 1。Codex daemon追加で二重owner 0 |
-| rollback | adapter pointerを旧Claude pathへ戻し、同じbaseline receiptを再現できる |
+| rollback | `scripts/runtime_compatibility_restore.sh --receipt <baseline.json> --dry-run`でpath/mode/SHA/ownerを照合し、`--apply`はcanary所有pathのみatomic restoreする。他者dirty path、hash不一致、scope外はBLOCK |
 
-Claude primaryの6/6 receiptがないcommitは、Codex側が全PASSでもrelease不可とする。
+Claude primaryのexpanded action N/N receiptがないcommitは、Codex側が全PASSでもrelease不可とする。rollbackは「adapter pointerを戻す」という散文ではなく、実在script、baseline artifact、dry-run、apply後再fixtureの4点をそろえる。
+
+### §0.5 編成mutation journal
+
+`queue/gates/cmd_4200/runtime_mutations.jsonl`に、検証窓内の全pane spawn/respawn/switchを`event_id` / `timestamp` / `owner` / `cause` / `cmd_id` / before-after pane PID+starttime / CLI / model / effort / service tierで記録する。
+
+- 全体respawn数0を要求しない。idle recovery等の正常別owner動作をcmd_4200に誤帰属させないためである。
+- cmd_4200起因のsettings変更、pane respawn、CLI/model/effort switchはそれぞれ0を要求する。owner/cause不明は0と数えずBLOCKする。
+- journalなしのmtime・pane birth時刻のみで「cmd起因0」と判定しない。今回の再レビュでcommit後pane birth 1/9を観測したがowner receiptがないため、AC22は未判定とする。
 
 ## §1 As-Is — 現状5W1H
 
@@ -504,8 +541,11 @@ Gate0A contract [DONE]
 | 18 | configured全agentでresolver結果、launch binary、tmux CLI tag、process bannerがN/N一致し、type/binary mismatch 0 |
 | 19 | runtime manifestとtuple receiptがfixed source SHA、runner ID、OS/filesystem identityへ束縛され、欠落0・重複0 |
 | 20 | native Linux/Windows-nativeをportable保証に含める場合は専用runner executed N/N。証跡0の間は`PLANNED`表示でrelease claim 0 |
-| 21 | Claude primary rowがsupport matrixに必ず存在し、Claude 6 eventのbefore/after receipt 6/6、behavior差分0、二重owner0 |
-| 22 | cmd_4200によるsettings変更0、pane respawn0、CLI/model/effort切替0。matrix検証が実編成を変更していない |
+| 21 | Claude primary rowがsupport matrixに必ず存在し、`.claude/settings.json`の6 event type / 12 top handler / dispatcher展開leaf Nがbefore/after全数receipt、behavior差分0、二重owner0 |
+| 22 | owner/cause付きmutation journal上、cmd_4200起因のsettings変更0、pane respawn0、CLI/model/effort切替0。owner/cause不明0。別ownerの正常respawnは分離計数 |
+| 23 | 各変更unitがold design reason、根拠commit/file/line、cut edge、影響、保存方法をN/N記録し、不明0 |
+| 24 | support全valid tupleで安全性非退行、Claude primary使い勝手差分0、既定budget内、追加手順税0。1件でも未証明/悪化ならNO-CHANGE CLOSE |
+| 25 | canary採用時は旧Claude pathのhash/mode/owner付き保存、実在restore scriptのdry-run PASS、apply後expanded action N/N再現を同一receiptで証明 |
 
 ## §7 Decision Ledger
 
@@ -534,6 +574,7 @@ Gate0A contract [DONE]
 | D05 | runtime母集団の正本 | support/configured/activeを別生成し、active-only誤PASSを再現 | `support_matrix`をrelease terminal、configuredを配置整合、activeを実態観測に固定 |
 | D06 | OS portability claim | runner receiptの有無をOS/filesystem rowごとに確認 | WSL2 DrvFSのみ現行実証。native Linux/Windows-nativeはrunner証跡まで`PLANNED` |
 | D07 | 主編成の定義 | active pane比率ではなく殿の編成方針とsupport matrix primary fieldで判定 | **Claude primary**。Codex active増加・一時配置でも主編成を変更しない |
+| D08 | 新共通層の採用判定 | 旧系の成立因果とsupport全tupleの純便益をbefore/after比較 | 純便益が全数証明されるまで`NO-CHANGE`。Claude悪化1件でrollback |
 
 ## §8 Review Checklist
 
@@ -560,6 +601,10 @@ Gate0A contract [DONE]
 19. hook不在eventを「daemonで代替」と散文だけで済ませず、action別owner/test/receipt N/Nを持つか。
 20. active Codex比率を理由にClaude primary row・fixture・rollbackを削っていないか。
 21. compatibility検証が実paneのCLI/model/effortを勝手に変更・respawnしていないか。
+22. Claude baselineを抽象6 cellに縮小せず、SessionEnd・Stop全5 handler・UserPromptSubmit全3 handler・dispatcher/combinedのleaf actionをN/N展開したか。
+23. rollback先は実在artifact/scriptとhash/mode/ownerに束縛され、dry-runとapply後再検証があるか。
+24. 検証窓のpane birthはmutation journalでowner/causeを確定したか。時刻相関だけでcmd起因0としていないか。
+25. 旧系が優先された導入理由と事故回避の因果辺を、変更unitごとに追ったか。全tuple純便益が未証明ならNO-CHANGEにしたか。
 
 ## §9 履歴・因果・検索索引
 
@@ -581,10 +626,15 @@ Gate0A contract [DONE]
 | Multi-runtime RC1 | 軍師 | REQUEST_CHANGES | Gist/local一致のみPASS。active-only Claude欠落、3 matrix未分離、resolver/manifest欠落、type/binary矛盾2、Codex Stop代替receipt欠落、OS runner証跡0、valid constraint欠落の6 finding |
 | Multi-runtime RC1 response | 家老 | UPDATED v3.3 | support/configured/active分離、artifact/resolver、event代替receipt、OS support境界、valid constraint、AC16-20へ反映 |
 | 殿訂正 | 殿/家老 | UPDATED v3.3 | 主編成=Claudeを明記。active Codexを主編成へ誤昇格しない。Claude primary 6-event非退行、配備変更0、AC21-22を追加 |
+| 因果保存訂正 | 殿/家老 | UPDATED v3.4 | 旧Claude主系の成立因果、native hook優先理由、CLI adapterが必要になった事故、全tuple純便益未証明時NO-CHANGEを追加 |
+| Multi-runtime RC2 | 軍師 | REQUEST_CHANGES | 前回6 findingは6/6解消。新規3件: Claude実manifestの6 cell縮小、rollback pointer不存在、post-commit pane birth 1/9のowner/cause未証明 |
+| Multi-runtime RC2 response | 家老 | UPDATED v3.4 | 6 event type/12 top handler/dispatcher leaf N全数、baseline hash+restore script、mutation journal、AC21-25へ反映 |
 
 ### §9.2 因果リンク
 
-`[[殿下知_hidden_infrastructure実装_20260731]] -> [[multi_cli_hook_gap]] -> [[durable_state_remediation]] -> [[cmd_4200]]`
+`[[Claude主編成の長期運用]] -> [[Claude_native_hook優先]] -> [[multi_cli_hook_gap]] -> [[codex_stop_block_loop]] -> [[cli_capability_adapter_required]] -> [[durable_state_remediation]] -> [[cmd_4200]]`
+
+`[[旧系の成立因果]] -> [[全runtime純便益検証]] -> [[未証明はNO_CHANGE]] -> [[Claude悪化はrollback]]`
 
 ### §9.3 grep索引
 
