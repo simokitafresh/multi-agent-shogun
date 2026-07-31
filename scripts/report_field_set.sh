@@ -1631,8 +1631,8 @@ except yaml.YAMLError:
 if isinstance(data, dict) and ('id' in data or 'useful' in data or 'reason' in data):
     print('[autofix] lessons_useful dict→list変換(単体dictをlistに包む)', file=sys.stderr)
     print(yaml_text([data]), end='')
-elif isinstance(data, dict) and all(isinstance(v, dict) for v in data.values()):
-    # {0: {id:..}, 1: {id:..}} 形式 → list化
+elif isinstance(data, dict) and all(str(k).isdigit() for k in data.keys()) and all(isinstance(v, dict) for v in data.values()):
+    # {0: {id:..}, 1: {id:..}} 形式 → list化 (数値キーのみ。ID-keyed dictはlist契約違反としてfall-through)
     items = [v for k, v in sorted(data.items(), key=lambda x: str(x[0]))]
     print('[autofix] lessons_useful 数値キーdict→list変換', file=sys.stderr)
     print(yaml_text(items), end='')

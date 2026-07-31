@@ -85,6 +85,17 @@ PY
     [[ "$output" == *"[autofix]"* ]]
 }
 
+# test_necessity: ID-keyed dict({L001: {...}, L002: {...}})はnumbered dict救済
+# ({0: {...}, 1: {...}})と誤認されてはならない入力契約。
+# Origin: cmd_karo_recon_rfs_idkey_normalization_20260731 -> whole-field条件過広 ->
+# cmd_karo_hotfix_rfs_idkey_normalization_20260731
+@test "lessons_useful: ID-keyed dict(L001,L002)はnonzeroで拒否されreportはbyte不変" {
+    cp "$TEST_REPORT" "$TEST_TMPDIR/before.yaml"
+    run bash -c "printf 'L001:\n  id: L001\n  useful: true\n  reason: test\nL002:\n  id: L002\n  useful: false\n  reason: test2\n' | bash '$SCRIPT' '$TEST_REPORT' lessons_useful - 2>&1"
+    [ "$status" -ne 0 ]
+    diff "$TEST_TMPDIR/before.yaml" "$TEST_REPORT"
+}
+
 @test "lessons_useful: string形式入力はexit 1" {
     run bash -c "bash '$SCRIPT' '$TEST_REPORT' lessons_useful 'L001をreviewで使用した' 2>&1"
     [ "$status" -eq 1 ]
