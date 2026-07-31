@@ -2282,3 +2282,32 @@
     SG5_lesson_candidate: PASS
     SG6_code_quality: PASS
     SG7_gate_prediction: PASS
+- cmd_id: idle_deferred_work_audit_20260801
+  review_type: self_study
+  verdict: COMPLETE
+  reviewed_at: "2026-08-01T03:26:00+09:00"
+  observations:
+    - "gunshi inbox未読0、掲示板未確認0、active task4/4はpaneで作業継続。"
+    - "pending decisionsは監査中に家老が24→12へ削減し、放置ではなく処理中。"
+    - "飛猿旧failed dependency taskだけが02:11:06-03:14:01に同一BLOCKを24回反復。"
+  operational_simulation:
+    command: "全task status + 8 pane capture + gate_fire_log exact task_id集計 + pending decision before/after比較"
+    expected: "作業中/正当待機/放置を一次状態と時間差で分類し、放置は即actionへ変換"
+    actual: "active4/4、PD24→12、放置1 task、反復BLOCK24件/63分。shogun+karoへaction_required送信。"
+    result: PASS
+  verified_files:
+    - scripts/ninja_monitor.sh:3691
+    - scripts/ninja_monitor.sh:3711
+    - queue/tasks/tobisaru.yaml:status
+    - docs/research/gunshi_idle_deferred_work_audit_20260801.md:1
+  cs_checklist:
+    CS1: "前提: snapshotではなく全pane/task現物を照合。"
+    CS2: "数値: active4/4、PD24→12、反復BLOCK24。"
+    CS3: "時系列: FIRST02:11:06→LAST03:14:01の63分を確認。"
+    CS4: "失敗前提: failed taskが永久にmonitor BLOCKを生成。"
+    CS5: "North Star: 同一異常を1 durable actionへ収束。"
+    CS6: "曖昧性: terminal GATEなしreviewは捏造同期せず除外。"
+  altruism_check: "shared: Karo/Shogunへtask state修復とmonitor再発防止をaction_requiredで通知。"
+  causal_chain: "[[cmd_karo_hotfix_archive_review_canonical_allowlist_20260801]] -> [[dependency_registration_missing]] -> [[repeated_BLOCK_without_state_transition]]"
+  memory_ref: "[MEM: memory_db ts=2026-08-01T03:22:18+09:00]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。報告だけで止めず放置1件を特定、BLOCK24件/63分を計測し2役へaction_required送信。"
