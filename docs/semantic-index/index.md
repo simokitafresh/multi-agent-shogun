@@ -8977,6 +8977,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607311610_saizo` — [[semantic_causal_automation]] -> `docs/research/gunshi_idle_infra_bugs_session_20260724.md` |
 | causal | `cmd_reflux_backlink_202607311610_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607311711_saizo` — [[semantic_causal_automation]] -> `docs/research/gunshi_idle_log_append_sequential_block_20260720.md` |
+| causal | `cmd_reflux_backlink_202607312324_hanzo` — [[semantic_causal_automation]] -> `docs/research/gunshi_session_rca_20260718.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_insights — 仮: Insights
