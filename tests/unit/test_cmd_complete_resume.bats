@@ -186,6 +186,40 @@ PY
     [ "$status" -ne 0 ]
 }
 
+# test_necessity: the formal approval writer must use the same logical report
+# key as terminal readers and explicitly authorize archived SG7 input.
+@test "formal archived approvals share logical key and pass SG7 archive authorization" {
+    local root="$BATS_TEST_TMPDIR/formal-archive"
+    mkdir -p "$root/scripts/lib" "$root/queue/archive/reports" "$root/queue/reports" \
+        "$root/queue/tasks" "$root/queue/gates/cmd_archive"
+    cp "$BATS_TEST_DIRNAME/../../scripts/review_approval.sh" "$root/scripts/"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/review_approval.sh" "$root/scripts/lib/"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/report_commit_identity.py" "$root/scripts/lib/"
+    printf 'yaml_field_set_batch() { :; }\n' > "$root/scripts/lib/yaml_field_set.sh"
+    printf 'defense_overhead_write() { :; }\n' > "$root/scripts/lib/defense_overhead_writer.sh"
+    printf 'import pathlib,sys\npathlib.Path(__file__).with_name("sg7.args").write_text(" ".join(sys.argv[1:]))\n' \
+        > "$root/scripts/review_bundle.py"
+    report="$root/queue/archive/reports/ninja_report_cmd_archive.yaml"
+    printf 'report_id: rpt-archive\nparent_cmd: cmd_archive\nstatus: completed\nverdict: PASS\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult: {summary: ok}\n' > "$report"
+
+    run env REVIEW_APPROVAL_ROOT="$root" REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+        REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
+        bash "$root/scripts/review_approval.sh" cmd_archive gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    run env REVIEW_APPROVAL_ROOT="$root" REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+        REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
+        bash "$root/scripts/review_approval.sh" cmd_archive karo ACCEPT "$report"
+    [ "$status" -eq 0 ]
+
+    logical_key=$(printf '%s' 'queue/reports/ninja_report_cmd_archive.yaml' | sha256sum | awk '{print $1}')
+    physical_key=$(printf '%s' 'queue/archive/reports/ninja_report_cmd_archive.yaml' | sha256sum | awk '{print $1}')
+    [ -f "$root/queue/gates/cmd_archive/review_approvals/reports/$logical_key/gunshi.yaml" ]
+    [ -f "$root/queue/gates/cmd_archive/review_approvals/reports/$logical_key/karo.yaml" ]
+    [ ! -e "$root/queue/gates/cmd_archive/review_approvals/reports/$physical_key" ]
+    grep -q -- '--allow-archived' "$root/scripts/sg7.args" || { cat "$root/scripts/sg7.args" >&3; false; }
+    [ "$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["reports"]))' "$root/queue/gates/cmd_archive/terminal_review_manifest.json")" -eq 1 ]
+}
+
 # test_necessity: archive identity resolution must reject every ambiguity and
 # path-boundary escape before any approval can be consumed.
 @test "archived report resolver fails closed on malformed identity and boundary escapes" {

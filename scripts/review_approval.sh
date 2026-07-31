@@ -42,6 +42,10 @@ fi
 [[ "$report" = /* ]] || report="$ROOT/$report"
 PROJECT_ROOT="$ROOT" review_validate_report "$cmd_id" "$report" || { echo "BLOCK: invalid cmd/report boundary or parent_cmd mismatch" >&2; exit 2; }
 report=$(realpath "$report")
+report_logical=$(PROJECT_ROOT="$ROOT" review_report_logical_path "$report") || {
+  echo "BLOCK: report logical path resolution failed: $report" >&2
+  exit 2
+}
 # A formal decision is valid only for a submitted report.  Karo RC moves the
 # report to revision_requested before waking the worker; without this guard a
 # delayed Gunshi review can bind LGTM to that post-RC document and recreate a
@@ -77,7 +81,7 @@ base="$ROOT/queue/gates/$cmd_id/review_approvals"
 mkdir -p "$base"
 exec 200>"$base/.lock"; flock -w 10 200
 fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$fail_close" review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
-report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_rel")
+report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_logical")
 dir="$base/reports/$report_key"; mkdir -p "$dir"
 # An RC means the reviewed implementation was not acceptable.  Re-submitting
 # the same implementation commit merely by toggling report lifecycle fields
@@ -265,8 +269,10 @@ fi
 # no production caller, so GATE could archive the report before Karo consumed
 # the bundle.  Bind generation to the existing formal Gunshi-LGTM boundary.
 if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ -f "$ROOT/scripts/review_bundle.py" ]; then
+  sg7_archive_args=()
+  [[ "$report_rel" = queue/archive/reports/* ]] && sg7_archive_args+=(--allow-archived)
   python3 "$ROOT/scripts/review_bundle.py" generate \
-    --cmd "$cmd_id" --verdict APPROVE --report "$report_rel" >/dev/null || {
+    --cmd "$cmd_id" --verdict APPROVE --report "$report_rel" "${sg7_archive_args[@]}" >/dev/null || {
       echo "BLOCK: SG7 bundle generation failed: $cmd_id $report_rel" >&2
       exit 1
     }
