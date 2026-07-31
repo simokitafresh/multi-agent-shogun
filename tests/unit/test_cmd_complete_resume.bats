@@ -188,9 +188,9 @@ PY
 
 # test_necessity: archive identity resolution must reject every ambiguity and
 # path-boundary escape before any approval can be consumed.
-@test "archived report resolver fails closed on nested symlink missing id and duplicate id" {
+@test "archived report resolver fails closed on malformed identity and boundary escapes" {
     local cases_root="$BATS_TEST_TMPDIR/archive-negative"
-    for kind in nested symlink missing duplicate; do
+    for kind in nested symlink symlink_other_cmd invalid missing duplicate; do
         root="$cases_root/$kind"
         mkdir -p "$root/scripts/lib" "$root/queue/reports" "$root/queue/archive/reports" "$root/queue/tasks"
         cp "$BATS_TEST_DIRNAME/../../scripts/lib/review_approval.sh" "$root/scripts/lib/"
@@ -203,6 +203,12 @@ PY
             symlink)
                 printf 'report_id: rpt-2\nparent_cmd: cmd_4200\n' > "$root/outside.yaml"
                 ln -s "$root/outside.yaml" "$root/queue/archive/reports/two.yaml" ;;
+            symlink_other_cmd)
+                printf 'report_id: rpt-other\nparent_cmd: cmd_other\n' > "$root/outside.yaml"
+                ln -s "$root/outside.yaml" "$root/queue/archive/reports/two.yaml" ;;
+            invalid)
+                printf 'report_id: [unterminated\nparent_cmd: cmd_4200\n' \
+                    > "$root/queue/archive/reports/two.yaml" ;;
             missing)
                 printf 'parent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two.yaml" ;;
             duplicate)

@@ -281,20 +281,23 @@ for report_path in sorted(candidates):
     if report_path in seen_paths:
         continue
     seen_paths.add(report_path)
-    try:
-        doc = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
-    except (OSError, yaml.YAMLError):
-        continue
-    if not isinstance(doc, dict) or str(doc.get("parent_cmd") or "") != cmd_id:
-        continue
-    is_live = report_path.parent == reports_dir
-    if is_live and report_path.name not in live_names:
-        continue
+    # Authenticate the storage boundary before reading attacker-controlled
+    # content.  In particular, a symlink carrying another command's payload
+    # must not escape validation through the parent_cmd mismatch branch.
     if report_path.is_symlink() or report_path.parent not in (reports_dir, archive_dir):
         raise SystemExit(1)
     resolved = report_path.resolve()
     if resolved.parent not in (reports_dir.resolve(), archive_dir.resolve()):
         raise SystemExit(1)
+    try:
+        doc = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        raise SystemExit(1)
+    if not isinstance(doc, dict) or str(doc.get("parent_cmd") or "") != cmd_id:
+        continue
+    is_live = report_path.parent == reports_dir
+    if is_live and report_path.name not in live_names:
+        continue
     report_id = str(doc.get("report_id") or "").strip()
     # Active legacy reports remain task-bound for compatibility.  Archived
     # reports have no task slot to authenticate them and therefore require a
