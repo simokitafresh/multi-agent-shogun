@@ -1,5 +1,7 @@
 # 【✅CLOSED 2/2 — #1 Δ実測CLEAR・#2 no-change CLOSE】ホットスクリプト集中高速化 第三弾 — AsIs/ToBe 5W1H設計書 v3.0 (2026-07-28 21:12 完了宣言。版履歴は§-3)
 
+> シリーズ: ホットスクリプト集中高速化 全七弾。第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`✅ / 第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`✅ / **第三弾=本書**✅ / 第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅ / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(稼働中) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅
+
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(v1.3・5/9 CLEAR+1家老判定待ち、残3弾直列)。本書は殿方針(2026-07-28 12:26)「**第二弾で触るスクリプト以外から選別**」に基づく第三弾。第二弾とファイル素集合は交わらず**技術上は別ファイル並列可能**だが、殿裁定12:45により第三弾の実装並行は未解禁。**殿直命14:50(blt_20260728_145050)で「第三弾は設計書の先頭弾のみ、空き戦力かつ別ファイルなら並列先行可。後続弾はthroughput実測後」と条件付き解禁**。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
 ## §-2 第三弾 弾台帳(2026-07-28 14:55時点 — 第一弾§-2完了台帳と同型)

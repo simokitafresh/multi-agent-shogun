@@ -1,5 +1,7 @@
 # 【✅CLOSED(2026-07-30 09:45 gen4 checkpoint成功)】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.8 (2026-07-30 09:47 将軍CLOSE刻印。殿発案07-29 22:06)
 
+> シリーズ: ホットスクリプト集中高速化 全七弾。第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`✅ / 第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`✅ / 第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`✅ / 第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅ / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(稼働中) / **第七弾=本書**✅
+
 ## §-2.2 CLOSE(gen4全量checkpoint結果 — blt_20260730_094558一次)
 
 - 固定SHA bee4d7ef4・isolated一度だけ: **184/184ファイル・2,812/2,812 tests・FAIL0・SKIP0・cache0**。4識別子結合=receipt1/per-file184/per-suite1・集合差0

@@ -1,5 +1,7 @@
 # 【⚙checkpoint 3巡目実行中 — 2巡で残存不整合2件を検出・是正済み】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.5 (2026-07-29 03:15 覚醒更新。版履歴は§-3)
 
+> シリーズ: ホットスクリプト集中高速化 全七弾。第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`✅ / 第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`✅ / 第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`✅ / **第四弾=本書** / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅ / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(稼働中) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅
+
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9・閉幕プランP1-P4全充足)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(✅CLOSED 2/2)。本書は殿下知(2026-07-28 20:02)「第四弾の準備も始めよう」に基づき、**第二弾閉幕snapshot v2.0**(`hot-script-speedup-round2-v2-snapshot-20260728.md`、fixed SHA=60a88c241、固定窓2026-07-28T02:46:57Z..10:08:06Z)の序列から標的を引いた第四弾である。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
 ## §-2 第四弾 弾台帳(2026-07-28 21:05時点 — 第一弾§-2完了台帳と同型)

@@ -1,4 +1,6 @@
-# 【✅ CLOSED — 第一弾完了 12/12】ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v3.0 (2026-07-28 11:56クローズ)
+# 【✅ CLOSED — 第一弾完了 12/12】ホットスクリプト集中高速化 第一弾 — AsIs/ToBe 5W1H設計書 v3.0 (2026-07-28 11:56クローズ)
+
+> シリーズ: ホットスクリプト集中高速化 全七弾。**第一弾=本書**✅ / 第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`✅ / 第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`✅ / 第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅ / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(稼働中) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅
 
 > **本設計書はクローズ済み(第一弾12/12全GATE CLEAR、最終CLEAR=memory_db_token_search 2026-07-28 11:46:57)。**
 > **後継**: 第二弾設計書=`docs/research/hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(gist e13277d8)。第二弾の最終序列(v2.0)は本弾完了後の台帳再snapshotで確定し殿裁可を仰ぐ。
