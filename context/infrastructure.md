@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-31 cmd_karo_skill_ref_report_write_20260731 reviewed source boundary -->
-<!-- source_commit:a3d5858e1 reason:cmd_karo_skill_ref_report_write_20260731 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=a3d5858e1 -->
+<!-- last_updated: 2026-07-31 cmd_karo_hotfix_ga418 reviewed exact source boundary -->
+<!-- source_commit:e4744442f reason:cmd_karo_hotfix_ga418 reviewed exact source boundary evidence:a3d5858e1..e4744442f 12 commits classified; implementation 2, reflux/context 10; cache-disabled gate ALERT 1 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -20,6 +20,8 @@ daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_m
 context freshnessの`source_commit`境界はinfra root fallbackにも適用する。境界後commitは、context自身を変更した・lesson-only・本文がhash/cmd IDを明示した場合だけ反映済みと分類し、それ以外は日付をbumpしてもALERTへ残す。ALERTには直近3件のhash・subjectを同梱する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124、GA-264、GA-295）
 
 GA-417一次差分: `6e33bdbb2..2eec66892`全14件のうちroot fallback候補は5件。`2eec66892`はX threadを本文+画像の単一知識へ統合する取得skill、`9c90c23ca`は外部repo成果物のscope path正規化、`897c7370d`は自動push前のdirty-overlap fail-closed、`947ce5451`は自動生成semantic indexの正当なdirty除外、`d878d5096`はhook result parent mapping正規化を導入した。`2ce5e9e6f`は既存本文参照済みのため反映済み除外。直接原因は同日`last_updated`がexact source境界を進めないこと、根本判定はregistry 10/10一致・infra登録1/1・未反映5/5検出で既存防御が十分なためgate/registry変更0。→ `skills/x-thread-fetch/SKILL.md` / `scripts/gates/gate_report_format_main.py` / `scripts/cmd_complete_gate.sh` / `scripts/lib/autogen_paths.sh` / `scripts/report_field_set.sh`（cmd_karo_hotfix_ga417_infrastructure_trigger_20260730）
+
+GA-418一次差分: `a3d5858e1..e4744442f`全12件を照合し、実装差分は2件。`8785e78a9`は`lessons_useful` whole-field autofixを数値キーdictだけに限定してID-keyed dictの誤受理をfail-closed化、`e4744442f`はGuard14へ「設定済みproject配下の実在SQLiteをliteral file URI + `mode=ro` + `uri=True`で開く」限定能力を追加した。残り10件はcontext/semantic/DM-Signal refluxでinfra本文の新規不変量なし。完了時refluxは当該cmd自身の未反映commitだけをBLOCKするため、後続の別cmd・direct fixを先行contextへ自動追記しない（非発火は設計通り）。cache無効gateは未反映12/12を1件のALERTとして検出し、registry `context/infrastructure.md` entry 1/1・caller 3箇所(`cmd_complete_gate.sh`/gate action/template)・setter unit 6/6 PASSで既存防御が成立するため追加修正0。→ `scripts/report_field_set.sh` / `scripts/lib/guard14_db_trust_classify.py` / `.claude/hooks/pre-bash-combined.sh`（cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427）
 
 context自己更新commitは、それ自身の除外だけでなく、その祖先にある検出済みsource候補のeffective boundaryとして扱う。GA-414では`b40e11a3c..66cb48be0`の116件を全走査し、除外83・本文反映10・未反映23を検出した後、`c36df4056`のcontext自己更新が23/23を包含していたのに旧gateが候補を残した。直接原因は自己更新commitの単体除外、根本原因は反映証拠を境界へ昇格しない非対称性。新しいsource commitがcontext commitより後なら従来通りALERTする。→ `scripts/gates/gate_context_freshness.sh` / `tests/unit/test_gate_context_freshness.bats`（cmd_karo_hotfix_ga414_context_freshness_20260729）
 
@@ -2231,6 +2233,9 @@ done | sort -u
   でuntrusted扱いする。credential source segment(source builtin等)自体も接続先不明のためuntrusted
 - 免除(db-check等)は自由文字列一致ではなく、実行operandのrealpathをconfig/projects.yaml(SSOT)由来の
   正規パスとsamefile同一性確認まで行う。basename一致だけでは同名の別ファイルでなりすませる
+- file-backed SQLiteのread-only能力は、設定済みproject root配下へrealpath confinementできる実在file、
+  literal `file:` URI、`mode=ro`、`uri=True`が全て証明できる場合だけ`local_ephemeral`として許可する。
+  writable mode、動的引数、project外path、symlink escape、remote engineとの混在はfail-closedでuntrusted。
 
 **性能**: 全Bash commandを無条件でPython classifierへ渡すとWSL2実測+29-33ms/呼び出し(baseline比
 約60-77%増)で許容不能。解決策は「外側if(語彙gate)を復活させる」ではなく「共通classifier自体の
