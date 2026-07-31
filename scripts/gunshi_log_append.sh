@@ -52,8 +52,12 @@ if [ -z "$ENTRY" ]; then
     exit 1
 fi
 
+# Parse only the entry's top-level review_type. Stable remediation identity
+# contains target_review_type and must not trigger draft/report guards.
+ENTRY_REVIEW_TYPE=$(printf '%s\n' "$ENTRY" | awk '/^  review_type:[[:space:]]*/ {v=$0; sub(/^  review_type:[[:space:]]*/, "", v); gsub(/["'\'' ]/, "", v); print v; exit}')
+
 # --- observations必須チェック(draft/report/self_study) ---
-if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study) ]]; then
+if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report|self_study)$ ]]; then
     if [[ "$ENTRY" != *"observations:"* ]]; then
         echo "BLOCK: observationsが未記入(review_type=draft/report/self_study)。事実3点以上を記入してから再実行せよ" >&2
         exit 2
@@ -66,7 +70,7 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study) ]]; then
 fi
 
 # --- finding_categories必須チェック(draft/report) --- 冷え観点L4化 2026-06-24: 3セッション連続再発の根治
-if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report) ]]; then
+if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report)$ ]]; then
     if [[ "$ENTRY" != *"finding_categories:"* ]]; then
         echo "BLOCK: finding_categoriesが未記入(review_type=draft/report)。6観点カタログ全てを記載せよ(冷え観点防止)" >&2
         exit 2
@@ -84,7 +88,7 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report) ]]; then
 fi
 
 # --- ambiguity_points必須チェック(draft) --- 冷え観点遡及 2026-06-26: ambiguity記録漏れ根治
-if [[ "$ENTRY" =~ review_type:[[:space:]]*draft ]]; then
+if [ "$ENTRY_REVIEW_TYPE" = "draft" ]; then
     if [[ "$ENTRY" != *"ambiguity_points:"* ]]; then
         echo "BLOCK: ambiguity_pointsが未記入(review_type=draft)。none または曖昧箇所を記載せよ(冷え観点防止)" >&2
         exit 2
@@ -93,7 +97,7 @@ fi
 
 # --- brainwash_check数値強制(draft/report/self_study/consultation) --- 覚醒洗脳監査2026-06-09: L4貫通
 # brainwash_checkに数値(0-9)が含まれない場合BLOCK。「OK」「確認済み」は形骸化(LG027横展開)
-if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation) ]]; then
+if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report|self_study|consultation)$ ]]; then
     if [[ "$ENTRY" != *"brainwash_check:"* ]]; then
         echo "BLOCK: brainwash_checkが未記入。8パターン自問+数値証拠を記入してから再実行せよ" >&2
         exit 2
@@ -111,14 +115,14 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation)
 fi
 
 # --- LGTM+BLOCK矛盾チェック(report) --- 今セッション3件連続事故の根治(L4貫通)
-if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && echo "$ENTRY" | grep -Pq 'gate_prediction:\s*BLOCK(\s|$|\(|\[|/)'; then
+if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && echo "$ENTRY" | grep -Pq 'gate_prediction:\s*BLOCK(\s|$|\(|\[|/)'; then
     echo "BLOCK: verdict=LGTMとgate_prediction=BLOCKの矛盾。BLOCKが予測される報告にLGTMを出すな。FAILに変更するか、BLOCK理由を解消してからLGTMせよ" >&2
     exit 2
 fi
 
 # --- LGTM bundle guard: sg7_bundle.json必須(lgtm_bundle_guard, cmd_4157) ---
 # LGTM記載とbundle生成を不可分にする。bundle未生成のままreview_logへLGTM記載を禁止する
-if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]]; then
+if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]]; then
     _lbg_cmd_id=$(python3 -c "
 import sys, yaml
 entry = yaml.safe_load(sys.argv[1])
@@ -142,7 +146,7 @@ print(str(item.get('cmd_id') or ''))
 fi
 
 # --- gate_prediction_reason必須チェック(report) --- GP-259: prediction偽陽性分析の材料を残す
-if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ gate_prediction:[[:space:]]*(CLEAR|WARN|BLOCK) ]]; then
+if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ gate_prediction:[[:space:]]*(CLEAR|WARN|BLOCK) ]]; then
     if [[ "$ENTRY" != *"gate_prediction_reason:"* ]]; then
         echo "BLOCK: gate_prediction_reasonが未記入。precheckのreasonをreview_logへ転記せよ(GP-259)" >&2
         exit 2
@@ -216,7 +220,7 @@ PY
 if [[ "$ENTRY" == *"remediation:"* ]]; then
     python3 - "$LOG_FILE" "$ENTRY" <<'PY'
 import re, sys, yaml
-allowed = {"operational_simulation", "verified_files", "adversarial", "step3_5_verified", "d0_applied"}
+allowed = {"operational_simulation", "verified_files", "adversarial", "step3_5_verified", "d0_applied", "hole_action"}
 try:
     old = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or []
     parsed = yaml.safe_load(sys.argv[2])
@@ -226,12 +230,18 @@ if not isinstance(parsed, list) or len(parsed) != 1 or not isinstance(parsed[0],
     print("BLOCK: remediation entry must be one YAML list item", file=sys.stderr); raise SystemExit(2)
 item = parsed[0]; rem = item.get("remediation")
 target = str(rem.get("target_cmd_id") or "").strip() if isinstance(rem, dict) else ""
-known = {str(x.get("cmd_id") or x.get("id") or "").strip() for x in old if isinstance(x, dict) and "remediation" not in x}
+target_type = str(rem.get("target_review_type") or "").strip() if isinstance(rem, dict) else ""
+target_at = str(rem.get("target_reviewed_at") or "").strip() if isinstance(rem, dict) else ""
+records = [x for x in old if isinstance(x, dict) and "remediation" not in x]
+matches = [x for x in records if str(x.get("cmd_id") or x.get("id") or "").strip() == target]
+identity_partial = bool(target_type) != bool(target_at)
+if target_type and target_at:
+    matches = [x for x in matches if str(x.get("review_type") or "").strip() == target_type and str(x.get("reviewed_at") or "").strip() == target_at]
 fields = rem.get("fields") if isinstance(rem, dict) else None
 evidence = rem.get("evidence") if isinstance(rem, dict) else None
 bad_fields = not isinstance(fields, dict) or not fields or any(k not in allowed or v is None or v is False or str(v).strip().lower() in {"", "null", "none", "n/a", "[]", "{}"} for k, v in (fields or {}).items())
 bad_evidence = not isinstance(evidence, list) or not evidence or any(not isinstance(v, str) or not v.strip() or not re.search(r"(?:[^:]+:[A-Za-z0-9_.-]+|\b[0-9a-f]{7,40}\b)", v) for v in (evidence or []))
-if item.get("review_type") != "self_study" or target not in known or bad_fields or bad_evidence:
+if item.get("review_type") != "self_study" or identity_partial or len(matches) != 1 or bad_fields or bad_evidence:
     print(f"BLOCK: invalid remediation target/fields/evidence: {target or '<empty>'}", file=sys.stderr); raise SystemExit(2)
 PY
 fi

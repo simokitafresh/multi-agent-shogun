@@ -72,6 +72,7 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
     if (review_type == "draft") {
         draft_count++
         draft_id[draft_count] = (entry_id != "" ? entry_id : "?")
+        draft_reviewed_at[draft_count] = reviewed_at
         draft_obs[draft_count] = obs_text
         draft_obs_count[draft_count] = obs_count
         draft_verdict[draft_count] = verdict
@@ -89,6 +90,7 @@ function flush_record(    is_ss, has_fm, has_tolerance, idx) {
     entry_id = ""
     review_type = ""
     verdict = ""
+    reviewed_at = ""
     has_cs = 0
     has_causal = 0
     has_ambiguity = 0
@@ -117,6 +119,10 @@ BEGIN {
     entry_id = trim(line)
     next
 }
+/^- remediation:/ {
+    flush_record()
+    next
+}
 {
     if (!in_record) next
 
@@ -130,6 +136,11 @@ BEGIN {
         sub(/^[[:space:]]*verdict:[[:space:]]*/, "", line)
         gsub(/["'\''"]/, "", line)
         verdict = trim(line)
+    } else if ($0 ~ /^[[:space:]]*reviewed_at:[[:space:]]*/) {
+        line = $0
+        sub(/^[[:space:]]*reviewed_at:[[:space:]]*/, "", line)
+        gsub(/["'\''"]/, "", line)
+        reviewed_at = trim(line)
     } else if ($0 ~ /^[[:space:]]*cs_checklist:/) {
         has_cs = 1
     } else if ($0 ~ /^[[:space:]]*causal_chain:[[:space:]]*/) {
@@ -224,7 +235,7 @@ END {
             adversarial_missing[++adversarial_missing_count] = draft_id[i] "(required=true)"
         }
         if (i >= start_draft && draft_verdict[i] == "REQUEST_CHANGES" && !draft_has_hole_action[i]) {
-            hole_action_missing[++hole_action_missing_count] = draft_id[i]
+            hole_action_missing[++hole_action_missing_count] = draft_id[i] "|draft|" draft_reviewed_at[i]
         }
         if (i >= start_draft && !draft_has_brainwash[i]) {
             brainwash_missing[++brainwash_missing_count] = draft_id[i]
@@ -779,19 +790,32 @@ verified_files_missing=$(awk '
 _remediation_tmp="$(mktemp)"
 python3 - "$LOG_FILE" >"$_remediation_tmp" <<'PY'
 import re, sys, yaml
-allowed = {"operational_simulation", "verified_files", "adversarial", "step3_5_verified", "d0_applied"}
+allowed = {"operational_simulation", "verified_files", "adversarial", "step3_5_verified", "d0_applied", "hole_action"}
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or []
-known = {str(x.get("cmd_id") or x.get("id") or "").strip() for x in data if isinstance(x, dict) and "remediation" not in x}
+records = [x for x in data if isinstance(x, dict) and "remediation" not in x]
 bad = []
 for n, item in enumerate(data, 1):
     if not isinstance(item, dict) or "remediation" not in item: continue
     rem = item.get("remediation"); target = str(rem.get("target_cmd_id") or "").strip() if isinstance(rem, dict) else ""
+    target_type = str(rem.get("target_review_type") or "").strip() if isinstance(rem, dict) else ""
+    target_at = str(rem.get("target_reviewed_at") or "").strip() if isinstance(rem, dict) else ""
     fields = rem.get("fields") if isinstance(rem, dict) else None; evidence = rem.get("evidence") if isinstance(rem, dict) else None
-    ok = item.get("review_type") == "self_study" and target in known and isinstance(fields, dict) and bool(fields)
+    identity_complete = bool(target_type and target_at)
+    identity_partial = bool(target_type) != bool(target_at)
+    matches = [x for x in records if str(x.get("cmd_id") or x.get("id") or "").strip() == target]
+    if identity_complete:
+        matches = [x for x in matches if str(x.get("review_type") or "").strip() == target_type and str(x.get("reviewed_at") or "").strip() == target_at]
+    ok = item.get("review_type") == "self_study" and not identity_partial and len(matches) == 1 and isinstance(fields, dict) and bool(fields)
     ok = ok and isinstance(evidence, list) and bool(evidence) and all(isinstance(v, str) and v.strip() and re.search(r"(?:[^:]+:[A-Za-z0-9_.-]+|\b[0-9a-f]{7,40}\b)", v) for v in evidence)
     ok = ok and all(k in allowed and v is not None and v is not False and str(v).strip().lower() not in {"", "null", "none", "n/a", "[]", "{}"} for k, v in (fields or {}).items())
     if not ok: bad.append(f"entry#{n}:{target or '<empty>'}"); continue
-    for field in fields: print(f"{field}\t{target}")
+    matched = matches[0]
+    key = "|".join((
+        str(matched.get("cmd_id") or matched.get("id") or "").strip(),
+        str(matched.get("review_type") or "").strip(),
+        str(matched.get("reviewed_at") or "").strip(),
+    ))
+    for field in fields: print(f"{field}\t{key}")
 if bad: print("INVALID\t" + ",".join(bad))
 PY
 _remediation_invalid=$(awk -F '\t' '$1=="INVALID"{print $2}' "$_remediation_tmp")
@@ -814,6 +838,7 @@ _filter_remediated_lines() {
 }
 ops_sim_missing=$(_filter_remediated_csv operational_simulation "$ops_sim_missing")
 verified_files_missing=$(_filter_remediated_lines verified_files "$verified_files_missing")
+hole_action_missing=$(_filter_remediated_csv hole_action "$hole_action_missing")
 
 if (( all_pass > 0 )); then
     echo "PASS: 直近self_study/consultationエントリ全てにcs_checklist+causal_chain確認"
@@ -1318,6 +1343,7 @@ data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or []
 minor = re.compile(r"typo|フォーマット|format|missing.field|フィールド不備|記入漏れ|欠落|誤字|脱字|field.*missing|フィールド.*不備", re.I)
 resolved = re.compile(r"(修正済み|訂正済み|解消済み|対応済み|再配備済み|再配備完了)\s*[。．.!！）)」\"]*$|→再配備\s*[。．.!！\"]*$")
 negated = re.compile(r"(欠落|不備|記入漏れ)\s*(0|ゼロ|なし|無し|ない|無い)")
+aggregate_measurement = re.compile(r"(欠落|不備|記入漏れ).*?(?:\d+\s*件|\d+\s*→\s*\d+)")
 knowledge = re.compile(r"(教訓|知見|lesson).*(欠落|不備)|(欠落|不備).*(教訓|知見|lesson)", re.I)
 truthy = {"yes", "true", "1", "applied", "done"}
 
@@ -1333,13 +1359,14 @@ for item in data:
         text for text in texts
         if minor.search(text)
         and not negated.search(text)
+        and not aggregate_measurement.search(text)
         and not knowledge.search(text)
         and not resolved.search(text)
     ]
     if actionable:
         ident = str(item.get("cmd_id") or item.get("id") or "").strip()
         if ident:
-            print(ident)
+            print("|".join((ident, str(item.get("review_type") or "").strip(), str(item.get("reviewed_at") or "").strip())))
 PY
 )
 _d0_missing=$(_filter_remediated_lines d0_applied "$_d0_missing")

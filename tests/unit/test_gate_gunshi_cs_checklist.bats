@@ -23,6 +23,7 @@ setup() {
     # copy under TEST_TMPDIR/scripts/gates/ resolves LOG_FILE to
     # TEST_TMPDIR/logs/gunshi_review_log.yaml — fully isolated from the real log.
     cp "$GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    cp "$PROJECT_ROOT/scripts/gunshi_log_append.sh" "$TEST_TMPDIR/scripts/gunshi_log_append.sh"
     export LOG_UNDER_TEST="$TEST_TMPDIR/logs/gunshi_review_log.yaml"
 }
 
@@ -133,6 +134,13 @@ EOF
     - "枝選択コンテキスト欠落の具体知見"
   d0_applied: no
   timestamp: "2026-07-28T00:02:00+09:00"
+- cmd_id: cmd_aggregate_measurement
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  observations:
+    - "hole_action欠落5件を計測し、d0_applied 4→3と確認"
+  d0_applied: no
+  timestamp: "2026-07-28T00:02:30+09:00"
 - cmd_id: cmd_yes_resolved
   review_type: report
   verdict: FAIL
@@ -161,6 +169,78 @@ EOF
     [[ "$output" == *"cmd_true_positive"* ]]
     [[ "$output" != *"cmd_negative_count: 軽微修正"* ]]
     [[ "$output" != *"cmd_knowledge_only: 軽微修正"* ]]
+    [[ "$output" != *"cmd_aggregate_measurement: 軽微修正"* ]]
     [[ "$output" != *"cmd_yes_resolved: 軽微修正"* ]]
     [[ "$output" != *"cmd_structured_resolved: 軽微修正"* ]]
+}
+
+# test_necessity: duplicate cmd_id reviews must be remediated by stable review
+# identity so one historical finding can never waive its siblings.
+@test "append-only remediationは重複cmdをreview_type+reviewed_atでexact 1件だけ解消する" {
+    cat > "$LOG_UNDER_TEST" <<'EOF'
+- cmd_id: cmd_dup
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  reviewed_at: "2026-08-01T00:01:00+09:00"
+  ambiguity_points: none
+  brainwash_check: "8/8"
+- cmd_id: cmd_dup
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  reviewed_at: "2026-08-01T00:02:00+09:00"
+  ambiguity_points: none
+  brainwash_check: "8/8"
+- cmd_id: cmd_dup
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  reviewed_at: "2026-08-01T00:03:00+09:00"
+  ambiguity_points: none
+  brainwash_check: "8/8"
+- cmd_id: cmd_dup
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  reviewed_at: "2026-08-01T00:04:00+09:00"
+  ambiguity_points: none
+  brainwash_check: "8/8"
+- remediation:
+    target_cmd_id: cmd_dup
+    target_review_type: draft
+    target_reviewed_at: "2026-08-01T00:01:00+09:00"
+    fields: {hole_action: d0_implemented}
+    evidence: ["queue/reports/evidence.yaml:42"]
+  review_type: self_study
+EOF
+    run bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    [[ "$output" == *"3件のREQUEST_CHANGESにhole_action未記入"* ]]
+    [[ "$output" == *"cmd_dup|draft|2026-08-01T00:02:00+09:00"* ]]
+    [[ "$output" != *"cmd_dup|draft|2026-08-01T00:01:00+09:00: hole_action"* ]]
+
+    sed -i '/target_review_type:/d; /target_reviewed_at:/d' "$LOG_UNDER_TEST"
+    run bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(remediation): invalid structured remediation"* ]]
+
+    cat > "$TEST_TMPDIR/stable_remediation.yaml" <<'EOF'
+- cmd_id: remediation_probe
+  review_type: self_study
+  remediation:
+    target_cmd_id: cmd_dup
+    target_review_type: draft
+    target_reviewed_at: "2026-08-01T00:01:00+09:00"
+    fields: {hole_action: d0_implemented}
+    evidence: ["queue/reports/evidence.yaml:42"]
+  observations:
+    - "target exact 1/1"
+  cs_checklist: {CS1: one, CS2: two, CS3: three, CS4: four, CS5: five, CS6: six}
+  causal_chain: "a -> b -> c"
+  operational_simulation: {command: probe, expected: exact, actual: exact, result: PASS}
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; 1/1"
+EOF
+    GUNSHI_VALIDATE_ONLY=1 run bash "$TEST_TMPDIR/scripts/gunshi_log_append.sh" < "$TEST_TMPDIR/stable_remediation.yaml"
+    [ "$status" -eq 0 ]
+
+    sed -i '/target_review_type:/d; /target_reviewed_at:/d' "$TEST_TMPDIR/stable_remediation.yaml"
+    GUNSHI_VALIDATE_ONLY=1 run bash "$TEST_TMPDIR/scripts/gunshi_log_append.sh" < "$TEST_TMPDIR/stable_remediation.yaml"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"invalid remediation target"* ]]
 }
