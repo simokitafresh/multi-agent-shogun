@@ -8806,6 +8806,7 @@ codd:
 | causal | `docs/research/defense-enforcement-classification_20260720.md` — [[defense_hierarchy]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_control_plane_20260723.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_task_mutation_20260721.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607311429_kotaro` — [[semantic_causal_automation]] -> `docs/research/codd-deploy-control-plane-20260723/design/system_design.md` |
 | causal | `docs/research/cmd_4106_cache_flock_experiment_kotaro.md` — [[wave_cache_flock_contention]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/cmd_4106_yaml_mutation_experiment_saizo.md` — [[yaml_safe_write]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/cmd_karo_recon_axis_b_color_20260722.md` — [[semantic_causal_automation]] -> [[cmd_karo_recon_axis_b_color_20260722]] |
