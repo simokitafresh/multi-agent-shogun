@@ -785,6 +785,7 @@ YAML
 #!/usr/bin/env bash
 if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
   printf 'pytest:%s\n' "$*" >>"$ENGINE_LOG"
+  printf '1 passed in 0.01s\n'
   exit 0
 fi
 exec "$REAL_PYTHON3" "$@"
@@ -828,6 +829,41 @@ SH
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/missing.yaml"
   [ "$status" -eq 2 ]
   [[ "$output" == *"selected task test is missing"* ]]
+
+  receipt_dir="$TMPROOT/logs/mixed-receipt"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    RUN_TESTS_RECEIPT_DIR="$receipt_dir" BATS_TAP_OUTPUT="$TMPROOT/mixed.tap" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/mixed.yaml"
+  [ "$status" -eq 0 ]
+  receipt="$(find "$receipt_dir" -name '*.json' -type f | head -1)"
+  run "$REAL_PYTHON3" - "$receipt" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+s = d["run_manifest"]["scope_identity"]
+assert d["declared_test_count"] == d["observed_test_count"] == 2, d
+assert s["selected_file_count"] == s["executed_file_count"] == 2, s
+assert d["skip_count"] == 0, d
+PY
+  [ "$status" -eq 0 ]
+  tap="${receipt%.json}.tap"
+  [ "$(grep -c '^1..1$' "$tap")" -eq 2 ]
+
+  receipt_dir="$TMPROOT/logs/python-receipt"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    RUN_TESTS_RECEIPT_DIR="$receipt_dir" SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/python.yaml"
+  [ "$status" -eq 0 ]
+  receipt="$(find "$receipt_dir" -name '*.json' -type f | head -1)"
+  run "$REAL_PYTHON3" - "$receipt" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+s = d["run_manifest"]["scope_identity"]
+assert d["rc"] == 0, d
+assert d["declared_test_count"] == d["observed_test_count"] == 1, d
+assert s["selected_file_count"] == s["executed_file_count"] == 1, s
+PY
+  [ "$status" -eq 0 ]
 }
 
 # test_necessity: Task selector must classify tests by path/extension contract;

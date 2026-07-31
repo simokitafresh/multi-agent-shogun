@@ -880,7 +880,10 @@ run_bats_files_parallel() {
 
     manifest="$(mktemp "${TMPDIR:-/tmp}/shogun-manifest.XXXXXX")"
     stats="$(mktemp "${TMPDIR:-/tmp}/shogun-stats.XXXXXX")"
-    [ -z "${BATS_TAP_OUTPUT:-}" ] || : >"$BATS_TAP_OUTPUT"
+    if [ -n "${BATS_TAP_OUTPUT:-}" ] \
+       && [[ "${RUN_TESTS_PRESERVE_SELECTED_PATHS:-0}" != "1" ]]; then
+        : >"$BATS_TAP_OUTPUT"
+    fi
     for pid in "${all_pids[@]}"; do
         printf '%s\t%s\t%s\t%s\t0\n' "$pid" "${pid_file[$pid]}" "${pid_out[$pid]}" "${pid_time[$pid]}" >>"$manifest"
     done
@@ -1017,11 +1020,48 @@ run_task_test_paths() {
     fi
     if [ "${#pytest_paths[@]}" -gt 0 ]; then
         printf 'TEST_DISPATCH engine=pytest files=%s\n' "${#pytest_paths[@]}"
-        (cd "$REPO_ROOT" && python3 -m pytest -q "${pytest_paths[@]}") || return $?
+        local pytest_output pytest_rc=0 pytest_path
+        pytest_output="$(mktemp)"
+        for pytest_path in "${pytest_paths[@]}"; do
+            printf 'START: %s pid=%s engine=pytest\n' "${pytest_path##*/}" "$$" >&2
+        done
+        (cd "$REPO_ROOT" && python3 -m pytest -q "${pytest_paths[@]}") \
+            2>&1 | tee "$pytest_output" || pytest_rc=${PIPESTATUS[0]}
+        for pytest_path in "${pytest_paths[@]}"; do
+            printf 'DONE: %s rc=%s engine=pytest\n' "${pytest_path##*/}" "$pytest_rc" >&2
+        done
+        if [[ -n "${BATS_TAP_OUTPUT:-}" ]]; then
+            python3 - "$pytest_output" "$BATS_TAP_OUTPUT" <<'PY'
+import re, sys
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+lines = [line for line in text.splitlines()
+         if re.search(r"\b\d+\s+(?:passed|failed|skipped)\b", line)
+         and (re.match(r"^\s*=+\s+.*\s+=+\s*$", line)
+              or re.match(r"^\s*\d+\s+(?:passed|failed|skipped)\b", line))]
+if lines:
+    counts = {"passed": 0, "failed": 0, "skipped": 0}
+    for count, outcome in re.findall(r"\b(\d+)\s+(passed|failed|skipped)\b", lines[-1]):
+        counts[outcome] = int(count)
+    total = sum(counts.values())
+    with open(sys.argv[2], "a", encoding="utf-8") as tap:
+        tap.write(f"1..{total}\n")
+        index = 0
+        for outcome in ("passed", "failed", "skipped"):
+            for _ in range(counts[outcome]):
+                index += 1
+                marker = "not ok" if outcome == "failed" else "ok"
+                suffix = " # skip" if outcome == "skipped" else ""
+                tap.write(f"{marker} {index} pytest-{outcome}{suffix}\n")
+PY
+        fi
+        rm -f "$pytest_output"
+        [ "$pytest_rc" -eq 0 ] || return "$pytest_rc"
     fi
     if [ "${#bats_paths[@]}" -gt 0 ]; then
         printf 'TEST_DISPATCH engine=bats files=%s\n' "${#bats_paths[@]}"
         RUN_TESTS_PRESERVE_SELECTED_PATHS=1 run_bats_files_parallel "${bats_paths[@]}" || return $?
+    elif [[ -n "${BATS_TAP_OUTPUT:-}" && -f "$BATS_TAP_OUTPUT" ]]; then
+        cat "$BATS_TAP_OUTPUT"
     fi
 }
 
@@ -1444,8 +1484,9 @@ try:
     # xfail/xpass, and duration are not selected test results.
     pytest_summaries=[
         line for line in clean.splitlines()
-        if re.match(r'^\s*=+\s+.*\s+=+\s*$', line)
-        and re.search(r'\b\d+\s+(?:passed|failed|skipped)\b', line)
+        if re.search(r'\b\d+\s+(?:passed|failed|skipped)\b', line)
+        and (re.match(r'^\s*=+\s+.*\s+=+\s*$', line)
+             or re.match(r'^\s*\d+\s+(?:passed|failed|skipped)\b', line))
     ]
     if pytest_summaries:
         counts={'passed': 0, 'failed': 0, 'skipped': 0}
@@ -1456,9 +1497,13 @@ try:
             counts[outcome]=int(count)
         total=sum(counts.values())
         if total:
-            d['declared_test_count']=total
-            d['observed_test_count']=total
-            d['skip_count']=counts['skipped']
+            # task dispatch emits pytest outcomes into the same TAP stream as
+            # Bats, so the generic receipt already owns the aggregate count.
+            # External pytest lanes have no TAP and still need this fallback.
+            if 'TEST_DISPATCH engine=pytest' not in clean:
+                d['declared_test_count']=total
+                d['observed_test_count']=total
+                d['skip_count']=counts['skipped']
 except (OSError, ValueError):
     pass
 d['drvfs_p9_client_rpc']=p9
