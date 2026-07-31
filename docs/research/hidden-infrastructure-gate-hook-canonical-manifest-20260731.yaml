@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 title: hidden infrastructure gate/hook canonical Gate 0 manifest
 repository_observed_head: f3478e625235b364a187d7c2f6412a78d8add4c7
 code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
@@ -16,9 +16,12 @@ legacy_map_count: 2
 count_contract:
   selected: 17
   discovered: 17
-  executed: 17
-  invariant: selected == discovered == executed; caller_unclassified == 0
-  execution_note: Gate 0 contract coverage count; runtime repro outcomes are populated only at fixed-SHA Wave 0 execution
+  executed: 1
+  open_confirmed: 1
+  superseded_with_evidence: 0
+  needs_new_probe: 16
+  invariant: selected == discovered; executed == count(receipts with executed=true); selected == open_confirmed + superseded_with_evidence + needs_new_probe; caller_unclassified == 0
+  execution_note: Coverage and execution are separate. Only R01 has a fixed-code-baseline runtime receipt; unexecuted findings are never counted PASS.
 dependency_contract:
   parallel_ok: [AC1, AC2]
   AC3_requires: [AC1, AC2]
@@ -27,10 +30,74 @@ legacy_id_map:
   R12: {canonical_id: V04, disposition: PARTIALLY_SUPERSEDED, old_path_reachable: false}
 status_values: [ACTIVE, PARTIALLY_SUPERSEDED, SUPERSEDED]
 required_runtime_evidence:
-  positive_reproducer: PASS
-  negative_control: detected
+  positive_reproducer: per-finding receipt required before OPEN_CONFIRMED
+  negative_control: per-finding receipt required before OPEN_CONFIRMED
   production_state_unchanged: true
   isolation: queue/log/WAL redirected; tmux/ntfy/network faked
+runtime_probe_receipts:
+  R01:
+    classification: OPEN_CONFIRMED
+    executed: true
+    code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
+    caller_diff_from_baseline: 0
+    isolation: read-only path computation; no queue/tmux/ntfy/network mutation
+    positive:
+      command: source scripts/lib/lock_path.sh; compare inbox_write.sh legacy lock identity with lock_path(target)
+      expected: equal=no
+      actual: equal=no
+      result: PASS
+      output_sha256: 70c810f0a72521e05f855d90851dc6f173ac5f7c1eb82c73e1cd39266c0a4f86
+    negative_control:
+      command: source scripts/lib/lock_path.sh; compare two canonical lock_path(target) evaluations
+      expected: equal=yes
+      actual: equal=yes
+      result: PASS
+      output_sha256: 14071f441651acd9a701be74757c2380bd7f5061db51ec8c568bab1a250da360
+  R03: &needs_probe {classification: NEEDS_NEW_PROBE, executed: false, evidence: caller discovered; no fixed-baseline runtime receipt exists}
+  R04: *needs_probe
+  R05: *needs_probe
+  R06: *needs_probe
+  R07: *needs_probe
+  R08: *needs_probe
+  R09: *needs_probe
+  R10: *needs_probe
+  R11: *needs_probe
+  R13: *needs_probe
+  R14: *needs_probe
+  R15: *needs_probe
+  V01: *needs_probe
+  V02: *needs_probe
+  V03: *needs_probe
+  V04: *needs_probe
+caller_inventory:
+  unique_paths: 13
+  records: 22
+  discovered: 22
+  classified: 22
+  missing: 0
+  entries:
+    - {finding: R01, location: 'scripts/inbox_write.sh:2042', role: writer_lock_owner}
+    - {finding: R01, location: 'scripts/inbox_mark_read.sh:102', role: reader_writer_lock_owner}
+    - {finding: R03, location: 'scripts/auto_deploy_next.sh:362', role: target_publisher}
+    - {finding: R04, location: 'scripts/deploy_task.sh:553', role: rollback_owner}
+    - {finding: R05, location: 'scripts/auto_deploy_next.sh:402', role: deploy_dispatcher}
+    - {finding: R06, location: 'scripts/cmd_complete_gate.sh:505', role: clear_receipt_reader}
+    - {finding: R06, location: 'scripts/dashboard_update.sh:1041', role: dashboard_correlation_reader}
+    - {finding: R07, location: 'scripts/review_approval.sh:490', role: review_marker_writer}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:1782', role: completion_tail_owner}
+    - {finding: R09, location: '.github/workflows/test.yml:39', role: ci_inventory_consumer}
+    - {finding: R09, location: 'scripts/run_tests.sh:1605', role: test_inventory_selector}
+    - {finding: R10, location: 'scripts/run_tests.sh:1123', role: terminal_receipt_writer}
+    - {finding: R11, location: 'scripts/semantic_index_update.sh:1408', role: provenance_classifier}
+    - {finding: R13, location: 'scripts/run_tests.sh:798', role: cache_identity_reader}
+    - {finding: R14, location: '.codex/hooks.json:72', role: hook_manifest_owner}
+    - {finding: R14, location: '.claude/hooks/post-bash-combined.sh:260', role: hook_dispatcher}
+    - {finding: R15, location: 'scripts/semantic_index_update.sh:1605', role: insight_state_writer}
+    - {finding: V01, location: 'scripts/semantic_index_update.sh:1627', role: semantic_index_writer}
+    - {finding: V02, location: 'scripts/inbox_watcher.sh:756', role: delivery_dispatcher}
+    - {finding: V03, location: 'scripts/auto_deploy_next.sh:356', role: outer_lock_owner}
+    - {finding: V03, location: 'scripts/deploy_task.sh:315', role: inner_lock_owner}
+    - {finding: V04, location: 'scripts/inbox_watcher.sh:817', role: idle_gate_reader}
 findings:
   - {id: R01, status: ACTIVE, primitive: lock_identity, caller: [scripts/inbox_write.sh, scripts/inbox_mark_read.sh], edge: inbox_mutation, failpoint: concurrent_append_mark_read, expected_durable_prefix: lock/acquired, invariant: one lock identity per inbox, serialization_key: inbox_yaml}
   - {id: R03, status: ACTIVE, primitive: owner_transaction, caller: [scripts/auto_deploy_next.sh], edge: source_to_target, failpoint: after_target_before_tombstone, expected_durable_prefix: prepared/owner_pointer, invariant: executable_owner_count_le_1, serialization_key: task_owner}

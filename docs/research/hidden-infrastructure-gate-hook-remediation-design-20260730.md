@@ -11,7 +11,7 @@
 - code baseline: `55b3df6d4d937c7683ef1ca9a83393760d593e47`
 - HEAD drift: 2/2はcontextのみ（`context/lord-conversation-index.md`, `context/semantic-map.md`）、caller影響0/2
 - 対象: `multi-agent-shogun` の制御面、gate、hook、配備、完了、CI、知識還流
-- 状態: Gate 0成果契約反映済み・軍師再レビュー待ち
+- 状態: Gate 0 revision 1 — runtime receipt/count separation反映・軍師再レビュー待ち
 - canonical manifest: `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml`
 
 ## 0. 結論
@@ -249,6 +249,27 @@ terminal判定へ使わない。
 - fixture corpusの正例・反例・境界例を採番し、FP/FNの分母を固定する。
 - Gate 0完了前に旧13件をまとめて実装waveへ流さない。
 
+#### Gate 0 runtime disposition（revision 1）
+
+期待契約と観測結果を分離する。`selected`はcanonical manifest対象、`discovered`はcallerを
+一つ以上現HEADで解決した対象、`executed`はpositive reproducerとnegative controlの双方に
+実在receiptがある対象だけを数える。したがって未実行をPASSへ算入しない。
+
+固定code baseline `55b3df6d4d937c7683ef1ca9a83393760d593e47`に対し、caller差分0を確認した
+R01だけをread-only runtime probeで再実行した。positiveは`inbox_write.sh`固有lockと
+`lock_path.sh`の同一target比較が`equal=no`、negative controlはcanonical同士が
+`equal=yes`。出力SHAはmanifest receiptに固定した。本番queue/tmux/ntfy/network変更は0。
+
+| classification | 件数 | 意味 |
+|---|---:|---|
+| `OPEN_CONFIRMED` | 1 | R01。positive/negative receipt双方あり |
+| `SUPERSEDED_WITH_EVIDENCE` | 0 | 修正commit+現caller+同一入力再測定の三点を満たすものなし |
+| `NEEDS_NEW_PROBE` | 16 | callerは発見済みだが固定baseline runtime receiptなし |
+
+計数は`selected=17, discovered=17, executed=1`。callerはunique path 13、findingとの
+対応record 22、classified 22、missing 0である。全`file:line+role`はmanifest
+`caller_inventory`を正本とする。残る16件はWave 0で決定的barrierを作るまでOPEN扱いしない。
+
 #### Gate 0 durable-state contract
 
 - WAL rootは隔離可能な単一rootとし、recordは`schema_version, subject_id, generation,
@@ -286,8 +307,9 @@ terminal判定へ使わない。
   preflightでreal rootとfake endpointを二値確認し、実行前後の本番queue/tmux/ntfy/network
   fingerprint一致を必須とする。不一致は即時BLOCKして成果に算入しない。
 - canonical manifestの各findingは`primitive/caller/edge/failpoint/expected durable prefix/invariant`
-  を持つ。deterministic barrierで全edgeを選択し、`selected = discovered = executed`と
-  positive reproducer PASS/negative control detectedを固定HEADごとに計数する。母集団の縮小は禁止。
+  を持つ。deterministic barrierで全edgeを選択し、`selected/discovered/executed`を別々に
+  計数する。`executed`はpositive reproducer PASSとnegative control PASSのreceiptが実在する
+  findingだけであり、最終Gate 0では三者17/17を要求する。母集団の縮小は禁止。
 - detector新設は検知後にfail-closed遮断または自動実行するactionを必須とする。
   before/afterは既存gate fire logの同一固定corpusを使い、`FP/negative total`と
   `FN/positive total`を分子/分母で記録する。既存遮断条件の緩和は0件とする。
@@ -316,7 +338,7 @@ AC1とAC2の両方がterminal PASSとなった後にのみ開始する。
 | 4 | ACCEPTED | shadow contract | live dual mutation禁止、canary/rollback/撤去条件が全存在 |
 | 5 | ACCEPTED | canonical manifest | canonical 17/17、legacy map 2/2、caller未分類0 |
 | 6 | ACCEPTED | isolation contract | root redirect/fake/preflight/real-state fingerprintが全存在 |
-| 7 | ACCEPTED | corpus contract + manifest | edge全数とselected/discovered/executedの等値契約 |
+| 7 | ACCEPTED | corpus contract + manifest | edge全数、selected/discovered/executedの分離計数、最終17/17契約 |
 | 8 | ACCEPTED | performance contract | SHA/load/n/warm-cold/percentile/budget/rollbackが全存在 |
 | 9 | ACCEPTED | dependency contract | durable foundation先行、2A/2B依存、serialization keyが全存在 |
 
