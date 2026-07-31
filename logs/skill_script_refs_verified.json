@@ -1,0 +1,259 @@
+{
+  "references": {
+    "skills/campaign-lane/SKILL.md::skills/campaign-lane/scripts/campaign_lane.py": {
+      "contract_sha256": "42bf170502606b7ce6035740f5fb30f420d9c7de143dca46ace755775dabf217",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/cdp-browse/SKILL.md::scripts/note_draft.sh": {
+      "contract_sha256": "93179d03fc19ea594340492f05e1780886d40f625cdc7ce6ba240b0fc1a166aa",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/cmd-complete/SKILL.md::scripts/gates/gate_context_freshness.sh": {
+      "contract_sha256": "3ede9e205cf31903e6905190fbabbcad20a1e26a4b5a30b4ac8926a0384cbe01",
+      "last_action_contract_sha256": "3ede9e205cf31903e6905190fbabbcad20a1e26a4b5a30b4ac8926a0384cbe01",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/cmd-complete/SKILL.md::scripts/lesson_review.sh": {
+      "contract_sha256": "e5a8471d3fa378b246af8e0e584cf0fdaabd80f384b67e78e7b0e11c37dddc75",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/cmd-complete/SKILL.md::scripts/review_bundle.py": {
+      "contract_sha256": "152031ef7d3369362d8b7a4e1dcf7ab4ecd9c11216641d81464b5e0ccbfa3f6a",
+      "last_action_contract_sha256": "152031ef7d3369362d8b7a4e1dcf7ab4ecd9c11216641d81464b5e0ccbfa3f6a",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/codd-fix/SKILL.md::scripts/cmd_complete_gate.sh": {
+      "contract_sha256": "20d1183bfc0917df3ee4ea47325ff636d46b2b4ea27e7e9dd5f41bbc2fb6d3ce",
+      "last_action_contract_sha256": "20d1183bfc0917df3ee4ea47325ff636d46b2b4ea27e7e9dd5f41bbc2fb6d3ce",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/codd-fix/SKILL.md::scripts/test_select.sh": {
+      "contract_sha256": "a9b5d74921b6f77893fbff1bb7935e87369b58db7823ef49648e63f18b50b9de",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/codd-refactor/SKILL.md::scripts/run_tests.sh": {
+      "contract_sha256": "c61309aca3b1e41abc2fe14cd6ac6809d44200a40fa80c29983ffc73ae7e1cd3",
+      "last_action_contract_sha256": "c61309aca3b1e41abc2fe14cd6ac6809d44200a40fa80c29983ffc73ae7e1cd3",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/codd-refactor/SKILL.md::scripts/test_select.sh": {
+      "contract_sha256": "a9b5d74921b6f77893fbff1bb7935e87369b58db7823ef49648e63f18b50b9de",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/codd-refactor/SKILL.md::scripts/test_timing_ledger_write.sh": {
+      "contract_sha256": "d130031b83cf1a7189accde52929b43c843ae1d3e41173f15176a5c81bba858e",
+      "last_action_contract_sha256": "d130031b83cf1a7189accde52929b43c843ae1d3e41173f15176a5c81bba858e",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/dashboard-update/SKILL.md::scripts/dashboard_update.sh": {
+      "contract_sha256": "5f1d5c21210c900a5dc23f908f354d803e70171d02f0a137040a85535cc9c5bc",
+      "last_action_contract_sha256": "5f1d5c21210c900a5dc23f908f354d803e70171d02f0a137040a85535cc9c5bc",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/dashboard-update/SKILL.md::scripts/gates/gate_report_format.sh": {
+      "contract_sha256": "66c859b1413da2a0a64ffcb44f3bdbcc4818b812a03b02f3c17eb32827dbb2ff",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/dashboard-update/SKILL.md::scripts/ntfy.sh": {
+      "contract_sha256": "ebae8bfaab164b03c403a37d59b05bb8e659d9c6a6827252cb0d7ead1235c86b",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/db-check/SKILL.md::scripts/db_capability_launcher.py": {
+      "contract_sha256": "b5526e2975e5cb218b0f8562cb4554d73d0bc5c55b6899ca6aef952bfb967407",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/dream/SKILL.md::scripts/gates/gate_lesson_health.sh": {
+      "contract_sha256": "a20bda9b17a855f52bb14318f218927a770951c301c768ed824f8b4ef0056a48",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/dream/SKILL.md::scripts/gates/gate_shogun_memory.sh": {
+      "contract_sha256": "7fe0bcae6628d969c3382b122c50f6cfb864a628912314b2b843e80244d75721",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/dream/SKILL.md::scripts/insight_write.sh": {
+      "contract_sha256": "1cc75592ebc9e14e7b7816d50f3025a147d62f39d0a1d1bdd20823963c0acfcf",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/dream/SKILL.md::scripts/memory_db_query.sh": {
+      "contract_sha256": "d885b2cec5df64db30a64171f33e0c69d056c8aaa636ceecc0f24066e22ca297",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/dream/SKILL.md::scripts/semantic_search.sh": {
+      "contract_sha256": "d648b06c49a4fbf63de2069d2d693527cf565cfc1e1b080d43f88fb01fcf5e7b",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/dream/SKILL.md::scripts/should_dream.sh": {
+      "contract_sha256": "61d2a9364b715556c9e7128db5c586f1053aa63e26f4107de49f97365cadd06a",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/gate-sync/SKILL.md::scripts/bulletin_write.sh": {
+      "contract_sha256": "a28ccbce75bfb23ada02764ff39e7e351e0ce95a808eeaec44e2c93d87c47993",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/gate-sync/SKILL.md::scripts/gates/gate_gunshi_accuracy.sh": {
+      "contract_sha256": "ec3df6407a79be13cf4aca8f14fcda9913bfa44303affa16aef42c9389330c83",
+      "last_action_contract_sha256": "ec3df6407a79be13cf4aca8f14fcda9913bfa44303affa16aef42c9389330c83",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/gate-sync/SKILL.md::scripts/gunshi_gate_reflux.sh": {
+      "contract_sha256": "bd27c4c0a5579f5fde09814a410040b6e3fefee295cb8d07d00b70fcdfb537f3",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/gate-sync/SKILL.md::scripts/lib/yaml_field_set.sh": {
+      "contract_sha256": "b584dcf86f0c491db401a6067ed0512bd22976ca9c6d75176bff729d9b781f7b",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/gs-bench-gate/SKILL.md::/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py": {
+      "contract_sha256": "359ad83d5aeecd3a5a85746a0b2cbcd0285e55969e9332e2c191e225bf35b55f",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/idle-persist/SKILL.md::scripts/bulletin_write.sh": {
+      "contract_sha256": "a28ccbce75bfb23ada02764ff39e7e351e0ce95a808eeaec44e2c93d87c47993",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/idle-persist/SKILL.md::scripts/inbox_write.sh": {
+      "contract_sha256": "e864c5e446748e921f8cc01cbc70e620b23a13598c43ba4de59c386efd23b423",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/idle-persist/SKILL.md::scripts/lib/yaml_field_set.sh": {
+      "contract_sha256": "b584dcf86f0c491db401a6067ed0512bd22976ca9c6d75176bff729d9b781f7b",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/karo-direct/SKILL.md::scripts/deploy_task.sh": {
+      "contract_sha256": "3de768efe038e5d5067051d88afcc52b8d9dab9ff1b93c0b3d03309110f2dd27",
+      "verified_at": "2026-08-01T03:14:57+09:00"
+    },
+    "skills/ninja-commit/SKILL.md::scripts/ninja_scope_commit.sh": {
+      "contract_sha256": "a8fa1e3a1ae59c295a6cd11f3122c75c36e1855e9f8e5b7ba6e98d752a13fda9",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/ninja-commit/SKILL.md::scripts/report_field_set.sh": {
+      "contract_sha256": "4f334d0c4ace027ab18d7237d952c63734ef33e29dda799178996a269c73b61d",
+      "last_action_contract_sha256": "4f334d0c4ace027ab18d7237d952c63734ef33e29dda799178996a269c73b61d",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/note-writer/SKILL.md::scripts/note_draft.sh": {
+      "contract_sha256": "93179d03fc19ea594340492f05e1780886d40f625cdc7ce6ba240b0fc1a166aa",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/pf-registration/SKILL.md::scripts/parity_check.sh": {
+      "contract_sha256": "734bef64208b2bf2c4755f9d32ac962b23d70f78e61ac6a260b98197e4386512",
+      "verified_at": "2026-07-29T03:58:35+09:00"
+    },
+    "skills/recon-dual/SKILL.md::scripts/deploy_task.sh": {
+      "contract_sha256": "3de768efe038e5d5067051d88afcc52b8d9dab9ff1b93c0b3d03309110f2dd27",
+      "verified_at": "2026-08-01T03:14:57+09:00"
+    },
+    "skills/recon-dual/SKILL.md::scripts/lib/yaml_field_set.sh": {
+      "contract_sha256": "b584dcf86f0c491db401a6067ed0512bd22976ca9c6d75176bff729d9b781f7b",
+      "verified_at": "2026-08-01T03:14:57+09:00"
+    },
+    "skills/report-write/SKILL.md::scripts/report_field_set.sh": {
+      "contract_sha256": "4f334d0c4ace027ab18d7237d952c63734ef33e29dda799178996a269c73b61d",
+      "last_action_contract_sha256": "4f334d0c4ace027ab18d7237d952c63734ef33e29dda799178996a269c73b61d",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/review-bundle/SKILL.md::scripts/bulletin_write.sh": {
+      "contract_sha256": "a28ccbce75bfb23ada02764ff39e7e351e0ce95a808eeaec44e2c93d87c47993",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/review-bundle/SKILL.md::scripts/inbox_write.sh": {
+      "contract_sha256": "e864c5e446748e921f8cc01cbc70e620b23a13598c43ba4de59c386efd23b423",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/review-bundle/SKILL.md::scripts/lib/yaml_field_set.sh": {
+      "contract_sha256": "b584dcf86f0c491db401a6067ed0512bd22976ca9c6d75176bff729d9b781f7b",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/review-bundle/SKILL.md::scripts/review_bundle.py": {
+      "contract_sha256": "152031ef7d3369362d8b7a4e1dcf7ab4ecd9c11216641d81464b5e0ccbfa3f6a",
+      "last_action_contract_sha256": "152031ef7d3369362d8b7a4e1dcf7ab4ecd9c11216641d81464b5e0ccbfa3f6a",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/sengoku-writer/SKILL.md::scripts/note_draft.sh": {
+      "contract_sha256": "93179d03fc19ea594340492f05e1780886d40f625cdc7ce6ba240b0fc1a166aa",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-clear-prep/SKILL.md::scripts/clear_prep_check.sh": {
+      "contract_sha256": "fea92617661ab4d5c398920e51fb1cfd2058c1084a7cf16cbfcc7eec7b1b4c1f",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-cli-switch/SKILL.md::scripts/agent_respawn.sh": {
+      "contract_sha256": "34ae29c8e34aa3450b3631ad92231cdf374e2f8bce8267cd0a8bcd1fc85daf6c",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-cli-switch/SKILL.md::scripts/lib/cli_lookup.sh": {
+      "contract_sha256": "93387864f107e88852bd9b99d82bc603ed39eb42502aea72e9b8b6504759385d",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-cli-switch/SKILL.md::scripts/lib/yaml_field_set.sh": {
+      "contract_sha256": "b584dcf86f0c491db401a6067ed0512bd22976ca9c6d75176bff729d9b781f7b",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-cli-switch/SKILL.md::scripts/ninja_monitor.sh": {
+      "contract_sha256": "95bdf2685cfbe2269c573954d60f3509f1b1086281d5c0722eb94665b27f0b8c",
+      "last_action_contract_sha256": "95bdf2685cfbe2269c573954d60f3509f1b1086281d5c0722eb94665b27f0b8c",
+      "verified_at": "2026-08-01T03:18:31+09:00"
+    },
+    "skills/shogun-cli-switch/SKILL.md::scripts/switch_cli_mode.sh": {
+      "contract_sha256": "94e21ff07267f098a808268b41fab4d8e7729d182dba8f6eef2568d9089433d6",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-cli-switch/SKILL.md::~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh": {
+      "contract_sha256": "44f03853b5d572c5972cef96f6ebbe12553ef24d90f8031fc10d113e77e76a7d",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-param-neighbor-check/SKILL.md::~/.claude/skills/shogun-param-neighbor-check/scripts/param_neighbor_check.py": {
+      "contract_sha256": "412b5bf3e9bef251c8bac6ba9acca691af24ccf33cddd05596e9942e2cf52edc",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-teire/SKILL.md::scripts/count_gate_metrics.sh": {
+      "contract_sha256": "67fbce1aaab56d2469001b4efa96484a09d7b1f229386e0d43ef7d7b1b037e09",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-teire/SKILL.md::scripts/gates/gate_lesson_health.sh": {
+      "contract_sha256": "a20bda9b17a855f52bb14318f218927a770951c301c768ed824f8b4ef0056a48",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-teire/SKILL.md::scripts/gates/gate_pd_sync.sh": {
+      "contract_sha256": "5a4912ef438460b6f819b580225395d9ecf2a723dc02f665424940a174ebe121",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-teire/SKILL.md::scripts/gates/gate_yaml_status.sh": {
+      "contract_sha256": "adb8400f3fa7678d9549ef80b1b65baa8ca6c328a2a4026ace711c0fba882bf6",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-teire/SKILL.md::scripts/knowledge_metrics.sh": {
+      "contract_sha256": "6f56fd8e353219e3c550367ac28319c5269ba9c43f481a8b0837424dac8a43e7",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/shogun-teire/SKILL.md::scripts/lesson_deprecate.sh": {
+      "contract_sha256": "6d4c5b17a54c22bc341950fcbb637a123574be860727370abdeaca85a50b23d6",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/switch-project/SKILL.md::scripts/check_project_codd_ready.sh": {
+      "contract_sha256": "ce3ca7bf7c6106d6fcf57f1215432f2651a4192023f5e86ef84ee7b5c343f092",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/three-layer-penetrate/SKILL.md::scripts/memory_db_query.sh": {
+      "contract_sha256": "d885b2cec5df64db30a64171f33e0c69d056c8aaa636ceecc0f24066e22ca297",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/three-layer-penetrate/SKILL.md::scripts/semantic_map_generate.sh": {
+      "contract_sha256": "f6b69c88dd5ef154d915d6387e65426db2eb13e03c977049e8eaae44ecc4519e",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/three-layer-penetrate/SKILL.md::scripts/semantic_search.sh": {
+      "contract_sha256": "d648b06c49a4fbf63de2069d2d693527cf565cfc1e1b080d43f88fb01fcf5e7b",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/verdict-check/SKILL.md::scripts/gates/gate_report_format.sh": {
+      "contract_sha256": "66c859b1413da2a0a64ffcb44f3bdbcc4818b812a03b02f3c17eb32827dbb2ff",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    },
+    "skills/weekly-report-writer/SKILL.md::scripts/note_draft.sh": {
+      "contract_sha256": "93179d03fc19ea594340492f05e1780886d40f625cdc7ce6ba240b0fc1a166aa",
+      "verified_at": "2026-07-29T03:58:36+09:00"
+    }
+  }
+}
