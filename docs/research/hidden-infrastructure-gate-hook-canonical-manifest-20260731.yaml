@@ -2,14 +2,14 @@ schema_version: 3
 title: hidden infrastructure gate/hook canonical Gate 0A contract manifest
 phase_order: [GATE_0A_CONTRACT_AUTHORING, WAVE_0_PROBE, GATE_0B_CLOSURE, DURABLE_STATE_FOUNDATION, WAVE_1A_IDENTITY, WAVE_1B_OWNERSHIP, WAVE_2A_TERMINAL_RECEIPT, WAVE_2B_SAFE_DELIVERY, WAVE_3_CI_TEST_SSOT, WAVE_4A_HOOK_OWNERSHIP, WAVE_4B_KNOWLEDGE_PROVENANCE, FINAL_CHECKPOINT]
 current_phase: WAVE_1A_IDENTITY
-phase_state: IN_PROGRESS
+phase_state: ACCEPTED
 next_phase: WAVE_1B_OWNERSHIP
 implementation_progress:
-  updated_at: '2026-07-31T22:54:00+09:00'
+  updated_at: '2026-08-01T03:30:00+09:00'
   parent_cmd: cmd_4200
-  parent_ac_complete: 2
+  parent_ac_complete: 3
   parent_ac_total: 3
-  completion_gate_blocker: parent_ac_uncovered:AC3
+  completion_gate_blocker: none
   gate0b:
     state: ACCEPTED
     commit: 2e1090bb7
@@ -28,11 +28,11 @@ implementation_progress:
     hard_crash_effect_count: 1
     hard_crash_outcome_unknown: true
   wave1a_r01:
-    state: IN_PROGRESS
+    state: ACCEPTED
     owner: tobisaru
-    task: queue/tasks/tobisaru.yaml
+    report: queue/archive/reports/tobisaru_report_cmd_4200_20260731.yaml
     commit: 6f4e4b77b
-    checkpoint: task_scope_10_tests_in_progress
+    checkpoint: terminal_review_manifest_accepted
     rounds_observed: 10
     submitted: 160
     saved: 160
@@ -41,6 +41,50 @@ implementation_progress:
     lost_update: 0
     duplicate: 0
     parse_error: 0
+    task_scope_pass: 287
+    task_scope_total: 287
+    skip: 0
+    gunshi_result: LGTM
+    karo_result: ACCEPT
+  governance_receipts:
+    r06_review_path:
+      state: PARTIAL_CLOSURE
+      commits: [a71753ed7, f24fa608f]
+      corpus_pass: 13
+      corpus_total: 13
+      false_positive: 0
+      false_negative: 0
+      remaining: non-review R06 callers require later receipt reconciliation
+    n05_review_verdict_axis:
+      state: IMPLEMENTED_AHEAD_OF_WAVE
+      commits: [9c5a12b36, f0019d489, c8337adf4]
+      matrix_expected_success: 6
+      matrix_expected_nonzero: 2
+      matrix_match: 8
+      matrix_total: 8
+    r09_r13_runner_adjacent:
+      state: IMPLEMENTED_AHEAD_OF_WAVE
+      commits: [6c3392d74, d9c02f170]
+      direct_pass: 21
+      direct_total: 21
+      contract_pass: 55
+      contract_total: 55
+      skip: 0
+      remaining: canonical CI membership and full immutable receipt/cache identity migration
+    completion_step8:
+      state: VERIFIED
+      terminal_reviews: 6
+      terminal_reviews_total: 6
+      notify_markers: 6
+      notify_markers_total: 6
+      checkpoint_steps: 8
+      checkpoint_steps_total: 8
+      archive_done: 1
+      ntfy_delivery_receipts: 1
+      duplicate_side_effects: 0
+      checkpoint: queue/gates/cmd_4200/completion_checkpoint.json
+      terminal_manifest: queue/gates/cmd_4200/terminal_review_manifest.json
+      ntfy_receipt: queue/gates/cmd_4200/ntfy_delivery_receipt.json
 repository_observed_head: f3478e625235b364a187d7c2f6412a78d8add4c7
 code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
 head_drift:

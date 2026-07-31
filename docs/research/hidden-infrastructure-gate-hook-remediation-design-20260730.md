@@ -16,7 +16,7 @@
 
 ## §-2 現在地（最初に読め）
 
-結論: **Gate 0Bとdurable-state foundationは受入済み。親AC基準2/3完了。** 残るAC3はWave 1Aから順次実装中であり、現在はR01 lock identityを実測している。
+結論: **Gate 0B、durable-state foundation、Wave 1A R01は受入済み。親AC基準3/3完了。** archive再承認レーンでWave 1A/2A/3の一部が先行実装されたため、canonical manifestのreceiptを照合して残作業だけを後続Waveで実装する。
 
 | 段階 | 状態 | 一次証跡 | 数値 |
 |---|---|---|---:|
@@ -25,10 +25,10 @@
 | Gate 0B evidence prerequisite | `ACCEPTED` | `f37a4365a` | SHA不一致0、未来時刻0、未分類0 |
 | Gate 0B wave map | `ACCEPTED` | `2e1090bb7`、foundation map | OPEN 13/13、未割当0、owner重複0、循環0、serialization key欠落0 |
 | AC2 durable-state foundation | `ACCEPTED` | `4c89d38ca` | focused 17/17 PASS、SKIP 0、hard-crash時 effect 2→1 |
-| AC3 Wave 1A R01 | `IN_PROGRESS` | `6f4e4b77b`、`queue/tasks/tobisaru.yaml` | post-commit 10反復もsubmitted 160/160、marked 80/80、lost/duplicate/parse 0。task-scope 10 test実行中 |
-| 親cmd completion gate | `BLOCK_EXPECTED` | `cmd_complete_gate.sh cmd_4200` | 未充足は `parent_ac_uncovered:AC3` 1件のみ |
+| AC3 Wave 1A R01 | `ACCEPTED` | `6f4e4b77b`、`queue/archive/reports/tobisaru_report_cmd_4200_20260731.yaml` | post-commit 10反復 submitted 160/160、marked 80/80、lost/duplicate/parse 0。task selector 287/287、SKIP 0、軍師LGTM・家老ACCEPT |
+| 親cmd completion gate | `COMPLETED` | `queue/gates/cmd_4200/completion_checkpoint.json` | Step群8/8、terminal review 6/6、notify marker 6/6、`archive.done` 1/1、同一completion generationのntfy receipt 1件 |
 
-現manifest: `current_phase=WAVE_1A_IDENTITY`、`phase_state=IN_PROGRESS`、`next_phase=WAVE_1B_OWNERSHIP`。AC3はfoundation mapの依存順・serialization keyに従い直列進行する。
+現manifest: `current_phase=WAVE_1A_IDENTITY`、`phase_state=ACCEPTED`、`next_phase=WAVE_1B_OWNERSHIP`。後続はfoundation mapの依存順・serialization keyに従い直列進行し、先行receiptと重なる実装を再作成しない。
 
 ### §-2.0 進捗更新 2026-08-01 03:05 (将軍検分)
 
@@ -42,7 +42,7 @@
 | gate予測精度の計測粒度是正 | `3ee176a0c` | LS096型粒度バグ根治。cmd単位最終verdictへ統一 | final-cmd accuracy 9/9=100%、同型アラート閉鎖 |
 | archive notify対称化+6段監査表 | `667f75b13` `10d349dc4` `ad03ca655` | 受付≠完了の6段identity連続性を監査表で固定 | generate/review/notify/SG7/marker/complete 全段対称 |
 
-cmd_4200再承認の実勢: 軍師LGTM 6/6・家老ACCEPT 6/6・notify marker 6/6・archive.done/completion_checkpoint生成済み。残=wrapper Step8実走の終端確認。
+cmd_4200再承認の終端実勢: 軍師LGTM 6/6・家老ACCEPT 6/6・notify marker 6/6・`archive.done` 1/1。wrapper Step8相当のcompletion checkpointは `sg7_consume` から `inbox_archive` まで8/8、ntfy delivery receiptは同一completion generationで1件、重複副作用0。
 
 ### §-2.2 方向性再検証 (殿下問2026-08-01 03:02への回答・将軍判定)
 
@@ -481,13 +481,13 @@ Gate0A contract [DONE]
 
 実績: `scripts/lib/durable_state.py`、`scripts/lib/durable_state.sh`、`tests/unit/test_durable_state.bats`を実装した。focused 17/17 PASS・SKIP 0、path traversal/symlink escape各0、ack-lossとhard-crashのeffect countを1へ収束させた。受入commitは`4c89d38ca`。
 
-### §5.3 Wave 1A — identity（進行中）
+### §5.3 Wave 1A — identity（R01受入済み・R06 review path先行実装済み）
 
 - `lock_path.sh`を唯一のlock identity生成器にしR01を閉じる。
 - typed exact-match helperでR06を閉じる。
 - immutable rc receipt primitiveを作る。`run_tests.sh` caller置換はWave 3で行う。
 
-進捗: R01を飛猿へ配備済み。対象は`lock_path.sh`、`inbox_write.sh`、`inbox_mark_read.sh`、focused testは`test_lock_path.bats`。初回およびcommit `6f4e4b77b`後の敵対計測は各10反復でsubmitted 160/160、marked 80/80、lost update 0、duplicate 0、parse error 0。task-scope 10 test・報告・軍師reviewが未完了のためterminal扱いしない。
+実績: R01はcommit `6f4e4b77b`、報告 `queue/archive/reports/tobisaru_report_cmd_4200_20260731.yaml` で終端した。初回およびcommit後の敵対計測は各10反復でsubmitted 160/160、marked 80/80、lost update 0、duplicate 0、parse error 0。task selector 287/287、SKIP 0、軍師LGTM・家老ACCEPTをterminal manifestで確認した。R06 review pathはarchive再承認レーンで先行実装済み。残るR06 callerはmanifest receipt照合後にのみ実装する。
 
 ### §5.4 Wave 1B — ownership（R03-R05、採用時V03）
 
@@ -501,6 +501,8 @@ Gate0A contract [DONE]
 - async tailをdurable job化し、supervisorがterminalまで再駆動する。
 - dashboard/archive/品質記録/通知を同一idempotency keyで収束させる。
 
+先行差分: archive再承認レーンはcanonical report identity、二者lineage、atomic terminal review manifest、completion checkpointを実装済み。cmd_4200実走でterminal review 6/6、Step群8/8、notify marker 6/6、archive 1/1、ntfy delivery receipt 1 generation/1件を確認した。残作業は全completion jobへの汎用WAL/reconciler適用であり、この先行範囲を二重実装しない。
+
 ### §5.6 Wave 2B — safe delivery（V02/V04）
 
 - pane送信を中央関数一択にし、送信直前のconfirmation prompt再検出を必須化する。
@@ -512,6 +514,8 @@ Gate0A contract [DONE]
 - canonical parserでCI所属N/N、未所属0。監査時80/177・未所属97は再採番して置換する。
 - leader/joiner/issuerをimmutable rc receiptへ移行する。
 - SKIPはFAIL。cache keyへworktree source/runner/fixture/env identityを含める。
+
+先行差分: `run_tests.sh task` のPython dispatchとterminal receipt集計はcommit `6c3392d74`、`d9c02f170`で先行実装済み（対象直接21/21、contract 55/55、SKIP 0）。残作業はcanonical CI membership N/N、全runnerのimmutable receipt、worktree identity cache keyであり、既存dispatch/receipt集計を再実装しない。
 
 ### §5.8 Wave 4A — multi-CLI hook ownership（R14）
 
@@ -656,7 +660,7 @@ Gate0A contract [DONE]
 | Gate0B map | 軍師/家老 | ACCEPTED | OPEN 13/13、未割当/owner重複/循環/serialization欠落すべて0 `2e1090bb7` |
 | Foundation RC1-5 | 軍師/家老 | REQUEST_CHANGES→LGTM | 空terminal、path traversal、symlink escape、ack-loss、hard-crash、test安全性を順次是正 |
 | Foundation final | 家老 | ACCEPTED | 17/17 PASS、SKIP 0、hard-crash retry rc 10/effect 1 `4c89d38ca` |
-| Wave1A R01 | 飛猿 | IN_PROGRESS | 敵対contract `6f4e4b77b`。post-commit 10反復もlost/duplicate/parse各0、task-scope 10 test実行中 |
+| Wave1A R01 | 飛猿 | ACCEPTED | 敵対contract `6f4e4b77b`。post-commit 10反復もlost/duplicate/parse各0、task selector 287/287・SKIP 0、軍師LGTM・家老ACCEPT |
 | Multi-runtime RC1 | 軍師 | REQUEST_CHANGES | Gist/local一致のみPASS。active-only Claude欠落、3 matrix未分離、resolver/manifest欠落、type/binary矛盾2、Codex Stop代替receipt欠落、OS runner証跡0、valid constraint欠落の6 finding |
 | Multi-runtime RC1 response | 家老 | UPDATED v3.3 | support/configured/active分離、artifact/resolver、event代替receipt、OS support境界、valid constraint、AC16-20へ反映 |
 | 殿訂正 | 殿/家老 | UPDATED v3.3 | 主編成=Claudeを明記。active Codexを主編成へ誤昇格しない。Claude primary 6-event非退行、配備変更0、AC21-22を追加 |
