@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-31 cmd_karo_hotfix_ga418 reviewed exact source boundary -->
-<!-- source_commit:e4744442f reason:cmd_karo_hotfix_ga418 reviewed exact source boundary evidence:a3d5858e1..e4744442f 12 commits classified; implementation 2, reflux/context 10; cache-disabled gate ALERT 1 -->
+<!-- last_updated: 2026-07-31 cmd_karo_hotfix_q6_latest_invalid_fallback_202607311427 reviewed source boundary -->
+<!-- source_commit:2def66ea2 reason:cmd_karo_hotfix_q6_latest_invalid_fallback_202607311427 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=2def66ea2 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -902,7 +902,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1492 -->
+<!-- last_synced_lesson: L1493 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2108,6 +2108,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1490: test_select.shの依存マップがscripts/report_field_set.shに対しtest_report_field_set_validation.batsを含まない（cmd_karo_hotfix_rfs_idkey_normalization_20260731）
 - L1491: external taskのcontext還流commitがtest selectorで構造BLOCK（cmd_4199）
 - L1492: reflux inventoryのzero_backlinks指標はcausal_backlink_counts.sh --limit 50の頭打ちで個別解消の効果を隠しうる（cmd_reflux_backlink_202607311036_kagemaru）
+- L1493: 完了reflux非発火と鮮度gate検出を混同しない（cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
