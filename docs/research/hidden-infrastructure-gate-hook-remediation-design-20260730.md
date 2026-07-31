@@ -4,9 +4,9 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-08-01 03:05 将軍 (ドキュメント主導権=将軍。殿下知2026-08-01 00:14) |
-| 版 | v3.8 = v3.7 + §-2.2/§-2.3新設 (archive再承認レーン実績の findings 写像・方向性再検証・是正3点。契約意味変更なし) |
-| 最終レビュー | 将軍(Claude Fable 5) RC2 LGTM。blob照合7/7 OK・Codex前提すり替わり0件。正本=`docs/research/shogun-adversarial-review-hidden-infra-design-20260801.md` |
+| 進捗更新 | 2026-08-01 03:36 家老 (殿下問「超速回転に対する過剰防御・実装単純性」実測反映。レビュー前draft) |
+| 版 | v3.9 = v3.8 + §-2.3単純性監査 + §5.0途中lane契約改訂(将軍APPROVE 03:44。安全性を弱めず途中tryの儀式を削る) |
+| 最終レビュー | v3.9将軍APPROVE(実測spot check: manifest331/py788/sh106/bats421行 全一致・fail-close境界維持確認)。v3.8はRC2 LGTM。旧正本=`docs/research/shogun-adversarial-review-hidden-infra-design-20260801.md` |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
 | canonical manifest | `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml` |
@@ -51,8 +51,32 @@ cmd_4200再承認の終端実勢: 軍師LGTM 6/6・家老ACCEPT 6/6・notify mar
 | # | 欠陥 | 是正 |
 |---|---|---|
 | G1 | manifest未更新: `current_phase=WAVE_1A_IDENTITY`のまま、archive再承認レーンの成果がfindings receiptへ未写像。後日の二重実装(SUPERSEDED相当の再着手)リスク | 上表の写像をmanifestへreceipt登録し、R06 review path部分をpartial closure記録 |
-| G2 | R01の非terminal中断: 飛猿がR01(lock identity, `6f4e4b77b`敵対contract済・task-scope test実行中)からallowlist taskへ先取された。§5.0「先行terminal receiptなしに後続を開始しない」の逸脱 | R01を再開しterminal化するか、中断理由と再開条件をmanifestへ明記(黙殺しない) |
+| G2 | R01の非terminal中断: 飛猿がR01(lock identity, `6f4e4b77b`敵対contract済・task-scope test実行中)からallowlist taskへ先取された。旧§5.0「先行terminal receiptなしに後続を開始しない」の逸脱(当時基準)。※v3.9の§5.0改訂(実競合unitのみ直列)により先取自体は今後正規となるが、中断状態のmanifest記録義務は不変 | R01を再開しterminal化するか、中断理由と再開条件をmanifestへ明記(黙殺しない)→ 03:27 reconcileでterminal化済み |
 | G3 | Wave 2A/3隣接の修正が順序外で先行(運用強制ゆえ許容)だが、記録なしでは§5.5/§5.7実装時に競合する | 該当Waveの設計節へ「先行実装済み・残作業」の差分を反映(§5.5/§5.7実装時にreceipt照合) |
+
+### §-2.3 超速回転・単純性監査 (殿下問2026-08-01 03:34)
+
+**判定: 原則は書かれているが、現実装は単純ではない。設計意図PASS / 実装単純性FAIL。** §5.10は「途中はfocused test、全量testは最終固定SHAで1回」と正しく定める。一方、進捗manifest・report freshness・共有ledger・Wave終端receiptを途中laneにも重ねた結果、成果成立後の整形・同期が実作業を止めている。安全防御ではなく回転税であり、設計どおりに削減する。
+
+| 実測 | 値 | 判定 |
+|---|---:|---|
+| 公開Gist / local設計(監査前) / canonical manifest | 689 / 693 / 331行 | 設計+進行台帳だけで1,024行。検索・同期面が多い |
+| durable foundation本体+wrapper+contract test | 788+106+421=1,315行 | caller移行前の共通基盤として大きい |
+| 関連commit | 40 | 反復の多くがreceipt・review・governance同期 |
+| Gist revision(監査時) | 15 | 監査時は公開Gistが親AC 2/3・R01 IN_PROGRESS、localが3/3 ACCEPTED。03:37の将軍同期でrevision 16となり乖離解消。同期面の回転税は残る |
+| 同一invalid continuation | 24 cycle / durable action 0 | dedupe不在で同じ防御が回転を消費 |
+| blocker通知 | valid blocker 1件 / 家老通知0件 | freshness早期returnが停止理由の報告を隠した |
+| 完了後shared ledger更新 | 対象commit不変 / 再gate BLOCK | 他agent後着差分を本人成果の失敗として扱った |
+
+**最小解決原則:** 新しいgate・receipt・状態面を足して単純性を「強制」しない。既存面を統合し、途中laneを次の3操作へ縮める。
+
+1. `event append`: `{subject, generation, state, reason_fingerprint, timestamp}`を1回追記する。
+2. `focused binary check`: 変更境界だけを即時yes/no計測し、PASSなら次tryへ進む。途中report、共有tree freshness、全量receipt matrixを要求しない。
+3. `final reconcile`: 外部副作用・不可逆操作・release/親cmd終端の直前だけ、固定SHAで全receipt・全量test・rollbackを1回照合する。
+
+**採用境界:** 外部副作用、不可逆操作、最終releaseはfail-closeを維持する。可逆な隔離tryと同一成果の再提出はfail-fastではなく継続優先。新しい共通抽象は、異なるcaller 2系統以上の再現があり、旧path/field/手順の純減を同一変更で示す場合だけ採用する。追加だけで旧経路を消さない変更はNO-CHANGEとする。
+
+**直ちに変える進め方:** Wave全体の一律直列を廃し、実際に同一file・同一side effect・同一serialization keyを共有するunitだけ直列化する。独立unitは並列可。後続Wave開始条件は先行Waveの文書終端ではなく、依存する実行不変量のfocused PASSとする。厳密な全体終端はFinal checkpointの1回に集約する。
 
 ### §-2.1 Foundation敵対検証の修正前→修正後
 
@@ -462,7 +486,7 @@ Gate0A contract [DONE]
   → Final checkpoint
 ```
 
-同一file/callerを変更するWaveは`serialization_key`一致として直列化する。先行terminal receiptなしに後続を開始しない。
+同一file・同一side effect・同一`serialization_key`を共有するunitだけ直列化する。独立unitはWaveをまたいでも並列実験可。途中unitは依存不変量のfocused PASSを次unitの開始条件とし、文書・共有ledger・全体receiptの終端待ちは課さない。全量のterminal receipt照合はFinal checkpointへ集約する。
 
 ### §5.1 Gate 0B closure（完了）
 
@@ -545,6 +569,7 @@ Gate0A contract [DONE]
 
 ### §5.10 Final checkpoint
 
+- 途中laneの正規操作はevent append 1回+focused binary check 1回を上限とし、共有treeの他者差分・manifest時刻・公開Gist同期を途中成果のFAIL条件にしない。
 - 各Wave途中はfocused testのみ。固定SHAで全量testを共有1回実行する。
 - FAIL=0、SKIP=0、fault edge未実行0、実状態変更0。
 - 修正前FAIL→修正後PASSを全件再計測する。
@@ -643,6 +668,9 @@ Gate0A contract [DONE]
 26. DrvFsの`git_mode=100644` / `fs_mode_observed=0777`を矛盾と誤判定せず、Git意味論とfilesystem capability/mountを分離したか。
 27. settings/profile/hook差分とpane差分をbefore/after snapshotから全数検出し、journalとN/N対応したか。未journal差分を0と数えていないか。
 28. 因果証跡は現行path/節参照ではなく、fixed commit/path/line/blob/観測期間/生値へ束縛されているか。
+29. 同じ安全性をより少ないstate/field/path/手順で実現できないか。追加変更なら旧経路の純減が同一diffにあるか。
+30. 可逆な途中tryへ最終checkpointのreport freshness・全量receipt・共有tree cleanを誤適用していないか。
+31. Wave番号だけを理由に独立unitを直列化していないか。実際のfile/side effect/serialization key競合を示せるか。
 
 ## §9 履歴・因果・検索索引
 
