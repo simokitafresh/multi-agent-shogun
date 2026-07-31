@@ -902,7 +902,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1494 -->
+<!-- last_synced_lesson: L1498 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2110,6 +2110,10 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1492: reflux inventoryのzero_backlinks指標はcausal_backlink_counts.sh --limit 50の頭打ちで個別解消の効果を隠しうる（cmd_reflux_backlink_202607311036_kagemaru）
 - L1493: 完了reflux非発火と鮮度gate検出を混同しない（cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427）
 - L1494: fail-closed依存のfixtureはproduction前提を明示生成する（cmd_karo_ci_fix_30608934057_deploy_task_backlink_selector）
+- L1495: LG051はdocs basenameだけでgate/hook/dispatcher実装変更と判定して偽陽性になる（cmd_4200）
+- L1496: task/inbox指示の『前報告は有効・再利用可』前提は実体確認してから従え（cmd_4200）
+- L1497: artifact後続更新時のmanifest SHA追随検査（cmd_4200）
+- L1498: review manifest集合は全callerでtask report_filename正本へ統一する（cmd_karo_recon2_cmd_complete_manifest_resume_20260731）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

@@ -5,6 +5,7 @@
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
+| 将軍強ニュー化23:35 | cmd_4200本体CLEAR後の未完了laneをclear越しに保持 | 復帰正本を作成。postprocess冪等性・archive security固定generation・Codex MEM citation実送adapterを完遂前条件として固定 | [[殿指示_強くてニューゲーム_20260731]] -> [[cmd_4200]] -> [[strong_new_game_completion_contract]] |
 | cmd_4198 月末N日前モメンタム感度分析 | 殿指示「open to openで結果を見たい」DM2/DM6 N=0-7感度分析 | GATE CLEAR。DM2/DM6ともNシフトで実務的改善なし(最良delta_Sharpe+0.015、閾値0.1未満)。ギザギザ形状+PF間不一致+方向逆転14件。現行N=0が妥当 | [[殿指示_open_to_open_20260731]] -> [[GS既存コード活用]] -> [[N=0最適確認]] |
 | LS115登録+origin修正 | 設計書完璧化ループの教訓化 | 設計書v1.0→v1.6の6回レビュー(結果ゼロ)→殿指摘→LS115記録+origin因果リンク修正(gate再計測OK) | [[設計書v1_6回レビュー結果ゼロ]] -> [[殿指摘_起票したくなったら洗脳]] -> [[LS115記録]] |
 
