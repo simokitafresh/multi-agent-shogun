@@ -4,8 +4,8 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-07-31 23:32 家老 |
-| 版 | v3.2 As-Is / To-Be 5W1H + multi-runtime compatibility contract |
+| 進捗更新 | 2026-07-31 23:50 家老 |
+| 版 | v3.3 As-Is / To-Be 5W1H + reviewed multi-runtime compatibility contract |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
 | canonical manifest | `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml` |
@@ -81,23 +81,91 @@
 
 ### §0.1 実行基盤の大前提 — multi CLI / model / effort / OS
 
-**本書はCodex単体の設計書ではない。** 正本はCLI固有hook設定ではなく、共通event・durable state・gate契約である。Claude CodeとCodexは能力差をadapterで吸収し、model/effort/service tierは実行条件、OS/filesystemは永続化・監視・性能条件として明示的に検証する。
+**本書はCodex単体の設計書ではない。主編成はClaudeであり、Codexは補完・検証・一時配置のCLIである。** 正本はCLI固有hook設定ではなく、共通event・durable state・gate契約である。Claude CodeとCodexは能力差をadapterで吸収し、model/effort/service tierは実行条件、OS/filesystemは永続化・監視・性能条件として明示的に検証する。現在のactive paneがCodex寄りでも、それを主編成変更・Claude support縮小・Claude経路撤去の根拠にしない。
 
 | 軸 | 現在の実体・正本 | 設計契約 |
 |---|---|---|
-| CLI | `config/settings.yaml`、`config/cli_profiles.yaml`の`claude` / `codex` | CLI固有hookをSSOTにしない。共通eventを各CLIのcapability adapterへ写像し、未対応eventはdaemon/gate/scriptで等価保証する |
+| CLI | event意味論=`config/cli_events.yaml`、能力profile=`config/cli_profiles.yaml`、配置=`config/settings.yaml` | CLI固有hookをSSOTにしない。共通eventを各CLIのcapability adapterへ写像し、未対応eventはdaemon/gate/scriptで等価保証する |
 | model | Claude Opus/Sonnet系、GPT系を含むconfigured `model_name` | model名で安全性を分岐しない。全configured model tupleで同一binary invariantを満たす |
 | effort / tier | low/medium/high等のeffort、default/fast等のservice tier | latency・timeout・出力特性を計測条件へ含める。高effort 1件を他tupleの代理にしない |
 | OS / filesystem | WSL2+DrvFs(`/mnt/c`)、Linux filesystem、Windows host境界。追加OSはmanifestで明示 | flock、atomic replace、fsync、symlink、mtime、inotify/stat、実行bit、改行をOS/filesystem別に検証する。未検証OSをportableと称さない |
 | shell / process | bash、tmux、CLI child process | PID/PGID、signal、prompt、TTY挙動をCLI×OS tupleで検証する |
 
-検証母集団は「代表1構成」ではなく、checkpoint時点のactive configurationから生成した**全distinct tuple**とする。
+軍師敵対レビューで、active-only母集団は9/9 Codex・3 distinct tupleとなり、inactive supported Claudeを0件のまま`executed == discovered`にできると実証された。よって母集団を次の3層へ分離する。
+
+| matrix | 生成元 | 用途 | terminal条件 |
+|---|---|---|---|
+| `support_matrix` | To-Be `config/runtime_support_matrix.yaml`の明示rowとvalid constraint | release可能と宣言する全runtime。inactiveも含む | **release terminalの正本**。全row executed、FAIL 0、SKIP 0、receipt欠落0 |
+| `configured_matrix` | `config/settings.yaml`を下記resolverで解決 | 現在配置する全agent tuple | support rowとの対応N/N、type/binary矛盾0。unsupported配置はBLOCK |
+| `active_matrix` | tmux/process banner、実binary、mount/OS probe | 実際に稼働したtupleの観測 | configuredとの一致N/N。support母集団の代替には使わない |
+
+検証母集団は`support_matrix ∪ configured_matrix`の全distinct **valid tuple**とする。activeは観測値であり、inactive rowを除外する根拠にしない。
+
+`support_matrix`はClaude primary rowを必須とし、Claude row 0件ではschema validation自体をBLOCKする。Codex rowの増加・active比率・一時的な全Codex配置はClaude primary rowを置換しない。
 
 ```text
 (cli_type, model_name, effort, service_tier, os_family, filesystem_type, hook_capability_set)
 ```
 
 同一modelでもeffort/tier/OS/filesystemが異なれば別tupleである。`selected / discovered / executed`を別計数し、`executed == discovered`、FAIL 0、SKIP 0をterminal条件とする。未対応tupleは黙って除外せず`UNSUPPORTED`として根拠・代替保証・ownerをmanifestへ残す。
+
+`UNSUPPORTED`は全直積の後処理に使わない。`runtime_support_matrix.yaml`は許可rowまたはvalid constraintを先に列挙し、generatorはその集合だけを展開する。configured tupleがvalid集合外なら`UNSUPPORTED`へ逃がさず配置エラーとしてBLOCKする。
+
+### §0.2 Runtime matrix artifact・resolver・identity契約
+
+To-Be artifact:
+
+| artifact | owner | 必須内容 |
+|---|---|---|
+| `config/runtime_support_matrix.yaml` | platform owner | schema version、CLI capability、許可model/effort/tier、OS/filesystem/runner、valid constraint、support status |
+| `scripts/runtime_matrix_generate.py` | Wave 0/4A | support/configured/activeの3 manifest生成、tuple ID採番、矛盾検出 |
+| `queue/gates/cmd_4200/runtime_matrix_manifest.json` | generator | fixed source SHA、3 matrix全row、selected/discovered/executed、runner owner、receipt path |
+| `queue/gates/cmd_4200/runtime_matrix_receipts/<tuple_id>.json` | 各runner | tuple identity、binary/banner、event coverage、fault/test結果、artifact SHA、開始/終了時刻 |
+| `scripts/gates/gate_runtime_compatibility.sh` | final checkpoint | support全row、configured対応、active一致、receipt N/N、FAIL/SKIP/未分類0を強制 |
+
+resolver precedenceは次で固定し、暗黙fallbackを禁止する。
+
+1. `config/settings.yaml:cli.agents.<agent>`の`type/model_name/service_tier`をconfigured値とする。
+2. 欠落fieldだけを`config/cli_profiles.yaml:defaults.agents.<agent>`、次に`defaults`から補う。
+3. `profiles.<cli>`は能力と既定launch templateだけを与え、agentの明示値を上書きしない。
+4. `model_name`接尾辞からeffortを正規化し、明示effortとの不一致はBLOCKする。
+5. launch commandの実binary basename、tmux `@agent_cli`、process bannerがresolved `type`と全一致した時だけactive rowを有効化する。
+
+As-Isでは`cli_profiles.yaml`に`type: codex`とClaude起動binaryが混在するrowが2件ある。generatorはこれを自動補正せず`type_binary_mismatch=2`としてBLOCKし、正本修正後に0を要求する。
+
+### §0.2.1 編成変更と互換性検証の分離
+
+- cmd_4200はCLI/model/effortの**配備変更を行わない**。`config/settings.yaml`更新、pane respawn、default切替はscope外。
+- matrix生成・fixture・probeは実paneの編成を変えず、isolated root/fake paneまたは明示的な検証runnerで実行する。
+- mismatch検出は自動switchや自動respawnを起こさずBLOCK receiptだけを出す。編成変更は殿の明示指示とCLI switch正規手順に限定する。
+- primary Claudeの既存event/prompt/reset/inbox/report/complete挙動をbefore baselineとして保存し、Codex adapter追加後も同じfixtureがPASSしなければrollbackする。
+- Codexでしか再現しない問題をClaude共通実装へ無条件に持ち込まない。共通primitive変更が必要ならClaude before/after parityを同一commitで証明する。
+
+### §0.3 OS / filesystem support境界
+
+| runtime | 現在の証跡 | release扱い |
+|---|---|---|
+| WSL2 + DrvFs/9p (`/mnt/c`) | 実host・workspaceで観測済み | support row。flock/replace/symlink/mtime/inotify-stat/exec-bit/CRLFを実走 |
+| WSL2 + native ext4 | 同hostのnative mountを観測済み | support row候補。専用runner receipt完了までBLOCK |
+| native Linux host | runner証跡0 | `PLANNED`。portable PASSへ算入禁止 |
+| Windows-native | host境界のみ観測、runner証跡0 | `PLANNED`。tmux/bash前提を満たすrunner定義まで算入禁止 |
+
+各support rowは`runner_id + os build/kernel + filesystem/mount options + shell + CLI version`をidentityとする。WSL上のWindows host観測をWindows-native実行証跡に数えない。
+
+### §0.4 Claude primary非退行契約
+
+Claude primary baselineは次の6 eventとする: `SessionStart`、`UserPromptSubmit`、`PreToolUse(Bash)`、`PreToolUse(Write|Edit)`、`PostToolUse(Bash)`、`Stop`。`config/cli_events.yaml`のClaude cell 6/6を正本とし、各cellで次を固定する。
+
+| invariant | binary check |
+|---|---|
+| event reachability | matcher fixtureとisolated interactive probeが6/6到達 |
+| payload/decision | additional context、deny/warn、Stop decisionのschema差分0 |
+| lifecycle | `/clear`、idle flag、inbox nudge、report handoff、cmd completionがbefore/after同結果 |
+| latency | event別p95が既定budget以内。Codex都合のtimeout増加をClaudeへ波及させない |
+| ownership | Claude hook ownerは各action 1。Codex daemon追加で二重owner 0 |
+| rollback | adapter pointerを旧Claude pathへ戻し、同じbaseline receiptを再現できる |
+
+Claude primaryの6/6 receiptがないcommitは、Codex側が全PASSでもrelease不可とする。
 
 ## §1 As-Is — 現状5W1H
 
@@ -279,7 +347,7 @@ intended → prepared → published → terminal
 | detector | 検知後action（fail-closedまたは自動実行）必須 |
 | FP/FN | 固定corpusで`FP/negative total`、`FN/positive total`を記録 |
 | performance | fixed SHA、同一load/concurrency、warm/cold、`n>=30`、p50/p95/p99/max/timeout |
-| runtime matrix | active configurationからCLI/model/effort/tier/OS/filesystem全distinct tupleを生成。代表抽出禁止、未実行0 |
+| runtime matrix | support/configured/activeを分離し、`support ∪ configured`のvalid tupleを生成。active-only代用禁止、未実行0 |
 | stop budget | wall/lock-wait p95 `max(5%,20ms)`、recovery p95 `max(10%,1s)`超過でrollback |
 
 timeout増加、sample減少、load縮小による通過は禁止する。
@@ -295,7 +363,7 @@ timeout増加、sample減少、load縮小による通過は禁止する。
 | Where | redirect queue/log/WAL root + fake tmux/ntfy/network |
 | How | deterministic barrierでedgeを全選択し、未実行0を集計する |
 
-各faultは全runtime tupleへ直積展開する。CLI固有fault（hook return、Stop、prompt、reset）は該当CLI全tuple、filesystem固有fault（rename、fsync、symlink、mtime、watch）は該当OS/filesystem全tupleで実行する。別CLI・別effort・別OSのPASSを代理証拠にしない。
+各faultは`runtime_support_matrix.yaml`のvalid constraintに従って該当tupleへ展開する。無効なCartesian productは生成しない。CLI固有fault（hook return、Stop、prompt、reset）は該当CLIの全valid tuple、filesystem固有fault（rename、fsync、symlink、mtime、watch）は該当OS/filesystemの全valid tupleで実行する。別CLI・別effort・別OSのPASSを代理証拠にしない。
 
 | fault | 必須結果 |
 |---|---|
@@ -380,12 +448,22 @@ Gate0A contract [DONE]
 
 ### §5.8 Wave 4A — multi-CLI hook ownership（R14）
 
-- 共通event contractを唯一の意味論ownerとし、Claude Code / Codex adapterは能力写像だけを持つ。
+- `config/cli_events.yaml`の6 eventを唯一の意味論ownerとし、Claude Code / Codex adapterは能力写像だけを持つ。
 - 同一event内の順序依存処理はCLIごとに単一adapterへ合成する。CLI固有hook設定の二重ownerを禁止する。
-- manifest generatorで、全configured CLIのmatcher到達性、実体存在、event coverage、代替daemon/gate coverageを強制する。
+- manifest generatorで、support CLI×6 eventの全cellについてmatcher到達性、実体存在、event coverage、代替daemon/gate coverageを強制する。
 - Codexは意図的BLOCKをexit 2、hook errorを別分類し、exit 1によるCLI停止を0件にする。
 - Claude CodeはPreToolUse/PostToolUse/Stopのpayload・exit・permissionDecision意味論をfixtureとinteractive probeで固定する。
 - Stopは共通実装を押し付けない。Claudeのturn停止とCodexの再生成挙動を別adapterで扱い、再実行loop・silent allow・stale flag・retry capを各CLIで測る。
+- Codex Stopを0 hookのまま維持する期間も、`mark_idle`、`log_terminal_response`、`stop_check_inbox`各actionにdaemon/gate/script ownerを1つ割当て、`event_id/action_id/owner/mode/test/receipt`を記録する。代替receipt欠落1件でもrelease BLOCK。
+
+### §5.8.1 Runtime compatibility実装順序
+
+1. `runtime_support_matrix.yaml` schemaとvalid constraintを定義し、Claude primary row必須をschemaで強制する。
+2. resolver/generatorを実装し、現状のtype/binary mismatch 2件を検出するfixtureを固定する。
+3. mismatchを正本で0へ直し、support/configured/active 3 manifestを生成する。
+4. `cli_events.yaml` 6 event×support CLIのcoverage receiptを生成する。先にClaude primary 6/6のbefore/after parityを確定し、その後Codex hookなしcellの代替owner N/Nを証明する。
+5. WSL2 DrvFS/native ext4、native Linux、Windows-nativeの各support rowへrunnerを割当てる。runnerなしrowは`PLANNED`のままrelease集合へ入れない。
+6. final checkpointでmanifestと全receiptをfixed SHAへ束縛する。
 
 ### §5.9 Wave 4B — knowledge provenance（R11/R15/V01）
 
@@ -421,8 +499,13 @@ Gate0A contract [DONE]
 | 13 | fixed SHA isolated checkpointを用い共有tree状態を混ぜない |
 | 14 | wall/lock wait/recovery budget超過0。超過時rollback済み |
 | 15 | lesson/insight/gate metricsへ新checkを還流し、次回起動時に受動注入される |
-| 16 | active configurationから生成したCLI/model/effort/tier/OS/filesystem tupleのdiscovered=executed、FAIL=0、SKIP=0、未分類0 |
-| 17 | CLI固有hook eventは共通event contractへN/N写像され、未対応eventはdaemon/gate/scriptの代替保証N/Nを持つ |
+| 16 | `support_matrix ∪ configured_matrix`のvalid tupleでdiscovered=selected=executed、FAIL=0、SKIP=0、未分類0。active-only母集団は禁止 |
+| 17 | `config/cli_events.yaml` 6 event×support CLIの全cellがhookまたは代替ownerへN/N写像され、action単位receipt欠落0 |
+| 18 | configured全agentでresolver結果、launch binary、tmux CLI tag、process bannerがN/N一致し、type/binary mismatch 0 |
+| 19 | runtime manifestとtuple receiptがfixed source SHA、runner ID、OS/filesystem identityへ束縛され、欠落0・重複0 |
+| 20 | native Linux/Windows-nativeをportable保証に含める場合は専用runner executed N/N。証跡0の間は`PLANNED`表示でrelease claim 0 |
+| 21 | Claude primary rowがsupport matrixに必ず存在し、Claude 6 eventのbefore/after receipt 6/6、behavior差分0、二重owner0 |
+| 22 | cmd_4200によるsettings変更0、pane respawn0、CLI/model/effort切替0。matrix検証が実編成を変更していない |
 
 ## §7 Decision Ledger
 
@@ -448,6 +531,9 @@ Gate0A contract [DONE]
 | D02 | V03 lock-domainをR03-R05と同時修正するか | `/mnt/c`隔離競合30回のreceipt | 採用。Wave 1B slot 3、R03/R05後 |
 | D03 | V04 prompt-safe sendの採用境界 | confirmation 0/30、idle 30/30 | 採用。Wave 2B slot 2、V02後 |
 | D04 | CLI別の限定Stop adapterを使うか | Claude/Codex各configured tupleのinteractive実機でblock後挙動、silent allow、stale、retry capを全確認 | Codexのblock再生成は実測済み。allow JSONはinvalidのため、無出力allowと上限検証までCodex Stop禁止を維持。Claudeは別adapterとして既存Stop意味論を再検証する |
+| D05 | runtime母集団の正本 | support/configured/activeを別生成し、active-only誤PASSを再現 | `support_matrix`をrelease terminal、configuredを配置整合、activeを実態観測に固定 |
+| D06 | OS portability claim | runner receiptの有無をOS/filesystem rowごとに確認 | WSL2 DrvFSのみ現行実証。native Linux/Windows-nativeはrunner証跡まで`PLANNED` |
+| D07 | 主編成の定義 | active pane比率ではなく殿の編成方針とsupport matrix primary fieldで判定 | **Claude primary**。Codex active増加・一時配置でも主編成を変更しない |
 
 ## §8 Review Checklist
 
@@ -468,6 +554,12 @@ Gate0A contract [DONE]
 13. configured CLI/model/effort/tier/OS/filesystemのdistinct tupleを全数列挙し、代表1構成で代用していないか。
 14. Claudeのhook/Stop意味論をCodex exit codeへ、またはCodexの再生成意味論をClaudeへ誤投影していないか。
 15. WSL2/DrvFsのPASSをnative Linux/別filesystemのatomicity・watch・実行bit証拠として流用していないか。
+16. support/configured/activeを混同し、active-onlyでinactive Claudeを母集団から消していないか。
+17. type文字列だけを信じ、実launch binary・tmux tag・bannerの矛盾を見逃していないか。
+18. 全Cartesian productを作って大量の`UNSUPPORTED`で帳尻を合わせていないか。valid constraintは先に定義されているか。
+19. hook不在eventを「daemonで代替」と散文だけで済ませず、action別owner/test/receipt N/Nを持つか。
+20. active Codex比率を理由にClaude primary row・fixture・rollbackを削っていないか。
+21. compatibility検証が実paneのCLI/model/effortを勝手に変更・respawnしていないか。
 
 ## §9 履歴・因果・検索索引
 
@@ -486,6 +578,9 @@ Gate0A contract [DONE]
 | Foundation RC1-5 | 軍師/家老 | REQUEST_CHANGES→LGTM | 空terminal、path traversal、symlink escape、ack-loss、hard-crash、test安全性を順次是正 |
 | Foundation final | 家老 | ACCEPTED | 17/17 PASS、SKIP 0、hard-crash retry rc 10/effect 1 `4c89d38ca` |
 | Wave1A R01 | 飛猿 | IN_PROGRESS | 敵対contract `6f4e4b77b`。post-commit 10反復もlost/duplicate/parse各0、task-scope 10 test実行中 |
+| Multi-runtime RC1 | 軍師 | REQUEST_CHANGES | Gist/local一致のみPASS。active-only Claude欠落、3 matrix未分離、resolver/manifest欠落、type/binary矛盾2、Codex Stop代替receipt欠落、OS runner証跡0、valid constraint欠落の6 finding |
+| Multi-runtime RC1 response | 家老 | UPDATED v3.3 | support/configured/active分離、artifact/resolver、event代替receipt、OS support境界、valid constraint、AC16-20へ反映 |
+| 殿訂正 | 殿/家老 | UPDATED v3.3 | 主編成=Claudeを明記。active Codexを主編成へ誤昇格しない。Claude primary 6-event非退行、配備変更0、AC21-22を追加 |
 
 ### §9.2 因果リンク
 
