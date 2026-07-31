@@ -1246,7 +1246,13 @@ EOF
 
 @test "cmd_training target_path prefers backlink-zero file over outgoing link count" {
     use_private_scripts_fixture
-    mkdir -p "$TEST_PROJECT/context" "$TEST_PROJECT/docs/research"
+    mkdir -p \
+        "$TEST_PROJECT/context" \
+        "$TEST_PROJECT/docs/research" \
+        "$TEST_PROJECT/docs/semantic-index" \
+        "$TEST_PROJECT/instructions" \
+        "$TEST_PROJECT/memory" \
+        "$TEST_PROJECT/skills"
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
   task_type: training
