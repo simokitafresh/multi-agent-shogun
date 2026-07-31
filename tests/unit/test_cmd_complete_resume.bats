@@ -149,6 +149,11 @@ run_complete() {
     done
     printf 'report_id: rpt-other\nparent_cmd: cmd_other\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' \
         > "$review_root/queue/archive/reports/other_cmd.yaml"
+    for n in 1 2 3; do
+        printf 'report_id: rpt-other-%s\nparent_cmd: cmd_other\n' "$n" > "$review_root/outside${n}.yaml"
+        ln -s "$review_root/outside${n}.yaml" \
+            "$review_root/queue/archive/reports/ninja${n}_report_cmd_other.yaml"
+    done
 
     run bash -c '
         set -e
@@ -232,24 +237,24 @@ PY
         mkdir -p "$root/scripts/lib" "$root/queue/reports" "$root/queue/archive/reports" "$root/queue/tasks"
         cp "$BATS_TEST_DIRNAME/../../scripts/lib/review_approval.sh" "$root/scripts/lib/"
         printf 'report_id: rpt-1\nparent_cmd: cmd_4200\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' \
-            > "$root/queue/archive/reports/one.yaml"
+            > "$root/queue/archive/reports/one_report_cmd_4200.yaml"
         case "$kind" in
             nested)
                 mkdir -p "$root/queue/archive/reports/nested"
-                printf 'report_id: rpt-2\nparent_cmd: cmd_4200\n' > "$root/queue/archive/reports/nested/two.yaml" ;;
+                printf 'report_id: rpt-2\nparent_cmd: cmd_4200\n' > "$root/queue/archive/reports/nested/two_report_cmd_4200.yaml" ;;
             symlink)
                 printf 'report_id: rpt-2\nparent_cmd: cmd_4200\n' > "$root/outside.yaml"
-                ln -s "$root/outside.yaml" "$root/queue/archive/reports/two.yaml" ;;
+                ln -s "$root/outside.yaml" "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
             symlink_other_cmd)
                 printf 'report_id: rpt-other\nparent_cmd: cmd_other\n' > "$root/outside.yaml"
-                ln -s "$root/outside.yaml" "$root/queue/archive/reports/two.yaml" ;;
+                ln -s "$root/outside.yaml" "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
             invalid)
                 printf 'report_id: [unterminated\nparent_cmd: cmd_4200\n' \
-                    > "$root/queue/archive/reports/two.yaml" ;;
+                    > "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
             missing)
-                printf 'parent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two.yaml" ;;
+                printf 'parent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
             duplicate)
-                printf 'report_id: rpt-1\nparent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two.yaml" ;;
+                printf 'report_id: rpt-1\nparent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
         esac
         run bash -c 'export PROJECT_ROOT="$1"; source "$1/scripts/lib/review_approval.sh"; review_resolve_reports cmd_4200' _ "$root"
         [ "$status" -ne 0 ]

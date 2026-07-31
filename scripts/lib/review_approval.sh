@@ -256,7 +256,7 @@ review_resolve_reports() {
     root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
     review_validate_cmd_id "$cmd_id" || return 1
     python3 - "$root" "$cmd_id" <<'PY'
-import pathlib, sys, yaml
+import pathlib, re, sys, yaml
 root, cmd_id = pathlib.Path(sys.argv[1]).resolve(), sys.argv[2]
 reports_dir = root / "queue" / "reports"
 archive_dir = root / "queue" / "archive" / "reports"
@@ -276,6 +276,12 @@ candidates = list(reports_dir.glob("*.yaml")) + list(archive_dir.glob("*.yaml"))
 # A matching nested archive is an invalid ambiguous storage location, not a
 # candidate to silently ignore.
 candidates += list(archive_dir.glob("**/*.yaml"))
+# The shared archive contains reports for every command.  Select by the
+# basename-owned command token before touching the path or payload so a broken
+# report belonging to another command cannot poison this command's recovery.
+# The boundary after cmd_id prevents cmd_42 from claiming cmd_4200.
+cmd_name = re.compile(r"_report_" + re.escape(cmd_id) + r"(?:_[^/]*)?\.yaml\Z")
+candidates = [path for path in candidates if cmd_name.search(path.name)]
 seen_paths = set()
 for report_path in sorted(candidates):
     if report_path in seen_paths:
