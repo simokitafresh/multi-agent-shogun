@@ -1,0 +1,165 @@
+schema_version: 1
+title: hidden infrastructure Gate0B durable-state foundation map
+source_design: docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md
+source_manifest: docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml
+source_receipt: docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml
+runtime_classification: OPEN_CONFIRMED
+finding_count: 13
+excluded_superseded: [R04, R06, R10, V01]
+owner_contract: one unique implementation unit owns each finding; shared files are ordered by depends_on and serialization_key
+wave_contract: wave names match design section 5; wave_slot imposes an order inside a design wave
+units:
+  - finding: R01
+    primitive: lock_identity
+    files: [scripts/lib/lock_path.sh, scripts/inbox_write.sh, scripts/inbox_mark_read.sh]
+    owner: unit_r01_lock_identity
+    depends_on: []
+    wave: WAVE_1A_IDENTITY
+    wave_slot: 1
+    serialization_key: inbox_yaml
+    focused_test: tests/unit/test_lock_path.bats
+    rollback: restore both inbox callers to the prior lock_path invocation while retaining the canonical lock helper
+    done_binary: both inbox mutation callers derive one equal lock identity and concurrent append/mark-read loses 0 records
+  - finding: R03
+    primitive: owner_transaction
+    files: [scripts/auto_deploy_next.sh]
+    owner: unit_r03_owner_transaction
+    depends_on: []
+    wave: WAVE_1B_OWNERSHIP
+    wave_slot: 1
+    serialization_key: task_owner
+    focused_test: tests/unit/test_auto_deploy_next.bats
+    rollback: restore the prior target writer and replay the source task from its preserved owner receipt
+    done_binary: target publish plus source tombstone yields executable_owner_count_le_1 after injected interruption
+  - finding: R05
+    primitive: deploy_selector
+    files: [scripts/auto_deploy_next.sh]
+    owner: unit_r05_deploy_selector
+    depends_on: [R03]
+    wave: WAVE_1B_OWNERSHIP
+    wave_slot: 2
+    serialization_key: task_owner
+    focused_test: tests/unit/test_auto_deploy_next.bats
+    rollback: restore the prior selector predicate without reverting the R03 owner transaction
+    done_binary: pending_or_idle inputs are selected and in_progress inputs are rejected
+  - finding: V03
+    primitive: lock_domain
+    files: [scripts/auto_deploy_next.sh, scripts/deploy_task.sh, scripts/lib/lock_path.sh]
+    owner: unit_v03_task_lock_domain
+    depends_on: [R03, R05]
+    wave: WAVE_1B_OWNERSHIP
+    wave_slot: 3
+    serialization_key: task_owner
+    focused_test: tests/unit/test_deploy_task.bats
+    rollback: restore outer and inner callers together to their last shared lock-domain generation
+    done_binary: outer and inner writers resolve one lock domain and concurrent writers produce false_success=0 and lost_update=0
+  - finding: R07
+    primitive: durable_dispatch
+    files: [scripts/review_approval.sh]
+    owner: unit_r07_review_dispatch
+    depends_on: []
+    wave: WAVE_2A_TERMINAL_RECEIPT
+    wave_slot: 1
+    serialization_key: review_dispatch
+    focused_test: tests/unit/test_review_approval.bats
+    rollback: retain the intended receipt and restore the previous marker publisher until reconciler replay
+    done_binary: review marker publish count is 0 before terminal receipt and 1 after terminal receipt
+  - finding: R08
+    primitive: completion_job
+    files: [scripts/cmd_complete_gate.sh]
+    owner: unit_r08_completion_job
+    depends_on: [R07]
+    wave: WAVE_2A_TERMINAL_RECEIPT
+    wave_slot: 2
+    serialization_key: completion_receipt
+    focused_test: tests/unit/test_cmd_complete_gate.bats
+    rollback: stop new job admission, preserve queued receipts, and replay them with the prior completion tail
+    done_binary: every queued completion reaches one terminal receipt after child-exit injection and queued_ne_completed is never violated
+  - finding: V02
+    primitive: delivery_trace
+    files: [scripts/inbox_watcher.sh]
+    owner: unit_v02_delivery_trace
+    depends_on: [R08]
+    wave: WAVE_2B_SAFE_DELIVERY
+    wave_slot: 1
+    serialization_key: inbox_delivery
+    focused_test: tests/unit/test_inbox_watcher.bats
+    rollback: disable trace correlation reads while preserving persisted event and unread mailbox records
+    done_binary: each persisted event has exactly one trace and duplicate versus delayed delivery counters are independently reproducible
+  - finding: V04
+    primitive: prompt_safe_send
+    files: [scripts/inbox_watcher.sh]
+    owner: unit_v04_prompt_safe_send
+    depends_on: [V02]
+    wave: WAVE_2B_SAFE_DELIVERY
+    wave_slot: 2
+    serialization_key: inbox_delivery
+    focused_test: tests/unit/test_inbox_watcher.bats
+    rollback: restore the prior sender behind a fail-closed confirmation-prompt guard
+    done_binary: confirmation prompt sends 0 nudges while an idle prompt sends the complete 30-case corpus
+  - finding: R09
+    primitive: contract_inventory
+    files: [.github/workflows/test.yml, scripts/run_tests.sh]
+    owner: unit_r09_contract_inventory
+    depends_on: [R08]
+    wave: WAVE_3_CI_TEST_SSOT
+    wave_slot: 1
+    serialization_key: test_runner
+    focused_test: tests/unit/test_run_tests.bats
+    rollback: restore the previous inventory selector while retaining the generated inventory artifact for diagnosis
+    done_binary: declared persistent contracts equal CI membership N_of_N and unassigned contract count is 0
+  - finding: R13
+    primitive: cache_identity
+    files: [scripts/run_tests.sh]
+    owner: unit_r13_cache_identity
+    depends_on: [R09]
+    wave: WAVE_3_CI_TEST_SSOT
+    wave_slot: 2
+    serialization_key: test_runner
+    focused_test: tests/unit/test_run_tests.bats
+    rollback: disable new cache reads and force misses without removing immutable terminal receipts
+    done_binary: tracked worktree source runner fixture and environment changes each produce a cache miss
+  - finding: R14
+    primitive: hook_owner
+    files: [.codex/hooks.json, .claude/hooks/post-bash-combined.sh]
+    owner: unit_r14_hook_owner
+    depends_on: [R08]
+    wave: WAVE_4A_HOOK_OWNERSHIP
+    wave_slot: 1
+    serialization_key: hook_manifest
+    focused_test: tests/unit/test_write_edit_combined_hooks.bats
+    rollback: restore the prior generated hook manifest and dispatcher as one versioned pair
+    done_binary: each matcher has one reachable owner BLOCK exits 2 and reachable BLOCK exit 1 count is 0
+  - finding: R11
+    primitive: provenance_policy
+    files: [scripts/semantic_index_update.sh]
+    owner: unit_r11_provenance_policy
+    depends_on: [R08]
+    wave: WAVE_4B_KNOWLEDGE_PROVENANCE
+    wave_slot: 1
+    serialization_key: semantic_promotion
+    focused_test: tests/unit/test_semantic_index_update.bats
+    rollback: disable automatic promotion and retain all candidates in pending state
+    done_binary: signed curated manual promotes and unsigned manual remains pending
+  - finding: R15
+    primitive: insight_state
+    files: [scripts/semantic_index_update.sh]
+    owner: unit_r15_insight_state
+    depends_on: [R11]
+    wave: WAVE_4B_KNOWLEDGE_PROVENANCE
+    wave_slot: 2
+    serialization_key: semantic_promotion
+    focused_test: tests/unit/test_semantic_index_update.bats
+    rollback: revert state transitions to pending while preserving artifact receipts and discarded reasons
+    done_binary: resolved requires an artifact receipt and no-artifact candidates become discarded_noise with a reason
+validation_contract:
+  required_fields: [finding, primitive, files, owner, depends_on, wave, wave_slot, serialization_key, focused_test, rollback, done_binary]
+  expected_findings: [R01, R03, R05, R07, R08, R09, R11, R13, R14, R15, V02, V03, V04]
+  expected_wave_counts:
+    WAVE_1A_IDENTITY: 1
+    WAVE_1B_OWNERSHIP: 3
+    WAVE_2A_TERMINAL_RECEIPT: 2
+    WAVE_2B_SAFE_DELIVERY: 2
+    WAVE_3_CI_TEST_SSOT: 2
+    WAVE_4A_HOOK_OWNERSHIP: 1
+    WAVE_4B_KNOWLEDGE_PROVENANCE: 2

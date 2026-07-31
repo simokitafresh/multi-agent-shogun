@@ -1,9 +1,9 @@
 schema_version: 3
 title: hidden infrastructure gate/hook canonical Gate 0A contract manifest
 phase_order: [GATE_0A_CONTRACT_AUTHORING, WAVE_0_PROBE, GATE_0B_CLOSURE, DURABLE_STATE_FOUNDATION]
-current_phase: WAVE_0_PROBE
+current_phase: GATE_0B_CLOSURE
 phase_state: TERMINAL_PASS
-next_phase: GATE_0B_CLOSURE
+next_phase: DURABLE_STATE_FOUNDATION
 repository_observed_head: f3478e625235b364a187d7c2f6412a78d8add4c7
 code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
 head_drift:
@@ -29,6 +29,14 @@ count_contract:
 dependency_contract:
   parallel_ok: [AC1, AC2]
   AC3_requires: [AC1, AC2]
+gate0b_foundation_map:
+  path: docs/research/hidden-infrastructure-gate-hook-foundation-map-20260731.yaml
+  open_confirmed_mapped: 13
+  open_confirmed_unassigned: 0
+  superseded_excluded: [R04, R06, R10, V01]
+  owner_duplicates: 0
+  dependency_cycles: 0
+  serialization_key_missing: 0
 legacy_id_map:
   R02: {canonical_id: V03, remediation_status: PARTIALLY_SUPERSEDED, old_path_reachable: true}
   R12: {canonical_id: V04, remediation_status: PARTIALLY_SUPERSEDED, old_path_reachable: true}
