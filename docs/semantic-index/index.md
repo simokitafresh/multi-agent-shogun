@@ -643,6 +643,7 @@ codd:
 | causal | `cmd_karo_hotfix_commit_generated_knowledge_unblock_push_20260730` files_modified: [[three_layer_memory_system]] |
 | causal | `cmd_karo_hotfix_ga417_infrastructure_trigger_20260730` files_modified: [[three_layer_memory_system]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T15:36:37+09:00 ではデュアルモメンタムに関係する最新論文紹介としてnote記事を書こう。もう少し一般論としての意見もくわえて３０００文字程度にしよう。正しく natural-japaneseを利用してくれ。まずは記事を作成、その後 natural-japa |
+| causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[three_layer_memory_system]] |
 | causal_chain | `[[cmd_karo_recon_memory_cache_mtime_freshness_20260726]]` (L1343) |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
@@ -1266,10 +1267,16 @@ codd:
 | lesson | `L1487` 解決状態と棄却状態を混同しない |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T08:56:42+09:00 バグは即時解消 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T09:00:21+09:00 確認しました。**前回指摘した主要点はほぼ適切に修正されています。** 特に、shiftの説明、DM6固有期間のSPY、前半・後半のベンチマーク、DM2のロバストネス表現、DM6の実質的なシグナル更新数が改善されています。 ただし、**DM |
+| cmd | `cmd_4199` 執行日感度分析トライアル — DM2/DM6のE=0-7 執行遅延ロバストネス検証 (`context/dm-signal-research.md`) |
+| causal | `cmd_4199` origin: [[殿指示_執行日感度分析_20260731]] -> [[実験1_N日前ロバスト確認]] -> [[実験2_執行日感度v1.5_家老LGTM]] |
+| lesson | `L1492` reflux inventoryのzero_backlinks指標はcausal_backlink_counts.sh --limit 50の頭打ちで個別解消の効果を隠しうる |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:01:35+09:00 確認しました。前回の指摘は適切に反映されています。**特に、DM6のSharpeについて「弱い」ではなく「概ね維持」「中程度」と修正した点は妥当**です。 ## 判定 この版なら、結論はかなりバランスが取れています。 * DM2 * CAG |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:20:39+09:00 guard14問題はインフラバグだな。バグは即時修正しよう |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 | causal_chain | `[[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]` (L1397) |
 | causal_chain | `[[cmd_karo_hotfix_ga414_context_freshness_20260729]]` (L1454) |
 | causal_chain | `[[cmd_karo_recon_hidden_infra_learning_observability_20260730]]` (L1487) |
+| causal_chain | `[[cmd_reflux_backlink_202607311036_kagemaru]]` (L1492) |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -1444,6 +1451,7 @@ codd:
 | causal | `cmd_karo_hotfix_commit_cmd4196_context_boundary_20260730` files_modified: [[recalculate_pipeline]] |
 | causal | `cmd_karo_hotfix_ga417_dm_signal_research_20260730` files_modified: [[recalculate_pipeline]] |
 | causal | `cmd_4198` files_modified: [[recalculate_pipeline]] |
+| causal | `cmd_4199` files_modified: [[recalculate_pipeline]] |
 | causal_chain | `[[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]` (L1447) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
@@ -1452,7 +1460,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0, 要件 ①実行と承認の分離 実行者の自己承認禁止, cmd完了品質へ単調保持する履歴である, semantic_index_update_158秒, source lord conversation, 報告するのは正しい結果が出た時と, 完了gateのown commit検査だけでは, 回帰13 PASS, 復元184 exact完了, 個別Unit上位test semantic index update 072秒の支配項を除去し, 原因はlive PIDだけをhealthy扱いしたことと, 各wrapperはexact test名のok行を検証する, source gunshi session, 三層health未貫通0件となること, 教訓 fixture≠live, source commit ab302df7b inbox, startup gate検出を一体化する, これは指摘した2失敗と別修正のため赤残存の可能性, source shogun recovery, tmp等の隔離コピーへ複製してから旧版パッチを当てて検証する, 今回は3 3修正し355 356から356 356へ改善, 背景再入回帰を追加した結果, fixture広義同型16件（家老11 軍師5）, source dummy, 家老自身のD0修正・実装commitは禁止, 接続cmdがactive時だけWAIT, cmd完了監視はHEADを使用, commit f4d94ab4, 新規cmd 0件, source shogun d0 fix, source commit 64fcd42c9, WARN_hook+test, startup BLOCK→WARN, 時間がかかるものはすべてバグとして扱い, source session shogun ls091, source lessons shogun, 軍師は2回目で注記, P1 全チェックTIMING追加, PASS, daemon fixtureは本番永続daemonを起動せず, 即時diffで検知し復元, 選定とreservation記録が非原子的で, 隔離source fixtureは必須依存追加へ追随させる, daemonのsource依存追加とログ契約強化を行った際, producerのみgit履歴生成, 全て二値条件で実装する, obsidianは有効活用されているか？, 比較境界は両辺を同一fixtureで型正規化する, Git tree解決可能を型検証する, fix R1, 家老hotfix ab8d6a9f5で境界3 PASS済み, GA 304は残存5行でCI実行前FAIL, 外部repo identity fixture隔離, GA_304_CI_FAIL, cmd complete本体へsource依存を追加した際, 確認せずに想像するから結果が出ない』, wrapperへsource追加時, 復元testは後発依存と実git状態をfixture化する, source session shogun, source lord ruling typo fix, source lord confirm, source n series all closed, 誤爆扱い問い返し禁止, 結果 未反映15→1件 残1は正常進行中, 当該6件はgateコードに到達する前に落ちるため因果なし, 同値確認だけでは自分のcommitが壊した回帰を見逃す, gate commit flow設計書キャンペーンの完了, 実装の多重化を発見したら, 26に軍師はこの型で3回誤った, 判定が読む環境変数を実装で確かめ, 軍師は同じデータで『該当0件』とした, 方式選択が個別の誤りを吸収することがある, ∴★新しい教訓が新しい誤読を生んだ, 前者の教訓を後者に当ててはならない, source shogun gist publish, ★『教訓は3度守られなかった, 本日の組織的到達点 家老の最終行を原文のまま記録・将軍指示, bats側で $status eq を見る書き方は, source karo latency analysis, source karo scope claim family, 既存欠陥FAILは掘り当てた在庫であり人質にしない, 宣言後の指摘で初めて定義を修正した, source lord haste remedy, フォールバックという発想自体がバグの真因である, 殿が明示した方針 例 『今は調査の時間, 受け手は指示・訂正・懸念の形で来たものを検証せず実行するため, 運用経路0件 testからしか実行されない, n 1でなくなった, 本日の還流弾が是正済みの問題』, 全軍恒久教訓 家老blt 軍師blt ・ 『自分で数えると, 実証 軍師が自分の『同型11回』を検証したところ, source 家老blt 軍師blt, 家老・将軍のgateには0件, 軍師自身が自分に不利な事実として提出, source 殿裁定 lord conversation, gistは殿閲覧用ミラー, 訂正の正道 過去行の手書き換え禁止 捏造, source kotaro r6 timing probe, source kotaro r6 fixture1, source kotaro r6 fixture2, リンクを含めない場合の挙動を家老が実測する, fixture body without a link, 次回このtestに遭遇したら, R6のL3表示文言を検証する家老のテスト, L3表示文言, source kotaro ac1 check, fixture no link, source gunshi multilink probe, source gunshi multilink probe2, source gunshi reverify3, source gunshi reverify5, source karo gate probe, karo_probe_reached_20260727, 同一報告が入口ごとにPASS BLOCKへ分岐する, insight在庫だけでは再発したため, source lord ruling, mapping注入またはautofix検討, 完了宣言 12check全クローズ→台帳再集計→第二弾序列, 家老の自立配備 karo direct, v3 CLOSED, commit a4ababd16, 殿裁定2026 最上位訂正 『誰の判断だ？第二弾が優先, 誰の判断だ？第二弾が優先, 将軍はその後, scopeは2スクリプト2弾のまま, 本弾で正しいファイルへの実装を素早く進める土台になった, P2 reflux SSOT修正 才蔵, source shogun session save, commit 1be8bee8f, scope拡張が全量test要求へ化ける, source round5 v141 lgtm, 将軍が骨子起草→殿提示, 家老の序列表 上位20 setup寄与 が掲示板に上がり次第, 序列表は家老抽出中→確定でv1 1改版→殿裁可→解禁, 不変indexへの辺ごとgit照会を一括集合へ変換する, 不成立ならBLOCKする, promotion v1 2は待機継続 殿裁定00, promotion v1 2は指示があるでも待機せよ, 共通修正dbf26c3de後はdirect selected, fixture専用hooksへ明示modeでinstallし, 既存policy gate PASSでもFNを検出しなかった |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0, 要件 ①実行と承認の分離 実行者の自己承認禁止, cmd完了品質へ単調保持する履歴である, semantic_index_update_158秒, source lord conversation, 報告するのは正しい結果が出た時と, 完了gateのown commit検査だけでは, 回帰13 PASS, 復元184 exact完了, 個別Unit上位test semantic index update 072秒の支配項を除去し, 原因はlive PIDだけをhealthy扱いしたことと, 各wrapperはexact test名のok行を検証する, source gunshi session, 三層health未貫通0件となること, 教訓 fixture≠live, source commit ab302df7b inbox, startup gate検出を一体化する, これは指摘した2失敗と別修正のため赤残存の可能性, source shogun recovery, tmp等の隔離コピーへ複製してから旧版パッチを当てて検証する, 今回は3 3修正し355 356から356 356へ改善, 背景再入回帰を追加した結果, fixture広義同型16件（家老11 軍師5）, source dummy, 家老自身のD0修正・実装commitは禁止, 接続cmdがactive時だけWAIT, cmd完了監視はHEADを使用, commit f4d94ab4, 新規cmd 0件, source shogun d0 fix, source commit 64fcd42c9, WARN_hook+test, startup BLOCK→WARN, 時間がかかるものはすべてバグとして扱い, source session shogun ls091, source lessons shogun, 軍師は2回目で注記, P1 全チェックTIMING追加, PASS, daemon fixtureは本番永続daemonを起動せず, 即時diffで検知し復元, 選定とreservation記録が非原子的で, 隔離source fixtureは必須依存追加へ追随させる, daemonのsource依存追加とログ契約強化を行った際, producerのみgit履歴生成, 全て二値条件で実装する, obsidianは有効活用されているか？, 比較境界は両辺を同一fixtureで型正規化する, Git tree解決可能を型検証する, fix R1, 家老hotfix ab8d6a9f5で境界3 PASS済み, GA 304は残存5行でCI実行前FAIL, 外部repo identity fixture隔離, GA_304_CI_FAIL, cmd complete本体へsource依存を追加した際, 確認せずに想像するから結果が出ない』, wrapperへsource追加時, 復元testは後発依存と実git状態をfixture化する, source session shogun, source lord ruling typo fix, source lord confirm, source n series all closed, 誤爆扱い問い返し禁止, 結果 未反映15→1件 残1は正常進行中, 当該6件はgateコードに到達する前に落ちるため因果なし, 同値確認だけでは自分のcommitが壊した回帰を見逃す, gate commit flow設計書キャンペーンの完了, 実装の多重化を発見したら, 26に軍師はこの型で3回誤った, 判定が読む環境変数を実装で確かめ, 軍師は同じデータで『該当0件』とした, 方式選択が個別の誤りを吸収することがある, ∴★新しい教訓が新しい誤読を生んだ, 前者の教訓を後者に当ててはならない, source shogun gist publish, ★『教訓は3度守られなかった, 本日の組織的到達点 家老の最終行を原文のまま記録・将軍指示, bats側で $status eq を見る書き方は, source karo latency analysis, source karo scope claim family, 既存欠陥FAILは掘り当てた在庫であり人質にしない, 宣言後の指摘で初めて定義を修正した, source lord haste remedy, フォールバックという発想自体がバグの真因である, 殿が明示した方針 例 『今は調査の時間, 受け手は指示・訂正・懸念の形で来たものを検証せず実行するため, 運用経路0件 testからしか実行されない, n 1でなくなった, 本日の還流弾が是正済みの問題』, 全軍恒久教訓 家老blt 軍師blt ・ 『自分で数えると, 実証 軍師が自分の『同型11回』を検証したところ, source 家老blt 軍師blt, 家老・将軍のgateには0件, 軍師自身が自分に不利な事実として提出, source 殿裁定 lord conversation, gistは殿閲覧用ミラー, 訂正の正道 過去行の手書き換え禁止 捏造, source kotaro r6 timing probe, source kotaro r6 fixture1, source kotaro r6 fixture2, リンクを含めない場合の挙動を家老が実測する, fixture body without a link, 次回このtestに遭遇したら, R6のL3表示文言を検証する家老のテスト, L3表示文言, source kotaro ac1 check, fixture no link, source gunshi multilink probe, source gunshi multilink probe2, source gunshi reverify3, source gunshi reverify5, source karo gate probe, karo_probe_reached_20260727, 同一報告が入口ごとにPASS BLOCKへ分岐する, insight在庫だけでは再発したため, source lord ruling, mapping注入またはautofix検討, 完了宣言 12check全クローズ→台帳再集計→第二弾序列, 家老の自立配備 karo direct, v3 CLOSED, commit a4ababd16, 殿裁定2026 最上位訂正 『誰の判断だ？第二弾が優先, 誰の判断だ？第二弾が優先, 将軍はその後, scopeは2スクリプト2弾のまま, 本弾で正しいファイルへの実装を素早く進める土台になった, P2 reflux SSOT修正 才蔵, source shogun session save, commit 1be8bee8f, scope拡張が全量test要求へ化ける, source round5 v141 lgtm, 将軍が骨子起草→殿提示, 家老の序列表 上位20 setup寄与 が掲示板に上がり次第, 序列表は家老抽出中→確定でv1 1改版→殿裁可→解禁, 不変indexへの辺ごとgit照会を一括集合へ変換する, 不成立ならBLOCKする, promotion v1 2は待機継続 殿裁定00, promotion v1 2は指示があるでも待機せよ, 共通修正dbf26c3de後はdirect selected, fixture専用hooksへ明示modeでinstallし, 既存policy gate PASSでもFNを検出しなかった, 完了reflux非発火と鮮度gate検出を混同しない |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -2107,6 +2115,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T05:45:00+09:00 bmej82x96 toolu_01G9zAWbrLJ1sxUbUQoMhav1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/bfa514ce-7758-4a2c-ae21-510a08 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T05:45:03+09:00 bi1ensj4c toolu_013UuYmQ6mWMRbUfUbBZRCoS /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/bfa514ce-7758-4a2c-ae21-510a08 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T08:46:22+09:00 aef7986b9217f1df3 toolu_01LzTAUMQmHmyqfZZq1ziKxx /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T10:53:01+09:00 a2a21165b6ccd098f toolu_01WciRxJzN7Y3qef7LC2uL34 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
+| lesson | `L1493` 完了reflux非発火と鮮度gate検出を混同しない |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -2133,6 +2143,7 @@ codd:
 | causal_chain | `[[cmd_round7_lane1_inbox_write_20260730]]` (L1468) |
 | causal_chain | `[[cmd_karo_ci_fix_30514131026_cmd_complete_gate_baseline]]` (L1484) |
 | causal_chain | `[[cmd_karo_recon_hidden_infra_gate_hooks_20260730]]` (L1488) |
+| causal_chain | `[[cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427]]` (L1493) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -2140,7 +2151,7 @@ codd:
 |------|---|
 | id | investment_knowledge_base |
 | label | 投資知識辞書 |
-| aliases | 金融ML知識辞書, investment knowledge base, knowledge-base methods, methods dictionary, GARCH, Generalized Autoregressive Conditional Heteroskedasticity, adaptive-kalman-ms, Adaptive Kalman with Markov Switching, adaptive-momentum-cssa, Adaptive Momentum CSSA, adaptive-trend-following-crypto, Adaptive Trend-Following Crypto, all-days-not-equal, All Days Are Not Created Equal, amihud-illiquidity, Amihud Illiquidity, apt, Arbitrage Pricing Theory, arima, band-pass-cf, Christiano-Fitzgerald Band-Pass Filter, bandit-portfolio-adts, Adaptive Discounted Thompson Sampling, CADTS, bayesian-estimation, Bayesian Persistence Estimation, bootstrap-time-series, Bootstrap for Time Series, breaking-bad-trends, Breaking Bad Trends, capm, Carhart 4-Factor Model, carhart-4-factor, cointegration, cross-sectional-momentum, Cross-Sectional Momentum, cvar-expected-shortfall, CVaR, Expected Shortfall, deep-momentum-networks, Deep Momentum Networks, deep-unified-momentum, DeepUnifiedMom, deflated-sharpe-ratio, Deflated Sharpe Ratio, denoising-detoning, Denoising Detoning, dual-momentum, Dual Momentum, dynamic-momentum-learning, Dynamic Momentum Learning, ewma-volatility, EWMA Volatility, expert-aggregation-wasa, Expert Aggregation WASA, factor-momentum, Factor Momentum, fama-french-3-factor, Fama-French 3-Factor, fama-french-5-factor, Fama-French 5-Factor, fda-momentum, FDA Momentum, feature-importance, Feature Importance, fractional-differentiation, Fractional Differentiation, gerber-statistic, Gerber Statistic, granger-causality, Granger Causality, greedy-online-classifier, Greedy Online Classifier, hidden-markov-model, Hidden Markov Model, HMM, hierarchical-momentum, Hierarchical Momentum, jump-detection, Jump Detection, kalman-filter-signal, Kalman Filter Signal, kelly-criterion, Kelly Criterion, l1-trend-filter, L1 Trend Filter, m17_flair, FLAIR, mean-variance-optimization, Mean-Variance Optimization, MVO, median-momentum, Median Momentum, meta-labeling, momentum-crashes, Momentum Crashes, momentum-fragility-dual, Momentum Fragility Dual, momentum-life-cycle, Momentum Life Cycle, momentum-performance-shifts, Momentum Performance Shifts, momentum-transformer, Momentum Transformer, momentum-turning-points, Momentum Turning Points, network-momentum, Network Momentum, oos-r-squared, OOS R Squared, optics-clustering, OPTICS Clustering, optimal-dynamic-momentum, Optimal Dynamic Momentum, optimal-lookback-halflife, Optimal Lookback Halflife, p-average-method, p-average method, permutation-entropy, Permutation Entropy, probabilistic-sharpe-ratio, Probabilistic Sharpe Ratio, rank-persistence, Rank Persistence, re-evaluating-trend-factors, Re-evaluating Trend Factors, regime-switching, Regime Switching, savitzky-golay, sequential-bootstrap, Sequential Bootstrap, shannon-entropy-gate, Shannon Entropy Gate, sharpe-ratio-inference-2025, Sharpe Ratio Inference, shrinkage-estimators, Shrinkage Estimators, slow-momentum-cpd, Slow Momentum CPD, ssa, Singular Spectrum Analysis, stochastic-jump-model, Stochastic Jump Model, structural-break-tests, Structural Break Tests, transfer-entropy, Transfer Entropy, tsmom, Time-Series Momentum, var, vigilant-bold-asset-allocation, VAA, BAA, vmd, Variational Mode Decomposition, volatility-scaling, Volatility Scaling, vpin, Ward, ward-hierarchical-clustering, Ward Hierarchical Clustering, wavelet-jump-classification, Wavelet Jump Classification, x-trend-few-shot, X-Trend Few-Shot, garch, APT, ARIMA, CAPM, Cointegration, Meta-Labeling, Savitzky-Golay, VAR, VPIN, 旧忍法 Wardも削除対象にいれよう, ただし, p average freshnessがAPI DNS障害時に既存DB鮮度fallbackへ到達せずバッチ未実行と通信障, 投資辞書M86_carry_tsmom_filter |
+| aliases | 金融ML知識辞書, investment knowledge base, knowledge-base methods, methods dictionary, GARCH, Generalized Autoregressive Conditional Heteroskedasticity, adaptive-kalman-ms, Adaptive Kalman with Markov Switching, adaptive-momentum-cssa, Adaptive Momentum CSSA, adaptive-trend-following-crypto, Adaptive Trend-Following Crypto, all-days-not-equal, All Days Are Not Created Equal, amihud-illiquidity, Amihud Illiquidity, apt, Arbitrage Pricing Theory, arima, band-pass-cf, Christiano-Fitzgerald Band-Pass Filter, bandit-portfolio-adts, Adaptive Discounted Thompson Sampling, CADTS, bayesian-estimation, Bayesian Persistence Estimation, bootstrap-time-series, Bootstrap for Time Series, breaking-bad-trends, Breaking Bad Trends, capm, Carhart 4-Factor Model, carhart-4-factor, cointegration, cross-sectional-momentum, Cross-Sectional Momentum, cvar-expected-shortfall, CVaR, Expected Shortfall, deep-momentum-networks, Deep Momentum Networks, deep-unified-momentum, DeepUnifiedMom, deflated-sharpe-ratio, Deflated Sharpe Ratio, denoising-detoning, Denoising Detoning, dual-momentum, Dual Momentum, dynamic-momentum-learning, Dynamic Momentum Learning, ewma-volatility, EWMA Volatility, expert-aggregation-wasa, Expert Aggregation WASA, factor-momentum, Factor Momentum, fama-french-3-factor, Fama-French 3-Factor, fama-french-5-factor, Fama-French 5-Factor, fda-momentum, FDA Momentum, feature-importance, Feature Importance, fractional-differentiation, Fractional Differentiation, gerber-statistic, Gerber Statistic, granger-causality, Granger Causality, greedy-online-classifier, Greedy Online Classifier, hidden-markov-model, Hidden Markov Model, HMM, hierarchical-momentum, Hierarchical Momentum, jump-detection, Jump Detection, kalman-filter-signal, Kalman Filter Signal, kelly-criterion, Kelly Criterion, l1-trend-filter, L1 Trend Filter, m17_flair, FLAIR, mean-variance-optimization, Mean-Variance Optimization, MVO, median-momentum, Median Momentum, meta-labeling, momentum-crashes, Momentum Crashes, momentum-fragility-dual, Momentum Fragility Dual, momentum-life-cycle, Momentum Life Cycle, momentum-performance-shifts, Momentum Performance Shifts, momentum-transformer, Momentum Transformer, momentum-turning-points, Momentum Turning Points, network-momentum, Network Momentum, oos-r-squared, OOS R Squared, optics-clustering, OPTICS Clustering, optimal-dynamic-momentum, Optimal Dynamic Momentum, optimal-lookback-halflife, Optimal Lookback Halflife, p-average-method, p-average method, permutation-entropy, Permutation Entropy, probabilistic-sharpe-ratio, Probabilistic Sharpe Ratio, rank-persistence, Rank Persistence, re-evaluating-trend-factors, Re-evaluating Trend Factors, regime-switching, Regime Switching, savitzky-golay, sequential-bootstrap, Sequential Bootstrap, shannon-entropy-gate, Shannon Entropy Gate, sharpe-ratio-inference-2025, Sharpe Ratio Inference, shrinkage-estimators, Shrinkage Estimators, slow-momentum-cpd, Slow Momentum CPD, ssa, Singular Spectrum Analysis, stochastic-jump-model, Stochastic Jump Model, structural-break-tests, Structural Break Tests, transfer-entropy, Transfer Entropy, tsmom, Time-Series Momentum, var, vigilant-bold-asset-allocation, VAA, BAA, vmd, Variational Mode Decomposition, volatility-scaling, Volatility Scaling, vpin, Ward, ward-hierarchical-clustering, Ward Hierarchical Clustering, wavelet-jump-classification, Wavelet Jump Classification, x-trend-few-shot, X-Trend Few-Shot, garch, APT, ARIMA, CAPM, Cointegration, Meta-Labeling, Savitzky-Golay, VAR, VPIN, 旧忍法 Wardも削除対象にいれよう, ただし, p average freshnessがAPI DNS障害時に既存DB鮮度fallbackへ到達せずバッチ未実行と通信障, 投資辞書M86_carry_tsmom_filter, Sharpeのベンチマーク優位性は概ね維持されているが |
 | related_concepts | dmsignal_operations, semantic_dictionary_design, causal_traversal_pipeline |
 
 | 種別 | パス/参照 |
@@ -2267,6 +2278,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T03:10:17+09:00 adc48985166c14900 toolu_01WQ9B57zHu8sEW5U5EH6tvb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T05:41:12+09:00 a2cb1f75a8fa89baa toolu_01C4PTyikH6J4rRnurf6ekvq /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T09:23:34+09:00 a1b849d62b3241e39 toolu_01RzRBZxJecycZ9ydDj5x7gg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T11:54:16+09:00 6/8や7/8という件数だけを見て「Sharpe不変性が弱い」と言うのは強すぎます。 特にDM6では、 6/8でSPY Sharpe超過 E=7の差は −0.014 E=4の差は −0.067 Sharpe全体のレンジは約0.15 PF S |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:33:15+09:00 a6f5d5e63a8a6dbe8 toolu_01RmAEKZNtdLPYt4dvLZdXNN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -2805,6 +2818,7 @@ codd:
 | causal | `cmd_4195` origin: [[殿ntfy_SIGNAL_CHANGE_ALERT_20260730]] -> [[同一署名ALERT3日連続反復]] -> [[cmd_4195反復実体偵察]] |
 | causal | `cmd_karo_hotfix_commit_cmd4196_context_boundary_20260730` files_modified: [[production_parity]] |
 | lesson | `L921` open-to-open全月パリティはbootstrapとlive MTDを独立境界として実装する |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T10:52:39+09:00 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=4 portfolios=4 dates=2026-07-30 |
 
 ## deepdive_principles — deepdive原理
 
@@ -3282,6 +3296,7 @@ codd:
 | causal | `cmd_karo_hotfix_commit_generated_knowledge_unblock_push_20260730` files_modified: [[growth_loop]] |
 | causal | `cmd_karo_hotfix_ga417_infrastructure_trigger_20260730` files_modified: [[growth_loop]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T14:33:24+09:00 続けよ |
+| causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[growth_loop]] |
 | causal_chain | `[[cmd_karo_impl_b45_memory_cache_rowid_watermark_20260726]]` (L1344) |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_instruction_sync_20260728]]` (L1422) |
 | causal_chain | `[[cmd_karo_hotfix_gate_clear_notify_dedup_20260728]]` (L1423) |
@@ -3911,6 +3926,8 @@ codd:
 | lesson | `L1490` test_select.shの依存マップがscripts/report_field_set.shに対しtest_report_field_set_validation.batsを含まない |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T10:05:42+09:00 次の実験の整理 実験2：執行日だけの感度分析 今回のN日前実験とは逆に、まず以下を固定します。 モメンタム測定日：月末最終営業日のclose シグナル：N＝0の現行シグナルに固定 変更するもの：翌月の執行日だけ 執行価格：各営業日のopen |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T10:47:20+09:00 会話継続性などは我らのシステムで担保されているのでは？重要なのはアカウントの切り替えがシームレスにスムーズにできれば便利だなというのと、現在の使用状況と残り時間がリアルタイムで容易に確認できることかな。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:08:49+09:00 この分解結果はかなり重要です。結論としては、**DM6のE感度は「リバランス時の切替失敗」ではなく、月初数日間を保有期間に含めるかどうかによるカレンダー区間効果が中心**と解釈するのが自然です。 特に、差の76.3％が非リバランス月で生じ、 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:36:31+09:00 その通りです。少し原因分析へ踏み込みすぎました。 今回の主目的は一貫して、 > **測定日や執行日を0〜7営業日の範囲で動かしても、戦略の優位性が壊れないか** を見ることです。最適なNやE、月初プレミアムの原因を特定することではありません |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
 | causal_chain | `[[cmd_karo_hotfix_ga170_context_freshness_202607030012]]` (L943) |
@@ -4023,6 +4040,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga414_context_freshness_20260729` files_modified: [[verify_dont_imagine]] |
 | causal | `cmd_karo_hotfix_commit_generated_knowledge_unblock_push_20260730` files_modified: [[verify_dont_imagine]] |
 | causal | `cmd_karo_hotfix_ga417_infrastructure_trigger_20260730` files_modified: [[verify_dont_imagine]] |
+| causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[verify_dont_imagine]] |
 
 ## ultimate_state_principle — 究極系原則
 
@@ -4912,6 +4930,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga417_dm_signal_research_20260730` files_modified: [[dmsignal_operations]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T01:21:19+09:00 少し 誤解があるんじゃないか 保有 シグナルを決めるモメンタムは常にクローズtoクローズで決めている。リターンはオープンto オープンとclose to close で計算している 。シグナルと 保有シグナル、リターンを誤解している。そして |
 | causal | `cmd_4198` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_4199` files_modified: [[dmsignal_operations]] |
 
 ## admin_ui_redesign_asis_tobe — DM-Signal Admin画面一覧性改修設計書
 
@@ -5786,6 +5805,9 @@ codd:
 | causal | `cmd_karo_hotfix_ga417_infrastructure_trigger_20260730` files_modified: [[agent_formation_management]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T13:55:11+09:00 セッション完全状態2026-07-30 13:55(強くてニューゲーム復帰点): (1)[[第五弾]]=✅CLOSED(全10弾+wave-final 2800/2800、正本v1.7 gist 5259aa640)。(2)[[第七弾]]= |
 | cmd | `cmd_karo_recon_hidden_infra_deploy_lifecycle_20260730` |
+| causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[agent_formation_management]] |
+| lesson | `L1494` fail-closed依存のfixtureはproduction前提を明示生成する |
+| cmd | `cmd_karo_ci_fix_30608934057_deploy_task_backlink_selector` (`tests/unit/test_deploy_task.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
@@ -5814,6 +5836,7 @@ codd:
 | causal_chain | `[[cmd_round7_lane10_ninja_monitor_stall_20260730]]` (L1475) |
 | causal_chain | `[[cmd_karo_hotfix_cmd_save_deploy_time_contract_parity_20260730]]` (L1476) |
 | causal_chain | `[[cmd_karo_recon_test7_parallel_race_20260730_recon2]]` (L1477) |
+| causal_chain | `[[cmd_karo_ci_fix_30608934057_deploy_task_backlink_selector]]` (L1494) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -5944,6 +5967,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga414_context_freshness_20260729` files_modified: [[shogun_android_app]] |
 | causal | `cmd_karo_hotfix_commit_generated_knowledge_unblock_push_20260730` files_modified: [[shogun_android_app]] |
 | causal | `cmd_karo_hotfix_ga417_infrastructure_trigger_20260730` files_modified: [[shogun_android_app]] |
+| causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[shogun_android_app]] |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
@@ -6567,6 +6591,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T02:07:35+09:00 [[殿直筆仕様書_N日前スクリーニング_20260731]]: 殿が自ら初期スクリーニング仕様書を起草(02:05)。要点=(1)目的=月末N日前モメンタム計算時の成績変化を素早く確認。本番採用可否やアルファ検定は行わない (2)対象=代表 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T03:21:55+09:00 a38c237990e2d4c96 toolu_01HPCw7b7Vp3RJLgsTKzteJ9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T08:53:09+09:00 確認しました。**大枠の実装と数値集計は整合しており、N感度に対する初期ロバストネス検証として成立しています。** ただし、結論は少し分けて表現した方が正確です。 ## 結論 * **DM6：N＝0〜7に対して強くロバスト** * **DM |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T11:13:05+09:00 acf3ae62bacdb48b2 toolu_01QwEMSHaxY7fx6ZdrHknHp5 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T11:49:53+09:00 実験設計、parity、closed cohort、欠損処理、集計の整合性はかなり良く、結果自体は初期感度分析として採用可能です。 ただし、解釈に重要な修正が3点あります。 1. DM6を「全Eでロバスト」と一括評価しない方がよい DM6は |
 
 ## rebalancer_app — Rebalancerアプリ
 
@@ -6635,6 +6661,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T20:19:37.731019+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T10:32:37+09:00 リバランサーの進捗を報告して、ドキュメントを更新せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T10:59:05+09:00 家老はrebalancerとdm-sigbalを混同していないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:03:53+09:00 非リバランス月の保有方法が本番と違うのでは？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:52:26+09:00 内容が薄いな。あとまとめすぎでは？今回は執行日＝リバランス日をずらしてもロバストネスだったという内容だ。一緒にするな |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -6897,6 +6925,7 @@ codd:
 | causal | `cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_frozen_promotion_startup_classification_20260731` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_hotfix_q6_latest_invalid_fallback_202607311427` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
@@ -7599,6 +7628,7 @@ codd:
 | causal | `cmd_training_speed_causal_backlink_counts_20260717024046` files_modified: [[causal_traversal_pipeline]] |
 | causal | `cmd_training_speed_causal_backlinks_20260717043257` files_modified: [[causal_traversal_pipeline]] |
 | causal | `cmd_karo_impl_a2_semantic_fallback_visible_20260727` files_modified: [[causal_traversal_pipeline]] |
+| causal | `cmd_karo_hotfix_causal_backlink_parity_failclosed_202607311459` files_modified: [[causal_traversal_pipeline]] |
 
 ## infrastructure_ops — インフラ運用基盤
 
@@ -7777,6 +7807,7 @@ codd:
 | causal | `cmd_karo_hotfix_commit_generated_knowledge_unblock_push_20260730` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_ga417_infrastructure_trigger_20260730` files_modified: [[infrastructure_ops]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T16:02:02+09:00 af5e2f37618f64b78 toolu_01Af1iwPDi8gLSgtsGWUvpxf /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
+| causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
 | causal_chain | `[[cmd_karo_hotfix_heavy_admission_lock_release_20260729]]` (L1443) |
@@ -8125,6 +8156,8 @@ codd:
 | cmd | `cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730` (`tests/unit/test_gate_shogun_startup.bats`, `scripts/gates/gate_shogun_startup.sh`) |
 | causal | `cmd_karo_hotfix_frozen_promotion_startup_classification_20260731` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_karo_hotfix_frozen_promotion_startup_classification_20260731` (`scripts/gates/gate_shogun_startup.sh`, `tests/unit/test_gate_shogun_startup.bats`) |
+| causal | `cmd_karo_hotfix_q6_latest_invalid_fallback_202607311427` files_modified: [[gate_quality_framework]] |
+| cmd | `cmd_karo_hotfix_q6_latest_invalid_fallback_202607311427` (`scripts/gates/gate_shogun_startup.sh`, `tests/unit/test_gate_shogun_startup.bats`) |
 | causal_chain | `[[cmd_3658]]` (L936) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
@@ -8591,6 +8624,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga414_context_freshness_20260729` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_karo_hotfix_commit_generated_knowledge_unblock_push_20260730` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_karo_hotfix_ga417_infrastructure_trigger_20260730` files_modified: [[multi_cli_event_commonization]] |
+| causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[multi_cli_event_commonization]] |
 
 ## codex_goal_mode — Codex /goal 自律目標モード
 
@@ -8759,6 +8793,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_active_pointer_tmp_race_20260730` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_commit_generated_knowledge_unblock_push_20260730` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_ga417_infrastructure_trigger_20260730` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -8935,7 +8970,12 @@ codd:
 | causal | `cmd_reflux_backlink_202607300530_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_karo_hotfix_commit_generated_knowledge_unblock_push_20260730` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_karo_hotfix_commit_cmd4196_context_boundary_20260730` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607311036_kagemaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607311407_saizo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607311429_kotaro` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607311511_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607311610_saizo` — [[semantic_causal_automation]] -> `docs/research/gunshi_idle_infra_bugs_session_20260724.md` |
+| causal | `cmd_reflux_backlink_202607311610_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607311711_saizo` — [[semantic_causal_automation]] -> `docs/research/gunshi_idle_log_append_sequential_block_20260720.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
@@ -9450,6 +9490,9 @@ codd:
 | cmd | `cmd_reflux_backlink_202607292152_saizo` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607300120_saizo` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607300530_saizo` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607311407_saizo` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607311511_saizo` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607311610_saizo` (`docs/semantic-index/index.md`) |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_b7_b19_20260727]]` (L1376) |
 
 ## provisional_tobisaru — 仮: Tobisaru
@@ -9657,6 +9700,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607300128_kotaro` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607300516_kotaro` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_insight_202607301925_kotaro` (`queue/insights.yaml`) |
+| cmd | `cmd_reflux_backlink_202607311429_kotaro` (`docs/semantic-index/index.md`) |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
@@ -9738,6 +9782,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607290925_kagemaru` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607300508_kagemaru` (`docs/semantic-index/index.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T16:01:20+09:00 bp47thg2a toolu_01Ech3nRaYNiQytwuhoC22A5 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68e-d7b2aa |
+| cmd | `cmd_reflux_backlink_202607311036_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_lessons — 仮: Lessons
 
@@ -10510,6 +10555,7 @@ codd:
 | lesson | `L1412` 成果物commit repoとproject repoを全consumerで分離せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T14:26:10+09:00 第二弾のgistをアップデートしてくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T14:59:50+09:00 内容を説明して、DM-signalへの応用可能性について書いた記事を作成して |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:37:58+09:00 では前回のnote記事と同じトーンとスタイルで下書きをアップしてくれ。 |
 | causal_chain | `[[cmd_karo_hotfix_training_generation_dedup_202607102016]]` (L1027) |
 | causal_chain | `[[cmd_karo_hotfix_gate_commit_repo_root_20260727]]` (L1412) |
 
@@ -10943,6 +10989,9 @@ codd:
 | cmd | `cmd_karo_hotfix_commit_cmd4196_context_boundary_20260730` (`context/dm-signal-core.md`, `context/dm-signal-ops.md`, `context/semantic-map.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T04:53:40.910850+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T18:07:59.590475+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T01:48:31.859411+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T02:06:27.624678+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T03:20:02.898219+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -11212,6 +11261,7 @@ codd:
 | causal | `cmd_karo_hotfix_loop_ledger_startup_escalation_dedup_20260729` files_modified: [[push_batch_operation]] |
 | causal | `cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730` files_modified: [[push_batch_operation]] |
 | causal | `cmd_karo_hotfix_frozen_promotion_startup_classification_20260731` files_modified: [[push_batch_operation]] |
+| causal | `cmd_karo_hotfix_q6_latest_invalid_fallback_202607311427` files_modified: [[push_batch_operation]] |
 
 ## control_plane_fork_gitwalk_countermeasure — 制御面fork・gitwalk恒久対策
 
