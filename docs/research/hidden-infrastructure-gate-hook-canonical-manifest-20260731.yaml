@@ -25,7 +25,7 @@ count_contract:
   superseded_with_evidence: 4
   needs_new_probe: 0
   invariant: selected == discovered; executed == count(receipts with executed=true); selected == open_confirmed + superseded_with_evidence + needs_new_probe; caller_unclassified == 0
-  execution_note: Coverage and execution are separate. Only R01 has a fixed-code-baseline runtime receipt; unexecuted findings are never counted PASS.
+  execution_note: Coverage and execution are separate. All 17 findings have fixed-code-baseline runtime receipts; unexecuted findings are never counted PASS.
 dependency_contract:
   parallel_ok: [AC1, AC2]
   AC3_requires: [AC1, AC2]
@@ -56,7 +56,7 @@ runtime_probe_receipts:
     rc: 0
     artifact_path: docs/research/hidden-infrastructure-gate-hook-r01-receipt-20260731.txt
     artifact_hash_scope: entire receipt byte sequence including the final LF
-    artifact_sha256: b88355c80aadbd8a0615025072f25c699fc7df3ecd9d5b93c7bf2ccf2495ac9a
+    artifact_sha256: 10804a0d7d09a6883e960c240b9c3e7f0e7220b795ae04038723f98d1147780c
     exact_executable_command: >-
       bash -c 'set -euo pipefail; target=/mnt/c/tools/multi-agent-shogun/queue/inbox/hanzo.yaml; legacy=${target//[^[:alnum:]._-]/_}; legacy=/tmp/shogun_lock_${legacy}.lock; source scripts/lib/lock_path.sh; canonical=$(lock_path "$target"); canonical2=$(lock_path "$target"); printf "positive legacy=%s canonical=%s equal=%s\n" "$legacy" "$canonical" "$([ "$legacy" = "$canonical" ] && echo yes || echo no)"; printf "negative canonical_1=%s canonical_2=%s equal=%s\n" "$canonical" "$canonical2" "$([ "$canonical" = "$canonical2" ] && echo yes || echo no)"'
     raw_bounded_output:
