@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-31 cmd_4199 reviewed source boundary -->
-<!-- dm_signal_research_reflux: fingerprint=ea6f6216f04556ad9f339d9e4f75d99bad99e4d42a2937a966dc675e950ddc27; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgY21kXzQxOTlf5Z+36KGM5pel5oSf5bqm5YiG5p6Q44G45ZCM5pyf5riI44G/ -->
+<!-- dm_signal_research_reflux: fingerprint=55cab931e652cbfef227ad5ae02670d0a850ba678ff6a04c0a5a55539db96922; mode=non-target; evidence_b64=Y21kX2thcm9fcmVjb25fZG02X2UwX2U0X21vbnRoc3RhcnRfMjAyNjA3MzE6IOS4gOWbnumZkOOCiuOBruWBteWvn+WIhuaekOe1kOaenChCTE9DS+WIpOWumuOBruWun+iovOODh+ODvOOCvynjgILml6LlrZhjb250ZXh044K744Kv44K344On44Oz44G444Gu5oGS5LmF55+l6KaL5piH5qC844Gv5a626ICBL+i7jeW4q+OBruODrOODk+ODpeODvOW+jOWIpOaWreOBqOOBl+OAgeacrHRhc2vjga5zY29wZeOBr+WIhuaekOWun+aWveOBqOeUn+ODh+ODvOOCv+WgseWRiuOBq+mZkOWumg== -->
 <!-- source_commit:4a93ce7b reason:cmd_4199 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=4a93ce7b -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
