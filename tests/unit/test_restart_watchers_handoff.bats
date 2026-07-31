@@ -13,9 +13,11 @@ setup() {
 }
 
 @test "rolling handoff enforces root floor and three stable terminal samples" {
+    grep -Fq 'prefill_count="$(watcher_process_count)"' "$SCRIPT"
+    grep -Fq 'rolling handoff前のwatcher補充不全' "$SCRIPT"
     grep -Fq 'current" -lt $((EXPECTED_WATCHER_COUNT - 1))' "$SCRIPT"
     grep -Fq 'for sample in 1 2 3' "$SCRIPT"
-    run bash -c 'n=9; min=$n; for agent in {1..9}; do n=$((n-1)); ((n<min)) && min=$n; n=$((n+1)); done; printf "min=%s final=%s samples=%s\n" "$min" "$n" "9,9,9"'
+    run bash -c 'n=7; while ((n<9)); do n=$((n+1)); done; min=$n; for agent in {1..9}; do n=$((n-1)); ((n<min)) && min=$n; n=$((n+1)); done; printf "min=%s final=%s samples=%s\n" "$min" "$n" "9,9,9"'
     [ "$status" -eq 0 ]
     [ "$output" = "min=8 final=9 samples=9,9,9" ]
 }
@@ -85,7 +87,7 @@ echo "missing=0 duplicate=0 deliveries=1"
 
 @test "watcher inventory accepts bash spellings and rejects command-text false positives" {
     run awk '
-        $3 ~ /^inbox_watcher/ && ($4 == "bash" || $4 ~ /\/bash$/) &&
+        ($3 ~ /^inbox_watcher/ || $3 == "bash") && ($4 == "bash" || $4 ~ /\/bash$/) &&
         $5 ~ /\/inbox_watcher\.sh$/ && $6 ~ /^[a-z][a-z0-9_-]*$/ {
             pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
         }
@@ -99,13 +101,17 @@ echo "missing=0 duplicate=0 deliveries=1"
 202 201 inbox_watcher.s bash /repo/scripts/inbox_watcher.sh saizo pane
 301 1 bash /bin/bash -lc ps | rg '/inbox_watcher.sh karo'
 401 999 inbox_watcher.s /bin/bash /repo/scripts/inbox_watcher.sh vanished pane
+501 1 bash bash /repo/scripts/inbox_watcher.sh fresh pane
+502 501 bash bash /repo/scripts/inbox_watcher.sh fresh pane
 PS
     [ "$status" -eq 0 ]
-    [ "$(printf '%s\n' "$output" | wc -l)" -eq 3 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 4 ]
     [[ "$output" == *"101 1 inbox_watcher.s /bin/bash"* ]]
     [[ "$output" == *"201 1 inbox_watcher.s bash"* ]]
     [[ "$output" == *"401 999 inbox_watcher.s /bin/bash"* ]]
+    [[ "$output" == *"501 1 bash bash"* ]]
     [[ "$output" != *"102 101"* ]]
     [[ "$output" != *"202 201"* ]]
     [[ "$output" != *"301 1"* ]]
+    [[ "$output" != *"502 501"* ]]
 }

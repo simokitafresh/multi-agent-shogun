@@ -14,10 +14,11 @@ watcher_processes() {
     # Match process identity, not an arbitrary occurrence in the argument text.
     # `ps ... args` alone also sees this regex inside `bash -lc "..."`, while
     # the old literal `bash` prefix misses the production `/bin/bash` argv[0].
-    # Linux exposes a script process as the truncated `inbox_watcher.s` comm;
-    # that identity + exact argv[0]/script argv positions rejects both cases.
+    # Linux normally exposes the script as truncated `inbox_watcher.s`, but a
+    # freshly launched watcher can remain `bash`; exact argv positions reject
+    # command-text false positives in both states.
     ps -eo pid=,ppid=,comm=,args= 2>/dev/null | awk '
-        $3 ~ /^inbox_watcher/ && ($4 == "bash" || $4 ~ /\/bash$/) &&
+        ($3 ~ /^inbox_watcher/ || $3 == "bash") && ($4 == "bash" || $4 ~ /\/bash$/) &&
         $5 ~ /\/inbox_watcher\.sh$/ && $6 ~ /^[a-z][a-z0-9_-]*$/ {
             pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
         }
@@ -139,7 +140,7 @@ verify_watcher_count() {
     if [ "$actual" -ne "$expected" ]; then
         echo "ERROR: inbox_watcherプロセス数が不正です (actual=${actual}, expected=${expected})"
         ps -eo pid=,ppid=,comm=,args= 2>/dev/null | awk '
-            $3 ~ /^inbox_watcher/ && ($4 == "bash" || $4 ~ /\/bash$/) &&
+            ($3 ~ /^inbox_watcher/ || $3 == "bash") && ($4 == "bash" || $4 ~ /\/bash$/) &&
             $5 ~ /\/inbox_watcher\.sh$/ && $6 ~ /^[a-z][a-z0-9_-]*$/ {
                 pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
             }
@@ -166,6 +167,26 @@ declare -a LAUNCHED_PIDS=()
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+
+# 欠員状態からも自己修復できるよう、rolling handoffの前に不足watcherだけ補充する。
+# 先に既存watcherを落とすと、8/9開始時は安全下限7へ下がって再起動自体が停止する。
+for name in $(get_all_agents); do
+    [ -n "$(watcher_pid_for_agent "$name" | head -1)" ] && continue
+    if [ "$name" = shogun ]; then pane="shogun:main"; else pane=$(pane_lookup "$name" 2>/dev/null) || true; fi
+    [[ -z "$pane" ]] && continue
+    _cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "claude")
+    unset ASW_DISABLE_ESCALATION
+    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${name}" "$pane" "$_cli" \
+        &>> "$SCRIPT_DIR/logs/inbox_watcher_${name}.log" 200>&- &
+    disown
+    wait_for_agent_state "$name" present || { echo "ERROR: ${name} 欠員watcher補充失敗" >&2; exit 1; }
+    echo "  prefill ${name} → ${pane}"
+done
+prefill_count="$(watcher_process_count)"
+if [ "$prefill_count" -ne "$EXPECTED_WATCHER_COUNT" ]; then
+    echo "ERROR: rolling handoff前のwatcher補充不全 (${prefill_count}/${EXPECTED_WATCHER_COUNT})" >&2
+    exit 1
+fi
 
 # get_all_agents includes shogun; consuming it directly prevents duplicate identity handoff.
 for name in $(get_all_agents); do
