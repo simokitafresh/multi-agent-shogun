@@ -119,6 +119,8 @@ def _resolve_report(root, report_ref, *, allow_archived=False):
     if not report_arg.is_absolute():
         report_arg = root / report_arg
     report_arg = Path(os.path.abspath(report_arg))
+    if report_arg.is_symlink():
+        raise ValueError("report must not be a symlink")
     report = report_arg.resolve()
     reports = (root / "queue/reports").resolve()
     archived = (root / "queue/archive/reports").resolve()

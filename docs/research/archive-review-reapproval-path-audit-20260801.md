@@ -23,16 +23,19 @@ archive済みreportの再承認経路を6段で一次走査した。修正前の
 | archive direct | 1 | allow | PASS |
 | archive nested | 1 | block | PASS |
 | archive symlink escape | 1 | block | PASS |
+| archive内symlink alias | 1 | block | PASS |
+| live内symlink alias | 1 | block | PASS |
+| symlink chain | 1 | block | PASS |
 | archive missing | 1 | block | PASS |
 | bundle cmd mismatch | 1 | block | PASS |
 | 正式CLI archive generate→notify | 1 | 通知1・重複0・logical key一致 | PASS |
 
-`tests/unit/test_review_bundle.py`は上記の具体的不変量を宣言したcontract testで、6/6 PASS・SKIP 0。任務帰属テストは43/43 PASS・SKIP 0。
+`tests/unit/test_review_bundle.py`は上記の具体的不変量を宣言したcontract testで、9/9 PASS・SKIP 0。候補自身のsymlinkを解決前に拒否し、内部aliasでもfail-closeする。
 
 ## 残存障壁の全数
 
 - 修正前: 1件。`notify()`が`queue/reports`直下だけを許可し、`generate --allow-archived`が保存したarchive logical keyを拒否した。
-- 修正後: 0件。generate/notifyが共通`_resolve_report`を使用し、live/archiveとも同一のdirect-parent・realpath・存在境界を共有する。
+- 修正後: 0件。generate/notifyが共通`_resolve_report`を使用し、live/archiveとも同一の候補symlink拒否・direct-parent・realpath・存在境界を共有する。
 - 前提差異: AC1記載の「自動notify未完了」は監査時点で`notify_karo.done` 1/1へ変化していた。修正要否の根拠はmarkerの古い想定ではなく、修正前コードのnotify境界非対称とisolated再現である。
 
 origin: `[[cmd_4200]] -> [[archive_notify_boundary_asymmetry]] -> [[automatic_review_notification_gap]]`

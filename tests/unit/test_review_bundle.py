@@ -30,7 +30,10 @@ def test_resolve_report_accepts_direct_live_and_archive(tmp_path):
     assert review_bundle._resolve_report(root, archived, allow_archived=True)[1] == archived
 
 
-@pytest.mark.parametrize("kind", ["nested", "symlink", "missing"])
+@pytest.mark.parametrize(
+    "kind",
+    ["nested", "symlink_escape", "archive_alias", "live_alias", "symlink_chain", "missing"],
+)
 def test_resolve_report_rejects_archive_boundary_escapes(tmp_path, kind):
     root = _root(tmp_path)
     archive = root / "queue/archive/reports"
@@ -38,11 +41,29 @@ def test_resolve_report_rejects_archive_boundary_escapes(tmp_path, kind):
         candidate = archive / "nested/report.yaml"
         candidate.parent.mkdir()
         candidate.write_text("parent_cmd: cmd_ok\n", encoding="utf-8")
-    elif kind == "symlink":
+    elif kind == "symlink_escape":
         outside = root / "outside.yaml"
         outside.write_text("parent_cmd: cmd_ok\n", encoding="utf-8")
         candidate = archive / "report.yaml"
         candidate.symlink_to(outside)
+    elif kind == "archive_alias":
+        target = archive / "target.yaml"
+        target.write_text("parent_cmd: cmd_ok\n", encoding="utf-8")
+        candidate = archive / "alias.yaml"
+        candidate.symlink_to(target)
+    elif kind == "live_alias":
+        live = root / "queue/reports"
+        target = live / "target.yaml"
+        target.write_text("parent_cmd: cmd_ok\n", encoding="utf-8")
+        candidate = live / "alias.yaml"
+        candidate.symlink_to(target)
+    elif kind == "symlink_chain":
+        target = archive / "target.yaml"
+        target.write_text("parent_cmd: cmd_ok\n", encoding="utf-8")
+        link = archive / "link.yaml"
+        link.symlink_to(target)
+        candidate = archive / "chain.yaml"
+        candidate.symlink_to(link)
     else:
         candidate = archive / "missing.yaml"
 
