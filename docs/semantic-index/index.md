@@ -7323,6 +7323,7 @@ codd:
 | causal | `cmd_karo_impl_singleflight_hold_instrumentation_20260725` files_modified: [[report_quality_protocol]] |
 | cmd | `cmd_karo_impl_singleflight_hold_instrumentation_20260725` (`scripts/gates/gate_report_format.sh`, `tests/unit/test_gate_report_format_singleflight.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-25T22:12:43+09:00 E型検知器の完成条件は陽性対照(positive control)であり、搭載先は新規機構ではなくgate_report_format_main.pyのLG051ブロック(L1090-1132)の拡張である。LG051はスコープ述語(_ca |
+| causal | [[report_quality_protocol]] -> [[positive_control_lens]] -> [[gunshi_idle_positive_control_lens_20260725]] (`docs/research/gunshi_idle_positive_control_lens_20260725.md`) |
 | causal | `cmd_karo_impl_lg051_scope_basename_20260725` files_modified: [[report_quality_protocol]] |
 | cmd | `cmd_karo_impl_lg051_scope_basename_20260725` (`scripts/gates/gate_report_format_main.py`, `tests/unit/test_gate_report_format_lg051_scope.bats`) |
 | causal | `cmd_karo_impl_report_publish_latency_20260725` files_modified: [[report_quality_protocol]] |
