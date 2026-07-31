@@ -244,6 +244,42 @@ PY
     bash "$SCRIPT_DIR/inbox_archive.sh" karo
 }
 
+run_ntfy_once() {
+    local receipt="$CHECKPOINT_DIR/ntfy_delivery_receipt.json"
+    if python3 - "$receipt" "$CMD_ID" "$BUNDLE_FINGERPRINT" "$BUNDLE_IDENTITY" <<'PY'
+import json, sys
+try:
+    data = json.load(open(sys.argv[1], encoding="utf-8"))
+except (OSError, ValueError):
+    raise SystemExit(1)
+expected = {"version": 1, "cmd_id": sys.argv[2], "bundle_fingerprint": sys.argv[3],
+            "completion_generation": sys.argv[4], "delivered": True}
+raise SystemExit(0 if data == expected else 1)
+PY
+    then
+        printf '[cmd_complete] SKIP ntfy durable_receipt_verified\n' >&2
+        return 0
+    fi
+    timeout "${CMD_COMPLETE_NTFY_TIMEOUT:-25}" bash "$SCRIPT_DIR/ntfy_cmd.sh" "$CMD_ID" "完了" || return $?
+    python3 - "$receipt" "$CMD_ID" "$BUNDLE_FINGERPRINT" "$BUNDLE_IDENTITY" <<'PY'
+import json, os, sys, tempfile
+path, cmd_id, bundle_fp, generation = sys.argv[1:]
+data = {"version": 1, "cmd_id": cmd_id, "bundle_fingerprint": bundle_fp,
+        "completion_generation": generation, "delivered": True}
+fd, tmp = tempfile.mkstemp(prefix=".ntfy_delivery_receipt.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+PY
+    if [[ "${CMD_COMPLETE_TEST_CRASH_AFTER_NTFY_RECEIPT:-0}" = "1" ]]; then
+        printf '[cmd_complete] TEST_CRASH after ntfy receipt\n' >&2
+        exit 97
+    fi
+}
+
 if checkpoint_has sg7_consume; then
     printf '[cmd_complete] SKIP sg7_consume checkpoint_verified\n' >&2
     PROJECT_ID="$(checkpoint_project)"
@@ -328,8 +364,7 @@ if checkpoint_has ntfy; then
 else
     run_step_with_retry ntfy "${CMD_COMPLETE_NTFY_ATTEMPTS:-3}" \
         "${CMD_COMPLETE_NTFY_RETRY_DELAY:-1}" \
-        timeout "${CMD_COMPLETE_NTFY_TIMEOUT:-25}" \
-        bash "$SCRIPT_DIR/ntfy_cmd.sh" "$CMD_ID" "完了"
+        run_ntfy_once
     checkpoint_mark ntfy
 fi
 run_checkpointed inbox_archive archive_inbox_after_completion_hint

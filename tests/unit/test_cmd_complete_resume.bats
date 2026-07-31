@@ -88,6 +88,21 @@ run_complete() {
     [ "$(grep -c '^ntfy_cmd$' "$LOG")" -eq 4 ]
 }
 
+# test_necessity: an external notification already acknowledged for one
+# completion generation must not be repeated if the worker crashes before the
+# enclosing checkpoint update.
+@test "ntfy durable receipt suppresses resend after receipt-to-checkpoint crash" {
+    export CMD_COMPLETE_TEST_CRASH_AFTER_NTFY_RECEIPT=1
+    run_complete
+    [ "$status" -ne 0 ]
+    [ "$(grep -c '^ntfy_cmd$' "$LOG")" -eq 1 ]
+    unset CMD_COMPLETE_TEST_CRASH_AFTER_NTFY_RECEIPT
+    run_complete
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^ntfy_cmd$' "$LOG")" -eq 1 ]
+    [[ "$output" == *"SKIP ntfy durable_receipt_verified"* ]]
+}
+
 @test "corrupt checkpoint fails closed before any side effect" {
     printf '{broken\n' > "$ROOT/queue/gates/cmd_resume/completion_checkpoint.json"
     run_complete

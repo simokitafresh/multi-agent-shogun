@@ -15,7 +15,7 @@ fi
 mkdir -p "$REVIEW_FP_CACHE_DIR"
 
 review_report_fingerprint() {
-    local report="$1" content_hash commit_identity root cache_key cache_file
+    local report="$1" content_hash raw_hash commit_identity root cache_key cache_file
     [ -f "$report" ] || return 1
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     # Compute a normalized content hash that excludes non-content metadata fields
@@ -47,7 +47,8 @@ PY
     # Path is part of the identity boundary: no-code eligibility can depend on
     # whether files_modified names this exact report. Keep path+content in the
     # key so identical bytes at different paths never share a decision.
-    cache_key=$(printf '%s:%s' "$(realpath "$report")" "$content_hash" | sha256sum | awk '{print $1}')
+    raw_hash=$(sha256sum "$report" | awk '{print $1}') || return 1
+    cache_key=$(printf '%s:%s:%s' "$(realpath "$report")" "$content_hash" "$raw_hash" | sha256sum | awk '{print $1}')
     cache_file="$REVIEW_FP_CACHE_DIR/$cache_key"
     if [ -s "$cache_file" ]; then
         head -n 1 "$cache_file"
@@ -194,9 +195,10 @@ PY
 # implementation commit.  Empty output means no identity was determinable
 # (only reachable under REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT=1).
 review_report_commit_identity() {
-    local report="$1" content_hash cache_key cache_file
+    local report="$1" content_hash raw_hash cache_key cache_file
     content_hash=$(review_report_fingerprint "$report") || return 1
-    cache_key=$(printf '%s:%s' "$(realpath "$report")" "$content_hash" | sha256sum | awk '{print $1}')
+    raw_hash=$(sha256sum "$report" | awk '{print $1}') || return 1
+    cache_key=$(printf '%s:%s:%s' "$(realpath "$report")" "$content_hash" "$raw_hash" | sha256sum | awk '{print $1}')
     cache_file="$REVIEW_FP_CACHE_DIR/$cache_key"
     [ -f "$cache_file" ] || return 1
     sed -n '2p' "$cache_file"
@@ -235,9 +237,42 @@ review_report_key() {
 
 review_validate_cmd_id() { [[ "$1" =~ ^cmd_[A-Za-z0-9_]+$ || "$1" =~ ^campaign_lane_[A-Za-z0-9._-]+$ ]]; }
 
+# Resolve the terminal report set from task YAML, the same SSOT used by
+# cmd_complete_gate.  Basename globs are insufficient because report_filename
+# may intentionally carry a suffix (for example *_gate0_contract.yaml).
+review_resolve_reports() {
+    local cmd_id="$1" root
+    root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
+    review_validate_cmd_id "$cmd_id" || return 1
+    python3 - "$root" "$cmd_id" <<'PY'
+import pathlib, sys, yaml
+root, cmd_id = pathlib.Path(sys.argv[1]).resolve(), sys.argv[2]
+reports_dir = (root / "queue" / "reports").resolve()
+found = set()
+for task_path in sorted((root / "queue" / "tasks").glob("*.yaml")):
+    try:
+        doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    task = doc.get("task", doc)
+    if not isinstance(task, dict) or str(task.get("parent_cmd") or "") != cmd_id:
+        continue
+    filename = str(task.get("report_filename") or "").strip()
+    if not filename:
+        filename = f"{task_path.stem}_report_{cmd_id}.yaml"
+    candidate = reports_dir / filename
+    logical = pathlib.Path(str(candidate))
+    if logical.parent != reports_dir or not candidate.is_file():
+        continue
+    found.add(str(candidate))
+for report in sorted(found):
+    print(report)
+PY
+}
+
 review_validate_campaign_shard() {
     local cmd_id="$1" report="$2" root item_id
-    root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
     [[ "$cmd_id" =~ ^campaign_lane_(.+)$ ]] || return 1
     item_id="${BASH_REMATCH[1]}"
     python3 - "$root" "$item_id" "$report" <<'PY'
@@ -345,6 +380,77 @@ review_manifest_fingerprint() {
     done | LC_ALL=C sort | sha256sum | awk '{print $1}'
 }
 
+# Publish the terminal review decision as one immutable, per-report snapshot.
+# The compact review_gate.done marker only points at this artifact by SHA256;
+# therefore a crash can leave an unreferenced snapshot, but can never publish a
+# partially-built decision.  Each row preserves both approvers' lineage before
+# archive_completed consumes their live marker files.
+review_terminal_snapshot_write() {
+    local cmd_id="$1"; shift
+    local root gate_dir snapshot tmp rows report logical resolved fp fp2 commit_id report_id key approvals report_fd pinned
+    local gunshi_result gunshi_fp karo_result karo_fp
+    root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
+    [ "$#" -gt 0 ] || return 1
+    gate_dir="$root/queue/gates/$cmd_id"
+    snapshot="$gate_dir/terminal_review_manifest.json"
+    rows=$(mktemp "$gate_dir/.terminal_review_rows.XXXXXX") || return 1
+    tmp=$(mktemp "$gate_dir/.terminal_review_manifest.XXXXXX") || { rm -f "$rows"; return 1; }
+    for report in "$@"; do
+        logical="${report#"$root"/}"
+        [[ "$logical" == queue/reports/* ]] || { rm -f "$rows" "$tmp"; return 1; }
+        resolved=$(realpath "$report") || { rm -f "$rows" "$tmp"; return 1; }
+        [[ "$resolved" == "$root/queue/reports/"* ]] || { rm -f "$rows" "$tmp"; return 1; }
+        exec {report_fd}<"$report" || { rm -f "$rows" "$tmp"; return 1; }
+        pinned="/proc/$BASHPID/fd/$report_fd"
+        fp=$(review_report_fingerprint "$pinned") || { exec {report_fd}<&-; rm -f "$rows" "$tmp"; return 1; }
+        commit_id=$(review_report_commit_identity "$pinned") || { exec {report_fd}<&-; rm -f "$rows" "$tmp"; return 1; }
+        report_id=$(python3 - "$pinned" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(d.get("report_id") or ""))
+PY
+) || { rm -f "$rows" "$tmp"; return 1; }
+        [ -n "$report_id" ] || { rm -f "$rows" "$tmp"; return 1; }
+        key=$(review_report_key "$logical")
+        approvals="$gate_dir/review_approvals/reports/$key"
+        gunshi_result=$(review_approval_value "$approvals/gunshi.yaml" result || true)
+        gunshi_fp=$(review_approval_value "$approvals/gunshi.yaml" fingerprint || true)
+        karo_result=$(review_approval_value "$approvals/karo.yaml" result || true)
+        karo_fp=$(review_approval_value "$approvals/karo.yaml" fingerprint || true)
+        [ "$gunshi_result" = LGTM ] && [ "$karo_result" = ACCEPT ] \
+            && [ "$gunshi_fp" = "$fp" ] && [ "$karo_fp" = "$fp" ] \
+            || { rm -f "$rows" "$tmp"; return 1; }
+        # A second read closes the content-change window between identity and
+        # lineage collection.  Any concurrent rewrite aborts publication.
+        fp2=$(review_report_fingerprint "$pinned") || { exec {report_fd}<&-; rm -f "$rows" "$tmp"; return 1; }
+        [ "$fp" = "$fp2" ] || { exec {report_fd}<&-; rm -f "$rows" "$tmp"; return 1; }
+        exec {report_fd}<&-
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$logical" "$report_id" "$fp" "$commit_id" \
+            "$gunshi_result" "$gunshi_fp" "$karo_result:$karo_fp" >> "$rows"
+    done
+    python3 - "$cmd_id" "$rows" "$tmp" <<'PY'
+import json, pathlib, sys
+cmd_id, rows_path, output = sys.argv[1:]
+reports = []
+for line in pathlib.Path(rows_path).read_text(encoding="utf-8").splitlines():
+    logical, report_id, content_sha, commit_id, gr, gf, karo = line.split("\t")
+    kr, kf = karo.split(":", 1)
+    reports.append({
+        "logical_path": logical, "report_id": report_id,
+        "content_sha": content_sha, "commit_identity": commit_id,
+        "gunshi": {"result": gr, "fingerprint": gf},
+        "karo": {"result": kr, "fingerprint": kf},
+    })
+reports.sort(key=lambda item: item["logical_path"])
+doc = {"version": 1, "cmd_id": cmd_id, "reports": reports}
+pathlib.Path(output).write_text(json.dumps(doc, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+PY
+    rm -f "$rows"
+    mv -f "$tmp" "$snapshot"
+    sha256sum "$snapshot" | awk '{print $1}'
+}
+
 # Formal approvals are intentionally consumed/archived after CLEAR.  A later
 # cmd_complete_gate --force must still be able to revalidate the immutable
 # reviewed artifact without demanding a second human review.  The marker is
@@ -352,19 +458,82 @@ review_manifest_fingerprint() {
 # match exactly; a stale/backfilled/placeholder marker remains fail-closed.
 review_gate_manifest_ready() {
     local cmd_id="$1"; shift
-    local root marker source result reports stored_manifest current_manifest
-    root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    local root marker source result reports snapshot_rel snapshot snapshot_sha actual_sha rows report logical resolved fp fp2 commit_id report_id report_fd pinned
+    root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
     marker="$root/queue/gates/$cmd_id/review_gate.done"
     [ -f "$marker" ] || return 1
     [ "$#" -gt 0 ] || return 1
     source=$(review_approval_value "$marker" source || true)
     result=$(review_approval_value "$marker" result || true)
     reports=$(review_approval_value "$marker" reports || true)
-    stored_manifest=$(review_approval_value "$marker" manifest || true)
+    snapshot_rel=$(review_approval_value "$marker" terminal_manifest || true)
+    snapshot_sha=$(review_approval_value "$marker" terminal_manifest_sha || true)
     [ "$source" = "two_phase_review" ] || return 1
     [ "$result" = "LGTM" ] || return 1
     [ "$reports" = "$#" ] || return 1
-    [ -n "$stored_manifest" ] || return 1
-    current_manifest=$(review_manifest_fingerprint "$@") || return 1
-    [ "$stored_manifest" = "$current_manifest" ]
+    [ "$snapshot_rel" = "queue/gates/$cmd_id/terminal_review_manifest.json" ] || return 1
+    snapshot="$root/$snapshot_rel"
+    [ -f "$snapshot" ] || return 1
+    [[ "$snapshot_sha" =~ ^[0-9a-f]{64}$ ]] || return 1
+    actual_sha=$(sha256sum "$snapshot" | awk '{print $1}')
+    [ "$snapshot_sha" = "$actual_sha" ] || return 1
+    rows=$(mktemp) || return 1
+    for report in "$@"; do
+        logical="${report#"$root"/}"
+        [[ "$logical" == queue/reports/* ]] || { rm -f "$rows"; return 1; }
+        resolved=$(realpath "$report") || { rm -f "$rows"; return 1; }
+        [[ "$(dirname "$resolved")" == "$root/queue/reports" \
+            || "$(dirname "$resolved")" == "$root/queue/archive/reports" ]] \
+            || { rm -f "$rows"; return 1; }
+        exec {report_fd}<"$report" || { rm -f "$rows"; return 1; }
+        pinned="/proc/$BASHPID/fd/$report_fd"
+        fp=$(review_report_fingerprint "$pinned") || { exec {report_fd}<&-; rm -f "$rows"; return 1; }
+        commit_id=$(review_report_commit_identity "$pinned") || { exec {report_fd}<&-; rm -f "$rows"; return 1; }
+        report_id=$(python3 - "$pinned" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(d.get("report_id") or ""))
+PY
+) || { rm -f "$rows"; return 1; }
+        [ -n "$report_id" ] || { rm -f "$rows"; return 1; }
+        fp2=$(review_report_fingerprint "$pinned") || { exec {report_fd}<&-; rm -f "$rows"; return 1; }
+        [ "$fp" = "$fp2" ] || { exec {report_fd}<&-; rm -f "$rows"; return 1; }
+        exec {report_fd}<&-
+        printf '%s\t%s\t%s\t%s\n' "$logical" "$report_id" "$fp" "$commit_id" >> "$rows"
+    done
+    python3 - "$cmd_id" "$snapshot" "$rows" <<'PY'
+import json, pathlib, sys
+cmd_id, snapshot_path, rows_path = sys.argv[1:]
+try:
+    doc = json.loads(pathlib.Path(snapshot_path).read_text(encoding="utf-8"))
+except (OSError, ValueError):
+    raise SystemExit(1)
+if doc.get("version") != 1 or doc.get("cmd_id") != cmd_id:
+    raise SystemExit(1)
+stored = doc.get("reports")
+if not isinstance(stored, list):
+    raise SystemExit(1)
+current = {}
+for line in pathlib.Path(rows_path).read_text(encoding="utf-8").splitlines():
+    logical, report_id, content_sha, commit_id = line.split("\t")
+    if logical in current:
+        raise SystemExit(1)
+    current[logical] = (report_id, content_sha, commit_id)
+if len(stored) != len(current):
+    raise SystemExit(1)
+for item in stored:
+    if not isinstance(item, dict) or set(item) != {"logical_path", "report_id", "content_sha", "commit_identity", "gunshi", "karo"}:
+        raise SystemExit(1)
+    logical = item["logical_path"]
+    if current.get(logical) != (item["report_id"], item["content_sha"], item["commit_identity"]):
+        raise SystemExit(1)
+    gunshi, karo = item["gunshi"], item["karo"]
+    if gunshi != {"result": "LGTM", "fingerprint": item["content_sha"]}:
+        raise SystemExit(1)
+    if karo != {"result": "ACCEPT", "fingerprint": item["content_sha"]}:
+        raise SystemExit(1)
+PY
+    rc=$?
+    rm -f "$rows"
+    return "$rc"
 }

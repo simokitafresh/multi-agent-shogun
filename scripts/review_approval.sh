@@ -384,7 +384,7 @@ PY
     mv -f "$rejected_tmp" "$rejected_payload_file"
     rm -f "$rejected_commit_file"
   fi
-  mapfile -t current_reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)
+  mapfile -t current_reports < <(PROJECT_ROOT="$ROOT" review_resolve_reports "$cmd_id")
   current_manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${current_reports[@]}" 2>/dev/null || true)
   # RC starts a fresh report-review lifecycle.  Clear both the formal approval
   # markers and inbox_write's completion-notify marker; otherwise a revised
@@ -471,7 +471,7 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_NOTIF
 fi
 echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
-mapfile -t reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)
+mapfile -t reports < <(PROJECT_ROOT="$ROOT" review_resolve_reports "$cmd_id")
 if [ -n "${REVIEW_APPROVAL_TEST_READY_FILE:-}" ]; then
   : > "$REVIEW_APPROVAL_TEST_READY_FILE"
   while [ ! -e "${REVIEW_APPROVAL_TEST_RELEASE_FILE:?}" ]; do sleep 0.01; done
@@ -487,9 +487,14 @@ elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then
     exit 1
   fi
   manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${reports[@]}")
+  terminal_manifest_sha=$(PROJECT_ROOT="$ROOT" review_terminal_snapshot_write "$cmd_id" "${reports[@]}") || {
+    echo "BLOCK: terminal review manifest publication failed" >&2
+    exit 1
+  }
   marker="$ROOT/queue/gates/$cmd_id/review_gate.done"
   marker_tmp=$(mktemp "$ROOT/queue/gates/$cmd_id/.review_gate.XXXXXX")
-  printf 'timestamp: %s\nsource: two_phase_review\nresult: LGTM\nreports: %s\nmanifest: %s\n' "$(date -Iseconds)" "${#reports[@]}" "$manifest" > "$marker_tmp"
+  printf 'timestamp: %s\nsource: two_phase_review\nresult: LGTM\nreports: %s\nmanifest: %s\nterminal_manifest: queue/gates/%s/terminal_review_manifest.json\nterminal_manifest_sha: %s\n' \
+    "$(date -Iseconds)" "${#reports[@]}" "$manifest" "$cmd_id" "$terminal_manifest_sha" > "$marker_tmp"
   mv -f "$marker_tmp" "$marker"
   if (set -o noclobber; : > "$base/.gate_triggered.$manifest") 2>/dev/null; then
     if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ]; then

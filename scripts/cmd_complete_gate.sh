@@ -6785,13 +6785,7 @@ fi
 # must bind to the exact same report content+commit fingerprint.
 if [ "$HAS_IMPLEMENT" = "true" ]; then
     source "$SCRIPT_DIR/scripts/lib/review_approval.sh"
-    _two_phase_reports=()
-    for _tf in "${MATCHING_TASK_FILES[@]}"; do
-        _ninja=$(basename "$_tf" .yaml)
-        _candidate=$(resolve_report_file "$_ninja")
-        [ -f "$_candidate" ] && _two_phase_reports+=("$_candidate")
-    done
-    mapfile -t _two_phase_reports < <(printf '%s\n' "${_two_phase_reports[@]}" | LC_ALL=C sort -u)
+    mapfile -t _two_phase_reports < <(PROJECT_ROOT="$SCRIPT_DIR" review_resolve_reports "$CMD_ID")
     if ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
         && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
         echo "GATE BLOCK: review_two_phase_pending (every report requires matching gunshi LGTM + karo ACCEPT)"
