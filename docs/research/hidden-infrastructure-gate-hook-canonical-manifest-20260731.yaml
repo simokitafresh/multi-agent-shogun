@@ -32,7 +32,7 @@ implementation_progress:
     owner: tobisaru
     task: queue/tasks/tobisaru.yaml
     commit: 6f4e4b77b
-    checkpoint: post_commit_remeasurement_in_progress
+    checkpoint: task_scope_10_tests_in_progress
     rounds_observed: 10
     submitted: 160
     saved: 160

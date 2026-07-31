@@ -24,7 +24,7 @@
 | Gate 0B evidence prerequisite | `ACCEPTED` | `f37a4365a` | SHA不一致0、未来時刻0、未分類0 |
 | Gate 0B wave map | `ACCEPTED` | `2e1090bb7`、foundation map | OPEN 13/13、未割当0、owner重複0、循環0、serialization key欠落0 |
 | AC2 durable-state foundation | `ACCEPTED` | `4c89d38ca` | focused 17/17 PASS、SKIP 0、hard-crash時 effect 2→1 |
-| AC3 Wave 1A R01 | `IN_PROGRESS` | `6f4e4b77b`、`queue/tasks/tobisaru.yaml` | 10反復、submitted 160/160、marked 80/80、lost/duplicate/parse 0（post-commit再測定・最終報告待ち） |
+| AC3 Wave 1A R01 | `IN_PROGRESS` | `6f4e4b77b`、`queue/tasks/tobisaru.yaml` | post-commit 10反復もsubmitted 160/160、marked 80/80、lost/duplicate/parse 0。task-scope 10 test実行中 |
 | 親cmd completion gate | `BLOCK_EXPECTED` | `cmd_complete_gate.sh cmd_4200` | 未充足は `parent_ac_uncovered:AC3` 1件のみ |
 
 現manifest: `current_phase=WAVE_1A_IDENTITY`、`phase_state=IN_PROGRESS`、`next_phase=WAVE_1B_OWNERSHIP`。AC3はfoundation mapの依存順・serialization keyに従い直列進行する。
@@ -329,7 +329,7 @@ Gate0A contract [DONE]
 - typed exact-match helperでR06を閉じる。
 - immutable rc receipt primitiveを作る。`run_tests.sh` caller置換はWave 3で行う。
 
-進捗: R01を飛猿へ配備済み。対象は`lock_path.sh`、`inbox_write.sh`、`inbox_mark_read.sh`、focused testは`test_lock_path.bats`。初回敵対計測は10反復でsubmitted 160/160、marked 80/80、lost update 0、duplicate 0、parse error 0。`6f4e4b77b`で敵対contractをcommit済みだが、post-commit再測定・報告・軍師reviewが未完了のためterminal扱いしない。
+進捗: R01を飛猿へ配備済み。対象は`lock_path.sh`、`inbox_write.sh`、`inbox_mark_read.sh`、focused testは`test_lock_path.bats`。初回およびcommit `6f4e4b77b`後の敵対計測は各10反復でsubmitted 160/160、marked 80/80、lost update 0、duplicate 0、parse error 0。task-scope 10 test・報告・軍師reviewが未完了のためterminal扱いしない。
 
 ### §5.4 Wave 1B — ownership（R03-R05、採用時V03）
 
@@ -453,7 +453,7 @@ Gate0A contract [DONE]
 | Gate0B map | 軍師/家老 | ACCEPTED | OPEN 13/13、未割当/owner重複/循環/serialization欠落すべて0 `2e1090bb7` |
 | Foundation RC1-5 | 軍師/家老 | REQUEST_CHANGES→LGTM | 空terminal、path traversal、symlink escape、ack-loss、hard-crash、test安全性を順次是正 |
 | Foundation final | 家老 | ACCEPTED | 17/17 PASS、SKIP 0、hard-crash retry rc 10/effect 1 `4c89d38ca` |
-| Wave1A R01 | 飛猿 | IN_PROGRESS | 敵対contract `6f4e4b77b`。初回10反復でlost/duplicate/parse各0、post-commit再測定中 |
+| Wave1A R01 | 飛猿 | IN_PROGRESS | 敵対contract `6f4e4b77b`。post-commit 10反復もlost/duplicate/parse各0、task-scope 10 test実行中 |
 
 ### §9.2 因果リンク
 
