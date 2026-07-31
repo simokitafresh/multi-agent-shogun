@@ -87,8 +87,9 @@
       "verified_at": "2026-07-29T03:58:35+09:00"
     },
     "skills/gate-sync/SKILL.md::scripts/bulletin_write.sh": {
-      "contract_sha256": "a28ccbce75bfb23ada02764ff39e7e351e0ce95a808eeaec44e2c93d87c47993",
-      "verified_at": "2026-07-29T03:58:35+09:00"
+      "contract_sha256": "7e8223e13d44b6f6cb486706b7e8937406a635b645be7c60e4da246e7fd48947",
+      "last_action_contract_sha256": "7e8223e13d44b6f6cb486706b7e8937406a635b645be7c60e4da246e7fd48947",
+      "verified_at": "2026-08-01T03:52:00+09:00"
     },
     "skills/gate-sync/SKILL.md::scripts/gates/gate_gunshi_accuracy.sh": {
       "contract_sha256": "ec3df6407a79be13cf4aca8f14fcda9913bfa44303affa16aef42c9389330c83",
@@ -108,8 +109,9 @@
       "verified_at": "2026-07-29T03:58:35+09:00"
     },
     "skills/idle-persist/SKILL.md::scripts/bulletin_write.sh": {
-      "contract_sha256": "a28ccbce75bfb23ada02764ff39e7e351e0ce95a808eeaec44e2c93d87c47993",
-      "verified_at": "2026-07-29T03:58:35+09:00"
+      "contract_sha256": "7e8223e13d44b6f6cb486706b7e8937406a635b645be7c60e4da246e7fd48947",
+      "last_action_contract_sha256": "7e8223e13d44b6f6cb486706b7e8937406a635b645be7c60e4da246e7fd48947",
+      "verified_at": "2026-08-01T03:52:00+09:00"
     },
     "skills/idle-persist/SKILL.md::scripts/inbox_write.sh": {
       "contract_sha256": "e864c5e446748e921f8cc01cbc70e620b23a13598c43ba4de59c386efd23b423",
@@ -124,8 +126,9 @@
       "verified_at": "2026-08-01T03:14:57+09:00"
     },
     "skills/ninja-commit/SKILL.md::scripts/ninja_scope_commit.sh": {
-      "contract_sha256": "a8fa1e3a1ae59c295a6cd11f3122c75c36e1855e9f8e5b7ba6e98d752a13fda9",
-      "verified_at": "2026-07-29T03:58:35+09:00"
+      "contract_sha256": "000c130bdc7b116af585c18cedbabac42d851d49ca3ac7764cd76478b1ade8a1",
+      "last_action_contract_sha256": "000c130bdc7b116af585c18cedbabac42d851d49ca3ac7764cd76478b1ade8a1",
+      "verified_at": "2026-08-01T03:52:00+09:00"
     },
     "skills/ninja-commit/SKILL.md::scripts/report_field_set.sh": {
       "contract_sha256": "4f334d0c4ace027ab18d7237d952c63734ef33e29dda799178996a269c73b61d",
@@ -154,8 +157,9 @@
       "verified_at": "2026-08-01T03:18:31+09:00"
     },
     "skills/review-bundle/SKILL.md::scripts/bulletin_write.sh": {
-      "contract_sha256": "a28ccbce75bfb23ada02764ff39e7e351e0ce95a808eeaec44e2c93d87c47993",
-      "verified_at": "2026-07-29T03:58:36+09:00"
+      "contract_sha256": "7e8223e13d44b6f6cb486706b7e8937406a635b645be7c60e4da246e7fd48947",
+      "last_action_contract_sha256": "7e8223e13d44b6f6cb486706b7e8937406a635b645be7c60e4da246e7fd48947",
+      "verified_at": "2026-08-01T03:52:00+09:00"
     },
     "skills/review-bundle/SKILL.md::scripts/inbox_write.sh": {
       "contract_sha256": "e864c5e446748e921f8cc01cbc70e620b23a13598c43ba4de59c386efd23b423",
@@ -191,9 +195,9 @@
       "verified_at": "2026-07-29T03:58:36+09:00"
     },
     "skills/shogun-cli-switch/SKILL.md::scripts/ninja_monitor.sh": {
-      "contract_sha256": "95bdf2685cfbe2269c573954d60f3509f1b1086281d5c0722eb94665b27f0b8c",
-      "last_action_contract_sha256": "95bdf2685cfbe2269c573954d60f3509f1b1086281d5c0722eb94665b27f0b8c",
-      "verified_at": "2026-08-01T03:18:31+09:00"
+      "contract_sha256": "f4869b1cb61141d2a5d0eeec2d6951eba60e97953d47fe3dd6e14e2424e634f1",
+      "last_action_contract_sha256": "f4869b1cb61141d2a5d0eeec2d6951eba60e97953d47fe3dd6e14e2424e634f1",
+      "verified_at": "2026-08-01T03:52:00+09:00"
     },
     "skills/shogun-cli-switch/SKILL.md::scripts/switch_cli_mode.sh": {
       "contract_sha256": "94e21ff07267f098a808268b41fab4d8e7729d182dba8f6eef2568d9089433d6",
