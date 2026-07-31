@@ -4,8 +4,8 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-08-01 00:18 将軍 (以後ドキュメント主導権=将軍。殿下知2026-08-01 00:14) |
-| 版 | v3.7 = v3.5 + 将軍主導反映 (row5行範囲訂正 + §5.8.1固定2件fixture廃止→resolved N/N統一。契約意味変更なし) |
+| 進捗更新 | 2026-08-01 03:05 将軍 (ドキュメント主導権=将軍。殿下知2026-08-01 00:14) |
+| 版 | v3.8 = v3.7 + §-2.2/§-2.3新設 (archive再承認レーン実績の findings 写像・方向性再検証・是正3点。契約意味変更なし) |
 | 最終レビュー | 将軍(Claude Fable 5) RC2 LGTM。blob照合7/7 OK・Codex前提すり替わり0件。正本=`docs/research/shogun-adversarial-review-hidden-infra-design-20260801.md` |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
@@ -29,6 +29,30 @@
 | 親cmd completion gate | `BLOCK_EXPECTED` | `cmd_complete_gate.sh cmd_4200` | 未充足は `parent_ac_uncovered:AC3` 1件のみ |
 
 現manifest: `current_phase=WAVE_1A_IDENTITY`、`phase_state=IN_PROGRESS`、`next_phase=WAVE_1B_OWNERSHIP`。AC3はfoundation mapの依存順・serialization keyに従い直列進行する。
+
+### §-2.0 進捗更新 2026-08-01 03:05 (将軍検分)
+
+01:00-03:00のarchive再承認レーン(cmd_4200完遂条件の前段)が5往復のRC後に構造収束した。一次証跡は監査正本`docs/research/archive-review-reapproval-path-audit-20260801.md`と以下のcommit群。
+
+| 成果 | commit | 設計へのfindings写像 | 実測 |
+|---|---|---|---|
+| canonical report identity allowlist (resolver反転) | `a71753ed7` `f24fa608f` | **R06 exact_correlation の review path 実装**。symlink/alias/traversal/nested/別cmd payloadの全族を1契約でfail-close | corpus 13/13 PASS、FP 0/13、FN 0/13、6段非対称0 |
+| review/report verdict軸分離 (reviewer FAIL bundle) | `9c5a12b36` `f0019d489` `c8337adf4` | **N05 (receipt=rc中心の欠陥)** のreview層是正。8セルverdict matrix明文化 | failed/FAIL報告を書換えずFAIL bundle正規生成 |
+| run_tests task Python dispatch + receipt集計 | `6c3392d74` `d9c02f170` | **R09/R13隣接** (runner inventory/receipt)。suffix dispatch+Python receipt統合 | Python receipt 21/21 rc0、contract 55/55、SKIP 0 |
+| gate予測精度の計測粒度是正 | `3ee176a0c` | LS096型粒度バグ根治。cmd単位最終verdictへ統一 | final-cmd accuracy 9/9=100%、同型アラート閉鎖 |
+| archive notify対称化+6段監査表 | `667f75b13` `10d349dc4` `ad03ca655` | 受付≠完了の6段identity連続性を監査表で固定 | generate/review/notify/SG7/marker/complete 全段対称 |
+
+cmd_4200再承認の実勢: 軍師LGTM 6/6・家老ACCEPT 6/6・notify marker 6/6・archive.done/completion_checkpoint生成済み。残=wrapper Step8実走の終端確認。
+
+### §-2.2 方向性再検証 (殿下問2026-08-01 03:02への回答・将軍判定)
+
+**判定: 家老の方向性は実質正しい。** 初動はケース別deny増設の各論パッチ(4巡FAIL)だったが、全数監査→allowlist反転→verdict軸分離へ転換後は、本設計の根因治療(identity曖昧→typed exact identity、受付=完了→terminal receipt)を**Wave順序に先行して実運用経路へ適用した**形になっており、方向は設計と同一線上にある。ただしgovernance欠陥3点を検出:
+
+| # | 欠陥 | 是正 |
+|---|---|---|
+| G1 | manifest未更新: `current_phase=WAVE_1A_IDENTITY`のまま、archive再承認レーンの成果がfindings receiptへ未写像。後日の二重実装(SUPERSEDED相当の再着手)リスク | 上表の写像をmanifestへreceipt登録し、R06 review path部分をpartial closure記録 |
+| G2 | R01の非terminal中断: 飛猿がR01(lock identity, `6f4e4b77b`敵対contract済・task-scope test実行中)からallowlist taskへ先取された。§5.0「先行terminal receiptなしに後続を開始しない」の逸脱 | R01を再開しterminal化するか、中断理由と再開条件をmanifestへ明記(黙殺しない) |
+| G3 | Wave 2A/3隣接の修正が順序外で先行(運用強制ゆえ許容)だが、記録なしでは§5.5/§5.7実装時に競合する | 該当Waveの設計節へ「先行実装済み・残作業」の差分を反映(§5.5/§5.7実装時にreceipt照合) |
 
 ### §-2.1 Foundation敵対検証の修正前→修正後
 
