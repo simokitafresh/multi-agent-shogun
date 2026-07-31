@@ -66,6 +66,10 @@ class InvalidIdentityError(DurableStateError):
     exit_code = 9
 
 
+class OutcomeUnknownError(OutboxError):
+    exit_code = 10
+
+
 OUTBOX_STATES = ("reserved", "inflight", "applied", "failed")
 
 
@@ -426,6 +430,7 @@ def outbox_reserve(root: Path, idempotency_key: str, action: str, target: str,
                 "target": target,
                 "payload_hash": payload_hash,
                 "attempts": 0,
+                "outcome_unknown": False,
                 "recorded_at": time.time(),
             }
             _atomic_publish(_outbox_path(root, idempotency_key), record)
@@ -438,7 +443,18 @@ def outbox_apply_once(root: Path, idempotency_key: str, apply_fn) -> dict:
     """Run `apply_fn` for this key at most once, even across repeated calls
     for the same key (subject+generation+action+target+payload_hash), by
     holding the per-key lock across the reserved->inflight->applied|failed
-    transition (§3.4 idempotency collapse)."""
+    transition (§3.4 idempotency collapse).
+
+    `apply_fn` must return a non-empty provider receipt to count as applied
+    (gunshi AC4 RC: a falsy/empty return is never treated as success, since
+    a provider ack is the only proof the external effect actually landed).
+    If `apply_fn` raises, whether the external side effect already fired is
+    unknowable from here (e.g. the ack was lost after a real network call
+    reached the provider) -- so the record is marked failed with
+    outcome_unknown=True and this function refuses to retry it again.
+    Only outbox_reconcile() (fed authoritative out-of-band evidence) may
+    move a key out of that state; a naive automatic retry is exactly what
+    caused a real side effect to fire twice."""
     lock_path = _outbox_lock_path(root, idempotency_key)
     with open(lock_path, "a+") as lock_f:
         fcntl.flock(lock_f, fcntl.LOCK_EX)
@@ -448,20 +464,77 @@ def outbox_apply_once(root: Path, idempotency_key: str, apply_fn) -> dict:
                 raise OutboxError(f"no reservation for key {idempotency_key}")
             if record["state"] == "applied":
                 return record
+            if record.get("outcome_unknown"):
+                raise OutcomeUnknownError(
+                    f"key {idempotency_key} has an unresolved outcome; "
+                    "call outbox_reconcile() with provider evidence before retrying"
+                )
             record["state"] = "inflight"
             record["attempts"] = record.get("attempts", 0) + 1
             record["recorded_at"] = time.time()
             _atomic_publish(_outbox_path(root, idempotency_key), record)
             try:
-                result = apply_fn()
+                receipt = apply_fn()
             except Exception as exc:  # noqa: BLE001 -- external side effect boundary
                 record["state"] = "failed"
+                record["outcome_unknown"] = True
                 record["error"] = str(exc)
                 record["recorded_at"] = time.time()
                 _atomic_publish(_outbox_path(root, idempotency_key), record)
                 raise
+            if not receipt:
+                record["state"] = "failed"
+                record["outcome_unknown"] = True
+                record["error"] = "apply_fn returned an empty provider receipt"
+                record["recorded_at"] = time.time()
+                _atomic_publish(_outbox_path(root, idempotency_key), record)
+                raise OutcomeUnknownError(
+                    f"key {idempotency_key}: apply_fn returned no provider receipt; "
+                    "outcome cannot be trusted as applied"
+                )
             record["state"] = "applied"
-            record["result"] = result
+            record["provider_receipt"] = receipt
+            record["outcome_unknown"] = False
+            record["recorded_at"] = time.time()
+            _atomic_publish(_outbox_path(root, idempotency_key), record)
+            return record
+        finally:
+            fcntl.flock(lock_f, fcntl.LOCK_UN)
+
+
+def outbox_reconcile(root: Path, idempotency_key: str, provider_receipt: str = "",
+                      not_executed_proof: str = "") -> dict:
+    """Resolve a key stuck in failed+outcome_unknown using authoritative
+    out-of-band evidence obtained from the provider -- never an automatic
+    retry. Exactly one of `provider_receipt` (proof the effect already
+    landed -- collapse to applied, no re-run) or `not_executed_proof`
+    (proof the effect never fired -- safe to reopen for a fresh attempt)
+    must be supplied."""
+    lock_path = _outbox_lock_path(root, idempotency_key)
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f, fcntl.LOCK_EX)
+        try:
+            record = _outbox_read(root, idempotency_key)
+            if record is None:
+                raise OutboxError(f"no reservation for key {idempotency_key}")
+            if record["state"] == "applied":
+                return record
+            if not record.get("outcome_unknown"):
+                raise OutboxError(
+                    f"key {idempotency_key} is not outcome_unknown; nothing to reconcile"
+                )
+            if bool(provider_receipt) == bool(not_executed_proof):
+                raise OutboxError(
+                    "supply exactly one of provider_receipt or not_executed_proof"
+                )
+            if provider_receipt:
+                record["state"] = "applied"
+                record["provider_receipt"] = provider_receipt
+                record["outcome_unknown"] = False
+            else:
+                record["state"] = "reserved"
+                record["not_executed_proof"] = not_executed_proof
+                record["outcome_unknown"] = False
             record["recorded_at"] = time.time()
             _atomic_publish(_outbox_path(root, idempotency_key), record)
             return record
@@ -571,9 +644,23 @@ def _cmd_outbox_apply(args) -> int:
         if args.side_effect_log:
             with open(args.side_effect_log, "a") as f:
                 f.write(f"{args.idempotency_key}\n")
-        return "applied"
+        if args.fail_after_effect:
+            # Simulate an ack lost after the external effect already fired
+            # (e.g. the provider received the call but the response never
+            # made it back) -- used to exercise the outcome_unknown path.
+            raise RuntimeError("simulated ack loss after external effect fired")
+        return "receipt-ok"
 
     record = outbox_apply_once(Path(args.root), args.idempotency_key, apply_fn)
+    print(json.dumps(record, sort_keys=True, ensure_ascii=True))
+    return 0
+
+
+def _cmd_outbox_reconcile(args) -> int:
+    record = outbox_reconcile(
+        Path(args.root), args.idempotency_key,
+        provider_receipt=args.provider_receipt, not_executed_proof=args.not_executed_proof,
+    )
     print(json.dumps(record, sort_keys=True, ensure_ascii=True))
     return 0
 
@@ -650,7 +737,15 @@ def main(argv=None) -> int:
     p_outbox_apply.add_argument("--root", required=True)
     p_outbox_apply.add_argument("--idempotency-key", required=True)
     p_outbox_apply.add_argument("--side-effect-log", default="")
+    p_outbox_apply.add_argument("--fail-after-effect", action="store_true")
     p_outbox_apply.set_defaults(func=_cmd_outbox_apply)
+
+    p_outbox_reconcile = sub.add_parser("outbox-reconcile")
+    p_outbox_reconcile.add_argument("--root", required=True)
+    p_outbox_reconcile.add_argument("--idempotency-key", required=True)
+    p_outbox_reconcile.add_argument("--provider-receipt", default="")
+    p_outbox_reconcile.add_argument("--not-executed-proof", default="")
+    p_outbox_reconcile.set_defaults(func=_cmd_outbox_reconcile)
 
     p_shadow = sub.add_parser("shadow-compare")
     p_shadow.add_argument("--root", required=True)

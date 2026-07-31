@@ -177,6 +177,68 @@ fence_of() {
     [ "$status" -ne 0 ]
 }
 
+# test_necessity: 外部effectが実行された後にack前で例外が起きた(結果不明)場合、
+# 同一keyの自動retryは即拒否され、effect_countは1のまま増えない(偽applied=0)
+# 不変量を守る(軍師AC4 RC: 修正前はeffect_count=2/final=appliedで再現していた)。
+@test "an unknown-outcome apply blocks automatic retry so the side effect never fires twice" {
+    side_log="$STATE_ROOT/ackloss_side_effect.log"
+    run bash "$DS" outbox-reserve "$STATE_ROOT" "ackloss-key" deliver targetX payloadhashY
+    [ "$status" -eq 0 ]
+
+    run bash "$DS" outbox-apply "$STATE_ROOT" "ackloss-key" "$side_log" fail-after-effect
+    [ "$status" -ne 0 ]
+    [ "$(wc -l < "$side_log")" -eq 1 ]
+
+    # a naive automatic retry (no provider evidence) must be refused, not
+    # silently re-run the effect
+    run bash "$DS" outbox-apply "$STATE_ROOT" "ackloss-key" "$side_log"
+    [ "$status" -ne 0 ]
+    [ "$(wc -l < "$side_log")" -eq 1 ]
+
+    # outbox-reserve is idempotent (returns the existing record) -- use it
+    # to confirm the record is failed+outcome_unknown, never applied
+    run bash "$DS" outbox-reserve "$STATE_ROOT" "ackloss-key" deliver targetX payloadhashY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"\"state\": \"failed\""* ]]
+    [[ "$output" == *"\"outcome_unknown\": true"* ]]
+}
+
+# test_necessity: 未applyの外部effectを、providerから得たprovider_receiptで
+# 事後確定させると(自動retryではなく)状態がappliedへ収束する不変量を守る。
+@test "reconcile with a provider receipt collapses an unknown outcome to applied without re-running it" {
+    side_log="$STATE_ROOT/reconcile_applied_side.log"
+    run bash "$DS" outbox-reserve "$STATE_ROOT" "reconcile-applied-key" deliver targetX payloadhashY
+    [ "$status" -eq 0 ]
+    run bash "$DS" outbox-apply "$STATE_ROOT" "reconcile-applied-key" "$side_log" fail-after-effect
+    [ "$status" -ne 0 ]
+
+    run bash "$DS" outbox-reconcile "$STATE_ROOT" "reconcile-applied-key" "provider-confirmed-receipt-123"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"\"state\": \"applied\""* ]]
+
+    # re-apply on an already-applied key is a no-op: no new side effect line
+    run bash "$DS" outbox-apply "$STATE_ROOT" "reconcile-applied-key" "$side_log"
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$side_log")" -eq 1 ]
+}
+
+# test_necessity: 未実行証明(not_executed_proof)でreconcileすると、キーが
+# reservedへ復帰し安全に再applyできる不変量を守る。
+@test "reconcile with proof of non-execution reopens the key for a fresh apply attempt" {
+    run bash "$DS" outbox-reserve "$STATE_ROOT" "reconcile-reopen-key" deliver targetY payloadhashZ
+    [ "$status" -eq 0 ]
+    run bash "$DS" outbox-apply "$STATE_ROOT" "reconcile-reopen-key" "" fail-after-effect
+    [ "$status" -ne 0 ]
+
+    run bash "$DS" outbox-reconcile "$STATE_ROOT" "reconcile-reopen-key" "" "provider-confirmed-not-executed"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"\"state\": \"reserved\""* ]]
+
+    run bash "$DS" outbox-apply "$STATE_ROOT" "reconcile-reopen-key" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"\"state\": \"applied\""* ]]
+}
+
 # test_necessity: shadow comparatorは正常fixtureで一致し、checksum改ざんのように
 # naiveは読めるがcanonicalだけがfail-closeするfixtureでは一致を報告せず、
 # 安全側(diverge)に倒れる不変量を守る。

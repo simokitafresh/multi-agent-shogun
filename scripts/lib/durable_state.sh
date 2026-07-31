@@ -61,9 +61,21 @@ durable_state_outbox_reserve() {
 }
 
 durable_state_outbox_apply() {
-    local root="$1" idempotency_key="$2" side_effect_log="${3:-}"
+    local root="$1" idempotency_key="$2" side_effect_log="${3:-}" fail_after_effect="${4:-}"
+    local extra_args=()
+    if [ -n "$fail_after_effect" ]; then
+        extra_args+=(--fail-after-effect)
+    fi
     python3 "$DURABLE_STATE_PY" outbox-apply \
-        --root "$root" --idempotency-key "$idempotency_key" --side-effect-log "$side_effect_log"
+        --root "$root" --idempotency-key "$idempotency_key" --side-effect-log "$side_effect_log" \
+        "${extra_args[@]}"
+}
+
+durable_state_outbox_reconcile() {
+    local root="$1" idempotency_key="$2" provider_receipt="${3:-}" not_executed_proof="${4:-}"
+    python3 "$DURABLE_STATE_PY" outbox-reconcile \
+        --root "$root" --idempotency-key "$idempotency_key" \
+        --provider-receipt "$provider_receipt" --not-executed-proof "$not_executed_proof"
 }
 
 durable_state_shadow_compare() {
@@ -84,9 +96,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         terminal-receipt) durable_state_terminal_receipt "$@" ;;
         outbox-reserve) durable_state_outbox_reserve "$@" ;;
         outbox-apply) durable_state_outbox_apply "$@" ;;
+        outbox-reconcile) durable_state_outbox_reconcile "$@" ;;
         shadow-compare) durable_state_shadow_compare "$@" ;;
         *)
-            echo "usage: durable_state.sh {begin|mutate|read|lease-acquire|reconcile|terminal-receipt|outbox-reserve|outbox-apply|shadow-compare} ..." >&2
+            echo "usage: durable_state.sh {begin|mutate|read|lease-acquire|reconcile|terminal-receipt|outbox-reserve|outbox-apply|outbox-reconcile|shadow-compare} ..." >&2
             exit 64
             ;;
     esac
