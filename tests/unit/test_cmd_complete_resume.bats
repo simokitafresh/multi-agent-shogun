@@ -131,3 +131,82 @@ run_complete() {
     [ "$(grep -c '^ntfy_cmd$' "$LOG")" -eq 1 ]
     [ "$(grep -c '^inbox_archive$' "$LOG")" -eq 1 ]
 }
+
+# test_necessity: terminal review recovery must derive its immutable report set
+# from archived report identity after all worker task slots have been reused.
+@test "archived reports retain six fingerprint-bound approvals and terminal snapshot" {
+    local review_root="$BATS_TEST_TMPDIR/review-root"
+    mkdir -p "$review_root/scripts/lib" "$review_root/queue/archive/reports" \
+        "$review_root/queue/reports" "$review_root/queue/tasks" \
+        "$review_root/queue/gates/cmd_4200/review_approvals/reports"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/review_approval.sh" "$review_root/scripts/lib/"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/report_commit_identity.py" "$review_root/scripts/lib/"
+    printf 'task:\n  parent_cmd: cmd_new_generation\n' > "$review_root/queue/tasks/kotaro.yaml"
+
+    for n in 1 2 3 4 5 6; do
+        report="$review_root/queue/archive/reports/ninja${n}_report_cmd_4200.yaml"
+        printf 'report_id: rpt-%s\nparent_cmd: cmd_4200\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult: {summary: ok}\n' "$n" > "$report"
+    done
+    printf 'report_id: rpt-other\nparent_cmd: cmd_other\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' \
+        > "$review_root/queue/archive/reports/other_cmd.yaml"
+
+    run bash -c '
+        set -e
+        export PROJECT_ROOT="$1"
+        source "$1/scripts/lib/review_approval.sh"
+        mapfile -t reports < <(review_resolve_reports cmd_4200)
+        [ "${#reports[@]}" -eq 6 ]
+        for report in "${reports[@]}"; do
+            logical=$(review_report_logical_path "$report")
+            key=$(review_report_key "$logical")
+            dir="$1/queue/gates/cmd_4200/review_approvals/reports/$key"
+            mkdir -p "$dir"
+            fp=$(review_report_fingerprint "$report")
+            printf "result: LGTM\nfingerprint: %s\n" "$fp" > "$dir/gunshi.yaml"
+            printf "result: ACCEPT\nfingerprint: %s\n" "$fp" > "$dir/karo.yaml"
+        done
+        review_all_reports_ready cmd_4200 "${reports[@]}"
+        review_terminal_snapshot_write cmd_4200 "${reports[@]}" >/dev/null
+        python3 - "$1/queue/gates/cmd_4200/terminal_review_manifest.json" <<"PY"
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+assert len(d["reports"]) == 6
+assert len({x["logical_path"] for x in d["reports"]}) == 6
+assert all(x["logical_path"].startswith("queue/reports/") for x in d["reports"])
+assert all(x["gunshi"]["result"] == "LGTM" and x["karo"]["result"] == "ACCEPT" for x in d["reports"])
+PY
+    ' _ "$review_root"
+    [ "$status" -eq 0 ]
+
+    cp "$review_root/queue/archive/reports/ninja1_report_cmd_4200.yaml" \
+        "$review_root/queue/reports/ninja1_report_cmd_4200.yaml"
+    run bash -c 'export PROJECT_ROOT="$1"; source "$1/scripts/lib/review_approval.sh"; review_resolve_reports cmd_4200' _ "$review_root"
+    [ "$status" -ne 0 ]
+}
+
+# test_necessity: archive identity resolution must reject every ambiguity and
+# path-boundary escape before any approval can be consumed.
+@test "archived report resolver fails closed on nested symlink missing id and duplicate id" {
+    local cases_root="$BATS_TEST_TMPDIR/archive-negative"
+    for kind in nested symlink missing duplicate; do
+        root="$cases_root/$kind"
+        mkdir -p "$root/scripts/lib" "$root/queue/reports" "$root/queue/archive/reports" "$root/queue/tasks"
+        cp "$BATS_TEST_DIRNAME/../../scripts/lib/review_approval.sh" "$root/scripts/lib/"
+        printf 'report_id: rpt-1\nparent_cmd: cmd_4200\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' \
+            > "$root/queue/archive/reports/one.yaml"
+        case "$kind" in
+            nested)
+                mkdir -p "$root/queue/archive/reports/nested"
+                printf 'report_id: rpt-2\nparent_cmd: cmd_4200\n' > "$root/queue/archive/reports/nested/two.yaml" ;;
+            symlink)
+                printf 'report_id: rpt-2\nparent_cmd: cmd_4200\n' > "$root/outside.yaml"
+                ln -s "$root/outside.yaml" "$root/queue/archive/reports/two.yaml" ;;
+            missing)
+                printf 'parent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two.yaml" ;;
+            duplicate)
+                printf 'report_id: rpt-1\nparent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two.yaml" ;;
+        esac
+        run bash -c 'export PROJECT_ROOT="$1"; source "$1/scripts/lib/review_approval.sh"; review_resolve_reports cmd_4200' _ "$root"
+        [ "$status" -ne 0 ]
+    done
+}

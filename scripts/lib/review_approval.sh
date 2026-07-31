@@ -235,11 +235,22 @@ review_report_key() {
     printf '%s' "$report" | sha256sum | awk '{print $1}'
 }
 
+review_report_logical_path() {
+    local report="$1" root resolved base
+    root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
+    resolved=$(realpath "$report") || return 1
+    base=$(basename "$report")
+    [[ "$resolved" == "$root/queue/reports/$base" \
+        || "$resolved" == "$root/queue/archive/reports/$base" ]] || return 1
+    printf 'queue/reports/%s\n' "$base"
+}
+
 review_validate_cmd_id() { [[ "$1" =~ ^cmd_[A-Za-z0-9_]+$ || "$1" =~ ^campaign_lane_[A-Za-z0-9._-]+$ ]]; }
 
-# Resolve the terminal report set from task YAML, the same SSOT used by
-# cmd_complete_gate.  Basename globs are insufficient because report_filename
-# may intentionally carry a suffix (for example *_gate0_contract.yaml).
+# Resolve the terminal report set from report-owned identity.  Task YAML is a
+# volatile deployment slot and may already contain a later generation when a
+# completion resumes.  Both live and flat archive reports are accepted, while
+# duplicate basenames/report_ids, nested archives, and symlinks fail closed.
 review_resolve_reports() {
     local cmd_id="$1" root
     root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
@@ -247,25 +258,36 @@ review_resolve_reports() {
     python3 - "$root" "$cmd_id" <<'PY'
 import pathlib, sys, yaml
 root, cmd_id = pathlib.Path(sys.argv[1]).resolve(), sys.argv[2]
-reports_dir = (root / "queue" / "reports").resolve()
-found = set()
-for task_path in sorted((root / "queue" / "tasks").glob("*.yaml")):
+reports_dir = root / "queue" / "reports"
+archive_dir = root / "queue" / "archive" / "reports"
+found, basenames, report_ids = [], set(), set()
+candidates = list(reports_dir.glob("*.yaml")) + list(archive_dir.glob("*.yaml"))
+# A matching nested archive is an invalid ambiguous storage location, not a
+# candidate to silently ignore.
+candidates += list(archive_dir.glob("**/*.yaml"))
+seen_paths = set()
+for report_path in sorted(candidates):
+    if report_path in seen_paths:
+        continue
+    seen_paths.add(report_path)
     try:
-        doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+        doc = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
     except (OSError, yaml.YAMLError):
         continue
-    task = doc.get("task", doc)
-    if not isinstance(task, dict) or str(task.get("parent_cmd") or "") != cmd_id:
+    if not isinstance(doc, dict) or str(doc.get("parent_cmd") or "") != cmd_id:
         continue
-    filename = str(task.get("report_filename") or "").strip()
-    if not filename:
-        filename = f"{task_path.stem}_report_{cmd_id}.yaml"
-    candidate = reports_dir / filename
-    logical = pathlib.Path(str(candidate))
-    if logical.parent != reports_dir or not candidate.is_file():
-        continue
-    found.add(str(candidate))
-for report in sorted(found):
+    if report_path.is_symlink() or report_path.parent not in (reports_dir, archive_dir):
+        raise SystemExit(1)
+    resolved = report_path.resolve()
+    if resolved.parent not in (reports_dir.resolve(), archive_dir.resolve()):
+        raise SystemExit(1)
+    report_id = str(doc.get("report_id") or "").strip()
+    if not report_id or report_path.name in basenames or report_id in report_ids:
+        raise SystemExit(1)
+    basenames.add(report_path.name)
+    report_ids.add(report_id)
+    found.append(str(report_path))
+for report in sorted(found, key=lambda p: pathlib.Path(p).name):
     print(report)
 PY
 }
@@ -312,13 +334,15 @@ PY
 }
 
 review_validate_report() {
-    local cmd_id="$1" report="$2" root reports_dir resolved parent
+    local cmd_id="$1" report="$2" root reports_dir archive_dir resolved parent base
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     review_validate_cmd_id "$cmd_id" || return 1
     reports_dir=$(realpath "$root/queue/reports") || return 1
+    archive_dir=$(realpath -m "$root/queue/archive/reports") || return 1
     resolved=$(realpath "$report") || return 1
-    [[ "$resolved" == "$reports_dir/"* ]] || return 1
-    [[ "$(dirname "$resolved")" == "$reports_dir" ]] || return 1
+    base=$(basename "$report")
+    [ ! -L "$report" ] || return 1
+    [[ "$resolved" == "$reports_dir/$base" || "$resolved" == "$archive_dir/$base" ]] || return 1
     parent=$(python3 - "$resolved" <<'PY'
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
@@ -339,10 +363,11 @@ review_approval_value() {
 }
 
 review_two_phase_ready() {
-    local cmd_id="$1" report="$2" root dir key fingerprint gunshi_fp gunshi_result karo_fp karo_result
+    local cmd_id="$1" report="$2" root dir key logical fingerprint gunshi_fp gunshi_result karo_fp karo_result
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     review_validate_report "$cmd_id" "$report" || return 1
-    key=$(review_report_key "${report#"$root"/}")
+    logical=$(PROJECT_ROOT="$root" review_report_logical_path "$report") || return 1
+    key=$(review_report_key "$logical")
     dir="$root/queue/gates/${cmd_id}/review_approvals/reports/$key"
     fingerprint=$(review_report_fingerprint "$report") || return 1
     gunshi_fp=$(review_approval_value "$dir/gunshi.yaml" fingerprint || true)
@@ -353,11 +378,12 @@ review_two_phase_ready() {
 }
 
 review_two_phase_ready_gunshi() {
-    local cmd_id="$1" report="$2" root key dir fingerprint stored result
+    local cmd_id="$1" report="$2" root key dir logical fingerprint stored result
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     review_validate_report "$cmd_id" "$report" || return 1
     fingerprint=$(review_report_fingerprint "$report") || return 1
-    key=$(review_report_key "${report#"$root"/}")
+    logical=$(PROJECT_ROOT="$root" review_report_logical_path "$report") || return 1
+    key=$(review_report_key "$logical")
     dir="$root/queue/gates/$cmd_id/review_approvals/reports/$key"
     stored=$(review_approval_value "$dir/gunshi.yaml" fingerprint || true)
     result=$(review_approval_value "$dir/gunshi.yaml" result || true)
@@ -376,7 +402,7 @@ review_manifest_fingerprint() {
     [ "$#" -gt 0 ] || return 1
     for report in "$@"; do
         fp=$(review_report_fingerprint "$report") || return 1
-        printf '%s:%s\n' "${report#"$root"/}" "$fp"
+        printf '%s:%s\n' "$(PROJECT_ROOT="$root" review_report_logical_path "$report")" "$fp"
     done | LC_ALL=C sort | sha256sum | awk '{print $1}'
 }
 
@@ -396,10 +422,11 @@ review_terminal_snapshot_write() {
     rows=$(mktemp "$gate_dir/.terminal_review_rows.XXXXXX") || return 1
     tmp=$(mktemp "$gate_dir/.terminal_review_manifest.XXXXXX") || { rm -f "$rows"; return 1; }
     for report in "$@"; do
-        logical="${report#"$root"/}"
-        [[ "$logical" == queue/reports/* ]] || { rm -f "$rows" "$tmp"; return 1; }
+        logical=$(PROJECT_ROOT="$root" review_report_logical_path "$report") || { rm -f "$rows" "$tmp"; return 1; }
         resolved=$(realpath "$report") || { rm -f "$rows" "$tmp"; return 1; }
-        [[ "$resolved" == "$root/queue/reports/"* ]] || { rm -f "$rows" "$tmp"; return 1; }
+        [[ "$(dirname "$resolved")" == "$root/queue/reports" \
+            || "$(dirname "$resolved")" == "$root/queue/archive/reports" ]] \
+            || { rm -f "$rows" "$tmp"; return 1; }
         exec {report_fd}<"$report" || { rm -f "$rows" "$tmp"; return 1; }
         pinned="/proc/$BASHPID/fd/$report_fd"
         fp=$(review_report_fingerprint "$pinned") || { exec {report_fd}<&-; rm -f "$rows" "$tmp"; return 1; }
@@ -479,8 +506,7 @@ review_gate_manifest_ready() {
     [ "$snapshot_sha" = "$actual_sha" ] || return 1
     rows=$(mktemp) || return 1
     for report in "$@"; do
-        logical="${report#"$root"/}"
-        [[ "$logical" == queue/reports/* ]] || { rm -f "$rows"; return 1; }
+        logical=$(PROJECT_ROOT="$root" review_report_logical_path "$report") || { rm -f "$rows"; return 1; }
         resolved=$(realpath "$report") || { rm -f "$rows"; return 1; }
         [[ "$(dirname "$resolved")" == "$root/queue/reports" \
             || "$(dirname "$resolved")" == "$root/queue/archive/reports" ]] \
