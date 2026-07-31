@@ -113,6 +113,21 @@ def atomic_json(path, value):
         finally:
             if temp.exists(): temp.unlink()
 
+def _resolve_report(root, report_ref, *, allow_archived=False):
+    """Resolve a direct report while preserving the live/archive boundary."""
+    report_arg = Path(report_ref)
+    if not report_arg.is_absolute():
+        report_arg = root / report_arg
+    report_arg = Path(os.path.abspath(report_arg))
+    report = report_arg.resolve()
+    reports = (root / "queue/reports").resolve()
+    archived = (root / "queue/archive/reports").resolve()
+    current_direct = report_arg.parent == reports and report.parent == reports
+    archived_direct = allow_archived and report_arg.parent == archived and report.parent == archived
+    if not (current_direct or archived_direct) or not report.is_file():
+        raise ValueError("report must be a current direct report (or archived with --allow-archived)")
+    return report_arg, report
+
 def validate(bundle, expected_cmd=None, expected_verdict=None):
     if not isinstance(bundle, dict) or not isinstance(bundle.get("review"), dict): raise ValueError("review bundle root/review is missing")
     review = bundle["review"]; cmd_id = str(review.get("cmd_id") or ""); verdict = str(review.get("verdict") or "").upper()
@@ -187,14 +202,8 @@ def _require_hook_failures_resolved(hook_failures):
         )
 
 def generate(args):
-    root = Path(args.root).resolve(); report_arg = Path(args.report)
-    if not report_arg.is_absolute(): report_arg = root / report_arg
-    report_arg = Path(os.path.abspath(report_arg)); report = report_arg.resolve()
-    reports = (root / "queue/reports").resolve(); archived = (root / "queue/archive/reports").resolve()
-    current_direct = report_arg.parent == reports and report.parent == reports
-    archived_direct = args.allow_archived and report.parent == archived
-    if not (current_direct or archived_direct) or not report.is_file():
-        raise ValueError("report must be a current direct report (or archived with --allow-archived)")
+    root = Path(args.root).resolve()
+    report_arg, report = _resolve_report(root, args.report, allow_archived=args.allow_archived)
     report_data = load(report)
     if str(report_data.get("parent_cmd") or "") != args.cmd: raise ValueError("report parent_cmd contradicts requested cmd")
     report_ref = report_arg if report_arg.is_relative_to(root) else report
@@ -225,8 +234,9 @@ def notify(args):
     path = path.resolve(); gates = (root / "queue/gates").resolve()
     if gates not in path.parents or path.name != "sg7_bundle.json": raise ValueError("bundle must be queue/gates/<cmd>/sg7_bundle.json")
     review = validate(load(path), args.cmd, "APPROVE")
-    report = (root / review["report"]).resolve(); reports = (root / "queue/reports").resolve()
-    if report.parent != reports or not report.is_file(): raise ValueError("bundle report is missing or outside queue/reports")
+    report_ref = str(review["report"])
+    allow_archived = Path(report_ref).parent == Path("queue/archive/reports")
+    _, report = _resolve_report(root, report_ref, allow_archived=allow_archived)
     if hashlib.sha256(report.read_bytes()).hexdigest() != review.get("report_fingerprint"): raise ValueError("bundle report fingerprint is stale")
     # Step 1.5 observations and Step 2 review_log happen before the skill calls
     # formal review_approval.  This final boundary merely verifies that exact
