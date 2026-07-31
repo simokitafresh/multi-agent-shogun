@@ -78,9 +78,16 @@ def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=
     # worker task may already belong to a later assignment.
     if cmd_id.startswith(SPEC_LESS_AUTOGEN_PREFIXES) and isinstance(report, dict) and report_path is not None:
         state = (str(report.get("status") or ""), str(report.get("verdict") or "").upper())
-        expected = ("failed", "FAIL") if requested_verdict == "FAIL" else ("completed", "PASS")
-        if state != expected:
-            raise ValueError(f"autogen spec fallback requires {expected[0]}/{expected[1]} report")
+        # The review verdict and the reporter's verdict are separate axes.  A
+        # reviewer may legitimately reject a completed/PASS report; requiring
+        # the reporter to rewrite it as failed/FAIL destroys the evidence that
+        # was reviewed.  APPROVE remains strict, while FAIL accepts either a
+        # rejected success claim or an already self-reported failure.
+        allowed = ({("completed", "PASS"), ("failed", "FAIL")} if requested_verdict == "FAIL"
+                   else {("completed", "PASS")})
+        if state not in allowed:
+            expected = " or ".join(f"{status}/{verdict}" for status, verdict in sorted(allowed))
+            raise ValueError(f"autogen spec fallback requires {expected} report")
         return _snapshot_command(root, report, cmd_id)
     raise ValueError(f"cmd spec not found: {cmd_id}")
 

@@ -168,3 +168,54 @@ def test_specless_failed_report_generates_fail_bundle_from_snapshot(tmp_path):
     args = SimpleNamespace(root=str(root), report=str(report), cmd=cmd, verdict="FAIL",
                            allow_archived=False, fail_reason="measured failure")
     assert review_bundle.generate(args) == 0
+
+
+@pytest.mark.parametrize(
+    ("has_spec", "review_verdict", "report_status", "report_verdict", "accepted"),
+    [
+        (has_spec, review_verdict, report_status, report_verdict, accepted)
+        for has_spec in (False, True)
+        for review_verdict, report_status, report_verdict, accepted in (
+            ("APPROVE", "completed", "PASS", True),
+            ("APPROVE", "failed", "FAIL", False),
+            ("FAIL", "completed", "PASS", True),
+            ("FAIL", "failed", "FAIL", True),
+        )
+    ],
+)
+def test_review_and_report_verdict_axes_contract(
+    tmp_path, has_spec, review_verdict, report_status, report_verdict, accepted
+):
+    """test_necessity: review verdict must not overwrite the reporter verdict axis."""
+    root = _root(tmp_path); cmd = "cmd_karo_matrix"
+    report = root / f"queue/reports/worker_report_{cmd}.yaml"
+    task = root / "queue/tasks/worker.yaml"
+    task.write_text(
+        f"task:\n  parent_cmd: {cmd}\n  task_id: {cmd}_normal\n  ac_version: ac1\n"
+        f"  report_id: rpt-matrix\n  report_filename: {report.name}\n",
+        encoding="utf-8",
+    )
+    if has_spec:
+        (root / "queue/shogun_to_karo.yaml").write_text(
+            f"commands:\n  {cmd}:\n    acceptance_criteria: [one]\n"
+            "    target_path: scripts/review_bundle.py\n    project: infra\n",
+            encoding="utf-8",
+        )
+    report.write_text(
+        f"parent_cmd: {cmd}\ntask_id: {cmd}_normal\nworker_id: worker\nreport_id: rpt-matrix\n"
+        f"ac_version_read: ac1\nstatus: {report_status}\nverdict: {report_verdict}\n"
+        "binary_checks: {AC1: [{result: yes}]}\nresult: {summary: measured}\n"
+        f"task_contract_snapshot: {{parent_cmd: {cmd}, issued_cmd_id: {cmd}, task_id: {cmd}_normal, "
+        "ac_fingerprint: ac1, purpose: probe, acceptance_criteria: [one], project: infra}\n",
+        encoding="utf-8",
+    )
+    args = SimpleNamespace(
+        root=str(root), report=str(report), cmd=cmd, verdict=review_verdict,
+        allow_archived=False, fail_reason="review evidence mismatch",
+    )
+    if accepted:
+        assert review_bundle.generate(args) == 0
+        assert review_bundle.load(root / f"queue/gates/{cmd}/sg7_bundle.json")["review"]["verdict"] == review_verdict
+    else:
+        with pytest.raises(ValueError):
+            review_bundle.generate(args)
