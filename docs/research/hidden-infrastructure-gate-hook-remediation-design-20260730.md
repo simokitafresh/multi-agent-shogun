@@ -4,7 +4,8 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 版 | v3.0 As-Is / To-Be 5W1H |
+| 進捗更新 | 2026-07-31 22:54 家老 |
+| 版 | v3.1 As-Is / To-Be 5W1H + implementation progress |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流 |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
 | canonical manifest | `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml` |
@@ -14,18 +15,31 @@
 
 ## §-2 現在地（最初に読め）
 
-結論: **調査・再現・成果契約は完了、実装は未着手。親AC基準1/3完了。** Gate 0Bを閉じ、durable-state foundationから実装せよ。
+結論: **Gate 0Bとdurable-state foundationは受入済み。親AC基準2/3完了。** 残るAC3はWave 1Aから順次実装中であり、現在はR01 lock identityを実測している。
 
 | 段階 | 状態 | 一次証跡 | 数値 |
 |---|---|---|---:|
 | Gate 0A contract | `ACCEPTED` | `9e5f8a382` | canonical 17/17、caller 44/44、Gist/local SHA一致 |
 | Wave 0 runtime probe | `ACCEPTED` | `ce54074be` | executed 17/17、OPEN 13、SUPERSEDED 4、未実行0 |
 | Gate 0B evidence prerequisite | `ACCEPTED` | `f37a4365a` | SHA不一致0、未来時刻0、未分類0 |
-| Gate 0B wave map | `NOT_STARTED` | manifest `next_phase=GATE_0B_CLOSURE` | owner/file/dependency map未作成 |
-| AC2 foundation + caller migration | `NOT_STARTED` | なし | 未移行数は実装後に計数 |
-| AC3 fault/performance/full test | `NOT_STARTED` | なし | 未実行 |
+| Gate 0B wave map | `ACCEPTED` | `2e1090bb7`、foundation map | OPEN 13/13、未割当0、owner重複0、循環0、serialization key欠落0 |
+| AC2 durable-state foundation | `ACCEPTED` | `4c89d38ca` | focused 17/17 PASS、SKIP 0、hard-crash時 effect 2→1 |
+| AC3 Wave 1A R01 | `IN_PROGRESS` | `6f4e4b77b`、`queue/tasks/tobisaru.yaml` | 10反復、submitted 160/160、marked 80/80、lost/duplicate/parse 0（post-commit再測定・最終報告待ち） |
+| 親cmd completion gate | `BLOCK_EXPECTED` | `cmd_complete_gate.sh cmd_4200` | 未充足は `parent_ac_uncovered:AC3` 1件のみ |
 
-現manifest: `current_phase=WAVE_0_PROBE`、`phase_state=TERMINAL_PASS`、`next_phase=GATE_0B_CLOSURE`。`foundation wave map`が存在するまでは実装開始条件を満たさない。
+現manifest: `current_phase=WAVE_1A_IDENTITY`、`phase_state=IN_PROGRESS`、`next_phase=WAVE_1B_OWNERSHIP`。AC3はfoundation mapの依存順・serialization keyに従い直列進行する。
+
+### §-2.1 Foundation敵対検証の修正前→修正後
+
+| 不変量 | 修正前 | 修正後 |
+|---|---:|---:|
+| 空artifact/ledgerの偽terminal | rc 0 | fail-close |
+| subject path traversal root escape | 1 | 0 |
+| symlink state-dir root escape | 1 | 0 |
+| ack-loss retryのeffect count | 2 | 1（`outcome_unknown`） |
+| hard process crash後のnaive retry | rc 0、effect 2 | rc 10、effect 1、provider reconcile限定 |
+| test内の明示的破壊コマンド | 3 | 0 |
+| focused contract | 未確定 | 17/17 PASS、SKIP 0 |
 
 ## §-1 スコープ・SSOT・境界
 
@@ -278,9 +292,9 @@ timeout増加、sample減少、load縮小による通過は禁止する。
 ```text
 Gate0A contract [DONE]
   → Wave0 probe [DONE]
-  → Gate0B closure [AC1 DONE / AC2-AC3 PENDING]
-  → durable-state foundation
-  → Wave1A identity
+  → Gate0B closure [DONE]
+  → durable-state foundation [DONE]
+  → Wave1A identity [IN PROGRESS: R01]
   → Wave1B ownership
   → Wave2A terminal receipt
   → Wave2B safe delivery
@@ -292,24 +306,30 @@ Gate0A contract [DONE]
 
 同一file/callerを変更するWaveは`serialization_key`一致として直列化する。先行terminal receiptなしに後続を開始しない。
 
-### §5.1 Gate 0B closure（次に実行）
+### §5.1 Gate 0B closure（完了）
 
 | What | Who | Where | How | Done |
 |---|---|---|---|---|
 | 17 findingをimplementation unitへ写像 | 家老分解→忍者実測→軍師レビュー | canonical manifest | primitive/file/owner/dependency/serialization key/focused test/rollbackを全数記録 | 未割当0、owner重複0、循環0 |
 | phase遷移 | 同上 | manifest | `current_phase=GATE_0B_CLOSURE`→terminal | `next_phase=DURABLE_STATE_FOUNDATION` |
 
-### §5.2 Foundation
+実績: OPEN_CONFIRMED 13/13を実装unitへ写像し、SUPERSEDED 4件を二重実装対象から除外した。受入commitは`2e1090bb7`。
+
+### §5.2 Foundation（完了）
 
 - 隔離可能なWAL root、schema/checksum、atomic publish、generation/fence、reconciler、terminal receipt、outboxを作る。
 - primitive単体PASSだけで採用しない。既存readerとのshadow差分0を先に証明する。
 - parse/write/corruption/stale fenceをfail-closeする。
 
-### §5.3 Wave 1A — identity
+実績: `scripts/lib/durable_state.py`、`scripts/lib/durable_state.sh`、`tests/unit/test_durable_state.bats`を実装した。focused 17/17 PASS・SKIP 0、path traversal/symlink escape各0、ack-lossとhard-crashのeffect countを1へ収束させた。受入commitは`4c89d38ca`。
+
+### §5.3 Wave 1A — identity（進行中）
 
 - `lock_path.sh`を唯一のlock identity生成器にしR01を閉じる。
 - typed exact-match helperでR06を閉じる。
 - immutable rc receipt primitiveを作る。`run_tests.sh` caller置換はWave 3で行う。
+
+進捗: R01を飛猿へ配備済み。対象は`lock_path.sh`、`inbox_write.sh`、`inbox_mark_read.sh`、focused testは`test_lock_path.bats`。初回敵対計測は10反復でsubmitted 160/160、marked 80/80、lost update 0、duplicate 0、parse error 0。`6f4e4b77b`で敵対contractをcommit済みだが、post-commit再測定・報告・軍師reviewが未完了のためterminal扱いしない。
 
 ### §5.4 Wave 1B — ownership（R03-R05、採用時V03）
 
@@ -395,9 +415,10 @@ Gate0A contract [DONE]
 
 | ID | 決めること | 判定方法 | 現在 |
 |---|---|---|---|
-| D01 | V01を独立findingとして実装するか | 同一条件30回。再発>=1で採用 | runtime分類済み、実装map未作成 |
-| D02 | V03 lock-domainをR03-R05と同時修正するか | `/mnt/c`隔離競合30回のreceipt | runtime分類済み、実装map未作成 |
-| D03 | V04 prompt-safe sendの採用境界 | confirmation 0/30、idle 30/30 | runtime分類済み、実装map未作成 |
+| D01 | V01を独立findingとして実装するか | Wave 0のsupersession receiptと現行writer契約を照合 | `SUPERSEDED_WITH_EVIDENCE`。独立unitを作らず再発時のみ再開 |
+| D02 | V03 lock-domainをR03-R05と同時修正するか | `/mnt/c`隔離競合30回のreceipt | 採用。Wave 1B slot 3、R03/R05後 |
+| D03 | V04 prompt-safe sendの採用境界 | confirmation 0/30、idle 30/30 | 採用。Wave 2B slot 2、V02後 |
+| D04 | Codex最終応答で限定Stop adapterを使うか | interactive実機でblock後再生成、silent allow、stale、retry capを全確認 | block再生成は実測済み。allow JSONはinvalidのため、無出力allowと上限検証まで現行Stop禁止を維持 |
 
 ## §8 Review Checklist
 
@@ -429,6 +450,10 @@ Gate0A contract [DONE]
 | 9 | 軍師 | LGTM | Gate 0A contract確定 `9e5f8a382` |
 | Wave0 RC1 | 軍師 | LGTM | 完全再実行command、正時刻、16/16 byte一致 `ce54074be` |
 | Gate0B AC1 | 軍師 | LGTM | receipt 17/17、SHA/未来/未分類0 `f37a4365a` |
+| Gate0B map | 軍師/家老 | ACCEPTED | OPEN 13/13、未割当/owner重複/循環/serialization欠落すべて0 `2e1090bb7` |
+| Foundation RC1-5 | 軍師/家老 | REQUEST_CHANGES→LGTM | 空terminal、path traversal、symlink escape、ack-loss、hard-crash、test安全性を順次是正 |
+| Foundation final | 家老 | ACCEPTED | 17/17 PASS、SKIP 0、hard-crash retry rc 10/effect 1 `4c89d38ca` |
+| Wave1A R01 | 飛猿 | IN_PROGRESS | 敵対contract `6f4e4b77b`。初回10反復でlost/duplicate/parse各0、post-commit再測定中 |
 
 ### §9.2 因果リンク
 

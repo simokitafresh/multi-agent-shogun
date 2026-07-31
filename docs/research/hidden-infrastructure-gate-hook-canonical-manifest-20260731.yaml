@@ -1,9 +1,46 @@
 schema_version: 3
 title: hidden infrastructure gate/hook canonical Gate 0A contract manifest
-phase_order: [GATE_0A_CONTRACT_AUTHORING, WAVE_0_PROBE, GATE_0B_CLOSURE, DURABLE_STATE_FOUNDATION]
-current_phase: WAVE_0_PROBE
-phase_state: TERMINAL_PASS
-next_phase: GATE_0B_CLOSURE
+phase_order: [GATE_0A_CONTRACT_AUTHORING, WAVE_0_PROBE, GATE_0B_CLOSURE, DURABLE_STATE_FOUNDATION, WAVE_1A_IDENTITY, WAVE_1B_OWNERSHIP, WAVE_2A_TERMINAL_RECEIPT, WAVE_2B_SAFE_DELIVERY, WAVE_3_CI_TEST_SSOT, WAVE_4A_HOOK_OWNERSHIP, WAVE_4B_KNOWLEDGE_PROVENANCE, FINAL_CHECKPOINT]
+current_phase: WAVE_1A_IDENTITY
+phase_state: IN_PROGRESS
+next_phase: WAVE_1B_OWNERSHIP
+implementation_progress:
+  updated_at: '2026-07-31T22:54:00+09:00'
+  parent_cmd: cmd_4200
+  parent_ac_complete: 2
+  parent_ac_total: 3
+  completion_gate_blocker: parent_ac_uncovered:AC3
+  gate0b:
+    state: ACCEPTED
+    commit: 2e1090bb7
+    open_confirmed_mapped: 13
+    unassigned: 0
+    owner_duplicates: 0
+    dependency_cycles: 0
+    serialization_key_missing: 0
+  durable_state_foundation:
+    state: ACCEPTED
+    commit: 4c89d38ca
+    focused_pass: 17
+    focused_total: 17
+    skip: 0
+    hard_crash_retry_rc: 10
+    hard_crash_effect_count: 1
+    hard_crash_outcome_unknown: true
+  wave1a_r01:
+    state: IN_PROGRESS
+    owner: tobisaru
+    task: queue/tasks/tobisaru.yaml
+    commit: 6f4e4b77b
+    checkpoint: post_commit_remeasurement_in_progress
+    rounds_observed: 10
+    submitted: 160
+    saved: 160
+    mark_targets: 80
+    marked: 80
+    lost_update: 0
+    duplicate: 0
+    parse_error: 0
 repository_observed_head: f3478e625235b364a187d7c2f6412a78d8add4c7
 code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
 head_drift:
