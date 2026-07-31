@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-31 -->
+<!-- last_updated: 2026-08-01 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,13 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3619 | 殿指示(2026-07-01): Rolling Returnsページのサマリーテーブルに短期・中期期間を追加する。チャートは変更しない。設計書(docs/spec/rolling-returns-period-extension.md)で家老APPROVE済み(commit 3c4254a6) | dm-signal | 07-01 | Rolling Returns summary tableに |
-| cmd_3558 | 軍師覚醒点検(2026-06-27 blt_20260627_025812): commit_missing BLOCK 2件の共通根因=gate_report_format.shがcommit_hash長とfiles_modified形式を未検証。PRE3bにfull hash(40文字)強制、PRE25にfiles_modified文字列形式検証を追加し、根因を構造的に封じる | infra | 07-01 | GP-288(空pathWARN)をgate_report_ |
-| cmd_3620 | 軍師提案(blt_20260701_040406)+殿承認(2026-07-01): Sonnet 5(tobisaru)とSonnet 4.6(kotaro)に同一cmdを並列配備し、既存インフラの計測値で定量比較する。評価対象はinfra gate修正・hook改善・DM-Signal BE・FE・偵察の全カテゴリ | infra | 07-01 | cmd_3620(Sonnet5 vs Sonnet4.6 |
-| cmd_3621 | 殿指示(2026-07-01): 第1ラウンド(cmd_3620)はstaleコンテキスト混入でクリーンベンチマークにならなかった。クリーンなタスクYAMLで別カテゴリcmdを両モデルに配備し再比較する | infra | 07-01 | cmd_3621(Sonnet5 vs Sonnet4.6 |
-| cmd_3623 | 殿指示(2026-07-01): 第3ラウンド(infra改善設計)に続き、バグ調査cmdで三者(S5, S4.6, Opus 4.8)の診断品質を比較する。偵察→設計→バグ調査とカテゴリを変えて累積データを蓄積 | infra | 07-01 | deploy_task.shの教訓注入postconditi |
-| cmd_3633 | 軍師テスト速度分析(blt_20260701_203455): bats per-file overhead(起動1回あたり約600ms)が支配的。テストケース数が少ないファイルを統合し、bats起動回数を削減して総実行時間を短縮する | infra | 07-01 | テスト小型ファイル10本を2本へ統合し、対象12件PASS・ |
-| cmd_3632 | 軍師速度監査(blt_20260630_221002): D0で改善したが残存悪化3件。共通根因=YAML肥大化とpython3 yaml.load逐次実行。cmd_3631累計昇格cancelにつき新IDで再起票 | infra | 07-01 | gate速度高速化3件: ac_physical_verif |
 | cmd_3636 | 殿指示(2026-07-02): DM-Signal性能改善Phase2。設計書v7(6往復レビュー済み)に基づき、PrecomputedRawテーブル新設+Layer5事前計算バッチ+/admin/precompute-raw endpoint+recalculate_fast hookを実装し、API応答の事前計算基盤を構築する | dm-signal | 07-02 | Phase2 raw precompute foundati |
 | cmd_3637 | 殿指示(2026-07-02): DM-Signal性能改善Phase3。Phase2でPrecomputedRaw基盤完成(3f920b94)。P1の5EPにraw lookup+masking分離を適用し、API応答を数秒→200ms以下に短縮する | dm-signal | 07-02 | 軍師レビューFAILを修正。compare-returnsは |
 | cmd_3638 | 殿厳命(2026-07-02): 将軍の起票能力は根幹。品質+速度+自動成長の3軸同時改善。設計書v3(家老3往復APPROVE_WITH_CONDITIONS)に基づき、(1)D0実施済みFP修正のcommit+bats回帰 (2)BLOCK SUMMARYにパターン別集計追加 (3)ファイル抽出器を共通関数化 (4)速度プロファイル計測+ボトルネック関数の高速化 | infra | 07-02 | cmd_saveのBLOCK SUMMARY集計追加、SG- |
