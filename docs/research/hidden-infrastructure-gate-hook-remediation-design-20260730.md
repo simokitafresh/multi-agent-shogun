@@ -4,9 +4,9 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-07-31 22:54 家老 |
-| 版 | v3.1 As-Is / To-Be 5W1H + implementation progress |
-| 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流 |
+| 進捗更新 | 2026-07-31 23:32 家老 |
+| 版 | v3.2 As-Is / To-Be 5W1H + multi-runtime compatibility contract |
+| 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
 | canonical manifest | `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml` |
 | Wave 0 receipt | `docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml` |
@@ -78,6 +78,26 @@
 4. retry可能な外部副作用をtransactional outboxとidempotency keyで収束させる。
 5. 共通primitiveを一括置換せず、read-only shadowとcaller単位canaryを通す。
 6. 品質だけでなくwall/lock-wait/recoveryを測定し、スループット退行を停止条件にする。
+
+### §0.1 実行基盤の大前提 — multi CLI / model / effort / OS
+
+**本書はCodex単体の設計書ではない。** 正本はCLI固有hook設定ではなく、共通event・durable state・gate契約である。Claude CodeとCodexは能力差をadapterで吸収し、model/effort/service tierは実行条件、OS/filesystemは永続化・監視・性能条件として明示的に検証する。
+
+| 軸 | 現在の実体・正本 | 設計契約 |
+|---|---|---|
+| CLI | `config/settings.yaml`、`config/cli_profiles.yaml`の`claude` / `codex` | CLI固有hookをSSOTにしない。共通eventを各CLIのcapability adapterへ写像し、未対応eventはdaemon/gate/scriptで等価保証する |
+| model | Claude Opus/Sonnet系、GPT系を含むconfigured `model_name` | model名で安全性を分岐しない。全configured model tupleで同一binary invariantを満たす |
+| effort / tier | low/medium/high等のeffort、default/fast等のservice tier | latency・timeout・出力特性を計測条件へ含める。高effort 1件を他tupleの代理にしない |
+| OS / filesystem | WSL2+DrvFs(`/mnt/c`)、Linux filesystem、Windows host境界。追加OSはmanifestで明示 | flock、atomic replace、fsync、symlink、mtime、inotify/stat、実行bit、改行をOS/filesystem別に検証する。未検証OSをportableと称さない |
+| shell / process | bash、tmux、CLI child process | PID/PGID、signal、prompt、TTY挙動をCLI×OS tupleで検証する |
+
+検証母集団は「代表1構成」ではなく、checkpoint時点のactive configurationから生成した**全distinct tuple**とする。
+
+```text
+(cli_type, model_name, effort, service_tier, os_family, filesystem_type, hook_capability_set)
+```
+
+同一modelでもeffort/tier/OS/filesystemが異なれば別tupleである。`selected / discovered / executed`を別計数し、`executed == discovered`、FAIL 0、SKIP 0をterminal条件とする。未対応tupleは黙って除外せず`UNSUPPORTED`として根拠・代替保証・ownerをmanifestへ残す。
 
 ## §1 As-Is — 現状5W1H
 
@@ -259,6 +279,7 @@ intended → prepared → published → terminal
 | detector | 検知後action（fail-closedまたは自動実行）必須 |
 | FP/FN | 固定corpusで`FP/negative total`、`FN/positive total`を記録 |
 | performance | fixed SHA、同一load/concurrency、warm/cold、`n>=30`、p50/p95/p99/max/timeout |
+| runtime matrix | active configurationからCLI/model/effort/tier/OS/filesystem全distinct tupleを生成。代表抽出禁止、未実行0 |
 | stop budget | wall/lock-wait p95 `max(5%,20ms)`、recovery p95 `max(10%,1s)`超過でrollback |
 
 timeout増加、sample減少、load縮小による通過は禁止する。
@@ -273,6 +294,8 @@ timeout増加、sample減少、load縮小による通過は禁止する。
 | When | caller移行前のfocused test、最終checkpointの全量test |
 | Where | redirect queue/log/WAL root + fake tmux/ntfy/network |
 | How | deterministic barrierでedgeを全選択し、未実行0を集計する |
+
+各faultは全runtime tupleへ直積展開する。CLI固有fault（hook return、Stop、prompt、reset）は該当CLI全tuple、filesystem固有fault（rename、fsync、symlink、mtime、watch）は該当OS/filesystem全tupleで実行する。別CLI・別effort・別OSのPASSを代理証拠にしない。
 
 | fault | 必須結果 |
 |---|---|
@@ -355,10 +378,14 @@ Gate0A contract [DONE]
 - leader/joiner/issuerをimmutable rc receiptへ移行する。
 - SKIPはFAIL。cache keyへworktree source/runner/fixture/env identityを含める。
 
-### §5.8 Wave 4A — hook ownership（R14）
+### §5.8 Wave 4A — multi-CLI hook ownership（R14）
 
-- combined hookを唯一owner化する。
-- manifest generatorでmatcher到達性、実体存在、Codex BLOCK exit=2、exit=1件数0を強制する。
+- 共通event contractを唯一の意味論ownerとし、Claude Code / Codex adapterは能力写像だけを持つ。
+- 同一event内の順序依存処理はCLIごとに単一adapterへ合成する。CLI固有hook設定の二重ownerを禁止する。
+- manifest generatorで、全configured CLIのmatcher到達性、実体存在、event coverage、代替daemon/gate coverageを強制する。
+- Codexは意図的BLOCKをexit 2、hook errorを別分類し、exit 1によるCLI停止を0件にする。
+- Claude CodeはPreToolUse/PostToolUse/Stopのpayload・exit・permissionDecision意味論をfixtureとinteractive probeで固定する。
+- Stopは共通実装を押し付けない。Claudeのturn停止とCodexの再生成挙動を別adapterで扱い、再実行loop・silent allow・stale flag・retry capを各CLIで測る。
 
 ### §5.9 Wave 4B — knowledge provenance（R11/R15/V01）
 
@@ -394,6 +421,8 @@ Gate0A contract [DONE]
 | 13 | fixed SHA isolated checkpointを用い共有tree状態を混ぜない |
 | 14 | wall/lock wait/recovery budget超過0。超過時rollback済み |
 | 15 | lesson/insight/gate metricsへ新checkを還流し、次回起動時に受動注入される |
+| 16 | active configurationから生成したCLI/model/effort/tier/OS/filesystem tupleのdiscovered=executed、FAIL=0、SKIP=0、未分類0 |
+| 17 | CLI固有hook eventは共通event contractへN/N写像され、未対応eventはdaemon/gate/scriptの代替保証N/Nを持つ |
 
 ## §7 Decision Ledger
 
@@ -418,7 +447,7 @@ Gate0A contract [DONE]
 | D01 | V01を独立findingとして実装するか | Wave 0のsupersession receiptと現行writer契約を照合 | `SUPERSEDED_WITH_EVIDENCE`。独立unitを作らず再発時のみ再開 |
 | D02 | V03 lock-domainをR03-R05と同時修正するか | `/mnt/c`隔離競合30回のreceipt | 採用。Wave 1B slot 3、R03/R05後 |
 | D03 | V04 prompt-safe sendの採用境界 | confirmation 0/30、idle 30/30 | 採用。Wave 2B slot 2、V02後 |
-| D04 | Codex最終応答で限定Stop adapterを使うか | interactive実機でblock後再生成、silent allow、stale、retry capを全確認 | block再生成は実測済み。allow JSONはinvalidのため、無出力allowと上限検証まで現行Stop禁止を維持 |
+| D04 | CLI別の限定Stop adapterを使うか | Claude/Codex各configured tupleのinteractive実機でblock後挙動、silent allow、stale、retry capを全確認 | Codexのblock再生成は実測済み。allow JSONはinvalidのため、無出力allowと上限検証までCodex Stop禁止を維持。Claudeは別adapterとして既存Stop意味論を再検証する |
 
 ## §8 Review Checklist
 
@@ -436,6 +465,9 @@ Gate0A contract [DONE]
 10. fault corpus・FP/FN母集団を縮めていないか。
 11. wall/lock-wait/recoveryを悪化させていないか。
 12. 最終checkpointの厳密さを途中tryへ誤適用していないか。
+13. configured CLI/model/effort/tier/OS/filesystemのdistinct tupleを全数列挙し、代表1構成で代用していないか。
+14. Claudeのhook/Stop意味論をCodex exit codeへ、またはCodexの再生成意味論をClaudeへ誤投影していないか。
+15. WSL2/DrvFsのPASSをnative Linux/別filesystemのatomicity・watch・実行bit証拠として流用していないか。
 
 ## §9 履歴・因果・検索索引
 
