@@ -9325,6 +9325,7 @@ codd:
 | causal | `cmd_karo_part2_p1a_review_publish_identity_20260728` files_modified: [[provisional_review_approval]] |
 | cmd | `cmd_karo_part2_p1a_review_publish_identity_20260728` (`scripts/lib/defense_overhead_writer.sh`, `scripts/report_field_set.sh`, `scripts/review_approval.sh`) |
 | cmd | `cmd_karo_hotfix_review_approval_no_code_contract_20260729` (`scripts/lib/review_approval.sh`, `tests/unit/test_report_commit_identity.bats`) |
+| causal | `[[archive-review-reapproval-path-audit-20260801]]` audits the archived review reapproval path for [[provisional_review_approval]]. |
 | causal_chain | `[[cmd_karo_impl_partial_push_safety_20260726]]` (L1370) |
 
 ## provisional_bash_speed_training — 仮: Bash Speed Training
