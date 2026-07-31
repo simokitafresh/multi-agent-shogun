@@ -13,6 +13,7 @@
 - 対象: `multi-agent-shogun` の制御面、gate、hook、配備、完了、CI、知識還流
 - 状態: Gate 0A contract authoring revision 3 — Wave 0 probe開始前
 - canonical manifest: `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml`
+- external sync receipt: local/Gist raw SHA256 `11e171b49a650240aa64c925c3a3d59adb623cd32c13de3d4d405ab8ad7bb456`、Gist revision `ebc1c7e83c8b2e9f69b3161f35ba2e4ad7f89565`（bytes一致、2026-07-31確認）
 
 ## 0. 結論
 
