@@ -736,6 +736,7 @@ SH
 # checkpoint; dependency expansion belongs to the fixed-SHA integration lane.
 @test "task mode selects the declared contract test without transitive expansion" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
   cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$@" >"$SELECT_ARGS_LOG"
@@ -769,6 +770,64 @@ YAML
   [[ "$output" == *"TEST_SCOPE result=task files=3"* ]]
   [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
   [ ! -e "$SELECT_ARGS_LOG" ]
+}
+
+# test_necessity: task-mode selected paths must reach their suffix-owned engine
+# exactly once; missing and unowned suffixes must fail closed before execution.
+@test "task mode dispatches Python Bats and mixed paths once and rejects unknown or missing" {
+  mkdir -p "$TMPROOT/queue/tasks"
+  printf 'def test_ok():\n    assert True\n' >"$TMPROOT/tests/unit/owned.py"
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  printf 'not a test\n' >"$TMPROOT/tests/unit/owned.txt"
+  export ENGINE_LOG="$TMPROOT/engine.log"
+  export REAL_PYTHON3="$(command -v python3)"
+  cat >"$TMPROOT/bin/python3" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
+  printf 'pytest:%s\n' "$*" >>"$ENGINE_LOG"
+  exit 0
+fi
+exec "$REAL_PYTHON3" "$@"
+SH
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf 'bats:%s\n' "$*" >>"$ENGINE_LOG"
+printf '1..1\nok 1 owned\n'
+SH
+  chmod +x "$TMPROOT/bin/python3" "$TMPROOT/bin/bats"
+
+  for fixture in python bats mixed unknown missing; do
+    case "$fixture" in
+      python) paths='[tests/unit/owned.py]' ;;
+      bats) paths='[tests/unit/owned.bats]' ;;
+      mixed) paths='[tests/unit/owned.py, tests/unit/owned.bats]' ;;
+      unknown) paths='[tests/unit/owned.txt]' ;;
+      missing) paths='[tests/unit/missing.py]' ;;
+    esac
+    printf 'task:\n  test_path: %s\n' "$paths" >"$TMPROOT/queue/tasks/$fixture.yaml"
+  done
+
+  for fixture in python bats mixed; do
+    : >"$ENGINE_LOG"
+    run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+      SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+      bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/$fixture.yaml"
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^pytest:' "$ENGINE_LOG")" -eq "$([ "$fixture" = bats ] && echo 0 || echo 1)" ]
+    [ "$(grep -c '^bats:' "$ENGINE_LOG")" -eq "$([ "$fixture" = python ] && echo 0 || echo 1)" ]
+  done
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/unknown.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"no task test engine for suffix"* ]]
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/missing.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"selected task test is missing"* ]]
 }
 
 # test_necessity: Task selector must classify tests by path/extension contract;

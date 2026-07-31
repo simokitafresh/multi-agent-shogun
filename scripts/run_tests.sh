@@ -632,10 +632,14 @@ aggregate_bats_outputs() {
 run_bats_files_parallel() {
     local -a files=("$@")
     if [[ -n "${RUN_TESTS_SELECTED_PATHS_FILE:-}" ]]; then
-        : > "$RUN_TESTS_SELECTED_PATHS_FILE"
+        if [[ "${RUN_TESTS_PRESERVE_SELECTED_PATHS:-0}" != "1" ]]; then
+            : > "$RUN_TESTS_SELECTED_PATHS_FILE"
+        fi
         local selected_path
         for selected_path in "${files[@]}"; do
-            printf '%s\n' "${selected_path#"$REPO_ROOT"/}" >> "$RUN_TESTS_SELECTED_PATHS_FILE"
+            if [[ "${RUN_TESTS_PRESERVE_SELECTED_PATHS:-0}" != "1" ]]; then
+                printf '%s\n' "${selected_path#"$REPO_ROOT"/}" >> "$RUN_TESTS_SELECTED_PATHS_FILE"
+            fi
         done
     fi
     local total="${#files[@]}"
@@ -982,6 +986,43 @@ run_bats_files_parallel() {
     fi
 
     printf 'PASS: %s bats file(s) (%s run, %s cached)\n' "$total" "$launched_count" "$cached_count"
+}
+
+run_task_test_paths() {
+    local -a selected=("$@") bats_paths=() pytest_paths=()
+    local path resolved
+
+    for path in "${selected[@]}"; do
+        resolved="$path"
+        [ -f "$resolved" ] || resolved="$REPO_ROOT/$path"
+        if [ ! -f "$resolved" ]; then
+            echo "BLOCK: selected task test is missing: $path" >&2
+            return 2
+        fi
+        case "$path" in
+            *.bats) bats_paths+=("$path") ;;
+            *.py) pytest_paths+=("$path") ;;
+            *)
+                echo "BLOCK: no task test engine for suffix: $path" >&2
+                return 2
+                ;;
+        esac
+    done
+
+    if [[ -n "${RUN_TESTS_SELECTED_PATHS_FILE:-}" ]]; then
+        : > "$RUN_TESTS_SELECTED_PATHS_FILE"
+        for path in "${selected[@]}"; do
+            printf '%s\n' "${path#"$REPO_ROOT"/}" >> "$RUN_TESTS_SELECTED_PATHS_FILE"
+        done
+    fi
+    if [ "${#pytest_paths[@]}" -gt 0 ]; then
+        printf 'TEST_DISPATCH engine=pytest files=%s\n' "${#pytest_paths[@]}"
+        (cd "$REPO_ROOT" && python3 -m pytest -q "${pytest_paths[@]}") || return $?
+    fi
+    if [ "${#bats_paths[@]}" -gt 0 ]; then
+        printf 'TEST_DISPATCH engine=bats files=%s\n' "${#bats_paths[@]}"
+        RUN_TESTS_PRESERVE_SELECTED_PATHS=1 run_bats_files_parallel "${bats_paths[@]}" || return $?
+    fi
 }
 
 verify_run_tests_receipt() {
@@ -1823,27 +1864,13 @@ _run_tests_main() {
             [ "$_selector_rc" -eq 0 ] || { echo "BLOCK: task-scoped selector failed rc=$_selector_rc" >&2; exit 2; }
             mapfile -t selected <<<"$_selector_output"
             [ -n "$_selector_output" ] || selected=()
-            # Execution guard: declared paths may name tests that exist only in
-            # another environment or are yet to be written (files_to_modify);
-            # passing a missing file to bats fails with rc=7 (CI RED 2026-07-24
-            # sample.bats). Keep the selection reason, drop only missing files.
-            local -a _runnable_tests=()
-            local _sel_file
-            for _sel_file in "${selected[@]}"; do
-                if [ -f "$_sel_file" ] || [ -f "$REPO_ROOT/$_sel_file" ]; then
-                    _runnable_tests+=("$_sel_file")
-                else
-                    echo "WARN: selected test not found, skipping: $_sel_file" >&2
-                fi
-            done
-            selected=("${_runnable_tests[@]}")
             if [ "${#selected[@]}" -eq 0 ]; then
                 echo "TEST_SELECTION result=selected reason=task_scope_no_mapped_tests files=0"
                 exit 0
             fi
             printf 'TEST_SELECTION result=selected reason=task_scope files=%s\n' "${#selected[@]}"
             RUN_TESTS_MODE=affected
-            run_bats_files_parallel "${selected[@]}"
+            run_task_test_paths "${selected[@]}"
             ;;
         *)
             echo "Usage: bash scripts/run_tests.sh [all|unit|push|affected|task <task_yaml>|file <path>]" >&2
