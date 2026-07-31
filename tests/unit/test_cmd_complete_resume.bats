@@ -199,25 +199,28 @@ PY
     printf 'defense_overhead_write() { :; }\n' > "$root/scripts/lib/defense_overhead_writer.sh"
     printf 'import pathlib,sys\npathlib.Path(__file__).with_name("sg7.args").write_text(" ".join(sys.argv[1:]))\n' \
         > "$root/scripts/review_bundle.py"
-    report="$root/queue/archive/reports/ninja_report_cmd_archive.yaml"
-    printf 'report_id: rpt-archive\nparent_cmd: cmd_archive\nstatus: completed\nverdict: PASS\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult: {summary: ok}\n' > "$report"
-
-    run env REVIEW_APPROVAL_ROOT="$root" REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
-        REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
-        bash "$root/scripts/review_approval.sh" cmd_archive gunshi LGTM "$report"
-    [ "$status" -eq 0 ]
-    run env REVIEW_APPROVAL_ROOT="$root" REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
-        REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
-        bash "$root/scripts/review_approval.sh" cmd_archive karo ACCEPT "$report"
-    [ "$status" -eq 0 ]
-
-    logical_key=$(printf '%s' 'queue/reports/ninja_report_cmd_archive.yaml' | sha256sum | awk '{print $1}')
-    physical_key=$(printf '%s' 'queue/archive/reports/ninja_report_cmd_archive.yaml' | sha256sum | awk '{print $1}')
-    [ -f "$root/queue/gates/cmd_archive/review_approvals/reports/$logical_key/gunshi.yaml" ]
-    [ -f "$root/queue/gates/cmd_archive/review_approvals/reports/$logical_key/karo.yaml" ]
-    [ ! -e "$root/queue/gates/cmd_archive/review_approvals/reports/$physical_key" ]
+    for n in 1 2 3 4 5 6; do
+        report="$root/queue/archive/reports/ninja${n}_report_cmd_archive.yaml"
+        printf 'report_id: rpt-archive-%s\nparent_cmd: cmd_archive\nstatus: completed\nverdict: PASS\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult: {summary: ok}\n' "$n" > "$report"
+        run env REVIEW_APPROVAL_ROOT="$root" REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+            REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
+            bash "$root/scripts/review_approval.sh" cmd_archive gunshi LGTM "$report"
+        [ "$status" -eq 0 ]
+    done
+    for n in 1 2 3 4 5 6; do
+        report="$root/queue/archive/reports/ninja${n}_report_cmd_archive.yaml"
+        run env REVIEW_APPROVAL_ROOT="$root" REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+            REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
+            bash "$root/scripts/review_approval.sh" cmd_archive karo ACCEPT "$report"
+        [ "$status" -eq 0 ]
+        logical_key=$(printf '%s' "queue/reports/ninja${n}_report_cmd_archive.yaml" | sha256sum | awk '{print $1}')
+        physical_key=$(printf '%s' "queue/archive/reports/ninja${n}_report_cmd_archive.yaml" | sha256sum | awk '{print $1}')
+        [ -f "$root/queue/gates/cmd_archive/review_approvals/reports/$logical_key/gunshi.yaml" ]
+        [ -f "$root/queue/gates/cmd_archive/review_approvals/reports/$logical_key/karo.yaml" ]
+        [ ! -e "$root/queue/gates/cmd_archive/review_approvals/reports/$physical_key" ]
+    done
     grep -q -- '--allow-archived' "$root/scripts/sg7.args" || { cat "$root/scripts/sg7.args" >&3; false; }
-    [ "$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["reports"]))' "$root/queue/gates/cmd_archive/terminal_review_manifest.json")" -eq 1 ]
+    [ "$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["reports"]))' "$root/queue/gates/cmd_archive/terminal_review_manifest.json")" -eq 6 ]
 }
 
 # test_necessity: archive identity resolution must reject every ambiguity and
