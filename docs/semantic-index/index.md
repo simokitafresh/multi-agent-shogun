@@ -9001,6 +9001,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607311711_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607311717_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607312324_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608010127_tobisaru` — [[semantic_causal_automation]] -> `docs/research/hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_insights — 仮: Insights
