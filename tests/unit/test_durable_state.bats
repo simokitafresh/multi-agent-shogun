@@ -204,3 +204,26 @@ json.dump(d, open(p, 'w'))
     [[ "$output" == *"\"result\": \"diverge\""* ]]
     [[ "$output" == *"\"naive_error\": null"* ]]
 }
+
+# test_necessity: writeが失敗するfault(権限拒否等)はloudに非0 exitで失敗し、
+# 既存の有効recordを一切壊さない不変量を守る(root実行時はpermission bitが無効化
+# されるため本テストの前提が成立せず、意図的にskipする)。
+@test "a write fault fails loudly and leaves the prior valid record untouched" {
+    if [ "$(id -u)" -eq 0 ]; then
+        skip "root ignores directory permission bits; fault cannot be injected"
+    fi
+    run bash "$DS" begin "$STATE_ROOT" cmd wfsubj att1 payloadhash1 ""
+    [ "$status" -eq 0 ]
+    before="$output"
+
+    subj_dir="$STATE_ROOT/active/cmd/wfsubj"
+    chmod 555 "$subj_dir"
+    run bash "$DS" begin "$STATE_ROOT" cmd wfsubj att2 payloadhash2 ""
+    write_fault_status="$status"
+    chmod 755 "$subj_dir"
+    [ "$write_fault_status" -ne 0 ]
+
+    run bash "$DS" read "$STATE_ROOT" cmd wfsubj
+    [ "$status" -eq 0 ]
+    [ "$output" = "$before" ]
+}
