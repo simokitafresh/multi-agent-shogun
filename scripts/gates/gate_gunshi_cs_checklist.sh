@@ -161,7 +161,7 @@ BEGIN {
         sub(/^[[:space:]]*changed_lines:[[:space:]]*/, "", line)
         gsub(/[^0-9]/, "", line)
         changed_lines = line + 0
-    } else if ($0 ~ /^[[:space:]]*adversarial_review:[[:space:]]*$/) {
+    } else if ($0 ~ /^[[:space:]]*adversarial_review:/) {
         has_adversarial = 1
     } else if ($0 ~ /^[[:space:]]*required:[[:space:]]*(true|yes)/) {
         adversarial_required = 1
