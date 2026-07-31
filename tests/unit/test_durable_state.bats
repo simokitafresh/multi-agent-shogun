@@ -6,11 +6,8 @@
 setup() {
     ROOT_DIR="${BATS_TEST_DIRNAME}/../.."
     DS="$ROOT_DIR/scripts/lib/durable_state.sh"
-    STATE_ROOT="$(mktemp -d)"
-}
-
-teardown() {
-    rm -rf "$STATE_ROOT"
+    STATE_ROOT="$BATS_TEST_TMPDIR/state_root"
+    mkdir -p "$STATE_ROOT"
 }
 
 fence_of() {
@@ -234,10 +231,11 @@ json.dump(d, open(p, 'w'))
 # ディレクトリが作成されrc=0で成功していた。修正後は全てtyped identity検証で
 # fail-closeし、root外への副作用が発生しないことを実測する)。
 @test "subject identity containing path traversal never writes outside the declared root" {
-    # Use a private nested root (not $STATE_ROOT's shared parent, e.g. system
-    # /tmp) so the escape check is not flaky under unrelated concurrent
-    # activity from other processes sharing the same temp directory.
-    escape_parent="$(mktemp -d)"
+    # Use a private nested root under bats' own per-test tmpdir (not a
+    # shared system location) so the escape check is not flaky under
+    # unrelated concurrent activity, and cleanup is left entirely to bats
+    # (no explicit rm -rf here).
+    escape_parent="$BATS_TEST_TMPDIR/escape_parent"
     nested_root="$escape_parent/nested/state_root"
     mkdir -p "$nested_root"
 
@@ -258,8 +256,6 @@ json.dump(d, open(p, 'w'))
     run bash "$DS" read "$nested_root" cmd "normal-subject-123"
     [ "$status" -eq 0 ]
     [ "$output" = "null" ]
-
-    rm -rf "$escape_parent"
 }
 
 # test_necessity: active/locks/leases/quarantine/outbox/outbox_locksのいずれかが
@@ -268,39 +264,39 @@ json.dump(d, open(p, 'w'))
 # outbox-reserveがrc=0で外部dirへ書込んだ。修正後はrealpath containmentが
 # mkdir/openの直前で必ず検証され、正常系(symlinkなし)は引続き成功する)。
 @test "a symlinked fixed state subdirectory never receives a write escaping the root" {
-    external_root="$(mktemp -d)"
-
+    # Each corpus entry gets its own never-reused root under bats' per-test
+    # tmpdir, so an operation's side effects in one subdirectory (e.g.
+    # begin() also touching "locks") can never collide with a later
+    # iteration's symlink -- no cleanup/deletion between iterations needed.
     for sub in active locks leases quarantine outbox outbox_locks; do
-        rm -rf "${STATE_ROOT:?}/${sub}"
-        ln -s "$external_root" "$STATE_ROOT/$sub"
+        iter_root="$BATS_TEST_TMPDIR/corpus_$sub/state_root"
+        external_root="$BATS_TEST_TMPDIR/corpus_$sub/external_root"
+        mkdir -p "$iter_root" "$external_root"
+        ln -s "$external_root" "$iter_root/$sub"
 
         case "$sub" in
             active|locks)
-                run bash "$DS" begin "$STATE_ROOT" cmd "escsubj_$sub" att1 payloadhash1 ""
+                run bash "$DS" begin "$iter_root" cmd "escsubj_$sub" att1 payloadhash1 ""
                 ;;
             leases)
-                run bash "$DS" lease-acquire "$STATE_ROOT" cmd "escsubj_$sub" owner1 30
+                run bash "$DS" lease-acquire "$iter_root" cmd "escsubj_$sub" owner1 30
                 ;;
             quarantine)
-                mkdir -p "$STATE_ROOT/active/cmd/escsubj_$sub"
-                echo 'not valid json{{{' > "$STATE_ROOT/active/cmd/escsubj_$sub/state.json"
-                run bash "$DS" read "$STATE_ROOT" cmd "escsubj_$sub"
+                mkdir -p "$iter_root/active/cmd/escsubj_$sub"
+                echo 'not valid json{{{' > "$iter_root/active/cmd/escsubj_$sub/state.json"
+                run bash "$DS" read "$iter_root" cmd "escsubj_$sub"
                 ;;
             outbox|outbox_locks)
-                run bash "$DS" outbox-reserve "$STATE_ROOT" "esckey_$sub" deliver targetX payloadhashY
+                run bash "$DS" outbox-reserve "$iter_root" "esckey_$sub" deliver targetX payloadhashY
                 ;;
         esac
 
         [ "$status" -ne 0 ]
         escaped_count="$(ls -A "$external_root" | wc -l)"
         [ "$escaped_count" -eq 0 ]
-
-        rm -f "$STATE_ROOT/$sub"
     done
 
     # normal operation must still succeed once no subdirectory is symlinked
     run bash "$DS" begin "$STATE_ROOT" cmd normal_after_corpus att1 payloadhash1 ""
     [ "$status" -eq 0 ]
-
-    rm -rf "$external_root"
 }
