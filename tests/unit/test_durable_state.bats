@@ -227,3 +227,29 @@ json.dump(d, open(p, 'w'))
     [ "$status" -eq 0 ]
     [ "$output" = "$before" ]
 }
+
+# test_necessity: subject_type/subject_idにdotdot/separator/absolute-pathを渡しても
+# declared root外へのwriteは常に0件である不変量を守る(軍師containment RC:
+# 修正前は "../../../escaped_marker" のようなsubject_idでdeclared root外に
+# ディレクトリが作成されrc=0で成功していた。修正後は全てtyped identity検証で
+# fail-closeし、root外への副作用が発生しないことを実測する)。
+@test "subject identity containing path traversal never writes outside the declared root" {
+    parent_dir="$(dirname "$STATE_ROOT")"
+    before_parent_listing="$(ls -A "$parent_dir")"
+
+    for bad_id in "../../../escaped_marker" "../evil" "/etc/passwd" "." ".." "a/b"; do
+        run bash "$DS" read "$STATE_ROOT" cmd "$bad_id"
+        [ "$status" -ne 0 ]
+        [[ "$output" == *"ERROR:"* ]]
+    done
+    run bash "$DS" begin "$STATE_ROOT" "../escaped_type" subj att1 payloadhash1 ""
+    [ "$status" -ne 0 ]
+
+    after_parent_listing="$(ls -A "$parent_dir")"
+    [ "$before_parent_listing" = "$after_parent_listing" ]
+
+    # a well-formed identity must still work after the containment guard
+    run bash "$DS" read "$STATE_ROOT" cmd "normal-subject-123"
+    [ "$status" -eq 0 ]
+    [ "$output" = "null" ]
+}

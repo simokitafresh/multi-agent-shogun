@@ -62,6 +62,10 @@ class OutboxError(DurableStateError):
     exit_code = 7
 
 
+class InvalidIdentityError(DurableStateError):
+    exit_code = 9
+
+
 OUTBOX_STATES = ("reserved", "inflight", "applied", "failed")
 
 
@@ -78,8 +82,42 @@ def compute_idempotency_key(subject_type, subject_id, generation, action, target
     return f"{subject_type}:{subject_id}:{generation}:{action}:{target}:{payload_hash}"
 
 
+def _validate_identity(name: str, label: str) -> None:
+    """Typed identity guard for subject_type/subject_id (gunshi containment RC):
+    reject anything that is not a single, relative, plain path component --
+    empty, absolute, '.'/'..' or containing '..', a path separator, or NUL."""
+    if not isinstance(name, str) or not name:
+        raise InvalidIdentityError(f"{label} must be a non-empty string")
+    if "\x00" in name:
+        raise InvalidIdentityError(f"{label} must not contain a NUL byte: {name!r}")
+    if name in (".", ".."):
+        raise InvalidIdentityError(f"{label} must not be '.' or '..': {name!r}")
+    if name.startswith("/") or name.startswith("\\"):
+        raise InvalidIdentityError(f"{label} must not be an absolute path: {name!r}")
+    if "/" in name or "\\" in name:
+        raise InvalidIdentityError(f"{label} must not contain a path separator: {name!r}")
+    if ".." in name:
+        raise InvalidIdentityError(f"{label} must not contain '..': {name!r}")
+
+
+def _ensure_contained(root: Path, path: Path) -> Path:
+    """realpath containment check (defense in depth, independent of
+    _validate_identity): the resolved path must stay under the declared
+    root even if it does not yet exist."""
+    root_real = os.path.realpath(str(root))
+    path_real = os.path.realpath(str(path))
+    if path_real != root_real and not path_real.startswith(root_real + os.sep):
+        raise InvalidIdentityError(
+            f"resolved path escapes declared root: {path_real!r} not under {root_real!r}"
+        )
+    return path
+
+
 def _subject_dir(root: Path, subject_type: str, subject_id: str) -> Path:
+    _validate_identity(subject_type, "subject_type")
+    _validate_identity(subject_id, "subject_id")
     d = root / "active" / subject_type / subject_id
+    _ensure_contained(root, d)
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -91,9 +129,13 @@ def _quarantine_dir(root: Path) -> Path:
 
 
 def _lock_path(root: Path, subject_type: str, subject_id: str) -> Path:
+    _validate_identity(subject_type, "subject_type")
+    _validate_identity(subject_id, "subject_id")
     d = root / "locks"
     d.mkdir(parents=True, exist_ok=True)
-    return d / f"{subject_type}__{subject_id}.lock"
+    p = d / f"{subject_type}__{subject_id}.lock"
+    _ensure_contained(root, p)
+    return p
 
 
 def _record_path(root: Path, subject_type: str, subject_id: str) -> Path:
@@ -145,6 +187,7 @@ def read_active(root: Path, subject_type: str, subject_id: str):
         validate_schema(record)
     except (json.JSONDecodeError, SchemaQuarantineError) as exc:
         qpath = _quarantine_dir(root) / f"{subject_type}__{subject_id}.{time.time_ns()}.json"
+        _ensure_contained(root, qpath)
         with open(qpath, "w") as qf:
             qf.write(raw)
         raise SchemaQuarantineError(str(exc)) from exc
@@ -239,9 +282,13 @@ def mutate(root: Path, subject_type: str, subject_id: str, expected_fence: int,
 
 
 def _lease_path(root: Path, subject_type: str, subject_id: str) -> Path:
+    _validate_identity(subject_type, "subject_type")
+    _validate_identity(subject_id, "subject_id")
     d = root / "leases"
     d.mkdir(parents=True, exist_ok=True)
-    return d / f"{subject_type}__{subject_id}.json"
+    p = d / f"{subject_type}__{subject_id}.json"
+    _ensure_contained(root, p)
+    return p
 
 
 def _read_lease(root: Path, subject_type: str, subject_id: str):
