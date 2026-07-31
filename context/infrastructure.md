@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-31 cmd_karo_hotfix_q6_latest_invalid_fallback_202607311427 reviewed source boundary -->
-<!-- source_commit:2def66ea2 reason:cmd_karo_hotfix_q6_latest_invalid_fallback_202607311427 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=2def66ea2 -->
+<!-- last_updated: 2026-08-01 cmd_karo_hotfix_run_tests_task_python_dispatch_20260801 reviewed source boundary -->
+<!-- source_commit:d9c02f170 reason:cmd_karo_hotfix_run_tests_task_python_dispatch_20260801 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=d9c02f170 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -105,6 +105,8 @@ affected=0はheavy-job admission前にselectorを先行し、terminal receiptを
 CDP孤児=profileパターン自動掃除で意志非依存化。`cleanup_orphan_profiles`が`--user-data-dir`に`cdp-`を含み`--remote-debugging-port`を持つchrome.exeをpidfile有無に関係なく掃除する。殿のdefault Chrome（`cdp-`なし）は除外。→ `scripts/cdp_chrome_cleanup.sh` / `docs/research/cmd_4121_cdp_orphan_cleanup.md`（cmd_4121）
 
 共有worktreeの任務テスト帰属は `run_tests.sh task queue/tasks/<worker>.yaml` を使い、task/report所有pathのみを既存selectorへ渡す。引数なし`affected`や`unit`全量を忍者任務verdictへ混入させず、全量健全性はfixed-SHA統合checkpointで独立判定する。cmd_4108実測は690件中scope外FAIL1→所有4 test files・109/109 PASS・混入0。→ `docs/research/task-test-attribution-after-20260721.md`
+
+`run_tests.sh task` は選択testをsuffix別の正規engineへ一度だけ配送する（`.py`→pytest、`.bats`→Bats）。Python/Bats混在も単一TAP/receiptへ集約し、未知suffix・欠損pathはfail-closeする。実測は非cache 55/55 PASS・SKIP0、Python-only receipt 1/1、mixed receipt 2/2、誤配送0・重複0。→ `scripts/run_tests.sh` / `tests/unit/test_run_tests.bats`（cmd_karo_hotfix_run_tests_task_python_dispatch_20260801、commits `6c3392d74`, `d9c02f170`）
 
 同一CLIが複数入力を受けるBatsでは、互換caseをbatch化してassertionを維持したまま重複初期化だけを減らす。`test_test_select.bats`は`test_select.sh`起動10→5、wall 18.248→8.444秒（53.7%短縮）、5/5 PASS・FAIL0・SKIP0。→ `tests/unit/test_test_select.bats` / `scripts/test_select.sh`（commit `a1ea08648`）
 
