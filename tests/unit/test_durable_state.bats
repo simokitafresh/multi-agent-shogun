@@ -203,6 +203,63 @@ fence_of() {
     [[ "$output" == *"\"outcome_unknown\": true"* ]]
 }
 
+# test_necessity: hard process crash(SIGKILL相当。except節を経由せずflockだけが
+# 解放される)でrecordがinflight/outcome_unknown=falseのまま残っていても、次回
+# applyはeffectを再実行してはならない(効果済みretryのeffect_countは1のまま、
+# 偽applied=0)不変量を守る(家老AC4追補RC: 修正前はeffect_count=1→2/final=applied
+# で再現していた)。
+@test "a record left in-flight by a hard crash blocks retry instead of re-running the effect" {
+    side_log="$STATE_ROOT/hardcrash_side_effect.log"
+    run bash "$DS" outbox-reserve "$STATE_ROOT" "hardcrash-key" deliver targetX payloadhashY
+    [ "$status" -eq 0 ]
+
+    # Simulate a hard crash: fire the effect, persist state=inflight (as
+    # outbox_apply_once does just before calling apply_fn), then exit via
+    # os._exit() -- this skips all Python exception handling, exactly like
+    # SIGKILL/OOM/host failure would, releasing the flock without ever
+    # marking the record failed/outcome_unknown. The helper deliberately
+    # exits 137 (simulated SIGKILL); that is not a test failure here.
+    python3 - "$STATE_ROOT" "$side_log" <<'PYEOF' || true
+import sys, os, fcntl, time
+sys.path.insert(0, "scripts/lib")
+import durable_state as ds
+from pathlib import Path
+
+root = Path(sys.argv[1])
+side_log = sys.argv[2]
+key = "hardcrash-key"
+
+lock_path = ds._outbox_lock_path(root, key)
+lock_f = open(lock_path, "a+")
+fcntl.flock(lock_f, fcntl.LOCK_EX)
+record = ds._outbox_read(root, key)
+record["state"] = "inflight"
+record["attempts"] = record.get("attempts", 0) + 1
+record["recorded_at"] = time.time()
+ds._atomic_publish(ds._outbox_path(root, key), record)
+with open(side_log, "a") as f:
+    f.write(f"{key}\n")
+os._exit(137)
+PYEOF
+    [ "$(wc -l < "$side_log")" -eq 1 ]
+
+    # a retry that only sees the crash-left inflight record must be
+    # refused, never silently resumed/re-run
+    run bash "$DS" outbox-apply "$STATE_ROOT" "hardcrash-key" "$side_log"
+    [ "$status" -ne 0 ]
+    [ "$(wc -l < "$side_log")" -eq 1 ]
+
+    run bash "$DS" outbox-reserve "$STATE_ROOT" "hardcrash-key" deliver targetX payloadhashY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"\"outcome_unknown\": true"* ]]
+
+    # the only way forward is explicit reconciliation with provider evidence
+    run bash "$DS" outbox-reconcile "$STATE_ROOT" "hardcrash-key" "provider-confirmed-receipt"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"\"state\": \"applied\""* ]]
+    [ "$(wc -l < "$side_log")" -eq 1 ]
+}
+
 # test_necessity: 未applyの外部effectを、providerから得たprovider_receiptで
 # 事後確定させると(自動retryではなく)状態がappliedへ収束する不変量を守る。
 @test "reconcile with a provider receipt collapses an unknown outcome to applied without re-running it" {

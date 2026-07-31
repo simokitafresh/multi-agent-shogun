@@ -452,9 +452,17 @@ def outbox_apply_once(root: Path, idempotency_key: str, apply_fn) -> dict:
     unknowable from here (e.g. the ack was lost after a real network call
     reached the provider) -- so the record is marked failed with
     outcome_unknown=True and this function refuses to retry it again.
+
+    A hard crash (SIGKILL, OOM, host failure) releases the flock without
+    ever running the except handler, so a *retry* can also find the record
+    already `inflight` from a previous, unfinished call (karo hard-crash
+    RC). That is exactly as ambiguous as an in-process exception -- this
+    function never resumes an on-disk `inflight` record itself; it fails
+    it closed as outcome_unknown instead.
+
     Only outbox_reconcile() (fed authoritative out-of-band evidence) may
-    move a key out of that state; a naive automatic retry is exactly what
-    caused a real side effect to fire twice."""
+    move a key out of outcome_unknown; a naive automatic retry is exactly
+    what caused a real side effect to fire twice."""
     lock_path = _outbox_lock_path(root, idempotency_key)
     with open(lock_path, "a+") as lock_f:
         fcntl.flock(lock_f, fcntl.LOCK_EX)
@@ -467,6 +475,21 @@ def outbox_apply_once(root: Path, idempotency_key: str, apply_fn) -> dict:
             if record.get("outcome_unknown"):
                 raise OutcomeUnknownError(
                     f"key {idempotency_key} has an unresolved outcome; "
+                    "call outbox_reconcile() with provider evidence before retrying"
+                )
+            if record["state"] == "inflight":
+                # Found already in-flight at entry: some earlier call started
+                # apply_fn and never recorded a result (crash or otherwise).
+                # We did not just set this ourselves in this call, so we
+                # cannot assume it is safe -- fail closed instead of resuming.
+                record["outcome_unknown"] = True
+                record["error"] = record.get("error") or (
+                    "found in-flight on retry entry; a prior attempt's outcome is unknown"
+                )
+                record["recorded_at"] = time.time()
+                _atomic_publish(_outbox_path(root, idempotency_key), record)
+                raise OutcomeUnknownError(
+                    f"key {idempotency_key} was left in-flight by a prior attempt; "
                     "call outbox_reconcile() with provider evidence before retrying"
                 )
             record["state"] = "inflight"
