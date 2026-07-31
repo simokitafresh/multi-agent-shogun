@@ -1553,6 +1553,8 @@ if _bulletin_files:
     # 掲示板がQ6回答の正規チャネルなので、lord_conversationに古い回答が
     # 残っていても最新の将軍投稿を優先する。archiveは追記順のため、
     # ファイル順のままでは当日最古のQ6を拾ってしまう。
+    # 最新Q6が弱い/空/矛盾targetでも旧Q6へfallbackしてはならない。
+    # 最新の実回答1件を選んだ時点で正規チャネルの判定を確定する。
     bulletin_entries.sort(key=lambda entry: str(entry.get("posted_at", "")), reverse=True)
     for entry in bulletin_entries:
         if entry.get("posted_by") != "shogun":
@@ -1570,16 +1572,16 @@ if _bulletin_files:
             continue
         if not is_q6_answer_text(text):
             continue
+        if "Q6" in text and all(term in text for term in prompt_only_terms):
+            continue
+        found_answer = any(term in text for term in answer_terms)
+        found_automation_target = False
+        automation_target = ""
         value = extract_automation_target(text)
         if value:
             found_automation_target = True
             automation_target = value
-        if any(term in text for term in answer_terms):
-            if "Q6" in text and all(term in text for term in prompt_only_terms):
-                continue
-            found_answer = True
-        if found_answer and found_automation_target:
-            break
+        break
 
 if found_answer and found_automation_target:
     print("FOUND_WITH_AUTOMATION")

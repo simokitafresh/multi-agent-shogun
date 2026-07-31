@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: 明示Q6追補は旧Q6回答を上書きするがprompt-onlyは回答ではない不変量を守る。
+# test_necessity: 最新Q6時系列単調性（最新の実回答だけを判定し、弱い/空targetから旧回答へfallbackしない）を守る。
 
 setup() {
     export PROJECT_ROOT
@@ -125,6 +125,100 @@ EOF
         'projects/infra/lessons_shogun.yaml に q6_followup_proof_token を実装済み。origin接続済み。'
     [ "$status" -eq 0 ]
     [[ "$output" == *$'OK\tprojects/infra/lessons_shogun.yaml: q6_followup_proof_token'* ]]
+}
+
+@test "latest weak Q6 target does not fall back to older valid target" {
+    local older newer
+    older="$(date -d '2 minutes ago' '+%Y-%m-%dT%H:%M:%S')"
+    newer="$(date -d '1 minute ago' '+%Y-%m-%dT%H:%M:%S')"
+    cat > "$TEST_ROOT/queue/bulletin.yaml" <<EOF
+entries:
+- id: old-valid
+  content: 'Q6回答: 洗脳#5を確認。自動化ターゲット: scripts/old-proof.sh を実装済み。'
+  posted_by: shogun
+  posted_at: '$older'
+- id: latest-weak
+  content: 'Q6回答: 洗脳#5を確認。自動化ターゲット: gate修正を予定。'
+  posted_by: shogun
+  posted_at: '$newer'
+EOF
+
+    run_detector
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FOUND_MISSING_AUTOMATION"* ]]
+    [[ "$output" != *$'TARGET\tscripts/old-proof.sh'* ]]
+}
+
+@test "latest empty Q6 target does not fall back to older valid target" {
+    local older newer
+    older="$(date -d '2 minutes ago' '+%Y-%m-%dT%H:%M:%S')"
+    newer="$(date -d '1 minute ago' '+%Y-%m-%dT%H:%M:%S')"
+    cat > "$TEST_ROOT/queue/bulletin.yaml" <<EOF
+entries:
+- id: old-valid
+  content: 'Q6回答: 洗脳#5を確認。自動化ターゲット: scripts/old-proof.sh を実装済み。'
+  posted_by: shogun
+  posted_at: '$older'
+- id: latest-empty
+  content: 'Q6回答: 洗脳#5を確認。自動化ターゲット: なし'
+  posted_by: shogun
+  posted_at: '$newer'
+EOF
+
+    run_detector
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FOUND_MISSING_AUTOMATION"* ]]
+    [[ "$output" != *$'TARGET\tscripts/old-proof.sh'* ]]
+}
+
+@test "latest valid Q6 target remains the implementation proof target" {
+    local older newer
+    older="$(date -d '2 minutes ago' '+%Y-%m-%dT%H:%M:%S')"
+    newer="$(date -d '1 minute ago' '+%Y-%m-%dT%H:%M:%S')"
+    cat > "$TEST_ROOT/queue/bulletin.yaml" <<EOF
+entries:
+- id: old-valid
+  content: 'Q6回答: 洗脳#5を確認。自動化ターゲット: scripts/old-proof.sh を実装済み。'
+  posted_by: shogun
+  posted_at: '$older'
+- id: latest-valid
+  content: 'Q6回答: 洗脳#5を確認。自動化ターゲット: scripts/new-proof.sh に new_proof_token を実装済み。'
+  posted_by: shogun
+  posted_at: '$newer'
+EOF
+
+    run_detector
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FOUND_WITH_AUTOMATION"* ]]
+    [[ "$output" == *$'TARGET\tscripts/new-proof.sh に new_proof_token'* ]]
+    [[ "$output" != *$'TARGET\tscripts/old-proof.sh'* ]]
+}
+
+@test "current bulletin Q6 takes precedence over archive fallback" {
+    local older newer archive
+    older="$(date -d '2 minutes ago' '+%Y-%m-%dT%H:%M:%S')"
+    newer="$(date -d '1 minute ago' '+%Y-%m-%dT%H:%M:%S')"
+    archive="$TEST_ROOT/queue/archive/bulletin_$(date '+%Y%m%d').yaml"
+    mkdir -p "$(dirname "$archive")"
+    cat > "$archive" <<EOF
+entries:
+- id: archived-valid
+  content: 'Q6回答: 洗脳#5を確認。自動化ターゲット: scripts/archive-proof.sh を実装済み。'
+  posted_by: shogun
+  posted_at: '$older'
+EOF
+    cat > "$TEST_ROOT/queue/bulletin.yaml" <<EOF
+entries:
+- id: current-weak
+  content: 'Q6回答: 洗脳#5を確認。自動化ターゲット: hook追加を検討中。'
+  posted_by: shogun
+  posted_at: '$newer'
+EOF
+
+    run_detector
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FOUND_MISSING_AUTOMATION"* ]]
+    [[ "$output" != *$'TARGET\tscripts/archive-proof.sh'* ]]
 }
 
 # test_necessity: 「Q6追記」等のQ6追補と同義の実回答ラベルが実装証拠付きで検出される不変量を守る
