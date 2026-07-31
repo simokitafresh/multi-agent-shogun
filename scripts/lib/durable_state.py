@@ -103,7 +103,10 @@ def _validate_identity(name: str, label: str) -> None:
 def _ensure_contained(root: Path, path: Path) -> Path:
     """realpath containment check (defense in depth, independent of
     _validate_identity): the resolved path must stay under the declared
-    root even if it does not yet exist."""
+    root even if it does not yet exist. Resolving realpath walks the whole
+    chain, so this also catches a *fixed* state subdirectory (active/locks/
+    leases/quarantine/outbox/outbox_locks) itself being a symlink out of
+    root, not only a subject-identity injection."""
     root_real = os.path.realpath(str(root))
     path_real = os.path.realpath(str(path))
     if path_real != root_real and not path_real.startswith(root_real + os.sep):
@@ -113,26 +116,30 @@ def _ensure_contained(root: Path, path: Path) -> Path:
     return path
 
 
+def _safe_dir(root: Path, path: Path) -> Path:
+    """Common safe-join point (karo containment RC): verify realpath
+    containment BEFORE creating any state directory, so a symlink planted
+    at any fixed subdirectory cannot redirect subsequent writes outside the
+    declared root."""
+    _ensure_contained(root, path)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def _subject_dir(root: Path, subject_type: str, subject_id: str) -> Path:
     _validate_identity(subject_type, "subject_type")
     _validate_identity(subject_id, "subject_id")
-    d = root / "active" / subject_type / subject_id
-    _ensure_contained(root, d)
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    return _safe_dir(root, root / "active" / subject_type / subject_id)
 
 
 def _quarantine_dir(root: Path) -> Path:
-    d = root / "quarantine"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    return _safe_dir(root, root / "quarantine")
 
 
 def _lock_path(root: Path, subject_type: str, subject_id: str) -> Path:
     _validate_identity(subject_type, "subject_type")
     _validate_identity(subject_id, "subject_id")
-    d = root / "locks"
-    d.mkdir(parents=True, exist_ok=True)
+    d = _safe_dir(root, root / "locks")
     p = d / f"{subject_type}__{subject_id}.lock"
     _ensure_contained(root, p)
     return p
@@ -284,8 +291,7 @@ def mutate(root: Path, subject_type: str, subject_id: str, expected_fence: int,
 def _lease_path(root: Path, subject_type: str, subject_id: str) -> Path:
     _validate_identity(subject_type, "subject_type")
     _validate_identity(subject_id, "subject_id")
-    d = root / "leases"
-    d.mkdir(parents=True, exist_ok=True)
+    d = _safe_dir(root, root / "leases")
     p = d / f"{subject_type}__{subject_id}.json"
     _ensure_contained(root, p)
     return p
@@ -379,17 +385,19 @@ def reconcile(root: Path, subject_type: str, subject_id: str, owner_id: str,
 
 
 def _outbox_path(root: Path, idempotency_key: str) -> Path:
-    d = root / "outbox"
-    d.mkdir(parents=True, exist_ok=True)
+    d = _safe_dir(root, root / "outbox")
     digest = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest()
-    return d / f"{digest}.json"
+    p = d / f"{digest}.json"
+    _ensure_contained(root, p)
+    return p
 
 
 def _outbox_lock_path(root: Path, idempotency_key: str) -> Path:
-    d = root / "outbox_locks"
-    d.mkdir(parents=True, exist_ok=True)
+    d = _safe_dir(root, root / "outbox_locks")
     digest = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest()
-    return d / f"{digest}.lock"
+    p = d / f"{digest}.lock"
+    _ensure_contained(root, p)
+    return p
 
 
 def _outbox_read(root: Path, idempotency_key: str):

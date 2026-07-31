@@ -234,22 +234,73 @@ json.dump(d, open(p, 'w'))
 # ディレクトリが作成されrc=0で成功していた。修正後は全てtyped identity検証で
 # fail-closeし、root外への副作用が発生しないことを実測する)。
 @test "subject identity containing path traversal never writes outside the declared root" {
-    parent_dir="$(dirname "$STATE_ROOT")"
-    before_parent_listing="$(ls -A "$parent_dir")"
+    # Use a private nested root (not $STATE_ROOT's shared parent, e.g. system
+    # /tmp) so the escape check is not flaky under unrelated concurrent
+    # activity from other processes sharing the same temp directory.
+    escape_parent="$(mktemp -d)"
+    nested_root="$escape_parent/nested/state_root"
+    mkdir -p "$nested_root"
 
     for bad_id in "../../../escaped_marker" "../evil" "/etc/passwd" "." ".." "a/b"; do
-        run bash "$DS" read "$STATE_ROOT" cmd "$bad_id"
+        run bash "$DS" read "$nested_root" cmd "$bad_id"
         [ "$status" -ne 0 ]
         [[ "$output" == *"ERROR:"* ]]
     done
-    run bash "$DS" begin "$STATE_ROOT" "../escaped_type" subj att1 payloadhash1 ""
+    run bash "$DS" begin "$nested_root" "../escaped_type" subj att1 payloadhash1 ""
     [ "$status" -ne 0 ]
 
-    after_parent_listing="$(ls -A "$parent_dir")"
-    [ "$before_parent_listing" = "$after_parent_listing" ]
+    # nothing must have escaped into escape_parent besides the "nested" dir
+    # we created ourselves before running any of the malicious calls
+    escape_listing="$(ls -A "$escape_parent")"
+    [ "$escape_listing" = "nested" ]
 
     # a well-formed identity must still work after the containment guard
-    run bash "$DS" read "$STATE_ROOT" cmd "normal-subject-123"
+    run bash "$DS" read "$nested_root" cmd "normal-subject-123"
     [ "$status" -eq 0 ]
     [ "$output" = "null" ]
+
+    rm -rf "$escape_parent"
+}
+
+# test_necessity: active/locks/leases/quarantine/outbox/outbox_locksのいずれかが
+# root外を指すsymlinkに置き換えられていても、そのsymlink経由の書込みは常に0件で
+# 拒否される不変量を守る(家老containment RC: 修正前はroot/outboxをsymlinkにすると
+# outbox-reserveがrc=0で外部dirへ書込んだ。修正後はrealpath containmentが
+# mkdir/openの直前で必ず検証され、正常系(symlinkなし)は引続き成功する)。
+@test "a symlinked fixed state subdirectory never receives a write escaping the root" {
+    external_root="$(mktemp -d)"
+
+    for sub in active locks leases quarantine outbox outbox_locks; do
+        rm -rf "${STATE_ROOT:?}/${sub}"
+        ln -s "$external_root" "$STATE_ROOT/$sub"
+
+        case "$sub" in
+            active|locks)
+                run bash "$DS" begin "$STATE_ROOT" cmd "escsubj_$sub" att1 payloadhash1 ""
+                ;;
+            leases)
+                run bash "$DS" lease-acquire "$STATE_ROOT" cmd "escsubj_$sub" owner1 30
+                ;;
+            quarantine)
+                mkdir -p "$STATE_ROOT/active/cmd/escsubj_$sub"
+                echo 'not valid json{{{' > "$STATE_ROOT/active/cmd/escsubj_$sub/state.json"
+                run bash "$DS" read "$STATE_ROOT" cmd "escsubj_$sub"
+                ;;
+            outbox|outbox_locks)
+                run bash "$DS" outbox-reserve "$STATE_ROOT" "esckey_$sub" deliver targetX payloadhashY
+                ;;
+        esac
+
+        [ "$status" -ne 0 ]
+        escaped_count="$(ls -A "$external_root" | wc -l)"
+        [ "$escaped_count" -eq 0 ]
+
+        rm -f "$STATE_ROOT/$sub"
+    done
+
+    # normal operation must still succeed once no subdirectory is symlinked
+    run bash "$DS" begin "$STATE_ROOT" cmd normal_after_corpus att1 payloadhash1 ""
+    [ "$status" -eq 0 ]
+
+    rm -rf "$external_root"
 }
