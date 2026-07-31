@@ -1,0 +1,9 @@
+receipt_schema=1
+finding=R01
+code_baseline_sha=55b3df6d4d937c7683ef1ca9a83393760d593e47
+executed_at=2026-07-31T19:31:34+09:00
+rc=0
+hash_scope=entire_file_bytes_including_final_LF; sha256 command excludes only the sha256 field because this immutable receipt contains no self-hash
+exact_command=bash -c 'set -euo pipefail; target=/mnt/c/tools/multi-agent-shogun/queue/inbox/hanzo.yaml; legacy=${target//[^[:alnum:]._-]/_}; legacy=/tmp/shogun_lock_${legacy}.lock; source scripts/lib/lock_path.sh; canonical=$(lock_path "$target"); canonical2=$(lock_path "$target"); printf "positive legacy=%s canonical=%s equal=%s\n" "$legacy" "$canonical" "$([ "$legacy" = "$canonical" ] && echo yes || echo no)"; printf "negative canonical_1=%s canonical_2=%s equal=%s\n" "$canonical" "$canonical2" "$([ "$canonical" = "$canonical2" ] && echo yes || echo no)"'
+positive legacy=/tmp/shogun_lock__mnt_c_tools_multi-agent-shogun_queue_inbox_hanzo.yaml.lock canonical=/tmp/shogun_lock_512f0b4b88bf47ff.lock equal=no
+negative canonical_1=/tmp/shogun_lock_512f0b4b88bf47ff.lock canonical_2=/tmp/shogun_lock_512f0b4b88bf47ff.lock equal=yes

@@ -2,6 +2,8 @@ schema_version: 3
 title: hidden infrastructure gate/hook canonical Gate 0A contract manifest
 phase_order: [GATE_0A_CONTRACT_AUTHORING, WAVE_0_PROBE, GATE_0B_CLOSURE, DURABLE_STATE_FOUNDATION]
 current_phase: GATE_0A_CONTRACT_AUTHORING
+phase_state: TERMINAL_PASS
+next_phase: WAVE_0_PROBE
 repository_observed_head: f3478e625235b364a187d7c2f6412a78d8add4c7
 code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
 head_drift:
@@ -52,7 +54,9 @@ runtime_probe_receipts:
     isolation: read-only path computation; no queue/tmux/ntfy/network mutation
     executed_at: '2026-07-31T19:31:34+09:00'
     rc: 0
-    artifact_path: docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml#runtime_probe_receipts.R01
+    artifact_path: docs/research/hidden-infrastructure-gate-hook-r01-receipt-20260731.txt
+    artifact_hash_scope: entire receipt byte sequence including the final LF
+    artifact_sha256: b88355c80aadbd8a0615025072f25c699fc7df3ecd9d5b93c7bf2ccf2495ac9a
     exact_executable_command: >-
       bash -c 'set -euo pipefail; target=/mnt/c/tools/multi-agent-shogun/queue/inbox/hanzo.yaml; legacy=${target//[^[:alnum:]._-]/_}; legacy=/tmp/shogun_lock_${legacy}.lock; source scripts/lib/lock_path.sh; canonical=$(lock_path "$target"); canonical2=$(lock_path "$target"); printf "positive legacy=%s canonical=%s equal=%s\n" "$legacy" "$canonical" "$([ "$legacy" = "$canonical" ] && echo yes || echo no)"; printf "negative canonical_1=%s canonical_2=%s equal=%s\n" "$canonical" "$canonical2" "$([ "$canonical" = "$canonical2" ] && echo yes || echo no)"'
     raw_bounded_output:
@@ -88,9 +92,10 @@ runtime_probe_receipts:
   V04: *needs_probe
 caller_inventory:
   unique_paths: 13
-  records: 22
-  discovered: 22
-  classified: 22
+  derivation: executable definitions, callsites, readers, and writers were re-enumerated from the fixed code baseline; comments and variable declarations are excluded
+  records: 25
+  discovered: 25
+  classified: 25
   missing: 0
   line_content_verified_at: '2026-07-31T19:31:34+09:00'
   false_mappings: 0
@@ -104,19 +109,22 @@ caller_inventory:
     - {finding: R06, location: "scripts/dashboard_update.sh:248", role: "dashboard_gate_clear_reader", observed_line: "if [ \"$latest_status\" = \"CLEAR\" ] && review_two_phase_ready \"$CMD_ID\" \"$report\"; then"}
     - {finding: R07, location: "scripts/review_approval.sh:490", role: "review_marker_writer", observed_line: "marker=\"$ROOT/queue/gates/$cmd_id/review_gate.done\""}
     - {finding: R08, location: "scripts/cmd_complete_gate.sh:1835", role: "completion_task_status_writer", observed_line: "if yaml_field_set \"$task_file\" \"task\" \"status\" \"idle\" >/dev/null 2>&1; then"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9354", role: "semantic_async_tail_dispatch", observed_line: "bash \"$SCRIPT_DIR/scripts/semantic_causal_post_clear.sh\" \"$CMD_ID\""}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9475", role: "dashboard_async_tail_dispatch", observed_line: "(SKIP_AUTO_SECTION=1 bash \"$SCRIPT_DIR/scripts/dashboard_update.sh\" \"$CMD_ID\" >/dev/null 2>&1 || true) &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9983", role: "archive_async_tail_dispatch", observed_line: "bash \"$SCRIPT_DIR/scripts/archive_completed.sh\" \"$CMD_ID\" >> \"$LOG_DIR/cmd_complete_gate_async.log\" 2>&1"}
     - {finding: R09, location: ".github/workflows/test.yml:62", role: "ci_test_inventory_selector", observed_line: "bash scripts/run_tests.sh push || {"}
     - {finding: R09, location: "scripts/run_tests.sh:1605", role: "test_inventory_selector", observed_line: "[ \"${#test_files[@]}\" -gt 0 ] || { echo \"BLOCK: canonical push set empty\" >&2; exit 2; }"}
     - {finding: R10, location: "scripts/run_tests.sh:1123", role: "terminal_receipt_writer", observed_line: "emit_run_tests_terminal_receipt() {"}
-    - {finding: R11, location: "scripts/semantic_index_update.sh:1408", role: "provenance_classifier", observed_line: "# before source filtering so manually curated AC5 insights are not dropped."}
+    - {finding: R11, location: "scripts/semantic_index_update.sh:1405", role: "provenance_classifier", observed_line: "source_allowed = entry_source in (\"semantic_index_update\", \"semantic_stress_test\") or is_training_source"}
     - {finding: R13, location: "scripts/run_tests.sh:798", role: "cache_identity_reader", observed_line: "cache_key=\"$(bats_cache_key \"$file\" \"$file_inner_jobs\" \"$source_fp\")\""}
     - {finding: R14, location: ".codex/hooks.json:72", role: "hook_manifest_owner", observed_line: "\"matcher\": \"Bash|exec_command|unified_exec\","}
     - {finding: R14, location: ".claude/hooks/post-bash-combined.sh:260", role: "hook_dispatcher", observed_line: "if tool_name not in {\"Bash\", \"exec_command\", \"unified_exec\"}: raise SystemExit(0)"}
     - {finding: R15, location: "scripts/semantic_index_update.sh:1605", role: "insight_state_writer", observed_line: "for insight_id in sorted(resolved_ids):"}
     - {finding: V01, location: "scripts/semantic_index_update.sh:1627", role: "semantic_index_writer", observed_line: "atomic_write_text(index_path, text)"}
-    - {finding: V02, location: "scripts/inbox_watcher.sh:756", role: "delivery_dispatcher", observed_line: "local unread_count=\"$1\""}
+    - {finding: V02, location: "scripts/inbox_watcher.sh:1085", role: "delivery_dispatcher", observed_line: "if ! timeout \"$SEND_KEYS_TIMEOUT\" tmux paste-buffer -t \"$PANE_TARGET\" -b \"nudge_${AGENT_ID}\" -d 2>/dev/null; then"}
     - {finding: V03, location: "scripts/auto_deploy_next.sh:356", role: "outer_lock_owner", observed_line: "TARGET_LOCK=\"${TARGET_YAML}.lock\""}
     - {finding: V03, location: "scripts/deploy_task.sh:315", role: "inner_lock_owner", observed_line: "deploy_task_lock_path() {"}
-    - {finding: V04, location: "scripts/inbox_watcher.sh:817", role: "idle_gate_reader", observed_line: "local idle_flag=\"${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}\""}
+    - {finding: V04, location: "scripts/inbox_watcher.sh:818", role: "idle_gate_reader", observed_line: "if [[ \"$effective_cli\" == \"claude\" ]] && [ ! -f \"$idle_flag\" ] && ! maybe_force_idle_flag \"$effective_cli\"; then"}
   entries:
     - {finding: R01, location: 'scripts/inbox_write.sh:2042', role: writer_lock_owner}
     - {finding: R01, location: 'scripts/inbox_mark_read.sh:102', role: reader_writer_lock_owner}
@@ -127,19 +135,22 @@ caller_inventory:
     - {finding: R06, location: 'scripts/dashboard_update.sh:248', role: dashboard_gate_clear_reader}
     - {finding: R07, location: 'scripts/review_approval.sh:490', role: review_marker_writer}
     - {finding: R08, location: 'scripts/cmd_complete_gate.sh:1835', role: completion_task_status_writer}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9354', role: semantic_async_tail_dispatch}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9475', role: dashboard_async_tail_dispatch}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9983', role: archive_async_tail_dispatch}
     - {finding: R09, location: '.github/workflows/test.yml:62', role: ci_test_inventory_selector}
     - {finding: R09, location: 'scripts/run_tests.sh:1605', role: test_inventory_selector}
     - {finding: R10, location: 'scripts/run_tests.sh:1123', role: terminal_receipt_writer}
-    - {finding: R11, location: 'scripts/semantic_index_update.sh:1408', role: provenance_classifier}
+    - {finding: R11, location: 'scripts/semantic_index_update.sh:1405', role: provenance_classifier}
     - {finding: R13, location: 'scripts/run_tests.sh:798', role: cache_identity_reader}
     - {finding: R14, location: '.codex/hooks.json:72', role: hook_manifest_owner}
     - {finding: R14, location: '.claude/hooks/post-bash-combined.sh:260', role: hook_dispatcher}
     - {finding: R15, location: 'scripts/semantic_index_update.sh:1605', role: insight_state_writer}
     - {finding: V01, location: 'scripts/semantic_index_update.sh:1627', role: semantic_index_writer}
-    - {finding: V02, location: 'scripts/inbox_watcher.sh:756', role: delivery_dispatcher}
+    - {finding: V02, location: 'scripts/inbox_watcher.sh:1085', role: delivery_dispatcher}
     - {finding: V03, location: 'scripts/auto_deploy_next.sh:356', role: outer_lock_owner}
     - {finding: V03, location: 'scripts/deploy_task.sh:315', role: inner_lock_owner}
-    - {finding: V04, location: 'scripts/inbox_watcher.sh:817', role: idle_gate_reader}
+    - {finding: V04, location: 'scripts/inbox_watcher.sh:818', role: idle_gate_reader}
 findings:
   - {id: R01, remediation_status: ACTIVE, primitive: lock_identity, caller: [scripts/inbox_write.sh, scripts/inbox_mark_read.sh], edge: inbox_mutation, failpoint: concurrent_append_mark_read, expected_durable_prefix: lock/acquired, invariant: one lock identity per inbox, serialization_key: inbox_yaml}
   - {id: R03, remediation_status: ACTIVE, primitive: owner_transaction, caller: [scripts/auto_deploy_next.sh], edge: source_to_target, failpoint: after_target_before_tombstone, expected_durable_prefix: prepared/owner_pointer, invariant: executable_owner_count_le_1, serialization_key: task_owner}
