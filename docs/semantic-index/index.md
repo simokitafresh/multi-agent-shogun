@@ -2121,6 +2121,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T10:53:01+09:00 a2a21165b6ccd098f toolu_01WciRxJzN7Y3qef7LC2uL34 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
 | lesson | `L1493` 完了reflux非発火と鮮度gate検出を混同しない |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T23:37:04+09:00 2026-07-31 23:38 強ニュー復帰点差分。cmd_reflux_backlink_202607312324_hanzoはSSOT index exact=1に対しgenerated semantic-map exact=0で固定 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T23:46:50+09:00 2026-07-31 23:46 強ニュー復帰点訂正。cmd_karo_hotfix_cmd_complete_review_manifest_resume_20260731は実装test 416/416 PASS・SKIP0だが、旧cmd |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T23:47:19+09:00 2026-07-31 23:46 cmd_4200復帰契約訂正。manifest resume hotfixは416/416 PASSでもStep8未実走のため未完了。archived 6 report正規再承認、新terminal sna |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -2285,6 +2287,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T11:54:16+09:00 6/8や7/8という件数だけを見て「Sharpe不変性が弱い」と言うのは強すぎます。 特にDM6では、 6/8でSPY Sharpe超過 E=7の差は −0.014 E=4の差は −0.067 Sharpe全体のレンジは約0.15 PF S |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:33:15+09:00 a6f5d5e63a8a6dbe8 toolu_01RmAEKZNtdLPYt4dvLZdXNN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T23:35:07+09:00 2026-07-31 23:35 将軍強くてニューゲーム復帰点。cmd_4200本体はGATE CLEAR済みだが、完遂前条件としてpostprocess外部通知冪等性、archive security固定generation、Codex  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T00:11:05+09:00 2026-08-01 00:10 将軍(Fable 5)敵対レビュー: hidden-infra設計書v3.4(固定50575c8ae)=REQUEST_CHANGES。F1=type_binary_mismatch実数3(saizo/to |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -5008,7 +5011,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, GPT忍者のdefaultはGPT luna medium, GPT luna medium, push_allowed, deploy_task push_allowed, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, idle忍者だけrespawanせよ, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう, 3595は配備されているか？, per-agent launch_cmd, cli_lookup launch_cmd override, ninja_monitor 巻き戻し, 2.1.87巻き戻し防止, settings.yaml per-agent launch_cmd, ~/.local/bin/claude 最新版, 最新版と固定版の個別切替, 最新版とピン留めの違い, pin-2.1.87は版だけ, unpin-latestは版だけ, unpin-latestだけではOpus 4.8 xhighにならない, 最新版 Opus 4.8 xhigh は二段切替, いつでもだれでも個別もしくは複数をピン留めや最新版に自由自在に切り替えられることが必須だ, tobisaru 最新版, agent単位バージョン切替, cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE, model comparison, A/B evaluation, A/B/C evaluation, モデル比較, Sonnet 5 vs Sonnet 4.6, GPT 5.5 vs Opus 4.8, 四者比較, 三者比較, 三社比較, 3社比較, Opus 4.8 xhigh, 1M xhigh, saizo Opus 4.8 xhigh, CLIとモデルとエフォートを切り替え, 未調査モデルeffort組み合わせ, CLI model effort組合せ, MECEモデル比較, paneの枠のステータスがsonnetのまま, GPTはCodex専用, SonnetはClaude Code専用, OpusはClaude Code専用, 別会社の別CLI, クロス使用不可能, GPTのClaude Code版は存在しない, 未検証の組合せを検証しよう, 将軍と軍師を最新版のopus xhigh変更してくれ, ピン留めと最新版の違いはわかるか？, 将軍と軍師をピン留めopus highにしてくれ, 将軍と軍師をピン留めopus 4 6 highにしてくれ, 忍者は終わり次第, 将軍をピン止めopus4 1m highにせよ, 将軍をピン止めopus4 6 1m highにせよ, 将軍をピン留めopu 1Mにスキルを使って変更せよ, 将軍をピン留めopu 4 6 1Mにスキルを使って変更せよ, 偵察を許可する, 将軍をピン止めopus 1Mにrespawanせよ, D1偵察cmdを起票せよ, 許可する, 3827は配備したか？, git blob HEAD index 経由で参照せよ, 配備時に固定される契約情報は, 子gate不在127と実在gate失敗を分離せよ, 検証しよう, ninjya monitorは順調かinbox1？, 軍師をピン留めopus4 1Mにrespwanせよ, 軍師をピン留めopus4 6 1Mにrespwanせよ, 完了BLOCKは当該cmd相関に限定する, 将軍をピン留めopus4 1Mにrewpawnせよ, 将軍をピン留めopus4 6 1Mにrewpawnせよ, 将軍をピン留めopus4 1Mにrespawanせよ, 将軍をピン留めopus4 6 1Mにrespawanせよ, 今セッションでインフラバグはなかったか？バグは即時修正しよう, 修正したら副作用がないか検証しよう, 将軍はopus4 8だ, settings yaml変更してよい, 今後はCIの修正は忍者に配備させよう, active_dead_pane_auto_respawn, 明らかに流れが悪い, 家老が超速で配備することがボトルネックを解消して, shard終端は報告でなくworkdir実体を再検証, 配備の速度アップをやったはずなのに異常なまでに配備が遅い, 泰策は全て実装したか？実装したら検証しよう, deploy taskの安全判定を維持したままpath履歴walkとstale report全走査を配送critical, 家老の作業が長く, これはバグか？バグなら修正しよう, E2E clear fault injection, 慌ててやる必要はない, README記述とtracked計器を分離して成熟度を測る, 世代dedupは成功作用後にのみcommitする, 改善したら検証しよう, FAIL一覧だけを見ると実装の欠陥に見える, 穴がないか覚醒して検証しよう, では改めて検証しよう, は trueによりcs exitが常に0になる, gunshiをピン止めopus 1Mにせよ, auto clear設計書を実装せよ, gunshiをピン止めopus 4 6 1Mにせよ, これはピン止めverではないな, 偵察が終わったら設計書の再構築をせよ, では引き続き, hanzoがauto clearされていないな, same_cmd_redeploy, read onlyなら複数に同じ内容を配備させればいい, 将軍をピンとめopus 4 6 1Mにせよ, 第二世代checkpointまでtest deploy task bats合成raceで2連続FAIL→偵察2系統でde |
+| aliases | 編成, hensei, モデル編成, GPT忍者のdefaultはGPT luna medium, GPT luna medium, push_allowed, deploy_task push_allowed, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, idle忍者だけrespawanせよ, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう, 3595は配備されているか？, per-agent launch_cmd, cli_lookup launch_cmd override, ninja_monitor 巻き戻し, 2.1.87巻き戻し防止, settings.yaml per-agent launch_cmd, ~/.local/bin/claude 最新版, 最新版と固定版の個別切替, 最新版とピン留めの違い, pin-2.1.87は版だけ, unpin-latestは版だけ, unpin-latestだけではOpus 4.8 xhighにならない, 最新版 Opus 4.8 xhigh は二段切替, いつでもだれでも個別もしくは複数をピン留めや最新版に自由自在に切り替えられることが必須だ, tobisaru 最新版, agent単位バージョン切替, cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE, model comparison, A/B evaluation, A/B/C evaluation, モデル比較, Sonnet 5 vs Sonnet 4.6, GPT 5.5 vs Opus 4.8, 四者比較, 三者比較, 三社比較, 3社比較, Opus 4.8 xhigh, 1M xhigh, saizo Opus 4.8 xhigh, CLIとモデルとエフォートを切り替え, 未調査モデルeffort組み合わせ, CLI model effort組合せ, MECEモデル比較, paneの枠のステータスがsonnetのまま, GPTはCodex専用, SonnetはClaude Code専用, OpusはClaude Code専用, 別会社の別CLI, クロス使用不可能, GPTのClaude Code版は存在しない, 未検証の組合せを検証しよう, 将軍と軍師を最新版のopus xhigh変更してくれ, ピン留めと最新版の違いはわかるか？, 将軍と軍師をピン留めopus highにしてくれ, 将軍と軍師をピン留めopus 4 6 highにしてくれ, 忍者は終わり次第, 将軍をピン止めopus4 1m highにせよ, 将軍をピン止めopus4 6 1m highにせよ, 将軍をピン留めopu 1Mにスキルを使って変更せよ, 将軍をピン留めopu 4 6 1Mにスキルを使って変更せよ, 偵察を許可する, 将軍をピン止めopus 1Mにrespawanせよ, D1偵察cmdを起票せよ, 許可する, 3827は配備したか？, git blob HEAD index 経由で参照せよ, 配備時に固定される契約情報は, 子gate不在127と実在gate失敗を分離せよ, 検証しよう, ninjya monitorは順調かinbox1？, 軍師をピン留めopus4 1Mにrespwanせよ, 軍師をピン留めopus4 6 1Mにrespwanせよ, 完了BLOCKは当該cmd相関に限定する, 将軍をピン留めopus4 1Mにrewpawnせよ, 将軍をピン留めopus4 6 1Mにrewpawnせよ, 将軍をピン留めopus4 1Mにrespawanせよ, 将軍をピン留めopus4 6 1Mにrespawanせよ, 今セッションでインフラバグはなかったか？バグは即時修正しよう, 修正したら副作用がないか検証しよう, 将軍はopus4 8だ, settings yaml変更してよい, 今後はCIの修正は忍者に配備させよう, active_dead_pane_auto_respawn, 明らかに流れが悪い, 家老が超速で配備することがボトルネックを解消して, shard終端は報告でなくworkdir実体を再検証, 配備の速度アップをやったはずなのに異常なまでに配備が遅い, 泰策は全て実装したか？実装したら検証しよう, deploy taskの安全判定を維持したままpath履歴walkとstale report全走査を配送critical, 家老の作業が長く, これはバグか？バグなら修正しよう, E2E clear fault injection, 慌ててやる必要はない, README記述とtracked計器を分離して成熟度を測る, 世代dedupは成功作用後にのみcommitする, 改善したら検証しよう, FAIL一覧だけを見ると実装の欠陥に見える, 穴がないか覚醒して検証しよう, では改めて検証しよう, は trueによりcs exitが常に0になる, gunshiをピン止めopus 1Mにせよ, auto clear設計書を実装せよ, gunshiをピン止めopus 4 6 1Mにせよ, これはピン止めverではないな, 偵察が終わったら設計書の再構築をせよ, では引き続き, hanzoがauto clearされていないな, same_cmd_redeploy, read onlyなら複数に同じ内容を配備させればいい, 将軍をピンとめopus 4 6 1Mにせよ, 第二世代checkpointまでtest deploy task bats合成raceで2連続FAIL→偵察2系統でde, 主編成はclaudeだ |
 | skills | shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み), karo-direct, recon-dual |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing, commander_role_ssot_analysis, codex_goal_mode, infra_throughput_outcome_design |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -5816,6 +5819,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[agent_formation_management]] |
 | lesson | `L1494` fail-closed依存のfixtureはproduction前提を明示生成する |
 | cmd | `cmd_karo_ci_fix_30608934057_deploy_task_backlink_selector` (`tests/unit/test_deploy_task.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T23:52:02+09:00 主編成はclaudeだ。勘違いするな |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
@@ -7457,6 +7461,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T18:08:29+09:00 将軍と軍師をGPT５．６ sol mediumにしてくれ。スキルを使おう |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T18:24:58+09:00 https://gist.github.com/simokitafresh/c18ce89c63d6d7beef7a0fd252fe8d9f#file-hidden-infrastructure-gate-hook-remediation- |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T23:36:20+09:00 軍師に忖度なしのレビューをしてもらえ。我らはmulti CLI,multi model multi effort,multi OSだと強く伝えよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T23:49:39+09:00 軍師のレビューを受けてドキュメントのアップデートはしたのか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T00:07:19+09:00 将軍をclaude Fable 5にした。将軍にドキュメントを忖度なしでレビューしてもらえ。codex前提にすり替わっていないか吉備s効くれびゅしてもらおう |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -8638,6 +8644,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[multi_cli_event_commonization]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T18:21:38+09:00 https://gist.github.com/simokitafresh/f6cacb21b38c2be5a031a9f8ffe741b2#file-multi-cli-account-failover-asis-tobe-5w1h-20 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T18:36:36+09:00 multi-CLI account failover設計のドキュメントは家老が作成したので家老自身にアップデート佐瀬よ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T00:03:25+09:00 殿裁定2026-07-31 23:55: multi-CLIの主編成はClaude。新仕組みは旧系が成り立った導入理由・事故回避・成功実績の因果を追い、Claudeを含む全support tupleに純便益が実証された場合のみ採用する。誰か |
 
 ## codex_goal_mode — Codex /goal 自律目標モード
 
@@ -8993,6 +9000,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607311711_saizo` — [[semantic_causal_automation]] -> `docs/research/gunshi_idle_log_append_sequential_block_20260720.md` |
 | causal | `cmd_reflux_backlink_202607311711_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607311717_kotaro` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607312324_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_insights — 仮: Insights
@@ -9726,7 +9734,7 @@ codd:
 |------|---|
 | id | provisional_kagemaru |
 | label | 仮: Kagemaru |
-| aliases | kagemaru, queue/tasks/kagemaru.yaml, queue tasks kagemaru.yaml, provisional_kagemaru, kagemaruに直接ナッジしてやれ, kagemaruが放置されているように見えるが問題はないか？, kagemaruにナッジして, kagemaruで実験せよ, kagemaruを最新版のsonnet highにせよ, kagemaruを最新版のsonnet 5 highにせよ, kagemaruをGPT5 sol lowにせよ |
+| aliases | kagemaru, queue/tasks/kagemaru.yaml, queue tasks kagemaru.yaml, provisional_kagemaru, kagemaruに直接ナッジしてやれ, kagemaruが放置されているように見えるが問題はないか？, kagemaruにナッジして, kagemaruで実験せよ, kagemaruを最新版のsonnet highにせよ, kagemaruを最新版のsonnet 5 highにせよ, kagemaruをGPT5 sol lowにせよ, kagemaruをGPT5 6 sol lowにせよ |
 | status | provisional |
 | auto_generated | true |
 | source_cmd | cmd_3566 |
@@ -11013,6 +11021,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T01:48:31.859411+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T02:06:27.624678+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T03:20:02.898219+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-31T14:37:51.028419+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -11292,6 +11301,7 @@ codd:
 | label | 制御面fork・gitwalk恒久対策 |
 | aliases | WSL2 mntc subprocess反復fork, 大履歴gitwalk, 制御面レイテンシ恒久対策 |
 | related_concepts | semantic_causal_automation, gate_quality_framework |
+| causal | `cmd_reflux_backlink_202608010024_tobisaru` — [[semantic_causal_automation]] -> `docs/research/hot-script-speedup-round3-asis-tobe-5w1h_20260728.md` |
 
 | 種別 | パス/参照 |
 |------|----------|
