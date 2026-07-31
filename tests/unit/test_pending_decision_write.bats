@@ -366,6 +366,37 @@ EOF
     grep -q "  pending: 0$"  "$df"
 }
 
+# test_necessity: shelvedをpendingへ誤算入せず、未知statusもunknownとして可視化する集計契約を守る。
+@test "recalc counts shelved and unknown independently from pending" {
+    cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'
+summary:
+  total: 4
+  resolved: 0
+  pending: 4
+decisions:
+- id: PD-001
+  status: resolved
+- id: PD-002
+  status: pending
+- id: PD-003
+  status: shelved
+- id: PD-004
+  status: future_status
+EOF
+
+    run _run_pd recalc
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"total=4, resolved=1, pending=1, shelved=1, unknown=1"* ]]
+
+    local df="$TEST_TMPDIR/queue/pending_decisions.yaml"
+    grep -q "  total: 4$"    "$df"
+    grep -q "  resolved: 1$" "$df"
+    grep -q "  pending: 1$"  "$df"
+    grep -q "  shelved: 1$"  "$df"
+    grep -q "  unknown: 1$"  "$df"
+    grep -q "status: future_status" "$df"
+}
+
 # ── Test 22: create - similar existing pending decision triggers duplicate warning (LK-A10) ──
 @test "create warns on similar existing pending decision" {
     _run_pd create "本番PFのバンド閾値未設定により発火せず不具合が発生する懸念がある" "cmd_2000" "escalation" "karo" >/dev/null 2>&1
@@ -422,4 +453,33 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"PD_ID=PD-002"* ]]
     [[ "$output" != *"PD_DEDUP=updated"* ]]
+}
+
+# test_necessity: dedup_keyを持たないlegacy PDを暗黙一致させず、既存記録を破壊せず新しいregistry entryを作る。
+@test "create with PD_DEDUP_KEY preserves legacy pending PD without dedup_key" {
+    cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'
+summary:
+  total: 1
+  resolved: 0
+  pending: 1
+decisions:
+- id: PD-001
+  type: escalation
+  summary: legacy record
+  source_cmd: cmd_legacy
+  status: pending
+  created_at: '2026-07-01T00:00:00+09:00'
+  created_by: karo
+EOF
+
+    PD_DEDUP_KEY="registry:new-key" \
+        run _run_pd create "new keyed record" "cmd_3004" "escalation" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PD_ID=PD-002"* ]]
+    [[ "$output" != *"PD_DEDUP=updated"* ]]
+
+    local df="$TEST_TMPDIR/queue/pending_decisions.yaml"
+    [ "$(grep -c "^- id: PD-" "$df")" -eq 2 ]
+    grep -q "summary: legacy record" "$df"
+    grep -q "dedup_key: registry:new-key" "$df"
 }

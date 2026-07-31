@@ -221,7 +221,11 @@ try:
     def _persist(all_decisions):
         _total = len(all_decisions)
         _resolved = sum(1 for d in all_decisions if isinstance(d, dict) and d.get('status') == 'resolved')
-        ordered = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _total - _resolved},
+        _pending = sum(1 for d in all_decisions if isinstance(d, dict) and d.get('status') == 'pending')
+        _shelved = sum(1 for d in all_decisions if isinstance(d, dict) and d.get('status') == 'shelved')
+        _unknown = _total - _resolved - _pending - _shelved
+        ordered = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending,
+                               'shelved': _shelved, 'unknown': _unknown},
                    'decisions': all_decisions}
         sys.path.insert(0, os.path.dirname(os.path.dirname(data_path)))
         from scripts.lib.yaml_atomic import atomic_yaml_write
@@ -297,8 +301,11 @@ try:
     # Update summary (AC2/AC3: auto-generated counts)
     _total = len(data['decisions'])
     _resolved = sum(1 for d in data['decisions'] if isinstance(d, dict) and d.get('status') == 'resolved')
-    _pending = _total - _resolved
-    ordered_data = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending}, 'decisions': data['decisions']}
+    _pending = sum(1 for d in data['decisions'] if isinstance(d, dict) and d.get('status') == 'pending')
+    _shelved = sum(1 for d in data['decisions'] if isinstance(d, dict) and d.get('status') == 'shelved')
+    _unknown = _total - _resolved - _pending - _shelved
+    ordered_data = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending,
+                                'shelved': _shelved, 'unknown': _unknown}, 'decisions': data['decisions']}
 
     sys.path.insert(0, os.path.dirname(os.path.dirname(data_path)))
     from scripts.lib.yaml_atomic import atomic_yaml_write
@@ -477,8 +484,11 @@ try:
     # Update summary (AC2/AC3: auto-generated counts)
     _total = len(data['decisions'])
     _resolved = sum(1 for d in data['decisions'] if isinstance(d, dict) and d.get('status') == 'resolved')
-    _pending = _total - _resolved
-    ordered_data = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending}, 'decisions': data['decisions']}
+    _pending = sum(1 for d in data['decisions'] if isinstance(d, dict) and d.get('status') == 'pending')
+    _shelved = sum(1 for d in data['decisions'] if isinstance(d, dict) and d.get('status') == 'shelved')
+    _unknown = _total - _resolved - _pending - _shelved
+    ordered_data = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending,
+                                'shelved': _shelved, 'unknown': _unknown}, 'decisions': data['decisions']}
 
     sys.path.insert(0, os.path.dirname(os.path.dirname(data_path)))
     from scripts.lib.yaml_atomic import atomic_yaml_write
@@ -639,24 +649,42 @@ cmd_recalc() {
             (
             flock -w 5 200 || exit 1
 
-            # Pass 1: count decisions and resolved status lines
+            # Pass 1: count each known status independently. Anything else remains
+            # visible as unknown instead of being silently folded into pending.
             _total=$(awk '/^- id: /{c++} END{print c+0}' "$DATA_FILE")
             _resolved=$(awk '/^  status: resolved$/{c++} END{print c+0}' "$DATA_FILE")
-            _pending=$(( _total - _resolved ))
+            _pending=$(awk '/^  status: pending$/{c++} END{print c+0}' "$DATA_FILE")
+            _shelved=$(awk '/^  status: shelved$/{c++} END{print c+0}' "$DATA_FILE")
+            _unknown=$(( _total - _resolved - _pending - _shelved ))
 
-            # Pass 2: update summary fields with targeted line replacement
+            # Pass 2: update summary fields with targeted line replacement. Add
+            # newer compatible fields when reading a legacy three-field summary.
             _tmpfile=$(mktemp "${DATA_FILE}.XXXXXX.tmp")
-            awk -v total="$_total" -v resolved="$_resolved" -v pending="$_pending" '
-                /^  total: /{print "  total: " total; next}
-                /^  resolved: /{print "  resolved: " resolved; next}
-                /^  pending: /{print "  pending: " pending; next}
+            awk -v total="$_total" -v resolved="$_resolved" -v pending="$_pending" \
+                -v shelved="$_shelved" -v unknown="$_unknown" '
+                /^summary:$/ {in_summary=1; print; next}
+                in_summary && /^  total: /{print "  total: " total; have_total=1; next}
+                in_summary && /^  resolved: /{print "  resolved: " resolved; have_resolved=1; next}
+                in_summary && /^  pending: /{print "  pending: " pending; have_pending=1; next}
+                in_summary && /^  shelved: /{print "  shelved: " shelved; have_shelved=1; next}
+                in_summary && /^  unknown: /{print "  unknown: " unknown; have_unknown=1; next}
+                in_summary && /^decisions:$/ {
+                    if (!have_total) print "  total: " total
+                    if (!have_resolved) print "  resolved: " resolved
+                    if (!have_pending) print "  pending: " pending
+                    if (!have_shelved) print "  shelved: " shelved
+                    if (!have_unknown) print "  unknown: " unknown
+                    in_summary=0
+                    print
+                    next
+                }
                 {print}
             ' "$DATA_FILE" > "$_tmpfile" && mv "$_tmpfile" "$DATA_FILE" || {
                 rm -f "$_tmpfile"
                 exit 1
             }
 
-            echo "[pending_decision] Recalculated summary: total=$_total, resolved=$_resolved, pending=$_pending"
+            echo "[pending_decision] Recalculated summary: total=$_total, resolved=$_resolved, pending=$_pending, shelved=$_shelved, unknown=$_unknown"
 
             ) 200>"$LOCKFILE"
         ); then
