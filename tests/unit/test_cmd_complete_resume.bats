@@ -180,6 +180,8 @@ PY
 
     cp "$review_root/queue/archive/reports/ninja1_report_cmd_4200.yaml" \
         "$review_root/queue/reports/ninja1_report_cmd_4200.yaml"
+    printf 'task:\n  parent_cmd: cmd_4200\n  report_filename: ninja1_report_cmd_4200.yaml\n' \
+        > "$review_root/queue/tasks/kotaro.yaml"
     run bash -c 'export PROJECT_ROOT="$1"; source "$1/scripts/lib/review_approval.sh"; review_resolve_reports cmd_4200' _ "$review_root"
     [ "$status" -ne 0 ]
 }

@@ -261,6 +261,17 @@ root, cmd_id = pathlib.Path(sys.argv[1]).resolve(), sys.argv[2]
 reports_dir = root / "queue" / "reports"
 archive_dir = root / "queue" / "archive" / "reports"
 found, basenames, report_ids = [], set(), set()
+live_names = set()
+for task_path in sorted((root / "queue" / "tasks").glob("*.yaml")):
+    try:
+        task_doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    task = task_doc.get("task", task_doc)
+    if not isinstance(task, dict) or str(task.get("parent_cmd") or "") != cmd_id:
+        continue
+    filename = str(task.get("report_filename") or "").strip()
+    live_names.add(filename or f"{task_path.stem}_report_{cmd_id}.yaml")
 candidates = list(reports_dir.glob("*.yaml")) + list(archive_dir.glob("*.yaml"))
 # A matching nested archive is an invalid ambiguous storage location, not a
 # candidate to silently ignore.
@@ -276,16 +287,23 @@ for report_path in sorted(candidates):
         continue
     if not isinstance(doc, dict) or str(doc.get("parent_cmd") or "") != cmd_id:
         continue
+    is_live = report_path.parent == reports_dir
+    if is_live and report_path.name not in live_names:
+        continue
     if report_path.is_symlink() or report_path.parent not in (reports_dir, archive_dir):
         raise SystemExit(1)
     resolved = report_path.resolve()
     if resolved.parent not in (reports_dir.resolve(), archive_dir.resolve()):
         raise SystemExit(1)
     report_id = str(doc.get("report_id") or "").strip()
-    if not report_id or report_path.name in basenames or report_id in report_ids:
+    # Active legacy reports remain task-bound for compatibility.  Archived
+    # reports have no task slot to authenticate them and therefore require a
+    # durable report_id of their own.
+    if (not report_id and not is_live) or report_path.name in basenames or (report_id and report_id in report_ids):
         raise SystemExit(1)
     basenames.add(report_path.name)
-    report_ids.add(report_id)
+    if report_id:
+        report_ids.add(report_id)
     found.append(str(report_path))
 for report in sorted(found, key=lambda p: pathlib.Path(p).name):
     print(report)
