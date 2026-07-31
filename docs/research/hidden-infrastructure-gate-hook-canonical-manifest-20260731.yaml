@@ -67,13 +67,11 @@ runtime_probe_receipts:
       expected: equal=no
       actual: equal=no
       result: PASS
-      output_sha256: 70c810f0a72521e05f855d90851dc6f173ac5f7c1eb82c73e1cd39266c0a4f86
     negative_control:
       command: source scripts/lib/lock_path.sh; compare two canonical lock_path(target) evaluations
       expected: equal=yes
       actual: equal=yes
       result: PASS
-      output_sha256: 14071f441651acd9a701be74757c2380bd7f5061db51ec8c568bab1a250da360
   R03: &needs_probe {runtime_classification: NEEDS_NEW_PROBE, executed: false, evidence: caller discovered; no fixed-baseline runtime receipt exists}
   R04: *needs_probe
   R05: *needs_probe
@@ -93,9 +91,29 @@ runtime_probe_receipts:
 caller_inventory:
   unique_paths: 13
   derivation: executable definitions, callsites, readers, and writers were re-enumerated from the fixed code baseline; comments and variable declarations are excluded
-  records: 25
-  discovered: 25
-  classified: 25
+  discovery_command: "rg -n '<finding-specific primitive|state edge|reader|writer|callsite tokens>' scripts .github .codex .claude; inspect every hit at code_baseline_sha"
+  finding_discovery:
+    R01: {candidate_total: 2, adopted: 2, excluded: 0, reason: executable lock owners}
+    R03: {candidate_total: 1, adopted: 1, excluded: 0, reason: executable target writer}
+    R04: {candidate_total: 1, adopted: 1, excluded: 0, reason: rollback definition}
+    R05: {candidate_total: 1, adopted: 1, excluded: 0, reason: deploy callsite}
+    R06: {candidate_total: 2, adopted: 2, excluded: 0, reason: executable readers}
+    R07: {candidate_total: 2, adopted: 2, excluded: 0, reason: temp write and atomic publish}
+    R08: {candidate_total: 12, adopted: 12, excluded: 0, reason: async callsites 11 plus task-idle writer}
+    R09: {candidate_total: 2, adopted: 2, excluded: 0, reason: inventory selectors}
+    R10: {candidate_total: 1, adopted: 1, excluded: 0, reason: receipt writer definition}
+    R11: {candidate_total: 1, adopted: 1, excluded: 0, reason: executable classifier}
+    R13: {candidate_total: 1, adopted: 1, excluded: 0, reason: cache reader}
+    R14: {candidate_total: 2, adopted: 2, excluded: 0, reason: manifest and dispatcher}
+    R15: {candidate_total: 1, adopted: 1, excluded: 0, reason: state writer}
+    V01: {candidate_total: 1, adopted: 1, excluded: 0, reason: atomic writer}
+    V02: {candidate_total: 1, adopted: 1, excluded: 0, reason: dispatch callsite}
+    V03: {candidate_total: 2, adopted: 2, excluded: 0, reason: lock owners}
+    V04: {candidate_total: 1, adopted: 1, excluded: 0, reason: executable idle condition}
+  exclusion_totals: {comments: 0, variable_declarations_without_execution: 0, tests: 0, fixtures: 0}
+  records: 34
+  discovered: 34
+  classified: 34
   missing: 0
   line_content_verified_at: '2026-07-31T19:31:34+09:00'
   false_mappings: 0
@@ -107,11 +125,20 @@ caller_inventory:
     - {finding: R05, location: "scripts/auto_deploy_next.sh:402", role: "deploy_dispatcher", observed_line: "if ! bash \"$SCRIPT_DIR/scripts/deploy_task.sh\" \"$SELECTED_NINJA\"; then"}
     - {finding: R06, location: "scripts/cmd_complete_gate.sh:505", role: "clear_receipt_reader", observed_line: "if grep -Fq $'\\t'\"${CMD_ID}\"$'\\tCLEAR\\t' \"$GATE_METRICS_LOG\"; then"}
     - {finding: R06, location: "scripts/dashboard_update.sh:248", role: "dashboard_gate_clear_reader", observed_line: "if [ \"$latest_status\" = \"CLEAR\" ] && review_two_phase_ready \"$CMD_ID\" \"$report\"; then"}
-    - {finding: R07, location: "scripts/review_approval.sh:490", role: "review_marker_writer", observed_line: "marker=\"$ROOT/queue/gates/$cmd_id/review_gate.done\""}
+    - {finding: R07, location: "scripts/review_approval.sh:492", role: "review_marker_temp_writer", observed_line: "printf ... > \"$marker_tmp\""}
+    - {finding: R07, location: "scripts/review_approval.sh:493", role: "review_marker_atomic_publisher", observed_line: "mv -f \"$marker_tmp\" \"$marker\""}
     - {finding: R08, location: "scripts/cmd_complete_gate.sh:1835", role: "completion_task_status_writer", observed_line: "if yaml_field_set \"$task_file\" \"task\" \"status\" \"idle\" >/dev/null 2>&1; then"}
     - {finding: R08, location: "scripts/cmd_complete_gate.sh:9354", role: "semantic_async_tail_dispatch", observed_line: "bash \"$SCRIPT_DIR/scripts/semantic_causal_post_clear.sh\" \"$CMD_ID\""}
-    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9475", role: "dashboard_async_tail_dispatch", observed_line: "(SKIP_AUTO_SECTION=1 bash \"$SCRIPT_DIR/scripts/dashboard_update.sh\" \"$CMD_ID\" >/dev/null 2>&1 || true) &"}
     - {finding: R08, location: "scripts/cmd_complete_gate.sh:9983", role: "archive_async_tail_dispatch", observed_line: "bash \"$SCRIPT_DIR/scripts/archive_completed.sh\" \"$CMD_ID\" >> \"$LOG_DIR/cmd_complete_gate_async.log\" 2>&1"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9276", role: "workaround_resolution_async", observed_line: "update_karo_workaround_resolutions ... &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9278", role: "changelog_async", observed_line: "append_changelog ... &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9283", role: "lesson_feedback_async", observed_line: "record_lesson_feedback_for_cmd ... &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9286", role: "lesson_tracking_async", observed_line: "append_lesson_tracking ... &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9288", role: "lesson_impact_async", observed_line: "update_lesson_impact_tsv ... &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9364", role: "context_freshness_async", observed_line: "context_freshness_check.sh ... &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9374", role: "lesson_merge_async", observed_line: "lesson_merge.sh ... &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9448", role: "codd_propagate_async", observed_line: "run_codd_propagate_update ... &"}
+    - {finding: R08, location: "scripts/cmd_complete_gate.sh:9453", role: "skill_refs_async", observed_line: "run_skill_script_refs_check ... &"}
     - {finding: R09, location: ".github/workflows/test.yml:62", role: "ci_test_inventory_selector", observed_line: "bash scripts/run_tests.sh push || {"}
     - {finding: R09, location: "scripts/run_tests.sh:1605", role: "test_inventory_selector", observed_line: "[ \"${#test_files[@]}\" -gt 0 ] || { echo \"BLOCK: canonical push set empty\" >&2; exit 2; }"}
     - {finding: R10, location: "scripts/run_tests.sh:1123", role: "terminal_receipt_writer", observed_line: "emit_run_tests_terminal_receipt() {"}
@@ -133,11 +160,20 @@ caller_inventory:
     - {finding: R05, location: 'scripts/auto_deploy_next.sh:402', role: deploy_dispatcher}
     - {finding: R06, location: 'scripts/cmd_complete_gate.sh:505', role: clear_receipt_reader}
     - {finding: R06, location: 'scripts/dashboard_update.sh:248', role: dashboard_gate_clear_reader}
-    - {finding: R07, location: 'scripts/review_approval.sh:490', role: review_marker_writer}
+    - {finding: R07, location: 'scripts/review_approval.sh:492', role: review_marker_temp_writer}
+    - {finding: R07, location: 'scripts/review_approval.sh:493', role: review_marker_atomic_publisher}
     - {finding: R08, location: 'scripts/cmd_complete_gate.sh:1835', role: completion_task_status_writer}
     - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9354', role: semantic_async_tail_dispatch}
-    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9475', role: dashboard_async_tail_dispatch}
     - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9983', role: archive_async_tail_dispatch}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9276', role: workaround_resolution_async}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9278', role: changelog_async}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9283', role: lesson_feedback_async}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9286', role: lesson_tracking_async}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9288', role: lesson_impact_async}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9364', role: context_freshness_async}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9374', role: lesson_merge_async}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9448', role: codd_propagate_async}
+    - {finding: R08, location: 'scripts/cmd_complete_gate.sh:9453', role: skill_refs_async}
     - {finding: R09, location: '.github/workflows/test.yml:62', role: ci_test_inventory_selector}
     - {finding: R09, location: 'scripts/run_tests.sh:1605', role: test_inventory_selector}
     - {finding: R10, location: 'scripts/run_tests.sh:1123', role: terminal_receipt_writer}
