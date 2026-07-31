@@ -272,7 +272,7 @@ PARTIALLY_SUPERSEDED / SUPERSEDED`）であり、互いに直交する。前者�
 | `NEEDS_NEW_PROBE` | 16 | callerは発見済みだが固定baseline runtime receiptなし |
 
 計数は`receipt entries=17, executed receipts=1`（`selected=17, discovered=17, executed=1`）。callerは固定母数を前提にせず、definition/callsite/reader/writerの実行行を再導出した。コメント・変数宣言は0件、
-対応record 34、classified 34、missing 0である。finding別discovery command・候補総数・採用/除外理由を固定し、R08は独立async callsite 11/11とtask-idle writer、R07は実書込行492-493、R11 classifier、V02 dispatch、V04 idle条件を実行行で列挙した。全`file:line+role`はmanifest
+対応record 44、classified 44、missing 0である。finding別discovery command・候補総数・採用/除外理由を固定し、R08は実行可能なbounded awkで後処理範囲の行末`&`を抽出して22/22を採用（未分類0）。実生成点9355/9984/9992を用い、R07は実書込行492-493、R11 classifier、V02 dispatch、V04 idle条件を実行行で列挙した。全`file:line+role`はmanifest
 `caller_inventory`を正本とする。残る16件はWave 0で決定的barrierを作るまでOPEN扱いしない。
 
 #### Gate 0 durable-state contract
