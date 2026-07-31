@@ -7661,6 +7661,7 @@ codd:
 | file | `docs/research/gunshi_idle_infra_bug_trio_fix_20260503.md` — 軍師idle: インフラバグトリオ修正(2026-05-03) |
 | file | `docs/research/gunshi_idle_infra_bug_universal_commit_20260430.md` — 軍師idle: インフラバグ汎用コミット対策(2026-04-30) |
 | file | `docs/research/gunshi_idle_infra_bugs_full_audit_20260424.md` — 軍師idle: インフラバグ全量監査(2026-04-24) |
+| causal | `docs/research/gist-r5-delay-infra-bug-suspicions-20260727.md` — [[R5_revalidation_delay]] -> [[no_code_identity_contract_split]] -> [[infrastructure_ops]] |
 | file | `docs/research/gunshi_idle_infra_health_20260425.md` — 軍師idle: インフラ健全性レポート(2026-04-25) |
 | file | `docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md` — 軍師idle: インフラ速度の隠れバグ(2026-06-05) |
 | file | `docs/research/gunshi_idle_wa_pattern_20260612.md` — 軍師idle: WAパターン分析(2026-06-12) |
