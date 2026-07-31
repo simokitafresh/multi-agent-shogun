@@ -182,6 +182,14 @@ commander_three_point_missing() {
         || echo "1件の定義"
 }
 
+# レビュー/相談の依頼は計測結果そのものではない。本文に版番号・件数・節番号が
+# 含まれても、受け手へ検分を求める途中laneへ最終報告用3点セットを課さない。
+# 関連宣言(AC3)は引き続き必須なので、無関係な在庫投稿の迂回には使えない。
+commander_post_is_review_request() {
+    local content="$1"
+    printf '%s' "$content" | grep -qP '(レビュー依頼|レビューして|検分されたし|相談依頼|照会依頼)'
+}
+
 # 現在指示との関連宣言(cmd_id/下知)の有無。
 # 実害進行中の緊急阻止は固定マーカー [URGENT-HARM] を本文先頭行に含む場合のみ例外とする。
 # cmd_karo_impl_commander_post_contract_20260727 是正2点目: 曖昧なキーワード一致(実害進行中/緊急阻止等)は
@@ -320,7 +328,10 @@ fi
 # 呼び出し元が BULLETIN_AUTOGEN=1 を明示した場合のみ免除。既定(未設定)は検査ありのまま。
 if [[ "${BULLETIN_AUTOGEN:-0}" != "1" ]]; then
     # AC2: 指揮官発信+数値主張 → 3点セット必須(起動時義務投稿=自己検証は免除)
-    if is_commander_poster "$POSTED_BY" && ! is_startup_verification_post "$CONTENT" && post_has_numeric_claim "$CONTENT"; then
+    if is_commander_poster "$POSTED_BY" \
+        && ! is_startup_verification_post "$CONTENT" \
+        && ! commander_post_is_review_request "$CONTENT" \
+        && post_has_numeric_claim "$CONTENT"; then
         _cmd_missing_elements="$(commander_three_point_missing "$CONTENT")"
         if [[ -n "$_cmd_missing_elements" ]]; then
             echo "BLOCK: 指揮官(${POSTED_BY})発信の数値含み投稿に3点セットの欠落要素あり: $(printf '%s' "$_cmd_missing_elements" | tr '\n' ',' | sed 's/,$//')" >&2
