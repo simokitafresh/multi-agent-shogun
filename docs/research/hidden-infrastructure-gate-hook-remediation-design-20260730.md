@@ -4,8 +4,8 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-08-01 00:16 将軍 (以後ドキュメント主導権=将軍。殿下知2026-08-01 00:14) |
-| 版 | v3.6 = v3.5 + 将軍最終LGTM反映 (行範囲訂正のみ、契約変更なし) |
+| 進捗更新 | 2026-08-01 00:18 将軍 (以後ドキュメント主導権=将軍。殿下知2026-08-01 00:14) |
+| 版 | v3.7 = v3.5 + 将軍主導反映 (row5行範囲訂正 + §5.8.1固定2件fixture廃止→resolved N/N統一。契約意味変更なし) |
 | 最終レビュー | 将軍(Claude Fable 5) RC2 LGTM。blob照合7/7 OK・Codex前提すり替わり0件。正本=`docs/research/shogun-adversarial-review-hidden-infra-design-20260801.md` |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
@@ -503,7 +503,7 @@ Gate0A contract [DONE]
 ### §5.8.1 Runtime compatibility実装順序
 
 1. `runtime_support_matrix.yaml` schemaとvalid constraintを定義し、Claude primary row必須をschemaで強制する。
-2. resolver/generatorを実装し、現状のtype/binary mismatch 2件を検出するfixtureを固定する。
+2. resolver/generatorを実装する。fixtureは固定件数を正解にせず、resolved全agentのN/N走査で観測されたmismatch全件（As-Is実測=resolved 3 agent: saizo/tobisaru/gunshi）をBLOCK receiptへ記録し、正本修正後の終端条件は`type_binary_mismatch=0/N`のみとする（§0.2と同一契約）。
 3. mismatchを正本で0へ直し、support/configured/active 3 manifestを生成する。
 4. `cli_events.yaml` 6 event×support CLIのcoverage receiptを生成する。先にClaude primary 6/6のbefore/after parityを確定し、その後Codex hookなしcellの代替owner N/Nを証明する。
 5. WSL2 DrvFS/native ext4、native Linux、Windows-nativeの各support rowへrunnerを割当てる。runnerなしrowは`PLANNED`のままrelease集合へ入れない。
