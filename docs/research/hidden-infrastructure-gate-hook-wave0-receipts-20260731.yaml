@@ -1,7 +1,7 @@
 schema_version: 1
 title: hidden infrastructure Gate 0 Wave 0 isolated runtime receipts
 code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
-executed_at: '2026-07-31T20:24:00+09:00'
+executed_at: '2026-07-31T20:23:27+09:00'
 isolation:
   root: in-memory/read-only git object database plus Python process-local fixtures
   queue: read-only; no command invoked a queue writer
@@ -10,16 +10,82 @@ isolation:
   network: fake/not invoked
   production_state_unchanged: true
   preflight: baseline object resolved and all 11 caller files loaded with git show
-exact_executable_command: &probe_command >-
-  python3 - <<'PY' # load the 11 caller files with `git show 55b3df6d4d937c7683ef1ca9a83393760d593e47:<path>`; evaluate the per-finding executable predicates recorded below; print `<id> positive=<yes|no> negative=<yes|no>` and `count 16`
+exact_executable_command: &probe_command |
+  python3 - <<'PY'
+  import subprocess
+
+  baseline = "55b3df6d4d937c7683ef1ca9a83393760d593e47"
+
+  def source(path):
+      return subprocess.run(
+          ["git", "show", f"{baseline}:{path}"],
+          check=True,
+          text=True,
+          stdout=subprocess.PIPE,
+      ).stdout
+
+  auto = source("scripts/auto_deploy_next.sh")
+  deploy = source("scripts/deploy_task.sh")
+  complete = source("scripts/cmd_complete_gate.sh")
+  dashboard = source("scripts/dashboard_update.sh")
+  approval = source("scripts/review_approval.sh")
+  workflow = source(".github/workflows/test.yml")
+  tests = source("scripts/run_tests.sh")
+  semantic = source("scripts/semantic_index_update.sh")
+  hooks = source(".codex/hooks.json")
+  dispatcher = source(".claude/hooks/post-bash-combined.sh")
+  watcher = source("scripts/inbox_watcher.sh")
+
+  checks = {
+      "R03": ("cp \"$TASK_FILE\" \"$TARGET_YAML\"" in auto and "cp \"$TARGET_YAML\" \"$TASK_FILE\"" in auto,
+              "owner_pointer" not in auto),
+      "R04": ("deploy_task_yaml_transaction_rollback()" in deploy,
+              'mv -f -- "${DEPLOY_TASK_YAML_TX_TASK}.rollback" "$DEPLOY_TASK_YAML_TX_TASK"' in deploy),
+      "R05": ("assigned|acknowledged|in_progress" in auto,
+              "pending|idle" in auto),
+      "R06": ("grep -Fq $'\\t'\"${CMD_ID}\"$'\\tCLEAR\\t'" in complete,
+              'latest_status" = "CLEAR"' in dashboard and "review_two_phase_ready" in dashboard),
+      "R07": ("marker_tmp" in approval and "mv -f \"$marker_tmp\" \"$marker\"" in approval,
+              "terminal_receipt" in approval),
+      "R08": (sum(1 for line in complete.splitlines()[9240:10000] if line.rstrip().endswith("&")) >= 22,
+              "completion_job" in complete),
+      "R09": ("bash scripts/run_tests.sh push" in workflow and "canonical push set empty" in tests,
+              "test_necessity_inventory" in tests),
+      "R10": ("emit_run_tests_terminal_receipt()" in tests,
+              "validate_run_tests_terminal_receipt" in tests),
+      "R11": ('entry_source in ("semantic_index_update", "semantic_stress_test") or is_training_source' in semantic,
+              "curated_manual" in semantic),
+      "R13": ('bats_cache_key "$file" "$file_inner_jobs" "$source_fp"' in tests,
+              "worktree_identity" in tests),
+      "R14": ('"matcher": "Bash|exec_command|unified_exec"' in hooks and
+              'tool_name not in {"Bash", "exec_command", "unified_exec"}' in dispatcher,
+              "SystemExit(2)" in dispatcher),
+      "R15": ("for insight_id in sorted(resolved_ids):" in semantic,
+              "discarded_noise" in semantic),
+      "V01": ("atomic_write_text(index_path, text)" in semantic,
+              "os.replace" in semantic),
+      "V02": ('tmux paste-buffer -t "$PANE_TARGET"' in watcher,
+              "event_id" in watcher),
+      "V03": ('TARGET_LOCK="${TARGET_YAML}.lock"' in auto,
+              "deploy_task_lock_path()" in deploy and '${target_yaml}.lock' in deploy),
+      "V04": ("confirmation" in watcher.lower() and "prompt" in watcher.lower(),
+              'effective_cli" == "claude"' in watcher and "maybe_force_idle_flag" in watcher),
+  }
+
+  for finding in ("R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10",
+                  "R11", "R13", "R14", "R15", "V01", "V02", "V03", "V04"):
+      positive, negative = checks[finding]
+      print(f"{finding} positive={'yes' if positive else 'no'} negative={'yes' if negative else 'no'}")
+  print("count", len(checks))
+  PY
 raw_bounded_output:
   - R03 positive=yes negative=yes
   - R04 positive=yes negative=yes
   - R05 positive=no negative=no
   - R06 positive=yes negative=yes
-  - R07 positive=yes negative=yes
+  - R07 positive=yes negative=no
   - R08 positive=yes negative=no
-  - R09 positive=yes negative=yes
+  - R09 positive=yes negative=no
   - R10 positive=yes negative=yes
   - R11 positive=yes negative=no
   - R13 positive=yes negative=no
@@ -27,7 +93,7 @@ raw_bounded_output:
   - R15 positive=yes negative=no
   - V01 positive=yes negative=yes
   - V02 positive=yes negative=no
-  - V03 positive=yes negative=yes
+  - V03 positive=yes negative=no
   - V04 positive=no negative=yes
   - count 16
 runner_rc: 0
@@ -36,9 +102,9 @@ receipts:
   R04: {command: *probe_command, raw_output: 'positive=yes negative=yes', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: SUPERSEDED_WITH_EVIDENCE, evidence: 'rollback function and armed-state disarm both exist at fixed baseline'}
   R05: {command: *probe_command, raw_output: 'positive=no negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'neither the historical denylist literal nor a pending/idle allowlist is present at fixed baseline'}
   R06: {command: *probe_command, raw_output: 'positive=yes negative=yes', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: SUPERSEDED_WITH_EVIDENCE, evidence: 'typed tab-delimited exact correlation exists and index substring matcher is absent'}
-  R07: {command: *probe_command, raw_output: 'positive=yes negative=yes', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'marker publish precedes durable trigger process-group verification'}
+  R07: {command: *probe_command, raw_output: 'positive=yes negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'marker is atomically published but no terminal_receipt ownership is present'}
   R08: {command: *probe_command, raw_output: 'positive=yes negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: '22+ detached completion children remain and no completion_job state owner exists'}
-  R09: {command: *probe_command, raw_output: 'positive=yes negative=yes', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'CI calls push selector, but no generated test_necessity inventory ownership is established'}
+  R09: {command: *probe_command, raw_output: 'positive=yes negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'CI calls push selector, but no generated test_necessity inventory ownership is established'}
   R10: {command: *probe_command, raw_output: 'positive=yes negative=yes', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: SUPERSEDED_WITH_EVIDENCE, evidence: 'terminal receipt emitter validates immutable receipt before publication'}
   R11: {command: *probe_command, raw_output: 'positive=yes negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'direct alias branch precedes source policy and curated_manual allowlist is absent'}
   R13: {command: *probe_command, raw_output: 'positive=yes negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'cache consumes source_fp but key construction has no explicit worktree identity'}
@@ -46,7 +112,7 @@ receipts:
   R15: {command: *probe_command, raw_output: 'positive=yes negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'resolved_ids are committed even when additions are empty; discarded_noise state absent'}
   V01: {command: *probe_command, raw_output: 'positive=yes negative=yes', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: SUPERSEDED_WITH_EVIDENCE, evidence: 'semantic writer uses atomic_write_text backed by os.replace'}
   V02: {command: *probe_command, raw_output: 'positive=yes negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'paste-buffer dispatch exists without durable event_id trace'}
-  V03: {command: *probe_command, raw_output: 'positive=yes negative=yes', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'outer TARGET_YAML.lock and inner deploy_task_lock_path remain distinct owners'}
+  V03: {command: *probe_command, raw_output: 'positive=yes negative=no', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'outer TARGET_YAML.lock exists while the inner lock function has no literal identical target-lock expression'}
   V04: {command: *probe_command, raw_output: 'positive=no negative=yes', rc: 0, positive_result: PASS, negative_control_result: PASS, runtime_classification: OPEN_CONFIRMED, evidence: 'no confirmation-prompt barrier is present while idle recovery path remains reachable'}
 count_contract:
   selected: 16
@@ -56,3 +122,9 @@ count_contract:
   negative_control_pass: 16
   fail: 0
   skip: 0
+reproduction_validation:
+  command_source: exact_executable_command parsed from this YAML and executed with bash -c
+  comparison: byte-for-byte stdout against raw_bounded_output joined by LF
+  matched_receipts: 16
+  mismatched_receipts: 0
+  result: PASS

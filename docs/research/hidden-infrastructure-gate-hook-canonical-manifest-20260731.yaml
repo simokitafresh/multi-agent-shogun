@@ -72,8 +72,8 @@ runtime_probe_receipts:
       expected: equal=yes
       actual: equal=yes
       result: PASS
-  R03: &wave0_open {runtime_classification: OPEN_CONFIRMED, executed: true, executed_at: '2026-07-31T20:24:00+09:00', rc: 0, artifact_path: docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml, artifact_sha256: d8fff8ee5ef7c4050c1c2e405e27e2b18000cdd4709786619fb0380a5d34fbe1, production_state_unchanged: true}
-  R04: &wave0_superseded {runtime_classification: SUPERSEDED_WITH_EVIDENCE, executed: true, executed_at: '2026-07-31T20:24:00+09:00', rc: 0, artifact_path: docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml, artifact_sha256: d8fff8ee5ef7c4050c1c2e405e27e2b18000cdd4709786619fb0380a5d34fbe1, production_state_unchanged: true}
+  R03: &wave0_open {runtime_classification: OPEN_CONFIRMED, executed: true, executed_at: '2026-07-31T20:23:27+09:00', rc: 0, artifact_path: docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml, artifact_sha256: 0223b9064c837b199b10ed14fa5e3cb8d06adc5d3ddc267b4b167aebafcebf2a, production_state_unchanged: true}
+  R04: &wave0_superseded {runtime_classification: SUPERSEDED_WITH_EVIDENCE, executed: true, executed_at: '2026-07-31T20:23:27+09:00', rc: 0, artifact_path: docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml, artifact_sha256: 0223b9064c837b199b10ed14fa5e3cb8d06adc5d3ddc267b4b167aebafcebf2a, production_state_unchanged: true}
   R05: *wave0_open
   R06: *wave0_superseded
   R07: *wave0_open
