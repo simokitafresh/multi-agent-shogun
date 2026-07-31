@@ -7,11 +7,15 @@ reject a completed/PASS report without rewriting the reporter's evidence.
 
 | Spec | Review | Report | Expected |
 |---|---|---|---|
-| present/absent | APPROVE | completed/PASS | success |
-| present/absent | APPROVE | failed/FAIL | nonzero |
-| present/absent | FAIL | completed/PASS | success |
-| present/absent | FAIL | failed/FAIL | success |
+| present | APPROVE | completed/PASS | success |
+| present | APPROVE | failed/FAIL | nonzero |
+| present | FAIL | completed/PASS | success |
+| present | FAIL | failed/FAIL | success |
+| absent | APPROVE | completed/PASS | success |
+| absent | APPROVE | failed/FAIL | nonzero |
+| absent | FAIL | completed/PASS | success |
+| absent | FAIL | failed/FAIL | success |
 
-The parametrized contract executes all 8 combinations. Expected-success and
-expected-nonzero cases are counted separately; no expected rejection is counted
-as a test failure.
+The parametrized contract executes all 8 combinations. Expected-success is
+6/6 and expected-nonzero is 2/2; all 8/8 outcomes match. No expected rejection
+is counted as a test failure.
