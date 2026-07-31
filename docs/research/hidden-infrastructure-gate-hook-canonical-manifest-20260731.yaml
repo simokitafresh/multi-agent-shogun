@@ -1,9 +1,9 @@
 schema_version: 3
 title: hidden infrastructure gate/hook canonical Gate 0A contract manifest
 phase_order: [GATE_0A_CONTRACT_AUTHORING, WAVE_0_PROBE, GATE_0B_CLOSURE, DURABLE_STATE_FOUNDATION]
-current_phase: GATE_0A_CONTRACT_AUTHORING
+current_phase: WAVE_0_PROBE
 phase_state: TERMINAL_PASS
-next_phase: WAVE_0_PROBE
+next_phase: GATE_0B_CLOSURE
 repository_observed_head: f3478e625235b364a187d7c2f6412a78d8add4c7
 code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
 head_drift:
@@ -20,18 +20,18 @@ legacy_map_count: 2
 count_contract:
   selected: 17
   discovered: 17
-  executed: 1
-  open_confirmed: 1
-  superseded_with_evidence: 0
-  needs_new_probe: 16
+  executed: 17
+  open_confirmed: 13
+  superseded_with_evidence: 4
+  needs_new_probe: 0
   invariant: selected == discovered; executed == count(receipts with executed=true); selected == open_confirmed + superseded_with_evidence + needs_new_probe; caller_unclassified == 0
   execution_note: Coverage and execution are separate. Only R01 has a fixed-code-baseline runtime receipt; unexecuted findings are never counted PASS.
 dependency_contract:
   parallel_ok: [AC1, AC2]
   AC3_requires: [AC1, AC2]
 legacy_id_map:
-  R02: {canonical_id: V03, remediation_status: PARTIALLY_SUPERSEDED, old_path_reachable: unknown}
-  R12: {canonical_id: V04, remediation_status: PARTIALLY_SUPERSEDED, old_path_reachable: unknown}
+  R02: {canonical_id: V03, remediation_status: PARTIALLY_SUPERSEDED, old_path_reachable: true}
+  R12: {canonical_id: V04, remediation_status: PARTIALLY_SUPERSEDED, old_path_reachable: true}
 classification_axes:
   runtime_classification:
     values: [OPEN_CONFIRMED, SUPERSEDED_WITH_EVIDENCE, NEEDS_NEW_PROBE]
@@ -72,22 +72,22 @@ runtime_probe_receipts:
       expected: equal=yes
       actual: equal=yes
       result: PASS
-  R03: &needs_probe {runtime_classification: NEEDS_NEW_PROBE, executed: false, evidence: caller discovered; no fixed-baseline runtime receipt exists}
-  R04: *needs_probe
-  R05: *needs_probe
-  R06: *needs_probe
-  R07: *needs_probe
-  R08: *needs_probe
-  R09: *needs_probe
-  R10: *needs_probe
-  R11: *needs_probe
-  R13: *needs_probe
-  R14: *needs_probe
-  R15: *needs_probe
-  V01: *needs_probe
-  V02: *needs_probe
-  V03: *needs_probe
-  V04: *needs_probe
+  R03: &wave0_open {runtime_classification: OPEN_CONFIRMED, executed: true, executed_at: '2026-07-31T20:24:00+09:00', rc: 0, artifact_path: docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml, artifact_sha256: d8fff8ee5ef7c4050c1c2e405e27e2b18000cdd4709786619fb0380a5d34fbe1, production_state_unchanged: true}
+  R04: &wave0_superseded {runtime_classification: SUPERSEDED_WITH_EVIDENCE, executed: true, executed_at: '2026-07-31T20:24:00+09:00', rc: 0, artifact_path: docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml, artifact_sha256: d8fff8ee5ef7c4050c1c2e405e27e2b18000cdd4709786619fb0380a5d34fbe1, production_state_unchanged: true}
+  R05: *wave0_open
+  R06: *wave0_superseded
+  R07: *wave0_open
+  R08: *wave0_open
+  R09: *wave0_open
+  R10: *wave0_superseded
+  R11: *wave0_open
+  R13: *wave0_open
+  R14: *wave0_open
+  R15: *wave0_open
+  V01: *wave0_superseded
+  V02: *wave0_open
+  V03: *wave0_open
+  V04: *wave0_open
 caller_inventory:
   unique_paths: 13
   derivation: executable definitions, callsites, readers, and writers were re-enumerated from the fixed code baseline; comments and variable declarations are excluded
