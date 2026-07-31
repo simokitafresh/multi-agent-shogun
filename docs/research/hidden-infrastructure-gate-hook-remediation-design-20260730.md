@@ -4,8 +4,9 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-08-01 00:11 家老 |
-| 版 | v3.5 As-Is / To-Be 5W1H + immutable causal evidence / universal-benefit contract |
+| 進捗更新 | 2026-08-01 00:16 将軍 (以後ドキュメント主導権=将軍。殿下知2026-08-01 00:14) |
+| 版 | v3.6 = v3.5 + 将軍最終LGTM反映 (行範囲訂正のみ、契約変更なし) |
+| 最終レビュー | 将軍(Claude Fable 5) RC2 LGTM。blob照合7/7 OK・Codex前提すり替わり0件。正本=`docs/research/shogun-adversarial-review-hidden-infra-design-20260801.md` |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
 | canonical manifest | `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml` |
@@ -82,7 +83,7 @@
 | native hookが優先された因果 | `1ec43f3b9:.claude/settings.json:3-86`; blobs settings=`70dcc0f17aee6285b145cc2f238c7e255d4b6e09`, pre=`65f3b29b6d297a53b21718e6ef216e540e8839c3`, post=`8d98bf268e093301f33c882ff34c89bd49620996` | 2026-06-05 dispatcher統合。6 event typeをnative lifecycle境界で維持しつつ、複数hook entryを1 dispatcherへ集約 | 早期検出とadditional contextを正規ターン境界で与え、常時polling税と順序競合を避けた | Claude native hookを等価性未証明のdaemon/polling/wrapperで置換しない |
 | CLI外共通層が必要になった因果 | `e401d29ade04bc997fc519eb52b2793b03541f39:docs/research/multi-cli-hook-event-commonization-design_20260602.md:7-15,26-33,71-77`; blob `a97cc89b2f11f2722668a6cea192f97a607ebcd4` | 2026-06-02〜06-24。Claude/Codex hook差、Stop再生成loop、settings/pane/process/watcher/coverageの5点不一致を観測 | 同event名でも意味論が異なり、Claude実装の単純移植はCodexを壊した | 共通化は「同じhook実装」ではなく「同じ軍規event」。CLIごとのcapability adapterを維持する |
 | 環境強制がモデルより優先された因果 | `53d326ad5c:context/training-cycle.md:733,750,752-765`; blob `7583b27e06c73a7a10a5334c0fad455385647321` | 2026-04-02 R7→R8。Opus 2/2→2/2、GPT 0/2→2/2、Sonnet 1/2→0/2 | テンプレートでGPTは改善したがSonnetは失敗箇所が移り、モデル固有回避は他者に逆効果を持った | 安全性はモデル非依存のgate/template/stateへ置くが、CLI nativeの有利な境界は消さない |
-| Codex補完が許された因果 | `cc1d6a80534fe37f0cbd15dba59e578a73297bbf:.codex/hooks.json:1-82`; blob `726b9ae4859b7f958b2b08c6ebf15cf193372592` | 2026-07-15初回追跡。Codex側はPreToolUse/SessionStart/UserPromptSubmit/PostToolUseの能力に限定し、Claude Stop blockを含めない | Claude主系を変更せず、Codex一時配置の穴だけをCLI能力に応じて埋めた | Codexの便益は補完範囲に限定し、Claude主系へ運用税・遅延・手順増を逆流させない |
+| Codex補完が許された因果 | `cc1d6a80534fe37f0cbd15dba59e578a73297bbf:.codex/hooks.json:1-73`; blob `726b9ae4859b7f958b2b08c6ebf15cf193372592` | 2026-07-15初回追跡。Codex側はPreToolUse/SessionStart/UserPromptSubmit/PostToolUseの能力に限定し、Claude Stop blockを含めない | Claude主系を変更せず、Codex一時配置の穴だけをCLI能力に応じて埋めた | Codexの便益は補完範囲に限定し、Claude主系へ運用税・遅延・手順増を逆流させない |
 
 したがって採否順序は次で固定する。
 
