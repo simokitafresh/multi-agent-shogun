@@ -7,3 +7,12 @@ hash_scope=entire_file_bytes_including_final_LF; sha256 command excludes only th
 exact_command=bash -c 'set -euo pipefail; target=/mnt/c/tools/multi-agent-shogun/queue/inbox/hanzo.yaml; legacy=${target//[^[:alnum:]._-]/_}; legacy=/tmp/shogun_lock_${legacy}.lock; source scripts/lib/lock_path.sh; canonical=$(lock_path "$target"); canonical2=$(lock_path "$target"); printf "positive legacy=%s canonical=%s equal=%s\n" "$legacy" "$canonical" "$([ "$legacy" = "$canonical" ] && echo yes || echo no)"; printf "negative canonical_1=%s canonical_2=%s equal=%s\n" "$canonical" "$canonical2" "$([ "$canonical" = "$canonical2" ] && echo yes || echo no)"'
 positive legacy=/tmp/shogun_lock__mnt_c_tools_multi-agent-shogun_queue_inbox_hanzo.yaml.lock canonical=/tmp/shogun_lock_512f0b4b88bf47ff.lock equal=no
 negative canonical_1=/tmp/shogun_lock_512f0b4b88bf47ff.lock canonical_2=/tmp/shogun_lock_512f0b4b88bf47ff.lock equal=yes
+external_sync_design=docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md
+external_sync_gist_id=c18ce89c63d6d7beef7a0fd252fe8d9f
+external_sync_prior_revision=ebc1c7e83c8b2e9f69b3161f35ba2e4ad7f89565
+external_sync_rule=receipt lives outside synchronized design bytes to avoid self-reference
+external_sync_local_sha256=11e171b49a650240aa64c925c3a3d59adb623cd32c13de3d4d405ab8ad7bb456
+external_sync_gist_raw_sha256=11e171b49a650240aa64c925c3a3d59adb623cd32c13de3d4d405ab8ad7bb456
+external_sync_bytes=equal
+external_sync_cmp_rc=0
+external_sync_gist_revision=ebc1c7e83c8b2e9f69b3161f35ba2e4ad7f89565
