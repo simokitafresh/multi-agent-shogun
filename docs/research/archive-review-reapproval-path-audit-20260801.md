@@ -2,7 +2,7 @@
 
 ## 結論
 
-archive済みreportの再承認経路を6段で一次走査した。現HEAD旧resolverでsame-directory symlink alias受理は0件（AC想定1件との差1）だが、物理境界判定がcanonical registryと独立する非対称は1件あった。修正後は既存`review_resolve_reports`＋`review_report_logical_path`の(realpath, logical identity) allowlistだけを受理し、残存非対称0件。追加契約のfailed report→FAIL bundleもcompleted/PASSを要求せず正規生成する。
+archive済みreportの再承認経路を6段で一次走査した。旧resolverはsame-directory symlink alias 0件受理（AC想定との差1）だが、canonical/dot-segment/absolute probeのdot-segment 1/3を誤受理した。修正後はlexical canonical一致と既存`review_resolve_reports`＋`review_report_logical_path`の(realpath, logical identity) allowlistだけを受理し、残存非対称0件。追加契約の通常failed reportとspec-less failed reportはいずれもcompleted/PASSを要求せずFAIL bundleを正規生成する。
 
 ## 6段監査表
 
@@ -27,11 +27,13 @@ archive済みreportの再承認経路を6段で一次走査した。現HEAD旧re
 | live内symlink alias | 1 | block | PASS |
 | symlink chain | 1 | block | PASS |
 | archive missing | 1 | block | PASS |
+| dot-segment traversal | 1 | block | PASS |
 | bundle cmd mismatch | 1 | block | PASS |
 | 正式CLI archive generate→notify | 1 | 通知1・重複0・logical key一致 | PASS |
 | failed archive report→FAIL bundle | 1 | completed/PASS不要・FAIL reason保持 | PASS |
+| spec-less failed report→FAIL bundle | 1 | immutable snapshot採用・failed/FAIL保持 | PASS |
 
-`tests/unit/test_review_bundle.py`は上記の具体的不変量を宣言したcontract testで、11/11 PASS・SKIP 0。alias種別ではなくshared registry identity不一致として一律fail-closeする。
+`tests/unit/test_review_bundle.py`は上記の具体的不変量を宣言したcontract testで、13/13 PASS・SKIP 0。alias種別ではなくlexical canonical/共有registry identity不一致として一律fail-closeする。
 
 ## 残存障壁の全数
 

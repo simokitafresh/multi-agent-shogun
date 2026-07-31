@@ -66,7 +66,7 @@ def _snapshot_command(root, report, cmd_id):
 SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_")
 
 
-def find_command(root, cmd_id, report=None, report_path=None):
+def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=None):
     paths = [root / "queue/shogun_to_karo.yaml", root / f"queue/reopened_cmds/{cmd_id}.yaml"]
     paths += [Path(p) for p in sorted(glob.glob(str(root / f"queue/archive/cmds/{cmd_id}_*.yaml")), reverse=True)]
     for path in paths:
@@ -77,8 +77,10 @@ def find_command(root, cmd_id, report=None, report_path=None):
     # Their immutable deploy-generation snapshot is the contract; the live
     # worker task may already belong to a later assignment.
     if cmd_id.startswith(SPEC_LESS_AUTOGEN_PREFIXES) and isinstance(report, dict) and report_path is not None:
-        if str(report.get("status") or "") != "completed" or str(report.get("verdict") or "").upper() != "PASS":
-            raise ValueError("autogen spec fallback requires completed/PASS report")
+        state = (str(report.get("status") or ""), str(report.get("verdict") or "").upper())
+        expected = ("failed", "FAIL") if requested_verdict == "FAIL" else ("completed", "PASS")
+        if state != expected:
+            raise ValueError(f"autogen spec fallback requires {expected[0]}/{expected[1]} report")
         return _snapshot_command(root, report, cmd_id)
     raise ValueError(f"cmd spec not found: {cmd_id}")
 
@@ -133,8 +135,10 @@ done
 def _resolve_report(root, report_ref, cmd_id, *, allow_archived=False):
     """Resolve only an identity selected by the shared canonical report registry."""
     report_arg = Path(report_ref)
-    if not report_arg.is_absolute():
-        report_arg = root / report_arg
+    if not report_arg.is_absolute(): report_arg = root / report_arg
+    lexical = str(report_arg)
+    if os.path.normpath(lexical) != lexical:
+        raise ValueError("report identity is not a canonical lexical path")
     report_arg = Path(os.path.abspath(report_arg)); report = report_arg.resolve()
     logical = f"queue/reports/{report_arg.name}"
     identity = (str(report), logical)
@@ -223,7 +227,8 @@ def generate(args):
     report_data = load(report)
     if str(report_data.get("parent_cmd") or "") != args.cmd: raise ValueError("report parent_cmd contradicts requested cmd")
     report_ref = report_arg if report_arg.is_relative_to(root) else report
-    command, source = find_command(root, args.cmd, report_data, report_ref); verdict = args.verdict.upper()
+    verdict = args.verdict.upper()
+    command, source = find_command(root, args.cmd, report_data, report_ref, verdict)
     if verdict == "APPROVE":
         if str(report_data.get("status") or "") != "completed" or str(report_data.get("verdict") or "").upper() != "PASS":
             raise ValueError("APPROVE requires completed/PASS report")

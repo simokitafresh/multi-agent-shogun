@@ -38,7 +38,7 @@ def test_resolve_report_accepts_direct_live_and_archive(tmp_path, archived):
 
 @pytest.mark.parametrize(
     "kind",
-    ["nested", "symlink_escape", "archive_alias", "live_alias", "symlink_chain", "missing"],
+    ["nested", "symlink_escape", "archive_alias", "live_alias", "symlink_chain", "traversal", "missing"],
 )
 def test_resolve_report_rejects_archive_boundary_escapes(tmp_path, kind):
     root = _root(tmp_path)
@@ -70,6 +70,10 @@ def test_resolve_report_rejects_archive_boundary_escapes(tmp_path, kind):
         link.symlink_to(target)
         candidate = archive / "chain.yaml"
         candidate.symlink_to(link)
+    elif kind == "traversal":
+        target = archive / "target.yaml"
+        _register(root, target)
+        candidate = Path(str(archive / ".." / "reports" / "target.yaml"))
     else:
         candidate = archive / "missing.yaml"
 
@@ -142,4 +146,25 @@ def test_cli_failed_archive_report_generates_fail_bundle(tmp_path):
     )
     args = SimpleNamespace(root=str(root), report=str(report), cmd="cmd_ok", verdict="FAIL",
                            allow_archived=True, fail_reason="measured failure")
+    assert review_bundle.generate(args) == 0
+
+
+def test_specless_failed_report_generates_fail_bundle_from_snapshot(tmp_path):
+    root = _root(tmp_path); cmd = "cmd_karo_probe"
+    report = root / f"queue/reports/worker_report_{cmd}.yaml"
+    task = root / "queue/tasks/worker.yaml"
+    task.write_text(
+        f"task:\n  parent_cmd: {cmd}\n  task_id: {cmd}_normal\n  ac_version: ac1\n"
+        f"  report_id: rpt-failed\n  report_filename: {report.name}\n",
+        encoding="utf-8",
+    )
+    report.write_text(
+        f"parent_cmd: {cmd}\ntask_id: {cmd}_normal\nworker_id: worker\nreport_id: rpt-failed\n"
+        "ac_version_read: ac1\nstatus: failed\nverdict: FAIL\nresult: {summary: failed}\n"
+        f"task_contract_snapshot: {{parent_cmd: {cmd}, issued_cmd_id: {cmd}, task_id: {cmd}_normal, "
+        "ac_fingerprint: ac1, purpose: probe, acceptance_criteria: [one], project: infra}\n",
+        encoding="utf-8",
+    )
+    args = SimpleNamespace(root=str(root), report=str(report), cmd=cmd, verdict="FAIL",
+                           allow_archived=False, fail_reason="measured failure")
     assert review_bundle.generate(args) == 0
