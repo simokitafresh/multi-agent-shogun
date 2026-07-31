@@ -4,14 +4,14 @@
 - 作成者: 家老
 - 覚醒更新: 2026-07-31
 - 更新者: 将軍
-- 版: v2.1 Gate 0 contract
+- 版: v2.2 Gate 0A contract revision 3
 - 基準commit: `48048e465322753420b808584d13bbdf3190f965`
 - 再基線候補commit: `55b3df6d4`（2026-07-31 18:25 JST時点。実装開始前に再取得必須）
 - repository observed HEAD: `f3478e625235b364a187d7c2f6412a78d8add4c7`
 - code baseline: `55b3df6d4d937c7683ef1ca9a83393760d593e47`
 - HEAD drift: 2/2はcontextのみ（`context/lord-conversation-index.md`, `context/semantic-map.md`）、caller影響0/2
 - 対象: `multi-agent-shogun` の制御面、gate、hook、配備、完了、CI、知識還流
-- 状態: Gate 0 revision 1 — runtime receipt/count separation反映・軍師再レビュー待ち
+- 状態: Gate 0A contract authoring revision 3 — Wave 0 probe開始前
 - canonical manifest: `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml`
 
 ## 0. 結論
@@ -239,17 +239,17 @@ terminal判定へ使わない。
 
 ## 4. 修正Wave設計
 
-### Gate 0: 現HEAD再基線化（全Waveの入口）
+### Gate 0A: 成果契約の固定（全Waveの入口）
 
-- 固定HEAD・isolated worktreeでR01-R15、V01-V04を同一probeで再実行する。
-- 各IDへ`OPEN_CONFIRMED / SUPERSEDED_WITH_EVIDENCE / NEEDS_NEW_PROBE`を付与する。
+- 固定HEAD、canonical 17 ID、caller inventory、probe receipt schema、判定軸を契約として固定する。
+- Gate 0Aはcontract authoringであり、runtime終端判定はR01の既存read-only receipt以外行わない。
 - superseded判定には修正commit、現行caller、同一入力再測定の三点を必須化する。
 - 全caller・writer・readerを表にし、同一ファイル直列条件をファイル名で固定する。
 - 状態スキーマ、WAL、receipt、idempotency keyの所有者を一意化する。
 - fixture corpusの正例・反例・境界例を採番し、FP/FNの分母を固定する。
-- Gate 0完了前に旧13件をまとめて実装waveへ流さない。
+- `Gate 0A contract authoring → Wave 0 probe → Gate 0B closure → durable-state foundation`の順序を崩さない。Gate 0Bで17/17のexecuted receiptを閉じるまでfoundation実装へ進まない。
 
-#### Gate 0 runtime disposition（revision 1）
+#### Gate 0A observed receipt disposition（revision 3）
 
 期待契約と観測結果を分離する。`selected`はcanonical manifest対象、`discovered`はcallerを
 一つ以上現HEADで解決した対象、`executed`はpositive reproducerとnegative controlの双方に
@@ -260,13 +260,18 @@ R01だけをread-only runtime probeで再実行した。positiveは`inbox_write.
 `lock_path.sh`の同一target比較が`equal=no`、negative controlはcanonical同士が
 `equal=yes`。出力SHAはmanifest receiptに固定した。本番queue/tmux/ntfy/network変更は0。
 
-| classification | 件数 | 意味 |
+`runtime_classification`はprobe観測（`OPEN_CONFIRMED / SUPERSEDED_WITH_EVIDENCE /
+NEEDS_NEW_PROBE`）、`remediation_status`は実装進捗（`ACTIVE /
+PARTIALLY_SUPERSEDED / SUPERSEDED`）であり、互いに直交する。前者から後者を
+推定しない。未probeのlegacy reachabilityは`unknown`とする。
+
+| runtime_classification | 件数 | 意味 |
 |---|---:|---|
 | `OPEN_CONFIRMED` | 1 | R01。positive/negative receipt双方あり |
 | `SUPERSEDED_WITH_EVIDENCE` | 0 | 修正commit+現caller+同一入力再測定の三点を満たすものなし |
 | `NEEDS_NEW_PROBE` | 16 | callerは発見済みだが固定baseline runtime receiptなし |
 
-計数は`selected=17, discovered=17, executed=1`。callerはunique path 13、findingとの
+計数は`receipt entries=17, executed receipts=1`（`selected=17, discovered=17, executed=1`）。callerはunique path 13、findingとの
 対応record 22、classified 22、missing 0である。全`file:line+role`はmanifest
 `caller_inventory`を正本とする。残る16件はWave 0で決定的barrierを作るまでOPEN扱いしない。
 
@@ -320,7 +325,7 @@ R01だけをread-only runtime probeで再実行した。positiveは`inbox_write.
 
 #### Gate 0 wave dependency and serialization
 
-`Gate0 → Wave0 → durable-state/WAL/reconciler foundation → Wave1A → Wave1B →
+`Gate0A contract authoring → Wave0 probe → Gate0B closure → durable-state/WAL/reconciler foundation → Wave1A → Wave1B →
 Wave2A → Wave2B → Wave3 → Wave4`を必須依存とする。Wave2Aは汎用outbox/reconcilerと
 Wave1B owner transaction完了後のみ、Wave2BはR01 lock identityとV04 prompt-safe
 primitive完了後のみ開始する。同一fileまたは同一callerを変更するWaveはmanifestの
