@@ -201,6 +201,7 @@ fingerprint_unread_ids() {
 # Exact task_assigned retries for one published task generation must not become
 # new prompts merely because inbox_write allocated another message id.
 task_publication_fingerprint() {
+    local unread_fingerprint="${1:-}"
     local task_file="${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml"
     [ -f "$task_file" ] || return 1
     local identity
@@ -214,7 +215,7 @@ task_publication_fingerprint() {
         END { if (task_id != "" && deployed_at != "") print task_id "@" deployed_at }
     ' "$task_file")
     [ -n "$identity" ] || return 1
-    printf 'task-%s\n' "$(printf '%s' "$identity" | sha256sum | awk '{print $1}')"
+    printf 'task-%s\n' "$(printf '%s\t%s' "$identity" "$unread_fingerprint" | sha256sum | awk '{print $1}')"
 }
 
 
@@ -1027,7 +1028,7 @@ send_wakeup() {
             current_fp="$live_fp"
             fp_kind="inbox"
             if [ "$live_has_task" = "true" ]; then
-                current_fp=$(task_publication_fingerprint 2>/dev/null || printf '%s' "$live_fp")
+                current_fp=$(task_publication_fingerprint "$live_fp" 2>/dev/null || printf '%s' "$live_fp")
                 [ "$current_fp" = "$live_fp" ] || fp_kind="task"
             fi
             nudge="inbox${unread_count}"

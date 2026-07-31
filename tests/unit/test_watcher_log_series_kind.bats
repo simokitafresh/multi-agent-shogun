@@ -81,6 +81,29 @@ i=0; while [ "$i" -lt "$rounds" ]; do process_unread; i=$((i+1)); done
     [[ "$output" == *"[SEND-LEASE] Skipping delivered fingerprint"*"task-"*"kind=task"* ]]
 }
 
+# test_necessity: 同一taskへの新しい未読指示はmessage集合が変われば再度nudgeされる。
+@test "same task generation gets a new fingerprint when unread message set changes" {
+    run bash -c '
+set -euo pipefail
+tmp="$(mktemp -d)"; trap "rm -rf \"$tmp\"" EXIT
+mkdir -p "$tmp/queue/tasks"
+cat > "$tmp/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  task_id: cmd_same_task
+  deployed_at: "2026-08-01T03:00:00"
+YAML
+export INBOX_WATCHER_LIB_ONLY=1 SHOGUN_STATE_DIR="$tmp/state"
+source "'"$PROJECT_ROOT"'/scripts/inbox_watcher.sh" kagemaru dummy-pane
+SCRIPT_DIR="$tmp"
+first=$(task_publication_fingerprint unread_set_one)
+same=$(task_publication_fingerprint unread_set_one)
+second=$(task_publication_fingerprint unread_set_two)
+printf "same=%s changed=%s\n" "$([[ "$first" = "$same" ]] && echo yes || echo no)" "$([[ "$first" != "$second" ]] && echo yes || echo no)"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"same=yes changed=yes"* ]]
+}
+
 @test "AC3: 本日の実例2行はkind=を見るだけで別系列と機械判定できる" {
     run _run_watcher task_assigned yes 2
     [ "$status" -eq 0 ]
