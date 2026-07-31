@@ -4,8 +4,8 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-07-31 23:59 家老 |
-| 版 | v3.4 As-Is / To-Be 5W1H + causal-preservation / universal-benefit contract |
+| 進捗更新 | 2026-08-01 00:11 家老 |
+| 版 | v3.5 As-Is / To-Be 5W1H + immutable causal evidence / universal-benefit contract |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
 | canonical manifest | `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml` |
@@ -76,13 +76,13 @@
 
 新しい抽象化は、旧系の結論だけを上書きしない。まず「なぜその仕組みで長期運用が成立したか」を歴史・現物・実績から復元する。
 
-| 因果の段階 | 一次・準一次証跡 | 成り立っていた理由 | 今回保存する不変量 |
-|---|---|---|---|
-| Claude主編成の成立 | `context/infrastructure.md` tmux編成、`config/settings.yaml`、Claude実機pane | Claude native hookと既存手順が同じlifecycleで長期に運用され、ロールと復帰手順がそれを前提に蓄積した | Claudeをprimaryとし、event・prompt・reset・inbox・report・completeの使い勝手を不変とする |
-| native hookが優先された因果 | `.claude/settings.json`、`.claude/hooks/*`、`config/cli_events.yaml` | `SessionStart` / `UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Stop`がターンlifecycleの正規境界で動き、早期検出と追加contextを小さい運用税で与えた | Claude native hookを等価性未証明のdaemon/polling/wrapperで置換しない |
-| CLI外共通層が必要になった因果 | `docs/research/multi-cli-hook-event-commonization-design_20260602.md`、`context/infrastructure.md` §Codex multi-CLI統合 | CodexにClaude Stop blockを単純移植すると再生成loopが起き、同eventでも実行意味論が異なった | 共通化は「同じhook実装」ではなく「同じ軍規event」。CLIごとのcapability adapterを維持する |
-| 環境強制がモデルより優先された因果 | `context/training-cycle.md` §24-§25 | Opus 4.6は2条件で2/2安定、GPTはテンプレート有無で0/2→2/2、Sonnetは失敗箇所が移動した。モデル性質で回避すると別モデルで破綻する | 安全性はモデル非依存のgate/template/stateへ置くが、CLI nativeの有利な境界は消さない |
-| Codex補完が許された因果 | `.codex/hooks.json`、Codex adapter、daemon/gate receipts | Claudeの主系を変更せず、Claude非対応時・一時配置時の穴をCLI別に埋められた | Codexの便益は補完範囲に限定し、Claude主系へ運用税・遅延・手順増を逆流させない |
+| 因果の段階 | immutable evidence (`commit:path:line`; blob) | 観測期間・生値 | 成り立っていた理由 | 今回保存する不変量 |
+|---|---|---|---|---|
+| Claude主編成の成立 | `462ea2ee31:context/infrastructure.md:177`; blob `4c8384063ab0f59d4ea10218487f2e1297bb4fd5` | 2026-03-17編成確定。将軍1+家老1+軍師1+忍者6=9/9 Opus 4.6 | 役割・復帰・hook・報告の運用がClaude lifecycle前提で蓄積した | Claudeをprimaryとし、event・prompt・reset・inbox・report・completeの使い勝手を不変とする |
+| native hookが優先された因果 | `1ec43f3b9:.claude/settings.json:3-86`; blobs settings=`70dcc0f17aee6285b145cc2f238c7e255d4b6e09`, pre=`65f3b29b6d297a53b21718e6ef216e540e8839c3`, post=`8d98bf268e093301f33c882ff34c89bd49620996` | 2026-06-05 dispatcher統合。6 event typeをnative lifecycle境界で維持しつつ、複数hook entryを1 dispatcherへ集約 | 早期検出とadditional contextを正規ターン境界で与え、常時polling税と順序競合を避けた | Claude native hookを等価性未証明のdaemon/polling/wrapperで置換しない |
+| CLI外共通層が必要になった因果 | `e401d29ade04bc997fc519eb52b2793b03541f39:docs/research/multi-cli-hook-event-commonization-design_20260602.md:7-15,26-33,71-77`; blob `a97cc89b2f11f2722668a6cea192f97a607ebcd4` | 2026-06-02〜06-24。Claude/Codex hook差、Stop再生成loop、settings/pane/process/watcher/coverageの5点不一致を観測 | 同event名でも意味論が異なり、Claude実装の単純移植はCodexを壊した | 共通化は「同じhook実装」ではなく「同じ軍規event」。CLIごとのcapability adapterを維持する |
+| 環境強制がモデルより優先された因果 | `53d326ad5c:context/training-cycle.md:733,750,752-765`; blob `7583b27e06c73a7a10a5334c0fad455385647321` | 2026-04-02 R7→R8。Opus 2/2→2/2、GPT 0/2→2/2、Sonnet 1/2→0/2 | テンプレートでGPTは改善したがSonnetは失敗箇所が移り、モデル固有回避は他者に逆効果を持った | 安全性はモデル非依存のgate/template/stateへ置くが、CLI nativeの有利な境界は消さない |
+| Codex補完が許された因果 | `cc1d6a80534fe37f0cbd15dba59e578a73297bbf:.codex/hooks.json:1-82`; blob `726b9ae4859b7f958b2b08c6ebf15cf193372592` | 2026-07-15初回追跡。Codex側はPreToolUse/SessionStart/UserPromptSubmit/PostToolUseの能力に限定し、Claude Stop blockを含めない | Claude主系を変更せず、Codex一時配置の穴だけをCLI能力に応じて埋めた | Codexの便益は補完範囲に限定し、Claude主系へ運用税・遅延・手順増を逆流させない |
 
 したがって採否順序は次で固定する。
 
@@ -106,7 +106,7 @@
 | 軸 | 現在の実体・正本 | 設計契約 |
 |---|---|---|
 | CLI | event意味論=`config/cli_events.yaml`、能力profile=`config/cli_profiles.yaml`、配置=`config/settings.yaml` | CLI固有hookをSSOTにしない。共通eventを各CLIのcapability adapterへ写像し、未対応eventはdaemon/gate/scriptで等価保証する |
-| model | Claude Opus/Sonnet系、GPT系を含むconfigured `model_name` | model名で安全性を分岐しない。全configured model tupleで同一binary invariantを満たす |
+| model | Claude Opus/Sonnet/Fable系（現configured例=`claude-fable-5-low`）、GPT系を含むconfigured `model_name` | model名で安全性を分岐しない。全configured model tupleで同一binary invariantを満たす |
 | effort / tier | low/medium/high等のeffort、default/fast等のservice tier | latency・timeout・出力特性を計測条件へ含める。高effort 1件を他tupleの代理にしない |
 | OS / filesystem | WSL2+DrvFs(`/mnt/c`)、Linux filesystem、Windows host境界。追加OSはmanifestで明示 | flock、atomic replace、fsync、symlink、mtime、inotify/stat、実行bit、改行をOS/filesystem別に検証する。未検証OSをportableと称さない |
 | shell / process | bash、tmux、CLI child process | PID/PGID、signal、prompt、TTY挙動をCLI×OS tupleで検証する |
@@ -151,7 +151,7 @@ resolver precedenceは次で固定し、暗黙fallbackを禁止する。
 4. `model_name`接尾辞からeffortを正規化し、明示effortとの不一致はBLOCKする。
 5. launch commandの実binary basename、tmux `@agent_cli`、process bannerがresolved `type`と全一致した時だけactive rowを有効化する。
 
-As-Isでは`cli_profiles.yaml`に`type: codex`とClaude起動binaryが混在するrowが2件ある。generatorはこれを自動補正せず`type_binary_mismatch=2`としてBLOCKし、正本修正後に0を要求する。
+As-Isの2026-08-01 00:10将軍実測では、単一`cli_profiles.yaml`内混在は2 rowだが、本書resolver precedenceを全agentへ適用した**resolved tuple不整合は3 agent**（saizo/tobisaru/gunshi）であった。gunshiは`settings type=codex`+`launch_cmd`欠落にprofileのClaude binaryがfallbackするcross-file矛盾である。generatorは単一file内の固定`2`をfixture正解にせず、resolved全agent N/Nを走査する。未修正期間は観測NをそのままBLOCK receiptへ記録し、終端は`type_binary_mismatch=0/N`だけを要求する。
 
 ### §0.2.1 編成変更と互換性検証の分離
 
@@ -183,7 +183,9 @@ Claude primary baselineは抽象event 6 cellではなく、**現行`.claude/sett
 | dispatcher / combined child | generated N | shell構文と実fixtureの両方からleaf actionを展開。discovered=selected=executed=N、未展開0 |
 | lifecycle side effect | generated N | state/last_active、log、lint、alert、inbox、clear-checkを独立actionとし、合成済みの1 handlerで帳消ししない |
 
-baseline artifactは`queue/gates/cmd_4200/claude_primary_baseline/` に固定する。`source_commit` / `git_blob` / file SHA-256 / mode / handler graph / child SHA-256 / fixture receiptを持つ。現行起点の`.claude/settings.json` blobは`be93a9ff5706a7d79eebedfeb52a668310bc1e8b`、working content SHA-256は`4b1945c8477afdba71d6fe7fdf7a10b8a49a0e6f43e3a5c6476a1b0bae79ca52`である。最終実装checkpointでは開始時HEADを改めて固定し、古い設計書記載値を流用しない。
+baseline artifactは`queue/gates/cmd_4200/claude_primary_baseline/` に固定する。`source_commit` / `git_blob` / file SHA-256 / `git_mode` / `fs_mode_observed` / `fs_capability` / mount identity / handler graph / child SHA-256 / fixture receiptを持つ。現行起点の`.claude/settings.json` blobは`be93a9ff5706a7d79eebedfeb52a668310bc1e8b`、working content SHA-256は`4b1945c8477afdba71d6fe7fdf7a10b8a49a0e6f43e3a5c6476a1b0bae79ca52`である。最終実装checkpointでは開始時HEADを改めて固定し、古い設計書記載値を流用しない。
+
+modeは単一値に正規化しない。現WSL2 DrvFs実測は`git_mode=100644`、`fs_mode_observed=0777`、`fstype=9p`、mount option=`aname=drvfs`であり、両者は矛盾ではない。restore時はGit tree/indexと`git_mode`を比較し、filesystem側は`fs_capability` contractに応じてexec-bit保存可否・`bash <script>`起動可否・mount identityを別検証する。`stat` modeとGit modeの直接一致は求めない。
 
 | invariant | binary check |
 |---|---|
@@ -192,16 +194,19 @@ baseline artifactは`queue/gates/cmd_4200/claude_primary_baseline/` に固定す
 | lifecycle | `/clear`、idle flag、inbox nudge、report handoff、cmd completionがbefore/after同結果 |
 | latency | event別p95が既定budget以内。Codex都合のtimeout増加をClaudeへ波及させない |
 | ownership | Claude hook ownerは各action 1。Codex daemon追加で二重owner 0 |
-| rollback | `scripts/runtime_compatibility_restore.sh --receipt <baseline.json> --dry-run`でpath/mode/SHA/ownerを照合し、`--apply`はcanary所有pathのみatomic restoreする。他者dirty path、hash不一致、scope外はBLOCK |
+| rollback | `scripts/runtime_compatibility_restore.sh --receipt <baseline.json> --dry-run`でpath/git_mode/fs_capability/mount/SHA/ownerを照合し、`--apply`はcanary所有pathのみatomic restoreする。他者dirty path、hash不一致、scope外はBLOCK |
 
 Claude primaryのexpanded action N/N receiptがないcommitは、Codex側が全PASSでもrelease不可とする。rollbackは「adapter pointerを戻す」という散文ではなく、実在script、baseline artifact、dry-run、apply後再fixtureの4点をそろえる。
 
 ### §0.5 編成mutation journal
 
-`queue/gates/cmd_4200/runtime_mutations.jsonl`に、検証窓内の全pane spawn/respawn/switchを`event_id` / `timestamp` / `owner` / `cause` / `cmd_id` / before-after pane PID+starttime / CLI / model / effort / service tierで記録する。
+`queue/gates/cmd_4200/runtime_mutations.jsonl`に、検証窓内の全settings/profile/config writeとpane spawn/respawn/switchを`event_id` / `timestamp` / `owner` / `cause` / `cmd_id` / changed paths+before-after SHA-256 / before-after pane PID+starttime / CLI / model / effort / service tierで記録する。
+
+窓開始時に`config/settings.yaml`、`config/cli_profiles.yaml`、`config/cli_events.yaml`、`.claude/settings.json`、`.codex/hooks.json`のSHA-256+git blob+mtimeと、全paneのPID/starttime/CLI/model/effort/tierを`runtime_state_before.json`へ固定する。窓終了時の`runtime_state_after.json`と比較し、全observed deltaにjournal eventがexactly one対応することを要求する。
 
 - 全体respawn数0を要求しない。idle recovery等の正常別owner動作をcmd_4200に誤帰属させないためである。
 - cmd_4200起因のsettings変更、pane respawn、CLI/model/effort switchはそれぞれ0を要求する。owner/cause不明は0と数えずBLOCKする。
+- `observed_delta_count == journal_event_count == attributed_event_count`を強制する。snapshot差分に対するjournal欠落、journalに対するsnapshot差分欠落、owner/cause不明はすべて`UNKNOWN_MUTATION`としrelease BLOCK。0とみなさない。
 - journalなしのmtime・pane birth時刻のみで「cmd起因0」と判定しない。今回の再レビュでcommit後pane birth 1/9を観測したがowner receiptがないため、AC22は未判定とする。
 
 ## §1 As-Is — 現状5W1H
@@ -487,6 +492,7 @@ Gate0A contract [DONE]
 
 - `config/cli_events.yaml`の6 eventを唯一の意味論ownerとし、Claude Code / Codex adapterは能力写像だけを持つ。
 - 同一event内の順序依存処理はCLIごとに単一adapterへ合成する。CLI固有hook設定の二重ownerを禁止する。
+- **Claude現行multi-handler構成（Stop 5 / UserPromptSubmit 3 / expanded leaf N）は合成対象外**とする。既にreachable owner 1/actionを満たすClaude native chainはNO-CHANGEが優先する。単一adapter合成はhook欠落CLIの代替ownerまたは二重ownerが実測されたCLI固有経路に限定し、Claudeへの適用は全support tuple純便益が証明された別裁定まで禁止する。
 - manifest generatorで、support CLI×6 eventの全cellについてmatcher到達性、実体存在、event coverage、代替daemon/gate coverageを強制する。
 - Codexは意図的BLOCKをexit 2、hook errorを別分類し、exit 1によるCLI停止を0件にする。
 - Claude CodeはPreToolUse/PostToolUse/Stopのpayload・exit・permissionDecision意味論をfixtureとinteractive probeで固定する。
@@ -542,10 +548,10 @@ Gate0A contract [DONE]
 | 19 | runtime manifestとtuple receiptがfixed source SHA、runner ID、OS/filesystem identityへ束縛され、欠落0・重複0 |
 | 20 | native Linux/Windows-nativeをportable保証に含める場合は専用runner executed N/N。証跡0の間は`PLANNED`表示でrelease claim 0 |
 | 21 | Claude primary rowがsupport matrixに必ず存在し、`.claude/settings.json`の6 event type / 12 top handler / dispatcher展開leaf Nがbefore/after全数receipt、behavior差分0、二重owner0 |
-| 22 | owner/cause付きmutation journal上、cmd_4200起因のsettings変更0、pane respawn0、CLI/model/effort切替0。owner/cause不明0。別ownerの正常respawnは分離計数 |
-| 23 | 各変更unitがold design reason、根拠commit/file/line、cut edge、影響、保存方法をN/N記録し、不明0 |
+| 22 | before/after config hash+pane snapshotのobserved deltaとowner/cause付きmutation journalがN/N exact対応。cmd_4200起因のsettings変更0、pane respawn0、CLI/model/effort切替0、`UNKNOWN_MUTATION=0` |
+| 23 | 各変更unitがold design reason、根拠commit/path/line/blob、観測期間、成功/失敗生値、cut edge、影響、保存方法をN/N記録し、不明0 |
 | 24 | support全valid tupleで安全性非退行、Claude primary使い勝手差分0、既定budget内、追加手順税0。1件でも未証明/悪化ならNO-CHANGE CLOSE |
-| 25 | canary採用時は旧Claude pathのhash/mode/owner付き保存、実在restore scriptのdry-run PASS、apply後expanded action N/N再現を同一receiptで証明 |
+| 25 | canary採用時は旧Claude pathのhash/git_mode/fs_capability/mount/owner付き保存、実在restore scriptのdry-run PASS、apply後expanded action N/N再現を同一receiptで証明 |
 
 ## §7 Decision Ledger
 
@@ -605,6 +611,9 @@ Gate0A contract [DONE]
 23. rollback先は実在artifact/scriptとhash/mode/ownerに束縛され、dry-runとapply後再検証があるか。
 24. 検証窓のpane birthはmutation journalでowner/causeを確定したか。時刻相関だけでcmd起因0としていないか。
 25. 旧系が優先された導入理由と事故回避の因果辺を、変更unitごとに追ったか。全tuple純便益が未証明ならNO-CHANGEにしたか。
+26. DrvFsの`git_mode=100644` / `fs_mode_observed=0777`を矛盾と誤判定せず、Git意味論とfilesystem capability/mountを分離したか。
+27. settings/profile/hook差分とpane差分をbefore/after snapshotから全数検出し、journalとN/N対応したか。未journal差分を0と数えていないか。
+28. 因果証跡は現行path/節参照ではなく、fixed commit/path/line/blob/観測期間/生値へ束縛されているか。
 
 ## §9 履歴・因果・検索索引
 
@@ -629,6 +638,10 @@ Gate0A contract [DONE]
 | 因果保存訂正 | 殿/家老 | UPDATED v3.4 | 旧Claude主系の成立因果、native hook優先理由、CLI adapterが必要になった事故、全tuple純便益未証明時NO-CHANGEを追加 |
 | Multi-runtime RC2 | 軍師 | REQUEST_CHANGES | 前回6 findingは6/6解消。新規3件: Claude実manifestの6 cell縮小、rollback pointer不存在、post-commit pane birth 1/9のowner/cause未証明 |
 | Multi-runtime RC2 response | 家老 | UPDATED v3.4 | 6 event type/12 top handler/dispatcher leaf N全数、baseline hash+restore script、mutation journal、AC21-25へ反映 |
+| Multi-runtime RC3 | 軍師 | REQUEST_CHANGES | RC2契約3/3はPASS。新規3件: DrvFsのGit mode 100644/stat 0777二重性、settings writeと未journal mutation不可視、因果5 rowがmutable path参照でfixed commit/line 0/5 |
+| Multi-runtime RC3 response | 家老 | UPDATED v3.5 | git_mode/fs_mode/fs_capability/mount分離、before/after state delta×journal N/N、因果5/5をcommit/path/line/blob/期間/生値で固定 |
+| Claude Fable RC1 | 将軍 (Claude Fable 5) | REQUEST_CHANGES | Claude primary/NO-CHANGEはPASS。新規3件: resolved mismatch実数3を固定2が過少計数、Wave 4A合成がClaude Stop 5-chainへ逆流可能、Fable 5 row例欠落 |
+| Claude Fable RC1 response | 家老 | UPDATED v3.5 | mismatchをresolved全agent N/N・終端0/Nへ変更、Claude native multi-handlerを合成対象外+NO-CHANGE優先、Fable configured例追加 |
 
 ### §9.2 因果リンク
 
