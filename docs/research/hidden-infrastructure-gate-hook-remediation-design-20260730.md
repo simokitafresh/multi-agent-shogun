@@ -452,7 +452,7 @@ Gate0A contract [DONE]
   → Wave0 probe [DONE]
   → Gate0B closure [DONE]
   → durable-state foundation [DONE]
-  → Wave1A identity [IN PROGRESS: R01]
+  → Wave1A identity [R01 ACCEPTED / R06 review-path先行実装済(§-2.0)。残=typed exact helper横展開]
   → Wave1B ownership
   → Wave2A terminal receipt
   → Wave2B safe delivery
