@@ -54,6 +54,17 @@ class InvalidTransitionError(DurableStateError):
     exit_code = 5
 
 
+class LeaseHeldError(DurableStateError):
+    exit_code = 6
+
+
+class OutboxError(DurableStateError):
+    exit_code = 7
+
+
+OUTBOX_STATES = ("reserved", "inflight", "applied", "failed")
+
+
 def _canonical_bytes(record: dict) -> bytes:
     payload = {k: v for k, v in record.items() if k != "checksum"}
     return json.dumps(payload, sort_keys=True, ensure_ascii=True).encode("utf-8")
@@ -227,6 +238,217 @@ def mutate(root: Path, subject_type: str, subject_id: str, expected_fence: int,
             fcntl.flock(lock_f, fcntl.LOCK_UN)
 
 
+def _lease_path(root: Path, subject_type: str, subject_id: str) -> Path:
+    d = root / "leases"
+    d.mkdir(parents=True, exist_ok=True)
+    return d / f"{subject_type}__{subject_id}.json"
+
+
+def _read_lease(root: Path, subject_type: str, subject_id: str):
+    path = _lease_path(root, subject_type, subject_id)
+    if not path.exists():
+        return None
+    with open(path) as f:
+        return json.loads(f.read())
+
+
+def acquire_lease(root: Path, subject_type: str, subject_id: str, owner_id: str,
+                   lease_ttl: float = 30.0) -> dict:
+    """Grant a time-bounded lease so at most one reconciler mutates a subject
+    at a time (safety: executable_owner_count <= 1). An expired lease may be
+    reclaimed by any owner (liveness: eventually executable_owner_count == 1).
+    """
+    lock_path = _lock_path(root, subject_type, subject_id)
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f, fcntl.LOCK_EX)
+        try:
+            now = time.time()
+            current = _read_lease(root, subject_type, subject_id)
+            if current is not None and current["owner_id"] != owner_id and current["expires_at"] > now:
+                raise LeaseHeldError(
+                    f"lease held by {current['owner_id']} until {current['expires_at']}"
+                )
+            lease = {
+                "subject_type": subject_type,
+                "subject_id": subject_id,
+                "owner_id": owner_id,
+                "acquired_at": now,
+                "expires_at": now + lease_ttl,
+                "lease_ttl": lease_ttl,
+            }
+            _atomic_publish(_lease_path(root, subject_type, subject_id), lease)
+            return lease
+        finally:
+            fcntl.flock(lock_f, fcntl.LOCK_UN)
+
+
+def terminal_receipt(root: Path, subject_type: str, subject_id: str, generation: int):
+    """Commit-point read (§3.3 step 7): return the record only when the
+    requested generation's terminal receipt, artifact hash, side-effect
+    ledger, and current fence all agree. Any gap or mismatch yields None --
+    never a false terminal."""
+    record = read_active(root, subject_type, subject_id)
+    if record is None:
+        return None
+    if record["generation"] != generation:
+        return None
+    if record["phase"] != "terminal":
+        return None
+    if record["fence_token"] != generation:
+        return None
+    if not record["artifact_hash"]:
+        return None
+    if record["terminal_result"] not in VALID_TERMINAL_RESULTS:
+        return None
+    if not isinstance(record["side_effect_ledger"], list):
+        return None
+    return record
+
+
+def reconcile(root: Path, subject_type: str, subject_id: str, owner_id: str,
+              observed_artifact_hash: str, side_effect_ledger=None,
+              lease_ttl: float = 30.0) -> dict:
+    """The single lease-holding reconciler drives a subject toward terminal.
+    `intended`/`prepared` are left for their owner to resume or cancel
+    (untouched here -- reconciler does not invent a decision for them).
+    `published` rolls forward to terminal only when observed_artifact_hash
+    matches the record's own artifact hash (owner/artifact match); any
+    mismatch converges to rolled_back instead.
+    """
+    acquire_lease(root, subject_type, subject_id, owner_id, lease_ttl)
+    current = read_active(root, subject_type, subject_id)
+    if current is None:
+        raise InvalidTransitionError("no active record to reconcile")
+    if current["phase"] in TERMINAL_PHASES:
+        return current
+    if current["phase"] in ("intended", "prepared"):
+        return current
+    fence = current["fence_token"]
+    if observed_artifact_hash and observed_artifact_hash == current["artifact_hash"]:
+        return mutate(root, subject_type, subject_id, fence, "terminal",
+                      terminal_result="CLEAR", side_effect_ledger=side_effect_ledger)
+    return mutate(root, subject_type, subject_id, fence, "rolled_back",
+                  side_effect_ledger=side_effect_ledger)
+
+
+def _outbox_path(root: Path, idempotency_key: str) -> Path:
+    d = root / "outbox"
+    d.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest()
+    return d / f"{digest}.json"
+
+
+def _outbox_lock_path(root: Path, idempotency_key: str) -> Path:
+    d = root / "outbox_locks"
+    d.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest()
+    return d / f"{digest}.lock"
+
+
+def _outbox_read(root: Path, idempotency_key: str):
+    path = _outbox_path(root, idempotency_key)
+    if not path.exists():
+        return None
+    with open(path) as f:
+        return json.loads(f.read())
+
+
+def outbox_reserve(root: Path, idempotency_key: str, action: str, target: str,
+                    payload_hash: str) -> dict:
+    """Persist intent to deliver an external side effect before attempting
+    it (§3.4). Reserving twice for the same key is idempotent."""
+    lock_path = _outbox_lock_path(root, idempotency_key)
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f, fcntl.LOCK_EX)
+        try:
+            existing = _outbox_read(root, idempotency_key)
+            if existing is not None:
+                return existing
+            record = {
+                "idempotency_key": idempotency_key,
+                "state": "reserved",
+                "action": action,
+                "target": target,
+                "payload_hash": payload_hash,
+                "attempts": 0,
+                "recorded_at": time.time(),
+            }
+            _atomic_publish(_outbox_path(root, idempotency_key), record)
+            return record
+        finally:
+            fcntl.flock(lock_f, fcntl.LOCK_UN)
+
+
+def outbox_apply_once(root: Path, idempotency_key: str, apply_fn) -> dict:
+    """Run `apply_fn` for this key at most once, even across repeated calls
+    for the same key (subject+generation+action+target+payload_hash), by
+    holding the per-key lock across the reserved->inflight->applied|failed
+    transition (§3.4 idempotency collapse)."""
+    lock_path = _outbox_lock_path(root, idempotency_key)
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f, fcntl.LOCK_EX)
+        try:
+            record = _outbox_read(root, idempotency_key)
+            if record is None:
+                raise OutboxError(f"no reservation for key {idempotency_key}")
+            if record["state"] == "applied":
+                return record
+            record["state"] = "inflight"
+            record["attempts"] = record.get("attempts", 0) + 1
+            record["recorded_at"] = time.time()
+            _atomic_publish(_outbox_path(root, idempotency_key), record)
+            try:
+                result = apply_fn()
+            except Exception as exc:  # noqa: BLE001 -- external side effect boundary
+                record["state"] = "failed"
+                record["error"] = str(exc)
+                record["recorded_at"] = time.time()
+                _atomic_publish(_outbox_path(root, idempotency_key), record)
+                raise
+            record["state"] = "applied"
+            record["result"] = result
+            record["recorded_at"] = time.time()
+            _atomic_publish(_outbox_path(root, idempotency_key), record)
+            return record
+        finally:
+            fcntl.flock(lock_f, fcntl.LOCK_UN)
+
+
+def shadow_compare(root: Path, subject_type: str, subject_id: str) -> dict:
+    """Read-only comparator: the canonical reader (schema+checksum validated)
+    against a naive reader (plain json.loads, no validation). Used to prove
+    the canonical reader diverges from a raw read only in the fail-closed
+    direction (never accepts something the naive reader would also reject,
+    and any divergence is reported rather than silently swallowed)."""
+    path = _record_path(root, subject_type, subject_id)
+    naive = None
+    naive_error = None
+    if path.exists():
+        try:
+            with open(path) as f:
+                naive = json.loads(f.read())
+        except json.JSONDecodeError as exc:
+            naive_error = str(exc)
+    canonical = None
+    canonical_error = None
+    try:
+        canonical = read_active(root, subject_type, subject_id)
+    except SchemaQuarantineError as exc:
+        canonical_error = str(exc)
+
+    if canonical is not None and naive is not None and canonical == naive:
+        return {"result": "match", "canonical": canonical}
+    if canonical is None and naive is None and naive_error is None:
+        return {"result": "match", "canonical": None}
+    return {
+        "result": "diverge",
+        "canonical": canonical,
+        "canonical_error": canonical_error,
+        "naive": naive,
+        "naive_error": naive_error,
+    }
+
+
 def _print_record(record) -> None:
     if record is None:
         print("null")
@@ -259,6 +481,54 @@ def _cmd_read(args) -> int:
     return 0
 
 
+def _cmd_lease_acquire(args) -> int:
+    lease = acquire_lease(Path(args.root), args.subject_type, args.subject_id,
+                          args.owner_id, args.lease_ttl)
+    print(json.dumps(lease, sort_keys=True, ensure_ascii=True))
+    return 0
+
+
+def _cmd_reconcile(args) -> int:
+    side_effect_ledger = json.loads(args.side_effect_ledger) if args.side_effect_ledger else None
+    record = reconcile(
+        Path(args.root), args.subject_type, args.subject_id, args.owner_id,
+        observed_artifact_hash=args.observed_artifact_hash,
+        side_effect_ledger=side_effect_ledger, lease_ttl=args.lease_ttl,
+    )
+    _print_record(record)
+    return 0
+
+
+def _cmd_terminal_receipt(args) -> int:
+    _print_record(terminal_receipt(Path(args.root), args.subject_type, args.subject_id, args.generation))
+    return 0
+
+
+def _cmd_outbox_reserve(args) -> int:
+    record = outbox_reserve(Path(args.root), args.idempotency_key, args.action,
+                            args.target, args.payload_hash)
+    print(json.dumps(record, sort_keys=True, ensure_ascii=True))
+    return 0
+
+
+def _cmd_outbox_apply(args) -> int:
+    def apply_fn():
+        if args.side_effect_log:
+            with open(args.side_effect_log, "a") as f:
+                f.write(f"{args.idempotency_key}\n")
+        return "applied"
+
+    record = outbox_apply_once(Path(args.root), args.idempotency_key, apply_fn)
+    print(json.dumps(record, sort_keys=True, ensure_ascii=True))
+    return 0
+
+
+def _cmd_shadow_compare(args) -> int:
+    result = shadow_compare(Path(args.root), args.subject_type, args.subject_id)
+    print(json.dumps(result, sort_keys=True, ensure_ascii=True))
+    return 0 if result["result"] == "match" else 8
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="durable_state")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -287,6 +557,51 @@ def main(argv=None) -> int:
     p_read.add_argument("--subject-type", required=True)
     p_read.add_argument("--subject-id", required=True)
     p_read.set_defaults(func=_cmd_read)
+
+    p_lease = sub.add_parser("lease-acquire")
+    p_lease.add_argument("--root", required=True)
+    p_lease.add_argument("--subject-type", required=True)
+    p_lease.add_argument("--subject-id", required=True)
+    p_lease.add_argument("--owner-id", required=True)
+    p_lease.add_argument("--lease-ttl", type=float, default=30.0)
+    p_lease.set_defaults(func=_cmd_lease_acquire)
+
+    p_reconcile = sub.add_parser("reconcile")
+    p_reconcile.add_argument("--root", required=True)
+    p_reconcile.add_argument("--subject-type", required=True)
+    p_reconcile.add_argument("--subject-id", required=True)
+    p_reconcile.add_argument("--owner-id", required=True)
+    p_reconcile.add_argument("--observed-artifact-hash", default="")
+    p_reconcile.add_argument("--side-effect-ledger", default="")
+    p_reconcile.add_argument("--lease-ttl", type=float, default=30.0)
+    p_reconcile.set_defaults(func=_cmd_reconcile)
+
+    p_terminal = sub.add_parser("terminal-receipt")
+    p_terminal.add_argument("--root", required=True)
+    p_terminal.add_argument("--subject-type", required=True)
+    p_terminal.add_argument("--subject-id", required=True)
+    p_terminal.add_argument("--generation", type=int, required=True)
+    p_terminal.set_defaults(func=_cmd_terminal_receipt)
+
+    p_outbox_reserve = sub.add_parser("outbox-reserve")
+    p_outbox_reserve.add_argument("--root", required=True)
+    p_outbox_reserve.add_argument("--idempotency-key", required=True)
+    p_outbox_reserve.add_argument("--action", required=True)
+    p_outbox_reserve.add_argument("--target", required=True)
+    p_outbox_reserve.add_argument("--payload-hash", required=True)
+    p_outbox_reserve.set_defaults(func=_cmd_outbox_reserve)
+
+    p_outbox_apply = sub.add_parser("outbox-apply")
+    p_outbox_apply.add_argument("--root", required=True)
+    p_outbox_apply.add_argument("--idempotency-key", required=True)
+    p_outbox_apply.add_argument("--side-effect-log", default="")
+    p_outbox_apply.set_defaults(func=_cmd_outbox_apply)
+
+    p_shadow = sub.add_parser("shadow-compare")
+    p_shadow.add_argument("--root", required=True)
+    p_shadow.add_argument("--subject-type", required=True)
+    p_shadow.add_argument("--subject-id", required=True)
+    p_shadow.set_defaults(func=_cmd_shadow_compare)
 
     args = parser.parse_args(argv)
     try:

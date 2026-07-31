@@ -30,6 +30,48 @@ durable_state_read() {
         --root "$root" --subject-type "$subject_type" --subject-id "$subject_id"
 }
 
+durable_state_lease_acquire() {
+    local root="$1" subject_type="$2" subject_id="$3" owner_id="$4" lease_ttl="${5:-30.0}"
+    python3 "$DURABLE_STATE_PY" lease-acquire \
+        --root "$root" --subject-type "$subject_type" --subject-id "$subject_id" \
+        --owner-id "$owner_id" --lease-ttl "$lease_ttl"
+}
+
+durable_state_reconcile() {
+    local root="$1" subject_type="$2" subject_id="$3" owner_id="$4"
+    local observed_artifact_hash="${5:-}" side_effect_ledger="${6:-}" lease_ttl="${7:-30.0}"
+    python3 "$DURABLE_STATE_PY" reconcile \
+        --root "$root" --subject-type "$subject_type" --subject-id "$subject_id" \
+        --owner-id "$owner_id" --observed-artifact-hash "$observed_artifact_hash" \
+        --side-effect-ledger "$side_effect_ledger" --lease-ttl "$lease_ttl"
+}
+
+durable_state_terminal_receipt() {
+    local root="$1" subject_type="$2" subject_id="$3" generation="$4"
+    python3 "$DURABLE_STATE_PY" terminal-receipt \
+        --root "$root" --subject-type "$subject_type" --subject-id "$subject_id" \
+        --generation "$generation"
+}
+
+durable_state_outbox_reserve() {
+    local root="$1" idempotency_key="$2" action="$3" target="$4" payload_hash="$5"
+    python3 "$DURABLE_STATE_PY" outbox-reserve \
+        --root "$root" --idempotency-key "$idempotency_key" --action "$action" \
+        --target "$target" --payload-hash "$payload_hash"
+}
+
+durable_state_outbox_apply() {
+    local root="$1" idempotency_key="$2" side_effect_log="${3:-}"
+    python3 "$DURABLE_STATE_PY" outbox-apply \
+        --root "$root" --idempotency-key "$idempotency_key" --side-effect-log "$side_effect_log"
+}
+
+durable_state_shadow_compare() {
+    local root="$1" subject_type="$2" subject_id="$3"
+    python3 "$DURABLE_STATE_PY" shadow-compare \
+        --root "$root" --subject-type "$subject_type" --subject-id "$subject_id"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     cmd="${1:-}"
     shift || true
@@ -37,8 +79,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         begin) durable_state_begin "$@" ;;
         mutate) durable_state_mutate "$@" ;;
         read) durable_state_read "$@" ;;
+        lease-acquire) durable_state_lease_acquire "$@" ;;
+        reconcile) durable_state_reconcile "$@" ;;
+        terminal-receipt) durable_state_terminal_receipt "$@" ;;
+        outbox-reserve) durable_state_outbox_reserve "$@" ;;
+        outbox-apply) durable_state_outbox_apply "$@" ;;
+        shadow-compare) durable_state_shadow_compare "$@" ;;
         *)
-            echo "usage: durable_state.sh {begin|mutate|read} ..." >&2
+            echo "usage: durable_state.sh {begin|mutate|read|lease-acquire|reconcile|terminal-receipt|outbox-reserve|outbox-apply|shadow-compare} ..." >&2
             exit 64
             ;;
     esac
