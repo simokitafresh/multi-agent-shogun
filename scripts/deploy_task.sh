@@ -857,6 +857,42 @@ deploy_task_start_deferred_drain() {
     log "deferred_drain: started single-flight pid=$!"
 }
 
+deploy_task_continuation_contract_valid() {
+    local task_file="$1"
+    local report_file="$2"
+    local parent_cmd="$3"
+
+    [ -f "$task_file" ] || return 1
+    [ -f "$report_file" ] || return 1
+    python3 - "$task_file" "$report_file" "$parent_cmd" <<'PY'
+import os, sys, yaml
+task_path, report_path, parent = sys.argv[1:]
+task = (yaml.safe_load(open(task_path, encoding="utf-8")) or {}).get("task") or {}
+report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+
+raw_many = task.get("continuation_of_reports")
+if raw_many is None:
+    raw_many = [task.get("continuation_of_report")]
+if not isinstance(raw_many, list) or any(not isinstance(item, str) for item in raw_many):
+    raise SystemExit(1)
+continuations = {item.strip() for item in raw_many if item.strip()}
+expected = f"queue/reports/{os.path.basename(report_path)}"
+assigned = task.get("assigned_acs")
+subtask = str(task.get("subtask_id") or "").strip()
+prior_task = str(report.get("task_id") or "").strip()
+valid = (
+    str(task.get("parent_cmd") or "").strip() == parent
+    and bool(continuations.intersection({expected, os.path.basename(report_path)}))
+    and isinstance(assigned, list) and bool(assigned)
+    and bool(subtask) and subtask != prior_task
+    and str(report.get("parent_cmd") or "").strip() == parent
+    and str(report.get("status") or "").strip() == "completed"
+    and str(report.get("verdict") or "").strip() in {"PASS", "PASS_NO_IMPROVEMENT"}
+)
+raise SystemExit(0 if valid else 1)
+PY
+}
+
 deploy_task_has_completed_peer_report() {
     local parent_cmd="$1"
     local ninja_name="$2"
@@ -878,29 +914,10 @@ deploy_task_has_completed_peer_report() {
             # reconnaissance/report stage.  Require an explicit, machine-bound
             # continuation contract so ordinary duplicate deployments remain
             # fail-closed: distinct subtask_id, explicit parent AC mapping, and
-            # the exact completed peer report being continued.
-            if [ -f "$task_file" ] && python3 - "$task_file" "$report_file" "$parent_cmd" <<'PY'
-import os, sys, yaml
-task_path, report_path, parent = sys.argv[1:]
-task = (yaml.safe_load(open(task_path, encoding="utf-8")) or {}).get("task") or {}
-report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
-continuation = str(task.get("continuation_of_report") or "").strip()
-expected = f"queue/reports/{os.path.basename(report_path)}"
-assigned = task.get("assigned_acs")
-subtask = str(task.get("subtask_id") or "").strip()
-prior_task = str(report.get("task_id") or "").strip()
-valid = (
-    str(task.get("parent_cmd") or "").strip() == parent
-    and continuation in {expected, os.path.basename(report_path)}
-    and isinstance(assigned, list) and bool(assigned)
-    and bool(subtask) and subtask != prior_task
-    and str(report.get("parent_cmd") or "").strip() == parent
-    and str(report.get("status") or "").strip() == "completed"
-    and str(report.get("verdict") or "").strip() in {"PASS", "PASS_NO_IMPROVEMENT"}
-)
-raise SystemExit(0 if valid else 1)
-PY
-            then
+            # every exact completed peer report being continued.  The plural
+            # form is required when a natural-boundary command has more than
+            # one completed predecessor; the singular field remains compatible.
+            if deploy_task_continuation_contract_valid "$task_file" "$report_file" "$parent_cmd"; then
                 log "continuation_deploy: ${parent_cmd} continues ${report_base} with explicit AC mapping — allowing"
                 continue
             fi

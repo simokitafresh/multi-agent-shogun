@@ -404,6 +404,8 @@ EOF
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         pane_lookup() { echo "shogun:agents.2"; }
+        # test_necessity: pane evidenceなしのdirect re-nudge契約を実tmux表示から隔離する。
+        tmux() { return 1; }
         safe_send_keys_atomic() {
             printf '%s|%s|%s\n' "$1" "$2" "$3" > "$TEST_PROJECT/logs/direct_renudge.log"
         }
@@ -434,6 +436,8 @@ EOF
         # shellcheck disable=SC1090,SC1091
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         pane_lookup() { echo "shogun:agents.2"; }
+        # test_necessity: message本文中の文字列ではなくYAML read値だけを数える不変量を隔離検証する。
+        tmux() { return 1; }
         safe_send_keys_atomic() {
             printf '%s|%s|%s\n' "$1" "$2" "$3" > "$TEST_PROJECT/logs/direct_renudge_literal.log"
         }
