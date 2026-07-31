@@ -92,6 +92,44 @@ EXEMPT_SCRIPT_BASENAMES = {"check_pf_config.py", "db_capability_launcher.py"}
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 
+def _projects_config() -> dict:
+    """Load configured project roots from the production SSOT (test override is Bats-only)."""
+    try:
+        import yaml
+    except ImportError:
+        try:
+            import site
+            site.main()
+            import yaml
+        except ImportError:  # pragma: no cover - PyYAML欠如環境ではfail-closed
+            return {}
+    if os.environ.get("BATS_TEST_FILENAME"):
+        projects_yaml = os.environ.get(
+            "GUARD14_PROJECTS_YAML", os.path.join(_REPO_ROOT, "config", "projects.yaml")
+        )
+    else:
+        projects_yaml = os.path.join(_REPO_ROOT, "config", "projects.yaml")
+    try:
+        with open(projects_yaml, encoding="utf-8") as handle:
+            data = yaml.safe_load(handle) or {}
+    except (OSError, yaml.YAMLError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _configured_project_roots() -> list[str]:
+    roots: list[str] = []
+    for project in _projects_config().get("projects") or []:
+        if not isinstance(project, dict):
+            continue
+        path = project.get("path")
+        if isinstance(path, str) and os.path.isabs(path):
+            resolved = os.path.realpath(path)
+            if os.path.isdir(resolved):
+                roots.append(resolved)
+    return roots
+
+
 def _canonical_exempt_script_path(basename: str) -> str | None:
     if basename == "db_capability_launcher.py":
         return os.path.realpath(os.path.join(_REPO_ROOT, "scripts", basename))
@@ -102,32 +140,9 @@ def _canonical_exempt_script_path(basename: str) -> str | None:
     # hookは python3 -S (site初期化skip、実測-6ms/呼び出し)で起動するため、通常経路では
     # site-packages がsys.pathに無くyamlをimportできない。ここ(免除判定の稀な経路)でのみ
     # site.main()でsite-packagesを復元してからimportする。
-    try:
-        import yaml
-    except ImportError:
-        try:
-            import site
-            site.main()
-            import yaml
-        except ImportError:  # pragma: no cover - PyYAML欠如環境ではfail-closed
-            return None
-    # Unit tests supply a private projects fixture so this structural samefile
-    # check never depends on a developer's external DM-Signal checkout.  The
-    # override is deliberately unavailable outside Bats: production must use
-    # this repository's config/projects.yaml SSOT, not a caller-controlled
-    # environment variable.
-    if os.environ.get("BATS_TEST_FILENAME"):
-        projects_yaml = os.environ.get(
-            "GUARD14_PROJECTS_YAML", os.path.join(_REPO_ROOT, "config", "projects.yaml")
-        )
-    else:
-        projects_yaml = os.path.join(_REPO_ROOT, "config", "projects.yaml")
-    try:
-        with open(projects_yaml, encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-    except OSError:
-        return None
-    for proj in data.get("projects") or []:
+    for proj in _projects_config().get("projects") or []:
+        if not isinstance(proj, dict):
+            continue
         if proj.get("id") == "dm-signal":
             base = proj.get("path")
             if not base:
@@ -383,6 +398,113 @@ def _python_inline_code(tokens: list[str]) -> str | None:
     except ValueError:
         return None
     return stripped[index + 1] if index + 1 < len(stripped) else ""
+
+
+def _readonly_sqlite_uri_is_confined(value: str) -> bool:
+    """Prove a literal SQLite file URI is read-only and resolves inside a configured project."""
+    from urllib.parse import parse_qs, unquote, urlsplit
+
+    try:
+        parts = urlsplit(value)
+        query = parse_qs(parts.query, keep_blank_values=True, strict_parsing=True)
+    except ValueError:
+        return False
+    if parts.scheme != "file" or parts.netloc or parts.fragment:
+        return False
+    if set(query) - {"mode", "immutable", "cache"}:
+        return False
+    if query.get("mode") != ["ro"]:
+        return False
+    if "immutable" in query and query["immutable"] != ["1"]:
+        return False
+    if "cache" in query and query["cache"] not in (["private"], ["shared"]):
+        return False
+
+    path = unquote(parts.path)
+    if not path or "\x00" in path or not os.path.isabs(path):
+        return False
+    resolved = os.path.realpath(path)
+    if not os.path.isfile(resolved):
+        return False
+    for root in _configured_project_roots():
+        try:
+            if os.path.commonpath((root, resolved)) == root:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def _python_readonly_sqlite_capability(tokens: list[str]) -> bool:
+    """Prove every connect call in Python -c is an explicit confined SQLite read-only URI."""
+    code = _python_inline_code(tokens)
+    if code is None:
+        return False
+    # A segment that mixes the bounded SQLite call with any other DB-intent
+    # category must fall back to the generic fail-closed classifier.  Otherwise
+    # one valid SQLite call could camouflage a remote engine/DSN in the same -c.
+    if (
+        DSN_URL_RE.search(code)
+        or DB_ENV_VAR_RE.search(code)
+        or CREATE_ENGINE_RE.search(code)
+        or HOST_KV_RE.search(code)
+        or ":memory:" in code
+    ):
+        return False
+    try:
+        tree = ast.parse(code)
+    except (SyntaxError, ValueError):
+        return False
+
+    module_aliases: set[str] = set()
+    connect_aliases: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "sqlite3":
+                    module_aliases.add(alias.asname or "sqlite3")
+        elif isinstance(node, ast.ImportFrom) and node.module == "sqlite3":
+            for alias in node.names:
+                if alias.name == "connect":
+                    connect_aliases.add(alias.asname or "connect")
+
+    protected_names = module_aliases | connect_aliases
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            if any(isinstance(target, ast.Name) and target.id in protected_names for target in targets):
+                return False
+
+    saw_sqlite_connect = False
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        is_sqlite_connect = False
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "connect":
+            if not isinstance(node.func.value, ast.Name) or node.func.value.id not in module_aliases:
+                return False
+            is_sqlite_connect = True
+        elif isinstance(node.func, ast.Name) and node.func.id in connect_aliases:
+            is_sqlite_connect = True
+        if not is_sqlite_connect:
+            continue
+
+        if any(keyword.arg is None for keyword in node.keywords):
+            return False
+        database = node.args[0] if node.args else next(
+            (keyword.value for keyword in node.keywords if keyword.arg == "database"), None
+        )
+        uri_flag = next((keyword.value for keyword in node.keywords if keyword.arg == "uri"), None)
+        if not (
+            isinstance(database, ast.Constant)
+            and isinstance(database.value, str)
+            and isinstance(uri_flag, ast.Constant)
+            and uri_flag.value is True
+            and _readonly_sqlite_uri_is_confined(database.value)
+        ):
+            return False
+        saw_sqlite_connect = True
+    return saw_sqlite_connect
 
 
 def _python_http_only_capability(tokens: list[str]) -> bool:
@@ -787,6 +909,8 @@ def classify(command: str) -> str:
 
     for seg in connection_segments:
         if _segment_is_exempt(seg):
+            continue
+        if _python_readonly_sqlite_capability(seg):
             continue
         candidates = _extract_candidates(seg)
         if not candidates:

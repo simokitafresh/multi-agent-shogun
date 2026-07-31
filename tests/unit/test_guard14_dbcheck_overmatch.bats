@@ -1,21 +1,28 @@
 #!/usr/bin/env bats
-# test_necessity: Guard14 must admit only the canonical DB capability launcher independent of hook cwd, treat dot-env prose as inert argv, and continue blocking unknown direct DB connections.
+# test_necessity: Guard14 must admit only structurally proven local read-only DB capabilities, including canonical launchers and file-backed SQLite URIs confined to configured project roots, while blocking writable, dynamic, escaped-path, and unknown direct connections.
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   CLASSIFIER="$ROOT/scripts/lib/guard14_db_trust_classify.py"
   HOOK="$ROOT/.claude/hooks/pre-bash-combined.sh"
+  FIXTURE_ROOT="$BATS_TEST_TMPDIR/allowed-project"
+  SQLITE_DB="$FIXTURE_ROOT/analysis_runs/fixture.db"
+  PROJECTS_YAML="$BATS_TEST_TMPDIR/projects.yaml"
+  mkdir -p "$FIXTURE_ROOT/analysis_runs"
+  : > "$SQLITE_DB"
+  printf 'projects:\n  - id: fixture\n    path: "%s"\n' "$FIXTURE_ROOT" > "$PROJECTS_YAML"
 }
 
 classify() {
   local command="$1"
-  run env COMMAND="$command" python3 -S "$CLASSIFIER"
+  run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" GUARD14_PROJECTS_YAML="$PROJECTS_YAML" \
+    COMMAND="$command" python3 -S "$CLASSIFIER"
   [ "$status" -eq 0 ]
 }
 
 run_hook() {
   local command="$1"
-  run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" GUARD14_BATS_ONLY=1 \
+  run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" GUARD14_PROJECTS_YAML="$PROJECTS_YAML" GUARD14_BATS_ONLY=1 \
     GUARD14_BATS_PROJECT_ROOT="$ROOT" GUARD14_BATS_COMMAND="$command" bash "$HOOK"
 }
 
@@ -55,4 +62,37 @@ run_hook() {
   run_hook "python3 -c 'import psycopg2; psycopg2.connect(host=\"prod-db.example\")'"
   [ "$status" -ne 0 ]
   [[ "$output" == *"Guard14"* ]]
+}
+
+@test "literal readonly SQLite URI inside configured project root is local ephemeral" {
+  local command="python3 -c 'import sqlite3; sqlite3.connect(\"file:$SQLITE_DB?mode=ro&immutable=1\", uri=True)'"
+  classify "$command"
+  [ "$output" = "connection:local_ephemeral" ]
+  run_hook "$command"
+  [ "$status" -eq 0 ]
+}
+
+@test "readonly SQLite trust proof rejects writable missing-uri dynamic and escaped paths" {
+  local outside_db="$BATS_TEST_TMPDIR/outside.db"
+  local escaped_db="$FIXTURE_ROOT/analysis_runs/escaped.db"
+  : > "$outside_db"
+  ln -s "$outside_db" "$escaped_db"
+
+  classify "python3 -c 'import sqlite3; sqlite3.connect(\"file:$SQLITE_DB?mode=rwc\", uri=True)'"
+  [ "$output" = "connection:untrusted" ]
+
+  classify "python3 -c 'import sqlite3; sqlite3.connect(\"file:$SQLITE_DB?mode=ro\")'"
+  [ "$output" = "connection:untrusted" ]
+
+  classify "python3 -c 'import sqlite3, sys; sqlite3.connect(sys.argv[1], uri=True)' 'file:$SQLITE_DB?mode=ro'"
+  [ "$output" = "connection:untrusted" ]
+
+  classify "python3 -c 'import sqlite3; sqlite3.connect(\"file:$outside_db?mode=ro\", uri=True)'"
+  [ "$output" = "connection:untrusted" ]
+
+  classify "python3 -c 'import sqlite3; sqlite3.connect(\"file:$escaped_db?mode=ro\", uri=True)'"
+  [ "$output" = "connection:untrusted" ]
+
+  classify "python3 -c 'import sqlite3; from sqlalchemy import create_engine; sqlite3.connect(\"file:$SQLITE_DB?mode=ro\", uri=True); create_engine(\"postgresql://prod-db.example/app\")'"
+  [ "$output" = "connection:untrusted" ]
 }

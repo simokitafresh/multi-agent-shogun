@@ -87,7 +87,7 @@ run_guard14() {
         return 2
     fi
     if [[ "$classification" != "not_connection" && "$classification" != "connection:local_ephemeral" ]]; then
-        echo "BLOCK [Guard14]: DB直接接続禁止(判定=${classification:-classification_error})。/db-checkスキルを使え(skills/db-check/SKILL.md)。2ステップ: (1)python3 scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --prepare-only --credential-source-file backend/.env --credential-file /tmp/dm-signal-db-chk.env (2)printf 'SELECT ...' | python3 scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce \$(date +%s)-readonly --credential-file /tmp/dm-signal-db-chk.env。localhost/127.0.0.1/::1/Unix socket/sqlite:///:memory: を使うローカルCI接続は自動許可対象。" >&2
+        echo "BLOCK [Guard14]: DB直接接続禁止(判定=${classification:-classification_error})。/db-checkスキルを使え(skills/db-check/SKILL.md)。2ステップ: (1)python3 scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --prepare-only --credential-source-file backend/.env --credential-file /tmp/dm-signal-db-chk.env (2)printf 'SELECT ...' | python3 scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce \$(date +%s)-readonly --credential-file /tmp/dm-signal-db-chk.env。localhost/127.0.0.1/::1/Unix socket/:memory:、または設定済みproject配下の実在SQLiteへ literal file URI + mode=ro + uri=True で接続する場合は自動許可対象。" >&2
         return 2
     fi
 }
