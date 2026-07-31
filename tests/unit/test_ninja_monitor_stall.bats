@@ -104,6 +104,53 @@ printf "pre_clear=0 post_clear=1 duplicate=0 false_positive=0\n"
     [[ "$output" == *"pre_clear=0 post_clear=1 duplicate=0 false_positive=0"* ]]
 }
 
+# test_necessity: malformed dependency continuationは同一task+reasonをrestart後も1件だけdurable記録する
+@test "dependency continuation invalid registration is durably deduped and terminal repair emits zero new actions" {
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/dependency-invalid-dedupe"
+LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
+DEPENDENCY_CONTINUATION_GATE_LOG="$SCRIPT_DIR/logs/gate_fire_log.yaml"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+cat > "$SCRIPT_DIR/queue/tasks/tobisaru.yaml" <<'"'"'EOF'"'"'
+task:
+  task_id: continuation_invalid_001
+  status: failed
+  wait_reason: dependency
+  wait_connected_cmd: cmd_dependency
+EOF
+log() { printf "%s\n" "$1" >> "$LOG"; }
+
+for _ in $(seq 1 24); do _handle_dependency_continuation tobisaru; done
+before=$(grep -c "durable_fields=invalid" "$DEPENDENCY_CONTINUATION_GATE_LOG")
+
+# Process memoryを使わず、新しいbash processがtask YAML上のfenceだけでdedupeする。
+TEST_SCRIPT_DIR="$SCRIPT_DIR" TEST_GATE_LOG="$DEPENDENCY_CONTINUATION_GATE_LOG" PROJECT_ROOT="'"$PROJECT_ROOT"'" bash -lc '"'"'
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$TEST_SCRIPT_DIR"
+LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
+DEPENDENCY_CONTINUATION_GATE_LOG="$TEST_GATE_LOG"
+log() { printf "%s\\n" "$1" >> "$LOG"; }
+_handle_dependency_continuation tobisaru
+'"'"'
+after_restart=$(grep -c "durable_fields=invalid" "$DEPENDENCY_CONTINUATION_GATE_LOG")
+
+yaml_field_set "$SCRIPT_DIR/queue/tasks/tobisaru.yaml" task status done
+for _ in $(seq 1 5); do _handle_dependency_continuation tobisaru || true; done
+after_terminal=$(grep -c "durable_fields=invalid" "$DEPENDENCY_CONTINUATION_GATE_LOG")
+printf "before=%s after_restart=%s after_terminal=%s\n" "$before" "$after_restart" "$after_terminal"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"before=1 after_restart=1 after_terminal=1"* ]]
+}
+
 @test "C4-07 report state cohort separates awaiting evidence and PASS terminal" {
     run bash -lc '
 set -euo pipefail
@@ -706,6 +753,95 @@ cat "$TEST_LOG"
     [[ "$output" == *"STALL-RECOVERY-SEND:"* ]]
 }
 
+# test_necessity: fresh progress内の明示BLOCKER/STOPは同cycleに家老へ通知され同一理由だけdurable dedupeされる
+@test "check_stall: explicit stop bypasses freshness, dedupes across restart, and reason change re-notifies" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/explicit-stop"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
+TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"
+cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<EOF
+task:
+  status: in_progress
+  task_id: task_explicit_stop_001
+  progress_updated_at: "$(date -Iseconds)"
+  progress: |
+    AC1 PASS
+    BLOCKER: fourth path authority required
+EOF
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+log() { printf "%s\n" "$1" >> "$LOG"; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
+
+check_stall kotaro
+check_stall kotaro
+first=$(wc -l < "$TEST_MESSAGES")
+
+# restart相当: process-local stateを全消去してもtask YAML fenceが残る。
+unset STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+check_stall kotaro
+after_restart=$(wc -l < "$TEST_MESSAGES")
+
+yaml_field_set "$SCRIPT_DIR/queue/tasks/kotaro.yaml" task progress "STOP: dependency evidence missing"
+check_stall kotaro
+after_change=$(wc -l < "$TEST_MESSAGES")
+printf "first=%s after_restart=%s after_change=%s\n" "$first" "$after_restart" "$after_change"
+cat "$TEST_MESSAGES"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"first=1 after_restart=1 after_change=2"* ]]
+    [[ "$output" == *"karo|stall_alert|【TASK-STOP】worker=kotaro task=task_explicit_stop_001 reason=BLOCKER: fourth path authority required path="* ]]
+    [[ "$output" == *"reason=STOP: dependency evidence missing"* ]]
+}
+
+# test_necessity: stop通知のdelivery失敗はdedupeせず可視ログを残し次cycleで再送する
+@test "check_stall: explicit stop delivery failure stays visible and retries" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/explicit-stop-retry"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
+TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"
+cat > "$SCRIPT_DIR/queue/tasks/hanzo.yaml" <<EOF
+task:
+  status: in_progress
+  task_id: task_explicit_stop_retry
+  blocked_reason: external evidence unavailable
+  progress_updated_at: "$(date -Iseconds)"
+EOF
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+log() { printf "%s\n" "$1" >> "$LOG"; }
+attempt=0
+send_inbox_message() {
+  attempt=$((attempt + 1))
+  if [ "$attempt" -eq 1 ]; then return 1; fi
+  printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"
+}
+check_stall hanzo
+test -z "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/hanzo.yaml" silent_stop_notified_fingerprint "")"
+check_stall hanzo
+printf "attempts=%s delivered=%s\n" "$attempt" "$(wc -l < "$TEST_MESSAGES")"
+grep "SILENT-STOP-NOTIFY-BLOCK" "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"attempts=2 delivered=1"* ]]
+    [[ "$output" == *"SILENT-STOP-NOTIFY-BLOCK: hanzo task=task_explicit_stop_retry"* ]]
+}
+
 @test "check_stall: intentional pause with reason and blocking cmd suppresses false stall" {
     run bash -lc '
 set -euo pipefail
@@ -730,6 +866,7 @@ task:
   stall_detection_paused: true
   pause_reason: production DB exclusive operation
   paused_by_cmd: cmd_3832
+  progress: "BLOCKER: intentionally serialized behind cmd_3832"
 EOF
 
 log() { echo "$1" >> "$TEST_LOG"; }

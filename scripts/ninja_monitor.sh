@@ -3688,13 +3688,18 @@ _dependency_continuation_gate_log() {
     } 9>>"$log_file"
 }
 
+_dependency_continuation_invalid_fingerprint() {
+    local task_id="$1" reason="$2"
+    printf '%s\t%s' "$task_id" "$reason" | cksum | awk '{print $1 ":" $2}'
+}
+
 _handle_dependency_continuation() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     [ -f "$task_file" ] || return 1
 
-    local task_status wait_reason connected_cmd continuation_task_id task_id release_fp
-    IFS='|' read -r task_status wait_reason connected_cmd continuation_task_id task_id release_fp < <(awk '
+    local task_status wait_reason connected_cmd continuation_task_id task_id release_fp invalid_fp
+    IFS='|' read -r task_status wait_reason connected_cmd continuation_task_id task_id release_fp invalid_fp < <(awk '
         function value(line) { sub(/^[^:]*:[[:space:]]*/, "", line); gsub(/["'"'"'[:space:]]/, "", line); return line }
         /^[[:space:]]*status:/ && status=="" { status=value($0) }
         /^[[:space:]]*wait_reason:/ && reason=="" { reason=value($0) }
@@ -3702,15 +3707,28 @@ _handle_dependency_continuation() {
         /^[[:space:]]*continuation_task_id:/ && continuation=="" { continuation=value($0) }
         /^[[:space:]]*task_id:/ && $0 !~ /_ac_task_id:/ && task=="" { task=value($0) }
         /^[[:space:]]*continuation_release_fingerprint:/ && released=="" { released=value($0) }
-        END { print status "|" reason "|" connected "|" continuation "|" task "|" released }
+        /^[[:space:]]*continuation_invalid_fingerprint:/ && invalid=="" { invalid=value($0) }
+        END { print status "|" reason "|" connected "|" continuation "|" task "|" released "|" invalid }
     ' "$task_file")
 
     [ "$task_status" = "failed" ] || return 1
     [ "$wait_reason" = "dependency" ] || return 1
 
     if [ -z "$connected_cmd" ] || [ -z "$continuation_task_id" ] || [ "$continuation_task_id" != "$task_id" ]; then
-        _dependency_continuation_gate_log BLOCK "ninja=${name} durable_fields=invalid wait_reason=${wait_reason} connected=${connected_cmd:-missing} continuation=${continuation_task_id:-missing} task=${task_id:-missing}"
-        log "DEPENDENCY-CONTINUATION-BLOCK: $name durable registration invalid"
+        local invalid_reason invalid_fingerprint
+        invalid_reason="durable_fields=invalid wait_reason=${wait_reason} connected=${connected_cmd:-missing} continuation=${continuation_task_id:-missing}"
+        invalid_fingerprint=$(_dependency_continuation_invalid_fingerprint "${task_id:-missing}" "$invalid_reason")
+        if [ "$invalid_fp" = "$invalid_fingerprint" ]; then
+            log "DEPENDENCY-CONTINUATION-BLOCK-SKIP: $name task=${task_id:-missing} duplicate invalid registration"
+            return 0
+        fi
+        _dependency_continuation_gate_log BLOCK "ninja=${name} ${invalid_reason} task=${task_id:-missing}"
+        if yaml_field_set "$task_file" task continuation_invalid_fingerprint "$invalid_fingerprint"; then
+            log "DEPENDENCY-CONTINUATION-BLOCK: $name durable registration invalid"
+        else
+            # A failed durable fence must stay visible and be retried next cycle.
+            log "DEPENDENCY-CONTINUATION-BLOCK-PERSIST-FAILED: $name task=${task_id:-missing}"
+        fi
         return 0
     fi
 
@@ -5675,6 +5693,77 @@ recover_dead_active_pane() {
     return 0
 }
 
+# Active taskが自ら停止理由を記録した時点で、それは時間ベースのstallではなく
+# 即時通知すべき状態遷移である。progress freshnessより先に読むことで、進捗を
+# 更新した同じ瞬間のBLOCKER/STOPが20分間サイレントになる穴を塞ぐ。
+_task_explicit_stop_reason() {
+    local task_file="$1"
+    awk '
+        function trim(v) {
+            sub(/^[[:space:]]+/, "", v)
+            sub(/[[:space:]"]+$/, "", v)
+            sub(/^"/, "", v)
+            sub(/^\047/, "", v)
+            sub(/\047$/, "", v)
+            return v
+        }
+        /^  blocked_reason:[[:space:]]*/ {
+            v=$0
+            sub(/^  blocked_reason:[[:space:]]*/, "", v)
+            v=trim(v)
+            if (v != "" && v != "null" && v != "~") {
+                print "blocked_reason: " v
+                exit
+            }
+        }
+        /^  progress:[[:space:]]*/ {
+            in_progress=1
+            v=$0
+            sub(/^  progress:[[:space:]]*/, "", v)
+            v=trim(v)
+            if (v ~ /^(BLOCKER:|STOP:)/) { print v; exit }
+            next
+        }
+        in_progress && /^  [[:alnum:]_][^:]*:/ { in_progress=0 }
+        in_progress {
+            v=trim($0)
+            if (v ~ /^(BLOCKER:|STOP:)/) { print v; exit }
+        }
+    ' "$task_file"
+}
+
+_notify_explicit_task_stop() {
+    local name="$1" task_id="$2" task_file="$3" reason="$4"
+    local fingerprint prior_fingerprint message
+    fingerprint=$(printf '%s\t%s' "$task_id" "$reason" | cksum | awk '{print $1 ":" $2}')
+    prior_fingerprint=$(awk '
+        /^  silent_stop_notified_fingerprint:/ {
+            sub(/^[^:]*:[[:space:]]*/, "")
+            gsub(/["\047[:space:]]/, "")
+            print
+            exit
+        }
+    ' "$task_file" 2>/dev/null || true)
+    if [ "$prior_fingerprint" = "$fingerprint" ]; then
+        log "SILENT-STOP-NOTIFY-SKIP: $name task=$task_id duplicate fingerprint=$fingerprint"
+        return 0
+    fi
+
+    message="【TASK-STOP】worker=${name} task=${task_id} reason=${reason} path=${task_file}"
+    if ! send_inbox_message karo "$message" stall_alert; then
+        # Do not persist the dedupe fence: delivery is retried and the failure
+        # remains visible in every monitor cycle until durable inbox succeeds.
+        log "SILENT-STOP-NOTIFY-BLOCK: $name task=$task_id reason=$reason path=$task_file"
+        return 1
+    fi
+    if ! yaml_field_set "$task_file" task silent_stop_notified_fingerprint "$fingerprint"; then
+        log "SILENT-STOP-DEDUPE-PERSIST-BLOCK: $name task=$task_id fingerprint=$fingerprint path=$task_file"
+        return 1
+    fi
+    log "SILENT-STOP-NOTIFY: $name task=$task_id reason=$reason path=$task_file fingerprint=$fingerprint"
+    return 0
+}
+
 check_stall() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
@@ -5777,6 +5866,18 @@ check_stall() {
             log "STALL-PAUSE-INVALID: $name task=$task_id requires pause_reason and paused_by_cmd; monitoring remains active"
             ;;
     esac
+
+    # Explicit stop is an event, not an elapsed-time stall.  Notify in this
+    # cycle before deploy/progress freshness can return.  The durable task
+    # fingerprint suppresses identical reasons across cycles and restarts;
+    # changing the reason creates a new event.
+    local explicit_stop_reason
+    explicit_stop_reason=$(_task_explicit_stop_reason "$task_file")
+    if [ -n "$explicit_stop_reason" ]; then
+        _notify_explicit_task_stop "$name" "$task_id" "$task_file" "$explicit_stop_reason" || true
+        unset "STALL_FIRST_SEEN[$name]"
+        return
+    fi
 
     if [ -n "$deployed_at_val" ]; then
         local deployed_epoch
