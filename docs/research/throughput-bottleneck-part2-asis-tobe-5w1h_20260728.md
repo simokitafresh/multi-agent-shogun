@@ -1,4 +1,6 @@
-# 【★第六弾稼働中 — finalize identity接続4連鎖着地(canonical generation=report_fingerprint統一)。P1b再開条件の充足計測が次手】ホットスクリプト集中高速化 第六弾 — スループット全体のボトルネック改善 part2 — AsIs/ToBe 5W1H設計書 v2.0 (2026-07-30 09:08 将軍覚醒更新。版履歴は§-3)
+# ホットスクリプト集中高速化 第六弾 — スループット全体のボトルネック改善 part2 — AsIs/ToBe 5W1H設計書 v2.0 【⚙稼働中】
+
+> 状態: finalize identity接続4連鎖着地(canonical generation=report_fingerprint統一)。P1b再開条件の充足計測が次手 (2026-07-30 09:08 将軍覚醒更新。版履歴は§-3)
 
 > シリーズ: ホットスクリプト集中高速化 全七弾。第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`✅ / 第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`✅ / 第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`✅ / 第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅ / **第六弾=本書**(稼働中) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅
 

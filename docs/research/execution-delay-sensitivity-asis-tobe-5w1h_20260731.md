@@ -1,4 +1,4 @@
-# モメンタム感度分析 第二弾 — 執行日感度分析 — v1.5
+# モメンタム感度分析 第二弾 — 執行日遅延(E感度) — AsIs/ToBe 5W1H設計書 v1.5 【✅完了】
 
 > シリーズ: 第一弾=月末N営業日前モメンタム感度分析(`month-end-n-day-momentum-sensitivity-asis-tobe-5w1h_20260731.md`) / **第二弾=本書(E感度)** / 第三弾=N×E二次元ロバストネス検証(`nxe-2d-robustness-asis-tobe-5w1h_20260801.md`)
 

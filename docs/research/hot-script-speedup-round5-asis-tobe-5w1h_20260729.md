@@ -1,4 +1,6 @@
-# 【✅CLOSED(2026-07-30 02:45 wave-final完了)】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.7 (2026-07-30 02:50 将軍CLOSE刻印。版履歴は§-3)
+# ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.7 【✅CLOSED】
+
+> 状態: wave-final完了 (2026-07-30 02:45。02:50 将軍CLOSE刻印。版履歴は§-3)
 
 > シリーズ: ホットスクリプト集中高速化 全七弾。第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`✅ / 第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`✅ / 第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`✅ / 第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` / **第五弾=本書**✅ / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(稼働中) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅
 

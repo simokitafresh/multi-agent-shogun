@@ -1,4 +1,6 @@
-# 【⚙checkpoint 3巡目実行中 — 2巡で残存不整合2件を検出・是正済み】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.5 (2026-07-29 03:15 覚醒更新。版履歴は§-3)
+# ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.5 【⚙稼働中】
+
+> 状態: checkpoint 3巡目実行中 — 2巡で残存不整合2件を検出・是正済み (2026-07-29 03:15 覚醒更新。版履歴は§-3)
 
 > シリーズ: ホットスクリプト集中高速化 全七弾。第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`✅ / 第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`✅ / 第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`✅ / **第四弾=本書** / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅ / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(稼働中) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅
 

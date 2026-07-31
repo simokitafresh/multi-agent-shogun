@@ -1,4 +1,4 @@
-# モメンタム感度分析 第三弾 — 測定日N × 執行日E 二次元ロバストネス検証 — v1.1
+# モメンタム感度分析 第三弾 — 測定日N×執行日E 二次元ロバストネス — AsIs/ToBe 5W1H設計書 v1.2 【📋設計済・実験待ち】
 
 > シリーズ: 第一弾=月末N営業日前モメンタム感度分析(`month-end-n-day-momentum-sensitivity-asis-tobe-5w1h_20260731.md` v3.4) / 第二弾=執行日感度分析(`execution-delay-sensitivity-asis-tobe-5w1h_20260731.md` v1.5) / **第三弾=本書(N×E直積)**
 
