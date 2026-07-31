@@ -900,7 +900,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1489 -->
+<!-- last_synced_lesson: L1490 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2103,6 +2103,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1487: 解決状態と棄却状態を混同しない（cmd_karo_recon_hidden_infra_learning_observability_20260730）
 - L1488: hook matcher到達可能性とexit契約を静的監査せよ（cmd_karo_recon_hidden_infra_gate_hooks_20260730）
 - L1489: 完了証跡は完全一致かつdurable receipt後に公開せよ（cmd_karo_recon_hidden_infra_completion_review_20260730）
+- L1490: test_select.shの依存マップがscripts/report_field_set.shに対しtest_report_field_set_validation.batsを含まない（cmd_karo_hotfix_rfs_idkey_normalization_20260731）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
