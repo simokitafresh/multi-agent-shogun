@@ -1,9 +1,9 @@
 schema_version: 3
 title: hidden infrastructure gate/hook canonical Gate 0A contract manifest
 phase_order: [GATE_0A_CONTRACT_AUTHORING, WAVE_0_PROBE, GATE_0B_CLOSURE, DURABLE_STATE_FOUNDATION]
-current_phase: GATE_0B_CLOSURE
+current_phase: WAVE_0_PROBE
 phase_state: TERMINAL_PASS
-next_phase: DURABLE_STATE_FOUNDATION
+next_phase: GATE_0B_CLOSURE
 repository_observed_head: f3478e625235b364a187d7c2f6412a78d8add4c7
 code_baseline_sha: 55b3df6d4d937c7683ef1ca9a83393760d593e47
 head_drift:
