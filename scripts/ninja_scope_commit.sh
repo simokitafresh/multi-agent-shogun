@@ -1219,8 +1219,8 @@ for committed_path in "${committed[@]}"; do
         || { echo "FATAL: out-of-scope path entered commit: $committed_path" >&2; exit 1; }
 done
 
-# Commit直後に同一scopeへ自分のcommitと重なるdirty hunkが残れば、報告gateまで
-# 遅延させずここで停止する。他者の並行作業による非重複hunkは許容する。
+# Commit公開後に到着したdirty hunkは別eventであり、既にterminalなcommitを
+# 失敗へ巻き戻さない。重複は可視WARNに留め、最終report/checkpointで照合する。
 if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh" ]]; then
     # shellcheck source=scripts/lib/report_commit_nonoverlap_filter.sh
     source "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh"
@@ -1233,12 +1233,11 @@ if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh"
         rm -f "$commit_probe"
         trap - EXIT
         if [[ -n "$overlapping_dirty" ]]; then
-            echo "BLOCK(GA-260): post-commit mutation — commit後も同一scopeにcommit hunkと重なる未commit差分あり:" >&2
+            echo "WARN(GA-260): post-commit mutation — terminal commit後に同一scopeの未commit差分あり:" >&2
             while IFS= read -r dirty_path; do
                 [[ -n "$dirty_path" ]] && printf '  %s\n' "$dirty_path" >&2
             done <<< "$overlapping_dirty"
-            echo "追加差分をscope commitして作業木を収束させてから報告せよ" >&2
-            exit 1
+            echo "公開済みcommitは成功のまま維持し、追加差分は次eventとして最終checkpointで照合する" >&2
         fi
     fi
 fi

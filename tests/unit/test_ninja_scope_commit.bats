@@ -731,7 +731,7 @@ HOOK
     [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
 }
 
-@test "commit後に同一hunkのdirty差分が残れば報告前にBLOCKする" {
+@test "commit後のdirty差分は別eventとしてWARNし公開済みcommitを失敗へ戻さない" {
     mkdir -p "$REPO/.git/hooks"
     cat > "$REPO/.git/hooks/post-commit" <<'HOOK'
 #!/bin/sh
@@ -742,8 +742,8 @@ HOOK
 
     run bash -c "cd '$REPO' && bash '$HELPER' -m overlap -- own.txt"
 
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"BLOCK(GA-260)"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN(GA-260)"* ]]
     [[ "$output" == *"own.txt"* ]]
 }
 
