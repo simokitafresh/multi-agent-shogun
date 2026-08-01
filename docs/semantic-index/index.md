@@ -9003,6 +9003,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607312324_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608010127_tobisaru` — [[semantic_causal_automation]] -> `docs/research/hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` |
 | causal | `cmd_reflux_backlink_202608011140_hayate` — [[semantic_causal_automation]] -> `docs/research/gunshi_idle_deferred_work_audit_20260801.md` |
+| causal | `cmd_reflux_backlink_202608011247_kagemaru` — [[semantic_causal_automation]] -> `docs/research/gunshi_idle_gate_accuracy_final_cmd_20260801.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_insights — 仮: Insights
