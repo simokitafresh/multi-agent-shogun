@@ -289,13 +289,14 @@ assert all(x['target_reached'] for x in mutant), [x['check_id'] for x in mutant 
 assert (len(diff),len(fp),len(fn))==(0,0,0)
 assert mutation_diff==[41], mutation_diff
 PY
-  run python3 - "$TMPROOT/parity-receipt.json" <<'PY'
-import json,sys
+  run python3 - "$TMPROOT/parity-receipt.json" "$ROOT/logs/test_receipts/cmd_4205_production_parity.json" <<'PY'
+import json,shutil,sys
 r=json.load(open(sys.argv[1])); assert len(r['before'])==82 and len(r['after'])==82 and len(r['mutant'])==82
 assert (r['decision_diff'],r['fp'],r['fn'])==(0,0,0)
 assert r['mutation_diff']==[41]
 assert r['production_invocations']=={'before':82,'after':82,'mutant':82,'total':246}
 assert all(v==0 for v in r['forbidden_shortcuts'].values())
+shutil.copyfile(sys.argv[1],sys.argv[2])
 PY
   [ "$status" -eq 0 ]
 }
