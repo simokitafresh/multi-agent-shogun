@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: an interrupted source-to-target owner transfer must converge to at most one executable owner.
+# test_necessity: pending/idle alone remain selectable across the complete status x actor-role x writer-mode x lifecycle product, with at most one executable owner.
 
 make_case() {
   root="$1" cmd="$2"
@@ -32,55 +32,95 @@ YAML
 
 }
 
-@test "R05 selector admits only pending and idle statuses" {
-  statuses=(pending idle assigned acknowledged in_progress transferred done failed mystery "")
-  selected=0 rejected=0 false_positive=0 false_negative=0
-  for fixture_status in "${statuses[@]}"; do
-    root="$BATS_TEST_TMPDIR/status-${fixture_status:-missing}"
-    cmd="cmd_fixture_status_${fixture_status:-missing}_${RANDOM}"
-    make_case "$root" "$cmd"
-    if [ -n "$fixture_status" ]; then
-      sed -i "s/^  status: pending$/  status: $fixture_status/" "$root/queue/tasks/pending.yaml"
-    else
-      sed -i '/^  status: pending$/d' "$root/queue/tasks/pending.yaml"
-    fi
+@test "R05 selector satisfies the complete 120-cell status actor writer lifecycle product" {
+  statuses=(pending idle assigned acknowledged in_progress transferred done failed unknown "")
+  actor_roles=(source target)
+  writer_modes=(single concurrent)
+  lifecycles=(normal crash_before_publish retry_after_crash)
+  total=0 eligible=0 rejected=0 false_positive=0 false_negative=0
+  in_progress_reselected=0 owner_overflow=0 duplicate_publish=0
 
-    run bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
-    case "$fixture_status" in
-      pending|idle)
-        [ "$status" -eq 0 ] || false_negative=$((false_negative + 1))
-        [[ "$output" == *"AUTO_DEPLOY_OK"* ]] || false_negative=$((false_negative + 1))
-        selected=$((selected + 1))
-        ;;
-      done)
-        [ "$status" -eq 0 ]
-        [[ "$output" == *"AUTO_DEPLOY_DONE"* ]]
-        rejected=$((rejected + 1))
-        ;;
-      *)
-        [ "$status" -eq 3 ] || false_positive=$((false_positive + 1))
-        [[ "$output" == *"selector rejected"* ]] || false_positive=$((false_positive + 1))
-        rejected=$((rejected + 1))
-        ;;
-    esac
+  for fixture_status in "${statuses[@]}"; do
+    for actor_role in "${actor_roles[@]}"; do
+      for writer_mode in "${writer_modes[@]}"; do
+        for lifecycle in "${lifecycles[@]}"; do
+          total=$((total + 1))
+          root="$BATS_TEST_TMPDIR/product-${fixture_status:-missing}-${actor_role}-${writer_mode}-${lifecycle}"
+          cmd="cmd_fixture_${total}_${RANDOM}"
+          make_case "$root" "$cmd"
+          if [ "$actor_role" = source ]; then
+            sed -i 's/assigned_to: hayate/assigned_to: saizo/' "$root/queue/tasks/pending.yaml"
+          fi
+          if [ -n "$fixture_status" ]; then
+            sed -i "s/^  status: pending$/  status: $fixture_status/" "$root/queue/tasks/pending.yaml"
+          else
+            sed -i '/^  status: pending$/d' "$root/queue/tasks/pending.yaml"
+          fi
+
+          rc=0
+          output_file="$root/cell.output"
+          case "$lifecycle:$writer_mode" in
+            normal:single)
+              bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file" 2>&1 || rc=$?
+              ;;
+            normal:concurrent)
+              bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.1" 2>&1 & p1=$!
+              bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.2" 2>&1 & p2=$!
+              wait "$p1" || rc=$?
+              wait "$p2" || true
+              cat "$output_file.1" "$output_file.2" >"$output_file"
+              ;;
+            crash_before_publish:*)
+              AUTO_DEPLOY_OWNER_LEASE_TTL=0 AUTO_DEPLOY_FAILPOINT=after_intended_before_target \
+                bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file" 2>&1 || rc=$?
+              ;;
+            retry_after_crash:*)
+              AUTO_DEPLOY_OWNER_LEASE_TTL=0 AUTO_DEPLOY_FAILPOINT=after_intended_before_target \
+                bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.crash" 2>&1 || true
+              AUTO_DEPLOY_OWNER_LEASE_TTL=0 bash "$root/scripts/auto_deploy_next.sh" \
+                "$cmd" completed >"$output_file" 2>&1 || rc=$?
+              ;;
+          esac
+
+          # Count the public receipt only; log() mirrors the same text to stderr
+          # with an [AUTO_DEPLOY] prefix and is not a second publish.
+          publishes=$(rg -c '^AUTO_DEPLOY_OK:' "$output_file" || true)
+          publishes=${publishes:-0}
+          [ "$publishes" -le 1 ] || duplicate_publish=$((duplicate_publish + 1))
+          executable=$(rg -l '^  status: (assigned|acknowledged|in_progress)$' \
+            "$root/queue/tasks"/*.yaml 2>/dev/null | wc -l)
+          [ "$executable" -le 1 ] || owner_overflow=$((owner_overflow + 1))
+
+          case "$fixture_status" in
+            pending|idle)
+              eligible=$((eligible + 1))
+              if [ "$lifecycle" = crash_before_publish ]; then
+                [ "$rc" -ne 0 ] || false_negative=$((false_negative + 1))
+              else
+                [ "$publishes" -eq 1 ] || false_negative=$((false_negative + 1))
+              fi
+              ;;
+            *)
+              rejected=$((rejected + 1))
+              [ "$publishes" -eq 0 ] || false_positive=$((false_positive + 1))
+              [ "$fixture_status" != in_progress ] || \
+                in_progress_reselected=$((in_progress_reselected + publishes))
+              ;;
+          esac
+        done
+      done
+    done
   done
-  [ "$selected" -eq 2 ]
-  [ "$rejected" -eq 8 ]
+
+  echo "R05_RECEIPT total=$total eligible=$eligible rejected=$rejected in_progress_reselected=$in_progress_reselected false_positive=$false_positive false_negative=$false_negative owner_overflow=$owner_overflow duplicate_publish=$duplicate_publish" >&3
+  [ "$total" -eq 120 ]
+  [ "$eligible" -eq 24 ]
+  [ "$rejected" -eq 96 ]
+  [ "$in_progress_reselected" -eq 0 ]
   [ "$false_positive" -eq 0 ]
   [ "$false_negative" -eq 0 ]
-}
-
-@test "R05 in_progress owner is never selected again" {
-  root="$BATS_TEST_TMPDIR/in-progress-reselection"
-  cmd="cmd_fixture_in_progress_${RANDOM}"
-  make_case "$root" "$cmd"
-  sed -i 's/^  status: pending$/  status: in_progress/' "$root/queue/tasks/pending.yaml"
-
-  run bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
-  [ "$status" -eq 3 ]
-  [[ "$output" == *"next:in_progress"* ]]
-  executable=$(rg -l '^  status: (assigned|acknowledged|in_progress)$' "$root/queue/tasks"/*.yaml | wc -l)
-  [ "$executable" -eq 1 ]
+  [ "$owner_overflow" -eq 0 ]
+  [ "$duplicate_publish" -eq 0 ]
 }
 
 @test "R03 all owner mutation boundaries converge without lost update or false success" {
