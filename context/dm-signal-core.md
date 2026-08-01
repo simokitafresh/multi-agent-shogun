@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-30 cmd_4196 reviewed source boundary -->
-<!-- source_commit:fb945019 reason:cmd_4196 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=fb945019 -->
+<!-- last_updated: 2026-08-01 GA-422 reviewed source boundary -->
+<!-- source_commit:6200cc1ea4fc804d07b6bcca66cf2338dde00b2d reason:GA-422 reviewed source boundary evidence:cmd_karo_hotfix_ga422_context_freshness_20260801; backend/app/jobs/flush/signal_flush.py chunk contract reflected -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -629,6 +629,10 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - cmd_3879: framed typed streamのsafe bundle v2、raw/artifact/schema/canonical hash多段検証、再計算関数非依存read-only materializerをproduction consumerへ統合。旧export経路0・valid bundle時source fallback 0を固定。詳細は`context/dm-signal-research.md`の`cmd_3879_safe_bundle_v2`へ集約。
 - cmd_3880: safe bundle transportは1 instance×2 worker共有、one-use状態機械`SEALED→ARMED→LEASED→CONSUMED`をCASで強制する。bundle TTL 24h、nonce TTL 15分、approval bind、明示re-armがコア契約。詳細は`context/dm-signal-research.md`の`cmd_3880_transport_state_API`へ集約。
 - cmd_3882: 18対象表writerをAST/literal SQLから検出し、AST↔registry↔DB enforcement三集合をfail-closed照合するCIを実装。詳細は`context/dm-signal-research.md`の`AST恒常スキャンCI`へ集約。
+
+## §24 signal flushの複合IN照会chunk境界 (cmd_karo_hotfix_dm_signal_l3_tuple_chunk_20260801, 2026-08-01)
+
+- `backend/app/jobs/flush/signal_flush.py` の2列複合key照会は `_query_composite_keys_in_chunks()` に集約し、`COMPOSITE_IN_QUERY_CHUNK_SIZE=10_000` ごとに分割する。対象は新規Signal INSERTの既存行照合と、反復ledger guard correctionの過去`signal_change_log`照合。無制限の`tuple_(...).in_(keys)`は使わない。対象commit: `/mnt/c/Python_app/DM-signal` `6200cc1e`。
 
 ---
 

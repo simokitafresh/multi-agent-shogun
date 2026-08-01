@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-30 cmd_4196 reviewed source boundary -->
-<!-- source_commit:fb945019 reason:cmd_4196 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=fb945019 -->
+<!-- last_updated: 2026-08-01 GA-422 reviewed source boundary -->
+<!-- source_commit:6200cc1ea4fc804d07b6bcca66cf2338dde00b2d reason:GA-422 reviewed source boundary evidence:cmd_karo_hotfix_ga422_context_freshness_20260801; backend/app/jobs/flush/signal_flush.py operational chunk contract reflected -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1325,3 +1325,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - accepted responseの`run_id`と`end_date`を証跡へ記録し、`end_date=2026-07-28`を照合する。完了判定はresponse受付ではなくDB `recalculation_status`の同一`run_id` completedを使う。
 - `end_date`はISO `YYYY-MM-DD`。未指定は`date.today()`、形式不正・`start_date`以前・未来日はrun予約/lock/business write前に`ValidationError`となる。有効値は`recalculate_history_fast(end_date=...)`へ透過伝播する。
 - 因果リンク: [[同日再計測の終端日が実行日へ揺れる]] -> [[recalculate-sync_end_date契約]] -> [[同一logical_date全PF直列計測]]
+
+## §85 signal flush複合key照会の運用上限 (commit 6200cc1e, 2026-08-01)
+
+- `_collect_new_insert_ledger_drift_alerts()` と `_classify_repeated_ledger_guard_corrections()` の複合key照会は共通helper経由で10,000 keyごとにchunk実行する。全keyを1回の複合`IN`へ渡す旧経路は廃止し、大規模L3同期でのDB bind/query上限超過を防ぐ。結果行は各chunkから結合し、既存のdrift判定・反復補正分類の意味論は維持する。
+- 対象ファイル: `backend/app/jobs/flush/signal_flush.py`。対象commit: `/mnt/c/Python_app/DM-signal` `6200cc1e`。
+- 因果リンク: [[L3同期の無制限複合IN照会]] -> [[DB照会上限・同期停止]] -> [[10k_chunk複合key照会]]
