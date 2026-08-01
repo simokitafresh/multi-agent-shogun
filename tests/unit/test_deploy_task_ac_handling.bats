@@ -780,6 +780,7 @@ lessons:
     detail: detail
     status: confirmed
     tags: [universal]
+    when: lessons_useful reason example injection
     helpful_count: 10
 EOF
 
@@ -982,6 +983,8 @@ EOF
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 lessons:
   - id: L910
+    tags: [deploy]
+    target_files: [scripts/deploy.sh]
     title: rollback safeguard
     summary: rollback branch before deploy cutover
     when: deploy cutover
@@ -989,6 +992,8 @@ lessons:
     status: confirmed
     helpful_count: 10
   - id: L911
+    tags: [deploy]
+    target_files: [scripts/deploy.sh]
     title: database migration guard
     summary: database schema check before release
     when: database migration
@@ -996,6 +1001,8 @@ lessons:
     status: confirmed
     helpful_count: 9
   - id: L912
+    tags: [deploy]
+    target_files: [scripts/deploy.sh]
     title: cache invalidation order
     summary: cache purge after config update
     when: config update
@@ -1003,6 +1010,8 @@ lessons:
     status: confirmed
     helpful_count: 8
   - id: L913
+    tags: [deploy]
+    target_files: [scripts/deploy.sh]
     title: notification fallback route
     summary: notification fallback when primary webhook fails
     when: webhook failure
@@ -1215,6 +1224,7 @@ PY
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 lessons:
   - id: L001
+    tags: [deploy]
     title: deploy alpha orbit maple quartz
     summary: deploy alpha orbit maple quartz
     when: deploy alpha
@@ -1222,6 +1232,7 @@ lessons:
     status: confirmed
     helpful_count: 20
   - id: L002
+    tags: [deploy]
     title: deploy beta cobalt harbor prism
     summary: deploy beta cobalt harbor prism
     when: deploy beta
@@ -1229,6 +1240,7 @@ lessons:
     status: confirmed
     helpful_count: 19
   - id: L003
+    tags: [deploy]
     title: deploy gamma ember satellite lattice
     summary: deploy gamma ember satellite lattice
     when: deploy gamma
@@ -1236,6 +1248,7 @@ lessons:
     status: confirmed
     helpful_count: 18
   - id: L004
+    tags: [deploy]
     title: deploy delta fable orchard copper
     summary: deploy delta fable orchard copper
     when: deploy delta
@@ -1243,6 +1256,7 @@ lessons:
     status: confirmed
     helpful_count: 17
   - id: L005
+    tags: [deploy]
     title: deploy epsilon granite meadow syntax
     summary: deploy epsilon granite meadow syntax
     when: deploy epsilon
@@ -1250,6 +1264,7 @@ lessons:
     status: confirmed
     helpful_count: 16
   - id: L006
+    tags: [deploy]
     title: deploy zeta horizon velvet engine
     summary: deploy zeta horizon velvet engine
     when: deploy zeta
@@ -1257,6 +1272,7 @@ lessons:
     status: confirmed
     helpful_count: 15
   - id: L007
+    tags: [deploy]
     title: deploy eta ivory lagoon vector
     summary: deploy eta ivory lagoon vector
     when: deploy eta
@@ -1264,6 +1280,7 @@ lessons:
     status: confirmed
     helpful_count: 14
   - id: L008
+    tags: [deploy]
     title: deploy theta jade canyon signal
     summary: deploy theta jade canyon signal
     when: deploy theta
@@ -1271,6 +1288,7 @@ lessons:
     status: confirmed
     helpful_count: 13
   - id: L009
+    tags: [deploy]
     title: deploy iota kernel citadel packet
     summary: deploy iota kernel citadel packet
     when: deploy iota
@@ -1278,6 +1296,7 @@ lessons:
     status: confirmed
     helpful_count: 12
   - id: L010
+    tags: [deploy]
     title: deploy kappa lunar bridge token
     summary: deploy kappa lunar bridge token
     when: deploy kappa
@@ -1285,6 +1304,7 @@ lessons:
     status: confirmed
     helpful_count: 11
   - id: L_LOW
+    tags: [deploy]
     title: deploy low sample nova metric
     summary: deploy low sample nova metric
     when: deploy low sample
@@ -1292,6 +1312,7 @@ lessons:
     status: confirmed
     helpful_count: 1
   - id: L_BAD
+    tags: [deploy]
     title: deploy mature bad omega parser
     summary: deploy mature bad omega parser
     when: deploy mature
@@ -1338,6 +1359,7 @@ EOF
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 lessons:
   - id: L_SCORE
+    tags: [deploy]
     title: deploy score metric tracer
     summary: deploy score metric tracer
     when: deploy score metric
@@ -1667,6 +1689,7 @@ EOF
     cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
 lessons:
   - id: L_INFRA_PLATFORM
+    tags: [deploy]
     title: deploy platform guard
     summary: deploy platform guard
     when: deploy platform guard
@@ -1882,11 +1905,15 @@ print('|'.join(ids))
     cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
 lessons:
   - id: L274
+    tags: [cdp]
+    when: CDP auth wall benchmark routing
     title: cdp reload benchmark auth wall
     summary: cdp reload計測は認証壁込みで扱う
     status: confirmed
     helpful_count: 7
   - id: L941
+    tags: [unrelated]
+    when: unrelated scenario only
     title: unrelated lesson
     summary: should stay out
     status: confirmed

@@ -7363,13 +7363,19 @@ try:
     if _project_filtered:
         print(f'[INJECT] project filter: removed {_project_filtered} lessons outside project={project} (platform allowed)', file=sys.stderr)
 
-    # Deduplicate lessons by ID — last wins (後勝ち: 同一IDで内容が異なる場合は後の値を採用)
+    # Deduplicate lessons by ID deterministically.  The task project's SSOT
+    # wins over platform copies; within one source the first canonical entry
+    # wins.  Loading order can therefore never silently replace project facts.
     _id_to_lesson = {}
     _no_id = []
     for _l in lessons:
         _lid = _l.get('id', '')
         if _lid:
-            _id_to_lesson[_lid] = _l
+            current = _id_to_lesson.get(_lid)
+            if current is None:
+                _id_to_lesson[_lid] = _l
+            elif current.get('_source_project') != project and _l.get('_source_project') == project:
+                _id_to_lesson[_lid] = _l
         else:
             _no_id.append(_l)
     _pre_dedup = len(lessons)
@@ -7808,6 +7814,21 @@ try:
     filtered_deprecated = 0
     filtered_retired = 0
     for lesson in lessons:
+        # Applicability metadata is an executable contract.  Missing tags or
+        # malformed when/scope/target_files must fail closed, not be coerced
+        # into a broad keyword candidate.
+        _tags_value = lesson.get('tags')
+        _when_value = lesson.get('when')
+        _scope_value = lesson.get('scope')
+        _targets_value = lesson.get('target_files')
+        _metadata_types_valid = (
+            isinstance(_tags_value, (list, str))
+            and isinstance(_when_value, (str, type(None)))
+            and isinstance(_scope_value, (str, type(None)))
+            and isinstance(_targets_value, (list, str, type(None)))
+        )
+        if not _metadata_types_valid or not _tags_value:
+            continue
         # Skip retired lessons (cmd_1297: 退役制度)
         if lesson.get('retired', False):
             filtered_retired += 1
@@ -7935,6 +7956,50 @@ try:
         lesson_terms = set(extract_keywords(lesson_text, min_len=3))
         return bool(task_file_terms & lesson_terms)
 
+    _GENERIC_WHEN = {
+        '', '未設定', '同種の作業・判断・検証を行う時',
+        '同種の作業を行う時', '関連作業を行う時',
+    }
+
+    def _condition_terms(value):
+        """Extract bounded applicability terms; boilerplate is not evidence."""
+        text = str(value or '').strip()
+        if text in _GENERIC_WHEN:
+            return set()
+        return set(extract_keywords(text, min_len=4))
+
+    task_condition_terms = set(extract_keywords(task_text, min_len=4))
+    task_scope_terms = set(extract_keywords(
+        ' '.join(str(task.get(k, '') or '') for k in ('scope', 'scope_mode', 'task_type', 'type')),
+        min_len=3,
+    ))
+
+    def _lesson_has_applicability_evidence(lesson):
+        """Require a concrete when/scope/target_files fact, never project or boost alone."""
+        if _lesson_matches_task_target_path(lesson):
+            return True
+        when_terms = _condition_terms(lesson.get('when'))
+        if when_terms and (when_terms & task_condition_terms):
+            return True
+        lesson_scope_terms = _condition_terms(lesson.get('scope'))
+        return bool(lesson_scope_terms and (lesson_scope_terms & task_scope_terms))
+
+    def _lesson_tags_compatible(l_tags):
+        """Task kind/domain and lesson tags must agree; universal is not a wildcard."""
+        concrete = {t for t in l_tags if t != 'universal'}
+        if concrete and task_tags and (concrete & set(task_tags)):
+            return True
+        type_aliases = {
+            'recon': {'recon', 'research', 'scout'},
+            'scout': {'recon', 'research', 'scout'},
+            'research': {'recon', 'research', 'analysis'},
+            'impl': {'impl', 'implementation', 'code'},
+            'exact': {'exact', 'impl', 'implementation', 'code'},
+            'focused': {'focused', 'impl', 'implementation', 'code'},
+            'hotfix': {'hotfix', 'impl', 'implementation', 'code'},
+        }
+        return bool(concrete & type_aliases.get(task_type, {task_type}))
+
     # target_filesフィルタ: 明示target_filesはタグより強い制約として扱う。
     # narrow lessonがタグ一致だけで別ファイルtaskへ漏れると useful率を悪化させる。
     _tf_excluded_ids = set()  # target_files不一致で除外候補のID
@@ -7983,31 +8048,30 @@ try:
             l_tags = [l_tags]
         l_tags = [str(t).lower().strip() for t in l_tags if t]
 
-        if lesson.get('_cross_project_opt_in'):
-            tag_candidates.append(lesson)
-            continue
-
-        if lesson.get('id', '') in lesson_boosts:
-            tag_candidates.append(lesson)
+        # Relevance boosts and project membership only rank already-applicable
+        # lessons.  They can never manufacture task applicability.
+        if not _lesson_has_applicability_evidence(lesson):
             continue
 
         # universal教訓は広すぎるため、target_files未設定ならtarget_pathとの関連性を確認する。
         if 'universal' in l_tags:
-            if _universal_without_target_files_is_relevant(lesson, l_tags):
+            if _universal_without_target_files_is_relevant(lesson, l_tags) and (
+                _lesson_tags_compatible(l_tags) or _condition_terms(lesson.get('when'))
+            ):
                 universal_lessons.append(lesson)
             else:
                 _tf_excluded_ids.add(lesson.get('id', ''))
             continue
 
-        # 教訓にtagsがない場合（旧フォーマット）→常にスコアリング候補に含める（後方互換）
+        # タグなし旧形式は適用種別を証明できないため、target_files一致時だけ許可する。
         if not l_tags:
-            tag_candidates.append(lesson)
+            if _lesson_matches_task_target_path(lesson):
+                tag_candidates.append(lesson)
             continue
 
         # task_tagsが決定済みの場合、タグ重複チェック
         if task_tags:
-            overlap = set(task_tags) & set(l_tags)
-            if overlap:
+            if _lesson_tags_compatible(l_tags):
                 tag_candidates.append(lesson)
         # cmd_3271: target_pathなし+tag推定失敗 → タグ付き教訓は除外（NOT_USEFUL量産防止）
         # target_pathあり時は安全側フォールバック維持（既存動作）
@@ -8035,7 +8099,7 @@ try:
     # cmd_2270: 3→10に拡大。キーワード関連度スコアリングで上位10件に絞る
     # cmd_3405: 10→3に縮小。useful_rate=16.7%(<30%)の根因=過剰注入修正
     # tag fallback/useful_rate処理より前に定義し、条件分岐での未定義参照を防ぐ
-    MAX_INJECT = 3
+    MAX_INJECT = int(os.environ.get('MAX_INJECT_OVERRIDE', '3'))
 
     # ═══ スコアリング: タグマッチ候補内でキーワードスコア順位付け ═══
     scored = []
@@ -8066,7 +8130,8 @@ try:
 
         # D0: when未設定教訓のスコア降格 — when条件なしはキーワードのみで注入され
         # NOT_USEFUL率が高い(199/828=24%がwhen未設定, useful_rate 19%)
-        if not l_when or l_when == '未設定':
+        if (not l_when or l_when == '未設定') and not _condition_terms(lesson.get('scope')) \
+                and not _lesson_matches_task_target_path(lesson):
             score -= NO_WHEN_PENALTY
 
         # cmd_3254: boostはkeyword_score>0の教訓にのみ適用

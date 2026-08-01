@@ -1104,6 +1104,7 @@ PY
     cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
 lessons:
   - id: L_OLD
+    tags: [deploy]
     title: "deploy_task old training lesson"
     summary: "deploy_task training obsolete"
     detail: "obsolete deploy_task training"
@@ -1112,6 +1113,7 @@ lessons:
     status: confirmed
     superseded_by: L_NEW
   - id: L_NEW
+    tags: [deploy]
     title: "deploy_task new training lesson"
     summary: "deploy_task training active"
     detail: "active deploy_task training"

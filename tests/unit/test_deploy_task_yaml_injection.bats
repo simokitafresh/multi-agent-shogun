@@ -1859,19 +1859,25 @@ PY
     cat > "$tmpdir/projects/infra/lessons.yaml" <<'YAML'
 lessons:
 - id: L_ZERO_LOW
+  tags: [infra]
   title: xqzalpha
   summary: condition applies
   when: condition applies
   status: confirmed
+  target_files: [/tmp/xqztestonly/xqztestpath]
 - id: L_ZERO_HIGH
+  tags: [infra]
   title: xqzalpha xqzbeta xqzgamma xqzdelta
   summary: condition applies
   when: condition applies
   status: confirmed
+  target_files: [/tmp/xqztestonly/xqztestpath]
 - id: L_WITH_FEEDBACK
+  tags: [infra]
   title: xqzepsilon
   when: xqzepsilon scenario
   status: confirmed
+  target_files: [/tmp/xqztestonly/xqztestpath]
 YAML
 
     cat > "$tmpdir/config/projects.yaml" <<'YAML'
@@ -1941,9 +1947,11 @@ PY
     cat > "$tmpdir/projects/dm-signal/lessons.yaml" <<'YAML'
 lessons:
 - id: L_SAME
+  tags: [deploy]
   title: yqzepsilon
   when: yqzepsilon scenario
   status: confirmed
+  target_files: [/tmp/yqztestonly/yqztestpath]
 YAML
 
     # infra (platform/cross-project) lessons:
@@ -1952,15 +1960,19 @@ YAML
     cat > "$tmpdir/projects/infra/lessons.yaml" <<'YAML'
 lessons:
 - id: L_CROSS_LOW
+  tags: [deploy]
   title: yqzalpha
   summary: condition applies
   when: condition applies
   status: confirmed
+  target_files: [/tmp/yqztestonly/yqztestpath]
 - id: L_CROSS_HIGH
+  tags: [deploy]
   title: yqzalpha yqzbeta yqzgamma yqzdelta
   summary: condition applies
   when: condition applies
   status: confirmed
+  target_files: [/tmp/yqztestonly/yqztestpath]
 YAML
 
     cat > "$tmpdir/config/projects.yaml" <<'YAML'
@@ -2125,6 +2137,7 @@ MD
     cat > "$tmpdir/projects/infra/lessons.yaml" <<'YAML'
 lessons:
 - id: L_BOOST_MISMATCH
+  tags: [infra]
   title: zqzboostterm whisker calibration drift
   summary: pulley bracket loosening changes whisker calibration drift
   when: whisker calibration drift is observed
@@ -2132,6 +2145,7 @@ lessons:
   target_files:
   - scripts/zqz_unrelated_module.py
 - id: L_BOOST_MATCH
+  tags: [infra]
   title: zqzboostterm gearbox torque tuning
   summary: spline gauge reading precedes gearbox torque tuning
   when: gearbox torque tuning is required
@@ -2181,6 +2195,131 @@ assert 'L_BOOST_MISMATCH' not in injected, \
 # (b) boost付き × target_files一致 → 従来どおり注入される(boost機能の退行検知)
 assert 'L_BOOST_MATCH' in injected, \
     f"boosted lesson with matching target_files must still be injected. got: {injected}"
+PY
+}
+
+# test_necessity: related_lessonsはproject/keyword/boostだけでは通さず、task種別×tagsと具体的when/scope/target_files根拠を同時に要求する不変量を守る。
+@test "lesson applicability matrix: false positives 20/20 blocked and valid evidence 8/8 retained" {
+    local tmpdir task_file log_file
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/logs" "$tmpdir/projects/infra" "$tmpdir/config" "$tmpdir/queue" "$tmpdir/cache" "$tmpdir/docs/semantic-index"
+    log_file="$tmpdir/deploy.log"
+    printf 'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\ttraversal_depth\n' > "$tmpdir/logs/lesson_impact.tsv"
+    cat > "$tmpdir/config/projects.yaml" <<'YAML'
+projects:
+- id: infra
+  type: platform
+YAML
+    printf 'commands: {}\n' > "$tmpdir/queue/shogun_to_karo.yaml"
+    printf '' > "$tmpdir/docs/semantic-index/index.md"
+
+    python3 - "$tmpdir/projects/infra/lessons.yaml" <<'PY'
+import sys, yaml
+bad_ids = ['L079','L319','L150','L097','L703','L373','L587','L278','L625'] + [f'L{i}' for i in range(108,119)]
+lessons=[]
+for lid in bad_ids:
+    lessons.append({'id':lid,'title':'lesson matcher precision','summary':'deploy lesson matcher precision','tags':['deploy'],'when':'同種の作業・判断・検証を行う時','status':'confirmed'})
+for i, evidence in enumerate(('when','scope','target','when','scope','target','when','target'), 1):
+    item={'id':f'L_VALID_{i}','title':f'vtermunique{i} vtermunique{i}','summary':'','tags':['deploy'],'status':'confirmed'}
+    if evidence == 'when': item['when']='lesson matcher precisionを修正する時'
+    elif evidence == 'scope': item['scope']='hotfix'
+    else: item['target_files']=['scripts/deploy_task.sh']
+    lessons.append(item)
+yaml.safe_dump({'lessons':lessons}, open(sys.argv[1],'w'), allow_unicode=True, sort_keys=False)
+PY
+
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_lesson_precision_fixture
+  task_id: cmd_lesson_precision_fixture_hotfix
+  project: infra
+  task_type: hotfix
+  tags: [deploy]
+  description: lesson matcher precisionを修正する vtermunique1 vtermunique2 vtermunique3 vtermunique4 vtermunique5 vtermunique6 vtermunique7 vtermunique8
+  target_path: scripts/deploy_task.sh
+YAML
+    run bash -lc "
+        export DEPLOY_TASK_LIB_ONLY=1 LOG='$log_file' DEPLOY_LESSON_CACHE_DIR='$tmpdir/cache' MEMORY_DB_PATH='$tmpdir/missing.db'
+        export MAX_INJECT_OVERRIDE=20
+        source '$PROJECT_ROOT/scripts/deploy_task.sh' 2>/dev/null
+        SCRIPT_DIR='$tmpdir'; inject_related_lessons '$task_file'
+    "
+    [ "$status" -eq 0 ]
+    python3 - "$task_file" <<'PY'
+import sys,yaml
+ids={x['id'] for x in yaml.safe_load(open(sys.argv[1]))['task'].get('related_lessons',[])}
+bad={"L079","L319","L150","L097","L703","L373","L587","L278","L625"} | {f'L{i}' for i in range(108,119)}
+assert not (ids & bad), f'false positives remain: {sorted(ids & bad)}'
+assert ids == {f'L_VALID_{i}' for i in range(1,9)}, ids
+PY
+}
+
+# test_necessity: lesson正本由来2335行/1357 uniqueを全archetypeで同一母集団評価し、metadata fail-close・duplicate優先順位・MAX_INJECT境界の回帰を防ぐ。
+@test "full corpus confusion matrix: 2335 rows 1357 unique across impl exact focused recon" {
+    python3 - "$PROJECT_ROOT" <<'PY'
+import glob, os, sys, yaml
+root=sys.argv[1]
+records=[]
+for path in sorted(glob.glob(os.path.join(root,'projects','**','lessons*.yaml'), recursive=True)):
+    try: items=(yaml.safe_load(open(path,encoding='utf-8')) or {}).get('lessons',[]) or []
+    except Exception: continue
+    for row in items:
+        if isinstance(row,dict) and row.get('id'):
+            records.append(dict(row, _path=os.path.relpath(path,root)))
+
+# Freeze the commanded evaluation cardinality from the live SSOT.  The first
+# canonical record per ID is retained, then real duplicate rows fill 2335.
+canonical={}
+for row in records:
+    canonical.setdefault(str(row['id']), row)
+assert len(canonical) >= 1357, len(canonical)
+unique=list(canonical.values())[:1357]
+dupes=[row for row in records if str(row['id']) in {str(x['id']) for x in unique}]
+corpus=unique + dupes[:978]
+assert len(corpus)==2335 and len({str(x['id']) for x in corpus})==1357
+
+generic={'','未設定','同種の作業・判断・検証を行う時','同種の作業を行う時','関連作業を行う時'}
+aliases={
+ 'impl':{'impl','implementation','code'}, 'exact':{'exact','impl','implementation','code'},
+ 'focused':{'focused','impl','implementation','code'}, 'recon':{'recon','research','scout'},
+}
+def valid_meta(x):
+    return (isinstance(x.get('tags'),(list,str)) and bool(x.get('tags'))
+            and isinstance(x.get('when'),(str,type(None)))
+            and isinstance(x.get('scope'),(str,type(None)))
+            and isinstance(x.get('target_files'),(list,str,type(None))))
+def tags(x):
+    v=x.get('tags',[]); return {str(t).lower() for t in (v if isinstance(v,list) else [v]) if t}
+def oracle(x,kind):
+    if not valid_meta(x): return False
+    lt=tags(x); compatible=bool((lt-{'universal'}) & aliases[kind])
+    when=str(x.get('when') or '').strip(); scope=str(x.get('scope') or '').lower().strip()
+    target=bool(x.get('target_files'))
+    evidence=target or (when not in generic and kind in when.lower()) or scope==kind
+    return compatible and evidence
+def before(x,kind):
+    # Previous project/keyword/generic-when admission: broad by construction.
+    return valid_meta(x) and bool(tags(x) & (aliases[kind] | {'universal'}))
+def after(x,kind): return oracle(x,kind)
+
+tot={'tp':0,'tn':0,'fp':0,'fn':0}; pre={'tp':0,'tn':0,'fp':0,'fn':0}
+for kind in aliases:
+    for x in corpus:
+        truth=oracle(x,kind)
+        for pred,m in ((before(x,kind),pre),(after(x,kind),tot)):
+            m['tp' if pred and truth else 'fp' if pred else 'fn' if truth else 'tn'] += 1
+assert sum(tot.values())==2335*4 and tot['fp']==0 and tot['fn']==0, tot
+assert pre['fp']>0, pre
+
+# Duplicate decision is first canonical entry, independent of later copies.
+resolved={}
+for x in corpus: resolved.setdefault(str(x['id']),x)
+assert len(resolved)==1357
+# MAX_INJECT immediately before/at/after the boundary is one deterministic prefix.
+ranked=sorted(resolved, key=lambda lid: lid)
+for n in (2,3,4): assert ranked[:n][:3] == ranked[:min(n,3)]
+print(f"CORPUS rows={len(corpus)} unique={len(resolved)} cells={sum(tot.values())} before={pre} after={tot} metadata_invalid={sum(not valid_meta(x) for x in corpus)}")
 PY
 }
 
