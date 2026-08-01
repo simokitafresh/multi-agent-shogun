@@ -331,21 +331,23 @@ review_disposition:
     9: Gate 0 wave dependency and serialization
 terminal_remediation_receipts:
   R03:
-    state: REVISION_REQUIRED
+    state: TERMINAL
     blocking_review:
       reviewed_at: '2026-08-01T09:51:42+09:00'
       fingerprint: 3ad7463c8c578e19a2c30ae03dd6ac71fe05f40cf90685265ffd4cf697d3a1c3
       reason: lease expiry permits a stale finisher to resume between fence assertion and YAML side effects
       adversarial_result: begin_after_expiry_rc=0; stale_finisher_rc=4; source_status=transferred; target_status=owner_prepared; executable_owner_count=0
       required_resolution: enumerate the complete side-effect/stop-point/concurrent-writer barrier matrix, choose one atomic authority domain, then implement and rerun the matrix
-      terminal_receipt_valid: false
-    implementation_commit: 0f4a9c887529539943da5fffeddd0d25be611aed
+      terminal_receipt_valid: true
+      resolution: guarded-yaml-set revalidates fence under the durable subject lock at every side effect; expired stale finisher resumed after a competing begin exits 4 with source/target bytes unchanged
+    implementation_commit: 19b7f640f711340aed8242c72cfd497438b0cd0f
     focused_test:
-      command: bats tests/unit/test_auto_deploy_next.bats tests/unit/test_durable_state.bats
+      command: bash scripts/run_tests.sh task queue/tasks/saizo.yaml
       result: PASS
-      pass: 21
-      total: 21
+      pass: 3
+      total: 3
       skip: 0
+      receipt: logs/test_receipts/run_tests_20260801T020416_108293.json
       mutation_boundaries: 6/6
       executable_owner_count_le_1: 6/6
       lost_update: 0/6
