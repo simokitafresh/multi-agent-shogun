@@ -266,6 +266,7 @@ codd:
 | cmd | `cmd_karo_hotfix_dm_signal_ui_alignment_batch_n_20260801` |
 | lesson | `L926` canonical移行時は旧contract assertionも同一scopeで更新する |
 | cmd | `cmd_karo_hotfix_dm_signal_market_type_ui_batch_n_20260801` |
+| causal | `cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801` files_modified: [[dm_signal_pf_restore_guardrails]] |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
@@ -1298,6 +1299,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T17:12:23+09:00 掲示板に投稿するなら調査して改善して検証した結果の報告にしよう。報告するだけは洗脳だ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T20:34:54+09:00 hayateとkagemaruがauto-clearされていない。どこにバグがあるのだろう？バグは修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:13:58+09:00 今セッションでhookやgateの品質問題で遅延やエラー、放置などが起きていたらバグだ。バグは即時修正しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:34:32+09:00 バグは即時修正しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:54:37+09:00 覚醒して行動 |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 | causal_chain | `[[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]` (L1397) |
 | causal_chain | `[[cmd_karo_hotfix_ga414_context_freshness_20260729]]` (L1454) |
@@ -1490,7 +1493,7 @@ codd:
 | label | セマンティック辞書構想 |
 | aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0, 要件 ①実行と承認の分離 実行者の自己承認禁止, cmd完了品質へ単調保持する履歴である, semantic_index_update_158秒, source lord conversation, 報告するのは正しい結果が出た時と, 完了gateのown commit検査だけでは, 回帰13 PASS, 復元184 exact完了, 個別Unit上位test semantic index update 072秒の支配項を除去し, 原因はlive PIDだけをhealthy扱いしたことと, 各wrapperはexact test名のok行を検証する, source gunshi session, 三層health未貫通0件となること, 教訓 fixture≠live, source commit ab302df7b inbox, startup gate検出を一体化する, これは指摘した2失敗と別修正のため赤残存の可能性, source shogun recovery, tmp等の隔離コピーへ複製してから旧版パッチを当てて検証する, 今回は3 3修正し355 356から356 356へ改善, 背景再入回帰を追加した結果, fixture広義同型16件（家老11 軍師5）, source dummy, 家老自身のD0修正・実装commitは禁止, 接続cmdがactive時だけWAIT, cmd完了監視はHEADを使用, commit f4d94ab4, 新規cmd 0件, source shogun d0 fix, source commit 64fcd42c9, WARN_hook+test, startup BLOCK→WARN, 時間がかかるものはすべてバグとして扱い, source session shogun ls091, source lessons shogun, 軍師は2回目で注記, P1 全チェックTIMING追加, PASS, daemon fixtureは本番永続daemonを起動せず, 即時diffで検知し復元, 選定とreservation記録が非原子的で, 隔離source fixtureは必須依存追加へ追随させる, daemonのsource依存追加とログ契約強化を行った際, producerのみgit履歴生成, 全て二値条件で実装する, obsidianは有効活用されているか？, 比較境界は両辺を同一fixtureで型正規化する, Git tree解決可能を型検証する, fix R1, 家老hotfix ab8d6a9f5で境界3 PASS済み, GA 304は残存5行でCI実行前FAIL, 外部repo identity fixture隔離, GA_304_CI_FAIL, cmd complete本体へsource依存を追加した際, 確認せずに想像するから結果が出ない』, wrapperへsource追加時, 復元testは後発依存と実git状態をfixture化する, source session shogun, source lord ruling typo fix, source lord confirm, source n series all closed, 誤爆扱い問い返し禁止, 結果 未反映15→1件 残1は正常進行中, 当該6件はgateコードに到達する前に落ちるため因果なし, 同値確認だけでは自分のcommitが壊した回帰を見逃す, gate commit flow設計書キャンペーンの完了, 実装の多重化を発見したら, 26に軍師はこの型で3回誤った, 判定が読む環境変数を実装で確かめ, 軍師は同じデータで『該当0件』とした, 方式選択が個別の誤りを吸収することがある, ∴★新しい教訓が新しい誤読を生んだ, 前者の教訓を後者に当ててはならない, source shogun gist publish, ★『教訓は3度守られなかった, 本日の組織的到達点 家老の最終行を原文のまま記録・将軍指示, bats側で $status eq を見る書き方は, source karo latency analysis, source karo scope claim family, 既存欠陥FAILは掘り当てた在庫であり人質にしない, 宣言後の指摘で初めて定義を修正した, source lord haste remedy, フォールバックという発想自体がバグの真因である, 殿が明示した方針 例 『今は調査の時間, 受け手は指示・訂正・懸念の形で来たものを検証せず実行するため, 運用経路0件 testからしか実行されない, n 1でなくなった, 本日の還流弾が是正済みの問題』, 全軍恒久教訓 家老blt 軍師blt ・ 『自分で数えると, 実証 軍師が自分の『同型11回』を検証したところ, source 家老blt 軍師blt, 家老・将軍のgateには0件, 軍師自身が自分に不利な事実として提出, source 殿裁定 lord conversation, gistは殿閲覧用ミラー, 訂正の正道 過去行の手書き換え禁止 捏造, source kotaro r6 timing probe, source kotaro r6 fixture1, source kotaro r6 fixture2, リンクを含めない場合の挙動を家老が実測する, fixture body without a link, 次回このtestに遭遇したら, R6のL3表示文言を検証する家老のテスト, L3表示文言, source kotaro ac1 check, fixture no link, source gunshi multilink probe, source gunshi multilink probe2, source gunshi reverify3, source gunshi reverify5, source karo gate probe, karo_probe_reached_20260727, 同一報告が入口ごとにPASS BLOCKへ分岐する, insight在庫だけでは再発したため, source lord ruling, mapping注入またはautofix検討, 完了宣言 12check全クローズ→台帳再集計→第二弾序列, 家老の自立配備 karo direct, v3 CLOSED, commit a4ababd16, 殿裁定2026 最上位訂正 『誰の判断だ？第二弾が優先, 誰の判断だ？第二弾が優先, 将軍はその後, scopeは2スクリプト2弾のまま, 本弾で正しいファイルへの実装を素早く進める土台になった, P2 reflux SSOT修正 才蔵, source shogun session save, commit 1be8bee8f, scope拡張が全量test要求へ化ける, source round5 v141 lgtm, 将軍が骨子起草→殿提示, 家老の序列表 上位20 setup寄与 が掲示板に上がり次第, 序列表は家老抽出中→確定でv1 1改版→殿裁可→解禁, 不変indexへの辺ごとgit照会を一括集合へ変換する, 不成立ならBLOCKする, promotion v1 2は待機継続 殿裁定00, promotion v1 2は指示があるでも待機せよ, 共通修正dbf26c3de後はdirect selected, fixture専用hooksへ明示modeでinstallし, 既存policy gate PASSでもFNを検出しなかった, 完了reflux非発火と鮮度gate検出を混同しない, 完遂条件へindex map 二回目差分0を追加, source shogun, source shogun GATE CLEAR, 修正のための修正 本末転倒, 追記型九龍城の解体3例目 context層 設計書自身 本件, 返答が必要なinboxは, 返答が必要なinboxの確認・既読化は, 正しく本番環境で表示されてスタート地点 |
 | skills | なし |
-| related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore |
+| related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore, gist_master_sync_asis_tobe |
 | related_lessons | `L317`, `L088`, `L079` |
 
 | 種別 | パス/参照 |
@@ -3259,6 +3262,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T20:08:11+09:00 UserPromptSubmit operation blocked by hook: [bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/prompt_state_inject.sh]: |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T20:20:35+09:00 いまクリアされても今より強くてニューゲームできるようにせよ、って俺が入力したら出てきたよ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T20:30:35+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:26:14+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -3995,6 +3999,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T17:43:49+09:00 New Fund of Funds_copy_copy_copyで確認してみよ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T19:39:19+09:00 monthly trade ページのテーブルの左端の縦線はいらないな。ここだけ他のページと違う。gistに過去のスタイル調整の設計書があるはずだから確認んしてくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T19:48:11+09:00 Compare Returnsページの一行目の配置と二行目以降がずれている。項目とタイトルの縦位置をそろえよう。意味は分かるか？確認してみてくれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:31:46+09:00 忍者のpaneを確認してみろ。inbox1 |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
 | causal_chain | `[[cmd_karo_hotfix_ga170_context_freshness_202607030012]]` (L943) |
@@ -4896,7 +4901,7 @@ codd:
 |------|---|
 | id | dmsignal_operations |
 | label | DM-Signal運用 |
-| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？, cashを持つ可能性は無いはずだ, DM signalにフォーカスしよう, DM Signalの実precommit経路からruff自動fixを除去し, 7保有とはどういう意味だ？保有シグナルは月初に固定される, standardPFが２４とFoFが７８では？, シグナルと 保有シグナル, Monthly Tradeページを見てみろ, 過去リターンは表示されているのに, どちらにせよ |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？, cashを持つ可能性は無いはずだ, DM signalにフォーカスしよう, DM Signalの実precommit経路からruff自動fixを除去し, 7保有とはどういう意味だ？保有シグナルは月初に固定される, standardPFが２４とFoFが７８では？, シグナルと 保有シグナル, Monthly Tradeページを見てみろ, 過去リターンは表示されているのに, どちらにせよ, DM signalのUI問題は修正されたか？ |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan, dm_signal_pf_restore_guardrails, admin_ui_redesign_asis_tobe |
 
@@ -5896,6 +5901,11 @@ codd:
 | causal | `cmd_karo_hotfix_active_context_gate_transient_20260801` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_active_context_gate_transient_20260801` (`tests/unit/test_deploy_task_yaml_injection.bats`, `tests/unit/test_gate_lesson_health_active_context_owner.bats`, `tests/unit/test_gate_context_freshness_active_context_owner.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T16:58:27+09:00 軍師をピン止めopus 4.6 1Mにスキルで変更せよ |
+| causal | `cmd_karo_hotfix_auto_clear_completion_deadlock_20260801` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_auto_clear_completion_deadlock_20260801` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_clear_guard.bats`, `tests/unit/test_ninja_monitor_failed_respawn.bats`) |
+| lesson | `L1509` 実装前review receiptはtask identityとAC fingerprintの双方へ結合する |
+| causal | `cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_pre_implementation_review.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
@@ -5927,6 +5937,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_30608934057_deploy_task_backlink_selector]]` (L1494) |
 | causal_chain | `[[cmd_4206]]` (L1505) |
 | causal_chain | `[[cmd_karo_hotfix_active_context_gate_transient_20260801]]` (L1506) |
+| causal_chain | `[[cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801]]` (L1509) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -6764,6 +6775,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T10:59:05+09:00 家老はrebalancerとdm-sigbalを混同していないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:03:53+09:00 非リバランス月の保有方法が本番と違うのでは？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-31T12:52:26+09:00 内容が薄いな。あとまとめすぎでは？今回は執行日＝リバランス日をずらしてもロバストネスだったという内容だ。一緒にするな |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:33:17+09:00 auto clearは大切だから意図に即している。前セッションのことを聞けばよかったのでは？ |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -7095,6 +7107,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_active_pointer_tmp_race_20260730` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_lesson_injection_precision_20260801` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_active_context_gate_transient_20260801` files_modified: [[task_modifier_injection]] |
+| causal | `cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -7172,6 +7185,7 @@ codd:
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_auto_clear_completion_deadlock_20260801` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -7561,6 +7575,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T11:34:53+09:00 https://gist.github.com/simokitafresh/c18ce89c63d6d7beef7a0fd252fe8d9f#file-hidden-infrastructure-gate-hook-remediation- |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T15:23:48+09:00 まずは設計書をasis/tobe 5w1Hで書け。その後家老にレビューしてもらえ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:13:59+09:00 バグの修正は必ず事前と事後に軍師にレビューしてもらえ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:23:46+09:00 今セッションでhookやgateの品質問題で遅延やエラー、放置 などが起きていたらバグだ。バグは即時修正しよう › バグの修正は必ず事前と事後に軍師にレビューしてもらえ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:24:43+09:00 軍師が見つけたものは家老がレビューがいいな |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:56:35+09:00 https://gist.github.com/simokitafresh/89b0a0ad88595a9c3e087caf2c34becfはどうなった？ |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
@@ -7699,6 +7716,7 @@ codd:
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_auto_clear_completion_deadlock_20260801` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -7924,6 +7942,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[infrastructure_ops]] |
 | lesson | `L1504` appendとarchiveはreaderを含むgeneration transactionにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T14:53:44+09:00 hayateが止まっていないか？ |
+| causal | `cmd_karo_hotfix_auto_clear_completion_deadlock_20260801` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
 | causal_chain | `[[cmd_karo_hotfix_heavy_admission_lock_release_20260729]]` (L1443) |
@@ -8924,6 +8943,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_lesson_injection_precision_20260801` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_active_context_gate_transient_20260801` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -8962,7 +8982,7 @@ codd:
 | label | セマンティック因果自動化 |
 | aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale, semantic searchのヒット率を定量計測し, node id design semantic map, 教訓セマンティック還流, 教訓還流検査, operational noise filter, セマンティック検索, 概念検索スクリプト, alias_layer_search, llm_fallback_search, semantic_search, concept_lookup, alias_search, index_search, causal_expand, クエリ照合, 二層検索, 掲示板action required の semantic map generate new file INSIGHT, semantic_repair |
 | skills | |
-| related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system, control_plane_fork_gitwalk_countermeasure |
+| related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system, control_plane_fork_gitwalk_countermeasure, gist_master_sync_asis_tobe |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -9120,6 +9140,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608011247_kagemaru` — [[semantic_causal_automation]] -> `docs/research/gunshi_idle_gate_accuracy_final_cmd_20260801.md` |
 | causal | `cmd_reflux_backlink_202608011247_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608012107_hayate` — [[semantic_causal_automation]] -> `docs/research/context-restructure-plan-20260801.md` |
+| causal | `cmd_reflux_backlink_202608012107_hayate` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gunshi_log_append — 仮: Gunshi Log Append
@@ -9834,6 +9855,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202608010231_hayate` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202608011140_hayate` (`docs/semantic-index/index.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T14:53:23+09:00 バグは修正したのか？hayateinbox1 |
+| cmd | `cmd_reflux_backlink_202608012107_hayate` (`docs/semantic-index/index.md`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
@@ -10220,6 +10242,7 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_round5_lane_inbox_write_total_20260729` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_auto_clear_completion_deadlock_20260801` files_modified: [[infra_design_intent]] |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
 
@@ -10282,6 +10305,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_active_pointer_tmp_race_20260730` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_lesson_injection_precision_20260801` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_active_context_gate_transient_20260801` files_modified: [[scope_integrity_lifecycle]] |
+| causal | `cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
@@ -10783,7 +10807,7 @@ codd:
 |------|---|
 | id | skill_routing |
 | label | スキルルーティング |
-| aliases | スキル使い分け, どのスキルを使う, 適切なスキル, スキル選択, skill routing, ペイン死亡, pane dead, panedead, pane is dead, ペインがdead, 忍者が死んでいる, 家老が死んでいる, CLI死亡, CLI-DEAD, status 126, respawn, respawnせよ, respwanせよ, CLI切替, Claude⇔Codex切替, モデル切替, version切替, 2.1.87固定, pinned/latest, auto-update再許可, 家老をCodexに, 軍師をOpusに, ペイン復元, レイアウトリセット, ペイン消失, レイアウト崩壊, 全ペイン復元, 編成切替, 忍者モデル編成, 一括モデル切替, 混成編成, Opus全戻し, 決戦モード, 全員Codex, 平時復旧, clear前, セッション終了前, メモリ整理, 三層記憶整理, 知識統合, 棚卸し, 7層監査, 教訓整理, 教訓振り分け, lesson_health ALERT, PJ切替, プロジェクト変更, 裁定反映, context反映確認, GATE CLEAR後処理, cmd完了処理, ダッシュボード更新, レビュー完了後処理, SG7バンドル, gate結果同期, accuracy計算, bc判定, binary_checks確認, idle分析永続化, 分析結果保存, コミット, commit, 作業完了コミット, 報告YAML作成, 報告フィールド記入, FILL_THIS修正, 本番登録, PF登録, GSベンチマーク, パフォーマンス回帰, 家老自立配備, karo_direct, CI修正配備, 偵察2名配備, 設計書生成, CoDDパイプライン, リファクタリング設計, 速度改善, 事象修正, 現象修正, DB確認, 本番DB, パリティ検証, ブラウザ確認, 本番画面スクショ, CDPで確認, ファイル名整理, Driveリネーム, 週報, ウィークリーレポート, 月報, マンスリーレポート, note記事, ユーザー向け記事, 開発裏話, 戦国AI列伝, X検索, Xリサーチ, トレンド調査, スキル作成, スキル化, リポジトリ掃除, 未コミット確認, チャンピオン近傍分析, 過適合判定, 隣接パラメータ, 本文更新要否とgate設計問題を分ける, commit missing WAの穴を今ふさげ, git log showでsource commitを分類し, 研究正本へ追記すべき差分は既反映のcmd 3546のみで, 将軍を最新版のclaude CLIにrespwanせよ, gate出力はALERT対象名だけを出すため, 本番DB直列とはなんだ？ルール違反はしていないか？, 将軍を最新版のclaude fable xhighにスキルを使ってrespwanせよ, 既存手法の入力 出力だけを差し替える場合は, 進行中commitの共有済み誤認, 将軍を最新版のfable5 lowにrespwanせよ, スクリプト化もしくはスキル化で対応できるのではないか？, これでなぜ俺が, 実装は正しく指揮官paneでallowする設計のため, commitメッセージを根拠に断定, 今の知見をもとに三足記憶の貫通をスキル化しよう, 親commitの差分を逆stageと誤認する |
+| aliases | スキル使い分け, どのスキルを使う, 適切なスキル, スキル選択, skill routing, ペイン死亡, pane dead, panedead, pane is dead, ペインがdead, 忍者が死んでいる, 家老が死んでいる, CLI死亡, CLI-DEAD, status 126, respawn, respawnせよ, respwanせよ, CLI切替, Claude⇔Codex切替, モデル切替, version切替, 2.1.87固定, pinned/latest, auto-update再許可, 家老をCodexに, 軍師をOpusに, ペイン復元, レイアウトリセット, ペイン消失, レイアウト崩壊, 全ペイン復元, 編成切替, 忍者モデル編成, 一括モデル切替, 混成編成, Opus全戻し, 決戦モード, 全員Codex, 平時復旧, clear前, セッション終了前, メモリ整理, 三層記憶整理, 知識統合, 棚卸し, 7層監査, 教訓整理, 教訓振り分け, lesson_health ALERT, PJ切替, プロジェクト変更, 裁定反映, context反映確認, GATE CLEAR後処理, cmd完了処理, ダッシュボード更新, レビュー完了後処理, SG7バンドル, gate結果同期, accuracy計算, bc判定, binary_checks確認, idle分析永続化, 分析結果保存, コミット, commit, 作業完了コミット, 報告YAML作成, 報告フィールド記入, FILL_THIS修正, 本番登録, PF登録, GSベンチマーク, パフォーマンス回帰, 家老自立配備, karo_direct, CI修正配備, 偵察2名配備, 設計書生成, CoDDパイプライン, リファクタリング設計, 速度改善, 事象修正, 現象修正, DB確認, 本番DB, パリティ検証, ブラウザ確認, 本番画面スクショ, CDPで確認, ファイル名整理, Driveリネーム, 週報, ウィークリーレポート, 月報, マンスリーレポート, note記事, ユーザー向け記事, 開発裏話, 戦国AI列伝, X検索, Xリサーチ, トレンド調査, スキル作成, スキル化, リポジトリ掃除, 未コミット確認, チャンピオン近傍分析, 過適合判定, 隣接パラメータ, 本文更新要否とgate設計問題を分ける, commit missing WAの穴を今ふさげ, git log showでsource commitを分類し, 研究正本へ追記すべき差分は既反映のcmd 3546のみで, 将軍を最新版のclaude CLIにrespwanせよ, gate出力はALERT対象名だけを出すため, 本番DB直列とはなんだ？ルール違反はしていないか？, 将軍を最新版のclaude fable xhighにスキルを使ってrespwanせよ, 既存手法の入力 出力だけを差し替える場合は, 進行中commitの共有済み誤認, 将軍を最新版のfable5 lowにrespwanせよ, スクリプト化もしくはスキル化で対応できるのではないか？, これでなぜ俺が, 実装は正しく指揮官paneでallowする設計のため, commitメッセージを根拠に断定, 今の知見をもとに三足記憶の貫通をスキル化しよう, 親commitの差分を逆stageと誤認する, gistに共有はスキル化するのはどう思う？ |
 | skills | shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み), reset-layout(全ペイン配置復元), shogun-clear-prep(clear前), dream(三層記憶整理), shogun-teire(棚卸し), lesson-sort(教訓整理), switch-project(PJ切替), shogun-pd-sync(裁定反映), cmd-complete(GATE CLEAR後/家老), dashboard-update(ダッシュボード/家老), review-bundle(レビュー完了/軍師), gate-sync(gate同期/軍師), verdict-check(bc判定/忍者), idle-persist(分析永続化/軍師), ninja-commit(commit/忍者), report-write(報告YAML/忍者), pf-registration(本番登録/忍者), gs-bench-gate(GSベンチ/忍者), karo-direct(家老自立配備/家老), recon-dual(偵察2名/家老), codd(設計書), codd-refactor(リファクタ), codd-fix(事象修正), db-check(DB確認), cdp-browse(ブラウザ確認), file-rename(ファイルリネーム), weekly-report-writer(週報), monthly-report-writer(月報), note-writer(note記事), sengoku-writer(戦国記事), x-research(X検索), skill-creator(スキル作成), repo-clean(リポ掃除), shogun-param-neighbor-check(パラメータ近傍) |
 | related_concepts | agent_formation_management, growth_loop, skill_design_rules, content_artifacts |
 
@@ -11219,6 +11243,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T07:59:27.037826+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T09:36:09.521388+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T11:48:16.384992+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:22:27+09:00 推奨案で設計書を書こう。gistに共有はスキル化するのはどう思う？ |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
@@ -11438,6 +11463,7 @@ codd:
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_auto_clear_completion_deadlock_20260801` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -11504,6 +11530,16 @@ codd:
 | file | `docs/research/control-plane-fork-gitwalk-countermeasure-asis-tobe_20260721.md` |
 | causal | `[[cmd_4112]] -> [[WSL2_mntc_subprocess反復fork_大履歴gitwalk]] -> [[制御面レイテンシ恒久対策]]` |
 | cmd | `cmd_1668` backfill — | cmd_1668 | gate_shogun_startup.shにAC注入検証Gate16追加 + lesson_write.sh cat3重→read統合 | 完了(GATE未実行)。半蔵+飛 |
+
+## gist_master_sync_asis_tobe — Gistと正本の同期設計
+
+| 属性 | 値 |
+|------|---|
+| id | gist_master_sync_asis_tobe |
+| label | Gistと正本の同期設計 |
+| related_concepts | semantic_causal_automation, semantic_dictionary_design |
+| causal | `cmd_reflux_backlink_202608012155_kotaro` — [[semantic_causal_automation]] -> `docs/research/gist-master-sync-asis-tobe-5w1h_20260801.md` |
+| cmd | `cmd_3463` backfill — - 2026-06-20 cmd_3463: オントロジー駆動Phase2-3をAC別5分割で配備開始。hanzo=AC1 registry、kagemaru=AC2 config SSOT、kota |
 
 ## execution_delay_sensitivity — 執行日感度分析(実験2)
 
