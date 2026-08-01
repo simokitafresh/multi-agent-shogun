@@ -311,6 +311,12 @@ fi
 prompt_state_source_event_id="${PROMPT_STATE_SOURCE_EVENT_ID:-}"
 prompt_state_received_ts="${PROMPT_STATE_RECEIVED_TS:-}"
 prompt_state_lord_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
+# Prefer the identity carried by this hook invocation.  Text lookup is only a
+# legacy fallback: identical text is not an event identity and may legitimately
+# recur in a later turn (for example "y" or "続けて").
+if [[ -z "$prompt_state_source_event_id" ]]; then
+  prompt_state_source_event_id="$(jq -r '.source_event_id // .event_id // .prompt_id // .turn_id // empty' 2>/dev/null <<<"$payload" || true)"
+fi
 if [[ -z "$prompt_state_source_event_id" && "$prompt_is_inbox_nudge" -eq 0 && -f "$prompt_state_lord_file" ]]; then
   prompt_state_identity="$({ PROMPT_TEXT="$prompt_text" TARGET_AGENT="$agent_id" python3 - "$prompt_state_lord_file" <<'PY'
 import json, os, sys
