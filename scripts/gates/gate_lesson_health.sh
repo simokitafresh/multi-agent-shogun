@@ -177,6 +177,7 @@ _compute_lesson_stats() {
         if (is_set_value(inline_value($0, "when"))) has_when = 1
         if (is_set_value(inline_value($0, "how"))) has_how = 1
         if (is_set_value(inline_value($0, "origin"))) has_origin = 1
+        cur_subdomain = inline_value($0, "subdomain")
     }
     /[[:space:]]+status:[[:space:]]+deprecated/ { is_deprecated = 1 }
     /[[:space:]]+deprecated:[[:space:]]+true/ { is_deprecated = 1 }

@@ -103,3 +103,40 @@ run_case_gate() {
   [ "$fn" -eq 0 ]
   [ "$fail" -eq 0 ]
 }
+
+@test "flow-style mixed routes count six consecutive lessons against their routed markers" {
+  # regression_justification: sync_lessons.sh emits flow-style YAML, while the
+  # existing owner matrix does not exercise routed subdomain marker selection.
+  local root="$CASE_ROOT/flow_routes"
+  mkdir -p "$root/context" "$root/scripts/gates" "$root/scripts/lib" \
+    "$root/projects/dm-signal" "$root/config" "$root/logs" "$root/queue/tasks"
+  cp "$CONTROL/scripts/gates/gate_lesson_health.sh" "$root/scripts/gates/"
+  cp "$CONTROL/scripts/gates/lesson_context_routes.sh" "$root/scripts/gates/"
+  cp "$CONTROL/scripts/lib/yaml_field_set.sh" "$root/scripts/lib/"
+  printf 'projects:\n  - id: dm-signal\n    status: active\n    context_file: context/dm-signal.md\n' > "$root/config/projects.yaml"
+  printf 'ssot_path: %s/projects/dm-signal/lessons.md\nlessons:\n' "$root" > "$root/projects/dm-signal/lessons.yaml"
+  : > "$root/projects/dm-signal/lessons.md"
+  printf '%s\n' \
+    '- {id: L922, when: x, how: y, origin: "[[x]] -> [[y]] -> [[z]]"}' \
+    '- {id: L923, subdomain: gs, when: x, how: y, origin: "[[x]] -> [[y]] -> [[z]]"}' \
+    '- {id: L924, subdomain: be, when: x, how: y, origin: "[[x]] -> [[y]] -> [[z]]"}' \
+    '- {id: L925, subdomain: fe, when: x, how: y, origin: "[[x]] -> [[y]] -> [[z]]"}' \
+    '- {id: L926, subdomain: fe, when: x, how: y, origin: "[[x]] -> [[y]] -> [[z]]"}' \
+    '- {id: L927, subdomain: fe, when: x, how: y, origin: "[[x]] -> [[y]] -> [[z]]"}' \
+    >> "$root/projects/dm-signal/lessons.yaml"
+  printf '<!-- last_synced_lesson: L922 -->\n- L922: main\n' > "$root/context/dm-signal.md"
+  printf '<!-- last_synced_lesson: L927 -->\n- L925: fe\n- L926: fe\n- L927: fe\n' > "$root/context/dm-signal-frontend.md"
+  printf '<!-- last_synced_lesson: L924 -->\n- L923: gs\n- L924: be\n' > "$root/context/dm-signal-ops.md"
+
+  run env LESSON_EFFECT_NTFY_ENABLED=0 bash "$root/scripts/gates/gate_lesson_health.sh" dm-signal
+  echo "$output" >&3
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"未合流0件"* ]]
+  [ "$(grep -Ec '^- L92[5-7]: fe$' "$root/context/dm-signal-frontend.md")" -eq 3 ]
+  [ "$(grep -Ec '^- L92[3-4]: (gs|be)$' "$root/context/dm-signal-ops.md")" -eq 2 ]
+
+  sed -i 's/last_synced_lesson: L927/last_synced_lesson: L926/' "$root/context/dm-signal-frontend.md"
+  run env LESSON_EFFECT_NTFY_ENABLED=0 bash "$root/scripts/gates/gate_lesson_health.sh" dm-signal
+  echo "$output" >&3
+  [[ "$output" == *"未合流1件"* ]]
+}
