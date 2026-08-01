@@ -1,14 +1,10 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-08-01 GA-422 RC corrected 1k boundary -->
 <!-- source_commit:3ee5c21ba62821e0aca571797f3ddb7ca4547d09 reason:GA-422 RC corrected 1k boundary evidence:10k StatementTooComplex rows0; 5c8a9cf 1k boundary reapplied by 3ee5c21b; production revalidation pending -->
-
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
-
 コア定義(§0-5,8,10-11,13,15,18) → `context/dm-signal-core.md`
 研究・検証結果(§19-24) → `context/dm-signal-research.md`
-
 ## §6-7 recalculate_fast.py + OPT-E
-
 6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。最新本番: **357.28s/124PF**(2026-03-29 cmd_1478, OPT-12~15全反映)。
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
 - L818: 本番DB read-only確認はpython3 -cのインライン実行ではなくスクリプトファイル経由で行え（cmd_3698_recon2）
@@ -1325,7 +1321,6 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - accepted responseの`run_id`と`end_date`を証跡へ記録し、`end_date=2026-07-28`を照合する。完了判定はresponse受付ではなくDB `recalculation_status`の同一`run_id` completedを使う。
 - `end_date`はISO `YYYY-MM-DD`。未指定は`date.today()`、形式不正・`start_date`以前・未来日はrun予約/lock/business write前に`ValidationError`となる。有効値は`recalculate_history_fast(end_date=...)`へ透過伝播する。
 - 因果リンク: [[同日再計測の終端日が実行日へ揺れる]] -> [[recalculate-sync_end_date契約]] -> [[同一logical_date全PF直列計測]]
-
 ## §85 signal flush複合key照会の運用上限 (commit 3ee5c21b, 2026-08-01)
 
 - `6200cc1e`の10,000-key chunkは本番L3同期で07:15開始→07:19 `updated_at`、`StatementTooComplex`、rows 0で失敗。既知正常commit `5c8a9cf` の1,000-key境界を再適用した`3ee5c21b`で、`_collect_new_insert_ledger_drift_alerts()`と`_classify_repeated_ledger_guard_corrections()`を共通helper経由1,000 keyごとに照会する。現在は本番再検証中で、rows>0・terminal完走の一次証跡が出るまで未解決扱い。詳細はDM-Signal側research正本へ集約し、本contextは運用結論のみ保持する。

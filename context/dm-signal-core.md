@@ -1,13 +1,9 @@
 # DM-signal コアコンテキスト
 <!-- last_updated: 2026-08-01 GA-422 RC corrected 1k boundary -->
 <!-- source_commit:3ee5c21ba62821e0aca571797f3ddb7ca4547d09 reason:GA-422 RC corrected 1k boundary evidence:10k StatementTooComplex rows0; 5c8a9cf 1k boundary reapplied by 3ee5c21b; production revalidation pending -->
-
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
-
 タスクに `project: dm-signal` がある場合このファイルを読め。パス: `/mnt/c/Python_app/DM-signal/`
-
 ## 0. 研究レイヤー構造
-
 | Layer | 名前 | 内容 | 状態 |
 |-------|------|------|------|
 | L0 | 四神 (`pf_L0`) | 個別DM戦略（青龍/朱雀/白虎/玄武）のパラメータGS・検証 | 完了(12体+ノンレバ玄武1=13体) |
