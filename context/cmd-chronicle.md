@@ -261,3 +261,10 @@
 | cmd_round7_checkpoint_final_gen4_20260730 | 第三世代checkpointはtest7根治を確認(rc:0)しつつlgtm_bundle_guardの実行bit契約不一致で正直FAIL_CLOSE。小太郎hotfixがGATE CLEAR(blt_20260730_091531、mode 100644のまま50反復pass50/fail0生貼付)し起票条件達成。新固定SHAで第四世代success checkpointを実行し第七弾の総短縮効果を確定する | infra | 07-30 | 第四世代fixed-SHA checkpointは184/1 |
 | cmd_4195 | 殿ntfy 2026-07-30 10:52『confirmed-month holding_signal changes: count=3 portfolios=3 dates=2026-07-29』。同一署名のALERTがdates=07-27/07-28/07-29と3日連続発火。07-28のcmd_4190は当日分を『FoF3件=台帳ガード(signal_decision_ledger)の安全側補正・pending marker 0/3・DB変更0件』と正常判定済みだが、毎日同じ補正が再発しているなら、signalsとledgerの乖離が日次で再生成される構造根因があり、ALERTは情報価値ゼロの反復になっている。反復の実体と根因を確定する | dm-signal | 07-30 | 07-27/28/29は同一3PF・同一旧→新値が9/9反復 |
 | cmd_4199 | 殿指示2026-07-31「執行日だけの感度分析。シグナルはN=0固定。変更するのは翌月の執行日だけ」。設計書v1.5(docs/research/execution-delay-sensitivity-asis-tobe-5w1h_20260731.md)に基づき、新規凍結snapshotでcmd_4198再計測+E=0-7の執行遅延感度分析を実行し、デュアルモメンタム戦略の執行タイミングに対するロバストネスを確認する | dm-signal | 07-31 | AC1-5完了: 凍結DB SHA前後一致、producti |
+
+## 2026-08
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| cmd_4203_withdrawn | 殿下知2026-08-01 09:09『設計書実装は順調か、利他の精神で家老と協調せよ』を受けた次弾解禁。設計書v3.9はWave 1Aまで全ACCEPTEDだが後続の親cmdが不在で境界停滞(LS086型)。設計書§5.4のWave 1B(ownership)を実装し、deploy経路の二重owner・ghost配備の族を構造根治する | infra | 08-01 | — |
+| cmd_4204 | gate_karo_startup Check3.8の実装品質WARN率が50%(閾値30%)で1セッション連続しescalation到達。本日の実測でFAIL群の主因は実装欠陥ではなく、(1)review_approval.shのimplementation-commit-unchanged guardが、FAIL verdictのterminal受理とRC後のreport-only再提出より先に発火して正式closeを塞ぐ構造(小太郎blt_20260801_111006・飛猿blt_20260801_111714の2実証) (2)report statusのnonterminal×verdict=PASS矛盾でquality monitorが反復BLOCKする状態遷移欠陥(cmd_4202 blt_20260801_112717)。guard評価順序と再提出契約を是正し、WARN率を同一計測器で再計測して数値差分を確定する | infra | 08-01 | post-RC review matrixを正規化。是正前の |

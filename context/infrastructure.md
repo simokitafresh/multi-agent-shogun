@@ -904,7 +904,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1498 -->
+<!-- last_synced_lesson: L1501 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2116,6 +2116,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1496: task/inbox指示の『前報告は有効・再利用可』前提は実体確認してから従え（cmd_4200）
 - L1497: artifact後続更新時のmanifest SHA追随検査（cmd_4200）
 - L1498: review manifest集合は全callerでtask report_filename正本へ統一する（cmd_karo_recon2_cmd_complete_manifest_resume_20260731）
+- L1499: realpath正規化だけではdot-segment入力を拒否できない（cmd_karo_hotfix_archive_review_canonical_allowlist_20260801）
+- L1500: task契約改訂時はnested commit_contractも同時更新（cmd_4202）
+- L1501: 終端FAILはimplementation identity更新を要求せず正式close可能にせよ（cmd_4204）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
