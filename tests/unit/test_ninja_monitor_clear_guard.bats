@@ -1045,6 +1045,28 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: a fingerprint-bound Karo ACCEPT is the formal FAIL-close
+# handshake and must suppress the contradictory post-respawn warning.
+@test "failed respawn notice is suppressed after matching Karo ACCEPT" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"
+mkdir -p "$SCRIPT_DIR/queue/tasks"
+cat > "$SCRIPT_DIR/queue/tasks/hanzo.yaml" <<YAML
+task:
+  status: failed
+  task_id: cmd_failed_exact
+  parent_cmd: cmd_failed
+  deployed_at: "2026-08-01T09:00:00+09:00"
+YAML
+_failed_task_is_formally_closed() { return 0; }
+! _failed_task_needs_karo_notice hanzo
+'
+    [ "$status" -eq 0 ]
+}
+
 # test_necessity: archive.done is terminal evidence for both CLEAR and FAIL_CLOSE;
 # removing it on explicit reopen must restore failed-task respawn eligibility.
 @test "failed respawn notice respects archive terminal marker and explicit reopen" {
