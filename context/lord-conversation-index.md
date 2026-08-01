@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-02 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-02T06:47:49+09:00 -->
+<!-- generated_at: 2026-08-02T07:54:09+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-02T06:47:48+09:00 | terminal | response | 処理完了。idle待機。
-- 2026-08-02T06:47:24+09:00 | ntfy | outbound | 【hayate】cmd_reflux_backlink_202608020646_kotaro 初回配備開始 (title=(untitled), ninja=kotaro)
-- 2026-08-02T06:45:04+09:00 | ntfy | outbound | 【hayate】cmd_karo_hotfix_formal_rc_direct_contract_refresh_20260802 完了
-- 2026-08-02T06:44:08+09:00 | terminal | response | 確認済み。GATE CLEAR。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-02T06:41:53+09:00 | terminal | response | ERRORS=0。LGTM処理。
-- 2026-08-02T06:33:40+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-02 06:30:33|GATE CLEAR — cmd_karo_hotfix_rc_redeploy_pass_verdict_20260802 完了
-- 2026-08-02T06:32:37+09:00 | terminal | response | 処理完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-02T06:32:15+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_formal_rc_direct_contract_refresh_20260802 初回配備開始 (title=(untitled), ninja=kagemaru)
-- 2026-08-02T06:31:11+09:00 | ntfy | outbound | 【hayate】cmd_karo_hotfix_rc_redeploy_pass_verdict_20260802 完了
-- 2026-08-02T06:30:43+09:00 | terminal | response | 処理完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-02T07:54:08+09:00 | terminal | response | reflux backlink LGTM+SG7+GATE trigger完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-02T07:48:04+09:00 | terminal | response | 処理完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-02T07:47:38+09:00 | ntfy | outbound | 【hayate】cmd_reflux_backlink_202608020747_kotaro 初回配備開始 (title=(untitled), ninja=kotaro)
+- 2026-08-02T07:24:34+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-02 07:10:49|GATE CLEAR — cmd_karo_hotfix_gate_shared_insight_semantic_20260802 完了
+- 2026-08-02T07:11:34+09:00 | terminal | response | 確認済み。GATE CLEAR。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-02T07:11:33+09:00 | ntfy | outbound | 【hayate】cmd_karo_hotfix_gate_shared_insight_semantic_20260802 完了
+- 2026-08-02T07:08:03+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-02 06:56:27|GATE CLEAR — cmd_reflux_backlink_202608020646_kotaro 完了
+- 2026-08-02T07:07:05+09:00 | terminal | response | shared insight semantic最終版 LGTM+SG7完了。archive証跡evictionでRC指摘を根治。idle待機。
+- 2026-08-02T06:57:14+09:00 | terminal | response | 処理完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-02T06:57:01+09:00 | ntfy | outbound | 【hayate】cmd_reflux_backlink_202608020646_kotaro 完了
 
 ## 未解決確認事項
 - 確認済み。GATE CLEAR。idle待機。 [meta] stop_reason=end_turn

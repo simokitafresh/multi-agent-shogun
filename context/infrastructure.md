@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-01 -->
+<!-- last_updated: 2026-08-02 shared insight eviction契約反映 -->
+<!-- source_commit:137382332ffffea1a103481dc35eeaf6bfb4c86e reason:shared insight eviction契約反映 evidence:commit=137382332; hanzo gate BLOCK1→0; matrix8/8; task584/584 SKIP0 -->
 <!-- last_synced_lesson: L1516 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
@@ -49,6 +50,7 @@
 - L1514: 進捗freshnessとSTALL閾値を直列加算するな（cmd_4213）
 - L1515: 高価なcache整合処理は書込ごとのpushではなく読取stale検知で需要駆動せよ（cmd_4212）
 - L1516: 削除必須一時testをtask selector planned pathへ残すと最終receiptが自己矛盾する（cmd_karo_hotfix_viewer_rotation_recovery_20260802）
+- 共有bounded queueのtask-owned recordがliveから消えた場合、archive内の同ID・完全一致・一意を満たす時だけ正規evictionとして許可し、それ以外はBLOCKする（cmd_karo_hotfix_gate_shared_insight_semantic_20260802）
 
 ## 設計標準・テスト・因果
 
