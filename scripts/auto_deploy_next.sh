@@ -282,9 +282,17 @@ if completed_ninja:
 
 # ─── Find next subtask ───
 done_ids = set(st['task_id'] for st in all_subtasks if st['status'] == 'done')
-undone = [st for st in all_subtasks if st['status'] != 'done']
+SELECTABLE_STATUSES = {'pending', 'idle'}
+undone = [st for st in all_subtasks if st['status'] in SELECTABLE_STATUSES]
+rejected = [st for st in all_subtasks
+            if st['status'] != 'done' and st['status'] not in SELECTABLE_STATUSES]
 
 if not undone:
+    if rejected:
+        rejected_detail = ','.join(
+            '{}:{}'.format(st['task_id'], st['status'] or 'MISSING_STATUS') for st in rejected)
+        print(f'REJECTED\t{rejected_detail}')
+        sys.exit(0)
     print(f'ALL_DONE\t{cmd_id}\t{len(all_subtasks)}')
     sys.exit(0)
 
@@ -336,6 +344,12 @@ case "$ACTION" in
         UNRESOLVED=$(echo "$ANALYSIS" | cut -f3)
         echo "AUTO_DEPLOY_BLOCKED: ${NEXT_ID}はblocked_by未解消 (${UNRESOLVED})"
         log "AUTO_DEPLOY_BLOCKED: ${NEXT_ID} unresolved=${UNRESOLVED}"
+        exit 3
+        ;;
+    REJECTED)
+        REJECTED_DETAIL=$(echo "$ANALYSIS" | cut -f2)
+        echo "AUTO_DEPLOY_BLOCKED: selector rejected non-pending/idle task(s): ${REJECTED_DETAIL}"
+        log "AUTO_DEPLOY_BLOCKED: selector rejected ${REJECTED_DETAIL}"
         exit 3
         ;;
     SKIP)

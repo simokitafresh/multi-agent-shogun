@@ -23,7 +23,7 @@ YAML
 task:
   task_id: next
   parent_cmd: cmd_fixture
-  status: assigned
+  status: pending
   blocked_by: [completed]
   assigned_to: hayate
   auto_deploy: true
@@ -32,40 +32,82 @@ YAML
 
 }
 
+@test "R05 selector admits only pending and idle statuses" {
+  statuses=(pending idle assigned acknowledged in_progress transferred done failed mystery "")
+  selected=0 rejected=0 false_positive=0 false_negative=0
+  for fixture_status in "${statuses[@]}"; do
+    root="$BATS_TEST_TMPDIR/status-${fixture_status:-missing}"
+    cmd="cmd_fixture_status_${fixture_status:-missing}_${RANDOM}"
+    make_case "$root" "$cmd"
+    if [ -n "$fixture_status" ]; then
+      sed -i "s/^  status: pending$/  status: $fixture_status/" "$root/queue/tasks/pending.yaml"
+    else
+      sed -i '/^  status: pending$/d' "$root/queue/tasks/pending.yaml"
+    fi
+
+    run bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
+    case "$fixture_status" in
+      pending|idle)
+        [ "$status" -eq 0 ] || false_negative=$((false_negative + 1))
+        [[ "$output" == *"AUTO_DEPLOY_OK"* ]] || false_negative=$((false_negative + 1))
+        selected=$((selected + 1))
+        ;;
+      done)
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"AUTO_DEPLOY_DONE"* ]]
+        rejected=$((rejected + 1))
+        ;;
+      *)
+        [ "$status" -eq 3 ] || false_positive=$((false_positive + 1))
+        [[ "$output" == *"selector rejected"* ]] || false_positive=$((false_positive + 1))
+        rejected=$((rejected + 1))
+        ;;
+    esac
+  done
+  [ "$selected" -eq 2 ]
+  [ "$rejected" -eq 8 ]
+  [ "$false_positive" -eq 0 ]
+  [ "$false_negative" -eq 0 ]
+}
+
+@test "R05 in_progress owner is never selected again" {
+  root="$BATS_TEST_TMPDIR/in-progress-reselection"
+  cmd="cmd_fixture_in_progress_${RANDOM}"
+  make_case "$root" "$cmd"
+  sed -i 's/^  status: pending$/  status: in_progress/' "$root/queue/tasks/pending.yaml"
+
+  run bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"next:in_progress"* ]]
+  executable=$(rg -l '^  status: (assigned|acknowledged|in_progress)$' "$root/queue/tasks"/*.yaml | wc -l)
+  [ "$executable" -eq 1 ]
+}
+
 @test "R03 all owner mutation boundaries converge without lost update or false success" {
   boundaries=(after_intended_before_target after_target_before_pointer after_pointer_before_tombstone after_tombstone_before_activation after_activation_before_published after_published_before_terminal)
   observed=0 lost=0 false_success=0
   for fp in "${boundaries[@]}"; do
     root="$BATS_TEST_TMPDIR/$fp"; cmd="cmd_fixture_${BATS_TEST_NUMBER}_${fp}"
     make_case "$root" "$cmd"
-    # Keep enough headroom for the later mutation boundaries to be reached
-    # before the first startup probe observes the lease.
-    run env AUTO_DEPLOY_OWNER_LEASE_TTL=5 AUTO_DEPLOY_FAILPOINT="$fp" bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
+    # The separate competing-writer test covers the live-lease barrier. This
+    # loop uses an immediately recoverable lease to exercise every crash edge.
+    run env AUTO_DEPLOY_OWNER_LEASE_TTL=0 AUTO_DEPLOY_FAILPOINT="$fp" bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
     [ "$status" -ne 0 ]; observed=$((observed + 1))
     executable=$(rg -l '^  status: (assigned|acknowledged|in_progress)$' "$root/queue/tasks"/*.yaml | wc -l)
-    [ "$executable" -le 1 ] || lost=$((lost + 1))
+    [ "$executable" -le 1 ] || { echo "pre-reconcile boundary=$fp executable=$executable" >&3; lost=$((lost + 1)); }
     run env AUTO_DEPLOY_OWNER_STATE_ROOT="$root/logs/durable_state/auto_deploy_owner" \
       SHOGUN_STATE_DIR="$root/monitor-state" NINJA_MONITOR_STARTUP_RECONCILE_ONLY=1 \
       bash scripts/ninja_monitor.sh
-    case "$fp" in
-      after_pointer_before_tombstone|after_tombstone_before_activation|after_activation_before_published|after_published_before_terminal)
-        [ "$status" -ne 0 ] || { echo "startup unexpectedly succeeded at boundary=$fp output=$output"; false; }
-        sleep 5.1
-        run env AUTO_DEPLOY_OWNER_STATE_ROOT="$root/logs/durable_state/auto_deploy_owner" \
-          SHOGUN_STATE_DIR="$root/monitor-state" NINJA_MONITOR_STARTUP_RECONCILE_ONLY=1 \
-          bash scripts/ninja_monitor.sh
-        [ "$status" -eq 0 ]
-        ;;
-      *) [ "$status" -eq 0 ] ;;
-    esac
+    [ "$status" -eq 0 ]
     run bash "$root/scripts/auto_deploy_next.sh" --reconcile-owner-transactions
     [ "$status" -eq 0 ]
-    if [ "$(awk '/^  status:/{print $2}' "$root/queue/tasks/pending.yaml")" = assigned ]; then
+    pending_status=$(awk '/^  status:/{print $2}' "$root/queue/tasks/pending.yaml")
+    if [ "$pending_status" = pending ] || [ "$pending_status" = idle ]; then
       run bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
       [ "$status" -eq 0 ]
     fi
     executable=$(rg -l '^  status: (assigned|acknowledged|in_progress)$' "$root/queue/tasks"/*.yaml | wc -l)
-    [ "$executable" -eq 1 ] || lost=$((lost + 1))
+    [ "$executable" -eq 1 ] || { echo "post-reconcile boundary=$fp executable=$executable" >&3; lost=$((lost + 1)); }
     state=$(find "$root/logs/durable_state" -path '*/active/*/state.json' -type f | head -1)
     phase=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["phase"])' "$state")
     [ "$phase" = terminal ] || false_success=$((false_success + 1))
