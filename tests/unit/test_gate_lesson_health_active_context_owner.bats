@@ -135,8 +135,11 @@ run_case_gate() {
   [ "$(grep -Ec '^- L92[5-7]: fe$' "$root/context/dm-signal-frontend.md")" -eq 3 ]
   [ "$(grep -Ec '^- L92[3-4]: (gs|be)$' "$root/context/dm-signal-ops.md")" -eq 2 ]
 
-  sed -i 's/last_synced_lesson: L927/last_synced_lesson: L926/' "$root/context/dm-signal-frontend.md"
+  sed -i 's/last_synced_lesson: L922/last_synced_lesson: L0/' "$root/context/dm-signal.md"
+  sed -i 's/last_synced_lesson: L927/last_synced_lesson: L0/' "$root/context/dm-signal-frontend.md"
+  sed -i 's/last_synced_lesson: L924/last_synced_lesson: L0/' "$root/context/dm-signal-ops.md"
   run env LESSON_EFFECT_NTFY_ENABLED=0 bash "$root/scripts/gates/gate_lesson_health.sh" dm-signal
   echo "$output" >&3
-  [[ "$output" == *"未合流1件"* ]]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"未合流6件"* ]]
 }
