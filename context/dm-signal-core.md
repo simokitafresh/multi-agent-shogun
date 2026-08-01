@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-01 GA-422 RC corrected 1k boundary -->
-<!-- source_commit:3ee5c21ba62821e0aca571797f3ddb7ca4547d09 reason:GA-422 RC corrected 1k boundary evidence:10k StatementTooComplex rows0; 5c8a9cf 1k boundary reapplied by 3ee5c21b; production revalidation pending -->
+<!-- last_updated: 2026-08-01 cmd_karo_hotfix_dm_signal_dashboard_fof_stale_cash_20260801 reviewed source boundary -->
+<!-- source_commit:e2b3d19e reason:cmd_karo_hotfix_dm_signal_dashboard_fof_stale_cash_20260801 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=e2b3d19e -->
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 タスクに `project: dm-signal` がある場合このファイルを読め。パス: `/mnt/c/Python_app/DM-signal/`
 ## 0. 研究レイヤー構造

@@ -335,7 +335,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - （L650/L651/L653/L656→§8性能最適化、L654/L655→§2.5、L702/L704/L705→§11.5、L719→§5に振り分け済み 2026-06-16）
 - （L786/L792→§5、L796→§7、L798/L801→§8に振り分け済み 2026-07-16）
 - （L804/L850/L858/L873/L878/L880→ops/core、L861→research、L865/L867/L868/L890/L902→infraに振り分け済み 2026-07-16）
-<!-- last_synced_lesson: L919 -->
+<!-- last_synced_lesson: L925 -->
 - L906: lint修正時もmasked表示のkey一意性を保持する（cmd_4116）
 - L907: 共有style定数化では既存formatter debtを先に分離する（cmd_4117）
 - L910: mobile表は文字列列を先に圧縮し数値列をnowrap固定する（cmd_4139）
@@ -345,6 +345,8 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - L914: overflow-x-autoは縦stickyの中立祖先ではない（cmd_karo_hotfix_three_tables_page_sticky_20260724）
 - L915: 文字列一致contract testはsource変更commitのscope外だと静かに陳腐化する（cmd_karo_hotfix_n2_deterioration_sticky_20260724）
 - L919: logical flushの前処理はphysical chunk外で1回化する（cmd_karo_hotfix_fullrecalc_deferred_flush_extreme_runtime_ready_20260729）
+- L924: 非支配的最適化撤回がimmutable artifact契約を破壊（cmd_karo_hotfix_dm_signal_l3_monthly_restore_20260801）
+- L925: TTLだけではsource更新後のartifact鮮度を保証できない（cmd_karo_hotfix_dm_signal_dashboard_fof_stale_cash_20260801）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 
