@@ -2383,6 +2383,56 @@ EOF
     [ ! -s "$TEST_PROJECT/notify.log" ]
 }
 
+@test "gunshi verdict pre-check scans newest blocks first and stops at first success" {
+    # test_necessity: pre-check must preserve chronological verdict semantics while
+    # avoiding reads of older ~240KB logs after a resolving success is found.
+    local fixture="$BATS_TEST_TMPDIR/verdict-tail"
+    local py="$fixture/precheck.py"
+    mkdir -p "$fixture/archive"
+    awk '/^import sys, re, os, glob$/ {capture=1} capture {print} /^END_GV_PRECHECK_PY$/ {exit}' \
+        "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" | sed '$d' > "$py"
+
+    cat > "$fixture/archive/gunshi_review_log_001_old.yaml" <<'EOF'
+- cmd_id: cmd_fixture
+  review_type: draft
+  verdict: FAIL
+  findings_summary: "old failure"
+EOF
+    cat > "$fixture/archive/gunshi_review_log_002_new.yaml" <<'EOF'
+- cmd_id: cmd_fixture
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  findings_summary: "resolved request"
+- cmd_id: cmd_fixture
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "new success"
+EOF
+    cat > "$fixture/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_other
+  review_type: draft
+  verdict: FAIL
+  findings_summary: "unrelated"
+EOF
+
+    run python3 "$py" cmd_fixture "$fixture/gunshi_review_log.yaml" "$fixture/archive"
+    [ "$status" -eq 0 ]
+    [ "$output" = "OK" ]
+
+    cat >> "$fixture/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_fixture
+  review_type: draft
+  verdict: FAIL
+  findings_summary: "newest failure"
+EOF
+    run python3 "$py" cmd_fixture "$fixture/gunshi_review_log.yaml" "$fixture/archive"
+    [ "$status" -eq 0 ]
+    [[ "$output" == WARN* ]]
+    [[ "$output" == *"newest failure"* ]]
+    [[ "$output" != *"old failure"* ]]
+    [[ "$output" != *"resolved request"* ]]
+}
+
 @test "update_karo_workaround_resolutions fills unresolved matching categories only" {
     export GATE_METRICS_LOG="$TEST_PROJECT/logs/gate_metrics.log"
     export KARO_WORKAROUNDS_FILE="$TEST_PROJECT/logs/karo_workarounds.yaml"

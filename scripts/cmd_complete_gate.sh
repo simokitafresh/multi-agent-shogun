@@ -9143,52 +9143,76 @@ cmd_id = sys.argv[1]
 review_log = sys.argv[2]
 archive_dir = sys.argv[3]
 
-sources = []
+# Newest file first.  Each file is scanned from its tail so a resolving
+# LGTM/APPROVE stops all older I/O immediately.
 archives = sorted(glob.glob(os.path.join(archive_dir, "gunshi_review_log*.yaml")))
-sources.extend(archives[-2:])
+sources = []
 if os.path.exists(review_log):
     sources.append(review_log)
+sources.extend(reversed(archives[-2:]))
 
-# Archive is older than the live log and entries are append-ordered within each
-# file.  A later LGTM/APPROVE resolves earlier FAIL/REQUEST_CHANGES; only a
-# failure occurring after the latest success remains actionable.
-events = []
+def reverse_blocks(path, chunk_size=65536):
+    """Yield top-level ``- cmd_id:`` blocks newest-first without full read."""
+    with open(path, 'rb') as f:
+        f.seek(0, os.SEEK_END)
+        pos = f.tell()
+        carry = b''
+        lines = []
+        while pos:
+            size = min(chunk_size, pos)
+            pos -= size
+            f.seek(pos)
+            data = f.read(size) + carry
+            parts = data.split(b'\n')
+            carry = parts.pop(0)
+            for raw in reversed(parts):
+                line = raw.decode('utf-8', errors='replace')
+                if re.match(r'^- cmd_id:', line):
+                    lines.append(line)
+                    yield '\n'.join(reversed(lines))
+                    lines = []
+                else:
+                    lines.append(line)
+        if carry or lines:
+            line = carry.decode('utf-8', errors='replace')
+            if line:
+                lines.append(line)
+            if lines:
+                yield '\n'.join(reversed(lines))
+
+fail_verdicts = []
+resolved = False
 for src in sources:
     try:
-        with open(src, encoding='utf-8') as f:
-            content = f.read()
-    except Exception:
-        continue
-    for m in re.finditer(r'^- cmd_id:.*?(?=^- cmd_id:|\Z)', content, re.MULTILINE | re.DOTALL):
-        entry = m.group(0)
-        cm = re.match(r'^- cmd_id:\s*["\']?([^"\'\n]+)["\']?', entry)
-        if not cm or cm.group(1).strip() != cmd_id:
-            continue
-        # self_study/consultationは対象外
-        rt_m = re.search(r'review_type:\s*(\S+)', entry)
-        if rt_m:
-            rt = rt_m.group(1).strip('"\'')
+        blocks = reverse_blocks(src)
+        for entry in blocks:
+            cm = re.match(r'^- cmd_id:\s*["\']?([^"\'\n]+)["\']?', entry)
+            if not cm or cm.group(1).strip() != cmd_id:
+                continue
+            rt_m = re.search(r'review_type:\s*(\S+)', entry)
+            rt = rt_m.group(1).strip('"\'') if rt_m else 'unknown'
             if rt in ('self_study', 'consultation'):
                 continue
-        vm = re.search(r'(?<![a-z_])verdict:\s*(\S+)', entry)
-        if not vm:
-            continue
-        v = vm.group(1).strip('"\'')
-        fs_m = re.search(r'findings_summary:\s*"([^"]*)"', entry)
-        fs = fs_m.group(1) if fs_m else '(findings_summary not found)'
-        rt_label = rt if rt_m else 'unknown'
-        events.append((rt_label, v, fs))
-
-last_success = max(
-    (idx for idx, (_rt, verdict, _fs) in enumerate(events) if verdict in ('LGTM', 'APPROVE')),
-    default=-1,
-)
-fail_verdicts = [
-    event for idx, event in enumerate(events)
-    if idx > last_success and event[1] in ('FAIL', 'REQUEST_CHANGES')
-]
+            vm = re.search(r'(?<![a-z_])verdict:\s*(\S+)', entry)
+            if not vm:
+                continue
+            verdict = vm.group(1).strip('"\'')
+            if verdict in ('LGTM', 'APPROVE'):
+                resolved = True
+                break
+            if verdict in ('FAIL', 'REQUEST_CHANGES'):
+                fs_m = re.search(r'findings_summary:\s*"([^"]*)"', entry)
+                fs = fs_m.group(1) if fs_m else '(findings_summary not found)'
+                fail_verdicts.append((rt, verdict, fs))
+        if resolved:
+            break
+    except (OSError, ValueError):
+        continue
 
 if fail_verdicts:
+    # Preserve the historical oldest-to-newest display order even though I/O
+    # discovery runs newest-first.
+    fail_verdicts.reverse()
     print("WARN")
     for rt_label, v, fs in fail_verdicts:
         print(f"  [{rt_label}] verdict={v}: {fs}")
