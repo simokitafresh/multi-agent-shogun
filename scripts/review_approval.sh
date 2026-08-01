@@ -85,6 +85,12 @@ base="$ROOT/queue/gates/$cmd_id/review_approvals"
 mkdir -p "$base"
 exec 200>"$base/.lock"; flock -w 10 200
 fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$fail_close" review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
+# Finalize telemetry joins against SG7 review.report_fingerprint, whose contract
+# is the SHA-256 of the report's exact bytes.  The approval fingerprint above is
+# intentionally normalized for review stability and therefore is not the same
+# lifecycle generation.
+canonical_generation=$(sha256sum "$report" | awk '{print $1}')
+[[ "$canonical_generation" =~ ^[0-9a-f]{64}$ ]] || { echo "BLOCK: canonical report generation unavailable: $report" >&2; exit 1; }
 report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_logical")
 dir="$base/reports/$report_key"; mkdir -p "$dir"
 # An RC means the reviewed implementation was not acceptable.  Re-submitting
@@ -318,12 +324,12 @@ case "$role:$result" in
   gunshi:LGTM)
     defense_overhead_write review_approval gunshi_lgtm 0 PASS \
       "review-approval-gunshi-lgtm-${cmd_id}-${report_key}-${fingerprint}" \
-      "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${fingerprint}\"}" || true
+      "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
     ;;
   karo:ACCEPT)
     defense_overhead_write review_approval karo_accept 0 PASS \
       "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" \
-      "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${fingerprint}\"}" || true
+      "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
     ;;
 esac
 if [ "$role" = karo ] && [ "$result" = RC ]; then
