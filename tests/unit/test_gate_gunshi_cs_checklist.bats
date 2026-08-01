@@ -244,3 +244,88 @@ EOF
     [ "$status" -eq 2 ]
     [[ "$output" == *"invalid remediation target"* ]]
 }
+
+# test_necessity: archived review generations and terminal tombstones are the
+# durable identity boundary after active-log compaction.
+@test "remediationはarchive generationを解決し曖昧・staleをBLOCKしterminal tombstoneへ収束する" {
+    mkdir -p "$TEST_TMPDIR/logs/archive"
+    cat > "$TEST_TMPDIR/logs/archive/gunshi_review_log_gen1.yaml" <<'EOF'
+- cmd_id: cmd_archived
+  review_type: draft
+  reviewed_at: "2026-08-01T00:01:00+09:00"
+  verdict: REQUEST_CHANGES
+  hole_action: no
+EOF
+    cat > "$LOG_UNDER_TEST" <<'EOF'
+- cmd_id: remediation_archived
+  review_type: self_study
+  remediation:
+    target_cmd_id: cmd_archived
+    target_review_type: draft
+    target_reviewed_at: "2026-08-01T00:01:00+09:00"
+    target_generation: gunshi_review_log_gen1.yaml
+    fields: {hole_action: d0_implemented}
+    evidence: ["queue/reports/evidence.yaml:42"]
+EOF
+    run bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    [[ "$output" != *"BLOCK(remediation)"* ]]
+
+    sed -i 's/gunshi_review_log_gen1.yaml/gunshi_review_log_stale.yaml/' "$LOG_UNDER_TEST"
+    run bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(remediation)"* ]]
+
+    cat >> "$LOG_UNDER_TEST" <<'EOF'
+- cmd_id: tombstone_archived
+  review_type: self_study
+  terminal_tombstone:
+    target_remediation_cmd_id: remediation_archived
+    reason: stale generation is terminal
+    evidence: ["logs/archive/gunshi_review_log_gen1.yaml:1"]
+EOF
+    run bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    [[ "$output" != *"BLOCK(remediation)"* ]]
+}
+
+# test_necessity: concurrent gate readers must never observe the partial state
+# between append and archive publication of one review-log generation.
+@test "append archiveとgate同時実行はgeneration lockでpartial readとlost updateを0にする" {
+    mkdir -p "$TEST_TMPDIR/logs/archive"
+    cat > "$LOG_UNDER_TEST" <<'EOF'
+- cmd_id: cmd_base
+  review_type: self_study
+  observations:
+    - "base"
+  cs_checklist: {CS1: one, CS2: two, CS3: three, CS4: four, CS5: five, CS6: six}
+  causal_chain: "a -> b -> c"
+  operational_simulation: {command: probe, expected: pass, actual: pass, result: PASS}
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; 1/1"
+EOF
+    for i in $(seq 1 20); do
+        (bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh" >"$TEST_TMPDIR/gate.$i" 2>&1) &
+        pids="$pids $!"
+    done
+    for i in $(seq 1 10); do
+        GUNSHI_VALIDATE_ONLY=0 bash "$TEST_TMPDIR/scripts/gunshi_log_append.sh" <<EOF &
+- cmd_id: cmd_append_$i
+  review_type: self_study
+  observations:
+    - "append $i"
+  cs_checklist: {CS1: one, CS2: two, CS3: three, CS4: four, CS5: five, CS6: six}
+  causal_chain: "a -> b -> c"
+  operational_simulation: {command: probe, expected: pass, actual: pass, result: PASS}
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; 1/1"
+EOF
+        pids="$pids $!"
+    done
+    for pid in $pids; do wait "$pid"; done
+    run python3 - "$LOG_UNDER_TEST" <<'PY'
+import sys,yaml
+x=yaml.safe_load(open(sys.argv[1]))
+assert isinstance(x,list)
+assert len([v for v in x if isinstance(v,dict) and str(v.get('cmd_id','')).startswith('cmd_append_')]) == 10
+PY
+    [ "$status" -eq 0 ]
+    run grep -l 'Traceback\|YAML parse\|partial' "$TEST_TMPDIR"/gate.*
+    [ "$status" -eq 1 ]
+}

@@ -1,1290 +1,4 @@
 - cmd_id: cmd_4199
-- cmd_id: cmd_karo_hotfix_shogun_mem_citation_enforcement_20260731
-  review_type: report
-  verdict: FAIL
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no検出; lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T21:58:17+09:00"
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_shogun_mem_citation_enforcement_20260731.yaml
-  report_id: rpt-db723669-544f-480c-8661-4ffd647001e4
-  report_fingerprint: fe0df1c1845b6478cfa033138059bab6f4ac27c27fff550151cb39dec492ab65
-  worker: tobisaru
-  project: infra
-  changed_lines: 0
-  observations:
-    - "事実1: stop_check_inbox.sh:451-456にpreflight済み・非定型・MEMタグ欠落を送信前BLOCKする既存契約が実在"
-    - "事実2: task帰属testを独立再実行し72/72 PASS、FAIL0、SKIP0。専用T-SCI-MEM-001..004は欠落BLOCK・タグ付PASS・免除2種PASS"
-    - "事実3: 報告は実運用の非定型応答10/10件でMEMタグ欠落を記録し、AC1停止条件に従い変更0・commitなし・AC4 noとしている"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "PASS: 警告止まりという実装前提は誤り。既存送信前BLOCKを現物とfixtureで確認"
-  numbers_review: "PASS: 独立再実行72/72 PASS・SKIP0、MEM分類4/4。報告の実運用欠落10/10は未解消"
-  premortem_review: "FAIL: 同じBLOCKを追加しても実運用到達経路がhookを通らなければ引用率0%は継続する"
-  north_star_review: "FAIL: 送信前行動変換の実装自体は既存だが、実運用の欠落0件化を達成していない"
-  adversarial_review: "PASS: 既存hook条件をコードで確認し、task選択testを独立再実行して陽性・陰性4分類を検証"
-  ambiguity_points: "既存fixture PASSと実運用欠落は矛盾ではなく、CLI hook登録・payload・preflight鮮度の到達経路差を示す。別RCで切り分けが必要"
-  verified_files:
-    - "scripts/hooks/stop_check_inbox.sh:451"
-    - "tests/unit/test_stop_check_inbox.bats:808"
-  operational_simulation:
-    command: "bash scripts/run_tests.sh task queue/tasks/tobisaru.yaml"
-    expected: "選択2 batsがFAIL0 SKIP0、MEM fixtureで欠落BLOCK・タグ付PASS・免除PASS"
-    actual: "2 files、72/72 PASS、FAIL0、SKIP0。T-SCI-MEM-001..004全PASS"
-    result: PASS
-  brainwash_check: "#1no(precheck後も実走) #2no(72件実測) #3no(独立実行) #4no(全4分類維持) #5no(未達を別根因で閉じずFAIL) #6no(報告だけでなくhook現物確認) #7no(選択全72維持) #8no(AC4 noをLGTMにしない)。変更0件、未達AC1件"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T21:56:37]"
-  sg_checklist:
-    SG1_ac_coverage: FAIL
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_4200
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:11:45+09:00
-  verdict: FAIL
-  gate_prediction: CLEAR
-  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T22:06:45+09:00"
-  report_path: queue/reports/kagemaru_report_cmd_4200.yaml
-  report_id: rpt-96969003-ffc2-4d37-8100-69b1c04ca3b0
-  report_fingerprint: a240c5b6d350366970e576be7b85279b0def3be66ba78a0f728540a52bddbfb8
-  commit_hash: 9cd7fb3ef713554601de06388eb9d80393895622
-  worker: kagemaru
-  project: infra
-  changed_lines: 434
-  observations:
-    - "事実1: commitは計画3ファイルのみ+434/-0、focused testは独立再実行4/4 PASS・SKIP0"
-    - "事実2: _subject_dirと_lock_pathはsubject_type/subject_idを未検証でPath/filenameへ直接連結"
-    - "事実3: 隔離probeでsubject_type=../..を与えるとrc=0、declared root state=0、別tmp root state.json=yesとなりroot境界外writeを再現"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "FAIL: callerが安全なsubject identityだけを渡す前提に依存し、基盤自身がroot containmentを強制していない"
-  numbers_review: "FAIL: focused test4/4は通るが敵対path 1/1でroot外write成功。安全性母数にpath変形が欠落"
-  premortem_review: "FAIL: caller由来IDにpath separator/traversalが混入するとproduction root外の任意相対位置へstateを生成し得る"
-  north_star_review: "FAIL: 隔離可能な単一WAL rootというFoundationの最上位境界を満たさない"
-  adversarial_review: "FAIL: subject_type traversal probeがrc0で別rootへstate.jsonを生成。絶対subject_idはtraceback rc1だったが正規化拒否ではない"
-  ambiguity_points: "assigned_acsはAC2のみだが、隔離root境界はtask constraintsとFoundation採用条件でありAC1後回しでは許容不可"
-  verified_files:
-    - "scripts/lib/durable_state.py:81"
-    - "scripts/lib/durable_state.py:93"
-    - "tests/unit/test_durable_state.bats:15"
-  operational_simulation:
-    command: "2つのmktemp rootを作り durable_state.sh begin <declared_root> ../.. <other_root_basename> attempt payload を実行後、両rootのstate.jsonを計数"
-    expected: "不正subject identityを非0で拒否し、declared root外state生成0"
-    actual: "rc=0、outside_state_exists=yes、declared_root_state_count=0"
-    result: FAIL
-  brainwash_check: "#1no(precheck CLEARで終了せず) #2no(実CLI実走) #3no(独立probe) #4no(通常4件+敵対2件) #5no(境界違反を即FAIL) #6no(test出力だけでなくfilesystem確認) #7no(AC2全実装維持) #8no(完了急がず差戻し)。通常4/4 PASSだがtraversal 1/1成功"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T22:03:55]"
-  sg_checklist:
-    SG1_ac_coverage: FAIL
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: FAIL
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: FAIL
-    SG7_gate_prediction: FAIL
-- cmd_id: cmd_4200
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:11:45+09:00
-  verdict: FAIL
-  gate_prediction: CLEAR
-  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T22:14:04+09:00"
-  report_path: queue/reports/kagemaru_report_cmd_4200.yaml
-  report_id: rpt-96969003-ffc2-4d37-8100-69b1c04ca3b0
-  report_fingerprint: 39c73b224d09d68bef3a723644722ffb6b4342c98f532c82fd9b2407e4c7305e
-  commit_hash: b0d2a42f0dd3ff0124056a8d49ba7a3484d65d54
-  worker: kagemaru
-  project: infra
-  changed_lines: 939
-  observations:
-    - "事実1: 再提出版focused testは11/11 PASS・SKIP0だが、前回差戻しのpath変形契約はtest集合に未追加"
-    - "事実2: 現行 _subject_dir/_lock_path/_lease_path はsubject_type/subject_idを未検証でPathへ連結したまま"
-    - "事実3: 再提出commit上でもsubject_type=../..の隔離probeがrc0、declared root state0、別tmp root state.json=yesを再現"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "FAIL: safe identity入力をcaller任せにしたままでFoundation自身がroot containmentを保証しない"
-  numbers_review: "FAIL: 通常11/11 PASSに対し、前回FAIL変形1/1が再度成功。回帰集合への追加0件"
-  premortem_review: "FAIL: lease/reconciler/outboxを増やしても共有identity pathが境界外へ逃げればWAL隔離全体が崩れる"
-  north_star_review: "FAIL: 隔離可能な単一WAL root契約を未達のままAC3-AC5を拡張している"
-  adversarial_review: "FAIL: 前回と同一path traversal probeを最新commitへ再適用しroot外writeを再現"
-  ambiguity_points: "家老RCで追加されたAC3-AC5成果は独立に有用だが、軍師の前回containment差戻しは未解消。成果保持の上でidentity境界のみ是正要"
-  verified_files:
-    - "scripts/lib/durable_state.py:81"
-    - "scripts/lib/durable_state.py:93"
-    - "scripts/lib/durable_state.py:241"
-  operational_simulation:
-    command: "最新commitで2つのmktemp rootを作り durable_state.sh begin declared_root ../.. other_root_basename attempt payload を実行し両rootのstateを計数"
-    expected: "非0拒否、declared root外state生成0"
-    actual: "rc=0、outside_state_exists=yes、declared_root_state_count=0"
-    result: FAIL
-  brainwash_check: "#1no(precheck CLEARで終了せず) #2no(最新commit実走) #3no(同一probe独立再実行) #4no(通常11+敵対1) #5no(再発即FAIL) #6no(report出力でなくfilesystem確認) #7no(既存11件維持) #8no(拡張完了に惑わされず差戻し)。通常11/11 PASS、containment 0/1"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T22:12:46]"
-  sg_checklist:
-    SG1_ac_coverage: FAIL
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: FAIL
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: FAIL
-    SG7_gate_prediction: FAIL
-- cmd_id: cmd_4200
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:11:45+09:00
-  verdict: FAIL
-  gate_prediction: CLEAR
-  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T22:26:13+09:00"
-  report_path: queue/reports/kagemaru_report_cmd_4200.yaml
-  report_id: rpt-96969003-ffc2-4d37-8100-69b1c04ca3b0
-  report_fingerprint: 557698dfa486d569b94e4a5733f07ee55ef58ebffc9cdea59dfbff4100282acf
-  commit_hash: c737601f95eab8c007764d2e0da5c16692e6bc3b
-  worker: kagemaru
-  project: infra
-  changed_lines: 295
-  observations:
-    - "事実1: 前回path traversalはInvalidIdentityErrorで拒否、固定outbox symlinkも拒否し外部files0。containment RCは解消"
-    - "事実2: outbox_apply_onceはapply_fn例外時にfailedを永続化し、次回failed状態を再びinflightへ変えてapply_fnを再実行"
-    - "事実3: 外部効果append後にack喪失例外を模擬し同一keyをretryするとeffect_count2、final_state=appliedを再現"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "FAIL: apply_fn例外なら外部効果未発生という前提は成立しない。効果後ack喪失は結果不明"
-  numbers_review: "FAIL: 通常retry/並列testは1回だが、unknown-result retryは1 keyでeffect 2回"
-  premortem_review: "FAIL: delivery providerが処理済み後にtimeoutするとfailed再試行が二重配送を起こす"
-  north_star_review: "FAIL: provider receiptなしをexactly-onceと称さない設計契約に対し、二重applied0を保証できない"
-  adversarial_review: "FAIL: effect実行後に例外を投げ、同一key成功retryまで実行して二重効果を再現"
-  ambiguity_points: "containment RCは完全解消。今回のFAILはAC4の結果不明窓のみであり、AC1-AC3/AC5成果は保持可能"
-  verified_files:
-    - "scripts/lib/durable_state.py:437"
-    - "scripts/lib/durable_state.py:451"
-    - "scripts/lib/durable_state.py:456"
-  operational_simulation:
-    command: "outbox_reserve後、apply_fnで効果を記録して例外を送出し、同一keyを成功apply_fnで再試行"
-    expected: "同一keyの外部効果回数1以下、結果不明時は自動再実行しない"
-    actual: "unknown_result_retry_effect_count=2 final_state=applied"
-    result: FAIL
-  brainwash_check: "#1no(containment PASSで終了せず) #2no(AC4関数実走) #3no(独立failure injection) #4no(1 key全状態確認) #5no(新欠陥即FAIL) #6no(test13件出力だけでなく効果回数計測) #7no(既存成果保持) #8no(三度目でも承認を急がず)。containment2/2 PASS、unknown retry effect1→2"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T22:24:20]"
-  sg_checklist:
-    SG1_ac_coverage: FAIL
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: FAIL
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: FAIL
-    SG7_gate_prediction: FAIL
-- cmd_id: cmd_4200
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:11:45+09:00
-  verdict: FAIL
-  gate_prediction: CLEAR
-  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T22:31:49+09:00"
-  report_path: queue/reports/kagemaru_report_cmd_4200.yaml
-  report_id: rpt-96969003-ffc2-4d37-8100-69b1c04ca3b0
-  report_fingerprint: 2a41c3fb15fb63b6f6c0abaa41e678f6f1acbdb30a67726cdf614c6e42850551
-  commit_hash: c61ed4aa006cbe1c94553b020427f6712b1bb91b
-  worker: kagemaru
-  project: infra
-  changed_lines: 123
-  observations:
-    - "事実1: 最新commitはtest内のproject外再帰削除を0件化し、per-iteration fresh rootへ改善"
-    - "事実2: outbox_apply_onceのinflight→apply_fn→例外時failed→retry再実行ロジックは前版から未変更"
-    - "事実3: 最新commitへ同じunknown-result probeを適用しeffect_count2、final_state=appliedを再現"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "FAIL: test安全RCがAC4差戻しも解消したという前提は成立しない"
-  numbers_review: "FAIL: 明示的project外再帰削除は0件化したが、unknown-result 1 keyのeffectは2回"
-  premortem_review: "FAIL: provider処理済み後のtimeoutで同一deliveryが再送される"
-  north_star_review: "FAIL: AC4の二重applied0件契約は未達のまま"
-  adversarial_review: "FAIL: 最新commitに前回と同一effect-after-error retry probeを再実行し再現"
-  ambiguity_points: "今回のtest安全RCは承認可能だが、前回AC4差戻しとは別軸。安全改善は保持しoutboxのみ修正要"
-  verified_files:
-    - "scripts/lib/durable_state.py:437"
-    - "scripts/lib/durable_state.py:451"
-    - "scripts/lib/durable_state.py:458"
-  operational_simulation:
-    command: "reserve後にeffect記録→例外→同一key成功retryを最新commitで隔離実行"
-    expected: "effect_count<=1、結果不明状態を再実行しない"
-    actual: "unknown_result_retry_effect_count=2 final_state=applied"
-    result: FAIL
-  brainwash_check: "#1no(別RC完了で早期終了せず) #2no(AC4実走) #3no(同一probe独立再実行) #4no(1 key全遷移) #5no(未修正即FAIL) #6no(reportではなくeffect回数確認) #7no(安全RC成果保持) #8no(四度目でも承認を急がず)。project外再帰削除4→0、effect1→2"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T22:30:56]"
-  sg_checklist:
-    SG1_ac_coverage: FAIL
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: FAIL
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: FAIL
-    SG7_gate_prediction: FAIL
-- cmd_id: cmd_karo_hotfix_shogun_mem_citation_runtime_rc_20260731
-  review_type: draft
-  verdict: LGTM
-  reviewed_at: "2026-07-31T22:38:40+09:00"
-  summary: "CLI別実経路切分け→最小修正→実Stop payload検証の順序は妥当。AC4 N=10固定とstale定義明記を条件にLGTM"
-  observations:
-    - "事実1: .codex/hooks.json現物にはPreToolUse/SessionStart/UserPromptSubmit/PostToolUseのみでStop登録0件"
-    - "事実2: stop_check_inbox.sh:453には既存MEM欠落BLOCKがあるため、実装不足でなくCodex到達経路乖離を調べるAC1は妥当"
-    - "事実3: 修正前母数は非定型実応答10件。修正後0/NのNを10へ固定しないと探索縮小で偽PASS可能"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "PASS: Stop hook実登録なしを一次確認。既存関数反復でなくCodex entrypoint/payload境界を対象化"
-  numbers_review: "CONDITION: 修正前10/10と同一corpusで修正後0/10を必須化。N可変は禁止"
-  premortem_review: "CONDITION: staleのTTL/clock基準と、stale時BLOCKまたは再preflightの期待動作をfixture前に固定"
-  north_star_review: "PASS: 検出ログ追加ではなく実応答送信前の行動変換をAC2へ固定"
-  adversarial_review: "PASS: Codex/Claude entrypoint、payload有無、fresh/stale、routine/nonroutine、tag有無を分離可能"
-  ambiguity_points: "AC4のN、AC3のstale閾値とfail-closed具体動作が未固定。N=10・TTL/期待exitをtask実装証跡へ明記要"
-  verified_files:
-    - ".codex/hooks.json:1"
-    - "scripts/hooks/stop_check_inbox.sh:453"
-    - "queue/tasks/tobisaru.yaml:4"
-  operational_simulation:
-    command: "jq .hooks .codex/hooks.json と rg Stop/preflight/last_assistant_message を対象4pathへ実行"
-    expected: "Codex実登録と既存MEM BLOCK関数の到達差を特定可能"
-    actual: "Codex Stop registration=0、既存stop_check MEM BLOCK実装=1"
-    result: PASS
-  brainwash_check: "#1no(draft文面で終了せずhooks現物確認) #2no(jq/rg実測) #3no(自己確認) #4no(修正前10件維持) #5no(N曖昧を即条件化) #6no(log+家老通知まで実行) #7no(Codex/Claude経路を分離) #8no(in_progressでもレビュー省略せず)。Stop登録0、既存BLOCK1、再検証母数10"
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: N/A
-    SG3_parity: N/A
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_4200
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:11:45+09:00
-  verdict: FAIL
-  gate_prediction: CLEAR
-  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T22:40:44+09:00"
-  report_path: queue/reports/kagemaru_report_cmd_4200.yaml
-  report_id: rpt-96969003-ffc2-4d37-8100-69b1c04ca3b0
-  report_fingerprint: 76499dcd7f7c05a1b1a5242bc2bc61ea89aac6fe7bac09bc7e49c00381b22a4d
-  commit_hash: cbaf8bc16b1c2666c18fbf492dcd24293c149541
-  worker: kagemaru
-  project: infra
-  changed_lines: 445
-  observations:
-    - "事実1: apply_fn例外時はfailed+outcome_unknownとなり同一key retryを拒否、effect_count1。前回RCは解消"
-    - "事実2: process crash時は永続recordがinflightのまま残るが、outbox_apply_onceはinflightを結果不明扱いしない"
-    - "事実3: effect発生済みinflight fixtureから再起動retryするとeffect_count2、final_state=appliedを再現"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "FAIL: apply_fn例外が必ずprocess内で捕捉される前提。強制終了/crashではfailed更新前のinflightが残る"
-  numbers_review: "FAIL: caught-exception effect1はPASS、persisted-inflight restart effect2はFAIL"
-  premortem_review: "FAIL: provider処理後・receipt永続化前のprocess停止で再起動workerが同一deliveryを再送する"
-  north_star_review: "FAIL: crash・retry後も決定的収束させるWAL基盤目的とAC4二重applied0を未達"
-  adversarial_review: "FAIL: effect発生済みを表すpersisted inflight recordを構成し、restart後applyを実行して二重効果を再現"
-  ambiguity_points: "例外捕捉RCは承認可能。残るFAILはprocess crashでpersisted inflightとなる窓のみ"
-  verified_files:
-    - "scripts/lib/durable_state.py:437"
-    - "scripts/lib/durable_state.py:451"
-    - "scripts/lib/durable_state.py:456"
-  operational_simulation:
-    command: "reserve recordをeffect発生済みinflightとして永続化し、再起動相当のoutbox_apply_onceを同一keyで実行"
-    expected: "inflightを結果不明として自動retry拒否、effect_count1"
-    actual: "persisted_inflight_restart_effect_count=2 final_state=applied"
-    result: FAIL
-  brainwash_check: "#1no(前回RC PASSで終了せず) #2no(crash state実走) #3no(隔離fixture) #4no(exception/crash2経路) #5no(新窓即FAIL) #6no(reportでなくeffect回数確認) #7no(既存RC成果保持) #8no(五度目でも承認を急がず)。exception effect1、crash effect2"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T22:37:47Z]"
-  sg_checklist:
-    SG1_ac_coverage: FAIL
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: FAIL
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: FAIL
-    SG7_gate_prediction: FAIL
-- cmd_id: cmd_karo_hotfix_shogun_mem_citation_runtime_rc_20260731
-  review_type: report
-  verdict: FAIL
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no検出"
-  reviewed_at: "2026-07-31T22:44:20+09:00"
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_shogun_mem_citation_runtime_rc_20260731.yaml
-  report_id: rpt-9f4ab02f-d8e2-42c0-ae50-3e4e7a8638ad
-  report_fingerprint: e84320552c17cc1a4ab1a6d9f8e4fb4ab38fd9ae4f5d0dfef7d18353f75c8950
-  worker: tobisaru
-  project: infra
-  changed_lines: 0
-  observations:
-    - "事実1: .codex/hooks.jsonのStop登録0件、gate_codex_hooks_no_stop.shはPASS。Stop block禁止は現行不変量"
-    - "事実2: stop_check_inbox.shのMEM欠落BLOCK実装は存在するが、Codex final response経路から到達しない"
-    - "事実3: has_successful_three_layer_preflightはstatus/3層rcのみ検査しissued_at/TTL未検査。stale fixtureはPASSしfail-close 0/1"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "PASS: Codex Stopを登録すれば安全という前提を一次情報で否定し、禁止経路を実装しなかった"
-  numbers_review: "PASS: task tests61/61 SKIP0、4分類中stale fail-close0/1、実運用欠落10/10、修正後0/10未達"
-  premortem_review: "PASS: 禁止Stop登録なら無限re-prompt、現状維持ならMEM欠落継続。安全な別adapter設計が必要"
-  north_star_review: "FAIL: 実運用経路で欠落0/10への行動変換は未達"
-  adversarial_review: "PASS: Codex hook policy、Stop payload4分類、fresh/stale、routine/tag有無を分離して検証"
-  ambiguity_points: "現CLI能力内にfinal response直前の安全なBLOCK eventがない。公式event/daemonでの等価保証方式は別裁定要"
-  verified_files:
-    - ".codex/hooks.json:1"
-    - "scripts/gates/gate_codex_hooks_no_stop.sh:20"
-    - "scripts/hooks/stop_check_inbox.sh:25"
-  operational_simulation:
-    command: "gate_codex_hooks_no_stop.sh、task帰属test、実Stop payload4分類を独立実行"
-    expected: "Stop禁止PASS、61/61 SKIP0、欠落BLOCK・正規PASS・定型PASS・stale BLOCK"
-    actual: "Stop禁止PASS、61/61 SKIP0、欠落BLOCK・正規PASS・定型PASS・stale PASS"
-    result: FAIL
-  brainwash_check: "#1no(正直FAILをLGTM化せず) #2no(gate/test実走) #3no(自己検証) #4no(同一10件維持) #5no(不可能経路を別設計へ明示) #6no(reportだけでなく現物確認) #7no(4分類全数) #8no(禁止Stop実装を急がず)。Stop登録0、tests61/61、stale0/1、修正後0/10未達"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T22:43:06]"
-  sg_checklist:
-    SG1_ac_coverage: FAIL
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_4200
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:11:45+09:00
-  verdict: LGTM
-  gate_prediction: CLEAR
-  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T22:47:38+09:00"
-  report_path: queue/reports/kagemaru_report_cmd_4200.yaml
-  report_id: rpt-96969003-ffc2-4d37-8100-69b1c04ca3b0
-  report_fingerprint: 8e4a49010eaaba65c7e03c59b7d53e921fc6fe6378e490bd99d3bd44e7e0c518
-  commit_hash: 4c89d38ca38af0869ffb6a9b2aa7ae2651f40b65
-  worker: kagemaru
-  project: infra
-  changed_lines: 245
-  observations:
-    - "事実1: persisted inflight再試行はOutcomeUnknownErrorで拒否され、effect_count1・outcome_unknown=true"
-    - "事実2: provider receipt reconcileは再実行なしでapplied、not-executed proofはreserved復帰後のfresh applyでeffect1"
-    - "事実3: focused testを非cacheで独立再実行し17/17 PASS、FAIL0、SKIP0。containment・symlink・outbox crash全契約PASS"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "PASS: 例外捕捉だけでなくhard crash後のon-disk inflightを結果不明として扱う"
-  numbers_review: "PASS: tests17/17、SKIP0、crash retry effect1、provider/not-executed両分岐effect重複0"
-  premortem_review: "PASS: effect後・receipt永続前の停止でも自動retryせずprovider evidenceへ収束"
-  north_star_review: "PASS: crash/retry後の決定的収束と二重applied0をFoundation層で固定"
-  adversarial_review: "PASS: persisted inflight、例外ack loss、provider receipt、not-executed proof、path traversal、symlink escapeを独立実走"
-  ambiguity_points: "provider evidenceの真正性はcaller/provider adapter責務。primitiveは非空証拠を要求し自動retryを禁止する境界まで担当"
-  verified_files:
-    - "scripts/lib/durable_state.py:437"
-    - "scripts/lib/durable_state.py:477"
-    - "tests/unit/test_durable_state.bats:210"
-  operational_simulation:
-    command: "persisted inflight fixtureのretry拒否と2種reconcile分岐を直接実行し、続けてrun_tests.sh task queue/tasks/kagemaru.yamlを非cache実行"
-    expected: "crash retry拒否/effect1、provider→applied、not-executed→reserved→fresh apply effect1、17/17 SKIP0"
-    actual: "REJECTED effect_count1 outcome_unknown=true、provider applied、not-executed reserved→applied effect1、17/17 PASS SKIP0"
-    result: PASS
-  brainwash_check: "#1no(前回FAIL履歴で確証せず再実走) #2no(noncache17件) #3no(直接fixture独立実行) #4no(全17維持) #5no(FAIL窓を即再確認) #6no(reportだけでなくstate/effect確認) #7no(全RC corpus維持) #8no(6回目でも承認を急がず)。effect2→1、tests17/17、SKIP0"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T22:45:35]"
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_4200
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:11:45+09:00
-  verdict: LGTM
-  gate_prediction: CLEAR
-  gate_prediction_reason: "all checks passed"
-  reviewed_at: "2026-07-31T23:04:51+09:00"
-  report_path: queue/reports/tobisaru_report_cmd_4200.yaml
-  report_id: rpt-05a0803e-cc01-4500-8193-b42e26596501
-  report_fingerprint: 16dc7ac755337822ca81fed7ec256e0cd15545af92b9d467f1b038ae776ee058
-  commit_hash: 6f4e4b77b1f088dbaa6522137783b085a524078f
-  worker: tobisaru
-  project: infra
-  changed_lines: 83
-  observations:
-    - "事実1: commitはAC3契約test 1ファイル+83/-0のみでproduction実装変更0"
-    - "事実2: fixtureは10 rounds、各round old8+new8をmark-read1 processとwriter8 processで並行実行し全指標をassert"
-    - "事実3: BATS_CACHE=0で独立再実行し1/1 PASS、FAIL0、SKIP0。報告receiptはtask selector287/287 PASS"
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  assumptions_review: "PASS: 擬似lock関数でなく実caller3本をDrvFs配下の隔離copyで実行"
-  numbers_review: "PASS: 10×16=160保存、10×8=80既読、lost/duplicate/parse各0をassert"
-  premortem_review: "PASS: appendとmark-readのread-modify-write競合を同時起動しLost Update経路を直接刺激"
-  north_star_review: "PASS: Wave1A R01のcanonical lock identityが並行mutationを保護する結果契約を固定"
-  adversarial_review: "PASS: 10反復、各round writer8並列+marker1並列、DrvFs実pathで非cache再実行"
-  ambiguity_points: "LGTMはassigned AC3の敵対fixture成果に限定。inbox_write local lock_path撤去というAC2正本統合は別担当の完了条件"
-  verified_files:
-    - "tests/unit/test_lock_path.bats:3"
-    - "tests/unit/test_lock_path.bats:22"
-    - "scripts/lib/lock_path.sh:12"
-  operational_simulation:
-    command: "BATS_CACHE=0 bash scripts/run_tests.sh file tests/unit/test_lock_path.bats"
-    expected: "1/1 PASS、SKIP0。submitted160=saved160、mark80=marked80、lost/duplicate/parse0"
-    actual: "1/1 PASS、1 run、0 cached、SKIP0。test本体が全7数値条件をassert"
-    result: PASS
-  brainwash_check: "#1no(precheck CLEARで終了せず) #2no(noncache実走) #3no(独立runner) #4no(10反復160件維持) #5no(即時再計測) #6no(commit+test現物確認) #7no(母数縮小なし) #8no(AC2とAC3を分離)。cached1→noncache1、PASS1/1、SKIP0"
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T22:54:25Z]"
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: PASS
-    SG3_parity: N/A
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_karo_hotfix_cmd_complete_review_manifest_resume_20260731
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  reviewed_at: '2026-07-31T23:18:20+09:00'
-  summary: per-report二者approval lineage、atomic terminal snapshot、全クラッシュ窓をAC2/AC3へ追加せよ
-  observations:
-  - review_gate.doneはreports=5と集約hashのみでidentity/commit/二者approval内訳0件
-  - 現report=6、archive symlink=6/6、現SHAと最新LGTM一致=6/6
-  - 正規review_approval入口はarchive symlinkを拒否し再同期成功0/1
-  finding_categories:
-  - assumptions
-  - numbers
-  - simulation
-  - premortem
-  - north_star
-  - ambiguity
-  - adversarial
-  assumptions_review: 'NG: terminal manifestは未実装で、現markerは件数+集約hashのみ'
-  numbers_review: marker 5、現report 6、差1。symlink 6/6、SHA一致6/6、正規resume 0/1
-  simulation_result: 'NG: marker生成、最終approval、archive、approval消費の各中間crash状態が未契約'
-  premortem_review: 同件数差替え、片側approval欠落/撤回、途中write、symlink retargetの4失敗モードが未契約
-  north_star_review: fail-close resume目的は正しいが完全terminal snapshotの環境強制が必要
-  adversarial_review: 二者approval欠落/撤回、同件数identity差替え、phase crash、TOCTOU追加必須
-  ambiguity_points: manifest schema、atomic commit point、approval消費、Step8完了条件が未固定
-  semantic_concept_check: semantic_conceptsなし。semantic_searchでreport_quality_protocol/checkpoint
-    resumeを確認
-  verified_files:
-  - queue/gates/cmd_4200/review_gate.done:1
-  - scripts/lib/review_approval.sh:339
-  - scripts/review_approval.sh:489
-  operational_simulation:
-    command: marker読取、report全6件realpath+SHA、review_validate_report正規入口を実行
-    expected: 6報告の完全な二者approval manifestからresume可能
-    actual: marker内訳0・reports 5/6・symlink 6/6・正規入口0/1
-    result: FAIL
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。5→6件、成功0/1'
-  sg_checklist:
-    SG1_ac_coverage: FAIL
-    SG2_test_pass: N/A
-    SG3_parity: N/A
-    SG4_no_regression: FAIL
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: N/A
-    SG7_gate_prediction: BLOCK
-- cmd_id: cmd_karo_recon2_cmd_complete_manifest_resume_20260731
-  review_type: draft
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:28:37+09:00
-  verdict: APPROVE
-  reviewed_at: '2026-07-31T23:18:20+09:00'
-  summary: 独立readonly偵察としてAPPROVE。二者approval lineage・全クラッシュ窓・TOCTOUを含めよ
-  observations:
-  - recon readonly_refs 7系統、hotfix変更pathとの衝突0
-  - AC1集合比較、AC2caller時系列、AC3正反例と最小修正へ分離
-  - marker reports=5、現report=6、archive symlink=6/6で再現対象あり
-  finding_categories:
-  - assumptions
-  - numbers
-  - simulation
-  - premortem
-  - north_star
-  - ambiguity
-  - adversarial
-  assumptions_review: 'PASS: 5対6およびsymlink 6/6を一次確認'
-  numbers_review: AC3、readonly refs 7、変更path衝突0、集合差1
-  simulation_result: 'PASS: 事実確定→caller時系列→安全条件の順で前提相違時停止も明示'
-  premortem_review: approval欠落/撤回、同件数差替え、途中write、phase crash、retargetを反例へ含める
-  north_star_review: 'PASS: 実装者と独立にfalse_accept=0条件を先に固定'
-  adversarial_review: 内容改変に二者approval lineageとTOCTOUを追加
-  ambiguity_points: terminal snapshot schemaはコード現物から特定すること
-  semantic_concept_check: semantic_concepts確認。report品質へ適用しresume本体はコード正本
-  verified_files:
-  - queue/tasks/kotaro.yaml:1
-  - scripts/lib/review_approval.sh:339
-  - scripts/cmd_complete_gate.sh:6784
-  conflict_of_interest: 軍師approval機構が対象のため自己利害あり。readonly独立偵察のみ承認し、実装LGTMは別途一次テストと家老ACCEPTを要求
-  operational_simulation:
-    command: AC3件をmarker/report/archiveへ対応付け、hotfix targetとのgit status衝突確認
-    expected: 全AC到達かつreadonlyで衝突0
-    actual: AC3/3到達、衝突0、集合差1再現
-    result: PASS
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。AC3/3、衝突0'
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: N/A
-    SG3_parity: N/A
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: N/A
-    SG7_gate_prediction: CLEAR
-- cmd_id: cmd_karo_recon2_cmd_complete_archive_security_20260731
-  review_type: draft
-  verdict: APPROVE
-  reviewed_at: '2026-07-31T23:18:20+09:00'
-  summary: archive symlink安全境界の独立偵察としてAPPROVE。検証後retargetとinode交換を敵対corpusへ含めよ
-  observations:
-  - AC1はpath/realpath/root containment/content SHA/commit identityの5要素を全件計測
-  - AC2は正規/相対/絶対/外部/dangling/差替え/内容改変/同内容別pathの8類型
-  - AC3はfalse_accept=0とfile/line・依存・既存test再利用を要求
-  finding_categories:
-  - assumptions
-  - numbers
-  - simulation
-  - premortem
-  - north_star
-  - ambiguity
-  - adversarial
-  assumptions_review: 'PASS: archive symlink境界が現実のBLOCK根因であることを6/6 realpathで確認'
-  numbers_review: AC3、識別5要素、敵対8類型、readonly refs 8、変更path衝突0
-  simulation_result: 'PASS: 現物計測→隔離8類型→最小契約の順で実装者と独立'
-  premortem_review: 'CONDITION: validate後のretarget/inode交換、archive root自体のsymlink化、basename
-    collisionを追加'
-  north_star_review: 'PASS: archiveを無条件許可せずcontent+commit+saved manifestを同時要求'
-  adversarial_review: 8類型にTOCTOU、archive root retarget、同basename別artifactを追加
-  ambiguity_points: 同内容別pathを許可するかはlogical pathをmanifest identityへ含めて二値化すること
-  semantic_concept_check: semantic_concepts確認。report品質へ適用、安全境界はreview/archiveコード現物を正本
-  verified_files:
-  - queue/tasks/saizo.yaml:1
-  - scripts/lib/review_approval.sh:279
-  - scripts/archive_completed.sh:1751
-  conflict_of_interest: 軍師approval機構が対象のため自己利害あり。readonly security reconのみ承認し、修正採用は別途敵対testと家老判定を要求
-  operational_simulation:
-    command: AC3件を現symlink 6件とreview_validate_report境界へ対応付け、敵対分類を再計数
-    expected: 安全境界全要素と反例が重複なく到達
-    actual: 識別5要素、敵対8類型、AC3/3到達、現symlink6/6
-    result: PASS
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。5要素、8類型、6/6'
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: N/A
-    SG3_parity: N/A
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: N/A
-    SG7_gate_prediction: CLEAR
-- cmd_id: cmd_karo_recon2_cmd_complete_postprocess_idempotence_20260731
-  review_type: draft
-  verdict: APPROVE
-  reviewed_at: "2026-07-31T23:20:30+09:00"
-  summary: "readonly冪等性監査としてAPPROVE。副作用後checkpoint前crashと二重起動を必須corpusへ含めよ"
-  observations:
-    - "completion checkpoint現物は8段中sg7_consume/lesson_reviewの2段完了"
-    - "cmd_complete.shはcommandごとのflockで同一cmd二重起動を直列化"
-    - "dashboard/ntfy/inbox_archiveはいずれも副作用成功後にcheckpoint_markするためcrash重複窓が3/3存在"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "PASS: postprocess再開の必要性をcheckpoint 2/8とコード順序で確認"
-  numbers_review: "step 8、completed 2、remaining 6、副作用後mark窓3/3、同一cmd lock 1"
-  simulation_result: "PASS条件: 各step前後だけでなく副作用成功後・mark前、二重起動、tail worker重複を実験"
-  premortem_review: "ntfy再送、dashboard二重publish、inbox二重archive、checkpoint更新直前crashの4失敗を計測"
-  north_star_review: "PASS: 重複0・欠落0・false_complete0を固定SHAで証明する監査"
-  adversarial_review: "外部ntfyはtransaction共有不可。at-most-once/at-least-once限界とidempotency key有無を明示必須"
-  ambiguity_points: "『各Step直後』は副作用後mark前を含むと明記し、二重起動とasync tail二重spawnも含めること"
-  semantic_concept_check: "skill_routingは間接的。semantic_searchでcheckpoint resume/exactly-onceの過去事例を確認"
-  verified_files: ["queue/gates/cmd_4200/completion_checkpoint.json:1", "scripts/cmd_complete.sh:45", "scripts/cmd_complete.sh:116", "scripts/cmd_complete.sh:315"]
-  operational_simulation:
-    command: "checkpoint現物を再計数しcmd_complete.shの8段順序・flock・副作用→mark順を行番号照合"
-    expected: "監査ACが全重複窓と再開状態へ到達"
-    actual: "2/8完了、残6、crash重複窓3/3、同一cmd lockあり"
-    result: PASS
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。2/8、窓3/3、lock1"
-  sg_checklist: {SG1_ac_coverage: PASS, SG2_test_pass: N/A, SG3_parity: N/A, SG4_no_regression: PASS, SG5_lesson_candidate: PASS, SG6_code_quality: N/A, SG7_gate_prediction: CLEAR}
-- cmd_id: cmd_karo_recon2_cmd_complete_manifest_resume_20260731
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:28:37+09:00
-  verdict: LGTM
-  gate_prediction: CLEAR
-  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T23:22:30+09:00"
-  report_path: queue/reports/kotaro_report_cmd_karo_recon2_cmd_complete_manifest_resume_20260731.yaml
-  report_id: rpt-fafd6331-a248-4e5a-a54c-8ead6a2bf781
-  report_fingerprint: 20456ee8f5927cfad543563f174c0efc93380e5ae8c5ff8ccecd7bd211bec9c8
-  worker: kotaro
-  project: infra
-  changed_lines: 0
-  observations:
-    - "HEAD review_approval.sh:474は固定suffix globで5件、gate:6789-6794はtask resolverで6件"
-    - "独立再計算で5件manifest=7201f9...、6件=fcefbe...、6件ready rc=1"
-    - "archive symlinkは6/6 canonical、報告は反例8類型・crash窓6・TOCTOU2を特定"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "PASS: marker5対resolver6をHEADと実データで確認"
-  numbers_review: "AC3/3、binary checks5/5 yes、manifest5対6、symlink6/6、反例8、crash6、TOCTOU2"
-  simulation_result: "PASS: marker生成→approval→archive→resume時系列をcaller行付きで再構成"
-  premortem_review: "PASS: 集合追加/欠落/同数差替え/内容/commit/approval/path escape/TOCTOUを網羅"
-  north_star_review: "PASS: resolver共有+containment+lineage+atomic snapshotでfalse_accept=0を目標化"
-  adversarial_review: "PASS: 二者approval欠落/世代不一致、同件数差替え、archive escapeまで含む"
-  ambiguity_points: "実装時はlogical path identityとarchive canonical pathの双方をsnapshot schemaへ固定要"
-  semantic_concept_check: "task semantic concept確認済み。report品質はprecheck、resume意味論はHEADコードで独立検証"
-  verified_files: ["scripts/review_approval.sh:474", "scripts/cmd_complete_gate.sh:6789", "scripts/archive_completed.sh:1442", "queue/gates/cmd_4200/review_gate.done:1"]
-  conflict_of_interest: "軍師approval機構が調査対象のため自己利害あり。報告LGTMはHEAD再計算と家老の独立ACCEPTを前提に限定"
-  operational_simulation:
-    command: "git show HEADの3 caller照合、5/6 manifest再計算、review_gate_manifest_ready cmd_4200 six"
-    expected: "報告値7201f9/fcefbe/rc1と一致"
-    actual: "5=7201f9...、6=fcefbe...、ready rc=1で完全一致"
-    result: PASS
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T23:16:00Z]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。AC3/3、5→6、反例8、窓6"
-  sg_checklist: {SG1_ac_coverage: PASS, SG2_test_pass: PASS, SG3_parity: N/A, SG4_no_regression: PASS, SG5_lesson_candidate: PASS, SG6_code_quality: PASS, SG7_gate_prediction: PASS}
-- cmd_id: cmd_karo_recon2_cmd_complete_postprocess_idempotence_20260731
-  review_type: report
-  verdict: FAIL
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no検出"
-  reviewed_at: "2026-07-31T23:26:30+09:00"
-  report_path: queue/reports/kagemaru_report_cmd_karo_recon2_cmd_complete_postprocess_idempotence_20260731.yaml
-  report_id: rpt-8ba1e9bd-e1c2-4e9f-967e-b3f28d05c797
-  report_fingerprint: 4c12bc00d281dbbb9e5dfc2a81f4f4ae50510c7cea28521983b38462af816bdd
-  worker: kagemaru
-  project: infra
-  changed_lines: 0
-  observations:
-    - "report status=failed、verdict=FAIL、AC2/AC3 binary_checks noの正直報告"
-    - "HEAD cmd_complete.sh:329-333はntfy成功後checkpoint_mark、ntfy_cmd.sh:225-226はidempotency keyなし"
-    - "precheck ERRORS=0だがgate prediction BLOCK。FAIL bundleはarchive+direct cmd spec不在で正規generateが2経路BLOCK"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "PASS: checkpoint lockで外部送信exactly-onceになる前提を否定"
-  numbers_review: "AC2/3未達2件、duplicate_effect ntfy=1、dashboard=0、inbox=0、現checkpoint2/8"
-  simulation_result: "FAIL: child成功後mark前crashでntfyが再送される"
-  premortem_review: "PASS: ntfy重複、dashboard重複、inbox二重archive、tail二重起動を分離"
-  north_star_review: "FAIL: duplicate_effect=0を満たさずStep8完了契約に進めない"
-  adversarial_review: "PASS: success-after-effect/before-mark crash窓を特定"
-  ambiguity_points: "外部ntfyのat-most-once/at-least-once選択とidempotency key正本が未決"
-  semantic_concept_check: "task semantic concept確認済み。exactly-onceはHEAD callerで独立検証"
-  verified_files: ["scripts/cmd_complete.sh:329", "scripts/ntfy_cmd.sh:225", "queue/gates/cmd_4200/completion_checkpoint.json:1"]
-  operational_simulation:
-    command: "HEAD caller照合、test_cmd_complete_resume 6件、wrapper 25件を実走"
-    expected: "31/31既存test PASSでもsuccess-before-mark窓を検出"
-    actual: "resume6/6 PASS、wrapper出力19/25まで独立確認、コード上ntfy duplicate窓1件確定"
-    result: FAIL
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T23:23:17]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。bc:no2、duplicate1、checkpoint2/8"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: PASS, SG3_parity: N/A, SG4_no_regression: PASS, SG5_lesson_candidate: PASS, SG6_code_quality: PASS, SG7_gate_prediction: PASS}
-- cmd_id: cmd_reflux_backlink_202607312324_hanzo
-  review_type: draft
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:50:21+09:00
-  verdict: APPROVE
-  reviewed_at: "2026-07-31T23:28:00+09:00"
-  summary: "backlink還流契約としてAPPROVE。対象文書無変更・generator二回目差分0・incoming>=1を最終証拠化せよ"
-  observations:
-    - "target文書は存在し、SSOT indexへ対象pathのcausal行1件が追加済み"
-    - "planned pathsはSSOT indexとgenerated semantic-mapの2件、対象研究文書は明示scope外"
-    - "semantic-map generatorは同時刻の別入力も取り込むため生成差分は広いが、正本変更はindex1行"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "PASS: backlink0解消対象とSSOT→generated導線が明示"
-  numbers_review: "AC2、planned path2、SSOT対象行1、対象文書変更許容0"
-  simulation_result: "PASS条件: index更新→generate→incoming計測→再generate差分0"
-  premortem_review: "対象文書自己編集、generated直編集、generator非冪等、並行在庫値汚染の4失敗を最終確認"
-  north_star_review: "PASS: 孤立文書を受動検索層へ接続しincoming 0→1以上"
-  adversarial_review: "条件付きPASS: 同じcmd再実行で重複causal行が増えないこと"
-  ambiguity_points: "global inventoryは並行taskで変動するため対象incomingを主判定、在庫4値はtimestamp付き観測とする"
-  semantic_concept_check: "semantic_causal_automation等4概念を確認、generator正規経路がACに反映"
-  verified_files: ["queue/tasks/hanzo.yaml:1", "docs/semantic-index/index.md:8988", "scripts/semantic_map_generate.sh:auto_intake_semantic_index"]
-  operational_simulation:
-    command: "target存在確認、git status/diff、indexとgenerated mapの対象path検索"
-    expected: "SSOTに対象1件、研究文書変更0、generated mapへ反映可能"
-    actual: "SSOT対象1件、研究文書status差分0、planned generated map変更あり"
-    result: PASS
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。AC2/2、path2、target変更0"
-  sg_checklist: {SG1_ac_coverage: PASS, SG2_test_pass: N/A, SG3_parity: N/A, SG4_no_regression: PASS, SG5_lesson_candidate: PASS, SG6_code_quality: PASS, SG7_gate_prediction: PASS}
-- cmd_id: cmd_karo_recon2_cmd_complete_archive_security_20260731
-  review_type: report
-  verdict: FAIL
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no検出; lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
-  reviewed_at: "2026-07-31T23:30:00+09:00"
-  report_path: queue/reports/saizo_report_cmd_karo_recon2_cmd_complete_archive_security_20260731.yaml
-  report_id: rpt-144fa5d7-fae8-47af-9135-1e8c5e4f366a
-  report_fingerprint: aa00c7319711328ee540406de7dbf0a58f85d4d65be9a6f4b7ebb222a47fb15e
-  worker: saizo
-  project: infra
-  changed_lines: 0
-  observations:
-    - "report status=failed、verdict=FAIL、AC3 binary_check noの正直報告"
-    - "報告時は敵対FD保持10/10だが現行contract 5 PASS/2 FAILで実装未達"
-    - "レビュー時は並行hotfixの3 script変更+新testにより7/7 PASSへ変化。後発状態で歴史的FAILを上書きしない"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "PASS: containment単独安全の前提をinode交換false_acceptで否定"
-  numbers_review: "symlink6/6、敵対10、報告時false_accept 1→0、contract5/7。レビュー時後発tree7/7"
-  simulation_result: "FAIL: 報告固定状態ではcontract2件FAILでAC3未達"
-  premortem_review: "PASS: escape/dangling/retarget/inode交換/root symlink/basename collisionを分離"
-  north_star_review: "FAIL: false_accept=0契約が報告時コードへ未統合"
-  adversarial_review: "PASS: FD保持、root dev/ino、target dev/ino、content/commit lineageを要求"
-  ambiguity_points: "後発hotfixの7/7は別generation。saizo報告generationの判定には使用しない"
-  semantic_concept_check: "semantic timeoutは手動コード/報告照合で補完。archive identity境界を直接確認"
-  verified_files: ["scripts/lib/review_approval.sh:17", "scripts/review_approval.sh:42", "scripts/archive_completed.sh:1437", "tests/unit/test_review_approval.bats:1"]
-  operational_simulation:
-    command: "bats tests/unit/test_review_approval.bats; git status対象4path; git rev-parse HEAD"
-    expected: "報告generationは5/7、後発generationと分離"
-    actual: "現在7/7 PASSだが3 script modified+test untracked、HEAD bf2e8ff。報告時5/7を置換不可"
-    result: FAIL
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T23:25:20]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。5/7→後発7/7、bc:no1"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: FAIL, SG3_parity: N/A, SG4_no_regression: PASS, SG5_lesson_candidate: PASS, SG6_code_quality: PASS, SG7_gate_prediction: PASS}
-- cmd_id: cmd_reflux_backlink_202607312324_hanzo
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:50:21+09:00
-  verdict: FAIL
-  gate_prediction: BLOCK
-  gate_prediction_reason: "manual semantic backlink check: SSOT target=1, generated semantic-map target=0"
-  reviewed_at: "2026-07-31T23:34:00+09:00"
-  report_path: queue/reports/hanzo_report_cmd_reflux_backlink_202607312324_hanzo.yaml
-  report_id: rpt-593a23e0-62a3-4294-8d94-c381e0b78f07
-  report_fingerprint: 74f3c60fa8dfc37ead2c066b275ec9131c4d722bb0eda91bd8be4953cd3a696a
-  worker: hanzo
-  project: infra
-  changed_lines: 1
-  observations:
-    - "commit bf2e8ffはdocs/semantic-index/index.md 1行のみで、対象SSOT linkは1件"
-    - "現context/semantic-map.mdの対象linkは0件、同fileは並行generator由来の未commit変更あり"
-    - "reportはgenerated mapをchecked_not_modified依存扱いしSHA証跡をcommit固定していないためAC1反映が消失"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "FAIL: 一時的generator出力が完了まで維持される前提が並行更新で崩れた"
-  numbers_review: "SSOT target1、generated target0、commit files1、対象研究文書diff0"
-  simulation_result: "FAIL: index commit後に別generatorが古いsnapshotからsemantic-map公開しtarget反映を失う"
-  premortem_review: "FAIL: generator同時実行/lost updateと生成物のcommit境界がACで防御されていない"
-  north_star_review: "FAIL: 受動検索層への因果辺が現generated mapに存在しない"
-  adversarial_review: "FAIL: 二つのgeneratorが異なるindex snapshotでpublishする競合を未検証"
-  ambiguity_points: "incoming=1はSSOT index由来で、generated map反映の証明とは別。両方を二値検査すべき"
-  semantic_concept_check: "precheck timeoutを手動rgで補完し、index1/map0の不一致を検出"
-  verified_files: ["docs/semantic-index/index.md:8990", "context/semantic-map.md:8985", "queue/reports/hanzo_report_cmd_reflux_backlink_202607312324_hanzo.yaml:1"]
-  operational_simulation:
-    command: "git show --stat bf2e8ff; rg -c exact target on index and semantic-map; git status 3 paths"
-    expected: "index=1、semantic-map=1、target doc diff0"
-    actual: "index=1、semantic-map=0、target doc diff0、semantic-map modified"
-    result: FAIL
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T23:24:49]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。precheck CLEARでも手動1対0検出"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: PASS, SG3_parity: FAIL, SG4_no_regression: FAIL, SG5_lesson_candidate: PASS, SG6_code_quality: FAIL, SG7_gate_prediction: FAIL}
-- cmd_id: cmd_4200
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  reviewed_at: "2026-07-31T23:44:30+09:00"
-  summary: "multi-runtime追補は方向のみ妥当だが、active/support混同と未生成manifestにより移植性ACを実行不能。敵対レビュー6 findingでREQUEST_CHANGES"
-  observations:
-    - "Gist raw 31467 bytesとlocal doc 31467 bytesはSHA256 e262b9cb4ec42c6c5cb626f3a4fccb24e45e21571952b4bff894b5c9ef201f3で一致。Gist version=811af7fce1d843caee8c6803a9de3df45db9e31a、local commit=1827ebd2d1fde6388a159ebd3e21407d8931c293"
-    - "settings activeは9/9 Codex、distinct core tuple=3。一方cli_profilesはClaude/Codex 2 CLI・distinct core tuple=3で、inactive supported Claude 2 agentがactive-only母集団から0件になる"
-    - "cli_events SSOTは6/6 eventsを両CLIへ写像するが、実hookはClaude 6 events相当、Codex hooks.jsonはStopなし5 event types。no-stop gateはPASSするがdaemon/gate代替保証manifest N/Nの実装証跡はない"
-    - "一次環境はWSL2 kernel 6.6.87.1、workspace DrvFs/9p、WSL native ext4、Windows host NT 10.0.26200/NTFS。native Linux host runnerとWindows-native実行runnerの全tuple証跡は0件"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "FAIL: active configurationがsupported/configured集合を代表する前提でinactive Claudeを落とす"
-  numbers_review: "finding 6件、active agents 9/9 Codex、active distinct tuple 3、profile CLI 2、SSOT event 6、Codex hook Stop 0、type/binary mismatch 2、未検証host runner 2"
-  simulation_result: "FAIL: active-only generatorならClaude tuple discovered=0のままexecuted==discoveredを満たし、誤ったportable完了を許す"
-  premortem_review: "FAIL: CLI切替後に初めてClaude差異が発火、Windows/native Linuxではfs/shell契約が未検証、invalid Cartesian tupleの大量UNSUPPORTED化が予見される"
-  north_star_review: "FAIL: supported全runtimeで同一binary invariantを証明する母集団とrunner ownershipがない"
-  adversarial_review: "REQUEST_CHANGES: Codex-only active集合のPASSをmulti CLI/multi OS保証へ昇格できる構造"
-  ambiguity_points: "configured/active/supportedの定義、effort precedence、service tier未指定値、typeとlaunch binaryの不一致処理、OS runner identity、hook alternative ownerが未定義"
-  semantic_concept_check: "config/cli_events.yamlをevent意味論SSOTとして照合。設計§5.8は正本pathを明記せずterminal17の生成器/receiptも未指定"
-  verified_files: ["docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:94", "config/settings.yaml:6", "config/cli_profiles.yaml:15", "config/cli_profiles.yaml:41", "config/cli_events.yaml:95", ".codex/hooks.json:1", ".claude/settings.json:1"]
-  operational_simulation:
-    command: "Gist API/raw取得とsha256sum/diff、settings+cli_profiles YAML独立tuple集計、cli_eventsと両hook JSON照合、gate_codex_hooks_no_stop、uname/stat/findmnt、cmd.exe/powershell OS probe、最新Codex manual Stop節照合"
-    expected: "support matrix全CLI/OSを列挙し、Gist/local一致、event代替N/N、runner evidence全数あり"
-    actual: "Gist/local一致のみPASS。active CLI 1/2、native Linux host runner 0、Windows-native test runner 0、Codex Stop hook 0、代替coverage receipt 0、config mismatch 2"
-    result: FAIL
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T23:36:43+09:00]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。代表構成3件をsupport全体へ代用せず、6 finding中6件をREQUEST_CHANGES化"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: N/A, SG3_parity: FAIL, SG4_no_regression: N/A, SG5_lesson_candidate: PASS, SG6_code_quality: FAIL, SG7_gate_prediction: BLOCK}
-- cmd_id: cmd_karo_hotfix_cmd_complete_review_manifest_resume_20260731
-  review_type: report
-  verdict: FAIL
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no検出; AC4 Step8実走未達"
-  reviewed_at: "2026-07-31T23:46:00+09:00"
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_cmd_complete_review_manifest_resume_20260731.yaml
-  report_id: rpt-46e71f06-9fc6-46a2-b955-f6ede565cea9
-  report_fingerprint: 514e2711006ae3e2835ae3eec09451046953e794ac672685146587b1826cdfb3
-  worker: hayate
-  project: infra
-  changed_lines: 528
-  observations:
-    - "precheck ERRORS=0だがAC4 binary_check=noを検出しprediction BLOCK"
-    - "commit 51132772eは5 files +241/-23、reportはpostcommit416/416 PASS・SKIP0"
-    - "旧cmd_4200 CLEAR世代に新terminal snapshotがないため、正規二者再承認なしではStep8到達不能"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "PASS: 旧集約markerから新per-report lineageを後付け復元できる前提を棄却"
-  numbers_review: "AC3/4達成、AC4未達1、binary no 1、changed 528、test 416/416"
-  simulation_result: "FAIL: 現cmd_4200世代はterminal snapshot欠落によりwrapper Step8をfail-close"
-  premortem_review: "PASS: 後付けsnapshot捏造を許さず再承認を要求"
-  north_star_review: "部分PASS: 実装はlineage強化だがtask目的の実cmd resumeは未完"
-  adversarial_review: "PASS: report追加・同数差替え・内容・commit・lineage・path・TOCTOUを拒否。ただしAC4未達のためLGTM不可"
-  ambiguity_points: "再承認後のStep8実走は後続作業。現reportの完了条件には含まれるため免除不可"
-  semantic_concept_check: "review_approval/cmd_complete正本callerをcommit固定で照合。precheck semantic timeoutはAC4判定へ影響なし"
-  verified_files: ["scripts/lib/review_approval.sh:1", "scripts/cmd_complete_gate.sh:1", "scripts/cmd_complete.sh:1", "queue/reports/hayate_report_cmd_karo_hotfix_cmd_complete_review_manifest_resume_20260731.yaml:1"]
-  operational_simulation:
-    command: "gate_gunshi_report_precheck.sh; git show --stat 51132772e; report AC/binary/test receipt照合"
-    expected: "AC4 Step8実測yesならLGTM、未達ならFAIL"
-    actual: "AC4=no、prediction BLOCK、実装test 416/416 PASSだが旧世代snapshotなし"
-    result: FAIL
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T23:15:10+09:00]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。416/416という出力を完了と誤認せずAC4中3達成/1未達でFAIL"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: PASS, SG3_parity: N/A, SG4_no_regression: PASS, SG5_lesson_candidate: PASS, SG6_code_quality: PASS, SG7_gate_prediction: PASS}
-- cmd_id: cmd_reflux_backlink_202607312324_hanzo
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-31T23:50:21+09:00
-  verdict: LGTM
-  gate_prediction: CLEAR
-  gate_prediction_reason: "all checks passed"
-  reviewed_at: "2026-07-31T23:46:30+09:00"
-  report_path: queue/reports/hanzo_report_cmd_reflux_backlink_202607312324_hanzo.yaml
-  report_id: rpt-593a23e0-62a3-4294-8d94-c381e0b78f07
-  report_fingerprint: 39f4d187af926262f34bc35f1a63b57f4bfe6c9d6fe0473a9ff97ba3e74050a6
-  worker: hanzo
-  project: infra
-  changed_lines: 92
-  observations:
-    - "前回FAIL時index=1/map=0だったがcommit ca1ea853でindex=1/map=1へ修正"
-    - "対象docs/research/gunshi_session_rca_20260718.mdはcommit差分0、incoming実測2"
-    - "precheck ERRORS=0、prediction CLEAR、commitはindex/map両方を収録"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "PASS: generator出力が一時状態でなくcommit固定されることを独立確認"
-  numbers_review: "AC2/2、index exact1、map exact1、incoming2、target diff0、precheck error0"
-  simulation_result: "PASS: SSOT→generate→再生成byte同一→両artifact commitの順で永続化"
-  premortem_review: "PASS: 別generatorによるlost update後も現HEAD/commitにmap exact1が残る"
-  north_star_review: "PASS: 孤立文書をSSOTと受動検索生成物の双方へ接続"
-  adversarial_review: "PASS: 対象doc自己編集0、duplicate媒体内0、index/map parity 1/1"
-  ambiguity_points: "incoming=2はindexとmapの2媒体由来。媒体内exact各1で重複ではない"
-  semantic_concept_check: "semantic_causal_automation正本indexと派生mapを1対1で再計数"
-  verified_files: ["docs/semantic-index/index.md:8990", "context/semantic-map.md:1", "queue/reports/hanzo_report_cmd_reflux_backlink_202607312324_hanzo.yaml:1"]
-  operational_simulation:
-    command: "gate_gunshi_report_precheck.sh; git show --stat ca1ea853; rg -c exact target on index/map; causal_backlink_counts; target doc git diff"
-    expected: "index=1、map=1、incoming>=1、target doc diff0、precheck CLEAR"
-    actual: "index=1、map=1、incoming=2、target diff0、ERRORS=0/CLEAR"
-    result: PASS
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T23:40:14+09:00]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。前回FAIL 1対0を現物1対1へ再計数し、AC2/2確認"
-  sg_checklist: {SG1_ac_coverage: PASS, SG2_test_pass: PASS, SG3_parity: PASS, SG4_no_regression: PASS, SG5_lesson_candidate: PASS, SG6_code_quality: PASS, SG7_gate_prediction: PASS}
-- cmd_id: cmd_4200
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  reviewed_at: "2026-07-31T23:58:00+09:00"
-  summary: "v3.3は前回6 findingを文面上6/6反映したが、Claude primary baseline欠落・rollback実体欠落・pane非変更AC反証の新3 findingでREQUEST_CHANGES"
-  observations:
-    - "Gist raw/local 41620 bytes、SHA256 5df9d2bd207b91054e2d0c4330db8f962207a2d8733a99944765dfcb02488770一致。Gist version=9af9945a4c34ceb8dd765b3a430c6aa700b311ea、local commit=08f29f9f3372b8ee4442dde55e9f6d38183525ce"
-    - "前回6 findingはsupport/configured/active、resolver、OS境界、event代替receipt、type/binary mismatch、valid constraintへ6/6反映"
-    - "Claude現物はevent type 6・direct handler 12。cli_events契約はsemantic cell 6だがdistinct hook type 5・action 9で、SessionEnd 1 eventとStop/UserPrompt state系actionがbaseline外"
-    - "commit変更はdocs 1 file、protected config diff 0。だがcommit 23:53:33後のpane bornを全9件再計数するとhayate 23:55:44が1件でPOST_COMMIT_RESPAWN=1"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "FAIL: cli_eventsの6 semantic cellがClaude現行hook全挙動を代表する前提。実体は6 hook type/12 handlersでSessionEndが集合外"
-  numbers_review: "旧finding反映6/6、新finding3、actual event types6/handlers12、contract cells6/distinct types5/actions9、protected diff0、postcommit pane respawn1/9"
-  simulation_result: "FAIL: baseline外SessionEnd/Stop lint/alert/state actionはCodex adapter変更後に消えてもAC21の6/6を満たせる。AC22は実測respawn1でもowner receipt不在でcmd起因判定不能"
-  premortem_review: "FAIL: Claude clear/session cleanup・Stop lint/alertが無音退行し、存在しないadapter pointerでrollback不能"
-  north_star_review: "FAIL: Claude primary保護の宣言は追加されたが、現行behavior N/Nと復元可能性を証明しない"
-  adversarial_review: "REQUEST_CHANGES: 文面6/6反映のみ。Claude現物surface全数とmutation provenanceに3穴"
-  ambiguity_points: "6 eventがsemantic cell数かhook event type数か不明。pane respawnのcmd_4200起因判定期間・owner・event ID、rollback pointerの実体pathが未定義"
-  semantic_concept_check: "config/cli_events.yamlと.claude/settings.jsonを独立全数比較。Claude公式hooks資料でSessionEndとStopを別lifecycle eventとして確認"
-  verified_files: ["docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:157", "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:166", "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:508", ".claude/settings.json:31", ".claude/settings.json:62", "config/cli_events.yaml:95"]
-  operational_simulation:
-    command: "Gist raw/local SHA diff、git parent→08f29 protected diff、Claude settings/cli_events JSON-YAML全数集計、official Claude hooks照合、commit epoch対pane pid birth全9件比較、rollback symbol全repo検索"
-    expected: "前回6/6反映、Claude現行behavior N/N、settings0/pane respawn0/switch0、実rollback path存在"
-    actual: "旧6/6反映、settings commit diff0、CLI/model/effort現値一致9/9。だが actual6 types/12 handlers対contract5 types/9 actions、SessionEnd欠落1、postcommit respawn1、rollback実装検索0"
-    result: FAIL
-  memory_references:
-    - "[MEM: memory_db ts=2026-07-31T23:54:05+09:00]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。前回6/6という出力で早期終了せず、現物12 handlerと9 action差、新3 findingを計測"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: N/A, SG3_parity: FAIL, SG4_no_regression: FAIL, SG5_lesson_candidate: PASS, SG6_code_quality: FAIL, SG7_gate_prediction: BLOCK}
-- cmd_id: cmd_4200
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  reviewed_at: "2026-08-01T00:07:00+09:00"
-  summary: "v3.4はRC2 3 findingを契約上3/3反映したが、mode identity・mutation journal completeness・因果履歴immutabilityの新3穴でREQUEST_CHANGES"
-  observations:
-    - "Gist raw/local SHA256 323ef710a612c4af4fd79c73d9aeab479254ed577f185a7365357bec732130e6一致。Gist version=645b405986ea1cc7d71689ed0dfce862fedd9a2b、local commit=50575c8ae36e91bdfca93be2592143822058b083"
-    - "RC2はClaude 6 event type/12 top handler/leaf N、restore path+dry-run/apply、owner/cause mutation journalへ3/3反映"
-    - "baseline hash値はgit blob be93a9ff...、content SHA 4b1945c8...とも一致。ただし同一.claude/settings.jsonのgit mode=100644、DrvFs stat mode=777でmode生値が二重"
-    - "§0.0因果表5 rowの一次・準一次証跡はmutable path/sectionのみ。各rowにsource commit+lineを同時固定した件数0/5"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "FAIL: mode単一値でgit/DrvFsを同一視、journalに書かれないmutationはowner不明として検知できる、mutable path参照で歴史が保存されるという3前提"
-  numbers_review: "RC2反映3/3、新finding3、git mode100644対fs mode777、journal schema pane eventのみ1種、因果row immutable commit+line 0/5"
-  simulation_result: "FAIL: restore dry-runがmode差でfalse BLOCK/誤restore、未計装settings edit/respawnはjournal欠落のままowner不明0、将来doc更新で旧因果証跡が上書きされる"
-  premortem_review: "FAIL: current DrvFsでrestore契約が即曖昧、instrumentation bypassでAC22 false PASS、歴史の結論だけ残り具体的成立過程が消える"
-  north_star_review: "FAIL: Claude主系保護の方向は正しいが、復元identity・mutation完全性・歴史固定が未閉鎖"
-  adversarial_review: "REQUEST_CHANGES: RC2 3/3は表面反映済みだが防御境界に新3穴"
-  ambiguity_points: "modeがgit index modeかfs effective modeか不明。runtime_mutations journalの全caller coverage証明とsettings write event未定義。因果表の歴史時点/commit未固定"
-  semantic_concept_check: "Claude dispatcherはpre106行/post80行、combined計3031行。generated N+未展開0契約は妥当。旧因果はcommonization design現物と照合"
-  verified_files: ["docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:81", "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:186", "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:201", "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:545", ".claude/settings.json:1"]
-  operational_simulation:
-    command: "Gist SHA/diff、git ls-tree+hash-object+stat、restore/matrix artifact existence、Claude settings/dispatcher全数、因果表commit+line token再計数、mutation schema反例分析"
-    expected: "RC2 3/3、mode identity一意、observed mutation=journal N/N、因果5/5 immutable"
-    actual: "RC2 3/3、hash一致。mode100644対777、journalはpane eventのみでsettings write/unjournaled reconciliationなし、因果commit+line 0/5"
-    result: FAIL
-  memory_references:
-    - "[MEM: memory_db ts=2026-08-01T00:02:51+09:00]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。3/3反映で早期終了せず、mode2値・journal欠落経路1・因果0/5を追加計測"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: N/A, SG3_parity: FAIL, SG4_no_regression: FAIL, SG5_lesson_candidate: PASS, SG6_code_quality: FAIL, SG7_gate_prediction: BLOCK}
-- cmd_id: cmd_4200
-  review_type: draft
-  verdict: REQUEST_CHANGES
-  reviewed_at: "2026-08-01T00:15:30+09:00"
-  summary: "v3.5は軍師RC3 3/3と将軍Fable RC1のうち2/3を解消したが、resolved mismatchの固定2禁止が実装順序に残存しREQUEST_CHANGES"
-  observations:
-    - "Gist raw/local/commit SHA256 06478b2bc30bebb9431ab3586008f4ef1b07dd06769afc2efdc84cfdeafb8e2a一致。Gist version=5a2cf108965ee23b96364439eae22d493460c001、local commit=6da5386792c71cb08381d8206c9d79d70a38728e"
-    - "軍師RC3 3 findingはmode分離、before/after delta×journal N/N・UNKNOWN 0、因果5 row fixed commit/path/line/blob/期間/生値へ3/3反映。因果blobはgit rev-parseで5/5一致"
-    - "将軍Fable RC1はClaude native multi-handler合成除外+NO-CHANGE優先、Fable row追加を2/2反映。現物はClaude event 6、handler 12、Stop 5、UserPromptSubmit 3"
-    - "resolved mismatch契約はL154で全agent N/N・観測3・固定2禁止・終端0/Nだが、L505は現状2件を検出するfixture固定を指示し内部矛盾"
-    - "mode実測はgit_mode=100644、fs_mode=777、fstype=v9fs、mount=9p aname=drvfsで設計記述と一致"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "FAIL: §0.2の動的N/N契約が§5.8.1の固定2 fixtureより優先され実装者が無視すると仮定できない"
-  numbers_review: "RC3 3/3 PASS、Fable RC1 2/3 PASS・1/3 FAIL、因果blob 5/5、SHA一致3/3、矛盾行2箇所(L154/L505)"
-  simulation_result: "FAIL: 実装者がL505どおり2件fixtureを正解にすると3件目gunshi cross-file mismatchを再び見逃し、resolved全agent N/N契約と矛盾する"
-  premortem_review: "FAIL: 固定fixtureが将来のcross-file mismatch増減を吸収できず、過少計数のまま実装完了しうる"
-  north_star_review: "FAIL: 全configured tupleを動的に守る設計目的を固定2件fixtureが損なう"
-  adversarial_review: "REQUEST_CHANGES: 将軍LGTM報告を既知でも独立照合し、L505の残存矛盾を検出"
-  ambiguity_points: "L505の2件が単一file fixture限定かresolved全agent fixtureか不明。L154と同じく動的N/N・観測3・終端0/Nへ統一が必要"
-  semantic_concept_check: "runtime resolverの母集団をsupport/configured/activeで区別し、configured全agentのcross-file resolution契約として照合"
-  verified_files: ["docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:154", "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:505", ".claude/settings.json:1", "config/settings.yaml:1", "config/cli_profiles.yaml:1"]
-  operational_simulation:
-    command: "Gist raw/local/commit SHA256、因果5 blob git rev-parse、git/stat/findmnt mode、jq handler数、全doc mismatch表現rg"
-    expected: "RC3 3/3、Fable RC1 3/3、固定2禁止が全節一貫、終端0/N"
-    actual: "RC3 3/3、Fable RC1 2/3。L154は観測3・固定2禁止・0/NだがL505は2件fixture固定"
-    result: FAIL
-  memory_references:
-    - "[MEM: inbox review_request msg_20260801_001313_255944_50de10b5]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。将軍LGTM既知でも早期終了せず、6観点中5 PASS/1 FAILを行番号で独立計測"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: N/A, SG3_parity: FAIL, SG4_no_regression: FAIL, SG5_lesson_candidate: PASS, SG6_code_quality: FAIL, SG7_gate_prediction: BLOCK}
-- cmd_id: cmd_4200
-  review_type: draft
-  verdict: LGTM
-  reviewed_at: "2026-08-01T00:18:20+09:00"
-  summary: "v3.7はv3.5残存矛盾と因果row5 EOF範囲を修正し、RC3 3/3・Fable RC1 3/3・SHA/blob整合を満たすためLGTM"
-  observations:
-    - "local worktree・fixed commit・Gist raw SHA256はbe0c5d8e7c1681c656038b4c4d75ce8d4371da18196fa8d47b6995a14279dec0で3/3一致"
-    - "v3.5→v3.7の契約差分はrow5行範囲1-82→1-73と§5.8.1固定2 fixture→resolved全agent N/N・観測3・終端0/Nの2点。ヘッダは将軍所有権更新"
-    - "因果証跡blobは7/7一致、MISMATCH 0。Codex hooks実blobは73行で引用1-73が73/73一致"
-    - "旧矛盾表現 mismatch 2・2件を検出・1-82 は設計書内0件"
-    - "RC3 mode/journal/因果3/3、Fable mismatch/Claude NO-CHANGE/Fable row 3/3を再確認"
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  assumptions_review: "PASS: §0.2と§5.8.1を別々に照合し、動的N/N契約が両節で一致"
-  numbers_review: "SHA 3/3、blob 7/7、EOF 73/73、stale 0、RC3 3/3、Fable RC1 3/3"
-  simulation_result: "PASS: agent不整合件数が将来変動しても固定期待値ではなくresolved全agent N/N走査し、修正後0/Nのみ終端になる"
-  premortem_review: "PASS: Claude multi-handlerへの合成逆流は明文禁止、未journal mutationはUNKNOWNでBLOCK、mode二重性も分離済み"
-  north_star_review: "PASS: Claude primary非退行と全configured runtimeの動的整合を同時に維持"
-  adversarial_review: "PASS: 将軍LGTM既知でもSHA・diff・blob・EOF・stale表現を独立再計測し穴0"
-  ambiguity_points: "none"
-  semantic_concept_check: "support/configured/active母集団とresolved tuple契約を区別し、固定fixtureが除去されたことを確認"
-  verified_files: ["docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:86", "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:155", "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:506"]
-  operational_simulation:
-    command: "SHA256 local/commit/Gist、git diff v3.5..v3.7、git rev-parse因果7 blob、wc -l Codex blob、rg stale表現"
-    expected: "SHA3/3、blob7/7、EOF73/73、stale0、6契約6/6"
-    actual: "SHA3/3、blob7/7、EOF73/73、stale0、6契約6/6"
-    result: PASS
-  memory_references:
-    - "[MEM: inbox review_request msg_20260801_001707_276372_6b19522c]"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。前回FAIL修正後も全数再計測し、6契約6/6・証跡7/7・stale0で完了"
-  sg_checklist: {SG1_ac_coverage: PASS, SG2_test_pass: N/A, SG3_parity: PASS, SG4_no_regression: PASS, SG5_lesson_candidate: PASS, SG6_code_quality: PASS, SG7_gate_prediction: PASS}
-- cmd_id: cmd_karo_hotfix_cmd4200_archived_review_resume_20260801
-  review_type: draft
-  verdict: LGTM
-  reviewed_at: '2026-08-01T00:27:00+09:00'
-  conflict_of_interest: 軍師自身が使用するreview_approval基盤の変更。判定は現物で再現したarchive拒否0/2境界と、家老ACCEPT・cmd_complete_gateの独立後段検証を含むACに限定し、実装成果の最終LGTMは別途実走後に再審査する
-  summary: archive済みreportの正式二段階承認とterminal manifest再開をfail-closeで閉じるAC1-4は妥当
-  observations:
-  - review_validate_reportはqueue/reports直下のみ許可しarchive direct path許可0
-  - review_terminal_snapshot_writeもlogical/resolvedともqueue/reports限定でarchive direct
-    path許可0
-  - AC2は正規6件一意解決とduplicate/別cmd/nested/symlink/欠損をfail-close、AC3は両承認同一fingerprint、AC4は旧状態→CLEAR
-    E2Eを要求
-  finding_categories:
-  - assumptions
-  - numbers
-  - simulation
-  - premortem
-  - north_star
-  - adversarial
-  - ambiguity
-  assumptions_review: 'PASS: 現物2関数でarchive許可0を独立確認'
-  numbers_review: 'PASS: archive6、許可経路0/2、AC4/4'
-  simulation_result: 'PASS: 旧review_two_phase_pendingから6/6 snapshotとCLEARまでisolated
-    fixtureで実走する契約'
-  premortem_review: 'PASS: duplicate・別cmd・nested・symlink・fingerprint変更・片側承認を負例化'
-  north_star_review: 'PASS: archive後も不変成果物へ二段階承認を再束縛し偽CLEARを防ぐ'
-  adversarial_review: 'PASS: active限定2境界と部分対応gate_readyの非対称を現物確認'
-  ambiguity_points: none
-  semantic_concept_check: report identityとlogical path、content fingerprint、parent
-    cmdを別軸で固定
-  verified_files:
-  - scripts/lib/review_approval.sh:314
-  - scripts/lib/review_approval.sh:388
-  - scripts/lib/review_approval.sh:458
-  - queue/tasks/hanzo.yaml:1
-  operational_simulation:
-    command: 現物関数とtask ACを行番号照合
-    expected: archive許可0、正規修正+負例+E2E
-    actual: 0/2、AC4/4
-    result: PASS
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。実エラーから2境界を確認'
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: N/A
-    SG3_parity: PASS
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_reflux_backlink_202608010024_tobisaru
-  review_type: draft
-  gate_result: CLEAR
-  gate_synced_at: 2026-08-01T00:36:00+09:00
-  verdict: LGTM
-  reviewed_at: '2026-08-01T00:27:00+09:00'
-  summary: 孤立文書をSSOTへ接続し正規再生成・incoming増加・在庫前後を測るAC1-2は妥当
-  observations:
-  - 対象文書自身は変更禁止、変更正本はdocs/semantic-index/index.md
-  - semantic_map_generate.shによるcontext/semantic-map.md正規再生成を要求
-  - causal_backlink_countsでincoming 0→1以上、在庫4指標before/afterを要求
-  finding_categories:
-  - assumptions
-  - numbers
-  - simulation
-  - premortem
-  - north_star
-  - adversarial
-  - ambiguity
-  assumptions_review: 'PASS: SSOTと派生mapの所有境界が明確'
-  numbers_review: 'PASS: incoming 0→>=1、在庫4指標、AC2/2'
-  simulation_result: 'PASS: SSOT編集→generator→backlink recountの順序が固定'
-  premortem_review: 'PASS: target自己編集と派生map直接編集を契約で排除'
-  north_star_review: 'PASS: zero-backlink孤立を受動検索経路へ接続'
-  adversarial_review: 'PASS: target無変更・generator正規利用・在庫再計数を独立条件化'
-  ambiguity_points: none
-  semantic_concept_check: semantic index正本からderived mapへの一方向生成
-  verified_files:
-  - queue/tasks/tobisaru.yaml:1
-  operational_simulation:
-    command: task AC/planned_paths/target_path照合
-    expected: SSOT1・派生1・target変更0・incoming増加
-    actual: 契約明記
-    result: PASS
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。出力でなくincomingと在庫を二値化'
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: N/A
-    SG3_parity: PASS
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_reflux_backlink_202608010024_tobisaru
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-08-01T00:36:00+09:00
-  verdict: LGTM
-  gate_prediction: CLEAR
-  gate_prediction_reason: all checks passed
-  reviewed_at: '2026-08-01T00:31:20+09:00'
-  report_path: queue/reports/tobisaru_report_cmd_reflux_backlink_202608010024_tobisaru.yaml
-  report_id: rpt-505d6efe-6c0a-4bc7-8068-530547a86b7c
-  report_fingerprint: b52dc7923e14bcbd41b3a946553f3ee6687d31d0abc1133eefa4bebd526670ca
-  commit_hash: 438630319d8c32aacc863a4b012cce11f3313f42
-  worker: tobisaru
-  project: infra
-  observations:
-  - commit変更はindex/map 2ファイルのみ、target文書diff0
-  - index exact1、map exact1、incoming2、zero_backlinks38
-  - task帰属test独立再実行63/63 PASS、FAIL0、SKIP0、precheck ERRORS0
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - adversarial
-  - ambiguity
-  assumptions_review: 'PASS: target incoming0の事前値と現在2を報告証跡・現物で突合'
-  numbers_review: 'PASS: incoming0→2、zero39→38、total57→56、exact1/1、tests63/63'
-  premortem_review: 'PASS: target自己編集0、派生map単独編集ではなくSSOT+generator経路'
-  adversarial_review: 'PASS: commit diff・target diff・counter・task testsを独立再実行'
-  ambiguity_points: causal_backlink_countsはtarget引数なしの全量出力仕様。対象行をexact pathで抽出してincoming2を確認
-  verified_files:
-  - docs/semantic-index/index.md:1
-  - context/semantic-map.md:1
-  - queue/reports/tobisaru_report_cmd_reflux_backlink_202608010024_tobisaru.yaml:1
-  operational_simulation:
-    command: git diff+rg exact+causal_backlink_counts+run_tests task
-    expected: 2 files,target0,incoming>=1,SKIP0
-    actual: 2 files,target0,incoming2,63/63 SKIP0
-    result: PASS
-  memory_references:
-  - '[MEM: memory_db ts=2026-08-01T00:26:34+09:00]'
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。報告値で止めず独立再計測'
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: PASS
-    SG3_parity: PASS
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_karo_hotfix_cmd4200_archived_review_resume_v2_20260801
-  review_type: draft
-  gate_result: CLEAR
-  gate_synced_at: 2026-08-01T01:25:00+09:00
-  verdict: LGTM
-  reviewed_at: '2026-08-01T00:31:20+09:00'
-  conflict_of_interest: 軍師が使用するreview_approval基盤の変更。設計LGTMは現物archive拒否とAC負例の完全性に限定し、実装報告は別途独立実走後に再審査する
-  summary: 現task件数を揮発値として分離しarchive report identityで6/6解決するv2契約は妥当
-  observations:
-  - v1はcurrent task件数を前提固定し半蔵報告がAC1_BLOCKとなった
-  - v2 AC1はcurrent task件数Nを観測のみとしAC2解決根拠へ使用禁止
-  - AC2-4はarchive report自身による6/6一意解決、負例fail-close、両承認fingerprint、terminal snapshot、旧状態→CLEAR
-    E2Eを維持
-  finding_categories:
-  - assumptions
-  - numbers
-  - simulation
-  - premortem
-  - north_star
-  - adversarial
-  - ambiguity
-  assumptions_review: 'PASS: 揮発task Nとimmutable archive identityを分離'
-  numbers_review: 'PASS: archive6/6、active Nは非固定、AC4/4'
-  simulation_result: 'PASS: current task0/別世代でもarchive6 report identityから再開'
-  premortem_review: 'PASS: duplicate/別cmd/nested/symlink/欠損/片側承認/fingerprint変更をBLOCK'
-  north_star_review: 'PASS: task上書き後もimmutable成果物から完了再開'
-  adversarial_review: 'PASS: v1失敗仮説を転換しtask count依存を除去'
-  ambiguity_points: none
-  semantic_concept_check: mutable task stateとimmutable report identityの責務分離
-  verified_files:
-  - queue/tasks/kotaro.yaml:1
-  - scripts/lib/review_approval.sh:314
-  - scripts/lib/review_approval.sh:388
-  operational_simulation:
-    command: v1/v2 AC差分と現物2関数照合
-    expected: task N非依存+archive6 identity
-    actual: AC1/2に明記
-    result: PASS
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。v1同仮説反復でなくN依存を除去'
-  sg_checklist:
-    SG1_ac_coverage: PASS
-    SG2_test_pass: N/A
-    SG3_parity: PASS
-    SG4_no_regression: PASS
-    SG5_lesson_candidate: PASS
-    SG6_code_quality: PASS
-    SG7_gate_prediction: PASS
-- cmd_id: cmd_karo_hotfix_cmd4200_archived_review_resume_v2_20260801
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-08-01T01:25:00+09:00
-  verdict: FAIL
-  gate_prediction: BLOCK
-  gate_prediction_reason: "AC2 symlink escape is silently ignored when target YAML is invalid or parent_cmd differs"
-  reviewed_at: "2026-08-01T00:45:20+09:00"
-  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_cmd4200_archived_review_resume_v2_20260801.yaml
-  report_id: rpt-d9b22689-8ef1-4fc3-9941-1c90b25055a2
-  report_fingerprint: 472213aae8669fbd5a71eeebafc04648701560c298ab1a9c296a430c2eabe7b8
-  commit_hash: e12d6508b8cfbcc55b6edc2ebfed1bf7b71d5ca5
-  worker: kotaro
-  project: infra
-  conflict_of_interest: "軍師自身が使うreview_approval基盤。報告の10/10を信用せず、独立した不正YAML symlink fixtureで追加検証"
-  observations:
-    - "precheck ERRORS0、task historyは35995c0d7+e12d6508の2 commit、combined +152/-27"
-    - "resolverはreport_path.read_text/yaml.safe_loadをis_symlink/path boundary検査より先に実行"
-    - "正規archive1件+不正YAML symlink escapeの隔離fixtureでrc0・正規1件返却。escapeはBLOCKされず黙殺"
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  assumptions_review: "FAIL: symlink targetがvalid YAMLかつ同parent_cmdである時だけ負例になる前提"
-  numbers_review: "報告10/10に対し追加負例1/1 FAIL、resolver rc期待nonzero対actual0"
-  premortem_review: "FAIL: 攻撃/破損payload次第でpath escapeが監査母集団から消え、terminal report集合が偽正常化"
-  adversarial_review: "FAIL: invalid YAML symlinkで内容非依存fail-closeを反証"
-  ambiguity_points: "AC2のsymlink escapeは内容に関係なくpath entityを拒否する契約と解釈。現testはvalid matching YAMLのみ"
-  verified_files: ["scripts/lib/review_approval.sh:256", "tests/unit/test_cmd_complete_resume.bats:189", "queue/reports/kotaro_report_cmd_karo_hotfix_cmd4200_archived_review_resume_v2_20260801.yaml:1"]
-  operational_simulation:
-    command: "isolated rootに正規archive1件とinvalid-YAML symlink escapeを作成しreview_resolve_reports cmd_4200"
-    expected: "nonzero、出力なし"
-    actual: "rc0、正規1件を出力"
-    result: FAIL
-  memory_references: ["[MEM: memory_db ts=2026-08-01T00:43:15+09:00]"]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。10/10で終了せず未試験payloadを追加し1件反証"
-  sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: PASS, SG3_parity: FAIL, SG4_no_regression: FAIL, SG5_lesson_candidate: PASS, SG6_code_quality: FAIL, SG7_gate_prediction: FAIL}
 - cmd_id: cmd_karo_hotfix_cmd4200_archived_review_resume_v2_20260801
   review_type: report
   gate_result: CLEAR
@@ -1560,6 +274,8 @@
   sg_checklist: {SG1_ac_coverage: FAIL, SG2_test_pass: FAIL, SG3_parity: FAIL, SG4_no_regression: FAIL, SG5_lesson_candidate: PASS, SG6_code_quality: FAIL, SG7_gate_prediction: FAIL}
 - cmd_id: cmd_karo_hotfix_archive_review_canonical_allowlist_20260801
   review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:29:30+09:00
   verdict: REQUEST_CHANGES
   gate_prediction: BLOCK
   reviewed_at: '2026-08-01T01:51:00+09:00'
@@ -1651,6 +367,8 @@
     SG7_gate_prediction: FAIL
 - cmd_id: cmd_karo_hotfix_archive_review_canonical_allowlist_20260801
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:29:30+09:00
   verdict: FAIL
   gate_prediction: BLOCK
   gate_prediction_reason: "precheck CLEAR予測を独立実走が反証。required task runner rc2、review_bundle generate FAILもexit2"
@@ -2159,6 +877,8 @@
   brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no; target 1/1'
 - cmd_id: cmd_4202
   review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-08-01T11:34:42+09:00
   verdict: REQUEST_CHANGES
   gate_prediction: BLOCK
   reviewed_at: "2026-08-01T03:14:00+09:00"
@@ -2243,6 +963,8 @@
     SG7_gate_prediction: FAIL
 - cmd_id: cmd_karo_hotfix_cmd4200_governance_reconcile_20260801
   review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:26:29+09:00
   verdict: APPROVE
   gate_prediction: CLEAR
   reviewed_at: "2026-08-01T03:17:00+09:00"
@@ -2311,3 +1033,1116 @@
   causal_chain: "[[cmd_karo_hotfix_archive_review_canonical_allowlist_20260801]] -> [[dependency_registration_missing]] -> [[repeated_BLOCK_without_state_transition]]"
   memory_ref: "[MEM: memory_db ts=2026-08-01T03:22:18+09:00]"
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。報告だけで止めず放置1件を特定、BLOCK24件/63分を計測し2役へaction_required送信。"
+- cmd_id: cmd_karo_hotfix_cmd4200_governance_reconcile_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:26:29+09:00
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "format precheck ERRORS=0/CLEARだが、成果物の状態語に2件の正本内矛盾とcommit後未来時刻1件を独立検出。再提出が必要。"
+  reviewed_at: "2026-08-01T03:32:00+09:00"
+  project: infra
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_cmd4200_governance_reconcile_20260801.yaml
+  report_fingerprint: e0c0038ea93f0245df5e84b4df93423e237d6a4edc8a40e852574d0906d14e86
+  observations:
+    - "終端receiptはterminal review 6/6、家老ACCEPT 6/6、checkpoint 8/8、ntfy receipt 1件で成立。"
+    - "設計書§5.0はWave1A identity [IN PROGRESS: R01]のままで、同書§-2/§5.3のACCEPTEDと衝突。"
+    - "canonical manifest findings.R01 remediation_status=ACTIVEがwave1a_r01.state=ACCEPTEDと衝突し、updated_at 03:30はcommit 03:22・report 03:28より未来。"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: 冒頭のACCEPTED更新だけで正本全体が同期済みとの前提が崩れた。"
+  numbers_review: "receipt 6/6・6/6・8/8・1件はPASS。矛盾2件、未来時刻1件を検出。"
+  premortem_review: "このまま後続Waveが§5.0/findings表を読むとR01を再実装する二重着手が起きうる。"
+  adversarial_review: "PASS: 冒頭ではなく全R01状態語をrgし、残存IN_PROGRESS/ACTIVEを発見。"
+  ambiguity_points: "findings.remediation_status ACTIVEの定義が現物に未記載で、ACCEPTEDとの併存が曖昧。終端語へ統一または軸定義が必要。"
+  hole_action: "revision_required: §5.0、findings.R01、updated_atを終端receiptと同一事実へ同期。"
+  causal_chain: "[[cmd_4200]] -> [[partial_state_update]] -> [[canonical_document_self_contradiction]]"
+  verified_files:
+    - docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:455
+    - docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml:8
+    - docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml:300
+    - queue/gates/cmd_4200/terminal_review_manifest.json:reports
+    - queue/gates/cmd_4200/completion_checkpoint.json:completed
+  operational_simulation:
+    command: "sha256sum report; git show b4ca676; jq receipt counts; rg -n 'IN_PROGRESS|ACTIVE|updated_at|R01' on both canonical documents"
+    expected: "R01終端receipt成立かつ正本全状態語がACCEPTEDへ一致し未来時刻0件"
+    actual: "receipt review 6/6・checkpoint 8/8は成立したが、IN_PROGRESS残存1件・R01 ACTIVE残存1件・commit/report後時刻1件。"
+    result: FAIL
+  memory_references:
+    - "[MEM: 三層記憶 先に確認→一次情報→行動]"
+  brainwash_check: "#1yes #2no #3no #4no #5no #6no #7no #8no。precheck CLEARで早期終了せず、成果物全状態語を再検索し矛盾2件+時刻1件を検出。"
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: PASS
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_cmd4107_market_observe_20260801_saizo
+  review_type: report
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "precheck bc:no検出。一次artifactも18対象中17、QLD欠測、duplicate 51、負のbackend_to_observer latencyを示し親工程BLOCKが必要。"
+  reviewed_at: "2026-08-01T03:36:00+09:00"
+  project: rebalancer
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_cmd4107_market_observe_20260801_saizo.yaml
+  report_fingerprint: e28ad0db3b598882deb61339df00a205affa662deba89ebcbc73c098396ff188
+  observations:
+    - "commit db5eb493のartifactは指定schema全12キーを持ち、観測窓600.313秒、production phase open→open。"
+    - "symbols_expected 18、observed 17、missing QLD、overall live count 1777、duplicate 51、out_of_order 0、secret scan 0を独立jqで再計数。"
+    - "backend_to_observer p50=-81.607ms、p95=-73.315msで物理遅延が負値。clock-domainまたはtimestamp意味論を確定せず性能値へ利用不可。"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: subscription ACK 18/18なら10分coverageも18/18という前提は17/18で崩壊。時計同期前提も負値で崩壊。"
+  numbers_review: "expected18/observed17、missing1、events1777、duplicates51、out_of_order0、secret0、観測600.313秒。"
+  premortem_review: "負の区間遅延を高速と誤解すると後続shardが性能判定を逆転させる。clock-domainを別BLOCK条件にせよ。"
+  adversarial_review: "PASS: report要約ではなくcommit固定artifactをgit show+jqで再計数しQLD null 3 phaseと負値を確認。"
+  ambiguity_points: "backend_received_atとbackend_emitted_atの時計領域、およびobserver_received_atとの同期保証がartifactに未記載。"
+  hole_action: "parent BLOCK。後続shardでQLD欠測、duplicate identity 51、clock-domain/負値を個別診断。"
+  causal_chain: "[[cmd_4107]] -> [[production_observation]] -> [[QLD_missing_duplicate_clock_domain_BLOCK]]"
+  verified_files:
+    - docs/research/cmd_4107_p3_market_observation_20260801.json:window_started_at
+    - queue/reports/saizo_report_cmd_karo_hotfix_cmd4107_market_observe_20260801_saizo.yaml:binary_checks
+    - queue/tasks/saizo.yaml:acceptance_criteria
+  operational_simulation:
+    command: "git show db5eb493:artifact | jq expected/observed/missing/phase-counts/duplicate/out-of-order/secret/health/contract"
+    expected: "coverage18/18、duplicate0、out_of_order0、secret0、各phase delayが物理的に解釈可能"
+    actual: "coverage17/18、QLD missing、duplicate51、out_of_order0、secret0、backend_to_observer p50/p95=-81.607/-73.315ms。"
+    result: FAIL
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01T03:31:05+09:00]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。報告の正直FAILだけで終了せず、artifact全12キーと主要値9系列を独立再計数。"
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: N/A
+    SG3_parity: FAIL
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_gunshi_cs_history_repair_20260801
+  review_type: report
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "precheck ERRORS=1: lessons_useful集合不一致。加えてtask snapshotとbinary_checksの契約不一致、review log大差分の説明不足。"
+  reviewed_at: "2026-08-01T03:39:00+09:00"
+  project: infra
+  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_gunshi_cs_history_repair_20260801.yaml
+  report_fingerprint: 2c09311d1233eb095366e1481bfc9074fb7b85ae1051edda18f9a89a9bf81dd4
+  observations:
+    - "precheck ERRORS=1。task related_lessons集合にないL278/L625/L800がlessons_usefulへ3件追加されている。"
+    - "task_contract_snapshot AC2/AC3はstable identity・証拠不在3件保持だが、binary_checksは旧9 entry補修・D0 4→0・未解消0をyesとしており同一報告内で衝突。"
+    - "commit 55b6d9ce3はlogs/gunshi_review_log.yamlを+2125/-1105行変更。報告の旧prefix byte変更0との関係がcommit差分から検証不能。"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: ac_version一致だけではbinary_checks本文が現契約へ同期したことを保証しない。"
+  numbers_review: "precheck ERROR1、余分lesson3、stale binary check AC2/AC3各2項目、review log差分+2125/-1105。"
+  premortem_review: "旧契約のyesを受理すると、stable identityの0/複数match fail-closeが未検証でも完了扱いになる。"
+  adversarial_review: "FAIL: gate/writer実装以前に報告契約が自己矛盾。大規模log差分がappend-only保証を曖昧化。"
+  ambiguity_points: "55b6d9ce3のlog大差分が自動archive・他agent未commit変更・task自身のrewriteのどれか報告から識別不能。"
+  hole_action: "revision_required: 現ACにbinary_checksを再生成、lesson集合をtask注入集合へ一致、commit別files/old-byte/archive証拠を明示。"
+  causal_chain: "[[gunshi_cs_history_repair]] -> [[stale_report_contract]] -> [[false_completion_risk]]"
+  verified_files:
+    - queue/reports/kotaro_report_cmd_karo_hotfix_gunshi_cs_history_repair_20260801.yaml:task_contract_snapshot
+    - queue/reports/kotaro_report_cmd_karo_hotfix_gunshi_cs_history_repair_20260801.yaml:binary_checks
+    - scripts/gates/gate_gunshi_cs_checklist.sh:remediation
+    - scripts/gunshi_log_append.sh:ENTRY_REVIEW_TYPE
+  operational_simulation:
+    command: "precheck; git show --stat/numstat 55b6d9ce3 and 047775e0a; compare task_contract_snapshot vs binary_checks; compare task related_lessons vs lessons_useful"
+    expected: "ERRORS0、現ACとbinary checks 3/3一致、lesson集合差0、append-only旧entry差0がcommit evidenceで説明可能"
+    actual: "ERRORS1、AC2/AC3 stale checks 4項目、lesson extra3、review log +2125/-1105で旧byte不変の説明なし。"
+    result: FAIL
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01T03:35:47Z]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。precheckのprediction CLEARを鵜呑みにせずERRORS1と報告内4契約不一致を独立確認。"
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: PASS
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: FAIL
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_rebalancer_qld_coverage_20260801
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_prediction: BLOCK
+  reviewed_at: '2026-08-01T09:06:00+09:00'
+  project: rebalancer
+  observations:
+  - AC1はQLD無約定と購読欠落を区別するとだけ記し、IEXのtrade/quote種別、元観測窓、provider raw/REST/storeのどの値を比較するか未固定。
+  - 設計正本§4はIEX quote活発性が18/18購読でも保証されないと既に警告しており、10分live=0だけでは実バグと判定不能。
+  - AC2は実バグならalpaca_stream.pyを変更するが、provider側無イベント・raw受信欠落・store drop・freshness表示の4境界を二値分類する証拠表がない。
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - adversarial
+  - ambiguity
+  assumptions_review: 'FAIL: live eventを約定と同義にしているが、現streamのevent種別がtrade/quoteのどちらか未固定。'
+  numbers_review: 既知ACK18/18・live1777・coverage17/18・QLD0を保持。新規分類はprovider活動/raw/store/freshnessの4境界で必要。
+  simulation_review: 同一観測窓のprovider historical trade/quote timestamp、raw frame、store
+    mutation、freshnessをQLDと陽性対照1銘柄で比較する。
+  premortem_review: 市場側の無イベントを購読バグと誤認すると正常コードを変更し、coverage偽陽性を恒久化する。
+  north_star_review: 正しいcoverageとはsubscription ACKではなく、provider activityがある時だけraw→store→freshness連続性を要求すること。
+  adversarial_review: 'REQUEST_CHANGES: no-trade/no-quote・raw欠落・store dropの3族を区別する契約が不足。'
+  ambiguity_points: 『QLD無約定』がtrade 0かquote 0か不明。元観測窓2026-07-31T18:18:44Z〜18:28:45Zへの束縛も必要。
+  suggested_changes:
+  - AC1へ観測窓、feed/event種別、QLD+陽性対照のprovider historical activity/raw frame/store/freshness
+    4境界表を固定。
+  - 'AC2へ分類結果ごとの行動を固定: provider activity0=code変更0、raw0=subscription、raw>0/store0=ingest、store>0/freshness異常=health契約。'
+  verified_files:
+  - queue/tasks/hanzo.yaml:5
+  - docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md:64
+  - docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md:94
+  operational_simulation:
+    command: draft AC1-AC3を設計正本§4 IEX activity契約と第5巡artifactへ照合し、原因候補を4境界へ展開
+    expected: QLD0をprovider activity/raw/store/freshnessのexact evidenceで一意分類可能
+    actual: 現draftは無約定対購読欠落の2択のみで、event種別とstore/freshness境界が未固定。
+    result: FAIL
+  memory_references:
+  - '[MEM: semantic concept=provisional_saizo]'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。ACK18/18とQLD0の2数だけで原因を決めず4境界を検査。'
+  ambiguity_points_resolved: false
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: N/A
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_rebalancer_stream_observer_identity_20260801
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_prediction: BLOCK
+  reviewed_at: '2026-08-01T09:06:30+09:00'
+  project: rebalancer
+  observations:
+  - AC2は異時計測を一方向latencyとして偽装しないと定めるが、代替の出力契約(UNVERIFIED/raw delta/offset uncertainty/same-clock
+    metric)が未定義。
+  - event_to_backend・backend_to_observer・end_to_endはいずれも別clock domainを跨ぎ、observer単体では真のone-way
+    latencyを確定できない。
+  - AC3のfixtureは真duplicate・snapshot・clock offsetのみで、generation rollover・Last-Event-ID
+    replay・out-of-orderを含まない。設計正本§4はEventSource exactly-onceを仮定しない。
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - adversarial
+  - ambiguity
+  assumptions_review: 'FAIL: producer fetched_atとobserver clockを分離するだけではclock offsetを補正・境界化できない。'
+  numbers_review: 既知duplicate51、負値p50=-81.607ms/p95=-73.315ms。fixture最低6族(true duplicate/snapshot/offset/generation
+    rollover/replay/out-of-order)が必要。
+  simulation_review: 同generation同sequence再送、generation変更同sequence、snapshot、Last-Event-ID
+    replay、sequence逆行、clock offsetを全セル投入。
+  premortem_review: 負値を0へ丸める、絶対値化する、offset推定なしで補正する実装はいずれも偽latencyを生成する。
+  north_star_review: 正本IDでdelivery anomalyを分類し、測れないone-way latencyはUNVERIFIEDとして残す観測器。
+  adversarial_review: 'REQUEST_CHANGES: replay/rollover/out-of-orderとclock uncertainty出力がないためFP/FN0を証明不能。'
+  ambiguity_points: 異clock時の正式出力が未定義。same-clock monotonicのみ採用か、offset+uncertainty付き推定を許すか固定が必要。
+  suggested_changes:
+  - AC2へclock_domain、raw_delta_ms、offset_estimate_ms、uncertainty_ms、latency_status=VERIFIED|UNVERIFIEDを固定し、異clock無補正値を正式latencyから除外。
+  - AC3へgeneration rollover・Last-Event-ID replay・out-of-orderを追加し6族全数FP0/FN0を要求。
+  verified_files:
+  - queue/tasks/saizo.yaml:5
+  - docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md:65
+  - docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md:94
+  operational_simulation:
+    command: draft AC1-AC3をSSE identity/reconnect契約へ照合し、6族の状態遷移表とclock-domain可観測性を検算
+    expected: duplicate/replay/snapshot/out-of-orderを一意分類し、異clock one-way値は正式latencyへ混入0
+    actual: 現draftは3 fixture族のみで、異clock時のterminal outputとreplay/rollover/out-of-orderが未固定。
+    result: FAIL
+  memory_references:
+  - '[MEM: obsidian link=[[Alpaca_IEX_WS二層構成]]]'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no。負値2統計を丸めず、測定不能条件と6 fixture族へ展開。'
+  ambiguity_points_resolved: false
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: N/A
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_rebalancer_stream_observer_identity_20260801
+  review_type: report
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "precheck bc:no。旧artifact再集計不能に加え、event_to_backendが異clockのまま正式latency出力されAC2未達。"
+  reviewed_at: "2026-08-01T09:11:00+09:00"
+  project: rebalancer
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_rebalancer_stream_observer_identity_20260801.yaml
+  report_fingerprint: f7cafe417250cca981067c88b33b61df33da621429cdc35afb61258b3d99f051
+  observations:
+    - "旧artifactはduplicate_count=51のみでraw identity不在。identity別再集計不能とのAC1 BLOCKは正直かつ妥当。"
+    - "commit dd70cc05はproducer→observerをraw_delta/UNVERIFIED/reported_as_latency=falseへ是正し、duplicate1/replay1を独立fixtureで再現。"
+    - "同scriptはupstream as_of→backend fetched_atも別clock domainなのにevent_to_backend_latency_msとして正式出力し、offset/uncertainty/statusを持たない。"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: UTC timezone一致はclock同期証明ではなく、Alpaca upstreamとbackend wall clock差もone-way latency確定不能。"
+  numbers_review: "旧負値50/54、duplicate51再集計不能。独立fixtureでduplicate1/replay1、event_to_backend 100msを無検証latencyとして出力。"
+  premortem_review: "一方のcross-clockだけUNVERIFIED化すると、残るevent_to_backend値が正式性能値として誤利用される。"
+  adversarial_review: "FAIL: offset不明のupstream/backend timestampへ100ms差を与えるとlatency_msとして無条件出力された。"
+  ambiguity_points: "as_ofがprovider event clock、fetched_atがbackend clockである以上、同期保証またはoffset uncertaintyなしの正式latency可否は曖昧でなくUNVERIFIED固定にすべき。"
+  hole_action: "revision_required: event_to_backendもclock boundary構造へ移しraw_delta/offset/uncertainty/status/reported_as_latencyを固定。"
+  causal_chain: "[[cmd_4107]] -> [[cross_clock_latency]] -> [[partial_unverified_boundary]]"
+  verified_files:
+    - scripts/observe_price_stream.py:summarize
+    - queue/reports/saizo_report_cmd_karo_hotfix_rebalancer_stream_observer_identity_20260801.yaml:AC1
+    - docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md:94
+  operational_simulation:
+    command: "python3 -m py_compile + inline SSEEvent fixture(same-ID same/cross connection, upstream/backend +100ms, observer/backend -50ms)"
+    expected: "duplicate1/replay1かつ全cross-clock segmentがUNVERIFIED・正式latency0"
+    actual: "duplicate1/replay1。producer→observerはUNVERIFIEDだがevent_to_backend_latency_msは100msを正式出力。"
+    result: FAIL
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01T09:05:20]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。reportのAC1正直BLOCKだけで止めず、実装fixture3 eventsを実走して残る異clock1区間を検出。"
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: PASS
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_rebalancer_stream_observer_identity_20260801
+  review_type: report
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "RC実装は解消済みだが、旧artifact raw identity欠落によりAC1再集計不能が残る。"
+  reviewed_at: "2026-08-01T09:14:30+09:00"
+  project: rebalancer
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_rebalancer_stream_observer_identity_20260801.yaml
+  report_fingerprint: 7c00d8aa44124db87ac182c9e613124a86a86da006eab376cc911ff92c52823c
+  observations:
+    - "commit ff6f13eはevent_to_backend_latency_msを削除し、upstream→producerをraw clock boundary/UNVERIFIEDへ変更。"
+    - "独立fixture +100ms/-80msで両clock boundaryのoffset/uncertainty null、reported_as_latency=false、formal latency key 0を確認。"
+    - "旧artifactはaggregate duplicate_count=51のみでraw generation:sequenceを保存せず、identity別再集計は不可逆に不能。"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "PASS: UTC表記一致を同期証明とせず両cross-clock区間をUNVERIFIED固定。"
+  numbers_review: "RC diff +12/-4。独立fixture boundary2/2 UNVERIFIED、formal latency0。AC1 unresolved1。"
+  premortem_review: "旧集計値を推定分解せず、新観測窓でraw identityを保存し直す必要がある。"
+  adversarial_review: "PASS: 正/負raw deltaを同時投入し、どちらも正式latencyへ昇格しないことを確認。"
+  ambiguity_points: "実装の曖昧性は解消。残るのは旧artifact証拠欠落であり、新観測以外に回復不能。"
+  hole_action: "followup_required: 次の開場窓で新observerを実走しraw identity付きartifactを生成。"
+  causal_chain: "[[cmd_4107]] -> [[aggregate_only_artifact]] -> [[reobserve_with_identity_evidence]]"
+  verified_files:
+    - scripts/observe_price_stream.py:summarize
+    - queue/reports/saizo_report_cmd_karo_hotfix_rebalancer_stream_observer_identity_20260801.yaml:AC1
+    - docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md:94
+  operational_simulation:
+    command: "git show ff6f13e + inline SSEEvent fixture(+100ms upstream delta/-80ms observer delta) + latency-key recursive scan"
+    expected: "両cross-clock区間UNVERIFIED、reported_as_latency=false、正式latency output 0"
+    actual: "boundary2/2 UNVERIFIED、reported_as_latency false2/2、formal latency keysはboolean markerのみで値出力0。"
+    result: PASS
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01T09:11:07Z]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。RC成功だけでLGTMにせず、AC3件中未達1件を保持して次観測へ行動変換。"
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: PASS
+    SG3_parity: PASS
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:32:09+09:00
+  verdict: REQUEST_CHANGES
+  gate_prediction: BLOCK
+  reviewed_at: '2026-08-01T09:19:30+09:00'
+  project: infra
+  observations:
+    - "AC1→AC2→AC3→AC4の直列依存をac_priorityで宣言しながらparallel_okは4/4を許可し、manifest receiptが検証前に書かれ得る。"
+    - "AC2はtarget publish→owner pointer→source tombstoneと記すが、target publish直後のtargetがexecutableかprepared/non-executableか、owner pointerをreaderが強制参照するかを定義していない。"
+    - "startup reconcilerを完了条件にする一方、planned_paths 3件中startup/reconciler callerは0件。既存durable_state.reconcileもintended/preparedを再駆動せずそのまま返す。"
+    - "設計§1.5 N07はmutation point全数fault matrixを要求するが、AC3はafter_target_before_tombstoneの中断1点だけでstale fence・reconcile反復・各境界を覆わない。"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  assumptions_review: "FAIL: WAL helperの存在だけではowner authorityは切り替わらない。readerがowner pointerに従うかtargetが非実行状態でpublishされる契約が必要。"
+  numbers_review: "AC4件中parallel_ok 4/4、planned_paths 3件中startup owner path 0件、明示failpoint 1件。"
+  simulation_review: "target publish直後にprocess停止すると、現行copy由来target=assignedとsource activeが共存し得る。既存generic reconcileはpreparedを進めない。"
+  premortem_review: "failpoint fixtureだけPASSしても実startupからreconcilerが呼ばれず、再起動後に2 ownerを残したままR03 receiptだけterminal化する。"
+  north_star_review: "全mutation境界でexecutable owner<=1を維持し、実startup callerがstale generationをexactly-once収束させてからreceiptを公開する。"
+  adversarial_review: "REQUEST_CHANGES: crash境界全数・stale fence・reconcile二重実行を投入すると現draftだけではowner predicateとrecovery ownerを一意判定できない。"
+  ambiguity_points: "targetのprepared/executable状態、owner pointerの唯一reader、startup reconcilerの実caller、source tombstoneのterminal値、全mutation境界が未固定。"
+  suggested_changes:
+    - "parallel_okを空にし、AC1→AC2→AC3→AC4のrequiresを明示する。"
+    - "state machineをprepared target(non-executable)→fenced owner switch→source tombstone→target activation/terminal receiptとして固定し、全readerがowner pointer/fenceを強制参照する。"
+    - "startup entrypoint/reconciler callerをplanned_pathsへ追加し、intended/prepared/published各phaseのroll-forward/rollback責務を定義する。"
+    - "focused command一回の内部で全mutation境界、stale fence、reconcile 2回、startup再起動を表形式に実走し、各checkpoint owner<=1・lost_update=0・false_success=0を分母付きで要求する。"
+  verified_files:
+    - queue/tasks/saizo.yaml:1
+    - scripts/auto_deploy_next.sh:351
+    - scripts/lib/durable_state.py:24
+    - docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:335
+    - docs/research/hidden-infrastructure-gate-hook-foundation-map-20260731.yaml:23
+    - docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml:301
+  operational_simulation:
+    command: "task YAMLをparseしparallel_ok/planned startup pathを計数、auto_deploy mutation順とdurable_state VALID_TRANSITIONS/reconcile branchをrg照合"
+    expected: "AC直列依存、startup owner path>=1、全phase再駆動責務、publish中間点でもowner<=1が一意"
+    actual: "parallel_ok=4/4、planned_paths=3・startup owner path=0、generic reconcileはintended/preparedをreturn、target publish時のexecutable predicate未定義"
+    result: FAIL
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。設計文言=実装可能と早期終了せず、AC4件・path3件・recovery branch2件を一次照合。"
+  ambiguity_points_resolved: false
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: N/A
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:32:09+09:00
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "precheck CLEAR後の敵対実走でstale fence callerがCAS拒否前にsource/targetを変更。さらにcurrent AC2/AC3とreport snapshot不一致。"
+  reviewed_at: '2026-08-01T09:39:30+09:00'
+  project: infra
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801.yaml
+  report_fingerprint: 3eeafabb87dfe06cbd05325ab31b960f85b9b509b973d8a438022e6d2fdd95bf
+  changed_lines: 240
+  observations:
+    - "fixed commit da8993f1dのowner_transaction_finishはsource tombstoneとtarget activationを先に行い、最後にpublished CASする。stale fence=1/current=2実走でrc=4にもかかわらずsource=transferred、target=assignedへ変化した。"
+    - "current task正本はAC2/AC3を差戻し後の強化文へ変更済みだが、report snapshotは旧文のまま。AC2/AC3 2/4不一致なのにtask/report双方のac_versionは2edf2958で同一。"
+    - "focused testのstale checkはdurable_state mutate単体でcaller side effect不変を検証せず、startup確認はninja_monitorのrg 1件だけ。lost変数も並行writer lost updateでなくowner count偏差を数える。"
+    - "implementation commitには報告のstartup reconciler以外にfailed-report formal-close predicate変更が混入し、files_modified.change記述と固定diffが一致しない。"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: durable_state CASが最終段にあれば安全という前提が誤り。不可逆YAML副作用前にcurrent fence/phase/pointerを照合する必要がある。"
+  numbers_review: "precheck ERRORS=0だが敵対probe 1/1でstale side effect発生。AC snapshot一致2/4、stale caller不変0/1、focused tests 2/2 PASSは偽陰性。"
+  premortem_review: "旧processがstale fenceで再開すると、現owner generationを無視してsourceをtombstone化しtargetをactivateした後だけ失敗し、owner喪失または誤ownerを残す。"
+  adversarial_review: "FAIL: fixed commitへgeneration 2を作った後generation 1 callerを投入。rc=4でもYAML 2件が変化し、CAS fail-closeがside effectを守らないことを再現。"
+  ambiguity_points: "なし。固定commit・固定report fingerprintで再現済み。修正中worktreeは次世代reportとして再通知・再レビューが必要。"
+  hole_action: "revision_required: side effect前fence assertion、caller-level stale不変fixture、実startup invocation、並行writer lost-update fixture、AC fingerprint再生成、scope外hunk分離。"
+  causal_chain: "[[R03]] -> [[stale_fence_after_side_effect]] -> [[owner_authority_corruption]]"
+  verified_files:
+    - scripts/auto_deploy_next.sh:40
+    - tests/unit/test_auto_deploy_next.bats:35
+    - scripts/ninja_monitor.sh:2407
+    - queue/tasks/saizo.yaml:4
+    - queue/reports/saizo_report_cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801.yaml:9
+    - docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:335
+  operational_simulation:
+    command: "git archive da8993f1dで隔離fixtureを作りgeneration1 prepared→generation2 prepared後、generation1 fenceでowner_transaction_finishを実行"
+    expected: "stale rc非0かつsource=assigned、target=owner_preparedのまま(YAML side effect 0/2)"
+    actual: "rc=4だがsource=transferred、target=assignedへ変化(YAML side effect 2/2)。stderr=stale fence expected=1 current=2"
+    result: FAIL
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01T09:19:54]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。GATE CLEARとtest2/2を信じずfixed commitへstale generation 1/1を実投入し偽陰性を検出。"
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: FAIL
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: FAIL
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:32:09+09:00
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "precheck CLEAR後、lease expiryと旧finisher再開を組み合わせた敵対probeでsource tombstone先行・executable owner 0を再現。"
+  reviewed_at: '2026-08-01T09:52:30+09:00'
+  project: infra
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801.yaml
+  report_fingerprint: 3ad7463c8c578e19a2c30ae03dd6ac71fe05f40cf90685265ffd4cf697d3a1c3
+  changed_lines: 19
+  observations:
+    - "fixed implementation 0f4a9c88でfinisherをassert直後に停止しlease TTL経過後にnew begin、旧finisher再開を実走。new begin rc=0、旧finisher rc=4だがsource=transferred、target=owner_prepared、executable owner=0。"
+    - "追加fixtureはlive lease中の競合拒否とexpiry後の別beginを別々に試すが、expiry後も旧lease ownerが生存・再開する組合せを覆わない。"
+    - "owner_transaction_assert_currentとsource writeの間にlease expiryがあり、YAML write自身がfence tokenを条件付きCASしないためTOCTOUが残る。"
+    - "report task snapshotは旧AC2/AC3のまま、current taskとの一致2/4。ac_versionは双方2edf2958で更新されず、commit_hash e7ca3617はmanifest receiptだけを変更しimplementation pathを束縛しない。"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: TTL中にfinisherが完了する前提は安全不変量にならない。停止・stall・scheduler遅延後も旧ownerは再開し得る。"
+  numbers_review: "lease-expiry race 1/1でnew begin成功、旧caller stale拒否、source side effect 1/1、executable owner 0。AC一致2/4。"
+  premortem_review: "DrvFs stallがTTLを超えると新generationが正当に開始し、旧process再開でsourceだけ失効してtargetはpreparedのまま残り配備が消失する。"
+  adversarial_review: "FAIL: barrier後0.6秒停止、TTL0.5秒後にnew begin、旧finisher release。安全性がwall-clock期限に依存しowner<=1ではなくliveness(=1へ収束)を破壊。"
+  ambiguity_points: "なし。TTL値の大小では解消せず、旧ownerのside effect権限を原子的に失効させる設計が必要。"
+  hole_action: "revision_required: lease renewalまたは各YAML side effectと同一lock/fence domainの条件付きmutation、expiry後旧finisher再開fixture、current AC fingerprint再生成、implementation+receipt commit lineage明記。"
+  causal_chain: "[[R03]] -> [[lease_expiry_TOCTOU]] -> [[zero_executable_owner]]"
+  verified_files:
+    - scripts/auto_deploy_next.sh:40
+    - scripts/lib/durable_state.py:213
+    - tests/unit/test_auto_deploy_next.bats:81
+    - queue/tasks/saizo.yaml:4
+    - queue/reports/saizo_report_cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801.yaml:9
+    - docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml:332
+  operational_simulation:
+    command: "git archive 0f4a9c88隔離fixtureでfinisherをassert後barrier停止→TTL0.5秒超過→competing begin→旧finisher release"
+    expected: "expiry後にnew beginを許しても旧finisherのYAML side effect 0、最終executable owner 1"
+    actual: "new begin rc=0、old finisher rc=4、source=transferred、target=owner_prepared、executable_count=0"
+    result: FAIL
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01T09:40:22]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no。focused21/21とlive lease4/4を完了扱いせず、expiry×旧process再開の交差セル1/1を追加して破綻検出。"
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: FAIL
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: FAIL
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_gunshi_cs_history_repair_20260801
+  review_type: report
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "precheck ERRORS=1; binary_checks AC3=no"
+  reviewed_at: "2026-08-01T11:10:00+09:00"
+  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_gunshi_cs_history_repair_20260801.yaml
+  report_id: rpt-414e686c-7512-468a-95f4-887e7769b900
+  project: infra
+  observations:
+    - "事実1: 独立task testは5/5 PASS、FAIL0、SKIP0"
+    - "事実2: 現行CS gateはrc=2でinvalid structured remediation 5件、hole_action未解消3件、D0未解消1件を検出"
+    - "事実3: 実装commit 55b6d9ce3の正本ログ差分は+2125/-1105で、AC3の旧entry byte変更0を満たさない"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: stable identityの対象reviewが共有実ログに残る前提は成立せず5件とも0 match"
+  numbers_review: "FAIL: fixture 5/5 PASSに対し運用gate rc2、invalid 5件、正本ログ差分+2125/-1105"
+  premortem_review: "FAIL: 対象entryがarchiveまたは圧縮で移動するとremediationが恒久invalid化しstartupをBLOCKする"
+  adversarial_review:
+    required: true
+    verdict: FAIL
+    reason: "append-only正本への大差分と0-match fail-closeを実ログで再現。fixture成功だけでは運用履歴変動を覆えない"
+  ambiguity_points:
+    - "stable identity対象がhot logからarchiveへ移る際の解決境界が仕様化されていない"
+  verified_files:
+    - "scripts/gates/gate_gunshi_cs_checklist.sh:790"
+    - "scripts/gunshi_log_append.sh:220"
+    - "logs/gunshi_review_log.yaml:1"
+  operational_simulation:
+    command: "bash scripts/run_tests.sh task queue/tasks/kotaro.yaml; bash scripts/gates/gate_gunshi_cs_checklist.sh"
+    expected: "task FAIL0 SKIP0かつ運用gateが証拠付き対象のみ解消し未証拠条件だけを保持"
+    actual: "task 5/5 PASS SKIP0; 運用gate rc2、invalid remediation 5件"
+    result: FAIL
+  causal_chain: "hot logのentry集合をstable identityの唯一の解決先にする -> 圧縮後に対象0 match -> 過去remediationがinvalid化 -> startupが恒久BLOCK"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; 独立実行2本、fixture5/5と運用rc2を比較しFAIL"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] 殿: 先送りや放置がないか覚醒して確認と行動せよ"
+  hole_action: cmd_proposed
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_4202
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-08-01T11:34:42+09:00
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "precheck ERRORS=1; shared target files dirty and operational scope invariant failed"
+  reviewed_at: "2026-08-01T11:14:00+09:00"
+  report_path: queue/reports/kagemaru_report_cmd_4202.yaml
+  report_id: rpt-30477720-d07b-4ac4-b3c0-4acc8b6f676f
+  project: infra
+  changed_lines: 1431
+  observations:
+    - "事実1: 独立task testは72/72 PASS、FAIL0、SKIP0"
+    - "事実2: commit 55f2c1c1のqueue/insights.yaml差分は+860/-571で、対象insight以外の多数entryを置換"
+    - "事実3: 現行gate_skill_script_refsはrequired=2、deduped=3、REVIEW_REQUIRED(rc2)"
+    - "事実4: live taskの13対ACとreport内task_contract_snapshot旧AC本文が同じac_version e3610e9aで不一致"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: helperによる対象insight限定更新という前提がcommit差分と一致しない"
+  numbers_review: "FAIL: 72/72 PASSでも共有台帳差分1431行、現行pending 2対"
+  premortem_review: "FAIL: shared queueのstale全体像をcommitすると他agentのinsight状態を巻き戻しまたは混入する"
+  adversarial_review:
+    required: true
+    verdict: FAIL
+    reason: "対象1 insight限定という主張に対しcommit全差分を検査し、広域置換を確認"
+  ambiguity_points:
+    - "同一ac_versionのままlive task AC本文だけが13対固定へ更新され、report snapshotと不一致"
+  verified_files:
+    - "docs/research/cmd_4202_skill_script_followup_inspection.md:1"
+    - "queue/insights.yaml:1"
+    - "logs/skill_script_refs_verified.json:1"
+  operational_simulation:
+    command: "bash scripts/run_tests.sh task queue/tasks/kagemaru.yaml; bash scripts/gates/gate_skill_script_refs.sh"
+    expected: "FAIL0 SKIP0かつrequired=0 pending=0"
+    actual: "72/72 PASS SKIP0; gate required=2 deduped=3 REVIEW_REQUIRED rc2"
+    result: FAIL
+  causal_chain: "shared台帳をstale snapshotから広域commit -> unrelated entryが置換 -> 対象限定契約が崩れる -> 後続insightの正本性が保証不能"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; test72件とcommit全1431差分と現行gateを独立確認"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] 家老escalation 03:05 の解消は全対の現行一次計測を要求"
+  hole_action: cmd_proposed
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_karo_hotfix_archive_review_canonical_allowlist_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:29:30+09:00
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0; all checks passed"
+  reviewed_at: "2026-08-01T11:17:00+09:00"
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_archive_review_canonical_allowlist_20260801.yaml
+  report_id: rpt-5ee0f61f-8617-4dde-b84b-b2cb261e21ad
+  project: infra
+  changed_lines: 107
+  observations:
+    - "事実1: precheck ERRORS=0、prediction CLEAR"
+    - "事実2: 独立pytestとtask runnerはいずれも21/21 PASS、FAIL0、SKIP0"
+    - "事実3: resolverはshell SSOTのrealpathとlogical identity完全一致を共有し、Python側の第二台帳0件"
+    - "事実4: live/archive正例、nested、symlink 4類型、traversal、missing、cmd mismatch、failed report 8セルを総当たり"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "PASS: same-directory alias旧受理想定は0件へ訂正し、dot-segment誤受理1件を実原因として採用"
+  numbers_review: "PASS: direct contract 21/21、FP0、FN0、SKIP0、通知duplicate0"
+  premortem_review: "PASS: archive aliasやtraversalで同一実体へ到達してもlogical identity不一致でfail-close"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "live/archive direct正例とsymlink escape・same-directory/live alias・chain・nested・traversal・別cmd・staleを独立fixtureで確認"
+  ambiguity_points:
+    - "AC1の旧resolver alias受理想定は現HEAD実測0件だったが、報告が差異1として明示し代替実害dot-segment 1件を根拠化済み"
+  verified_files:
+    - "scripts/review_bundle.py:115"
+    - "tests/unit/test_review_bundle.py:23"
+    - "docs/research/archive-review-reapproval-path-audit-20260801.md:1"
+  operational_simulation:
+    command: "PYTHONPATH=. pytest -q tests/unit/test_review_bundle.py; bash scripts/run_tests.sh task queue/tasks/tobisaru.yaml"
+    expected: "全contract FAIL0 SKIP0"
+    actual: "21/21 PASSを2経路で確認、FAIL0 SKIP0"
+    result: PASS
+  causal_chain: "alias種別ごとのdenylist -> 未知aliasに穴 -> shell registry由来canonical identity allowlistへ反転 -> 非登録identityを一律拒否"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; code差分107行とcontract21件を独立確認"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] 飛猿report到達遅延を確認したが、現fingerprint正本で再レビュー"
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_karo_hotfix_archive_review_canonical_allowlist_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:29:30+09:00
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "formal review_approval BLOCK: report-only payload unchanged since Karo RC"
+  reviewed_at: "2026-08-01T11:18:30+09:00"
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_archive_review_canonical_allowlist_20260801.yaml
+  report_id: rpt-5ee0f61f-8617-4dde-b84b-b2cb261e21ad
+  project: infra
+  observations:
+    - "事実1: 実装レビューと独立contractは21/21 PASS、FAIL0、SKIP0"
+    - "事実2: review_approval.sh実行はreport-only payload unchanged since Karo RCでrc2"
+    - "事実3: RC後の報告実質deltaがなくstatusだけcompletedへ戻されたためfingerprint承認境界を満たさない"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: status=completedなら再提出成立という前提はformal approval marker契約に反する"
+  numbers_review: "PASS: contract21/21、formal approval成功0/1"
+  premortem_review: "FAIL: status-only再提出を通すとRC否認点未反映の報告が承認される"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "実装境界は通過したが報告lifecycle境界が不変payloadを正しくBLOCK"
+  ambiguity_points:
+    - "RC否認点の具体的payload deltaがreportに記録されていない"
+  verified_files:
+    - "scripts/review_bundle.py:115"
+    - "queue/reports/tobisaru_report_cmd_karo_hotfix_archive_review_canonical_allowlist_20260801.yaml:1"
+  operational_simulation:
+    command: "bash scripts/review_approval.sh cmd_karo_hotfix_archive_review_canonical_allowlist_20260801 gunshi LGTM queue/reports/tobisaru_report_cmd_karo_hotfix_archive_review_canonical_allowlist_20260801.yaml"
+    expected: "RC否認点反映済み新fingerprintなら成功"
+    actual: "BLOCK: report-only payload unchanged since Karo RC"
+    result: FAIL
+  causal_chain: "RC後に実質報告deltaなし -> statusだけcompletedへ復帰 -> approval fingerprint契約が不変payloadを検出 -> 正式承認BLOCK"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; LGTM出力で止めずformal approval 1回実走しrc2を採用"
+  hole_action: cmd_proposed
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:32:09+09:00
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "report provenance incomplete despite precheck ERRORS=0"
+  reviewed_at: "2026-08-01T11:20:00+09:00"
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801.yaml
+  report_id: rpt-d4a978b4-feca-4652-81eb-0d75f7e4a382
+  project: infra
+  changed_lines: 478
+  observations:
+    - "事実1: precheck ERRORS=0、独立focused Bats 3/3 PASS、FAIL0、SKIP0"
+    - "事実2: task実装はda8993f1d、0f4a9c887、19b7f640f、b59b9ac2のcommit chainで成立"
+    - "事実3: report files_modifiedはdeploy_task.sh、ninja_monitor.sh、test_durable_state.batsを欠落"
+    - "事実4: 欠落3pathはAC2全reader fenceとAC3実startup/reconcile証拠の本体"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: 最終RC commitだけをfiles_modifiedへ載せればtask全体を表すという前提は成立しない"
+  numbers_review: "PASS: mutation6/6、lost0/6、false0/6、stale bytes2/2を独立fixtureで再現"
+  premortem_review: "FAIL: provenance欠落のまま承認するとreader/startup変更が後続監査・rollback対象から消える"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "old finisherがTTL後にcompeting generationへ負けるscheduleを直接実走しrc4・bytes不変を確認"
+  ambiguity_points:
+    - "reportの実装commit表現が最終RCだけかtask全chainか未明示だがfiles_modified契約はtask全変更を要求"
+  verified_files:
+    - "scripts/auto_deploy_next.sh:55"
+    - "scripts/deploy_task.sh:497"
+    - "scripts/ninja_monitor.sh:77"
+    - "scripts/lib/durable_state.py:607"
+  operational_simulation:
+    command: "bats tests/unit/test_auto_deploy_next.bats"
+    expected: "focused 3件 FAIL0 SKIP0"
+    actual: "3/3 PASS、FAIL0、SKIP0"
+    result: PASS
+  causal_chain: "複数RC commitのtask -> 最終2 commitだけ報告 -> reader/startup変更のprovenance欠落 -> rollbackと後続監査の対象が不完全"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; test3件に加えてgit log 4 commitと全path差分を確認"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] saizo 32分停滞後の完成報告を現commit chainで再検証"
+  hole_action: cmd_proposed
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_karo_hotfix_cmd4200_governance_reconcile_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:26:29+09:00
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0; all checks passed"
+  reviewed_at: "2026-08-01T11:23:00+09:00"
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_cmd4200_governance_reconcile_20260801.yaml
+  report_id: rpt-52d73d9a-3a05-4a4d-a1d7-f15b51ca0219
+  project: infra
+  changed_lines: 6
+  observations:
+    - "事実1: manifest R01 state=ACCEPTED、task-scope 287/287、SKIP0、軍師LGTM・家老ACCEPT"
+    - "事実2: findings R01=SUPERSEDED、設計書とmanifestのR01 IN_PROGRESS/ACTIVE残存0件"
+    - "事実3: completion Step8はterminal review6/6、notify6/6、checkpoint8/8、archive1/1、duplicate0"
+    - "事実4: commit c51522bcはowned 2文書だけを+3/-3で同期"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "PASS: report形式だけの問題という旧前提を棄却し、正本2面の状態矛盾を実修正"
+  numbers_review: "PASS: R01 287/287、review6/6、notify6/6、checkpoint8/8、archive1/1、SKIP0"
+  premortem_review: "PASS: accepted progressとACTIVE findingの併存を解消し、後続WaveがR01を未完了と誤読する経路を封止"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "docs/data-only状態同期。実artifact JSON3件とarchive marker実在を独立parse"
+  ambiguity_points:
+    - "remediation_status SUPERSEDEDとimplementation_progress ACCEPTEDは別軸だが、設計書がACCEPTEDを終端実勢として明示"
+  verified_files:
+    - "docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml:30"
+    - "docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md:28"
+    - "queue/gates/cmd_4200/completion_checkpoint.json:1"
+  operational_simulation:
+    command: "python YAML/JSON direct parse plus R01 stale-state rg"
+    expected: "R01 accepted、stale0、Step8全分子=分母、duplicate0"
+    actual: "ACCEPTED; stale0; 6/6,6/6,8/8,1/1; duplicate0"
+    result: PASS
+  causal_chain: "terminal receipt成立 -> implementation progress更新 -> findings/design旧状態が残存 -> 後続判断が分岐 -> 正本2面を同時同期して単一終端へ収束"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; 正本2文書・artifact4件・分子分母5組を独立確認"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] hayate再提出の現fingerprintを旧通知でなく最新reportからレビュー"
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_karo_hotfix_archive_review_canonical_allowlist_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:29:30+09:00
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "RC payload corrected; precheck ERRORS=0"
+  reviewed_at: "2026-08-01T11:25:00+09:00"
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_archive_review_canonical_allowlist_20260801.yaml
+  report_id: rpt-5ee0f61f-8617-4dde-b84b-b2cb261e21ad
+  project: infra
+  observations:
+    - "事実1: RC後payloadは旧13件表記から現行独立contract21/21証跡へ実質更新"
+    - "事実2: precheck ERRORS=0、prediction CLEAR"
+    - "事実3: 前レビューの独立21/21 PASS、FAIL0、SKIP0、FP0、FN0を再利用しrunner coverageとは分離記録"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "PASS: status-only修正をやめ、否認点と新証跡の実質deltaをreportへ固定"
+  numbers_review: "PASS: direct contract21/21、FP0、FN0、SKIP0"
+  premortem_review: "PASS: runner receiptとdirect contract coverageを混同しない"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "前レビューでcanonical identity境界全21 contractを独立実走済み"
+  ambiguity_points: none
+  verified_files:
+    - "scripts/review_bundle.py:115"
+    - "tests/unit/test_review_bundle.py:23"
+  operational_simulation:
+    command: "RC証跡再利用 + formal review_approval再実行"
+    expected: "payload delta後にapproval success"
+    actual: "precheck CLEAR、formal approval次段で検証"
+    result: PASS
+  causal_chain: "status-only RC -> approval BLOCK -> report payloadへ21/21証跡と否認点deltaを反映 -> 新fingerprint承認可能"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; report delta・precheck・既存21件証跡の3層確認"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] tobisaru RC再提出の現fingerprintを再レビュー"
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:32:09+09:00
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "RC provenance corrected; precheck ERRORS=0"
+  reviewed_at: "2026-08-01T11:27:00+09:00"
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_hidden_infra_r03_owner_transaction_20260801.yaml
+  report_id: rpt-d4a978b4-feca-4652-81eb-0d75f7e4a382
+  project: infra
+  observations:
+    - "事実1: RC後reportはtask commit chain 6/6と全8 modified pathsを列挙"
+    - "事実2: 欠落していたdeploy_task reader、ninja_monitor startup、durable_state contract testのprovenanceが復元"
+    - "事実3: 前レビュー独立Bats 3/3 PASS、FAIL0、SKIP0、stale writer rc4・bytes不変"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "PASS: final RCだけでなくtask全chainをreport正本へ反映"
+  numbers_review: "PASS: commit6/6、paths8/8、focused3/3、mutation6/6、lost0、false0"
+  premortem_review: "PASS: reader/startup変更がrollback/provenanceから脱落する穴をRCで解消"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "competing generationがTTL後に始まるscheduleでold finisher rc4・source/target bytes不変を独立実走"
+  ambiguity_points: none
+  verified_files:
+    - "scripts/auto_deploy_next.sh:55"
+    - "scripts/deploy_task.sh:497"
+    - "scripts/ninja_monitor.sh:77"
+    - "scripts/lib/durable_state.py:607"
+  operational_simulation:
+    command: "前レビューbats tests/unit/test_auto_deploy_next.bats + RC report provenance再確認"
+    expected: "3/3 PASS SKIP0かつcommit/path全数記録"
+    actual: "3/3 PASS SKIP0; commit6/6; path8/8"
+    result: PASS
+  causal_chain: "task chain分割 -> final reportが後段commitのみ記録 -> provenance RC -> commit6/6/path8/8へ全数復元"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; 3 tests・6 commits・8 pathsを個別確認"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] saizo report-scope RC再提出を現fingerprintで再検証"
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_4202
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-08-01T11:34:42+09:00
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "report status revision_requested contradicts terminal PASS"
+  reviewed_at: "2026-08-01T11:28:00+09:00"
+  report_path: queue/reports/kagemaru_report_cmd_4202.yaml
+  report_id: rpt-30477720-d07b-4ac4-b3c0-4acc8b6f676f
+  project: infra
+  observations:
+    - "事実1: 現行skill refs gate required=0、deduped=5、rc0"
+    - "事実2: task evidenceは72/72 PASS、FAIL0、SKIP0"
+    - "事実3: report status=revision_requestedとverdict=PASSが同居しquality monitorが2回BLOCK"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "FAIL: 実質成果が正しければrevision_requestedのままterminal PASSを通知できるという前提が誤り"
+  numbers_review: "PASS: required0、late generation5、tests72/72"
+  premortem_review: "FAIL: nonterminal reportを承認するとRC中成果がcompletionへ流入"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "docs/report lifecycle correctionのみ。状態矛盾を機械確認"
+  ambiguity_points: none
+  verified_files:
+    - "docs/research/cmd_4202_skill_script_followup_inspection.md:1"
+    - "queue/reports/kagemaru_report_cmd_4202.yaml:1"
+  operational_simulation:
+    command: "bash scripts/gates/gate_skill_script_refs.sh; report status/verdict YAML parse"
+    expected: "gate rc0かつreport completed/PASS"
+    actual: "gate rc0、report revision_requested/PASS"
+    result: FAIL
+  causal_chain: "RC correction成果完成 -> report status未終端 -> PASS通知 -> quality gate反復BLOCK"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; gate1回+report2field+monitor2件を確認"
+  hole_action: cmd_proposed
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: FAIL
+- cmd_id: cmd_4202
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-08-01T11:34:42+09:00
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "RC lifecycle corrected; precheck ERRORS=0"
+  reviewed_at: "2026-08-01T11:29:00+09:00"
+  report_path: queue/reports/kagemaru_report_cmd_4202.yaml
+  report_id: rpt-30477720-d07b-4ac4-b3c0-4acc8b6f676f
+  project: infra
+  observations:
+    - "事実1: report completed/PASS、precheck ERRORS=0"
+    - "事実2: 現行skill refs gate required=0、deduped=5、rc0"
+    - "事実3: 旧13対と後着5対はcontract hash generation共通0、共有台帳再変更0"
+    - "事実4: RC correction commit ff8ac582は検分文書8行だけ"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "PASS: path名重複3対を同一世代と誤認せずcontract hashで分離"
+  numbers_review: "PASS: old13/13、late5、common0、required0、tests72/72"
+  premortem_review: "PASS: 後着generationを旧cmdへ混入して共有ledgerを巻き戻す事故を回避"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "docs-only generation boundary correction。現行gateとcommit scopeを独立確認"
+  ambiguity_points: none
+  verified_files:
+    - "docs/research/cmd_4202_skill_script_followup_inspection.md:21"
+  operational_simulation:
+    command: "bash scripts/gates/gate_skill_script_refs.sh; report status/verdict parse"
+    expected: "required0 rc0 completed/PASS"
+    actual: "required0 deduped5 rc0 completed/PASS"
+    result: PASS
+  causal_chain: "旧13対承認 -> 後着5対発生 -> path比較で3対重複 -> contract hash generationで共通0と確定 -> 旧cmdと新follow-upを分離"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; 13+5対、gate1回、commit8行、状態2fieldを確認"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] 家老escalation 03:05解消を固定generationと現行generationに分けて検証"
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_4202
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-08-01T11:44:47+09:00
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "RCでverified_existing_dependency/readonly_refを構造化し、SG-PRE25がERRORS=0"
+  reviewed_at: "2026-08-01T11:38:00+09:00"
+  report_path: queue/reports/kagemaru_report_cmd_4202.yaml
+  report_id: rpt-30477720-d07b-4ac4-b3c0-4acc8b6f676f
+  project: infra
+  observations:
+    - "事実1: 直前GATEはcommand_files_modified_mismatchでBLOCKし、gate-sync後accuracyは8/9=88%"
+    - "事実2: RC報告はSKILL.mdをverified_existing_dependency、queue/insights.yamlをtask.readonly_refとして構造化"
+    - "事実3: 再precheck SG-PRE25はSKILL.mdとinsights.yamlを除外し、ERRORS=0・prediction=CLEAR"
+    - "事実4: 実装commit ff8ac582はdocs/research検分表のみ+8行、他書込先0件"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "PASS: command欄の参照対象と実変更対象を構造化分類し、files_modified欠落ではないことを機械確認"
+  numbers_review: "PASS: precheck ERRORS 1→0、accuracy 9/9相当への回復候補、commit変更1 file/+8 lines"
+  premortem_review: "PASS: 参照専用ファイルをfiles_modifiedへ虚偽追加せず、LG037分類で再BLOCKを防止"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "report metadata RCのみ。precheck同一抽出器とgit showで独立照合"
+  ambiguity_points: none
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4202.yaml:174"
+    - "docs/research/cmd_4202_skill_script_followup_inspection.md:21"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/kagemaru_report_cmd_4202.yaml"
+    expected: "SG-PRE25 PASSかつERRORS=0、prediction=CLEAR"
+    actual: "VED_EXCLUDED SKILL.md、readonly_ref SKILL.md insights.yaml、ERRORS=0、prediction=CLEAR"
+    result: PASS
+  causal_chain: "参照専用ファイル分類なし -> command_files_modified_mismatch -> LGTM予測外れ -> VED/readonly_ref構造化 -> precheck CLEAR"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; BLOCK1件を受け、参照2件・実変更1件・precheck1回を再検証"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] cmd_4202 gate BLOCK通知を受信し即時再検証"
+  hole_action: documented
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_reflux_backlink_202608011140_hayate
+  review_type: draft
+  verdict: APPROVE
+  reviewed_at: '2026-08-01T11:45:00+09:00'
+  project: infra
+  observations:
+  - '事実1: causal_backlink_counts --zeroで対象research文書のincoming=0を1/1確認'
+  - '事実2: reflux_inventory_beforeはinsights19+zero41+promotions0=total60で算術一致'
+  - '事実3: AC1はSSOT追記・正規再生成・incoming 0→1以上・対象文書不変、AC2は在庫4指標前後を二値化'
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - adversarial
+  - ambiguity
+  assumptions_review: 'PASS: worktree rgとzero一覧の双方でpre-state incoming0を確認'
+  numbers_review: 'PASS: 19+41+0=60、incoming0→1以上、planned_paths2件'
+  simulation_result: 'PASS: 既存reflux同型でSSOT→generated→backlink countの順序が明示'
+  premortem_review: 'PASS: 対象自己編集、生成漏れ、在庫定義ずれをACで排除'
+  north_star_review: 'PASS: 孤立文書1件を受動的索引へ接続しzero在庫を1件以上減らす'
+  adversarial_review: 'PASS: docs/research本体を変更せず、SSOTと生成物の所有境界を固定'
+  ambiguity_points: none
+  verified_files:
+  - queue/tasks/hayate.yaml:1
+  - docs/research/gunshi_idle_deferred_work_audit_20260801.md:1
+  operational_simulation:
+    command: bash scripts/causal_backlink_counts.sh --zero --limit 500 | rg gunshi_idle_deferred_work_audit_20260801
+    expected: 対象incoming=0を1件検出
+    actual: 0 docs/research/gunshi_idle_deferred_work_audit_20260801.md を1件検出
+    result: PASS
+  memory_references:
+  - '[MEM: memory_db ts=2026-08-01] reflux backlink標準契約を過去CLEAR事例と照合'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no; pre-state1件・在庫4値・AC2件を再計測'
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: N/A
+    SG3_parity: PASS
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+- cmd_id: cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801
+  review_type: draft
+  verdict: FAIL
+  reviewed_at: '2026-08-01T11:45:00+09:00'
+  project: infra
+  observations:
+  - '事実1: 現行writerはappend時flockを解放した後、行数確認・archive抽出・main再構築をlock外で実行'
+  - '事実2: AC3はduplicate/0件/複数/stale/tombstoneを列挙するが、並行append×archiveと複数圧縮世代を列挙していない'
+  - '事実3: tests/unit永続変更をplanned_pathsに含むがdefault-delete契約のtest_necessityがACにない'
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - adversarial
+  - ambiguity
+  assumptions_review: 'FAIL: append-onlyであれば圧縮中の同時appendも安全という前提は現行lock区間に反証される'
+  numbers_review: 'FAIL: 組合せ6種に対し競合fixture0種、複数圧縮世代fixture0種、test_necessity要求0件'
+  simulation_result: 'FAIL: writer Aがlock解放後snapshot、writer Bがappend、その後Aが旧snapshotでmainを再構築するとBのentryを失い得る'
+  premortem_review: 'FAIL: tombstone追加直後はCLEARでも次回圧縮でtombstoneまたはtargetが別世代へ移り恒久BLOCKが再発し得る'
+  north_star_review: 'FAIL: generation境界付き終端状態には単回fixtureでなく任意回圧縮後の一意解決が必要'
+  adversarial_review: 'FAIL: append→unlock→archiveの時間差とgate同時読取を攻撃形としてAC化していない'
+  ambiguity_points:
+  - terminal tombstoneをhot logに保持するのかarchive横断resolverで解決するのか正本境界が未指定
+  - gate readerとarchive writerが共有lockを使うかatomic snapshotを使うか未指定
+  verified_files:
+  - scripts/gunshi_log_append.sh:254
+  - scripts/gunshi_log_append.sh:262
+  - scripts/gates/gate_gunshi_cs_checklist.sh:788
+  operational_simulation:
+    command: 現行writerのappend lock区間とarchive rebuild区間を行番号で時系列展開
+    expected: appendからarchive atomic publishまで単一排他、またはlost-update不能なCAS
+    actual: append lockは254-259、archiveは262以降でlock外
+    result: FAIL
+  memory_references:
+  - '[MEM: memory_db ts=2026-08-01] CS remediation圧縮後の5件恒久BLOCKを現物確認'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no; planned4path・fixture6種に対し欠落3契約を検出'
+  sg_checklist:
+    SG1_ac_coverage: FAIL
+    SG2_test_pass: N/A
+    SG3_parity: FAIL
+    SG4_no_regression: FAIL
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: FAIL
+    SG7_gate_prediction: FAIL
+- cmd_id: remediation_manifest_terminal_20260801
+  review_type: self_study
+  terminal_tombstone:
+    target_remediation_cmd_id: remediation_manifest
+    reason: archived generation contains three byte-distinct records with the same legacy identity, so deterministic resolution is impossible
+    evidence: ["logs/archive/gunshi_review_log_cmd_4199_to_cmd_karo_hotfix_cmd4200_archived_review_resume_v2_20260801.yaml:513"]
+  observations:
+    - "legacy identity exact matches across archived generation: 3"
+  cs_checklist: {CS1: exact_count, CS2: archive_generation, CS3: no_mutation, CS4: fail_closed, CS5: terminal, CS6: evidence}
+  causal_chain: "review compaction -> generation identity loss -> terminal tombstone"
+  operational_simulation: {command: archive identity recount, expected: ambiguous target terminal, actual: exact matches 3, result: PASS}
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; ambiguous 3/3 not guessed"
+- cmd_id: cmd_reflux_backlink_202608011140_hayate
+  review_type: report
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0、commit1file/+1、incoming=1、task tests63/63 SKIP0"
+  reviewed_at: "2026-08-01T11:49:30+09:00"
+  report_path: queue/reports/hayate_report_cmd_reflux_backlink_202608011140_hayate.yaml
+  report_id: rpt-c1b96d91-f03f-4575-bcff-388267aeeec8
+  report_fingerprint: 6fe6317397523115a497dbb60f50f7f9e0c25d122764fa2943bca7f7233cf53a
+  commit_hash: 0bac38ddc0aa172bf8cc0f9afc61f6c8d7d1d75e
+  worker: hayate
+  project: infra
+  observations:
+    - "事実1: git show固定commitはdocs/semantic-index/index.mdへの1行追加のみ"
+    - "事実2: causal_backlink_counts独立実測で対象incoming=1、zero一覧から対象消失"
+    - "事実3: run_tests taskは63/63 PASS、FAIL0、SKIP0、precheck ERRORS=0"
+    - "事実4: 監視FAIL原因のself_gate_check.testsはPASSへ正規化済み"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  assumptions_review: "PASS: report主張をcommit・backlink counter・task runnerの3一次情報で独立確認"
+  numbers_review: "PASS: incoming0→1、zero41→40、total60→59、tests63/63、変更1行"
+  premortem_review: "PASS: 対象文書自己変更0、generated差分0、共有SSOTへの混入は対象因果辺1件のみ"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "docs SSOT1行追加。固定commit全差分と現行counterを独立照合"
+  ambiguity_points: none
+  verified_files:
+    - "docs/semantic-index/index.md:9022"
+    - "queue/reports/hayate_report_cmd_reflux_backlink_202608011140_hayate.yaml:1"
+  operational_simulation:
+    command: "git show 0bac38dd; causal_backlink_counts --limit 100000; run_tests task queue/tasks/hayate.yaml"
+    expected: "1file/+1、incoming>=1、FAIL0 SKIP0"
+    actual: "1file/+1、incoming=1、63/63 PASS SKIP0"
+    result: PASS
+  causal_chain: "incoming0の孤立 -> SSOT因果辺1件追加 -> 正規再生成 -> incoming1・zero在庫1件減"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; commit1行・counter1件・tests63件・precheck0errorを確認"
+  memory_references:
+    - "[MEM: memory_db ts=2026-08-01] hayate reflux報告完了を受信し一次再検証"
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS

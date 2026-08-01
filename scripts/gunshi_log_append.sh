@@ -217,26 +217,41 @@ PY
 
 # Historical reviews are immutable. Retroactive evidence is accepted only as
 # a structured self_study remediation for an exact existing cmd_id.
-if [[ "$ENTRY" == *"remediation:"* ]]; then
-    python3 - "$LOG_FILE" "$ENTRY" <<'PY'
-import re, sys, yaml
+if [[ "$ENTRY" == *"remediation:"* || "$ENTRY" == *"terminal_tombstone:"* ]]; then
+    python3 - "$LOG_FILE" "$ARCHIVE_DIR" "$ENTRY" <<'PY'
+import glob, os, re, sys, yaml
 allowed = {"operational_simulation", "verified_files", "adversarial", "step3_5_verified", "d0_applied", "hole_action"}
 try:
     old = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or []
-    parsed = yaml.safe_load(sys.argv[2])
+    parsed = yaml.safe_load(sys.argv[3])
 except Exception as exc:
     print(f"BLOCK: remediation YAML parse error: {exc}", file=sys.stderr); raise SystemExit(2)
 if not isinstance(parsed, list) or len(parsed) != 1 or not isinstance(parsed[0], dict):
     print("BLOCK: remediation entry must be one YAML list item", file=sys.stderr); raise SystemExit(2)
 item = parsed[0]; rem = item.get("remediation")
+if "terminal_tombstone" in item:
+    tomb = item.get("terminal_tombstone")
+    target_id = str(tomb.get("target_remediation_cmd_id") or "").strip() if isinstance(tomb, dict) else ""
+    matches = [x for x in old if isinstance(x, dict) and str(x.get("cmd_id") or x.get("id") or "").strip() == target_id and "remediation" in x]
+    existing = [x for x in old if isinstance(x, dict) and isinstance(x.get("terminal_tombstone"), dict) and str(x["terminal_tombstone"].get("target_remediation_cmd_id") or "").strip() == target_id]
+    evidence = tomb.get("evidence") if isinstance(tomb, dict) else None
+    if item.get("review_type") != "self_study" or len(matches) != 1 or existing or not str(tomb.get("reason") or "").strip() or not isinstance(evidence, list) or not evidence:
+        print(f"BLOCK: invalid terminal tombstone target/evidence: {target_id or '<empty>'}", file=sys.stderr); raise SystemExit(2)
+    raise SystemExit(0)
 target = str(rem.get("target_cmd_id") or "").strip() if isinstance(rem, dict) else ""
 target_type = str(rem.get("target_review_type") or "").strip() if isinstance(rem, dict) else ""
 target_at = str(rem.get("target_reviewed_at") or "").strip() if isinstance(rem, dict) else ""
-records = [x for x in old if isinstance(x, dict) and "remediation" not in x]
-matches = [x for x in records if str(x.get("cmd_id") or x.get("id") or "").strip() == target]
+sources = [("active", old)]
+for path in sorted(glob.glob(os.path.join(sys.argv[2], "gunshi_review_log*.yaml"))):
+    try: archived = yaml.safe_load(open(path, encoding="utf-8")) or []
+    except Exception: continue
+    sources.append((os.path.basename(path), archived))
+generation = str(rem.get("target_generation") or "").strip() if isinstance(rem, dict) else ""
+records = [(g, x) for g, items in sources for x in items if isinstance(x, dict) and "remediation" not in x and "terminal_tombstone" not in x]
+matches = [(g, x) for g, x in records if str(x.get("cmd_id") or x.get("id") or "").strip() == target and (not generation or g == generation)]
 identity_partial = bool(target_type) != bool(target_at)
 if target_type and target_at:
-    matches = [x for x in matches if str(x.get("review_type") or "").strip() == target_type and str(x.get("reviewed_at") or "").strip() == target_at]
+    matches = [(g, x) for g, x in matches if str(x.get("review_type") or "").strip() == target_type and str(x.get("reviewed_at") or "").strip() == target_at]
 fields = rem.get("fields") if isinstance(rem, dict) else None
 evidence = rem.get("evidence") if isinstance(rem, dict) else None
 bad_fields = not isinstance(fields, dict) or not fields or any(k not in allowed or v is None or v is False or str(v).strip().lower() in {"", "null", "none", "n/a", "[]", "{}"} for k, v in (fields or {}).items())
@@ -251,11 +266,10 @@ if [ "${GUNSHI_VALIDATE_ONLY:-0}" = "1" ]; then
     exit 0
 fi
 
-# Append to log file (flock for safety)
-(
-    flock -w 5 200 || { echo "ERROR: flock timeout" >&2; exit 1; }
-    echo "$ENTRY" >> "$LOG_FILE"
-) 200>"$LOG_FILE.lock"
+# Publish append and any resulting archive as one generation transaction.
+exec 200>"$LOG_FILE.lock"
+flock -w 30 200 || { echo "ERROR: flock timeout" >&2; exit 1; }
+echo "$ENTRY" >> "$LOG_FILE"
 
 echo "OK: appended to $LOG_FILE"
 
@@ -298,9 +312,11 @@ ARCHIVE_FILE="$ARCHIVE_DIR/gunshi_review_log_${ARCHIVE_NAME}.yaml"
 
 mkdir -p "$ARCHIVE_DIR"
 
-# Archive old entries
-sed -n "${FIRST_ENTRY},$((SPLIT_BOUNDARY - 1))p" "$LOG_FILE" > "$ARCHIVE_FILE"
-ARCHIVED_LINES=$(wc -l < "$ARCHIVE_FILE")
+# Archive old entries through atomic rename; readers hold the shared generation
+# lock and can therefore see either the complete old or complete new pair.
+ARCHIVE_TEMP=$(mktemp "$ARCHIVE_DIR/.gunshi_review_archive.XXXXXX")
+sed -n "${FIRST_ENTRY},$((SPLIT_BOUNDARY - 1))p" "$LOG_FILE" > "$ARCHIVE_TEMP"
+ARCHIVED_LINES=$(wc -l < "$ARCHIVE_TEMP")
 
 # Rebuild main file: header + remaining entries
 TEMP_FILE=$(mktemp)
@@ -312,8 +328,8 @@ if [ -n "$LAST_ARCHIVE_LINE" ]; then
     sed -i "${LAST_ARCHIVE_LINE}a\\# 詳細エントリ: ${ARCHIVE_NAME} → logs/archive/gunshi_review_log_${ARCHIVE_NAME}.yaml" "$TEMP_FILE"
 fi
 
-cp "$TEMP_FILE" "$LOG_FILE"
-rm -f "$TEMP_FILE"
+mv "$ARCHIVE_TEMP" "$ARCHIVE_FILE"
+mv "$TEMP_FILE" "$LOG_FILE"
 
 NEW_LINES=$(wc -l < "$LOG_FILE")
 echo "ARCHIVE: done. ${ARCHIVED_LINES} lines → ${ARCHIVE_FILE##*/}. Main: ${TOTAL_LINES} → ${NEW_LINES} lines"

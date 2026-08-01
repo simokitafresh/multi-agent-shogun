@@ -15,6 +15,11 @@ set +e
 LOG_FILE="$REPO_ROOT/logs/gunshi_review_log.yaml"
 STDERR_LOG="$REPO_ROOT/logs/gate_gunshi_cs_checklist_stderr.log"
 
+# A reader observes one complete review-log generation. gunshi_log_append.sh
+# holds the exclusive side of this lock across append and archive publication.
+exec 201>"$LOG_FILE.lock"
+flock -s -w 30 201 || { echo "BLOCK(remediation): review generation lock timeout"; exit 2; }
+
 log_stderr_file() {
     local label="$1"
     local stderr_file="$2"
@@ -788,11 +793,23 @@ verified_files_missing=$(awk '
 # Exact, append-only retroactive remediation coverage. Invalid remediation is
 # itself a BLOCK; same-name entries and empty evidence cannot waive a finding.
 _remediation_tmp="$(mktemp)"
-python3 - "$LOG_FILE" >"$_remediation_tmp" <<'PY'
-import re, sys, yaml
+python3 - "$LOG_FILE" "$REPO_ROOT/logs/archive" >"$_remediation_tmp" <<'PY'
+import glob, os, re, sys, yaml
 allowed = {"operational_simulation", "verified_files", "adversarial", "step3_5_verified", "d0_applied", "hole_action"}
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or []
-records = [x for x in data if isinstance(x, dict) and "remediation" not in x]
+sources = [("active", data)]
+for path in sorted(glob.glob(os.path.join(sys.argv[2], "gunshi_review_log*.yaml"))):
+    try: archived = yaml.safe_load(open(path, encoding="utf-8")) or []
+    except Exception: continue
+    sources.append((os.path.basename(path), archived))
+records = [(generation, x) for generation, items in sources for x in items
+           if isinstance(x, dict) and "remediation" not in x and "terminal_tombstone" not in x]
+tombstones = {}
+for item in data:
+    tomb = item.get("terminal_tombstone") if isinstance(item, dict) else None
+    if isinstance(tomb, dict):
+        key = str(tomb.get("target_remediation_cmd_id") or "").strip()
+        if key: tombstones.setdefault(key, []).append(tomb)
 bad = []
 for n, item in enumerate(data, 1):
     if not isinstance(item, dict) or "remediation" not in item: continue
@@ -802,20 +819,27 @@ for n, item in enumerate(data, 1):
     fields = rem.get("fields") if isinstance(rem, dict) else None; evidence = rem.get("evidence") if isinstance(rem, dict) else None
     identity_complete = bool(target_type and target_at)
     identity_partial = bool(target_type) != bool(target_at)
-    matches = [x for x in records if str(x.get("cmd_id") or x.get("id") or "").strip() == target]
+    generation = str(rem.get("target_generation") or "").strip() if isinstance(rem, dict) else ""
+    matches = [(g, x) for g, x in records if str(x.get("cmd_id") or x.get("id") or "").strip() == target and (not generation or g == generation)]
     if identity_complete:
-        matches = [x for x in matches if str(x.get("review_type") or "").strip() == target_type and str(x.get("reviewed_at") or "").strip() == target_at]
+        matches = [(g, x) for g, x in matches if str(x.get("review_type") or "").strip() == target_type and str(x.get("reviewed_at") or "").strip() == target_at]
     ok = item.get("review_type") == "self_study" and not identity_partial and len(matches) == 1 and isinstance(fields, dict) and bool(fields)
     ok = ok and isinstance(evidence, list) and bool(evidence) and all(isinstance(v, str) and v.strip() and re.search(r"(?:[^:]+:[A-Za-z0-9_.-]+|\b[0-9a-f]{7,40}\b)", v) for v in evidence)
     ok = ok and all(k in allowed and v is not None and v is not False and str(v).strip().lower() not in {"", "null", "none", "n/a", "[]", "{}"} for k, v in (fields or {}).items())
-    if not ok: bad.append(f"entry#{n}:{target or '<empty>'}"); continue
-    matched = matches[0]
+    if not ok:
+        remediation_id = str(item.get("cmd_id") or item.get("id") or "").strip()
+        ts = tombstones.get(remediation_id, [])
+        terminal = len(ts) == 1 and bool(str(ts[0].get("reason") or "").strip()) and bool(ts[0].get("evidence"))
+        if not terminal: bad.append(f"entry#{n}:{target or '<empty>'}")
+        continue
+    matched_generation, matched = matches[0]
     key = "|".join((
         str(matched.get("cmd_id") or matched.get("id") or "").strip(),
         str(matched.get("review_type") or "").strip(),
         str(matched.get("reviewed_at") or "").strip(),
     ))
-    for field in fields: print(f"{field}\t{key}")
+    resolved_key = key if matched_generation == "active" else f"{matched_generation}|{key}"
+    for field in fields: print(f"{field}\t{resolved_key}")
 if bad: print("INVALID\t" + ",".join(bad))
 PY
 _remediation_invalid=$(awk -F '\t' '$1=="INVALID"{print $2}' "$_remediation_tmp")
