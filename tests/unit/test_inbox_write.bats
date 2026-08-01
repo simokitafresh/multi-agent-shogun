@@ -2578,3 +2578,40 @@ _autoread_env() {
     # would freeze it as the contract.
     [[ "$output" == *"auto-read completed notification"*"cmd=cmd_own_20260726"* ]]
 }
+
+# test_necessity: 調査返信は完了report lifecycleから独立し、証拠付き忍者→家老だけを起床配送する。
+@test "investigation_result is evidence-bound ninja-to-karo and has no completion side effects" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    printf 'task:\n  status: in_progress\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    local body='task_id=cmd_probe check_id=gate_1 occurred_at=2026-08-01T21:00:00+09:00 evidence=logs/probe.log impact=delay_2m'
+
+    run _run_inbox_write karo "$body" investigation_result testninja reply_required
+    [ "$status" -eq 0 ]
+    grep -q "type: 'investigation_result'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "read: false" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q '^  status: in_progress$' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    [ ! -e "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
+}
+
+@test "investigation_result rejects five malformed or misrouted variants" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    printf 'task:\n  status: in_progress\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    local good='task_id=cmd_probe check_id=gate_1 occurred_at=2026-08-01T21:00:00+09:00 evidence=logs/probe.log impact=delay_2m'
+    local bad
+    for bad in \
+        'check_id=gate_1 occurred_at=x evidence=x impact=x' \
+        'task_id=cmd_probe occurred_at=x evidence=x impact=x' \
+        'task_id=cmd_probe check_id=gate_1 evidence=x impact=x' \
+        'task_id=cmd_probe check_id=gate_1 occurred_at=x impact=x' \
+        'task_id=cmd_probe check_id=gate_1 occurred_at=x evidence=x'; do
+        run _run_inbox_write karo "$bad" investigation_result testninja reply_required
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"required: task_id/check_id/occurred_at/evidence/impact"* ]]
+    done
+    run _run_inbox_write gunshi "$good" investigation_result testninja reply_required
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"ninja -> karo only"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}

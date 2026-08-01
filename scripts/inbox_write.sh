@@ -23,6 +23,7 @@
 #   workaround_feedback  — workaround原因共有（家老→軍師）
 #   review_hint          — レビューヒント（家老→軍師）
 #   analysis_result      — idle時データ分析結果（軍師→家老）
+#   investigation_result — hook/gate調査結果（忍者→家老、返答必須の専用lane）
 #   gunshi_lesson_candidate — 軍師教訓候補（軍師→家老）
 #   decomposition_feedback  — 分解フィードバック（軍師→家老）
 #   verify_request       — RC修正再検証依頼（家老→軍師）
@@ -867,6 +868,24 @@ inbox_type_is_report_lifecycle() {
         report_review|report_review_result|report_revision) return 0 ;;
     esac
     return 1
+}
+
+inbox_validate_investigation_result() {
+    local target="$1" from_agent="$2" content="$3"
+    local field value
+
+    [ "$TYPE" = "investigation_result" ] || return 0
+    [ "$target" = "karo" ] && sender_is_ninja_from_fs "$from_agent" || {
+        echo "BLOCK: investigation_result is ninja -> karo only" >&2
+        exit 2
+    }
+    for field in task_id check_id occurred_at evidence impact; do
+        value=$(printf '%s\n' "$content" | sed -n "s/.*${field}=\([^[:space:]]\+\).*/\1/p" | head -1)
+        if [ -z "$value" ] || [ "$value" = "-" ]; then
+            echo "BLOCK: investigation_result requires ${field}=<non-empty>; required: task_id/check_id/occurred_at/evidence/impact" >&2
+            exit 2
+        fi
+    done
 }
 
 inbox_should_auto_read_completed_notification() {
@@ -2022,6 +2041,9 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
     fi
 fi
 
+# This is the public lane contract, so fixtures exercise it in test mode too.
+inbox_validate_investigation_result "$TARGET" "$FROM" "$CONTENT"
+
 # A bare revision notification must never race ahead of formal RC.  The RC
 # helper atomically reopens task/report state; persistence before that point can
 # be consumed and then erased by monitor auto-clear.
@@ -2357,6 +2379,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                             done <<< "$GATE_RESULT"
                             echo "" >&2
                             echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
+                            echo "[report_format_gate] 調査返信なら完了通知ではない。次を使え: bash scripts/inbox_write.sh karo \"task_id=<id> check_id=<id> occurred_at=<ISO8601> evidence=<path> impact=<summary>\" investigation_result ${FROM} reply_required" >&2
                             echo "==============================" >&2
                             exit 1
                         fi
