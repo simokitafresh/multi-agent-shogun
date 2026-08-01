@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-08-01 -->
-<!-- last_synced_lesson: L1506 -->
+<!-- last_synced_lesson: L1507 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -35,10 +35,11 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1506 -->
+<!-- last_synced_lesson: L1507 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
+- L1507: chunk値の安全性はcommit・unit PASSでなく本番rows>0・terminal完走で確定する（cmd_karo_hotfix_ga422_context_freshness_20260801）
 
 ## 設計標準・テスト・因果
 
