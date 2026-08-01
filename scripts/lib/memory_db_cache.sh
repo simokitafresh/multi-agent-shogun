@@ -62,6 +62,7 @@ refresh_memory_db_cache_async() {
     local repo_root="$1"
     local source_path="$2"
     local cache_path="$3"
+    local force_refresh="${4:-0}"
     # 626MB DBの9p→ext4コピーは実測66s(2026-07-15将軍計測)。旧デフォルト60sは
     # コピー完了直前にkillし、cold cacheが恒久化して全preflightが124連鎖した。
     local timeout_sec="${SHOGUN_MEMORY_DB_CACHE_REFRESH_TIMEOUT:-300}"
@@ -81,7 +82,9 @@ refresh_memory_db_cache_async() {
     # discarded instead of copying the same source generation again.
     (
         flock -n 8 2>/dev/null || exit 0
-        memory_db_cache_is_current "$source_path" "$cache_path" && exit 0
+        if [ "$force_refresh" != "1" ]; then
+            memory_db_cache_is_current "$source_path" "$cache_path" && exit 0
+        fi
         if command -v setsid >/dev/null 2>&1; then
             # shellcheck disable=SC2016 # positional args are expanded by bash -c.
             setsid -f bash -c '
@@ -96,6 +99,15 @@ refresh_memory_db_cache_async() {
             create_memory_db_cache "$repo_root" "$source_path" >/dev/null 2>&1 &
         fi
     ) 8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null
+}
+
+# A cache can be non-empty and newer than its source while still being corrupt.
+# Callers that have observed an actual SQLite query failure use this entrypoint
+# to bypass the metadata-only freshness check. The existing refresh lock keeps
+# concurrent recovery requests single-flight and the publisher remains atomic.
+force_refresh_memory_db_cache_async() {
+    local repo_root="$1" source_path="$2" cache_path="$3"
+    refresh_memory_db_cache_async "$repo_root" "$source_path" "$cache_path" 1
 }
 
 # warm_memory_db_cache_async <repo_root> <source_path>

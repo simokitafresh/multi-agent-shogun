@@ -8,6 +8,11 @@ warn_bytes="${SHOGUN_THREE_LAYER_CACHE_WARN_BYTES:-5368709120}"
 cleanup_script="${SHOGUN_THREE_LAYER_CLEANUP_SCRIPT:-$repo_root/scripts/cleanup_three_layer_tmp.sh}"
 overall="PASS"
 
+if [ -f "$repo_root/scripts/lib/memory_db_cache.sh" ]; then
+    # shellcheck source=scripts/lib/memory_db_cache.sh
+    source "$repo_root/scripts/lib/memory_db_cache.sh"
+fi
+
 # Resolve cache_path in bash (mirrors memory_db_live_insert.memory_db_cache_path()).
 # Eliminates the first Python subprocess call. Uses bash parameter expansion
 # (##*/ for basename, %/* for dirname) to avoid subprocess forks.
@@ -201,6 +206,14 @@ finally:
     conn.close()
 PY
         overall="WARN"
+        # The cache freshness predicate intentionally uses cheap metadata only.
+        # A real query failure is the authoritative corruption signal: recover
+        # asynchronously so this run remains WARN and only a later run can PASS.
+        if [ "$query_db" = "$cache_path" ] && [ -f "$db_path" ] \
+            && declare -F force_refresh_memory_db_cache_async >/dev/null; then
+            echo "WARN: cache query failed; scheduling single-flight atomic refresh"
+            force_refresh_memory_db_cache_async "$repo_root" "$db_path" "$cache_path"
+        fi
     fi
 else
     echo "WARN: 三層記憶DBが存在しない: $query_db"
