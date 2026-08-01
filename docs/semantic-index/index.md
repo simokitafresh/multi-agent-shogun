@@ -11258,6 +11258,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T11:48:16.384992+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:22:27+09:00 推奨案で設計書を書こう。gistに共有はスキル化するのはどう思う？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T12:59:45.210013+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T14:06:31.659745+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
