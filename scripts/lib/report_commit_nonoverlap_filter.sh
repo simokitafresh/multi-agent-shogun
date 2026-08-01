@@ -23,6 +23,7 @@ filter_report_commit_nonoverlap_uncommitted() {
 
     REPO_ROOT="$repo_root" REPORT_FILE="$report_file" UNCOMMITTED_PATHS="$uncommitted_paths" python3 - <<'PY'
 import os
+import glob
 import json
 import re
 import subprocess
@@ -115,6 +116,69 @@ def stable_file_text(path, attempts=3):
             return content
     return None
 
+def archive_generation_name_matches(path, entries):
+    """Bind an archive candidate to the owners advertised by its generation name."""
+    if not entries:
+        return False
+    first_owner = entry_owner(entries[0])
+    last_owner = entry_owner(entries[-1])
+    if not first_owner or not last_owner:
+        return False
+    basename = os.path.basename(path)
+    prefix = f"gunshi_review_log_{first_owner}_to_{last_owner}"
+    return basename == f"{prefix}.yaml" or basename.startswith(f"{prefix}_")
+
+def active_pre_rotation_generation(before, after):
+    """Restore a prefix moved to one canonical archive generation.
+
+    Rotation is accepted only when a direct, regular archive file is an exact
+    structural copy of the removed active prefix and its filename is bound to
+    the first/last entry owners.  Returning the unrotated suffix lets the
+    ordinary ownership checks prove that the active copy has no omissions,
+    duplicates, or mutations.
+    """
+    archive_pattern = os.path.join(repo, "logs", "archive", "gunshi_review_log_*.yaml")
+    matches = []
+    for archive_path in glob.glob(archive_pattern):
+        if os.path.islink(archive_path) or not os.path.isfile(archive_path):
+            continue
+        relative = os.path.relpath(archive_path, repo)
+        archive_text = stable_file_text(relative)
+        if archive_text is None:
+            continue
+        try:
+            archived = yaml.safe_load(archive_text)
+        except Exception:
+            continue
+        if not isinstance(archived, list) or not archived or len(archived) >= len(before):
+            continue
+        if archived != before[:len(archived)]:
+            continue
+        if not archive_generation_name_matches(archive_path, archived):
+            continue
+        matches.append((len(archived), archived))
+    # More than one matching generation is ambiguous; fail closed.
+    if len(matches) != 1:
+        return before
+    cut, archived = matches[0]
+    remainder = before[cut:]
+    # The log's owner-only leading anchor is generation metadata, not a review
+    # identity.  Rotation preserves that exact anchor in active while also
+    # copying it into the archive.  Retain only byte-semantically identical
+    # legacy anchors that are demonstrably present in the active generation.
+    after_legacy = Counter(
+        json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        for entry in after if entry_identity(entry) is None
+    )
+    for entry in archived:
+        if entry_identity(entry) is not None:
+            continue
+        canonical = json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        if after_legacy[canonical] > 0:
+            remainder.append(entry)
+            after_legacy[canonical] -= 1
+    return remainder
+
 def shared_yaml_owned_by_other(path, commit, parent_cmd):
     if path not in SHARED_APPEND_ONLY_YAMLS or not parent_cmd:
         return False
@@ -129,6 +193,8 @@ def shared_yaml_owned_by_other(path, commit, parent_cmd):
         return False
     if not isinstance(before, list) or not isinstance(after, list):
         return False
+
+    before = active_pre_rotation_generation(before, after)
 
     # Identity must be unique and complete; ambiguity is fail-closed.
     before_by_id = {}
