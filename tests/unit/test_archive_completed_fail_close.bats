@@ -74,7 +74,7 @@ _b28_root() {
     ln -sfn "$REPO_ROOT/scripts" "$B28/scripts"
     B28_CMD="cmd_karo_b28_fixture"
     B28_REPORT="$B28/queue/reports/saizo_report_${B28_CMD}.yaml"
-    printf 'worker_id: saizo\nparent_cmd: %s\ntask_id: %s_normal\nstatus: failed\nverdict: %s\nfiles_modified:\n  - path: ""\n' \
+    printf 'worker_id: saizo\nparent_cmd: %s\ntask_id: %s_normal\nstatus: failed\nverdict: %s\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nfiles_modified:\n  - path: scripts/review_approval.sh\n' \
         "$B28_CMD" "$B28_CMD" "$1" > "$B28_REPORT"
 }
 
@@ -98,13 +98,54 @@ _b28_review() {
     [ ! -f "$B28/queue/gates/$B28_CMD/review_gate.done" ]
 }
 
+# test_necessity: an implementation RC followed by an honest terminal FAIL must
+# remain closable without inventing a new implementation commit; otherwise the
+# fail-close evidence required by archive_completed.sh is structurally unreachable.
+# regression_justification: overlaps B28's basic FAIL close fixture but uniquely
+# composes it with a persisted implementation-RC identity guard.
+@test "B28: terminal FAIL after implementation RC bypasses only the unchanged-commit guard" {
+    _b28_root FAIL
+    mkdir -p "$B28/queue/tasks"
+    printf 'task:\n  task_id: %s_normal\n  parent_cmd: %s\n  issued_cmd_id: %s\n  status: done\n' \
+        "$B28_CMD" "$B28_CMD" "$B28_CMD" > "$B28/queue/tasks/saizo.yaml"
+
+    # Record the genuine implementation RC first.
+    run env REVIEW_APPROVAL_ROOT="$B28" REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
+        bash "$REPO_ROOT/scripts/review_approval.sh" "$B28_CMD" karo RC "$B28_REPORT" implementation
+    [ "$status" -eq 0 ]
+
+    # Re-submit the same implementation identity as an honest terminal FAIL.
+    bash "$REPO_ROOT/scripts/report_field_set.sh" "$B28_REPORT" status failed
+    run _b28_review
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fail-close review recorded"* ]]
+    [ ! -f "$B28/queue/gates/$B28_CMD/review_gate.done" ]
+}
+
+# test_necessity: PASS is terminal only with status=completed. A stale
+# revision_requested/PASS pair must fail with one canonical repair command so
+# operators do not mutate lifecycle fields piecemeal or replay implementation.
+# regression_justification: overlaps the failed/PASS negative control but fixes
+# the distinct revision_requested transition and actionable error contract.
+@test "review rejects nonterminal PASS with the atomic normalization command" {
+    _b28_root PASS
+    bash "$REPO_ROOT/scripts/report_field_set.sh" "$B28_REPORT" status revision_requested
+
+    run _b28_review
+    echo "$output"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"nonterminal report cannot carry verdict=PASS"* ]]
+    [[ "$output" == *"report_field_set.sh"*"status completed"* ]]
+}
+
 @test "B28: failed report whose verdict is not FAIL stays blocked at the submission guard" {
     _b28_root PASS
 
     run _b28_review
     echo "$output"
     [ "$status" -ne 0 ]
-    [[ "$output" == *"formal review requires status=completed"* ]]
+    [[ "$output" == *"nonterminal report cannot carry verdict=PASS"* ]]
     run bash -c 'ls "$1"/queue/gates/"$2"/review_approvals/reports/*/karo.yaml' _ "$B28" "$B28_CMD"
     [ "$status" -ne 0 ]
 }

@@ -74,6 +74,10 @@ if [ "$report_status" = "failed" ] && [ "$role:$result" = "karo:RC" ] && [ "$rep
   failed_rc=1
 fi
 [ "$report_status" = "completed" ] || [ "$fail_close" = 1 ] || [ "$failed_rc" = 1 ] || [ "$role:$result" = "karo:RC_REVOKE" ] || {
+  if [ "$report_verdict" = "PASS" ]; then
+    echo "BLOCK: nonterminal report cannot carry verdict=PASS (status=${report_status:-missing}); normalize atomically: bash scripts/report_field_set.sh '$report' status completed" >&2
+    exit 1
+  fi
   echo "BLOCK: formal review requires status=completed (actual=${report_status:-missing}): $report" >&2
   exit 1
 }
@@ -235,7 +239,7 @@ PY
   exit 0
 fi
 
-if [ ! "$role:$result" = "karo:RC" ] && [ "$correction_scope" = implementation ] \
+if [ ! "$role:$result" = "karo:RC" ] && [ "$fail_close" != 1 ] && [ "$correction_scope" = implementation ] \
   && [ -f "$rejected_commit_file" ] && [ "$current_commit" != "no-code-change" ]; then
   rejected_commit=$(head -n 1 "$rejected_commit_file" 2>/dev/null || true)
   if [ -n "$rejected_commit" ] && [ "$rejected_commit" = "$current_commit" ]; then

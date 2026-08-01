@@ -102,6 +102,8 @@ _review() {
 
 # test_necessity: report-only RC must preserve already-valid measurements and
 # prohibit whole-task replay while still forcing the current task YAML reload.
+# regression_justification: extends the existing RC lifecycle fixture to cover
+# the distinct report fingerprint/approval identity boundary after rework.
 @test "report-only RC records its scope and tells the worker to reuse valid results" {
     local cmd_id=cmd_rc_report_scope worker=atomicworker3
     _make_task "$worker" "$cmd_id"
@@ -117,6 +119,63 @@ _review() {
     grep -q '前報告の実測・成果物は有効' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
     grep -q '再計算・再実装は禁止' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
     ! grep -q '前taskの情報は無効' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
+}
+
+# test_necessity: report-only RC success requires a changed report payload, a
+# completed terminal status, and a Gunshi approval for that exact fingerprint;
+# an unchanged implementation commit is intentionally allowed in this lane.
+# regression_justification: overlaps the RC scope setup above but uniquely
+# protects the post-RC approval matrix and exact fingerprint binding.
+@test "report-only RC accepts corrected payload with unchanged implementation and exact fingerprint" {
+    local cmd_id=cmd_rc_report_success worker=atomicworker4
+    _make_task "$worker" "$cmd_id"
+    local report
+    report="$(_make_report "${worker}_rpt_${cmd_id}" "$cmd_id" "$worker")"
+
+    run _review "$cmd_id" karo RC "$report" report
+    [ "$status" -eq 0 ]
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" result.summary "report payload corrected"
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" status completed
+
+    local key fingerprint approval_dir
+    key="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$FAKE_ROOT" "$report")"
+    fingerprint="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_fingerprint "$2"' _ "$FAKE_ROOT" "$report")"
+    approval_dir="$FAKE_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    printf 'role: gunshi\nresult: LGTM\nfingerprint: %s\n' "$fingerprint" > "$approval_dir/gunshi.yaml"
+
+    run _review "$cmd_id" karo ACCEPT "$report"
+    echo "$output" >&3
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: a report-only correction may not reuse an approval for an
+# older report fingerprint, even when status and implementation identity pass.
+# regression_justification: negative control for the exact-fingerprint success
+# fixture above; without it a stale Gunshi approval could authorize new bytes.
+@test "report-only RC rejects stale Gunshi fingerprint after another payload change" {
+    local cmd_id=cmd_rc_report_stale_fp worker=atomicworker5
+    _make_task "$worker" "$cmd_id"
+    local report
+    report="$(_make_report "${worker}_rpt_${cmd_id}" "$cmd_id" "$worker")"
+
+    run _review "$cmd_id" karo RC "$report" report
+    [ "$status" -eq 0 ]
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" result.summary "first correction"
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" status completed
+
+    local key fingerprint approval_dir
+    key="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$FAKE_ROOT" "$report")"
+    fingerprint="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_fingerprint "$2"' _ "$FAKE_ROOT" "$report")"
+    approval_dir="$FAKE_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    printf 'role: gunshi\nresult: LGTM\nfingerprint: %s\n' "$fingerprint" > "$approval_dir/gunshi.yaml"
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" result.summary "second unreviewed correction"
+
+    run _review "$cmd_id" karo ACCEPT "$report"
+    echo "$output" >&3
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"requires current Gunshi LGTM"* ]]
 }
 
 # ---------------------------------------------------------------------------
