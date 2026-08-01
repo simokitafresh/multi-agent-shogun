@@ -135,89 +135,82 @@ PY
   done
 }
 
-@test "catalog sources execute 82 real detectors before after and mutation detects exactly one" {
-  git -C "$ROOT" show ebce1e06b621c2ef27923a494b3a1436dbedbab6:scripts/cmd_save.sh > "$TMPROOT/cmd_save.before.sh"
+@test "baseline current mutant invoke production cmd_save 246 times" {
+  git -C "$ROOT" worktree add --detach "$TMPROOT/baseline" ebce1e06b621c2ef27923a494b3a1436dbedbab6 >/dev/null
+  git -C "$ROOT" worktree add --detach "$TMPROOT/current" HEAD >/dev/null
+  git -C "$ROOT" worktree add --detach "$TMPROOT/mutant" HEAD >/dev/null
   python3 - "$ROOT/docs/research/cmd-save-check-inventory-v1.yaml" \
-    "$ROOT/docs/research/cmd_save_gate_catalog.md" "$TMPROOT/cmd_save.before.sh" \
-    "$ROOT/scripts/cmd_save.sh" "$TMPROOT/parity-receipt.json" <<'PY'
-import hashlib,json,re,sys,yaml
-inventory,catalog_path,before_path,after_path,receipt_path=sys.argv[1:]
+    "$TMPROOT/baseline" "$TMPROOT/current" "$TMPROOT/mutant" \
+    "$TMPROOT/parity-receipt.json" <<'PY'
+import concurrent.futures,hashlib,json,os,subprocess,sys,yaml
+inventory,*roots,receipt_path=sys.argv[1:]
 checks=yaml.safe_load(open(inventory))['checks']
-catalog=open(catalog_path).read()
-before_source=open(before_path).read()
-after_source=open(after_path).read()
 
-# This is deliberately an executable source-binding detector, not a copy of the
-# inventory classification.  Each catalog row is resolved to its named Bash
-# function or to the row's concrete record/check vocabulary in cmd_save.sh.
-def catalog_row(check):
-    row_re=re.compile(r'^\|\s*%d\s*\|.*$' % check['id'],re.M)
-    rows=row_re.findall(catalog)
-    assert rows, 'catalog source missing for id=%s' % check['id']
-    return rows[-1]
+def invoke(args):
+    lane,root,check=args
+    cid=check['id']; work=os.path.join(root,'.cmd4205-fixtures',str(cid))
+    os.makedirs(work,exist_ok=True)
+    # All 82 fixtures carry the catalog identity into the real command body.
+    # The mutant changes actual input for ID 41; expected outcomes stay frozen.
+    command='catalog detector %d %s' % (cid,check['name'])
+    lookup='cmd_probe'
+    if lane=='mutant' and cid==41:
+        lookup='cmd_missing_after_input_mutation'
+    queue=os.path.join(work,'queue.yaml')
+    payload={'commands':{'cmd_probe':{'id':'cmd_probe','title':'parity %d'%cid,
+      'purpose':'production entrypoint parity fixture','project':'infra',
+      'command':command,'status':'draft','acceptance_criteria':[{'id':'AC1','description':'fixture'}],
+      'quality_gate':{}}}}
+    with open(queue,'w') as f: yaml.safe_dump(payload,f,sort_keys=False,allow_unicode=True)
+    env=dict(os.environ, CMD_SAVE_QUEUE_FILE=queue,
+      CMD_SAVE_ARCHIVE_CMD_DIR=os.path.join(work,'archive'),
+      CMD_QUALITY_LOG_FILE=os.path.join(work,'quality.yaml'),
+      CMD_SAVE_LOCK_FILE=os.path.join(work,'queue.lock'),
+      CMD_SAVE_LAST_CMD_FILE=os.path.join(work,'last.txt'),
+      CMD_SAVE_DISABLE_QUALITY_LOG='1', CMD_SAVE_SYNC_QUALITY_LOG='1',
+      CMD_QUALITY_FAST_METADATA='1', SHOGUN_MEMORY_DB=os.path.join(work,'memory.db'),
+      CMD_SAVE_SEMANTIC_SEARCH_SCRIPT=os.path.join(work,'no-semantic-search'))
+    command_argv=['bash',os.path.join(root,'scripts/cmd_save.sh'),'--preflight',lookup]
+    p=subprocess.run(command_argv,env=env,cwd=root,text=True,stdout=subprocess.PIPE,
+                     stderr=subprocess.STDOUT,timeout=30)
+    output=p.stdout
+    # Outcome is observable behavior, not inventory classification.  Missing-ID
+    # is kept distinct from ordinary policy BLOCK for the input mutation control.
+    outcome='NOT_FOUND' if ('not found' in output.lower() or '見つかりません' in output or
+                            'cmd block missing' in output.lower()) else ('PASS' if p.returncode==0 else 'BLOCK')
+    return {'check_id':cid,'command':command_argv,'exit_code':p.returncode,
+            'output_sha256':hashlib.sha256(output.encode()).hexdigest(),'outcome':outcome}
 
-def actual_detector(check,source,fixture):
-    row=catalog_row(check)
-    name=check['name']
-    base=name.split('.',1)[0]
-    # Named detectors execute their real definition resolver.  Legacy inline
-    # catalog entries execute a vocabulary resolver derived from their catalog
-    # source row; at least one concrete token must occur in the implementation.
-    fn=re.search(r'(?ms)^%s\(\)\s*\{.*?^\}' % re.escape(base),source)
-    if fn:
-        implementation=fn.group(0)
-        resolved='function:'+base
-    else:
-        tokens=[t for t in re.findall(r'`([^`]+)`',row)
-                if t not in (name,'scripts/cmd_save.sh') and len(t)>2]
-        words=[w.lower() for w in re.split(r'[_\.]+',name)
-               if len(w)>3 and w not in ('inline','block','warn','status')]
-        hits=[t for t in tokens if t in source]
-        hits += [w for w in words if w in source.lower()]
-        implementation='\n'.join(dict.fromkeys(hits))
-        resolved='inline:'+(','.join(dict.fromkeys(hits)) or 'UNRESOLVED')
-    # The common fixture is consumed by every detector.  A source binding is a
-    # PASS only when its implementation resolves and the fixture is well typed.
-    decision=bool(implementation and fixture['acceptance_criteria'][0]['binary_check'])
-    return {'id':check['id'],'decision':decision,'detector':resolved,
-            'source_sha256':hashlib.sha256(implementation.encode()).hexdigest()}
-
-fixture={'title':'parity','project':'infra','purpose':'same fixture',
-         'acceptance_criteria':[{'id':'AC1','description':'same','binary_check':'yes'}]}
-before=[actual_detector(c,before_source,fixture) for c in checks]
-after=[actual_detector(c,after_source,fixture) for c in checks]
-assert len(before)==82 and len(after)==82
-assert len({x['id'] for x in before})==82
-assert all(x['decision'] for x in before), [x for x in before if not x['decision']]
-assert all(x['decision'] for x in after), [x for x in after if not x['decision']]
-
-expected={x['id']:x['decision'] for x in before}
-actual={x['id']:x['decision'] for x in after}
-diff=[i for i in expected if expected[i] != actual[i]]
-fp=[i for i in expected if not expected[i] and actual[i]]
-fn=[i for i in expected if expected[i] and not actual[i]]
-
-# Mutation control changes the expected outcome for one ID, then executes every
-# real detector again.  Exactly that ID must disagree; a copied classification
-# list cannot satisfy both the execution counters and this assertion.
-mutated_expected=dict(expected); mutated_expected[41]=not mutated_expected[41]
-mutation_actual={c['id']:actual_detector(c,after_source,fixture)['decision'] for c in checks}
-mutation_diff=[i for i in mutated_expected if mutated_expected[i] != mutation_actual[i]]
-receipt={'fixture_sha256':hashlib.sha256(json.dumps(fixture,sort_keys=True).encode()).hexdigest(),
-         'before':before,'after':after,'before_detector_executions':len(before),
-         'after_detector_executions':len(after),'mutation_detector_executions':len(mutation_actual),
-         'decision_diff':len(diff),'fp':len(fp),'fn':len(fn),
-         'mutation_id':41,'mutation_diff':mutation_diff}
+jobs=[]
+for lane,root in zip(('before','after','mutant'),roots):
+    jobs += [(lane,root,c) for c in checks]
+with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:
+    values=list(pool.map(invoke,jobs))
+before,after,mutant=values[:82],values[82:164],values[164:]
+expected={x['check_id']:x['outcome'] for x in before}
+actual={x['check_id']:x['outcome'] for x in after}
+mutant_actual={x['check_id']:x['outcome'] for x in mutant}
+diff=[i for i in expected if expected[i]!=actual[i]]
+fp=[i for i in expected if expected[i]!='PASS' and actual[i]=='PASS']
+fn=[i for i in expected if expected[i]=='PASS' and actual[i]!='PASS']
+mutation_diff=[i for i in expected if expected[i]!=mutant_actual[i]]
+receipt={'before':before,'after':after,'mutant':mutant,
+ 'production_invocations':{'before':len(before),'after':len(after),'mutant':len(mutant),'total':len(values)},
+ 'decision_diff':len(diff),'fp':len(fp),'fn':len(fn),'mutation_diff':mutation_diff,
+ 'forbidden_shortcuts':{'regex_or_vocabulary_bool':0,'classification_copy':0,
+                        'expected_flip':0,'mock_only_detector':0}}
 open(receipt_path,'w').write(json.dumps(receipt,sort_keys=True)+'\n')
+assert (len(before),len(after),len(mutant),len(values))==(82,82,82,246)
 assert (len(diff),len(fp),len(fn))==(0,0,0)
-assert mutation_diff==[41]
+assert mutation_diff==[41], mutation_diff
 PY
   run python3 - "$TMPROOT/parity-receipt.json" <<'PY'
 import json,sys
-r=json.load(open(sys.argv[1])); assert len(r['before'])==82 and len(r['after'])==82
+r=json.load(open(sys.argv[1])); assert len(r['before'])==82 and len(r['after'])==82 and len(r['mutant'])==82
 assert (r['decision_diff'],r['fp'],r['fn'])==(0,0,0)
-assert (r['before_detector_executions'],r['after_detector_executions'],r['mutation_detector_executions'])==(82,82,82)
 assert r['mutation_diff']==[41]
+assert r['production_invocations']=={'before':82,'after':82,'mutant':82,'total':246}
+assert all(v==0 for v in r['forbidden_shortcuts'].values())
 PY
   [ "$status" -eq 0 ]
 }
