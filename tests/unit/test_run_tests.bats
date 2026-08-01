@@ -1002,6 +1002,7 @@ YAML
   cat >"$TMPROOT/bin/python3" <<'SH'
 #!/usr/bin/env bash
 if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
+  printf '%s|%s\n' "$PWD" "${PYTHONPATH:-}" >>"$PYTEST_ENV_LOG"
   printf '1 passed in 0.01s\n'
   exit 0
 fi
@@ -1016,6 +1017,7 @@ SH
   git -C "$external" add backend
   git -C "$external" commit -qm init
   external_head="$(git -C "$external" rev-parse HEAD)"
+  export PYTEST_ENV_LOG="$TMPROOT/pytest-env.log"
   cat >"$TMPROOT/projects/external.yaml" <<YAML
 project:
   path: $external
@@ -1047,6 +1049,9 @@ YAML
   [[ "$output" == *"scope=backend_contract"* ]]
   [[ "$output" == *"1 passed"* ]]
   [[ "$output" != *"backend_full_unit_checkpoint"* ]]
+  IFS='|' read -r contract_pwd contract_pythonpath <"$PYTEST_ENV_LOG"
+  [ "$contract_pwd" = "$external/backend" ]
+  [[ ":$contract_pythonpath:" == *":$external:"* ]]
 
   cat >"$TMPROOT/queue/tasks/checkpoint.yaml" <<YAML
 task:

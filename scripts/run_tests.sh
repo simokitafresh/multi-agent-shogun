@@ -1804,10 +1804,17 @@ _run_tests_main() {
                         fi
                     done
                     if [ "$_external_backend" -eq 1 ] && [ -d "$_task_root/backend/tests" ]; then
+                        local _external_python="python3"
+                        if [ -x "$_task_root/.venv/bin/python" ] \
+                            && "$_task_root/.venv/bin/python" -c 'import pytest' >/dev/null 2>&1; then
+                            _external_python="$_task_root/.venv/bin/python"
+                        fi
                         if [ "${#_external_backend_tests[@]}" -gt 0 ]; then
                             printf 'TEST_SELECTION result=external runner=pytest scope=backend_contract project_root=%s files=%s\n' \
                                 "$_task_root" "${#_external_backend_tests[@]}"
-                            (cd "$_task_root/backend" && python3 -m pytest -q "${_external_backend_tests[@]}") || exit $?
+                            (cd "$_task_root/backend" \
+                                && PYTHONPATH="$_task_root${PYTHONPATH:+:$PYTHONPATH}" \
+                                    "$_external_python" -m pytest -q "${_external_backend_tests[@]}") || exit $?
                         else
                             if ! task_allows_full_unit_checkpoint "$1" "$_task_root"; then
                                 log_full_unit_scope_guard "$1" BLOCK \
@@ -1818,7 +1825,9 @@ _run_tests_main() {
                             log_full_unit_scope_guard "$1" PASS \
                                 "reason=explicit_fixed_sha_wave_final_checkpoint"
                             printf 'TEST_SELECTION result=external runner=pytest scope=backend_full_unit_checkpoint project_root=%s\n' "$_task_root"
-                            (cd "$_task_root/backend" && python3 -m pytest -q) || exit $?
+                            (cd "$_task_root/backend" \
+                                && PYTHONPATH="$_task_root${PYTHONPATH:+:$PYTHONPATH}" \
+                                    "$_external_python" -m pytest -q) || exit $?
                         fi
                     fi
                     if [ "$_external_frontend" -eq 1 ] && [ -f "$_task_root/frontend/package.json" ]; then
