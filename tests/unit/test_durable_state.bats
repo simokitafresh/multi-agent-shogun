@@ -103,11 +103,26 @@ fence_of() {
 @test "live lease rejects begin and expiry restores liveness" {
     run bash "$DS" begin "$STATE_ROOT" task_owner lease_begin attempt-a payload-a artifact-a
     [ "$status" -eq 0 ]
-    run bash "$DS" lease-acquire "$STATE_ROOT" task_owner lease_begin finisher 0.5
+    run bash "$DS" lease-acquire "$STATE_ROOT" task_owner lease_begin finisher 30
     [ "$status" -eq 0 ]
     run bash "$DS" begin "$STATE_ROOT" task_owner lease_begin attempt-b payload-b artifact-b
     [ "$status" -eq 6 ]
-    sleep 0.6
+    python3 - "$STATE_ROOT/leases/task_owner__lease_begin.json" <<'PY'
+import json
+import os
+import sys
+
+path = sys.argv[1]
+with open(path) as source:
+    lease = json.load(source)
+lease["expires_at"] = 0
+tmp = f"{path}.tmp"
+with open(tmp, "w") as target:
+    json.dump(lease, target, sort_keys=True)
+    target.flush()
+    os.fsync(target.fileno())
+os.replace(tmp, path)
+PY
     run bash "$DS" begin "$STATE_ROOT" task_owner lease_begin attempt-b payload-b artifact-b
     [ "$status" -eq 0 ]
 }
