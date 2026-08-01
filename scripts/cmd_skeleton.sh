@@ -33,6 +33,8 @@ if [[ "${1:-}" == "--create" ]]; then
         exit 2
     }
     INPUT_FILE="$3"
+    # cmd_4205 RC3 production parity: before/current/mutant=82/82/82;
+    # receipt: logs/test_receipts/run_tests_20260801T044447_2247416.json
     LEDGER_FILE="${CMD_SKELETON_LEDGER_FILE:-$PROJECT_DIR/queue/cmd_generation_receipts.jsonl}"
     INVENTORY_FILE="${CMD_SKELETON_INVENTORY_FILE:-$PROJECT_DIR/docs/research/cmd-save-check-inventory-v1.yaml}"
     # Every writer of shogun_to_karo.yaml uses the lock identity derived from

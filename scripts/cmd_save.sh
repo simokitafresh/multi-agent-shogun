@@ -4015,6 +4015,8 @@ if ! validate_queue_yaml_syntax; then
 fi
 
 # --- Check 0.95: typed creator generation receipt 3/3 consistency ---
+# cmd_4205 RC3 production parity: before/current/mutant=82/82/82;
+# receipt: logs/test_receipts/run_tests_20260801T044447_2247416.json
 # Legacy commands without schema_version remain governed by the frozen 82 checks.
 # Typed entries are accepted only when queue payload, embedded receipt and the
 # committed ledger record agree byte-for-byte on the cryptographic identity.
