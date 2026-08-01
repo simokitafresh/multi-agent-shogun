@@ -20,6 +20,8 @@ allowed-tools:
 ---
 
 <!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-08-01T19:15:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_reflux_b_20260801検分: gate_report_format.sh c15becc99は共有logs/gunshi_review_log.yamlの未commit汚染判定をsemantic ownership SSOTへ委譲し、fail-closed時は従来判定へ戻す。binary_checks yes/no、verdict自動導出、report引数、PASS/FAIL出口契約は不変。 -->
 
 Script refs verified: 2026-07-13 将軍検分. `gate_report_format.sh` checked_at以降の変更(97170f617)をgit showで確認。dashboard reflux skipのCLEAR review fingerprint連携4行のみで、binary_checks検証・verdict自動導出の判定契約不変。手順書き換え不要。
 
