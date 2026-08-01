@@ -488,6 +488,7 @@ fi
 echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
 mapfile -t reports < <(PROJECT_ROOT="$ROOT" review_resolve_reports "$cmd_id")
+mapfile -t reports < <(PROJECT_ROOT="$ROOT" review_resolve_gate_reports "$cmd_id" "${reports[@]}")
 if [ -n "${REVIEW_APPROVAL_TEST_READY_FILE:-}" ]; then
   : > "$REVIEW_APPROVAL_TEST_READY_FILE"
   while [ ! -e "${REVIEW_APPROVAL_TEST_RELEASE_FILE:?}" ]; do sleep 0.01; done

@@ -417,11 +417,49 @@ review_two_phase_ready_gunshi() {
     [ "$result" = LGTM ] && [ "$stored" = "$fingerprint" ]
 }
 
+# A failed attempt that Karo formally accepted is terminal evidence, but it can
+# never receive Gunshi LGTM: review_approval.sh deliberately limits the
+# status=failed/verdict=FAIL lane to karo:ACCEPT.  Exclude only that exact,
+# fingerprint-bound report from a parent cmd's success two-phase manifest.
+review_formally_closed_failure() {
+    local cmd_id="$1" report="$2" root logical key dir fingerprint stored result lifecycle
+    root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    review_validate_report "$cmd_id" "$report" || return 1
+    lifecycle=$(python3 - "$report" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(d.get("status") or "").strip())
+print(str(d.get("verdict") or "").strip().upper())
+PY
+) || return 1
+    [ "$(printf '%s\n' "$lifecycle" | sed -n 1p)" = failed ] || return 1
+    [ "$(printf '%s\n' "$lifecycle" | sed -n 2p)" = FAIL ] || return 1
+    fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT=1 review_report_fingerprint "$report") || return 1
+    logical=$(PROJECT_ROOT="$root" review_report_logical_path "$report") || return 1
+    key=$(review_report_key "$logical")
+    dir="$root/queue/gates/$cmd_id/review_approvals/reports/$key"
+    stored=$(review_approval_value "$dir/karo.yaml" fingerprint || true)
+    result=$(review_approval_value "$dir/karo.yaml" result || true)
+    [ "$result" = ACCEPT ] && [ "$stored" = "$fingerprint" ]
+}
+
+review_resolve_gate_reports() {
+    local cmd_id="$1" report
+    shift
+    for report in "$@"; do
+        review_formally_closed_failure "$cmd_id" "$report" && continue
+        printf '%s\n' "$report"
+    done
+}
+
 review_all_reports_ready() {
     local cmd_id="$1"; shift
     [ "$#" -gt 0 ] || return 1
     local report
-    for report in "$@"; do review_two_phase_ready "$cmd_id" "$report" || return 1; done
+    for report in "$@"; do
+        review_formally_closed_failure "$cmd_id" "$report" && continue
+        review_two_phase_ready "$cmd_id" "$report" || return 1
+    done
 }
 
 review_manifest_fingerprint() {
@@ -513,6 +551,12 @@ PY
 review_gate_manifest_ready() {
     local cmd_id="$1"; shift
     local root marker source result reports snapshot_rel snapshot snapshot_sha actual_sha rows report logical resolved fp fp2 commit_id report_id report_fd pinned
+    local -a gate_reports=()
+    for report in "$@"; do
+        review_formally_closed_failure "$cmd_id" "$report" && continue
+        gate_reports+=("$report")
+    done
+    set -- "${gate_reports[@]}"
     root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
     marker="$root/queue/gates/$cmd_id/review_gate.done"
     [ -f "$marker" ] || return 1
