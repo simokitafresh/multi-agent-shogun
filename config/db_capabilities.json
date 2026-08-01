@@ -39,6 +39,16 @@
       "required_credential_keys": ["DATABASE_URL"],
       "requires_expected_commit": true
     },
+    "bounded_fof_monthly_restore_20260729": {
+      "tool": "scripts/lib/db_capability_tool.py",
+      "project": "dm-signal",
+      "modes": ["bounded_fof_monthly_restore"],
+      "confirm": "BOUNDED_FOF_MONTHLY_RESTORE_ROLLBACK_READY",
+      "actions": ["dry-run", "restore"],
+      "allowed_child_flags": ["--artifact"],
+      "required_credential_keys": ["DATABASE_URL"],
+      "requires_expected_commit": true
+    },
     "transactional_restore": {
       "tool": "scripts/lib/db_capability_tool.py",
       "project": "dm-signal",

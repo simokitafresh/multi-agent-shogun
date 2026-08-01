@@ -9,6 +9,7 @@ import argparse
 import importlib.util
 import hashlib
 import json
+import math
 import secrets
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -886,6 +887,217 @@ def _freeze_signal_ledger_baseline_20260715(dsn: str, output: Path) -> dict:
         conn.close()
 
 
+_FOF_MONTHLY_ARTIFACT = Path(
+    "/mnt/c/Python_app/DM-signal/outputs/analysis/fof_monthly_restore_20260729.json"
+)
+_FOF_MONTHLY_ARTIFACT_SHA256 = (
+    "fb4b2b31ee22cd02a8bee4860be2c9af5230b268b656802106a393eb1472c0ef"
+)
+_FOF_MONTHLY_ROWS_SHA256 = (
+    "27bde73f4b33f52795c154338d6ccae1af15cb9990986f13bac8b9877faecc6d"
+)
+_FOF_MONTHLY_COLUMNS = (
+    "portfolio_id", "year_month", "cumulative_return", "cumulative_return_open",
+    "monthly_return", "monthly_return_open", "benchmark_cumulative",
+    "benchmark_cumulative_open", "benchmark_return", "benchmark_return_open",
+    "in_market", "holding_signal",
+)
+
+
+def _load_fof_monthly_artifact(artifact: Path) -> tuple[dict, list[list]]:
+    """Validate the one immutable FoF monthly-returns recovery artifact."""
+    artifact = artifact.resolve()
+    if artifact != _FOF_MONTHLY_ARTIFACT.resolve():
+        raise RuntimeError("artifact path is not the registered FoF monthly restore artifact")
+    payload = artifact.read_bytes()
+    if hashlib.sha256(payload).hexdigest() != _FOF_MONTHLY_ARTIFACT_SHA256:
+        raise RuntimeError("FoF monthly restore artifact SHA-256 mismatch")
+    manifest = json.loads(payload)
+    required_manifest = {
+        "version": 1,
+        "scope": "fof_monthly_returns_only",
+        "columns": list(_FOF_MONTHLY_COLUMNS),
+        "row_count": 11717,
+        "portfolio_count": 78,
+        "duplicate_key_count": 0,
+        "null_key_count": 0,
+        "rows_sha256": _FOF_MONTHLY_ROWS_SHA256,
+    }
+    for key, expected in required_manifest.items():
+        if manifest.get(key) != expected:
+            raise RuntimeError(f"FoF monthly artifact manifest mismatch: {key}")
+    rows = manifest.get("rows")
+    if not isinstance(rows, list) or len(rows) != 11717:
+        raise RuntimeError("FoF monthly artifact row cardinality mismatch")
+    if any(not isinstance(row, list) or len(row) != len(_FOF_MONTHLY_COLUMNS) for row in rows):
+        raise RuntimeError("FoF monthly artifact row shape mismatch")
+    keys = [(row[0], row[1]) for row in rows]
+    null_keys = sum(key[0] is None or key[1] is None for key in keys)
+    duplicate_keys = len(keys) - len(set(keys))
+    portfolio_ids = {row[0] for row in rows}
+    if null_keys != 0 or duplicate_keys != 0 or len(portfolio_ids) != 78:
+        raise RuntimeError(
+            "FoF monthly artifact key drift: "
+            f"null={null_keys} duplicate={duplicate_keys} portfolios={len(portfolio_ids)}"
+        )
+    for row in rows:
+        if not isinstance(row[0], str) or not isinstance(row[1], str):
+            raise RuntimeError("FoF monthly artifact key type mismatch")
+        for value in row[2:10]:
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                raise RuntimeError("FoF monthly artifact contains invalid numeric value")
+        if row[10] not in (None, 0, 1) or (
+            row[11] is not None and not isinstance(row[11], str)
+        ):
+            raise RuntimeError("FoF monthly artifact signal value mismatch")
+    canonical = json.dumps(rows, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    if hashlib.sha256(canonical).hexdigest() != _FOF_MONTHLY_ROWS_SHA256:
+        raise RuntimeError("FoF monthly artifact canonical rows hash mismatch")
+    return manifest, rows
+
+
+def _restore_fof_monthly_20260729(
+    dsn: str, artifact: Path, action: str,
+) -> dict:
+    """Insert only the registered FoF monthly rows; dry-run always rolls back."""
+    import psycopg2
+    from psycopg2.extras import execute_values
+
+    manifest, rows = _load_fof_monthly_artifact(artifact)
+    artifact_ids = sorted({row[0] for row in rows})
+    conn = psycopg2.connect(dsn)
+    conn.autocommit = False
+    cursor = None
+    transaction = "rolled_back"
+    non_fof_select = (
+        "SELECT " + ",".join(_FOF_MONTHLY_COLUMNS) + " FROM monthly_returns "
+        "WHERE NOT (portfolio_id = ANY(%s)) ORDER BY portfolio_id, year_month"
+    )
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT current_user, session_user, current_database(), "
+            "COALESCE(inet_server_addr()::text, '')"
+        )
+        current_user, session_user, database_name, server_address = cursor.fetchone()
+        if database_name != "dm_signal":
+            raise RuntimeError("bounded FoF monthly restore requires dm_signal database")
+
+        cursor.execute("SELECT pg_try_advisory_xact_lock(%s)", (8675309,))
+        if not cursor.fetchone()[0]:
+            raise RuntimeError("recalculate advisory transaction lock is held")
+        cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM recalculation_status "
+            "WHERE status='running' AND end_time IS NULL)"
+        )
+        if cursor.fetchone()[0]:
+            raise RuntimeError("running recalculation exists")
+
+        cursor.execute("SET LOCAL lock_timeout = '30s'")
+        cursor.execute(
+            "LOCK TABLE portfolios, monthly_returns IN SHARE ROW EXCLUSIVE MODE"
+        )
+        cursor.execute("SELECT id FROM portfolios WHERE type='fof' ORDER BY id")
+        production_fof_ids = [str(row[0]) for row in cursor.fetchall()]
+        if len(production_fof_ids) != 78 or production_fof_ids != artifact_ids:
+            raise RuntimeError(
+                "artifact IDs do not exactly match the 78 production type=fof IDs"
+            )
+        cursor.execute(
+            "SELECT count(*) FROM monthly_returns m "
+            "JOIN portfolios p ON p.id=m.portfolio_id WHERE p.type='fof'"
+        )
+        preexisting_fof_rows = int(cursor.fetchone()[0])
+        if preexisting_fof_rows != 0:
+            raise RuntimeError(
+                f"pre-existing FoF monthly_returns must be zero, got {preexisting_fof_rows}"
+            )
+        cursor.execute(non_fof_select, (artifact_ids,))
+        non_fof_before = [list(row) for row in cursor.fetchall()]
+        non_fof_sha256_before = hashlib.sha256(
+            json.dumps(
+                non_fof_before, separators=(",", ":"), ensure_ascii=False
+            ).encode("utf-8")
+        ).hexdigest()
+
+        insert_sql = (
+            "INSERT INTO monthly_returns (" + ",".join(_FOF_MONTHLY_COLUMNS) + ") VALUES %s"
+        )
+        execute_values(cursor, insert_sql, rows, page_size=500)
+
+        cursor.execute(
+            "SELECT " + ",".join(_FOF_MONTHLY_COLUMNS) + " FROM monthly_returns "
+            "WHERE portfolio_id = ANY(%s) ORDER BY portfolio_id, year_month",
+            (artifact_ids,),
+        )
+        actual_rows = [list(row) for row in cursor.fetchall()]
+        if len(actual_rows) != 11717 or len({row[0] for row in actual_rows}) != 78:
+            raise RuntimeError(
+                f"post-restore cardinality mismatch: rows={len(actual_rows)} "
+                f"portfolios={len({row[0] for row in actual_rows})}"
+            )
+        if actual_rows != rows:
+            raise RuntimeError("post-restore canonical rows differ from artifact")
+        actual_canonical = json.dumps(
+            actual_rows, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        actual_sha256 = hashlib.sha256(actual_canonical).hexdigest()
+        if actual_sha256 != manifest["rows_sha256"]:
+            raise RuntimeError("post-restore canonical rows hash mismatch")
+        cursor.execute(non_fof_select, (artifact_ids,))
+        non_fof_after = [list(row) for row in cursor.fetchall()]
+        non_fof_sha256_after = hashlib.sha256(
+            json.dumps(
+                non_fof_after, separators=(",", ":"), ensure_ascii=False
+            ).encode("utf-8")
+        ).hexdigest()
+        if (
+            len(non_fof_after) != len(non_fof_before)
+            or non_fof_sha256_after != non_fof_sha256_before
+        ):
+            raise RuntimeError("non-FoF monthly_returns changed during bounded restore")
+
+        if action == "restore":
+            conn.commit()
+            transaction = "committed"
+        else:
+            conn.rollback()
+        return {
+            "decision": "PASS",
+            "action": action,
+            "transaction": transaction,
+            "artifact_sha256": _FOF_MONTHLY_ARTIFACT_SHA256,
+            "canonical_rows_sha256": actual_sha256,
+            "inserted_rows": len(actual_rows),
+            "portfolio_count": len({row[0] for row in actual_rows}),
+            "preexisting_fof_rows": preexisting_fof_rows,
+            "non_fof_rows_before": len(non_fof_before),
+            "non_fof_rows_after": len(non_fof_after),
+            "non_fof_sha256_before": non_fof_sha256_before,
+            "non_fof_sha256_after": non_fof_sha256_after,
+            "non_fof_unchanged": True,
+            "other_table_writes": 0,
+            "delete_statements": 0,
+            "update_statements": 0,
+            "identity": {
+                "current_user": current_user,
+                "session_user": session_user,
+                "database": database_name,
+                "server_address": server_address,
+            },
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conn.close()
+
+
 def main() -> int:
     capability = os.environ.get("DB_CAPABILITY")
     mode = os.environ.get("DB_CAPABILITY_MODE")
@@ -974,6 +1186,24 @@ def main() -> int:
         if database_identity != "dm_signal":
             raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
         result = _freeze_signal_ledger_baseline_20260715(dsn, output)
+        print(json.dumps(result, sort_keys=True, ensure_ascii=False))
+        return 0
+    if capability == "bounded_fof_monthly_restore_20260729":
+        if mode != "bounded_fof_monthly_restore":
+            raise SystemExit("unknown capability or mode")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("action", choices=("dry-run", "restore"))
+        parser.add_argument("--artifact", required=True)
+        args = parser.parse_args()
+        dsn = os.environ["DATABASE_URL"]
+        parsed = urlsplit(dsn)
+        resource_identity = parsed.hostname or ""
+        database_identity = unquote(parsed.path.lstrip("/").split("/", 1)[0])
+        if not resource_identity.endswith(".singapore-postgres.render.com"):
+            raise SystemExit("BLOCK: DATABASE_URL is not a registered Render production resource")
+        if database_identity != "dm_signal":
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
+        result = _restore_fof_monthly_20260729(dsn, Path(args.artifact), args.action)
         print(json.dumps(result, sort_keys=True, ensure_ascii=False))
         return 0
     if capability == "production_role_probe":
