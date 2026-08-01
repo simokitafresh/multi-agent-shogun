@@ -303,6 +303,94 @@ filter_report_commit_nonoverlap_diffs() {
             fi
         fi
     fi
+    # queue/insights.yaml is a shared bounded queue: later workers may rotate
+    # unrelated IDs through the same line range.  Range overlap is therefore
+    # not ownership evidence.  Suppress only when every insight ID named by
+    # the task snapshot and changed by the report commit is structurally
+    # unchanged when still present in the current worktree. Absence is a valid
+    # bounded-queue eviction by later IDs; duplicate/ambiguous IDs and malformed
+    # YAML deliberately fail closed.
+    local insight_path="queue/insights.yaml"
+    if printf '%s\n' "$uncommitted_raw" | awk 'substr($0,4)=="queue/insights.yaml" {found=1} END {exit !found}'; then
+        if REPO_ROOT="$repo" REPORT_PATH="$report_path" INSIGHT_PATH="$insight_path" python3 - <<'PY'
+import os
+import re
+import subprocess
+import sys
+import yaml
+
+repo = os.environ["REPO_ROOT"]
+report_path = os.environ["REPORT_PATH"]
+path = os.environ["INSIGHT_PATH"]
+
+def fail():
+    raise SystemExit(1)
+
+try:
+    with open(report_path, encoding="utf-8") as stream:
+        report = yaml.safe_load(stream)
+    commit = str(report.get("commit_hash") or "")
+    snapshot = report.get("task_contract_snapshot")
+    if not isinstance(report, dict) or not isinstance(snapshot, dict):
+        fail()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        fail()
+    snapshot_ids = set(re.findall(r"INS-[0-9A-Za-z-]+", str(snapshot)))
+    if not snapshot_ids:
+        fail()
+    parent_text = subprocess.check_output(
+        ["git", "-C", repo, "show", f"{commit}^:{path}"], text=True,
+        stderr=subprocess.DEVNULL,
+    )
+    commit_text = subprocess.check_output(
+        ["git", "-C", repo, "show", f"{commit}:{path}"], text=True,
+        stderr=subprocess.DEVNULL,
+    )
+    with open(os.path.join(repo, path), encoding="utf-8") as stream:
+        current_text = stream.read()
+    documents = [yaml.safe_load(text) for text in (parent_text, commit_text, current_text)]
+except Exception:
+    fail()
+
+def indexed(document):
+    if not isinstance(document, dict) or set(document) != {"insights"}:
+        fail()
+    entries = document["insights"]
+    if not isinstance(entries, list):
+        fail()
+    result = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            fail()
+        identity = entry.get("id")
+        if not isinstance(identity, str) or not identity or identity in result:
+            fail()
+        result[identity] = entry
+    return result
+
+before, committed, current = map(indexed, documents)
+changed_ids = {
+    identity for identity in set(before) | set(committed)
+    if before.get(identity) != committed.get(identity)
+}
+owned_ids = snapshot_ids & changed_ids
+if not owned_ids:
+    fail()
+if any(identity in current and committed.get(identity) != current.get(identity) for identity in owned_ids):
+    fail()
+sys.exit(0)
+PY
+        then
+            uncommitted_raw=$(printf '%s\n' "$uncommitted_raw" | awk 'substr($0,4)!="queue/insights.yaml"')
+            [ -n "$uncommitted_raw" ] || return 0
+        else
+            # Semantic comparison is the only safe ownership proof for this
+            # bounded queue.  Do not let positional hunks turn parse failure
+            # or ambiguous identity into a false suppression.
+            printf '%s\n' "$uncommitted_raw"
+            return 0
+        fi
+    fi
     REPO_ROOT="$repo" REPORT_PATH="$report_path" CC_UNCOMMITTED_RAW="$uncommitted_raw" python3 - <<'PY'
 import os
 import re
