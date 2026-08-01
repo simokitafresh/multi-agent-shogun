@@ -15,6 +15,7 @@ import fcntl
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -606,6 +607,47 @@ def shadow_compare(root: Path, subject_type: str, subject_id: str) -> dict:
     }
 
 
+def guarded_yaml_set(root: Path, subject_type: str, subject_id: str,
+                     expected_fence: int, expected_phase: str,
+                     expected_payload_hash: str, expected_pointer: str,
+                     yaml_setter: str, yaml_file: str, block_id: str,
+                     field: str, value: str) -> dict:
+    """Apply one operational YAML mutation inside the subject authority domain.
+
+    The fence check and yaml_field_set subprocess are covered by the same flock.
+    Therefore TTL expiry or a prior unlocked assertion cannot let a stale caller
+    mutate after a competing generation has been published.
+    """
+    lock_path = _lock_path(root, subject_type, subject_id)
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f, fcntl.LOCK_EX)
+        try:
+            current = read_active(root, subject_type, subject_id)
+            pointer = next((x.split(":", 1)[1] for x in current.get("side_effect_ledger", [])
+                            if x.startswith("owner_pointer:")), "") if current else ""
+            valid = (
+                current is not None
+                and current.get("fence_token") == expected_fence
+                and current.get("phase") == expected_phase
+                and current.get("payload_hash") == expected_payload_hash
+                and pointer
+                and os.path.realpath(pointer) == os.path.realpath(expected_pointer)
+            )
+            if not valid:
+                raise StaleFenceError("guarded YAML mutation lost fence/phase/payload/pointer authority")
+            completed = subprocess.run(
+                ["bash", yaml_setter, yaml_file, block_id, field, value],
+                check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            if completed.returncode != 0:
+                raise DurableStateError(
+                    f"yaml setter failed rc={completed.returncode}: {completed.stderr.strip()}"
+                )
+            return current
+        finally:
+            fcntl.flock(lock_f, fcntl.LOCK_UN)
+
+
 def _print_record(record) -> None:
     if record is None:
         print("null")
@@ -700,6 +742,15 @@ def _cmd_shadow_compare(args) -> int:
     return 0 if result["result"] == "match" else 8
 
 
+def _cmd_guarded_yaml_set(args) -> int:
+    _print_record(guarded_yaml_set(
+        Path(args.root), args.subject_type, args.subject_id, args.expected_fence,
+        args.expected_phase, args.expected_payload_hash, args.expected_pointer,
+        args.yaml_setter, args.yaml_file, args.block_id, args.field, args.value,
+    ))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="durable_state")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -781,6 +832,21 @@ def main(argv=None) -> int:
     p_shadow.add_argument("--subject-type", required=True)
     p_shadow.add_argument("--subject-id", required=True)
     p_shadow.set_defaults(func=_cmd_shadow_compare)
+
+    p_guard = sub.add_parser("guarded-yaml-set")
+    p_guard.add_argument("--root", required=True)
+    p_guard.add_argument("--subject-type", required=True)
+    p_guard.add_argument("--subject-id", required=True)
+    p_guard.add_argument("--expected-fence", required=True, type=int)
+    p_guard.add_argument("--expected-phase", required=True)
+    p_guard.add_argument("--expected-payload-hash", required=True)
+    p_guard.add_argument("--expected-pointer", required=True)
+    p_guard.add_argument("--yaml-setter", required=True)
+    p_guard.add_argument("--yaml-file", required=True)
+    p_guard.add_argument("--block-id", required=True)
+    p_guard.add_argument("--field", required=True)
+    p_guard.add_argument("--value", required=True)
+    p_guard.set_defaults(func=_cmd_guarded_yaml_set)
 
     args = parser.parse_args(argv)
     try:

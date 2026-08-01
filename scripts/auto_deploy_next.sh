@@ -65,13 +65,21 @@ owner_transaction_finish() {
     }
     owner_failpoint after_pointer_before_tombstone || return $?
     if [ "$(realpath "$source")" != "$(realpath "$target")" ]; then
-        bash "$yfs" "$source" task status transferred >/dev/null
-        bash "$yfs" "$source" task owner_transaction_status tombstoned >/dev/null
+        bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" guarded-yaml-set "$OWNER_STATE_ROOT" \
+            "$OWNER_SUBJECT_TYPE" "$subject_id" "$fence" prepared "$payload_hash" "$target" \
+            "$yfs" "$source" task status transferred >/dev/null || return $?
+        bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" guarded-yaml-set "$OWNER_STATE_ROOT" \
+            "$OWNER_SUBJECT_TYPE" "$subject_id" "$fence" prepared "$payload_hash" "$target" \
+            "$yfs" "$source" task owner_transaction_status tombstoned >/dev/null || return $?
     fi
     owner_failpoint after_tombstone_before_activation || return $?
     owner_transaction_assert_current "$subject_id" "$target" "$fence" "$payload_hash" prepared || return 4
-    bash "$yfs" "$target" task status assigned >/dev/null
-    bash "$yfs" "$target" task owner_transaction_status active >/dev/null
+    bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" guarded-yaml-set "$OWNER_STATE_ROOT" \
+        "$OWNER_SUBJECT_TYPE" "$subject_id" "$fence" prepared "$payload_hash" "$target" \
+        "$yfs" "$target" task status assigned >/dev/null || return $?
+    bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" guarded-yaml-set "$OWNER_STATE_ROOT" \
+        "$OWNER_SUBJECT_TYPE" "$subject_id" "$fence" prepared "$payload_hash" "$target" \
+        "$yfs" "$target" task owner_transaction_status active >/dev/null || return $?
     owner_failpoint after_activation_before_published || return $?
     local ledger
     ledger="[\"owner_pointer:$target\",\"source_tombstone:$source\",\"payload:$payload_hash\"]"
@@ -106,9 +114,9 @@ owner_transaction_reconcile_startup() {
         [ -f "$source" ] && [ -f "$target" ] || continue
         if [ "$phase" = published ]; then
             ledger="[\"owner_pointer:$target\",\"source_tombstone:$source\",\"payload:$payload_hash\"]"
-            bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" reconcile "$OWNER_STATE_ROOT" "$OWNER_SUBJECT_TYPE" "$subject_id" "startup-reconciler-$$" "$payload_hash" "$ledger" >/dev/null
+            bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" reconcile "$OWNER_STATE_ROOT" "$OWNER_SUBJECT_TYPE" "$subject_id" "startup-reconciler-$$" "$payload_hash" "$ledger" >/dev/null || return $?
         else
-        owner_transaction_finish "$subject_id" "$source" "$target" "$fence" "$payload_hash"
+            owner_transaction_finish "$subject_id" "$source" "$target" "$fence" "$payload_hash" || return $?
         fi
         OWNER_RECONCILED_COUNT=$((OWNER_RECONCILED_COUNT + 1))
         log "OWNER_RECONCILED: $subject_id"

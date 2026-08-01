@@ -38,7 +38,9 @@ YAML
   for fp in "${boundaries[@]}"; do
     root="$BATS_TEST_TMPDIR/$fp"; cmd="cmd_fixture_${BATS_TEST_NUMBER}_${fp}"
     make_case "$root" "$cmd"
-    run env AUTO_DEPLOY_OWNER_LEASE_TTL=2 AUTO_DEPLOY_FAILPOINT="$fp" bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
+    # Keep enough headroom for the later mutation boundaries to be reached
+    # before the first startup probe observes the lease.
+    run env AUTO_DEPLOY_OWNER_LEASE_TTL=5 AUTO_DEPLOY_FAILPOINT="$fp" bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed
     [ "$status" -ne 0 ]; observed=$((observed + 1))
     executable=$(rg -l '^  status: (assigned|acknowledged|in_progress)$' "$root/queue/tasks"/*.yaml | wc -l)
     [ "$executable" -le 1 ] || lost=$((lost + 1))
@@ -47,8 +49,8 @@ YAML
       bash scripts/ninja_monitor.sh
     case "$fp" in
       after_pointer_before_tombstone|after_tombstone_before_activation|after_activation_before_published|after_published_before_terminal)
-        [ "$status" -ne 0 ]
-        sleep 2.1
+        [ "$status" -ne 0 ] || { echo "startup unexpectedly succeeded at boundary=$fp output=$output"; false; }
+        sleep 5.1
         run env AUTO_DEPLOY_OWNER_STATE_ROOT="$root/logs/durable_state/auto_deploy_owner" \
           SHOGUN_STATE_DIR="$root/monitor-state" NINJA_MONITOR_STARTUP_RECONCILE_ONLY=1 \
           bash scripts/ninja_monitor.sh
@@ -114,18 +116,25 @@ YAML
   fence2=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["fence_token"])' "$record2")
   payload2=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["payload_hash"])' "$record2")
   barrier="$root2/barrier"
-  env AUTO_DEPLOY_OWNER_STATE_ROOT="$root2/logs/durable_state/auto_deploy_owner" AUTO_DEPLOY_BARRIER_AFTER_ASSERT="$barrier" \
+  env AUTO_DEPLOY_OWNER_STATE_ROOT="$root2/logs/durable_state/auto_deploy_owner" AUTO_DEPLOY_OWNER_LEASE_TTL=0.2 AUTO_DEPLOY_BARRIER_AFTER_ASSERT="$barrier" \
     bash "$root2/scripts/auto_deploy_next.sh" --finish-owner-transaction "$subject2" "$root2/queue/tasks/pending.yaml" "$root2/queue/tasks/hayate.yaml" "$fence2" "$payload2" &
   finisher=$!
   for _ in {1..200}; do [ -f "$barrier" ] && break; sleep 0.01; done
   [ -f "$barrier" ]
   before2=$(sha256sum "$root2/queue/tasks/pending.yaml" "$root2/queue/tasks/hayate.yaml")
+  sleep 0.3
   run bash "$root2/scripts/lib/durable_state.sh" begin "$root2/logs/durable_state/auto_deploy_owner" task_owner "$subject2" competing-barrier "$payload2" "$payload2"
-  [ "$status" -eq 6 ]
+  [ "$status" -eq 0 ]
   after2=$(sha256sum "$root2/queue/tasks/pending.yaml" "$root2/queue/tasks/hayate.yaml")
   [ "$before2" = "$after2" ]
   touch "${barrier}.release"
+  set +e
   wait "$finisher"
+  finisher_rc=$?
+  set -e
+  [ "$finisher_rc" -eq 4 ]
+  final2=$(sha256sum "$root2/queue/tasks/pending.yaml" "$root2/queue/tasks/hayate.yaml")
+  [ "$before2" = "$final2" ]
 }
 
 @test "R03 legacy source mirror writer is absent" {
