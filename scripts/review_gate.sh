@@ -15,6 +15,12 @@ write_gate_flag() {
         "$_RG_TS" "$cmd_id" "$gate_name" "$result" "$reason" > "$flag_file"
 }
 
+write_review_done() {
+    local result="$1" local_gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
+    mkdir -p "$local_gates_dir"
+    printf 'timestamp: %s\nresult: %s\n' "$_RG_TS" "$result" > "$local_gates_dir/review_gate.done"
+}
+
 _self="${BASH_SOURCE[0]}"
 [[ "$_self" != /* ]] && _self="$PWD/$_self"
 SCRIPT_DIR="${_self%/scripts/review_gate.sh}"
@@ -31,6 +37,23 @@ TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 if [ ! -d "$TASKS_DIR" ]; then
     echo "SKIP: タスクディレクトリが存在しない ($TASKS_DIR)"
     exit 0
+fi
+
+# Formal SG7 approval is the current review SSOT. Direct/karo_direct hotfixes
+# intentionally have no separate task_type=review task, so requiring one after
+# a fingerprint-bound Gunshi LGTM creates a permanent completion deadlock.
+# A present but invalid bundle is never allowed to fall back to the legacy path.
+SG7_BUNDLE="$SCRIPT_DIR/queue/gates/$CMD_ID/sg7_bundle.json"
+if [ -f "$SG7_BUNDLE" ]; then
+    if python3 "$SCRIPT_DIR/scripts/review_bundle.py" consume \
+        --cmd "$CMD_ID" --bundle "$SG7_BUNDLE" --expect-verdict APPROVE >/dev/null; then
+        echo "PASS: 正式SG7レビュー済み (gunshi)"
+        write_gate_flag "$CMD_ID" "review_gate" "pass" "正式SG7レビュー完了(gunshi)"
+        write_review_done "PASS"
+        exit 0
+    fi
+    echo "BLOCK: 正式SG7 bundleが不正 ($SG7_BUNDLE)" >&2
+    exit 1
 fi
 
 set +e
@@ -135,9 +158,7 @@ if [ "$PY_RC" -eq 0 ]; then
         write_gate_flag "$CMD_ID" "review_gate" "skip" "コード変更なし"
     fi
     # cmd_108: Write .done flag for cmd_complete_gate
-    local_gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
-    mkdir -p "$local_gates_dir"
-    printf 'timestamp: %s\nresult: %s\n' "$_RG_TS" "${PY_OUT%%:*}" > "$local_gates_dir/review_gate.done"
+    write_review_done "${PY_OUT%%:*}"
 fi
 
 exit "$PY_RC"
