@@ -2413,8 +2413,26 @@ PY
 }
 # test_necessity: deployed tasks must carry the exact worktree baseline blob and initial lease timestamp used by active-context gates.
 @test "deploy records worktree baseline and progress lease together" {
-  run grep -F 'target_path_worktree_blob_at_deploy=$blob' "$PROJECT_ROOT/scripts/deploy_task.sh"
+  local tmpdir="$BATS_TEST_TMPDIR/deploy-baseline"
+  mkdir -p "$tmpdir/context"
+  printf 'deploy-start-bytes\n' > "$tmpdir/context/infrastructure.md"
+  git -C "$tmpdir" init -q
+  git -C "$tmpdir" add .
+  git -C "$tmpdir" -c user.name=t -c user.email=t@x commit -qm baseline
+  printf '%s\n' 'task:' '  target_path: context/infrastructure.md' > "$tmpdir/task.yaml"
+
+  run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; record_target_worktree_blob_at_deploy '$tmpdir/task.yaml'"
   [ "$status" -eq 0 ]
-  run grep -F 'progress_updated_at=$now' "$PROJECT_ROOT/scripts/deploy_task.sh"
+  run python3 - "$tmpdir/task.yaml" "$tmpdir/context/infrastructure.md" <<'PY'
+import datetime as dt, hashlib, pathlib, sys, yaml
+task=(yaml.safe_load(open(sys.argv[1])) or {})['task']
+data=pathlib.Path(sys.argv[2]).read_bytes()
+expected=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+stamp=dt.datetime.fromisoformat(task['progress_updated_at'].replace('Z','+00:00'))
+assert task['target_path_worktree_blob_at_deploy']==expected
+assert stamp.tzinfo is not None
+print(f"DEPLOY_BEHAVIOR_OK blob={expected} lease={task['progress_updated_at']}")
+PY
   [ "$status" -eq 0 ]
+  [[ "$output" == DEPLOY_BEHAVIOR_OK* ]]
 }
