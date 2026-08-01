@@ -491,6 +491,24 @@ if [ "$fail_close" = 1 ]; then
   # review_gate.done(=CLEAR marker)を書かず GATE も起動しないため、品質記録には
   # FAILのまま残る(instructions/karo.md §verdict=FAIL のcmdを閉じる・L1318)。
   echo "fail-close review recorded (no CLEAR marker, no gate trigger): $cmd_id"
+  # 正式closeを書いた同じ行動でworkerの会話状態も白紙化する。monitorの次巡回を
+  # 待つと、failed taskが数分間prompt待ちのまま残る。agent_respawn.sh側はfailedを
+  # 保持するため、白紙化直後にauto-deployへ再選択されない。
+  live_root=$(cd "$(dirname "$0")/.." && pwd)
+  if [ "$ROOT" = "$live_root" ]; then
+    report_base=$(basename "$report_logical")
+    fail_close_agent=${report_base%%_report_*}
+    fail_close_task="$ROOT/queue/tasks/${fail_close_agent}.yaml"
+    fail_close_status=$(grep -m1 -E '^\s*status:\s*' "$fail_close_task" 2>/dev/null \
+      | sed 's/.*status:[[:space:]]*//' | tr -d "\"'[:space:]" || true)
+    if [ "$fail_close_status" = "failed" ]; then
+      if bash "$ROOT/scripts/agent_respawn.sh" "$fail_close_agent" formal_fail_close; then
+        echo "fail-close auto-clear completed: agent=$fail_close_agent"
+      else
+        echo "WARN: fail-close auto-clear failed; ninja_monitor will retry: agent=$fail_close_agent" >&2
+      fi
+    fi
+  fi
 elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then
   if [[ "$cmd_id" =~ ^cmd_[0-9]+$ ]] && ! python3 "$ROOT/scripts/lib/parent_cmd_contract.py" "$cmd_id" --root "$ROOT"; then
     echo "BLOCK: parent cmd SSOT/purpose/AC contract incomplete; formalization withheld" >&2

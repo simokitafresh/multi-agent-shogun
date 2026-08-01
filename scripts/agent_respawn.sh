@@ -38,7 +38,17 @@ fi
 # LS078根治: settings.yaml model_nameをそのまま@model_nameへ焼込み(バナーパース非経由)
 apply_model_name_tag "$agent_name" "$pane" || true
 
-# task statusをidle化
-bash "$REPO_ROOT/scripts/lib/yaml_field_set.sh" "queue/tasks/${agent_name}.yaml" task status idle 2>/dev/null || true
+# 通常respawnは次任務を受けられるようidleへ戻す。ただし正式FAIL-close後の
+# failed taskは非配備状態そのものが終端契約なので保持する。ここでidle化すると
+# auto-deployが旧任務停止直後の忍者を再選択できてしまう。
+task_file="$REPO_ROOT/queue/tasks/${agent_name}.yaml"
+task_status=""
+if [[ -f "$task_file" ]]; then
+    task_status=$(grep -m1 -E '^\s*status:\s*' "$task_file" 2>/dev/null \
+        | sed 's/.*status:[[:space:]]*//' | tr -d "\"'[:space:]" || true)
+fi
+if [[ "$task_status" != "failed" ]]; then
+    bash "$REPO_ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task status idle 2>/dev/null || true
+fi
 
 echo "[agent_respawn] ${agent_name} respawned (reason=${reason}, cli=${cli})"
