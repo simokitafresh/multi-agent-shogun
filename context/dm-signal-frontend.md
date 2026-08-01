@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-02 cmd_4209_reviewed_source_boundary -->
-<!-- source_commit:fc5e6e57 reason:cmd_4209_reviewed_source_boundary evidence:cmd_complete_gate:project=dm-signal:context=context/dm-signal-frontend.md:commit=fc5e6e57 -->
+<!-- last_updated: 2026-08-02 cmd_karo_hotfix_compare_summary_alignment_20260802 reviewed source boundary -->
+<!-- source_commit:caa26b5b reason:cmd_karo_hotfix_compare_summary_alignment_20260802 reviewed source boundary evidence:cmd_complete_gate -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
