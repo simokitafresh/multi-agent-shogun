@@ -842,8 +842,9 @@ fi
     [[ "$output" == *"PASS: verdict present → return 0 (allowed)"* ]]
 }
 
-# 家老通知チェック: report存在+verdict有効でもreport_received通知なし→return 1(clearブロック)
-@test "report_gate: missing karo report_received notification blocks clear" {
+# test_necessity: a generation-exact terminal PASS report is sufficient primary
+# evidence; a missing transport notification must not deadlock auto-clear.
+@test "report_gate: terminal PASS report allows clear without report_received" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -876,6 +877,7 @@ cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_notify.yaml" <<INNEREO
 worker_id: kagemaru
 task_id: cmd_test_notify
 parent_cmd: cmd_test_notify
+status: completed
 verdict: PASS
 INNEREOF
 
@@ -885,17 +887,17 @@ result=0
 can_send_clear_with_report_gate kagemaru "test_trigger" || result=$?
 wait 2>/dev/null
 
-if [ "$result" -eq 1 ]; then
-    echo "PASS: missing report_received → return 1 (blocked)"
+if [ "$result" -eq 0 ]; then
+    echo "PASS: terminal report without report_received → return 0 (allowed)"
 else
-    echo "FAIL: expected return 1, got $result"
+    echo "FAIL: expected return 0, got $result"
     exit 1
 fi
 
-grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"
+! grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: missing report_received → return 1 (blocked)"* ]]
+    [[ "$output" == *"PASS: terminal report without report_received → return 0 (allowed)"* ]]
 }
 
 # test_necessity: exact SG7 LGTM is stronger terminal evidence than a missing earlier report_received transport and must suppress its false alert.
@@ -906,6 +908,7 @@ PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
 SCRIPT_DIR="$BATS_TEST_TMPDIR"; LOG="$SCRIPT_DIR/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts"
+touch "$LOG"
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
 task:
   status: done
@@ -1143,7 +1146,9 @@ echo "COUNTS archived_pending=0 reopened_pending=1"
     [[ "$output" == *"COUNTS archived_pending=0 reopened_pending=1"* ]]
 }
 
-@test "report_gate: near-match identity remains a true missing notification" {
+# test_necessity: a near-match report identity from another generation must
+# remain BLOCK even when transport history contains a similar token.
+@test "report_gate: near-match report identity blocks current generation" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -1152,9 +1157,11 @@ source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 SCRIPT_DIR="$BATS_TEST_TMPDIR"; LOG="$SCRIPT_DIR/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts"
+touch "$LOG"
 cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<YAML
 task:
   status: done
+  task_id: cmd_exact_current
   parent_cmd: cmd_exact
   report_filename: kotaro_report_cmd_exact.yaml
 YAML
@@ -1163,6 +1170,7 @@ worker_id: kotaro
 task_id: cmd_exact_task
 parent_cmd: cmd_exact
 timestamp: "2026-07-18T04:00:00+09:00"
+status: completed
 verdict: PASS
 YAML
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
@@ -1177,12 +1185,12 @@ log() { echo "$1" >> "$LOG"; }
 notify_karo_throttled() { echo "NOTIFY:$*" >> "$LOG"; }
 rc=0; can_send_clear_with_report_gate kotaro test || rc=$?
 [ "$rc" -eq 1 ]
-count=$(grep -c "report_notification_missing" "$LOG")
-[ "$count" -eq 1 ]
-echo "PASS: true missing notifications=$count"
+count=$(grep -c "report_notification_missing" "$LOG" || true)
+[ "$count" -eq 0 ]
+echo "PASS: near-match generation blocked without transport dependency"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: true missing notifications=1"* ]]
+    [[ "$output" == *"PASS: near-match generation blocked without transport dependency"* ]]
 }
 
 @test "report_gate: archived report_received after report timestamp allows clear even when report mtime changed later" {
@@ -1409,10 +1417,10 @@ echo "PASS: in_progress redeployed task with stale report kept status=$status_af
 }
 
 # cmd_karo_hotfix_report_notify_inprogress_guard AC2: 再配備後に実際に完了し、
-# deployed_at以降のreportがあるのに家老へのreport_received通知がない場合は、
-# 従来どおりAUTO-DONEでstatus=doneへ更新され、report_notification_missingも検知される
-# （通知防御を弱めない）。
-@test "report_gate: in_progress task with fresh report after redeploy still auto-dones and notifies-missing" {
+# deployed_at以降のreportがあればAUTO-DONEでstatus=doneへ更新され、
+# transport通知が失われてもterminal一次状態だけでclearできる。
+# test_necessity: auto-done must not depend on a later worker utterance.
+@test "report_gate: in_progress task with fresh report auto-dones without notification dependency" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -1468,19 +1476,19 @@ fi
 gate_result=0
 can_send_clear_with_report_gate kagemaru "test_trigger" || gate_result=$?
 
-if [ "$gate_result" -ne 1 ]; then
-    echo "FAIL: expected report_notification_missing to still block (gate_rc=$gate_result)"
+if [ "$gate_result" -ne 0 ]; then
+    echo "FAIL: terminal report should allow clear without notification (gate_rc=$gate_result)"
     cat "$LOG"
     exit 1
 fi
 
-if ! grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"; then
-    echo "FAIL: expected REPORT-NOTIFY-MISSING-BLOCK log for genuinely missing notification"
+if grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"; then
+    echo "FAIL: transport notification reintroduced a completion dependency"
     cat "$LOG"
     exit 1
 fi
 
-echo "PASS: fresh post-redeploy report auto-dones (status=$status_after) and notify-missing still detected (gate_rc=$gate_result)"
+echo "PASS: fresh post-redeploy report auto-dones and clears without notification dependency (status=$status_after, gate_rc=$gate_result)"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: fresh post-redeploy report auto-dones"* ]]
@@ -1520,6 +1528,7 @@ cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_verdict.yaml" <<INNERE
 worker_id: kagemaru
 task_id: cmd_test_verdict
 parent_cmd: cmd_test_verdict
+status: completed
 verdict: None
 INNEREOF
 
@@ -1921,6 +1930,7 @@ respawn_recovery_notify() { return 0; }
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
 task:
   status: done
+  task_id: cmd_test_task
   parent_cmd: cmd_test
   report_filename: hayate_report_cmd_test.yaml
 YAML
@@ -1929,6 +1939,7 @@ safe_send_clear "shogun:2.3" "hayate" "DONE-MISSING-REPORT" || DONE_BLOCKED=$?
 
 cat > "$SCRIPT_DIR/queue/reports/hayate_report_cmd_test.yaml" <<YAML
 worker_id: hayate
+task_id: cmd_test_task
 parent_cmd: cmd_test
 status: done
 verdict: FILL_THIS
@@ -1938,6 +1949,7 @@ safe_send_clear "shogun:2.3" "hayate" "DONE-INVALID-REPORT" || INVALID_BLOCKED=$
 
 cat > "$SCRIPT_DIR/queue/reports/hayate_report_cmd_test.yaml" <<YAML
 worker_id: hayate
+task_id: cmd_test_task
 parent_cmd: cmd_test
 status: done
 verdict: PASS

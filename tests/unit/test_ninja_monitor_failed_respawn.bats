@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # test_necessity: A failed task generation with unreviewed work must never be
-# respawned before archive.done or a formally accepted FAIL report closes it.
+# respawned before archive.done or its generation-exact terminal FAIL report closes it.
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -43,7 +43,7 @@ write_task() {
 
 write_fail_report() {
   local status="${1:-completed}"
-  printf 'status: %s\nverdict: FAIL\n' "$status" >"$SCRIPT_DIR/queue/reports/saizo.yaml"
+  printf 'task_id: generation-a\nparent_cmd: cmd_x\nstatus: %s\nverdict: FAIL\n' "$status" >"$SCRIPT_DIR/queue/reports/saizo.yaml"
 }
 
 write_karo_approval() {
@@ -78,12 +78,12 @@ write_karo_approval() {
   [ "$status" -eq 1 ]
 }
 
-@test "report_received alone does not formally close failed generation" {
+@test "terminal FAIL report formally closes failed generation without later notification" {
   write_task
   write_fail_report
   REPORT_ACCEPTED_RC=0
   run _failed_task_preserve_before_respawn saizo
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
 }
 
 @test "matching Karo ACCEPT formally closes failed generation" {
@@ -102,10 +102,10 @@ write_karo_approval() {
   [ "$status" -eq 1 ]
 }
 
-@test "stale Karo ACCEPT fingerprint does not close current report generation" {
+@test "mismatched terminal FAIL report does not close current task generation" {
   write_task
   write_fail_report
-  write_karo_approval "$(printf stale | sha256sum | awk '{print $1}')"
+  sed -i 's/task_id: generation-a/task_id: stale-generation/' "$SCRIPT_DIR/queue/reports/saizo.yaml"
   run _failed_task_preserve_before_respawn saizo
   [ "$status" -eq 0 ]
 }

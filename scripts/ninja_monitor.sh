@@ -1907,12 +1907,23 @@ can_send_clear_with_report_gate() {
     fi
 
     if [ -f "$report_path" ]; then
+        local task_id report_task_id report_parent_cmd report_status
+        task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
+        report_task_id=$(yaml_field_get "$report_path" "task_id" "" 2>/dev/null || true)
+        report_parent_cmd=$(yaml_field_get "$report_path" "parent_cmd" "" 2>/dev/null || true)
+        report_status=$(yaml_field_get "$report_path" "status" "" 2>/dev/null || true)
+        if [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$report_task_id" != "$task_id" ]; then
+            return 1
+        fi
+        [ -n "$parent_cmd" ] || parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+        [ -n "$parent_cmd" ] && [ "$report_parent_cmd" = "$parent_cmd" ] || return 1
+        [ -z "$report_status" ] || [[ "$report_status" =~ ^(completed|done|success)$ ]] || return 1
         if ! report_file_has_verdict "$name" "$report_path" "$trigger"; then
             return 1
         fi
-        if ! report_notification_completed "$name" "$report_path" "$trigger"; then
-            return 1
-        fi
+        local terminal_verdict
+        terminal_verdict=$(yaml_field_get "$report_path" "verdict" "" 2>/dev/null || true)
+        [[ "$terminal_verdict" =~ ^(PASS|PASS_NO_IMPROVEMENT)$ ]] || return 1
         return 0
     fi
 
@@ -1941,12 +1952,21 @@ can_send_clear_with_report_gate() {
             local matched_report
             matched_report=$(compgen -G "${dir}/${pattern}" | head -1 || true)
             if [ -n "$matched_report" ]; then
+                local matched_task_id matched_parent_cmd matched_status matched_verdict current_task_id
+                current_task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
+                matched_task_id=$(yaml_field_get "$matched_report" "task_id" "" 2>/dev/null || true)
+                matched_parent_cmd=$(yaml_field_get "$matched_report" "parent_cmd" "" 2>/dev/null || true)
+                matched_status=$(yaml_field_get "$matched_report" "status" "" 2>/dev/null || true)
+                matched_verdict=$(yaml_field_get "$matched_report" "verdict" "" 2>/dev/null || true)
+                if [ -n "$current_task_id" ] && [ -n "$matched_task_id" ] && [ "$matched_task_id" != "$current_task_id" ]; then
+                    return 1
+                fi
+                [ "$matched_parent_cmd" = "$parent_cmd" ] || return 1
+                [ -z "$matched_status" ] || [[ "$matched_status" =~ ^(completed|done|success)$ ]] || return 1
                 if ! report_file_has_verdict "$name" "$matched_report" "$trigger"; then
                     return 1
                 fi
-                if ! report_notification_completed "$name" "$matched_report" "$trigger"; then
-                    return 1
-                fi
+                [[ "$matched_verdict" =~ ^(PASS|PASS_NO_IMPROVEMENT)$ ]] || return 1
                 return 0
             fi
         done
@@ -1965,14 +1985,14 @@ can_send_clear_with_report_gate() {
 }
 
 # A failed task is not disposable merely because the worker marked it failed.
-# Preserve its pane/worktree until karo has durably closed that exact generation:
-# archive.done is the canonical terminal marker; alternatively a completed FAIL
-# report plus Karo's fingerprint-bound ACCEPT is the formal fail-close handshake.
+# Preserve its pane/worktree until that exact generation has terminal primary
+# evidence: archive.done, or its own completed FAIL report. Requiring a later
+# Karo ACCEPT here creates a completion cycle.
 _failed_task_is_formally_closed() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-    local parent_cmd report_file report_status report_verdict report_rel report_key
-    local approval_file approval_role approval_result approval_report approval_fp current_fp
+    local parent_cmd task_id report_file report_status report_verdict
+    local report_parent_cmd report_task_id
 
     [ -f "$task_file" ] || return 1
     parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
@@ -1987,19 +2007,12 @@ _failed_task_is_formally_closed() {
     [[ "$report_status" =~ ^(completed|done|failed)$ ]] || return 1
     [ "$report_verdict" = "FAIL" ] || return 1
 
-    report_rel="${report_file#"$SCRIPT_DIR"/}"
-    report_key=$(review_report_key "$report_rel" 2>/dev/null) || return 1
-    approval_file="$SCRIPT_DIR/queue/gates/${parent_cmd}/review_approvals/reports/${report_key}/karo.yaml"
-    [ -f "$approval_file" ] || return 1
-    approval_role=$(yaml_field_get "$approval_file" "role" "" 2>/dev/null || true)
-    approval_result=$(yaml_field_get "$approval_file" "result" "" 2>/dev/null || true)
-    approval_report=$(yaml_field_get "$approval_file" "report" "" 2>/dev/null || true)
-    approval_fp=$(yaml_field_get "$approval_file" "fingerprint" "" 2>/dev/null || true)
-    [ "$approval_role" = "karo" ] || return 1
-    [ "$approval_result" = "ACCEPT" ] || return 1
-    [ "$approval_report" = "$report_rel" ] || return 1
-    current_fp=$(PROJECT_ROOT="$SCRIPT_DIR" review_report_fingerprint "$report_file" 2>/dev/null) || return 1
-    [ "$approval_fp" = "$current_fp" ]
+    report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] && [ "$report_parent_cmd" = "$parent_cmd" ] || return 1
+    task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
+    report_task_id=$(yaml_field_get "$report_file" "task_id" "" 2>/dev/null || true)
+    [ -n "$task_id" ] && [ "$report_task_id" = "$task_id" ] || return 1
+    return 0
 }
 
 _failed_task_preserve_marker_file() {
