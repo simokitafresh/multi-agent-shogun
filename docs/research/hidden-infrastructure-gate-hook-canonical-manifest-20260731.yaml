@@ -329,3 +329,22 @@ review_disposition:
     7: count_contract and per-finding edge/failpoint
     8: Gate 0 performance contract
     9: Gate 0 wave dependency and serialization
+terminal_remediation_receipts:
+  R03:
+    state: TERMINAL_CLEAR
+    implementation_commit: da8993f1d0524a3c2e6e3838f79f1a9b1e6e7267
+    focused_test:
+      command: bats tests/unit/test_auto_deploy_next.bats
+      result: PASS
+      pass: 2
+      total: 2
+      skip: 0
+      mutation_boundaries: 6/6
+      executable_owner_count_le_1: 6/6
+      lost_update: 0/6
+      false_success: 0/6
+      stale_fence_rejected: 1/1
+      repeated_reconcile: 2/2
+    side_effect_identity: task_owner/subject_id/generation/fence_token/owner_pointer
+    startup_owner: scripts/ninja_monitor.sh
+    rollback: durable intended without target rolls_back; prepared rolls forward through source tombstone and target activation; published reconciles to terminal only on artifact-hash identity
