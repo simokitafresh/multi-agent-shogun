@@ -243,3 +243,5 @@ Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の gate_re
 
 <!-- 検分: 2026-07-12 shogun起動時gate WARN解消。checked_at以降の差分をgit logで確認 — gate_report_format.sh 8c576d849(AC3 hunk provenance判定=内部判定強化)/memory_db_query.sh 8ce7c5c26(ext4キャッシュ経由=内部速度)/deploy_task.sh 2ecaf21ba+0cc6175e6+5dc9e8423(chunk境界regex誤検知根治+lesson注入絞込+atomic mv=内部)/ninja_scope_commit.sh 42d06b1d5+13f46a918(fail-closed patch commit mode追加+CI fixture=内部)/ninja_monitor.sh b40e13d2c系(dedupe通知+stall FP抑制=内部)。いずれも呼び出し契約・手順・出口文言に変更なし -->
 <!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-08-01T19:18:00+09:00 -->
+<!-- 2026-08-01 reflux検分: gate_report_format.sh c15becc99は共有運用log logs/gunshi_review_log.yamlの非重複所有判定を共通SSOTへ委譲する。report path引数、verdict自動導出、PASS/FAIL出口、dashboard前検証契約は不変。 -->

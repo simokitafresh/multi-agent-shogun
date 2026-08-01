@@ -180,3 +180,5 @@ review_gate.done を書かないため **gate_metrics上CLEARにはならず、�
 - 2026-05-05: gate=cmd_complete_gate result=FAIL executor=unknown reason=draft_lessons:1
 
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=hanzo:ac_version_mismatch:task=d41d8cd9:report=88572c76
+<!-- script_refs_checked_at: 2026-08-01T19:18:00+09:00 -->
+<!-- 2026-08-01 reflux検分: gate_context_freshness.sh 7a4748678はactive task ownerのlease・deploy時blob・dirty実体をyaml_field_set.shの共通判定で照合し、context再構築中だけWARNをDEFERする。引数なし実行、ALERT/WARN/OKの終了契約、cmd-complete内の実行順は不変。 -->

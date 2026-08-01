@@ -94,3 +94,5 @@ Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は�
 <!-- script参照互換確認 2026-07-12: 参照先(yaml_field_set.sh/deploy_task.sh/ninja_monitor.sh)の直近変更はatomic mv/validate/fail-closed等の内部堅牢化のみでCLI引数・呼出手順の変更なし。本書の手順は現行スクリプトと互換(将軍git log現物確認) -->
 <!-- script_refs_checked_at: 2026-07-29T03:59:00+09:00 -->
 <!-- 検分: bulletin_write.sh b2f07586f/10899e185/3965e2c28/0a3f97a18。位置引数・BULLETIN_NOTIFY・action_type契約は維持。指揮官投稿には、数値主張時の「集計コマンド/出力行の生貼付/1件の定義」と現在指示との関連宣言が追加された。本スキル例は数値プレースホルダを含むため実値投稿時に3点セットを添える。BULLETIN_AUTOGEN=1と起動時Q6/洗脳チェック投稿のみ免除。 -->
+<!-- script_refs_checked_at: 2026-08-01T19:18:00+09:00 -->
+<!-- 2026-08-01 reflux検分: yaml_field_set.sh 7a4748678はtask progress/active status更新とprogress_updated_at lease更新を同一batchへ統合し、active_context_defer_allowedを公開した。既存のyaml_field_set.sh <file> <block> <field> <value>契約と原子更新は不変。 -->

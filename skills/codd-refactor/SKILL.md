@@ -269,3 +269,5 @@ codd propagate --path "$PROJECT_ROOT" --update
 
 <!-- script_refs_checked_at: 2026-07-18T22:08:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_ci_fix_skill_refs_run_tests検分: run_tests.sh 108451a3f/5daec7902/07a9ef1c0/1086730b4/a11074b31をgit log/showで照合。公開runはrun_with_receipt.sh経由でdurable terminal receiptをexactly 1件生成し、内部実行を--receipt-innerで識別する。heavy admission再execも--receipt-innerを継承して二重receiptを防止する。file modeは外側Bats transportを隔離し、fixture symlink write-throughを事前BLOCKする。mode引数・test選択・終了status・通常suite実行契約は不変。 -->
+<!-- script_refs_checked_at: 2026-08-01T19:18:00+09:00 -->
+<!-- 2026-08-01 reflux検分: run_tests.sh 9ab1087c7は外部backend contract testをproject .venvのpytestとproject-root PYTHONPATHで実行する。task mode・明示test選択・FAIL/SKIPの終了契約は不変。 -->
