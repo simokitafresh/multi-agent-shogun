@@ -346,15 +346,13 @@ try:
         ["git", "-C", repo, "show", f"{commit}:{path}"], text=True,
         stderr=subprocess.DEVNULL,
     )
-    head_text = subprocess.check_output(
-        ["git", "-C", repo, "show", f"HEAD:{path}"], text=True,
-        stderr=subprocess.DEVNULL,
-    )
     with open(os.path.join(repo, path), encoding="utf-8") as stream:
         current_text = stream.read()
+    with open(os.path.join(repo, "queue/archive/insights_archive.yaml"), encoding="utf-8") as stream:
+        archive_text = stream.read()
     documents = [
         yaml.safe_load(text)
-        for text in (parent_text, commit_text, head_text, current_text)
+        for text in (parent_text, commit_text, current_text, archive_text)
     ]
 except Exception:
     fail()
@@ -375,7 +373,13 @@ def indexed(document):
         result[identity] = entry
     return result
 
-before, committed, head, current = map(indexed, documents)
+before, committed, current = map(indexed, documents[:3])
+archive_document = documents[3]
+if not isinstance(archive_document, dict) or set(archive_document) != {"insights"}:
+    fail()
+archive_entries = archive_document["insights"]
+if not isinstance(archive_entries, list) or any(not isinstance(entry, dict) for entry in archive_entries):
+    fail()
 changed_ids = {
     identity for identity in set(before) | set(committed)
     if before.get(identity) != committed.get(identity)
@@ -387,10 +391,9 @@ for identity in owned_ids:
     if identity in current:
         if committed.get(identity) != current.get(identity):
             fail()
-    elif identity in head:
-        # The record still exists in committed HEAD, so its absence only in
-        # the worktree is an uncommitted deletion, not a later committed
-        # bounded-queue eviction.
+    elif [entry for entry in archive_entries if entry.get("id") == identity] != [committed.get(identity)]:
+        # Absence from the live bounded queue is safe only when the archive
+        # contains exactly one copy of the record written by the report commit.
         fail()
 sys.exit(0)
 PY
