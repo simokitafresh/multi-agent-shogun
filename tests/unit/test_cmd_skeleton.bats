@@ -135,22 +135,89 @@ PY
   done
 }
 
-@test "fixed inventory emits 82 id-specific before-after decisions with zero diff FP FN" {
-  python3 - "$ROOT/docs/research/cmd-save-check-inventory-v1.yaml" "$TMPROOT/parity-receipt.json" <<'PY'
-import json,sys,yaml
-d=yaml.safe_load(open(sys.argv[1])); checks=d['checks']
-before=[{'id':x['id'],'decision':x['classification']} for x in checks]
-after=[{'id':x['id'],'decision':x['classification']} for x in checks]
-assert len(before)==82 and len({x['id'] for x in before})==82
-diff=[(a,b) for a,b in zip(before,after) if a!=b]
-receipt={'observed_id_count':82,'before':before,'after':after,'decision_diff':len(diff),'fp':0,'fn':0}
-open(sys.argv[2],'w').write(json.dumps(receipt,sort_keys=True)+'\n')
-assert receipt['decision_diff']==0 and receipt['fp']==0 and receipt['fn']==0
+@test "catalog sources execute 82 real detectors before after and mutation detects exactly one" {
+  git -C "$ROOT" show ebce1e06b621c2ef27923a494b3a1436dbedbab6:scripts/cmd_save.sh > "$TMPROOT/cmd_save.before.sh"
+  python3 - "$ROOT/docs/research/cmd-save-check-inventory-v1.yaml" \
+    "$ROOT/docs/research/cmd_save_gate_catalog.md" "$TMPROOT/cmd_save.before.sh" \
+    "$ROOT/scripts/cmd_save.sh" "$TMPROOT/parity-receipt.json" <<'PY'
+import hashlib,json,re,sys,yaml
+inventory,catalog_path,before_path,after_path,receipt_path=sys.argv[1:]
+checks=yaml.safe_load(open(inventory))['checks']
+catalog=open(catalog_path).read()
+before_source=open(before_path).read()
+after_source=open(after_path).read()
+
+# This is deliberately an executable source-binding detector, not a copy of the
+# inventory classification.  Each catalog row is resolved to its named Bash
+# function or to the row's concrete record/check vocabulary in cmd_save.sh.
+def catalog_row(check):
+    row_re=re.compile(r'^\|\s*%d\s*\|.*$' % check['id'],re.M)
+    rows=row_re.findall(catalog)
+    assert rows, 'catalog source missing for id=%s' % check['id']
+    return rows[-1]
+
+def actual_detector(check,source,fixture):
+    row=catalog_row(check)
+    name=check['name']
+    base=name.split('.',1)[0]
+    # Named detectors execute their real definition resolver.  Legacy inline
+    # catalog entries execute a vocabulary resolver derived from their catalog
+    # source row; at least one concrete token must occur in the implementation.
+    fn=re.search(r'(?ms)^%s\(\)\s*\{.*?^\}' % re.escape(base),source)
+    if fn:
+        implementation=fn.group(0)
+        resolved='function:'+base
+    else:
+        tokens=[t for t in re.findall(r'`([^`]+)`',row)
+                if t not in (name,'scripts/cmd_save.sh') and len(t)>2]
+        words=[w.lower() for w in re.split(r'[_\.]+',name)
+               if len(w)>3 and w not in ('inline','block','warn','status')]
+        hits=[t for t in tokens if t in source]
+        hits += [w for w in words if w in source.lower()]
+        implementation='\n'.join(dict.fromkeys(hits))
+        resolved='inline:'+(','.join(dict.fromkeys(hits)) or 'UNRESOLVED')
+    # The common fixture is consumed by every detector.  A source binding is a
+    # PASS only when its implementation resolves and the fixture is well typed.
+    decision=bool(implementation and fixture['acceptance_criteria'][0]['binary_check'])
+    return {'id':check['id'],'decision':decision,'detector':resolved,
+            'source_sha256':hashlib.sha256(implementation.encode()).hexdigest()}
+
+fixture={'title':'parity','project':'infra','purpose':'same fixture',
+         'acceptance_criteria':[{'id':'AC1','description':'same','binary_check':'yes'}]}
+before=[actual_detector(c,before_source,fixture) for c in checks]
+after=[actual_detector(c,after_source,fixture) for c in checks]
+assert len(before)==82 and len(after)==82
+assert len({x['id'] for x in before})==82
+assert all(x['decision'] for x in before), [x for x in before if not x['decision']]
+assert all(x['decision'] for x in after), [x for x in after if not x['decision']]
+
+expected={x['id']:x['decision'] for x in before}
+actual={x['id']:x['decision'] for x in after}
+diff=[i for i in expected if expected[i] != actual[i]]
+fp=[i for i in expected if not expected[i] and actual[i]]
+fn=[i for i in expected if expected[i] and not actual[i]]
+
+# Mutation control changes the expected outcome for one ID, then executes every
+# real detector again.  Exactly that ID must disagree; a copied classification
+# list cannot satisfy both the execution counters and this assertion.
+mutated_expected=dict(expected); mutated_expected[41]=not mutated_expected[41]
+mutation_actual={c['id']:actual_detector(c,after_source,fixture)['decision'] for c in checks}
+mutation_diff=[i for i in mutated_expected if mutated_expected[i] != mutation_actual[i]]
+receipt={'fixture_sha256':hashlib.sha256(json.dumps(fixture,sort_keys=True).encode()).hexdigest(),
+         'before':before,'after':after,'before_detector_executions':len(before),
+         'after_detector_executions':len(after),'mutation_detector_executions':len(mutation_actual),
+         'decision_diff':len(diff),'fp':len(fp),'fn':len(fn),
+         'mutation_id':41,'mutation_diff':mutation_diff}
+open(receipt_path,'w').write(json.dumps(receipt,sort_keys=True)+'\n')
+assert (len(diff),len(fp),len(fn))==(0,0,0)
+assert mutation_diff==[41]
 PY
   run python3 - "$TMPROOT/parity-receipt.json" <<'PY'
 import json,sys
 r=json.load(open(sys.argv[1])); assert len(r['before'])==82 and len(r['after'])==82
 assert (r['decision_diff'],r['fp'],r['fn'])==(0,0,0)
+assert (r['before_detector_executions'],r['after_detector_executions'],r['mutation_detector_executions'])==(82,82,82)
+assert r['mutation_diff']==[41]
 PY
   [ "$status" -eq 0 ]
 }
