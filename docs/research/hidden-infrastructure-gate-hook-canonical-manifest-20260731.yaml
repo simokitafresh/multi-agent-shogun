@@ -5,7 +5,7 @@ current_phase: WAVE_1A_IDENTITY
 phase_state: ACCEPTED
 next_phase: WAVE_1B_OWNERSHIP
 implementation_progress:
-  updated_at: '2026-08-01T03:30:00+09:00'
+  updated_at: '2026-08-01T11:13:00+09:00'
   parent_cmd: cmd_4200
   parent_ac_complete: 3
   parent_ac_total: 3
@@ -297,7 +297,7 @@ caller_inventory:
     - {finding: V03, location: 'scripts/deploy_task.sh:315', role: inner_lock_owner}
     - {finding: V04, location: 'scripts/inbox_watcher.sh:818', role: idle_gate_reader}
 findings:
-  - {id: R01, remediation_status: ACTIVE, primitive: lock_identity, caller: [scripts/inbox_write.sh, scripts/inbox_mark_read.sh], edge: inbox_mutation, failpoint: concurrent_append_mark_read, expected_durable_prefix: lock/acquired, invariant: one lock identity per inbox, serialization_key: inbox_yaml}
+  - {id: R01, remediation_status: SUPERSEDED, primitive: lock_identity, caller: [scripts/inbox_write.sh, scripts/inbox_mark_read.sh], edge: inbox_mutation, failpoint: concurrent_append_mark_read, expected_durable_prefix: lock/acquired, invariant: one lock identity per inbox, serialization_key: inbox_yaml}
   - {id: R03, remediation_status: ACTIVE, primitive: owner_transaction, caller: [scripts/auto_deploy_next.sh], edge: source_to_target, failpoint: after_target_before_tombstone, expected_durable_prefix: prepared/owner_pointer, invariant: executable_owner_count_le_1, serialization_key: task_owner}
   - {id: R04, remediation_status: ACTIVE, primitive: deploy_receipt, caller: [scripts/deploy_task.sh], edge: publish_to_delivery, failpoint: delivery_rc_nonzero, expected_durable_prefix: prepared/not_terminal, invariant: failed_deploy_not_active, serialization_key: task_owner}
   - {id: R05, remediation_status: ACTIVE, primitive: deploy_selector, caller: [scripts/auto_deploy_next.sh], edge: selection, failpoint: in_progress_input, expected_durable_prefix: selector/rejected, invariant: only_pending_or_idle_selected, serialization_key: task_owner}

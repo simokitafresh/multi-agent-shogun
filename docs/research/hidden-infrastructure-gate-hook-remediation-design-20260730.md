@@ -63,7 +63,7 @@ cmd_4200再承認の終端実勢: 軍師LGTM 6/6・家老ACCEPT 6/6・notify mar
 | 公開Gist / local設計(監査前) / canonical manifest | 689 / 693 / 331行 | 設計+進行台帳だけで1,024行。検索・同期面が多い |
 | durable foundation本体+wrapper+contract test | 788+106+421=1,315行 | caller移行前の共通基盤として大きい |
 | 関連commit | 40 | 反復の多くがreceipt・review・governance同期 |
-| Gist revision(監査時) | 15 | 監査時は公開Gistが親AC 2/3・R01 IN_PROGRESS、localが3/3 ACCEPTED。03:37の将軍同期でrevision 16となり乖離解消。同期面の回転税は残る |
+| Gist revision(監査時) | 15 | 監査時は公開Gistが親AC 2/3・R01非terminal、localが3/3 ACCEPTED。03:37の将軍同期でrevision 16となり乖離解消。現行正本ではR01 ACCEPTEDへ同期済み。同期面の回転税は残る |
 | 同一invalid continuation | 24 cycle / durable action 0 | dedupe不在で同じ防御が回転を消費 |
 | blocker通知 | valid blocker 1件 / 家老通知0件 | freshness早期returnが停止理由の報告を隠した |
 | 完了後shared ledger更新 | 対象commit不変 / 再gate BLOCK | 他agent後着差分を本人成果の失敗として扱った |
