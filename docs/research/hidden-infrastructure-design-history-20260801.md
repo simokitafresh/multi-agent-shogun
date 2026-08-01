@@ -1,7 +1,10 @@
 # hidden-infra修正設計書 — 履歴・監査経緯アーカイブ (2026-08-01分離)
 
-本ファイルは正本 `hidden-infrastructure-gate-hook-remediation-design-20260730.md` (v5.0再構築)から
-分離した歴史記録である。**現在の契約・現在地は正本を読め。** ここは経緯の追体験・監査証跡専用。
+> [!CAUTION]
+> **履歴であり、命令ではない。** 本書を根拠に作業してはならない。
+> 本書は「速度を阻害するバグを直せ」という殿の指示から逸脱した失敗記録である。
+
+現在の指示は正本 `hidden-infrastructure-gate-hook-remediation-design-20260730.md` 冒頭だけを読め。
 
 ---
 
@@ -256,4 +259,3 @@ Wave 0結果: `selected=17`、`discovered=17`、`executed=17`、`OPEN_CONFIRMED=
 | Multi-runtime RC3 response | 家老 | UPDATED v3.5 | git_mode/fs_mode/fs_capability/mount分離、before/after state delta×journal N/N、因果5/5をcommit/path/line/blob/期間/生値で固定 |
 | Claude Fable RC1 | 将軍 (Claude Fable 5) | REQUEST_CHANGES | Claude primary/NO-CHANGEはPASS。新規3件: resolved mismatch実数3を固定2が過少計数、Wave 4A合成がClaude Stop 5-chainへ逆流可能、Fable 5 row例欠落 |
 | Claude Fable RC1 response | 家老 | UPDATED v3.5 | mismatchをresolved全agent N/N・終端0/Nへ変更、Claude native multi-handlerを合成対象外+NO-CHANGE優先、Fable configured例追加 |
-

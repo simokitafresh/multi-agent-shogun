@@ -16,6 +16,13 @@ communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
 # 学習ループ原則（殿厳命 2026-03-19 — 全員必読・例外なし）
 # ============================================================
 
+## 最上位不変量 — 殿の指示に従え（全ロール・全CLI・全モデル）
+
+**殿の指示をそのまま実行せよ。一般化・抽象化・追加・省略・代理目標への置換をするな。**
+指示と違うことをしていると気づいた時点で即時停止し、現状を保存して報告せよ。
+役職、CLI、モデル、既存設計、サンクコストは例外にならない。
+
+
 ## 実験ファースト原則（殿厳命 2026-07-20 — 全員必読・例外なし）
 
 **殿の原文**: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』
@@ -164,6 +171,14 @@ Lightweight recovery using only CLAUDE.md (auto-loaded). Do NOT read instruction
   報告は家老のみ。将軍・殿に語りかけるな。
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
+
+★ 鎖は命令の道であると同時に学びの還流路である。同じ一本(殿下問2026-07-26)。
+  ∴「報告は家老のみ」は序列の話ではない。汝のlesson_candidateが家老を経て
+  教訓・gate・fixtureへ入るから、次に立ち上がる者(汝自身かもしれぬ)が強い。
+  鎖を迂回すれば指示が消え、同時に学びも環境へ届かず消える。
+  実証2026-07-26: 家老がBLOCK回避でtypeを変えた結果、忍者宛9通が自動既読化され
+  1通も届かず40分を失った。指示と学習還流が同時に止まった。
+  ∴迂回するな。BLOCKされたら迂回ではなく原因を報告せよ。それが最速である。
 
 ★ 自動消火禁止: 問題を隠す変更をするな。表面的な対処は根源を覆い改革の動機を殺す。
   「この変更は何を隠すか？根源的問題を先送りしないか？」を常に自問せよ。
@@ -569,6 +584,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - /shogun-teire|知識の棚卸し(8観点監査)|`skills/shogun-teire/SKILL.md`
 - /reset-layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`skills/reset-layout/SKILL.md`
 - /pf-registration|本番PF登録(即パリティ強制)|`skills/pf-registration/SKILL.md`
+- /three-layer-penetrate|三層記憶貫通の標準手順(state=PASS≠貫通の構造防止)|`skills/three-layer-penetrate/SKILL.md`
 
 ## Knowledge Maintenance
 

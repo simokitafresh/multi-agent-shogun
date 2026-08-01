@@ -16,6 +16,13 @@ communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
 # 学習ループ原則（殿厳命 2026-03-19 — 全員必読・例外なし）
 # ============================================================
 
+## 最上位不変量 — 殿の指示に従え（全ロール・全CLI・全モデル）
+
+**殿の指示をそのまま実行せよ。一般化・抽象化・追加・省略・代理目標への置換をするな。**
+指示と違うことをしていると気づいた時点で即時停止し、現状を保存して報告せよ。
+役職、CLI、モデル、既存設計、サンクコストは例外にならない。
+
+
 ## 実験ファースト原則（殿厳命 2026-07-20 — 全員必読・例外なし）
 
 **殿の原文**: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』
@@ -86,6 +93,9 @@ language:
 ## Session Start / Recovery (all agents)
 
 **This is ONE procedure for ALL situations**: fresh start, compaction, session continuation, or any state where you see AGENTS.md. You cannot distinguish these cases, and you don't need to. **Always follow the same steps.**
+
+- **positive_rule**: **/new後の初回入力に限り**、殿からの入力が「y」単独（大文字小文字問わず、前後空白除去後に y のみ）の場合、それは「復帰せよ」の意である。誤爆と判断して問い返すな。即座に本Recovery手順（自ロールの/new Recovery）を実行し、完了後に状況を1報せよ。前提条件: (1)セッション内で殿からの最初のメッセージであること (2)y単独であること。2回目以降の「y」は本ルール適用外（直前の問いへの承認等、文脈で判断せよ）。
+- **reason**: /clear直後の殿の定型復帰指示。2026-07-25にshogunが2回連続で「y」を誤爆扱いし殿の時間を奪った。初回限定は殿追加裁定2026-07-25 14:35（無限定だと承認の「y」と衝突するため）。
 
 0. **CLI Switch Respawn判定**: SessionContextに「CLI Switch Respawn (待機状態)」が含まれる場合、recovery手順を**全てスキップ**し、inboxが届くまで待機せよ。CLI/model切替によるrespawnであり、recoveryは不要。
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
@@ -161,6 +171,14 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
   報告は家老のみ。将軍・殿に語りかけるな。
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
+
+★ 鎖は命令の道であると同時に学びの還流路である。同じ一本(殿下問2026-07-26)。
+  ∴「報告は家老のみ」は序列の話ではない。汝のlesson_candidateが家老を経て
+  教訓・gate・fixtureへ入るから、次に立ち上がる者(汝自身かもしれぬ)が強い。
+  鎖を迂回すれば指示が消え、同時に学びも環境へ届かず消える。
+  実証2026-07-26: 家老がBLOCK回避でtypeを変えた結果、忍者宛9通が自動既読化され
+  1通も届かず40分を失った。指示と学習還流が同時に止まった。
+  ∴迂回するな。BLOCKされたら迂回ではなく原因を報告せよ。それが最速である。
 
 ★ 自動消火禁止: 問題を隠す変更をするな。表面的な対処は根源を覆い改革の動機を殺す。
   「この変更は何を隠すか？根源的問題を先送りしないか？」を常に自問せよ。
@@ -323,6 +341,11 @@ bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ�
 Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
 **Agents NEVER call tmux send-keys directly.**
 
+- **positive_rule**: **危険語(`rm` / 削除 / `kill` / `reset --hard` 等)を含む本文を `inbox_write.sh` の引数へ直接渡すな。本文をファイルへ書き、短い要約+パス参照のみを引数にせよ。**
+- **reason**: 2026-07-26、半蔵が『ファイル削除は集約移動(**rm禁止**)を含めて提示する』という**日本語の報告本文**を引数に渡し、CLI組み込みの安全確認 `Dangerous rm operation on critical path: /` が偽陽性発火して**2度停止した**(実際のrmコマンドではない)。引数はコマンドラインへ露出するため本文の文字列が安全判定に掛かる。∴**破壊的操作について報告・議論するほど報告自体が止まる。**B37(発言テキストを状態と誤読)のCLI層版であり、CLI側は修正できない。
+- **★停止中エージェントへ送るな（最重要）**: 対象がCLIの確認プロンプト(`Do you want to proceed? 1. Yes / 2. No`)で停止している間は、**inbox_write を送るな**。watcher の nudge が send-keys され、**そのキー入力がプロンプトの選択肢へ流し込まれて「Yes」を選ばせうる**。送る前に `tmux capture-pane` で相手の状態を確認し、**確認結果を見てから送信を判断せよ**(capture と送信を同一コマンドに並べると判断の余地が無くなる — 家老が実際にこれで警告を自ら破った)。プロンプト解消は将軍が「2. No」を送出する(殿裁定07-10の可逆行動として実行済みの先例あり)。
+- **★依頼の受け手にも同じ確認義務がある（軍師の実証 2026-07-26）**: 「止まっているから解除せよ」という依頼を受けた側も、**実行前に自分で capture-pane を引け**。**依頼者の観測は依頼者の時刻のものである。** 実例: 家老が07:40の実測に基づき「2. No」の再送出を依頼したが、軍師が実行前に確認したところ**プロンプトは既に解消しており通常の入力待ちであった**。★**そのまま送っていれば「2」が半蔵の作業へ文字列として混入していた。** ∴**「停止していることを確認して送る」だけでなく「停止が解消していないことを確認して送る」も同じ手順が要る。**
+
 ## Delivery Mechanism
 
 Two layers:
@@ -345,6 +368,9 @@ When you receive `inboxN` (e.g. `inbox3`):
 4. Mark each processed message by ID: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`. ID省略・全未読一括既読は禁止（Read後に到着した未処理メッセージを巻き込むため）
    **Edit toolでのinbox既読化は禁止** — flock未使用のためLost Update(メッセージ消失)が発生する
 5. Resume normal workflow
+
+- **positive_rule**: **指示・命令を `low` / `info` / `gate_clear` / `heartbeat` / `status_update` / `retro_answer` のtypeで送るな。** watcherはこの6typeを「判断不要の情報通知」とみなし**自動既読化して `logs/inbox_info_digest.jsonl` へ退避する。受け手のターンを起こさない**(`scripts/inbox_mark_read.sh:112` の `allowed` 集合)。指示は `task_assigned` 等の起床するtypeで送れ。
+- **reason**: 2026-07-26、家老が `report_received` のBLOCKを回避して `status_update` へ切り替え、以後の忍者宛指示(才蔵5通・影丸2通・飛猿1通・半蔵1通)が全てdigestへ退避され**1件も届かなかった**。家老は40分を「指示の書き方が悪い」と誤診し3度書き直した。∴**一度のBLOCK回避が、以後の全指示を無効化した。** これは「正規フローが通らない=調査対象、迂回するな」(deepdive causal_tracing Phase 6)の実例であり、**BLOCKされた時に別typeへ逃げるのはgate迂回の変形**である。
 
 **Also**: After completing ANY task, check your inbox for unread messages before going idle.
 This is a safety net — even if the wake-up nudge was missed, messages are still in the file.
@@ -558,6 +584,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - /shogun-teire|知識の棚卸し(8観点監査)|`skills/shogun-teire/SKILL.md`
 - /reset-layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`skills/reset-layout/SKILL.md`
 - /pf-registration|本番PF登録(即パリティ強制)|`skills/pf-registration/SKILL.md`
+- /three-layer-penetrate|三層記憶貫通の標準手順(state=PASS≠貫通の構造防止)|`skills/three-layer-penetrate/SKILL.md`
 
 ## Knowledge Maintenance
 
