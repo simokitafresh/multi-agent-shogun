@@ -15,6 +15,8 @@
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_202607171819検分: deploy_task.sh 06cd5ddf1はtarget_pathをYAML型のまま解釈し、git HEAD存在証跡(target_path_git_preflight)と未追跡警告をtaskへ事前注入するLevel5強化。1人目の正規配備、2人目の--yaml配備、重複guard、通知契約は不変。 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: deploy_task.sh 14e62013d/630386f4d/242df2ee4/fff17f591/a9cf189d6のlesson注入・telemetry・batch read・delivery・opsim差分を実検分。2名配備順序とkaro_direct併用契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+<!-- script_refs_checked_at: 2026-08-01T19:15:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_reflux_b_20260801検分: deploy_task.sh 4b2ebade6/ad9b08a8c/da8993f1d/efd5aaac7/9ef3e2d7e/7a4748678 と yaml_field_set.sh 7a4748678 をgit showで確認。配備時target_path blob基準とtask lease(progress_updated_at)の原子更新、lesson適用fail-close、owner transactionを追加。1人目正規配備→2人目--yaml、固定base、衝突BLOCK、通知・失敗出口の契約は不変。 -->
 
 <!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: deploy_task.sh 110c4df67/a9cf189d6/fff17f591をgit show。report metadata内部取得、全report opsim事前注入、task_assigned配達確認の非同期化のみ。1人目通常配備→2人目--yaml配備の引数・順序・重複guard・永続化/通知契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->

@@ -278,3 +278,5 @@ Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は�
 <!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->
 <!-- script_refs_checked_at: 2026-07-29T03:59:00+09:00 -->
 <!-- 検分: bulletin_write.sh b2f07586f/10899e185/3965e2c28/0a3f97a18。位置引数・BULLETIN_NOTIFY・action_type契約は維持。指揮官投稿には、数値主張時の「集計コマンド/出力行の生貼付/1件の定義」と現在指示との関連宣言が追加された。本スキルのFAIL投稿はcmd_idで関連宣言を満たすが、数値を含む場合は3点セットを添える。BULLETIN_AUTOGEN=1と起動時Q6/洗脳チェック投稿のみ免除。 -->
+<!-- script_refs_checked_at: 2026-08-01T19:15:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_reflux_b_20260801検分: yaml_field_set.sh 7a4748678はqueue/tasks lifecycle書込み時のprogress_updated_at同時更新とactive context owner判定helperを追加。review-bundleが用いるreview_log field-setの位置引数、atomic書込み、precheck→bundle→review_log→通知順序、失敗出口は不変。 -->

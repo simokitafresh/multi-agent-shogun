@@ -48,6 +48,8 @@ Script refs verified: 2026-06-26 558ec6eae. `gate_lesson_health.sh` 直近変更
 Script refs verified: 2026-06-26 364744210+955c2e756. `gate_lesson_health.sh` 直近変更はuseful率計測のpresence_file追加(active lesson抽出高速化)+min sample threshold調整。引数なし全project走査/METRIC行/WARN・ALERT出力契約は変更なし。
 
 <!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-08-01T19:15:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_reflux_b_20260801検分: gate_lesson_health.sh 7a4748678は、freshな単一active ownerが対象contextをdeploy時blobから変更中の時だけ未合流閾値超過をALERTではなくDEFERとして扱う。owner不在・複数・lease期限外・clean時は従来どおりfail-close ALERT。棚卸しではDEFERを完了扱いせず、owner終了後の再実走でCLEARを確認する。 -->
 
 <!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: gate_lesson_health.sh 40bd53d77のrg列挙高速化はf76a2b104で完全revertされ、最終実装はchecked_at時点と同一。引数、METRIC/WARN/ALERT、exit、棚卸し呼出順序は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->
