@@ -26,6 +26,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import yaml
 
 repo = os.environ.get("REPO_ROOT", "")
@@ -51,6 +52,110 @@ def hunk_ranges(diff_text):
 def overlaps(left, right):
     return any(a <= d and c <= b for a, b in left for c, d in right)
 
+SHARED_APPEND_ONLY_YAMLS = {"logs/gunshi_review_log.yaml"}
+ALLOWED_AUXILIARY_FIELDS = {
+    "gate_result",
+    "gate_synced_at",
+    "gate_checked_at",
+    "gate_evidence",
+}
+
+def entry_owner(entry):
+    if not isinstance(entry, dict):
+        return ""
+    return str(entry.get("cmd_id") or entry.get("parent_cmd") or "").strip()
+
+def entry_identity(entry):
+    """Return the stable identity of one review-log generation."""
+    if not isinstance(entry, dict):
+        return None
+    owner = entry_owner(entry)
+    review_type = str(entry.get("review_type") or "").strip()
+    reviewed_at = str(entry.get("reviewed_at") or "").strip()
+    if not owner or not review_type or not reviewed_at:
+        return None
+    return (
+        owner,
+        review_type,
+        reviewed_at,
+        str(entry.get("report_id") or ""),
+    )
+
+def mapping_has_only_allowed_auxiliary_additions(before, after):
+    if not isinstance(before, dict) or not isinstance(after, dict):
+        return False
+    if any(key not in after or after[key] != value for key, value in before.items()):
+        return False
+    return set(after) - set(before) <= ALLOWED_AUXILIARY_FIELDS
+
+def stable_file_text(path, attempts=3):
+    """Read one stable snapshot; continuous writers fail closed after a bound."""
+    full_path = os.path.join(repo, path)
+    for _ in range(attempts):
+        try:
+            before = os.stat(full_path)
+            with open(full_path, encoding="utf-8") as f:
+                content = f.read()
+            after = os.stat(full_path)
+        except OSError:
+            return None
+        signature_before = (before.st_ino, before.st_size, before.st_mtime_ns)
+        signature_after = (after.st_ino, after.st_size, after.st_mtime_ns)
+        if signature_before != signature_after:
+            continue
+        time.sleep(0.01)
+        try:
+            confirm = os.stat(full_path)
+        except OSError:
+            return None
+        signature_confirm = (confirm.st_ino, confirm.st_size, confirm.st_mtime_ns)
+        if signature_after == signature_confirm:
+            return content
+    return None
+
+def shared_yaml_owned_by_other(path, commit, parent_cmd):
+    if path not in SHARED_APPEND_ONLY_YAMLS or not parent_cmd:
+        return False
+    before_text = run_git(["show", f"{commit}:{path}"])
+    after_text = stable_file_text(path)
+    if after_text is None:
+        return False
+    try:
+        before = yaml.safe_load(before_text)
+        after = yaml.safe_load(after_text)
+    except Exception:
+        return False
+    if not isinstance(before, list) or not isinstance(after, list):
+        return False
+
+    # Identity must be unique and complete; ambiguity is fail-closed.
+    before_by_id = {}
+    after_by_id = {}
+    for collection, index in ((before, before_by_id), (after, after_by_id)):
+        for entry in collection:
+            identity = entry_identity(entry)
+            if identity is None or identity in index:
+                return False
+            index[identity] = entry
+
+    # No deletion or mutation. Additive auxiliary fields are allowed only on
+    # entries owned by another command.
+    for identity, old_entry in before_by_id.items():
+        new_entry = after_by_id.get(identity)
+        if new_entry is None:
+            return False
+        if new_entry != old_entry:
+            if entry_owner(old_entry) == parent_cmd:
+                return False
+            if not mapping_has_only_allowed_auxiliary_additions(old_entry, new_entry):
+                return False
+
+    # Every complete new generation must have a known, non-self owner.
+    for identity, new_entry in after_by_id.items():
+        if identity not in before_by_id and entry_owner(new_entry) == parent_cmd:
+            return False
+    return True
+
 try:
     with open(report_file, encoding="utf-8") as f:
         report = yaml.safe_load(f) or {}
@@ -58,6 +163,7 @@ except Exception:
     report = {}
 
 commit_hash = str(report.get("commit_hash") or "").strip()
+parent_cmd = str(report.get("parent_cmd") or "").strip()
 if not re.fullmatch(r"[0-9a-f]{40}", commit_hash):
     print("\n".join(paths))
     raise SystemExit(0)
@@ -72,6 +178,12 @@ suppressed = []
 for path in paths:
     if path not in changed_files:
         kept.append(path)
+        continue
+    if path in SHARED_APPEND_ONLY_YAMLS:
+        if shared_yaml_owned_by_other(path, commit_hash, parent_cmd):
+            suppressed.append(path)
+        else:
+            kept.append(path)
         continue
     commit_ranges = hunk_ranges(run_git(["diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path]))
     dirty_ranges = hunk_ranges(run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path]))
