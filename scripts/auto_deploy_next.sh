@@ -37,15 +37,39 @@ owner_failpoint() {
     [ "${AUTO_DEPLOY_FAILPOINT:-}" != "$1" ] || { echo "AUTO_DEPLOY_FAILPOINT: $1" >&2; return 97; }
 }
 
+owner_transaction_assert_current() {
+    local subject_id="$1" target="$2" fence="$3" payload_hash="$4" expected_phase="$5"
+    local record pointer
+    record=$(bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" read "$OWNER_STATE_ROOT" "$OWNER_SUBJECT_TYPE" "$subject_id") || return 4
+    python3 - "$record" "$subject_id" "$fence" "$payload_hash" "$expected_phase" "$target" <<'PY'
+import json, os, sys
+r=json.loads(sys.argv[1]); subject,fence,payload,phase,target=sys.argv[2:]
+pointer=next((x.split(':',1)[1] for x in r.get('side_effect_ledger',[]) if x.startswith('owner_pointer:')), '')
+ok=(r.get('subject_id')==subject and str(r.get('fence_token'))==fence and
+    r.get('phase')==phase and r.get('payload_hash')==payload and
+    pointer and os.path.realpath(pointer)==os.path.realpath(target))
+raise SystemExit(0 if ok else 4)
+PY
+}
+
 owner_transaction_finish() {
     local subject_id="$1" source="$2" target="$3" fence="$4" payload_hash="$5"
     local yfs="$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+    local lease_owner="owner-finish-${BASHPID}-${fence}"
+    bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" lease-acquire "$OWNER_STATE_ROOT" \
+        "$OWNER_SUBJECT_TYPE" "$subject_id" "$lease_owner" "${AUTO_DEPLOY_OWNER_LEASE_TTL:-30}" >/dev/null || return $?
+    owner_transaction_assert_current "$subject_id" "$target" "$fence" "$payload_hash" prepared || return 4
+    [ "${AUTO_DEPLOY_BARRIER_AFTER_ASSERT:-}" = "" ] || {
+        printf 'ready\n' > "$AUTO_DEPLOY_BARRIER_AFTER_ASSERT"
+        while [ ! -f "${AUTO_DEPLOY_BARRIER_AFTER_ASSERT}.release" ]; do sleep 0.01; done
+    }
     owner_failpoint after_pointer_before_tombstone || return $?
     if [ "$(realpath "$source")" != "$(realpath "$target")" ]; then
         bash "$yfs" "$source" task status transferred >/dev/null
         bash "$yfs" "$source" task owner_transaction_status tombstoned >/dev/null
     fi
     owner_failpoint after_tombstone_before_activation || return $?
+    owner_transaction_assert_current "$subject_id" "$target" "$fence" "$payload_hash" prepared || return 4
     bash "$yfs" "$target" task status assigned >/dev/null
     bash "$yfs" "$target" task owner_transaction_status active >/dev/null
     owner_failpoint after_activation_before_published || return $?
@@ -55,7 +79,7 @@ owner_transaction_finish() {
         "$OWNER_SUBJECT_TYPE" "$subject_id" "$fence" published "" "$ledger" >/dev/null
     owner_failpoint after_published_before_terminal || return $?
     bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" reconcile "$OWNER_STATE_ROOT" \
-        "$OWNER_SUBJECT_TYPE" "$subject_id" "startup-reconciler-$$" "$payload_hash" "$ledger" >/dev/null
+        "$OWNER_SUBJECT_TYPE" "$subject_id" "$lease_owner" "$payload_hash" "$ledger" >/dev/null
 }
 
 owner_transaction_reconcile_startup() {
@@ -96,6 +120,12 @@ if [ "${1:-}" = --reconcile-owner-transactions ]; then
     owner_transaction_reconcile_startup
     echo "OWNER_RECONCILE_OK: ${OWNER_RECONCILED_COUNT:-0}"
     exit 0
+fi
+
+if [ "${1:-}" = --finish-owner-transaction ]; then
+    shift
+    owner_transaction_finish "$@"
+    exit $?
 fi
 
 # ═══════════════════════════════════════

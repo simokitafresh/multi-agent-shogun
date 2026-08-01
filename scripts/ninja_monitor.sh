@@ -73,6 +73,11 @@ source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
 source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
 
+if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
+    bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" --reconcile-owner-transactions >> "$LOG" 2>&1 || exit 1
+    [ "${NINJA_MONITOR_STARTUP_RECONCILE_ONLY:-0}" != "1" ] || exit 0
+fi
+
 # --- CTX profile cache（L4-R?: cli_profile_getサブシェル呼び出し削減） ---
 # update_context_pct ループ内での$(cli_profile_get ...)サブシェル(78ms/回)を排除するグローバルキャッシュ
 # 主シェル文脈(update_all_context_pct経由)でのみ有効。サブシェルからのget_context_pct呼び出しは従来通り
@@ -9156,11 +9161,6 @@ fi
 
 # 旧monitorのexecが残したFDはmtime差の有無にかかわらずstartupで除去する。
 close_inherited_deploy_lock_fds
-
-bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" --reconcile-owner-transactions >> "$LOG_FILE" 2>&1 || {
-    log "BLOCK: owner transaction startup reconciliation failed"
-    exit 1
-}
 
 discover_panes
 

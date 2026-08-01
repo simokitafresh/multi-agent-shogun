@@ -98,6 +98,20 @@ fence_of() {
     [ "$status" -ne 0 ]
 }
 
+# test_necessity: a live owner lease must fence a new generation until expiry,
+# so side effects guarded by that lease cannot race begin_intended.
+@test "live lease rejects begin and expiry restores liveness" {
+    run bash "$DS" begin "$STATE_ROOT" task_owner lease_begin attempt-a payload-a artifact-a
+    [ "$status" -eq 0 ]
+    run bash "$DS" lease-acquire "$STATE_ROOT" task_owner lease_begin finisher 0.5
+    [ "$status" -eq 0 ]
+    run bash "$DS" begin "$STATE_ROOT" task_owner lease_begin attempt-b payload-b artifact-b
+    [ "$status" -eq 6 ]
+    sleep 0.6
+    run bash "$DS" begin "$STATE_ROOT" task_owner lease_begin attempt-b payload-b artifact-b
+    [ "$status" -eq 0 ]
+}
+
 # test_necessity: 単一reconcilerはpublishedを観測artifact_hashが一致する時だけ
 # terminalへroll-forwardし、不一致はrolled_backへ収束させる不変量を守る。
 @test "reconcile rolls forward on artifact match and rolls back on mismatch" {

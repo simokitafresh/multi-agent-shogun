@@ -213,6 +213,12 @@ def begin_intended(root: Path, subject_type: str, subject_id: str, attempt_id: s
     with open(lock_path, "a+") as lock_f:
         fcntl.flock(lock_f, fcntl.LOCK_EX)
         try:
+            lease = _read_lease(root, subject_type, subject_id)
+            now = time.time()
+            if lease is not None and lease.get("expires_at", 0) > now:
+                raise LeaseHeldError(
+                    f"live lease held by {lease.get('owner_id', 'unknown')} until {lease['expires_at']}"
+                )
             current = read_active(root, subject_type, subject_id)
             generation = (current["generation"] + 1) if current else 1
             now = time.time()
