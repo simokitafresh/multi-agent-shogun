@@ -253,6 +253,47 @@ PY
     return 0
 }
 
+# bugfix/hotfix/ci_fix are implementation changes made under incident pressure.
+# Bind the Gunshi pre-implementation decision to the exact task contract so a
+# receipt for another task, or one issued before an AC edit, cannot authorize
+# deployment.  The post-implementation report review remains independently
+# enforced by cmd_complete_gate.sh.
+deploy_task_require_pre_implementation_review() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY'
+import sys, yaml
+
+path = sys.argv[1]
+doc = yaml.safe_load(open(path, encoding="utf-8")) or {}
+task = doc.get("task") or doc
+task_type = str(task.get("task_type") or task.get("type") or "").strip().lower()
+if task_type not in {"bugfix", "hotfix", "ci_fix"}:
+    raise SystemExit(0)
+
+receipt = task.get("pre_implementation_review")
+fingerprint = str(task.get("ac_version") or task.get("ac_fingerprint") or "").strip()
+if not isinstance(receipt, dict):
+    print("BLOCK: pre-implementation Gunshi LGTM receipt missing", file=sys.stderr)
+    raise SystemExit(2)
+if str(receipt.get("result") or "").strip().upper() != "LGTM" or str(receipt.get("reviewer") or "").strip() != "gunshi":
+    print("BLOCK: pre-implementation review must be gunshi LGTM", file=sys.stderr)
+    raise SystemExit(2)
+receipt_fp = str(receipt.get("task_fingerprint") or receipt.get("fingerprint") or "").strip()
+receipt_task = str(receipt.get("task_id") or "").strip()
+task_id = str(task.get("task_id") or task.get("_ac_task_id") or "").strip()
+if not fingerprint or receipt_fp != fingerprint:
+    print("BLOCK: pre-implementation review fingerprint missing or stale", file=sys.stderr)
+    raise SystemExit(2)
+if not task_id or receipt_task != task_id:
+    print("BLOCK: pre-implementation review belongs to another task", file=sys.stderr)
+    raise SystemExit(2)
+if not str(receipt.get("evidence_message_id") or "").strip():
+    print("BLOCK: pre-implementation review evidence_message_id missing", file=sys.stderr)
+    raise SystemExit(2)
+print(f"PASS: pre-implementation Gunshi LGTM receipt task={task_id} fingerprint={fingerprint}")
+PY
+}
+
 deploy_task_idle_codex_ninjas() {
     local target_ninja="$1"
     local task_file candidate status
@@ -12700,6 +12741,12 @@ except Exception:
         DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
+    }
+    deploy_task_require_pre_implementation_review "$task_yaml" || {
+        DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+        DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 2
     }
     # Publication identity (active status + deployed_at) must become visible
     # under the same per-ninja/deploy lock.  Previously deployed_at was written
