@@ -47,3 +47,42 @@ YAML
     [ "$status" -eq 0 ]
     [ "$(printf '%s\n' "$output" | wc -l)" -eq 2 ]
 }
+
+# test_necessity: a pre-v2 archived sibling must remain reviewable after its task slot is reused by a current v2 worker, without weakening duplicate-report rejection.
+# regression_justification: compare-summary had a valid active v2 report, but an older archived sibling without report_id made the canonical registry return rc=1 and blocked SG7 generation.
+@test "canonical registry accepts archived legacy sibling and still rejects duplicate basename" {
+    mkdir -p "$PROJECT_ROOT/queue/tasks"
+    cat > "$PROJECT_ROOT/queue/tasks/current.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_legacy
+  report_filename: current_report_cmd_legacy.yaml
+YAML
+    cat > "$PROJECT_ROOT/queue/reports/current_report_cmd_legacy.yaml" <<'YAML'
+report_id: rpt-current
+report_identity_version: 2
+parent_cmd: cmd_legacy
+status: completed
+verdict: PASS
+commit_hash: 0123456789012345678901234567890123456789
+YAML
+    cat > "$PROJECT_ROOT/queue/archive/reports/old_report_cmd_legacy_20260802.yaml" <<'YAML'
+parent_cmd: cmd_legacy
+status: failed
+verdict: FAIL
+commit_hash: no-code-change
+YAML
+
+    run review_resolve_reports cmd_legacy
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 2 ]
+
+    cp "$PROJECT_ROOT/queue/archive/reports/old_report_cmd_legacy_20260802.yaml" \
+        "$PROJECT_ROOT/queue/reports/old_report_cmd_legacy_20260802.yaml"
+    cat > "$PROJECT_ROOT/queue/tasks/duplicate.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_legacy
+  report_filename: old_report_cmd_legacy_20260802.yaml
+YAML
+    run review_resolve_reports cmd_legacy
+    [ "$status" -eq 1 ]
+}

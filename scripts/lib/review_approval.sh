@@ -256,7 +256,7 @@ review_resolve_reports() {
     root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
     review_validate_cmd_id "$cmd_id" || return 1
     python3 - "$root" "$cmd_id" <<'PY'
-import pathlib, re, sys, yaml
+import hashlib, pathlib, re, sys, yaml
 root, cmd_id = pathlib.Path(sys.argv[1]).resolve(), sys.argv[2]
 reports_dir = root / "queue" / "reports"
 archive_dir = root / "queue" / "archive" / "reports"
@@ -305,6 +305,12 @@ for report_path in sorted(candidates):
     if is_live and report_path.name not in live_names:
         continue
     report_id = str(doc.get("report_id") or "").strip()
+    if not report_id and not is_live:
+        version = int(doc.get("report_identity_version") or 1)
+        if version >= 2:
+            raise SystemExit(1)
+        relative = report_path.resolve().relative_to(root).as_posix()
+        report_id = "legacy-" + hashlib.sha256(("report-v1\0" + relative).encode()).hexdigest()
     # Active legacy reports remain task-bound for compatibility.  Archived
     # reports have no task slot to authenticate them and therefore require a
     # durable report_id of their own.
