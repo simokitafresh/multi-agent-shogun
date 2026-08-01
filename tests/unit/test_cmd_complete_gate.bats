@@ -4513,4 +4513,32 @@ print('durable_archive_worker=1 correlated_log=1 null_stdin=1')
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "durable_archive_worker=1 correlated_log=1 null_stdin=1" ]
+
+    local root="$BATS_TEST_TMPDIR/archive-durable" cmd=cmd_archive_durable
+    mkdir -p "$root/scripts" "$root/queue/gates/$cmd"
+    cat > "$root/scripts/archive_completed.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+root="${ARCHIVE_TEST_ROOT:?}"
+cmd="${1:?}"
+if [ ! -f "$root/retry.enabled" ]; then
+    echo "forced archive worker failure for $cmd" >&2
+    exit 23
+fi
+sleep 0.1
+touch "$root/queue/gates/$cmd/archive.done"
+SH
+    chmod +x "$root/scripts/archive_completed.sh"
+
+    run bash -c 'nohup setsid env ARCHIVE_TEST_ROOT="$1" SHOGUN_COMPLETION_GENERATION=fixture bash "$1/scripts/archive_completed.sh" "$2" </dev/null >>"$1/queue/gates/$2/archive_worker.log" 2>&1 &' _ "$root" "$cmd"
+    [ "$status" -eq 0 ]
+    for _ in $(seq 1 50); do [ -s "$root/queue/gates/$cmd/archive_worker.log" ] && break; sleep 0.02; done
+    [ -s "$root/queue/gates/$cmd/archive_worker.log" ]
+    [ ! -e "$root/queue/gates/$cmd/archive.done" ]
+
+    touch "$root/retry.enabled"
+    run bash -c 'nohup setsid env ARCHIVE_TEST_ROOT="$1" SHOGUN_COMPLETION_GENERATION=fixture bash "$1/scripts/archive_completed.sh" "$2" </dev/null >>"$1/queue/gates/$2/archive_worker.log" 2>&1 &' _ "$root" "$cmd"
+    [ "$status" -eq 0 ]
+    for _ in $(seq 1 50); do [ -e "$root/queue/gates/$cmd/archive.done" ] && break; sleep 0.02; done
+    [ -e "$root/queue/gates/$cmd/archive.done" ]
 }
