@@ -7,6 +7,42 @@ setup_file() {
     python3 -c "import yaml" 2>/dev/null || return 1
 }
 
+@test "head-fixed validation is explicit opt-in and detached runner survives shared HEAD commit without residue" {
+    tmpdir="$(mktemp -d)"
+    repo="$tmpdir/repo"
+    mkdir -p "$repo/scripts"
+    git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    cp "$PROJECT_ROOT/scripts/head_fixed_validation.sh" "$repo/scripts/"
+    chmod +x "$repo/scripts/head_fixed_validation.sh"
+    printf 'old\n' >"$repo/value"
+    printf 'task:\n  head_fixed_validation: true\n' >"$tmpdir/declared.yaml"
+    printf 'task:\n  task_type: full\n' >"$tmpdir/normal.yaml"
+    git -C "$repo" add . && git -C "$repo" commit -qm base
+
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; inject_head_fixed_validation_contract '$tmpdir/declared.yaml'; inject_head_fixed_validation_contract '$tmpdir/normal.yaml'"
+    [ "$status" -eq 0 ]
+    python3 - "$tmpdir" <<'PY'
+import pathlib, sys, yaml
+root = pathlib.Path(sys.argv[1])
+declared = yaml.safe_load((root/'declared.yaml').read_text())['task']
+normal = yaml.safe_load((root/'normal.yaml').read_text())['task']
+assert 'isolated detached worktree' in declared['head_fixed_validation_contract']
+assert 'head_fixed_validation_contract' not in normal
+PY
+
+    hook="cd '$repo' && printf 'new\\n' > value && git add value && git commit -qm concurrent"
+    mkdir -p "$tmpdir/runner-tmp"
+    run env TMPDIR="$tmpdir/runner-tmp" HEAD_FIXED_VALIDATION_AFTER_CAPTURE_COMMAND="$hook" HEAD_FIXED_VALIDATION_COMMAND='test "$(cat value)" = old' \
+        bash "$repo/scripts/head_fixed_validation.sh" "$tmpdir/declared.yaml" "$repo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HEAD_FIXED_VALIDATION fixed_sha="* ]]
+    [ "$(cat "$repo/value")" = new ]
+    [ "$(git -C "$repo" worktree list --porcelain | grep -c '^worktree ' || true)" -eq 1 ]
+    [ "$(find "$tmpdir/runner-tmp" -maxdepth 1 -type d -name 'head-fixed-validation.*' | wc -l)" -eq 0 ]
+}
+
 @test "new test requires non-duplicate non-self-referential necessity while controls pass" {
     tmpdir="$(mktemp -d)"
     git -C "$tmpdir" init -q

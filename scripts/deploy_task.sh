@@ -11838,6 +11838,9 @@ deploy_task_apply_task_mutations() {
     # ci_fix clean reproduction scaffoldと専用ACを一度だけ注入する。
     inject_ci_fix_clean_repro_contract "$task_file" || return 1
 
+    # Explicit opt-in only; this must remain before final syntax/report publication.
+    inject_head_fixed_validation_contract "$task_file" || return 1
+
     # Level5: investigation tasks receive an executable, bounded code-location
     # path before publication.  Raw recursive grep is intentionally forbidden.
     inject_code_location_contract "$task_file" || return 1
@@ -11870,6 +11873,18 @@ inject_code_location_contract() {
     fi
     contract='Code-locationは `bash scripts/code_locate.sh "QUERY" [PATHSPEC ...]`（追跡対象限定、git grep）を使う。`grep -r`/`grep -R`は禁止。追跡外生成物が必要な場合のみ `bash scripts/code_locate.sh --include-untracked --reason "必要理由" "QUERY" [PATH ...]` を使う（node_modules/.git/.*_worktreesは既定除外）。exit 0=match、1=no match、2以上=実行異常として区別する。'
     yaml_field_set "$task_file" "task" "code_location_contract" "$contract"
+}
+
+# cmd_4215: only an explicit boolean declaration may opt a task into fixed-HEAD
+# validation.  Normal editing tasks must continue to use the shared worktree.
+inject_head_fixed_validation_contract() {
+    local task_file="$1" declared contract
+    [ -f "$task_file" ] || return 0
+    declared=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "head_fixed_validation" "false" 2>/dev/null || true)
+    [ "$declared" = "true" ] || return 0
+
+    contract='Capture the current HEAD once, then run `bash scripts/head_fixed_validation.sh <task_yaml>`. The runner creates an isolated detached worktree at that SHA, executes the task-selected runner from that worktree, removes the worktree on every exit path, and fails if a registered or on-disk residue remains. Shared-tree HEAD changes after capture must not alter the validated SHA.'
+    yaml_field_set "$task_file" "task" "head_fixed_validation_contract" "$contract"
 }
 
 # Direct hotfixes may repair a failed task owned by another ninja.  Validate
