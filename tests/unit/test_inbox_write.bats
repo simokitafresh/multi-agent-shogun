@@ -213,6 +213,35 @@ setup() {
     init_test_env
 }
 
+@test "failed unclosed idle_notice is converted to review alert while formal FAIL close is preserved" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: failed
+  task_id: cmd_failed_fixture
+  report_path: queue/reports/testninja_report_cmd_failed_fixture.yaml
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_failed_fixture.yaml" <<'YAML'
+status: pending
+verdict: FAIL
+YAML
+    run bash "$TEST_INBOX_WRITE" karo "idle" idle_notice testninja idle
+    [ "$status" -eq 0 ]
+    grep -q "type: 'failed_unclosed'" "$TEST_INBOX_DIR/karo.yaml"
+    grep -q "action: 'review_failed_task'" "$TEST_INBOX_DIR/karo.yaml"
+    grep -q 'task_id=cmd_failed_fixture report_state=OPEN' "$TEST_INBOX_DIR/karo.yaml"
+
+    cat > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_failed_fixture.yaml" <<'YAML'
+status: completed
+verdict: FAIL
+status_detail: BLOCKED
+YAML
+    run bash "$TEST_INBOX_WRITE" karo "idle closed" idle_notice testninja idle
+    [ "$status" -eq 0 ]
+    grep -q "type: 'idle_notice'" "$TEST_INBOX_DIR/karo.yaml"
+}
+
 @test "retro_result is diverted from karo inbox into append-only retro queue" {
     setup_basic_test_env
     ln -s "$PROJECT_ROOT/scripts/retro_write.sh" "$TEST_TMPDIR/scripts/retro_write.sh"

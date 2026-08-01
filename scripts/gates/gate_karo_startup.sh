@@ -2314,6 +2314,34 @@ else
 fi
 echo ""
 
+# --- Check 9.2: failed task without formal FAIL close/archive ---
+echo "■ failed task未閉鎖検知"
+_failed_unclosed_count=0
+for ninja in $_KARO_NINJA_NAMES; do
+    _fuc_task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+    [ -f "$_fuc_task_file" ] || continue
+    _fuc_status=$(awk '/^[[:space:]]*status:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"'[:space:]]/,"",v); print v; exit }' "$_fuc_task_file" 2>/dev/null)
+    [ "$_fuc_status" = "failed" ] || continue
+    _fuc_task_id=$(awk '/^[[:space:]]*task_id:/ && !/^[[:space:]]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_fuc_task_file" 2>/dev/null)
+    _fuc_report_rel=$(awk '/^[[:space:]]*report_path:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_fuc_task_file" 2>/dev/null)
+    _fuc_report_file=""
+    if [ -n "$_fuc_report_rel" ] && [ -f "$SCRIPT_DIR/$_fuc_report_rel" ]; then
+        _fuc_report_file="$SCRIPT_DIR/$_fuc_report_rel"
+    elif [ -n "$_fuc_report_rel" ]; then
+        _fuc_base="${_fuc_report_rel##*/}"
+        _fuc_report_file=$(find "$SCRIPT_DIR/queue/archive/reports" -maxdepth 1 -name "${_fuc_base%.yaml}*.yaml" -print 2>/dev/null | head -1 || true)
+    fi
+    _fuc_terminal="MISSING"
+    [ -z "$_fuc_report_file" ] || _fuc_terminal=$(report_terminal_state "$_fuc_report_file")
+    [ "$_fuc_terminal" = "CLOSED_BLOCKED" ] && continue
+    echo "  ALERT: ${ninja} failed_unclosed task=${_fuc_task_id:-unknown} report_state=${_fuc_terminal} action=review_failed_task"
+    overall="ALERT"
+    alerts+=("${ninja}: failed_unclosed task=${_fuc_task_id:-unknown} report_state=${_fuc_terminal} action=review_failed_task")
+    _failed_unclosed_count=$((_failed_unclosed_count + 1))
+done
+[ "$_failed_unclosed_count" -gt 0 ] || echo "  OK: failed_unclosed 0件"
+echo ""
+
 # --- Check 9.3: task status=failed × report status=completed 乖離検知 (INS-20260708-165744270-6a1d) ---
 # cmd_3771/3772がtask status=failed+報告YAML status=completedの乖離状態で約75分滞留した事故の再発防止
 echo "■ failed×report completed 乖離検知"

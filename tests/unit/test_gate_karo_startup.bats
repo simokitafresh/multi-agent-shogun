@@ -92,3 +92,26 @@ PY
   run awk '/_deferred_lock=.*karo_startup_escalation.lock/{seen=1} seen && /flock -x 9/{locked=1} locked && /inbox_write.sh.*shogun/{sent=1} END{exit !(seen&&locked&&sent)}' "$ROOT/scripts/gates/gate_karo_startup.sh"
   [ "$status" -eq 0 ]
 }
+
+@test "startup gate keeps failed unclosed visible and excludes formal FAIL close" {
+  fixture="$TMPDIR_CASE/failed-unclosed"
+  mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/archive/reports" "$fixture/scripts/lib"
+  cp "$ROOT/scripts/lib/report_terminal_state.sh" "$fixture/scripts/lib/"
+  awk '/^# --- Check 9.2:/{copy=1} /^# --- Check 9.3:/{copy=0} copy' \
+    "$ROOT/scripts/gates/gate_karo_startup.sh" > "$fixture/check.sh"
+  cat > "$fixture/queue/tasks/alpha.yaml" <<'YAML'
+task:
+  status: failed
+  task_id: cmd_unclosed
+  report_path: queue/reports/alpha_report_cmd_unclosed.yaml
+YAML
+  printf 'status: pending\nverdict: FAIL\n' > "$fixture/queue/reports/alpha_report_cmd_unclosed.yaml"
+  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/scripts/lib/report_terminal_state.sh"; source "$1/check.sh"' _ "$fixture"
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | grep -c 'ALERT: alpha failed_unclosed task=cmd_unclosed report_state=OPEN action=review_failed_task')" -eq 1 ]
+
+  printf 'status: completed\nverdict: FAIL\nstatus_detail: BLOCKED\n' > "$fixture/queue/reports/alpha_report_cmd_unclosed.yaml"
+  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/scripts/lib/report_terminal_state.sh"; source "$1/check.sh"' _ "$fixture"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'OK: failed_unclosed 0件'* ]]
+}

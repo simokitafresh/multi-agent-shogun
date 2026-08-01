@@ -1947,6 +1947,40 @@ if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ] && printf '%s'
 fi
 ACTION="${5:-}"
 
+# A ninja process becoming idle does not close a failed task.  The monitor
+# deliberately excludes failed tasks from stall/idle handling, so the durable
+# inbox boundary must turn an attempted ordinary idle notice into an explicit
+# review request until a formal FAIL report has been closed (active or
+# archived).  This keeps the state-machine hole visible without changing the
+# sender's task YAML.
+if [ "$TARGET" = "karo" ] && [ "$TYPE" = "idle_notice" ] && sender_is_ninja_from_fs "$FROM"; then
+    _idle_task_file="$SCRIPT_DIR/queue/tasks/${FROM}.yaml"
+    _idle_task_status=$(inbox_yaml_field_get "$_idle_task_file" "status" "")
+    if [ "$_idle_task_status" = "failed" ]; then
+        _idle_task_id=$(inbox_yaml_field_get "$_idle_task_file" "task_id" "")
+        _idle_report_rel=$(inbox_yaml_field_get "$_idle_task_file" "report_path" "")
+        _idle_report_state="MISSING"
+        _idle_report_file=""
+        if [ -n "$_idle_report_rel" ] && [ -f "$SCRIPT_DIR/$_idle_report_rel" ]; then
+            _idle_report_file="$SCRIPT_DIR/$_idle_report_rel"
+        elif [ -n "$_idle_report_rel" ]; then
+            _idle_report_base="${_idle_report_rel##*/}"
+            _idle_report_file=$(find "$SCRIPT_DIR/queue/archive/reports" -maxdepth 1 \
+                -name "${_idle_report_base%.yaml}*.yaml" -print 2>/dev/null | head -1 || true)
+        fi
+        if [ -n "$_idle_report_file" ]; then
+            # shellcheck source=/dev/null
+            source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
+            _idle_report_state=$(report_terminal_state "$_idle_report_file")
+        fi
+        if [ "$_idle_report_state" != "CLOSED_BLOCKED" ]; then
+            TYPE="failed_unclosed"
+            ACTION="review_failed_task"
+            CONTENT="failed task requires formal close: worker=${FROM} task_id=${_idle_task_id:-unknown} report_state=${_idle_report_state} report_path=${_idle_report_rel:-missing}"
+        fi
+    fi
+fi
+
 # Fast path: profiling/usage queries should not pay the agent-config cost.
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     usage
