@@ -84,6 +84,18 @@ durable_state_shadow_compare() {
         --root "$root" --subject-type "$subject_type" --subject-id "$subject_id"
 }
 
+durable_state_guarded_yaml_set() {
+    local root="$1" subject_type="$2" subject_id="$3" expected_fence="$4"
+    local expected_phase="$5" payload_hash="$6" pointer="$7" setter="$8"
+    local yaml_file="$9" block_id="${10}" field="${11}" value="${12}"
+    python3 "$DURABLE_STATE_PY" guarded-yaml-set \
+        --root "$root" --subject-type "$subject_type" --subject-id "$subject_id" \
+        --expected-fence "$expected_fence" --expected-phase "$expected_phase" \
+        --expected-payload-hash "$payload_hash" --expected-pointer "$pointer" \
+        --yaml-setter "$setter" --yaml-file "$yaml_file" --block-id "$block_id" \
+        --field "$field" --value "$value"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     cmd="${1:-}"
     shift || true
@@ -98,8 +110,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         outbox-apply) durable_state_outbox_apply "$@" ;;
         outbox-reconcile) durable_state_outbox_reconcile "$@" ;;
         shadow-compare) durable_state_shadow_compare "$@" ;;
+        guarded-yaml-set) durable_state_guarded_yaml_set "$@" ;;
         *)
-            echo "usage: durable_state.sh {begin|mutate|read|lease-acquire|reconcile|terminal-receipt|outbox-reserve|outbox-apply|outbox-reconcile|shadow-compare} ..." >&2
+            echo "usage: durable_state.sh {begin|mutate|read|lease-acquire|reconcile|terminal-receipt|outbox-reserve|outbox-apply|outbox-reconcile|shadow-compare|guarded-yaml-set} ..." >&2
             exit 64
             ;;
     esac
