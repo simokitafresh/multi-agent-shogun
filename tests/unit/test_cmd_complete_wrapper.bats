@@ -77,10 +77,22 @@ PY
 
 # test_necessity: the production launcher must use setsid's fork mode so the worker is not the exec-session's directly tracked child.
 # regression_justification: a plain setsid child disappeared when the caller exec-session closed despite nohup.
-@test "completion tail launcher uses the established setsid double-fork boundary" {
-    run grep -F 'nohup setsid -f env CMD_COMPLETE_ASYNC_TAIL_WORKER=1' "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
+@test "completion tail launcher uses the tmux server boundary" {
+    run grep -F '"$_tmux_bin" run-shell -b' "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
     [ "$status" -eq 0 ]
     [ "$(printf '%s\n' "$output" | wc -l)" -eq 1 ]
+}
+
+# test_necessity: hosts without tmux must complete synchronously rather than lose terminal side effects.
+@test "completion tail falls back synchronously when tmux is unavailable" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/no-tmux-fallback.log"
+    run env CMD_COMPLETE_TMUX_BIN="$BATS_TEST_TMPDIR/missing-tmux" \
+        CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FALLBACK completion_tail mode=sync"* ]]
+    grep -q '^inbox_archive.sh|karo$' "$CMD_COMPLETE_TEST_LOG"
 }
 
 # test_necessity: all known slow/failing tail variants must remain outside the public caller while the worker preserves checkpoints.

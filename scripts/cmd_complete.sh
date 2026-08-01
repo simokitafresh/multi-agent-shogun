@@ -327,11 +327,28 @@ fi
 if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
     && [[ "${CMD_COMPLETE_ASYNC_TAIL_WORKER:-0}" != "1" ]]; then
     _tail_log="$CHECKPOINT_DIR/completion_tail.log"
-    nohup setsid -f env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
-        CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
-        bash "$SCRIPT_DIR/cmd_complete.sh" "$CMD_ID" "$BUNDLE_PATH" \
-        </dev/null >>"$_tail_log" 2>&1 9>&- &
-    printf '[cmd_complete] QUEUED completion_tail pid=%d log=%s\n' "$!" "$_tail_log"
+    _tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
+    if command -v "$_tmux_bin" >/dev/null 2>&1 \
+        && "$_tmux_bin" display-message -p '#S' >/dev/null 2>&1; then
+        printf -v _tail_cmd '%q ' env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
+            CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
+            bash "$SCRIPT_DIR/cmd_complete.sh" "$CMD_ID" "$BUNDLE_PATH"
+        if [[ -n "${CMD_COMPLETE_TEST_LOG:-}" ]]; then
+            printf -v _tail_test_env '%q ' "CMD_COMPLETE_TEST_LOG=$CMD_COMPLETE_TEST_LOG"
+            _tail_cmd="env $_tail_test_env${_tail_cmd#env }"
+        fi
+        printf -v _tail_log_q '%q' "$_tail_log"
+        "$_tmux_bin" run-shell -b "$_tail_cmd </dev/null >>$_tail_log_q 2>&1"
+        printf '[cmd_complete] QUEUED completion_tail launcher=tmux log=%s\n' "$_tail_log"
+    else
+        printf '[cmd_complete] FALLBACK completion_tail mode=sync reason=tmux_unavailable log=%s\n' "$_tail_log" >&2
+        flock -u 9
+        exec 9>&-
+        env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
+            CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
+            bash "$SCRIPT_DIR/cmd_complete.sh" "$CMD_ID" "$BUNDLE_PATH" \
+            </dev/null >>"$_tail_log" 2>&1 9>&-
+    fi
     exit 0
 fi
 # Distinct commands have distinct checkpoint locks, so their detached tails can

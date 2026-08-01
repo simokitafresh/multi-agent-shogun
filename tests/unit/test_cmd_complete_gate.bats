@@ -4505,8 +4505,9 @@ text = pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
 start = text.index('echo "Archive (post-GATE CLEAR):"')
 end = text.index('echo "Task idle transition: queued (async)"', start)
 block = text[start:end]
-assert 'nohup setsid -f env SHOGUN_COMPLETION_GENERATION=' in block
-assert '</dev/null >>"$_archive_worker_log" 2>&1 &' in block
+assert '"$_archive_tmux_bin" run-shell -b' in block
+assert 'synchronous fallback' in block
+assert '</dev/null >>$_archive_log_q 2>&1' in block
 assert '_archive_worker_log="$GATES_DIR/archive_worker.log"' in block
 assert 'archive_completed.sh" "$CMD_ID"' in block
 print('durable_archive_worker=1 correlated_log=1 null_stdin=1')

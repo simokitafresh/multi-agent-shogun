@@ -9974,10 +9974,21 @@ PYEOF
     echo "Archive (post-GATE CLEAR):"
     if [ ! -f "$GATES_DIR/archive.done" ]; then
         _archive_worker_log="$GATES_DIR/archive_worker.log"
-        nohup setsid -f env SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
-            bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" \
-            </dev/null >>"$_archive_worker_log" 2>&1 &
-        echo "  archive: queued (durable pid=$! log=$_archive_worker_log)"
+        _archive_tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
+        if command -v "$_archive_tmux_bin" >/dev/null 2>&1 \
+            && "$_archive_tmux_bin" display-message -p '#S' >/dev/null 2>&1; then
+            printf -v _archive_cmd '%q ' env SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
+                bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID"
+            printf -v _archive_log_q '%q' "$_archive_worker_log"
+            "$_archive_tmux_bin" run-shell -b "$_archive_cmd </dev/null >>$_archive_log_q 2>&1"
+            echo "  archive: queued (tmux server; log=$_archive_worker_log)"
+        else
+            echo "  archive: tmux unavailable; synchronous fallback (log=$_archive_worker_log)"
+            env SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
+                bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" \
+                </dev/null >>"$_archive_worker_log" 2>&1 \
+                || echo "  [INFO] archive: WARN (sync fallback failed)" >>"$_archive_worker_log"
+        fi
     else
         echo "  archive: already exists (skip)"
     fi
