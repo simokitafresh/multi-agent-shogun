@@ -346,9 +346,16 @@ try:
         ["git", "-C", repo, "show", f"{commit}:{path}"], text=True,
         stderr=subprocess.DEVNULL,
     )
+    head_text = subprocess.check_output(
+        ["git", "-C", repo, "show", f"HEAD:{path}"], text=True,
+        stderr=subprocess.DEVNULL,
+    )
     with open(os.path.join(repo, path), encoding="utf-8") as stream:
         current_text = stream.read()
-    documents = [yaml.safe_load(text) for text in (parent_text, commit_text, current_text)]
+    documents = [
+        yaml.safe_load(text)
+        for text in (parent_text, commit_text, head_text, current_text)
+    ]
 except Exception:
     fail()
 
@@ -368,7 +375,7 @@ def indexed(document):
         result[identity] = entry
     return result
 
-before, committed, current = map(indexed, documents)
+before, committed, head, current = map(indexed, documents)
 changed_ids = {
     identity for identity in set(before) | set(committed)
     if before.get(identity) != committed.get(identity)
@@ -376,8 +383,15 @@ changed_ids = {
 owned_ids = snapshot_ids & changed_ids
 if not owned_ids:
     fail()
-if any(identity in current and committed.get(identity) != current.get(identity) for identity in owned_ids):
-    fail()
+for identity in owned_ids:
+    if identity in current:
+        if committed.get(identity) != current.get(identity):
+            fail()
+    elif identity in head:
+        # The record still exists in committed HEAD, so its absence only in
+        # the worktree is an uncommitted deletion, not a later committed
+        # bounded-queue eviction.
+        fail()
 sys.exit(0)
 PY
         then
