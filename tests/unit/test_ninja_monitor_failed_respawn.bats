@@ -42,7 +42,8 @@ write_task() {
 }
 
 write_fail_report() {
-  printf 'status: completed\nverdict: FAIL\n' >"$SCRIPT_DIR/queue/reports/saizo.yaml"
+  local status="${1:-completed}"
+  printf 'status: %s\nverdict: FAIL\n' "$status" >"$SCRIPT_DIR/queue/reports/saizo.yaml"
 }
 
 write_karo_approval() {
@@ -88,6 +89,14 @@ write_karo_approval() {
 @test "matching Karo ACCEPT formally closes failed generation" {
   write_task
   write_fail_report
+  write_karo_approval
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 1 ]
+}
+
+@test "status failed plus matching Karo ACCEPT formally closes failed generation" {
+  write_task
+  write_fail_report failed
   write_karo_approval
   run _failed_task_preserve_before_respawn saizo
   [ "$status" -eq 1 ]

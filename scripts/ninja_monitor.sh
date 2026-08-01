@@ -1979,7 +1979,7 @@ _failed_task_is_formally_closed() {
     report_file=$(find_matching_report_file "$name" 2>/dev/null) || return 1
     report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
     report_verdict=$(yaml_field_get "$report_file" "verdict" "" 2>/dev/null || true)
-    [[ "$report_status" =~ ^(completed|done)$ ]] || return 1
+    [[ "$report_status" =~ ^(completed|done|failed)$ ]] || return 1
     [ "$report_verdict" = "FAIL" ] || return 1
 
     report_rel="${report_file#"$SCRIPT_DIR"/}"
