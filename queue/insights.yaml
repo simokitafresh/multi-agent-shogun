@@ -988,3 +988,19 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260801-140238564-b109
+  ts: "2026-08-01T14:02:38+09:00"
+  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: resolved
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq '7e4ffafed5cfe6941c62429a36424afd7053520a96307773befbb3fae533d125' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
+  resolved_reason: "一次ログでevent_idが1件のみ、cmd_4206 SG7 bundle送達記録あり。review_notifyは実信号としてT11台帳駆動高速化へ既に接続済みのため吸収済み"
+  action_artifact: "logs/self_retro.jsonl:event_id=7e4ffafed5cfe6941c62429a36424afd7053520a96307773befbb3fae533d125 count=1; queue/gates/cmd_4206/sg7_bundle.json; docs/research/cmd_4123_self_retro_signal.md; docs/research/three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707.md:T11"
+  resolved_at: "2026-08-01T20:15:10+09:00"
