@@ -21,3 +21,11 @@
 | `skills/shogun-cli-switch/SKILL.md` ← `scripts/ninja_monitor.sh` | 影響なし。respawn・watcher・状態観測の内部変更で、本文が依存する次回clear時の`cli_launch_cmd()`反映契約は不変。 |
 
 結論: 現行pending 13対中、本文追従更新が必要な対は0、契約hash承認対象は13。対象外の参照対は承認しない。
+
+## RC固定基点照合（2026-08-01 11:20 JST）
+
+- 旧generation: 配備時に固定した上記13対。13/13検分・契約hash承認済みの既存成果を再利用する。
+- 現generation: `gate_skill_script_refs.sh` 実測は `required=0` / `deduped=5` / `FOLLOWUP_SUPPRESSED: pending_pairs=5` / `rc=0`。
+- 集合照合: generation identity（SKILL×script×contract hash）では旧13対と現5対の共通は0対。path名だけの単純比較では3対が同名だが、contract hashが異なる後着generationである。現5対は全て後着follow-upであり、cmd_4202の承認対象に混入させない。
+- 後着5対: `skills/dream/SKILL.md` ← `scripts/gates/gate_lesson_health.sh`; `skills/karo-direct/SKILL.md` ← `scripts/deploy_task.sh`; `skills/recon-dual/SKILL.md` ← `scripts/deploy_task.sh`; `skills/shogun-cli-switch/SKILL.md` ← `scripts/ninja_monitor.sh`; `skills/shogun-teire/SKILL.md` ← `scripts/gates/gate_lesson_health.sh`。
+- 所有境界: 共有 `queue/insights.yaml` と `logs/skill_script_refs_verified.json` の現dirtyは変更せず、本correctionはこの検分表のみを更新する。
