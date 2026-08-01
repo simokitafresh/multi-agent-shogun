@@ -1624,7 +1624,7 @@ EOF
 
 # test_necessity: revision_requested reports may bypass the pending-own-report
 # guard only when an exact same-worker/same-command report has formal Karo RC.
-@test "formal Karo RC permits only the exact revision_requested FAIL report" {
+@test "formal Karo RC permits only the exact revision_requested PASS or FAIL report" {
     local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_rc_retry.yaml"
     local task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
     local approvals="$TEST_PROJECT/queue/gates/cmd_rc_retry/review_approvals/reports/case"
@@ -1646,14 +1646,18 @@ result: RC
 report: queue/reports/sasuke_report_cmd_rc_retry.yaml
 EOF
 
-    run bash -c '
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "$1/scripts/deploy_task.sh"
-        log() { echo "$*"; }
-        deploy_task_has_pending_own_report cmd_rc_retry sasuke "$1/queue/tasks/sasuke.yaml"
-    ' _ "$TEST_PROJECT"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"formal_karo_rc_redeploy:"* ]]
+    local allowed_verdict
+    for allowed_verdict in FAIL PASS; do
+        sed -i "s/^verdict: .*/verdict: $allowed_verdict/" "$report"
+        run bash -c '
+            export DEPLOY_TASK_LIB_ONLY=1
+            source "$1/scripts/deploy_task.sh"
+            log() { echo "$*"; }
+            deploy_task_has_pending_own_report cmd_rc_retry sasuke "$1/queue/tasks/sasuke.yaml"
+        ' _ "$TEST_PROJECT"
+        [ "$status" -eq 1 ]
+        [[ "$output" == *"formal_karo_rc_redeploy:"* ]]
+    done
 
     local case_name
     for case_name in unreviewed accept gunshi other_report completed failed; do

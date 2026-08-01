@@ -1044,7 +1044,7 @@ valid = (
     and str(approval.get("result") or "").strip() == "RC"
     and os.path.realpath(approved_report) == os.path.realpath(report_path)
     and str(report.get("status") or "").strip() == "revision_requested"
-    and str(report.get("verdict") or "").strip() == "FAIL"
+    and str(report.get("verdict") or "").strip() in {"PASS", "FAIL"}
     and str(report.get("parent_cmd") or "").strip() == parent_cmd
     and str(report.get("worker_id") or "").strip() == ninja_name
 )
