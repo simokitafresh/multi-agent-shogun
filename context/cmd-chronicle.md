@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-01 -->
+<!-- last_updated: 2026-08-02 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,12 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3636 | 殿指示(2026-07-02): DM-Signal性能改善Phase2。設計書v7(6往復レビュー済み)に基づき、PrecomputedRawテーブル新設+Layer5事前計算バッチ+/admin/precompute-raw endpoint+recalculate_fast hookを実装し、API応答の事前計算基盤を構築する | dm-signal | 07-02 | Phase2 raw precompute foundati |
-| cmd_3637 | 殿指示(2026-07-02): DM-Signal性能改善Phase3。Phase2でPrecomputedRaw基盤完成(3f920b94)。P1の5EPにraw lookup+masking分離を適用し、API応答を数秒→200ms以下に短縮する | dm-signal | 07-02 | 軍師レビューFAILを修正。compare-returnsは |
-| cmd_3638 | 殿厳命(2026-07-02): 将軍の起票能力は根幹。品質+速度+自動成長の3軸同時改善。設計書v3(家老3往復APPROVE_WITH_CONDITIONS)に基づき、(1)D0実施済みFP修正のcommit+bats回帰 (2)BLOCK SUMMARYにパターン別集計追加 (3)ファイル抽出器を共通関数化 (4)速度プロファイル計測+ボトルネック関数の高速化 | infra | 07-02 | cmd_saveのBLOCK SUMMARY集計追加、SG- |
-| cmd_3639 | 殿指示(2026-07-02): 全ページ瞬時表示がゴール。PF別EPは0.2-0.5sに改善済み。compare-returns(初期表示)が4.3-4.7s残存。根因=PF別rawのSELECT+fallback計算が102PF分積み上がる。一括事前計算で即応答に変更 | dm-signal | 07-02 | compare-returnsのPF行をcompare_re |
-| cmd_3640 | 殿指示(2026-07-02): MECE全EP×全PF計測でmonthly-tradeが75/102PF遅延(最遅7.63s)と判明。precompute_raw.pyにraw生成は実装済みだがmonthly_trade.pyにlookup未追加(Phase3漏れ)。annual_returnsも2PF遅延。lookup追加で全PF瞬時化 | dm-signal | 07-02 | monthly_trade.py と annual_retu |
-| cmd_3642 | 軍師提案(blt_20260702_124509+blt_20260702_124855)+将軍一次計測(2026-07-02): 最新版CLIはバナーにモデル名が出ないケースがあり、pane履歴方式の検出は前セッション残像を誤採用する。将軍D0(commit 3964e334e: 最終セッション限定awkフィルタ+Guard16検出器除外)後も、実プロセスがsonnet xhighのpaneで検出値がOpus 4.8 highのまま乖離残存を実測済み。pane履歴に依存しない検出とrespawn時の残存値排除で実モデル表示の信頼を回復する | infra | 07-02 | model_detectが実プロセス/TTY引数を優先し、古 |
 �し、古 |
 | cmd_3687 | 殿指示(2026-07-05 20:58 やろう): 価格データソース多重化計画Phase 1。Alpaca/EODHD/Tiingo/Stockdata(yfinance)の4ソースで全コアシンボルの直近月末open/closeを突合し、乖離の全体像を定量化する。未解決2点(Alpaca IEXフィードのSIP適用範囲、EODHDの終値方式)を実測で決着させ、プライマリ選定の判断材料を殿に提供する。発端=シン青龍-鉄壁TECL/XLU再反転(cmd_3676-3685) | database | 07-05 | 4ソース×12シンボル×3月末=144ポイントを取得し、EO |
 | cmd_3688 | 殿指示(2026-07-05 21:42): 価格データソース多重化計画Phase 2。(a)EODHD/Tiingo 2ソース毎晩突合cronで不一致時警報 (b)月初入力確定検証(前月最終営業日の全コアシンボル行存在検証、不在ならpending+警報) (c)cron時刻をJST 08:00+17:00の2回に変更(殿案: 01:00 JSTは米国市場close前で構造的問題)。発端=シン青龍-鉄壁再反転+yfinance遡及修正 | database | 07-05 | EODHD/Tiingo close照合、月初入力確定ゲート |
@@ -269,3 +263,7 @@
 | cmd_4203_withdrawn | 殿下知2026-08-01 09:09『設計書実装は順調か、利他の精神で家老と協調せよ』を受けた次弾解禁。設計書v3.9はWave 1Aまで全ACCEPTEDだが後続の親cmdが不在で境界停滞(LS086型)。設計書§5.4のWave 1B(ownership)を実装し、deploy経路の二重owner・ghost配備の族を構造根治する | infra | 08-01 | — |
 | cmd_4204 | gate_karo_startup Check3.8の実装品質WARN率が50%(閾値30%)で1セッション連続しescalation到達。本日の実測でFAIL群の主因は実装欠陥ではなく、(1)review_approval.shのimplementation-commit-unchanged guardが、FAIL verdictのterminal受理とRC後のreport-only再提出より先に発火して正式closeを塞ぐ構造(小太郎blt_20260801_111006・飛猿blt_20260801_111714の2実証) (2)report statusのnonterminal×verdict=PASS矛盾でquality monitorが反復BLOCKする状態遷移欠陥(cmd_4202 blt_20260801_112717)。guard評価順序と再提出契約を是正し、WARN率を同一計測器で再計測して数値差分を確定する | infra | 08-01 | post-RC review matrixを正規化。是正前の |
 | cmd_4206 | 殿下知2026-08-01 13:02『ドキュメントも覚醒して再構築せよ』。一次計測でcontext/の500行規約違反7ファイル(最大=infrastructure.md 2453行=規約5倍)を確認。因果=『リンク先なき圧縮禁止』原則はあるが500行制限に強制機構がなく追記のみ累積(rg -c '500行' 両startup gate→0件)。cmd_saveと同型の追記型九龍城をVercel正規手順(リンク先作成→存在確認→索引層化)で解体する第一弾 | infra | 08-01 | infrastructure.mdを2453→42行へ索引化 |
+| cmd_round7_checkpoint_final_gen3_20260730 | 第二世代checkpointまでtest_deploy_task.bats合成raceで2連続FAIL→偵察2系統でdeploy_task.sh両writerの固定.tmp共有mv競合を真因確定→BASHPID一意化是正がGATE CLEAR(blt_20260730_075933、旧test7 exact 50反復FAIL0生貼付)。起票条件達成につき新固定SHAで第三世代success checkpointを実行し第七弾の総短縮効果を確定する | infra | 08-01 | — |
+| cmd_round7_checkpoint_final_gen2_20260730 | 第一世代checkpoint(飛猿)はtest_deploy_task.bats合成回帰1件で正直FAIL終端。根因修正がGATE CLEAR(blt_20260730_065017、当該test focused PASS生貼付済み)し起票条件が達成されたため、新固定SHAで別世代のsuccess checkpointを実行し第七弾の総短縮効果を確定する | infra | 08-01 | — |
+| cmd_round7_checkpoint_final_20260730 | 殿裁可2026-07-30 03:09の第七弾本体は全10レーンGATE CLEAR済み(最終=#9/#10 blt_20260730_061225)。正本v1.6の完了条件に従い、現固定SHAをisolated環境で全量unit checkpointとして一度だけ実行し、wave-final基準との同一4識別子比較で第七弾の総短縮効果を確定する | infra | 08-01 | — |
+| cmd_4209 | 殿指摘2026-08-01 21:09『PCだとテーブル全体が横にスクロールするのでPFがサイドメニューの裏に隠れてしまう』。PC幅ではコンテナ内スクロールが無効化されページ全体が横スクロールし、sticky left-0のPF列が固定サイドメニューの裏へ潜る。表コンテナ内横スクロールへ是正しPF列stickyを機能させる | dm-signal | 08-02 | PC表を内側横スクロールへ変更し、独立page-sticky |
