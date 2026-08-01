@@ -75,6 +75,14 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: the production launcher must use setsid's fork mode so the worker is not the exec-session's directly tracked child.
+# regression_justification: a plain setsid child disappeared when the caller exec-session closed despite nohup.
+@test "completion tail launcher uses the established setsid double-fork boundary" {
+    run grep -F 'nohup setsid -f env CMD_COMPLETE_ASYNC_TAIL_WORKER=1' "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 1 ]
+}
+
 # test_necessity: all known slow/failing tail variants must remain outside the public caller while the worker preserves checkpoints.
 @test "five tail latency variants return from public caller below five seconds" {
     unset CMD_COMPLETE_SYNC_TAIL

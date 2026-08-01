@@ -4505,7 +4505,7 @@ text = pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
 start = text.index('echo "Archive (post-GATE CLEAR):"')
 end = text.index('echo "Task idle transition: queued (async)"', start)
 block = text[start:end]
-assert 'nohup setsid env SHOGUN_COMPLETION_GENERATION=' in block
+assert 'nohup setsid -f env SHOGUN_COMPLETION_GENERATION=' in block
 assert '</dev/null >>"$_archive_worker_log" 2>&1 &' in block
 assert '_archive_worker_log="$GATES_DIR/archive_worker.log"' in block
 assert 'archive_completed.sh" "$CMD_ID"' in block
@@ -4530,14 +4530,14 @@ touch "$root/queue/gates/$cmd/archive.done"
 SH
     chmod +x "$root/scripts/archive_completed.sh"
 
-    run bash -c 'nohup setsid env ARCHIVE_TEST_ROOT="$1" SHOGUN_COMPLETION_GENERATION=fixture bash "$1/scripts/archive_completed.sh" "$2" </dev/null >>"$1/queue/gates/$2/archive_worker.log" 2>&1 &' _ "$root" "$cmd"
+    run bash -c 'nohup setsid -f env ARCHIVE_TEST_ROOT="$1" SHOGUN_COMPLETION_GENERATION=fixture bash "$1/scripts/archive_completed.sh" "$2" </dev/null >>"$1/queue/gates/$2/archive_worker.log" 2>&1 &' _ "$root" "$cmd"
     [ "$status" -eq 0 ]
     for _ in $(seq 1 50); do [ -s "$root/queue/gates/$cmd/archive_worker.log" ] && break; sleep 0.02; done
     [ -s "$root/queue/gates/$cmd/archive_worker.log" ]
     [ ! -e "$root/queue/gates/$cmd/archive.done" ]
 
     touch "$root/retry.enabled"
-    run bash -c 'nohup setsid env ARCHIVE_TEST_ROOT="$1" SHOGUN_COMPLETION_GENERATION=fixture bash "$1/scripts/archive_completed.sh" "$2" </dev/null >>"$1/queue/gates/$2/archive_worker.log" 2>&1 &' _ "$root" "$cmd"
+    run bash -c 'nohup setsid -f env ARCHIVE_TEST_ROOT="$1" SHOGUN_COMPLETION_GENERATION=fixture bash "$1/scripts/archive_completed.sh" "$2" </dev/null >>"$1/queue/gates/$2/archive_worker.log" 2>&1 &' _ "$root" "$cmd"
     [ "$status" -eq 0 ]
     for _ in $(seq 1 50); do [ -e "$root/queue/gates/$cmd/archive.done" ] && break; sleep 0.02; done
     [ -e "$root/queue/gates/$cmd/archive.done" ]
