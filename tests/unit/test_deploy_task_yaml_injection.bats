@@ -2411,3 +2411,10 @@ PY
 
     rm -rf "$tmpdir"
 }
+# test_necessity: deployed tasks must carry the exact worktree baseline blob and initial lease timestamp used by active-context gates.
+@test "deploy records worktree baseline and progress lease together" {
+  run grep -F 'target_path_worktree_blob_at_deploy=$blob' "$PROJECT_ROOT/scripts/deploy_task.sh"
+  [ "$status" -eq 0 ]
+  run grep -F 'progress_updated_at=$now' "$PROJECT_ROOT/scripts/deploy_task.sh"
+  [ "$status" -eq 0 ]
+}

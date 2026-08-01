@@ -1344,6 +1344,16 @@ yaml_field_set() {
         return 1
     fi
 
+    # Active task leases have one authority: progress_updated_at.  Lifecycle
+    # writes must publish the requested value and the renewed lease together.
+    if [[ "$yaml_file" == */queue/tasks/*.yaml || "$yaml_file" == queue/tasks/*.yaml ]] \
+        && [ "$block_id" = "task" ] \
+        && { [ "$field" = "progress" ] || { [ "$field" = "status" ] && [[ "$new_value" =~ ^(acknowledged|in_progress)$ ]]; }; }; then
+        yaml_field_set_batch "$yaml_file" "$block_id" \
+            "$field=$new_value" "progress_updated_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+        return $?
+    fi
+
     if [ ! -f "$yaml_file" ]; then
         echo "FATAL: yaml_field_set: file not found: $yaml_file" >&2
         return 1
@@ -1544,6 +1554,17 @@ yaml_field_set_batch() {
     local block_id="$2"
     shift 2
 
+    if [[ "$yaml_file" == */queue/tasks/*.yaml || "$yaml_file" == queue/tasks/*.yaml ]] && [ "$block_id" = "task" ]; then
+        local _lease_refresh=0 _lease_present=0 _lease_arg
+        for _lease_arg in "$@"; do
+            [[ "$_lease_arg" == progress_updated_at=* ]] && _lease_present=1
+            [[ "$_lease_arg" == progress=* || "$_lease_arg" == status=acknowledged || "$_lease_arg" == status=in_progress ]] && _lease_refresh=1
+        done
+        if [ "$_lease_refresh" -eq 1 ] && [ "$_lease_present" -eq 0 ]; then
+            set -- "$@" "progress_updated_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+        fi
+    fi
+
     if [ "$#" -eq 0 ]; then
         echo "Usage: yaml_field_set_batch <yaml_file> <block_id> field1=val1 [field2=val2 ...]" >&2
         return 1
@@ -1621,6 +1642,7 @@ function unquote(s) {
     }
     return s
 }
+
 function leading_spaces(line,    i,cnt,c) {
     cnt = 0
     for (i = 1; i <= length(line); i++) {
@@ -1834,6 +1856,47 @@ END {
             fi
         done
     } 200>"$lock_file"
+}
+
+# Return success only when exactly one fresh active task owns rel_path and the
+# target is a dirty worktree blob different from its deploy-time baseline.
+active_context_defer_allowed() {
+    local root="$1" rel_path="$2"
+    ACTIVE_CONTEXT_ROOT="$root" ACTIVE_CONTEXT_REL_PATH="$rel_path" \
+    ACTIVE_CONTEXT_DEFER_LEASE_SECONDS="${ACTIVE_CONTEXT_DEFER_LEASE_SECONDS:-1200}" \
+    ACTIVE_CONTEXT_CLOCK_SKEW_SECONDS="${ACTIVE_CONTEXT_CLOCK_SKEW_SECONDS:-5}" python3 - <<'PY'
+import datetime as dt, glob, hashlib, os, pathlib, subprocess, sys, yaml
+root=pathlib.Path(os.environ['ACTIVE_CONTEXT_ROOT']).resolve(); rel=os.environ['ACTIVE_CONTEXT_REL_PATH']
+owners=[]
+for name in glob.glob(str(root/'queue/tasks/*.yaml')):
+    try: task=(yaml.safe_load(open(name, encoding='utf-8')) or {}).get('task', {})
+    except Exception: sys.exit(1)
+    if not isinstance(task, dict): sys.exit(1)
+    paths=[]
+    for value in (task.get('target_path'), task.get('planned_paths'), (task.get('commit_contract') or {}).get('planned_paths')):
+        paths += value if isinstance(value,list) else [value] if isinstance(value,str) else []
+    if rel in paths and task.get('status') in ('acknowledged','in_progress'): owners.append(task)
+if len(owners)!=1: sys.exit(1)
+t=owners[0]; baseline=t.get('target_path_worktree_blob_at_deploy','')
+if not isinstance(baseline,str) or len(baseline)!=40: sys.exit(1)
+target=root/rel
+if not target.is_file(): sys.exit(1)
+data=target.read_bytes(); current=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+if current==baseline: sys.exit(1)
+dirty=subprocess.run(['git','-C',str(root),'status','--porcelain','--',rel],capture_output=True,text=True).stdout.strip()
+if not dirty: sys.exit(1)
+try:
+    stamp=dt.datetime.fromisoformat(str(t['progress_updated_at']).replace('Z','+00:00'))
+    if stamp.tzinfo is None: raise ValueError
+    now_raw=os.environ.get('ACTIVE_CONTEXT_NOW','')
+    now=(dt.datetime.fromisoformat(now_raw.replace('Z','+00:00')) if now_raw else dt.datetime.now(dt.timezone.utc))
+    if now.tzinfo is None: raise ValueError
+    age=(now.astimezone(dt.timezone.utc)-stamp.astimezone(dt.timezone.utc)).total_seconds()
+except Exception: sys.exit(1)
+lease=float(os.environ['ACTIVE_CONTEXT_DEFER_LEASE_SECONDS']); skew=float(os.environ['ACTIVE_CONTEXT_CLOCK_SKEW_SECONDS'])
+if age < -skew or age > lease: sys.exit(1)
+print(t.get('task_id') or t.get('parent_cmd') or 'active-owner')
+PY
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

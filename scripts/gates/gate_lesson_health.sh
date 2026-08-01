@@ -33,6 +33,7 @@ if [ ! -f "$SCRIPT_DIR/scripts/gates/lesson_context_routes.sh" ]; then
     exit 1
 fi
 source "$SCRIPT_DIR/scripts/gates/lesson_context_routes.sh"
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 
 ALERT_THRESHOLD=5
 EXIT_CODE=0
@@ -678,6 +679,10 @@ for _pid in "${_target_pids[@]}"; do
     _cf="${_context_map[$_pid]:-}"
     [ -z "$_cf" ] && _cf="context/${_pid}.md"
     _context_path="$SCRIPT_DIR/$_cf"
+    _active_context_defer=0
+    if active_context_defer_allowed "$SCRIPT_DIR" "$_cf" >/dev/null 2>&1; then
+        _active_context_defer=1
+    fi
 
     # GA-244: infra lesson本文が全件contextへ合流済みなのにmarkerだけ古い場合は、
     # 高水位を原子的に自己修復する。部分合流時は1件でも欠ければ更新しない。
@@ -821,7 +826,9 @@ PY
             "lesson_write.sh の --origin または source_cmd 由来の [[cmd_XXX]] origin を既存教訓へ補完せよ。"
     fi
 
-    if [ "${_unsynced:-0}" -gt "$ALERT_THRESHOLD" ]; then
+    if [ "${_unsynced:-0}" -gt "$ALERT_THRESHOLD" ] && [ "$_active_context_defer" -eq 1 ]; then
+        echo "DEFER: ${_pid} context再構築中のactive ownerを確認 (${_cf}, 未合流${_unsynced}件)"
+    elif [ "${_unsynced:-0}" -gt "$ALERT_THRESHOLD" ]; then
         emit_actionable \
             "ALERT: ${_pid}のlesson→context未合流${_unsynced}件(total:${_total_lessons},synced:L${_synced_num},max:L${_max_id})" \
             "context 側へ未合流教訓を反映し、last_synced_lesson を更新せよ。"

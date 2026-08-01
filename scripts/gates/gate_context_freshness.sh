@@ -24,7 +24,9 @@ _self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_self%/*}"
 [[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 SCRIPT_DIR="${SCRIPT_DIR%/scripts/gates}"
+CONTROL_ROOT="$SCRIPT_DIR"
 ROOT_DIR="${CONTEXT_FRESHNESS_ROOT:-$SCRIPT_DIR}"
+source "$CONTROL_ROOT/scripts/lib/yaml_field_set.sh"
 CHECK_SCRIPT="${CONTEXT_FRESHNESS_CHECK_SCRIPT:-$ROOT_DIR/scripts/context_freshness_check.sh}"
 NTFY_SCRIPT="${CONTEXT_FRESHNESS_NTFY_SCRIPT:-$ROOT_DIR/scripts/ntfy.sh}"
 TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
@@ -382,6 +384,10 @@ for rel_path in "${target_rel_paths[@]}"; do
     done < "$file"
 
     if [[ -z "$last_updated" ]]; then
+        if active_context_defer_allowed "$ROOT_DIR" "$rel_path" >/dev/null 2>&1; then
+            echo "DEFER: ${basename_file} (active ownerによるcontext再構築中)"
+            continue
+        fi
         emit_actionable \
             "WARN: ${basename_file} (last_updated 未記載)" \
             "${basename_file} に <!-- last_updated: YYYY-MM-DD --> を追記せよ。"

@@ -10386,6 +10386,18 @@ record_deployed_at() {
     fi
 }
 
+record_target_worktree_blob_at_deploy() {
+    local task_file="$1" target blob now
+    target=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null || true)
+    target="${target#[}"; target="${target%]}"; target="${target#\"}"; target="${target%\"}"
+    [ -n "$target" ] && [ -f "$SCRIPT_DIR/$target" ] || return 0
+    blob=$(git -C "$SCRIPT_DIR" hash-object -- "$target" 2>/dev/null || true)
+    [[ "$blob" =~ ^[0-9a-f]{40}$ ]] || return 1
+    now=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+    yaml_field_set_batch "$task_file" task \
+        "target_path_worktree_blob_at_deploy=$blob" "progress_updated_at=$now"
+}
+
 # ─── context鮮度チェック（穴2対策: cmd_239） ───
 # cmd_1393: Python2箇所→awk+date変換
 check_context_freshness() {
@@ -12698,6 +12710,7 @@ except Exception:
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     }
+    record_target_worktree_blob_at_deploy "$task_yaml" || return 1
     deploy_task_wall_phase_checkpoint task_mutations
     deploy_task_check_deadline "after_task_mutations" || return $?
 

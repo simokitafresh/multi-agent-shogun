@@ -1430,3 +1430,18 @@ EOF
     run cmp -s "$yaml.before" "$yaml"
     [ "$status" -eq 0 ]
 }
+# test_necessity: active task progress/status writes must renew progress_updated_at in the same atomic helper transaction.
+@test "task active lifecycle write renews progress_updated_at" {
+  local yaml="$TEST_TMPDIR/queue/tasks/lease.yaml"
+  mkdir -p "$(dirname "$yaml")"
+  printf '%s\n' 'task:' '  status: assigned' '  progress: old' > "$yaml"
+  run bash "$YFS" "$yaml" task status acknowledged
+  [ "$status" -eq 0 ]
+  run python3 - "$yaml" <<'PY'
+import datetime as dt, sys, yaml
+t=yaml.safe_load(open(sys.argv[1]))['task']
+s=dt.datetime.fromisoformat(t['progress_updated_at'].replace('Z','+00:00'))
+assert t['status']=='acknowledged' and s.tzinfo is not None
+PY
+  [ "$status" -eq 0 ]
+}
