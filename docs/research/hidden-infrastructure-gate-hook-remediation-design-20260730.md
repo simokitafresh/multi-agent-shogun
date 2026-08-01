@@ -12,7 +12,7 @@
 | canonical manifest | `docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml` |
 | Wave 0 receipt | `docs/research/hidden-infrastructure-gate-hook-wave0-receipts-20260731.yaml` |
 | Gist | `c18ce89c63d6d7beef7a0fd252fe8d9f` |
-| 親cmd | `cmd_4200` |
+| 親cmd | `cmd_4200`(Gate0A〜Wave1A、完遂済み)。**Wave 1B以降=cmdなし家老自走**(殿裁定2026-08-01 09:14: ホットスクリプト方式。本設計書+canonical manifestが唯一のmandate。台帳駆動campaign laneで直進し、進捗はmanifest phase遷移+掲示板GATEで将軍が検分) |
 
 ## §-2 現在地（最初に読め）
 
