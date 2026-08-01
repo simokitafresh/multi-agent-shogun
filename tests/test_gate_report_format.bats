@@ -1263,7 +1263,7 @@ YAML
     [[ "$output" == *"M queue/tasks/testninja.yaml"* ]]
 }
 
-@test "T-AC2-5: earlier task-owned commit permits non-overlapping dirty hunk" {
+@test "T-AC2-5: abbreviated earlier task-owned commit in structured evidence permits non-overlapping dirty hunk" {
     local repo="$REPO_TMPDIR_BATS/multicommit_nonoverlap_repo"
     local report="$repo/reports/testninja_report_cmd_multi.yaml"
     mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
@@ -1285,7 +1285,8 @@ task:
 YAML
     _write_ac3_report "$report" "$final_hash"
     sed -i 's/path: shared.txt/path: context\/shared.txt/' "$report"
-    sed -i "s/parent_cmd: cmd_test/parent_cmd: cmd_multi/; /summary: \"test summary\"/a\\  details: \"commits ${first_hash} and ${final_hash}\"" "$report"
+    local first_short="${first_hash:0:8}"
+    sed -i "s/parent_cmd: cmd_test/parent_cmd: cmd_multi/; /summary: \"test summary\"/a\\ac_evidence_mapping:\n  AC2: \"task commits ${first_short}\"" "$report"
     run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" bash "$GATE" "$report"
     echo "$output"
     [ "$status" -eq 0 ]
@@ -1314,9 +1315,34 @@ task:
 YAML
     _write_ac3_report "$report" "$final_hash"
     sed -i 's/path: shared.txt/path: context\/shared.txt/' "$report"
-    sed -i "s/parent_cmd: cmd_test/parent_cmd: cmd_multi/; /summary: \"test summary\"/a\\  details: \"foreign ${foreign_hash}\"" "$report"
+    local foreign_short="${foreign_hash:0:8}"
+    sed -i "s/parent_cmd: cmd_test/parent_cmd: cmd_multi/; /summary: \"test summary\"/a\\ac_evidence_mapping:\n  AC2: \"foreign ${foreign_short}\"" "$report"
     run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" bash "$GATE" "$report"
     echo "$output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK(cmd_3264-AC2)"* ]]
+}
+
+@test "T-AC2-7: abbreviated owned commit with overlapping dirty hunk remains blocked" {
+    local repo="$REPO_TMPDIR_BATS/multicommit_short_overlap_repo"
+    local report="$repo/reports/testninja_report_cmd_multi.yaml"
+    mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs" "$repo/context"
+    _init_fixture_repo "$repo"
+    printf 'one\ntwo\n' > "$repo/context/shared.txt"
+    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m "test-fixture(tests/test_gate_report_format.bats): seed"
+    sed -i 's/^one$/one owned/' "$repo/context/shared.txt"
+    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m 'cmd_multi: first scoped commit'
+    local first_hash; first_hash=$(git -C "$repo" rev-parse HEAD)
+    printf 'final\n' > "$repo/final.txt"
+    git -C "$repo" add final.txt && git -C "$repo" commit -q -m 'cmd_multi: final scoped commit'
+    local final_hash; final_hash=$(git -C "$repo" rev-parse HEAD)
+    sed -i 's/^one owned$/one dirty overlap/' "$repo/context/shared.txt"
+    printf 'task:\n  status: in_progress\n  target_path: context/shared.txt\n' > "$repo/queue/tasks/testninja.yaml"
+    _write_ac3_report "$report" "$final_hash"
+    sed -i 's/path: shared.txt/path: context\/shared.txt/' "$report"
+    local first_short="${first_hash:0:8}"
+    sed -i "s/parent_cmd: cmd_test/parent_cmd: cmd_multi/; /summary: \"test summary\"/a\\ac_evidence_mapping:\n  AC2: \"task commit ${first_short}\"" "$report"
+    run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" bash "$GATE" "$report"
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK(cmd_3264-AC2)"* ]]
 }

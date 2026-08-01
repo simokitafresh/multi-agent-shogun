@@ -360,17 +360,25 @@ if not re.fullmatch(r"[0-9a-f]{40}", commit_hash):
 # additional hashes only when their commit subject proves task ownership.
 parent_cmd = str(report.get("parent_cmd") or "").strip()
 task_id = str(report.get("task_id") or "").strip()
-identity_text = "\n".join((
-    str((report.get("result") or {}).get("summary") or "") if isinstance(report.get("result"), dict) else "",
-    str((report.get("result") or {}).get("details") or "") if isinstance(report.get("result"), dict) else "",
-))
+def scalar_texts(value):
+    if isinstance(value, dict):
+        for child in value.values():
+            yield from scalar_texts(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from scalar_texts(child)
+    elif value is not None:
+        yield str(value)
+
+identity_text = "\n".join(scalar_texts(report))
 owned_commits = [commit_hash]
-for candidate in re.findall(r"(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])", identity_text):
-    if candidate in owned_commits:
+for candidate in re.findall(r"(?<![0-9a-f])[0-9a-f]{7,40}(?![0-9a-f])", identity_text):
+    resolved = run_git(["rev-parse", "--verify", f"{candidate}^{{commit}}"]).strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", resolved) or resolved in owned_commits:
         continue
-    subject = run_git(["show", "-s", "--format=%s", candidate]).strip()
+    subject = run_git(["show", "-s", "--format=%s", resolved]).strip()
     if subject and ((parent_cmd and parent_cmd in subject) or (task_id and task_id in subject)):
-        owned_commits.append(candidate)
+        owned_commits.append(resolved)
 
 changed_files = set()
 for owned in owned_commits:
