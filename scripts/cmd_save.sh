@@ -4014,6 +4014,44 @@ if ! validate_queue_yaml_syntax; then
     BLOCK_REASONS+=("yaml_syntax_error")
 fi
 
+# --- Check 0.95: typed creator generation receipt 3/3 consistency ---
+# Legacy commands without schema_version remain governed by the frozen 82 checks.
+# Typed entries are accepted only when queue payload, embedded receipt and the
+# committed ledger record agree byte-for-byte on the cryptographic identity.
+if ! python3 - "$QUEUE_FILE" "${CMD_GENERATION_LEDGER_FILE:-$PROJECT_DIR/queue/cmd_generation_receipts.jsonl}" "$CMD_ID" <<'PY'
+import hashlib,json,sys,yaml
+from pathlib import Path
+q,l,cmd=Path(sys.argv[1]),Path(sys.argv[2]),sys.argv[3]
+d=yaml.safe_load(q.read_text()) or {}; entry=(d.get('commands') or {}).get(cmd)
+if not isinstance(entry,dict) or 'schema_version' not in entry: raise SystemExit(0)
+r=entry.get('generation_receipt')
+if not isinstance(r,dict): print('BLOCK: generation_receipt missing',file=sys.stderr); raise SystemExit(1)
+latest={}
+if l.exists():
+  for line in l.read_text().splitlines():
+    if line.strip():
+      x=json.loads(line); latest[x['identity']]=x
+lr=latest.get(r.get('identity'))
+payload={k:v for k,v in entry.items() if k not in ('status','schema_version','generation_receipt')}
+ps=hashlib.sha256(json.dumps(payload,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+raw=json.dumps([r.get('schema_version'),r.get('reserved_cmd_id'),ps,r.get('baseline_sha'),r.get('writer_version')],separators=(',',':'))
+ident=hashlib.sha256(raw.encode()).hexdigest()
+ok=(r.get('state')=='committed' and lr and lr.get('state')=='committed' and
+    r.get('reserved_cmd_id')==cmd and r.get('canonical_payload_sha256')==ps and
+    ident==r.get('identity') and all(lr.get(k)==r.get(k) for k in
+    ('schema_version','reserved_cmd_id','canonical_payload_sha256','baseline_sha','writer_version','identity')))
+if not ok: print('BLOCK: generation_receipt queue/embedded/ledger consistency is not 3/3',file=sys.stderr)
+raise SystemExit(0 if ok else 1)
+PY
+then
+    BLOCK_REASONS+=("generation_receipt_inconsistent")
+fi
+if [[ "${CMD_SAVE_RECEIPT_ONLY:-0}" == "1" ]]; then
+    if (( ${#BLOCK_REASONS[@]} > 0 )); then exit 1; fi
+    echo "PASS: generation_receipt queue/embedded/ledger consistency 3/3"
+    exit 0
+fi
+
 # --- Check 1: cmdブロック存在確認 ---
 check_cmd_block_presence_warn
 

@@ -27,6 +27,136 @@ LAST_CMD_FILE="${CMD_SKELETON_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd
 RESERVATION_FILE="${CMD_SKELETON_RESERVATION_FILE:-$PROJECT_DIR/config/cmd_id_reservations.txt}"
 RESERVATION_LOCK="${CMD_SKELETON_RESERVATION_LOCK:-${RESERVATION_FILE}.lock}"
 
+if [[ "${1:-}" == "--create" ]]; then
+    [[ "${2:-}" == "--input" && -n "${3:-}" && $# -eq 3 ]] || {
+        echo "Usage: bash scripts/cmd_skeleton.sh --create --input <typed.yaml|json>" >&2
+        exit 2
+    }
+    INPUT_FILE="$3"
+    LEDGER_FILE="${CMD_SKELETON_LEDGER_FILE:-$PROJECT_DIR/queue/cmd_generation_receipts.jsonl}"
+    INVENTORY_FILE="${CMD_SKELETON_INVENTORY_FILE:-$PROJECT_DIR/docs/research/cmd-save-check-inventory-v1.yaml}"
+    # Every writer of shogun_to_karo.yaml uses the lock identity derived from
+    # that file, never a writer-private lock.
+    source "$PROJECT_DIR/scripts/lib/lock_path.sh"
+    COMMON_LOCK="$(lock_path "$(realpath -m "$QUEUE_FILE")")"
+    mkdir -p "$(dirname "$LEDGER_FILE")" "$(dirname "$COMMON_LOCK")"
+    exec 8>>"$COMMON_LOCK"
+    flock -x 8
+    python3 - "$QUEUE_FILE" "$LEDGER_FILE" "$INVENTORY_FILE" "$INPUT_FILE" <<'PY'
+import hashlib, json, os, re, sys, tempfile
+from pathlib import Path
+import yaml
+
+queue, ledger, inventory, input_path = map(Path, sys.argv[1:])
+SCHEMA_VERSION = 1
+WRITER_VERSION = "cmd_skeleton-v1"
+CRASH_AT = os.environ.get("CMD_SKELETON_CRASH_AT", "")
+def crash(point):
+    if CRASH_AT == point:
+        os._exit(97)
+
+def atomic_write(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=path.name + ".", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(data); fh.flush(); os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp): os.unlink(tmp)
+
+def ledger_append(record):
+    old = ledger.read_text(encoding="utf-8") if ledger.exists() else ""
+    atomic_write(ledger, old + json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+
+def load_ledger():
+    out = {}
+    if ledger.exists():
+        for line in ledger.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                r=json.loads(line); out[r["identity"]]=r
+    return out
+
+def reconcile():
+    text=queue.read_text(encoding="utf-8") if queue.exists() else "commands:\n"
+    latest=load_ledger()
+    changed=False
+    for ident, rec in list(latest.items()):
+        if rec.get("state") not in ("prepared", "committed"): continue
+        pid=rec["reserved_cmd_id"]
+        marker=f"  prepared_{pid}: "
+        line=next((x for x in text.splitlines() if x.startswith(marker)), None)
+        if line:
+            obj=json.loads(line[len(marker):])
+            if obj.get("generation_receipt",{}).get("identity")==ident:
+                if rec.get("state") == "prepared":
+                    ledger_append({**rec,"state":"committed"})
+                obj["generation_receipt"]["state"]="committed"
+                text=text.replace(line, f"  {pid}: "+json.dumps(obj,ensure_ascii=False,sort_keys=True,separators=(",",":")),1)
+                atomic_write(queue,text if text.endswith("\n") else text+"\n")
+                changed=True; continue
+        if rec.get("state") == "prepared":
+            ledger_append({**rec,"state":"aborted"})
+    return changed
+
+reconcile()
+try:
+    payload=yaml.safe_load(input_path.read_text(encoding="utf-8"))
+except Exception as exc:
+    raise SystemExit(f"BLOCK: typed input parse failed: {exc}")
+if not isinstance(payload,dict): raise SystemExit("BLOCK: typed input must be a mapping")
+scalar_str=("title","project","purpose","command","depends_on")
+for key in scalar_str:
+    if not isinstance(payload.get(key),str) or not payload[key].strip():
+        raise SystemExit(f"BLOCK: {key} must be a non-empty string")
+for key in ("timeout_minutes","estimated_minutes"):
+    if not isinstance(payload.get(key),int) or isinstance(payload.get(key),bool) or payload[key] <= 0:
+        raise SystemExit(f"BLOCK: {key} must be a positive integer")
+acs=payload.get("acceptance_criteria")
+if not isinstance(acs,list) or not acs: raise SystemExit("BLOCK: acceptance_criteria must be a non-empty list")
+seen=set()
+for i,ac in enumerate(acs):
+    if not isinstance(ac,dict) or set(("id","description","binary_check"))-set(ac):
+        raise SystemExit(f"BLOCK: acceptance_criteria[{i}] requires id/description/binary_check")
+    if any(not isinstance(ac[k],str) or not ac[k].strip() for k in ("id","description","binary_check")):
+        raise SystemExit(f"BLOCK: acceptance_criteria[{i}] fields must be non-empty strings")
+    if ac["id"] in seen: raise SystemExit(f"BLOCK: duplicate AC id: {ac['id']}")
+    seen.add(ac["id"])
+if not isinstance(payload.get("quality_gate"),dict) or not payload["quality_gate"]:
+    raise SystemExit("BLOCK: quality_gate must be a non-empty mapping")
+
+inv=yaml.safe_load(inventory.read_text(encoding="utf-8"))
+baseline=inv["baseline_sha"]
+text=queue.read_text(encoding="utf-8") if queue.exists() else "commands:\n"
+ids=[int(x) for x in re.findall(r'^  (?:prepared_)?cmd_(\d+):',text,re.M)]
+reserved=f"cmd_{max(ids,default=0)+1}"
+canonical=json.dumps(payload,ensure_ascii=False,sort_keys=True,separators=(",",":"))
+payload_sha=hashlib.sha256(canonical.encode()).hexdigest()
+identity_input=json.dumps([SCHEMA_VERSION,reserved,payload_sha,baseline,WRITER_VERSION],separators=(",",":"))
+identity=hashlib.sha256(identity_input.encode()).hexdigest()
+receipt={"schema_version":SCHEMA_VERSION,"reserved_cmd_id":reserved,"canonical_payload_sha256":payload_sha,
+         "baseline_sha":baseline,"writer_version":WRITER_VERSION,"identity":identity,"state":"prepared"}
+record={**receipt,"state":"prepared"}
+crash("intent_before")
+ledger_append(record)
+crash("ledger_prepared_after")
+entry=dict(payload); entry["status"]="draft"; entry["schema_version"]=SCHEMA_VERSION; entry["generation_receipt"]=receipt
+prepared=f"  prepared_{reserved}: "+json.dumps(entry,ensure_ascii=False,sort_keys=True,separators=(",",":"))+"\n"
+atomic_write(queue,(text if text.endswith("\n") else text+"\n")+prepared)
+crash("queue_append_after")
+crash("ledger_commit_before")
+ledger_append({**record,"state":"committed"})
+crash("ledger_commit_after")
+entry["generation_receipt"]["state"]="committed"
+final=f"  {reserved}: "+json.dumps(entry,ensure_ascii=False,sort_keys=True,separators=(",",":"))
+qtext=queue.read_text(encoding="utf-8").replace(prepared.rstrip("\n"),final,1)
+atomic_write(queue,qtext if qtext.endswith("\n") else qtext+"\n")
+print(reserved)
+print(identity)
+PY
+    exit $?
+fi
+
 TITLE="${1:-FILL_THIS: タイトル(パリティ/新規作成/new_fileの語を含めるな=偽陽性トリガー)}"
 PROJECT="${2:-FILL_THIS_project}"
 
