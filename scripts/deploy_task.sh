@@ -11266,6 +11266,37 @@ should_skip_same_cmd_resolve() {
     return 0
 }
 
+deploy_task_direct_formal_rc_refresh_report() {
+    local task_file="$1"
+    local requested_cmd="$2"
+    local ninja_name="$3"
+    local source_file="${4:-}"
+    local current_parent source_parent report_path report_filename
+
+    [ "${DIRECT_MODE:-false}" = true ] || return 1
+    [ -f "$task_file" ] || return 1
+    [ -f "$source_file" ] || return 1
+    [ -n "$requested_cmd" ] || return 1
+
+    current_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    source_parent=$(FIELD_GET_NO_LOG=1 field_get "$source_file" "parent_cmd" "" 2>/dev/null || true)
+    [ "$current_parent" = "$requested_cmd" ] || return 1
+    [ "$source_parent" = "$requested_cmd" ] || return 1
+
+    report_path=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_path" "" 2>/dev/null || true)
+    report_filename=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_filename" "" 2>/dev/null || true)
+    if [ -z "$report_path" ] && [ -n "$report_filename" ]; then
+        report_path="queue/reports/$report_filename"
+    fi
+    [ -n "$report_path" ] || report_path="queue/reports/${ninja_name}_report_${requested_cmd}.yaml"
+    [[ "$report_path" = /* ]] || report_path="$SCRIPT_DIR/$report_path"
+    [ -f "$report_path" ] || return 1
+
+    deploy_task_has_formal_karo_rc_for_report \
+        "$requested_cmd" "$ninja_name" "$report_path" "$task_file" || return 1
+    printf '%s\n' "$report_path"
+}
+
 inject_done_redeploy_hints() {
     local task_file="$1"
     local report_path report_filename existing_desc note
@@ -12452,7 +12483,18 @@ except Exception:
         fi
         export _DEPLOY_PREV_SESSION_STATE
         export _DEPLOY_PREV_PARENT_CMD
-        if should_skip_same_cmd_resolve "$task_yaml" "$CMD_ID" "$NINJA_NAME"; then
+        _DEPLOY_FORMAL_RC_REFRESH_REPORT=""
+        if [ "$DIRECT_MODE" = true ] && [ -n "$YAML_FILE" ]; then
+            _DEPLOY_FORMAL_RC_REFRESH_REPORT=$(deploy_task_direct_formal_rc_refresh_report \
+                "$task_yaml" "$CMD_ID" "$NINJA_NAME" "$YAML_FILE" 2>/dev/null || true)
+        fi
+        _DEPLOY_SKIP_SAME_CMD_RESOLVE=0
+        if [ -z "$_DEPLOY_FORMAL_RC_REFRESH_REPORT" ]; then
+            if should_skip_same_cmd_resolve "$task_yaml" "$CMD_ID" "$NINJA_NAME"; then
+                _DEPLOY_SKIP_SAME_CMD_RESOLVE=1
+            fi
+        fi
+        if [ "$_DEPLOY_SKIP_SAME_CMD_RESOLVE" = "1" ]; then
             _DEPLOY_PREV_PARENT_CMD="$CMD_ID"
             _DEPLOY_SAME_CMD_REDEPLOY=1
             # The reused task already passed reset_stale_fields during the first
@@ -12492,6 +12534,14 @@ except Exception:
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }
+                if [ -n "${_DEPLOY_FORMAL_RC_REFRESH_REPORT:-}" ]; then
+                    # The transaction already captured both generations. Remove
+                    # the reviewed revision only after every source precheck has
+                    # passed so report publication mints a fresh, unsubmitted
+                    # template bound to the incoming contract.
+                    rm -f -- "$_DEPLOY_FORMAL_RC_REFRESH_REPORT"
+                    log "formal_karo_rc_refresh: authoritative source accepted; old report reset ($(basename "$_DEPLOY_FORMAL_RC_REFRESH_REPORT"))"
+                fi
             elif [ "$DIRECT_MODE" != true ]; then
                 local cmd_source_file
                 cmd_source_file=$(resolve_cmd_source_path "$CMD_ID") || {
