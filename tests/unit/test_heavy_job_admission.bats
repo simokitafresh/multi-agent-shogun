@@ -42,12 +42,22 @@ _wait_for_waiter_count() {
     done
 }
 
+_wait_for_owner_lock() {
+    local attempts=0
+    while flock -n "$SHOGUN_HEAVY_JOB_LOCK_FILE" true 2>/dev/null; do
+        attempts=$((attempts + 1))
+        [ "$attempts" -lt 200 ] || return 1
+        sleep 0.01
+    done
+}
+
 @test "CI waiterは先に待つnormal waiterを明示priorityで追い越す" {
     _install_empty_ps
     export SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS=1
     release="$TMP/release-owner"
     bash "$WRAPPER" -- bash -c 'while [ ! -e "$1" ]; do sleep 0.01; done' _ "$release" &
     owner=$!
+    _wait_for_owner_lock
     SHOGUN_HEAVY_JOB_PRIORITY=normal bash "$WRAPPER" -- bash -c 'echo normal >>"$1"' _ "$OUT" &
     normal=$!
     SHOGUN_HEAVY_JOB_PRIORITY=ci bash "$WRAPPER" -- bash -c 'echo ci >>"$1"' _ "$OUT" &
@@ -65,6 +75,7 @@ _wait_for_waiter_count() {
     release="$TMP/release-owner"
     bash "$WRAPPER" -- bash -c 'while [ ! -e "$1" ]; do sleep 0.01; done' _ "$release" &
     owner=$!
+    _wait_for_owner_lock
     for n in 1 2 3; do
         SHOGUN_HEAVY_JOB_PRIORITY=normal bash "$WRAPPER" -- bash -c \
             'v=$(cat "$1" 2>/dev/null || echo 0); v=$((v+1)); echo "$v" >"$1"; echo "$2:$v" >>"$3"; sleep 0.1; echo 0 >"$1"' \

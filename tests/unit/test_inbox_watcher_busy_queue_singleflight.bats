@@ -82,3 +82,34 @@ printf "unread=%s\n" "$(grep -c "read: false" "$INBOX")"
     [ "$status" -eq 0 ]
     [ "$output" -ge 2 ]
 }
+
+@test "忍者の報告到着と調査結果はhigh priorityでdebounceを迂回する" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+tmp="$(mktemp -d)"
+trap "rm -rf \"$tmp\"" EXIT
+mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/state"
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh; do
+  ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"
+done
+ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
+ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
+cat > "$tmp/root/queue/inbox/fixture.yaml" <<YAML
+messages:
+- id: msg_report
+  type: report_received
+  read: false
+  content: report
+- id: msg_investigation
+  type: investigation_result
+  read: false
+  content: investigation
+YAML
+export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
+source "$tmp/root/scripts/inbox_watcher.sh" fixture dummy-pane
+get_unread_info
+' 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'\thigh\t'* ]]
+}

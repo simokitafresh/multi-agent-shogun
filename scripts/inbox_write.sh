@@ -2823,22 +2823,17 @@ while [ $attempt -lt $max_attempts ]; do
             record_inbox_event_to_memory_db >/dev/null 2>&1 &
         fi
 
-        # A ninja completion is a durable lifecycle event, but Karo cannot act
-        # on it until Gunshi has reviewed the exact report generation.  Leaving
-        # the parent event unread while dispatching the child in background
-        # woke Karo once before review and again after LGTM.  Preserve the
-        # parent-first ordering, synchronously persist the fingerprint-bound
-        # review child, then acknowledge only this exact parent message.  If
-        # child persistence fails the parent deliberately stays unread so the
-        # failure remains visible and retryable.
+        # A ninja completion and its Gunshi review are separate actionable
+        # events. Keep the durable parent unread so Karo sees the report arrival
+        # immediately and can prepare in parallel with review. The former
+        # auto-ack hid the parent until the review result arrived (92s observed).
+        # If child persistence fails the parent also remains visible/retryable.
         INBOX_REVIEW_CHILD_DELIVERED=0
         if [ "$TARGET" = "karo" ] && inbox_type_triggers_report_completion "$TYPE" \
            && [ -n "${_structured_candidate:-}" ] && [ -f "$_structured_candidate" ] \
            && [ -n "${STRUCTURED_PARENT_CMD:-}" ]; then
             if inbox_deliver_report_review_generation "$FROM" "$_structured_candidate" \
                 "$STRUCTURED_PARENT_CMD" "$STRUCTURED_REPORT_FINGERPRINT"; then
-                INBOX_MARK_READ_ROOT_OVERRIDE="$SCRIPT_DIR" \
-                    bash "$INBOX_WRITE_INSTALL_ROOT/scripts/inbox_mark_read.sh" karo "$MSG_ID" >/dev/null
                 INBOX_REVIEW_CHILD_DELIVERED=1
             else
                 echo "[inbox_write] WARN: review child persistence failed; parent remains unread: id=$MSG_ID" >&2

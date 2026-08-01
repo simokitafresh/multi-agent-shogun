@@ -1028,9 +1028,9 @@ _wait_for_file() {
 
     # Verify message was delivered to inbox
     [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
-    # The durable parent is acknowledged only after the fingerprint-bound
-    # Gunshi child exists, so Karo is not interrupted before review readiness.
-    grep -q "^  read: true" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    # Report arrival and review completion are separate events: keep the
+    # durable parent unread so Karo can prepare while Gunshi reviews in parallel.
+    grep -q "^  read: false" "$TEST_TMPDIR/queue/inbox/karo.yaml"
     [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
     grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     [ ! -s "$TEST_TMPDIR/queue/retro/pending.yaml" ]
@@ -1362,7 +1362,7 @@ YAML
     grep -q "^  from: 'karo'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "cmd_test_001" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "testninja" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
-
+    grep -B5 "type: 'report_received'" "$TEST_TMPDIR/queue/inbox/karo.yaml" | grep -q "read: false"
 }
 
 @test "report_received: report's own parent_cmd wins over task YAML's redeployed parent_cmd (race, LS078/cmd_4163)" {
