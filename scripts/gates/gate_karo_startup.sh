@@ -2554,6 +2554,11 @@ for _skill_static_spec in \
     if [ "$_skill_static_rc" -eq 0 ]; then
         echo "    PASS: ${_skill_static_label}: ${_skill_static_summary}"
     elif [ "$_skill_static_rc" -eq 2 ]; then
+        if printf '%s\n' "$_skill_static_output" | grep -q '^FOLLOWUP_COVERS_REVIEW_REQUIRED: yes$'; then
+            echo "    WARN: ${_skill_static_label}: ${_skill_static_summary} (followup routed; duplicate escalation suppressed)"
+            if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+            continue
+        fi
         echo "    WARN: ${_skill_static_label}: ${_skill_static_summary}"
         if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
         alerts+=("スキル静的品質WARN: ${_skill_static_name}")

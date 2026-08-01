@@ -1,11 +1,21 @@
 #!/usr/bin/env bats
-# test_necessity: result-determining input changes must invalidate the TTL cache, while implementation-only changes must not become interface WARNs.
+# test_necessity: result-determining input changes must invalidate the TTL cache, implementation-only changes must not become interface WARNs, and an unresolved deduplicated contract change must remain review-required until verified.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   FIXTURE="$(mktemp -d)"
   mkdir -p "$FIXTURE/scripts" "$FIXTURE/skills/demo" "$FIXTURE/logs"
   cp "$REPO_ROOT/scripts/gates/gate_skill_script_refs.sh" "$FIXTURE/gate.sh"
+  cat > "$FIXTURE/scripts/insight_write.sh" <<'EOF'
+#!/usr/bin/env bash
+receipt="$(cd "$(dirname "$0")/.." && pwd)/logs/followup.receipt"
+if [[ -f "$receipt" ]]; then
+  printf 'SKIP:%s\n' "$(<"$receipt")"
+else
+  printf 'INS-fixture-followup\n' | tee "$receipt"
+fi
+EOF
+  chmod +x "$FIXTURE/scripts/insight_write.sh"
   cat > "$FIXTURE/scripts/demo.sh" <<'EOF'
 #!/usr/bin/env bash
 # Usage: demo.sh [--name VALUE]
@@ -43,14 +53,17 @@ establish_verified() {
   [[ "$output" == *"総合判定: PASS"* ]]
 }
 
-@test "usage interface change produces exactly one WARN" {
+@test "usage interface change stays review-required after followup deduplication" {
   establish_verified
   sed -i 's/--name VALUE/--name VALUE --force/' "$FIXTURE/scripts/demo.sh"
   run_gate; [ "$status" -eq 2 ]
   [ "$(grep -c 'WARN: .*demo.sh' <<<"$output")" -eq 1 ]
-  run_gate; [ "$status" -eq 0 ]
+  run_gate; [ "$status" -eq 2 ]
   [ "$(grep -c 'WARN: .*demo.sh' <<<"$output")" -eq 0 ]
   [[ "$output" == *"required=0, deduped=1"* ]]
+  [[ "$output" == *"FOLLOWUP_ACTIVE: pairs=1 route=insight->reflux"* ]]
+  [[ "$output" == *"FOLLOWUP_COVERS_REVIEW_REQUIRED: yes"* ]]
+  [[ "$output" == *"総合判定: REVIEW_REQUIRED"* ]]
 }
 
 @test "non-max SKILL and verified state changes invalidate TTL cache" {

@@ -536,6 +536,7 @@ git_history_paths = sorted(history_path_set)
 missing: list[tuple[str, str, str]] = []
 stale: list[tuple[str, str, str]] = []
 deduped_stale = 0
+pending_stale = []
 missing_example_paths: list[tuple[str, str, str]] = []
 unverified_side_effect_examples: list[str] = []
 total_refs = 0
@@ -612,6 +613,7 @@ for skill_file in skill_files:
                 state_dirty = True
             else:
                 deduped_stale += 1
+                pending_stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
 
 if state_dirty:
     acquire_state_lock()
@@ -627,8 +629,10 @@ if state_dirty:
     fcntl.flock(state_lock.fileno(), fcntl.LOCK_UN)
 
 followup_queued = False
+followup_active = False
 followup_error = ""
-if stale:
+followup_candidates = stale + pending_stale
+if followup_candidates:
     # Connect detection to the existing insight -> reflux auto-deploy lane.
     # Only newly observed contract hashes enter ``stale``; repeated startup
     # scans are suppressed by last_action_contract_sha256 until the referenced
@@ -637,10 +641,10 @@ if stale:
         "SKILL_REF_FOLLOWUP_WRITER", repo_root / "scripts" / "insight_write.sh"
     ))
     if followup_writer.is_file() and os.access(followup_writer, os.X_OK):
-        pairs = [f"{skill} <- {resolved}" for skill, _ref, resolved, *_ in stale]
+        pairs = [f"{skill} <- {resolved}" for skill, _ref, resolved, *_ in followup_candidates]
         digest = hashlib.sha256("\n".join(sorted(pairs)).encode("utf-8")).hexdigest()[:16]
         message = (
-            "SKILL.md追従task: gate_skill_script_refs.sh rc=2。"
+            f"SKILL.md追従task[{digest}]: gate_skill_script_refs.sh rc=2。"
             "以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: "
             + "; ".join(pairs)
         )
@@ -651,8 +655,10 @@ if stale:
             capture_output=True,
             check=False,
         )
-        followup_queued = result.returncode == 0
-        if not followup_queued:
+        followup_receipt = (result.stdout or "").strip().splitlines()[0] if result.returncode == 0 and (result.stdout or "").strip() else ""
+        followup_queued = followup_receipt.startswith("INS-")
+        followup_active = followup_receipt.startswith("SKIP:INS-")
+        if not (followup_queued or followup_active):
             followup_error = (result.stderr or result.stdout).strip()[:300]
     else:
         followup_error = f"writer unavailable: {followup_writer}"
@@ -663,13 +669,15 @@ print(
     f"参照あり {skills_with_refs}件 / roots={','.join(str(p.relative_to(repo_root)) if p.is_relative_to(repo_root) else str(p) for p in scan_roots)}"
 )
 print(f"契約hash action: required={actions_required}, deduped={deduped_stale}")
-if stale:
+if followup_candidates:
     if followup_queued:
-        print(f"FOLLOWUP_QUEUED: pairs={len(stale)} route=insight->reflux")
+        print(f"FOLLOWUP_QUEUED: pairs={len(followup_candidates)} route=insight->reflux")
+    elif followup_active:
+        print(f"FOLLOWUP_ACTIVE: pairs={len(followup_candidates)} route=insight->reflux")
     else:
-        print(f"FOLLOWUP_QUEUE_WARN: pairs={len(stale)} {followup_error}")
-elif deduped_stale:
-    print(f"FOLLOWUP_SUPPRESSED: pending_pairs={deduped_stale}")
+        print(f"FOLLOWUP_QUEUE_WARN: pairs={len(followup_candidates)} {followup_error}")
+    if (followup_queued or followup_active) and not (missing or missing_example_paths or unverified_side_effect_examples):
+        print("FOLLOWUP_COVERS_REVIEW_REQUIRED: yes")
 
 if state_corrupt:
     print(f"BLOCK: contract hash state is corrupt: {hash_state_path}")
@@ -710,11 +718,11 @@ if unverified_side_effect_examples:
 else:
     print("OK: 宣言済み副作用例示に日時つき実走検証マーカーあり")
 
-if missing or stale or missing_example_paths or unverified_side_effect_examples:
+if missing or stale or deduped_stale or missing_example_paths or unverified_side_effect_examples:
     fire_log = Path(os.environ.get("GATE_FIRE_LOG_FILE", repo_root / "logs/gate_fire_log.yaml"))
     fire_log.parent.mkdir(parents=True, exist_ok=True)
     reasons = (
-        f"missing={len(missing)},stale={len(stale)},"
+        f"missing={len(missing)},stale={len(stale)},pending={deduped_stale},"
         f"example_path_missing={len(missing_example_paths)},"
         f"side_effect_marker_missing={len(unverified_side_effect_examples)}"
     )
