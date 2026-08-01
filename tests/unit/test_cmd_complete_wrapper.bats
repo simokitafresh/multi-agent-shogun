@@ -45,6 +45,36 @@ SH
     [ ! -e "$CMD_COMPLETE_TEST_LOG" ] || ! grep -q '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG"
 }
 
+# test_necessity: the detached tail must outlive its public parent and complete all ordered terminal side effects.
+# regression_justification: cmd_4209 observed QUEUED followed by process0/log0byte because the child was not nohup-detached.
+@test "detached completion tail survives parent exit and finishes dashboard ntfy and inbox archive" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/durable-tail.log"
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"QUEUED completion_tail"* ]]
+
+    local i checkpoint="$FIXTURE/queue/gates/cmd_fixture/completion_checkpoint.json"
+    for i in $(seq 1 100); do
+        python3 - "$checkpoint" <<'PY' 2>/dev/null && break
+import json, sys
+completed = json.load(open(sys.argv[1], encoding='utf-8'))['completed']
+raise SystemExit(0 if completed[-3:] == ['dashboard', 'ntfy', 'inbox_archive'] else 1)
+PY
+        sleep 0.05
+    done
+    grep -q '^dashboard_update.sh|cmd_fixture ' "$CMD_COMPLETE_TEST_LOG"
+    grep -q '^ntfy_cmd.sh|cmd_fixture 完了$' "$CMD_COMPLETE_TEST_LOG"
+    grep -q '^inbox_archive.sh|karo$' "$CMD_COMPLETE_TEST_LOG"
+    run python3 - "$checkpoint" <<'PY'
+import json, sys
+completed = json.load(open(sys.argv[1], encoding='utf-8'))['completed']
+assert completed[-3:] == ['dashboard', 'ntfy', 'inbox_archive'], completed
+PY
+    [ "$status" -eq 0 ]
+}
+
 # test_necessity: all known slow/failing tail variants must remain outside the public caller while the worker preserves checkpoints.
 @test "five tail latency variants return from public caller below five seconds" {
     unset CMD_COMPLETE_SYNC_TAIL

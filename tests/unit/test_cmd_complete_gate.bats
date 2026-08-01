@@ -4495,3 +4495,22 @@ run_commit_repo_resolution() {
     [ "$status" -eq 0 ]
     [[ "$output" == "BLOCK: report commit"* ]]
 }
+
+# test_necessity: archive publication must use a session-independent worker and a command-correlated failure log.
+# regression_justification: cmd_4209 observed the background archive die after stk-trim with process0 and archive.done0.
+@test "archive worker is durably detached with null stdin and command-correlated log" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
+start = text.index('echo "Archive (post-GATE CLEAR):"')
+end = text.index('echo "Task idle transition: queued (async)"', start)
+block = text[start:end]
+assert 'nohup setsid env SHOGUN_COMPLETION_GENERATION=' in block
+assert '</dev/null >>"$_archive_worker_log" 2>&1 &' in block
+assert '_archive_worker_log="$GATES_DIR/archive_worker.log"' in block
+assert 'archive_completed.sh" "$CMD_ID"' in block
+print('durable_archive_worker=1 correlated_log=1 null_stdin=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "durable_archive_worker=1 correlated_log=1 null_stdin=1" ]
+}

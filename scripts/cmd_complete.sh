@@ -327,7 +327,7 @@ fi
 if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
     && [[ "${CMD_COMPLETE_ASYNC_TAIL_WORKER:-0}" != "1" ]]; then
     _tail_log="$CHECKPOINT_DIR/completion_tail.log"
-    setsid env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
+    nohup setsid env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
         CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
         bash "$SCRIPT_DIR/cmd_complete.sh" "$CMD_ID" "$BUNDLE_PATH" \
         </dev/null >>"$_tail_log" 2>&1 9>&- &

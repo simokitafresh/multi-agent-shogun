@@ -9973,10 +9973,11 @@ PYEOF
     echo ""
     echo "Archive (post-GATE CLEAR):"
     if [ ! -f "$GATES_DIR/archive.done" ]; then
-        (SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
-            bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
-            || echo "  [INFO] archive: WARN (failed, non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
-        echo "  archive: queued (async)"
+        _archive_worker_log="$GATES_DIR/archive_worker.log"
+        nohup setsid env SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
+            bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" \
+            </dev/null >>"$_archive_worker_log" 2>&1 &
+        echo "  archive: queued (durable pid=$! log=$_archive_worker_log)"
     else
         echo "  archive: already exists (skip)"
     fi
