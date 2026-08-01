@@ -467,6 +467,7 @@ Rolling Returns summary tableは`3_months`/`6_months`/`1_year`/`2_years`/`3_year
 | L631 | TRF insufficient_candidatesパス(len<2)でcurrent_tickers=set()するな。単独ティッカー通過不能バグ。dict.get→bisect修正と同根(cmd_1899) | cmd_1899 |
 | L635 | Signal DELETEを外すならFoF deferred flushもUPSERTへ切り替える必要あり | cmd_2021 |
 | L669 | GS monthly_returnはopen-to-open系列。本番monthly_return(close)と混同するな | cmd_2376 |
+| L921 | open-to-open全月パリティはbootstrap(初月return=0/holding=None)とlive MTD(latest-open)を独立境界として実装する | cmd_4198 |
 | L670 | Oikaze GS: production first_signal_monthまで初期EqualWeightを再現する | cmd_2379 |
 | L694 | pipeline_config内側top_nとPortfolio直下top_nは別経路。分離検証必須 | cmd_2443 |
 | L696 | FoF登録ではPortfolio直下top_nを構成数に使うな(直下top_n=1固定+pipeline_config内側のみ) | cmd_2444 |

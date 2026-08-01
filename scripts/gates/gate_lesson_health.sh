@@ -536,6 +536,17 @@ check_lesson_effectiveness() {
                 useful += (lid in lesson_useful) ? lesson_useful[lid] : 0
             }
             printf "%d\t%d\t%d\t%d\n", referenced+0, injected+0, useful+0, total_feedback+0
+            # not-useful内訳: useful率ALERT時に手動集計せず淘汰/scope絞り対象IDへ直行できるようにする
+            breakdown = ""
+            for (lid in lesson_total) {
+                nu = lesson_total[lid] - ((lid in lesson_useful) ? lesson_useful[lid] : 0)
+                if (nu >= 2) {
+                    n = split(lid, parts, SUBSEP)
+                    label = (n >= 2) ? parts[1] ":" parts[2] : lid
+                    breakdown = breakdown label "=" nu " "
+                }
+            }
+            if (breakdown != "") printf "BREAKDOWN\t%s\n", breakdown
         }
     ' "$LESSON_IMPACT_FILE")
     rm -f "$mature_file"
@@ -543,6 +554,8 @@ check_lesson_effectiveness() {
 
     local referenced_count=0 injected_count=0 useful_count=0 total_feedback_count=0
     IFS=$'\t' read -r referenced_count injected_count useful_count total_feedback_count <<< "$metric"
+    local notuseful_breakdown
+    notuseful_breakdown=$(printf '%s\n' "$metric" | awk -F'\t' '$1 == "BREAKDOWN" { print $2 }')
 
     # 高速化: float比較4回のawk呼び出しを1回に統合
     local threshold_status rate useful_rate
@@ -564,6 +577,9 @@ check_lesson_effectiveness() {
 
     echo "INFO: 教訓効果率(直近${window_cmds}cmd): ${referenced_count}/${injected_count} = ${rate}%"
     echo "INFO: useful率(直近${window_cmds}cmd): ${useful_count}/${total_feedback_count} = ${useful_rate}%"
+    if [ -n "$notuseful_breakdown" ]; then
+        echo "INFO: not-useful内訳(2件以上): ${notuseful_breakdown}"
+    fi
     echo "METRIC: lesson_effectiveness_threshold status=${threshold_status} rate=${rate}% useful_rate=${useful_rate}% window_cmds=${window_cmds} referenced=${referenced_count} injected=${injected_count} useful=${useful_count} total_feedback=${total_feedback_count} scope=${scope}"
 
     write_lesson_effect_status "$threshold_status" "$rate" "$window_cmds" \

@@ -335,10 +335,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L887-L899は振り分け済 2026-07-14 /lesson-sort → research教訓索引(L887:非階層container敵対fixture), ops§76(L888:全量前preflight=既存本文とマージ), ops§32(L891:pytest node id実在収集固定/L899:subprocess ready timeout無条件継続禁止), ops§80(L897:bounded restore launcher貫通試験)。新規PIなし(全て手順・テスト教訓)）
 - （L900/L901→ops§32に振り分け済み 2026-07-16）
 - （L903→ops§9に振り分け済み 2026-07-17）
-- L908: pytest pluginは実行cwdに依存しないroot namespace pathへ固定する（cmd_karo_ci_fix_29913493218_dm_pytest_plugin_import_202607222052）
-- L909: 過去月キー指定とas-of入力切断は別契約（cmd_4140）
-- L918: launcher準備コマンドの引数構成2点がBLOCKを誘発(結合実行/相対パス)（cmd_karo_recon2_signal_change_alert_20260729）
-- L921: open-to-open全月パリティはbootstrapとlive MTDを独立境界として実装する（cmd_4198）
+- （L908/L909/L918/L921は振り分け済 2026-08-01 /lesson-sort → ops§38(L908:pytest plugin root namespace固定), ops§6-7(L909:バックフィルas-of入力切断), ops§32(L918:launcher結合実行/相対パスBLOCK), core§19.2(L921:open-to-open bootstrap/live MTD独立境界)。新規PIなし）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 

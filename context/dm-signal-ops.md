@@ -15,6 +15,7 @@
 - L827: archive由来の複数行復元(FK依存あり)はテーブルごとにdb.flush()を挟まないとFK制約違反になる（cmd_3754）
 - L833: recalculate完了矛盾は経過時間見積り(timing-history平均2000s級)と照合してから切り分けよ。API running確認は複数worker前提で解釈せよ（cmd_karo_recon2_cmd3771_recalc_status_202607081502）
 - L836: recalculate acceptedと完走証跡を分離して判定する（cmd_3771）
+- L909: 履歴バックフィルは保存先year_month変更だけでなくas-of入力切断も必須。過去月キー指定とas-of入力切断は別契約（cmd_4140）
 crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテーブルDB永続化+pg_advisory_lock排他制御(key=8675309, セッション保持方式, fail-open)。SIGKILL時PostgreSQL自動解放。
 cmd_3788: Render `uvicorn --workers 2`下の`/admin/recalculate-status`と`/admin/recalculate-sync`起票ガードをDB SSOT化。最新`recalculation_status.status='running' AND end_time IS NULL`をクロスプロセス真実源にし、他worker実行中は起票時に409を返す。成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3788_recalc_status_db_ssot.md`
 GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_integrity)。zero-signal自動検知WARN+signal COUNT記録。OPT-13(修正)+GP-124(検知)=二重防御。
@@ -663,6 +664,7 @@ import metrics_research_engine as MRE
 - L880: 永続化するset由来の配列は明示sorted()なしでは非決定（cmd_3858）
 - L900: subprocess moduleはpackage名でなくapp-dirで探索根を固定する（cmd_karo_ci_red_dm_p4_uvicorn_import_29328352201）
 - L901: 永続helperはchecked-in source同期後に実行する（cmd_karo_ci_fix_ga256_cmd3907_fof_golden）
+- L918: launcher準備コマンドは削除コマンドとの同一Bash結合実行と相対パス指定を避けよ。両方BLOCK誘発（cmd_karo_recon2_signal_change_alert_20260729）
 
 - L819: PF単位の確定イベント実装はrebalance_trigger等のPF別設定を参照せよ。全PF一律の固定日付/件数はハードコードの温床（cmd_3702）
 - L822: MonthlyTradeCalculatorのMockベースdbテストは新規DB問合せ関数追加のたびに複数クラスへ横展開して壊れる（cmd_3710）
@@ -890,6 +892,7 @@ import metrics_research_engine as MRE
 
 - L789: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能（cmd_3569）
 - L820: check_mixed_format_commit.pyは新規import追加を「並び替え」と誤検知することがある。--no-verifyせず根本原因を修正せよ（cmd_3703）
+- L908: pytest pluginは実行cwdに依存しないroot namespace pathへ固定する（cmd_karo_ci_fix_29913493218_dm_pytest_plugin_import_202607222052）
 
 | 領域 | 結論 | 参照 |
 |------|------|------|
