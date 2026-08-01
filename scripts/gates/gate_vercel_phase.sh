@@ -55,6 +55,32 @@ declare -a RESOLVE_BASES=()
 declare -A FILE_CACHE=()
 FILE_CACHE_READY=false
 
+# cmd_4206: 500行超の既存6ファイルは移行中debtとして固定し、増加だけを
+# fail-closeする。その他（新規を含む）は500行を上限とする。
+declare -A CONTEXT_LINE_DEBT=(
+    [senkyoku-log.md]=1489
+    [dm-signal-ops.md]=1327
+    [training-cycle.md]=1134
+    [dm-signal-research.md]=807
+    [l3-robustness.md]=782
+    [dm-signal-core.md]=642
+)
+
+check_context_line_limits() {
+    local file base count limit
+    local violations=0
+    for file in "$@"; do
+        base="$(basename "$file")"
+        count="$(wc -l < "$file")"
+        limit="${CONTEXT_LINE_DEBT[$base]:-500}"
+        if (( count > limit )); then
+            echo "[ALERT] gate_vercel_phase: line limit exceeded: ${base}=${count} limit=${limit}"
+            violations=$((violations + 1))
+        fi
+    done
+    (( violations == 0 ))
+}
+
 load_external_repos() {
     # config/projects.yaml から当リポ以外の全プロジェクトパスを動的に読む
     local path
@@ -226,6 +252,8 @@ main() {
         echo "[ALERT] gate_vercel_phase: 0 context files scanned"
         return 1
     fi
+
+    check_context_line_limits "${context_files[@]}" || return 1
 
     while IFS=$'\t' read -r context_file line_no raw_ref; do
         [ -n "$context_file" ] || continue

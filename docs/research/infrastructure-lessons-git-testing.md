@@ -1,0 +1,400 @@
+- L666: idle系スクリプトのCACHE_TTLデフォルト2秒はキャッシュ効果がほぼない（cmd_training_L7_v3_tobisaru_6_20260521205341）
+- L667: report_field_setはself_gate_check未知キーを事前BLOCKせよ（cmd_training_L7_v3_saizo_6_20260521205341）
+- L668: insight_write.shのPython2回起動→1回統合: dedup+write+count単一パス化で~12%高速化（cmd_training_L7_v3_hanzo_6_20260521205341）
+- L669: 2ファイル順次write→1ファイル原子writeでcache race condition排除+57%高速化（cmd_training_L7_v3_kotaro_6_20260521205341）
+- L670: 同一ファイルへの複数yaml_field_get呼出しはawk単一パスで置換せよ（cmd_training_L7_v3_kotaro_7_20260521213836）
+- L671: 修行FAIL率計測はreport単位で重複排除せよ（cmd_training_L7_v3_hayate_9_20260521214706）
+- L672: found=true系フィールドは書込み時に必須伴随情報を要求する（cmd_training_L7_v3_saizo_9_20260521214706）
+- L673: bash: grep+awkで同ファイル2回読むパターンはawk単独化で1回に削減可能（cmd_training_L7_v3_hanzo_9_20260521215033）
+- L674: bashスクリプトのself-path解決は$0ではなく${BASH_SOURCE[0]}を使え（cmd_training_L7_v3_tobisaru_9_20260521215529）
+- L675: 同関数内でprintfビルトインを部分使用しているならdate/外部コマンドも同パターンで統一せよ（cmd_training_L7_v3_kotaro_9_20260521215949）
+- L676: 修行target_path自動選択は既存target_pathを上書きしないことを検証せよ（cmd_2950）
+- L677: 二次証跡WARNの部分一致対策は完全一致と非一致の両方をテストせよ（cmd_training_L7_v3_hayate_12_20260521225008）
+- L678: 委任メッセージは非空白文字を必須にする（cmd_training_L7_v3_kagemaru_12_20260521225203）
+- L679: ASCII identifier matching should pin locale at grep call sites（cmd_training_L7_v3_saizo_12_20260521225416）
+- L680: llm_search tmpfile: trapはmktemp前に宣言し空デフォルト付き変数で初期化せよ（cmd_training_L7_v3_kotaro_11_20260521225610）
+- L681: L4修行並列収束: 最高インパクト改善はgit logで先行コミット確認してから着手せよ（cmd_training_L7_v3_tobisaru_11_20260521225928）
+- L682: 同一スクリプトへの並行改善: 先行実装確認後に次手を選択せよ（cmd_training_L7_v3_hanzo_11_20260521225610）
+- L683: WSL2 NTFS I/O削減: ファイル全量catをstat(mtime+size)に置換するパターン（cmd_training_L7_v3_tobisaru_12_20260521231234）
+- L684: 修行ラウンド後検証ACは配備主体と実行主体を分離する（cmd_2953）
+- L685: 自動生成resourcesは最終dry-runで再検出せよ（cmd_2955）
+- L686: 修行taskのparent_cmdがnullならcmd_idをSSOTとして注入前に復元する（cmd_2956）
+- L687: 二重引用のhook文面でバッククォートを使うとコマンド置換が実行される（cmd_2962）
+- L688: lesson_impact_rotateのtmpはTSV同一ディレクトリに作る（cmd_2969）
+- L689: FTS5可否はsqlite3コマンドではなく実行経路で検証する（cmd_2970）
+- L690: cwd非依存スクリプトはscript_dir基準でパス解決せよ（cmd_karo_ci_fix_lord_conv_read）
+- L691: CIでrepo内スクリプトをテストから呼ぶ時はgit実行権限かbash経由を確認する（cmd_karo_ci_fix_lord_conv_read_v2）
+- L692: CIでrepo内スクリプト呼出はgit実行権限かbash経由を確認せよ（cmd_karo_ci_fix_lord_conv_read_v2）
+- L693: doc-dirs投入は品質対象拡張子を事前照合せよ（cmd_3012）
+- L694: 新スクリプト追加時の3点確認(CI RED連鎖防止)（cmd_karo_ci_fix_lord_conv_read_v2）
+- L695: set -e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する（cmd_3027）
+- L696: set-e下でALERT集計script呼出し時は終了値捕捉を明示する（cmd_3027）
+- L697: REQUEST_CHANGESで穴を見つけたら即対処せよ — severity分類で先送りするな（cmd_3027）
+- L698: 裁定抽出はsourceやkeywordよりdirectionを先に絞る（cmd_3028）
+- L699: q12の新規WARN計上は既存cmd_save fixtureを一斉BLOCK化する（cmd_3033_saizo）
+- L700: 新規WARN追加時は段階導入で既存fixture BLOCK化を防げ（cmd_3033_saizo）
+- L701: if条件失敗後のrc取得はelse内で行う（cmd_3047）
+- L702: bash if条件失敗後のrcはelse内で捕捉せよ（cmd_3047）
+- L703: D0 commit前にgit diff --cachedでstaging確認必須（cmd_3045）
+- L704: セマンティック監査エージェントP0報告は全件現物検証必須（cmd_3047）
+- L705: HEAD確認時はcommit statだけで対象実装有無を判断しない（cmd_3048）
+- L706: 動的データ件数をACに固定値で書くと実装時点でズレる（cmd_3049）
+- L707: 動的データ件数をACに固定値で書くな — source count一致で定義せよ（cmd_3049）
+- L708: レビュー結論は現物実行で裏付けよ — 検証なき結論禁止（cmd_3049）
+- L709: FTS5 unicode61はCJK漢字/カタカナで機能しない — ext4 LIKE代替（cmd_3049）
+- L710: AC偽PASS検出 — HITだけでなく正しい概念へのHITかを検証せよ（cmd_3049）
+- L711: 共有repoの自動commitが他忍者のstage済み差分を取り込む（cmd_3050）
+- L712: 共有repo auto-commitが他忍者のstage済みdiffを吸収する — stage→commitを連続区間で完了せよ（cmd_3050）
+- L713: draft reviewでもgit show HEADでAC実装状態を確認せよ — LG001のdraft拡張（cmd_3051）
+- L714: auto-commit skipはclear停止まで接続せよ（cmd_3053）
+- L715: APPROVE撤回の教訓 — APPROVEは穴がない宣言。将軍が更に掘れるなら軍師の掘りが浅い（cmd_3060）
+- L716: 点数=洗脳 — レビュー品質の点数ラベルは早期終了の変形。穴の有無だけが判断基準（cmd_3060）
+- L717: metricsの時刻形式混在と観測不能推薦を分母に入れると品質指標が歪む（cmd_3061）
+- L718: FTS5伝播は未タグ起点全走査ではなくタグ付き代表起点にせよ（cmd_3063）
+- L719: FTS5伝播は未タグ全走査ではなくタグ付き代表起点にせよ（cmd_3063）
+- L720: 軍師3/3穴なし判定は洗脳#8 — Step3実運用シミュレーション強制（cmd_3065）
+- L721: Bats並列隔離: cacheパスをenv変数化+TEST_TMPDIR export（cmd_karo_ci_parallel_isolation_wa_rate）
+- L722: Edit toolでのindex.md変更がauto_intake_semantic_indexに上書きされるリスク（cmd_3088）
+- L723: source commit基準の鮮度テストはfixtureにgit履歴を作る（cmd_karo_ci_fix_freshness_test_20260529）
+- L724: set -e下のgrep -c件数集計は0件で早期exitする（cmd_3091）
+- L725: 修行cmdのCoDD台帳自動記載スキップの3段根因: cmd_id未検索/type:training未認識/~計測値未対応（cmd_3099）
+- L726: lesson_effectivenessはpending注入と退役済み教訓を分母から除外せよ（cmd_3101）
+- L727: cmd_save系テストは少ないテスト数(5件)でも30s超になる: テスト数だけでは実行時間を予測できない（cmd_3103）
+- L728: safe_inbox_write ACTION省略がhookスキップ構造穴を作る（cmd_3102）
+- L729: SKILL.md内の省略scriptパス表現はgateに実参照として拾われる（cmd_3107）
+- L730: 孤立Markdownは因果リンクセクション追加で双方向接続を確立できる（cmd_training_backlinks_hanzo_20260602）
+- L731: 孤立Markdown修行ではincoming backlinkとoutgoing wiki linkを分けて報告する（cmd_training_backlinks_saizo_20260602）
+- L732: docs/research孤立ファイルへのsemantic-links+origin+[[根拠リンク]]+因果リンクセクション一括追加パターン（cmd_training_backlinks_tobisaru_20260602）
+- L733: 軍師分析Markdownの因果リンクセクション欠如パターン: 速度分析-耐性分析ペアは片方向リンクのみになりやすい（cmd_training_backlinks_kotaro_20260602）
+- L734: ロック競合テストは保持時間を待機上限より十分長くする（cmd_karo_ci_red_fix_26821340025）
+- L735: 末尾改行なしstateファイルはread失敗時に値を消すな（cmd_3142）
+- L736: background子プロセスはflock FDを閉じて起動せよ（cmd_3139）
+- L737: FAST_METADATAガードの適用範囲: 教育的表示を追加したら同時にFAST_METADATAガードも追加せよ（cmd_3145）
+- L738: 分割context freshnessは外部repo全体でなく領域pathspecを使う（cmd_karo_context_freshness_ga407_20260603）
+- L739: 実装commitとqueue/tasks混入はpre-commitで止める（cmd_karo_hotfix_ga408_hook_failure_20260603）
+- L740: 新hook機能実装時のtest setup()ディレクトリ作成漏れパターン（cmd_karo_hotfix_ga409_hook_failure_20260603）
+- L741: pre-push hook_failureはfull log artifactを保存しなければ根因再現不能になる（cmd_karo_hotfix_ga410_hook_failure_20260603）
+- L742: hook/gateを殿の直接指示と表現しない（lord_session_20260603）
+- L743: テスト高速化は不要テスト削除から始める（cmd_3149）
+- L744: EventRow型タプル拡張時はアンパック箇所を全て更新せよ（cmd_3153）
+- L745: no test mapping系hook failureは正本文書パターンを明示分類する（cmd_karo_hotfix_ga411_test_select_mapping_20260603）
+- L746: EventRow拡張時はevent_row_with_attributes()で長さ分岐するパターンが安全（cmd_3154）
+- L747: bashで呼ぶhelperを-xで存在判定するな（cmd_karo_ci_fix_ga412_semantic_search_logs_20260603）
+- L748: stale cache refresh失敗時に古いcacheへ戻すな（cmd_3168）
+- L749: 古い分析Markdownには現況照合表で正本リンクを追加する（cmd_training_backlinks_fullrecalc_resilience_20260604）
+- L750: infrastructure.mdのObsidianリンクは.md付きだとcausal_backlink_counts.shのstemベース検索で検出されない（cmd_training_backlinks_android_ssh_input_loss_20260604）
+- L751: script targetのbacklink修行は対応Markdown索引を編集対象にする（cmd_training_L4_auto_202606041638_hayate）
+- L752: WATCHED_DEPSにsourceするlib全ファイルを含める(欠落→変更時再起動スキップ)（cmd_training_L4_auto_202606041637_tobisaru）
+- L753: STATE_DIR不使用のハードコード/tmpはSTATE_DIR環境変数による分離を無効化する（cmd_training_L4_auto_202606041637_kotaro）
+- L754: 候補0成功だけではstate遷移DDL欠落を検出できない（cmd_3182）
+- L755: tmp cleanupはSQLite sidecarまで候補数差分で検証せよ（cmd_3185）
+- L756: cmd_save表示追加はscope対象/非対象を同時に固定せよ（cmd_3186）
+- L757: gate仕様変更時は既存Bats fixture前提崩壊を事前検死する（cmd_3184）
+- L758: context freshness root fallback tests must separate context-only commits from source commits（cmd_3184）
+- L759: context freshness root fallbackはcontext-only/source commit fixtureを分離する（cmd_3184）
+- L760: taskロックもSTATE_DIR分離対象として確認せよ（cmd_training_L4_auto_202606051836_saizo）
+- L761: STALE_CMD_NOTIFIEDはcheck_stale_cmds()でプルーニングが必要（cmd_training_L4_auto_202606051831_kotaro）
+- L762: ninja_monitor.sh WATCHEDDEPSは全sourceファイルを含める必要がある（self-update機能の欠陥構造）（cmd_training_L4_auto_202606051832_tobisaru）
+- L763: root fallback対象contextには staleness_triggers pathspecが必要。外部ツール参照contextはinfra全変化で陳腐化しない（cmd_karo_recon_context_freshness_ga001_saizo_20260605）
+- L764: D0のS0-5検証は全入力モード(stdin/cmd_id/archive)をテストせよ（D0_ac_physical_verify）
+- L765: karo_direct報告にもlesson_candidate抽出を必須化する（infra,lesson,karo_direct,ci）
+- L766: obsidian_promote実行後はキャッシュを同期しないとgateがWARNのまま（cmd_3194）
+- L767: curl_exit=6はgeneric API応答なしに落とさずDNS/API_BASE分岐を先に出す（cmd_karo_hotfix_p_average_ga004_20260606）
+- L768: Hook dispatcher追加時はgit index mode 100755をACに含める（cmd_karo_ci_fix_ga006_hook_dispatcher_exec_20260606）
+- L769: binary_checksのresultを埋めずに報告するとGATE BLOCK(report_yaml_format)（cmd_3199）
+- L770: SKILL.md複数checked_atタグ時はmatches[-1]が基準（cmd_karo_hotfix_skill_ref_sync_20260610181800）
+- L771: cmd-complete完了処理にcontext鮮度更新ステップが欠落(研究系cmdで顕在化)（cmd_karo_hotfix_ga038）
+- L772: causal_backlink_counts.shの検索スコープ盲点 — whitelist型gitignoreでskills/除外+semantic-index対象外（cmd_3278）
+- L773: autofixのsilent変換は'内容不変'条件を必ず検証せよ: 文字列内の構造マーカー数でERROR昇格（cmd_3282）
+- L775: auto_commit_before_clearはscripts/gates/と.claude/hooks/を無条件除外しなければならない（cmd_3284）
+- L776: pending_approval レジストリの空エントリYAML書き込みはentries: []が必要（cmd_3285）
+- L777: 殿の直接指示はスキルのロール制限に優先する（cmd_session_20260611）
+- L778: 配備時auto-deprecatedは計測分母を縮めて低usefulを隠す（cmd_karo_hotfix_lesson_useful_rate_20260611134310）
+- L779: 分割context鮮度判定は全repo fallbackではなくcontext別pathspecを持つ（cmd_karo_hotfix_ga041_context_freshness_202606111520）
+- L780: CDP preflightの実portと要求portがズレる時はcleanup権限を絞る（cmd_karo_hotfix_cdp_gate_stability_202606111540）
+- L781: readonly_ref判定はSG-PRE25とcmd_complete_gateで同じ入力規約に揃えよ（cmd_3293）
+- L782: 検知チャネルの判定基準は同一ソースで共有する（cmd_3295）
+- L783: PASS文言とexit codeを分離したgateはstartup側で文言/exit規約を二重確認する（cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956）
+- L784: 行動→結果検証の未同期は探索ソース不足と実データ未到着を二値分解せよ（cmd_karo_hotfix_gunshi_gate_sync_202606111958）
+- L785: active git hookはtracked templateと別物なら実hook証跡を直接確認する（cmd_karo_hotfix_ga044_hook_failure_202606112110）
+- L786: 検知チャネル間の除外基準はtask YAMLなど同一ソースへ源流注入する（cmd_3300）
+- L787: context_freshnessはsource commitを分類してから索引更新する（cmd_karo_hotfix_ga047_context_freshness_202606112306）
+- L788: context_freshness調査はcache無効化を一次判定にする（cmd_karo_hotfix_ga050_context_freshness_202606121052）
+- L789: semantic_stress候補はHIT再検証で消化してからalias昇格を検討する（cmd_3316）
+- L790: context_freshness調査はgate timeout差分も記録する（cmd_karo_hotfix_ga051_context_freshness_202606121555）
+- L791: context_freshness gateはgit timeout時に0件OKへ倒さずtimeoutをWARN/ALERT化する（cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622）
+- L792: context_freshness解消報告は対象contextと残存別contextを分離する（cmd_karo_hotfix_ga053_core_context_freshness_202606121637）
+- L793: 運用ログ全体parse不能時は対象ブロック単体parseと正規ゲートで変更影響を検証する（cmd_karo_hotfix_gunshi_cs_operational_sim_20260612）
+- L794: 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する（cmd_karo_hotfix_note_draft_fail_rate_20260612）
+- L795: script_refs_checked_atは複数ある場合最後の値が採用される（cmd_karo_hotfix_skill_script_refs_20260612）
+- L796: script_refs_checked_atはファイル内最後の値を更新する（cmd_karo_hotfix_note_draft_skill_refs_20260612）
+- L797: semantic_map_generateの副作用差分はcommit前にscope検査する（cmd_karo_hotfix_insight_repeat_backlog_20260612）
+- L798: superseded_by運用の件数gateはactive件数で測る（cmd_karo_hotfix_shogun_startup_deferred_20260612）
+- L799: startupの教訓useful率健康指標はhotfix feedbackを分けて測る（cmd_karo_hotfix_startup_lesson_skill_health_20260612）
+- L800: 冷えWARNの根因: ambiguity確認済みでもfinding_categoriesへの記入を忘れると3連続CRITICALになる（cmd_karo_hotfix_gunshi_cs_startup_20260613）
+- L801: ninja_monitor AUTO_DEPLOY競合: respawn直前にstatus再読取りが必須（cmd_3347）
+- L802: semantic recommendation cacheはprompt以外の実行コンテキストもキーに含める（cmd_karo_hotfix_ga061_pre_push_skill_marker_20260613）
+- L803: pre-push artifact hotfixはartifact時点と現行HEADの再現性を分けて判定する（cmd_karo_hotfix_ga060_cmd_complete_readonly_ref_20260613）
+- L804: Codex配達検証は対象roleごとに正本状態を分ける（cmd_3354）
+- L805: task YAML使い回しで自動注入メタを追加したらreset_stale_fieldsにも同時登録する（cmd_3368）
+- L806: cmd_save.sh/cmd_skeleton.sh非対称成長の根因: 追加チェックの反映に強制機構が存在しない（cmd_3369）
+- L807: SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定（cmd_3380）
+- L808: yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須（cmd_3382）
+- L809: review_quality集計はgate_result=CLEARでのverdict上書きが必要（cmd_karo_hotfix_review_quality_warn_gate_result_20260615）
+- L810: タグ変更の効果はgate_lesson_health.shに即座に反映されない（cmd_3396）
+- L811: Check系ゲートは入口(文字列トリガー)でなく出口(構造判定)で実装すべき（cmd_3401）
+- L812: cmd_save chronicle検索はtitleのみをクエリにせよ(purposeは120トークン過多で全件マッチ)（cmd_3403）
+- L813: cmd_complete_gate.shとprecheck.shの実行対象除外ロジックは常に同期が必要（cmd_3408）
+- L814: CMD_BLOCK_NC全文grepチェックはdiagnosisフィールドを除外せよ（cmd_3407）
+- L815: target_pathのディレクトリ構造からタグ推定しタグなし全教訓フォールバックを削減（cmd_3413）
+- L816: target_pathディレクトリからタグ推定しタグなし全教訓フォールバックを削減（cmd_3413）
+- L817: Whitelist方式gitignoreでrg検索が意図しないディレクトリをスキップする（cmd_3432）
+- L818: lesson_write.sh --retagは旧フォーマット教訓(タグ行なし)を静かに失敗させていた（cmd_3433）
+- L819: [[link]]参照の99.9%が宣言conceptに未到達 — セマンティックグラフの孤立点実体（cmd_3435）
+- L820: Phase3: BFS影響ノード列挙→実行を分離実装する際は『実行ロジック追加』を別ACで明示しないと列挙止まりで完了扱いになる（cmd_3442）
+- L821: CLI種別判定にsettings.yamlを使うな — pane_current_commandを一次情報にせよ（cmd_session_20260619）
+- L822: [自動生成] 有効教訓の記録を怠った: cmd_3457（cmd_3457）
+- L823: report precheckはrelated_lessonsなしのlessons_useful空リストをFAILにしない（cmd_3461）
+- L824: startup WARN測定は解消行動への接続まで検証せよ（cmd_karo_recon_startup_defer_escalation_20260620）
+- L825: context_freshnessは検出だけでなくcmd完了フローの必須入力へ接続せよ（cmd_karo_hotfix_context_freshness_ga099_20260620）
+- L826: yaml.dump集中管理ファイルはhookスキャン対象から除外必須（cmd_karo_hotfix_hook_yaml_dump_ga101_20260620）
+- L827: 新規libスクリプト追加時は対応hookテストのtest_select mappingを同時追加する（cmd_karo_hotfix_ga103_prepush_causal_index_20260620）
+- L828: SKILL.md script参照同期は更新対象数とscript集合をreportに残す（cmd_karo_hotfix_skill_script_refs_20260620_1442）
+- L829: docs/researchの軍師idle分析docは実ファイル名リンクを初期作成時に埋め込む（cmd_training_L1_report_write_tobisaru_20260620）
+- L830: Q6自動化ターゲットWARN解消にはファイルパスの明示が必要（cmd_karo_hotfix_shogun_startup_escalation_20260620_1436）
+- L831: Commanderロールは忍者名SSOT確立時に意図的でなく後回しにされた: is_core_agentの二重実装が証拠（cmd_3470）
+- L832: WSL2 WindowsFS上のforループ+globは件数×syscall overhead → find一発+gawk内フィルタに変換（cmd_3472）
+- L833: [自動生成] 有効教訓の記録を怠った: cmd_3474（cmd_3474）
+- L834: switch_cli_mode.sh @agent_state=active残留バグ — recovery後にactive化→task=none/idleでもrespawnスキップ（cmd_karo_hotfix_model_family_ssot_20260620）
+- L835: switch_cli_mode.sh @agent_state=active残留バグ（cmd_karo_hotfix_model_family_ssot_20260620）
+- L836: @model_name tmux変数同期漏れ — to-claude後に旧Codex値のまま（cmd_karo_hotfix_model_family_ssot_20260620）
+- L837: 2層SSOT設計(殿承認) — デフォルト層(cli_profiles.yaml)+動的層(settings.yaml)でCLI/model編成管理（cmd_karo_hotfix_model_family_ssot_20260620）
+- L838: Codex CLIのper-agent effortはmodel_name接尾辞(gpt-X.X-{effort})でsettings.yaml上に記録する（cmd_3481）。ただしCodex CLIの実effortはconfig.toml(全Codex共有)が決定。per-agent effort共存(家老medium+忍者low)はconfig.toml変更→対象respawn→config.toml復元の回避策で実現(2026-06-23殿指示で実証。揮発的=再respawnで戻る)
+- L839: root fallback対象contextはpathspec有無と同一countを偵察報告に必ず記録する（cmd_karo_recon_ga122_context_freshness_20260624）
+- PD-048解決: `context_freshness_check.sh` は `projects/{id}.yaml` 不在時も `config/projects.yaml` のactive `path` をsource repoとして使う。一次証跡: `tests/unit/test_context_freshness_check.bats` の config fallback test + 29/29 PASS（cmd_karo_pd048_pd049_recheck_20260704）
+- PD-049解決: 専用source repoがない概念contextへinfra root commitをそのまま本文更新要求にしない。unmapped infra fallback contextはroot source alertを継承せず、infra scoped contextも同一root fallback countを共有しない。一次証跡: root fallback tests + `gate_context_freshness.sh` OK（cmd_karo_pd048_pd049_recheck_20260704）
+- L841: busy deferの経過時間はfingerprint作成前でも進む一次時刻を使う（cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624）
+- L842: CI赤のadapter仕様追従漏れは旧期待値テスト名まで一次情報で数える（cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624）
+- L843: Stop hook単独でtool payload内容を前提にしない（cmd_3522）
+- L844: 確認行為カウントでRead toolのみの確認はBash hookでは観測できない（cmd_3523）
+- L845: context_freshness偵察は実gateと低レベルcheckのtimeout差分を分けて報告する（cmd_karo_recon_ga125_context_freshness_backup_20260624）
+- L846: context_freshness ALERT調査ではroot_fallbackを必ず数値化する（cmd_karo_recon_ga125_context_freshness_20260624）
+- L847: context_freshness ALERTはsource commit件名とpathspecをタスクへ自動注入せよ（cmd_karo_recon_ga126_obsidian_link_principles_20260625）
+- L848: context_freshness ALERTにはsource commit要約を同梱せよ（cmd_karo_hotfix_ga128_context_freshness_google_classroom_20260625）
+- L849: context_freshness gate cache署名は監視対象ファイル内容を含める（cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625）
+- L850: context_freshnessが作業開始時点でOKでも発火ログとsource差分を分けて報告する（cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625）
+- L851: karo_snapshotは重い監視処理より前に早期発行しatomic publishする（snapshot_staleness_fix_20260625）
+- L852: cmd-completeスキルは現物script pathとarchive済みcmd扱いを明記する（cmd_complete_skill_path_fix_20260625）
+- L853: GATE CLEAR済みWAの永続ALERT防止: cmd_design_quality品質ログを解決判定に活用（cmd_karo_hotfix_wa_resolved_gate_20260625170121）
+- L854: context freshness hotfixでは対象context以外のALERTを横展開候補として報告に分離する（cmd_karo_hotfix_ga132_context_freshness_dm_signal_research_20260625）
+- L855: hook artifact調査では発火時点と現時点を分けて報告する（cmd_karo_hotfix_ga133_pre_push_clear_prep_memory_db_20260625）
+- L856: context_freshness_check: docs/semantic-index pathspecが過広でindex.md成長更新が偽陽性ALERTを常時発火（cmd_karo_recon_ga134_obsidian_link_principles_20260626）
+- L857: lesson_health未振り分けALERTはID一覧まで出さないと次アクションが遅れる（cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626）
+- L858: gateキャッシュは人間可読状態行とexit_codeを構造検証してから再利用する（cmd_karo_recon_ga137_p_average_freshness_20260626）
+- L859: notify_targetsフィールドを読むスクリプトは書き戻し時にも保持せよ（cmd_karo_hotfix_bulletin_confirm_close_20260626081815）
+- L860: useful_rate低下の主因はwhen未設定教訓のfullタスク広域誤注入（cmd_karo_recon_lesson_health_useful_20260626082714）
+- L861: semantic_index_updateの伝播テストは閾値式を数値で固定せよ（cmd_karo_recon_hook_failure_ga138_202606261303）
+- L862: project内deprecated同IDはinfra fallbackで復活させるな（cmd_karo_hotfix_lesson_health_useful_20260626173325）
+- L863: precheck文字列検出ロジックは陰性ケースでFPを固定せよ（gunshi_idle_precheck_fp_trio_20260626）
+- L864: docs/research追加commitはcontext_update候補を自動注入する（cmd_karo_hotfix_ga141_context_freshness_dm_signal_research_20260626）
+- L865: CLI切替時はsettings.yaml typeとtmux @real_modelを同時検証する（session_20260626_pane_status_mismatch）
+- L866: infra主contextはroot_fallbackのままにせず明示pathspecかcommit details注入で判定させる（cmd_karo_recon_ga142_context_freshness_infrastructure_202606270309）
+- L867: semantic_stress_testのAC母数は実データで再集計してから判定する（cmd_karo_hotfix_semantic_stress_pending_202606270905）
+- L868: コマンド置換内のバックグラウンド処理はstdout継承で待たれる（cmd_3563）
+- L869: context_freshness ALERTはsource差分件数と真のops反映差分を分けて報告する（cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627）
+- L870: context_freshnessの真陽性はsource commit分類を索引カテゴリへ圧縮してからlast_updatedを更新する（cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627）
+- L871: context freshness hotfixでは外部repo API/service差分をsplit context別に分類する（cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627）
+- L872: context_freshness hotfixはsource差分分類欄を自動注入する（cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627）
+- L873: NO_MATCH率報告は抽出元sourceを必ず併記する（cmd_3580）
+- L874: CDP touch stream成功とReact state更新成功を分離して判定せよ（cmd_3588）
+- L875: CDP検証用localhostポートがstale serverで占有されている場合は停止せず修正後bundleを別ポートで実証し制約を報告せよ（cmd_3588）
+- L876: context_freshness root fallbackは運用同期commitをsource扱いしない（cmd_karo_hotfix_ga150_context_freshness_infra_20260629）
+- L877: 外部リポcmdのcommit hash検証はtarget repoで行う（cmd_3602）
+- L878: hook非コメント行にincident ID/日付を書くとgate_hooks_no_runtime_incident_idがBLOCKする（cmd_karo_ci_fix_ga151_main_ci_red_202606291410）
+- L879: cmd_save.sh全bash関数113件のうちcheck/gate系は37件（設計書の58本と乖離）（cmd_3608_recon2）
+- L880: cmd_save関数数の前提と現物抽出条件を分離せよ（cmd_3608）
+- L881: context last_updated更新はcommitまでをセットとせよ — uncommittedは鮮度保証にならない（cmd_karo_hotfix_ga152_context_freshness_infrastructure_202606301214）
+- L882: SQLite date()のTZ付き文字列UTC変換罠: substr(,1,10)でYYYY-MM-DD部分のみ使え（cmd_karo_ci_fix_ga153_main_ci_red_202606301403）
+- L883: bash関数抽出後は断片batsだけでなく実スクリプト経路を即実行する（cmd_3614）
+- L884: bash関数化リファクタ後はsed抽出型bats mockを関数名抽出へ同時追従する（cmd_karo_ci_fix_prev_cmd_gate_202606301629）
+- L885: Phase3関数化時はテストfixtureの抽出前提とseed check名を同時追従する（cmd_karo_ci_fix_cmd_save_phase3_ci_202606301937）
+- L886: context_freshnessはcache無効・timeout延長の再計測で見かけWARNと実ALERTを分離する（cmd_karo_hotfix_ga154_context_freshness_202607010005）
+- L887: context_freshness完了条件は通常gateで元対象WARNが0件（cmd_karo_hotfix_ga154_context_freshness_202607010005）
+- L888: context_freshness hotfixは通常gate完了条件と長timeout横展開を分離する（cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_202607010312）
+- L889: 再配備時のtask YAML assigned_scope残留が誤作業を誘発(cmd_3620)（cmd_3620）
+- L890: Batsのsed抽出ハーネスは削除済み関数名exportを残すとsetup_fileで全体停止する（cmd_karo_hotfix_ga156_hook_failure_prepush_cmd_save_202607010443）
+- L891: cmd_design_quality.yamlへの複数writerが異なるロックファイルを使い排他制御が機能していない(cmd品質記録漏れALERT根因)（cmd_3621）
+- L892: cmd_quality_log.sh非同期呼び出しの無音失敗パターン（cmd_3621_kotaro_ab）
+- L893: CLEAR時ベストエフォート(&)は並列実行規模増大でサイレント失敗化する（cmd_3622_kotaro_r3）
+- L894: 同一ファイルへの複数writerは単一lock_path()でロック共有せよ(static lock混在=排他破綻)（cmd_3622_saizo_r3）
+- L895: cmd_complete_gate.sh内にgunshi_verdict更新ロジックが2箇所重複し、優先順位ロジックが不一致(cmd品質記録漏れ恒久修正の副次発見)（cmd_3622）
+- L896: postcondition_lesson_injectはinject_related_lessons後に呼ぶ必要がある（cmd_3623_kotaro_r4）
+- L897: 事後不変条件(postcondition)チェックは検証対象の実行後に配置せよ（cmd_3623_saizo_r4）
+- L898: 共有ステートファイルのpostcondition読取は、対応する書込み呼出しの後に置かれているかを呼出し順序で必ず検証せよ（cmd_3623）
+- L899: AC更新補足はtask YAMLより後のinboxを優先してscopeを確定する（cmd_karo_hotfix_model_detect_launch_cmd_202607010733）
+- L900: CLI種別変更時のlaunch_cmdクリアには専用回帰テストが必要（cmd_3624_kagemaru）
+- L901: detect_real_model head-1はrespawn後に旧バナーが混在すると誤検出する（cmd_3624_kotaro）
+- L902: model_family/model_display分類ロジックの複製先がSSOT変更(新モデルfamily追加)に追従しない（cmd_3624_tobisaru）
+- L903: 研究Markdownは要約表の近くに詳細データ直接リンクを置く（cmd_training_L1_report_write_202607011522_hayate）
+- L904: Markdown改善修行では対象内リンク数を個別計測する（cmd_training_L1_report_write_202607011554_kagemaru）
+- L905: 対象ファイルがTop20計測に出なくても対象内リンク数を直接数えて改善を証明する（cmd_training_L1_report_write_202607011624_hanzo）
+- L906: 参照docのインフラ挙動主張は正本を[[link]]で根拠付けよ（cmd_training_L1_report_write_202607011655_saizo）
+- L907: capture-paneバナーはmodel検証の一次情報として不十分(model labelがstaleする既知バグ)。model×version検証は環境注入/launch_cmd/--versionで多重照合せよ（cmd_3628_saizo）
+- L908: cache key比較では片側だけ空白除去するな（cmd_training_L4_R20260701_idle1_hayate）
+- L909: binary_checks result-only更新はpost-write Pythonを避ける（cmd_training_L4_R20260701_idle1_kagemaru）
+- L910: WSL2ではbash内 python3 import yaml が182ms/call。大YAML(204KB)の safe_load を単一フィールド取得に使うのは高コスト。境界付きline-scanで yaml-free 化すると-71.7%(378→107ms)（cmd_training_L4_R20260701_idle1_saizo）
+- L911: 並行修行cmd時、git addで自分のstaged変更が他忍者の同時commitに巻き込まれる（cmd_training_L4_R20260701_idle1_tobisaru）
+- L912: 並列作業中、他忍者commitに自分のステージ済み変更が収録される逆L529パターン（cmd_training_L4_R20260701_idle1_kotaro）
+- L913: 通知テストは配送だけでなくpayload本文を検証する（cmd_3629）
+- L914: INSIGHT_REPEAT bulletin追加時にmsg変数を投稿文字列に含める（cmd_3629_kotaro）
+- L915: 空データのhealth gateはmetadata完全性チェックより先に0件短絡する（cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058）
+- L916: 小型テスト統合では不要なglobal setupも計測せよ（cmd_3633）
+- L917: WSL2 NTFS上でfindが存在しないディレクトリに対してset -eでabortする（cmd_3632）
+- L918: direct --yamlは入力YAMLのACを正本としてcmd source overwriteをスキップせよ（cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845）
+- L919: リスト型YAMLの存在判定はfield_get_multiではなく構造パースで行う（cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133）
+- L920: 常駐daemonは起動時間ではなくmainループ反復コストを優先計測せよ（cmd_training_speed_inbox_watcher_202607020409_saizo）
+- L921: startup連続BLOCKのkeyは根因を識別できる粒度にする（cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421）
+- L922: 高負荷な共有マルチエージェント環境でのマイクロベンチマークはpaired計測と統計的有意性チェックが必須（cmd_training_speed_gate_karo_startup_202607020409_tobisaru）
+- L923: cmd_training_speed_*でgate呼出しスクリプトをベンチマークする時はGATE_NO_LOG=1を付けよ（cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526）
+- L924: deploy_task.shのawk -vはCスタイルバックスラッシュエスケープを解釈しYAML文字列を破壊する（cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530）
+- L925: tmux paneの実プロセス検出はpane_pid子孫だけでなくpane_ttyも確認する（cmd_3642）
+- L926: context_freshness hotfixは元ALERTのcommit hash/subjectをtaskへ注入せよ（cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348）
+- L927: 並列バッチ機構の背後に'export -f find'等のオーバーライドを置くと後続の再構成で静かに死ぬ。定期的に消費者ゼロを検証せよ（cmd_3644）
+- L928: startup WARN streakは実行回数ではなく実質セッションで集計する（cmd_karo_hotfix_shogun_startup_defer_escalation_202607021349）
+- L929: Codexの保留nudge配達はbusy_max_defer秒ではなくメインループの目覚め間隔(最悪INOTIFY_TIMEOUT)に律速される（cmd_3646）
+- L930: bash export -fは関数サイズがLinux MAX_ARG_STRLEN(128KiB)を超えると全外部コマンドをE2BIGで壊す（cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402）
+- L931: 書込みフィールドallowlist(known_fields等)は全書込み元を棚卸ししてから定義せよ。新規追加のみで検証するな（cmd_karo_hotfix_insight_corruption_202607021437）
+- L932: atomic化済みappendの隣に未atomic repair/resolveが残る（cmd_3649）
+- L933: 並行セッションの広範囲git addが他エージェントの未commit編集を無関係commitへ巻き込む（cmd_3648）
+- L934: lesson_health未振り分けALERTは閾値到達前の早期導線を作る（cmd_karo_hotfix_ga166_lesson_health_unclassified_202607021655）
+- L935: hotfix別名完了通知は送信側で正規化dedupする（cmd_3657）
+- L936: streak/先送り検出はカウント文字列ではなく識別子安定な信号で判定せよ（cmd_3658）
+- L937: レビュー時はcommand欄の追記/更新指示もfiles_modified突合対象にせよ（cmd_3650）
+- L938: PRE3b WARNとcmd_complete_gate CLEARを同義扱いするな（cmd_3654）
+- L939: 外部SSOT直接編集の教訓はlesson_write.shの自動追記を通らずcontext不可視化する(orphaned lesson blind spot)（cmd_karo_hotfix_ga168_lesson_health_202607021948）
+- L940: L770更新要: matches[-1]根本原因はgate自体のコード修正(commit 07a0cfd83, max(epochs)採用)で解消済み（cmd_karo_hotfix_skill_script_refs_202607022043）
+- L941: モデルファミリー追加時、cli_lookup.shへの表示整形追加はGuard16(操作的オントロジー)がBLOCKする（cmd_3664）
+- L942: logs/cmd_design_quality.yamlのcmd_idはリスト項目内で先頭フィールドとは限らない（cmd_3665）
+- L943: 性能最適化で処理呼び出しを削る際は副作用(生成物の更新)も棚卸しせよ（cmd_karo_hotfix_ga170_context_freshness_202607030012）
+- L944: 生成YAMLへ任意テキストをdouble-quoted出力する時はbackslashとdouble quoteをescapeする（cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051）
+- L945: pre-push hookの実行者向け出力はstderr捕捉後もstdoutへ要点を出す（cmd_karo_ci_fix_shogun_20260703）
+- L946: backgroundサブシェル{ ...; } &はtrap EXITを継承し自身の終了時に再発火する（cmd_karo_ci_fix_shogun_retry_20260703）
+- L947: report_field_set.shで既存フィールドが無警告で消失する再現バグ(worker_id/task_id/parent_cmd/ac_version_read書込み後)（cmd_3683）
+- L948: 5000行超のインフラdaemonでも死コードは repo全体grepで確定検証してから安全削除できる（cmd_training_L4_auto_202607031741_kotaro）
+- L949: tmuxペイン新規作成スクリプトはflock排他必須（cmd_karo_hotfix_auto_update_pane_spawn_202607031806）
+- L950: files_modifiedはcommit済み主張としてgateで常時検査する（cmd_karo_hotfix_commit_missing_structural_202607032250）
+- L951: 0リンク研究Markdownは冒頭に前後cmdリンクとoriginを戻す（cmd_training_L4_idle_202607041308_hayate）
+- L952: 孤立研究Markdownは後続cmdの実在行へ接続してから数値を横断引用する（cmd_training_L4_idle_202607041308_hanzo）
+- L953: 修行targetは最新補足だけでなく全忍者taskマトリクスで衝突確認する（cmd_training_L4_idle_202607041308_kagemaru）
+- L954: AC5の2スクリプトは逆方向指標: causal_backlink_counts=被参照数(incoming)、markdown_link_counts=発信リンク数(outgoing)（cmd_training_L4_idle_202607041308_saizo）
+- L955: 同一バッチ配備でkotaroのtask.related_lessonsだけ注入漏れが発生した（cmd_training_L4_idle_202607041308_kotaro）
+（L956-L972: /lesson-sort 2026-07-06で各セクションへ振り分け済み）
+- L973: 絶対パス起動されるgateはcwdに依存せずSCRIPT_DIR由来repo rootを渡す（cmd_karo_hotfix_ga188_p_average_repo_root_outside_cwd_202607061807）
+- L974: バックグラウンド連鎖を追加する既存スクリプトのテストは、DB引数(--db等)だけでなく連鎖先スクリプトの全env override(SEMANTIC_INDEX_PATH等)も隔離しないと本番ファイルを汚染する（cmd_3715）
+- L975: context_freshness_check.shはcontext_file共有時にproject_id誤判定→誤ったリポジトリでsource commitを監視する（cmd_karo_hotfix_ga189_context_freshness_20260707）
+- L976: 生成物同期チェックはBLOCKでなくauto-fixが正しい設計(GA-190)（cmd_karo_hotfix_ga190_generated_instructions_hook_20260707）
+- L977: grep -oEの複数マッチ混入によるJSONL破損(pipefail環境)（cmd_3718）
+- L978: verdict missingはbinary_checks空欄を先に疑う（cmd_training_L1_report-write_20260708022912）
+- L979: python3 subprocessでのrg呼出しはローカルWSL2環境で常にFileNotFoundError(シェル関数はexecve()に見えない)（cmd_reflux_insight_202607080225_kotaro）
+- L980: 対話bashの'rg'はClaude Code CLIの関数ラッパーでありsubprocess/非対話シェルからは実体不在。command -vではなくshutil.which/実行時FileNotFoundErrorで検出せよ（cmd_karo_hotfix_rg_fallback_causal_backlinks_202607080241）
+- L981: lesson_health新規蓄積WARNはcheckpoint更新で即時計測差分を取る（cmd_karo_hotfix_lesson_health_ga193_202607080337）
+- L982: semantic index新規ファイル登録insightはSSOT(index.md)へのfile追加のみで足り、semantic_map_generate.shの自動resolve機構がinsight_write.sh --resolveを内部実行する（cmd_reflux_insight_202607080437_saizo）
+- L983: reflux insight consumptionタスクで自タスクYAMLをfiles_modifiedに含めるとcmd_3264-AC2が自己増殖的にBLOCKする（cmd_reflux_insight_202607080457_tobisaru）
+- L984: semantic index還流insightは『前回同一ファイルがresolve済みか』をqueue/insights.yaml内で横断検索し、再発なら根因修正を優先せよ（cmd_reflux_insight_202607080538_saizo）
+- L985: 計測gateは構造化フィールドを無視するな — テキストヒューリスティックは明示フィールドのフォールバックに限定せよ（cmd_reflux_promotion_202607080640_saizo）
+- L986: テキストベースの数値判定gateへの数値記述は誤分類を招く。構造化フィールドで実値を明示せよ（cmd_reflux_promotion_202607080658_kotaro）
+- L987: reflux_promotion自動配備はtarget別dedupが無く、未解決decision_candidateを持つ同一昇格候補への重複dispatchが発生する（cmd_reflux_promotion_202607080715_saizo）
+- L988: exit=1 gateでALERT行なしの場合は先頭OKではなくWARN/action/METRICを原因snippetにする（cmd_karo_hotfix_ga194_lesson_health_202607080732）
+- L989: lesson_health早期WARNは監視通知対象まで到達させる（cmd_karo_hotfix_ga195_lesson_health_backlog_202607080739）
+- L990: reflux_promotion自動配備のPD-dedup欠如は修正済み。今後はPD登録だけでなく除外ロジックの実装まで一体で行え（cmd_reflux_promotion_202607080727_tobisaru）
+- L991: 還流昇格候補の対象特定はsource_idsではなくstandalone id:エントリを確認せよ（cmd_reflux_promotion_202607080807_kotaro）
+- L992: lesson_health長期useful率はcmd ID prefixでも自己修復cmdを除外する（cmd_karo_hotfix_ga196_lesson_health_skill_refs_202607080830）
+- L993: 起票/配備速度改善後も知識注入層追加でhot pathは再劣化する（cmd_3757）
+- L994: cmd_save検索cacheだけでは2秒目標に届かない場合がある（cmd_3760）
+- L995: semantic_alias_absorb_pending.shのalias_similarity_scoreは長い一文クエリを構造的に低スコア化し、閾値16.0未達=noiseと機械的に判定すると意味的に関連するinsightを見送ってしまう（cmd_reflux_insight_202607081557_tobisaru）
+- L996: context/training-cycle.md §28の『codd require禁止』記述は一次情報(codd --help)で誤りと判明。codd requireはbrownfield専用(extract後の下流ステップ)（cmd_reflux_promotion_202607081642_saizo）
+- L997: verdict missing防止はbinary_checks全件yes/no確認を先に固定する（cmd_training_L1_report-write_20260708173845）
+- L998: throughput_scan.shのTHROUGHPUT_FIX_KNOWN insightは相対パスverify+target固定でresolve機構が機能しない（cmd_reflux_insight_202607082010_saizo）
+- L999: 新規throughputメトリクス導入直後はcold-start小標本で偽regression検知が起きる（cmd_reflux_insight_202607082024_tobisaru）
+- L1000: semantic_stress_test候補insight解決手順: absorb_pendingを先に走らせよ（cmd_reflux_insight_202607090242_kotaro）
+- L1001: scripts/causal_backlinks.shが複数SEARCH_PATHS同時指定時に既存backlinkを偽陰性報告する(ゼロ backlink判定を誤らせるinfraバグ)（cmd_reflux_backlink_202607090255_tobisaru）
+- L1002: reflux_promotion教訓のenforcement_level誤判定パターン: 実コードBLOCK済みでも本文にLevel語彙が無いとgate既定L1化（cmd_reflux_promotion_202607090343_kotaro）
+- L1003: 還流候補の実装/メタデータ判別: enforcement_levelフィールド欠落によるLevel1誤分類はL1002の判定順序で解決する（cmd_reflux_promotion_202607090400_tobisaru）
+- L1004: reflux_promotion(L1候補検証)はenforcement文言でなくreferenced実装+testを直接確認せよ（cmd_reflux_promotion_202607090500_tobisaru）
+- L1005: 複合lessonエントリはgate_lesson_enforcement_level.shで個別要素のLevel差が平均化・埋没する（cmd_reflux_promotion_202607090518_saizo）
+- L1006: 複合lessonの単一Level昇格は未達要素を隠す（cmd_reflux_promotion_202607090537_hanzo）
+- L1007: 還流促進(reflux_promotion)在庫は既配備中/直近completed分を除外せよ。既存実装調査はキーワードgrep限定でなく識別子横断検索を行え（cmd_reflux_promotion_202607090544_kotaro）
+- L1008: L968(ninja_monitor.sh source絶対禁止)とL134(NINJA_MONITOR_LIB_ONLY安全経路)が未連携。L968本文だけ読むと安全な代替手段(L134)を知らずに『関数だけ使いたくても一切sourceするな』と過度に広く解釈しうる（cmd_reflux_promotion_202607090621_saizo）
+- L1009: reflux_promotion候補は必ずしも既存Level4の誤分類ではない: 真に未実装ならPD escalationへ整理し虚偽のenforcement_level昇格を避けよ（cmd_reflux_promotion_202607090644_kotaro）
+- L1010: 還流promotion選定ロジックがLKプレフィックスPD登録済み候補を除外できず重複配備が発生（cmd_reflux_promotion_202607090708_tobisaru）
+- L1011: reflux_promotion配備前は必ずpending_decisions.yamlを対象lesson IDで直接grep確認せよ(自動除外フィルタはLK-/LG-プレフィックスIDを検出できない既知バグがある)（cmd_reflux_promotion_202607090721_saizo）
+- L1012: context_freshness source path共有によるdm-signal-research.md/ops.md二重ALERTはL787完成まで繰り返す（cmd_karo_hotfix_ga206_context_freshness_202607091123）
+- L1013: gate_loop_health高頻度FAIL insightはSTALL検知ポーリングの反復ログで誤って高頻度化しうる（cmd_reflux_insight_202607091155_saizo）
+- L1014: 拡張子.yamlでもjson.dumpで書込む学習ファイルは、消費側のYAML前提grep判定で検出漏れするサイレント不具合を起こす（cmd_reflux_insight_202607091206_kotaro）
+- L1015: FAILパターンのinsight抑制はco-occurrence率100%を実測してから横展開せよ。似ているだけでは不十分（cmd_reflux_insight_202607091222_tobisaru）
+- L1016: semantic_alias_absorb_pendingはスコア閾値未達なら機能せず、正本index.md手動編集+再生成が必要な場合がある（cmd_reflux_insight_202607091255_saizo）
+- L1017: karo_direct hotfixが失敗cmdを代替したら元taskへsuperseded_by終端を付ける（cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318）
+- L1018: causal_backlinks.shの-lモードがprojects/scripts含む複数パス検索時に非決定的に0件を返す（cmd_reflux_backlink_202607091355_saizo）
+- L1019: causal_backlinks.shは検索パスを個別走査してrg -lの非決定的0件を避ける（cmd_reflux_backlink_202607091355_saizo）
+- L1020: INSIGHT_REPEATの掲示板status=closedは通知処理完了を意味するだけで、根本原因の解消を意味しない（cmd_karo_recon_insight_repeat_backlog_202607091438）
+- L1021: 『修正コミット済み』は実データでの動作確認とは別物。バックスラッシュエスケープ等のフォーマット差異は文字列一致比較を静かに無効化する（cmd_karo_hotfix_gate_loop_health_verdict_invalid_202607091438）
+- L1022: L770(matches[-1]基準)はL940(2026-07-02)でgate側修正(max(epochs)採用)により無効化済みだが、superseded_by未記入のまま放置され、7日後の本タスクAC設計にも古い前提が埋め込まれた（cmd_karo_hotfix_skill_refs_update_202607091452）
+- L1023: semantic_stress_test resolve時はabsorb_pendingのスコア未満match先の既存alias一覧も目視確認せよ(L1000補完)（cmd_reflux_insight_202607091521_tobisaru）
+- L1024: lesson_write.shはsubdomain未指定時にcontext/{pid}.md汎用教訓索引へ滞留し、gate_lesson_health.sh未振り分けALERTの根本原因になる（cmd_karo_recon2_ga207_lesson_unsorted_202607091627）
+- L1025: semantic_stress_test NO_MATCH insightは断片ノイズと即断せず、query文字列に既知の通知トークンが混入していないか確認せよ（cmd_reflux_insight_202607091820_kotaro）
+- L1026: inbox nudge入力ガードはプロンプト行だけを未送信入力として判定する（cmd_karo_ci_fix_ci_red_29009508184_202607091912）
+- L1027: reflux L1候補は実装済みの可能性を疑え — enforcement本文のワード選択がgateのキーワード判定を外すだけのケースがある（cmd_reflux_promotion_202607092004_tobisaru）
+- L1028: semantic_stress_test由来のlord source候補が短く意味不明な英字混在の場合、absorb_pendingを待たずlord_conversation.jsonlの原文を直接確認せよ（cmd_reflux_insight_202607092040_saizo）
+- L1029: yaml_field_set.shはコメント行をブロック境界と誤認識し新フィールドを別ブロックへ誤挿入する（cmd_reflux_promotion_202607092120_tobisaru）
+- L1030: ルール・context更新時は実行中タスク通知とfreshness防御をセット化する（cmd_karo_hotfix_context_freshness_ga214_202607100328）
+- L1031: throughput_scan.shは隣接2snapshotのみ比較するため中間の回帰スパイクを検知漏れする（cmd_reflux_insight_202607100335_kotaro）
+- L1032: gate_loop_health.shのGP-107判定済みinsight抑制はdone状態の残存に依存してはならない(自動archiveで無効化する)（cmd_reflux_insight_202607100346_tobisaru）
+- L1033: reflux_insightで'MISSING'系gate学習パターンをresolveする前に、既存対応(prefill_active)と共起率を確認せよ（cmd_reflux_insight_202607100400_saizo）
+- L1034: semantic_stress_test NO_MATCH insightのdirect_concept解決はalias追加とoriginal insight resolveを別々のabsorb_pendingパスで行う必要がある（cmd_reflux_insight_202607100535_kotaro）
+- L1035: AC2でpush/deployを要求するcmdは配備時にtask YAMLへpush_allowed: trueを付与しないとninjaがG2ガードでBLOCKされる（cmd_3820）
+- L1036: .git/hooks/配下の非追跡フックは正本(scripts/hooks/*.sh)修正後も自動反映されずdrift蓄積する（cmd_karo_hotfix_ga222_instruction_sync_202607110913）
+- L1037: 共有worktreeで自動化スクリプトがworking treeの内容を直接参照すると他agentの未commit編集が混入する。git blob(HEAD/index)経由で参照せよ（cmd_karo_hotfix_ga222_shared_worktree_followup_202607110947）
+- L1038: cmd_complete_gate.shはnohup非対話bashで走るため、日時計算のparse_iso関数はtz-aware/naive混在を正規化しdelta計算をtry/exceptで保護せよ。個別のtry/exceptガードがあっても最後の演算だけがガード外にあると意味がない（cmd_karo_hotfix_review_trigger_gate_datetime_202607111233）
+- PD-115: `trigger_silent_loss` 3件の構造対策は重複起票せず、短命caller終了後もgate完遂を保証するdurable dispatch hotfix `cmd_karo_hotfix_review_trigger_durable_cli_202607111336` で実装・実環境検証する。
+- L1039: 読取りcacheは健全性検証と原子的公開を一体化せよ（cmd_karo_hotfix_memory_cache_malformed_202607111306）
+- L1040: cmd_complete_gate内のreport発見はdiscover_reports_for_cmd()経由にせよ。MATCHING_TASK_FILESのみに頼るな（cmd_karo_hotfix_gate_report_discovery_after_redeploy_202607111321）
+- L1041: nohup単体は呼び出し元プロセスグループからの分離を保証しない。CLI/tool短命callerからの永続バックグラウンド起動にはsetsidが必須（cmd_karo_hotfix_review_trigger_durable_cli_202607111336）
+- L1042: 防御強化前に実運用call siteを数値監査する（cmd_karo_hotfix_inbox_gate_trigger_durable_202607111406）
+- L1043: 副作用を持つテストは全外部sinkを共通setupで隔離する（cmd_3846）
+- L1044: pre-bash-combined.shガードはコマンド文字列内のリテラル部分一致で発火する。無関係な一時ディレクトリ配下のパスでも'queue/tasks/'を含むとBLOCKされる（cmd_karo_hotfix_deploy_task_atomic_publish_202607111645）
+- L1045: 契約強化時は利用fixture全体を同一commitで横断更新する（cmd_karo_hotfix_ga223_review_fixture_contract_202607111840）
+- L1046: 将軍Q6回答はidle待ちせず即時に第三者検証せよ（session_20260712）
+- L1047: 同一概念の分岐経路は境界入力を対称適用する（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124）
+- L1048: Bash caseの*はslashを跨ぐためnested代替はdead branchになる（cmd_karo_hotfix_infra_hook_awaken_202607120130）
+- L1049: 複数行commit commandのguard判定は実行時tokenizationと一致させよ（cmd_3853）
+- L1050: atomic renameでも候補名共有なら並行安全ではない（cmd_karo_hotfix_dashboard_tmp_race_202607120209）
+- L1051: pre-push静的検査は同一入力への同種走査を単一収集へ統合せよ（cmd_karo_hotfix_infra_gate_awaken_202607120130）
+- L1052: 異種gate全量計測ではtimeoutとcaller契約を分離する（cmd_karo_hotfix_infra_gate_awaken_202607120130）
+- L1053: 隔離indexで部分commitした後は共有indexの対象pathを新HEADへ同期せよ（cmd_karo_hotfix_scope_hunk_commit_202607120214）
+- L1054: 解消判定は厳密な因果順序と単一SSOTで行う（cmd_karo_hotfix_skill_auto_improve_stale_202607120225）
+- L1055: 設計索引は関連語リンクではなく実行契約の正本へ直接接続する（cmd_training_L4_r1_hanzo）
+- L1056: source freshnessは件数閾値でなくcontext記録境界から1件で発火させる（cmd_karo_hotfix_ga226_context_freshness_revert_stale_202607120335）
+- L1057: context freshness reflow: P2a/P2a2の実diff読解でcore不変量非該当を確定する必要がある（cmd_karo_hotfix_dm_signal_core_freshness_202607120345）
+- L1058: SSOT不在経路のメタデータ解決は優先順位付き一意fallbackにせよ（cmd_karo_hotfix_cmd_quality_direct_ac_count_202607120401）
+- L1059: semantic SSOTを検証するテストとconsumer契約テストのfixtureを分離する（cmd_karo_hotfix_ga227_prepush_semantic_concepts_202607120410）
+- L1060: pane無出力と計算停止を同一視しない（cmd_karo_hotfix_background_compute_stall_fp_202607120427）
+- L1061: commit時BLOCKだけでは共有index汚染を防げない（cmd_karo_hotfix_ga228_task_yaml_mixed_stage_202607120650）
+- L1062: failed task通知ギャップは『respawnをBLOCK』ではなく『実行結果起点のdurable通知+outbox retry』で塞ぐ（cmd_karo_hotfix_failed_report_clear_notify_gap_202607120842）
+- L1063: セキュリティguardは語彙一致ではなく操作意図×信頼境界の構造判定にせよ。fast-path最適化は必ず全構造マーカーをミラーし乖離検出testで固定する（cmd_karo_hotfix_guard14_db_trust_boundary_202607120854）
+- L1064: ninja_monitor.shをsourceするscratch/benchmarkスクリプトは必ずsource前にexport SHOGUN_STATE_DIRせよ。source後のplain STATE_DIR代入は次のsource実行でデフォルト値へ上書きされ実運用の/tmpを汚染する（cmd_karo_hotfix_pending_work_generation_dedupe_202607121023）
+- L1065: task_id等の自然言語混在識別子から命名規約を自動推論するregexは、境界文字種だけでなく規約固有の固定トークン列全体をパターンに含めよ（cmd_karo_hotfix_chunk_marker_boundary_202607121210）
+- L1066: gate判定ロジックの対(AC2/AC3)を強化する時は片方だけでなく同一原理を共有する全ロジックへ横展開を確認せよ（cmd_karo_hotfix_gate_ac3_hunk_provenance_202607121205）
+- L1067: 既存ログ非破壊fallbackは新規entryの既定bucketと同一値にせよ（cmd_karo_hotfix_wa_root_signature_202607121225）
+- L1068: 共有git working treeでのgit stash pushは意図しない別ファイルを巻き込むリスクがある（cmd_karo_hotfix_ga220_multiline_commit_parser_202607121306）
+- L1069: Gitのstash pushはWSL2の共有repoでBus errorクラッシュしindex.lockを残置し他エージェントのコミットを止め得る。旧版比較には読取専用の参照方法を使え（cmd_karo_hotfix_report_completed_immutability_202607121305）
+- L1070: awk抽出の未unescapeはGuard横断の構造バグ源。json.loads+shlex.shlex(punctuation_chars)がSSOTパターン（cmd_karo_hotfix_guard1_git_commit_tokenizer_202607121350）
+- L1071: GA-230: 新規テストは既存対象スイートへ統合する（cmd_3863）
+- L1072: bats @testブロック内から実bats-coreをnested実行すると内部通信FDが外側batsのTAP集計と衝突しテスト未実行のままexit0化する（cmd_karo_hotfix_heavy_job_admission_202607121348）
+- L1073: bashのset -eu下でx="$(func)"(非local代入)がfuncの非0 returnをそのまま呼出元スクリプトのerrexitへ伝播させ、スクリプト全体を即終了させる（cmd_3866）
+- L1074: CLEAR後refluxはreview fingerprintを再利用せよ（cmd_karo_hotfix_dashboard_postclear_reflux_202607121620）
+- L1075: 振動する状態のdedupeは直前値でなく解消までの既通知集合を保持する（cmd_karo_hotfix_pending_work_seen_generations_202607121710）
+- L1076: 複数bats rootの共通スケジューラはbats-core私有transportを起動境界で消毒せよ（cmd_karo_hotfix_bats_parallel_transport_202607121902）
+- L1077: 10-15分例外の自由文検証は非空・非placeholderチェックだけでは意味論を担保できず'x'等の無意味値がPASSする（cmd_karo_hotfix_task_natural_boundary_contract_rc4_202607122210）
+- L1078: yaml_field_set post-write検証をparse比較へ移行する際はYAML1.1暗黙型変換とawk -vエスケープ自動デコードに注意（cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228）
+- L1079: read-only shell allowlistはcmd0一致だけでなくoption/script能力を検証せよ（cmd_karo_hotfix_guard14_env_db_intent_rc5_202607122241）
+- L1080: 能力launcherは文字列分類でなく実行環境そのものを制約する（cmd_karo_hotfix_guard14_db_capability_launcher_202607122350）

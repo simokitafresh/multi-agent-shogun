@@ -1,0 +1,211 @@
+source: context/infrastructure.md
+source_blob: 19cd9d8f106bdfeca47db18d26908d7f5b447ee1
+generated: '2026-08-01'
+details:
+- path: docs/research/infrastructure-context-memory.md
+  lines: 347
+- path: docs/research/infrastructure-agents-delivery.md
+  lines: 349
+- path: docs/research/infrastructure-platforms-operations.md
+  lines: 227
+- path: docs/research/infrastructure-lessons-deploy-gates.md
+  lines: 400
+- path: docs/research/infrastructure-lessons-git-testing.md
+  lines: 400
+- path: docs/research/infrastructure-lessons-reviews-operations.md
+  lines: 423
+- path: docs/research/infrastructure-design-standards.md
+  lines: 307
+headings:
+- heading: '# インフラコンテキスト'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## コンテキスト管理'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 2026-07-24インフラ修正バッチ(cmd_4154-4164)'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## lord_conversation / 記憶DBデータフロー（cmd_2963〜cmd_3032）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 直近改善（cmd_181〜cmd_541）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 直近改善（cmd_602〜cmd_612）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 直近改善（cmd_875〜cmd_878）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 直近改善（cmd_1039〜cmd_1120）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 直近改善（cmd_3300〜GA-050）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 軍師品質管理ユニット（cmd_1144〜cmd_1181）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 偵察デフォルト品質5要件（cmd_754+cmd_1476）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 直近改善（cmd_1532〜cmd_1543）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## 直近改善（2026-04-16〜2026-04-30 CoDD波 / GP-198〜240）'
+  path: docs/research/infrastructure-context-memory.md
+- heading: '## deploy_task.sh --direct mode（cmd_1672）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## /henseiスキル（cmd_1673）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## Claude CLIモデル指定とコンテキスト（ci_fix_200k）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### Codex multi-CLI統合(2026-05-11確立)'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### 直近24日間の主要裁定/実装（2026-05-01〜2026-05-24）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## Claude Code バージョン固定と復帰'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## 忍者個別弱点自動注入（cmd_1307）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## gate強化（cmd_1178〜cmd_1180）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## 知識サイクル現状（cmd_531/533/541/1111/1113/1117 反映）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### 稼働中の仕組み'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### 現行メトリクス（2026-03-30時点）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### 設計思想'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## SessionStart hook — startup gate自動実行（cmd_2683）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## 二重配備防止3層防御（cmd_2681/2682/2684）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## 暗黒物質Phase 2: 高優先度60関数（cmd_2777）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### ninja_monitor.sh: 状態管理・配備・監視・自動化（26件）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### deploy_task.sh: 注入・ゲート・配備制御（20件）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### inbox_write.sh: メッセージ管理・重複検出（9件）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '### cmd_save.sh: 品質ゲート補助（5件）'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## ninja_monitor.sh'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## inbox_watcher.sh'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## ntfy.sh'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## ログローテーション'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## field_deps.tsv'
+  path: docs/research/infrastructure-agents-delivery.md
+- heading: '## tmux設定'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## Claude Code マルチアカウント管理（cmd_313偵察）'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## Google Workspace CLI (gws) — 全PJ共通ツール'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## Render運用（cmd_2824, 2026-05-17）'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '### プラン別挙動'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '### 障害切り分け手順'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '### 全サービス一覧'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## WSL2固有'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## 競合調査'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## Android App'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## 記憶DBバックアップ棚卸し（cmd_3869）'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## DM-Signal outputs陳腐化中間成果物削除（cmd_3871）'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## `/mnt/c`残量の事前検知（cmd_3875）'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## 防御機構スループット棚卸し（cmd_4059）'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## 外れ値型防御checkの発生条件（cmd_4185）'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## DM-signal outputs陳腐化成果物削除（cmd_3871, 2026-07-24）'
+  path: docs/research/infrastructure-platforms-operations.md
+- heading: '## テスト方針（全PJ共通・殿裁定2026-07-19）'
+  path: docs/research/infrastructure-lessons-deploy-gates.md
+- heading: '## Infra教訓索引'
+  path: docs/research/infrastructure-lessons-deploy-gates.md
+- heading: '### カテゴリ別索引（L051-L466）'
+  path: docs/research/infrastructure-lessons-deploy-gates.md
+- heading: '## 軍師レビュー効果計測（cmd_1144導入）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### ベースライン（導入前）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### 導入後計測'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### 判定基準（30cmd後）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '## PD裁定反映（cmd_354同期）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '## skill_gate_feedback.sh 最適化パターン（cmd_2589, 2026-05-06）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '## SKILL.md品質基準（7項目チェックリスト）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### フロントマター必須フィールド'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### オプションフィールド'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### North Star'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '## Diff-aware Testing 方針（GStack/GBrain #26）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### 適用判断フロー'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### CI固有FAIL切り分け手順(ローカル未再現時)'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### WSL2固有の注意点'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### 変更ファイルに関連するテスト特定方法'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '# 変更ファイルのテストを特定'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '### 制約（SKIP=FAILルール、Test Rules §1）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '## DB guard = 語彙一致ではなく操作意図×信頼境界で判定せよ（cmd_karo_hotfix_guard14_db_trust_boundary_202607120854）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '## 重量テストジョブのhost-wide admission契約（cmd_karo_hotfix_heavy_job_admission_202607121348）'
+  path: docs/research/infrastructure-design-standards.md
+- heading: '## 因果リンク'
+  path: docs/research/infrastructure-design-standards.md
+source_lines: 2453
+heading_count: 77
+preamble:
+  source_lines: 1-11
+  destination: docs/research/infrastructure-context-memory.md
+source_ranges:
+- source_lines: 1-347
+  destination: docs/research/infrastructure-context-memory.md
+  destination_lines: 1-347
+  sha256: d4c295519b540d08adb478ec88810c29017bb3acec94c3dbf86eb3fce356a0a0
+- source_lines: 348-696
+  destination: docs/research/infrastructure-agents-delivery.md
+  destination_lines: 1-349
+  sha256: e445fb33fa5c1b7943b2d46b97aa2f90ce7ed674b73d6062738062cf1bef6269
+- source_lines: 697-900
+  destination: docs/research/infrastructure-platforms-operations.md
+  destination_lines: 1-204
+  sha256: dca71e06ef0ea655bad2a3045ad734f445605fe6eee726e8554a7f17074f88fc
+- source_lines: 901-1300
+  destination: docs/research/infrastructure-lessons-deploy-gates.md
+  destination_lines: 1-400
+  sha256: 87e77e065e0f45e23d1c02405cd97426603619afd9a16d185e856c2b3849eac1
+- source_lines: 1301-1700
+  destination: docs/research/infrastructure-lessons-git-testing.md
+  destination_lines: 1-400
+  sha256: d12d9c5187be6aec7b8cea05acd4ec989fe8b3a3c5165f4c3afd1676dfc8e45a
+- source_lines: 1701-2123
+  destination: docs/research/infrastructure-lessons-reviews-operations.md
+  destination_lines: 1-423
+  sha256: 922c4a5ac4425f07fb1f1b0244f232ca057d2cfc5281e732c40c5310fa5ee7f4
+- source_lines: 2124-2430
+  destination: docs/research/infrastructure-design-standards.md
+  destination_lines: 1-307
+  sha256: 5ea7bfe27e5adf8123989eb1d236e249fa915d6d1acd8df8985c0708f37f5db8
+- source_lines: 2431-2453
+  destination: docs/research/infrastructure-platforms-operations.md
+  destination_lines: 205-227
+  sha256: 870135b2a1fe0ad947ed79a8f9d69931276dd6275161e81c7ffc3fe541aa75e4
