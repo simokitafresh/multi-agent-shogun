@@ -126,6 +126,7 @@ codd:
 | causal | `cmd_karo_hotfix_p1b_report_publish_generation_20260730` files_modified: [[circular_lock_reconciler_fix]] |
 | causal | `cmd_karo_hotfix_hook_result_parent_mapping_20260730` files_modified: [[circular_lock_reconciler_fix]] |
 | causal | `cmd_karo_hotfix_rfs_idkey_normalization_20260731` files_modified: [[circular_lock_reconciler_fix]] |
+| research | `docs/research/cmd_4210_p1b_identity_coverage_snapshot_20260801.md` — report完了からcompletionまでのcanonical identity世代一致率とP1b再開条件の実測 |
 
 ## strong_new_game_completion_contract — 強くてニューゲーム完遂契約
 
@@ -493,7 +494,7 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて, 今回の試行錯誤を, 三層記憶は記憶DB obsidian セマンティックの三層, 三層記憶にも正しく貫通させよう, スキルの問題か？三層記憶の問題か？, 三層記憶の更なるアップデートについて軍師と検証して報告せよ, そのための三層記憶だ, まずは三層記憶を確認し, 勝手に行動せずに三層記憶を確認せよ, 稼働中taskのAC是正を家老へ指示, つまり三層記憶を確認しなかったのが真因だな, 三層記憶を先に読めば, 三層記憶に貫通させたか？, やり方がおかしくないか？三層記憶は全員が利用可能なはずだ, 三層記憶が本来の意図通りに動くようになったか？, 三層記憶にフォーカスせよ, まずは三層記憶を完了させよう, では三層記憶アクセスルート是正にフォーカスして進めよう, 3点セット規律を三層記憶に貫通させよ, 軍師の断定が 家老の一次証拠 を撤回させた, 家老の一次証拠, 三層記憶貫通のスキルを検証して報告せよ, 家老と軍師は三層記憶に貫通させるスキルを使うようになったか？, 三層記憶アクセスルート是正のドキュメントをアップデートし, noteに下書きをCDPスキルを使って作成, 作業前に三層記憶を毎回読んでいた気がするんだが, 三層記憶「作業前に読ませる強制」の修正はなぜ効果がないんだ？ |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて, 今回の試行錯誤を, 三層記憶は記憶DB obsidian セマンティックの三層, 三層記憶にも正しく貫通させよう, スキルの問題か？三層記憶の問題か？, 三層記憶の更なるアップデートについて軍師と検証して報告せよ, そのための三層記憶だ, まずは三層記憶を確認し, 勝手に行動せずに三層記憶を確認せよ, 稼働中taskのAC是正を家老へ指示, つまり三層記憶を確認しなかったのが真因だな, 三層記憶を先に読めば, 三層記憶に貫通させたか？, やり方がおかしくないか？三層記憶は全員が利用可能なはずだ, 三層記憶が本来の意図通りに動くようになったか？, 三層記憶にフォーカスせよ, まずは三層記憶を完了させよう, では三層記憶アクセスルート是正にフォーカスして進めよう, 3点セット規律を三層記憶に貫通させよ, 軍師の断定が 家老の一次証拠 を撤回させた, 家老の一次証拠, 三層記憶貫通のスキルを検証して報告せよ, 家老と軍師は三層記憶に貫通させるスキルを使うようになったか？, 三層記憶アクセスルート是正のドキュメントをアップデートし, noteに下書きをCDPスキルを使って作成, 作業前に三層記憶を毎回読んでいた気がするんだが, 三層記憶「作業前に読ませる強制」の修正はなぜ効果がないんだ？, 三層記憶で確認せよ |
 | related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode, dm_signal_pf_restore_guardrails, strong_new_game_completion_contract, gist_master_three_step_rule, circular_lock_reconciler_fix, primary_observation_precedence |
 
 | 種別 | パス/参照 |
@@ -662,6 +663,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T12:32:58+09:00 構造的に優れたやり方を見つけたら、車輪の再発明をしないように三層記憶に貫通させて、最初から超速回転のメリットを活かせる仕組みで全員が行動できるようにしよう。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T15:31:44+09:00 作業前に三層記憶を毎回読んでいた気がするんだが、本当にお前の因果のたどりは正しいのか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T15:40:44+09:00 いま三層確認が行われるのはどのタイミングなんだ？おれはすべての行動の前だと指示した。三層記憶「作業前に読ませる強制」の修正はなぜ効果がないんだ？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T22:12:20+09:00 三層記憶で確認せよ |
 | causal_chain | `[[cmd_karo_recon_memory_cache_mtime_freshness_20260726]]` (L1343) |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
@@ -1301,6 +1303,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:13:58+09:00 今セッションでhookやgateの品質問題で遅延やエラー、放置などが起きていたらバグだ。バグは即時修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:34:32+09:00 バグは即時修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:54:37+09:00 覚醒して行動 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T22:12:17+09:00 覚醒して行動 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T22:45:09+09:00 覚醒して行動 |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 | causal_chain | `[[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]` (L1397) |
 | causal_chain | `[[cmd_karo_hotfix_ga414_context_freshness_20260729]]` (L1454) |
@@ -3263,6 +3267,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T20:20:35+09:00 いまクリアされても今より強くてニューゲームできるようにせよ、って俺が入力したら出てきたよ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T20:30:35+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:26:14+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T22:48:22+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -3580,7 +3585,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら, 検証してみて, 家老は明示的に指示しないと自分自身で読まないから気をつけろ, スキルを使ってCDPで確認せよ, ニンジャが確認で躓いている, 基本的にできる限り別CMDで出すのがルールだ, 陳腐化しているPDはないか？確認せよ, やり方があるはずだ, 将軍が出来るはず, admin画面での設定にバがあるのでは？覚醒して確認せよ, 実測では check gate名称含む関数 37件, 家老に確認を取れ, 隠れたインフラバグはないか？覚醒して確認, 追加時は通知受信者が必要な情報を全て含むか確認せよ, mode別にatomic性を確認する, バグの再燃だったのかだな, 本cmdではrun tests shに実装した, 将軍が即時確認せよ, 未確認を確認しよう, 102PF全てを確認せよ, 小さく確認しよう, 本番とのパリティを確認するときに, AC4 AC5をまとめて報告YAML作成に進む, GSはできそうなのか？本番とのパリティは全て確認できたか？, 全PF一律ロジックになっていないか確認せよ, gateの品質問題は根治したか？覚醒して確認せよ, 並列可能なCMD起票を待機していないか確認せよ, commit前に既存ステージを必ず確認する, やり残したことはないか？確認しよう, 不要なバックスラッシュを付けないことを確認せよ, kotaroとtobisaruもidleに見える, 未起票のCMDはないか？, 次回実行でcmd AC2がBLOCKする, band適用済み本番PFに対し必ずFAILする, 逆に実態が本当に未実装ならそのとき初めて実装に着手する, 俺の指示した1体登録して再計算, 本番と100％一致していなければだめだな, エラーかバグだ, 自分がステージした変更がそのcommitに吸収された, hanzoを確認せよ, CI修正前に失敗テストの仕様正当性をgit履歴で確認する, FEとBEとDBが連携しているか確認せよ, commit前に既存indexを対象scopeと分離確認する, run不変値を日次ループで外部process再取得するな, ｐｄが陳腐化していないか確認せよ, 未完了ならさらに待機, diffゼロで正常復元を確認, 忍者が迷いなく作業できる粒度になっているか？確認せよ, 複数workerは全worker ready件数を確認する, teardownのrmは全testごとの重複I O, 次回はsetupのmktemp重複を最初に二値確認する, BATS既定tmpと追加mktempの二重管理を避ける, 速度最適化前に共有fixtureの現行契約適合を二値確認する, 1Mになっていないぞ, 旧世代はrc75・pathなしでfail closedにする, インフラバグやGateやhookの品質問題が潜んでいる, 運用ログは呼出元とcronで三角測量して本番性を判定する, 古い数値を未確認で使用していないか？, WSL実行権限とGit index modeを分離検証する, 共有YAMLの件数超過時, hook速度改善は一巡後の最大残存寄与を再計測する, 現版139 167ms対旧154 188msを確認, 出力評価順が不変かを二値確認する, 判定契約を変えず反復git diffを除去できる, 同一mkdir pの連続呼出しは単一processへ束ねる, 該当する場合は同期処理を維持するチェックを追加する, module import from aliasを解決し, 実証まで自分を疑う無知の知, 家老の現物確認, 家老の現物確認 blt 20260720 133855, 確認を進めよ, 家老は効率よく行動できているか？利他の精神で確認せよ, 状況を確認しサイクルが止まらずに動くようにナッジせよ, しかし実装が無いまま書けば『記録≠状態』を自分で作り, まだ忍者は動いてるぞ, まずバグの実在を確認しないとな, 家老は配備が出来ず, 未決定や未調査を全て確認しよう, 検出gateの稼働有無と接続有無は別軸で確認せよ, 検知器の語彙拡張は自分のcommitを新たにBLOCKしうる, wait nの回収対象と独自PID台帳を二重管理しない, tobisaruを確認せよ, 外れ値台帳には枝選択コンテキストが必要, unitテスト完了確認・報告書仕上げ・commit, commit hashを報告YAMLへ記録する作業を継続する, 軍師に確認をとれ, 第四弾は順調か？やり残しはないか確認せよ, 進捗を確認し, 統合済みtest pathは実行前に実在確認する, receiptは失敗診断のためterminal公開が必要だが, 次回は固定窓の時点と計装開始時点の整合を二値確認し, 翌月の最初の取引可能価格で ポジションをリバランスしている, 成績がどのように変化するかを素早く確認する, 当該taskの明示的attribution対象から漏れる, 何営業日遅らせて執行しても優位性が壊れないかを確認します, 返答までするのが確認と既読化だ, いま危機的な状況だ, criticalなエラーがないか確認するように伝えてくれ |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら, 検証してみて, 家老は明示的に指示しないと自分自身で読まないから気をつけろ, スキルを使ってCDPで確認せよ, ニンジャが確認で躓いている, 基本的にできる限り別CMDで出すのがルールだ, 陳腐化しているPDはないか？確認せよ, やり方があるはずだ, 将軍が出来るはず, admin画面での設定にバがあるのでは？覚醒して確認せよ, 実測では check gate名称含む関数 37件, 家老に確認を取れ, 隠れたインフラバグはないか？覚醒して確認, 追加時は通知受信者が必要な情報を全て含むか確認せよ, mode別にatomic性を確認する, バグの再燃だったのかだな, 本cmdではrun tests shに実装した, 将軍が即時確認せよ, 未確認を確認しよう, 102PF全てを確認せよ, 小さく確認しよう, 本番とのパリティを確認するときに, AC4 AC5をまとめて報告YAML作成に進む, GSはできそうなのか？本番とのパリティは全て確認できたか？, 全PF一律ロジックになっていないか確認せよ, gateの品質問題は根治したか？覚醒して確認せよ, 並列可能なCMD起票を待機していないか確認せよ, commit前に既存ステージを必ず確認する, やり残したことはないか？確認しよう, 不要なバックスラッシュを付けないことを確認せよ, kotaroとtobisaruもidleに見える, 未起票のCMDはないか？, 次回実行でcmd AC2がBLOCKする, band適用済み本番PFに対し必ずFAILする, 逆に実態が本当に未実装ならそのとき初めて実装に着手する, 俺の指示した1体登録して再計算, 本番と100％一致していなければだめだな, エラーかバグだ, 自分がステージした変更がそのcommitに吸収された, hanzoを確認せよ, CI修正前に失敗テストの仕様正当性をgit履歴で確認する, FEとBEとDBが連携しているか確認せよ, commit前に既存indexを対象scopeと分離確認する, run不変値を日次ループで外部process再取得するな, ｐｄが陳腐化していないか確認せよ, 未完了ならさらに待機, diffゼロで正常復元を確認, 忍者が迷いなく作業できる粒度になっているか？確認せよ, 複数workerは全worker ready件数を確認する, teardownのrmは全testごとの重複I O, 次回はsetupのmktemp重複を最初に二値確認する, BATS既定tmpと追加mktempの二重管理を避ける, 速度最適化前に共有fixtureの現行契約適合を二値確認する, 1Mになっていないぞ, 旧世代はrc75・pathなしでfail closedにする, インフラバグやGateやhookの品質問題が潜んでいる, 運用ログは呼出元とcronで三角測量して本番性を判定する, 古い数値を未確認で使用していないか？, WSL実行権限とGit index modeを分離検証する, 共有YAMLの件数超過時, hook速度改善は一巡後の最大残存寄与を再計測する, 現版139 167ms対旧154 188msを確認, 出力評価順が不変かを二値確認する, 判定契約を変えず反復git diffを除去できる, 同一mkdir pの連続呼出しは単一processへ束ねる, 該当する場合は同期処理を維持するチェックを追加する, module import from aliasを解決し, 実証まで自分を疑う無知の知, 家老の現物確認, 家老の現物確認 blt 20260720 133855, 確認を進めよ, 家老は効率よく行動できているか？利他の精神で確認せよ, 状況を確認しサイクルが止まらずに動くようにナッジせよ, しかし実装が無いまま書けば『記録≠状態』を自分で作り, まだ忍者は動いてるぞ, まずバグの実在を確認しないとな, 家老は配備が出来ず, 未決定や未調査を全て確認しよう, 検出gateの稼働有無と接続有無は別軸で確認せよ, 検知器の語彙拡張は自分のcommitを新たにBLOCKしうる, wait nの回収対象と独自PID台帳を二重管理しない, tobisaruを確認せよ, 外れ値台帳には枝選択コンテキストが必要, unitテスト完了確認・報告書仕上げ・commit, commit hashを報告YAMLへ記録する作業を継続する, 軍師に確認をとれ, 第四弾は順調か？やり残しはないか確認せよ, 進捗を確認し, 統合済みtest pathは実行前に実在確認する, receiptは失敗診断のためterminal公開が必要だが, 次回は固定窓の時点と計装開始時点の整合を二値確認し, 翌月の最初の取引可能価格で ポジションをリバランスしている, 成績がどのように変化するかを素早く確認する, 当該taskの明示的attribution対象から漏れる, 何営業日遅らせて執行しても優位性が壊れないかを確認します, 返答までするのが確認と既読化だ, いま危機的な状況だ, criticalなエラーがないか確認するように伝えてくれ, たしか関連する他のドキュメントもあった気がする, 他に放置やスルー先送りになっているものはないか確認せよ |
 | skills | db-check(DB確認/本番DB/パリティ検証), cdp-browse(ブラウザ確認/本番画面スクショ/CDPで確認) |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -4000,6 +4005,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T19:39:19+09:00 monthly trade ページのテーブルの左端の縦線はいらないな。ここだけ他のページと違う。gistに過去のスタイル調整の設計書があるはずだから確認んしてくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T19:48:11+09:00 Compare Returnsページの一行目の配置と二行目以降がずれている。項目とタイトルの縦位置をそろえよう。意味は分かるか？確認してみてくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:31:46+09:00 忍者のpaneを確認してみろ。inbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T22:41:34+09:00 gistをクローズドにしよう。たしか関連する他のドキュメントもあった気がする。覚醒して確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T22:44:37+09:00 他に放置やスルー先送りになっているものはないか確認せよ |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
 | causal_chain | `[[cmd_karo_hotfix_ga170_context_freshness_202607030012]]` (L943) |
@@ -5906,6 +5913,7 @@ codd:
 | lesson | `L1509` 実装前review receiptはtask identityとAC fingerprintの双方へ結合する |
 | causal | `cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_pre_implementation_review.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T22:38:30+09:00 検証しよう |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
@@ -7578,6 +7586,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:23:46+09:00 今セッションでhookやgateの品質問題で遅延やエラー、放置 などが起きていたらバグだ。バグは即時修正しよう › バグの修正は必ず事前と事後に軍師にレビューしてもらえ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:24:43+09:00 軍師が見つけたものは家老がレビューがいいな |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:56:35+09:00 https://gist.github.com/simokitafresh/89b0a0ad88595a9c3e087caf2c34becfはどうなった？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T22:42:07+09:00 cmd4209はどうなった？ |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
@@ -9141,6 +9150,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608011247_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608012107_hayate` — [[semantic_causal_automation]] -> `docs/research/context-restructure-plan-20260801.md` |
 | causal | `cmd_reflux_backlink_202608012107_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608012155_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gunshi_log_append — 仮: Gunshi Log Append
@@ -9931,6 +9941,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607311429_kotaro` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607311717_kotaro` (`docs/semantic-index/index.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T09:17:36+09:00 kotaroをrespawanせよ |
+| cmd | `cmd_reflux_backlink_202608012155_kotaro` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
@@ -10243,6 +10254,7 @@ codd:
 | causal | `cmd_karo_round5_lane_inbox_write_total_20260729` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_auto_clear_completion_deadlock_20260801` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_infra_anomaly_reporting_lane_20260801` files_modified: [[infra_design_intent]] |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
 
@@ -10404,6 +10416,7 @@ codd:
 | causal | `cmd_karo_hotfix_rfs_idkey_normalization_20260731` files_modified: [[yaml_safe_write]] |
 | cmd | `cmd_4200` (`docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml`, `docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md`, `tests/unit/test_lock_path.bats`) |
 | causal | `cmd_karo_hotfix_active_context_gate_transient_20260801` files_modified: [[yaml_safe_write]] |
+| causal | `cmd_karo_hotfix_infra_anomaly_reporting_lane_20260801` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
 | causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
 | causal_chain | `[[cmd_4192]]` (L1450) |
@@ -11244,6 +11257,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T09:36:09.521388+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T11:48:16.384992+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T21:22:27+09:00 推奨案で設計書を書こう。gistに共有はスキル化するのはどう思う？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-01T12:59:45.210013+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
