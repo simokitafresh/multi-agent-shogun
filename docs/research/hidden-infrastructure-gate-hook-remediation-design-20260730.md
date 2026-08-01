@@ -4,8 +4,8 @@
 |---|---|
 | 作成 | 2026-07-30 家老 |
 | 再構築 | 2026-07-31 家老 |
-| 進捗更新 | 2026-08-01 03:36 家老 (殿下問「超速回転に対する過剰防御・実装単純性」実測反映。レビュー前draft) |
-| 版 | v3.9 = v3.8 + §-2.3単純性監査 + §5.0途中lane契約改訂(将軍APPROVE 03:44。安全性を弱めず途中tryの儀式を削る) |
+| 進捗更新 | 2026-08-01 11:40 将軍 (殿下問「全体進捗と見込み時間を直感的に」→§-2.Pダッシュボード新設) |
+| 版 | v4.0 = v3.9 + §-2.P全体進捗ダッシュボード(進捗バー+Wave別完了度+見込み時間) |
 | 最終レビュー | v3.9将軍APPROVE(実測spot check: manifest331/py788/sh106/bats421行 全一致・fail-close境界維持確認)。v3.8はRC2 LGTM。旧正本=`docs/research/shogun-adversarial-review-hidden-infra-design-20260801.md` |
 | 対象 | `multi-agent-shogun` 制御面、gate、hook、配備、完了、CI、知識還流。Codex専用設計ではなく、全configured CLI/model/effort/service-tier/OS-filesystem tupleを対象とする |
 | code baseline | `55b3df6d4d937c7683ef1ca9a83393760d593e47` |
@@ -15,6 +15,36 @@
 | 親cmd | `cmd_4200`(Gate0A〜Wave1A、完遂済み)。**Wave 1B以降=cmdなし家老自走**(殿裁定2026-08-01 09:14: ホットスクリプト方式。本設計書+canonical manifestが唯一のmandate。台帳駆動campaign laneで直進し、進捗はmanifest phase遷移+掲示板GATEで将軍が検分) |
 
 ## §-2 現在地（最初に読め）
+
+### §-2.P 全体進捗ダッシュボード (2026-08-01 11:40 将軍更新)
+
+```text
+全体進捗(工数加重):  █████████████░░░░░░░░░░░░  ≈50%
+経過: 2.5日(07-30着手)  /  残り見込み: 6〜7日  /  完了見込み: 2026-08-07〜08
+  楽観(独立unit並列化が効く場合): 08-06
+  悲観(R03級のRC反復が2件以上再発): 08-10
+```
+
+対象は17 canonical findings(probe段でSUPERSEDED 4件除外→実装対象13 unit + Final checkpoint)。完了度はunit終端(terminal receipt)基準、部分値は先行実装分。
+
+| # | 段階 | 対象unit | 状態 | 完了度 | 実績/見込み |
+|---|---|---|---|---:|---|
+| 1 | Gate 0A contract | 17 findings契約化 | ✅ 終端 | 100% | 実績 07-31 |
+| 2 | Wave 0 runtime probe | 17/17実行 | ✅ 終端 | 100% | 実績 07-31 |
+| 3 | Gate 0B closure | 13 OPEN→実装unit写像 | ✅ 終端 | 100% | 実績 07-31 |
+| 4 | Foundation (durable_state) | WAL/fence/receipt基盤 | ✅ 終端 | 100% | 実績 07-31 |
+| 5 | Wave 1A identity | R01, R06 | ✅ R01終端・R06 review path済(残=caller横展開) | 90% | 実績 07-31〜08-01 |
+| 6 | **Wave 1B ownership** | R03✅, **R04, R05** (+V03) | 🔄 **現在地**。R03=障壁表方式でRC反復5回の末**GATE CLEAR終端(08-01 11:31)**。R04/R05が次unit | 45% | 残り1日 |
+| 7 | Wave 2A terminal receipt | R07, R08 | ⏳ archive再承認レーンで大半先行実装済み。残=汎用WAL/reconciler適用 | 40% | 残り0.5日 |
+| 8 | Wave 2B safe delivery | V02, V04 | ⏳ V04部分先行(PARTIALLY_SUPERSEDED) | 25% | 1日 |
+| 9 | Wave 3 CI/test SSOT | R09, R10, R13 | ⏳ 未着手。**最大工数**(CI未所属97 testの再採番+inventory生成) | 0% | 2〜3日 |
+| 10 | Wave 4A hook ownership | R14 | ⏳ 未着手 | 0% | 0.5日 |
+| 11 | Wave 4B knowledge provenance | R11, R15, V01 | ⏳ R15はinsight resolve運用が部分先行 | 10% | 1日 |
+| 12 | Final checkpoint | 固定SHAで全receipt+全量test照合 | ⏳ | 0% | 0.5日 |
+
+**読み方**: ゴール=13 unit全終端+Final checkpoint 1回。前半4段(契約・probe・写像・基盤)は工数の約1/3を占め完了済み。ボトルネック候補は現在進行のR03(fence/authority domain設計、軍師FAIL 2回で再設計中)とWave 3(物量最大)。見込みの根拠: Wave 1A実績=1日/2unit、archive先行レーン実績=1日、R03実績=RC反復込み1日/unit — これを残unit数に外挿し、§5.0の独立unit並列化(直列はserialization key共有時のみ)で楽観側へ寄せる。
+
+**進捗の一次確認先**: canonical manifest `current_phase`/`phase_state`(現在=`WAVE_1A_IDENTITY:ACCEPTED`→`next=WAVE_1B_OWNERSHIP`) + findings別 `remediation_status`(SUPERSEDED=終端済み、ACTIVE=未了)。本表は将軍が掲示板GATE報告とmanifestから集計した二次情報であり、乖離時はmanifestが正。
 
 結論: **Gate 0B、durable-state foundation、Wave 1A R01は受入済み。親AC基準3/3完了。** archive再承認レーンでWave 1A/2A/3の一部が先行実装されたため、canonical manifestのreceiptを照合して残作業だけを後続Waveで実装する。
 
