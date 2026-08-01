@@ -1324,5 +1324,4 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 因果リンク: [[同日再計測の終端日が実行日へ揺れる]] -> [[recalculate-sync_end_date契約]] -> [[同一logical_date全PF直列計測]]
 ## §85 signal flush複合key照会の運用上限 (commit 3ee5c21b, 2026-08-01)
 
-- `6200cc1e`の10,000-key chunkは本番L3同期で07:15開始→07:19 `updated_at`、`StatementTooComplex`、rows 0で失敗。既知正常commit `5c8a9cf` の1,000-key境界を再適用した`3ee5c21b`で、`_collect_new_insert_ledger_drift_alerts()`と`_classify_repeated_ledger_guard_corrections()`を共通helper経由1,000 keyごとに照会する。現在は本番再検証中で、rows>0・terminal完走の一次証跡が出るまで未解決扱い。詳細はDM-Signal側research正本へ集約し、本contextは運用結論のみ保持する。
-- 因果リンク: [[10k_chunk本番StatementTooComplex_rows0]] -> [[5c8a9cf_1k境界再適用]] -> [[3ee5c21b_本番再検証中]]
+- `6200cc1e`の10,000-key chunkは本番L3同期で07:15開始→07:19 `updated_at`、`StatementTooComplex`、rows 0で失敗。既知正常commit `5c8a9cf` の1,000-key境界を再適用した`3ee5c21b`で、`_collect_new_insert_ledger_drift_alerts()`と`_classify_repeated_ledger_guard_corrections()`を共通helper経由1,000 keyごとに照会する。現在は本番再検証中で、rows>0・terminal完走の一次証跡が出るまで未解決扱い。詳細はDM-Signal側research正本へ集約し、本contextは運用結論のみ保持する。因果リンク: [[10k_chunk本番StatementTooComplex_rows0]] -> [[5c8a9cf_1k境界再適用]] -> [[3ee5c21b_本番再検証中]]
