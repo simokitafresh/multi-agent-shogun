@@ -5687,7 +5687,7 @@ PY
 
 # ─── 停滞検知（assigned/acknowledged/in_progress+idle） ───
 # 忍者がタスク受領後にペインがidle状態のまま放置された場合、家老に通知
-# 閾値: assigned=15分, acknowledged=10分, in_progress=20分(progress未更新時)
+# 閾値: 全active statusでSTALL_THRESHOLD_MIN。RUNTIME idleの連続時間を一次証跡とする。
 _run_dead_pane_recovery() {
     local agent_name="$1"
     bash "$SCRIPT_DIR/scripts/respawn_dead_agent.sh" "$agent_name"
@@ -5790,6 +5790,18 @@ _notify_explicit_task_stop() {
     fi
     log "SILENT-STOP-NOTIFY: $name task=$task_id reason=$reason path=$task_file fingerprint=$fingerprint"
     return 0
+}
+
+# A CLI confirmation prompt is deliberately waiting for an authorized human
+# decision.  Sending a watcher nudge here can be consumed as a prompt choice,
+# so it is never an eligible STALL recovery target.
+_pane_has_confirmation_prompt() {
+    local pane_target="$1"
+    local capture
+    capture=$(tmux capture-pane -t "$pane_target" -p -S -30 2>/dev/null || true)
+    [ -n "$capture" ] || return 1
+    printf '%s\n' "$capture" | grep -Eiq \
+        'Do you want to proceed\?|[[:space:]]1\.[[:space:]]*Yes|[[:space:]]2\.[[:space:]]*No|confirm(ation)? required|approval required'
 }
 
 check_stall() {
@@ -5922,26 +5934,6 @@ check_stall() {
         fi
     fi
 
-    case "$status" in
-        assigned|acknowledged)
-            ;;
-        in_progress)
-            # progress_updated_atが最近更新されていれば作業中と判断（last_progressはawk取得済み）
-            if [ -n "$last_progress" ]; then
-                local progress_epoch
-                progress_epoch=$(date -d "$last_progress" +%s 2>/dev/null || echo "0")
-                local now_epoch
-                now_epoch=$EPOCHSECONDS
-                local progress_age=$(( now_epoch - progress_epoch ))
-                if [ $progress_age -lt 1200 ]; then
-                    # 20分以内にprogress更新あり → 作業中
-                    unset "STALL_FIRST_SEEN[$name]"
-                    return
-                fi
-            fi
-            ;;
-    esac
-
     # ペインがidleか確認
     local target="${PANE_TARGETS[$name]}"
     if [ -z "$target" ]; then return; fi
@@ -5955,6 +5947,12 @@ check_stall() {
     if _pane_has_active_background_compute "$target"; then
         unset "STALL_FIRST_SEEN[$name]"
         log "STALL-ACTIVE-COMPUTE: $name pane=$target has progressing background process"
+        return
+    fi
+
+    if _pane_has_confirmation_prompt "$target"; then
+        unset "STALL_FIRST_SEEN[$name]"
+        log "STALL-CONFIRMATION-PROMPT-SKIP: $name task=$task_id pane=$target nudge=0"
         return
     fi
 
@@ -5987,17 +5985,9 @@ check_stall() {
     local first_seen=${STALL_FIRST_SEEN[$name]}
     local elapsed_min=$(( (now - first_seen) / 60 ))
 
-    # statusごとの閾値分岐
+    # RUNTIME idle継続の共通閾値。progress_updated_atやCLI profileの猶予を
+    # ここへ重ねると、20分 freshness + 20分 stall の二重時計になる。
     local threshold=$STALL_THRESHOLD_MIN
-    case "$status" in
-        acknowledged) threshold=10 ;;
-        in_progress)
-            threshold=$(cli_profile_get "$name" "in_progress_stall_min")
-            if ! [[ "$threshold" =~ ^[0-9]+$ ]]; then
-                threshold=20
-            fi
-            ;;
-    esac
 
     local stall_key="${name}:${task_id}"
 

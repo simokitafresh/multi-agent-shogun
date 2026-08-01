@@ -740,6 +740,7 @@ cli_profile_get() {
 }
 
 PANE_TARGETS[kagemaru]="shogun:2.5"
+STALL_THRESHOLD_MIN=1
 now=$(date +%s)
 STALL_FIRST_SEEN[kagemaru]=$((now - 2 * 60))
 check_stall kagemaru
@@ -751,6 +752,88 @@ cat "$TEST_LOG"
     [[ "$output" == *"karo|stall_alert|"* ]]
     [[ "$output" == *"kagemaru|task_assigned|"* ]]
     [[ "$output" == *"STALL-RECOVERY-SEND:"* ]]
+}
+
+# test_necessity: confirmation prompt中のnudgeは選択肢入力になり得るため送出を禁止する
+@test "check_stall: confirmation prompt suppresses in_progress recovery nudge" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/confirmation-prompt"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: in_progress
+  task_id: cmd_4213_full
+EOF
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+TEST_LOG="$SCRIPT_DIR/logs/monitor.log"
+TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"
+log() { printf "%s\n" "$1" >> "$TEST_LOG"; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
+tmux() {
+  case "$*" in
+    *capture-pane*) printf "Do you want to proceed?\n1. Yes\n2. No\n" ;;
+    *"#{pane_dead}"*) printf "0\n" ;;
+  esac
+}
+PANE_TARGETS[kagemaru]="shogun:2.4"
+STALL_FIRST_SEEN[kagemaru]=$((EPOCHSECONDS - 30 * 60))
+check_stall kagemaru
+test ! -s "$TEST_MESSAGES"
+grep -q "STALL-CONFIRMATION-PROMPT-SKIP: kagemaru task=cmd_4213_full pane=shogun:2.4 nudge=0" "$TEST_LOG"
+printf "messages=0 confirmation_skip=1\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "messages=0 confirmation_skip=1" ]
+}
+
+# test_necessity: fresh progress timestampとprofile 20分の二重猶予で16分idleを見逃さない
+@test "check_stall: in_progress runtime idle uses common threshold despite fresh progress and profile" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/runtime-idle-threshold"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+progress_at=$(date -d "16 minutes ago" -Iseconds)
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<EOF
+task:
+  status: in_progress
+  task_id: cmd_4211_full
+  progress_updated_at: "$progress_at"
+EOF
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+TEST_LOG="$SCRIPT_DIR/logs/monitor.log"
+TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"
+log() { printf "%s\n" "$1" >> "$TEST_LOG"; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
+_pane_has_confirmation_prompt() { return 1; }
+cli_profile_get() { [ "$2" = in_progress_stall_min ] && printf "20\n" || true; }
+PANE_TARGETS[saizo]="shogun:2.6"
+STALL_THRESHOLD_MIN=10
+STALL_FIRST_SEEN[saizo]=$((EPOCHSECONDS - 11 * 60))
+check_stall saizo
+grep -q "karo|stall_alert|" "$TEST_MESSAGES"
+grep -q "saizo|task_assigned|" "$TEST_MESSAGES"
+grep -q "STALL-DETECTED: saizo stalled on cmd_4211_full for 11min" "$TEST_LOG"
+printf "elapsed=11 threshold=10 profile=20 alert=1 nudge=1\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "elapsed=11 threshold=10 profile=20 alert=1 nudge=1" ]
 }
 
 # test_necessity: fresh progress内の明示BLOCKER/STOPは同cycleに家老へ通知され同一理由だけdurable dedupeされる
@@ -925,6 +1008,7 @@ check_idle() { return 0; }
 _pane_has_active_background_compute() { return 1; }
 cli_profile_get() { echo "1"; }
 PANE_TARGETS[saizo]="shogun:2.6"
+STALL_THRESHOLD_MIN=1
 now=$(date +%s)
 STALL_FIRST_SEEN[saizo]=$((now - 2 * 60))
 
@@ -991,6 +1075,7 @@ cli_profile_get() {
 }
 
 PANE_TARGETS[kagemaru]="shogun:2.5"
+STALL_THRESHOLD_MIN=1
 now=$(date +%s)
 STALL_FIRST_SEEN[kagemaru]=$((now - 2 * 60))
 check_stall kagemaru
@@ -1054,6 +1139,7 @@ _pane_has_active_background_compute() { return 1; }
 cli_profile_get() { echo ""; }
 
 PANE_TARGETS[kagemaru]="shogun:2.5"
+STALL_THRESHOLD_MIN=1
 now=$(date +%s)
 STALL_FIRST_SEEN[kagemaru]=$((now - 16 * 60))
 check_stall kagemaru
@@ -3123,6 +3209,7 @@ cli_profile_get() {
 PANE_TARGETS[kagemaru]="shogun:2.5"
 now=$(date +%s)
 stall_key="kagemaru:subtask_500_impl_stall_enforcement"
+STALL_THRESHOLD_MIN=1
 STALL_COUNT["$stall_key"]=1
 STALL_NOTIFIED["$stall_key"]=$((now - 301))
 STALL_FIRST_SEEN[kagemaru]=$((now - 2 * 60))
