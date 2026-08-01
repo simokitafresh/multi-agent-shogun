@@ -702,6 +702,12 @@ EOF
     rm -rf "$workdir"
 }
 
+@test "cmd_3264 AC2 delegates exact shared review log ownership to SSOT" {
+    run rg -n 'filter_report_commit_nonoverlap_uncommitted.*shared_path' "$PROJECT_ROOT/scripts/gates/gate_report_format.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'filter_report_commit_nonoverlap_uncommitted'* ]]
+}
+
 # === Test 4: PASS_NO_IMPROVEMENT はゲートとしてexit 0 (PASSと同等) ===
 @test "PASS_NO_IMPROVEMENTのときゲートはexit 0を返す" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"

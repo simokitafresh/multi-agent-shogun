@@ -287,6 +287,22 @@ filter_report_commit_nonoverlap_diffs() {
     local repo="$1"
     local report_path="$2"
     local uncommitted_raw="$3"
+    # Shared operational log ownership is semantic, not positional. Delegate
+    # this exact allowlisted path to the SSOT; retain the legacy range filter
+    # below for every ordinary file and for fail-closed results.
+    local shared_path="logs/gunshi_review_log.yaml"
+    if printf '%s\n' "$uncommitted_raw" | awk 'substr($0,4)=="logs/gunshi_review_log.yaml" {found=1} END {exit !found}'; then
+        if [ -f "$repo/scripts/lib/report_commit_nonoverlap_filter.sh" ]; then
+            # shellcheck source=scripts/lib/report_commit_nonoverlap_filter.sh
+            source "$repo/scripts/lib/report_commit_nonoverlap_filter.sh"
+            local shared_kept
+            shared_kept=$(filter_report_commit_nonoverlap_uncommitted "$repo" "$report_path" "$shared_path" 2>/dev/null || printf '%s\n' "$shared_path")
+            if [ -z "$shared_kept" ]; then
+                uncommitted_raw=$(printf '%s\n' "$uncommitted_raw" | awk 'substr($0,4)!="logs/gunshi_review_log.yaml"')
+                [ -n "$uncommitted_raw" ] || return 0
+            fi
+        fi
+    fi
     REPO_ROOT="$repo" REPORT_PATH="$report_path" CC_UNCOMMITTED_RAW="$uncommitted_raw" python3 - <<'PY'
 import os
 import re

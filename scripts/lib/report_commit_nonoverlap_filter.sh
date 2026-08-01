@@ -23,10 +23,12 @@ filter_report_commit_nonoverlap_uncommitted() {
 
     REPO_ROOT="$repo_root" REPORT_FILE="$report_file" UNCOMMITTED_PATHS="$uncommitted_paths" python3 - <<'PY'
 import os
+import json
 import re
 import subprocess
 import sys
 import time
+from collections import Counter
 import yaml
 
 repo = os.environ.get("REPO_ROOT", "")
@@ -131,12 +133,25 @@ def shared_yaml_owned_by_other(path, commit, parent_cmd):
     # Identity must be unique and complete; ambiguity is fail-closed.
     before_by_id = {}
     after_by_id = {}
+    legacy_before = Counter()
+    legacy_after = Counter()
     for collection, index in ((before, before_by_id), (after, after_by_id)):
         for entry in collection:
             identity = entry_identity(entry)
-            if identity is None or identity in index:
+            if identity is None:
+                # Pre-existing legacy entries may lack the modern identity,
+                # but they must remain byte-semantically unchanged in count.
+                # Deterministic structural key without serializing operational
+                # YAML back through a dumper (the repository bans dump-based
+                # operational YAML rewrites at the pre-commit boundary).
+                canonical = json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+                (legacy_before if collection is before else legacy_after)[canonical] += 1
+                continue
+            if identity in index:
                 return False
             index[identity] = entry
+    if legacy_before != legacy_after:
+        return False
 
     # No deletion or mutation. Additive auxiliary fields are allowed only on
     # entries owned by another command.
