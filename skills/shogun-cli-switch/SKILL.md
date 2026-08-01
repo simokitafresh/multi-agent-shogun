@@ -28,6 +28,8 @@ allowed-tools:
 <!-- cmd_karo_hotfix_active_dead_pane_recovery_202607161035検分: ninja_monitor.sh a98021ebcはactive/assigned taskのpane_dead=1をdeploy/stall graceより先に検知し、respawn_dead_agent.shのCLI SSOT・dead-only拒否・flockを再利用して自動復旧する。live pane/idle taskは対象外。既存のCLI切替I/Fは不変だが、死亡pane復旧では手動respawnよりmonitor自動復旧を優先し、capture-pane+task statusで再開を確認する契約を本文へ反映。82/82 PASS、SKIP0。 -->
 <!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: ninja_monitor.sh 494e2c145/7fb06303bをgit showで確認。stale taskのauto-commit ownership除外と、死亡pane復旧時のCLI ready確認・最大3回retry・成否metrics追加。後者はmonitor自動復旧の信頼性強化であり、`shogun_cli_switch.sh`/`switch_cli_mode.sh`の引数、settings→tmux同期、対象paneの`respawn-pane -k`契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
+<!-- script_refs_checked_at: 2026-08-01T19:15:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_reflux_b_20260801検分: yaml_field_set.sh 7a4748678はtask lease同時更新を追加。ninja_monitor.sh da8993f1d/0f4a9c887はowner transaction startup reconciliationのfail-close化とformal-close済みfailed通知抑止を追加。settings→tmux同期、idle/dead pane respawn、cli_launch_cmd、CLI切替I/Fは不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_202607151824検分: yaml_field_set.sh 7042b59e9をgit showで確認。indentless sequence field置換時の残存行防止のみで、settings更新CLI・atomic反映・tmux同期/respawn副作用契約は不変。 -->
 <!-- 2026-07-15検分: ninja_monitor.sh 2faecab31はinbox pruning時のmessage_id evidence退避を追加。CLI切替・idle pane respawn・settings同期・respawn-pane -k契約には影響なし。 -->
 
