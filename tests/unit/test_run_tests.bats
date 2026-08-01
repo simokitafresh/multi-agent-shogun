@@ -1276,6 +1276,35 @@ print(len(data["task"]["commit_contract"]["planned_paths"]))
   [[ "$output" == *"BLOCK: task scope is empty"* ]]
 }
 
+# test_necessity: directory ownership must select only concrete changed files;
+# a literal directory would fan out through the dependency map to the whole repo.
+@test "directory task scope expands concrete diffs and blocks empty directories" {
+  eval "$(sed -n '/^expand_task_directory_scope()/,/^}/p' "$TMPROOT/scripts/run_tests.sh")"
+  mkdir -p "$TMPROOT/app"
+  printf 'a\n' >"$TMPROOT/app/one.sh"
+  printf 'b\n' >"$TMPROOT/app/two.sh"
+  git -C "$TMPROOT" add app && git -C "$TMPROOT" commit -qm app
+
+  printf 'changed\n' >>"$TMPROOT/app/one.sh"
+  run expand_task_directory_scope "$TMPROOT" app
+  [ "$status" -eq 0 ]
+  [ "$output" = "app/one.sh" ]
+
+  printf 'changed\n' >>"$TMPROOT/app/two.sh"
+  run expand_task_directory_scope "$TMPROOT" app
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"app/one.sh"* && "$output" == *"app/two.sh"* ]]
+
+  git -C "$TMPROOT" restore app/one.sh app/two.sh
+  run expand_task_directory_scope "$TMPROOT" app
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"no concrete changed files"* ]]
+
+  run expand_task_directory_scope "$TMPROOT" scripts/run_tests.sh
+  [ "$status" -eq 0 ]
+  [ "$output" = "scripts/run_tests.sh" ]
+}
+
 # test_necessity: inspection-only recon tasks must produce a successful
 # zero-source-test receipt instead of expanding inspection references through
 # the dependency selector and attributing unrelated failures to the recon.

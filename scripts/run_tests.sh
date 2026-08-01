@@ -274,6 +274,34 @@ for raw in values:
 PY
 }
 
+# A directory in a task contract is an ownership boundary, not a dependency
+# selector input.  Resolve it to the concrete tracked/untracked files changed
+# beneath that boundary; passing the literal directory makes test_select map
+# every dependency in the tree.
+expand_task_directory_scope() {
+    local root="$1"; shift
+    local path rel
+    local -a expanded=()
+    for path in "$@"; do
+        if [ -d "$root/$path" ]; then
+            while IFS= read -r rel; do
+                [ -n "$rel" ] && expanded+=("$rel")
+            done < <(
+                { git -C "$root" diff --name-only HEAD -- "$path"
+                  git -C "$root" ls-files --others --exclude-standard -- "$path"; } |
+                    awk 'NF && !seen[$0]++'
+            )
+        else
+            expanded+=("$path")
+        fi
+    done
+    [ "${#expanded[@]}" -gt 0 ] || {
+        echo "BLOCK: directory task scope has no concrete changed files" >&2
+        return 2
+    }
+    printf '%s\0' "${expanded[@]}"
+}
+
 is_test_contract_path() {
     local path="$1" name="${1##*/}"
     [[ "$path" == tests/* || "$path" == */tests/* \
@@ -1892,6 +1920,14 @@ _run_tests_main() {
                     _production_scope+=("$_scoped_path")
                 fi
             done
+            if [ "${#_production_scope[@]}" -gt 0 ]; then
+                local _concrete_scope_tmp
+                _concrete_scope_tmp="$(mktemp)"
+                expand_task_directory_scope "$_task_root" "${_production_scope[@]}" >"$_concrete_scope_tmp" \
+                    || { rm -f "$_concrete_scope_tmp"; exit 2; }
+                mapfile -d '' -t _production_scope <"$_concrete_scope_tmp"
+                rm -f "$_concrete_scope_tmp"
+            fi
             if [ "${#_declared_contract_tests[@]}" -gt 0 ]; then
                 _selector_output="$(printf '%s\n' "${_declared_contract_tests[@]}")"
                 _selector_rc=0
