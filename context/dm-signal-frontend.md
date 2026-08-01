@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-01 FoF Dashboard/Monthly Trade cache freshness production verification -->
-<!-- source_commit:48c6bbfa reason:FoF stale display cache bypass evidence:CDP production Dashboard+Monthly Trade project=dm-signal context=context/dm-signal-frontend.md commit=48c6bbfa -->
+<!-- last_updated: 2026-08-01 cmd_karo_hotfix_dm_signal_market_type_ui_batch_n_20260801 reviewed source boundary -->
+<!-- source_commit:25d0c8bb reason:cmd_karo_hotfix_dm_signal_market_type_ui_batch_n_20260801 reviewed source boundary evidence:cmd_complete_gate -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
