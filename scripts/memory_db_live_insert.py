@@ -1851,7 +1851,17 @@ def main() -> int:
         append_contradiction_candidate(args)
     elif args.event_type == "duplicate_candidate":
         append_duplicate_candidate(args)
-    if os.environ.get("SHOGUN_MEMORY_DB_SKIP_CACHE_SYNC", "0") != "1":
+    # Do not rebuild the complete 700MB+ read cache after every live event.
+    # Readers already reject a stale generation by comparing the source DB/WAL
+    # mtimes and schedule a single-flight asynchronous refresh while continuing
+    # to use the last atomically-published snapshot (or the primary DB when the
+    # cache is cold).  Eager rebuilding here duplicated that mechanism for every
+    # inbox/gate/report write and made refresh frequency, rather than copy method,
+    # the dominant cost.  Keep an explicit opt-in for recovery/diagnostic callers.
+    if (
+        os.environ.get("SHOGUN_MEMORY_DB_EAGER_CACHE_SYNC", "0") == "1"
+        and os.environ.get("SHOGUN_MEMORY_DB_SKIP_CACHE_SYNC", "0") != "1"
+    ):
         try:
             sync_memory_db_ext4_cache(args.db_path)
         except Exception as exc:
