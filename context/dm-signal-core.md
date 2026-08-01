@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-01 GA-422 reviewed source boundary -->
-<!-- source_commit:6200cc1ea4fc804d07b6bcca66cf2338dde00b2d reason:GA-422 reviewed source boundary evidence:cmd_karo_hotfix_ga422_context_freshness_20260801; backend/app/jobs/flush/signal_flush.py chunk contract reflected -->
+<!-- last_updated: 2026-08-01 GA-422 RC corrected 1k boundary -->
+<!-- source_commit:3ee5c21ba62821e0aca571797f3ddb7ca4547d09 reason:GA-422 RC corrected 1k boundary evidence:10k StatementTooComplex rows0; 5c8a9cf 1k boundary reapplied by 3ee5c21b; production revalidation pending -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -632,7 +632,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 
 ## §24 signal flushの複合IN照会chunk境界 (cmd_karo_hotfix_dm_signal_l3_tuple_chunk_20260801, 2026-08-01)
 
-- `backend/app/jobs/flush/signal_flush.py` の2列複合key照会は `_query_composite_keys_in_chunks()` に集約し、`COMPOSITE_IN_QUERY_CHUNK_SIZE=10_000` ごとに分割する。対象は新規Signal INSERTの既存行照合と、反復ledger guard correctionの過去`signal_change_log`照合。無制限の`tuple_(...).in_(keys)`は使わない。対象commit: `/mnt/c/Python_app/DM-signal` `6200cc1e`。
+- `backend/app/jobs/flush/signal_flush.py` の2列複合key照会は `_query_composite_keys_in_chunks()` に集約する。`6200cc1e`の10,000-key chunkは本番で07:15開始後、07:19の`updated_at`で`StatementTooComplex`・rows 0となり不十分だった。既知正常境界`5c8a9cf`(1,000-key)を再適用した`3ee5c21b`で`COMPOSITE_IN_QUERY_CHUNK_SIZE=1_000`へ修正済み。対象は新規Signal INSERTの既存行照合と反復ledger guard correctionの過去`signal_change_log`照合。現在は本番再検証中であり、完走確認前に解決済みと扱わない。
 
 ---
 
