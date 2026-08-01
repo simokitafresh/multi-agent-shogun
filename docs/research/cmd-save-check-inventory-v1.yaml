@@ -7,6 +7,21 @@ canonicalization: UTF-8 JSON; items sorted by id; object keys sorted; separators
 count: 82
 unique_ids: 82
 inventory_sha256: 6bfd3bff673c662a7044df84835e3a6517e85cb10a420a2e15f8eb14383d980b
+rc3_production_parity:
+  fixture_receipt: logs/test_receipts/run_tests_20260801T044447_2247416.json
+  production_entrypoint_invocations: 246
+  before: 82
+  after: 82
+  mutant: 82
+  baseline_diff: 0
+  false_positive: 0
+  false_negative: 0
+  mutation_diff_ids: [41]
+  forbidden_shortcuts:
+    regex_or_vocabulary_bool: 0
+    classification_copy: 0
+    expected_flip: 0
+    mock_only_detector: 0
 checks:
 - id: 1
   name: is_gate_or_hook_addition_cmd
