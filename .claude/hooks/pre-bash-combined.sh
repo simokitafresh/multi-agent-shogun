@@ -289,9 +289,53 @@ PY
     printf '%s\n' "$query"
 }
 
+emit_three_layer_digest_once() {
+    # 三層preflightは「証跡の存在」を強制するが「読むこと」を強制しない形骸化バグ
+    # (2026-08-01殿指摘: 作業前三層確認の実効が消えている)。既存の証跡ストアを
+    # 唯一の正本として、同一promptにつき一度だけ検索結果要点をツール実行画面へ
+    # 再注入し、読まずに作業が進まない構造にする。printしたら0、対象外なら1を返す。
+    local agent pane safe_key ev_file marker prompt_hash
+    agent="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
+    agent="${agent:-unknown}"
+    pane="${TMUX_PANE:-default}"
+    safe_key="${agent}_${pane}"
+    safe_key="${safe_key//[^A-Za-z0-9_.-]/_}"
+    ev_file="$SCRIPT_DIR/logs/preaction_memory/evidence_${safe_key}.json"
+    [[ -r "$ev_file" ]] || return 1
+    prompt_hash="$(EV_FILE="$ev_file" python3 -c 'import json,os;print(json.load(open(os.environ["EV_FILE"])).get("prompt_hash","")[:16])' 2>/dev/null || true)"
+    [[ -z "$prompt_hash" ]] && return 1
+    marker="/tmp/three_layer_digest_${safe_key}_${prompt_hash}"
+    [[ -e "$marker" ]] && return 1
+    : > "$marker" 2>/dev/null || true
+    EV_FILE="$ev_file" python3 - <<'PY'
+import json
+import os
+
+try:
+    ev = json.load(open(os.environ["EV_FILE"]))
+except Exception:
+    raise SystemExit(0)
+def clip(key, n=300):
+    return (ev.get(key) or "").replace("\n", " ")[:n]
+message = (
+    "★三層記憶ダイジェスト(preflight証跡より・本prompt初回のみ): 作業前に読め。[MEM:]引用にはこの実結果を使え。\n"
+    f"query={ev.get('memory_query','')!r} status={ev.get('status','')}\n"
+    f"- memory_db({ev.get('memory_timestamp','')}): {clip('memory_top')}\n"
+    f"- semantic({ev.get('semantic_timestamp','')}): {clip('semantic_top', 200)}\n"
+    f"- obsidian({ev.get('obsidian_timestamp','')}): {clip('obsidian_top', 200)}"
+)
+print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": message}}, ensure_ascii=False))
+PY
+    return 0
+}
+
 emit_memory_db_for_knowledge_grep() {
     local query agent_id hash_file now last rows sql query_sql agent_sql like_sql
     local rows_cache_dir rows_cache_file db_file db_fingerprint cached_fingerprint tmp_cache
+
+    if emit_three_layer_digest_once; then
+        return 0
+    fi
 
     case "$command" in
         *grep*|*rg*) ;;
