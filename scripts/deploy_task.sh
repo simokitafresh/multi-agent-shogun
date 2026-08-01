@@ -4811,8 +4811,11 @@ PY_MEMORY_REFS
 
             if [ ${#_tp_paths[@]} -gt 0 ]; then
                 local _all_ignored=true
+                local _gitignore_root
+                _gitignore_root=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "commit_contract.repo_root" "$SCRIPT_DIR" 2>/dev/null || true)
+                [ -n "$_gitignore_root" ] || _gitignore_root="$SCRIPT_DIR"
                 for _tp_p in "${_tp_paths[@]}"; do
-                    if ! git -C "$SCRIPT_DIR" check-ignore -q "$_tp_p" 2>/dev/null; then
+                    if ! git -C "$_gitignore_root" check-ignore -q "$_tp_p" 2>/dev/null; then
                         _all_ignored=false
                         break
                     fi

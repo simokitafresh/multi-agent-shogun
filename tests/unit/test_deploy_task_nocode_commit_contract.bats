@@ -75,6 +75,8 @@ PY
 @test "DM-signal commit contract preinjects external repo scope" {
   local dm_repo
   dm_repo="$(get_project_path dm-signal)"
+  # Infra側の同名pathがignoreでも、外部repoのcommit判定へ漏れてはならない。
+  printf 'backend/\n' >"$TEST_PROJECT/.gitignore"
   cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
   assigned_to: sasuke
@@ -103,6 +105,9 @@ assert task["commit_contract"]["planned_paths"] == ["backend/app/main.py"]
 assert report["cross_repo_commits"] == [{
     "repo": root, "commit_hash": "", "paths": ["backend/app/main.py"]
 }]
+check = report["binary_checks"]["commit"][0]
+assert check["result"] == "", check
+assert "gitignore対象" not in check["check"], check
 PY
   if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
   [ "$status" -eq 0 ]
