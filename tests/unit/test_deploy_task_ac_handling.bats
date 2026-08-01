@@ -513,6 +513,28 @@ EOF
 # ac_version injection + if_then lesson detail behavior
 # ═══════════════════════════════════════════════════════════
 
+# test_necessity: the AC fingerprint must include inline descriptions and
+# folded continuation text; otherwise materially revised ACs share one hash.
+@test "ac hash changes when folded description content changes" {
+    cat > "$(task_file)" <<'YAML'
+task:
+  acceptance_criteria:
+  - id: AC1
+    description: first physical line
+      folded contract version one
+  - id: AC2
+    description: second contract
+YAML
+    first=$(_compute_ac_hash "$(task_file)")
+
+    sed -i 's/folded contract version one/folded contract version two/' "$(task_file)"
+    second=$(_compute_ac_hash "$(task_file)")
+
+    [ -n "$first" ]
+    [ -n "$second" ]
+    [ "$first" != "$second" ]
+}
+
 @test "deploy_task injects ac_version and report ac_version_read on first deploy [template_only]" {
     run deploy_task_template_only sasuke
     [ "$status" -eq 0 ]

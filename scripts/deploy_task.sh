@@ -2545,54 +2545,36 @@ inject_ac_assigned_from_stk() {
 _compute_ac_hash() {
     local task_file="$1"
     local concat
-    concat=$(awk '
-        BEGIN { in_ac=0; in_item=0; desc=""; chk=""; n=0; ac_item_indent=-1 }
-        /^[[:space:]]*acceptance_criteria:/ {
-            ac_indent = match($0, /[^ ]/) - 1
-            in_ac=1; next
-        }
-        !in_ac { next }
-        {
-            if (match($0, /[^ ]/)) ci = RSTART - 1; else next
-            if (ci <= ac_indent && $0 !~ /^[[:space:]]*-/) {
-                if (in_item) { descs[n++]=(desc != "" ? desc : chk); desc=""; chk=""; in_item=0 }
-                in_ac=0; next
-            }
-            # AC item境界: acceptance_criteria直下の"-"レベルのみ (checks[]内の"- check:"は除外)
-            if ($0 ~ /^[[:space:]]*- / && (ac_item_indent < 0 || ci == ac_item_indent)) {
-                if (in_item) { descs[n++]=(desc != "" ? desc : chk); desc=""; chk="" }
-                if (ac_item_indent < 0) ac_item_indent = ci
-                in_item=1; next
-            }
-            if (in_item) {
-                line=$0; sub(/^[[:space:]]+/,"",line)
-                if (line ~ /^description:/) {
-                    sub(/^description:[[:space:]]*/,"",line)
-                    sub(/[[:space:]]*$/,"",line)
-                    gsub(/^["'"'"']|["'"'"']$/,"",line)
-                    desc=line
-                } else if (line ~ /^- check:/) {
-                    # checks[]リスト内の"- check:"をchkに収集(descriptionフォールバック)
-                    sub(/^- check:[[:space:]]*/,"",line)
-                    sub(/[[:space:]]*$/,"",line)
-                    gsub(/^["'"'"']|["'"'"']$/,"",line)
-                    if (chk == "") chk = line; else chk = chk "|" line
-                } else if (line ~ /^check:/) {
-                    sub(/^check:[[:space:]]*/,"",line)
-                    sub(/[[:space:]]*$/,"",line)
-                    gsub(/^["'"'"']|["'"'"']$/,"",line)
-                    if (chk == "") chk = line; else chk = chk "|" line
-                }
-            }
-        }
-        END {
-            if (in_item) descs[n++]=(desc != "" ? desc : chk)
-            for(i=0;i<n;i++) for(j=i+1;j<n;j++) if(descs[i]>descs[j]){t=descs[i];descs[i]=descs[j];descs[j]=t}
-            r=""
-            for(i=0;i<n;i++){if(i>0)r=r"|"; r=r descs[i]}
-            printf "%s",r
-        }
-    ' "$task_file" 2>/dev/null)
+    # Hash parsed YAML values rather than physical lines. The former awk
+    # parser skipped inline "- description:" values and all folded
+    # continuation text, collapsing description-form ACs to one empty hash.
+    concat=$(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = data.get("task") if isinstance(data, dict) else None
+items = (task or {}).get("acceptance_criteria", []) if isinstance(task, dict) else []
+values = []
+for item in items if isinstance(items, list) else []:
+    if not isinstance(item, dict):
+        values.append(str(item))
+        continue
+    description = str(item.get("description", "")).strip()
+    if description:
+        values.append(description)
+        continue
+    checks = item.get("checks", [])
+    if isinstance(checks, list):
+        values.append("|".join(
+            str(check.get("check", "")).strip() if isinstance(check, dict) else str(check).strip()
+            for check in checks
+        ))
+    else:
+        values.append(str(item.get("check", "")).strip())
+sys.stdout.write("|".join(sorted(values)))
+PY
+    )
     printf '%s' "$concat" | md5sum | cut -c1-8
 }
 
