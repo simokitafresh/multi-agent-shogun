@@ -17,6 +17,8 @@ SCRIPT_DIR="${_adn_self%/scripts/auto_deploy_next.sh}"
 LOG="$SCRIPT_DIR/logs/auto_deploy.log"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 REPORTS_DIR="$SCRIPT_DIR/queue/reports"
+OWNER_STATE_ROOT="${AUTO_DEPLOY_OWNER_STATE_ROOT:-$SCRIPT_DIR/logs/durable_state/auto_deploy_owner}"
+OWNER_SUBJECT_TYPE="task_owner"
 
 CMD_ID="${1:-}"
 COMPLETED_SUBTASK_ID="${2:-}"
@@ -25,6 +27,76 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] $1" >> "$LOG"
     echo "[AUTO_DEPLOY] $1" >&2
 }
+
+owner_state_field() {
+    local json="$1" field="$2"
+    python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get(sys.argv[2], ""))' "$json" "$field"
+}
+
+owner_failpoint() {
+    [ "${AUTO_DEPLOY_FAILPOINT:-}" != "$1" ] || { echo "AUTO_DEPLOY_FAILPOINT: $1" >&2; return 97; }
+}
+
+owner_transaction_finish() {
+    local subject_id="$1" source="$2" target="$3" fence="$4" payload_hash="$5"
+    local yfs="$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+    owner_failpoint after_pointer_before_tombstone || return $?
+    if [ "$(realpath "$source")" != "$(realpath "$target")" ]; then
+        bash "$yfs" "$source" task status transferred >/dev/null
+        bash "$yfs" "$source" task owner_transaction_status tombstoned >/dev/null
+    fi
+    owner_failpoint after_tombstone_before_activation || return $?
+    bash "$yfs" "$target" task status assigned >/dev/null
+    bash "$yfs" "$target" task owner_transaction_status active >/dev/null
+    owner_failpoint after_activation_before_published || return $?
+    local ledger
+    ledger="[\"owner_pointer:$target\",\"source_tombstone:$source\",\"payload:$payload_hash\"]"
+    bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" mutate "$OWNER_STATE_ROOT" \
+        "$OWNER_SUBJECT_TYPE" "$subject_id" "$fence" published "" "$ledger" >/dev/null
+    owner_failpoint after_published_before_terminal || return $?
+    bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" reconcile "$OWNER_STATE_ROOT" \
+        "$OWNER_SUBJECT_TYPE" "$subject_id" "startup-reconciler-$$" "$payload_hash" "$ledger" >/dev/null
+}
+
+owner_transaction_reconcile_startup() {
+    OWNER_RECONCILED_COUNT=0
+    local active_root="$OWNER_STATE_ROOT/active/$OWNER_SUBJECT_TYPE"
+    [ -d "$active_root" ] || return 0
+    local state record phase subject_id fence payload_hash source target attempt ledger
+    while IFS= read -r state; do
+        record=$(cat "$state") || continue
+        phase=$(owner_state_field "$record" phase)
+        case "$phase" in intended|prepared|published) ;; *) continue ;; esac
+        subject_id=$(owner_state_field "$record" subject_id)
+        fence=$(owner_state_field "$record" fence_token)
+        payload_hash=$(owner_state_field "$record" payload_hash)
+        attempt=$(owner_state_field "$record" attempt_id)
+        source=${attempt%%|*}; target=${attempt#*|}
+        [ "$source" != "$target" ] || continue
+        if [ "$phase" = intended ]; then
+            [ -f "$target" ] || { bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" mutate "$OWNER_STATE_ROOT" "$OWNER_SUBJECT_TYPE" "$subject_id" "$fence" rolled_back >/dev/null; continue; }
+            ledger="[\"owner_pointer:$target\",\"source_pending:$source\",\"payload:$payload_hash\"]"
+            bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" mutate "$OWNER_STATE_ROOT" "$OWNER_SUBJECT_TYPE" "$subject_id" "$fence" prepared "" "$ledger" >/dev/null
+            phase=prepared
+        fi
+        [ -f "$source" ] && [ -f "$target" ] || continue
+        if [ "$phase" = published ]; then
+            ledger="[\"owner_pointer:$target\",\"source_tombstone:$source\",\"payload:$payload_hash\"]"
+            bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" reconcile "$OWNER_STATE_ROOT" "$OWNER_SUBJECT_TYPE" "$subject_id" "startup-reconciler-$$" "$payload_hash" "$ledger" >/dev/null
+        else
+        owner_transaction_finish "$subject_id" "$source" "$target" "$fence" "$payload_hash"
+        fi
+        OWNER_RECONCILED_COUNT=$((OWNER_RECONCILED_COUNT + 1))
+        log "OWNER_RECONCILED: $subject_id"
+    done < <(find "$active_root" -mindepth 2 -maxdepth 2 -name state.json -type f 2>/dev/null)
+}
+
+if [ "${1:-}" = --reconcile-owner-transactions ]; then
+    mkdir -p "$SCRIPT_DIR/logs"
+    owner_transaction_reconcile_startup
+    echo "OWNER_RECONCILE_OK: ${OWNER_RECONCILED_COUNT:-0}"
+    exit 0
+fi
 
 # ═══════════════════════════════════════
 # Step 1: Input validation
@@ -43,6 +115,11 @@ if [[ "$CMD_ID" != cmd_* ]]; then
 fi
 
 mkdir -p "$SCRIPT_DIR/logs"
+owner_transaction_reconcile_startup
+if [ "${OWNER_RECONCILED_COUNT:-0}" -gt 0 ]; then
+    echo "AUTO_DEPLOY_OK: startup reconciler recovered ${OWNER_RECONCILED_COUNT} owner transaction(s)"
+    exit 0
+fi
 
 # ═══════════════════════════════════════
 # flock: 二重配備防止
@@ -353,13 +430,17 @@ fi
 # ═══════════════════════════════════════
 
 TARGET_YAML="$TASKS_DIR/${SELECTED_NINJA}.yaml"
-TARGET_LOCK="${TARGET_YAML}.lock"
-
 WRITE_EXIT=0
 (
-    flock -w 10 201 || { log "ERROR: flock failed for ${TARGET_YAML}"; exit 1; }
-
-    # Copy source file to target (preserves original YAML format — no yaml.dump)
+    # Durable owner transaction: target is published non-executable first.
+    # A crash before source tombstone leaves the source as the sole executable
+    # owner; startup reconciliation resumes using the generation/fence record.
+    source_hash=$(sha256sum "$TASK_FILE" | awk '{print $1}')
+    owner_subject=$(printf '%s' "${CMD_ID}:${NEXT_ID}" | sha256sum | cut -c1-32)
+    owner_record=$(bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" begin "$OWNER_STATE_ROOT" \
+        "$OWNER_SUBJECT_TYPE" "$owner_subject" "$TASK_FILE|$TARGET_YAML" "$source_hash" "$source_hash")
+    owner_fence=$(owner_state_field "$owner_record" fence_token)
+    owner_failpoint after_intended_before_target || exit $?
     cp "$TASK_FILE" "$TARGET_YAML"
 
     # Update fields via yaml_field_set.sh (flock-safe, format-preserving)
@@ -374,17 +455,25 @@ WRITE_EXIT=0
         bash "$local_yfs" "$TARGET_YAML" "task" "assigned_to" "$SELECTED_NINJA" 2>> "$LOG"
     fi
 
-    # Set status to assigned
-    bash "$local_yfs" "$TARGET_YAML" "task" "status" "assigned" 2>> "$LOG"
+    bash "$local_yfs" "$TARGET_YAML" "task" "status" "owner_prepared" 2>> "$LOG"
+    bash "$local_yfs" "$TARGET_YAML" "task" "owner_generation" "$owner_fence" 2>> "$LOG"
+    bash "$local_yfs" "$TARGET_YAML" "task" "owner_fence" "$owner_fence" 2>> "$LOG"
+    bash "$local_yfs" "$TARGET_YAML" "task" "owner_subject_id" "$owner_subject" 2>> "$LOG"
+    bash "$local_yfs" "$TARGET_YAML" "task" "owner_state_root" "$OWNER_STATE_ROOT" 2>> "$LOG"
+    bash "$local_yfs" "$TARGET_YAML" "task" "owner_transaction_status" "prepared" 2>> "$LOG"
+    owner_failpoint after_target_before_pointer || exit $?
+    owner_ledger="[\"owner_pointer:$TARGET_YAML\",\"source_pending:$TASK_FILE\",\"payload:$source_hash\"]"
+    bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" mutate "$OWNER_STATE_ROOT" \
+        "$OWNER_SUBJECT_TYPE" "$owner_subject" "$owner_fence" prepared "" "$owner_ledger" >/dev/null
 
     echo "Written: ${TARGET_YAML}" >&2
 
-    # If source file differs from target, update source too (prevent stale duplicates)
-    if [ "$(realpath "$TASK_FILE")" != "$(realpath "$TARGET_YAML")" ]; then
-        cp "$TARGET_YAML" "$TASK_FILE" 2>> "$LOG" || echo "WARN: source update failed (non-fatal)" >&2
-    fi
+    owner_failpoint after_target_before_tombstone || exit $?
 
-) 201>"$TARGET_LOCK" || WRITE_EXIT=$?
+    owner_transaction_finish "$owner_subject" "$TASK_FILE" "$TARGET_YAML" \
+        "$owner_fence" "$source_hash"
+
+) || WRITE_EXIT=$?
 
 if [ "$WRITE_EXIT" -ne 0 ]; then
     log "ERROR: Task YAML write failed for ${SELECTED_NINJA}"

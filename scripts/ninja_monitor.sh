@@ -2407,6 +2407,16 @@ _failed_task_needs_karo_notice() {
     task_status=$(yaml_field_get "$task_file" "status")
     [ "$task_status" = "failed" ] || return 1
 
+    # The respawn guard and the post-respawn notification must consume the
+    # same terminal evidence.  Otherwise a fingerprint-bound Karo ACCEPT can
+    # correctly permit recovery while this older heuristic still emits the
+    # contradictory "unreviewed" warning (observed with Hanzo on 2026-08-01).
+    # Keep the formal close predicate as the SSOT; the heuristics below are
+    # only fallbacks for generations which have not completed that handshake.
+    if _failed_task_is_formally_closed "$name"; then
+        return 1
+    fi
+
     parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
     if [ -z "$parent_cmd" ] || [ "$parent_cmd" = "none" ]; then
         return 1
@@ -9146,6 +9156,11 @@ fi
 
 # 旧monitorのexecが残したFDはmtime差の有無にかかわらずstartupで除去する。
 close_inherited_deploy_lock_fds
+
+bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" --reconcile-owner-transactions >> "$LOG_FILE" 2>&1 || {
+    log "BLOCK: owner transaction startup reconciliation failed"
+    exit 1
+}
 
 discover_panes
 

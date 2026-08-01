@@ -494,6 +494,24 @@ deploy_task_guard_worker_assignment() {
     local current_status current_parent worker_name
 
     current_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "unknown" 2>/dev/null || true)
+    local owner_tx owner_subject owner_generation owner_fence owner_root owner_record owner_phase owner_record_fence owner_pointer
+    owner_tx=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "owner_transaction_status" "" 2>/dev/null || true)
+    if [ "$current_status" = owner_prepared ]; then
+        echo "BLOCK: prepared owner is non-executable: $task_file" >&2
+        return 1
+    fi
+    if [ "$owner_tx" = active ]; then
+        owner_subject=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "owner_subject_id" "" 2>/dev/null || true)
+        owner_generation=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "owner_generation" "" 2>/dev/null || true)
+        owner_fence=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "owner_fence" "" 2>/dev/null || true)
+        owner_root=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "owner_state_root" "" 2>/dev/null || true)
+        [ -n "$owner_subject" ] && [ "$owner_generation" = "$owner_fence" ] && [ -n "$owner_root" ] || { echo "BLOCK: invalid owner fence metadata: $task_file" >&2; return 1; }
+        owner_record=$(bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" read "$owner_root" task_owner "$owner_subject" 2>/dev/null) || { echo "BLOCK: owner pointer unreadable: $task_file" >&2; return 1; }
+        owner_phase=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get("phase",""))' "$owner_record")
+        owner_record_fence=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get("fence_token",""))' "$owner_record")
+        owner_pointer=$(python3 -c 'import json,sys; r=json.loads(sys.argv[1]); print(next((x.split(":",1)[1] for x in r.get("side_effect_ledger",[]) if x.startswith("owner_pointer:")),""))' "$owner_record")
+        [ "$owner_phase" = terminal ] && [ "$owner_record_fence" = "$owner_fence" ] && [ "$(realpath "$owner_pointer")" = "$(realpath "$task_file")" ] || { echo "BLOCK: stale/non-owner task execution denied: $task_file" >&2; return 1; }
+    fi
     current_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
     worker_name="${NINJA_NAME:-$(basename "$task_file" .yaml)}"
     case "$current_status" in
