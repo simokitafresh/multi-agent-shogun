@@ -939,3 +939,19 @@ insights:
   resolved_reason: "self_retro eventを一次確認し、completion_pipeline支配因とcheckpointを弱めない短縮方針が既存第六弾研究§0/§2へ合流済みと確認したためresolve"
   action_artifact: "event=logs/self_retro.jsonl:1429;artifact=docs/research/throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md:60,83;verify=event_id ff468f325e60c05cedf940da48a0129d3fa603e4d9bab80bc7c73d977b0cc976 exists 1/1"
   resolved_at: "2026-08-02T14:22:20+09:00"
+- id: INS-20260802-142907657-f4ee
+  ts: "2026-08-02T14:29:07+09:00"
+  insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: resolved
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq '139792fed50963c3ca3afb43cbf63810579436c93268c5c1fd0ac456601eea19' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
+  resolved_reason: "self_retro eventを一次確認し、completion_pipeline支配因とcheckpointを弱めない短縮方針が既存第六弾研究§0.-1/§-2へ合流済みと確認したためresolve"
+  action_artifact: "event=logs/self_retro.jsonl:1457;artifact=docs/research/throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md:60,71;verify=event_id 139792fed50963c3ca3afb43cbf63810579436c93268c5c1fd0ac456601eea19 exists 1/1, duplicate=0, wall_ms=11830, dashboard_ms=8980"
+  resolved_at: "2026-08-02T14:56:41+09:00"
