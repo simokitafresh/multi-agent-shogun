@@ -82,6 +82,13 @@ karo_startup_extract_ctx_pct() {
     return 1
 }
 
+karo_startup_pane_is_active() {
+    local output="$1"
+
+    printf '%s\n' "$output" \
+        | grep -qE '[•◦] (Working|Ran |Waiting|Running .*([Hh]ook|UserPromptSubmit|PostToolUse))'
+}
+
 phase_guide_cached() {
     local source_file="${1:?source file required}"
     local cache_name="${2:?cache name required}"
@@ -1828,8 +1835,15 @@ for ninja in $_KARO_NINJA_NAMES; do
         fi
         rm -f "${_CTX_TMPF[$ninja]}"
         if [[ "$task_status" == "assigned" && ( "$ctx" == "0%" || -z "$ctx" ) ]]; then
+            # The snapshot/task/pane trio can cross a deployment transition while this
+            # gate is running.  Re-read the primary pane immediately before counting a
+            # STALL so a stale initial capture cannot advance escalation generation.
+            _stall_pane_output=$(tmux capture-pane -t "${_AGENTS_WINDOW_TARGET}.${pane_idx}" -p -J -S -30 2>/dev/null || true)
+            _stall_fresh_ctx=$(karo_startup_extract_ctx_pct "$_stall_pane_output" || true)
             task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
-            if _stall_age="$(karo_startup_recent_deploy_grace "$task_file" "$_stall_now_epoch")"; then
+            if karo_startup_pane_is_active "$_stall_pane_output" || [[ -n "$_stall_fresh_ctx" && "$_stall_fresh_ctx" != "0%" ]]; then
+                echo "  $ninja: CTX=${ctx:-EMPTY}→${_stall_fresh_ctx:-?} status=$task_status → pane一次再照合で稼働中のためSTALL対象外"
+            elif _stall_age="$(karo_startup_recent_deploy_grace "$task_file" "$_stall_now_epoch")"; then
                 echo "  $ninja: CTX=${ctx:-EMPTY} status=$task_status → 配備直後(${_stall_age}s<=${KARO_ASSIGNED_STALL_GRACE_SEC}s)のためSTALL判定猶予"
             else
                 echo "  ⚠ $ninja: CTX=${ctx:-EMPTY} status=$task_status → STALL疑い"

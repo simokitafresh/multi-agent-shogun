@@ -93,6 +93,21 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "assigned CTX0はSTALL加算前にpane一次再照合しWorking中を除外する" {
+  helper="$TMPDIR_CASE/pane-active.sh"
+  sed -n '/^karo_startup_pane_is_active()/,/^}/p' \
+    "$ROOT/scripts/gates/gate_karo_startup.sh" > "$helper"
+  source "$helper"
+
+  run karo_startup_pane_is_active '• Working (1m 2s • esc to interrupt)'
+  [ "$status" -eq 0 ]
+  run karo_startup_pane_is_active '› Run /review on my current changes'
+  [ "$status" -ne 0 ]
+
+  run awk '/_stall_pane_output=.*tmux capture-pane/{recapture=1} recapture && /karo_startup_pane_is_active/{active=1} recapture && /stall_count=\$\(\(stall_count \+ 1\)\)/{counted=1} END{exit !(recapture&&active&&counted)}' "$ROOT/scripts/gates/gate_karo_startup.sh"
+  [ "$status" -eq 0 ]
+}
+
 @test "startup gate keeps failed unclosed visible and excludes formal FAIL close" {
   fixture="$TMPDIR_CASE/failed-unclosed"
   mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/archive/reports" "$fixture/scripts/lib"
