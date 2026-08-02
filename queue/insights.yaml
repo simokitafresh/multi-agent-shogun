@@ -15,7 +15,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "殿診断はCDP設計書v2.2で一次実測済み（品質欠陥4経路、推薦0/4、直操作阻止0/3、教訓LS098不作用）かつ単一契約化工程cmd_4217-4219へ接続済み。重複実装不要。"
+  action_artifact: "docs/research/cdp-skill-flow-inventory-20260802.md"
+  resolved_at: "2026-08-02T15:39:34+09:00"
 - id: INS-20260802-105016261-1e8c
   ts: "2026-08-02T10:50:16+09:00"
   insight: "[[今後起きないようにしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今後起きないようにしよう。これはバグだ"
