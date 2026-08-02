@@ -31,7 +31,7 @@ import threading
 import time
 import urllib.request
 import uuid
-from cdp_session import establish
+from cdp_session import cleanup, establish
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 
@@ -559,7 +559,24 @@ def idle_watchdog(state: DaemonState, server: CDPDaemonServer):
                 file=sys.stderr,
             )
             server.shutdown()
-            os._exit(0)
+            return
+
+
+class SessionRelease:
+    """Idempotent daemon-exit release bound to the issued receipt."""
+
+    def __init__(self, receipt, cleanup_fn=cleanup):
+        self.receipt = receipt
+        self.cleanup_fn = cleanup_fn
+        self.lock = threading.Lock()
+        self.released = False
+
+    def __call__(self):
+        with self.lock:
+            if self.released:
+                return False
+            self.released = True
+        return self.cleanup_fn(self.receipt)
 
 
 # ---------------------------------------------------------------------------
@@ -590,6 +607,7 @@ def main():
     args = parser.parse_args()
 
     receipt = establish("generic", ports=(args.cdp_port,))
+    release_session = SessionRelease(receipt)
     args.cdp_port = int(receipt["endpoint"].rsplit(":", 1)[1])
 
     # Generate Bearer token
@@ -637,8 +655,7 @@ def main():
     # Handle SIGTERM gracefully
     def sigterm_handler(signum, frame):
         print("SIGTERM received, shutting down.", file=sys.stderr)
-        server.shutdown()
-        sys.exit(0)
+        threading.Thread(target=server.shutdown, daemon=True).start()
 
     signal.signal(signal.SIGTERM, sigterm_handler)
 
@@ -653,6 +670,8 @@ def main():
     except KeyboardInterrupt:
         print("Interrupted, shutting down.", file=sys.stderr)
         server.shutdown()
+    finally:
+        release_session()
 
 
 if __name__ == "__main__":

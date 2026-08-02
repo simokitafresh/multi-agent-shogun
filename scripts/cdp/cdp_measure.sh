@@ -110,7 +110,15 @@ echo "OK (HTTP 200)"
 CDP_PORT="${CDP_PORT:-9222}"
 CDP_REQUESTED_PORT="$CDP_PORT"
 CDP_RECEIPT="$(mktemp /tmp/cdp-measure-receipt.XXXXXX)"
-python3 "${SCRIPT_DIR}/scripts/cdp/cdp_session.py" establish --consumer measurement --ports "$CDP_PORT" --receipt "$CDP_RECEIPT" >/dev/null
+if [[ -n "${CDP_SESSION_ESTABLISHER:-}" ]]; then
+    "$CDP_SESSION_ESTABLISHER" --consumer measurement --ports "$CDP_PORT" --receipt "$CDP_RECEIPT" >/dev/null
+else
+    python3 "${SCRIPT_DIR}/scripts/cdp/cdp_session.py" establish --consumer measurement --ports "$CDP_PORT" --receipt "$CDP_RECEIPT" >/dev/null
+fi
+if [[ "${CDP_CONSUMER_FIXTURE_ONLY:-0}" == "1" ]]; then
+    echo "consumer=measurement receipt=$CDP_RECEIPT port=$CDP_PORT baseline=$BASELINE_PATH"
+    exit 0
+fi
 LOCK_DIR="${SCRIPT_DIR}/queue/locks"
 mkdir -p "$LOCK_DIR"
 LOCK_FILE="${LOCK_DIR}/cdp_measure_port_${CDP_PORT}.lock"

@@ -38,8 +38,18 @@ readonly AUTO_OPS_DIR
 export PATH="${PATH}:/mnt/c/Windows/System32/WindowsPowerShell/v1.0:/mnt/c/Windows/System32"
 _REPO_ROOT="$(get_repo_root)"
 _NOTE_RECEIPT="$(mktemp /tmp/cdp-note-receipt.XXXXXX)"
-python3 "${_REPO_ROOT}/scripts/cdp/cdp_session.py" establish --consumer note --ports "$CDP_PORT" --receipt "$_NOTE_RECEIPT" >/dev/null
+if [[ -n "${CDP_SESSION_ESTABLISHER:-}" ]]; then
+  "$CDP_SESSION_ESTABLISHER" --consumer note --ports "$CDP_PORT" --receipt "$_NOTE_RECEIPT" >/dev/null
+else
+  python3 "${_REPO_ROOT}/scripts/cdp/cdp_session.py" establish --consumer note --ports "$CDP_PORT" --receipt "$_NOTE_RECEIPT" >/dev/null
+fi
 trap 'python3 "${_REPO_ROOT}/scripts/cdp/cdp_session.py" cleanup --receipt "$_NOTE_RECEIPT" >/dev/null 2>&1 || true; rm -f "$_NOTE_RECEIPT"' EXIT
+if [[ "${CDP_CONSUMER_FIXTURE_ONLY:-0}" == "1" ]]; then
+  echo "consumer=note receipt=$_NOTE_RECEIPT port=$CDP_PORT markdown=$1"
+  trap - EXIT
+  rm -f "$_NOTE_RECEIPT"
+  exit 0
+fi
 
 MD_FILE="$(realpath "$1")"
 
