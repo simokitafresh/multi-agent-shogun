@@ -44,7 +44,7 @@ foundationはWindows側Chromeを必ず隔離profileとremote-debugging設定で�
 
 ## 完了条件
 
-- receiptのissuer、consumer、有効期限、capabilityを確認する。
+- receiptのissuer、consumer、有効期限、capabilitiesを確認する。
 - 認証・deploy包含確認が必要な用途はadapter成功証跡を残す。
 - 操作結果はDOM値またはスクリーンショットで二値確認する。
 - SKIPを成功扱いせず、失敗段階とreceipt IDを報告する。
