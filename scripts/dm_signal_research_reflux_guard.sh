@@ -144,6 +144,24 @@ print(hashlib.sha256(canonical.encode("utf-8", "surrogateescape")).hexdigest())
 PY
 }
 
+# Recreate the exact would-be staged fingerprint without mutating the caller's
+# index.  ninja_scope_commit uses a private index, so a failed attempt can leave
+# the shared index clean even though the owned worktree change is still valid.
+worktree_fingerprint() {
+    local repo="$1" temp_index
+    temp_index="$(mktemp "${TMPDIR:-/tmp}/dm-reflux-index.XXXXXX")"
+    rm -f "$temp_index"
+    (
+        export GIT_INDEX_FILE="$temp_index"
+        git -C "$repo" read-tree HEAD
+        git -C "$repo" add -A -- docs/research
+        staged_fingerprint "$repo"
+    )
+    local result=$?
+    rm -f "$temp_index" "$temp_index.lock"
+    return "$result"
+}
+
 has_staged_research() {
     git -C "$1" diff --cached --quiet -- docs/research || return 0
     return 1
@@ -226,8 +244,17 @@ prepare() {
         return 2
     fi
     ((rc == 0)) || { echo "BLOCK(GA-220): prepare対象はDM-Signal repoのみ" >&2; return 2; }
-    has_staged_research "$repo" || { echo "BLOCK(GA-220): staged docs/research変更がない" >&2; return 2; }
-    fingerprint="$(staged_fingerprint "$repo")"
+    if has_staged_research "$repo"; then
+        fingerprint="$(staged_fingerprint "$repo")"
+    elif has_worktree_research_changes "$repo"; then
+        fingerprint="$(worktree_fingerprint "$repo")" || {
+            echo "BLOCK(GA-220): worktree docs/research fingerprintを生成できない" >&2
+            return 2
+        }
+    else
+        echo "BLOCK(GA-220): docs/research変更がない" >&2
+        return 2
+    fi
     encoded="$(printf '%s' "$evidence" | base64 -w0)"
     marker="<!-- dm_signal_research_reflux: fingerprint=$fingerprint; mode=$mode; evidence_b64=$encoded -->"
     tmp="$(mktemp "${CONTEXT_FILE}.tmp.XXXXXX")"

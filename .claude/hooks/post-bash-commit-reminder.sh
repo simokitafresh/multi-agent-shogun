@@ -90,8 +90,9 @@ try:
         task_data = yaml.safe_load(f)
     task = task_data.get("task", task_data) if isinstance(task_data, dict) else {}
     project = task.get("project", "")
+    commit_contract = task.get("commit_contract") if isinstance(task.get("commit_contract"), dict) else {}
     owned_paths = task.get("owned_paths")
-    planned_paths = task.get("planned_paths")
+    planned_paths = task.get("planned_paths") or commit_contract.get("planned_paths")
     target_path = task.get("target_path")
     report_path_value = task.get("report_path", "")
 except Exception:
@@ -100,12 +101,22 @@ except Exception:
 if not project:
     raise SystemExit(0)
 
+# commit_contract.repo_root is the task-owned repository SSOT.  Registry
+# lookup remains the fallback for older tasks.
+contract_repo_root = str(commit_contract.get("repo_root") or "").strip()
+if contract_repo_root:
+    project_path = os.path.realpath(contract_repo_root)
+else:
+    project_path = ""
+
 # projects.yamlからproject path取得
 projects_path = os.path.join(script_dir, "config", "projects.yaml")
-if not os.path.exists(projects_path):
+if not project_path and not os.path.exists(projects_path):
     raise SystemExit(0)
 
 try:
+    if project_path:
+        raise StopIteration
     with open(projects_path) as f:
         projects = yaml.safe_load(f)
     project_conf = None
@@ -116,6 +127,8 @@ try:
     if not project_conf:
         raise SystemExit(0)
     project_path = project_conf.get("path", "")
+except StopIteration:
+    pass
 except Exception:
     raise SystemExit(0)
 

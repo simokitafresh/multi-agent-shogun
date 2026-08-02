@@ -1526,6 +1526,30 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: external ownership declared only in commit_contract must run
+# its owned contract test instead of returning the files=0 admission path.
+@test "external commit_contract repo_root selects nested planned test" {
+  external="$TMPROOT/external-contract"
+  mkdir -p "$external/backend/tests" "$TMPROOT/queue/tasks"
+  git -C "$external" init -q
+  printf 'def test_owned():\n    assert True\n' >"$external/backend/tests/test_owned.py"
+  git -C "$external" add .
+  git -C "$external" -c user.email=t@example.invalid -c user.name=t commit -qm init
+  cat >"$TMPROOT/queue/tasks/external-contract.yaml" <<YAML
+task:
+  project: absent-from-registry
+  commit_contract:
+    repo_root: $external
+    planned_paths: [backend/tests/test_owned.py]
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/external-contract.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"scope=backend_contract"* ]]
+  [[ "$output" != *"files=0"* ]]
+}
+
 # test_necessity: every terminal receipt rc must determine both the public label and process exit code.
 @test "terminal receipt emitter keeps label exit and receipt rc identical for rc0 rc1 rc2 rc7" {
   mkdir -p "$TMPROOT/receipts"

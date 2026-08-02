@@ -518,8 +518,12 @@ import os, subprocess, sys, yaml
 control_root, task_path = map(os.path.realpath, sys.argv[1:])
 doc = yaml.safe_load(open(task_path, encoding="utf-8")) or {}
 task = doc.get("task", doc)
+contract = task.get("commit_contract") if isinstance(task.get("commit_contract"), dict) else {}
 project = str(task.get("project") or "infra").strip()
-if project == "infra":
+contract_root = str(contract.get("repo_root") or "").strip()
+if contract_root:
+    candidate = contract_root
+elif project == "infra":
     candidate = control_root
 else:
     registry = os.path.join(control_root, "projects", project + ".yaml")

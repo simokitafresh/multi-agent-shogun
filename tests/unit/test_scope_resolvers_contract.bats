@@ -30,6 +30,45 @@ setup() {
     [ -z "$output" ]
 }
 
+@test "commit reminder resolves external repo_root and nested planned_paths" {
+    run env FIXTURE_ROOT="$BATS_TEST_TMPDIR/system" PROJECT_ROOT="$BATS_TEST_TMPDIR/project" \
+        SOURCE_HOOK="$REPO_ROOT/.claude/hooks/post-bash-commit-reminder.sh" bash -c '
+            mkdir -p "$FIXTURE_ROOT/.claude/hooks" "$FIXTURE_ROOT/queue/tasks" \
+                "$FIXTURE_ROOT/queue/reports" "$FIXTURE_ROOT/config" "$PROJECT_ROOT"
+            cp "$SOURCE_HOOK" "$FIXTURE_ROOT/.claude/hooks/post-bash-commit-reminder.sh"
+            git -C "$PROJECT_ROOT" init -q
+            git -C "$PROJECT_ROOT" config user.email fixture@example.com
+            git -C "$PROJECT_ROOT" config user.name fixture
+            printf "owned\n" > "$PROJECT_ROOT/owned.txt"
+            git -C "$PROJECT_ROOT" add owned.txt
+            git -C "$PROJECT_ROOT" commit -qm "cmd_external initial"
+            head=$(git -C "$PROJECT_ROOT" rev-parse HEAD)
+            printf "projects: []\n" > "$FIXTURE_ROOT/config/projects.yaml"
+            cat > "$FIXTURE_ROOT/queue/tasks/kotaro.yaml" <<YAML
+task:
+  task_id: cmd_external
+  parent_cmd: cmd_external
+  project: missing-registry-entry
+  commit_contract:
+    repo_root: $PROJECT_ROOT
+    planned_paths: [owned.txt]
+  report_path: queue/reports/kotaro.yaml
+YAML
+            cat > "$FIXTURE_ROOT/queue/reports/kotaro.yaml" <<YAML
+task_id: cmd_external
+parent_cmd: cmd_external
+commit_hash: $head
+files_modified:
+  - path: owned.txt
+    change: committed
+YAML
+            HOOK_PAYLOAD="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"bash scripts/inbox_write.sh karo done report_received kotaro notify_karo\"}}" \
+                bash "$FIXTURE_ROOT/.claude/hooks/post-bash-commit-reminder.sh"
+        '
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 @test "pre-karo edit guard distinguishes identical basenames in different paths" {
     run env AGENT_ID=karo PRE_KARO_EDIT_PROJ_DIR="$BATS_TEST_TMPDIR/project" \
         bash -c '

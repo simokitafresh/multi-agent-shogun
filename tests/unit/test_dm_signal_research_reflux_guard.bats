@@ -334,6 +334,20 @@ EOF
     [ "$(git -C "$DM" rev-list --count HEAD)" -eq 1 ]
 }
 
+# test_necessity: a failed private-index scope commit must not make the normal
+# prepare flow impossible to retry; the worktree fingerprint must equal the
+# subsequent private-index fingerprint without staging the shared index.
+@test "reflux prepare retries from an unstaged worktree without mutating shared index" {
+    printf 'retry\n' > "$DM/docs/research/retry.md"
+    run bash "$GUARD" prepare --repo "$DM" --mode synced --evidence retry
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_PREPARED"* ]]
+    git -C "$DM" diff --cached --quiet -- docs/research
+    git -C "$DM" add docs/research/retry.md
+    run bash "$GUARD" check --repo "$DM"
+    [ "$status" -eq 0 ]
+}
+
 @test "GA-236 TOCTOU: docs/research対象外のgit add+git commit連結は誤BLOCKしない" {
     printf 'change\n' >> "$DM/README.md"
     run bash "$GUARD" check-command "cd '$DM' && git add README.md && git commit -m test"
