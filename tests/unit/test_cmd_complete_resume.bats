@@ -252,7 +252,8 @@ PY
                 printf 'report_id: [unterminated\nparent_cmd: cmd_4200\n' \
                     > "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
             missing)
-                printf 'parent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
+                printf 'report_identity_version: 2\nparent_cmd: cmd_4200\n' \
+                    > "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
             duplicate)
                 printf 'report_id: rpt-1\nparent_cmd: cmd_4200\n' > "$root/queue/archive/reports/two_report_cmd_4200.yaml" ;;
         esac
