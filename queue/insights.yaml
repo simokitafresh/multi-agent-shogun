@@ -435,7 +435,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:skill_script_refs:cmd_4218"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行gate実走で全script参照先実在かつSKILL.md更新日がscript参照先以上に新しいことを確認。当該cmd_4218由来の鮮度WARNは解消済み。総合rc=2は別のFOLLOWUP_ACTIVE 26組による。"
+  action_artifact: "command=timeout 30 bash scripts/gates/gate_skill_script_refs.sh; evidence=OK:全script参照先が実在,OK:SKILL.md更新日がscript参照先以上に新しい,FOLLOWUP_ACTIVE pairs=26,GATE_RC=2; target=scripts/cdp/cdp_session.py"
+  resolved_at: "2026-08-02T22:57:41+09:00"
 - id: INS-20260802-140315676-87ac
   ts: "2026-08-02T14:03:15+09:00"
   insight: "SKILL.md追従cmd候補: cmd_4219 で scripts変更(scripts/cdp/dm_signal_adapters.py)後にSKILL.md参照鮮度WARN。追従cmdを起票して gate_skill_script_refs.sh rc=2 を解消せよ。"
