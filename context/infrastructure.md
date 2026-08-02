@@ -1,7 +1,7 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-08-02 shared insight eviction契約反映 -->
 <!-- source_commit:137382332ffffea1a103481dc35eeaf6bfb4c86e reason:shared insight eviction契約反映 evidence:commit=137382332; hanzo gate BLOCK1→0; matrix8/8; task584/584 SKIP0 -->
-<!-- last_synced_lesson: L1520 -->
+<!-- last_synced_lesson: L1525 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -36,7 +36,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1520 -->
+<!-- last_synced_lesson: L1525 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -55,6 +55,11 @@
 - L1518: terminal report fixtureはtask side effectも隔離する（cmd_karo_hotfix_fail_close_truthful_terminal_20260802）
 - L1519: canonical receiptへidentityを追記せずsidecarで厳密再利用する（cmd_karo_hotfix_precommit_receipt_index_latency_20260802）
 - L1520: task runner終端receiptを明示パスで検証する（cmd_4215）
+- L1521: shared-file帰属はpath/blob全体でなくtask-owned normalized hunkで判定する（cmd_karo_hotfix_report_shared_provenance_fp_20260802）
+- L1522: async送達の最終判定は同一tickの複合証拠で行う（cmd_karo_hotfix_async_delivery_verify_20260802）
+- L1523: CDP target closeはbrowser cleanupではない（cmd_4218）
+- L1524: 再検証対象は固定archive pathとSHAを対で注入する（cmd_karo_verify_fixed_infra_bugs_20260802）
+- L1525: 外部repo鮮度判定は既存commit receiptを消費せよ（cmd_karo_hotfix_context_freshness_ga425_20260802）
 
 ## 設計標準・テスト・因果
 
