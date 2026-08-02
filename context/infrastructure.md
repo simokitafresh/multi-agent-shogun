@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-02 cmd_karo_hotfix_hook_argument_text_false_positive_20260802 reviewed source boundary -->
-<!-- source_commit:a200e0803 reason:cmd_karo_hotfix_hook_argument_text_false_positive_20260802 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=a200e0803 -->
+<!-- last_updated: 2026-08-02 cmd_karo_hotfix_skill_dirty_recovery_20260802 reviewed source boundary -->
+<!-- source_commit:fd25aecd5 reason:cmd_karo_hotfix_skill_dirty_recovery_20260802 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=fd25aecd5 -->
 <!-- last_synced_lesson: L1526 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
