@@ -164,6 +164,9 @@ post_has_numeric_claim() {
     # (殿裁定2026-07-29 03:48「blockはゲートのバグだ」— Q6回答が3連続FP BLOCKされた実測への是正。
     #  件/率/%/ms/s等の計測単位は残す=真の数値報告への3点セット要求は不変)
     stripped="$(printf '%s' "$stripped" | sed -E 's/[0-9]{1,2}(パターン|問|つ|例|語)//g')"
+    # WBSレーン識別子(S1-S3/A1-A4/B1-B3b等)は構造参照であり数値主張ではない
+    # (殿裁定2026-08-03「blockがバグではないか」— 軍師レビュー回答でS3がFP BLOCKされた)
+    stripped="$(printf '%s' "$stripped" | sed -E 's/[SABsab][0-9]{1,2}[a-z]?//g')"
     printf '%s' "$stripped" | grep -qP '[0-9０-９]'
 }
 
