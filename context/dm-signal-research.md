@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 own_reviewed_commit -->
-<!-- dm_signal_research_reflux: fingerprint=22f9a110d33ebb94992c9b0ced051580b90fd88301ae6e5b5eb1605fcfdc4ff4; mode=non-target; evidence_b64=UzEgQUMxIGNvdmVyYWdlIEJMT0NL44Gu5bGA5omA5a6f5ris44CC5pei5a2Y5LuV5qeY44O75oGS5LmFY29udGV4dOe1kOirluOCkuWkieabtOOBm+OBmuOAgeS4i+a1gXJlcGxheeacquWun+ihjOOBruOBn+OCgWNvbnRleHTlkIzmnJ/lr77osaHlpJY= -->
-<!-- source_commit:80d574b5 reason:own_reviewed_commit evidence:cmd_karo_hotfix_a0_2_fof_oracle_20260803 reviewed source boundary -->
+<!-- last_updated: 2026-08-03 reviewed_source_boundary -->
+<!-- dm_signal_research_reflux: fingerprint=ba68b47322e7ebb0ccfc95a1067013c6354bee85b23afd79621ef3c8d3be719d; mode=non-target; evidence_b64=UkMz5pei5a2YQTHmiJDmnpwzcGF0aOmZkOWumnNjb3BlIGNvbW1pdOOAgnZlcmlmaWVy44GvbGludOOBruOBv+aYr+ato+OAgUNTVi9NROeglOeptue1kOirluOBr+S4jeWkieOAgWNvbnRleHTmnKzmloflpInmm7Tlr77osaHlpJY= -->
+<!-- source_commit:778f8ae3 reason:reviewed_source_boundary evidence:cmd_karo_goal_a2_l0_mismatch_classify_20260803_133_of_133 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
