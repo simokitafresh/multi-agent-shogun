@@ -867,8 +867,8 @@ if [[ -n "$patch_file" ]]; then
         || { echo "BLOCK: patch is missing or empty: $patch_file" >&2; exit 2; }
     patch_file="$(cd "$(dirname "$patch_file")" && pwd)/$(basename "$patch_file")"
     scope_path="${paths[0]}"
-    if git cat-file -e "HEAD:$scope_path" 2>/dev/null; then
-        head_blob="$(git rev-parse "HEAD:$scope_path")"
+    if git cat-file -e "$transaction_head:$scope_path" 2>/dev/null; then
+        head_blob="$(git rev-parse "$transaction_head:$scope_path")"
     else
         head_blob="0000000000000000000000000000000000000000"
     fi
@@ -900,7 +900,16 @@ if [[ -n "$patch_file" ]]; then
     cleanup_patch_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock"; publish_terminal_failure "$rc"; }
     trap cleanup_patch_index EXIT
     export GIT_INDEX_FILE="$temp_index"
-    git read-tree HEAD
+    git read-tree "$transaction_head"
+    # Deterministic contract-test seam: prove that all validation below stays
+    # bound to the captured generation even when an unrelated commit advances
+    # live HEAD after private-index construction.
+    if [[ -n "${NINJA_SCOPE_PATCH_INDEX_READY_FILE:-}" ]]; then
+        : > "$NINJA_SCOPE_PATCH_INDEX_READY_FILE"
+    fi
+    if [[ -n "${NINJA_SCOPE_PATCH_AFTER_INDEX_DELAY:-}" ]]; then
+        sleep "$NINJA_SCOPE_PATCH_AFTER_INDEX_DELAY"
+    fi
     finish_phase 0
     begin_phase add
     git apply --cached --check -- "$patch_file" \
@@ -908,9 +917,9 @@ if [[ -n "$patch_file" ]]; then
     git apply --cached -- "$patch_file"
     finish_phase 0
     begin_phase scope_sync
-    [[ -n "$(git diff --cached --name-only)" ]] \
+    [[ -n "$(git diff --cached --name-only "$transaction_head")" ]] \
         || { echo "BLOCK: patch produced an empty index diff" >&2; exit 2; }
-    [[ "$(git diff --cached --name-only)" == "$scope_path" ]] \
+    [[ "$(git diff --cached --name-only "$transaction_head")" == "$scope_path" ]] \
         || { echo "BLOCK: patch polluted temporary index scope" >&2; exit 2; }
     # git apply may relocate a hunk when identical context exists elsewhere.  A
     # clean exit alone therefore does not prove that the requested line range
@@ -918,7 +927,7 @@ if [[ -n "$patch_file" ]]; then
     # content with a zero-context diff generated from the temporary index.
     staged_patch="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-staged.XXXXXX")"
     cleanup_patch_index() { rm -f "$temp_index" "$temp_index.lock" "$staged_patch"; }
-    git diff --cached --no-ext-diff --no-color --unified=0 -- "$scope_path" > "$staged_patch"
+    git diff --cached --no-ext-diff --no-color --unified=0 "$transaction_head" -- "$scope_path" > "$staged_patch"
     python3 - "$patch_file" "$staged_patch" <<'PY' \
         || { echo "BLOCK: staged diff does not exactly match requested patch position/content" >&2; exit 2; }
 import re

@@ -761,6 +761,34 @@ make_own_patch() {
     mv "$REPO/shared.working" "$REPO/shared.txt"
 }
 
+# test_necessity: moving live HEAD after patch private-index construction must
+# not classify an unrelated committed path as patch-owned scope pollution.
+@test "patch modeはprivate index構築後の無関係HEAD前進をscope汚染と誤判定しない" {
+    make_shared_fixture; make_own_patch
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    ready="$BATS_TEST_TMPDIR/patch-index-ready"
+
+    (
+        for _ in $(seq 1 200); do
+            [[ -e "$ready" ]] && break
+            sleep 0.01
+        done
+        [[ -e "$ready" ]] || exit 91
+        printf 'parallel\n' > "$REPO/unrelated.txt"
+        git -C "$REPO" add unrelated.txt
+        git -C "$REPO" commit -qm unrelated-parallel
+    ) &
+    advancer=$!
+
+    run bash -c "cd '$REPO' && NINJA_SCOPE_PATCH_INDEX_READY_FILE='$ready' NINJA_SCOPE_PATCH_AFTER_INDEX_DELAY=0.5 bash '$HELPER' -m moving-head --patch '$REPO/own.patch' --base-blob '$base_blob' -- shared.txt"
+    wait "$advancer"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"patch polluted temporary index scope"* ]]
+    [ "$(git -C "$REPO" show HEAD:shared.txt | grep -c -- '-own')" -eq 5 ]
+    git -C "$REPO" cat-file -e HEAD:unrelated.txt
+}
+
 @test "patch modeは同内容hunkが別位置へ適用されたらcommit前にBLOCKする" {
     printf 'start\nrepeat\nend\nstart\nrepeat\nend\n' > "$REPO/ambiguous.txt"
     git -C "$REPO" add ambiguous.txt && git -C "$REPO" commit -qm ambiguous-base
