@@ -601,6 +601,45 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: 同一task_idを別忍者へ再配備した時、完了ゲートが旧担当の
+# 未着reportを必須母数へ残して180秒待機する回帰を防ぐ。異なるtask_idの
+# 正当な並列shardは同時に保持されることも同じ境界で保証する。
+@test "task cmd matcher keeps newest reassignment generation but preserves distinct shards" {
+    local matcher="$PROJECT_ROOT/scripts/lib/task_cmd_match.sh"
+    local old_worker="$TEST_PROJECT/queue/tasks/hayate.yaml"
+    local new_worker="$TEST_PROJECT/queue/tasks/hanzo.yaml"
+    local shard="$TEST_PROJECT/queue/tasks/saizo.yaml"
+
+    cat > "$old_worker" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: ${TEST_CMD_ID}_full
+  deployed_at: '2026-08-03T03:04:56+09:00'
+  status: acknowledged
+EOF
+    cat > "$new_worker" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: ${TEST_CMD_ID}_full
+  deployed_at: '2026-08-03T03:06:08+09:00'
+  status: done
+EOF
+    cat > "$shard" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: ${TEST_CMD_ID}_shard_b
+  deployed_at: '2026-08-03T03:05:00+09:00'
+  status: done
+EOF
+
+    run bash -c 'source "$1"; list_current_task_files_for_cmd "$2" "$3"' \
+        _ "$matcher" "$TEST_PROJECT/queue/tasks" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"$old_worker"* ]]
+    [[ "$output" == *"$new_worker"* ]]
+    [[ "$output" == *"$shard"* ]]
+}
+
 @test "auto_resolve_cmd_related_insights resolves pending insights that mention cmd_id" {
     export INSIGHTS_FILE="$TEST_PROJECT/queue/insights.yaml"
     cat > "$INSIGHTS_FILE" <<EOF

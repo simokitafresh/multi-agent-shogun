@@ -145,6 +145,31 @@ EOF
     grep -q 'ac_count: 0' "$CMD_QUALITY_LOG_FILE"
 }
 
+# test_necessity: 同一task_idの再配備後、旧担当をAC母数へ重複算入せず、
+# 最新世代だけから品質記録のAC数を確定する不変量を守る。
+@test "reassigned duplicate task_id uses newest deployed generation for AC count" {
+    setup_ac_fixtures
+    cat > "$CMD_QUALITY_TASKS_DIR/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_reassigned
+  task_id: cmd_reassigned_full
+  deployed_at: '2026-08-03T03:04:56+09:00'
+  acceptance_criteria: {AC1: {}}
+EOF
+    cat > "$CMD_QUALITY_TASKS_DIR/hanzo.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_reassigned
+  task_id: cmd_reassigned_full
+  deployed_at: '2026-08-03T03:06:08+09:00'
+  acceptance_criteria: {AC1: {}, AC2: {}}
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_reassigned PASS no 0
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ambiguous tasks"* ]]
+    grep -q 'ac_count: 2' "$CMD_QUALITY_LOG_FILE"
+}
+
 @test "malformed task is diagnosed and unique report fallback excludes commit" {
     setup_ac_fixtures
     printf 'task: [broken\n' > "$CMD_QUALITY_TASKS_DIR/broken.yaml"

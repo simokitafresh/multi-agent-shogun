@@ -5991,20 +5991,23 @@ DEFERRED_GATES=("archive")
 # WSL2最適化: 個別grep×N回 → grep -l一括スキャン(プロセス1本)
 declare -A _CMD_TASK_MAP
 MATCHING_TASK_FILES=()
+RAW_MATCHING_TASK_FILES=()
+mapfile -t RAW_MATCHING_TASK_FILES < <(list_task_files_for_cmd "$TASKS_DIR" "$CMD_ID" | sort -u || true)
 while IFS= read -r _cache_tf; do
     [ -f "$_cache_tf" ] || continue
     _CMD_TASK_MAP["$_cache_tf"]=1
     MATCHING_TASK_FILES+=("$_cache_tf")
-done < <(list_task_files_for_cmd "$TASKS_DIR" "$CMD_ID" | sort -u || true)
+done < <(list_current_task_files_for_cmd "$TASKS_DIR" "$CMD_ID" || true)
 if cmd_status_is_canceled "$CMD_ID"; then
     MATCHING_TASK_FILES=()
     _CMD_TASK_MAP=()
     echo "Canceled cmd detected: ${CMD_ID}; task/report wait checks excluded"
 fi
 MATCHING_TASK_FILES_INITIAL_COUNT=${#MATCHING_TASK_FILES[@]}
+MATCHING_TASK_FILES_SUPERSEDED_COUNT=$((${#RAW_MATCHING_TASK_FILES[@]} - MATCHING_TASK_FILES_INITIAL_COUNT))
 MATCHING_TASK_FILES_PROCESSED_COUNT=0
 MATCHING_TASK_FILES_SKIPPED_COUNT=0
-echo "Matching task files snapshot: ${MATCHING_TASK_FILES_INITIAL_COUNT}"
+echo "Matching task files snapshot: ${MATCHING_TASK_FILES_INITIAL_COUNT} (superseded_same_task_id=${MATCHING_TASK_FILES_SUPERSEDED_COUNT})"
 
 print_matching_task_files_summary() {
     echo "Matching task files summary: snapshot=${MATCHING_TASK_FILES_INITIAL_COUNT} processed_refs=${MATCHING_TASK_FILES_PROCESSED_COUNT} skipped_missing=${MATCHING_TASK_FILES_SKIPPED_COUNT}"

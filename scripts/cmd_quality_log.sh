@@ -188,7 +188,8 @@ fetch_ac_count() {
     local stk="${CMD_QUALITY_COMMAND_FILE:-$REPO_ROOT/queue/shogun_to_karo.yaml}"
     local tasks_dir="${CMD_QUALITY_TASKS_DIR:-$REPO_ROOT/queue/tasks}"
     local reports_dir="${CMD_QUALITY_REPORTS_DIR:-$REPO_ROOT/queue/reports}"
-    python3 - "$CMD_ID" "$stk" "$tasks_dir" "$reports_dir" <<'PY'
+python3 - "$CMD_ID" "$stk" "$tasks_dir" "$reports_dir" <<'PY'
+import datetime as dt
 import glob, os, sys, yaml
 
 cid, command_file, tasks_dir, reports_dir = sys.argv[1:]
@@ -212,12 +213,50 @@ if isinstance(commands, dict):
         print(ac_len(candidate["acceptance_criteria"]))
         raise SystemExit
 
+def generation(value):
+    if value in (None, ""):
+        return None
+    if hasattr(value, "timestamp"):
+        try:
+            return float(value.timestamp())
+        except Exception:
+            return None
+    try:
+        parsed = dt.datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        return float(parsed.timestamp())
+    except ValueError:
+        return None
+
 task_matches = []
 for path in sorted(glob.glob(os.path.join(tasks_dir, "*.yaml"))):
     data = load(path)
     task = data.get("task", data) if isinstance(data, dict) else None
     if isinstance(task, dict) and task.get("parent_cmd") == cid:
-        task_matches.append((path, ac_len(task.get("acceptance_criteria"))))
+        task_matches.append((
+            path,
+            ac_len(task.get("acceptance_criteria")),
+            str(task.get("task_id") or task.get("_ac_task_id") or "").strip(),
+            generation(task.get("deployed_at") or task.get("issued_at")),
+        ))
+
+# A reassignment creates two worker YAMLs for the same logical task_id.  Only
+# the newest unambiguous deployed generation is authoritative; distinct task_id
+# shards and missing/tied generations remain fail-closed as ambiguous.
+by_task_id = {}
+for row in task_matches:
+    if row[2]:
+        by_task_id.setdefault(row[2], []).append(row)
+excluded = set()
+for grouped in by_task_id.values():
+    if len(grouped) < 2 or any(row[3] is None for row in grouped):
+        continue
+    newest = max(row[3] for row in grouped)
+    winners = [row for row in grouped if row[3] == newest]
+    if len(winners) == 1:
+        excluded.update(row[0] for row in grouped if row is not winners[0])
+task_matches = [row for row in task_matches if row[0] not in excluded]
 if len(task_matches) == 1 and task_matches[0][1] > 0:
     print(task_matches[0][1])
     raise SystemExit
