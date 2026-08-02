@@ -1,7 +1,7 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-08-02 cmd_karo_hotfix_skill_dirty_recovery_20260802 reviewed source boundary -->
 <!-- source_commit:fd25aecd5 reason:cmd_karo_hotfix_skill_dirty_recovery_20260802 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=fd25aecd5 -->
-<!-- last_synced_lesson: L1526 -->
+<!-- last_synced_lesson: L1527 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -36,7 +36,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1526 -->
+<!-- last_synced_lesson: L1527 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -61,6 +61,7 @@
 - L1524: 再検証対象は固定archive pathとSHAを対で注入する（cmd_karo_verify_fixed_infra_bugs_20260802）
 - L1525: 外部repo鮮度判定は既存commit receiptを消費せよ（cmd_karo_hotfix_context_freshness_ga425_20260802）
 - L1526: 並列runnerはfail-fastとselection receipt完全性を両立できない（cmd_karo_hotfix_run_tests_terminal_receipt_partial_exit_20260802）
+- L1527: 完了後source commitにも行動receiptを提示せよ（cmd_karo_hotfix_context_freshness_ga426_20260802）
 
 ## 設計標準・テスト・因果
 
