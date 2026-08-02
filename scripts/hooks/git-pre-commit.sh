@@ -38,6 +38,84 @@ _PRECOMMIT_SELF_SYNC_STARTED_US="${PRECOMMIT_SELF_SYNC_STARTED_US:-}"
 # from git log (as this task's own AC1/AC3 analysis had to).
 _PRECOMMIT_INSTRUCTION_SYNC_REBUILT=0
 _PRECOMMIT_INSTRUCTION_SYNC_SKIPPED=0
+_PRECOMMIT_TEST_RECEIPT="${NINJA_TEST_RECEIPT:-}"
+
+precommit_staged_tree_hash() {
+    git write-tree 2>/dev/null
+}
+
+precommit_staged_blob_hashes() {
+    local path
+    while IFS= read -r path; do
+        [[ "$path" == *.sh ]] || continue
+        printf '%s=%s\n' "$path" "$(git rev-parse ":$path" 2>/dev/null || true)"
+    done < <(list_staged_files)
+}
+
+# A receipt is only a cache of an already completed test run.  Reuse is
+# deliberately fail-closed: old receipts without the exact commit-boundary
+# identity simply take the normal execution path.
+precommit_receipt_matches() {
+    local task_file="$1" receipt="$_PRECOMMIT_TEST_RECEIPT" identity tree blobs
+    [[ -f "$receipt" ]] || return 1
+    identity="${receipt}.precommit-identity.json"
+    [[ -f "$identity" ]] || identity="$receipt"
+    tree="$(precommit_staged_tree_hash)" || return 1
+    blobs="$(precommit_staged_blob_hashes)"
+    python3 - "$receipt" "$identity" "$task_file" "$(git rev-parse HEAD)" "$tree" "$blobs" <<'PY'
+import hashlib, json, os, sys, yaml
+receipt, identity_file, task_file, head, staged_tree, blobs = sys.argv[1:]
+try:
+    data = yaml.safe_load(open(receipt, encoding="utf-8")) or {}
+    identity_data = yaml.safe_load(open(identity_file, encoding="utf-8")) or {}
+    task_doc = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
+    task = task_doc.get("task", task_doc)
+    ident = identity_data.get("precommit_identity") or {}
+    paths = data.get("test_paths") or []
+    selected = hashlib.sha256(("\n".join(sorted(paths)) + "\n").encode()).hexdigest()
+    ok = (
+        data.get("complete") is True and data.get("result") == "PASS"
+        and data.get("rc") == 0 and data.get("skip_count") == 0
+        and data.get("source_head") == head
+        and ident.get("task_id") == task.get("task_id")
+        and ident.get("source_head") == head
+        and ident.get("selected_tests_sha256") == selected
+        and ident.get("staged_tree") == staged_tree
+        and ident.get("staged_shell_blobs", "") == blobs
+    )
+except (OSError, ValueError, TypeError, KeyError, yaml.YAMLError):
+    ok = False
+raise SystemExit(0 if ok else 1)
+PY
+}
+
+precommit_publish_receipt_identity() {
+    local task_file="$1" receipt="$_PRECOMMIT_TEST_RECEIPT" tree blobs
+    [[ -f "$receipt" ]] || return 0
+    tree="$(precommit_staged_tree_hash)" || return 0
+    blobs="$(precommit_staged_blob_hashes)"
+    python3 - "$receipt" "${receipt}.precommit-identity.json" "$task_file" \
+        "$(git rev-parse HEAD)" "$tree" "$blobs" <<'PY'
+import hashlib, json, os, sys, tempfile, yaml
+receipt, output, task_file, head, tree, blobs = sys.argv[1:]
+try:
+    data=yaml.safe_load(open(receipt, encoding='utf-8')) or {}
+    task=(yaml.safe_load(open(task_file, encoding='utf-8')) or {}).get('task', {})
+    paths=data.get('test_paths') or []
+    if not (data.get('complete') is True and data.get('result') == 'PASS'
+            and data.get('rc') == 0 and data.get('skip_count') == 0
+            and data.get('source_head') == head): raise ValueError('not reusable')
+    payload={'precommit_identity': {
+        'task_id': task.get('task_id'), 'source_head': head,
+        'selected_tests_sha256': hashlib.sha256(('\n'.join(sorted(paths))+'\n').encode()).hexdigest(),
+        'staged_tree': tree, 'staged_shell_blobs': blobs}}
+    fd,tmp=tempfile.mkstemp(prefix='.precommit-identity.', dir=os.path.dirname(output) or '.')
+    with os.fdopen(fd,'w',encoding='utf-8') as f: json.dump(payload,f,sort_keys=True); f.write('\n')
+    os.replace(tmp,output)
+except (OSError, ValueError, TypeError, yaml.YAMLError):
+    pass
+PY
+}
 
 precommit_epoch_us() {
     local value="${EPOCHREALTIME/./}"
@@ -553,11 +631,16 @@ check_precommit_affected_tests() {
     task_rc=$?
     if [[ "$task_rc" -eq 0 ]]; then
         echo "[pre-commit] affected-test mode=task task_file=${task_file#"$REPO_ROOT"/}" >&2
+        if precommit_receipt_matches "$task_file"; then
+            echo "[pre-commit] affected-test exact PASS receipt reused; test process launches=0" >&2
+            return 0
+        fi
         if ! env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE -u GIT_OBJECT_DIRECTORY -u GIT_COMMON_DIR \
                 bash "$run_tests" task "$task_file" >&2; then
             echo "[pre-commit] BLOCK(GA-PRECOMMIT1): task-contract tests failed." >&2
             return 1
         fi
+        precommit_publish_receipt_identity "$task_file"
         return 0
     elif [[ "$task_rc" -ne 1 ]]; then
         return 1
@@ -1194,9 +1277,14 @@ main() {
     # killing the monitor for 47min. Syntax-broken shell must never reach the tree.
     precommit_step_begin shell_syntax
     _shell_syntax_fail=""
-    while IFS= read -r _staged_sh; do
-        [[ -n "$_staged_sh" ]] && _shell_syntax_fail+="    $_staged_sh"$'\n'
-    done < <(check_staged_shell_syntax)
+    _task_file="$(resolve_precommit_task_file 2>/dev/null || true)"
+    if [[ -n "$_task_file" ]] && precommit_receipt_matches "$_task_file"; then
+        echo "[pre-commit] shell_syntax exact staged-blob PASS receipt reused; bash processes=0" >&2
+    else
+        while IFS= read -r _staged_sh; do
+            [[ -n "$_staged_sh" ]] && _shell_syntax_fail+="    $_staged_sh"$'\n'
+        done < <(check_staged_shell_syntax)
+    fi
     if [[ -n "$_shell_syntax_fail" ]]; then
         precommit_step_end 1
         echo "BLOCKED: bash -n failed on staged shell script(s):" >&2
