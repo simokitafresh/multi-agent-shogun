@@ -274,7 +274,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "殿の同一指示は複数忍者へ展開済み。hanzo対象の品質問題も既存hotfixで再検証され、軍師LGTM・GATE CLEAR・台帳記録まで完了しているため追加修正不要"
+  action_artifact: "queue/lord_conversation.jsonl:223; commit 7f54227ce9d784d2db77e6782cecaf20ee199d98; queue/archive/bulletin_20260802.yaml:1048-1059; logs/karo_workarounds.yaml:1063"
+  resolved_at: "2026-08-02T18:25:38+09:00"
 - id: INS-20260802-123501606-c75a
   ts: "2026-08-02T12:35:01+09:00"
   insight: "[[内容の粒度が雑になってしまったな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=内容の粒度が雑になってしまったな。元と同じレベルで書き直してくれ"
