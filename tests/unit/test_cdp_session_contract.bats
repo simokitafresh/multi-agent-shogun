@@ -71,6 +71,65 @@ PY
   [ "$output" = "owned_release=1 reused_change=0 duplicate_release=0" ]
 }
 
+# test_necessity: daemonのSIGTERM・idle・KeyboardInterrupt配線そのものがfinally releaseへ各1/1到達する契約を守る。
+@test "daemon exit paths each reach finally release exactly once" {
+  run env PYTHONPATH="$BATS_TEST_DIRNAME/../../scripts/cdp" python3 - <<'PY'
+import builtins, io, signal, sys
+import cdp_server as mod
+
+results = []
+for exit_path in ("sigterm", "idle", "keyboard"):
+    for owned in (True, False):
+        receipt = {"issuer": "cdp_session_foundation", "owned": owned,
+                   "endpoint": "http://127.0.0.1:9222"}
+        cleanup_calls = []
+        handlers = {}
+        mod.establish = lambda *a, _r=receipt, **k: _r
+        class FakeRelease:
+            def __init__(self, r): self.receipt, self.called = r, False
+            def __call__(self):
+                if self.called: return False
+                self.called = True; cleanup_calls.append(self.receipt)
+                return bool(self.receipt["owned"])
+        mod.SessionRelease = FakeRelease
+        mod.ensure_ws = lambda state: object()
+        mod.os.chmod = lambda *a: None
+        mod.signal.signal = lambda sig, fn, _h=handlers: _h.__setitem__(sig, fn)
+        real_open = builtins.open
+        builtins.open = lambda path, *a, **k: io.StringIO() if path == "/tmp/cdp-server.json" else real_open(path, *a, **k)
+
+        class FakeServer:
+            def __init__(self, *a, **k): self.shutdown_calls = 0
+            def shutdown(self): self.shutdown_calls += 1
+            def serve_forever(self):
+                if exit_path == "sigterm": handlers[signal.SIGTERM](signal.SIGTERM, None)
+                elif exit_path == "keyboard": raise KeyboardInterrupt
+
+        class FakeThread:
+            def __init__(self, target=None, args=(), **k): self.target, self.args = target, args
+            def start(self):
+                name = getattr(self.target, "__name__", "")
+                if exit_path == "idle" and name == "idle_watchdog": self.target(*self.args)
+                elif name == "shutdown": self.target(*self.args)
+
+        mod.CDPDaemonServer = FakeServer
+        mod.threading.Thread = FakeThread
+        mod.time.sleep = lambda *_: None
+        sys.argv = ["cdp_server.py", "--port", "19400", "--idle-timeout", "-1"]
+        try:
+            mod.main()
+        finally:
+            builtins.open = real_open
+        assert cleanup_calls == [receipt], (exit_path, owned, cleanup_calls)
+        results.append((exit_path, owned, len(cleanup_calls)))
+
+assert len(results) == 6
+print("sigterm=1/1 idle=1/1 keyboard=1/1 duplicate_release=0 reused_change=0")
+PY
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"sigterm=1/1 idle=1/1 keyboard=1/1 duplicate_release=0 reused_change=0"* ]]
+}
+
 # test_necessity: Python consumer 7入口を実行し、業務処理より先にinspection/generic receiptが伝播する契約を守る。
 @test "python consumer entrypoints execute receipt acquisition" {
   run python3 - "$BATS_TEST_DIRNAME/../.." <<'PY'
