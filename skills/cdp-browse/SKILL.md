@@ -34,7 +34,7 @@ python3 scripts/cdp/cdp_session.py establish --consumer "$CONSUMER" --ports 9222
 |---|---|---|
 | 1. port占有時に復旧不能 | 9222→9223→9224の有限fallback、全候補失敗は明示FAIL | `scripts/cdp/cdp_session.py` |
 | 2. admin 401分岐なし | admin失敗後、要求権限がviewerの場合だけviewerへfallback | `scripts/cdp/dm_signal_adapters.py` |
-| 3. viewer認証が暗黙 | adapterがVIEWER_PASS読込とReact input eventを内包 | `scripts/cdp/dm_signal_adapters.py` |
+| 3. viewer認証が暗黙 | adapterがVIEWER_PASS読込とReact input eventを内包し、password form消失かつ`tbody tr` 1行以上だけ成功（0行はFAIL） | `scripts/cdp/dm_signal_adapters.py` |
 | 4. 発火が字句依存 | 全用途をfoundation receiptの同一入口へ固定 | `docs/research/cdp-session-contract-v1.yaml` |
 | 5. 推薦止まり | consumerがreceiptなしの接続を受理しない | `scripts/cdp/cdp_session.py`、各consumer wrapper |
 | 6. 役割別に入口が自由 | inspection/measurement/note/genericの4 consumerを同じissuerへ固定 | `docs/research/cdp-session-contract-v1.yaml` |
