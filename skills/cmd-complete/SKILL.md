@@ -160,25 +160,19 @@ review_gate.done を書かないため **gate_metrics上CLEARにはならず、�
 
 ## 注意ポイント
 - 2026-05-11: gate=cmd_complete_gate result=FAIL executor=hayate reason=missing_gate:review_gate
-
 - 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:hanzo_report_cmd_2611.yaml|hanzo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503',MISSING;parent_cmd:MISSING;ac_...
 - 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:hanzo_report_cmd_2611.yaml|hanzo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|hanzo:lesson_candidate_no_rea...
-
 - 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|report_format:hanzo_report_cmd_2611.yaml|hanzo:empty_lessons_useful:related=['L512','L511','L510','L509','L508','L507','L506','L505','L504','L503']|hanzo:les...
 - 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:report_merge
-
 - 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|kagemaru:lesson_done_missing|draft_lessons:1
 - 2026-05-09: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|hanzo:lesson_done_missing|draft_lessons:1
-
 - 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|kotaro:lesson_done_missing|draft_lessons:1
 - 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|tobisaru:lesson_done_missing|draft_lessons:1
-
 - 2026-05-06: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|kagemaru:lesson_done_missing
 - 2026-05-05: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|hayate:lesson_done_missing|draft_lessons:1
-
 - 2026-05-05: gate=cmd_complete_gate result=FAIL executor=unknown reason=missing_gate:lesson|hanzo:lesson_done_missing
 - 2026-05-05: gate=cmd_complete_gate result=FAIL executor=unknown reason=draft_lessons:1
-
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=hanzo:ac_version_mismatch:task=d41d8cd9:report=88572c76
+
 <!-- script_refs_checked_at: 2026-08-01T19:18:00+09:00 -->
 <!-- 2026-08-01 reflux検分: gate_context_freshness.sh 7a4748678はactive task ownerのlease・deploy時blob・dirty実体をyaml_field_set.shの共通判定で照合し、context再構築中だけWARNをDEFERする。引数なし実行、ALERT/WARN/OKの終了契約、cmd-complete内の実行順は不変。 -->

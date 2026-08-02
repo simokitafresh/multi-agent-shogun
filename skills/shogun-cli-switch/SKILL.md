@@ -1,4 +1,16 @@
 ---
+name: shogun-cli-switch
+description: |
+  multi-agent-shogun のCLI種別(Claude⇔Codex)とClaude Code version運用を切り替える。全ロールが殿の指示のもとに使用可能。
+  switch-to-codex / switch-to-opus / shogun-claude-version-switch の上位互換。
+  settings.yaml更新→tmux変数同期→idle paneのみrespawn。in_progress/active paneはスキップして設定だけ反映する。
+  TRIGGER: /shogun-cli-switch、Claude auto-update再許可、2.1.87固定へロールバック、ピン留めOpus 4.6 1M、Claude version確認、pinned/latest切替、Claude⇔Codex切替、家老をCodexに、軍師をOpusに、CLI pane respawn、編成切替、忍者モデル編成、一括モデル切替、混成編成、モデル混成、Opus全戻し、決戦モード、全員Codex切替、Codex-only編成、緊急Codex編成、平時編成へ戻す、Codex-only解除、Claude復旧後ロールバック、ペイン死亡復旧、respawnせよ、GPT-5.5にしたい、GPTモデルに変更、モデルをGPTに、モデル変更
+  DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（scripts/reset_layout.shで復旧）
+allowed-tools:
+  - Bash
+  - Read
+---
+
 <!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_b検分: ninja_monitor.sh 5be953b8/b5865875/edb0645a/046e8750/f955d556/e42ffe0c/8dd728a2/483a94ce/a7e7f42cをgit log/show。通知generation dedupe、failed即復帰、task-state fast path、reflux promotion原子予約を確認。CLI切替I/F、settings→tmux同期、dead/idle pane respawn、cli_launch_cmd契約は不変で本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T04:48:00+09:00 -->
@@ -11,17 +23,6 @@
 <!-- 2026-07-18検分: ninja_monitor.sh 4a122414/68847eb9/1be952b4はreflux ledgerをevent-driven化+legacy一回reconcile。CLI切替/respawn契約不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: ninja_monitor.sh 348d1df9c/2a09dc71c/e9a172bad/432d78e71c/7b5a87837をgit showで確認。reflux/speed配備のidle・estimated_minutes・rollback/QUALITY_CONTRACT修正と重複source削除であり、CLI切替、settings→tmux同期、dead/idle pane respawn-pane -k、cli_launch_cmd契約は不変。本文変更不要。 -->
-name: shogun-cli-switch
-description: |
-  multi-agent-shogun のCLI種別(Claude⇔Codex)とClaude Code version運用を切り替える。全ロールが殿の指示のもとに使用可能。
-  switch-to-codex / switch-to-opus / shogun-claude-version-switch の上位互換。
-  settings.yaml更新→tmux変数同期→idle paneのみrespawn。in_progress/active paneはスキップして設定だけ反映する。
-  TRIGGER: /shogun-cli-switch、Claude auto-update再許可、2.1.87固定へロールバック、Claude version確認、pinned/latest切替、Claude⇔Codex切替、家老をCodexに、軍師をOpusに、CLI pane respawn、編成切替、忍者モデル編成、一括モデル切替、混成編成、モデル混成、Opus全戻し、決戦モード、全員Codex切替、Codex-only編成、緊急Codex編成、平時編成へ戻す、Codex-only解除、Claude復旧後ロールバック、ペイン死亡復旧、respawnせよ、GPT-5.5にしたい、GPTモデルに変更、モデルをGPTに、モデル変更
-  DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（scripts/reset_layout.shで復旧）
-allowed-tools:
-  - Bash
-  - Read
----
 
 <!-- script_refs_checked_at: 2026-07-16T14:52:00+09:00 -->
 <!-- cmd_karo_hotfix_failed_completed_blocked_terminal_202607161446検分: ninja_monitor.sh 3bb11a0a7はfailed taskのcompleted reportを共通report_terminal_state.shでCLOSED_BLOCKED判定し、完結済みBLOCKED偵察への再nudgeを抑止する内部状態分類変更。check_idle、dead pane復旧、cli_launch_cmd、respawn-pane -k、settings→tmux同期、shogun_cli_switch.shのCLI引数契約には影響なし。startup72/72+monitor70/70 PASS、SKIP0。本文変更不要。 -->
@@ -77,7 +78,32 @@ Script refs verified: 2026-06-24T09:12. `switch_cli_mode.sh` 最新commit 78e467
 
 # Shogun CLI Switch
 
-Argument hint: `[status|to-claude|to-codex|pin-2.1.87|unpin-latest|probe-codex] [--agent AGENT] [--scope core|all|csv]`
+Argument hint: `[status|to-claude|to-codex|pin-2.1.87|pin-opus-4.6-1m|unpin-latest|probe-codex] [--agent AGENT] [--scope core|all|csv]`
+
+## ピン留めOpus 4.6 1M（専用action以外を使うな）
+
+「ピン留めOpus 4.6 1M」は次の一コマンドだけで実行する。
+
+```bash
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh \
+  pin-opus-4.6-1m --agent <name>
+```
+
+このactionは、Claude Code 2.1.87確認、canonical `model_name=claude-opus-4-6`、
+固定版Opus high起動、`/model default`、実プロセス確認を順序保証する。
+既に正しい場合はrespawnもコマンド送信も行わず即時PASSする。切替が必要な場合は
+`@cli_switch_pending=true` を設定して重いRecoveryをスキップする。Recovery完了待ちで
+速度を稼ぐ設計は禁止する。
+次の二表示が揃わなければ非ゼロ終了し、完了扱いしない。
+
+- `Opus 4.6 (1M context) with high effort`
+- `Set model to Opus 4.6 (1M context) (default)`
+
+`pin-2.1.87`単独はCLI版しか固定せず、デフォルトSonnetで起動しうる。
+`--model opus`単独も1M確定ではない。独自の`model_name`を作るな。
+
+2026-07-27実測（影丸）: Sonnet 5 low→ピン留めOpus 4.6 1M highは6.18秒、
+同一状態への再実行は0.35秒。これを大幅に超える場合は待機せず実装バグとして扱う。
 
 Quality metric: 将軍系CLI/version切替cmdの`cmd_save.sh`チェック通過率（q1-q4 BLOCKなしで保存できた割合）。
 
@@ -123,6 +149,14 @@ multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間�
 
 **Codex注意**: config.tomlは全Codex忍者共有。変更は全Codex忍者に影響するが、respawnした忍者のみ反映。
 
+**Claude Opus 5 コンテキスト指定(2026-07-25実験実証)**:
+- `--model opus` = `claude-opus-5` (200Kコンテキスト)。1Mにはならない
+- `--model 'claude-opus-5[1m]'` = opus 5 1Mコンテキスト。明示指定必須
+- バナーで判別: 200K=`Opus 5 with low effort · Claude Max` / 1M=`Opus 5 (1M context) with low effort`
+- **Claude Max はサブスクプラン名であり1Mの証拠ではない**
+- launch_cmd例: `/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low`
+- v2.1.220のlatest CLI必須（pinned 2.1.87はopus 5未対応）
+
 **Codex CLI引数の実証結果(2026-07-20軍師実証)**:
 - `--model gpt-5.6-sol`: 有効。config.tomlの`model`値を上書き
 - `--effort low/medium/high`: **無効(exit 2)**。Codex CLIに`--effort`引数は存在しない
@@ -130,19 +164,67 @@ multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間�
 - `-c model_reasoning_effort=medium`: tmux respawn-pane経由だとquotingが崩れ無効化されることがある
 - config.toml `model = "gpt-5.6-sol"`: **有効だがexit 2になるモデル名あり**。gpt-5.6-solは`--model`経由でのみ動作する環境がある
 
-**正規方法(2026-07-21確立・殿裁定)**: config.tomlのmodel/model_reasoning_effortを対象agentの正本値(settings.yaml)にsedで書き換え→respawn-pane -k→最下行バナーで確認。restoreしない(restore廃止: a125c2aa5)。`/effort`コマンドは存在しない(実験実証6/6)。`/model`はインタラクティブメニューのみ(引数不可)。作業中は`/model`不可(idle時のみ)。
+**正本(2026-07-27更新)**: per-agentのCLI/model/effortは
+`config/settings.yaml` を正本とし、`scripts/agent_respawn.sh` に起動コマンドを生成させる。
+共有 `~/.codex/config.toml` のagent別書換えや直接 `tmux respawn-pane` は通常運用に使わない。
+`/effort`コマンドは存在しない(実験実証6/6)。`/model`はインタラクティブメニューのみ
+(引数不可)であり、作業中は使用しない。
 
 **モデル実験はactive worker paneで行わない（2026-07-21）**: モデル/effortの組合せ検証は `shogun_cli_switch.sh probe-codex --model <model> --effort <level>` を使う。この経路は `codex exec --ephemeral --ignore-user-config` のisolated processで実行し、共有config checksum不変・全pane PID変化0を同時検証する。workerのtask中にself-respawnしてはならない。実運用の切替だけ、idle paneへ既存respawn経路を使う。
 
-**per-agent model/effort切替手順** (殿裁定2026-07-21、軍師6回実験で確立):
-1. `sed -i 's/^model = .*/model = "gpt-5.6-sol"/' ~/.codex/config.toml`
-2. `sed -i 's/^model_reasoning_effort = .*/model_reasoning_effort = "low"/' ~/.codex/config.toml`
-3. `tmux respawn-pane -k -t <pane> "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"`
-4. 最下行バナーで `gpt-5.6-sol low` を一次確認
-5. 次のagent切替が必要なら手順1-4を繰り返す(config.tomlは上書きされるがrespawnしたpaneにのみ反映)
-**制約**: 対象agentが再respawn(/clear等)されるとconfig.toml現在値に戻る(揮発的)。ninja_monitorのidle /clearでrespawnされる忍者はconfig.toml現在値を取得するが、codex_config_apply_agentが接続済みの経路ではsettings.yaml値が一時適用される。
+### per-agent CLI/model切替の唯一の正規順（2026-07-27実機確認）
 
-**2026-07-10追記(未commit差分確認・要再検証)**: `cli_lookup.sh`の`codex_config_apply_agent()`/`codex_config_restore()`が`ninja_monitor.sh`の自動respawn経路(`safe_send_clear`=idle /clear系、`check_ninja_cli_dead`=死亡pane復旧)にのみ組み込まれた。該当agentのsettings.yaml `model_name`が`gpt-*`形式で設定されていれば、ninja_monitor起因の自動respawnではeffort/service_tierが一時適用→復元され揮発しなくなる見込み。ただし`switch_cli_mode.sh`(Step2の手動`to-codex`/`to-claude`)経路には未接続のため、手動切替直後は従来通り本回避策の手順が必要。本変更は未commit・無テストのため、実機respawnでの動作確認は次回検証時に実施すること。
+`to-codex` はCLI種別を切り替えるが、切替前のClaude系 `model_name`（例: `sonnet-5-low`）が
+settings/tmuxへ残る場合がある。`to-codex` の成功表示だけでモデル変更完了と判断するな。
+
+```bash
+# 1. 現状確認とdry-run
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh status
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh \
+  to-codex --scope hayate,kotaro --dry-run
+
+# 2. CLI種別をCodexへ切替（設定のみ。旧model_nameでの中間respawnを防ぐ）
+#    既に対象全員がCodexならこの段階だけ省略可
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh \
+  to-codex --scope hayate,kotaro --settings-only
+
+# 3. per-agent正本を更新（settings.yamlへsedを使わない）
+for agent in hayate kotaro; do
+  bash scripts/lib/yaml_field_set.sh config/settings.yaml \
+    "$agent" model_name gpt-5.6-sol-low
+done
+
+# 4. 正本値から起動コマンドを再生成してrespawn
+for agent in hayate kotaro; do
+  bash scripts/agent_respawn.sh "$agent"
+done
+
+# 5. settings/tmux → 最新banner → 現在processの順で一次確認
+```
+
+`agent_respawn.sh` の出力に
+`-c model_reasoning_effort=low -c service_tier=default` が含まれることを確認する。
+完了条件は次の3点が全て一致すること:
+
+1. settings/tmux: `cli=codex model=gpt-5.6-sol-low`
+2. banner: `model: gpt-5.6-sol low` または最下部 `gpt-5.6-sol low`
+3. process: 現在のpane子プロセスがCodexで、起動引数に `model_reasoning_effort=low`
+
+capture-paneの上部に以前の失敗
+`error: unexpected argument '--effort' found`
+が残っていても、それだけで現在の起動失敗と判定するな。paneの開始コマンド、最新banner、
+現在PIDの3点で判定する。今回の実機確認では旧エラー残像がありながら、両paneの現行bannerと
+processは `gpt-5.6-sol low` で一致した。
+
+**実行順の不変量**:
+- CLI変更と最終モデル変更を同時に行う場合は、`to-codex/to-claude --settings-only`を先に行う。
+- 次に `yaml_field_set.sh` でagent別の `model_name`（必要なら`service_tier`）を確定する。
+- 最後に `agent_respawn.sh` を実行する。正本更新前のrespawnは禁止。
+- `--settings-only`を省くと、旧model_nameで1回、確定model_nameで1回の二重respawnになる。
+  2026-07-27の3名一括切替で不要な中間respawnが3回発生したため、モデル併用切替では設定のみを正規経路とする。
+- CLI種別だけを変え、モデル名を変更しない依頼では従来どおり`to-codex/to-claude`単独でよい。
+- active/in_progress paneは殿の即時切替指示がない限りrespawnせず、設定反映を次の安全な再起動まで保留する。
+- 完了判定は settings/tmux・最新banner・現在process の3点一致だけで行う。
 
 ### Step 4: 一次確認（必須）
 
@@ -169,40 +251,56 @@ ps -o pid,ppid,stat,comm,args --forest -g "$pid" | sed -n '1,40p'
 
 ```bash
 # 例1: 「hanzoをGPT5.5 low fastonに」
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent hanzo
-# config.toml: model_reasoning_effort="low", service_tier="fast" (既定ならrespawn不要)
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent hanzo --settings-only
+bash scripts/lib/yaml_field_set.sh config/settings.yaml hanzo model_name gpt-5.5-low
+bash scripts/lib/yaml_field_set.sh config/settings.yaml hanzo service_tier fast
+bash scripts/agent_respawn.sh hanzo
 tmux capture-pane -t shogun:2.5 -p | tail -2  # → gpt-5.5 low fast 確認
 
 # 例2: 「saizo をSonnet low に」(既にClaude CLIなら)
-tmux respawn-pane -k -t shogun:2.6 "/home/simokitafresh/bin/claude --dangerously-skip-permissions --model sonnet --effort low"
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-claude --agent saizo --settings-only
+bash scripts/lib/yaml_field_set.sh config/settings.yaml saizo model_name sonnet-5-low
+bash scripts/agent_respawn.sh saizo
 tmux capture-pane -t shogun:2.6 -p | head -3  # → Sonnet 4.6 with low effort 確認
 
 # 例3: 「hayateとkagemaruを同時にCodexに」
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --scope hayate,kagemaru
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --scope hayate,kagemaru --settings-only
+for a in hayate kagemaru; do
+  bash scripts/lib/yaml_field_set.sh config/settings.yaml "$a" model_name gpt-5.6-sol-low
+  bash scripts/agent_respawn.sh "$a"
+done
 
 # 例4: version切替
 ~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh pin-2.1.87      # 全員2.1.87固定
 ~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh unpin-latest     # 全員最新版
 
-# 例5: 「karoをGPT5.5 medium fast onに」(per-agent effort回避策)
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent karo
-sed -i 's/model_reasoning_effort = "low"/model_reasoning_effort = "medium"/' ~/.codex/config.toml
-tmux respawn-pane -k -t shogun:2.1 "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
-sed -i 's/model_reasoning_effort = "medium"/model_reasoning_effort = "low"/' ~/.codex/config.toml
+# 例5: 「karoをGPT5.5 medium fast onに」
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent karo --settings-only
+bash scripts/lib/yaml_field_set.sh config/settings.yaml karo model_name gpt-5.5-medium
+bash scripts/lib/yaml_field_set.sh config/settings.yaml karo service_tier fast
+bash scripts/agent_respawn.sh karo
 tmux capture-pane -t shogun:2.1 -p | tail -2  # → gpt-5.5 medium fast 確認
 ```
 
-# 例6: 「karoをGPT5.5 medium、忍者6名をGPT5.5 low fastに」(一括切替 2026-06-23実証)
-# Step1: config.toml→medium、家老をCodexに切替(respawn込み)
-sed -i 's/model_reasoning_effort = "low"/model_reasoning_effort = "medium"/' ~/.codex/config.toml
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent karo
-# Step2: config.toml→low(忍者用)、忍者6名をCodexに切替(respawn込み)
-sed -i 's/model_reasoning_effort = "medium"/model_reasoning_effort = "low"/' ~/.codex/config.toml
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --scope hayate,kagemaru,hanzo,saizo,kotaro,tobisaru
-# Step3: settings.yaml model_name同期(switch_cli_mode.shがリセットするため)
+# 例6: 「karoをOpus 5 1M lowに」(2026-07-25実証)
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-claude --agent karo --settings-only
+bash scripts/lib/yaml_field_set.sh config/settings.yaml karo model_name opus-5-1m-low
+bash scripts/lib/yaml_field_set.sh config/settings.yaml karo launch_cmd "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low"
+bash scripts/agent_respawn.sh karo
+sleep 8 && tmux capture-pane -t shogun:2.1 -p -S -60 | grep -i "opus\|context"  # → Opus 5 (1M context) 確認
+
+# 例7: 「karoをGPT5.5 medium、忍者6名をGPT5.5 low fastに」(一括切替 2026-06-23実証)
+# Step1: CLI種別を先にCodexへ統一
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --scope karo,hayate,kagemaru,hanzo,saizo,kotaro,tobisaru --settings-only
+# Step2: settings.yamlのagent別正本を確定
 bash scripts/lib/yaml_field_set.sh config/settings.yaml karo model_name gpt-5.5-medium
-for a in hayate kagemaru hanzo saizo kotaro tobisaru; do bash scripts/lib/yaml_field_set.sh config/settings.yaml "$a" model_name gpt-5.5-low; done
-# Step4: バナー一次確認
+for a in hayate kagemaru hanzo saizo kotaro tobisaru; do
+  bash scripts/lib/yaml_field_set.sh config/settings.yaml "$a" model_name gpt-5.5-low
+  bash scripts/lib/yaml_field_set.sh config/settings.yaml "$a" service_tier fast
+done
+# Step3: 正本値から各paneを再生成
+for a in karo hayate kagemaru hanzo saizo kotaro tobisaru; do bash scripts/agent_respawn.sh "$a"; done
+# Step4: settings/tmux・banner・processを一次確認
 sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shogun:2.$p -p | grep -o 'gpt-5.5[^·]*')"; done
 ```
 
@@ -220,8 +318,11 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 | Claude CLI で `/fast` → Sonnet fast | `/fast` は Opus 4.6 に強制変更される |
 | `codex --full-auto` で起動 | `codex` 単体起動(0.141.0でexit 2) |
 | switch_cli_mode.sh後にsettings.yaml未確認 | 切替後に`grep type settings.yaml`で一次確認必須(2026-06-23: tmux変数のみ更新しsettings未反映の事故) |
+| `to-codex`成功表示だけでGPTモデル反映済みと判断 | settingsの旧Claude model_name残存を確認し、yaml_field_set→agent_respawn→banner/tmux/process三点確認 |
+| capture-pane内の過去`--effort`エラーだけで現行起動失敗と判断 | pane_start_command・最新banner・現在PIDを照合して残像と現行状態を分離 |
 | CLI切替後に`shutsujin_departure.sh`実行 | セッション起動時だけ実行。切替中に呼ぶとsettings.yamlを平時デフォルトへ巻き戻す |
 | `sed -n '27,33p' config/settings.yaml`など固定行で対象agent確認 | YAMLパースで`cli.agents.<agent>`を直接読む |
+| `--model opus` でOpus 5 1Mと判断 | `--model 'claude-opus-5[1m]'` と明示指定。バナーに`(1M context)`表示を確認 |
 
 ## Safety
 
@@ -229,7 +330,8 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 - `active` / `assigned` task中に `pane_dead=1` を検知した場合は、`ninja_monitor.sh` がdeploy/stall graceより先に `respawn_dead_agent.sh` でdead-only自動復旧する。手動respawnを重ねず、`capture-pane -S -30` とtask statusで復旧・再開を確認せよ。live paneとidle taskは自動復旧対象外。
 - CLI/version 切替は設定変更だけでは不十分。**idle paneのrespawnが必須**
 - `active` / `in_progress` 相当のpaneはスキップし、設定だけを次回起動へ反映する
-- `--settings-only` は「次回 respawn 時に反映したい」時だけ使え。CLI切替では `scripts/switch_cli_mode.sh --no-relaunch` に対応する
+- `--settings-only` は、CLI+モデルを同時変更して最後に`agent_respawn.sh`を1回だけ行う場合、
+  または次回respawnまで反映を保留する場合に使う。`scripts/switch_cli_mode.sh --no-relaunch`に対応する
 - **切替後にsettings.yamlのtype/model_nameが正しいか`grep`で一次確認必須**。switch_cli_mode.shがtmux変数のみ更新しsettings未反映の事故あり(2026-06-23 LK007)
 - **固定行sedでsettings確認禁止**。行番号は差分で動く。必ずPython/YAMLで `cli.agents.<agent>` を読む
 - **切替後に実pane確認必須**。`tmux display-message`、`capture-pane`、必要時は`ps --forest -g #{pane_pid}`で「実CLI/実モデル/実プロセス」を確認する
@@ -307,8 +409,8 @@ print('手動でsettings.yaml の tobisaru.launch_cmd 行を削除')
 bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> model_name opus-4-8-xhigh
 bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> launch_cmd "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh"
 
-# 3) idle pane を respawn
-tmux respawn-pane -k -t <pane> "cd /mnt/c/tools/multi-agent-shogun && /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh"
+# 3) 正本値からidle paneをrespawn
+bash scripts/agent_respawn.sh <agent>
 ```
 
 **確認は3点セット**:
@@ -319,6 +421,30 @@ tmux respawn-pane -k -t <pane> "cd /mnt/c/tools/multi-agent-shogun && /home/simo
 **やってはいけないこと**:
 - `unpin-latest` だけで「最新版Opus 4.8 xhighになった」と判断する
 - staleしうる pane label だけで version/model を確定する
+
+### 最新版 + Opus 5 1M を特定agentへ反映する正道（2026-07-25実証）
+
+**重要**: `--model opus` は `claude-opus-5` (200K) に解決される。1Mには `claude-opus-5[1m]` の明示指定が必須。
+
+```bash
+# 1) settings.yaml更新
+bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> type claude
+bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> model_name opus-5-1m-low
+bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> launch_cmd "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low"
+
+# 2) respawn (agent_respawn.sh経由必須)
+bash scripts/agent_respawn.sh <agent>
+
+# 3) バナー確認 — 「(1M context)」表示が必須
+sleep 8 && tmux capture-pane -t shogun:2.<pane> -p -S -60 | grep -i "opus\|context"
+# 正: Opus 5 (1M context) with low effort
+# 誤: Opus 5 with low effort · Claude Max  ← これは200K
+```
+
+**確認は3点セット**:
+- `settings.yaml` に `model_name=opus-5-1m-low`
+- `launch_cmd` に `--model 'claude-opus-5[1m]'`
+- バナーに `Opus 5 (1M context)` 表示（`Claude Max`だけではサブスクプラン名で1Mの証拠にならない）
 
 ## 実践検証結果（2026-06-21 殿指示で検証）
 
