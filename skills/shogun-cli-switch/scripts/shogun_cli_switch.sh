@@ -11,6 +11,7 @@ PROBE_MODEL=""
 PROBE_EFFORT=""
 PROBE_TIER="default"
 CODEX_BIN="${CODEX_BIN:-codex}"
+OPUS46_1M_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions --model opus --effort high"
 
 PINNED_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions"
 LATEST_CMD="/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions"
@@ -21,11 +22,14 @@ LATEST_BIN="/home/simokitafresh/.local/bin/claude"
 
 usage() {
   cat <<'USAGE'
-Usage: shogun_cli_switch.sh <status|pin-2.1.87|unpin-latest|to-claude|to-codex|probe-codex> [--agent <name>] [--scope <core|all|csv>] [--repo <path>] [--dry-run] [--settings-only]
+Usage: shogun_cli_switch.sh <status|pin-2.1.87|pin-opus-4.6-1m|unpin-latest|to-claude|to-codex|probe-codex> [--agent <name>] [--scope <core|all|csv>] [--repo <path>] [--dry-run] [--settings-only]
 
 Actions:
   status         Show current launch_cmd, available binaries, and active Claude scope
   pin-2.1.87     Point launch_cmd at /home/simokitafresh/bin/claude and respawn Claude panes
+  pin-opus-4.6-1m
+                 Pin one agent to Claude Code 2.1.87 + Opus 4.6 high + 1M context,
+                 including /model default and runtime verification
   unpin-latest   Point launch_cmd at /home/simokitafresh/.local/bin/claude and respawn Claude panes
   to-claude      Switch target agents to Claude CLI
   to-codex       Switch target agents to Codex CLI
@@ -248,6 +252,129 @@ ensure_pinned_assets() {
     exit 1
   fi
   [[ "$DRY_RUN" == true ]] || chmod +x "$PINNED_BIN"
+}
+
+pin_opus46_1m() {
+  [[ -n "$TARGET_AGENT" ]] || {
+    echo "[ERROR] pin-opus-4.6-1m requires --agent <name>" >&2
+    return 1
+  }
+  [[ "$SETTINGS_ONLY" == false ]] || {
+    echo "[ERROR] pin-opus-4.6-1m cannot use --settings-only; /model default runtime verification is mandatory" >&2
+    return 1
+  }
+  ensure_pinned_assets
+
+  local version pane state yaml_set respawn_script capture process_args pane_pid
+  version=$("$PINNED_BIN" --version 2>/dev/null || true)
+  [[ "$version" == "2.1.87 (Claude Code)" ]] || {
+    echo "[ERROR] pinned binary is not Claude Code 2.1.87: ${version:-unreadable}" >&2
+    return 1
+  }
+  if [[ "$DRY_RUN" == true ]]; then
+    log "[dry-run] $TARGET_AGENT type=claude"
+    log "[dry-run] $TARGET_AGENT model_name=claude-opus-4-6"
+    log "[dry-run] $TARGET_AGENT launch_cmd=$OPUS46_1M_CMD"
+    log "[dry-run] respawn $TARGET_AGENT, send /model default, require two 1M confirmations"
+    return 0
+  fi
+  pane=$(agent_pane_target "$TARGET_AGENT" 2>/dev/null || true)
+  [[ -n "$pane" ]] || {
+    echo "[ERROR] pane not found for agent: $TARGET_AGENT" >&2
+    return 1
+  }
+  pane_pid=$(tmux display-message -t "$pane" -p '#{pane_pid}' 2>/dev/null || true)
+  capture=$(tmux capture-pane -t "$pane" -p -S -40 2>/dev/null || true)
+  process_args=$(ps -o args= -g "$pane_pid" 2>/dev/null || true)
+
+  # Idempotent O(1) fast path: never respawn or send a command when the live
+  # pane already proves the requested state.
+  if [[ "$capture" == *"Claude Code v2.1.87"* &&
+        "$capture" == *"Opus 4.6 (1M context) with high effort"* &&
+        "$process_args" == *"/home/simokitafresh/bin/claude"* &&
+        "$process_args" == *"--model opus"* &&
+        "$process_args" == *"--effort high"* ]]; then
+    log "PASS agent=$TARGET_AGENT version=2.1.87 model='Opus 4.6' context=1M effort=high confirmations=2/2 fast_path=already_correct"
+    return 0
+  fi
+
+  state=$(agent_runtime_state "$TARGET_AGENT" "$pane")
+  if [[ "$state" != idle:* ]]; then
+    if check_agent_busy "$pane" "$TARGET_AGENT"; then
+      log "Treating stale tmux state as idle after prompt verification: $TARGET_AGENT ($state)"
+    else
+      echo "[ERROR] refusing Opus 4.6 1M pin while $TARGET_AGENT is busy ($state)" >&2
+      return 1
+    fi
+  fi
+
+  yaml_set="$REPO_ROOT/scripts/lib/yaml_field_set.sh"
+  respawn_script="$REPO_ROOT/scripts/agent_respawn.sh"
+  [[ -x "$yaml_set" && -x "$respawn_script" ]] || {
+    echo "[ERROR] required settings/respawn script is missing" >&2
+    return 1
+  }
+
+  bash "$yaml_set" "$SETTINGS_YAML" "$TARGET_AGENT" type claude
+  bash "$yaml_set" "$SETTINGS_YAML" "$TARGET_AGENT" model_name claude-opus-4-6
+  bash "$yaml_set" "$SETTINGS_YAML" "$TARGET_AGENT" launch_cmd "$OPUS46_1M_CMD"
+
+  # If the live process is already the pinned Opus command, do not respawn.
+  # Otherwise mark this as a CLI switch so SessionStart skips heavy Recovery.
+  if [[ "$process_args" != *"/home/simokitafresh/bin/claude"* ||
+        "$process_args" != *"--model opus"* ||
+        "$process_args" != *"--effort high"* ]]; then
+    tmux set-option -p -t "$pane" @agent_state idle >/dev/null 2>&1 || true
+    tmux set-option -p -t "$pane" @cli_switch_pending true >/dev/null 2>&1 || true
+    bash "$respawn_script" "$TARGET_AGENT" cli-switch-opus46-1m
+
+    local ready=0
+    for _ in {1..80}; do
+      capture=$(tmux capture-pane -t "$pane" -p -S -40 2>/dev/null || true)
+      if [[ "$capture" == *"Claude Code v2.1.87"* &&
+            "$capture" == *"Opus 4.6 with high effort"* &&
+            "$capture" == *"❯"* ]] &&
+            check_agent_busy "$pane" "$TARGET_AGENT"; then
+        ready=1
+        break
+      fi
+      sleep 0.25
+    done
+    [[ "$ready" -eq 1 ]] || {
+      echo "[ERROR] pinned Opus 4.6 prompt did not become ready within 20s" >&2
+      return 1
+    }
+  fi
+
+  # This wrapper provides the same flock-protected command delivery boundary as
+  # inbox_watcher, without direct tmux send-keys.
+  # shellcheck source=/dev/null
+  source "$REPO_ROOT/scripts/lib/tmux_utils.sh"
+  safe_send_keys_atomic "$pane" "/model default" 0.3
+
+  local verified=0
+  for _ in {1..40}; do
+    capture=$(tmux capture-pane -t "$pane" -p -S -40 2>/dev/null || true)
+    if [[ "$capture" == *"Opus 4.6 (1M context) with high effort"* &&
+          "$capture" == *"Set model to Opus 4.6 (1M context) (default)"* ]]; then
+      verified=1
+      break
+    fi
+    sleep 0.25
+  done
+  [[ "$verified" -eq 1 ]] || {
+    echo "[ERROR] Opus 4.6 1M verification failed within 10s; both banner and /model result are required" >&2
+    return 1
+  }
+
+  process_args=$(ps -o args= -g "$(tmux display-message -t "$pane" -p '#{pane_pid}')" 2>/dev/null || true)
+  [[ "$process_args" == *"/home/simokitafresh/bin/claude"* &&
+        "$process_args" == *"--model opus"* &&
+        "$process_args" == *"--effort high"* ]] || {
+    echo "[ERROR] runtime process does not match pinned Opus 4.6 high command" >&2
+    return 1
+  }
+  log "PASS agent=$TARGET_AGENT version=2.1.87 model='Opus 4.6' context=1M effort=high confirmations=2/2"
 }
 
 set_launch_cmd() {
@@ -591,6 +718,9 @@ case "$ACTION" in
     ;;
   probe-codex)
     probe_codex_model
+    ;;
+  pin-opus-4.6-1m)
+    pin_opus46_1m
     ;;
   pin-2.1.87)
     ensure_pinned_assets
