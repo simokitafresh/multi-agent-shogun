@@ -135,7 +135,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4217"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "候補前提のファイル不在を一次情報で反証。post-write-edit-combined.sh Guard 1にはGP-197の報告YAML parse検証が2026-04-15 commit 4f219754から現存し、同目的防御は既に統合済み。重複修正不要"
+  action_artifact: ".claude/hooks/post-write-edit-combined.sh:64-78;git_commit=4f219754a5290d524e0ee8eafed0d640a32887e0"
+  resolved_at: "2026-08-02T16:21:21+09:00"
 - id: INS-20260802-120833183-0a61
   ts: "2026-08-02T12:08:33+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿診断_スキル品質低+強制なし_20260802]] は既存aliasesに一致なし。類似概念TOP3: operational_ontology(操作的オントロジー; alias=スキル強制; score=2.6) / growth_loop(学習ループ; alias=たぶんスキルの品質が低いのと; score=2.3) / dm_fusion_app(DM-Fusionアプリ; alias=殿指示_admin設定+Xシェア_20260628; score=2.2)。概念定義とaliases追加を検討せよ"
