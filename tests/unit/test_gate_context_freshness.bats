@@ -177,6 +177,61 @@ SH
   [[ "$output" == *"ALERT: dm-signal-research.md"* ]]
 }
 
+# test_necessity: an exact approved source commit must become a context update
+# request without weakening the ALERT boundary for the next unreviewed commit.
+@test "approved DM-Signal report automatically requests core context update while an unreviewed commit still alerts" {
+  project_root="$BATS_TEST_TMPDIR/dm-signal-approved"
+  mkdir -p "$project_root/backend/app" "$FIXTURE_ROOT/queue/reports" "$FIXTURE_ROOT/logs"
+  git -C "$project_root" init -q
+  git -C "$project_root" config user.email fixture@example.com
+  git -C "$project_root" config user.name fixture
+  printf 'approved runtime change\n' > "$project_root/backend/app/runtime.py"
+  git -C "$project_root" add backend/app/runtime.py
+  git -C "$project_root" commit -qm 'cmd_fixture: approved runtime change'
+  approved_hash="$(git -C "$project_root" rev-parse HEAD)"
+  printf '<!-- last_updated: 2026-07-19 cmd_fixture -->\n<!-- source_commit:abc1234 reason:older evidence:fixture -->\n' \
+    > "$FIXTURE_ROOT/context/dm-signal-core.md"
+  cat > "$FIXTURE_ROOT/queue/reports/ninja_report_cmd_fixture.yaml" <<YAML
+status: completed
+verdict: PASS
+parent_cmd: cmd_fixture
+commit_hash: $approved_hash
+YAML
+  cat > "$FIXTURE_ROOT/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_fixture
+  verdict: APPROVE
+YAML
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
+#!/usr/bin/env bash
+echo 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-07-19 repo=$project_root latest: ${approved_hash} cmd_fixture approved runtime change'
+SH
+
+  run env CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CONTEXT_UPDATE_REQUEST project=dm-signal context=context/dm-signal-core.md source_commit=${approved_hash}"* ]]
+  [[ "$output" == *"総合判定: OK"* ]]
+
+  printf 'unreviewed runtime change\n' >> "$project_root/backend/app/runtime.py"
+  git -C "$project_root" add backend/app/runtime.py
+  git -C "$project_root" commit -qm 'cmd_unreviewed: runtime change'
+  unreviewed_hash="$(git -C "$project_root" rev-parse HEAD)"
+  sed -i "s/${approved_hash}/${unreviewed_hash}/" "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"ALERT: dm-signal-core.md"* ]]
+}
+
 @test "stale context links resolve across workspace and registered project roots" {
   project_root="$BATS_TEST_TMPDIR/project"
   mkdir -p "$FIXTURE_ROOT/projects" "$FIXTURE_ROOT/docs/research" \

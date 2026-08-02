@@ -178,6 +178,79 @@ PY
     [[ -n "$actual" && "$actual" == "$recorded" ]]
 }
 
+# GA-427: runtime/core/ops commits do not pass through the research-only
+# reflux guard.  Their review evidence already exists in the normal report +
+# gunshi review ledgers, but the dashboard gate previously ignored it and
+# emitted the same ALERT until somebody copied the source hash into context.
+# Consume only an exact, terminal PASS report whose parent command also has an
+# APPROVE review.  This is an automatic update *request* receipt, not a content
+# reflection claim: later commits and unreviewed commits remain stale.
+approved_report_requests_context_update() {
+    local rel_path="$1" alert_line="$2"
+    local latest_hash="" repo=""
+
+    [[ "$rel_path" == context/dm-signal*.md ]] || return 1
+    [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
+    latest_hash="${BASH_REMATCH[1]}"
+    [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
+    repo="${BASH_REMATCH[1]}"
+
+    python3 - "$ROOT_DIR" "$repo" "$latest_hash" <<'PY'
+import glob
+import os
+import subprocess
+import sys
+
+import yaml
+
+root, repo, wanted = sys.argv[1:]
+try:
+    wanted = subprocess.run(
+        ["git", "-C", repo, "rev-parse", wanted],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+except (OSError, subprocess.CalledProcessError):
+    raise SystemExit(1)
+if len(wanted) != 40:
+    raise SystemExit(1)
+
+approved = set()
+review_log = os.path.join(root, "logs", "gunshi_review_log.yaml")
+try:
+    reviews = yaml.safe_load(open(review_log, encoding="utf-8")) or []
+except (OSError, yaml.YAMLError):
+    reviews = []
+if isinstance(reviews, dict):
+    reviews = reviews.get("reviews", reviews.get("entries", []))
+for row in reviews if isinstance(reviews, list) else []:
+    if not isinstance(row, dict):
+        continue
+    verdict = str(row.get("verdict", row.get("result", ""))).upper()
+    if verdict in {"APPROVE", "APPROVED", "PASS"}:
+        approved.add(str(row.get("cmd_id", row.get("parent_cmd", ""))))
+
+for path in glob.glob(os.path.join(root, "queue", "reports", "*_report_*.yaml")):
+    try:
+        report = yaml.safe_load(open(path, encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    if report.get("status") not in {"completed", "done"} or report.get("verdict") != "PASS":
+        continue
+    if str(report.get("parent_cmd", "")) not in approved:
+        continue
+    hashes = {str(report.get("commit_hash", ""))}
+    hashes.update(
+        str(row.get("commit_hash", ""))
+        for row in report.get("cross_repo_commits", [])
+        if isinstance(row, dict) and os.path.realpath(str(row.get("repo", ""))) == os.path.realpath(repo)
+    )
+    if wanted in hashes:
+        print(report.get("parent_cmd", ""))
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 # GA-314: source更新を解消する際、索引本文が参照するrepo相対リンクの欠落を
 # source_commit更新だけで隠してはならない。鮮度ALERT対象に限って参照を検査し、
 # 欠落が1件でもあれば後段でBLOCKへ倒す。
@@ -469,6 +542,14 @@ for rel_path in "${target_rel_paths[@]}"; do
             || reflux_receipt_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}"; then
             context_hash="$(git -C "$ROOT_DIR" log -1 --format=%h -- "$rel_path" 2>/dev/null || true)"
             echo "OK: ${basename_file} (${days_ago}日前更新、context commit ${context_hash} が検出済みsource候補を包含)"
+            continue
+        elif request_cmd="$(approved_report_requests_context_update "$rel_path" "${source_alerts[$rel_path]}")"; then
+            latest_hash=""
+            [[ "${source_alerts[$rel_path]}" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] \
+                && latest_hash="${BASH_REMATCH[1]}"
+            printf 'CONTEXT_UPDATE_REQUEST project=dm-signal context=%s source_commit=%s parent_cmd=%s reason=approved_source_commit\n' \
+                "$rel_path" "$latest_hash" "$request_cmd"
+            echo "OK: ${basename_file} (承認済みsource commitのcontext更新要求を自動発火)"
             continue
         fi
         missing_links="$(missing_context_links "$file" "$rel_path")"
