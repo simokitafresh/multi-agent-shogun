@@ -4297,7 +4297,7 @@ run_ci_push_state() {
     local report="$BATS_TEST_TMPDIR/no-code-self-report.yaml"
     local task="$BATS_TEST_TMPDIR/no-code-self-report-task.yaml"
     make_ci_push_repo "$repo"
-    printf 'task_type: recon2\ncommit_hash: ""\nfiles_modified: [{path: %s}]\ncommit_contract: {required: false, task_type: recon2}\n' "$report" > "$report"
+    printf 'task_type: recon2\ncommit_hash: no-code-change\nfiles_modified: [{path: %s}]\ncommit_contract: {required: false, task_type: recon2}\n' "$report" > "$report"
     printf 'task:\n  task_type: recon2\n  commit_contract: {required: false, task_type: recon2}\n' > "$task"
     run_ci_push_state "$repo" "$report" "$task"
     [ "$status" -eq 0 ]

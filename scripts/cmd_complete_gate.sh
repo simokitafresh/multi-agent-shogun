@@ -340,7 +340,7 @@ if task_file:
         and task_type in no_code_types
         and report_type == task_type
         and only_self_report
-        and not commit
+        and commit in {"", "no-code-change"}
     ):
         print("contract-no-code\t")
         raise SystemExit
