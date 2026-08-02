@@ -141,16 +141,24 @@ bash scripts/review_approval.sh <cmd_id> karo RC <report_path> report   # 報告
 `karo RC` を挟まずに別cmdで再配備すると「完了済み(status=done)だが報告未archive」でBLOCKされ、
 同一cmd_idで再配備しても「pending reportあり」でBLOCKされる。RCが正規の入口である。
 
-**(2) FAILのまま閉じる（是正せず終了する場合）** — 上の `karo RC` を記録した上で:
+**(2) FAILのまま閉じる（是正せず終了する場合）** — `karo ACCEPT` でFAIL_CLOSE専用承認を記録する。`RC`を使ってはならない:
 
 ```bash
-bash scripts/archive_completed.sh 3 <cmd_id>   # [archive] FAIL_CLOSE: ... が出れば退避成功
+GENERATION=$(sha256sum <report_path> | awk '{print $1}')
+bash scripts/review_approval.sh <cmd_id> karo ACCEPT <report_path>
+SHOGUN_COMPLETION_GENERATION="$GENERATION" bash scripts/archive_completed.sh 3 <cmd_id>
+bash scripts/lib/yaml_field_set.sh queue/tasks/<ninja>.yaml task status idle
 ```
 
+`review_approval.sh` は `status: failed` + `verdict: FAIL` + `karo ACCEPT` の組合せだけを
+`fail_close=1` として受理し、RCの `revision_requested` 化・task再配備・忍者起床を行わない。
 `archive_completed.sh` は「家老の正式レビュー証跡（`queue/gates/<cmd_id>/review_approvals/reports/*/karo.yaml`）があり、
 かつ報告の `verdict: FAIL`」の場合に限り、CLEARを捏造せずに報告を退避する。
 review_gate.done を書かないため **gate_metrics上CLEARにはならず、品質記録にはFAILとして残る**。
 証跡がない、または verdict が FAIL でない報告は従来どおり退避されない（安全性は不変）。
+
+`karo RC` はACを是正して同一cmdを再配備する場合だけに使う。FAIL終端へRCを使うと、
+taskが`assigned`へ戻り忍者へ`task_assigned`が送られるため、終端済み作業が再開する。
 
 これにより pending report が解消し、忍者が解放されて次のcmdを受けられる。
 
