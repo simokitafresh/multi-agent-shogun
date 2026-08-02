@@ -210,3 +210,66 @@ PY
   [ "$status" -eq 0 ]
   [ "$output" = "concurrent=PASS rerun=PASS fallback_exhausted=PASS" ]
 }
+
+# test_necessity: HTTPだけ応答する偽healthyを拒否し、WebSocket/CDP応答可能な次portへ有限fallbackする不変量を守る。
+@test "endpoint qualification requires websocket CDP response before fallback selection" {
+  run env PYTHONPATH="$BATS_TEST_DIRNAME/../../scripts/cdp" python3 - <<'PY'
+import json
+import cdp_session as mod
+
+class HttpResponse:
+    def __init__(self, port): self.port = port
+    def __enter__(self): return self
+    def __exit__(self, *args): pass
+    def read(self):
+        return json.dumps({"webSocketDebuggerUrl": f"ws://127.0.0.1:{self.port}/devtools/browser"}).encode()
+
+class Socket:
+    def __init__(self, port): self.port, self.sent = port, []
+    def send(self, payload): self.sent.append(json.loads(payload))
+    def recv(self): return json.dumps({"id": 1, "result": {"product": "fixture"}})
+    def close(self): pass
+
+def fake_urlopen(url, timeout=1): return HttpResponse(int(url.split(":")[2].split("/")[0]))
+def fake_connect(url, timeout=1):
+    port = int(url.split(":")[2].split("/")[0])
+    if port == 9222: raise mod.websocket.WebSocketBadStatusException("403", status_code=403)
+    return Socket(port)
+
+mod.urlopen = fake_urlopen
+mod.websocket.create_connection = fake_connect
+qualified = {port: mod.endpoint_alive(port) for port in (9222, 9223)}
+assert qualified == {9222: False, 9223: True}, qualified
+receipt = mod.establish("inspection", ports=(9222, 9223), alive=mod.endpoint_alive,
+                        launcher=lambda port, profile: (_ for _ in ()).throw(AssertionError("qualified fallback must be reused")))
+assert receipt["endpoint"].endswith(":9223") and receipt["owned"] is False
+
+socket = fake_connect("ws://127.0.0.1:9223/devtools/browser")
+for ident, method in ((2, "Page.navigate"), (3, "Runtime.evaluate")):
+    socket.send(json.dumps({"id": ident, "method": method}))
+assert [item["method"] for item in socket.sent] == ["Page.navigate", "Runtime.evaluate"]
+print("false_healthy_rejected=1/1 fallback_selected=1/1 navigate=1/1 evaluate=1/1 human_judgment=0")
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "false_healthy_rejected=1/1 fallback_selected=1/1 navigate=1/1 evaluate=1/1 human_judgment=0" ]
+}
+
+# test_necessity: foundation所有Chromeを通常profileから隔離し、CDP接続に必要な3引数を常に同時指定する不変量を守る。
+@test "foundation Chrome launch always uses isolated CDP arguments" {
+  run env PYTHONPATH="$BATS_TEST_DIRNAME/../../scripts/cdp" python3 - <<'PY'
+import cdp_session as mod
+seen = []
+mod.detect_browser = lambda _: r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+mod.ps_run = lambda command, timeout=15: seen.append(command) or "4242"
+pid = mod.launch_windows_chrome(9223, "/tmp/cdp-session-profiles/p9223-fixture")
+command = seen[0]
+required = ("--remote-debugging-port=9223", "--remote-allow-origins=*",
+            "--user-data-dir=/tmp/cdp-session-profiles/p9223-fixture")
+assert pid == 4242
+assert all(token in command for token in required), command
+assert "--user-data-dir=C:" not in command
+print("required_args=3/3 normal_profile_refs=0")
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "required_args=3/3 normal_profile_refs=0" ]
+}

@@ -39,10 +39,29 @@ class SessionError(RuntimeError):
 
 
 def endpoint_alive(port: int, timeout: float = 1.0) -> bool:
+    connection = None
     try:
         with urlopen(f"http://127.0.0.1:{port}/json/version", timeout=timeout) as response:
             payload = json.load(response)
-        return bool(payload.get("webSocketDebuggerUrl"))
+        websocket_url = payload.get("webSocketDebuggerUrl")
+        if not websocket_url:
+            return False
+        connection = websocket.create_connection(websocket_url, timeout=timeout)
+        connection.send(json.dumps({"id": 1, "method": "Browser.getVersion"}))
+        response = json.loads(connection.recv())
+        return response.get("id") == 1 and isinstance(response.get("result"), dict) and not response.get("error")
+    except Exception:
+        return False
+    finally:
+        if connection is not None:
+            connection.close()
+
+
+def endpoint_present(port: int, timeout: float = 1.0) -> bool:
+    """Return whether an HTTP CDP endpoint occupies the port, qualified or not."""
+    try:
+        with urlopen(f"http://127.0.0.1:{port}/json/version", timeout=timeout):
+            return True
     except Exception:
         return False
 
@@ -89,6 +108,10 @@ def establish(
     for port in ports:
         if alive(port):
             return _receipt(receipt_id, consumer, now, ttl, port, None, "", False)
+        # Never launch over an existing but unqualified endpoint.  It is not
+        # ours to alter; continue through the finite fallback list instead.
+        if alive is endpoint_alive and endpoint_present(port):
+            continue
 
         profile = (profile_factory or _new_profile)(port)
         pid = launcher(port, profile)
