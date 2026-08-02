@@ -185,7 +185,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_fail_close_truthful_terminal_20260802"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存GP-234根治を一次確認: commit 5bf5715afeaf570d04d521df947b6a1aa3979289でroot/nested fast scalar両経路が旧block scalar continuationを除去。専用multiline回帰7/7 PASSのため追加修正不要"
+  action_artifact: "scripts/report_field_set.sh:L2006-L2020,L2119-L2125;tests/unit/test_report_field_set_multiline.bats 7/7 PASS;git commit 5bf5715afeaf570d04d521df947b6a1aa3979289"
+  resolved_at: "2026-08-02T16:38:57+09:00"
 - id: INS-20260802-121607843-5f06
   ts: "2026-08-02T12:16:07+09:00"
   insight: "SKILL.md追従cmd候補: cmd_karo_hotfix_fail_close_truthful_terminal_20260802 で scripts変更(scripts/gates/gate_report_format.sh,scripts/report_field_set.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して gate_skill_script_refs.sh rc=2 を解消せよ。"
