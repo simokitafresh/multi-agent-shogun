@@ -4,6 +4,8 @@
 # Usage:
 #   bash scripts/skill_execution_log.sh summary
 #   bash scripts/skill_execution_log.sh source-summary
+#   bash scripts/skill_execution_log.sh role-summary
+#   bash scripts/skill_execution_log.sh repair
 #   bash scripts/skill_execution_log.sh <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]
 
 set -euo pipefail
@@ -14,7 +16,7 @@ REPO_ROOT="${SHOGUN_REPO_ROOT:-${_self%/scripts/skill_execution_log.sh}}"
 LOG_FILE="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 
 usage() {
-    echo "Usage: $0 summary | source-summary | <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]" >&2
+    echo "Usage: $0 summary | source-summary | role-summary | repair | <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]" >&2
 }
 
 _yaml_val=""
@@ -49,6 +51,116 @@ normalize_skill_source() {
 }
 
 skill="${1:-}"
+if [ "$skill" = "repair" ]; then
+    if [ "${2:-}" ]; then
+        usage
+        exit 2
+    fi
+    lock_file="${LOG_FILE}.lock"
+    (
+        flock -w 30 200
+        python3 - "$LOG_FILE" <<'PY'
+import os
+import re
+import sys
+import tempfile
+
+import yaml
+
+path = sys.argv[1]
+text = open(path, encoding="utf-8").read()
+before = text
+repairs = 0
+while True:
+    try:
+        data = yaml.safe_load(text) or {}
+        entries = data.get("executions") or []
+        break
+    except yaml.YAMLError as exc:
+        mark = getattr(exc, "problem_mark", None)
+        if mark is None:
+            raise SystemExit("BLOCK: YAML parse failed without a repairable line")
+        lines = text.splitlines(keepends=True)
+        line = lines[mark.line]
+        match = re.match(r'^(  [A-Za-z_][A-Za-z0-9_]*: ")(.*)("\r?\n?)$', line)
+        if not match:
+            raise SystemExit(f"BLOCK: non-scalar YAML damage at line {mark.line + 1}")
+        body = match.group(2)
+        repaired = re.sub(r'(?<!\\)"', r'\\"', body)
+        if repaired == body:
+            raise SystemExit(f"BLOCK: no unescaped quote found at line {mark.line + 1}")
+        lines[mark.line] = match.group(1) + repaired + match.group(3)
+        text = "".join(lines)
+        repairs += 1
+
+if repairs == 0:
+    print(f"repair_count=0 entries={len(entries)}")
+    raise SystemExit(0)
+
+fd, tmp = tempfile.mkstemp(prefix=".skill_execution_log.", dir=os.path.dirname(path), text=True)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(text)
+        fh.flush()
+        os.fsync(fh.fileno())
+    if len(text) < len(before):
+        raise SystemExit("BLOCK: repair unexpectedly reduced ledger bytes")
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+print(f"repair_count={repairs} entries={len(entries)} bytes_before={len(before.encode())} bytes_after={len(text.encode())}")
+PY
+    ) 200>"$lock_file"
+    exit 0
+fi
+if [ "$skill" = "role-summary" ]; then
+    if [ "${2:-}" ]; then
+        usage
+        exit 2
+    fi
+    python3 - "$LOG_FILE" <<'PY'
+import sys
+from collections import Counter
+
+import yaml
+
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+entries = data.get("executions") or []
+ninja = {"hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru", "sasuke", "kirimaru"}
+known = {"shogun", "karo", "gunshi"}
+counts = {role: Counter() for role in ("shogun", "karo", "gunshi", "ninja", "system", "unknown", "missing")}
+
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    executor = str(entry.get("executor") or "").strip().lower()
+    if not executor:
+        role = "missing"
+    elif executor in known:
+        role = executor
+    elif executor in ninja:
+        role = "ninja"
+    elif executor in {"system", "simokitafresh"}:
+        role = "system"
+    else:
+        role = "unknown"
+    result = str(entry.get("result") or "").strip().upper()
+    used = str(entry.get("used", True)).strip().lower() != "false"
+    counts[role]["executions"] += 1
+    counts[role]["used"] += int(used)
+    counts[role]["pass"] += int(result == "PASS")
+    counts[role]["fail"] += int(result == "FAIL")
+
+print("role\texecutions\tpass\tfail\tused_numerator\tusage_denominator\tusage_rate")
+for role in ("shogun", "karo", "gunshi", "ninja", "system", "unknown", "missing"):
+    row = counts[role]
+    denominator = row["executions"]
+    rate = 100 * row["used"] / denominator if denominator else 0
+    print(f'{role}\t{denominator}\t{row["pass"]}\t{row["fail"]}\t{row["used"]}\t{denominator}\t{rate:.2f}%')
+PY
+    exit 0
+fi
 if [ "$skill" = "source-summary" ]; then
     if [ "${2:-}" ]; then
         usage
