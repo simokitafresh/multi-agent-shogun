@@ -1866,6 +1866,57 @@ EOF
     [ ! -f "$TMUX_LOG" ] || ! grep -q 'send-keys' "$TMUX_LOG"
 }
 
+# test_necessity: detached verification must treat a pane that becomes working
+# during the bounded wait as delivery success even when read/task state has not
+# transitioned yet; durable-only idle remains covered by the negative fixture.
+@test "task_assigned: async verifier observes pane working during bounded wait" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+    printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export CAPTURE_COUNT_FILE="$TEST_TMPDIR/capture_count"
+    cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
+#!/bin/bash
+echo "123 bash /repo/scripts/inbox_watcher.sh testninja shogun:agents.3 codex"
+EOF
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  capture-pane)
+    count=0
+    [ -f "$CAPTURE_COUNT_FILE" ] && count=$(cat "$CAPTURE_COUNT_FILE")
+    count=$((count + 1))
+    echo "$count" > "$CAPTURE_COUNT_FILE"
+    if [ "$count" -ge 2 ]; then echo "• Working"; else echo "›"; fi
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_NUDGE_RETRIES=0 \
+        run bash "$TEST_INBOX_WRITE" testninja "タスクを読め" task_assigned karo
+    [ "$status" -eq 0 ]
+    local verify_log
+    verify_log="$(find "$TEST_TMPDIR/logs/inbox_codex_delivery_verify" -type f -name '*.log' -print -quit)"
+    [ -n "$verify_log" ]
+    local attempt
+    for attempt in $(seq 1 100); do
+        grep -q "ASYNC_VERIFY SUCCESS" "$verify_log" 2>/dev/null && break
+        sleep 0.05
+    done
+    grep -q "ASYNC_VERIFY SUCCESS" "$verify_log"
+    ! grep -q "ASYNC_VERIFY FAILURE" "$verify_log"
+}
+
 # test_necessity: inbox_write B5 telemetry must persist one parent total and
 # diagnostic persist/nudge/delivery slices without changing retry delivery.
 @test "task_assigned: B5 telemetry records persist nudge delivery verify and additive total" {

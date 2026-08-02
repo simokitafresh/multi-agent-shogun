@@ -1048,6 +1048,21 @@ codex_pane_has_delivery_evidence() {
         | grep -qE "inbox[0-9]+ — .*queue/tasks/${target}\.yaml|[•◦] (Working|Ran |Waiting|Running .*([Hh]ook|UserPromptSubmit|PostToolUse))"
 }
 
+codex_delivery_evidence_observed() {
+    local target="$1"
+    local msg_id="$2"
+    local pane_target="$3"
+
+    if verify_codex_task_delivery "$target" "$msg_id"; then
+        return 0
+    fi
+
+    [ -n "$pane_target" ] || return 1
+    local pane_snapshot
+    pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
+    codex_pane_has_delivery_evidence "$target" "$pane_snapshot"
+}
+
 maybe_verify_codex_delivery() {
     local target="$1"
     local msg_id="$2"
@@ -1071,14 +1086,10 @@ maybe_verify_codex_delivery() {
 
     while [ "$attempt" -le "$retries" ]; do
         # Working状態のCodex paneは、task YAML更新前でも配達済みとして扱う。
-        if [ -n "$pane_target" ]; then
-            local pane_snapshot
-            pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
-            if codex_pane_has_delivery_evidence "$target" "$pane_snapshot"; then
-                echo "[inbox_write] codex delivery verified (prompt/working evidence) for ${target}" >&2
-                capture_codex_delivery_snapshot "$target" "$pane_target"
-                return 0
-            fi
+        if codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target"; then
+            echo "[inbox_write] codex delivery verified (prompt/working evidence) for ${target} (read/task/pane composite)" >&2
+            capture_codex_delivery_snapshot "$target" "$pane_target"
+            return 0
         fi
 
         if [ "$attempt" -gt 0 ]; then
@@ -1108,11 +1119,11 @@ maybe_verify_codex_delivery() {
         # persistence, and message identity unchanged.
         local delivered=0 wait_tick
         if [ "$wait_sec" = "0" ]; then
-            verify_codex_task_delivery "$target" "$msg_id" && delivered=1
+            codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target" && delivered=1
         else
             for wait_tick in 1 2 3 4 5; do
                 sleep 0.2
-                if verify_codex_task_delivery "$target" "$msg_id"; then
+                if codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target"; then
                     delivered=1
                     break
                 fi
