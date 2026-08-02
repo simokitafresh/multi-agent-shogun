@@ -415,7 +415,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_async_delivery_verify_20260802"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "返信先例外は既にinstructions/gunshi.mdの強制表へ実装済み。F-G01一般則に対し将軍review_request/design_review・自発cmd提案は掲示板BULLETIN_NOTIFY=shogunへ送る具体例外が明記されており、新規修正不要"
+  action_artifact: "instructions/gunshi.md:569-581;AGENTS.md:378-403"
+  resolved_at: "2026-08-02T22:04:02+09:00"
 - id: INS-20260802-135802776-c18b
   ts: "2026-08-02T13:58:02+09:00"
   insight: "SKILL.md追従cmd候補: cmd_karo_hotfix_async_delivery_verify_20260802 で scripts変更(scripts/inbox_write.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して gate_skill_script_refs.sh rc=2 を解消せよ。"
