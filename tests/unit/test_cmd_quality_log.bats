@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Duplicate CLEAR entries are deduplicated, rework upgrades monotonically, and every quality-log writer shares one canonical lock identity; violation can lose completion records and is BLOCK.
+# test_necessity: Duplicate CLEAR entries are deduplicated, rework upgrades monotonically, every writer shares one lock, and the latest fingerprint-bound formal report verdict is selected; violation can lose or stale completion quality records and is BLOCK.
 # test_cmd_quality_log.bats — cmd_quality_log idempotency tests
 
 setup() {
@@ -17,6 +17,13 @@ setup_ac_fixtures() {
     export CMD_QUALITY_REPORTS_DIR="$TEST_TMPDIR/queue/reports"
     unset CMD_QUALITY_FAST_METADATA
     printf 'commands: {}\n' > "$CMD_QUALITY_COMMAND_FILE"
+}
+
+setup_review_fixtures() {
+    setup_ac_fixtures
+    export CMD_QUALITY_REVIEW_LOG="$TEST_TMPDIR/gunshi_review_log.yaml"
+    export CMD_QUALITY_SG7_ROOT="$TEST_TMPDIR/queue/gates"
+    mkdir -p "$CMD_QUALITY_SG7_ROOT"
 }
 
 teardown() {
@@ -149,4 +156,55 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"unreadable YAML"* ]]
     grep -q 'ac_count: 2' "$CMD_QUALITY_LOG_FILE"
+}
+
+@test "gunshi verdict selects latest formal report and validates its SG7 fingerprint" {
+    setup_review_fixtures
+    cat > "$CMD_QUALITY_REVIEW_LOG" <<'EOF'
+- cmd_id: cmd_old_fail_new_lgtm
+  review_type: report
+  verdict: FAIL
+  timestamp: 2026-08-02T13:51:00+09:00
+- cmd_id: cmd_old_fail_new_lgtm
+  review_type: report
+  verdict: LGTM
+  timestamp: 2026-08-02T14:05:00+09:00
+- cmd_id: cmd_old_lgtm_new_fail
+  review_type: report
+  verdict: LGTM
+  timestamp: 2026-08-02T13:51:00+09:00
+- cmd_id: cmd_old_lgtm_new_fail
+  review_type: report
+  verdict: FAIL
+  timestamp: 2026-08-02T14:05:00+09:00
+- cmd_id: cmd_draft_and_report
+  review_type: draft
+  verdict: APPROVE
+  timestamp: 2026-08-02T14:06:00+09:00
+- cmd_id: cmd_draft_and_report
+  review_type: report
+  verdict: LGTM
+  timestamp: 2026-08-02T14:05:00+09:00
+- cmd_id: cmd_single
+  review_type: report
+  verdict: LGTM
+  timestamp: 2026-08-02T14:05:00+09:00
+EOF
+    mkdir -p "$CMD_QUALITY_SG7_ROOT/cmd_old_fail_new_lgtm"
+    cat > "$CMD_QUALITY_SG7_ROOT/cmd_old_fail_new_lgtm/sg7_bundle.json" <<'EOF'
+{"review":{"cmd_id":"cmd_old_fail_new_lgtm","report_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","verdict":"APPROVE"}}
+EOF
+
+    for spec in \
+        cmd_old_fail_new_lgtm:LGTM \
+        cmd_old_lgtm_new_fail:FAIL \
+        cmd_draft_and_report:LGTM \
+        cmd_single:LGTM \
+        cmd_no_review:unknown; do
+        cmd="${spec%%:*}"
+        expected="${spec#*:}"
+        run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" "$cmd" PASS no 0
+        [ "$status" -eq 0 ]
+        grep -A8 "cmd_id: \"$cmd\"" "$CMD_QUALITY_LOG_FILE" | grep -q "gunshi_verdict: \"$expected\""
+    done
 }

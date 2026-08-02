@@ -74,67 +74,68 @@ fi
 # Search gunshi_review_log.yaml first (persistent), then karo inbox (fallback)
 # Priority: draft verdict (APPROVE/REQUEST_CHANGES) > report verdict (LGTM/FAIL) > inbox > unknown
 fetch_gunshi_verdict() {
-    local review_log="$REPO_ROOT/logs/gunshi_review_log.yaml"
+    local review_log="${CMD_QUALITY_REVIEW_LOG:-$REPO_ROOT/logs/gunshi_review_log.yaml}"
+    local sg7_root="${CMD_QUALITY_SG7_ROOT:-$REPO_ROOT/queue/gates}"
     local karo_inbox="$REPO_ROOT/queue/inbox/karo.yaml"
 
     # Primary source: gunshi_review_log.yaml (persistent, not affected by inbox archive)
     if [[ -f "$review_log" ]]; then
-        local draft_verdict=""
-        local report_verdict=""
+        local formal_verdict
+        formal_verdict=$(python3 - "$CMD_ID" "$review_log" "$sg7_root" <<'PY'
+import json
+import os
+import sys
+import yaml
 
-        if grep -Fq "$CMD_ID" "$review_log" 2>/dev/null; then
-            # Scan all entries for this cmd_id, classify by review_type
-            # awk outputs: review_type<TAB>verdict (rtype defaults to "draft" when absent)
-            while IFS=$'\t' read -r _rtype _rverdict; do
-                case "$_rtype" in
-                    draft)
-                        [[ -z "$draft_verdict" ]] && draft_verdict="$_rverdict"
-                        ;;
-                    report)
-                        [[ -z "$report_verdict" ]] && report_verdict="$_rverdict"
-                        ;;
-                esac
-            done < <(awk -v cid="$CMD_ID" '
-                /^- cmd_id:/ || /^-  *cmd_id:/ {
-                    if (match_cmd && verdict != "") {
-                        print (rtype == "" ? "draft" : rtype) "\t" verdict
-                    }
-                    match_cmd = 0; rtype = ""; verdict = ""
-                    sub(/.*cmd_id:[[:space:]]*/, "")
-                    gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
-                    if ($0 == cid) match_cmd = 1
-                    next
-                }
-                match_cmd && /review_type:/ {
-                    sub(/.*review_type:[[:space:]]*/, "")
-                    gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
-                    rtype = $0
-                }
-                match_cmd && /report_verdict:/ {
-                    sub(/.*report_verdict:[[:space:]]*/, "")
-                    gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
-                    verdict = $0
-                }
-                match_cmd && !/report_verdict:/ && /verdict:/ {
-                    sub(/.*verdict:[[:space:]]*/, "")
-                    gsub(/["'"'"']/, ""); gsub(/[[:space:]]*$/, "")
-                    if (verdict == "") verdict = $0
-                }
-                END {
-                    if (match_cmd && verdict != "") {
-                        print (rtype == "" ? "draft" : rtype) "\t" verdict
-                    }
-                }
-            ' "$review_log" 2>/dev/null)
-        fi
+cmd_id, review_log, sg7_root = sys.argv[1:]
+try:
+    entries = yaml.safe_load(open(review_log, encoding="utf-8")) or []
+except (OSError, yaml.YAMLError):
+    entries = []
+if isinstance(entries, dict):
+    entries = entries.get("entries", [])
 
-        # Priority: draft verdict > report verdict
-        if [[ -n "$draft_verdict" ]]; then
-            echo "$draft_verdict"
-            return
-        fi
-        if [[ -n "$report_verdict" ]]; then
-            echo "$report_verdict"
+latest = {}
+for index, entry in enumerate(entries if isinstance(entries, list) else []):
+    if not isinstance(entry, dict) or entry.get("cmd_id") != cmd_id:
+        continue
+    review_type = str(entry.get("review_type") or "draft")
+    verdict = entry.get("report_verdict") or entry.get("verdict")
+    if verdict:
+        latest[review_type] = (index, str(verdict))
+
+# Terminal report quality supersedes draft approval.  Within either type the
+# append-only log's last entry is the latest formal review.
+selected = latest.get("report") or latest.get("draft")
+if not selected:
+    raise SystemExit
+verdict = selected[1]
+
+# A terminal SG7 bundle binds the report to its canonical fingerprint.  If it
+# contradicts the selected review, fail closed and let the inbox fallback run.
+bundle_path = os.path.join(sg7_root, cmd_id, "sg7_bundle.json")
+if os.path.isfile(bundle_path):
+    try:
+        review = (json.load(open(bundle_path, encoding="utf-8")) or {}).get("review", {})
+    except (OSError, ValueError):
+        raise SystemExit
+    fingerprint = str(review.get("report_fingerprint") or "")
+    bundle_verdict = str(review.get("verdict") or "")
+    if review.get("cmd_id") != cmd_id or len(fingerprint) != 64:
+        raise SystemExit
+    compatible = {
+        "APPROVE": {"APPROVE", "LGTM"},
+        "REQUEST_CHANGES": {"REQUEST_CHANGES", "FAIL"},
+        "FAIL": {"REQUEST_CHANGES", "FAIL"},
+    }
+    if verdict not in compatible.get(bundle_verdict, {bundle_verdict}):
+        raise SystemExit
+
+print(verdict)
+PY
+) || true
+        if [[ -n "$formal_verdict" ]]; then
+            echo "$formal_verdict"
             return
         fi
     fi
