@@ -1020,11 +1020,11 @@ SH
   [[ "$output" != *"inferred_0001.bats"* ]]
 }
 
-# test_necessity: A task whose complete resolved scope consists only of tests
-# must execute those tests directly, while any production path keeps inferred
-# planned tests behind the dependency-map boundary.
+# test_necessity: A task-owned real test must always execute directly and must
+# not disappear when a sibling source path lacks a dependency mapping; inferred
+# tests remain behind the dependency-map boundary.
 # regression_justification: overlaps_existing=true; existing explicit-contract
-# coverage did not exercise the zero-explicit, zero-production test-only branch.
+# coverage did not exercise a directly owned test mixed with an unmapped source.
 @test "test-only task selects its complete scope without promoting mixed planned tests" {
   printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
   printf '@test "inferred" { true; }\n' >"$TMPROOT/tests/unit/inferred.bats"
@@ -1037,7 +1037,6 @@ SH
   cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >"$SELECT_ARGS_LOG"
-printf '%s\n' "$REPO_ROOT/tests/unit/owned.bats"
 SH
   chmod +x "$TMPROOT/bin/bats" "$TMPROOT/scripts/test_select.sh"
   cat >"$TMPROOT/queue/tasks/test-only.yaml" <<'YAML'
@@ -1048,11 +1047,9 @@ task:
 YAML
   cat >"$TMPROOT/queue/tasks/mixed.yaml" <<'YAML'
 task:
-  target_path: scripts/run_tests.sh
-  commit_contract:
-    planned_paths:
-      - scripts/run_tests.sh
-      - tests/unit/inferred.bats
+  target_path:
+    - tests/unit/owned.bats
+    - scripts/unmapped.sh
 YAML
   export BATS_ARGS_LOG="$TMPROOT/bats.args"
   export SELECT_ARGS_LOG="$TMPROOT/selector.args"
@@ -1070,8 +1067,8 @@ YAML
     SELECT_ARGS_LOG="$SELECT_ARGS_LOG" SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/mixed.yaml"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"TEST_SELECTION_REASON direct=0 transitive=1 source=dependency_map"* ]]
-  grep -Fxq "scripts/run_tests.sh" "$SELECT_ARGS_LOG"
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=dependency_map"* ]]
+  grep -Fxq "scripts/unmapped.sh" "$SELECT_ARGS_LOG"
   [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 1 ]
   grep -Fq "owned.bats" "$BATS_ARGS_LOG"
   ! grep -Fq "inferred.bats" "$BATS_ARGS_LOG"

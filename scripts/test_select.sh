@@ -108,8 +108,12 @@ for changed in "${CHANGED_FILES[@]}"; do
         fi
     done < <(REPO_ROOT="$REPO_ROOT" TEST_DIR="$TEST_DIR" bash "$REPO_ROOT/scripts/lib/report_contract_test_selector.sh" "$changed")
 
-    # 変更ファイル自体がテストなら直接追加
-    if [[ "$changed" == tests/unit/test_*.bats ]]; then
+    # 変更ファイル自体が実行可能なtest contractなら依存mapを介さず直接追加。
+    # run_tests task modeも同じ拡張子境界を使うため、source mapping欠落で
+    # task所有testが消える経路を作らない。
+    if [[ "$changed" == tests/* || "$changed" == */tests/* ]] \
+        && [[ "$changed" == *.bats || "$changed" == */test_*.py \
+            || "$changed" == *.spec.js || "$changed" == *.test.js ]]; then
         full_path="$REPO_ROOT/$changed"
         if [ -f "$full_path" ]; then
             AFFECTED_TESTS["$full_path"]=1

@@ -1911,6 +1911,7 @@ _run_tests_main() {
             fi
             local _selector_log _selector_rc _selector_output _explicit_tests_tmp
             local -a _declared_contract_tests=()
+            local -a _direct_scope_tests=()
             local -a _production_scope=()
             local _scoped_path
             _explicit_tests_tmp="$(mktemp)"
@@ -1919,7 +1920,9 @@ _run_tests_main() {
             mapfile -d '' -t _declared_contract_tests <"$_explicit_tests_tmp"
             rm -f "$_explicit_tests_tmp"
             for _scoped_path in "${scoped_paths[@]}"; do
-                if ! is_test_contract_path "$_scoped_path"; then
+                if is_test_contract_path "$_scoped_path"; then
+                    _direct_scope_tests+=("$_scoped_path")
+                else
                     _production_scope+=("$_scoped_path")
                 fi
             done
@@ -1943,7 +1946,24 @@ _run_tests_main() {
                 set -e
                 cat "$_selector_log" >&2
                 rm -f "$_selector_log"
-                echo "TEST_SELECTION_REASON direct=0 transitive=$(printf '%s\n' "$_selector_output" | sed '/^$/d' | wc -l) source=dependency_map"
+                local _transitive_count
+                _transitive_count="$(printf '%s\n' "$_selector_output" | sed '/^$/d' | wc -l)"
+                if [ "${#_direct_scope_tests[@]}" -gt 0 ]; then
+                    _selector_output="$(
+                        {
+                            for _scoped_path in "${_direct_scope_tests[@]}"; do
+                                if [[ "$_scoped_path" == /* ]]; then
+                                    printf '%s\n' "$_scoped_path"
+                                else
+                                    printf '%s/%s\n' "$REPO_ROOT" "$_scoped_path"
+                                fi
+                            done
+                            printf '%s\n' "$_selector_output"
+                        } \
+                            | sed '/^$/d' | awk '!seen[$0]++'
+                    )"
+                fi
+                echo "TEST_SELECTION_REASON direct=${#_direct_scope_tests[@]} transitive=${_transitive_count} source=dependency_map"
             else
                 # A test-only task has no production dependency edge to map.
                 # Its resolved ownership scope is already the complete,

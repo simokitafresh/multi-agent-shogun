@@ -236,6 +236,24 @@ YAML
   [[ "$output" == *"BC_YES_CLARITY_TERMS="*"家老が実施"* ]]
 }
 
+# test_necessity: 時間窓分類はAC未達ではない一方、真の未完了はBLOCKする不変量。
+@test "LG043 ignores temporal-window classifications only" {
+  for expression in "2026未完了当年102 PF年は確定年から分離" "未完了年度は別集計" "進行中月は対象外"; do
+    run_engine "$expression"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  done
+}
+
+@test "LG043 keeps blocking concrete incomplete, deferred, and delegated work" {
+  for expression in "作業未完了" "検証未完了" "後で実施" "家老へ委譲し、家老が実施"; do
+    run_engine "$expression"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+    [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+  done
+}
+
 @test "SG-PRE35 blocks unclassified new test and accepts necessity plus control groups" {
   gate="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
   task="$TMP_DIR/tasks/kagemaru.yaml"

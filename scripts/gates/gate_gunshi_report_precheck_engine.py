@@ -443,7 +443,8 @@ def main():
                 return True
         if term == '未完了':
             # 「未完了マーカー」「未完了検出」等は検出器設計のメタ言語。
-            # 「AC未完了」「作業未完了」は実際の未完了なので除外しない。
+            # 「未完了当年」「未完了年度」は時間窓の分類名でありAC未達ではない。
+            # 「AC未完了」「作業未完了」「検証未完了」は実際の未完了なので除外しない。
             occurrences = list(re.finditer(re.escape(lower_term), lower_text))
             metalinguistic = 0
             for occurrence in occurrences:
@@ -451,8 +452,8 @@ def main():
                 before = lower_text[max(0, start - 8):start]
                 after = lower_text[end:min(len(lower_text), end + 8)]
                 if (
-                    after.startswith(('マーカー', '語', '文字列', '検出', '判定', 'チェック'))
-                    and not before.endswith(('ac', '作業', '実装', 'タスク'))
+                    after.startswith(('マーカー', '語', '文字列', '検出', '判定', 'チェック', '当年', '年度'))
+                    and not before.endswith(('ac', '作業', '実装', '検証', 'タスク'))
                 ):
                     metalinguistic += 1
             if occurrences and metalinguistic == len(occurrences):
