@@ -476,6 +476,68 @@ def _count_task_binary_checks(task_data, assigned_acs):
     return task_bc_count
 
 
+_ZERO_TOLERANCE_RE = re.compile(
+    r"zero[-_ ]?tolerance|(?:許容)?誤差(?:は|を|[:：= ]*)?ゼロ|誤差\s*0(?:件)?",
+    re.I,
+)
+_STRUCTURED_CONFLICT_COUNT_KEYS = {
+    "mismatch_count", "missing_count", "extra_count",
+    "calculation_error_count", "calculation_failure_count", "uncomputable_count",
+}
+
+
+def _positive_structured_conflict_counts(value, path=""):
+    """Find positive exact-key counters; intentionally ignore free-form prose."""
+    found = []
+    if isinstance(value, dict):
+        for raw_key, child in value.items():
+            key = str(raw_key).strip().lower()
+            child_path = f"{path}.{raw_key}" if path else str(raw_key)
+            if key in _STRUCTURED_CONFLICT_COUNT_KEYS and not isinstance(child, bool):
+                try:
+                    count = float(child)
+                except (TypeError, ValueError):
+                    count = 0.0
+                if math.isfinite(count) and count > 0:
+                    found.append((child_path, child))
+            found.extend(_positive_structured_conflict_counts(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            found.extend(_positive_structured_conflict_counts(child, f"{path}[{index}]"))
+    return found
+
+
+def _zero_tolerance_conflict_errors(report, task, assigned_acs=None):
+    zero_tolerance_acs = set()
+    for ac_id, ac_value in _iter_task_acceptance_criteria(task):
+        if assigned_acs and ac_id not in assigned_acs:
+            continue
+        if isinstance(ac_value, dict):
+            ac_text = " ".join(str(ac_value.get(k, "") or "") for k in ("description", "check", "title"))
+        else:
+            ac_text = str(ac_value or "")
+        if _ZERO_TOLERANCE_RE.search(ac_text):
+            zero_tolerance_acs.add(ac_id)
+    checks = report.get("binary_checks") if isinstance(report, dict) else None
+    affirmed = set()
+    if isinstance(checks, dict):
+        for ac_id in zero_tolerance_acs:
+            items = checks.get(ac_id)
+            if isinstance(items, list) and any(
+                isinstance(item, dict) and str(item.get("result", "")).strip().lower() == "yes"
+                for item in items
+            ):
+                affirmed.add(ac_id)
+    conflicts = _positive_structured_conflict_counts(report) if affirmed else []
+    if not conflicts:
+        return []
+    evidence = ", ".join(f"{path}={value}" for path, value in conflicts)
+    return [
+        "zero-tolerance contradiction: structured conflict count is positive "
+        f"({evidence}) while binary_checks {sorted(affirmed)} contain result=yes"
+    ]
+
+
 CAUSAL_SCOPE_RE = re.compile(
     r"hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report[_ -]?format|cmd_save|inbox_watcher|ninja_monitor",
     re.IGNORECASE,
@@ -1155,6 +1217,11 @@ def main(report_data=None) -> int:
                         hints.append("FIX COMMAND (binary_checks result): " + _rfs_cmd(report_path, f"binary_checks.{ac_key}.{j}.result", "yes"))
     elif isinstance(bc, list) and not bc:
         errors.append("binary_checks: empty list (must have at least one entry)")
+
+    # Fail closed when a zero-tolerance AC is affirmed despite an explicitly
+    # structured positive mismatch/calculation-failure counter.  Exact mapping
+    # keys only: free-form report prose is deliberately outside this detector.
+    errors.extend(_zero_tolerance_conflict_errors(data, task_data, assigned_acs))
 
     if isinstance(bc, dict) and bc:
         rpt_bc_count = 0
