@@ -517,9 +517,23 @@ deploy_task_guard_checkpoint_review_hold() {
 
 deploy_task_guard_done_report_unarchived() {
     local ninja_name="$1" parent_cmd="$2"
-    local report_file
+    local report_file gate_dir completion_tail
     [ -n "$ninja_name" ] || return 1
     [ -n "$parent_cmd" ] || return 1
+    gate_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
+    completion_tail="$gate_dir/completion_tail.log"
+    # archive_completed.sh intentionally retains up to 10 completed reports in
+    # queue/reports, while its overflow scan writes archive.done for every
+    # GATE-CLEAR candidate.  A retained report is therefore logically closed
+    # once the ordered cmd-complete pipeline has also reached its exact terminal
+    # checkpoint; treating file existence alone as "unarchived" permanently
+    # blocks that worker's next task.
+    if [ -f "$gate_dir/archive.done" ] \
+        && [ -f "$completion_tail" ] \
+        && grep -Fqx -- "[cmd_complete] COMPLETE $parent_cmd" "$completion_tail"; then
+        log "LOGICAL_ARCHIVE: ${ninja_name} ${parent_cmd} retained report is closed by archive.done + cmd_complete terminal checkpoint"
+        return 1
+    fi
     for report_file in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}"*.yaml; do
         # archive_completed.sh keeps a temporary compatibility symlink at the
         # former active path.  The report body is already archived, so treating

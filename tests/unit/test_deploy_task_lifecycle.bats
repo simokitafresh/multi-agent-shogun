@@ -1069,6 +1069,59 @@ EOF
     [[ "$output" == *"完了済み(status=done)だが報告未archive"* ]]
 }
 
+# test_necessity: archive_completed keeps a bounded number of completed reports
+# active; archive.done plus the exact terminal checkpoint must release the worker.
+@test "done task with retained report allows next cmd after exact cmd-complete terminal checkpoint" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml" <<'EOF'
+worker_id: hayate
+verdict: PASS
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_old"
+    : > "$TEST_PROJECT/queue/gates/cmd_old/archive.done"
+    printf '%s\n' '[cmd_complete] COMPLETE cmd_old' > "$TEST_PROJECT/queue/gates/cmd_old/completion_tail.log"
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LOGICAL_ARCHIVE"* ]]
+}
+
+# test_necessity: a marker alone can be created before report movement; it must
+# not release a worker until the ordered completion pipeline is terminal.
+@test "done task with retained report and archive marker but no terminal checkpoint stays blocked" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml" <<'EOF'
+worker_id: hayate
+verdict: PASS
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_old"
+    : > "$TEST_PROJECT/queue/gates/cmd_old/archive.done"
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new
+    ' -- "$TEST_PROJECT"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
 @test "cmd_4170: done task overwrite by a different cmd is allowed again once the report is archived" {
     cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
 task:
