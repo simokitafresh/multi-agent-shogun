@@ -1,228 +1,50 @@
 ---
-
-<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
-<!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答時は隔離profileをlaunch_browser→cmd.exe fallbackで自動起動し、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾のskill-auto-improveコメント追記はexit後で呼出契約・副作用不変。単一Markdown引数/CDP_PORT=9234/PASS・FAIL記録契約を維持。 -->
 name: cdp-browse
 argument-hint: "[url] [screenshot_path]"
 description: |
-  CDPでWebブラウザを人間と同じように使うための基礎スキル。
-  ブラウザ起動、ログイン、ページ遷移、スクリーンショット、画面状況確認を1つの標準フローで実行する。
-  TRIGGER: /cdp-browse、CDPで確認、CDPで調査、CDP調査、CDPで実画面、実際の画面をCDPで、ブラウザ確認、ログインしてスクショ、本番画面をスクショ、スクショして、画面確認、画面調査、admin画面確認、Render画面確認、DM-Signal本番FE確認 project:dm-signal、rebalancer本番画面確認 project:rebalancer、本番動作確認 role:ninja、修正後の画面確認 role:ninja、CI RED後の画面確認 role:karo、本番FE検証 role:karo
-  DO NOT TRIGGER: DB確認（→/db-check）、静的コード確認だけで足りる調査、E2E全体試験
-quality_metric: "CDP確認タスクで、認証失敗・スクショ未取得・CDPポート不通によるやり直しが発生しない割合"
+  共有CDP session foundationを通してブラウザを操作するスキル。
+  DM-Signal検分、性能計測、note下書き、汎用ブラウザ操作を同じreceipt契約で実行する。
+  TRIGGER: /cdp-browse、CDPで確認、CDPで調査、ブラウザ確認、画面確認、スクリーンショット、note下書き、CDP性能計測
+  DO NOT TRIGGER: ブラウザを使わないコード読解、DBだけの確認、既存画像ファイルの閲覧
 allowed-tools:
   - Bash
   - Read
-  - Glob
-  - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
-<!-- 2026-07-16再検分: note_draft.sh 31cfcb906/7127ab894/1421d3c92/5a7543ad9。Chrome未起動時のexit 0(SKIP)を廃止し、隔離profileを自動起動、起動不能時はexit 1(FAIL)。■行は個別bulletとして解釈後、<br>で1行改行する。単一Markdown引数とCDP_PORT契約は不変。 -->
-<!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "<記事.md>"`、PASS/FAIL/SKIPログ契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+# /cdp-browse — CDP session単一契約
 
-Script refs verified: 2026-06-30 a519e6365+dad84ea2c. `note_draft.sh` 直近変更はinvisible reCAPTCHA対応(dispatch_click+quick_url待ち)とコメント形式修正。引数・CDP_PORT・PASS/FAIL/SKIPログの契約変更なし。CDPブラウズ手順・preflight/navigate/screenshotの契約変更なし。
-
-# /cdp-browse
-
-CDPの本質は、LLMが人間と同じようにWebブラウザを使えること。推測で答えず、ブラウザ起動、ログイン、遷移、スクリーンショット、画面確認までを同じ順序で実行する。
-
-## 基本フロー
-
-### Chrome未起動時の復旧
-
-CDPポート未応答だけで止まらない。まず `preflight_cdp_flow` に自動起動させる。手動復旧が必要な場合は、Windows側Chrome/Edgeを隔離プロファイルかつ `--remote-allow-origins=*` 付きで起動する。
-
-```powershell
-Start-Process chrome.exe --remote-debugging-port=9222 --remote-allow-origins=* --user-data-dir=$TEMP/cdp-edge-9222 --no-first-run
-```
-
-`--remote-allow-origins=*` がないとCDP WebSocket接続が403になることがある。`--user-data-dir` は殿の通常Chromeセッションを汚さないため必須。
-
-1. `preflight_cdp_flow` でCDPブラウザを確認する。CDPポート未応答で止まらず、隔離プロファイルのブラウザ自動起動に任せる。
-2. 認証が必要なサイトなら、対象PJの `projects/{project}.yaml` と `context/{project}.md` から認証方式と認証情報の参照先を確認する。
-3. UIログインが正本のサイトでは `ui_login` を使い、フォーム入力、送信、ログイン後URLまたは画面要素まで確認する。
-4. Cookie注入などPJ専用の認証 helper が正本化されている場合は、そのPJ contextの手順を優先する。DM-Signalは `auto-ops` の `cdp_cli.sh auth --env <env>` が標準。
-5. **修正後の本番検証タスクでは、navigate前にlive deployが対象commitを含むことを一次確認する（実装完了≠本番到達 LS-A09(34)）。** DM-Signalは Render deploy状態（FE=srv-d4ja8pp5pdvs739a5fsg）のdeploy commit SHAと対象commitの包含関係を `git merge-base --is-ancestor <対象> <deploy SHA>` で照合。未反映のまま画面検証すると旧UIを測って偽陰性/偽陽性になる。
-6. `navigate` で対象URLへ移動する。
-7. `screenshot` で証跡を保存する。
-8. スクリーンショットまたはAX snapshotを読んで、画面が期待状態かを報告する。
-
-## 実行例
+CDP操作の入口は共有foundationだけである。用途wrapperは下記と同じsession確立を内部実行し、`cdp_session_foundation`発行のreceiptがない接続をfail-closedで拒否する。
 
 ```bash
-# 1. CDP daemonのヘルスチェック。未起動なら自動起動される。
-scripts/cdp/cdp_cli.sh healthz
-
-# 2. URL遷移。
-scripts/cdp/cdp_cli.sh navigate "https://example.com"
-
-# 3. スクリーンショット保存。
-scripts/cdp/cdp_cli.sh screenshot "/tmp/cdp-browse-example.png"
-
-# 4. 画面構造確認。クリック対象が必要なら @ref を使う。
-scripts/cdp/cdp_cli.sh snapshot
+python3 scripts/cdp/cdp_session.py establish --consumer "$CONSUMER" --ports 9222,9223,9224 --receipt "$RECEIPT"
 ```
 
-## Python preflight / UI Login
+`CONSUMER`は`inspection`、`measurement`、`note`、`generic`のいずれか、`RECEIPT`は当該実行だけが読める一時ファイルとする。個別にブラウザ、daemon、port、credentialを準備してはならない。終了時はwrapperのtrapまたは `cdp_session.py cleanup --receipt "$RECEIPT"` に任せる。
 
-`preflight_cdp_flow` と `ui_login` は `auto-ops` 側のCDPプリミティブを使う。手動で `chrome --headless` を叩く場合も `--user-data-dir` を省略してはならない。
+## 用途写像
 
-```python
-import sys
-sys.path.insert(0, "/mnt/c/Python_app/auto-ops")
-from cdp import cdp_helper
+- DM-Signal検分: `inspection` receiptを消費する `scripts/cdp/cdp_*_probe.py` を選び、認証が必要なら `scripts/cdp/dm_signal_adapters.py` のauth/deploy adapterを使う。
+- 性能計測: `measurement` receiptを内部で確立・消費する `bash scripts/cdp/cdp_measure.sh <cmd_id> ...` を使う。
+- note下書き: `note` receiptを内部で確立・消費する `bash scripts/note_draft.sh <article.md>` を使う。
+- 汎用操作: `generic` receiptを確立し、そのreceiptのendpointだけをnavigate/click/type/screenshot操作へ渡す。
 
-result = cdp_helper.preflight_cdp_flow(port=9222, browser="auto", launch_timeout=30)
-port = result.get("cdp_port", 9222)
-tab_id = cdp_helper.create_tab(url="https://example.com/login", port=port, timeout=30)
-cdp_helper.ui_login(tab_id, user, password, port=port)
-```
+## A7欠陥と実装保証
 
-### Cookie注入失敗時のフォームログイン
+| A7 | 実装済み保証 | 一次正本 |
+|---|---|---|
+| 1. port占有時に復旧不能 | 9222→9223→9224の有限fallback、全候補失敗は明示FAIL | `scripts/cdp/cdp_session.py` |
+| 2. admin 401分岐なし | admin失敗後、要求権限がviewerの場合だけviewerへfallback | `scripts/cdp/dm_signal_adapters.py` |
+| 3. viewer認証が暗黙 | adapterがVIEWER_PASS読込とReact input eventを内包 | `scripts/cdp/dm_signal_adapters.py` |
+| 4. 発火が字句依存 | 全用途をfoundation receiptの同一入口へ固定 | `docs/research/cdp-session-contract-v1.yaml` |
+| 5. 推薦止まり | consumerがreceiptなしの接続を受理しない | `scripts/cdp/cdp_session.py`、各consumer wrapper |
+| 6. 役割別に入口が自由 | inspection/measurement/note/genericの4 consumerを同じissuerへ固定 | `docs/research/cdp-session-contract-v1.yaml` |
+| 7. 台帳破損で使用率不明 | receiptのconsumerとskill実行台帳で役割別計測 | `logs/skill_execution_log.yaml` |
 
-`Network.setCookie` や `cdp_cli.sh auth` でCookieを注入しても認証ダイアログが解消しない場合は、UIフォームログインへ切り替える。React管理のinputはJSの直接 `value = ...` ではstateが更新されないため、`nativeInputValueSetter` で値を入れて `input` eventを発火する。
+foundationはWindows側Chromeを必ず隔離profileとremote-debugging設定で起動する。auth adapterはadmin専用要求をviewer成功で代替せず、非同値ならFAILする。cleanupはreceiptが`owned`と証明するPID/profileだけを閉じ、既存Chromeや通常profileには触れない。
 
-```javascript
-const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
-const setInput = (selector, value) => {
-  const el = document.querySelector(selector);
-  setValue.call(el, value);
-  el.dispatchEvent(new Event("input", { bubbles: true }));
-};
+## 完了条件
 
-setInput('input[name="username"], input[type="text"]', user);
-setInput('input[name="password"], input[type="password"]', password);
-document.querySelector('button[type="submit"], button').click();
-```
-
-## ポート使い分け
-
-| port | 用途 | profile |
-|------|------|---------|
-| 9222 | 汎用。DM-Signalなどの本番FE確認 | `$TEMP/cdp-edge-9222` |
-| 9234 | note.com下書き保存 | `$TEMP/cdp-edge-9234` |
-| 9400 | `auto-ops` CDP daemon / `cdp_cli.sh` 操作口 | daemon管理 |
-
-同時に複数サイトを扱う場合はポートと `--user-data-dir` を分ける。ログイン状態やCookieを混ぜない。
-
-note.com下書き保存では、共通ヘルパー `scripts/note_draft.sh` を使う。引数はMarkdownファイル1件のみで、`CDP_PORT` 未指定時は9234を使う。9234はnote.com専用の隔離プロファイルとして扱い、9222の汎用確認や9400のdaemon操作口と混ぜない。
-
-```bash
-CDP_PORT=9234 bash scripts/note_draft.sh "<記事.md>"
-```
-
-`note_draft.sh` は `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。CDP_PORTに応答がなければ `launch_browser`(PowerShell)を試行し、失敗時は `cmd.exe` フォールバックで隔離プロファイル付きChromeを自動起動する。起動不能はSKIPせずFAIL(exit 1)。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` でログインし、reCAPTCHA画像チャレンジが出た場合は `/tmp/note_recaptcha_challenge.png` を出力して最大120秒待つ。解決されずログイン完了できない場合もFAIL(exit 1)として記録する。ProseMirrorエディタがスピナーで停止している場合は `Page.reload` で最大2回リトライする。本文挿入は `.ProseMirror.note-common-styles__textnote-body` → `div.ProseMirror` → `div[contenteditable]` の3段fallbackでエディタを検出する。下書き保存の成果はnote.comエディタ上のドラフトで、スクリプトは最終URLを `[note_draft] Done: ...` に出し、`skill_execution_log.yaml` にPASS/FAILを記録する。
-
-## cdp_cli.sh不可時の直接WS操作
-
-`cdp_cli.sh` やdaemonが使えない場合は、Chromeの `/json` からWebSocket URLを取得してCDPを直接送る。最小パターンは `Page.navigate` と `Page.captureScreenshot`。
-
-```python
-import base64
-import json
-import urllib.request
-from websocket import create_connection
-
-port = 9222
-tabs = json.load(urllib.request.urlopen(f"http://127.0.0.1:{port}/json"))
-ws = create_connection(tabs[0]["webSocketDebuggerUrl"], timeout=10)
-seq = 0
-
-def send_cmd(method, params=None):
-    global seq
-    seq += 1
-    ws.send(json.dumps({"id": seq, "method": method, "params": params or {}}))
-    while True:
-        msg = json.loads(ws.recv())
-        if msg.get("id") == seq:
-            return msg
-
-send_cmd("Page.enable")
-send_cmd("Page.navigate", {"url": "https://example.com"})
-shot = send_cmd("Page.captureScreenshot", {"format": "png", "fromSurface": True})
-open("/tmp/cdp-direct.png", "wb").write(base64.b64decode(shot["result"]["data"]))
-```
-
-## Reactアプリのスワイプ操作
-
-Reactアプリのスワイプ検証では、まず実装が `onTouch*` / `onPointer*` / `onMouse*` のどれで判定しているかを確認する。CDPの `Input.dispatchTouchEvent` はtrustedな `touch*` と `pointer*` をDOMへ届けられるが、ブラウザの既定ジェスチャ処理やReact側のhandler種別でstate更新まで届かない場合がある。推測で成功扱いせず、操作前後のDOM状態とスクリーンショットを比較する。
-
-事前にモバイルviewportとtouch emulationを有効化する。
-
-```python
-cdp_helper.cdp_send_batch(tab_id, [
-    ("Page.enable", {}),
-    ("Runtime.enable", {}),
-    ("Emulation.setDeviceMetricsOverride", {
-        "width": 390,
-        "height": 844,
-        "deviceScaleFactor": 2,
-        "mobile": True,
-    }),
-    ("Emulation.setTouchEmulationEnabled", {
-        "enabled": True,
-        "maxTouchPoints": 1,
-    }),
-], port=port, timeout=30)
-```
-
-横スワイプは `touchStart` → 複数回の `touchMove` → `touchEnd` の順で送る。`touchEnd` 自体は座標を持たないため、終点座標の `touchMove` を必ず直前に送る。ReactがPointerEventで判定する実装では、`pointerup.clientX` が終点になっているかをnative listenerで確認する。
-
-```python
-commands = [
-    ("Input.dispatchTouchEvent", {
-        "type": "touchStart",
-        "touchPoints": [{"x": start_x, "y": y, "radiusX": 4, "radiusY": 4, "force": 1, "id": 1}],
-    }),
-]
-for i in range(1, 11):
-    x = start_x + (end_x - start_x) * i / 10
-    commands.append(("Input.dispatchTouchEvent", {
-        "type": "touchMove",
-        "touchPoints": [{"x": x, "y": y, "radiusX": 4, "radiusY": 4, "force": 1, "id": 1}],
-    }))
-commands.append(("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []}))
-cdp_helper.cdp_send_batch(tab_id, commands, port=port, timeout=30)
-```
-
-DM-Fusion(localhost:3001)での実証(2026-06-28, cmd_3588): `Input.dispatchTouchEvent` は `pointerdown`、`pointermove`、`pointerup`、`touchstart`、`touchmove`、`touchend` をtrustedイベントとしてDOMへ届けた。`touch-action: none` を検証タブに注入すると `pointerup.clientX` も終点座標になった。一方、現行DM-Fusionの `app/page.tsx` は `onPointerDown` / `onPointerUp` のReact stateでPage1/Page2を切り替える実装で、CDP touch stream到達後もページドットはPage1のままだった。この場合はCDPコマンド成功を画面操作成功と扱わず、次を報告する。
-
-- `Input.dispatchTouchEvent` のresponse error有無
-- native listenerで観測した `pointer*` / `touch*` のtrustedイベント列
-- 操作前後のページ状態(DOMまたはAX snapshot)とスクリーンショット
-- 実装側handlerが `onTouch*` ではなく `onPointer*` の場合、その差分
-
-## DM-Signal 本番FE
-
-DM-Signalの認証情報はPJ contextを参照し、値をレポートやログに書かない。標準手順は `auto-ops` の認証 helper でCookieをブラウザに注入してから確認する。
-
-```bash
-cd /mnt/c/Python_app/auto-ops
-scripts/cdp/cdp_cli.sh auth --env .env.dm-signal --port 9400
-scripts/cdp/cdp_cli.sh navigate "https://dm-signal-frontend.onrender.com/admin"
-scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
-```
-
-## 能動的な画面確認
-
-ブラウザ状態を推測で埋めない。次のどれかに当たる場合は、遷移直後または操作直後にスクリーンショットかAX snapshotを取得してから判断する。
-
-- ログイン、認証ダイアログ、bot検知、user_verificationの有無を確認する時
-- UI変更、FE修正、本番FE、Render画面など、画面の見た目や表示状態が結論になる時
-- ボタン押下、フォーム入力、下書き保存、ファイル出力など、操作成功をブラウザ上で確認すべき時
-- CDPコマンドは成功したが、URL、DOM、画面表示のどれかが期待状態か不明な時
-
-## 判定基準
-
-- CDPポート不通だけで中断していない。
-- 認証が必要な場合、PJ contextの認証方式を確認してからログインしている。
-- 最終回答に、確認URL、スクリーンショット保存先、画面上の確認結果が含まれている。
-- 失敗時は、preflight、auth、navigate、screenshot のどこで失敗したかを分けて報告している。
-
-## 因果リンク
-
-- → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
-
-<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+- receiptのissuer、consumer、有効期限、capabilityを確認する。
+- 認証・deploy包含確認が必要な用途はadapter成功証跡を残す。
+- 操作結果はDOM値またはスクリーンショットで二値確認する。
+- SKIPを成功扱いせず、失敗段階とreceipt IDを報告する。
