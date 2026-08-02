@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
-<!-- last_synced_lesson: L921 -->
+<!-- last_synced_lesson: L929 -->
 <!-- source_commit:5e9ea355d0ad6d6856b0e03f08993f2ca1c744fa (DM-Signal terminology/disambiguation/db-operations-runbook対象pathspecの最終同期commit。GA-238で導入。当該pathspecは2026-07-13時点で未反映commitなし=同型穴の解消のみ、新規本文反映は不要) -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -336,6 +336,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L900/L901→ops§32に振り分け済み 2026-07-16）
 - （L903→ops§9に振り分け済み 2026-07-17）
 - （L908/L909/L918/L921は振り分け済 2026-08-01 /lesson-sort → ops§38(L908:pytest plugin root namespace固定), ops§6-7(L909:バックフィルas-of入力切断), ops§32(L918:launcher結合実行/相対パスBLOCK), core§19.2(L921:open-to-open bootstrap/live MTD独立境界)。新規PIなし）
+- L929: parity範囲を設計cohortに一致させる（cmd_karo_nxe_2d_robustness_20260802）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 

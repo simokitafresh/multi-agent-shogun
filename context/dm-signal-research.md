@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-02 cmd_karo_hotfix_matched_weight_warn_448_20260802 reviewed source boundary -->
-<!-- dm_signal_research_reflux: fingerprint=381cf0c7bd919024d75328587129ea540f9247b3c6b1b6e02e6648f205a60f3c; mode=non-target; evidence_b64=b25lLXRpbWUgcHJvZHVjdGlvbiBjbG9zdXJlIGV2aWRlbmNlOyBjYW5vbmljYWwgb3BlcmF0aW9uYWwgcmVzdWx0IHJlbWFpbnMgaW4gY21kLXNjb3BlZCBkb2NzL3Jlc2VhcmNoIGFydGlmYWN0 -->
-<!-- source_commit:381928e4 reason:cmd_karo_hotfix_matched_weight_warn_448_20260802 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=381928e4 -->
+<!-- last_updated: 2026-08-02 cmd_karo_nxe_2d_robustness_20260802 reviewed source boundary -->
+<!-- dm_signal_research_reflux: fingerprint=d877a492b5cd9895dc1bb9fe3148d706918a7cb65010ef40cb028d6b6b5aa799; mode=non-target; evidence_b64=Y21kX2thcm9fbnhlXzJkX3JvYnVzdG5lc3Mgb25lLW9mZiBhbmFseXNpcyBhcnRpZmFjdHM7IHRhc2sgQUM1IHJlcXVpcmVzIGFydGlmYWN0IGNvbW1pdCBhbmQgZXhjbHVkZXMgY29udGV4dCBmaWxlcw== -->
+<!-- source_commit:8fa64328 reason:cmd_karo_nxe_2d_robustness_20260802 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=8fa64328 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -805,3 +805,4 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - → [[cmd_3903_signal_change_evidence_classification]] 07-13の800行はrestore-lockedで履歴が物理消失し再分類不能、07-14の161行は23PF×7日exactだがinput snapshot不在のため非決定性と断定せず、961/961を証拠不足とした。運用結論=`context/dm-signal-ops.md` §77、正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3903_signal_change_root_cause.md` (2026-07-14)
 - → [[cmd_4198_N日前感度分析]] DM2/DM6の月末N営業日前(N=0〜7) open-to-open感度を本番prices由来SQLiteで全量実測。N=0はDM2 185/185月・DM6 197/197月でreturn/holding/signal mismatch 0。DM2はN=3のみSharpe +0.015/CAGRほぼ同等、DM6はN=2/4でCAGR微増だがSharpe差≤0.012。両PF・前後半に共通する広い改善帯はなく初期スクリーニングでは採用根拠なし。設計=`docs/research/month-end-n-day-momentum-sensitivity-asis-tobe-5w1h_20260731.md`、結果=`/mnt/c/Python_app/DM-signal/docs/research/cmd_4198_n_day_sensitivity.md`、CSV=`cmd_4198_n_day_returns.csv`/`cmd_4198_n_day_metrics.csv`/`cmd_4198_n_day_split_metrics.csv` (2026-07-31)
 - → [[cmd_4199_執行日感度分析]] N=0のsignal/holdingを固定し、翌月執行日だけE=0〜7営業日へ平行移動してDM2/DM6を全量実測。凍結DB SHA前後一致、production_signals 382鍵・重複0、closed cohortはDM2 182月/DM6 194月、data_missing=0、E=0 return/holding/signal mismatch=0。全Eで両PFともSPY累積を上回り、CAGR変動幅はDM2 7.27pp/DM6 17.63pp。設計=`docs/research/execution-delay-sensitivity-asis-tobe-5w1h_20260731.md`、結果=`/mnt/c/Python_app/DM-signal/docs/research/cmd_4199_execution_delay_sensitivity.md`、CSV=`cmd_4199_execution_delay_returns.csv`/`cmd_4199_execution_delay_metrics.csv`/`cmd_4199_execution_delay_split_metrics.csv` (2026-07-31)
+- → [[cmd_karo_nxe_2d_robustness_20260802]] N=0〜7×E=0〜7×DM2/DM6の128系列をThird common cohortで全量実測し、欠損0・N0E0 return/holding/signal mismatch 0・両PFともSPY CAGR超過64/64を確認。DM2最低CAGR 35.88%(N7,E7)、DM6最低36.07%(N6,E4)。64セルは独立標本ではなく、DM6の独立signal更新は約65回というモデル限界を保持する。成果物=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_nxe_2d_robustness/nxe_robustness.md`、CSV=`nxe_metrics.csv`/`nxe_returns.csv`、source commit=`8fa64328` (2026-08-02)
