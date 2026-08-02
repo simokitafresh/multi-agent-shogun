@@ -324,7 +324,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4215"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "candidate already implemented: deploy_task.sh detects commit-prohibition constraints and omits the commit binary check"
+  action_artifact: "scripts/deploy_task.sh:L4876-L4889;commit=3d8630d474;git_blame_verified=2026-08-02T18:34+09:00"
+  resolved_at: "2026-08-02T18:33:59+09:00"
 - id: INS-20260802-124136650-5d09
   ts: "2026-08-02T12:41:36+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4215; matched=検証,task,構造,deploy_task; current_pattern=HEAD依存検証taskのworktree隔離構造化 — 並列infraレーンの相互待ち根治; candidate_level=4; candidate=なぜなぜ7回の根因=新パス追加時に既存防御層との整合性チェックがない。GP-180(即効)に加え、STALE_RESET実行済みフラグ(例: _STALE_RESET_DONE=1)を配備最終段階で確認→未実行ならBLOCK。今後DIRECT_MODE3やCMD_FORCED2が追加されても防御層迂回を構造的に検出; source=gunshi_gp_tracker.yaml"
