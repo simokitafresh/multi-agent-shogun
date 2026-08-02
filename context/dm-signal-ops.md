@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_goal_b2c_trade_performance reviewed source boundary -->
-<!-- source_commit:9bd7f3ba reason:cmd_karo_goal_b2c_trade_performance reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=9bd7f3ba -->
+<!-- last_updated: 2026-08-03 own_reviewed_commit -->
+<!-- source_commit:80d574b5 reason:own_reviewed_commit evidence:cmd_karo_hotfix_a0_2_fof_oracle_20260803 reviewed source boundary -->
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 コア定義(§0-5,8,10-11,13,15,18) → `context/dm-signal-core.md`
 研究・検証結果(§19-24) → `context/dm-signal-research.md`
@@ -87,7 +87,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L933 -->
+<!-- last_synced_lesson: L937 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -863,6 +863,7 @@ import metrics_research_engine as MRE
 - L922: 複合tuple INの境界fixture PASSだけではproduction PostgreSQL parser上限を証明できない（cmd_karo_hotfix_dm_signal_l3_tuple_chunk_20260801）
 - L931: 表示ラベルと永続テーブルを分離して追跡する（cmd_karo_recon2_midmonth_trade_t2_ssot_path_20260802）
 - L933: 保存済み表示ウェイトを独立再計算の入力契約へ固定する（cmd_karo_recon2_midmonth_trade_t4_phase0_old_new_judge_20260802）
+- L937: FoF oracleは関数よりinput bundle境界を検査する（cmd_karo_hotfix_a0_2_fof_oracle_20260803）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true

@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_goal_w0_b3i reviewed source boundary -->
-<!-- dm_signal_research_reflux: fingerprint=cf4fefb0e465ba1a00263096643771fa85a0dcf21463a5097c3954cba1edfc1d; mode=non-target; evidence_b64=QTAtMiBCTE9DSyBhbmFseXNpcyBhcnRpZmFjdCB3aXRoIDcwODAgbWlzc2luZyBvcmFjbGUgcHJpbWl0aXZlczsgUkMgcmVxdWlyZWQgYmVmb3JlIGNvbnRleHQgcmVmbHV4 -->
-<!-- source_commit:e24ecbe8 reason:cmd_karo_goal_w0_b3i reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=e24ecbe8 -->
+<!-- last_updated: 2026-08-03 own_reviewed_commit -->
+<!-- dm_signal_research_reflux: fingerprint=22f9a110d33ebb94992c9b0ced051580b90fd88301ae6e5b5eb1605fcfdc4ff4; mode=non-target; evidence_b64=UzEgQUMxIGNvdmVyYWdlIEJMT0NL44Gu5bGA5omA5a6f5ris44CC5pei5a2Y5LuV5qeY44O75oGS5LmFY29udGV4dOe1kOirluOCkuWkieabtOOBm+OBmuOAgeS4i+a1gXJlcGxheeacquWun+ihjOOBruOBn+OCgWNvbnRleHTlkIzmnJ/lr77osaHlpJY= -->
+<!-- source_commit:80d574b5 reason:own_reviewed_commit evidence:cmd_karo_hotfix_a0_2_fof_oracle_20260803 reviewed source boundary -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
