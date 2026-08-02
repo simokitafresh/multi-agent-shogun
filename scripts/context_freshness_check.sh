@@ -84,6 +84,7 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -1443,6 +1444,21 @@ def build_source_warning(
     )
     if details:
         message += f" latest: {' | '.join(details)}"
+        latest_hash, _, _latest_subject = details[0].partition(" ")
+        reason = "context_freshness reviewed source boundary"
+        evidence = f"context_freshness_check context={rel_path} commit={latest_hash}"
+        command = " ".join(
+            shlex.quote(part)
+            for part in (
+                "bash",
+                "scripts/context_source_commit_set.sh",
+                rel_path,
+                latest_hash,
+                reason,
+                evidence,
+            )
+        )
+        message += f" action: {command}"
     return message
 
 

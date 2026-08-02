@@ -895,6 +895,8 @@ PROJ
     [[ "$output" == *"ALERT: context/google-classroom.md source commits 1件"* ]]
     [[ "$output" == *"latest: "* ]]
     [[ "$output" == *"feature: classroom source changed"* ]]
+    # test_necessity: a detected post-completion source commit must present the canonical context setter action instead of remaining informational only.
+    [[ "$output" == *"action: bash scripts/context_source_commit_set.sh context/google-classroom.md"* ]]
 }
 
 @test "dm-signal root and core contexts ignore unrelated external commits" {
