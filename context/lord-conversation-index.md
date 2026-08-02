@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-02 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-02T08:56:04+09:00 -->
+<!-- generated_at: 2026-08-02T09:55:42+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-08-02T09:55:41+09:00 | terminal | response | 全件処理済み。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-02T09:54:55+09:00 | terminal | response | 処理完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-02T09:49:19+09:00 | terminal | response | 処理完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-02T09:49:00+09:00 | ntfy | outbound | 【hayate】cmd_reflux_backlink_202608020948_kotaro 初回配備開始 (title=(untitled), ninja=kotaro)
+- 2026-08-02T09:02:25+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-02 08:56:59|GATE CLEAR — cmd_reflux_backlink_202608020848_kotaro 完了
+- 2026-08-02T08:57:46+09:00 | ntfy | outbound | 【hayate】cmd_reflux_backlink_202608020848_kotaro 完了
 - 2026-08-02T08:56:03+09:00 | terminal | response | reflux backlink LGTM+SG7+GATE trigger完了。idle待機。 [meta] stop_reason=end_turn
 - 2026-08-02T08:54:36+09:00 | terminal | response | 処理完了。idle待機。 [meta] stop_reason=end_turn
 - 2026-08-02T08:49:18+09:00 | terminal | response | 標準reflux backlink。
 - 2026-08-02T08:48:58+09:00 | ntfy | outbound | 【hayate】cmd_reflux_backlink_202608020848_kotaro 初回配備開始 (title=(untitled), ninja=kotaro)
-- 2026-08-02T07:57:53+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-02 07:55:06|GATE CLEAR — cmd_reflux_backlink_202608020747_kotaro 完了
-- 2026-08-02T07:55:46+09:00 | ntfy | outbound | 【hayate】cmd_reflux_backlink_202608020747_kotaro 完了
-- 2026-08-02T07:54:08+09:00 | terminal | response | reflux backlink LGTM+SG7+GATE trigger完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-02T07:48:04+09:00 | terminal | response | 処理完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-02T07:47:38+09:00 | ntfy | outbound | 【hayate】cmd_reflux_backlink_202608020747_kotaro 初回配備開始 (title=(untitled), ninja=kotaro)
-- 2026-08-02T07:24:34+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-02 07:10:49|GATE CLEAR — cmd_karo_hotfix_gate_shared_insight_semantic_20260802 完了
 
 ## 未解決確認事項
 - 確認済み。GATE CLEAR。idle待機。 [meta] stop_reason=end_turn
@@ -33,9 +33,7 @@
 - cmd_3264
 - cmd_3677
 - cmd_3687
-- cmd_3996
 - cmd_4131
-- cmd_4196
 - cmd_4205
 - cmd_4206
 - cmd_4209
