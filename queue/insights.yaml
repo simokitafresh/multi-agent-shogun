@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260802-104808890-2f2b
-  ts: "2026-08-02T10:48:08+09:00"
-  insight: "[[compare summary画面が崩れてるぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=compare summary画面が崩れてるぞ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-02T10:48:12+09:00"
-- id: INS-20260802-105008837-972a
-  ts: "2026-08-02T10:50:08+09:00"
-  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=たぶんスキルの品質が低いのと、スキルの利用が強制されていないのが問題だ。教訓を埋め込むのは意思依存で効果がない"
-  priority: "medium"
-  source: "lord_conversation:lesson_candidate"
-  fix_known: false
-  status: resolved
-  resolved_reason: "殿診断はCDP設計書v2.2で一次実測済み（品質欠陥4経路、推薦0/4、直操作阻止0/3、教訓LS098不作用）かつ単一契約化工程cmd_4217-4219へ接続済み。重複実装不要。"
-  action_artifact: "docs/research/cdp-skill-flow-inventory-20260802.md"
-  resolved_at: "2026-08-02T15:39:34+09:00"
 - id: INS-20260802-105016261-1e8c
   ts: "2026-08-02T10:50:16+09:00"
   insight: "[[今後起きないようにしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今後起きないようにしよう。これはバグだ"
@@ -105,7 +85,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608020519_hanzo"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現HEADでは既に解消済み。archive_cmdsはQUEUE_FILE読込・分類・原子的mvを同一flock区間内で実施し、指摘されたflock外読込は存在しない。"
+  action_artifact: "scripts/archive_completed.sh:L730-L824; blame_rev=29d15d42d3; context/senkyoku-log.md:L1009 cmd_1862 GATE CLEAR"
+  resolved_at: "2026-08-02T16:09:30+09:00"
 - id: INS-20260802-114831324-2daa
   ts: "2026-08-02T11:48:31+09:00"
   insight: "[[signal decision ledgerで確定した下位FoF値と親FoF component入力の境界を実測で特定し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: dm_fusion_app(DM-Fusionアプリ; alias=SPYとTQQQはDM-Signal monthly_returns; score=12.2) / investment_knowledge_base(投資知識辞書; alias=Kalman Filter Signal; score=11.9) / production_parity(本番パリティ; alias=SIGNAL CHANGE ALERT; score=11.6)。既存概念aliasesへの自動昇格候補"
@@ -305,8 +288,8 @@ insights:
   action_artifact: "event=logs/self_retro.jsonl:1429;artifact=docs/research/throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md:60,83;verify=event_id ff468f325e60c05cedf940da48a0129d3fa603e4d9bab80bc7c73d977b0cc976 exists 1/1"
   resolved_at: "2026-08-02T14:22:20+09:00"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 5
-  last_seen: "2026-08-02T15:30:08+09:00"
+  occurrence_count: 8
+  last_seen: "2026-08-02T15:47:15+09:00"
 - id: INS-20260802-123359806-cdd4
   ts: "2026-08-02T12:33:59+09:00"
   insight: "[[DM signalのallertについて詳しく教えてほしい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-signalのallertについて詳しく教えてほしい。どうなるとallertが鳴るんだ？allertがなぜなるんだ？"
@@ -913,5 +896,29 @@ insights:
   insight: "SKILL.md追従cmd候補: cmd_karo_hotfix_hook_external_scope_reflux_retry_20260802 で scripts変更(scripts/dm_signal_research_reflux_guard.sh,scripts/run_tests.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して gate_skill_script_refs.sh rc=2 を解消せよ。"
   priority: "medium"
   source: "cmd_complete_gate:skill_script_refs:cmd_karo_hotfix_hook_external_scope_reflux_retry_20260802"
+  fix_known: false
+  status: pending
+- id: INS-20260802-153800078-b32d
+  ts: "2026-08-02T15:38:00+09:00"
+  insight: "SKILL.md追従cmd候補: cmd_karo_hotfix_run_tests_terminal_receipt_partial_exit_20260802 で scripts変更(scripts/run_tests.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して gate_skill_script_refs.sh rc=2 を解消せよ。"
+  priority: "medium"
+  source: "cmd_complete_gate:skill_script_refs:cmd_karo_hotfix_run_tests_terminal_receipt_partial_exit_20260802"
+  fix_known: false
+  status: pending
+- id: INS-20260802-153938158-ae84
+  ts: "2026-08-02T15:39:38+09:00"
+  insight: "semantic_index_update新概念候補: discussion:進捗を報告せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-02T15:46:58+09:00"
+- id: INS-20260802-154712422-ba53
+  ts: "2026-08-02T15:47:12+09:00"
+  insight: "[[idle忍者が二名いるから検証inbox2]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=idle忍者が二名いるから検証inbox2"
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
