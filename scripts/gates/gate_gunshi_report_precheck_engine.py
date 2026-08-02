@@ -334,6 +334,10 @@ def main():
             continue
         _clarity_parts.append(val)
     clarity_text = ' '.join(_clarity_parts)
+    completion_evidence_text = ' '.join(
+        _flatten_text(report.get(field))
+        for field in ('result', 'ac_evidence_mapping', 'operational_simulation')
+    ).lower()
     contradiction_terms = (
         'デプロイ後',
         '家老実施',
@@ -372,9 +376,24 @@ def main():
             # 局所判定し、「未確認の前提あり」「未解決事項を保留」は維持する。
             occurrences = list(re.finditer(re.escape(lower_term), lower_text))
             benign_occurrence_count = 0
+            delegation_markers = (
+                '家老実施', '家老が実施', '後で', '未実施', '未完了', '保留',
+                'todo', 'fill_this',
+            )
             for occurrence in occurrences:
                 _, end = occurrence.span()
                 after = lower_text[end:min(len(lower_text), end + 32)]
+                past_state = bool(re.match(r'(?:だった|であった)(?:が|ものの|[\s。、，,.]|$)', after))
+                completion_markers = (
+                    ('status=resolved', 'status: resolved', 'resolvedへ遷移', '解決済み', '解決済')
+                    if term == '未解決'
+                    else ('確認済み', '確認済', 'mismatch=0', '未確認0')
+                )
+                past_state_with_evidence = (
+                    past_state
+                    and any(marker in completion_evidence_text for marker in completion_markers)
+                    and not any(marker.lower() in lower_text for marker in delegation_markers)
+                )
                 completed_or_quoted = (
                     # 完了肯定: 「未確認0」「未確認0を確認」。裸の0は
                     # 末尾・空白・句読点境界だけを許可し、「0だが…」を除外する。
@@ -393,6 +412,9 @@ def main():
                     )
                     # AC要件引用: 「未確認が1件でもあればBLOCK」
                     or re.match(r'が?(?:1件|一件|1つ|ひとつ)でもあれば', after)
+                    # 過去状態は、別の完了証拠が報告内にある場合だけ免除する。
+                    # 「未解決だったがresolve可能」のような可能性記述だけでは通さない。
+                    or past_state_with_evidence
                 )
                 if completed_or_quoted:
                     benign_occurrence_count += 1
@@ -415,7 +437,6 @@ def main():
                 '認証',
                 '401',
             )
-            delegation_markers = ('家老実施', '家老が実施', '後で', '未実施', '未完了', '保留', 'todo', 'fill_this')
             if any(marker.lower() in lower_text for marker in investigation_markers) and not any(
                 marker.lower() in lower_text for marker in delegation_markers
             ):

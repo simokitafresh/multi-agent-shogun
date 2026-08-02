@@ -22,10 +22,13 @@ teardown() {
 
 run_engine() {
   local assumption_check="$1"
+  local completion_evidence="${2:-}"
   cat > "$TMP_DIR/report.yaml" <<YAML
 worker_id: kagemaru
 parent_cmd: cmd_fixture
 assumption_check: "$assumption_check"
+result:
+  details: "$completion_evidence"
 task_clarity:
   score: 100
   unclear_points: なし
@@ -148,6 +151,20 @@ YAML
   run_engine "未解決事項なし"
   [ "$status" -eq 0 ]
   [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+}
+
+@test "LG043 ignores a resolved historical state only with completion evidence" {
+  run_engine "対象は未解決だったが既存原則に包含" "target status=resolved"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+}
+
+@test "LG043 blocks a historical unresolved phrase without completion evidence" {
+  run_engine "対象は未解決だったがresolve可能"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
 }
 
 @test "LG043 ignores completed zero-count confirmation" {
