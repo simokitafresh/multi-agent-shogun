@@ -31,6 +31,7 @@ import threading
 import time
 import urllib.request
 import uuid
+from cdp_session import establish
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 
@@ -588,6 +589,9 @@ def main():
     )
     args = parser.parse_args()
 
+    receipt = establish("generic", ports=(args.cdp_port,))
+    args.cdp_port = int(receipt["endpoint"].rsplit(":", 1)[1])
+
     # Generate Bearer token
     token = str(uuid.uuid4())
     cred_path = "/tmp/cdp-server.json"
@@ -596,6 +600,7 @@ def main():
         "port": args.port,
         "cdp_port": args.cdp_port,
         "pid": os.getpid(),
+        "session_receipt": receipt,
     }
     with open(cred_path, "w") as f:
         json.dump(cred_data, f)

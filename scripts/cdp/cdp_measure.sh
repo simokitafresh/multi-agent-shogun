@@ -41,11 +41,17 @@ AUTO_OPS_ROOT="/mnt/c/Python_app/auto-ops"
 AUTO_OPS_ROOT="$(get_project_path 'auto-ops' 2>/dev/null || printf '%s\n' "$AUTO_OPS_ROOT")"
 TEMP_CONFIG=""
 CDP_LOCK_ACQUIRED=0
+CDP_RECEIPT=""
 
 # 終了時にCDPブラウザをcleanup（成功/失敗/中断どれでも）
 _cdp_cleanup() {
     if [[ -n "${TEMP_CONFIG:-}" && -f "$TEMP_CONFIG" ]]; then
         rm -f "$TEMP_CONFIG"
+    fi
+    if [[ -n "${CDP_RECEIPT:-}" && -f "$CDP_RECEIPT" ]]; then
+        python3 "${SCRIPT_DIR}/scripts/cdp/cdp_session.py" cleanup --receipt "$CDP_RECEIPT" >/dev/null || true
+        rm -f "$CDP_RECEIPT"
+        CDP_RECEIPT=""
     fi
     if [[ "${CDP_LOCK_ACQUIRED:-0}" != "1" ]]; then
         return 0
@@ -54,10 +60,6 @@ _cdp_cleanup() {
         echo "  SKIP: cleanup skipped because requested port ${CDP_REQUESTED_PORT} differs from actual port ${CDP_PORT}"
         return 0
     fi
-    PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 -c "
-from cdp import cdp_helper
-cdp_helper.cleanup_chrome(${CDP_PORT:-9222})
-" 2>/dev/null || true
 }
 trap _cdp_cleanup EXIT
 PERF_MEASURE="${AUTO_OPS_ROOT}/workflows/perf_measure.py"
@@ -107,6 +109,8 @@ echo "OK (HTTP 200)"
 #     人間と同じ: ブラウザ起動→ページ開く→フォーム入力→ボタン押す
 CDP_PORT="${CDP_PORT:-9222}"
 CDP_REQUESTED_PORT="$CDP_PORT"
+CDP_RECEIPT="$(mktemp /tmp/cdp-measure-receipt.XXXXXX)"
+python3 "${SCRIPT_DIR}/scripts/cdp/cdp_session.py" establish --consumer measurement --ports "$CDP_PORT" --receipt "$CDP_RECEIPT" >/dev/null
 LOCK_DIR="${SCRIPT_DIR}/queue/locks"
 mkdir -p "$LOCK_DIR"
 LOCK_FILE="${LOCK_DIR}/cdp_measure_port_${CDP_PORT}.lock"
@@ -130,9 +134,8 @@ port = int(sys.argv[1])
 env_file = Path(sys.argv[2])
 admin_url = sys.argv[3]
 
-# ブラウザ起動(自動起動+ポート探索+別ブラウザfallback)
-result = cdp_helper.preflight_cdp_flow(port=port, browser="auto", launch_timeout=30)
-actual_port = result.get("cdp_port", port)
+# shared session receipt already qualified this endpoint; auth is an adapter only.
+actual_port = port
 
 # admin loginページにナビゲート
 tab_id = cdp_helper.create_tab(url=admin_url, port=actual_port, timeout=30)
@@ -255,14 +258,9 @@ echo ""
 
 # ─── Phase 5: CDP Cleanup ───
 echo "■ Phase 5: CDP Cleanup"
-PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 -c "
-from cdp import cdp_helper
-cleaned = cdp_helper.cleanup_chrome(${CDP_PORT})
-if cleaned:
-    print('  OK: CDPブラウザを終了')
-else:
-    print('  SKIP: PIDファイルなし(手動起動のCDPは残存)')
-" 2>&1 || echo "  WARN: cleanup失敗(無視可)"
+python3 "${SCRIPT_DIR}/scripts/cdp/cdp_session.py" cleanup --receipt "$CDP_RECEIPT"
+rm -f "$CDP_RECEIPT"
+CDP_RECEIPT=""
 echo ""
 
 echo "═══════════════════════════════════════════════════"

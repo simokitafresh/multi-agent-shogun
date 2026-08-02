@@ -105,7 +105,7 @@ if __name__ == "__main__":
     ap.add_argument("--routes", required=True)
     ap.add_argument("--port", type=int, default=9222)
     ap.add_argument("--modes", default="light,dark")
-    a = ap.parse_args()
+    a = ap.parse_args(); a.port = edp.receipt_port(edp.session_receipt(a.port))
     result = run(a.port, a.base.rstrip("/"), [r for r in a.routes.split(",") if r], [m for m in a.modes.split(",") if m])
     print(json.dumps(result, ensure_ascii=False, indent=1))
     sys.exit(0 if not result["summary"] else 1)

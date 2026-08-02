@@ -12,6 +12,18 @@ import time
 import urllib.request
 
 
+def session_receipt(requested_port=9222, consumer="inspection"):
+    """Issue the sole connection authority for one consumer invocation."""
+    from cdp_session import establish
+    return establish(consumer, ports=(requested_port,))
+
+
+def receipt_port(receipt):
+    if receipt.get("issuer") != "cdp_session_foundation":
+        raise RuntimeError("CDP connection requires a foundation receipt")
+    return int(receipt["endpoint"].rsplit(":", 1)[1])
+
+
 def _get_page_ws(port: int, url_substr: str):
     try:
         with urllib.request.urlopen(f"http://localhost:{port}/json/list", timeout=10) as fh:
@@ -110,6 +122,7 @@ def main() -> int:
     ap.add_argument("--max-wait", type=float, default=20.0)
     ap.add_argument("--interval", type=float, default=1.0)
     args = ap.parse_args()
+    args.port = receipt_port(session_receipt(args.port))
 
     try:
         import websocket  # noqa: F401

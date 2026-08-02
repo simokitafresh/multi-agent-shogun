@@ -111,6 +111,8 @@ def main():
     ap.add_argument("--port", type=int, default=9222); ap.add_argument("--max-wait", type=float, default=20.0)
     ap.add_argument("--interval", type=float, default=1.0)
     a = ap.parse_args()
+    from cdp_ed_probe import receipt_port, session_receipt
+    a.port = receipt_port(session_receipt(a.port))
     try:
         import websocket  # noqa
     except ImportError:

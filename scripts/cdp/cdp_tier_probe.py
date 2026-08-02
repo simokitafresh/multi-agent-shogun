@@ -48,5 +48,5 @@ def measure(port, base, routes):
 
 if __name__=="__main__":
     ap=argparse.ArgumentParser(); ap.add_argument("--base",required=True); ap.add_argument("--routes",required=True); ap.add_argument("--port",type=int,default=9222)
-    a=ap.parse_args()
+    a=ap.parse_args(); a.port=edp.receipt_port(edp.session_receipt(a.port))
     print(json.dumps(measure(a.port,a.base.rstrip("/"),[r for r in a.routes.split(",") if r]),ensure_ascii=False,indent=1))

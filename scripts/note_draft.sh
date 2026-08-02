@@ -37,35 +37,16 @@ readonly AUTO_OPS_DIR
 # auto-ops cdp_helper.pyがpowershell.exe依存のため必須(殿裁定2026-07-16)。
 export PATH="${PATH}:/mnt/c/Windows/System32/WindowsPowerShell/v1.0:/mnt/c/Windows/System32"
 _REPO_ROOT="$(get_repo_root)"
+_NOTE_RECEIPT="$(mktemp /tmp/cdp-note-receipt.XXXXXX)"
+python3 "${_REPO_ROOT}/scripts/cdp/cdp_session.py" establish --consumer note --ports "$CDP_PORT" --receipt "$_NOTE_RECEIPT" >/dev/null
+trap 'python3 "${_REPO_ROOT}/scripts/cdp/cdp_session.py" cleanup --receipt "$_NOTE_RECEIPT" >/dev/null 2>&1 || true; rm -f "$_NOTE_RECEIPT"' EXIT
 
 MD_FILE="$(realpath "$1")"
 
 echo "[note_draft] Markdown: ${MD_FILE}"
 echo "[note_draft] CDP port: ${CDP_PORT}"
 
-# ── Step 0: Chrome CDP pre-check + auto-launch (bash layer) ──
-# Chrome未起動時はbash層で直接起動する(PowerShell不要)。
-# SKIPはバグ(殿裁定2026-07-16): スキルは成果を届けるべきで、前提条件不足時は自分で満たせ。
-# auto-opsのlaunch_browserはPowerShell依存のため、WSL2 PATH問題で失敗する場合がある。
-# bash層でcmd.exeフルパス起動することで環境に依存しない確実な起動を実現。
-if ! curl -s --max-time 3 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
-  echo "[note_draft] Chrome not running on port ${CDP_PORT}. Launching via cmd.exe..."
-  /mnt/c/Windows/System32/cmd.exe /c start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" \
-    "--remote-debugging-port=${CDP_PORT}" "--remote-allow-origins=*" \
-    "--user-data-dir=C:\tmp\cdp-chrome-${CDP_PORT}" "--no-first-run" "--no-default-browser-check" \
-    "about:blank" >/dev/null 2>&1 &
-  for _i in $(seq 10); do
-    sleep 1
-    if curl -s --max-time 2 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
-      echo "[note_draft] Chrome launched successfully on port ${CDP_PORT}."
-      break
-    fi
-  done
-  if ! curl -s --max-time 2 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
-    echo "[note_draft] FAIL: Chrome launch failed on port ${CDP_PORT}."
-    exit 1
-  fi
-fi
+# ── Step 0: shared session receipt established above ──
 
 # ── Step 1-6: All in one Python script ──
 PY_EXIT=0
@@ -74,7 +55,7 @@ python3 << PYEOF 2>"$_PY_STDERR_FILE" || PY_EXIT=$?
 import sys, os, time, json, base64, pathlib
 
 sys.path.insert(0, "${AUTO_OPS_DIR}")
-from cdp.cdp_helper import launch_browser, get_tab, create_tab, js_eval, navigate, cdp_send, screenshot, _is_cdp_alive
+from cdp.cdp_helper import get_tab, create_tab, js_eval, navigate, cdp_send, screenshot
 from dotenv import load_dotenv
 
 PORT = ${CDP_PORT}
@@ -233,39 +214,7 @@ def login_if_needed():
         raise RuntimeError("Login did not complete. Check credentials or reCAPTCHA state.")
     print(f"[note_draft] Login successful: {final_url}")
 
-# cmd_3252 AC2: PowerShell失敗時のcmd.exeフォールバック
-def fallback_chrome_launch(port):
-    """launch_browser(PowerShell)失敗時にcmd.exe経由でChrome起動を試行"""
-    import subprocess
-    print("[note_draft] WARN: launch_browser failed. Trying cmd.exe fallback...")
-    try:
-        subprocess.Popen(
-            ["/mnt/c/Windows/System32/cmd.exe", "/c", "start", "",
-             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-             f"--remote-debugging-port={port}",
-             "--no-first-run", "--no-default-browser-check",
-             "--remote-allow-origins=*",
-             f"--user-data-dir=C:\\tmp\\cdp-chrome-{port}"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-    except Exception as e:
-        print(f"[note_draft] cmd.exe fallback launch error: {e}", file=sys.stderr)
-        return False
-    for attempt in range(6):
-        time.sleep(2)
-        if _is_cdp_alive(port):
-            print(f"[note_draft] cmd.exe fallback succeeded (attempt {attempt})")
-            return True
-    return False
-
-# Step 1: Ensure Chrome is running
-if not _is_cdp_alive(PORT):
-    print(f"[note_draft] Launching Chrome on port {PORT}...")
-    if not launch_browser(port=PORT):
-        if not fallback_chrome_launch(PORT):
-            print("ERROR: Chrome launch failed. PowerShell and cmd.exe fallbacks both failed.", file=sys.stderr)
-            sys.exit(1)
-    time.sleep(3)
+# Step 1: receipt establishment already guaranteed a qualified endpoint.
 print(f"[note_draft] Chrome alive on port {PORT}")
 
 # Step 2: Check login state
