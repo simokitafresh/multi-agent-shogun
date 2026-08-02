@@ -112,6 +112,7 @@ PY
   fixture="$TMPDIR_CASE/failed-unclosed"
   mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/archive/reports" "$fixture/scripts/lib"
   cp "$ROOT/scripts/lib/report_terminal_state.sh" "$fixture/scripts/lib/"
+  cp "$ROOT/scripts/lib/task_cmd_match.sh" "$fixture/scripts/lib/"
   awk '/^# --- Check 9.2:/{copy=1} /^# --- Check 9.3:/{copy=0} copy' \
     "$ROOT/scripts/gates/gate_karo_startup.sh" > "$fixture/check.sh"
   cat > "$fixture/queue/tasks/alpha.yaml" <<'YAML'
@@ -121,12 +122,42 @@ task:
   report_path: queue/reports/alpha_report_cmd_unclosed.yaml
 YAML
   printf 'status: pending\nverdict: FAIL\n' > "$fixture/queue/reports/alpha_report_cmd_unclosed.yaml"
-  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/scripts/lib/report_terminal_state.sh"; source "$1/check.sh"' _ "$fixture"
+  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/scripts/lib/report_terminal_state.sh"; source "$1/scripts/lib/task_cmd_match.sh"; source "$1/check.sh"' _ "$fixture"
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | grep -c 'ALERT: alpha failed_unclosed task=cmd_unclosed report_state=OPEN action=review_failed_task')" -eq 1 ]
 
   printf 'status: completed\nverdict: FAIL\nstatus_detail: BLOCKED\n' > "$fixture/queue/reports/alpha_report_cmd_unclosed.yaml"
-  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/scripts/lib/report_terminal_state.sh"; source "$1/check.sh"' _ "$fixture"
+  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/scripts/lib/report_terminal_state.sh"; source "$1/scripts/lib/task_cmd_match.sh"; source "$1/check.sh"' _ "$fixture"
   [ "$status" -eq 0 ]
   [[ "$output" == *'OK: failed_unclosed 0件'* ]]
+}
+
+@test "startup gate excludes an older failed generation after same task_id reassignment" {
+  fixture="$TMPDIR_CASE/failed-reassigned"
+  mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/archive/reports" "$fixture/scripts/lib"
+  cp "$ROOT/scripts/lib/report_terminal_state.sh" "$fixture/scripts/lib/"
+  cp "$ROOT/scripts/lib/task_cmd_match.sh" "$fixture/scripts/lib/"
+  awk '/^# --- Check 9.2:/{copy=1} /^# --- Check 9.3:/{copy=0} copy' \
+    "$ROOT/scripts/gates/gate_karo_startup.sh" > "$fixture/check.sh"
+  cat > "$fixture/queue/tasks/alpha.yaml" <<'YAML'
+task:
+  status: failed
+  task_id: cmd_reassigned_full
+  parent_cmd: cmd_reassigned
+  deployed_at: '2026-08-03T03:04:56'
+  report_path: queue/reports/alpha_report_cmd_reassigned.yaml
+YAML
+  cat > "$fixture/queue/tasks/beta.yaml" <<'YAML'
+task:
+  status: in_progress
+  task_id: cmd_reassigned_full
+  parent_cmd: cmd_reassigned
+  deployed_at: '2026-08-03T03:06:08'
+  report_path: queue/reports/beta_report_cmd_reassigned.yaml
+YAML
+  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES="alpha beta"; overall=OK; alerts=(); source "$1/scripts/lib/report_terminal_state.sh"; source "$1/scripts/lib/task_cmd_match.sh"; source "$1/check.sh"' _ "$fixture"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'INFO: alpha failed task=cmd_reassigned_full は新しい同一task_id世代へ再配備済みのため未閉鎖対象外'* ]]
+  [[ "$output" == *'OK: failed_unclosed 0件'* ]]
+  [[ "$output" != *'ALERT: alpha failed_unclosed'* ]]
 }

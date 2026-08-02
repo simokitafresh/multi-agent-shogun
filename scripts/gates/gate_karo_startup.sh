@@ -15,6 +15,8 @@ source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null || true
 source "$SCRIPT_DIR/scripts/gates/session_alerts_render.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/task_cmd_match.sh"
 _KARO_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 
 overall="OK"
@@ -2337,6 +2339,14 @@ for ninja in $_KARO_NINJA_NAMES; do
     _fuc_status=$(awk '/^[[:space:]]*status:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"'[:space:]]/,"",v); print v; exit }' "$_fuc_task_file" 2>/dev/null)
     [ "$_fuc_status" = "failed" ] || continue
     _fuc_task_id=$(awk '/^[[:space:]]*task_id:/ && !/^[[:space:]]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_fuc_task_file" 2>/dev/null)
+    _fuc_parent_cmd=$(awk '/^[[:space:]]*parent_cmd:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_fuc_task_file" 2>/dev/null)
+    if [ -n "$_fuc_parent_cmd" ]; then
+        _fuc_current_files=$(list_current_task_files_for_cmd "$SCRIPT_DIR/queue/tasks" "$_fuc_parent_cmd")
+        if [ -n "$_fuc_current_files" ] && ! printf '%s\n' "$_fuc_current_files" | grep -Fxq "$_fuc_task_file"; then
+            echo "  INFO: ${ninja} failed task=${_fuc_task_id:-unknown} は新しい同一task_id世代へ再配備済みのため未閉鎖対象外"
+            continue
+        fi
+    fi
     _fuc_report_rel=$(awk '/^[[:space:]]*report_path:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_fuc_task_file" 2>/dev/null)
     _fuc_report_file=""
     if [ -n "$_fuc_report_rel" ] && [ -f "$SCRIPT_DIR/$_fuc_report_rel" ]; then
