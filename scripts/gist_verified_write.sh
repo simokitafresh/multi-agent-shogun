@@ -48,8 +48,12 @@ raw_url="$(jq -er --arg filename "$remote_filename" \
 
 local_sha="$(sha256sum "$local_path" | awk '{print $1}')"
 remote_sha="$(sha256sum "$remote_file" | awk '{print $1}')"
-[ "$local_sha" = "$remote_sha" ] \
-    || die "readback SHA256 mismatch local=$local_sha remote=$remote_sha"
+if [ "$local_sha" != "$remote_sha" ]; then
+    sleep "${GIST_READBACK_RETRY_DELAY_SECONDS:-1}"
+    "$GH_CMD" api "$raw_url" > "$remote_file" || die "remote raw retry failed"
+    remote_sha="$(sha256sum "$remote_file" | awk '{print $1}')"
+    [ "$local_sha" = "$remote_sha" ] || die "readback SHA256 mismatch after retry local=$local_sha remote=$remote_sha"
+fi
 
 printf 'VERIFIED gist=%s filename=%s sha256=%s\n' \
     "$gist_id" "$remote_filename" "$local_sha"

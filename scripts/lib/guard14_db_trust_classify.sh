@@ -24,6 +24,11 @@
 
 guard14_maybe_connection() {
     local cmd="$1"
+    if [[ "$cmd" =~ (^|[^A-Za-z0-9_])(grep|rg|sed|cat|head|tail|cut)[[:space:]] ]] &&
+       [[ "$cmd" =~ (^|[^A-Za-z0-9_])\.env([^A-Za-z0-9_]|$) ]] &&
+       [[ ! "$cmd" =~ (DATABASE_URL|POSTGRES|[A-Z0-9_]*(DB|DATABASE|POSTGRES|PG)[A-Z0-9_]*_(URL|DSN)|psql|\.connect[[:space:]]*\(|create_[A-Za-z_]*engine[[:space:]]*\() ]]; then
+        return 1
+    fi
     # (1) DSN URLスキーム
     [[ "$cmd" == *'postgres://'* || "$cmd" == *'postgresql://'* ]] && return 0
     # (2) DB系env/DSN変数名。review_correction(09:51, karo): 単なる_URL/_DSN suffixだけでは

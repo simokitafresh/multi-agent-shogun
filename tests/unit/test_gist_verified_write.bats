@@ -11,6 +11,7 @@ setup() {
 #!/usr/bin/env bash
 set -euo pipefail
 mode="${FAKE_GH_MODE:-success}"
+state="${FAKE_GH_STATE:-/tmp/fake-gh-state}"
 if [ "${1:-}" != api ]; then exit 90; fi
 shift
 if [ "${1:-}" = --method ]; then
@@ -26,7 +27,11 @@ if [ "${1:-}" = gists/abc123 ]; then
     exit 0
 fi
 if [ "${1:-}" = https://raw.test/index ]; then
-    if [ "$mode" = silent_noop ]; then
+    if [ "$mode" = eventual ]; then
+        count=0; [ ! -f "$state" ] || count="$(cat "$state")"
+        count=$((count + 1)); printf '%s' "$count" > "$state"
+        [ "$count" -gt 1 ] && printf 'expected content\n' || printf 'old content\n'
+    elif [ "$mode" = silent_noop ]; then
         printf 'old content\n'
     else
         printf 'expected content\n'
@@ -38,6 +43,12 @@ SH
     chmod +x "$GH_CMD"
 }
 
+@test "eventual raw consistency is reread once and verifies" {
+    run env FAKE_GH_MODE=eventual FAKE_GH_STATE="$FIXTURE/state" GIST_READBACK_RETRY_DELAY_SECONDS=0 bash "$REPO_ROOT/scripts/gist_verified_write.sh" abc123 index.md "$FIXTURE/local.md"
+    [ "$status" -eq 0 ]
+    [ "$(cat "$FIXTURE/state")" -eq 2 ]
+}
+
 @test "successful write verifies remote raw SHA256" {
     run bash "$REPO_ROOT/scripts/gist_verified_write.sh" abc123 index.md "$FIXTURE/local.md"
     [ "$status" -eq 0 ]
@@ -45,7 +56,7 @@ SH
 }
 
 @test "silent successful PATCH with unchanged remote content is blocked" {
-    run env FAKE_GH_MODE=silent_noop bash "$REPO_ROOT/scripts/gist_verified_write.sh" abc123 index.md "$FIXTURE/local.md"
+    run env FAKE_GH_MODE=silent_noop GIST_READBACK_RETRY_DELAY_SECONDS=0 bash "$REPO_ROOT/scripts/gist_verified_write.sh" abc123 index.md "$FIXTURE/local.md"
     [ "$status" -ne 0 ]
     [[ "$output" == *"readback SHA256 mismatch"* ]]
 }

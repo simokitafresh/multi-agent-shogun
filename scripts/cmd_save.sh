@@ -6349,19 +6349,26 @@ check_gunshi_design_num_relax() {
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
     AC_NUMS=$(echo "$AC_SECTION" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g' | sed 's|AC[0-9]\{1,\}||g; s|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g; s|[αβγδ][0-9]\{1,\}||g; s|§[0-9.]\{1,\}||g' | sed -E 's#[A-Za-z][A-Za-z]*[0-9][A-Za-z0-9]*##g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
 
-    if [[ -z "$AC_NUMS" ]]; then
-        echo "WARN: 軍師設計書参照cmdでAC数値不一致を検出（cmd_1783教訓）" >&2
-        echo "  q8のWHAT数値: ${Q8_MAX} → ACに数値なし（緩和/抜落ちの可能性）" >&2
-        echo "  設計書の数値をACに明記せよ" >&2
-        return 0
-    fi
+    [[ -n "$AC_NUMS" ]] || return 0
 
     AC_MAX=$(echo "$AC_NUMS" | tail -1)
 
-    # AC最大値 > q8最大値 = 緩和の可能性（大きいtimeout/少ない対象数の逆）
-    if python3 -c "import sys; sys.exit(0 if float('$AC_MAX') > float('$Q8_MAX') else 1)" 2>/dev/null; then
+    local _c17_relax
+    _c17_relax="$(Q8_WHAT="$WHAT_PART" AC_CLAIMS="$AC_SECTION" python3 - <<'PY'
+import os, re
+pat = re.compile(r'(\d+(?:\.\d+)?)\s*(件|本|個|項目|基準|files?|tests?|秒|分|時間)')
+def claims(text):
+    out = {}
+    for n, unit in pat.findall(text): out.setdefault(unit.lower(), []).append(float(n))
+    return out
+q, a = claims(os.environ['Q8_WHAT']), claims(os.environ['AC_CLAIMS'])
+for unit in q.keys() & a.keys():
+    if min(a[unit]) < max(q[unit]): print(f'{max(q[unit]):g}{unit}->{min(a[unit]):g}{unit}')
+PY
+)"
+    if [[ -n "$_c17_relax" ]]; then
         echo "WARN: 軍師設計書参照cmdで数値緩和を検出（cmd_1783教訓）" >&2
-        echo "  q8のWHAT最大値: ${Q8_MAX} → AC最大値: ${AC_MAX}（ACがq8より大きい=緩和の可能性）" >&2
+        echo "  同一数量主張の縮小: ${_c17_relax}" >&2
         echo "  設計書の数値をACで緩和するな。元の設計書数値を維持せよ" >&2
         record_warn_reason "設計書数値緩和" "check=check_gunshi_reference_numeric_relaxation"
     fi
@@ -7005,7 +7012,7 @@ is_db_operation_command_text() {
     local filtered
     filtered="$(grep -viE 'quick_check|GS.*SQLite|SQLite.*出力|SQLite.*結果|SQLite.*記録|SQLite.*統計|SQLite.*突合|SQLite.*経路|SQLite.*参照|grid_search|experiments\.db|daily_prices' <<< "$command_text")"
     [[ -n "${filtered//[[:space:]]/}" ]] || return 1
-    grep -qiE '(^|[^A-Za-z0-9_])(migrate|ALTER[[:space:]]+TABLE|schema|database|init_database|SQLite|DROP|TRUNCATE|DELETE[[:space:]]+FROM)([^A-Za-z0-9_]|$)' <<< "$filtered" || return 1
+    grep -qiE '(^|[^A-Za-z0-9_])(migrate|schema[[:space:]_-]+migration|ALTER[[:space:]]+SCHEMA|ALTER[[:space:]]+TABLE|database|init_database|SQLite|DROP|TRUNCATE|DELETE[[:space:]]+FROM)([^A-Za-z0-9_]|$)' <<< "$filtered" || return 1
 }
 
 check_db_backup_ac_warn() {
@@ -7150,7 +7157,7 @@ check_ac_phase_mixing() {
         lt = tolower(text)
         # Exclude concrete file/script references before keyword matching.
         # Example: scripts/deploy_task.sh contains "deploy" but is not a delivery action.
-        gsub(/[A-Za-z0-9_.\/-]+\.(sh|bash|py|tsx|ts|jsx|js|yaml|yml|json|sql|html|css|toml|cfg|env|bats)/, " ", lt)
+        gsub(/[A-Za-z0-9_.\/-]+\.(md|sh|bash|py|tsx|ts|jsx|js|yaml|yml|json|sql|html|css|toml|cfg|env|bats)/, " ", lt)
         # Exclude function calls that happen to contain phase keywords.
         # Example: deploy_task() names a function; "deploy" alone remains a delivery action.
         gsub(/[a-z_][a-z0-9_]*[[:space:]]*\(/, " ", lt)
