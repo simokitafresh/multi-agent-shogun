@@ -835,9 +835,9 @@ lessons:
   how: '(1)0件を見たら同じファイルを開いて周辺を読め。撤去・変更には理由がコメントで残っていることが多い。(2)三層記憶を検索せよ(CLAUDE.md最上位原則)。(3)git log -S で導入・撤去の意図を追え(LS-A09(39)/LS106と同一)。(4)検索式の形が対象の表記と一致しているかを疑え(-oE/末尾スペース等)。★軍師は本件で(1)(2)(3)を全て飛ばした。既存ルールは全て存在していた。問題は使わなかったことである'
   source_cmd: 'cmd_karo_cifix_cmd_publish_preflight_invariant_20260726'
   created_at: '2026-07-26'
-  automated: false
-  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入。★提案(未実装): gunshi_log_append.sh の operational_simulation で actual が「0件/不在」を主張する場合に、同一ファイルの通読またはgit log -S の証跡を必須化すれば Level4 になる'
-  enforcement_level: 5
+  automated: true
+  enforcement: "Level4(フロー内BLOCK): gunshi_log_append.shのPython検証ブロックで、operational_simulation.actualが「0件/不在/存在しない/見つからない/実在しない」を含む場合、commandにgit log -S/Read(/cat /head /通読/周辺確認の証跡がなければexit 2 BLOCK。3パターン検証済み(BLOCK発火/証跡あり許可/非対象除外)"
+  enforcement_level: 4
 - id: 'LG073'
   title: '自分が当事者である対象のレビューでは自分に不利な側を推し、その旨を明記せよ'
   origin: "[[gate_gunshi_accuracyは軍師の成績装置]] -> [[軍師が甘くする誘因が実在]] -> [[自己開示と不利側の選択で規律を保つ]]"
@@ -857,9 +857,9 @@ lessons:
   how: '(1)実装の検証と報告契約の検証を分けて両方行え。(2)precheck ERRORS=0 は報告形式の一部しか見ない — hook_failures/commit_contract/semantic_validation は別経路で落ちうる。(3)★承認を発行して初めて「通った」と言え。発行前の判断は予測にすぎない'
   source_cmd: 'cmd_karo_impl_approval_log_atomic_20260726'
   created_at: '2026-07-26'
-  automated: false
-  enforcement: 'Level5(受動的層): 毎起動注入。★既存の構造防御あり: review_approval.sh のfail-closedと review_bundle の hook_failures 検査が実際に軍師を止めた(2026-07-26実証)。∴本教訓は「なぜ止められたか」を理解して繰り返さないための記録である'
-  enforcement_level: 5
+  automated: true
+  enforcement: "Level4(フロー内BLOCK): gunshi_log_append.sh lgtm_bundle_guard(L123-142)がLGTM記録時にsg7_bundle.json未生成をexit 2 BLOCK。review_approval.shのfail-closedがhook_failures.details形式違反もBLOCK。2026-07-26に2重防御が実際に軍師を止めた実証あり"
+  enforcement_level: 4
 - id: 'LG075'
   title: '見た範囲を全体として語るな — 範囲の機械証明だけが塞ぐ'
   origin: '[[cmd_karo_impl_receipt_scope_identity_20260726]]'
@@ -989,3 +989,25 @@ lessons:
   created_at: '2026-07-29'
   enforcement: "Level4(フロー内BLOCK): gunshi_log_append.shがAPPROVE/LGTM記録を受理する前にprecheck ERRORS=0を機械確認し、1件以上ならFAIL/RCのみ許可する。"
   enforcement_level: 4
+- id: 'LG086'
+  title: 'AC指定日とreport SQL実行日の突合'
+  origin: '[[cmd_karo_hotfix_fof_ledger_cascade_rootfix_v2_20260802]] -> [[AC日付とSQL日付不一致見逃し]] -> [[LG052適用範囲拡大]]'
+  detail: 'FoF v2初回FAIL受理で、AC1が2026-08-01指定なのにreport SQLが2026-08-02実行だった不一致を見逃した。report reviewでACに日付指定がある場合、ac_evidence_mappingのSQL/query実行日と対象日を必ず突合し、不一致はLG052同期時点FAILとして扱う。'
+  source_cmd: 'cmd_karo_hotfix_fof_ledger_cascade_rootfix_v2_20260802'
+  when: '同種の状況が再発した時'
+  how: 'FoF v2初回FAIL受理で、AC1が2026-08-01指定なのにreport SQLが2026-08-02実行だった不一致を見逃した。report reviewでACに日付指定がある場合、ac_evidence_mappingのSQL/query実行日と対象日を必ず突合し、不一致はLG052同期時点FAILとして扱う。'
+  created_at: '2026-08-02'
+  enforcement: 'Level5: lessons_gunshi.yaml起動時注入。日付指定ACはSQL/query対象日との突合を必須化'
+  enforcement_level: 5
+- id: 'LG087'
+  title: 'precheck ERRORとgate BLOCKを区別する'
+  origin: '[[cmd_4219]]'
+  detail: |
+    cmd_4219でlessons_useful mismatchのSG-PRE ERRORをgate BLOCKと誤認してFAIL判定したが、gate_report_format.sh実行はPASSだった。FAIL判定前に実gateを実行し、BLOCK証跡を確認する。
+    吸収(2026-08-02, cmd_4219, origin: [[cmd_4219]]): cmd_4219でlessons_useful mismatchのSG-PRE ERRORをgate BLOCKと誤認してFAIL判定したが、gate_report_format.sh実行はPASSだった。FAIL判定前に実gateを実行し、BLOCK証跡を確認する。
+  source_cmd: 'cmd_4219'
+  when: '同種の状況が再発した時'
+  how: 'cmd_4219でlessons_useful mismatchのSG-PRE ERRORをgate BLOCKと誤認してFAIL判定したが、gate_report_format.sh実行はPASSだった。FAIL判定前に実gateを実行し、BLOCK証跡を確認する。'
+  created_at: '2026-08-02'
+  enforcement: "Level5: lessons_gunshi.yaml起動時全文ロード + review precheck ERROR時に実gateのexit code/BLOCK証跡確認を必須注入"
+  enforcement_level: 5
