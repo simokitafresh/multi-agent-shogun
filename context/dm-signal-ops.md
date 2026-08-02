@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_goal_w0_b1 reviewed source boundary -->
-<!-- source_commit:9051c741 reason:cmd_karo_goal_w0_b1 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=9051c741 -->
+<!-- last_updated: 2026-08-03 cmd_karo_goal_b2c_trade_performance reviewed source boundary -->
+<!-- source_commit:9bd7f3ba reason:cmd_karo_goal_b2c_trade_performance reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=9bd7f3ba -->
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 コア定義(§0-5,8,10-11,13,15,18) → `context/dm-signal-core.md`
 研究・検証結果(§19-24) → `context/dm-signal-research.md`
