@@ -156,10 +156,10 @@ post_has_numeric_claim() {
     stripped="$(printf '%s' "$stripped" | sed -E 's/[0-9]{1,2}:[0-9]{2}(:[0-9]{2})?//g')"
     # 行番号参照 (:229 / L229 / 行229)
     stripped="$(printf '%s' "$stripped" | sed -E 's/([:Ll行])[0-9]+/\1/g')"
-    # git SHA (7-40桁hex)
-    stripped="$(printf '%s' "$stripped" | sed -E 's/\b[0-9a-f]{7,40}\b//g')"
-    # バージョン番号 (v1.2.3 / 2.16.0)
-    stripped="$(printf '%s' "$stripped" | sed -E 's/\bv?[0-9]+(\.[0-9]+){1,2}\b//g')"
+    # git SHA (7-40桁hex) — \bはマルチバイト境界で効かないため除去
+    stripped="$(printf '%s' "$stripped" | sed -E 's/[0-9a-f]{7,40}//g')"
+    # バージョン番号 (v1.2.3 / 2.16.0 / v4.55) — \bはマルチバイト境界で効かないため除去
+    stripped="$(printf '%s' "$stripped" | sed -E 's/v?[0-9]+(\.[0-9]+){1,2}//g')"
     # 言語的数量表現(1-2桁+語彙助数詞: 8パターン/2問/1つ/3例/2語)は計測主張ではない
     # (殿裁定2026-07-29 03:48「blockはゲートのバグだ」— Q6回答が3連続FP BLOCKされた実測への是正。
     #  件/率/%/ms/s等の計測単位は残す=真の数値報告への3点セット要求は不変)
