@@ -4290,6 +4290,34 @@ run_ci_push_state() {
     [ "$output" = "UNPUSHED: commit_contract no-code task" ]
 }
 
+# test_necessity: readonly recon reports may list the report itself as their
+# sole artifact without turning a no-code project task into a commit task.
+@test "CI push detection skips symmetric no-code recon with only its own report artifact" {
+    local repo="$BATS_TEST_TMPDIR/no-code-self-report"
+    local report="$BATS_TEST_TMPDIR/no-code-self-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-self-report-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: recon2\ncommit_hash: ""\nfiles_modified: [{path: %s}]\ncommit_contract: {required: false, task_type: recon2}\n' "$report" > "$report"
+    printf 'task:\n  task_type: recon2\n  commit_contract: {required: false, task_type: recon2}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "UNPUSHED: commit_contract no-code task" ]
+}
+
+# test_necessity: the exemption is exact-file identity, not a blanket allowance
+# for arbitrary queue/reports artifacts.
+@test "CI push detection blocks no-code recon with a different report artifact" {
+    local repo="$BATS_TEST_TMPDIR/no-code-other-report"
+    local report="$BATS_TEST_TMPDIR/no-code-other-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-other-report-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: recon2\ncommit_hash: ""\nfiles_modified: [{path: %s}]\ncommit_contract: {required: false, task_type: recon2}\n' "$BATS_TEST_TMPDIR/another-report.yaml" > "$report"
+    printf 'task:\n  task_type: recon2\n  commit_contract: {required: false, task_type: recon2}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: report commit"* ]]
+}
+
 # test_necessity: report-only optional-contract claims must remain fail-closed.
 @test "CI push detection blocks report-only no-code contract spoof" {
     local repo="$BATS_TEST_TMPDIR/no-code-report-spoof"

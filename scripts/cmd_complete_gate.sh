@@ -310,6 +310,27 @@ if task_file:
         "data-readonly", "data_readonly", "readonly", "read_only",
         "recon", "recon2", "scout",
     }
+    # A readonly worker legitimately writes its own report artifact even though
+    # its project commit contract is no-code.  Compare the resolved path to the
+    # report currently being gated; do not allow arbitrary queue/report paths.
+    report_path = pathlib.Path(os.environ["REPORT_FILE"]).resolve()
+    root_path = pathlib.Path(os.environ.get("REPO_ROOT", ".")).resolve()
+    only_self_report = files == []
+    if isinstance(files, list) and files:
+        resolved_files = []
+        for item in files:
+            value = item.get("path") if isinstance(item, dict) else item
+            value = str(value or "").strip()
+            if not value:
+                resolved_files = []
+                break
+            candidate = pathlib.Path(value)
+            if not candidate.is_absolute():
+                candidate = root_path / candidate
+            resolved_files.append(candidate.resolve())
+        only_self_report = bool(resolved_files) and all(
+            candidate == report_path for candidate in resolved_files
+        )
     if (
         isinstance(report_contract, dict)
         and isinstance(task_contract, dict)
@@ -318,7 +339,7 @@ if task_file:
         and report_type in no_code_types
         and task_type in no_code_types
         and report_type == task_type
-        and files == []
+        and only_self_report
         and not commit
     ):
         print("contract-no-code\t")
