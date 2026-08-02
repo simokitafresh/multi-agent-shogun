@@ -313,6 +313,8 @@ PY
     git -C "$repo" config user.name fixture
   done
   printf 'a\n' >"$repo_a/a.txt"
+  printf 'stable\n' >"$repo_b/stable.txt"
+  git -C "$repo_b" add stable.txt && git -C "$repo_b" commit -qm stable
   printf 'b\n' >"$repo_b/b.txt"
   git -C "$repo_a" add a.txt && git -C "$repo_a" commit -qm a
   git -C "$repo_b" add b.txt && git -C "$repo_b" commit -qm b
@@ -320,7 +322,7 @@ PY
   sha_b="$(git -C "$repo_b" rev-parse HEAD)"
 
   run python3 - "$ROOT" "$repo_a" "$sha_a" "$repo_b" "$sha_b" <<'PY'
-import pathlib, sys
+import copy, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(sys.argv[1]) / "scripts" / "lib"))
 from cross_repo_commit_contract import validate_cross_repo_commits
 report = {
@@ -332,9 +334,64 @@ report = {
     ],
 }
 assert validate_cross_repo_commits(report) == []
-report["cross_repo_commits"][1]["paths"] = ["missing.txt"]
-errors = validate_cross_repo_commits(report)
-assert errors == ["cross_repo_commits[1] commit does not contain path: missing.txt"], errors
+# test_necessity: cross_repo ownership is limited to paths actually changed by
+# the declared commit; mere existence in that commit's tree is not ownership.
+case = copy.deepcopy(report)
+case["cross_repo_commits"][1]["paths"] = ["stable.txt"]
+errors = validate_cross_repo_commits(case)
+assert errors == ["cross_repo_commits[1] commit does not change path: stable.txt"], errors
+case = copy.deepcopy(report)
+case["files_modified"].append({"path": "undeclared.txt"})
+assert validate_cross_repo_commits(case) == ["files_modified path lacks cross-repo ownership: undeclared.txt"]
+case = copy.deepcopy(report)
+case["cross_repo_commits"][1]["paths"] = ["a.txt"]
+assert validate_cross_repo_commits(case) == ["cross_repo path appears in multiple entries: a.txt"]
+case = copy.deepcopy(report)
+case["cross_repo_commits"][1]["commit_hash"] = "f" * 40
+assert validate_cross_repo_commits(case) == [
+    "cross_repo_commits[1].commit_hash is not a resolvable 40-hex commit",
+], validate_cross_repo_commits(case)
+PY
+  [ "$status" -eq 0 ]
+}
+
+# test_necessity: explicit cross-repo ownership must accept a different-task
+# subject only when all three declared B2e paths are in that commit's diff.
+@test "B2e cross-repo diff ownership accepts 3/3 paths without subject matching" {
+  repo="$BATS_TEST_TMPDIR/b2e"
+  git -C "$BATS_TEST_TMPDIR" init -q b2e
+  git -C "$repo" config user.email fixture@example.invalid
+  git -C "$repo" config user.name fixture
+  for path in jobs/recalculate_fof.py jobs/recalculate_fast.py api/debug.py; do
+    mkdir -p "$repo/${path%/*}"
+    printf '%s\n' "$path" >"$repo/$path"
+  done
+  git -C "$repo" add . && git -C "$repo" commit -qm "different task subject"
+  cross_sha="$(git -C "$repo" rev-parse HEAD)"
+  printf 'stable\n' >"$repo/stable.txt"
+  git -C "$repo" add stable.txt && git -C "$repo" commit -qm cmd_b2e
+  own_sha="$(git -C "$repo" rev-parse HEAD)"
+
+  run python3 - "$ROOT" "$repo" "$cross_sha" "$own_sha" <<'PY'
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(sys.argv[1]) / "scripts" / "gates"))
+import gate_report_format_main as m
+
+paths = ["jobs/recalculate_fof.py", "jobs/recalculate_fast.py", "api/debug.py"]
+report = {
+    "commit_hash": sys.argv[4], "task_id": "cmd_b2e_normal", "parent_cmd": "cmd_b2e",
+    "files_modified": [{"path": path} for path in paths],
+    "cross_repo_commits": [
+        {"repo": sys.argv[2], "commit_hash": sys.argv[3], "paths": paths},
+        {"repo": sys.argv[2], "commit_hash": sys.argv[4], "paths": ["stable.txt"]},
+    ],
+}
+task = {"task_id": "cmd_b2e_normal", "commit_contract": {
+    "required": True, "repo_root": sys.argv[2], "planned_paths": paths,
+}}
+assert m.validate_cross_repo_commits(report) == []
+errors = m.commit_contract_errors(report, task, pathlib.Path(sys.argv[2]))
+assert errors == [], errors
 PY
   [ "$status" -eq 0 ]
 }

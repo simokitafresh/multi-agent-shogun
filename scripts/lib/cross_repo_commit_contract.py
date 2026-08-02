@@ -21,14 +21,18 @@ def _git(repo: pathlib.Path, *args: str) -> bool:
     )
 
 
-def validate_cross_repo_commits(report: Mapping[str, Any]) -> list[str]:
+def validate_cross_repo_commit_ownership(
+    report: Mapping[str, Any],
+) -> tuple[list[str], set[str]]:
+    """Return validation errors and paths changed by their declared commit."""
     raw = report.get("cross_repo_commits")
     if raw in (None, []):
-        return []
+        return [], set()
     if not isinstance(raw, list):
-        return ["cross_repo_commits must be a list"]
+        return ["cross_repo_commits must be a list"], set()
 
     errors: list[str] = []
+    declared: set[str] = set()
     owned: set[str] = set()
     primary = str(report.get("commit_hash") or "").strip()
     commits: set[str] = set()
@@ -50,6 +54,22 @@ def validate_cross_repo_commits(report: Mapping[str, Any]) -> list[str]:
             errors.append(f"{label}.commit_hash is not a resolvable 40-hex commit")
             continue
         commits.add(commit)
+        try:
+            changed = set(
+                subprocess.run(
+                    [
+                        "git", "-C", str(repo), "diff-tree", "--no-commit-id",
+                        "--name-only", "-r", "--root", commit,
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                ).stdout.splitlines()
+            )
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            errors.append(f"{label} commit diff-tree is not readable")
+            continue
         if not isinstance(paths, list) or not paths:
             errors.append(f"{label}.paths must be a non-empty list")
             continue
@@ -58,12 +78,14 @@ def validate_cross_repo_commits(report: Mapping[str, Any]) -> list[str]:
             if not path or path.startswith("/") or ".." in pathlib.PurePosixPath(path).parts:
                 errors.append(f"{label}.paths contains unsafe path: {raw_path!r}")
                 continue
-            if path in owned:
+            if path in declared:
                 errors.append(f"cross_repo path appears in multiple entries: {path}")
                 continue
+            declared.add(path)
+            if path not in changed:
+                errors.append(f"{label} commit does not change path: {path}")
+                continue
             owned.add(path)
-            if not _git(repo, "cat-file", "-e", f"{commit}:{path}"):
-                errors.append(f"{label} commit does not contain path: {path}")
 
     if primary and primary not in commits:
         errors.append("primary commit_hash is absent from cross_repo_commits")
@@ -72,4 +94,9 @@ def validate_cross_repo_commits(report: Mapping[str, Any]) -> list[str]:
             path = str(item.get("path") or "").replace("\\", "/").strip().lstrip("./")
             if path and path not in owned:
                 errors.append(f"files_modified path lacks cross-repo ownership: {path}")
+    return errors, owned
+
+
+def validate_cross_repo_commits(report: Mapping[str, Any]) -> list[str]:
+    errors, _owned = validate_cross_repo_commit_ownership(report)
     return errors
