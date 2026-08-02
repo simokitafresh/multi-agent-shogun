@@ -19,7 +19,10 @@ _PROJECT_ROOT = pathlib.Path(
 sys.path.insert(0, str(_PROJECT_ROOT / "scripts" / "lib"))
 from report_commit_identity import permits_no_code_identity, valid_commit_identity
 from ac_contract import canonical_assigned_ids
-from cross_repo_commit_contract import validate_cross_repo_commits
+from cross_repo_commit_contract import (
+    validate_cross_repo_commit_ownership,
+    validate_cross_repo_commits,
+)
 
 
 def _has_explicit_commit_scope(task):
@@ -320,6 +323,9 @@ def commit_contract_errors(report, task, root):
     if not allowed_targets:
         errors.append("commit owned/planned scope is missing")
     modified_targets = _report_modified_paths(report)
+    cross_repo_errors, cross_repo_owned = validate_cross_repo_commit_ownership(report)
+    if cross_repo_errors:
+        cross_repo_owned = set()
     for modified in modified_targets:
         if allowed_targets and not any(
             _literal_path_within(modified, allowed, commit_repo)
@@ -370,7 +376,9 @@ def commit_contract_errors(report, task, root):
     pending_targets = [
         t
         for t in (str(raw or "").strip().rstrip("/") for raw in targets)
-        if t and not any(_literal_path_within(path, t) for path in changed)
+        if t
+        and not any(_literal_path_within(path, t) for path in changed)
+        and not any(_literal_path_within(path, t) for path in cross_repo_owned)
     ]
     if pending_targets:
         try:
