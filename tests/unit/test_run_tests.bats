@@ -828,7 +828,7 @@ SH
     SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/missing.yaml"
   [ "$status" -eq 2 ]
-  [[ "$output" == *"selected task test is missing"* ]]
+  [[ "$output" == *"BLOCK: explicit task tests could not be resolved"* ]]
 
   receipt_dir="$TMPROOT/logs/mixed-receipt"
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
@@ -1124,6 +1124,7 @@ task:
   planned_paths:
     - backend/app/source.py
     - backend/tests/test_scope.py
+  test_path: backend/tests/test_scope.py
 YAML
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/contract.yaml"
@@ -1153,6 +1154,76 @@ YAML
   [[ "$output" == *"1 passed"* ]]
   [ "$(grep -c 'gate: \"full_unit_scope_guard\", result: PASS' "$TMPROOT/logs/gate_fire_log.yaml")" -eq 1 ]
   echo "FIXTURE_METRICS forbidden_executed=0 forbidden_block=1 contract_scope_outside=0 checkpoint_selection_preserved=1 false_positive=0 detector_fp_rate=0/3"
+}
+
+# test_necessity: Cross-repository docs/data ownership must still execute one
+# explicitly declared backend contract, while absent, escaping, missing, and
+# unsupported declarations remain fail-closed instead of becoming 0-test PASS.
+@test "external docs scope executes exact explicit contract and rejects invalid declarations" {
+  external="$TMPROOT/external-docs"
+  mkdir -p "$external/backend/tests" "$external/docs" \
+    "$TMPROOT/projects" "$TMPROOT/queue/tasks"
+  printf 'evidence\n' >"$external/docs/result.md"
+  printf 'def test_scope():\n    assert True\n' >"$external/backend/tests/test_scope.py"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add .
+  git -C "$external" commit -qm init
+  cat >"$TMPROOT/projects/external-docs.yaml" <<YAML
+project:
+  path: $external
+YAML
+  export PYTEST_ARGS_LOG="$TMPROOT/pytest-args.log"
+  cat >"$TMPROOT/bin/python3" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
+  printf '%s\n' "$*" >>"$PYTEST_ARGS_LOG"
+  printf '1 passed in 0.01s\n'
+  exit 0
+fi
+exec /usr/bin/python3 "$@"
+SH
+  chmod +x "$TMPROOT/bin/python3"
+
+  cat >"$TMPROOT/queue/tasks/explicit.yaml" <<'YAML'
+task:
+  project: external-docs
+  target_path: docs/result.md
+  test_path: backend/tests/test_scope.py
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" PYTEST_ARGS_LOG="$PYTEST_ARGS_LOG" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/explicit.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"scope=backend_contract"* ]]
+  [[ "$output" == *"files=1"* ]]
+  [[ "$output" == *"1 passed"* ]]
+  [ "$(wc -l <"$PYTEST_ARGS_LOG")" -eq 1 ]
+  grep -Fq 'tests/test_scope.py' "$PYTEST_ARGS_LOG"
+
+  cat >"$TMPROOT/queue/tasks/absent.yaml" <<'YAML'
+task:
+  project: external-docs
+  target_path: docs/result.md
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/absent.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"external_scope_no_mapped_tests"* ]]
+
+  for fixture in traversal missing unsupported; do
+    case "$fixture" in
+      traversal) declared='../outside/test_bad.py' ;;
+      missing) declared='backend/tests/test_missing.py' ;;
+      unsupported) declared='docs/result.md' ;;
+    esac
+    printf 'task:\n  project: external-docs\n  target_path: docs/result.md\n  test_path: %s\n' "$declared" \
+      >"$TMPROOT/queue/tasks/$fixture.yaml"
+    run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+      bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/$fixture.yaml"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK:"* ]]
+  done
 }
 
 # test_necessity: deployed planned_paths are the task ownership SSOT; both
@@ -1608,9 +1679,9 @@ PY
   [ "$status" -eq 0 ]
 }
 
-# test_necessity: external ownership declared only in commit_contract must run
-# its owned contract test instead of returning the files=0 admission path.
-@test "external commit_contract repo_root selects nested planned test" {
+# test_necessity: an external repo_root may come from commit_contract, but its
+# planned ownership remains distinct from the explicit test execution request.
+@test "external commit_contract repo_root selects explicit nested test" {
   external="$TMPROOT/external-contract"
   mkdir -p "$external/backend/tests" "$TMPROOT/queue/tasks"
   git -C "$external" init -q
@@ -1623,6 +1694,7 @@ task:
   commit_contract:
     repo_root: $external
     planned_paths: [backend/tests/test_owned.py]
+  test_path: backend/tests/test_owned.py
 YAML
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
     BATS_CACHE=0 BATS_INNER_JOBS=1 \

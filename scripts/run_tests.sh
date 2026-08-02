@@ -253,7 +253,19 @@ if not isinstance(task, dict):
     raise ValueError("task mapping missing")
 
 values = []
-collect(task.get("test_path"), values)
+declared_values = []
+collect(task.get("test_path"), declared_values)
+for raw in declared_values:
+    path = raw if os.path.isabs(raw) else os.path.join(root, raw)
+    resolved = os.path.realpath(path)
+    if resolved != root and not resolved.startswith(root + os.sep):
+        raise ValueError(f"explicit test path outside repository: {raw}")
+    relative = os.path.relpath(resolved, root)
+    if not is_test(relative):
+        raise ValueError(f"explicit test path has no supported engine: {raw}")
+    if not os.path.isfile(resolved):
+        raise ValueError(f"explicit test path is missing: {raw}")
+    values.append(raw)
 collect(task.get("files_modified"), values)
 report_path = task.get("report_path")
 if isinstance(report_path, str) and report_path.strip():
@@ -1817,6 +1829,13 @@ _run_tests_main() {
             [ "${#scoped_paths[@]}" -gt 0 ] || { echo "BLOCK: task scope is empty" >&2; exit 2; }
             local _task_root
             _task_root="$(task_scope_root "$1")" || { echo "BLOCK: task project root could not be resolved" >&2; exit 2; }
+            local _explicit_tests_tmp
+            local -a _declared_contract_tests=()
+            _explicit_tests_tmp="$(mktemp)"
+            task_explicit_test_paths "$1" >"$_explicit_tests_tmp" \
+                || { rm -f "$_explicit_tests_tmp"; echo "BLOCK: explicit task tests could not be resolved" >&2; exit 2; }
+            mapfile -d '' -t _declared_contract_tests <"$_explicit_tests_tmp"
+            rm -f "$_explicit_tests_tmp"
             printf 'TEST_SCOPE result=task files=%s task=%s\n' "${#scoped_paths[@]}" "$1"
             if [ "$_task_root" != "$REPO_ROOT" ]; then
                 if [ -x "$_task_root/scripts/run_tests.sh" ]; then
@@ -1827,12 +1846,18 @@ _run_tests_main() {
                     for _external_path in "${scoped_paths[@]}"; do
                         if [[ "$_external_path" == backend/* ]]; then
                             _external_backend=1
-                            [[ "$_external_path" == backend/tests/* ]] && _external_backend_tests+=("${_external_path#backend/}")
                         fi
                         if [[ "$_external_path" == frontend/* ]]; then
                             _external_frontend=1
                             _external_frontend_sources+=("${_external_path#frontend/}")
                         fi
+                    done
+                    for _external_path in "${_declared_contract_tests[@]}"; do
+                        case "$_external_path" in
+                            backend/tests/*.py) _external_backend_tests+=("${_external_path#backend/}") ;;
+                            frontend/*.spec.js|frontend/*.test.js) _external_frontend_sources+=("${_external_path#frontend/}") ;;
+                            *) echo "BLOCK: no external task test engine for path: $_external_path" >&2; exit 2 ;;
+                        esac
                     done
                     if [ "$_external_backend" -eq 1 ] && [ -d "$_task_root/backend/tests" ]; then
                         local _external_python="python3"
@@ -1905,20 +1930,16 @@ _run_tests_main() {
                     fi
                     if [ "$_external_backend" -eq 0 ] && [ "$_external_frontend" -eq 0 ]; then
                         echo "TEST_SELECTION result=selected reason=external_scope_no_mapped_tests files=0"
+                        echo "BLOCK: external task scope has no mapped tests and no explicit contract" >&2
+                        exit 2
                     fi
                 fi
                 exit $?
             fi
-            local _selector_log _selector_rc _selector_output _explicit_tests_tmp
-            local -a _declared_contract_tests=()
+            local _selector_log _selector_rc _selector_output
             local -a _direct_scope_tests=()
             local -a _production_scope=()
             local _scoped_path
-            _explicit_tests_tmp="$(mktemp)"
-            task_explicit_test_paths "$1" >"$_explicit_tests_tmp" \
-                || { rm -f "$_explicit_tests_tmp"; echo "BLOCK: explicit task tests could not be resolved" >&2; exit 2; }
-            mapfile -d '' -t _declared_contract_tests <"$_explicit_tests_tmp"
-            rm -f "$_explicit_tests_tmp"
             for _scoped_path in "${scoped_paths[@]}"; do
                 if is_test_contract_path "$_scoped_path"; then
                     _direct_scope_tests+=("$_scoped_path")
