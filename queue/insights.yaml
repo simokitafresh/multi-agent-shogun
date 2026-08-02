@@ -195,7 +195,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:skill_script_refs:cmd_karo_hotfix_quality_contract_projection_20260802"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "対象変更6e5838d62と現行gateを一次確認。script参照先実在・SKILL.md鮮度OKであり、rc=2は未追従ではなくFOLLOWUP_ACTIVEを示す現行契約。対象追従候補は本refluxで消化した"
+  action_artifact: "commit=6e5838d62e726e3eee1d02b6115608ab4d3f014f;gate=scripts/gates/gate_skill_script_refs.sh:OK_refs+OK_freshness+REVIEW_REQUIRED_followup_active"
+  resolved_at: "2026-08-02T17:30:50+09:00"
 - id: INS-20260802-123341952-ebcf
   ts: "2026-08-02T12:33:41+09:00"
   insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
