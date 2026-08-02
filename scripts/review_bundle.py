@@ -313,6 +313,10 @@ def _batch_precheck(root, item):
     )
     evidence = proc.stdout.strip()
     if proc.returncode != 0:
+        # FAIL verdict accepts precheck BLOCK (e.g. bc:no on failed reports).
+        # The precheck observation is recorded but does not prevent bundle generation.
+        if str(item.get("verdict", "")).upper() == "FAIL":
+            return {"status": "BLOCK_ACCEPTED", "reason": f"precheck BLOCK accepted for FAIL verdict (rc={proc.returncode})", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
         raise ValueError(f"precheck failed cmd={item['cmd']}: {evidence[-500:]}")
     return {"status": "PASS", "reason": "all checks passed", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
 
