@@ -195,7 +195,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:skill_script_refs:cmd_karo_hotfix_fail_close_truthful_terminal_20260802"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行gate実走で対象契約hash action required=0、参照実在・SKILL更新日・例示パス・副作用検証すべてOK。rc=2は別のFOLLOWUP_ACTIVE 19対を示し、対象cmd由来の追従は既存鮮度更新で解消済み"
+  action_artifact: "bash scripts/gates/gate_skill_script_refs.sh: required=0,deduped=19,FOLLOWUP_ACTIVE,4xOK,RC=2; git log: a3d5858e1(report-write鮮度追従),be1d281d5(verdict skill追従); scripts/gates/gate_skill_script_refs.sh:L620-L690"
+  resolved_at: "2026-08-02T16:49:43+09:00"
 - id: INS-20260802-121957532-1aab
   ts: "2026-08-02T12:19:57+09:00"
   insight: "semantic_index_update新概念候補: discussion:バグはどうやって修繕するんだ？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
