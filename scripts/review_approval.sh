@@ -337,8 +337,8 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_SKIP_LED
   ledger_file="$ROOT/logs/gunshi_review_log.yaml"
   if ! grep -Eq "^[[:space:]]*-?[[:space:]]*cmd_id:[[:space:]]*[\"']?${cmd_id}[\"']?[[:space:]]*$" "$ledger_file" 2>/dev/null; then
     echo "BLOCK: review ledger entry missing for $cmd_id — approval withheld." >&2
-    echo "  先に軍師のレビュー記録を台帳へ追記せよ: bash scripts/gunshi_log_append.sh < <entry.yaml>" >&2
-    echo "  (sg7 bundle は本実行で生成済みのため lgtm_bundle_guard は通る。追記後に本コマンドを再実行せよ)" >&2
+    echo "  正規入口: python3 scripts/review_bundle.py single --cmd '$cmd_id' --verdict APPROVE --report '$report_rel' --review-entry <review-entry.yaml>" >&2
+    echo "  この入口がbundle生成→review ledger追記→正式approval→家老通知を一試行で順序保証する。" >&2
     echo "  台帳: ${ledger_file#"$ROOT"/}" >&2
     exit 2
   fi

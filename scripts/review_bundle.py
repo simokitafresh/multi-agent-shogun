@@ -360,12 +360,26 @@ def batch(args):
     result = {"total": len(items), "fail": 0, "skip": 0, "wall_ms": round((time.monotonic() - wall_started) * 1000), "p95_report_ms": max(durations)}
     print(json.dumps(result, ensure_ascii=False, sort_keys=True)); return 0
 
+def single(args):
+    """Run the existing batch transaction for exactly one review."""
+    entry = load(args.review_entry)
+    if not isinstance(entry, dict) or not entry:
+        raise ValueError("single review_entry must be a non-empty YAML mapping")
+    item = {"cmd": args.cmd, "report": args.report, "verdict": args.verdict,
+            "review_entry": entry}
+    if args.fail_reason:
+        item["fail_reason"] = args.fail_reason
+    manifest = Path(args.root).resolve() / f"queue/gates/{args.cmd}/single_review_manifest.json"
+    atomic_json(manifest, {"reviews": [item]})
+    return batch(argparse.Namespace(root=args.root, manifest=str(manifest), max_workers=1))
+
 def build_parser():
     p = argparse.ArgumentParser(); p.add_argument("--root", default=str(Path(__file__).resolve().parents[1])); subs = p.add_subparsers(dest="action", required=True)
     g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.add_argument("--allow-archived", action="store_true"); g.set_defaults(func=generate)
     n = subs.add_parser("notify"); n.add_argument("--cmd", required=True); n.add_argument("--bundle", required=True); n.set_defaults(func=notify)
     c = subs.add_parser("consume"); c.add_argument("--cmd", required=True); c.add_argument("--bundle", required=True); c.add_argument("--expect-verdict", choices=("APPROVE", "FAIL")); c.set_defaults(func=consume)
     b = subs.add_parser("batch"); b.add_argument("--manifest", required=True); b.add_argument("--max-workers", type=int, default=5); b.set_defaults(func=batch)
+    s = subs.add_parser("single"); s.add_argument("--cmd", required=True); s.add_argument("--report", required=True); s.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); s.add_argument("--review-entry", required=True); s.add_argument("--fail-reason"); s.set_defaults(func=single)
     return p
 
 def main():

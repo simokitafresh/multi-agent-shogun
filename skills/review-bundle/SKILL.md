@@ -70,15 +70,18 @@ bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>
 - precheck未実行のままStep 1に進むな（33件のGATE_PREDICTION記載なし=precheck未実行が根因。accuracy Goodhart是正で発見）
 - **GATE_PREDICTION=WARN時はLGTMを出すな**。WARNの原因(lesson_candidate有/draft_lessons等)を確認し、BLOCK要因が家老処理待ちなら「verdict: LGTM, gate_prediction: WARN(理由)」と明記した上で家老に先行対処を依頼せよ。WARNを無視してLGTMを出すとBLOCK→再GATE無駄サイクルが発生する(cmd_karo_ci_fix_e2e_parallel事故)
 
-### Step 1: SG7バンドル生成
+### Step 1: 単件レビューを正規入口で完了
 
-レビュー結果は実行器で生成する。このStepでは軍師が既読のcmd spec正本から
-AC数・scope・projectを自動転記してatomic保存するだけで、approvalも通知も行わない:
+充実したreview ledger entryをYAMLへ用意し、既存batch transactionの単件入口を1回実行する。
+このコマンドがprecheck→SG7 bundle→ledger追記→正式approval→家老通知を順序保証する:
 ```bash
-python3 scripts/review_bundle.py generate --cmd "$CMD_ID" --verdict APPROVE --report "$REPORT_PATH"
+python3 scripts/review_bundle.py single --cmd "$CMD_ID" --verdict APPROVE --report "$REPORT_PATH" --review-entry "$REVIEW_ENTRY_PATH"
 # FAIL時のみ
-python3 scripts/review_bundle.py generate --cmd "$CMD_ID" --verdict FAIL --report "$REPORT_PATH" --fail-reason "$FAIL_REASON"
+python3 scripts/review_bundle.py single --cmd "$CMD_ID" --verdict FAIL --report "$REPORT_PATH" --review-entry "$REVIEW_ENTRY_PATH" --fail-reason "$FAIL_REASON"
 ```
+
+`review_approval.sh ... gunshi LGTM` の直接実行は異常系のfail-closed確認専用であり、
+正常入口として案内・実行しない。単件入口成功後にledger追記、approval、notifyを個別再実行しない。
 
 生成物の形式:
 ```yaml
