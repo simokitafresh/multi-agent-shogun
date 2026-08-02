@@ -72,7 +72,7 @@ bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>
 
 ### Step 1: 単件レビューを正規入口で完了
 
-充実したreview ledger entryをYAMLへ用意し、既存batch transactionの単件入口を1回実行する。
+充実したreview ledger entryを単一mapping YAMLへ生成し、既存batch transactionの単件入口を1回実行する。
 このコマンドがprecheck→SG7 bundle→ledger追記→正式approval→家老通知を順序保証する:
 ```bash
 python3 scripts/review_bundle.py single --cmd "$CMD_ID" --verdict APPROVE --report "$REPORT_PATH" --review-entry "$REVIEW_ENTRY_PATH"
@@ -81,7 +81,9 @@ python3 scripts/review_bundle.py single --cmd "$CMD_ID" --verdict FAIL --report 
 ```
 
 `review_approval.sh ... gunshi LGTM` の直接実行は異常系のfail-closed確認専用であり、
-正常入口として案内・実行しない。単件入口成功後にledger追記、approval、notifyを個別再実行しない。
+正常入口として案内・実行できない（直接実行はexit 2）。単件入口成功後にledger追記、approval、notifyを個別再実行しない。
+既存toolがsequence YAMLを生成する場合も、対象cmd_idのmappingが厳密に1件ならsingleが抽出する。
+0件または2件以上なら曖昧入力としてfail-closedする。
 
 生成物の形式:
 ```yaml

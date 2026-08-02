@@ -349,7 +349,8 @@ def batch(args):
     def finish(pair):
         item, path = pair; verdict = str(item["verdict"]).upper()
         if verdict == "APPROVE":
-            subprocess.run(["bash", str(root / "scripts/review_approval.sh"), str(item["cmd"]), "gunshi", "LGTM", str(item["report"])], cwd=root, check=True)
+            approval_env = os.environ.copy(); approval_env["REVIEW_APPROVAL_CANONICAL_ENTRY"] = "review_bundle"
+            subprocess.run(["bash", str(root / "scripts/review_approval.sh"), str(item["cmd"]), "gunshi", "LGTM", str(item["report"])], cwd=root, env=approval_env, check=True)
             notify(argparse.Namespace(root=str(root), cmd=str(item["cmd"]), bundle=str(path)))
         else:
             message = f"{item['cmd']} review FAIL. report: {item['report']} reason: {item.get('fail_reason') or 'quality evidence mismatch'}"
@@ -363,6 +364,11 @@ def batch(args):
 def single(args):
     """Run the existing batch transaction for exactly one review."""
     entry = load(args.review_entry)
+    if isinstance(entry, list):
+        matches = [item for item in entry if isinstance(item, dict) and str(item.get("cmd_id") or "") == args.cmd]
+        if len(matches) != 1:
+            raise ValueError(f"single review_entry sequence requires exactly one cmd_id={args.cmd} mapping (found {len(matches)})")
+        entry = matches[0]
     if not isinstance(entry, dict) or not entry:
         raise ValueError("single review_entry must be a non-empty YAML mapping")
     item = {"cmd": args.cmd, "report": args.report, "verdict": args.verdict,

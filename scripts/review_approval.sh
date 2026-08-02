@@ -19,6 +19,14 @@ cmd_id=$1; role=$2; result=$3; report=$4
 # omitted one; RC_REVOKE's reason validation depends on seeing the real "".
 requested_scope=${5-auto}
 case "$role:$result" in gunshi:LGTM|karo:ACCEPT|karo:RC|karo:RC_REVOKE) ;; *) echo "BLOCK: invalid role/result" >&2; exit 2;; esac
+if [ "$role:$result" = "gunshi:LGTM" ] \
+  && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" != review_bundle ] \
+  && [ "${REVIEW_APPROVAL_SKIP_LEDGER_CHECK:-0}" != 1 ]; then
+  echo "BLOCK: direct Gunshi LGTM is not a normal entry point." >&2
+  echo "  正規入口: python3 scripts/review_bundle.py single --cmd '$cmd_id' --verdict APPROVE --report '$report' --review-entry <review-entry.yaml>" >&2
+  echo "  正規入口がbundle生成→ledger追記→approval→notifyを一試行で実行する。" >&2
+  exit 2
+fi
 if [ "$role:$result" = "karo:RC_REVOKE" ]; then
   # RC_REVOKE の第5引数は scope 語ではなく撤回理由(必須・自由文でよい。表示型の
   # 作文強要はしない=殿裁定07-20。空文字のみ機械的に拒否する)。

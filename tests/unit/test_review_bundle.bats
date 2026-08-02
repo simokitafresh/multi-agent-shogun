@@ -19,6 +19,7 @@ cat >"$TEST_ROOT/logs/gunshi_review_log.yaml"
 SH
   cat >"$root/scripts/review_approval.sh" <<'SH'
 #!/bin/sh
+test "$REVIEW_APPROVAL_CANONICAL_ENTRY" = review_bundle
 grep -q 'cmd_id: cmd_one' "$TEST_ROOT/logs/gunshi_review_log.yaml"
 echo approval >>"$TEST_CALLS"
 SH
@@ -70,4 +71,44 @@ YAML
   [ "$(grep -c '^approval$' "$TEST_CALLS")" -eq 1 ]
   [ "$(grep -c '^inbox$' "$TEST_CALLS")" -eq 1 ]
   [ "$(tr '\n' ' ' <"$TEST_CALLS")" = "precheck ledger approval notify inbox " ]
+}
+
+@test "single accepts one matching mapping from a sequence and rejects ambiguity" {
+  root="$BATS_TEST_TMPDIR/root"
+  mkdir -p "$root/queue/gates"
+  cat >"$root/entries.yaml" <<'YAML'
+- {cmd_id: other, verdict: LGTM}
+- {cmd_id: cmd_one, verdict: LGTM, observations: [measured]}
+YAML
+  run python3 - "$root" <<'PY'
+import argparse, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd()))
+from scripts import review_bundle
+root = Path(sys.argv[1])
+captured = {}
+review_bundle.batch = lambda args: captured.update(review_bundle.load(args.manifest)) or 0
+args = argparse.Namespace(root=str(root), cmd='cmd_one', report='r.yaml', verdict='APPROVE', review_entry=str(root/'entries.yaml'), fail_reason=None)
+assert review_bundle.single(args) == 0
+assert captured['reviews'][0]['review_entry']['cmd_id'] == 'cmd_one'
+PY
+  [ "$status" -eq 0 ]
+  printf '%s\n' '- {cmd_id: cmd_one}' '- {cmd_id: cmd_one}' >"$root/entries.yaml"
+  run python3 - "$root" <<'PY'
+import argparse, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd()))
+from scripts import review_bundle
+root = Path(sys.argv[1])
+args = argparse.Namespace(root=str(root), cmd='cmd_one', report='r.yaml', verdict='APPROVE', review_entry=str(root/'entries.yaml'), fail_reason=None)
+review_bundle.single(args)
+PY
+  [ "$status" -ne 0 ]
+}
+
+@test "direct Gunshi LGTM is structurally rejected before report processing" {
+  run bash "$BATS_TEST_DIRNAME/../../scripts/review_approval.sh" cmd_direct gunshi LGTM nowhere.yaml
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"direct Gunshi LGTM is not a normal entry point"* ]]
+  [[ "$output" == *"review_bundle.py single"* ]]
 }
