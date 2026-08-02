@@ -254,7 +254,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "lord_conversation原文を一次確認し、semantic index収載および三層検索で既存concept growth_loop/report_quality_protocol/lesson_lifecycleへの吸収を確認。新規実修正・decision不要"
+  action_artifact: "queue/lord_conversation.jsonl:234;docs/semantic-index/index.md:3410;scripts/semantic_search.sh result=existing concepts"
+  resolved_at: "2026-08-02T17:50:37+09:00"
 - id: INS-20260802-123449128-c83e
   ts: "2026-08-02T12:34:49+09:00"
   insight: "lord_conversation教訓候補: target=kotaro trigger=inbound_lord detail=今セッションでhookやgateの品質問題で遅延やエラー、\n    放置などが起きていたらバグだ。バグは利他の精神で\n  調\n    査して家老に報告せよ。すでに修正済みのことがある\n  から必ず再検証せよ"
