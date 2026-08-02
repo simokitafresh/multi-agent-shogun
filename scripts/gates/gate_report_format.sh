@@ -212,6 +212,65 @@ fi
 # refresh. Do not let those transitive descendants inherit the report lock.
 RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 199>&- 2>&1) || true
 
+# A truthful implementation failure has no artifact commit by definition.  Keep
+# the ordinary success lane strict, but remove the missing-hash error for the
+# exact failed/FAIL/commit=no contract when task and report both require a
+# commit.  The report snapshot is the immutable AC generation; a later task
+# redeploy must not create a GP-131b warning against an older report.
+RESULT=$(GATE_RESULT="$RESULT" GATE_REPORT="$REPORT_PATH" python3 - <<'PY'
+import os, pathlib, re, yaml
+
+result = os.environ.get("GATE_RESULT", "")
+report_path = pathlib.Path(os.environ["GATE_REPORT"])
+try:
+    report = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
+    worker = str(report.get("worker_id") or "").strip()
+    task_path = report_path.parent.parent / "tasks" / f"{worker}.yaml"
+    task_raw = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+    task = task_raw.get("task", task_raw)
+except Exception:
+    print(result)
+    raise SystemExit(0)
+
+def required(node):
+    contract = node.get("commit_contract") if isinstance(node, dict) else None
+    return isinstance(contract, dict) and contract.get("required") is True
+
+commit_checks = (report.get("binary_checks") or {}).get("commit")
+truthful_failure = (
+    str(report.get("status") or "").strip().lower() == "failed"
+    and str(report.get("verdict") or "").strip().upper() == "FAIL"
+    and required(report) and required(task)
+    and isinstance(commit_checks, list) and bool(commit_checks)
+    and all(isinstance(item, dict) and str(item.get("result") or "").strip().lower() == "no" for item in commit_checks)
+)
+
+snapshot = report.get("task_contract_snapshot")
+snapshot_acs = snapshot.get("acceptance_criteria") if isinstance(snapshot, dict) else None
+snapshot_ids = {
+    str(item.get("id") or f"AC{index}")
+    for index, item in enumerate(snapshot_acs or [], 1)
+    if isinstance(item, dict)
+}
+report_ac_ids = {
+    str(key) for key in (report.get("binary_checks") or {})
+    if str(key).upper().startswith("AC")
+}
+snapshot_covers_report = bool(snapshot_ids) and report_ac_ids.issuperset(snapshot_ids)
+
+out = []
+for line in result.splitlines():
+    if truthful_failure and line.startswith("FAIL: "):
+        errors = [part.strip() for part in line[6:].split(";") if part.strip()]
+        errors = [part for part in errors if part != "commit_contract: required commit_hash is missing or invalid"]
+        line = "FAIL: " + "; ".join(errors) if errors else "PASS"
+    if snapshot_covers_report and "GP-131b WARN:" in line:
+        continue
+    out.append(line)
+print("\n".join(out))
+PY
+)
+
 echo "$RESULT"
 
 # --- cmd_3264: auto-commit contamination check (AC2/AC3) ---

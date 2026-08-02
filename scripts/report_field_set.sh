@@ -206,6 +206,25 @@ if results:
         data["status"] = "completed"
 
 terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"}
+
+def expected_failed_commit_absence(report):
+    """Permit only the truthful terminal FAIL lane to omit a required commit."""
+    contract = report.get("commit_contract")
+    checks = (report.get("binary_checks") or {}).get("commit")
+    return (
+        str(report.get("status") or "").strip().lower() == "failed"
+        and str(report.get("verdict") or "").strip().upper() == "FAIL"
+        and isinstance(contract, dict)
+        and contract.get("required") is True
+        and isinstance(checks, list)
+        and bool(checks)
+        and all(
+            isinstance(item, dict)
+            and str(item.get("result") or "").strip().lower() == "no"
+            for item in checks
+        )
+    )
+
 # operational_simulation is the author-entered test evidence SSOT.  Keep the
 # legacy test_results consumer compatible without a second hand-written copy.
 opsim = data.get("operational_simulation")
@@ -222,7 +241,7 @@ if terminal:
     # no-code identity contract as review_approval and cmd_complete_gate.
     # This does not trust commit_contract.required alone: evidence, an explicit
     # no-commit assertion, and operational-only paths must all be true.
-    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+    if not re.fullmatch(r"[0-9a-f]{40}", commit) and not expected_failed_commit_absence(data):
         # The normal implementation lane always carries a full commit hash.
         # Loading report_commit_identity also imports pathlib/subprocess and
         # taxed every terminal publish despite being needed only by the
