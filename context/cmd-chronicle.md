@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-02 -->
+<!-- last_updated: 2026-08-03 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -270,3 +270,4 @@
 | cmd_4214 | 家老escalation(msg_20260802_021252)対応。家老startupの先送り台帳がkeyスキル静的品質WARNを世代累積しCRITICAL発火するが、将軍のgate直接実行はPASS・WARN0件(2026-08-02 02:13実測)。台帳と実態の乖離(真実の在処不一致クラス)またはFOLLOWUP_SUPPRESSED pending_pairs(契約hash followup未処理)が家老startup時のみWARN化する構造を突合し、真因側を根治する | infra | 08-02 | pending_pairs=13をPASSへ落とす偽陰性とf |
 | cmd_4213 | 殿裁定2026-08-02 01:10『今後起きないようにしよう。これはバグだ』。実測事象: 才蔵がcmd_4211作業中に続行宣言のままturn終了しidle promptで長時間停止(将軍pane capture 01:08)したが、STALL検知はassigned+idle状態のみを対象とするため(scripts/ninja_monitor.sh冒頭のSTALL_THRESHOLD_MIN定義コメント現物)、in_progress+RUNTIME idleの停止が検知されず放置された。in_progress停止も検知して自動nudge再起動する構造へ拡張する | infra | 08-02 | in_progress+RUNTIME idle見逃しの二重 |
 | cmd_4217 | CDP能力設計書v2.2(独立レビュー2系統完了: 軍師APPROVE blt_112103+家老ACCEPT blt_112816)の工程1a。土台層(session確立)の実装に先立ち、session receipt・adapter interface(auth_strategy/deploy_verifier)・cleanup境界の契約仕様を定義し境界fixtureで固定する。契約が先に固まることで工程1b(transport)と1c(adapter)が並行実装可能になる | infra | 08-02 | CDP session契約をYAML化し、正常1・違反4 f |
+| cmd_4222 | 殿下知2026-08-03 02:37『では起票せよ』。設計書v4.4(docs/research/dm-monthly-trade-bug-asis-tobe-5w1h_20260802.md §2.5レーンA0)のW0工程A0-0c: 月次境界日の一次SSOT(優先順位=ledger確定decisionの効力日→expanded weightsの実切替日)について、signal_decision_ledgerのどのフィールドが効力日を表すかをコード現物とDB現物で確定する。オラクル(A0-1)とboundary helper(B1)のStart前提を独立工程として供給する | dm-signal | 08-03 | signal_decision_ledgerの効力開始フィー |
