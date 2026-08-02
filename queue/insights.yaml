@@ -176,8 +176,8 @@ insights:
   action_artifact: "event=logs/self_retro.jsonl:1429;artifact=docs/research/throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md:60,83;verify=event_id ff468f325e60c05cedf940da48a0129d3fa603e4d9bab80bc7c73d977b0cc976 exists 1/1"
   resolved_at: "2026-08-02T14:22:20+09:00"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 27
-  last_seen: "2026-08-02T18:58:46+09:00"
+  occurrence_count: 28
+  last_seen: "2026-08-02T19:20:43+09:00"
 - id: INS-20260802-123359806-cdd4
   ts: "2026-08-02T12:33:59+09:00"
   insight: "[[DM signalのallertについて詳しく教えてほしい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-signalのallertについて詳しく教えてほしい。どうなるとallertが鳴るんだ？allertがなぜなるんだ？"
@@ -384,7 +384,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9a8c2cfd701a2cbf"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行gate再実走で参照実在・SKILL鮮度・例示パス・実走マーカーが全てOK。rc=2はFOLLOWUP_ACTIVEの経路状態であり未追従を示さないため、既存追従成果を再利用して解消"
+  action_artifact: "bash scripts/gates/gate_skill_script_refs.sh => REVIEW_REQUIRED rc=2, OK 4項目, FOLLOWUP_ACTIVE pairs=21; git log: fd25aecd5/acafe6e5e/b972d51f8/80ef78036/1dae80c86/0b0de8fa9/00e2bce5a/be1d281d5"
+  resolved_at: "2026-08-02T19:26:05+09:00"
 - id: INS-20260802-125312560-e186
   ts: "2026-08-02T12:53:12+09:00"
   insight: "SKILL.md追従cmd候補: cmd_karo_hotfix_patch_scope_moving_head_fp_20260802 で scripts変更(scripts/ninja_scope_commit.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して skills/idle-persist/SKILL.md <- scripts/inbox_write.sh (newer: scripts/inbox_write.sh); skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh (newer: scripts/report_field_set.sh); skills/report-write/SKILL.md <- scripts/report_field_set.sh (newer: scripts/report_field_set.sh); skills/review-bundle/SKILL.md <- scripts/inbox_write.sh (newer: scripts/inbox_write.sh) を解消せよ。"
@@ -876,8 +879,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '9131342b7e5300eab44ac238bfa64597be6ccbcaee9dd636c0e4257090931098' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 12
-  last_seen: "2026-08-02T18:57:03+09:00"
+  occurrence_count: 13
+  last_seen: "2026-08-02T19:19:19+09:00"
   verification:
     status: "passed"
     exit_code: 0
