@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-31 reviewed_source_boundary -->
-<!-- dm_signal_research_reflux: fingerprint=55cab931e652cbfef227ad5ae02670d0a850ba678ff6a04c0a5a55539db96922; mode=non-target; evidence_b64=Y21kX2thcm9fcmVjb25fZG02X2UwX2U0X21vbnRoc3RhcnRfMjAyNjA3MzE6IOS4gOWbnumZkOOCiuOBruWBteWvn+WIhuaekOe1kOaenChCTE9DS+WIpOWumuOBruWun+iovOODh+ODvOOCvynjgILml6LlrZhjb250ZXh044K744Kv44K344On44Oz44G444Gu5oGS5LmF55+l6KaL5piH5qC844Gv5a626ICBL+i7jeW4q+OBruODrOODk+ODpeODvOW+jOWIpOaWreOBqOOBl+OAgeacrHRhc2vjga5zY29wZeOBr+WIhuaekOWun+aWveOBqOeUn+ODh+ODvOOCv+WgseWRiuOBq+mZkOWumg== -->
+<!-- dm_signal_research_reflux: fingerprint=381cf0c7bd919024d75328587129ea540f9247b3c6b1b6e02e6648f205a60f3c; mode=non-target; evidence_b64=b25lLXRpbWUgcHJvZHVjdGlvbiBjbG9zdXJlIGV2aWRlbmNlOyBjYW5vbmljYWwgb3BlcmF0aW9uYWwgcmVzdWx0IHJlbWFpbnMgaW4gY21kLXNjb3BlZCBkb2NzL3Jlc2VhcmNoIGFydGlmYWN0 -->
 <!-- source_commit:a4aca2cc reason:reviewed_source_boundary evidence:cmd=cmd_karo_recon_dm6_e0_e4_monthstart_20260731 project=dm-signal commit=a4aca2cc -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
