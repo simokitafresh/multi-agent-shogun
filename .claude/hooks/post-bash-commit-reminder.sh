@@ -22,6 +22,7 @@ HOOK_PAYLOAD="$payload" SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -197,8 +198,6 @@ else:
     if asymmetric:
         filtered.extend(asymmetric)
         issues.append("planned_report_scope_asymmetric")
-    if not scope_paths and not asymmetric:
-        issues.append("owned_scope_missing")
     status = (git("status", "--porcelain", "--untracked-files=all", "--", *scope_paths)
               if scope_paths else subprocess.CompletedProcess([], 0, "", ""))
     if status.returncode != 0:
@@ -227,6 +226,7 @@ else:
                 return len(v) == 40 and all(c in "0123456789abcdefABCDEF" for c in v)
 
         commit_hash = str(report.get("commit_hash") or "").strip()
+        owned_commits = []
         if not valid_commit_identity(commit_hash, report, pathlib.Path(project_path)):
             issues.append("report_commit_hash_missing_or_invalid")
         elif commit_hash == NO_CODE_IDENTITY:
@@ -236,9 +236,50 @@ else:
             if commit.returncode != 0:
                 issues.append("report_commit_not_found")
             else:
-                commit_paths = set(git("diff-tree", "--root", "--no-commit-id", "--name-only", "-r", commit_hash).stdout.splitlines())
+                def scalar_texts(value):
+                    if isinstance(value, dict):
+                        for child in value.values():
+                            yield from scalar_texts(child)
+                    elif isinstance(value, list):
+                        for child in value:
+                            yield from scalar_texts(child)
+                    elif value is not None:
+                        yield str(value)
+
+                owned_commits = [commit_hash]
+                identity_text = "\n".join(scalar_texts(report))
+                parent_cmd = str(report.get("parent_cmd") or task.get("parent_cmd") or "")
+                task_id = str(report.get("task_id") or task.get("task_id") or "")
+                for candidate in re.findall(r"(?<![0-9a-f])[0-9a-f]{7,40}(?![0-9a-f])", identity_text):
+                    resolved = git("rev-parse", "--verify", f"{candidate}^{{commit}}")
+                    sha = resolved.stdout.strip()
+                    if resolved.returncode != 0 or sha in owned_commits:
+                        continue
+                    subject = git("show", "-s", "--format=%s", sha).stdout.strip()
+                    if subject and ((parent_cmd and parent_cmd in subject) or (task_id and task_id in subject)):
+                        owned_commits.append(sha)
+
+                commit_paths = set()
+                for owned_commit in owned_commits:
+                    commit_paths.update(git("diff-tree", "--root", "--no-commit-id", "--name-only", "-r", owned_commit).stdout.splitlines())
+                effective_reported = reported
+                if not reported:
+                    # Legacy/independent reports may omit files_modified.  A
+                    # valid task-owned commit still proves ownership, bounded
+                    # by planned_paths; planned paths absent from both remain
+                    # intentionally out of scope.
+                    effective_reported = planned & commit_paths
+                    scope_paths = sorted(effective_reported)
+                    fallback_status = git("status", "--porcelain", "--untracked-files=all", "--", *scope_paths)
+                    if fallback_status.returncode != 0:
+                        issues.append("scope_status_failed")
+                    else:
+                        filtered.extend(
+                            line[3:].strip() for line in fallback_status.stdout.splitlines()
+                            if len(line) >= 4 and line[3:].strip()
+                        )
                 planned_asymmetric = sorted(
-                    path for path in planned if ((path in reported) != (path in commit_paths))
+                    path for path in planned if ((path in effective_reported) != (path in commit_paths))
                 )
                 if planned_asymmetric:
                     filtered.extend(planned_asymmetric)
@@ -252,10 +293,10 @@ else:
                         continue
                     if head_blob.stdout.strip() == report_blob.stdout.strip():
                         continue
-                    owned_diff = git("diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path)
+                    owned_diff_text = "\n".join(git("diff", "--unified=0", f"{owned_commit}^", owned_commit, "--", path).stdout for owned_commit in owned_commits)
                     later_diff = git("diff", "--unified=0", commit_hash, "HEAD", "--", path)
                     dirty_diff = git("diff", "--unified=0", "--", path)
-                    owned_tokens = changed_tokens(owned_diff.stdout)
+                    owned_tokens = changed_tokens(owned_diff_text)
                     foreign_tokens = changed_tokens(later_diff.stdout + "\n" + dirty_diff.stdout)
                     if not owned_tokens or owned_tokens & foreign_tokens:
                         mismatched.append(path)
@@ -270,9 +311,9 @@ else:
                 if not commit_hash or commit_hash == NO_CODE_IDENTITY:
                     unresolved.append(path)
                     continue
-                owned = git("diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path)
+                owned_text = "\n".join(git("diff", "--unified=0", f"{owned_commit}^", owned_commit, "--", path).stdout for owned_commit in owned_commits)
                 dirty = git("diff", "--unified=0", "--", path)
-                if not changed_tokens(owned.stdout) or changed_tokens(owned.stdout) & changed_tokens(dirty.stdout):
+                if not changed_tokens(owned_text) or changed_tokens(owned_text) & changed_tokens(dirty.stdout):
                     unresolved.append(path)
             filtered = unresolved
             if unresolved:
