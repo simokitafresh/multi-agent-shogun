@@ -23,7 +23,7 @@ python3 scripts/cdp/cdp_session.py establish --consumer "$CONSUMER" --ports 9222
 
 ## 用途写像
 
-- DM-Signal検分: `inspection` receiptを消費する `scripts/cdp/cdp_*_probe.py` を選び、認証が必要なら `scripts/cdp/dm_signal_adapters.py` のauth/deploy adapterを使う。
+- DM-Signal検分: `inspection` receiptを消費するカード=`scripts/cdp/cdp_card_probe.py`、contrast=`scripts/cdp/cdp_contrast_probe.py`、ED=`scripts/cdp/cdp_ed_probe.py`、font=`scripts/cdp/cdp_font_probe.py`、最大表示=`scripts/cdp/cdp_maxdisplay_probe.py`、tier=`scripts/cdp/cdp_tier_probe.py`から選び、認証が必要なら `scripts/cdp/dm_signal_adapters.py` のauth/deploy adapterを使う。
 - 性能計測: `measurement` receiptを内部で確立・消費する `bash scripts/cdp/cdp_measure.sh <cmd_id> ...` を使う。
 - note下書き: `note` receiptを内部で確立・消費する `bash scripts/note_draft.sh <article.md>` を使う。
 - 汎用操作: `generic` receiptを確立し、そのreceiptのendpointだけをnavigate/click/type/screenshot操作へ渡す。
