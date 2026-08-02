@@ -7,6 +7,19 @@ setup_file() {
     python3 -c "import yaml" 2>/dev/null || return 1
 }
 
+@test "quality contract projection classifies all six structured boundaries without false results" {
+    # test_necessity: direct deployment must recognize action conversion in quality_gate while preserving missing-field and non-candidate boundaries.
+    run bash -lc "source '$PROJECT_ROOT/scripts/lib/gate_hook_quality_contract.sh';
+      check() { local expected=\"\$1\" text=\"\$2\"; local actual; actual=\$(gate_hook_quality_contract_evaluate \"\$text\"); [[ \"\$actual\" == \"\$expected\" ]] || { printf 'expected=%s actual=%s\\n' \"\$expected\" \"\$actual\"; return 1; }; };
+      check $'yes\\tpass\\tpass' $'purpose: add gate detector\\nquality_gate:\\n  action_conversion: BLOCK on missing action\\n  fp_measurement: false_positive=0';
+      check $'yes\\tpass\\tpass' $'purpose: add gate detector\\nacceptance_criteria:\\n  - description: BLOCK on missing action; false_positive=0';
+      check $'yes\\tpass\\tpass' $'purpose: add gate detector\\ncommand: |\\n  BLOCK on missing action; false_positive=0';
+      check $'yes\\tmissing\\tpass' $'purpose: add gate detector\\nquality_gate:\\n  fp_measurement: false_positive=0';
+      check $'yes\\tpass\\tmissing' $'purpose: add gate detector\\nquality_gate:\\n  action_conversion: BLOCK on missing action';
+      check $'no\\tpass\\tpass' $'purpose: update ordinary parser\\nquality_gate:\\n  action_conversion: BLOCK\\n  fp_measurement: false_positive=0'"
+    [ "$status" -eq 0 ]
+}
+
 @test "head-fixed validation is explicit opt-in and detached runner survives shared HEAD commit without residue" {
     tmpdir="$(mktemp -d)"
     repo="$tmpdir/repo"

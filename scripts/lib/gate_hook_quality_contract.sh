@@ -10,10 +10,13 @@ gate_hook_quality_contract_action_text() {
         /^[[:space:]]*command:[[:space:]]*[^|]/ { sub(/^[[:space:]]*command:[[:space:]]*/, ""); print; next }
         /^[[:space:]]*acceptance_criteria:[[:space:]]*$/ { in_ac=1; ac_indent=indent($0); print; next }
         /^[[:space:]]*acceptance_criteria:[[:space:]]*\[/ { sub(/^[[:space:]]*acceptance_criteria:[[:space:]]*/, ""); print; next }
+        /^[[:space:]]*quality_gate:[[:space:]]*$/ { in_qg=1; qg_indent=indent($0); print; next }
         in_command && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:[[:space:]]*/ && indent($0) <= command_indent { in_command=0; next }
         in_ac && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:[[:space:]]*/ && indent($0) <= ac_indent { in_ac=0; next }
+        in_qg && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:[[:space:]]*/ && indent($0) <= qg_indent { in_qg=0; next }
         in_command && indent($0) > command_indent { print; next }
         in_ac && indent($0) > ac_indent { print; next }
+        in_qg && indent($0) > qg_indent { print; next }
     '
 }
 
