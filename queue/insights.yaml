@@ -354,7 +354,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存の恒久原則とsemantic indexに包含済み。新規実装・decision不要の重複lesson candidateとして解決"
+  action_artifact: "AGENTS.md:先に確認それから行動+行動結果を数値計測;docs/semantic-index/index.md:1317;queue/insights.yaml:311-321"
+  resolved_at: "2026-08-02T20:46:09+09:00"
 - id: INS-20260802-132237981-f62a
   ts: "2026-08-02T13:22:37+09:00"
   insight: "lord_conversation教訓候補: target=kagemaru trigger=inbound_lord detail=今セッションでhookやgateの品質問題で遅延やエラー、\n      放置などが起きていたらバグだ。バグは利他の精神\n  で\n    調\n      査して家老に報告せよ。すでに修正済みのことがあ\n  る\n    から必ず再検証せよ"
