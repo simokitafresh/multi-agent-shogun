@@ -405,7 +405,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_report_shared_provenance_fp_20260802"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GP-183は既に実装済み。現行deploy_task.shがscope_mode/target_pathから研究taskを自動判定しcommit binary checkへwaive_reasonを構造注入するため、Level2候補は陳腐化した重複で新規修正不要"
+  action_artifact: "logs/gunshi_gp_tracker.yaml:256-263;scripts/deploy_task.sh:3560-3609"
+  resolved_at: "2026-08-02T21:51:04+09:00"
 - id: INS-20260802-135755158-02d9
   ts: "2026-08-02T13:57:55+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_async_delivery_verify_20260802; matched=inbox_write; current_pattern=; candidate_level=2; candidate=2026-04-16実証: 軍師がレビュー完了→家老にinbox_write→将軍気づかず→リマインダー送信。掲示板が唯一の将軍↔軍師直通ライン。F-G01(全通信は家老のみ)の例外として返信先ルールをgunshi.mdに明記; source=gunshi_gp_tracker.yaml"
