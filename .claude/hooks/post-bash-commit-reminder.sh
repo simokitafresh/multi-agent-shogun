@@ -148,6 +148,26 @@ def resolve_task_scope():
         return [target_path.strip()]
     return []
 
+def report_owned_paths(value):
+    if not isinstance(value, list):
+        return []
+    result = []
+    for item in value:
+        path = item.get("path") if isinstance(item, dict) else item
+        if isinstance(path, str) and path.strip() and not os.path.isabs(path):
+            result.append(path.strip())
+    return list(dict.fromkeys(result))
+
+def changed_tokens(diff_text):
+    tokens = set()
+    for line in diff_text.splitlines():
+        if not line or line.startswith(("+++", "---", "@@")) or line[0] not in "+-":
+            continue
+        token = "".join(line[1:].split())
+        if token:
+            tokens.add(token)
+    return tokens
+
 
 issues = []
 filtered = []
@@ -169,6 +189,16 @@ if not scope_paths:
 elif not isinstance(report, dict):
     issues = ["report_missing_or_invalid"]
 else:
+    reported_paths = report_owned_paths(report.get("files_modified"))
+    planned = set(scope_paths)
+    reported = set(reported_paths)
+    asymmetric = sorted(reported - planned)
+    scope_paths = sorted(planned & reported)
+    if asymmetric:
+        filtered.extend(asymmetric)
+        issues.append("planned_report_scope_asymmetric")
+    if not scope_paths and not asymmetric:
+        issues.append("owned_scope_missing")
     status = git("status", "--porcelain", "--untracked-files=all", "--", *scope_paths)
     if status.returncode != 0:
         issues = ["scope_status_failed"]
@@ -177,9 +207,6 @@ else:
             line[3:].strip() for line in status.stdout.splitlines()
             if len(line) >= 4 and line[3:].strip()
         })
-        if filtered:
-            issues.append("owned_paths_uncommitted")
-
         # cmd_karo_hotfix_no_code_commit_reminder_20260728: 独自の40hex限定判定は
         # gate_report_format.sh(report_commit_identity.py)が正式に許可している
         # commit_hash="no-code-change"(queue/logs配下のみ・no_code_change_evidence
@@ -208,17 +235,47 @@ else:
             if commit.returncode != 0:
                 issues.append("report_commit_not_found")
             else:
+                commit_paths = set(git("diff-tree", "--root", "--no-commit-id", "--name-only", "-r", commit_hash).stdout.splitlines())
+                planned_asymmetric = sorted(
+                    path for path in planned if ((path in reported) != (path in commit_paths))
+                )
+                if planned_asymmetric:
+                    filtered.extend(planned_asymmetric)
+                    issues.append("planned_report_scope_asymmetric")
                 mismatched = []
                 for path in scope_paths:
                     head_blob = git("rev-parse", f"HEAD:{path}")
                     report_blob = git("rev-parse", f"{commit_hash}:{path}")
-                    if (head_blob.returncode != 0 or report_blob.returncode != 0
-                            or head_blob.stdout.strip() != report_blob.stdout.strip()):
+                    if head_blob.returncode != 0 or report_blob.returncode != 0:
+                        mismatched.append(path)
+                        continue
+                    if head_blob.stdout.strip() == report_blob.stdout.strip():
+                        continue
+                    owned_diff = git("diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path)
+                    later_diff = git("diff", "--unified=0", commit_hash, "HEAD", "--", path)
+                    dirty_diff = git("diff", "--unified=0", "--", path)
+                    owned_tokens = changed_tokens(owned_diff.stdout)
+                    foreign_tokens = changed_tokens(later_diff.stdout + "\n" + dirty_diff.stdout)
+                    if not owned_tokens or owned_tokens & foreign_tokens:
                         mismatched.append(path)
                 if mismatched:
                     filtered.extend(mismatched)
                     filtered = sorted(set(filtered))
                     issues.append("head_report_blob_mismatch")
+
+        if filtered and "planned_report_scope_asymmetric" not in issues:
+            unresolved = []
+            for path in filtered:
+                if not commit_hash or commit_hash == NO_CODE_IDENTITY:
+                    unresolved.append(path)
+                    continue
+                owned = git("diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path)
+                dirty = git("diff", "--unified=0", "--", path)
+                if not changed_tokens(owned.stdout) or changed_tokens(owned.stdout) & changed_tokens(dirty.stdout):
+                    unresolved.append(path)
+            filtered = unresolved
+            if unresolved:
+                issues.append("owned_paths_uncommitted")
 
 if not issues:
     raise SystemExit(0)

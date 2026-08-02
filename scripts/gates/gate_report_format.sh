@@ -504,6 +504,16 @@ def hunk_ranges(diff_text):
         ranges.append((start, start + count - 1))
     return ranges
 
+def changed_tokens(diff_text):
+    tokens = set()
+    for line in diff_text.splitlines():
+        if not line or line.startswith(("+++", "---", "@@")) or line[0] not in "+-":
+            continue
+        token = "".join(line[1:].split())
+        if token:
+            tokens.add(token)
+    return tokens
+
 def overlaps(left, right):
     return any(a <= d and c <= b for a, b in left for c, d in right)
 
@@ -562,7 +572,10 @@ for line in raw_lines:
     for owned in owned_commits:
         commit_ranges.extend(hunk_ranges(run_git(["diff", "--unified=0", f"{owned}^", owned, "--", path])))
     dirty_ranges = hunk_ranges(run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path]))
-    if commit_ranges and dirty_ranges and not overlaps(commit_ranges, dirty_ranges):
+    commit_diff = "\n".join(run_git(["diff", "--unified=0", f"{owned}^", owned, "--", path]) for owned in owned_commits)
+    dirty_diff = run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path])
+    semantic_overlap = bool(changed_tokens(commit_diff) & changed_tokens(dirty_diff))
+    if commit_ranges and dirty_ranges and (not overlaps(commit_ranges, dirty_ranges) or not semantic_overlap):
         suppressed.append(path)
     else:
         kept.append(line)

@@ -207,6 +207,18 @@ if results:
 
 terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"}
 
+def task_allows_empty_lessons(report, root):
+    worker = str(report.get("worker_id") or "").strip()
+    if not worker:
+        return False
+    task_path = root / "queue" / "tasks" / f"{worker}.yaml"
+    try:
+        task_doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return False
+    task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else {}
+    return isinstance(task, dict) and task.get("related_lessons") == []
+
 def expected_failed_commit_absence(report):
     """Permit only the truthful terminal FAIL lane to omit a required commit."""
     contract = report.get("commit_contract")
@@ -232,11 +244,13 @@ if isinstance(opsim, dict) and all(str(opsim.get(key) or "").strip() for key in 
     data["test_results"] = dict(opsim)
 if terminal:
     required = ("worker_id", "parent_cmd", "ac_version_read", "binary_checks", "files_modified", "lessons_useful", "lesson_candidate")
-    missing = [key for key in required if data.get(key) in (None, "", [], {})]
+    root = pathlib.Path(os.environ.get("REPORT_FIELD_SET_TASK_ROOT", sys.argv[2])).resolve()
+    missing = [key for key in required if data.get(key) in (None, "", [], {})
+               and not (key == "lessons_useful" and data.get(key) == []
+                        and task_allows_empty_lessons(data, root))]
     if missing:
         raise SystemExit("BLOCK: terminal readiness missing: " + ",".join(missing))
     commit = str(data.get("commit_hash", "")).strip()
-    root = pathlib.Path(sys.argv[2]).resolve()
     # Third and final terminal-readiness entrance uses the same structural
     # no-code identity contract as review_approval and cmd_complete_gate.
     # This does not trust commit_contract.required alone: evidence, an explicit

@@ -162,3 +162,39 @@ YAML
   [ "$status" -eq 0 ]
   [[ "$output" == *"COMMIT MISSING"* ]]
 }
+
+# test_necessity: planned scope全件ではなくreport-owned pathだけを照合し、同じ共有fileの
+# 後着非重複appendは許可する一方、commit/report片側欠落はBLOCKする。
+@test "shared owned hunk ignores later append but blocks planned-report asymmetry" {
+  cat > "$FIX/context_shared.md" <<'EOF'
+base
+EOF
+  git -C "$FIX" add context_shared.md
+  git -C "$FIX" commit -q -m shared-base
+  printf 'owned\n' >> "$FIX/context_shared.md"
+  git -C "$FIX" add context_shared.md
+  git -C "$FIX" commit -q -m owned-change
+  local owned_commit
+  owned_commit=$(git -C "$FIX" rev-parse HEAD)
+  printf 'later append\n' >> "$FIX/context_shared.md"
+  git -C "$FIX" add context_shared.md
+  git -C "$FIX" commit -q -m later-append
+
+  cat > "$FIX/queue/tasks/sharedninja.yaml" <<YAML
+task:
+  project: fixture
+  planned_paths: [context_shared.md, absent.md]
+  report_path: out_reports/sharedninja.yaml
+YAML
+  cat > "$FIX/out_reports/sharedninja.yaml" <<YAML
+commit_hash: $owned_commit
+files_modified: [{path: context_shared.md, change: owned append}]
+YAML
+  run_hook sharedninja
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+
+  printf 'files_modified: []\ncommit_hash: %s\n' "$owned_commit" > "$FIX/out_reports/sharedninja.yaml"
+  run_hook sharedninja
+  [[ "$output" == *"planned_report_scope_asymmetric"* ]]
+}

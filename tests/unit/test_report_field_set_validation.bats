@@ -208,6 +208,37 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: related_lessons未注入taskだけが空lessonsのままterminalへ進め、
+# 注入済みtaskを空へ落とす経路はfail-closedを維持する。
+@test "terminal empty lessons follows task related_lessons contract" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/emptyworker.yaml" <<'YAML'
+task:
+  related_lessons: []
+YAML
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$TEST_TMPDIR/inbox_stub.sh"
+    chmod +x "$TEST_TMPDIR/inbox_stub.sh"
+    cat > "$TEST_REPORT" <<'YAML'
+worker_id: emptyworker
+parent_cmd: cmd_empty
+ac_version_read: v1
+status: in_progress
+commit_hash: "0000000000000000000000000000000000000000"
+files_modified: [{path: scripts/report_field_set.sh, change: modified}]
+lessons_useful: []
+lesson_candidate: {found: false, no_lesson_reason: none}
+binary_checks: {AC1: [{check: empty contract, result: "yes"}]}
+YAML
+    run env REPORT_FIELD_SET_TASK_ROOT="$TEST_TMPDIR" RFS_INBOX_WRITE_PATH="$TEST_TMPDIR/inbox_stub.sh" RFS_DISABLE_FAST_RECONCILER=1 bash -c "printf 'status: completed\n' | bash '$SCRIPT' --batch '$TEST_REPORT'"
+    [ "$status" -eq 0 ]
+
+    sed -i 's/related_lessons: \[\]/related_lessons: [L001]/' "$TEST_TMPDIR/queue/tasks/emptyworker.yaml"
+    sed -i 's/status: completed/status: in_progress/' "$TEST_REPORT"
+    run env REPORT_FIELD_SET_TASK_ROOT="$TEST_TMPDIR" RFS_INBOX_WRITE_PATH="$TEST_TMPDIR/inbox_stub.sh" RFS_DISABLE_FAST_RECONCILER=1 bash -c "printf 'status: completed\n' | bash '$SCRIPT' --batch '$TEST_REPORT'"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"terminal readiness missing: lessons_useful"* ]]
+}
+
 @test "files_modified: 散文入力はautofix後にexit 1" {
     run bash -c "bash '$SCRIPT' '$TEST_REPORT' files_modified '変更なし。調査のみ' 2>&1"
     [ "$status" -eq 1 ]
