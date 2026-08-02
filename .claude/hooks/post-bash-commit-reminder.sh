@@ -199,7 +199,8 @@ else:
         issues.append("planned_report_scope_asymmetric")
     if not scope_paths and not asymmetric:
         issues.append("owned_scope_missing")
-    status = git("status", "--porcelain", "--untracked-files=all", "--", *scope_paths)
+    status = (git("status", "--porcelain", "--untracked-files=all", "--", *scope_paths)
+              if scope_paths else subprocess.CompletedProcess([], 0, "", ""))
     if status.returncode != 0:
         issues = ["scope_status_failed"]
     else:
