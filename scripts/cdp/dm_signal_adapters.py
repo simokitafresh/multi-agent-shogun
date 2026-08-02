@@ -100,8 +100,12 @@ def _viewer_auth(target_url: str, receipt: dict, viewer_pass: str) -> tuple[bool
       if (!form) return {ok:false, reason:'viewer form missing'};
       if (form.requestSubmit) form.requestSubmit(); else form.submit();
       await new Promise(resolve => setTimeout(resolve, 800));
-      return {ok: !document.querySelector('input[type="password"]'),
-              reason: 'viewer form submitted and checked'};
+      const passwordFormGone = !document.querySelector('input[type="password"]');
+      const rows = document.querySelectorAll('tbody tr').length;
+      return {ok: passwordFormGone && rows > 0, rows,
+              reason: passwordFormGone && rows > 0
+                ? `viewer authenticated; tbody rows=${rows}`
+                : `viewer DOM verification failed; passwordFormGone=${passwordFormGone}; tbody rows=${rows}`};
     })()
     """ % json.dumps(viewer_pass)
     try:
@@ -114,7 +118,10 @@ def _viewer_auth(target_url: str, receipt: dict, viewer_pass: str) -> tuple[bool
             message = json.loads(ws.recv())
             if message.get("id") == 1:
                 value = message.get("result", {}).get("result", {}).get("value", {})
-                return bool(value.get("ok")), str(value.get("reason", "viewer authentication failed"))
+                rows = value.get("rows")
+                ok = bool(value.get("ok")) and isinstance(rows, int) and rows > 0
+                reason = str(value.get("reason", "viewer authentication failed"))
+                return ok, f"{reason}; verified_rows={rows}"
     finally:
         ws.close()
 

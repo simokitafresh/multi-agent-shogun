@@ -1,10 +1,11 @@
 #!/usr/bin/env bats
 # test_necessity: Preserve capability non-equivalence and fail-closed deployment
-# ancestry at the cdp-session-contract-v1 project-adapter boundary.
+# ancestry, and authenticated non-empty DOM evidence at the
+# cdp-session-contract-v1 project-adapter boundary.
 
 @test "DM-Signal auth and deploy adapters enforce contract boundaries" {
   run python3 - <<'PY'
-import importlib.util, subprocess
+import importlib.util, json, subprocess
 
 path = "scripts/cdp/dm_signal_adapters.py"
 spec = importlib.util.spec_from_file_location("adapters", path)
@@ -26,6 +27,35 @@ assert adapters.auth_strategy(
     admin_auth=lambda *_: (False, "401"),
     viewer_auth=lambda *_: (True, "viewer ok"),
 )["granted_capability"] == "viewer"
+
+class FixtureWebSocket:
+    def __init__(self, rows):
+        self.rows = rows
+        self.sent = None
+        self.closed = False
+    def send(self, payload):
+        self.sent = json.loads(payload)
+    def recv(self):
+        expression = self.sent["params"]["expression"]
+        assert "document.querySelectorAll('tbody tr').length" in expression
+        return json.dumps({
+            "id": 1,
+            "result": {"result": {"value": {
+                "ok": self.rows > 0, "rows": self.rows,
+                "reason": f"fixture tbody rows={self.rows}",
+            }}},
+        })
+    def close(self):
+        self.closed = True
+
+adapters._page_websocket = lambda *_: "ws://fixture"
+for rows, expected_ok in ((2, True), (0, False)):
+    fixture_ws = FixtureWebSocket(rows)
+    adapters.websocket.create_connection = lambda *_, _ws=fixture_ws, **__: _ws
+    ok, evidence = adapters._viewer_auth("https://api", receipt, "fixture-secret")
+    assert ok is expected_ok, (rows, ok, evidence)
+    assert f"verified_rows={rows}" in evidence
+    assert fixture_ws.closed is True
 for required, viewer_ok in (("admin", True), ("viewer", False)):
     try:
         adapters.auth_strategy(
@@ -50,8 +80,8 @@ for target, deployed, fetcher in (
         pass
     else:
         raise AssertionError((target, deployed))
-print("auth=4/4 deploy=3/3")
+print("auth=4/4 dom_rows=2/2 deploy=3/3")
 PY
   [ "$status" -eq 0 ]
-  [[ "$output" == *"auth=4/4 deploy=3/3"* ]]
+  [[ "$output" == *"auth=4/4 dom_rows=2/2 deploy=3/3"* ]]
 }
