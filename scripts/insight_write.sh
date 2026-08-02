@@ -172,6 +172,7 @@ def repair_trailing_partial_entry(path):
         '  ts:', '  insight:', '  priority:', '  source:', '  status:',
         '  resolved_at:', '  resolved_reason:', '  action_artifact:', '  fix_known:',
         '  target_file:', '  verify_command:', '  verification:',
+        '  insight_summary_hash:', '  occurrence_count:', '  last_seen:',
         '    status:', '    exit_code:', '    output:',
     )
 
@@ -247,6 +248,10 @@ def parse_scalar(raw):
 def normalize_text(value):
     return re.sub(r'\s+', ' ', value).strip().lower()
 
+def yaml_escape(s):
+    """JSON double-quoted strings are valid YAML double-quoted scalars."""
+    return json.dumps(s, ensure_ascii=False)
+
 def direct_alias_key(value):
     match = re.search(r'\[\[[^\]]+\]\]\s*alias:\s*(.+)', value, flags=re.IGNORECASE)
     if not match:
@@ -268,6 +273,96 @@ def semantic_query_key(value):
 
 new_semantic_key = semantic_query_key(msg)
 
+def summary_hash(value):
+    import hashlib
+    return hashlib.sha256(normalize_text(value).encode('utf-8')).hexdigest()
+
+new_summary_hash = summary_hash(msg)
+
+# A verified fix-known finding represents a conclusion, not a verification
+# command invocation.  Repeated detections of the same normalized conclusion
+# from the same source are folded into the existing ledger entry (pending or
+# resolved); differing commands remain evidence on the caller side, not identity.
+if fix_known == 'true':
+    with open(insights_file, 'r', encoding='utf-8') as f:
+        ledger_lines = f.readlines()
+
+    blocks = []
+    start = None
+    for idx, line in enumerate(ledger_lines):
+        if line.startswith('- id: '):
+            if start is not None:
+                blocks.append((start, idx))
+            start = idx
+    if start is not None:
+        blocks.append((start, len(ledger_lines)))
+
+    matched = None
+    for block_start, block_end in blocks:
+        values = {}
+        for line in ledger_lines[block_start:block_end]:
+            if line.startswith('- id: '):
+                values['id'] = line[len('- id: '):].strip()
+            elif line.startswith('  insight:'):
+                values['insight'] = parse_scalar(line.split(':', 1)[1])
+            elif line.startswith('  source:'):
+                values['source'] = parse_scalar(line.split(':', 1)[1])
+            elif line.startswith('  insight_summary_hash:'):
+                values['hash'] = parse_scalar(line.split(':', 1)[1])
+            elif line.startswith('  occurrence_count:'):
+                values['count'] = parse_scalar(line.split(':', 1)[1])
+        existing_hash = values.get('hash')
+        if not existing_hash and values.get('insight') is not None:
+            existing_hash = summary_hash(values['insight'])
+        if values.get('source') == source_info and existing_hash == new_summary_hash:
+            matched = (block_start, block_end, values)
+            break
+
+    if matched is not None:
+        block_start, block_end, values = matched
+        try:
+            occurrence_count = int(values.get('count', '1')) + 1
+        except ValueError:
+            occurrence_count = 2
+        replacement = []
+        saw_hash = saw_count = saw_last_seen = False
+        for line in ledger_lines[block_start:block_end]:
+            if line.startswith('  insight_summary_hash:'):
+                replacement.append(f'  insight_summary_hash: {yaml_escape(new_summary_hash)}\n')
+                saw_hash = True
+            elif line.startswith('  occurrence_count:'):
+                replacement.append(f'  occurrence_count: {occurrence_count}\n')
+                saw_count = True
+            elif line.startswith('  last_seen:'):
+                replacement.append(f'  last_seen: {yaml_escape(ts)}\n')
+                saw_last_seen = True
+            else:
+                replacement.append(line)
+        if not saw_hash:
+            replacement.append(f'  insight_summary_hash: {yaml_escape(new_summary_hash)}\n')
+        if not saw_count:
+            replacement.append(f'  occurrence_count: {occurrence_count}\n')
+        if not saw_last_seen:
+            replacement.append(f'  last_seen: {yaml_escape(ts)}\n')
+
+        directory = os.path.dirname(os.path.abspath(insights_file)) or '.'
+        fd, tmp_path = tempfile.mkstemp(prefix='.insights.', suffix='.tmp', dir=directory)
+        try:
+            with os.fdopen(fd, 'w', encoding='utf-8') as out:
+                out.writelines(ledger_lines[:block_start])
+                out.writelines(replacement)
+                out.writelines(ledger_lines[block_end:])
+                out.flush()
+                os.fsync(out.fileno())
+            os.replace(tmp_path, insights_file)
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        print('AGGREGATE:' + values['id'])
+        print(occurrence_count)
+        print('aggregated')
+        sys.exit(0)
+
 # Single-pass: dedup check + source repeat count
 current_id = None
 current_insight = None
@@ -281,11 +376,12 @@ with open(insights_file, 'r', encoding='utf-8') as f:
         if line.startswith('- id: '):
             if current_status == 'pending':
                 if current_insight is not None:
-                    if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
+                    if fix_known != 'true' and (current_insight == msg or (msg and current_insight[:50] == msg[:50])):
                         print('SKIP:' + current_id)
                         sys.exit(0)
                     if (
-                        current_source == source_info
+                        fix_known != 'true'
+                        and current_source == source_info
                         and new_semantic_key is not None
                         and current_semantic_key is not None
                         and (
@@ -316,11 +412,12 @@ with open(insights_file, 'r', encoding='utf-8') as f:
 # Finalize last entry
 if current_status == 'pending':
     if current_insight is not None:
-        if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
+        if fix_known != 'true' and (current_insight == msg or (msg and current_insight[:50] == msg[:50])):
             print('SKIP:' + current_id)
             sys.exit(0)
         if (
-            current_source == source_info
+            fix_known != 'true'
+            and current_source == source_info
             and new_semantic_key is not None
             and current_semantic_key is not None
             and (
@@ -339,10 +436,6 @@ if status == 'pending':
 
 # Append raw YAML entry via atomic replace. This keeps raw YAML bytes intact while
 # preventing a killed writer from leaving a half-written entry in the live file.
-def yaml_escape(s):
-    """JSON double-quoted strings are valid YAML double-quoted scalars."""
-    return json.dumps(s, ensure_ascii=False)
-
 entry_lines = [
     f'- id: {entry_id}\n',
     f'  ts: {yaml_escape(ts)}\n',
@@ -356,6 +449,12 @@ if target_file:
     entry_lines.append(f'  target_file: {yaml_escape(target_file)}\n')
 if verify_command:
     entry_lines.append(f'  verify_command: {yaml_escape(verify_command)}\n')
+if fix_known == 'true':
+    entry_lines.extend([
+        f'  insight_summary_hash: {yaml_escape(new_summary_hash)}\n',
+        '  occurrence_count: 1\n',
+        f'  last_seen: {yaml_escape(ts)}\n',
+    ])
 if verification_status != 'not_requested':
     verification_output = re.sub(r'\s+', ' ', verification_output).strip()
     if len(verification_output) > 300:
