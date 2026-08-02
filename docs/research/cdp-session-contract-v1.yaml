@@ -1,0 +1,67 @@
+version: 1
+source:
+  document: docs/research/cdp-skill-flow-inventory-20260802.md
+  revision: v2.2
+receipt_contract:
+  required: [receipt_id, issuer, consumer, issued_at, expires_at, endpoint, chrome_pid, profile_path, capabilities]
+  issuer: cdp_session_foundation
+  consumers: [inspection, measurement, note, generic]
+  storage: runtime_private_file
+  validity: issued_at <= now < expires_at
+  fail_closed: missing_or_expired_receipt
+auth_strategy_interface:
+  input: [target_url, required_capability, receipt]
+  output: [granted_capability, evidence]
+  rule: granted_capability_must_equal_or_dominate_required_capability
+  fail_closed: missing_or_insufficient_capability
+deploy_verifier_interface:
+  input: [target_commit, deployed_revision, receipt]
+  output: [included, evidence]
+  rule: included_must_be_true
+  fail_closed: target_commit_not_in_deployment
+cleanup_contract:
+  owned_resources_from: receipt
+  may_release: [receipt.chrome_pid, receipt.profile_path]
+  forbidden: [unowned_pid, unowned_profile, normal_chrome_session]
+fixtures:
+  valid:
+    receipt: {receipt_id: r1, issuer: cdp_session_foundation, consumer: inspection, issued_at: 10, expires_at: 20, endpoint: "http://127.0.0.1:9222", chrome_pid: 101, profile_path: "/tmp/cdp-r1", capabilities: [viewer]}
+    now: 15
+    required_capability: viewer
+    granted_capability: viewer
+    target_commit: abc
+    deployed_commits: [abc]
+    cleanup_pid: 101
+    cleanup_profile: /tmp/cdp-r1
+    expected: pass
+  receipt_missing: {expected: fail}
+  auth_insufficient:
+    receipt: {receipt_id: r2, issuer: cdp_session_foundation, consumer: inspection, issued_at: 10, expires_at: 20, endpoint: x, chrome_pid: 102, profile_path: /tmp/cdp-r2, capabilities: [viewer]}
+    now: 15
+    required_capability: admin
+    granted_capability: viewer
+    expected: fail
+  deploy_not_included:
+    receipt: {receipt_id: r3, issuer: cdp_session_foundation, consumer: inspection, issued_at: 10, expires_at: 20, endpoint: x, chrome_pid: 103, profile_path: /tmp/cdp-r3, capabilities: [viewer]}
+    now: 15
+    required_capability: viewer
+    granted_capability: viewer
+    target_commit: abc
+    deployed_commits: [def]
+    expected: fail
+  cleanup_outside_boundary:
+    receipt: {receipt_id: r4, issuer: cdp_session_foundation, consumer: inspection, issued_at: 10, expires_at: 20, endpoint: x, chrome_pid: 104, profile_path: /tmp/cdp-r4, capabilities: [viewer]}
+    now: 15
+    required_capability: viewer
+    granted_capability: viewer
+    target_commit: abc
+    deployed_commits: [abc]
+    cleanup_pid: 999
+    cleanup_profile: /tmp/unowned
+    expected: fail
+t5_mapping:
+  contract_layer: {4: deploy_verifier_fail_closed, 7: required_shared_receipt, 9: receipt_owned_cleanup_only, 11: auth_capability_non_equivalence}
+  phase_1b: [1, 6, 8, 9, 10]
+  phase_1c: [2, 4, 6, 11]
+  phase_3: [3, 7, 12]
+  phase_2: [5]
