@@ -588,6 +588,10 @@ cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
 printf "0\tdocs/research/orphan.md\torphan\n"
 SH
 chmod +x "$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+mkdir -p "$SCRIPT_DIR/docs/research"
+: > "$SCRIPT_DIR/docs/research/orphan.md"
+git -C "$SCRIPT_DIR" init -q
+git -C "$SCRIPT_DIR" add docs/research/orphan.md
 
 cat > "$SCRIPT_DIR/scripts/deploy_task.sh" <<SH
 #!/usr/bin/env bash
@@ -633,6 +637,42 @@ echo "REFLUX_BACKLINK_DEPLOY_OK"
     [[ "$output" == *"REFLUX_BACKLINK_DEPLOY_OK"* ]]
 }
 
+# test_necessity: reflux自動配備が他cloneに存在しないuntracked文書を候補へ
+# 混入させず、tracked候補の順序と上限を維持する不変量を守る。
+@test "reflux zero backlink inventory filters untracked documents before applying limit" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -r \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/docs/research"
+cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
+#!/usr/bin/env bash
+printf "0\tdocs/research/untracked.md\tuntracked\n"
+printf "0\tdocs/research/tracked.md\ttracked\n"
+SH
+chmod +x "$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+: > "$SCRIPT_DIR/docs/research/untracked.md"
+: > "$SCRIPT_DIR/docs/research/tracked.md"
+git -C "$SCRIPT_DIR" init -q
+git -C "$SCRIPT_DIR" add docs/research/tracked.md
+REFLUX_BACKLINK_SCAN_LIMIT=1
+REFLUX_BACKLINK_TIMEOUT=5
+
+[ "$(_reflux_zero_backlink_inventory)" = $'"'"'1\tdocs/research/tracked.md\tok'"'"' ]
+git -C "$SCRIPT_DIR" rm --cached -q docs/research/tracked.md
+[ "$(_reflux_zero_backlink_inventory)" = $'"'"'0\t-\tok'"'"' ]
+echo REFLUX_TRACKED_ONLY_OK
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_TRACKED_ONLY_OK"* ]]
+}
+
 # test_necessity: 適切な外部索引sourceを決定できない場合は配備0件を維持する不変量を守る。
 # 決定不能なまま配備すると自己参照または誤った対象への配備が発生しうるため、
 # 未決定はBLOCKログを残し配備しないことを二値証明する(家老中間レビュー2026-07-28 16:24)。
@@ -669,6 +709,10 @@ cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
 printf "0\tdocs/research/orphan.md\torphan\n"
 SH
 chmod +x "$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+mkdir -p "$SCRIPT_DIR/docs/research"
+: > "$SCRIPT_DIR/docs/research/orphan.md"
+git -C "$SCRIPT_DIR" init -q
+git -C "$SCRIPT_DIR" add docs/research/orphan.md
 
 cat > "$SCRIPT_DIR/scripts/deploy_task.sh" <<SH
 #!/usr/bin/env bash
@@ -738,6 +782,8 @@ cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
 printf "0\tcontext/semantic-map.md\tsemantic-map\n"
 SH
 chmod +x "$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+git -C "$SCRIPT_DIR" init -q
+git -C "$SCRIPT_DIR" add context/semantic-map.md
 
 cat > "$SCRIPT_DIR/scripts/deploy_task.sh" <<SH
 #!/usr/bin/env bash

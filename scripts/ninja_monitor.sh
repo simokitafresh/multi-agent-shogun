@@ -4273,10 +4273,10 @@ _reflux_zero_backlink_inventory() {
     fi
 
     if command -v timeout >/dev/null 2>&1; then
-        output=$(CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" timeout "$timeout_sec" bash "$helper" --zero --limit "$limit" 2>/dev/null)
+        output=$(CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" timeout "$timeout_sec" bash "$helper" --zero 2>/dev/null)
         status=$?
     else
-        output=$(CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$helper" --zero --limit "$limit" 2>/dev/null)
+        output=$(CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$helper" --zero 2>/dev/null)
         status=$?
     fi
 
@@ -4285,8 +4285,18 @@ _reflux_zero_backlink_inventory() {
         return 0
     fi
 
-    count=$(printf '%s\n' "$output" | awk 'NF >= 2 { n++ } END { print n + 0 }')
-    first_path=$(printf '%s\n' "$output" | awk 'NF >= 2 { print $2; exit }')
+    count=0
+    first_path=""
+    while IFS=$'\t' read -r _incoming candidate_path _stem; do
+        [ -n "$candidate_path" ] || continue
+        # causal_backlink_counts intentionally sees untracked-but-not-ignored
+        # knowledge files. Auto-deployment must not publish links to artifacts
+        # absent from other clones, so dispatch inventory is tracked-only.
+        git -C "$SCRIPT_DIR" ls-files --error-unmatch -- "$candidate_path" >/dev/null 2>&1 || continue
+        [ -n "$first_path" ] || first_path="$candidate_path"
+        count=$((count + 1))
+        [ "$count" -ge "$limit" ] && break
+    done <<< "$output"
     [ -n "$first_path" ] || first_path="-"
     printf '%s\t%s\tok\n' "${count:-0}" "$first_path"
 }
