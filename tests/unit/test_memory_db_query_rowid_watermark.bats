@@ -164,3 +164,74 @@ PY
     [[ "$output" == *"WARN: cacheが本体に追随していない"* ]]
     [[ "$output" == *"STATUS: WARN"* ]]
 }
+
+# test_necessity: A corrupt published cache must fail closed and delegate its
+# rebuild without making the SQL caller synchronously quick-check or back up
+# the canonical 9P database; violation can hang every pre-action hook.
+@test "corrupt cache recovery is delegated and returns fail-closed within 5s" {
+    local source="$TEST_TMPDIR/source.db" cache="$TEST_TMPDIR/cache.db"
+    make_events_db "$source"
+    insert_event "$source" "canonical row"
+    printf 'not sqlite\n' > "$cache"
+
+    local started elapsed
+    started="$(date +%s%3N)"
+    run env -u TMUX_PANE -u AGENT_ID -u MEMORY_DB_QUERY_TARGET \
+        MEMORY_DB_QUERY_DB="$source" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" \
+        SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1 \
+        bash "$QUERY_SCRIPT" --db "$source" "SELECT summary FROM events"
+    elapsed=$(( $(date +%s%3N) - started ))
+
+    [ "$status" -eq 2 ]
+    [ "$elapsed" -lt 5000 ]
+    [[ "$output" == *"cache recovery scheduled"* ]]
+}
+
+# regression_justification: This overlaps the corrupt-cache contract above on
+# purpose: the invariant here is single-flight latency under competing callers,
+# not the single-caller fail-closed result.
+# test_necessity: Concurrent corrupt-cache readers must all return within the
+# hook budget while the existing refresh lock serializes detached rebuilding.
+@test "competing corrupt cache callers all return within 5s without silent output" {
+    local source="$TEST_TMPDIR/source.db" cache="$TEST_TMPDIR/cache.db"
+    make_events_db "$source"
+    insert_event "$source" "canonical row"
+    printf 'not sqlite\n' > "$cache"
+    local started pid rc failures=0 empty=0
+    started="$(date +%s%3N)"
+    for i in 1 2 3; do
+        env -u TMUX_PANE -u AGENT_ID -u MEMORY_DB_QUERY_TARGET \
+            MEMORY_DB_QUERY_DB="$source" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" \
+            SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1 \
+            bash "$QUERY_SCRIPT" --db "$source" "SELECT summary FROM events" \
+            >"$TEST_TMPDIR/out.$i" 2>&1 &
+        eval "pid_$i=$!"
+    done
+    for i in 1 2 3; do
+        eval "pid=\$pid_$i"
+        set +e
+        wait "$pid"; rc=$?
+        set -e
+        [ "$rc" -eq 2 ] || failures=$((failures + 1))
+        [ -s "$TEST_TMPDIR/out.$i" ] || empty=$((empty + 1))
+    done
+    [ $(( $(date +%s%3N) - started )) -lt 5000 ]
+    [ "$failures" -eq 0 ]
+    [ "$empty" -eq 0 ]
+}
+
+# test_necessity: The SQL caller must not contain a synchronous canonical-DB
+# health scan or backup path; source I/O delay belongs only to the detached
+# cache publisher and cannot retain the foreground hook process.
+@test "SQL recovery caller has no synchronous canonical quick-check or backup" {
+    run python3 - "$QUERY_SCRIPT" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index("def main() -> int:")
+caller = text[start:]
+assert "source.backup(" not in caller
+assert "require_healthy_database(source_db_path)" not in caller
+assert "force_refresh_memory_db_cache_async" in caller
+PY
+    [ "$status" -eq 0 ]
+}

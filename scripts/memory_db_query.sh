@@ -218,14 +218,13 @@ fi
 
 sql="$1"
 
-python3 - "$db_path" "$source_db_path" "$script_dir" "$sql" <<'PY'
+query_rc=0
+python3 - "$db_path" "$source_db_path" "$script_dir" "$sql" <<'PY' || query_rc=$?
 from __future__ import annotations
 
-import fcntl
 import os
 import sqlite3
 import sys
-import tempfile
 from pathlib import Path
 
 
@@ -321,76 +320,6 @@ def is_corrupt_database_error(exc: sqlite3.DatabaseError) -> bool:
     return "database disk image is malformed" in message or "file is not a database" in message
 
 
-def require_healthy_database(db_path: Path) -> None:
-    db_uri = f"{db_path.resolve().as_uri()}?mode=ro"
-    with sqlite3.connect(db_uri, uri=True) as conn:
-        result = conn.execute("PRAGMA quick_check").fetchone()
-    if result is None or result[0] != "ok":
-        detail = result[0] if result else "no result"
-        raise sqlite3.DatabaseError(f"database disk image is malformed ({detail})")
-
-
-def require_cache_backup_healthy(db_path: Path) -> None:
-    """Verify a freshly-built cache copy before it is published.
-
-    PRAGMA quick_check validates ordinary b-tree structure but does not
-    exercise FTS5's own index-vs-content consistency, so a page-level "ok"
-    can still hide a search-time failure. Run FTS5's dedicated
-    'integrity-check' command too when the table exists. Only call this
-    against a private, not-yet-published temp copy — never the live
-    primary DB — since the FTS check needs a writable connection.
-    """
-    require_healthy_database(db_path)
-    with sqlite3.connect(db_path.resolve().as_uri() + "?mode=ro", uri=True) as conn:
-        has_fts = conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'events_fts'"
-        ).fetchone() is not None
-    if has_fts:
-        with sqlite3.connect(db_path) as conn:
-            conn.execute("INSERT INTO events_fts(events_fts) VALUES ('integrity-check')")
-
-
-def regenerate_cache_atomically(source_path: Path, cache_path: Path) -> None:
-    """Build a verified replacement beside cache_path, then publish atomically."""
-    require_healthy_database(source_path)
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    lock_path = Path(f"{cache_path}.lock")
-    with lock_path.open("a", encoding="utf-8") as lock_handle:
-        fcntl.flock(lock_handle, fcntl.LOCK_EX)
-        # Another process may have repaired the cache while this process waited.
-        try:
-            require_healthy_database(cache_path)
-            return
-        except (OSError, sqlite3.DatabaseError):
-            pass
-
-        recovery_log = os.environ.get("MEMORY_DB_QUERY_RECOVERY_LOG", "")
-        if recovery_log:
-            with open(recovery_log, "a", encoding="utf-8") as handle:
-                handle.write(f"backup pid={os.getpid()}\n")
-
-        fd, temp_name = tempfile.mkstemp(
-            prefix=f".{cache_path.name}.", suffix=".tmp", dir=cache_path.parent
-        )
-        os.close(fd)
-        temp_path = Path(temp_name)
-        try:
-            with sqlite3.connect(source_path) as source, sqlite3.connect(temp_path) as destination:
-                source.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
-                destination.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
-                source.backup(destination)
-            require_cache_backup_healthy(temp_path)
-            os.replace(temp_path, cache_path)
-            for suffix in ("-wal", "-shm", "-journal"):
-                Path(f"{cache_path}{suffix}").unlink(missing_ok=True)
-        finally:
-            # os.replace() only renames temp_path itself; a WAL-mode backup
-            # leaves -wal/-shm sidecars named after the temp path behind.
-            for suffix in ("-wal", "-shm", "-journal"):
-                Path(f"{temp_path}{suffix}").unlink(missing_ok=True)
-            temp_path.unlink(missing_ok=True)
-
-
 def main() -> int:
     db_path = Path(sys.argv[1])
     source_db_path = Path(sys.argv[2])
@@ -416,13 +345,13 @@ def main() -> int:
         if not (is_cache and is_corrupt_database_error(exc)):
             print(f"memory_db_query: BLOCKED: only SELECT statements are allowed ({exc})", file=sys.stderr)
             return 2
-        try:
-            regenerate_cache_atomically(source_db_path, db_path)
-            # Exactly one retry. A second failure is returned fail-closed.
-            output = execute_read(db_path, statements)
-        except (OSError, sqlite3.DatabaseError) as retry_exc:
-            print(f"memory_db_query: BLOCKED: cache recovery failed ({retry_exc})", file=sys.stderr)
-            return 2
+        # Never repair a cache synchronously from a SQL caller.  The canonical
+        # DB lives on 9P and quick_check()/backup() can enter uninterruptible I/O,
+        # keeping review hooks alive indefinitely.  Exit with an internal
+        # recovery request; the shell delegates the copy to the existing
+        # detached, single-flight cache refresher and returns fail-closed.
+        print(f"memory_db_query: BLOCKED: cache recovery scheduled ({exc})", file=sys.stderr)
+        return 75
     for line in output:
         print(line)
     return 0
@@ -431,3 +360,11 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 PY
+
+if [ "$query_rc" -eq 75 ]; then
+    if [ -n "$cache_db_path" ]; then
+        force_refresh_memory_db_cache_async "$script_dir" "$source_db_path" "$cache_db_path"
+    fi
+    exit 2
+fi
+exit "$query_rc"
