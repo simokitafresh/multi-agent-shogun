@@ -180,8 +180,8 @@ _review() {
 
     local tf="$FAKE_ROOT/queue/tasks/${worker}.yaml"
     grep -q '^  review_correction_scope: report' "$tf"
-    grep -q '前報告の実測・成果物は有効' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
-    grep -q '再計算・再実装は禁止' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
+    grep -q '現task YAMLとRC指摘を正本として再読' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
+    grep -q '再計算・再実装の要否はレビュー指示に従え' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
     ! grep -q '前taskの情報は無効' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
 }
 

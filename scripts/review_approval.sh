@@ -478,7 +478,7 @@ PY
     "completed_at=" \
     "done_at="
   if [ "$correction_scope" = report ]; then
-    rc_task_message="前報告の実測・成果物は有効。現task YAMLを正本として再読し、RCで指摘された報告項目だけを是正せよ。再計算・再実装は禁止。"
+    rc_task_message="現task YAMLとRC指摘を正本として再読し、RCで指摘された報告項目だけを是正せよ。再計算・再実装の要否はレビュー指示に従え。"
   else
     rc_task_message="現task YAMLを正本として再読し、RCで否認された実装範囲と依存する検証だけを是正せよ。独立な既存成果は再利用し、全作業をやり直すな。"
   fi
