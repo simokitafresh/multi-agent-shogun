@@ -168,3 +168,31 @@ YAML
     TMUX_AGENT_ID=nobody run_hook "git commit -m test"
     [[ "$output" != *"BLOCK(GA-231"* ]]
 }
+
+# test_necessity: Guard2 previously classified raw argument text, so a read-only
+# search for a forbidden Python/YAML example was denied despite executing only rg.
+@test "Guard2 allows read-only search arguments containing Python YAML write examples" {
+    run_hook "rg 'python3 yaml.dump open(\"queue/x.yaml\",\"w\")' AGENTS.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"yaml.dump on operational YAML"* ]]
+}
+
+# test_necessity: narrowing Guard2 to executable argv must not permit actual
+# operational-YAML writes through Python, including an absolute interpreter path.
+@test "Guard2 blocks actual Python operational YAML dump variations" {
+    for command in \
+        "python3 -c 'import yaml; yaml.dump({},open(\"queue/tasks/x.yaml\",\"w\"))'" \
+        "/usr/bin/python3 -c 'import yaml; yaml.safe_dump({},open(\"queue/inbox/x.yaml\",\"a\"))'"; do
+        run_hook "$command"
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"yaml.dump on operational YAML"* ]]
+    done
+}
+
+# test_necessity: helper evidence/reason text may describe direct commits; only
+# an executed git commit argv is subject to GA-231/GA-231c.
+@test "GA-231 allows helper argument text describing direct git commit" {
+    TMUX_AGENT_ID=hanzo run_hook "bash scripts/report_field_set.sh report.yaml reason 'direct git commit is forbidden'"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK(GA-231"* ]]
+}

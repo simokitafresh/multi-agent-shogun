@@ -677,7 +677,25 @@ fi
 # === Guard 2: yaml-dump ===
 if [[ "$payload" == *'yaml.dump'* || "$payload" == *'yaml.safe_dump'* ]]; then
     if [[ -n "${command:-}" ]]; then
-        if [[ "$command" == *'python3'* || "$command" == *'python '* || "$command" == *'python	'* || "$command" == *'python -'* ]]; then
+        # 判定対象はraw text中のpythonという単語ではなく、実際に起動される
+        # segment先頭argvがPythonである場合だけに限る。rg/grepの検索語に
+        # Python書込例が含まれるだけの読取コマンドを実操作と誤認しない。
+        _guard2_runs_python="$(COMMAND="$command" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.environ["PROJECT_ROOT"], "scripts", "lib"))
+from shell_command_segments import segment_tokens
+
+segments = segment_tokens(os.environ.get("COMMAND", ""))
+if segments is None:
+    print("yes")  # malformed shell is fail-closed when sensitive text exists
+else:
+    python_names = {"python", "python3", "python.exe", "python3.exe"}
+    print("yes" if any(segment and segment[0].rsplit("/", 1)[-1] in python_names for segment in segments) else "no")
+PY
+)"
+        if [[ "$_guard2_runs_python" == "yes" ]]; then
             for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/"; do
                 yaml_open_write_pattern="open[[:space:]]*\\([^)]*${pattern}[^)]*,[^)]*[wax+]"
                 yaml_redirect_write_pattern="(>+|tee[[:space:]]+)[[:space:]]*[^;&|[:space:]]*${pattern}"
@@ -686,6 +704,7 @@ if [[ "$payload" == *'yaml.dump'* || "$payload" == *'yaml.safe_dump'* ]]; then
                 fi
             done
         fi
+        unset _guard2_runs_python
     fi
 fi
 
