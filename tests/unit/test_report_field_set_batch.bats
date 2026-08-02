@@ -3,8 +3,10 @@
 setup() {
     REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
     REPORT="$BATS_TEST_TMPDIR/report.yaml"
+    TASK_STUB="$BATS_TEST_TMPDIR/task.yaml"
     INBOX_STUB="$BATS_TEST_TMPDIR/inbox_write_stub.sh"
     printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$INBOX_STUB"
+    printf '%s\n' 'task:' '  status: in_progress' > "$TASK_STUB"
     chmod +x "$INBOX_STUB"
 }
 
@@ -35,7 +37,7 @@ YAML
 
 @test "truthful failed report is terminal while three commit-absence contradictions are blocked" {
     write_report failed no no true
-    run env RFS_DISABLE_FAST_RECONCILER=1 RFS_INBOX_WRITE_PATH="$INBOX_STUB" bash "$REPO_ROOT/scripts/report_field_set.sh" --batch "$REPORT" < "$BATS_TEST_TMPDIR/payload.yaml"
+    run env RFS_DISABLE_FAST_RECONCILER=1 RFS_INBOX_WRITE_PATH="$INBOX_STUB" RFS_TASK_FILE_PATH="$TASK_STUB" bash "$REPO_ROOT/scripts/report_field_set.sh" --batch "$REPORT" < "$BATS_TEST_TMPDIR/payload.yaml"
     [ "$status" -eq 0 ]
     run python3 - "$REPORT" <<'PY'
 import sys, yaml
@@ -47,7 +49,7 @@ PY
     for tuple in "completed yes yes true" "failed no yes true" "failed no no false"; do
         set -- $tuple
         write_report "$1" "$2" "$3" "$4"
-        run env RFS_DISABLE_FAST_RECONCILER=1 RFS_INBOX_WRITE_PATH="$INBOX_STUB" bash "$REPO_ROOT/scripts/report_field_set.sh" --batch "$REPORT" < "$BATS_TEST_TMPDIR/payload.yaml"
+        run env RFS_DISABLE_FAST_RECONCILER=1 RFS_INBOX_WRITE_PATH="$INBOX_STUB" RFS_TASK_FILE_PATH="$TASK_STUB" bash "$REPO_ROOT/scripts/report_field_set.sh" --batch "$REPORT" < "$BATS_TEST_TMPDIR/payload.yaml"
         [ "$status" -ne 0 ]
         [[ "$output" == *"terminal readiness requires"* ]]
     done
