@@ -334,7 +334,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4215"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "candidate already implemented: all deploy paths set _STALE_RESET_DONE and final pre-publication gate blocks when unset"
+  action_artifact: "scripts/deploy_task.sh:L1722,L12514,L12582,L12799-L12804;commit=5dbea7dea1bce21bdac0183811df84c4e05f294b;git_blame_verified=2026-08-02T18:53+09:00"
+  resolved_at: "2026-08-02T18:53:01+09:00"
 - id: INS-20260802-124143646-42ce
   ts: "2026-08-02T12:41:43+09:00"
   insight: "SKILL.md追従cmd候補: cmd_4215 で scripts変更(scripts/deploy_task.sh,scripts/head_fixed_validation.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して gate_skill_script_refs.sh rc=2 を解消せよ。"
