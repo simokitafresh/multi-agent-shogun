@@ -9196,6 +9196,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608020646_kotaro` — [[semantic_causal_automation]] -> `docs/research/hidden-infrastructure-r03-owner-transaction-barrier-matrix-20260801.md` |
 | causal | `cmd_reflux_backlink_202608020747_kotaro` — [[semantic_causal_automation]] -> `docs/research/hidden-infrastructure-r04-r05-task-owner-barrier-matrix-20260801.md` |
 | causal | `cmd_reflux_backlink_202608020848_kotaro` — [[semantic_causal_automation]] -> `docs/research/hot-script-speedup-round5-wave-final-snapshot-20260730.md` |
+| causal | `cmd_reflux_backlink_202608020948_kotaro` — [[semantic_causal_automation]] -> `docs/research/karo_dm_drain_delay_infra_bug_20260723.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gunshi_log_append — 仮: Gunshi Log Append
