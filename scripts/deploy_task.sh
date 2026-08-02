@@ -3317,6 +3317,7 @@ fp=hashlib.sha256(raw.encode()).hexdigest()[:16]
 print("["+", ".join(coverage)+"]\t"+fp+"\t"+cmd)
 PARENT_CONTRACT_PY
     ) || return 1
+    [ -z "$contract" ] && return 0
     IFS=$'\t' read -r coverage fingerprint cmd_bound <<< "$contract"
     printf '%s\n' "$coverage" | bash "$tool_root/scripts/report_field_set.sh" "$task_file" task.parent_ac_coverage - || return 1
     bash "$tool_root/scripts/report_field_set.sh" "$task_file" task.parent_contract_fingerprint "$fingerprint" || return 1

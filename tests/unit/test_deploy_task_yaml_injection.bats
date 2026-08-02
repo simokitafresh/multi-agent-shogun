@@ -1808,6 +1808,48 @@ YAML
 }
 
 # test_necessity: --directへYAML pathを誤投入した場合、task/report/inbox publication前にBLOCKし正規--yaml構文を提示する不変量を守る。
+# test_necessity: direct non-numeric commands have no parent mapping and must
+# succeed without mutating task/report, while numbered parents remain fail-closed.
+@test "inject_parent_contract exempts direct command without weakening numbered parent" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue/reports" "$tmpdir/queue/reopened_cmds"
+    task_file="$tmpdir/queue/tasks/hanzo.yaml"
+    report_file="$tmpdir/queue/reports/hanzo.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_karo_hotfix_direct_fixture
+  task_id: cmd_karo_hotfix_direct_fixture_normal
+  status: assigned
+  sentinel: task-unchanged
+YAML
+    cat > "$report_file" <<'YAML'
+status: pending
+sentinel: report-unchanged
+YAML
+    task_before="$(sha256sum "$task_file" | awk '{print $1}')"
+    report_before="$(sha256sum "$report_file" | awk '{print $1}')"
+
+    run env DEPLOY_TASK_LIB_ONLY=1 TASK_FILE_ENV="$task_file" REPORT_FILE_ENV="$report_file" PROJECT_ROOT_ENV="$PROJECT_ROOT" bash -c '
+        source "$PROJECT_ROOT_ENV/scripts/deploy_task.sh"
+        inject_parent_contract "$TASK_FILE_ENV" "$REPORT_FILE_ENV" hanzo
+    '
+    [ "$status" -eq 0 ]
+    [ "$(sha256sum "$task_file" | awk '{print $1}')" = "$task_before" ]
+    [ "$(sha256sum "$report_file" | awk '{print $1}')" = "$report_before" ]
+
+    sed -i 's/cmd_karo_hotfix_direct_fixture/cmd_999999/' "$task_file"
+    numbered_before="$(sha256sum "$task_file" | awk '{print $1}')"
+    run env DEPLOY_TASK_LIB_ONLY=1 TASK_FILE_ENV="$task_file" REPORT_FILE_ENV="$report_file" PROJECT_ROOT_ENV="$PROJECT_ROOT" SCRIPT_DIR_ENV="$tmpdir" bash -c '
+        source "$PROJECT_ROOT_ENV/scripts/deploy_task.sh"
+        SCRIPT_DIR="$SCRIPT_DIR_ENV"
+        inject_parent_contract "$TASK_FILE_ENV" "$REPORT_FILE_ENV" hanzo
+    '
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: parent SSOT missing during deployment"* ]]
+    [ "$(sha256sum "$task_file" | awk '{print $1}')" = "$numbered_before" ]
+    [ "$(sha256sum "$report_file" | awk '{print $1}')" = "$report_before" ]
+}
+
 @test "direct mode rejects YAML path cmd before publication" {
     task="$PROJECT_ROOT/queue/tasks/hayate.yaml"
     inbox="$PROJECT_ROOT/queue/inbox/hayate.yaml"
