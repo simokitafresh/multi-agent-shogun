@@ -264,7 +264,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "殿指示は11:31-12:34に複数役へ展開され、品質バグは家老へ報告後、gate false-positive bundle等で実修正済み。現HEADで関連hotfix commit群を再確認したため追加修正不要"
+  action_artifact: "queue/lord_conversation.jsonl:163-228; commit 7f54227ce9d784d2db77e6782cecaf20ee199d98; logs/karo_workarounds.yaml:1063"
+  resolved_at: "2026-08-02T18:16:33+09:00"
 - id: INS-20260802-123452644-f4a9
   ts: "2026-08-02T12:34:52+09:00"
   insight: "lord_conversation教訓候補: target=hanzo trigger=inbound_lord detail=今セッションでhookやgateの品質問題で遅延やエラー、\n    放置などが起きていたらバグだ。バグは利他の精神で\n  調\n    査して家老に報告せよ。すでに修正済みのことがある\n  から必ず再検証せよ"
