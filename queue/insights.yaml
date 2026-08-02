@@ -434,7 +434,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存防御で解消済み。deploy_task.shはgunshi_review_logに同一cmdのverdictが存在すれば正式draft review送信前に自動SKIPする"
+  action_artifact: "commit=670918b39b8421b1babdb9402f0b5a153a7d7536;code=scripts/deploy_task.sh:10984-11030;verification=HEADにdraft_review_already_completed+SKIP(already reviewed)存在"
+  resolved_at: "2026-08-02T21:27:33+09:00"
 - id: INS-20260802-133255657-c3ec
   ts: "2026-08-02T13:32:55+09:00"
   insight: "semantic_index_update新概念候補: discussion:DM signalの進捗を報告せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
