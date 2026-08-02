@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260802-122445492-0c6c
-  ts: "2026-08-02T12:24:45+09:00"
-  insight: "semantic_index_update新概念候補: discussion:DM signalを最優先して対応佐瀬よ。compare summaryページも修正完了したか は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-02T12:28:07+09:00"
 - id: INS-20260802-122546313-a4e9
   ts: "2026-08-02T12:25:46+09:00"
   insight: "semantic_index_update新概念候補: discussion:覚醒して継続せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -86,8 +76,8 @@ insights:
   action_artifact: "event=logs/self_retro.jsonl:1429;artifact=docs/research/throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md:60,83;verify=event_id ff468f325e60c05cedf940da48a0129d3fa603e4d9bab80bc7c73d977b0cc976 exists 1/1"
   resolved_at: "2026-08-02T14:22:20+09:00"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 33
-  last_seen: "2026-08-02T19:59:52+09:00"
+  occurrence_count: 35
+  last_seen: "2026-08-02T20:19:39+09:00"
 - id: INS-20260802-123359806-cdd4
   ts: "2026-08-02T12:33:59+09:00"
   insight: "[[DM signalのallertについて詳しく教えてほしい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-signalのallertについて詳しく教えてほしい。どうなるとallertが鳴るんだ？allertがなぜなるんだ？"
@@ -314,7 +304,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "殿の同一指示は複数役へ展開済み。軍師対象の品質問題も既存hotfixで再検証され、軍師LGTM・GATE CLEAR・semantic既存概念への収載まで完了しているため追加修正・decision不要"
+  action_artifact: "queue/lord_conversation.jsonl:189;commit=7f54227ce9d784d2db77e6782cecaf20ee199d98;queue/archive/bulletin_20260802.yaml:1048-1059;scripts/semantic_search.sh=report_quality_protocol/growth_loop/lesson_lifecycle"
+  resolved_at: "2026-08-02T20:22:11+09:00"
 - id: INS-20260802-125720141-b3f2
   ts: "2026-08-02T12:57:20+09:00"
   insight: "[[将軍も利他の精神で独自調査を進めよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍も利他の精神で独自調査を進めよ"
@@ -792,8 +785,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '9131342b7e5300eab44ac238bfa64597be6ccbcaee9dd636c0e4257090931098' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 19
-  last_seen: "2026-08-02T20:09:11+09:00"
+  occurrence_count: 20
+  last_seen: "2026-08-02T20:17:24+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -916,5 +909,12 @@ insights:
   insight: "SKILL.md追従cmd候補: cmd_karo_cdp_phase3_consumers_20260802 で scripts変更(scripts/cdp/cdp_measure.sh,scripts/cdp/cdp_server.py,scripts/note_draft.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して gate_skill_script_refs.sh rc=2 を解消せよ。"
   priority: "medium"
   source: "cmd_complete_gate:skill_script_refs:cmd_karo_cdp_phase3_consumers_20260802"
+  fix_known: false
+  status: pending
+- id: INS-20260802-201540475-1691
+  ts: "2026-08-02T20:15:40+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_cdp_phase4_skill_20260802 hanzo lesson_candidate: 文書contractは実装schema字段を正本から機械照合する 件数検査だけでは字段名の単複不一致を見逃す。REQUIRED_RECEIPT_FIELDSをASTから読み、本文字段との一致と旧字段残存0を同時に二値検証する。"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
   fix_known: false
   status: pending
