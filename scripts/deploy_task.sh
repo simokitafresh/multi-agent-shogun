@@ -9212,11 +9212,22 @@ for name in sorted(os.listdir(task_dir)) if os.path.isdir(task_dir) else []:
     status = str(peer_task.get('status') or '').strip()
     peer_files, peer_dirs = split_file_targets(reserved_paths(peer_task))
     if status not in active_statuses:
+        parent_cmd = str(peer_task.get('parent_cmd') or '').strip()
+        archive_marker = (
+            os.path.join(script_dir, 'queue', 'gates', parent_cmd, 'archive.done')
+            if parent_cmd and os.path.basename(parent_cmd) == parent_cmd
+            else ''
+        )
+        # archive.done closes this task generation.  Any later dirty state on
+        # the shared path belongs to a subsequent writer and must not revive
+        # the archived worker's reservation.
+        if archive_marker and os.path.isfile(archive_marker):
+            continue
         # The task record says "finished", but unpushed edits say otherwise.
         # Keep the claim so the worktree lane below can compare declaration
         # against the actual tree (2026-07-26: hanzo held 5 uncommitted files
         # from terminal tasks while the same paths were deployed to tobisaru).
-        settled_claims.append((peer_ninja, status, str(peer_task.get('parent_cmd') or ''), peer_files))
+        settled_claims.append((peer_ninja, status, parent_cmd, peer_files))
         continue
     file_overlap = sorted(current_files & peer_files)
     dir_overlap = sorted(current_dirs & peer_dirs)

@@ -369,6 +369,46 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: GATE CLEAR後にarchive済みのterminal generationは共有pathの
+# reservationを解放し、後続writerのdirtyを旧担当へ誤帰属させない。
+# regression_justification: 15:59-16:01のreflux配備3試行がarchive済み旧taskの
+# queue/insights.yaml予約として全件BLOCKした。
+@test "archived terminal owner releases dirty shared path while unarchived owner blocks" {
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_sasuke"
+    git -C "$TEST_PROJECT" init -q
+    git -C "$TEST_PROJECT" config user.email test@example.invalid
+    git -C "$TEST_PROJECT" config user.name test
+    printf 'baseline\n' > "$TEST_PROJECT/queue/insights.yaml"
+    git -C "$TEST_PROJECT" add queue/insights.yaml
+    git -C "$TEST_PROJECT" commit -q -m baseline
+    printf 'later writer\n' >> "$TEST_PROJECT/queue/insights.yaml"
+
+    write_collision_task sasuke done scripts/a.sh queue/insights.yaml
+    write_collision_task hanzo assigned scripts/b.sh queue/insights.yaml
+
+    run_path_collision_guard "$TEST_PROJECT/queue/tasks/hanzo.yaml" hanzo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"status=done/uncommitted"* ]]
+
+    : > "$TEST_PROJECT/queue/gates/cmd_sasuke/archive.done"
+    run_path_collision_guard "$TEST_PROJECT/queue/tasks/hanzo.yaml" hanzo
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"reserved path collision"* ]]
+}
+
+# test_necessity: archive解放はterminal generationだけに限定し、active ownerの
+# 同一path予約はarchive markerが存在しても解放しない。
+@test "archive marker never releases an active owner" {
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_sasuke"
+    : > "$TEST_PROJECT/queue/gates/cmd_sasuke/archive.done"
+    write_collision_task sasuke in_progress scripts/a.sh queue/insights.yaml
+    write_collision_task hanzo assigned scripts/b.sh queue/insights.yaml
+
+    run_path_collision_guard "$TEST_PROJECT/queue/tasks/hanzo.yaml" hanzo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: reserved path collision with sasuke"* ]]
+}
+
 @test "direct prewrite guard BLOCK leaves existing task YAML byte-identical" {
     write_collision_task sasuke in_progress scripts/a.sh tests/unit/shared.bats
     write_collision_task hanzo idle scripts/existing.sh tests/unit/existing.bats
