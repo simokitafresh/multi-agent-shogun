@@ -866,6 +866,91 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: A frozen task selection must execute every selected file and
+# publish exactly one terminal receipt whose rc matches PASS, FAIL, or BLOCK.
+@test "task runner completes all nine selected files and emits one rc-matched terminal receipt" {
+  mkdir -p "$TMPROOT/queue/tasks"
+  for n in $(seq 1 9); do
+    printf '@test "owned-%s" { true; }\n' "$n" >"$TMPROOT/tests/unit/owned-$n.bats"
+  done
+  cat >"$TMPROOT/queue/tasks/nine.yaml" <<'YAML'
+task:
+  test_path:
+    - tests/unit/owned-1.bats
+    - tests/unit/owned-2.bats
+    - tests/unit/owned-3.bats
+    - tests/unit/owned-4.bats
+    - tests/unit/owned-5.bats
+    - tests/unit/owned-6.bats
+    - tests/unit/owned-7.bats
+    - tests/unit/owned-8.bats
+    - tests/unit/owned-9.bats
+YAML
+  export ENGINE_LOG="$TMPROOT/engine.log"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >>"$ENGINE_LOG"
+printf '1..1\nok 1 owned\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  for outcome in pass fail; do
+    : >"$ENGINE_LOG"
+    receipt_dir="$TMPROOT/receipts-$outcome"
+    if [ "$outcome" = fail ]; then
+      cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >>"$ENGINE_LOG"
+if [[ "$1" == *owned-1.bats ]]; then
+  printf '1..1\nnot ok 1 owned\n'
+  exit 7
+fi
+printf '1..1\nok 1 owned\n'
+SH
+      chmod +x "$TMPROOT/bin/bats"
+    fi
+    run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" \
+      RUN_TESTS_RECEIPT_DIR="$receipt_dir" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+      BATS_CACHE=0 BATS_INNER_JOBS=1 BATS_MAX_TEST_JOBS=2 \
+      bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/nine.yaml"
+    expected_rc=0
+    [ "$outcome" = pass ] || expected_rc=7
+    [ "$status" -eq "$expected_rc" ]
+    [ "$(wc -l <"$ENGINE_LOG")" -eq 9 ]
+    [ "$(find "$receipt_dir" -name '*.json' -type f | wc -l)" -eq 1 ]
+    receipt="$(find "$receipt_dir" -name '*.json' -type f)"
+    [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["rc"], d["run_manifest"]["scope_identity"]["selected_file_count"], d["run_manifest"]["scope_identity"]["executed_file_count"])' "$receipt")" = "$expected_rc 9 9" ]
+  done
+
+  : >"$ENGINE_LOG"
+  cat >"$TMPROOT/queue/tasks/zero.yaml" <<'YAML'
+task:
+  target_path: scripts/unmapped.sh
+YAML
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/zero.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"files=0"* ]]
+  [ ! -s "$ENGINE_LOG" ]
+
+  printf 'task:\n  test_path: [tests/unit/missing.bats]\n' >"$TMPROOT/queue/tasks/invalid.yaml"
+  invalid_receipts="$TMPROOT/receipts-invalid"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" \
+    RUN_TESTS_RECEIPT_DIR="$invalid_receipts" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/invalid.yaml"
+  [ "$status" -eq 2 ]
+  [ "$(find "$invalid_receipts" -name '*.json' -type f | wc -l)" -eq 1 ]
+  receipt="$(find "$invalid_receipts" -name '*.json' -type f)"
+  [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$receipt")" -eq 2 ]
+}
+
 # test_necessity: Task selector must classify tests by path/extension contract;
 # production scripts named test_*.sh are sources, never direct Bats targets.
 @test "task mode excludes test-prefixed production shell scripts from direct tests" {

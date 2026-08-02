@@ -860,13 +860,12 @@ run_bats_files_parallel() {
         [ "$pending_count" -gt 0 ] || break
         if [ "$selected" -lt 0 ]; then
             wait_for_one
-            if [ "$failed" -ne 0 ]; then
-                # Close the queue immediately, but let already-admitted light
-                # files finish under their existing per-file timeout.  Heavy
-                # files consume the full budget and therefore never overlap.
-                pending_count=0
-                break
-            fi
+            # A terminal receipt covers the complete frozen selection, not
+            # merely the files admitted before the first failure.  Keep
+            # admitting every queued file after a child fails; aggregate the
+            # concrete rc only after all selected files have reached a
+            # terminal state.  Otherwise a two-slot runner can report 2/9 and
+            # leave the public invocation without a valid terminal receipt.
             continue
         fi
         file="${queued_files[$selected]}"
