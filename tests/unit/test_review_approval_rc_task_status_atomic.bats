@@ -67,8 +67,72 @@ YAML
     echo "$report"
 }
 
+_make_failed_report() {
+    local name="$1" cmd_id="$2" worker="$3"
+    local report="$FAKE_ROOT/queue/reports/${name}.yaml"
+    cat > "$report" <<YAML
+worker_id: ${worker}
+task_id: ${cmd_id}_normal
+parent_cmd: ${cmd_id}
+status: failed
+verdict: FAIL
+binary_checks:
+  AC1:
+    - check: "implementation failed before commit"
+      result: "no"
+files_modified:
+  - path: scripts/foo.sh
+YAML
+    echo "$report"
+}
+
 _review() {
     REVIEW_APPROVAL_ROOT="$FAKE_ROOT" bash "$PROJECT_ROOT/scripts/review_approval.sh" "$@"
+}
+
+# test_necessity: a truthful failed report may lack a commit precisely because
+# implementation failed; Karo RC must bind that one exception to exact report
+# bytes and the current worker task, while every PASS/identity boundary remains
+# fail-closed.
+# regression_justification: cmd_karo_hotfix_memory_db_recovery_stall_20260802
+# reached failed+FAIL, but RC passed fail_close=0 to the commit identity gate and
+# deadlocked on the absence that the report was truthfully recording.
+@test "failed uncommitted RC is exact-generation and task-identity bound" {
+    local cmd_id=cmd_karo_failed_uncommitted worker=atomicworker6
+    _make_task "$worker" "$cmd_id"
+    local report
+    report="$(_make_failed_report "${worker}_rpt_${cmd_id}" "$cmd_id" "$worker")"
+
+    run _review "$cmd_id" karo RC "$report"
+    echo "$output" >&3
+    [ "$status" -eq 0 ]
+    grep -q '^status: revision_requested' "$report"
+    grep -q '^  status: assigned' "$FAKE_ROOT/queue/tasks/${worker}.yaml"
+
+    local key approval generation
+    key="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$FAKE_ROOT" "$report")"
+    approval="$FAKE_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key/karo.yaml"
+    generation="$(sed -n 's/^generation: //p' "$approval")"
+    [[ "$generation" =~ ^[0-9a-f]{64}$ ]]
+
+    # The formal record is for the pre-RC exact bytes, so the lifecycle write
+    # performed by RC itself must already make the recorded generation stale.
+    [ "$generation" != "$(sha256sum "$report" | awk '{print $1}')" ]
+}
+
+@test "failed uncommitted RC exception does not admit PASS or wrong task identity" {
+    local cmd_id=cmd_karo_failed_uncommitted_negative worker=atomicworker7
+    _make_task "$worker" "$cmd_id"
+    local report
+    report="$(_make_failed_report "${worker}_rpt_${cmd_id}" "$cmd_id" "$worker")"
+
+    sed -i 's/status: failed/status: completed/; s/verdict: FAIL/verdict: PASS/' "$report"
+    run _review "$cmd_id" karo RC "$report"
+    [ "$status" -ne 0 ]
+
+    sed -i 's/status: completed/status: failed/; s/verdict: PASS/verdict: FAIL/; s/task_id: cmd_karo_failed_uncommitted_negative_normal/task_id: wrong_task/' "$report"
+    run _review "$cmd_id" karo RC "$report"
+    [ "$status" -ne 0 ]
 }
 
 # ---------------------------------------------------------------------------

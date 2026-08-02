@@ -81,10 +81,41 @@ fi
   echo "BLOCK: formal review requires status=completed (actual=${report_status:-missing}): $report" >&2
   exit 1
 }
+
+# A failed RC can truthfully have no implementation commit.  Admit that narrow
+# exception only after binding the report to the worker's current task.  This
+# precheck deliberately precedes the fingerprint commit-identity gate; normal
+# completed reports and failed reports for another task never receive it.
+identity_exempt="$fail_close"
+if [ "$failed_rc" = 1 ]; then
+  failed_rc_boundary=$(python3 - "$ROOT" "$report" "$cmd_id" <<'PY'
+import pathlib, sys, yaml
+root = pathlib.Path(sys.argv[1])
+report = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
+cmd_id = sys.argv[3]
+worker = str(report.get("worker_id") or "")
+if not worker or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789_-" for c in worker):
+    raise SystemExit(1)
+task_path = root / "queue" / "tasks" / f"{worker}.yaml"
+task_doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+task = task_doc.get("task") or {}
+task_id = str(task.get("task_id") or task.get("_ac_task_id") or "")
+report_task_id = str(report.get("task_id") or "")
+task_parent = str(task.get("parent_cmd") or "")
+issued_cmd_id = str(task.get("issued_cmd_id") or "")
+normal = not cmd_id.startswith("cmd_karo_") and task_parent == cmd_id
+karo_direct = cmd_id.startswith("cmd_karo_") and (task_parent == cmd_id or issued_cmd_id == cmd_id)
+if not ((normal or karo_direct) and task_id and report_task_id == task_id):
+    raise SystemExit(1)
+print(task_path)
+PY
+  ) || { echo "BLOCK: failed RC report/task identity mismatch: $report" >&2; exit 1; }
+  identity_exempt=1
+fi
 base="$ROOT/queue/gates/$cmd_id/review_approvals"
 mkdir -p "$base"
 exec 200>"$base/.lock"; flock -w 10 200
-fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$fail_close" review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
+fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$identity_exempt" review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
 # Finalize telemetry joins against SG7 review.report_fingerprint, whose contract
 # is the SHA-256 of the report's exact bytes.  The approval fingerprint above is
 # intentionally normalized for review stability and therefore is not the same
@@ -104,7 +135,7 @@ rc_scope_file="$dir/last_rc_scope"
 # The fingerprint is the normalized content hash alone (3718e7245 / cmd_4156);
 # ${fingerprint##*:} returned the whole hash, so the no-code test below was
 # always false.  Read the gate's decided commit identity instead.
-current_commit=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$fail_close" review_report_commit_identity "$report" 2>/dev/null || true)
+current_commit=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$identity_exempt" review_report_commit_identity "$report" 2>/dev/null || true)
 stored_scope=$(head -n 1 "$rc_scope_file" 2>/dev/null || true)
 case "$stored_scope" in implementation|report) ;; *) stored_scope="" ;; esac
 if [ "$result" = RC ]; then
@@ -314,7 +345,7 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_SKIP_LED
 fi
 tmp=$(mktemp "$dir/.${role}.XXXXXX")
 trap 'rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*; rmdir "${REVIEW_FP_CACHE_DIR:?}" 2>/dev/null || true' EXIT
-printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" "$correction_scope" > "$tmp"
+printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 # T1a throughput instrumentation: the approval file above is the existing
 # durable decision boundary.  Reuse the shared append-only timing ledger and
