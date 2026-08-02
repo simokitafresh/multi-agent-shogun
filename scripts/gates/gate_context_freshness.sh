@@ -121,6 +121,63 @@ context_commit_closes_source_alert() {
         && git -C "$ROOT_DIR" merge-base --is-ancestor "$latest_hash" "$context_hash" 2>/dev/null
 }
 
+# GA-425: DM-Signal docs/research commits are already forced through
+# dm_signal_research_reflux_guard.sh before commit.  That guard records the
+# exact staged path/status/blob fingerprint in dm-signal-research.md, but the
+# generic source_commit ancestry check above cannot consume it because the
+# source hash belongs to the external DM-Signal repository.  Recompute the
+# latest alerted commit's canonical fingerprint and accept it only when the
+# persisted guard receipt matches byte-for-byte.  A later unreviewed commit has
+# a different fingerprint and therefore remains actionable.
+reflux_receipt_closes_source_alert() {
+    local rel_path="$1" alert_line="$2"
+    local file="$ROOT_DIR/$rel_path" repo="" latest_hash="" recorded="" actual=""
+
+    [[ "$rel_path" == "context/dm-signal-research.md" ]] || return 1
+    [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
+    latest_hash="${BASH_REMATCH[1]}"
+    [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
+    repo="${BASH_REMATCH[1]}"
+    [[ -d "$repo" ]] || return 1
+    git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
+
+    recorded="$(sed -n 's/.*dm_signal_research_reflux: fingerprint=\([0-9a-f]\{64\}\);.*/\1/p' "$file" | head -1)"
+    [[ "$recorded" =~ ^[0-9a-f]{64}$ ]] || return 1
+    actual="$(python3 - "$repo" "$latest_hash" <<'PY'
+import hashlib
+import subprocess
+import sys
+
+repo, commit = sys.argv[1:]
+raw = subprocess.run(
+    ["git", "-C", repo, "diff-tree", "--root", "--no-commit-id", "--name-status", "-r", "-z", commit, "--", "docs/research"],
+    check=True, capture_output=True,
+).stdout.decode("utf-8", "surrogateescape").split("\0")
+entries = []
+i = 0
+while i < len(raw) and raw[i]:
+    status = raw[i]
+    path = raw[i + 1]
+    i += 2
+    # Rename/copy records contain old and new paths.  The staged guard uses
+    # diff --name-only plus the destination's name-status prefix.
+    if status.startswith(("R", "C")):
+        path = raw[i]
+        i += 1
+    blob_result = subprocess.run(
+        ["git", "-C", repo, "rev-parse", f"{commit}:{path}"],
+        capture_output=True, text=True,
+    )
+    blob = blob_result.stdout.strip() if blob_result.returncode == 0 else "DELETED"
+    entries.append(f"{status}\t{path}\t{blob}")
+if entries:
+    canonical = "\n".join(sorted(entries, key=lambda row: row.split("\t", 1)[1])) + "\n"
+    print(hashlib.sha256(canonical.encode("utf-8", "surrogateescape")).hexdigest())
+PY
+)" || return 1
+    [[ -n "$actual" && "$actual" == "$recorded" ]]
+}
+
 # GA-314: source更新を解消する際、索引本文が参照するrepo相対リンクの欠落を
 # source_commit更新だけで隠してはならない。鮮度ALERT対象に限って参照を検査し、
 # 欠落が1件でもあれば後段でBLOCKへ倒す。
@@ -408,7 +465,8 @@ for rel_path in "${target_rel_paths[@]}"; do
     record_stale_template_candidate "$rel_path" "$days_ago" "$last_updated"
 
     if [[ -n "${source_alerts[$rel_path]:-}" ]]; then
-        if context_commit_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}"; then
+        if context_commit_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}" \
+            || reflux_receipt_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}"; then
             context_hash="$(git -C "$ROOT_DIR" log -1 --format=%h -- "$rel_path" 2>/dev/null || true)"
             echo "OK: ${basename_file} (${days_ago}日前更新、context commit ${context_hash} が検出済みsource候補を包含)"
             continue

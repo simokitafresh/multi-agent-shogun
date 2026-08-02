@@ -123,6 +123,60 @@ SH
   [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "DM-Signal research reflux receipt closes its exact external source commit" {
+  project_root="$BATS_TEST_TMPDIR/dm-signal"
+  mkdir -p "$project_root/docs/research"
+  git -C "$project_root" init -q
+  git -C "$project_root" config user.email fixture@example.com
+  git -C "$project_root" config user.name fixture
+  printf 'reviewed research\n' > "$project_root/docs/research/result.md"
+  git -C "$project_root" add docs/research/result.md
+  git -C "$project_root" commit -qm "cmd_fixture: research result"
+  source_hash="$(git -C "$project_root" rev-parse HEAD)"
+  source_blob="$(git -C "$project_root" rev-parse HEAD:docs/research/result.md)"
+  fingerprint="$(printf 'A\tdocs/research/result.md\t%s\n' "$source_blob" | sha256sum | awk '{print $1}')"
+  printf '%s\n' \
+    '<!-- last_updated: 2026-07-19 cmd_fixture -->' \
+    "<!-- dm_signal_research_reflux: fingerprint=${fingerprint}; mode=synced; evidence_b64=Zml4dHVyZQ== -->" \
+    '<!-- source_commit:abc1234 reason:older evidence:fixture -->' \
+    > "$FIXTURE_ROOT/context/dm-signal-research.md"
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
+#!/usr/bin/env bash
+echo 'ALERT: context/dm-signal-research.md source commits 1件 since last_updated=2026-07-19 repo=$project_root latest: ${source_hash} cmd_fixture research result'
+SH
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"総合判定: OK"* ]]
+  [[ "$output" != *"ALERT: dm-signal-research.md"* ]]
+
+  printf 'unreviewed research\n' >> "$project_root/docs/research/result.md"
+  git -C "$project_root" add docs/research/result.md
+  git -C "$project_root" commit -qm "cmd_fixture_new: unreviewed research"
+  newer_hash="$(git -C "$project_root" rev-parse HEAD)"
+  sed -i "s/${source_hash}/${newer_hash}/" "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"ALERT: dm-signal-research.md"* ]]
+}
+
 @test "stale context links resolve across workspace and registered project roots" {
   project_root="$BATS_TEST_TMPDIR/project"
   mkdir -p "$FIXTURE_ROOT/projects" "$FIXTURE_ROOT/docs/research" \
