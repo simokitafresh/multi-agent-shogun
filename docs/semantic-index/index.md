@@ -6785,7 +6785,7 @@ codd:
 |------|---|
 | id | defense_hierarchy |
 | label | 防御階層原則(Level 1-6) |
-| aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口側強化, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, Level5入口ゲート, 事前コンテキスト強制, q11既存確認, レベル0 7に貫通してCMD起票ルールを埋め込もう, 速度, 速度が遅いスクリプトや仕組みはバグだ, 遅いスクリプトはないか？品質を落とさずに速度を改善しよう, 品質を下げてはだめだな, 実行速度が遅い pyはないか？遅いのはバグの1種だ, 速度も向上してくれ, 品質の低いhookやgateはインフラバグだ, 利他の精神でインフラバグがないか調査してくれ, あまりにも遅いな, setup file相当の共有で速度を上げる際, 品詞向上しながら更に速度を上げるのが我らのスタイルだな, スループットの向上がバグによるものではナンセンスだな, 品質速度同時向上, 自動成長速度, 正しい試行回数×一発PASS率×知見還流率, バグ由来スループット拒否, この点を改善するアイデアを家老と協議せよ, 今わかっているバグを根治しよう, 小さく役割分担を並列で最速, 小並列最速, オーバーヘッドを気にする必要はない, 並列で知見が多く集まり複利での速度アップ, 過剰直列化, 逐次化は真の依存がある場合のみ, 実験ファースト, 総当たり実験, 膨大な量の実験を超速で回し続ける, 考えることは向いてない, 全てを実験してみればいい, 確認せずに想像するから結果が出ない, 真の強制, 強制されていることすら自覚しない状態, 表示型防御, 構造型防御, 目の前の事を即時やり続ける, 台帳も計測もしながら即時やる, 全部やるんだ, 俺の指示に従え改変するな, pane直貼り, 作業終了後のidle状態で送信, lost-wakeup, retro原文配送, 失敗前提N並列調査, hookやgateの品質問題などがないか覚 醒して調査せよ, 速度は計測しているか？, 実は構造の改善をしなくても, 本番で計測, 速度を改善する目的以外のことをやっていたのか, 家老の速度を落としている原因も調査せよ |
+| aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口側強化, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, Level5入口ゲート, 事前コンテキスト強制, q11既存確認, レベル0 7に貫通してCMD起票ルールを埋め込もう, 速度, 速度が遅いスクリプトや仕組みはバグだ, 遅いスクリプトはないか？品質を落とさずに速度を改善しよう, 品質を下げてはだめだな, 実行速度が遅い pyはないか？遅いのはバグの1種だ, 速度も向上してくれ, 品質の低いhookやgateはインフラバグだ, 利他の精神でインフラバグがないか調査してくれ, あまりにも遅いな, setup file相当の共有で速度を上げる際, 品詞向上しながら更に速度を上げるのが我らのスタイルだな, スループットの向上がバグによるものではナンセンスだな, 品質速度同時向上, 自動成長速度, 正しい試行回数×一発PASS率×知見還流率, バグ由来スループット拒否, この点を改善するアイデアを家老と協議せよ, 今わかっているバグを根治しよう, 小さく役割分担を並列で最速, 小並列最速, オーバーヘッドを気にする必要はない, 並列で知見が多く集まり複利での速度アップ, 過剰直列化, 逐次化は真の依存がある場合のみ, 実験ファースト, 総当たり実験, 膨大な量の実験を超速で回し続ける, 考えることは向いてない, 全てを実験してみればいい, 確認せずに想像するから結果が出ない, 真の強制, 強制されていることすら自覚しない状態, 表示型防御, 構造型防御, 目の前の事を即時やり続ける, 台帳も計測もしながら即時やる, 全部やるんだ, 俺の指示に従え改変するな, pane直貼り, 作業終了後のidle状態で送信, lost-wakeup, retro原文配送, 失敗前提N並列調査, hookやgateの品質問題などがないか覚 醒して調査せよ, 速度は計測しているか？, 実は構造の改善をしなくても, 本番で計測, 速度を改善する目的以外のことをやっていたのか, 家老の速度を落としている原因も調査せよ, 家老と協議せよ |
 | skills | なし |
 | related_concepts | growth_loop, gate_quality_framework, hook_automation_framework, creator_brainwashing_defense, gate_bypass_prevention, deepdive_principles, chain_principle, no_auto_extinguish, ultimate_state_principle, silent_fallback_quality, cmd_save_gate_catalog, sg_pre31_semantic_validation, infra_throughput_outcome_design |
 | related_lessons | `L317`, `L512` |
@@ -10345,7 +10345,7 @@ codd:
 |------|---|
 | id | provisional_tobisaru |
 | label | 仮: Tobisaru |
-| aliases | tobisaru, queue/tasks/tobisaru.yaml, queue tasks tobisaru.yaml, provisional_tobisaru, じゃあtobisaruは何をやっているんだ？, tobisaruが放置されていないか？, tobisaruがバグで呈している, 作業に直接関係のないCI GREENを強要するのはバグだ |
+| aliases | tobisaru, queue/tasks/tobisaru.yaml, queue tasks tobisaru.yaml, provisional_tobisaru, じゃあtobisaruは何をやっているんだ？, tobisaruが放置されていないか？, tobisaruがバグで呈している, 作業に直接関係のないCI GREENを強要するのはバグだ, tobisaruは何をやっているのだ？ |
 | status | provisional |
 | auto_generated | true |
 | source_cmd | cmd_karo_hotfix_lesson_health_ga183_202607060939 |
@@ -10399,6 +10399,7 @@ codd:
 | cmd | `cmd_karo_recon2_pf_apply_oracle_design_tobisaru_20260803` |
 | cmd | `cmd_karo_recon2_b4_schema_divergence_tobisaru_20260803` |
 | cmd | `cmd_reflux_backlink_202608032028_tobisaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:50:18+09:00 tobisaruは何をやっているのだ？ |
 
 ## provisional_hayate — 仮: Hayate
 
