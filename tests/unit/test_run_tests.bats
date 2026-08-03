@@ -1685,7 +1685,7 @@ YAML
 @test "external p9 fallback provisions dirty source and receipt uses external HEAD" {
   external="$TMPROOT/external"
   mkdir -p "$external/frontend" "$TMPROOT/projects" "$TMPROOT/queue/tasks" "$TMPROOT/receipts" "$TMPROOT/sf"
-  printf '{"scripts":{"test":"fixture"}}\n' >"$external/frontend/package.json"
+  printf '{"scripts":{"test":"jest"}}\n' >"$external/frontend/package.json"
   printf 'committed\n' >"$external/frontend/source.ts"
   git -C "$external" init -q
   git -C "$external" config user.email test@example.invalid
