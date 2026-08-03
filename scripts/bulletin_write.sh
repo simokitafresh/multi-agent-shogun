@@ -220,6 +220,9 @@ commander_post_has_related_declaration() {
     is_startup_verification_post "$content" && return 0
     printf '%s' "$content" | grep -qP 'cmd_[A-Za-z0-9_]+' && return 0
     printf '%s' "$content" | grep -qP '(下知|下問|下命|御下知|御下問|仰せ|沙汰|指図|裁定|指示)' && return 0
+    # 将軍review_request/review_designへの応答(設計書独立レビュー等)。
+    # 実測(2026-08-03): 独立レビュー6件が最多。cmd_idを自然に含まない正当投稿がBLOCKされるバグ是正。
+    printf '%s' "$content" | grep -qP '独立レビュー' && return 0
     return 1
 }
 
