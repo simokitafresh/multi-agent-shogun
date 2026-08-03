@@ -510,6 +510,17 @@ def is_noise_only_candidate(payload_id, fields):
     payload_id_clean = norm(strip_noise(payload_id))
     if payload_id_clean and combined == payload_id_clean:
         return True
+    # Short discussion questions that only ask for the current status do not
+    # define a durable concept.  Keep this narrower than a generic question
+    # check so reflective/design questions remain eligible as insights.
+    if source_type == "discussion" and len(combined) <= 40:
+        status_question = re.compile(
+            r"^(?:いま|今)?[^。!！]{0,24}(?:は|の)?"
+            r"(?:どうなって(?:る|いる)|どう(?:だ|ですか|なの)|"
+            r"進捗(?:は)?どう|状況(?:は)?どう)[?？]?$"
+        )
+        if status_question.fullmatch(combined):
+            return True
     # A payload that only contains generic source/event words after ID stripping
     # still has no concept signal worth sending to the insight backlog. Keep this
     # list conservative: it should catch transport/status chatter, not domain terms.

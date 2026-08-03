@@ -383,6 +383,20 @@ EOF
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
 
+# test_necessity: Ephemeral status questions must not create durable concepts,
+# while reflective questions with lasting guidance must remain candidates.
+@test "NONE: short discussion status question is skipped without suppressing reflective question" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-08-04T08:20:00+09:00","summary":"将軍はどうなってる？"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NONE: skipped noise-only candidate for discussion:将軍はどうなってる？"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-08-04T08:21:00+09:00","summary":"小さく進めるのを忘れていないか？"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NONE: insight queued for discussion:小さく進めるのを忘れていないか？"* ]]
+    grep -q '小さく進めるのを忘れていないか？' "$TEST_TMPDIR/queue/insights.log"
+}
+
 @test "NONE: cmd_complete generic event payload is skipped as noise" {
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2914","title":"cmd_completeイベント","purpose":"GATE CLEAR PASS pending"}'
     [ "$status" -eq 0 ]
