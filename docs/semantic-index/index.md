@@ -277,6 +277,7 @@ codd:
 | causal | `cmd_karo_hotfix_reflux_terminal_reservation_release_20260802` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-02T20:53:37+09:00 モメンタム感度分析第三弾設計書v1.3(2026-08-02 20:52、gist b2a97d63 sha256=e105a39f一致): 家老レビューREQUEST_CHANGES(blt_205112)の限定4修正を反映し【実験GO】 |
 | causal | `cmd_karo_hotfix_direct_parent_contract_exempt_20260803` files_modified: [[dm_signal_pf_restore_guardrails]] |
+| causal | `cmd_karo_hotfix_sgpre35_cross_repo_head_20260803` files_modified: [[dm_signal_pf_restore_guardrails]] |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
@@ -1525,6 +1526,9 @@ codd:
 | causal | `cmd_karo_recon_dm6_e0_e4_monthstart_20260731` files_modified: [[recalculate_pipeline]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-02T13:38:35+09:00 ledger-bound freeze正本v2.3.2(2026-08-02 13:38、gist 3d2c504e): 残穴収束。(1)反復真因=才蔵recon実測特定(GATE CLEAR 13:24): date仮説棄却9/9・esc |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T02:33:27+09:00 月中トレードバグ設計書v3.6(2026-08-03 02:36、gist 8cbc86a5 sha256=979b27b7一致): 殿質問『理論上シグナルは変わらないか』への確定回答=**standardのみ理論不変、FoFは変わり得る* |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:46:51+09:00 ab8058713945123ee toolu_01C61fPehcm2Z9CeniY34A8t /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:59:51+09:00 ad636c38b9201c845 toolu_01Xa78exQdLuCtsApfnR84wS /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:05:34+09:00 a5591599399536da9 toolu_01XxcsKUPfxnKh7XLdQDJWbi /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | causal_chain | `[[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]` (L1447) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
@@ -1533,7 +1537,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0, 要件 ①実行と承認の分離 実行者の自己承認禁止, cmd完了品質へ単調保持する履歴である, semantic_index_update_158秒, source lord conversation, 報告するのは正しい結果が出た時と, 完了gateのown commit検査だけでは, 回帰13 PASS, 復元184 exact完了, 個別Unit上位test semantic index update 072秒の支配項を除去し, 原因はlive PIDだけをhealthy扱いしたことと, 各wrapperはexact test名のok行を検証する, source gunshi session, 三層health未貫通0件となること, 教訓 fixture≠live, source commit ab302df7b inbox, startup gate検出を一体化する, これは指摘した2失敗と別修正のため赤残存の可能性, source shogun recovery, tmp等の隔離コピーへ複製してから旧版パッチを当てて検証する, 今回は3 3修正し355 356から356 356へ改善, 背景再入回帰を追加した結果, fixture広義同型16件（家老11 軍師5）, source dummy, 家老自身のD0修正・実装commitは禁止, 接続cmdがactive時だけWAIT, cmd完了監視はHEADを使用, commit f4d94ab4, 新規cmd 0件, source shogun d0 fix, source commit 64fcd42c9, WARN_hook+test, startup BLOCK→WARN, 時間がかかるものはすべてバグとして扱い, source session shogun ls091, source lessons shogun, 軍師は2回目で注記, P1 全チェックTIMING追加, PASS, daemon fixtureは本番永続daemonを起動せず, 即時diffで検知し復元, 選定とreservation記録が非原子的で, 隔離source fixtureは必須依存追加へ追随させる, daemonのsource依存追加とログ契約強化を行った際, producerのみgit履歴生成, 全て二値条件で実装する, obsidianは有効活用されているか？, 比較境界は両辺を同一fixtureで型正規化する, Git tree解決可能を型検証する, fix R1, 家老hotfix ab8d6a9f5で境界3 PASS済み, GA 304は残存5行でCI実行前FAIL, 外部repo identity fixture隔離, GA_304_CI_FAIL, cmd complete本体へsource依存を追加した際, 確認せずに想像するから結果が出ない』, wrapperへsource追加時, 復元testは後発依存と実git状態をfixture化する, source session shogun, source lord ruling typo fix, source lord confirm, source n series all closed, 誤爆扱い問い返し禁止, 結果 未反映15→1件 残1は正常進行中, 当該6件はgateコードに到達する前に落ちるため因果なし, 同値確認だけでは自分のcommitが壊した回帰を見逃す, gate commit flow設計書キャンペーンの完了, 実装の多重化を発見したら, 26に軍師はこの型で3回誤った, 判定が読む環境変数を実装で確かめ, 軍師は同じデータで『該当0件』とした, 方式選択が個別の誤りを吸収することがある, ∴★新しい教訓が新しい誤読を生んだ, 前者の教訓を後者に当ててはならない, source shogun gist publish, ★『教訓は3度守られなかった, 本日の組織的到達点 家老の最終行を原文のまま記録・将軍指示, bats側で $status eq を見る書き方は, source karo latency analysis, source karo scope claim family, 既存欠陥FAILは掘り当てた在庫であり人質にしない, 宣言後の指摘で初めて定義を修正した, source lord haste remedy, フォールバックという発想自体がバグの真因である, 殿が明示した方針 例 『今は調査の時間, 受け手は指示・訂正・懸念の形で来たものを検証せず実行するため, 運用経路0件 testからしか実行されない, n 1でなくなった, 本日の還流弾が是正済みの問題』, 全軍恒久教訓 家老blt 軍師blt ・ 『自分で数えると, 実証 軍師が自分の『同型11回』を検証したところ, source 家老blt 軍師blt, 家老・将軍のgateには0件, 軍師自身が自分に不利な事実として提出, source 殿裁定 lord conversation, gistは殿閲覧用ミラー, 訂正の正道 過去行の手書き換え禁止 捏造, source kotaro r6 timing probe, source kotaro r6 fixture1, source kotaro r6 fixture2, リンクを含めない場合の挙動を家老が実測する, fixture body without a link, 次回このtestに遭遇したら, R6のL3表示文言を検証する家老のテスト, L3表示文言, source kotaro ac1 check, fixture no link, source gunshi multilink probe, source gunshi multilink probe2, source gunshi reverify3, source gunshi reverify5, source karo gate probe, karo_probe_reached_20260727, 同一報告が入口ごとにPASS BLOCKへ分岐する, insight在庫だけでは再発したため, source lord ruling, mapping注入またはautofix検討, 完了宣言 12check全クローズ→台帳再集計→第二弾序列, 家老の自立配備 karo direct, v3 CLOSED, commit a4ababd16, 殿裁定2026 最上位訂正 『誰の判断だ？第二弾が優先, 誰の判断だ？第二弾が優先, 将軍はその後, scopeは2スクリプト2弾のまま, 本弾で正しいファイルへの実装を素早く進める土台になった, P2 reflux SSOT修正 才蔵, source shogun session save, commit 1be8bee8f, scope拡張が全量test要求へ化ける, source round5 v141 lgtm, 将軍が骨子起草→殿提示, 家老の序列表 上位20 setup寄与 が掲示板に上がり次第, 序列表は家老抽出中→確定でv1 1改版→殿裁可→解禁, 不変indexへの辺ごとgit照会を一括集合へ変換する, 不成立ならBLOCKする, promotion v1 2は待機継続 殿裁定00, promotion v1 2は指示があるでも待機せよ, 共通修正dbf26c3de後はdirect selected, fixture専用hooksへ明示modeでinstallし, 既存policy gate PASSでもFNを検出しなかった, 完了reflux非発火と鮮度gate検出を混同しない, 完遂条件へindex map 二回目差分0を追加, source shogun, source shogun GATE CLEAR, 修正のための修正 本末転倒, 追記型九龍城の解体3例目 context層 設計書自身 本件, 返答が必要なinboxは, 返答が必要なinboxの確認・既読化は, 正しく本番環境で表示されてスタート地点, rcだけで新規投入成功と判定すると未処理を隠す, 指示を無視しない, task runner終端receiptを明示パスで検証する, 報告commit相関だけでは完了後直投入を捕捉できない, 旧値も99 %がRULE非準拠 汚染は本日でなく長期継続, 旧値が正ならrevert路復活, source shogun session, 空weights 0化はfail visibleへ, trade rule md L153明文現物確認, v3.3計算仕様完全確定, gist 8cbc86a5 sha一致 仕様未決ゼロ達成, 残る殿裁定 実測後のA0 4b routeのみ, ledger再基線化 A0 4b route候補 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0, 要件 ①実行と承認の分離 実行者の自己承認禁止, cmd完了品質へ単調保持する履歴である, semantic_index_update_158秒, source lord conversation, 報告するのは正しい結果が出た時と, 完了gateのown commit検査だけでは, 回帰13 PASS, 復元184 exact完了, 個別Unit上位test semantic index update 072秒の支配項を除去し, 原因はlive PIDだけをhealthy扱いしたことと, 各wrapperはexact test名のok行を検証する, source gunshi session, 三層health未貫通0件となること, 教訓 fixture≠live, source commit ab302df7b inbox, startup gate検出を一体化する, これは指摘した2失敗と別修正のため赤残存の可能性, source shogun recovery, tmp等の隔離コピーへ複製してから旧版パッチを当てて検証する, 今回は3 3修正し355 356から356 356へ改善, 背景再入回帰を追加した結果, fixture広義同型16件（家老11 軍師5）, source dummy, 家老自身のD0修正・実装commitは禁止, 接続cmdがactive時だけWAIT, cmd完了監視はHEADを使用, commit f4d94ab4, 新規cmd 0件, source shogun d0 fix, source commit 64fcd42c9, WARN_hook+test, startup BLOCK→WARN, 時間がかかるものはすべてバグとして扱い, source session shogun ls091, source lessons shogun, 軍師は2回目で注記, P1 全チェックTIMING追加, PASS, daemon fixtureは本番永続daemonを起動せず, 即時diffで検知し復元, 選定とreservation記録が非原子的で, 隔離source fixtureは必須依存追加へ追随させる, daemonのsource依存追加とログ契約強化を行った際, producerのみgit履歴生成, 全て二値条件で実装する, obsidianは有効活用されているか？, 比較境界は両辺を同一fixtureで型正規化する, Git tree解決可能を型検証する, fix R1, 家老hotfix ab8d6a9f5で境界3 PASS済み, GA 304は残存5行でCI実行前FAIL, 外部repo identity fixture隔離, GA_304_CI_FAIL, cmd complete本体へsource依存を追加した際, 確認せずに想像するから結果が出ない』, wrapperへsource追加時, 復元testは後発依存と実git状態をfixture化する, source session shogun, source lord ruling typo fix, source lord confirm, source n series all closed, 誤爆扱い問い返し禁止, 結果 未反映15→1件 残1は正常進行中, 当該6件はgateコードに到達する前に落ちるため因果なし, 同値確認だけでは自分のcommitが壊した回帰を見逃す, gate commit flow設計書キャンペーンの完了, 実装の多重化を発見したら, 26に軍師はこの型で3回誤った, 判定が読む環境変数を実装で確かめ, 軍師は同じデータで『該当0件』とした, 方式選択が個別の誤りを吸収することがある, ∴★新しい教訓が新しい誤読を生んだ, 前者の教訓を後者に当ててはならない, source shogun gist publish, ★『教訓は3度守られなかった, 本日の組織的到達点 家老の最終行を原文のまま記録・将軍指示, bats側で $status eq を見る書き方は, source karo latency analysis, source karo scope claim family, 既存欠陥FAILは掘り当てた在庫であり人質にしない, 宣言後の指摘で初めて定義を修正した, source lord haste remedy, フォールバックという発想自体がバグの真因である, 殿が明示した方針 例 『今は調査の時間, 受け手は指示・訂正・懸念の形で来たものを検証せず実行するため, 運用経路0件 testからしか実行されない, n 1でなくなった, 本日の還流弾が是正済みの問題』, 全軍恒久教訓 家老blt 軍師blt ・ 『自分で数えると, 実証 軍師が自分の『同型11回』を検証したところ, source 家老blt 軍師blt, 家老・将軍のgateには0件, 軍師自身が自分に不利な事実として提出, source 殿裁定 lord conversation, gistは殿閲覧用ミラー, 訂正の正道 過去行の手書き換え禁止 捏造, source kotaro r6 timing probe, source kotaro r6 fixture1, source kotaro r6 fixture2, リンクを含めない場合の挙動を家老が実測する, fixture body without a link, 次回このtestに遭遇したら, R6のL3表示文言を検証する家老のテスト, L3表示文言, source kotaro ac1 check, fixture no link, source gunshi multilink probe, source gunshi multilink probe2, source gunshi reverify3, source gunshi reverify5, source karo gate probe, karo_probe_reached_20260727, 同一報告が入口ごとにPASS BLOCKへ分岐する, insight在庫だけでは再発したため, source lord ruling, mapping注入またはautofix検討, 完了宣言 12check全クローズ→台帳再集計→第二弾序列, 家老の自立配備 karo direct, v3 CLOSED, commit a4ababd16, 殿裁定2026 最上位訂正 『誰の判断だ？第二弾が優先, 誰の判断だ？第二弾が優先, 将軍はその後, scopeは2スクリプト2弾のまま, 本弾で正しいファイルへの実装を素早く進める土台になった, P2 reflux SSOT修正 才蔵, source shogun session save, commit 1be8bee8f, scope拡張が全量test要求へ化ける, source round5 v141 lgtm, 将軍が骨子起草→殿提示, 家老の序列表 上位20 setup寄与 が掲示板に上がり次第, 序列表は家老抽出中→確定でv1 1改版→殿裁可→解禁, 不変indexへの辺ごとgit照会を一括集合へ変換する, 不成立ならBLOCKする, promotion v1 2は待機継続 殿裁定00, promotion v1 2は指示があるでも待機せよ, 共通修正dbf26c3de後はdirect selected, fixture専用hooksへ明示modeでinstallし, 既存policy gate PASSでもFNを検出しなかった, 完了reflux非発火と鮮度gate検出を混同しない, 完遂条件へindex map 二回目差分0を追加, source shogun, source shogun GATE CLEAR, 修正のための修正 本末転倒, 追記型九龍城の解体3例目 context層 設計書自身 本件, 返答が必要なinboxは, 返答が必要なinboxの確認・既読化は, 正しく本番環境で表示されてスタート地点, rcだけで新規投入成功と判定すると未処理を隠す, 指示を無視しない, task runner終端receiptを明示パスで検証する, 報告commit相関だけでは完了後直投入を捕捉できない, 旧値も99 %がRULE非準拠 汚染は本日でなく長期継続, 旧値が正ならrevert路復活, source shogun session, 空weights 0化はfail visibleへ, trade rule md L153明文現物確認, v3.3計算仕様完全確定, gist 8cbc86a5 sha一致 仕様未決ゼロ達成, 残る殿裁定 実測後のA0 4b routeのみ, ledger再基線化 A0 4b route候補, index md行8049にfileエントリ既存 |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore, gist_master_sync_asis_tobe |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -2227,6 +2231,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T03:15:28+09:00 ★セーブポイント2026-08-03 03:25(月次リターン境界是正・最優先復帰点。/clear後はこのknowledgeとgist 8cbc86a5を読め): 【正本】docs/research/dm-monthly-trade-bug |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T03:20:57+09:00 月次リターン境界是正 正本v4.12(sha256=ed87ddc8)。家老v4.11指摘(cmd_4222実測: 本番15212行全件effective_start_date=rebalance_decision_date複写、2022- |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T08:21:22+09:00 ★セーブポイント2026-08-03 08:22(月次リターン境界是正・最優先復帰点。/clear後はこのknowledgeとgist 8cbc86a5を読め): 【正本】docs/research/dm-monthly-trade-bug |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:00:58+09:00 a848faaea6c8e1ab8 toolu_01HNxGgdYKpBTcsEgJUvPHHt /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:02:02+09:00 aebbae0fab8a7c938 toolu_01XyoxjR7R6d8YsGEtS16GdN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:09:02+09:00 abd7cbf981d8e6f50 toolu_011y6hKhRe9bAuFSpidAaBWS /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:19:58+09:00 a3e6cbdcc92af7505 toolu_01R2d4PnkURgjHWBrwRshSCX /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:25:32+09:00 a587e436c0a254f7c toolu_01WLkuynYTx7CV97e1qjQSR3 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -2421,6 +2430,22 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T07:45:58+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T08:00:38+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T08:15:37+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T08:32:52+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T08:45:37+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:00:37+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:15:59+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:24:34+09:00 ab87bb3433c203949 toolu_016heskxXaAMR1giTzHKsUJw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:30:37+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:45:39+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:50:25+09:00 b09yhcs0d toolu_013wFd7VrDEWEaFXe9RtBpv5 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-8006-b0b4f5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:02:43+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:08:48+09:00 a9533b55b335f62d6 toolu_01Q6paGvi3moqb4QGsVvPpPQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:15:37+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:29:43+09:00 ae7a1be08a91c35b5 toolu_01PQn29ZBNNsYh8PrBJQUwbQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:45:37+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:02:35+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:09:04+09:00 af713baf4cbfd2d32 toolu_011rc965i97k9vGFXz2Fp7uv /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:15:37+09:00 進捗巡回: (1)tmux capture-paneとgate_metrics/task YAMLで全工程の一次状態確認 (2)変化があれば設計書(docs/research/dm-monthly-trade-bug-asis-tobe-5 |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
 | causal_chain | `[[cmd_karo_impl_rc_revoke_command_20260727]]` (L1395) |
@@ -2577,6 +2602,7 @@ codd:
 | cmd | `cmd_karo_hotfix_skill_refs_reflux_a_20260801` (`skills/cmd-complete/SKILL.md`, `skills/codd-refactor/SKILL.md`, `skills/dashboard-update/SKILL.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-02T13:39:15+09:00 bbj11spjp toolu_01HAVwbm4yJqEFNwaCE7MLA5 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a52c153e-2925-463d-871c-a86ad5 |
 | lesson | `L1528` deployed_at graceだけではgate中task差替え競合を防げない |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:53:47+09:00 a0a4ce593f14ddbec toolu_015X2rzWyriG7nQjkwGaZMH1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 | causal_chain | `[[cmd_3720]]` (L958) |
 | causal_chain | `[[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]` (L967) |
@@ -2978,6 +3004,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T01:45:39+09:00 月中トレードバグ設計書v2.3(2026-08-03 01:47、gist 8cbc86a5 sha照合済): 殿裁定3件完結。①月次リターン=執行日→執行日の単一境界点共有で空白ゼロ構造(空白はpre/after価格変動の無視=是正の核心 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T02:08:59+09:00 月中トレードバグ設計書v3.2(2026-08-03 02:10、gist 8cbc86a5 sha256=80e65799一致): 家老v3.1 REVISE疑義10件を全採択。BLOCKER2件解消: F1=月次境界日を全暦月に定義(切 |
 | cmd | `cmd_karo_goal_a0_2p_partial_mtd_20260803` |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:00:41+09:00 a8ca17136309faa5d toolu_01QvrtdZECDdLjHtbEgEszV1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:02:14+09:00 ada27c91dd102d409 toolu_01P9bVUiivWS59rNk5U8mpKk /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:06:30+09:00 a6d661dde7b66c5bd toolu_0142x5pUJZ6bevH5kWdEePBk /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| lesson | `L939` 系列oracleは同名の保存列へ対応付けてから比較する |
+| cmd | `cmd_karo_goal_a4_mtd_mismatch_rootcause_rc2_20260803` |
+| cmd | `cmd_karo_goal_a4_mtd_rootcause_reconcile_rc3_20260803` |
 
 ## deepdive_principles — deepdive原理
 
@@ -3707,7 +3739,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら, 検証してみて, 家老は明示的に指示しないと自分自身で読まないから気をつけろ, スキルを使ってCDPで確認せよ, ニンジャが確認で躓いている, 基本的にできる限り別CMDで出すのがルールだ, 陳腐化しているPDはないか？確認せよ, やり方があるはずだ, 将軍が出来るはず, admin画面での設定にバがあるのでは？覚醒して確認せよ, 実測では check gate名称含む関数 37件, 家老に確認を取れ, 隠れたインフラバグはないか？覚醒して確認, 追加時は通知受信者が必要な情報を全て含むか確認せよ, mode別にatomic性を確認する, バグの再燃だったのかだな, 本cmdではrun tests shに実装した, 将軍が即時確認せよ, 未確認を確認しよう, 102PF全てを確認せよ, 小さく確認しよう, 本番とのパリティを確認するときに, AC4 AC5をまとめて報告YAML作成に進む, GSはできそうなのか？本番とのパリティは全て確認できたか？, 全PF一律ロジックになっていないか確認せよ, gateの品質問題は根治したか？覚醒して確認せよ, 並列可能なCMD起票を待機していないか確認せよ, commit前に既存ステージを必ず確認する, やり残したことはないか？確認しよう, 不要なバックスラッシュを付けないことを確認せよ, kotaroとtobisaruもidleに見える, 未起票のCMDはないか？, 次回実行でcmd AC2がBLOCKする, band適用済み本番PFに対し必ずFAILする, 逆に実態が本当に未実装ならそのとき初めて実装に着手する, 俺の指示した1体登録して再計算, 本番と100％一致していなければだめだな, エラーかバグだ, 自分がステージした変更がそのcommitに吸収された, hanzoを確認せよ, CI修正前に失敗テストの仕様正当性をgit履歴で確認する, FEとBEとDBが連携しているか確認せよ, commit前に既存indexを対象scopeと分離確認する, run不変値を日次ループで外部process再取得するな, ｐｄが陳腐化していないか確認せよ, 未完了ならさらに待機, diffゼロで正常復元を確認, 忍者が迷いなく作業できる粒度になっているか？確認せよ, 複数workerは全worker ready件数を確認する, teardownのrmは全testごとの重複I O, 次回はsetupのmktemp重複を最初に二値確認する, BATS既定tmpと追加mktempの二重管理を避ける, 速度最適化前に共有fixtureの現行契約適合を二値確認する, 1Mになっていないぞ, 旧世代はrc75・pathなしでfail closedにする, インフラバグやGateやhookの品質問題が潜んでいる, 運用ログは呼出元とcronで三角測量して本番性を判定する, 古い数値を未確認で使用していないか？, WSL実行権限とGit index modeを分離検証する, 共有YAMLの件数超過時, hook速度改善は一巡後の最大残存寄与を再計測する, 現版139 167ms対旧154 188msを確認, 出力評価順が不変かを二値確認する, 判定契約を変えず反復git diffを除去できる, 同一mkdir pの連続呼出しは単一processへ束ねる, 該当する場合は同期処理を維持するチェックを追加する, module import from aliasを解決し, 実証まで自分を疑う無知の知, 家老の現物確認, 家老の現物確認 blt 20260720 133855, 確認を進めよ, 家老は効率よく行動できているか？利他の精神で確認せよ, 状況を確認しサイクルが止まらずに動くようにナッジせよ, しかし実装が無いまま書けば『記録≠状態』を自分で作り, まだ忍者は動いてるぞ, まずバグの実在を確認しないとな, 家老は配備が出来ず, 未決定や未調査を全て確認しよう, 検出gateの稼働有無と接続有無は別軸で確認せよ, 検知器の語彙拡張は自分のcommitを新たにBLOCKしうる, wait nの回収対象と独自PID台帳を二重管理しない, tobisaruを確認せよ, 外れ値台帳には枝選択コンテキストが必要, unitテスト完了確認・報告書仕上げ・commit, commit hashを報告YAMLへ記録する作業を継続する, 軍師に確認をとれ, 第四弾は順調か？やり残しはないか確認せよ, 進捗を確認し, 統合済みtest pathは実行前に実在確認する, receiptは失敗診断のためterminal公開が必要だが, 次回は固定窓の時点と計装開始時点の整合を二値確認し, 翌月の最初の取引可能価格で ポジションをリバランスしている, 成績がどのように変化するかを素早く確認する, 当該taskの明示的attribution対象から漏れる, 何営業日遅らせて執行しても優位性が壊れないかを確認します, 返答までするのが確認と既読化だ, いま危機的な状況だ, criticalなエラーがないか確認するように伝えてくれ, たしか関連する他のドキュメントもあった気がする, 他に放置やスルー先送りになっているものはないか確認せよ, 家老に対応方法を確認せよ, 確定申告の作業, 残穴について軍師に確認をとってくれ, hayateが放置されていないか実際を確認せよ, 未検証の修正済みバグがあれば検証して確認せよ, ドキュメントを更新せよ, 将軍がいますぐ確認しないのはなぜだ？理由が知りたい, では一個のネステッドFoFを試しに分解していき, 進捗を確認せよ, 効力日という列名だけで実効力日SSOTと認定しない |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら, 検証してみて, 家老は明示的に指示しないと自分自身で読まないから気をつけろ, スキルを使ってCDPで確認せよ, ニンジャが確認で躓いている, 基本的にできる限り別CMDで出すのがルールだ, 陳腐化しているPDはないか？確認せよ, やり方があるはずだ, 将軍が出来るはず, admin画面での設定にバがあるのでは？覚醒して確認せよ, 実測では check gate名称含む関数 37件, 家老に確認を取れ, 隠れたインフラバグはないか？覚醒して確認, 追加時は通知受信者が必要な情報を全て含むか確認せよ, mode別にatomic性を確認する, バグの再燃だったのかだな, 本cmdではrun tests shに実装した, 将軍が即時確認せよ, 未確認を確認しよう, 102PF全てを確認せよ, 小さく確認しよう, 本番とのパリティを確認するときに, AC4 AC5をまとめて報告YAML作成に進む, GSはできそうなのか？本番とのパリティは全て確認できたか？, 全PF一律ロジックになっていないか確認せよ, gateの品質問題は根治したか？覚醒して確認せよ, 並列可能なCMD起票を待機していないか確認せよ, commit前に既存ステージを必ず確認する, やり残したことはないか？確認しよう, 不要なバックスラッシュを付けないことを確認せよ, kotaroとtobisaruもidleに見える, 未起票のCMDはないか？, 次回実行でcmd AC2がBLOCKする, band適用済み本番PFに対し必ずFAILする, 逆に実態が本当に未実装ならそのとき初めて実装に着手する, 俺の指示した1体登録して再計算, 本番と100％一致していなければだめだな, エラーかバグだ, 自分がステージした変更がそのcommitに吸収された, hanzoを確認せよ, CI修正前に失敗テストの仕様正当性をgit履歴で確認する, FEとBEとDBが連携しているか確認せよ, commit前に既存indexを対象scopeと分離確認する, run不変値を日次ループで外部process再取得するな, ｐｄが陳腐化していないか確認せよ, 未完了ならさらに待機, diffゼロで正常復元を確認, 忍者が迷いなく作業できる粒度になっているか？確認せよ, 複数workerは全worker ready件数を確認する, teardownのrmは全testごとの重複I O, 次回はsetupのmktemp重複を最初に二値確認する, BATS既定tmpと追加mktempの二重管理を避ける, 速度最適化前に共有fixtureの現行契約適合を二値確認する, 1Mになっていないぞ, 旧世代はrc75・pathなしでfail closedにする, インフラバグやGateやhookの品質問題が潜んでいる, 運用ログは呼出元とcronで三角測量して本番性を判定する, 古い数値を未確認で使用していないか？, WSL実行権限とGit index modeを分離検証する, 共有YAMLの件数超過時, hook速度改善は一巡後の最大残存寄与を再計測する, 現版139 167ms対旧154 188msを確認, 出力評価順が不変かを二値確認する, 判定契約を変えず反復git diffを除去できる, 同一mkdir pの連続呼出しは単一processへ束ねる, 該当する場合は同期処理を維持するチェックを追加する, module import from aliasを解決し, 実証まで自分を疑う無知の知, 家老の現物確認, 家老の現物確認 blt 20260720 133855, 確認を進めよ, 家老は効率よく行動できているか？利他の精神で確認せよ, 状況を確認しサイクルが止まらずに動くようにナッジせよ, しかし実装が無いまま書けば『記録≠状態』を自分で作り, まだ忍者は動いてるぞ, まずバグの実在を確認しないとな, 家老は配備が出来ず, 未決定や未調査を全て確認しよう, 検出gateの稼働有無と接続有無は別軸で確認せよ, 検知器の語彙拡張は自分のcommitを新たにBLOCKしうる, wait nの回収対象と独自PID台帳を二重管理しない, tobisaruを確認せよ, 外れ値台帳には枝選択コンテキストが必要, unitテスト完了確認・報告書仕上げ・commit, commit hashを報告YAMLへ記録する作業を継続する, 軍師に確認をとれ, 第四弾は順調か？やり残しはないか確認せよ, 進捗を確認し, 統合済みtest pathは実行前に実在確認する, receiptは失敗診断のためterminal公開が必要だが, 次回は固定窓の時点と計装開始時点の整合を二値確認し, 翌月の最初の取引可能価格で ポジションをリバランスしている, 成績がどのように変化するかを素早く確認する, 当該taskの明示的attribution対象から漏れる, 何営業日遅らせて執行しても優位性が壊れないかを確認します, 返答までするのが確認と既読化だ, いま危機的な状況だ, criticalなエラーがないか確認するように伝えてくれ, たしか関連する他のドキュメントもあった気がする, 他に放置やスルー先送りになっているものはないか確認せよ, 家老に対応方法を確認せよ, 確定申告の作業, 残穴について軍師に確認をとってくれ, hayateが放置されていないか実際を確認せよ, 未検証の修正済みバグがあれば検証して確認せよ, ドキュメントを更新せよ, 将軍がいますぐ確認しないのはなぜだ？理由が知りたい, では一個のネステッドFoFを試しに分解していき, 進捗を確認せよ, 効力日という列名だけで実効力日SSOTと認定しない, 現状を確認し, 改めて全体を俯瞰して確認せよ |
 | skills | db-check(DB確認/本番DB/パリティ検証), cdp-browse(ブラウザ確認/本番画面スクショ/CDPで確認) |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -4157,7 +4189,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T02:14:29+09:00 ただ俺のシステムでは四半期リバランスのPFに途中から参加しても成り立つように、同じ保有シグナルであってもあえて毎月ウェイトをリセットする仕組みに従前はしていたはずだ。確認してくれ |
 | lesson | `L934` 効力日という列名だけで実効力日SSOTと認定しない |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T04:06:44+09:00 将軍は/loopを使って動きがなくても15分ごとに進捗を確認し、利他の精神で家老と軍師と連絡を取り合って連携して作業を進められるようにしよう |
-| causal_chain | `[[cmd_karo_hotfix_ga170_context_freshness_202607030012]]` (L943) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:24:48+09:00 ad5f882aa5cb23e46 toolu_01EjXRP1P3q9SDZCRpL6qNuh /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:37:21+09:00 現状を確認し、利他の精神で分析し家老をサポートせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:53:53+09:00 a457c1d5a52128520 toolu_012sXvf9P1mbqLD5FuTRzuCq /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:55:55+09:00 改めて全体を俯瞰して確認せよ。全体の流れが破綻していないか検証しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:07:14+09:00 a7d9f7f2d7a072379 toolu_017Yrt9m3wk38ZiYCfRkB5YE /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | causal_chain | `[[cmd_karo_ci_fix_shogun_20260703]]` (L945) |
 | causal_chain | `[[cmd_3725]]` (L957) |
 | causal_chain | `[[cmd_3725]]` (L957) |
@@ -4379,6 +4415,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T20:06:09+09:00 b3wfpqnp5 toolu_0161gTTESgY9uVYkANUSgfaW /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a026848f-6656-44c9-9ef0-e3886a |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T00:28:56+09:00 bg9brh6mc toolu_01YZwwFxEpFZxCfX456GHNC6 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a026848f-6656-44c9-9ef0-e3886a |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T01:34:11+09:00 bl1543lvx toolu_01K7aZXJYjJrEnwFSBhoKeB1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a026848f-6656-44c9-9ef0-e3886a |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:23:39+09:00 bsp4o87ji toolu_01XhCoik47VYTkFu2t4dwffF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-8006-b0b4f5 |
 
 ## shin_shijin_design — 四神設計
 
@@ -4502,6 +4539,9 @@ codd:
 | cmd | `cmd_karo_recon2_l0_standard_saizo_20260802` |
 | cmd | `cmd_karo_goal_a2_l0_mismatch_classify_20260803` |
 | cmd | `cmd_karo_goal_a1_l0_boundary_reverify_commit_rc3_20260803` |
+| cmd | `cmd_karo_goal_a2_l0_mismatch_classify_rc_20260803` |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:04:47+09:00 b4x3bul0g toolu_01Pwi5syebG4uWcF7PrEAVLs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-8006-b0b4f5 |
+| cmd | `cmd_karo_goal_a5_l0_finalize_20260803` |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -4591,6 +4631,7 @@ codd:
 | lesson | `L823` yotsume(四つ目)は cmd_1186 のOUT_DIR変更でDM家系別split GSファイルがbak化され、他6忍法と異なるファイル構造になっている |
 | lesson | `L834` run_077_*.pyをモジュールimportで診断スクリプト再利用時はsys.argvでuniverseを明示指定せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T17:52:27+09:00 cmd_3795_full: kawarimiベンチマークの進捗・完了を確認し、完了していれば結果を記録して次のnukimiベンチマークへ進む |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:20:10+09:00 a1f27e04aa85367bf toolu_01QqBsAvsiUE4Qir5qE4xJge /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 
 ## gs_speed_e7_l0_full_confirm — GS道具磨きE7 L0 full実測
 
@@ -4685,8 +4726,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-02T13:59:27+09:00 add9f0ccccfc3ff27 toolu_01CThvVzs5QwTpw5Xs4Q59uD /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | lesson | `L930` ledger欠落と未確定を同じNoneで扱うと確定済み期間がsilent fallbackする |
 | causal | `cmd_karo_hotfix_task_selector_direct_test_rc_20260802` files_modified: [[silent_fallback_quality]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:17:13+09:00 a2a38da31898cd92d toolu_01Vfe7k9WwyQciDST5NaRaYc /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:34:00+09:00 ab22746768bd88184 toolu_012q2UtGT5V86MZbPvdphvwF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| lesson | `L1535` cross-repo git判定はtask project working treeをSSOTにする |
 | causal_chain | `[[RC2三重FAIL]] -> [[Render capability未実測]] -> [[actual環境preflight強制]]` (dm-signal:L893) |
 | causal_chain | `[[preview属性齟齬]] -> [[proxy無効可能性]] -> [[本番能力未証明]]` (dm-signal:L895) |
+| causal_chain | `[[cmd_karo_hotfix_sgpre35_cross_repo_head_20260803]]` (L1535) |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -4869,7 +4914,6 @@ codd:
 | cmd | `cmd_karo_cdp_phase2_ledger_20260802` (`scripts/skill_execution_log.sh`, `tests/unit/test_skill_execution_log.bats`) |
 | cmd | `cmd_karo_cdp_phase4_skill_20260802` (`skills/cdp-browse/SKILL.md`) |
 | cmd | `cmd_karo_cdp_skill_ref_glob_20260802` (`skills/cdp-browse/SKILL.md`) |
-| causal_chain | `[[cmd_karo_hotfix_skill_script_refs_202607022043]]` (L940) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
 
 ## dm_signal_refactor_mission — DM-Signalリファクタ任務
@@ -5305,6 +5349,7 @@ codd:
 | cmd | `cmd_karo_ci_fix_safe_inbox_test` (`tests/unit/test_deploy_task.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-12T01:05:43+09:00 二重配備はstallの判断ミスだろうな。家老の能力を上げるべきか仕組みを考えるべきか。なぜなぜ7回 |
 | cmd | `cmd_2681` 強化 — deploy_task.sh二重配備ガードのレース条件修正+完了報告検知 (`queue/tasks/hayate.yaml`, `scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lifecycle.bats`) |
+| causal | 疾風のmodel×effort切替実験で対象モデル一致2/2・共有config復元2/2を確認し、他agent不変証跡0/2を未達として明示した (`docs/research/model-effort-switch-hayate-sol-low-luna-low-20260721.md`) |
 | cmd | `cmd_2682` 強化 — ninja_monitor先行完了検知で後発忍者をauto-void (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | cmd | `cmd_2684` 強化 — inbox_write.sh task_assigned時の二重配備自動検査 (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-12T11:39:01+09:00 確かidle判定やstall判定が未熟で、すぐにninjyamonitorが/clearを送信→作業中にstartup再実行で無駄な重複が多かったからだった記憶がある |
@@ -6116,7 +6161,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-02T23:48:06+09:00 by0h1dsim toolu_0192NEXaZg3Bw3gFnEKBYZqA /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a52c153e-2925-463d-871c-a86ad5 |
 | causal | `cmd_karo_hotfix_direct_parent_contract_exempt_20260803` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_direct_parent_contract_exempt_20260803` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_yaml_injection.bats`) |
-| causal_chain | `[[cmd_3664]]` (L941) |
+| causal | `cmd_karo_hotfix_sgpre35_cross_repo_head_20260803` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_sgpre35_cross_repo_head_20260803` (`tests/unit/test_gate_gunshi_report_precheck.bats`, `scripts/deploy_task.sh`, `tests/unit/test_deploy_task_yaml_injection.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:24:26+09:00 a4e15bb48f02500d0 toolu_01LhDDnEHLyXeZDbyHbCHMA1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:32:32+09:00 af7193869c39192c3 toolu_012EgHy439qapV1HSpb3kpsM /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
 | causal_chain | `[[cmd_3726]]` (L956) |
 | causal_chain | `[[cmd_3765]]` (L985) |
@@ -6873,6 +6921,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T01:57:48+09:00 進捗と今後のプランは？ |
 | lesson | `L1500` task契約改訂時はnested commit_contractも同時更新 |
 | lesson | `L1521` shared-file帰属はpath/blob全体でなくtask-owned normalized hunkで判定する |
+| cmd | `cmd_karo_goal_s3_holding_changed_execution_plan_20260803` |
+| lesson | `L942` 候補母集団と要調査母集団を分離して数える |
 | causal_chain | `[[cmd_reflux_backlink_202607281529_hanzo]]` (L1433) |
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
@@ -7363,6 +7413,7 @@ codd:
 | causal | `cmd_4215` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_reflux_terminal_reservation_release_20260802` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_direct_parent_contract_exempt_20260803` files_modified: [[task_modifier_injection]] |
+| causal | `cmd_karo_hotfix_sgpre35_cross_repo_head_20260803` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -7865,6 +7916,28 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T04:23:32+09:00 設計書版発行運用是正(家老提案2026-08-03 04:22受理): 毎版、家老+軍師両者のレビュー完了を待ってから次版を発行する(v4.20が家老レビュー完了前にv4.21で上書きされ空振りした反省)。進捗は随時§0.1へ集約し版発行は |
 | causal | `cmd_karo_hotfix_cross_repo_ownership_gate_20260803` files_modified: [[report_quality_protocol]] |
 | cmd | `cmd_karo_hotfix_cross_repo_ownership_gate_20260803` (`scripts/lib/cross_repo_commit_contract.py`, `tests/unit/test_report_commit_identity.bats`, `scripts/gates/gate_report_format_main.py`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:00:21+09:00 a3b5e2046568008f2 toolu_01Cd1N2TEj4QRiq5x9R4fuEL /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:00:52+09:00 a53cd24ecbff39775 toolu_01Ybtby3gxkog5ycuw8VWZhD /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:01:45+09:00 a7efd6a8906394ee9 toolu_01NTrrZA6z8rewJHZ7jnqnmD /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:02:09+09:00 aaccdd02c53445470 toolu_017Gws4MTre7ct93x2c8XRb4 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:03:41+09:00 a6b7f1188b433628c toolu_014Sp8BbfBS7aYCBFjj8vtbw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:24:37+09:00 a6d0348710a463a77 toolu_01PdK8vighD4GWa24Uexm7MY /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:29:15+09:00 aa8eae2d7924e636d toolu_01MDBntNxmq6MUpHyL2bVsi9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:30:46+09:00 ae9cb3dcb37bdaba2 toolu_017wDuvLjH2qMqsnfyifLcF3 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:48:33+09:00 afb484e326f3eac0b toolu_01Fa6axjx7ACT6DiSQV1z1GJ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:54:13+09:00 af73ed0da3da9dace toolu_01HspTsmgp6vdkr2uuXTFncg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:01:41+09:00 a298483f103e9bb9d toolu_018VhRAJyhfw5E3yPSMs1aBn /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:26:07+09:00 a96c1b3362451cc73 toolu_01VccenznCGNBk5Xiww5nD2k /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:27:53+09:00 a3cf714f7e0549fb2 toolu_01NiTv7drzDGiY9S2HrBUHDQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:34:11+09:00 a134ca8afea659d26 toolu_015WSejR5bpV3kVhoMHYawuo /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:39:03+09:00 afd74e6540b8ae0e1 toolu_017BzrBMHkXCcYF5j9H2Bm3G /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:44:45+09:00 ad58750990b463acf toolu_0193kobmZq6Yd3ZzL959q4oy /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:53:32+09:00 ad0320aa41ecea8c5 toolu_01T9AFh5Txf9gAoRgBhviKnp /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:06:53+09:00 a92d247a80b2a36fd toolu_01CS8C3tD3Rb91hsHScHPfKj /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:07:23+09:00 ae4cc2f4b6164b20c toolu_013Y7khQv32ypfP8QyKv2PpK /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:10:20+09:00 a2caeef776ff4c665 toolu_01NikiFT8hgq5aybBHpapqBV /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:20:17+09:00 ab9389ec9558bd8fd toolu_0115qdyKqTazQhQUva7Dco1S /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:28:25+09:00 a0bd0f662fde3c511 toolu_01KX4nHkkUxNUt7Hrn1zerkR /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
@@ -8762,6 +8835,7 @@ codd:
 | causal | `cmd_reflux_promotion_202607272302_saizo` files_modified: [[lesson_lifecycle]] |
 | causal | `cmd_4187` files_modified: [[lesson_lifecycle]] |
 | lesson | `L1483` 自己参照checkpointのHEAD/aheadは基準時点値として扱い復帰時に再計測する |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:06:27+09:00 a3ce48dcb22782ff3 toolu_015Lb3Gy9VJ1XQaXqfDwZsiT /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | causal_chain | `[[cmd_3724]]` (L959) |
 | causal_chain | `[[cmd_karo_recon2_idle_reflux_dispatch_fixknown_202607081300]]` (L987) |
 | causal_chain | `[[cmd_karo_hotfix_ga_pair_dedup_202607101643]]` (L1024) |
@@ -9261,6 +9335,7 @@ codd:
 | causal | `cmd_4215` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_reflux_terminal_reservation_release_20260802` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_direct_parent_contract_exempt_20260803` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_karo_hotfix_sgpre35_cross_repo_head_20260803` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -9475,6 +9550,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608030250_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608030338_hanzo` — [[semantic_causal_automation]] -> `docs/research/cmd_4223_a0_3_midmonth_residual_investigation.md` |
 | causal | `cmd_reflux_backlink_202608030338_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608030822_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gunshi_log_append — 仮: Gunshi Log Append
@@ -9660,6 +9736,7 @@ codd:
 | cmd | `cmd_karo_hotfix_archive_review_canonical_allowlist_20260801` (`docs/research/archive-review-reapproval-path-audit-20260801.md`, `scripts/review_bundle.py`, `tests/unit/test_review_bundle.py`) |
 | causal | `cmd_karo_hotfix_review_bundle_single_pass_20260802` files_modified: [[provisional_review_bundle]] |
 | cmd | `cmd_karo_hotfix_review_bundle_single_pass_20260802` (`scripts/review_approval.sh`, `scripts/review_bundle.py`, `skills/review-bundle/SKILL.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:00:32+09:00 boueyea1z toolu_01C4tt7Ek7Pj4frtyXPzo7Ui /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-8006-b0b4f5 |
 
 ## provisional_cmd_gate_scaffold — 仮: Cmd Gate Scaffold
 
@@ -10449,6 +10526,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202608011247_kagemaru` (`docs/semantic-index/index.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T20:16:39+09:00 kagemaruは何をやっているんだ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-01T20:28:56+09:00 hayteとkagemaruは放置されていないか？ |
+| cmd | `cmd_reflux_backlink_202608030822_kagemaru` (`docs/semantic-index/index.md`) |
 
 ## provisional_lessons — 仮: Lessons
 
@@ -10748,6 +10826,7 @@ codd:
 | causal | `cmd_4215` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_reflux_terminal_reservation_release_20260802` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_direct_parent_contract_exempt_20260803` files_modified: [[scope_integrity_lifecycle]] |
+| causal | `cmd_karo_hotfix_sgpre35_cross_repo_head_20260803` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
@@ -11698,6 +11777,7 @@ codd:
 | cmd | `cmd_karo_hotfix_patch_scope_moving_head_fp_20260802` (`scripts/ninja_scope_commit.sh`, `tests/unit/test_ninja_scope_commit.bats`) |
 | cmd | `cmd_karo_hotfix_report_shared_provenance_fp_20260802` (`.claude/hooks/post-bash-commit-reminder.sh`, `tests/unit/test_post_bash_commit_reminder.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T01:11:51+09:00 karoをrespwanせよ |
+| lesson | `L943` reflux prepare後の成果不変順序 |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
