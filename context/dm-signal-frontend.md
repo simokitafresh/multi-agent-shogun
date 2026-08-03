@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-02 cmd_karo_hotfix_context_freshness_ga426_20260802 reviewed source boundary -->
-<!-- source_commit:155ab5e0 reason:cmd_karo_hotfix_context_freshness_ga426_20260802 reviewed source boundary evidence:GA-426 content review: sticky measurement dependency contract reflected -->
+<!-- last_updated: 2026-08-04 GA-429 Monthly Trade current-month/cache production fix -->
+<!-- source_commit:07b13601 reason:GA-429 source commits since 2026-08-02 evidence:Render live + CDP DM-safe Simple Aug 2026/GLD -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -411,3 +411,10 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 結論(N5): rolling-returnsのSummary Statistics/Distribution 2表はtable-fixed+colgroupで列幅統一(Roll Period=151px・データ列156px)。外形幅が同一でも列幅配分差は「幅が違う」と見える。commit=3c23d0d4。検証=将軍CDP両表全列幅同一+殿実機確認(19:10)。
 
 → 経緯全量: `docs/research/dm-signal-page-style-diff-mece_20260722.md` v3.0(§RETRO/§PLAYBOOK付き完成版、gist c50699ea)
+
+## 24. Monthly Trade 当月保有行・Simple Month列 (2026-08-04、本番確認済)
+
+結論: Monthly Tradeはリバランス発生有無によらず当月のcanonical `holding_signal`を先頭行へ表示する。SWRの5分キャッシュに当月行が欠ける場合は表示可能な応答とみなさず再取得し、Simple表示でもMonth列を常時表示する。frontend commit=`07b13601`、backend commit=`a1111735`。本番CDPでDM-safeの先頭行=`Aug 2026 / GLD / Pending`、Month header/cell=`table-cell`、loading=0、error=falseを確認。
+
+→ 実装: `/mnt/c/Python_app/DM-signal/frontend/lib/monthly-trade-display.ts`、`/mnt/c/Python_app/DM-signal/frontend/components/monthly-trade-table.tsx`
+→ 本番証跡: `/tmp/dm-signal-monthly-trade-after-07b13601.png`
