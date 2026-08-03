@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-08-03 D0 route preflight formal review accepted after C-x preflight commit -->
-<!-- last_synced_lesson: L943 -->
+<!-- last_synced_lesson: L947 -->
 <!-- source_commit:d7cab63f3aaacf8392a98bf455035317c5d5e2d7 reason:D0 route preflight formal review accepted after C-x preflight commit evidence:D0 report d3d2567c; latest DM-Signal source d7cab63f; runner17/17; writes0 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -336,12 +336,9 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L900/L901→ops§32に振り分け済み 2026-07-16）
 - （L903→ops§9に振り分け済み 2026-07-17）
 - （L908/L909/L918/L921は振り分け済 2026-08-01 /lesson-sort → ops§38(L908:pytest plugin root namespace固定), ops§6-7(L909:バックフィルas-of入力切断), ops§32(L918:launcher結合実行/相対パスBLOCK), core§19.2(L921:open-to-open bootstrap/live MTD独立境界)。新規PIなし）
-- L929: parity範囲を設計cohortに一致させる（cmd_karo_nxe_2d_robustness_20260802）
-- L932: 独立marginal分類は各軸ごとに総数一致を証明する（cmd_karo_recon2_midmonth_trade_t1_distribution_20260802）
-- L934: 効力日という列名だけで実効力日SSOTと認定しない（cmd_4222）
-- L935: 形式的分類和ではpurpose母集団確定を満たさない（cmd_4220）
-- L938: decision monthとactual decision dateを同一視しない（cmd_karo_s1_historical_config_reconstruct_20260803）
-- L943: reflux prepare後の成果不変順序（cmd_karo_recon_cx_oracle_lane_preflight_20260803）
+- （L929/L932/L934/L935/L938/L943は振り分け済 2026-08-03 /lesson-sort → ops§12(L929:parity範囲=設計cohort), research教訓索引(L932:軸別総数一致/L938:decision month≠actual date), ops§6-7(L934:効力日列名≠SSOT), ops§32(L935:形式的分類和禁止), ops教訓索引(L943:prepare後成果不変順序)。新規PIなし(L934は設計書§0.6-1/trade-rule.md正本転記済みで重複回避)）
+- L946: preflight母数の文言と実走値を同一assertから生成する（cmd_karo_recon_b4_route_sequence_harness_rc_20260803）
+- L947: scope fingerprintはprivate-index所有path集合と同じ集合で算出する（cmd_karo_recon_dx_transaction_topology_preflight_20260803）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 

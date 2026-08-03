@@ -8,6 +8,7 @@
 6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。最新本番: **357.28s/124PF**(2026-03-29 cmd_1478, OPT-12~15全反映)。
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
 - L818: 本番DB read-only確認はpython3 -cのインライン実行ではなくスクリプトファイル経由で行え（cmd_3698_recon2）
+- L934: 「効力日」という列名だけで実効力日SSOTと認定しない。採用前に代表的な執行ずれ月でexpanded実切替日との一致を二値確認（writerがdecision日を複写する場合あり）（cmd_4222）
 - L827: archive由来の複数行復元(FK依存あり)はテーブルごとにdb.flush()を挟まないとFK制約違反になる（cmd_3754）
 - L833: recalculate完了矛盾は経過時間見積り(timing-history平均2000s級)と照合してから切り分けよ。API running確認は複数worker前提で解釈せよ（cmd_karo_recon2_cmd3771_recalc_status_202607081502）
 - L836: recalculate acceptedと完走証跡を分離して判定する（cmd_3771）
@@ -87,7 +88,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L945 -->
+<!-- last_synced_lesson: L949 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -293,6 +294,7 @@ OPT一覧(1-15):
 
 - L832: 境界近傍のゲート判定は『合成式の代数的一致』では不十分。入力値(DTB3等)そのものの数値一致まで検証せよ（cmd_karo_recon2_cmd3772_dmsafe_pi009_202607081452）
 - L851: matched_weightは固定1.0でなくsum(weights)と比較。missing_tickers=[]でもweights和が1未満ならmatched_weight<1（cmd_3808）
+- L929: parity検証範囲は設計のintersection cohort契約に一致させる。native末尾境界差を全期間BLOCKへ昇格するな（cmd_karo_nxe_2d_robustness_20260802）
 
 命名: `{cmd番号}_{ブロック名}_{説明}.csv` + `.meta.yaml`。上書き禁止(`_v2`)。
 テンプレ: `scripts/analysis/grid_search/template_gs_runner.py` は現treeに不在（再配置待ち）。
@@ -357,6 +359,7 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - L810: 新規importのトップレベル追加はmixed-commit BLOCKやruff空コミット化を招くため、repo-checksの分割境界を先に確認する（cmd_3684）
 - L900: subprocess moduleはpackage名でなくapp-dirで探索根を固定する（cmd_karo_ci_red_dm_p4_uvicorn_import）
 - L901: 永続helperはchecked-in source同期後に実行する。live PIDだけのhealthy判定とpgserver cleanupのno-opに注意（cmd_karo_ci_fix_ga256_cmd3907）
+- L943: runner等で成果byteが変わるとprepare fingerprintが失効する。検証完了後にprivate prepareして直ちにscope commitする順序を守れ（cmd_karo_recon_cx_oracle_lane_preflight_20260803）
 
 <!-- lesson-sort 2026-04-27: 40件振り分け(30件移動+5件削除+2件重複除去+3件既存確認)
   §6-7: L634,L636,L357,L261 (L645既存,L637≈L638重複削除)
@@ -654,6 +657,8 @@ import metrics_research_engine as MRE
 
 > 偵察開始時: 症状を見て下表の「共通パターン」「DM-signal固有パターン」に当てはめ、初期仮説を立ててから調査に入れ。想像で進むな — 仮説1つに絞って検証→結果見て次仮説へ。
 
+- L935: 要調査を許す分類ACは全行要調査でも形式PASSになる。四分類和=N AND 要調査=0 AND 証拠欠損=0を同一gateで強制せよ（cmd_4220）
+
 - L857: 既存スクリプトの再利用はexec文字列置換でなく環境変数overrideで差し替える。exec置換はpre-commit S102でBLOCK（cmd_3815）
 - L891: pytest node idは推測せず`--collect-only -q`の実在収集結果から固定する。collected 0は指定ミスのサイン（cmd_3896）
 - L899: subprocessのready待ちloopはtimeout後の無条件継続を禁止し、成功条件を二値assert+child早期exitを即伝播する（cmd_karo_ci_red_dm_p4_uvicorn_29326659277）
@@ -869,6 +874,8 @@ import metrics_research_engine as MRE
 - L941: 診断unknownは同一PFの実層分類を上書きさせない（cmd_karo_recon_b4_lane_dryrun_contract_preflight_20260803）
 - L942: 候補母集団と要調査母集団を分離して数える（cmd_karo_recon_c0_l1_lane_contract_preflight_20260803）
 - L945: 固定日付E2Eの実時間変質を防ぐ（cmd_karo_goal_b2b_monthly_generator_20260803）
+- L948: C2母数は7lane×3へ縮小できない（cmd_karo_recon_c9_c2_isolated_handoff_20260803）
+- L949: 固定snapshotの境界入力は時刻固定だけでは復元できない（cmd_karo_recon2_b4_snapshot_boundary_adversarial_20260803）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
