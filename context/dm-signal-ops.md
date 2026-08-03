@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-03 C-x W4/W5 oracle reviewed source boundary -->
+<!-- last_updated: 2026-08-04 GA-429 reviewed source boundary through detached production investigation HEAD -->
+<!-- source_commit:f1977f8ed3ee4c78344791a8375ff53a161b346a reason:GA-429 reviewed source boundary through detached production investigation HEAD evidence:full recalc run226 and Compare recovery recorded; intervening monthly-boundary runtime/research work indexed -->
 <!-- source_commit:6f628677362b2ef936d0de5ef2f80e17d00fa944 reason:C-x W4/W5 oracle reviewed source boundary evidence:fixture6/6 pytest1/1 FAIL0 SKIP0 -->
 
 
