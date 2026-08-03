@@ -1,25 +1,28 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_b4_checkpoint_binding_fix_kagemaru_20260803 reviewed checkpoint binding source -->
-<!-- source_commit:60cdebe7b30bda2fd712280d3beb2854fbebf02e reason:cmd_karo_b4_checkpoint_binding_fix_kagemaru_20260803 reviewed checkpoint binding source evidence:positive 1/1; negative faults blocked 11/11; FAIL 0; SKIP 0; production write 0 -->
-
-
-
+<!-- last_updated: 2026-08-03 own_reviewed_commit -->
+<!-- source_commit:40740ebf reason:own_reviewed_commit evidence:cmd_karo_b4_anchor24_disappearance_trace_saizo_20260803 -->
+<!-- source_commit:cfebe8fb reason:cmd_karo_cx_fail9_oracle_semantics_hanzo_20260803 reviewed source boundary evidence:6 mismatch dimensions and H1-H7; recovered target 9/9 regressions 0/12 -->
+<!-- dm_signal_research_reflux: fingerprint=edf3a29a50f70462cec4b0e6e5b58be5a38421630aa68e85de9ea5fef3f18cbe; mode=non-target; evidence_b64=54++QjTpmpzlrrPjga7ljZjnmbpyb3ctbGV2ZWzoqr/mn7vmiJDmnpzjgafjgYLjgorjgIHmgZLkuYVzZW1hbnRpY+e0ouW8leOBuOOBruWQjOacn+OBr+WutuiAgeODrOODk+ODpeODvOW+jOOBq+WIpOaWreOBmeOCi+OBn+OCgQ== -->
+<!-- dm_signal_research_reflux: fingerprint=fab6c315cbd45b4dbf18d00ecd1067d85cd05e0918e149df2c5c6265ebe151e1; mode=non-target; evidence_b64=Ym91bmRlZCBmYWlsZWQgcmVwbGF5IGFydGlmYWN0OyBubyBkdXJhYmxlIHJlc2VhcmNoIGluZGV4IGNvbmNsdXNpb24= -->
+<!-- dm_signal_research_reflux: fingerprint=47722afe230265320f0b9746332dd05dc6857a5c13abd154c59fd21326d5d25b; mode=non-target; evidence_b64=dGFzay1vd25lZCBleGVjdXRpb24gYXJ0aWZhY3Q7IHByb2plY3QgcmVzZWFyY2ggaW5kZXggdXBkYXRlIGlzIG91dHNpZGUgYXNzaWduZWQgc2NvcGU= -->
+<!-- dm_signal_research_reflux: fingerprint=893b59f4b8a1d29a4776535e42be28358510149b4c3cc6f9efafc328dde7eec6; mode=non-target; evidence_b64=5Y2Y5LiAY21k44Gu5pyf6ZmQ5LuY44GNY2hlY2twb2ludOebo+afu+aIkOaenOOBp+OBguOCiuaBkuS5heeglOeptue0ouW8leOBruabtOaWsOWvvuixoeWklg== -->
+<!-- dm_signal_research_reflux: fingerprint=9498399134576968761e33c94485015a53667d8c2b00b899691658855c41f0f4; mode=non-target; evidence_b64=5Y2Y5LiAY21k44Gu5pyf6ZmQ5LuY44GNY2hlY2twb2ludOebo+afu+aIkOaenOOBp+OBguOCiuaBkuS5heeglOeptue0ouW8leOBruabtOaWsOWvvuixoeWklg== -->
+<!-- dm_signal_research_reflux: fingerprint=bead510dfdb5c198de966760c0ece02c5fd778fa98e9bebf152b3e646ce6e6cf; mode=non-target; evidence_b64=5LiA5Zue6ZmQ44KK44GuQy14IEJMT0NL5LuV5qeY5oiQ5p6c44Gn5oGS5LmF56CU56m257Si5byV44G45piH5qC844GX44Gq44GE -->
+<!-- dm_signal_research_reflux: fingerprint=2503bbfe78ac8456ab8fad9739e1ed64a13ec4579e7de088ba79ac38d4a37baf; mode=non-target; evidence_b64=5LiA5Zue6ZmQ44KK44GuQkxPQ0vlrp/pqJPmiJDmnpzjgafnoJTnqbbntKLlvJXjga7mgZLkuYXntZDoq5bjgbjmmIfmoLzjgZfjgarjgYQ= -->
+<!-- dm_signal_research_reflux: fingerprint=385d4e36661c53c6639243ce1a1eb4c5c36b98a9cc4e29e309ec3c4d4456bb78; mode=non-target; evidence_b64=T25seSBjdXJyZW50IHJlY29uIHRhcmdldCBtYXJrZG93biBpcyBzdGFnZWQ7IHVucmVsYXRlZCBkaXJ0eSBmaWxlcyByZW1haW4gdW5zdGFnZWQu -->
+<!-- dm_signal_research_reflux: fingerprint=aef5d631a4759c182d83d0ed0bc7f3ff004b5bfd9333354fec36c5ead0395814; mode=non-target; evidence_b64=QWxsIGZvdXIgY3VycmVudCB0YXNrIHBhdGhzIGNhcnJ5IHRhc2stc2NvcGVkIGltcGxlbWVudGF0aW9uL2V2aWRlbmNlOyB1bnJlbGF0ZWQgZGlydHkgZmlsZXMgcmVtYWluIHVuc3RhZ2VkLg== -->
+<!-- dm_signal_research_reflux: fingerprint=92cffe0f3fc2934f896f589f509483cf52c9047c110a03fde5c273c785772d1e; mode=non-target; evidence_b64=T25seSBjdXJyZW50IHRhc2sgZXZpZGVuY2UgbWFya2Rvd24gY2hhbmdlZDsgdW5yZWxhdGVkIGRpcnR5IGZpbGVzIHJlbWFpbiB1bnN0YWdlZC4= -->
 <!-- dm_signal_research_reflux: fingerprint=e72c7eb85eeb188607c9b03d068f3cc72c65703234bff04ac2faed2688949e0a; mode=non-target; evidence_b64=QWxsIHN0YWdlZCBwYXRocyBleGFjdGx5IG1hdGNoIGN1cnJlbnQgdGFzayB0YXJnZXRfcGF0aDsgdW5yZWxhdGVkIGRpcnR5IHdvcmt0cmVlIGZpbGVzIHJlbWFpbiB1bnN0YWdlZC4= -->
 <!-- dm_signal_research_reflux: fingerprint=51f012c6cdc0ca9dcc2968b37e77fdd41472906dde14c67fa5e9598c916fdfe8; mode=non-target; evidence_b64=QWxsIHN0YWdlZCBwYXRocyBleGFjdGx5IG1hdGNoIGN1cnJlbnQgdGFzayB0YXJnZXRfcGF0aDsgdW5yZWxhdGVkIGRpcnR5IHdvcmt0cmVlIGZpbGVzIHJlbWFpbiB1bnN0YWdlZC4= -->
 <!-- dm_signal_research_reflux: fingerprint=10f08a7d9f5a90c9aba5ef1c4ceecd184f4ec25064e5b5ed79807623bf10dea9; mode=non-target; evidence_b64=Ym91bmRlZCBvbmUtb2ZmIGNvdW50ZXJmYWN0dWFsIGFydGlmYWN0OyBubyBleGlzdGluZyByZXNlYXJjaCBpbmRleCBzZWN0aW9uIG93bnMgdGhpcyBleHBlcmltZW50IGdlbmVyYXRpb24= -->
 <!-- dm_signal_research_reflux: fingerprint=67dbcd98ec5d74cb1e32fbf41f5cc13cfde3d4a3d313746a526bb2446ef5bef7; mode=non-target; evidence_b64=5pei5a2YQjQgY2hlY2twb2ludOaIkOaenOOBrlJD5piv5q2j44Gn44GC44KK44CB5paw6KaP5oGS5LmF55+l6K2Y44Gn44Gv44Gq44GE44Gf44KB56CU56m257Si5byV5ZCM5pyf5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=cda23673c151e08e8fcaadb2f5002f442f061301b0c91d3e7cd36c941ea4e849; mode=non-target; evidence_b64=b25lLXNob3QgcHJvZHVjdGlvbiBwYXJpdHkgYXJ0aWZhY3QgZm9yIGFjdGl2ZSBXMyBkaWFnbm9zaXM= -->
 <!-- dm_signal_research_reflux: fingerprint=44a9748d22227a0f5e09b578e7dd9fad19e20b97f93570630059aa0efd4b6a5e; mode=non-target; evidence_b64=5LiA5Zue6ZmQ44KKVzPmoLnlm6B0cmFjZeOBp+aBkuS5heeglOeptue0ouW8leOBuOOBruWQjOacn+WvvuixoeWklg== -->
-<!-- dm_signal_research_reflux: fingerprint=08677c4b98a0ae149eca2b097e7866c429103ebffc85b6ef3b7540ac5d2c95fc; mode=non-target; evidence_b64=dGFzay1vd25lZCBCNCBpbXBsZW1lbnRhdGlvbiBldmlkZW5jZTsgcmVzZWFyY2ggaW5kZXggc3luY2hyb25pemF0aW9uIGlzIG91dHNpZGUgdGhpcyBpbXBsZW1lbnRhdGlvbiBzY29wZQ== -->
-<!-- dm_signal_research_reflux: fingerprint=b94d0ea716296f7de7b4b70f3bb2888437c4b2d903d467d4fcd98bca20a72751; mode=non-target; evidence_b64=Ym91bmRlZCBvbmUtb2ZmIHByZS1iaW5kIHJldmlldyBhcnRpZmFjdDsgbm8gZXhpc3RpbmcgcmVzZWFyY2ggaW5kZXggc2VjdGlvbiBvd25zIHRoaXMgY2hlY2twb2ludCBnZW5lcmF0aW9u -->
-<!-- dm_signal_research_reflux: fingerprint=032772e50f46268bdd2d27ab62d3081d221ce7dd1b3fffb82533e7ee27862502; mode=non-target; evidence_b64=Qm91bmRlZCBpbmRlcGVuZGVudCByZXZpZXcgYXJ0aWZhY3QgZm9yIEhheWF0ZSBwYXRjaDsgbm8gZHVyYWJsZSBjb250ZXh0IGluZGV4IGNoYW5nZSByZXF1aXJlZC4= -->
-<!-- dm_signal_research_reflux: fingerprint=79d689d7df8ff77ff0a35f91f641e80364516e16abb1b389f377db34fb3a7c6b; mode=non-target; evidence_b64=b25lLXNob3QgaW5kZXBlbmRlbnQgcmV2aWV3IGFydGlmYWN0IGZvciBhY3RpdmUgQjQgcGF0Y2g= -->
-<!-- dm_signal_research_reflux: fingerprint=8e7a46546c9441fc190865226c934ed109a041afdf5f9c771ff8233568c984a2; mode=non-target; evidence_b64=5LiA5Zue6ZmQ44KKVzPlrp/muKxyZWNlaXB044Gn5oGS5LmF56CU56m257Si5byV44G444Gu5ZCM5pyf5a++6LGh5aSW -->
-<!-- dm_signal_research_reflux: fingerprint=22c979194edae47077d30f08c2fe69cbae4b8174dc0ab9b6683a37fbd86ef177; mode=non-target; evidence_b64=dGFzay1vd25lZCBCNCBpbXBsZW1lbnRhdGlvbiBhcnRpZmFjdHMgYXJlIGRpcmVjdCB2ZXJpZmljYXRpb24gZXZpZGVuY2UsIG5vdCBzZW1hbnRpYyBpbmRleCBlbnRyaWVz -->
-<!-- dm_signal_research_reflux: fingerprint=e9888a4f90d0c287fa446d462b85a8d254c57bf1cf6af37976f8e0977d4ec6b3; mode=non-target; evidence_b64=dGFzayBvd25zIHN0YW5kYWxvbmUgcmVhZGluZXNzIGFydGlmYWN0czsgbm8gZXhpc3RpbmcgcmVzZWFyY2ggaW5kZXggc2VjdGlvbiBpcyBtb2RpZmllZA== -->
-<!-- dm_signal_research_reflux: fingerprint=4cb7f01bcc25cbfc4be346fb15b34dab887f6fdf2ace9714d9b33eae673d962a; mode=non-target; evidence_b64=VGFzayBjcmVhdGVzIGEgYm91bmRlZCBCNSByZWFkaW5lc3MgYXJ0aWZhY3Q7IG1hc3RlciBkZXNpZ24gYWxyZWFkeSBpbmRleGVzIEI1IGFuZCBCNCBkZXBlbmRlbmN5LCBzbyBubyBjb250ZXh0IGluZGV4IHVwZGF0ZSBpcyByZXF1aXJlZC4= -->
-<!-- dm_signal_research_reflux: fingerprint=376b477a35228d18fc6bfa8514bfbcc0605e6a9daba38aaafdda115012cde13a; mode=non-target; evidence_b64=dGFzayBvd25zIHN0YW5kYWxvbmUgcmVhZGluZXNzIGFydGlmYWN0czsgbm8gZXhpc3RpbmcgcmVzZWFyY2ggaW5kZXggc2VjdGlvbiBpcyBtb2RpZmllZA== -->
-<!-- dm_signal_research_reflux: fingerprint=f49bc07c1aa8ef458dabd1572742e689f0ea14aa0e5cf234bc173651bf0c2da4; mode=non-target; evidence_b64=5pys5oiQ5p6c44GvQy14IFcy6ZmQ5a6a44Gu5a6f6KGM6Ki86Leh44Gn44GC44KK5oGS5LmF56CU56m257Si5byV44Gu5pu05paw5a++6LGh44Gn44Gv44Gq44GE -->
+
+
+
+
+
 
 
 
@@ -61,6 +64,8 @@ D系topology先行偵察: readonly本番configから対象 `78/78 PF`、依存ed
 B5拒否gate先行偵察: Signal共通flushとMonthlyReturn共通delete/UPSERTの2保存境界へvalidatorを集約し、writer/schema/caller `8/8`分類・未分類0。敵対4類型を拒否/通知 `4/4`、正常4類型の誤拒否 `0/4`とする実装契約を固定し、DB恒久制約はD3まで保留。本体変更0、本番write0、runner `17/17` PASS、SKIP0、hash `2/2`一致。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_recon_b5_rejection_gate_preflight.md`、source commit=`97dc501b`。
 
 C9/C2隔離handoff先行偵察: C-x W5 receiptからC9 `21/21`→L2 `24/24`→L3 `25/25`へ同一snapshot世代を直列継承するmanifest契約を固定。旧C2=`21/層`仮定はL2で3件・L3で4件不足するため撤回。欠落/重複/世代混在各0、hash `2/2`、本番write0、task runner `1/1` PASS・SKIP0。一時contract testはdefault-delete済み。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_recon_c9_c2_isolated_handoff.md`、source commit=`7a24d609`。
+
+C-x W4/W5 oracle意味論監査: bf769e77の9件`normal_mismatch`は、子PF固有境界の`monthly_return_open`×月内latest DB weightを親境界ticker再帰生成の独立oracleとして扱った非同値が主因候補。修正採否はH1-H7を全数小実験し、`recovered 9/9`かつ既存PASS `regressed 0/12`で決める。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_cx_fail9_oracle_semantics_hanzo_20260803.md`、source commit=`cfebe8fb`。
 
 ---
 
