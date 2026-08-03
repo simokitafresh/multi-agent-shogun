@@ -1539,6 +1539,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T19:59:08+09:00 ★セーブポイント2026-08-03 20:01(月次リターン境界是正・最優先復帰点。前版=f9c68713222a6272): 正本=v5.15(sha256先頭=f3d879b4・gist 8cbc86a5一致・両レビュー依頼済み)。* |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T20:15:20+09:00 ★セーブポイント2026-08-03 20:16(月次リターン境界是正・最優先復帰点。前版=07c6f4a1d4efa712): 正本=v5.17(sha256先頭=08609d14・gist 8cbc86a5一致)。★殿下知20:11『間 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T20:29:24+09:00 b1uppav0x toolu_017gsYKWJao5eoypRhYX9j7M /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7241430f-e6a0-49a1-bef2-c66498 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:40:34+09:00 b1fktwee5 toolu_01Nmt9mc45tE9tiHEMgJPJmB /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7241430f-e6a0-49a1-bef2-c66498 |
 | causal_chain | `[[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]` (L1447) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
@@ -2267,6 +2268,7 @@ codd:
 | cmd | `cmd_karo_impl_context_source_commit_set_tobisaru_20260803` (`scripts/context_source_commit_set.sh`, `tests/unit/test_context_source_commit_set.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T19:41:15+09:00 ★セーブポイント2026-08-03 19:42(月次リターン境界是正・最優先復帰点。前版=d988d7184dccdc2c): 正本=v5.13(sha256先頭=bd293439・gist 8cbc86a5一致・両レビュー依頼済み)。家 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T19:54:37+09:00 ★セーブポイント2026-08-03 19:53(月次リターン境界是正・最優先復帰点。前版=b425e2091301cc12): 正本=v5.14(sha256先頭=bf608e11・gist 8cbc86a5一致・両レビュー依頼済み)。家 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:56:46+09:00 ★セーブポイント2026-08-03 21:58(月次リターン境界是正・最優先復帰点。前版=897f68a398efb51c): 正本=v5.21(sha256先頭=9f594938・gist 8cbc86a5一致実測・checker FA |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -2637,6 +2639,7 @@ codd:
 | lesson | `L1528` deployed_at graceだけではgate中task差替え競合を防げない |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T10:53:47+09:00 a0a4ce593f14ddbec toolu_015X2rzWyriG7nQjkwGaZMH1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-800 |
 | cmd | `cmd_karo_prep_e1_three_face_ready_20260803` |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:16:15+09:00 WARNING:app.jobs.precompute_raw:precompute_raw failed for 9f90be70-197b-4f67-8665-be80f6613e27; stale raw remains: build |
 | causal_chain | `[[cmd_3720]]` (L958) |
 | causal_chain | `[[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]` (L967) |
 | causal_chain | `[[cmd_karo_ci_fix_commit_fixture_202607152031]]` (L1042) |
@@ -3045,6 +3048,10 @@ codd:
 | cmd | `cmd_karo_goal_a4_mtd_rootcause_reconcile_rc3_20260803` |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T14:59:55+09:00 2026/7のすべてのpriceを取得していないのでは？満月のみで確認するのが早いはずだ。patialとMTDは別に検証しないと切り分けができなくなるぞ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T19:27:58+09:00 ★セーブポイント2026-08-03 19:28(月次リターン境界是正・最優先復帰点。前版=db274a8a1aeb8117): 正本=v5.12(sha256先頭=fffecb9c・gist 8cbc86a5一致・両レビュー依頼済み)。★ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T20:57:03+09:00 ★セーブポイント2026-08-03 20:58(月次リターン境界是正・最優先復帰点。前版=29ef817c1230f4fb): 正本=v5.18(sha256先頭=52a6d8af・gist一致)。実行フェーズ: 20:26 c0724f |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:05:56+09:00 ★セーブポイント2026-08-03 21:06(月次リターン境界是正・★本番復旧確認。前版=417e4a8b76a4e8a8): **run223で全量回復=monthly_returns 16,874行・102/102PF・max 20 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:24:20+09:00 ★セーブポイント2026-08-03 21:25(月次リターン境界是正・★本番復旧完了・最優先復帰点。前版=b98a8e5f6e90ae88): 正本=v5.19(sha256先頭=b25857d0・gist 8cbc86a5一致)。【復旧 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:35:58+09:00 ★セーブポイント2026-08-03 21:37(月次リターン境界是正・最優先復帰点。前版=58ae0126553f5454): 正本=v5.20(sha256先頭=71864d3b・gist 8cbc86a5一致実測)。【v5.20要点】 |
 
 ## deepdive_principles — deepdive原理
 
@@ -3455,6 +3462,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T16:24:06+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T17:05:43+09:00 今クリアされても今より強くてニューゲームできるようにせよ。クリア後に即時同じ水準で続きができるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T18:43:19+09:00 今クリアされてもいまより強くてinbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:16:33+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:23:07+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -4249,6 +4258,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T17:45:50+09:00 進捗を確認せよ |
 | lesson | `L953` fixture IDは分類軸を含めて一意化する |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T20:30:44+09:00 renderのlogを確認せよ。ちゃんとtickerのpriceの取得からやっているか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:18:43+09:00 bdu7j01nt toolu_01NBjZQAp9Yjui24Jyx2CSBz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7241430f-e6a0-49a1-bef2-c66498 |
 | causal_chain | `[[cmd_3725]]` (L957) |
 | causal_chain | `[[cmd_3725]]` (L957) |
 | causal_chain | `[[cmd_3720]]` (L958) |
@@ -5184,7 +5194,7 @@ codd:
 |------|---|
 | id | dmsignal_operations |
 | label | DM-Signal運用 |
-| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？, cashを持つ可能性は無いはずだ, DM signalにフォーカスしよう, DM Signalの実precommit経路からruff自動fixを除去し, 7保有とはどういう意味だ？保有シグナルは月初に固定される, standardPFが２４とFoFが７８では？, シグナルと 保有シグナル, Monthly Tradeページを見てみろ, 過去リターンは表示されているのに, どちらにせよ, DM signalのUI問題は修正されたか？, 日々のシグナルが日々の株価で変わるのは正常, DM signalを最優先して対応佐瀬よ, DM signalの進捗を報告せよ, 進捗を報告せよ, 正しい値とは？毎月の保有シグナルは変わらないんだよな？, driftした子FoF値を消費とはどういう意味だ？, 保有シグナルと, 1に再計算したあとに始めて正しい８月の保有シグナルが出る, v3.4シグナル不変保証, 理論上で保有シグナルが変わらないかを訪ねている, もし新しい正しい計算によって保有シグナルが変わるのであれば |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？, cashを持つ可能性は無いはずだ, DM signalにフォーカスしよう, DM Signalの実precommit経路からruff自動fixを除去し, 7保有とはどういう意味だ？保有シグナルは月初に固定される, standardPFが２４とFoFが７８では？, シグナルと 保有シグナル, Monthly Tradeページを見てみろ, 過去リターンは表示されているのに, どちらにせよ, DM signalのUI問題は修正されたか？, 日々のシグナルが日々の株価で変わるのは正常, DM signalを最優先して対応佐瀬よ, DM signalの進捗を報告せよ, 進捗を報告せよ, 正しい値とは？毎月の保有シグナルは変わらないんだよな？, driftした子FoF値を消費とはどういう意味だ？, 保有シグナルと, 1に再計算したあとに始めて正しい８月の保有シグナルが出る, v3.4シグナル不変保証, 理論上で保有シグナルが変わらないかを訪ねている, もし新しい正しい計算によって保有シグナルが変わるのであれば, 設計書が完成すると保有シグナルは変わるか？, 保有シグナルが先月と同じになっている, ７月と８月の保有シグナルが変わっていないモノが本番にある, ７月と８月の保有シグナルが変わっていないPFが本番にあ る |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan, dm_signal_pf_restore_guardrails, admin_ui_redesign_asis_tobe |
 
@@ -5311,6 +5321,13 @@ codd:
 | cmd | `cmd_karo_recon_c9_fof_identity_preflight_20260803` |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T14:08:10+09:00 進捗を報告せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T15:35:22+09:00 進捗を報告せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:59:15+09:00 設計書が完成すると保有シグナルは変わるか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:04:23+09:00 保有シグナルが先月と同じになっている。バグではないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:10:51+09:00 ７月３１日の終値が確定した時点で８月のポジションの計算が可能になる。ゆえに８月のフル再計算後に８月の保有シグナルが表示できる仕組みだったはずだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:20:05+09:00 ７月と８月の保有シグナルが変わっていないモノが本番にある。正当なのかバグなのか調査してくれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:20:54+09:00 ７月と８月の保有シグナルが変わっていないPFが本番にあ る。正当なのかバグなのか調査してくれ。最優先で家老自身で調査せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:20:56+09:00 ７月と８月の保有シグナルが変わっていないPFが本番にあ る。正当なのかバグなのか調査してくれ。最優先で家老自身で調査せよ inbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:23:52+09:00 遅すぎる。７月と８月の保有シグナルが変わっていないPFが本番にあ る。正当なのかバグなのか調査してくれ。最優先で将軍自身 で調査せよ |
 
 ## admin_ui_redesign_asis_tobe — DM-Signal Admin画面一覧性改修設計書
 
@@ -6239,6 +6256,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T16:03:38+09:00 ローカルは本番ではない。本番はrenderにdeployしているものだけだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T17:01:06+09:00 そもそも家老の配備CMDの質が低いから忍者がfailする可能性はあるか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T17:06:23+09:00 ★セーブポイント2026-08-03 17:07(月次リターン境界是正・最優先復帰点。/clear後はこのknowledgeとgist 8cbc86a5を読め。前版=f6b6ef77e803ad10): 【正本】docs/research/ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T21:04:57+09:00 bg3xqg6ad toolu_01Cq3ZKs5DKCNoy6biThqYwE /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7241430f-e6a0-49a1-bef2-c66498 |
 | causal_chain | `[[cmd_3726]]` (L956) |
 | causal_chain | `[[cmd_3765]]` (L985) |
 | causal_chain | `[[cmd_karo_hotfix_fill_this_202607151848]]` (L1037) |
@@ -6929,6 +6947,7 @@ codd:
 | causal | `cmd_karo_hotfix_context_freshness_ga427_20260803` files_modified: [[defense_hierarchy]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T16:00:04+09:00 家老の速度を落としている原因も調査せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T17:00:04+09:00 更に速度向上をはかるアイデアはあるか？正しさをすててはならない。無駄や冗長を省く方向性だ。 |
+| causal | `cmd_karo_direct_ga428_context_freshness_fix_20260803` files_modified: [[defense_hierarchy]] |
 | causal_chain | `[[cmd_reflux_insight_202607072138_saizo]]` (L969) |
 | causal_chain | `[[cmd_karo_hotfix_ga219_context_freshness_202607110107]]` (L1030) |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_perf_20260727]]` (L1378) |
@@ -8769,6 +8788,7 @@ codd:
 | causal | `cmd_karo_hotfix_stall_transition_fp_20260802` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_karo_hotfix_stall_transition_fp_20260802` (`scripts/gates/gate_karo_startup.sh`, `tests/unit/test_gate_karo_startup.bats`) |
 | cmd | `cmd_karo_hotfix_context_freshness_ga427_20260803` (`scripts/gates/gate_context_freshness.sh`, `tests/unit/test_gate_context_freshness.bats`) |
+| cmd | `cmd_karo_direct_ga428_context_freshness_fix_20260803` (`scripts/gates/gate_context_freshness.sh`, `tests/unit/test_gate_context_freshness.bats`) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
 | causal_chain | `[[cmd_3765]]` (L985) |
@@ -9649,6 +9669,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608031510_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608031611_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608031817_saizo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608032028_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gunshi_log_append — 仮: Gunshi Log Append
@@ -9786,6 +9807,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608031520_kotaro` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608031629_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608031629_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608032104_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608032104_saizo` (`queue/insights.yaml`) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
 
@@ -10375,6 +10398,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-02T12:56:53+09:00 作業に直接関係のないCI GREENを強要するのはバグだ。バグは修正せよ。tobisaruがバグで停止している |
 | cmd | `cmd_karo_recon2_pf_apply_oracle_design_tobisaru_20260803` |
 | cmd | `cmd_karo_recon2_b4_schema_divergence_tobisaru_20260803` |
+| cmd | `cmd_reflux_backlink_202608032028_tobisaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_hayate — 仮: Hayate
 
@@ -11906,6 +11930,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T06:56:59.143593+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T07:15:59.748590+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T07:17:08.014360+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-03T11:33:08.567146+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
