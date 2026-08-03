@@ -1,7 +1,7 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-08-03 reflux backlink SSOT update reviewed -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1535 -->
+<!-- last_synced_lesson: L1536 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -36,7 +36,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1535 -->
+<!-- last_synced_lesson: L1536 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -70,6 +70,7 @@
 - L1533: 外部source鮮度は検出だけでなく承認receiptを更新要求へ接続する（cmd_karo_hotfix_context_freshness_ga427_20260803）
 - L1534: refluxはcommit専用index scopeでfingerprint生成（cmd_karo_goal_a1_l0_boundary_reverify_commit_rc3_20260803）
 - L1535: cross-repo git判定はtask project working treeをSSOTにする（cmd_karo_hotfix_sgpre35_cross_repo_head_20260803）
+- L1536: task runnerの外部repo contract選択を配備時に注入する（cmd_karo_goal_b3_fallback_remove_rc_20260803）
 
 ## 設計標準・テスト・因果
 

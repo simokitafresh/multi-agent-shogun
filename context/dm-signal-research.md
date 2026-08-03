@@ -1,7 +1,10 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_complete_gate -->
-<!-- dm_signal_research_reflux: fingerprint=8e713b44e11728bd5b310e8e0273ed450d9afe50c7bd708770fe53c5440e2d32; mode=non-target; evidence_b64=UnVubmVyIFJDIHJlY2VpcHQgZG9jdW1lbnRhdGlvbiBvbmx5OyBleGlzdGluZyBvcmFjbGUgYXJ0aWZhY3RzIHVuY2hhbmdlZCBhbmQgbm8gY29udGV4dCBrbm93bGVkZ2UgZGVsdGE= -->
-<!-- source_commit:96d35946 reason:cmd_complete_gate evidence:project=dm-signal context=context/dm-signal-research.md commit=96d35946 -->
+<!-- last_updated: 2026-08-03 cmd_karo_goal_cx_nukimi_classification_rc_20260803 reviewed source boundary -->
+<!-- dm_signal_research_reflux: fingerprint=f4b56fe5868028d0159648cd03a8baa2352fea2d5aca7307d8c796834f9b0ac1; mode=non-target; evidence_b64=U3RhbmRhbG9uZSBCNSBwcmVmbGlnaHQgZGV0YWlsOyBjYW5vbmljYWwgaW5kZXggYWxyZWFkeSBleGlzdHMgaW4gbXVsdGktYWdlbnQtc2hvZ3VuIGRlc2lnbiB2NC44MiDCpzIuNSBCNTsgdGFzayBzY29wZSBpcyBsaW1pdGVkIHRvIHR3byByZXNlYXJjaCBhcnRpZmFjdHMu -->
+<!-- dm_signal_research_reflux: fingerprint=b12479b1eeaa57a2a508c1528581f70a46ae67df53a527303cdd7eeaf375504f; mode=non-target; evidence_b64=U3RhbmRhbG9uZSBCNSBwcmVmbGlnaHQgZGV0YWlsOyBjYW5vbmljYWwgaW5kZXggYWxyZWFkeSBleGlzdHMgaW4gbXVsdGktYWdlbnQtc2hvZ3VuIGRlc2lnbiB2NC44MiDCpzIuNSBCNTsgdGFzayBzY29wZSBpcyBsaW1pdGVkIHRvIHR3byByZXNlYXJjaCBhcnRpZmFjdHMu -->
+<!-- dm_signal_research_reflux: fingerprint=d3bb755754b67bee43fa721d58dceadf4759a13d26894b097fde0acc6bd6e94a; mode=non-target; evidence_b64=RDDliY3mrrVyZWFkb25seeWBteWvn+aIkOaenOOAguioreioiOato+acrOabtOaWsOOBr+WutuiAgeODrOODk+ODpeODvC9HQVRF5b6M44Gu5bCG6LuN5Y2Y5LiAd3JpdGVy6LKs5YuZ44Gn44GC44KK44CB5pysdGFza+OBr+Wun+ihjHRvcG9sb2d5IGFydGlmYWN044Gu44G/44CC -->
+<!-- dm_signal_research_reflux: fingerprint=f49c6268d6fe307d8c02f8efacf48451d558ed60eef5d9f85ff9f1ceead1d3c8; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwubWQgQy146ZqU6ZuiVzEtVzU6IFc144G+44GnQkxPQ0vjg7tPVVRfT0ZfU0NPUEXkuLjjgoHnpoHmraLjgbjkuIDoh7Q= -->
+<!-- source_commit:36008e55 reason:cmd_karo_goal_cx_nukimi_classification_rc_20260803 reviewed source boundary evidence:cmd_complete_gate -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

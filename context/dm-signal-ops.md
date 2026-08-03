@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_ci_fix_b2e_integrated_30769057468_rc2_20260803 reviewed source boundary -->
-<!-- source_commit:85a15e50 reason:cmd_karo_ci_fix_b2e_integrated_30769057468_rc2_20260803 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=85a15e50 -->
+<!-- last_updated: 2026-08-03 cmd_karo_goal_b3_fallback_remove_rc_20260803 -->
+<!-- source_commit:3efd01e0 reason:cmd_karo_goal_b3_fallback_remove_rc_20260803 evidence:reviewed source boundary; report PASS; gunshi LGTM; karo ACCEPT -->
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 コア定義(§0-5,8,10-11,13,15,18) → `context/dm-signal-core.md`
 研究・検証結果(§19-24) → `context/dm-signal-research.md`
@@ -87,7 +87,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L942 -->
+<!-- last_synced_lesson: L945 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -868,6 +868,7 @@ import metrics_research_engine as MRE
 - L940: golden manifestとlocal archiveとCI gzipを三位一体で同期する（cmd_karo_ci_fix_b2e_integrated_30769057468_rc2_20260803）
 - L941: 診断unknownは同一PFの実層分類を上書きさせない（cmd_karo_recon_b4_lane_dryrun_contract_preflight_20260803）
 - L942: 候補母集団と要調査母集団を分離して数える（cmd_karo_recon_c0_l1_lane_contract_preflight_20260803）
+- L945: 固定日付E2Eの実時間変質を防ぐ（cmd_karo_goal_b2b_monthly_generator_20260803）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
