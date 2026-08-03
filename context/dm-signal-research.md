@@ -17,6 +17,7 @@
 <!-- dm_signal_research_reflux: fingerprint=6c6def2375dcc96144cd5b4a959926cef1ebfbd8769125448e035cb4ffafaa7d; mode=non-target; evidence_b64=QkxPQ0vlgbXlr5/miJDmnpzjgILmiJDnq4vlgJnoo5ww44Gu44Gf44KB56CU56m257Si5byV44G444Gu56K65a6a55+l6K2Y5ZCM5pyf44Gv5a626ICB44Os44OT44Ol44O85b6M44Go44GZ44KL -->
 <!-- dm_signal_research_reflux: fingerprint=5148fe3aca7554b773fb36e5cb7cc3a19478bc0f7f43f91ff506aa207e40a052; mode=non-target; evidence_b64=QjQgaXNvbGF0ZWQgcHJvYmUgZXZpZGVuY2UgaXMgdGFzay1sb2NhbCBhbmQgbm90IGRpcmVjdCBtb250aGx5IHJlc2VhcmNoIFNTT1QgbWF0ZXJpYWw= -->
 <!-- source_commit:faf45ac6f5fc70c44e8a0e5301da751e97780771 reason:cmd_karo_recon2_july_prices_full_coverage_20260803 evidence:18x22=396・actual286・missing110・5symbol各22欠落をproduction readonly再照合 -->
+<!-- source_commit:cc4882758a985d65f1fec16c55462e4b7523ada7 reason:cmd_karo_recon2_cx_w1_7lane_normal_202606_20260803 evidence:C0 eligible21=7lane×3・selected7・generated7・oracle exact7/7・missing0・duplicate0・write0 -->
 
 
 
