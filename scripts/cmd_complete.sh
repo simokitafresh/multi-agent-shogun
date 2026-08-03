@@ -329,8 +329,7 @@ if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
     && [[ "${CMD_COMPLETE_ASYNC_TAIL_WORKER:-0}" != "1" ]]; then
     _tail_log="$CHECKPOINT_DIR/completion_tail.log"
     _tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
-    if command -v "$_tmux_bin" >/dev/null 2>&1 \
-        && "$_tmux_bin" display-message -p '#S' >/dev/null 2>&1; then
+    if command -v "$_tmux_bin" >/dev/null 2>&1; then
         printf -v _tail_cmd '%q ' env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
             CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
             bash "$SCRIPT_DIR/cmd_complete.sh" "$CMD_ID" "$BUNDLE_PATH"
@@ -339,8 +338,17 @@ if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
             _tail_cmd="env $_tail_test_env${_tail_cmd#env }"
         fi
         printf -v _tail_log_q '%q' "$_tail_log"
-        "$_tmux_bin" run-shell -b "$_tail_cmd </dev/null >>$_tail_log_q 2>&1"
-        printf '[cmd_complete] QUEUED completion_tail launcher=tmux log=%s\n' "$_tail_log"
+        if "$_tmux_bin" display-message -p '#S' >/dev/null 2>&1; then
+            "$_tmux_bin" run-shell -b "$_tail_cmd </dev/null >>$_tail_log_q 2>&1"
+            printf '[cmd_complete] QUEUED completion_tail launcher=tmux log=%s\n' "$_tail_log"
+        else
+            # CI commonly installs tmux without starting a server.  A private
+            # one-shot session supplies the same durable server boundary and
+            # exits with the worker instead of turning the public call sync.
+            _tail_socket="cmd-complete-${CMD_ID//[^A-Za-z0-9_-]/_}-$$"
+            "$_tmux_bin" -L "$_tail_socket" new-session -d "$_tail_cmd </dev/null >>$_tail_log_q 2>&1"
+            printf '[cmd_complete] QUEUED completion_tail launcher=tmux-private log=%s\n' "$_tail_log"
+        fi
     else
         printf '[cmd_complete] FALLBACK completion_tail mode=sync reason=tmux_unavailable log=%s\n' "$_tail_log" >&2
         flock -u 9

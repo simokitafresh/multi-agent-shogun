@@ -1775,11 +1775,18 @@ SH
 # planned ownership remains distinct from the explicit test execution request.
 @test "external commit_contract repo_root selects explicit nested test" {
   external="$TMPROOT/external-contract"
-  mkdir -p "$external/backend/tests" "$TMPROOT/queue/tasks"
+  mkdir -p "$external/backend/tests" "$external/.venv/bin" "$TMPROOT/queue/tasks"
   git -C "$external" init -q
   printf 'def test_owned():\n    assert True\n' >"$external/backend/tests/test_owned.py"
   git -C "$external" add .
   git -C "$external" -c user.email=t@example.invalid -c user.name=t commit -qm init
+  cat >"$external/.venv/bin/python" <<'SH'
+#!/usr/bin/env bash
+[[ "$1 $2 $3" == "-m pytest -q" ]] || exit 64
+[[ "$4" == "backend/tests/test_owned.py" ]] || exit 65
+printf '1 passed in 0.01s\n'
+SH
+  chmod +x "$external/.venv/bin/python"
   cat >"$TMPROOT/queue/tasks/external-contract.yaml" <<YAML
 task:
   project: absent-from-registry
