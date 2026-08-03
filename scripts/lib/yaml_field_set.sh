@@ -1406,6 +1406,7 @@ yaml_field_set() {
         case "$field" in
             test_necessity) _yfs_structured_type="list_or_mapping" ;;
             commit_contract) _yfs_structured_type="mapping" ;;
+            pre_implementation_review) _yfs_structured_type="mapping" ;;
             planned_paths|target_path) _yfs_structured_type="list" ;;
         esac
     fi
