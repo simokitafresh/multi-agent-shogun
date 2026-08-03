@@ -3453,6 +3453,7 @@ codd:
 | causal | [[fe3943375_retro_pane_cut]] -> [[self_retro_inline一タスク化]] -> [[二重ループ破壊]] -> [[retro_pane_prompt復元]] |
 | causal | `[[report_publication同期I/O]] -> [[deferred安全分離]] -> [[二重ループ高速化]]` (`docs/research/double-loop-report-publication-tobisaru.md`) |
 | causal | `[[completion_pipeline_next_bottleneck]] -> [[full_and_integration_cost_or_flake]] -> [[related_only_final_checkpoint_candidate]]` (`docs/research/next-throughput-hayate.md`) |
+| causal | `[[review_display_friction]] -> [[unknown_alias_BLOCK]] -> [[next-throughput-kagemaru]]` (`docs/research/next-throughput-kagemaru.md`) |
 | discussion | 殿指示2026-07-20 20:33「メインの作業＋作業におけるインフラ改善の二重ループが超高速で回転を止めない」 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-20T20:37:53+09:00 殿定義2026-07-20 20:33: 仕組みの本体は、メイン作業と、その作業で観測した遅延・失敗・摩擦を一次データで即インフラ改善へ還す二重ループを常時並走させ、改善→主作業加速→試行増加→次律速発見→再改善のポジティブフィードバックを |
 | cmd | `cmd_3245-3251` backfill — | session_20260609_brainwash_awakening | 覚醒洗脳監査→根因7件特定→L4-L7全層修正cmdサイクル完遂 | stable | **強くてニューゲーム要点** |
