@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-02 CDP foundation and skill reference reviewed source boundary -->
-<!-- source_commit:a377c2e71 reason:CDP foundation and skill reference reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commits=129ef2db5,a377c2e71 -->
+<!-- last_updated: 2026-08-03 reflux backlink SSOT update reviewed -->
+<!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
 <!-- last_synced_lesson: L1535 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。

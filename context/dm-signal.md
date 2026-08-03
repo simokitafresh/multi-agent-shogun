@@ -1,7 +1,7 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
-<!-- last_synced_lesson: L938 -->
-<!-- source_commit:5e9ea355d0ad6d6856b0e03f08993f2ca1c744fa (DM-Signal terminology/disambiguation/db-operations-runbook対象pathspecの最終同期commit。GA-238で導入。当該pathspecは2026-07-13時点で未反映commitなし=同型穴の解消のみ、新規本文反映は不要) -->
+<!-- last_updated: 2026-08-03 D0 route preflight formal review accepted after C-x preflight commit -->
+<!-- last_synced_lesson: L943 -->
+<!-- source_commit:d7cab63f3aaacf8392a98bf455035317c5d5e2d7 reason:D0 route preflight formal review accepted after C-x preflight commit evidence:D0 report d3d2567c; latest DM-Signal source d7cab63f; runner17/17; writes0 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -341,6 +341,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L934: 効力日という列名だけで実効力日SSOTと認定しない（cmd_4222）
 - L935: 形式的分類和ではpurpose母集団確定を満たさない（cmd_4220）
 - L938: decision monthとactual decision dateを同一視しない（cmd_karo_s1_historical_config_reconstruct_20260803）
+- L943: reflux prepare後の成果不変順序（cmd_karo_recon_cx_oracle_lane_preflight_20260803）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 
