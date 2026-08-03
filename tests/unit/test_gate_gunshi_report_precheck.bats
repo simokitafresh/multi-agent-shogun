@@ -344,13 +344,20 @@ YAML
   git -C "$project_repo" init -q
   git -C "$project_repo" config user.email fixture@example.invalid
   git -C "$project_repo" config user.name fixture
-  printf '# existing\n' > "$project_repo/tests/unit/test_existing.py"
+  printf '# existing a\n' > "$project_repo/tests/unit/test_existing.py"
+  printf '# existing b\n' > "$project_repo/tests/unit/test_existing_b.py"
+  printf '# existing c\n' > "$project_repo/tests/unit/test_existing_c.py"
   git -C "$project_repo" add .
   git -C "$project_repo" commit -qm baseline
   printf 'path: %s\n' "$project_repo" > "$project_file"
   printf 'worker_id: kagemaru\nparent_cmd: cmd_fixture\n' > "$TMP_DIR/report.yaml"
 
-  printf 'task:\n  project: %s\n  planned_paths: [tests/unit/test_existing.py]\n' "$project_id" > "$task"
+  printf 'task:\n  project: %s\n  planned_paths: [tests/unit/test_existing.py, tests/unit/test_existing_b.py, tests/unit/test_existing_c.py]\n' "$project_id" > "$task"
+  old_basis_misses=0
+  for path in tests/unit/test_existing.py tests/unit/test_existing_b.py tests/unit/test_existing_c.py; do
+    git -C "$REPO_ROOT" cat-file -e "HEAD:$path" 2>/dev/null || old_basis_misses=$((old_basis_misses + 1))
+  done
+  [ "$old_basis_misses" -eq 3 ]
   run env DEPLOY_TASK_PROJECTS_DIR="$projects_dir" GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -eq 0 ]
 
