@@ -161,6 +161,7 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
+- 2026-08-03: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: commit/task history does not contain owned/planned path: docs/research/cmd_karo_goal_cx_isolated_materialization_w1_w5.py; commit_contract: commit/task history ...
 - 2026-08-03: gate=gate_report_format result=FAIL executor=kagemaru reason=cross_repo_commits: cross_repo_commits[0] commit does not change path: backend/tests/test_monthly_boundary_contract.py
 - 2026-08-03: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: commit/task history does not contain owned/planned path: backend/app/jobs/recalculate_fof.py; commit_contract: commit/task history does not contain owned/planne...
 - 2026-08-03: gate=gate_report_format result=FAIL executor=tobisaru reason=cross_repo_commits: cross_repo path appears in multiple entries: backend/tests/test_monthly_boundary_contract.py
@@ -180,7 +181,6 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - 2026-07-29: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: task/report commit_contract required mismatch; variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, ...
 - 2026-07-29: gate=gate_report_format result=FAIL executor=hanzo reason=cross_repo_commits: cross_repo_commits[0] commit does not contain path: backend/tests/test_fof_monthly_returns_optimization_contract.py
 - 2026-07-29: gate=gate_report_format result=FAIL executor=saizo reason=cross_repo_commits: cross_repo_commits[0] commit does not contain path: mnt/c/Python_app/rebalancer/backend/app/config.py
-- 2026-07-29: gate=gate_report_format result=FAIL executor=saizo reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: commit/task history does not contain owned/planned path: scripts/inbox_write.sh; commit_co...
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。binary_checks.resultはyes/noのみ、verdictはgate_report_format.sh自動導出、報告追記はhelper経由に限定する。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パスを検出し、個別dict変換する。ninja-commitのcommit_hash記録手順への影響なし。

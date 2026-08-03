@@ -16,6 +16,7 @@
 | **v3.0** | **2026-07-24 19:25** | **完成版へ再構築(殿指示「次回同じようなことがあっても役に立つ資料として完成させよ」): §RETRO(なぜ時間がかかったか=7根因の実証データ)+§PLAYBOOK(次回のUI統一を最短で回す手順)を新設。N2 v2=compare系2表PASS(殿実機確認19:10)・deterioration残。N5列幅=クローズ(殿実機確認19:10)。cmd_4145 loading=クローズ(殿実機確認19:14)** | 殿指示+将軍実測 |
 | **v3.1** | **2026-08-01** | **残差N6/N7をコードcanonicalへ補正。N6=Monthly Trade simpleでは先頭可視列Position Startの左罫線を除去し、fullのみSignal群との境界slate-700を維持。N7=Compare Returns数値列のth/body/loadingを右寄せ・mobile px-1/desktop px-2・68px幅へ統一。deploy後のsimple/full表示とx座標は家老integration taskで実測する。** | 殿指摘+cmd_karo_hotfix_dm_signal_ui_alignment_batch_n_20260801 |
 | **v3.2** | **2026-08-01** | **残差N8をcanonicalへ補正。metrics Market Type表はtable SSOT `[&_th]:px-2 [&_th]:py-3 [&_td]:px-2 [&_td]:py-3` と各cellの`py-2 px-3`が競合していたため、個別指定40件を0件へ統一。表・chartは既にbareで、`bg-card/95`はhover tooltip固有のため維持する。contract testもSSOT存在+個別padding残存0を守る形へ更新。** | 殿指摘+cmd_karo_hotfix_dm_signal_market_type_ui_batch_n_20260801 |
+| **v3.3** | **2026-08-01 21:20** | **N6/N7/N8=本番検分PASSで全クローズ(段階deploy live=e8721ae5→25d0c8bb、家老CDP全数走査: MonthlyTrade simple左端0px/full境界0.667px slate-700・Compare Returns数値列8/8 header/body位置幅一致・Metrics padding署名統一+表内card背景0。証跡=blt_20260801_204342)。新規N9起票=Compare Summary PC幅でPF列がサイドメニュー裏に隠れる(殿指摘21:09)。将軍CDP実測で真因確定: 表コンテナ`md:overflow-x-auto lg:overflow-visible`(L258/L336)によりlg以上でページ全体が横スクロール(viewport 1036px vs docW 1633px実測)、sticky left-0のPF列がviewport左端基準で張付き固定サイドメニューと重畳。N2 v1(2026-07-24 mobileでth sticky不発)と同根=overflowコンテキスト設計。修正=表コンテナ内横スクロール化(cmd_4209配備済み)。** | 殿指摘+将軍CDP実測 |
 
 ## §RETRO — なぜここまで時間がかかったか(7根因・全て本PJの実証データ)
 

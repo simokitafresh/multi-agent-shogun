@@ -1011,3 +1011,13 @@ lessons:
   created_at: '2026-08-02'
   enforcement: "Level5: lessons_gunshi.yaml起動時全文ロード + review precheck ERROR時に実gateのexit code/BLOCK証跡確認を必須注入"
   enforcement_level: 5
+- id: 'LG088'
+  title: '設計書レビューはchecker数値とWBS意味論を二重突合する'
+  origin: '[[v4.78_checker_only_approve]] -> [[WBS意味論見落とし]] -> [[設計書意味論レビュー義務化]]'
+  detail: 'checkerの工程数・進捗がPASSでも、WBS本文のroute・契約・依存変更を意味論で差分確認しなければAPPROVEしてはならない。v4.78では数値PASSのみでroute文言変更を見落とした。'
+  source_cmd: 'v4.78_design_review'
+  when: '設計書の新版をレビューする時'
+  how: 'checker生出力に加え、WBS本文のroute・契約・依存の差分を一次確認し、意味論一致を二値記録する'
+  created_at: '2026-08-03'
+  enforcement: 'Level5: gunshi設計書レビュー手順へWBS意味論突合を必須注入'
+  enforcement_level: 5
