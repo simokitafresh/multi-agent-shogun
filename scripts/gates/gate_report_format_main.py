@@ -326,12 +326,21 @@ def commit_contract_errors(report, task, root):
     cross_repo_errors, cross_repo_owned = validate_cross_repo_commit_ownership(report)
     if cross_repo_errors:
         cross_repo_owned = set()
+    scope_violations = set()
     for modified in modified_targets:
         if allowed_targets and not any(
             _literal_path_within(modified, allowed, commit_repo)
             for allowed in allowed_targets
         ):
-            errors.append(f"files_modified path is outside planned scope: {modified}")
+            scope_violations.add(modified)
+            # cmd_karo_hotfix_commit_contract_false_listing: if the path
+            # doesn't exist on disk, hint that it may be a typo/stale path
+            # in the report's files_modified — helps the ninja fix faster.
+            full_path = commit_repo / modified
+            hint = ""
+            if not full_path.exists():
+                hint = " (file does not exist — possible path typo in files_modified)"
+            errors.append(f"files_modified path is outside planned scope: {modified}{hint}")
     # planned_paths is the permission ceiling, not a promise that every allowed
     # path changes. Commit provenance applies only to the report's actual subset.
     #
@@ -1363,7 +1372,11 @@ def main(report_data=None) -> int:
     # scripts/hooks/test_hooks.sh / test_result_guard.sh のような
     # 名前がtest_で始まる本番hookまで対象外にしてしまう(実測FN=2)。
     _test_path_re = re.compile(
-        r"(?:^|/)tests?/|\.bats$|(?:^|/)fixtures?/",
+        r"(?:^|/)tests?/|\.bats$|(?:^|/)fixtures?/"
+        # cmd_karo_hotfix_lg051_skill_fp: skills/gate-sync/SKILL.md のように
+        # スキル名に gate/hook を含むだけのドキュメントを偽陽性対象から除外。
+        # SKILL.md はコードではなく説明文書であり caller 数は無意味。
+        r"|(?:^|/)skills/[^/]+/SKILL\.md$",
         re.I,
     )
     _caller_scope = any(

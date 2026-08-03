@@ -181,6 +181,12 @@ if review_type in {"draft", "report", "self_study", "consultation"}:
     claim_text = yaml_text(item, allow_unicode=True)
     if "既実装" in claim_text and "git show" not in str(ops.get("command", "")):
         print("BLOCK: 既実装判定にはoperational_simulation.commandのgit show証跡が必須(LG001)", file=sys.stderr); raise SystemExit(2)
+    _actual_text = str(ops.get("actual", ""))
+    import re as _re072
+    if _re072.search(r"0件|不在|存在しない|見つからない|実在しない", _actual_text):
+        _cmd_text = str(ops.get("command", ""))
+        if not _re072.search(r"git log -S|Read\(|cat |head |通読|周辺確認", _cmd_text):
+            print("BLOCK: actual「0件/不在」主張にはcommandに同一ファイル通読またはgit log -S証跡が必須(LG072)", file=sys.stderr); raise SystemExit(2)
 verdict = str(item.get("verdict") or "").strip().upper()
 if verdict in {"APPROVE", "LGTM"}:
     _ops_actual = str((item.get("operational_simulation") or {}).get("actual") or "")

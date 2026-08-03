@@ -50,5 +50,10 @@ if len(mikomi) > 1:
 
 genzaichi = re.search(r'- \*\*現在地\(([^)]+)\)\*\*', s)
 header_ver = re.search(r'設計書 (v[\d.]+)', s)
+# 現在地行の版とヘッダ版の一致検査(v4.37 stale自己検知の恒久化)
+if genzaichi and header_ver:
+    gm = re.search(r'(v[\d.]+)発行時', genzaichi.group(1))
+    if gm and gm.group(1) != header_ver.group(1):
+        print(f'FAIL: 現在地の版={gm.group(1)} vs ヘッダ版={header_ver.group(1)} (現在地stale)'); ok = False
 print(f'VERIFY: 版={header_ver.group(1) if header_ver else "?"} 母数={total} CLEAR={len(clear)}件{clear} 進行中={len(prog)}件{prog} score={score} pct={pct}% 現在地時刻={genzaichi.group(1) if genzaichi else "?"}')
 sys.exit(0 if ok else 1)
