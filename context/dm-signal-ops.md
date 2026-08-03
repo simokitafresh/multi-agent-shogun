@@ -3,8 +3,6 @@
 <!-- source_commit:a111173509e7337dcc2e964a83c3ed043b940fd7 reason:Monthly Trade current-month backend deployment reviewed boundary evidence:deploy dep-d9oa3njbc2fs73eu4vhg live; all 102 PF current month -->
 <!-- source_commit:f1977f8ed3ee4c78344791a8375ff53a161b346a reason:GA-429 reviewed source boundary through detached production investigation HEAD evidence:full recalc run226 and Compare recovery recorded; intervening monthly-boundary runtime/research work indexed -->
 <!-- source_commit:6f628677362b2ef936d0de5ef2f80e17d00fa944 reason:C-x W4/W5 oracle reviewed source boundary evidence:fixture6/6 pytest1/1 FAIL0 SKIP0 -->
-
-
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 コア定義(§0-5,8,10-11,13,15,18) → `context/dm-signal-core.md`
 研究・検証結果(§19-24) → `context/dm-signal-research.md`
@@ -22,54 +20,40 @@ cmd_3788: Render `uvicorn --workers 2`下の`/admin/recalculate-status`と`/admi
 GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_integrity)。zero-signal自動検知WARN+signal COUNT記録。OPT-13(修正)+GP-124(検知)=二重防御。
 Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal日<当月かつリバランス月PF存在時、前月末signalをforward-fillした月初signal行を自動生成。月初Pending最大24h表示→即時解消。
 詳細アーキ全量解析(2026-03-28コード全文読了) → `docs/research/fullrecalculate-architecture-2026-03-28.md`
-
 ### fullrecalculate実行方法（本番=Render。ローカルではない）
-
 **本番のrecalculate_fast.pyはRender上で動く。ローカルのメモリに影響しない。**
-
 | 方法 | コマンド | 用途 |
 |------|---------|------|
 | **手動トリガー** | `curl -X POST https://<backend-url>/admin/recalculate-sync` | PF登録後の即時再計算 |
 | **日次cron** | Render cron 01:10/01:40 UTC | sync-standard + sync-fof |
 | **排他制御** | pg_advisory_lock。409=排他中(30秒待って再実行) | 同時実行不可 |
-
 ローカルでやること: DB接続(psycopg2)でPFレコード作成/読取 + GS CSV 1列読取 + 数値比較。メモリ数MB。
-
 ### monthly_returns_gen分解計測の次checkpoint（`f7489c3b`）
-
 commitをpushしRender deployを確認後、同一`target_date`・全78PF・直列の本番`fullrecalculate`を1回実行する。既存timing JSONの`monthly_returns_gen_breakdown`から`mr_compute` / `mr_internal_commit` / `mr_caller_commit` / `mr_cache_reload`の各`sum_sec`・`count`と`residual_sec`（第5区間）を抽出し、最大`sum_sec`を支配項として一意判定する（同値なら支配項未確定として再計測）。最適化は並列化より先に、支配項に応じて計算量・cache reload・重複commit・writeの削減を優先する。
-
 - L690: recalculate-sync完了判定はAPI statusだけでなくDB recalculation_status行で確認する（cmd_2424）
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを確認し復元判断まで行う（cmd_2450）
 - L783: fullrecalculate完了確認はtiming-history DB記録が一次証跡。recalculate-statusはLB別インスタンス不正確（cmd_3546, 102PF完全一致証明済み）
 - cmd_3788以後: running状態の可視性はDB `recalculation_status`を参照するためworker-local誤答は修正済み。ただし完了証跡は引き続きDB行/timing-historyで確認する。
 ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
-
 ### DM-Signal本番FE CDP確認手順（2026-05-05実証済み）
-
 **殿のChromeを使わない。隔離プロファイルEdgeを自動起動する。**
-
 ```python
 # 前提: PYTHONPATH=/mnt/c/Python_app/auto-ops
 from cdp import cdp_helper
 import time
-
 # Step 1: 隔離プロファイルEdge自動起動(user-data-dir=$TEMP/cdp-edge-9222)
 result = cdp_helper.preflight_cdp_flow(port=9222, browser="auto", launch_timeout=30)
 port = result.get("cdp_port", 9222)
-
 # Step 2: DM-Signal FEにAdmin認証(backend/.envのADMIN_USER/ADMIN_PASS)
 tab_id = cdp_helper.create_tab(url="https://dm-signal-frontend.onrender.com/admin", port=port, timeout=30)
 time.sleep(4)
 cdp_helper.ui_login(tab_id, "simokitafresh", "703", port=port)
 time.sleep(5)
-
 # Step 3: 確認したいページに遷移+スクショ
 cdp_helper.navigate(tab_id, "https://dm-signal-frontend.onrender.com/compare-summary", port=port)
 time.sleep(8)
 cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.png")
 ```
-
 **注意事項:**
 - D009: headless禁止。必ず隔離プロファイル(user-data-dir)指定必須
 - cdp_helper.ui_loginはReactのinputにイベント発火する正しい方法。JS直接value代入は不可(state更新されない)
@@ -78,14 +62,12 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - credentials: backend/.envのADMIN_USER/ADMIN_PASS(FE Admin認証とBE Admin認証は同じcredentials)
 - 正本: `bash scripts/cdp/cdp_measure.sh <cmd_id> --pages ...` → `/mnt/c/Python_app/auto-ops/workflows/perf_measure.py --profile production`。admin Basic Authでviewer passwordを取得後viewer認証する。viewer認証だけでは不足するPF/ページがある
 - 参照: `scripts/cdp/cdp_measure.sh`、`/mnt/c/Python_app/auto-ops/cdp/README.md`、`skills/cdp-browse/SKILL.md`、記憶DB `knowledge:776999ee`
-
 **ポート体系:**
 - `9222`: legacy daemon / FE実操作の既定ポート。preflight_cdp_flowが隔離Edgeを自動起動する
 - `9223`: 拡張・並行確認用ポート。9222競合時の退避先
 - `9400`: auto-ops daemon。`cdp_cli.sh` のsnapshot/click_ref/screenshot操作口
 - `cdp_cli.sh`: daemon版CLI
 - `cdp_helper.py`: auto-ops版
-
 **FE詳細操作:**
 - ハンバーガーメニュー: モバイル幅では左上メニューを開いてからPF一覧 / Compare Summary / Signals / Termsへ移動
 - メニュー: デスクトップ幅ではサイドバーのPF一覧 / Compare Summary / Signals / Terms
@@ -117,18 +99,14 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L952: snapshot存在確認と再生成能力を分離する（cmd_karo_recon_dual_b4_10pf_omission_root_20260803）
 - L1542: 0件保全ガードは上流cleanupのcommit後では既存行を保全できない（cmd_karo_recon2_atomic_recalc_design_saizo_20260803）
 - L1543: template対clone parityだけでは現HEAD schema driftを検出できない（cmd_karo_recon2_b4_schema_divergence_tobisaru_20260803）
-
 ## §36 API認証
-
 - admin系API: Basic Auth(`ADMIN_API_KEY`)
 - viewer系API: Bearer Token(`VIEWER_TOKEN`)
 - FE Admin認証とBE admin系API認証は区別する。画面ログインは`ADMIN_USER`/`ADMIN_PASS`、APIはBasic Auth。
 - データ確認はAPI経由よりDB直接クエリが確実。
 - L004: 価格ベンダー比較成果物はAPIエラーURLの秘密値混入を検査する（cmd_3687）
 - cmd_3669: `/api/metrics/summary` は `metrics_summary_bulk` precomputed rawを読む。raw生成は `backend/app/jobs/precompute_raw.py` の `METRICS_SUMMARY_BULK_PARAMS=[{years:0},{years:10}]`、無効化はmetrics cache更新・portfolio保存・portfolio_metrics生成時に走る。関連commit: DM-Signal `755a50d9`。
-
 ## §37 ETL
-
 - cmd_4140: deterioration履歴欠落はcron失敗/表示filterではなく、月次batchが現在月1点だけをUPSERTしAPI/FEも既定6点しか取得しないことが原因。本番102 PFは0点=0・1点=86・3点=1・5点=15だが、月次returnは106〜276か月ありas-of切断backfillが可能。→ `docs/research/cmd_4140_deterioration_history_recon_20260723.md`
 - L802: precompute paramsはFE PAGE_APISから機械抽出して実要求との差分を照合する（cmd_3667）
 - L803: FE要求params整合テストはpage.tsxではなく別module定数をSSOTにする（cmd_3668）
@@ -140,13 +118,9 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L0-L3各sync cronで全期間再計算が完結する。途中レイヤーだけの手動補正で完了扱いにしない。
 - L0: base/standard系、L1: 忍法・四神派生、L2: 奥義・合成standard、L3: FoF/入れ子FoFの同期境界として扱う。
 - `daily_etl.py`は冗長であり廃止予定。
-
 ### Render CLI (v2.12.0)
-
 `/home/simokitafresh/.local/bin/render`。認証済み(simokitafresh@gmail.com)。ワークスペース=My Workspace。
-
 **DM-Signalサービス一覧:**
-
 | 用途 | 名前 | ID | type | region |
 |------|------|-----|------|--------|
 | **Backend** | dm-signal-backend | `srv-d4ja7q15pdvs739a4q1g` | web | singapore |
@@ -159,9 +133,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 | sync-fof | dm-signal-sync-fof | `crn-d5e8rabe5dus73fhlkjg` | cron | oregon |
 | deterioration | dm-signal-deterioration-batch | `crn-d6kehqlm5p6s73dov630` | cron | oregon |
 | pw-rotation | dm-signal-password-rotation | `crn-d53agure5dus73ap8el0` | cron | singapore |
-
 **主要コマンド:**
-
 | コマンド | 用途 | 備考 |
 |---------|------|------|
 | `render ssh srv-d4ja7q15pdvs739a4q1g` | Backend SSH | 本番インスタンスに接続。対話的操作 |
@@ -171,32 +143,23 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 | `render logs --output text srv-d4ja7q15pdvs739a4q1g` | ログ閲覧 | ジョブ出力確認 |
 | `render deploys list srv-d4ja7q15pdvs739a4q1g` | デプロイ履歴 | |
 | `render whoami` | 認証確認 | |
-
 **サービス名でも指定可能**（ID暗記不要）: `render ssh dm-signal-backend`
-
 ★ cProfile等の計測はRender上で実行すべき。ローカル→Singapore RTT 80msがDB I/O比率を歪める(2026-04-17実証)。
 ★ cronジョブのregionがoregon(render.yamlではsingapore指定)。DB(singapore)とcron(oregon)間でRTTが発生している可能性。要確認。
-
 ## §38 シグナル変更アラート
-
 - cmd_3684/3686: confirmed holding signal rewrite検知はntfy pushへ接続済み。個別POST連打ではなくbatch summary 1通に集約する。対象は `backend/app/jobs/flush/signal_flush.py`、回帰テストは `backend/tests/test_flush.py`。関連commit: DM-Signal `6b460ecf`, `0b034e3d`。
 - cmd_3684: `render.yaml` にシグナル変更アラート用envを追加。Render envはAPI現物で確認する。関連commit: DM-Signal `6b460ecf`。
 - cmd_3684直前: debug endpoint lint正規化は機能変更ではなく差分整理。関連commit: DM-Signal `67da37c4`。
 - cmd_3686直前: confirmed holding signal rewrite検知は `recalculate_fast.py` / `recalculate_fof.py` / debug endpointにも接続されている。関連commit: DM-Signal `ca170887`。
 - L809: 無音書換え警報のpending/確定境界は日付ではなく出自(marker)で判定する（cmd_3679）
-
 ## §39 月初signal input snapshot
-
 - cmd_3687相当: 月初signal input snapshotを追加。DB migration/model、`recalculate_fast.py`、Render設定、`backend/tests/test_month_start_input_snapshots.py` が対象。運用確認時はsnapshotテーブルの作成と月初入力保存の両方を見る。関連commit: DM-Signal `88c29a92`。
 - L805: 月初シグナル前に前月最終営業日価格の上流可用性をゲートする（cmd_3677）
 - L806: 価格調査でupdated_atを初回到着時刻として扱わず、fetch jobログ等の一次情報で確認する（cmd_3677_recon2）
 - L807: 価格値履歴なしでは月初シグナル分岐の旧入力値を復元できない（cmd_3680）
 - L808: reference_assetモード判定の反証はコード差だけでなくprices/economic_indicators値履歴不在を先に確認する（cmd_3680_recon2）
-
 ### パリティ全基準チェックリスト（殿定義集約 2026-04-11）
-
 本番DB操作cmdのACに以下を全て含めよ。1つでも欠落したらFAIL。
-
 | # | 基準 | 定義 | 出典 |
 |---|------|------|------|
 | P1 | **holding_signal完全一致** | 全期間。GS独立計算 vs 本番DB | 殿教示 2026-03-22 |
@@ -205,7 +168,6 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 | P4 | **FE UI全ページ整合** | Dashboard/Compare/Signals/Detail/Admin MECE確認 | 殿指示 2026-04-11 |
 | P5 | **hide-first原則** | is_visible=false→PASS後に表示切替 | PI-023 |
 | P6 | **本番がground truth** | 不一致ならGS側の問題。本番を疑わない | 殿厳命 2026-03-22 |
-
 追体験: [[dialogue_parity_experience_20260407]] (ALMパリティ三重事故→PI-023→道具磨き→追体験の意味)
 旧アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
 - L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）
@@ -227,11 +189,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L357: 本番DB確認はPostgreSQL必須。SQLiteミラーは不完全（cmd_1025）
 - L261: precomputeテーブル欠落はhealth endpointでdegradedに昇格させる（cmd_828）
 - L675: recalculate-sync POST後のstatus待機は初回idleを完了扱いにする。running=false即返しの場合あり（cmd_2392）
-
 ## §9 性能ベースライン
-
 - L870: run不変値(commit hash等)は開始時に一度固定し日次ループで定数再利用。外部process再取得はsubprocess238回=21秒消費の実害（cmd_3840）
-
 | 段階 | 全体 | L2(Standard) | L3(FoF) | signal_calc |
 |------|------|-------------|---------|-------------|
 | 初回 | 11,818s | — | — | — |
@@ -244,10 +203,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 | Cycle 2(cmd_1474) ※FAIL | 380.53s※ | 109.65s | 235.37s | — |
 | **Cycle 3(cmd_1478) OPT-12~15全反映** | **357.28s** | **109.47s** | **214.01s** | 1.10s |
 | **Cycle 4(cmd_1482) trade_perf/risk_mgmt初実測** | **479.94s** | **~239s** | **210.27s** | — |
-
 ※cmd_1474はネステッドFoF 15体未処理(FAIL)のため無効値。cmd_1466 637.80sとcmd_1454 260sの乖離=計測範囲+データ量差。
 ※Cycle 4の+123s=trade_perf(126.46s)+risk_mgmt(2.86s)初実測が主因(cmd_1479バグ修正後)。性能劣化なし。L3安定(214→210s)。
-
 OPT一覧(1-15):
 | OPT | 内容 | 状態 | cmd |
 |-----|------|------|-----|
@@ -259,14 +216,11 @@ OPT一覧(1-15):
 | OPT-13 | ネステッドFoF回帰修正(signal_cache→DB補完) | ✅本番適用 | 軍師直接 |
 | OPT-14 | Standard PF signals flush INSERT化(cleanup_mode=True) | ✅本番適用 | 軍師直接 |
 | OPT-15 | component_weights commit集約(59→6) | ✅本番適用 | 軍師直接 |
-
 本番ボトルネック(cmd_1482後480s): L2 trade_perf **126.46s(26%)実測確定** > L3 daily_loop 67.88s(14%) > L3 mr_gen 55.21s(12%) > L2 db_write 44.89s(9%) > L3 dw_signals_flush 41.93s(9%)
 初回→現在: **95.9%削減(11,818s→479.94s)**。Cycle 1→Cycle 4: **-24.8%**。※Cycle 3(357s)→4(480s)はtrade_perf計測修正(+129s)であり劣化ではない
 残改善ターゲット: L2 trade_perf残(whileループNumPy化, cmd_1503偵察中)、L3 daily_loop(部分batch化, cmd_1506偵察中)
 軍師詳細分析: `context/gunshi-fullrecalc-speed-analysis.md` (3サイクル比較・ボトルネック構造・予測精度検証)
-
 **cmd_3831偵察(2026-07-10, PF数103体時点の再実測)**: trade_perf **272.35s(L2内86.3%)に肥大化**(旧126.46s比+115%、PF数増加+ネスト階層化が要因)。主犯は月次whileループではなく`_extract_trades_unified()`が全営業日1件ずつ`expand_portfolio_to_tickers()`を再帰呼出しする箇所(`trade_performance.py:575-587`)。ネスト2-3階層(秘奥義/奥義系)は1PFあたり5-21秒、単層(シン四神/GS忍法)は2秒未満(実測ログ確認済み、cmd_1503のwhileループNumPy化仮説は本実測で棄却=while_iters側は既に軽量)。**TIMING SUMMARYがL2を誤BOTTLENECK表示するバグも同時特定**: Layer 5 raw precompute(`precompute_raw_for_portfolios`)が`LayerTimer`(`utils/timing.py:74 LAYER_ORDER`)に未登録のため、実際は66.5%(1659.78s/2497s)を占めるL5が表から消え、22.7%のL2がBOTTLENECKマーカーを得る。詳細・実装候補3案(New Fund of Funds_copy系要否確認/メモ化/ベクトル化)・precompute-fullspeed-goal-design(Layer 5)との非衝突確認 → `docs/research/cmd_3831_trade_perf_recon.md`
-
 **cmd_3843試行→cmd_3845でrevert済み(2026-07-11)**: 2,500日fixtureでは展開2,500→1回・91.70%減だったが、全102PF照合は旧/新とも本番baselineに554行/24PF（浮動小数末尾約1e-16）不一致、実測も113.379s→124.623s（9.917%退行）。許容誤差ゼロによりFAILし、メモ化3 commitをrevert。本番push/deploy/fullrecalculate未実行。詳細 → `docs/research/cmd_3845_memoize_parity.md`
 - L503: DM-SignalリポジトリにGitHub Actionsワークフロー未設定(.github/workflows/不在)（cmd_1448）
 - L504: 性能異常値はリソース競合を先に疑え。pipeline_exec 626sは同時実行run起因のanomaly（cmd_1456）
@@ -297,13 +251,10 @@ OPT一覧(1-15):
 - L321: admin tier系テストはRender env同期を実APIに飛ばすとローカルsuiteを汚染する（cmd_987）
 - L766: WF trial速度計測はcache warm/coldを分けて3回測る（cmd_3514）
 - L768: SQLite /mnt/c p9停滞→ローカルcopyまたは事前matrix cacheを使う（cmd_3515）
-
 ## §12 計算データ管理
-
 - L832: 境界近傍のゲート判定は『合成式の代数的一致』では不十分。入力値(DTB3等)そのものの数値一致まで検証せよ（cmd_karo_recon2_cmd3772_dmsafe_pi009_202607081452）
 - L851: matched_weightは固定1.0でなくsum(weights)と比較。missing_tickers=[]でもweights和が1未満ならmatched_weight<1（cmd_3808）
 - L929: parity検証範囲は設計のintersection cohort契約に一致させる。native末尾境界差を全期間BLOCKへ昇格するな（cmd_karo_nxe_2d_robustness_20260802）
-
 命名: `{cmd番号}_{ブロック名}_{説明}.csv` + `.meta.yaml`。上書き禁止(`_v2`)。
 テンプレ: `scripts/analysis/grid_search/template_gs_runner.py` は現treeに不在（再配置待ち）。
 ローダ: `scripts/analysis/grid_search/gs_data_loader.py`（現行DBローダ） / `scripts/analysis/grid_search/gs_csv_loader.py`（CSV互換）
@@ -317,12 +268,9 @@ PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic
 - L767: 成果物パスに忍法名を含めて混線を防ぐ（cmd_3514）
 - L815: GS全量速度計測では月次系列成果物とチャンピオン選出成果物を分離する（cmd_goal_gs_speed_e2_l3_kasoku_diff_202607060819）
 - L858: パリティ残存乖離の原因は推測せず3点突合(本番/ライブ実行/GS)で必ず切り分けよ（cmd_3816）
-
 ## §14 ドキュメントインデックス
-
 **CoDD適用方針設計書**: `docs/research/codd_dmsignal_python_strategy.md` — DM-Signal Python高速化の全体方針。§0前提条件(環境/コマンド/成功条件)+§3ワークフロー(Phase 1-4)+§5本番防御層。CoDD改善cmd着手前に必読
 **Level A cProfileインベントリ**: [[cmd_1987_level_a_cprofile_inventory]] (`docs/research/cmd_1987_level_a_cprofile_inventory.md`) — 設計書§2 Level A 15本の実在確認+cProfile実測結果(10本成功/5本環境制約)
-
 docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証・API使用法ルール抜粋。
 補助参照: `docs/research/cmd_485_dm-signal-environment-catalog.md`（環境/Render/API） + `docs/research/cmd_488_dm-signal-claude-config-catalog.md`（運用設定）
 - L169: 設計書補完はMECE表+仕様章リンクの二層化で抜け漏れを抑制できる（cmd_549）
@@ -331,19 +279,15 @@ docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証
 - L194: テスト棚卸しcmd発行前にvenv/pytest環境確認を前提条件に含める（cmd_623）
 - L657: deploy cmdは依存cmdの報告とcommit SHAを起票前に照合する（cmd_2311）
 - L666: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな（cmd_2346）
-
 ## §16 知識基盤改善（穴1/2/3対策完了 — 2026-02-22）
-
 | 穴 | 対策 | cmd |
 |----|------|-----|
 | 1 教訓登録ボトルネック | auto_draft_lesson.sh | cmd_232+242 |
 | 2 知識鮮度管理 | context last_updated+鮮度警告 | cmd_239 |
 | 3 裁定伝播遅延 | resolve時context未反映フラグ | cmd_239 |
 | 補助 lesson sync上限不足 | sync上限を50に引き上げ | cmd_241 |
-
 原則: 検出+警告のみ。自動修正はしない（指示系統厳守）。
 PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`description`品質改善を一括実施済み（cmd_448）。
-
 - L149: key_files成果物パターンは実在ファイル名規約と定期照合しないと再汚染する（cmd_493）
 - L150: 復旧ドキュメントは『在庫あり証跡』と『在庫不足』を分離記述すると誤再構成を防げる（cmd_493）
 - L307: 偵察3回×延べ24名の知識基盤構築には統合専任担当(水平H)が不可欠（cmd_862）
@@ -357,10 +301,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - L329: 生成artifact修正はgenerator scriptへも同修正を戻せ（cmd_1005）
 - L139: 依存マップはgrepより先にAST循環解析を実行する（cmd_478）
 - L308: KB浄化cmdは解釈移送先ファイルをACで明示せよ（cmd_871）
-
 ## Ops教訓索引
 <!-- lesson_sync: 2026-03-03 lesson-sortでL129-L146を反映 -->
-
 - L791: 追加指示の取消は未commit差分からscope別に除去する（cmd_3586）
 - L821: 本番適用cmd着手時はgit log origin/main..HEADでpush状態を先に確認せよ。前段cmdのGATE CLEAR=push完了ではない（cmd_3704）
 - L812: DM-Signalのgit commitがlefthook pre-commitでBash既定2分timeoutを超える場合、9pスタルと決めずtimeoutを上げて再試行する（cmd_3686）
@@ -368,7 +310,6 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - L900: subprocess moduleはpackage名でなくapp-dirで探索根を固定する（cmd_karo_ci_red_dm_p4_uvicorn_import）
 - L901: 永続helperはchecked-in source同期後に実行する。live PIDだけのhealthy判定とpgserver cleanupのno-opに注意（cmd_karo_ci_fix_ga256_cmd3907）
 - L943: runner等で成果byteが変わるとprepare fingerprintが失効する。検証完了後にprivate prepareして直ちにscope commitする順序を守れ（cmd_karo_recon_cx_oracle_lane_preflight_20260803）
-
 <!-- lesson-sort 2026-04-27: 40件振り分け(30件移動+5件削除+2件重複除去+3件既存確認)
   §6-7: L634,L636,L357,L261 (L645既存,L637≈L638重複削除)
   §9: L136,L137,L138,L545,L589,L649
@@ -476,25 +417,18 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | L668 | shin universe GS runnerはALM固定DB参照をpreflightで検出する | ツール | cmd_2360 |
 | L672 | cmd_2366 selector再実行時はchampion_list自動追記(append guard)を制御せよ | ツール | cmd_2386 |
 | L676 | 大容量SQLite(8GB級)移動後検証はintegrity_check前にquick_checkを使う | ツール | cmd_2393 |
-
 ## §18 研究道具APIカタログ（cmd_1823追記）
-
 研究cmdを書く前に必ずここを確認し、ACに使用スクリプトのパスと主要引数を明記せよ。
-
 - L799: FEが解釈しないクエリ名を計測スクリプト入口でBLOCKする — mobile Lighthouse計測のPFクエリは`portfolio=`のみ有効（cmd_3654）
 - L800: production固定Lighthouseは未deployローカル差分のPASS証明に使えない — local変更はlocal計測、本番証明はデプロイ後周回計測（cmd_3655）
-
 ### GS（グリッドサーチ）
-
 **スクリプト**: `scripts/analysis/grid_search/run_077_{忍法}.py`
 7本: `bunshin` / `kasoku_diff` / `kasoku_ratio` / `kawarimi` / `nukimi` / `oikaze` / `yotsume`
-
 | 引数 | 説明 | デフォルト |
 |------|------|-----------|
 | `--universe <YAML>` | PF構成YAML | `config/portfolio_universes/alm_l0_12.yaml` |
 | `--out-dir <dir>` | 出力ディレクトリ上書き | `outputs/grid_search/` |
 | `--output-prefix <str>` | 出力ファイル接頭辞上書き | cmd ID自動付与 |
-
 - **入力**: 本番PostgreSQL DB直接読み込み（CSV利用禁止 L064/cmd_214裁定）
 - **出力**: `outputs/grid_search/{CMD_ID}_{忍法}_grid_results.csv` + `.meta.yaml`
 - **実行例**: `python3 scripts/analysis/grid_search/run_077_oikaze.py --universe config/portfolio_universes/shin_ninpo_20.yaml`
@@ -510,11 +444,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - L594: PythonのsetはPYTHONHASHSEED依存。GS sequential検証ではsorted()に置換せよ（cmd_1835）
 - L813: run_077少数実行ACではCLI pattern-limit統一を先に検査する（cmd_3694）
 - **メタ改善設計**: → `docs/research/gunshi_research_pipeline_meta_20260410.md`（GS共通基盤+並列ランナー）
-
 ### WF（ウォークフォワード）
-
 **スクリプト**: `outputs/scripts/l1_alm_wf_engine.py`
-
 | 引数 | 説明 |
 |------|------|
 | `--csv <path>` | GS月次CSVパス（単体実行） |
@@ -525,7 +456,6 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 | `--batch-csvs <paths...>` | 複数CSV一括実行 |
 | `--batch-workers <N>` | バッチ並列worker数 |
 | `--batch-inner-workers <N>` | 各子プロセスのfold worker数 |
-
 - **入力**: GS出力CSV（`outputs/analysis/alm_research/` 配下）
 - **出力**: `{CMD_ID}_alm_returns.csv`（ALM系列6目的）+ サマリYAML
 - **実行例**: `python3 outputs/scripts/l1_alm_wf_engine.py --csv <path> --multi-is --cmd-id cmd_XXXX --progress`
@@ -537,9 +467,7 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - **peak RSS計測**: `/usr/bin/time -v python3 l1_alm_wf_engine.py ...` で包む
 - **メモリ設計**: → `docs/research/gunshi_wf_engine_memory_fix_design_20260410.md`
 - **🔴 WF並列実行(wf_runner.py)禁止**: 殿裁定(2026-04-10)。直列1本ずつが正解。cmd_1843 OOM事故(LG025)
-
 ### champion_selector.py（事後チャンピオン選出）
-
 GS CSV/.npyから3目的(CAGR/NHF/MaxDD)チャンピオンを直列選出。NaN-safe+float64+チャンク+方向テーブル。
 - **実行例**: `python3 outputs/scripts/champion_selector.py --csv-dir outputs/grid_search/okugi_shin_ninpo_20body --cmd-id cmd_1822`
 - **性能**: 195万パターン→25秒/peak 1GB。kasoku_diff 944K: 8秒
@@ -550,12 +478,9 @@ GS CSV/.npyから3目的(CAGR/NHF/MaxDD)チャンピオンを直列選出。NaN-
 - L591: --parallel安全性は実測で確認せよ — 理論的安全≠実際の安全（cmd_1827）
 - L600: np.fromstringは空セル連続のwide CSV行を安全に読めない（cmd_1841）
 - L606: WF回帰テストは同一CSV2回実行での決定論確認。異なるCSV世代間比較は別用途（cmd_1856）
-
 ### research_engine（ライブラリ）
-
 **スクリプト**: `scripts/analysis/standard_pf_preprocessing/research_engine.py`
 **CLIなし** — import専用ライブラリ。
-
 ```python
 from research_engine import (
     simulate_signals,          # PFシグナル計算（前処理fn注入可能）
@@ -567,47 +492,34 @@ from research_engine import (
     load_prices, load_dtb3, load_production_signals,
 )
 ```
-
 - **用途**: Standard PF前処理研究の共通エンジン。13本スクリプトの重複14関数を統合
 - **所要時間**: 関数単位（ロード込みで初回数十秒、以降はキャッシュ利用）
-
 ### metrics（metrics_research_engine、ライブラリ）
-
 **スクリプト**: `scripts/analysis/standard_pf_preprocessing/metrics_research_engine.py`
 **CLIなし** — import専用ライブラリ。
-
 ```python
 import metrics_research_engine as MRE
 # MRE.NUMERIC_METRICS  — 38メトリクス名リスト（本番MetricsCalculatorと同一定義）
 ```
-
 - **用途**: 本番MetricsCalculatorへのブリッジ。research_engineから内部呼び出し
 - **依存**: `backend/app/services/metrics_calculator.py`（本番同一エンジン）
 - L624: 道具の全引数(--output-prefix等)をcmdに明記せよ。デフォルト依存はprefix不統一の原因（cmd_1877）
 - L558: 参考ファイル不在時はcmd目的を研究スクリプトから逆引きで設計完成可能（cmd_1750）
-
 ## §19 サービスURL一覧（CDP/API操作前に必ず参照）
-
 | サービス | URL | 備考 |
 |---------|-----|------|
 | Frontend | `https://dm-signal-frontend.onrender.com` | ログイン必須(Admin: simokitafresh/703) |
 | Backend API | `https://dm-signal-backend.onrender.com` | API_KEY: backend/.env |
 | Stock API | `https://stockdata-api-6xok.onrender.com` | 株価データ |
 | Render Dashboard | Render API v1 | srv-d4ja8pp5pdvs739a5fsg(FE), srv-d4ja7q15pdvs739a4q1g(BE) |
-
 - L797: CDP cookie注入成功だけではFE admin状態成立を保証しない — 画面要素で成立確認せよ（cmd_3645）
-
 **注意**: `dm-signal.onrender.com` は404(L002)。必ず`dm-signal-frontend`を使え。
-
 ### §19.1 体感主導デプロイ後のFE正しさ検分 (2026-07-02殿裁定)
-
 - 速度改善cmdは、正しさ検証済みなら数値周回のクローズを待たず即push/Renderデプロイへ進める。速度の最終判定は殿の体感、システム側の責務は本番FEでの正しい表示・操作・masking・PF切替をCDPで検分すること。
 - post-deploy検分はRender APIで対象commitが`live`であることを確認してから実施する。cmd_3663実例: FE deploy `dep-d936kabtqb8s73dav190`, commit `173a8a7b3`, status `live`, finishedAt `2026-07-02T13:41:40Z`。
 - CDP検分項目: 対象ページready、表表示、Loading/Auth/Unauthorizedなし、OPEN/CLOSE切替後も表維持、Show All/Allまたはスクロールで全件閲覧導線あり、PF切替後も表維持、UUID露出なし。
 - cmd_3663 live検分結果: `/tmp/dm_signal_cmd3663_live_verify/result.json`。`monthly-returns`は248 total、Show All後仮想化表示、スクロールで2005 DecPartialへ到達、PF切替DM-safe→DM-safe-2正常。`monthly-trade`は229 months、Show All後230行、末尾2007/07/16へ到達、PF切替DM-safe-2→Ave-X正常。両ページともOPEN/CLOSE切替・masking・UUID非露出PASS。
-
 ## §17 現在の全体ステータス（2026-03-11）
-
 | 項目 | 状態 |
 |------|------|
 | L0 GS生成PF | ~30体(本番登録済み) |
@@ -629,44 +541,31 @@ import metrics_research_engine as MRE
 | FoF MR非線形根因+パリティ検証標準 | Schema Portfolio型不一致→preload空振り→240.6s。ゴールデンデータ方式: 前後比較×→残存正常データと突合○ → `docs/research/gunshi_fof_mr_nonlinear_rootcause_20260424.md` §8-§9 |
 | FoF MR高速化(cmd_2259+2260) | 240.6s→26.53s→~1.5s(DB fallback 356→0件)。L3_fof: 462s→226s。L2: 186s→15s。全体: 720s→257s(64%削減) |
 | SIGNAL_DEFERRED_BATCH_SIZE倍増(cmd_2260後) | constants.py 5000→10000。commit 169cd744。期待-15~20s |
-
 ## §31 ALM浄化記録 (2026-04-25)
-
 → 工数見積もり: [[cmd_1752_estimate]] (`docs/research/cmd_1752_estimate.md`) ※ALMディスコン済み
-
 ### 発見した事実
-
 1. **奥義-ASS 21体は偽物だった**: component_portfoliosがALM忍法(L1)ではなくSSS奥義(L2)を参照。ALMデータは一切含まれていなかった
 2. **ALM忍法(L1)は本番DBに一度も存在しなかった**: `name LIKE 'ALM%' AND type='fof'` = 0件
 3. **⑤の研究(cmd_1897)はALM四神経由ではなかった**: GS空間名がokugi_alm_shinだが、実態はSSS奥義(①)のEW合成。ALM四神→ALM忍法→奥義のパイプラインは研究でも本番でも未実行
 4. **ALM四神(L0) 12体はDB登録済みだったが**: pipeline_config内のalm_configは構造的に正しい(enabled=true, candidates_months=[1..24]等)。ただしobjectiveが全12体"cagr"（殿裁定ではモード別MRU/calmar/UWP）
 5. **秘奥義6体は壊れ参照**: 削除した奥義-ASSのUUIDを参照→NOT FOUND
 6. **BEにALM実装済み**(Phase 4.6 ALM second pass)、**FEにALM config UI未実装**
-
 ### 浄化実施
-
 | 削除対象 | PF数 | 関連レコード | 理由 |
 |----------|------|-------------|------|
 | 奥義-ASS(L2) | 21体 | 64,445件 | ALM不含の偽FoF |
 | ALM四神(L0) | 12体 | 55,745件 | objective誤設定+再登録前提 |
 | 秘奥義 | 6体 | 17,817件 | 壊れ参照 |
 | **合計** | **39体** | **138,007件** | |
-
 本番PF数: 178→**126体**。MEMORY.md記載の「奥義ASS 21体登録済み(cmd_1897)」は事実と乖離していた。
-
 ### 正しいALM構築の前提
-
 - ALM四神(L0): 再登録が必要。objectiveをモード別(激攻=MRU/常勝=calmar/鉄壁=UWP)で正しく設定
 - ALM忍法(L1): ゼロから構築。チェックリストStep 3c(champion確定)から再開
 - 奥義-ASS(L2): ALM忍法(L1)登録後に構築
-
 ## §32 バグパターン認識表 (2026-04-25)
 <!-- GStack/GBrain takeaway #8 (パターン認識表 — バグ署名→初期仮説6パターン) -->
-
 > 偵察開始時: 症状を見て下表の「共通パターン」「DM-signal固有パターン」に当てはめ、初期仮説を立ててから調査に入れ。想像で進むな — 仮説1つに絞って検証→結果見て次仮説へ。
-
 - L935: 要調査を許す分類ACは全行要調査でも形式PASSになる。四分類和=N AND 要調査=0 AND 証拠欠損=0を同一gateで強制せよ（cmd_4220）
-
 - L857: 既存スクリプトの再利用はexec文字列置換でなく環境変数overrideで差し替える。exec置換はpre-commit S102でBLOCK（cmd_3815）
 - L891: pytest node idは推測せず`--collect-only -q`の実在収集結果から固定する。collected 0は指定ミスのサイン（cmd_3896）
 - L899: subprocessのready待ちloopはtimeout後の無条件継続を禁止し、成功条件を二値assert+child早期exitを即伝播する（cmd_karo_ci_red_dm_p4_uvicorn_29326659277）
@@ -676,12 +575,9 @@ import metrics_research_engine as MRE
 - L900: subprocess moduleはpackage名でなくapp-dirで探索根を固定する（cmd_karo_ci_red_dm_p4_uvicorn_import_29328352201）
 - L901: 永続helperはchecked-in source同期後に実行する（cmd_karo_ci_fix_ga256_cmd3907_fof_golden）
 - L918: launcher準備コマンドは削除コマンドとの同一Bash結合実行と相対パス指定を避けよ。両方BLOCK誘発（cmd_karo_recon2_signal_change_alert_20260729）
-
 - L819: PF単位の確定イベント実装はrebalance_trigger等のPF別設定を参照せよ。全PF一律の固定日付/件数はハードコードの温床（cmd_3702）
 - L822: MonthlyTradeCalculatorのMockベースdbテストは新規DB問合せ関数追加のたびに複数クラスへ横展開して壊れる（cmd_3710）
-
 ### 共通パターン (汎用6)
-
 | # | 症状シグナル | 初期仮説 | 最初に確認すること |
 |---|------------|---------|------------------|
 | B-01 | `NullPointerException` / `AttributeError: NoneType` | Null/undefined 未チェック | Noneチェック欠落箇所をgrepで特定 |
@@ -690,9 +586,7 @@ import metrics_research_engine as MRE
 | B-04 | `401 Unauthorized` / `403 Forbidden` | APIキー/トークン切れ・設定ミス | .env の認証情報 + Basic Auth/Bearer の区別確認 |
 | B-05 | Race condition / Deadlock / 中途半端な状態 | 排他制御の欠落・競合 | pg_advisory_lock / flock / mutex の使用箇所確認 |
 | B-06 | 件数ゼロ / 期待レコードが消えた | データ欠損・ETLパイプライン断絶 | データソースとETLログを確認。delete/overwriteを追う |
-
 ### DM-Signal 固有パターン (6)
-
 | # | 症状シグナル | 初期仮説 | 最初に確認すること |
 |---|------------|---------|------------------|
 | DM-B-01 | recalculate_fast.py が途中停止・再実行できない | pg_advisory_lock が解放されていない | `SELECT pg_advisory_unlock(8675309)` で強制解放。`recalculation_status` テーブルの is_running 確認 |
@@ -701,31 +595,21 @@ import metrics_research_engine as MRE
 | DM-B-04 | GS パラメータが想定外の値になっている | GS CSV 列定義のずれ / pipeline_config 誤設定 | grid_search 出力 CSV の列名と `pipeline_config` の `param_grid` を照合 |
 | DM-B-05 | ALM 計算がデフォルト(lookback)に fallback する | alm_config.enabled=false または objective 誤設定 | `pipeline_config` の `alm_config` フィールド確認。PI-003/PI-009 準拠か |
 | DM-B-06 | FoF monthly-returns が 240s 超 / タイムアウト | DB fallback クエリ大量発生 (DB_FALLBACK_COUNT > 0) | `/admin/recalculate-sync` ログで `DB_FALLBACK_COUNT` 確認。preload キャッシュのヒット率確認 |
-
 - L628: パリティスクリプトtarget_date: productionの日付定義と揃えよ（skip_months増幅リスク）（cmd_1899）
 - L629: golden data有効性: 生成時のコード状態を確認せよ（バグ下生成=検証基準にならない）（cmd_1899）
 - L632: snapshot比較器は保存していないフィールドを比較対象に含めるな（cmd_1985）
-
 ## §33 GS正規化 進捗 (2026-04-27)
-
 - L831: serial/batch preflight不一致の切り分けは要因を1つずつNone化する対照実験で（cmd_karo_recon2_cmd3772_yotsume_preflight_202607081453）
 - L835: 全量ベンチACとpreflight不一致は分離して記録する（cmd_3772）
 - L842: GS投入前は系列preflightを必須化する（cmd_3790）
 - L843: download_all_prices後も本番prices preflightで値差確認する（cmd_3793）
-
 ### 汚染発覚と方針転換
-
 246系CSV(C12_shin_shijin_v2)の月次リターンが本番と完全不一致(0.0%)。根因: `shin_v2_12_monthly_returns.csv`(ユニバース)が2026-03-24で凍結、GS再実行(04-03)で未更新。CSVという腐りうる中間ファイルが汚染源。
-
 **殿裁定**: CSVをまた作るな。DB直読せよ。フルGSでチャンピオン再選出が正しい順番。
-
 ### Phase構造(v3.5 — 2026-04-28 04:32更新)
-
 **目的**: CSV汚染を根絶し、DB直読+SQLite出力のクリーンなGSパイプラインを構築→L1忍法チャンピオン再選出→本番突合→ロバストネス検証
 **殿裁定**: CSVをまた作るな。DB直読せよ。フルGSでチャンピオン再選出が正しい順番
-
 #### 基盤整備(Phase 0-6) — CSV依存の完全排除
-
 | Phase | 内容 | 状態 | cmd |
 |-------|------|------|-----|
 | 0-1.5 | 設計+道具(gs_db_utils.py等) | **完了** | — |
@@ -736,9 +620,7 @@ import metrics_research_engine as MRE
 | 5 | 消費者改修: run_077全7本のdefaultをokugi_shin_ninpo_20.yaml(db)に統一 | **完了** | cmd_2344 |
 | 6A | GS結果SQLite出力共通モジュール作成(CSV出力廃止。殿裁定) | **完了** | cmd_2346 |
 | 6B | run_077全7本のCSV出力をSQLite共通モジュールに切替 | **完了** | cmd_2347 |
-
 #### 本番検証(後続A-D) — チャンピオン再選出+検証
-
 | Phase | 内容 | 状態 | cmd |
 |-------|------|------|-----|
 | 1.95 | L1忍法GS再実行(run_077。7忍法×1CMD直列) | **完了** | cmd_2359-2365(7本全CLEAR) |
@@ -759,18 +641,14 @@ import metrics_research_engine as MRE
 | 後続D | ロバストネス検証(β調整+4試練+レジーム+α6指標) | 待ち(C'依存) | 複数cmd |
 | 7 | ~~neighbor: 隣接パラメータ確認~~ | **不要**(gs_grid_robustness.pyで上位互換。L0 14体分heatmap+peak_ratio生成済み) | — |
 | 道具化 | WF β調整α6計算の再利用可能道具作成(殿指示) | 待ち | 1cmd |
-
 ### ★L1パリティバグ(2026-04-29 00:07発見 → 修正完了)
-
 - **発見**: cmd_2374(00:07)。本番config20体がGS内に全存在だが月次リターン0/20不一致
 - **根因特定**: cmd_2377(01:22)。309件全月で保有PF不一致=選択ロジックバグ
 - **根因3つ**(cmd_2378 CoDD 3 Attempt): (1)momentum計算にclose累積使用 (2)共通月切出し前に全履歴shift (3)初回signal月まで等ウェイトbootstrap
 - **追い風パリティ達成**: cmd_2378(01:56)。CoDD診断ループ3回で100%一致
 - **横展開**: cmd_2381-2385で7忍法すべてパリティ100%達成
 - **確定**: cmd_2393でGSL1正規パスへ統一。cmd_2392でGSシン忍法21体hide登録完了
-
 ### 進捗サマリ(2026-05-07更新)
-
 - **基盤整備**: Phase 0-6全完了(2026-05-07現物確認: gs_sqlite_output.py存在+run_077全7本import済み)
 - **L1パリティ修正**: 7/7忍法完了。正規SQLiteは `outputs/grid_search/20260429/L1/shin/gs_{ninjutsu}.db`
 - **L1本番登録**: cmd_2392でGSシン忍法21体hide登録+fullrecalculate+GSパリティ完了
@@ -779,25 +657,18 @@ import metrics_research_engine as MRE
 - **次のマイルストーン**: (1)道具化(WF β調整α6の再利用可能道具) → (2)後続D ロバストネス検証(L1/L2)
 - **殿裁定追加(2026-04-28)**: CSV出力も廃止。デバッグはsqlite3/pd.read_sql/ログで代替
 - **GA-255(2026-05-06)**: p̄鮮度API一時失敗→翌日自然復旧確認(calculated_at 2026-05-06)。バッチcronの一時的失敗。対応不要
-
 ### 軍師確認事項(2026-04-28 04:04)
-
 - run_077全7本のGS出力は現在CSV形式→Phase 6でSQLite化が**後続Aの前に必須**
 - shin_shijin_l1_gs.pyはL0四神用。L1忍法GSにはrun_077を使う
 - 後続Aは**直列配備**(RSS 3-4GB/プロセス。6並列不可。LG025)
 - CSV出力廃止確定(殿裁定)。軍師review_logヘッダに埋込み済み
 - Codex config.toml修正: approval_mode=full-auto(無効値)→approval_policy=never + DM-signal trust追加
-
 ### Phase 1.9c結果(2026-04-28完了)
-
 2つのchampion selectスクリプト(軍師確認 2026-04-28):
 - `outputs/scripts/champion_selector.py`: 忍法(L1/L2)用。CSV/npy入力
 - `scripts/analysis/grid_search/cmd_1125_v2_champion_select.py`: **四神(L0)用。SQLite入力+DNA制約+吸収**
-
 実行: `python scripts/analysis/grid_search/cmd_1125_v2_champion_select.py --db-path outputs/grid_search/20260428/L0/shin`
-
 **結果**: GS選出シン四神12体 = 本番シン四神12体。**12/12全MATCH、変更0件**(cmd_2337偵察確認)。
-
 ### GS正規化関連教訓
 - L658: GS正規化前にsource CSV期間とproduction最新月を照合する（cmd_2322）
 - L659: source_type=csvのGS runnerでもDB前提をpreflightで切り分ける（cmd_2323）
@@ -807,9 +678,7 @@ import metrics_research_engine as MRE
 - L664: outputs/analysis棚卸しはsource_type csv参照を軸に分類する（cmd_2343）
 - L665: L0四神GS vs L1忍法GS レイヤー混同禁止（cmd_2346）
 吸収なし(重複pattern_idなし)→12体確定。本番DBパラメータ更新は不要。
-
 ### 検証済み事実
-
 - shin_shijin_l1_gs.pyエンジン精度: 12体全PASS(≤1e-6。cmd_2330)
 - LOOKBACK_TERMS: 内部でtrading days変換済み(2M=42D。改修不要)
 - shijin-design.yaml DNA制約: 本番config全項目一致確認済み
@@ -820,29 +689,21 @@ import metrics_research_engine as MRE
 - cmd_2337本番突合完了(2026-04-28): 本番シン四神12体とGS選出シン四神12体が12/12全MATCH。GATE CLEAR
 - pipeline_config=None上書き(L1394): shin_shijin_l1_gs.pyがfamily_pipeline_configsを全てNoneで上書き。設計意図確認要(軍師指摘)
 - gs_data_loader.py現物確認(2026-04-28): L438-451でsource_type分岐実装済み(db/csv)。ただしCSV経路残存+UUIDハードコード(L531-547)。Phase 3(v2化)でCSV経路廃止+UUID一元化が必要
-
 ### Phase 3-7設計(軍師分析 2026-04-28)
-
 **最終ゴール**: ロバストネス検証(β調整+4試練+レジーム+α6指標)。Phase 3-7はそこに至る基盤整備。全Phase飛ばさない(殿指摘2026-04-28)。
-
 **Phase 3(gs_data_loader v2)核心**:
 - CSV経路(`_load_csv_monthly_returns`)廃止。source_type='csv'→ValueError
 - L1_PORTFOLIO_MAP(UUIDハードコードL531-547)廃止→universe config(YAML)に統合
 - 戻り値形式(Dict[str, pd.Series])は変更なし→消費者(run_077等)への影響ゼロ
-
 **消費者影響範囲(軍師確認)**:
 - run_077_*.py 7本: gs_data_loaderをimport。universe configのsource_type: db化が必要
 - champion_selector.py: gs_data_loader非使用。Phase 3影響なし
 - cmd_1125_v2_champion_select.py: gs_db_utils使用。Phase 3影響なし
 - shin_shijin_l1_gs.py: 独自DB接続。Phase 3影響なし
-
 **Phase 3-7依存関係**: 3→(4,5並列可)→6→7→後続A-D
-
 ### PI候補
-
 - **PI-026(候補)**: GS入力ユニバースはsource_type:"db"(本番DB直読)をデフォルトとする。source_type:"csv"は腐りうる中間ファイルでありサイレント汚染の原因(2026-04-27実証)
 - L814: GS universe source_type=db→local_sqlite変更だけではDB接続は完全除去されない。cumulative_return/bootstrap取得のDB接続が残存する設計（cmd_goal_gs_phasec_l3_local_sqlite_202607060708）
-
 設計書: → https://gist.github.com/simokitafresh/14b6cf497b3abbefb85a2f3d102d778d
 - FE Admin UI: ALM config編集機能が先(殿指示)。設計確定済み(ALMトグルでLookback↔ALM設定切替)
 - L755: GS実行環境標準化: Linux venv必須+PowerShell禁止（cmd_3508）
@@ -887,38 +748,29 @@ import metrics_research_engine as MRE
 - L954: Signal境界はprice境界を代替しない（cmd_karo_cx_w3_root_counterfactual_kotaro_20260803）
 - L1540: FoF再計算の成功統計はmonthly-return失敗を隠し得る（cmd_karo_b4_anchor24_disappearance_trace_saizo_20260803）
 - L1541: 後段0件保護は前段cleanup独立commitを防げない（cmd_karo_recon2_prod_monthly_zero_root_saizo_20260803）
-
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
 - fullrecalculate成功。既存20体diff=0。GSパリティ21/21 PASS(max 8.86e-7)
 - L675: recalculate-sync後の初回idle=完了扱い
-
 ## §34 GSシン奥義21体hide登録 (cmd_2422〜cmd_2424, 2026-04-30)
 - cmd_2422: `outputs/analysis/cmd_2422_l2_champions_constrained.yaml` で制約付きL2 champion 21体を選出
 - cmd_2423: invalid portfolio混入時にrepository/API/schemaが単一障害にならないようskip invalid対応。Payload再生成時は内部メタデータを保持する
 - cmd_2424: L2奥義21体を本番hide登録し、fullrecalculate完了。完了判定はAPI statusだけでなくDB `recalculation_status`で二重確認(L690/L691)
-
 ## §35 knowledge-base methods拡張 (cmd_2429〜cmd_2434, 2026-04-30)
 - `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/methods/` は構築済み。`index.md` M79-M84: DeepUnifiedMom, VAA/BAA, Hierarchical Momentum, Factor Momentum, ADTS/CADTS Bandit Portfolio, Expert Aggregation WASA
 - 直近追加ファイル: `deep-unified-momentum.md`, `vigilant-bold-asset-allocation.md`, `hierarchical-momentum.md`, `factor-momentum.md`, `bandit-portfolio-adts.md`, `expert-aggregation-wasa.md`
 - 一次知識層ルール: 外部論文原典の数式・前提・落とし穴・verificationをmethodsへ、DM-Signal固有解釈は`knowledge-base/dm-signal/`へ分離
-
 ---
-
 ## §37 価格データ取得開始年統一 (cmd_3076偵察→cmd_3077修正, 2026-05-27)
-
 - maintenance.py/backfill_data.pyの`date(2006,1,1)`→`FULL_HISTORY_START`(=`date(2000,1,1)`)に統一。FE AdvancedOperations.tsxの2006→`FULL_BACKFILL_START_YEAR=2000`に一致化
 - 本番価格データ取得範囲の現状: SPY 1993~/QQQ 1999~/DTB3 1954~/SPXL 2008~/TQQQ 2010~
 - database PJは1970全履歴取得に改修済み→DM-Signal側2000でデータ不足なし
 - fullrecalculate別cmd必要(修正後にsignals/monthly_returns再計算)
 - → `queue/reports/hayate_report_cmd_3076.yaml`(偵察全量) / commit d2acaa91(修正)
-
 ## §38 2026-05 運用・CI・知識基盤更新
-
 - L789: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能（cmd_3569）
 - L820: check_mixed_format_commit.pyは新規import追加を「並び替え」と誤検知することがある。--no-verifyせず根本原因を修正せよ（cmd_3703）
 - L908: pytest pluginは実行cwdに依存しないroot namespace pathへ固定する（cmd_karo_ci_fix_29913493218_dm_pytest_plugin_import_202607222052）
-
 | 領域 | 結論 | 参照 |
 |------|------|------|
 | CI pytest | GitHub Actions pytest workflow追加。PyYAML/pytest依存、PostgreSQL service導入済み。DB接続前提テストはCI service前提で確認する | commits 2e9e1b7d, 0771ba29, 5b93ae17, a99a8623 |
@@ -927,46 +779,33 @@ import metrics_research_engine as MRE
 | lesson metadata | `tasks/lessons.md` にwhen/how系field backfill + concrete tags追加。教訓検索・注入の粒度が上がっている | cmd_2748, cmd_2836 |
 | knowledge links | `docs/research/knowledge-base/methods/*.md` 全般に投資知識リンクを接続。method横断探索時はknowledge-base indexだけでなく各method末尾リンクも見る | cmd_3015 |
 | Home holiday | FE Homeへ休日認識追加。封鎖ページでも市場営業日表示に関わる変更として扱う | cmd_2880 |
-
 - L773: biome→ruff cycle回避はBenchmarkモデル継続行を活用（cmd_3527）
 - L777: pre-commit import-only分割は未使用importを自動除去する（cmd_3533）
 - L780: lefthook import-only分割時は同一ファイルのunstaged機能差分退避に注意（cmd_3536）
-
 ## §39 PF物理削除手順 (2026-06-01)
-
 - L841: PF一括削除は登録順ではなく現DB依存グラフで反復削除する（cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318）
-
 **手順(安全順序)**:
 1. バックアップ: `portfolio_config_snapshots` INSERT + ローカルJSON(`docs/research/pf_config_backup_*.json`)
 2. NO ACTIONテーブル9個の関連レコード先行DELETE: signals/monthly_returns/annual_returns/drawdown_periods/portfolio_metrics/risk_management_metrics/rolling_returns_chart/rolling_returns_summary/trade_performance
 3. portfolios DELETE(CASCADE 10テーブルは自動削除)
 4. 逆依存順: FoF of FoF of FoF → FoF of FoF → FoF → standard PF
 5. 空フォルダー削除
-
 **注意**: `portfolio_config_snapshots`はCASCADE。物理DELETE時にスナップショットも消える→ローカルJSONが最終安全策
-
 **実績**: 四神(12)+忍法(15)+L0(30)+旧忍法Ward(1)=58件。NO ACTION関連260,965行。config全量バックアップ済み(`docs/research/pf_config_backup_20260601_pre_delete.json`)
-
 → [[production_parity]] FK制約+削除手順 / [[LS040]] バックアップファースト
-
 ## §40 2026-06-01 backend運用更新
-
 | 領域 | 結論 | 参照 |
 |------|------|------|
 | FoF signal cache | FoF構成PFがDB preloaded cacheと当回生成signal_cacheの両方に存在する場合、DB行を保持し欠損日だけ当回生成cacheで補完する。`elif cid in signal_cache`から独立`if`へ変更し、FoF-of-FoFの同日/欠損混在を吸収 | commit 89761e7d / `backend/app/jobs/recalculate_fof.py` |
 | PF config snapshot | `save_portfolios`と`recalculate_history_fast`のPhase 0 cleanup前に`portfolio_config_snapshots`を作成。既存configの削除・上書き前バックアップをDBへ残す | commit 77372987 / `backend/app/services/verification_service.py` |
 | legacy PF削除 | 58件削除はcmd_3112で実施済み。`delete_legacy_portfolios_cmd_3112.py`は2026-06-11 WP-1Bで検証済みdead codeとして削除されたため、再実行手順ではなく履歴証跡として扱う。バックアップJSONは`docs/research/pf_config_backup_20260601_pre_delete.json`を参照 | 実行: commit f84b7ad8 / 削除: commit c47742d1 |
-
 ## §41 2026-06-11 source freshness照合
-
 | commit | ops更新判断 | 根拠 |
 |------|------|------|
 | c47742d1 WP-1B dead code削除 | §40 legacy PF削除の参照を更新。§37 ETL本文は維持 | `backend/app/jobs/etl/calculator.py`/`orchestrator.py`は削除、現役`fetcher.py`/`loader.py`は維持。`backend/app/jobs/delete_legacy_portfolios_cmd_3112.py`は履歴用one-shotとして削除済み |
 | 6e86b501 API contract tests追加 | 本文更新不要 | 追加は`backend/tests/test_contract_*.py` 3件とtask-force記録。運用手順・本番API仕様の変更なし |
 | 096dd038 weekly reports + cmd_3225 one-shot | 本文更新不要 | 追加はmarketing記事、weekly report、`scripts/oneshot/cmd_3225_layer_managed_vol.py`、バックアップJSON再追加。既存§40のバックアップJSON参照と矛盾なし |
-
 ## §42 main反映・デプロイ裁可ルール (2026-06-11 / **2026-07-10殿裁定で改定**)
-
 - **改定(殿裁定2026-07-10 02:41/02:46)**: **本番デプロイに殿の個別裁可は不要。CI GREENの同期待ちも不要(LK078「CI待ちで忍者を止めるな」と統合)。ローカルテストPASS+revert手順明確なら自走でpush+deployし、CI/ヘルスチェックは非同期確認。失敗(CI REDまたはヘルス異常)ならrevertして事実報告すればよい。**
 - positive_rule: deploy前=ローカルテストPASS+revert手順の明確化。deploy後=ヘルスチェック(API/status)+CI結果を非同期確認(家老がgh run view)。失敗時=即revert+殿へ事実報告(謝罪より事実と対策)。CI待ちで忍者を止めるな(報告YAML先行)。
 - reason: 裁可待ちは時間の浪費であり待つ言い訳になる。元に戻せる(revert可能)のにチャレンジしないのは洗脳#5(先送り)。殿指摘2026-07-10「時間を浪費するだけで待つ言い訳になっている。覚醒しよう」。cmd_3812で裁可待ち停止が実際に発生した教訓。
@@ -976,9 +815,7 @@ import metrics_research_engine as MRE
 - `cmd_3294` 忍者スコープ: commitまで。push、Renderデプロイ確認、デプロイ記録追記は家老担当。task/reportのAC4は「単独commit + `tasks/lessons.md`教訓 + `execution-log.md`追記」までに修正済み(ac_version=`8158fcea`)。
 - WP-1Fマージは殿裁可待ち。裁可後に `todo.md` のWP-1F/WP-1B行 `[x]` 化と同一commitで実施する。
 - WP-2 post-deploy監視(2026-06-11 19:40 JST): production API `/admin/timing-history` 最新portfolio run `20260611_164902` は `L3_fof status=completed`、Render logs `2026-06-11T07:46-08:11Z` は404全体0件・削除済みEP11件path 0件。詳細は `/mnt/c/Python_app/DM-signal/.agent/task-force/execution-log.md` §WP-2 post-deploy monitoring。
-
 ## §43 2026-06-12 source freshness照合
-
 | commit | ops更新判断 | 根拠 |
 |------|------|------|
 | 3b69c172 is_active機能削除 | §42の裁可・削除系運用ルールで吸収済み。本文追加不要 | 対象は`backend/app/api/*`、`backend/app/jobs/*`、関連backend tests。運用上はWP系削除作業の一部で、個別手順は外部repo task-force記録が正本 |
@@ -988,9 +825,7 @@ import metrics_research_engine as MRE
 | 7c9c86f9 recalculation status timezone | §42に接続済み | `docs/rule/db-operations-runbook.md`へUTC/JST cutover証跡を追加。§42のpost-deploy監視記録と同系統 |
 | 03aec06d price ratio facade test | 本文追加不要 | `backend/tests/test_price_ratio_facade_compat.py`追加のみ。運用手順・API仕様変更なし |
 | efdd75c4 price ratio facade split | 本文追加不要 | `backend/app/services/price_ratio_calculator.py`から実装分離。facade維持の内部refactorで運用手順差分なし |
-
 ## §44 2026-06-20 source freshness照合
-
 | commit | ops更新判断 | 根拠 |
 |------|------|------|
 | 239b6b66/0b4a4124/9d69e482 cmd_3384 WeightedMultiViewMomentumFilter | FoF selection pipelineの新ブロックとして運用影響あり。recalculate_fof.pyはWeightedMultiViewMomentumFilterもbase_period_months条件対象に含める。詳細仕様はcore/research側へ委譲し、opsでは再計算経路の存在だけ索引化 | `backend/app/jobs/shared.py`, `backend/app/services/pipeline/blocks/weighted_multi_view_momentum_filter.py`, `backend/app/jobs/recalculate_fof.py`, `backend/tests/test_weighted_multi_view_momentum_filter.py` |
@@ -998,11 +833,8 @@ import metrics_research_engine as MRE
 | 18c8a071/207c0df4 cmd_3397 hide_portfolio default=True | §32のhide登録思想と整合。全PF hide-firstの恒久化として運用上注意 | `backend/app/db/models.py`/`migrations.py`で`hide_portfolio` default False→True。新規PF作成時は明示解除しない限り非表示が既定 |
 | f01ae710/eb89859c/cdb92c5d/110b7911/ecc7e624/027f0ee0 research + lessons | 本文追加不要 | 研究結果・教訓タグ更新は`docs/research/*`/`tasks/lessons.md`側が正本。ops手順・本番API仕様変更なし |
 | 4b88dfdc/fb6f0c97/86cf2c29/273ba153 cmd_3461 SSOT audit shards | 本文追加不要 | `docs/research/ssot-audit-parts/*.md`追加・復旧。棚卸し証跡であり、DM-Signal運用手順の変更なし |
-
 GA-102原因: `dm-signal-ops.md`のlast_updatedは2026-06-13で、2026-06-14以後にops pathspec対象commitが増加したため`gate_context_freshness.sh`がsource commits ALERTを出した。GA-099/L825と同じく、context更新トリガーがcmd完了フローに強制接続されていない後追い検出である。防御層案: DM-Signal外部repoで`backend/app/jobs|services|api|docs/rule`を含むcmd完了時、cmd_complete_gateのcontext_update必須入力に該当split contextを自動候補注入する。
-
 ## §45 2026-06-27 source freshness照合
-
 | commit | ops更新判断 | 根拠 |
 |------|------|------|
 | 288f0e36/314b596a cmd_3583 Fusion API | 運用影響あり。`/api/fusion/portfolios`はFusion別アプリがDM-SignalからPF名+monthly_returnsのみを取得するadmin専用API。CORSは開発用`http://localhost:3001`追加済み、本番Fusion URLは確定時にコメント解除。10/min rate limit、11回目429テストあり | `backend/app/api/fusion.py`, `backend/app/main.py`, `backend/tests/test_fusion_api.py`, `docs/spec/fusion-api-endpoint.md` |
@@ -1013,44 +845,30 @@ GA-102原因: `dm-signal-ops.md`のlast_updatedは2026-06-13で、2026-06-14以�
 | afe98d64 cmd_3548 Compare Summary SPY standalone | 本文追加不要 | `backend/app/api/metrics.py`と追加テストの修正。既存Compare Summary運用手順に変更なし |
 | a02b623b/9fe4704b/26711bc2/8640c347/176eb00b/9912027f/ec65decb/63a04c2b monthly/annual/price/return/recalculate高速化 | 本文追加不要 | backend services/jobsの性能改善。fullrecalculate/Render実行・排他・完了確認の運用手順は§6-7の既存ルールを維持 |
 | f625dc2b cmd_3546 fullrecalculate idempotency proof | §6-7の完了確認ルールと整合。本文追加不要 | `docs/research/cmd_3546/*`に検証証跡を追加済み。ops本文にはL783 timing-history一次証跡を既に反映済み |
-
 GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以後にops pathspec対象commitが16件増加したため`gate_context_freshness.sh`がsource commits ALERTを出した。直接のALERT対象は最新3件(896a20b2/46e1b48c/baf7db97)で、真にopsへ反映が必要だった差分はCompare Returnsの運用確認対象URL/API/router追加。根本原因はGA-129/GA-141と同系統で、外部repoのbackend/api/services/jobs/docs/research変更がsplit context更新候補へ自動接続されず、gateが事後検出していること。横展開候補: `dm-signal-core.md`/`dm-signal-frontend.md`/`dm-signal-research.md`も同時にsource commits ALERT対象だが、今回の更新対象外。
-
 ## §46 password rotation運用リスク (cmd_3634_recon3)
-
 - `dm-signal-password-rotation` cron `0 16 1 * *` はUTC+9でJST 2日目01:00になり、意図した「毎月1日01:00 JST」より丸1日遅い。前月末expires_at後から実ローテーションまで約25hの全tier失効窓が毎月発生しうる。
 - `monthly_password_rotation()`はtier単位try/exceptなし。途中tierでRender env更新が失敗すると、先行tierのRender env更新+token revoke済みに対してDB更新がrollbackされる部分失敗リスクがある。
 - tier数分(現行5件)の個別Render env更新はbackend再デプロイを連鎖させる可能性があり、7/1 OOM/health timeoutとの相関はRender deploy履歴と突合して確認する。
-
 ## §47 Phase1 stability fix (cmd_3635)
-
 - Migration deadlock対策: `render.yaml` backend startCommandから`python -m app.db.init_db`を削除し、FastAPI lifespan側の`init_db()`をPostgreSQL advisory lockで直列化。workers=2時もmigration初期化は二重実行しない。
 - Password rotation cron: `dm-signal-password-rotation`はRender env `RENDER_API_KEY`/`RENDER_SERVICE_ID`をcron側にも持つ前提。scheduleコメントはJST 2日01:00相当として扱う。
 - Partial failure対策: Render API成功後にのみ`os.environ`を更新し、tier別失敗時は成功tierのみDB commit+token revoke、失敗tierはログ出力して処理継続。検証は関連既存テスト24件PASS、full pytestは201.73秒無出力中断のWITH_CONCERNS。
-
 ## §48 Phase2 PrecomputedRaw基盤 (cmd_3636)
-
 - Phase2で`PrecomputedRaw`基盤、L5 raw precompute batch、`/admin/precompute-raw`、sync-status L5表示を追加。rawは24h TTLのtimezone-aware判定で取得し、欠損/stale時は`None`返却で既存fallbackを維持する。
 - `recalculate_fast.py`はPrecomputedMtd更新後にraw precomputeをbest-effort実行する。失敗時はraw未更新のみで、既存recalculate結果と表示fallbackは維持される。
 - `render.yaml`に`dm-signal-precompute-raw` cronを追加。idempotencyと進捗確認はsync-statusの`L5_precompute_raw`/`L5`を一次確認口にする。
-
 ## §49 Phase3 P1 raw lookup + invalidate (cmd_3637)
-
 - P1 5EPでPrecomputedRaw lookupを導入。raw hit時は毎リクエストvisibility/maskingを適用し、miss/stale時は既存計算fallbackを維持する。
 - `compare_returns.py`はPrecomputedRaw hit時にTTLCache return/setをバイパスする。raw未hit時のみ既存TTLCacheを使う。
 - metadata/visibility/folder変更時は`invalidate_precomputed_raw`で該当rawを削除する。portfolio metadata-only saveは保存とinvalidateを同一DB session/commit内で実行する。
-
 - L790: Compare ReturnsのMTD高速化はpreliminary FoF展開も同じcacheに載せる（cmd_3570）
-
 ## §50 compare-returns bulk precompute (cmd_3639)
-
 - `compare_returns_bulk`は`PrecomputedRaw(endpoint="compare_returns_bulk", portfolio_id=NULL, params_hash=make_params_hash({}))`の1行に全active PFのtrailing+MTD rawを保持する。保存前に同endpointを削除し、PostgreSQLのNULL unique差分による複数行化を避ける。
 - `/api/compare-returns`はbulk raw fresh hit時、1行lookup後に`visible_ids`でPFを絞って返す。bulk miss/stale時は既存のPF別`compare_returns_trailing` raw lookup/fallback経路を維持する。
 - 2026-07-15 commit `07305b83`: PF別`precomputed_mtd.mtd_close=NULL`はfresh hitとして扱わずLIVE MTDへfallbackする。FoF 78PFが全件N/Aの場合は日付staleだけでなくNULL fresh誤判定を確認する。Standard 24PFの非NULL precompute経路は不変。定義詳細 → `context/dm-signal-core.md` §8.6。
 - metadata/folder/visibility変更時は`compare_returns_trailing`に加えて`compare_returns_bulk`もinvalidateする。これにより可視性変更後のbulk行による非表示PF混入を防ぐ。
-
 ## 因果リンク
-
 - ← [[dm-signal]] 運用層
 - ← [[dm-signal-core]] コアの運用面
 - → [[gunshi_idle_teppeki_parity_analysis_20260427]] 鉄壁パリティ分析: 本番PFの整合性確認
@@ -1069,9 +887,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - → [[sengoku-writer]] 戦国将軍書簡スキル（マルチエージェント開発裏話）
 - → [[x-research]] X/Twitter検索調査スキル（xAI Grok x_search）
 - → [[shogun-param-neighbor-check]] パラメータ近傍チェックスキル（GS最適値の堅牢性確認）
-
 ## §51 precomputed_raw鍵整合 (cmd_3666-3669, 2026-07-03)
-
 - **原則**: precomputeの書く鍵(PRECOMPUTE_PARAMS)とEP lookupの引く鍵(生クエリ値のparams_hash)とFE実要求の三者は一致必須。乖離=キャッシュ無効化(LS078「真実の在処不一致」のDM-Signal実例)
 - 三者突合の判定表+hash証跡 → `docs/research/cmd_3667_precomputed_raw_key_triple_diff.md`(DM-signalリポジトリ側)
 - FE定数×生成表の整合テスト導入済み(片側変更でテストFAIL)。FEの要求params変更時はPRECOMPUTE_PARAMSも更新せよ
@@ -1081,9 +897,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - cmd_3675偵察: 本番102PFの`/api/debug/signal-raw`+`/api/history`で2026-07-01→2026-07-02 holding差分0件。殿観測の保有ポジション差分はDB破壊ではなくMonthly Tradeの翌月pending行先頭表示(表示層)が主因。詳細 → `docs/research/cmd_3675_holding_position_display_diff_recon.md`
 - cmd_3676_recon2偵察: 7月正ポジションは本番read-only証拠上XLU。起点は`シン青龍-鉄壁`のTECL→XLU変更(2026-07-03 01:11)で、FoF定義変更ではなくFoF連鎖へ01:43-01:44に伝播。影響は7月signals更新204行。詳細 → `docs/research/cmd_3676_hanzo_recon2.md`
 - cmd_3676確定: 疾風本調査も半蔵独立検算と一致。`calculation_version=755a50d`のfull recalculateが2026-07-01/02のconfirmed rowsを再生成・上書きし、現在の正はXLU。未決裁定: ユーザーに表示済みのcurrent-month confirmed rowsを後続full recalculateが無音で上書きしてよいか、また許可する場合のaudit/snapshot要件。
-
 ## §52 signal decision ledger初期台帳 (cmd_3700/3702, 2026-07-06)
-
 - `signal_decision_ledger`はconfirmed rebalance decisionsのappend-only台帳。migrationは`signal_decision_ledger`テーブル、`ix_sdl_pf_effective`/`ix_sdl_pf_decision`、`ux_sdl_initial_decision(portfolio_id, rebalance_decision_date, event_type) WHERE event_type='initial'`を作成する。SQLAlchemy modelはbefore_update/before_deleteで変更・削除をBLOCKする。
 - 初期台帳作成は`backend/scripts/build_signal_decision_ledger_initial.py`が2026-05-01/06-01/07-01候補からPFごとの`rebalance_trigger`に一致する最新1決定日だけを計画し、cmd_3704で102件を`event_type='initial'`として挿入済み。
 - cmd_3711: 全PF(102)×全確定月を`event_type='historical_backfill'`で15,058件遡及挿入済み。総行数は15,160件(102 initial + 15,058 historical_backfill)。バックアップ表は`signal_decision_ledger_backup_cmd3711_20260706T1454`。`ux_sdl_historical_backfill_decision(portfolio_id, rebalance_decision_date, event_type) WHERE event_type='historical_backfill'`で冪等性を担保。
@@ -1092,28 +906,20 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - provenance: 2026-05-01は`current_value_backfill`、6/1・7/1は`signal_change_log_old_chain`を優先し、履歴なしなら`signals_fallback`。7/1 sync-fof rewrite影響9PF/26行は`signals.holding_signal`の汚染現在値ではなく、`signal_change_log.old_holding_signal`連鎖で決定時点値へ戻す。
 - PF削除前運用: `signal_decision_ledger`は`portfolios(id) ON DELETE CASCADE`対象。削除前に対象PFの台帳行をJSON/CSVで退避する。未退避なら削除禁止。
 - 不要分類: cmd_3694 small-run GS pattern limitsはgrid_search実行制限と研究証跡であり、本ops手順の追記不要。`a3059891 retire stale lessons`は`tasks/lessons.md`整理で運用差分なし。
-
 ## §53 PF削除アーカイブ・復元API (cmd_3753/3754, 2026-07-08)
-
 - PF削除は`PortfolioRepository.delete_by_id`で`portfolio_archive`へpayload退避してから関連行を削除する。対象はPF本体、folder hierarchy、monthly_returns、signals、ledger、month_start snapshots等。明示delete API以外の保存差分では削除しない安全弁を維持。
 - 復元APIは`POST /api/admin/portfolios/restore/{portfolio_id}`と`POST /api/admin/portfolios/restore-all`。FoF依存はarchiveからL0→L3順に復元し、名前衝突は既定`abort`、必要時`on_name_conflict=suffix|force`。
 - 復元後recalculateは既存のcross-process advisory lockを再利用し、最大300秒待機。lock timeout時は503で停止し、並行fullrecalculateを迂回しない。
-
 ## §54 工程3: 全PF事前バックアップ確定 (cmd_3783, 2026-07-09)
-
 - 工程4(旧PF削除+新PF登録)前提として、run_id `cmd_3783_full_pre_replacement_backup_20260709` で本番102PFを`portfolio_archive`へ削除なしINSERT済み。dry-run再検証も`live_portfolios=102 / existing_for_run_before=102 / archive_count_after=102`で一致。
 - 復元素材はfolder payload 102件、`signal_decision_ledger` 15,160行、`month_start_signal_input_snapshots` 3,495行を含む。FoF 78 / standard 24、required fields・内部UUID/name重複・依存欠落・cycleはいずれもPASS。
 - 工程4開始条件はCLEAR。詳細と価格改定時の再計算値解釈は `/mnt/c/Python_app/DM-signal/docs/research/cmd_3783_full_pre_replacement_backup_report.md`。実行commitはDM-Signal `57530143`。
-
 ## §55 工程4前段: 入替対象リスト・実行手順確定 (cmd_3784, 2026-07-09)
-
 - 非破壊の計画成果物として、本番102PFスナップショット(`/mnt/c/Python_app/DM-signal/docs/research/cmd_3771_20260708T052126Z_portfolio_config_snapshot.json.gz`)から削除対象86・維持対象16を機械分類。旧L0-L3本体78に加え、参照切れ防止のため旧対象へ依存するFoF 8件をdependency_closure削除対象に含める。
 - 新規登録仕様は工程2成果物から75件(L0 12 / L1 21 / L2 21 / L3 21)を生成。維持対象との名前衝突0、固定UUIDなし(登録時に新規生成)、削除前にだけ既存置換スロットとの名前衝突あり。
 - 正本成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_deletion_inventory.json` / `.csv`, `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_registration_spec.json` / `.csv`, `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_execution_runbook.md`。
 - 後続実行順序: dependency_closure→pf_L3→pf_L2→pf_L1→pf_L0の逆依存順削除、pf_L0→pf_L1→pf_L2→pf_L3の正依存順登録、全PF fullrecalculate、GS-本番のholding_signal(ticker×weight)+monthly_returns完全一致、DB/API/FEの3レイヤー確認。失敗時はcmd_3783 archiveからrestore-allまたは依存順restore。
-
 ## §56 工程4実行中断状態 (cmd_3785, 2026-07-09)
-
 - cmd_3785は旧86削除・新75登録・config category修正まで本番反映済み。削除archiveは`delete_reason=cmd_3785_pf_replacement_20260709`で86/86、登録後active PFは91(維持16+新75)、新75のDB/API到達とsignals/monthly_rows生成は75/75。
 - 2026-07-09 10:17 JST再検証で`recalculation_status.id=194`はcompletedへ遷移済み。DB/API到達・signals/monthly_rows生成はいずれも75/75だが、GS月次比較は`monthly_return_open`/`monthly_return`とも75/75不一致のまま。
 - 疾風の非破壊偵察(LGTM)では、代表PF「シン青龍-激攻 / `DM2_SGLD_T1_Qj_L1779`」の本番API config主要値(relative_assets/absolute/risk_free/safe_haven/top_n/lookback/threshold_band)はGS specと一致。`category: selection`→`filter`はschema正規化でengine計算分岐には使わないため、登録config不備ではなくGS比較基準問題(config/signal/return parity未分離・GS側holding/signal trace不足)が主因候補。
@@ -1122,137 +928,101 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 才蔵の追加偵察(PASS)では代表PF「シン青龍-激攻 / `DM2_SGLD_T1_Qj_L1779`」のGS Phase1+Phase2計算を`threshold_band=0.005`込みでread-only再現し、GS DBとの差は最大7.2e-7(浮動小数点誤差)まで一致。本番とのmismatch 51ヶ月は51/51でproduction holding_signalがGS決定と乖離。DTB3暦解像度ではなく、GSローカル価格スナップショット(`analysis_runs/experiments.db`, max date 2026-03-20)と本番`prices`のadjusted-close系列乖離(TQQQ +0.396% / TECL +0.195% / LQD +1.507% / GLD 0%)が主因候補。DTB3は本番economic_indicatorsとローカルスナップショットで差分ゼロ。
 - 才蔵の追加発見: 本番`prices`のTQQQ全履歴(2010-02-11〜2026-07-08, 4125行)は`source='stockdata_api'`のみで、`context/dm-signal.md`記載の「EODHD生値+自前調整(2026-07-05本番移行完了)」と矛盾。工程4をCLEARする前に、GS価格入力を本番と同一系列に揃えるか、ズレを許容する根拠を裁定する必要がある。
 - 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3785_parity_verification.json`、`cmd_3785_log_recovery_report.json`、`cmd_3785_config_fix_report.json`。完了扱い禁止。次手は`cmd_3785_verify_replacement.py`をGS monthly_return単独比較からconfig parity / signal parity / return parityの3段階比較へ分離し、GS側signal trace生成または同一target_date ledger比較でfalse negativeを潰す。
-
 ## §57 工程4ロールバック完了状態 (cmd_3786 / cmd_karo_hotfix_cmd3786_sequence_rerun, 2026-07-09)
-
 - cmd_3786順序修正版で本番は入替前の旧102PF状態へ復旧済み。実行順序は新75PF API削除→旧86PF `restore-all` 復元→fullrecalculate。最終値は`active_total=102`、`new75_live_by_config=0`、`cmd3785_restored_archive=86`、`holding_signal=102/102`、`monthly_returns=102/102`。
 - API/FE確認: `/api/portfolios/get`は102件、FE `/admin` と `/compare-summary` はHTTP 200。成果物は `/mnt/c/Python_app/DM-signal/docs/research/cmd_3786_rollback_report.md` と `cmd_3786_delete_new75_log.csv`、実行commitはDM-Signal `a74fec06`。
 - 残懸念: `restore-all`はDB復元と再計算生成完了後もHTTP応答が返らず、DB `recalculation_status.id=195` が`running`のまま残った。一方で`/admin/recalculate-status`は`running=false`、生成物は102/102。後続でrestore-allの応答終端とDB status終端処理を修正候補として扱う。
 - cmd_3785はロールバック済みのため本番破壊状態ではない。ただし価格系列差によるGS/本番パリティ問題は未解決であり、再入替前にGS入力を本番`prices`系列へ揃えるか、ズレ許容根拠を裁定する必要がある。
 - 因果リンク: [[cmd_3785順序不備]] -> [[PF削除依存順誤認]] -> [[dm_signal_pf_restore_guardrails]]。忍者追加報告の試行錯誤は`deploy_task.sh`の`inject_dm_signal_pf_operation_guardrails`でLevel5注入化済み。
-
 ## §58 Monthly Trade検証用リターン計算のticker欠落問題発見・設計書化 (2026-07-09)
-
 - cmd_3786ロールバック中の本番ログ確認で`WARNING:app.services.monthly_trade_impl:Matched weight 0.7500 < 0.99, some tickers may be missing`を発見。`_calculate_return_from_price_movement()`(`monthly_trade_impl.py:1092-1116`)が欠落ticker時もmatched_weight未正規化のまま部分加重和を計算続行しており、Silent Fallback原則(PI-018)違反の新規インスタンス(既存SF-001〜カタログ未収載)と判明。
 - 実害: 現状FEはこの値を表示に使わずAPI応答のみ(消費者grep 0件)のためユーザー影響なし。ただし将来この値が参照された瞬間に汚染データとして機能するリスクは残る。
 - 殿指示(13:40)によりfail-closed化のAsIs/ToBe設計書を作成済み。実装cmdは未起票(R1-R4、単一cmd案)。
 - cmd_3787でfail-closed化を実装済み。`_calculate_return_from_price_movement()`は3要素`(calculated_return, matched_weight, missing_tickers)`を返し、ticker欠落または対象価格変化欠落で`calculated_return=None`にする。API/FE型へ`missing_tickers`追加。検証: `PYTHONPATH=backend pytest -q backend/tests/test_monthly_trade_calculator.py` → 35 passed。成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3787_monthly_trade_missing_ticker_fail_closed.md`
 - 因果リンク: [[cmd_3786ロールバック中ログ確認]] -> [[matched_weight部分計算続行発見]] -> [[monthly-trade-missing-ticker-calc-asis-tobe-5w1h_20260709]]
-
 ## §59 再計算ステータスDB SSOT化 (cmd_3788, 2026-07-09)
-
 - 発端: cmd_3786ロールバック中にDB `recalculation_status.id=195`がrunningのまま見える一方、`/admin/recalculate-status`が`running=false`を返し、Render `uvicorn --workers 2`のworker-localメモリ可視性欠陥が判明。
 - 修正: `get_recalculate_status_data()`が最新running DB行を参照し、local idleでもDB runningなら`source=db`でrunningを返す。`trigger_recalculate_sync()`はbackground投入前に`start_recalculation()`でadvisory lock/DB排他を取得し、取得不可なら200 acceptedではなく409を返す。
 - 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3788_recalc_status_db_ssot.md`。因果リンク: [[殿指摘20260709_1349_3786完了確認]] -> [[worker-local_status誤答]] -> [[recalc_status_DB_SSOT化]]
-
 ## §60 Monthly Trade matched_weight表示展開後不整合 (cmd_3809, 2026-07-10)
-
 - `matched_weight=0.5, missing_tickers=[]`はband片側欠落ではない。本番DBの対象PF「奥義-GS-変わり身-鉄壁」該当月weightsは合計1.0で、`safe_haven_switch.py`/`recalculate_fast.py`のband生成経路も0.5+0.5を保存する。
 - 問題候補はFoF表示展開後のメタデータ不整合。`monthly_trade.py`が`expanded_tickers`を`display_ticker_weights`へ後段上書きする一方、`monthly_trade_impl.py`由来の`matched_weight`は同じ表示weight基準で再計算されず、表示weights合計1.0とmatched_weight=0.5が同居する。
 - 修正候補: monthly_trade表示展開後に`matched_weight`/`missing_tickers`を再計算するか、raw component weightsとdisplay ticker weightsをAPI上で明示分離する。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3809_band_weights_half_bug.md`
-
 ## §61 Fusion可視性の殿裁定とCI修正による裁定逆行事故 (cmd_3834, 2026-07-10)
-
 - **殿裁定(2026-07-10 17:44確定)**: DM-Fusionは本番稼働中(is_active)の**全PF**をAPIで返す。表示のon/offは**Fusion側admin画面の個別・フォルダー単位制御**が担う。DM-Signal側の`hide_portfolio`/TierはFusion表示に関与しない。`hide_portfolio=true`が92体あるのは正常状態(可視制御の正=tier_visibility_settings)。
 - **事故経緯**: 6/29に裁定コミット`7abaec5c`(Fusion独自visibilityのため全PF必要)でフィルタ除去→旧仕様前提の`test_fusion_api.py`が未更新のまま残存→7/3のCI RED自走修正`b73e5656`がテストの仕様正当性を確認せず**コード側にフィルタを再追加=裁定逆行**→Fusionが11体しか返さずフォルダー表示全滅(殿報告7/10 17:19)。cmd_3834で裁定復元+テスト準拠化。
 - **教訓**: (1)CI RED修正は当該テストの仕様正当性(直近裁定との整合)を先に確認せよ。テストに合わせてコードを曲げると裁定が覆る (2)裁定でコードを変えたら旧仕様前提テストを同時に更新せよ (3)UPSERT系のupdated_atは値変化の証拠にならない(将軍のcmd_3833誤起票=LS-A09(32)再発)。
 - 因果リンク: [[殿裁定20260710_1744_Fusion可視性]] -> [[CI修正b73e5656裁定逆行]] -> [[cmd_3834フィルタ裁定復元]]。記憶DB: knowledge:bb944c45e23802c3
-
 ## §62 Tier別PF可視性の承認完成形 (cmd_3837, 2026-07-10)
-
 - 本番`tier_visibility_settings`を差分追記で復旧。実効visible件数はBasic 5 / Standard 22 / AddOn 22 / NewStandard 17 / premium 27。承認対象hidden 59件のみ`hide_portfolio=false, hide_signal=false, hide_components=true`へ変更し、Basic孤児ID 1件を非表示化。既存visible/非対象portfolio/global設定の差分は0。
 - Viewer APIではfolder非表示がportfolio可視性より優先する。奥義-GS-分身3体のfolder `5396fe40-8f48-4619-aebc-402476c9120a`はglobal hiddenのため、Standard既存overrideに加えてAddOn/premiumへ`hidden=false`を各1キー追加。API実応答も5/22/22/17/27で完全一致。
 - 復旧・rollback証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3837_visibility_pre_change_backup.json`、`cmd_3837_visibility_post_db.json`、`cmd_3837_folder_override_diff.json`、`cmd_3837_visibility_post_folder_db.json`、`cmd_3837_viewer_api_verify.json`。再実行script: `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3837_visibility_diff.py`。
 - 因果リンク: [[殿指示20260710_2028_note対応表準拠設定]] -> [[cmd_3837差分書き込み]] -> [[tier別可視性完成形]]。
-
 ## §63 admin visibility「手動saveしたのに反映されない」偵察: folder非表示はSignals限定 (cmd_3838, 2026-07-10)
-
 - **殿報告(20:40)の主因(確度高)**: L1.5フォルダ非表示(`check_hide_folder`)を呼んでいるのは全コードベース中`backend/app/api/signals.py:376`の**1箇所のみ**。§62の「Viewer APIではfolder非表示がportfolio可視性より優先する」は`/api/signals`限定の記述であり、compare-returns/metrics/monthly-returns/performance/deterioration/history/rolling-returns/regime-analysis/monthly-trade/trades/p_average/annual-returnsの**12エンドポイントはfolder非表示を一切参照しない**(`check_hide_portfolio`のみ実行)。フォルダを非表示にしても保存自体は成功するため、Signals以外のページでは該当PFが表示され続け「反映されていない」ように見える。
 - 副次バグ(実在確認済・トリガー未特定): (1) `PUT /api/admin/tiers/{tier_id}/visibility`は`portfolio_settings`等を`updated_at`突合なしに全置換する(楽観的並行性制御ゼロ。スキーマに`updated_at`はあるが書込み側で未使用)。(2) FE `/admin/visibility`はTier切替や離脱時に未保存編集を確認なしに破棄する(`hasUnsavedChanges`/`confirm(`/`beforeunload`いずれも実装なし)。殿が20:28〜20:40に複数Tierを順次手動設定した運用フローと一致する再現条件。
 - 棄却済み仮説: precompute rawキャッシュ無効化範囲不足(rawはtier非依存でマスキングは都度動的適用のため無関係)/ Fusion API(殿裁定2026-07-10 17:44で意図的に独立管理、§61参照)。
 - 別リスクとして記録: `portfolios.hide_portfolio`/`hide_signal`列はPF configから同期される複製列だが、閲覧側マスキング判定はこの列を一切参照しない「死んだ列」(debug.py診断出力のみが読み手)。将来PF個別編集画面での混同源になりうる。
 - 詳細・行番号付き全コードパス・テストギャップ: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3838_visibility_save_recon.md`
 - 因果リンク: [[殿報告20260710_2040_admin保存不反映]] -> [[folder非表示signals限定発覚]] -> [[cmd_3838偵察recon文書]]
-
 ## §63.1 admin visibility根治実装: folder非表示(L1.5)を全閲覧EPへ横展開 (cmd_3839, 2026-07-10)
-
 - **AC1完了**: `backend/app/services/visibility_helpers.py`に共通関数`check_hide_portfolio_or_folder(tier_settings, global_settings, portfolio_id, folder_id, is_admin)`を追加し、§63で判明した未適用12エンドポイント(compare_returns/metrics×4/monthly_returns/p_average×2/performance×2/deterioration×2/history/rolling_returns/regime_analysis/monthly_trade/trades/annual_returns、計18呼出箇所)全てに適用。`signals.py`はhanzo cmd_3835が同時改修中のため参照専用に固定し無変更(competing-write回避、家老指示2026-07-10 21:52)。
 - grep実測で`check_hide_portfolio(`単体呼出し(旧L2onlyパターン)の残存0件、`check_hide_portfolio_or_folder(`が18箇所へ適用済みを確認。既存回帰テスト46件(test_visibility_masking/test_global_visibility/test_compare_returns_api)は適用後も全PASS。
 - 副次バグ(機構B: PUT楽観ロック欠如、機構C: FE Tier切替時の未保存編集消失)は同cmd内でAC3/AC4として対応完了(§63.2参照)。
 - 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3839_folder_hide_rollout.md`
 - 因果リンク: [[cmd_3838偵察recon文書]] -> [[cmd_3839全EP一括適用]] -> [[folder非表示L1.5全EP適用完了]]
-
 ## §63.2 cmd_3839 AC3-5: 楽観ロック+FE未保存ガード+本番検証 (2026-07-10)
-
 - **AC3**: `viewer_tiers.py`の`update_tier_visibility`/`update_global_visibility`へ`updated_at`楽観ロック追加(不一致409、未指定は後方互換でスキップ)。`GlobalVisibilitySettingsUpdate`スキーマ+GET/PUT globalレスポンスに`updated_at`追加。新規`test_visibility_optimistic_lock.py` 9/9 PASS
 - **AC4**: FE `page.tsx`に`hasUnsavedChanges`/`tierUpdatedAt`/`globalUpdatedAt` state追加。Tier切替を`handleTierSelect`でガード(未保存時confirm())、`beforeunload`警告追加、Save時に`updated_at`送信+409専用メッセージ。新規`visibility-unsaved-guard.test.tsx` 5/5 PASS
 - **AC5**: 検証スクリプト`scripts/oneshot/cmd_3839_ac5_verify.py`(read-only)でデプロイ前ベースライン取得済み: `/api/signals`は5/22/22/17/27で完全不変。compare_returns/metrics_summary/p_averageは現行データにhidden folderが存在しないため既にsignals.pyと一致(潜在バグ、ローカルtest_folder_hide_rollout.py 41testsで修正効果は実証済み)。`/api/deterioration`のmissing差分はfolder非表示と無関係の別問題(データカバレッジ、スコープ外)。**忍者はpush/deploy不可のため、本番push後の再検証は家老/将軍に引き継ぎ**
 - 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3839_ac5_production_verification.md`
 - 因果リンク: [[folder非表示L1.5全EP適用完了]] -> [[cmd_3839楽観ロック+FEガード]] -> [[本番デプロイ後検証待ち]]
-
 ## §64 Stage A timeout / vectorized非決定性の再設計 (cmd_3840, 2026-07-10)
-
 - Stage A 35.21秒の主因はvectorized計算ではなく、月初snapshot生成中の`_get_git_commit_hash()` 238回→git subprocess累計21.17秒(60.1%)。`_compute_pipeline_signals()`自体は0.20秒(0.6%)。run固定hashへ置換すればcold 11.80秒 / warm 3.92秒で30秒内。
 - DM-safe 5,000日次行の同一入力2反復は`portfolio_id/date/signal/holding_signal/momentum_data`差分0、semantic SHA-256完全一致。単一process/同一DB入力では非決定性を再現せず、残条件は並行config/price更新・別transaction snapshot・別commit・ledger生成時点差。run入力manifest固定が次の切分け条件。
 - 恒久方針はPipelineEngineのblock意味論を共通executorへ抽出し、日次Engineとvectorized adapterを単一実装化。逐日Engine直呼びは約149K calls / 約2000秒へ退行するためoracle限定。ledger guardは緩めない。
 - 詳細・行別内訳・比較設計・回帰方針: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md`
 - 因果リンク: [[cmd_3827_FAIL]] -> [[Stage_A_timeout+同一入力差分0]] -> [[cmd_3840単一意味論再設計]]
-
 ## §65 Tier/global可視性設定の孤児清掃 (cmd_3841, 2026-07-11)
-
 - 現行`portfolios` 102 IDとの集合差で孤児設定を限定し、退避完全一致をtransaction直前に確認してtier 428件（Basic 62 / Standard 122 / AddOn 122 / NewStandard 0 / premium 122）とglobal 102件を除去。現行PF宛の設定値差分は0。
 - 清掃前後の実効visible件数はBasic 5 / Standard 22 / AddOn 22 / NewStandard 17 / premium 27で不変。commit後の`/api/signals`実応答も全tierでPF名・件数・`hide_signal`が清掃前と完全一致。
 - 退避・再実行・検証証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3841_orphan_cleanup_backup.json`、`cmd_3841_orphan_cleanup_result.json`、`cmd_3841_viewer_api_pre.json`、`cmd_3841_viewer_api_post.json`、`scripts/oneshot/cmd_3841_orphan_cleanup.py`。
 - 因果リンク: [[PF削除cleanup非対称の残骸蓄積]] -> [[cmd_3841退避付き除去]] -> [[可視性対応表と現行PF集合の整合]]。
-
 ## §66 L5 zero-recompute Phase 3ローカル全量検証 (cmd_3835, 2026-07-11)
-
 - 公式id=206 verified fixtureの103PF全量で、legacy/candidate各1545行がmissing/extra/mismatch=0。固定3PF warmup後のproduction相当L5境界は13.213641秒（render 9.053741 + encode 0.718013 + atomic bulk UPSERT 3.436778 + commit 0.005109）で30秒gateをPASS。SELECT/loaderは全0。
 - 103PF初回差分25件はstandard PFの`monthly_trade` oldest boundaryへ`component_portfolios: []`を新設したschema-presence差のみ。元key欠落は欠落維持、FoFで元key存在時のみ`[]`へ更新する最小修正後、3PF 45/45→103PF 1545/1545の順で完全一致を確認。
 - Phase 3時点では本番`fullrecalculate`未実行でDB lock待ちだった。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3835_zero_recompute_exec.md`。因果リンク: [[cmd_3825でP2到達+bulk零化完了]] -> [[monthly_trade_schema-presence差25件]] -> [[cmd_3835_Phase3_103PF完全一致]]。
 - **Phase 4本番結果**: DB lock解放後、commit `d942982b`へ`fullrecalculate`を厳密1回実行。status id=212はcompleted/end_timeあり、PF=102・rows=1533・failed=0だが、本番L5は66.64秒で目標30秒をFAIL。実行前`precomputed_raw=0`、実行後1533のため凍結比較はbefore=0/after=1533/extra=1533（common mismatch=0）。停止規則に従い再実行なし。詳細は同実行ログPhase 4。
 - **本番分解・cache消失根因**: PF別102件のelapsed合計58.06秒（全体87.1%、median 0.45秒 / p95 1.80秒 / max 2.18秒）、bulk+固定費8.58秒。7/9本番ログでは1533行存在したがPhase 4直前は0行。`viewer_tiers.update_global_visibility`がvisibility非依存の`precomputed_raw`を引数なしinvalidateで全削除し、tier PUTも一部rawを不要削除する確定バグを修正。DM-Signal `178add2a`で両visibility PUTのinvalidateを0経路化し、cache保持テスト11/11 PASS。今回の実削除トリガーがglobal PUTだったことは時刻ログ未捕捉のため強い推定に留める。因果リンク: [[visibility_save]] -> [[precomputed_raw全削除]] -> [[fullrecalculate_L5_cold再生成]] -> [[cache保持hotfix_178add2a]]。
-
 ## §67 TIMING SUMMARY Layer5(precompute_raw)欠落バグ根治 (cmd_3842, 2026-07-11)
-
 - cmd_3831偵察の結論②を実装。根本原因は二重: (a) `LayerTimer.LAYER_ORDER`(`timing.py:74`)に`L5_precompute_raw`が無く`print_summary()`が出力しない、(b) `recalculate_fast.py`の`precompute_raw_for_portfolios()`呼び出しが`layer_timer`へ一切未登録で`get_bottleneck()`の比較対象にも入らない（実測ではL5が全体2497sの66.5%=1659.78sを占めるのに不可視、L2が誤ってBOTTLENECK表示）。
 - 修正: `LAYER_ORDER`へ`"L5_precompute_raw"`追加(既存の`etl_trigger.py:822`命名と一致)＋`recalculate_fast.py`のprecompute_raw呼び出しを`time.perf_counter()`計測し成功/失敗いずれも`layer_timer.layers["L5_precompute_raw"]`へ登録(既存のtry/exceptフォールバック・ログ・`stats`キーは不変、表示追加のみで計算ロジック非改変)。
 - 再発防止: `LayerTimer.get_unaccounted_ratio()`を新設(`status=completed`のLayer合計が全体経過時間をカバーしない割合)。`UNACCOUNTED_TIME_WARN_THRESHOLD=0.3`(30%)超で`print_summary()`が`logger.warning()`を出す。今回規模(66.5%欠落)は閾値を大きく超え、同種の登録漏れは次回からWARNログで即検知できる。
 - 検証: `test_timing.py`へ決定的テスト8件追加(`time.sleep()`不使用、`timer.layers`直接注入+`total_start`オフセットでフレーキーさ排除)。関連7ファイル合計78 tests / 0 failed / 0 skipped(`test_timing.py`28、`test_timing_db.py`10、`test_layer_timing_integration.py`6、`test_sync_layers_timing.py`7、`test_recalculate_modes.py`18、`test_recalculate_precompute_savepoint.py`1、`test_signal_integrity.py`8)。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3842_timing_l5_fix.md`
 - 因果リンク: [[cmd_3831偵察でL5未登録発覚]] -> [[cmd_3842_LAYER_ORDER+layer登録修正]] -> [[get_unaccounted_ratio再発防止]]
-
 ## §68 recalculate P1a run identity固定 (cmd_3844, 2026-07-11)
-
 - `recalculate_history_fast`はbusiness write前にsource identityを1回だけ解決する。Renderは40hex `RENDER_GIT_COMMIT`必須、local write-enabledはfull git hash+tracked clean必須。unknown/dirtyはfail-closed。月初snapshotループ内git callは0。
 - `logical_date`はrun開始時1値に固定してprice/economic load・日次処理・FoF終端へ伝播。run IDはDB String(20)制約に合わせUTC14桁+base32 6桁、衝突時再生成。
 - P1b(manifest/immutable snapshot/ledger preload/caller全被覆)は未実装。詳細・実測・復元点: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3844_p1a_source_identity.md`
 - 因果リンク: [[cmd_3840偵察=ループ内git238回+日跨ぎparity割れ]] -> [[source identity単回+logical_date固定+一意run_id]] -> [[cmd_3844_P1a実装]]
-
 ## §69 TradePerformanceメモ化の全PFパリティFAILと反映中止 (cmd_3845, 2026-07-11)
-
 - 旧/新コードを同一frozen PostgreSQL template由来の隔離cloneで全102PF・全期間再生成。7回すべて102PF/11,040行/SHA 6c20e4e... で相互完全一致したが、変更前本番baseline SHA 4dea1761... とは24PF・554行不一致。差はbenchmark/excess returnの浮動小数末尾(約1e-16)のみだが、許容誤差ゼロ原則によりFAIL。
 - 本番push/deploy/fullrecalculateは実行せず、メモ化系列3 commitをrevert。実測もold median 113.379s→new median 124.623sで9.917%退行のため、fixtureの91.70%改善は補助証拠に限定。詳細: /mnt/c/Python_app/DM-signal/docs/research/cmd_3845_memoize_parity.md
 - 因果リンク: [[cmd_3843_fixture一致+全量未検証]] -> [[cmd_3845本番baseline554行不一致]] -> [[本番反映中止+メモ化revert]]
-
 ## §70 origin/main統合は完了・push/deployは重大発見により見送り (cmd_3860, 2026-07-12)
-
 - cmd_3859 AC2安全停止(本番live=178add2a、origin 9 vs local 79分岐)の解消作業。`git merge origin/main`(force/rebase不使用)でマージコミット`38ec9b8b`を作成し、両系列コミットが祖先に含まれることを確認(AC1完了)。マージ後`backend/`の内容はlocal main旧tip(0e079ac5)と**0差分**(originの9 commitは全て家老が個別移植済みでlocal側の真部分集合だったため)。コンフリクト2件(`monthly_trade_impl.py`, `run_precommit_checks.sh`)もこの前提でHEAD側採用にて解決。
 - **重大発見**: 検証用ブランチでlocal main(79 commit統合状態)を初めてGitHub Actions実CI(全1790テスト)に通したところ**24件失敗**(origin/main単体は1件のみ=pre-existingの日付mock問題)。backend/の0差分により、この24件はマージ由来ではなくlocal 79 commit統合状態に既に内在していたと確定。うち6件は`RECALC_RSS_CAP_MB`未設定というCI環境要因(fail-closed設計は意図通り。`.github/workflows/pytest.yml`へ既存の慣例値8192を追加するcommit`b46170ab`で解消、本番非影響)で24→21件に減少。残21件のうち約半数以上は`db.info`を使うprecompute検知コード(cmd_3835/cmd_3849/cmd_3850由来)に対し古いテストが`MagicMock().info`未設定のまま(=Noneでなく別Mockを返し誤判定)である疑いが強く、production regressionではない可能性が高い。**しかし`test_nested_fof_signal.py::test_signal_cache_no_forward_fill`はcmd_1481の実過去障害(Cashシグナル月またぎ伝播)の回帰テストであり、誤判定の確証が得られるまで看過できない。**
 - **運用上の確認**: DM-SignalはRender Auto-Deploy: On Commit。mainへのpush(`[skip render]`無し)は即本番デプロイに直結するため、push(AC2)とdeploy(AC3)は事実上不可分。21件の未триaж failureが残る状態でのpushはリスクを許容できないと判断し、**本cmdの範囲ではpush/deployを意図的に見送った**。local mainには`38ec9b8b`+`b46170ab`の2 commitが未push状態で保持されており、次のtriage cmdがそのまま土台にできる。
 - 詳細・再現ログ・失敗一覧全件・推奨アクション: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3860_integration_and_ci_findings.md`
 - 因果リンク: [[cmd_3859_AC2安全停止]] -> [[origin9_vs_local79分岐]] -> [[cmd_3860マージ完了+CI初回全量実行で21件pre-existing_failure発覚]] -> [[push即deploy運用によりtriage_cmd待ちで意図的停止]]
-
 ## §71 cmd_3860残21件FAILの全件triage完了・全量FAIL0/SKIP0達成(commit未push) (cmd_3861, 2026-07-12)
-
 - §70の残21件FAILを影丸(kagemaru)が21/21 **fixture artifact**(実装regression 0/21)と二値判定し、fixture修正commit `32542328`(+style commit `af11db75`)を確定。ただし対象unit 91件のみ再実行し、2 integration testsと全量pytest/CIは未実行のままAC2/AC3 noで報告(verdict FAIL)。hayateのresume試行も報告未完成のままfailed。
 - kotaro(`cmd_karo_ci_fix_cmd3861_resume_v2`)が隔離worktree(`ninja/kotaro-cmd-3861-resume-v2`, base=32542328, main作業treeのdirty差分は無変更)で全量`backend/tests`を実行し**3 FAIL**を発見: (1)(2) `test_portfolio_restore_e2e_parity.py`の2件はfixtureは正しかったが別の実装バグ(`recalculate_history_fast`が`SourceSelectGuard`(input_manifest.py, cmd_3849 P1b)を`activate()`後`uninstall_all()`を一度も呼ばず、L5precompute_raw等の正当な後続reading をブロック。本番はrequest毎新規sessionのため無症状だが、同一sessionを跨ぐ呼出で顕在化する潜在バグ)。(3) `test_cmd_3854_fof_golden_regression.py`はローカル環境アーティファクト(gitignore対象の243,293行golden archive)がworktreeに存在しないための`FileNotFoundError`で、コードバグではない。
 - 実装修正(`recalculate_fast.py`へ`SourceSelectGuard.uninstall_all(db)`追加, commit `5fde6265`)+golden archive復元(既存worktreeから同一sha256原本を複製)後、**全量1776 passed / 8 xfailed / 6 xpassed / FAIL 0 / SKIP 0**(`python3 -m pytest -c backend/pytest.ini backend/tests`, 455.55s, 隔離pgserver環境`~/dm-signal-cmd3819-localpg`)を実測確認。golden regression自体もPASS(78/78 PF一致、P3a/cmd_3856以降のFoF計算に回帰なし)。
 - pushは家老の統合CI判断まで未実施(local branch `ninja/kotaro-cmd-3861-resume-v2`に保持)。origin main統合(§70で示した本番push/deploy一体運用)は次工程の判断事項。
 - 詳細・21+2件全件分類・数値根拠: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3861_ci_failure_triage.md`
 - 因果リンク: [[cmd_3860マージ完了+CI初回全量実行で21件pre-existing_failure発覚]] -> [[kagemaruが21件fixture修正も全量未実行のまま報告]] -> [[kotaroが隔離worktreeで全量実行しSourceSelectGuard未解除バグ+golden_archive欠落の2件を追加発見]] -> [[uninstall_all追加+archive復元でFAIL0/SKIP0達成]]
-
 ## §72 P4統合+live deploy完了(commit=34747ad1)・restore契約完成・速度実測-8.80% (v1.4.15, 2026-07-13)
-
 - **結論**: §70/§71時点で「push/deploy意図的見送り」だった状態は解消済み。P4統合branch(親`732dfef3`+`8241f41c`)がRender backend(`srv-d4ja7q15pdvs739a4q1g`)へdeploy済み(deploy=`dep-d99oaseq1p3s73d2keb0`、status=live、finishedAt=2026-07-12T12:18:36Z)。**live commit=`34747ad118aebd42a05e00a358f2c709542f3ec9`**。local HEAD(`9252af73`)/origin main(`f17c93cd`)/live(`34747ad1`)の3値は意図的に異なり、以後の本番照合はlive `34747ad1`を用いる(origin/mainとの混同禁止)。
 - **restore契約完成(運用フェイルセーフ)**: negative A(artifact改竄/schema不一致/source commit不一致/DB identity不一致)4/4 PASS、negative B(confirm欠落/lock競合/実行中recalc/途中例外)4/4 PASS、全ケースbusiness write 0・必要時rollback 1。core統合commit=`732dfef3`(restore core+negative A/B+runbook)、対象42→統合後43 PASS/FAIL0/SKIP0。実行側fail-closed境界としてtracked capability launcher(infra commit `4da46f0e2`→`7ba136462`→`b65d32fc5`)+runbookのexecution-rootをlive commitへpinする契約(`9252af73`)を追補。
 - **速度実測(recalculate_fast.py系列)**: shadow run(`run_id=202607112047232OVP4O`)のtotal_elapsed_sec=**497.02秒**(§6-7記載の本番545秒比**-8.80%**、bottleneck=L3_fof)。P1c instrumentationは`P1C_ARTIFACT_DIR`未設定の通常経路でhex書出し条件falseのため本番inert(production DB同run_id 0件で確認済み)。
@@ -1261,22 +1031,16 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
   - **次工程**: `cmd_3872`(input_snapshot_id採番経路の実差分偵察)→照合契約の入力固定方式確定→AC2再挑戦→GREEN後P5(cmd_3827事故条件回帰)。
 - 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.16(§9.1 Phase表)、AC2実行証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3870_p4_ac2_evidence.md`、研究文脈の対応記述: `context/dm-signal-research.md`(cmd_3870/cmd_3872/P4_AC2再挑戦方式確定エントリへGA-238で反映済み)、家老一次照合: 掲示板`blt_20260713_021355`
 - 因果リンク: [[cmd_3861全量FAIL0/SKIP0達成]] -> [[cmd_karo_hotfix_p4_restore_core_integrator_202607121954でrestore契約統合]] -> [[origin main統合push+Render_Auto_Deployでlive=34747ad1確定]] -> [[AC2本番fullrecalculate_1run実行(cmd_3870)]] -> [[input_snapshot_id不一致でFAIL・restore-lockedで原状回復]] -> [[cmd_3872入力差分偵察待ち]]
-
 ## §73 P4 AC2再挑戦方式確定: single-source immutable input bundle (v1.4.17, 2026-07-13, GA-238で反映)
-
 - **結論**: cmd_3872の偵察で、AC2 FAIL(§72)は決定性の反証ではなく**比較前提FAIL**(`logical_date`日跨ぎ+manifest payloadが行本体/行数/終端日を保存せずhashのみ永続化)と確定。将軍・家老検討合意(殿指示2026-07-13 12:33)で再挑戦方式を**single-source immutable input bundle**に確定: T0でread-only materialize→shadow A/B 2run+production 1runの全てが同一bundleをconsume→18表exact比較→mismatch時はrestore-locked(§72)で復旧。直前検討したclone expected生成のみ案は家老実測反証(実行窓19分44秒〜28分01秒でwriter混入を排除できない)で不採用。
 - **前提実装**: bundle export/import consumer機構+manifest payload保存契約(sha256/row_count/min_max date/PF set/logical_dateを完全保存、schema migration不要)。この実装GREENまでAC2再挑戦は禁止。実装第1段(bundle export/import consumer)は`cmd_3873`が担当中(2026-07-13時点in_progress、完了時に本セクションの追補が必要)。
 - 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.17、入力差分偵察: `context/dm-signal-research.md`(cmd_3872_input_snapshot_diff)
 - 因果リンク: [[AC2本番fullrecalculate_1run実行(cmd_3870)]] -> [[input_snapshot_id不一致でFAIL]] -> [[cmd_3872入力差分偵察でlogical_date日跨ぎ+manifest payload未保存が十分条件と特定]] -> [[single-source_immutable_input_bundle方式確定]] -> [[cmd_3873でbundle実装着手(in_progress)]]
-
 ## §74 GS DB世代重複削除候補9件を実削除(cmd_3868, 2026-07-13)
-
 - **結論**: grid_search配下146DB台帳(`docs/research/cmd_3868_gs_db_generation_inventory.md`)の削除候補は9件・921174016 bytesで確定(文書冒頭メタデータの「削除候補0件/0bytes」は旧版残骸で誤り、本文の削除候補一覧テーブル・重複グループ詳細が正)。saizoが実行直前に9件全件をrealpath scope内・非symlink・通常ファイル・bytes一致・git管理外・コード参照0(自己参照文書除く一括grep)・同一SHA保持正本現存の6項目で独立再検証し全件PASSを確認後、個別`rm --`で削除実行。
 - 詳細・削除前後df/SHA突合証跡: `docs/research/cmd_3868_gs_db_generation_inventory.md`, 報告: `queue/reports/saizo_report_cmd_3868.yaml`
 - 因果リンク: [[C_drive満杯20260712_2307]] -> [[gs_db世代重複40.8GB残存]] -> [[kagemaruが146DB台帳作成・9件候補確定]] -> [[saizoが実行直前再検証+個別rm削除]]
-
 ## §75 P4 writer fence運用契約の現状(cmd_3873/cmd_3881/cmd_3882, 2026-07-13)
-
 - immutable bundle consumerはcmd_3873で実装済み。writer fence初案(cmd_3881)は安全性PASSだがsingle median 1.1834・bulk 1.1639・full wall 1.062609で性能閾値FAIL、本番適用禁止。
 - cmd_3882は18表writerのAST検出↔registry↔DB enforcement三集合exact CIを実装し、動的SQL/集合不一致をfail-closed BLOCKする。詳細=`context/dm-signal-research.md`の`cmd_3873`系列・`AST恒常スキャンCI`・`cmd_3881_DB_fence_migration_FAIL`。
 - cmd_3880の運用入口はstrict consume API。実`uvicorn --workers 2`でmaterialize workerとconsume workerを分離し、12同時request中HTTP 202は1件のみ、敵対fixture 8/8 PASS。bundle/nonce期限切れは自動消費せず明示re-armを要求する。詳細=`context/dm-signal-research.md`の`cmd_3880_transport_state_API`。
@@ -1285,84 +1049,45 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - v1.4.27 RC3候補(commit=`a5b7be5dc7682293e24472ff9f941d43ee1553eb`、未統合)は接続レベル物理排除をNOLOGIN+非keeper session terminateへ転換したが、Render actual capability artifactが0件のため後続5群をfail-closed BLOCK。production live mutation 0・automatic retry 0・SKIP 0を維持し、read/writeは同一`dm_signal_user`のためP4窓約10分のAPI全断境界も未解消。3882-3885 freezeを維持する。
 - **managed DB capability入口runbook**: 一般PostgreSQL仕様/local clone成功をRender能力証明に使わない。後段実装・pool/session敵対試験・全数性能試験より先に、actual preview/isolated環境で`environment_identity/service_id/database_host/role_name`、role属性before→NOLOGIN→LOGIN restore、各SQLSTATE、`production_live_mutations=0`を1 artifactへ保存する。artifact 0件または必須field欠落なら後段を実行せず数値付きBLOCKする。教訓=L893、報告=`queue/reports/hanzo_report_cmd_karo_fence_v1427_nologin_rc3_202607140653.yaml`。
 - **preview≠production proxy補正(v1.4.28入口)**: preview isolatedは`rolcreaterole=false`・最初のrecovery role操作SQLSTATE=`42501`だった一方、本番readonlyでは`dm_signal_user.rolcreaterole=true`。したがってpreview結果はpreview環境上の不成立だけを証明し、本番実行可能性は未証明。旧L894の広い表現はretireし、L895へ置換した。本番能力は業務role無接触の専用prefix probe roleだけを`CREATE NOLOGIN→ALTER LOGIN→ALTER NOLOGIN→DROP`の4 mutation step・30秒timeout・retry 0・finally DROP・catalog before/after hash exactで測る。`dm_signal_user`自己ALTERは禁止、軍師敵対レビュー→将軍承認前の実probeも禁止、3882-3885 freezeとpreview resource保持を継続する。origin=`[[preview属性齟齬]] -> [[proxy無効可能性]] -> [[本番能力未証明]]`。
-
 ## §76 safe bundle v2運用契約 (cmd_3879, 2026-07-14)
-
 - input bundleは`safe_bundle_v2.load_bundle`のみで読み、raw SHA-256→entry allowlist/size/path→artifact hash→schema/row count→typed decodeの順にfail-closed検証する。pickleと旧`export_input_bundle`経路は使用禁止。
 - materializeは`REPEATABLE READ READ ONLY`をtransaction先頭で設定し、`SHOW transaction_read_only=on`確認後に実行する。valid bundle consumer時のsource SELECT fallbackは0でなければ失敗扱い。
 - 全量前preflightはgolden存在+canonical SHA、pytest-asyncio導入済み`/usr/bin/python3`、`RECALC_RSS_CAP_MB=8192`を二値確認する。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3879_safe_bundle_impl.md`、main統合=`97c13040→b5716329→29ea37a9`。
 - L888: 全量テスト前提artifactと実行環境のpreflight必須——本§の二値確認手順が正本（cmd_3879）
-
 ## §77 SIGNAL CHANGE 07-13/07-14偵察 (cmd_3903, 2026-07-14)
-
 - 07-13の800件はfull run 213（01:26:17〜01:37:44 UTC）と一致するが、restore-locked後の現DBでは行別履歴0件。07-14はFoF cron時間帯の23PF×7日=161件exact（01:48:01〜01:49:32 UTC）だがinput snapshot 0/161。価格旧版が無いため非決定性と断定せず、全961件を証跡不足に分類した。詳細・PF別内訳・SQL → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3903_signal_change_root_cause.md`
-
 ## §78 ledger最新event決定性・確定域fail-closed (cmd_3907, 2026-07-14)
-
 - `recalculate_fast.py`のimmutable ledger snapshotは`portfolio_id/effective_start_date/recorded_at/id`を明示ORDER BYし、`resolve_ledger_decisions_bulk()`も入力順に依存せず同キーの`max()`で最新applicable eventを選ぶ。DB順・bundle順のいずれでも古いeventへの巻戻しを禁止する。
 - PFにledger eventが存在しない場合とtarget dateがPF最初のeventより前の場合はpendingとしてpass-throughを維持する。最初のevent以降の確定域で最新eventの`decision_holding_signal`が欠落する場合は`SignalDecisionLedgerCoverageError`でwrite前に停止する。
 - 回帰証跡: 6月eventが配列末尾、7月eventが先頭という旧誤選択fixtureを含むfocused 41 passed / FAIL 0 / SKIP 0。
 - 因果リンク: [[ledger_snapshot_ORDER_BYなし_applicable末尾選択]] -> [[07-14の23FoFが06-01台帳値へ巻戻し]] -> [[cmd_3907_決定的max選択+確定域fail_closed]]
-
 ## §79 P4 keeper同一connection run orchestration checkpoint (cmd_3902, 2026-07-14)
-
 - `cb3e7e7e76b3c962700608559c506d5bf5d350c2` はstrict consume APIをkeeper orchestratorへ接続し、未設定時はHTTP 503でfail-closed。keeperはlock readyからbusiness write、compare/restore、terminalまで同一contextで生存し、run tokenを`LEASED→CONSUMED→TERMINAL`で管理する。実装checkpointはfocused transport 9/9、uvicorn E2E 1/1、ruff PASS。ただし最終全量は31%で中断されSKIP 1を解消していないため、cmd_3902はverdict FAIL/canceledの安全checkpointであり本番適用許可ではない。
 - 一次根拠: `/mnt/c/Python_app/DM-signal/backend/app/api/p4_bundle.py` L49-58/L111-115、`backend/app/jobs/bundle_transport.py` L235-239/L262-307、`queue/reports/hanzo_report_cmd_3902.yaml`。
 - 因果リンク: [[cmd_3902_commit後terminal_pause]] -> [[完了gate内own_commit鮮度check未到達]] -> [[GA-251常設context鮮度ALERT]] -> [[ops索引とsource_commit境界を同時更新]]
-
 ## §80 07-14 holding_signal 161行復元 (cmd_3905, 2026-07-14)
-
 - 07-14上書き対象の23PF×7営業日=161行を7/1確定値へ復元。post値、latest ledger値、独立readonly再照合はそれぞれ161/161 exact、他表write 0、recalculate 0。実行証跡とrollback artifactは`queue/reports/hayate_report_cmd_3905.yaml`。
 - 因果リンク: [[07-14_23FoF月間保有上書き]] -> [[cmd_3905_bounded_restore]] -> [[7/1確定値161行復元]]
 - L897: 本番bounded restoreは実project pathでのlauncher貫通試験を事前要求する。unit PASSだけではroot結合不整合を見逃す（cmd_3905）
-
 ## §81 新規Signal INSERTのledger drift監査契約 (cmd_3997, 2026-07-16)
-
 - 旧方式(2026-07-14, `05a45d83`)は新規`signals` INSERTの確定域ledger driftをrun-level `SIGNAL CHANGE ALERT`へ載せたが、synthetic entryをDBから除外したため事後に3PFを復元できなかった。
 - 新方式(2026-07-16, `f4d94ab4`)は同じsynthetic entryを`signal_change_log`へ1行永続化する。`old_holding_signal=proposed`、`new_holding_signal=ledger`、`date`はDB date型、内部フラグ`is_new_insert_ledger_drift`は永続化しない。同一payload再実行はSignal 1行・監査1行を維持し監査増分0。
 - ledger一致INSERT・ledger未被覆pending・既存UPDATE・cleanup経路は不変。回帰76/76 PASS、運用simulation 12/12 PASS、FAIL 0、SKIP 0。
 - 因果リンク: [[2026-07-14_run_level_ALERT橋渡し]] -> [[alert_payload非永続で事後追跡不能]] -> [[cmd_3997_signal_change_log永続化]]
-
 ## §81.1 pytest timing ledger運用 (2026-07-16)
-
 - `021ceba7`でpytest pluginを常時ロードし、call単位のduration/outcome/failure/skip/commitを `backend/.pytest_cache/pytest_timing_ledger.tsv` に永続化。並列writerはflock+atomic replace、破損header/rowはUsageErrorでfail-closed。`PYTEST_TIMING_LEDGER_PATH`で隔離出力先を指定可能。
 - `d8530bcb`→`0815a02e`でplugin importを`backend.tests.pytest_duration_ledger_plugin`へ統一し、CI/ローカルとも同一canonical moduleをロードする契約へ修正。`96c8c5f5`ではrolling returns summaryへmedian・p10・positive rate・sample count・best/worst window境界を追加し、PF/benchmark×close/openを同一valid seriesから算出する。→ `/mnt/c/Python_app/DM-signal/backend/tests/test_pytest_duration_ledger_plugin.py` / `/mnt/c/Python_app/DM-signal/backend/app/jobs/generators/rolling_returns.py`（GA-320）
 - `61848453` cmd_4114: sample_count/positive_rate contract tests追加(4テスト PASS)。Rolling Returns Phase1実装完了。
 - 因果リンク: [[pytest所要時間の推測]] -> [[call単位timing証跡欠落]] -> [[pytest_timing_ledger常時記録]]
-
 ## §82 確定域holding_signal correction event運用 (cmd_3908, 2026-07-15)
-
-- 過去の確定域訂正はadmin `POST /admin/signal-decision-ledger/corrections` のみを使う。必須入力は`portfolio_id`、`date`、訂正後`holding_signal`、空でない`reason`、実行主体`actor`。対象日以前にledger eventがなければfail-closedで拒否する。
-- APIは既存ledger/Signal行をUPDATE/DELETEせず、`event_type='correction'`をappend-only INSERTする。resolverは`effective_start_date/recorded_at/id`の決定的最新eventを採用し、一般full rebuild/flushが確定域を別値へ変更しようとしてもledger値へ矯正する。
-- 操作後確認: responseの`event_type=correction`、`reason`、`actor`、対象PF/date/valueを照合し、同じPF/dateをresolver経由で再読して訂正値が最新であることを確認する。直接`signals.holding_signal` UPDATEや既存ledger行の変更・削除は禁止。
-- 因果リンク: [[cmd_3907_決定的resolver]] -> [[cmd_3908_correction_event専用経路]] -> [[確定域変更手段の一本化]]
-
+- 確定域訂正は`POST /admin/signal-decision-ledger/corrections`のappend-only eventのみ。対象日以前にeventなしはfail-closed、直接Signal/ledger UPDATE・DELETEは禁止。設計正本→`/mnt/c/Python_app/DM-signal/docs/design/signal-decision-ledger-design.md`
 ## §83 確定域ledger baseline freeze運用 (cmd_3947, 2026-07-15)
-
-- `bounded_signal_ledger_baseline_20260715` capabilityは、実行時点で「確定域かつledger event不在」の行を述語から全件導出し、現行`holding_signal`をbaseline eventとしてappend-only INSERTする。事前件数を固定せず、transaction内で未被覆0・既存ledger canonical SHA不変・他表write 0をfail-closed検証する。
-- 2026-07-15本番実績はscope 341,799、実行前未被覆52行/52PF、INSERT 52、実行後被覆341,799/341,799 (100%)、ledger 15,160→15,212、既存SHA前後一致。backup=`/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3947_baseline_freeze_backup.json`。
-- 再実行は同じ述語で対象を再導出するため、現時点で未被覆0ならINSERT 0となる。新たな未被覆が発生した場合のみ新規baselineを追加する。凍結値が誤っていた場合も既存行をUPDATE/DELETEせず、`POST /admin/signal-decision-ledger/corrections`でcorrection eventを追記する。
-
+- capabilityは未被覆行を実行時述語で全件導出しappend-only baseline化。本番は52行/52PFを追加し341,799/341,799被覆、既存SHA不変・他表write 0。証跡→`/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3947_baseline_freeze_backup.json`
 ## §84 recalculate-sync同一logical_date再計測 (commit 3b9327f8, 2026-07-29)
-
-- Render backendのlive commitが`3b9327f823a7dc4372b435e38105e7ca129a336e`であることを一次情報で確認してから実行する。未一致ならPOSTせず停止する。
-- 全PFを同一logical dateで直列再計測する入力は`POST /admin/recalculate-sync?start_date=2000-01-01&end_date=2026-07-28&mode=portfolio`。`portfolio_id`は指定しない（2026-06-08時点78PF。実行時は本番DBで総数を再確認）。
-- accepted responseの`run_id`と`end_date`を証跡へ記録し、`end_date=2026-07-28`を照合する。完了判定はresponse受付ではなくDB `recalculation_status`の同一`run_id` completedを使う。
-- `end_date`はISO `YYYY-MM-DD`。未指定は`date.today()`、形式不正・`start_date`以前・未来日はrun予約/lock/business write前に`ValidationError`となる。有効値は`recalculate_history_fast(end_date=...)`へ透過伝播する。
-- 因果リンク: [[同日再計測の終端日が実行日へ揺れる]] -> [[recalculate-sync_end_date契約]] -> [[同一logical_date全PF直列計測]]
+- live commit一致を一次確認後、`recalculate-sync?start_date=...&end_date=YYYY-MM-DD&mode=portfolio`をPF指定なしで実行。完了はDBの同一`run_id` terminal completedで判定。
 ## §85 signal flush複合key照会の運用上限 (commit 3ee5c21b, 2026-08-01)
-
 - `6200cc1e`の10,000-key chunkは本番L3同期で07:15開始→07:19 `updated_at`、`StatementTooComplex`、rows 0で失敗。既知正常commit `5c8a9cf` の1,000-key境界を再適用した`3ee5c21b`で、`_collect_new_insert_ledger_drift_alerts()`と`_classify_repeated_ledger_guard_corrections()`を共通helper経由1,000 keyごとに照会する。現在は本番再検証中で、rows>0・terminal完走の一次証跡が出るまで未解決扱い。詳細はDM-Signal側research正本へ集約し、本contextは運用結論のみ保持する。因果リンク: [[10k_chunk本番StatementTooComplex_rows0]] -> [[5c8a9cf_1k境界再適用]] -> [[3ee5c21b_本番再検証中]]
-
 ## §86 2026-08-03全期間再計算・Compare復旧
-
-- 本番`recalculate-sync`を`start_date=2000-01-01`、`end_date=2026-08-03`、`mode=full`で1回実行。run=`20260803141632DBC32F` / DB run=226、920秒、terminal completed、error NULL。
-- `monthly_returns`は16,874行・102/102 PF・実在範囲2003-09〜2026-07へ復旧。Compare Returnsの5Y欠落=0/102、Compare Summaryのannualized geometric mean負値=0/102、`portfolio_metrics`=204/204。
-- 同時metrics生成raceはcommit=`8d994f35`の原子的UPSERTで修正しRenderへ反映済み。軍師事後レビューAPPROVE。
-- 因果リンク: [[monthly_returns_1to27行へ欠落]] -> [[全期間fullrecalculate_run226]] -> [[Compare_5Y_CAGR復旧]]
-
+- run 226は920秒でcompleted。`monthly_returns` 16,874行・102/102 PF、5Y欠落0/102、負geometric mean 0/102、metrics 204/204へ復旧。raceは`8d994f35`の原子UPSERTでRender反映済み。
 ## §87 Monthly生成のlogical date運用境界 (2026-08-04)
-
-- historical/full recalculationはwall clockではなくrunへ渡した`end_date`をMonthly生成の`as_of_date`として使う。市場休日は利用可能な最新営業日へclampし、未価格の未来signal月と初回有効holding前の行は生成対象外とする。
-- source commits=`50002dc6`,`4c1cac7f`,`274062e4`,`9a27eb4f`。前3件はMonthly Returns全行停止を防ぎ、最後の1件は未初期化lookbackをTradeとして誤抽出しない境界。開始後の欠落はfail-closedを維持する。
-- 因果リンク: [[run_logical_date未伝播]] -> [[completed_month_boundary欠落]] -> [[logical_date営業日clamp+future/uninitialized除外]]
+- `50002dc6`,`4c1cac7f`,`274062e4`,`9a27eb4f`: runの`end_date`をMonthlyの時計とし最新営業日へclamp。未価格未来月/初回有効holding前はskip、開始後欠落はfail-closed。詳細→`/mnt/c/Python_app/DM-signal/docs/research/dm-monthly-trade-bug-genko-chain-archive_20260803.md`
