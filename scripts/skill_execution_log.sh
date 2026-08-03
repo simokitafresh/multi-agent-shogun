@@ -119,7 +119,11 @@ if [ "$skill" = "role-summary" ]; then
         usage
         exit 2
     fi
+    # shellcheck disable=SC1091
+    source "${_self%/skill_execution_log.sh}/lib/agent_config.sh"
+    SKILL_LOG_NINJA_NAMES="$(get_ninja_names 2>/dev/null || true)" \
     python3 - "$LOG_FILE" <<'PY'
+import os
 import sys
 from collections import Counter
 
@@ -127,7 +131,7 @@ import yaml
 
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 entries = data.get("executions") or []
-ninja = {"hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru", "sasuke", "kirimaru"}
+ninja = set(os.environ.get("SKILL_LOG_NINJA_NAMES", "").split())
 known = {"shogun", "karo", "gunshi"}
 counts = {role: Counter() for role in ("shogun", "karo", "gunshi", "ninja", "system", "unknown", "missing")}
 
