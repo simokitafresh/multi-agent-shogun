@@ -90,7 +90,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L1540 -->
+<!-- last_synced_lesson: L1543 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -113,6 +113,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L928: プロセス内分類値と永続元データを分離して追跡する（cmd_karo_dm_alert_daily_repeat_recon_20260802）
 - L951: 正準外日を持つsymbolの完全性はactual日数一致で判定しない（cmd_karo_recon2_july_prices_full_coverage_20260803）
 - L952: snapshot存在確認と再生成能力を分離する（cmd_karo_recon_dual_b4_10pf_omission_root_20260803）
+- L1542: 0件保全ガードは上流cleanupのcommit後では既存行を保全できない（cmd_karo_recon2_atomic_recalc_design_saizo_20260803）
+- L1543: template対clone parityだけでは現HEAD schema driftを検出できない（cmd_karo_recon2_b4_schema_divergence_tobisaru_20260803）
 
 ## §36 API認証
 
@@ -882,6 +884,7 @@ import metrics_research_engine as MRE
 - L949: 固定snapshotの境界入力は時刻固定だけでは復元できない（cmd_karo_recon2_b4_snapshot_boundary_adversarial_20260803）
 - L954: Signal境界はprice境界を代替しない（cmd_karo_cx_w3_root_counterfactual_kotaro_20260803）
 - L1540: FoF再計算の成功統計はmonthly-return失敗を隠し得る（cmd_karo_b4_anchor24_disappearance_trace_saizo_20260803）
+- L1541: 後段0件保護は前段cleanup独立commitを防げない（cmd_karo_recon2_prod_monthly_zero_root_saizo_20260803）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
