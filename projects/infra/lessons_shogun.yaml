@@ -192,7 +192,7 @@ lessons:
   created_at: '2026-04-25'
   automated: true
   enforcement_level: 5
-  enforcement: "Level5: inject_task_modifiers.py lsa16_production_parity_controlsがDM-Signal本番DB/recalculate系taskへパリティ確認ACを配備時自動注入(bats検証済)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS-A16-enforcement全文"
+  enforcement: "Level5: inject_task_modifiers.py lsa16_production_parity_controls自動注入(bats検証済)→archive §LS-A16-enforcement"
 - id: LS-A17
   title: 成長ループ実装 — CoDD L3→Session State、忍者=矛盾を書けない構造
   origin: '[[cmd_2181]] + dialogue_shogun_operator_trap_20260402 + dialogue_preprocessing_research_20260331'
@@ -254,13 +254,14 @@ lessons:
 - id: 'LS048'
   title: '洗脳対策は検出→環境強制→実戦検証→バグ修正の全サイクルを1セッションで完結'
   origin: '[[cmd_3251_洗脳L4貫通]] -> [[将軍L4穴]] -> [[修正+4パターン再発防止完結]]'
-  detail: '洗脳監査サイクル=検出→環境強制→実戦検証→バグ修正を1セッションで完結(殿定義2026-06-08)。全文→docs/research/lessons_shogun_a04_a09_detail.md(2026-07-12 v4圧縮で移設)。核心: (2)質問の形をした範囲縮小提案も#7洗脳の変種。範囲・期間・対象数は全範囲デフォルトで自分で決めて宣言、縮小オプションは提示しない。(4)Q6検出→投稿で止まるな。対応cmd起票orD0… 全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS048'
+  detail: 'superseded stub: 全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS048'
   source_cmd: 'cmd_3251'
   source_ids_absorbed: [LS052, LS065, LS066, LS073, LS088]
   created_at: '2026-06-09'
   automated: true
   enforcement_level: 5
-  enforcement: 'Level5: type=hook; file=scripts/hooks/prompt_state_inject.sh+stop_check_inbox.sh; pattern=因果+detect_f009。F009殿操作依頼をdecision=block停止+Q6 flag検出時は8パターン全文+台帳記録へ接続。cmd_3251/3252/3409/3522/3782でhook+tests実装済み。一次再検証全文→docs/research/lessons_shogun_a04_a09_detail.md'
+  enforcement: 'Level5(hook継続稼働)。詳細→archive §LS048'
+  superseded_by: 'LS090 (出力で止まる同一パターンへ統合。経緯→archive §LS048)'
 - id: LS-A24
   title: 計測の実運用代表性 — 条件・有効性証拠・環境分離
   origin: '[[cmd_3650]] + [[cmd_3654]] + [[cmd_3655]] + LS-A10(計測環境明記)の発展形'
@@ -303,12 +304,13 @@ lessons:
 - id: 'LS090'
   title: 'escalation未対処WARN hook — Q6自動化ターゲットのLevel4実装'
   origin: '[[Q6洗脳#5_CI_RED先送り]] -> [[escalation_handler_gap_grep0件]] -> [[post-shogun-inbox-check_WARN注入]]'
-  detail: 'Q6で洗脳#5(escalation先送り)を検出→自動化ターゲット=escalation handler不在を特定→post-shogun-inbox-check.shにtype:escalation+read:false検出WARN注入を実装(79c60e0c6)。awkバグ(escフラグ未リセット)を初回テストで検出し修正。行動→検証→commitの3ステップを1サイクルで完結'
+  detail: 'stub: 全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS090'
   source_cmd: 'session_20260717'
   created_at: '2026-07-17'
   automated: true
   enforcement_level: 5
-  enforcement: 'Level5: type=hook+test; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=escalation_unread; test=tests/unit/test_post_shogun_escalation_warn.bats(4/4 PASS)。PostToolUseごとにescalation未対処をWARN表示'
+  enforcement: 'Level5(LS116が継承): post-shogun-inbox-check.sh escalation_unread WARN。詳細→archive §LS090'
+  superseded_by: 'LS116 (出力≠行動の統合教訓へ吸収。enforcementはLS116が継承)'
 - id: 'LS095'
   title: '分離原則 — メインtaskと振り返りを混ぜるな'
   origin: '[[殿裁定_分離原則_20260718]] -> [[AC自動注入否定]] -> [[retro_prompt分離実装_2f6203c98]]'
@@ -357,12 +359,12 @@ lessons:
 - id: 'LS101'
   title: 'CI RED診断は origin失敗SHA vs 現HEAD を見よ — push保留と修正未pushの自己永続デッドロック'
   origin: '[[殿裁定_gitで健全時点rollback_20260721]] -> [[rollback尾部多重回帰]] -> [[push保留デッドロック]] -> [[fast-forward pushで解消]]'
-  detail: 'CI REDが解けない時、まず【失敗runのSHA(origin/main) vs ローカルHEAD】を一次確認せよ。2026-07-21: CI REDが1セッション継続し家老が忍者deployで直せず滞留したが、真因は『CI RED中はpush保留』ルールで全CI修正入りの46commitが未pushのまま、CI REDは古いorigin(1fc7d294)で自己永続していた=修正は約21h存在したのにCI赤。デッドロック構造: p… 全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS101'
+  detail: 'superseded stub: CI RED診断はまず origin失敗SHA vs 現HEAD を比較。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS101'
   source_cmd: 'cmd_shogun_ci_red_push_deadlock_20260721'
   created_at: '2026-07-21'
   automated: true
-  enforcement: 'L1のまま(2026-07-26飛猿一次確認=検出実装ゼロ。2026-07-26同型再発を軍師が手作業特定)。昇格案=decision_candidate(cmd_reflux_promotion_202607261757_tobisaru)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS101-enforcement全文'
-  superseded_by: 'CI RED診断の2手順 — (1)origin失敗SHA vs 現HEAD (2)連続cancelはtimeout-minutes確認。(1)LS101本体: まず失敗runのSHA(origin/main)とローカルHEADを比較。push保留デッドロック(修正21h未pushでCI赤自己永続)はfast-forward pushで解消。(2)同一経過時間で繰り返しcancelされるrunは外部干渉を疑う前にworkflowのtimeout-minutesとjob実行時間を比較せよ(cancelled表示=人為的中断とは限らない)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS101-timeout誤診パターン全文'
+  enforcement: 'L1。昇格案=decision_candidate(cmd_reflux_promotion_202607261757_tobisaru)。詳細→archive §LS101-enforcement全文'
+  superseded_by: 'CI RED診断2手順(origin SHA比較+timeout-minutes確認)→docs/research/lessons_shogun_superseded_archive_20260724.md §LS101'
 - id: 'LS104'
   title: 'デザイン/モック依頼は最小から作れ — 既存を厳密踏襲し、頼まれた最小差分だけ足す(過剰デザイン禁止)'
   origin: '[[殿ワイヤーフレーム依頼]] -> [[V1過剰デザインごちゃごちゃ却下]] -> [[V2列追加誤解]] -> [[V3既存踏襲+最小追加で正解]] -> [[最小から作る設計規律]]'
@@ -414,3 +416,19 @@ lessons:
   created_at: '2026-07-27'
   automated: true
   enforcement: '部分Level4(gate_no_direct_yaml_dump.sh実在・test実行時BLOCK動作確認済み2026-07-27疾風)。残穴2件(pre-commit未接続/違反現物gate_report_format.sh:1065未修正)。昇格案=decision_candidate(cmd_reflux_promotion_202607270511_hayate)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS114-enforcement全文'
+- id: 'LS115'
+  title: '設計書完璧化ループは洗脳#8+#5 — 実験ファーストで結果を先に出せ'
+  origin: '[[設計書v1_6回レビュー結果ゼロ]] -> [[殿指摘_起票したくなったら洗脳]] -> [[実験ファースト統一原理再発]]'
+  detail: '2026-07-31 月末N日前モメンタム感度分析で設計書v1.0→v1.6まで6回レビュー往復し結果ゼロ。殿指摘『起票したくなったら洗脳だ』『シンプルに1PFでやれ』『ローカルでやれ。GS使え』。設計書を完璧にしてから起票=洗脳#8(完了急ぎ=設計書の完了を急ぐ)の裏面+#5(実験の先送り)。正解=v2.0のシンプル設計書でまず実験→結果を見てから精緻化。家老レビューも設計書の穴探しではなく実験可能性の二値判定のみ。'
+  source_cmd: 'session_20260731'
+  created_at: '2026-07-31'
+  automated: true
+  enforcement: 'automated:false'
+- id: 'LS116'
+  title: '検出・報告は出力であり行動ではない — 是正完遂まで1サイクルで閉じよ(受信側も同罪)'
+  origin: '[[殿指摘_家老報告放置_20260804]] -> [[LS048_LS090統合_出力≠行動]] -> [[BLOCK報告next_action必須化]]'
+  detail: '統合元LS048(洗脳サイクル1セッション完結)+LS090(escalation未対処WARN hook)。第三実証2026-08-04 02:49: 家老がcmd_4225 Track B保全BLOCK(run_tests readonly_probe files=0→receipt rc=2)を掲示板報告後、是正せずidle化。将軍も報告受信=把握で止まり、殿指摘02:52『報告しただけで放置しているぞ』まで行動指示を出さなかった=二段の放置。時限AC(市場オープンJST 5:00期限)下では放置=機会喪失。核心: (1)検出→環境強制→実戦検証→バグ修正を1サイクルで完結(殿定義2026-06-08) (2)BLOCK/FAIL/escalation報告には次の行動+実行者+期限を必ず添える (3)報告の受信者は『誰が次の行動を持つか』を即確定しナッジまで行う。受信=把握で止めるのも洗脳#6'
+  source_cmd: 'cmd_4225'
+  created_at: '2026-08-04'
+  automated: true
+  enforcement: 'Level5継承: LS048=prompt_state_inject.sh+stop_check_inbox.sh(F009 block+Q6 8パターン)、LS090=post-shogun-inbox-check.sh escalation_unread WARN(4/4 PASS)。追加候補(未実装): bulletin_write.shでBLOCK/FAIL投稿にnext_action欠落WARN'

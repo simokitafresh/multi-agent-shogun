@@ -483,3 +483,8 @@ cmd_4175/4176で3回BLOCK。原因=environment_change値をシングルクォー
 
 ## §LS-A16-enforcement全文 (2026-07-29移設)
 Level5: deploy_task.sh経由のscripts/lib/inject_task_modifiers.py lsa16_production_parity_controlsで、DM-Signal本番DB/recalculate系taskへstop_for「本番パリティ未確認」+LS-A16説明+DB/API/FE 3レイヤー貫通・即fullrecalculate/差分確認・savepoint(begin_nested)確認ACを配備時に自動注入する(cmd_karo_hotfix_reflux_promotion_202607090438_hayate)。tests/unit/test_deploy_task_yaml_injection.batsでDM-Signal recalculate発火/非DM-Signal非発火を検証。既存: post-bash-combined.sh Guard5(admin/recalculate-sync実行検知→parity_check.sh実行を即時リマインドするLevel3層)、checklist-shin-v2-registration.md+checklist-alm-registration.md(Level2手順書)、PI-007+PI-025(begin_nested知識)、health_check.py+gate_recalculate_completeness.sh+parity_check.sh、pf-registration skill。残課題: fullrecalculate実行後parity未確認のままcommit/次操作へ進むruntime BLOCKはpending parity flag/DM-Signal PJ検知/FP設計が必要で別cmd判断
+
+## §LS048/LS090/LS101 stub化時の除去メタ情報 (2026-08-04移設)
+- LS048 superseded_by補足: LS090(検出・報告=出力で止まり行動が完遂されないパターン)へ統合。2026-08-04家老BLOCK報告放置事例で三たび実証。旧enforcement全文: Level5 type=hook; prompt_state_inject.sh+stop_check_inbox.sh; 因果+detect_f009。F009殿操作依頼をdecision=block停止+Q6 flag検出時は8パターン全文+台帳記録へ接続。cmd_3251/3252/3409/3522/3782でhook+tests実装済み。
+- LS090 旧detail: Q6で洗脳#5(escalation先送り)検出→escalation handler不在を特定→post-shogun-inbox-check.shにtype:escalation+read:false検出WARN注入(79c60e0c6)。awkバグ(escフラグ未リセット)を初回テストで検出し修正。旧enforcement: Level5 hook+test=.claude/hooks/post-shogun-inbox-check.sh pattern=escalation_unread test=tests/unit/test_post_shogun_escalation_warn.bats(4/4 PASS)。
+- LS101 旧detail要旨: 2026-07-21 CI RED 1セッション継続の真因=『CI RED中push保留』ルールで修正入り46commit未push、CI REDは古いorigin(1fc7d294)で自己永続。旧enforcement: L1のまま(2026-07-26飛猿一次確認=検出実装ゼロ。同型再発を軍師が手作業特定)。

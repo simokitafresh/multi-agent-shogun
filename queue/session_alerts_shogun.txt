@@ -1,6 +1,13 @@
-# session_alerts — generated: 2026-07-29T11:11:53+0900
-[DONE] 学習ループ台帳: 空転/在庫超過あり (2781914702:60)
-[DONE] startup連続出現BLOCK: 学習ループ台帳: 空転/在庫超過あり (2781914702:60)
-[DONE] 先送り判断: 学習ループ台帳: 空転/在庫超過あり (2781914702:60) が1セッション連続
+# session_alerts — generated: 2026-08-04T04:05:36+0900
+[DONE] 掲示板action_required未対応: 1件
+[DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[DONE] SKILL.md script参照: 要確認あり (4294967295:0) — bash scripts/gates/gate_skill_script_refs.sh
+[DONE] 教訓健全度useful_rate改善cmd接続済: WARN
+[DONE] startup連続出現BLOCK: 掲示板action_required未対応: 1件
+[DONE] 先送り判断: 掲示板action_required未対応: 1件 が1セッション連続
+[DONE] startup連続出現BLOCK: 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[DONE] 先送り判断: 追体験自動化ターゲット: WARN (自動化ターゲット未記入) が1セッション連続
+[DONE] startup連続出現BLOCK: SKILL.md script参照: 要確認あり (4294967295:0) — bash scripts/gates/gate_skill_script_refs.sh
+[DONE] 先送り判断: SKILL.md script参照: 要確認あり (4294967295:0) — bash scripts/gates/gate_skill_script_refs.sh が1セッション連続
 [DONE] backlinks=0: 修行候補あり
-[DONE] 必読lessons肥大: 55975bytes>55KB(/lesson-sortで統合圧縮)
+[TODO] 必読lessons肥大: 55005bytes>55KB(/lesson-sortで統合圧縮)
