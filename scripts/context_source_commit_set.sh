@@ -82,14 +82,10 @@ path, commit, reason, evidence = sys.argv[1:]
 text = open(path, encoding='utf-8').read()
 line = f'<!-- source_commit:{commit} reason:{reason} evidence:{evidence} -->'
 pattern = re.compile(r'<!--\s*source_commit:[0-9a-f]{7,40}[^\n]*?-->')
-match = pattern.search(text)
-if match:
-    updated = text[:match.start()] + line + pattern.sub('', text[match.end():])
-else:
-    lines = text.splitlines(True)
-    pos = next((i + 1 for i, v in enumerate(lines[:8]) if 'last_updated:' in v), min(1, len(lines)))
-    lines.insert(pos, line + '\n')
-    updated = ''.join(lines)
+# Remove every stale marker first.  Replacing one in place is insufficient:
+# GA-220 reflux markers may push an existing source marker below the five-line
+# read window used by context_freshness_check.py.
+updated = pattern.sub('', text)
 # cmd_karo_hotfix_control_plane_contracts_ga321_20260723: publish both
 # freshness markers in the same atomic replacement.
 today = datetime.date.today().isoformat()
@@ -101,6 +97,13 @@ else:
     lines = updated.splitlines(True)
     lines.insert(min(1, len(lines)), last_updated + '\n')
     updated = ''.join(lines)
+lines = updated.splitlines(True)
+pos = next(
+    (i + 1 for i, value in enumerate(lines) if 'last_updated:' in value),
+    min(1, len(lines)),
+)
+lines.insert(pos, line + '\n')
+updated = ''.join(lines)
 fd, tmp = tempfile.mkstemp(prefix='.source-commit.', dir=os.path.dirname(path))
 try:
     with os.fdopen(fd, 'w', encoding='utf-8') as f:

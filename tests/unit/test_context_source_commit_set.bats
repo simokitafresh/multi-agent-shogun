@@ -81,6 +81,22 @@ teardown_file() { rm -rf "$SOURCE_MARKER_TEMPLATE"; }
   grep -q "source_commit:$SHA reason:audit evidence:current" "$TMP/context/test.md"
 }
 
+@test "moves source marker into freshness read window after many reflux markers" {
+  {
+    printf '# Test\n<!-- last_updated: 2026-07-01 -->\n'
+    for i in $(seq 1 10); do
+      printf '<!-- dm_signal_research_reflux: fingerprint=%064d; mode=non-target; evidence_b64=e -->\n' "$i"
+    done
+    printf '<!-- source_commit:deadbee reason:old evidence:stale -->\n'
+  } > "$TMP/context/test.md"
+
+  run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$SHA" audit current
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 1 ]
+  [ "$(grep -n '<!-- source_commit:' "$TMP/context/test.md" | cut -d: -f1)" -le 5 ]
+  [ "$(grep -c 'dm_signal_research_reflux:' "$TMP/context/test.md")" -eq 10 ]
+}
+
 @test "rejects invalid or non-ancestor commit" {
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md HEAD audit evidence
   [ "$status" -ne 0 ]

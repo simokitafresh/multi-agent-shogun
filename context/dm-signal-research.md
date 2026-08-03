@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-03 cmd_karo_recon_b4_route_sequence_harness_rc_20260803 reviewed source boundary -->
+<!-- source_commit:6447e5ca1b8d0488b9415a1dc3a803cf2a2fa713 reason:cmd_karo_recon_b4_route_sequence_harness_rc_20260803 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=6447e5ca1b8d0488b9415a1dc3a803cf2a2fa713 -->
 <!-- dm_signal_research_reflux: fingerprint=e38020fd3d79802b46dc6d9db84c24544e1b95ffe51e02e7418490343adb2b29; mode=non-target; evidence_b64=RC14IHRvcG9sb2d55oiQ5p6c44Gv5pyI5qyh56CU56m25q2j5pys44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=a29e30f56093a95457bf80508edc847fd172850d9883c6c51dc2a26a05abd01f; mode=non-target; evidence_b64=RC14IHRvcG9sb2d55oiQ5p6c44Gv5pyI5qyh56CU56m25q2j5pys44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=0de57ce148b35743b3ad5018f2392565a7675fb0bbb2cd69bd53b38f8e2bc63c; mode=non-target; evidence_b64=QjQgc3RhZ2UtMyBGQUlML0JMT0NLIGV2aWRlbmNlOyBubyBHQVRFIENMRUFSIGtub3dsZWRnZSB0byByZWZsdXg7IHJlcG9ydCByb3V0ZXMgYmxvY2tlciB0byBLYXJv -->
@@ -10,7 +11,7 @@
 <!-- dm_signal_research_reflux: fingerprint=f4b56fe5868028d0159648cd03a8baa2352fea2d5aca7307d8c796834f9b0ac1; mode=non-target; evidence_b64=U3RhbmRhbG9uZSBCNSBwcmVmbGlnaHQgZGV0YWlsOyBjYW5vbmljYWwgaW5kZXggYWxyZWFkeSBleGlzdHMgaW4gbXVsdGktYWdlbnQtc2hvZ3VuIGRlc2lnbiB2NC44MiDCpzIuNSBCNTsgdGFzayBzY29wZSBpcyBsaW1pdGVkIHRvIHR3byByZXNlYXJjaCBhcnRpZmFjdHMu -->
 <!-- dm_signal_research_reflux: fingerprint=b12479b1eeaa57a2a508c1528581f70a46ae67df53a527303cdd7eeaf375504f; mode=non-target; evidence_b64=U3RhbmRhbG9uZSBCNSBwcmVmbGlnaHQgZGV0YWlsOyBjYW5vbmljYWwgaW5kZXggYWxyZWFkeSBleGlzdHMgaW4gbXVsdGktYWdlbnQtc2hvZ3VuIGRlc2lnbiB2NC44MiDCpzIuNSBCNTsgdGFzayBzY29wZSBpcyBsaW1pdGVkIHRvIHR3byByZXNlYXJjaCBhcnRpZmFjdHMu -->
 <!-- dm_signal_research_reflux: fingerprint=f49c6268d6fe307d8c02f8efacf48451d558ed60eef5d9f85ff9f1ceead1d3c8; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwubWQgQy146ZqU6ZuiVzEtVzU6IFc144G+44GnQkxPQ0vjg7tPVVRfT0ZfU0NPUEXkuLjjgoHnpoHmraLjgbjkuIDoh7Q= -->
-<!-- source_commit:6447e5ca reason:cmd_karo_recon_b4_route_sequence_harness_rc_20260803 seven-stage contract evidence:cmd_complete_gate -->
+
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
