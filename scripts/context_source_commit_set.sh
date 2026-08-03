@@ -76,16 +76,19 @@ git -C "$repo" merge-base --is-ancestor "$commit" HEAD || { echo "BLOCK: commit 
 
 file="$ROOT/$context_path"
 [[ -f "$file" ]] || { echo 'BLOCK: context file missing' >&2; exit 1; }
+# Serialize the complete read-modify-replace transaction per context path.
+# The lock lives beside the target so independent context files never contend.
+exec 9>"${file}.source_commit.lock"
+flock 9
 python3 - "$file" "$commit" "$reason" "$evidence" <<'PY'
 import datetime, os, re, sys, tempfile
 path, commit, reason, evidence = sys.argv[1:]
 text = open(path, encoding='utf-8').read()
 line = f'<!-- source_commit:{commit} reason:{reason} evidence:{evidence} -->'
-pattern = re.compile(r'<!--\s*source_commit:[0-9a-f]{7,40}[^\n]*?-->')
-# Remove every stale marker first.  Replacing one in place is insufficient:
-# GA-220 reflux markers may push an existing source marker below the five-line
-# read window used by context_freshness_check.py.
-updated = pattern.sub('', text)
+pattern = re.compile(r'<!--\s*source_commit:([0-9a-f]{7,40})[^\n]*?-->')
+# A context can record several independently reviewed source commits.  Replace
+# only this commit's prior marker (upsert); retaining the others is the contract.
+updated = pattern.sub(lambda match: '' if match.group(1) == commit else match.group(0), text)
 # cmd_karo_hotfix_control_plane_contracts_ga321_20260723: publish both
 # freshness markers in the same atomic replacement.
 today = datetime.date.today().isoformat()

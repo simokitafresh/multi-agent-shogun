@@ -77,8 +77,53 @@ teardown_file() { rm -rf "$SOURCE_MARKER_TEMPLATE"; }
   printf '# Test\n<!-- last_updated: 2026-07-01 -->\n<!-- source_commit:deadbee reason:old evidence:alerts:3->0 -->\n<!-- source_commit:feedbee reason:duplicate evidence:stale -->\n' > "$TMP/context/test.md"
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$SHA" audit current
   [ "$status" -eq 0 ]
-  [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 1 ]
+  [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 3 ]
   grep -q "source_commit:$SHA reason:audit evidence:current" "$TMP/context/test.md"
+}
+
+@test "retains three sequential source commits and upserts without duplicates" {
+  commits=()
+  for n in 1 2 3; do
+    printf '%s\n' "$n" >> "$TMP/source"
+    git -C "$TMP" add source
+    git -C "$TMP" commit -qm "source $n"
+    commits+=("$(git -C "$TMP" rev-parse HEAD)")
+    run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "${commits[-1]}" "reason-$n" "evidence-$n"
+    [ "$status" -eq 0 ]
+  done
+
+  [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 3 ]
+  for commit in "${commits[@]}"; do
+    [ "$(grep -c "source_commit:$commit" "$TMP/context/test.md")" -eq 1 ]
+  done
+  run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "${commits[1]}" reason-2-new evidence-2-new
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 3 ]
+  [ "$(grep -c "source_commit:${commits[1]}" "$TMP/context/test.md")" -eq 1 ]
+  grep -q "source_commit:${commits[1]} reason:reason-2-new evidence:evidence-2-new" "$TMP/context/test.md"
+}
+
+@test "two parallel writers preserve both markers without duplicate metadata" {
+  commits=()
+  for n in 1 2; do
+    printf '%s\n' "$n" >> "$TMP/parallel-source"
+    git -C "$TMP" add parallel-source
+    git -C "$TMP" commit -qm "parallel source $n"
+    commits+=("$(git -C "$TMP" rev-parse HEAD)")
+  done
+
+  for iteration in $(seq 1 20); do
+    printf '# Test\n<!-- last_updated: 2026-07-01 -->\n' > "$TMP/context/test.md"
+    bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "${commits[0]}" writer-a "iteration-$iteration-a" &
+    writer_a=$!
+    bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "${commits[1]}" writer-b "iteration-$iteration-b" &
+    writer_b=$!
+    wait "$writer_a"
+    wait "$writer_b"
+    [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 2 ]
+    [ "$(grep -c "source_commit:${commits[0]} reason:writer-a evidence:iteration-$iteration-a" "$TMP/context/test.md")" -eq 1 ]
+    [ "$(grep -c "source_commit:${commits[1]} reason:writer-b evidence:iteration-$iteration-b" "$TMP/context/test.md")" -eq 1 ]
+  done
 }
 
 @test "moves source marker into freshness read window after many reflux markers" {
@@ -92,8 +137,8 @@ teardown_file() { rm -rf "$SOURCE_MARKER_TEMPLATE"; }
 
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$SHA" audit current
   [ "$status" -eq 0 ]
-  [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 1 ]
-  [ "$(grep -n '<!-- source_commit:' "$TMP/context/test.md" | cut -d: -f1)" -le 5 ]
+  [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 2 ]
+  [ "$(grep -n "<!-- source_commit:$SHA" "$TMP/context/test.md" | cut -d: -f1)" -le 5 ]
   [ "$(grep -c 'dm_signal_research_reflux:' "$TMP/context/test.md")" -eq 10 ]
 }
 
