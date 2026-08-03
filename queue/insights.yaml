@@ -936,3 +936,22 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-03T00:14:37+09:00"
+- id: INS-20260803-132134506-2f39
+  ts: "2026-08-03T13:21:34+09:00"
+  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: resolved
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq '1d9b8dc0be6445e9bcf1ec096abd8f80661608b39f63dd5cb68328254f9c8053' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
+  occurrence_count: 8
+  last_seen: "2026-08-03T15:22:21+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
+  resolved_reason: "一次ログで対象review_bundle event_idが1件、全event_id重複0件、SG7 APPROVEとdelivery receipt delivered=trueを確認。同一review_notify候補は既存T11計測レーンへ吸収済みのため追加実装不要"
+  action_artifact: "logs/self_retro.jsonl:1809 event_id=1d9b8dc0be6445e9bcf1ec096abd8f80661608b39f63dd5cb68328254f9c8053 target_occurrences=1 duplicate_event_ids=0;queue/gates/cmd_karo_recon_b4_route_sequence_harness_rc_20260803/sg7_bundle.json verdict=APPROVE;queue/gates/cmd_karo_recon_b4_route_sequence_harness_rc_20260803/ntfy_delivery_receipt.json delivered=true;prior=b4747f938,7908b9b72"
+  resolved_at: "2026-08-03T15:22:57+09:00"
