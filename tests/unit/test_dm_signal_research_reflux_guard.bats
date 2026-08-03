@@ -348,6 +348,29 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: parallel private-index prepares retain both exact GA-220
+# fingerprints; one ninja must not invalidate another ninja's prepared commit.
+@test "GA-220 parallel private indexes retain both prepared fingerprints" {
+    printf 'track-a\n' > "$DM/docs/research/a.md"
+    printf 'track-b\n' > "$DM/docs/research/b.md"
+    local index_a="$TMP/index-a" index_b="$TMP/index-b"
+    GIT_INDEX_FILE="$index_a" git -C "$DM" read-tree HEAD
+    GIT_INDEX_FILE="$index_a" git -C "$DM" add docs/research/a.md
+    GIT_INDEX_FILE="$index_b" git -C "$DM" read-tree HEAD
+    GIT_INDEX_FILE="$index_b" git -C "$DM" add docs/research/b.md
+
+    run env GIT_INDEX_FILE="$index_a" bash "$GUARD" prepare --repo "$DM" --mode non-target --evidence track-a
+    [ "$status" -eq 0 ]
+    run env GIT_INDEX_FILE="$index_b" bash "$GUARD" prepare --repo "$DM" --mode non-target --evidence track-b
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'dm_signal_research_reflux: fingerprint=' "$CTX")" -eq 2 ]
+
+    run env GIT_INDEX_FILE="$index_a" bash "$GUARD" check --repo "$DM"
+    [ "$status" -eq 0 ]
+    run env GIT_INDEX_FILE="$index_b" bash "$GUARD" check --repo "$DM"
+    [ "$status" -eq 0 ]
+}
+
 @test "GA-236 TOCTOU: docs/research対象外のgit add+git commit連結は誤BLOCKしない" {
     printf 'change\n' >> "$DM/README.md"
     run bash "$GUARD" check-command "cd '$DM' && git add README.md && git commit -m test"

@@ -38,7 +38,10 @@ paths = [p.strip().strip("./") for p in os.environ.get("UNCOMMITTED_PATHS", "").
 
 def run_git(args):
     try:
-        return subprocess.check_output(["git", "-C", repo, *args], text=True, stderr=subprocess.DEVNULL)
+        env = os.environ.copy()
+        for key in ("GIT_INDEX_FILE", "GIT_DIR", "GIT_WORK_TREE", "GIT_OBJECT_DIRECTORY", "GIT_COMMON_DIR"):
+            env.pop(key, None)
+        return subprocess.check_output(["git", "-C", repo, *args], text=True, stderr=subprocess.DEVNULL, env=env)
     except Exception:
         return ""
 
@@ -267,7 +270,7 @@ for path in paths:
             kept.append(path)
         continue
     commit_ranges = hunk_ranges(run_git(["diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path]))
-    dirty_ranges = hunk_ranges(run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path]))
+    dirty_ranges = hunk_ranges(run_git(["diff", "--unified=0", "HEAD", "--", path]))
     if commit_ranges and dirty_ranges and not overlaps(commit_ranges, dirty_ranges):
         suppressed.append(path)
     else:

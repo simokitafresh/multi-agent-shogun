@@ -181,6 +181,26 @@ ensure_dirty_hunk_filter_loaded() {
     DIRTY_HUNK_FILTER_LOADED=1
 }
 
+# Report completion must observe HEAD vs working tree, never the process-wide
+# shared index (or a caller-inherited private GIT_INDEX_FILE).  In a multi-agent
+# checkout that index can intentionally lag HEAD or contain another ninja's
+# stage, which used to turn an already committed report into a false BLOCK.
+inbox_status_against_head() {
+    local repo="$1" temp_index rc
+    shift
+    temp_index="$(mktemp "${TMPDIR:-/tmp}/inbox-head-index.XXXXXX")"
+    rm -f "$temp_index"
+    rc=0
+    (
+        export GIT_INDEX_FILE="$temp_index"
+        unset GIT_DIR GIT_WORK_TREE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
+        git -C "$repo" read-tree HEAD
+        git -C "$repo" status --porcelain --untracked-files=all -- "$@"
+    ) || rc=$?
+    rm -f "$temp_index" "$temp_index.lock"
+    return "$rc"
+}
+
 lock_path() {
     case "$1" in
         /mnt/c/*|/mnt/d/*)
@@ -2586,7 +2606,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 if [ "${#_filtered_check_paths[@]}" -eq 0 ]; then
                     UNCOMMITTED=""
                 else
-                    UNCOMMITTED=$(git -C "$GIT_REPO_DIR" status --porcelain -- "${_filtered_check_paths[@]}" 2>/dev/null || true)
+                    UNCOMMITTED=$(inbox_status_against_head "$GIT_REPO_DIR" "${_filtered_check_paths[@]}" 2>/dev/null || true)
                 fi
                 # cmd_karo_hotfix_shared_dirty_commit_gate_202607101643 (AC1/AC2):
                 # 報告者自身の変更が commit_hash として commit 済みなら、同一ファイル内に残る

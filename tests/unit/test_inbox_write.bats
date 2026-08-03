@@ -1067,6 +1067,25 @@ _wait_for_file() {
     grep -q 'legacy_tombstones' "$TEST_TMPDIR/queue/retro/state.json"
 }
 
+# test_necessity: report completion is based on HEAD vs worktree and must not
+# fail merely because the shared or inherited private index predates HEAD.
+@test "report_received: stale inherited index after scoped commit does not false BLOCK" {
+    setup_git_test_env
+
+    printf 'echo "scoped commit"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+    git -C "$TEST_TMPDIR" add src/test_file.sh
+    git -C "$TEST_TMPDIR" commit -q -m "scoped report change"
+    local commit_hash stale_index="$BATS_TEST_TMPDIR/stale-report.index"
+    commit_hash=$(git -C "$TEST_TMPDIR" rev-parse HEAD)
+    GIT_INDEX_FILE="$stale_index" git -C "$TEST_TMPDIR" read-tree HEAD^
+    run bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" commit_hash "$commit_hash"
+    [ "$status" -eq 0 ]
+
+    GIT_INDEX_FILE="$stale_index" run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"git_uncommitted_gate] BLOCKED"* ]]
+}
+
 @test "report_received: explicit verified linked worktree checks that worktree instead of dirty main" {
     setup_git_test_env
     local worktree="$BATS_TEST_TMPDIR/reporter-wt"

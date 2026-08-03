@@ -216,11 +216,11 @@ check_repo() {
         echo "BLOCK(GA-220): reflux context欠落: $CONTEXT_FILE" >&2
         return 2
     }
-    recorded="$(sed -n 's/.*dm_signal_research_reflux: fingerprint=\([0-9a-f]\{64\}\);.*/\1/p' "$CONTEXT_FILE" | head -1)"
-    if [[ "$recorded" != "$fingerprint" ]]; then
+    recorded="$(sed -n 's/.*dm_signal_research_reflux: fingerprint=\([0-9a-f]\{64\}\);.*/\1/p' "$CONTEXT_FILE")"
+    if ! printf '%s\n' "$recorded" | grep -Fqx "$fingerprint"; then
         echo "BLOCK(GA-220): DM-Signal staged docs/researchとcontext reflux証跡が不一致" >&2
         echo "  staged_fingerprint=$fingerprint" >&2
-        echo "  recorded_fingerprint=${recorded:-MISSING}" >&2
+        echo "  recorded_fingerprints=${recorded//$'\n'/,}" >&2
         echo "  action: bash scripts/dm_signal_research_reflux_guard.sh prepare --repo '$repo' --mode synced --evidence '<context節/同期根拠>'" >&2
         echo "  非対象なら --mode non-target --evidence '<明示的非対象根拠>'" >&2
         return 2
@@ -257,14 +257,39 @@ prepare() {
     fi
     encoded="$(printf '%s' "$evidence" | base64 -w0)"
     marker="<!-- dm_signal_research_reflux: fingerprint=$fingerprint; mode=$mode; evidence_b64=$encoded -->"
-    tmp="$(mktemp "${CONTEXT_FILE}.tmp.XXXXXX")"
-    awk -v marker="$marker" '
-        /dm_signal_research_reflux: fingerprint=/ { if (!done) { print marker; done=1 }; next }
-        { print }
-        /^<!-- last_updated:/ && !done { print marker; done=1 }
-        END { if (!done) print marker }
-    ' "$CONTEXT_FILE" > "$tmp"
-    mv "$tmp" "$CONTEXT_FILE"
+    # Multiple ninjas prepare distinct private-index research commits in
+    # parallel.  A single global marker made the last writer invalidate every
+    # earlier prepared fingerprint (GA-220 false BLOCK).  Serialize publication
+    # and retain a bounded set of 16 distinct prepared fingerprints.  The
+    # actual commit check still requires an exact content fingerprint match.
+    (
+        flock -w 10 9 || { echo "BLOCK(GA-220): reflux marker lock timeout" >&2; exit 2; }
+        tmp="$(mktemp "${CONTEXT_FILE}.tmp.XXXXXX")"
+        python3 - "$CONTEXT_FILE" "$tmp" "$marker" "$fingerprint" <<'PY'
+import re
+import sys
+
+source, target, marker, fingerprint = sys.argv[1:]
+with open(source, encoding="utf-8") as fh:
+    lines = fh.readlines()
+pattern = re.compile(r"dm_signal_research_reflux: fingerprint=([0-9a-f]{64});")
+kept = []
+body = []
+for line in lines:
+    match = pattern.search(line)
+    if match:
+        if match.group(1) != fingerprint and line not in kept:
+            kept.append(line)
+        continue
+    body.append(line)
+markers = [marker + "\n", *kept[:15]]
+insert_at = next((i + 1 for i, line in enumerate(body) if line.startswith("<!-- last_updated:")), 0)
+body[insert_at:insert_at] = markers
+with open(target, "w", encoding="utf-8") as fh:
+    fh.writelines(body)
+PY
+        mv "$tmp" "$CONTEXT_FILE"
+    ) 9>"${CONTEXT_FILE}.reflux.lock"
     echo "REFLUX_PREPARED fingerprint=$fingerprint mode=$mode"
 }
 
