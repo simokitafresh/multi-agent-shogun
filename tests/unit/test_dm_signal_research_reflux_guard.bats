@@ -371,6 +371,22 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: repeated GA-220 prepares must not push the exact source
+# revision boundary outside context_freshness_check.sh's five-line read window.
+@test "GA-220 prepare keeps source_commit in the first five lines" {
+    source_sha="$(git -C "$DM" rev-parse HEAD)"
+    printf '# research\n<!-- last_updated: 2026-07-10 test -->\n<!-- source_commit:%s reason:test evidence:fixed -->\n' "$source_sha" > "$CTX"
+
+    for i in $(seq 1 8); do
+        printf 'version-%s\n' "$i" > "$DM/docs/research/source-window.md"
+        run bash "$GUARD" prepare --repo "$DM" --mode non-target --evidence "window-$i"
+        [ "$status" -eq 0 ]
+    done
+
+    [ "$(grep -n '<!-- source_commit:' "$CTX" | cut -d: -f1)" -le 5 ]
+    [ "$(grep -c 'dm_signal_research_reflux: fingerprint=' "$CTX")" -eq 8 ]
+}
+
 # test_necessity: the scoped commit helper must prepare GA-220 from its exact
 # owned private index while unrelated research WIP remains in the worktree.
 @test "GA-220 scoped commit reflux flags ignore unrelated concurrent research WIP" {

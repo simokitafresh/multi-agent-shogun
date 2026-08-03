@@ -283,7 +283,18 @@ for line in lines:
         continue
     body.append(line)
 markers = [marker + "\n", *kept[:15]]
-insert_at = next((i + 1 for i, line in enumerate(body) if line.startswith("<!-- last_updated:")), 0)
+# `context_freshness_check.sh` intentionally reads source_commit only from the
+# first five lines.  Keep the exact revision boundary immediately after
+# last_updated and append GA-220 reflux receipts after it; repeatedly inserting
+# receipts directly after last_updated pushes the boundary out of that window.
+source_marker_at = next(
+    (i + 1 for i, line in enumerate(body) if re.search(r"<!--\s*source_commit:[0-9a-f]{7,40}\b", line)),
+    None,
+)
+insert_at = source_marker_at if source_marker_at is not None else next(
+    (i + 1 for i, line in enumerate(body) if line.startswith("<!-- last_updated:")),
+    0,
+)
 body[insert_at:insert_at] = markers
 with open(target, "w", encoding="utf-8") as fh:
     fh.writelines(body)
