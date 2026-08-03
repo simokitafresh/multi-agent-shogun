@@ -66,13 +66,59 @@ def _snapshot_command(root, report, cmd_id):
 SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_")
 
 
-def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=None):
+def _saved_command(root, cmd_id):
     paths = [root / "queue/shogun_to_karo.yaml", root / f"queue/reopened_cmds/{cmd_id}.yaml"]
     paths += [Path(p) for p in sorted(glob.glob(str(root / f"queue/archive/cmds/{cmd_id}_*.yaml")), reverse=True)]
     for path in paths:
         if path.is_file():
             item = command_from(load(path), cmd_id)
-            if item is not None: return item, path
+            if item is not None:
+                return item, path
+    return None
+
+
+def _split_command(root, report, cmd_id, report_path):
+    """Resolve a generated split child only through its longest saved ancestor."""
+    snapshot = report.get("task_contract_snapshot") if isinstance(report, dict) else None
+    if not isinstance(snapshot, dict) or str(snapshot.get("issued_cmd_id") or "") != cmd_id:
+        return None
+    _, task_path = _snapshot_command(root, report, cmd_id)
+    task = load(task_path).get("task")
+    split_identities = {
+        "issued_cmd_id": (cmd_id, task.get("issued_cmd_id")),
+        "report_filename": (Path(report_path).name, task.get("report_filename")),
+    }
+    for key, (expected, actual) in split_identities.items():
+        if not expected or str(actual or "") != str(expected):
+            raise ValueError(f"immutable task/report identity mismatch: {key}")
+    if not str(task.get("subtask_id") or "").strip():
+        raise ValueError("split task subtask_id is missing")
+    ancestor = None
+    for cut in range(len(cmd_id), 3, -1):
+        if cut < len(cmd_id) and cmd_id[cut] != "_":
+            continue
+        candidate = cmd_id[:cut]
+        found = _saved_command(root, candidate)
+        if found:
+            ancestor = (candidate, *found)
+            break
+    if ancestor is None:
+        return None
+    _, command, source = ancestor
+    criteria = command.get("acceptance_criteria")
+    ancestor_ids = set(criteria) if isinstance(criteria, dict) else {
+        str(item.get("id")) for item in criteria or [] if isinstance(item, dict) and item.get("id")
+    }
+    assigned = task.get("assigned_acs")
+    if not isinstance(assigned, list) or not assigned or not set(map(str, assigned)).issubset(ancestor_ids):
+        raise ValueError("split task assigned_acs are not a subset of ancestor acceptance criteria")
+    return command, source
+
+
+def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=None):
+    saved = _saved_command(root, cmd_id)
+    if saved:
+        return saved
     # Auto-generated commands intentionally have no Shogun command record.
     # Their immutable deploy-generation snapshot is the contract; the live
     # worker task may already belong to a later assignment.
@@ -89,6 +135,10 @@ def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=
             expected = " or ".join(f"{status}/{verdict}" for status, verdict in sorted(allowed))
             raise ValueError(f"autogen spec fallback requires {expected} report")
         return _snapshot_command(root, report, cmd_id)
+    if isinstance(report, dict) and report_path is not None:
+        split = _split_command(root, report, cmd_id, report_path)
+        if split:
+            return split
     raise ValueError(f"cmd spec not found: {cmd_id}")
 
 def summary(command):

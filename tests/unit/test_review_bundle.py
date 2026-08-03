@@ -170,6 +170,46 @@ def test_specless_failed_report_generates_fail_bundle_from_snapshot(tmp_path):
     assert review_bundle.generate(args) == 0
 
 
+@pytest.mark.parametrize("mutation", [None, "missing_subtask", "foreign_ac", "wrong_issued", "wrong_report"])
+def test_split_child_resolves_only_verified_longest_ancestor(tmp_path, mutation):
+    """test_necessity: spec-less split reports cannot invent or escape their saved parent contract."""
+    root = _root(tmp_path); cmd = "cmd_4225_frontend_impl"
+    (root / "queue/archive/cmds").mkdir(parents=True)
+    (root / "queue/archive/cmds/cmd_4225_done.yaml").write_text(
+        "commands:\n  cmd_4225:\n    acceptance_criteria:\n      AC1: {description: backend}\n"
+        "      AC2: {description: frontend}\n    target_path: app\n    project: demo\n",
+        encoding="utf-8",
+    )
+    report = root / f"queue/reports/worker_report_{cmd}.yaml"
+    issued = "cmd_wrong" if mutation == "wrong_issued" else cmd
+    filename = "wrong.yaml" if mutation == "wrong_report" else report.name
+    subtask = "" if mutation == "missing_subtask" else "frontend_price"
+    assigned = "[AC9]" if mutation == "foreign_ac" else "[AC2]"
+    (root / "queue/tasks/worker.yaml").write_text(
+        f"task:\n  parent_cmd: {cmd}\n  issued_cmd_id: {issued}\n  task_id: {cmd}_normal\n"
+        f"  subtask_id: {subtask!r}\n  assigned_acs: {assigned}\n  ac_version: ac1\n"
+        f"  report_id: rpt-split\n  report_filename: {filename}\n",
+        encoding="utf-8",
+    )
+    report.write_text(
+        f"parent_cmd: {cmd}\ntask_id: {cmd}_normal\nworker_id: worker\nreport_id: rpt-split\n"
+        "ac_version_read: ac1\nstatus: completed\nverdict: PASS\n"
+        "binary_checks: {AC2: [{result: yes}]}\nresult: {summary: measured}\n"
+        f"task_contract_snapshot: {{parent_cmd: {cmd}, issued_cmd_id: {cmd}, task_id: {cmd}_normal, "
+        "ac_fingerprint: ac1, purpose: frontend, acceptance_criteria: [{id: AC2}], project: demo}\n",
+        encoding="utf-8",
+    )
+    args = SimpleNamespace(root=str(root), report=str(report), cmd=cmd, verdict="APPROVE",
+                           allow_archived=False, fail_reason=None)
+    if mutation is None:
+        assert review_bundle.generate(args) == 0
+        bundle = review_bundle.load(root / f"queue/gates/{cmd}/sg7_bundle.json")
+        assert bundle["review"]["cmd_spec_summary"]["acceptance_criteria_count"] == 2
+    else:
+        with pytest.raises(ValueError):
+            review_bundle.generate(args)
+
+
 @pytest.mark.parametrize(
     ("has_spec", "review_verdict", "report_status", "report_verdict", "accepted"),
     [
