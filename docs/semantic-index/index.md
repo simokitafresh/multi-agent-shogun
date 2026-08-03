@@ -9475,6 +9475,7 @@ codd:
 | file | `scripts/causal_backlinks.sh` |
 | file | `docs/semantic-index/index.md` |
 | file | `docs/research/ci-test-elimination-design-20260719.md` |
+| causal | `cmd_reflux_backlink_202608032243_tobisaru` — [[semantic_causal_automation]] -> `docs/research/next-throughput-saizo.md` |
 | causal | `cmd_reflux_backlink_202608020325_hanzo` — [[semantic_causal_automation]] -> `docs/research/hidden-infra-rollback-asis-tobe-5w1h_20260801.md` |
 | causal | `cmd_reflux_backlink_202607312324_hanzo` — [[semantic_causal_automation]] -> `docs/research/gunshi_session_rca_20260718.md` |
 | causal | `cmd_reflux_backlink_202608030250_kotaro` — [[semantic_causal_automation]] -> `docs/research/lesson_useful_rate_recon_20260724.md` |
