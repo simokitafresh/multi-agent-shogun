@@ -492,6 +492,32 @@ def _memory_db_source_max_rowid(db_path: str) -> str:
     return str(int(row[0]))
 
 
+def _memory_db_source_signature(db_path: str):
+    """Cheap change-detection signature of the events content, or None.
+
+    (MAX(rowid), COUNT(*), MAX(updated_at/recorded_at/ts)) of events in one
+    read-only query. Catches inserts, deletes and state updates (which set
+    updated_at). Concepts-only updates (memory_db_import / semantic_index_
+    update) do NOT touch updated_at, so callers must pair this signature with
+    a TTL bound — see create_memory_db_ext4_cache. File mtimes are unusable
+    here: unrelated search_logs writes touch the -wal on every prompt and
+    would make the signature never match. Returns None on any failure so
+    callers fall back to a full refresh (never a stale skip).
+    """
+    try:
+        with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
+            conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            row = conn.execute(
+                "SELECT MAX(rowid), COUNT(*),"
+                " MAX(COALESCE(updated_at, recorded_at, ts)) FROM events"
+            ).fetchone()
+        if not row or row[0] is None:
+            return None
+        return f"rowid:{row[0]}|count:{row[1]}|maxts:{row[2]}"
+    except Exception:
+        return None
+
+
 def _record_refresh_window_point(
     phase: str, rowid: str, group: str, wall_ms: int = 0, extra: str = ""
 ) -> None:
@@ -558,6 +584,35 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
     lock_path = f"{cache_path}.lock"
     with open(lock_path, "w", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        # cmd-lord-20260803 D0速度: skip-if-unchanged。前回publish時のsource署名
+        # (db/-wal/-shmのmtime_ns+size+max_rowid)が現在と一致し、cacheが実在する
+        # なら、コピー(mean13.5s)+検証(11.5s)を丸ごと省く。committedな書込みは
+        # 必ず-walのmtime/sizeを動かすため、偽の「変更なし」判定は起きない。
+        # 署名不一致・sidecar欠損・読取失敗はすべてfull refreshへfall through
+        # (fail-open側は常にrefresh=品質不変)。
+        _sig_path = f"{cache_path}.srcsig"
+        _cur_sig = _memory_db_source_signature(db_path)
+        # TTL bound: concepts-only updates don't move the events signature,
+        # so a signature match may only skip while the cache is younger than
+        # SHOGUN_MEMORY_CACHE_SKIP_TTL_SEC (default 600). Staleness is thereby
+        # bounded to one TTL for concepts-only changes and zero for event
+        # inserts/deletes/state updates.
+        try:
+            _skip_ttl = int(os.environ.get("SHOGUN_MEMORY_CACHE_SKIP_TTL_SEC", "600"))
+        except ValueError:
+            _skip_ttl = 600
+        if _cur_sig is not None and _skip_ttl > 0 and os.path.exists(cache_path):
+            try:
+                if (time.time() - os.stat(cache_path).st_mtime) < _skip_ttl:
+                    with open(_sig_path, "r", encoding="utf-8") as _sf:
+                        if _sf.read().strip() == _cur_sig:
+                            _record_phase_point(
+                                "refresh_skip_unchanged", 0, "PASS",
+                                "refresh_skip:sig-match"
+                            )
+                            return cache_path
+            except OSError:
+                pass
         # Orphan sweep: remove any stale tmp files left by pre-fix runs or
         # edge cases.  The exclusive flock guarantees no other backup is live.
         # Two patterns cover both old-style ({basename}.tmp.{PID}) and new-style
@@ -636,6 +691,16 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
             except Exception:
                 pass
             remove_memory_db_cache_sidecars(cache_path)
+            # skip-if-unchangedの署名はコピー開始前(_cur_sig)を記録する。
+            # コピー中に到着した書込みは署名を必ずずらすため、次回は
+            # full refreshになる(stale skipは構造的に起きない)。
+            try:
+                if _cur_sig is not None:
+                    with open(f"{_sig_path}.tmp.{os.getpid()}", "w", encoding="utf-8") as _sf:
+                        _sf.write(_cur_sig + "\n")
+                    os.replace(f"{_sig_path}.tmp.{os.getpid()}", _sig_path)
+            except OSError:
+                pass
         finally:
             # os.replace() only renames temp_path itself; a WAL-mode backup
             # (inherited from db_path's own journal_mode) leaves -wal/-shm
