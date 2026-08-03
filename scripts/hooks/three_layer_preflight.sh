@@ -375,6 +375,39 @@ prewarm_memory_cache_async() {
         ' _ "$ROOT" "$source_db" "$cache_path" "$boot_id" >/dev/null 2>&1 </dev/null
 }
 
+rebuild_memory_cache_sync() {
+    local source_db="$1" cache_path="$2" boot_id="$3" failed_generation="$4"
+    local refresh_lock="${cache_path}.refresh.lock"
+    [[ "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" ]] || return 1
+    [[ -f "$source_db" && -f "$ROOT/scripts/lib/memory_db_cache.sh" ]] || return 1
+    mkdir -p "${cache_path%/*}" || return 1
+    # A query-level rc=2 proves that the published generation is unusable.
+    # Rebuild synchronously once so this issue can consume the repaired atomic
+    # generation; the same lock keeps two simultaneous issue calls single-flight.
+    (
+        flock -x 8
+        local current_generation
+        current_generation="$(stat -c '%i:%s:%Y' "$cache_path" 2>/dev/null || printf missing)"
+        # Another issue may already have replaced the failed inode while this
+        # caller waited for the lock. Reuse that verified generation instead
+        # of rebuilding twice; otherwise force replacement even when the cheap
+        # probe still says healthy, because the real MATCH query returned rc2.
+        if [[ "$current_generation" != "$failed_generation" ]] \
+            && memory_cache_is_healthy "$source_db" "$cache_path" "$boot_id"; then
+            exit 0
+        fi
+        export SHOGUN_MEMORY_DB_CACHE_PATH="$cache_path"
+        # shellcheck source=scripts/lib/memory_db_cache.sh
+        source "$ROOT/scripts/lib/memory_db_cache.sh"
+        timeout -k 1 "${SHOGUN_MEMORY_DB_CACHE_REFRESH_TIMEOUT:-300}" \
+            bash -c 'source "$1/scripts/lib/memory_db_cache.sh"; create_memory_db_cache "$1" "$2"' \
+            _ "$ROOT" "$source_db" || exit 1
+        printf '%s\n' "$boot_id" >"${cache_path}.boot_id.tmp"
+        mv -f "${cache_path}.boot_id.tmp" "${cache_path}.boot_id"
+        memory_cache_is_healthy "$source_db" "$cache_path" "$boot_id"
+    ) 8>"$refresh_lock"
+}
+
 prompt_from_payload() {
     local payload="$1"
     if command -v jq >/dev/null 2>&1; then
@@ -524,6 +557,25 @@ issue() {
             semantic_rc="$batch_rc"
         fi
         rm -f "$batch_result"
+        # A cache can pass the cheap health probe and still fail a real FTS
+        # query (rc=2). Repair that exact generation atomically and retry this
+        # same issue once; never loop and never switch to a second fixed dir.
+        if [[ "$memory_rc" == 2 && -n "${memory_cache:-}" ]]; then
+            local failed_cache_generation
+            failed_cache_generation="$(stat -c '%i:%s:%Y' "$memory_cache" 2>/dev/null || printf missing)"
+            if rebuild_memory_cache_sync "$source_db" "$memory_cache" "$boot_id" "$failed_cache_generation"; then
+                batch_result="$(mktemp "$EVIDENCE_DIR/.batch-retry.XXXXXX")"
+                local retry_rc=0
+                batch_index_search "$prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 || retry_rc=$?
+                if [[ -s "$batch_result" ]]; then
+                    IFS=$'\t' read -r memory_rc semantic_rc memory_count semantic_count memory_query semantic_query memory_ts semantic_ts memory_wall_ms semantic_wall_ms memory_top_b64 semantic_top_b64 memory_total_hits semantic_total_hits <"$batch_result"
+                else
+                    memory_rc="$retry_rc"
+                    semantic_rc="$retry_rc"
+                fi
+                rm -f "$batch_result"
+            fi
+        fi
     else
         wait "$memory_pid" || memory_rc=$?
         wait "$semantic_pid" || semantic_rc=$?

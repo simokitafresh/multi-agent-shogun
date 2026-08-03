@@ -857,6 +857,41 @@ PY
 
 }
 
+@test "memory cache query rc2は原子的再構築後に同一issueで一度だけ再試行する" {
+    local tmp_root="$TMP_EVIDENCE/cache_selfheal" cache="$TMP_EVIDENCE/cache-selfheal.db" evidence_dir="$TMP_EVIDENCE/cache-selfheal-evidence"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/data" "$tmp_root/.git"
+    git -C "$tmp_root" init -q
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cp "$ROOT/scripts/lib/memory_db_cache.sh" "$tmp_root/scripts/lib/memory_db_cache.sh"
+    cp "$ROOT/scripts/memory_db_live_insert.py" "$tmp_root/scripts/memory_db_live_insert.py"
+    cp "$THREE_LAYER_DB_FIXTURE" "$tmp_root/data/multi_agent_shogun_memory.db"
+    cp "$THREE_LAYER_DB_FIXTURE" "$cache"
+    # Keep the cheap schema/link probe green but make a real FTS MATCH fail.
+    python3 - "$cache" <<'PY'
+import sqlite3, sys
+with sqlite3.connect(sys.argv[1]) as conn:
+    conn.execute("INSERT INTO events_fts(events_fts, rank) VALUES('merge', 1)")
+PY
+    printf '%s\n' "$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || printf unknown)" > "$cache.boot_id"
+    printf 'three layer preflight fixture\n' > "$tmp_root/docs/semantic-index/index.md"
+    printf 'three layer preflight fixture\tdocs/fixture.md\n' > "$tmp_root/stale.tsv"
+    printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$2"\n' > "$tmp_root/scripts/lib/causal_index.sh"
+    chmod +x "$tmp_root/scripts/lib/causal_index.sh"
+    run env SHOGUN_MEMORY_DB_CACHE_PATH="$cache" THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="heal" TMUX_PANE="%heal" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "three layer preflight fixture"
+    [ "$status" -eq 0 ]
+    run python3 - "$cache" "$evidence_dir/evidence_heal__heal.json" <<'PY'
+import json, sqlite3, sys
+cache, evidence = sys.argv[1:]
+with sqlite3.connect(f"file:{cache}?mode=ro", uri=True) as conn:
+    assert conn.execute("SELECT COUNT(*) FROM events").fetchone()[0] > 0
+data = json.load(open(evidence, encoding="utf-8"))
+assert data["status"] == "success"
+assert int(data["memory_count"]) == 1
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "外部source DBはimmutableにせず未checkpoint WAL eventを検索" {
     local external_db="$TMP_EVIDENCE/external-wal.db" ready="$TMP_EVIDENCE/external-wal.ready"
     cp "$THREE_LAYER_DB_FIXTURE" "$external_db"
