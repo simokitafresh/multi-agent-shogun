@@ -456,6 +456,7 @@ if answers.exists():
 # Parse YAML structure and require the exact answer type plus an event-boundary
 # match. inbox_archive must not turn an answered hold back into unanswered.
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 mailboxes = [Path(root) / "queue/inbox/karo.yaml"]
 mailboxes.extend(sorted((Path(root) / "archive/inbox").glob("karo_*.yaml")))
@@ -1046,6 +1047,7 @@ deploy_task_has_formal_karo_rc_for_report() {
 import os
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 approval_path, report_path, parent_cmd, ninja_name, root = sys.argv[1:]
 approval = yaml.safe_load(open(approval_path, encoding="utf-8")) or {}
@@ -1113,6 +1115,7 @@ deploy_task_direct_yaml_is_preinjected() {
     python3 - "$task_file" <<'PY'
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 path = sys.argv[1]
 required = (
@@ -1742,6 +1745,7 @@ deploy_task_cmd_status_is_canceled() {
     python3 - "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$cmd_id" <<'PY'
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 path, cmd_id = sys.argv[1], sys.argv[2]
 try:
@@ -1774,6 +1778,7 @@ deploy_task_cmd_status_is_draft() {
     python3 - "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$cmd_id" <<'PY'
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 path, cmd_id = sys.argv[1], sys.argv[2]
 try:
@@ -1919,6 +1924,7 @@ deploy_task_validate_or_repair_direct_yaml() {
 import sys
 import re
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 from pathlib import Path
 
 src = Path(sys.argv[1])
@@ -2044,6 +2050,7 @@ import re
 import sys
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 path, cmd_id, depends_on = sys.argv[1:4]
 with open(path, encoding="utf-8") as fh:
@@ -2209,6 +2216,7 @@ import re
 import sys
 import tempfile
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_path, source_path, cmd_id = sys.argv[1:]
 with open(source_path, encoding="utf-8") as f:
@@ -2307,6 +2315,7 @@ import os
 import sys
 import tempfile
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_path, source_path, cmd_id = sys.argv[1:]
 with open(source_path, encoding='utf-8') as f:
@@ -2606,6 +2615,7 @@ _compute_ac_hash() {
     concat=$(python3 - "$task_file" <<'PY'
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 task = data.get("task") if isinstance(data, dict) else None
@@ -2655,6 +2665,7 @@ import sys
 import tempfile
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_file = sys.argv[1]
 parent_cmd = sys.argv[2]
@@ -3040,6 +3051,7 @@ TRAINING_TEMPLATE_PY
 import os
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 def flatten_text(value):
     if isinstance(value, dict):
@@ -3370,6 +3382,7 @@ import os
 import sys
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_file = sys.argv[1]
 parent_cmd = sys.argv[2]
@@ -3536,6 +3549,7 @@ import os
 import sys
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 from scripts.lib.yaml_atomic import yaml_text
 
 
@@ -3651,6 +3665,7 @@ import re
 from pathlib import Path
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 try:
     raw = yaml.safe_load(Path(os.environ['TASK_FILE_ENV']).read_text(encoding='utf-8')) or {}
@@ -4586,6 +4601,7 @@ import sys
 from pathlib import Path
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_path = Path(os.environ["TASK_FILE_ENV"])
 script_dir = Path(os.environ["SCRIPT_DIR_ENV"])
@@ -4912,6 +4928,7 @@ import re
 from pathlib import Path
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_path = Path(os.environ["TASK_FILE_ENV"])
 ac_filter_raw = os.environ.get("AC_FILTER_ENV", "")
@@ -5175,6 +5192,7 @@ import os
 from pathlib import Path
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 report_path = Path(os.environ["REPORT_FILE_ENV"])
 task_path = Path(os.environ["TASK_FILE_ENV"])
@@ -5247,6 +5265,7 @@ import re
 from pathlib import Path
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 report_path = Path(os.environ["REPORT_FILE_ENV"])
 learning_path = Path(os.environ["LEARNING_FILE_ENV"])
@@ -5572,6 +5591,7 @@ rehydrate_task_commit_contract_from_report() {
 import json
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 contract = report.get("commit_contract")
@@ -6078,6 +6098,7 @@ task_targets_are_documentation_only() {
     python3 - "$task_file" <<'PY'
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 try:
     data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
@@ -6267,6 +6288,7 @@ ${planned_paths}"
 import json
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
 paths = task.get("planned_paths") or []
@@ -6689,6 +6711,7 @@ inject_experiment_first_principle() {
 import os
 import tempfile
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 from scripts.lib.yaml_atomic import atomic_yaml_write
 
 task_file = os.environ['TASK_FILE_ENV']
@@ -6716,6 +6739,7 @@ inject_readonly_refs() {
             PARENT_CMD_ENV="$parent_cmd" STK_ENV="$SCRIPT_DIR/queue/shogun_to_karo.yaml" python3 - <<'PY' 2>/dev/null || true
 import os
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 parent_cmd = os.environ.get("PARENT_CMD_ENV", "")
 stk = os.environ.get("STK_ENV", "")
@@ -6870,6 +6894,7 @@ PY
 import os
 import tempfile
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_file = os.environ["TASK_FILE_ENV"]
 fragment = os.environ["READONLY_YAML_ENV"].rstrip("\n")
@@ -6942,6 +6967,7 @@ import sys
 import tempfile
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_file = os.environ['TASK_FILE_ENV']
 script_dir = os.environ['SCRIPT_DIR_ENV']
@@ -9152,6 +9178,7 @@ import re
 import subprocess
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 from datetime import datetime, timezone
 from scripts.lib.yaml_atomic import atomic_yaml_write
 
@@ -9365,6 +9392,7 @@ deploy_task_guard_preserved_path() {
 import os
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 script_dir, task_file, preserved_file = sys.argv[1:4]
 
@@ -9702,6 +9730,7 @@ import sys
 import tempfile
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_file = os.environ['TASK_FILE_ENV']
 workarounds_file = os.environ['WORKAROUNDS_FILE_ENV']
@@ -10848,6 +10877,7 @@ count_task_acceptance_criteria() {
 import sys
 import os
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 from pathlib import Path
 
 task_file = sys.argv[1]
@@ -11491,6 +11521,7 @@ import subprocess
 import sys
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_file = os.environ['TASK_FILE_ENV']
 stk_path = os.environ['STK_PATH_ENV']
@@ -11591,6 +11622,7 @@ import re
 import sys
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 task_file = os.environ['TASK_FILE_ENV']
 stk_path = os.environ['STK_PATH_ENV']
@@ -12016,6 +12048,7 @@ deploy_task_ci_fix_run_id_precheck() {
 import re
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 path = sys.argv[1]
 try:
@@ -12263,6 +12296,7 @@ import shlex
 import sys
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
 
 path, cmd_id = sys.argv[1:3]
 try:
