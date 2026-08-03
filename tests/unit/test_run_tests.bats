@@ -1782,11 +1782,23 @@ SH
   git -C "$external" -c user.email=t@example.invalid -c user.name=t commit -qm init
   cat >"$external/.venv/bin/python" <<'SH'
 #!/usr/bin/env bash
+if [[ "$1 $2" == "-c import pytest" ]]; then
+  exit 64
+fi
 [[ "$1 $2 $3" == "-m pytest -q" ]] || exit 64
-[[ "$4" == "backend/tests/test_owned.py" ]] || exit 65
+[[ "$4" == "tests/test_owned.py" ]] || exit 65
 printf '1 passed in 0.01s\n'
 SH
   chmod +x "$external/.venv/bin/python"
+  real_python3="$(command -v python3)"
+  cat >"$TMPROOT/bin/python3" <<SH
+#!/usr/bin/env bash
+if [[ "\$1 \$2" == "-m pytest" ]]; then
+  exit 66
+fi
+exec "$real_python3" "\$@"
+SH
+  chmod +x "$TMPROOT/bin/python3"
   cat >"$TMPROOT/queue/tasks/external-contract.yaml" <<YAML
 task:
   project: absent-from-registry

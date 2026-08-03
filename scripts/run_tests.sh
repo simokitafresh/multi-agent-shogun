@@ -1877,8 +1877,17 @@ _run_tests_main() {
                     done
                     if [ "$_external_backend" -eq 1 ] && [ -d "$_task_root/backend/tests" ]; then
                         local _external_python="python3"
+                        # An explicit backend contract is already a concrete
+                        # pytest execution request. Keep its repo_root, test
+                        # path, and interpreter in one deterministic boundary:
+                        # probing imports before dispatch can reject a valid
+                        # wrapper interpreter and silently fall back to the
+                        # control repository's environment. Full-unit fallback
+                        # retains the capability probe because it has no
+                        # explicit contract proving the requested engine.
                         if [ -x "$_task_root/.venv/bin/python" ] \
-                            && "$_task_root/.venv/bin/python" -c 'import pytest' >/dev/null 2>&1; then
+                            && { [ "${#_external_backend_tests[@]}" -gt 0 ] \
+                                || "$_task_root/.venv/bin/python" -c 'import pytest' >/dev/null 2>&1; }; then
                             _external_python="$_task_root/.venv/bin/python"
                         fi
                         if [ "${#_external_backend_tests[@]}" -gt 0 ]; then
