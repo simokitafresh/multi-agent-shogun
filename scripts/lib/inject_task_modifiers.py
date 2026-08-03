@@ -708,6 +708,18 @@ def inject_lsa16_production_parity_controls(task, script_dir):
     if is_documentation_only_task(task):
         return False
 
+    # LS-A16 constrains commands that mutate production state and therefore
+    # require a post-write parity check.  Read-only reconnaissance often names
+    # the production generator/table it is measuring (for example
+    # ``monthly_returns``), but it neither authorizes nor performs a DB change.
+    # Treating that noun as a mutation injected fullrecalculate/API/FE ACs into
+    # recon2 experiments and changed their assigned scope after deployment.
+    # Recon tasks must report observed parity through their own explicit ACs;
+    # they must never acquire production-write obligations from keyword prose.
+    task_type = str(task.get('task_type', '') or '').strip().lower()
+    if task_type in {'recon', 'recon2', 'scout'}:
+        return False
+
     parent_entry = parent_cmd_entry(task, script_dir)
     if not is_dm_signal_scope(task, parent_entry):
         return False

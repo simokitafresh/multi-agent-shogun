@@ -1146,6 +1146,45 @@ assert all(isinstance(ac, dict) and ac.get('description') for ac in acs), acs
 PY
 }
 
+# test_necessity: read-only recon2 tasks that name a production table/generator
+# must preserve their assigned AC namespace and must not gain write/parity duties.
+@test "LS-A16 controls: DM-Signal recon2 monthly_returns measurement is not a production mutation" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_recon_monthly_returns
+  project: dm-signal
+  task_type: recon2
+  task_id: cmd_recon_monthly_returns_normal
+  status: assigned
+  purpose: "production monthly_returns generatorをread-only cloneで全数照合する"
+  description: "本番DBは変更せず、monthly_returnsのoracle exact件数を測る"
+  acceptance_criteria:
+  - id: AC1
+    description: "全対象を照合しwrite0を証明する"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands: {}
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="lsa16_production_parity_controls" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+assert [ac['id'] for ac in task['acceptance_criteria']] == ['AC1'], task
+assert '本番パリティ未確認' not in task.get('stop_for', []), task
+assert '【LS-A16 本番パリティ必須】' not in task['description'], task
+PY
+}
+
 @test "LS-A16 controls: non DM-Signal recalculate mention does not inject" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
