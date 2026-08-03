@@ -1360,3 +1360,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `monthly_returns`は16,874行・102/102 PF・実在範囲2003-09〜2026-07へ復旧。Compare Returnsの5Y欠落=0/102、Compare Summaryのannualized geometric mean負値=0/102、`portfolio_metrics`=204/204。
 - 同時metrics生成raceはcommit=`8d994f35`の原子的UPSERTで修正しRenderへ反映済み。軍師事後レビューAPPROVE。
 - 因果リンク: [[monthly_returns_1to27行へ欠落]] -> [[全期間fullrecalculate_run226]] -> [[Compare_5Y_CAGR復旧]]
+
+## §87 Monthly生成のlogical date運用境界 (2026-08-04)
+
+- historical/full recalculationはwall clockではなくrunへ渡した`end_date`をMonthly生成の`as_of_date`として使う。市場休日は利用可能な最新営業日へclampし、未価格の未来signal月と初回有効holding前の行は生成対象外とする。
+- source commits=`50002dc6`,`4c1cac7f`,`274062e4`,`9a27eb4f`。前3件はMonthly Returns全行停止を防ぎ、最後の1件は未初期化lookbackをTradeとして誤抽出しない境界。開始後の欠落はfail-closedを維持する。
+- 因果リンク: [[run_logical_date未伝播]] -> [[completed_month_boundary欠落]] -> [[logical_date営業日clamp+future/uninitialized除外]]

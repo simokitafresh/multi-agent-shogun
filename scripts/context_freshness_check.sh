@@ -331,8 +331,9 @@ def last_updated_date(abs_path: str) -> date | None:
     return None
 
 
-def source_commit_marker(abs_path: str) -> str | None:
-    """Return the source-repository commit recorded beside last_updated."""
+def source_commit_markers(abs_path: str) -> list[str]:
+    """Return every source-repository boundary recorded beside last_updated."""
+    markers: list[str] = []
     try:
         with open(abs_path, encoding="utf-8") as f:
             for _ in range(5):
@@ -341,9 +342,44 @@ def source_commit_marker(abs_path: str) -> str | None:
                     break
                 match = SOURCE_COMMIT_RE.search(line)
                 if match:
-                    return match.group(1)
+                    markers.append(match.group(1))
     except Exception:
+        return []
+    return markers
+
+
+def source_commit_marker(project_id: str, rel_path: str, abs_path: str) -> str | None:
+    """Return the newest ancestry boundary, independent of marker line order.
+
+    context_source_commit_set.sh intentionally retains independently reviewed
+    markers.  Selecting the first line let a later write of an older boundary
+    regress freshness and replay already reviewed commits (GA-432).
+    """
+    markers = source_commit_markers(abs_path)
+    if not markers:
         return None
+    if len(markers) == 1:
+        return markers[0]
+    repo_path, _pathspecs, _root_fallback = source_repo_for_context(project_id, rel_path)
+    resolved: list[str] = []
+    for marker in markers:
+        result = subprocess.run(
+            ["git", "-C", repo_path, "rev-parse", marker],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return None
+        resolved.append(result.stdout.strip())
+    for candidate in resolved:
+        if all(
+            subprocess.run(
+                ["git", "-C", repo_path, "merge-base", "--is-ancestor", other, candidate],
+                capture_output=True,
+            ).returncode == 0
+            for other in resolved
+        ):
+            return candidate
     return None
 
 
@@ -1526,7 +1562,7 @@ if mode == "--dashboard-warnings":
         if updated_at is None:
             warnings.append(build_warning(rel_path, None))
             continue
-        source_commit = source_commit_marker(abs_path)
+        source_commit = source_commit_marker(project_id, rel_path, abs_path)
         if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
             warnings.append(build_missing_source_commit_warning(rel_path))
             continue
@@ -1555,7 +1591,7 @@ elif mode == "--cmd-warnings":
             if updated_at is None:
                 warnings.append(build_warning(rel_path, None))
                 continue
-            source_commit = source_commit_marker(abs_path)
+            source_commit = source_commit_marker(current_project, rel_path, abs_path)
             if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
                 warnings.append(build_missing_source_commit_warning(rel_path))
                 continue
@@ -1588,7 +1624,7 @@ elif mode == "--cmd-commit-list":
             updated_at = last_updated_date(abs_path)
             if updated_at is None:
                 continue
-            source_commit = source_commit_marker(abs_path)
+            source_commit = source_commit_marker(current_project, rel_path, abs_path)
             if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
                 print(f"MISSING_SOURCE_COMMIT\t{rel_path}")
                 continue

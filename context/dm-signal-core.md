@@ -640,6 +640,12 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 例外時はrollback前にORM属性へ触れず、事前取得した文字列IDを使い、`rollback → log`順を守る。commit=`8d994f35`、対象テスト15/15 PASS、Render live、軍師事後レビューAPPROVE。
 - 因果リンク: [[Compare_Summary同時metrics生成]] -> [[SELECT_INSERT_race_UniqueViolation]] -> [[dialect_upsert_8d994f35]]
 
+## 31. Monthly生成のlogical date・未初期化境界 (2026-08-04)
+
+- `50002dc6`〜`274062e4`: Monthly Returns生成はrunの`as_of_date`を唯一の時計とし、利用可能な最新営業日へclampする。価格未到来の未来signal月はboundaryなしとしてskipし、過去の確定月/MTD行生成を巻き添え停止しない。
+- `9a27eb4f`: Trade抽出は最初の有効holding前の未初期化lookback行をtradeとして扱わない。有効trade開始後のholding欠落は従来どおりstrict accessorでfail-visibleを維持する。
+- 因果リンク: [[calendar_max_as_of]] -> [[未価格未来月でrun全体停止]] -> [[logical_date_clampと未初期化skip]]
+
 ---
 
 ## 因果リンク

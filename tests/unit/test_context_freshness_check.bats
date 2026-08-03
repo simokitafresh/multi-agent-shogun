@@ -674,6 +674,34 @@ EOF
     [[ "$output" == *"ALERT: context/dm-signal-core.md source commits 1件"* ]]
 }
 
+@test "GA-432 multiple source markers select newest ancestry boundary regardless of line order" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo/backend/app" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+
+    printf 'v1\n' > "$source_repo/backend/app/core.py"
+    git -C "$source_repo" add backend/app/core.py
+    git -C "$source_repo" commit -q -m "feature: old boundary"
+    local old_sha
+    old_sha="$(git -C "$source_repo" rev-parse HEAD)"
+    printf 'v2\n' >> "$source_repo/backend/app/core.py"
+    git -C "$source_repo" add backend/app/core.py
+    git -C "$source_repo" commit -q -m "feature: reviewed newer boundary"
+    local new_sha
+    new_sha="$(git -C "$source_repo" rev-parse HEAD)"
+
+    _create_context "context/dm-signal-core.md" "$TODAY"
+    sed -i "1a<!-- source_commit:${old_sha} reason:later write of older boundary evidence:fixture -->\n<!-- source_commit:${new_sha} reason:newer reviewed boundary evidence:fixture -->" "$TEST_TMPDIR/context/dm-signal-core.md"
+    _create_shogun_to_karo "cmd_ga432" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_ga432
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/dm-signal-core.md source commits"* ]]
+}
+
 @test "GA-288 source commit that updates infra context in same commit is reflected" {
     mkdir -p "$TEST_TMPDIR/skills/codd"
     printf 'v1\n' > "$TEST_TMPDIR/skills/codd/SKILL.md"
