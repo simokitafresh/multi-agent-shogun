@@ -123,6 +123,9 @@ SH
   [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+# test_necessity: every persisted research reflux receipt remains valid after
+# later receipts are prepended/appended; only an exact source fingerprint may
+# close the alert, and a newer unreviewed commit must still alert.
 @test "DM-Signal research reflux receipt closes its exact external source commit" {
   project_root="$BATS_TEST_TMPDIR/dm-signal"
   mkdir -p "$project_root/docs/research"
@@ -137,6 +140,7 @@ SH
   fingerprint="$(printf 'A\tdocs/research/result.md\t%s\n' "$source_blob" | sha256sum | awk '{print $1}')"
   printf '%s\n' \
     '<!-- last_updated: 2026-07-19 cmd_fixture -->' \
+    '<!-- dm_signal_research_reflux: fingerprint=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; mode=non-target; evidence_b64=c3RhbGU= -->' \
     "<!-- dm_signal_research_reflux: fingerprint=${fingerprint}; mode=synced; evidence_b64=Zml4dHVyZQ== -->" \
     '<!-- source_commit:abc1234 reason:older evidence:fixture -->' \
     > "$FIXTURE_ROOT/context/dm-signal-research.md"

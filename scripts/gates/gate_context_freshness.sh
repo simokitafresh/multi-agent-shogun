@@ -141,8 +141,12 @@ reflux_receipt_closes_source_alert() {
     [[ -d "$repo" ]] || return 1
     git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
 
-    recorded="$(sed -n 's/.*dm_signal_research_reflux: fingerprint=\([0-9a-f]\{64\}\);.*/\1/p' "$file" | head -1)"
-    [[ "$recorded" =~ ^[0-9a-f]{64}$ ]] || return 1
+    # Receipts accumulate because every scoped docs/research commit records its
+    # own immutable fingerprint.  Checking only the first receipt makes every
+    # later correctly reviewed commit look stale (GA-428).  Retain the exact
+    # equality boundary, but compare the source commit against the full set.
+    recorded="$(sed -n 's/.*dm_signal_research_reflux: fingerprint=\([0-9a-f]\{64\}\);.*/\1/p' "$file")"
+    [[ -n "$recorded" ]] || return 1
     actual="$(python3 - "$repo" "$latest_hash" <<'PY'
 import hashlib
 import subprocess
@@ -175,7 +179,7 @@ if entries:
     print(hashlib.sha256(canonical.encode("utf-8", "surrogateescape")).hexdigest())
 PY
 )" || return 1
-    [[ -n "$actual" && "$actual" == "$recorded" ]]
+    [[ -n "$actual" ]] && grep -Fqx -- "$actual" <<<"$recorded"
 }
 
 # GA-427: runtime/core/ops commits do not pass through the research-only
