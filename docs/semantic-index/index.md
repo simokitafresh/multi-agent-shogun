@@ -9528,6 +9528,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607311717_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607312324_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608010024_tobisaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608031510_hayate` — [[semantic_causal_automation]] -> `docs/research/model-effort-switch-saizo-sol-high-20260721.md` |
 | causal | `cmd_reflux_backlink_202608010127_tobisaru` — [[semantic_causal_automation]] -> `docs/research/hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` |
 | causal | `cmd_reflux_backlink_202608010127_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608010231_hayate` files_modified: [[semantic_causal_automation]] |
