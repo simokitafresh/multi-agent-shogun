@@ -9052,6 +9052,30 @@ sys.path.insert(0, code_root)
 from scripts.lib.test_necessity_contract import validate_entries
 data = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
 task = data.get("task", data)
+project = str(task.get("project") or os.environ.get("DEPLOY_TASK_TEST_DEFAULT_PROJECT") or "").strip()
+
+def resolve_project_repo(project_id):
+    if project_id == "infra":
+        candidate = repo
+    else:
+        projects_dir = os.environ.get("DEPLOY_TASK_PROJECTS_DIR") or os.path.join(repo, "projects")
+        project_file = os.path.join(projects_dir, f"{project_id}.yaml")
+        if not project_id or not os.path.isfile(project_file):
+            raise SystemExit(f"BLOCK: cannot resolve test lifecycle repo for project={project_id or '<empty>'}")
+        project_data = yaml.safe_load(open(project_file, encoding="utf-8")) or {}
+        project_block = project_data.get("project") if isinstance(project_data.get("project"), dict) else project_data
+        candidate = str(project_block.get("path") or "").strip()
+        if not candidate:
+            raise SystemExit(f"BLOCK: project path is empty for project={project_id}")
+    resolved = subprocess.run(
+        ["git", "-C", candidate, "rev-parse", "--show-toplevel"],
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+    )
+    if resolved.returncode != 0 or not resolved.stdout.strip():
+        raise SystemExit(f"BLOCK: project working tree is unavailable for project={project_id}")
+    return os.path.realpath(resolved.stdout.strip())
+
+project_repo = resolve_project_repo(project)
 paths = task.get("planned_paths") or []
 if isinstance(paths, str):
     paths = [paths]
@@ -9081,8 +9105,13 @@ for path in paths:
     path = str(path).strip()
     if not is_test(path):
         continue
+    normalized = path.replace("\\", "/")
+    candidate = os.path.realpath(os.path.join(project_repo, normalized))
+    if os.path.isabs(path) or normalized.startswith("../") or candidate == project_repo or not candidate.startswith(project_repo + os.sep):
+        print(f"BLOCK: test path is outside project repo: {path}", file=sys.stderr)
+        raise SystemExit(1)
     exists = subprocess.run(
-        ["git", "-C", repo, "cat-file", "-e", f"HEAD:{path}"],
+        ["git", "-C", project_repo, "cat-file", "-e", f"HEAD:{normalized}"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     ).returncode == 0
     if not exists:

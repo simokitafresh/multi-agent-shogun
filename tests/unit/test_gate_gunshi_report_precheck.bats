@@ -259,13 +259,14 @@ YAML
   task="$TMP_DIR/tasks/kagemaru.yaml"
   printf 'worker_id: kagemaru\nparent_cmd: cmd_fixture\n' > "$TMP_DIR/report.yaml"
 
-  printf 'task:\n  planned_paths: [tests/unit/test_never_existing_contract.bats]\n' > "$task"
+  printf 'task:\n  project: infra\n  planned_paths: [tests/unit/test_never_existing_contract.bats]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -ne 0 ]
   [[ "$output" == *"omits transient deletion evidence: tests/unit/test_never_existing_contract.bats"* ]]
 
   cat > "$task" <<'YAML'
 task:
+  project: infra
   planned_paths: [tests/unit/test_never_existing_contract.bats, scripts/deploy_task.sh]
   test_necessity:
     defense_target: deployment rejects tests without unique production defense
@@ -278,21 +279,21 @@ YAML
   [ "$status" -eq 0 ]
   [[ "$output" == *"persistent=tests/unit/test_never_existing_contract.bats"* ]]
 
-  printf 'task:\n  planned_paths: [tests/unit/test_gate_gunshi_report_precheck.bats]\n' > "$task"
+  printf 'task:\n  project: infra\n  planned_paths: [tests/unit/test_gate_gunshi_report_precheck.bats]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -eq 0 ]
-  printf 'task:\n  planned_paths: [scripts/deploy_task.sh]\n' > "$task"
+  printf 'task:\n  project: infra\n  planned_paths: [scripts/deploy_task.sh]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -eq 0 ]
 
   for path in logs/test_timing_ledger.tsv docs/test-plan.md contest/data.tsv; do
-    printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task"
+    printf 'task:\n  project: infra\n  planned_paths: [%s]\n' "$path" > "$task"
     run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
     [ "$status" -eq 0 ]
   done
 
   for path in tests/unit/test_new.bats tests/test_new.sh test_new.py; do
-    printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task"
+    printf 'task:\n  project: infra\n  planned_paths: [%s]\n' "$path" > "$task"
     run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
     [ "$status" -ne 0 ]
     [[ "$output" == *"omits transient deletion evidence: $path"* ]]
@@ -304,6 +305,7 @@ YAML
   task="$TMP_DIR/tasks/kagemaru.yaml"
   cat > "$task" <<'YAML'
 task:
+  project: infra
   planned_paths: [scripts/only_planned.sh]
   test_necessity:
     - path: tests/unit/test_actual_persistent.bats
@@ -329,6 +331,54 @@ YAML
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -ne 0 ]
   [[ "$output" == *"omits transient deletion evidence"* ]]
+}
+
+@test "SG-PRE35 resolves existing and new tests against the task project working tree" {
+  gate="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
+  task="$TMP_DIR/tasks/kagemaru.yaml"
+  project_id="sgpre35_fixture_${BATS_TEST_NUMBER}_$$"
+  projects_dir="$TMP_DIR/projects"
+  project_file="$projects_dir/${project_id}.yaml"
+  project_repo="$TMP_DIR/external-project"
+  mkdir -p "$project_repo/tests/unit" "$projects_dir"
+  git -C "$project_repo" init -q
+  git -C "$project_repo" config user.email fixture@example.invalid
+  git -C "$project_repo" config user.name fixture
+  printf '# existing\n' > "$project_repo/tests/unit/test_existing.py"
+  git -C "$project_repo" add .
+  git -C "$project_repo" commit -qm baseline
+  printf 'path: %s\n' "$project_repo" > "$project_file"
+  printf 'worker_id: kagemaru\nparent_cmd: cmd_fixture\n' > "$TMP_DIR/report.yaml"
+
+  printf 'task:\n  project: %s\n  planned_paths: [tests/unit/test_existing.py]\n' "$project_id" > "$task"
+  run env DEPLOY_TASK_PROJECTS_DIR="$projects_dir" GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+
+  cat > "$task" <<YAML
+task:
+  project: $project_id
+  planned_paths: [tests/unit/test_new.py]
+  test_necessity:
+    - path: tests/unit/test_new.py
+      defense_target: external project new-test lifecycle remains explicit
+      overlap_evidence: fixture has no equivalent assertion
+      overlaps_existing: false
+      fixture_self_reference: false
+      deprecated_mechanism: false
+YAML
+  run env DEPLOY_TASK_PROJECTS_DIR="$projects_dir" GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"persistent=tests/unit/test_new.py"* ]]
+
+  printf 'task:\n  project: unknown_project_fixture\n  planned_paths: [tests/unit/test_existing.py]\n' > "$task"
+  run env DEPLOY_TASK_PROJECTS_DIR="$projects_dir" GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"cannot resolve test lifecycle repo"* ]]
+
+  printf 'task:\n  project: %s\n  planned_paths: [../tests/unit/test_outside.py]\n' "$project_id" > "$task"
+  run env DEPLOY_TASK_PROJECTS_DIR="$projects_dir" GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"outside project repo"* ]]
 }
 
 # test_necessity: LG048(SG-PRE31)はresult=PASSのみを受理していたため、意味検算の結果を

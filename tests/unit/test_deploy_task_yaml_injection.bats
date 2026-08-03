@@ -4,6 +4,7 @@
 
 setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export DEPLOY_TASK_TEST_DEFAULT_PROJECT=infra
     python3 -c "import yaml" 2>/dev/null || return 1
 }
 
