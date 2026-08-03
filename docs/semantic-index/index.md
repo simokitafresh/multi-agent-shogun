@@ -5334,6 +5334,7 @@ codd:
 | file | `docs/research/claude-code-version-runbook.md` |
 | file | `docs/research/model-comparison-5w1h-20260701.md` 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) |
 | file | `docs/research/sonnet5_vs_46_ab_evaluation_20260701.md` 5ラウンドA/B/C評価データ |
+| causal | `[[model-effort-switch-kotaro-luna-high-20260721]]` — 小太郎のCodexモデル・effort切替と実態検証 |
 | cmd | `cmd_2640` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | cmd | `cmd_2644` 強化 — チェックリスト隣接Step自動注入(LG012 Level5化) (`queue/tasks/kotaro.yaml`, `scripts/deploy_task.sh`) |
 | cmd | `cmd_2650` 強化 — deploy_task.shにcontext自動注入を一括追加(堅牢性カタログ/GS知見/用語辞書/修行サイクル) (`scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`, `tests/unit/test_deploy_task_lifecycle.bats`) |
