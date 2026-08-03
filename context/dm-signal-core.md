@@ -632,6 +632,12 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 
 - `backend/app/jobs/flush/signal_flush.py` の2列複合key照会は `_query_composite_keys_in_chunks()` に集約する。`6200cc1e`の10,000-key chunkは本番で07:15開始後、07:19の`updated_at`で`StatementTooComplex`・rows 0となり不十分だった。既知正常境界`5c8a9cf`(1,000-key)を再適用した`3ee5c21b`で`COMPOSITE_IN_QUERY_CHUNK_SIZE=1_000`へ修正済み。対象は新規Signal INSERTの既存行照合と反復ledger guard correctionの過去`signal_change_log`照合。現在は本番再検証中であり、完走確認前に解決済みと扱わない。
 
+## 30. Compare metrics同時生成の原子的UPSERT (2026-08-04、本番反映済)
+
+- `backend/app/services/metrics_impl.py`のmetrics保存はSELECT→INSERT/UPDATE分岐を使わず、PostgreSQL/SQLite dialectの`ON CONFLICT DO UPDATE`で原子的に保存する。同一PFへの同時要求で`portfolio_metrics_pkey`競合を起こさない。
+- 例外時はrollback前にORM属性へ触れず、事前取得した文字列IDを使い、`rollback → log`順を守る。commit=`8d994f35`、対象テスト15/15 PASS、Render live、軍師事後レビューAPPROVE。
+- 因果リンク: [[Compare_Summary同時metrics生成]] -> [[SELECT_INSERT_race_UniqueViolation]] -> [[dialect_upsert_8d994f35]]
+
 ---
 
 ## 因果リンク
