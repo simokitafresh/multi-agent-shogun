@@ -1,5 +1,11 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_recon2_b4_snapshot_boundary_adversarial_20260803 -->
+<!-- last_updated: 2026-08-03 cmd_karo_recon2_cx_logical_asof_partial_diff_review_20260803 -->
+<!-- source_commit:3222293887bdbc9c23b8a2090a0cf3ced16bc5ae reason:cmd_karo_recon2_cx_logical_asof_partial_diff_review_20260803 evidence:caller3/3・未伝搬0・FoF caller追加要否YES・境界load FAILを独立監査 -->
+<!-- dm_signal_research_reflux: fingerprint=ee3b4b0d9f472b6be206ad310078d1e3c71c3f83d415d30efa75651587f3b313; mode=non-target; evidence_b64=dGFzay1vd25lZCByZWNvbiBldmlkZW5jZTsgbW9udGhseSByZXNlYXJjaCBTU09U44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
+<!-- dm_signal_research_reflux: fingerprint=12b65aa782dcb51b49c79c469b79035af039f59162bb7bbcec38f6ae1c780cd3; mode=non-target; evidence_b64=dGFzay1vd25lZCByZWNvbiBldmlkZW5jZTsgbW9udGhseSByZXNlYXJjaCBTU09U44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
+<!-- dm_signal_research_reflux: fingerprint=5a2f84864232afe59e09a9e5bd0653e77ef55a71cf5288a02d582ddbb6a7aaf9; mode=non-target; evidence_b64=dGFzay1vd25lZCByZWNvbiBldmlkZW5jZTsgbW9udGhseSByZXNlYXJjaCBTU09U44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
+<!-- dm_signal_research_reflux: fingerprint=11fbce10c2d9cadb9a6f39ab585d6bd78ab6350394a14458e7804edbcab1aeac; mode=non-target; evidence_b64=b25lLW9mZiBSQyByZXZpZXcgYXJ0aWZhY3Q7IG5vIGR1cmFibGUgcmVzZWFyY2ggaW5kZXggc2VjdGlvbiBjaGFuZ2Vk -->
+<!-- dm_signal_research_reflux: fingerprint=6c6def2375dcc96144cd5b4a959926cef1ebfbd8769125448e035cb4ffafaa7d; mode=non-target; evidence_b64=QkxPQ0vlgbXlr5/miJDmnpzjgILmiJDnq4vlgJnoo5ww44Gu44Gf44KB56CU56m257Si5byV44G444Gu56K65a6a55+l6K2Y5ZCM5pyf44Gv5a626ICB44Os44OT44Ol44O85b6M44Go44GZ44KL -->
 <!-- dm_signal_research_reflux: fingerprint=5148fe3aca7554b773fb36e5cb7cc3a19478bc0f7f43f91ff506aa207e40a052; mode=non-target; evidence_b64=QjQgaXNvbGF0ZWQgcHJvYmUgZXZpZGVuY2UgaXMgdGFzay1sb2NhbCBhbmQgbm90IGRpcmVjdCBtb250aGx5IHJlc2VhcmNoIFNTT1QgbWF0ZXJpYWw= -->
 <!-- dm_signal_research_reflux: fingerprint=f33c38b8c0dfbd28c8c2160b931528f93cb0eadc72ca72a3549f99e76a54340d; mode=non-target; evidence_b64=QjQgaXNvbGF0ZWQgcHJvYmUgZXZpZGVuY2UgaXMgdGFzay1sb2NhbCBhbmQgbm90IGRpcmVjdCBtb250aGx5IHJlc2VhcmNoIFNTT1QgbWF0ZXJpYWw= -->
 <!-- dm_signal_research_reflux: fingerprint=4909b549a09424fe0c42c55635f3bab1941a7a5364c567ec8ec98fc1f200d362; mode=non-target; evidence_b64=Qy145Y2Y55m6UkPlgbXlr5/ov73oo5zjgafnoJTnqbbntKLlvJXmm7TmlrDjga90YXNrIHNjb3Bl5aSW -->
@@ -11,12 +17,7 @@
 <!-- dm_signal_research_reflux: fingerprint=02594f60e181593bc74373ae18507cd7a31fa3f02146894c32193084855d67e6; mode=non-target; evidence_b64=dGFzay1vd25lZCBCNCBoYW5kb2ZmIGFydGlmYWN0OyBleGlzdGluZyByZXNlYXJjaCBpbmRleCBoYXMgbm8gbWF0Y2hpbmcgQjQgc25hcHNob3QtYm91bmRhcnkgc2VjdGlvbg== -->
 <!-- dm_signal_research_reflux: fingerprint=090971c37e792ea5c55a057d325f3d2b3f822d276e3eabf64b395730e6218f18; mode=non-target; evidence_b64=dGFzay1vd25lZCBCNCBoYW5kb2ZmIGFydGlmYWN0OyBleGlzdGluZyByZXNlYXJjaCBpbmRleCBoYXMgbm8gbWF0Y2hpbmcgQjQgc25hcHNob3QtYm91bmRhcnkgc2VjdGlvbg== -->
 <!-- dm_signal_research_reflux: fingerprint=1ffa5b00b1232e86b8ddda412d551c0643d6d62232e5f6a6136e216baa3c0573; mode=non-target; evidence_b64=QUMxIHByZXJlcXVpc2l0ZSB2ZXJpZmllcjsgbm8gZGVzaWduIGNvbmNsdXNpb24gdW50aWwgY2xlYW4gaGFuZG9mZg== -->
-<!-- dm_signal_research_reflux: fingerprint=5804a3d8a792143699ab9e8c964d8414493e7163c9d901cc05766b4f8eca81be; mode=non-target; evidence_b64=QUMxIHByZXJlcXVpc2l0ZSB2ZXJpZmllcjsgbm8gZGVzaWduIGNvbmNsdXNpb24gdW50aWwgY2xlYW4gaGFuZG9mZg== -->
-<!-- dm_signal_research_reflux: fingerprint=83164530c7ec54ae2f118a6a54d84f991c219d5c39fb45569628d0c4551e27bf; mode=non-target; evidence_b64=UkPlsYDmiYDmiJDmnpzjgafnoJTnqbbntKLlvJXjgbjjga7mgZLkuYXlkIzmnJ/jga9HQVRFIENMRUFS5b6M44Gr5a626ICB44GM5Yik5pat44GZ44KL -->
-<!-- dm_signal_research_reflux: fingerprint=1dc2404906f08d1042e6d0d894bce04c5460bd231e9c8bfa092dded39c064de6; mode=non-target; evidence_b64=dGFzay1zY29wZWQgQjQgUkMgZXZpZGVuY2UgaXMgbm90IGEgcmV1c2FibGUgcmVzZWFyY2ggaW5kZXggZW50cnk= -->
-<!-- dm_signal_research_reflux: fingerprint=b9dd6450bf75434bdee26592de04ec0a4413550861d75acf23df2e4e5dde037f; mode=non-target; evidence_b64=dGFzay1zY29wZWQgQjQgUkMgZXZpZGVuY2UgaXMgbm90IGEgcmV1c2FibGUgcmVzZWFyY2ggaW5kZXggZW50cnk= -->
-<!-- dm_signal_research_reflux: fingerprint=7d02042197c6aa50ce27b90e7e2353861c5637859f67c015b767931403f6d42f; mode=non-target; evidence_b64=UkPlsYDmiYDmiJDmnpzjgafnoJTnqbbntKLlvJXjgbjjga7mgZLkuYXlkIzmnJ/jga9HQVRFIENMRUFS5b6M44Gr5a626ICB44GM5Yik5pat44GZ44KL -->
-<!-- source_commit:f9f9b325c4120ff0d5fb7cf8c9f626d1072c45a4 reason:cmd_karo_recon2_b4_snapshot_boundary_adversarial_20260803 evidence:B4 adversarial handoff reviewed; source repo HEAD verified before completion -->
+
 
 
 
