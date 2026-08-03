@@ -1,10 +1,16 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_goal_cx_nukimi_classification_rc_20260803 reviewed source boundary -->
+<!-- last_updated: 2026-08-03 cmd_karo_recon_b4_route_sequence_harness_rc_20260803 reviewed source boundary -->
+<!-- dm_signal_research_reflux: fingerprint=e38020fd3d79802b46dc6d9db84c24544e1b95ffe51e02e7418490343adb2b29; mode=non-target; evidence_b64=RC14IHRvcG9sb2d55oiQ5p6c44Gv5pyI5qyh56CU56m25q2j5pys44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
+<!-- dm_signal_research_reflux: fingerprint=a29e30f56093a95457bf80508edc847fd172850d9883c6c51dc2a26a05abd01f; mode=non-target; evidence_b64=RC14IHRvcG9sb2d55oiQ5p6c44Gv5pyI5qyh56CU56m25q2j5pys44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
+<!-- dm_signal_research_reflux: fingerprint=0de57ce148b35743b3ad5018f2392565a7675fb0bbb2cd69bd53b38f8e2bc63c; mode=non-target; evidence_b64=QjQgc3RhZ2UtMyBGQUlML0JMT0NLIGV2aWRlbmNlOyBubyBHQVRFIENMRUFSIGtub3dsZWRnZSB0byByZWZsdXg7IHJlcG9ydCByb3V0ZXMgYmxvY2tlciB0byBLYXJv -->
+<!-- dm_signal_research_reflux: fingerprint=2f62cfbd0cafa333793ef8cb0e596645fd1b3dc75a459d4001c12ca86ef94eee; mode=non-target; evidence_b64=QjQgc3RhZ2UtMyBGQUlML0JMT0NLIGV2aWRlbmNlOyBubyBHQVRFIENMRUFSIGtub3dsZWRnZSB0byByZWZsdXg7IHJlcG9ydCByb3V0ZXMgYmxvY2tlciB0byBLYXJv -->
+<!-- dm_signal_research_reflux: fingerprint=d3bb755754b67bee43fa721d58dceadf4759a13d26894b097fde0acc6bd6e94a; mode=non-target; evidence_b64=QjQgc3RhZ2UtMyBGQUlML0JMT0NLIGV2aWRlbmNlOyBubyBHQVRFIENMRUFSIGtub3dsZWRnZSB0byByZWZsdXg7IHJlcG9ydCByb3V0ZXMgYmxvY2tlciB0byBLYXJv -->
+<!-- dm_signal_research_reflux: fingerprint=7d79c726ec910b9a91c3e078f882ab334dca0b2ef5f0c0618507e2cfce3d0d1a; mode=non-target; evidence_b64=QjTlhYjooYzlgbXlr59SQ+OBrnRhc2stb3duZWTlrp/ooYzlpZHntITmiJDmnpzjgILml6LlrZhjb250ZXh057WQ6KuW44Gu5aSJ5pu044Gq44GX -->
+<!-- dm_signal_research_reflux: fingerprint=e44d7d73c8ff22f1b8104396ba5dc2c1a2a7c181d0abe9956f6d7f00c8de0e7b; mode=non-target; evidence_b64=QjTlhYjooYzlgbXlr59SQ+OBrnRhc2stb3duZWTlrp/ooYzlpZHntITmiJDmnpzjgILml6LlrZhjb250ZXh057WQ6KuW44Gu5aSJ5pu044Gq44GX -->
 <!-- dm_signal_research_reflux: fingerprint=f4b56fe5868028d0159648cd03a8baa2352fea2d5aca7307d8c796834f9b0ac1; mode=non-target; evidence_b64=U3RhbmRhbG9uZSBCNSBwcmVmbGlnaHQgZGV0YWlsOyBjYW5vbmljYWwgaW5kZXggYWxyZWFkeSBleGlzdHMgaW4gbXVsdGktYWdlbnQtc2hvZ3VuIGRlc2lnbiB2NC44MiDCpzIuNSBCNTsgdGFzayBzY29wZSBpcyBsaW1pdGVkIHRvIHR3byByZXNlYXJjaCBhcnRpZmFjdHMu -->
 <!-- dm_signal_research_reflux: fingerprint=b12479b1eeaa57a2a508c1528581f70a46ae67df53a527303cdd7eeaf375504f; mode=non-target; evidence_b64=U3RhbmRhbG9uZSBCNSBwcmVmbGlnaHQgZGV0YWlsOyBjYW5vbmljYWwgaW5kZXggYWxyZWFkeSBleGlzdHMgaW4gbXVsdGktYWdlbnQtc2hvZ3VuIGRlc2lnbiB2NC44MiDCpzIuNSBCNTsgdGFzayBzY29wZSBpcyBsaW1pdGVkIHRvIHR3byByZXNlYXJjaCBhcnRpZmFjdHMu -->
-<!-- dm_signal_research_reflux: fingerprint=d3bb755754b67bee43fa721d58dceadf4759a13d26894b097fde0acc6bd6e94a; mode=non-target; evidence_b64=RDDliY3mrrVyZWFkb25seeWBteWvn+aIkOaenOOAguioreioiOato+acrOabtOaWsOOBr+WutuiAgeODrOODk+ODpeODvC9HQVRF5b6M44Gu5bCG6LuN5Y2Y5LiAd3JpdGVy6LKs5YuZ44Gn44GC44KK44CB5pysdGFza+OBr+Wun+ihjHRvcG9sb2d5IGFydGlmYWN044Gu44G/44CC -->
 <!-- dm_signal_research_reflux: fingerprint=f49c6268d6fe307d8c02f8efacf48451d558ed60eef5d9f85ff9f1ceead1d3c8; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwubWQgQy146ZqU6ZuiVzEtVzU6IFc144G+44GnQkxPQ0vjg7tPVVRfT0ZfU0NPUEXkuLjjgoHnpoHmraLjgbjkuIDoh7Q= -->
-<!-- source_commit:36008e55 reason:cmd_karo_goal_cx_nukimi_classification_rc_20260803 reviewed source boundary evidence:cmd_complete_gate -->
+<!-- source_commit:6447e5ca reason:cmd_karo_recon_b4_route_sequence_harness_rc_20260803 seven-stage contract evidence:cmd_complete_gate -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -13,6 +19,8 @@
 補足: 旧詳細資料(`parity-verification-details.md`, `edge-detection-cycles.md`, `spa-overfitting-analysis.md`, `gs-results-by-ninjutsu.md`)は未復旧。現存するdocs/researchは `cmd_484/485/486/488` の4件のみ。
 
 GA-320境界照合: `ace6d961`（copy/caption axis L監査）と`20bc9de2`（値配色baseline復旧）は研究アルゴリズム変更ではなくUI監査資料の追加で、結論は`context/dm-signal-frontend.md` §19へ反映済み。research索引への重複転記は偽陽性2/2として行わず、source境界のみ更新する。
+
+B4七段先行偵察RC: A0-4b CSV `8,951`行・`78/78 PF`を対象SSOTとし、snapshot→隔離再生成→anchor `24/24`→guard `1249`/apply `72`→ledger再基線 `72`→cache→commitの7段契約を `7/7`、FAIL `0`、SKIP `0`、本番write `0`、成果hash `2/2`一致で確定。旧preflightは表示78に対して実走93のため対象集合SSOTから除外した。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_recon_b4_route_sequence_harness_rc.md`、source commit=`6447e5ca`。
 
 ---
 
