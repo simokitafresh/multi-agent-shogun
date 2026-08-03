@@ -50,7 +50,9 @@ SH
 @test "detached completion tail survives parent exit and finishes dashboard ntfy and inbox archive" {
     unset CMD_COMPLETE_SYNC_TAIL
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/durable-tail.log"
-    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+    mkdir -p "$BATS_TEST_TMPDIR/tmux-no-server"
+    run env TMUX= TMUX_TMPDIR="$BATS_TEST_TMPDIR/tmux-no-server" \
+        CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
         bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
     [ "$status" -eq 0 ]
     [[ "$output" == *"QUEUED completion_tail"* ]]

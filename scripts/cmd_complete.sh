@@ -346,7 +346,11 @@ if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
             # one-shot session supplies the same durable server boundary and
             # exits with the worker instead of turning the public call sync.
             _tail_socket="cmd-complete-${CMD_ID//[^A-Za-z0-9_-]/_}-$$"
-            "$_tmux_bin" -L "$_tail_socket" new-session -d "$_tail_cmd </dev/null >>$_tail_log_q 2>&1"
+            # A newly spawned tmux server inherits open descriptors from this
+            # process.  Do not let it retain the checkpoint lock while the
+            # worker re-enters this script and waits to acquire that lock.
+            "$_tmux_bin" -L "$_tail_socket" new-session -d \
+                "$_tail_cmd </dev/null >>$_tail_log_q 2>&1" 9>&-
             printf '[cmd_complete] QUEUED completion_tail launcher=tmux-private log=%s\n' "$_tail_log"
         fi
     else
