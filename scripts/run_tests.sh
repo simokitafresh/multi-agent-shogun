@@ -1354,16 +1354,20 @@ identity = {
 blob = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 print(hashlib.sha256(blob.encode()).hexdigest())
 PY
-)" || return 2
+            )" || return 2
             printf 'task-identity:%s\n' "$_sf_task_identity"
+            # Read-only probes own no executable source scope, including when
+            # their inspection target belongs to an external project.  Emit
+            # the sentinel before external-project identity so the public
+            # receipt freezes an empty test_paths list.
+            if task_is_readonly_probe "$1"; then
+                printf 'readonly-probe:%s\n' "$(realpath -- "$1")"
+                return 0
+            fi
             local _sf_task_root
             _sf_task_root="$(task_scope_root "$1")" || return 2
             if [ "$_sf_task_root" != "$REPO_ROOT" ]; then
                 printf 'external-project:%s\n' "$_sf_task_root"
-                return 0
-            fi
-            if task_is_readonly_probe "$1"; then
-                printf 'readonly-probe:%s\n' "$(realpath -- "$1")"
                 return 0
             fi
             local scope

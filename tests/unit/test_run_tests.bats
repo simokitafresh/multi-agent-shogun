@@ -1501,6 +1501,58 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: an inspection-only task may target another project without
+# leaking the external-project selection sentinel into its zero-test receipt;
+# the same external scope remains fail-closed for implementation ownership.
+@test "external readonly recon emits zero-test receipt while implementation scope stays BLOCKed" {
+  external_root="$TMPROOT/external-project"
+  mkdir -p "$external_root/scripts" "$TMPROOT/queue/tasks" "$TMPROOT/receipts-readonly" "$TMPROOT/receipts-implementation"
+  printf '# inspected\n' >"$external_root/scripts/inspected.sh"
+  git -C "$external_root" init -q
+  git -C "$external_root" config user.email test@example.invalid
+  git -C "$external_root" config user.name test
+  git -C "$external_root" add scripts/inspected.sh
+  git -C "$external_root" commit -qm init
+
+  cat >"$TMPROOT/queue/tasks/external-readonly.yaml" <<YAML
+task:
+  task_type: recon
+  project: external-fixture
+  inspection_path: '["$external_root/scripts"]'
+  commit_contract:
+    required: false
+    repo_root: $external_root
+    planned_paths: []
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-readonly" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/external-readonly.yaml"
+  [ "$status" -eq 0 ]
+  readonly_receipt="$(find "$TMPROOT/receipts-readonly" -name '*.json' -type f | head -1)"
+  [ -n "$readonly_receipt" ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["rc"], d["declared_test_count"], d["observed_test_count"], d["skip_count"], d["test_paths"])' "$readonly_receipt")" = "0 0 0 0 []" ]
+
+  cat >"$TMPROOT/queue/tasks/external-implementation.yaml" <<YAML
+task:
+  task_type: hotfix
+  project: external-fixture
+  target_path: scripts/inspected.sh
+  commit_contract:
+    required: true
+    repo_root: $external_root
+    planned_paths: [scripts/inspected.sh]
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-implementation" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/external-implementation.yaml"
+  [ "$status" -eq 2 ]
+  implementation_receipt="$(find "$TMPROOT/receipts-implementation" -name '*.json' -type f | head -1)"
+  [ -n "$implementation_receipt" ]
+  [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$implementation_receipt")" -eq 2 ]
+}
+
 # test_necessity: a recon with commit ownership remains an implementation task;
 # readonly classification must not suppress its declared contract test.
 @test "commit-required recon keeps implementation test selection" {
