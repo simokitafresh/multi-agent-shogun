@@ -35,13 +35,15 @@ fi
 unset _ninja_scope_commit_self
 
 usage() {
-    echo "Usage: bash scripts/ninja_scope_commit.sh [-m <message>] [--repair-index | --patch <file> --base-blob <hash>] -- <path> [path ...]" >&2
+    echo "Usage: bash scripts/ninja_scope_commit.sh [-m <message>] [--reflux-mode synced|non-target --reflux-evidence <text>] [--repair-index | --patch <file> --base-blob <hash>] -- <path> [path ...]" >&2
 }
 
 message=""
 patch_file=""
 base_blob=""
 repair_index=false
+reflux_mode=""
+reflux_evidence=""
 while (($#)); do
     case "$1" in
         -m|--message)
@@ -63,6 +65,16 @@ while (($#)); do
             repair_index=true
             shift
             ;;
+        --reflux-mode)
+            (($# >= 2)) || { usage; exit 2; }
+            reflux_mode="$2"
+            shift 2
+            ;;
+        --reflux-evidence)
+            (($# >= 2)) || { usage; exit 2; }
+            reflux_evidence="$2"
+            shift 2
+            ;;
         --)
             shift
             break
@@ -77,6 +89,10 @@ done
 
 if [[ "$repair_index" == false ]]; then
     [[ -n "$message" ]] || { echo "BLOCK: commit message is required" >&2; exit 2; }
+fi
+if [[ -n "$reflux_mode" || -n "$reflux_evidence" ]]; then
+    [[ "$reflux_mode" =~ ^(synced|non-target)$ && -n "$reflux_evidence" ]] \
+        || { echo "BLOCK: --reflux-mode and --reflux-evidence must be supplied together" >&2; exit 2; }
 fi
 (($# > 0)) || { echo "BLOCK: commit scope is empty" >&2; exit 2; }
 if [[ "$repair_index" == true && ( -n "$patch_file" || -n "$base_blob" ) ]]; then
@@ -1166,6 +1182,13 @@ begin_phase guard
 # (NINJA_SCOPE_COMMIT_SCRIPT_DIR)は常にmulti-agent-shogun/scripts/を指すため
 # それを基準にguardを解決する。
 if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]]; then
+    if [[ -n "$reflux_mode" ]]; then
+        # Prepare from this helper's exact private index after scope
+        # normalization.  Running prepare beforehand observes the shared index
+        # and is inherently ambiguous while other ninjas have research WIP.
+        bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" prepare \
+            --repo "$repo_root" --mode "$reflux_mode" --evidence "$reflux_evidence"
+    fi
     bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
 fi
 finish_phase 0

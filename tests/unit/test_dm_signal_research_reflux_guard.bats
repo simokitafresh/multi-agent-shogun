@@ -371,6 +371,22 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: the scoped commit helper must prepare GA-220 from its exact
+# owned private index while unrelated research WIP remains in the worktree.
+@test "GA-220 scoped commit reflux flags ignore unrelated concurrent research WIP" {
+    printf 'owned-a\n' > "$DM/docs/research/owned-a.md"
+    printf 'foreign-b\n' > "$DM/docs/research/foreign-b.md"
+
+    run bash -c "cd '$DM' && DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/scripts/ninja_scope_commit.sh' -m owned-a --reflux-mode non-target --reflux-evidence owned-a -- docs/research/owned-a.md"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$DM" show --pretty='' --name-only HEAD)" = "docs/research/owned-a.md" ]
+    [ -f "$DM/docs/research/foreign-b.md" ]
+
+    run bash -c "cd '$DM' && DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/scripts/ninja_scope_commit.sh' -m foreign-b --reflux-mode non-target --reflux-evidence foreign-b -- docs/research/foreign-b.md"
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'dm_signal_research_reflux: fingerprint=' "$CTX")" -eq 2 ]
+}
+
 @test "GA-236 TOCTOU: docs/research対象外のgit add+git commit連結は誤BLOCKしない" {
     printf 'change\n' >> "$DM/README.md"
     run bash "$GUARD" check-command "cd '$DM' && git add README.md && git commit -m test"

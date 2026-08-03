@@ -99,6 +99,16 @@ shell syntaxを再実行する。
 
 helperは指定pathだけをaddし、`git commit --only -- <paths>`でcommitする。共有indexにある他者stageは変更もcommitもしない。空scope・存在しないpathはBLOCKし、pre-commit hookは通常どおり実行する。
 
+DM-Signalの`docs/research`成果は、外部の`prepare`を先に実行してはならない。並行忍者の共有indexを読んでscope fingerprintがずれるため、helperの同一private index内で証跡生成と検査を連続実行する。
+
+```bash
+bash scripts/ninja_scope_commit.sh -m "<message>" \
+  --reflux-mode non-target --reflux-evidence "<研究索引へ反映しない具体的根拠>" \
+  -- docs/research/<owned-file-1> docs/research/<owned-file-2>
+```
+
+研究索引へ同期済みなら`--reflux-mode synced`を使う。`--reflux-mode`と`--reflux-evidence`は必ず対で指定し、helperがscope限定addを終えた後のprivate indexを正本としてfingerprintを作る。
+
 commit hash公開後に同一scopeへ到着したdirty差分は別eventとしてWARNし、公開済みcommitを失敗へ戻さない。追加差分の整合は最終report/checkpointで確認する。
 
 同一run・message・mode・scope・worktree bytesで再実行した場合、helperはsingle-flight receiptを検証し、重複commitを作らず既存の40桁commit hashをstdoutへ返す。別タスクで同じmessage/pathを意図的に使うオーケストレータは `NINJA_SCOPE_COMMIT_RUN_ID` をタスク固有値にする。不正・消失receiptはfail-closedでBLOCKされる。
@@ -151,6 +161,11 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
+- 2026-08-03: gate=gate_report_format result=FAIL executor=kagemaru reason=cross_repo_commits: cross_repo_commits[0] commit does not change path: backend/tests/test_monthly_boundary_contract.py
+- 2026-08-03: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: commit/task history does not contain owned/planned path: backend/app/jobs/recalculate_fof.py; commit_contract: commit/task history does not contain owned/planne...
+- 2026-08-03: gate=gate_report_format result=FAIL executor=tobisaru reason=cross_repo_commits: cross_repo path appears in multiple entries: backend/tests/test_monthly_boundary_contract.py
+- 2026-08-02: gate=gate_report_format result=FAIL executor=hanzo reason=cross_repo_commits: cross_repo_commits[1] commit does not contain path: queue/reports/hanzo_report_cmd_karo_recon_cagr_drop_20260802_recon2.yaml
+- 2026-08-02: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_contract: commit/task history does not contain owned/planned path: logs/skill_execution_log.yaml
 - 2026-08-02: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_hash: 'no-code-change' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ; commit_contract: required commit_hash is missing or invalid
 - 2026-08-02: gate=gate_report_format result=FAIL executor=tobisaru reason=cross_repo_commits: primary commit_hash is absent from cross_repo_commits
 - 2026-08-02: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: commit_hash does not resolve to a readable commit; LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
@@ -166,11 +181,6 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - 2026-07-29: gate=gate_report_format result=FAIL executor=hanzo reason=cross_repo_commits: cross_repo_commits[0] commit does not contain path: backend/tests/test_fof_monthly_returns_optimization_contract.py
 - 2026-07-29: gate=gate_report_format result=FAIL executor=saizo reason=cross_repo_commits: cross_repo_commits[0] commit does not contain path: mnt/c/Python_app/rebalancer/backend/app/config.py
 - 2026-07-29: gate=gate_report_format result=FAIL executor=saizo reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: commit/task history does not contain owned/planned path: scripts/inbox_write.sh; commit_co...
-- 2026-07-28: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: commit/task history does not contain owned/planned path: scripts/deploy_task.sh; commit_co...
-- 2026-07-28: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: commit/task history does not contain owned/planned path: context/semantic-map.md
-- 2026-07-28: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: commit/task history does not contain owned/planned path: queue/insights.yaml
-- 2026-07-28: gate=gate_report_format result=FAIL executor=saizo reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: commit/task history does not contain owned/planned path: context/shogun-awakening-check.md
-- 2026-07-28: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: required commit_hash is missing or invalid; operational_simulation: MISSING (command,expected,actual,result; integration cmd requires command/expected/actual/re...
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。binary_checks.resultはyes/noのみ、verdictはgate_report_format.sh自動導出、報告追記はhelper経由に限定する。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パスを検出し、個別dict変換する。ninja-commitのcommit_hash記録手順への影響なし。
