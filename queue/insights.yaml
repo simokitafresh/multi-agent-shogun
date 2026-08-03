@@ -1039,3 +1039,22 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-03T21:06:05+09:00"
+- id: INS-20260804-031401742-4711
+  ts: "2026-08-04T03:14:01+09:00"
+  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: resolved
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq 'f40c8ce422e5bd710a91502c96325a007b4476871afa76866ac406dbdb1ff797' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
+  occurrence_count: 3
+  last_seen: "2026-08-04T03:32:00+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
+  resolved_reason: "verify_command PASS; self_retro event_id is unique (count=1, duplicate count=0); delivery recorded by gunshi_review_bundle and SG7 validation preserved, so no additional code change or decision required"
+  action_artifact: "logs/self_retro.jsonl#event_id=f40c8ce422e5bd710a91502c96325a007b4476871afa76866ac406dbdb1ff797"
+  resolved_at: "2026-08-04T04:56:24+09:00"
