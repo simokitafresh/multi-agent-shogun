@@ -168,6 +168,8 @@ post_has_numeric_claim() {
     # (殿裁定2026-08-03「blockがバグではないか」— 軍師レビュー回答でS3がFP BLOCKされた)
     # 複合ID(B3.5/A0-4b/A0-2p等)はドット・ハイフン接続の数字+接尾辞を再帰的に除去
     stripped="$(printf '%s' "$stripped" | sed -E 's/[SABsab][0-9]{1,2}([.\-][0-9]{1,2}[a-z]?)*[a-z]?//g')"
+    # RC番号(RC1/RC2/RC3等)・SG-PRE番号(SG-PRE35等)・AC番号(AC1-AC8等)は構造参照
+    stripped="$(printf '%s' "$stripped" | sed -E 's/(RC|SG-PRE|AC|PRE)[0-9]{1,3}//gi')"
     printf '%s' "$stripped" | grep -qP '[0-9０-９]'
 }
 
