@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_recon2_cx_logical_asof_partial_diff_review_20260803 -->
-<!-- source_commit:3222293887bdbc9c23b8a2090a0cf3ced16bc5ae reason:cmd_karo_recon2_cx_logical_asof_partial_diff_review_20260803 evidence:caller3/3・未伝搬0・FoF caller追加要否YES・境界load FAILを独立監査 -->
+<!-- last_updated: 2026-08-03 cmd_karo_recon2_july_prices_full_coverage_20260803 -->
+<!-- source_commit:faf45ac6f5fc70c44e8a0e5301da751e97780771 reason:cmd_karo_recon2_july_prices_full_coverage_20260803 evidence:18x22=396・actual286・missing110・5symbol各22欠落をproduction readonly再照合 -->
 <!-- dm_signal_research_reflux: fingerprint=ee3b4b0d9f472b6be206ad310078d1e3c71c3f83d415d30efa75651587f3b313; mode=non-target; evidence_b64=dGFzay1vd25lZCByZWNvbiBldmlkZW5jZTsgbW9udGhseSByZXNlYXJjaCBTU09U44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=12b65aa782dcb51b49c79c469b79035af039f59162bb7bbcec38f6ae1c780cd3; mode=non-target; evidence_b64=dGFzay1vd25lZCByZWNvbiBldmlkZW5jZTsgbW9udGhseSByZXNlYXJjaCBTU09U44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=5a2f84864232afe59e09a9e5bd0653e77ef55a71cf5288a02d582ddbb6a7aaf9; mode=non-target; evidence_b64=dGFzay1vd25lZCByZWNvbiBldmlkZW5jZTsgbW9udGhseSByZXNlYXJjaCBTU09U44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
