@@ -1731,7 +1731,8 @@ PY
   [ "$status" -eq 0 ]
 }
 
-# test_necessity: External frontend dispatch must never pass Jest-only CLI flags
+# test_necessity: cmd_karo_hotfix_run_tests_vitest_cli_20260804 — External
+# frontend dispatch must never pass Jest-only CLI flags
 # to Vitest, and its native terminal summary must produce a non-zero test count.
 @test "external frontend Vitest uses engine-specific arguments and publishes count" {
   external="$TMPROOT/external-vitest"

@@ -1935,6 +1935,8 @@ _run_tests_main() {
                             _frontend_root="$_fallback/frontend"
                             printf 'DRVFS_EXT4_FALLBACK result=selected root=%s receipt=required\n' "$_fallback"
                         fi
+                        # cmd_karo_hotfix_run_tests_vitest_cli_20260804:
+                        # CLI options are owned by the detected test engine.
                         local _frontend_engine
                         _frontend_engine="$(python3 - "$_frontend_root/package.json" <<'PY'
 import json, re, sys
