@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_goal_a3_partial_oracle_rc_20260803 reviewed source boundary -->
-<!-- dm_signal_research_reflux: fingerprint=17101031f5de0d9b7668a809a71f5b0694dc537b10ae6da2fddcd38759edf96b; mode=non-target; evidence_b64=QTTni6znq4tSQ+OBruS4gOWbnumZkOOCiuaIkOaenOeJqeOAgkIyYiBmdWxsIHJlY2FsY3VsYXRpb27liY3jga7liIbpoZ7oqLzot6HjgafjgYLjgopjb250ZXh05oGS5LmF57Si5byV44G45pyq56K65a6a57WQ5p6c44KS5ZCM5pyf44GX44Gq44GE -->
-<!-- source_commit:023e258f reason:cmd_karo_goal_a3_partial_oracle_rc_20260803 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=023e258f -->
+<!-- last_updated: 2026-08-03 reviewed_source_boundary -->
+<!-- dm_signal_research_reflux: fingerprint=fcddb9815811280428eeb9f77120a045e323f217fab7305facbd4d4250d9f05a; mode=non-target; evidence_b64=RDAgcHJlZmxpZ2h0IGRvY3Mtb25seSBleGVjdXRpb24gY29udHJhY3Q7IGNvbnRleHQgaW5kZXjlpInmm7TkuI3opoHjgIFydW50aW1l5pyq5aSJ5pu0 -->
+<!-- source_commit:201a05c0 reason:reviewed_source_boundary evidence:cmds=cmd_karo_goal_a5_l0_finalize_20260803,cmd_karo_recon_c0_l1_lane_contract_preflight_20260803 reports=PASS A5_rows=133 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
