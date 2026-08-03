@@ -28,6 +28,10 @@ B4隔離実走の現状: 固定snapshot `2026-07-11`ではPF再生成 `78/78`後
 
 D系topology先行偵察: readonly本番configから対象 `78/78 PF`、依存edge `189`、L1/L2/L3=`25/24/29`をKahn順へ一意分類し、欠落・重複・循環・未分類各0、全edgeでchild先行を確認。PF単位transaction、rollback/checkpoint、全78完了後のguard `1249`→apply `72`→ledger `72`→cacheの順序を固定。本番write0、runner `1/1` PASS、SKIP0、hash `2/2`一致。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_recon_dx_transaction_topology_preflight.md`、source commit=`7d69f153`。
 
+B5拒否gate先行偵察: Signal共通flushとMonthlyReturn共通delete/UPSERTの2保存境界へvalidatorを集約し、writer/schema/caller `8/8`分類・未分類0。敵対4類型を拒否/通知 `4/4`、正常4類型の誤拒否 `0/4`とする実装契約を固定し、DB恒久制約はD3まで保留。本体変更0、本番write0、runner `17/17` PASS、SKIP0、hash `2/2`一致。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_recon_b5_rejection_gate_preflight.md`、source commit=`97dc501b`。
+
+C9/C2隔離handoff先行偵察: C-x W5 receiptからC9 `21/21`→L2 `24/24`→L3 `25/25`へ同一snapshot世代を直列継承するmanifest契約を固定。旧C2=`21/層`仮定はL2で3件・L3で4件不足するため撤回。欠落/重複/世代混在各0、hash `2/2`、本番write0、task runner `1/1` PASS・SKIP0。一時contract testはdefault-delete済み。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_recon_c9_c2_isolated_handoff.md`、source commit=`7a24d609`。
+
 ---
 
 ## §19. 月次リターン傾き分析 (cmd_270/271/272)
