@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_recon2_cx_w1_7lane_normal_202606_20260803 reviewed source boundary -->
-<!-- source_commit:cc4882758a985d65f1fec16c55462e4b7523ada7 reason:cmd_karo_recon2_cx_w1_7lane_normal_202606_20260803 reviewed source boundary evidence:generated7 oracle_exact7 missing0 duplicate0 write0 -->
+<!-- last_updated: 2026-08-03 cmd_karo_recon2_ief_22day_shadow_fetch_20260803 reviewed source boundary -->
+<!-- source_commit:bf3ffe7dfe124fcd4281ce97fd26bef218525f1b reason:cmd_karo_recon2_ief_22day_shadow_fetch_20260803 reviewed source boundary evidence:expected22 actual0 shadow22 finite22 missing0 hash2 write0 -->
 <!-- dm_signal_research_reflux: fingerprint=ca5314404b911dd6c2cca95bc6dcc846caee6c9b624b847fec89e492b3ee4523; mode=non-target; evidence_b64=5Y2Y5LiAcGFpcuOBrumZkOWumuWBteWvn+aIkOaenOOBp+OBguOCiuaBkuS5heeglOeptue0ouW8leOBruabtOaWsOWvvuixoeWklg== -->
 <!-- dm_signal_research_reflux: fingerprint=5d788caa6d0c4a0de9354e2744ff821b111aae1671fac592a12ded97a71ad116; mode=non-target; evidence_b64=5Y2Y55m6Ym91bmRlZCBwcm9iZeaIkOaenOOBp+eglOeptue0ouW8leOBruaBkuS5heamguW/teOCkuWkieabtOOBl+OBquOBhA== -->
 <!-- dm_signal_research_reflux: fingerprint=424aad328ca81e55e049847fcf805a1fb41ba08541abd45c59c7c64bbcd4b971; mode=non-target; evidence_b64=5Y2Y55m6Ym91bmRlZCBwcm9iZeaIkOaenOOBp+eglOeptue0ouW8leOBruaBkuS5heamguW/teOCkuWkieabtOOBl+OBquOBhA== -->
