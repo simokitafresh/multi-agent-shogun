@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-03 reflux backlink SSOT update reviewed -->
+<!-- last_updated: 2026-08-04 cmd_karo_hotfix_ga432_context_freshness reviewed source boundary -->
+<!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
 <!-- last_synced_lesson: L1542 -->
 
