@@ -1526,6 +1526,18 @@ try:
         d['declared_test_count']=total
         d['observed_test_count']=failed + skipped + passed
         d['skip_count']=skipped
+    vitest=list(re.finditer(
+        r'^\s*Tests\s+(?:(\d+)\s+failed\s*\|\s*)?'
+        r'(?:(\d+)\s+skipped\s*\|\s*)?(?:(\d+)\s+passed\s*)'
+        r'(?:\((\d+)\))?\s*$',
+        clean, re.MULTILINE,
+    ))
+    if vitest:
+        failed, skipped, passed, total=(int(value or 0) for value in vitest[-1].groups())
+        total = total or failed + skipped + passed
+        d['declared_test_count']=total
+        d['observed_test_count']=failed + skipped + passed
+        d['skip_count']=skipped
     # Pytest's terminal summary is decoration-delimited rather than TAP/Jest.
     # Count only the three receipt-contract outcomes; warnings, deselected,
     # xfail/xpass, and duration are not selected test results.
@@ -1923,9 +1935,28 @@ _run_tests_main() {
                             _frontend_root="$_fallback/frontend"
                             printf 'DRVFS_EXT4_FALLBACK result=selected root=%s receipt=required\n' "$_fallback"
                         fi
+                        local _frontend_engine
+                        _frontend_engine="$(python3 - "$_frontend_root/package.json" <<'PY'
+import json, re, sys
+script = str((json.load(open(sys.argv[1], encoding="utf-8")).get("scripts") or {}).get("test") or "")
+if re.search(r'(^|[ /])vitest(?:[ /]|$)', script):
+    print("vitest")
+elif re.search(r'(^|[ /])jest(?:[ /]|$)', script):
+    print("jest")
+else:
+    raise SystemExit(2)
+PY
+)" || { echo "BLOCK: unsupported external frontend test engine" >&2; exit 2; }
                         local _frontend_rc=0
-                        (cd "$_frontend_root" && npm test -- --runInBand --passWithNoTests --findRelatedTests "${_external_frontend_sources[@]}") \
-                            || _frontend_rc=$?
+                        if [[ "$_frontend_engine" == "vitest" ]]; then
+                            # Vitest uses positional filters and does not expose
+                            # Jest's related-test CLI options.
+                            (cd "$_frontend_root" && npm test -- --passWithNoTests "${_external_frontend_sources[@]}") \
+                                || _frontend_rc=$?
+                        else
+                            (cd "$_frontend_root" && npm test -- --runInBand --passWithNoTests --findRelatedTests "${_external_frontend_sources[@]}") \
+                                || _frontend_rc=$?
+                        fi
                         if [[ "${_fallback_owned:-0}" == "1" ]]; then
                             cleanup_frontend_ext4_fallback "$_fallback" \
                                 || { echo "BLOCK: frontend ext4 fallback cleanup failed" >&2; exit 2; }

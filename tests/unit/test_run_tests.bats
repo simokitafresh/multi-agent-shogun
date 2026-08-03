@@ -1731,6 +1731,45 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: External frontend dispatch must never pass Jest-only CLI flags
+# to Vitest, and its native terminal summary must produce a non-zero test count.
+@test "external frontend Vitest uses engine-specific arguments and publishes count" {
+  external="$TMPROOT/external-vitest"
+  mkdir -p "$external/frontend" "$TMPROOT/projects" "$TMPROOT/queue/tasks" "$TMPROOT/receipts"
+  printf '{"scripts":{"test":"vitest run"}}\n' >"$external/frontend/package.json"
+  printf 'export const value = 1;\n' >"$external/frontend/source.ts"
+  git -C "$external" init -q
+  git -C "$external" add .
+  git -C "$external" -c user.email=t@example.invalid -c user.name=t commit -qm init
+  cat >"$TMPROOT/projects/external-vitest.yaml" <<YAML
+project:
+  path: $external
+YAML
+  cat >"$TMPROOT/queue/tasks/external-vitest.yaml" <<'YAML'
+task:
+  project: external-vitest
+  planned_paths: [frontend/source.ts]
+YAML
+  export NPM_ARGS_LOG="$TMPROOT/npm.args"
+  cat >"$TMPROOT/bin/npm" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >"$NPM_ARGS_LOG"
+printf ' Test Files  1 passed (1)\n Tests  3 passed (3)\n'
+SH
+  chmod +x "$TMPROOT/bin/npm"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0 \
+    NPM_ARGS_LOG="$NPM_ARGS_LOG" RUN_TESTS_DRVFS_P9_DETECTED=0 \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/external-vitest.yaml"
+
+  [ "$status" -eq 0 ]
+  grep -Fqx 'test -- --passWithNoTests source.ts' "$NPM_ARGS_LOG"
+  ! grep -q -- '--runInBand\|--findRelatedTests\|--related' "$NPM_ARGS_LOG"
+  receipt="$(find "$TMPROOT/receipts" -name '*.json' -type f | head -1)"
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["observed_test_count"], d["rc"])' "$receipt")" = "3 0" ]
+}
+
 # test_necessity: an external repo_root may come from commit_contract, but its
 # planned ownership remains distinct from the explicit test execution request.
 @test "external commit_contract repo_root selects explicit nested test" {
