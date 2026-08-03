@@ -1486,3 +1486,28 @@ HOOK
     [ -n "$(git -C "$repo" status --porcelain -- foreign.txt)" ]
     [ ! -e "$repo/.git/scoped-publish-overlap" ]
 }
+
+# test_necessity: a foreign blob present in the final private candidate tree
+# must be rejected before commit-tree/update-ref; this is the 980b4110 safety
+# invariant and cannot be proved by the existing post-publication assertion.
+@test "final private tree scope detector blocks foreign blob before HEAD publication" {
+    repo="$BATS_TEST_TMPDIR/prepublish-scope-detector"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'base-owned\n' > "$repo/owned.txt"
+    printf 'base-foreign\n' > "$repo/foreign.txt"
+    git -C "$repo" add owned.txt foreign.txt
+    git -C "$repo" commit -qm base
+    before="$(git -C "$repo" rev-parse HEAD)"
+    printf 'changed-owned\n' > "$repo/owned.txt"
+    printf 'changed-foreign\n' > "$repo/foreign.txt"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_TEST_INJECT_FOREIGN_PATH=foreign.txt bash "$2" -m detector -- owned.txt' _ "$repo" "$HELPER"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"out-of-scope path entered private commit tree before publish: foreign.txt"* ]]
+    [ "$(git -C "$repo" rev-parse HEAD)" = "$before" ]
+    [ "$(git -C "$repo" rev-list --count --all)" -eq 1 ]
+    [ -n "$(git -C "$repo" status --porcelain -- owned.txt foreign.txt)" ]
+}

@@ -285,6 +285,23 @@ create_and_publish_scoped_commit() {
     # The slow safety hook has already passed without the repository lock.
     # Construct the object from the rebased private index and publish HEAD by
     # old-value CAS while the caller holds the short transaction lock.
+    # Last irreversible-boundary check: the private index may have been
+    # rebuilt after a concurrent HEAD advance or changed by a hook.  Compare
+    # the exact candidate tree with its captured parent before creating an
+    # object or publishing HEAD.  Post-publication checks are too late: the
+    # 980b4110 incident already made eight paths visible when only four were
+    # owned by its caller.
+    local candidate_path
+    # Contract-test seam: inject a real foreign index entry at the final
+    # boundary so the detector is exercised against tree data, not a mock.
+    if [[ -n "${NINJA_SCOPE_COMMIT_TEST_INJECT_FOREIGN_PATH:-}" ]]; then
+        git add -- "$NINJA_SCOPE_COMMIT_TEST_INJECT_FOREIGN_PATH"
+    fi
+    while IFS= read -r candidate_path; do
+        [[ -n "$candidate_path" ]] || continue
+        scope_path_is_in_scope "$candidate_path" "${requested_paths[@]}" \
+            || { echo "BLOCK: out-of-scope path entered private commit tree before publish: $candidate_path" >&2; return 2; }
+    done < <(git diff --cached --name-only "$transaction_head")
     tree_hash="$(git write-tree)" \
         || { echo "BLOCK: failed to write scoped commit tree" >&2; return 1; }
     command_stderr="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-git-exit.XXXXXX")"
@@ -564,6 +581,7 @@ for path in "$@"; do
     normalized="$(scope_path_normalize "$path")" || exit 2
     paths+=("$normalized")
 done
+requested_paths=("${paths[@]}")
 
 # Transient tests are proof artifacts, not contract code.  Immediately before
 # the commit boundary, require a complete primary receipt and remove only
@@ -1116,7 +1134,6 @@ if [[ "$has_task_yaml" == true && "$has_implementation" == true ]]; then
     done
 fi
 
-requested_paths=("${paths[@]}")
 mapfile -t paths < <(git diff --cached --name-only --diff-filter=ACMRD)
 ((${#paths[@]} > 0)) \
     || { echo "BLOCK: scope produced an empty private index after task-YAML separation" >&2; exit 2; }
