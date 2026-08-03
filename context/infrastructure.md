@@ -2,7 +2,7 @@
 <!-- last_updated: 2026-08-04 cmd_karo_hotfix_ga432_context_freshness reviewed source boundary -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1542 -->
+<!-- last_synced_lesson: L1547 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -37,7 +37,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1542 -->
+<!-- last_synced_lesson: L1547 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -78,6 +78,11 @@
 - L1540: append型receiptは集合として全件照合する（cmd_karo_direct_ga428_context_freshness_fix_20260803）
 - L1541: 既存tracked test内の新関数はtask-level test_necessity path宣言とcommit helperが衝突する（cmd_4225_backend_impl）
 - L1542: dependency lock変更のtask test selectorはファイル名filterにしてはならない（cmd_karo_ci_fix_rebalancer_30841850798）
+- L1543: full-corpus testはtracked境界を固定せよ（cmd_karo_ci_fix_30844464109_yaml_injection）
+- L1544: binary存在とdaemon稼働を同一視しない（cmd_karo_ci_fix_30844464109_wrapper_run_tests）
+- L1545: 共有運用YAMLはcommit前にID集合scopeを二値検査する（cmd_reflux_insight_202608040505_kagemaru）
+- L1546: 複数source markerは行順でなくcommit ancestryから単調境界を選べ（cmd_karo_hotfix_ga432_context_freshness）
+- L1547: 同一cmd再配備時のreport snapshot世代一致を報告前に検査する（cmd_karo_hotfix_review_bundle_split_subtask）
 
 ## 設計標準・テスト・因果
 
