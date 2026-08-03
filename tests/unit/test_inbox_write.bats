@@ -1292,6 +1292,34 @@ PY
     [ "$(find "$TEST_TMPDIR/queue/retro/verbatim_pending" -name '*.event' | wc -l)" -eq 1 ]
 }
 
+# test_necessity: a verified FAIL report must reach karo even when the failed
+# attempt leaves task-owned WIP dirty; otherwise failure evidence is structurally
+# undeliverable until the ninja commits an implementation it explicitly rejected.
+@test "task_failed: verified FAIL delivers with uncommitted task-owned evidence" {
+    setup_git_test_env
+
+    python3 - "$TEST_TMPDIR" <<'PY'
+import pathlib, yaml, sys
+root = pathlib.Path(sys.argv[1])
+task_path = root / "queue/tasks/testninja.yaml"
+report_path = root / "queue/reports/testninja_report_cmd_test_001.yaml"
+task = yaml.safe_load(task_path.read_text())
+task["task"]["status"] = "failed"
+task_path.write_text(yaml.safe_dump(task, allow_unicode=True, sort_keys=False))
+report = yaml.safe_load(report_path.read_text())
+report["verdict"] = "FAIL"
+report["binary_checks"]["AC1"][0].update(check="AC1未達を実測", result="no")
+report_path.write_text(yaml.safe_dump(report, allow_unicode=True, sort_keys=False))
+(root / "src/test_file.sh").write_text("#!/bin/bash\n# rejected WIP evidence\n")
+PY
+
+    run _run_inbox_write karo "未達報告" task_failed testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified failure report"* ]]
+    [[ "$output" == *"SKIP: verified task_failed preserves failure evidence"* ]]
+    [ "$(grep -c "^- content: '未達報告'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+}
+
 @test "task_failed: blocked task is a canonical terminal and receives verbatim prompt" {
     setup_git_test_env
     python3 - "$TEST_TMPDIR" <<'PY'

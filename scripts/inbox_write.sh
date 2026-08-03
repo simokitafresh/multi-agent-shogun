@@ -2269,6 +2269,7 @@ fi
 # 目的: 家老の手動修正作業を根絶（karo_workarounds 5件連続同一問題を自動化×強制で解消）
 # LK013: Codex忍者がtask_done typeで報告→gunshi_notify不発を防止
 if inbox_type_triggers_report_completion "$TYPE"; then
+    VERIFIED_FAILURE_REPORT=0
     # Find report YAML path from task YAML
     ensure_agent_config_loaded
     is_ninja_reporter=0
@@ -2510,6 +2511,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                                 exit 1
                             fi
                             echo "[report_format_gate] verified failure report: verdict=FAIL, task status=failed (ninja: ${FROM})" >&2
+                            VERIFIED_FAILURE_REPORT=1
                         else
                         echo "" >&2
                         echo "==============================" >&2
@@ -2544,7 +2546,14 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 TASK_SCOUT_EXEMPT=$(inbox_yaml_field_get "$TASK_YAML" "scout_exempt" "" 2>/dev/null || true)
             fi
 
-            if [ "$TASK_SCOUT_EXEMPT" = "true" ]; then
+            if [ "$VERIFIED_FAILURE_REPORT" = "1" ]; then
+                # A canonical task_failed report must remain deliverable when the
+                # failed attempt intentionally leaves task-owned WIP uncommitted.
+                # Requiring a commit here creates a deadlock: the failure report
+                # cannot reach karo until the failed implementation is committed.
+                # Success completion types still use the strict uncommitted gate.
+                echo "[git_uncommitted_gate] SKIP: verified task_failed preserves failure evidence (ninja: ${FROM})" >&2
+            elif [ "$TASK_SCOUT_EXEMPT" = "true" ]; then
                 echo "[git_uncommitted_gate] SKIP: scout_exempt=true (ninja: ${FROM})" >&2
             else
                 REPORT_CHECK_PATHS="$(inbox_extract_report_paths "$FULL_REPORT" | awk 'NF && $0 != "偵察のみ"')"
@@ -2558,7 +2567,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 fi
             fi
 
-            if [ "$TASK_SCOUT_EXEMPT" != "true" ] && [ -n "$GIT_CHECK_PATHS" ]; then
+            if [ "$VERIFIED_FAILURE_REPORT" != "1" ] && [ "$TASK_SCOUT_EXEMPT" != "true" ] && [ -n "$GIT_CHECK_PATHS" ]; then
                 # プロジェクトリポジトリの解決: task YAMLのproject:からprojects/{project}.yamlのpath:を参照
                 # cmd_1412教訓: SCRIPT_DIR(multi-agent-shogun)でDM-signalファイルをチェックしても検出不能
                 GIT_REPO_DIR="$SCRIPT_DIR"
