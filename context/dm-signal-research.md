@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_recon2_july_prices_full_coverage_20260803 -->
+<!-- last_updated: 2026-08-03 cmd_karo_recon2_cx_w1_7lane_normal_202606_20260803 reviewed source boundary -->
+<!-- source_commit:cc4882758a985d65f1fec16c55462e4b7523ada7 reason:cmd_karo_recon2_cx_w1_7lane_normal_202606_20260803 reviewed source boundary evidence:generated7 oracle_exact7 missing0 duplicate0 write0 -->
 <!-- dm_signal_research_reflux: fingerprint=ca5314404b911dd6c2cca95bc6dcc846caee6c9b624b847fec89e492b3ee4523; mode=non-target; evidence_b64=5Y2Y5LiAcGFpcuOBrumZkOWumuWBteWvn+aIkOaenOOBp+OBguOCiuaBkuS5heeglOeptue0ouW8leOBruabtOaWsOWvvuixoeWklg== -->
 <!-- dm_signal_research_reflux: fingerprint=5d788caa6d0c4a0de9354e2744ff821b111aae1671fac592a12ded97a71ad116; mode=non-target; evidence_b64=5Y2Y55m6Ym91bmRlZCBwcm9iZeaIkOaenOOBp+eglOeptue0ouW8leOBruaBkuS5heamguW/teOCkuWkieabtOOBl+OBquOBhA== -->
 <!-- dm_signal_research_reflux: fingerprint=424aad328ca81e55e049847fcf805a1fb41ba08541abd45c59c7c64bbcd4b971; mode=non-target; evidence_b64=5Y2Y55m6Ym91bmRlZCBwcm9iZeaIkOaenOOBp+eglOeptue0ouW8leOBruaBkuS5heamguW/teOCkuWkieabtOOBl+OBquOBhA== -->
@@ -16,8 +17,6 @@
 <!-- dm_signal_research_reflux: fingerprint=11fbce10c2d9cadb9a6f39ab585d6bd78ab6350394a14458e7804edbcab1aeac; mode=non-target; evidence_b64=b25lLW9mZiBSQyByZXZpZXcgYXJ0aWZhY3Q7IG5vIGR1cmFibGUgcmVzZWFyY2ggaW5kZXggc2VjdGlvbiBjaGFuZ2Vk -->
 <!-- dm_signal_research_reflux: fingerprint=6c6def2375dcc96144cd5b4a959926cef1ebfbd8769125448e035cb4ffafaa7d; mode=non-target; evidence_b64=QkxPQ0vlgbXlr5/miJDmnpzjgILmiJDnq4vlgJnoo5ww44Gu44Gf44KB56CU56m257Si5byV44G444Gu56K65a6a55+l6K2Y5ZCM5pyf44Gv5a626ICB44Os44OT44Ol44O85b6M44Go44GZ44KL -->
 <!-- dm_signal_research_reflux: fingerprint=5148fe3aca7554b773fb36e5cb7cc3a19478bc0f7f43f91ff506aa207e40a052; mode=non-target; evidence_b64=QjQgaXNvbGF0ZWQgcHJvYmUgZXZpZGVuY2UgaXMgdGFzay1sb2NhbCBhbmQgbm90IGRpcmVjdCBtb250aGx5IHJlc2VhcmNoIFNTT1QgbWF0ZXJpYWw= -->
-<!-- source_commit:faf45ac6f5fc70c44e8a0e5301da751e97780771 reason:cmd_karo_recon2_july_prices_full_coverage_20260803 evidence:18x22=396・actual286・missing110・5symbol各22欠落をproduction readonly再照合 -->
-<!-- source_commit:cc4882758a985d65f1fec16c55462e4b7523ada7 reason:cmd_karo_recon2_cx_w1_7lane_normal_202606_20260803 evidence:C0 eligible21=7lane×3・selected7・generated7・oracle exact7/7・missing0・duplicate0・write0 -->
 
 
 
