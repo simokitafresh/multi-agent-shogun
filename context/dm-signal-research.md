@@ -1,6 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-03 cmd_karo_recon_b4_route_sequence_harness_rc_20260803 reviewed source boundary -->
-<!-- source_commit:6447e5ca1b8d0488b9415a1dc3a803cf2a2fa713 reason:cmd_karo_recon_b4_route_sequence_harness_rc_20260803 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=6447e5ca1b8d0488b9415a1dc3a803cf2a2fa713 -->
+<!-- last_updated: 2026-08-03 cmd_karo_recon_dx_transaction_topology_preflight_20260803 reviewed source boundary -->
+<!-- source_commit:7d69f153226c0107dc37a675e87201a2dfd36250 reason:cmd_karo_recon_dx_transaction_topology_preflight_20260803 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=7d69f153226c0107dc37a675e87201a2dfd36250 -->
+
 <!-- dm_signal_research_reflux: fingerprint=e38020fd3d79802b46dc6d9db84c24544e1b95ffe51e02e7418490343adb2b29; mode=non-target; evidence_b64=RC14IHRvcG9sb2d55oiQ5p6c44Gv5pyI5qyh56CU56m25q2j5pys44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=a29e30f56093a95457bf80508edc847fd172850d9883c6c51dc2a26a05abd01f; mode=non-target; evidence_b64=RC14IHRvcG9sb2d55oiQ5p6c44Gv5pyI5qyh56CU56m25q2j5pys44G444Gu55u05o6l5Y+N5pig5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=0de57ce148b35743b3ad5018f2392565a7675fb0bbb2cd69bd53b38f8e2bc63c; mode=non-target; evidence_b64=QjQgc3RhZ2UtMyBGQUlML0JMT0NLIGV2aWRlbmNlOyBubyBHQVRFIENMRUFSIGtub3dsZWRnZSB0byByZWZsdXg7IHJlcG9ydCByb3V0ZXMgYmxvY2tlciB0byBLYXJv -->
@@ -22,6 +23,10 @@
 GA-320境界照合: `ace6d961`（copy/caption axis L監査）と`20bc9de2`（値配色baseline復旧）は研究アルゴリズム変更ではなくUI監査資料の追加で、結論は`context/dm-signal-frontend.md` §19へ反映済み。research索引への重複転記は偽陽性2/2として行わず、source境界のみ更新する。
 
 B4七段先行偵察RC: A0-4b CSV `8,951`行・`78/78 PF`を対象SSOTとし、snapshot→隔離再生成→anchor `24/24`→guard `1249`/apply `72`→ledger再基線 `72`→cache→commitの7段契約を `7/7`、FAIL `0`、SKIP `0`、本番write `0`、成果hash `2/2`一致で確定。旧preflightは表示78に対して実走93のため対象集合SSOTから除外した。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_recon_b4_route_sequence_harness_rc.md`、source commit=`6447e5ca`。
+
+B4隔離実走の現状: 固定snapshot `2026-07-11`ではPF再生成 `78/78`後、次境界入力欠落によりanchor `0/24`でfail-closedし、後段は未実行。本番接続/write/外部副作用は各0。次境界を追加する方式とlogical date/anchor月を再固定する方式を隔離比較してRC中。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_goal_b4_isolated_full78_dryrun.md`、source commit=`f29f4a09`。
+
+D系topology先行偵察: readonly本番configから対象 `78/78 PF`、依存edge `189`、L1/L2/L3=`25/24/29`をKahn順へ一意分類し、欠落・重複・循環・未分類各0、全edgeでchild先行を確認。PF単位transaction、rollback/checkpoint、全78完了後のguard `1249`→apply `72`→ledger `72`→cacheの順序を固定。本番write0、runner `1/1` PASS、SKIP0、hash `2/2`一致。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_karo_recon_dx_transaction_topology_preflight.md`、source commit=`7d69f153`。
 
 ---
 
