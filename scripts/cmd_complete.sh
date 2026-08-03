@@ -218,6 +218,7 @@ archive_inbox_after_completion_hint() {
         mapfile -t hint_ids < <(python3 - "$inbox_path" "$CMD_ID" <<'PY'
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 path, cmd_id = sys.argv[1:]
 with open(path, encoding="utf-8") as fh:

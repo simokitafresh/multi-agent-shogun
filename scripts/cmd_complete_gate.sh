@@ -158,6 +158,7 @@ ci_fix_task_deployed() {
 from pathlib import Path
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 tasks_dir = Path(sys.argv[1])
 run_id = sys.argv[2]
@@ -228,6 +229,7 @@ import importlib.util
 import pathlib
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 report_path, task_path, root, fallback_repo, module_file = sys.argv[1:]
 try:
@@ -278,6 +280,7 @@ import re
 import os
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 try:
     with open(os.environ["REPORT_FILE"], encoding="utf-8") as f:
@@ -760,6 +763,7 @@ cmd_status_is_canceled() {
 import sys
 import re
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 path, cmd_id = sys.argv[1], sys.argv[2]
 try:
@@ -846,6 +850,7 @@ resolve_report_file() {
 import os
 import tempfile
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 report_file = os.environ["REPORT_FILE"]
 
@@ -1091,6 +1096,7 @@ import os
 import re
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 path = sys.argv[1]
 key = os.environ["GCN_KEY"]
@@ -1232,6 +1238,7 @@ karo_gate_block_unread_exists() {
 import sys
 import re
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 path, cmd_id = sys.argv[1], sys.argv[2]
 
@@ -1380,6 +1387,7 @@ import os
 from datetime import datetime
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 task_file = os.environ["TASK_FILE_ENV"]
 fallback_start = os.environ.get("FALLBACK_START_ENV", "")
@@ -1466,6 +1474,7 @@ import glob
 from datetime import datetime
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 cmd_id = os.environ["CMD_ID_ENV"]
 yaml_file = os.environ["YAML_FILE_ENV"]
@@ -1930,6 +1939,7 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 
 cmd_id = sys.argv[1]
@@ -2659,6 +2669,7 @@ import sys
 from pathlib import Path
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 repo = Path(os.environ["L6_REPO_ROOT"])
 cmd_id = os.environ.get("L6_CMD_ID", "")
@@ -2864,6 +2875,7 @@ import os
 import re
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 report_path = os.environ["REPORT_PATH"]
 ninja = os.environ["NINJA_NAME"]
@@ -2943,6 +2955,7 @@ import pathlib
 import re
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 path = os.environ["INSIGHTS_FILE_ENV"]
 cmd_id = os.environ["CMD_ID_ENV"]
@@ -3276,6 +3289,7 @@ fallback_model_label_from_settings() {
     python3 - "$settings_yaml" "$profiles_yaml" "$ninja_name" <<'PY'
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 settings_yaml, profiles_yaml, ninja_name = sys.argv[1], sys.argv[2], sys.argv[3]
 
@@ -3423,6 +3437,7 @@ collect_injected_lessons() {
 import os
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 tasks_dir = sys.argv[1]
 cmd_id = sys.argv[2]
@@ -4437,6 +4452,7 @@ import glob
 import os
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 tasks_dir = sys.argv[1]
 reports_dir = sys.argv[2]
@@ -4649,6 +4665,7 @@ import csv
 import os
 import tempfile
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 impact_file = os.environ["IMPACT_FILE"]
 tasks_dir = os.environ["TASKS_DIR"]
@@ -4953,6 +4970,7 @@ from collections import Counter
 from datetime import datetime
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 cache_file = os.environ["CACHE_FILE"]
 entries_raw = os.environ.get("SCORE_ENTRIES", "")
@@ -5116,6 +5134,7 @@ report_has_commit_binary_check_yes() {
 import os
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 path = os.environ["REPORT_FILE"]
 try:
@@ -5146,6 +5165,7 @@ collect_report_files_modified() {
     REPORT_FILE="$report_file" python3 - <<'PY'
 import os
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 path = os.environ["REPORT_FILE"]
 try:
@@ -5182,6 +5202,7 @@ discover_reports_for_cmd() {
 import glob
 import os
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 reports_dir = os.environ["REPORTS_DIR"]
 cmd_id = os.environ["CMD_ID"]
@@ -5247,6 +5268,7 @@ collect_report_commit_hash() {
 import os
 import re
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 try:
     with open(os.environ["REPORT_FILE"], encoding="utf-8") as handle:
@@ -5648,6 +5670,7 @@ import re
 import sys
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 root = sys.argv[1]
 cmd_id = sys.argv[2]
@@ -6153,6 +6176,7 @@ import glob
 import os
 import re
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 cmd_id = os.environ.get("CMD_ID_ENV", "")
 yaml_file = os.environ.get("YAML_FILE_ENV", "")
@@ -6698,6 +6722,7 @@ cmd_requires_cdp_production_check() {
             if REPORT_FILE="$report_file" python3 - <<'PY' 2>/dev/null
 import os
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 with open(os.environ["REPORT_FILE"], encoding="utf-8") as f:
     data = yaml.safe_load(f) or {}
@@ -7261,6 +7286,7 @@ if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$C
 import glob
 import os
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 reports_dir = os.environ["REPORTS_DIR"]
 cmd_id = os.environ["CMD_ID"]
@@ -8011,6 +8037,7 @@ import os
 from datetime import datetime, timezone
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 report_file = os.environ["REPORT_FILE"]
 with open(report_file, encoding="utf-8") as f:

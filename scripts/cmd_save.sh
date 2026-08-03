@@ -368,6 +368,7 @@ import os
 import re
 import sys
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 _CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -2482,6 +2483,7 @@ show_prior_attempts() {
 import os
 import json
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 _CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -2566,6 +2568,7 @@ count_same_reason_prior_blocks() {
 import os
 import json
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 _CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -2617,6 +2620,7 @@ import json
 import os
 import re
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 from collections import OrderedDict
 
 _CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
@@ -2684,6 +2688,7 @@ count_same_check_prior_blocks() {
 import os
 import json
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 _CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -2892,6 +2897,7 @@ import glob
 import json
 import re
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 _CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -3074,6 +3080,7 @@ count_cmd_save_blocks_for_cmd() {
 import os
 import json
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 _CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -4708,6 +4715,7 @@ import sqlite3
 import sys
 
 import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
 
 root = os.path.realpath(os.environ["CMD_REFERENCE_PROJECT_WD"])
 try:
