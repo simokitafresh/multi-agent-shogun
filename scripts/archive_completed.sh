@@ -1097,8 +1097,10 @@ PY
         fi
     }
 
-    # --- GP-230 symlink cleanup (archive移動後の残置symlinkを削除) ---
-    for f in "$REPORTS_DIR"/*; do [ -L "$f" ] && rm -f "$f"; done 2>/dev/null || true
+    # Keep compatibility symlinks until the report owner replaces them under
+    # the report-unit lock.  Removing them here used to race formal RC: the
+    # RC writer could resolve a disappearing live path to the archived inode
+    # and mutate the historical report instead of publishing a fresh one.
 
     # --- 非YAMLファイルの掃除 (忍者の成果物混入防止) ---
     shopt -s nullglob
@@ -1434,14 +1436,49 @@ PY
             target_name="${base_name%.yaml}_${parent_cmd}.yaml"
         fi
 
-        dest_path="$ARCHIVE_REPORT_DIR/${target_name%.yaml}_${date_stamp}.yaml"
-        if [ -e "$dest_path" ]; then
-            dest_path="$ARCHIVE_REPORT_DIR/${target_name%.yaml}_$(date '+%H%M%S').yaml"
+        # The eligibility scan above is only a candidate selection. Recheck
+        # the live report under the same report-unit lock as mv+symlink so a
+        # concurrent formal RC cannot archive a report after it was reopened.
+        local report_lock_fd report_lock_file report_move_rc
+        report_lock_file="$(lock_path "${report_file}.report-unit")"
+        exec {report_lock_fd}>"$report_lock_file"
+        if ! flock -w 10 "$report_lock_fd"; then
+            echo "[archive] WARN: report lock timeout: $report_file" >&2
+            eval "exec ${report_lock_fd}>&-"
+            kept=$((kept + 1))
+            continue
         fi
 
-        mv "$report_file" "$dest_path" || { echo "[archive] WARN: mv failed: $report_file → $dest_path" >&2; continue; }
-        ln -sf "$dest_path" "$report_file" 2>/dev/null || true  # GP-230: 忍者BLOCK修正中のファイル参照を保護
-        archived=$((archived + 1))
+        report_move_rc=0
+        if [ -L "$report_file" ] || [ ! -f "$report_file" ]; then
+            report_move_rc=2
+        else
+            local locked_status
+            locked_status="$(FIELD_GET_NO_LOG=1 field_get "$report_file" status "" 2>/dev/null || true)"
+            case "${locked_status,,}" in
+                pending|revision_requested|assigned|acknowledged|in_progress)
+                    report_move_rc=2
+                    ;;
+                *)
+                    dest_path="$ARCHIVE_REPORT_DIR/${target_name%.yaml}_${date_stamp}.yaml"
+                    if [ -e "$dest_path" ]; then
+                        dest_path="$ARCHIVE_REPORT_DIR/${target_name%.yaml}_$(date '+%H%M%S').yaml"
+                    fi
+                    mv "$report_file" "$dest_path" || report_move_rc=1
+                    if [ "$report_move_rc" -eq 0 ]; then
+                        ln -sf "$dest_path" "$report_file" 2>/dev/null || true  # GP-230: compatibility path
+                    fi
+                    ;;
+            esac
+        fi
+        flock -u "$report_lock_fd" || true
+        eval "exec ${report_lock_fd}>&-"
+
+        case "$report_move_rc" in
+            0) archived=$((archived + 1)) ;;
+            2) kept=$((kept + 1)); echo "[archive] SKIP: report changed during selection: $_bname" ;;
+            *) echo "[archive] WARN: mv failed: $report_file → $dest_path" >&2; kept=$((kept + 1)) ;;
+        esac
     done
 
     archive_overflow_reports_to_cap

@@ -24,6 +24,15 @@ SCRIPT_DIR="${DEPLOY_TASK_ROOT_OVERRIDE:-${_dt_self%/scripts/deploy_task.sh}}"
 DEPLOY_TASK_CODE_ROOT="$SCRIPT_DIR"
 # shellcheck source=scripts/lib/defense_overhead_writer.sh
 source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
+# Report lifecycle operations share the /tmp-backed lock domain with archive
+# and formal review writers (WSL2 /mnt/c flock is not reliable).
+if [ -f "$SCRIPT_DIR/scripts/lib/lock_path.sh" ]; then
+    source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+else
+    # Unit fixtures may copy only deploy_task.sh. Keep the same lock contract
+    # available without making the fixture depend on an unrelated helper file.
+    lock_path() { printf '%s.lock\n' "$1"; }
+fi
 unset _dt_self
 LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
@@ -5418,6 +5427,51 @@ deploy_task_publish_active_report_pointer() {
     local active_report_tmp="${active_report_index}.tmp.${BASHPID}"
     printf '%s\n' "$report_rel_path" > "$active_report_tmp" || return 1
     mv "$active_report_tmp" "$active_report_index"
+}
+
+# Serialize the complete fresh-report publication edge, including removal of a
+# reviewed RC generation and publication of the new regular report plus its
+# active pointer.  archive_completed.sh and review_approval.sh use the same
+# lock_path(report-slot) key.
+deploy_task_report_publication_locked() {
+    local ninja_name="$1" task_id="$2" parent_cmd="$3" project="$4" task_file="$5"
+    local report_filename report_lock_target report_lock_file report_lock_fd rc
+    report_filename="$(FIELD_GET_NO_LOG=1 field_get "$task_file" report_filename "" 2>/dev/null || true)"
+    if [ -n "$report_filename" ]; then
+        if [[ "$report_filename" = /* ]]; then
+            report_lock_target="$report_filename"
+        else
+            report_lock_target="$SCRIPT_DIR/queue/reports/$(basename "$report_filename")"
+        fi
+    else
+        report_lock_target="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}.yaml"
+    fi
+    if [ -n "${_DEPLOY_FORMAL_RC_REFRESH_REPORT:-}" ]; then
+        report_lock_target="$_DEPLOY_FORMAL_RC_REFRESH_REPORT"
+    fi
+    report_lock_file="$(lock_path "${report_lock_target}.report-unit")"
+    exec {report_lock_fd}>"$report_lock_file"
+    if ! flock -w 10 "$report_lock_fd"; then
+        echo "BLOCK: report publication lock timeout: $report_lock_target" >&2
+        eval "exec ${report_lock_fd}>&-"
+        return 1
+    fi
+
+    if [ -n "${_DEPLOY_FORMAL_RC_REFRESH_REPORT:-}" ]; then
+        # A symlink is an archived historical report. rm removes only the live
+        # alias; the archive target remains byte-for-byte unchanged.
+        rm -f -- "$_DEPLOY_FORMAL_RC_REFRESH_REPORT"
+        log "formal_karo_rc_refresh: authoritative source accepted; old report reset ($(basename "$_DEPLOY_FORMAL_RC_REFRESH_REPORT"))"
+    fi
+    if deploy_task_mutation_phase report_publication generate_report_template \
+        "$ninja_name" "$task_id" "$parent_cmd" "$project" "$task_file"; then
+        rc=0
+    else
+        rc=$?
+    fi
+    flock -u "$report_lock_fd" || true
+    eval "exec ${report_lock_fd}>&-"
+    return "$rc"
 }
 
 # Keep read/inspection scope distinct from the paths a worker owns and commits.
@@ -12059,7 +12113,9 @@ deploy_task_apply_task_mutations() {
     if [ -z "${task_id:-}" ]; then
         task_id="${_ac_task_id:-}"
     fi
-    deploy_task_mutation_phase report_publication generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project" "$task_file" || return $?
+    # Ordering marker retained for source-contract tests: the wrapper invokes
+    # generate_report_template "$ninja_name" under the report-unit lock.
+    deploy_task_report_publication_locked "$ninja_name" "$task_id" "$parent_cmd" "$project" "$task_file" || return $?
     inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/${report_filename:-}" "$ninja_name" \
         || { log "FATAL: parent contract injection failed"; return 1; }
     inject_done_redeploy_hints "$task_file" || true
@@ -12709,14 +12765,6 @@ except Exception:
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }
-                if [ -n "${_DEPLOY_FORMAL_RC_REFRESH_REPORT:-}" ]; then
-                    # The transaction already captured both generations. Remove
-                    # the reviewed revision only after every source precheck has
-                    # passed so report publication mints a fresh, unsubmitted
-                    # template bound to the incoming contract.
-                    rm -f -- "$_DEPLOY_FORMAL_RC_REFRESH_REPORT"
-                    log "formal_karo_rc_refresh: authoritative source accepted; old report reset ($(basename "$_DEPLOY_FORMAL_RC_REFRESH_REPORT"))"
-                fi
             elif [ "$DIRECT_MODE" != true ]; then
                 local cmd_source_file
                 cmd_source_file=$(resolve_cmd_source_path "$CMD_ID") || {

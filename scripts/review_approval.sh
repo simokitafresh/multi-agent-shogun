@@ -5,6 +5,13 @@ set -euo pipefail
 ROOT=${REVIEW_APPROVAL_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
 source "$ROOT/scripts/lib/review_approval.sh"
 source "$ROOT/scripts/lib/yaml_field_set.sh"
+if [ -f "$ROOT/scripts/lib/lock_path.sh" ]; then
+  source "$ROOT/scripts/lib/lock_path.sh"
+else
+  # Unit fixtures may copy only the approval entrypoint. Preserve the shared
+  # report-unit lock contract without requiring the helper in the fixture.
+  lock_path() { printf '%s.lock\n' "$1"; }
+fi
 defense_writer="$ROOT/scripts/lib/defense_overhead_writer.sh"
 [ -f "$defense_writer" ] || defense_writer="$(cd "$(dirname "$0")" && pwd)/lib/defense_overhead_writer.sh"
 DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$ROOT}"
@@ -405,6 +412,24 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   mkdir -p "${rc_deploy_lock%/*}"
   exec 201>"$rc_deploy_lock"
   flock -w 10 201 || { echo "BLOCK: RC deploy lock timeout: worker=$worker_id" >&2; exit 1; }
+  # The live report path is the lifecycle slot even when archive_completed
+  # left a compatibility symlink there.  Serialize RC status transition and
+  # live-path materialization against archive mv+symlink and deploy template
+  # publication with the same report-unit lock.
+  rc_report_path="$ROOT/$report_logical"
+  rc_report_lock_file="$(lock_path "${rc_report_path}.report-unit")"
+  exec 202>"$rc_report_lock_file"
+  flock -w 10 202 || { echo "BLOCK: RC report lock timeout: $rc_report_path" >&2; exit 1; }
+  if [ -L "$rc_report_path" ]; then
+    rc_report_source="$report"
+    rc_report_tmp=$(mktemp "${rc_report_path}.rc.XXXXXX")
+    cp -- "$rc_report_source" "$rc_report_tmp"
+    mv -f -- "$rc_report_tmp" "$rc_report_path"
+    echo "formal RC: detached archived compatibility symlink into live report slot: $report_rel"
+  fi
+  # All subsequent RC mutations must address the logical live slot, never the
+  # archived target resolved by realpath().  This preserves the archive hash.
+  report="$rc_report_path"
   # cmd_karo_impl_rc_revoke_command_20260727: snapshot pre-RC state under the
   # same deploy lock so a mistaken RC can be revoked later (incident
   # 2026-07-27 12:47: a correct report was RC'd by mistake with no formal
