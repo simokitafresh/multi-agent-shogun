@@ -15,7 +15,14 @@ _GUNSHI_STARTUP_TOTAL_SELF="${BASH_SOURCE[0]:-$0}"
 _GUNSHI_STARTUP_TOTAL_ROOT="${_GUNSHI_STARTUP_TOTAL_SELF%/scripts/gates/gate_gunshi_startup.sh}"
 DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$_GUNSHI_STARTUP_TOTAL_ROOT}"
 # shellcheck source=scripts/lib/defense_overhead_writer.sh
-source "$_GUNSHI_STARTUP_TOTAL_ROOT/scripts/lib/defense_overhead_writer.sh"
+_GUNSHI_DEFENSE_WRITER="$_GUNSHI_STARTUP_TOTAL_ROOT/scripts/lib/defense_overhead_writer.sh"
+if [ -r "$_GUNSHI_DEFENSE_WRITER" ]; then
+    source "$_GUNSHI_DEFENSE_WRITER"
+else
+    # Minimal/isolated fixtures may omit optional telemetry support.  Startup
+    # contract checks must still run; telemetry is additive and non-blocking.
+    defense_overhead_write_async() { :; }
+fi
 GUNSHI_STARTUP_TOTAL_RECORDED=0
 gunshi_startup_record_total() {
     local rc="${1:-0}" now_us wall_ms verdict
