@@ -259,6 +259,10 @@ wait "$maintenance_pid"
         start_mtime=$(stat -c %Y "$script_path")
         printf "%s %s %s\n" "$$" "$generation" "$EPOCHSECONDS" > "$STATE_DIR/ninja_monitor.owner"
         NINJA_MONITOR_HOT_RELOAD_POLL_SEC=0.05
+        # The fixture shell is not named ninja_monitor.sh; production uses the
+        # real monitor PID and therefore does not need this override.
+        NINJA_MONITOR_LIVENESS_OVERRIDE_PID="$$"
+        export NINJA_MONITOR_LIVENESS_OVERRIDE_PID
         _NM_SCRIPT_PATH="$script_path"
         _NM_START_MTIME="$start_mtime"
         NINJA_MONITOR_GENERATION="$generation"
@@ -290,6 +294,47 @@ wait "$maintenance_pid"
     '
     [ "$status" -eq 0 ]
     [[ "$output" == successor=1\ old_generation_alive=1\ elapsed_ms=* ]]
+}
+
+# test_necessity: owner/pid is one generation-fenced lease; three consecutive
+# heartbeats must preserve the same live PID and stale generations must not
+# rewrite either file.
+@test "owner pid SSOT survives three heartbeats and fences stale writers" {
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+STATE_DIR="'"$BATS_TEST_TMPDIR"'/owner-ssot/state"
+LOG="'"$BATS_TEST_TMPDIR"'/owner-ssot/monitor.log"
+NINJA_MONITOR_OWNER_FILE="$STATE_DIR/ninja_monitor.owner"
+NINJA_MONITOR_HEARTBEAT_STALE_SECONDS=5
+mkdir -p "$STATE_DIR"
+acquire_singleton_lock
+read -r owner generation heartbeat < "$NINJA_MONITOR_OWNER_FILE"
+test "$owner" = "$$"
+test "$(cat "$STATE_DIR/ninja_monitor.pid")" = "$owner"
+for cycle in 1 2 3; do
+  sleep 1
+  ninja_monitor_owner_heartbeat
+  read -r owner_after generation_after heartbeat_after < "$NINJA_MONITOR_OWNER_FILE"
+  test "$owner_after" = "$owner"
+  test "$generation_after" = "$generation"
+  test "$heartbeat_after" -gt "$heartbeat"
+  test "$(cat "$STATE_DIR/ninja_monitor.pid")" = "$owner"
+  heartbeat="$heartbeat_after"
+done
+before_owner=$(cat "$NINJA_MONITOR_OWNER_FILE")
+before_pid=$(cat "$STATE_DIR/ninja_monitor.pid")
+NINJA_MONITOR_GENERATION=stale-generation
+export NINJA_MONITOR_GENERATION
+if ninja_monitor_owner_heartbeat; then exit 41; fi
+test "$(cat "$NINJA_MONITOR_OWNER_FILE")" = "$before_owner"
+test "$(cat "$STATE_DIR/ninja_monitor.pid")" = "$before_pid"
+printf "owner_pid=%s heartbeat_cycles=3 stale_rewrite=0\n" "$owner"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == "owner_pid="*" heartbeat_cycles=3 stale_rewrite=0" ]]
 }
 
 @test "snapshot keeps task done while publishing runtime busy separately" {

@@ -438,7 +438,15 @@ acquire_singleton_lock() {
     tmp="${owner_file}.tmp.$$"
     printf '%s %s %s\n' "$$" "$NINJA_MONITOR_GENERATION" "$now" > "$tmp"
     mv "$tmp" "$owner_file"
-    printf '%s\n' "$$" > "$pid_file"
+    # Publish the pid only through the generation-fenced writer. Keeping the
+    # owner record as the authority prevents a stale generation from repairing
+    # the pid file after a successor has taken the lease.
+    if ! ninja_monitor_publish_owner_pid; then
+        log "SINGLETON-PUBLISH-BLOCK: generation=$NINJA_MONITOR_GENERATION owner_pid=$$"
+        flock -u "$lock_fd"
+        eval 'exec '"$lock_fd"'>&-'
+        exit 1
+    fi
     log "SINGLETON-TAKEOVER: old_pid=${existing_pid:-none} old_generation=${existing_generation:-none} heartbeat_age=${age}s new_generation=${NINJA_MONITOR_GENERATION} reason=$([ "$replacement_requested" -eq 1 ] && printf hot_reload || printf stale_owner)"
     if [ "$replacement_requested" -eq 1 ]; then
         log "HOT-RELOAD: successor active old_generation=${existing_generation} new_generation=${NINJA_MONITOR_GENERATION} mtime=${NINJA_MONITOR_REPLACE_MTIME:-unknown}"
@@ -448,6 +456,19 @@ acquire_singleton_lock() {
     if [ "${NINJA_MONITOR_RELEASE_OWNER_ON_EXIT:-1}" = "1" ]; then
         trap 'ninja_monitor_release_owner' EXIT
     fi
+}
+
+ninja_monitor_publish_owner_pid() {
+    local owner_file="$NINJA_MONITOR_OWNER_FILE"
+    local pid_file="$STATE_DIR/ninja_monitor.pid"
+    local owner_pid="" owner_generation="" owner_heartbeat="" tmp
+    [ -n "$owner_file" ] || owner_file="$STATE_DIR/ninja_monitor.owner"
+    read -r owner_pid owner_generation owner_heartbeat < "$owner_file" 2>/dev/null || return 1
+    [ "$owner_pid" = "$$" ] || return 1
+    [ "$owner_generation" = "$NINJA_MONITOR_GENERATION" ] || return 1
+    tmp="$pid_file.tmp.$$"
+    printf '%s\n' "$$" > "$tmp" || return 1
+    mv "$tmp" "$pid_file"
 }
 
 ninja_monitor_release_owner() {
@@ -479,7 +500,12 @@ ninja_monitor_owner_heartbeat() {
     tmp="${owner_file}.tmp.$$"
     printf '%s %s %s\n' "$$" "$generation" "$now" > "$tmp"
     mv "$tmp" "$owner_file"
-    printf '%s\n' "$$" > "$pid_file"
+    if ! ninja_monitor_publish_owner_pid; then
+        log "SINGLETON-PUBLISH-BLOCK: generation=$generation owner_pid=$$"
+        flock -u "$lock_fd"
+        eval 'exec '"$lock_fd"'>&-'
+        return 1
+    fi
     flock -u "$lock_fd"
     eval "exec ${lock_fd}>&-"
 }
@@ -496,6 +522,17 @@ _ninja_monitor_pid_is_live() {
     local cmdline=""
     cmdline=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)
     [[ "$cmdline" == *"ninja_monitor.sh"* ]]
+}
+
+_ninja_monitor_owner_record_matches() {
+    local owner_file="$1"
+    local expected_generation="$2"
+    local expected_pid="$3"
+    local owner_pid="" owner_generation="" owner_heartbeat=""
+    read -r owner_pid owner_generation owner_heartbeat < "$owner_file" 2>/dev/null || return 1
+    [ "$owner_pid" = "$expected_pid" ] || return 1
+    [ "$owner_generation" = "$expected_generation" ] || return 1
+    _ninja_monitor_pid_is_live "$owner_pid"
 }
 
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
@@ -9215,14 +9252,14 @@ _ninja_monitor_hot_reload_watch() {
 
     while [ -d "/proc/${parent_pid}" ]; do
         read -r owner_pid owner_generation owner_heartbeat < "$owner_file" 2>/dev/null || return 0
-        [ "$owner_generation" = "$generation" ] || return 0
+        _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
 
         current_mtime="$(stat -c %Y "$script_path" 2>/dev/null || true)"
         if [ -n "$current_mtime" ] && [ "$current_mtime" != "$start_mtime" ]; then
             # stat on /mnt/c can itself stall.  Ownership may have changed
             # while it was blocked, so revalidate immediately before launch.
             read -r owner_pid owner_generation owner_heartbeat < "$owner_file" 2>/dev/null || return 0
-            [ "$owner_generation" = "$generation" ] || return 0
+            _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
             log "HOT-RELOAD-DETECTED: generation=${generation} mtime ${start_mtime} -> ${current_mtime}"
             _ninja_monitor_launch_hot_reload_successor "$script_path" "$generation" "$current_mtime"
             return 0
@@ -9238,6 +9275,7 @@ start_ninja_monitor_hot_reload_watch() {
     # named bash -c process; the script path is environment-only so neither
     # supervisor pgrep predicate can match it.
     export -f log close_inherited_non_stdio_fds \
+        _ninja_monitor_pid_is_live _ninja_monitor_owner_record_matches \
         _ninja_monitor_launch_hot_reload_successor _ninja_monitor_hot_reload_watch
     NINJA_MONITOR_WATCH_SCRIPT_PATH="$_NM_SCRIPT_PATH"
     NINJA_MONITOR_WATCH_START_MTIME="$_NM_START_MTIME"
