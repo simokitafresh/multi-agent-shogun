@@ -236,6 +236,7 @@ _write_lpt_ledger() {
   awk -F'\t' 'NR==2 {exit !($4=="unit" && $9=="pass" && $11==0 && NF==15 && length($15)==64)}' "$TMPROOT/logs/ledger.tsv"
   awk -F'\t' 'NR==1 {exit !($5=="suite_wall_sec" && $6=="sum_file_sec" && NF==11)} NR==2 {exit !(NF==11 && $5>=0 && $6>=0 && length($11)==64)}' "$TMPROOT/logs/test_suite_timing_ledger.tsv"
   receipt="$(find "$TMPROOT/logs/test_receipts" -name '*.json' -type f | head -1)"
+  python3 -c 'import json,sys; assert json.load(open(sys.argv[1]))["run_manifest"]["estimated_cost"]["suite_timeout_sec"] == 1800' "$receipt"
   receipt_id="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["run_id"],d["commit_sha"],d["source_fingerprint"],d["output_sha256"])' "$receipt")"
   file_id="$(awk -F'\t' 'NR==2 {print $1,$3,$12,$15}' "$TMPROOT/logs/ledger.tsv")"
   suite_id="$(awk -F'\t' 'NR==2 {print $1,$3,$9,$11}' "$TMPROOT/logs/test_suite_timing_ledger.tsv")"
@@ -414,7 +415,7 @@ SH
 }
 
 @test "timing-regressed shared-resource fixtures receive the full aggregate weight" {
-  for name in test_hook_dispatchers test_statusline test_sqlite3_cli_removal test_small_workflow_consolidated test_skill_recommend_metrics; do
+  for name in test_hook_dispatchers test_statusline test_sqlite3_cli_removal test_small_workflow_consolidated test_skill_recommend_metrics test_insight_write test_shogun_cli_switch_probe; do
     printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/$name.bats"
   done
   export BATS_SCHEDULER_TRACE="$TMPROOT/schedule.tsv"
@@ -426,13 +427,15 @@ SH
         "$1/tests/unit/test_statusline.bats" \
         "$1/tests/unit/test_sqlite3_cli_removal.bats" \
         "$1/tests/unit/test_small_workflow_consolidated.bats" \
-        "$1/tests/unit/test_skill_recommend_metrics.bats"
+        "$1/tests/unit/test_skill_recommend_metrics.bats" \
+        "$1/tests/unit/test_insight_write.bats" \
+        "$1/tests/unit/test_shogun_cli_switch_probe.bats"
     ' _ "$TMPROOT"
 
   [ "$status" -eq 0 ]
-  [ "$(wc -l <"$BATS_SCHEDULER_TRACE")" -eq 5 ]
-  [ "$(awk -F '\t' '$2 == 8 {count++} END {print count+0}' "$BATS_SCHEDULER_TRACE")" -eq 5 ]
-  [ "$(awk -F '\t' '$3 == 0 {count++} END {print count+0}' "$BATS_SCHEDULER_TRACE")" -eq 5 ]
+  [ "$(wc -l <"$BATS_SCHEDULER_TRACE")" -eq 7 ]
+  [ "$(awk -F '\t' '$2 == 8 {count++} END {print count+0}' "$BATS_SCHEDULER_TRACE")" -eq 7 ]
+  [ "$(awk -F '\t' '$3 == 0 {count++} END {print count+0}' "$BATS_SCHEDULER_TRACE")" -eq 7 ]
 }
 
 @test "campaign shard fixture exclusively owns scheduler budget" {

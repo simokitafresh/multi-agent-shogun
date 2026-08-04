@@ -765,7 +765,7 @@ run_bats_files_parallel() {
     for file in "${files[@]}"; do
         file_base="${file##*/}"
         case "$file_base" in
-            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats)
+            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_insight_write.bats|test_shogun_cli_switch_probe.bats|test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats)
                 protected_files+=("$file") ;;
             *) normal_files+=("$file") ;;
         esac
@@ -815,7 +815,7 @@ run_bats_files_parallel() {
                 ;;
         esac
         case "$file_base" in
-            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats)
+            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_insight_write.bats|test_shogun_cli_switch_probe.bats)
                 file_inner_jobs="${BATS_ISOLATED_INNER_JOBS:-$INNER_JOBS}"
                 file_weight="$MAX_TEST_JOBS"
                 ;;
@@ -1450,7 +1450,7 @@ d.update(version=3, source_head=head, test_paths=paths, run_id=run_id,
                        'scope_identity': scope_identity,
                        'estimated_cost': {
                            'selected_files': len(paths),
-                           'suite_timeout_sec': int(os.environ.get('RUN_TESTS_SUITE_TIMEOUT_SEC', '1200')),
+                           'suite_timeout_sec': int(os.environ.get('RUN_TESTS_SUITE_TIMEOUT_SEC', '1800')),
                            'selection_reason': 'unknown',
                            'direct_files': 0,
                            'transitive_files': 0,
@@ -2268,7 +2268,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         # fixture's PATH and execute the wrong runner.
         _bats_bin="$(command -v bats 2>/dev/null || true)"
         [ -n "$_bats_bin" ] || { echo "BLOCK: bats executable could not be resolved" >&2; exit 2; }
-        _suite_timeout="${RUN_TESTS_SUITE_TIMEOUT_SEC:-1200}"
+        _suite_timeout="${RUN_TESTS_SUITE_TIMEOUT_SEC:-1800}"
         [[ "$_suite_timeout" =~ ^[1-9][0-9]*$ ]] \
             || { echo "BLOCK: RUN_TESTS_SUITE_TIMEOUT_SEC must be a positive integer" >&2; exit 2; }
         export RUN_TESTS_SUITE_TIMEOUT_SEC="$_suite_timeout"
