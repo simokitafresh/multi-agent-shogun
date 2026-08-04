@@ -127,7 +127,7 @@ source "$SCRIPT_DIR/lib/agent_state.sh"
 # WSL2 NTFS最適化: field_getの依存ログ(flock+stat+write)を抑制。65回×20ms=1.3s削減
 export FIELD_GET_NO_LOG=1
 
-DEFAULT_MESSAGE="現task YAMLを正本として読み直して作業開始せよ。既存成果の再利用可否はinbox本文とRC指示に従え。"
+DEFAULT_MESSAGE="現task YAMLを正本として読み直して作業開始せよ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな。"
 DIRECT_MODE=false
 YAML_FILE=""
 NINJA_NAME=""

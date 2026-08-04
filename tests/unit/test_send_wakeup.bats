@@ -277,6 +277,19 @@ YAML
     [[ "$output" == *$'\thigh\tfalse' ]]
 }
 
+# test_necessity: a new task wake-up must never authorize a ninja to apply a
+# read or different-task RC/supplement; doing so can turn a fresh implementation
+# assignment into a false fixed-HEAD/code-change prohibition.
+@test "T-SW-025: task wake-up scopes supplements to unread current task identity" {
+    local deploy_source watcher_source
+    deploy_source="$(<"$PROJECT_ROOT/scripts/deploy_task.sh")"
+    watcher_source="$(<"$WATCHER_SCRIPT")"
+
+    [[ "$deploy_source" == *"read:falseかつ現task_id一致"* ]]
+    [ "$(grep -o 'read:falseかつ現task_id一致' "$WATCHER_SCRIPT" | wc -l)" -eq 2 ]
+    [[ "$deploy_source$watcher_source" != *"既存成果の再利用可否はinbox本文とRC指示に従え"* ]]
+}
+
 # --- T-SW-001: self-watch active → skip nudge ---
 
 @test "T-SW-001: send_wakeup skips nudge when agent has active self-watch" {

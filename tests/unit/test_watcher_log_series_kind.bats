@@ -151,9 +151,10 @@ printf "same=%s changed=%s\n" "$([[ "$first" = "$same" ]] && echo yes || echo no
     [[ "$output" =~ \[SEND-RESULT\]\ attempted\ agent=[a-z_]+\ observed_count=[0-9]+\ fingerprint=[a-z0-9-]+\ kind=[a-z]+ ]]
 }
 
-# test_necessity: generic watcher nudges must refresh the task SSOT without
-# declaring every result from the prior attempt invalid; RC scope owns reuse.
-@test "task nudge preserves RC-scoped reuse instead of invalidating all prior work" {
+# test_necessity: generic watcher nudges must refresh the task SSOT while
+# limiting executable supplements to unread messages for that current task.
+@test "task nudge scopes RC reuse to unread current-task supplements" {
     ! grep -q '前taskの情報は無効' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
-    grep -q '既存成果の再利用可否はinbox本文とRC指示に従え' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    [ "$(grep -c 'read:falseかつ現task_id一致' "$PROJECT_ROOT/scripts/inbox_watcher.sh")" -eq 2 ]
+    ! grep -q '既存成果の再利用可否はinbox本文とRC指示に従え' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
 }
