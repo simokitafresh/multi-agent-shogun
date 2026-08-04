@@ -468,7 +468,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "提案済みの機械照合外出し・内容hash cache・レビュー需要ピーク時のbatch並列precheckが現行実装に存在することを一次確認"
+  action_artifact: "scripts/gates/gate_gunshi_report_precheck.sh:62-107; scripts/review_bundle.py:352-414; commit=bb7731d07"
+  resolved_at: "2026-08-04T09:44:00+09:00"
 - id: INS-20260803-184554638-d065
   ts: "2026-08-03T18:45:54+09:00"
   insight: "[[前セッション同様に設計書を進捗ごとに更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=前セッション同様に設計書を進捗ごとに更新せよ"
