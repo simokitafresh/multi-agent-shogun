@@ -1,5 +1,7 @@
 <!-- gist-master: 20bd7f137665f0badedb7241035732c3 commit-reservation-ledger-asis-tobe-5w1h_20260805.md -->
-# commit予約台帳 — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 v1.0
+# commit予約台帳 — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 v1.1
+
+> v1.1(2026-08-05 04:30 殿指示): §ファイル&フォルダ構造(AsIs/ToBe)、ロック階層図、AsIs vs ToBeフロー比較を追加
 
 > v1.0(2026-08-05 03:58 殿発案): commit競合で将軍が20分以上浪費した実事例から。殿『コミットの予約台帳みたいなものを共有して順番を予約する仕組みにすればいいのでは？』
 
@@ -15,6 +17,52 @@
 | WHEN | 殿裁可後 |
 | WHERE | `scripts/ninja_scope_commit.sh`(既存commitパス)+新規`scripts/commit_queue.sh`(台帳管理) |
 | HOW | 下記§ToBe |
+
+## §ファイル&フォルダ構造(AsIs)
+
+```
+multi-agent-shogun/
+├── .git/
+│   ├── index                        ← 共有git index(全9 CLIが争奪)
+│   ├── index.lock                   ← git操作中に自動生成(排他ロック)
+│   └── hooks/
+│       └── pre-commit               ← commit時に自動実行(run_tests.sh affected呼出し)
+├── .karo_worktrees/                 ← 家老が作成するshard用worktree
+│   └── round8-shard-N/              ← 各shardの独立worktree(ただし.git/indexは共有)
+├── scripts/
+│   ├── ninja_scope_commit.sh        ← 全agentのcommit入口(owned-scope lock+pre-commit)
+│   ├── run_tests.sh                 ← テストランナー(pre-commitから呼出される)
+│   └── lib/
+│       └── lock_path.sh             ← WSL2 ext4へのlock写像SSOT
+├── tests/unit/
+│   └── test_ninja_scope_commit.bats ← ★デッドロック源(pre-commit→このテスト→index.lock要求)
+└── /tmp/ (ext4)
+    ├── shogun_lock_<hash>.lock/     ← 将軍のowned-scope lock
+    │   ├── <run_key>.ledger         ← commit実行ログ
+    │   ├── <run_key>.git-exit       ← git終了コード記録
+    │   └── <run_key>.receipt        ← commit成功受領証
+    ├── <agent>_lock_<hash>.lock/    ← 各agentのowned-scope lock(同構造)
+    └── shogun_commit_queue.tsv      ← ★新設: 予約台帳(ToBe)
+```
+
+### ロック階層(AsIs — 3段)
+
+```
+L1: owned-scope lock (/tmp/<agent>_lock_<hash>.lock/)
+    │  flock -n → 取得失敗="BLOCK: cannot acquire ninja owned-scope lock"
+    │  目的: 同一agentの二重commit防止
+    │
+    └─ L2: commit lock (/tmp/ext4側 lock_path写像)
+        │  flock -w 120 → 120秒timeout
+        │  目的: 全agentの直列化(gitの排他要求)
+        │
+        └─ L3: git index.lock (.git/index.lock)
+            │  git内部が自動管理
+            │  目的: index操作の原子性
+            │  ★問題: pre-commitテスト中ずっと保持(数分〜34分)
+            │
+            └─ L4(再帰): テスト内のninja_scope_commit.sh → L3要求 → デッドロック
+```
 
 ## §AsIs — 3つの構造問題(2026-08-05実証)
 
@@ -83,6 +131,67 @@ Agent: commit したい
   └─ Step 4: 完了
        flock → 自分の行を削除(またはstatus=done) → flock解放
        後続agentのStep 2が即座に検知して進行
+```
+
+### ファイル&フォルダ構造(ToBe)
+
+```
+multi-agent-shogun/
+├── .git/
+│   ├── index                        ← 変更なし
+│   ├── index.lock                   ← 変更なし(保持時間が短縮)
+│   └── hooks/
+│       └── pre-commit               ← 変更: PRECOMMIT=1をexport+timeout 60s
+├── scripts/
+│   ├── ninja_scope_commit.sh        ← 変更: commit_queue.sh経由に改修
+│   ├── commit_queue.sh              ← ★新設: 予約台帳管理
+│   │   ├── reserve()                   予約追記(flock <100ms)
+│   │   ├── wait_turn()                 FIFO順番待ち(sleep 3ループ)
+│   │   ├── mark_running()              status更新
+│   │   └── release()                   行削除+後続通知
+│   ├── run_tests.sh                 ← 変更: PRECOMMIT=1時にデッドロック源を除外
+│   └── lib/
+│       └── lock_path.sh             ← 変更なし
+├── tests/unit/
+│   └── test_ninja_scope_commit.bats ← 変更なし(CI/手動で実行。pre-commit除外)
+│   └── test_commit_queue.bats       ← ★新設: 予約台帳テスト
+└── /tmp/ (ext4)
+    ├── shogun_commit_queue.tsv      ← ★新設: 予約台帳(FIFO。flock保護)
+    └── <agent>_lock_<hash>.lock/    ← 変更なし(owned-scope lockは残置)
+```
+
+### ロック階層(ToBe — 2段に簡素化)
+
+```
+L1: 予約台帳 (/tmp/shogun_commit_queue.tsv)
+    │  flock → 1行write/read → flock解放(<100ms)
+    │  目的: FIFO順序の保証+二重予約拒否
+    │  ★改善: ロック保持<100ms(AsIsの数分〜34分から99.9%短縮)
+    │
+    └─ L2: git index.lock (.git/index.lock)
+        │  順番が来たagentのみがgit commit実行
+        │  pre-commit timeout=60s(AsIs 900s→93%短縮)
+        │  ★改善: test_ninja_scope_commit.bats除外でデッドロック消滅
+        │
+        (L3/L4の再帰デッドロックは構造的に不可能)
+```
+
+### AsIs vs ToBe フロー比較
+
+```
+=== AsIs(現行) ===
+Agent A: commit要求 ──→ flock -w 120(L2) ──→ git commit ──→ pre-commit(900s) ──→ 完了
+Agent B: commit要求 ──→ flock -w 120(L2) ──→ 120s timeout FAIL ──→ retry ──→ FAIL...
+Agent C: commit要求 ──→ flock -w 120(L2) ──→ 120s timeout FAIL ──→ retry storm...
+                                                    ↑
+                                              A が34分保持(デッドロック)
+
+=== ToBe(予約台帳) ===
+Agent A: 予約(<100ms) → 先頭 → git commit → pre-commit(60s max) → release → 完了
+Agent B: 予約(<100ms) → #2 → sleep 3 → sleep 3 → ... → 先頭 → git commit → 完了
+Agent C: 予約(<100ms) → #3 → sleep 3 → sleep 3 → ... → 先頭 → git commit → 完了
+                                ↑                           ↑
+                          予約は瞬時(ブロックなし)    FIFO順で確実に実行
 ```
 
 ### 問題1の根治: 自己デッドロック防止
