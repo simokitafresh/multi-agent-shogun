@@ -81,6 +81,64 @@ def _prepare_source(tmp_path, monkeypatch, name, rows):
     return db_path, ledger
 
 
+def _prepare_appendable_source(tmp_path, monkeypatch, name):
+    """Create the production event shape plus append-only child projections."""
+    ledger_dir = tmp_path / name / "logs"
+    ledger_dir.mkdir(parents=True)
+    ledger = ledger_dir / "defense_overhead.jsonl"
+    monkeypatch.setenv("DEFENSE_OVERHEAD_LEDGER", str(ledger))
+    monkeypatch.setenv("SHOGUN_MEMORY_DB_CACHE_PATH", str(tmp_path / name / "cache.sqlite"))
+    db_path = tmp_path / name / "source.sqlite"
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE events(
+                id TEXT PRIMARY KEY, ts TEXT, event_type TEXT, agent TEXT,
+                target TEXT, direction TEXT, summary TEXT, detail TEXT,
+                session_id TEXT, cmd_id TEXT, concepts TEXT, source_file TEXT,
+                parent_event_id INTEGER, importance TEXT, confidence TEXT,
+                freshness TEXT, source_type TEXT, state TEXT, occurred_at TEXT,
+                recorded_at TEXT, updated_at TEXT, raw_content TEXT, skill TEXT
+            )
+            """
+        )
+        conn.execute(
+            "CREATE TABLE event_concepts(event_id TEXT, concept_name TEXT, relevance_score REAL)"
+        )
+        conn.execute(
+            "CREATE TABLE event_links(source_event_id TEXT, target_concept TEXT, link_type TEXT)"
+        )
+        for index in range(1, 4):
+            conn.execute(
+                "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    f"event-{index}", "2026-08-04T19:00:00", "bulletin", "saizo",
+                    "", "info", f"summary-{index}", f"detail-{index}", "", "", "[]", "",
+                    None, "normal", "medium", "current", "fact", "raw", None,
+                    "2026-08-04T19:00:00", "2026-08-04T19:00:00", f"raw-{index}", "",
+                ),
+            )
+        conn.executemany(
+            "INSERT INTO event_concepts VALUES (?,?,?)",
+            [(f"event-{index}", f"concept-{index}", 1.0) for index in range(1, 4)],
+        )
+        conn.executemany(
+            "INSERT INTO event_links VALUES (?,?,?)",
+            [(f"event-{index}", f"link-{index}", "obsidian") for index in range(1, 4)],
+        )
+        conn.execute(
+            """
+            CREATE VIRTUAL TABLE events_fts USING fts5(
+                summary, detail, content='events', content_rowid='rowid', tokenize='trigram'
+            )
+            """
+        )
+        conn.execute(
+            "INSERT INTO events_fts(rowid, summary, detail) SELECT rowid, summary, detail FROM events"
+        )
+    return db_path, ledger
+
+
 def _ledger_rows(ledger: Path, check_id: str):
     if not ledger.exists():
         return []
@@ -199,3 +257,73 @@ def test_parallel_refreshes_do_not_collapse_into_one_observation(tmp_path, monke
     groups = {row["event_id"].split(":grp-")[1].split(":")[0] for row in rows}
     assert len(rows) == 4
     assert len(groups) == 2
+
+
+def test_append_only_refresh_uses_atomic_incremental_snapshot(tmp_path, monkeypatch):
+    """test_necessity: a proven append-only source change must update the
+    published cache without re-reading the canonical full database, while the
+    returned cache remains complete for events and child projections."""
+    module = load_module(SOURCE, "memory_db_live_insert_incremental_append")
+    db_path, _ = _prepare_appendable_source(tmp_path, monkeypatch, "incremental")
+    monkeypatch.setenv("SHOGUN_MEMORY_DB_INCREMENTAL_MIN_BYTES", "0")
+    published = Path(module.create_memory_db_ext4_cache(str(db_path)))
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                "event-4", "2026-08-04T19:01:00", "bulletin", "saizo", "", "info",
+                "summary-4", "detail-4", "", "", "[]", "", None, "normal", "medium",
+                "current", "fact", "raw", None, "2026-08-04T19:01:00",
+                "2026-08-04T19:01:00", "raw-4", "",
+            ),
+        )
+        conn.execute("INSERT INTO event_concepts VALUES (?,?,?)", ("event-4", "concept-4", 1.0))
+        conn.execute("INSERT INTO event_links VALUES (?,?,?)", ("event-4", "link-4", "obsidian"))
+
+    def full_copy_forbidden(*args, **kwargs):
+        raise AssertionError("append-only refresh unexpectedly used full source copy")
+
+    module.create_sqlite_backup = full_copy_forbidden
+    published = Path(module.create_memory_db_ext4_cache(str(db_path)))
+
+    with sqlite3.connect(published) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM events").fetchone() == (4,)
+        assert conn.execute("SELECT COUNT(*) FROM event_concepts").fetchone() == (4,)
+        assert conn.execute("SELECT COUNT(*) FROM event_links").fetchone() == (4,)
+        assert conn.execute("SELECT detail FROM events WHERE id='event-4'").fetchone() == ("detail-4",)
+
+
+def test_prefix_mutation_forces_full_snapshot_fallback(tmp_path, monkeypatch):
+    """test_necessity: an old-row mutation must never be treated as an
+    append-only delta; uncertain provenance falls back to the existing full
+    snapshot and integrity path."""
+    module = load_module(SOURCE, "memory_db_live_insert_incremental_fallback")
+    db_path, _ = _prepare_appendable_source(tmp_path, monkeypatch, "fallback")
+    module.create_memory_db_ext4_cache(str(db_path))
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("UPDATE events SET updated_at = ? WHERE id = ?", ("2026-08-04T19:02:00", "event-1"))
+        conn.execute(
+            "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                "event-4", "2026-08-04T19:03:00", "bulletin", "saizo", "", "info",
+                "summary-4", "detail-4", "", "", "[]", "", None, "normal", "medium",
+                "current", "fact", "raw", None, "2026-08-04T19:03:00",
+                "2026-08-04T19:03:00", "raw-4", "",
+            ),
+        )
+
+    original_backup = module.create_sqlite_backup
+    calls = []
+
+    def counted_full_copy(*args, **kwargs):
+        calls.append(True)
+        return original_backup(*args, **kwargs)
+
+    module.create_sqlite_backup = counted_full_copy
+    published = Path(module.create_memory_db_ext4_cache(str(db_path)))
+
+    assert len(calls) == 1
+    with sqlite3.connect(published) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM events").fetchone() == (4,)

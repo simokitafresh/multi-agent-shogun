@@ -452,6 +452,170 @@ def _hot_copy_snapshot(db_path: str, output_path: str) -> None:
         reader.close()
 
 
+def _sqlite_table_columns(conn, table_name: str) -> list[str]:
+    return [row[1] for row in conn.execute(f"PRAGMA table_info({table_name})")]
+
+
+def _try_incremental_cache_snapshot(
+    db_path: str, cache_path: str, output_path: str
+) -> bool:
+    """Build an atomic cache snapshot by applying a proven append-only suffix.
+
+    The canonical DB is on 9P while the published cache is normally on ext4.
+    Re-copying the whole canonical file for each append is the measured hot
+    path.  This optimization copies the already-published cache locally, then
+    applies only rows whose source rowid is beyond the cache watermark.  It is
+    deliberately conservative: any schema drift, prefix mutation/deletion,
+    auxiliary-table drift, or read failure returns False so the caller uses
+    the existing full snapshot path.  The caller still runs the unchanged
+    integrity checks and publishes with the same os.replace() boundary.
+    """
+    source_path = os.path.abspath(db_path)
+    published_path = os.path.abspath(cache_path)
+    if source_path == published_path or not os.path.exists(published_path):
+        return False
+    try:
+        incremental_min_bytes = int(
+            os.environ.get("SHOGUN_MEMORY_DB_INCREMENTAL_MIN_BYTES", str(64 * 1024 * 1024))
+        )
+    except ValueError:
+        incremental_min_bytes = 64 * 1024 * 1024
+    if incremental_min_bytes > 0 and os.path.getsize(published_path) < incremental_min_bytes:
+        return False
+
+    try:
+        _hot_copy_snapshot(published_path, output_path)
+        source_uri = f"file:{source_path}?mode=ro"
+        with sqlite3.connect(source_uri, uri=True) as source_conn, sqlite3.connect(
+            output_path
+        ) as cache_conn:
+            source_conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            cache_conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            source_conn.execute("BEGIN")
+            cache_conn.execute("BEGIN IMMEDIATE")
+
+            source_columns = _sqlite_table_columns(source_conn, "events")
+            cache_columns = _sqlite_table_columns(cache_conn, "events")
+            required_columns = {"id", "summary", "detail", "updated_at", "recorded_at", "ts"}
+            if not required_columns.issubset(source_columns) or source_columns != cache_columns:
+                raise sqlite3.DatabaseError("events schema is not append-compatible")
+
+            def event_prefix_aggregate(conn, watermark: int):
+                return conn.execute(
+                    """
+                    SELECT COUNT(*), COALESCE(MAX(rowid), 0),
+                           MAX(COALESCE(updated_at, recorded_at, ts)),
+                           COALESCE(SUM(
+                               length(COALESCE(id, '')) +
+                               length(COALESCE(summary, '')) +
+                               length(COALESCE(detail, ''))
+                           ), 0)
+                    FROM events WHERE rowid <= ?
+                    """,
+                    (watermark,),
+                ).fetchone()
+
+            source_count, source_max_rowid = source_conn.execute(
+                "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
+            ).fetchone()
+            cache_count, cache_max_rowid = cache_conn.execute(
+                "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
+            ).fetchone()
+            if source_count <= cache_count or source_max_rowid <= cache_max_rowid:
+                raise sqlite3.DatabaseError("source is not a strict append")
+            source_delta_count = source_conn.execute(
+                "SELECT COUNT(*) FROM events WHERE rowid > ?", (cache_max_rowid,)
+            ).fetchone()[0]
+            if source_delta_count != source_count - cache_count:
+                raise sqlite3.DatabaseError("source prefix contains a deletion or gap")
+            if event_prefix_aggregate(source_conn, cache_max_rowid) != event_prefix_aggregate(
+                cache_conn, cache_max_rowid
+            ):
+                raise sqlite3.DatabaseError("source event prefix changed")
+
+            for table_name, key_column in (
+                ("event_concepts", "event_id"),
+                ("event_links", "source_event_id"),
+            ):
+                source_table_columns = _sqlite_table_columns(source_conn, table_name)
+                cache_table_columns = _sqlite_table_columns(cache_conn, table_name)
+                if source_table_columns != cache_table_columns:
+                    raise sqlite3.DatabaseError(f"{table_name} schema is not append-compatible")
+                source_total = source_conn.execute(
+                    f"SELECT COUNT(*) FROM {table_name}"
+                ).fetchone()[0]
+                cache_total = cache_conn.execute(
+                    f"SELECT COUNT(*) FROM {table_name}"
+                ).fetchone()[0]
+                source_delta_total = source_conn.execute(
+                    f"""
+                    SELECT COUNT(*) FROM {table_name} AS child
+                    JOIN events AS event ON event.id = child.{key_column}
+                    WHERE event.rowid > ?
+                    """,
+                    (cache_max_rowid,),
+                ).fetchone()[0]
+                if source_total - cache_total != source_delta_total:
+                    raise sqlite3.DatabaseError(f"{table_name} prefix changed")
+
+            quoted_events = ", ".join(f'"{column}"' for column in source_columns)
+            source_rows = source_conn.execute(
+                f"SELECT rowid, {quoted_events} FROM events WHERE rowid > ? ORDER BY rowid",
+                (cache_max_rowid,),
+            )
+            event_placeholders = ", ".join("?" for _ in range(len(source_columns) + 1))
+            cache_conn.executemany(
+                f"INSERT INTO events(rowid, {quoted_events}) VALUES ({event_placeholders})",
+                source_rows,
+            )
+
+            if "events_fts" in {
+                row[0] for row in cache_conn.execute(
+                    "SELECT name FROM sqlite_master WHERE name = 'events_fts'"
+                )
+            }:
+                source_summary_index = source_columns.index("summary") + 1
+                source_detail_index = source_columns.index("detail") + 1
+                cache_conn.executemany(
+                    "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, ?, ?)",
+                    (
+                        (row[0], row[source_summary_index], row[source_detail_index])
+                        for row in source_conn.execute(
+                            f"SELECT rowid, {quoted_events} FROM events WHERE rowid > ? ORDER BY rowid",
+                            (cache_max_rowid,),
+                        )
+                    ),
+                )
+
+            for table_name, key_column in (
+                ("event_concepts", "event_id"),
+                ("event_links", "source_event_id"),
+            ):
+                child_columns = _sqlite_table_columns(source_conn, table_name)
+                quoted_child = ", ".join(
+                    f'"{column}"' for column in child_columns
+                )
+                quoted_child_select = ", ".join(f'child."{column}"' for column in child_columns)
+                child_placeholders = ", ".join("?" for _ in child_columns)
+                cache_conn.executemany(
+                    f"INSERT INTO {table_name}({quoted_child}) VALUES ({child_placeholders})",
+                    source_conn.execute(
+                        f"""
+                        SELECT {quoted_child_select} FROM {table_name} AS child
+                        JOIN events AS event ON event.id = child.{key_column}
+                        WHERE event.rowid > ?
+                        """,
+                        (cache_max_rowid,),
+                    ),
+                )
+
+            cache_conn.commit()
+            source_conn.commit()
+            return True
+    except Exception:
+        return False
+
+
 def require_cache_backup_healthy(db_path: str) -> None:
     """Verify a freshly-built cache copy before it is published.
 
@@ -657,10 +821,13 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
         temp_path = temp_name
         try:
             _copy_t0 = time.monotonic_ns()
-            create_sqlite_backup(db_path, output_path=temp_path, suffix="ext4_cache")
+            incremental = _try_incremental_cache_snapshot(db_path, cache_path, temp_path)
+            if not incremental:
+                create_sqlite_backup(db_path, output_path=temp_path, suffix="ext4_cache")
             _copy_ms = (time.monotonic_ns() - _copy_t0) // 1_000_000
             _record_phase_point(
-                "refresh_copy", _copy_ms, "PASS", f"refresh_copy:grp-{_window_group}"
+                "refresh_copy", _copy_ms, "PASS",
+                f"refresh_copy:grp-{_window_group}:mode-{'incremental' if incremental else 'full'}",
             )
             _verify_t0 = time.monotonic_ns()
             require_cache_backup_healthy(temp_path)
