@@ -1,7 +1,9 @@
 <!-- gist-master: e131b06c137d3da41ad28df6373e7601 rebalancer-market-phase-asis-tobe-5w1h_20260804.md -->
-# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.7 【✅CLOSED — 全工程完了】
+# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.8 【✅SSOT+UX完了 / ⚙ガイドページ更新】
 
-> v1.7(2026-08-05 02:18 将軍クローズ): 全工程完了。§実装分解3cmd(4227/4228/4229)全GATE CLEAR+§検証4面全PASS+§UXカード是正(cmd_karo_hotfix_rebalancer_ux_card_20260805 GATE CLEAR 01:58)。殿裁定6件全て実装済み。本設計書をCLOSEDとする
+> v1.8(2026-08-05 02:28 殿指示): §ガイドページ更新を追加。内容陳腐化(Yahoo Finance→Alpaca RT/EODHD)+ライトモードコントラスト違反の2問題をAsIs/ToBeで記述
+
+> v1.7(2026-08-05 02:18 将軍クローズ): SSOT+UX全工程完了。§実装分解3cmd(4227/4228/4229)全GATE CLEAR+§検証4面全PASS+§UXカード是正(cmd_karo_hotfix_rebalancer_ux_card_20260805 GATE CLEAR 01:58)+realtimeレーン統合。殿裁定6件全て実装済み
 
 > v1.6(2026-08-05 00:20 殿フィードバック): §UXアクションカード是正を追加(3問題: 再接続中表示の誤解/2時刻矛盾/タブレットレスポンシブ崩れ)+4フェーズモック。殿指示『下の段に今の計算で何を使っているかが表示されるのがシンプルで誤解を生まない』
 
@@ -265,6 +267,46 @@ CLOSED (左記以外+週末+祝日):
 | P3 本番検証 | 開場中E2E 4巡実測(07-29殿裁定)+本番バグ2件是正 | ✅完了 — 08-05 00:14 REGULAR検証で全銘柄RT PASS(本設計書§検証状況)。旧残欠(health commit露出/recovery完走)はmarket-phase 3cmd+UX是正の本番稼働で実質カバー済み |
 
 旧設計書は本統合をもってCLOSEDとする。詳細経緯は `docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md` を参照。
+
+## §ガイドページ更新(v1.7追加 — 殿指示2026-08-05 02:15)
+
+### AsIs — 2つの問題
+
+**問題1: 内容が現状と不一致**
+
+| 箇所 | ガイド記載(旧) | 実態(現) |
+|---|---|---|
+| L241 JA / L525 EN | 「価格データは5分間隔で自動更新」「Stock prices fetched from Yahoo Finance」 | Alpaca IEX WS リアルタイム(PRE/REGULAR/POST)+EODHD確定終値(CLOSED) |
+| 市場フェーズ説明(L334-341) | 4行テーブルのみ。ET時刻/DST/ソース切替の説明なし | §価格フロー図(本設計書)の4フェーズ×ソース対応が正 |
+| アクションカード説明(L197-209) | 旧UI構成(上段時刻+LIVE/再接続中バッジ+下段) | 新UXカード(下段1行: 時刻·ソース·フェーズバッジのみ) |
+| yfinance言及(EN L525, L600-602) | 「Stock prices fetched from Yahoo Finance」「prices in USD」 | yfinanceはdegraded fallbackのみ。主経路はAlpaca RT/EODHD |
+
+**問題2: ライトモードのコントラスト違反(殿指摘)**
+
+| 要素 | 現状のクラス | 問題 |
+|---|---|---|
+| H2 | `text-white` | ライト背景で不可視 |
+| H3 | `text-teal-300` | コントラスト比 < 4.5:1(WCAG AA不適合) |
+| P/Li | `text-gray-300` | ライト背景で薄すぎ |
+| Note | `bg-teal-950/40 text-teal-100` | ダーク専用。ライトで背景が消える |
+| Code | `bg-slate-950 text-gray-300` | 同上 |
+| Table | `bg-slate-800 text-gray-200` | 同上 |
+
+全コンポーネントが`dark:`プレフィックスなしのダーク専用色。ライトモードではテキスト4.5:1のコントラスト比(UIデザインルール)を満たさない。
+
+### ToBe
+
+1. **内容更新**: 本設計書の§価格フロー図・§UXカード是正のToBe・§API台帳をガイドページに反映
+   - JA: Alpaca RT/EODHD二層構成の説明+4フェーズ×ソース対応表+新UXカード説明
+   - EN: 同上の英語版
+   - yfinance→degraded fallbackへの記述修正
+2. **ライトモード対応**: 全コンポーネントに`dark:`プレフィックス追加
+   - `text-gray-900 dark:text-white`(H2)、`text-teal-700 dark:text-teal-300`(H3)等
+   - コントラスト比4.5:1以上を全要素で確保(UIデザインルール準拠)
+
+### 対象ファイル
+
+- `/mnt/c/Python_app/rebalancer/frontend/app/guide/page.tsx` (JA+EN両セクション)
 
 ## §因果リンク
 
