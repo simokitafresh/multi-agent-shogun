@@ -342,14 +342,21 @@ if [[ -n "$prompt_state_source_event_id" ]]; then
   prompt_state_ledger="${PROMPT_STATE_CONSUMED_LEDGER:-$SCRIPT_DIR/logs/prompt_consumed_ledger.tsv}"
   mkdir -p "$(dirname "$prompt_state_ledger")"
   exec 218>"${prompt_state_ledger}.lock"
-  flock -w 5 218 || { prompt_state_wait_preflight; exit 2; }
-  if [[ -f "$prompt_state_ledger" ]] && awk -F '\t' -v id="$prompt_state_source_event_id" '$1==id{found=1} END{exit !found}' "$prompt_state_ledger"; then
-    printf 'BLOCK: prompt source_event_id already consumed; delayed replay suppressed (%s)\n' "$prompt_state_source_event_id" >&2
-    prompt_state_wait_preflight
-    exit 2
+  # lockタイムアウトはfail-open(fence skip)。インフラ都合のexit 2は殿のpromptを無言BLOCKする
+  # (2026-08-04 15:59実事故: DrvFS上の共有lock競合で5秒超→殿prompt消失)。
+  # 意図的BLOCKはledger突合で重複が実証された場合のみ(下のBLOCK分岐、stderr必須)。
+  if flock -w 5 218; then
+    if [[ -f "$prompt_state_ledger" ]] && awk -F '\t' -v id="$prompt_state_source_event_id" '$1==id{found=1} END{exit !found}' "$prompt_state_ledger"; then
+      printf 'BLOCK: prompt source_event_id already consumed; delayed replay suppressed (%s)\n' "$prompt_state_source_event_id" >&2
+      prompt_state_wait_preflight
+      exit 2
+    fi
+    printf '%s\t%s\t%s\t%s\t%s\n' "$prompt_state_source_event_id" "${prompt_state_received_ts:-$timestamp}" "$prompt_state_send_ts" "$prompt_state_pane_generation" "$timestamp" >> "$prompt_state_ledger"
+    flock -u 218
+  else
+    printf 'WARN: prompt_consumed_ledger lock timeout; replay fence skipped fail-open (%s)\n' "$prompt_state_source_event_id" >&2
+    printf '%s\tfence_lock_timeout_failopen\t%s\n' "$timestamp" "$prompt_state_source_event_id" >> "$SCRIPT_DIR/logs/prompt_state_inject_diag.log" 2>/dev/null || true
   fi
-  printf '%s\t%s\t%s\t%s\t%s\n' "$prompt_state_source_event_id" "${prompt_state_received_ts:-$timestamp}" "$prompt_state_send_ts" "$prompt_state_pane_generation" "$timestamp" >> "$prompt_state_ledger"
-  flock -u 218
 fi
 
 count_lord_responses() {
@@ -1309,10 +1316,14 @@ if [[ -n "$memory_citation_scaffold" ]]; then
   memory_citation_wall_ms=$((memory_citation_finished_ms - memory_citation_started_ms))
   memory_citation_gate_log="${PROMPT_STATE_MEM_CITATION_GATE_LOG:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
   mkdir -p "${memory_citation_gate_log%/*}"
+  # gate_fire_logのlockタイムアウトはfail-open(記録skip・注入は続行)。exit 2は殿のpromptを無言BLOCKする(2026-08-04 15:59実事故と同型の穴)。
   {
-    flock -w 2 219 || exit 2
-    printf -- '- ts: "%s", file: "prompt_state_inject", gate: "mem_citation_injection", result: PASS, checks: "injected=1 missing=0 block=0 false_positive=0 false_negative=0 detector_fp_rate=0 wall_ms=%s"\n' \
-      "$(date -Iseconds)" "$memory_citation_wall_ms" >&219
+    if flock -w 2 219; then
+      printf -- '- ts: "%s", file: "prompt_state_inject", gate: "mem_citation_injection", result: PASS, checks: "injected=1 missing=0 block=0 false_positive=0 false_negative=0 detector_fp_rate=0 wall_ms=%s"\n' \
+        "$(date -Iseconds)" "$memory_citation_wall_ms" >&219
+    else
+      printf 'WARN: gate_fire_log lock timeout; mem_citation record skipped fail-open\n' >&2
+    fi
   } 219>>"$memory_citation_gate_log"
   additional_context="${memory_citation_scaffold}
 ${additional_context}"
