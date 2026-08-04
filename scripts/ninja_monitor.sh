@@ -496,6 +496,12 @@ ninja_monitor_owner_heartbeat() {
         eval "exec ${lock_fd}>&-"
         return 1
     fi
+    if [ "$pid" != "$$" ]; then
+        log "SINGLETON-FENCE: pid $$ lost ownership to ${pid:-missing}"
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+        return 1
+    fi
     now=$EPOCHSECONDS
     tmp="${owner_file}.tmp.$$"
     printf '%s %s %s\n' "$$" "$generation" "$now" > "$tmp"
@@ -533,6 +539,37 @@ _ninja_monitor_owner_record_matches() {
     [ "$owner_pid" = "$expected_pid" ] || return 1
     [ "$owner_generation" = "$expected_generation" ] || return 1
     _ninja_monitor_pid_is_live "$owner_pid"
+}
+
+_ninja_monitor_refresh_owner_lease() {
+    local owner_file="$1"
+    local pid_file="$2"
+    local generation="$3"
+    local owner_pid="$4"
+    local lock_file="$owner_file.lock"
+    local current_pid="" current_generation="" current_heartbeat="" now tmp lock_fd
+    exec {lock_fd}>"$lock_file"
+    flock "$lock_fd"
+    read -r current_pid current_generation current_heartbeat < "$owner_file" 2>/dev/null || true
+    if [ "$current_pid" != "$owner_pid" ] || [ "$current_generation" != "$generation" ]; then
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+        return 1
+    fi
+    _ninja_monitor_pid_is_live "$owner_pid" || {
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+        return 1
+    }
+    now=$EPOCHSECONDS
+    tmp="$owner_file.tmp.heartbeat.$$"
+    printf '%s %s %s\n' "$owner_pid" "$generation" "$now" > "$tmp"
+    mv "$tmp" "$owner_file"
+    tmp="$pid_file.tmp.heartbeat.$$"
+    printf '%s\n' "$owner_pid" > "$tmp"
+    mv "$tmp" "$pid_file"
+    flock -u "$lock_fd"
+    eval "exec ${lock_fd}>&-"
 }
 
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
@@ -9290,6 +9327,40 @@ start_ninja_monitor_hot_reload_watch() {
     disown "$NINJA_MONITOR_HOT_RELOAD_WATCH_PID" 2>/dev/null || true
 }
 
+# Unlike the hot-reload watcher, this lease refresher must not perform stat on
+# /mnt/c. It keeps owner/pid alive while the main loop is blocked in a D-state
+# operation, and exits as soon as generation or owner PID changes.
+_ninja_monitor_owner_heartbeat_watch() {
+    local owner_file="$1"
+    local pid_file="$2"
+    local generation="$3"
+    local owner_pid="$4"
+    local parent_pid="$5"
+    local poll_sec="$NINJA_MONITOR_OWNER_HEARTBEAT_POLL_SEC"
+    [ -n "$poll_sec" ] || poll_sec=1
+    exec </dev/null >> "$LOG" 2>&1
+    close_inherited_non_stdio_fds
+    while [ -d "/proc/$parent_pid" ]; do
+        _ninja_monitor_refresh_owner_lease "$owner_file" "$pid_file" "$generation" "$owner_pid" || return 0
+        sleep "$poll_sec"
+    done
+}
+
+start_ninja_monitor_owner_heartbeat_watch() {
+    local owner_file="$NINJA_MONITOR_OWNER_FILE"
+    local pid_file="$STATE_DIR/ninja_monitor.pid"
+    [ -n "$owner_file" ] || owner_file="$STATE_DIR/ninja_monitor.owner"
+    export -f log close_inherited_non_stdio_fds _ninja_monitor_pid_is_live \
+        _ninja_monitor_refresh_owner_lease _ninja_monitor_owner_heartbeat_watch
+    export LOG STATE_DIR NINJA_MONITOR_OWNER_FILE NINJA_MONITOR_GENERATION
+    export NINJA_MONITOR_OWNER_HEARTBEAT_POLL_SEC \
+        NINJA_MONITOR_OWNER_WATCH_OWNER_PID NINJA_MONITOR_OWNER_WATCH_PARENT_PID
+    nohup bash -c '_ninja_monitor_owner_heartbeat_watch "$NINJA_MONITOR_OWNER_FILE" "$STATE_DIR/ninja_monitor.pid" "$NINJA_MONITOR_GENERATION" "$NINJA_MONITOR_OWNER_WATCH_OWNER_PID" "$NINJA_MONITOR_OWNER_WATCH_PARENT_PID"' \
+        shogun-owner-heartbeat-watch >> "$LOG" 2>&1 &
+    NINJA_MONITOR_OWNER_HEARTBEAT_WATCH_PID=$!
+    disown "$NINJA_MONITOR_OWNER_HEARTBEAT_WATCH_PID" 2>/dev/null || true
+}
+
 # Existing monitor idle edge is the single trigger; no new daemon/poll loop.
 # A trusted writer publishes one CLI argument per line and atomic rename claims it.
 check_throughput_ready_events() {
@@ -9538,6 +9609,10 @@ prev_idle=""
 prev_gate_sig=""
 _NM_SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 _NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
+NINJA_MONITOR_OWNER_WATCH_OWNER_PID="$$"
+NINJA_MONITOR_OWNER_WATCH_PARENT_PID="$$"
+export NINJA_MONITOR_OWNER_WATCH_OWNER_PID NINJA_MONITOR_OWNER_WATCH_PARENT_PID
+start_ninja_monitor_owner_heartbeat_watch
 start_ninja_monitor_hot_reload_watch
 
 while true; do

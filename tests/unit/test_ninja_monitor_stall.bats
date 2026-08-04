@@ -337,6 +337,38 @@ printf "owner_pid=%s heartbeat_cycles=3 stale_rewrite=0\n" "$owner"
     [[ "$output" == "owner_pid="*" heartbeat_cycles=3 stale_rewrite=0" ]]
 }
 
+@test "owner heartbeat watcher keeps three live SSOT cycles independent of main loop" {
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+STATE_DIR="'"$BATS_TEST_TMPDIR"'/owner-heartbeat/state"
+LOG="'"$BATS_TEST_TMPDIR"'/owner-heartbeat/monitor.log"
+NINJA_MONITOR_OWNER_FILE="$STATE_DIR/ninja_monitor.owner"
+NINJA_MONITOR_LIVENESS_OVERRIDE_PID="$$"
+NINJA_MONITOR_OWNER_HEARTBEAT_POLL_SEC=0.1
+mkdir -p "$STATE_DIR"
+acquire_singleton_lock
+read -r owner generation previous < "$NINJA_MONITOR_OWNER_FILE"
+NINJA_MONITOR_OWNER_WATCH_OWNER_PID="$$"
+NINJA_MONITOR_OWNER_WATCH_PARENT_PID="$$"
+start_ninja_monitor_owner_heartbeat_watch
+for cycle in 1 2 3; do
+  sleep 1
+  read -r owner_after generation_after heartbeat_after < "$NINJA_MONITOR_OWNER_FILE"
+  test "$owner_after" = "$owner"
+  test "$generation_after" = "$generation"
+  test "$heartbeat_after" -gt "$previous"
+  test "$(cat "$STATE_DIR/ninja_monitor.pid")" = "$owner"
+  previous="$heartbeat_after"
+done
+printf "owner_pid=%s heartbeat_cycles=3 pid_match=1\n" "$owner"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == "owner_pid="*" heartbeat_cycles=3 pid_match=1" ]]
+}
+
 @test "snapshot keeps task done while publishing runtime busy separately" {
     run bash -lc '
 set -euo pipefail
