@@ -138,6 +138,10 @@ declare -a CMD_SAVE_PHASE_EVENTS=()
 CMD_SAVE_PHASE_LAST_US=""
 CMD_SAVE_RUN_ID=""
 CMD_SAVE_CHECKS_MAIN_LAST_US=""
+# 全体wall計測(2026-08-04 殿指示『計測可能にせよ』): フェーズ計装済み区間(合計≈12s/回)と
+# 実wall(実測≈150s/回)の差分≈9割が台帳の外にあった計測盲点を塞ぐ。save_total=script開始→EXITの全区間。
+CMD_SAVE_TOTAL_T0_US="${EPOCHREALTIME/./}"
+CMD_SAVE_TOTAL_T0_US="${CMD_SAVE_TOTAL_T0_US:0:16}"
 
 cmd_save_phase_mark() {
     local name="$1" now_us wall_ms
@@ -3220,6 +3224,22 @@ handle_cmd_save_exit() {
             _cs_batch+=(cmd_save "$_cs_phase" "$_cs_ms" "$_cs_verdict" "${CMD_SAVE_RUN_ID:-cmd_unknown-$$}-${_cs_phase}")
         done
         defense_overhead_write_batch_async "${_cs_batch[@]}" || true
+    fi
+
+    # save_total: script開始からEXITまでの全wall(未計装区間込み)。計測盲点根絶(殿指示2026-08-04)。
+    if [[ -n "${CMD_SAVE_TOTAL_T0_US:-}" ]]; then
+        local _cs_total_now_us _cs_total_ms _cs_total_verdict
+        _cs_total_now_us="${EPOCHREALTIME/./}"
+        _cs_total_now_us="${_cs_total_now_us:0:16}"
+        _cs_total_ms=$(( (_cs_total_now_us - CMD_SAVE_TOTAL_T0_US + 999) / 1000 ))
+        if [[ "${BLOCK_COUNT:-0}" -gt 0 ]]; then
+            _cs_total_verdict=BLOCK
+        elif [[ "${WARN_COUNT:-0}" -gt 0 ]]; then
+            _cs_total_verdict=WARN
+        else
+            _cs_total_verdict=PASS
+        fi
+        defense_overhead_write_async cmd_save save_total "$_cs_total_ms" "$_cs_total_verdict" "${CMD_SAVE_RUN_ID:-cmd_unknown-$$}-save_total" || true
     fi
 
     if [[ "$status" -ne 0 ]]; then

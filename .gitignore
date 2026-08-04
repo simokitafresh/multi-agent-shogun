@@ -119,6 +119,7 @@ queue/memory_db_live_insert_queue/
 !.githooks/
 !.githooks/pre-commit
 !.githooks/pre-push
+!.githooks/post-commit
 !lefthook.yml
 !lefthook-local.yml
 

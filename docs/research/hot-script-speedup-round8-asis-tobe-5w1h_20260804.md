@@ -1,7 +1,7 @@
 <!-- gist-master: fc4b27c4031149d7d6b45fde49028942 hot-script-speedup-round8-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.1 【📋設計済・裁可待ち】
+# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.2 【📋設計済・裁可待ち】
 
-> 状態: v1.1覚醒更新(2026-08-04 09:07 殿指示『設計書は覚醒してアップデートせよ』— §0を最新ledger 166,956行で再実測。**序列不変**を確認、弾台帳・境界に変更なし) / 初版起草(2026-08-04 02:50。殿発案02:44『第八弾をやろう。まずは同じ形式で設計書を』)
+> 状態: v1.2(2026-08-04 11:45 殿指示『計測可能にせよ』『第八弾の設計書をアップデートせよ。他に未計測で漏れているモノがないかも調査せよ』— §0.5計測盲点サーベイを追加。cmd_save save_total計装をD0実装済み(将軍・動作確認row出力済み)。弾台帳へ弾#6と計測盲点根絶レーンを追加) / v1.1覚醒更新(2026-08-04 09:07 殿指示『設計書は覚醒してアップデートせよ』— §0を最新ledger 166,956行で再実測。**序列不変**を確認、弾台帳・境界に変更なし) / 初版起草(2026-08-04 02:50。殿発案02:44『第八弾をやろう。まずは同じ形式で設計書を』)
 
 > シリーズ: ホットスクリプト集中高速化。第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`✅ / 第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`✅ / 第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`✅ / 第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md` / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅ / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(identity基盤完成・P1b蓄積待ち) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅(全量wall -3.35%確定) / **第八弾=本書**
 
@@ -44,6 +44,32 @@
 
 **読み**: 両序列でthree_layer_health系が圧倒的TOP。refresh_copy+refresh_verify+refresh_windowの3 check合算で**約320,800s≈89.1時間/週**の課税。中央値12秒級×1万回超の反復=恒常課税型の教科書例。median 0.00sのrefresh_window/heavy_job系は長い裾(外れ値型)であり、恒常型と別の手筋が要る。v1.1追記: 本セッション(CI RED対応で高頻度活動)でも序列・中央値とも安定=標的選定はノイズでなく構造。
 
+## §0.5 計測盲点サーベイ(v1.2追加 — 殿指示2026-08-04 11:38『計測可能にせよ』『未計測で漏れているモノを調査せよ』)
+
+**発端**: cmd_save --preflightのwall実測≈150s/回に対し、ledger計装済みcheck合計は≈12s/回(2026-08-04将軍実測: checks_main max5.2s+three_layer 6.2s+pre_session 1.0s)。**差分≈9割が台帳の外**=序列に載らず改善対象に上がらない構造欠陥。計測なき区間は存在しないのと同じに扱われる。
+
+**D0是正済み(2026-08-04 11:43将軍実装・動作確認済み)**: cmd_save.shへ`save_total`(script開始→EXITの全wall・未計装区間込み)を計装。検証row実出力: `{"source":"cmd_save","check_id":"save_total","wall_ms":2231,"verdict":"PASS"}`。以後、preflight全体の実コストが台帳の序列へ自動で載る。
+
+**サーベイ結果A — 台帳接続済みだがtotal計測なし(7 source、区間の切れ端のみで全体像不明)**:
+
+| source | 現状checks | 欠落 |
+|---|---|---|
+| three_layer_health | 5(refresh_copy/verify/window等) | **script全体total**(現TOP課税源なのに全体walが無い) |
+| git_pre_commit | 13 | total(affected_tests単体は有るが全hook wall無し) |
+| gate_report_format | 3 | total |
+| completion_finalize / dashboard_update / review_approval / self_retro | 各1-2 | total |
+
+**サーベイ結果B — 台帳完全未接続のホットスクリプト(grep defense_overhead=0件)**:
+
+| script | 性質 |
+|---|---|
+| gate_shogun_startup.sh / gate_karo_startup.sh / gate_gunshi_startup.sh | 毎/clear必発。体感で分単位だが1行も計測なし |
+| semantic_index_update.sh | 高頻度デーモン系 |
+| ninja_scope_commit.sh | 全commit経路(第六弾残候補④=46sの体感値のみ) |
+| cmd_delegate.sh | 全cmd配備経路 |
+
+**原理(本弾憲法への追記)**: 「エントリポイントには必ず*_total計装を置く」。子区分の精密化より先に、まず全体walを台帳に載せる(載らないものは序列に上がらず、序列に上がらないものは改善されない)。
+
 ## §1 計測境界(憲法・第五〜七弾継承)
 
 - 計測=既存台帳のみ(`logs/defense_overhead.jsonl`)。**新台帳禁止**(車輪の再発明防止 knowledge:fbb5716c)
@@ -73,6 +99,7 @@
 | 補欠A | `inbox_write:inbox_write_total` | 頻度課税 | med 0.33s×8,170 | 呼出し頻度が主因ゆえ効果/リスク比を計測後判断 |
 | 補欠B | `gate_report_format:singleflight_hold` | 待機 | total 10,736s | hold時間の分布から真因(lock競合)特定のみ本弾、是正は判断後 |
 | 補欠C | review_notifyフェーズ(self_retro支配コスト) | 恒常課税 | INS-20260804-031401742(priority=high・検証passed) | self_retro台帳の遅延分析で支配的コストと特定(殿裁定03:29で台帳合流)。SG7検証の品質不変でレビュー通知フェーズを削減。`gate_gunshi_report_precheck`系(#5)の上流同族ゆえ#5の子区分計測と合同で真因特定 |
+| **弾#0'** | **計測盲点根絶(*_total一斉計装)** | 計測基盤 | §0.5サーベイ: total欠落7 source+台帳未接続6 script(startup gate 3本/semantic_index_update/ninja_scope_commit/cmd_delegate) | cmd_save save_totalの実装型(script冒頭T0+EXIT trapで1行write)を全エントリポイントへ横展開。**全弾に先行**(序列に載らないものは改善されない)。cmd_saveの未計装≈140s/回の内訳特定は計装後1週間のledgerで自動判明 |
 
 - 弾#1-#3は同一スクリプト(three_layer_health)の別checkだが、writer共有ゆえ**#1→#2→#3の直列**(共有層先行の原則)。#4以降は独立並列可
 
