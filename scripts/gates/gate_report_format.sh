@@ -446,9 +446,53 @@ changed_ids = {
 owned_ids = snapshot_ids & changed_ids
 if not owned_ids:
     fail()
+
+def post_commit_shared_mutation_allowed(before_entry, after_entry):
+    """Accept only producer-owned metadata changes, never worker edits.
+
+    Reflux workers publish a resolved insight and the self-retro producer may
+    immediately update the same ID's occurrence metadata.  The task/report
+    contract is the primary source.  The narrowly-scoped legacy fallback is
+    retained for reports created before Level5 injection: it requires the
+    stable self_retro producer marker and the exact two metadata fields.
+    """
+    contract = report.get("reflux_commit_contract")
+    if not isinstance(contract, dict):
+        snapshot_contract = snapshot.get("reflux_commit_contract")
+        contract = snapshot_contract if isinstance(snapshot_contract, dict) else None
+    if contract is None:
+        contract = {
+            "producer": {"field": "source", "value": "self_retro"},
+            "stable_id_field": "id",
+            "post_commit_allowed_fields": ["occurrence_count", "last_seen"],
+        }
+    if not isinstance(contract, dict):
+        return False
+    producer = contract.get("producer")
+    if not isinstance(producer, dict):
+        return False
+    producer_field = str(producer.get("field") or "").strip()
+    producer_value = producer.get("value")
+    if not producer_field or before_entry.get(producer_field) != producer_value or after_entry.get(producer_field) != producer_value:
+        return False
+    stable_field = str(contract.get("stable_id_field") or "id").strip()
+    if not stable_field or before_entry.get(stable_field) != after_entry.get(stable_field):
+        return False
+    allowed = contract.get("post_commit_allowed_fields")
+    if not isinstance(allowed, list) or not allowed:
+        return False
+    allowed = {str(field).strip() for field in allowed if str(field).strip()}
+    changed = {
+        key for key in set(before_entry) | set(after_entry)
+        if before_entry.get(key) != after_entry.get(key)
+    }
+    return bool(changed) and changed <= allowed
+
 for identity in owned_ids:
     if identity in current:
-        if committed.get(identity) != current.get(identity):
+        if committed.get(identity) != current.get(identity) and not post_commit_shared_mutation_allowed(
+            committed.get(identity) or {}, current.get(identity) or {}
+        ):
             fail()
     elif [entry for entry in archive_entries if entry.get("id") == identity] != [committed.get(identity)]:
         # Absence from the live bounded queue is safe only when the archive
@@ -585,6 +629,17 @@ for path in suppressed:
 print("\n".join(kept))
 PY
 }
+
+# Focused contract-test entry point.  It exercises the same shared-queue
+# filter used by the production gate without running unrelated report checks.
+# The fixture supplies a real commit/report and a porcelain path list through
+# GATE_REFLUX_UNCOMMITTED_PATHS.
+if [ "${GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST:-0}" = "1" ]; then
+    _REFLUX_TEST_ROOT="${GATE_REPO_ROOT_OVERRIDE:-$PWD}"
+    filter_report_commit_nonoverlap_diffs \
+        "$_REFLUX_TEST_ROOT" "$REPORT_PATH" "${GATE_REFLUX_UNCOMMITTED_PATHS:-}"
+    exit $?
+fi
 
 # cmd_karo_hotfix_gate_ac3_hunk_provenance: AC3 hunk/commit provenance filter.
 # AC2は commit_hash のhunkと未commit差分のhunkを比較して非重複なら黙らせる(上のfilter_report_commit_nonoverlap_diffs)。

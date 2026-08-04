@@ -2583,3 +2583,36 @@ PY
   [ "$status" -eq 0 ]
   [[ "$output" == DEPLOY_BEHAVIOR_OK* ]]
 }
+
+# test_necessity: reflux workers need one injected absolute helper/scope and
+# producer contract so the gate can distinguish post-commit self-retro metadata
+# from a worker's own dirty edit.
+@test "reflux tasks receive absolute scope and producer commit contract" {
+  local tmpdir="$BATS_TEST_TMPDIR/reflux-contract"
+  mkdir -p "$tmpdir"
+  cat > "$tmpdir/task.yaml" <<'YAML'
+task:
+  project: infra
+  task_type: exact
+  purpose: reflux_insight producer contract fixture
+  planned_paths:
+  - queue/insights.yaml
+YAML
+
+  run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$PROJECT_ROOT'; inject_reflux_commit_contract '$tmpdir/task.yaml'"
+  [ "$status" -eq 0 ]
+  run python3 - "$tmpdir/task.yaml" "$PROJECT_ROOT" <<'PY'
+import os, sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+contract = task['reflux_commit_contract']
+assert contract['helper_path'] == os.path.join(sys.argv[2], 'scripts/ninja_scope_commit.sh')
+assert os.path.isabs(contract['helper_path'])
+assert contract['scope'] == ['queue/insights.yaml']
+assert contract['producer'] == {'field': 'source', 'value': 'self_retro'}
+assert contract['post_commit_allowed_fields'] == ['occurrence_count', 'last_seen']
+assert contract['uncommitted_worker_policy'] == 'block'
+print('REFLUX_CONTRACT_OK')
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "REFLUX_CONTRACT_OK" ]
+}

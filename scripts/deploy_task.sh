@@ -1653,6 +1653,7 @@ STALE_FIELDS = [
     # 第14層: Level5自動注入/診断メタ。スカラー親だけ上書きされると旧リスト子が残りYAMLを壊す
     'growth_loop_defense', 'semantic_concepts', 'standard_skills',
     'memory_db_context', 'related_causal_links', 'production_invariants',
+    'reflux_commit_contract',
     'hypothesis_count', 'three_strike_rule',
     # 第15層: cmd固有メタ(karo_direct手動注入/resolve_cmd_to_task転写。前cmdの値が次cmdに残留する)
     'expected_model_effort', 'pre_deploy_banner_evidence',
@@ -4088,6 +4089,7 @@ snapshot = {
     "purpose": str(task.get("purpose") or task.get("title") or task.get("command") or sys.argv[3]).strip(),
     "project": str(task.get("project") or sys.argv[6] or "unknown").strip(),
     "acceptance_criteria": task.get("acceptance_criteria"),
+    "reflux_commit_contract": task.get("reflux_commit_contract"),
 }
 print(json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
 PY
@@ -4454,6 +4456,13 @@ timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
 task_contract_snapshot: ${_task_contract_snapshot}
+reflux_commit_contract: $(python3 - "$task_file" <<'PY'
+import json, sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+value = task.get("reflux_commit_contract")
+print(json.dumps(value, ensure_ascii=False, separators=(",", ":")) if isinstance(value, dict) else "null")
+PY
+)
 result:
   summary: "${_summary_context} — 実施・検証結果を本報告へ記録"  # Level5: task context pre-supplied; 完了前に実測を追記
   details: ""
@@ -6322,6 +6331,78 @@ PY
 
     _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_context_hints: ${#hints[@]} hints injected"
+}
+
+# ─── reflux shared-queue commit contract (Level5) ───
+# A reflux worker commits one bounded insight record while self-retro may
+# update occurrence metadata in the same shared YAML immediately afterwards.
+# Give the worker and the report gate the same immutable contract up front:
+# the canonical helper, the exact scope, the producer identity, and the only
+# fields a post-commit producer mutation may change.  A worker edit to any
+# other field remains a real uncommitted change and must BLOCK.
+inject_reflux_commit_contract() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local project task_type purpose command_text planned_paths haystack
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    planned_paths=$(python3 - "$task_file" <<'PY' 2>/dev/null || true
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+value = task.get("planned_paths", [])
+if isinstance(value, str):
+    print(value)
+elif isinstance(value, list):
+    print("\n".join(str(item) for item in value))
+PY
+)
+    haystack="${project}\n${task_type}\n${purpose}\n${command_text}\n${planned_paths}"
+    if ! grep -Eqi 'reflux[_ -]?insight|insight.*還流|還流.*insight' <<< "$haystack" \
+        || ! grep -qxF 'queue/insights.yaml' <<< "$planned_paths"; then
+        return 0
+    fi
+
+    local repo_root helper_path
+    repo_root=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$SCRIPT_DIR")
+    helper_path=$(realpath "$repo_root/scripts/ninja_scope_commit.sh" 2>/dev/null || printf '%s\n' "$repo_root/scripts/ninja_scope_commit.sh")
+    # Generic yaml_field_set treats unknown JSON-valued fields as scalars.
+    # Publish this mapping as a real YAML block so the task/report contract
+    # cannot silently degrade into a quoted string.
+    local tmp_file inject_block
+    tmp_file=$(mktemp "${task_file}.XXXXXX") || return 1
+    awk '
+        {
+            if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
+            if (skip) {
+                if (indent <= 2 && $0 ~ /^  [a-zA-Z_][a-zA-Z0-9_]*:/) { skip = 0 }
+                else { next }
+            }
+            if (indent == 2 && $0 ~ /^  reflux_commit_contract:/) { skip = 1; next }
+            print
+        }
+    ' "$task_file" > "$tmp_file" || return 1
+    inject_block=$(cat <<EOF
+  reflux_commit_contract:
+    helper_path: "${helper_path}"
+    repo_root: "${repo_root}"
+    scope:
+      - "queue/insights.yaml"
+    producer:
+      field: "source"
+      value: "self_retro"
+    stable_id_field: "id"
+    post_commit_allowed_fields:
+      - "occurrence_count"
+      - "last_seen"
+    uncommitted_worker_policy: "block"
+EOF
+)
+    insert_task_block_before_description "$tmp_file" "$inject_block" || return 1
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
+    log "inject_reflux_commit_contract: helper=${helper_path} scope=queue/insights.yaml producer=self_retro"
 }
 
 # ─── 本番不変量注入（task YAMLにproduction_invariantsを挿入） ───
@@ -11886,6 +11967,7 @@ deploy_task_apply_task_mutations() {
         inject_dm_signal_pf_operation_guardrails "$task_file" || true  # Level5: PF削除/復元/rollback前提知識を自動注入(cmd_3786)
         inject_dm_signal_golden_baseline_contract "$task_file" || true  # Level5: L877巨大golden-baseline二層契約
         inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
+        inject_reflux_commit_contract "$task_file" || handle_yaml_injection_failure "inject_reflux_commit_contract" "$task_file" "$ninja_name"
         inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
         inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
         inject_growth_loop_defense "$task_file" || true    # Level5: gate/hook関連cmdに防御階層§11を強制注入(cmd_2649)
