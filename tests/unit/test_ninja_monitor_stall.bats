@@ -204,6 +204,41 @@ wait "$maintenance_pid"
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: done-report探索がnested process-substitutionのpipe/FDを継承せず、cycle内で有限時間に収束する不変量を守る。
+@test "done-report matching is pipe-safe and bounded" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -lc '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/pipe-safe"
+        SCRIPT_DIR="$root"
+        mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/queue/locks"
+        printf "task:\n  parent_cmd: cmd_pipe_safe\n  task_id: task_pipe_safe\n  status: in_progress\n" >"$root/queue/tasks/alpha.yaml"
+        for i in $(seq -w 1 24); do
+            printf "parent_cmd: cmd_other_%s\ntask_id: task_%s\nstatus: pending\n" "$i" "$i" >"$root/queue/reports/alpha_report_cmd_${i}.yaml"
+        done
+        printf "parent_cmd: cmd_pipe_safe\ntask_id: task_pipe_safe\nstatus: pending\n" >"$root/queue/reports/alpha_report_cmd_pipe_safe.yaml"
+
+        exec 63< <(sleep 10)
+        close_inherited_non_stdio_fds
+        test ! -e /proc/$$/fd/63
+
+        report=$(timeout 3 bash -c '\''
+            export NINJA_MONITOR_LIB_ONLY=1
+            source "$1/scripts/ninja_monitor.sh"
+            unset NINJA_MONITOR_LIB_ONLY
+            SCRIPT_DIR="$2"
+            find_matching_report_file alpha
+        '\'' _ "$PROJECT_ROOT" "$root")
+        test "$(basename "$report")" = alpha_report_cmd_pipe_safe.yaml
+        printf "report_match=1 inherited_fd_closed=1 timeout=3s\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "report_match=1 inherited_fd_closed=1 timeout=3s" ]
+}
+
 @test "snapshot keeps task done while publishing runtime busy separately" {
     run bash -lc '
 set -euo pipefail

@@ -44,10 +44,15 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
         _ninja_monitor_usage
         return 64
     fi
-elif (( $# != 0 )); then
+elif (( $# != 0 )) && [[ "${1:-}" != "--check-and-update-done-task" || $# -ne 2 ]]; then
     _ninja_monitor_usage
     exit 64
 fi
+
+# Preserve the source-vs-daemon mode across the common test idiom
+# `LIB_ONLY=1 source ...; unset LIB_ONLY`.  Production calls never set this
+# marker, so only the daemon path uses the isolated bounded CLI worker.
+_NINJA_MONITOR_LIB_MODE="${NINJA_MONITOR_LIB_ONLY:-0}"
 
 # cmd_training_speed_ninja_monitor_20260607140828: サブシェル不要の純bash文字列演算でSCRIPT_DIR解決
 _NM_SELF="${BASH_SOURCE[0]}"
@@ -73,7 +78,7 @@ source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
 source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
 
-if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
+if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ] && [ "${NINJA_MONITOR_BOUNDED_DONE_CHECK:-0}" != "1" ]; then
     bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" --reconcile-owner-transactions >> "$LOG" 2>&1 || exit 1
     [ "${NINJA_MONITOR_STARTUP_RECONCILE_ONLY:-0}" != "1" ] || exit 0
 fi
@@ -1870,13 +1875,15 @@ find_matching_report_file() {
     local preferred_report legacy_report
     local -a candidates=()
 
-    IFS='|' read -r task_parent_cmd task_id < <(awk '
+    local task_metadata
+    task_metadata=$(awk '
         BEGIN { pc=""; ti=""; ai="" }
         /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
         /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
         /^[ \t]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ai=v }
         END { print pc "|" (ti!=""?ti:ai) }
     ' "$task_file")
+    IFS='|' read -r task_parent_cmd task_id <<< "$task_metadata"
     [ -z "$task_parent_cmd" ] && return 1
 
     preferred_report="$SCRIPT_DIR/queue/reports/${name}_report_${task_parent_cmd}.yaml"
@@ -1884,22 +1891,26 @@ find_matching_report_file() {
     candidates+=("$preferred_report" "$legacy_report")
 
     # 追加フォールバック: cmd付き報告の最新から順に確認
+    local report_listing
+    report_listing=$(ls -1t "$SCRIPT_DIR/queue/reports/${name}_report_cmd"*.yaml 2>/dev/null || true)
     while IFS= read -r f; do
         [ -z "$f" ] && continue
         if [ "$f" != "$preferred_report" ] && [ "$f" != "$legacy_report" ]; then
             candidates+=("$f")
         fi
-    done < <(ls -1t "$SCRIPT_DIR/queue/reports/${name}_report_cmd"*.yaml 2>/dev/null || true)
+    done <<< "$report_listing"
 
     for report_file in "${candidates[@]}"; do
         [ -f "$report_file" ] || continue
 
-        IFS='|' read -r report_parent_cmd report_task_id < <(awk '
+        local report_metadata
+        report_metadata=$(awk '
             BEGIN { pc=""; ti="" }
             /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
             /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
             END { print pc "|" ti }
         ' "$report_file")
+        IFS='|' read -r report_parent_cmd report_task_id <<< "$report_metadata"
         [ -z "$report_parent_cmd" ] && continue
         [ "$report_parent_cmd" != "$task_parent_cmd" ] && continue
 
@@ -3252,8 +3263,8 @@ check_and_update_done_task() (
     fi
     # awk単一パスでtask_fileから必要フィールドを一括取得
     # (check_stall/auto_void_if_parent_cmd_completedと同パターン: サブシェル3回削減)
-    local task_parent_cmd task_status task_id
-    IFS='|' read -r task_parent_cmd task_status task_id < <(awk '
+    local task_parent_cmd task_status task_id task_metadata
+    task_metadata=$(awk '
         BEGIN { pc=""; s=""; ti=""; ai="" }
         /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
         /^[ \t]*status:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
@@ -3261,6 +3272,7 @@ check_and_update_done_task() (
         /^[ \t]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ai=v }
         END { print pc "|" s "|" (ti!=""?ti:ai) }
     ' "$task_file")
+    IFS='|' read -r task_parent_cmd task_status task_id <<< "$task_metadata"
     [ -z "$task_parent_cmd" ] && return 1
     # 新形式({ninja}_report_{cmd}.yaml)優先で一致報告を探索。旧形式も許容。
     report_file=$(find_matching_report_file "$name") || return 1
@@ -3382,7 +3394,7 @@ check_and_update_done_task() (
 monitor_task_state_fast_path() {
     local name
     for name in "${NINJA_NAMES[@]}"; do
-        check_and_update_done_task "$name" >/dev/null 2>&1 || true
+        _ninja_monitor_run_bounded_done_check "$name" >/dev/null 2>&1 || true
     done
 }
 
@@ -3396,7 +3408,7 @@ is_task_deployed() {
 
         if [[ "$task_status" =~ ^(assigned|acknowledged|in_progress|done)$ ]]; then
             # AC1/AC2: 報告YAML完了チェック（parent_cmd一致+status:done）
-            if check_and_update_done_task "$name"; then
+            if _ninja_monitor_run_bounded_done_check "$name"; then
                 # ─── 報告フォーマットgate（cmd_1236: 家老workaround根絶, cmd_1254: FAIL時auto_deployスキップ） ───
                 local gate_report_file gate_parent_cmd gate_key gate_output gate_passed
                 gate_passed=true
@@ -5929,7 +5941,7 @@ check_stall() {
                 return
                 ;;
             pass_terminal)
-                if check_and_update_done_task "$name"; then
+                if _ninja_monitor_run_bounded_done_check "$name"; then
                     unset "STALL_FIRST_SEEN[$name]"
                     log "STALL-PASS-AUTO-DONE: $name task=$task_id report=$(basename "$active_report")"
                     return
@@ -9099,6 +9111,49 @@ close_inherited_deploy_lock_fds() {
     done
 }
 
+# A bounded done-check is launched as a fresh monitor process.  Do not let a
+# process-substitution pipe from the caller survive into that process: an
+# inherited write end keeps the caller's read side in pipe_read forever when a
+# nested check stops.  The child owns its own task lock and can therefore be
+# safely discarded at the timeout boundary.
+close_inherited_non_stdio_fds() {
+    local fd_path inherited_fd
+    for fd_path in /proc/$$/fd/[3-9]*; do
+        [ -e "$fd_path" ] || continue
+        inherited_fd="${fd_path##*/}"
+        exec {inherited_fd}>&- 2>/dev/null || true
+    done
+}
+
+NINJA_MONITOR_DONE_CHECK_TIMEOUT=${NINJA_MONITOR_DONE_CHECK_TIMEOUT:-15}
+
+_ninja_monitor_run_bounded_done_check() {
+    local name="$1"
+    local timeout_sec="$NINJA_MONITOR_DONE_CHECK_TIMEOUT"
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=15
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=15
+
+    # Unit fixtures override functions after sourcing the library.  Preserve
+    # that direct path; production loops use the isolated CLI path below.
+    if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
+        check_and_update_done_task "$name"
+        return $?
+    fi
+
+    [ -n "${_NM_SCRIPT_PATH:-}" ] || return 1
+    timeout --signal=TERM --kill-after=2 "$timeout_sec" \
+        env NINJA_MONITOR_BOUNDED_DONE_CHECK=1 \
+        bash "$_NM_SCRIPT_PATH" --check-and-update-done-task "$name" \
+        </dev/null >/dev/null 2>&1
+    local rc=$?
+    if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+        log "AUTO-DONE-TIMEOUT: $name timeout=${timeout_sec}s rc=$rc retry=next-cycle"
+    elif [ "$rc" -ne 0 ]; then
+        log "AUTO-DONE-BOUNDED-FAIL: $name rc=$rc retry=next-cycle"
+    fi
+    return "$rc"
+}
+
 reload_ninja_monitor_if_updated() {
     local current_mtime
     current_mtime="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
@@ -9335,6 +9390,17 @@ fi
 # 旧monitorのexecが残したFDはmtime差の有無にかかわらずstartupで除去する。
 close_inherited_deploy_lock_fds
 
+if [ "${1:-}" = "--check-and-update-done-task" ]; then
+    # This mode is intentionally side-effect bounded to one worker task.  It
+    # is used by the main loop's timeout wrapper and must not inherit any
+    # caller pipe or lock descriptor.
+    exec </dev/null >/dev/null 2>&1
+    close_inherited_non_stdio_fds
+    trap 'close_inherited_non_stdio_fds' EXIT
+    check_and_update_done_task "${2:-}"
+    exit $?
+fi
+
 discover_panes
 
 # hayate事故(2026-04-28): bypass欠落で確認プロンプト停止。startup直後から検査する。
@@ -9424,7 +9490,7 @@ while true; do
                         # 根因: fast_pathのAUTO-DONEとSTAGE1の間で報告提出→GATE CLEAR
                         # が発生するとSTAGE1が古いin_progressでcontinueし、clearが
                         # 次サイクルまで最大20秒+遅延する(実測14分の遅延事例あり)。
-                        if check_and_update_done_task "$name" 2>/dev/null; then
+                        if _ninja_monitor_run_bounded_done_check "$name" 2>/dev/null; then
                             log "STAGE1-IN-PROGRESS-RESOLVED: $name was in_progress but report completed, proceeding to clear"
                             _s1_task_status="done"
                         else
