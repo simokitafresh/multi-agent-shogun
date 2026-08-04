@@ -168,6 +168,7 @@ def repair_trailing_partial_entry(path):
     truncate_at = None
     current_start = None
     current_has_status = False
+    header_seen = False
     known_fields = (
         '  ts:', '  insight:', '  priority:', '  source:', '  status:',
         '  resolved_at:', '  resolved_reason:', '  action_artifact:', '  fix_known:',
@@ -178,7 +179,18 @@ def repair_trailing_partial_entry(path):
 
     for idx, line in enumerate(lines):
         stripped = line.strip()
-        if idx == 0 and stripped == 'insights:':
+        if not header_seen:
+            # Operational provenance comments are valid YAML and may precede
+            # the top-level key.  Treating them as corruption used to
+            # quarantine the entire healthy queue on the next append.
+            if not stripped or stripped.startswith('#'):
+                continue
+            if stripped == 'insights:':
+                header_seen = True
+                continue
+            truncate_at = idx
+            break
+        if stripped.startswith('#'):
             continue
         if not stripped:
             continue

@@ -219,6 +219,38 @@ print('APPEND OK')
     [[ "$output" == *"APPEND OK"* ]]
 }
 
+# test_necessity: Valid YAML provenance comments before the top-level key must never cause whole-queue quarantine or entry loss.
+@test "追記: 先頭provenanceコメント付きqueueの既存全件を保持する" {
+    cat > "${TEST_TMP}/queue/insights.yaml" <<'EOF'
+# archive-reconciliation provenance: stable multiset verified
+insights:
+- id: INS-20260805-000000000-kept
+  ts: "2026-08-05T00:00:00+09:00"
+  insight: "保持対象"
+  priority: "medium"
+  source: "unit"
+  status: pending
+EOF
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" "コメント後の追記" "high" "unit_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+
+    run python3 - "${TEST_TMP}/queue/insights.yaml" <<'PY'
+import glob
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    data = yaml.safe_load(handle)
+assert [entry["insight"] for entry in data["insights"]] == ["保持対象", "コメント後の追記"]
+assert open(path, encoding="utf-8").readline().startswith("# archive-reconciliation provenance:")
+assert not glob.glob(path.replace("/insights.yaml", "/archive/insights_corrupt/*"))
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "中断耐性: 未完了の末尾エントリを退避してparse可能なまま追記する" {
     cat > "${TEST_TMP}/queue/insights.yaml" <<'EOF'
 insights:
