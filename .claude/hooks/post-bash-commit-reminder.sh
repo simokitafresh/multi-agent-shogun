@@ -172,6 +172,28 @@ def report_owned_paths(value):
             result.append(path.strip())
     return list(dict.fromkeys(result))
 
+
+def normalized_rel_path(value):
+    """Normalize git-style relative paths without weakening component boundaries."""
+    return os.path.normpath(str(value).strip()).replace(os.sep, "/")
+
+
+def path_in_planned_scope(planned_path, candidate_path):
+    """Return true for an exact path or a child of a planned directory only."""
+    planned = normalized_rel_path(planned_path)
+    candidate = normalized_rel_path(candidate_path)
+    if planned == candidate:
+        return True
+    planned_fs_path = os.path.join(project_path, planned)
+    return os.path.isdir(planned_fs_path) and candidate.startswith(planned + "/")
+
+
+def paths_in_planned_scope(planned_paths, candidates):
+    return {
+        candidate for candidate in candidates
+        if any(path_in_planned_scope(planned, candidate) for planned in planned_paths)
+    }
+
 def changed_tokens(diff_text):
     tokens = set()
     for line in diff_text.splitlines():
@@ -206,8 +228,9 @@ else:
     reported_paths = report_owned_paths(report.get("files_modified"))
     planned = set(scope_paths)
     reported = set(reported_paths)
-    asymmetric = sorted(reported - planned)
-    scope_paths = sorted(planned & reported)
+    reported_in_scope = paths_in_planned_scope(planned, reported)
+    asymmetric = sorted(reported - reported_in_scope)
+    scope_paths = sorted(reported_in_scope)
     if asymmetric:
         filtered.extend(asymmetric)
         issues.append("planned_report_scope_asymmetric")
@@ -281,7 +304,7 @@ else:
                     # valid task-owned commit still proves ownership, bounded
                     # by planned_paths; planned paths absent from both remain
                     # intentionally out of scope.
-                    effective_reported = planned & commit_paths
+                    effective_reported = paths_in_planned_scope(planned, commit_paths)
                     scope_paths = sorted(effective_reported)
                     fallback_status = git("status", "--porcelain", "--untracked-files=all", "--", *scope_paths)
                     if fallback_status.returncode != 0:
@@ -291,9 +314,19 @@ else:
                             line[3:].strip() for line in fallback_status.stdout.splitlines()
                             if len(line) >= 4 and line[3:].strip()
                         )
-                planned_asymmetric = sorted(
-                    path for path in planned if ((path in effective_reported) != (path in commit_paths))
-                )
+                planned_asymmetric = []
+                for planned_path in planned:
+                    reported_match = any(
+                        path_in_planned_scope(planned_path, path)
+                        for path in effective_reported
+                    )
+                    committed_match = any(
+                        path_in_planned_scope(planned_path, path)
+                        for path in commit_paths
+                    )
+                    if reported_match != committed_match:
+                        planned_asymmetric.append(planned_path)
+                planned_asymmetric = sorted(set(planned_asymmetric))
                 if planned_asymmetric:
                     filtered.extend(planned_asymmetric)
                     issues.append("planned_report_scope_asymmetric")

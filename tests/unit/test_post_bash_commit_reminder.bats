@@ -163,6 +163,124 @@ YAML
   [[ "$output" == *"COMMIT MISSING"* ]]
 }
 
+@test "AC1: planned research directory and reported child reproduce one pre-fix false warning" {
+  mkdir -p "$FIX/docs/research"
+  write_task testninjaDir out_reports/testninjaDir.yaml
+  cat > "$FIX/queue/tasks/testninjaDir.yaml" <<YAML
+task:
+  project: fixture
+  planned_paths: [docs/research]
+  report_path: out_reports/testninjaDir.yaml
+YAML
+  cat > "$FIX/out_reports/testninjaDir.yaml" <<'YAML'
+files_modified:
+  - path: docs/research/cmd_4224_august_holding_signal_be_fe_parity.md
+    change: reported child
+YAML
+  # 修正前の完全一致判定を固定再現。planned directoryとreported childの差分は1件。
+  run python3 - "$FIX" <<'PY'
+import sys, yaml, os
+fix = sys.argv[1]
+task = yaml.safe_load(open(os.path.join(fix, "queue", "tasks", "testninjaDir.yaml")))['task']
+report = yaml.safe_load(open(os.path.join(fix, "out_reports", "testninjaDir.yaml")))
+planned = set(task['planned_paths'])
+reported = {item['path'] for item in report['files_modified']}
+print(len(reported - planned))
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "1" ]
+}
+
+@test "AC2: a reported child of a planned directory is in scope, exact files stay exact" {
+  mkdir -p "$FIX/docs/research"
+  printf 'owned child\n' > "$FIX/docs/research/cmd_4224_august_holding_signal_be_fe_parity.md"
+  git -C "$FIX" add docs/research/cmd_4224_august_holding_signal_be_fe_parity.md
+  git -C "$FIX" commit -qm 'cmd_4224 directory child'
+  local owned_commit
+  owned_commit=$(git -C "$FIX" rev-parse HEAD)
+  cat > "$FIX/queue/tasks/testninjaDir.yaml" <<YAML
+task:
+  project: fixture
+  planned_paths: [docs/research]
+  report_path: out_reports/testninjaDir.yaml
+YAML
+  cat > "$FIX/out_reports/testninjaDir.yaml" <<YAML
+commit_hash: $owned_commit
+files_modified:
+  - path: docs/research/cmd_4224_august_holding_signal_be_fe_parity.md
+    change: reported child
+YAML
+  run_hook testninjaDir
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "AC2 fail-closed: a similar-prefix sibling remains outside a planned directory" {
+  mkdir -p "$FIX/docs/researcher"
+  write_task testninjaSibling out_reports/testninjaSibling.yaml
+  cat > "$FIX/queue/tasks/testninjaSibling.yaml" <<YAML
+task:
+  project: fixture
+  planned_paths: [docs/research]
+  report_path: out_reports/testninjaSibling.yaml
+YAML
+  cat > "$FIX/out_reports/testninjaSibling.yaml" <<'YAML'
+commit_hash: "0000000000000000000000000000000000000000"
+files_modified:
+  - path: docs/researcher/report.md
+    change: sibling outside scope
+YAML
+  run_hook testninjaSibling
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"COMMIT MISSING"* ]]
+  [[ "$output" == *"planned_report_scope_asymmetric"* ]]
+}
+
+@test "AC2 fail-closed: an exact planned file does not contain a reported child" {
+  printf 'exact file\n' > "$FIX/exact.md"
+  git -C "$FIX" add exact.md
+  git -C "$FIX" commit -qm 'exact file baseline'
+  local exact_commit
+  exact_commit=$(git -C "$FIX" rev-parse HEAD)
+  cat > "$FIX/queue/tasks/testninjaExact.yaml" <<YAML
+task:
+  project: fixture
+  planned_paths: [exact.md]
+  report_path: out_reports/testninjaExact.yaml
+YAML
+  cat > "$FIX/out_reports/testninjaExact.yaml" <<YAML
+commit_hash: $exact_commit
+files_modified:
+  - path: exact.md/child.md
+    change: invalid descendant of exact file
+YAML
+  run_hook testninjaExact
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"COMMIT MISSING"* ]]
+  [[ "$output" == *"planned_report_scope_asymmetric"* ]]
+}
+
+@test "AC3: missing or uncommitted directory child remains a true warning" {
+  mkdir -p "$FIX/docs/research"
+  printf 'uncommitted child\n' > "$FIX/docs/research/missing.md"
+  cat > "$FIX/queue/tasks/testninjaMissing.yaml" <<YAML
+task:
+  project: fixture
+  planned_paths: [docs/research]
+  report_path: out_reports/testninjaMissing.yaml
+YAML
+  cat > "$FIX/out_reports/testninjaMissing.yaml" <<YAML
+commit_hash: $HEAD_COMMIT
+files_modified:
+  - path: docs/research/missing.md
+    change: reported but not committed
+YAML
+  run_hook testninjaMissing
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"COMMIT MISSING"* ]]
+  [[ "$output" == *"planned_report_scope_asymmetric"* ]]
+}
+
 # test_necessity: planned scope全件ではなくreport-owned pathだけを照合し、同じ共有fileの
 # 後着非重複appendは許可する一方、commit/report片側欠落はBLOCKする。
 @test "shared owned hunk ignores later append but blocks planned-report asymmetry" {
