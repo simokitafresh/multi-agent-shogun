@@ -724,6 +724,12 @@ run_bats_files_parallel() {
             -u BATS_OUT \
             -u BATS_TAP_OUTPUT \
             -u RUN_TESTS_BATS_BIN \
+            -u RUN_TESTS_RECEIPT_PATH \
+            -u RUN_TESTS_RUN_ID \
+            -u RUN_TESTS_COMMIT_SHA \
+            -u RUN_TESTS_SOURCE_FINGERPRINT \
+            -u RUN_TESTS_PENDING_FILE_BATCH \
+            -u RUN_TESTS_PENDING_SUITE_BATCH \
             -u RUN_TESTS_SELECTED_PATHS_FILE \
             -u SHOGUN_HEAVY_JOB_LOCK_HELD \
             -u SHOGUN_HEAVY_JOB_ADMITTED \
@@ -744,7 +750,15 @@ run_bats_files_parallel() {
     fi
 
     if [ "${BATS_SPLIT_FILES:-1}" != "1" ]; then
-        env -u RUN_TESTS_BATS_BIN \
+        env \
+            -u RUN_TESTS_BATS_BIN \
+            -u RUN_TESTS_RECEIPT_PATH \
+            -u RUN_TESTS_RUN_ID \
+            -u RUN_TESTS_COMMIT_SHA \
+            -u RUN_TESTS_SOURCE_FINGERPRINT \
+            -u RUN_TESTS_PENDING_FILE_BATCH \
+            -u RUN_TESTS_PENDING_SUITE_BATCH \
+            -u RUN_TESTS_SELECTED_PATHS_FILE \
             "${RUN_TESTS_BATS_BIN:-bats}" "${files[@]}" --jobs "$JOBS" --timing
         return $?
     fi
@@ -1068,7 +1082,15 @@ run_task_test_paths() {
         for pytest_path in "${pytest_paths[@]}"; do
             printf 'START: %s pid=%s engine=pytest\n' "${pytest_path##*/}" "$$" >&2
         done
-        (cd "$REPO_ROOT" && python3 -m pytest -q "${pytest_paths[@]}") \
+        (cd "$REPO_ROOT" && env \
+            -u RUN_TESTS_RECEIPT_PATH \
+            -u RUN_TESTS_RUN_ID \
+            -u RUN_TESTS_COMMIT_SHA \
+            -u RUN_TESTS_SOURCE_FINGERPRINT \
+            -u RUN_TESTS_PENDING_FILE_BATCH \
+            -u RUN_TESTS_PENDING_SUITE_BATCH \
+            -u RUN_TESTS_SELECTED_PATHS_FILE \
+            python3 -m pytest -q "${pytest_paths[@]}") \
             2>&1 | tee "$pytest_output" || pytest_rc=${PIPESTATUS[0]}
         for pytest_path in "${pytest_paths[@]}"; do
             printf 'DONE: %s rc=%s engine=pytest\n' "${pytest_path##*/}" "$pytest_rc" >&2

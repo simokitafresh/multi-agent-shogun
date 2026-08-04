@@ -74,6 +74,98 @@ SH
 
 teardown() { rm -rf "$TMPROOT"; }
 
+# test_necessity: A nested test process must not inherit the outer public
+# receipt identity; otherwise a nested runner can overwrite the outer
+# selection/source identity and timing destinations.
+@test "nested Bats and pytest processes do not inherit outer receipt identity" {
+  export IDENTITY_ENV_LOG="$TMPROOT/identity-env.log"
+  export REAL_PYTHON3="$(command -v python3)"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+if [[ "${NESTED_INNER:-0}" != "1" ]]; then
+  mkdir -p "$REPO_ROOT/logs/nested-receipts"
+  nested_rc=0
+  NESTED_INNER=1 RUN_TESTS_RECEIPT_DIR="$REPO_ROOT/logs/nested-receipts" \
+    bash "$REPO_ROOT/scripts/run_tests.sh" file "$1" \
+    >"$REPO_ROOT/logs/nested.stdout" 2>"$REPO_ROOT/logs/nested.stderr" || nested_rc=$?
+  [ "$nested_rc" -eq 0 ] || exit "$nested_rc"
+fi
+printf 'bats' >>"$IDENTITY_ENV_LOG"
+for name in RUN_TESTS_RECEIPT_PATH RUN_TESTS_RUN_ID RUN_TESTS_COMMIT_SHA RUN_TESTS_SOURCE_FINGERPRINT RUN_TESTS_PENDING_FILE_BATCH RUN_TESTS_PENDING_SUITE_BATCH RUN_TESTS_SELECTED_PATHS_FILE; do
+  printf ' %s=%s' "$name" "${!name-<unset>}" >>"$IDENTITY_ENV_LOG"
+done
+printf '\n' >>"$IDENTITY_ENV_LOG"
+printf '\n1..1\nok 1 sample\n'
+SH
+  cat >"$TMPROOT/bin/python3" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
+  printf 'pytest' >>"$IDENTITY_ENV_LOG"
+  for name in RUN_TESTS_RECEIPT_PATH RUN_TESTS_RUN_ID RUN_TESTS_COMMIT_SHA RUN_TESTS_SOURCE_FINGERPRINT RUN_TESTS_PENDING_FILE_BATCH RUN_TESTS_PENDING_SUITE_BATCH RUN_TESTS_SELECTED_PATHS_FILE; do
+    printf ' %s=%s' "$name" "${!name-<unset>}" >>"$IDENTITY_ENV_LOG"
+  done
+  printf '\n' >>"$IDENTITY_ENV_LOG"
+  printf '\n============================== 1 passed in 0.01s ==============================\n'
+  exit 0
+fi
+exec "$REAL_PYTHON3" "$@"
+SH
+  chmod +x "$TMPROOT/bin/bats" "$TMPROOT/bin/python3"
+  printf 'def test_owned():\n    assert True\n' >"$TMPROOT/tests/unit/owned.py"
+  outer_env=(env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT"
+    RUN_TESTS_RECEIPT_PATH="$TMPROOT/outer.json" RUN_TESTS_RUN_ID=outer-run
+    RUN_TESTS_COMMIT_SHA=outer-commit RUN_TESTS_SOURCE_FINGERPRINT=outer-source
+    RUN_TESTS_PENDING_FILE_BATCH="$TMPROOT/outer.timing"
+    RUN_TESTS_PENDING_SUITE_BATCH="$TMPROOT/outer.suite-timing"
+    RUN_TESTS_SELECTED_PATHS_FILE="$TMPROOT/outer.paths"
+    IDENTITY_ENV_LOG="$IDENTITY_ENV_LOG" REAL_PYTHON3="$REAL_PYTHON3"
+    BATS_CACHE=0 BATS_INNER_JOBS=1 SHOGUN_HEAVY_JOB_LOCK_HELD=1 NESTED_INNER=1)
+
+  for split in 1 0; do
+    : >"$IDENTITY_ENV_LOG"
+    rc=0
+    "${outer_env[@]}" BATS_SPLIT_FILES="$split" bash -c \
+      'source "$1/scripts/run_tests.sh"; run_bats_files_parallel "$1/tests/unit/sample.bats"' \
+      _ "$TMPROOT" || rc=$?
+    [ "$rc" -eq 0 ]
+    identity_lines="$(wc -l <"$IDENTITY_ENV_LOG")"
+    [ "$identity_lines" -eq 1 ]
+    grep -Fqx 'bats RUN_TESTS_RECEIPT_PATH=<unset> RUN_TESTS_RUN_ID=<unset> RUN_TESTS_COMMIT_SHA=<unset> RUN_TESTS_SOURCE_FINGERPRINT=<unset> RUN_TESTS_PENDING_FILE_BATCH=<unset> RUN_TESTS_PENDING_SUITE_BATCH=<unset> RUN_TESTS_SELECTED_PATHS_FILE=<unset>' "$IDENTITY_ENV_LOG"
+  done
+
+  : >"$IDENTITY_ENV_LOG"
+  "${outer_env[@]}" bash -c \
+    'source "$1/scripts/run_tests.sh"; run_task_test_paths "$1/tests/unit/owned.py"' \
+    _ "$TMPROOT"
+  [ "$(wc -l <"$IDENTITY_ENV_LOG")" -eq 1 ]
+  grep -Fqx 'pytest RUN_TESTS_RECEIPT_PATH=<unset> RUN_TESTS_RUN_ID=<unset> RUN_TESTS_COMMIT_SHA=<unset> RUN_TESTS_SOURCE_FINGERPRINT=<unset> RUN_TESTS_PENDING_FILE_BATCH=<unset> RUN_TESTS_PENDING_SUITE_BATCH=<unset> RUN_TESTS_SELECTED_PATHS_FILE=<unset>' "$IDENTITY_ENV_LOG"
+
+  outer_receipt="$TMPROOT/logs/outer.json"
+  mkdir -p "$TMPROOT/logs/nested-receipts"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_PATH="$outer_receipt" RUN_TESTS_RECEIPT_DIR="$TMPROOT/logs" \
+    RUN_TESTS_RUN_ID=outer-run RUN_TESTS_COMMIT_SHA=outer-commit \
+    RUN_TESTS_SOURCE_FINGERPRINT=outer-source \
+    RUN_TESTS_PENDING_FILE_BATCH="$TMPROOT/outer.timing" \
+    RUN_TESTS_PENDING_SUITE_BATCH="$TMPROOT/outer.suite-timing" \
+    RUN_TESTS_SELECTED_PATHS_FILE="$TMPROOT/outer.paths" \
+    IDENTITY_ENV_LOG="$IDENTITY_ENV_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 SHOGUN_HEAVY_JOB_LOCK_HELD=1 NESTED_INNER=0 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats"
+  [ "$status" -eq 0 ]
+  nested_receipt="$(find "$TMPROOT/logs/nested-receipts" -name '*.json' -type f | head -1)"
+  [ -n "$nested_receipt" ]
+  run python3 - "$outer_receipt" "$nested_receipt" <<'PY'
+import json, sys
+outer, nested = (json.load(open(path, encoding="utf-8")) for path in sys.argv[1:])
+assert outer["test_paths"] == ["tests/unit/sample.bats"], outer
+assert nested["test_paths"] == ["tests/unit/sample.bats"], nested
+assert outer["run_id"] != nested["run_id"], (outer, nested)
+assert outer["source_fingerprint"] != "outer-source", outer
+PY
+  [ "$status" -eq 0 ]
+}
+
 # test_necessity: External Jest output must publish its real terminal count and a selected external scope may never pass as 0/0.
 @test "external Jest receipt adopts summary counts and fails closed when summary is absent" {
   receipt="$TMPROOT/logs/external.json"
@@ -1596,9 +1688,9 @@ count=$(cat "$HEAVY_COUNT" 2>/dev/null || printf 0)
 printf '%s\n' "$((count + 1))" >"$HEAVY_COUNT"
 flock -u 9
 # Both public callers must overlap before either publishes its terminal
-# receipt.  A count barrier proves that overlap directly without paying a
-# fixed one-second delay in every adversarial trial.
-for _barrier_try in {1..100}; do
+# receipt. A count barrier proves overlap directly; both public callers are
+# launched back-to-back so readiness is synchronized by the fixture itself.
+for _barrier_try in {1..3000}; do
   [ "$(cat "$HEAVY_COUNT" 2>/dev/null || printf 0)" -eq 2 ] && break
   sleep 0.01
 done
@@ -1619,11 +1711,9 @@ YAML
     rm -f "$TMPROOT/receipts"/* "$TMPROOT/sf"/* "$TMPROOT/count"
     if [ $((trial % 2)) -eq 1 ]; then
       "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/saizo.yaml" >"$TMPROOT/task.out" 2>"$TMPROOT/task.err" & p1=$!
-      sleep 0.2
       "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats" >"$TMPROOT/file.out" 2>"$TMPROOT/file.err" & p2=$!
     else
       "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats" >"$TMPROOT/file.out" 2>"$TMPROOT/file.err" & p2=$!
-      sleep 0.2
       "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/saizo.yaml" >"$TMPROOT/task.out" 2>"$TMPROOT/task.err" & p1=$!
     fi
     rc1=0; wait "$p1" || rc1=$?
