@@ -1,5 +1,6 @@
 # Rebalancer Context
-<!-- last_updated: 2026-08-04 cmd_4229 reviewed source boundary -->
+<!-- last_updated: 2026-08-05 cmd_karo_hotfix_rebalancer_ux_card_20260805 -->
+<!-- source_commit:f66e319 reason:cmd_karo_hotfix_rebalancer_ux_card_20260805 evidence:reviewed -->
 <!-- source_commit:f202c578e44ba99e1daf9232a18b905142e99615 reason:cmd_4229 reviewed source boundary evidence:shared price snapshot SSOT, phase-transition invalidation, CLOSED EODHD final-price contract, Render deploy_commit match -->
 <!-- source_commit:e26ba81 reason:cmd_4228 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=e26ba81 -->
 <!-- source_commit:e3c4565 reason:cmd_4227 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=e3c4565 -->
