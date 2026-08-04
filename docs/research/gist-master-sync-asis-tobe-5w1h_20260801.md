@@ -1,11 +1,12 @@
 <!-- gist-master: 0c95806223c8ad666cfa13fec2eb226b gist-master-sync-asis-tobe-5w1h_20260801.md -->
-# gist正本同期+スキル化+index再設計 AsIs/ToBe 5W1H v1.2 【⚙稼働中・実装完了・将軍検分済み】
+# gist正本同期+スキル化+index再設計 AsIs/ToBe 5W1H v1.3 【⚙稼働中・実装完了・将軍検分済み】
 
 作成: 2026-08-01 21:25 将軍 / 発端: 殿指示 21:20「gistとローカルの正本は常に同期していたほうがいいな」+ 21:22「gistに共有はスキル化」+ 21:24「gist indexのカテゴリも実際にフィットしていない」
 
 > レビュー状態: 軍師=APPROVE条件付き(blt_024837: 因果一本・fail-open正当。条件=タグなし分類ルールの明確化) / 家老=REVISE(blt_024843: 一次計測3系+必須修正7点)→**本v1.1で全点反映**(独立性担保: 両者相互不可視で査読、将軍が2026-08-04 02:50に統合)
 
 ## §版履歴
+- v1.3(2026-08-04 13:22): **軽微所見を解消** — 状態タグなしAsIs/ToBeをカテゴリ「設計書・状態未確認」へ分離し、`unknown_status`ログ件数とindexカテゴリ件数の一致を実データで検証。
 - v1.2(2026-08-04 13:00): **実装完了反映(将軍コードレビュー済み)** — 依存DAG 1a/1b/2/3/4全実装。commit: 51ec2cd70(index pagination+再分類)、1b59eaa18+191b4115f(writer --master blob同期/flock/newer-skip/owner-secret検証/pending台帳/bounded timeout+reconcile fail-close)、650f72b31(post-commit fail-open trigger+sync_git_hooks)、0f14e3560(/gist-shareスキル+孤立gist防御)、2c0f6851c(稼働中3正本へメタ行backfill)。軍師事前・事後review全件LGTM+各GATE CLEAR。家老独立実測: focused 5/5・remote secret owner一致・commit blob byte一致3/3・pending 0。将軍検分所見: 家老RC1-RC7・軍師条件(unknown_status別計上)全て現物コードで充足。軽微所見1件=classify_gist()がタグなしAsIs/ToBeへカテゴリ「設計書・稼働中」を付与しつつstatus=unknown_statusで別計上する実装(設計意図の「昇格保留」はカウント可視化で担保、許容)。§詳細=§実装完了状態
 - v1.1(2026-08-04 02:55): **覚醒更新(殿指示02:40)** — 実装状況の一次実測(ToBe 3項とも未実装: post_commit_files=0/gist_share_skills=0/index旧7カテゴリ現存。メタ行のみ2 docsに普及)+家老REVISE 7点+軍師条件1点を反映。gist総数185(list 100の85件欠落)判明によりAC全面二値化。実装分解を依存DAGへ再分割
 - v1.0(2026-08-01 21:25): 初版
@@ -105,7 +106,7 @@ gh gist list 100件のタイトル実測に基づく新カテゴリ案:
 | 3 | scripts/gist_index_update.sh再設計 | 51ec2cd70 | gh api --paginate(185件全量)・precedence固定(明示除外→状態タグ→タイトルキー→fallback)・完全一致AC(取得=分類+除外)・unknown_status/fallback_ratio明示出力 |
 | 4 | 稼働中3正本メタ行backfill | 2c0f6851c | hot-script-speedup-round4/nxe-2d-robustness/throughput-bottleneck-part2へ1行ずつ。remote secret owner一致・commit blob byte一致3/3 |
 
-- 軽微所見(将軍): classify_gist()はタグなしAsIs/ToBeにカテゴリ「設計書・稼働中」+status=unknown_statusを同時付与。軍師条件の「即断せず別計上」はunknown_statusカウントの明示出力で担保されており許容。昇格運用(鮮度/人手)は今後の運用判断
+- 軽微所見(将軍・解消済み): classify_gist()はタグなしAsIs/ToBeをカテゴリ「設計書・状態未確認」+status=unknown_statusへ分離。タグありは「設計書・稼働中」を維持し、分類ログのunknown_status件数とindexカテゴリ件数を一致させる。
 - 本v1.2更新のcommit自体がpost-commit hook経由で本gist(メタ行先頭)へ自動同期される=§1の実走証明
 
 ## §スコープ外

@@ -43,7 +43,8 @@ STUB
 @test "status tags, title keys, exclusions, duplicate, and fallback follow precedence" {
   make_stub; run bash scripts/gist_index_update.sh --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" == *"設計書・稼働中=102"* && "$output" == *"設計書・CLOSED=1"* ]]
+  [[ "$output" == *"設計書・稼働中=101"* && "$output" == *"設計書・状態未確認=1"* && "$output" == *"設計書・CLOSED=1"* ]]
+  [[ "$output" == *"## 設計書・状態未確認"* ]]
   [[ "$output" == *"調査書・監査・レポート=1"* && "$output" == *"正本・カタログ・パターン=1"* ]]
   [[ "$output" == *"記事・対外発信=1"* && "$output" == *"その他・運用=1"* ]]
   [[ "$output" == *"unknown_status=1 fallback=1"* ]]

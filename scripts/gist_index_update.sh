@@ -10,6 +10,7 @@ GIST_INDEX_DATE="${GIST_INDEX_DATE:-$(date '+%Y-%m-%d')}"
 
 declare -a CATEGORY_ORDER=(
     "設計書・稼働中"
+    "設計書・状態未確認"
     "設計書・CLOSED"
     "調査書・監査・レポート"
     "正本・カタログ・パターン"
@@ -43,7 +44,7 @@ classify_gist() {
     elif [[ "$key" =~ 【[^】]*(稼働中|設計済|実装進行中|レビュー反映済)[^】]*】 ]]; then
         printf '%s\t%s\t%s\n' "設計書・稼働中" "active" "false"
     elif [[ "$key" == *"asis/tobe"* || "$key" == *"as-is/to-be"* || "$key" == *"5w1h"* ]]; then
-        printf '%s\t%s\t%s\n' "設計書・稼働中" "unknown_status" "false"
+        printf '%s\t%s\t%s\n' "設計書・状態未確認" "unknown_status" "false"
     elif [[ "$key" == *"調査書"* || "$key" == *"監査"* || "$key" == *"レポート"* || "$key" == *"進化量"* ]]; then
         printf '%s\t%s\t%s\n' "調査書・監査・レポート" "not_applicable" "false"
     elif [[ "$key" == *"mece"* || "$key" == *"カタログ"* || "$key" == *"パターン"* || "$key" == *"正本"* || "$key" == *"チェックリスト"* ]]; then
@@ -192,7 +193,7 @@ main() {
     excluded_total=$((excluded_counts[self_index] + excluded_counts[duplicate_title] + excluded_counts[ipynb]))
     completeness_sum=$((kept_count + excluded_total))
     fallback_ratio="$(awk -v fallback="$fallback_count" -v kept="$kept_count" 'BEGIN { printf "%.2f", kept ? (fallback * 100 / kept) : 0 }')"
-    log "category_counts: 設計書・稼働中=${category_counts["設計書・稼働中"]:-0} 設計書・CLOSED=${category_counts["設計書・CLOSED"]:-0} 調査書・監査・レポート=${category_counts["調査書・監査・レポート"]:-0} 正本・カタログ・パターン=${category_counts["正本・カタログ・パターン"]:-0} 記事・対外発信=${category_counts["記事・対外発信"]:-0} その他・運用=${category_counts["その他・運用"]:-0}"
+    log "category_counts: 設計書・稼働中=${category_counts["設計書・稼働中"]:-0} 設計書・状態未確認=${category_counts["設計書・状態未確認"]:-0} 設計書・CLOSED=${category_counts["設計書・CLOSED"]:-0} 調査書・監査・レポート=${category_counts["調査書・監査・レポート"]:-0} 正本・カタログ・パターン=${category_counts["正本・カタログ・パターン"]:-0} 記事・対外発信=${category_counts["記事・対外発信"]:-0} その他・運用=${category_counts["その他・運用"]:-0}"
     log "completeness: fetched=${total_count} classified=${kept_count} excluded=${excluded_total} sum=${completeness_sum} match=$([ "$total_count" -eq "$completeness_sum" ] && printf true || printf false)"
     log "classification_quality: unknown_status=${unknown_status_count} fallback=${fallback_count} fallback_ratio_pct=${fallback_ratio}"
     log "excluded_counts: self_index=${excluded_counts[self_index]} duplicate_title=${excluded_counts[duplicate_title]} ipynb=${excluded_counts[ipynb]}"
