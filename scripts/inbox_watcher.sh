@@ -49,6 +49,16 @@ source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
+if [ -f "$SCRIPT_DIR/scripts/lib/pane_confirmation_guard.sh" ]; then
+    source "$SCRIPT_DIR/scripts/lib/pane_confirmation_guard.sh"
+elif [ "${INBOX_WATCHER_LIB_ONLY:-0}" = "1" ]; then
+    # Minimal source-only fixtures may omit optional production dependencies.
+    # The daemon path remains fail-closed when the shared safety library is absent.
+    _pane_has_confirmation_prompt() { return 1; }
+else
+    echo "[inbox_watcher] ERROR: missing shared pane confirmation guard" >&2
+    exit 1
+fi
 
 AGENT_ID="$1"
 PANE_TARGET="$2"
@@ -1072,6 +1082,17 @@ send_wakeup() {
             tmux send-keys -t "$PANE_TARGET" -X cancel 2>/dev/null || true
             sleep 0.3
             echo "[$(date)] [COPY-MODE] Exited copy-mode for $AGENT_ID before nudge" >&2
+        fi
+        # Never paste a nudge into an interactive confirmation prompt. The
+        # prompt may consume the nudge as its Yes/No choice. Keep the inbox
+        # unread and persist one deferred record so the normal retry path can
+        # deliver after the prompt is resolved.
+        if _pane_has_confirmation_prompt "$PANE_TARGET"; then
+            [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
+            record_deferred_nudge "$current_fp" "confirmation_prompt"
+            rm -f "$FINGERPRINT_FILE" "$DEBOUNCE_FILE" 2>/dev/null || true
+            echo "[$(date)] [CONFIRMATION-GUARD] Deferring nudge for $AGENT_ID: confirmation prompt active nudge=0 unread=${unread_count} held=1" >&2
+            exit 2
         fi
         if [ "$allow_nonempty_input_line" != "1" ] && pane_input_line_has_text "$PANE_TARGET" "$effective_cli"; then
             [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true

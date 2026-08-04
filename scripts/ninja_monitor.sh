@@ -77,6 +77,7 @@ source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
 source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
+source "$SCRIPT_DIR/scripts/lib/pane_confirmation_guard.sh"
 
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ] \
     && [ "${NINJA_MONITOR_BOUNDED_DONE_CHECK:-0}" != "1" ] \
@@ -5981,18 +5982,6 @@ _notify_explicit_task_stop() {
     fi
     log "SILENT-STOP-NOTIFY: $name task=$task_id reason=$reason path=$task_file fingerprint=$fingerprint"
     return 0
-}
-
-# A CLI confirmation prompt is deliberately waiting for an authorized human
-# decision.  Sending a watcher nudge here can be consumed as a prompt choice,
-# so it is never an eligible STALL recovery target.
-_pane_has_confirmation_prompt() {
-    local pane_target="$1"
-    local capture
-    capture=$(tmux capture-pane -t "$pane_target" -p -S -30 2>/dev/null || true)
-    [ -n "$capture" ] || return 1
-    printf '%s\n' "$capture" | grep -Eiq \
-        'Do you want to proceed\?|[[:space:]]1\.[[:space:]]*Yes|[[:space:]]2\.[[:space:]]*No|confirm(ation)? required|approval required'
 }
 
 check_stall() {

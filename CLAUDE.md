@@ -349,6 +349,9 @@ Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
 ## Delivery Mechanism
 
 Two layers:
+
+> **確認プロンプト安全弁（2026-08-04）**: 通常配備は `inbox_write` → `inbox_watcher` のreceipt経路と `ninja_monitor` の監視に委ねる。watcherは送出直前に共有確認ガードでCLI確認プロンプトを検知し、nudgeを0件に抑止して未読メッセージと保留記録を残す。手動`capture-pane`は確認プロンプトの解除送出直前、またはdelivery未確認時だけ行う。送出前の通常手動capture待機は不要である。
+
 1. **Message persistence**: `inbox_write.sh` writes to `queue/inbox/{agent}.yaml` with flock. Guaranteed.
 2. **Wake-up signal**: `inbox_watcher.sh` detects file change via `inotifywait` → sends SHORT nudge via send-keys (timeout 5s)
 
