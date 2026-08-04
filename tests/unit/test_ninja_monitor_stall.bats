@@ -839,6 +839,56 @@ cat "$TEST_LOG"
     [[ "$output" == *"STALL-RECOVERY-SEND:"* ]]
 }
 
+# test_necessity: assigned/acknowledged初回idleを即時復旧し、同一taskの反復・busy復帰後を重複通知しない不変量を守る
+@test "check_stall: assigned and acknowledged initial idle recover once per task" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/initial-idle-recovery"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+TEST_LOG="$SCRIPT_DIR/logs/monitor.log"
+TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"
+log() { printf "%s\n" "$1" >> "$TEST_LOG"; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+check_idle() { [ "${PANE_IDLE:-0}" = 0 ]; }
+_pane_has_active_background_compute() { return 1; }
+_pane_has_confirmation_prompt() { return 1; }
+PANE_TARGETS[kagemaru]="shogun:2.4"
+STALL_THRESHOLD_MIN=999
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+
+for task_status in assigned acknowledged; do
+    task_id="cmd_initial_${task_status}"
+    cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: $task_status
+  task_id: $task_id
+  parent_cmd: cmd_initial_idle
+EOF
+    STALL_FIRST_SEEN[kagemaru]=$EPOCHSECONDS
+    PANE_IDLE=0
+    check_stall kagemaru
+    check_stall kagemaru
+    PANE_IDLE=1
+    check_stall kagemaru
+    STALL_FIRST_SEEN[kagemaru]=$EPOCHSECONDS
+    PANE_IDLE=0
+    check_stall kagemaru
+done
+
+test "$(grep -c "|task_assigned|" "$TEST_MESSAGES")" -eq 2
+test "$(grep -c "STALL-INITIAL-IDLE-RECOVERY: .* sent=1" "$TEST_LOG")" -eq 2
+test "$(grep -c "STALL-INITIAL-IDLE-RECOVERY-SKIP: .* duplicate=1" "$TEST_LOG")" -ge 4
+printf "initial_idle_recovery=2 duplicate=0 busy_recovery_duplicate=0 false_positive=0\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "initial_idle_recovery=2 duplicate=0 busy_recovery_duplicate=0 false_positive=0" ]
+}
+
 # test_necessity: confirmation prompt中のnudgeは選択肢入力になり得るため送出を禁止する
 @test "check_stall: confirmation prompt suppresses in_progress recovery nudge" {
     run bash -lc '

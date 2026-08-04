@@ -6017,6 +6017,25 @@ check_stall() {
         return
     fi
 
+    # assigned/acknowledged tasks that are already idle have not entered the
+    # timed STALL path yet. Recover them immediately after the same compute
+    # and confirmation guards used by the timed path. Reuse the bounded
+    # task-scoped fence so repeated cycles, status acknowledgement, and a
+    # busy->idle transition cannot emit an unbounded stream of nudges.
+    if [ "$status" = "assigned" ] || [ "$status" = "acknowledged" ]; then
+        local initial_idle_key="${name}:${task_id}:initial_idle"
+        if [ "${ACTIVE_IDLE_RECOVERY_SENT[$initial_idle_key]:-}" != "1" ]; then
+            if send_inbox_message "$name" "${status} taskが初回idleを検知。task YAMLを再確認し、作業を開始または再開せよ。" task_assigned; then
+                ACTIVE_IDLE_RECOVERY_SENT[$initial_idle_key]="1"
+                log "STALL-INITIAL-IDLE-RECOVERY: $name task=$task_id status=$status sent=1"
+            else
+                log "STALL-INITIAL-IDLE-RECOVERY-BLOCK: $name task=$task_id status=$status sent=0"
+            fi
+        else
+            log "STALL-INITIAL-IDLE-RECOVERY-SKIP: $name task=$task_id status=$status duplicate=1"
+        fi
+    fi
+
     # in_progress without any progress timestamp is not evidence of forward
     # motion.  The old path waited the full in_progress_stall_min before the
     # first recovery nudge (cmd_4043: about 29 minutes idle).  Re-send once on
