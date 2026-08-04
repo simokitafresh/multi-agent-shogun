@@ -378,6 +378,88 @@ cat "$TEST_LOG"
     [[ "$output" == *"NTFY_COUNT=0"* ]]
 }
 
+@test "check_undeployed_cmds: task親一致の配備済み6状態を抑止し真の未配備3条件を通知する" {
+    DELEGATED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+DELEGATED_AT="'"$DELEGATED_AT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/scripts" "$TMP_ROOT/logs"
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+TEST_NTFY="$TMP_ROOT/ntfy.log"; : > "$TEST_NTFY"
+export TEST_NTFY
+
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_matrix:
+    status: pending
+    timestamp: "2026-04-03T01:12:00"
+    delegated_at: "$DELEGATED_AT"
+EOF
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'EOF'
+#!/usr/bin/env bash
+printf "%s\n" "${1:-}" >> "$TEST_NTFY"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh"
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+cycle=0
+active_statuses=(assigned acknowledged in_progress done completed failed)
+for task_status in "${active_statuses[@]}"; do
+    cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  parent_cmd: cmd_matrix
+  status: $task_status
+EOF
+    unset UNDEPLOYED_CMD_NOTIFIED
+    declare -A UNDEPLOYED_CMD_NOTIFIED
+    cycle=$((cycle + 1))
+    check_undeployed_cmds
+done
+active_count=$(wc -l < "$TEST_NTFY" | tr -d " ")
+
+# 親不一致: taskは存在するが、対象cmdのexact parent_cmdではない。
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  parent_cmd: cmd_other
+  status: acknowledged
+EOF
+unset UNDEPLOYED_CMD_NOTIFIED; declare -A UNDEPLOYED_CMD_NOTIFIED
+cycle=$((cycle + 1)); check_undeployed_cmds
+
+# idle: exact parent_cmdでも配備済みstatus集合外。
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  parent_cmd: cmd_matrix
+  status: idle
+EOF
+unset UNDEPLOYED_CMD_NOTIFIED; declare -A UNDEPLOYED_CMD_NOTIFIED
+cycle=$((cycle + 1)); check_undeployed_cmds
+
+# task不在: taskファイルを退避して照合対象から外す。
+mv "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml.absent"
+unset UNDEPLOYED_CMD_NOTIFIED; declare -A UNDEPLOYED_CMD_NOTIFIED
+cycle=$((cycle + 1)); check_undeployed_cmds
+
+echo "ACTIVE_FP_NTFY=$active_count"
+echo "TRUE_UNDEPLOYED_NTFY=$(wc -l < "$TEST_NTFY" | tr -d " ")"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ACTIVE_FP_NTFY=0"* ]]
+    [[ "$output" == *"TRUE_UNDEPLOYED_NTFY=3"* ]]
+}
+
 @test "check_karo_pending_cmd: 新規pendingが猶予内ならcmd_pending通知しない" {
     RECENT_TS=$(date -d "10 seconds ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '

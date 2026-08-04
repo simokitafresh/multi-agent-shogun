@@ -6306,6 +6306,54 @@ list_pending_cmds_cached() {
     [ -n "$_PENDING_CMDS_CACHE" ] && printf '%s\n' "$_PENDING_CMDS_CACHE"
 }
 
+# queue/shogun_to_karo.yaml の委任状態だけでは配備済みか判定できない。
+# 忍者taskの親cmdと状態を一次照合し、配備済みのcmdは未配備通知から除外する。
+# 戻り値は、exact parent_cmdに一致する配備済みstatusのうち最初の1件。
+find_deployed_task_status() {
+    local target_cmd="$1"
+    local tasks_dir="$SCRIPT_DIR/queue/tasks"
+    [ -d "$tasks_dir" ] || return 0
+    local -a task_files=("$tasks_dir"/*.yaml)
+    [ -f "${task_files[0]}" ] || return 0
+
+    awk -v target="$target_cmd" '
+    function clean(v) {
+        sub(/^[[:space:]]+/, "", v)
+        sub(/[[:space:]]+#.*/, "", v)
+        gsub(/["'"'"'[:space:]]/, "", v)
+        return v
+    }
+    function emit() {
+        if (parent_cmd == target &&
+            (task_status == "assigned" || task_status == "acknowledged" ||
+             task_status == "in_progress" || task_status == "done" ||
+             task_status == "completed" || task_status == "failed")) {
+            print task_status
+            found = 1
+        }
+    }
+    FNR == 1 {
+        if (seen) emit()
+        seen = 1
+        parent_cmd = ""
+        task_status = ""
+    }
+    /^  parent_cmd:/ {
+        v = $0
+        sub(/^[^:]*:[[:space:]]*/, "", v)
+        parent_cmd = clean(v)
+        next
+    }
+    /^  status:/ {
+        v = $0
+        sub(/^[^:]*:[[:space:]]*/, "", v)
+        task_status = clean(v)
+        next
+    }
+    END { if (seen) emit() }
+    ' "${task_files[@]}" 2>/dev/null | head -n 1
+}
+
 check_stale_cmds() {
     local now
     now=$EPOCHSECONDS
@@ -6390,6 +6438,19 @@ check_undeployed_cmds() {
         [ -z "$cmd_id" ] && continue
         [ -z "$delegated_at" ] && continue
         current_pending["$cmd_id"]=1
+
+        # 委任済みでも、忍者taskのexact parent_cmdと配備済みstatusが存在すれば
+        # 実配備済み。未配備通知のdedupeより先に照合し、status遷移後の再誤通知も防ぐ。
+        local deployed_task_status
+        deployed_task_status=$(find_deployed_task_status "$cmd_id")
+        if [ -n "$deployed_task_status" ]; then
+            if [ -n "${UNDEPLOYED_CMD_NOTIFIED[$cmd_id]:-}" ]; then
+                unset "UNDEPLOYED_CMD_NOTIFIED[$cmd_id]"
+                log "UNDEPLOYED-CMD-RESOLVED: ${cmd_id} task parent matched status=${deployed_task_status}"
+            fi
+            log "UNDEPLOYED-CMD-SKIP: ${cmd_id} task parent matched status=${deployed_task_status}"
+            continue
+        fi
 
         if [ -n "${UNDEPLOYED_CMD_NOTIFIED[$cmd_id]:-}" ]; then
             continue
