@@ -1,4 +1,6 @@
-# 【⏸未クローズ — P3実測4巡で本番バグ2件検出・是正済み。残欠=health commit露出+ID対応証明の最終1巡】リバランサー改良 — 価格経路リアルタイム化 AsIs/ToBe 5W1H（2026-07-19起草・2026-07-29 10:35覚醒更新）
+# 【✅CLOSED — market-phase設計書v1.7に統合】リバランサー改良 — 価格経路リアルタイム化 AsIs/ToBe 5W1H（2026-07-19起草・2026-08-05 02:20クローズ）
+
+> **2026-08-05 02:20 統合クローズ**: 本設計書の全工程(P0-P3)は `docs/research/rebalancer-market-phase-asis-tobe-5w1h_20260804.md` v1.7 §リアルタイム化レーン統合に集約。P3残欠(health commit露出/recovery完走)は08-05 00:14 REGULAR本番検証で実質カバー済み。以下は経緯記録として保存。
 
 **現在地(2026-07-29 10:35)**: P0偵察・P1a/P1b/P1c実装・P2 FE配信の5工程は全てGATE CLEAR済み(commit群=2023dbf/31d071c/f31c5a0/df4ccf9/e011379)。**P3(本番E2E最終checkpoint)は殿裁定(07-29 03:29「いま市場が開いているから検証しよう」)で開場中に4巡実測し、本番の実バグ2件を検出・是正した**(§5-P3経過表)。E2Eの主要証跡はほぼ回収済み: production d799d9d・market open・subscription 18/18・SSE 63件coverage 18/18・browser 91/backend 60/同一event ID 60対応・snapshot 18/18・**Alpaca表示値の計算混入0(is_final=false 91/91)**・秘密値ログ0。**残欠2点のみ**: (1)production /healthがdeploy commitを非露出でd799d9d包含を一次確認不能(小改修=healthへcommit hash露出) (2)recovery検証(WS強制切断/Render restart/SSE再接続 duplicate0・out-of-order0)の完走。次窓(開場JST22:30-05:00)で最終1巡→P3クローズ=本レーン完了宣言。
 

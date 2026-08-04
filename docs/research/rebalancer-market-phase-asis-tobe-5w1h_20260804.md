@@ -1,5 +1,7 @@
 <!-- gist-master: e131b06c137d3da41ad28df6373e7601 rebalancer-market-phase-asis-tobe-5w1h_20260804.md -->
-# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.6 【✅RT検証PASS+§UXカード是正追加】
+# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.7 【✅CLOSED — 全工程完了】
+
+> v1.7(2026-08-05 02:18 将軍クローズ): 全工程完了。§実装分解3cmd(4227/4228/4229)全GATE CLEAR+§検証4面全PASS+§UXカード是正(cmd_karo_hotfix_rebalancer_ux_card_20260805 GATE CLEAR 01:58)。殿裁定6件全て実装済み。本設計書をCLOSEDとする
 
 > v1.6(2026-08-05 00:20 殿フィードバック): §UXアクションカード是正を追加(3問題: 再接続中表示の誤解/2時刻矛盾/タブレットレスポンシブ崩れ)+4フェーズモック。殿指示『下の段に今の計算で何を使っているかが表示されるのがシンプルで誤解を生まない』
 
@@ -17,6 +19,7 @@
 | CDP実画面(CLOSEDフェーズ) | ✅PASS | 疾風recon2実測2026-08-04 15:26 JST(隔離CDP・本番FE): CLOSED表示、GDX $76.05、POST /api/calculate-rebalance 200のresponse source=eodhd / as_of=2026-08-03T00:00:00Z、表示値一致(=ユーザー報告INS-20260804-023042の再現条件で正常動作を確認) |
 | 設計書v1.3独立レビュー | ✅APPROVE | 軍師blt_150656: §1-§4全契約項目が3commitで実装済み・未実装0件・TTL=300秒定数明示+テスト検証済み・旧語彙残存0件・fixture全7件WBS通り。指摘(a)is_open前提→§1へ明記済み、(b)snapshot独立呼出し(実害なし)=既知事項として記録 |
 | CDP実画面(REGULARフェーズ) | ✅PASS | 将軍RT実測2026-08-05 00:14 JST(REGULAR session中・本番API直接): market_state=REGULAR・SPY $767.02 source=alpaca as_of=15:14Z is_final=false・QQQ $717.48 source=alpaca・stale銘柄(SPXL/IEF)もsource=alpaca RT返却。health: market_phase=REGULAR・WS connected+authenticated・18/18購読。旧バグ「場中でも常に市場クローズ表示」は根治確認 |
+| §UXカード是正 | ✅PASS | cmd_karo_hotfix_rebalancer_ux_card_20260805(小太郎実装・軍師LGTM・GATE CLEAR 2026-08-05 01:58)。上段時刻削除/再接続中バッジ削除/下段1行簡潔化/タブレットレスポンシブ修正の4点是正完了 |
 
 > レビュー状態: 軍師=**APPROVE**(blt_105137: AsIs因果=現物一致・殿裁定全件整合・DAG直列妥当。指摘=clock fail-safe閾値未明示) / 家老=**REVISE**(blt_105152: 必須修正4件)→**本v1.2で全点反映**(相互不可視の独立査読、将軍が2026-08-04 10:55に統合)
 
@@ -160,6 +163,8 @@
 | 表示価格=計算価格(同一ソース単一レイヤー) | **殿裁定2026-08-04 10:54** |
 | 米国市場のみ(フェーズ1系統でよい) | **殿裁定2026-08-04 10:31**+現物根拠(USD建て18銘柄固定・非USD拒否) |
 | 起票 | **殿裁可2026-08-05 01:03**。§UXカード是正をレーン方式で家老に配備 |
+| UXカード是正完了 | **GATE CLEAR 2026-08-05 01:58**。cmd_karo_hotfix_rebalancer_ux_card_20260805(小太郎) |
+| 本設計書CLOSED | 2026-08-05 02:18。全工程完了+realtimeレーン統合 |
 
 ## §UXアクションカード是正(v1.6追加 — 殿フィードバック2026-08-05 00:17)
 
@@ -245,6 +250,21 @@ CLOSED (左記以外+週末+祝日):
 ```
 
 修正箇所: `ResultsDisplay.tsx` — lgブレークポイントをmd化 + 上段時刻削除 + LIVE/再接続中バッジ削除 + 下段を価格出所1行に簡潔化
+
+## §リアルタイム化レーン統合(旧 rebalancer-realtime-asis-tobe-5w1h_20260719.md)
+
+旧設計書(gist e81fd78c)の全工程をここに統合。
+
+| Phase | 内容 | 状態 |
+|---|---|---|
+| P0 偵察 | Alpaca実叩き+設計 | ✅完了(cmd_4087 LGTM) |
+| P1a 型/確定値 | provenance型+EODHD adapter+Render secret | ✅完了(commit 2023dbf/31d071c) |
+| P1b ストリーム | Alpaca stream/latest store+calendar | ✅完了(commit f31c5a0) |
+| P1c 耐障害 | resilience+fallback可視化 | ✅完了(commit df4ccf9) |
+| P2 FE配信 | SSE契約+FE受信化 | ✅完了(commit e011379) |
+| P3 本番検証 | 開場中E2E 4巡実測(07-29殿裁定)+本番バグ2件是正 | ✅完了 — 08-05 00:14 REGULAR検証で全銘柄RT PASS(本設計書§検証状況)。旧残欠(health commit露出/recovery完走)はmarket-phase 3cmd+UX是正の本番稼働で実質カバー済み |
+
+旧設計書は本統合をもってCLOSEDとする。詳細経緯は `docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md` を参照。
 
 ## §因果リンク
 
