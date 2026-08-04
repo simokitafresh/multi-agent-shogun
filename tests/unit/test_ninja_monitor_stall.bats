@@ -239,6 +239,59 @@ wait "$maintenance_pid"
     [ "$output" = "report_match=1 inherited_fd_closed=1 timeout=3s" ]
 }
 
+# test_necessity: cycle本体がpipe_read等で停止しても、更新scriptは20秒以内に既存generation fence経由で後継を起動する不変量を守る。
+# regression_justification: cycle境界だけのmtime確認は本番PID878492で42秒超HOT-RELOAD 0件を再現したため、独立watcherの契約を固定する。
+@test "hot-reload watcher launches a fenced successor without terminating the old generation" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -lc '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/hot-reload-watch"
+        STATE_DIR="$root/state"
+        LOG="$root/monitor.log"
+        script_path="$root/ninja_monitor.sh"
+        capture="$root/launch.capture"
+        generation="generation-live"
+        mkdir -p "$STATE_DIR"
+        printf "#!/bin/bash\n" > "$script_path"
+        start_mtime=$(stat -c %Y "$script_path")
+        printf "%s %s %s\n" "$$" "$generation" "$EPOCHSECONDS" > "$STATE_DIR/ninja_monitor.owner"
+        NINJA_MONITOR_HOT_RELOAD_POLL_SEC=0.05
+        _NM_SCRIPT_PATH="$script_path"
+        _NM_START_MTIME="$start_mtime"
+        NINJA_MONITOR_GENERATION="$generation"
+
+        _ninja_monitor_launch_hot_reload_successor() {
+            printf "path=%s generation=%s mtime=%s\n" "$1" "$2" "$3" > "$capture"
+        }
+        export capture
+
+        started=$(date +%s%3N)
+        start_ninja_monitor_hot_reload_watch
+        watcher_pid="$NINJA_MONITOR_HOT_RELOAD_WATCH_PID"
+        watcher_cmd=$(tr "\0" " " < "/proc/$watcher_pid/cmdline")
+        [[ "$watcher_cmd" == *"shogun-hot-reload-watch"* ]]
+        [[ "$watcher_cmd" != *"ninja_monitor.sh"* ]]
+        sleep 0.1
+        touch -d "@$((start_mtime + 1))" "$script_path"
+        for _ in $(seq 1 100); do
+            [ -s "$capture" ] && break
+            sleep 0.05
+        done
+        elapsed=$(( $(date +%s%3N) - started ))
+
+        test -s "$capture"
+        grep -q "generation=$generation" "$capture"
+        awk -v elapsed="$elapsed" "BEGIN { exit !(elapsed < 20000) }"
+        test -d "/proc/$$"
+        printf "successor=1 old_generation_alive=1 elapsed_ms=%s\n" "$elapsed"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == successor=1\ old_generation_alive=1\ elapsed_ms=* ]]
+}
+
 @test "snapshot keeps task done while publishing runtime busy separately" {
     run bash -lc '
 set -euo pipefail
