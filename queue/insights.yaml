@@ -1148,3 +1148,22 @@ insights:
   resolved_reason: "fix_known=true; verification.status=passed and verify_command exit 0; primary event and existing semantic/context records confirm no new implementation or decision is needed"
   action_artifact: "logs/self_retro.jsonl#event_id=94a79de1fc59cc545350595cd2d4cb3e657f632af2348d1e085f58db2559c17a;context/semantic-map.md;docs/research/cmd_4123_self_retro_signal.md"
   resolved_at: "2026-08-04T15:54:00+09:00"
+- id: INS-20260804-142209841-2aaf
+  ts: "2026-08-04T14:22:09+09:00"
+  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: resolved
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq '412d0fda8c05506a06f9943698ebd4d5c5ac4f747e7369e780daf3109773b876' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
+  occurrence_count: 15
+  last_seen: "2026-08-04T17:44:06+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
+  resolved_reason: "fix_known=true; primary self_retro event verified; cmd_4123 existing context confirms review_notify is a real signal and SG7 validation remains preserved; no new implementation or decision_candidate required"
+  action_artifact: "logs/self_retro.jsonl#event_id=412d0fda8c05506a06f9943698ebd4d5c5ac4f747e7369e780daf3109773b876;docs/research/cmd_4123_self_retro_signal.md;context/infrastructure.md"
+  resolved_at: "2026-08-04T18:36:59+09:00"
