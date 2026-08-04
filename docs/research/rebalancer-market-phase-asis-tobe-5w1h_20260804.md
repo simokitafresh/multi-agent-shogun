@@ -1,5 +1,18 @@
 <!-- gist-master: e131b06c137d3da41ad28df6373e7601 rebalancer-market-phase-asis-tobe-5w1h_20260804.md -->
-# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.2 【📋設計済・独立レビュー2系統反映済み・裁可待ち】
+# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.4 【✅実装完了・検証進行中(コード面+CDP CLOSED実測PASS/残=開場時間帯RT実測)】
+
+> v1.4覚醒更新(2026-08-04 16:17 殿指示『覚醒してアップデートせよ』): §検証状況を新設し実測進捗を反映。v1.3軍師指摘(a)のis_open=true→REGULAR前提を§1へ明記済み
+
+> 実装状態(v1.3 2026-08-04 15:01 将軍一次確認): §実装分解の3cmdは家老配備で**全て実装完了**。cmd_4227=`e3c4565`(clock snapshot phase SSOT) / cmd_4228=`e26ba81`(語彙4値統一+未知語彙warn) / cmd_4229=`f202c57`(表示=計算price snapshot統一・GATE CLEAR 14:38)。HEAD=origin/main一致(push済み)。contract fixture=backend/tests/test_price_snapshot_contract.py他
+
+## §検証状況(v1.4新設 — 2026-08-04 16:17時点の一次証跡)
+
+| 面 | 状態 | 証跡 |
+|---|---|---|
+| コード面 | ✅PASS | cmd_4228: backend 55+frontend 6テスト全PASS・build rc0・旧語彙rg残存0件 / cmd_4229: 58テスト全PASS・CI run 30876539561 GREEN・deploy health status=ok deploy_commit=f202c578(軍師レビュー記録12:36/13:15 APPROVE) |
+| CDP実画面(CLOSEDフェーズ) | ✅PASS | 疾風recon2実測2026-08-04 15:26 JST(隔離CDP・本番FE): CLOSED表示、GDX $76.05、POST /api/calculate-rebalance 200のresponse source=eodhd / as_of=2026-08-03T00:00:00Z、表示値一致(=ユーザー報告INS-20260804-023042の再現条件で正常動作を確認) |
+| 設計書v1.3独立レビュー | ✅APPROVE | 軍師blt_150656: §1-§4全契約項目が3commitで実装済み・未実装0件・TTL=300秒定数明示+テスト検証済み・旧語彙残存0件・fixture全7件WBS通り。指摘(a)is_open前提→§1へ明記済み、(b)snapshot独立呼出し(実害なし)=既知事項として記録 |
+| CDP実画面(PRE/REGULARフェーズ) | ⏳残 | 開場時間帯(夏時間: PRE=JST17:00〜/REGULAR=JST22:30〜)でRT価格反映+フェーズ表示を実測する第2弾検証。家老が計画・配備 |
 
 > レビュー状態: 軍師=**APPROVE**(blt_105137: AsIs因果=現物一致・殿裁定全件整合・DAG直列妥当。指摘=clock fail-safe閾値未明示) / 家老=**REVISE**(blt_105152: 必須修正4件)→**本v1.2で全点反映**(相互不可視の独立査読、将軍が2026-08-04 10:55に統合)
 
@@ -91,6 +104,7 @@
 - **祝日・早引けの導出是正(家老RC1)**: `is_open=false`は通常のPRE/POSTでも成立するため単独では祝日oracleにならない。**trading-day判定=next_open/next_closeから導出**: (a)当日ET日付に取引セッションが存在しない(next_openが翌営業日)→祝日=CLOSED (b)早引け日=`next_close`がET16:00より早い→REGULAR終端とPOST開始をnext_closeへ繰上げ
 - tzは`ZoneInfo("America/New_York")`限定(固定オフセット禁止)。**DSTはfixtureで固定**: EDT期(2026-07-01)・EST期(2026-01-15)・切替日(2026-03-08 / 2026-11-01)の4時点×各セッション境界
 - A2の`PRE_OPEN_CONNECT_MINUTES=30`窓と`AFTER_HOURS_START_HOUR_ET=13`固定は**廃止**(早引けはnext_close導出が吸収)
+- **is_open=true→REGULARマッピングの前提(v1.3軍師レビュー指摘(a)の明記)**: clock snapshotの`is_open=true`はAlpaca定義で通常セッション中のみ真となるため、pure phase関数は`is_open=true`をREGULARへ直接マッピングする。PRE/POSTは`is_open=false`かつタイムベース窓内で判定する
 
 ### §2 語彙統一(1対1)
 
