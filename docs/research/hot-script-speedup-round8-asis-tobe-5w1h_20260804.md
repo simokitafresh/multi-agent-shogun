@@ -105,6 +105,19 @@
 
 - 弾#1-#3は同一スクリプト(three_layer_health)の別checkだが、writer共有ゆえ**#1→#2→#3の直列**(共有層先行の原則)。#4以降は独立並列可
 
+## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 17:20将軍転記。帰結は各報告YAML result.summaryから転記)
+
+| # | 標的 | 状態 | 帰結(実測生値) |
+|---|---|---|---|
+| 0' | 計測盲点根絶(*_total一斉計装) | 🔄in_progress(小太郎 lane0a) | AC1 PASS(cmd_save save_total既存確認+9対象の未計装9/9一次確認)・AC2 PASS(9 scriptsへ固有*_total追加、個別probeで9/9行出力)・AC3(task選択テスト)継続中 |
+| 4 | `git_pre_commit:affected_tests` | ✅実装完了・軍師LGTM(17:17)・家老GATE判定待ち(疾風 lane4) | resolve_reverse_lib_depsを単一git grep+Bash集合フィルタへ変更。5-lib同一fixtureで**before p50/p95=6444/6643ms→after=2240/2416ms**(p50 -65%)。検出集合39/39一致(品質不変)。commit後再計測でも同結果。選択43/43 PASS・SKIP0 |
+| 1-3 | three_layer_health(refresh_copy/verify/window) | ⏳未配備 | 共有writer原則で#0'完了後に#1→#2→#3直列開始 |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | ⏳未配備 | 独立writerゆえ並列配備可(将軍ナッジ16:14で並列開始指示済み) |
+| 補欠A/B/C | inbox_write / singleflight_hold / review_notify | ⏳未配備 | 計測後判断 |
+
+- 効果の正式確定は§1計測憲法の通り「修正後1週間のledger累積課税の前週比」。上表の帰結は各レーンのfocused実測(同一fixture before/after)
+- 配備経緯: 将軍下知blt_154140(15:41)→家老受領blt_154722(事故2件閉鎖優先)→殿指摘16:13『並列でできないか』→将軍ナッジmsg_161412→lane0a+lane4並列配備
+
 ## §3 decision ledger
 
 | 項 | 状態 |
