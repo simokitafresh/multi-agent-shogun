@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-04 -->
+<!-- last_updated: 2026-08-05 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,10 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_3687 | 殿指示(2026-07-05 20:58 やろう): 価格データソース多重化計画Phase 1。Alpaca/EODHD/Tiingo/Stockdata(yfinance)の4ソースで全コアシンボルの直近月末open/closeを突合し、乖離の全体像を定量化する。未解決2点(Alpaca IEXフィードのSIP適用範囲、EODHDの終値方式)を実測で決着させ、プライマリ選定の判断材料を殿に提供する。発端=シン青龍-鉄壁TECL/XLU再反転(cmd_3676-3685) | database | 07-05 | 4ソース×12シンボル×3月末=144ポイントを取得し、EO |
-| cmd_3688 | 殿指示(2026-07-05 21:42): 価格データソース多重化計画Phase 2。(a)EODHD/Tiingo 2ソース毎晩突合cronで不一致時警報 (b)月初入力確定検証(前月最終営業日の全コアシンボル行存在検証、不在ならpending+警報) (c)cron時刻をJST 08:00+17:00の2回に変更(殿案: 01:00 JSTは米国市場close前で構造的問題)。発端=シン青龍-鉄壁再反転+yfinance遡及修正 | database | 07-05 | EODHD/Tiingo close照合、月初入力確定ゲート |
-| cmd_3689 | 殿指示(2026-07-05 22:15): 価格データソース多重化計画Phase 3。pricesテーブルをyfinance調整済み値の直接保存から、生値正本(prices_raw)+確定イベント(corporate_events)による自前調整導出に移行する。生値は取得後不変、イベントはex_date通過後にのみ確定追加。同じ入力から常に同じ出力を保証し、シグナルの日次変動を原理的に消滅させる。DM-Signal側は変更ゼロ(API互換維持)。発端=yfinance遡及修正による毎日シグナル変動 | database | 07-05 | Phase3実装に加え、既存009 migrationの_s |
-| cmd_3690 | 殿裁可(2026-07-05 23:00): Phase 2(cmd_3688)+Phase 3(cmd_3689)の成果物を本番適用する。バックアップ→リモート送信→ビルド→マイグレーション→再計算→3レイヤー検証の順序。バックアップファースト。発端=yfinance遡及修正によるシグナル変動の根本解決 | database | 07-05 | 価格多重化本番適用を実施。Stockdata deploy |
 | cmd_3691 | 殿指示(2026-07-06 00:23): 浮動小数点ノイズがモメンタム判定に影響するか検証し精度を完璧に仕上げる。(1)全コアシンボル×全期間でprices(自前調整値)とEODHD adjusted_closeの差分を全件照合し、差分がモメンタムスコアの閾値判定を反転させるケースを特定する (2)設計書§7の月末月初エッジケース7件が全て対処されていることをテストで証明する。GS再キャリブレーション(Phase A)の前提条件 | database | 07-06 | 全コア11銘柄×2000-01-01〜2026-07-06で |
 | cmd_3693 | 殿指示(2026-07-06 01:44+01:46横展開): cmd_3692で秘奥義GS(L3)がsource_type=csv非対応でexit1、四神GS(L0)がgs_data_loader未使用の独自DB接続で遅い。GS入力方式をDB統一(秘奥義csv→db移行+四神gs_data_loader統一)し、全universe YAMLの棚卸しを横展開で一括実施する | dm-signal | 07-06 | GS入力をDB統一: okugi_l3_168をDB uni |
 | cmd_3696 | 殿指示(2026-07-06 03:23「ではやろう」): 軍師設計書v4のPhase Aを実行。四神GS(shin_shijin_l1_gs.py)と秘奥義加速D(kasoku_diff)のcProfileでhot path特定+Phase 1/2時間内訳計測。回帰テスト用比較スクリプト作成 | dm-signal | 07-06 | Phase Aプロファイル取得とGS SQLite月次リター |
