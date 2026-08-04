@@ -97,7 +97,7 @@
 
 - 弾#1→#2は同一script(heavy_job_admission)ゆえ直列。#3・#4は独立writerで並列可。補欠は条件成立後に殿へ昇格提案
 
-## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 23:15家老更新。gate_metrics/report/task一次突合)
+## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-05 00:22家老更新。gate_metrics/report/task一次突合)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
@@ -112,7 +112,7 @@
 
 - **第九弾関連GATE CLEAR 5件**: #0'' Track A/B、#1、#3、再利用gate hotfix。偵察とgate hotfixはいずれも#0''是正実装のCLEARではなく、implは未配備。
 - **正式FAIL-close 2本**: #4と補欠A。どちらも欠損identityを数値特定して後続計装へ還流済み。偽CLEAR 0件。
-- **先行インフラ根治**: `scout_reports`明示再利用をcompleted・PASS・GATE CLEAR・軍師LGTM・異report_idでfail-closed検証するhotfixを小太郎が実装中。CLEAR後に#0'' implを再配備する。
+- **先行インフラ根治**: `scout_reports`明示再利用hotfixはcommit `c341e923fba7a3ad427f055569c24a015511a889`・focused 9/9・false判断0/7・GATE CLEAR済み。#0'' implは未配備であり、次レーンで新規task/report/gateを生成する。
 - **次レーン**: #0'' impl再配備（hotfix CLEAR後に新規task/report/gateを生成）、#2 queue_wait偵察、#4 mode metadata計装、補欠A共通run_id計装。補欠B/Cは計測条件待ち。
 - **正式効果**: 全是正弾完了後、修正後1週間ledger累積課税の前週比で確定。現時点は偵察段階ゆえ未確定。
 
