@@ -5131,7 +5131,7 @@ _handle_reflux_auto_deploy() {
     local insight_before backlink_before promotion_before total_before first_insight first_backlink first_promotion backlink_status promotion_status
     local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
     local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2 ac1_yaml ac2_yaml
-    local external_source inspection_path_line="" planned_paths_line=""
+    local external_source inspection_path_line="" planned_paths_line="" purpose_yaml=""
     local promotion_reserved=false active_owner
 
     [ -n "$name" ] || return 1
@@ -5220,7 +5220,9 @@ _handle_reflux_auto_deploy() {
     case "$kind" in
       insight)
         target_path="queue/insights.yaml"
-        purpose="還流在庫自動消化: queue/insights.yaml の pending insight ${first_insight} を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
+        planned_paths_line=$'  planned_paths:\n    - queue/insights.yaml'
+        purpose="reflux insight 還流在庫自動消化: queue/insights.yaml の pending insight ${first_insight} を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
+        purpose_yaml="  purpose: $(_yaml_single_quote_scalar "$purpose")"
         ac1="対象insight ${first_insight} を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
         ;;
       backlink)
@@ -5259,6 +5261,9 @@ _handle_reflux_auto_deploy() {
     ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す"
     ac1_yaml=$(_yaml_single_quote_scalar "$ac1")
     ac2_yaml=$(_yaml_single_quote_scalar "$ac2")
+    if [ -z "$purpose_yaml" ]; then
+        purpose_yaml=$(printf '  purpose: |-\n    %s' "$purpose")
+    fi
 
     active_owner=$(_reflux_active_target_owner "$target_path" "$name" 2>/dev/null || true)
     if [ -n "$active_owner" ]; then
@@ -5297,8 +5302,7 @@ ${inspection_path_line}
   scout_exempt: true
   estimated_minutes: 5
   status: assigned
-  purpose: |-
-    ${purpose}
+${purpose_yaml}
   acceptance_criteria:
     - id: AC1
       checks:

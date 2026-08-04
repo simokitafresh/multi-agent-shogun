@@ -446,16 +446,59 @@ REFLUX_AUTO_DEPLOY_STATE_PREFIX="$TMP_ROOT/state/reflux_auto"
 REFLUX_BACKLINK_SCAN_LIMIT=5
 REFLUX_BACKLINK_TIMEOUT=5
 
-_handle_reflux_auto_deploy hayate 100
+for run in 1 2 3; do
+    REFLUX_IDLE_FIRST_SEEN[hayate]=0
+    _handle_reflux_auto_deploy hayate "$((100 * run))"
+done
 
-grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
+deploy_count=0
+while IFS= read -r line; do
+    case "$line" in
+        *DEPLOY_CALLED:*--yaml*) deploy_count=$((deploy_count + 1));;
+    esac
+done < "$TMP_ROOT/deploy.log"
+test "$deploy_count" -eq 3
 grep -q "target_path: queue/insights.yaml" "$TMP_ROOT/deployed.yaml"
+python3 - "$TMP_ROOT/deployed.yaml" <<'PY'
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task["planned_paths"] == ["queue/insights.yaml"]
+print("REFLUX_INSIGHT_GENERATOR_OK runs=3")
+PY
+(
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/deploy_task.sh"
+    SCRIPT_DIR="$PROJECT_ROOT"
+    inject_reflux_commit_contract "$TMP_ROOT/deployed.yaml"
+)
+python3 - "$TMP_ROOT/deployed.yaml" <<'PY'
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+contract = task["reflux_commit_contract"]
+assert contract["scope"] == ["queue/insights.yaml"]
+assert contract["producer"] == {"field": "source", "value": "self_retro"}
+assert contract["post_commit_allowed_fields"] == ["occurrence_count", "last_seen"]
+print("REFLUX_INSIGHT_CONTRACT_OK")
+PY
 grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=1 zero_backlinks=0 promotions=0 total=1" "$TMP_ROOT/test.log"
 grep -q "REFLUX-AUTO-INVENTORY-AFTER: hayate insights_pending=1 zero_backlinks=0 promotions=0 total=1" "$TMP_ROOT/test.log"
-echo "REFLUX_INSIGHT_DEPLOY_OK"
+done_count=0
+while IFS= read -r line; do
+    case "$line" in
+        *REFLUX-AUTO-DEPLOY-DONE:*) done_count=$((done_count + 1));;
+    esac
+done < "$TMP_ROOT/test.log"
+test "$done_count" -eq 3
+echo "REFLUX_INSIGHT_DEPLOY_OK runs=3"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"REFLUX_INSIGHT_DEPLOY_OK"* ]]
+    [[ "$output" == *"REFLUX_INSIGHT_GENERATOR_OK runs=3"* ]]
+    [[ "$output" == *"REFLUX_INSIGHT_CONTRACT_OK"* ]]
+    [[ "$output" == *"REFLUX_INSIGHT_DEPLOY_OK runs=3"* ]]
 }
 
 @test "reflux auto deploy rolls back partial task when deploy_task fails" {
