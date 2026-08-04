@@ -1864,8 +1864,9 @@ EOF
 setup_hook_failure_repo() {
     TEST_REPO="$TEST_TMPDIR/hookrepo"
     rm -rf "$TEST_REPO"
-    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/queue/reports" "$TEST_REPO/queue/gates"
+    mkdir -p "$TEST_REPO/scripts/lib" "$TEST_REPO/queue/reports" "$TEST_REPO/queue/gates" "$TEST_REPO/queue/tasks"
     cp "$PROJECT_ROOT/scripts/review_bundle.py" "$TEST_REPO/scripts/review_bundle.py"
+    cp "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_REPO/scripts/lib/review_approval.sh"
     cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_2473:
@@ -1879,11 +1880,21 @@ EOF
     cat > "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml" <<'EOF'
 worker_id: hayate
 parent_cmd: cmd_2473
+task_id: cmd_2473
+report_id: rpt-hook-failure
 status: completed
 result:
   summary: hook failure state fixture
 EOF
     complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
+    cat > "$TEST_REPO/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  task_id: cmd_2473
+  parent_cmd: cmd_2473
+  ac_version: fixture-v1
+  report_id: rpt-hook-failure
+  report_filename: hayate_report_cmd_2473.yaml
+EOF
     HOOK_REPORT="$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
 }
 
