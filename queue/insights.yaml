@@ -1098,3 +1098,13 @@ insights:
   resolved_reason: "一次eventを確認: completion_total=3092ms、既存commit d6683ff548771d7fc50af5aef7c188a88d9bf33f がdashboard再検証をfingerprint再利用しcheckpoint順序を維持。event_id出現1件のため重複0件。追加実装不要。"
   action_artifact: "commit:d6683ff548771d7fc50af5aef7c188a88d9bf33f;logs/self_retro.jsonl:event_id=a08dd6b5a44cc6da538f538648b8ea041e15189f8aff04e8639186e7252c6642"
   resolved_at: "2026-08-04T05:07:59+09:00"
+- id: INS-20260804-090144902-b10d
+  ts: "2026-08-04T09:01:44+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=俺の裁定待ちの内容を教えて"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: resolved
+  resolved_reason: "殿の単発の状況照会であり、直後に将軍が裁定待ち2件を回答済み。恒久的な行動規則・新規教訓ではないためlesson_candidate誤検出として解決"
+  action_artifact: "queue/lord_conversation.jsonl:451-452 + queue/pending_decisions.yaml現物照合"
+  resolved_at: "2026-08-04T11:28:06+09:00"
