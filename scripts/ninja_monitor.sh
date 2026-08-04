@@ -7251,23 +7251,23 @@ check_inbox_renudge() {
 "
                 done
                 if [ -n "$_karo_pending_entries" ]; then
-                    local _karo_target="$KARO_PANE"
-                    if [ -n "$_karo_target" ] && check_idle "$_karo_target" "karo"; then
-                        local _karo_pending_fp
-                        _karo_pending_fp=$(printf '%s' "$_karo_pending_entries" | md5sum)
-                        _karo_pending_fp="${_karo_pending_fp:0:32}"
-                        if _karo_pending_work_already_notified "$_karo_pending_fp"; then
-                            log "KARO-PENDING-DEDUPE: generation ${_karo_pending_fp} already notified for this pending set, skipping"
+                    local _karo_pending_fp
+                    _karo_pending_fp=$(printf '%s' "$_karo_pending_entries" | md5sum)
+                    _karo_pending_fp="${_karo_pending_fp:0:32}"
+                    if _karo_pending_work_already_notified "$_karo_pending_fp"; then
+                        log "KARO-PENDING-DEDUPE: generation ${_karo_pending_fp} already notified for this pending set, skipping"
+                    else
+                        # Pending completion is a durable control-plane event.  It must
+                        # reach Karo even while the pane is busy; the inbox watcher owns
+                        # wake-up and no direct pane input is allowed on this path.
+                        log "KARO-PENDING-INBOX: karo pane state independent (new generation ${_karo_pending_fp}), sending inbox message"
+                        # notify_karo_durableがreturn 0(direct成功またはoutbox永続化成功)の
+                        # 場合のみ世代を確定する。return 1(outbox永続化自体が失敗)ならmarkerを
+                        # 書かず、次サイクルで同一fpのまま再試行させる(AC3)。
+                        if notify_karo_durable pending_work karo "未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。"; then
+                            _karo_pending_work_mark_notified "$_karo_pending_fp"
                         else
-                            log "KARO-PENDING-INBOX: karo idle with pending work (new generation ${_karo_pending_fp}), sending inbox message"
-                            # notify_karo_durableがreturn 0(direct成功またはoutbox永続化成功)の
-                            # 場合のみ世代を確定する。return 1(outbox永続化自体が失敗)ならmarkerを
-                            # 書かず、次サイクルで同一fpのまま再試行させる(AC3)。
-                            if notify_karo_durable pending_work karo "未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。"; then
-                                _karo_pending_work_mark_notified "$_karo_pending_fp"
-                            else
-                                log "KARO-PENDING-INBOX-RETRY: notify_karo_durable failed to persist (outbox append failed), generation not marked, will retry next cycle"
-                            fi
+                            log "KARO-PENDING-INBOX-RETRY: notify_karo_durable failed to persist (outbox append failed), generation not marked, will retry next cycle"
                         fi
                     fi
                 else

@@ -201,6 +201,163 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: the public completion pipeline must checkpoint archive
+# terminal evidence before dashboard/ntfy/COMPLETE and invoke the archive
+# helper with its positional keep_results argument.
+@test "cmd_complete checkpoints archive terminal before public completion" {
+    local wrapper="$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
+    run python3 - "$wrapper" <<'PY'
+import pathlib, sys
+
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+step_line = text.index("STEP_ORDER=(")
+archive_step = text.index("run_checkpointed archive_terminal archive_terminal")
+dashboard_step = text.index("if checkpoint_has dashboard;", archive_step)
+assert "archive_terminal" in text[step_line:dashboard_step]
+assert archive_step < dashboard_step
+assert 'bash "$archive_script" 3 "$CMD_ID"' in text
+assert 'active_count=$(find "$ROOT_DIR/queue/reports"' in text
+assert '[[ -f "$marker" && "$active_count" -eq 0 ]]' in text
+print("archive_terminal_before_dashboard=1 retry_postcondition=1 positional_cmd_id=1")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"archive_terminal_before_dashboard=1 retry_postcondition=1 positional_cmd_id=1"* ]]
+}
+
+# test_necessity: cmd_complete.shはBashの逐次読込中に正本が更新されても、
+# detached completion workerが起動時の全本体snapshotを使い、archive→dashboard→ntfy→COMPLETE
+# のcheckpoint列を最後まで完了する不変量を守る。正本追記でworkerが途中停止する回帰を実行時に再現する。
+@test "completion worker uses immutable source snapshot after canonical script update" {
+    local wrapper="$TEST_PROJECT/scripts/cmd_complete.sh"
+    local bundle="$TEST_PROJECT/queue/gates/$TEST_CMD_ID/sg7_bundle.json"
+    local fake_tmux="$TEST_PROJECT/fake_tmux"
+    local generation
+    generation="$(printf 'a%.0s' {1..64})"
+
+    cp "$PROJECT_ROOT/scripts/cmd_complete.sh" "$wrapper"
+    rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done"
+    rm -f "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
+    printf 'active report\n' > "$TEST_PROJECT/queue/reports/hanzo_report_${TEST_CMD_ID}.yaml"
+    printf '{"review":{"cmd_id":"%s","report_fingerprint":"%s"}}\n' \
+        "$TEST_CMD_ID" "$generation" > "$bundle"
+    cat > "$TEST_PROJECT/scripts/review_bundle.py" <<'PY'
+#!/usr/bin/env python3
+print('{"project":"infra"}')
+PY
+    cat > "$TEST_PROJECT/scripts/lesson_review.sh" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+    cat > "$TEST_PROJECT/scripts/cmd_complete_gate.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s CLEAR\n' "$1" >> "$(dirname "$(dirname "$0")")/logs/gate_metrics.log"
+exit 0
+SH
+    cat > "$TEST_PROJECT/scripts/cmd_quality_log.sh" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+    cat > "$TEST_PROJECT/scripts/gates/gate_yaml_status.sh" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+    cat > "$TEST_PROJECT/scripts/dashboard_update.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'dashboard %s\n' "$1" >> "$(dirname "$(dirname "$0")")/dashboard.log"
+exit 0
+SH
+    cat > "$TEST_PROJECT/scripts/ntfy_cmd.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'ntfy %s\n' "$1" >> "$(dirname "$(dirname "$0")")/ntfy.log"
+exit 0
+SH
+    cat > "$TEST_PROJECT/scripts/inbox_archive.sh" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+    cat > "$TEST_PROJECT/scripts/archive_completed.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+root="${ARCHIVE_COMPLETED_PROJECT_DIR:?}"
+cmd_id="$2"
+printf 'archive_worker_started\n' > "$root/worker_started"
+while [[ ! -f "$root/allow_archive" ]]; do sleep 0.01; done
+rm -f "$root/queue/reports/"*_report_${cmd_id}*.yaml
+mkdir -p "$root/queue/gates/$cmd_id"
+printf 'archive terminal\n' > "$root/queue/gates/$cmd_id/archive.done"
+SH
+    rm -f "$TEST_PROJECT/scripts/lib/retro_pane_prompt.sh"
+    cat > "$TEST_PROJECT/scripts/lib/retro_pane_prompt.sh" <<'SH'
+#!/usr/bin/env bash
+retro_pane_prompt_async() { :; }
+SH
+    cat > "$fake_tmux" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "display-message" ]]; then
+    exit 1
+fi
+cmd="${@: -1}"
+bash -c "$cmd" &
+printf '%s\n' "$!" > "${FAKE_TMUX_WORKER_PID:?}"
+exit 0
+SH
+    chmod +x "$wrapper" "$fake_tmux" "$TEST_PROJECT/scripts/"*.sh \
+        "$TEST_PROJECT/scripts/gates/"*.sh
+
+    env \
+        CMD_COMPLETE_ROOT_DIR="$TEST_PROJECT" \
+        CMD_COMPLETE_SCRIPT_DIR="$TEST_PROJECT/scripts" \
+        CMD_COMPLETE_TMUX_BIN="$fake_tmux" \
+        FAKE_TMUX_WORKER_PID="$TEST_PROJECT/worker.pid" \
+        CMD_COMPLETE_ARCHIVE_ATTEMPTS=1 \
+        CMD_COMPLETE_ARCHIVE_RETRY_DELAY=0 \
+        CMD_COMPLETE_DASHBOARD_ATTEMPTS=1 \
+        CMD_COMPLETE_NTFY_ATTEMPTS=1 \
+        DEFENSE_OVERHEAD_ENABLED=0 \
+        RETRO_PANE_PENDING_DIR="$TEST_PROJECT/queue/retro/verbatim_pending" \
+        RETRO_PANE_STATE_DIR="$TEST_PROJECT/queue/retro/pane_prompt" \
+        bash "$wrapper" "$TEST_CMD_ID" "$bundle" \
+        > "$TEST_PROJECT/caller.out" 2>&1 &
+    local caller_pid=$!
+    if ! wait "$caller_pid"; then
+        cat "$TEST_PROJECT/caller.out" >&3
+        false
+    fi
+
+    local attempt=0
+    while [[ ! -f "$TEST_PROJECT/worker_started" && "$attempt" -lt 200 ]]; do
+        sleep 0.02
+        attempt=$((attempt + 1))
+    done
+    [ -f "$TEST_PROJECT/worker_started" ]
+    printf '\npoint: command not found\n' >> "$wrapper"
+    : > "$TEST_PROJECT/allow_archive"
+
+    local tail_log="$TEST_PROJECT/queue/gates/$TEST_CMD_ID/completion_tail.log"
+    attempt=0
+    while [[ ! -f "$tail_log" ]] || ! grep -Fq '[cmd_complete] COMPLETE cmd_999' "$tail_log"; do
+        sleep 0.02
+        attempt=$((attempt + 1))
+        [ "$attempt" -lt 300 ]
+    done
+    grep -F '[cmd_complete] COMPLETE cmd_999' "$tail_log"
+    run python3 - "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/completion_checkpoint.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding='utf-8'))
+expected = [
+    'sg7_consume', 'lesson_review', 'cmd_complete_gate', 'quality_log',
+    'status_completed', 'archive_terminal', 'dashboard', 'ntfy', 'inbox_archive',
+]
+assert data['completed'] == expected, data['completed']
+print('immutable_snapshot_checkpoint_order=1')
+PY
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done" ]
+    [ ! -f "$TEST_PROJECT/queue/reports/hanzo_report_${TEST_CMD_ID}.yaml" ]
+    [ -f "$TEST_PROJECT/dashboard.log" ]
+    [ -f "$TEST_PROJECT/ntfy.log" ]
+}
+
 # cmd_karo_hotfix_task_idle_transition_verify_202607041407: append_codd_registry_entry
 # is called bare (no "||" guard) between "GATE CLEAR: cmd完了許可" and
 # set_matching_tasks_idle. Under `set -e` (active at the top of cmd_complete_gate.sh),

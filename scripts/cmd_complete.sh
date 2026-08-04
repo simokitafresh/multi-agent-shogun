@@ -42,7 +42,32 @@ PY
 )" || exit 1
 export SHOGUN_COMPLETION_GENERATION="$BUNDLE_IDENTITY"
 BUNDLE_FINGERPRINT="$(sha256sum "$BUNDLE_PATH" | awk '{print $1}')"
-STEP_ORDER=(sg7_consume lesson_review cmd_complete_gate quality_log status_completed dashboard ntfy inbox_archive)
+
+# Bash reads a script incrementally.  A deploy/rebuild which replaces this
+# canonical file while the detached tail is still running can therefore make
+# the already-running shell parse a different generation halfway through
+# (for example, a trailing fragment becomes ``point: command not found``).
+# Freeze the complete source before any checkpoint work and re-enter from that
+# immutable copy.  Preserve the operational roots because the snapshot lives
+# below CHECKPOINT_DIR, not below the source script directory.
+CMD_COMPLETE_SOURCE_SNAPSHOT="${CMD_COMPLETE_SOURCE_SNAPSHOT:-}"
+if [[ -z "$CMD_COMPLETE_SOURCE_SNAPSHOT" ]]; then
+    _cmd_complete_source_file="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+    _cmd_complete_snapshot_tmp="$(mktemp "$CHECKPOINT_DIR/.cmd_complete_source.XXXXXX.sh")"
+    if ! cp -- "$_cmd_complete_source_file" "$_cmd_complete_snapshot_tmp"; then
+        rm -f -- "$_cmd_complete_snapshot_tmp"
+        printf '[cmd_complete] FAILED source snapshot copy: %s\n' "$_cmd_complete_source_file" >&2
+        exit 1
+    fi
+    chmod 700 "$_cmd_complete_snapshot_tmp"
+    CMD_COMPLETE_SOURCE_SNAPSHOT="$_cmd_complete_snapshot_tmp"
+    export CMD_COMPLETE_SOURCE_SNAPSHOT
+    export CMD_COMPLETE_ROOT_DIR="$ROOT_DIR"
+    export CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR"
+    export CMD_COMPLETE_CHECKPOINT_DIR="$CHECKPOINT_DIR"
+    exec bash "$CMD_COMPLETE_SOURCE_SNAPSHOT" "$@"
+fi
+STEP_ORDER=(sg7_consume lesson_review cmd_complete_gate quality_log status_completed archive_terminal dashboard ntfy inbox_archive)
 
 checkpoint_init() {
     python3 - "$CHECKPOINT_PATH" "$CMD_ID" "$BUNDLE_FINGERPRINT" "${STEP_ORDER[@]}" <<'PY'
@@ -245,6 +270,54 @@ PY
     bash "$SCRIPT_DIR/inbox_archive.sh" karo
 }
 
+# The archive worker is launched asynchronously by cmd_complete_gate.  That is
+# useful for the gate caller, but it is not a terminal guarantee for this
+# wrapper: dashboard, ntfy, and COMPLETE must not become public before the
+# report lifecycle is closed.  Re-run only the real archive worker and accept
+# success only after both durable postconditions are visible.
+archive_terminal() {
+    local archive_script="$SCRIPT_DIR/archive_completed.sh"
+    local marker="$CHECKPOINT_DIR/archive.done"
+    local attempts="${CMD_COMPLETE_ARCHIVE_ATTEMPTS:-3}"
+    local delay="${CMD_COMPLETE_ARCHIVE_RETRY_DELAY:-1}"
+    local attempt active_count
+
+    # Test fixtures that intentionally model only the wrapper may omit the
+    # archive worker.  Production roots always contain this script; absence in
+    # a real root is a fail-closed error.
+    if [[ ! -f "$archive_script" ]]; then
+        if [[ -n "${CMD_COMPLETE_TEST_LOG:-}" ]]; then
+            printf '[cmd_complete] SKIP archive_terminal (fixture archive worker absent)\n' >&2
+            return 0
+        fi
+        printf '[cmd_complete] FAILED archive_terminal worker missing: %s\n' "$archive_script" >&2
+        return 1
+    fi
+
+    for ((attempt = 1; attempt <= attempts; attempt++)); do
+        active_count=$(find "$ROOT_DIR/queue/reports" -maxdepth 1 -type f \
+            -name "*_report_${CMD_ID}*.yaml" -print 2>/dev/null | wc -l | tr -d ' ')
+        if [[ -f "$marker" && "$active_count" -eq 0 ]]; then
+            printf '[cmd_complete] PASS archive_terminal marker=present active_reports=0 attempt=%d\n' "$attempt" >&2
+            return 0
+        fi
+        printf '[cmd_complete] START archive_terminal attempt=%d/%d marker=%s active_reports=%s\n' \
+            "$attempt" "$attempts" "$([[ -f "$marker" ]] && echo present || echo missing)" "$active_count" >&2
+        env ARCHIVE_COMPLETED_PROJECT_DIR="$ROOT_DIR" \
+            SHOGUN_COMPLETION_GENERATION="$BUNDLE_IDENTITY" \
+            bash "$archive_script" 3 "$CMD_ID" || true
+        active_count=$(find "$ROOT_DIR/queue/reports" -maxdepth 1 -type f \
+            -name "*_report_${CMD_ID}*.yaml" -print 2>/dev/null | wc -l | tr -d ' ')
+        if [[ -f "$marker" && "$active_count" -eq 0 ]]; then
+            printf '[cmd_complete] PASS archive_terminal marker=present active_reports=0 attempt=%d\n' "$attempt" >&2
+            return 0
+        fi
+        [[ "$attempt" -lt "$attempts" ]] && sleep "$delay"
+    done
+    printf '[cmd_complete] FAILED archive_terminal marker_or_report_postcondition incomplete after %d attempts\n' "$attempts" >&2
+    return 1
+}
+
 run_ntfy_once() {
     local receipt="$CHECKPOINT_DIR/ntfy_delivery_receipt.json"
     if python3 - "$receipt" "$CMD_ID" "$BUNDLE_FINGERPRINT" "$BUNDLE_IDENTITY" <<'PY'
@@ -319,7 +392,6 @@ else
     run_status_step
     checkpoint_mark status_completed
 fi
-
 # Dashboard publication, notification delivery, and inbox archival remain
 # strictly checkpoint ordered, but are not part of the interactive caller's
 # latency boundary.  The detached worker re-enters this same script, verifies
@@ -332,7 +404,9 @@ if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
     if command -v "$_tmux_bin" >/dev/null 2>&1; then
         printf -v _tail_cmd '%q ' env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
             CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
-            bash "$SCRIPT_DIR/cmd_complete.sh" "$CMD_ID" "$BUNDLE_PATH"
+            CMD_COMPLETE_CHECKPOINT_DIR="$CHECKPOINT_DIR" \
+            CMD_COMPLETE_SOURCE_SNAPSHOT="$CMD_COMPLETE_SOURCE_SNAPSHOT" \
+            bash "$CMD_COMPLETE_SOURCE_SNAPSHOT" "$CMD_ID" "$BUNDLE_PATH"
         if [[ -n "${CMD_COMPLETE_TEST_LOG:-}" ]]; then
             printf -v _tail_test_env '%q ' "CMD_COMPLETE_TEST_LOG=$CMD_COMPLETE_TEST_LOG"
             _tail_cmd="env $_tail_test_env${_tail_cmd#env }"
@@ -359,11 +433,14 @@ if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
         exec 9>&-
         env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
             CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
-            bash "$SCRIPT_DIR/cmd_complete.sh" "$CMD_ID" "$BUNDLE_PATH" \
+            CMD_COMPLETE_CHECKPOINT_DIR="$CHECKPOINT_DIR" \
+            CMD_COMPLETE_SOURCE_SNAPSHOT="$CMD_COMPLETE_SOURCE_SNAPSHOT" \
+            bash "$CMD_COMPLETE_SOURCE_SNAPSHOT" "$CMD_ID" "$BUNDLE_PATH" \
             </dev/null >>"$_tail_log" 2>&1 9>&-
     fi
     exit 0
 fi
+run_checkpointed archive_terminal archive_terminal
 # Distinct commands have distinct checkpoint locks, so their detached tails can
 # otherwise enter dashboard_update's 10s flock concurrently and each start an
 # independent retry loop.  Queue them once at the wrapper boundary instead.

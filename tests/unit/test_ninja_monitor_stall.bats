@@ -2631,6 +2631,48 @@ fi
     [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
 }
 
+# test_necessity: terminal pending work must be persisted while Karo is busy;
+# watcher-owned wake-up must not depend on pane idleness or direct input.
+@test "check_inbox_renudge: busy karo still receives exactly-once pending mailbox notice" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+printf "task:\n  status: done\n  task_id: busy_pending\n  parent_cmd: cmd_busy_pending\n" > "$SCRIPT_DIR/queue/tasks/hanzo.yaml"
+printf "status: completed\nverdict: PASS\n" > "$SCRIPT_DIR/queue/reports/hanzo_report_cmd_busy_pending.yaml"
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s from=%s msg=%s\\n" "\$1" "\$3" "\$4" "\$2" >> "$TMP_ROOT/inbox.log"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+NINJA_NAMES=(); KARO_PANE="shogun:agents.1"
+declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 1; }
+safe_send_keys_atomic() { echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"; return 0; }
+
+check_inbox_renudge
+check_inbox_renudge
+test "$(grep -c "INBOX-WRITE-CALLED: to=karo type=pending_work" "$TMP_ROOT/inbox.log")" -eq 1
+test ! -e "$TMP_ROOT/direct_nudge.log"
+grep -q "KARO-PENDING-INBOX" "$LOG"
+printf "%s\\n" "busy_notice=1 direct_nudge=0"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"busy_notice=1 direct_nudge=0"* ]]
+}
+
 # test_necessity: 軍師LGTM済みdoneを処理不要SKIPせず、既存世代dedupeで家老完了処理要求を一度だけ送る不変量。
 @test "check_inbox_renudge: reviewed done report requests karo completion exactly once" {
     run bash -lc '

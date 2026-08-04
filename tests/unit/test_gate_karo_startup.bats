@@ -158,6 +158,33 @@ YAML
   [[ "$output" == *'OK: failed_unclosed 0件'* ]]
 }
 
+# test_necessity: completed/pass task generations with a live report remain
+# visible until the archive marker is paired with the ordered terminal tail.
+@test "startup gate reports completed_unarchived once and clears after terminal archive" {
+  fixture="$TMPDIR_CASE/completed-unarchived"
+  mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/gates/cmd_done" \
+    "$fixture/scripts/lib"
+  awk '/^# --- Check 9.2b:/{copy=1} /^# --- Check 9.3:/{copy=0} copy' \
+    "$ROOT/scripts/gates/gate_karo_startup.sh" > "$fixture/check.sh"
+  cat > "$fixture/queue/tasks/alpha.yaml" <<'YAML'
+task:
+  status: done
+  task_id: task_done
+  parent_cmd: cmd_done
+YAML
+  printf 'status: completed\nverdict: PASS\n' > "$fixture/queue/reports/alpha_report_cmd_done.yaml"
+
+  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/check.sh"' _ "$fixture"
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | grep -c 'ALERT: alpha completed_unarchived task=cmd_done')" -eq 1 ]
+
+  : > "$fixture/queue/gates/cmd_done/archive.done"
+  printf '%s\n' '[cmd_complete] COMPLETE cmd_done' > "$fixture/queue/gates/cmd_done/completion_tail.log"
+  run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/check.sh"' _ "$fixture"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'OK: completed_unarchived 0件'* ]]
+}
+
 @test "startup gate excludes an older failed generation after same task_id reassignment" {
   fixture="$TMPDIR_CASE/failed-reassigned"
   mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/archive/reports" "$fixture/scripts/lib"
