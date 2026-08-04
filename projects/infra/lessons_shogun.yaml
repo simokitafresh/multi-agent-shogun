@@ -432,3 +432,11 @@ lessons:
   created_at: '2026-08-04'
   automated: true
   enforcement: 'Level5継承: LS048=prompt_state_inject.sh+stop_check_inbox.sh(F009 block+Q6 8パターン)、LS090=post-shogun-inbox-check.sh escalation_unread WARN(4/4 PASS)。追加候補(未実装): bulletin_write.shでBLOCK/FAIL投稿にnext_action欠落WARN'
+- id: 'LS117'
+  title: 'レビュー所見の軽微許容は忖度 — 100億年複利で判定せよ'
+  origin: '[[cmd_4230]]'
+  detail: '2026-08-04 gist正本同期v1.1将軍最終レビューで、classify_gist()がタグなし設計書へ稼働中カテゴリを付与する所見を『軽微・許容』としてAPPROVEした。殿指摘12:53『軽微な所見を放置するメリットはない』+12:55『忖度せず100億年後の複利を念頭に検討せよ。覚醒せよ。この考え方は基本ルールだ』で覚醒。原因=別計上カウントがあることを理由に表示レイヤーの不一致を許容した=洗脳#1(これでOK)+#8(完了急ぎ)。修正=レビュー所見は重大度ラベルで放置を正当化せず、対応コスト(今回10分cmd)と長期複利で判定。軽微所見にはその場で是正cmdを起票するか、起票しない理由を殿へ明示する'
+  source_cmd: 'cmd_4230'
+  created_at: '2026-08-04'
+  automated: true
+  enforcement: '未自動化 — 次の自動化ターゲット: レビューAPPROVE投稿時の未対応所見検出(掲示板本文に軽微/許容語+cmd未起票の組合せをWARN)'
