@@ -2029,6 +2029,54 @@ print("persist=1 nudge=1 delivery_verify=1 total=1 false_positive=0 additive_row
 PY
 }
 
+# test_necessity: inbox_write_total caller metadata is additive-only and keeps
+# the parent total count exactly one per invocation for representative runtime
+# callers plus an invalid/unknown fallback.
+@test "B5 telemetry records caller classification without adding ledger rows" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs"
+    export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
+
+    local caller content
+    for caller in cmd_complete_gate ninja_monitor deploy_task; do
+        content="caller-$caller"
+        run env INBOX_WRITE_RUNTIME_CALLER="$caller" bash "$TEST_INBOX_WRITE" \
+            test_agent "$content" info testninja notify_karo
+        [ "$status" -eq 0 ]
+    done
+    run env INBOX_WRITE_RUNTIME_CALLER='invalid caller' bash "$TEST_INBOX_WRITE" \
+        test_agent caller-unknown info testninja notify_karo
+    [ "$status" -eq 0 ]
+
+    local attempt
+    for attempt in $(seq 1 100); do
+        [ -f "$DEFENSE_OVERHEAD_LEDGER" ] \
+            && [ "$(grep -c '"'"'\"check_id\":\"inbox_write_total\"'"'"' "$DEFENSE_OVERHEAD_LEDGER" || true)" -ge 4 ] \
+            && break
+        sleep 0.05
+    done
+    python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json
+import sys
+
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8")]
+totals = [row for row in rows if row.get("check_id") == "inbox_write_total"]
+assert len(totals) == 4, len(totals)
+counts = {}
+for row in totals:
+    caller = row.get("caller")
+    assert caller
+    counts[caller] = counts.get(caller, 0) + 1
+assert counts == {
+    "cmd_complete_gate": 1,
+    "ninja_monitor": 1,
+    "deploy_task": 1,
+    "unknown": 1,
+}, counts
+print("caller_values=4 total_rows=4 additive_rows=1 unknown=1")
+PY
+}
+
 @test "task_assigned: codex non-ninja delivery verification uses inbox read only" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/bin"

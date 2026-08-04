@@ -60,10 +60,25 @@ IW_ROOT_BASHPID="${BASHPID:-$$}"
 
 iw_record_timing() {
     local check_id="$1" started_us="$2" verdict="${3:-PASS}"
-    local finished_us="${EPOCHREALTIME/./}" wall_ms
+    local finished_us="${EPOCHREALTIME/./}" wall_ms caller metadata_json
     wall_ms=$(( (finished_us - started_us + 999) / 1000 ))
-    defense_overhead_write_async inbox_write "$check_id" "$wall_ms" "$verdict" \
-        "inbox_write-${check_id}-${IW_ROOT_BASHPID}-${finished_us}" || true
+    if [ "$check_id" = "inbox_write_total" ]; then
+        # `FROM` is the stable caller label already supplied by every normal
+        # inbox_write callsite. An explicit override keeps wrapper/fixture
+        # callers observable without adding a process or filesystem lookup to
+        # this hot path. The field is metadata-only: existing six-key ledger
+        # consumers continue to select source/check_id/wall_ms/verdict/event_id.
+        caller="${INBOX_WRITE_RUNTIME_CALLER:-${INBOX_WRITE_CALLER:-${FROM:-unknown}}}"
+        case "$caller" in
+            ''|unknown|UNKNOWN|*[!A-Za-z0-9_.:-]*) caller=unknown ;;
+        esac
+        metadata_json=$(printf '{"caller":"%s"}' "$caller")
+        defense_overhead_write_async inbox_write "$check_id" "$wall_ms" "$verdict" \
+            "inbox_write-${check_id}-${IW_ROOT_BASHPID}-${finished_us}" "$metadata_json" || true
+    else
+        defense_overhead_write_async inbox_write "$check_id" "$wall_ms" "$verdict" \
+            "inbox_write-${check_id}-${IW_ROOT_BASHPID}-${finished_us}" || true
+    fi
 }
 
 iw_record_total_on_exit() {
