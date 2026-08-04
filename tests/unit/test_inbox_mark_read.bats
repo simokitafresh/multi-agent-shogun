@@ -404,3 +404,57 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"ACK_TS_PRESERVED"* ]]
 }
+
+# test_necessity: Every YAML null scalar spelling must be timestamped exactly
+# once, while an existing timestamp and inactive task remain unchanged.
+@test "mark-read treats YAML null scalars as missing and skips inactive tasks" {
+    mkdir -p "$TEST_ROOT/queue/tasks"
+
+    for null_value in null Null NULL '~' ''; do
+        _create_inbox hanzo
+        if [ -n "$null_value" ]; then
+            printf "task:\n  parent_cmd: cmd_999\n  status: assigned\n  acknowledged_at: %s\n" "$null_value" > "$TEST_ROOT/queue/tasks/hanzo.yaml"
+        else
+            cat > "$TEST_ROOT/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_999
+  status: assigned
+  acknowledged_at:
+YAML
+        fi
+
+        run bash "$TEST_SCRIPT" hanzo msg_001
+        [ "$status" -eq 0 ] || {
+            echo "null_value=${null_value:-<empty>} validation_output=$output"
+            return 1
+        }
+        run python3 - <<PY
+import re
+import yaml
+data = yaml.safe_load(open("$TEST_ROOT/queue/tasks/hanzo.yaml"))
+ack_value = data["task"].get("acknowledged_at", "")
+ack = ack_value.isoformat() if hasattr(ack_value, "isoformat") else str(ack_value)
+assert re.match(r"^202[0-9]-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$", ack), ack
+PY
+        [ "$status" -eq 0 ] || {
+            echo "null_value=${null_value:-<empty>} validation_output=$output"
+            return 1
+        }
+    done
+
+    _create_inbox hanzo
+    cat > "$TEST_ROOT/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_999
+  status: done
+  acknowledged_at: null
+YAML
+    run bash "$TEST_SCRIPT" hanzo msg_001
+    [ "$status" -eq 0 ]
+    run python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$TEST_ROOT/queue/tasks/hanzo.yaml"))
+assert data["task"]["acknowledged_at"] is None
+PY
+    [ "$status" -eq 0 ]
+}

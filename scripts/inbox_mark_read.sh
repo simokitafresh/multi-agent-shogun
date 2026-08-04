@@ -71,7 +71,13 @@ record_task_acknowledged_at() {
         in_task && /^  acknowledged_at:/ { gsub(/["'\'']/, "", $2); print $2; exit }
         !in_task && /^acknowledged_at:/ { gsub(/["'\'']/, "", $2); print $2; exit }
     ' "$task_file" 2>/dev/null || true)
-    [ -z "$ack_existing" ] || return 0
+    # YAML null scalars are parsed as missing values.  Treat the canonical
+    # spellings as empty, while preserving any real timestamp verbatim.
+    local ack_normalized="${ack_existing//[[:space:]]/}"
+    case "$ack_normalized" in
+        ""|null|Null|NULL|"~") ack_existing="" ;;
+        *) return 0 ;;
+    esac
 
     ack_ts=$(date '+%Y-%m-%dT%H:%M:%S')
     bash "$yfs" "$task_file" task acknowledged_at "$ack_ts" >/dev/null 2>&1 || true
