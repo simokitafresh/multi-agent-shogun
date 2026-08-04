@@ -1757,7 +1757,7 @@ print(yaml_text(data, sort_keys=False), end='')
                   "$dot_key" == "hook_failures.details.post_verification_result" ]]; then
                 local fixed
                 fixed=$(PYTHONPATH="$SCRIPT_DIR" DOT_KEY="$dot_key" python3 -c '
-import os, sys, yaml
+import json, os, sys, yaml
 
 canon = {
     "PASS": "all_pass", "all_pass": "all_pass",
@@ -1919,7 +1919,7 @@ elif [[ "$DOT_KEY" == "commit_hash" ]] && { [[ "$VALUE" =~ ^[0-9a-f]{40}$ ]] || 
         *) _rfs_ch_verdict="" ;;
     esac
     if [ -n "$_rfs_ch_verdict" ] && REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
-import os, sys, yaml
+import json, os, sys, yaml
 data = yaml.safe_load(open(os.environ['REPORT_PATH'], encoding='utf-8')) or {}
 checks = (data.get('binary_checks') or {}).get('commit')
 def is_yes(value):
