@@ -9283,9 +9283,20 @@ while true; do
                     # liveness decisions and must not be bypassed by an automatic
                     # task reset + /clear here.
                     if [ "$_s1_task_status" = "in_progress" ]; then
-                        log "STAGE1-IN-PROGRESS: $name idle observation while task is active, /clear禁止"
-                        PREV_STATE[$name]="busy"
-                        continue
+                        # Bug fix: in_progress + idle pane = report完了済みの可能性。
+                        # check_and_update_done_taskで最新状態を確認し、doneに遷移
+                        # できればSTAGE1ブロックを解除してhandle_confirmed_idleへ進む。
+                        # 根因: fast_pathのAUTO-DONEとSTAGE1の間で報告提出→GATE CLEAR
+                        # が発生するとSTAGE1が古いin_progressでcontinueし、clearが
+                        # 次サイクルまで最大20秒+遅延する(実測14分の遅延事例あり)。
+                        if check_and_update_done_task "$name" 2>/dev/null; then
+                            log "STAGE1-IN-PROGRESS-RESOLVED: $name was in_progress but report completed, proceeding to clear"
+                            _s1_task_status="done"
+                        else
+                            log "STAGE1-IN-PROGRESS: $name idle observation while task is active, /clear禁止"
+                            PREV_STATE[$name]="busy"
+                            continue
+                        fi
                     fi
                     # cmd_1156 AC2: pre-start task timeout safety valve
                     _s1_task_mtime=$(stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
