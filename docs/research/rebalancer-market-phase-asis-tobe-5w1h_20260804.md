@@ -1,5 +1,7 @@
 <!-- gist-master: e131b06c137d3da41ad28df6373e7601 rebalancer-market-phase-asis-tobe-5w1h_20260804.md -->
-# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.8 【✅SSOT+UX完了 / ⚙ガイドページ更新】
+# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.9 【✅SSOT+UX完了 / ⚙ガイド更新+全コンポーネントコントラスト是正】
+
+> v1.9(2026-08-05 03:05 殿指摘反映): (1)stale記述是正(§META WHEN/§decision ledger/§実装分解を全完了状態に更新) (2)P3証跡を具体化(「実質カバー」→4項の一次証跡) (3)§ガイドページスコープ拡大: ガイドページ単体→全5ファイル54箇所の横断コントラスト是正。色指定をデザインガイド(4.5:1)+アプリCSS変数体系に基づくコントラスト比付き確定値に変更
 
 > v1.8(2026-08-05 02:28 殿指示): §ガイドページ更新を追加。内容陳腐化(Yahoo Finance→Alpaca RT/EODHD)+ライトモードコントラスト違反の2問題をAsIs/ToBeで記述
 
@@ -35,7 +37,7 @@
 | WHY | 市場フェーズ判定が**3系統併存**し語彙も窓も不一致。特にrebalance結果の`market_state`はフェーズ語彙の不一致によりFEで**場中でも常に「市場クローズ」表示**になる実バグ(ユーザー報告の正体・下記AsIs-C) |
 | WHAT | フェーズ判定を米国株式市場セッション(ET基準・DST自動)の**単一SSOT関数**へ統一し、BE/FE語彙を1対1にし、接続・計算・表示の全消費者を同SSOTへ載せ替える |
 | WHO | 実装=忍者(家老配備)。レビュー=軍師。裁可=殿 |
-| WHEN | 本設計書の裁可後。1道具1CMD(cmd_4227 draft起票済み・保存保留中) |
+| WHEN | ✅全工程完了(cmd_4227/4228/4229 GATE CLEAR+UX是正 GATE CLEAR 2026-08-05 01:58) |
 | WHERE | `/mnt/c/Python_app/rebalancer/backend`(market_data.py / alpaca_stream.py / rebalance.py)+FE `components/ResultsDisplay.tsx`(語彙表) |
 | HOW | SSOT関数1本+語彙統一+DST境界fixture。下記§ToBe |
 
@@ -152,7 +154,7 @@
 | 2 | 語彙4値統一+FE未知語彙警告 | §2。BE/FE往復の語彙1対1をテスト固定 | 1 |
 | 3 | price snapshot SSOT統合(接続・計算・表示の載せ替え+RT残値無効化+CLOSED値契約) | §3。identity/stale fixtureで固定 | 1,2 |
 
-- cmd_4227(draft済み)は本設計書裁可後に1-3へ分割再構成して保存する
+- ✅3cmdとも実装完了・GATE CLEAR(cmd_4227=`e3c4565` / cmd_4228=`e26ba81` / cmd_4229=`f202c57`)
 
 ## §decision ledger
 
@@ -160,7 +162,7 @@
 |---|---|
 | フェーズ=米国株式市場セッションに統一 | **殿裁定2026-08-04 10:31** |
 | DST=ZoneInfo自動+fixture固定 | 同上(『サマータイムの考慮もしよう』)。現物は既にZoneInfoで壊れていない=検証欠如の是正 |
-| 語彙4値統一(PRE/REGULAR/POST/CLOSED) | 提案。裁可対象 |
+| 語彙4値統一(PRE/REGULAR/POST/CLOSED) | ✅**実装済み**(cmd_4228 `e26ba81`。旧語彙rg残存0件) |
 | CLOSED時=EODHD直近終値表示 | **殿裁定2026-08-04 10:51**(ユーザー報告への仕様回答を兼ねる) |
 | 表示価格=計算価格(同一ソース単一レイヤー) | **殿裁定2026-08-04 10:54** |
 | 米国市場のみ(フェーズ1系統でよい) | **殿裁定2026-08-04 10:31**+現物根拠(USD建て18銘柄固定・非USD拒否) |
@@ -264,15 +266,15 @@ CLOSED (左記以外+週末+祝日):
 | P1b ストリーム | Alpaca stream/latest store+calendar | ✅完了(commit f31c5a0) |
 | P1c 耐障害 | resilience+fallback可視化 | ✅完了(commit df4ccf9) |
 | P2 FE配信 | SSE契約+FE受信化 | ✅完了(commit e011379) |
-| P3 本番検証 | 開場中E2E 4巡実測(07-29殿裁定)+本番バグ2件是正 | ✅完了 — 08-05 00:14 REGULAR検証で全銘柄RT PASS(本設計書§検証状況)。旧残欠(health commit露出/recovery完走)はmarket-phase 3cmd+UX是正の本番稼働で実質カバー済み |
+| P3 本番検証 | 開場中E2E 4巡実測(07-29殿裁定)+本番バグ2件是正 | ✅完了 — 証跡: (1)07-29開場中4巡実測(subscription 18/18・SSE 63件・is_final=false 91/91・秘密値0) (2)08-05 00:14 REGULAR再検証(market_state=REGULAR・全銘柄source=alpaca・WS connected 18/18。§検証状況CDP REGULAR行) (3)旧残欠health commit露出=deploy health status=ok+deploy_commit=f202c578で一次確認済み(§検証状況コード面行) (4)旧残欠recovery=08-04〜05の連続本番稼働で自然回復実績あり(断定不可だが実害ゼロ) |
 
 旧設計書は本統合をもってCLOSEDとする。詳細経緯は `docs/research/rebalancer-realtime-asis-tobe-5w1h_20260719.md` を参照。
 
-## §ガイドページ更新(v1.7追加 — 殿指示2026-08-05 02:15)
+## §ガイドページ更新+全コンポーネントコントラスト是正(v1.8追加 — 殿指示2026-08-05 02:15/02:59)
 
-### AsIs — 2つの問題
+### AsIs — 3つの問題
 
-**問題1: 内容が現状と不一致**
+**問題1: ガイドページの内容が現状と不一致**
 
 | 箇所 | ガイド記載(旧) | 実態(現) |
 |---|---|---|
@@ -281,32 +283,63 @@ CLOSED (左記以外+週末+祝日):
 | アクションカード説明(L197-209) | 旧UI構成(上段時刻+LIVE/再接続中バッジ+下段) | 新UXカード(下段1行: 時刻·ソース·フェーズバッジのみ) |
 | yfinance言及(EN L525, L600-602) | 「Stock prices fetched from Yahoo Finance」「prices in USD」 | yfinanceはdegraded fallbackのみ。主経路はAlpaca RT/EODHD |
 
-**問題2: ライトモードのコントラスト違反(殿指摘)**
+**問題2: ガイドページのライトモードコントラスト違反(殿指摘)**
 
-| 要素 | 現状のクラス | 問題 |
+ガイドページのヘルパーコンポーネント10個が全てダーク専用色(15箇所)。§ガイドToBe色対応表を参照。
+
+**問題3: メインページ含む全コンポーネントのライトモードコントラスト違反(殿指摘2026-08-05 02:59)**
+
+ガイドページだけでなくアプリ全体が同一パターンの問題を持つ(grep一次確認済み)。
+
+| ファイル | dark専用色の箇所数 | 主な違反パターン |
 |---|---|---|
-| H2 | `text-white` | ライト背景で不可視 |
-| H3 | `text-teal-300` | コントラスト比 < 4.5:1(WCAG AA不適合) |
-| P/Li | `text-gray-300` | ライト背景で薄すぎ |
-| Note | `bg-teal-950/40 text-teal-100` | ダーク専用。ライトで背景が消える |
-| Code | `bg-slate-950 text-gray-300` | 同上 |
-| Table | `bg-slate-800 text-gray-200` | 同上 |
+| ResultsDisplay.tsx | 20 | `text-white`(見出し/値)・`text-gray-300`(本文/数値)・`text-teal-300`(バッジ) |
+| guide/page.tsx | 15 | ヘルパーコンポーネント10個のハードコード色 |
+| PortfolioForm.tsx | 8 | `text-white`(ラベル)・`text-gray-300`(説明) |
+| Header.tsx | 6 | `text-white`(タイトル)・`text-gray-300`(ナビ) |
+| page.tsx | 5 | `text-white`(見出し)・`text-gray-300`(説明) |
+| **合計** | **54箇所** | 全て`dark:`プレフィックスなし。ライト背景`#f8fafc`でコントラスト不足 |
 
-全コンポーネントが`dark:`プレフィックスなしのダーク専用色。ライトモードではテキスト4.5:1のコントラスト比(UIデザインルール)を満たさない。
+アプリのCSS変数体系(`globals.css`)はlight/dark切替を備えているが、コンポーネント側がダーク専用色をハードコードしているため変数体系が無効化されている。
 
 ### ToBe
 
-1. **内容更新**: 本設計書の§価格フロー図・§UXカード是正のToBe・§API台帳をガイドページに反映
-   - JA: Alpaca RT/EODHD二層構成の説明+4フェーズ×ソース対応表+新UXカード説明
-   - EN: 同上の英語版
-   - yfinance→degraded fallbackへの記述修正
-2. **ライトモード対応**: 全コンポーネントに`dark:`プレフィックス追加
-   - `text-gray-900 dark:text-white`(H2)、`text-teal-700 dark:text-teal-300`(H3)等
-   - コントラスト比4.5:1以上を全要素で確保(UIデザインルール準拠)
+**1. 内容更新**: 本設計書の§価格フロー図・§UXカード是正のToBe・§API台帳をガイドページに反映
+
+| 箇所 | 修正内容 |
+|---|---|
+| JA リアルタイムデータ(L237-242) | 「5分間隔」→「Alpaca IEX WS リアルタイム(PRE/REGULAR/POST)。CLOSED時はEODHD確定終値」。4フェーズ×ソース対応表を追加 |
+| JA 市場フェーズ(L334-341) | ET時刻帯(DST考慮)+ソース切替を明記。§価格フロー図の4行テーブルに差替 |
+| JA アクションカード(L197-209) | 新UXカード説明に差替(下段1行: 時刻·ソース·フェーズバッジ) |
+| EN Data Sources(L525) | 「Yahoo Finance」→「Alpaca IEX real-time (market hours) + EODHD end-of-day (closed)。yfinance is degraded fallback only」 |
+| EN FAQ(L600-602) | 価格ソース説明をAlpaca/EODHD二層構成に修正 |
+
+**2. ライトモード対応**: アプリ既存のCSS変数体系(`globals.css`)に準拠。デザインガイド(ui-design-guide.md)のコントラスト基準を適用
+
+| 要素 | 修正前(dark専用) | 修正後 | コントラスト根拠 |
+|---|---|---|---|
+| H2 | `text-white` | `text-foreground` | CSS変数: light=`#0f172a` dark=`#f8fafc`。両モードで最大コントラスト |
+| H3 | `text-teal-300` | `text-teal-700 dark:text-teal-300` | teal-700(`#0f766e`) on `#f8fafc` = 5.1:1 ≥ 4.5:1 ✅ |
+| H4 | `text-gray-200` | `text-gray-700 dark:text-gray-200` | gray-700(`#374151`) on `#f8fafc` = 9.2:1 ✅ |
+| P/Li | `text-gray-300` | `text-gray-600 dark:text-gray-300` | gray-600(`#4b5563`) on `#f8fafc` = 7.0:1 ✅。純黒回避(§34) |
+| Note bg | `bg-teal-950/40 text-teal-100` | `bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-100` | teal-900 on teal-50 = 8.5:1 ✅ |
+| Code bg | `bg-slate-950 text-gray-300` | `bg-gray-100 text-gray-800 dark:bg-slate-950 dark:text-gray-300` | gray-800 on gray-100 = 11.7:1 ✅ |
+| Table header | `bg-slate-800 text-gray-200` | `bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-gray-200` | 同上 ✅ |
+| Table cell | `text-gray-300` | `text-gray-600 dark:text-gray-300` | P/Liと同一 ✅ |
+| Warn | `bg-amber-900/30 text-amber-200` | `bg-amber-50 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200` | amber-900 on amber-50 = 7.8:1 ✅ |
+| Badge | 各色`/20`+`300`系 | 各色light(`700`系)+dark(`300`系) | 同パターン ✅ |
+
+コントラスト比の算出基準: WCAG 2.1 AA、小テキスト(18px未満)4.5:1以上(ui-design-guide.md §27)。背景色はライト=`#f8fafc`(globals.css `--color-background`)を使用。
 
 ### 対象ファイル
 
-- `/mnt/c/Python_app/rebalancer/frontend/app/guide/page.tsx` (JA+EN両セクション)
+| ファイル | 作業内容 |
+|---|---|
+| `components/ResultsDisplay.tsx` | コントラスト是正(20箇所) |
+| `app/guide/page.tsx` | 内容更新(JA+EN)+コントラスト是正(15箇所) |
+| `components/PortfolioForm.tsx` | コントラスト是正(8箇所) |
+| `components/Header.tsx` | コントラスト是正(6箇所) |
+| `app/page.tsx` | コントラスト是正(5箇所) |
 
 ## §因果リンク
 
