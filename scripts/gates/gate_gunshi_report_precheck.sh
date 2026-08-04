@@ -1044,8 +1044,14 @@ print(f"MISMATCH mode={'strict' if strict else 'subset'} missing={','.join(missi
 PY
 )
         if [ "${_set_status:-}" != "OK" ] && [ -n "${_set_status:-}" ]; then
-            echo "  ERROR: lessons_useful集合がtask契約と不一致 → GATE BLOCK確実: ${_set_status}"
-            ERRORS=$((ERRORS + 1))
+            # subset+extra-only(忍者が自発的に教訓を発見・使用)はWARN止まり。
+            # missing有り or strict modeはERROR(GATE BLOCK確実)。
+            if echo "$_set_status" | grep -qP 'mode=subset.*missing=none.*extra=[^n]'; then
+                echo "  WARN: lessons_useful集合にtask契約外あり(自発使用): ${_set_status}"
+            else
+                echo "  ERROR: lessons_useful集合がtask契約と不一致 → GATE BLOCK確実: ${_set_status}"
+                ERRORS=$((ERRORS + 1))
+            fi
         else
             echo "  PASS: related_lessons=${_rl_count} lessons_useful=${_lu_count} set=${_set_status:-unchecked}"
         fi
