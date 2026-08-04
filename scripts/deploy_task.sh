@@ -10807,6 +10807,138 @@ check_entrance_gate() {
     return 0
 }
 
+# Validate an explicit cross-command scout hand-off.  The ordinary scout gate
+# deliberately counts only live tasks with the same parent_cmd; completed
+# scouts are routinely archived and their workers reused, so an impl task may
+# instead name the exact reviewed reports it consumes.
+validate_explicit_scout_reports() {
+    local task_file="$1"
+    # Keep the common legacy path shell-only.  Python/YAML validation is paid
+    # only by tasks that explicitly opt into cross-command report reuse.
+    if ! grep -qE '^[[:space:]]{2}scout_reports:[[:space:]]*' "$task_file" 2>/dev/null; then
+        return 3
+    fi
+    python3 - "$task_file" "$SCRIPT_DIR" <<'PY'
+import pathlib
+import sys
+
+import yaml
+
+task_path = pathlib.Path(sys.argv[1])
+root = pathlib.Path(sys.argv[2]).resolve()
+
+
+def block(reason):
+    print(f"BLOCK(scout_reports): {reason}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+try:
+    task_doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError) as exc:
+    block(f"task YAML unreadable: {exc}")
+task = task_doc.get("task", task_doc)
+if not isinstance(task, dict):
+    block("task mapping missing")
+if "scout_reports" not in task:
+    raise SystemExit(3)
+
+raw_paths = task.get("scout_reports")
+if not isinstance(raw_paths, list) or len(raw_paths) < 2:
+    block("at least two explicit report paths are required")
+
+allowed_roots = tuple(
+    (root / rel).resolve()
+    for rel in ("queue/reports", "queue/archive/reports", "archive/reports")
+)
+reports = []
+resolved_paths = set()
+report_ids = set()
+for index, raw_path in enumerate(raw_paths):
+    if not isinstance(raw_path, str) or not raw_path.strip():
+        block(f"entry[{index}] must be a non-empty repo-relative path")
+    lexical = pathlib.PurePosixPath(raw_path.strip())
+    if lexical.is_absolute() or ".." in lexical.parts:
+        block(f"entry[{index}] is outside repo scope: {raw_path}")
+    candidate = (root / lexical).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        block(f"entry[{index}] resolves outside repo: {raw_path}")
+    if not any(candidate == base or base in candidate.parents for base in allowed_roots):
+        block(f"entry[{index}] is not under an approved report directory: {raw_path}")
+    if candidate in resolved_paths:
+        block(f"duplicate report path: {raw_path}")
+    resolved_paths.add(candidate)
+    if not candidate.is_file():
+        block(f"report missing: {raw_path}")
+    try:
+        report = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        block(f"report unreadable ({raw_path}): {exc}")
+    if not isinstance(report, dict):
+        block(f"report is not a mapping: {raw_path}")
+    report_id = str(report.get("report_id") or "").strip()
+    if not report_id:
+        block(f"report_id missing: {raw_path}")
+    if report_id in report_ids:
+        block(f"duplicate report_id: {report_id}")
+    report_ids.add(report_id)
+    status = str(report.get("status") or "").strip().lower()
+    if status != "completed":
+        block(f"report status is not completed ({raw_path}): {status or 'missing'}")
+    task_type = str(report.get("task_type") or "").strip().lower()
+    if task_type not in {"scout", "recon"}:
+        block(f"report task_type is not scout/recon ({raw_path}): {task_type or 'missing'}")
+    verdict = str(report.get("verdict") or "").strip().upper()
+    if verdict not in {"PASS", "PASS_NO_IMPROVEMENT"}:
+        block(f"report verdict is not PASS-family ({raw_path}): {verdict or 'missing'}")
+    cmd_id = str(report.get("parent_cmd") or "").strip()
+    if not cmd_id.startswith("cmd_"):
+        block(f"report parent_cmd missing or invalid: {raw_path}")
+    reports.append((raw_path, cmd_id))
+
+metrics_path = root / "logs/gate_metrics.log"
+latest_gate = {}
+try:
+    for line in metrics_path.read_text(encoding="utf-8").splitlines():
+        parts = line.split("\t")
+        if len(parts) >= 3:
+            latest_gate[parts[1].strip()] = parts[2].strip().upper()
+except OSError as exc:
+    block(f"gate metrics unreadable: {exc}")
+
+review_path = root / "logs/gunshi_review_log.yaml"
+try:
+    review_doc = yaml.safe_load(review_path.read_text(encoding="utf-8")) or []
+except (OSError, yaml.YAMLError) as exc:
+    block(f"gunshi review log unreadable: {exc}")
+if not isinstance(review_doc, list):
+    block("gunshi review log is not a list")
+
+latest_review = {}
+for raw_entry in review_doc:
+    if not isinstance(raw_entry, dict):
+        continue
+    entry = raw_entry.get("review", raw_entry)
+    if not isinstance(entry, dict):
+        continue
+    if str(entry.get("review_type") or "").strip().lower() != "report":
+        continue
+    cmd_id = str(entry.get("cmd_id") or "").strip()
+    if cmd_id:
+        latest_review[cmd_id] = str(entry.get("verdict") or "").strip().upper()
+
+for raw_path, cmd_id in reports:
+    if latest_gate.get(cmd_id) != "CLEAR":
+        block(f"latest gate is not CLEAR ({raw_path}): {latest_gate.get(cmd_id, 'missing')}")
+    if latest_review.get(cmd_id) != "LGTM":
+        block(f"latest gunshi report review is not LGTM ({raw_path}): {latest_review.get(cmd_id, 'missing')}")
+
+print(f"PASS: explicit scout_reports={len(reports)} distinct_report_ids={len(report_ids)}")
+PY
+}
+
 # ─── 偵察ゲート: implタスクは偵察済みorscout_exempt必須 ───
 # cmd_1393: check_scout_gate Python→bash/awk化
 check_scout_gate() {
@@ -10883,6 +11015,25 @@ check_scout_gate() {
         log "scout_gate: PASS: report_merge.done exists for ${parent_cmd}"
         return 0
     fi
+
+    # 4.5 Explicitly reused, fully completed scouts from other parent commands.
+    # Absence (rc=3) preserves the historical same-parent counting contract;
+    # a present but invalid list always fails closed.
+    local _explicit_scout_output="" _explicit_scout_rc=0
+    _explicit_scout_output=$(validate_explicit_scout_reports "$task_file" 2>&1) || _explicit_scout_rc=$?
+    case "$_explicit_scout_rc" in
+        0)
+            log "scout_gate: ${_explicit_scout_output}"
+            return 0
+            ;;
+        3)
+            ;;
+        *)
+            log "${_explicit_scout_output}"
+            echo "${_explicit_scout_output}" >&2
+            return 1
+            ;;
+    esac
 
     # 5. scout/reconタスクのdone数カウント
     local done_count=0
