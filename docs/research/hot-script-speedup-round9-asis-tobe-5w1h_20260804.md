@@ -1,9 +1,11 @@
 <!-- gist-master: 59a5e79368f385cddfdb0656fd8ca3bd hot-script-speedup-round9-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.2 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.3 【🚀裁可済み・進行中】
+
+> v1.4(2026-08-05 00:14進捗同期): #0''偵察A/B・#1・#3はGATE CLEAR。別parent偵察再利用gate hotfixもcommit `c341e923fba7a3ad427f055569c24a015511a889`・focused 9/9・false判断0/7でGATE CLEAR済み。ただし#0''実装shardは現行task/report/gateが存在せず未配備のため、完了扱いしない。#4はpreflight mode metadata欠落、補欠Aは親子共通run_id欠落を一次特定して正当FAIL-close。両FAILは「数値不足」ではなく、次の高速化を可能にする計装identity欠落の発見である。
 
 > 状態: v1.2(2026-08-04 20:16 殿裁可『よい。追記したらレーン方式で家老にやらせよう』。§0.6母集団漏れ3系(git pre-push/Codex固有hook/セッション境界+基本コマンド)を弾#0''スコープへ同梱) / v1.1(2026-08-04 18:58 §0.6サイレント盲点サーベイ追加+弾#0''をhookチェーン計装として弾台帳へ追加) / v1.0初版起草(2026-08-04 18:46。殿発案『第九弾の設計書を作ろう。以前の設計書を参考にして同じスタイルで。進捗表も』)。序列=将軍一次実測18:46(下記§0)
 
-> シリーズ: ホットスクリプト集中高速化。第一弾〜第四弾✅ / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅(10レーン) / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(identity基盤完成・P1b蓄積待ち) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅(全量wall -3.35%確定) / 第八弾=`hot-script-speedup-round8-asis-tobe-5w1h_20260804.md`(🚀進行中: 弾#4 -65%済・#0'計装済・#1-#3/#5進行) / **第九弾=本書**
+> シリーズ: ホットスクリプト集中高速化。第一弾〜第四弾✅ / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅(10レーン) / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(identity基盤完成・P1b蓄積待ち) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅(全量wall -3.35%確定) / 第八弾=`hot-script-speedup-round8-asis-tobe-5w1h_20260804.md`(本体12/12 GATE CLEAR・wave checkpoint進行中) / **第九弾=本書**
 
 ## §-1 スコープと境界(数と原理を先に固定)
 
@@ -95,18 +97,24 @@
 
 - 弾#1→#2は同一script(heavy_job_admission)ゆえ直列。#3・#4は独立writerで並列可。補欠は条件成立後に殿へ昇格提案
 
-## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 22:42軍師更新)
+## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 23:15家老更新。gate_metrics/report/task一次突合)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
-| 0'' | CLIライフサイクルhook層計装 | ✅**Track A GATE CLEAR + Track B LGTM + impl配備済み** | Track A: 12/22到達対象、既存writer接続1件。Track B: LG043是正後LGTM。impl(Claude session hooks 4入口)配備中 |
-| 1 | `heavy_job_admission:execution` | ✅**偵察LGTM・GATE判定待ち** | n=2490/p95=132550ms/p99=733110ms/max=1191s。p95上125件=total 80.8%。外れ値型 |
-| 3 | `deploy_task:deploy_total` | ✅**偵察LGTM・GATE判定待ち** | n=3930/p50=1815ms/p95=49980ms。最大寄与=report_publication 366回2146s。未計装残差98% |
-| 4 | `cmd_save:save_total`+`checks_main` | 🔄**偵察配備中**(小太郎) | — |
-| 2 | `heavy_job_admission:queue_wait` | ⏳未配備(#1後直列) | — |
-| 補欠A | `full_precheck`本体 | 🔒条件待ち(第八弾#5帰結) | — |
-| 補欠B | 新規*_total群 | 🔒計測蓄積待ち | — |
-| 補欠C | 共有lock競合ファミリー | ⏳未配備 | — |
+| 0'' | CLIライフサイクルhook層計装 | ✅**偵察Track A/B GATE CLEAR** / ✅**再利用gate hotfix GATE CLEAR** / ⏸️**impl未配備** | Track A=`cmd_karo_round9_lane0pp_hook_instrument_recon_20260804`: 到達12/22・既存writer接続1件・fixture 100行/平均4.568ms。Track B=`cmd_karo_round9_lane0pp_hook_instrument_recon_20260804_recon2`: 未接続11/11・commit-msg欠落1・task test 899/899 PASS。再利用gate hotfix=`cmd_karo_fix_scout_report_reuse_gate_20260804`: commit `c341e923fba7a3ad427f055569c24a015511a889`・focused 9/9・false判断0/7・GATE CLEAR。実装shardは現行task/report/gate不在のため未配備 |
+| 1 | `heavy_job_admission:execution` | ✅**偵察GATE CLEAR** | `cmd_karo_round9_lane1_heavy_execution_recon_20260804`: n=2490/zero=1729/nonzero=761/p95=132550ms/p99=733110ms/max=1191000ms/total=66858000ms。p99上位25件をevent_id分類。実装0件 |
+| 3 | `deploy_task:deploy_total` | ✅**偵察GATE CLEAR** | `cmd_karo_round9_lane3_deploy_total_recon_20260804`: n=3930/p50=1815.0ms/p95=49980.4ms/max=991086ms/total=40537853ms。`check_yaml_freshness`結合486件・子179171ms、未計装残差40358682ms。最大子区分`report_publication`=366回/2145960ms |
+| 4 | `cmd_save:save_total`+`checks_main` | ⚠️**偵察FAIL-close** | `cmd_karo_round9_lane4_cmd_save_recon_20260804`: save_total 155件、checks_main 2088件、結合108組。preflight mode metadata 0/155で全件分類不能、task wildcard実行0件、ac_version不一致。偽CLEARにせず計装課題へ還流 |
+| 2 | `heavy_job_admission:queue_wait` | ⏳未配備（#1後直列） | 現行queue task/report/gateなし。数値を推測して補わない |
+| 補欠A | `full_precheck`本体 | ⚠️**条件成立→偵察FAIL-close** | `cmd_karo_round9_spare_a_full_precheck_recon_20260804`: parent n=5362/child n=5039、共通run_idなし、unmatched=823・child-after-parent=9で一意結合不能。明示Bats 34/34 PASS。数値は正本再配備後に再結合する |
+| 補欠B | 新規*_total群 | 🔒計測蓄積待ち | 現行queue task/report/gateなし |
+| 補欠C | 共有lock競合ファミリー | ⏳未配備 | 直近下知の昇格撤回に従い元の条件待ちへ復帰。短期ノイズで追加契約を積まない |
+
+- **第九弾関連GATE CLEAR 5件**: #0'' Track A/B、#1、#3、再利用gate hotfix。偵察とgate hotfixはいずれも#0''是正実装のCLEARではなく、implは未配備。
+- **正式FAIL-close 2本**: #4と補欠A。どちらも欠損identityを数値特定して後続計装へ還流済み。偽CLEAR 0件。
+- **先行インフラ根治**: `scout_reports`明示再利用をcompleted・PASS・GATE CLEAR・軍師LGTM・異report_idでfail-closed検証するhotfixを小太郎が実装中。CLEAR後に#0'' implを再配備する。
+- **次レーン**: #0'' impl再配備（hotfix CLEAR後に新規task/report/gateを生成）、#2 queue_wait偵察、#4 mode metadata計装、補欠A共通run_id計装。補欠B/Cは計測条件待ち。
+- **正式効果**: 全是正弾完了後、修正後1週間ledger累積課税の前週比で確定。現時点は偵察段階ゆえ未確定。
 
 ## §3 decision ledger
 
