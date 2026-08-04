@@ -504,12 +504,7 @@ def _try_incremental_cache_snapshot(
                 return conn.execute(
                     """
                     SELECT COUNT(*), COALESCE(MAX(rowid), 0),
-                           MAX(COALESCE(updated_at, recorded_at, ts)),
-                           COALESCE(SUM(
-                               length(COALESCE(id, '')) +
-                               length(COALESCE(summary, '')) +
-                               length(COALESCE(detail, ''))
-                           ), 0)
+                           MAX(COALESCE(updated_at, recorded_at, ts))
                     FROM events WHERE rowid <= ?
                     """,
                     (watermark,),
