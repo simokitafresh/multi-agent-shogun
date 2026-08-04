@@ -1068,6 +1068,17 @@ insights:
   action_artifact: "logs/self_retro.jsonl#event_id=f40c8ce422e5bd710a91502c96325a007b4476871afa76866ac406dbdb1ff797"
   resolved_at: "2026-08-04T04:56:24+09:00"
 
+- id: INS-20260804-052332605-ba20
+  ts: "2026-08-04T05:23:32+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_ga432_context_freshness; matched=context; current_pattern=; candidate_level=4; candidate=cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_ga432_context_freshness"
+  fix_known: false
+  status: resolved
+  resolved_reason: "GP-223/225/226で教訓注入精度を修正済み、L650とCDP因果鎖がcontext/docs/semantic-indexへ還流済み"
+  action_artifact: "docs/research/gunshi_nazenaze_cdp_measurement_20260426.md §2-4; context/dm-signal-frontend.md L234; logs/gunshi_gp_tracker.yaml GP-223/225/226"
+  resolved_at: "2026-08-04T10:45:01+09:00"
+
 - id: INS-20260804-041057009-d16b
   ts: "2026-08-04T04:10:57+09:00"
   insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
