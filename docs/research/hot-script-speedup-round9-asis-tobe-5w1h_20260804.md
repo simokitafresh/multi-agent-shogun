@@ -122,6 +122,8 @@
 
 full/wave checkpointの全量テストを1名へ一括配備しない。以下の契約に従う。
 
+**Step 0 — test衛生・高速化を先に行う**: 固定HEAD化とshard実走の前に、当該waveで新規/変更した実装用testを `作成→PASS→同一task内で削除` し、永続testは全件に具体的不変量の `test_necessity` があることをN/Nで確認する。重複・陳腐・一時fixture残存を0件化し、残るcontract testは検出力を削らずrunner/fixture/共有資源を高速化してからmanifestを生成する。
+
 | 項 | 契約 |
 |---|---|
 | 並列度 | 3〜4名。1名一括配備禁止 |
@@ -131,6 +133,7 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 | 隔離 | lane固有worktree・TMPDIR・receipt。shard間の状態共有0 |
 | 最終判定 | receipt和集合: N/N(全件)・duplicate 0・missing 0・FAIL 0・SKIP 0・source_head全一致 |
 | 再実走 | 全量再実走を既定にせずshard単位で再実走。FAILしたshardのみ再実走 |
+| test肥大防止 | 新規/変更testの削除または`test_necessity`宣言率N/N。contract外test 0、不要fixture参照0をmanifest生成前に確認 |
 
 - origin: `[[殿裁定_全量テスト3_4名分割_20260805]] -> [[固定HEAD相互排他shard]] -> [[receipt和集合で全量検収]]`
 
