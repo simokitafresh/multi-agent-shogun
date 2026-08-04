@@ -1,0 +1,121 @@
+# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.0
+
+> 初版起草(2026-08-04 23:46。殿指示23:45『同じ仕組みで第十一弾の設計書も作成せよ。第十弾の候補を除外した8-15番目までをやろう』)
+
+> シリーズ: ホットスクリプト集中高速化。第一弾〜第七弾=✅CLOSED / **第八弾**=wave最終checkpoint進行中 / **第九弾**=レーン配備中 / **第十弾**=TOP7再攻撃(裁可待ち) / **第十一弾=本書**
+
+## §-1 スコープと境界(数と原理を先に固定)
+
+- **標的=直近24時間の累積課税8-15位**(第十弾TOP7を除いた次層8標的)。第八弾・第九弾で補欠・条件付きだった標的も含め、Tier 2で依然上位なら正式攻撃する
+- **二段計測(殿設計2026-08-04 23:34 — 第十弾から恒久導入)**:
+  - **Tier 1 劣化検知**: 修正後1週間のledger累積課税を前週比で総括
+  - **Tier 2 ボトルネック特定**: 直近24時間の絶対値で累積課税を序列化
+- **前弾との境界**: 第八弾補欠A(inbox_write)/補欠B(singleflight)/第九弾#4(cmd_save系)/第九弾補欠A(full_precheck)と重複する標的は、前弾の改善成果を引き継いだ上で残課税を攻撃する
+- **第十弾との境界**: 第十弾=1-7位、第十一弾=8-15位。writer重複がある場合は直列条件を設定(§2弾台帳の依存関係を参照)
+- **writer構造(第五〜十弾の写像)**: 1スクリプト(の1ホットパス)=1弾=1レーン。共有層(`scripts/lib/`)に触れる弾は独立writerかつ先行→固定HEADで再計測→個別弾の直列依存。並列変更禁止
+- **品質2原則堅持**: 正本突合判定+境界fixture両方を維持。防御の検証力は1点も削らない(殿裁定2026-07-21『削るな、速くしろ』が憲法)
+- **スコープ外**: gate/hookの削除・条件緩和(必須ハーネス保持=LS099)/テスト実行時間(第七弾CLOSED)/DM-Signal側Python(別repo)/第十弾標的全部
+- **方式=レーン方式**(殿裁可→将軍下知blt→家老レーン配備→gate_metricsへlane名CLEAR刻印→最終checkpointで品質2原則検分)
+- **lane最小AC/wave checkpointの二層契約**(殿恒久裁定2026-08-04 19:26): 【lane最小AC】focused fixture PASS+コード変更確認+p50/p95非悪化のみ。【wave最終checkpoint】全量FAIL0+全lane間独立比較+全量再測定+Tier 1前週比+Tier 2序列更新
+
+## §0 序列SSOT(2026-08-04 23:32 将軍一次実測 — 直近24時間)
+
+**取得方法**: `logs/defense_overhead.jsonl`から直近24時間を抽出し、source:check_id別にwall_msの累積・中央値・max・p95・呼出数を算出(Python statistics.median+sorted percentile)。1件=jsonl 1行=1計測イベント。第十弾標的(1-7位)は表に残すが背景扱い(本弾対象外)。
+
+### 累積課税序列(直近24時間・Tier 2)
+
+| 順 | source:check_id | 累積 | n | median | p95 | max | 型 | 前弾帰属 |
+|---|---|---|---|---|---|---|---|---|
+| - | 1-7位(refresh系3種・affected_tests・execution・deploy_total・queue_wait) | 659,341s合計 | — | — | — | — | — | 第十弾 |
+| 8 | `gate_gunshi_report_precheck:full_precheck` | **23,427s(≈6.5h)** | 5,381 | 1.07s | 17.6s | 288.9s | 恒常 | 第九弾補欠A |
+| 9 | `inbox_write:inbox_write_total` | **18,822s(≈5.2h)** | 9,197 | 0.33s | 6.1s | 96.2s | 外れ値 | 第八弾補欠A |
+| 10 | `gate_report_format:singleflight_hold` | **17,332s(≈4.8h)** | 8,276 | 0.39s | 11.9s | 61.2s | 外れ値 | 第八弾補欠B |
+| 11 | `cmd_save:checks_main` | **9,344s(≈2.6h)** | 2,089 | 1.28s | 21.2s | 141.1s | 恒常 | 第九弾#4の一部 |
+| 12 | `gate_gunshi_report_precheck:full_precheck_body_rest` | **6,143s(≈1.7h)** | 947 | 5.15s | 15.9s | 48.6s | 恒常 | 第八弾#5 |
+| 13 | `report_publish:publish_total` | **3,272s(≈0.9h)** | 3,749 | 0.37s | 1.6s | 55.1s | 外れ値 | 新規 |
+| 14 | `cmd_save:q11_semantic_search_overhead` | **3,086s(≈0.9h)** | 645 | 0.00s | 23.7s | 190.8s | 外れ値 | 第九弾#4の一部 |
+| 15 | `cmd_save:checks_main.quality_gate` | **2,720s(≈0.8h)** | 780 | 0.45s | 14.4s | 203.4s | 外れ値 | 第九弾#4の一部 |
+
+**読み**: (a)**full_precheck**(8位)はmed 1.07s×5,381回の恒常課税。第九弾補欠A(偵察FAIL-close: 共通run_idなしで一意結合不能)の知見を引き継ぐ。第八弾#5(body_rest=12位)とは同族上流の関係ゆえ直列条件要。(b)**inbox_write_total**(9位)はmed 0.33s×9,197回=最高頻度。1回は軽いが回数で累積する「砂粒型」。第八弾補欠Aだったが正式昇格。(c)**singleflight_hold**(10位)は報告gate同時発火時のlock待ち。med 0.39s×8,276回でinbox_writeと同格の砂粒型。(d)**cmd_save子区分**(11位checks_main・14位q11_semantic・15位quality_gate)は第九弾#4の分解。save_totalが可視化した未計装区間の内訳特定が続く。(e)**publish_total**(13位)は新規標的。med 0.37s×3,749回=配備パイプラインの一部で、deploy_total(第十弾#6)の子区分候補。
+
+## §1 計測境界(憲法・第五〜十弾継承+Tier 2)
+
+- 計測=既存台帳のみ(`logs/defense_overhead.jsonl`)。**新台帳禁止**(knowledge:fbb5716c)
+- before/afterは**同一スクリプト・同一check_id・同一環境**のfixed-window比較。異なるcheck_idの混算禁止
+- run間ノイズ: 各check_idの分布(p25/p75)を先に取り、Δ有意判定はノイズ帯超のみ
+- **Tier 1**: 効果宣言=**修正後1週間の累積課税(total秒)の前週比**を正式確定値とする
+- **Tier 2**: 弾標的選定=**直近24時間の累積課税絶対値**で序列化。依然上位なら再攻撃
+- 外れ値型(median ≈ 0)は中央値比較が無意味——**p95/p99と裾の総量(total)**で判定する
+- 恒常課税型(median > 1s)は**中央値×呼出数=累積課税**で判定する
+- **砂粒型**(median < 0.5s but n > 5,000): 1回は軽いが頻度で累積する。削減手筋=呼出回数削減 or 1回あたりの定数項削減
+
+## §2 To-Be — 進め方(型を継承)+品質底線
+
+1. **1標的=1弾・複合弾禁止**。恒常課税型=子区分計測→最大寄与是正/外れ値型=発火条件特定→条件ベース是正/砂粒型=呼出回数削減 or 定数項削減
+2. **品質底線**: (a)防御の検証力不変(precheck検証力・inbox配送保証・singleflight排他・cmd_save gate判定は全て固定。検証を弱める高速化禁止) (b)PASS/FAIL挙動不変=是正前後で同一入力の判定完全一致 (c)敵対fixture=是正で変更した独立oracle・副作用境界ごとに1点
+3. 仮説在庫(序列裏取り済みの初期観察のみ・事前外挿禁止): full_precheck=run_id結合不能(第九弾補欠A偵察知見)→計装identity追加後に再計測/inbox_write=pre-send capture(Phase 6起源)の累積課税疑い/singleflight=flock競合パターンの同定→wait条件是正/cmd_save子区分=save_total-checks_main差分の中身特定(第九弾#4知見引継ぎ)
+4. **反復サイクル型**: ローカル極限化→live計測→差分再検証→再極限化。停止条件=Δがノイズ帯以内でクローズ
+5. **read-only冗長並列**: 子区分計測・発火条件記録はread-only冗長2名先着採用可。是正実装は単独所有
+6. 個別弾は選択実行(`bash scripts/run_tests.sh file <対象>`)FAIL0・SKIP0のみ。途中try回数最大化
+7. 完了宣言=全弾クローズ→Tier 1(前週比)+Tier 2(直近24h序列再計測)→CLOSE刻印
+8. **方式=レーン方式**(将軍下知→家老配備→lane名CLEAR→最終checkpoint品質2原則検分)
+9. **lane最小AC/wave checkpointの二層契約**(殿恒久裁定2026-08-04 19:26)
+
+### 提案弾台帳(殿裁可で固定)
+
+| # | 標的 | 型 | 現状(直近24h) | 手筋候補(実測で裏取り後) |
+|---|---|---|---|---|
+| 1 | `gate_gunshi_report_precheck:full_precheck` | 恒常 | med 1.07s×5,381・total 23,427s | 第九弾補欠A偵察知見(run_id結合不能)引継ぎ。計装identity追加後に子区分計測→最大寄与是正 |
+| 2 | `inbox_write:inbox_write_total` | 砂粒 | med 0.33s×9,197・total 18,822s | pre-send captureの寄与率計測→不要呼出削減 or 非同期化。配送保証は不変 |
+| 3 | `gate_report_format:singleflight_hold` | 砂粒 | med 0.39s×8,276・total 17,332s | flock競合パターン同定→wait条件是正。singleflight排他保証は不変 |
+| 4 | `cmd_save:checks_main` | 恒常 | med 1.28s×2,089・total 9,344s | 第九弾#4知見(save_total差分)引継ぎ。子check別寄与率計測→最大寄与是正 |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | 恒常 | med 5.15s×947・total 6,143s | 第八弾#5知見引継ぎ。#1(full_precheck)と同族writerゆえ#1→#5直列 |
+| 6 | `report_publish:publish_total` | 砂粒 | med 0.37s×3,749・total 3,272s | 新規標的。子区分計測→最大寄与特定。deploy_total(第十弾#6)の子区分候補 |
+| 7 | `cmd_save:q11_semantic_search_overhead` | 外れ値 | med 0.00s×645・total 3,086s・max 190.8s | 長裾の発火条件特定。semantic_search.sh内のFTS5/DB呼出しパターン分解 |
+| 8 | `cmd_save:checks_main.quality_gate` | 外れ値 | med 0.45s×780・total 2,720s・max 203.4s | 長裾の発火条件特定。#4(checks_main)と同族writerゆえ#4→#8直列 |
+
+- #1→#5は同族writer(gate_gunshi_report_precheck)ゆえ直列。#4→#8は同族writer(cmd_save)ゆえ直列
+- #2・#3・#6は独立writerで並列可
+- 第十弾#6(deploy_total)と#6(publish_total)は親子関係の可能性あり。第十弾#6偵察で確定後に直列条件を判断
+
+## §2.5 進捗台帳(初版 — 未着手)
+
+| # | 標的 | 状態 | 帰結(実測生値) |
+|---|---|---|---|
+| 1 | full_precheck | ⏳着手可(第九弾補欠A知見あり) | — |
+| 2 | inbox_write_total | ⏳着手可(独立writer) | — |
+| 3 | singleflight_hold | ⏳着手可(独立writer) | — |
+| 4 | checks_main | ⏳着手可(第九弾#4知見あり) | — |
+| 5 | full_precheck_body_rest | ⏳#1完了後(同族writer直列) | — |
+| 6 | publish_total | ⏳着手可(独立writer) | — |
+| 7 | q11_semantic_search | ⏳着手可 | — |
+| 8 | quality_gate | ⏳#4完了後(同族writer直列) | — |
+
+## §3 decision ledger
+
+| 項 | 状態 |
+|---|---|
+| 第十一弾の起動 | 殿指示2026-08-04 23:45。裁可待ち |
+| 序列snapshot | 起草時実測済み(§0=2026-08-04 23:32・直近24時間・第十弾と同一snapshot) |
+| 弾数・標的固定 | 8-15位の8標的。殿裁可で固定 |
+| 同族writer直列条件 | #1→#5(precheck系)、#4→#8(cmd_save系)。裁可対象 |
+| 高速化と防御力の境界 | **確定**: 検証力不変・fail-closed維持・チェック間引き禁止(LS099/殿裁定07-21) |
+
+## §4 5W1H
+
+- **WHY**: 第十弾TOP7の下に累積21.4時間/日の次層8標的が控える。砂粒型(低median×高頻度)は個別には目立たないが累積でTOP7に迫る。前弾の補欠として後回しにされた標的を正式攻撃する(殿指摘2026-08-04 23:29『改善後も遅いものを無視してしまう』)
+- **WHAT**: 8-15位の8標的。恒常型2弾(precheck+checks_main)+砂粒型3弾(inbox+singleflight+publish)+外れ値型2弾(q11+quality_gate)+恒常型1弾(body_rest)。検証力不変
+- **WHEN**: 殿裁可後にレーン配備。独立writerの#2/#3/#6/#7は先行可。同族writer直列弾は前弾完了後
+- **WHERE**: `scripts/`配下のgate_gunshi_report_precheck.sh・inbox_write.sh・gate_report_format.sh・cmd_save.sh・report_publish(scripts内)。台帳=`logs/defense_overhead.jsonl`
+- **WHO**: 偵察・是正=忍者(read-only冗長2名可+是正は単独所有)、検分=家老+軍師、裁可=殿
+- **HOW**: レーン方式(将軍下知→家老配備→lane名CLEAR→最終checkpoint品質2原則検分)。Tier 1+Tier 2の二段計測で効果確認
+
+## §5 因果リンク
+
+- → [[hot-script-speedup-round10-asis-tobe-5w1h_20260804]] 同時起草の姉妹弾(TOP7)。writer重複なし
+- → [[hot-script-speedup-round8-asis-tobe-5w1h_20260804]] 補欠A(inbox)/補欠B(singleflight)/#5(body_rest)の成果引継ぎ元
+- → [[hot-script-speedup-round9-asis-tobe-5w1h_20260804]] 補欠A(full_precheck)/#4(cmd_save系)の成果引継ぎ元
+- → [[殿裁定_削るな速くしろ_20260721]] 品質を保ったまま超速化=憲法(knowledge:569abc55)
+- → [[ledger-driven-campaign-lane-pattern_20260714]] レーン方式の型元
+- → [[殿裁定_厳密さは最終チェックのみ_20260714]] 途中try最大化・報告整形は最終集約
+- origin: `[[殿指示_第十一弾_8_15位_20260804]] -> [[第十弾TOP7除外の次層]] -> [[砂粒型+前弾補欠の正式攻撃]]`
