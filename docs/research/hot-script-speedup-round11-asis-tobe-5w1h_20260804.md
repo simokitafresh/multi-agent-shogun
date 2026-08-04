@@ -1,3 +1,4 @@
+<!-- gist-master: 4571e36dca63e089831abaa8b1d6c275 hot-script-speedup-round11-asis-tobe-5w1h_20260804.md -->
 # ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.0
 
 > 初版起草(2026-08-04 23:46。殿指示23:45『同じ仕組みで第十一弾の設計書も作成せよ。第十弾の候補を除外した8-15番目までをやろう』)
