@@ -1129,3 +1129,22 @@ insights:
   resolved_reason: "76参照対を一次実測し、参照先実在・SKILL鮮度・例示パス・副作用実走マーカーが全てOK。rc=2はFOLLOWUP_ACTIVEのREVIEW_REQUIRED設計値で追加修正不要"
   action_artifact: "bash scripts/gates/gate_skill_script_refs.sh => references=76; existence=OK; freshness=OK; examples=OK; side_effect_markers=OK; FOLLOWUP_ACTIVE pairs=30; rc=2(REVIEW_REQUIRED)"
   resolved_at: "2026-08-04T12:32:08+09:00"
+- id: INS-20260804-142000313-9813
+  ts: "2026-08-04T14:20:00+09:00"
+  insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: resolved
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq '94a79de1fc59cc545350595cd2d4cb3e657f632af2348d1e085f58db2559c17a' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
+  occurrence_count: 10
+  last_seen: "2026-08-04T15:46:34+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
+  resolved_reason: "fix_known=true; verification.status=passed and verify_command exit 0; primary event and existing semantic/context records confirm no new implementation or decision is needed"
+  action_artifact: "logs/self_retro.jsonl#event_id=94a79de1fc59cc545350595cd2d4cb3e657f632af2348d1e085f58db2559c17a;context/semantic-map.md;docs/research/cmd_4123_self_retro_signal.md"
+  resolved_at: "2026-08-04T15:54:00+09:00"
