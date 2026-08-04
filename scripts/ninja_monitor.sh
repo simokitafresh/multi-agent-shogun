@@ -332,6 +332,7 @@ TRAINING_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_training_auto_deploy"
 REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=${REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD:-600}       # 還流在庫自動配備: idle継続しきい値（秒）
 REFLUX_AUTO_DEPLOY_COOLDOWN=${REFLUX_AUTO_DEPLOY_COOLDOWN:-3600}                 # 還流在庫自動配備: 忍者別クールダウン（秒）
 REFLUX_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_reflux_auto_deploy"
+REFLUX_DIRTY_NOTICE_STATE_PREFIX=${REFLUX_DIRTY_NOTICE_STATE_PREFIX:-$STATE_DIR/shogun_reflux_dirty_notice}
 REFLUX_PROMOTION_LEDGER="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}"
 REFLUX_PROMOTION_DEFERRED_LEDGER="${REFLUX_PROMOTION_DEFERRED_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_deferred.tsv}"
 REFLUX_BACKLINK_SCAN_LIMIT=${REFLUX_BACKLINK_SCAN_LIMIT:-50}                     # backlinksゼロ在庫の1回あたり確認上限
@@ -4374,6 +4375,74 @@ _reflux_auto_state_file() {
     printf '%s_%s.last\n' "${REFLUX_AUTO_DEPLOY_STATE_PREFIX:-$STATE_DIR/shogun_reflux_auto_deploy}" "$name"
 }
 
+# Return a stable status/content fingerprint only when the target path differs
+# from the committed worktree.  The reflux task's commit contract makes the
+# shared queue file its exclusive scope, so publishing a task for a foreign
+# dirty generation would hand the worker an impossible commit.  Include HEAD,
+# index, worktree and porcelain status so staged, unstaged and untracked
+# generations are distinct while unrelated paths remain invisible.
+_reflux_target_dirty_fingerprint() {
+    local target="$1" status head_blob index_blob worktree_blob fingerprint
+    [ -n "$target" ] || return 1
+    status=$(git -C "$SCRIPT_DIR" status --porcelain=v1 --untracked-files=all -- "$target" 2>/dev/null || true)
+    [ -n "$status" ] || return 1
+    head_blob=$(git -C "$SCRIPT_DIR" rev-parse "HEAD:$target" 2>/dev/null || printf 'missing')
+    index_blob=$(git -C "$SCRIPT_DIR" ls-files -s -- "$target" 2>/dev/null | awk 'NR == 1 {print $2}')
+    [ -n "$index_blob" ] || index_blob=missing
+    worktree_blob=$(git -C "$SCRIPT_DIR" hash-object -- "$target" 2>/dev/null || printf 'missing')
+    fingerprint=$(printf '%s\n%s\n%s\n%s\n' "$status" "$head_blob" "$index_blob" "$worktree_blob" | sha256sum | awk '{print $1}')
+    printf '%s\t%s\n' "$fingerprint" "$status"
+}
+
+_reflux_dirty_notice_state_file() {
+    local target="$1" target_key
+    target_key=$(printf '%s' "$target" | sha256sum | awk '{print $1}')
+    printf '%s_%s.last\n' "${REFLUX_DIRTY_NOTICE_STATE_PREFIX:-$STATE_DIR/shogun_reflux_dirty_notice}" "$target_key"
+}
+
+# Notify Karo once per target dirty generation.  The marker is written only
+# after durable inbox persistence succeeds; a failed notification therefore
+# remains retryable and cannot silently convert a blocked dispatch into idle.
+_reflux_notify_dirty_target_once() {
+    local name="$1" target="$2" fingerprint="$3" status="$4" cmd_id="$5"
+    local state_file state_dir previous notice_tmp notice_lock_fd notice
+    state_file=$(_reflux_dirty_notice_state_file "$target")
+    state_dir="${state_file%/*}"
+    [ "$state_dir" = "$state_file" ] && state_dir="."
+    mkdir -p "$state_dir" || return 1
+    exec {notice_lock_fd}>"${state_file}.lock" || return 1
+    if ! flock -x -w 5 "$notice_lock_fd"; then
+        exec {notice_lock_fd}>&-
+        return 1
+    fi
+    previous=$(cat "$state_file" 2>/dev/null || true)
+    if [ "$previous" = "$fingerprint" ]; then
+        log "REFLUX-AUTO-DIRTY-NOTIFY: $name target=$target fingerprint=$fingerprint duplicate=1"
+        flock -u "$notice_lock_fd"
+        exec {notice_lock_fd}>&-
+        return 0
+    fi
+
+    notice="reflux dirty dispatch blocked: cmd=${cmd_id} target=${target} dirty_status=${status} fingerprint=${fingerprint} action=clean_target_then_retry"
+    if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$notice" task_supplement ninja_monitor hold_next_task; then
+        log "REFLUX-AUTO-DIRTY-NOTIFY-FAIL: $name target=$target fingerprint=$fingerprint"
+        flock -u "$notice_lock_fd"
+        exec {notice_lock_fd}>&-
+        return 1
+    fi
+    notice_tmp="${state_file}.tmp.$$"
+    if ! printf '%s\n' "$fingerprint" > "$notice_tmp" || ! mv -f "$notice_tmp" "$state_file"; then
+        rm -f "$notice_tmp"
+        flock -u "$notice_lock_fd"
+        exec {notice_lock_fd}>&-
+        return 1
+    fi
+    log "REFLUX-AUTO-DIRTY-NOTIFY: $name target=$target fingerprint=$fingerprint duplicate=0"
+    flock -u "$notice_lock_fd"
+    exec {notice_lock_fd}>&-
+    return 0
+}
+
 _reflux_insight_pending_count() {
     local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
     [ -f "$insights_file" ] || { printf '0\n'; return 0; }
@@ -5138,7 +5207,7 @@ _handle_reflux_auto_deploy() {
     local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
     local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2 ac1_yaml ac2_yaml
     local external_source inspection_path_line="" planned_paths_line="" purpose_yaml=""
-    local promotion_reserved=false active_owner
+    local promotion_reserved=false active_owner dirty_fingerprint dirty_status
 
     [ -n "$name" ] || return 1
 
@@ -5332,6 +5401,17 @@ EOF
         log "REFLUX-AUTO-SKIP: generated task YAML parse failed for ${name}: ${tmp_task}"
         rm -f "$tmp_task"
         _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
+        return 1
+    fi
+
+    # A reflux insight task owns queue/insights.yaml.  Check the exact target
+    # immediately before publication so a foreign edit cannot create another
+    # in-progress worker that is guaranteed to fail its commit contract.
+    if [ "$kind" = "insight" ] && IFS=$'\t' read -r dirty_fingerprint dirty_status < <(_reflux_target_dirty_fingerprint "$target_path"); then
+        _reflux_notify_dirty_target_once "$name" "$target_path" "$dirty_fingerprint" "$dirty_status" "$cmd_id" || true
+        rm -f "$tmp_task"
+        _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
+        log "REFLUX-AUTO-BLOCK: $name target=$target_path dirty_fingerprint=$dirty_fingerprint task_publication=0"
         return 1
     fi
 

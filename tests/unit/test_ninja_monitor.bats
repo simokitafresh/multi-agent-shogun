@@ -525,3 +525,94 @@ SH
     '
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: reflux insight配備は共有queueのforeign dirty世代を公開せず、同一世代通知を重複せず、clean復帰と無関係なdirtyを許可する不変量を守る。
+@test "reflux insight dirty target blocks publication and notifies once per generation" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$(mktemp -d)"
+        trap '\''rm -r "$root"'\'' EXIT
+        SCRIPT_DIR="$root"
+        STATE_DIR="$root/state"
+        mkdir -p "$root/queue/tasks" "$root/queue" "$root/scripts" "$root/logs" "$STATE_DIR"
+        cat > "$root/queue/insights.yaml" <<YAML
+insights:
+- id: INS-DIRTY
+  status: pending
+YAML
+        cp "$root/queue/insights.yaml" "$root/clean-insights.yaml"
+        cat > "$root/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+YAML
+        cat > "$root/scripts/deploy_task.sh" <<SH
+#!/usr/bin/env bash
+printf "%s\\n" "DEPLOY_CALLED:\$*" >> "$root/deploy.log"
+cp "\$3" "$root/deployed.yaml"
+SH
+        chmod +x "$root/scripts/deploy_task.sh"
+        cat > "$root/scripts/inbox_write.sh" <<SH
+#!/usr/bin/env bash
+printf "%s\\n" "\$*" >> "$root/notifications.log"
+SH
+        chmod +x "$root/scripts/inbox_write.sh"
+
+        git -C "$root" init -q
+        git -C "$root" config user.email test@example.com
+        git -C "$root" config user.name test
+        git -C "$root" add queue/insights.yaml queue/tasks/hayate.yaml
+        git -C "$root" commit -qm baseline
+
+        log() { printf "%s\\n" "$1" >> "$root/test.log"; }
+        yaml_field_get() {
+            grep -m1 -E "^[[:space:]]*$2:" "$1" | sed "s/.*:[[:space:]]*//; s/[\\\"'"'"' ]//g" || true
+        }
+        _training_pipeline_has_work() { return 1; }
+        _reflux_zero_backlink_inventory() { printf "0\\t-\\tok\\n"; }
+        _reflux_promotion_inventory() { printf "0\\t-\\tok\\n"; }
+        declare -gA REFLUX_IDLE_FIRST_SEEN
+        REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1
+        REFLUX_AUTO_DEPLOY_COOLDOWN=1
+        REFLUX_AUTO_DEPLOY_STATE_PREFIX="$root/state/reflux_auto"
+        REFLUX_DIRTY_NOTICE_STATE_PREFIX="$root/state/reflux_dirty_notice"
+
+        run_reflux() {
+            REFLUX_IDLE_FIRST_SEEN[hayate]=0
+            _handle_reflux_auto_deploy hayate "$1" || true
+        }
+        run_reflux 100
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
+
+        printf "# foreign generation one\\n" >> "$root/queue/insights.yaml"
+        run_reflux 200
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
+        [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
+        grep -q "target=queue/insights.yaml" "$root/notifications.log"
+        grep -q "task_publication=0" "$root/test.log"
+
+        run_reflux 300
+        [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
+
+        printf "# foreign generation two\\n" >> "$root/queue/insights.yaml"
+        run_reflux 400
+        [ "$(wc -l < "$root/notifications.log")" -eq 2 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
+
+        cp "$root/clean-insights.yaml" "$root/queue/insights.yaml"
+        run_reflux 500
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
+
+        printf unrelated > "$root/unrelated.txt"
+        run_reflux 600
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 3 ]
+        [ "$(wc -l < "$root/notifications.log")" -eq 2 ]
+        echo "REFLUX_DIRTY_GENERATIONS_OK deploys=3 notifications=2"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_DIRTY_GENERATIONS_OK deploys=3 notifications=2"* ]]
+}
