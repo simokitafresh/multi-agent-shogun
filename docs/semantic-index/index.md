@@ -9600,7 +9600,7 @@ codd:
 | label | セマンティック因果自動化 |
 | aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale, semantic searchのヒット率を定量計測し, node id design semantic map, 教訓セマンティック還流, 教訓還流検査, operational noise filter, セマンティック検索, 概念検索スクリプト, alias_layer_search, llm_fallback_search, semantic_search, concept_lookup, alias_search, index_search, causal_expand, クエリ照合, 二層検索, 掲示板action required の semantic map generate new file INSIGHT, semantic_repair |
 | skills | |
-| related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system, control_plane_fork_gitwalk_countermeasure, gist_master_sync_asis_tobe, autocorrelation_layer_screening_asis_tobe_20260804 |
+| related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system, control_plane_fork_gitwalk_countermeasure, gist_master_sync_asis_tobe, autocorrelation_layer_screening_asis_tobe_20260804, commit_reservation_ledger_asis_tobe_20260805 |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -12349,7 +12349,7 @@ codd:
 | label | 正規push batch運用 |
 | aliases | push batch, 正規push batch, 家老にpush batchを指示せよ, 未push滞留, 一括push, push保留, push batch待ち, unpushed閾値WARN, remote分岐reject, push滞留はCI REDの先送り, push_batch_20260719 |
 | skills | なし |
-| related_concepts | destructive_operations, gate_quality_framework |
+| related_concepts | destructive_operations, gate_quality_framework, commit_reservation_ledger_asis_tobe_20260805 |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -12426,3 +12426,18 @@ codd:
 | causal | [[semantic_causal_automation]] -> [[autocorrelation-layer-screening-asis-tobe-5w1h_20260804]] |
 | cmd | `cmd_2640-2658` backfill — - 2026-05-10 cmd_2640-2658: 19件全GATE CLEAR WA0%。Level5化一括+DM-Signal CI追加+L6定義確定(5W1H+横展開scan) |
 
+
+## commit_reservation_ledger_asis_tobe_20260805 — commit予約台帳設計
+
+| 属性 | 値 |
+|------|---|
+| id | commit_reservation_ledger_asis_tobe_20260805 |
+| label | commit予約台帳設計 |
+| aliases | commit予約台帳, 共有git index直列化, commit reservation ledger |
+| related_concepts | push_batch_operation, semantic_causal_automation |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/commit-reservation-ledger-asis-tobe-5w1h_20260805.md` — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 |
+| causal | [[commit-reservation-ledger-asis-tobe_20260805]] — 共有git index直列化の設計根拠 |
+| cmd | `cmd_delegate` backfill — description: "設計書§0.5サーベイの台帳未接続script群(startup gate三本・semantic_index_update・ninja_scope_commit・cmd_delegate)" |
