@@ -10055,7 +10055,10 @@ PYEOF
             printf -v _archive_cmd '%q ' env SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
                 bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID"
             printf -v _archive_log_q '%q' "$_archive_worker_log"
-            "$_archive_tmux_bin" run-shell -b "$_archive_cmd </dev/null >>$_archive_log_q 2>&1"
+            # 末尾の || echo で常にexit 0にする: run-shellは非0終了時にコマンド行を
+            # アクティブpaneへview-modeオーバーレイ表示する(殿観測2026-08-04 18:08の正体)。
+            # 失敗はログへ記録され検知力は落ちない。
+            "$_archive_tmux_bin" run-shell -b "$_archive_cmd </dev/null >>$_archive_log_q 2>&1 || echo \"[WARN] archive worker rc=\$? (run-shell)\" >>$_archive_log_q"
             echo "  archive: queued (tmux server; log=$_archive_worker_log)"
         else
             echo "  archive: tmux unavailable; synchronous fallback (log=$_archive_worker_log)"
