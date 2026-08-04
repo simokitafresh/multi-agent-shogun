@@ -1,5 +1,6 @@
 # Rebalancer Context
-<!-- last_updated: 2026-08-04 cmd_4228 reviewed source boundary -->
+<!-- last_updated: 2026-08-04 cmd_4229 reviewed source boundary -->
+<!-- source_commit:f202c578e44ba99e1daf9232a18b905142e99615 reason:cmd_4229 reviewed source boundary evidence:shared price snapshot SSOT, phase-transition invalidation, CLOSED EODHD final-price contract, Render deploy_commit match -->
 <!-- source_commit:e26ba81 reason:cmd_4228 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=e26ba81 -->
 <!-- source_commit:e3c4565 reason:cmd_4227 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=e3c4565 -->
 <!-- source_commit:9ef55fb reason:cmd_4226 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=9ef55fb -->
@@ -114,3 +115,14 @@ Source of truthは `backend/app/config.py`。
 | 環境変数注意 | Stock Database `.env`は`ALPACA_API_SECRET_KEY`、rebalancerコードは`ALPACA_API_SECRET`を読むため名称不一致に注意 |
 | EODHDトークン | 1アカウント1トークン、database PJと共有、graceful rotation不可 |
 | 資格情報配置 | `rebalancer/backend/.env`へ複製済み |
+
+## §9 2026-08-04 cmd_4229 価格スナップショットSSOT
+
+| 項目 | 正本・契約 |
+|------|------------|
+| 共有境界 | `backend/app/services/price_snapshot.py` の `PriceSnapshotService` を表示API・SSE・リバランス計算で共有。表示値と計算値は同一snapshotの `price/as_of` を使う |
+| ACTIVEフェーズ | `PRE/REGULAR/POST` はAlpaca RT storeを優先し、欠落銘柄のみEODHD確定値を `degraded` で補完 |
+| フェーズ遷移 | `PRE/REGULAR/POST` から `CLOSED` へ遷移した時、RT storeをsnapshot保存後にclearし、RT残値をCLOSED表示・計算へ持ち越さない |
+| CLOSED終値 | `CLOSED` はEODHDの `is_final=true` 最新確定終値を使用。取得失敗時のみ直前snapshotを `degraded` として復元し、障害状態を明示 |
+| 本番反映 | Renderの `deploy_commit` が `f202c578e44ba99e1daf9232a18b905142e99615` と一致し、cmd_4229のGATE CLEARを確認済み |
+| 契約テスト | `backend/tests/test_price_snapshot_contract.py` で表示・計算同値、POST→CLOSEDのRT残値無効化、CLOSED EODHD障害時のdegraded復元を検証 |
