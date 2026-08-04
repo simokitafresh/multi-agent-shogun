@@ -1,6 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-03 reviewed_source_boundary -->
 <!-- source_commit:44f91330 reason:reviewed_source_boundary evidence:cmd_karo_exact_b4d_anchor7_reconcile_20260803 report+LGTM+Karo_ACCEPT -->
+<!-- dm_signal_research_reflux: fingerprint=d3bb755754b67bee43fa721d58dceadf4759a13d26894b097fde0acc6bd6e94a; mode=synced; evidence_b64=UzA4IE1hbiAyMDI2IENhc2ggRXF1aXRpZXMgSXMgS2luZzogY29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWTnoJTnqbbntKLlvJXjgbhTMDjooYzov73oqJjmuIjjgb8o5bCG6LuN55u05o6l5oqV5YWl44O75q6/6KOB5a6aMTM6MzYp -->
 <!-- dm_signal_research_reflux: fingerprint=1aeaa9dd1355644a90751caff57ffdae06c0cf5891ee20ffb45c7640ffa6b389; mode=non-target; evidence_b64=5Y2Y55m644Gu5pys55Wq5YWo5pWw5qSc5YiG5oiQ5p6c54mp44Gn44GC44KK5pei5a2Y56CU56m257Si5byV44Gu5oGS5LmF5qaC5b+16L+95Yqg44KS5Ly044KP44Gq44GE -->
 <!-- dm_signal_research_reflux: fingerprint=008c796f9dadc6ace8c3639e55d98e2351e2a7182f3df7f547433089b0bbf1f0; mode=non-target; evidence_b64=c2luZ2xlLWNvbW1hbmQgQjRlIGNoZWNrcG9pbnQgZXZpZGVuY2U7IGN1cnJlbnQgcmVhZG9ubHkgcmVjZWlwdCBpcyBsaW5rZWQgZnJvbSB0YXNrIHJlcG9ydCBhbmQgbm90IGEgZHVyYWJsZSBwcm9qZWN0IGNvbmNlcHQgdW50aWwgYmFzZWxpbmUgaXMgc3VwcGxpZWQ= -->
 <!-- dm_signal_research_reflux: fingerprint=9df93b50be42b7dcc4b451ac61c08c2de7721ef512b5baa1b3720fc13a24eebd; mode=non-target; evidence_b64=b25lLW9mZiBleGFjdCB2ZXJpZmllcjsgcmVzZWFyY2ggaW5kZXggc3luY2hyb25pemF0aW9uIGlzIG91dHNpZGUgYXNzaWduZWQgc2NvcGU= -->
@@ -16,7 +17,7 @@
 <!-- dm_signal_research_reflux: fingerprint=ffd0224a88f07e52b46e1a65d2c9fe60ab0a9a6828b5000a73730f63e0ff4c3b; mode=non-target; evidence_b64=b25lLW9mZiBDOSByZWFkaW5lc3MgYXJ0aWZhY3Q7IHBlcm1hbmVudCBpbmRleCByZW1haW5zIGRlc2lnbiB2NS4yMA== -->
 <!-- dm_signal_research_reflux: fingerprint=367f0e40312be1ee1892e70ac2c79717e63d39caaefda557ed1f0c6bb9942dd7; mode=non-target; evidence_b64=5LiA5Zue6ZmQ44KK44GuRTHlrp/ooYzmupblgpnmiJDmnpzjgafjgYLjgormgZLkuYXnoJTnqbbntKLlvJXjgbjjga7lkIzmnJ/lr77osaHlpJY= -->
 <!-- dm_signal_research_reflux: fingerprint=e3a1f982bededc962e7c2350c16ddfa82f3fb0c9fc4f42835bfca0c0367d0436; mode=non-target; evidence_b64=5Y2Y55m6QjXmupblgpnmiJDmnpzjgafml6LlrZjnoJTnqbbntKLlvJXjga7mgZLkuYXmpoLlv7XjgpLlpInmm7TjgZfjgarjgYQ= -->
-<!-- dm_signal_research_reflux: fingerprint=0960a96b75d6824eecb339ae1bdebe4b52f052498bbf9c5d425aa0e7b8bce736; mode=non-target; evidence_b64=5pei5a2YQzIgZXhlY3V0aW9uLXJlYWR55oiQ5p6c54mp44Gu5aWR57SEaG90Zml444Gn44GC44KK56CU56m257Si5byV44Gu5paw6KaP6aCF55uu44KS6L+95Yqg44GX44Gq44GE -->
+<!-- dm_signal_research_reflux: fingerprint=fb52e943f4c7189a7ffca809905ffaf3707a07fa647ded8a05b19d2f6f95e010; mode=synced; evidence_b64=UzA4IE1hbiAyMDI2IENhc2ggRXF1aXRpZXMgSXMgS2luZzogY29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWTnoJTnqbbntKLlvJXjgbhTMDjooYzov73oqJjmuIjjgb8o5bCG6LuN55u05o6l5oqV5YWl44O75q6/6KOB5a6aMTM6MzYp44CCc2NvcGVkIDTjg5XjgqHjgqTjg6tmaW5nZXJwcmludOOCkmd1YXJk5ZCM5LiA5byP44Gn566X5Ye6KOWFseaciXdvcmt0cmVl44Gr5LuWYWdlbnTlt67liIbjgYzkuKblrZjjgZnjgovjgZ/jgoFwcmVwYXJl5YWo6YePZmluZ2VycHJpbnTjgajkuI3kuIDoh7Tjgavjgarjgovmp4vpgKAp -->
 <!-- source_commit:74081181 reason:reviewed_source_boundary evidence:cmd_karo_recon2_b4e_prod_evidence_prep_20260803 report+LGTM+Karo_ACCEPT -->
 <!-- source_commit:b489c87b reason:reviewed_source_boundary evidence:cmd_karo_recon2_c9_identity_prep_20260803 report+LGTM+Karo_ACCEPT -->
 <!-- source_commit:127df6d1 reason:reviewed_source_boundary evidence:cmd_karo_recon2_b5_rejection_gate_prep_20260803 report+LGTM+Karo_ACCEPT -->
@@ -466,6 +467,7 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 | M85 | Breaking the Trend | 70先物ARPでは単一EMA（112±10営業日）が理論SharpeをR²=0.98で説明し、MACD等の多時間スケール化・非線形補正は改善せずcherry-pickingリスクを増やす。 | `docs/research/knowledge-base/methods/breaking-the-trend.md` |
 | M86 | Carry-Filtered TSMOM | 12か月TSMOMと先物basisの符号が一致する時だけ発動するANDフィルタで、特に景気後退初期のSharpeを改善する。原論文一次確認前の候補として扱う。 | `docs/research/knowledge-base/methods/carry-tsmom-filter.md` |
 | S07 | Chasing Your Own Tail Risk Revisited | Put保護は長期コストと最悪下落時の保護不足が残り、リスクパリティ・マネージドフューチャーズ・ディフェンシブ株式の分散代替を支持する。 | `docs/research/knowledge-base/sources/aqr-nielsen-2019-chasing-your-own-tail-risk-revisited.md` |
+| S08 | Cash (Equities) Is King — Man AHL (2026) | 現物株トレンドの構築軸比較。方向性セクタートレンドは指数先物トレンドと高相関(左テールで最大)で分散薄。クロスセクショナル・セクター/スタイルトレンド(市場中立)はほぼ無相関で指数トレンド大型DD時もプラス。分散は粒度でなく構築軸の変更で生まれる。原本PDF+全文+解釈層あり(将軍直接投入2026-08-04) | `docs/research/knowledge-base/sources/man-2026-trend-following-cash-is-king.md` |
 
 境界分類: `fb945019`（cmd_4196）は`backend/app/jobs/flush/signal_flush.py`だけの通知抑制実装であり、研究知識の変更ではないため本索引への転記対象外。
 
