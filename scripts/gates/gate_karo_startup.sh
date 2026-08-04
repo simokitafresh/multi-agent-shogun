@@ -91,6 +91,25 @@ karo_startup_pane_is_active() {
         | grep -qE '[•◦] (Working|Ran |Waiting|Running .*([Hh]ook|UserPromptSubmit|PostToolUse))'
 }
 
+# cmd_4231: deepdive追体験の起動直後FAILを先送りstreakへ混入させない。
+# session markerはこのgenerationの開始時刻であり、markerから猶予閾値を超えても
+# gate_deepdive_replayがFAILなら、そのgenerationの受領証が進んでいない実先送りとして
+# 呼び出し側がalertへ積む。marker不在/不正はfail-closedで猶予を与えない。
+karo_startup_deepdive_replay_within_grace() {
+    local marker_file="$1"
+    local now_epoch="${2:-$(date +%s)}"
+    local marker_ts marker_epoch dwell_sec grace_sec
+
+    [[ -f "$marker_file" ]] || return 1
+    marker_ts="$(cat "$marker_file" 2>/dev/null || true)"
+    marker_epoch="$(date -d "$marker_ts" +%s 2>/dev/null || echo 0)"
+    [[ "$marker_epoch" =~ ^[0-9]+$ && "$marker_epoch" -gt 0 ]] || return 1
+    [[ "$now_epoch" =~ ^[0-9]+$ ]] || return 1
+    dwell_sec=$((now_epoch - marker_epoch))
+    grace_sec=$((KARO_INBOX_UNREAD_DWELL_MIN * 60))
+    (( dwell_sec >= 0 && dwell_sec < grace_sec ))
+}
+
 phase_guide_cached() {
     local source_file="${1:?source file required}"
     local cache_name="${2:?cache name required}"
@@ -1733,7 +1752,20 @@ _dd_replay_out="$(bash "$SCRIPT_DIR/scripts/gates/gate_deepdive_replay.sh" karo 
 echo "  ${_dd_replay_out:-ERROR: gate_deepdive_replay.sh実行失敗}" | head -3
 if [[ "$_dd_replay_out" == DEEPDIVE-REPLAY:\ FAIL* ]]; then
     overall="ALERT"
-    alerts+=("deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh karo <md> <Phase> \"<自問>\"")
+    _dd_replay_alert="deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh karo <md> <Phase> \"<自問>\""
+    _dd_replay_marker="$SCRIPT_DIR/logs/deepdive_replay/karo.session"
+    # marker直後は追体験を開始できる正常な起動直後状態。表示は残すが、
+    # 固定alertを積まず、startup streak/escalationの入力から除外する。
+    if karo_startup_deepdive_replay_within_grace "$_dd_replay_marker"; then
+        _dd_replay_marker_ts="$(cat "$_dd_replay_marker" 2>/dev/null || true)"
+        _dd_replay_marker_epoch="$(date -d "$_dd_replay_marker_ts" +%s 2>/dev/null || echo 0)"
+        _dd_replay_dwell_min=$(( ($(date +%s) - _dd_replay_marker_epoch) / 60 ))
+        echo "  ALERT: ${_dd_replay_alert}"
+        echo "  INFO: deepdive generation開始から${_dd_replay_dwell_min}分(閾値${KARO_INBOX_UNREAD_DWELL_MIN}分未満) — 表示のみ、先送りCRITICAL streak/escalation対象外。直ちに追体験を開始せよ"
+    else
+        echo "  ALERT: ${_dd_replay_alert}"
+        alerts+=("$_dd_replay_alert")
+    fi
 fi
 echo ""
 

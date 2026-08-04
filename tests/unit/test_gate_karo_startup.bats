@@ -108,6 +108,32 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "deepdive起動直後FAILは表示のみでstreak対象外" {
+  helper="$TMPDIR_CASE/deepdive-grace.sh"
+  sed -n '/^karo_startup_deepdive_replay_within_grace()/,/^}/p' \
+    "$ROOT/scripts/gates/gate_karo_startup.sh" > "$helper"
+  source "$helper"
+  printf '%s\n' "$(date -d '5 minutes ago' '+%Y-%m-%dT%H:%M:%S%z')" > "$TMPDIR_CASE/marker"
+
+  run env KARO_INBOX_UNREAD_DWELL_MIN=30 bash -c \
+    'source "$1"; KARO_INBOX_UNREAD_DWELL_MIN="$2"; karo_startup_deepdive_replay_within_grace "$3" "$(date +%s)"' \
+    _ "$helper" 30 "$TMPDIR_CASE/marker"
+  [ "$status" -eq 0 ]
+}
+
+@test "deepdive滞留超過FAILはstreak対象にできる" {
+  helper="$TMPDIR_CASE/deepdive-grace.sh"
+  sed -n '/^karo_startup_deepdive_replay_within_grace()/,/^}/p' \
+    "$ROOT/scripts/gates/gate_karo_startup.sh" > "$helper"
+  source "$helper"
+  printf '%s\n' "$(date -d '31 minutes ago' '+%Y-%m-%dT%H:%M:%S%z')" > "$TMPDIR_CASE/marker"
+
+  run env KARO_INBOX_UNREAD_DWELL_MIN=30 bash -c \
+    'source "$1"; KARO_INBOX_UNREAD_DWELL_MIN="$2"; karo_startup_deepdive_replay_within_grace "$3" "$(date +%s)"' \
+    _ "$helper" 30 "$TMPDIR_CASE/marker"
+  [ "$status" -ne 0 ]
+}
+
 @test "startup gate keeps failed unclosed visible and excludes formal FAIL close" {
   fixture="$TMPDIR_CASE/failed-unclosed"
   mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/archive/reports" "$fixture/scripts/lib"
