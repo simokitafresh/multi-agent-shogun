@@ -2,7 +2,7 @@
 <!-- last_updated: 2026-08-04 cmd_karo_hotfix_ga432_context_freshness reviewed source boundary -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1553 -->
+<!-- last_synced_lesson: L1555 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -37,7 +37,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1553 -->
+<!-- last_synced_lesson: L1555 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -89,6 +89,8 @@
 - L1551: DrvFS frontend fallbackは依存もext4でなければworker stallを防げない（cmd_4228）
 - L1552: 成果物commit repoとproject repoの分離をtask契約へ反映する（cmd_4232）
 - L1553: Bash caseのYAML tildeは引用して全表現を個別計測する（cmd_karo_hotfix_acknowledged_at_null_20260804）
+- L1554: reflux insight生成は注入判定対象のpurpose scalar形式を保持する（cmd_karo_fix_reflux_insight_scope_20260804）
+- L1555: RCとarchiveはreport pathの世代transactionとして直列化する（cmd_karo_fix_rc_archive_report_race_20260804）
 
 ## 設計標準・テスト・因果
 
