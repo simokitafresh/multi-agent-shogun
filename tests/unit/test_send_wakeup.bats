@@ -662,6 +662,25 @@ YAML
     [[ "$output" == *"decision=skip"* ]]
 }
 
+# test_necessity: batch windowは同一unread集合の再通知だけを抑止し、別message追加で
+# fingerprintが変わった配送義務を最大300秒隠さない不変量を守る。
+@test "T-SW-024: fingerprint change is decided before bulletin batch window" {
+    run python3 - "$WATCHER_SCRIPT" <<'PY'
+import pathlib, sys
+
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index("# Tier 1.5: Debounce repeated nudge storms")
+end = text.index("# Tier 2:", start)
+block = text[start:end]
+fp_change = block.index('if [ "$current_fp" != "$_prev_fp" ]')
+batch_window = block.index('if [ -f "$DEBOUNCE_FILE" ]')
+assert fp_change < batch_window, (fp_change, batch_window)
+print("FP_CHANGE_BEFORE_BATCH_WINDOW")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FP_CHANGE_BEFORE_BATCH_WINDOW"* ]]
+}
+
 # test_necessity: escalation/CRITICAL型は高優先度に分類されdebounceブロックの
 # priority!=highガードをスキップし即時配送される不変量を守る。
 @test "T-SW-023: escalation classified as high priority bypasses debounce block guard" {

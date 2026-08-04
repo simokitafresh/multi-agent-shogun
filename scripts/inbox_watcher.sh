@@ -929,6 +929,23 @@ send_wakeup() {
                 exit 0
             fi
 
+            # A changed unread set is a new delivery obligation, not a retry
+            # storm.  Compare the fingerprint before applying the time window;
+            # otherwise an unrelated earlier bulletin suppresses a later one for
+            # up to NORMAL_BATCH_WINDOW_SEC (observed: 02:32:47 -> 02:35).
+            _prev_fp=""
+            if [ -f "$FINGERPRINT_FILE" ]; then
+                IFS= read -r _prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || true
+            fi
+
+            if [ "$current_fp" != "$_prev_fp" ]; then
+                printf '%s' "$current_fp" > "$FINGERPRINT_FILE"
+                printf '%s' "$_now" > "$DEBOUNCE_FILE"
+                printf 'send\t[FP-CHANGE] Unread set changed for %s (%s unread), sending nudge\n' "$AGENT_ID" "$unread_count" > "$atomic_result_file"
+                exit 0
+            fi
+
+            # The batch/debounce window applies only to the same fingerprint.
             if [ -f "$DEBOUNCE_FILE" ]; then
                 _last=""
                 IFS= read -r _last < "$DEBOUNCE_FILE" 2>/dev/null || true
@@ -946,18 +963,6 @@ send_wakeup() {
                         exit 0
                     fi
                 fi
-            fi
-
-            _prev_fp=""
-            if [ -f "$FINGERPRINT_FILE" ]; then
-                IFS= read -r _prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || true
-            fi
-
-            if [ "$current_fp" != "$_prev_fp" ]; then
-                printf '%s' "$current_fp" > "$FINGERPRINT_FILE"
-                printf '%s' "$_now" > "$DEBOUNCE_FILE"
-                printf 'send\t[FP-CHANGE] Unread set changed for %s (%s unread), sending nudge\n' "$AGENT_ID" "$unread_count" > "$atomic_result_file"
-                exit 0
             fi
 
             _fp_age=0
