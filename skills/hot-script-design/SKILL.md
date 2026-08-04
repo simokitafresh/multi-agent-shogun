@@ -1,6 +1,6 @@
 ---
 name: hot-script-design
-argument-hint: "<弾番号> <開始順位>-<終了順位>"
+argument-hint: "弾番号 開始順位-終了順位"
 user-invocable: true
 description: |
   ホットスクリプト集中高速化の設計書を自動生成し、gist同期まで一括実行するスキル。
