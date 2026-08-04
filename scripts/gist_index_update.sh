@@ -9,13 +9,12 @@ GIST_INDEX_TITLE="${GIST_INDEX_TITLE:-DM-Signal Gist Index}"
 GIST_INDEX_DATE="${GIST_INDEX_DATE:-$(date '+%Y-%m-%d')}"
 
 declare -a CATEGORY_ORDER=(
-    "note記事"
-    "週報"
-    "研究データ・分析レポート"
-    "deepdive・将軍記録"
-    "ユーザー向け"
-    "インフラ・確定申告・比較分析"
-    "前処理研究"
+    "設計書・稼働中"
+    "設計書・CLOSED"
+    "調査書・監査・レポート"
+    "正本・カタログ・パターン"
+    "記事・対外発信"
+    "その他・運用"
 )
 
 log() {
@@ -28,7 +27,7 @@ title_key() {
 
 is_ipynb_title() {
     local title_key_value
-    title_key_value="$(title_key "$1")"
+    title_key_value="$(title_key "$1 ${2:-}")"
     [[ "$title_key_value" == *".ipynb"* || "$title_key_value" == *"ipynb"* ]]
 }
 
@@ -37,29 +36,31 @@ classify_gist() {
     local key
     key="$(title_key "$title")"
 
-    case "$key" in
-        *"note記事"*|*"記事下書き"*|*"解説"*|*"検証"*|*"信じていい"*|*"選べ"*|*"使えない"*|*"p平均"*|*"p-average"*|*"p̄"*|*"戦国ai列伝"*|*"列伝"*)
-            printf '%s\n' "note記事"
-            ;;
-        *"weekly"*)
-            printf '%s\n' "週報"
-            ;;
-        *"研究日誌"*|*"前処理研究"*)
-            printf '%s\n' "前処理研究"
-            ;;
-        *"deepdive"*|*"why深掘り"*|*"因果探索"*|*"why chain"*|*"deep dive"*|*"将軍必読"*)
-            printf '%s\n' "deepdive・将軍記録"
-            ;;
-        *"user manual"*|*"マニュアル"*)
-            printf '%s\n' "ユーザー向け"
-            ;;
-        *"確定申告"*|*"経費管理"*|*"gstack"*|*"dashboard"*|*"ダッシュボード"*|*"mcas"*|*"システム比較"*|*"対比"*|*"比較ドキュメント"*)
-            printf '%s\n' "インフラ・確定申告・比較分析"
-            ;;
-        *)
-            printf '%s\n' "研究データ・分析レポート"
-            ;;
-    esac
+    # Output: category<TAB>status<TAB>fallback.  Precedence is explicit
+    # exclusion (caller) -> status tag -> title key -> fallback.
+    if [[ "$key" =~ 【[^】]*(closed|完了|後継)[^】]*】 ]]; then
+        printf '%s\t%s\t%s\n' "設計書・CLOSED" "closed" "false"
+    elif [[ "$key" =~ 【[^】]*(稼働中|設計済|実装進行中|レビュー反映済)[^】]*】 ]]; then
+        printf '%s\t%s\t%s\n' "設計書・稼働中" "active" "false"
+    elif [[ "$key" == *"asis/tobe"* || "$key" == *"as-is/to-be"* || "$key" == *"5w1h"* ]]; then
+        printf '%s\t%s\t%s\n' "設計書・稼働中" "unknown_status" "false"
+    elif [[ "$key" == *"調査書"* || "$key" == *"監査"* || "$key" == *"レポート"* || "$key" == *"進化量"* ]]; then
+        printf '%s\t%s\t%s\n' "調査書・監査・レポート" "not_applicable" "false"
+    elif [[ "$key" == *"mece"* || "$key" == *"カタログ"* || "$key" == *"パターン"* || "$key" == *"正本"* || "$key" == *"チェックリスト"* ]]; then
+        printf '%s\t%s\t%s\n' "正本・カタログ・パターン" "not_applicable" "false"
+    elif [[ "$key" == *"note記事"* || "$key" == *"週報"* || "$key" == *"weekly"* || "$key" == *"投資知識辞書"* || "$key" == *"ユーザー向け"* ]]; then
+        printf '%s\t%s\t%s\n' "記事・対外発信" "not_applicable" "false"
+    else
+        printf '%s\t%s\t%s\n' "その他・運用" "not_applicable" "true"
+    fi
+}
+
+fetch_gists() {
+    if command -v "$GH_CMD" >/dev/null 2>&1; then
+        "$GH_CMD" api --paginate gists --jq '.[] | [.id, (.description // ""), ((.files | keys) | join(",")), .public, .updated_at] | @tsv'
+    else
+        bash "$GH_CMD" api --paginate gists --jq '.[] | [.id, (.description // ""), ((.files | keys) | join(",")), .public, .updated_at] | @tsv'
+    fi
 }
 
 short_date() {
@@ -106,11 +107,7 @@ main() {
     fi
 
     local raw_list
-    if command -v "$GH_CMD" >/dev/null 2>&1; then
-        raw_list="$("$GH_CMD" gist list --limit 100)"
-    else
-        raw_list="$(bash "$GH_CMD" gist list --limit 100)"
-    fi
+    raw_list="$(fetch_gists)"
 
     declare -A seen_titles=()
     declare -A category_rows=()
@@ -122,6 +119,8 @@ main() {
     )
     local total_count=0
     local kept_count=0
+    local unknown_status_count=0
+    local fallback_count=0
     local excluded_lines=""
 
     local gist_id title _files _visibility updated_at
@@ -135,7 +134,7 @@ main() {
             continue
         fi
 
-        if is_ipynb_title "$title"; then
+        if is_ipynb_title "$title" "$_files"; then
             excluded_counts[ipynb]=$((excluded_counts[ipynb] + 1))
             excluded_lines+=$'ipynb\t'"$gist_id"$'\t'"$title"$'\n'
             continue
@@ -150,8 +149,14 @@ main() {
         fi
         seen_titles[$seen_key]="$gist_id"
 
-        local category
-        category="$(classify_gist "$title")"
+        local category status is_fallback
+        IFS=$'\t' read -r category status is_fallback <<< "$(classify_gist "$title")"
+        if [ "$status" = "unknown_status" ]; then
+            unknown_status_count=$((unknown_status_count + 1))
+        fi
+        if [ "$is_fallback" = "true" ]; then
+            fallback_count=$((fallback_count + 1))
+        fi
         local row
         row="| $(short_date "$updated_at") | [$title]($(gist_url "$gist_id")) |"
         if [ -n "${category_rows[$category]:-}" ]; then
@@ -183,7 +188,13 @@ main() {
             "${excluded_counts[ipynb]}"
     } >> "$tmpfile"
 
-    log "category_counts: note記事=${category_counts["note記事"]:-0} 週報=${category_counts["週報"]:-0} 研究データ・分析レポート=${category_counts["研究データ・分析レポート"]:-0} deepdive・将軍記録=${category_counts["deepdive・将軍記録"]:-0} ユーザー向け=${category_counts["ユーザー向け"]:-0} インフラ・確定申告・比較分析=${category_counts["インフラ・確定申告・比較分析"]:-0} 前処理研究=${category_counts["前処理研究"]:-0}"
+    local excluded_total completeness_sum fallback_ratio
+    excluded_total=$((excluded_counts[self_index] + excluded_counts[duplicate_title] + excluded_counts[ipynb]))
+    completeness_sum=$((kept_count + excluded_total))
+    fallback_ratio="$(awk -v fallback="$fallback_count" -v kept="$kept_count" 'BEGIN { printf "%.2f", kept ? (fallback * 100 / kept) : 0 }')"
+    log "category_counts: 設計書・稼働中=${category_counts["設計書・稼働中"]:-0} 設計書・CLOSED=${category_counts["設計書・CLOSED"]:-0} 調査書・監査・レポート=${category_counts["調査書・監査・レポート"]:-0} 正本・カタログ・パターン=${category_counts["正本・カタログ・パターン"]:-0} 記事・対外発信=${category_counts["記事・対外発信"]:-0} その他・運用=${category_counts["その他・運用"]:-0}"
+    log "completeness: fetched=${total_count} classified=${kept_count} excluded=${excluded_total} sum=${completeness_sum} match=$([ "$total_count" -eq "$completeness_sum" ] && printf true || printf false)"
+    log "classification_quality: unknown_status=${unknown_status_count} fallback=${fallback_count} fallback_ratio_pct=${fallback_ratio}"
     log "excluded_counts: self_index=${excluded_counts[self_index]} duplicate_title=${excluded_counts[duplicate_title]} ipynb=${excluded_counts[ipynb]}"
     if [ -n "$excluded_lines" ]; then
         log "excluded_entries_begin"
