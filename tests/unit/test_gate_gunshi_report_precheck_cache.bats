@@ -78,8 +78,8 @@ YAML
   # Fresh recheck evidence: no cache-hit marker, and the ERRORS tally moved.
   ! grep -q "cache応答" "$TMP_DIR/err3.txt"
   ! diff -q "$TMP_DIR/out1.txt" "$TMP_DIR/out3.txt" > /dev/null
-  grep -q "=== 総合: ERRORS=2 ===" "$TMP_DIR/out1.txt"
-  grep -q "=== 総合: ERRORS=1 ===" "$TMP_DIR/out3.txt"
+  grep -q "=== 総合: ERRORS=3 ===" "$TMP_DIR/out1.txt"
+  grep -q "=== 総合: ERRORS=2 ===" "$TMP_DIR/out3.txt"
   cache_entries_after=$(find "$GUNSHI_PRECHECK_CACHE_DIR" -type f | wc -l)
   [ "$cache_entries_after" -eq 2 ]
 

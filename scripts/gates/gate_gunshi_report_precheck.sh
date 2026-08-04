@@ -324,15 +324,22 @@ print_sg_pre24() {
     for _ifile in "${_instr_files[@]}"; do
         _rname=$(echo "$_ifile" | grep -oP '(shogun|karo|gunshi|ashigaru)' | head -1)
         [ -z "$_rname" ] && continue
-        _gen_files=$(git -C "$REPO_ROOT" ls-tree -r --name-only "$fixed_hash" -- instructions/generated/ 2>/dev/null | grep -E "/[^/]*${_rname}[^/]*$" || true)
-        if [ -z "$_gen_files" ]; then
-            echo "  ★ BLOCK: ${_ifile}変更だが固定commit内のgenerated/に対応ファイルなし"
+        _fixed_files=$(git -C "$REPO_ROOT" diff-tree --no-commit-id --name-only -r "$fixed_hash" 2>/dev/null || true)
+        # diff-tree(変更ファイル)からgenerated/の対応ファイルを検索。ls-tree(全ファイル)だと
+        # 変更されていないgenerated/ファイルが先頭に来て偽BLOCKになる(claude-gunshi.md事故)
+        _gen_changed=$(printf '%s\n' "$_fixed_files" | grep -E "^instructions/generated/[^/]*${_rname}[^/]*$" || true)
+        if [ -z "$_gen_changed" ]; then
+            # diff-treeになければls-treeで存在自体を確認
+            _gen_exists=$(git -C "$REPO_ROOT" ls-tree -r --name-only "$fixed_hash" -- instructions/generated/ 2>/dev/null | grep -E "/[^/]*${_rname}[^/]*$" || true)
+            if [ -z "$_gen_exists" ]; then
+                echo "  ★ BLOCK: ${_ifile}変更だが固定commit内のgenerated/に対応ファイルなし"
+            else
+                echo "  ★ BLOCK: ${_ifile}変更がfixed:${fixed_hash:0:12} 時点のgenerated/に未反映"
+            fi
             _pre24_pass=false
             continue
         fi
-        _gen_first=${_gen_files%%$'\n'*}
-        _fixed_files=$(git -C "$REPO_ROOT" diff-tree --no-commit-id --name-only -r "$fixed_hash" 2>/dev/null || true)
-        if printf '%s\n' "$_fixed_files" | grep -qxF "$_ifile" && printf '%s\n' "$_fixed_files" | grep -qxF "$_gen_first"; then
+        if printf '%s\n' "$_fixed_files" | grep -qxF "$_ifile"; then
             echo "  PASS: ${_ifile} → fixed:${fixed_hash:0:12} でgenerated/を同時更新済み"
         else
             echo "  ★ BLOCK: ${_ifile}変更がfixed:${fixed_hash:0:12} 時点のgenerated/に未反映"
