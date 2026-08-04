@@ -149,6 +149,10 @@ run_complete() {
     done
     printf 'report_id: rpt-other\nparent_cmd: cmd_other\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' \
         > "$review_root/queue/archive/reports/other_cmd.yaml"
+    # test_necessity: an archived pre-RC template is non-terminal history and
+    # must not create an impossible second two-phase approval obligation.
+    printf 'report_id: rpt-stale\nparent_cmd: cmd_4200\nstatus: pending\n' \
+        > "$review_root/queue/archive/reports/stale_report_cmd_4200_20260804.yaml"
     for n in 1 2 3; do
         printf 'report_id: rpt-other-%s\nparent_cmd: cmd_other\n' "$n" > "$review_root/outside${n}.yaml"
         ln -s "$review_root/outside${n}.yaml" \

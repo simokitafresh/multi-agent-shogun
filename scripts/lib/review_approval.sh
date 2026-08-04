@@ -304,6 +304,16 @@ for report_path in sorted(candidates):
     is_live = report_path.parent == reports_dir
     if is_live and report_path.name not in live_names:
         continue
+    # Archive may retain an older report template after a formal RC reopens
+    # the same logical task.  Such pending/revision payloads are history, not
+    # terminal reports requiring a second pair of approvals.  Keep live
+    # non-terminal reports visible so the active lifecycle still fails closed,
+    # and preserve status-less legacy archives for compatibility.
+    archived_status = str(doc.get("status") or "").strip().lower()
+    if not is_live and archived_status in {
+        "pending", "revision_requested", "assigned", "acknowledged", "in_progress"
+    }:
+        continue
     report_id = str(doc.get("report_id") or "").strip()
     if not report_id and not is_live:
         version = int(doc.get("report_identity_version") or 1)
