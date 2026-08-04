@@ -137,6 +137,32 @@ PY
     [ "$count" -eq 0 ]
 }
 
+# cmd_karo_round8_spare_b_singleflight_io_20260804 AC3
+# test_necessity: 品質FAILでもsingle-flight lockを解放し、FAIL verdictのhold計測を
+# 1件だけ記録する不変量。異常経路で次のreport検証が詰まる回帰を防ぐ。
+@test "quality failure releases the lock and records one FAIL hold row" {
+    ledger="$TEST_DIR/overhead_failure.jsonl"
+
+    run env \
+        DEFENSE_OVERHEAD_LEDGER="$ledger" \
+        GATE_FAST_EXIT=1 \
+        bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
+
+    [ "$status" -eq 1 ]
+    run flock -n "${REPORT}.gate.lock" true
+    [ "$status" -eq 0 ]
+
+    for _ in $(seq 1 100); do
+        grep -q '"check_id":"singleflight_hold"' "$ledger" 2>/dev/null && break
+        sleep 0.1
+    done
+    run grep -c '"check_id":"singleflight_hold"' "$ledger"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+    run grep '"check_id":"singleflight_hold"' "$ledger"
+    [[ "$output" == *'"verdict":"FAIL"'* ]]
+}
+
 # cmd_karo_impl_singleflight_hold_instrumentation_20260725 (軍師レビュー指摘の是正)
 # test_necessity: 計装のためにforkする非同期writerがgate.lock(fd 199)を継承してはならない。
 # 継承するとledger.lock待ちと低速FS書込みの間ロックが保持され、計装自体が
@@ -163,4 +189,22 @@ PY
 
     wait "$ledger_holder"
     [ "$lock_status" -eq 0 ]
+}
+
+# cmd_karo_round8_spare_b_singleflight_io_20260804 AC1/AC3
+# test_necessity: 後段の同期skill loggerより前にsingle-flight lockを解放する
+# 実装順序を固定し、遅いloggingがlock保持区間へ戻る回帰を防ぐ契約。
+@test "post-validation logging is structurally after single-flight release" {
+    run python3 - "$REPO_ROOT/scripts/gates/gate_report_format.sh" <<'PY'
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+release = text.index("_gate_record_singleflight_hold 0")
+logging = text.index("# --- Gate fire logging")
+assert release < logging
+assert text.index("_GATE_HOLD_FINALIZED=1") < release
+assert "trap '_gate_record_singleflight_hold_on_exit' EXIT" in text
+PY
+    [ "$status" -eq 0 ]
 }

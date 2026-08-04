@@ -98,16 +98,22 @@ _gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
 # 記録はdetached subshell(1 fork)で行い、本番経路の待ち時間を増やさない(AC3)。
 if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
     _GATE_HOLD_STARTED="$(_gate_mono_ms)"
+    _GATE_HOLD_FINALIZED=0
     # shellcheck disable=SC2317  # EXIT trap経由の間接呼出し(SC2317は到達不能と誤検知する)
     _gate_record_singleflight_hold() {
-        local _rc="$?" _verdict _hold_ms _lib
+        local _rc="${1:-$?}" _verdict _hold_ms _lib
         [ -n "${_GATE_HOLD_STARTED:-}" ] || return 0
+        [ "${_GATE_HOLD_FINALIZED:-0}" = "1" ] && return 0
         _hold_ms=$(( $(_gate_mono_ms) - _GATE_HOLD_STARTED ))
         case "$_rc" in
             0) _verdict="PASS" ;;
             1) _verdict="FAIL" ;;
             *) _verdict="BLOCK" ;;
         esac
+        _GATE_HOLD_FINALIZED=1
+        # The report lock must be released even if the optional telemetry
+        # library is unavailable or cannot be sourced.
+        exec 199>&- 2>/dev/null || true
         _lib="$(dirname "${BASH_SOURCE[0]}")/../lib/defense_overhead_writer.sh"
         [ -f "$_lib" ] || return 0
         # shellcheck source=/dev/null
@@ -117,12 +123,16 @@ if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
         # 子がgate.lockを保持したままledger.lockと低速FS書込みを待つ。計装自体が
         # ロック保持区間を延ばし、本cmdの目的(timeout削減)に反する。∴fork前に必ず閉じる。
         # ここでの解放は保持区間の終端そのものであり、計測値(_hold_ms算出済み)にも影響しない。
-        exec 199>&- 2>/dev/null || true
         defense_overhead_write_async gate_report_format singleflight_hold \
             "$_hold_ms" "$_verdict" "gate_report_format:hold:$$:${_GATE_HOLD_STARTED}" || true
         return 0
     }
-    trap '_gate_record_singleflight_hold' EXIT
+    _gate_record_singleflight_hold_on_exit() {
+        local _exit_rc="$?"
+        _gate_record_singleflight_hold "$_exit_rc"
+        return "$_exit_rc"
+    }
+    trap '_gate_record_singleflight_hold_on_exit' EXIT
 fi
 
 # executor帰属: 報告YAMLのworker_idを読取り(CLI非依存)
@@ -946,6 +956,19 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
         mv "${_GATE_FP_CACHE}.tmp.$$" "$_GATE_FP_CACHE"
     ) 200>"${_GATE_FP_CACHE}.lock"
     _gate_receipt_phase local_gate "$_GATE_MONO_START_MS"
+fi
+
+# The validation/cache critical section ends here.  Release the report lock and
+# submit its hold metric before any fire-log, DB, or skill-execution logging.
+# Those writes are deliberately outside single-flight so a slow ledger cannot
+# make the next validator wait or timeout.  The EXIT trap remains as a
+# fail-closed fallback for validation errors and other exits before this point.
+if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
+    if [ "$RESULT_IS_PASS" -eq 1 ]; then
+        _gate_record_singleflight_hold 0
+    else
+        _gate_record_singleflight_hold 1
+    fi
 fi
 
 # Test/unit fast path: callers that only need stdout + exit code can bypass cache/log/session-state work.
