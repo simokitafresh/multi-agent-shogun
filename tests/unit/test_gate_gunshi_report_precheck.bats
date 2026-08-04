@@ -59,6 +59,57 @@ run_cross_repo_precheck() {
     bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
 }
 
+# test_necessity: no-hashの同一repo/parent_cmd git走査はHEAD世代とparent_cmdを
+# cache keyへ含め、報告本文の変化では再走査せず、commit世代またはcmd変更では再計測する不変量。
+@test "no-hash batch git lookup reuses same committed-history generation" {
+  gate="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
+  cache="$TMP_DIR/batch-git-cache"
+  trace="$TMP_DIR/batch-git-trace"
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  project: infra
+  parent_cmd: cmd_fixture
+  planned_paths: [scripts/gates/gate_gunshi_report_precheck.sh]
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+files_modified:
+  - {path: scripts/gates/gate_gunshi_report_precheck.sh, change: fixture}
+binary_checks:
+  AC1:
+    - {check: fixture, result: yes}
+YAML
+
+  run env GUNSHI_BATCH_GIT_CACHE_DIR="$cache" \
+    GUNSHI_BATCH_GIT_CACHE_TRACE_FILE="$trace" \
+    GUNSHI_PRECHECK_CACHE_DIR="$TMP_DIR/full-cache-1" \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  grep -q '^miss:parent_numstat$' "$trace"
+  grep -q '^miss:recent_data$' "$trace"
+
+  run env GUNSHI_BATCH_GIT_CACHE_DIR="$cache" \
+    GUNSHI_BATCH_GIT_CACHE_TRACE_FILE="$trace" \
+    GUNSHI_PRECHECK_CACHE_DIR="$TMP_DIR/full-cache-2" \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  grep -q '^hit:parent_numstat$' "$trace"
+  grep -q '^hit:recent_data$' "$trace"
+
+  sed -i 's/parent_cmd: cmd_fixture/parent_cmd: cmd_fixture_changed/g' "$TMP_DIR/report.yaml"
+  run env GUNSHI_BATCH_GIT_CACHE_DIR="$cache" \
+    GUNSHI_BATCH_GIT_CACHE_TRACE_FILE="$trace" \
+    GUNSHI_PRECHECK_CACHE_DIR="$TMP_DIR/full-cache-3" \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [ "$(grep -c '^miss:parent_numstat$' "$trace")" -ge 2 ]
+  [ "$(find "$cache" -type f | wc -l)" -ge 2 ]
+}
+
 @test "SG-PRE3 no-code exemption requires matching structured task and report contracts" {
   cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
 task:

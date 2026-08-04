@@ -14,6 +14,60 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "${REPO_ROOT}/scripts/lib/defense_overhead_writer.sh"
 GUNSHI_PRECHECK_STARTED_US="${EPOCHREALTIME/./}"
 GUNSHI_PRECHECK_STARTED_US="${GUNSHI_PRECHECK_STARTED_US:0:16}"
+# No-hash reports repeat the same bounded git history lookup whenever the
+# report body changes. Cache only committed-history results, keyed by the
+# repository HEAD and parent command, so a new commit invalidates the entry.
+GUNSHI_BATCH_GIT_CACHE_DIR="${GUNSHI_BATCH_GIT_CACHE_DIR:-${TMPDIR:-/tmp}/gate_gunshi_batch_git_cache}"
+GUNSHI_BATCH_GIT_SCRIPT_HASH="$(sha256sum "${BASH_SOURCE[0]}" 2>/dev/null | awk '{print $1}')"
+GUNSHI_BATCH_GIT_CACHE_HIT=0
+GUNSHI_BATCH_GIT_PROJECT_LOOKUP_DONE=0
+_gunshi_batch_git_cached_output() {
+    local kind="$1" repo="$2" parent_cmd="$3" output_file="$4"
+    local head key cache_file tmp_file rc cached_rc
+    : > "$output_file"
+    head="$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)"
+    if [ -z "$head" ]; then
+        return 1
+    fi
+    key="$(printf '%s\0%s\0%s\0%s' "$kind" "$repo" "$parent_cmd$head" "$GUNSHI_BATCH_GIT_SCRIPT_HASH" | sha256sum | awk '{print $1}')"
+    if ! mkdir -p "$GUNSHI_BATCH_GIT_CACHE_DIR" 2>/dev/null; then
+        cache_file=""
+    else
+        cache_file="$GUNSHI_BATCH_GIT_CACHE_DIR/$key"
+    fi
+    if [ -n "$cache_file" ] && [ -f "$cache_file" ]; then
+        cached_rc="$(head -1 "$cache_file" 2>/dev/null || true)"
+        if [[ "$cached_rc" =~ ^[0-9]+$ ]]; then
+            tail -n +2 "$cache_file" > "$output_file"
+            GUNSHI_BATCH_GIT_CACHE_HIT=1
+            [ -z "${GUNSHI_BATCH_GIT_CACHE_TRACE_FILE:-}" ] || printf '%s\n' "hit:$kind" >> "$GUNSHI_BATCH_GIT_CACHE_TRACE_FILE"
+            return "$cached_rc"
+        fi
+    fi
+    [ -z "${GUNSHI_BATCH_GIT_CACHE_TRACE_FILE:-}" ] || printf '%s\n' "miss:$kind" >> "$GUNSHI_BATCH_GIT_CACHE_TRACE_FILE"
+    case "$kind" in
+        parent_numstat)
+            (cd "$repo" && timeout 2 git log -20 --no-merges --fixed-strings --grep="$parent_cmd" --format="" --numstat 2>/dev/null) > "$output_file"
+            ;;
+        recent_data)
+            (cd "$repo" && timeout 2 git log --oneline -20 --name-only 2>/dev/null) > "$output_file"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+    rc=$?
+    # Preserve both successful output and the existing timeout result. The
+    # timeout path already treats incomplete history as empty; replaying that
+    # exact result for the same HEAD/script generation avoids a repeated scan.
+    if { [ "$rc" -eq 0 ] || [ "$rc" -eq 124 ]; } && [ -n "$cache_file" ]; then
+        tmp_file="${cache_file}.$$"
+        if { printf '%s\n' "$rc"; cat "$output_file"; } > "$tmp_file" 2>/dev/null; then
+            mv -f "$tmp_file" "$cache_file" 2>/dev/null || rm -f "$tmp_file"
+        fi
+    fi
+    return "$rc"
+}
 gunshi_precheck_overhead_exit() {
     local rc=$? finished_us wall_ms verdict
     finished_us="${EPOCHREALTIME/./}"; finished_us="${finished_us:0:16}"
@@ -475,17 +529,25 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
         _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_CMD_FILES" | sed '/^$/d' | sort -u)
     else
         # PRE3/PRE19-DM用: cmd固有commitのnumstat (1 call)。name-only相当は3列目(path)から導出しPRE3と共用
-        _PRE_PROJECT_NUMSTAT=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && timeout 2 git log -20 --no-merges --fixed-strings --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null) || true
+        _gunshi_batch_git_tmpdir=$(mktemp -d /tmp/gunshi_batch_git_XXXXXX)
+        _gunshi_batch_git_project_output="$_gunshi_batch_git_tmpdir/project_numstat"
+        _gunshi_batch_git_recent_output="$_gunshi_batch_git_tmpdir/recent_data"
+        _gunshi_batch_git_cached_output parent_numstat "${PROJECT_DIR:-$REPO_ROOT}" "$PARENT_CMD" "$_gunshi_batch_git_project_output" || true
+        GUNSHI_BATCH_GIT_PROJECT_LOOKUP_DONE=1
+        _PRE_PROJECT_NUMSTAT=$(cat "$_gunshi_batch_git_project_output")
         _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_PROJECT_NUMSTAT" | awk -F'\t' 'NF>=3{print $3}' | sort -u)
         # PRE14用: 直近20 commitとファイル (1 call)
-        _PRE_RECENT_DATA=$(cd "$REPO_ROOT" && timeout 2 git log --oneline -20 --name-only 2>/dev/null) || true
+        _gunshi_batch_git_cached_output recent_data "$REPO_ROOT" "$PARENT_CMD" "$_gunshi_batch_git_recent_output" || true
+        _PRE_RECENT_DATA=$(cat "$_gunshi_batch_git_recent_output")
+        rm -f "$_gunshi_batch_git_project_output" "$_gunshi_batch_git_recent_output"
+        rmdir "$_gunshi_batch_git_tmpdir" 2>/dev/null || true
     fi
 fi
 # PRE13/PRE19-shogun用: REPO_ROOTのnumstat。PRE13はhashの有無に関わらず全履歴grep走査が必要なため
 # 上のブロックとは独立にガードする(元のPRE13ガードと同一条件=FILES_MODIFIEDのみ)。
 # PROJECT_DIR==REPO_ROOT(非DM-Signal報告。実運用で最頻出)なら上のnumstatをそのまま再利用しgit呼出を省略する。
 if [ -n "${FILES_MODIFIED:-}" ] && [ -z "$_REPORT_HASHES" ]; then
-    if [ "${PROJECT_DIR:-$REPO_ROOT}" = "$REPO_ROOT" ] && [ -n "$_PRE_PROJECT_NUMSTAT" ]; then
+    if [ "${PROJECT_DIR:-$REPO_ROOT}" = "$REPO_ROOT" ] && [ "${GUNSHI_BATCH_GIT_PROJECT_LOOKUP_DONE:-0}" -eq 1 ]; then
         _PRE_REPO_NUMSTAT="$_PRE_PROJECT_NUMSTAT"
     else
         _PRE_REPO_NUMSTAT=$( { timeout 3 git -C "$REPO_ROOT" log -20 --no-merges --fixed-strings --grep="${PARENT_CMD:-}" --format="" --numstat 2>/dev/null || true; } )
@@ -495,6 +557,8 @@ if [ -z "${FILES_MODIFIED:-}" ]; then
     _gunshi_phase_report batch_git "$_GUNSHI_PH_BATCHGIT_START_US" no_files_modified
 elif [ -n "$_REPORT_HASHES" ]; then
     _gunshi_phase_report batch_git "$_GUNSHI_PH_BATCHGIT_START_US" has_hash
+elif [ "${GUNSHI_BATCH_GIT_CACHE_HIT:-0}" -eq 1 ]; then
+    _gunshi_phase_report batch_git "$_GUNSHI_PH_BATCHGIT_START_US" no_hash_cache_hit
 else
     _gunshi_phase_report batch_git "$_GUNSHI_PH_BATCHGIT_START_US" no_hash_full_scan
 fi
