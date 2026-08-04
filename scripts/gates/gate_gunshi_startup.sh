@@ -7,6 +7,31 @@
 
 set -e
 
+# Round8 lane #0': complete entrypoint wall-clock telemetry.
+GUNSHI_STARTUP_TOTAL_T0_US="${EPOCHREALTIME/./}"
+GUNSHI_STARTUP_TOTAL_T0_US="${GUNSHI_STARTUP_TOTAL_T0_US:0:16}"
+_GUNSHI_STARTUP_TOTAL_SELF="${BASH_SOURCE[0]:-$0}"
+[[ "$_GUNSHI_STARTUP_TOTAL_SELF" = /* ]] || _GUNSHI_STARTUP_TOTAL_SELF="$PWD/$_GUNSHI_STARTUP_TOTAL_SELF"
+_GUNSHI_STARTUP_TOTAL_ROOT="${_GUNSHI_STARTUP_TOTAL_SELF%/scripts/gates/gate_gunshi_startup.sh}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$_GUNSHI_STARTUP_TOTAL_ROOT}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$_GUNSHI_STARTUP_TOTAL_ROOT/scripts/lib/defense_overhead_writer.sh"
+GUNSHI_STARTUP_TOTAL_RECORDED=0
+gunshi_startup_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${GUNSHI_STARTUP_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    GUNSHI_STARTUP_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - GUNSHI_STARTUP_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async gate_gunshi_startup gunshi_startup_total "$wall_ms" "$verdict" \
+        "gate-gunshi-startup-${BASHPID}-${GUNSHI_STARTUP_TOTAL_T0_US}" || true
+}
+gunshi_startup_total_on_exit() { local rc=$?; gunshi_startup_record_total "$rc"; return "$rc"; }
+trap gunshi_startup_total_on_exit EXIT
+
 # Same-session, content-addressed evidence for mandated recovery reads.  Marking
 # is explicit and happens only after the read; a byte change always invalidates.
 gunshi_recovery_session_key() {
@@ -176,7 +201,13 @@ write_auto_idle_actions() {
 
 # === 並列実行最適化: 遅いサブゲートを事前にバックグラウンド起動 ===
 _TMP_D=$(mktemp -d)
-trap 'rm -rf "$_TMP_D"' EXIT
+gunshi_startup_cleanup_on_exit() {
+    local rc=$?
+    rm -rf "${_TMP_D:-}" 2>/dev/null || true
+    gunshi_startup_record_total "$rc"
+    return "$rc"
+}
+trap gunshi_startup_cleanup_on_exit EXIT
 
 _SKILL_REC_SH="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
 _LESSON_SH="$SCRIPT_DIR/scripts/gates/gate_lesson_health.sh"

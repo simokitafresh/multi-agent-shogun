@@ -6,6 +6,32 @@
 
 set -e
 
+# Round8 lane #0': measure the complete entrypoint wall clock, including
+# uninstrumented work between individual startup checks.
+SHOGUN_STARTUP_TOTAL_T0_US="${EPOCHREALTIME/./}"
+SHOGUN_STARTUP_TOTAL_T0_US="${SHOGUN_STARTUP_TOTAL_T0_US:0:16}"
+_SHOGUN_STARTUP_TOTAL_SELF="${BASH_SOURCE[0]:-$0}"
+[[ "$_SHOGUN_STARTUP_TOTAL_SELF" = /* ]] || _SHOGUN_STARTUP_TOTAL_SELF="$PWD/$_SHOGUN_STARTUP_TOTAL_SELF"
+_SHOGUN_STARTUP_TOTAL_ROOT="${_SHOGUN_STARTUP_TOTAL_SELF%/scripts/gates/gate_shogun_startup.sh}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$_SHOGUN_STARTUP_TOTAL_ROOT}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$_SHOGUN_STARTUP_TOTAL_ROOT/scripts/lib/defense_overhead_writer.sh"
+SHOGUN_STARTUP_TOTAL_RECORDED=0
+shogun_startup_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${SHOGUN_STARTUP_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    SHOGUN_STARTUP_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - SHOGUN_STARTUP_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async gate_shogun_startup shogun_startup_total "$wall_ms" "$verdict" \
+        "gate-shogun-startup-${BASHPID}-${SHOGUN_STARTUP_TOTAL_T0_US}" || true
+}
+shogun_startup_total_on_exit() { local rc=$?; shogun_startup_record_total "$rc"; return "$rc"; }
+trap shogun_startup_total_on_exit EXIT
+
 # Defined before the timing-ledger section, the first cache caller.
 run_startup_short_cache() {
     local cache_file="$1"

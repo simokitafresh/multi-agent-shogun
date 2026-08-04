@@ -3,6 +3,36 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Round8 lane #0': complete entrypoint wall-clock telemetry.
+THREE_LAYER_HEALTH_TOTAL_T0_US="${EPOCHREALTIME/./}"
+THREE_LAYER_HEALTH_TOTAL_T0_US="${THREE_LAYER_HEALTH_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$repo_root}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+if [[ -f "$repo_root/scripts/lib/defense_overhead_writer.sh" ]]; then
+    source "$repo_root/scripts/lib/defense_overhead_writer.sh"
+else
+    # Lightweight gate fixtures may intentionally omit optional telemetry
+    # dependencies; preserve the gate's original judgement contract there.
+    defense_overhead_write_async() { return 0; }
+fi
+THREE_LAYER_HEALTH_TOTAL_RECORDED=0
+three_layer_health_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${THREE_LAYER_HEALTH_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    THREE_LAYER_HEALTH_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - THREE_LAYER_HEALTH_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    # Keep the existing source=three_layer_health cache-gap row namespace
+    # unchanged; the entrypoint total has its own source namespace so legacy
+    # consumers that count cache-gap observations remain byte-compatible.
+    defense_overhead_write_async three_layer_health_total three_layer_health_total "$wall_ms" "$verdict" \
+        "three-layer-health-${BASHPID}-${THREE_LAYER_HEALTH_TOTAL_T0_US}" || true
+}
+three_layer_health_total_on_exit() { local rc=$?; three_layer_health_record_total "$rc"; return "$rc"; }
+trap three_layer_health_total_on_exit EXIT
 db_path="${SHOGUN_MEMORY_DB:-$repo_root/data/multi_agent_shogun_memory.db}"
 warn_bytes="${SHOGUN_THREE_LAYER_CACHE_WARN_BYTES:-5368709120}"
 cleanup_script="${SHOGUN_THREE_LAYER_CLEANUP_SCRIPT:-$repo_root/scripts/cleanup_three_layer_tmp.sh}"

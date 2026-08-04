@@ -34,6 +34,36 @@ if [[ -n "${NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY:-}" ]]; then
 fi
 unset _ninja_scope_commit_self
 
+# Round8 lane #0': complete entrypoint wall-clock telemetry.  This is placed
+# after the snapshot re-exec so one invocation emits one row, not a parent and
+# child pair.
+NINJA_SCOPE_COMMIT_TOTAL_T0_US="${EPOCHREALTIME/./}"
+NINJA_SCOPE_COMMIT_TOTAL_T0_US="${NINJA_SCOPE_COMMIT_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$NINJA_SCOPE_COMMIT_SCRIPT_DIR}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/defense_overhead_writer.sh" ]]; then
+    source "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/defense_overhead_writer.sh"
+else
+    # Isolated contract fixtures intentionally copy only scope-path helpers;
+    # telemetry must not turn a valid scoped commit into a dependency failure.
+    defense_overhead_write_async() { return 0; }
+fi
+NINJA_SCOPE_COMMIT_TOTAL_RECORDED=0
+ninja_scope_commit_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${NINJA_SCOPE_COMMIT_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    NINJA_SCOPE_COMMIT_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - NINJA_SCOPE_COMMIT_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async ninja_scope_commit ninja_scope_commit_total "$wall_ms" "$verdict" \
+        "ninja-scope-commit-${BASHPID}-${NINJA_SCOPE_COMMIT_TOTAL_T0_US}" || true
+}
+ninja_scope_commit_total_on_exit() { local rc=$?; ninja_scope_commit_record_total "$rc"; return "$rc"; }
+trap ninja_scope_commit_total_on_exit EXIT
+
 usage() {
     echo "Usage: bash scripts/ninja_scope_commit.sh [-m <message>] [--reflux-mode synced|non-target --reflux-evidence <text>] [--repair-index | --patch <file> --base-blob <hash>] -- <path> [path ...]" >&2
 }
@@ -462,7 +492,13 @@ publish_terminal_failure() {
     fi
     terminal_event_emitted=true
 }
-trap 'publish_terminal_failure "$?"' EXIT
+ninja_scope_commit_failure_on_exit() {
+    local rc=$?
+    publish_terminal_failure "$rc"
+    ninja_scope_commit_record_total "$rc"
+    return "$rc"
+}
+trap ninja_scope_commit_failure_on_exit EXIT
 
 # A successful return is one terminal contract: the commit object exists, the
 # published branch/HEAD ref resolves to that object, all post-checks finished,
@@ -510,6 +546,7 @@ publish_terminal_success() {
             "$singleflight_role" "$singleflight_key" "$terminal_hash" "$singleflight_receipt" >&2
     fi
     terminal_event_emitted=true
+    ninja_scope_commit_record_total 0
     printf '%s\n' "$terminal_hash"
 }
 
@@ -931,7 +968,7 @@ if [[ -n "$patch_file" ]]; then
 
     temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
     rm -f "$temp_index"
-    cleanup_patch_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock"; publish_terminal_failure "$rc"; }
+    cleanup_patch_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock"; publish_terminal_failure "$rc"; ninja_scope_commit_record_total "$rc"; }
     trap cleanup_patch_index EXIT
     export GIT_INDEX_FILE="$temp_index"
     git read-tree "$transaction_head"
@@ -960,7 +997,7 @@ if [[ -n "$patch_file" ]]; then
     # entered the index.  Compare the patch's exact +/- line coordinates and
     # content with a zero-context diff generated from the temporary index.
     staged_patch="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-staged.XXXXXX")"
-    cleanup_patch_index() { rm -f "$temp_index" "$temp_index.lock" "$staged_patch"; }
+    cleanup_patch_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock" "$staged_patch"; ninja_scope_commit_record_total "$rc"; }
     git diff --cached --no-ext-diff --no-color --unified=0 "$transaction_head" -- "$scope_path" > "$staged_patch"
     python3 - "$patch_file" "$staged_patch" <<'PY' \
         || { echo "BLOCK: staged diff does not exactly match requested patch position/content" >&2; exit 2; }
@@ -1079,7 +1116,7 @@ declare -A shared_scope_staged_before=()
 shared_index_paths=()
 temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
 rm -f "$temp_index"
-cleanup_normal_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock"; publish_terminal_failure "$rc"; }
+cleanup_normal_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock"; publish_terminal_failure "$rc"; ninja_scope_commit_record_total "$rc"; }
 trap cleanup_normal_index EXIT
 export GIT_INDEX_FILE="$temp_index"
 git read-tree HEAD

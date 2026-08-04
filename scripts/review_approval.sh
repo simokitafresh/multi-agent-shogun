@@ -9,6 +9,23 @@ defense_writer="$ROOT/scripts/lib/defense_overhead_writer.sh"
 [ -f "$defense_writer" ] || defense_writer="$(cd "$(dirname "$0")" && pwd)/lib/defense_overhead_writer.sh"
 DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$ROOT}"
 source "$defense_writer"
+REVIEW_APPROVAL_TOTAL_T0_US="${EPOCHREALTIME/./}"
+REVIEW_APPROVAL_TOTAL_T0_US="${REVIEW_APPROVAL_TOTAL_T0_US:0:16}"
+REVIEW_APPROVAL_TOTAL_RECORDED=0
+review_approval_record_total() {
+  local rc="${1:-0}" now_us wall_ms verdict
+  [ "${REVIEW_APPROVAL_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+  REVIEW_APPROVAL_TOTAL_RECORDED=1
+  now_us="${EPOCHREALTIME/./}"
+  now_us="${now_us:0:16}"
+  wall_ms=$(( (now_us - REVIEW_APPROVAL_TOTAL_T0_US + 999) / 1000 ))
+  verdict=PASS
+  [ "$rc" -eq 0 ] || verdict=FAIL
+  defense_overhead_write_async review_approval review_approval_total "$wall_ms" "$verdict" \
+    "review-approval-${BASHPID}-${REVIEW_APPROVAL_TOTAL_T0_US}" || true
+}
+review_approval_total_on_exit() { local rc=$?; review_approval_record_total "$rc"; return "$rc"; }
+trap review_approval_total_on_exit EXIT
 if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
   echo "Usage: $0 <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path> [auto|implementation|report]" >&2
   echo "   or: $0 <cmd_id> karo RC_REVOKE <report_path> <reason>" >&2
@@ -352,7 +369,14 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_SKIP_LED
   fi
 fi
 tmp=$(mktemp "$dir/.${role}.XXXXXX")
-trap 'rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*; rmdir "${REVIEW_FP_CACHE_DIR:?}" 2>/dev/null || true' EXIT
+review_approval_cleanup_on_exit() {
+  local rc=$?
+  rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*
+  rmdir "${REVIEW_FP_CACHE_DIR:?}" 2>/dev/null || true
+  review_approval_record_total "$rc"
+  return "$rc"
+}
+trap review_approval_cleanup_on_exit EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 # T1a throughput instrumentation: the approval file above is the existing
@@ -517,6 +541,9 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_NOTIF
       echo "BLOCK: LGTM recorded but Karo notification persistence failed: cmd=$cmd_id report=$report_rel" >&2
       exit 1
     }
+    # D0 bugfix: bulletin_notify型はwatcherが自動既読化し家老に起床nudgeが届かない(殿裁定2026-08-04)。
+    # report_review_result型のinbox_writeを追加し、家老を確実に起床させる。
+    bash "$ROOT/scripts/inbox_write.sh" karo "$review_notice" report_review_result gunshi notify_karo 2>/dev/null || true
     notice_tmp=$(mktemp "$dir/.gunshi_notice.XXXXXX")
     printf '%s\n' "$fingerprint" > "$notice_tmp"
     mv -f "$notice_tmp" "$notice_marker"

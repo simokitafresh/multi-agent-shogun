@@ -18,6 +18,32 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 # shellcheck source=/dev/null
 source "$PROJECT_DIR/scripts/lib/agent_config.sh"
+# Round8 lane #0': complete entrypoint wall-clock telemetry.
+DASHBOARD_UPDATE_TOTAL_T0_US="${EPOCHREALTIME/./}"
+DASHBOARD_UPDATE_TOTAL_T0_US="${DASHBOARD_UPDATE_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$PROJECT_DIR}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+if [[ -f "$PROJECT_DIR/scripts/lib/defense_overhead_writer.sh" ]]; then
+    source "$PROJECT_DIR/scripts/lib/defense_overhead_writer.sh"
+else
+    # Isolated dashboard fixtures may omit optional telemetry dependencies;
+    # preserve the dashboard command's original output/exit contract there.
+    defense_overhead_write_async() { return 0; }
+fi
+DASHBOARD_UPDATE_TOTAL_RECORDED=0
+dashboard_update_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${DASHBOARD_UPDATE_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    DASHBOARD_UPDATE_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - DASHBOARD_UPDATE_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async dashboard_update dashboard_update_total "$wall_ms" "$verdict" \
+        "dashboard-update-${BASHPID}-${DASHBOARD_UPDATE_TOTAL_T0_US}" || true
+}
+dashboard_update_total_on_exit() { local rc=$?; dashboard_update_record_total "$rc"; return "$rc"; }
 
 # Opt-in phase telemetry for latency diagnosis.  The default path performs no
 # extra clock subprocesses; DASHBOARD_UPDATE_PROFILE=1 emits one line per phase.
@@ -87,7 +113,13 @@ log_dashboard_update_skill_result() {
         "$PROJECT_DIR/skills/dashboard-update/SKILL.md" \
         "$_DASHBOARD_UPDATE_USED" >/dev/null 2>&1 || true
 }
-trap 'rc=$?; log_dashboard_update_skill_result "$rc"; exit "$rc"' EXIT
+dashboard_update_cleanup_on_exit() {
+    local rc=$?
+    log_dashboard_update_skill_result "$rc"
+    dashboard_update_record_total "$rc"
+    return "$rc"
+}
+trap dashboard_update_cleanup_on_exit EXIT
 
 # ─── Validation ───
 if [[ -z "$CMD_ID" && "$DRY_RUN" == true ]]; then

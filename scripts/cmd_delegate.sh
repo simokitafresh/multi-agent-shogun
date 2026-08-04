@@ -23,6 +23,31 @@
 
 set -euo pipefail
 
+# Round8 lane #0': complete entrypoint wall-clock telemetry.
+CMD_DELEGATE_TOTAL_T0_US="${EPOCHREALTIME/./}"
+CMD_DELEGATE_TOTAL_T0_US="${CMD_DELEGATE_TOTAL_T0_US:0:16}"
+_CMD_DELEGATE_TOTAL_SELF="${BASH_SOURCE[0]:-$0}"
+[[ "$_CMD_DELEGATE_TOTAL_SELF" = /* ]] || _CMD_DELEGATE_TOTAL_SELF="$PWD/$_CMD_DELEGATE_TOTAL_SELF"
+_CMD_DELEGATE_TOTAL_ROOT="${_CMD_DELEGATE_TOTAL_SELF%/scripts/cmd_delegate.sh}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$_CMD_DELEGATE_TOTAL_ROOT}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$_CMD_DELEGATE_TOTAL_ROOT/scripts/lib/defense_overhead_writer.sh"
+CMD_DELEGATE_TOTAL_RECORDED=0
+cmd_delegate_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${CMD_DELEGATE_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    CMD_DELEGATE_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - CMD_DELEGATE_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async cmd_delegate cmd_delegate_total "$wall_ms" "$verdict" \
+        "cmd-delegate-${BASHPID}-${CMD_DELEGATE_TOTAL_T0_US}" || true
+}
+cmd_delegate_total_on_exit() { local rc=$?; cmd_delegate_record_total "$rc"; return "$rc"; }
+trap cmd_delegate_total_on_exit EXIT
+
 if [ "$#" -lt 2 ]; then
     echo "Usage: cmd_delegate.sh <cmd_id> \"<message>\"" >&2
     exit 1

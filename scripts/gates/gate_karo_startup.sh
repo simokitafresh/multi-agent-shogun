@@ -8,6 +8,27 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Round8 lane #0': complete entrypoint wall-clock telemetry.
+KARO_STARTUP_TOTAL_T0_US="${EPOCHREALTIME/./}"
+KARO_STARTUP_TOTAL_T0_US="${KARO_STARTUP_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$SCRIPT_DIR}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
+KARO_STARTUP_TOTAL_RECORDED=0
+karo_startup_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${KARO_STARTUP_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    KARO_STARTUP_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - KARO_STARTUP_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async gate_karo_startup karo_startup_total "$wall_ms" "$verdict" \
+        "gate-karo-startup-${BASHPID}-${KARO_STARTUP_TOTAL_T0_US}" || true
+}
+karo_startup_total_on_exit() { local rc=$?; karo_startup_record_total "$rc"; return "$rc"; }
+trap karo_startup_total_on_exit EXIT
 # L821: ハードコード忍者名を排除。get_ninja_namesで動的取得
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null || true

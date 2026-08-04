@@ -5,6 +5,31 @@
 
 set -euo pipefail
 
+# Round8 lane #0': complete entrypoint wall-clock telemetry.
+SEMANTIC_INDEX_UPDATE_TOTAL_T0_US="${EPOCHREALTIME/./}"
+SEMANTIC_INDEX_UPDATE_TOTAL_T0_US="${SEMANTIC_INDEX_UPDATE_TOTAL_T0_US:0:16}"
+_SEMANTIC_INDEX_UPDATE_TOTAL_SELF="${BASH_SOURCE[0]:-$0}"
+[[ "$_SEMANTIC_INDEX_UPDATE_TOTAL_SELF" = /* ]] || _SEMANTIC_INDEX_UPDATE_TOTAL_SELF="$PWD/$_SEMANTIC_INDEX_UPDATE_TOTAL_SELF"
+_SEMANTIC_INDEX_UPDATE_TOTAL_ROOT="${_SEMANTIC_INDEX_UPDATE_TOTAL_SELF%/scripts/semantic_index_update.sh}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$_SEMANTIC_INDEX_UPDATE_TOTAL_ROOT}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$_SEMANTIC_INDEX_UPDATE_TOTAL_ROOT/scripts/lib/defense_overhead_writer.sh"
+SEMANTIC_INDEX_UPDATE_TOTAL_RECORDED=0
+semantic_index_update_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${SEMANTIC_INDEX_UPDATE_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    SEMANTIC_INDEX_UPDATE_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - SEMANTIC_INDEX_UPDATE_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async semantic_index_update semantic_index_update_total "$wall_ms" "$verdict" \
+        "semantic-index-update-${BASHPID}-${SEMANTIC_INDEX_UPDATE_TOTAL_T0_US}" || true
+}
+semantic_index_update_total_on_exit() { local rc=$?; semantic_index_update_record_total "$rc"; return "$rc"; }
+trap semantic_index_update_total_on_exit EXIT
+
 usage() {
     cat <<'EOF'
 Usage: bash scripts/semantic_index_update.sh <source_type> <payload_json>
@@ -113,7 +138,13 @@ run_semantic_quality_after_alias_change() {
 }
 
 post_state_file="$(mktemp "${TMPDIR:-/tmp}/semantic_index_update.post.XXXXXX")"
-trap 'rm -f "$post_state_file"' EXIT
+semantic_index_update_cleanup_on_exit() {
+    local rc=$?
+    rm -f "${post_state_file:-}"
+    semantic_index_update_record_total "$rc"
+    return "$rc"
+}
+trap semantic_index_update_cleanup_on_exit EXIT
 
 (
     flock -w 10 200 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
