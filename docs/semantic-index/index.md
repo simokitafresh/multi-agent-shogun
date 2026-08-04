@@ -10013,6 +10013,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608041408_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608050612_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608050642_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608050742_hanzo` — [[semantic_causal_automation]] -> `docs/research/nxe-2d-robustness-asis-tobe-5w1h_20260801.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
