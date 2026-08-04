@@ -1002,7 +1002,15 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
     disown 2>/dev/null || true
     _SKILL_LOG="$REPO_ROOT/scripts/skill_execution_log.sh"
     _REPORT_WRITE_SKILL="$REPO_ROOT/skills/report-write/SKILL.md"
-    if [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_LOG" ]; then
+    # queue/配下の実報告のみスキル品質台帳へ記録する。ベンチ・fixture実行
+    # (.cache//tmp等)を本番品質として記録すると台帳が汚染されstartup gateが
+    # 偽ALERTを出す(2026-08-04実証: round8ベンチのio_with_log_*.yamlがFAIL連投
+    # →家老エスカレーション)。gate本来の判定・exit codeは影響を受けない。
+    case "$REPORT_PATH" in
+        "$REPO_ROOT"/queue/*|queue/*) _GRF_GENUINE_REPORT=1 ;;
+        *) _GRF_GENUINE_REPORT=0 ;;
+    esac
+    if [ "$_GRF_GENUINE_REPORT" = "1" ] && [ "${SKILL_EXECUTION_PASS_LOG_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_LOG" ]; then
         # cmd_karo_hotfix_control_plane_contracts_ga321_20260723:
         # sync loggerもtransitive background子を起動し得るためFD199を先に閉じる。
         # WSL2最適化: skill_execution_log.sh を非同期化。
@@ -1108,7 +1116,12 @@ except Exception:
     # cmd_2459: Gate FAIL → relevant skill feedback loop.
     # Best-effort only: report gate must remain responsible for the FAIL exit.
     _SKILL_FEEDBACK="$REPO_ROOT/scripts/skill_gate_feedback.sh"
-    if [ "${SKILL_GATE_FEEDBACK_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_FEEDBACK" ]; then
+    # queue/配下の実報告のみ(ベンチfixture汚染防止。PASS側L1005-1014と同一ガード)
+    case "$REPORT_PATH" in
+        "$REPO_ROOT"/queue/*|queue/*) _GRF_GENUINE_REPORT=1 ;;
+        *) _GRF_GENUINE_REPORT=0 ;;
+    esac
+    if [ "$_GRF_GENUINE_REPORT" = "1" ] && [ "${SKILL_GATE_FEEDBACK_DISABLE:-0}" != "1" ] && [ -x "$_SKILL_FEEDBACK" ]; then
         _target_skill=""
         case "$REASONS" in
             *lesson_candidate*|*lessons_useful*|*result.summary*|*files_modified*|*status:\ \"pending\"*|*assumption_invalidation*|*purpose_validation*)
