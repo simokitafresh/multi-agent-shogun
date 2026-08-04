@@ -153,6 +153,7 @@ friction_type: `ambiguous_scope` | `missing_context` | `too_many_acs` | `unclear
 - Two-pass Review: CRITICALはblocking(PASS/FAIL直結)、INFORMATIONALは記録のみ(non-blocking)。→ detail §3 Two-pass Review
 - A/B/C Triage: レビュー指摘を3分類。A:Fix(修正必須→impl再配備)、B:Acknowledge(認識するが今回対応不要→理由記録)、C:False Positive(偽陽性→以後抑制)。PASS/FAIL/WAIVEとの対応表あり。→ detail §3 A/B/C Triage
 - Re-review Loop: blocking fix→修正task配備→再レビュー配備の明示フロー。曖昧に続行するな。→ detail §3 Re-review Loop
+- **途中FAILの再実走を家老が奪うな**: 忍者が再実行できる検証は `karo RC → 同一cmd再配備` を第一選択とし、家老D0でtest/gateを再実走しない。家老の実走はwave最終checkpointの統合検証1回に集中する。途中での家老再実走は忍者の回転を止め、同じ実行手順を二重に作る車輪の再発明である（殿指摘2026-08-04）。
 - **Context還流判定**: GATE CLEAR前に「この報告にcontext索引を更新すべき数値・事実があるか？」を判定せよ。あればGATE CLEAR処理の一部としてcontext更新を実行。対象: 性能テーブル、設計決定、新API仕様、パイプライン状態等。**Why**: 報告YAMLに閉じた情報はアーカイブ後に将軍から見えなくなり、古いcontextで誤判断する（cmd_1048-1052後のgs-speedup§6未更新が契機）。
 - **後方伝播検証（assumption_invalidation）**: 忍者報告の `assumption_invalidation` 欄を確認せよ。
   - `found: true` → `affected_cmds` に列挙された過去cmdの前提を再検証する計画を将軍に報告。ntfy送信: `bash scripts/ntfy.sh "【家老】後方伝播検出: cmd_XXXX の前提が cmd_YYYY の結果により変更。再検証要"`
