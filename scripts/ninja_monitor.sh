@@ -9350,6 +9350,8 @@ start_ninja_monitor_owner_heartbeat_watch() {
     local owner_file="$NINJA_MONITOR_OWNER_FILE"
     local pid_file="$STATE_DIR/ninja_monitor.pid"
     [ -n "$owner_file" ] || owner_file="$STATE_DIR/ninja_monitor.owner"
+    NINJA_MONITOR_OWNER_FILE="$owner_file"
+    export NINJA_MONITOR_OWNER_FILE
     export -f log close_inherited_non_stdio_fds _ninja_monitor_pid_is_live \
         _ninja_monitor_refresh_owner_lease _ninja_monitor_owner_heartbeat_watch
     export LOG STATE_DIR NINJA_MONITOR_OWNER_FILE NINJA_MONITOR_GENERATION
@@ -9598,6 +9600,11 @@ if [ "${1:-}" = "--check-and-update-done-task" ]; then
     exit $?
 fi
 
+NINJA_MONITOR_OWNER_WATCH_OWNER_PID="$$"
+NINJA_MONITOR_OWNER_WATCH_PARENT_PID="$$"
+export NINJA_MONITOR_OWNER_WATCH_OWNER_PID NINJA_MONITOR_OWNER_WATCH_PARENT_PID
+start_ninja_monitor_owner_heartbeat_watch
+
 discover_panes
 
 # hayate事故(2026-04-28): bypass欠落で確認プロンプト停止。startup直後から検査する。
@@ -9609,10 +9616,6 @@ prev_idle=""
 prev_gate_sig=""
 _NM_SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 _NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
-NINJA_MONITOR_OWNER_WATCH_OWNER_PID="$$"
-NINJA_MONITOR_OWNER_WATCH_PARENT_PID="$$"
-export NINJA_MONITOR_OWNER_WATCH_OWNER_PID NINJA_MONITOR_OWNER_WATCH_PARENT_PID
-start_ninja_monitor_owner_heartbeat_watch
 start_ninja_monitor_hot_reload_watch
 
 while true; do
