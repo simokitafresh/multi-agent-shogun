@@ -793,7 +793,7 @@ auto_commit_normalize_scope_path() {
 auto_commit_scope_paths_for_agent() {
     local agent_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
-    local task_status raw_scope
+    local task_status raw_scope planned_scope
 
     [ -f "$task_file" ] || return 0
     task_status="$(yaml_field_get "$task_file" "status" "" || true)"
@@ -805,10 +805,33 @@ auto_commit_scope_paths_for_agent() {
             ;;
     esac
     raw_scope="$(yaml_field_get "$task_file" "target_path" "" || true)"
-    [ -n "${raw_scope//[[:space:]]/}" ] || return 0
+    if [ -n "${raw_scope//[[:space:]]/}" ]; then
+        while IFS= read -r raw_line || [ -n "$raw_line" ]; do
+            auto_commit_normalize_scope_path "$raw_line"
+        done <<< "$raw_scope"
+    fi
+    # target_path is the primary scope, while planned_paths is the task's
+    # complete ownership set. Both are authoritative for notification
+    # filtering; omitting planned_paths leaks unrelated repository dirt when
+    # a task owns multiple files (RC 2026-08-04).
+    planned_scope="$(python3 - "$task_file" <<'PY' 2>/dev/null || true
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    task = yaml.safe_load(fh) or {}
+task = task.get("task") or {}
+paths = task.get("planned_paths") or []
+if isinstance(paths, str):
+    paths = [paths]
+for path in paths:
+    if path is not None:
+        print(path)
+PY
+)"
     while IFS= read -r raw_line || [ -n "$raw_line" ]; do
         auto_commit_normalize_scope_path "$raw_line"
-    done <<< "$raw_scope"
+    done <<< "$planned_scope"
 }
 
 auto_commit_path_in_scope() {
@@ -3517,7 +3540,7 @@ is_task_deployed() {
                         looked_up=$(grep -A5 "id: ${uncommit_project_id}$" "$SCRIPT_DIR/config/projects.yaml" | grep "path:" | head -1 | sed 's/.*path: *"\([^"]*\)"/\1/')
                         [ -n "$looked_up" ] && [ -d "$looked_up" ] && uncommit_project_path="$looked_up"
                     fi
-                    uncommit_files=$(cd "$uncommit_project_path" && { git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null; } | sort -u)
+                    uncommit_files=$(cd "$uncommit_project_path" && { git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null; } | sort -u | filter_auto_commit_paths_by_task_scope "$name")
                     if [ -n "$uncommit_files" ]; then
                         UNCOMMITTED_BLOCK_SENT[$gate_key]="1"
                         local uncommit_file_list
@@ -6286,7 +6309,7 @@ evaluate_active_idle_report_recovery() {
         looked_up=$(grep -A5 "id: ${project_id}$" "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null | grep "path:" | head -1 | sed 's/.*path: *"\([^"]*\)"/\1/')
         [ -n "$looked_up" ] && [ -d "$looked_up" ] && project_path="$looked_up"
     fi
-    uncommitted_files=$(cd "$project_path" && { git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null; } | sort -u || true)
+    uncommitted_files=$(cd "$project_path" && { git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null; } | sort -u | filter_auto_commit_paths_by_task_scope "$name" || true)
     [ -n "$uncommitted_files" ] || return 0
 
     commit_key="${name}:${task_id}:uncommitted"

@@ -1424,6 +1424,8 @@ task:
   status: assigned
   task_id: cmd_3751_full
   parent_cmd: cmd_3751
+  planned_paths:
+    - base.txt
 EOF
 
 cat > "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" <<'"'"'EOF'"'"'
@@ -1455,6 +1457,38 @@ cat "$TEST_LOG"
     [ "$status" -eq 0 ]
     [[ "$output" == *"COMMIT_BLOCK_COUNT=1"* ]]
     [[ "$output" == *"未commitファイルあり: base.txt"* ]]
+}
+
+@test "uncommitted notification scope excludes repo-dirty files outside task path" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/scope-filter"
+mkdir -p "$TMP_ROOT/queue/tasks"
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/filter.log"
+cat > "$TMP_ROOT/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: in_progress
+  target_path: scripts/ninja_monitor.sh
+  planned_paths:
+    - tests/unit/test_ninja_monitor_stall.bats
+EOF
+log() { printf "%s\n" "$1" >> "$LOG"; }
+outside=$(printf "repo-dirty-%02d.md\n" $(seq 1 38))
+paths=$(printf "%s\n%s\n%s\n" "scripts/ninja_monitor.sh" "tests/unit/test_ninja_monitor_stall.bats" "$outside")
+scoped=$(printf "%s" "$paths" | filter_auto_commit_paths_by_task_scope kagemaru)
+test "$(printf "%s\n" "$scoped" | sed "/^$/d" | wc -l)" -eq 2
+grep -qx "scripts/ninja_monitor.sh" <<< "$scoped"
+grep -qx "tests/unit/test_ninja_monitor_stall.bats" <<< "$scoped"
+test "$(grep -c "AUTO-COMMIT-SCOPE-SKIP: kagemaru" "$LOG")" -eq 38
+printf "repo_dirty=40 scope_selected=2 scope_excluded=38\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"repo_dirty=40 scope_selected=2 scope_excluded=38"* ]]
 }
 
 @test "count_unread_messages_cached: same cycle reuses count and next cycle refreshes" {
