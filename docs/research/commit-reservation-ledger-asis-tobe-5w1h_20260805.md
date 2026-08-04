@@ -1,4 +1,4 @@
-<!-- gist-master: pending -->
+<!-- gist-master: 20bd7f137665f0badedb7241035732c3 commit-reservation-ledger-asis-tobe-5w1h_20260805.md -->
 # commit予約台帳 — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 v1.0
 
 > v1.0(2026-08-05 03:58 殿発案): commit競合で将軍が20分以上浪費した実事例から。殿『コミットの予約台帳みたいなものを共有して順番を予約する仕組みにすればいいのでは？』
