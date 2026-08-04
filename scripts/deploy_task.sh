@@ -1675,6 +1675,10 @@ STALE_FIELDS = [
     # report identityは配備世代ごとの一意契約。旧世代taskからfast publicationへ
     # 渡すと別report pathでも同じUUIDを再利用するため、世代境界で必ず除去する。
     'report_id', 'report_identity_version',
+    # Pre-implementation review is bound to one exact task_id + AC fingerprint.
+    # Reusing it across task generations makes a valid new APPROVE collide with
+    # the predecessor receipt before the new task can be published.
+    'pre_implementation_review',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。

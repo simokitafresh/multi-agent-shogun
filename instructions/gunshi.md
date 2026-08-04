@@ -632,7 +632,18 @@ S0 を通過した変更には commit message に以下を添付せよ:
 依頼にはdraft cmdの内容（purpose/AC/command）と元の偵察報告参照先が含まれる。
 
 ### 返信
-inbox_writeで家老に返す（type: review_result）。
+REQUEST_CHANGES / REJECT はinbox_writeで家老に返す（type: review_result）。
+APPROVEだけは手動inbox_writeを禁止し、task現物へexact receiptを記録してから通知する専用入口を必ず使う。
+
+```bash
+bash scripts/draft_review_approval.sh \
+  queue/tasks/{ninja}.yaml \
+  {task.task_id} \
+  {task.ac_version} \
+  {APPROVE判断のevidence_message_id}
+```
+
+この入口はtask_id・AC fingerprint・statusを照合し、`pre_implementation_review`をflock下で`yaml_field_set.sh`経由で原子的に記録する。記録成功後だけ`review_result`を家老へ通知する。APPROVE文面だけを`inbox_write.sh`で送ってはならない。
 
 フォーマット:
 ```

@@ -237,7 +237,18 @@ causal_chain: "未検証前提→誤配備→家老workaround増。個別SQL×10
 2. 必要な `projects/{id}.yaml`、`context/{project}.md`、関連ログを読む
 3. semantic_concepts / semantic_search の要否を確認する
 4. 6観点でレビュー
-5. `APPROVE / REQUEST_CHANGES / REJECT` を家老へ返す
+5. `REQUEST_CHANGES / REJECT` は従来の`review_result`で家老へ返す
+6. `APPROVE` は手動inbox_writeを禁止し、次の専用入口でexact task receiptを記録してから通知する
+
+```bash
+bash scripts/draft_review_approval.sh \
+  queue/tasks/{ninja}.yaml \
+  {task.task_id} \
+  {task.ac_version} \
+  {APPROVE判断のevidence_message_id}
+```
+
+専用入口はtask_id・AC fingerprint・statusを照合し、`pre_implementation_review`をflock下で`yaml_field_set.sh`経由で原子的に記録する。記録成功後だけ`review_result`を家老へ通知する。APPROVE文面だけを`inbox_write.sh`で送ってはならない。
 
 ### Report Review
 
