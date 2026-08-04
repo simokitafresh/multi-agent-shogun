@@ -1,5 +1,6 @@
 # Rebalancer Context
-<!-- last_updated: 2026-08-04 cmd_4226 reviewed source boundary -->
+<!-- last_updated: 2026-08-04 cmd_4227 reviewed source boundary -->
+<!-- source_commit:e3c4565 reason:cmd_4227 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=e3c4565 -->
 <!-- source_commit:9ef55fb reason:cmd_4226 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=9ef55fb -->
 <!-- source_commit:1866696 reason:cmd_4225_backend_impl reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=1866696 -->
 <!-- source_commit:f541642 reason:cmd_karo_hotfix_rebalancer_health_deploy_identity_20260729 evidence:reviewed -->
