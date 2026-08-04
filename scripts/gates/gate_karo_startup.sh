@@ -2419,6 +2419,41 @@ done
 [ "$_failed_unclosed_count" -gt 0 ] || echo "  OK: failed_unclosed 0件"
 echo ""
 
+# --- Check 9.2b: completed task with active report but no terminal archive ---
+# A completed report is not a closed lifecycle until archive.done and the
+# ordered cmd_complete terminal checkpoint are both durable.  This check is
+# intentionally independent from the idle/pane checks so a busy Karo cannot
+# hide a report that would block the next deployment.
+echo "■ completed未archive検知"
+_completed_unarchived_count=0
+for _cur_ninja in $_KARO_NINJA_NAMES; do
+    _cur_task_file="$SCRIPT_DIR/queue/tasks/${_cur_ninja}.yaml"
+    [ -f "$_cur_task_file" ] || continue
+    _cur_status=$(awk '/^[[:space:]]*status:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/[[:space:]]/,"",v); gsub(/"/,"",v); print v; exit }' "$_cur_task_file" 2>/dev/null)
+    case "$_cur_status" in done|completed|PASS) ;; *) continue ;; esac
+    _cur_parent_cmd=$(awk '/^[[:space:]]*parent_cmd:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/[[:space:]]/,"",v); gsub(/"/,"",v); print v; exit }' "$_cur_task_file" 2>/dev/null)
+    [ -n "$_cur_parent_cmd" ] || continue
+    _cur_gate_dir="$SCRIPT_DIR/queue/gates/$_cur_parent_cmd"
+    if [ -f "$_cur_gate_dir/archive.done" ] &&
+       [ -f "$_cur_gate_dir/completion_tail.log" ] &&
+       grep -Fqx -- "[cmd_complete] COMPLETE $_cur_parent_cmd" "$_cur_gate_dir/completion_tail.log"; then
+        continue
+    fi
+    _cur_active_report=""
+    while IFS= read -r _cur_candidate; do
+        [ -f "$_cur_candidate" ] && [ ! -L "$_cur_candidate" ] || continue
+        _cur_active_report="$_cur_candidate"
+        break
+    done < <(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -type f -name "${_cur_ninja}_report_${_cur_parent_cmd}*.yaml" -print 2>/dev/null)
+    [ -n "$_cur_active_report" ] || continue
+    echo "  ALERT: ${_cur_ninja} completed_unarchived task=${_cur_parent_cmd} report=$(basename "$_cur_active_report") action=archive_terminal"
+    overall="ALERT"
+    alerts+=("${_cur_ninja}: completed_unarchived task=${_cur_parent_cmd} report=$(basename "$_cur_active_report") action=archive_terminal")
+    _completed_unarchived_count=$((_completed_unarchived_count + 1))
+done
+[ "$_completed_unarchived_count" -gt 0 ] || echo "  OK: completed_unarchived 0件"
+echo ""
+
 # --- Check 9.3: task status=failed × report status=completed 乖離検知 (INS-20260708-165744270-6a1d) ---
 # cmd_3771/3772がtask status=failed+報告YAML status=completedの乖離状態で約75分滞留した事故の再発防止
 echo "■ failed×report completed 乖離検知"
