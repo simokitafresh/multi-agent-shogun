@@ -1,3 +1,4 @@
+<!-- gist-master: 9700daa0a666bfd37629ff12f64d43ab hot-script-speedup-round4-asis-tobe-5w1h_20260728.md -->
 # ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.5 【⚙稼働中】
 
 > 状態: checkpoint 3巡目実行中 — 2巡で残存不整合2件を検出・是正済み (2026-07-29 03:15 覚醒更新。版履歴は§-3)
