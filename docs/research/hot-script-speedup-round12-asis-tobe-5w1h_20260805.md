@@ -1,3 +1,4 @@
+<!-- gist-master: c325edf9169d327b290a38cdf9e0352c hot-script-speedup-round12-asis-tobe-5w1h_20260805.md -->
 # ホットスクリプト集中高速化 第十二弾 — 二段計測16-25位層(cmd_save子区分+配送検証+dashboard+precheck内訳) — AsIs/ToBe 5W1H設計書 v1.0
 
 > 初版起草(2026-08-05 00:00。殿指示23:59『第十二弾も作成してくれ16位〜25位だ』)
