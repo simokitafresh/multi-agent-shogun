@@ -53,6 +53,23 @@ fi
 ARCHIVE_DIR="$SCRIPT_DIR/archive/inbox"
 mkdir -p "$ARCHIVE_DIR"
 
+# GA-IA1(2026-08-04): 未配備cmdの指示消失防止。status: delegated(=委任済みだが
+# 忍者未配備)のcmdを指すcmd_newメッセージは、既読でもarchiveへ掃き出さず
+# inboxに残す。実証事故: cmd_4228/4229のcmd_newが既読化→cmd_4227完了処理の
+# archive sweepで退避され、idle忍者4名のまま35分間配備されなかった。
+# 既読化=nudge消費であって処理完了ではない。配備完了(status遷移)が唯一の完了証跡。
+RETAIN_CMD_IDS=""
+_ia_cmds_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+if [ "$AGENT" = "karo" ] && [ -f "$_ia_cmds_file" ]; then
+    RETAIN_CMD_IDS=$(awk '
+        /^  cmd_[0-9A-Za-z_]+:[[:space:]]*$/ { id=$1; sub(/:$/,"",id); next }
+        /^    status:/ {
+            if (id != "" && $0 ~ /delegated/) print id
+            id=""
+        }
+    ' "$_ia_cmds_file" | tr '\n' ',' || true)
+fi
+
 printf -v DATE_STAMP '%(%Y%m%d)T' -1
 ARCHIVE_FILE="$ARCHIVE_DIR/${AGENT}_${DATE_STAMP}.yaml"
 
@@ -140,7 +157,7 @@ inbox_archive_fast_path() {
         return 1
     }
 
-    if ! awk -v read_out="$read_tmp" -v unread_out="$unread_tmp" -v stats_out="$stats_tmp" '
+    if ! awk -v read_out="$read_tmp" -v unread_out="$unread_tmp" -v stats_out="$stats_tmp" -v retain_ids="${RETAIN_CMD_IDS:-}" '
 # Detect complex YAML in a single pass — replaces grep -Eq pre-scan
 /^[[:space:]][[:space:]][[:space:]][[:space:]]/ {
     if (block_key != "") {
@@ -238,10 +255,21 @@ function emit_msg(out,    keys,nkeys,i,prefix,k) {
         }
     }
 }
+function retained_cmd_new(    i, t, c) {
+    # GA-IA1: 未配備(delegated)cmdへのcmd_newは既読でもinbox側へ残す
+    if (n_retain == 0) return 0
+    t = unquote(values["type"])
+    if (t != "cmd_new") return 0
+    c = values["content"]
+    for (i = 1; i <= n_retain; i++) {
+        if (retain_arr[i] != "" && index(c, retain_arr[i]) > 0) return 1
+    }
+    return 0
+}
 function flush_msg() {
     if (!in_msg) return
     total_count++
-    if (read_value == "true") {
+    if (read_value == "true" && !retained_cmd_new()) {
         read_count++
         emit_msg(read_out)
     } else {
@@ -251,6 +279,7 @@ function flush_msg() {
 }
 BEGIN {
     total_count = read_count = unread_count = 0
+    n_retain = split(retain_ids, retain_arr, ",")
     reset_msg()
 }
 /^[[:space:]]*messages:[[:space:]]*\[\][[:space:]]*$/ { empty_seen = 1; next }
@@ -355,7 +384,7 @@ while [ $attempt -lt $max_attempts ]; do
             exit 0
         fi
 
-        INBOX_PATH="$INBOX" ARCHIVE_PATH="$ARCHIVE_FILE" AGENT_ID="$AGENT" python3 -c "
+        INBOX_PATH="$INBOX" ARCHIVE_PATH="$ARCHIVE_FILE" AGENT_ID="$AGENT" RETAIN_CMD_IDS="${RETAIN_CMD_IDS:-}" python3 -c "
 import yaml, sys, os, tempfile
 
 inbox_path = os.environ['INBOX_PATH']
@@ -371,8 +400,15 @@ if not data or not data.get('messages'):
     sys.exit(0)
 
 msgs = data['messages']
-unread = [m for m in msgs if not m.get('read', False)]
-read_msgs = [m for m in msgs if m.get('read', False)]
+
+# GA-IA1: 未配備(delegated)cmdへのcmd_newは既読でもinbox側へ残す
+retain_ids = [x for x in os.environ.get('RETAIN_CMD_IDS', '').split(',') if x]
+def _retained(m):
+    return (m.get('type') == 'cmd_new'
+            and any(rid in str(m.get('content', '')) for rid in retain_ids))
+
+unread = [m for m in msgs if not m.get('read', False) or _retained(m)]
+read_msgs = [m for m in msgs if m.get('read', False) and not _retained(m)]
 
 print(f'[inbox_archive] {agent_id}: total={len(msgs)}, read={len(read_msgs)}, unread={len(unread)}')
 
