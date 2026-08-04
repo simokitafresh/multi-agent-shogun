@@ -22,7 +22,7 @@
 
 ## §0 序列SSOT(2026-08-04 23:59 将軍一次実測 — 直近24時間)
 
-**取得方法**: `logs/defense_overhead.jsonl`から直近24時間を抽出し、source:check_id別にwall_msの累積・中央値・max・p95・呼出数を算出(Python statistics.median+sorted percentile)。1件=jsonl 1行=1計測イベント。第十弾(1-7位)・第十一弾(8-15位)は除外。
+**取得方法**: `logs/defense_overhead.jsonl`から直近24時間を抽出し、source:check_id別にwall_msの累積・中央値・max・p95・呼出数を算出(Python statistics.median+sorted percentile)。1件=jsonl 1行=1計測イベント。第十弾(1-7位)・第十一弾(8-15位)は除外。**累積時間はagent-hours(全CLI合算)**=9並列CLIの全呼出しの合計であり壁時計の24h/日を超えうる。
 
 ### 累積課税序列(直近24時間・Tier 2)
 

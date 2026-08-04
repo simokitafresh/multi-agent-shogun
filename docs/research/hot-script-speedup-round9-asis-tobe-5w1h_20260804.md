@@ -19,7 +19,7 @@
 
 ## §0 序列SSOT(2026-08-04 18:46 将軍一次実測 — 既存台帳のみ・新台帳なし)
 
-**取得方法**: `logs/defense_overhead.jsonl`(174,227行)から2026-07-28以降の行を抽出し、source:check_id別にwall_msの中央値と累積を算出(1件=jsonl 1行=1計測イベント)。集計はPython statistics.median+sum、生出力を下表へそのまま転記。第八弾標的は表に残すが背景色扱い(本弾対象外)。
+**取得方法**: `logs/defense_overhead.jsonl`(174,227行)から2026-07-28以降の行を抽出し、source:check_id別にwall_msの中央値と累積を算出(1件=jsonl 1行=1計測イベント)。集計はPython statistics.median+sum、生出力を下表へそのまま転記。第八弾標的は表に残すが背景色扱い(本弾対象外)。**累積時間はagent-hours(全CLI合算)**=9並列CLIの全呼出しの合計であり壁時計の24h/日を超えうる。
 
 ### 累積課税序列(第八弾標的を除いた次層)
 
