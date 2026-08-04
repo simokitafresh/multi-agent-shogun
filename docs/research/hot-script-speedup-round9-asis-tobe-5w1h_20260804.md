@@ -1,7 +1,7 @@
 <!-- gist-master: 59a5e79368f385cddfdb0656fd8ca3bd hot-script-speedup-round9-asis-tobe-5w1h_20260804.md -->
 # ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.1 【📋設計済・裁可待ち】
 
-> 状態: v1.1(2026-08-04 18:58 §0.6サイレント盲点サーベイ追加+弾#0''をhookチェーン計装として弾台帳へ追加) / v1.0初版起草(2026-08-04 18:46。殿発案『第九弾の設計書を作ろう。以前の設計書を参考にして同じスタイルで。進捗表も』)。序列=将軍一次実測18:46(下記§0)
+> 状態: v1.2(2026-08-04 20:16 殿裁可『よい。追記したらレーン方式で家老にやらせよう』。§0.6母集団漏れ3系(git pre-push/Codex固有hook/セッション境界+基本コマンド)を弾#0''スコープへ同梱) / v1.1(2026-08-04 18:58 §0.6サイレント盲点サーベイ追加+弾#0''をhookチェーン計装として弾台帳へ追加) / v1.0初版起草(2026-08-04 18:46。殿発案『第九弾の設計書を作ろう。以前の設計書を参考にして同じスタイルで。進捗表も』)。序列=将軍一次実測18:46(下記§0)
 
 > シリーズ: ホットスクリプト集中高速化。第一弾〜第四弾✅ / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅(10レーン) / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(identity基盤完成・P1b蓄積待ち) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅(全量wall -3.35%確定) / 第八弾=`hot-script-speedup-round8-asis-tobe-5w1h_20260804.md`(🚀進行中: 弾#4 -65%済・#0'計装済・#1-#3/#5進行) / **第九弾=本書**
 
@@ -56,6 +56,8 @@
 
 **含意**: 第八弾#0'の原理「エントリポイントには必ず*_total計装」を**CLIライフサイクルhook層へ拡張**する弾(仮称**弾#0''**)が、序列確定の前提として本弾の全是正弾に先行すべき。デーモンはcycle単位計装(1ポーリング=1row)を別型で設計する。
 
+**v1.2追記(母集団漏れ3系 — 将軍突合実測2026-08-04 20:15)**: (a)**git hooks**: `.git/hooks/pre-commit`はdefense_overhead接続済みだが、`grep -l defense_overhead`でpre-push/commit-msg/post-commitは不検出=未接続。忍者の全commit/pushに乗る層 (b)**Codex固有hook**(`.codex/hooks.json`の`codex_skill_execution_guard.sh`等): dispatch共有分は弾#0''で自動カバーされるが、Codex専用実体は別途1行計装が要る(multi-CLI大原則=CLI固有実装はCLI別に計装) (c)**セッション境界2本+基本コマンド4本**(semantic_search/bulletin_write/inbox_mark_read/lesson_write): §0.6表で未実測のまま。いずれもsave_total型と同型ゆえ**弾#0''スコープへ同梱**(追加コストほぼゼロ)。デーモンcycle計装のみ別型として分離を維持。
+
 **注意(計測の再帰課税)**: hook計装自体がhookを遅くしては本末転倒。defense_overhead_write_asyncの非同期書込み(既存live実装)を使い、計装オーバーヘッド<5ms/回をfixtureで確認してから展開する。
 
 ## §1 計測境界(憲法・第五〜八弾継承)
@@ -86,7 +88,7 @@
 | 2 | `heavy_job_admission:queue_wait` | 外れ値(待機) | med 0s×1,313・total 8,839s | #1の裾同定と合同で真因特定→wait発生条件の是正。#1と同scriptゆえ直列(#1→#2) |
 | 3 | `deploy_task:deploy_total` | 恒常課税 | med 1.86s×2,383・total 19,275s | 残余の子区分計測→最大寄与是正(第六弾-47%の続き。inject系・contract生成の分解) |
 | 4 | `cmd_save:save_total`+`checks_main` | 恒常課税 | save_total med 2.47s×155 / checks_main med 1.31s×881 | 未計装区間≈1.2sの同定+--preflight実測≈150s経路の別経路特定→最大寄与是正 |
-| **弾#0''** | **CLIライフサイクルhook層の計装**(pretool/posttool dispatch・prompt_state_inject・stop hooks) | 計測基盤 | §0.6: 全て台帳未接続。サンプル実測=pre 204ms+post 357ms/毎tool、prompt 1,207ms/毎prompt、stop 943ms/毎Stop | save_total型のdispatch入口T0+EXIT trap 1行write(非同期・計装overhead<5ms fixture確認)。**全是正弾に先行** |
+| **弾#0''** | **CLIライフサイクルhook層の計装**(pretool/posttool dispatch・prompt_state_inject・stop hooks **+v1.2同梱: git pre-push等未接続git hooks・Codex固有hook・セッション境界2本・基本コマンド4本**) | 計測基盤 | §0.6: 全て台帳未接続。サンプル実測=pre 204ms+post 357ms/毎tool、prompt 1,207ms/毎prompt、stop 943ms/毎Stop | save_total型のdispatch入口T0+EXIT trap 1行write(非同期・計装overhead<5ms fixture確認)。**全是正弾に先行** |
 | 補欠A | `gate_gunshi_report_precheck:full_precheck` | 恒常課税 | med 1.22s×2,136・total 10,164s | **第八弾#5(body_rest)帰結確定後のみ着手**(同族writer衝突回避の直列条件) |
 | 補欠B | 弾#0'計装で新規に載る*_total群 | 計測覚醒待ち | startup gate三本・semantic_index_update・ninja_scope_commit・cmd_delegate等(蓄積<1日) | 第0手の序列再実測で序列入りすれば昇格。特にninja_scope_commit(体感46s・本日index.lock競合3件の主戦場)とstartup gate(毎/clear分単位) |
 | 補欠C | 共有lock競合ファミリー | 待機(横断) | 本日実証3件: prompt_consumed_ledger flock timeout(殿prompt消失)・git index.lock競合・DASHBOARD flock timeout(archive worker 5件) | lock保持時間の計測row追加→保持長の真因特定のみ本弾。是正は判断後(DrvFS上の共有lockは設計変更を伴うため) |
@@ -111,9 +113,9 @@
 
 | 項 | 状態 |
 |---|---|
-| 第九弾の起動 | 殿発案2026-08-04 18:46。**設計書の裁可待ち(本書v1.0)** |
+| 第九弾の起動 | 殿発案2026-08-04 18:46。**殿裁可2026-08-04 20:16『よい。追記したらレーン方式で家老にやらせよう』(v1.2)** |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 18:46・174,227行)。**第0手=裁可時に再実測**(第五弾RC1教訓) |
-| 弾数・標的固定 | **本書で4+補欠3を提案**。殿裁可で固定 |
+| 弾数・標的固定 | **裁可で固定(2026-08-04 20:16)**: 弾#0''(v1.2同梱スコープ)+4弾+補欠3 |
 | heavy_job 2弾の直列 | 提案(同一script writer原則)。裁可対象 |
 | 高速化と防御力の境界 | **確定**: 検証力不変・fail-closed維持・チェック間引き禁止(LS099/殿裁定07-21『削るな速くしろ』) |
 | 起票解禁 | 設計書裁可→(必要なら家老・軍師レビュー)→**レーン方式で配備**。第八弾#1-#3/#5と並列(writer非重複確認済み) |
