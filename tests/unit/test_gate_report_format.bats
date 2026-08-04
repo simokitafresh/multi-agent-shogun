@@ -101,3 +101,115 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"queue/insights.yaml"* ]]
 }
+
+# test_necessity: the report gate must distinguish a legitimate duplicate
+# insight eviction from data loss while preserving the existing unique-ID
+# contract.  This is the focused six-case regression contract for
+# cmd_karo_fix_reflux_duplicate_preimage_gate_20260804.
+# regression_justification: commit 52f29f2c6 removed one of two identical
+# insight entries; rejecting the duplicate preimage blocks valid reflux
+# reports, while accepting an unverified disappearance can hide data loss.
+make_duplicate_preimage_fixture() {
+    local fixture="$1"
+    local mode="$2"
+    local insight_id="INS-20260804-142209841-2aaf"
+    mkdir -p "$fixture/queue/archive"
+    cat > "$fixture/queue/insights.yaml" <<YAML
+insights:
+- id: $insight_id
+  source: self_retro
+  status: resolved
+  priority: high
+  occurrence_count: 15
+  last_seen: "2026-08-04T17:44:06+09:00"
+YAML
+    if [[ "$mode" == "duplicate" || "$mode" == "archive" || "$mode" == "missing" || "$mode" == "field-change" || "$mode" == "duplicate-increase" ]]; then
+        cat >> "$fixture/queue/insights.yaml" <<YAML
+- id: $insight_id
+  source: self_retro
+  status: resolved
+  priority: high
+  occurrence_count: 15
+  last_seen: "2026-08-04T17:44:06+09:00"
+YAML
+    fi
+    printf 'insights: []\n' > "$fixture/queue/archive/insights_archive.yaml"
+    git -C "$fixture" init -q
+    git -C "$fixture" config user.email test@example.invalid
+    git -C "$fixture" config user.name test
+    git -C "$fixture" add queue/insights.yaml
+    git -C "$fixture" commit -qm baseline
+
+    if [[ "$mode" == "duplicate-increase" ]]; then
+        cat >> "$fixture/queue/insights.yaml" <<YAML
+- id: $insight_id
+  source: self_retro
+  status: resolved
+  priority: high
+  occurrence_count: 15
+  last_seen: "2026-08-04T17:44:06+09:00"
+YAML
+    else
+        if [[ "$mode" == "duplicate" || "$mode" == "archive" || "$mode" == "missing" || "$mode" == "field-change" ]]; then
+            awk 'BEGIN {records=0} /^- id:/{records++} records <= 1 {print}' \
+                "$fixture/queue/insights.yaml" > "$fixture/queue/insights.yaml.trim"
+            mv "$fixture/queue/insights.yaml.trim" "$fixture/queue/insights.yaml"
+        fi
+        sed -i 's/status: resolved/status: archived/; s/occurrence_count: 15/occurrence_count: 16/; s/17:44:06/18:31:00/' "$fixture/queue/insights.yaml"
+    fi
+    git -C "$fixture" add queue/insights.yaml
+    git -C "$fixture" commit -qm reflux_duplicate_preimage
+    local commit_hash
+    commit_hash="$(git -C "$fixture" rev-parse HEAD)"
+
+    case "$mode" in
+        current|unique)
+            cp "$fixture/queue/insights.yaml" "$fixture/queue/insights.yaml.current"
+            mv "$fixture/queue/insights.yaml.current" "$fixture/queue/insights.yaml"
+            ;;
+        archive)
+            printf 'insights: []\n' > "$fixture/queue/insights.yaml"
+            cp "$fixture/queue/insights.yaml" "$fixture/queue/archive/insights_archive.yaml"
+            git -C "$fixture" show "$commit_hash:queue/insights.yaml" > "$fixture/queue/archive/insights_archive.yaml"
+            ;;
+        missing)
+            printf 'insights: []\n' > "$fixture/queue/insights.yaml"
+            ;;
+        field-change)
+            sed -i 's/status: archived/status: archived/; s/priority: high/priority: low/' "$fixture/queue/insights.yaml"
+            ;;
+        duplicate-increase)
+            :
+            ;;
+    esac
+    cat > "$fixture/report.yaml" <<YAML
+worker_id: saizo
+commit_hash: $commit_hash
+task_contract_snapshot:
+  acceptance_criteria:
+  - id: AC1
+    checks:
+    - check: "$insight_id"
+  parent_cmd: cmd_karo_fix_reflux_duplicate_preimage_gate_20260804
+  task_id: cmd_karo_fix_reflux_duplicate_preimage_gate_20260804_normal
+YAML
+}
+
+@test "reflux duplicate preimage six-case boundary is fail-closed" {
+    local cases=(current archive missing field-change duplicate-increase unique)
+    local expect_path=(0 0 1 1 1 0)
+    local i fixture
+    for i in "${!cases[@]}"; do
+        fixture="$BATS_TEST_TMPDIR/reflux-duplicate-${cases[$i]}"
+        make_duplicate_preimage_fixture "$fixture" "${cases[$i]}"
+        run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+            GATE_REPO_ROOT_OVERRIDE="$fixture" \
+            GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
+            bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$fixture/report.yaml"
+        if [ "${expect_path[$i]}" -eq 1 ]; then
+            [[ "$output" == *"queue/insights.yaml"* ]]
+        else
+            [[ "$output" != *"queue/insights.yaml"* ]]
+        fi
+    done
+}

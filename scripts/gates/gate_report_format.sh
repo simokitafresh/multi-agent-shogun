@@ -383,6 +383,7 @@ filter_report_commit_nonoverlap_diffs() {
     if printf '%s\n' "$uncommitted_raw" | awk 'substr($0,4)=="queue/insights.yaml" {found=1} END {exit !found}'; then
         if REPO_ROOT="$repo" REPORT_PATH="$report_path" INSIGHT_PATH="$insight_path" python3 - <<'PY'
 import os
+import json
 import re
 import subprocess
 import sys
@@ -426,7 +427,7 @@ try:
 except Exception:
     fail()
 
-def indexed(document):
+def indexed(document, allow_duplicate_ids=False):
     if not isinstance(document, dict) or set(document) != {"insights"}:
         fail()
     entries = document["insights"]
@@ -437,21 +438,38 @@ def indexed(document):
         if not isinstance(entry, dict):
             fail()
         identity = entry.get("id")
-        if not isinstance(identity, str) or not identity or identity in result:
+        if not isinstance(identity, str) or not identity:
             fail()
-        result[identity] = entry
+        if identity in result:
+            if not allow_duplicate_ids:
+                fail()
+            result[identity].append(entry)
+        elif allow_duplicate_ids:
+            result[identity] = [entry]
+        else:
+            result[identity] = entry
     return result
 
-before, committed, current = map(indexed, documents[:3])
+before = indexed(documents[0], allow_duplicate_ids=True)
+committed, current = map(indexed, documents[1:3])
 archive_document = documents[3]
 if not isinstance(archive_document, dict) or set(archive_document) != {"insights"}:
     fail()
 archive_entries = archive_document["insights"]
 if not isinstance(archive_entries, list) or any(not isinstance(entry, dict) for entry in archive_entries):
     fail()
+def canonical_entry(entry):
+    return json.dumps(entry, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+def preimage_multiset_changed(before_entries, committed_entry):
+    """Compare the preimage as an ID-keyed multiset, not a unique-ID map."""
+    before_fingerprints = sorted(canonical_entry(entry) for entry in before_entries)
+    committed_fingerprints = [canonical_entry(committed_entry)] if committed_entry is not None else []
+    return before_fingerprints != committed_fingerprints
+
 changed_ids = {
     identity for identity in set(before) | set(committed)
-    if before.get(identity) != committed.get(identity)
+    if preimage_multiset_changed(before.get(identity, []), committed.get(identity))
 }
 owned_ids = snapshot_ids & changed_ids
 if not owned_ids:
