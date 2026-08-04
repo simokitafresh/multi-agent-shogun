@@ -97,6 +97,43 @@ _ci_red_run_details() {
         | jq -r --arg run "$run_id" '[$run, .headSha, (.createdAt | fromdateiso8601)] | @tsv'
 }
 
+# A terminal task is not available for reassignment while its completed report
+# is still in the active queue. Keep this predicate aligned with
+# deploy_task_guard_done_report_unarchived: archive.done alone is not enough
+# until the ordered cmd-complete terminal checkpoint is present.
+_task_done_report_unarchived() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_status parent_cmd gate_dir completion_tail report_file
+    [ -f "$task_file" ] || return 1
+
+    IFS='|' read -r task_status parent_cmd < <(awk '
+        BEGIN { s=""; p="" }
+        /^[ \t]*status:/ && s=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
+        /^[ \t]*parent_cmd:/ && p=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); p=v }
+        END { print s "|" p }
+    ' "$task_file")
+    case "$task_status" in
+        done|completed|PASS) ;;
+        *) return 1 ;;
+    esac
+    [ -n "$parent_cmd" ] || return 1
+
+    gate_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
+    completion_tail="$gate_dir/completion_tail.log"
+    if [ -f "$gate_dir/archive.done" ] \
+        && [ -f "$completion_tail" ] \
+        && grep -Fqx -- "[cmd_complete] COMPLETE $parent_cmd" "$completion_tail"; then
+        log "LOGICAL-ARCHIVE: ${name} ${parent_cmd} active report is closed by terminal checkpoint"
+        return 1
+    fi
+
+    for report_file in "$SCRIPT_DIR/queue/reports/${name}_report_${parent_cmd}"*.yaml; do
+        [ -f "$report_file" ] && [ ! -L "$report_file" ] && return 0
+    done
+    return 1
+}
+
 _ci_red_idle_count() {
     python3 - "$SCRIPT_DIR/queue/tasks" <<'PY'
 import glob, sys, yaml
@@ -7496,6 +7533,10 @@ write_karo_snapshot() {
                         if [ -z "$task_status" ] && [ -f "$task_file" ]; then
                             task_status=$(yaml_field_get "$task_file" "status")
                         fi
+                        if _task_done_report_unarchived "$name"; then
+                            log "IDLE-AVAILABILITY-BLOCK: ${name} task status=${task_status} has an unarchived terminal report"
+                            continue
+                        fi
                         if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ] && [ "$task_status" != "failed" ]; then
                             idle_list="${idle_list}${name},"
                         fi
@@ -8801,6 +8842,20 @@ get_idle_pipeline_state() {
         END { print total+0 "|" active+0 }
     ' "$snapshot_file" 2>/dev/null || echo "0|0")
     IFS='|' read -r ninja_total active_count <<< "$snapshot_counts"
+
+    # A terminal task with an active report remains unavailable even when its
+    # pane is runtime-idle. Recheck the task/report SSOT instead of trusting
+    # the compressed snapshot's terminal status alone.
+    local snapshot_name snapshot_status
+    while IFS='|' read -r _snapshot_type snapshot_name _snapshot_task_id snapshot_status; do
+        case "$snapshot_status" in
+            done|completed|PASS)
+                if _task_done_report_unarchived "$snapshot_name"; then
+                    active_count=$((active_count + 1))
+                fi
+                ;;
+        esac
+    done < <(awk -F'|' '/^ninja\|/ { print $1 "|" $2 "|" $3 "|" $4 }' "$snapshot_file" 2>/dev/null || true)
 
     pending_count=$(awk '/^[[:space:]]+status:[[:space:]]*(pending|new)/ {c++} END {print c+0}' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || echo 0)
     echo "${ninja_total:-0}|${active_count:-0}|${pending_count:-0}"

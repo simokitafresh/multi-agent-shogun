@@ -3993,6 +3993,65 @@ grep "^ninja|kagemaru|cmd_training_fixture_normal|idle|infra|CTX:" "$SCRIPT_DIR/
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: done tasks with active reports are excluded from every idle
+# availability view until the ordered archive terminal checkpoint is present.
+@test "done task with unarchived report is unavailable until archive terminal checkpoint" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/gates" "$SCRIPT_DIR/logs" "$STATE_DIR"
+printf "commands: []\n" > "$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+
+cat > "$SCRIPT_DIR/queue/tasks/blocked.yaml" <<'EOF'
+task:
+  task_id: task_blocked
+  parent_cmd: cmd_blocked
+  status: done
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/archived.yaml" <<'EOF'
+task:
+  task_id: task_archived
+  parent_cmd: cmd_archived
+  status: done
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/idle.yaml" <<'EOF'
+task:
+  task_id: task_idle
+  status: idle
+EOF
+printf "status: completed\n" > "$SCRIPT_DIR/queue/reports/blocked_report_cmd_blocked.yaml"
+printf "status: completed\n" > "$SCRIPT_DIR/queue/reports/archived_report_cmd_archived.yaml"
+mkdir -p "$SCRIPT_DIR/queue/gates/cmd_archived"
+: > "$SCRIPT_DIR/queue/gates/cmd_archived/archive.done"
+printf "%s\n" "[cmd_complete] COMPLETE cmd_archived" > "$SCRIPT_DIR/queue/gates/cmd_archived/completion_tail.log"
+
+NINJA_NAMES=(blocked archived idle)
+declare -A PREV_STATE
+PREV_STATE[blocked]=idle; PREV_STATE[archived]=idle; PREV_STATE[idle]=idle
+get_context_pct() { echo 0; }
+get_model_display_name() { echo GPT; }
+get_latest_report_file() { return 1; }
+log() { :; }
+
+write_karo_snapshot
+grep -q "^idle|archived,idle$" "$SCRIPT_DIR/queue/karo_snapshot.txt"
+! grep -q "^idle|.*blocked" "$SCRIPT_DIR/queue/karo_snapshot.txt"
+
+pipeline=$(get_idle_pipeline_state)
+[ "$pipeline" = "3|1|0" ]
+printf "snapshot_idle=archived,idle pipeline=%s blocked=1 archived=0\n" "$pipeline"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"snapshot_idle=archived,idle pipeline=3|1|0 blocked=1 archived=0"* ]]
+}
+
 @test "check_and_update_done_task: flat task YAML uses yaml_field_set root fallback for completed_at" {
     run bash -c '
 set -euo pipefail
