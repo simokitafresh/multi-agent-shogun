@@ -702,6 +702,78 @@ EOF
     [[ "$output" != *"context/dm-signal-core.md source commits"* ]]
 }
 
+@test "divergent source markers use a frontier and still detect one own commit" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo/backend/app/jobs" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    printf 'base\n' > "$source_repo/backend/app/jobs/base.py"
+    git -C "$source_repo" add .
+    git -C "$source_repo" commit -q -m "fixture: common source base"
+    local base_sha main_sha side_sha
+    base_sha="$(git -C "$source_repo" rev-parse HEAD)"
+
+    printf 'main\n' > "$source_repo/backend/app/jobs/main.py"
+    git -C "$source_repo" add .
+    git -C "$source_repo" commit -q -m "fixture: reviewed main boundary"
+    main_sha="$(git -C "$source_repo" rev-parse HEAD)"
+
+    git -C "$source_repo" checkout -q -b fixture-side "$base_sha"
+    printf 'side\n' > "$source_repo/backend/app/jobs/side.py"
+    git -C "$source_repo" add .
+    git -C "$source_repo" commit -q -m "fixture: reviewed side boundary"
+    side_sha="$(git -C "$source_repo" rev-parse HEAD)"
+
+    git -C "$source_repo" checkout -q -b fixture-tip "$main_sha"
+    git -C "$source_repo" merge --no-ff -q "$side_sha" -m "fixture: merge divergent boundaries"
+    printf 'own\n' > "$source_repo/backend/app/core.py"
+    git -C "$source_repo" add .
+    git -C "$source_repo" commit -q -m "cmd_frontier_own: unreflected source change"
+
+    sed -i '/context\/dm-signal-core\.md/a\      - file: context/dm-signal-ops.md' \
+        "$TEST_TMPDIR/config/projects.yaml"
+    _create_context "context/dm-signal-core.md" "$TODAY"
+    _create_context "context/dm-signal-ops.md" "$TODAY"
+    sed -i "1a<!-- source_commit:${main_sha} reason:main boundary evidence:fixture -->\n<!-- source_commit:${side_sha} reason:side boundary evidence:fixture -->" \
+        "$TEST_TMPDIR/context/dm-signal-core.md"
+    sed -i "1a<!-- source_commit:${main_sha} reason:main boundary evidence:fixture -->\n<!-- source_commit:${side_sha} reason:side boundary evidence:fixture -->" \
+        "$TEST_TMPDIR/context/dm-signal-ops.md"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" \
+        "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
+
+    CFC_OUTPUT_CACHE_TTL=0 CFC_REQUIRE_SOURCE_COMMIT=1 CFC_HISTORY_REFRESH_SYNC=1 \
+        CFC_PROJECT_OVERRIDE=dm-signal run bash "$TEST_SCRIPT" --cmd-commit-list divergent_cmd
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | grep -c 'cmd_frontier_own:')" -eq 1 ]
+    [[ "$output" != *"MISSING_SOURCE_COMMIT"* ]]
+    [[ "$output" != *"INVALID_SOURCE_COMMIT"* ]]
+}
+
+@test "invalid source marker emits a blocking machine-readable boundary failure" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo/backend/app" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    printf 'source\n' > "$source_repo/backend/app/core.py"
+    git -C "$source_repo" add .
+    git -C "$source_repo" commit -q -m "fixture: source"
+    _create_context "context/dm-signal-core.md" "$TODAY"
+    sed -i '1a<!-- source_commit:0000000000000000000000000000000000000000 reason:invalid evidence:fixture -->' \
+        "$TEST_TMPDIR/context/dm-signal-core.md"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" \
+        "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
+
+    CFC_OUTPUT_CACHE_TTL=0 CFC_REQUIRE_SOURCE_COMMIT=1 CFC_HISTORY_REFRESH_SYNC=1 \
+        CFC_PROJECT_OVERRIDE=dm-signal run bash "$TEST_SCRIPT" --cmd-commit-list invalid_cmd
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | grep -c '^INVALID_SOURCE_COMMIT')" -eq 1 ]
+    [ "$(printf '%s\n' "$output" | grep -c '^MISSING_SOURCE_COMMIT')" -eq 1 ]
+}
+
 @test "GA-288 source commit that updates infra context in same commit is reflected" {
     mkdir -p "$TEST_TMPDIR/skills/codd"
     printf 'v1\n' > "$TEST_TMPDIR/skills/codd/SKILL.md"

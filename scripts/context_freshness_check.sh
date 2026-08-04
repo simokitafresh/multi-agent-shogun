@@ -348,39 +348,44 @@ def source_commit_markers(abs_path: str) -> list[str]:
     return markers
 
 
-def source_commit_marker(project_id: str, rel_path: str, abs_path: str) -> str | None:
-    """Return the newest ancestry boundary, independent of marker line order.
+def source_commit_frontier(
+    project_id: str, rel_path: str, abs_path: str
+) -> tuple[tuple[str, ...], str | None]:
+    """Resolve markers and retain every non-ancestor frontier.
 
-    context_source_commit_set.sh intentionally retains independently reviewed
-    markers.  Selecting the first line let a later write of an older boundary
-    regress freshness and replay already reviewed commits (GA-432).
+    Independently reviewed markers may be divergent. A single newest marker is
+    valid only for a linear history; the frontier keeps both branch tips so
+    callers can exclude commits reachable from either reviewed boundary.
     """
     markers = source_commit_markers(abs_path)
     if not markers:
-        return None
-    if len(markers) == 1:
-        return markers[0]
+        return (), "missing"
     repo_path, _pathspecs, _root_fallback = source_repo_for_context(project_id, rel_path)
     resolved: list[str] = []
     for marker in markers:
         result = subprocess.run(
-            ["git", "-C", repo_path, "rev-parse", marker],
+            ["git", "-C", repo_path, "rev-parse", "--verify", f"{marker}^{{commit}}"],
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
-            return None
-        resolved.append(result.stdout.strip())
+            return (), "invalid"
+        commit = result.stdout.strip()
+        if commit and commit not in resolved:
+            resolved.append(commit)
+    frontier: list[str] = []
     for candidate in resolved:
-        if all(
-            subprocess.run(
-                ["git", "-C", repo_path, "merge-base", "--is-ancestor", other, candidate],
+        if any(
+            candidate != other
+            and subprocess.run(
+                ["git", "-C", repo_path, "merge-base", "--is-ancestor", candidate, other],
                 capture_output=True,
             ).returncode == 0
             for other in resolved
         ):
-            return candidate
-    return None
+            continue
+        frontier.append(candidate)
+    return (tuple(frontier), None) if frontier else ((), "invalid")
 
 
 def load_project_paths() -> dict[str, str]:
@@ -582,6 +587,13 @@ def build_missing_source_commit_warning(rel_path: str) -> str:
         f"ALERT: {rel_path} MISSING_SOURCE_COMMIT — registered pathspec contextは"
         "exact revision境界が必須。日付--since fallbackは禁止"
     )
+
+
+def build_invalid_source_commit_warning(rel_path: str) -> str:
+    return (
+        f"ALERT: {rel_path} INVALID_SOURCE_COMMIT — registered pathspec contextの"
+        "source_commit markerが解決不能。正確なrevision境界へ修復せよ"
+    )
 # WSL2/9pマウント上でgit logが数秒〜十数秒かかるため並列実行と組み合わせてこの値で
 # 打ち切る。GA-245実測: 集約後の呼び出しは6秒以下では不安定(5回中2回timeout)、
 # 8秒で安定、安全マージンを見て10秒を既定とする(旧既定3秒は実測を大幅に下回り
@@ -751,12 +763,14 @@ def commit_is_reflected_or_lesson_only(
 
 
 def _root_fallback_commit_count_since(
-    updated_at: date, source_commit: str | None = None
+    updated_at: date, source_commits: tuple[str, ...] | None = None
 ) -> tuple[int, list[str]]:
     tip_ref = source_tip_ref(root)
-    revision = f"{source_commit}..{tip_ref}" if source_commit else tip_ref
+    revision: str | tuple[str, ...] = tip_ref
+    if source_commits:
+        revision = (tip_ref, *(f"^{commit}" for commit in source_commits))
     commits = _run_grouped_git_log(
-        root, revision, None if source_commit else updated_at, []
+        root, revision, None if source_commits else updated_at, []
     )
     if commits is None:
         return -1, []
@@ -828,14 +842,14 @@ def source_commit_summary_since(
     rel_path: str,
     abs_path: str,
     updated_at: date,
-    source_commit: str | None = None,
+    source_commits: tuple[str, ...] | None = None,
     max_details: int = 3,
 ) -> tuple[int, list[str]]:
     repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     if not repo_path or not os.path.isdir(repo_path):
         return 0, []
     if root_fallback:
-        return _root_fallback_commit_count_since(updated_at, source_commit)
+        return _root_fallback_commit_count_since(updated_at, source_commits)
 
     cited_dirs = [
         p[len(CITED_PATHSPEC_PREFIX):] for p in pathspecs if p.startswith(CITED_PATHSPEC_PREFIX)
@@ -845,7 +859,9 @@ def source_commit_summary_since(
     cited_files = load_cited_paths(abs_path, cited_dirs) if cited_dirs else set()
 
     tip_ref = source_tip_ref(repo_path)
-    revision = f"{source_commit}..{tip_ref}" if source_commit else tip_ref
+    revision_args = [tip_ref]
+    if source_commits:
+        revision_args.extend(f"^{commit}" for commit in source_commits)
     cmd = [
         "git",
         "-C",
@@ -854,8 +870,8 @@ def source_commit_summary_since(
         "--pretty=format:__CFC_C__%x00%h%x00%s",
         "--name-only",
     ]
-    cmd.append(revision)
-    if not source_commit:
+    cmd.extend(revision_args)
+    if not source_commits:
         cmd.append(f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
     if git_pathspecs:
         cmd.extend(["--", *git_pathspecs])
@@ -897,7 +913,7 @@ def source_commit_summary_since(
 
 def _run_grouped_git_log(
     repo_path: str,
-    revision: str | None,
+    revision: str | tuple[str, ...] | None,
     since_date: date | None,
     pathspecs: list[str],
 ) -> list[tuple[str, str, list[str]]] | None:
@@ -911,12 +927,43 @@ def _run_grouped_git_log(
         "--pretty=format:__CFC_G__%x00%h%x00%s",
         "--name-only",
     ]
-    if revision:
-        cmd.append(revision)
+    revision_parts = (
+        list(revision)
+        if isinstance(revision, (tuple, list))
+        else ([revision] if revision else [])
+    )
+    cmd.extend(revision_parts)
     if since_date is not None:
         cmd.append(f"--since={(since_date + timedelta(days=1)).isoformat()} 00:00:00")
     if pathspecs:
         cmd.extend(["--", *pathspecs])
+
+    # Divergent source markers need multiple revision exclusions. The shared
+    # snapshot refresh helper accepts one revision argument, so execute this
+    # exact multi-boundary query directly and keep the cache path unchanged
+    # for the common single-boundary case.
+    if len(revision_parts) > 1:
+        result = _run_git_with_bounded_retry(cmd, f"source_commit_count_since: {repo_path}")
+        if result is None:
+            return None
+        commits: list[tuple[str, str, list[str]]] = []
+        current_hash = ""
+        current_subject = ""
+        changed_paths: list[str] = []
+
+        def flush_commit() -> None:
+            if current_subject.strip():
+                commits.append((current_hash, current_subject.strip(), list(changed_paths)))
+
+        for line in result.stdout.splitlines():
+            if line.startswith("__CFC_G__\x00"):
+                flush_commit()
+                _marker, current_hash, current_subject = line.split("\x00", 2)
+                changed_paths = []
+            elif line.strip():
+                changed_paths.append(line.strip())
+        flush_commit()
+        return commits
 
     # GA-286: dashboard rendering invokes this checker repeatedly, while a 9p
     # git log may consume the full 10s + 60s retry budget.  Persist only
@@ -1089,7 +1136,7 @@ def _run_grouped_git_log(
 
 
 def _compute_direct_group(
-    key: tuple[str, str | None, date | None],
+    key: tuple[str, tuple[str, ...] | None, date | None],
     members: list[tuple[str, str, list[str], list[str], set[str]]],
 ) -> dict[tuple[str, str], tuple[int, list[str]]]:
     """(repo_path, source_commit/updated_at)を共有するcontext file群を
@@ -1099,9 +1146,13 @@ def _compute_direct_group(
     cited_dirs, cited_files)。plain/cited双方が空のmember(pathspec指定のない
     project直下context)は元のsource_commit_summary_sinceと同じくフィルタ無しで
     全コミットを対象にする。"""
-    repo_path, source_commit, since_date = key
+    repo_path, source_commits, since_date = key
     tip_ref = source_tip_ref(repo_path)
-    revision = f"{source_commit}..{tip_ref}" if source_commit else tip_ref
+    revision: str | tuple[str, ...] = (
+        (tip_ref, *(f"^{commit}" for commit in source_commits))
+        if source_commits
+        else tip_ref
+    )
     has_unfiltered_member = any(
         not plain_pathspecs and not cited_dirs
         for _pid, _rp, plain_pathspecs, cited_dirs, _cf in members
@@ -1146,7 +1197,7 @@ def _compute_direct_group(
 
 
 def batch_source_commit_summaries(
-    infos: list[tuple[str, str, str, date, str | None]],
+    infos: list[tuple[str, str, str, date, tuple[str, ...] | None]],
 ) -> dict[tuple[str, str], tuple[int, list[str]]]:
     """(project_id, rel_path) → commit_count を並列計算（ThreadPoolExecutor）。
     GA-245: 同一リポジトリ×同一revision範囲(source_commit有無/updated_at)を
@@ -1157,16 +1208,16 @@ def batch_source_commit_summaries(
         return {}
     summaries: dict[tuple[str, str], tuple[int, list[str]]] = {}
 
-    root_fallback_groups: dict[tuple[date, str | None], list[tuple[str, str]]] = {}
+    root_fallback_groups: dict[tuple[date, tuple[str, ...] | None], list[tuple[str, str]]] = {}
     direct_groups: dict[
-        tuple[str, str | None, date | None],
+        tuple[str, tuple[str, ...] | None, date | None],
         list[tuple[str, str, list[str], list[str], set[str]]],
     ] = {}
 
-    for project_id, rel_path, abs_path, updated_at, source_commit in infos:
+    for project_id, rel_path, abs_path, updated_at, source_commits in infos:
         repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
         if root_fallback:
-            root_fallback_groups.setdefault((updated_at, source_commit), []).append(
+            root_fallback_groups.setdefault((updated_at, source_commits), []).append(
                 (project_id, rel_path)
             )
             continue
@@ -1178,7 +1229,7 @@ def batch_source_commit_summaries(
         ]
         plain_pathspecs = [p for p in pathspecs if not p.startswith(CITED_PATHSPEC_PREFIX)]
         cited_files = load_cited_paths(abs_path, cited_dirs) if cited_dirs else set()
-        key = (repo_path, source_commit, None if source_commit else updated_at)
+        key = (repo_path, source_commits, None if source_commits else updated_at)
         direct_groups.setdefault(key, []).append(
             (project_id, rel_path, plain_pathspecs, cited_dirs, cited_files)
         )
@@ -1189,8 +1240,8 @@ def batch_source_commit_summaries(
     max_workers = max(1, int(os.environ.get("CFC_GIT_MAX_WORKERS", "4")))
     with ThreadPoolExecutor(max_workers=min(max_workers, 16)) as executor:
         root_futures = {
-            executor.submit(_root_fallback_commit_count_since, updated_at, source_commit): keys
-            for (updated_at, source_commit), keys in root_fallback_groups.items()
+            executor.submit(_root_fallback_commit_count_since, updated_at, source_commits): keys
+            for (updated_at, source_commits), keys in root_fallback_groups.items()
         }
         direct_futures = {
             executor.submit(_compute_direct_group, key, members): key
@@ -1562,11 +1613,15 @@ if mode == "--dashboard-warnings":
         if updated_at is None:
             warnings.append(build_warning(rel_path, None))
             continue
-        source_commit = source_commit_marker(project_id, rel_path, abs_path)
-        if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
-            warnings.append(build_missing_source_commit_warning(rel_path))
+        source_commits, marker_error = source_commit_frontier(project_id, rel_path, abs_path)
+        if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and marker_error:
+            warnings.append(
+                build_invalid_source_commit_warning(rel_path)
+                if marker_error == "invalid"
+                else build_missing_source_commit_warning(rel_path)
+            )
             continue
-        files_for_git.append((project_id, rel_path, abs_path, updated_at, source_commit))
+        files_for_git.append((project_id, rel_path, abs_path, updated_at, source_commits or None))
     commit_summaries = batch_source_commit_summaries(files_for_git)
     min_source_commits = int(os.environ.get("CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS", "1"))
     alerted_for_group: list[tuple[str, list[str]]] = []
@@ -1591,11 +1646,19 @@ elif mode == "--cmd-warnings":
             if updated_at is None:
                 warnings.append(build_warning(rel_path, None))
                 continue
-            source_commit = source_commit_marker(current_project, rel_path, abs_path)
-            if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
-                warnings.append(build_missing_source_commit_warning(rel_path))
+            source_commits, marker_error = source_commit_frontier(
+                current_project, rel_path, abs_path
+            )
+            if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and marker_error:
+                warnings.append(
+                    build_invalid_source_commit_warning(rel_path)
+                    if marker_error == "invalid"
+                    else build_missing_source_commit_warning(rel_path)
+                )
                 continue
-            files_for_git.append((current_project, rel_path, abs_path, updated_at, source_commit))
+            files_for_git.append(
+                (current_project, rel_path, abs_path, updated_at, source_commits or None)
+            )
         commit_summaries = batch_source_commit_summaries(files_for_git)
         alerted_for_group = []
         for current_project, rel_path, abs_path, updated_at, _source_commit in files_for_git:
@@ -1624,8 +1687,14 @@ elif mode == "--cmd-commit-list":
             updated_at = last_updated_date(abs_path)
             if updated_at is None:
                 continue
-            source_commit = source_commit_marker(current_project, rel_path, abs_path)
-            if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
+            source_commits, marker_error = source_commit_frontier(
+                current_project, rel_path, abs_path
+            )
+            if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and marker_error:
+                if marker_error == "invalid":
+                    print(f"INVALID_SOURCE_COMMIT\t{rel_path}")
+                # cmd_complete_gate already fail-closes on this machine-readable
+                # marker; retain the common prefix for invalid boundaries too.
                 print(f"MISSING_SOURCE_COMMIT\t{rel_path}")
                 continue
             cc, details = source_commit_summary_since(
@@ -1633,7 +1702,7 @@ elif mode == "--cmd-commit-list":
                 rel_path,
                 abs_path,
                 updated_at,
-                source_commit,
+                source_commits or None,
                 max_details=1000,
             )
             if cc < 0:
