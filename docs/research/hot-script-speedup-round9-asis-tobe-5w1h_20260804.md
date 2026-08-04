@@ -1,5 +1,7 @@
 <!-- gist-master: 59a5e79368f385cddfdb0656fd8ca3bd hot-script-speedup-round9-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.3 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.4 【🚀裁可済み・進行中】
+
+> v1.4(2026-08-05 02:40 殿裁定): §2.6 checkpoint契約を追加(全弾共通)
 
 > v1.4(2026-08-05 00:14進捗同期): #0''偵察A/B・#1・#3はGATE CLEAR。別parent偵察再利用gate hotfixもcommit `c341e923fba7a3ad427f055569c24a015511a889`・focused 9/9・false判断0/7でGATE CLEAR済み。ただし#0''実装shardは現行task/report/gateが存在せず未配備のため、完了扱いしない。#4はpreflight mode metadata欠落、補欠Aは親子共通run_id欠落を一次特定して正当FAIL-close。両FAILは「数値不足」ではなく、次の高速化を可能にする計装identity欠落の発見である。
 
@@ -116,10 +118,27 @@
 - **次レーン**: #0'' impl再配備（hotfix CLEAR後に新規task/report/gateを生成）、#2 queue_wait偵察、#4 mode metadata計装、補欠A共通run_id計装。補欠B/Cは計測条件待ち。
 - **正式効果**: 全是正弾完了後、修正後1週間ledger累積課税の前週比で確定。現時点は偵察段階ゆえ未確定。
 
+## §2.6 checkpoint契約(殿裁定2026-08-05 — 全弾共通)
+
+full/wave checkpointの全量テストを1名へ一括配備しない。以下の契約に従う。
+
+| 項 | 契約 |
+|---|---|
+| 並列度 | 3〜4名。1名一括配備禁止 |
+| HEAD固定 | 全shardが同一commit HEADで実走。shard間のHEAD不一致は和集合判定を無効化する |
+| shard分割 | 相互排他的LPT(Longest Processing Time)shard。テスト集合の完全分割・重複0 |
+| 共有資源 | fixture等の共有資源は専用shard(1名が専有)。共有資源shardと通常shardの並列実行でロック競合しない設計 |
+| 隔離 | lane固有worktree・TMPDIR・receipt。shard間の状態共有0 |
+| 最終判定 | receipt和集合: N/N(全件)・duplicate 0・missing 0・FAIL 0・SKIP 0・source_head全一致 |
+| 再実走 | 全量再実走を既定にせずshard単位で再実走。FAILしたshardのみ再実走 |
+
+- origin: `[[殿裁定_全量テスト3_4名分割_20260805]] -> [[固定HEAD相互排他shard]] -> [[receipt和集合で全量検収]]`
+
 ## §3 decision ledger
 
 | 項 | 状態 |
 |---|---|
+| checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
 | 第九弾の起動 | 殿発案2026-08-04 18:46。**殿裁可2026-08-04 20:16『よい。追記したらレーン方式で家老にやらせよう』(v1.2)** |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 18:46・174,227行)。**第0手=裁可時に再実測**(第五弾RC1教訓) |
 | 弾数・標的固定 | **裁可で固定(2026-08-04 20:16)**: 弾#0''(v1.2同梱スコープ)+4弾+補欠3 |

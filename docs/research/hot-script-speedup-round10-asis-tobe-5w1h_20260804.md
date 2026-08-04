@@ -1,5 +1,7 @@
 <!-- gist-master: 98f42e727bea67ad5dd322e6756bc45b hot-script-speedup-round10-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.1
+# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.2
+
+> v1.2(2026-08-05 02:40 殿裁定): §2.6 checkpoint契約を追加(全弾共通)
 
 > v1.1(2026-08-04 23:46覚醒更新): 殿指示『第九弾と同じ粒度同じ水準で覚醒して作成せよ』。§-1スコープ拡充(writer構造・前弾境界・スコープ外)、§1計測境界(第九弾継承+Tier 2追加)、§2 To-Be(9項目)、弾台帳に型・現状・手筋候補追加、§2.5進捗台帳・§3 decision ledger・§5因果リンク新設
 
@@ -100,10 +102,27 @@
 | 6 | deploy_total | ⏳着手可(独立writer) | — |
 | 7 | queue_wait | ⏳第九弾#2完了待ち | — |
 
+## §2.6 checkpoint契約(殿裁定2026-08-05 — 全弾共通)
+
+full/wave checkpointの全量テストを1名へ一括配備しない。以下の契約に従う。
+
+| 項 | 契約 |
+|---|---|
+| 並列度 | 3〜4名。1名一括配備禁止 |
+| HEAD固定 | 全shardが同一commit HEADで実走。shard間のHEAD不一致は和集合判定を無効化する |
+| shard分割 | 相互排他的LPT(Longest Processing Time)shard。テスト集合の完全分割・重複0 |
+| 共有資源 | fixture等の共有資源は専用shard(1名が専有)。共有資源shardと通常shardの並列実行でロック競合しない設計 |
+| 隔離 | lane固有worktree・TMPDIR・receipt。shard間の状態共有0 |
+| 最終判定 | receipt和集合: N/N(全件)・duplicate 0・missing 0・FAIL 0・SKIP 0・source_head全一致 |
+| 再実走 | 全量再実走を既定にせずshard単位で再実走。FAILしたshardのみ再実走 |
+
+- origin: `[[殿裁定_全量テスト3_4名分割_20260805]] -> [[固定HEAD相互排他shard]] -> [[receipt和集合で全量検収]]`
+
 ## §3 decision ledger
 
 | 項 | 状態 |
 |---|---|
+| checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
 | 第十弾の起動 | 殿発案2026-08-04 23:29。裁可待ち |
 | 二段計測の導入 | 殿設計2026-08-04 23:34(Tier 1劣化検知+Tier 2ボトルネック特定)。第十弾から恒久導入。裁可対象 |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 23:32・直近24時間) |

@@ -1,5 +1,9 @@
 <!-- gist-master: fc4b27c4031149d7d6b45fde49028942 hot-script-speedup-round8-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.3 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.5 【wave最終checkpoint進行中】
+
+> v1.5(2026-08-05 02:38 殿裁定): §2.6 checkpoint契約を追加。full/wave全量テストの3〜4名並列分割・固定HEAD・receipt和集合判定を全弾共通契約として明記
+
+> v1.4(2026-08-04 23:10進捗同期): 第八弾本体・偵察・実装の対象12/12 GATE CLEARを一次台帳で確認。旧偵察FAIL 3件は後続是正へ還流済みとして正式FAIL-close 3/3。効果checkpointは8/8lane再計数・48/48 PASS、品質checkpointは全量検証中。1時間fixed-windowは対照群ドリフトを含むため正式効果へ昇格せず、修正後1週間ledger前週比を待つ。
 
 > v1.3(2026-08-04 15:36 殿裁可『開始しよう』): 弾台帳固定。**レーン方式で開始**(第五・七弾の型: 将軍下知blt_154140→家老レーン配備。cmd正式起票はしない=殿指摘15:39で方式確認済み)。弾#0'(計測盲点根絶)を先行、以後#1→#2→#3直列+#4以降独立並列
 
@@ -106,15 +110,15 @@
 
 - 弾#1-#3は同一スクリプト(three_layer_health)の別checkだが、writer共有ゆえ**#1→#2→#3の直列**(共有層先行の原則)。#4以降は独立並列可
 
-## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 22:47軍師覚醒更新。sg7_bundle一次確認+GATE CLEAR突合)
+## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 23:10家老更新。gate_metrics/report/task一次突合)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
 | 0' | 計測盲点根絶(*_total一斉計装) | ✅**GATE CLEAR** | 9 entrypoint計装 |
 | 4 | `git_pre_commit:affected_tests` | ✅**GATE CLEAR** | **p50 -65%** |
-| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | ✅**軍師LGTM・GATE判定待ち** | **p50 -95.6%** |
-| 1 | `three_layer_health:refresh_copy` | ✅**軍師LGTM・GATE判定待ち** | append-only差分snapshot |
-| 2 | `three_layer_health:refresh_verify` | ✅**偵察完了+impl LGTM・GATE判定待ち** | SQL alias 1行補正→9/9 PASS |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | ✅**GATE CLEAR** | lane計測 p50 -95.6%。wave正式効果は1週間待ち |
+| 1 | `three_layer_health:refresh_copy` | ✅**GATE CLEAR** | append-only差分snapshot |
+| 2 | `three_layer_health:refresh_verify` | ✅**偵察A/B+impl GATE CLEAR** | SQL alias 1行補正→9/9 PASS |
 | 3 | `three_layer_health:refresh_window` | ✅**偵察Track A/B GATE CLEAR** | begin/end混在→phase分離 |
 | 補欠A | `inbox_write:inbox_write_total` | ✅**GATE CLEAR** | caller計装完了 |
 | 補欠B | `gate_report_format:singleflight_hold` | ✅**GATE CLEAR** | **logging寄与 -93%** |
@@ -123,19 +127,39 @@
 | RC race fix | archive競合 | ✅**GATE CLEAR** | report-unit lock直列化 |
 | skill_refs dup | followup重複根治 | ✅**GATE CLEAR** | 17件→0件 |
 | capture guard | watcher自動ガード | ✅**GATE CLEAR** | nudge誤送信防止 |
-| same-cmd fix | pending symlink補完 | ✅**軍師LGTM・GATE判定待ち** | active pending切離し |
+| same-cmd fix | pending symlink補完 | ✅**GATE CLEAR** | active pending切離し |
 | scout gate | 偵察報告再利用 | 🔄**配備中** | fail-closed検証7ケース |
+| active-stall fix | active静止盲点 | ✅**軍師LGTM・GATE CLEAR** | 25分静止・子処理0・prompt0のみ家老通知。自己介入0 |
+| wave効果checkpoint | 8lane固定窓再集計 | ✅**完了・軍師レビュー待ち** | 177,600行、8/8lane、48/48 PASS、欠損0・外れ値除外0。正式効果は未確定 |
+| wave品質checkpoint | 全量FAIL0/SKIP0+lane独立性 | 🔄**実行中** | 全量実走は本checkpointの1回だけ |
 
-- **覚醒集計(22:47)**: sg7_bundle存在=**15本**(第八弾本体5+偵察5+hotfix/fix系5)。GATE CLEAR一次確認=11本以上。GATE判定待ち=4本(#5/#1/#2impl/same-cmd)
-- 効果の正式確定は§1計測憲法の通り「修正後1週間のledger累積課税の前週比」
-- 確定効果: #4=-65%、#5=-95.6%、補欠B=-93%
-- **GATE CLEAR: 11本** / 軍師LGTM GATE判定待ち: 3本 / 作業中: 1本
-- 確定効果: #4=-65%、#5=-95.6%、補欠B=-93%
+- **本体集計(23:10)**: 第八弾対象の本体・偵察・実装レーンは**GATE CLEAR 12/12**。後続是正へ繋いだ旧偵察FAILは**正式FAIL-close 3/3**で、偽CLEAR 0件。
+- **checkpoint**: 効果レーン=完了(8/8lane、48/48 PASS、FAIL0、SKIP0)。品質レーン=全量検証中。両方が閉じるまで第八弾CLOSEを宣言しない。
+- **局所観測**: lane focused値は#4=-65%、#5=-95.6%、補欠B logging寄与=-93%。これは実装局所の方向確認であり、wave正式効果ではない。
+- **wave即時固定窓**: #1と補欠Aはp50/totalとも減少。#2/#5/#0'/補欠Bは件数変動またはp50/total不一致、#3/#4は観測上悪化。対照群も大幅変動し、正式確定可能lane=0/8。
+- **正式効果**: §1計測憲法どおり「修正後1週間のledger累積課税の前週比」。2026-08-04時点では未成熟ゆえ未確定。
+
+## §2.6 checkpoint契約(殿裁定2026-08-05 — 全弾共通)
+
+full/wave checkpointの全量テストを1名へ一括配備しない。以下の契約に従う。
+
+| 項 | 契約 |
+|---|---|
+| 並列度 | 3〜4名。1名一括配備禁止 |
+| HEAD固定 | 全shardが同一commit HEADで実走。shard間のHEAD不一致は和集合判定を無効化する |
+| shard分割 | 相互排他的LPT(Longest Processing Time)shard。テスト集合の完全分割・重複0 |
+| 共有資源 | fixture等の共有資源は専用shard(1名が専有)。共有資源shardと通常shardの並列実行でロック競合しない設計 |
+| 隔離 | lane固有worktree・TMPDIR・receipt。shard間の状態共有0 |
+| 最終判定 | receipt和集合: N/N(全件)・duplicate 0・missing 0・FAIL 0・SKIP 0・source_head全一致 |
+| 再実走 | 全量再実走を既定にせずshard単位で再実走。FAILしたshardのみ再実走 |
+
+- origin: `[[殿裁定_全量テスト3_4名分割_20260805]] -> [[固定HEAD相互排他shard]] -> [[receipt和集合で全量検収]]`
 
 ## §3 decision ledger
 
 | 項 | 状態 |
 |---|---|
+| checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
 | 第八弾の起動 | 殿発案2026-08-04 02:44。**設計書の裁可待ち(本書v1.0)** |
 | 序列snapshot | **確定済み**(§0=2026-08-04 09:07将軍再実測v1.1。既存ledger 112,089行・fixed-window。02:47実測比+1,978行で序列不変=構造確認済み) |
 | 弾数・標的固定 | **本書で5+補欠2を提案**。殿裁可で固定 |
