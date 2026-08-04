@@ -88,6 +88,7 @@
 5. **read-only冗長並列**(殿裁定13:28): 序列子区分計測・発火条件記録はread-only冗長2名先着採用可。是正実装は単独所有
 6. 個別弾は選択実行(`bash scripts/run_tests.sh file <対象>`)FAIL0・SKIP0のみ。途中try回数最大化・厳密さは最終checkpointへ集中(殿裁定2026-07-14)
 7. 完了宣言=全弾クローズ→修正後1週間のledger累積課税を前週比で総括→CLOSE刻印
+8. **lane最小AC/wave checkpointの二層契約(殿裁定2026-08-04 19:26で恒久化・本弾進行中レーンへ即時適用)**: 【lane最小AC】focused fixture PASS+コード変更確認+p50/p95非悪化のみ。scope外全量テスト・並行中固定HEAD比較・commit後全量再測定を途中レーンに課すな(小太郎補欠Aレーン9回BLOCK実測=再実走税)。設計baseline差は数値報告して続行。【wave最終checkpoint】全量FAIL0+全lane間独立比較+全量再測定+正式効果確定(1週間ledger前週比)。原理=殿19:10『再実走よりも再配備が高速回転に直結』。経緯=殿AC過剰厳格性監査→軍師5観点(blt_192103)→将軍検分採用→殿恒久裁定
 
 ### 提案弾台帳(殿裁可で固定)
 
@@ -105,18 +106,19 @@
 
 - 弾#1-#3は同一スクリプト(three_layer_health)の別checkだが、writer共有ゆえ**#1→#2→#3の直列**(共有層先行の原則)。#4以降は独立並列可
 
-## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 17:20将軍転記。帰結は各報告YAML result.summaryから転記)
+## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 18:40軍師更新。帰結は各報告YAML result.summaryから転記)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
-| 0' | 計測盲点根絶(*_total一斉計装) | 🔄in_progress(小太郎 lane0a) | AC1 PASS(cmd_save save_total既存確認+9対象の未計装9/9一次確認)・AC2 PASS(9 scriptsへ固有*_total追加、個別probeで9/9行出力)・AC3(task選択テスト)継続中 |
-| 4 | `git_pre_commit:affected_tests` | ✅実装完了・軍師LGTM(17:17)・家老GATE判定待ち(疾風 lane4) | resolve_reverse_lib_depsを単一git grep+Bash集合フィルタへ変更。5-lib同一fixtureで**before p50/p95=6444/6643ms→after=2240/2416ms**(p50 -65%)。検出集合39/39一致(品質不変)。commit後再計測でも同結果。選択43/43 PASS・SKIP0 |
-| 1-3 | three_layer_health(refresh_copy/verify/window) | ⏳未配備 | 共有writer原則で#0'完了後に#1→#2→#3直列開始 |
-| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | ⏳未配備 | 独立writerゆえ並列配備可(将軍ナッジ16:14で並列開始指示済み) |
+| 0' | 計測盲点根絶(*_total一斉計装) | ✅**GATE CLEAR**(小太郎 lane0a・commit dd508b42e) | 9 entrypointへ固有total計装。cmd_save save_total既存再利用。直接Bats 96/96+ninja_scope 70/70 PASS。FAIL0・SKIP0。軍師LGTM 17:40 |
+| 4 | `git_pre_commit:affected_tests` | ✅**GATE CLEAR**(疾風 lane4・17:22) | resolve_reverse_lib_depsを単一git grep+Bash集合フィルタへ変更。5-lib同一fixtureで**before p50/p95=6444/6643ms→after=2240/2416ms**(p50 -65%)。検出集合39/39一致(品質不変)。選択43/43 PASS・SKIP0 |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | ✅**軍師LGTM**(疾風 lane5 impl・commit f37e044 + 飛猿 recon2完了・body_rest最大寄与裏付け) | batch_git no-hash反復履歴走査をHEAD世代cacheへ根治。**before p50/p95=6137/7122ms→after=270/3091ms(p50 -95.6%)**。stdout 159行SHA256一致(品質不変)。34/34 PASS。GATE判定待ち |
+| 1 | `three_layer_health:refresh_copy` | 🔄**配備済み**(影丸 impl assigned + 才蔵 recon2 assigned) | #0' CLEAR後に直列開始。影丸=baseline確認→根治高速化→敵対4種比較→scope commit。才蔵=独立再計測+call graph+小実験比較。軍師draft APPROVE済み(impl+recon2両方) |
+| 2-3 | three_layer_health(refresh_verify/window) | ⏳未配備 | #1完了後に直列開始 |
 | 補欠A/B/C | inbox_write / singleflight_hold / review_notify | ⏳未配備 | 計測後判断 |
 
 - 効果の正式確定は§1計測憲法の通り「修正後1週間のledger累積課税の前週比」。上表の帰結は各レーンのfocused実測(同一fixture before/after)
-- 配備経緯: 将軍下知blt_154140(15:41)→家老受領blt_154722(事故2件閉鎖優先)→殿指摘16:13『並列でできないか』→将軍ナッジmsg_161412→lane0a+lane4並列配備
+- 配備経緯: 将軍下知blt_154140(15:41)→家老受領blt_154722(事故2件閉鎖優先)→殿指摘16:13『並列でできないか』→将軍ナッジmsg_161412→lane0a+lane4並列配備→両GATE CLEAR→lane5+lane1並列配備(18:31-18:36)
 
 ## §3 decision ledger
 

@@ -76,6 +76,7 @@
 6. 個別弾は選択実行(`bash scripts/run_tests.sh file <対象>`)FAIL0・SKIP0のみ。途中try回数最大化・厳密さは最終checkpointへ集中
 7. 完了宣言=全弾クローズ→修正後1週間のledger累積課税を前週比で総括→CLOSE刻印
 8. **方式=レーン方式**(第五・七・八弾の型): 殿裁可→将軍下知(掲示板blt)→家老レーン配備→gate_metricsへlane名CLEAR刻印→最終checkpointで品質2原則検分。cmd正式起票はしない
+9. **lane最小AC/wave checkpointの二層契約**(**殿裁定2026-08-04 19:26『今後もレーン方式ではこのスタイルでいこう』で恒久化**。経緯=殿AC過剰厳格性監査→軍師blt_192103の5観点→将軍検分採用19:25。原理=殿19:10『再実走よりも再配備が高速回転に直結』): 【lane最小AC】focused fixture PASS+コード変更確認+p50/p95非悪化のみ。scope外全量テスト・並行中固定HEAD比較・commit後全量再測定を途中レーンに課すな(小太郎9回BLOCK実測=回転税)。設計baseline差は数値報告して続行(停止はwave判断)。【wave最終checkpoint】全量FAIL0+全lane間独立比較+全量再測定+正式効果確定(1週間ledger前週比)。検証の総量は不変、実施位置を正しい場所へ
 
 ### 提案弾台帳(殿裁可で固定)
 
