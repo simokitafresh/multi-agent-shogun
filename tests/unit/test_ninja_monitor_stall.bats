@@ -330,7 +330,10 @@ cat "$TEST_LOG"
     [[ "$output" == *"UNDEPLOYED-CMD: cmd_undeployed"* ]]
 }
 
-@test "check_undeployed_cmds: 配備済み(status=delegated)なら通知しない" {
+@test "check_undeployed_cmds: 配備済み(status=in_progress)なら通知しない" {
+    # GA-IA2(2026-08-04): 旧契約「delegated=配備済み」は誤前提(cmd_4228が
+    # delegatedのままidle忍者4名で35分停滞しても無通知だった実証事故)。
+    # 新契約: pending/delegatedとも未配備=通知対象。配備の証跡はin_progress遷移のみ。
     DELEGATED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '
 set -euo pipefail
@@ -352,7 +355,7 @@ export TEST_NTFY
 cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
 commands:
   cmd_deployed:
-    status: delegated
+    status: in_progress
     timestamp: "2026-04-03T01:12:00"
     delegated_at: "\"$DELEGATED_AT\""
 EOF

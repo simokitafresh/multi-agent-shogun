@@ -886,6 +886,20 @@ auto_commit_before_clear() {
                 done <<< "$auto_commit_candidate_paths"
 
                 if [ "$overlaps" = "true" ]; then
+                    # GA-IA3(2026-08-04): 自動生成/運用ファイル(SSOT=autogen_paths.sh)の
+                    # stage残留は自己回復する。restore --stagedは可逆(working tree不変)で、
+                    # 内容は本auto-commit経路が同サイクルでcommitする。実証事故:
+                    # context/lord-conversation-index.mdのstage残留が全忍者clearを
+                    # CLEAR-BLOCKEDで封鎖し人手復旧を要した(2026-08-04 12:14 URGENT-HARM)。
+                    # 非autogen(=誰かの実作業)のstageは従来通りskipで保全する。
+                    # shellcheck source=scripts/lib/autogen_paths.sh
+                    source "$SCRIPT_DIR/scripts/lib/autogen_paths.sh" 2>/dev/null || true
+                    if [ -n "${AUTOGEN_PATH_EXCLUDE_REGEX:-}" ] \
+                        && printf '%s\n' "$staged_path" | grep -Eq "$AUTOGEN_PATH_EXCLUDE_REGEX" \
+                        && git restore --staged -- "$staged_path" 2>/dev/null; then
+                        log "AUTO-COMMIT-SELF-HEAL: $agent_name unstaged autogen file: $staged_path"
+                        continue
+                    fi
                     log "AUTO-COMMIT-WARN-SKIP: $agent_name pre-existing staged file overlaps auto-commit scope: $staged_path"
                     return 2
                 fi
@@ -6198,7 +6212,11 @@ list_pending_cmds() {
     # defer契約も同じsnapshotから返し、stale判定と通知世代を一次状態へ束縛する。
     awk '
     function emit() {
-        if (cmd_id != "" && status == "pending") {
+        # GA-IA2(2026-08-04): delegated(委任済み・忍者未配備)も未配備検知の対象に含める。
+        # 旧: pendingのみ → cmd_delegateがstatusをdelegatedへ進めた後は死角となり、
+        # cmd_4228がidle忍者4名のまま35分停滞しても無通知だった(指示消失GA-IA1と複合)。
+        # 配備でstatusがin_progressへ遷移すれば自動解消(RESOLVED)する。
+        if (cmd_id != "" && (status == "pending" || status == "delegated")) {
             print cmd_id "|" timestamp "|" delegated_at "|" deferred_until "|" defer_reason "|" restart_condition
         }
     }
@@ -6363,6 +6381,13 @@ check_undeployed_cmds() {
             UNDEPLOYED_CMD_NOTIFIED["$cmd_id"]=$now
         else
             log "ERROR: Failed to send ntfy for undeployed cmd ${cmd_id}"
+        fi
+        # GA-IA2: 鎖内自己回復 — 殿へのntfyだけでなく家老へも起床nudgeを送る。
+        # 指示消失(GA-IA1)後でもこの再通知で配備が再駆動される二重防御。
+        if ! timeout 15 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+            "未配備検知: ${cmd_id} が委任後${elapsed_min}分未配備。queue/shogun_to_karo.yamlの該当cmdを確認しidle忍者へ配備せよ。" \
+            task_assigned ninja_monitor deploy_cmd >> "$LOG" 2>&1; then
+            log "ERROR: Failed to send karo redeploy nudge for ${cmd_id}"
         fi
     done < <(list_pending_cmds_cached)
 

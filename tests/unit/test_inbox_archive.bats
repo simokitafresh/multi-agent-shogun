@@ -187,3 +187,51 @@ YAML
     wait "$holder"
     grep -q 'msg_lock' "$mailbox/saizo.yaml"
 }
+
+@test "GA-IA1: read cmd_new for still-delegated cmd is retained; deployed cmd_new is archived" {
+    # test_necessity: 未配備(status: delegated)cmdを指す既読cmd_newはarchiveへ
+    # 掃き出されずinboxに残る(指示消失=cmd_4228 35分停滞の再発防止契約)。
+    cat > "$TEST_ROOT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_9001:
+    status: delegated
+  cmd_9002:
+    status: in_progress
+YAML
+    cat > "$TEST_ROOT/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- content: 'cmd_9001: deploy directive'
+  from: 'shogun'
+  id: 'msg_ret1'
+  read: true
+  timestamp: '2026-08-04T12:00:00'
+  type: 'cmd_new'
+- content: 'cmd_9002: already deployed'
+  from: 'shogun'
+  id: 'msg_arc1'
+  read: true
+  timestamp: '2026-08-04T12:00:01'
+  type: 'cmd_new'
+- content: 'cmd_9001 mentioned but not a cmd_new'
+  from: 'x'
+  id: 'msg_arc2'
+  read: true
+  timestamp: '2026-08-04T12:00:02'
+  type: 'gate_clear'
+YAML
+
+    run bash "$TEST_SCRIPT" karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Archived 2 messages"* ]]
+
+    python3 - "$TEST_ROOT" <<'PY'
+import pathlib, sys, yaml
+root = pathlib.Path(sys.argv[1])
+inbox = yaml.safe_load((root / "queue/inbox/karo.yaml").read_text())
+archive_files = list((root / "archive/inbox").glob("karo_*.yaml"))
+assert len(archive_files) == 1
+archive = yaml.safe_load(archive_files[0].read_text())
+assert [m["id"] for m in inbox["messages"]] == ["msg_ret1"], inbox
+assert sorted(m["id"] for m in archive["messages"]) == ["msg_arc1", "msg_arc2"], archive
+PY
+}
