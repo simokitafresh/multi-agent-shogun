@@ -6,10 +6,12 @@ GATE="scripts/gates/gate_report_format.sh"
 AUTOFIX="scripts/gates/gate_report_autofix.sh"
 TMPDIR_BATS=""
 REPO_TMPDIR_BATS=""
+SKILL_LOG_REPORT_DIR=""
 
 setup() {
     TMPDIR_BATS=$(mktemp -d)
     REPO_TMPDIR_BATS=$(mktemp -d ".tmp_gate_report_format.XXXXXX")
+    SKILL_LOG_REPORT_DIR=""
     # --jobs 8並列実行時の競合を回避するためキャッシュ/ログをテストごとに一意化
     export GATE_PASS_CACHE_FILE="$TMPDIR_BATS/.gate_pass_cache"
     export GATE_FIRE_LOG_FILE="$TMPDIR_BATS/gate_fire_log.yaml"
@@ -21,6 +23,9 @@ setup() {
 teardown() {
     rm -rf "$TMPDIR_BATS"
     rm -rf "$REPO_TMPDIR_BATS"
+    if [ -n "$SKILL_LOG_REPORT_DIR" ]; then
+        rm -rf "$SKILL_LOG_REPORT_DIR"
+    fi
     unset GATE_PASS_CACHE_FILE GATE_FIRE_LOG_FILE SKILL_EXECUTION_LOG_FILE
 }
 
@@ -828,7 +833,11 @@ PY
 
 # --- T-SKILL-LOG-1: PASS report records report-write execution ---
 @test "T-SKILL-LOG-1: PASS reports are recorded in skill_execution_log" {
-    local report="$REPO_TMPDIR_BATS/report.yaml"
+    # Skill execution logging intentionally covers only genuine queue reports;
+    # keep this fixture on that production path without sharing the real ledger.
+    local report
+    SKILL_LOG_REPORT_DIR="$(mktemp -d "queue/.tmp_gate_report_skill_log.XXXXXX")"
+    report="$SKILL_LOG_REPORT_DIR/testninja_report_cmd_test.yaml"
     create_valid_report "$report" >/dev/null
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
@@ -842,10 +851,10 @@ report_write = next(e for e in entries if e["skill"] == "report-write")
 verdict_check = next(e for e in entries if e["skill"] == "verdict-check")
 assert report_write["result"] == "PASS"
 assert report_write["gate"] == "gate_report_format"
-assert report_write["source"] == "$report"
+assert report_write["source"] == "cmd_test"
 assert verdict_check["result"] == "PASS"
 assert verdict_check["gate"] == "gate_report_format"
-assert verdict_check["source"] == "$report"
+assert verdict_check["source"] == "cmd_test"
 print("OK")
 EOF
     [ "$status" -eq 0 ]
