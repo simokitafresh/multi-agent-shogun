@@ -518,7 +518,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行防御へ吸収済み。判断不要6 typeはdigest永続化後auto-ack、判断要typeは永続を維持してnudge coalescingし、指示typeのauto-read拡大は不達事故防止のため不採用。2026-08-04一次確認で家老未読0件。"
+  action_artifact: "scripts/inbox_mark_read.sh:106-159;scripts/inbox_watcher.sh:1185-1213;docs/research/commander-inbox-flood-asis-tobe-5w1h_20260727.md;runtime:karo_unread=0"
+  resolved_at: "2026-08-04T10:00:27+09:00"
 - id: INS-20260803-185123018-ba56
   ts: "2026-08-03T18:51:23+09:00"
   insight: "semantic_index_update新概念候補: discussion:設計書のB4とC xの粒度を小さくして進捗をもう少し細かく把握できるようにしたいな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
