@@ -451,7 +451,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GPT向けreport scaffoldはmodel_injection_profile、extra_scaffold、ninja_weak_pointsとして既に実装され現taskへ注入済み。対象contract tests再実測PASSにつき重複実装不要"
+  action_artifact: "queue/tasks/hayate.yamlの注入3領域、test_deploy_task.bats選択4件PASS、FAIL0、SKIP0"
+  resolved_at: "2026-08-04T09:26:24+09:00"
 - id: INS-20260803-184504458-a643
   ts: "2026-08-03T18:45:04+09:00"
   insight: "review_bundle.pyのreport identity not in canonical registry BLOCKが本セッションで4回発生(hanzo Track B/saizo B4 impl review/hanzo W3 actual/tobisaru adversarial)。家老karo_directで配備されたcmdのreport_idがregistry未登録のため正規bundleパスが使えない。workaround=gunshi_log_append直接+karo inbox通知だが、registry自動登録の改善が必要"
