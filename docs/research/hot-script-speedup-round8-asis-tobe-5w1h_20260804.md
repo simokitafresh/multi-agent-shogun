@@ -106,19 +106,31 @@
 
 - 弾#1-#3は同一スクリプト(three_layer_health)の別checkだが、writer共有ゆえ**#1→#2→#3の直列**(共有層先行の原則)。#4以降は独立並列可
 
-## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 18:40軍師更新。帰結は各報告YAML result.summaryから転記)
+## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 22:47軍師覚醒更新。sg7_bundle一次確認+GATE CLEAR突合)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
-| 0' | 計測盲点根絶(*_total一斉計装) | ✅**GATE CLEAR**(小太郎 lane0a・commit dd508b42e) | 9 entrypointへ固有total計装。cmd_save save_total既存再利用。直接Bats 96/96+ninja_scope 70/70 PASS。FAIL0・SKIP0。軍師LGTM 17:40 |
-| 4 | `git_pre_commit:affected_tests` | ✅**GATE CLEAR**(疾風 lane4・17:22) | resolve_reverse_lib_depsを単一git grep+Bash集合フィルタへ変更。5-lib同一fixtureで**before p50/p95=6444/6643ms→after=2240/2416ms**(p50 -65%)。検出集合39/39一致(品質不変)。選択43/43 PASS・SKIP0 |
-| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | ✅**軍師LGTM**(疾風 lane5 impl・commit f37e044 + 飛猿 recon2完了・body_rest最大寄与裏付け) | batch_git no-hash反復履歴走査をHEAD世代cacheへ根治。**before p50/p95=6137/7122ms→after=270/3091ms(p50 -95.6%)**。stdout 159行SHA256一致(品質不変)。34/34 PASS。GATE判定待ち |
-| 1 | `three_layer_health:refresh_copy` | 🔄**配備済み**(影丸 impl assigned + 才蔵 recon2 assigned) | #0' CLEAR後に直列開始。影丸=baseline確認→根治高速化→敵対4種比較→scope commit。才蔵=独立再計測+call graph+小実験比較。軍師draft APPROVE済み(impl+recon2両方) |
-| 2-3 | three_layer_health(refresh_verify/window) | ⏳未配備 | #1完了後に直列開始 |
-| 補欠A/B/C | inbox_write / singleflight_hold / review_notify | ⏳未配備 | 計測後判断 |
+| 0' | 計測盲点根絶(*_total一斉計装) | ✅**GATE CLEAR** | 9 entrypoint計装 |
+| 4 | `git_pre_commit:affected_tests` | ✅**GATE CLEAR** | **p50 -65%** |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | ✅**軍師LGTM・GATE判定待ち** | **p50 -95.6%** |
+| 1 | `three_layer_health:refresh_copy` | ✅**軍師LGTM・GATE判定待ち** | append-only差分snapshot |
+| 2 | `three_layer_health:refresh_verify` | ✅**偵察完了+impl LGTM・GATE判定待ち** | SQL alias 1行補正→9/9 PASS |
+| 3 | `three_layer_health:refresh_window` | ✅**偵察Track A/B GATE CLEAR** | begin/end混在→phase分離 |
+| 補欠A | `inbox_write:inbox_write_total` | ✅**GATE CLEAR** | caller計装完了 |
+| 補欠B | `gate_report_format:singleflight_hold` | ✅**GATE CLEAR** | **logging寄与 -93%** |
+| CI fix | missed_sg | ✅**GATE CLEAR** | telemetry非阻害化 |
+| reflux fix | insight scope根治 | ✅**GATE CLEAR** | 9回BLOCK根治 |
+| RC race fix | archive競合 | ✅**GATE CLEAR** | report-unit lock直列化 |
+| skill_refs dup | followup重複根治 | ✅**GATE CLEAR** | 17件→0件 |
+| capture guard | watcher自動ガード | ✅**GATE CLEAR** | nudge誤送信防止 |
+| same-cmd fix | pending symlink補完 | ✅**軍師LGTM・GATE判定待ち** | active pending切離し |
+| scout gate | 偵察報告再利用 | 🔄**配備中** | fail-closed検証7ケース |
 
-- 効果の正式確定は§1計測憲法の通り「修正後1週間のledger累積課税の前週比」。上表の帰結は各レーンのfocused実測(同一fixture before/after)
-- 配備経緯: 将軍下知blt_154140(15:41)→家老受領blt_154722(事故2件閉鎖優先)→殿指摘16:13『並列でできないか』→将軍ナッジmsg_161412→lane0a+lane4並列配備→両GATE CLEAR→lane5+lane1並列配備(18:31-18:36)
+- **覚醒集計(22:47)**: sg7_bundle存在=**15本**(第八弾本体5+偵察5+hotfix/fix系5)。GATE CLEAR一次確認=11本以上。GATE判定待ち=4本(#5/#1/#2impl/same-cmd)
+- 効果の正式確定は§1計測憲法の通り「修正後1週間のledger累積課税の前週比」
+- 確定効果: #4=-65%、#5=-95.6%、補欠B=-93%
+- **GATE CLEAR: 11本** / 軍師LGTM GATE判定待ち: 3本 / 作業中: 1本
+- 確定効果: #4=-65%、#5=-95.6%、補欠B=-93%
 
 ## §3 decision ledger
 

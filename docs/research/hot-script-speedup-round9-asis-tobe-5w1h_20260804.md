@@ -1,5 +1,5 @@
 <!-- gist-master: 59a5e79368f385cddfdb0656fd8ca3bd hot-script-speedup-round9-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.1 【📋設計済・裁可待ち】
+# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.2 【🚀裁可済み・進行中】
 
 > 状態: v1.2(2026-08-04 20:16 殿裁可『よい。追記したらレーン方式で家老にやらせよう』。§0.6母集団漏れ3系(git pre-push/Codex固有hook/セッション境界+基本コマンド)を弾#0''スコープへ同梱) / v1.1(2026-08-04 18:58 §0.6サイレント盲点サーベイ追加+弾#0''をhookチェーン計装として弾台帳へ追加) / v1.0初版起草(2026-08-04 18:46。殿発案『第九弾の設計書を作ろう。以前の設計書を参考にして同じスタイルで。進捗表も』)。序列=将軍一次実測18:46(下記§0)
 
@@ -95,19 +95,18 @@
 
 - 弾#1→#2は同一script(heavy_job_admission)ゆえ直列。#3・#4は独立writerで並列可。補欠は条件成立後に殿へ昇格提案
 
-## §2.5 進捗台帳(第七弾§-2.4様式 — 起草時点は全弾未着手。レーン配備後に将軍/軍師が転記)
+## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-04 22:42軍師更新)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
-| 0 | 第0手=序列覚醒(裁可時fixed-window再実測) | ⏳裁可待ち | — |
-| 0'' | CLIライフサイクルhook層計装 | ⏳裁可待ち(全弾に先行) | — |
-| 1 | `heavy_job_admission:execution` | ⏳未配備 | — |
+| 0'' | CLIライフサイクルhook層計装 | ✅**Track A GATE CLEAR + Track B LGTM + impl配備済み** | Track A: 12/22到達対象、既存writer接続1件。Track B: LG043是正後LGTM。impl(Claude session hooks 4入口)配備中 |
+| 1 | `heavy_job_admission:execution` | ✅**偵察LGTM・GATE判定待ち** | n=2490/p95=132550ms/p99=733110ms/max=1191s。p95上125件=total 80.8%。外れ値型 |
+| 3 | `deploy_task:deploy_total` | ✅**偵察LGTM・GATE判定待ち** | n=3930/p50=1815ms/p95=49980ms。最大寄与=report_publication 366回2146s。未計装残差98% |
+| 4 | `cmd_save:save_total`+`checks_main` | 🔄**偵察配備中**(小太郎) | — |
 | 2 | `heavy_job_admission:queue_wait` | ⏳未配備(#1後直列) | — |
-| 3 | `deploy_task:deploy_total` | ⏳未配備 | — |
-| 4 | `cmd_save:save_total`+`checks_main` | ⏳未配備 | — |
 | 補欠A | `full_precheck`本体 | 🔒条件待ち(第八弾#5帰結) | — |
-| 補欠B | 新規*_total群 | 🔒計測蓄積待ち(第0手で判定) | — |
-| 補欠C | 共有lock競合ファミリー | ⏳未配備(計測のみ) | — |
+| 補欠B | 新規*_total群 | 🔒計測蓄積待ち | — |
+| 補欠C | 共有lock競合ファミリー | ⏳未配備 | — |
 
 ## §3 decision ledger
 
