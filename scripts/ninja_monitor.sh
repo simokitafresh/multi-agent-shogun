@@ -1163,6 +1163,9 @@ declare -A PANE_TARGETS   # 忍者名 → tmuxペインターゲット
 declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
 declare -A STALL_NOTIFIED    # 停滞通知時刻（epoch秒）— key: "ninja:task_id", value: epoch
+declare -A ACTIVE_STALL_FIRST_SEEN  # activeペイン静止の初回観測時刻 — key: "ninja:task_id"
+declare -A ACTIVE_STALL_PANE_FP     # activeペイン静止の表示fingerprint — key: "ninja:task_id"
+declare -A ACTIVE_STALL_NOTIFIED    # activeペイン静止の家老通知済み世代 — key: "ninja:task_id"
 declare -A STALE_CMD_NOTIFIED  # stale cmd通知済み世代 — key: "cmd_XXX", value: 状態fingerprint
 declare -A UNDEPLOYED_CMD_NOTIFIED  # pending+delegated_at超過cmdのntfy送信済みフラグ — key: "cmd_XXX", value: epoch秒
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
@@ -3744,6 +3747,8 @@ _clear_stall_tracking_for_completed_idle() {
         esac
     done
 
+    _reset_active_busy_stall "$name"
+
     if [ "$cleared_first" -gt 0 ] || [ "$cleared_count" -gt 0 ]; then
         log "STALL-TRACKING-CLEAR: $name status=$task_status first_seen=${cleared_first} count=${cleared_count}"
     fi
@@ -5777,6 +5782,19 @@ _cleanup_stale_keys() {
         [ -z "${active[$agent_part]}" ] && unset "STALL_NOTIFIED[$key]"
     done
 
+    for key in "${!ACTIVE_STALL_FIRST_SEEN[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "ACTIVE_STALL_FIRST_SEEN[$key]"
+    done
+    for key in "${!ACTIVE_STALL_PANE_FP[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "ACTIVE_STALL_PANE_FP[$key]"
+    done
+    for key in "${!ACTIVE_STALL_NOTIFIED[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "ACTIVE_STALL_NOTIFIED[$key]"
+    done
+
     for key in "${!AUTO_DEPLOY_DONE[@]}"; do
         agent_part="${key%%:*}"
         [ -z "${active[$agent_part]}" ] && unset "AUTO_DEPLOY_DONE[$key]"
@@ -5984,6 +6002,84 @@ _notify_explicit_task_stop() {
     return 0
 }
 
+_reset_active_busy_stall() {
+    local name="$1" task_id="${2:-}"
+    local key
+    if [ -n "$task_id" ]; then
+        key="${name}:${task_id}"
+        unset "ACTIVE_STALL_FIRST_SEEN[$key]"
+        unset "ACTIVE_STALL_PANE_FP[$key]"
+        unset "ACTIVE_STALL_NOTIFIED[$key]"
+        return 0
+    fi
+    for key in "${!ACTIVE_STALL_FIRST_SEEN[@]}" "${!ACTIVE_STALL_PANE_FP[@]}" "${!ACTIVE_STALL_NOTIFIED[@]}"; do
+        [ "${key%%:*}" = "$name" ] || continue
+        unset "ACTIVE_STALL_FIRST_SEEN[$key]"
+        unset "ACTIVE_STALL_PANE_FP[$key]"
+        unset "ACTIVE_STALL_NOTIFIED[$key]"
+    done
+}
+
+# active hook状態は通常BUSYとして扱うが、pane表示が静止したまま子処理も
+# 確認promptもないと、check_idle()だけではSTALL_FIRST_SEENに到達しない。
+# この経路はbusyペインへ入力・respawnせず、家老への一回通知だけを担当する。
+_check_active_busy_stall() {
+    local name="$1" task_id="$2" target="$3"
+    local key="${name}:${task_id}" now capture pane_fp first_seen elapsed threshold_sec
+
+    [ -n "$task_id" ] || return 0
+    capture=$(tmux capture-pane -t "$target" -p -J -S -100 2>/dev/null || true)
+    if [ -z "$capture" ]; then
+        _reset_active_busy_stall "$name" "$task_id"
+        log "ACTIVE-STALL-RESET: ${name} task=${task_id} pane_capture=empty"
+        return 0
+    fi
+
+    if _pane_has_active_background_compute "$target"; then
+        _reset_active_busy_stall "$name" "$task_id"
+        log "ACTIVE-STALL-RESET: ${name} task=${task_id} child_compute=1"
+        return 0
+    fi
+    if _pane_has_confirmation_prompt "$target"; then
+        _reset_active_busy_stall "$name" "$task_id"
+        log "ACTIVE-STALL-RESET: ${name} task=${task_id} confirmation_prompt=1"
+        return 0
+    fi
+
+    pane_fp=$(printf '%s' "$capture" | sha256sum | awk '{print $1}')
+    now=$EPOCHSECONDS
+    if [ "${ACTIVE_STALL_PANE_FP[$key]:-}" != "$pane_fp" ]; then
+        ACTIVE_STALL_PANE_FP[$key]="$pane_fp"
+        ACTIVE_STALL_FIRST_SEEN[$key]="$now"
+        unset "ACTIVE_STALL_NOTIFIED[$key]"
+        log "ACTIVE-STALL-WATCH: ${name} task=${task_id} pane_changed=1 tracking_started=1"
+        return 0
+    fi
+
+    first_seen=${ACTIVE_STALL_FIRST_SEEN[$key]:-$now}
+    ACTIVE_STALL_FIRST_SEEN[$key]="$first_seen"
+    elapsed=$(( now - first_seen ))
+    threshold_sec=$(( ${ACTIVE_STALL_THRESHOLD_MIN:-25} * 60 ))
+    if [ "$elapsed" -lt "$threshold_sec" ]; then
+        log "ACTIVE-STALL-WATCH: ${name} task=${task_id} pane_changed=0 elapsed=${elapsed}s threshold=${threshold_sec}s"
+        return 0
+    fi
+    if [ "${ACTIVE_STALL_NOTIFIED[$key]:-}" = "1" ]; then
+        log "ACTIVE-STALL-DEDUPE: ${name} task=${task_id} elapsed=${elapsed}s notified=1"
+        return 0
+    fi
+
+    local elapsed_min=$(( elapsed / 60 ))
+    local message="【BUSY-STALL】${name}のactive task=${task_id}でpane表示が${elapsed_min}分不変、子処理0、確認prompt0。busyペインへ介入せず実態を確認せよ。"
+    if send_inbox_message karo "$message" stall_alert; then
+        ACTIVE_STALL_NOTIFIED[$key]=1
+        log "ACTIVE-STALL-DETECTED: ${name} task=${task_id} elapsed=${elapsed}s notified_karo=1 self_action=0"
+    else
+        log "ACTIVE-STALL-NOTIFY-BLOCK: ${name} task=${task_id} elapsed=${elapsed}s notified_karo=0"
+    fi
+    return 0
+}
+
 check_stall() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
@@ -6114,11 +6210,25 @@ check_stall() {
         fi
     fi
 
-    # ペインがidleか確認
+    # active状態はcheck_idle()がBUSYを返すため、idle-stall経路の前に
+    # pane静止専用の検知を行う。status変化/idle遷移では観測世代を破棄する。
     local target="${PANE_TARGETS[$name]}"
     if [ -z "$target" ]; then return; fi
 
-    if ! check_idle "$target" "$name"; then
+    local idle_check_rc agent_state
+    if check_idle "$target" "$name"; then
+        idle_check_rc=0
+    else
+        idle_check_rc=$?
+    fi
+    agent_state=$(tmux display-message -t "$target" -p '#{@agent_state}' 2>/dev/null || true)
+    if [ "$status" = "in_progress" ] && [ "$agent_state" = "active" ] && [ "$idle_check_rc" -ne 0 ]; then
+        _check_active_busy_stall "$name" "$task_id" "$target"
+        return
+    fi
+    _reset_active_busy_stall "$name" "$task_id"
+
+    if [ "$idle_check_rc" -ne 0 ]; then
         # busy状態 → 停滞追跡リセット
         unset "STALL_FIRST_SEEN[$name]"
         return

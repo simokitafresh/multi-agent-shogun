@@ -40,6 +40,87 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
+# test_necessity: active taskがpane静止・子処理なし・確認promptなしで長時間BUSY化した
+# ときだけ家老へ一度通知し、pane変化/子処理/prompt/重複では通知しない不変量を守る。
+@test "check_stall: stale active pane notifies karo once without self action" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="'"$BATS_TEST_TMPDIR"'/active-busy-stall"
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: in_progress
+  task_id: cmd_active_stall_001
+EOF
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
+declare -A ACTIVE_STALL_FIRST_SEEN ACTIVE_STALL_PANE_FP ACTIVE_STALL_NOTIFIED
+TEST_MESSAGES="$TMP_ROOT/messages.log"
+TEST_LOG="$TMP_ROOT/monitor.log"
+PANE_CONTENT=stable
+CHILD_RC=1
+PROMPT_RC=1
+PANE_TARGETS[kagemaru]="shogun:2.4"
+
+log() { printf "%s\n" "$1" >> "$TEST_LOG"; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+recover_dead_active_pane() { return 1; }
+find_matching_report_file() { return 1; }
+check_idle() { return 1; }
+_pane_has_active_background_compute() { return "$CHILD_RC"; }
+_pane_has_confirmation_prompt() { return "$PROMPT_RC"; }
+tmux() {
+    case "$*" in
+        *"#{@agent_state}"*) printf "active\n" ;;
+        *capture-pane*) printf "%s\n" "$PANE_CONTENT" ;;
+        *) return 0 ;;
+    esac
+}
+
+# First observation establishes the generation; the second crosses 25 minutes.
+check_stall kagemaru
+ACTIVE_STALL_FIRST_SEEN[kagemaru:cmd_active_stall_001]=$((EPOCHSECONDS - 1501))
+check_stall kagemaru
+check_stall kagemaru
+
+# A pane change resets the generation and must not create a second alert.
+PANE_CONTENT=changed
+check_stall kagemaru
+
+# Child compute and confirmation prompt each reset tracking without notifying.
+PANE_CONTENT=child
+CHILD_RC=0
+check_stall kagemaru
+PANE_CONTENT=prompt
+CHILD_RC=1
+PROMPT_RC=0
+check_stall kagemaru
+
+alerts=$(grep -c "^karo|stall_alert|" "$TEST_MESSAGES" || true)
+self_actions=$(grep -c "^kagemaru|" "$TEST_MESSAGES" || true)
+pane_watches=$(grep -c "pane_changed=1" "$TEST_LOG" || true)
+child_resets=$(grep -c "child_compute=1" "$TEST_LOG" || true)
+prompt_resets=$(grep -c "confirmation_prompt=1" "$TEST_LOG" || true)
+dedupe=$(grep -c "ACTIVE-STALL-DEDUPE" "$TEST_LOG" || true)
+printf "alerts=%s self_actions=%s pane_watches=%s child_resets=%s prompt_resets=%s dedupe=%s\n" \
+  "$alerts" "$self_actions" "$pane_watches" "$child_resets" "$prompt_resets" "$dedupe"
+test "$alerts" -eq 1
+test "$self_actions" -eq 0
+test "$pane_watches" -eq 2
+test "$child_resets" -eq 1
+test "$prompt_resets" -eq 1
+test "$dedupe" -eq 1
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "alerts=1 self_actions=0 pane_watches=2 child_resets=1 prompt_resets=1 dedupe=1" ]
+}
+
 # test_necessity: dependency待機のfailed workerは接続cmd CLEAR前0回/CLEAR後ちょうど1回だけ再配備される
 @test "dependency continuation consumer releases failed task exactly once after GATE CLEAR" {
     run bash -lc '
