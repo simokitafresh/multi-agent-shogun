@@ -488,3 +488,9 @@ Level5: deploy_task.sh経由のscripts/lib/inject_task_modifiers.py lsa16_produc
 - LS048 superseded_by補足: LS090(検出・報告=出力で止まり行動が完遂されないパターン)へ統合。2026-08-04家老BLOCK報告放置事例で三たび実証。旧enforcement全文: Level5 type=hook; prompt_state_inject.sh+stop_check_inbox.sh; 因果+detect_f009。F009殿操作依頼をdecision=block停止+Q6 flag検出時は8パターン全文+台帳記録へ接続。cmd_3251/3252/3409/3522/3782でhook+tests実装済み。
 - LS090 旧detail: Q6で洗脳#5(escalation先送り)検出→escalation handler不在を特定→post-shogun-inbox-check.shにtype:escalation+read:false検出WARN注入(79c60e0c6)。awkバグ(escフラグ未リセット)を初回テストで検出し修正。旧enforcement: Level5 hook+test=.claude/hooks/post-shogun-inbox-check.sh pattern=escalation_unread test=tests/unit/test_post_shogun_escalation_warn.bats(4/4 PASS)。
 - LS101 旧detail要旨: 2026-07-21 CI RED 1セッション継続の真因=『CI RED中push保留』ルールで修正入り46commit未push、CI REDは古いorigin(1fc7d294)で自己永続。旧enforcement: L1のまま(2026-07-26飛猿一次確認=検出実装ゼロ。同型再発を軍師が手作業特定)。
+
+## §LS104 旧detail全文 (2026-08-04移設・lessons 55KB超過圧縮)
+2026-07-22 殿のRolling Returnsワイヤーフレーム依頼で将軍が3反復を空費した。V1=バー/詳細パネル/Histogram/デザインガイド注記を盛り込み殿に『ごちゃごちゃ』と却下。V2=既存表に列追加と誤解。V3でようやく『既存表そのまま＋下に同型テーブル』の正解に到達。真因=(1)頼まれていない装飾/機能を先回りで足す過剰デザイン(洗脳: 出力量=価値の錯覚)、(2)殿の『同じスタイル/既存そのまま』を最初に字義通り受け取らず自分の設計を上乗せした。正: デザイン/UI/モック依頼は『既存を1ピクセルも変えず、指示された最小差分だけ』から作れ。既存スタイルを一次確認し忠実複製→頼まれた要素のみ最小追加。凝る前に殿に最小案を見せて方向確認。過剰は減点、最小は加点。この作業の遅延はインフラバグでなく将軍の設計過剰が真因(偽インフラバグを起票せず自責で記録)。
+
+## §LS111 旧detail全文 (2026-08-04移設・lessons 55KB超過圧縮)
+2026-07-24全量テスト事故: 将軍がcmd_4154-4163のAC2へrun_tests.sh unit(約2454s)を焼込み忍者が反復フル実行(延べ80-100分浪費)。直接原因=cmd_save.sh test_ci_execution_contract(将軍のcmd_3867由来)+hookガイダンスの全量字句強制に将軍がBLOCK回避で盲従。真因=起票の分岐点で三層記憶が構造発火しない(knowledge:59515c96途中affected/最終unit二段設計・才蔵二段設計提案・05-19全量26分問題が既存なのに未参照)。付随=是正時に殿発言を殿裁定としてコードへ焼込む帰属捏造→即削除。強制のみ有効: gate反転(全量指定BLOCK)+起票Edit時の記憶DB自動注入拡張で意志依存ゼロ化
