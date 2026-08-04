@@ -199,6 +199,40 @@ YAML
   [[ "$output" == *"scripts/caller.sh"* ]]
 }
 
+# test_necessity: the batched reverse-dependency query must preserve the union
+# of source and subprocess callers for multiple staged libraries while issuing
+# one index scan, preventing staged-lib-count latency from growing linearly.
+@test "resolve_reverse_lib_deps batches multiple staged libraries without losing callers" {
+  printf '#!/bin/bash\nsource "$(dirname "$0")/lib/alpha.sh"\n' > "$REPO/scripts/caller_alpha.sh"
+  printf '#!/bin/bash\nbash "$(dirname "$0")/lib/beta.sh"\n' > "$REPO/scripts/caller_beta.sh"
+  printf '#!/bin/bash\necho alpha\n' > "$REPO/scripts/lib/alpha.sh"
+  printf '#!/bin/bash\necho beta\n' > "$REPO/scripts/lib/beta.sh"
+  git -C "$REPO" add scripts/caller_alpha.sh scripts/caller_beta.sh scripts/lib/alpha.sh scripts/lib/beta.sh
+  git -C "$REPO" commit -qm "add batched reverse dependency fixtures"
+  printf '#!/bin/bash\necho alpha changed\n' > "$REPO/scripts/lib/alpha.sh"
+  printf '#!/bin/bash\necho beta changed\n' > "$REPO/scripts/lib/beta.sh"
+  git -C "$REPO" add scripts/lib/alpha.sh scripts/lib/beta.sh
+  count_file="$REPO/logs/grep_calls.txt"
+  : > "$count_file"
+
+  FUNCS="$(extract_funcs resolve_reverse_lib_deps)"
+  run bash -c "
+    REPO_ROOT='$REPO'
+    $FUNCS
+    list_staged_files() { git -C '$REPO' diff --cached --name-only; }
+    staged_file_exists() { git -C '$REPO' diff --cached --name-only | grep -qxF \"\$1\"; }
+    git() {
+      if [[ \"\$1\" == '-C' && \"\$3\" == 'grep' ]]; then printf 'grep_invocation\\n' >> '$count_file'; fi
+      command git \"\$@\"
+    }
+    resolve_reverse_lib_deps | sort
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"scripts/caller_alpha.sh"* ]]
+  [[ "$output" == *"scripts/caller_beta.sh"* ]]
+  [ "$(wc -l < "$count_file")" -eq 1 ]
+}
+
 @test "AC5(b): a scripts/lib change that breaks a caller's dependent test is BLOCKED, not just the lib's own test" {
   printf '#!/bin/bash\necho changed\n' > "$REPO/scripts/lib/mylib.sh"
   git -C "$REPO" add scripts/lib/mylib.sh

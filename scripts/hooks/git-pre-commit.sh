@@ -505,25 +505,31 @@ check_staged_sourced_deps() {
 # .../yaml_field_set.sh "$file" ...` CLI-style calls, not `source`. A
 # source-only pattern would silently miss almost all of them.
 resolve_reverse_lib_deps() {
-    local staged_sh lib_base caller
+    local staged_sh line caller base
+    local -a batched_lib_bases=()
+    declare -A batched_seen=()
     while IFS= read -r staged_sh; do
         [[ "$staged_sh" == scripts/lib/*.sh ]] || continue
         staged_file_exists "$staged_sh" || continue
-        lib_base="${staged_sh##*/}"
-        while IFS= read -r caller; do
-            [[ -n "$caller" && "$caller" != "$staged_sh" ]] || continue
-            printf '%s\n' "$caller"
-        done < <(
-            # Deliberately lenient (unlike check_staged_sourced_deps' strict
-            # forward match): callers commonly wrap the path in a subshell
-            # (e.g. "$(dirname "$0")/lib/foo.sh"), which breaks a
-            # quote-excluding character class. Over-matching here only adds
-            # an extra affected test — the safe direction to err in — while
-            # under-matching would silently miss AC2's incident shape.
-            git -C "$REPO_ROOT" grep -lE '(source|\.|bash)[[:space:]].*/'"${lib_base}"'([[:space:]"]|$)' \
-                -- 'scripts' '.githooks' '.claude/hooks' 2>/dev/null
-        )
+        batched_lib_bases+=("${staged_sh##*/}")
     done < <(list_staged_files)
+    (("${#batched_lib_bases[@]} > 0")) || return 0
+    while IFS= read -r line; do
+        caller="${line%%:*}"
+        for base in "${batched_lib_bases[@]}"; do
+            if [[ "$line" == *"/$base"* && "$caller" != "scripts/lib/$base" ]]; then
+                [[ "${batched_seen["$caller"]+x}" ]] || {
+                    printf '%s\n' "$caller"
+                    batched_seen["$caller"]=1
+                }
+                break
+            fi
+        done
+    done < <(
+        git -C "$REPO_ROOT" grep -nE '(source|\.|bash)[[:space:]].*/[A-Za-z0-9_.-]+\.sh([[:space:]]|\"|$)' \
+            -- 'scripts' '.githooks' '.claude/hooks' 2>/dev/null
+    )
+    return 0
 }
 
 # LG042/LK-A14: reverse-dependency reports must state how many locations were
