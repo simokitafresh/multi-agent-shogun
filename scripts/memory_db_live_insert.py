@@ -457,7 +457,7 @@ def _sqlite_table_columns(conn, table_name: str) -> list[str]:
 
 
 def _try_incremental_cache_snapshot(
-    db_path: str, cache_path: str, output_path: str
+    db_path: str, cache_path: str, output_path: str, source_signature: str | None = None
 ) -> bool:
     """Build an atomic cache snapshot by applying a proven append-only suffix.
 
@@ -500,19 +500,13 @@ def _try_incremental_cache_snapshot(
             if not required_columns.issubset(source_columns) or source_columns != cache_columns:
                 raise sqlite3.DatabaseError("events schema is not append-compatible")
 
-            def event_prefix_aggregate(conn, watermark: int):
-                return conn.execute(
-                    """
-                    SELECT COUNT(*), COALESCE(MAX(rowid), 0),
-                           MAX(COALESCE(updated_at, recorded_at, ts))
-                    FROM events WHERE rowid <= ?
-                    """,
-                    (watermark,),
-                ).fetchone()
-
-            source_count, source_max_rowid = source_conn.execute(
-                "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
-            ).fetchone()
+            signature_match = re.search(r"\|count:(\d+)\|", source_signature or "")
+            if signature_match is None:
+                raise sqlite3.DatabaseError("source signature unavailable")
+            source_count = int(signature_match.group(1))
+            source_max_rowid = source_conn.execute(
+                "SELECT COALESCE(MAX(rowid), 0) FROM events"
+            ).fetchone()[0]
             cache_count, cache_max_rowid = cache_conn.execute(
                 "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
             ).fetchone()
@@ -523,10 +517,29 @@ def _try_incremental_cache_snapshot(
             ).fetchone()[0]
             if source_delta_count != source_count - cache_count:
                 raise sqlite3.DatabaseError("source prefix contains a deletion or gap")
-            if event_prefix_aggregate(source_conn, cache_max_rowid) != event_prefix_aggregate(
-                cache_conn, cache_max_rowid
-            ):
-                raise sqlite3.DatabaseError("source event prefix changed")
+            quoted_events = ", ".join(f'"{column}"' for column in source_columns)
+            delta_rows = source_conn.execute(
+                f"SELECT rowid, {quoted_events} FROM events WHERE rowid > ? ORDER BY rowid",
+                (cache_max_rowid,),
+            ).fetchall()
+            if len(delta_rows) != source_delta_count:
+                raise sqlite3.DatabaseError("source suffix changed during snapshot")
+
+            transition_tables = (
+                _sqlite_table_columns(source_conn, "event_state_transitions"),
+                _sqlite_table_columns(cache_conn, "event_state_transitions"),
+            )
+            if transition_tables[0] != transition_tables[1]:
+                raise sqlite3.DatabaseError("state transition schema is not append-compatible")
+            if transition_tables[0]:
+                source_transition_count = source_conn.execute(
+                    "SELECT COUNT(*) FROM event_state_transitions"
+                ).fetchone()[0]
+                cache_transition_count = cache_conn.execute(
+                    "SELECT COUNT(*) FROM event_state_transitions"
+                ).fetchone()[0]
+                if source_transition_count != cache_transition_count:
+                    raise sqlite3.DatabaseError("managed state transition changed")
 
             for table_name, key_column in (
                 ("event_concepts", "event_id"),
@@ -542,26 +555,10 @@ def _try_incremental_cache_snapshot(
                 cache_total = cache_conn.execute(
                     f"SELECT COUNT(*) FROM {table_name}"
                 ).fetchone()[0]
-                source_delta_total = source_conn.execute(
-                    f"""
-                    SELECT COUNT(*) FROM {table_name} AS child
-                    JOIN events AS event ON event.id = child.{key_column}
-                    WHERE event.rowid > ?
-                    """,
-                    (cache_max_rowid,),
-                ).fetchone()[0]
-                if source_total - cache_total != source_delta_total:
-                    raise sqlite3.DatabaseError(f"{table_name} prefix changed")
-
-            quoted_events = ", ".join(f'"{column}"' for column in source_columns)
-            source_rows = source_conn.execute(
-                f"SELECT rowid, {quoted_events} FROM events WHERE rowid > ? ORDER BY rowid",
-                (cache_max_rowid,),
-            )
             event_placeholders = ", ".join("?" for _ in range(len(source_columns) + 1))
             cache_conn.executemany(
                 f"INSERT INTO events(rowid, {quoted_events}) VALUES ({event_placeholders})",
-                source_rows,
+                delta_rows,
             )
 
             if "events_fts" in {
@@ -575,10 +572,7 @@ def _try_incremental_cache_snapshot(
                     "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, ?, ?)",
                     (
                         (row[0], row[source_summary_index], row[source_detail_index])
-                        for row in source_conn.execute(
-                            f"SELECT rowid, {quoted_events} FROM events WHERE rowid > ? ORDER BY rowid",
-                            (cache_max_rowid,),
-                        )
+                        for row in delta_rows
                     ),
                 )
 
@@ -592,16 +586,23 @@ def _try_incremental_cache_snapshot(
                 )
                 quoted_child_select = ", ".join(f'child."{column}"' for column in child_columns)
                 child_placeholders = ", ".join("?" for _ in child_columns)
+                child_rows = []
+                event_ids = [row[source_columns.index("id") + 1] for row in delta_rows]
+                for offset in range(0, len(event_ids), 500):
+                    chunk = event_ids[offset : offset + 500]
+                    placeholders = ", ".join("?" for _ in chunk)
+                    child_rows.extend(
+                        source_conn.execute(
+                            f"SELECT {quoted_child_select} FROM {table_name} AS child "
+                            f"WHERE {key_column} IN ({placeholders})",
+                            chunk,
+                        ).fetchall()
+                    )
+                if source_total - cache_total != len(child_rows):
+                    raise sqlite3.DatabaseError(f"{table_name} prefix changed")
                 cache_conn.executemany(
                     f"INSERT INTO {table_name}({quoted_child}) VALUES ({child_placeholders})",
-                    source_conn.execute(
-                        f"""
-                        SELECT {quoted_child_select} FROM {table_name} AS child
-                        JOIN events AS event ON event.id = child.{key_column}
-                        WHERE event.rowid > ?
-                        """,
-                        (cache_max_rowid,),
-                    ),
+                    child_rows,
                 )
 
             cache_conn.commit()
@@ -816,7 +817,9 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
         temp_path = temp_name
         try:
             _copy_t0 = time.monotonic_ns()
-            incremental = _try_incremental_cache_snapshot(db_path, cache_path, temp_path)
+            incremental = _try_incremental_cache_snapshot(
+                db_path, cache_path, temp_path, source_signature=_cur_sig
+            )
             if not incremental:
                 create_sqlite_backup(db_path, output_path=temp_path, suffix="ext4_cache")
             _copy_ms = (time.monotonic_ns() - _copy_t0) // 1_000_000
