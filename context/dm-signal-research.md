@@ -1,6 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-03 reviewed_source_boundary -->
 <!-- source_commit:44f91330 reason:reviewed_source_boundary evidence:cmd_karo_exact_b4d_anchor7_reconcile_20260803 report+LGTM+Karo_ACCEPT -->
+<!-- dm_signal_research_reflux: fingerprint=1aeaa9dd1355644a90751caff57ffdae06c0cf5891ee20ffb45c7640ffa6b389; mode=non-target; evidence_b64=5Y2Y55m644Gu5pys55Wq5YWo5pWw5qSc5YiG5oiQ5p6c54mp44Gn44GC44KK5pei5a2Y56CU56m257Si5byV44Gu5oGS5LmF5qaC5b+16L+95Yqg44KS5Ly044KP44Gq44GE -->
 <!-- dm_signal_research_reflux: fingerprint=008c796f9dadc6ace8c3639e55d98e2351e2a7182f3df7f547433089b0bbf1f0; mode=non-target; evidence_b64=c2luZ2xlLWNvbW1hbmQgQjRlIGNoZWNrcG9pbnQgZXZpZGVuY2U7IGN1cnJlbnQgcmVhZG9ubHkgcmVjZWlwdCBpcyBsaW5rZWQgZnJvbSB0YXNrIHJlcG9ydCBhbmQgbm90IGEgZHVyYWJsZSBwcm9qZWN0IGNvbmNlcHQgdW50aWwgYmFzZWxpbmUgaXMgc3VwcGxpZWQ= -->
 <!-- dm_signal_research_reflux: fingerprint=9df93b50be42b7dcc4b451ac61c08c2de7721ef512b5baa1b3720fc13a24eebd; mode=non-target; evidence_b64=b25lLW9mZiBleGFjdCB2ZXJpZmllcjsgcmVzZWFyY2ggaW5kZXggc3luY2hyb25pemF0aW9uIGlzIG91dHNpZGUgYXNzaWduZWQgc2NvcGU= -->
 <!-- dm_signal_research_reflux: fingerprint=2ee0720df2a3fb2d13188a3bff55a4a996a13ea917daee3e6aa551abd0678c5d; mode=non-target; evidence_b64=dGFzay1vd25lZCBvbmUtc2hvdCBCNGUgY2hlY2twb2ludCBldmlkZW5jZTsgbm8gcGVybWFuZW50IHJlc2VhcmNoIGluZGV4IGVudHJ5IHJlcXVpcmVk -->
@@ -16,7 +17,6 @@
 <!-- dm_signal_research_reflux: fingerprint=367f0e40312be1ee1892e70ac2c79717e63d39caaefda557ed1f0c6bb9942dd7; mode=non-target; evidence_b64=5LiA5Zue6ZmQ44KK44GuRTHlrp/ooYzmupblgpnmiJDmnpzjgafjgYLjgormgZLkuYXnoJTnqbbntKLlvJXjgbjjga7lkIzmnJ/lr77osaHlpJY= -->
 <!-- dm_signal_research_reflux: fingerprint=e3a1f982bededc962e7c2350c16ddfa82f3fb0c9fc4f42835bfca0c0367d0436; mode=non-target; evidence_b64=5Y2Y55m6QjXmupblgpnmiJDmnpzjgafml6LlrZjnoJTnqbbntKLlvJXjga7mgZLkuYXmpoLlv7XjgpLlpInmm7TjgZfjgarjgYQ= -->
 <!-- dm_signal_research_reflux: fingerprint=0960a96b75d6824eecb339ae1bdebe4b52f052498bbf9c5d425aa0e7b8bce736; mode=non-target; evidence_b64=5pei5a2YQzIgZXhlY3V0aW9uLXJlYWR55oiQ5p6c54mp44Gu5aWR57SEaG90Zml444Gn44GC44KK56CU56m257Si5byV44Gu5paw6KaP6aCF55uu44KS6L+95Yqg44GX44Gq44GE -->
-<!-- dm_signal_research_reflux: fingerprint=dc8a7fde81cd87425d135e843d106e572891c7f6a1eec7aa0919ed4a0e482e1d; mode=non-target; evidence_b64=5pei5a2YQy14IHJ1bm5lcuWGheOBrlcyM+iovOaLoOW8t+WMluOBp+eglOeptue0ouW8leOBruaWsOimj+mgheebruOBp+OBr+OBquOBhA== -->
 <!-- source_commit:74081181 reason:reviewed_source_boundary evidence:cmd_karo_recon2_b4e_prod_evidence_prep_20260803 report+LGTM+Karo_ACCEPT -->
 <!-- source_commit:b489c87b reason:reviewed_source_boundary evidence:cmd_karo_recon2_c9_identity_prep_20260803 report+LGTM+Karo_ACCEPT -->
 <!-- source_commit:127df6d1 reason:reviewed_source_boundary evidence:cmd_karo_recon2_b5_rejection_gate_prep_20260803 report+LGTM+Karo_ACCEPT -->
