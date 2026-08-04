@@ -1,7 +1,9 @@
 <!-- gist-master: e131b06c137d3da41ad28df6373e7601 rebalancer-market-phase-asis-tobe-5w1h_20260804.md -->
-# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.1 【📋設計済・裁可待ち】
+# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.2 【📋設計済・独立レビュー2系統反映済み・裁可待ち】
 
-> 状態: v1.1(2026-08-04 10:55 殿指示10:50『各種APIと株価の取得、フロー、時間(日本時間、米国時間)との関係、米国市場のみを扱うこと、サマータイムの考慮なども盛り込んでくれ』→§API台帳・§価格フローを追加。**殿裁定2件を確定: 10:51『closedの時間帯はEODHDの直近終値表示だ』/ 10:54『表示価格と計算価格は同じものを使う』**) / 初版起草(2026-08-04 10:45。殿裁定10:31『市場フェーズは米国株式のみなので米国株式市場に合わせてくれ。サマータイムの考慮もしよう』+殿指示10:42『リバランサーの設計書もasis/tobeで作成してくれ』)
+> レビュー状態: 軍師=**APPROVE**(blt_105137: AsIs因果=現物一致・殿裁定全件整合・DAG直列妥当。指摘=clock fail-safe閾値未明示) / 家老=**REVISE**(blt_105152: 必須修正4件)→**本v1.2で全点反映**(相互不可視の独立査読、将軍が2026-08-04 10:55に統合)
+
+> 状態: v1.2(2026-08-04 10:55 独立レビュー反映 — §1にclock snapshot層(取得者/TTL/失敗fallback/pure関数境界)+祝日導出の是正(is_open単独は祝日oracleにならない)、§3にprice snapshot SSOT+phase遷移時RT残値無効化+CLOSED値freshness契約、§4にcontract fixture WBSを追加) / v1.1(2026-08-04 10:55 殿指示10:50『各種APIと株価の取得、フロー、時間(日本時間、米国時間)との関係、米国市場のみを扱うこと、サマータイムの考慮なども盛り込んでくれ』→§API台帳・§価格フローを追加。**殿裁定2件を確定: 10:51『closedの時間帯はEODHDの直近終値表示だ』/ 10:54『表示価格と計算価格は同じものを使う』**) / 初版起草(2026-08-04 10:45。殿裁定10:31『市場フェーズは米国株式のみなので米国株式市場に合わせてくれ。サマータイムの考慮もしよう』+殿指示10:42『リバランサーの設計書もasis/tobeで作成してくれ』)
 > 発端: ユーザー報告(2026-07-31 09:00 JST)『リバランスアプリで現在値が反映されません。ステータスは「市場クローズ」となっていて現在価格が7月31日の終値になっています』(INS-20260804-023042)
 
 ## §META — 5W1H
@@ -83,9 +85,12 @@
 | POST | 16:00-20:00 | 翌05:00-09:00 | 翌06:00-10:00 |
 | CLOSED | 上記以外+週末+祝日 | — | — |
 
-- 実装: `get_current_market_state()`(A1)を正としてSSOT化。**祝日・早引けはAlpaca clock APIを重ねて判定**(clockが`is_open=false`かつ平日日中→祝日CLOSED、早引け日はclockのnext_close…ではなく`is_open`実値優先)。clock失敗時はタイムベース判定へfail-safe(現A2の`_refresh_phase_periodically`と同じ思想)
+- 実装: `get_current_market_state()`(A1)を正としてSSOT化。二層構造(家老RC2):
+  - **clock snapshot層**: Alpaca clockの取得者を1箇所に限定(alpaca_streamの60秒refreshを流用)し、snapshot(`timestamp/is_open/next_open/next_close`+取得時刻)を保持。**TTL=300秒**(gunshi指摘のfail-safe閾値を明示: TTL超過・取得失敗時はタイムベース判定のみで動作し、snapshotをフェーズ判定に使わない)
+  - **pure phase関数**: 入力=(now_utc, clock_snapshot|None)のみの純関数。外部API直結禁止=テスト容易性と決定性を保証
+- **祝日・早引けの導出是正(家老RC1)**: `is_open=false`は通常のPRE/POSTでも成立するため単独では祝日oracleにならない。**trading-day判定=next_open/next_closeから導出**: (a)当日ET日付に取引セッションが存在しない(next_openが翌営業日)→祝日=CLOSED (b)早引け日=`next_close`がET16:00より早い→REGULAR終端とPOST開始をnext_closeへ繰上げ
 - tzは`ZoneInfo("America/New_York")`限定(固定オフセット禁止)。**DSTはfixtureで固定**: EDT期(2026-07-01)・EST期(2026-01-15)・切替日(2026-03-08 / 2026-11-01)の4時点×各セッション境界
-- A2の`PRE_OPEN_CONNECT_MINUTES=30`窓と`AFTER_HOURS_START_HOUR_ET=13`固定は**廃止**(早引け対応はclock `is_open`実値が吸収)
+- A2の`PRE_OPEN_CONNECT_MINUTES=30`窓と`AFTER_HOURS_START_HOUR_ET=13`固定は**廃止**(早引けはnext_close導出が吸収)
 
 ### §2 語彙統一(1対1)
 
@@ -100,14 +105,29 @@
 | CLOSED | 切断 | **EODHD直近終値(殿裁定10:51)**。store残値・yfinance任せを廃止 |
 
 - 殿裁定(cmd_4225)『プレ/オープン/アフター=RT・クローズ=終値』に完全整合。表示専用と計算専用の二重取得経路(AsIsの`_get_calculation_prices`+`/stock-prices`)を単一価格レイヤーへ統合し、同一時刻の表示と計算結果が食い違う可能性を構造的にゼロにする
+- **price snapshot SSOT(家老RC3)**: 表示=計算の同一性は「同じ関数を呼ぶ」でなく「**同一のprice snapshot(銘柄→{price, as_of, source, is_final, freshness}辞書)を両者が参照する**」で担保する。契約:
+  - **phase遷移時のRT残値無効化**: POST→CLOSED遷移でstoreのRT値を失効させ、CLOSED中にRT残値が表示・計算へ漏れることを禁止(ユーザー報告の残根)
+  - **CLOSED時のEODHD値契約**: `as_of`=終値日付・`source=eodhd`・`is_final=true`を必須とし、freshness(取得からの経過)をsnapshotへ記録。取得失敗時は前snapshotを保持しdegraded明示(無言のyfinance差替え禁止)
 
-## §実装分解(依存DAG・1道具1CMD)
+## §4 contract fixture WBS(v1.2追加・家老RC4 — 各cmdへ割付、永続testは全件test_necessity宣言)
+
+| fixture | 検証する不変量 | 割付cmd |
+|---|---|---|
+| DST 4時点×セッション境界 | ET壁時計とフェーズの対応がEDT/EST/切替日で不変 | 1 |
+| 祝日(next_open翌営業日) | 平日でも取引セッション不在日はCLOSED | 1 |
+| 早引け(next_close<16:00) | REGULAR終端/POST開始がnext_closeへ繰上がる | 1 |
+| clock失敗/TTL超過 | タイムベース判定のみへfail-safeし例外を漏らさない | 1 |
+| 未知語彙 | FEがconsole.warnを出しCLOSEDへfallback | 2 |
+| 表示=計算identity | 同一snapshot参照で両者のprice/as_ofが完全一致 | 3 |
+| phase遷移stale残値 | POST→CLOSED遷移後にRT残値が表示・計算へ漏れない | 3 |
+
+## §実装分解(依存DAG・1道具1CMD — 家老レビューで責務再定義)
 
 | # | cmd | 内容 | 依存 |
 |---|---|---|---|
-| 1 | フェーズSSOT関数+DST/祝日fixture | §1。旧2系統の分岐残存grep 0件まで | なし |
-| 2 | 語彙統一+FE警告 | §2。BE/FE往復の語彙1対1をテスト固定 | 1 |
-| 3 | 接続・計算・表示の載せ替え | §3。対応表をテスト固定 | 1,2 |
+| 1 | clock snapshot層+pure phase関数+fixture(DST/祝日/早引け/clock失敗) | §1。旧2系統の分岐残存grep 0件まで | なし |
+| 2 | 語彙4値統一+FE未知語彙警告 | §2。BE/FE往復の語彙1対1をテスト固定 | 1 |
+| 3 | price snapshot SSOT統合(接続・計算・表示の載せ替え+RT残値無効化+CLOSED値契約) | §3。identity/stale fixtureで固定 | 1,2 |
 
 - cmd_4227(draft済み)は本設計書裁可後に1-3へ分割再構成して保存する
 
