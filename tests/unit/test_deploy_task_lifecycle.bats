@@ -1480,6 +1480,117 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "cmd_karo_fix_same_cmd_pending_symlink: active pending live slot is refreshed" {
+    # test_necessity: same-cmd redeploy must cut only the active pending alias
+    # before publishing a fresh regular report generation.
+    mkdir -p "$TEST_PROJECT/queue/archive/reports"
+    cat > "$TEST_PROJECT/queue/tasks/kotaro.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_same_pending
+  task_id: cmd_same_pending_normal
+  status: acknowledged
+  report_filename: kotaro_report_cmd_same_pending.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/archive/reports/kotaro_report_cmd_same_pending.yaml" <<'EOF'
+worker_id: kotaro
+task_id: cmd_same_pending_normal
+parent_cmd: cmd_same_pending
+status: pending
+EOF
+    ln -s "$TEST_PROJECT/queue/archive/reports/kotaro_report_cmd_same_pending.yaml" \
+        "$TEST_PROJECT/queue/reports/kotaro_report_cmd_same_pending.yaml"
+
+    before_symlinks=$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type l | wc -l)
+    [ "$before_symlinks" -eq 1 ]
+    archive_hash_before=$(sha256sum "$TEST_PROJECT/queue/archive/reports/kotaro_report_cmd_same_pending.yaml")
+
+    run bash -lc '
+        set -euo pipefail
+        fixture_root="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$fixture_root/scripts/deploy_task.sh"
+        SCRIPT_DIR="$fixture_root"
+        _DEPLOY_SAME_CMD_REDEPLOY=1
+        log() { :; }
+        deploy_task_mutation_phase() {
+            local phase="$1" function="$2"
+            shift 2
+            "$function" "$@"
+        }
+        generate_report_template() {
+            local ninja="$1" task_id="$2" parent="$3"
+            cat > "$fixture_root/queue/reports/${ninja}_report_${parent}.yaml" <<EOF
+worker_id: $ninja
+task_id: $task_id
+parent_cmd: $parent
+status: pending
+EOF
+        }
+        deploy_task_report_publication_locked \
+            kotaro cmd_same_pending_normal cmd_same_pending infra \
+            "$fixture_root/queue/tasks/kotaro.yaml"
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+
+    [ -f "$TEST_PROJECT/queue/reports/kotaro_report_cmd_same_pending.yaml" ]
+    [ ! -L "$TEST_PROJECT/queue/reports/kotaro_report_cmd_same_pending.yaml" ]
+    after_symlinks=$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type l | wc -l)
+    [ "$after_symlinks" -eq 0 ]
+    grep -q '^status: pending$' "$TEST_PROJECT/queue/reports/kotaro_report_cmd_same_pending.yaml"
+    archive_hash_after=$(sha256sum "$TEST_PROJECT/queue/archive/reports/kotaro_report_cmd_same_pending.yaml")
+    [ "$archive_hash_before" = "$archive_hash_after" ]
+}
+
+@test "cmd_karo_fix_same_cmd_pending_symlink: completed alias and different cmd stay untouched" {
+    # test_necessity: the pending/same-task guard must not detach completed
+    # compatibility aliases or a pending report owned by another command.
+    mkdir -p "$TEST_PROJECT/queue/archive/reports"
+    cat > "$TEST_PROJECT/queue/tasks/kotaro.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_same_pending
+  task_id: cmd_same_pending_normal
+  status: acknowledged
+EOF
+    cat > "$TEST_PROJECT/queue/archive/reports/kotaro_report_completed.yaml" <<'EOF'
+worker_id: kotaro
+task_id: cmd_same_pending_normal
+parent_cmd: cmd_same_pending
+status: completed
+verdict: PASS
+EOF
+    cat > "$TEST_PROJECT/queue/archive/reports/kotaro_report_other_cmd.yaml" <<'EOF'
+worker_id: kotaro
+task_id: cmd_other_normal
+parent_cmd: cmd_other
+status: pending
+EOF
+    ln -s "$TEST_PROJECT/queue/archive/reports/kotaro_report_completed.yaml" \
+        "$TEST_PROJECT/queue/reports/kotaro_report_completed.yaml"
+    ln -s "$TEST_PROJECT/queue/archive/reports/kotaro_report_other_cmd.yaml" \
+        "$TEST_PROJECT/queue/reports/kotaro_report_other_cmd.yaml"
+
+    run bash -lc '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        SCRIPT_DIR="$project"
+        _DEPLOY_SAME_CMD_REDEPLOY=1
+        log() { :; }
+        deploy_task_same_cmd_pending_symlink_reset \
+            "$project/queue/tasks/kotaro.yaml" cmd_same_pending_normal \
+            cmd_same_pending kotaro \
+            "$project/queue/reports/kotaro_report_completed.yaml"
+        deploy_task_same_cmd_pending_symlink_reset \
+            "$project/queue/tasks/kotaro.yaml" cmd_same_pending_normal \
+            cmd_same_pending kotaro \
+            "$project/queue/reports/kotaro_report_other_cmd.yaml"
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [ -L "$TEST_PROJECT/queue/reports/kotaro_report_completed.yaml" ]
+    [ -L "$TEST_PROJECT/queue/reports/kotaro_report_other_cmd.yaml" ]
+}
+
 @test "cmd_3701: draft cmd is blocked before deployment" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

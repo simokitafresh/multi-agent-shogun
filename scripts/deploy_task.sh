@@ -5433,6 +5433,36 @@ deploy_task_publish_active_report_pointer() {
 # reviewed RC generation and publication of the new regular report plus its
 # active pointer.  archive_completed.sh and review_approval.sh use the same
 # lock_path(report-slot) key.
+deploy_task_same_cmd_pending_symlink_reset() {
+    local task_file="$1" task_id="$2" parent_cmd="$3" ninja_name="$4" report_path="$5"
+    local task_status report_status report_parent_cmd report_worker_id report_task_id
+
+    [ "${_DEPLOY_SAME_CMD_REDEPLOY:-0}" = "1" ] || return 0
+    [ -f "$task_file" ] || return 0
+    [ -L "$report_path" ] || return 0
+
+    task_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" status "" 2>/dev/null || true)
+    case "$task_status" in
+        assigned|acknowledged|in_progress) ;;
+        *) return 0 ;;
+    esac
+
+    # The live symlink is eligible only when it still names this active task's
+    # pending generation.  Completed compatibility aliases and another cmd's
+    # report therefore remain untouched.
+    report_status=$(FIELD_GET_NO_LOG=1 field_get "$report_path" status "" 2>/dev/null || true)
+    report_parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$report_path" parent_cmd "" 2>/dev/null || true)
+    report_worker_id=$(FIELD_GET_NO_LOG=1 field_get "$report_path" worker_id "" 2>/dev/null || true)
+    report_task_id=$(FIELD_GET_NO_LOG=1 field_get "$report_path" task_id "" 2>/dev/null || true)
+    [ "$report_status" = "pending" ] || return 0
+    [ "$report_parent_cmd" = "$parent_cmd" ] || return 0
+    [ "$report_worker_id" = "$ninja_name" ] || return 0
+    [ "$report_task_id" = "$task_id" ] || return 0
+
+    rm -f -- "$report_path"
+    log "same_cmd_redeploy: reset active pending report symlink ($(basename "$report_path"))"
+}
+
 deploy_task_report_publication_locked() {
     local ninja_name="$1" task_id="$2" parent_cmd="$3" project="$4" task_file="$5"
     local report_filename report_lock_target report_lock_file report_lock_fd rc
@@ -5462,6 +5492,9 @@ deploy_task_report_publication_locked() {
         # alias; the archive target remains byte-for-byte unchanged.
         rm -f -- "$_DEPLOY_FORMAL_RC_REFRESH_REPORT"
         log "formal_karo_rc_refresh: authoritative source accepted; old report reset ($(basename "$_DEPLOY_FORMAL_RC_REFRESH_REPORT"))"
+    else
+        deploy_task_same_cmd_pending_symlink_reset \
+            "$task_file" "$task_id" "$parent_cmd" "$ninja_name" "$report_lock_target"
     fi
     if deploy_task_mutation_phase report_publication generate_report_template \
         "$ninja_name" "$task_id" "$parent_cmd" "$project" "$task_file"; then
