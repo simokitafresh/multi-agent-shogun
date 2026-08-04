@@ -188,6 +188,38 @@ commander_three_point_missing() {
         || echo "1件の定義"
 }
 
+# 3点セットは見出しの存在だけでは証拠にならない。一方、掲示板の読者は
+# 将軍・家老・軍師に限られるため、コマンド内容の良否は機械判定しない。
+# 回転速度を落とさず、明白な空欄・プレースホルダだけを静的に拒否する。
+commander_three_point_invalid() {
+    local content="$1"
+    local command_part=""
+    local output_part=""
+    local definition_part=""
+    local command_re='集計コマンド[[:space:]]*[:：=][[:space:]]*([^。；;[:cntrl:]]+)'
+    local output_re='(出力行[[:space:]]*[(（]生[)）]|出力行の生貼付|出力行|生貼付)[[:space:]]*[:：=][[:space:]]*([^。；;[:cntrl:]]+)'
+    local definition_re='(1件の定義[[:space:]]*[:：=]|1件は|1件とは|1件=)[[:space:]]*([^。；;[:cntrl:]]+)'
+
+    [[ "$content" =~ $command_re ]] && command_part="${BASH_REMATCH[1]}"
+
+    if [[ -z "${command_part//[[:space:]。；;]/}" ]] \
+        || [[ "$command_part" =~ ^[[:space:]]*(なし|不明|N/?A|TODO|TBD|省略|同上)[[:space:]]*$ ]]; then
+        echo "集計コマンドの値が空またはプレースホルダ"
+    fi
+
+    [[ "$content" =~ $output_re ]] && output_part="${BASH_REMATCH[2]}"
+    if [[ -z "${output_part//[[:space:]]/}" ]] \
+        || [[ "$output_part" =~ ^[[:space:]]*(なし|不明|N/?A|TODO|TBD|省略|同上)[[:space:]]*$ ]]; then
+        echo "出力行の値が空またはプレースホルダ"
+    fi
+
+    [[ "$content" =~ $definition_re ]] && definition_part="${BASH_REMATCH[2]}"
+    if [[ -z "${definition_part//[[:space:]]/}" ]] \
+        || [[ "$definition_part" =~ ^[[:space:]]*(なし|不明|N/?A|TODO|TBD|省略|同上|1件)[[:space:]]*$ ]]; then
+        echo "1件の定義が空またはプレースホルダ"
+    fi
+}
+
 # レビュー/相談の依頼は計測結果そのものではない。本文に版番号・件数・節番号が
 # 含まれても、受け手へ検分を求める途中laneへ最終報告用3点セットを課さない。
 # 関連宣言(AC3)は引き続き必須なので、無関係な在庫投稿の迂回には使えない。
@@ -344,6 +376,11 @@ if [[ "${BULLETIN_AUTOGEN:-0}" != "1" ]]; then
         _cmd_missing_elements="$(commander_three_point_missing "$CONTENT")"
         if [[ -n "$_cmd_missing_elements" ]]; then
             echo "BLOCK: 指揮官(${POSTED_BY})発信の数値含み投稿に3点セットの欠落要素あり: $(printf '%s' "$_cmd_missing_elements" | tr '\n' ',' | sed 's/,$//')" >&2
+            exit 1
+        fi
+        _cmd_invalid_elements="$(commander_three_point_invalid "$CONTENT")"
+        if [[ -n "$_cmd_invalid_elements" ]]; then
+            echo "BLOCK: 指揮官(${POSTED_BY})発信の数値含み投稿の証拠内容が不正: $(printf '%s' "$_cmd_invalid_elements" | tr '\n' ',' | sed 's/,$//')" >&2
             exit 1
         fi
     fi

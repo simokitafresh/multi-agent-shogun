@@ -59,3 +59,61 @@ teardown() {
     [[ "$output" == *"3点セットの欠落要素あり"* ]]
     [ ! -e "$BULLETIN_NOTIFY_CAPTURE" ]
 }
+
+# test_necessity: 閉じた指揮官チャネルでは既成結果の表示コマンドも証拠導線として受理する不変量。
+@test "commander numeric evidence accepts display command without semantic policing" {
+    run env \
+        BULLETIN_NOTIFY=shogun \
+        BULLETIN_INBOX_WRITE="$TEST_ROOT/scripts/inbox_write_fixture.sh" \
+        BULLETIN_NOTIFY_FAILURE_LOG="$TEST_ROOT/logs/failures.yaml" \
+        bash "$TEST_ROOT/scripts/bulletin_write.sh" karo \
+        "関連: cmd_numeric_result。5件PASS。集計コマンド: sed -n '1,20p' result.md。出力行(生): pass=5。1件の定義: 結果表の1行。" false info
+
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$BULLETIN_NOTIFY_CAPTURE")" -eq 1 ]
+}
+
+# test_necessity: 見出しだけで空値・プレースホルダの証拠を受理しない不変量。
+@test "commander numeric evidence rejects empty or placeholder values" {
+    run env \
+        BULLETIN_NOTIFY=shogun \
+        BULLETIN_INBOX_WRITE="$TEST_ROOT/scripts/inbox_write_fixture.sh" \
+        BULLETIN_NOTIFY_FAILURE_LOG="$TEST_ROOT/logs/failures.yaml" \
+        bash "$TEST_ROOT/scripts/bulletin_write.sh" karo \
+        "関連: cmd_numeric_result。5件PASS。集計コマンド: N/A。出力行(生): N/A。1件の定義: TODO。" false info
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"集計コマンドの値が空またはプレースホルダ"* ]]
+    [[ "$output" == *"出力行の値が空またはプレースホルダ"* ]]
+    [[ "$output" == *"1件の定義が空またはプレースホルダ"* ]]
+    [ ! -e "$BULLETIN_NOTIFY_CAPTURE" ]
+}
+
+# test_necessity: 3見出しがあっても各欄が空なら後続欄の値を誤取得せず拒否する不変量。
+@test "commander numeric evidence rejects marker-only empty fields" {
+    run env \
+        BULLETIN_NOTIFY=shogun \
+        BULLETIN_INBOX_WRITE="$TEST_ROOT/scripts/inbox_write_fixture.sh" \
+        BULLETIN_NOTIFY_FAILURE_LOG="$TEST_ROOT/logs/failures.yaml" \
+        bash "$TEST_ROOT/scripts/bulletin_write.sh" karo \
+        "関連: cmd_numeric_result。5件PASS。集計コマンド: 。出力行(生): 。1件の定義: 。" false info
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"集計コマンドの値が空またはプレースホルダ"* ]]
+    [[ "$output" == *"出力行の値が空またはプレースホルダ"* ]]
+    [[ "$output" == *"1件の定義が空またはプレースホルダ"* ]]
+    [ ! -e "$BULLETIN_NOTIFY_CAPTURE" ]
+}
+
+# test_necessity: 実集計コマンド・生出力・具体的単位定義を揃えた数値報告を配送する不変量。
+@test "commander numeric evidence accepts substantive measurement bundle" {
+    run env \
+        BULLETIN_NOTIFY=shogun \
+        BULLETIN_INBOX_WRITE="$TEST_ROOT/scripts/inbox_write_fixture.sh" \
+        BULLETIN_NOTIFY_FAILURE_LOG="$TEST_ROOT/logs/failures.yaml" \
+        bash "$TEST_ROOT/scripts/bulletin_write.sh" karo \
+        "関連: cmd_numeric_result。5件PASS。集計コマンド: awk -F, 'NR>1 {n++} END {print n}' result.csv。出力行(生): pass=5 fail=0。1件の定義: CSVのヘッダを除くデータ行。" false info
+
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$BULLETIN_NOTIFY_CAPTURE")" -eq 1 ]
+}
