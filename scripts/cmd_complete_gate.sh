@@ -2339,6 +2339,16 @@ run_skill_script_refs_check() {
             --cmd-id "${CMD_ID:-}" --ts "$(date -Is)" --detail "stale_or_missing_refs" \
             --source-file "$LOG_DIR/gate_fire_log.yaml" >/dev/null 2>&1 &
         disown 2>/dev/null || true
+        # gate_skill_script_refs owns the aggregate follow-up insight when its
+        # own writer successfully queued (or found active) the exact review.
+        # Do not add a second cmd-specific insight for the same covered review;
+        # retain this caller-side path only for queue failure/uncovered output.
+        case "$output" in
+            *$'FOLLOWUP_COVERS_REVIEW_REQUIRED: yes'*)
+                echo "  insight: SKIP (aggregate follow-up already covers review)"
+                return 0
+                ;;
+        esac
         if printf '%s\n' "${CMD_CHANGED_FILES:-}" | grep -qE '^scripts/'; then
             local insight_script="$SCRIPT_DIR/scripts/insight_write.sh"
             local changed_scripts

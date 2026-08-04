@@ -282,6 +282,30 @@ EOF
     [ ! -f "$TEST_INSIGHT_LOG" ]
 }
 
+@test "run_skill_script_refs_check skips cmd insight when gate follow-up covers review" {
+    _setup_skill_script_refs_check
+    cat > "$TEST_TMPDIR/scripts/gates/gate_skill_script_refs.sh" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+=== SKILL.md script reference check ===
+走査: 1 SKILL.md / script参照 1件 / 参照あり 1件 / roots=skills
+=== 要更新スキル一覧 (script newer than SKILL.md) ===
+  WARN: skills/demo/SKILL.md <- scripts/demo.sh (newer: scripts/demo.sh)
+FOLLOWUP_QUEUED: pairs=1 route=insight->reflux
+FOLLOWUP_COVERS_REVIEW_REQUIRED: yes
+--- 総合判定: WARN ---
+OUT
+exit 2
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_skill_script_refs.sh"
+    export CMD_CHANGED_FILES=$'scripts/demo.sh\nREADME.md'
+
+    run run_skill_script_refs_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"aggregate follow-up already covers review"* ]]
+    [ ! -f "$TEST_INSIGHT_LOG" ]
+}
+
 @test "run_report_memory_semantic_scan queues NO_MATCH aliases from lesson_candidate" {
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/report_memory_semantic.XXXXXX")"
