@@ -1108,3 +1108,14 @@ insights:
   resolved_reason: "殿の単発の状況照会であり、直後に将軍が裁定待ち2件を回答済み。恒久的な行動規則・新規教訓ではないためlesson_candidate誤検出として解決"
   action_artifact: "queue/lord_conversation.jsonl:451-452 + queue/pending_decisions.yaml現物照合"
   resolved_at: "2026-08-04T11:28:06+09:00"
+
+- id: INS-20260804-093249561-389d
+  ts: "2026-08-04T09:32:49+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608040920_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=cmd_2286でAC5(cmd原本に不在)がtask YAMLに混入→影丸verdict:FAIL→家老waive。根因=忍者がtask YAMLにACを手動追加。comm -23でcmd原本にないAC IDを検出→WARN; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608040920_hayate"
+  fix_known: false
+  status: resolved
+  resolved_reason: "既存SG-PRE17がcmd原本外AC IDをcomm -23で検出しWARNするため重複候補として解決"
+  action_artifact: "scripts/gates/gate_gunshi_report_precheck.sh:865-884;commit=79ebceb7fb1865d97546a2e117dceec3b818569c"
+  resolved_at: "2026-08-04T12:15:46+09:00"
