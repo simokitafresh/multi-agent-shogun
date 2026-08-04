@@ -1,7 +1,7 @@
 <!-- gist-master: 59a5e79368f385cddfdb0656fd8ca3bd hot-script-speedup-round9-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.0 【📋設計済・裁可待ち】
+# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.1 【📋設計済・裁可待ち】
 
-> 状態: v1.0初版起草(2026-08-04 18:46。殿発案『第九弾の設計書を作ろう。以前の設計書を参考にして同じスタイルで。進捗表も』)。序列=将軍一次実測18:46(下記§0)
+> 状態: v1.1(2026-08-04 18:58 §0.6サイレント盲点サーベイ追加+弾#0''をhookチェーン計装として弾台帳へ追加) / v1.0初版起草(2026-08-04 18:46。殿発案『第九弾の設計書を作ろう。以前の設計書を参考にして同じスタイルで。進捗表も』)。序列=将軍一次実測18:46(下記§0)
 
 > シリーズ: ホットスクリプト集中高速化。第一弾〜第四弾✅ / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅(10レーン) / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(identity基盤完成・P1b蓄積待ち) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅(全量wall -3.35%確定) / 第八弾=`hot-script-speedup-round8-asis-tobe-5w1h_20260804.md`(🚀進行中: 弾#4 -65%済・#0'計装済・#1-#3/#5進行) / **第九弾=本書**
 
@@ -34,6 +34,30 @@
 
 **読み**: 第八弾標的を除くと、(a)**heavy_job_admission系**(execution+queue_wait合算≈39,800s)がmedian 0の外れ値型で最大——「何が長い裾を作るか」の発火条件特定が先。(b)**deploy_task:deploy_total**は全cmd配備に乗る恒常課税(med 1.86s×2,383)。第六弾系譜で-47%済みだが残余が依然として次層TOP。(c)**cmd_save系**はsave_total計装(第八弾#0')で全体wall med 2.47sが可視化された——checks_main 1.31sとの差分+--preflight実測≈150sとの乖離の内訳特定が本弾で可能になった。(d)full_precheck本体は第八弾#5(body_rest)の同族上流ゆえ、**#5の帰結確定後にのみ着手**(条件付き)。
 
+## §0.6 サイレント盲点サーベイ(v1.1追加 — 殿指示2026-08-04 18:55『台帳に乗っていないスクリプト・デーモン・hook・gate・基本コマンドを覚醒調査』)
+
+**手法**: (1)台帳全期間のsource一覧をPython Counterで抽出(1件=jsonl 1行) (2)母集団を4系で列挙: .claude/settings.json登録hook/dispatch経由hook実体/ps実測の常駐デーモン/基本コマンドscript (3)各実体をrg -c defense_overheadで突合 (4)未接続の代表4本をdummy payloadでwall実測。
+
+**結論: エージェントの全tool呼出し・全prompt・全Stopに乗る「hookチェーン」全体が台帳に1行も載っていない。** 台帳接続済み27 sourceは「scriptが自分で書く」型のみで、CLIライフサイクル層(PreToolUse/PostToolUse/UserPromptSubmit/Stop/SessionStart)は完全な暗黒地帯。
+
+**未接続実体一覧(rg -c defense_overhead=0を確認)**:
+
+| 系 | 実体 | 発火頻度 | 将軍サンプル実測(2026-08-04 18:57 dummy payload 1回) |
+|---|---|---|---|
+| 毎tool呼出し | pretool-dispatch.sh(+pre-bash-combined他5本) | 全agentの全tool call | **204ms/回** |
+| 毎tool呼出し | posttool-dispatch.sh(+post-bash-combined他6本) | 同上 | **357ms/回** |
+| 毎prompt | prompt_state_inject.sh(三層preflight注入込み) | 全agentの全UserPromptSubmit | **1,207ms/回** |
+| 毎Stop | stop_check_inbox.sh+stop_session_alerts.sh+stop-lint-gate.sh | 全agentの全ターン終了 | stop_check_inbox=**943ms/回** |
+| セッション境界 | session_start_inject.sh / session_end_clear_check.sh | 毎/clear・毎起動 | 未実測(startup gate側は第八弾#0'で計装済み) |
+| 常駐デーモン | inbox_watcher.sh×9 / ninja_monitor.sh / ntfy_listener.sh | 常時ポーリング(WSL2 statポーリング) | 未実測(*_total型でなくcycle計装が要る) |
+| 基本コマンド | semantic_search.sh / bulletin_write.sh / inbox_mark_read.sh / lesson_write.sh | agent操作の度 | 未実測 |
+
+**規模感(概算・網羅保証なし)**: pretool+posttool≈0.56s/tool callは、全agentのtool call数(台帳proxy: inbox_write 24,712行/全期間と同オーダー以上)を掛けると**three_layer_health級(数万秒/週)の暗黒課税**になりうる。prompt_state_inject 1.2s×全promptも同格。ただしdummy payload 1回の点推定であり、分布・実頻度は計装後のledgerでのみ確定する。
+
+**含意**: 第八弾#0'の原理「エントリポイントには必ず*_total計装」を**CLIライフサイクルhook層へ拡張**する弾(仮称**弾#0''**)が、序列確定の前提として本弾の全是正弾に先行すべき。デーモンはcycle単位計装(1ポーリング=1row)を別型で設計する。
+
+**注意(計測の再帰課税)**: hook計装自体がhookを遅くしては本末転倒。defense_overhead_write_asyncの非同期書込み(既存live実装)を使い、計装オーバーヘッド<5ms/回をfixtureで確認してから展開する。
+
 ## §1 計測境界(憲法・第五〜八弾継承)
 
 - 計測=既存台帳のみ(`logs/defense_overhead.jsonl`)。**新台帳禁止**(knowledge:fbb5716c)
@@ -61,6 +85,7 @@
 | 2 | `heavy_job_admission:queue_wait` | 外れ値(待機) | med 0s×1,313・total 8,839s | #1の裾同定と合同で真因特定→wait発生条件の是正。#1と同scriptゆえ直列(#1→#2) |
 | 3 | `deploy_task:deploy_total` | 恒常課税 | med 1.86s×2,383・total 19,275s | 残余の子区分計測→最大寄与是正(第六弾-47%の続き。inject系・contract生成の分解) |
 | 4 | `cmd_save:save_total`+`checks_main` | 恒常課税 | save_total med 2.47s×155 / checks_main med 1.31s×881 | 未計装区間≈1.2sの同定+--preflight実測≈150s経路の別経路特定→最大寄与是正 |
+| **弾#0''** | **CLIライフサイクルhook層の計装**(pretool/posttool dispatch・prompt_state_inject・stop hooks) | 計測基盤 | §0.6: 全て台帳未接続。サンプル実測=pre 204ms+post 357ms/毎tool、prompt 1,207ms/毎prompt、stop 943ms/毎Stop | save_total型のdispatch入口T0+EXIT trap 1行write(非同期・計装overhead<5ms fixture確認)。**全是正弾に先行** |
 | 補欠A | `gate_gunshi_report_precheck:full_precheck` | 恒常課税 | med 1.22s×2,136・total 10,164s | **第八弾#5(body_rest)帰結確定後のみ着手**(同族writer衝突回避の直列条件) |
 | 補欠B | 弾#0'計装で新規に載る*_total群 | 計測覚醒待ち | startup gate三本・semantic_index_update・ninja_scope_commit・cmd_delegate等(蓄積<1日) | 第0手の序列再実測で序列入りすれば昇格。特にninja_scope_commit(体感46s・本日index.lock競合3件の主戦場)とstartup gate(毎/clear分単位) |
 | 補欠C | 共有lock競合ファミリー | 待機(横断) | 本日実証3件: prompt_consumed_ledger flock timeout(殿prompt消失)・git index.lock競合・DASHBOARD flock timeout(archive worker 5件) | lock保持時間の計測row追加→保持長の真因特定のみ本弾。是正は判断後(DrvFS上の共有lockは設計変更を伴うため) |
@@ -72,6 +97,7 @@
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
 | 0 | 第0手=序列覚醒(裁可時fixed-window再実測) | ⏳裁可待ち | — |
+| 0'' | CLIライフサイクルhook層計装 | ⏳裁可待ち(全弾に先行) | — |
 | 1 | `heavy_job_admission:execution` | ⏳未配備 | — |
 | 2 | `heavy_job_admission:queue_wait` | ⏳未配備(#1後直列) | — |
 | 3 | `deploy_task:deploy_total` | ⏳未配備 | — |
