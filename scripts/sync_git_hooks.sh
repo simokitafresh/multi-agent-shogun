@@ -101,6 +101,7 @@ source "$SYNC_GIT_HOOKS_SCRIPT_DIR/lib/scope_path.sh"
 # "<hook名>:<正本の repo-root 相対path>" のペア。
 HOOK_MANIFEST=(
     "pre-commit:scripts/hooks/git-pre-commit.sh"
+    "post-commit:.githooks/post-commit"
     "pre-push:.githooks/pre-push"
 )
 
@@ -118,6 +119,23 @@ while (($#)); do
             ;;
     esac
 done
+
+# Direct git commit and the live pre-commit self-sync do not pass explicit
+# scope arguments. Their staged index is the exact commit scope (a private
+# index under ninja_scope_commit), so staged hook sources are safe inputs,
+# including a hook's first introduction before HEAD contains it.
+if ((${#scope_paths[@]} == 0)); then
+    while IFS= read -r staged_hook; do
+        case "$staged_hook" in
+            scripts/hooks/*|.githooks/*)
+                # Infer only first-introduction sources. Existing staged hooks
+                # remain out of scope unless the caller explicitly owns them.
+                git -C "$repo_root" cat-file -e "HEAD:$staged_hook" 2>/dev/null \
+                    || scope_paths+=("$staged_hook")
+                ;;
+        esac
+    done < <(git -C "$repo_root" diff --cached --name-only --diff-filter=ACMR 2>/dev/null)
+fi
 
 is_in_scope() {
     # ninja_scope_commit.shはdirectory scope(例: -- scripts/hooks、
@@ -159,11 +177,17 @@ sync_one_hook() {
     local installed ref tmp source_blob installed_blob
 
     if ! git -C "$repo_root" cat-file -e "HEAD:$source_rel" 2>/dev/null; then
-        if uses_hook_source_convention "$source_rel"; then
+        # First installation is valid when this exact source is part of the
+        # current commit scope and exists in the private index. Check this
+        # before treating HEAD absence as tracked-source drift.
+        if is_in_scope "$source_rel" && git -C "$repo_root" cat-file -e ":$source_rel" 2>/dev/null; then
+            :
+        elif uses_hook_source_convention "$source_rel"; then
             echo "BLOCK(GA-222): tracked hook source missing at HEAD: $source_rel (scripts/hooks/ convention is in use — this looks like an anomaly, not an unmanaged repo)" >&2
             return 1
+        else
+            return 0   # hook convention itself is unused in this repo.
         fi
-        return 0   # scripts/hooks/自体が無い = 本方式を使わないrepo。対象外としてno-op。
     fi
 
     installed="$(resolve_installed_path "$hook_name")" \

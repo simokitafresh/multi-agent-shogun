@@ -93,9 +93,12 @@ commit_hook_source() {
     if [ ! -f "$TEST_ROOT/.githooks/pre-push" ]; then
         printf '#!/usr/bin/env bash\necho PRE_PUSH_HEAD\n' > "$TEST_ROOT/.githooks/pre-push"
     fi
+    if [ ! -f "$TEST_ROOT/.githooks/post-commit" ]; then
+        printf '#!/usr/bin/env bash\necho POST_COMMIT_HEAD\n' > "$TEST_ROOT/.githooks/post-commit"
+    fi
     (
         cd "$TEST_ROOT"
-        git add scripts/hooks/git-pre-commit.sh .githooks/pre-push
+        git add scripts/hooks/git-pre-commit.sh .githooks/pre-push .githooks/post-commit
         git commit -qm "hook source: $content"
     )
 }
@@ -110,6 +113,30 @@ commit_hook_source() {
     [ -x "$TEST_ROOT/.git/hooks/pre-commit" ]
     run cat "$TEST_ROOT/.git/hooks/pre-commit"
     [[ "$output" == *"echo v1"* ]]
+}
+
+# test_necessity: The tracked post-commit source is installed into the active worktree-isolated hooksPath.
+@test "tracked post-commit is part of the hook manifest" {
+    commit_hook_source "echo v1"
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
+
+    [ "$status" -eq 0 ]
+    [ -x "$TEST_ROOT/.git/hooks/post-commit" ]
+    grep -q POST_COMMIT_HEAD "$TEST_ROOT/.git/hooks/post-commit"
+}
+
+# test_necessity: A newly introduced tracked hook can install from the current private index before it exists in HEAD.
+@test "new in-scope post-commit installs from index on its first commit" {
+    commit_hook_source "echo v1"
+    (cd "$TEST_ROOT" && git rm -q .githooks/post-commit && git commit -qm without-post-commit)
+    printf '#!/usr/bin/env bash\necho FIRST_INDEX_POST_COMMIT\n' > "$TEST_ROOT/.githooks/post-commit"
+    (cd "$TEST_ROOT" && git add .githooks/post-commit)
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
+
+    [ "$status" -eq 0 ]
+    grep -q FIRST_INDEX_POST_COMMIT "$TEST_ROOT/.git/hooks/post-commit"
 }
 
 @test "overwrites stale installed hook to match HEAD (regression proof for GA-222)" {

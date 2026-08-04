@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Tracked post-commit boundary: synchronization is deliberately fail-open.
+set -u
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+commit="$(git rev-parse --verify HEAD^{commit} 2>/dev/null)" || exit 0
+
+if ! GIST_POST_COMMIT_REPO_ROOT="$repo_root" \
+    bash "$repo_root/scripts/gist_post_commit_sync.sh" "$commit"; then
+    printf 'WARN: gist post-commit synchronization failed for %s; local commit remains valid\n' "$commit" >&2
+fi
+exit 0
