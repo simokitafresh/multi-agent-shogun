@@ -1,5 +1,21 @@
 <!-- gist-master: 98f42e727bea67ad5dd322e6756bc45b hot-script-speedup-round10-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.10 【🚀裁可済み・#2実装中】
+# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.18 【🚀裁可済み・#3測定可能no-change確定】
+
+> v1.18(2026-08-06 01:00正式判定同期): #3 `refresh_verify`は軍師がFAIL判断を妥当とレビューし、家老ACCEPT後に正式FAIL-close。1.036GB fixture・5方式×3反復の比較で、既存quick+FTS oracleを全て保持し10%以上改善する候補は0/5だったため、tracked変更0の測定可能no-changeとして閉じた。これにより#3を未完了実装へ誤遷移させず、提案台帳の次標的だけへ進む。
+
+> v1.17(2026-08-06 00:54実測同期): #3 r2は固定1.036GB fixtureで現行refresh全体3反復、verify 5方式×各3反復を完走。現行pair=13,215/14,298/15,368ms、quick_only=7,561/7,579/7,757ms、fts_search=132/153/159ms、row_count_max=224/237/240ms、schema_sample=173/202/212ms。ただし既存quick+FTS oracleを全て守るのはcurrent_pairだけで、品質不変かつ10%以上改善する採用候補は0/5。直近24hはverify n=355/p50=14,649ms/p95=53,271ms/max=108,827ms/total=6,430,343ms、group欠損=copy有verify無22・verify有copy無7・window begin/end片側47。FAIL0・SKIP0・row mismatch0、tracked owner変更0。報告は軍師レビュー中で、正式判定前に実装へ進めない。
+
+> v1.16(2026-08-06 00:39契約是正): #3初回taskはAC2本文が未引用`#2`で始まりYAMLコメント扱いとなって`null`化したため実行前BLOCK。旧task/reportを`cancelled`終端し、AC1-AC4非空4/4・task/report fingerprint `a9e7075f`一致のr2 `cmd_karo_round10_lane3_refresh_verify_recon_r2_20260806`を正規再配備した。才蔵paneでr2読込・旧世代不適用を一次確認し、軍師もr2 APPROVE（evidence `msg_20260806_003831_944283_7c113aaf`）。標的・owner・最低5方式・1GB級fixture契約は不変。
+
+> v1.15(2026-08-06 00:33進捗同期): #2固定HEAD `180a3894`で同一writerを解放し、#3 `three_layer_health:refresh_verify` のread-only偵察 `cmd_karo_round10_lane3_refresh_verify_recon_20260806` を才蔵へ配備。nudge到達・SessionStart・作業開始をpane一次確認済み。1GB級同一fixture×3反復以上、内部phase分解、最低5方式の/tmp独立probe総当たり、品質oracle全PASSかつp50/p95非悪化・一方10%以上改善の候補一意化を要求。tracked変更0、提案外owner混入0を維持する。
+
+> v1.14(2026-08-06 00:27進捗同期): #2 `three_layer_health:refresh_copy` は軍師LGTM・家老ACCEPT・`cmd_complete_gate` CLEAR・`/cmd-complete`完了。commit `180a3894`、1GB同一fixture×3反復でrefresh_copy p50/p95=7,897/10,464ms→4,300/9,724ms、refresh_window p50/p95=28,081/29,442ms→18,165/24,422ms。FAIL0・SKIP0・row mismatch0、家老独立敵対試験込み10/10 PASS、変更owner `scripts/memory_db_live_insert.py`一件のみ。これにより同一writer直列の#3 `refresh_verify` は着手可能となった。
+
+> v1.13(2026-08-06 00:18進捗同期): #2 commit `180a3894`は厳密な全prefix全列比較を維持し、1GB同一fixture×3反復でrefresh_copy p50/p95=7,897/10,464ms→4,300/9,724ms、refresh_window p50/p95=28,081/29,442ms→18,165/24,422ms。FAIL0・SKIP0・row mismatch0。家老独立でtimestamp不変prefix敵対試験を含む10/10 PASSを確認し、現在は軍師最終レビュー待ち。ACCEPT前なので#3は未着手を維持する。
+
+> v1.12(2026-08-05 23:53進捗同期): #2再是正commit `a44de3202`はtimestamp不変の旧行内容変更+append敵対試験を家老pytestで1/1 PASSし、任意prefix mutationの品質穴は閉じた。一方、方式を`maxts`比較から全prefix全列のATTACH JOIN比較へ変更した後の1GB性能を再測定せず、reportは旧方式のp50/p95を再掲していたためAC4未達で再RC。現commitを同じ1GB fixture・同じ3反復で測り、品質不変と10%以上改善を同時に満たすまで#2をCLOSEしない。
+
+> v1.11(2026-08-05 23:30進捗同期): #2初回RC是正commit `df400ee75`は、既存試験（旧行`updated_at`変更+append）1/1とcontract 9/9をPASSしたが、家老の追加敵対試験（旧行`raw_content`のみ変更・timestamp不変+append）でfull fallback期待1回に対し実測0回となり、任意prefix mutation拒否契約の偽緑を検出した。軍師LGTM後も家老ACCEPTせず、正式RCへ戻して同じowner `scripts/memory_db_live_insert.py`一件だけで再是正中。#3は引き続き未着手。
 
 > v1.10(2026-08-05 22:34進捗同期): #1固定HEAD後の同一owner直列レーンとして、#2 `three_layer_health:refresh_copy` 実装 `cmd_karo_round10_lane2_refresh_copy_impl_20260805` を軍師LGTM(fingerprint `0bc4c2ef`)後に影丸へ配備し、nudge到達・作業開始を一次確認。本番同等容量または容量スケーリング3点以上でfull/incremental/source read/output write/fsync-replace/競合/残差を全実測し、小DBだけの誤PASSを禁止する。変更許可は引き続きowner `scripts/memory_db_live_insert.py`一件のみ。
 
@@ -107,20 +123,20 @@
 - 第八弾wave checkpointは完了済み。refresh三標的は同一writer `scripts/memory_db_live_insert.py` のため#1→#2→#3を直列実施する。#5・#7も同一writerゆえ#5→#7直列。#4・#6は独立writer
 - 第八弾完了後もrefresh三標的はTier 2で依然TOPのため、第十弾で再攻撃する。前弾待ちを理由に停止しない
 
-## §2.5 進捗台帳(2026-08-05 22:34家老更新)
+## §2.5 進捗台帳(2026-08-06 01:00家老更新)
 
 | # | 標的identifier | 高速化許可owner path | 状態 | 帰結(実測生値) |
 |---|---|---|---|---|
 | 1 | `three_layer_health:refresh_window` | `scripts/memory_db_live_insert.py` | ✅**GATE CLEAR** | `cmd_karo_round10_lane1_refresh_window_impl_20260805`。41MB級同一fixtureの全window p50/p95=1,040.98/1,040.98ms→596.47/596.47ms(42.7%改善)。家老独立再測定batch p50=104.986ms、contract 9/9 PASS、FAIL0、SKIP0。commit `7c461e2a0`+RC `4875ea831`、最終変更owner 1件 |
-| 2 | `three_layer_health:refresh_copy` | `scripts/memory_db_live_insert.py` | 🔧**高速化実装中(owner限定)** | `cmd_karo_round10_lane2_refresh_copy_impl_20260805`を22:34配備。本番同等容量または容量3点以上でcopy支配項を全実測中。変更許可はowner一件のみ |
-| 3 | `three_layer_health:refresh_verify` | `scripts/memory_db_live_insert.py` | ⏳**#2完了後(同一writer直列)** | 第八弾依存は解消済み。#2固定HEAD後に着手 |
+| 2 | `three_layer_health:refresh_copy` | `scripts/memory_db_live_insert.py` | ✅**GATE CLEAR** | `cmd_karo_round10_lane2_refresh_copy_impl_20260805`。commit `180a3894`。1GB×3反復でcopy p50 45.5%、window p50 35.3%改善、両p95非悪化。FAIL0・SKIP0・row mismatch0。家老独立10/10 PASS、軍師LGTM・家老ACCEPT・`/cmd-complete`完了。変更owner一件のみ |
+| 3 | `three_layer_health:refresh_verify` | `scripts/memory_db_live_insert.py` | ⏹️**測定可能no-change・正式FAIL-close** | `cmd_karo_round10_lane3_refresh_verify_recon_r2_20260806`。1.036GB、5方式×3反復完走。既存quick+FTS oracleを全維持して10%以上改善する候補0/5。24h group欠損22/7/47を検出。FAIL0・SKIP0・row mismatch0、tracked変更0。軍師レビュー妥当・家老ACCEPT済み |
 | 4 | `git_pre_commit:affected_tests` | `scripts/hooks/git-pre-commit.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round10_lane4_affected_tests_20260805`: baseline n=1,132/p50=4.82s/p95=336.8s/max=1,334.2s/total=74,925s → current n=1,187/p50=4.85s/p95=342.841s/max=1,975.901s/total=82,794.087s。p95上位60/60にtest set・selection_count・files_selected・call-path属性なし、hook event_idとtest_timing run_idのjoin不能。focusedは6ファイル選択・1 FAIL。コード変更/commitなし、家老ACCEPT・archive済み。次手は親hook event↔test timing identity計装 |
 | 5 | `heavy_job_admission:execution` | `scripts/heavy_job_admission.sh` | ⏳第九弾#1是正完了待ち | — |
 | 6 | `deploy_task:deploy_total` | `scripts/deploy_task.sh` | ⏸️**配備前保留(writer衝突)** | draft review LGTM済み。ただし`deploy_task.sh`が既存dirty(MM)でlane所有権を確保できず、変更を重ねず未配備。既存owner解放後に再判断 |
 | 7 | `heavy_job_admission:queue_wait` | `scripts/heavy_job_admission.sh` | ⏳第九弾#2完了待ち | — |
 
-- **進捗総括(7標的母数)**: 実装GATE CLEAR#1=1/7、実装中#2=1/7、正式FAIL-close#4=1/7。同一writer直列待ち#3=1/7、配備前保留#6=1/7、第九弾依存待ち#5/#7=2/7。提案外ownerの進捗混入0件、第八弾依存待ち0件。
-- **確定した次手**: (1)#1固定HEAD後の現物で#2 refresh_copyを再計測→高速化→固定HEAD (2)#3 refresh_verify (3)#4 identity計装後に再実走 (4)`deploy_task.sh`既存owner解放後に#6配備 (5)第九弾該当是正確定後に#5→#7。
+- **進捗総括(7標的母数)**: 実装GATE CLEAR#1/#2=2/7、測定可能no-change#3=1/7、正式FAIL-close#4=1/7、配備前保留#6=1/7、第九弾依存待ち#5/#7=2/7。閉鎖済み4/7、提案外ownerの進捗混入0件、第八弾依存待ち0件。
+- **確定した次手**: (1)#4 identity計装後に再実走 (2)`deploy_task.sh`既存owner解放後に#6配備 (3)第九弾該当是正確定後に#5→#7。#3へ品質を落とす実装は行わない。
 - **完了条件**: 7標的を全てGATE CLEARまたは測定可能なno-changeで閉じ、§2.6の固定HEAD分割checkpointをFAIL0・SKIP0・duplicate0・missing0で通過後、Tier 1前週比とTier 2直近24h序列を再計測してCLOSEする。現時点の終了目処は#1→#2→#3直列、#4 identity、#6 owner、第九弾#5/#7依存の解消順で規定する。
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)

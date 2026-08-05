@@ -1,7 +1,17 @@
 <!-- gist-master: b70512e1263db4a80042acb63c39778c partial-turnover-experiment-asis-tobe-5w1h_20260805.md -->
-# 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.5
+# 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.10 【指定12PF実験FAIL-close・全102PF未実行】
 
-> v1.5(2026-08-05 23:11 軍師draft review反映): 存在しない`PipelineEngine.expand()`参照を除去。本番ticker×weight展開の正本を`backend/app/services/price_ratio_impl.py:1045`の`expand_portfolio_to_tickers()`、独立oracleを`backend/scripts/analysis/monthly_return_oracle.py:51`の`expand_weights()`と明記。read-only直接SQLの許可経路を`/mnt/c/tools/multi-agent-shogun/scripts/db_capability_launcher.py readonly_query`へ固定
+> v1.10(2026-08-06 01:00 指定12PF実測同期): `cmd_partial_turnover_phase0_v19`は指定12/12PF・5α=60/60セルを完走し、指定外PF0・全102PF実行0・本番書込0・FAIL0・SKIP0を維持した。一方、FoF 4体の`display_ticker_weights`にweight合計非unit 35行、α=0 parity不一致29/2,096行(max abs diff=0.1713575056)を検出し、PF単位parityは8/12。軍師レビューと家老ACCEPTを経て正式FAIL-closeし、補正・fallback・FoF展開・102PF展開は行っていない。次のデータソース方式は殿の追加指示までBLOCK。
+
+> v1.9(2026-08-06 00:27 飛猿BLOCK+DB再確認): Standard PFのdisplay_ticker_weightsはNULL(DB実測)。ticker×weight取得を2経路に明確化: Standard=`holding_signal`カンマ分割→均等1/N weight、FoF/ネステッドFoF=`momentum_data->>'display_ticker_weights'`。両経路ともDB格納済みデータのみ使用、FoF展開ロジック不要は不変
+
+> v1.8(2026-08-06 00:05 殿指摘+DB一次確認): v1.7 BLOCKを解除。FoFのticker×weightは`display_ticker_weights`に確定値として保存済み。**Standard PFはNULL(v1.9で是正)**
+
+> v1.7(2026-08-05 23:33 本番read-only一次確認): BLOCK(holding_signal=UUID列挙8/12)。**v1.8で解除済み — display_ticker_weightsが正解**
+
+> v1.6(2026-08-05 23:18 殿指示・大幅簡素化): モメンタム計算・FoF展開・パイプライン再現は全て不要。既存のholding_signal(ticker×weight確定済み)をそのまま利用する方式に全面変更。「1カ月遅れシグナルのリターンを計算して元と比較するだけ」(殿)
+
+> v1.5(2026-08-05 23:11 軍師draft review反映): 存在しない`PipelineEngine.expand()`参照を除去。本番ticker×weight展開の正本を明記
 
 > v1.4(2026-08-05 22:40 殿裁定): 現在の実行許可scopeは§2.5で指定した12体のみ。全102体は殿が明示的に追加指示するまで実行禁止。初期実験の結果から全量へ自動遷移せず、指定PFの結果を殿へ報告して次の指示を待つ
 
@@ -107,174 +117,111 @@ for each_day in month:
 monthly_return = product(1 + daily_pf_return for each_day) - 1
 ```
 
-## §2 ToBe — 段階的リバランス実験
+## §2 ToBe — 段階的リバランス実験(v1.6 大幅簡素化)
 
-### 原理
+### 原理(殿方式)
 
-**前月ポジションのα%を維持し、新シグナルの(1-α)%で買付する。**
+**既存のholding_signal(ticker×weight確定済み)をそのまま利用する。** モメンタム計算・FoF展開・パイプライン再現は一切不要。
+
+各PFについて2つのmonthly_returnを計算するだけ:
+- **R_current**: 当月のholding_signalのticker×weightで計算したリターン(=本番の値)
+- **R_lagged**: **前月**のholding_signalのticker×weightで**当月**の日次価格から計算したリターン(=1カ月遅れ)
+
+段階的リバランスのリターン = `α × R_lagged + (1-α) × R_current`
 
 ```
-月初リバランス日:
-  1. モメンタム計算 → 新holding_signal決定
-  2. 前月ticker×weight × α + 新月ticker×weight × (1-α) = 混合ticker×weight
-  3. ポートフォリオ = 混合ticker×weight
+例: あるPFの8月
+  7月のholding_signal = QQQ 50% + GLD 50%  (確定済み)
+  8月のholding_signal = XLU 75% + GLD 25%  (確定済み)
 
-  例(α=0.5): 7月=QQQ50%+GLD50% → 8月=XLU75%+GLD25%
-  混合: QQQ×0.5×50% + GLD×0.5×50% + XLU×0.5×75% + GLD×0.5×25%
-       = QQQ 25% + GLD 25% + XLU 37.5% + GLD 12.5%
-       = QQQ 25% + XLU 37.5% + GLD 37.5%  (同一ticker合算)
+  R_current = 8月のXLU 75%+GLD 25%のリターン (=本番monthly_return)
+  R_lagged  = 8月のQQQ 50%+GLD 50%のリターン (=7月シグナルで8月の価格を計算)
+
+  α=0.5: 段階的リターン = 0.5 × R_lagged + 0.5 × R_current
 ```
 
-### 特殊ケース
-
-**同一シグナルの場合**: 7月=QQQ100% → 8月=QQQ100%
-→ 混合後もQQQ 100%。α の値に関係なく結果は同じ。
-
-**Cash含みの場合**: 7月=Cash → 8月=TQQQ50%+UPRO50%
-→ α=0.5なら: Cash 50% + TQQQ 25% + UPRO 25%
-→ Cashポジション(=無リスク)が混合に残る。
-
-**FoF/ネステッドFoFの場合**: 全てticker×weightに展開してから混合する。
-FoFのholding_signal(コンポーネントPF UUID)ではなく、展開後のETF ticker×weightで混合する。
+**R_laggedさえ作れば、αは自由自在に動かせる。**
 
 ### 実験パラメータ
 
 | パラメータ | 値 | 意味 |
 |---|---|---|
-| α (前月維持率) | [0.0, 0.25, 0.5, 0.75, 1.0] | 0.0=現行(一括入替)、1.0=前月全維持(リバランスしない) |
-| 現在の対象PF | §2.5の指定12体 | 殿が指定したPFだけで実験 |
-| 将来候補 | 全102体 | 殿の追加指示があった場合のみ実行 |
-| 期間 | 全期間(各PFのdata_start_date〜最新) | パラメータ空間縮小禁止(殿厳命) |
+| α (前月維持率) | [0.0, 0.25, 0.5, 0.75, 1.0] | 0.0=現行、1.0=前月全維持 |
+| 現在の対象PF | §2.5の指定12体 | 殿指示まで全102体は実行禁止 |
+| 期間 | 全期間(各PFのdata_start_date〜最新) | パラメータ空間縮小禁止 |
 
-### 計測指標(v1.3 B4修正+殿指示: 3指標に絞る)
+### 計測指標(3指標)
 
-**パリティ許容差**: α=0の結果と本番monthly_returnsの差 ≤ 1e-12(IEEE 754ノイズ=既存パリティ基準L392準拠)。パリティFAILなら実験全体を停止し展開ユーティリティのバグを修正する。
+各PFについて「現行(α=0) vs 段階的(α>0)」のpaired同期間比較。PF間の相対比較は目的ではない。
 
-**比較方法**: 全指標は**paired同期間比較**(同一PF×同一期間でα=0 vs α>0)。PFごとのdata_start_dateが異なるため、期間を揃えないと比較が無効。
-
-| 指標 | 説明 | 判定基準 |
-|---|---|---|
-| CAGR | 年率換算リターン | α=0(現行)との差。同一PF×同一期間のpaired比較 |
-| シャープレシオ | リスク調整後リターン | α=0より改善するか。同一PF×同一期間のpaired比較 |
-| MaxDD | 最大ドローダウン | α=0と比較して悪化しないか。同一PF×同一期間のpaired比較 |
-
-**比較の本質**: 各PFについて「現行一括リバランス(α=0) vs 段階的リバランス(α>0)」の2者比較。PF間の相対比較は目的ではない。
-
-### 追加分析
-
-1. **層別傾向**: L0/オリジナル/L1/L2/L3で段階的リバランスの効果傾向に差があるか
-
-## §2.5 初期実験 — 12体で効果の方向性を確認(殿指示 v1.2追加)
-
-### 目的
-
-現在の実行許可scopeは以下の**指定12体×全期間**のみ。効果の方向性(改善/悪化/中立)を確認して殿へ報告する。**全102体は殿の追加指示があるまで実行しない**。
-
-### 対象PF(12体)
-
-| 分類 | PF名 | 選定理由 |
-|---|---|---|
-| オリジナル | Ave-X | 独自構成のFoF。多銘柄で分散効果を検証 |
-| オリジナル | 劇薬DMオリジナル | 独自構成のFoF。レバレッジETF主体(ターンオーバーインパクト大) |
-| L0 | シン青龍-激攻 | シン四神激攻4体(L0の主力。銘柄宇宙が共通で層別比較に最適) |
-| L0 | シン朱雀-激攻 | 同上 |
-| L0 | シン白虎-激攻 | 同上 |
-| L0 | シン玄武-激攻 | 同上 |
-| L1 | GSシン分身-激攻 | L1代表(分身=TrendReversalFilter系) |
-| L1 | GSシン四つ目-激攻 | L1代表(四つ目=MultiViewMomentumFilter系) |
-| L2 | 奥義-GS-分身-激攻 | L2代表(FoF。L1分身を構成PFに持つ) |
-| L2 | 奥義-GS-四つ目-激攻 | L2代表(FoF。L1四つ目を構成PFに持つ) |
-| L3 | 秘奥義-分身-激攻 | L3代表(ネステッドFoF。L2分身を構成PFに持つ) |
-| L3 | 秘奥義-四つ目-激攻 | L3代表(ネステッドFoF。L2四つ目を構成PFに持つ) |
-
-**注**: Ave-Xと劇薬DMオリジナルはtypeがFoFだが、L0-L3の階層構造(シン四神→シン忍法→奥義→秘奥義)とは別系統のオリジナルPFであるため、L0-L3とは別軸で扱う。
-
-### 初期実験の目的と判定基準(v1.3 B1修正)
-
-**目的**: 指定12体でパイプライン検証と効果計測を行う。結果は殿へ報告し、全102体へは自動的に進まない。
-
-| 検証項目 | 判定基準 |
+| 指標 | 判定基準 |
 |---|---|
-| α=0パリティ | 12体全てで本番monthly_returnsとの差 ≤ 1e-12。FAILなら展開ユーティリティのバグ修正 |
-| ticker×weight展開 | Standard/FoF/ネステッドFoF全層で正常展開。エラー0件 |
-| blend関数 | 同一ticker合算・Cash混合・同一シグナルの各特殊ケースが正常動作 |
-| 計測指標計算 | 7指標全てが計算可能(NaN/Inf 0件) |
+| CAGR | α=0との差 |
+| シャープレシオ | α=0より改善するか |
+| MaxDD | α=0と比較して悪化しないか |
 
-**PASSとは上記4項目全てOK。PASS/FAILいずれも結果を殿へ報告し、追加指示を待つ。**
+### パリティ検証
 
-### 初期実験の手順
+α=0のR_currentは本番monthly_returnsと一致するはず。差 ≤ 1e-12(IEEE 754ノイズ)で検証。FAILなら計算ロジックのバグ。
 
-```
-1. 12体のデータ取得(Phase 1と同じ手順。対象を12体に限定)
-2. α=[0.0, 0.25, 0.5, 0.75, 1.0]の5段階で12体×全期間バックテスト(正本5αを継承)
-3. 計測指標7項目を12体×5αで計算
-4. 判定基準に照らして指定12体内の結果を分類
-5. 結果を殿に報告して追加指示を待つ。全102体へ自動遷移しない
-```
+### 指定12PFの実測結果(v1.10)
 
-## §3 実験実行手順
+| 二値項目 | 実測 | 判定 |
+|---|---:|---|
+| 指定PF / 指定外PF | 12/12 / 0 | PASS |
+| Standard / FoF | 4/4 / 8/8 | PASS |
+| αセル / duplicate / missing | 60/60 / 0 / 0 | PASS |
+| 全102PF実行 / 本番書込 | 0 / 0 | PASS |
+| FoF weight合計非unit | 35行(4PF) | FAIL |
+| α=0 parity | 8/12PF、29/2,096行不一致 | FAIL |
+| 最大絶対差 | 0.1713575056 | FAIL |
 
-### Phase 0: 初期実験(12体) ← v1.2追加
+結論: Standard 4PFの`holding_signal`均等1/N経路は成立したが、FoFの`display_ticker_weights`直接経路は全履歴でunitかつ本番月次と一致するという前提を満たさない。無断の正規化や別経路への切替はせず、本方式をFAIL-closeする。
 
-```
-1. 本番DBから12体のデータ取得(read-only)
-2. ticker×weight展開ユーティリティ作成+α=0パリティ検証
-3. 12体×5αバックテスト実行
-4. smoke test 4項目判定(parity/展開/blend/指標計算)
-5. PASS/FAILと効果値を殿へ報告 → 追加指示待ち
-```
+## §2.5 対象PF(12体・殿指定)
 
-### Phase 1: データ準備(read-only) — 殿が全102体を追加指示した場合のみ
+**全102体は殿の追加指示があるまで実行禁止。**
 
-```
-1. 本番DBから以下を取得(read-only):
-   - 全102体のportfolio_id + pipeline_config + rebalance_trigger
-   - 全期間のholding_signal(signals テーブル)
-   - 全期間のprices(日次ETF価格)
-   - 全期間のmonthly_returns(ベースライン比較用)
-2. ローカルSQLiteにキャッシュ(本番DBへの負荷軽減)
-3. Phase 0で作成済みのticker×weight展開ユーティリティを再利用
-4. 展開結果をα=0で計算し、本番monthly_returnsとのパリティ検証(完全一致)
-```
+| 分類 | PF名 |
+|---|---|
+| オリジナル | Ave-X, 劇薬DMオリジナル |
+| L0 | シン青龍-激攻, シン朱雀-激攻, シン白虎-激攻, シン玄武-激攻 |
+| L1 | GSシン分身-激攻, GSシン四つ目-激攻 |
+| L2 | 奥義-GS-分身-激攻, 奥義-GS-四つ目-激攻 |
+| L3 | 秘奥義-分身-激攻, 秘奥義-四つ目-激攻 |
 
-### Phase 2: バックテスト実行 — 殿が全102体を追加指示した場合のみ
+## §3 実験手順(4ステップ)
 
 ```
-1. 各αで全102体の月次リターンを再計算:
-   for each pf:
-     prev_weights = {}  # 初月は空
-     for each month:
-       new_signal = get_holding_signal(pf, month)
-       new_weights = expand_to_ticker_weights(new_signal)
-       mixed = blend(prev_weights, new_weights, alpha)
-       monthly_ret = calculate_return(mixed, daily_prices[month])
-       prev_weights = mixed  # 翌月の「前月」になる
+Step 1: データ取得(本番DB read-only)
+  - 12体の全期間ticker×weight:
+    - Standard PF(4体): signals.holding_signal をカンマ分割 → 均等1/N weight
+    - FoF/ネステッドFoF(8体): signals.momentum_data->>'display_ticker_weights'
+  - 日次ETF価格(pricesテーブル)
+  - 本番monthly_returns(パリティ検証用)
 
-2. α=0の結果が本番monthly_returnsと完全一致することを検証(パリティ)
-3. 計算結果をローカルDBに保存(α, pf_id, year_month, monthly_return, cumulative_return, weights)
+Step 2: R_lagged計算
+  - 各PF×各月: 前月のticker×weightで当月の日次リターンを積み上げ
+  - R_currentは本番monthly_returnsをそのまま使用
+
+Step 3: α混合
+  - 各α: 段階的リターン = α × R_lagged + (1-α) × R_current
+  - α=0の結果 = R_current = 本番monthly_returns(パリティ検証)
+
+Step 4: 3指標計算+殿に報告
+  - 12体×5αのCAGR/シャープレシオ/MaxDDテーブル生成
+  - 結果を殿に報告。追加指示を待つ
 ```
 
-### Phase 3: 分析・報告
+## §4 実装分解(v1.6簡素化)
 
-```
-1. 全PF×全αのCAGR+シャープレシオ+MaxDDテーブルを生成(各PFでα=0 vs α>0のpaired比較)
-2. 層別(L0/オリジナル/L1/L2/L3)の傾向サマリ
-3. 結果をgistで殿に報告
-```
+| # | 内容 | 依存 |
+|---|---|---|
+| 1 | Standard 4体の`holding_signal`、FoF 8体の`momentum_data.display_ticker_weights`、prices、monthly_returns取得→ローカルキャッシュ | なし |
+| 2 | R_lagged計算(前月シグナル×当月価格) + パリティ検証 | 1 |
+| 3 | α混合 + 3指標計算 + 結果テーブル生成 + 殿に報告 | 2 |
 
-## §4 実装分解
-
-| # | 内容 | 依存 | 並列可能 |
-|---|---|---|---|
-| 1 | データ取得+ticker×weight展開ユーティリティ+パリティ検証(Phase 1) | なし | — |
-| 2 | バックテストエンジン(blend関数+月次リターン再計算)(Phase 2) | 1 | — |
-| 3a | L0(20体)×5α バックテスト実行(殿の追加指示後のみ) | 2 | ✅ |
-| 3b | L1(33体)×5α バックテスト実行(殿の追加指示後のみ) | 2 | ✅ |
-| 3c | L2(24体)×5α バックテスト実行(殿の追加指示後のみ) | 2 | ✅ |
-| 3d | L3(25体)×5α バックテスト実行(殿の追加指示後のみ) | 2 | ✅ |
-| 4 | 分析・可視化・報告(Phase 3) | 3a-3d | — |
-
-3a-3dは独立で並列可能(4忍者)。
+**1忍者で完結。** データ取得→計算→報告の直列3ステップ。並列分割不要。
 
 ## §5 decision ledger
 
@@ -286,7 +233,8 @@ FoFのholding_signal(コンポーネントPF UUID)ではなく、展開後のETF
 | 対象PF = 全102体 | 将来候補。**殿が明示的に追加指示するまで実行禁止** |
 | 対象期間 = 全期間 | 提案(パラメータ空間縮小禁止)。裁可対象 |
 | 本番コード変更 | 禁止。実験スクリプトのみ |
-| ticker×weight展開のFoF再帰ロジック | 本番正本=`backend/app/services/price_ratio_impl.py:1045`の`expand_portfolio_to_tickers()`。独立oracle=`backend/scripts/analysis/monthly_return_oracle.py:51`の`expand_weights()`。`PipelineEngine.expand()`は存在しないため参照禁止 |
+| ticker×weightデータソース | Standard=`holding_signal`均等1/Nは4/4成立。FoF=`display_ticker_weights`直接は非unit 35行・parity不一致29行で**FAIL-close**。次方式は未決であり、補正・fallback・FoF展開を自動採用しない |
+| 指定12PF実験 | `cmd_partial_turnover_phase0_v19`正式FAIL-close。60/60セル完走、全102PF実行0 |
 
 ## §6 因果リンク
 
