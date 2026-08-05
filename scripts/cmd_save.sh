@@ -3659,14 +3659,14 @@ check_q9_prevention_length_block() {
 
 check_cmd_block_presence_warn() {
     if [[ ! -f "$QUEUE_FILE" ]]; then
-        echo "WARN: $QUEUE_FILE が存在しません" >&2
-        record_warn_reason "queue_file_missing" "check=session_state_queue_file_presence"
+        echo "BLOCK: $QUEUE_FILE が存在しません。先にEdit toolでcmdブロックを書け" >&2
+        record_block_reason "$QUEUE_FILE が存在しません" "check=session_state_queue_file_presence"
     elif ! load_cmd_block; then
         if [[ -d "$ARCHIVE_CMD_DIR" ]] && ls "$ARCHIVE_CMD_DIR"/"${CMD_ID}"_* 1>/dev/null 2>&1; then
             return 0
         fi
-        echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
-        record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
+        echo "BLOCK: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません。先にEdit toolでcmdブロックを書け" >&2
+        record_block_reason "${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" "check=session_state_cmd_block_presence"
     fi
 }
 
@@ -3990,14 +3990,14 @@ CMD_BLOCK_NC=""
 
 if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
     if [[ ! -f "$QUEUE_FILE" ]]; then
-        echo "WARN: $QUEUE_FILE が存在しません" >&2
-        record_warn_reason "queue_file_missing" "check=session_state_queue_file_presence"
+        echo "BLOCK: $QUEUE_FILE が存在しません。先にEdit toolでcmdブロックを書け" >&2
+        record_block_reason "$QUEUE_FILE が存在しません" "check=session_state_queue_file_presence"
     elif load_cmd_block; then
         CMD_DIAGNOSIS="$(extract_cmd_diagnosis "$CMD_BLOCK_NC")"
         warn_missing_prev_cmd_lesson
     else
-        echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
-        record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
+        echo "BLOCK: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません。先にEdit toolでcmdブロックを書け" >&2
+        record_block_reason "${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" "check=session_state_cmd_block_presence"
     fi
 
     if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
