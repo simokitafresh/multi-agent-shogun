@@ -416,6 +416,84 @@ def _record_phase_point(check_id: str, wall_ms: int, verdict: str, event_id: str
         return
 
 
+def _record_refresh_points(points: list[tuple[str, int, str, str]]) -> None:
+    """Persist one refresh's telemetry batch without four hot-path forks.
+
+    The normal refresh emits four records.  The shared shell writer is kept
+    for all other callers, while this local batch uses the same JSONL schema,
+    lock file, duplicate suppression, and fail-open behavior in one critical
+    section.  It changes telemetry plumbing only; cache publication remains
+    independent of every failure here.
+    """
+    if not points or os.environ.get("DEFENSE_OVERHEAD_ENABLED", "1") != "1":
+        return
+    try:
+        from datetime import datetime, timezone
+
+        ledger = os.environ.get(
+            "DEFENSE_OVERHEAD_LEDGER",
+            os.path.join(REPO_ROOT, "logs", "defense_overhead.jsonl"),
+        )
+        if not os.path.isdir(os.path.dirname(ledger)):
+            return
+        lock_path = f"{ledger}.lock"
+        deadline = time.monotonic() + float(os.environ.get("DEFENSE_OVERHEAD_LOCK_TIMEOUT", "2"))
+        lines = []
+        event_ids = []
+        for check_id, wall_ms, verdict, event_id in points:
+            if not re.fullmatch(r"[A-Za-z0-9_.:-]+", check_id):
+                return
+            if int(wall_ms) < 0 or verdict not in {"PASS", "FAIL", "BLOCK", "WARN"}:
+                return
+            if not re.fullmatch(r"[A-Za-z0-9_.:-]+", event_id):
+                return
+            event_ids.append(event_id)
+            lines.append(
+                json.dumps(
+                    {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "source": "three_layer_health",
+                        "check_id": check_id,
+                        "wall_ms": int(wall_ms),
+                        "verdict": verdict,
+                        "event_id": event_id,
+                    },
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                )
+            )
+        with open(lock_path, "a", encoding="utf-8") as lock_handle:
+            while True:
+                try:
+                    fcntl.flock(lock_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() >= deadline:
+                        return
+                    time.sleep(0.01)
+            try:
+                existing = set()
+                try:
+                    with open(ledger, encoding="utf-8") as ledger_handle:
+                        for raw in ledger_handle:
+                            try:
+                                row = json.loads(raw)
+                            except (TypeError, ValueError):
+                                continue
+                            if isinstance(row, dict) and row.get("event_id"):
+                                existing.add(row["event_id"])
+                except FileNotFoundError:
+                    pass
+                with open(ledger, "a", encoding="utf-8") as ledger_handle:
+                    for event_id, line in zip(event_ids, lines):
+                        if event_id not in existing:
+                            ledger_handle.write(line + "\n")
+            finally:
+                fcntl.flock(lock_handle, fcntl.LOCK_UN)
+    except Exception:
+        return
+
+
 def _hot_copy_snapshot(db_path: str, output_path: str) -> None:
     """Publish output_path as a byte-copy snapshot of db_path, WAL-safe.
 
@@ -678,6 +756,12 @@ def _memory_db_source_signature(db_path: str):
         return None
 
 
+def _source_signature_rowid(source_signature: str | None) -> str | None:
+    """Extract the already-measured source watermark from a signature."""
+    match = re.search(r"(?:^|\|)rowid:(\d+)(?:\||$)", source_signature or "")
+    return match.group(1) if match else None
+
+
 def _record_refresh_window_point(
     phase: str, rowid: str, group: str, wall_ms: int = 0, extra: str = ""
 ) -> None:
@@ -805,9 +889,21 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
         _window_group = f"{os.getpid()}-{time.monotonic_ns()}"
         _window_begin_rowid = "na"
         _window_begin_ns = time.monotonic_ns()
+        _refresh_points = []
         try:
-            _window_begin_rowid = _memory_db_source_max_rowid(db_path)
-            _record_refresh_window_point("begin", _window_begin_rowid, _window_group)
+            # _cur_sig queried MAX(rowid) immediately before the window. Use
+            # that value instead of opening a second SQLite connection and
+            # repeating the same source read; retain the fallback when
+            # signature collection failed.
+            _window_begin_rowid = _source_signature_rowid(_cur_sig) or _memory_db_source_max_rowid(db_path)
+            _refresh_points.append(
+                (
+                    "refresh_window",
+                    0,
+                    "PASS" if _window_begin_rowid != "na" else "WARN",
+                    f"refresh_window:begin:rowid-{_window_begin_rowid}:grp-{_window_group}",
+                )
+            )
         except Exception:
             pass
         fd, temp_name = tempfile.mkstemp(
@@ -823,15 +919,19 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
             if not incremental:
                 create_sqlite_backup(db_path, output_path=temp_path, suffix="ext4_cache")
             _copy_ms = (time.monotonic_ns() - _copy_t0) // 1_000_000
-            _record_phase_point(
-                "refresh_copy", _copy_ms, "PASS",
-                f"refresh_copy:grp-{_window_group}:mode-{'incremental' if incremental else 'full'}",
+            _refresh_points.append(
+                (
+                    "refresh_copy",
+                    _copy_ms,
+                    "PASS",
+                    f"refresh_copy:grp-{_window_group}:mode-{'incremental' if incremental else 'full'}",
+                )
             )
             _verify_t0 = time.monotonic_ns()
             require_cache_backup_healthy(temp_path)
             _verify_ms = (time.monotonic_ns() - _verify_t0) // 1_000_000
-            _record_phase_point(
-                "refresh_verify", _verify_ms, "PASS", f"refresh_verify:grp-{_window_group}"
+            _refresh_points.append(
+                ("refresh_verify", _verify_ms, "PASS", f"refresh_verify:grp-{_window_group}")
             )
             os.replace(temp_path, cache_path)
             # Refresh window, point 2 of 2: the watermark at publication.  The
@@ -846,12 +946,14 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
                     _arrived = str(int(_window_end_rowid) - int(_window_begin_rowid))
                 else:
                     _arrived = "na"
-                _record_refresh_window_point(
-                    "end",
-                    _window_end_rowid,
-                    _window_group,
-                    wall_ms=_window_ms,
-                    extra=f":arrived-{_arrived}:beginrowid-{_window_begin_rowid}",
+                _refresh_points.append(
+                    (
+                        "refresh_window",
+                        _window_ms,
+                        "PASS" if _window_end_rowid != "na" else "WARN",
+                        f"refresh_window:end:rowid-{_window_end_rowid}:grp-{_window_group}"
+                        f":arrived-{_arrived}:beginrowid-{_window_begin_rowid}",
+                    )
                 )
             except Exception:
                 pass
@@ -867,6 +969,7 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
             except OSError:
                 pass
         finally:
+            _record_refresh_points(_refresh_points)
             # os.replace() only renames temp_path itself; a WAL-mode backup
             # (inherited from db_path's own journal_mode) leaves -wal/-shm
             # sidecars named after the temp path, which os.replace() does not
