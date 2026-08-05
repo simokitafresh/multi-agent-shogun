@@ -506,9 +506,12 @@ def _hot_copy_snapshot(db_path: str, output_path: str) -> None:
     WAL-mode checkpoints never overwrite frames still needed by a reader
     whose snapshot predates them, so the base file's pages this reader
     depends on cannot change while it is open. New writes still land in the
-    WAL file; copying db_path/-wal/-shm in that order after the read
-    transaction is taken picks up a self-consistent (possibly slightly
-    fresher) snapshot either way. Callers still run the existing
+    WAL file; copying db_path/-wal after the read transaction is taken picks
+    up a self-consistent (possibly slightly fresher) snapshot either way.
+    The copied WAL is then checkpointed into output_path before the snapshot
+    leaves this function. This is required because the published cache is a
+    standalone database and its sidecars are removed after os.replace().
+    Callers still run the existing
     require_cache_backup_healthy() integrity gate against the result before
     publishing it, so a torn copy (if this reasoning is ever wrong for some
     edge case) is caught there instead of silently corrupting the cache.
@@ -519,13 +522,34 @@ def _hot_copy_snapshot(db_path: str, output_path: str) -> None:
         reader.execute("BEGIN")
         reader.execute("SELECT 1 FROM sqlite_master LIMIT 1")
         shutil.copyfile(db_path, output_path)
-        for suffix in ("-wal", "-shm"):
-            src_side = f"{db_path}{suffix}"
-            if os.path.exists(src_side):
-                shutil.copyfile(src_side, f"{output_path}{suffix}")
+        src_wal = f"{db_path}-wal"
+        output_wal = f"{output_path}-wal"
+        if os.path.exists(src_wal):
+            shutil.copyfile(src_wal, output_wal)
     finally:
         reader.execute("COMMIT")
         reader.close()
+    _checkpoint_snapshot(output_path)
+
+
+def _checkpoint_snapshot(output_path: str) -> None:
+    """Merge a private snapshot WAL before its DB file is atomically published."""
+    output_wal = f"{output_path}-wal"
+    if os.path.exists(output_wal) and os.path.getsize(output_wal) > 0:
+        with sqlite3.connect(output_path) as snapshot:
+            snapshot.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            checkpoint = snapshot.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+            if checkpoint and (checkpoint[0] != 0 or checkpoint[1] != 0):
+                raise sqlite3.DatabaseError(
+                    f"WAL checkpoint incomplete: busy={checkpoint[0]} frames={checkpoint[1]}"
+                )
+        if os.path.exists(output_wal) and os.path.getsize(output_wal) > 0:
+            raise sqlite3.DatabaseError("WAL checkpoint left unmerged frames")
+    fd = os.open(output_path, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
 
 
 def _sqlite_table_columns(conn, table_name: str) -> list[str]:
@@ -568,6 +592,11 @@ def _try_incremental_cache_snapshot(
             source_conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
             cache_conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
             source_conn.execute("BEGIN")
+            # The output is a private temp snapshot.  Keep its append
+            # transaction out of WAL so the published cache remains a
+            # standalone DB and needs no whole-file checkpoint afterward.
+            cache_conn.execute("PRAGMA journal_mode=DELETE")
+            cache_conn.execute("PRAGMA synchronous=FULL")
             cache_conn.execute("BEGIN IMMEDIATE")
 
             source_columns = _sqlite_table_columns(source_conn, "events")
@@ -576,13 +605,16 @@ def _try_incremental_cache_snapshot(
             if not required_columns.issubset(source_columns) or source_columns != cache_columns:
                 raise sqlite3.DatabaseError("events schema is not append-compatible")
 
-            signature_match = re.search(r"\|count:(\d+)\|", source_signature or "")
-            if signature_match is None:
-                raise sqlite3.DatabaseError("source signature unavailable")
-            source_count = int(signature_match.group(1))
-            source_max_rowid = source_conn.execute(
-                "SELECT COALESCE(MAX(rowid), 0) FROM events"
-            ).fetchone()[0]
+            # Use the read transaction's snapshot for eligibility.  The
+            # caller's signature is intentionally measured before this
+            # function starts; on a live writer that value can already be
+            # stale by the time the incremental read begins, which used to
+            # force a safe but needlessly expensive full refresh.  These two
+            # values are now read together with the suffix below, so the
+            # append check is both current and internally consistent.
+            source_count, source_max_rowid = source_conn.execute(
+                "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
+            ).fetchone()
             cache_count, cache_max_rowid = cache_conn.execute(
                 "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
             ).fetchone()
@@ -625,12 +657,6 @@ def _try_incremental_cache_snapshot(
                 cache_table_columns = _sqlite_table_columns(cache_conn, table_name)
                 if source_table_columns != cache_table_columns:
                     raise sqlite3.DatabaseError(f"{table_name} schema is not append-compatible")
-                source_total = source_conn.execute(
-                    f"SELECT COUNT(*) FROM {table_name}"
-                ).fetchone()[0]
-                cache_total = cache_conn.execute(
-                    f"SELECT COUNT(*) FROM {table_name}"
-                ).fetchone()[0]
             event_placeholders = ", ".join("?" for _ in range(len(source_columns) + 1))
             cache_conn.executemany(
                 f"INSERT INTO events(rowid, {quoted_events}) VALUES ({event_placeholders})",
@@ -664,6 +690,12 @@ def _try_incremental_cache_snapshot(
                 child_placeholders = ", ".join("?" for _ in child_columns)
                 child_rows = []
                 event_ids = [row[source_columns.index("id") + 1] for row in delta_rows]
+                source_total = source_conn.execute(
+                    f"SELECT COUNT(*) FROM {table_name}"
+                ).fetchone()[0]
+                cache_total = cache_conn.execute(
+                    f"SELECT COUNT(*) FROM {table_name}"
+                ).fetchone()[0]
                 for offset in range(0, len(event_ids), 500):
                     chunk = event_ids[offset : offset + 500]
                     placeholders = ", ".join("?" for _ in chunk)
@@ -683,6 +715,7 @@ def _try_incremental_cache_snapshot(
 
             cache_conn.commit()
             source_conn.commit()
+            _checkpoint_snapshot(output_path)
             return True
     except Exception:
         return False
@@ -932,6 +965,11 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
                 ("refresh_verify", _verify_ms, "PASS", f"refresh_verify:grp-{_window_group}")
             )
             os.replace(temp_path, cache_path)
+            _cache_dir_fd = os.open(cache_dir, os.O_RDONLY)
+            try:
+                os.fsync(_cache_dir_fd)
+            finally:
+                os.close(_cache_dir_fd)
             # Refresh window, point 2 of 2: the watermark at publication.  The
             # difference against point 1 is the number of writes that arrived
             # while the window was open; whether they are merely delayed or
