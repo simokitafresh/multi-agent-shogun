@@ -1,9 +1,11 @@
 <!-- gist-master: fc4b27c4031149d7d6b45fde49028942 hot-script-speedup-round8-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.5 【wave最終checkpoint進行中】
+# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.6 【wave最終checkpoint完了】
+
+> v1.6(2026-08-05 15:25): shard4固定HEAD `5aad3a61ecdd826a10271e296b3c8ed14b3cbec7` の全量unit receiptを確定。214/214ファイル、宣言/観測3,122/3,122、FAIL 0、SKIP 0、rc=0、`complete=1`、`full_scope=true`。品質checkpointをCLOSEし、第八弾の実装・品質ゲートを完了扱いとする。正式効果は§1どおり修正後1週間ledger前週比で別途確定する。
 
 > v1.5(2026-08-05 02:38 殿裁定): §2.6 checkpoint契約を追加。full/wave全量テストの3〜4名並列分割・固定HEAD・receipt和集合判定を全弾共通契約として明記
 
-> v1.4(2026-08-04 23:10進捗同期): 第八弾本体・偵察・実装の対象12/12 GATE CLEARを一次台帳で確認。旧偵察FAIL 3件は後続是正へ還流済みとして正式FAIL-close 3/3。効果checkpointは8/8lane再計数・48/48 PASS、品質checkpointは全量検証中。1時間fixed-windowは対照群ドリフトを含むため正式効果へ昇格せず、修正後1週間ledger前週比を待つ。
+> v1.4(2026-08-04 23:10進捗同期): 第八弾本体・偵察・実装の対象12/12 GATE CLEARを一次台帳で確認。旧偵察FAIL 3件は後続是正へ還流済みとして正式FAIL-close 3/3。効果checkpointは8/8lane再計数・48/48 PASS、品質checkpointはv1.6で完了。1時間fixed-windowは対照群ドリフトを含むため正式効果へ昇格せず、修正後1週間ledger前週比を待つ。
 
 > v1.3(2026-08-04 15:36 殿裁可『開始しよう』): 弾台帳固定。**レーン方式で開始**(第五・七弾の型: 将軍下知blt_154140→家老レーン配備。cmd正式起票はしない=殿指摘15:39で方式確認済み)。弾#0'(計測盲点根絶)を先行、以後#1→#2→#3直列+#4以降独立並列
 
@@ -128,16 +130,40 @@
 | skill_refs dup | followup重複根治 | ✅**GATE CLEAR** | 17件→0件 |
 | capture guard | watcher自動ガード | ✅**GATE CLEAR** | nudge誤送信防止 |
 | same-cmd fix | pending symlink補完 | ✅**GATE CLEAR** | active pending切離し |
-| scout gate | 偵察報告再利用 | 🔄**配備中** | fail-closed検証7ケース |
+| scout gate | 偵察報告再利用 | ✅**GATE CLEAR** | fail-closed検証7ケース |
 | active-stall fix | active静止盲点 | ✅**軍師LGTM・GATE CLEAR** | 25分静止・子処理0・prompt0のみ家老通知。自己介入0 |
-| wave効果checkpoint | 8lane固定窓再集計 | ✅**完了・軍師レビュー待ち** | 177,600行、8/8lane、48/48 PASS、欠損0・外れ値除外0。正式効果は未確定 |
-| wave品質checkpoint | 全量FAIL0/SKIP0+lane独立性 | 🔄**実行中** | 全量実走は本checkpointの1回だけ |
+| wave効果checkpoint | 8lane固定窓再集計 | ✅**完了・正式効果待ち** | 177,600行、8/8lane、48/48 PASS、欠損0・外れ値除外0。正式効果は修正後一週間ledger前週比で確定 |
+| wave品質checkpoint | 全量FAIL0/SKIP0+lane独立性 | ✅**完了** | shard4固定HEAD、214/214ファイル、3,122/3,122 PASS、FAIL0、SKIP0、rc=0、complete=1、full_scope=true |
 
 - **本体集計(23:10)**: 第八弾対象の本体・偵察・実装レーンは**GATE CLEAR 12/12**。後続是正へ繋いだ旧偵察FAILは**正式FAIL-close 3/3**で、偽CLEAR 0件。
-- **checkpoint**: 効果レーン=完了(8/8lane、48/48 PASS、FAIL0、SKIP0)。品質レーン=全量検証中。両方が閉じるまで第八弾CLOSEを宣言しない。
+- **checkpoint**: 効果レーン=完了(8/8lane、48/48 PASS、FAIL0、SKIP0)。品質レーン=完了(214/214ファイル、3,122/3,122 PASS、FAIL0、SKIP0、rc=0)。実装・品質ゲートはCLOSE。正式効果のみ修正後1週間ledger前週比で確定する。
 - **局所観測**: lane focused値は#4=-65%、#5=-95.6%、補欠B logging寄与=-93%。これは実装局所の方向確認であり、wave正式効果ではない。
 - **wave即時固定窓**: #1と補欠Aはp50/totalとも減少。#2/#5/#0'/補欠Bは件数変動またはp50/total不一致、#3/#4は観測上悪化。対照群も大幅変動し、正式確定可能lane=0/8。
 - **正式効果**: §1計測憲法どおり「修正後1週間のledger累積課税の前週比」。2026-08-04時点では未成熟ゆえ未確定。
+
+## §2.7 最終品質checkpoint記録(2026-08-05)
+
+| 項目 | 実測結果 | 判定 |
+|---|---|---|
+| 固定HEAD | `5aad3a61ecdd826a10271e296b3c8ed14b3cbec7` | PASS |
+| receipt | `/mnt/c/tools/multi-agent-shogun/.karo_worktrees/round8-shard-4/logs/test_receipts/run_tests_20260805T060402_523518.json` | PASS |
+| 対象ファイル | 214/214 (selected/discovered/executed) | PASS |
+| テスト数 | declared/observed = 3,122/3,122 | PASS |
+| FAIL / SKIP | 0 / 0 | PASS |
+| 終了・範囲 | `rc=0`, `complete=1`, `full_scope=true` | PASS |
+
+**CLOSE境界**: 第八弾の実装・品質checkpointは上記receiptにより完了。正式な速度効果値は品質判定と混同せず、修正後一週間の `logs/defense_overhead.jsonl` 累積課税の前週比で確定する。
+
+## §2.6.1 テスト修正・高速化の知見(今回の実証)
+
+1. **FAIL単位で分割する**: shardの失敗を一括修正せず、失敗したテストファイルごとに独立タスク化する。今回のheavy admission・three-layer preflight・commit wrapperを別担当へ分け、原因の混線と手戻りを防いだ。
+2. **テストを弱めず、根因を実装側で直す**: 判定条件・fail-closed境界・検証対象は維持する。heavy admissionはロック/待機境界、preflightは三層検証の前提、wrapperは継承ロックの解放を根因として修正した。
+3. **focused結果を先に二値確認する**: 各修正は対象ファイルだけを再実行し、PASS件数・FAIL件数・SKIP件数を即時計測する。実績はheavy **86/86 PASS**、preflight **52/52 PASS**、wrapper **28/28 PASS**、いずれもSKIP 0。
+4. **固定HEADへ統合してから全量確認する**: focused PASSを採用条件とし、同一固定HEADへ統合後に全量を一度だけ実走する。最終receiptは214/214ファイル、3,122/3,122 PASS、FAIL 0、SKIP 0、`rc=0`、`complete=1`、`full_scope=true`となった。
+5. **高速化は実行機構で行う**: テスト対象・品質境界を削らず、並列shard、専用fixture、ロック競合解消、不要な再走回避で時間を短縮する。今回の全量検証は品質を維持したまま、失敗shardだけを再実行する契約に適合した。
+6. **完了条件を出力でなくreceiptに固定する**: 「修正した」「テストした」では完了にせず、宣言数=観測数、重複0、欠損0、FAIL 0、SKIP 0、HEAD一致、`complete/full_scope`成立を必須条件にする。
+
+- origin: `[[shard4失敗テスト]] -> [[FAIL単位分割修正]] -> [[focused二値検証]] -> [[固定HEAD全量receipt]] -> [[第八弾品質CLOSE]]`
 
 ## §2.6 checkpoint契約(殿裁定2026-08-05 — 全弾共通)
 
@@ -163,12 +189,12 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 | 項 | 状態 |
 |---|---|
 | checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
-| 第八弾の起動 | 殿発案2026-08-04 02:44。**設計書の裁可待ち(本書v1.0)** |
+| 第八弾の起動 | 殿発案2026-08-04 02:44。**実施完了(v1.6品質checkpoint CLOSE)** |
 | 序列snapshot | **確定済み**(§0=2026-08-04 09:07将軍再実測v1.1。既存ledger 112,089行・fixed-window。02:47実測比+1,978行で序列不変=構造確認済み) |
-| 弾数・標的固定 | **本書で5+補欠2を提案**。殿裁可で固定 |
-| three_layer_health 3弾の直列 | 提案(共有writer原則)。裁可対象 |
+| 弾数・標的固定 | **5+補欠2で固定・実施完了** |
+| three_layer_health 3弾の直列 | **共有writer原則で実施完了** |
 | 高速化と防御力の境界 | **確定**: 検証力不変・fail-closed維持・チェック間引き禁止(LS099/殿裁定07-21『削るな速くしろ』) |
-| 起票解禁 | 設計書裁可→(必要なら家老・軍師レビュー)→1道具1CMDで順次起票。DM-signal月次E2検証・rebalancer cmd_4225/4226レーンを妨げない範囲で配備 |
+| 起票解禁 | **1道具1CMDで順次実施完了**。正式効果のみ修正後一週間ledger前週比待ち |
 
 ## §4 5W1H
 

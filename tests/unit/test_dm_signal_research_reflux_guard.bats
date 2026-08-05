@@ -119,6 +119,20 @@ make_split_contexts() {
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: non-DM-Signal infra docs/research changes explicitly marked
+# non-target must pass the reflux prepare gate so the scope-limited commit
+# path can commit unrelated repository documentation without bypassing the
+# DM-Signal research protection.
+@test "非DM-Signal repoの明示的non-target prepareは誤BLOCKしない" {
+    printf 'infra-design\n' > "$OTHER/docs/research/infra.md"
+    git -C "$OTHER" add docs/research/infra.md
+    run bash "$GUARD" prepare --repo "$OTHER" --mode non-target --evidence 'infra設計書でDM-Signal研究索引非対象'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NON_TARGET_REFLUX_SKIP"* ]]
+    run bash "$GUARD" check --repo "$OTHER"
+    [ "$status" -eq 0 ]
+}
+
 @test "他repoとDM-Signal非research commitは非発火" {
     printf 'x\n' > "$OTHER/docs/research/other.md"
     git -C "$OTHER" add docs/research/other.md

@@ -94,6 +94,20 @@
 | 7 | q11_semantic_search | ⏳着手可 | — |
 | 8 | quality_gate | ⏳#4完了後(同族writer直列) | — |
 
++## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
+
+第八弾で実証した以下の方式を、本弾の全レーンとwave最終checkpointへ継承する。
+
+1. **FAIL単位で分割**: shardの失敗をテストファイル単位の独立タスクへ分け、heavy admission・three-layer preflight・commit wrapperのように原因を混線させない。
+2. **根因を実装側で修正**: テストの期待値・fail-closed境界・検証対象を弱めない。今回もロック/待機境界、三層検証の前提、継承ロック解放を根因として直した。
+3. **focused二値検証**: 修正ごとに対象テストだけを再実行し、PASS/FAIL/SKIPを計測する。focused PASSを統合条件とし、SKIPは未完了扱いにする。
+4. **固定HEAD統合後に全量確認**: focused PASSを同一固定HEADへ統合し、receipt和集合で宣言数=観測数、重複0、欠損0、FAIL0、SKIP0、HEAD一致を確認する。
+5. **高速化の境界**: テスト対象・品質境界を削らず、並列shard、専用fixture、ロック競合解消、不要な再走回避で時間を短縮する。新規実装用testはPASS確認後に削除し、残すcontract testだけ具体的不変量をtest_necessityへ記録する。
+6. **完了はreceiptで判定**: 「修正した」「テストした」という出力では完了とせず、complete=1・full_scope=true・rc=0を含む最終receiptを必須証跡とする。
+
+- origin: [[第八弾shard4失敗テスト]] -> [[FAIL単位分割修正]] -> [[focused二値検証]] -> [[固定HEAD全量receipt]] -> [[第九弾_第十二弾へ継承]]
+
+
 ## §2.6 checkpoint契約(殿裁定2026-08-05 — 全弾共通)
 
 full/wave checkpointの全量テストを1名へ一括配備しない。以下の契約に従う。

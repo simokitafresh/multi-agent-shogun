@@ -239,6 +239,17 @@ prepare() {
     done
     [[ -n "$repo" && "$mode" =~ ^(synced|non-target)$ && -n "$evidence" ]] || { usage; return 2; }
     rc=0; is_dm_signal_repo "$repo" || rc=$?
+    # Non-DM-Signal repositories may explicitly declare that their
+    # docs/research changes are outside the reflux surface.  The old path
+    # rejected them before honoring --mode non-target, which made the
+    # scope-limited commit helper unusable in the infra repository (GA-220).
+    # Keep synced mode fail-closed and preserve invalid DM_SIGNAL_REPO
+    # handling; only a valid, unrelated repository gets the intentional
+    # no-op.
+    if ((rc == 1)) && [[ "$mode" == "non-target" ]]; then
+        echo "NON_TARGET_REFLUX_SKIP: repo=$repo evidence=$evidence" >&2
+        return 0
+    fi
     if ((rc == 2)); then
         echo "BLOCK(GA-220): DM_SIGNAL_REPO repo identityを解決できない(設定不正の疑い): $DM_SIGNAL_REPO" >&2
         return 2
