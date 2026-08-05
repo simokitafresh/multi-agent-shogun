@@ -472,21 +472,19 @@ def _record_refresh_points(points: list[tuple[str, int, str, str]]) -> None:
                         return
                     time.sleep(0.01)
             try:
-                existing = set()
+                existing = b""
                 try:
-                    with open(ledger, encoding="utf-8") as ledger_handle:
-                        for raw in ledger_handle:
-                            try:
-                                row = json.loads(raw)
-                            except (TypeError, ValueError):
-                                continue
-                            if isinstance(row, dict) and row.get("event_id"):
-                                existing.add(row["event_id"])
+                    # Match the shared writer's exact event_id needle, but
+                    # read the ledger once instead of parsing every JSON row
+                    # on the refresh critical path.
+                    with open(ledger, "rb") as ledger_handle:
+                        existing = ledger_handle.read()
                 except FileNotFoundError:
                     pass
                 with open(ledger, "a", encoding="utf-8") as ledger_handle:
                     for event_id, line in zip(event_ids, lines):
-                        if event_id not in existing:
+                        needle = f'"event_id":"{event_id}"'.encode()
+                        if needle not in existing:
                             ledger_handle.write(line + "\n")
             finally:
                 fcntl.flock(lock_handle, fcntl.LOCK_UN)
