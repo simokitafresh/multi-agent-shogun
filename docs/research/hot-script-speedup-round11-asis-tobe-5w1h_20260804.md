@@ -1,5 +1,7 @@
 <!-- gist-master: 4571e36dca63e089831abaa8b1d6c275 hot-script-speedup-round11-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.2 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.3 【🚀裁可済み・進行中】
+
+> v1.3(2026-08-05 20:35 殿指示scope純化): 第10弾v1.7準拠で提案弾台帳と進捗台帳に高速化許可owner pathを一次コード突合で確定。列挙外pathの変更を禁止
 
 > v1.2(2026-08-05 18:53進捗同期): 2026-08-05 18:03将軍下知で起動。#2 inbox_write_totalはfocused 20/20とp50/p95改善を得たが、最終scope commitが既存のscope外テストFAILに阻まれ正式FAIL-close。#3 singleflight_holdはfocused 10/10・full 65/65、joiner p50/p95 641/672ms→414/421msまで成立したが、31 affected testsのpre-commit 60秒timeoutでcommit未成立となり軍師レビューFAILで正式FAIL-close。両laneとも未コミット変更を保全し、完了へ丸めない。
 
@@ -66,35 +68,37 @@
 8. **方式=レーン方式**(将軍下知→家老配備→lane名CLEAR→最終checkpoint品質2原則検分)
 9. **lane最小AC/wave checkpointの二層契約**(殿恒久裁定2026-08-04 19:26)
 
-### 提案弾台帳(殿裁可で固定)
+### 提案弾台帳(殿裁可で固定 — v1.3 owner path確定)
 
-| # | 標的 | 型 | 現状(直近24h) | 手筋候補(実測で裏取り後) |
-|---|---|---|---|---|
-| 1 | `gate_gunshi_report_precheck:full_precheck` | 恒常 | med 1.07s×5,381・total 23,427s | 第九弾補欠A偵察知見(run_id結合不能)引継ぎ。計装identity追加後に子区分計測→最大寄与是正 |
-| 2 | `inbox_write:inbox_write_total` | 砂粒 | med 0.33s×9,197・total 18,822s | pre-send captureの寄与率計測→不要呼出削減 or 非同期化。配送保証は不変 |
-| 3 | `gate_report_format:singleflight_hold` | 砂粒 | med 0.39s×8,276・total 17,332s | flock競合パターン同定→wait条件是正。singleflight排他保証は不変 |
-| 4 | `cmd_save:checks_main` | 恒常 | med 1.28s×2,089・total 9,344s | 第九弾#4知見(save_total差分)引継ぎ。子check別寄与率計測→最大寄与是正 |
-| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | 恒常 | med 5.15s×947・total 6,143s | 第八弾#5知見引継ぎ。#1(full_precheck)と同族writerゆえ#1→#5直列 |
-| 6 | `report_publish:publish_total` | 砂粒 | med 0.37s×3,749・total 3,272s | 新規標的。子区分計測→最大寄与特定。deploy_total(第十弾#6)の子区分候補 |
-| 7 | `cmd_save:q11_semantic_search_overhead` | 外れ値 | med 0.00s×645・total 3,086s・max 190.8s | 長裾の発火条件特定。semantic_search.sh内のFTS5/DB呼出しパターン分解 |
-| 8 | `cmd_save:checks_main.quality_gate` | 外れ値 | med 0.45s×780・total 2,720s・max 203.4s | 長裾の発火条件特定。#4(checks_main)と同族writerゆえ#4→#8直列 |
+| # | 標的identifier | 高速化許可owner path | 型 | 現状(直近24h) | 手筋候補(実測で裏取り後) |
+|---|---|---|---|---|---|
+| 1 | `gate_gunshi_report_precheck:full_precheck` | `scripts/gates/gate_gunshi_report_precheck.sh` | 恒常 | med 1.07s×5,381・total 23,427s | 第九弾補欠A偵察知見(run_id結合不能)引継ぎ。計装identity追加後に子区分計測→最大寄与是正 |
+| 2 | `inbox_write:inbox_write_total` | `scripts/inbox_write.sh` | 砂粒 | med 0.33s×9,197・total 18,822s | pre-send captureの寄与率計測→不要呼出削減 or 非同期化。配送保証は不変 |
+| 3 | `gate_report_format:singleflight_hold` | `scripts/gates/gate_report_format.sh` | 砂粒 | med 0.39s×8,276・total 17,332s | flock競合パターン同定→wait条件是正。singleflight排他保証は不変 |
+| 4 | `cmd_save:checks_main` | `scripts/cmd_save.sh` | 恒常 | med 1.28s×2,089・total 9,344s | 第九弾#4知見(save_total差分)引継ぎ。子check別寄与率計測→最大寄与是正 |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | `scripts/gates/gate_gunshi_report_precheck.sh` | 恒常 | med 5.15s×947・total 6,143s | 第八弾#5知見引継ぎ。#1(full_precheck)と同族writerゆえ#1→#5直列 |
+| 6 | `report_publish:publish_total` | `scripts/report_field_set.sh` | 砂粒 | med 0.37s×3,749・total 3,272s | 新規標的。子区分計測→最大寄与特定。deploy_total(第十弾#6)の子区分候補 |
+| 7 | `cmd_save:q11_semantic_search_overhead` | `scripts/cmd_save.sh` | 外れ値 | med 0.00s×645・total 3,086s・max 190.8s | 長裾の発火条件特定。semantic_search.sh内のFTS5/DB呼出しパターン分解 |
+| 8 | `cmd_save:checks_main.quality_gate` | `scripts/cmd_save.sh` | 外れ値 | med 0.45s×780・total 2,720s・max 203.4s | 長裾の発火条件特定。#4(checks_main)と同族writerゆえ#4→#8直列 |
+
+**owner path制約**: 上記owner pathのみ高速化・変更可。test/log/call-path依存はread-onlyかつ進捗計上禁止。
 
 - #1→#5は同族writer(gate_gunshi_report_precheck)ゆえ直列。#4→#8は同族writer(cmd_save)ゆえ直列
 - #2・#3・#6は独立writerで並列可
 - 第十弾#6(deploy_total)と#6(publish_total)は親子関係の可能性あり。第十弾#6偵察で確定後に直列条件を判断
 
-## §2.5 進捗台帳(2026-08-05 18:53家老更新)
+## §2.5 進捗台帳(2026-08-05 20:35 v1.3 owner path追加)
 
-| # | 標的 | 状態 | 帰結(実測生値) |
-|---|---|---|---|
-| 1 | full_precheck | ⏳着手可(第九弾補欠A知見あり) | — |
-| 2 | inbox_write_total | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane2_inbox_write_total_20260805`: baseline n=9,197/p50=330ms/p95=6,100ms/max=96,200ms/total=18,822s → current n=9,758/p50=327.5ms/p95=6,134ms/max=181,570ms/total=20,376.43s。live resolver再利用で重複tmux scan/pane lookupを除去し、focused pre-send/persist/total=20/20/20、p50/p95=244/391ms、FAIL0/SKIP0。ただしscope-wide 38 testsは既存の`test_ninja_monitor_stall.bats`・`test_deploy_task.bats`失敗でAC4未達、commitなし。家老ACCEPT・archive済み |
-| 3 | singleflight_hold | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane3_singleflight_hold_20260805`: AC1-3 yes、AC4/commit no、軍師レビューverdict=FAIL。現ledger n=8,633/p50=400ms/p95=11,590ms/max=61,250ms/total=17,830.36s、focused 10/10・full 65/65 PASS、joiner p50/p95 641/672ms→414/421ms。変更は`gate_report_format.sh`+contract testに保全中。commit contractを22 pathへ同期した後もaffected 31 testsが60秒上限でPRECOMMIT_TIMEOUT、commit hashなし |
-| 4 | checks_main | ⏳着手可(第九弾#4知見あり) | — |
-| 5 | full_precheck_body_rest | ⏳#1完了後(同族writer直列) | — |
-| 6 | publish_total | ⏳着手可(独立writer) | — |
-| 7 | q11_semantic_search | ⏳着手可 | — |
-| 8 | quality_gate | ⏳#4完了後(同族writer直列) | — |
+| # | 標的identifier | 高速化許可owner path | 状態 | 帰結(実測生値) |
+|---|---|---|---|---|
+| 1 | `full_precheck` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳着手可(第九弾補欠A知見あり) | — |
+| 2 | `inbox_write_total` | `scripts/inbox_write.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane2_inbox_write_total_20260805`: baseline n=9,197/p50=330ms/p95=6,100ms/max=96,200ms/total=18,822s → current n=9,758/p50=327.5ms/p95=6,134ms/max=181,570ms/total=20,376.43s。live resolver再利用で重複tmux scan/pane lookupを除去し、focused pre-send/persist/total=20/20/20、p50/p95=244/391ms、FAIL0/SKIP0。ただしscope-wide 38 testsは既存の`test_ninja_monitor_stall.bats`・`test_deploy_task.bats`失敗でAC4未達、commitなし。家老ACCEPT・archive済み |
+| 3 | `singleflight_hold` | `scripts/gates/gate_report_format.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane3_singleflight_hold_20260805`: AC1-3 yes、AC4/commit no、軍師レビューverdict=FAIL。現ledger n=8,633/p50=400ms/p95=11,590ms/max=61,250ms/total=17,830.36s、focused 10/10・full 65/65 PASS、joiner p50/p95 641/672ms→414/421ms。変更は`gate_report_format.sh`+contract testに保全中。commit contractを22 pathへ同期した後もaffected 31 testsが60秒上限でPRECOMMIT_TIMEOUT、commit hashなし |
+| 4 | `checks_main` | `scripts/cmd_save.sh` | ⏳着手可(第九弾#4知見あり) | — |
+| 5 | `full_precheck_body_rest` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳#1完了後(同族writer直列) | — |
+| 6 | `publish_total` | `scripts/report_field_set.sh` | ⏳着手可(独立writer) | — |
+| 7 | `q11_semantic_search` | `scripts/cmd_save.sh` | ⏳着手可 | — |
+| 8 | `quality_gate` | `scripts/cmd_save.sh` | ⏳#4完了後(同族writer直列) | — |
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
 
