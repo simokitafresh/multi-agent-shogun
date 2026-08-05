@@ -14,6 +14,7 @@ import re
 import sqlite3
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]")
@@ -21,6 +22,29 @@ AGENT_ID_RE = re.compile(r"[a-z][a-z0-9_-]*\Z")
 SKILL_NAME_RE = re.compile(r"[a-z][a-z0-9-]*\Z")
 CDP_SKILL = "claude-in-chrome"
 CDP_TERMS = ("cdp", "getcomputedstyle", "remote-debugging")
+
+_DEFENSE_OVERHEAD_START_NS = time.monotonic_ns()
+_DEFENSE_OVERHEAD_WRITER = Path(__file__).resolve().parents[1] / "lib" / "defense_overhead_writer.sh"
+
+
+def _write_defense_overhead(rc: int) -> None:
+    wall_ms = max(0, (time.monotonic_ns() - _DEFENSE_OVERHEAD_START_NS) // 1_000_000)
+    verdict = "PASS" if rc == 0 else "FAIL"
+    event_id = f"memory_db_fts5_preflight-{os.getpid()}-{time.time_ns()}"
+    command = 'source "$1"; defense_overhead_write_async "$2" "$3" "$4" "$5" "$6" "{}" || true'
+    try:
+        subprocess.Popen(
+            [
+                "bash", "-c", command, "defense-overhead",
+                str(_DEFENSE_OVERHEAD_WRITER), "memory_db_fts5_preflight",
+                "memory_db_fts5_preflight_total", str(wall_ms), verdict, event_id,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        pass
 
 
 def has_cjk(text: str) -> bool:
@@ -353,4 +377,12 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    _rc = 0
+    try:
+        _rc = main()
+    except BaseException:
+        _rc = 1
+        raise
+    finally:
+        _write_defense_overhead(_rc)
+    raise SystemExit(_rc)

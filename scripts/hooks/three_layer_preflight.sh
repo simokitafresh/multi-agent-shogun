@@ -9,6 +9,32 @@ SELF="${BASH_SOURCE[0]}"
 ROOT="${SELF%/scripts/hooks/three_layer_preflight.sh}"
 EVIDENCE_DIR="${THREE_LAYER_PREACTION_EVIDENCE_DIR:-$ROOT/logs/preaction_memory}"
 
+_three_layer_overhead_source="three_layer_preflight"
+_three_layer_overhead_start_epoch="${EPOCHREALTIME/./}"
+_three_layer_overhead_start_ms="${_three_layer_overhead_start_epoch:0:13}"
+_three_layer_overhead_event_id="${_three_layer_overhead_source}-$$-${RANDOM}-${EPOCHREALTIME//./}"
+if [[ -f "$ROOT/scripts/lib/defense_overhead_writer.sh" ]]; then
+    # shellcheck source=/dev/null
+    _three_layer_overhead_path="${PATH:-}"
+    PATH="${PATH:-}:/usr/bin:/bin" source "$ROOT/scripts/lib/defense_overhead_writer.sh"
+    PATH="$_three_layer_overhead_path"
+    unset _three_layer_overhead_path
+else
+    defense_overhead_write_async() { :; }
+fi
+_three_layer_overhead_emit() {
+    local _three_layer_overhead_rc="$1"
+    local _three_layer_overhead_end_epoch="${EPOCHREALTIME/./}"
+    local _three_layer_overhead_end_ms="${_three_layer_overhead_end_epoch:0:13}"
+    local _three_layer_overhead_wall_ms=$((_three_layer_overhead_end_ms - _three_layer_overhead_start_ms))
+    local _three_layer_overhead_verdict=PASS
+    [[ "$_three_layer_overhead_rc" -eq 0 ]] || _three_layer_overhead_verdict=FAIL
+    PATH="${PATH:-}:/usr/bin:/bin" defense_overhead_write_async "$_three_layer_overhead_source" "${_three_layer_overhead_source}_total" \
+        "$_three_layer_overhead_wall_ms" "$_three_layer_overhead_verdict" "$_three_layer_overhead_event_id" '{}' || true
+    return "$_three_layer_overhead_rc"
+}
+trap '_three_layer_overhead_emit "$?"' EXIT
+
 agent_id="${THREE_LAYER_AGENT_ID:-${PROMPT_STATE_AGENT_ID:-}}"
 if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
     agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)"

@@ -14,6 +14,32 @@ case "$_sa_self" in
 esac
 SHOGUN_ROOT="${STOP_SESSION_ALERTS_ROOT:-$SHOGUN_ROOT}"
 
+_stop_alerts_overhead_source="stop_session_alerts"
+_stop_alerts_overhead_start_epoch="${EPOCHREALTIME/./}"
+_stop_alerts_overhead_start_ms="${_stop_alerts_overhead_start_epoch:0:13}"
+_stop_alerts_overhead_event_id="${_stop_alerts_overhead_source}-$$-${RANDOM}-${EPOCHREALTIME//./}"
+if [[ -f "$SHOGUN_ROOT/scripts/lib/defense_overhead_writer.sh" ]]; then
+    # shellcheck source=/dev/null
+    _stop_alerts_overhead_path="${PATH:-}"
+    PATH="${PATH:-}:/usr/bin:/bin" source "$SHOGUN_ROOT/scripts/lib/defense_overhead_writer.sh"
+    PATH="$_stop_alerts_overhead_path"
+    unset _stop_alerts_overhead_path
+else
+    defense_overhead_write_async() { :; }
+fi
+_stop_alerts_overhead_emit() {
+    local _stop_alerts_overhead_rc="$1"
+    local _stop_alerts_overhead_end_epoch="${EPOCHREALTIME/./}"
+    local _stop_alerts_overhead_end_ms="${_stop_alerts_overhead_end_epoch:0:13}"
+    local _stop_alerts_overhead_wall_ms=$((_stop_alerts_overhead_end_ms - _stop_alerts_overhead_start_ms))
+    local _stop_alerts_overhead_verdict=PASS
+    [[ "$_stop_alerts_overhead_rc" -eq 0 ]] || _stop_alerts_overhead_verdict=FAIL
+    PATH="${PATH:-}:/usr/bin:/bin" defense_overhead_write_async "$_stop_alerts_overhead_source" "${_stop_alerts_overhead_source}_total" \
+        "$_stop_alerts_overhead_wall_ms" "$_stop_alerts_overhead_verdict" "$_stop_alerts_overhead_event_id" '{}' || true
+    return "$_stop_alerts_overhead_rc"
+}
+trap '_stop_alerts_overhead_emit "$?"' EXIT
+
 # --- agent_idを取得 ---
 AGENT_ID=""
 if [[ -n "${TMUX_PANE:-}" ]]; then

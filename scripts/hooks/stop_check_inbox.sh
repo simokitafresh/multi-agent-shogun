@@ -9,6 +9,31 @@ case "$SOURCE_PATH" in
   scripts/hooks/*) SCRIPT_DIR="." ;;
   *) SCRIPT_DIR="$(cd "${SOURCE_PATH%/*}/../.." && pwd)" ;;
 esac
+_stop_check_overhead_source="stop_check_inbox"
+_stop_check_overhead_start_epoch="${EPOCHREALTIME/./}"
+_stop_check_overhead_start_ms="${_stop_check_overhead_start_epoch:0:13}"
+_stop_check_overhead_event_id="${_stop_check_overhead_source}-$$-${RANDOM}-${EPOCHREALTIME//./}"
+if [[ -f "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh" ]]; then
+  # shellcheck source=/dev/null
+  _stop_check_overhead_path="${PATH:-}"
+  PATH="${PATH:-}:/usr/bin:/bin" source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
+  PATH="$_stop_check_overhead_path"
+  unset _stop_check_overhead_path
+else
+  defense_overhead_write_async() { :; }
+fi
+_stop_check_overhead_emit() {
+  local _stop_check_overhead_rc="$1"
+  local _stop_check_overhead_end_epoch="${EPOCHREALTIME/./}"
+  local _stop_check_overhead_end_ms="${_stop_check_overhead_end_epoch:0:13}"
+  local _stop_check_overhead_wall_ms=$((_stop_check_overhead_end_ms - _stop_check_overhead_start_ms))
+  local _stop_check_overhead_verdict=PASS
+  [[ "$_stop_check_overhead_rc" -eq 0 ]] || _stop_check_overhead_verdict=FAIL
+  PATH="${PATH:-}:/usr/bin:/bin" defense_overhead_write_async "$_stop_check_overhead_source" "${_stop_check_overhead_source}_total" \
+    "$_stop_check_overhead_wall_ms" "$_stop_check_overhead_verdict" "$_stop_check_overhead_event_id" '{}' || true
+  return "$_stop_check_overhead_rc"
+}
+trap '_stop_check_overhead_emit "$?"' EXIT
 readonly COMPLETE_PATTERN='任務完了|完了でござる|報告YAML.*更新|task completed|タスク完了'
 # cmd_karo_impl_b37_error_report_false_fire_20260726 (B37):
 # 旧 ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop' は

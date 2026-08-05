@@ -8,6 +8,32 @@ _session_start_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_session_start_self%/scripts/hooks/session_start_inject.sh}"
 unset _session_start_self
 
+_session_start_overhead_source="session_start_inject"
+_session_start_overhead_start_epoch="${EPOCHREALTIME/./}"
+_session_start_overhead_start_ms="${_session_start_overhead_start_epoch:0:13}"
+_session_start_overhead_event_id="${_session_start_overhead_source}-$$-${RANDOM}-${EPOCHREALTIME//./}"
+if [[ -f "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh" ]]; then
+  # shellcheck source=/dev/null
+  _session_start_overhead_path="${PATH:-}"
+  PATH="${PATH:-}:/usr/bin:/bin" source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
+  PATH="$_session_start_overhead_path"
+  unset _session_start_overhead_path
+else
+  defense_overhead_write_async() { :; }
+fi
+_session_start_overhead_emit() {
+  local _session_start_overhead_rc="$1"
+  local _session_start_overhead_end_epoch="${EPOCHREALTIME/./}"
+  local _session_start_overhead_end_ms="${_session_start_overhead_end_epoch:0:13}"
+  local _session_start_overhead_wall_ms=$((_session_start_overhead_end_ms - _session_start_overhead_start_ms))
+  local _session_start_overhead_verdict=PASS
+  [[ "$_session_start_overhead_rc" -eq 0 ]] || _session_start_overhead_verdict=FAIL
+  PATH="${PATH:-}:/usr/bin:/bin" defense_overhead_write_async "$_session_start_overhead_source" "${_session_start_overhead_source}_total" \
+    "$_session_start_overhead_wall_ms" "$_session_start_overhead_verdict" "$_session_start_overhead_event_id" '{}' || true
+  return "$_session_start_overhead_rc"
+}
+trap '_session_start_overhead_emit "$?"' EXIT
+
 if [[ -f "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" ]]; then
   # shellcheck source=/dev/null
   source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"

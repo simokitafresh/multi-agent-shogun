@@ -2,6 +2,36 @@
 # @source: cmd_1808 (SessionEnd clear prep check hook)
 set -eu
 
+_session_end_self="${BASH_SOURCE[0]}"
+[[ "$_session_end_self" != /* ]] && _session_end_self="$PWD/$_session_end_self"
+SCRIPT_DIR="${_session_end_self%/scripts/hooks/session_end_clear_check.sh}"
+unset _session_end_self
+_session_end_overhead_source="session_end_clear_check"
+_session_end_overhead_start_epoch="${EPOCHREALTIME/./}"
+_session_end_overhead_start_ms="${_session_end_overhead_start_epoch:0:13}"
+_session_end_overhead_event_id="${_session_end_overhead_source}-$$-${RANDOM}-${EPOCHREALTIME//./}"
+if [[ -f "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh" ]]; then
+  # shellcheck source=/dev/null
+  _session_end_overhead_path="${PATH:-}"
+  PATH="${PATH:-}:/usr/bin:/bin" source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
+  PATH="$_session_end_overhead_path"
+  unset _session_end_overhead_path
+else
+  defense_overhead_write_async() { :; }
+fi
+_session_end_overhead_emit() {
+  local _session_end_overhead_rc="$1"
+  local _session_end_overhead_end_epoch="${EPOCHREALTIME/./}"
+  local _session_end_overhead_end_ms="${_session_end_overhead_end_epoch:0:13}"
+  local _session_end_overhead_wall_ms=$((_session_end_overhead_end_ms - _session_end_overhead_start_ms))
+  local _session_end_overhead_verdict=PASS
+  [[ "$_session_end_overhead_rc" -eq 0 ]] || _session_end_overhead_verdict=FAIL
+  PATH="${PATH:-}:/usr/bin:/bin" defense_overhead_write_async "$_session_end_overhead_source" "${_session_end_overhead_source}_total" \
+    "$_session_end_overhead_wall_ms" "$_session_end_overhead_verdict" "$_session_end_overhead_event_id" '{}' || true
+  return "$_session_end_overhead_rc"
+}
+trap '_session_end_overhead_emit "$?"' EXIT
+
 agent_id="${SESSION_END_AGENT_ID:-}"
 if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
   if [[ -n "${TMUX_PANE:-}" ]]; then
@@ -18,11 +48,6 @@ fi
 if [[ "$agent_id" != "shogun" ]]; then
   exit 0
 fi
-
-_session_end_self="${BASH_SOURCE[0]}"
-[[ "$_session_end_self" != /* ]] && _session_end_self="$PWD/$_session_end_self"
-SCRIPT_DIR="${_session_end_self%/scripts/hooks/session_end_clear_check.sh}"
-unset _session_end_self
 
 lc_file="${SESSION_END_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
 prep_check="${SESSION_END_CLEAR_PREP_CMD:-$SCRIPT_DIR/scripts/clear_prep_check.sh}"
