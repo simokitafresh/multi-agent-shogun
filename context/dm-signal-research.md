@@ -1,6 +1,8 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-04 cmd_4234 reviewed source boundary -->
 <!-- source_commit:bf0ffefc reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
+<!-- dm_signal_research_reflux: fingerprint=f133d86f41e88d570212704bda989b1d4938ffb4a4180540f782dd542516bee6; mode=non-target; evidence_b64=UGhhc2UgMSByZXNlYXJjaCByZWNlaXB0IGlzIHRoZSBwcmltYXJ5IHRhc2sgYXJ0aWZhY3Q7IG5vIHJlc2VhcmNoLWluZGV4IHN5bmNocm9uaXphdGlvbiB3YXMgcmVxdWVzdGVkIG9yIG5lZWRlZCBmb3IgdGhpcyB0YXNrLg== -->
+<!-- dm_signal_research_reflux: fingerprint=0e35a9723d3d06bbc2e1ae3396adede186d1f89a6856aeaf5480515e036f126e; mode=non-target; evidence_b64=UGhhc2UgMCByZXN1bHQgaXMgYSB0YXNrLXNjb3BlZCByZXNlYXJjaCBhcnRpZmFjdDsgbm8gY29udGV4dCBpbmRleCBzeW5jaHJvbml6YXRpb24gaXMgaW4gc2NvcGUu -->
 <!-- dm_signal_research_reflux: fingerprint=7434e8a7485d53d2eafc5d9d8927c496983303838876ef1fe7eeab43c81bcd03; mode=non-target; evidence_b64=44GT44Gu5oiQ5p6c44Gv5oyH5a6aMTJQRuOBruWun+mok+e1kOaenOOBqOWun+ihjOOCueOCr+ODquODl+ODiOOCkuaJgOacieOBmeOCi+OBjOOAgeaXouWtmOeglOeptue0ouW8leODu2NvbnRleHTjgbjjga7lkIzmnJ/jga/mnKx0YXNrIHNjb3Bl5aSW44Gn44GC44KKTWFya2Rvd27mnKzmlofjgavkuIDmrKHntZDmnpzjgpLlrozntZDoqJjpjLLjgZfjgZ8= -->
 <!-- dm_signal_research_reflux: fingerprint=8763e3ea91524702c40e3127b3b0fe82dac7144cb9288479cbc3c0e5f9f35836; mode=non-target; evidence_b64=VGhlIHN1bW1hcnkgd29yZGluZyBub3cgbmFtZXMgYWxsIGZvdXIgbWVhc3VyZWQgbGF5ZXJzOyBubyBicm9hZGVyIHJlc2VhcmNoIGluZGV4IHVwZGF0ZSBpcyBpbiBzY29wZS4= -->
 <!-- dm_signal_research_reflux: fingerprint=986be2db0601e57098ea8b9759afee2ae39f8c23bb428d6c7a1a00fbf9d887de; mode=non-target; evidence_b64=TDMgc291cmNlIGlzIHRoZSBjbWRfMzc3OSBjaGFtcGlvbiBKU09OIGFuZCB0aGUgZ2VuZXJhdGVkIHJobyBhcnRpZmFjdHMgYXJlIHRhc2sgb3V0cHV0czsgbm8gYnJvYWRlciByZXNlYXJjaCBpbmRleCB1cGRhdGUgaXMgaW4gc2NvcGUu -->
@@ -15,8 +17,6 @@
 <!-- dm_signal_research_reflux: fingerprint=9c53e0126cd191e71b969ff021e896e77bc51339fdefb9ae6c9e8ab60aaecca0; mode=non-target; evidence_b64=5Y2Y5LiAQjRk5pW15a++5qSc6Ki85oiQ5p6c44Gn44GC44KK5pei5a2YZG0tc2lnbmFsLXJlc2VhcmNo57Si5byV44GuQjTkuIPmrrXntZDoq5bjgpLlpInmm7TjgZfjgarjgYQ= -->
 <!-- dm_signal_research_reflux: fingerprint=b74346dfbd53f0c303a6ac210ea21ce9caca2d67c091861369ea1889ca4cba64; mode=non-target; evidence_b64=5Y2Y55m6RDDlrp/ooYxwYWNrYWdl44Gn44GC44KKcmVzZWFyY2jntKLlvJXjgbjjga7mgZLkuYXmpoLlv7Xov73liqDjgarjgZc= -->
 <!-- dm_signal_research_reflux: fingerprint=ea0b392a49099f92c4ed8907cf5cc3e8eb438b582a65ab4e27cd29687db9eecf; mode=non-target; evidence_b64=5Y2Y55m6UkPmpJzoqLzmiJDmnpzjgafnoJTnqbbntKLlvJXjga7mgZLkuYXliIbpoZ7lpInmm7TjgarjgZc= -->
-<!-- dm_signal_research_reflux: fingerprint=e86d29a3cde2f5b023ba7c95c224557d621652f4b1763577e7a39fda9d48ca78; mode=non-target; evidence_b64=dGFzay1vd25lZCBvbmUtc2hvdCBCNGQgYXVkaXQ7IG5vIHBlcm1hbmVudCByZXNlYXJjaCBpbmRleCBlbnRyeSByZXF1aXJlZA== -->
-<!-- dm_signal_research_reflux: fingerprint=d4c964dd100c0a14438421b29f503144385e94752763e04913a316aa40f71803; mode=non-target; evidence_b64=5pei5a2YRTHmupblgpnmiJDmnpzjgbjjga5SQ+mZkOWumkQ36Ki86Leh6L+96KiY44Gn5oGS5LmF56CU56m257Si5byV5a++6LGh5aSW -->
 <!-- source_commit:df59f94a reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:5b393e7ccd2160778060cc7d5522b32254d72c2e reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:5b393e7c reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
