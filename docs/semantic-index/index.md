@@ -10011,6 +10011,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608032243_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608050642_hanzo` — [[semantic_causal_automation]] -> `docs/research/hot-script-speedup-round12-asis-tobe-5w1h_20260805.md` |
 | causal | `cmd_reflux_backlink_202608050843_hanzo` — [[semantic_causal_automation]] -> `docs/research/report-write-batch-adoption-codd-spec_20260718.md` |
+| causal | `cmd_reflux_backlink_202608050943_hanzo` — [[semantic_causal_automation]] -> `docs/research/retro-atomic-integration-latency-hanzo.md` |
 | causal | `cmd_reflux_backlink_202608041408_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608050612_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608050642_hanzo` files_modified: [[semantic_causal_automation]] |
