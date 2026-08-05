@@ -578,7 +578,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '2597995703870cece9a3aecc8be36fa2a3eae7176db4632f055cb899d70afb18' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -588,6 +588,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "fix_known=true; self_retro event verified by verify_command rc=0; completion_pipeline candidate is already represented by existing cmd_4123 and finalize-pipeline design while ordered checkpoints remain required; no new implementation or decision_candidate required"
+  action_artifact: "logs/self_retro.jsonl#event_hash=2597995703870cece9a3aecc8be36fa2a3eae7176db4632f055cb899d70afb18;docs/research/cmd_4123_self_retro_signal.md;docs/research/finalize-pipeline-event-driven-asis-tobe-5w1h_20260727.md;context/infrastructure.md"
+  resolved_at: "2026-08-06T01:18:00+09:00"
 - id: INS-20260805-174733758-1135
   ts: "2026-08-05T17:47:33+09:00"
   insight: "semantic_index_update新概念候補: discussion:第九弾の設計書を進捗に合わせて更新せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -961,5 +964,12 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608060052_kagemaru; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608060052_kagemaru"
+  fix_known: false
+  status: pending
+- id: INS-20260806-011633138-00b7
+  ts: "2026-08-06T01:16:33+09:00"
+  insight: "semantic_index_update新概念候補: discussion:【殿ntfy】You received a file screenwriter temp png は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
