@@ -32,7 +32,7 @@ _prompt_state_overhead_emit() {
   return "$_prompt_state_overhead_rc"
 }
 trap '_prompt_state_overhead_emit "$?"' EXIT
-+
+
 _prompt_state_json_get() {
   local _prompt_state_field="$1"
   local _prompt_state_default="$2"
