@@ -1,5 +1,11 @@
 <!-- gist-master: 20bd7f137665f0badedb7241035732c3 commit-reservation-ledger-asis-tobe-5w1h_20260805.md -->
-# commit予約台帳 — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 v1.1
+# commit予約台帳 — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 v1.4
+
+> v1.4(2026-08-05 05:24 将軍セルフレビュー6穴修正): timeout 300s→600s/owned-scope lock役割整理/gc()関数追加/index.lock待機方法定義/Codex統合記載/worktree記述修正
+
+> v1.3(2026-08-05 05:22 家老RC2点反映): RC1 index.lock削除はfuserプロセス生存確認後のみ(無条件削除禁止)。RC2 台帳TSV全書込みにtmp+mv原子性明記
+
+> v1.2(2026-08-05 05:05 軍師REVISEに従い覚醒): 異常終了時の後続解放(trap)、期限切れ予約GC、実行直前のindex整合性確認、timeout超過→失敗証跡(PASS扱い撤回)を追加。実装分解を統合
 
 > v1.1(2026-08-05 04:30 殿指示): §ファイル&フォルダ構造(AsIs/ToBe)、ロック階層図、AsIs vs ToBeフロー比較を追加
 
@@ -28,7 +34,7 @@ multi-agent-shogun/
 │   └── hooks/
 │       └── pre-commit               ← commit時に自動実行(run_tests.sh affected呼出し)
 ├── .karo_worktrees/                 ← 家老が作成するshard用worktree
-│   └── round8-shard-N/              ← 各shardの独立worktree(ただし.git/indexは共有)
+│   └── round8-shard-N/              ← 各shardの独立worktree(独自index。object DB/refsは共有)
 ├── scripts/
 │   ├── ninja_scope_commit.sh        ← 全agentのcommit入口(owned-scope lock+pre-commit)
 │   ├── run_tests.sh                 ← テストランナー(pre-commitから呼出される)
@@ -111,17 +117,40 @@ pre-commitフック内のテスト実行が数分〜15分かかる。その間�
 ```
 Agent: commit したい
   │
-  ├─ Step 1: 予約(瞬時)
-  │    flock → 台帳末尾に1行追記(status=waiting) → flock解放
+  ├─ Step 0: GC(期限切れ予約回収)
+  │    flock → 台帳読込 → timestamp > 600s のエントリを強制削除 → flock解放
+  │    ★台帳書込み原子性: tmp file書込み → mv(rename)で原子的に置換(家老RC2)
+  │    目的: 異常終了で残った孤児予約の回収(全agentが毎回実行=自己修復)
   │    所要: <100ms
+  │
+  ├─ Step 1: 予約(瞬時)
+  │    flock → 同一agent_id既存チェック → 台帳末尾に1行追記(status=waiting) → flock解放
+  │    二重予約拒否: 同一agent_idが既にwaiting/runningなら予約拒否+既存予約の順番を返す
+  │    所要: <100ms
+  │
+  ├─ Step 1.5: trap登録(異常終了時の後続解放)
+  │    trap 'release $agent_id' EXIT INT TERM
+  │    目的: SIGTERM/SIGINT/異常終了でも自分の予約を確実に削除し、後続agentを解放
+  │    ★これがないと異常終了→孤児予約→後続全員が永久待ちの合成デッドロック
   │
   ├─ Step 2: 順番待ち
   │    while true:
   │      flock → 台帳読込 → 自分がwaiting最古か確認 → flock解放
-  │      最古なら → Step 3へ
+  │      最古なら → Step 2.5へ
   │      最古でないなら → sleep 3 → 再確認
-  │      timeout 300s → 予約取消+FAIL
+  │      timeout 600s → 予約取消+FAIL
+  │      ★600s根拠: 最悪ケース=9 agent × 60s(pre-commit timeout) = 540s + マージン60s
   │    所要: 0s(先頭) 〜 N×commit時間(後続)
+  │
+  ├─ Step 2.5: 実行直前のindex整合性確認
+  │    git status --porcelain でindex状態を確認
+  │    .git/index.lock が残存していた場合:
+  │      (a) fuser .git/index.lock でプロセス生存確認
+  │      (b) プロセス生存 → 待機(そのプロセスのcommit完了を待つ)
+  │      (c) プロセス不在(孤児lock) → 削除して続行
+  │      ★無条件削除禁止: 他CLIのcommit中にindex.lockを消すとindex破損(家老RC1)
+  │      ★待機方法: sleep 3 × 最大20回(60s)→超過でFAIL(予約は解放して後続に譲る)
+  │    目的: index破損状態でcommitに突入して失敗→再リトライの無駄を防止
   │
   ├─ Step 3: 実行
   │    flock → status=running に更新 → flock解放
@@ -129,8 +158,9 @@ Agent: commit したい
   │    所要: テスト実行時間
   │
   └─ Step 4: 完了
-       flock → 自分の行を削除(またはstatus=done) → flock解放
+       flock → 自分の行を削除 → flock解放
        後続agentのStep 2が即座に検知して進行
+       ★異常終了時はStep 1.5のtrapが同じrelease()を呼ぶ
 ```
 
 ### ファイル&フォルダ構造(ToBe)
@@ -145,10 +175,12 @@ multi-agent-shogun/
 ├── scripts/
 │   ├── ninja_scope_commit.sh        ← 変更: commit_queue.sh経由に改修
 │   ├── commit_queue.sh              ← ★新設: 予約台帳管理
-│   │   ├── reserve()                   予約追記(flock <100ms)
+│   │   ├── gc()                         期限切れ予約回収(600s超過エントリ強制削除)
+│   │   ├── reserve()                   予約追記(flock <100ms)+同一agent二重予約拒否
 │   │   ├── wait_turn()                 FIFO順番待ち(sleep 3ループ)
+│   │   ├── check_index()               実行直前のindex整合性確認(fuser+孤児lock削除)
 │   │   ├── mark_running()              status更新
-│   │   └── release()                   行削除+後続通知
+│   │   └── release()                   行削除+後続通知(trap EXIT/INT/TERMからも呼出し)
 │   ├── run_tests.sh                 ← 変更: PRECOMMIT=1時にデッドロック源を除外
 │   └── lib/
 │       └── lock_path.sh             ← 変更なし
@@ -157,20 +189,33 @@ multi-agent-shogun/
 │   └── test_commit_queue.bats       ← ★新設: 予約台帳テスト
 └── /tmp/ (ext4)
     ├── shogun_commit_queue.tsv      ← ★新設: 予約台帳(FIFO。flock保護)
-    └── <agent>_lock_<hash>.lock/    ← 変更なし(owned-scope lockは残置)
+    └── <agent>_lock_<hash>.lock/    ← 変更: 二重commit防止はcommit_queue.sh二重予約拒否に移管。
+                                       owned-scope lockはcommit実行ログ/receipt/git-exitの格納ディレクトリとして存続(ロック機能は廃止)
 ```
+
+### Codex CLI統合
+
+Codex CLIもcommit_queue.sh経由でcommitする。Codexのhook(`.codex/hooks.json`)からcommit_queue.shを呼び出す。台帳のagent_idはCodexセッションでは`codex`を使用。予約台帳はCLI種別を区別しないFIFOなので、Claude/Codex混在でも直列化される。
 
 ### ロック階層(ToBe — 2段に簡素化)
 
 ```
 L1: 予約台帳 (/tmp/shogun_commit_queue.tsv)
-    │  flock → 1行write/read → flock解放(<100ms)
-    │  目的: FIFO順序の保証+二重予約拒否
+    │  flock → tmp書込み → mv原子置換 → flock解放(<100ms)
+    │  目的: FIFO順序の保証+二重予約拒否+期限切れGC
+    │  ★原子性: 全書込み(GC/reserve/mark_running/release)はtmp+mvで原子的置換(家老RC2)
     │  ★改善: ロック保持<100ms(AsIsの数分〜34分から99.9%短縮)
+    │  ★安全弁: trap EXIT/INT/TERM → release()(異常終了時の孤児予約回収)
+    │           + Step 0 GC(600s超過エントリ強制削除=自己修復)
+    │
+    ├─ L1.5: index整合性確認(実行直前)
+    │  │  git status --porcelain + .git/index.lock残存チェック
+    │  │  目的: 前回異常終了の残骸を掃除してからcommit実行
     │
     └─ L2: git index.lock (.git/index.lock)
         │  順番が来たagentのみがgit commit実行
         │  pre-commit timeout=60s(AsIs 900s→93%短縮)
+        │  ★timeout超過=FAIL+失敗証跡(PASS扱いにしない)
         │  ★改善: test_ninja_scope_commit.bats除外でデッドロック消滅
         │
         (L3/L4の再帰デッドロックは構造的に不可能)
@@ -204,7 +249,7 @@ Agent C: 予約(<100ms) → #3 → sleep 3 → sleep 3 → ... → 先頭 → gi
 
 予約台帳方式では、ロック保持時間は台帳の1行read/write(<100ms)のみ。git index.lockの保持はStep 3のcommit実行中だけで、その間も他agentは**予約**できる(待つだけ)。
 
-追加改善: pre-commitフックのテスト実行にtimeout 60sを設定(現行900s → 60sに短縮)。超えたらpre-commit PASS扱いとし、CIで完全検証。
+追加改善: pre-commitフックのテスト実行にtimeout 60sを設定(現行900s → 60sに短縮)。超えたら**pre-commit FAIL**とし失敗証跡(`/tmp/precommit_timeout_<agent>_<timestamp>.log`)を残す。commitは中止され、agentは予約を解放して後続に譲る。原因調査はCIログ+失敗証跡で行う。★timeout超過をPASS扱いにしない(軍師REVISE指摘: 無検証commitの本番流入を防止)。
 
 ### 問題3の根治: リトライストーム防止
 
@@ -212,20 +257,26 @@ Agent C: 予約(<100ms) → #3 → sleep 3 → sleep 3 → ... → 先頭 → gi
 
 ## §実装分解
 
-| # | 内容 | 依存 |
-|---|---|---|
-| 1 | `scripts/commit_queue.sh` — 台帳管理(reserve/check/run/release) | なし |
-| 2 | `scripts/ninja_scope_commit.sh` — commit_queue.sh経由に変更 | 1 |
-| 3 | pre-commit hook — test_ninja_scope_commit.bats除外(PRECOMMIT=1) | なし |
-| 4 | テスト — commit_queue.shの予約/順番/timeout/二重予約拒否 | 1 |
+| # | 内容 | 依存 | 軍師REVISE対応 |
+|---|---|---|---|
+| 1 | `scripts/commit_queue.sh` — 台帳管理(reserve/wait_turn/mark_running/release) | なし | — |
+| 1a | └ GC: reserve()冒頭で600s超過エントリ強制削除(自己修復) | 1 | ★期限切れ予約回収 |
+| 1b | └ trap: EXIT/INT/TERM → release()(異常終了時の後続解放) | 1 | ★異常終了時の後続解放 |
+| 1c | └ index整合性確認: 実行直前にgit status + .git/index.lock残存チェック・削除 | 1 | ★実行直前のindex整合性確認 |
+| 2 | `scripts/ninja_scope_commit.sh` — commit_queue.sh経由に変更 | 1 | — |
+| 3 | pre-commit hook — PRECOMMIT=1 export + test_ninja_scope_commit.bats除外 + timeout 60s(超過=FAIL+失敗証跡) | なし | ★再帰経路除外+timeout→失敗証跡 |
+| 4 | テスト — commit_queue.shの予約/順番/timeout/二重予約拒否/GC/trap/index整合性 | 1 | — |
 
 ## §decision ledger
 
 | 項 | 状態 |
 |---|---|
-| 予約台帳方式の導入 | 殿発案2026-08-05 03:56。裁可待ち |
-| pre-commitテスト除外 | 提案(問題1根治)。裁可対象 |
-| pre-commit timeout短縮(900s→60s) | 提案(問題2緩和)。裁可対象 |
+| 予約台帳方式の導入 | 殿発案2026-08-05 03:56。家老LGTM・軍師REVISE→v1.2で全指摘反映。裁可待ち |
+| pre-commitテスト除外(PRECOMMIT=1) | 提案(問題1根治)。軍師「同一契約に束ねよ」→実装分解#3に統合。裁可対象 |
+| pre-commit timeout短縮(900s→60s) | 提案(問題2緩和)。★軍師指摘: 超過時PASS扱い撤回→FAIL+失敗証跡に変更。裁可対象 |
+| 異常終了時の後続解放(trap) | v1.2追加(軍師REVISE)。trap EXIT/INT/TERM→release() |
+| 期限切れ予約GC | v1.2追加(軍師REVISE)。reserve()冒頭で600s超過エントリ強制削除 |
+| 実行直前のindex整合性確認 | v1.2追加(軍師REVISE)。.git/index.lock残存チェック+削除 |
 | 台帳ファイルの配置 | 提案: `/tmp/shogun_commit_queue.tsv`(揮発性・再起動でリセット) |
 
 ## §因果リンク
