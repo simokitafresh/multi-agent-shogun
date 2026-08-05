@@ -3450,7 +3450,8 @@ fi
     [[ "$output" == *"PASS: grace period respected"* ]]
 }
 
-# draft review(配備前レビュー)は対象外
+# test_necessity: completion_notify_gap must exclude English/Japanese draft-review
+# receipts, including whitespace variants, while preserving final-review detection.
 @test "completion_notify_gap: draft review is excluded from detection" {
     run bash -lc '
 set -eo pipefail
@@ -3479,6 +3480,18 @@ messages:
 - content: "cmd_test_gap005 draft review。verdict: APPROVE。6観点OK。hayate配備。"
   from: gunshi
   id: msg_test_gap005
+  read: true
+  timestamp: "$old_ts"
+  type: review_feedback
+- content: "cmd_test_gap005_ja draftレビュー完了。verdict: LGTM。配備可。"
+  from: gunshi
+  id: msg_test_gap005_ja
+  read: true
+  timestamp: "$old_ts"
+  type: review_feedback
+- content: "cmd_test_gap005_space draft  レビュー完了。verdict: PASS。配備可。"
+  from: gunshi
+  id: msg_test_gap005_space
   read: true
   timestamp: "$old_ts"
   type: review_feedback

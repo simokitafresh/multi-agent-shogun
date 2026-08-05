@@ -3039,7 +3039,10 @@ for msg in messages:
     if str(msg.get("type", "")) != "review_feedback":
         continue
     content = str(msg.get("content", ""))
-    if "draft review" in content.lower():
+    # Draft reviews are pre-deployment approvals, not final completion
+    # reviews.  Accept both language forms and optional whitespace so the
+    # detector cannot treat a Japanese draftレビュー receipt as final LGTM.
+    if re.search(r"draft\s*(?:review|レビュー)", content, re.I):
         continue
     m = re.match(r'^(cmd_[A-Za-z0-9_]+)', content)
     if not m:
