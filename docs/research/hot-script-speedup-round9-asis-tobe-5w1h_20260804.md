@@ -1,5 +1,7 @@
 <!-- gist-master: 59a5e79368f385cddfdb0656fd8ca3bd hot-script-speedup-round9-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.5 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.6 【🚀裁可済み・一部CLEAR/保留】
+
+> v1.6(2026-08-05 18:53進捗同期): #0'' common lifecycleは最終修正commit `3d56941d7c8629b6869e0302b90fb8eeba1e64e0`で実Codex SessionStart・直接SessionStart・nested sourceが各1行、duplicate/missing各0、focused 323/323、計装overhead p95=0.018msを成立させGATE CLEAR。第九弾の実装CLEARは1件となった。一方、Codex/git/basicと#2 Track A/Bほか正式FAIL-close 5本は偽CLEARにせず保留し、2026-08-05 18:03将軍下知により戦力を第十・十一弾へ移した。
 
 > v1.5(2026-08-05 17:47進捗同期): #0''実装をcommon lifecycleとCodex/git/basicの2 shardへ配備。commonは3 commit・focused 323/323・単独ledger 8/8まで成立したが、`session_start_inject.sh`がsource-specific抑止markerを未受理で実Codex SessionStartが2行となるため家老RC中。Codex/git/basicは2 commit・focused 128/128を得た一方、同marker依存とp50非悪化未達(+4.120ms)を正しくFAIL-close。#2 queue_waitは独立Track A/Bを完走し、固定cutoffでqueue=2,558・execution=2,490・queue-only=109・execution-only=41・重複0を確定したが、非同期writerの個別欠落原因を台帳だけでは一意化できず両TrackをFAIL-close。実装CLEARはまだ0件であり、偵察CLEARを実装完了へ数えない。
 
@@ -101,11 +103,11 @@
 
 - 弾#1→#2は同一script(heavy_job_admission)ゆえ直列。#3・#4は独立writerで並列可。補欠は条件成立後に殿へ昇格提案
 
-## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-05 17:47家老更新。gate_metrics/report/task/commit一次突合)
+## §2.5 進捗台帳(第七弾§-2.4様式 — 2026-08-05 18:53家老更新。gate_metrics/report/task/commit一次突合)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
-| 0'' | CLIライフサイクルhook層計装 | 🛠️**common shard RC中** / ⚠️**Codex・git・basic shard FAIL-close** | common=`cmd_karo_round9_lane0pp_impl_common_20260805`: commits `f40638966`+`eea1ebcd3`+`8e6527a3c`、8 target、focused 323/323・FAIL0・SKIP0、単独ledger 8/8・overhead p95=0.018ms。ただし`SESSION_START_OVERHEAD_SUPPRESS=1`受理0件で実Codex SessionStartが2行となるためRC。Codex/git/basic=`cmd_karo_round9_lane0pp_impl_codex_git_basic_20260805`: commits `9ec61cb06`+`bf682d194`、focused 128/128・FAIL0・SKIP0。marker依存未解消かつp50差分+4.120msで非悪化未達のため正式FAIL-close。実装GATE CLEAR=0 |
+| 0'' | CLIライフサイクルhook層計装 | ✅**common shard GATE CLEAR** / ⚠️**Codex・git・basic shard FAIL-close・保留** | common=`cmd_karo_round9_lane0pp_impl_common_20260805`: final commit `3d56941d7c8629b6869e0302b90fb8eeba1e64e0`(先行 `f40638966`+`eea1ebcd3`+`8e6527a3c`)、focused 323/323・FAIL0・SKIP0。直接SessionStart=1、実Codex SessionStart=1、nested source=1、duplicate=0、missing=0、overhead p95=0.018ms。`logs/gate_metrics.log` 18:07:26 CLEAR、完了処理済み。Codex/git/basic=`cmd_karo_round9_lane0pp_impl_codex_git_basic_20260805`: commits `9ec61cb06`+`bf682d194`、focused 128/128・FAIL0・SKIP0だがmarker依存未解消かつp50差分+4.120msで正式FAIL-close。実装GATE CLEAR=1 |
 | 1 | `heavy_job_admission:execution` | ✅**偵察GATE CLEAR** | `cmd_karo_round9_lane1_heavy_execution_recon_20260804`: n=2490/zero=1729/nonzero=761/p95=132550ms/p99=733110ms/max=1191000ms/total=66858000ms。p99上位25件をevent_id分類。実装0件 |
 | 3 | `deploy_task:deploy_total` | ✅**偵察GATE CLEAR** | `cmd_karo_round9_lane3_deploy_total_recon_20260804`: n=3930/p50=1815.0ms/p95=49980.4ms/max=991086ms/total=40537853ms。`check_yaml_freshness`結合486件・子179171ms、未計装残差40358682ms。最大子区分`report_publication`=366回/2145960ms |
 | 4 | `cmd_save:save_total`+`checks_main` | ⚠️**偵察FAIL-close** | `cmd_karo_round9_lane4_cmd_save_recon_20260804`: save_total 155件、checks_main 2088件、結合108組。preflight mode metadata 0/155で全件分類不能、task wildcard実行0件、ac_version不一致。偽CLEARにせず計装課題へ還流 |
@@ -114,11 +116,11 @@
 | 補欠B | 新規*_total群 | 🔒計測蓄積待ち | 現行queue task/report/gateなし |
 | 補欠C | 共有lock競合ファミリー | ⏳未配備 | 直近下知の昇格撤回に従い元の条件待ちへ復帰。短期ノイズで追加契約を積まない |
 
-- **第九弾関連GATE CLEAR 5件(不変)**: #0'' Track A/B、#1、#3、再利用gate hotfix。全て偵察または先行gate hotfixであり、是正実装のCLEARではない。
-- **実装進捗**: #0'' commonはRC中、Codex/git/basicはFAIL-close。#1・#3は偵察CLEAR後の実装0件。#2は独立二重偵察まで完走したがidentity不足で実装0件。#4・補欠Aもidentity計装待ち。
+- **第九弾関連GATE CLEAR 6件**: 既存5件(#0'' Track A/B、#1、#3、再利用gate hotfix)に、#0'' common実装CLEAR 1件を追加。実装CLEARは1件、偵察/先行gate CLEARは5件。
+- **実装進捗**: #0'' commonのみ実装GATE CLEAR。Codex/git/basicはFAIL-close。#1・#3は偵察CLEAR後の実装0件。#2は独立二重偵察まで完走したがidentity不足で実装0件。#4・補欠Aもidentity計装待ち。
 - **正式FAIL-close 5本**: #0'' Codex/git/basic 1本、#2 Track A/B 2本、#4 1本、補欠A 1本。いずれも未達をPASSへ丸めず、欠損identityまたは性能非悪化未達を保持した。偽CLEAR 0件。
 - **先行インフラ根治**: `scout_reports`明示再利用hotfixはcommit `c341e923fba7a3ad427f055569c24a015511a889`・focused 9/9・false判断0/7・GATE CLEAR済み。
-- **次レーン順序**: (1)#0'' commonでsource-specific marker受入+実Codex SessionStart rows=1を成立 (2)Codex/git/basicを同一統合HEADで再検証しp50/p95非悪化を満たす (3)#2 queue/execution共通identityを計装して欠落41/109を一意化 (4)#1→#2の是正実装 (5)#3実装 (6)#4 mode metadata、補欠A共通run_id。補欠B/Cは計測条件待ち。
+- **現行方針(2026-08-05 18:03将軍下知)**: 第九弾は#0'' common CLEARをcheckpointとして、正式FAIL-close群を一時保留。独立忍者は第十・十一弾へ移す。再開時の順序は (1)Codex/git/basicを統合HEADで再検証 (2)#2 queue/execution共通identity計装 (3)#1→#2是正 (4)#3実装 (5)#4 mode metadata・補欠A共通run_id。
 - **正式効果**: 全是正弾完了後、修正後1週間ledger累積課税の前週比で確定。現時点は偵察段階ゆえ未確定。
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)

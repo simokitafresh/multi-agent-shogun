@@ -1,5 +1,7 @@
 <!-- gist-master: 98f42e727bea67ad5dd322e6756bc45b hot-script-speedup-round10-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.2
+# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.3 【🚀裁可済み・進行中】
+
+> v1.3(2026-08-05 18:53進捗同期): 2026-08-05 18:03将軍下知で起動。#4 affected_testsは現行ledgerの劣化と親hook↔test timing identity欠落を一次確定し、focused実走のFAILも隠さず正式FAIL-close。#6 deploy_totalは配備案レビューLGTMまで完了したが、既存dirtyな`deploy_task.sh`とのwriter衝突を検知して未配備保留。その他は依存wave待ち。
 
 > v1.2(2026-08-05 02:40 殿裁定): §2.6 checkpoint契約を追加(全弾共通)
 
@@ -7,7 +9,7 @@
 
 > 初版起草(2026-08-04 23:34。殿発案23:29『第十弾は実際に今この瞬間にボトルネックになっている遅いものを改めてやりたい』『トップ7全部をもう一度やるべきだ』『修正後1週間のledger累積課税を前週比で総括は劣化を検知、現在のボトルネックは直近24時間で計測の二段構え』)
 
-> シリーズ: ホットスクリプト集中高速化。第一弾〜第七弾=✅CLOSED / **第八弾**=wave最終checkpoint進行中 / **第九弾**=レーン配備中 / **第十弾=本書** / 第十一弾=8-15位(本書と同時起草)
+> シリーズ: ホットスクリプト集中高速化。第一弾〜第七弾=✅CLOSED / **第八弾**=wave最終checkpoint進行中 / **第九弾**=一部CLEAR・FAIL群保留 / **第十弾=本書(進行中)** / 第十一弾=8-15位(進行中)
 
 ## §-1 スコープと境界(数と原理を先に固定)
 
@@ -90,19 +92,19 @@
 - 弾#1-#3は第八弾wave checkpoint確定後に着手。#5・#7は第九弾是正完了後。#4・#6は独立writer
 - 前弾進行中の標的は前弾クローズを待つ(重複作業回避)。Tier 2で前弾クローズ後も依然TOPなら第十弾で是正開始
 
-## §2.5 進捗台帳(初版 — 未着手)
+## §2.5 進捗台帳(2026-08-05 18:53家老更新)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
 | 1 | refresh_window | ⏳第八弾wave checkpoint待ち | — |
 | 2 | refresh_copy | ⏳第八弾wave checkpoint待ち | — |
 | 3 | refresh_verify | ⏳第八弾wave checkpoint待ち | — |
-| 4 | affected_tests | ⏳着手可(独立writer) | — |
+| 4 | affected_tests | ⚠️**正式FAIL-close** | `cmd_karo_round10_lane4_affected_tests_20260805`: baseline n=1,132/p50=4.82s/p95=336.8s/max=1,334.2s/total=74,925s → current n=1,187/p50=4.85s/p95=342.841s/max=1,975.901s/total=82,794.087s。p95上位60/60にtest set・selection_count・files_selected・call-path属性なし、hook event_idとtest_timing run_idのjoin不能。focusedは6ファイル選択・1 FAIL。コード変更/commitなし、家老ACCEPT・archive済み。次手は親hook event↔test timing identity計装 |
 | 5 | execution | ⏳第九弾#1是正完了待ち | — |
-| 6 | deploy_total | ⏳着手可(独立writer) | — |
+| 6 | deploy_total | ⏸️**配備前保留(writer衝突)** | draft review LGTM済み。ただし`deploy_task.sh`が既存dirty(MM)でlane所有権を確保できず、変更を重ねず未配備。既存owner解放後に再判断 |
 | 7 | queue_wait | ⏳第九弾#2完了待ち | — |
 
-+## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
+## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
 
 第八弾で実証した以下の方式を、本弾の全レーンとwave最終checkpointへ継承する。
 
@@ -140,7 +142,7 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 | 項 | 状態 |
 |---|---|
 | checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
-| 第十弾の起動 | 殿発案2026-08-04 23:29。裁可待ち |
+| 第十弾の起動 | **裁可・起動済み**。2026-08-05 18:03将軍下知で第九弾保留laneの戦力を移し、#4を実走。#6はwriter衝突で配備前保留 |
 | 二段計測の導入 | 殿設計2026-08-04 23:34(Tier 1劣化検知+Tier 2ボトルネック特定)。第十弾から恒久導入。裁可対象 |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 23:32・直近24時間) |
 | 弾数・標的固定 | TOP7。殿裁可で固定 |
