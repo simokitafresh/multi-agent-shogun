@@ -7,6 +7,32 @@ _prompt_state_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_prompt_state_self%/scripts/hooks/prompt_state_inject.sh}"
 unset _prompt_state_self
 
+_prompt_state_overhead_source="prompt_state_inject"
+_prompt_state_overhead_start_epoch="${EPOCHREALTIME/./}"
+_prompt_state_overhead_start_ms="${_prompt_state_overhead_start_epoch:0:13}"
+_prompt_state_overhead_event_id="${_prompt_state_overhead_source}-$$-${RANDOM}-${EPOCHREALTIME//./}"
+if [[ -f "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh" ]]; then
+  # shellcheck source=/dev/null
+  _prompt_state_overhead_path="${PATH:-}"
+  PATH="${PATH:-}:/usr/bin:/bin" source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
+  PATH="$_prompt_state_overhead_path"
+  unset _prompt_state_overhead_path
+else
+  defense_overhead_write_async() { :; }
+fi
+_prompt_state_overhead_emit() {
+  local _prompt_state_overhead_rc="$1"
+  local _prompt_state_overhead_end_epoch="${EPOCHREALTIME/./}"
+  local _prompt_state_overhead_end_ms="${_prompt_state_overhead_end_epoch:0:13}"
+  local _prompt_state_overhead_wall_ms=$((_prompt_state_overhead_end_ms - _prompt_state_overhead_start_ms))
+  local _prompt_state_overhead_verdict=PASS
+  [[ "$_prompt_state_overhead_rc" -eq 0 ]] || _prompt_state_overhead_verdict=FAIL
+  PATH="${PATH:-}:/usr/bin:/bin" defense_overhead_write_async "$_prompt_state_overhead_source" "${_prompt_state_overhead_source}_total" \
+    "$_prompt_state_overhead_wall_ms" "$_prompt_state_overhead_verdict" "$_prompt_state_overhead_event_id" '{}' || true
+  return "$_prompt_state_overhead_rc"
+}
+trap '_prompt_state_overhead_emit "$?"' EXIT
++
 _prompt_state_json_get() {
   local _prompt_state_field="$1"
   local _prompt_state_default="$2"
