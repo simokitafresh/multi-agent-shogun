@@ -1,5 +1,7 @@
 <!-- gist-master: b70512e1263db4a80042acb63c39778c partial-turnover-experiment-asis-tobe-5w1h_20260805.md -->
-# 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.4
+# 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.5
+
+> v1.5(2026-08-05 23:11 軍師draft review反映): 存在しない`PipelineEngine.expand()`参照を除去。本番ticker×weight展開の正本を`backend/app/services/price_ratio_impl.py:1045`の`expand_portfolio_to_tickers()`、独立oracleを`backend/scripts/analysis/monthly_return_oracle.py:51`の`expand_weights()`と明記。read-only直接SQLの許可経路を`/mnt/c/tools/multi-agent-shogun/scripts/db_capability_launcher.py readonly_query`へ固定
 
 > v1.4(2026-08-05 22:40 殿裁定): 現在の実行許可scopeは§2.5で指定した12体のみ。全102体は殿が明示的に追加指示するまで実行禁止。初期実験の結果から全量へ自動遷移せず、指定PFの結果を殿へ報告して次の指示を待つ
 
@@ -284,7 +286,7 @@ FoFのholding_signal(コンポーネントPF UUID)ではなく、展開後のETF
 | 対象PF = 全102体 | 将来候補。**殿が明示的に追加指示するまで実行禁止** |
 | 対象期間 = 全期間 | 提案(パラメータ空間縮小禁止)。裁可対象 |
 | 本番コード変更 | 禁止。実験スクリプトのみ |
-| ticker×weight展開のFoF再帰ロジック | 本番のPipelineEngine.expand()を参照する方式で提案 |
+| ticker×weight展開のFoF再帰ロジック | 本番正本=`backend/app/services/price_ratio_impl.py:1045`の`expand_portfolio_to_tickers()`。独立oracle=`backend/scripts/analysis/monthly_return_oracle.py:51`の`expand_weights()`。`PipelineEngine.expand()`は存在しないため参照禁止 |
 
 ## §6 因果リンク
 
