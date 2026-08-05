@@ -211,6 +211,56 @@ PY
   [ "$output" = "concurrent=PASS rerun=PASS fallback_exhausted=PASS" ]
 }
 
+# test_necessity: 同一portへのプロセス間同時establishがlauncherを1回へ収束し、
+# 片方だけがowned、もう片方がreusedとなるsingle-flight所有境界を守る。
+@test "cross-process establishment launches one session per port" {
+  run env PYTHONPATH="$BATS_TEST_DIRNAME/../../scripts/cdp" python3 - <<'PY'
+import multiprocessing as mp
+import time
+from cdp_session import establish
+
+ready = mp.Value('i', 0)
+launch_count = mp.Value('i', 0)
+start_barrier = mp.Barrier(2)
+
+def alive(_port):
+    return bool(ready.value)
+
+def launcher(_port, _profile):
+    with launch_count.get_lock():
+        launch_count.value += 1
+    ready.value = 1
+    time.sleep(0.25)
+    return 4242
+
+def worker(queue):
+    try:
+        start_barrier.wait(timeout=5)
+        receipt = establish(
+            'inspection', ports=(19992,), startup_timeout=2,
+            alive=alive, launcher=launcher,
+            profile_factory=lambda _: '/tmp/fixture-profile',
+        )
+        queue.put(('ok', receipt['owned']))
+    except Exception as exc:
+        queue.put(('error', type(exc).__name__, str(exc)))
+
+queue = mp.Queue()
+procs = [mp.Process(target=worker, args=(queue,)) for _ in range(2)]
+for process in procs:
+    process.start()
+results = [queue.get(timeout=10) for _ in procs]
+for process in procs:
+    process.join(timeout=3)
+assert launch_count.value == 1, launch_count.value
+assert all(item[0] == 'ok' for item in results), results
+assert sorted(item[1] for item in results) == [False, True], results
+print('concurrent_establish=2 launcher=1 receipts=2 state_destroyed=0')
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "concurrent_establish=2 launcher=1 receipts=2 state_destroyed=0" ]
+}
+
 # test_necessity: HTTPだけ応答する偽healthyを拒否し、WebSocket/CDP応答可能な次portへ有限fallbackする不変量を守る。
 @test "endpoint qualification requires websocket CDP response before fallback selection" {
   run env PYTHONPATH="$BATS_TEST_DIRNAME/../../scripts/cdp" python3 - <<'PY'

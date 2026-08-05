@@ -9,6 +9,8 @@ profile and a finite, caller-visible port list.
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -28,6 +30,7 @@ from cdp_helper import detect_browser, ps_run
 
 ISSUER = "cdp_session_foundation"
 DEFAULT_PORTS = (9222, 9223, 9224)
+LOCK_ROOT = Path(tempfile.gettempdir()) / "cdp-session-locks"
 REQUIRED_RECEIPT_FIELDS = {
     "receipt_id", "issuer", "consumer", "issued_at", "expires_at",
     "endpoint", "chrome_pid", "profile_path", "capabilities",
@@ -92,6 +95,31 @@ def wait_alive(port: int, alive: Callable[[int], bool], timeout: float) -> bool:
     return alive(port)
 
 
+@contextmanager
+def _port_single_flight(port: int):
+    """Serialize launch decisions for one CDP port across processes.
+
+    The lock file is intentionally retained: removing it after unlock would
+    allow a waiting process to open a different inode and bypass the lock.
+    """
+    try:
+        LOCK_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
+        lock_fd = os.open(LOCK_ROOT / f"port-{port}.lock", os.O_CREAT | os.O_RDWR, 0o600)
+    except OSError as exc:
+        raise SessionError(f"cannot create CDP single-flight lock for port {port}") from exc
+    try:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        except OSError as exc:
+            raise SessionError(f"cannot acquire CDP single-flight lock for port {port}") from exc
+        yield
+    finally:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        finally:
+            os.close(lock_fd)
+
+
 def establish(
     consumer: str,
     ports: tuple[int, ...] = DEFAULT_PORTS,
@@ -108,17 +136,22 @@ def establish(
     for port in ports:
         if alive(port):
             return _receipt(receipt_id, consumer, now, ttl, port, None, "", False)
-        # Never launch over an existing but unqualified endpoint.  It is not
-        # ours to alter; continue through the finite fallback list instead.
-        if alive is endpoint_alive and endpoint_present(port):
-            continue
+        with _port_single_flight(port):
+            # The first check is only a fast path.  This recheck is the
+            # authority after waiting for another process's launch decision.
+            if alive(port):
+                return _receipt(receipt_id, consumer, now, ttl, port, None, "", False)
+            # Never launch over an existing but unqualified endpoint.  It is
+            # not ours to alter; continue through the finite fallback list.
+            if alive is endpoint_alive and endpoint_present(port):
+                continue
 
-        profile = (profile_factory or _new_profile)(port)
-        pid = launcher(port, profile)
-        if wait_alive(port, alive, startup_timeout):
-            return _receipt(receipt_id, consumer, now, ttl, port, pid, profile, True)
-        # A failed launch is not authority to terminate an unverified process.
-        # Preserve its profile for diagnosis and continue through the finite list.
+            profile = (profile_factory or _new_profile)(port)
+            pid = launcher(port, profile)
+            if wait_alive(port, alive, startup_timeout):
+                return _receipt(receipt_id, consumer, now, ttl, port, pid, profile, True)
+            # A failed launch is not authority to terminate an unverified
+            # process. Preserve its profile for diagnosis and continue.
     raise SessionError(f"no qualified CDP endpoint in finite ports: {list(ports)}")
 
 
