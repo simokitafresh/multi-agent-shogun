@@ -298,7 +298,10 @@ insights:
   priority: "high"
   source: "cmd_karo_round8_quality_close_20260805"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で第八弾品質checkpointの固定HEAD全量unit receiptと既存統合を確認。新規実修正・decision_candidateは不要で、正式効果は既存設計どおり修正後一週間のledger前週比で別途確定する。"
+  action_artifact: "docs/research/hot-script-speedup-round8-asis-tobe-5w1h_20260804.md; context/semantic-map.md; docs/semantic-index/index.md"
+  resolved_at: "2026-08-06T01:34:22+09:00"
 - id: INS-20260805-152457223-3ac4
   ts: "2026-08-05T15:24:57+09:00"
   insight: "semantic_index_update新概念候補: discussion:第八弾の設計書も更新せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
