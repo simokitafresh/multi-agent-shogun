@@ -1,5 +1,7 @@
 <!-- gist-master: c325edf9169d327b290a38cdf9e0352c hot-script-speedup-round12-asis-tobe-5w1h_20260805.md -->
-# ホットスクリプト集中高速化 第十二弾 — 二段計測16-25位層(cmd_save子区分+配送検証+dashboard+precheck内訳) — AsIs/ToBe 5W1H設計書 v1.2
+# ホットスクリプト集中高速化 第十二弾 — 二段計測16-25位層(cmd_save子区分+配送検証+dashboard+precheck内訳) — AsIs/ToBe 5W1H設計書 v1.3
+
+> v1.3(2026-08-05 20:44 家老差戻し修正): 進捗台帳を1集約行→全10行展開。identifier完全一致+owner path列追加。見出し+残存修正
 
 > v1.2(2026-08-05 20:38 殿指示scope純化): 第10弾v1.7準拠で提案弾台帳に高速化許可owner pathを一次コード突合で確定。列挙外pathの変更を禁止
 
@@ -83,13 +85,22 @@
 - 独立writerの#3・#4は先行着手可。残り8標的は上位弾完了後にTier 2で再計測してから着手判断
 - 上位弾の是正で自動改善された標的はno-changeクローズ
 
-## §2.5 進捗台帳(初版 — 未着手)
+## §2.5 進捗台帳(2026-08-05 20:44 v1.3 全10行展開+identifier完全一致)
 
-| # | 標的 | 状態 | 帰結 |
-|---|---|---|---|
-| 1-10 | 全標的 | ⏳上位弾完了待ち(#3/#4のみ着手可) | — |
+| # | 標的identifier | 高速化許可owner path | 状態 | 帰結(実測生値) |
+|---|---|---|---|---|
+| 1 | `cmd_save:three_layer_memory_ruling_overhead` | `scripts/cmd_save.sh` | ⏳第十一弾#4完了後 | — |
+| 2 | `inbox_write:inbox_write_delivery_verify` | `scripts/inbox_write.sh` | ⏳第十一弾#2完了後 | — |
+| 3 | `report_field_set:commit_hash` | `scripts/report_field_set.sh` | ⏳着手可(独立writer) | — |
+| 4 | `dashboard_update:dashboard_update_total` | `scripts/dashboard_update.sh` | ⏳着手可(独立writer) | — |
+| 5 | `git_pre_commit:self_sync` | `scripts/hooks/git-pre-commit.sh` | ⏳第十弾#4完了後 | — |
+| 6 | `gate_gunshi_report_precheck:full_precheck_memory_search` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳第十一弾#1完了後 | — |
+| 7 | `gate_gunshi_report_precheck:full_precheck_batch_git` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳第十一弾#1完了後 | — |
+| 8 | `report_publish:inbox_write` | `scripts/report_field_set.sh` | ⏳第十一弾#6完了後 | — |
+| 9 | `git_pre_commit:yaml_ast` | `scripts/hooks/git-pre-commit.sh` | ⏳第十弾#4完了後 | — |
+| 10 | `gate_gunshi_report_precheck:full_precheck_sg_pre21` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳第十一弾#1完了後 | — |
 
-+## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
+## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
 
 第八弾で実証した以下の方式を、本弾の全レーンとwave最終checkpointへ継承する。
 
