@@ -1,5 +1,7 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-05 cmd_shogun_commit_reservation_ledger_phase2_20260805 -->
+<!-- last_updated: 2026-08-05 cmd_karo_t5_ac12_consumer_regression_20260805 reviewed source boundary -->
+<!-- source_commit:8b80cb4a4 reason:cmd_karo_t5_ac12_consumer_regression_20260805 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=8b80cb4a4 -->
+<!-- source_commit:77f7e1a77 reason:cmd_karo_t5_ac10_idempotency_root_20260805 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=77f7e1a77 -->
 <!-- source_commit:248ea8d5b reason:cmd_shogun_commit_reservation_ledger_phase2_20260805 evidence:reviewed -->
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->

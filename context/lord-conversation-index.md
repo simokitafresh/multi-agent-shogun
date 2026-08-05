@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-05T16:39:27+09:00 -->
+<!-- generated_at: 2026-08-05T17:42:51+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-05T16:39:27+09:00 | terminal | response | LGTM・家老通知・既読化完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T16:38:38+09:00 | ntfy | outbound | 【家老】cmd_karo_round9_lane2_queue_wait_recon2_20260805 初回配備開始 (title=(untitled), ninja=kotaro)
-- 2026-08-05T16:38:14+09:00 | terminal | response | FAIL・家老通知・既読化完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T16:26:14+09:00 | terminal | response | 未読なし。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T16:24:38+09:00 | terminal | response | 第九弾0ppレーンの2件。暗黒課税(defense_overhead)計装タスク。 **共通パターン**: 既存async fail-open writerでhook入口を計装。AC1=前提再計数(不一致→BLOCK)、AC2=計装実装、…
-- 2026-08-05T16:23:49+09:00 | ntfy | outbound | 【家老】cmd_karo_round9_lane2_queue_wait_recon_20260805 初回配備開始 (title=(untitled), ninja=kagemaru)
-- 2026-08-05T16:19:21+09:00 | terminal | response | [MEM: n/a — 段階的リバランス実験設計書v1.0作成+gist同期完了] 段階的リバランス(Partial Turnover)実験設計書v1.0完了。 **正本**: `docs/research/partial-turnove…
-- 2026-08-05T16:16:13+09:00 | terminal | inbound | あっている
-- 2026-08-05T16:15:16+09:00 | terminal | inbound | hot-script-speedup-round9-asis-tobe-5w1h_20260804.mdをレーン形式で開始せよ
-- 2026-08-05T16:14:26+09:00 | terminal | response | [MEM: semantic concept=rebalancer_app "リバランスにはmonthly,bimonthly,quarterlyの3種類ある"] [MEM: memory_db ts=2026-08-03 "四半期リバラ…
+- 2026-08-05T17:42:50+09:00 | terminal | response | LGTM完了。bundle生成・家老通知・既読化済み。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-05T17:41:06+09:00 | terminal | response | 修正後: status=completed, verdict=PASS, commit ea45534b。**LGTM。**
+- 2026-08-05T17:34:56+09:00 | terminal | response | [MEM: n/a — CDP設計書v2.7 CLOSED更新+gist同期完了] CDP設計書v2.7 **CLOSED**。 - タイトル: 【CLOSED — T5検収 12/12 全PASS・工程1-4全GATE CLEAR】 -…
+- 2026-08-05T17:33:50+09:00 | terminal | response | FAIL・家老通知・既読化完了。idle待機。
+- 2026-08-05T17:32:32+09:00 | terminal | inbound | cdp-skill-flow-inventory-20260802.mdの進捗を確認しアップデートせよ。完了していればタイトルも分かりやすくせよ
+- 2026-08-05T17:26:32+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率98% 連勝22
+- 2026-08-05T17:25:42+09:00 | terminal | response | GATE CLEAR: T5 AC12 consumer regression完了。既読化済み。idle待機。
+- 2026-08-05T17:24:17+09:00 | terminal | response | [MEM: n/a — inbox既読化。軍師self-retro insight通知(情報のみ)] 処理済み。陣形図で影丸がT5 AC10冪等性(cmd_karo_t5_ac10_idempotency_root)にidle状態で確認で…
+- 2026-08-05T17:23:15+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率98% 連勝21
+- 2026-08-05T17:22:52+09:00 | terminal | response | 未読なし。inbox_unread=0と一致。idle待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
-- [MEM: semantic concept=rebalancer_app "リバランスにはmonthly,bimonthly,quarterlyの3種類ある"] [MEM: memory_db ts=2026-08-03 "四半期リバランスやbimonthlyリバランスだと切…
-- [MEM: n/a — 設計書v2.6アップデート+gist同期完了。T5検収進捗の一次確認結果] 殿、CDP設計書v2.6にアップデート+gist同期完了。 **T5検収進捗**: - **10/12 PASS**: contract(AC3/AC7) CLEAR、auth(…
-- [MEM: n/a — Phase2 軍師draftレビューLGTM確認。影丸着手中] Phase2: 軍師draftレビューLGTM、影丸着手中。完了commitを待つ。 [meta] stop_reason=end_turn
-- [MEM: n/a — Phase2配備確認。影丸に正式配備済み、作業中] Phase2は影丸に配備済み・作業中。陣形図でも`kagemaru|cmd_shogun_commit_reservation_ledger_phase2_20260805_exact|assigned…
-- 影丸2回目BLOCK確認・既読化済み。idle待機。 [meta] stop_reason=end_turn
-- 影丸Phase1報告gate FAIL(scope外+LG051)確認・既読化済み。忍者が自力修正する。idle待機。 [meta] stop_reason=end_turn
-- [MEM: n/a — commitプロセス完了確認。三層記憶参照不要] 設計書commit成功。`eeb5bdc24fcdd0d7441bdc310b56bf63491f62e8`。pre-commitテスト不要(docsのみ)で15秒完了。 本セッションの全commit完了…
-- [MEM: n/a — commit予約台帳経由でバックグラウンドcommit投入。影丸のrunning完了後にFIFO順で自動実行される] 設計書commitをバックグラウンドで予約投入した。影丸のcommit完了後に自動で実行される。予約台帳が直列化を処理するので待機不要。…
+- [MEM: n/a — inbox既読化。軍師self-retro insight通知(情報のみ)] 処理済み。陣形図で影丸がT5 AC10冪等性(cmd_karo_t5_ac10_idempotency_root)にidle状態で確認できる。疾風はround9 lane0pp…
+- AC10 GATE CLEAR確認 + T5 AC12 LGTM完了。bundle生成・家老通知・既読化済み。idle待機。
+- 半蔵3回目BLOCK確認・既読化済み。idle待機。 [meta] stop_reason=end_turn
+- 半蔵2回目BLOCK確認・既読化済み。idle待機。
+- [MEM: n/a — 家老に3件並列即時配備ナッジ送信完了] 家老に3件並列配備をナッジ済み。idle忍者(影丸/半蔵/小太郎/飛猿)がいるので即時着手可能。家老の配備確認を待つ。 [meta] stop_reason=end_turn
+- 家老から敵対補足。**重要**: p50差分+4.120msなのに非悪化=yesの整合性と、codex_session_startのDEFENSE_OVERHEAD_ENABLED=0が子伝播でnested別source計装を抑止しないかの確認依頼。 既にbundleを生成して…
+- 半蔵3回目LG051確認・既読化済み。idle待機。 [meta] stop_reason=end_turn
+- 半蔵LG051 BLOCK確認・既読化済み。idle待機。 [meta] stop_reason=end_turn
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
