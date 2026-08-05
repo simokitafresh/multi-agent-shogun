@@ -556,6 +556,19 @@ def _sqlite_table_columns(conn, table_name: str) -> list[str]:
     return [row[1] for row in conn.execute(f"PRAGMA table_info({table_name})")]
 
 
+def _enable_prefix_scan_mmap(conn: sqlite3.Connection, schema: str) -> None:
+    """Use a bounded read mapping for the cross-database prefix comparison."""
+    try:
+        page_size = int(conn.execute(f"PRAGMA {schema}.page_size").fetchone()[0])
+        page_count = int(conn.execute(f"PRAGMA {schema}.page_count").fetchone()[0])
+        mapping_bytes = min(1 << 30, max(page_size, page_size * page_count))
+        conn.execute(f"PRAGMA {schema}.mmap_size={mapping_bytes}")
+    except (TypeError, ValueError, sqlite3.DatabaseError):
+        # mmap is an optimization only; the exact SQL comparison remains the
+        # correctness boundary when the platform declines the mapping.
+        return
+
+
 def _events_prefix_matches(
     source_conn: sqlite3.Connection,
     published_path: str,
@@ -575,6 +588,8 @@ def _events_prefix_matches(
         f'source."{column}" IS NOT cached."{column}"' for column in event_columns
     )
     source_conn.execute("ATTACH DATABASE ? AS cached_prefix", (published_path,))
+    _enable_prefix_scan_mmap(source_conn, "main")
+    _enable_prefix_scan_mmap(source_conn, "cached_prefix")
     mismatch = source_conn.execute(
         f"""
         SELECT 1
