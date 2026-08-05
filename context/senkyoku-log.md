@@ -1,6 +1,12 @@
 # 戦局日誌 (Campaign Log)
 <!-- last_updated: 2026-08-03 karo_strong_new_game_dm_monthly_boundary -->
 
+## 2026-08-05
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_shogun_commit_reservation_ledger_phase2_20260805 | 既存scope commit経路を予約台帳へ統合 | 旧owned-scope lockを除去し、commit_queue wrapper経由へ統合。結合8/8、affected receipt 41/41、FAIL0/SKIP0、commit `248ea8d5b13731e8c24ebc487e592d01fb40d0d0` | [[owned_scope_lock残存]] -> [[commit_queue全入口統合]] -> [[scope commit FIFO]] |
+
 ## 2026-08-03
 
 | cmd/action | 意図 | 結果 | 因果 |
