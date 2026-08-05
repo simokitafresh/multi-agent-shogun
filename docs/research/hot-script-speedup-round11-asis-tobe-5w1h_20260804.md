@@ -1,7 +1,7 @@
 <!-- gist-master: 4571e36dca63e089831abaa8b1d6c275 hot-script-speedup-round11-asis-tobe-5w1h_20260804.md -->
 # ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.2 【🚀裁可済み・進行中】
 
-> v1.2(2026-08-05 18:53進捗同期): 2026-08-05 18:03将軍下知で起動。#2 inbox_write_totalはfocused 20/20とp50/p95改善を得たが、最終scope commitが既存のscope外テストFAILに阻まれ正式FAIL-close。#3 singleflight_holdはfocused 10/10・full 65/65、joiner p50/p95 641/672ms→414/421msまで成立したが、31 affected testsのpre-commit 60秒timeoutでcommit未成立となりFAIL-close報告を提出。両laneとも未コミット変更を保全し、完了へ丸めない。
+> v1.2(2026-08-05 18:53進捗同期): 2026-08-05 18:03将軍下知で起動。#2 inbox_write_totalはfocused 20/20とp50/p95改善を得たが、最終scope commitが既存のscope外テストFAILに阻まれ正式FAIL-close。#3 singleflight_holdはfocused 10/10・full 65/65、joiner p50/p95 641/672ms→414/421msまで成立したが、31 affected testsのpre-commit 60秒timeoutでcommit未成立となり軍師レビューFAILで正式FAIL-close。両laneとも未コミット変更を保全し、完了へ丸めない。
 
 > v1.1(2026-08-05 02:40 殿裁定): §2.6 checkpoint契約を追加(全弾共通)
 
@@ -89,7 +89,7 @@
 |---|---|---|---|
 | 1 | full_precheck | ⏳着手可(第九弾補欠A知見あり) | — |
 | 2 | inbox_write_total | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane2_inbox_write_total_20260805`: baseline n=9,197/p50=330ms/p95=6,100ms/max=96,200ms/total=18,822s → current n=9,758/p50=327.5ms/p95=6,134ms/max=181,570ms/total=20,376.43s。live resolver再利用で重複tmux scan/pane lookupを除去し、focused pre-send/persist/total=20/20/20、p50/p95=244/391ms、FAIL0/SKIP0。ただしscope-wide 38 testsは既存の`test_ninja_monitor_stall.bats`・`test_deploy_task.bats`失敗でAC4未達、commitなし。家老ACCEPT・archive済み |
-| 3 | singleflight_hold | ⚠️**FAIL-close報告提出・レビュー待ち** | `cmd_karo_round11_lane3_singleflight_hold_20260805`: AC1-3 yes、AC4/commit no。現ledger n=8,633/p50=400ms/p95=11,590ms/max=61,250ms/total=17,830.36s、focused 10/10・full 65/65 PASS、joiner p50/p95 641/672ms→414/421ms。変更は`gate_report_format.sh`+contract testに保全中。commit contractを22 pathへ同期した後もaffected 31 testsが60秒上限でPRECOMMIT_TIMEOUT、commit hashなし |
+| 3 | singleflight_hold | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane3_singleflight_hold_20260805`: AC1-3 yes、AC4/commit no、軍師レビューverdict=FAIL。現ledger n=8,633/p50=400ms/p95=11,590ms/max=61,250ms/total=17,830.36s、focused 10/10・full 65/65 PASS、joiner p50/p95 641/672ms→414/421ms。変更は`gate_report_format.sh`+contract testに保全中。commit contractを22 pathへ同期した後もaffected 31 testsが60秒上限でPRECOMMIT_TIMEOUT、commit hashなし |
 | 4 | checks_main | ⏳着手可(第九弾#4知見あり) | — |
 | 5 | full_precheck_body_rest | ⏳#1完了後(同族writer直列) | — |
 | 6 | publish_total | ⏳着手可(独立writer) | — |
@@ -134,7 +134,7 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 | 項 | 状態 |
 |---|---|
 | checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
-| 第十一弾の起動 | **裁可・起動済み**。2026-08-05 18:03将軍下知で#2/#3を並列配備。#2正式FAIL-close、#3はFAIL-close報告提出・レビュー待ち |
+| 第十一弾の起動 | **裁可・起動済み**。2026-08-05 18:03将軍下知で#2/#3を並列配備し、双方とも正式FAIL-close |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 23:32・直近24時間・第十弾と同一snapshot) |
 | 弾数・標的固定 | 8-15位の8標的。殿裁可で固定 |
 | 同族writer直列条件 | #1→#5(precheck系)、#4→#8(cmd_save系)。裁可対象 |
