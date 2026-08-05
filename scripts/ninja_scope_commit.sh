@@ -10,6 +10,25 @@ set -euo pipefail
 # (BASH_SOURCEが相対pathの場合、後のcdでPWD基準の解決が狂うため)。
 _ninja_scope_commit_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_ninja_scope_commit_self" = /* ]] || _ninja_scope_commit_self="$PWD/$_ninja_scope_commit_self"
+_ninja_scope_commit_script_dir="$(cd "$(dirname "$_ninja_scope_commit_self")" && pwd)"
+# Reserve the shared commit lane before this helper creates its private index.
+# The wrapper owns the EXIT/INT/TERM release trap, so every early return in the
+# large scoped-commit state machine releases the reservation without having to
+# duplicate cleanup calls at each existing exit point.
+if [[ -z "${COMMIT_QUEUE_ACTIVE:-}" && -x "$_ninja_scope_commit_script_dir/commit_queue.sh" ]]; then
+    _ninja_scope_commit_repo="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+    if [[ -n "$_ninja_scope_commit_repo" ]]; then
+        _ninja_scope_commit_agent="${COMMIT_QUEUE_AGENT_ID:-${AGENT_ID:-}}"
+        if [[ -z "$_ninja_scope_commit_agent" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+            _ninja_scope_commit_agent="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+        fi
+        _ninja_scope_commit_agent="${_ninja_scope_commit_agent:-${USER:-ninja}}"
+        exec env COMMIT_QUEUE_ACTIVE=1 COMMIT_QUEUE_AGENT_ID="$_ninja_scope_commit_agent" \
+            bash "$_ninja_scope_commit_script_dir/commit_queue.sh" run \
+            --agent "$_ninja_scope_commit_agent" --repo "$_ninja_scope_commit_repo" -- \
+            bash "$_ninja_scope_commit_self" "$@"
+    fi
+fi
 if [[ -z "${NINJA_SCOPE_COMMIT_SNAPSHOT_ACTIVE:-}" ]]; then
     _ninja_scope_commit_original_dir="$(cd "$(dirname "$_ninja_scope_commit_self")" && pwd)"
     _ninja_scope_commit_snapshot="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-commit.XXXXXX")"

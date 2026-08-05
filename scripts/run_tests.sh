@@ -675,6 +675,23 @@ aggregate_bats_outputs() {
 
 run_bats_files_parallel() {
     local -a files=("$@")
+    if [[ "${PRECOMMIT:-0}" == "1" ]]; then
+        local -a precommit_files=()
+        local precommit_file
+        for precommit_file in "${files[@]}"; do
+            if [[ "${precommit_file##*/}" == "test_ninja_scope_commit.bats" ]]; then
+                printf 'PRECOMMIT_EXCLUDED_SELF_TEST path=%s reason=commit_queue_recursion\n' \
+                    "$precommit_file" >&2
+                continue
+            fi
+            precommit_files+=("$precommit_file")
+        done
+        files=("${precommit_files[@]}")
+        if [ "${#files[@]}" -eq 0 ]; then
+            printf 'PRECOMMIT_TEST_SELECTION files=0 excluded_self_test=1\n' >&2
+            return 0
+        fi
+    fi
     if [[ -n "${RUN_TESTS_SELECTED_PATHS_FILE:-}" ]]; then
         if [[ "${RUN_TESTS_PRESERVE_SELECTED_PATHS:-0}" != "1" ]]; then
             : > "$RUN_TESTS_SELECTED_PATHS_FILE"

@@ -621,6 +621,39 @@ resolve_precommit_task_file() {
     printf '%s\n' "$resolved"
 }
 
+# Phase1 commit reservation contract: pre-commit tests are bounded and marked
+# explicitly so run_tests can remove the recursive scoped-commit contract test.
+# A timeout is a hard failure, with a durable local evidence path for diagnosis.
+run_precommit_tests_bounded() {
+    local run_tests="$1" mode="$2"; shift 2
+    local timeout_seconds="${PRECOMMIT_TEST_TIMEOUT_SECONDS:-60}"
+    local agent timestamp evidence timeout_marker rc
+    [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]] || {
+        echo "BLOCK: PRECOMMIT_TEST_TIMEOUT_SECONDS must be a positive integer" >&2
+        return 2
+    }
+    agent="${TMUX_AGENT_ID:-${AGENT_ID:-${USER:-unknown}}}"
+    agent="${agent//[^[:alnum:]_.-]/_}"
+    timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+    evidence="/tmp/precommit_timeout_${agent}_${timestamp}.log"
+    set +e
+    env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE -u GIT_OBJECT_DIRECTORY -u GIT_COMMON_DIR \
+        PRECOMMIT=1 timeout --signal=TERM --kill-after=5 "$timeout_seconds" \
+        bash "$run_tests" "$mode" "$@" >"$evidence" 2>&1
+    rc=$?
+    set -e
+    cat "$evidence" >&2
+    if [[ "$rc" -eq 124 || "$rc" -eq 137 ]]; then
+        timeout_marker="PRECOMMIT_TIMEOUT result=FAIL timeout_seconds=$timeout_seconds evidence=$evidence"
+        printf '%s\n' "$timeout_marker" >>"$evidence"
+        printf '%s\n' "$timeout_marker" >&2
+        echo "BLOCK: pre-commit test timeout; evidence=$evidence" >&2
+        return "$rc"
+    fi
+    rm -f -- "$evidence"
+    return "$rc"
+}
+
 # AC1: resolve staged paths (plus AC2's reverse-dependency expansion) to
 # affected tests and run them, reusing scripts/run_tests.sh's existing
 # `affected` mode (which itself delegates to scripts/test_select.sh) instead
@@ -641,8 +674,7 @@ check_precommit_affected_tests() {
             echo "[pre-commit] affected-test exact PASS receipt reused; test process launches=0" >&2
             return 0
         fi
-        if ! env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE -u GIT_OBJECT_DIRECTORY -u GIT_COMMON_DIR \
-                bash "$run_tests" task "$task_file" >&2; then
+        if ! run_precommit_tests_bounded "$run_tests" task "$task_file"; then
             echo "[pre-commit] BLOCK(GA-PRECOMMIT1): task-contract tests failed." >&2
             return 1
         fi
@@ -712,8 +744,7 @@ PY
     # plumbing env for the child process so nested test repos resolve purely
     # from their own `-C <path>`, not from this commit's private index.
     echo "[pre-commit] affected-test mode=affected files_selected=${#target_files[@]}" >&2
-    if ! env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE -u GIT_OBJECT_DIRECTORY -u GIT_COMMON_DIR \
-            bash "$run_tests" affected "${target_files[@]}" >&2; then
+    if ! run_precommit_tests_bounded "$run_tests" affected "${target_files[@]}"; then
         echo "BLOCK(GA-PRECOMMIT1): staged changes broke an affected test (directly, or via a scripts/lib/ reverse dependency)." >&2
         echo "  action: fix the failing test and re-commit." >&2
         echo "  emergency: SHOGUN_PRECOMMIT_AFFECTED_BYPASS='<reason>' git commit ... (logged to logs/precommit_affected_bypass.jsonl)" >&2
