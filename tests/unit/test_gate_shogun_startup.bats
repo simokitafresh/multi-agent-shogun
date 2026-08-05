@@ -1,6 +1,30 @@
 #!/usr/bin/env bats
 # test_necessity: 最新Q6時系列単調性（最新の実回答だけを判定し、弱い/空targetから旧回答へfallbackしない）を守る。
 
+setup_file() {
+    export PROJECT_ROOT
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export FUNCTION_ROOT="$BATS_FILE_TMPDIR/q6-functions"
+    mkdir -p "$FUNCTION_ROOT"
+
+    # 本体の埋込みPythonはファイル全体で不変なので、各@testではなく1回だけ抽出する。
+    awk '
+        /_deepdive_combined=\$\(python3 - / {inside=1; next}
+        inside && /^PY$/ {exit}
+        inside {print}
+    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$FUNCTION_ROOT/q6_detector.py"
+    awk '
+        /_q6_target_proof=\$\(python3 - / {inside=1; next}
+        inside && /^PY$/ {exit}
+        inside {print}
+    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$FUNCTION_ROOT/q6_proof.py"
+    awk '
+        /_deferred_dup_status=\$\(python3 - / {inside=1; next}
+        inside && /^PY$/ {exit}
+        inside {print}
+    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$FUNCTION_ROOT/escalation_dedupe.py"
+}
+
 setup() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -9,27 +33,10 @@ setup() {
     printf '# Phase fixture\n' > "$TEST_ROOT/deepdive-a.md"
     printf '# Phase fixture\n' > "$TEST_ROOT/deepdive-b.md"
     printf '%s\n' '{"direction":"response","agent":"shogun","summary":"Q6回答: 洗脳#5を確認。自動化ターゲット: missing/old-proof.yaml に old_missing_token を実装済み。"}' > "$TEST_ROOT/queue/lord.jsonl"
-
-    # 本体の埋込みPythonをそのまま実行し、テスト側への判定ロジック複製を避ける。
-    awk '
-        /_deepdive_combined=\$\(python3 - / {inside=1; next}
-        inside && /^PY$/ {exit}
-        inside {print}
-    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$TEST_ROOT/q6_detector.py"
-    awk '
-        /_q6_target_proof=\$\(python3 - / {inside=1; next}
-        inside && /^PY$/ {exit}
-        inside {print}
-    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$TEST_ROOT/q6_proof.py"
-    awk '
-        /_deferred_dup_status=\$\(python3 - / {inside=1; next}
-        inside && /^PY$/ {exit}
-        inside {print}
-    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$TEST_ROOT/escalation_dedupe.py"
 }
 
 run_escalation_dedupe() {
-    run python3 "$TEST_ROOT/escalation_dedupe.py" "$TEST_ROOT/queue/karo.yaml" "$1"
+    run python3 "$FUNCTION_ROOT/escalation_dedupe.py" "$TEST_ROOT/queue/karo.yaml" "$1"
 }
 
 # test_necessity: escalationはread状態に依存せず意味キーをbounded cooldown中だけ重複抑制し、新規キーと期限後の再通知を失わない不変量を守る。
@@ -92,7 +99,7 @@ EOF
 }
 
 run_detector() {
-    run python3 "$TEST_ROOT/q6_detector.py" \
+    run python3 "$FUNCTION_ROOT/q6_detector.py" \
         "$TEST_ROOT/deepdive-a.md" "$TEST_ROOT/deepdive-b.md" \
         "$TEST_ROOT/queue/lord.jsonl" "$TEST_ROOT/queue/bulletin.yaml"
 }
@@ -121,7 +128,7 @@ EOF
     [[ "$output" == *$'TARGET\tprojects/infra/lessons_shogun.yaml に q6_followup_proof_token'* ]]
     [[ "$output" != *$'TARGET\tmissing/old-proof.yaml'* ]]
 
-    run python3 "$TEST_ROOT/q6_proof.py" "$TEST_ROOT" \
+    run python3 "$FUNCTION_ROOT/q6_proof.py" "$TEST_ROOT" \
         'projects/infra/lessons_shogun.yaml に q6_followup_proof_token を実装済み。origin接続済み。'
     [ "$status" -eq 0 ]
     [[ "$output" == *$'OK\tprojects/infra/lessons_shogun.yaml: q6_followup_proof_token'* ]]
