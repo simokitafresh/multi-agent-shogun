@@ -1,5 +1,7 @@
 <!-- gist-master: 98f42e727bea67ad5dd322e6756bc45b hot-script-speedup-round10-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.5 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.6 【🚀裁可済み・進行中】
+
+> v1.6(2026-08-05 20:16再開): #1 refresh_window偵察 `cmd_karo_round10_lane1_refresh_window_recon_20260805` を配備。read-onlyで現ledger再計数→p95以上の発火条件・call path・phase全件分類→最大寄与または追加identity契約を一意化する。nudge到達・SessionStart・作業開始をcapture-paneで一次確認し、軍師draftレビューもLGTM。#2/#3は同一writerのため#1固定HEAD後まで直列待ちを維持する。
 
 > v1.5(2026-08-05 19:05依存訂正): v1.4まで第八弾#1-#3をwave checkpoint待ちとしたのは誤り。第八弾v1.6は2026-08-05 15:25に固定HEAD `5aad3a61ecdd826a10271e296b3c8ed14b3cbec7`、214/214ファイル、3,122/3,122 PASS、FAIL0、SKIP0、`complete=1`、`full_scope=true`で実装・品質checkpoint CLOSE済み。よって第十弾#1を即着手可へ解除し、同一writer `gate_three_layer_health.sh` のため#1→#2→#3直列とする。前弾依存待ちは第九弾に依存する#5/#7の2件だけへ訂正した。
 
@@ -96,11 +98,11 @@
 - 第八弾wave checkpointは完了済み。refresh三標的は同一writer `gate_three_layer_health.sh` のため#1→#2→#3を直列実施する。#5・#7は第九弾該当是正後。#4・#6は独立writer
 - 第八弾完了後もrefresh三標的はTier 2で依然TOPのため、第十弾で再攻撃する。前弾待ちを理由に停止しない
 
-## §2.5 進捗台帳(2026-08-05 19:05家老訂正)
+## §2.5 進捗台帳(2026-08-05 20:16家老更新)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
-| 1 | refresh_window | ▶️**即着手可** | 第八弾v1.6の品質checkpoint CLOSEを一次確認。直近24h Tier 2首位(total 245,481s)として再攻撃を開始できる |
+| 1 | refresh_window | 🛠️**偵察配備済み・実行中** | `cmd_karo_round10_lane1_refresh_window_recon_20260805`。第八弾v1.6 CLOSEを前提に、現ledger再計数とp95以上の全件分類を開始。20:16 nudge到達・SessionStart・作業開始を一次確認。軍師draftレビューLGTM |
 | 2 | refresh_copy | ⏳**#1完了後(同一writer直列)** | 第八弾依存は解消済み。`gate_three_layer_health.sh`のwriter競合を避け、#1固定HEAD後に着手 |
 | 3 | refresh_verify | ⏳**#2完了後(同一writer直列)** | 第八弾依存は解消済み。#2固定HEAD後に着手 |
 | 4 | affected_tests | ⚠️**正式FAIL-close** | `cmd_karo_round10_lane4_affected_tests_20260805`: baseline n=1,132/p50=4.82s/p95=336.8s/max=1,334.2s/total=74,925s → current n=1,187/p50=4.85s/p95=342.841s/max=1,975.901s/total=82,794.087s。p95上位60/60にtest set・selection_count・files_selected・call-path属性なし、hook event_idとtest_timing run_idのjoin不能。focusedは6ファイル選択・1 FAIL。コード変更/commitなし、家老ACCEPT・archive済み。次手は親hook event↔test timing identity計装 |
@@ -108,7 +110,7 @@
 | 6 | deploy_total | ⏸️**配備前保留(writer衝突)** | draft review LGTM済み。ただし`deploy_task.sh`が既存dirty(MM)でlane所有権を確保できず、変更を重ねず未配備。既存owner解放後に再判断 |
 | 7 | queue_wait | ⏳第九弾#2完了待ち | — |
 
-- **進捗総括(7標的母数)**: 実走済みは#4の1/7で、その帰結が正式FAIL-close 1/7。残る6件は、即着手可1/7(#1)、同一writer直列待ち2/7(#2/#3)、配備前保留1/7(#6)、第九弾依存待ち2/7(#5/#7)。実装GATE CLEAR 0/7、第八弾依存待ち0件。
+- **進捗総括(7標的母数)**: 実走済み#4=1/7(正式FAIL-close)、実行中#1=1/7、同一writer直列待ち#2/#3=2/7、配備前保留#6=1/7、第九弾依存待ち#5/#7=2/7。実装GATE CLEAR 0/7、第八弾依存待ち0件。
 - **確定した次手**: (1)#1 refresh_window着手→固定HEAD (2)#2 refresh_copy→固定HEAD (3)#3 refresh_verify (4)#4へselection manifest hash+親precommit event↔test timing run_idの共通identityを追加して再実走 (5)`deploy_task.sh`既存owner解放後に#6配備 (6)第九弾#1/#2是正確定後に#5/#7。
 - **完了条件**: 7標的を全てGATE CLEARまたは測定可能なno-changeで閉じ、§2.6の固定HEAD分割checkpointをFAIL0・SKIP0・duplicate0・missing0で通過後、Tier 1前週比とTier 2直近24h序列を再計測してCLOSEする。現時点の終了目処は#1→#2→#3直列、#4 identity、#6 owner、第九弾#5/#7依存の解消順で規定する。
 
@@ -150,7 +152,7 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 | 項 | 状態 |
 |---|---|
 | checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
-| 第十弾の起動 | **裁可・起動済み**。2026-08-05 18:03将軍下知で第九弾保留laneの戦力を移し、#4を実走。#6はwriter衝突で配備前保留 |
+| 第十弾の起動 | **裁可・起動済み**。#4正式FAIL-close後、2026-08-05 20:16に#1 refresh_window偵察を配備・作業開始一次確認。#6はwriter衝突で配備前保留 |
 | 二段計測の導入 | **確定**。殿設計2026-08-04 23:34(Tier 1劣化検知+Tier 2ボトルネック特定)を第十弾から恒久導入 |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 23:32・直近24時間) |
 | 弾数・標的固定 | **確定**。TOP7を母数とし、途中FAIL/保留でも標的を削らない |
