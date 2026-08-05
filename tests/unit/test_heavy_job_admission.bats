@@ -544,8 +544,9 @@ print('ok')
         bash "$WRAPPER" -- bash -c "echo B-start \$(date +%s.%N) >> '$OUT'; touch '$TMP/b_started'"
     ) &
     pid_b=$!
-    # Bがlock待機へ入る猶予を与え、A解放前には開始できないことを直接確認する。
-    sleep 0.05
+    # 固定sleepで「Bが待機へ入った」と推測せず、待機票を一次観測してから
+    # A解放前には開始できないことを直接確認する。
+    _wait_for_waiter_count 1
     [ ! -f "$TMP/b_started" ]
     touch "$release_marker"
     wait "$pid_a" "$pid_b"
@@ -586,9 +587,16 @@ print('ok')
 
 @test "wrapper: 同一run idの重複起動は待機でなくBLOCKする" {
     release="$TMP/run.release"
-    SHOGUN_HEAVY_JOB_RUN_ID=same bash "$WRAPPER" -- bash -c "while [ ! -e '$release' ]; do sleep 0.02; done" &
+    holder_started="$TMP/run-holder.started"
+    SHOGUN_HEAVY_JOB_RUN_ID=same bash "$WRAPPER" -- bash -c "touch '$holder_started'; while [ ! -e '$release' ]; do sleep 0.02; done" &
     holder=$!
-    sleep 0.08
+    local waited=0
+    while [ ! -f "$holder_started" ]; do
+        sleep 0.01
+        waited=$((waited + 1))
+        [ "$waited" -le 200 ] || break
+    done
+    [ -f "$holder_started" ]
     run env SHOGUN_HEAVY_JOB_RUN_ID=same bash "$WRAPPER" -- true
     [ "$status" -ne 0 ]
     [[ "$output" == *"duplicate heavy run id"* ]]
@@ -1209,7 +1217,7 @@ FAKEEOF
     [ "$status" -eq 0 ]
     for _ in 1 2 3 4 5 6 7 8 9 10; do
         [ "$(wc -l <"$ledger" 2>/dev/null || echo 0)" -ge 2 ] && break
-        sleep 0.3
+        sleep 0.05
     done
     [ "$(wc -l <"$ledger")" -eq 2 ]
     run grep -c '"check_id":"queue_wait"' "$ledger"
