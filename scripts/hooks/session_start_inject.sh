@@ -23,6 +23,12 @@ else
 fi
 _session_start_overhead_emit() {
   local _session_start_overhead_rc="$1"
+  # Codex's adapter owns the SessionStart boundary.  Suppress only this
+  # helper's row for that nested call; source-specific writers in the child
+  # process remain enabled and the wrapped command's rc is preserved.
+  if [[ "${SESSION_START_OVERHEAD_SUPPRESS:-0}" == "1" ]]; then
+    return "$_session_start_overhead_rc"
+  fi
   local _session_start_overhead_end_epoch="${EPOCHREALTIME/./}"
   local _session_start_overhead_end_ms="${_session_start_overhead_end_epoch:0:13}"
   local _session_start_overhead_wall_ms=$((_session_start_overhead_end_ms - _session_start_overhead_start_ms))
