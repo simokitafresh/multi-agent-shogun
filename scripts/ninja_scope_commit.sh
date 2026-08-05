@@ -18,11 +18,22 @@ _ninja_scope_commit_script_dir="$(cd "$(dirname "$_ninja_scope_commit_self")" &&
 if [[ -z "${COMMIT_QUEUE_ACTIVE:-}" && -x "$_ninja_scope_commit_script_dir/commit_queue.sh" ]]; then
     _ninja_scope_commit_repo="$(git rev-parse --show-toplevel 2>/dev/null || true)"
     if [[ -n "$_ninja_scope_commit_repo" ]]; then
-        _ninja_scope_commit_agent="${COMMIT_QUEUE_AGENT_ID:-${AGENT_ID:-}}"
-        if [[ -z "$_ninja_scope_commit_agent" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
-            _ninja_scope_commit_agent="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+        _ninja_scope_commit_agent_base="${COMMIT_QUEUE_AGENT_ID:-${AGENT_ID:-}}"
+        if [[ -z "$_ninja_scope_commit_agent_base" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+            _ninja_scope_commit_agent_base="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
         fi
-        _ninja_scope_commit_agent="${_ninja_scope_commit_agent:-${USER:-ninja}}"
+        _ninja_scope_commit_agent_base="${_ninja_scope_commit_agent_base:-${USER:-ninja}}"
+        # An explicit queue identity is a logical retry key and therefore
+        # participates in duplicate-reservation rejection.  Without one,
+        # concurrent helper invocations from the same agent are independent
+        # commit attempts; use the run id when supplied, otherwise the child
+        # PID, so unrelated scopes do not collide in the reservation ledger.
+        if [[ -n "${COMMIT_QUEUE_AGENT_ID:-}" ]]; then
+            _ninja_scope_commit_agent="$_ninja_scope_commit_agent_base"
+        else
+            _ninja_scope_commit_run="${NINJA_SCOPE_COMMIT_RUN_ID:-pid-${BASHPID}}"
+            _ninja_scope_commit_agent="${_ninja_scope_commit_agent_base}:${_ninja_scope_commit_run}"
+        fi
         exec env COMMIT_QUEUE_ACTIVE=1 COMMIT_QUEUE_AGENT_ID="$_ninja_scope_commit_agent" \
             bash "$_ninja_scope_commit_script_dir/commit_queue.sh" run \
             --agent "$_ninja_scope_commit_agent" --repo "$_ninja_scope_commit_repo" -- \
@@ -876,23 +887,6 @@ if [[ -f "$singleflight_receipt" ]]; then
     exit 2
 fi
 
-# Serialize only callers that own the exact same normalized path set.  The
-# repository transaction lock remains short, so different scopes can still run
-# expensive pre-commit checks concurrently.  A follower that had to wait may
-# find that the owner already published the identical worktree bytes; that is
-# an idempotent success, not a fresh no-change invocation.
-scope_lock_material="$(printf '%s\n' "${paths[@]}")"
-scope_lock_key="$(printf '%s' "$scope_lock_material" | sha256sum | awk '{print $1}')"
-scope_lock_path="$(lock_path "$git_common_dir/ninja-scope-owned-$scope_lock_key")"
-exec {scope_lock_fd}>"$scope_lock_path" \
-    || { echo "BLOCK: cannot open ninja owned-scope lock" >&2; exit 2; }
-scope_lock_waited=false
-if ! flock -n "$scope_lock_fd"; then
-    scope_lock_waited=true
-    flock -w 120 "$scope_lock_fd" \
-        || { echo "BLOCK: cannot acquire ninja owned-scope lock" >&2; exit 2; }
-fi
-
 if [[ -z "$patch_file" && "$repair_index" == false ]]; then
     scope_has_changes=false
     for scope_path in "${paths[@]}"; do
@@ -909,12 +903,6 @@ if [[ -z "$patch_file" && "$repair_index" == false ]]; then
         fi
     done
     if [[ "$scope_has_changes" == false ]]; then
-        if [[ "$scope_lock_waited" == true ]]; then
-            published_commit_hash="$(git rev-parse HEAD)"
-            publish_terminal_success "$published_commit_hash"
-            trap - EXIT
-            exit 0
-        fi
         echo "BLOCK: scope paths have no changes" >&2
         exit 2
     fi
