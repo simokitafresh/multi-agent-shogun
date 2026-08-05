@@ -41,16 +41,20 @@ run_daemon_isolated() {
 }
 
 @test "set records timestamp and operator; unset removes marker" {
-    run_daemon_isolated bash "$PROJECT_ROOT/scripts/daemon_maintenance.sh" set
+    run_daemon_isolated bash -c '
+        set -e
+        bash "$1/scripts/daemon_maintenance.sh" set
+        cat "$DAEMON_MAINTENANCE_MARKER"
+        bash "$1/scripts/daemon_maintenance.sh" status
+        bash "$1/scripts/daemon_maintenance.sh" unset
+        [ ! -e "$DAEMON_MAINTENANCE_MARKER" ]
+        echo marker_absent
+    ' _ "$PROJECT_ROOT"
     [ "$status" -eq 0 ]
-    grep -qx 'started_at=10000' "$DAEMON_MAINTENANCE_MARKER"
-    grep -qx 'operator=kagemaru' "$DAEMON_MAINTENANCE_MARKER"
-    run_daemon_isolated bash "$PROJECT_ROOT/scripts/daemon_maintenance.sh" status
-    [ "$status" -eq 0 ]
+    [[ "$output" == *"started_at=10000"* ]]
     [[ "$output" == *"operator=kagemaru"* ]]
-    run_daemon_isolated bash "$PROJECT_ROOT/scripts/daemon_maintenance.sh" unset
-    [ "$status" -eq 0 ]
-    [ ! -e "$DAEMON_MAINTENANCE_MARKER" ]
+    [[ "$output" == *"maintenance active: operator=kagemaru"* ]]
+    [[ "$output" == *"marker_absent"* ]]
 }
 
 @test "marker expires at 60 minute TTL and is removed" {
@@ -127,11 +131,16 @@ run_daemon_isolated() {
 
 @test "corrupt marker fails closed" {
     printf 'operator=tester\n' > "$DAEMON_MAINTENANCE_MARKER"
-    run_daemon_isolated bash "$PROJECT_ROOT/scripts/daemon_maintenance.sh" status
-    [ "$status" -eq 2 ]
+    run_daemon_isolated bash -c '
+        set +e
+        bash "$1/scripts/daemon_maintenance.sh" status
+        status_rc=$?
+        bash "$1/scripts/restart_watchers.sh"
+        restart_rc=$?
+        printf "status_rc=%s restart_rc=%s\n" "$status_rc" "$restart_rc"
+        [ "$status_rc" -eq 2 ] && [ "$restart_rc" -eq 1 ]
+    ' _ "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
     [[ "$output" == *"maintenance invalid: corrupt marker"* ]]
-
-    run_daemon_isolated bash "$PROJECT_ROOT/scripts/restart_watchers.sh"
-    [ "$status" -eq 1 ]
     [[ "$output" == *"corrupt"* ]]
 }
