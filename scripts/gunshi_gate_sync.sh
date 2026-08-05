@@ -50,7 +50,7 @@ for f in queue/inbox/archive/gunshi_*.yaml; do
 done
 
 # archiveでstatus: done/completed/delegatedのcmdはCLEARと推定
-# cancelled/halted/superseded/absorbed/shelvedはN/A（gateなし）
+# canceled/cancelled/halted/superseded/absorbed/shelvedはN/A（gateなし）
 # 高速化: glob展開+basename loop(3.1s/1740files)→ls+awk(0.014s, 220x)
 # WSL2 NTFSではglob展開が個別stat→致命的に遅い
 if [[ -d "queue/archive/cmds" ]]; then
@@ -62,6 +62,7 @@ if [[ -d "queue/archive/cmds" ]]; then
             *_done_*.yaml) local_cmd_id="${base%%_done_*}"; result="CLEAR" ;;
             *_completed_*.yaml) local_cmd_id="${base%%_completed_*}"; result="CLEAR" ;;
             *_delegated_*.yaml) local_cmd_id="${base%%_delegated_*}"; result="CLEAR" ;;
+            *_canceled_*.yaml) local_cmd_id="${base%%_canceled_*}"; result="N/A" ;;
             *_cancelled_*.yaml) local_cmd_id="${base%%_cancelled_*}"; result="N/A" ;;
             *_halted_*.yaml) local_cmd_id="${base%%_halted_*}"; result="N/A" ;;
             *_superseded_*.yaml) local_cmd_id="${base%%_superseded_*}"; result="N/A" ;;
@@ -74,7 +75,7 @@ if [[ -d "queue/archive/cmds" ]]; then
         [[ -f "queue/reopened_cmds/${local_cmd_id}.yaml" ]] && { GATE_MAP["$local_cmd_id"]="BLOCK"; continue; }
         [[ -n "${GATE_MAP[$local_cmd_id]:-}" ]] && continue
         GATE_MAP["$local_cmd_id"]="$result"
-    done < <(find queue/archive/cmds/ -maxdepth 1 \( -name '*_done_*.yaml' -o -name '*_completed_*.yaml' -o -name '*_delegated_*.yaml' -o -name '*_cancelled_*.yaml' -o -name '*_halted_*.yaml' -o -name '*_superseded_*.yaml' -o -name '*_absorbed_*.yaml' -o -name '*_shelved_*.yaml' \) 2>/dev/null)
+    done < <(find queue/archive/cmds/ -maxdepth 1 \( -name '*_done_*.yaml' -o -name '*_completed_*.yaml' -o -name '*_delegated_*.yaml' -o -name '*_canceled_*.yaml' -o -name '*_cancelled_*.yaml' -o -name '*_halted_*.yaml' -o -name '*_superseded_*.yaml' -o -name '*_absorbed_*.yaml' -o -name '*_shelved_*.yaml' \) 2>/dev/null)
 fi
 
 echo "=== gunshi_gate_sync: ${#GATE_MAP[@]}件のgate_result情報収集済み ==="

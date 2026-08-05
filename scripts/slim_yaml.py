@@ -118,7 +118,7 @@ def slim_tasks(dry_run: bool = False) -> bool:
             continue
 
         if path.stem in CANONICAL_TASKS:
-            if status not in {"done", "completed", "cancelled"}:
+            if status not in {"done", "completed", "canceled", "cancelled"}:
                 continue
             archived = archive_dir / f"{path.stem}_{timestamp()}.yaml"
             if dry_run:
@@ -131,7 +131,7 @@ def slim_tasks(dry_run: bool = False) -> bool:
                 return False
             continue
 
-        if status not in {"done", "cancelled"}:
+        if status not in {"done", "canceled", "cancelled"}:
             continue
 
         archived = archive_path(archive_dir, path)
@@ -223,7 +223,7 @@ def slim_shogun_to_karo() -> bool:
     active = []
     archived = []
     for command in commands:
-        if isinstance(command, dict) and command.get("status") in {"done", "cancelled"}:
+        if isinstance(command, dict) and command.get("status") in {"done", "canceled", "cancelled"}:
             archived.append(command)
         else:
             active.append(command)
