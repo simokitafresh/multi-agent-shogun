@@ -1,5 +1,7 @@
 <!-- gist-master: a73798d8a4cbdf967d1cd5b47201b331 partial-turnover-experiment-asis-tobe-5w1h_20260805.md -->
-# 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.10 【指定12PF実験FAIL-close・全102PF未実行】
+# 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.11 【FoF非unit真因確定・全102PF未実行】
+
+> v1.11(2026-08-06 01:10 三者独立調査中・家老一次結果): FoF非unit 35行の真因をコードと本番DBで確定。`expand_portfolio_to_tickers()`はcustom `weights`を全候補で正規化した後、`holding_signal`で選ばれたIDだけへ絞るが、残存weightを再正規化しない。L2の非unit 17/17行は「親weight×子selected mass」で保存値を完全再現し、L3へ同じ欠損が再帰伝播する。`monthly_returns`は保存済み`display_ticker_weights`を読まず、別時点・別cacheで同じ展開関数を再実行し、verified ledger weightがある場合だけ上書きする。したがって両者は共通の確定ticker×weightではなく、展開関数自体にも欠損があるためmonthly_returns側だけ正しいとは未証明。全102PF実行0・本番書込0は不変。
 
 > v1.10(2026-08-06 01:00 指定12PF実測同期): `cmd_partial_turnover_phase0_v19`は指定12/12PF・5α=60/60セルを完走し、指定外PF0・全102PF実行0・本番書込0・FAIL0・SKIP0を維持した。一方、FoF 4体の`display_ticker_weights`にweight合計非unit 35行、α=0 parity不一致29/2,096行(max abs diff=0.1713575056)を検出し、PF単位parityは8/12。軍師レビューと家老ACCEPTを経て正式FAIL-closeし、補正・fallback・FoF展開・102PF展開は行っていない。次のデータソース方式は殿の追加指示までBLOCK。
 
@@ -178,6 +180,23 @@ monthly_return = product(1 + daily_pf_return for each_day) - 1
 
 結論: Standard 4PFの`holding_signal`均等1/N経路は成立したが、FoFの`display_ticker_weights`直接経路は全履歴でunitかつ本番月次と一致するという前提を満たさない。無断の正規化や別経路への切替はせず、本方式をFAIL-closeする。
 
+### FoF非unitの因果(v1.11)
+
+```text
+全候補custom weightsを合計1へ正規化
+  → holding_signalの選択IDだけを残す
+  → 残存massを再正規化しない
+  → 選択外候補のmassが消失
+  → L2のdisplay合計<1
+  → L3へ再帰伝播
+```
+
+- 実装位置: `backend/app/services/price_ratio_impl.py` の`expand_portfolio_to_tickers()`。正規化後の`selected_pf_ids` filter後に再正規化がない。
+- 完全再現: L2 bad 17/17行で`actual_display_sum == Σ(parent_weight × child_selected_mass)`。
+- 代表例: 奥義-GS-分身-激攻 2012-03-01は`0.75 = 0.5×1.0 + 0.5×0.5`。
+- 月次確定式: `_generate_monthly_returns()`が月初の展開weightを別途求め、`Σ weight × (price_ratio - 1)`を保存する。verified ledger weightが存在するときだけそちらを優先する。
+- 境界: 保存済みdisplayをmonthly_returnsの入力SSOTとみなさない。展開関数の修正、既存月次の正当性、実験用weightの採用方式は別々に二値検証するまで未決。
+
 ## §2.5 対象PF(12体・殿指定)
 
 **全102体は殿の追加指示があるまで実行禁止。**
@@ -233,7 +252,7 @@ Step 4: 3指標計算+殿に報告
 | 対象PF = 全102体 | 将来候補。**殿が明示的に追加指示するまで実行禁止** |
 | 対象期間 = 全期間 | 提案(パラメータ空間縮小禁止)。裁可対象 |
 | 本番コード変更 | 禁止。実験スクリプトのみ |
-| ticker×weightデータソース | Standard=`holding_signal`均等1/Nは4/4成立。FoF=`display_ticker_weights`直接は非unit 35行・parity不一致29行で**FAIL-close**。次方式は未決であり、補正・fallback・FoF展開を自動採用しない |
+| ticker×weightデータソース | Standard=`holding_signal`均等1/Nは4/4成立。FoF=`display_ticker_weights`直接は非unit 35行・parity不一致29行で**FAIL-close**。同じ展開関数も選択後再正規化欠落があるため、単純な再展開を正解扱いしない。次方式は未決 |
 | 指定12PF実験 | `cmd_partial_turnover_phase0_v19`正式FAIL-close。60/60セル完走、全102PF実行0 |
 
 ## §6 因果リンク
