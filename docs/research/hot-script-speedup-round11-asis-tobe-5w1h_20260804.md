@@ -1,5 +1,7 @@
 <!-- gist-master: 4571e36dca63e089831abaa8b1d6c275 hot-script-speedup-round11-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.3 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.4 【🚀裁可済み・進行中】
+
+> v1.4(2026-08-05 20:42 家老差戻し修正): 進捗台帳のidentifierを提案台帳と完全一致へ修正(短縮形→完全修飾source:check_id)
 
 > v1.3(2026-08-05 20:35 殿指示scope純化): 第10弾v1.7準拠で提案弾台帳と進捗台帳に高速化許可owner pathを一次コード突合で確定。列挙外pathの変更を禁止
 
@@ -87,18 +89,18 @@
 - #2・#3・#6は独立writerで並列可
 - 第十弾#6(deploy_total)と#6(publish_total)は親子関係の可能性あり。第十弾#6偵察で確定後に直列条件を判断
 
-## §2.5 進捗台帳(2026-08-05 20:35 v1.3 owner path追加)
+## §2.5 進捗台帳(2026-08-05 20:42 v1.4 identifier完全一致修正)
 
 | # | 標的identifier | 高速化許可owner path | 状態 | 帰結(実測生値) |
 |---|---|---|---|---|
-| 1 | `full_precheck` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳着手可(第九弾補欠A知見あり) | — |
-| 2 | `inbox_write_total` | `scripts/inbox_write.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane2_inbox_write_total_20260805`: baseline n=9,197/p50=330ms/p95=6,100ms/max=96,200ms/total=18,822s → current n=9,758/p50=327.5ms/p95=6,134ms/max=181,570ms/total=20,376.43s。live resolver再利用で重複tmux scan/pane lookupを除去し、focused pre-send/persist/total=20/20/20、p50/p95=244/391ms、FAIL0/SKIP0。ただしscope-wide 38 testsは既存の`test_ninja_monitor_stall.bats`・`test_deploy_task.bats`失敗でAC4未達、commitなし。家老ACCEPT・archive済み |
-| 3 | `singleflight_hold` | `scripts/gates/gate_report_format.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane3_singleflight_hold_20260805`: AC1-3 yes、AC4/commit no、軍師レビューverdict=FAIL。現ledger n=8,633/p50=400ms/p95=11,590ms/max=61,250ms/total=17,830.36s、focused 10/10・full 65/65 PASS、joiner p50/p95 641/672ms→414/421ms。変更は`gate_report_format.sh`+contract testに保全中。commit contractを22 pathへ同期した後もaffected 31 testsが60秒上限でPRECOMMIT_TIMEOUT、commit hashなし |
-| 4 | `checks_main` | `scripts/cmd_save.sh` | ⏳着手可(第九弾#4知見あり) | — |
-| 5 | `full_precheck_body_rest` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳#1完了後(同族writer直列) | — |
-| 6 | `publish_total` | `scripts/report_field_set.sh` | ⏳着手可(独立writer) | — |
-| 7 | `q11_semantic_search` | `scripts/cmd_save.sh` | ⏳着手可 | — |
-| 8 | `quality_gate` | `scripts/cmd_save.sh` | ⏳#4完了後(同族writer直列) | — |
+| 1 | `gate_gunshi_report_precheck:full_precheck` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳着手可(第九弾補欠A知見あり) | — |
+| 2 | `inbox_write:inbox_write_total` | `scripts/inbox_write.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane2_inbox_write_total_20260805`: baseline n=9,197/p50=330ms/p95=6,100ms/max=96,200ms/total=18,822s → current n=9,758/p50=327.5ms/p95=6,134ms/max=181,570ms/total=20,376.43s。live resolver再利用で重複tmux scan/pane lookupを除去し、focused pre-send/persist/total=20/20/20、p50/p95=244/391ms、FAIL0/SKIP0。ただしscope-wide 38 testsは既存の`test_ninja_monitor_stall.bats`・`test_deploy_task.bats`失敗でAC4未達、commitなし。家老ACCEPT・archive済み |
+| 3 | `gate_report_format:singleflight_hold` | `scripts/gates/gate_report_format.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane3_singleflight_hold_20260805`: AC1-3 yes、AC4/commit no、軍師レビューverdict=FAIL。現ledger n=8,633/p50=400ms/p95=11,590ms/max=61,250ms/total=17,830.36s、focused 10/10・full 65/65 PASS、joiner p50/p95 641/672ms→414/421ms。変更は`gate_report_format.sh`+contract testに保全中。commit contractを22 pathへ同期した後もaffected 31 testsが60秒上限でPRECOMMIT_TIMEOUT、commit hashなし |
+| 4 | `cmd_save:checks_main` | `scripts/cmd_save.sh` | ⏳着手可(第九弾#4知見あり) | — |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳#1完了後(同族writer直列) | — |
+| 6 | `report_publish:publish_total` | `scripts/report_field_set.sh` | ⏳着手可(独立writer) | — |
+| 7 | `cmd_save:q11_semantic_search_overhead` | `scripts/cmd_save.sh` | ⏳着手可 | — |
+| 8 | `cmd_save:checks_main.quality_gate` | `scripts/cmd_save.sh` | ⏳#4完了後(同族writer直列) | — |
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
 
