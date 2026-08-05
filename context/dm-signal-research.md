@@ -802,6 +802,17 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 
 ---
 
+## §58. Partial Turnover Phase 1 — 実験実行・完了証跡の正しい方法論 (2026-08-06)
+
+- **実験結果**: 指定75PF（L0=12/L1=21/L2=21/L3=21）×5α=375/375セル、alpha=0 parity 75/75、mismatch/weight failure/禁止参照/本番書込はいずれも0。正本=`docs/research/partial-turnover-experiment-asis-tobe-5w1h_20260805.md`、結果=`/mnt/c/Python_app/DM-signal/docs/research/partial-turnover-phase1-75pf-results-20260806.md`、commit=`d14a4ec3ce8457ce17ef702079028dbb9c58a367`。
+- **詰まりの本体**: 実験値ではなく完了証跡の組立順序。未commitの計画pathを仮HEADとして`cross_repo_commits`へ記入すると、commit hash実在性・所有path・subject契約が同時にBLOCKする。binary checksやoperational simulationだけを先に埋めても解消しない。
+- **正しい順序**: 対象scopeを専用commit → 40桁実hash取得 → `git show`で申告pathの所有を確認 → report YAMLへhash/path記録 → 最終gate。完了状態への遷移は最後に行う（`skills/ninja-commit/SKILL.md` Step 5-6）。
+- **read-only SQL境界**: launcherが`WITH`先頭を拒否した場合、再帰SQLを書き換えず外側`SELECT`で包む。read-only判定を満たしつつ、history.py方式の再帰展開ロジックを不変に保つ。
+- origin: `[[cmd_partial_turnover_phase1_normal]] -> [[未commit仮HEADの証跡誤記]] -> [[専用commit_実hash_path確認_最終gate]]`
+- origin: `[[read_only_launcher_WITH拒否]] -> [[外側SELECTラップ]] -> [[再帰SQL不変で375セル完走]]`
+
+---
+
 ## 因果リンク
 
 - → [[cmd_4190_signal_change_verdict]] 2026-07-28のFoF 3件ALERTはpending marker 0/3で仕様上confirmed変更。ただし新値=signal_decision_ledger=現signalsが3/3、復元0件。誤検知ではなく台帳ガードによる安全側補正。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_4190_signal_change_verdict.md`

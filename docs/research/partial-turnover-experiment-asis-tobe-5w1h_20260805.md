@@ -1,7 +1,13 @@
 <!-- gist-master: a73798d8a4cbdf967d1cd5b47201b331 partial-turnover-experiment-asis-tobe-5w1h_20260805.md -->
-# 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.11 【FoF非unit真因確定・全102PF未実行】
+# 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.14 【Phase 1: 75体完走・方法論確定】
 
-> v1.11(2026-08-06 01:10 三者独立調査中・家老一次結果): FoF非unit 35行の真因をコードと本番DBで確定。`expand_portfolio_to_tickers()`はcustom `weights`を全候補で正規化した後、`holding_signal`で選ばれたIDだけへ絞るが、残存weightを再正規化しない。L2の非unit 17/17行は「親weight×子selected mass」で保存値を完全再現し、L3へ同じ欠損が再帰伝播する。`monthly_returns`は保存済み`display_ticker_weights`を読まず、別時点・別cacheで同じ展開関数を再実行し、verified ledger weightがある場合だけ上書きする。したがって両者は共通の確定ticker×weightではなく、展開関数自体にも欠損があるためmonthly_returns側だけ正しいとは未証明。全102PF実行0・本番書込0は不変。
+> v1.14(2026-08-06 02:45 才蔵実測+殿下知): Phase 1は指定75/75PF・375/375セルを完走し、alpha=0 parity 75/75、mismatch/weight failure/禁止参照/本番書込0。試行錯誤は実験値でなく完了証跡の組立順序が原因と確定し、専用commit→実hash/path確認→report記録→最終gateを正順序として§4.1へ恒久化
+
+> v1.13(2026-08-06 02:09 殿指示): Phase 0(12体)PASS確認済み。Phase 1としてL0(12)+L1(21)+L2(21)+L3(21)=75体×5α=375セルに展開。分析軸: 忍法7種別+モード3種別(激攻/常勝/鉄壁)の効果差。history.py方式(v1.12確定)を継続
+
+> v1.12(2026-08-06 01:28 将軍最終調査+殿スクリーンショット確認): 本番表示にバグなし。history.py方式(holding_signal再帰展開+均等合算)を確定
+
+> v1.11(2026-08-06 01:10 三者独立調査・家老一次結果): FoF非unit真因確定。`expand_portfolio_to_tickers()`の選択後再正規化不在。monthly_returnsもdisplay_ticker_weightsも使わない方式へ
 
 > v1.10(2026-08-06 01:00 指定12PF実測同期): `cmd_partial_turnover_phase0_v19`は指定12/12PF・5α=60/60セルを完走し、指定外PF0・全102PF実行0・本番書込0・FAIL0・SKIP0を維持した。一方、FoF 4体の`display_ticker_weights`にweight合計非unit 35行、α=0 parity不一致29/2,096行(max abs diff=0.1713575056)を検出し、PF単位parityは8/12。軍師レビューと家老ACCEPTを経て正式FAIL-closeし、補正・fallback・FoF展開・102PF展開は行っていない。次のデータソース方式は殿の追加指示までBLOCK。
 
@@ -149,7 +155,7 @@ monthly_return = product(1 + daily_pf_return for each_day) - 1
 | パラメータ | 値 | 意味 |
 |---|---|---|
 | α (前月維持率) | [0.0, 0.25, 0.5, 0.75, 1.0] | 0.0=現行、1.0=前月全維持 |
-| 現在の対象PF | §2.5の指定12体 | 殿指示まで全102体は実行禁止 |
+| 現在の対象PF | §2.6の指定75体 | L0=12、L1-L3=各21。全102体は実行禁止 |
 | 期間 | 全期間(各PFのdata_start_date〜最新) | パラメータ空間縮小禁止 |
 
 ### 計測指標(3指標)
@@ -197,7 +203,7 @@ monthly_return = product(1 + daily_pf_return for each_day) - 1
 - 月次確定式: `_generate_monthly_returns()`が月初の展開weightを別途求め、`Σ weight × (price_ratio - 1)`を保存する。verified ledger weightが存在するときだけそちらを優先する。
 - 境界: 保存済みdisplayをmonthly_returnsの入力SSOTとみなさない。展開関数の修正、既存月次の正当性、実験用weightの採用方式は別々に二値検証するまで未決。
 
-## §2.5 対象PF(12体・殿指定)
+## §2.5 Phase 0対象PF(12体・殿指定、完了済み)
 
 **全102体は殿の追加指示があるまで実行禁止。**
 
@@ -209,51 +215,109 @@ monthly_return = product(1 + daily_pf_return for each_day) - 1
 | L2 | 奥義-GS-分身-激攻, 奥義-GS-四つ目-激攻 |
 | L3 | 秘奥義-分身-激攻, 秘奥義-四つ目-激攻 |
 
-## §3 実験手順(4ステップ)
+## §2.6 Phase 1対象PF(75体・殿指定、完了済み)
+
+| 層 | 対象 | PF数 | DB type |
+|---|---|---:|---|
+| L0 | シン四神4種×3モード | 12 | standard |
+| L1 | GSシン忍法7種×3モード | 21 | fof |
+| L2 | 奥義7種×3モード | 21 | fof |
+| L3 | 秘奥義7種×3モード | 21 | fof |
+| 合計 | 指定L0-L3のみ | **75** | standard 12 + fof 63 |
+
+**全102PFへの実験は未許可のまま。** オリジナルPFと指定75以外はPhase 1で実行していない。
+
+### Phase 1実測結果(v1.14)
+
+| 二値項目 | 実測 | 判定 |
+|---|---:|---|
+| 対象 / 層別 | 75/75 / 12+21+21+21 | PASS |
+| αセル / duplicate / missing / FAIL / SKIP | 375/375 / 0 / 0 / 0 / 0 | PASS |
+| alpha=0 parity / mismatch | 75/75 / 0 | PASS |
+| weight failure / 禁止参照 / fallback | 0 / 0 / 0 | PASS |
+| 指定外実験 / 全102実行 / 本番書込 | 0 / 0 / 0 | PASS |
+| target date / production fullrecalculate logical date | 2026-08-03 / 2026-08-03 | PASS |
+
+結果正本: `/mnt/c/Python_app/DM-signal/docs/research/partial-turnover-phase1-75pf-results-20260806.md`、実装commit: `d14a4ec3ce8457ce17ef702079028dbb9c58a367`。
+
+## §3 実験手順(4ステップ) — v1.12 history.py方式
+
+**データソース**: `display_ticker_weights`と`expand_portfolio_to_tickers`は使わない。本番表示と同じ`history.py L224-237`方式(holding_signal再帰展開+均等1/N合算+同一ticker合算)を再現する。
 
 ```
 Step 1: データ取得(本番DB read-only)
-  - 12体の全期間ticker×weight:
-    - Standard PF(4体): signals.holding_signal をカンマ分割 → 均等1/N weight
-    - FoF/ネステッドFoF(8体): signals.momentum_data->>'display_ticker_weights'
+  - 75体の全期間signals(holding_signal + portfolio_id)
+  - FoFのcomponent_portfolios(portfolios.config->>'component_portfolios')
   - 日次ETF価格(pricesテーブル)
   - 本番monthly_returns(パリティ検証用)
 
-Step 2: R_lagged計算
-  - 各PF×各月: 前月のticker×weightで当月の日次リターンを積み上げ
-  - R_currentは本番monthly_returnsをそのまま使用
+Step 2: ticker×weight展開(history.py方式再現) + R_lagged計算
+  - 全PF共通の展開ロジック:
+    1. PFのholding_signalを取得
+    2. Standard PF → holding_signalカンマ分割 = ticker一覧。均等1/N weight
+    3. FoF → holding_signalカンマ分割 = コンポーネントPF UUID一覧
+       → 各コンポーネントPFのholding_signalを再帰取得(Standardに到達するまで)
+       → 全Standard tickerを均等weight(1/component数/ticker数)で合算
+       → 同一tickerのweightを合算 → 合計1.0
+    4. パリティ: α=0でR_currentを本番monthly_returnsと比較(差≤1e-12)
+  - R_lagged: 前月のticker×weightで当月の日次リターンを積み上げ
+  - R_current: 本番monthly_returnsをそのまま使用
 
 Step 3: α混合
   - 各α: 段階的リターン = α × R_lagged + (1-α) × R_current
   - α=0の結果 = R_current = 本番monthly_returns(パリティ検証)
 
 Step 4: 3指標計算+殿に報告
-  - 12体×5αのCAGR/シャープレシオ/MaxDDテーブル生成
+  - 75体×5αのCAGR/シャープレシオ/MaxDDテーブル生成
+  - L0-L3、忍法7種、モード3種の記述統計を生成
   - 結果を殿に報告。追加指示を待つ
 ```
 
-## §4 実装分解(v1.6簡素化)
+## §4 実装分解(v1.14)
 
 | # | 内容 | 依存 |
 |---|---|---|
-| 1 | Standard 4体の`holding_signal`、FoF 8体の`momentum_data.display_ticker_weights`、prices、monthly_returns取得→ローカルキャッシュ | なし |
-| 2 | R_lagged計算(前月シグナル×当月価格) + パリティ検証 | 1 |
-| 3 | α混合 + 3指標計算 + 結果テーブル生成 + 殿に報告 | 2 |
+| 1 | 75体のholding_signal+component_portfolios+prices+monthly_returns取得→ローカルキャッシュ | なし |
+| 2 | history.py方式のticker×weight展開(holding_signal再帰→均等合算) + R_lagged計算 + パリティ検証 | 1 |
+| 3 | 5α混合 + 3指標計算 + 層/忍法/モード集計 + 結果テーブル生成 | 2 |
 
-**1忍者で完結。** データ取得→計算→報告の直列3ステップ。並列分割不要。
+**1忍者で完結。** データ取得→展開+計算→報告の直列3ステップ。並列分割不要。
+
+### §4.1 才蔵の試行錯誤から確定した正しい方法論
+
+#### 完了証跡の組立
+
+初回の詰まりは実験値ではなく、報告とcommitの順序にあった。binary checks・verdict・operational simulationを埋めても、未commitの計画pathを仮HEADとして`cross_repo_commits`へ記すと、commit hash実在性・所有path・commit subject契約が同時にBLOCKする。
+
+正しい順序:
+
+1. 対象scopeだけを専用commitする。
+2. 40桁の実hashを取得する。
+3. `git show --name-only <hash>`で申告pathをそのcommitが所有することを確認する。
+4. report YAMLへ実hash・所有path・binary evidenceを記録する。
+5. 最終gateを実行し、最後にcompletedへ遷移する。
+
+#### read-only launcherと再帰SQL
+
+read-only launcherが`WITH`先頭のSQLを拒否した場合、再帰SQL本体を書き換えず外側`SELECT`で包む。これによりread-only判定を満たしつつ、Phase 0で確定したhistory.py再帰展開の意味を変えない。
+
+- origin: `[[cmd_partial_turnover_phase1_normal]] -> [[未commit仮HEADの証跡誤記]] -> [[専用commit_実hash_path確認_最終gate]]`
+- origin: `[[read_only_launcher_WITH拒否]] -> [[外側SELECTラップ]] -> [[再帰SQL不変で375セル完走]]`
 
 ## §5 decision ledger
 
 | 項 | 状態 |
 |---|---|
-| 段階的リバランス実験の実施 | 殿発案2026-08-05 15:57。裁可待ち |
-| α探索範囲 [0.0, 0.25, 0.5, 0.75, 1.0] | 提案。裁可対象 |
-| 現在の実行対象PF | **§2.5の指定12体のみ(殿裁定2026-08-05 22:40)** |
+| 段階的リバランス実験の実施 | 殿発案2026-08-05 15:57。殿裁可済み(22:46) |
+| α探索範囲 [0.0, 0.25, 0.5, 0.75, 1.0] | 確定 |
+| Phase 0対象PF | §2.5の指定12体。完了 |
+| Phase 1対象PF | **§2.6の指定75体。75/75・375/375完了** |
 | 対象PF = 全102体 | 将来候補。**殿が明示的に追加指示するまで実行禁止** |
-| 対象期間 = 全期間 | 提案(パラメータ空間縮小禁止)。裁可対象 |
+| 対象期間 = 全期間 | 確定 |
 | 本番コード変更 | 禁止。実験スクリプトのみ |
-| ticker×weightデータソース | Standard=`holding_signal`均等1/Nは4/4成立。FoF=`display_ticker_weights`直接は非unit 35行・parity不一致29行で**FAIL-close**。同じ展開関数も選択後再正規化欠落があるため、単純な再展開を正解扱いしない。次方式は未決 |
-| 指定12PF実験 | `cmd_partial_turnover_phase0_v19`正式FAIL-close。60/60セル完走、全102PF実行0 |
+| ticker×weightデータソース | **v1.12確定: history.py L224-237方式**(holding_signal再帰展開+均等1/N+同一ticker合算)。display_ticker_weightsもexpand_portfolio_to_tickersも使わない。本番表示と同一ロジック(殿スクリーンショット確認: XLU 100%) |
+| v1.10 FAIL-close | display_ticker_weights直接経路は非unit+parity不一致で棄却。v1.12で別方式に切替 |
+| Phase 1完了証跡 | commit `d14a4ec3`。専用commit→実hash/path確認→report→最終gateを標準順序とする |
 
 ## §6 因果リンク
 
@@ -262,3 +326,5 @@ Step 4: 3指標計算+殿に報告
 - → [[fof-acceleration-oscillation-experiment]] FoF加速度フィルタ振動問題。段階的リバランスが振動緩和効果を持つ可能性
 - → [[production_parity]] パリティ検証。α=0で本番一致を確認してからα>0の実験
 - → [[殿裁定_サイズ調整のみ_20260608]] 「シグナルはルールで判定する。やるのはサイズ調整のみ」
+- → [[専用commit_実hash_path確認_最終gate]] 才蔵の完了証跡組立から確定した正順序
+- → [[外側SELECTラップ]] read-only launcher制約下で再帰SQLを不変に保つ方法
