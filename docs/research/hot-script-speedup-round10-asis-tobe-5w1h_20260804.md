@@ -1,5 +1,7 @@
 <!-- gist-master: 98f42e727bea67ad5dd322e6756bc45b hot-script-speedup-round10-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.3 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.4 【🚀裁可済み・進行中】
+
+> v1.4(2026-08-05 18:59進捗・判断整合同期): 一次実績自体はv1.3から不変。実走1/7、実装GATE CLEAR 0、正式FAIL-close 1、配備前保留1、前弾依存待ち5。§2.5に進捗総括・再開順序・完了条件を追加し、§3/§4に残っていた「裁可対象」「先行可」を現行裁定・実態へ更新した。#4は親hook event↔test timing identity計装後に再開、#6は`deploy_task.sh`の既存owner解放後に配備する。
 
 > v1.3(2026-08-05 18:53進捗同期): 2026-08-05 18:03将軍下知で起動。#4 affected_testsは現行ledgerの劣化と親hook↔test timing identity欠落を一次確定し、focused実走のFAILも隠さず正式FAIL-close。#6 deploy_totalは配備案レビューLGTMまで完了したが、既存dirtyな`deploy_task.sh`とのwriter衝突を検知して未配備保留。その他は依存wave待ち。
 
@@ -92,7 +94,7 @@
 - 弾#1-#3は第八弾wave checkpoint確定後に着手。#5・#7は第九弾是正完了後。#4・#6は独立writer
 - 前弾進行中の標的は前弾クローズを待つ(重複作業回避)。Tier 2で前弾クローズ後も依然TOPなら第十弾で是正開始
 
-## §2.5 進捗台帳(2026-08-05 18:53家老更新)
+## §2.5 進捗台帳(2026-08-05 18:59家老更新)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
@@ -103,6 +105,10 @@
 | 5 | execution | ⏳第九弾#1是正完了待ち | — |
 | 6 | deploy_total | ⏸️**配備前保留(writer衝突)** | draft review LGTM済み。ただし`deploy_task.sh`が既存dirty(MM)でlane所有権を確保できず、変更を重ねず未配備。既存owner解放後に再判断 |
 | 7 | queue_wait | ⏳第九弾#2完了待ち | — |
+
+- **進捗総括(7標的母数)**: 実走1/7(#4)、実装GATE CLEAR 0/7、正式FAIL-close 1/7(#4)、配備前保留1/7(#6)、前弾依存待ち5/7(#1-#3/#5/#7)。偵察・レビューを実装完了へ数えない。
+- **確定した次手**: (1)#4へselection manifest hash+親precommit event↔test timing run_idの共通identityを追加し、p95上位test setを60/60分類可能にして再実走 (2)`deploy_task.sh`既存owner解放後に#6配備 (3)第八弾wave確定後に#1-#3 (4)第九弾#1/#2是正確定後に#5/#7。
+- **完了条件**: 7標的を全てGATE CLEARまたは測定可能なno-changeで閉じ、§2.6の固定HEAD分割checkpointをFAIL0・SKIP0・duplicate0・missing0で通過後、Tier 1前週比とTier 2直近24h序列を再計測してCLOSEする。現時点の終了目処は日付ではなく、上記2つのowner/identity障壁と前弾checkpointの解消順で規定する。
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
 
@@ -143,17 +149,17 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 |---|---|
 | checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
 | 第十弾の起動 | **裁可・起動済み**。2026-08-05 18:03将軍下知で第九弾保留laneの戦力を移し、#4を実走。#6はwriter衝突で配備前保留 |
-| 二段計測の導入 | 殿設計2026-08-04 23:34(Tier 1劣化検知+Tier 2ボトルネック特定)。第十弾から恒久導入。裁可対象 |
+| 二段計測の導入 | **確定**。殿設計2026-08-04 23:34(Tier 1劣化検知+Tier 2ボトルネック特定)を第十弾から恒久導入 |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 23:32・直近24時間) |
-| 弾数・標的固定 | TOP7。殿裁可で固定 |
-| 前弾との直列条件 | #1-#3=第八弾wave後、#5/#7=第九弾是正後。裁可対象 |
+| 弾数・標的固定 | **確定**。TOP7を母数とし、途中FAIL/保留でも標的を削らない |
+| 前弾との直列条件 | **確定**。#1-#3=第八弾wave後、#5/#7=第九弾是正後。#4/#6のみ独立writerだが、#4はidentity待ち、#6はwriter owner待ち |
 | 高速化と防御力の境界 | **確定**: 検証力不変・fail-closed維持・チェック間引き禁止(LS099/殿裁定07-21) |
 
 ## §4 5W1H
 
 - **WHY**: 前週比(Tier 1)のみでは「改善済みだが依然遅い」「新たに遅くなった」が盲点。直近24h絶対値(Tier 2)で今この瞬間の最大の敵を炙り出し再攻撃する(殿指摘2026-08-04 23:29)
 - **WHAT**: TOP7を全て再標的化。前弾成果引継ぎ+残課税攻撃。恒常型=子区分→最大寄与是正/外れ値型=発火条件→条件是正。検証力不変
-- **WHEN**: 第八弾wave checkpoint確定後(refresh系残課税確定)に順次着手。独立writerの#4・#6は先行可
+- **WHEN**: 起動済み。#4は初回実走を正式FAIL-closeしidentity計装後に再開、#6はwriter owner解放後に配備。#1-#3は第八弾wave checkpoint後、#5/#7は第九弾該当是正後に着手
 - **WHERE**: `scripts/`配下のthree_layer_health系・git_pre_commit・heavy_job_admission系・deploy_task.sh。台帳=`logs/defense_overhead.jsonl`
 - **WHO**: 偵察・是正=忍者(read-only冗長2名可+是正は単独所有)、検分=家老+軍師、裁可=殿
 - **HOW**: レーン方式(将軍下知→家老配備→lane名CLEAR→最終checkpoint品質2原則検分)。Tier 1+Tier 2の二段計測で効果確認
