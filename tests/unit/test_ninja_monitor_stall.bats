@@ -2477,6 +2477,10 @@ cat "$LOG"
 }
 
 @test "check_yaml_size counts lines and completed statuses with one awk pass" {
+    # test_necessity: canceled/cancelledの両綴りを終端statusとして数えないと、
+    # 監視がarchive不全を見逃してcommand queueが無制限に肥大化するため。
+    # regression_justification: 既存のcompleted/done集計契約を、実運用で使われる
+    # canceledと旧来cancelledの互換境界へ拡張する回帰固定。
     run bash -lc '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -2499,6 +2503,10 @@ commands:
     status: done
   cmd_c:
     status: pending
+  cmd_d:
+    status: canceled
+  cmd_e:
+    status: cancelled
 EOF
 
 cat > "$TMP_ROOT/bin/awk" <<'"'"'EOF'"'"'
@@ -2520,8 +2528,8 @@ cat "$LOG"
 printf "AWK_CALLS=%s\n" "$(wc -l < "$AWK_CALLS_FILE")"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"shogun_to_karo.yaml is 7 lines"* ]]
-    [[ "$output" == *"ALERT: 2 completed cmds"* ]]
+    [[ "$output" == *"shogun_to_karo.yaml is 11 lines"* ]]
+    [[ "$output" == *"ALERT: 4 completed cmds"* ]]
     [[ "$output" == *"AWK_CALLS=1"* ]]
 }
 

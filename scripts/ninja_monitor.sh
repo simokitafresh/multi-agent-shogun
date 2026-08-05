@@ -9002,13 +9002,13 @@ check_yaml_size() {
     local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
     [ ! -f "$cmd_file" ] && return
 
-    # (1) 行数 + completed/done/cancelled/absorbed cmd数チェック
+    # (1) 行数 + 終端cmd数チェック。米英両綴り canceled/cancelled を同一扱いする。
     # L019教訓: grep -cは0件でexit 1するのでawkで安全にカウント
     # L034教訓: インデント柔軟マッチ(固定space非依存)
     local counts line_count completed_count
     counts=$(awk '
         { lines++ }
-        /^[[:space:]]*status:[[:space:]]*(completed|done|cancelled|absorbed)([[:space:]]|$)/ { completed++ }
+        /^[[:space:]]*status:[[:space:]]*(completed|done|canceled|cancelled|absorbed)([[:space:]]|$)/ { completed++ }
         END { print lines+0 "|" completed+0 }
     ' "$cmd_file" 2>/dev/null || echo "0|0")
     IFS='|' read -r line_count completed_count <<< "$counts"

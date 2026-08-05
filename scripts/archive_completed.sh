@@ -521,7 +521,7 @@ stk_remove_cmd_blocks() {
 # 0.9 STK dict形式status同期+アーカイブ退避
 #   1. archive/cmds/ + 完了報告 から完了cmd_idを収集
 #   2. STK内delegated→doneに更新
-#   3. done/cancelled/absorbed エントリをarchive/cmds/に退避しSTKから除去
+#   3. done/canceled/cancelled/absorbed エントリをarchive/cmds/に退避しSTKから除去
 # ============================================================
 sync_stk_status_from_archive() {
     # GP-XXX: sync_stk + trim_stk_old を単一Python呼び出しに統合
@@ -551,8 +551,8 @@ from scripts.lib.yaml_atomic import atomic_yaml_write
 
 stk_path, archive_cmd_dir, reports_dir, archive_report_dir, stk_archive_dir = sys.argv[1:6]
 SAFE_STATUSES = {"pending", "in_progress", "acknowledged", "assigned", "parked", "draft"}
-DONE_STATUSES = {"done", "cancelled", "absorbed"}
-TRIM_STATUSES = {"done", "absorbed", "cancelled"}
+DONE_STATUSES = {"done", "canceled", "cancelled", "absorbed"}
+TRIM_STATUSES = {"done", "absorbed", "canceled", "cancelled"}
 CUTOFF_DAYS = 30
 
 # === Phase 1: 完了cmd_idを収集 (sync用) ===
@@ -560,7 +560,7 @@ CUTOFF_DAYS = 30
 completed_ids = set()
 
 # Source 1: archive/cmds/ のファイル名 (非完了status=delegatedを除外)
-# delegatedはSTKに残るべき。completed/done/cancelled/absorbed/superseded/closed/shelved/halted=STK除去対象
+# delegatedはSTKに残るべき。completed/done/canceled/cancelled/absorbed/superseded/closed/shelved/halted=STK除去対象
 _NON_COMPLETED_STATUSES = {"delegated"}
 if os.path.isdir(archive_cmd_dir):
     for fname in os.listdir(archive_cmd_dir):
@@ -780,9 +780,9 @@ archive_cmds() {
         function _flush(    i,stat,arch_stat,out) {
             stat=tolower(cur_status)
             if(stat==""&&(cur_cmd in cl)) stat="completed"
-            if(stat~/^(completed|cancelled|absorbed|halted|superseded|done|shelved|closed)/) {
+            if(stat~/^(completed|canceled|cancelled|absorbed|halted|superseded|done|shelved|closed)/) {
                 completed_count++
-                match(stat,/^(completed|cancelled|absorbed|halted|superseded|done|shelved|closed)/)
+                match(stat,/^(completed|canceled|cancelled|absorbed|halted|superseded|done|shelved|closed)/)
                 arch_stat=substr(stat,1,RLENGTH)
                 out=tmp_dir "/entry_" cur_cmd ".tmp"
                 for(i=1;i<=buf_n;i++) print buf[i] > out; close(out)
@@ -809,7 +809,7 @@ archive_cmds() {
 
         if [ "${no_entries:-0}" -eq 1 ]; then
             local pre_check
-            pre_check=$(awk '/^ *status: *(completed|cancelled|absorbed|halted|superseded|done)/{c++} END{print c+0}' "$QUEUE_FILE")
+            pre_check=$(awk '/^ *status: *(completed|canceled|cancelled|absorbed|halted|superseded|done)/{c++} END{print c+0}' "$QUEUE_FILE")
             printf 'no_entries=1\npre_check=%s\narchived=0\nkept=0\ncompleted_count=%s\n' \
                 "$pre_check" "$pre_check" > "$archive_result"
             exit 0
