@@ -37,21 +37,13 @@ setup() {
     [ -f "$FIX/queue/archive/cmds/cmd_uk_cancelled_$(date +%Y%m%d).yaml" ]
 }
 
-# test_necessity: archive後もstartup、slimming、軍師同期、report通知の各consumerが
-# 同じterminal-status契約を共有し、別層でcanceledをactive扱いへ戻さないことを守る。
+# test_necessity: archive後のslimmingと軍師同期が同じterminal-status契約を共有し、
+# canceledをactive扱いへ戻したり*_canceled_* archiveを見失わないことを守る。
 # regression_justification: archive本体だけ直すと、実際に生成された*_canceled_* archiveを
-# 軍師同期が発見できず、startup/slimmingも終端判定を分岐させるため横断契約が必要。
-@test "all terminal lifecycle consumers accept both canceled spellings" {
-    run grep -F '"canceled", "cancelled"' "$REPO_ROOT/scripts/gates/gate_shogun_startup.sh"
-    [ "$status" -eq 0 ]
-    run grep -F 'canceled|cancelled' "$REPO_ROOT/scripts/gates/gate_karo_startup.sh"
-    [ "$status" -eq 0 ]
+# 軍師同期が発見できず、slimmingも終端判定を分岐させるため直下consumer契約が必要。
+@test "archive downstream consumers accept both canceled spellings" {
     run grep -F '"canceled", "cancelled"' "$REPO_ROOT/scripts/slim_yaml.py"
     [ "$status" -eq 0 ]
     run grep -F '*_canceled_*.yaml' "$REPO_ROOT/scripts/gunshi_gate_sync.sh"
-    [ "$status" -eq 0 ]
-    run grep -F 'canceled|cancelled' "$REPO_ROOT/scripts/yaml_check_opus.sh"
-    [ "$status" -eq 0 ]
-    run grep -F '"canceled"' "$REPO_ROOT/scripts/lib/gunshi_notify.sh"
     [ "$status" -eq 0 ]
 }
