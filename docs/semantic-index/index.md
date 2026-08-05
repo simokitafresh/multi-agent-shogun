@@ -12759,5 +12759,6 @@ codd:
 |------|----------|
 | file | `docs/research/commit-reservation-ledger-asis-tobe-5w1h_20260805.md` — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 |
 | causal | [[commit-reservation-ledger-asis-tobe_20260805]] — 共有git index直列化の設計根拠 |
+| causal | [[commit-reservation-ledger-asis-tobe_20260805]] -> `docs/research/retro-git-index-contention-hanzo.md` — 共有git index競合の一次検証 |
 | cmd | `cmd_delegate` backfill — description: "設計書§0.5サーベイの台帳未接続script群(startup gate三本・semantic_index_update・ninja_scope_commit・cmd_d |
 | causal | `cmd_reflux_backlink_202608050812_hayate` — [[semantic_causal_automation]] -> `docs/research/promotion-reflux-redesign-asis-tobe-5w1h_20260728.md` |
