@@ -1,5 +1,7 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-05 cmd_karo_hotfix_completion_notify_gap_draft_ja_20260805 reviewed source boundary -->
+<!-- last_updated: 2026-08-05 cmd_karo_round10_lane1_refresh_window_impl_20260805 reviewed source boundary -->
+<!-- source_commit:4875ea831 reason:cmd_karo_round10_lane1_refresh_window_impl_20260805 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=4875ea831 -->
+<!-- source_commit:7c461e2a0 reason:cmd_karo_round10_lane1_refresh_window_impl_20260805 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=7c461e2a0 -->
 <!-- source_commit:ef7e4188f reason:cmd_karo_hotfix_completion_notify_gap_draft_ja_20260805 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=ef7e4188f -->
 <!-- source_commit:3d56941d7 reason:reviewed source boundary evidence:cmd_karo_round9_lane0pp_impl_common_20260805 gate evidence -->
 <!-- source_commit:8e6527a3c reason:reviewed source boundary evidence:cmd_karo_round9_lane0pp_impl_common_20260805 gate evidence -->
