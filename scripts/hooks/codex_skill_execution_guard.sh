@@ -7,6 +7,30 @@ _self="${BASH_SOURCE[0]}"
 [[ "$_self" != /* ]] && _self="$PWD/$_self"
 ROOT="${SHOGUN_REPO_ROOT:-${_self%/scripts/hooks/codex_skill_execution_guard.sh}}"
 
+CODEX_SKILL_EXECUTION_GUARD_TOTAL_T0_US="${EPOCHREALTIME/./}"
+CODEX_SKILL_EXECUTION_GUARD_TOTAL_T0_US="${CODEX_SKILL_EXECUTION_GUARD_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$ROOT}"
+if [[ -f "$ROOT/scripts/lib/defense_overhead_writer.sh" ]]; then
+    source "$ROOT/scripts/lib/defense_overhead_writer.sh"
+else
+    defense_overhead_write_async() { return 0; }
+fi
+CODEX_SKILL_EXECUTION_GUARD_TOTAL_RECORDED=0
+codex_skill_execution_guard_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${CODEX_SKILL_EXECUTION_GUARD_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    CODEX_SKILL_EXECUTION_GUARD_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - CODEX_SKILL_EXECUTION_GUARD_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async codex_skill_execution_guard codex_skill_execution_guard_total "$wall_ms" "$verdict" \
+        "codex-skill-execution-guard-${BASHPID}-${CODEX_SKILL_EXECUTION_GUARD_TOTAL_T0_US}" || true
+}
+codex_skill_execution_guard_total_on_exit() { local rc=$?; codex_skill_execution_guard_record_total "$rc"; return "$rc"; }
+trap codex_skill_execution_guard_total_on_exit EXIT
+
 payload="$(cat 2>/dev/null || true)"
 [[ -n "${payload//[[:space:]]/}" ]] || exit 0
 
@@ -103,4 +127,3 @@ if [[ -n "$missing" ]]; then
         "$task_id" "$agent" "$missing" >&2
     exit 2
 fi
-

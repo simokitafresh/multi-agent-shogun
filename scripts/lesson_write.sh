@@ -9,6 +9,34 @@
 
 set -e
 
+_LESSON_WRITE_SELF="${BASH_SOURCE[0]:-$0}"
+[[ "$_LESSON_WRITE_SELF" = /* ]] || _LESSON_WRITE_SELF="$PWD/$_LESSON_WRITE_SELF"
+_LESSON_WRITE_ROOT="${_LESSON_WRITE_SELF%/scripts/lesson_write.sh}"
+LESSON_WRITE_TOTAL_T0_US="${EPOCHREALTIME/./}"
+LESSON_WRITE_TOTAL_T0_US="${LESSON_WRITE_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-${LESSON_WRITE_SCRIPT_DIR:-$_LESSON_WRITE_ROOT}}"
+if [ -f "$_LESSON_WRITE_ROOT/scripts/lib/defense_overhead_writer.sh" ]; then
+    # shellcheck source=scripts/lib/defense_overhead_writer.sh
+    source "$_LESSON_WRITE_ROOT/scripts/lib/defense_overhead_writer.sh"
+else
+    defense_overhead_write_async() { return 0; }
+fi
+LESSON_WRITE_TOTAL_RECORDED=0
+lesson_write_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${LESSON_WRITE_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    LESSON_WRITE_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - LESSON_WRITE_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async lesson_write lesson_write_total "$wall_ms" "$verdict" \
+        "lesson-write-${BASHPID}-${LESSON_WRITE_TOTAL_T0_US}" || true
+}
+lesson_write_total_on_exit() { local rc=$?; lesson_write_record_total "$rc"; return "$rc"; }
+trap lesson_write_total_on_exit EXIT
+
 if [ -n "${LESSON_WRITE_SCRIPT_DIR:-}" ]; then
     SCRIPT_DIR="$LESSON_WRITE_SCRIPT_DIR"
 else
@@ -1100,7 +1128,7 @@ fi
 
 # Temp file for passing lesson ID out of flock subshell
 LESSON_ID_FILE=$(mktemp)
-trap 'rm -f "$LESSON_ID_FILE"' EXIT
+trap 'rc=$?; rm -f "$LESSON_ID_FILE"; lesson_write_record_total "$rc"; exit "$rc"' EXIT
 
 # Atomic append with flock (3 retries)
 attempt=0

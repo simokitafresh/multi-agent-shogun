@@ -4,6 +4,39 @@
 
 set -euo pipefail
 
+_SEMANTIC_SEARCH_SELF="${BASH_SOURCE[0]:-$0}"
+[[ "$_SEMANTIC_SEARCH_SELF" = /* ]] || _SEMANTIC_SEARCH_SELF="$PWD/$_SEMANTIC_SEARCH_SELF"
+_SEMANTIC_SEARCH_ROOT="${_SEMANTIC_SEARCH_SELF%/scripts/semantic_search.sh}"
+SEMANTIC_SEARCH_TOTAL_T0_US="${EPOCHREALTIME/./}"
+SEMANTIC_SEARCH_TOTAL_T0_US="${SEMANTIC_SEARCH_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$_SEMANTIC_SEARCH_ROOT}"
+if [[ -f "$_SEMANTIC_SEARCH_ROOT/scripts/lib/defense_overhead_writer.sh" ]]; then
+    source "$_SEMANTIC_SEARCH_ROOT/scripts/lib/defense_overhead_writer.sh"
+else
+    defense_overhead_write_async() { return 0; }
+fi
+SEMANTIC_SEARCH_TOTAL_RECORDED=0
+semantic_search_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${SEMANTIC_SEARCH_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    SEMANTIC_SEARCH_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - SEMANTIC_SEARCH_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async semantic_search semantic_search_total "$wall_ms" "$verdict" \
+        "semantic-search-${BASHPID}-${SEMANTIC_SEARCH_TOTAL_T0_US}" || true
+}
+semantic_search_total_on_exit() { local rc=$?; semantic_search_record_total "$rc"; return "$rc"; }
+semantic_search_cleanup_and_record() {
+    local rc=$?
+    semantic_search_record_total "$rc"
+    rm -f "$@"
+    return "$rc"
+}
+trap semantic_search_total_on_exit EXIT
+
 usage() {
     cat <<'EOF'
 Usage: bash scripts/semantic_search.sh [--llm] <query>
@@ -434,7 +467,7 @@ EOF
 if [ "$force_llm" = false ]; then
     if [ "${SEMANTIC_DISABLE_CAUSAL:-0}" = "1" ]; then
         first_output="$(mktemp)"
-        trap 'rm -f "$first_output"' EXIT
+        trap 'semantic_search_cleanup_and_record "$first_output"' EXIT
         if first_layer_search silent > "$first_output"; then
             emit_search_output "$first_output" 0
             exit 0
@@ -444,13 +477,13 @@ if [ "$force_llm" = false ]; then
                 exit "$rc"
             fi
             source_output="$(mktemp)"
-            trap 'rm -f "$first_output" "$source_output"' EXIT
+            trap 'semantic_search_cleanup_and_record "$first_output" "$source_output"' EXIT
             if try_source_map_fallback "$source_output"; then
                 exit 0
             fi
             if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
                 memory_output="$(mktemp)"
-                trap 'rm -f "$first_output" "$memory_output"' EXIT
+                trap 'semantic_search_cleanup_and_record "$first_output" "$memory_output"' EXIT
                 if memory_db_search > "$memory_output"; then
                     emit_search_output "$memory_output" 0
                     exit 0
@@ -461,10 +494,10 @@ if [ "$force_llm" = false ]; then
         fi
     else
         first_output="$(mktemp)"
-        trap 'rm -f "$first_output"' EXIT
+        trap 'semantic_search_cleanup_and_record "$first_output"' EXIT
         if first_layer_search silent > "$first_output"; then
             causal_output="$(mktemp)"
-            trap 'rm -f "$first_output" "$causal_output"' EXIT
+            trap 'semantic_search_cleanup_and_record "$first_output" "$causal_output"' EXIT
             cat "$first_output" > "$causal_output"
             append_causal_expansion "$first_output" >> "$causal_output"
             emit_search_output "$causal_output" 0
@@ -475,13 +508,13 @@ if [ "$force_llm" = false ]; then
                 exit "$rc"
             fi
             source_output="$(mktemp)"
-            trap 'rm -f "$first_output" "$source_output"' EXIT
+            trap 'semantic_search_cleanup_and_record "$first_output" "$source_output"' EXIT
             if try_source_map_fallback "$source_output"; then
                 exit 0
             fi
             if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
                 memory_output="$(mktemp)"
-                trap 'rm -f "$first_output" "$memory_output"' EXIT
+                trap 'semantic_search_cleanup_and_record "$first_output" "$memory_output"' EXIT
                 if memory_db_search > "$memory_output"; then
                     emit_search_output "$memory_output" 0
                     exit 0
@@ -495,7 +528,7 @@ fi
 
 if [ "$force_llm" = false ]; then
     memory_output="$(mktemp)"
-    trap 'rm -f "$memory_output"' EXIT
+    trap 'semantic_search_cleanup_and_record "$memory_output"' EXIT
     if memory_db_search > "$memory_output"; then
         emit_search_output "$memory_output" 0
         exit 0
@@ -504,7 +537,7 @@ fi
 
 if [ "$force_llm" = false ] && [ "${SEMANTIC_ENABLE_LLM_FALLBACK:-0}" != "1" ]; then
     no_match_output="$(mktemp)"
-    trap 'rm -f "$no_match_output"' EXIT
+    trap 'semantic_search_cleanup_and_record "$no_match_output"' EXIT
     {
         echo "NO_MATCH: $query"
         echo "alias_absorb_route: bash scripts/semantic_alias_absorb_pending.sh (該当queryをqueue/insights.yamlのcandidate_aliasesへ登録後に反映)"
@@ -515,7 +548,7 @@ if [ "$force_llm" = false ] && [ "${SEMANTIC_ENABLE_LLM_FALLBACK:-0}" != "1" ]; 
 fi
 
 llm_output="$(mktemp)"
-trap 'rm -f "$llm_output"' EXIT
+trap 'semantic_search_cleanup_and_record "$llm_output"' EXIT
 if llm_search > "$llm_output"; then
     emit_search_output "$llm_output" 0
     exit 0

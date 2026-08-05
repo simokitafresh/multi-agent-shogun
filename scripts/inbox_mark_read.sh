@@ -18,6 +18,31 @@ _imr_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${INBOX_MARK_READ_ROOT_OVERRIDE:-${_imr_self%/scripts/inbox_mark_read.sh}}"
 unset _imr_self
 
+INBOX_MARK_READ_TOTAL_T0_US="${EPOCHREALTIME/./}"
+INBOX_MARK_READ_TOTAL_T0_US="${INBOX_MARK_READ_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$SCRIPT_DIR}"
+if [ -f "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh" ]; then
+    # shellcheck source=scripts/lib/defense_overhead_writer.sh
+    source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
+else
+    defense_overhead_write_async() { return 0; }
+fi
+INBOX_MARK_READ_TOTAL_RECORDED=0
+inbox_mark_read_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${INBOX_MARK_READ_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    INBOX_MARK_READ_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - INBOX_MARK_READ_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async inbox_mark_read inbox_mark_read_total "$wall_ms" "$verdict" \
+        "inbox-mark-read-${BASHPID}-${INBOX_MARK_READ_TOTAL_T0_US}" || true
+}
+inbox_mark_read_total_on_exit() { local rc=$?; inbox_mark_read_record_total "$rc"; return "$rc"; }
+trap inbox_mark_read_total_on_exit EXIT
+
 AGENT_ID="$1"
 shift || true
 AUTO_INFO_MODE=false

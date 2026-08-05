@@ -2,6 +2,34 @@
 # Tracked post-commit boundary: synchronization is deliberately fail-open.
 set -u
 
+_POST_COMMIT_SELF="${BASH_SOURCE[0]:-$0}"
+[[ "$_POST_COMMIT_SELF" = /* ]] || _POST_COMMIT_SELF="$PWD/$_POST_COMMIT_SELF"
+_POST_COMMIT_ROOT="${_POST_COMMIT_SELF%/.githooks/post-commit}"
+POST_COMMIT_TOTAL_T0_US="${EPOCHREALTIME/./}"
+POST_COMMIT_TOTAL_T0_US="${POST_COMMIT_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$_POST_COMMIT_ROOT}"
+if [ -f "$_POST_COMMIT_ROOT/scripts/lib/defense_overhead_writer.sh" ]; then
+    # shellcheck source=scripts/lib/defense_overhead_writer.sh
+    source "$_POST_COMMIT_ROOT/scripts/lib/defense_overhead_writer.sh"
+else
+    defense_overhead_write_async() { return 0; }
+fi
+POST_COMMIT_TOTAL_RECORDED=0
+post_commit_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${POST_COMMIT_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    POST_COMMIT_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - POST_COMMIT_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async post_commit post_commit_total "$wall_ms" "$verdict" \
+        "post-commit-${BASHPID}-${POST_COMMIT_TOTAL_T0_US}" || true
+}
+post_commit_total_on_exit() { local rc=$?; post_commit_record_total "$rc"; return "$rc"; }
+trap post_commit_total_on_exit EXIT
+
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 commit="$(git rev-parse --verify HEAD^{commit} 2>/dev/null)" || exit 0
 

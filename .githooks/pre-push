@@ -15,6 +15,32 @@ if [ -z "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT" ]; then
     echo "[pre-push] BLOCK: cannot resolve the pushing worktree." >&2
     exit 1
 fi
+
+PRE_PUSH_TOTAL_T0_US="${EPOCHREALTIME/./}"
+PRE_PUSH_TOTAL_T0_US="${PRE_PUSH_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$REPO_ROOT}"
+if [ -f "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh" ]; then
+    # shellcheck source=scripts/lib/defense_overhead_writer.sh
+    source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
+else
+    defense_overhead_write_async() { return 0; }
+fi
+PRE_PUSH_TOTAL_RECORDED=0
+pre_push_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${PRE_PUSH_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    PRE_PUSH_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - PRE_PUSH_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async pre_push pre_push_total "$wall_ms" "$verdict" \
+        "pre-push-${BASHPID}-${PRE_PUSH_TOTAL_T0_US}" || true
+}
+pre_push_total_on_exit() { local rc=$?; pre_push_record_total "$rc"; return "$rc"; }
+trap pre_push_total_on_exit EXIT
+
 if [ -f "$REPO_ROOT/scripts/lib/autogen_paths.sh" ]; then
     # shellcheck source=scripts/lib/autogen_paths.sh
     source "$REPO_ROOT/scripts/lib/autogen_paths.sh"
@@ -133,7 +159,7 @@ _record_hook_failure() {
         rm -f "$_PREPUSH_LOCK_META" 2>/dev/null
     fi
 }
-trap '_ec=$?; _record_hook_failure $_ec; exit $_ec' EXIT
+trap '_ec=$?; _record_hook_failure $_ec; pre_push_record_total "$_ec"; exit "$_ec"' EXIT
 
 # Capture stderr for failure recording without a tee subprocess.
 exec 2>"$_STDERR_FILE"

@@ -8,8 +8,36 @@ _self="${BASH_SOURCE[0]}"
 [[ "$_self" != /* ]] && _self="$PWD/$_self"
 ROOT="${_self%/scripts/hooks/codex_user_prompt_submit.sh}"
 
+CODEX_USER_PROMPT_SUBMIT_TOTAL_T0_US="${EPOCHREALTIME/./}"
+CODEX_USER_PROMPT_SUBMIT_TOTAL_T0_US="${CODEX_USER_PROMPT_SUBMIT_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$ROOT}"
+if [[ -f "$ROOT/scripts/lib/defense_overhead_writer.sh" ]]; then
+    source "$ROOT/scripts/lib/defense_overhead_writer.sh"
+else
+    defense_overhead_write_async() { return 0; }
+fi
+CODEX_USER_PROMPT_SUBMIT_TOTAL_RECORDED=0
+codex_user_prompt_submit_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [ "${CODEX_USER_PROMPT_SUBMIT_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
+    CODEX_USER_PROMPT_SUBMIT_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - CODEX_USER_PROMPT_SUBMIT_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [ "$rc" -eq 0 ] || verdict=FAIL
+    defense_overhead_write_async codex_user_prompt_submit codex_user_prompt_submit_total "$wall_ms" "$verdict" \
+        "codex-user-prompt-submit-${BASHPID}-${CODEX_USER_PROMPT_SUBMIT_TOTAL_T0_US}" || true
+}
+codex_user_prompt_submit_cleanup() {
+    local rc=$?
+    rm -f "$payload_file"
+    codex_user_prompt_submit_record_total "$rc"
+    return "$rc"
+}
+
 payload_file="$(mktemp "${TMPDIR:-/tmp}/codex_user_prompt_submit.XXXXXX.json")"
-trap 'rm -f "$payload_file"' EXIT
+trap codex_user_prompt_submit_cleanup EXIT
 cat >"$payload_file"
 
 # Privacy-safe one-shot audit for the real Codex hook envelope.  Arming is an

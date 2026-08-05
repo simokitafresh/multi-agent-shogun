@@ -6,6 +6,33 @@
 
 set -euo pipefail
 
+_BULLETIN_SELF="${BASH_SOURCE[0]:-$0}"
+[[ "$_BULLETIN_SELF" = /* ]] || _BULLETIN_SELF="$PWD/$_BULLETIN_SELF"
+_BULLETIN_ROOT="${_BULLETIN_SELF%/scripts/bulletin_write.sh}"
+BULLETIN_WRITE_TOTAL_T0_US="${EPOCHREALTIME/./}"
+BULLETIN_WRITE_TOTAL_T0_US="${BULLETIN_WRITE_TOTAL_T0_US:0:16}"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-${BULLETIN_ROOT_OVERRIDE:-$_BULLETIN_ROOT}}"
+if [[ -f "$_BULLETIN_ROOT/scripts/lib/defense_overhead_writer.sh" ]]; then
+    source "$_BULLETIN_ROOT/scripts/lib/defense_overhead_writer.sh"
+else
+    defense_overhead_write_async() { return 0; }
+fi
+BULLETIN_WRITE_TOTAL_RECORDED=0
+bulletin_write_record_total() {
+    local rc="${1:-0}" now_us wall_ms verdict
+    [[ "${BULLETIN_WRITE_TOTAL_RECORDED:-0}" -eq 0 ]] || return 0
+    BULLETIN_WRITE_TOTAL_RECORDED=1
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - BULLETIN_WRITE_TOTAL_T0_US + 999) / 1000 ))
+    verdict=PASS
+    [[ "$rc" -eq 0 ]] || verdict=FAIL
+    defense_overhead_write_async bulletin_write bulletin_write_total "$wall_ms" "$verdict" \
+        "bulletin-write-${BASHPID}-${BULLETIN_WRITE_TOTAL_T0_US}" || true
+}
+bulletin_write_total_on_exit() { local rc=$?; bulletin_write_record_total "$rc"; return "$rc"; }
+trap bulletin_write_total_on_exit EXIT
+
 # ── Fast-path: no-args before SCRIPT_DIR/source ──────────────────────────────
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || "${2:-}" == "-h" || "${2:-}" == "--help" ]]; then
     echo "Usage: bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]"
