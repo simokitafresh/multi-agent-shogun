@@ -1,5 +1,7 @@
 <!-- gist-master: 98f42e727bea67ad5dd322e6756bc45b hot-script-speedup-round10-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.4 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.5 【🚀裁可済み・進行中】
+
+> v1.5(2026-08-05 19:05依存訂正): v1.4まで第八弾#1-#3をwave checkpoint待ちとしたのは誤り。第八弾v1.6は2026-08-05 15:25に固定HEAD `5aad3a61ecdd826a10271e296b3c8ed14b3cbec7`、214/214ファイル、3,122/3,122 PASS、FAIL0、SKIP0、`complete=1`、`full_scope=true`で実装・品質checkpoint CLOSE済み。よって第十弾#1を即着手可へ解除し、同一writer `gate_three_layer_health.sh` のため#1→#2→#3直列とする。前弾依存待ちは第九弾に依存する#5/#7の2件だけへ訂正した。
 
 > v1.4(2026-08-05 18:59進捗・判断整合同期): 一次実績自体はv1.3から不変。実走1/7、実装GATE CLEAR 0、正式FAIL-close 1、配備前保留1、前弾依存待ち5。§2.5に進捗総括・再開順序・完了条件を追加し、§3/§4に残っていた「裁可対象」「先行可」を現行裁定・実態へ更新した。#4は親hook event↔test timing identity計装後に再開、#6は`deploy_task.sh`の既存owner解放後に配備する。
 
@@ -11,7 +13,7 @@
 
 > 初版起草(2026-08-04 23:34。殿発案23:29『第十弾は実際に今この瞬間にボトルネックになっている遅いものを改めてやりたい』『トップ7全部をもう一度やるべきだ』『修正後1週間のledger累積課税を前週比で総括は劣化を検知、現在のボトルネックは直近24時間で計測の二段構え』)
 
-> シリーズ: ホットスクリプト集中高速化。第一弾〜第七弾=✅CLOSED / **第八弾**=wave最終checkpoint進行中 / **第九弾**=一部CLEAR・FAIL群保留 / **第十弾=本書(進行中)** / 第十一弾=8-15位(進行中)
+> シリーズ: ホットスクリプト集中高速化。第一弾〜第七弾=✅CLOSED / **第八弾**=✅実装・品質checkpoint CLOSED(正式速度効果のみ1週間ledger待ち) / **第九弾**=一部CLEAR・FAIL群保留 / **第十弾=本書(進行中)** / 第十一弾=8-15位(進行中)
 
 ## §-1 スコープと境界(数と原理を先に固定)
 
@@ -19,7 +21,7 @@
 - **二段計測(殿設計2026-08-04 23:34 — 本弾から恒久導入)**:
   - **Tier 1 劣化検知**: 修正後1週間のledger累積課税を前週比で総括。退行を機械的に検出。wave最終checkpointの既存契約
   - **Tier 2 ボトルネック特定**: 直近24時間の絶対値で累積課税TOP Nを序列化。「今この瞬間の最大の敵」を機械的に炙り出す。**前週比のみでは「改善済みだが依然遅い」「新たに遅くなった」が盲点**(殿指摘)。Tier 2で補完
-- **前弾との境界**: 第八弾・第九弾標的と重複する場合、前弾の改善成果を引き継いだ上で残課税を攻撃する(前弾クローズ後に第十弾へ吸収)。前弾進行中の標的は前弾のwave checkpoint結果を待ってから着手
+- **前弾との境界**: 第八弾は実装・品質checkpoint CLOSE済みのため#1-#3の依存条件を満たした。第九弾標的と重複する#5/#7だけは同弾の該当是正を待ち、成果を引き継いだ残課税を攻撃する
 - **writer構造(第五・七・八・九弾の写像)**: 1スクリプト(の1ホットパス)=1弾=1レーン。共有層(`scripts/lib/`)に触れる弾は独立writerかつ先行→固定HEADで再計測→個別弾の直列依存。並列変更禁止
 - **品質2原則堅持**: 正本突合判定+境界fixture両方を維持。防御の検証力は1点も削らない(殿裁定2026-07-21『削るな、速くしろ』が憲法)
 - **スコープ外**: gate/hookの削除・条件緩和(必須ハーネス保持=LS099)/テスト実行時間(第七弾CLOSED)/DM-Signal側Python(別repo)
@@ -91,24 +93,24 @@
 | 6 | `deploy_task:deploy_total` | 混合 | med 1.81s×3,934・total 40,592s・max 991s | 第九弾#3偵察済み(report_publication特定)。是正実装の残課税を攻撃 |
 | 7 | `heavy_job_admission:queue_wait` | 外れ値 | med 3.00s×358・total 28,010s・max 1,222s | 第九弾#2(#1後直列)。lock競合の構造根治 |
 
-- 弾#1-#3は第八弾wave checkpoint確定後に着手。#5・#7は第九弾是正完了後。#4・#6は独立writer
-- 前弾進行中の標的は前弾クローズを待つ(重複作業回避)。Tier 2で前弾クローズ後も依然TOPなら第十弾で是正開始
+- 第八弾wave checkpointは完了済み。refresh三標的は同一writer `gate_three_layer_health.sh` のため#1→#2→#3を直列実施する。#5・#7は第九弾該当是正後。#4・#6は独立writer
+- 第八弾完了後もrefresh三標的はTier 2で依然TOPのため、第十弾で再攻撃する。前弾待ちを理由に停止しない
 
-## §2.5 進捗台帳(2026-08-05 18:59家老更新)
+## §2.5 進捗台帳(2026-08-05 19:05家老訂正)
 
 | # | 標的 | 状態 | 帰結(実測生値) |
 |---|---|---|---|
-| 1 | refresh_window | ⏳第八弾wave checkpoint待ち | — |
-| 2 | refresh_copy | ⏳第八弾wave checkpoint待ち | — |
-| 3 | refresh_verify | ⏳第八弾wave checkpoint待ち | — |
+| 1 | refresh_window | ▶️**即着手可** | 第八弾v1.6の品質checkpoint CLOSEを一次確認。直近24h Tier 2首位(total 245,481s)として再攻撃を開始できる |
+| 2 | refresh_copy | ⏳**#1完了後(同一writer直列)** | 第八弾依存は解消済み。`gate_three_layer_health.sh`のwriter競合を避け、#1固定HEAD後に着手 |
+| 3 | refresh_verify | ⏳**#2完了後(同一writer直列)** | 第八弾依存は解消済み。#2固定HEAD後に着手 |
 | 4 | affected_tests | ⚠️**正式FAIL-close** | `cmd_karo_round10_lane4_affected_tests_20260805`: baseline n=1,132/p50=4.82s/p95=336.8s/max=1,334.2s/total=74,925s → current n=1,187/p50=4.85s/p95=342.841s/max=1,975.901s/total=82,794.087s。p95上位60/60にtest set・selection_count・files_selected・call-path属性なし、hook event_idとtest_timing run_idのjoin不能。focusedは6ファイル選択・1 FAIL。コード変更/commitなし、家老ACCEPT・archive済み。次手は親hook event↔test timing identity計装 |
 | 5 | execution | ⏳第九弾#1是正完了待ち | — |
 | 6 | deploy_total | ⏸️**配備前保留(writer衝突)** | draft review LGTM済み。ただし`deploy_task.sh`が既存dirty(MM)でlane所有権を確保できず、変更を重ねず未配備。既存owner解放後に再判断 |
 | 7 | queue_wait | ⏳第九弾#2完了待ち | — |
 
-- **進捗総括(7標的母数)**: 実走1/7(#4)、実装GATE CLEAR 0/7、正式FAIL-close 1/7(#4)、配備前保留1/7(#6)、前弾依存待ち5/7(#1-#3/#5/#7)。偵察・レビューを実装完了へ数えない。
-- **確定した次手**: (1)#4へselection manifest hash+親precommit event↔test timing run_idの共通identityを追加し、p95上位test setを60/60分類可能にして再実走 (2)`deploy_task.sh`既存owner解放後に#6配備 (3)第八弾wave確定後に#1-#3 (4)第九弾#1/#2是正確定後に#5/#7。
-- **完了条件**: 7標的を全てGATE CLEARまたは測定可能なno-changeで閉じ、§2.6の固定HEAD分割checkpointをFAIL0・SKIP0・duplicate0・missing0で通過後、Tier 1前週比とTier 2直近24h序列を再計測してCLOSEする。現時点の終了目処は日付ではなく、上記2つのowner/identity障壁と前弾checkpointの解消順で規定する。
+- **進捗総括(7標的母数)**: 実走済みは#4の1/7で、その帰結が正式FAIL-close 1/7。残る6件は、即着手可1/7(#1)、同一writer直列待ち2/7(#2/#3)、配備前保留1/7(#6)、第九弾依存待ち2/7(#5/#7)。実装GATE CLEAR 0/7、第八弾依存待ち0件。
+- **確定した次手**: (1)#1 refresh_window着手→固定HEAD (2)#2 refresh_copy→固定HEAD (3)#3 refresh_verify (4)#4へselection manifest hash+親precommit event↔test timing run_idの共通identityを追加して再実走 (5)`deploy_task.sh`既存owner解放後に#6配備 (6)第九弾#1/#2是正確定後に#5/#7。
+- **完了条件**: 7標的を全てGATE CLEARまたは測定可能なno-changeで閉じ、§2.6の固定HEAD分割checkpointをFAIL0・SKIP0・duplicate0・missing0で通過後、Tier 1前週比とTier 2直近24h序列を再計測してCLOSEする。現時点の終了目処は#1→#2→#3直列、#4 identity、#6 owner、第九弾#5/#7依存の解消順で規定する。
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
 
@@ -152,21 +154,21 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 | 二段計測の導入 | **確定**。殿設計2026-08-04 23:34(Tier 1劣化検知+Tier 2ボトルネック特定)を第十弾から恒久導入 |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 23:32・直近24時間) |
 | 弾数・標的固定 | **確定**。TOP7を母数とし、途中FAIL/保留でも標的を削らない |
-| 前弾との直列条件 | **確定**。#1-#3=第八弾wave後、#5/#7=第九弾是正後。#4/#6のみ独立writerだが、#4はidentity待ち、#6はwriter owner待ち |
+| 前弾との直列条件 | **第八弾条件は充足済み**。#1→#2→#3は同一writer直列で即開始可。#5/#7のみ第九弾是正待ち。#4はidentity待ち、#6はwriter owner待ち |
 | 高速化と防御力の境界 | **確定**: 検証力不変・fail-closed維持・チェック間引き禁止(LS099/殿裁定07-21) |
 
 ## §4 5W1H
 
 - **WHY**: 前週比(Tier 1)のみでは「改善済みだが依然遅い」「新たに遅くなった」が盲点。直近24h絶対値(Tier 2)で今この瞬間の最大の敵を炙り出し再攻撃する(殿指摘2026-08-04 23:29)
 - **WHAT**: TOP7を全て再標的化。前弾成果引継ぎ+残課税攻撃。恒常型=子区分→最大寄与是正/外れ値型=発火条件→条件是正。検証力不変
-- **WHEN**: 起動済み。#4は初回実走を正式FAIL-closeしidentity計装後に再開、#6はwriter owner解放後に配備。#1-#3は第八弾wave checkpoint後、#5/#7は第九弾該当是正後に着手
+- **WHEN**: 起動済み。第八弾checkpoint完了により#1を即時開始し、#1→#2→#3を同一writer直列で進める。#4はidentity計装後に再開、#6はwriter owner解放後、#5/#7は第九弾該当是正後に着手
 - **WHERE**: `scripts/`配下のthree_layer_health系・git_pre_commit・heavy_job_admission系・deploy_task.sh。台帳=`logs/defense_overhead.jsonl`
 - **WHO**: 偵察・是正=忍者(read-only冗長2名可+是正は単独所有)、検分=家老+軍師、裁可=殿
 - **HOW**: レーン方式(将軍下知→家老配備→lane名CLEAR→最終checkpoint品質2原則検分)。Tier 1+Tier 2の二段計測で効果確認
 
 ## §5 因果リンク
 
-- → [[hot-script-speedup-round8-asis-tobe-5w1h_20260804]] 前弾(wave checkpoint進行中)。refresh系#1-#3の成果引継ぎ元
+- → [[hot-script-speedup-round8-asis-tobe-5w1h_20260804]] 前弾(実装・品質checkpoint CLOSED)。refresh系#1-#3の依存解除・成果引継ぎ元
 - → [[hot-script-speedup-round9-asis-tobe-5w1h_20260804]] 前弾(レーン配備中)。execution/#1・queue_wait/#2・deploy_total/#3の成果引継ぎ元
 - → [[hot-script-speedup-round11-asis-tobe-5w1h_20260804]] 同時起草の姉妹弾(8-15位)
 - → [[殿裁定_削るな速くしろ_20260721]] 品質を保ったまま超速化=憲法(knowledge:569abc55)
