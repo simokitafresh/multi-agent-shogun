@@ -1454,6 +1454,7 @@ codd:
 | file | `docs/research/fullrecalculate-architecture-2026-03-28.md` |
 | file | `context/dm-signal-research.md` §因果リンク `P4_writer_fence_v1.4.22` |
 | causal | `cmd_3881` origin: [[cmd_3881性能FAIL]] -> [[常設trigger通常時課税]] -> [[P4窓限定role trigger]] |
+| causal | [[fof-acceleration-oscillation-experiment-asis-tobe-5w1h_20260805]] — FoF加速度フィルタ振動問題の実験設計書 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T15:11 fullrecalculate 3566s→480s |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T14:29:03+09:00 正しいfullrecalculateの仕方は知識もない？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T15:02 fullrecalculate deploy後トリガー+完了確認 |
