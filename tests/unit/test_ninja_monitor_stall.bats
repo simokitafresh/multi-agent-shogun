@@ -258,7 +258,7 @@ printf "awaiting=%s terminal=%s pending=%s wall_ms=%s\n" "$awaiting" "$terminal"
     [[ "$output" == awaiting=4\ terminal=4\ pending=4* ]]
 }
 
-@test "fast path returns before ten-second maintenance job" {
+@test "fast path returns before maintenance job" {
     run bash -lc '
 set -euo pipefail
 export NINJA_MONITOR_LIB_ONLY=1
@@ -268,18 +268,21 @@ NINJA_NAMES=(hanzo)
 MARK="'"$BATS_TEST_TMPDIR"'/detected"
 check_and_update_done_task() {
     printf detected > "$MARK"
-    (sleep 10) &
+    # Keep a real asynchronous maintenance child, but avoid a fixed ten-second
+    # drain in this focused test.  The fast-path contract is return-before-child,
+    # not the duration of the synthetic maintenance job.
+    (sleep 1) &
     maintenance_pid=$!
 }
 start=$EPOCHREALTIME
 monitor_task_state_fast_path
 elapsed=$(awk -v s="$start" -v e="$EPOCHREALTIME" "BEGIN { print e-s }")
 test -f "$MARK"
-awk -v e="$elapsed" "BEGIN { exit !(e < 5) }"
+awk -v e="$elapsed" "BEGIN { exit !(e < 0.5) }"
 # The latency assertion above must observe the asynchronous return, while the
 # fixture itself must still own and reap its synthetic maintenance child.
 # Otherwise bats can PASS and orphan the ten-second sleep into the aggregate
-# runner process group and race the finite 10s admission drain.
+# runner process group and race the finite maintenance drain.
 wait "$maintenance_pid"
 '
     [ "$status" -eq 0 ]
