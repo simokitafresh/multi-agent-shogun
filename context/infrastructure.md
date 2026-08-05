@@ -1,5 +1,8 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-05 cmd_karo_round10_lane1_refresh_window_impl_20260805 reviewed source boundary -->
+<!-- last_updated: 2026-08-06 cmd_karo_round10_lane2 reviewed source boundary -->
+<!-- source_commit:df400ee75 reason:cmd_karo_round10_lane2 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=df400ee75 -->
+<!-- source_commit:a44de3202 reason:cmd_karo_round10_lane2 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=a44de3202 -->
+<!-- source_commit:180a3894a reason:cmd_karo_round10_lane2 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=180a3894a -->
 <!-- source_commit:4875ea831 reason:cmd_karo_round10_lane1_refresh_window_impl_20260805 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=4875ea831 -->
 <!-- source_commit:7c461e2a0 reason:cmd_karo_round10_lane1_refresh_window_impl_20260805 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=7c461e2a0 -->
 <!-- source_commit:ef7e4188f reason:cmd_karo_hotfix_completion_notify_gap_draft_ja_20260805 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=ef7e4188f -->
@@ -11,7 +14,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1561 -->
+<!-- last_synced_lesson: L1563 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -46,7 +49,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1561 -->
+<!-- last_synced_lesson: L1563 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -106,6 +109,8 @@
 - L1559: Bats固定抽出はsetup_fileへ分離する（cmd_karo_round8_speed_gate_startup_20260805）
 - L1560: commit予約識別子はUSERでなくtmux agent_idを使う（cmd_shogun_commit_reservation_ledger_phase1_20260805）
 - L1561: restricted PATH下の既存writer計装はPATH復元をfixtureで守る（cmd_karo_round9_lane0pp_impl_common_20260805）
+- L1562: private cache公開前のWAL統合とappend判定snapshot（cmd_karo_round10_lane2_refresh_copy_impl_20260805）
+- L1563: context reflux後に到着する外部source commitの自動task化（cmd_karo_recon_context_freshness_ga437）
 
 ## 設計標準・テスト・因果
 
