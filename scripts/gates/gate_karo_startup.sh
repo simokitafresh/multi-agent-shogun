@@ -836,8 +836,15 @@ END {
         # 実装cmdに付随する通常のdraft/reportレビューを誤除外しない。
         review_basis = tolower(cmd_title[cid[i]] " " cid[i])
         review_purpose = tolower(cmd_purpose[cid[i]])
+        # 偵察・reflux・affected-tests計測可否判定も実装ではない。これらの
+        # 正当なFAIL（仮説棄却/入力不足）を実装品質WARNへ混ぜない。一方で
+        # hotfix/implのFAILは除外せず、品質劣化をそのまま残す。
+        non_impl_id = tolower(cid[i])
         review_only = (review_basis ~ /(delta[_ -]?review|independent[_ -]?review|design[_ -]?review|設計書.*検分|独立レビュー|敵対レビュー)/ \
-            || review_purpose ~ /^(設計書(の|を)?.*(検分|独立レビュー)|独立レビュー|敵対レビュー|delta[_ -]?review|independent[_ -]?review|design[_ -]?review)/)
+            || review_purpose ~ /^(設計書(の|を)?.*(検分|独立レビュー)|独立レビュー|敵対レビュー|delta[_ -]?review|independent[_ -]?review|design[_ -]?review)/ \
+            || non_impl_id ~ /^cmd_reflux_/ \
+            || non_impl_id ~ /_recon[0-9]*_/ \
+            || non_impl_id ~ /_affected_tests_/)
         if (review_only) {
             review_only_total++
             if (!ok) review_only_warn++
