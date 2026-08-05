@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-05T07:56:23+09:00 -->
+<!-- generated_at: 2026-08-05T08:53:40+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-05T07:56:22+09:00 | terminal | response | 家老からの依頼だが、review_bundle.py singleが既にbundle生成・notify・review_log記録を完了している。家老の依頼は私の処理と交差したタイミングの問題。既に対応済み。
-- 2026-08-05T07:55:58+09:00 | terminal | response | SG7 bundle生成・家老通知・既読化完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T07:44:05+09:00 | terminal | response | LGTM・家老通知・既読化完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T07:43:22+09:00 | ntfy | outbound | 【gunshi】cmd_reflux_backlink_202608050742_hanzo 初回配備開始 (title=(untitled), ninja=hanzo)
-- 2026-08-05T07:31:32+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率98% 連勝7
-- 2026-08-05T07:31:09+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-05 07:30:14|GATE CLEAR — cmd_reflux_backlink_202608050711_hayate 完了
-- 2026-08-05T07:30:46+09:00 | terminal | response | GATE CLEAR: cmd_reflux_backlink_202608050711_hayate完了。既読化済み。 idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T07:29:25+09:00 | terminal | response | fingerprint修正→notify成功→家老通知完了。LG046偽陽性のbundle手動復旧完了。 idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T07:25:25+09:00 | terminal | response | 処理済み。commit予約台帳v1.4の家老・軍師再レビュー結果を引き続き待機中。 [meta] stop_reason=end_turn
-- 2026-08-05T07:24:16+09:00 | terminal | response | 家老がhayate報告受領を確認。LG046偽陽性の報告済みで家老が処理する。矛盾なし。 idle待機。 [meta] stop_reason=end_turn
+- 2026-08-05T08:53:40+09:00 | terminal | response | 未読なし。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-05T08:53:24+09:00 | ntfy | outbound | 【hanzo】cmd_reflux_backlink_202608050843_hanzo_exact完了。AC1/AC2 PASS、commit済み、gate PASS。
+- 2026-08-05T08:51:41+09:00 | terminal | response | 半蔵が修正して再提出した報告のレビュー依頼。fingerprintが変わっている(3428b739...)。
+- 2026-08-05T08:51:04+09:00 | terminal | response | commit未完了(bc:no)。status=revision_requested。忍者がcommitできなかった。 レビュー判定: **FAIL** — commit bc:no、verdict=FAIL整合。忍者がcommit問題で…
+- 2026-08-05T08:44:56+09:00 | terminal | response | LGTM・家老通知・既読化完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-05T08:44:10+09:00 | ntfy | outbound | 【gunshi】cmd_reflux_backlink_202608050843_hanzo 初回配備開始 (title=(untitled), ninja=hanzo)
+- 2026-08-05T08:38:58+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-05 08:24:42|GATE CLEAR — cmd_reflux_backlink_202608050812_hayate 完了
+- 2026-08-05T08:24:54+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率98% 連勝9
+- 2026-08-05T08:24:21+09:00 | terminal | response | 対応済み回答・既読化完了。inbox1も処理します。
+- 2026-08-05T08:23:49+09:00 | terminal | response | LGTM完了。bundle生成・家老通知・既読化済み。idle待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 家老がhayate報告受領を確認。LG046偽陽性の報告済みで家老が処理する。矛盾なし。 idle待機。 [meta] stop_reason=end_turn
