@@ -1,4 +1,3 @@
-<!-- gist-master: b70512e1263db4a80042acb63c39778c partial-turnover-experiment-asis-tobe-5w1h_20260805.md -->
 # 段階的リバランス(Partial Turnover) — 実験設計書 AsIs/ToBe 5W1H v1.10 【指定12PF実験FAIL-close・全102PF未実行】
 
 > v1.10(2026-08-06 01:00 指定12PF実測同期): `cmd_partial_turnover_phase0_v19`は指定12/12PF・5α=60/60セルを完走し、指定外PF0・全102PF実行0・本番書込0・FAIL0・SKIP0を維持した。一方、FoF 4体の`display_ticker_weights`にweight合計非unit 35行、α=0 parity不一致29/2,096行(max abs diff=0.1713575056)を検出し、PF単位parityは8/12。軍師レビューと家老ACCEPTを経て正式FAIL-closeし、補正・fallback・FoF展開・102PF展開は行っていない。次のデータソース方式は殿の追加指示までBLOCK。
