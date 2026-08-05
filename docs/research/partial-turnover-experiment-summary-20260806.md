@@ -1,3 +1,4 @@
+<!-- gist-master: 894329c3f3f0b5a1b40162f3ff934a8d partial-turnover-experiment-summary-20260806.md -->
 # 段階的リバランス(Partial Turnover)実験 — 結果総括
 
 > 設計書: [partial-turnover-experiment-asis-tobe-5w1h_20260805.md](https://gist.github.com/simokitafresh/b70512e1263db4a80042acb63c39778c)
