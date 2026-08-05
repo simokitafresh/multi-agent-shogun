@@ -556,22 +556,37 @@ def _sqlite_table_columns(conn, table_name: str) -> list[str]:
     return [row[1] for row in conn.execute(f"PRAGMA table_info({table_name})")]
 
 
-def _events_prefix_fingerprint(conn, max_rowid: int) -> str:
-    """Return the mutation watermark for an events prefix."""
-    row = conn.execute(
-        """
-        SELECT MAX(COALESCE(updated_at, recorded_at, ts))
-          FROM events
-         WHERE rowid <= ?
+def _events_prefix_matches(
+    source_conn: sqlite3.Connection,
+    published_path: str,
+    event_columns: list[str],
+    max_rowid: int,
+) -> bool:
+    """Check every value in the cached events prefix without Python row marshaling.
+
+    The source and published cache have independent SQLite layouts, so a
+    page-level comparison is not valid.  Attach the stable published cache to
+    the source read transaction instead and let SQLite compare corresponding
+    rows and columns.  This catches payload-only mutations whose timestamps,
+    counts, and rowids are unchanged while keeping the large-value scan inside
+    SQLite rather than copying every prefix row through Python.
+    """
+    changed_columns = " OR ".join(
+        f'source."{column}" IS NOT cached."{column}"' for column in event_columns
+    )
+    source_conn.execute("ATTACH DATABASE ? AS cached_prefix", (published_path,))
+    mismatch = source_conn.execute(
+        f"""
+        SELECT 1
+          FROM main.events AS source
+          JOIN cached_prefix.events AS cached ON cached.rowid = source.rowid
+         WHERE source.rowid <= ?
+           AND ({changed_columns})
+         LIMIT 1
         """,
         (max_rowid,),
     ).fetchone()
-    return row[0] if row else None
-
-
-def _signature_maxts(signature: str | None) -> str | None:
-    match = re.search(r"(?:^|\|)maxts:(.*)$", signature or "")
-    return match.group(1) if match else None
+    return mismatch is None
 
 
 def _try_incremental_cache_snapshot(
@@ -638,15 +653,9 @@ def _try_incremental_cache_snapshot(
             ).fetchone()
             if source_count <= cache_count or source_max_rowid <= cache_max_rowid:
                 raise sqlite3.DatabaseError("source is not a strict append")
-            source_prefix_maxts = _events_prefix_fingerprint(source_conn, cache_max_rowid)
-            cache_sig_path = f"{published_path}.srcsig"
-            cache_prefix_maxts = None
-            try:
-                with open(cache_sig_path, encoding="utf-8") as signature_file:
-                    cache_prefix_maxts = _signature_maxts(signature_file.read().strip())
-            except OSError:
-                cache_prefix_maxts = _events_prefix_fingerprint(cache_conn, cache_max_rowid)
-            if source_prefix_maxts != cache_prefix_maxts:
+            if not _events_prefix_matches(
+                source_conn, published_path, source_columns, cache_max_rowid
+            ):
                 raise sqlite3.DatabaseError("source prefix content changed")
             source_delta_count = source_conn.execute(
                 "SELECT COUNT(*) FROM events WHERE rowid > ?", (cache_max_rowid,)
