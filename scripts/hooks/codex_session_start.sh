@@ -38,4 +38,6 @@ trap codex_session_start_total_on_exit EXIT
 # The shared helper may be instrumented when invoked as a Claude entrypoint;
 # this Codex adapter owns the same SessionStart event, so suppress the nested
 # helper row for this call and keep exactly one event in the ledger.
-DEFENSE_OVERHEAD_ENABLED=0 bash "$ROOT/scripts/hooks/session_start_inject.sh" || true
+# Suppress only the shared SessionStart row.  Do not disable the writer in the
+# child process globally: other source-specific writers must remain enabled.
+SESSION_START_OVERHEAD_SUPPRESS=1 bash "$ROOT/scripts/hooks/session_start_inject.sh" || true
