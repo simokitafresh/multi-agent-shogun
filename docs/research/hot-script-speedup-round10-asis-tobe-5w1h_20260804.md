@@ -1,5 +1,7 @@
 <!-- gist-master: 98f42e727bea67ad5dd322e6756bc45b hot-script-speedup-round10-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.6 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.7 【🚀裁可済み・scope監査中】
+
+> v1.7(2026-08-05 20:22 scope正規化): 提案弾台帳と進捗台帳の標的identifierは7/7一致していたが、実装owner pathが未定義で、#1-#3を`gate_three_layer_health.sh` writerと誤記していた。一次コード突合により#1-#3=`scripts/memory_db_live_insert.py`、#4=`scripts/hooks/git-pre-commit.sh`、#5/#7=`scripts/heavy_job_admission.sh`、#6=`scripts/deploy_task.sh`と確定。両台帳を同じidentifier+owner pathへ正規化し、列挙外pathの高速化・変更を禁止する。進行中#1はread-only対応証明までで停止し、実装変更0件を維持する。
 
 > v1.6(2026-08-05 20:16再開): #1 refresh_window偵察 `cmd_karo_round10_lane1_refresh_window_recon_20260805` を配備。read-onlyで現ledger再計数→p95以上の発火条件・call path・phase全件分類→最大寄与または追加identity契約を一意化する。nudge到達・SessionStart・作業開始をcapture-paneで一次確認し、軍師draftレビューもLGTM。#2/#3は同一writerのため#1固定HEAD後まで直列待ちを維持する。
 
@@ -85,33 +87,34 @@
 
 ### 提案弾台帳(殿裁可で固定)
 
-| # | 標的 | 型 | 現状(直近24h) | 手筋候補(実測で裏取り後) |
-|---|---|---|---|---|
-| 1 | `three_layer_health:refresh_window` | 恒常 | med 25.64s×8,300・total 245,481s | 第八弾#1成果引継ぎ。wave checkpoint後に残課税を確定→残構造を偵察 |
-| 2 | `three_layer_health:refresh_copy` | 恒常 | med 12.40s×7,385・total 111,764s | 第八弾#2成果引継ぎ。同上 |
-| 3 | `three_layer_health:refresh_verify` | 恒常 | med 12.31s×7,507・total 92,710s | 第八弾#3成果引継ぎ。同上 |
-| 4 | `git_pre_commit:affected_tests` | 恒常+裾 | med 4.82s×1,132・total 74,925s・max 1,334s | 第八弾#4(-65%)後の残裾。p95上位のtest set同定→裾削減 |
-| 5 | `heavy_job_admission:execution` | 外れ値 | med 3.00s×762・total 66,859s・max 1,191s | 第九弾#1偵察済み(p99上位job同定)。是正実装の残課税を攻撃 |
-| 6 | `deploy_task:deploy_total` | 混合 | med 1.81s×3,934・total 40,592s・max 991s | 第九弾#3偵察済み(report_publication特定)。是正実装の残課税を攻撃 |
-| 7 | `heavy_job_admission:queue_wait` | 外れ値 | med 3.00s×358・total 28,010s・max 1,222s | 第九弾#2(#1後直列)。lock競合の構造根治 |
+| # | 標的identifier | 高速化許可owner path | 型 | 現状(直近24h) | 手筋候補(実測で裏取り後) |
+|---|---|---|---|---|---|
+| 1 | `three_layer_health:refresh_window` | `scripts/memory_db_live_insert.py` | 恒常 | med 25.64s×8,300・total 245,481s | 第八弾#1成果引継ぎ。wave checkpoint後に残課税を確定→残構造を偵察 |
+| 2 | `three_layer_health:refresh_copy` | `scripts/memory_db_live_insert.py` | 恒常 | med 12.40s×7,385・total 111,764s | 第八弾#2成果引継ぎ。同上 |
+| 3 | `three_layer_health:refresh_verify` | `scripts/memory_db_live_insert.py` | 恒常 | med 12.31s×7,507・total 92,710s | 第八弾#3成果引継ぎ。同上 |
+| 4 | `git_pre_commit:affected_tests` | `scripts/hooks/git-pre-commit.sh` | 恒常+裾 | med 4.82s×1,132・total 74,925s・max 1,334s | 第八弾#4(-65%)後の残裾。p95上位のtest set同定→裾削減 |
+| 5 | `heavy_job_admission:execution` | `scripts/heavy_job_admission.sh` | 外れ値 | med 3.00s×762・total 66,859s・max 1,191s | 第九弾#1偵察済み(p99上位job同定)。是正実装の残課税を攻撃 |
+| 6 | `deploy_task:deploy_total` | `scripts/deploy_task.sh` | 混合 | med 1.81s×3,934・total 40,592s・max 991s | 第九弾#3偵察済み(report_publication特定)。是正実装の残課税を攻撃 |
+| 7 | `heavy_job_admission:queue_wait` | `scripts/heavy_job_admission.sh` | 外れ値 | med 3.00s×358・total 28,010s・max 1,222s | 第九弾#2(#1後直列)。lock競合の構造根治 |
 
-- 第八弾wave checkpointは完了済み。refresh三標的は同一writer `gate_three_layer_health.sh` のため#1→#2→#3を直列実施する。#5・#7は第九弾該当是正後。#4・#6は独立writer
+- **scope不変量**: 高速化・変更を許可するのは上表4 owner pathだけ。テスト・台帳・call path依存はread-only参照に限り、進捗行・高速化対象・変更scopeへ混ぜない。owner追加は提案弾台帳を先に改版してから行う
+- 第八弾wave checkpointは完了済み。refresh三標的は同一writer `scripts/memory_db_live_insert.py` のため#1→#2→#3を直列実施する。#5・#7も同一writerゆえ#5→#7直列。#4・#6は独立writer
 - 第八弾完了後もrefresh三標的はTier 2で依然TOPのため、第十弾で再攻撃する。前弾待ちを理由に停止しない
 
 ## §2.5 進捗台帳(2026-08-05 20:16家老更新)
 
-| # | 標的 | 状態 | 帰結(実測生値) |
-|---|---|---|---|
-| 1 | refresh_window | 🛠️**偵察配備済み・実行中** | `cmd_karo_round10_lane1_refresh_window_recon_20260805`。第八弾v1.6 CLOSEを前提に、現ledger再計数とp95以上の全件分類を開始。20:16 nudge到達・SessionStart・作業開始を一次確認。軍師draftレビューLGTM |
-| 2 | refresh_copy | ⏳**#1完了後(同一writer直列)** | 第八弾依存は解消済み。`gate_three_layer_health.sh`のwriter競合を避け、#1固定HEAD後に着手 |
-| 3 | refresh_verify | ⏳**#2完了後(同一writer直列)** | 第八弾依存は解消済み。#2固定HEAD後に着手 |
-| 4 | affected_tests | ⚠️**正式FAIL-close** | `cmd_karo_round10_lane4_affected_tests_20260805`: baseline n=1,132/p50=4.82s/p95=336.8s/max=1,334.2s/total=74,925s → current n=1,187/p50=4.85s/p95=342.841s/max=1,975.901s/total=82,794.087s。p95上位60/60にtest set・selection_count・files_selected・call-path属性なし、hook event_idとtest_timing run_idのjoin不能。focusedは6ファイル選択・1 FAIL。コード変更/commitなし、家老ACCEPT・archive済み。次手は親hook event↔test timing identity計装 |
-| 5 | execution | ⏳第九弾#1是正完了待ち | — |
-| 6 | deploy_total | ⏸️**配備前保留(writer衝突)** | draft review LGTM済み。ただし`deploy_task.sh`が既存dirty(MM)でlane所有権を確保できず、変更を重ねず未配備。既存owner解放後に再判断 |
-| 7 | queue_wait | ⏳第九弾#2完了待ち | — |
+| # | 標的identifier | 高速化許可owner path | 状態 | 帰結(実測生値) |
+|---|---|---|---|---|
+| 1 | `three_layer_health:refresh_window` | `scripts/memory_db_live_insert.py` | ⏸️**scope対応証明中(read-only)** | `cmd_karo_round10_lane1_refresh_window_recon_20260805`。当初target_path誤認を検出したため、source/check_id→実owner対応と変更0件の報告だけで停止。高速化未着手 |
+| 2 | `three_layer_health:refresh_copy` | `scripts/memory_db_live_insert.py` | ⏳**#1完了後(同一writer直列)** | 第八弾依存は解消済み。#1固定HEAD後に着手 |
+| 3 | `three_layer_health:refresh_verify` | `scripts/memory_db_live_insert.py` | ⏳**#2完了後(同一writer直列)** | 第八弾依存は解消済み。#2固定HEAD後に着手 |
+| 4 | `git_pre_commit:affected_tests` | `scripts/hooks/git-pre-commit.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round10_lane4_affected_tests_20260805`: baseline n=1,132/p50=4.82s/p95=336.8s/max=1,334.2s/total=74,925s → current n=1,187/p50=4.85s/p95=342.841s/max=1,975.901s/total=82,794.087s。p95上位60/60にtest set・selection_count・files_selected・call-path属性なし、hook event_idとtest_timing run_idのjoin不能。focusedは6ファイル選択・1 FAIL。コード変更/commitなし、家老ACCEPT・archive済み。次手は親hook event↔test timing identity計装 |
+| 5 | `heavy_job_admission:execution` | `scripts/heavy_job_admission.sh` | ⏳第九弾#1是正完了待ち | — |
+| 6 | `deploy_task:deploy_total` | `scripts/deploy_task.sh` | ⏸️**配備前保留(writer衝突)** | draft review LGTM済み。ただし`deploy_task.sh`が既存dirty(MM)でlane所有権を確保できず、変更を重ねず未配備。既存owner解放後に再判断 |
+| 7 | `heavy_job_admission:queue_wait` | `scripts/heavy_job_admission.sh` | ⏳第九弾#2完了待ち | — |
 
-- **進捗総括(7標的母数)**: 実走済み#4=1/7(正式FAIL-close)、実行中#1=1/7、同一writer直列待ち#2/#3=2/7、配備前保留#6=1/7、第九弾依存待ち#5/#7=2/7。実装GATE CLEAR 0/7、第八弾依存待ち0件。
-- **確定した次手**: (1)#1 refresh_window着手→固定HEAD (2)#2 refresh_copy→固定HEAD (3)#3 refresh_verify (4)#4へselection manifest hash+親precommit event↔test timing run_idの共通identityを追加して再実走 (5)`deploy_task.sh`既存owner解放後に#6配備 (6)第九弾#1/#2是正確定後に#5/#7。
+- **進捗総括(7標的母数)**: 実走済み#4=1/7(正式FAIL-close)、scope対応証明中#1=1/7、高速化実装は0/7。同一writer直列待ち#2/#3=2/7、配備前保留#6=1/7、第九弾依存待ち#5/#7=2/7。提案外ownerの進捗混入0件、第八弾依存待ち0件。
+- **確定した次手**: (1)#1の対応証明・変更0件を受領 (2)owner path限定ACで#1高速化を再配備→固定HEAD (3)#2 refresh_copy→固定HEAD (4)#3 refresh_verify (5)#4 identity計装後に再実走 (6)`deploy_task.sh`既存owner解放後に#6配備 (7)第九弾該当是正確定後に#5→#7。
 - **完了条件**: 7標的を全てGATE CLEARまたは測定可能なno-changeで閉じ、§2.6の固定HEAD分割checkpointをFAIL0・SKIP0・duplicate0・missing0で通過後、Tier 1前週比とTier 2直近24h序列を再計測してCLOSEする。現時点の終了目処は#1→#2→#3直列、#4 identity、#6 owner、第九弾#5/#7依存の解消順で規定する。
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
