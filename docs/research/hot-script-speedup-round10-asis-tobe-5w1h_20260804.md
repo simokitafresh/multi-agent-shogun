@@ -1,5 +1,7 @@
 <!-- gist-master: 98f42e727bea67ad5dd322e6756bc45b hot-script-speedup-round10-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.8 【🚀裁可済み・#1実装中】
+# ホットスクリプト集中高速化 第十弾 — 二段計測でTOP7再攻撃 — AsIs/ToBe 5W1H設計書 v1.9 【🚀裁可済み・#1 CLEAR】
+
+> v1.9(2026-08-05 22:28進捗同期): #1実装は小ledger fixtureの初回PASSを家老が41MB/194,673行の本番同等ledgerで再測定し、同期batch p50=703.954ms・旧方式比約2.64倍遅延を検出してRC。RC後commit `4875ea831` はbytes一括探索へ改め、41MB級同一fixtureのrefresh全window p50/p95=1,040.98/1,040.98ms→596.47/596.47ms(42.7%改善)、家老独立再測定batch p50=104.986ms、既存contract 9/9 PASS、FAIL0、SKIP0、最終変更owner 1件でGATE CLEAR。#2 refresh_copyは同一writer直列条件を満たし着手可。
 
 > v1.8(2026-08-05 21:59進捗同期): #1 read-only偵察は全期間n=8,608/p50=26.028s/p95=70.956s/max=320.043s/total=259,641.604s、p95 tail=432件、duplicate=0、完全group=229件、いずれかidentity欠測group=203件を確定して正式FAIL-close。正しいowner `scripts/memory_db_live_insert.py:681-855`だけを変更可能とする実装レーン `cmd_karo_round10_lane1_refresh_window_impl_20260805` を軍師LGTM(fingerprint `684489d3`)後に半蔵へ配備した。5仮説を同一fixture・同一反復数で総当たりし、品質不変かつp50/p95非悪化・一方10%以上改善を満たすまで、#2/#3は同一writer直列待ちを維持する。
 
@@ -103,20 +105,20 @@
 - 第八弾wave checkpointは完了済み。refresh三標的は同一writer `scripts/memory_db_live_insert.py` のため#1→#2→#3を直列実施する。#5・#7も同一writerゆえ#5→#7直列。#4・#6は独立writer
 - 第八弾完了後もrefresh三標的はTier 2で依然TOPのため、第十弾で再攻撃する。前弾待ちを理由に停止しない
 
-## §2.5 進捗台帳(2026-08-05 21:59家老更新)
+## §2.5 進捗台帳(2026-08-05 22:28家老更新)
 
 | # | 標的identifier | 高速化許可owner path | 状態 | 帰結(実測生値) |
 |---|---|---|---|---|
-| 1 | `three_layer_health:refresh_window` | `scripts/memory_db_live_insert.py` | 🔧**高速化実装中(owner限定)** | 偵察はn=8,608/p50=26.028s/p95=70.956s/max=320.043s/total=259,641.604s、p95 tail=432、duplicate=0、完全group=229、欠測group=203で正式FAIL-close。`cmd_karo_round10_lane1_refresh_window_impl_20260805`を21:59配備。copy/verify/source rowid/defense ledger subprocess/残差の5仮説を総当たり中。変更許可はowner 1件だけ |
-| 2 | `three_layer_health:refresh_copy` | `scripts/memory_db_live_insert.py` | ⏳**#1完了後(同一writer直列)** | 第八弾依存は解消済み。#1固定HEAD後に着手 |
+| 1 | `three_layer_health:refresh_window` | `scripts/memory_db_live_insert.py` | ✅**GATE CLEAR** | `cmd_karo_round10_lane1_refresh_window_impl_20260805`。41MB級同一fixtureの全window p50/p95=1,040.98/1,040.98ms→596.47/596.47ms(42.7%改善)。家老独立再測定batch p50=104.986ms、contract 9/9 PASS、FAIL0、SKIP0。commit `7c461e2a0`+RC `4875ea831`、最終変更owner 1件 |
+| 2 | `three_layer_health:refresh_copy` | `scripts/memory_db_live_insert.py` | ▶️**着手可(#1固定HEAD済み)** | 第八弾依存・#1同一writer直列条件とも解消。#1成果をbaselineに再計測して着手 |
 | 3 | `three_layer_health:refresh_verify` | `scripts/memory_db_live_insert.py` | ⏳**#2完了後(同一writer直列)** | 第八弾依存は解消済み。#2固定HEAD後に着手 |
 | 4 | `git_pre_commit:affected_tests` | `scripts/hooks/git-pre-commit.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round10_lane4_affected_tests_20260805`: baseline n=1,132/p50=4.82s/p95=336.8s/max=1,334.2s/total=74,925s → current n=1,187/p50=4.85s/p95=342.841s/max=1,975.901s/total=82,794.087s。p95上位60/60にtest set・selection_count・files_selected・call-path属性なし、hook event_idとtest_timing run_idのjoin不能。focusedは6ファイル選択・1 FAIL。コード変更/commitなし、家老ACCEPT・archive済み。次手は親hook event↔test timing identity計装 |
 | 5 | `heavy_job_admission:execution` | `scripts/heavy_job_admission.sh` | ⏳第九弾#1是正完了待ち | — |
 | 6 | `deploy_task:deploy_total` | `scripts/deploy_task.sh` | ⏸️**配備前保留(writer衝突)** | draft review LGTM済み。ただし`deploy_task.sh`が既存dirty(MM)でlane所有権を確保できず、変更を重ねず未配備。既存owner解放後に再判断 |
 | 7 | `heavy_job_admission:queue_wait` | `scripts/heavy_job_admission.sh` | ⏳第九弾#2完了待ち | — |
 
-- **進捗総括(7標的母数)**: 高速化実装中#1=1/7、正式FAIL-close#4=1/7、実装GATE CLEAR=0/7。同一writer直列待ち#2/#3=2/7、配備前保留#6=1/7、第九弾依存待ち#5/#7=2/7。提案外ownerの進捗混入0件、第八弾依存待ち0件。
-- **確定した次手**: (1)#1の5仮説総当たり→品質不変・性能ACを満たしてowner 1件だけ固定HEAD化 (2)#2 refresh_copy→固定HEAD (3)#3 refresh_verify (4)#4 identity計装後に再実走 (5)`deploy_task.sh`既存owner解放後に#6配備 (6)第九弾該当是正確定後に#5→#7。
+- **進捗総括(7標的母数)**: 実装GATE CLEAR#1=1/7、正式FAIL-close#4=1/7。着手可#2=1/7、同一writer直列待ち#3=1/7、配備前保留#6=1/7、第九弾依存待ち#5/#7=2/7。提案外ownerの進捗混入0件、第八弾依存待ち0件。
+- **確定した次手**: (1)#1固定HEAD後の現物で#2 refresh_copyを再計測→高速化→固定HEAD (2)#3 refresh_verify (3)#4 identity計装後に再実走 (4)`deploy_task.sh`既存owner解放後に#6配備 (5)第九弾該当是正確定後に#5→#7。
 - **完了条件**: 7標的を全てGATE CLEARまたは測定可能なno-changeで閉じ、§2.6の固定HEAD分割checkpointをFAIL0・SKIP0・duplicate0・missing0で通過後、Tier 1前週比とTier 2直近24h序列を再計測してCLOSEする。現時点の終了目処は#1→#2→#3直列、#4 identity、#6 owner、第九弾#5/#7依存の解消順で規定する。
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
