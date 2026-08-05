@@ -1,5 +1,7 @@
 <!-- gist-master: c325edf9169d327b290a38cdf9e0352c hot-script-speedup-round12-asis-tobe-5w1h_20260805.md -->
-# ホットスクリプト集中高速化 第十二弾 — 二段計測16-25位層(cmd_save子区分+配送検証+dashboard+precheck内訳) — AsIs/ToBe 5W1H設計書 v1.1
+# ホットスクリプト集中高速化 第十二弾 — 二段計測16-25位層(cmd_save子区分+配送検証+dashboard+precheck内訳) — AsIs/ToBe 5W1H設計書 v1.2
+
+> v1.2(2026-08-05 20:38 殿指示scope純化): 第10弾v1.7準拠で提案弾台帳に高速化許可owner pathを一次コード突合で確定。列挙外pathの変更を禁止
 
 > v1.1(2026-08-05 02:40 殿裁定): §2.6 checkpoint契約を追加(全弾共通)
 
@@ -61,20 +63,22 @@
 7. 完了宣言=Tier 1+Tier 2→CLOSE刻印
 8. **レーン方式** / 9. **lane最小AC/wave checkpoint二層契約**
 
-### 提案弾台帳(殿裁可で固定)
+### 提案弾台帳(殿裁可で固定 — v1.2 owner path確定)
 
-| # | 標的 | 型 | 現状(直近24h) | 手筋候補 | 上位弾依存 |
-|---|---|---|---|---|---|
-| 1 | `cmd_save:three_layer_memory_ruling_overhead` | 外れ値 | med 0.00s×758・total 2,401s・max 62s | ruling cache hit率計測→miss時の裾削減 | 第十一弾#4後 |
-| 2 | `inbox_write:inbox_write_delivery_verify` | 外れ値 | med 0.00s×6,932・total 2,364s・max 24s | 配送検証の裾条件特定→条件是正 | 第十一弾#2後 |
-| 3 | `report_field_set:commit_hash` | 砂粒 | med 0.27s×6,259・total 2,081s・max 3.1s | git rev-parse呼出し回数削減 or cache化 | 独立writer |
-| 4 | `dashboard_update:dashboard_update_total` | 恒常 | med 10.30s×63・total 2,024s・max 231s | dashboard_auto_section子区分→最大寄与是正 | 独立writer |
-| 5 | `git_pre_commit:self_sync` | 外れ値 | med 0.07s×1,773・total 1,989s・max 37s | 裾の発火条件特定 | 第十弾#4後 |
-| 6 | `full_precheck_memory_search` | 外れ値 | med 0.42s×1,029・total 1,775s・max 937s | max 937s外れ値の真因特定 | 第十一弾#1後 |
-| 7 | `full_precheck_batch_git` | 砂粒 | med 0.79s×1,087・total 1,720s・max 19s | git呼出し回数削減 or batch化 | 第十一弾#1後 |
-| 8 | `report_publish:inbox_write` | 外れ値 | med 0.01s×2,661・total 1,508s・max 56s | 裾条件特定 | 第十一弾#6後 |
-| 9 | `git_pre_commit:yaml_ast` | 外れ値 | med 0.00s×1,602・total 1,470s・max 15s | YAML解析の裾条件特定 | 第十弾#4後 |
-| 10 | `full_precheck_sg_pre21` | 砂粒 | med 0.98s×1,067・total 1,464s・max 5.7s | SG-PRE21チェックの定数項削減 | 第十一弾#1後 |
+| # | 標的identifier | 高速化許可owner path | 型 | 現状(直近24h) | 手筋候補 | 上位弾依存 |
+|---|---|---|---|---|---|---|
+| 1 | `cmd_save:three_layer_memory_ruling_overhead` | `scripts/cmd_save.sh` | 外れ値 | med 0.00s×758・total 2,401s・max 62s | ruling cache hit率計測→miss時の裾削減 | 第十一弾#4後 |
+| 2 | `inbox_write:inbox_write_delivery_verify` | `scripts/inbox_write.sh` | 外れ値 | med 0.00s×6,932・total 2,364s・max 24s | 配送検証の裾条件特定→条件是正 | 第十一弾#2後 |
+| 3 | `report_field_set:commit_hash` | `scripts/report_field_set.sh` | 砂粒 | med 0.27s×6,259・total 2,081s・max 3.1s | git rev-parse呼出し回数削減 or cache化 | 独立writer |
+| 4 | `dashboard_update:dashboard_update_total` | `scripts/dashboard_update.sh` | 恒常 | med 10.30s×63・total 2,024s・max 231s | dashboard_auto_section子区分→最大寄与是正 | 独立writer |
+| 5 | `git_pre_commit:self_sync` | `scripts/hooks/git-pre-commit.sh` | 外れ値 | med 0.07s×1,773・total 1,989s・max 37s | 裾の発火条件特定 | 第十弾#4後 |
+| 6 | `gate_gunshi_report_precheck:full_precheck_memory_search` | `scripts/gates/gate_gunshi_report_precheck.sh` | 外れ値 | med 0.42s×1,029・total 1,775s・max 937s | max 937s外れ値の真因特定 | 第十一弾#1後 |
+| 7 | `gate_gunshi_report_precheck:full_precheck_batch_git` | `scripts/gates/gate_gunshi_report_precheck.sh` | 砂粒 | med 0.79s×1,087・total 1,720s・max 19s | git呼出し回数削減 or batch化 | 第十一弾#1後 |
+| 8 | `report_publish:inbox_write` | `scripts/report_field_set.sh` | 外れ値 | med 0.01s×2,661・total 1,508s・max 56s | 裾条件特定 | 第十一弾#6後 |
+| 9 | `git_pre_commit:yaml_ast` | `scripts/hooks/git-pre-commit.sh` | 外れ値 | med 0.00s×1,602・total 1,470s・max 15s | YAML解析の裾条件特定 | 第十弾#4後 |
+| 10 | `gate_gunshi_report_precheck:full_precheck_sg_pre21` | `scripts/gates/gate_gunshi_report_precheck.sh` | 砂粒 | med 0.98s×1,067・total 1,464s・max 5.7s | SG-PRE21チェックの定数項削減 | 第十一弾#1後 |
+
+**owner path制約**: 上記owner pathのみ高速化・変更可。test/log/call-path依存はread-onlyかつ進捗計上禁止。
 
 - 独立writerの#3・#4は先行着手可。残り8標的は上位弾完了後にTier 2で再計測してから着手判断
 - 上位弾の是正で自動改善された標的はno-changeクローズ
