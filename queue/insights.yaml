@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260805-152732861-3977
-  ts: "2026-08-05T15:27:32+09:00"
-  insight: "semantic_index_update新概念候補: discussion:今回のテスト修正方針の知見をまとめて は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-05T15:29:31+09:00"
 - id: INS-20260805-153133079-64aa
   ts: "2026-08-05T15:31:33+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[第八弾shard4失敗テスト]] は既存aliasesに一致なし。類似概念TOP3: report_quality_protocol(忍者報告品質プロトコル; alias=batsテスト; score=3.1) / destructive_operations(破壊的操作安全機構; alias=reset --hard; score=2.9) / self_improving_agent_local_optima(自己改善エージェント局所最適脱出; alias=harness design; score=2.8)。概念定義とaliases追加を検討せよ"
@@ -209,8 +199,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'b0e2840cc9ae0cc30f3fc12886f51770a0a93f6189636e9aa15a670a5b320197' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 14
-  last_seen: "2026-08-06T04:22:27+09:00"
+  occurrence_count: 15
+  last_seen: "2026-08-06T05:08:58+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -994,5 +984,12 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_backlink_202608060250_hanzo; matched=docs; current_pattern=; candidate_level=2; candidate=workaround=true+category=clean矛盾9件(112件中8%)。2026-04-17に7件集中。根因=家老が--cleanではなく通常モードでcleanカテゴリを渡した; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608060250_hanzo"
+  fix_known: false
+  status: pending
+- id: INS-20260806-051143389-c4ac
+  ts: "2026-08-06T05:11:43+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_recon2_ga438_ga439_context_freshness hanzo lesson_candidate: context freshnessはsource path一致だけでなく本文反映要否を分類する codd.mdはskills/codd-refactorを監視対象に含むため、script_refsコメントだけを変更した1dae80c8でもsource ALERTになった。source boundary更新前に本文契約を変える差分かをyes/no分類し、metadata-only差分は偽陽性として別集計するチェックを後続hotfixへ追加する"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
   fix_known: false
   status: pending
