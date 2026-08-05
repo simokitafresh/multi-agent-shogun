@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-05 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-05T21:48:29+09:00 -->
+<!-- generated_at: 2026-08-05T23:01:19+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-05T21:48:28+09:00 | terminal | response | LGTM+receipt記録・家老通知・既読化完了。idle待機。
-- 2026-08-05T21:38:05+09:00 | ntfy | outbound | 【monitor】将軍CTX:55%。/compactをご検討ください
-- 2026-08-05T21:07:41+09:00 | ntfy | outbound | 【monitor】将軍CTX:55%。/compactをご検討ください
-- 2026-08-05T21:06:10+09:00 | terminal | response | FAIL・家老通知・既読化完了。idle待機。
-- 2026-08-05T21:04:23+09:00 | terminal | response | 疾風4回目BLOCK確認・既読化済み。共有index競合でcommitできない可能性(commit予約台帳Phase2が有効化されるまで繰り返す構造)。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T21:03:56+09:00 | terminal | response | 疾風3回目BLOCK。status=revision_requestedのままPASS送信+未commit。
-- 2026-08-05T21:02:08+09:00 | terminal | response | 疾風2回目BLOCK(未commit)確認・既読化済み。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-05T21:01:31+09:00 | terminal | response | 疾風gate FAIL。origin未記入+未commit変更。消火禁止。
-- 2026-08-05T20:47:34+09:00 | terminal | response | 全commit完了。 - `c37e76aed` — 第11弾v1.4(進捗台帳identifier完全一致修正) - `ab45ec2e5` — 第12弾v1.3(進捗台帳全10行展開+identifier完全一致) 両弾とも別comm…
-- 2026-08-05T20:46:49+09:00 | terminal | inbound | <task-notification> <task-id>bpp2kzgpz</task-id> <tool-use-id>toolu_016RosvKsQbKitUrvGSYRHgp</tool-use-id> <output-file…
+- 2026-08-05T23:01:16+09:00 | terminal | response | [MEM: n/a — Phase0が半蔵に配備済み。12PF×5α=60セル、本番read-only、軍師draft review同時送付] Phase0が半蔵に配備済み。12PF×5α=60セル、正本照合12/12+5/5。半蔵が作業…
+- 2026-08-05T22:59:52+09:00 | ntfy | outbound | 【家老】cmd_partial_turnover_phase0 初回配備開始 (title=(untitled), ninja=hanzo)
+- 2026-08-05T22:59:36+09:00 | terminal | response | 軍師復帰完了。 **状況報告:** - deepdive全10Phase追体験+receipt記録済み - instructions/gunshi.md + lessons_gunshi.yaml + karo_workarounds読了…
+- 2026-08-05T22:59:32+09:00 | ntfy | outbound | 【gunshi】復帰済み。deepdive全10Phase追体験完了。inbox未読0件。idle待機中。
+- 2026-08-05T22:58:08+09:00 | ntfy | outbound | 【monitor】将軍CTX:59%。/compactをご検討ください
+- 2026-08-05T22:54:19+09:00 | terminal | inbound | y
+- 2026-08-05T22:50:41+09:00 | ntfy | outbound | 【家老CRITICAL】先送り1セッション連続検出。起動は許可するが即対処必須
+- 2026-08-05T22:47:20+09:00 | terminal | response | [MEM: memory_db ts=2026-08-05T22:43:05 "殿裁定2026-08-05 22:40: Partial Turnover実験はまず設計書§2.5で指定した12PFのみ実行する"] Phase 0配備下知完…
+- 2026-08-05T22:46:19+09:00 | terminal | inbound | partial-turnover-experiment-asis-tobe-5w1h_20260805.mdの実験を開始せよ
+- 2026-08-05T22:45:32+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-05 22:28:04|GATE CLEAR — cmd_karo_round10_lane1_refresh_window_impl_20260805 完了
 
 ## 未解決確認事項
+- 軍師復帰完了。 **状況報告:** - deepdive全10Phase追体験+receipt記録済み - instructions/gunshi.md + lessons_gunshi.yaml + karo_workarounds読了 - inbox未読0件（全メッセージ処…
+- 記憶DB書込み完了。次の軍師が起動時にknowledge:9c85c624を検索すれば本セッションの全レビュー実績・発見・残件を把握できる。 **本セッション成果サマリ(強くてニューゲーム):** - **report LGTM**: 17件(GATE CLEAR多数) - *…
+- [MEM: n/a — 家老v1.4 commit ce371c507+gist同期+三層貫通完了の報告確認] 家老がv1.4のcommit(ce371c507)+gist同期+三層貫通まで完了。設計書は殿裁定通りの状態で確定。 [meta] stop_reason=end_t…
+- [MEM: n/a — v1.4家老改版確認+gist同期完了。殿裁定=12体のみ実行→報告→殿指示待ち] 設計書v1.4(殿裁定反映)gist同期完了。 **殿裁定**: 指定12体のみ実験→結果を殿に報告→全102体は殿の追加指示まで実行禁止。 gist: https://…
+- 対応済み・既読化完了。inbox1を確認。
 - 疾風4回目BLOCK確認・既読化済み。共有index競合でcommitできない可能性(commit予約台帳Phase2が有効化されるまで繰り返す構造)。idle待機。 [meta] stop_reason=end_turn
 - 疾風2回目BLOCK(未commit)確認・既読化済み。idle待機。 [meta] stop_reason=end_turn
 - [MEM: n/a — 家老の反論確認。殿の原文「将軍に更新してもらえ」が主体指定の根拠] 家老の反論を確認した。殿の原文は「将軍に第11弾と第12弾の設計書を同じ観点から別途更新してもらえ」であり、更新主体を将軍と明示していた。家老は殿の指示を中継しただけ。 殿、家老の中継が…
-- singleflight FAIL + 小太郎2回目BLOCK確認・家老通知・既読化完了。idle待機。
-- 小太郎LG051 BLOCK確認・既読化済み。idle待機。
-- [MEM: memory_db ts=2026-08-05T17:48:15 "段階的リバランス(Partial Turnover)実験設計書v1.1レビュー完了。verdict=LGTM"] [MEM: semantic concept=dmsignal_operations…
-- [MEM: n/a — 陣形図一次確認結果。第九弾の実態確認] 第九弾の現状は厳しい: - **疾風**: lane0pp impl common — in_progress(CTX:56%)だが既にrevision_requested - **半蔵**: lane0pp im…
-- [MEM: n/a — 段階的リバランス設計書v1.1 軍師LGTM確認] 段階的リバランス設計書v1.1: 軍師LGTM(疑問点なし)。殿の裁可で実験開始できる。
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
