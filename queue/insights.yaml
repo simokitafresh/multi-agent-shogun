@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260804-232411914-99c6
-  ts: "2026-08-04T23:24:11+09:00"
-  insight: "semantic_index_update新概念候補: discussion:そのやり方は高速回転にプラスか？指示をしたときに更新すればいい。自動という幻想で作業を増やしていないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-04T23:33:59+09:00"
 - id: INS-20260804-233034884-8d3a
   ts: "2026-08-04T23:30:34+09:00"
   insight: "semantic_index_update新概念候補: discussion:ホットスクリプト第十弾の準備をしよう。現在は修正後1週間のledger累積課税を前週比で総括としているが、直近で遅いものや改善後も遅いものを無視してしまう。第十 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -529,8 +519,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'b0e2840cc9ae0cc30f3fc12886f51770a0a93f6189636e9aa15a670a5b320197' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 10
-  last_seen: "2026-08-06T01:06:29+09:00"
+  occurrence_count: 11
+  last_seen: "2026-08-06T01:22:06+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -972,4 +962,7 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-06T01:23:27+09:00"
