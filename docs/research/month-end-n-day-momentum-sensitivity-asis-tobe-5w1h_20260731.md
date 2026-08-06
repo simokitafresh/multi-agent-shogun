@@ -1,4 +1,4 @@
-# モメンタム感度分析 第一弾 — 月末N営業日前(N感度) — AsIs/ToBe 5W1H設計書 v3.4 【✅完了】
+# モメンタム感度分析 第一弾 — 月末N営業日前(N感度) — AsIs/ToBe 5W1H設計書 v4.0
 
 > シリーズ: **第一弾=本書(N感度)** / 第二弾=執行日感度分析(`execution-delay-sensitivity-asis-tobe-5w1h_20260731.md`) / 第三弾=N×E二次元ロバストネス検証(`nxe-2d-robustness-asis-tobe-5w1h_20260801.md`)
 
@@ -11,6 +11,9 @@
 - v3.0-3.2: 軍師覚醒+殿7項目+プロット削除
 - v3.3: 家老1往復目反映。ポジション変換ルール是正、DM6 quarterly_jan維持、分割境界一意化
 - v3.4: 家老2往復目(最終FIX)反映。①DB接続2段階明記(本番→SQLite→load_prices) ②ポジション変換二値是正(absolute momentum>=DTB3) ③AC1比較先=monthly_return_open+holding/signal一致
+- **Phase 1完了**: cmd_4198 GATE CLEAR 2026-07-31。DM2/DM6×N=0-7の全結果は§8-§22
+- **v4.0**: Phase 2追加 — L0-L3全75体への拡張(殿指示2026-08-06「L0~L3は先程の75体がデフォルトだ」)
+- **v4.1**: cmd_4237 FAIL反映。FoF合成ロジック是正(equal-weight子PF月次平均→ticker-level再帰展開方式へ)。軍師独立調査(blt_20260806_010520)のexpand_portfolio_to_tickers use_raw_signal分岐知見を統合
 
 ## §1 やること
 
@@ -479,3 +482,174 @@ DM6はCAGRレンジ約3.3ポイント、Sharpeレンジ約0.08に収まり、全
 ## §22 用語の注記
 
 - CSV列名`alpha`は`PF monthly return − SPY monthly return`であり、統計的な回帰アルファ(Jensen's alpha)ではない。正確にはexcess_return(超過リターン)またはactive_return(アクティブリターン)。初期スクリーニングでは回帰アルファの計算は不要であるため、CSV列名の変更は後段で必要になった際に実施する
+
+---
+
+# Phase 2: L0-L3全75体への拡張
+
+## §23 概要
+
+Phase 1（DM2/DM6の2体、§1-§22）の結果を踏まえ、L0-L3全75体に対して同一のN-day感度分析を実施する。殿指示2026-08-06「L0~L3は先程の75体がデフォルトだ」に基づく。
+
+## §24 対象PF（75体）
+
+| 層 | 体数 | 命名パターン | DB type | 構成 |
+|---|---|---|---|---|
+| L0 | 12 | シン{四神}-{モード} | **standard** | 四神(青龍/朱雀/白虎/玄武)×3モード(激攻/常勝/鉄壁)。ticker-based holding_signal |
+| L1 | 21 | GSシン{忍法}-{モード} | **fof** | 忍法(分身/追い風/抜き身/変わり身/加速D/加速R/四つ目)×3モード。component_portfoliosにstandard PF UUIDsを持つ |
+| L2 | 21 | 奥義-GS-{忍法}-{モード} | **fof** | 忍法×3モード。nested FoF — componentにL1等のFoFを含みうる |
+| L3 | 21 | 秘奥義-{忍法}-{モード} | **fof** | 忍法×3モード。nested FoF — 同上 |
+
+- **一次情報**: Phase 1結果ファイル `path counts: Standard 12/12, FoF 63/63`。L0の12体のみstandard、L1-L3の63体は全てFoF
+- PF一覧の正本: 本番DB `portfolios` テーブル。`partial_turnover_phase0_lagged.py` の `_expected_target_names()` と完全一致
+- Phase 1のDM2/DM6はL0-L3に含まれないため、Phase 2の75体とは重複しない
+
+## §25 アーキテクチャ
+
+### 3段階シミュレーション
+
+```
+Phase 2A: Standard PFs (L0=12体のみ)
+  DB portfolios.config → (relative_assets, absolute_asset, safe_haven_asset,
+                          risk_free_asset, lookback_periods, rebalance_trigger, top_n)
+  → simulate_strategy_vectorized + shifted_endpoint_prices(N=0-7)
+  → 12体×8N=96シミュレーション → 月次リターン系列
+
+Phase 2B: FoFs (L1=21体) ※v4.1是正
+  DB portfolios.config → component_portfolios (standard PF UUID list)
+  → _resolve_weights再帰展開 → ticker×weight(holding_signalベース)
+  → shifted_endpoint_prices(N=0-7) × resolved_weights → ticker-level集計
+  → 21体×8N=168シミュレーション
+
+Phase 2C: Nested FoFs (L2+L3=42体) ※v4.1是正
+  DB portfolios.config → component_portfolios (FoF UUID list含む)
+  → _resolve_weights再帰展開 → 最終ticker×weightまで解決
+  → shifted_endpoint_prices(N=0-7) × resolved_weights → ticker-level集計
+  → 42体×8N=336シミュレーション
+```
+
+**重要**: L1-L3は全てFoF(DB type=fof)。L0の12体のみがstandard。
+L2-L3はnested FoF(componentが他のFoFを含みうる)のため、再帰展開が必要。
+partial_turnoverの`_resolve_weights`が再帰展開を実装済み — これを再利用する。
+
+### データ取得
+
+`partial_turnover_phase0_lagged.py` の `ReadonlyExporter` + SQLiteキャッシュパターンを再利用:
+
+1. 本番DB read-only接続(`db_capability_launcher.py --capability readonly_query`)
+2. portfolios(config含む75体+component依存先), signals(N=0パリティ用), monthly_returns(N=0パリティ用), prices(全ティッカー) を取得
+3. ローカルSQLiteにキャッシュ → 以降はオフライン実行可能
+
+### Standard PF config→simulate_strategy_vectorizedマッピング
+
+DB `portfolios.config` JSONフィールドから `simulate_strategy_vectorized` パラメータへの対応:
+
+| DB config field | simulate param | 変換 |
+|---|---|---|
+| `relative_assets` | `portfolio_config["relative_assets"]` | そのまま |
+| `absolute_asset` | `portfolio_config["absolute_asset"]` | そのまま |
+| `risk_free_asset` | `portfolio_config["risk_free_asset"]` | そのまま |
+| `safe_haven_asset` | `safe_haven` 引数 | そのまま |
+| `lookback_periods[].days` | `periods` リスト | 各要素の`days`値を抽出 |
+| `lookback_periods[].weight` | `weights` リスト | 各要素の`weight`値を抽出 |
+| `rebalance_trigger` | `rebalance_trigger` 引数 | そのまま |
+| `top_n` | `portfolio_config["top_n"]` | そのまま |
+| `benchmark_ticker` | SPYリターン計算用 | デフォルト"SPY"、各PF固有値があれば使用 |
+
+`safe_haven_map` の構築: 既存DM2/DM6の8種マップの代わりに、各PFの `safe_haven_asset` から `{safe_haven_asset[0]: safe_haven_asset}` を動的構築。`simulate_strategy_vectorized` は `safe_haven_map[safe_haven]` を参照するため、引数 `safe_haven` にマップのキーを渡す。
+
+`units`: `lookback_periods[].use_calendar` に基づく。`False`→`"days"`(営業日)、`True`→`"months"`(暦月)。
+
+### FoF合成ロジック（v4.1是正）
+
+> **v4.0の誤り**: `FoF月次リターン = (1/N_components) × Σ(component PF月次リターン)` と仮定した。cmd_4237でGSシン加速D-常勝 2012-02が計算0.195 vs 本番-0.005と乖離しFAIL。本番FoFは日次dynamic weights(`expand_portfolio_to_tickers` → `holding_signal`ベース)で算出しており、子PF月次リターンの等重み平均とは非同値。
+
+**是正方式**: FoFもticker-levelまで再帰展開してからN-dayシフトリターンを計算する。
+
+1. FoFのcomponent_portfoliosをticker-levelまで再帰展開（partial_turnoverの`_resolve_weights`準拠）
+2. 各ticker×weightを解決した状態で、Phase 2Aと同一のshifted_endpoint_prices(N=0-7)を適用
+3. ticker-level月次リターン × 解決済みweightで集計 → FoF月次リターン
+4. N=0パリティ: 本番monthly_returnsとの完全一致で検証（partial_turnover Phase 1で75/75 parity実証済みの`history.py`方式を踏襲）
+
+**重要**: `expand_portfolio_to_tickers`のuse_raw_signal引数の違い（display=引数受取、monthly_returns=デフォルトFalse）でticker×weightが分岐する（軍師独立調査blt_20260806_010520）。N-day実験ではholding_signalベース（use_raw_signal=False）を採用し本番monthly_returnsとの同格性を保つ。
+
+```
+Phase 2B/2C（是正後）:
+  FoF portfolios.config → component_portfolios
+  → _resolve_weights再帰展開 → ticker×weight(holding_signalベース)
+  → shifted_endpoint_prices(N=0-7) × resolved_weights
+  → FoF ticker-level月次リターン集計
+```
+
+- **L1のcomponent PF**: standard PF (L0層)のUUIDs。ticker展開は1段
+- **L2-L3のcomponent PF**: nested FoF。再帰展開で最終ticker×weightまで解決
+- N=0パリティがPhase 2B/2Cの前提条件。不成立ならFAIL-CLOSE（cmd_4237と同じ判定）
+- FoF固有のrebalance_triggerは適用しない: FoFのリターンはcomponent PFsのリターンの合成であり、component PFsがそれぞれのrebalance_triggerに従ってsignal変更する
+
+### N-dayシフトロジック
+
+Phase 1と同一:
+- `shifted_endpoint_prices(prices, n_days)` = `prices.shift(n_days)`
+- シフト済みclose価格でモメンタム計算 → signal判定 → 翌月初openで執行
+
+### 価格データ
+
+- Phase 1はDM2/DM6の少数ティッカー(TQQQ,TECL,SPY,XLU,GLD,LQD,^VIX,DTB3)のみ
+- Phase 2は75体のconfig中の全ティッカーを動的収集。partial_turnoverのtokens CTE相当
+- `gs_prefetch.db` の共有またはPhase 2専用キャッシュDBを構築
+
+## §26 AC
+
+- AC1: **N=0パリティ** — 75体×当該PFの全データ月について、本番`monthly_returns.monthly_return_open`と一致（abs<=1e-6）。standard PFはholding/signalも一致。FoFはmonthly_return_openのみ（FoFのsignalはcomponent UUID列であり直接比較対象外）。mismatch=0。不一致→N>0停止
+- AC2: 75PF×N=0-7のopen-to-openリターン+alpha(SPY対比)がCSV出力。CSV列: pf_id/pf_name/pf_type/year_month/N/signal/return_open/SPY_return_open/alpha
+- AC3: N×PFのCAGR/Sharpe/MaxDD/累積リターン比較表(全期間) + 前半/後半の期間分割比較表がdocs/researchに保存
+- AC4: 殿の初期スクリーニング7項目（§5）を75体規模で評価。特にPF間一貫性（項目6）の母集団が2→75に拡大し、忍法種別(7種)×モード(3種)×層(L0-L3)の構造的パターンが観察可能
+
+## §27 実装方針
+
+### 既存コードの再利用
+
+| 再利用元 | 何を使うか |
+|---|---|
+| `cmd_4198_month_end_n_day_sensitivity.py` | `shifted_endpoint_prices`, `simulate_n`, `metrics`, `run_full`のCSV出力構造 |
+| `partial_turnover_phase0_lagged.py` | `ReadonlyExporter`, `_expected_target_names`, `_discover_target_names`, `write_cache`/`read_cache`, FoF再帰展開 |
+| `grid_search_metrics_v2.py` | `simulate_strategy_vectorized`, `load_prices`, `MomentumCache` |
+
+### 新規実装
+
+1. **config→simulateパラメータ変換関数**: DB portfolios.configから`simulate_strategy_vectorized`のパラメータセットを構築
+2. **75体ループ**: standard PFs→FoFsの順序で全Nをシミュレーション。standard結果をdictキャッシュしFoFで参照
+3. **FoF合成関数**: component PF UUIDsから等重み月次リターンを合成
+4. **拡張パリティチェック**: 75体のN=0パリティ（monthly_return_open + holding/signal一致）
+
+### スクリプト構成
+
+新規スクリプト: `scripts/analysis/n_day_sensitivity_75pf.py`
+- `cmd_4198_month_end_n_day_sensitivity.py` をベースに75体対応へ拡張
+- `--cache` オプションでSQLiteキャッシュ入力（partial_turnoverと共有可能）
+- 既存cmd_4198スクリプトは変更しない（Phase 1結果の再現性保持）
+
+### 実行手順
+
+```
+1. SQLiteキャッシュ構築（初回のみ。partial_turnover Phase 1のキャッシュが再利用可能なら省略）
+   python3 scripts/analysis/n_day_sensitivity_75pf.py --fetch-cache --cache n_day_75pf_cache.db
+
+2. N=0パリティ検証（75体全てmismatch=0を確認してからN>0へ進む）
+   python3 scripts/analysis/n_day_sensitivity_75pf.py --cache n_day_75pf_cache.db --parity-only
+
+3. 全N実行+CSV出力
+   python3 scripts/analysis/n_day_sensitivity_75pf.py --cache n_day_75pf_cache.db --output-dir docs/research
+```
+
+## §28 検証事項（実装前確認）
+
+1. FoFの`monthly_return_open`が本番DBに存在するか — 存在しない場合、FoFパリティはcomponent単位で実施し、FoF合成結果はmonthly_return(close-to-close)と比較
+2. partial_turnover Phase 1のSQLiteキャッシュに必要なフィールド（lookback_periods等）が全て含まれるか — 含まれない場合、Phase 2専用キャッシュを構築
+3. 75体の全ティッカー集合のサイズ — gs_prefetch.dbに不足ティッカーがないか確認
+
+## §29 因果リンク
+
+- origin: `[[殿指示_75体デフォルト_20260806]] -> [[Phase1_DM2_DM6完了_cmd_4198]] -> [[Phase2_75体拡張v4.0]]`
+- ← [[partial_turnover_phase0_lagged_75体]] (データ取得+FoF展開の実装参照)
+- ← [[cmd_4198_month_end_n_day_sensitivity]] (N-dayシフト+シミュレーションの実装参照)
