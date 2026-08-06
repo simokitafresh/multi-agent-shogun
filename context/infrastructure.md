@@ -14,7 +14,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1564 -->
+<!-- last_synced_lesson: L1565 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -49,7 +49,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1564 -->
+<!-- last_synced_lesson: L1565 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -112,6 +112,7 @@
 - L1562: private cache公開前のWAL統合とappend判定snapshot（cmd_karo_round10_lane2_refresh_copy_impl_20260805）
 - L1563: context reflux後に到着する外部source commitの自動task化（cmd_karo_recon_context_freshness_ga437）
 - L1564: context freshnessはsource path一致だけでなく本文反映要否を分類する（cmd_karo_recon2_ga438_ga439_context_freshness）
+- L1565: WARN/BLOCKエスカレーション前に一次情報を再確認し、解消済みなら過去断面のまま裁定要求しない（cmd_karo_recon2_disk_recovery_20260806）
 
 ## 設計標準・テスト・因果
 
