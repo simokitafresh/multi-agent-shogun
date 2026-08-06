@@ -1366,7 +1366,9 @@ for path in required_paths:
     for idx, (start, title) in enumerate(lines):
         end = lines[idx + 1][0] - 1 if idx + 1 < len(lines) else total
         limit = end - start + 1
-        print(f"  {title}: Read(offset={start}, limit={limit})")
+        phase_num = re.search(r'Phase (\d+)', title)
+        pn = phase_num.group(1) if phase_num else '?'
+        print(f"  {title}: bash scripts/deepdive_replay.sh $AGENT_ID {p.name} {pn} \"<自問1行>\"")
 
 print("##Q6_COMBINED##")
 if not lord_log.is_file():
@@ -1629,7 +1631,7 @@ while IFS= read -r _pg_line; do
     [ -n "$_pg_line" ] || continue
     echo "  $_pg_line"
 done <<< "$_phase_guides"
-echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
+echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ bash scripts/deepdive_replay.sh \$AGENT_ID <md> <Phase番号> \"<自問>\" で実行せよ。receipt記録される。全文一括禁止。"
 fi
 
 # --- Gate 6.5: 追体験検証 (deepdive読了後の自問強制) ---

@@ -372,7 +372,7 @@ if [[ -n "$prompt_state_source_event_id" ]]; then
   # (2026-08-04 15:59実事故: DrvFS上の共有lock競合で5秒超→殿prompt消失)。
   # 意図的BLOCKはledger突合で重複が実証された場合のみ(下のBLOCK分岐、stderr必須)。
   if flock -w 5 218; then
-    if [[ -f "$prompt_state_ledger" ]] && awk -F '\t' -v id="$prompt_state_source_event_id" '$1==id{found=1} END{exit !found}' "$prompt_state_ledger"; then
+    if [[ -f "$prompt_state_ledger" ]] && [[ "$prompt_state_pane_generation" != "unknown" ]] && awk -F '\t' -v id="$prompt_state_source_event_id" -v gen="$prompt_state_pane_generation" '$1==id && $4==gen{found=1} END{exit !found}' "$prompt_state_ledger"; then
       printf 'BLOCK: prompt source_event_id already consumed; delayed replay suppressed (%s)\n' "$prompt_state_source_event_id" >&2
       prompt_state_wait_preflight
       exit 2

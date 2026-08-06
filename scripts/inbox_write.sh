@@ -2194,12 +2194,14 @@ fi
 # Pre-action auto-capture: 将軍→エージェント送信時、送信先ペインの現在状態を送信前に自動表示+ログ
 # 目的: 「観察なき行動」を構造的に防止（知性の外部化原則 2026-03-21）
 if [ "${INBOX_WRITE_TEST:-}" != "1" ] && { [ "$FROM" = "shogun" ] || [ "$FROM" = "karo" ]; }; then
+    _pre_send_capture_started_us="${EPOCHREALTIME/./}"
     _pane_target=""
-    if [[ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ]]; then
-        # shellcheck source=/dev/null
-        source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
-        _pane_target="$(pane_lookup "$TARGET" 2>/dev/null || true)"
-    fi
+    # Use the resolver already loaded in this script.  Sourcing pane_lookup.sh
+    # here repeated agent-config initialization and a second tmux scan for every
+    # commander send.  The in-script resolver only accepts a live @agent_id
+    # mapping, so the pre-send safety observation is retained without a static
+    # fallback that could point at a stale pane after respawn.
+    _pane_target="$(resolve_agent_pane_target "$TARGET" || true)"
 
     if [ -n "$_pane_target" ]; then
         _capture=$(tmux capture-pane -t "$_pane_target" -p 2>/dev/null | tail -8 || true)
@@ -2222,6 +2224,7 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ] && { [ "$FROM" = "shogun" ] || [ "$FROM" =
             "$TIMESTAMP" "$FROM" "$TARGET" "$TYPE" "$_capture" \
             >> "$_logdir/shogun_action_log.txt" 2>/dev/null || true
     fi
+    iw_record_timing inbox_write_pre_send_capture "$_pre_send_capture_started_us" PASS
 fi
 
 # Lesson injection safety net: type=task_assigned → 教訓注入チェック

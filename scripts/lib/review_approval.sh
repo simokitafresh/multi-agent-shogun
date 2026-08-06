@@ -303,7 +303,13 @@ for report_path in sorted(candidates):
         continue
     is_live = report_path.parent == reports_dir
     if is_live and report_path.name not in live_names:
-        continue
+        # Task YAML may have been archived after completion (status=done).
+        # When no live task exists for this cmd_id, fall through to let the
+        # cmd_name regex + parent_cmd payload match authenticate the report.
+        # This prevents the canonical registry from going empty after task
+        # completion, which would block review_bundle.py single entry.
+        if live_names:
+            continue
     # Archive may retain an older report template after a formal RC reopens
     # the same logical task.  Such pending/revision payloads are history, not
     # terminal reports requiring a second pair of approvals.  Keep live

@@ -1811,7 +1811,7 @@ if [ -n "$_phase_guide_2" ]; then
 else
     echo "    (ファイル不在またはPhaseなし)"
 fi
-echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
+echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ bash scripts/deepdive_replay.sh karo <md> <Phase番号> \"<自問>\" で実行せよ。receipt記録される。全文一括禁止。"
 echo ""
 
 # --- Check 1.5: 追体験検証Q4 (前セッション出来事注入) ---

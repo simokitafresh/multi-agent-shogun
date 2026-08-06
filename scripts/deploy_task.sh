@@ -2633,9 +2633,12 @@ yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-2026
 
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 task = data.get("task") if isinstance(data, dict) else None
-items = (task or {}).get("acceptance_criteria", []) if isinstance(task, dict) else []
+raw_items = (task or {}).get("acceptance_criteria", []) if isinstance(task, dict) else []
+# Support both list form ([{id: AC1, description: ...}]) and mapping form
+# ({AC1: {description: ...}}) used by karo_direct drafts.
+items = raw_items if isinstance(raw_items, list) else list(raw_items.values()) if isinstance(raw_items, dict) else []
 values = []
-for item in items if isinstance(items, list) else []:
+for item in items:
     if not isinstance(item, dict):
         values.append(str(item))
         continue
@@ -6149,7 +6152,7 @@ inject_model_injection_profile() {
     inject_block="${inject_block}"$'\n'"${indent}  - \"lessons_useful全reasonを具体記入\""
     inject_block="${inject_block}"$'\n'"${indent}  - \"files_modifiedはrepo相対path形式\""
     inject_block="${inject_block}"$'\n'"${indent}  - \"D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除\""
-    inject_block="${inject_block}"$'\n'"${indent}  - \"任務帰属検証契約: 反復・報告直前とも bash scripts/run_tests.sh task queue/tasks/${ninja_name}.yaml を実行し、task/reportの所有pathから選ばれたテストだけをbinary_checksへ帰属させる。選択対象はFAIL0・SKIP0を必須とし、scope外FAILを当該任務のFAILへ混入させない。run_tests.sh unit全量は個別taskで要求せず、fixed-SHAまたはwave最終checkpointで共有1回だけ実行する\""
+    inject_block="${inject_block}"$'\n'"${indent}  - \"任務帰属検証契約: 途中lane=focused fixture+scope diff+必要性能のみ。task scope(bash scripts/run_tests.sh task queue/tasks/${ninja_name}.yaml)は必要時一回、同一広域suite反復禁止。全量=fixed-HEAD wave最終checkpoint 3〜4名分割で共有1回だけ実行する。task/reportの所有pathから選ばれたテストだけをbinary_checksへ帰属させ、scope外FAILを混入させない\""
     if [ "$intensity" = "max" ]; then
         inject_block="${inject_block}"$'\n'"${indent}  extra_scaffold:"
         inject_block="${inject_block}"$'\n'"${indent}  - \"ACごとに実テスト証跡をresult.detailsへ記録\""

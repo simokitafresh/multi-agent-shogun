@@ -14,6 +14,52 @@ task_file="$1"; expected_task_id="$2"; expected_fingerprint="$3"; evidence_id="$
 [ -n "$expected_fingerprint" ] || die "task fingerprint is empty"
 [ -n "$evidence_id" ] || die "evidence message id is empty"
 
+# ─── ac_version自動注入(構造バグ根治 2026-08-05): karo_direct draftにac_versionがない場合、
+# deploy_task.shの_compute_ac_hashと同一ロジックで自動計算・注入する。
+# これにより家老が手動でac_versionを追加する3回繰返しを構造的に防止する。
+_current_ac=$(python3 -c "
+import yaml, sys
+doc = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+task = doc.get('task') or doc
+print(str(task.get('ac_version') or task.get('ac_fingerprint') or '').strip())
+" "$task_file" 2>/dev/null || true)
+if [ -z "$_current_ac" ]; then
+    # deploy_task.shのinject_ac_versionを呼び出す(source不要、関数を直接利用)
+    _computed_ac=$(python3 - "$task_file" <<'ACPY'
+import sys, hashlib, yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = data.get("task") if isinstance(data, dict) else None
+raw_items = (task or {}).get("acceptance_criteria", []) if isinstance(task, dict) else []
+# Support both list form ([{id: AC1, description: ...}]) and mapping form
+# ({AC1: {description: ...}}) used by karo_direct drafts.
+items = raw_items if isinstance(raw_items, list) else list(raw_items.values()) if isinstance(raw_items, dict) else []
+values = []
+for item in items:
+    if not isinstance(item, dict):
+        values.append(str(item)); continue
+    description = str(item.get("description", "")).strip()
+    if description:
+        values.append(description); continue
+    checks = item.get("checks", [])
+    if isinstance(checks, list):
+        values.append("|".join(
+            str(check.get("check", "")).strip() if isinstance(check, dict) else str(check).strip()
+            for check in checks
+        ))
+    else:
+        values.append(str(item.get("check", "")).strip())
+import hashlib as _h
+sys.stdout.write(_h.md5("|".join(sorted(values)).encode()).hexdigest()[:8])
+ACPY
+    )
+    if [ -n "$_computed_ac" ]; then
+        bash "$YAML_SET" "$task_file" task ac_version "$_computed_ac" 2>/dev/null \
+            && printf '[draft_review_approval] auto-injected ac_version=%s\n' "$_computed_ac" >&2 \
+            || printf '[draft_review_approval] WARN: ac_version auto-inject failed\n' >&2
+    fi
+fi
+
 lock_key="$(printf '%s' "$(realpath "$task_file")" | sha256sum | cut -c1-32)"
 exec 9>"${TMPDIR:-/tmp}/draft-review-approval-${lock_key}.lock"
 flock -w 30 9 || die "approval lock timeout"

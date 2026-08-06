@@ -57,15 +57,23 @@ _gate_fp_instrument() {
         "gate_report_format:${_check_id}:$$:${_started}" || true
 }
 
-if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ]; then
+_gate_try_fingerprint_reuse() {
+    [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ] || return 1
     _gate_current_fingerprint="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
     if [ "$_gate_current_fingerprint" = "$GATE_VALIDATED_FINGERPRINT" ] &&
        [ -f "$_GATE_FP_CACHE" ] && grep -qxF "$GATE_VALIDATED_FINGERPRINT" "$_GATE_FP_CACHE"; then
         _gate_receipt_phase fingerprint_reuse "$_GATE_MONO_START_MS"
         _gate_fp_instrument fingerprint_hit "$_GATE_MONO_START_MS"
         echo "PASS (fingerprint reuse)"
-        exit 0
+        return 0
     fi
+    return 1
+}
+
+if _gate_try_fingerprint_reuse; then
+    exit 0
+fi
+if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ]; then
     _gate_fp_instrument fingerprint_miss "$_GATE_MONO_START_MS"
 fi
 
@@ -89,6 +97,16 @@ if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
     }
 fi
 _gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
+
+# A caller can miss the fingerprint cache while the current leader is still
+# validating. Recheck after joining the single-flight lock: the leader may
+# have published the exact validated generation while this caller waited.
+# This preserves the report lock as the correctness boundary while avoiding a
+# duplicate validation that would otherwise extend aggregate lock hold time.
+if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ] && _gate_try_fingerprint_reuse; then
+    exec 199>&- 2>/dev/null || true
+    exit 0
+fi
 
 # cmd_karo_impl_singleflight_hold_instrumentation_20260725 AC1:
 # ロック保持区間(flock取得成功→プロセス終了によるfd 199解放)を既存台帳

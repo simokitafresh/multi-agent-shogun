@@ -63,7 +63,7 @@ def _snapshot_command(root, report, cmd_id):
 # bypassed cmd_save) still fails closed below.
 #   cmd_karo_*            karo-direct deployment
 #   cmd_reflux_promotion_ ninja_monitor's promotion reflux auto-deployment
-SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_")
+SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_", "cmd_shogun_")
 
 
 def _saved_command(root, cmd_id):
