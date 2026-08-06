@@ -1,5 +1,5 @@
 <!-- gist-master: fc4b27c4031149d7d6b45fde49028942 hot-script-speedup-round8-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.6 【wave最終checkpoint完了】
+# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.6 【✅CLOSED】
 
 > v1.6(2026-08-05 15:25): shard4固定HEAD `5aad3a61ecdd826a10271e296b3c8ed14b3cbec7` の全量unit receiptを確定。214/214ファイル、宣言/観測3,122/3,122、FAIL 0、SKIP 0、rc=0、`complete=1`、`full_scope=true`。品質checkpointをCLOSEし、第八弾の実装・品質ゲートを完了扱いとする。正式効果は§1どおり修正後1週間ledger前週比で別途確定する。
 

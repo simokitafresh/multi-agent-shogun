@@ -1,5 +1,5 @@
 <!-- gist-master: 59a5e79368f385cddfdb0656fd8ca3bd hot-script-speedup-round9-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.6 【🚀裁可済み・一部CLEAR/保留】
+# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.6 【✅CLOSED — 3 CLEAR + 5 FAIL-close】
 
 > v1.6(2026-08-05 18:53進捗同期): #0'' common lifecycleは最終修正commit `3d56941d7c8629b6869e0302b90fb8eeba1e64e0`で実Codex SessionStart・直接SessionStart・nested sourceが各1行、duplicate/missing各0、focused 323/323、計装overhead p95=0.018msを成立させGATE CLEAR。第九弾の実装CLEARは1件となった。一方、Codex/git/basicと#2 Track A/Bほか正式FAIL-close 5本は偽CLEARにせず保留し、2026-08-05 18:03将軍下知により戦力を第十・十一弾へ移した。
 

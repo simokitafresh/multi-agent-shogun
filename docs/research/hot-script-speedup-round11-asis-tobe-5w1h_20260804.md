@@ -1,5 +1,5 @@
 <!-- gist-master: 4571e36dca63e089831abaa8b1d6c275 hot-script-speedup-round11-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.4 【🚀裁可済み・進行中】
+# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.4 【✅CLOSED — 2/2 FAIL-close】
 
 > v1.4(2026-08-05 20:42 家老差戻し修正): 進捗台帳のidentifierを提案台帳と完全一致へ修正(短縮形→完全修飾source:check_id)
 
