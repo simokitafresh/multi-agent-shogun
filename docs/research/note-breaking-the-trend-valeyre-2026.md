@@ -1,3 +1,4 @@
+<!-- gist-master: e190c3e8419d4f4b4aa5e27086e3392e note-breaking-the-trend-valeyre-2026.md -->
 # トレンドフォローに最適なシグナルはたった1つのEMAだった — Valeyre (2026) 論文解説
 
 > Valeyre, S. (2026). "Breaking the Trend: How to Avoid Cherry-Picked Signals." arXiv:2504.10914
