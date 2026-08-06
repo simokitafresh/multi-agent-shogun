@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-06 cmd_karo_round10_lane2 reviewed source boundary -->
+<!-- last_updated: 2026-08-06 cmd_karo_hotfix_uncommitted_scripts_20260806 reviewed source boundary -->
+<!-- source_commit:b303051f0 reason:cmd_karo_hotfix_uncommitted_scripts_20260806 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=b303051f0 -->
 <!-- source_commit:df400ee75 reason:cmd_karo_round10_lane2 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=df400ee75 -->
 <!-- source_commit:a44de3202 reason:cmd_karo_round10_lane2 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=a44de3202 -->
 <!-- source_commit:180a3894a reason:cmd_karo_round10_lane2 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=180a3894a -->
@@ -14,7 +15,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1567 -->
+<!-- last_synced_lesson: L1568 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -49,7 +50,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1567 -->
+<!-- last_synced_lesson: L1568 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -115,6 +116,7 @@
 - L1565: WARN/BLOCKエスカレーション前に一次情報を再確認し、解消済みなら過去断面のまま裁定要求しない（cmd_karo_recon2_disk_recovery_20260806）
 - L1566: reflux inventoryのpromotions指標はledger-reconciliation短絡経路で実値と大きく乖離しうる（cmd_reflux_backlink_202608061239_hayate）
 - L1567: reflux_inventory(insights_pending/zero_backlinks/promotions/total)のうちzero_backlinks以外は並行稼働中の他忍者churnが支配的で単体タスクの効果測定に使えない（cmd_reflux_backlink_202608061316_kagemaru）
+- L1568: task_type=recon2の commit_contract.required=false 既定分類は、AC自体がcommitを要求する'hotfix型recon2'では実態と乖離する（cmd_karo_hotfix_uncommitted_scripts_20260806）
 
 ## 設計標準・テスト・因果
 
