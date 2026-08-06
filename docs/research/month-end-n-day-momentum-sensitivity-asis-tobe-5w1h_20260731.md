@@ -1,5 +1,4 @@
-<!-- gist-master: 175af64e269890e24d9aacc85d19e7e5 month-end-n-day-momentum-sensitivity-asis-tobe-5w1h_20260731.md -->
-# モメンタム感度分析 第一弾 — 月末N営業日前(N感度) — AsIs/ToBe 5W1H設計書 v4.0
+# モメンタム感度分析 第一弾 — 月末N営業日前(N感度) — AsIs/ToBe 5W1H設計書 v4.1
 
 > シリーズ: **第一弾=本書(N感度)** / 第二弾=執行日感度分析(`execution-delay-sensitivity-asis-tobe-5w1h_20260731.md`) / 第三弾=N×E二次元ロバストネス検証(`nxe-2d-robustness-asis-tobe-5w1h_20260801.md`)
 
