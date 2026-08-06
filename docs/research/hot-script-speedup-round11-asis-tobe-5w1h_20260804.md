@@ -1,5 +1,5 @@
 <!-- gist-master: 4571e36dca63e089831abaa8b1d6c275 hot-script-speedup-round11-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.4 【✅CLOSED — 2/2 FAIL-close】
+# ホットスクリプト集中高速化 第十一弾 — 二段計測8-15位層(precheck+inbox+singleflight+cmd_save子区分) — AsIs/ToBe 5W1H設計書 v1.5 【⏸SUSPENDED — 配備2/8・両FAIL-close・残6未配備】
 
 > v1.4(2026-08-05 20:42 家老差戻し修正): 進捗台帳のidentifierを提案台帳と完全一致へ修正(短縮形→完全修飾source:check_id)
 
@@ -11,7 +11,7 @@
 
 > 初版起草(2026-08-04 23:46。殿指示23:45『同じ仕組みで第十一弾の設計書も作成せよ。第十弾の候補を除外した8-15番目までをやろう』)
 
-> シリーズ: ホットスクリプト集中高速化。第一弾〜第七弾=✅CLOSED / **第八弾**=✅CLOSED(12/12 CLEAR) / **第九弾**=✅CLOSED(3 CLEAR + 5 FAIL-close) / **第十弾**=一部完了・#6保留 / **第十一弾=本書✅CLOSED(2/2 FAIL-close)**
+> シリーズ: ホットスクリプト集中高速化。第一弾〜第七弾=✅CLOSED / **第八弾**=✅CLOSED(12/12 CLEAR) / **第九弾**=✅CLOSED(3 CLEAR + 5 FAIL-close) / **第十弾**=⏸一部完了・#6保留 / **第十一弾=本書⏸SUSPENDED(配備2/8・両FAIL-close・残6未配備)**
 
 ## §-1 スコープと境界(数と原理を先に固定)
 
@@ -93,14 +93,14 @@
 
 | # | 標的identifier | 高速化許可owner path | 状態 | 帰結(実測生値) |
 |---|---|---|---|---|
-| 1 | `gate_gunshi_report_precheck:full_precheck` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏹️**未配備・閉弾**(2026-08-06) | 第九弾補欠A知見あり。配備前に弾CLOSED |
+| 1 | `gate_gunshi_report_precheck:full_precheck` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏸**未配備・SUSPENDED**(2026-08-06) | 第九弾補欠A知見あり。配備前に弾SUSPENDED。標的は改善価値あり、再開時に配備対象 |
 | 2 | `inbox_write:inbox_write_total` | `scripts/inbox_write.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane2_inbox_write_total_20260805`: baseline n=9,197/p50=330ms/p95=6,100ms/max=96,200ms/total=18,822s → current n=9,758/p50=327.5ms/p95=6,134ms/max=181,570ms/total=20,376.43s。live resolver再利用で重複tmux scan/pane lookupを除去し、focused pre-send/persist/total=20/20/20、p50/p95=244/391ms、FAIL0/SKIP0。ただしscope-wide 38 testsは既存の`test_ninja_monitor_stall.bats`・`test_deploy_task.bats`失敗でAC4未達、commitなし。家老ACCEPT・archive済み |
 | 3 | `gate_report_format:singleflight_hold` | `scripts/gates/gate_report_format.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane3_singleflight_hold_20260805`: AC1-3 yes、AC4/commit no、軍師レビューverdict=FAIL。現ledger n=8,633/p50=400ms/p95=11,590ms/max=61,250ms/total=17,830.36s、focused 10/10・full 65/65 PASS、joiner p50/p95 641/672ms→414/421ms。変更は`gate_report_format.sh`+contract testに保全中。commit contractを22 pathへ同期した後もaffected 31 testsが60秒上限でPRECOMMIT_TIMEOUT、commit hashなし |
-| 4 | `cmd_save:checks_main` | `scripts/cmd_save.sh` | ⏹️**未配備・閉弾**(2026-08-06) | 第九弾#4知見あり。配備前に弾CLOSED |
-| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏹️**未配備・閉弾**(2026-08-06) | #1未着手のため直列待ちのまま閉弾 |
-| 6 | `report_publish:publish_total` | `scripts/report_field_set.sh` | ⏹️**未配備・閉弾**(2026-08-06) | 独立writer。配備前に弾CLOSED |
-| 7 | `cmd_save:q11_semantic_search_overhead` | `scripts/cmd_save.sh` | ⏹️**未配備・閉弾**(2026-08-06) | 配備前に弾CLOSED |
-| 8 | `cmd_save:checks_main.quality_gate` | `scripts/cmd_save.sh` | ⏹️**未配備・閉弾**(2026-08-06) | #4未着手のため直列待ちのまま閉弾 |
+| 4 | `cmd_save:checks_main` | `scripts/cmd_save.sh` | ⏸**未配備・SUSPENDED**(2026-08-06) | 第九弾#4知見あり。配備前に弾SUSPENDED。標的は改善価値あり、再開時に配備対象 |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏸**未配備・SUSPENDED**(2026-08-06) | #1未着手のため直列待ちのままSUSPENDED。再開時は#1完了後に配備 |
+| 6 | `report_publish:publish_total` | `scripts/report_field_set.sh` | ⏸**未配備・SUSPENDED**(2026-08-06) | 独立writer。配備前に弾SUSPENDED。標的は改善価値あり、再開時に配備対象 |
+| 7 | `cmd_save:q11_semantic_search_overhead` | `scripts/cmd_save.sh` | ⏸**未配備・SUSPENDED**(2026-08-06) | 配備前に弾SUSPENDED。標的は改善価値あり、再開時に配備対象 |
+| 8 | `cmd_save:checks_main.quality_gate` | `scripts/cmd_save.sh` | ⏸**未配備・SUSPENDED**(2026-08-06) | #4未着手のため直列待ちのままSUSPENDED。再開時は#4完了後に配備 |
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
 
@@ -140,7 +140,7 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 | 項 | 状態 |
 |---|---|
 | checkpoint契約(全弾共通) | **殿裁定2026-08-05**。§2.6参照 |
-| 第十一弾の起動 | **全レーン決着・CLOSED**(2026-08-06)。2026-08-05 18:03将軍下知で#2/#3を並列配備→双方正式FAIL-close。残6標的は未配備のまま閉弾 |
+| 第十一弾の起動 | **SUSPENDED**(2026-08-06)。2026-08-05 18:03将軍下知で#2/#3を並列配備→双方正式FAIL-close(scope-wide test阻害)。残6標的は未配備のままSUSPENDED。標的の改善価値は残存しており、再開時に配備対象 |
 | 序列snapshot | 起草時実測済み(§0=2026-08-04 23:32・直近24時間・第十弾と同一snapshot) |
 | 弾数・標的固定 | 8-15位の8標的。殿裁可で固定 |
 | 同族writer直列条件 | #1→#5(precheck系)、#4→#8(cmd_save系)。裁可対象 |
