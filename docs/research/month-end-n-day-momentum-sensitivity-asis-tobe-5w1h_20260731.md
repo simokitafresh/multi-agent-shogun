@@ -15,6 +15,8 @@
 - **Phase 1完了**: cmd_4198 GATE CLEAR 2026-07-31。DM2/DM6×N=0-7の全結果は§8-§22
 - **v4.0**: Phase 2追加 — L0-L3全75体への拡張(殿指示2026-08-06「L0~L3は先程の75体がデフォルトだ」)
 - **v4.1**: cmd_4237 FAIL反映。FoF合成ロジック是正(equal-weight子PF月次平均→ticker-level再帰展開方式へ)。軍師独立調査(blt_20260806_010520)のexpand_portfolio_to_tickers use_raw_signal分岐知見を統合
+- **v4.2**: cmd_4237再FAIL偵察知見反映。根因2つ確定: (1)signal_map索引1ヶ月ズレ(L322-326) (2)signals.signal→signals.holding_signalカラム取り違え(L427)。2修正でreturn -81%/signal -59%改善
+- **v4.3**: 是正版FAIL(mismatch 6634→1234)残存分析反映。偽mismatch 306件(ticker順序文字列比較→sorted集合比較で解消)+真mismatch 200件(絶対モメンタム閾値境界TQQQ/TECL⇔TMV→δバンド許容で解消見込み)
 
 ## §1 やること
 
@@ -573,6 +575,17 @@ DB `portfolios.config` JSONフィールドから `simulate_strategy_vectorized` 
 4. N=0パリティ: 本番monthly_returnsとの完全一致で検証（partial_turnover Phase 1で75/75 parity実証済みの`history.py`方式を踏襲）
 
 **重要**: `expand_portfolio_to_tickers`のuse_raw_signal引数の違い（display=引数受取、monthly_returns=デフォルトFalse）でticker×weightが分岐する（軍師独立調査blt_20260806_010520）。N-day実験ではholding_signalベース（use_raw_signal=False）を採用し本番monthly_returnsとの同格性を保つ。
+
+### v4.2偵察知見（2026-08-06偵察2本で確定）
+
+> **cmd_4237 FAIL根因（偵察2本で独立確認）**:
+>
+> 1. **signal_map索引1ヶ月ズレ**（Track A/疾風特定）: `simulate_standard()` L322-326でsignal_mapの構築が1ヶ月未来へ索引ズレ。returnは正しいがsignal/holdingが本番と不一致（standard 12/12PF全体で発生）
+> 2. **signals.signal→signals.holding_signalカラム取り違え**（Track B/才蔵特定）: `DynamicFoFWeights.__init__` L427がstandard PF取込みに`signals.signal`（pre-rebalance）を使用。本番`expand_portfolio_to_tickers`（`price_ratio_impl.py:1178`）は`use_raw_signal`既定False→`signals.holding_signal`（post-rebalance確定保有）を使用。このカラム取り違えがexpand()再帰の全FoF葉へ伝播し、switch-date/boundary誤検出→FoF 63/63 return_mismatch・standard signal_mismatch 12/12を系統的に引き起こす
+>
+> **修正箇所**: (1) simulate_standard() L322-326のsignal_map索引修正 (2) DynamicFoFWeights L427の`signals.signal`→`signals.holding_signal`カラム修正
+> **検証**: 価格集計層（shifted_endpoint_prices/open-to-openリターン加重和）は本番と構造一致し原因から除外済み（才蔵実測）
+> **詳細trace**: `docs/research/cmd_4237_fof_boundary_signal_field_divergence_20260806.md`
 
 ```
 Phase 2B/2C（是正後）:

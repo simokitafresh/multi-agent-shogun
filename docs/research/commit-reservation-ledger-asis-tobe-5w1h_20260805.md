@@ -1,5 +1,9 @@
 <!-- gist-master: 20bd7f137665f0badedb7241035732c3 commit-reservation-ledger-asis-tobe-5w1h_20260805.md -->
-# commit予約台帳 — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 v1.4
+# commit予約台帳 — 共有git indexの直列化 AsIs/ToBe 5W1H設計書 v1.5 【CLOSED】
+
+> **CLOSED**(2026-08-05 15:26): Phase1 GATE CLEAR(14:02) + Phase2 GATE CLEAR(14:02)。全AC完了・全テストPASS・実稼働実証済み
+
+> v1.5(2026-08-05 14:01 実装完了): Phase1(commit_queue.sh+pre-commit改修)+Phase2(ninja_scope_commit.sh統合+テスト)全AC完了。実稼働で3 commit(将軍2+影丸1)を競合ゼロ直列化。cmd_save.shバグ(ブロック不在WARN→OK)も即時修正。decision ledger全項目を実装済みに更新
 
 > v1.4(2026-08-05 05:24 将軍セルフレビュー6穴修正): timeout 300s→600s/owned-scope lock役割整理/gc()関数追加/index.lock待機方法定義/Codex統合記載/worktree記述修正
 
@@ -267,20 +271,39 @@ Agent C: 予約(<100ms) → #3 → sleep 3 → sleep 3 → ... → 先頭 → gi
 | 3 | pre-commit hook — PRECOMMIT=1 export + test_ninja_scope_commit.bats除外 + timeout 60s(超過=FAIL+失敗証跡) | なし | ★再帰経路除外+timeout→失敗証跡 |
 | 4 | テスト — commit_queue.shの予約/順番/timeout/二重予約拒否/GC/trap/index整合性 | 1 | — |
 
+## §実装結果(v1.5)
+
+| Phase | 内容 | commit | テスト | 実施者 |
+|---|---|---|---|---|
+| Phase1 | commit_queue.sh新設(6関数+trap+GC+原子性) + pre-commit改修(PRECOMMIT=1+timeout 60s→FAIL) + run_tests.sh除外ロジック | f8c49cbd | 6/6 PASS, SKIP 0 | 影丸 |
+| Phase2 | ninja_scope_commit.sh台帳wrapper統合 + owned-scope lock除去 + test_commit_queue.bats + 結合テスト | (軍師レビュー待ち) | PASS, SKIP 0 | 影丸 |
+| D0修正 | cmd_save.shバグ修正(ブロック不在WARN→BLOCK) | 5442ad4fc | 38/38 PASS, SKIP 0 | 将軍 |
+
+### 実稼働実証
+
+- 将軍commit(cmd_save.sh修正) + 影丸commit(Phase1実装)が予約台帳でFIFO直列化。競合ゼロ
+- 台帳TSV実例: `simokitafresh status=running` → `kagemaru status=waiting` → 将軍完了 → 影丸自動進行
+- 将軍の設計書commit(Phase1+Phase2完了後)も予約台帳経由で影丸の後にFIFO順実行
+
 ## §decision ledger
 
 | 項 | 状態 |
 |---|---|
-| 予約台帳方式の導入 | 殿発案2026-08-05 03:56。家老LGTM・軍師REVISE→v1.2で全指摘反映。裁可待ち |
-| pre-commitテスト除外(PRECOMMIT=1) | 提案(問題1根治)。軍師「同一契約に束ねよ」→実装分解#3に統合。裁可対象 |
-| pre-commit timeout短縮(900s→60s) | 提案(問題2緩和)。★軍師指摘: 超過時PASS扱い撤回→FAIL+失敗証跡に変更。裁可対象 |
-| 異常終了時の後続解放(trap) | v1.2追加(軍師REVISE)。trap EXIT/INT/TERM→release() |
-| 期限切れ予約GC | v1.2追加(軍師REVISE)。reserve()冒頭で600s超過エントリ強制削除 |
-| 実行直前のindex整合性確認 | v1.2追加(軍師REVISE)。.git/index.lock残存チェック+削除 |
-| 台帳ファイルの配置 | 提案: `/tmp/shogun_commit_queue.tsv`(揮発性・再起動でリセット) |
+| 予約台帳方式の導入 | ★実装完了(Phase1+Phase2)。殿発案2026-08-05 03:56→実稼働実証14:00 |
+| pre-commitテスト除外(PRECOMMIT=1) | ★実装完了(Phase1 AC2)。test_ninja_scope_commit.batsをpre-commit時に除外 |
+| pre-commit timeout短縮(900s→60s) | ★実装完了(Phase1 AC2)。超過=FAIL+失敗証跡 |
+| 異常終了時の後続解放(trap) | ★実装完了(Phase1 AC1)。trap EXIT/INT/TERM→release() |
+| 期限切れ予約GC | ★実装完了(Phase1 AC1)。reserve()冒頭で600s超過エントリ強制削除 |
+| 実行直前のindex整合性確認 | ★実装完了(Phase1 AC1)。fuserプロセス生存確認後のみ削除 |
+| 台帳ファイルの配置 | ★実装完了。`/tmp/shogun_commit_queue.tsv`(揮発性・再起動でリセット) |
+| owned-scope lock廃止 | ★実装完了(Phase2 AC1)。ロック機能除去、ディレクトリ(receipt/ledger格納)として存続 |
+| cmd_save.shブロック不在検知 | ★バグ修正完了(D0)。WARN→BLOCKに昇格(5442ad4fc) |
 
 ## §因果リンク
 
-- origin: `[[将軍commit_20分デッドロック_20260805]] -> [[pre-commit自己デッドロック+ロック長時間保持+リトライストーム]] -> [[予約台帳方式(殿発案)]]`
-- → [[ninja_scope_commit]] 既存commitパス。本設計書で改修対象
-- → [[test_ninja_scope_commit.bats]] デッドロック源。pre-commit除外対象
+- origin: `[[将軍commit_20分デッドロック_20260805]] -> [[pre-commit自己デッドロック+ロック長時間保持+リトライストーム]] -> [[予約台帳方式(殿発案)]] -> [[Phase1+Phase2実装完了_20260805]]`
+- → [[ninja_scope_commit]] 改修完了。commit_queue.sh経由に統合
+- → [[test_ninja_scope_commit.bats]] pre-commit除外完了。CI/手動実行でカバー
+- → [[commit_queue.sh]] 新設。予約台帳管理の全機能
+- → [[test_commit_queue.bats]] 新設。台帳機能のテスト
+- → [[cmd_save.sh]] バグ修正。ブロック不在WARN→BLOCK昇格

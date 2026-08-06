@@ -1,5 +1,7 @@
 <!-- gist-master: e131b06c137d3da41ad28df6373e7601 rebalancer-market-phase-asis-tobe-5w1h_20260804.md -->
-# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v1.9 【✅SSOT+UX完了 / ⚙ガイド更新+全コンポーネントコントラスト是正】
+# rebalancer市場フェーズ 米国株式市場SSOT統一 AsIs/ToBe 5W1H設計書 v2.0 【CLOSED — 全工程完了】
+
+> v2.0(2026-08-06 00:58 全工程CLOSED): SSOT+UX+ガイド更新+コントラスト是正の全工程完了。cmd_karo_rebalancer_guide_contrast_v19_20260805 GATE CLEAR
 
 > v1.9(2026-08-05 03:05 殿指摘反映): (1)stale記述是正(§META WHEN/§decision ledger/§実装分解を全完了状態に更新) (2)P3証跡を具体化(「実質カバー」→4項の一次証跡) (3)§ガイドページスコープ拡大: ガイドページ単体→全5ファイル54箇所の横断コントラスト是正。色指定をデザインガイド(4.5:1)+アプリCSS変数体系に基づくコントラスト比付き確定値に変更
 
