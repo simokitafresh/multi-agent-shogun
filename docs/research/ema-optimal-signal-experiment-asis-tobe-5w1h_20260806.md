@@ -1,3 +1,4 @@
+<!-- gist-master: 54672858b2c18d60877eba4e8dac5e95 ema-optimal-signal-experiment-asis-tobe-5w1h_20260806.md -->
 <!-- gist-master: pending ema-optimal-signal-experiment-asis-tobe-5w1h_20260806.md -->
 # EMA最適シグナル実験 — Valeyre (2026) の知見をDM-Signalで検証する AsIs/ToBe 5W1H設計書 v1.0
 
