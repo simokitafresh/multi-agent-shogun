@@ -111,6 +111,42 @@ Valeyreの実証はARP（相関行列を考慮した加重）で行われてい�
 
 Schmidhuber (2021)のφ−cφ³型補正は、ARP上ではSharpe改善がほぼゼロ（tanh型γ=1.3で1.29 vs 1.24の微差）。ARPの回転不変性が大トレンドの過大評価を既に抑制しているためです。
 
+## 考察 — 美しい理論の、静かな前提条件
+
+ここまで読むと「もう単一EMA以外ありえない」と感じるかもしれません。論文の論理展開は見事です。しかし、見事であるがゆえに、その足元を照らしてみる価値があります。根拠なき批判ではなく、同じ学術的土俵の上での検証です。
+
+### 112日は「冗長な中間地帯」ではないのか
+
+Etienne et al. (2025) "Revisiting the Structure of Trend Premia"（arXiv:2510.23150）は、短期（20日）と長期（500日）のbarbell構造が性能の大部分を捕捉し、60-125日の中期帯は冗長であると実証しました。125日レイヤーを除去するとSharpe比が改善すると報告しています。
+
+皮肉なことに、Valeyreの最適EMA 112日はこの「除去すべき冗長ゾーン」のど真ん中に位置します。両論文とも厳密な実証に基づいている。矛盾の原因は、Valeyreが単一時間スケールの最適点を探したのに対し、Etienneは複数時間スケールの組み合わせの中での各層の貢献度を測ったこと。同じ風景を別の窓から見ている。
+
+### 線形ルールの世界だけの最適性
+
+Valeyreの「最適」は線形トレーディングルール（ポジション量がシグナルに比例する）の前提に立っています。しかし現実の多くの戦略はbinary rule（買いか売りかの二択）で運用されます。
+
+Zakamulin & Giner (2020, 2024)は、binary rule前提でのMA（移動平均）とMOM（モメンタム）を比較し、MAがMOMより頑健な精度を示すことを実証しました。特に弱トレンド環境で差が拡大する。見落としてはならないのは、binary ruleでの最適解は線形ruleとは異なる点。Valeyre自身も論文でこの点を認めていますが、「最適」という言葉の射程は線形ルールの世界に限定されます。
+
+デュアルモメンタムのように「保有するか、安全資産に退避するか」の二択で運用する戦略にとって、この最適性がそのまま適用できるかは別の問いです。
+
+### R²=0.98は誰にとっての0.98か
+
+理論と実証の一致R²=0.98は、ARP（Agnostic Risk Parity）というポートフォリオ構築法を使った場合の数字です。等ウェイト（1/N）ではR²=0.75。0.98が0.75になる。これは理論の破綻ではなく、ARP固有の性質（回転不変性による相関行列の効果）が0.98の大部分を担っていることを意味します。
+
+70先物で分散されたARP構築ができる機関投資家と、ETF数銘柄を等ウェイトで保有する個人投資家では、この理論の有効性が異なる可能性がある。
+
+### ガウス過程は現実をどこまで捕捉するか
+
+Grebenkov-Serrorモデルはトレンドをガウス的なAR(1)過程として記述します。「平均的には」R²=0.98で現実を捕捉している。しかしトレンドフォロー戦略の価値が最も問われるのは「平均的でない」局面、つまり市場の急変時です。
+
+Shi & Lian (2025)は中国先物市場の実証で、multi-scale組み合わせが単一スケールより安定したパフォーマンスを示すことを報告しています。高相関環境やトレンド不在期、つまりガウス的定常性の仮定が崩れる局面で差が出る。理論は美しい晴天のモデルかもしれませんが、投資家が知りたいのは嵐の日の振る舞いです。
+
+### それでも、この論文の価値
+
+前提条件を指摘することは論文の価値を否定しません。むしろ逆。
+
+「バックテストなしで最適パラメータを導出できる」という発想自体が、cherry-picking問題への構造的な解答です。前提条件が限定的であっても、理論的Sharpe公式という道具を手に入れたことの意義は大きい。前提を緩めて拡張していく道がここから始まります。
+
 ## まとめ
 
 Valeyreの論文が示した核心は、驚くほどシンプルです。
@@ -132,5 +168,7 @@ Valeyreの論文が示した核心は、驚くほどシンプルです。
 - Valeyre, S. (2026). "Breaking the Trend: How to Avoid Cherry-Picked Signals." arXiv:2504.10914
 - Grebenkov, D.S. & Serror, J. (2014). "Following a Trend with an Exponential Moving Average: Analytical Results for a Gaussian Model." Physica A 394, 288-303
 - Benichou, R. et al (2017). "Agnostic Risk Parity: Taming Known and Unknown Unknowns." Journal of Investment Strategies 6(3)
-- Zakamulin, V. & Giner, J. (2020, 2024). Moving Average指標の感度分析と最適性研究
+- Zakamulin, V. & Giner, J. (2020). "Trend following with momentum versus moving averages: a tale of differences." Quantitative Finance 20(6), 985-1007
+- Etienne, A. et al (2025). "Revisiting the Structure of Trend Premia: When Diversification Hides Redundancy." arXiv:2510.23150
+- Shi, C. & Lian, X. (2025). "Trend Following Strategies: A Practical Guide." SSRN:5140633
 - Moskowitz, T. et al (2012). "Time Series Momentum." Journal of Financial Economics 104(2), 228-250
