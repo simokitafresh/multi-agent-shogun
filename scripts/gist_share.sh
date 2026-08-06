@@ -44,6 +44,20 @@ command -v jq >/dev/null 2>&1 || die "jq is required"
 command -v timeout >/dev/null 2>&1 || die "timeout is required"
 
 title="$(basename "$source_path")"
+
+# --- duplicate detection + auto-repair (2026-08-06): gist-masterコメント欠落時に既存gistを自動検出し修復 ---
+# gh gist list失敗時(ネットワーク障害等)は空文字=fallthrough(新規作成)
+existing_gist_id="$( { gh_bounded gist list --limit 100 2>/dev/null || true; } | awk -v t="$title" '$2 == t {print $1; exit}' )"
+if [ -n "$existing_gist_id" ]; then
+    printf '[gist_share] auto-repair: found existing gist %s for %s — inserting gist-master comment\n' "$existing_gist_id" "$title" >&2
+    repair_tmp="$(mktemp "$(dirname "$repo_root/$source_path")/.gist-repair.XXXXXX")"
+    { printf '<!-- gist-master: %s %s -->\n' "$existing_gist_id" "$title"; cat "$repo_root/$source_path"; } > "$repair_tmp"
+    chmod --reference="$repo_root/$source_path" "$repair_tmp"
+    mv "$repair_tmp" "$repo_root/$source_path"
+    printf 'GIST_REPAIRED_PENDING_COMMIT gist_id=%s title=%s next="commit %s, then rerun gist-share"\n' \
+        "$existing_gist_id" "$title" "$source_path" >&2
+    exit 2
+fi
 content_sha="$(git -C "$repo_root" show "HEAD:$source_path" | sha256sum | awk '{print $1}')"
 payload="$(mktemp)"
 response="$(mktemp)"
