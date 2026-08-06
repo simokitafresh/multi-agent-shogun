@@ -1,7 +1,9 @@
 <!-- gist-master: 59a5e79368f385cddfdb0656fd8ca3bd hot-script-speedup-round9-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.6 【✅CLOSED — 3 CLEAR + 5 FAIL-close】
+# ホットスクリプト集中高速化 第九弾 — 外れ値型admission+配備経路+cmd_save本体 — AsIs/ToBe 5W1H設計書 v1.7 【✅CLOSED — 3 CLEAR + 5 FAIL-close】
 
-> v1.6(2026-08-05 18:53進捗同期): #0'' common lifecycleは最終修正commit `3d56941d7c8629b6869e0302b90fb8eeba1e64e0`で実Codex SessionStart・直接SessionStart・nested sourceが各1行、duplicate/missing各0、focused 323/323、計装overhead p95=0.018msを成立させGATE CLEAR。第九弾の実装CLEARは1件となった。一方、Codex/git/basicと#2 Track A/Bほか正式FAIL-close 5本は偽CLEARにせず保留し、2026-08-05 18:03将軍下知により戦力を第十・十一弾へ移した。
+> **CLOSED**(2026-08-06 将軍刻印): 全8レーン決着。実装CLEAR 1件(#0'' common lifecycle)、偵察CLEAR 2件(#1 heavy_execution, #3 deploy_total)、正式FAIL-close 5件(#0'' Codex/git/basic, #2 Track A/B, #4 cmd_save, 補欠A full_precheck)。偽CLEARは0件。FAIL-close 5件は計装・結合の構造課題であり、第十弾以降の台帳で再攻撃対象として継承。2026-08-05 18:03将軍下知で戦力を第十・十一弾へ移動済み。
+
+> v1.6(2026-08-05 18:53進捗同期): #0'' common lifecycleは最終修正commit `3d56941d7c8629b6869e0302b90fb8eeba1e64e0`で実Codex SessionStart・直接SessionStart・nested sourceが各1行、duplicate/missing各0、focused 323/323、計装overhead p95=0.018msを成立させGATE CLEAR。
 
 > v1.5(2026-08-05 17:47進捗同期): #0''実装をcommon lifecycleとCodex/git/basicの2 shardへ配備。commonは3 commit・focused 323/323・単独ledger 8/8まで成立したが、`session_start_inject.sh`がsource-specific抑止markerを未受理で実Codex SessionStartが2行となるため家老RC中。Codex/git/basicは2 commit・focused 128/128を得た一方、同marker依存とp50非悪化未達(+4.120ms)を正しくFAIL-close。#2 queue_waitは独立Track A/Bを完走し、固定cutoffでqueue=2,558・execution=2,490・queue-only=109・execution-only=41・重複0を確定したが、非同期writerの個別欠落原因を台帳だけでは一意化できず両TrackをFAIL-close。実装CLEARはまだ0件であり、偵察CLEARを実装完了へ数えない。
 

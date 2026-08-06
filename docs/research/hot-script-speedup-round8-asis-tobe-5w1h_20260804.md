@@ -1,7 +1,9 @@
 <!-- gist-master: fc4b27c4031149d7d6b45fde49028942 hot-script-speedup-round8-asis-tobe-5w1h_20260804.md -->
-# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.6 【✅CLOSED】
+# ホットスクリプト集中高速化 第八弾 — 三層記憶health+常時課税層 — AsIs/ToBe 5W1H設計書 v1.7 【✅CLOSED】
 
-> v1.6(2026-08-05 15:25): shard4固定HEAD `5aad3a61ecdd826a10271e296b3c8ed14b3cbec7` の全量unit receiptを確定。214/214ファイル、宣言/観測3,122/3,122、FAIL 0、SKIP 0、rc=0、`complete=1`、`full_scope=true`。品質checkpointをCLOSEし、第八弾の実装・品質ゲートを完了扱いとする。正式効果は§1どおり修正後1週間ledger前週比で別途確定する。
+> **CLOSED**(2026-08-06 将軍刻印): 実装GATE CLEAR 12/12、品質checkpoint完了(214/214 PASS、3,122/3,122 PASS、FAIL 0、SKIP 0)。旧偵察FAIL 3/3は正式FAIL-closeで偽CLEARなし。正式効果は修正後1週間ledger前週比で別途確定(v1.6時点で未成熟)。
+
+> v1.6(2026-08-05 15:25): shard4固定HEAD `5aad3a61ecdd826a10271e296b3c8ed14b3cbec7` の全量unit receiptを確定。214/214ファイル、宣言/観測3,122/3,122、FAIL 0、SKIP 0、rc=0、`complete=1`、`full_scope=true`。品質checkpointをCLOSEし、第八弾の実装・品質ゲートを完了扱いとする。
 
 > v1.5(2026-08-05 02:38 殿裁定): §2.6 checkpoint契約を追加。full/wave全量テストの3〜4名並列分割・固定HEAD・receipt和集合判定を全弾共通契約として明記
 
