@@ -93,14 +93,14 @@
 
 | # | 標的identifier | 高速化許可owner path | 状態 | 帰結(実測生値) |
 |---|---|---|---|---|
-| 1 | `gate_gunshi_report_precheck:full_precheck` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳着手可(第九弾補欠A知見あり) | — |
+| 1 | `gate_gunshi_report_precheck:full_precheck` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏹️**未配備・閉弾**(2026-08-06) | 第九弾補欠A知見あり。配備前に弾CLOSED |
 | 2 | `inbox_write:inbox_write_total` | `scripts/inbox_write.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane2_inbox_write_total_20260805`: baseline n=9,197/p50=330ms/p95=6,100ms/max=96,200ms/total=18,822s → current n=9,758/p50=327.5ms/p95=6,134ms/max=181,570ms/total=20,376.43s。live resolver再利用で重複tmux scan/pane lookupを除去し、focused pre-send/persist/total=20/20/20、p50/p95=244/391ms、FAIL0/SKIP0。ただしscope-wide 38 testsは既存の`test_ninja_monitor_stall.bats`・`test_deploy_task.bats`失敗でAC4未達、commitなし。家老ACCEPT・archive済み |
 | 3 | `gate_report_format:singleflight_hold` | `scripts/gates/gate_report_format.sh` | ⚠️**正式FAIL-close** | `cmd_karo_round11_lane3_singleflight_hold_20260805`: AC1-3 yes、AC4/commit no、軍師レビューverdict=FAIL。現ledger n=8,633/p50=400ms/p95=11,590ms/max=61,250ms/total=17,830.36s、focused 10/10・full 65/65 PASS、joiner p50/p95 641/672ms→414/421ms。変更は`gate_report_format.sh`+contract testに保全中。commit contractを22 pathへ同期した後もaffected 31 testsが60秒上限でPRECOMMIT_TIMEOUT、commit hashなし |
-| 4 | `cmd_save:checks_main` | `scripts/cmd_save.sh` | ⏳着手可(第九弾#4知見あり) | — |
-| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏳#1完了後(同族writer直列) | — |
-| 6 | `report_publish:publish_total` | `scripts/report_field_set.sh` | ⏳着手可(独立writer) | — |
-| 7 | `cmd_save:q11_semantic_search_overhead` | `scripts/cmd_save.sh` | ⏳着手可 | — |
-| 8 | `cmd_save:checks_main.quality_gate` | `scripts/cmd_save.sh` | ⏳#4完了後(同族writer直列) | — |
+| 4 | `cmd_save:checks_main` | `scripts/cmd_save.sh` | ⏹️**未配備・閉弾**(2026-08-06) | 第九弾#4知見あり。配備前に弾CLOSED |
+| 5 | `gate_gunshi_report_precheck:full_precheck_body_rest` | `scripts/gates/gate_gunshi_report_precheck.sh` | ⏹️**未配備・閉弾**(2026-08-06) | #1未着手のため直列待ちのまま閉弾 |
+| 6 | `report_publish:publish_total` | `scripts/report_field_set.sh` | ⏹️**未配備・閉弾**(2026-08-06) | 独立writer。配備前に弾CLOSED |
+| 7 | `cmd_save:q11_semantic_search_overhead` | `scripts/cmd_save.sh` | ⏹️**未配備・閉弾**(2026-08-06) | 配備前に弾CLOSED |
+| 8 | `cmd_save:checks_main.quality_gate` | `scripts/cmd_save.sh` | ⏹️**未配備・閉弾**(2026-08-06) | #4未着手のため直列待ちのまま閉弾 |
 
 ## §2.5.1 テスト修正・高速化の共通知見(第八弾実証・以後継承)
 
