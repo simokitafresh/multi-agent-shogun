@@ -10186,6 +10186,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608061256_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608061316_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608061340_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608061416_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
@@ -11137,6 +11138,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-16T23:58:51+09:00 bhf0vzjbz toolu_01AmE1THVb92EgQWVLCbn4fu /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a4216e99-f6cc-40b4-b9c6-530157 |
 | cmd | `cmd_reflux_promotion_202607170006_kotaro` (`queue/reports/kotaro_report_cmd_reflux_promotion_202607170006_kotaro.yaml`) |
 | cmd | `cmd_reflux_promotion_202607170200_kotaro` (`queue/reports/kotaro_report_cmd_reflux_promotion_202607170200_kotaro.yaml`) |
+| causal | `[[snapshot exec後~EXIT trap前の観測空白]] -> [[cmd_karo_impl_scope_bootstrap_trap_202607202153]] -> [[snapshot child冒頭にbootstrap ledger設置]]` (`docs/research/retro-scope-helper-silent-exit-kotaro.md`) — ninja_scope_commit.shのTERM/INT timeoutを3/3再現しstdout=0/stderr=0/ledger=0/HEAD差分0を確認。根因はhelper冒頭L14-22のsnapshot exec後、L298のEXIT trap設置前に外部終了すると観測契約が一切存在しないこと。cmd_karo_impl_scope_bootstrap_trap_202607202153でsnapshot child冒頭にbootstrap ledgerを設置し観測空白を解消した |
 | cmd | `cmd_reflux_promotion_202607170339_kotaro` (`queue/reports/kotaro_report_cmd_reflux_promotion_202607170339_kotaro.yaml`) |
 | causal | `cmd_reflux_promotion_202607170655_kotaro` files_modified: [[provisional_kotaro]] |
 | cmd | `cmd_reflux_promotion_202607170655_kotaro` (`queue/tasks/kotaro.yaml`) |
@@ -11268,6 +11270,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-04T15:29:16+09:00 kagemaruinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-04T23:36:02+09:00 kagemaruが放置されている |
 | cmd | `cmd_reflux_backlink_202608061316_kagemaru` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202608061416_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_lessons — 仮: Lessons
 
@@ -12609,6 +12612,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-06T03:50:24.499005+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-06T04:05:30.056938+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-06T13:26:45+09:00 commit-reservation-ledger-asis-tobe-5w1h_20260805.mdは順調に動作しているか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-06T05:20:59.202300+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
