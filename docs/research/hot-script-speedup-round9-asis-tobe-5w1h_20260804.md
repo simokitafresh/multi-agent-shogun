@@ -13,7 +13,7 @@
 
 > 状態: v1.2(2026-08-04 20:16 殿裁可『よい。追記したらレーン方式で家老にやらせよう』。§0.6母集団漏れ3系(git pre-push/Codex固有hook/セッション境界+基本コマンド)を弾#0''スコープへ同梱) / v1.1(2026-08-04 18:58 §0.6サイレント盲点サーベイ追加+弾#0''をhookチェーン計装として弾台帳へ追加) / v1.0初版起草(2026-08-04 18:46。殿発案『第九弾の設計書を作ろう。以前の設計書を参考にして同じスタイルで。進捗表も』)。序列=将軍一次実測18:46(下記§0)
 
-> シリーズ: ホットスクリプト集中高速化。第一弾〜第四弾✅ / 第五弾=`hot-script-speedup-round5-asis-tobe-5w1h_20260729.md`✅(10レーン) / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`(identity基盤完成・P1b蓄積待ち) / 第七弾=`hot-script-speedup-round7-test-speed-asis-tobe-5w1h_20260729.md`✅(全量wall -3.35%確定) / 第八弾=`hot-script-speedup-round8-asis-tobe-5w1h_20260804.md`(本体12/12 GATE CLEAR・wave checkpoint進行中) / **第九弾=本書**
+> シリーズ: ホットスクリプト集中高速化。第一弾〜第五弾✅ / 第六弾=`throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md`✅(no-change完遂CLOSE) / 第七弾✅ / 第八弾=`hot-script-speedup-round8-asis-tobe-5w1h_20260804.md`✅(12/12 CLEAR・品質checkpoint完了) / **第九弾=本書✅(3 CLEAR + 5 FAIL-close)**
 
 ## §-1 スコープと境界(数と原理を先に固定)
 
@@ -168,7 +168,7 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 | 弾数・標的固定 | **裁可で固定(2026-08-04 20:16)**: 弾#0''(v1.2同梱スコープ)+4弾+補欠3 |
 | heavy_job 2弾の直列 | 提案(同一script writer原則)。裁可対象 |
 | 高速化と防御力の境界 | **確定**: 検証力不変・fail-closed維持・チェック間引き禁止(LS099/殿裁定07-21『削るな速くしろ』) |
-| 起票解禁 | **配備済み・進行中**。#0''と#2の実測結果は§2.5へ同期済み。次の依存順序は§2.5「次レーン順序」を正とする |
+| 起票解禁 | **全レーン決着・CLOSED**(2026-08-06)。実装CLEAR 1 + 偵察CLEAR 2 + FAIL-close 5。戦力は第十・十一弾へ移動済み(08-05 18:03将軍下知) |
 
 ## §4 5W1H
 
@@ -181,7 +181,7 @@ full/wave checkpointの全量テストを1名へ一括配備しない。以下�
 
 ## §5 因果リンク
 
-- → [[hot-script-speedup-round8-asis-tobe-5w1h_20260804]] 直前弾(進行中)。標的境界とwriter非重複の根拠
+- → [[hot-script-speedup-round8-asis-tobe-5w1h_20260804]] 直前弾(✅CLOSED)。標的境界とwriter非重複の根拠
 - → [[殿裁定_削るな速くしろ_20260721]] 品質を保ったまま超速化=憲法(knowledge:569abc55)
 - → [[ledger-driven-campaign-lane-pattern_20260714]] レーン方式の型元
 - → [[殿裁定_厳密さは最終チェックのみ_20260714]] 途中try最大化・報告整形は最終集約
