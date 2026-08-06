@@ -3663,6 +3663,7 @@ codd:
 | causal | [[殿定義_二重ループ_20260720_2033]] -> [[メイン作業へ全力集中して完了]] -> [[完全な別retro_task]] -> [[即インフラ改善]] -> [[次の主作業加速]] |
 | causal | [[fe3943375_retro_pane_cut]] -> [[self_retro_inline一タスク化]] -> [[二重ループ破壊]] -> [[retro_pane_prompt復元]] |
 | causal | `[[report_publication同期I/O]] -> [[deferred安全分離]] -> [[二重ループ高速化]]` (`docs/research/double-loop-report-publication-tobisaru.md`) |
+| causal | `[[二重ループ高速化]] -> [[deferred安全分離実装cmd_karo_retro_publication_impl_202607202052]] -> [[実装latency_retro]]` (`docs/research/retro-publication-impl-latency-tobisaru.md`) — related contractを最終checkpointにする候補で full unit比 -96.7%(-420,648ms) |
 | causal | `[[completion_pipeline_next_bottleneck]] -> [[full_and_integration_cost_or_flake]] -> [[related_only_final_checkpoint_candidate]]` (`docs/research/next-throughput-hayate.md`) |
 | causal | `[[review_display_friction]] -> [[unknown_alias_BLOCK]] -> [[next-throughput-kagemaru]]` (`docs/research/next-throughput-kagemaru.md`) |
 | discussion | 殿指示2026-07-20 20:33「メインの作業＋作業におけるインフラ改善の二重ループが超高速で回転を止めない」 |
@@ -10169,6 +10170,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608051108_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608060250_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608061239_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608061256_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
@@ -10969,6 +10971,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T22:50:18+09:00 tobisaruは何をやっているのだ？ |
 | cmd | `cmd_reflux_backlink_202608032243_tobisaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202608041408_tobisaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202608061256_tobisaru` (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
 
 ## provisional_hayate — 仮: Hayate
 
@@ -11904,6 +11907,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-10T07:14:55+09:00 殿裁定(2026-07-10 07:14): GSはネイティブ暦(本番と同一のDTB3暦)に統一。常に本番が正。旧暦(株式取引日リインデックス)方式の比較検証は不要=撤回。cmd_3814実装+cmd_3815全量再GS(20260710  |
 | cmd | `cmd_karo_ci_fix_dtb3_native_parity_202607101820` |
 | cmd | `cmd_karo_ci_fix_dtb3_exact_numeric_parity_202607101829` |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-06T13:28:18+09:00 モメンタム感度分析 第一弾が重複しているぞ。最近重複作成が多いがインフラバグがあるのでは？ |
 
 ## command_files_modified_verification — Command×Files Modified照合
 
@@ -12587,6 +12591,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-06T03:10:55+09:00 by6zak42v toolu_01PLKH6RmhQ6h9eQECsiV5Zj /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7e864345-7b02-496e-9491-96caef |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-06T03:50:24.499005+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-06T04:05:30.056938+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-06T13:26:45+09:00 commit-reservation-ledger-asis-tobe-5w1h_20260805.mdは順調に動作しているか？ |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
