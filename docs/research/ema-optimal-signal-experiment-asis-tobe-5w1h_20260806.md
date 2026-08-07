@@ -55,7 +55,8 @@
 - **軍師**: レビューとボトルネック特定
 
 ### What（何を）
-- Phase 0道具: EMAシグナル計算の研究用Pythonスクリプト（read-only）
+- **既存道具の最大活用**: `scripts/analysis/grid_search/run_077_oikaze.py`を基盤とする。新規スクリプトは作らない
+- Phase 0: run_077_oikazeの`calc_momentum_series`をEMA方式に差し替えたバリアント(`run_077_oikaze_ema.py`)を作成。選出・リバランス・計測パイプラインはそのまま流用
 - Phase 1以降: 台帳駆動でPF×半減期の組合せを自動配備
 
 ### Where（どこで）
@@ -154,19 +155,54 @@ binary_checks:
 - Phase 0の結果で最良半減期のSharpeが現行以下 → **レーン終了**（アイデアとしてとどめる）
 - Phase 0の結果で最良半減期のSharpeが現行を上回る → **Phase 1開始**
 
-## §6 EMA計算の数式
+## §6 実装方針 — run_077_oikaze.pyの活用
+
+### 既存道具が持つもの（そのまま流用）
+- 本番DB読込+月次リターンベースの計算パイプライン (L317-445)
+- lookback期間パラメータ化+グリッドサーチ (PARAM_GRID_1, L149-175)
+- top_n選出→等ウェイト→月次リターン計算 (L523-534)
+- CAGR/Sharpe/MaxDD出力+CSV保存
+- 並列実行(ProcessPoolExecutor)
+
+### 変更点（1箇所のみ）
+`calc_momentum_series` (L317) の矩形窓モメンタムをEMAに差し替え:
 
 ```python
-# 半減期 → 平滑化パラメータ
-eta = math.log(2) / half_life_days
+# 現行(矩形窓): np.prod(1 + returns[start:end+1]) - 1
+# ↓ EMA方式に差し替え
 
-# EMAシグナル（日次更新）
-ema_signal[t] = (1 - eta) * ema_signal[t-1] + eta * daily_return[t]
+def calc_ema_momentum(values: np.ndarray, half_life_days: int) -> np.ndarray:
+    """半減期ベースのEMAモメンタム。run_077_oikazeのcalc_momentum_seriesと同じI/F"""
+    eta = math.log(2) / half_life_days
+    n = len(values)
+    ema = np.zeros(n)
+    ema_var = np.zeros(n)
+    result = np.full(n, np.nan)
+    warmup = min(252, n)  # 1年ウォームアップ
 
-# 正規化（Valeyre方式: ボラティリティで割る）
-ema_vol[t] = sqrt((1 - eta) * ema_vol[t-1]**2 + eta * daily_return[t]**2)
-normalized_signal[t] = ema_signal[t] / ema_vol[t]
+    for t in range(n):
+        daily_ret = values[t]
+        if t == 0:
+            ema[t] = daily_ret
+            ema_var[t] = daily_ret ** 2
+        else:
+            ema[t] = (1 - eta) * ema[t-1] + eta * daily_ret
+            ema_var[t] = (1 - eta) * ema_var[t-1] + eta * daily_ret ** 2
+
+        if t >= warmup:
+            vol = math.sqrt(ema_var[t]) if ema_var[t] > 0 else 1e-10
+            result[t] = ema[t] / vol  # Valeyre正規化シグナル
+
+    return result
 ```
+
+### パラメータグリッドの読み替え
+- 現行PARAM_GRID_1: `lookback_months` (1,2,3,...18ヶ月)
+- EMA版: `half_life_days` (40,60,78,100,120,150日) をlookback_months枠に流し込む
+- 月→営業日変換は不要（EMAは日次更新のため直接日数指定）
+
+### 作成するファイル
+- `scripts/analysis/grid_search/run_077_oikaze_ema.py` — run_077_oikaze.pyをコピーし、calc_momentum_seriesのみ上記EMA関数に差し替え+パラメータグリッドを半減期6点に変更。それ以外は一切変更しない
 
 ## §7 リスクと制約
 
