@@ -567,6 +567,16 @@ publish_terminal_success() {
             "$singleflight_key" "$terminal_hash" "$finished_epoch_ms" "$completed_event" > "$receipt_tmp"
         mv -f -- "$receipt_tmp" "$singleflight_receipt"
     fi
+    # Content-only receipt (paths + blob, no run id/message) so a differently
+    # identified peer that raced the same owned bytes can recognize this
+    # commit as already covering its intended change instead of BLOCKing on a
+    # since-converged worktree.  See the scope_content_key computation above.
+    if [[ -n "${scope_content_receipt:-}" ]]; then
+        receipt_tmp="${scope_content_receipt}.tmp.$$"
+        printf 'version=1\nkey=%s\ncommit_hash=%s\nfinished_at=%s\n' \
+            "$scope_content_key" "$terminal_hash" "$finished_epoch_ms" > "$receipt_tmp"
+        mv -f -- "$receipt_tmp" "$scope_content_receipt"
+    fi
     write_terminal_ledger 0 "$terminal_hash" true complete
     printf '%s\n' "$completed_event" >&2
     printf 'event=terminal_ledger run_id=%s rc=0 commit_hash=%s complete=true ledger=%s\n' \
@@ -887,6 +897,33 @@ if [[ -f "$singleflight_receipt" ]]; then
     exit 2
 fi
 
+# Content-only receipt: unlike the singleflight receipt above (keyed on
+# run id/message too), this is keyed purely on normalized paths + worktree
+# blob content.  ninja_scope_commit.sh routes every invocation through
+# commit_queue.sh's global reservation ledger (see script top), so two
+# helpers racing the same owned bytes under different run ids/messages never
+# actually execute this section concurrently — by the time the second one
+# runs, the first has already released its reservation.  A wait-based lock
+# therefore can never observe contention here; only a persisted receipt of
+# "these exact bytes were already published by a scoped commit" can tell a
+# genuine no-op invocation apart from a race follower whose intended change
+# was already committed by a differently-identified peer.
+scope_content_material="$(printf '%s\n' "${paths[@]}")"
+for scope_path in "${paths[@]}"; do
+    if [[ -f "$scope_path" || -L "$scope_path" ]]; then
+        scope_content_fingerprint="$(git hash-object -- "$scope_path" 2>/dev/null || printf missing)"
+    elif [[ -d "$scope_path" ]]; then
+        scope_content_fingerprint="$(find "$scope_path" -type f -print0 2>/dev/null | sort -z | xargs -0 -r git hash-object -- 2>/dev/null | sha256sum | awk '{print $1}')"
+    else
+        scope_content_fingerprint="missing"
+    fi
+    scope_content_material+=$'\n'"path=$scope_path blob=$scope_content_fingerprint"
+done
+scope_content_key="$(printf '%s' "$scope_content_material" | sha256sum | awk '{print $1}')"
+scope_content_receipt_dir="$(lock_path "$git_common_dir/ninja-scope-content-receipts")"
+mkdir -p -- "$scope_content_receipt_dir"
+scope_content_receipt="$scope_content_receipt_dir/$scope_content_key.receipt"
+
 if [[ -z "$patch_file" && "$repair_index" == false ]]; then
     scope_has_changes=false
     for scope_path in "${paths[@]}"; do
@@ -903,6 +940,23 @@ if [[ -z "$patch_file" && "$repair_index" == false ]]; then
         fi
     done
     if [[ "$scope_has_changes" == false ]]; then
+        if [[ -f "$scope_content_receipt" ]]; then
+            content_receipt_hash="$(awk -F= '$1 == "commit_hash" {print $2; exit}' "$scope_content_receipt")"
+            if [[ "$content_receipt_hash" =~ ^[0-9a-f]{40}$ ]] && \
+               git cat-file -e "${content_receipt_hash}^{commit}" 2>/dev/null && \
+               git merge-base --is-ancestor "$content_receipt_hash" HEAD 2>/dev/null; then
+                published_commit_hash="$content_receipt_hash"
+                write_terminal_ledger 0 "$content_receipt_hash" true complete
+                printf 'event=terminal_ledger run_id=%s rc=0 commit_hash=%s complete=true ledger=%s\n' \
+                    "$terminal_run_id" "$content_receipt_hash" "$terminal_ledger" >&2
+                printf 'event=scope_content_receipt role=follower key=%s rc=0 commit_hash=%s receipt=%s\n' \
+                    "$scope_content_key" "$content_receipt_hash" "$scope_content_receipt" >&2
+                terminal_event_emitted=true
+                printf '%s\n' "$content_receipt_hash"
+                trap - EXIT
+                exit 0
+            fi
+        fi
         echo "BLOCK: scope paths have no changes" >&2
         exit 2
     fi
