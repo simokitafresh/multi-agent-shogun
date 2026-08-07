@@ -982,3 +982,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260807-131121029-1be3
+  ts: "2026-08-07T13:11:21+09:00"
+  insight: "deploy_task.sh YAML TRANSACTION rollbackがpre-implementation review receiptを消すため、gunshi APPROVE後も再配備がBLOCK。ci_fix配備で再現。恒久策=rollback範囲からreceipt除外またはreceipt保存先をtask YAML外に分離"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
