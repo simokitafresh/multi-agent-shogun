@@ -1,3 +1,4 @@
+<!-- gist-master: 2282386778de982d36e74734e92007f7 fof-acceleration-oscillation-experiment-asis-tobe-5w1h_20260805.md -->
 # FoF加速度フィルタ振動問題 — 実験設計書 AsIs/ToBe 5W1H v2.0 【レーン方式】
 
 > **v2.0(2026-08-07 殿指示)**: レーン方式にアップデート。台帳駆動+idle自動配備。cmd起票不要。
