@@ -374,7 +374,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_uncommitted_scripts_20260806"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GP-236(logs/gunshi_gp_tracker.yaml)はadaptive gating windowをdraft限定→draft+reportへ2026-04-26implemented済み。現行scripts/gates/gate_gunshi_startup.sh L568,788,800,807,862,874は全てrt==\"draft\"||rt==\"report\"を確認しており修正は現存。さらにLevel4昇格としてSG-PRE18(adversarial_review必須WARN)も追加済み(commit 9c530bdb)。本insightはL6 horizontalスキャンがgunshi_gp_tracker.yamlのdefense_level<5ブロックをstatus未フィルタで再走査する仕様(cmd_complete_gate.sh write_l6_horizontal_level5_insights)により、無関係cmd(cmd_karo_hotfix_uncommitted_scripts_20260806)のトークンがgates/gate_gunshi_startupに一致し再浮上した既実装パターンの重複検出。新規の実修正対象なし"
+  action_artifact: "gp_id=GP-236;file=scripts/gates/gate_gunshi_startup.sh:568,788-874;evidence=commit_9c530bdb_SG-PRE18"
+  resolved_at: "2026-08-07T16:03:00+09:00"
 - id: INS-20260806-154651719-e62f
   ts: "2026-08-06T15:46:51+09:00"
   insight: "semantic_index_update新概念候補: discussion:tikennha は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
