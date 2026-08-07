@@ -6812,7 +6812,10 @@ fi
 # Therefore CLEAR must never be published before that exact bundle exists and
 # validates.  Otherwise archive_completed replaces the current report with an
 # archive symlink and /cmd-complete receives an impossible instruction.
-if [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ]; then
+# karo_direct起源cmd(CMD_ID=cmd_karo_*)はSG7レビューフローを経由しないため
+# バンドル自体が存在しない。review_two_phase(gunshi LGTM+karo ACCEPT)のみで
+# GATE CLEARする(cmd_karo_hotfix_karo_direct_gate_bypass_20260807)。
+if [[ "$CMD_ID" != cmd_karo_* ]] && [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ]; then
     _sg7_bundle="$GATES_DIR/sg7_bundle.json"
     if [ ! -f "$SCRIPT_DIR/scripts/review_bundle.py" ] \
         || ! _SG7_SPEC_JSON=$(python3 "$SCRIPT_DIR/scripts/review_bundle.py" consume \
@@ -6850,6 +6853,19 @@ if [ "$HAS_IMPLEMENT" = "true" ]; then
         echo "GATE BLOCK: review_two_phase_pending (every report requires matching gunshi LGTM + karo ACCEPT)"
         append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "review_two_phase_pending")"
         exit 1
+    fi
+    # karo_direct起源cmd(CMD_ID=cmd_karo_*)はSG7バンドルをスキップしたため
+    # SHOGUN_COMPLETION_GENERATIONが未設定のまま。review_two_phase確認済み
+    # report群のfingerprintを束ねたhashをgeneration代替として採用する
+    # (cmd_karo_hotfix_karo_direct_gate_bypass_20260807)。
+    if [[ "$CMD_ID" == cmd_karo_* ]] && [ -z "${SHOGUN_COMPLETION_GENERATION:-}" ]; then
+        _karo_direct_generation=$(PROJECT_ROOT="$SCRIPT_DIR" review_manifest_fingerprint "${_two_phase_reports[@]}") || _karo_direct_generation=""
+        if [[ ! "$_karo_direct_generation" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "GATE BLOCK: ${CMD_ID}:karo_direct_completion_generation_invalid"
+            append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "karo_direct_completion_generation_invalid")"
+            exit 1
+        fi
+        export SHOGUN_COMPLETION_GENERATION="$_karo_direct_generation"
     fi
 fi
 
