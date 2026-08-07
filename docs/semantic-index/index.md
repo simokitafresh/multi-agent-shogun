@@ -10067,6 +10067,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608030250_kotaro` — [[semantic_causal_automation]] -> `docs/research/lesson_useful_rate_recon_20260724.md` |
 | causal | `cmd_reflux_backlink_202608051007_hayate` — [[semantic_causal_automation]] -> `docs/research/retro-completion-fail4-hayate.md` |
 | causal | `cmd_reflux_backlink_202608060250_hanzo` — [[semantic_causal_automation]] -> `docs/research/retro-ninja-monitor-stall-saizo.md` |
+| causal | `cmd_reflux_backlink_202608071649_hanzo` — [[semantic_causal_automation]] -> `docs/research/shogun-adversarial-review-hidden-infra-design-20260801.md` |
 | causal | `docs/research/defense-enforcement-classification_20260720.md` — [[defense_hierarchy]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_control_plane_20260723.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_task_mutation_20260721.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
@@ -10265,6 +10266,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608071510_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071540_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071550_saizo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608071604_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
@@ -11372,6 +11374,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-04T23:36:02+09:00 kagemaruが放置されている |
 | cmd | `cmd_reflux_backlink_202608061316_kagemaru` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202608061416_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202608071604_kagemaru` (`docs/semantic-index/index.md`) |
 
 ## provisional_lessons — 仮: Lessons
 
