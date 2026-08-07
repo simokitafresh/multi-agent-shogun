@@ -1,3 +1,4 @@
+<!-- gist-master: 12649283dce0b7c30cd50840d1dcb5d6 detector-audit-portability-phase2-asis-tobe-5w1h_20260726.md -->
 # 第二段階設計書: 検知器の自己検証構造+可搬 — AsIs/ToBe 5W1H
 
 origin: [[第一段階クローズ宣言_20260726]] <- [[gate-commit-flow-bottleneck v2.x]] + [[殿指摘_過剰すぎる_真因まで因果をたどれ_20260726_1256]]

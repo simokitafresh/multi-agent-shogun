@@ -1,3 +1,4 @@
+<!-- gist-master: 8a1f29ecbab762cc0658dc40114868c5 daemon-inventory-asis-tobe-5w1h_20260715.md -->
 # デーモン棚卸し — AsIs/ToBe 5W1H調査 v1.3 FINAL (2026-07-15)
 
 - 起案: 殿指示 2026-07-15 03:33「デーモンの調査ファイルを作成してgistで共有。各デーモンについて別々にasis/tobe 5w1hで改善点をまとめよう」

@@ -1,3 +1,4 @@
+<!-- gist-master: c68c5194b41d0faa0b594ff4fafd6f3b dm-monthly-trade-bug-asis-tobe-5w1h_20260802.md -->
 # DM-Signal 月次リターン境界是正 — AsIs/ToBe 5W1H設計書 v5.22 【★stale ledgerバグ(8月保有切替消失・異常25PF)真因確定→修正deploy+run224完走(23:02)・102PF全数再検証中。AsIs→ToBe対照表§2.1新設。全体75%】
 
 > **本書の位置づけ**: 唯一の正本。前提知識ゼロのLLMが本書だけで作業可能なことを設計要件とする。

@@ -1,3 +1,4 @@
+<!-- gist-master: 1a114ea8d62c274e59c1ee329382ed29 hidden-infra-rollback-asis-tobe-5w1h_20260801.md -->
 # hidden-infra汚染rollback設計書 — AsIs/ToBe 5W1H
 
 - 版: v1.1 (2026-08-01 15:31 家老一次検証反映)

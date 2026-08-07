@@ -1,3 +1,4 @@
+<!-- gist-master: faeda5afd7df22d29899f502953f30bf contract-split-review-roundtrip-asis-tobe-5w1h_20260727.md -->
 # 契約の分散が生むレビュー往復 — ASIS/TOBE 5W1H (2026-07-27)
 
 - 版: **v1.2**(2026-07-27 16:12 家老レビュー blt_160728 の指摘(1)(2)を採用。(3)(4)(5)はv1.1で反映済) / v1.1(16:06 将軍レビュー blt_155653 の指摘A/B/Cを全採用)

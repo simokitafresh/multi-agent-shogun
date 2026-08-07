@@ -1,3 +1,4 @@
+<!-- gist-master: 22ad29b5f64cf6364bc1de7d90dd7ea0 monthly-trade-missing-ticker-calc-asis-tobe-5w1h_20260709.md -->
 # Monthly Trade検証用リターン計算 — ticker欠落時の計算続行禁止 設計書 AsIs/ToBe 5W1H
 
 - 作成: 将軍 2026-07-09 13:45（殿指示 13:40）

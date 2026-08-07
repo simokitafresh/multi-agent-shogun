@@ -1,3 +1,4 @@
+<!-- gist-master: 90e783d5a6e47c7645e5780ab91835dd clear-prep-common-skill-asis-tobe-5w1h_20260727.md -->
 # /clear前準備の3指揮官共通スキル化 — ASIS/TOBE 5W1H (2026-07-27)
 
 - 起案: 将軍(殿下知 2026-07-27 10:57「3人がクリア前の準備をできる共通のスキルにアップデートしたい」)

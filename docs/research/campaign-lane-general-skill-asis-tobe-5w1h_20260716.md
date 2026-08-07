@@ -1,3 +1,4 @@
+<!-- gist-master: 43f1e0325d4af41fc152b857c316db3d campaign-lane-general-skill-asis-tobe-5w1h_20260716.md -->
 # 台帳駆動 Campaign Lane — 品質維持高速化の両輪エンジン（覚醒再構築 v6：過剰対策削除の誤りを訂正）
 
 更新日: 2026-07-25 09:20（将軍による訂正再構築 v6）
