@@ -1,44 +1,4 @@
 insights:
-- id: INS-20260806-030523643-b0ad
-  ts: "2026-08-06T03:05:23+09:00"
-  insight: "[[phase1の結果を知りたい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=phase1の結果を知りたい"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-06T03:06:24+09:00"
-- id: INS-20260806-030524123-f6fa
-  ts: "2026-08-06T03:05:24+09:00"
-  insight: "[[今回試行錯誤した点を家老に報告せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今回試行錯誤した点を家老に報告せよ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-06T03:06:24+09:00"
-- id: INS-20260806-030524839-5b92
-  ts: "2026-08-06T03:05:24+09:00"
-  insight: "[[殿指示2026 08 06「month end n day momentum sensitivity asis tobe]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示2026-08-06「month-end-n-day-momentum-sensitivity-asis-tobe-5w1h_20260731.mdをやろう」。Phase1(cmd_4198)で確立したN-dayシフト方式をL0-L3全75体へ拡張する。設計書v4.0 §23-§29が仕様"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-06T03:06:24+09:00"
-- id: INS-20260806-030624662-e38a
-  ts: "2026-08-06T03:06:24+09:00"
-  insight: "semantic_index_update新概念候補: discussion:バグは即時根治しよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-06T03:11:24+09:00"
 - id: INS-20260806-031656747-511f
   ts: "2026-08-06T03:16:56+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿裁定_研究横展開はレーン方式_20260806]] は既存aliasesに一致なし。類似概念TOP3: db_price_data_range(DB価格データ範囲; alias=殿裁定 GSはネイティブ暦 本番と同一のDTB3暦 に統一; score=9.8) / semantic_dictionary_design(セマンティック辞書構想; alias=source 殿裁定 lord conversation; score=9.7) / dm_fusion_app(DM-Fusionアプリ; alias=殿指示_admin設定+Xシェア_20260628; score=2.2)。概念定義とaliases追加を検討せよ"
@@ -961,11 +921,51 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-07T13:28:11+09:00"
 - id: INS-20260807-131121029-1be3
   ts: "2026-08-07T13:11:21+09:00"
   insight: "deploy_task.sh YAML TRANSACTION rollbackがpre-implementation review receiptを消すため、gunshi APPROVE後も再配備がBLOCK。ci_fix配備で再現。恒久策=rollback範囲からreceipt除外またはreceipt保存先をtask YAML外に分離"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260807-132919693-16f3
+  ts: "2026-08-07T13:29:19+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[AC2還流在庫計測要求]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=還流在庫; score=23.6) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=AC要求語照合; score=2.9) / skill_routing(スキルルーティング; alias=accuracy計算; score=2.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-07T13:29:26+09:00"
+- id: INS-20260807-132919951-4218
+  ts: "2026-08-07T13:29:19+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[内部関数への安全な単独呼出し手段の不在]] は既存aliasesに一致なし。類似概念TOP3: known_unknowns_principle(無知の知; alias=同一mkdir pの連続呼出しは単一processへ束ねる; score=1.7) / gate_quality_framework(ゲート品質統合フレームワーク; alias=shのインラインCheckを関数化した後; score=1.3) / causal_traversal_pipeline(因果辺トラバース統合パイプライン(Obsidian×セマンティック); alias=孤立=存在しない; score=1.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-07T13:29:26+09:00"
+- id: INS-20260807-132920229-a6be
+  ts: "2026-08-07T13:29:20+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[L968既知事故の再現]] は既存aliasesに一致なし。類似概念TOP3: known_unknowns_principle(無知の知; alias=家老の現物確認 blt 20260720 133855; score=2.1) / defense_hierarchy(防御階層原則(Level 1-6); alias=Level6; score=1.5) / causal_traversal_pipeline(因果辺トラバース統合パイプライン(Obsidian×セマンティック); alias=知識の幅; score=1.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-07T13:29:26+09:00"
+- id: INS-20260807-133014767-63f1
+  ts: "2026-08-07T13:30:14+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608071301_hayate; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608071301_hayate"
   fix_known: false
   status: pending
