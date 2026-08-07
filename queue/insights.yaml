@@ -246,8 +246,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'a192244ae6671450da16408af0744dd66cd2b117388b11d1e14794b3544403ad' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 10
-  last_seen: "2026-08-07T14:48:01+09:00"
+  occurrence_count: 11
+  last_seen: "2026-08-07T15:07:21+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -981,3 +981,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-07T14:49:29+09:00"
+- id: INS-20260807-151225619-0856
+  ts: "2026-08-07T15:12:25+09:00"
+  insight: "[[EMA実験結果をnoteのメンバー向けの投資記事にまとめてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=EMA実験結果をnoteのメンバー向けの投資記事にまとめてくれ。gate側の構造的問題は別問題として解決せよ。gate側の問題はどう解決するつもりだ？俺の判断を仰ぐときは推奨案を出すルールだろ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
