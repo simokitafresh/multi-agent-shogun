@@ -1505,8 +1505,10 @@ _sg_pre30_check() {
     _daemon_files=$(echo "$_fm_block" | grep -iE 'ninja_monitor|ntfy_listener|inbox_watcher|dashboard_auto' | grep -v '#' || true)
     local _lib_only_contract
     # A source path in prose/evidence is not a lib-only execution contract.
-    # Restrict the non-daemon trigger to an explicit *_LIB_ONLY=1 assignment.
-    _lib_only_contract=$(grep -ciE '(^|[^[:alnum:]_])[A-Z][A-Z0-9_]*_LIB_ONLY[[:space:]]*=[[:space:]]*1([^[:digit:]]|$)' "$report_path" 2>/dev/null || true)
+    # Restrict the non-daemon trigger to an explicit *_LIB_ONLY=1 assignment
+    # within the files_modified block only (not the full report text).
+    # Fix: evidence内の "NINJA_MONITOR_LIB_ONLY=1 source ..." 等が偽陽性発火していた (INS-20260807-113145934-921f)
+    _lib_only_contract=$(echo "$_fm_block" | grep -ciE '(^|[^[:alnum:]_])[A-Z][A-Z0-9_]*_LIB_ONLY[[:space:]]*=[[:space:]]*1([^[:digit:]]|$)' 2>/dev/null || true)
     if [ -n "$_daemon_files" ] || [ "${_lib_only_contract:-0}" -gt 0 ]; then
         local _simulation _command _actual
         _simulation=$(awk '/^operational_simulation:/{found=1; next} found && /^[^[:space:]#]/{exit} found{print}' "$report_path" 2>/dev/null || true)

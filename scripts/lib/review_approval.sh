@@ -75,6 +75,14 @@ for key in ("commit_hash", "commit", "git_commit"):
 if not commit_hash:
     result = d.get("result") or {}
     commit_hash = result.get("commit_hash", "") if isinstance(result, dict) else ""
+# cross_repo_commits fallback: DM-Signal等の外部repo commitを検出 (INS-20260807-113118223-d6f0)
+if not commit_hash:
+    for xrc in (d.get("cross_repo_commits") or []):
+        if isinstance(xrc, dict):
+            xrc_hash = str(xrc.get("commit_hash", "")).strip()
+            if len(xrc_hash) == 40 and all(c in "0123456789abcdef" for c in xrc_hash):
+                commit_hash = xrc_hash
+                break
 
 no_code_task_types = ("scout", "recon", "recon2")
 task_type = str(d.get("task_type", "")).strip().lower()
