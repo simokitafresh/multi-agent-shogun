@@ -1140,7 +1140,10 @@ proposals:
    修正対象の計測スクリプトを再実行し、修正前→修正後の数値変化を記録せよ。
    「効果は次回配備で出る」は洗脳#5。シミュレーションでもいいから今検証せよ。
    全件対処確認: 対象N件中N件完了を数値で証明。「全部やった」は洗脳#8。
-4. commit（Co-Authored-By付き）
+4. commit（Co-Authored-By付き。ninja_scope_commit.sh経由必須）
+   ★ pre-commitタイムアウト時: bypass使用禁止・家老委任禁止(F-G06)。
+   台帳(HEAVY_ADMISSION)待ちが原因なら待て。再実行すれば通る。
+   テスト自体のFAILならテストを修正してから再commit。(2026-08-07実証)
 5. 家老にinbox_writeで通知:
    bash scripts/inbox_write.sh karo \
      "【軍師直接実装】{変更概要}。S0 PASS。commit {hash}。レビュー依頼。" \
