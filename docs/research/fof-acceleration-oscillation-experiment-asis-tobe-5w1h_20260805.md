@@ -1,8 +1,8 @@
 <!-- gist-master: 656fcb3ce8d126740d9594003892ad51 fof-acceleration-oscillation-experiment-asis-tobe-5w1h_20260805.md -->
-# FoF加速度フィルタ振動問題 — 実験設計書 AsIs/ToBe 5W1H v1.1
+# FoF加速度フィルタ振動問題 — 実験設計書 AsIs/ToBe 5W1H v2.0 【レーン方式】
 
+> **v2.0(2026-08-07 殿指示)**: レーン方式にアップデート。台帳駆動+idle自動配備。cmd起票不要。
 > v1.1(2026-08-05 12:12 軍師レビュー5指摘反映): 再現性条件(DBスナップショット/HEAD/seed)明記、判定閾値定義、案A集中度評価追加、案B初回確定誤り率追加、案Cパリティ基準明記
-
 > v1.0(2026-08-05 12:00 殿指示): 本番コードは変更しない。3案(A/B/C)の効果を実験で検証する設計書
 
 ## §0 前提知識 — この問題を理解するために必要な背景
@@ -118,6 +118,11 @@ selected = [item[0] for item in acceleration_results if item[1] >= cutoff_score]
 
 top_n位のスコアと**float64で完全同値(bit一致)**なら均等保有になる設計。しかしfloat64で完全同値はほぼ起きないため、**タイブレークは事実上死んでいる**。
 
+### 8/7時点の状況(v2.0追記)
+
+- 08-07 SIGNAL CHANGE ALERT一次確認: 3PF×5日=15件は当月シグナルの正常な日次変動。秘奥義-加速R-鉄壁の振動は08-05以降追加のfullrecalculateが実行されていないため再発確認は未実施
+- 本実験はread-onlyのため、振動の再発有無に関わらず実行可能(Phase 0のベースライン計測で再現性を確認する設計)
+
 ### L1(Standard PF)は安定している
 
 GS-抜き身-鉄壁もGS-変わり身-鉄壁も、L1のholding_signal自体は8月を通じて安定(signal_change_logに08-05エントリなし)。問題はL1の値ではなく、**L3のFoFがどのL1を選ぶか**のフィルタ判定で起きている。
@@ -132,10 +137,10 @@ GS-抜き身-鉄壁もGS-変わり身-鉄壁も、L1のholding_signal自体は8�
 |---|---|
 | WHY | FoFのtop_n=1加速度フィルタが、cumulative_returnの浮動小数点微少差でrecalcのたびに振動する。confirmed-monthシグナルの不安定はユーザー向けmonthly trade表示の信頼性に影響する |
 | WHAT | 3つの対策案(A: タイブレーク閾値/B: confirmed-month immutability/C: 丸め桁固定)の効果を**本番コード変更なし**の実験で検証する |
-| WHO | 実験実行=忍者(家老配備)。実験設計=将軍 |
-| WHEN | 殿裁可後 |
+| WHO | **将軍**: レーン起票(本設計書)と最終検分のみ。**家老**: 台帳駆動で自走配備+完了処理。cmd起票不要。**忍者**: 弾の実行と二値報告。**軍師**: レビュー |
+| WHEN | idle忍者検知の瞬間に常時。レーンは将軍・殿の在席と無関係に自走する |
 | WHERE | 実験スクリプト=`/mnt/c/Python_app/DM-signal/scripts/analysis/`配下。本番コード変更なし |
-| HOW | 下記§ToBe実験設計 |
+| HOW | §3 レーン構成要素参照。台帳駆動+idle自動配備+飽和終端 |
 
 ## §2 ToBe — 3案の実験設計
 
@@ -238,82 +243,113 @@ rounded_cum_return = round(cumulative_return, precision)
 
 **副作用リスク**: 丸め桁が少なすぎるとmonthly_returnの精度に影響し、パリティ検証(全期間の保有シグナル+monthly return完全一致)が崩れる。パリティ基準(holding_signal一致+monthly_return差≤1e-12)を満たすことが必須条件
 
-## §3 実験実行手順
+## §3 レーン構成要素（v2.0）
 
-### Phase 1: データ準備(read-only)
-
-```
-1. 本番DBから以下を取得:
-   - 全秘奥義12体のportfolio_id + pipeline_config
-   - 全コンポーネントPF(L1/L2)のcumulative_return全期間
-   - signal_change_log全期間(振動回数のベースライン計測)
-2. ローカルSQLiteにキャッシュ(本番DBへの負荷軽減)
-3. MomentumAccelerationFilterのスタンドアロン再現を検証:
-   → 本番と同一のholding_signalが再現できることを確認
-```
-
-### Phase 2: ベースライン計測
+### 要素1: 実験台帳
 
 ```
-1. 現行ロジック(案なし)でcumulative_returnにノイズ±1e-14を加えて100回計算
-2. 秘奥義-加速R-鉄壁のholding_signalが100回中何回変わるかを記録
-3. 他の秘奥義11体で同じ計測(期待値: 0回)
-4. 全期間(2012年〜2026年)の各月初で同じ計測
-   → 過去にも同じ振動が起きていた月を特定
+docs/research/fof-oscillation-experiment-ledger.tsv
+列: phase | plan | param | vibration_rate | total_return_diff | maxdd_diff | sharpe_diff | side_effect_count | status | ninja | timestamp
 ```
 
-### Phase 3: 各案の実験
+- Phase 0(道具作成+ベースライン)完了後に案A/B/Cの全パラメータ行を生成
+- **書き手は自動**: 実験スクリプトが結果を台帳に自動追記。手動更新なし
 
-```
-案A: 5つのεそれぞれで100回×全月初を計算
-案B: 3つの確定タイミング×2つの確定条件で全月初を計算
-案C: 5つの丸め桁それぞれで100回×全月初を計算
+### 要素2: 優先選定
 
-各案の出力:
-  - 振動回数(月別・全期間合計)
-  - パフォーマンス指標(トータルリターン/MaxDD/シャープレシオ)
-  - 副作用カウント(他PFへの影響件数)
-```
+- Phase 0: 道具作成(データ取得+スタンドアロン再現+ベースライン計測)を1タスクで実行
+- Phase 1: 案A/B/C × 各パラメータを台帳から優先配備。**3案は独立なので3忍者並列**
 
-### Phase 4: 比較分析
+### 要素3: 品質契約テンプレ
 
-```
-1. 3案×パラメータの組合せ結果を比較テーブルに整理
-2. 振動回数0 + パフォーマンス差最小 + 副作用0の最適パラメータを特定
-3. 案の優先順位を推奨(将軍判断)
-4. 殿に結果報告
+```yaml
+binary_checks:
+  production_mutation_zero: "yes/no — 本番DBへのINSERT/UPDATE/DELETE = 0"
+  baseline_reproduced: "yes/no — スタンドアロン再現が本番holding_signalと完全一致"
+  vibration_measured: "yes/no — 振動回数が100回×全月初で計測済み"
+  side_effect_zero: "yes/no — 他の秘奥義11体に意図しない変更0件"
+  seed_fixed: "yes/no — np.random.seed記録済み"
+  snapshot_recorded: "yes/no — DBスナップショットTS+HEAD SHA記録済み"
 ```
 
-## §4 実装分解
+### 要素4: idle自動配備
 
-| # | 内容 | 依存 | 見積もり |
-|---|---|---|---|
-| 1 | データ取得スクリプト(Phase 1) | なし | 1 cmd |
-| 2 | スタンドアロンフィルタ再現+ベースライン計測(Phase 2) | 1 | 1 cmd |
-| 3a | 案A実験(Phase 3) | 2 | 1 cmd |
-| 3b | 案B実験(Phase 3) | 2 | 1 cmd |
-| 3c | 案C実験(Phase 3) | 2 | 1 cmd |
-| 4 | 比較分析+報告(Phase 4) | 3a,3b,3c | 1 cmd |
+- ninja_monitorの既存idle検知に接続
+- 台帳のstatus=pendingの行から優先順で1件取り出し→task YAML生成→配備
+- Phase 0は手動配備(道具がまだ存在しないため)、Phase 1以降は自動配備
 
-3a/3b/3cは独立なので並列配備可能(3忍者)。
+### 要素5: 安全ガード
+
+- (a) idle限定配備: busy忍者への配備禁止
+- (b) completed再配備防止: 同一案×パラメータの重複実行禁止
+- (c) production mutation = 0: read-only強制。本番コード変更禁止
+- (d) 再現性固定: DBスナップショット+HEAD SHA+seed 42を全タスクに焼込み
+
+### 要素6: 計測還流+終端条件
+
+- 各弾の完了後に振動率・パフォーマンス差・副作用件数を台帳に記録
+- **終端条件**: 全パラメータ行(案A×5 + 案B×6 + 案C×5 = 16パターン)の結果が揃ったらレーン自動終了
+- **中間判断**: Phase 0ベースラインで振動再現に失敗(振動率0%)→ レーン終了(問題が自然解消)
+
+## §3.5 フェーズ構成（v2.0）
+
+### Phase 0: 道具作成 + ベースライン計測（手動配備）
+
+- **目的**: データ取得+スタンドアロンフィルタ再現+ベースライン振動計測
+- **配備**: 家老がidle忍者1名に手動配備
+- **AC**:
+  - AC1: 全秘奥義12体のcumulative_return全期間をローカルSQLiteにキャッシュ(production mutation=0)
+  - AC2: スタンドアロン再現が本番holding_signalと完全一致することを確認
+  - AC3: ノイズ注入100回×全月初でベースライン振動率を計測。振動月を特定
+
+### Phase 1: 3案並列実験（レーン自動配備）
+
+- **案A(タイブレーク閾値)**: ε×5パターン → idle忍者に自動配備
+- **案B(confirmed-month immutability)**: タイミング3×条件2=6パターン → idle忍者に自動配備
+- **案C(丸め桁固定)**: 桁数×5パターン → idle忍者に自動配備
+- 3案は独立。3忍者並列可能
+
+### Phase 0 → Phase 1 進行判断
+
+- Phase 0でベースライン振動率 > 0% → Phase 1開始(問題再現確認)
+- Phase 0でベースライン振動率 = 0% → **レーン終了**(問題が自然解消。根因は別にあった)
+
+### Phase 2: 比較分析+報告
+
+- 全16パターンの結果が揃ったら自動終端
+- 振動率0% + パフォーマンス差最小 + 副作用0の最適案×パラメータを特定
+- 殿に結果報告
+
+## §4 進捗台帳
+
+| Phase | 弾 | 対象 | パラメータ | 状態 | 結果 |
+|---|---|---|---|---|---|
+| P0 | 道具作成+ベースライン | 秘奥義12体 | ノイズ±1e-14×100回 | 未着手 | — |
+| P1-A | 案A実験 | 加速R-鉄壁+11体 | ε=[1e-6,1e-4,1e-3,1e-2,5e-2] | — | — |
+| P1-B | 案B実験 | 加速R-鉄壁+11体 | タイミング[1,3,5]×条件[初回,多数決] | — | — |
+| P1-C | 案C実験 | 加速R-鉄壁+11体 | 丸め桁[6,8,10,12,14] | — | — |
+| P2 | 比較分析 | — | — | — | — |
 
 ## §5 decision ledger
 
 | 項 | 状態 |
 |---|---|
-| 実験の実施 | 殿発案2026-08-05 12:00。裁可待ち |
-| 案A εの探索範囲 [1e-6〜5e-2] | 提案。裁可対象 |
-| 案B 確定タイミング [1日/3日/5日] | 提案。裁可対象 |
-| 案C 丸め桁 [6/8/10/12/14] | 提案。裁可対象 |
-| ノイズ注入回数 100回 | 提案。裁可対象(統計的有意性 vs 計算量) |
+| 実験の実施 | 殿発案2026-08-05 12:00 |
+| レーン方式採用 | 殿指示2026-08-07 |
+| 案A εの探索範囲 [1e-6〜5e-2] | v1.1提案。全範囲実行 |
+| 案B 確定タイミング [1日/3日/5日]×条件[初回/多数決] | v1.1提案。全組合せ実行 |
+| 案C 丸め桁 [6/8/10/12/14] | v1.1提案。全範囲実行 |
+| ノイズ注入回数 100回 | v1.1提案 |
 | 本番コード変更 | 禁止(殿指示)。実験スクリプトのみ |
 
 ## §6 因果リンク
 
 - origin: `[[SIGNAL_CHANGE_ALERT_20260805]] -> [[秘奥義-加速R-鉄壁_振動]] -> [[float64微少差×top_n=1境界]] -> [[実験設計書(殿発案)]]`
+- pattern: `[[台帳駆動攻略レーン]]`（gist f777582a41c66e95a53d1cc993bc5a1c）
 - → [[MomentumAccelerationFilter]] `backend/app/services/pipeline/blocks/momentum_acceleration_filter.py`
 - → [[ComponentPriceBlock]] `backend/app/services/pipeline/blocks/component_price.py` — cumulative_returnを「価格」として供給する入口
 - → [[monthly_returns]] DBテーブル。cumulative_returnの格納先
 - → [[signal_change_log]] 振動の検出源
 - → [[殿裁定_バンド採用_20260706]] モメンタムバンド撤廃の経緯
 - → [[L805]] 月初シグナル前に前月最終営業日価格の上流可用性をゲートせよ
+- related: `[[EMA全敗_矩形窓優位確定_20260807]]`（同日のEMA実験レーンCLOSED。同じ実験フレームワーク）
