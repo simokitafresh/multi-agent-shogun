@@ -122,6 +122,8 @@ top_n位のスコアと**float64で完全同値(bit一致)**なら均等保有�
 
 - 08-07 SIGNAL CHANGE ALERT一次確認: 3PF×5日=15件は当月シグナルの正常な日次変動。秘奥義-加速R-鉄壁の振動は08-05以降追加のfullrecalculateが実行されていないため再発確認は未実施
 - 本実験はread-onlyのため、振動の再発有無に関わらず実行可能(Phase 0のベースライン計測で再現性を確認する設計)
+- **cumulative_return再計算は実質毎日**(殿指摘で確認2026-08-07): sync-standard(日次cron)が`recalculate_history_fast(mode=PORTFOLIO)`を呼び、cumulative_returnを全期間再積上げしてUPSERTする。sync-fof(日次cron)も同様。月初の`recalculate-sync`は保険的な全量再実行。∴ split遡及修正は翌日のsync cronで反映され、最大30日放置にはならない
+- **振動の根本原因はsplit遡及ではなくfloat64の日次再積上げ差**: 日次sync cronが毎回cumulative_returnを全期間再積上げするからこそ、float64乗算順序差(pandas集約の内部実装依存)で微少差が日次で再生成され、境界近傍の加速度スコアが振動する。§1の根本原因チェーンと整合。因果: `[[sync_layers_daily_recalculate]]` → `[[recalculate_history_fast]]` → `[[cumulative_return全期間再積上げ]]` → `[[float64微少差日次再生成]]`
 
 ### L1(Standard PF)は安定している
 
