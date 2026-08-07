@@ -4746,6 +4746,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-03T09:23:39+09:00 bsp4o87ji toolu_01XhCoik47VYTkFu2t4dwffF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/45cf57e1-0673-4d49-8006-b0b4f5 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-04T13:28:46+09:00 bhmj753pd toolu_0196wFUDUfbHnes9dtBK5gP9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/7e864345-7b02-496e-9491-96caef |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-04T15:44:44+09:00 bkrafav6z toolu_01Y4DwadLRWfEdA6EzNhdWHx /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/c0cc095f-a607-476f-a7e3-89f4fb |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-07T15:20:27+09:00 bp3c752zj toolu_01JT7ZvZmczbvawfLqoxrFxx /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/dca0179a-e600-4973-adbe-f22340 |
 
 ## shin_shijin_design — 四神設計
 
@@ -6634,6 +6635,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T12:05:03+09:00 家老セッション2026-08-06〜07知見: (1)N-dayレーンR1-R8で前提転換(holding_signal優先化は誤り、本番はsignal列ベース)。設計書v4.8に時系列+因果記録済み。再開点=ledger検証欠如調査 (2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T14:01:57+09:00 b9nhcah7m toolu_018kE7YvsRNjUzvbunqqT7Zk /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8d040a46-0571-4527-906a-51c6b2 |
 | lesson | `L1574` reflux_insight task(AC2:reflux_inventory計測)のrelated_lessons injectionにL968/L134が含まれていない |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-07T15:35:28+09:00 家老セッション2026-08-07知見: (1)CI RED三連続修正(scope-path race dedup復元→model profile validation契約復元→-x/-f typo修正)でGREEN復帰 (2)EMA実験P |
 | causal_chain | `[[cmd_3726]]` (L956) |
 | causal_chain | `[[cmd_3765]]` (L985) |
 | causal_chain | `[[cmd_karo_hotfix_fill_this_202607151848]]` (L1037) |
@@ -10258,6 +10260,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608061340_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608061416_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071151_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608071510_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
@@ -10456,6 +10459,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608071431_hayate` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608071447_kagemaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608071447_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608071535_kotaro` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608071535_kotaro` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -10632,6 +10637,8 @@ codd:
 | file | `scripts/run_tests.sh` |
 | causal | `cmd_karo_run_tests_atomic_receipt_202607181608` -> [[provisional_run_tests]] (auto_generated) |
 | cmd | `cmd_karo_run_tests_atomic_receipt_202607181608` (`scripts/run_tests.sh`, `scripts/run_with_receipt.sh`, `tests/unit/test_run_tests.bats`) |
+| causal | [[cmd_reflux_backlink_202608071540_hayate]] -> [[provisional_run_tests]] -> [[retro-unit-receipt-reuse-saizo]] |
+| file | `docs/research/retro-unit-receipt-reuse-saizo.md` — unit receipt再利用・最終checkpoint短縮の隔離fixture実験(偵察のみ)。HEAD-keyed single-flight receiptをintegration generation内へ拡張する適用境界(二値5条件)を定義 |
 | causal | `cmd_karo_v21_c6_01_symlink_guard_202607181802` files_modified: [[provisional_run_tests]] |
 | cmd | `cmd_karo_v21_c6_01_symlink_guard_202607181802` (`scripts/run_tests.sh`, `tests/unit/test_run_tests_symlink_guard.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-19T04:11:27+09:00 afc57229e176abfe9 toolu_01FQ3Wn9QjCcRk2n1th7EPn5 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb5474c2-0222-4126-ab9 |
@@ -12712,6 +12719,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T05:08:33.824550+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T14:14:46+09:00 b0xqftjtw toolu_01PLB6noGMKe2W78VxhU2Qb8 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/bc13fabe-a490-4fe3-9d92-8cbbb1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T15:09:01+09:00 bf1xt4r4b toolu_016suZMxZ48SR7vwe5G1uybM /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/bc13fabe-a490-4fe3-9d92-8cbbb1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-07T06:20:31.114004+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
