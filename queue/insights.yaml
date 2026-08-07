@@ -704,7 +704,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "根因はcommit abd8af318で修正済みと確認(_lib_only_contract検索をfiles_modified限定=_fm_blockに変更済み。現在のgate_gunshi_report_precheck.sh L1505-1508に修正コード確認)"
+  action_artifact: "commit=abd8af31894fef1a7283f4abfe6e3dc7bdfa71ab;file=scripts/gates/gate_gunshi_report_precheck.sh"
+  resolved_at: "2026-08-07T16:48:49+09:00"
 - id: INS-20260807-114304468-20cb
   ts: "2026-08-07T11:43:04+09:00"
   insight: "semantic_index_update新概念候補: discussion:放置や先送りされているバグはないか？バグは発見したら利他の精神で自らで即時修正して根治させよう。根治させたら検証。検証したら結果を家老に報告 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
