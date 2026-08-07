@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260806-031711995-38ab
-  ts: "2026-08-06T03:17:11+09:00"
-  insight: "[[partial turnover experiment asis tobe 5w1h 20260805 mdの結果を説明]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=partial-turnover-experiment-asis-tobe-5w1h_20260805.mdの結果を説明してくれ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-06T03:17:33+09:00"
-- id: INS-20260806-031713268-e8cc
-  ts: "2026-08-06T03:17:13+09:00"
-  insight: "[[N日前モメンタム感度分析Phase2 — pf L0 pf L3全対象×N 0 7のopen to open感度実験]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=N日前モメンタム感度分析Phase2 — pf_L0-pf_L3全対象×N=0-7のopen-to-open感度実験"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-06T03:18:09+09:00"
 - id: INS-20260806-031810276-0f2b
   ts: "2026-08-06T03:18:10+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bw3s1bwab task id tool use id toolu 01WM5FQRuKZ8VHHPjw は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -266,8 +246,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'a192244ae6671450da16408af0744dd66cd2b117388b11d1e14794b3544403ad' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 9
-  last_seen: "2026-08-07T14:08:47+09:00"
+  occurrence_count: 10
+  last_seen: "2026-08-07T14:48:01+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -361,7 +341,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "lord_conversation transcript一次確認(queue/archive/lord_conversation/lord_conversation_20260806T145201+0900.jsonl L439以降)で検証: 殿の指示(14:00:59)『第九弾～第十二弾を確認せよ。確認しないのはバグ』は同セッション内で将軍が即応済み。14:10:05-14:10:08=第八弾をv1.7へCLOSED刻印+12/12 CLEAR確認(commit 8b8aa31b)。14:10:31-14:12:43=第十弾更新(#6 writer衝突保留のため一部完了で据え置き、というのが現状)。14:13:42-14:18:27=第十一弾§2.5進捗台帳未更新の指摘を受け是正しCLOSED刻印(commit 183ef3cd, gist 4571e36d)。第九弾は保留と明記(『第九弾は保留、第十弾以降が進行中』)。第十二弾は全10レーン未着手・配備判断は家老に委ねると明記。MEMORY.md最新(2026-08-05 01:21セーブ, curated 2026-07-24)も『裁可待ち=第十弾/十一弾/十二弾設計書3本』と整合しており状態は追跡され続けている。殿の直接指示は既に一次情報確認込みで実行済み・以後も状態は継続追跡中のためinsight自体はresolve。恒久的な仕組み化(確認漏れ防止gate等)が必要な場合は将軍のshogun-teireまたはlesson_write_shogun.sh側の判断に委ねる"
+  action_artifact: "lord_conversation=queue/archive/lord_conversation/lord_conversation_20260806T145201+0900.jsonl:L439-459;shogun_commits=8b8aa31b(第八弾v1.7),183ef3cd(第十一弾CLOSED,gist4571e36d);verified_by=cmd_reflux_insight_202608071447_kagemaru"
+  resolved_at: "2026-08-07T14:51:24+09:00"
 - id: INS-20260806-140117129-467c
   ts: "2026-08-06T14:01:17+09:00"
   insight: "[[C \\Python app 内はどうだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Python_app\"内はどうだ？"
@@ -984,11 +967,17 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-07T14:49:29+09:00"
 - id: INS-20260807-142152839-9410
   ts: "2026-08-07T14:21:52+09:00"
   insight: "semantic_index_update新概念候補: discussion:noteに下書きを保存せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-07T14:49:29+09:00"
