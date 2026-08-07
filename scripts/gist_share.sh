@@ -58,6 +58,12 @@ if [ -n "$existing_gist_id" ]; then
         "$existing_gist_id" "$title" "$source_path" >&2
     exit 2
 fi
+# 根治(2026-08-07殿指摘): gist-masterなし+既存gist検出失敗時の新規作成を禁止。
+# 新規作成は作成日が今日になり永久に取り返しがつかない。
+# 明示的に --allow-create フラグが渡された場合のみ新規作成を許可する。
+if [ "${GIST_ALLOW_CREATE:-}" != "1" ]; then
+    die "BLOCK: gist-masterコメントなし+既存gist未検出。新規作成は作成日が変わり取り返しがつかない。意図的な新規作成なら GIST_ALLOW_CREATE=1 を付けて再実行せよ"
+fi
 content_sha="$(git -C "$repo_root" show "HEAD:$source_path" | sha256sum | awk '{print $1}')"
 payload="$(mktemp)"
 response="$(mktemp)"

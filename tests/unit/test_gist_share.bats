@@ -46,7 +46,7 @@ SH
 }
 
 @test "new secret gist stops after atomic metadata insertion" {
-  run bash -c 'cd "$R" && bash ./gist_share.sh master.md'
+  run env GIST_ALLOW_CREATE=1 bash -c 'cd "$R" && bash ./gist_share.sh master.md'
   [ "$status" -eq 2 ]
   [[ "$output" == *"GIST_CREATED_PENDING_COMMIT gist_id=abc123"* ]]
   [ "$(head -n1 "$R/master.md")" = '<!-- gist-master: abc123 master.md -->' ]
@@ -80,19 +80,19 @@ SH
 }
 
 @test "create failures and unsafe responses expose orphan evidence" {
-  run env MODE=create_fail bash -c 'cd "$R" && bash ./gist_share.sh master.md'
+  run env GIST_ALLOW_CREATE=1 MODE=create_fail bash -c 'cd "$R" && bash ./gist_share.sh master.md'
   [ "$status" -ne 0 ]; [[ "$output" == *"title=master.md content_sha256="* ]]
   : > "$CALLS"
-  run env MODE=invalid_id bash -c 'cd "$R" && bash ./gist_share.sh master.md'
+  run env GIST_ALLOW_CREATE=1 MODE=invalid_id bash -c 'cd "$R" && bash ./gist_share.sh master.md'
   [ "$status" -ne 0 ]; [[ "$output" == *"orphan_candidate title=master.md content_sha256="* ]]
   : > "$CALLS"
-  run env MODE=public bash -c 'cd "$R" && bash ./gist_share.sh master.md'
+  run env GIST_ALLOW_CREATE=1 MODE=public bash -c 'cd "$R" && bash ./gist_share.sh master.md'
   [ "$status" -ne 0 ]; [[ "$output" == *"not secret; orphan_candidate gist_id=abc123"* ]]
 }
 
 @test "metadata install failure reports the created gist as an orphan candidate" {
   printf '#!/usr/bin/env bash\nexit 73\n' > "$R/bin/install-fail"; chmod +x "$R/bin/install-fail"
-  run env GIST_SHARE_METADATA_INSTALL_CMD="$R/bin/install-fail" bash -c 'cd "$R" && bash ./gist_share.sh master.md'
+  run env GIST_ALLOW_CREATE=1 GIST_SHARE_METADATA_INSTALL_CMD="$R/bin/install-fail" bash -c 'cd "$R" && bash ./gist_share.sh master.md'
   [ "$status" -ne 0 ]; [[ "$output" == *"metadata atomic install failed; orphan_candidate gist_id=abc123 title=master.md content_sha256="* ]]
   [ "$(head -n1 "$R/master.md")" = body ]
 }
