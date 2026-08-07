@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-07 cmd_karo_ci_fix_31076764177_scope_commit_race reviewed source boundary -->
+<!-- last_updated: 2026-08-07 GA-446 context freshness update -->
+<!-- source_commit:5e57ee7df37d02135910876cc431cf36ed400411 reason:GA-446 context freshness update evidence:gate_alert GA-446 -->
 <!-- source_commit:63a42ced1 reason:cmd_karo_ci_fix_31076764177_scope_commit_race reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=63a42ced1 -->
 <!-- source_commit:b303051f0 reason:cmd_karo_hotfix_uncommitted_scripts_20260806 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=b303051f0 -->
 <!-- source_commit:df400ee75 reason:cmd_karo_round10_lane2 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=df400ee75 -->
