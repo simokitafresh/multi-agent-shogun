@@ -9338,6 +9338,8 @@ codd:
 | causal | `cmd_karo_hotfix_done_unarchive_self_heal_20260805` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_karo_round8_speed_gate_startup_20260805` (`tests/unit/test_gate_shogun_startup.bats`) |
 | causal | `cmd_karo_hotfix_uncommitted_scripts_20260806` files_modified: [[gate_quality_framework]] |
+| causal | `[[cmd_karo_hotfix_gate_metrics_literal_tab_20260725]]` -> [[deploy_task_awk_v_escape_bug]] -> [[saizo_speed_investigation_20260725]] |
+| file | `docs/research/saizo_speed_investigation_20260725.md` — 殿指示の利他速度調査(cmd_karo_hotfix_gate_metrics_literal_tab_20260725の実測21分の遅延要因)。deploy_task.sh L4272/4382/4838の`awk -v repl=...`がCエスケープを解釈しbinary_checks/memory_references生成時にYAMLを破壊する構造的バグ(L924と同根、3箇所とも同型)/commit_contract.planned_paths自動生成がAC本文のtest追加明示を検知できない/test_cmd_complete_gate.bats実行108.4秒(146件)/既存test markerの非一意化による偶発FAILを数値付きで整理し、家老・軍師判断への提案(実装はスコープ外)を記す |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
 | causal_chain | `[[cmd_3765]]` (L985) |
@@ -10262,6 +10264,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608071151_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071510_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071540_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608071550_saizo` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
@@ -10462,6 +10465,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608071447_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608071535_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608071535_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608071557_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608071557_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -11015,6 +11020,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202608031817_saizo` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_karo_recon2_prod_monthly_zero_root_saizo_20260803` |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-04T13:42:22+09:00 いまsaizo,kagemaru,tobisaruinbox4 |
+| cmd | `cmd_reflux_backlink_202608071550_saizo` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_b7_b19_20260727]]` (L1376) |
 
 ## provisional_tobisaru — 仮: Tobisaru
@@ -12725,6 +12731,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T15:09:01+09:00 bf1xt4r4b toolu_016suZMxZ48SR7vwe5G1uybM /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/bc13fabe-a490-4fe3-9d92-8cbbb1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T06:20:31.114004+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T06:47:41.237798+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-07T07:00:52.968804+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
