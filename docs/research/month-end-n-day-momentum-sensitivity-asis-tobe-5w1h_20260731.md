@@ -17,6 +17,60 @@
 - **v4.1**: cmd_4237 FAIL反映。FoF合成ロジック是正(equal-weight子PF月次平均→ticker-level再帰展開方式へ)。軍師独立調査(blt_20260806_010520)のexpand_portfolio_to_tickers use_raw_signal分岐知見を統合
 - **v4.2**: cmd_4237再FAIL偵察知見反映。根因2つ確定: (1)signal_map索引1ヶ月ズレ(L322-326) (2)signals.signal→signals.holding_signalカラム取り違え(L427)。2修正でreturn -81%/signal -59%改善
 - **v4.3**: 是正版FAIL(mismatch 6634→1234)残存分析反映。偽mismatch 306件(ticker順序文字列比較→sorted集合比較で解消)+真mismatch 200件(絶対モメンタム閾値境界TQQQ/TECL⇔TMV→δバンド許容で解消見込み)
+- **v4.4**: 第3ラウンドFAIL反映。holding 168→0解消(sorted修正有効)。δバンドは既実装で前提崩壊。return_mismatch 1234件が全ラウンド不変=FoF boundary計算に別構造バグ。signal 200件=多銘柄閾値感度(20種ペア)
+- **v4.5**: 第4ラウンド偵察反映。FoF return根因: (1)FoFノードがholding_signalカラムでなくJSON内momentum_data.signalを誤用(隔離実験で検証済み) (2)修正後も2018-09で正確に2倍の差分残存→価格系列側の別根因。詳細trace=cmd_4237_fof_return_daily_trace_20260806.md
+- **v4.6**: 第5ラウンドFAIL反映。momentum_data.signal→holding_signal差替えが悪化(1234→1249)しrevert。単純フィールド差替えでは不十分
+- **v4.7**: 3仮説×5名並列偵察反映(第6ラウンド)。**根因確定=H1+H3の複合**:
+  - H1(signal源): FoFのfetch_production SQLがFoF型signalを除外→momentum_data疎データforward-fillで月ラグ。本番はholding_signal(確定値)。構造差9点(影丸行番号ペア特定)
+  - H2(boundary): 本番はreturn_calculator.py(history.pyは不在)。終点補正差あるが2012-02では非発火
+  - **H3(深度依存性=決定的)**: L0=0.00%/L1=1.91%/L2=9.39%/L3=29.56%。1段ごと3〜5倍に蓄積。component_signal_dateの不変伝播(L1258/1289/1335/1357)が再帰各段でmismatch蓄積
+  - **修正方針(v4.7時点)**: signal源+component_signal_date同時修正で解消見込み → **v4.8で反証**
+  - 詳細trace: cmd_4237_fof_depth_layer_analysis_20260806.md
+- **v4.8**: R7(signal源+component_signal_date同時修正)FAIL反映。**重大な前提転換**:
+  - holding_signal優先化がR5と完全一致する悪化(1234→1249)を再現
+  - **本番DB直接照会で反証**: GSシン加速D-常勝2012-02のsignal列とholding_signal列に28営業日ラグ。本番monthly_returns(-0.004652)はsignal列(遅い切替=Feb29→Mar1の1日保有)と整合し、holding_signal列(早い切替=Feb1→Mar1のフル月間TQQQ保有)とは矛盾
+  - **∴「holding_signal優先化が正しい」前提は誤り**。本番はsignal列ベースで動いている
+  - fetch_production() SQLがFoF型portfolio_idを完全除外(WHERE portfolio_id IN (standard_ids))→FoF用holding_signal密daily値は一切取得されていなかった
+  - **新方向**: tobisaru H2b diff#1が指摘した**ledger検証欠如**が真因候補。本番monthly_return計算はreturn_calculator.py(history.pyは不在)でledger/signal_decision_ledgerベースの月次boundary判定を行っている
+
+### Phase 2 レーン時系列（2026-08-06）
+
+| Round | 担当 | 修正/調査 | 結果 | 知見 |
+|-------|------|----------|------|------|
+| R1 | 半蔵 | cmd_4237初回(v4.0) | FAIL | return 6634/signal 823/holding 168 |
+| R2偵察 | 疾風+才蔵 | signal_map索引+holding_signalカラム | 根因2つ特定 | signal_map L322-326ズレ + signals.signal→holding_signal取り違え |
+| R3 | 飛猿 | 2修正適用 | FAIL(改善) | return -81%(6634→1234)/signal -59%/holding不変 |
+| R4 | 才蔵 | sorted比較+δバンド | FAIL(部分解消) | holding 168→0解消。δバンド既実装で前提崩壊 |
+| R5偵察 | 小太郎 | FoF return日次trace | 根因追加 | momentum_data.signal誤用+2倍差分 |
+| R6 | 影丸 | momentum_data.signal修正 | FAIL(悪化) | 1234→1249へ悪化しrevert |
+| R7偵察×5 | 全5名 | H1(weight)/H2(boundary)/H3(depth) | 3仮説検証完了 | H1支持+H2支持+**H3決定的**(深度依存L0=0%→L3=29.6%) |
+| R8 | 半蔵 | signal源+component_signal_date同時修正 | FAIL(R6再現) | **前提転換**: holding_signal優先化が反証。本番はsignal列ベース。ledger検証欠如が真因候補 |
+
+### 因果ネットワーク（Phase 2）
+
+```
+[[cmd_4237_v4.0]] FoF equal-weight仮定誤り
+  → [[v4.1是正_ticker_level再帰展開]]
+    → [[R2偵察_signal_map_holding_signal]] 2根因特定
+      → [[R3_2修正_return81%削減]]
+        → [[R4_sorted_holding解消_return不変]]
+          → [[R5偵察_momentum_data誤用]]
+            → [[R6_修正悪化_revert]]
+              → [[R7_3仮説並列偵察_H1H2H3]]
+                → [[H3_深度依存性確定_L3=29.6%]]
+                → [[H1_signal源_構造差9点]]
+                → [[H2_boundary_return_calculator.py]]
+                  → [[R8_同時修正_再悪化]]
+                    → [[前提転換_holding_signal優先化は誤り]]
+                    → [[真因候補_ledger検証欠如_H2b_diff1]]
+```
+
+### 再開時の方針（保留ポイント）
+
+1. **本番はsignal列ベース**: holding_signal優先化は誤り。reconスクリプトのsignal列使用は実は正しい方向だった
+2. **return_mismatch 1234件の真因**: tobisaru H2b diff#1のledger検証欠如が有力。return_calculator.pyのsignal_decision_ledger参照パスをreconスクリプトが再現していない
+3. **再開時の第一手**: return_calculator.pyのcalculate_monthly_return()でsignal_decision_ledgerがどう月次boundaryに影響するかのsingle-case trace偵察
+4. **L0=0%は重要な手がかり**: standard PFのreturnは完全一致。FoFのみ不一致=FoF固有のweight解決パスの差異が残存
 
 ## §1 やること
 
