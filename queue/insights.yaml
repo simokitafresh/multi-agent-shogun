@@ -67,8 +67,8 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "GP-220(workaround=true+category=clean矛盾検出)は既にcommit d3c4d6976(cmd_karo_hotfix_wa_clean_contradiction_202607191718, 2026-07-19)でWARNからBLOCK guardへ強化済み(karo_workaround_log.sh L677-683: CLEAN_MODE!=trueかつCATEGORY==cleanをledger書込前にexit 1で拒否)。実測: 現行karo_workarounds.yaml(100件)+archive(1657件)=計1757件中、workaround=true+category=clean矛盾は0件。gunshi_gp_tracker.yamlのGP-220エントリ(defense_level:2)は後発の強化を未反映のまま=メタデータ陳腐化のみで実害なし。insight自体は根因解消済みのためresolve"
-  action_artifact: "scripts/karo_workaround_log.sh:L677-683;commit=d3c4d6976;verified_zero_contradiction=logs/karo_workarounds.yaml(100)+logs/archive/karo_workarounds.yaml(1657)"
-  resolved_at: "2026-08-07T13:35:02+09:00"
+  action_artifact: "scripts/karo_workaround_log.sh:L677-683;commit=d3c4d6976;verified_zero_contradiction=logs/karo_workarounds.yaml(100)+logs/archive/karo_workarounds.yaml(1657);resolved_by=cmd_reflux_insight_202608071332_tobisaru"
+  resolved_at: "2026-08-07T13:45:47+09:00"
 - id: INS-20260806-051143389-c4ac
   ts: "2026-08-06T05:11:43+09:00"
   insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_recon2_ga438_ga439_context_freshness hanzo lesson_candidate: context freshnessはsource path一致だけでなく本文反映要否を分類する codd.mdはskills/codd-refactorを監視対象に含むため、script_refsコメントだけを変更した1dae80c8でもsource ALERTになった。source boundary更新前に本文契約を変える差分かをyes/no分類し、metadata-only差分は偽陽性として別集計するチェックを後続hotfixへ追加する"
