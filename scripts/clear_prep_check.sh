@@ -1140,6 +1140,42 @@ else
   echo "  OK"
 fi
 
+# ─── Check 13: 配備宣言vs実行の突合（出力=仕事の罠 根治） ───
+# 将軍がlord_conversationで「配備」を宣言したが、karoへのinbox_writeが存在しないケースを検知
+_deploy_decl=0
+_deploy_inbox=0
+_deploy_detail=""
+
+if [ -f "$LORD_CONV" ]; then
+  # セッション中の将軍発言で配備/委任/開始する系キーワードを含むものを検出
+  _deploy_decl=$(tail -200 "$LORD_CONV" | grep -c '"agent"[[:space:]]*:[[:space:]]*"shogun"' | head -1 || echo 0)
+  _deploy_decl=$(tail -200 "$LORD_CONV" | grep '"agent"[[:space:]]*:[[:space:]]*"shogun"' | grep -ciE '配備.*開始|配備せよ|配備する|委任する|deploy|Phase.*配備' || echo 0)
+fi
+
+if [ -f "$ROOT_DIR/queue/inbox/karo.yaml" ]; then
+  # 今日のkaroへのtask_assigned/execute_task/cmd_newメッセージ数
+  _today=$(date '+%Y-%m-%d')
+  _deploy_inbox=$(grep -c "${_today}" "$ROOT_DIR/queue/inbox/karo.yaml" 2>/dev/null || echo 0)
+fi
+
+# アーカイブも確認
+if [ -f "$ROOT_DIR/logs/inbox_archive/karo_archive.yaml" ]; then
+  _today=$(date '+%Y-%m-%d')
+  _archive_count=$(grep -c "${_today}" "$ROOT_DIR/logs/inbox_archive/karo_archive.yaml" 2>/dev/null || echo 0)
+  _deploy_inbox=$((_deploy_inbox + _archive_count))
+fi
+
+if [ "$_deploy_decl" -gt 0 ] && [ "$_deploy_inbox" -eq 0 ]; then
+  _deploy_detail="ALERT: 将軍がlord_conversationで配備を${_deploy_decl}回宣言したが、karoへのinbox送信が0件。出力=仕事の罠(deepdive Phase2)。配備指示を実際に送信してから/clearせよ"
+  echo "[13.配備宣言vs実行] ${_deploy_detail}"
+  issues=$((issues + 1))
+  issue_reasons+=("配備宣言未実行")
+elif [ "$_deploy_decl" -gt 0 ]; then
+  echo "[13.配備宣言vs実行] OK: 配備宣言${_deploy_decl}件、inbox送信${_deploy_inbox}件"
+else
+  echo "[13.配備宣言vs実行] OK: 配備宣言なし"
+fi
+
 # ─── 総合判定 ───
 echo ""
 if [ "$issues" -gt 0 ]; then

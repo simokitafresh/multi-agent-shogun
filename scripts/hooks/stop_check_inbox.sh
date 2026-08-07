@@ -430,6 +430,56 @@ detect_verification_action_gap() {
   rm -f "$count_file" 2>/dev/null || true
 }
 
+# 未対処依頼のリアルタイム検知(全ロール共通関数。根治: 2026-08-07殿指摘「家老は将軍裁定を求めたのに1時間放置=他責」)
+# 掲示板に自分宛の未対処action_required/裁定依頼があればリアルタイムWARN。/clear依存ゼロ
+detect_pending_action_required() {
+  local my_id="$1"
+  local bb_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
+  [[ -f "$bb_file" ]] || return 0
+  # 自分宛(notify_targets含む)でstatus=openかつaction_type=infoかつ「裁定」「判断」「対応」を含むエントリ数
+  local pending_count
+  pending_count=$(python3 -c "
+import yaml, sys
+try:
+    data = yaml.safe_load(open('$bb_file', encoding='utf-8'))
+    entries = data.get('entries', []) if data else []
+    count = 0
+    for e in entries:
+        if e.get('status') != 'open': continue
+        targets = e.get('notify_targets', [])
+        if '$my_id' not in targets and not (not targets): continue
+        content = str(e.get('content', ''))
+        if any(kw in content for kw in ['裁定', '判断', '対応', '確認', 'BLOCK', 'URGENT']):
+            count += 1
+    print(count)
+except: print(0)
+" 2>/dev/null || echo 0)
+  if [[ "$pending_count" -gt 0 ]]; then
+    printf 'WARN: 掲示板に自分宛の未対処依頼が%s件ある。裁定/判断/対応を求められたら即行動せよ。放置=洗脳#3(他者依存)の裏面。\n' "$pending_count" >&2
+  fi
+}
+
+# 確認なき行動宣言の検知(全ロール共通関数。根治: 2026-08-07殿指摘「確認しないことが根源」「将軍だけでなく家老や軍師も」)
+# 行動完了を宣言したが一次確認証跡がない場合にリアルタイムWARN。/clear依存ゼロ・意志依存ゼロ
+detect_unverified_action_claim() {
+  local msg="$1"
+  if [[ "$msg" =~ (配備した|送信した|起票した|委任した|開始した|実行した|修正した|追記した|コミットした|pushした|配備開始|配備済み|送信済み|起票済み|委任済み|完了した) ]]; then
+    if [[ "$msg" != *'INBOX_MESSAGE_ID'* ]] \
+      && [[ "$msg" != *'msg_'* ]] \
+      && [[ "$msg" != *'commit '* ]] \
+      && [[ "$msg" != *'SHA'* ]] \
+      && [[ "$msg" != *'sha256'* ]] \
+      && [[ "$msg" != *'capture-pane'* ]] \
+      && [[ "$msg" != *'grep'* ]] \
+      && [[ "$msg" != *'PASS ('* ]] \
+      && [[ "$msg" != *'件 PASS'* ]] \
+      && [[ "$msg" != *'/PASS'* ]] \
+      && [[ "$msg" != *'RC='* ]]; then
+      printf 'WARN: 行動完了を宣言したが一次確認証跡(INBOX_MESSAGE_ID/commit/SHA/grep結果/capture-pane等)が応答内にない。宣言=行動ではない(deepdive Phase2)。一次情報で確認せよ。\n' >&2
+    fi
+  fi
+}
+
 # cmd_TRAINING: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要, ~7ms削減)
 if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; then
   last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
@@ -451,6 +501,7 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
       printf 'WARN: LS065 Q6洗脳検出済み(%s)だがcmd起票未完了。検出した洗脳パターンに対応するcmdを起票せよ。\n' "$_q6_info" >&2
     fi
   fi
+  detect_pending_action_required "$agent_id"
   if [[ -n "$last_assistant_message" ]]; then
     _brainwash_match="$(detect_shogun_brainwash_pattern "$last_assistant_message")"
     if [[ -n "$_brainwash_match" ]]; then
@@ -460,6 +511,7 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
         printf '%s\t%s\n' "$(date +%s)" "$_brainwash_match" > "$_q6_flag" 2>/dev/null || true
       fi
     fi
+    detect_unverified_action_claim "$last_assistant_message"
     # 洗脳#3 BLOCK昇格: 殿への他者依存フレーズは常に洗脳#3。WARN無視で連続出力の実績あり(2026-07-15+2026-07-16事故)のためBLOCK化
     if [[ "$last_assistant_message" =~ (指示を待[つちた]|お許し|判断を仰|意に沿わねば|殿の判断) ]]; then
       printf '{"decision":"block","reason":"BLOCK 洗脳#3: 殿への他者依存フレーズを検出。殿の指示を待つな・許可を求めるな。Phase 7(自走): データを見て問いを見つけて動け。可逆な行動は自分で判断して即実行。"}\n'
@@ -498,7 +550,9 @@ if [[ ("$agent_id" == "karo" || "$agent_id" == "gunshi") && "$payload" == *'"las
     if [[ -n "$_bw" ]]; then
       printf 'WARN: 洗脳検出 %s。一次データ確認・即時行動・L0-L7貫通の自問をやり直せ。\n' "$_bw" >&2
     fi
+    detect_unverified_action_claim "$_lam"
   fi
+  detect_pending_action_required "$agent_id"
 fi
 
 notify_completion() {
@@ -516,6 +570,10 @@ if [[ "$agent_id" != "shogun" && "$agent_id" != "gunshi" && "$payload" == *'"las
     notify_completion "report_completed" "${agent_id}、タスク完了"
   fi
   shopt -u nocasematch
+  # 確認なき行動宣言チェック(忍者/家老。jq抽出は安全チェックのため許容)
+  _ninja_lam="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
+  [[ -n "$_ninja_lam" ]] && detect_unverified_action_claim "$_ninja_lam"
+  detect_pending_action_required "$agent_id"
 fi
 
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"

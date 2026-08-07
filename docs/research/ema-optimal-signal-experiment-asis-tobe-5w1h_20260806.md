@@ -1,7 +1,9 @@
 <!-- gist-master: 54672858b2c18d60877eba4e8dac5e95 ema-optimal-signal-experiment-asis-tobe-5w1h_20260806.md -->
-# EMA最適シグナル実験 — Valeyre (2026) の知見をDM-Signalで検証する AsIs/ToBe 5W1H設計書 v2.0 【レーン方式】
+# EMA最適シグナル実験 — Valeyre (2026) 検証完了・レーン終了 AsIs/ToBe 5W1H v3.0 【CLOSED】
 
-> **目的**: Valeyre (2026) arXiv:2504.10914 が示した「単一EMA(112営業日/半減期78日)が最適シグナル」が、我らのDM-Signal ETF universeにも当てはまるか実験で検証する。
+> **結論**: Valeyre (2026) arXiv:2504.10914 の「単一EMAが最適シグナル」は、我らのDM-Signal ETF universeには当てはまらない。42パターン全てで現行矩形窓がEMAを上回った。**現行方式の妥当性が実験的に裏付けられた。**
+> **v3.0**: Phase 0完了。§5レーン終了条件該当によりCLOSED(2026-08-07)。
+> **v2.1**: dead code回避修正(差替え対象をL346-352へ変更、月次EMA近似)。殿裁可2026-08-07。
 > **v2.0**: 殿指示2026-08-07「レーン方式で行うスタイルにアップデート」。レーン正本=gist f777582a41c66e95a53d1cc993bc5a1c
 
 ## §0 本質（1行）
@@ -82,7 +84,7 @@ docs/research/ema-experiment-ledger.tsv
 列: pf_name | layer | half_life_days | CAGR | Sharpe | MaxDD | CAGR_diff | Sharpe_diff | MaxDD_diff | signal_match_rate | status | ninja | timestamp
 ```
 
-- 初期行: Phase 0で道具完成後に全対象PF×21パターン(0=現行矩形窓, 10,20,...,200日の半減期)を生成
+- 初期行: Phase 0で道具完成後に全対象PF×21パターン(0=現行矩形窓, 1,2,...,20ヶ月の半減期)を生成
 - **書き手は自動**: 実験スクリプトが結果を台帳に自動追記。手動更新なし
 
 ### 要素2: 優先選定
@@ -96,6 +98,8 @@ docs/research/ema-experiment-ledger.tsv
 ```yaml
 # タスクに焼き込む品質契約
 binary_checks:
+  original_sha_unchanged: "yes/no — run_077_oikaze.py(元コード)のSHA256がb7e8aabc966b2151b76851aa9e6cc6c648b1073228dd157f890bab273a3292f6と一致"
+  ema_is_copy_not_modify: "yes/no — run_077_oikaze_ema.pyはrun_077_oikaze.pyのcp複製から作成(元ファイル未変更)"
   production_mutation_zero: "yes/no — 本番DBへのINSERT/UPDATE/DELETE = 0"
   metrics_complete: "yes/no — CAGR/Sharpe/MaxDD全3指標が計算済み"
   baseline_comparison: "yes/no — 現行シグナル(α=0)との差分が記録済み"
@@ -166,45 +170,62 @@ L0(シン四神12体)は理論ベースでユニークDNAを持つ4家×3モー�
 - CAGR/Sharpe/MaxDD出力+CSV保存
 - 並列実行(ProcessPoolExecutor)
 
-### 変更点（1箇所のみ）
-`calc_momentum_series` (L317) の矩形窓モメンタムをEMAに差し替え:
+### ★絶対原則: 元コード不変（殿厳命 2026-08-07）
 
+**`run_077_oikaze.py`（元の追い風コード）は一切変更してはならない。**
+
+正しい手順:
+1. `cp run_077_oikaze.py run_077_oikaze_ema.py`（単純複製）
+2. 複製先(`run_077_oikaze_ema.py`)のみを実験用に改修
+3. 元ファイルのSHA256不変を確認: `b7e8aabc966b2151b76851aa9e6cc6c648b1073228dd157f890bab273a3292f6`
+
+**実験用Valeyre版はこの実験にのみ使うもの。本番パイプラインへの混入禁止。**
+
+### 変更点（複製先のみ — v2.1修正: dead code回避）
+
+> **v2.1修正(2026-08-07 殿裁可)**: Phase 0前提検証(半蔵)で`calc_momentum_series`(L317)がmain()実行パス上のdead codeと判明。`build_global_sim_context`(L346)が`cumulative_returns`非None時に`cum_series.shift(lb_months)`で直接計算し、calc_momentum_seriesのelse分岐(L360)に到達しない。加えてL1 componentの本番データは月次粒度(monthly_returnsテーブル)のみで日次EMA不可。∴差替え対象をL346-352の直接計算箇所へ変更し、月次EMA近似を適用する。
+
+**差替え対象**: `build_global_sim_context` 内 L346-352の直接モメンタム計算
 ```python
-# 現行(矩形窓): np.prod(1 + returns[start:end+1]) - 1
-# ↓ EMA方式に差し替え
+# 現行(矩形窓・L346-352):
+# momentum = cum_series / cum_series.shift(lb_months) - 1.0
+# ↓ EMA方式に差し替え(月次近似)
 
-def calc_ema_momentum(values: np.ndarray, half_life_days: int) -> np.ndarray:
-    """半減期ベースのEMAモメンタム。run_077_oikazeのcalc_momentum_seriesと同じI/F"""
-    eta = math.log(2) / half_life_days
-    n = len(values)
+def calc_ema_momentum_monthly(cum_series: pd.Series, half_life_months: int) -> pd.Series:
+    """月次cumulative returnシリーズに対するEMAモメンタム。
+    half_life_months=0の場合は現行矩形窓(比較ベースライン)を返す。"""
+    if half_life_months == 0:
+        # ベースライン: 現行lookback_monthsの矩形窓をそのまま返す
+        return cum_series / cum_series.shift(lb_months) - 1.0
+
+    # 月次リターンを計算
+    monthly_ret = cum_series.pct_change()
+
+    # EMA減衰係数(月次)
+    eta = math.log(2) / half_life_months
+    n = len(monthly_ret)
     ema = np.zeros(n)
-    ema_var = np.zeros(n)
-    result = np.full(n, np.nan)
-    warmup = min(252, n)  # 1年ウォームアップ
+    warmup = min(12, n)  # 12ヶ月ウォームアップ
 
     for t in range(n):
-        daily_ret = values[t]
+        r = monthly_ret.iloc[t] if not np.isnan(monthly_ret.iloc[t]) else 0.0
         if t == 0:
-            ema[t] = daily_ret
-            ema_var[t] = daily_ret ** 2
+            ema[t] = r
         else:
-            ema[t] = (1 - eta) * ema[t-1] + eta * daily_ret
-            ema_var[t] = (1 - eta) * ema_var[t-1] + eta * daily_ret ** 2
+            ema[t] = (1 - eta) * ema[t-1] + eta * r
 
-        if t >= warmup:
-            vol = math.sqrt(ema_var[t]) if ema_var[t] > 0 else 1e-10
-            result[t] = ema[t] / vol  # Valeyre正規化シグナル
-
+    result = pd.Series(ema, index=cum_series.index)
+    result.iloc[:warmup] = np.nan  # ウォームアップ期間はNaN
     return result
 ```
 
 ### パラメータグリッドの読み替え
 - 現行PARAM_GRID_1: `lookback_months` (1,2,3,...18ヶ月)
-- EMA版: `half_life_days` (0=現行矩形窓, 10,20,30,...,200日の21パターン) をlookback_months枠に流し込む。0は比較ベースライン(矩形窓そのまま)
-- 月→営業日変換は不要（EMAは日次更新のため直接日数指定）
+- EMA版: `half_life_months` (0=現行矩形窓, 1,2,3,...,20ヶ月の21パターン) をlookback_months枠に流し込む。0は比較ベースライン(矩形窓そのまま)
+- 月次粒度のためhalf_life_monthsで直接指定(日次変換不要)
 
 ### 作成するファイル
-- `scripts/analysis/grid_search/run_077_oikaze_ema.py` — run_077_oikaze.pyをコピーし、calc_momentum_seriesのみ上記EMA関数に差し替え+パラメータグリッドを半減期6点に変更。それ以外は一切変更しない
+- `scripts/analysis/grid_search/run_077_oikaze_ema.py` — run_077_oikaze.pyをコピーし、build_global_sim_context内L346-352の直接計算を上記月次EMA関数に差し替え+パラメータグリッドを半減期21パターンに変更。それ以外は一切変更しない
 
 ## §7 リスクと制約
 
@@ -238,22 +259,68 @@ def calc_ema_momentum(values: np.ndarray, half_life_days: int) -> np.ndarray:
 |---|---|
 | 実験承認 | 殿発案2026-08-06 |
 | レーン方式採用 | 殿指示2026-08-07 |
-| Phase 0対象PF | シン青龍-激攻（提案） |
-| 半減期探索範囲 | 0(現行矩形窓)+10刻み10-200日=21パターン（殿指示2026-08-07） |
-| Phase 1拡大判断 | Phase 0結果を見てから判断 |
+| Phase 0対象PF | L1(L0シン四神12体をconstituent) |
+| 半減期探索範囲 | 0(現行矩形窓)+1-20ヶ月=21パターン（v2.1: 月次近似に変更。殿裁可2026-08-07） |
+| Phase 0 v1 | BLOCKED — calc_momentum_series(L317)がdead code。半蔵がAC1前提検証で発見(2026-08-07) |
+| Phase 0 v2.1 | 完了 — 差替え対象をL346-352へ変更。影丸が42パターン実行。commit d5117fadd |
+| Phase 1拡大判断 | **レーン終了** — §5終了条件該当。全EMAがbaseline未達(2026-08-07) |
+| 元コード不変 | 確認済み — SHA256=b7e8aabc(3時点不変: 複製前/複製後/実行後) |
 
-## §10 進捗台帳
+## §10 実験結果
+
+### Phase 0 結果（L1全量42パターン・2026-08-07 影丸実行）
+
+**全敗。42パターン全てで矩形窓(baseline)がEMAを上回った。**
+
+- top_n=1: baseline Sharpe **1.131** → 最良EMA(HL20) 1.014 (差 **-0.117**)
+- top_n=2: baseline Sharpe **1.171** → 最良EMA(HL11) 1.014 (差 **-0.157**)
+- 成果物: `outputs/grid_search/ema_experiment_phase0_v2_l1/ema_phase0_v2_l1_oikaze_grid_results.csv` (42行)
+- 曲線: `outputs/grid_search/ema_experiment_phase0_v2_l1/ema_phase0_v2_l1_half_life_sharpe_curve.png`
+- production mutation = 0 (grep INSERT/UPDATE/DELETE = 0件)
+- batch vs serial md5完全一致
+
+### レーン終了判断
+
+§5の終了条件「Phase 0(L1)結果で最良半減期のSharpeが既存追い風チャンピオン以下 → レーン終了」に該当。Phase 1(L2/L3拡大)には進まない。
+
+### なぜEMAが負けたか
+
+1. **データ粒度**: Valeyreは日次リターン×連続時間モデル。我らは月次粒度。月に1データ点ではEMAの「滑らかさ」の恩恵が消える
+2. **ユニバース**: 70先物(株/債券/FX/商品の多様クラス) vs ETF約20銘柄(株式系中心)。相関構造が異なる
+3. **構築方法**: ARP(相関逆平方根加重) vs 1/N等ウェイト。リスク配分の思想が別物
+
+### 得られた知見
+
+- Valeyre (2026)の「単一EMAが最適」は70先物×日次×ARP構築に固有の結論
+- 我らのETF×月次×1/N構築では現行矩形窓方式がEMAより優れている
+- **現行lookback方式の妥当性が42パターンの網羅的実験で裏付けられた**
+- note記事として公開済み: `marketing-director/content/articles/note-ema-vs-rectangular-window.md`
+
+### 副産物: dead code発見
+
+Phase 0 v1(半蔵)で`calc_momentum_series`(L317)がmain()実行パス上のdead codeであることを発見。`build_global_sim_context`(L346)のcumulative_returns分岐が実際の計算パス。run_077_oikaze.pyの構造理解が深まった。
+
+### 副産物: gate構造修正
+
+karo_direct起源cmdがcmd_complete_gate.shのSG7バンドル検証でBLOCKする構造問題を発見→飛猿がcmd_karo_*免除を実装(commit 12f00d6bb)で恒久修正。
+
+## §11 進捗台帳
 
 | Phase | 弾 | 対象 | 半減期 | 状態 | 結果 |
 |---|---|---|---|---|---|
-| P0 | 道具作成+L1全量GS | L1(シン忍法) | 21半減期×top_n(1,2)=42パターン | 未着手 | — |
-| P1 | L2全量GS | L2(奥義) | 42パターン | — | — |
-| P1 | L3全量GS | L3(秘奥義) | 42パターン | — | — |
-| — | L0 | (対象外) | — | N/A | 理論ベースDNA。GS不可 |
+| P0 v1 | 道具作成(半蔵) | L1 | — | BLOCKED | calc_momentum_series=dead code発見。AC1前提検証で即停止 |
+| P0 v2.1 | 道具作成+L1全量GS(影丸) | L1 | 21半減期×top_n(1,2)=42パターン | **完了** | 全EMAがbaseline未達。Sharpe差 -0.117〜-0.157 |
+| P1 | L2全量GS | L2(奥義) | 42パターン | **中止** | §5終了条件によりレーン終了 |
+| P1 | L3全量GS | L3(秘奥義) | 42パターン | **中止** | §5終了条件によりレーン終了 |
+| — | L0 | (対象外) | — | N/A | 理論ベースDNA。GS不可(殿裁定) |
 
 ## 因果リンク
 
 - origin: `[[殿発案_EMA実験_20260806]]` -> `[[投資辞書M85_breaking_the_trend]]` -> `[[Valeyre_arXiv_2504_10914]]`
+- result: `[[EMA全敗_矩形窓優位確定_20260807]]` -> `[[現行lookback方式妥当性裏付け]]`
+- dead_code: `[[calc_momentum_series_dead_code_discovery]]` -> `[[build_global_sim_context_L346実行パス確定]]`
+- gate_fix: `[[sg7_bundle_karo_direct_exempt]]` -> `[[cmd_complete_gate_12f00d6bb]]`
 - pattern: `[[台帳駆動攻略レーン]]`（gist f777582a41c66e95a53d1cc993bc5a1c）
 - related: `[[段階的リバランス実験]]`（同一実験フレームワーク）
 - related: `[[gs_ninpo_research]]`（既存GS lookbackとの比較）
+- note: `[[note_ema_vs_rectangular_window]]`（メンバー向け記事）
