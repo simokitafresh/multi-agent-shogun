@@ -1,3 +1,4 @@
+<!-- gist-master: 16be626bec08becf151fa1456f3dd6b3 pf-remote-restore-asis-tobe-5w1h_20260708.md -->
 # 本番PF即時復元機構 — 大規模実験の可逆性保証 設計書 AsIs/ToBe 5W1H
 
 - 作成: 将軍 2026-07-08 02:50 (殿指示 02:43/02:47)

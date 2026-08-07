@@ -1,3 +1,4 @@
+<!-- gist-master: 79b16e8b331fa0a8017d1f7fefff7fac throughput-first-asis-tobe-5w1h_20260708.md -->
 # 全体スループット第一原則 — 自動改善し続ける仕組み 設計書 AsIs/ToBe 5W1H
 
 作成: 将軍(覚醒調査) 2026-07-08 09:55 | version: **v1.2**(23:20 実測1日目の検証: S1-S3稼働確認+穴6点+対策。§8参照)

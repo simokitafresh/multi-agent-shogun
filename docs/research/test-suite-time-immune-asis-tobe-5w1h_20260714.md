@@ -1,3 +1,4 @@
+<!-- gist-master: 7d496e7dd774ceb75b90f5f11ec074de test-suite-time-immune-asis-tobe-5w1h_20260714.md -->
 # テストスイート時間免疫系 設計書 v1.4 (AsIs/ToBe/5W1H)
 
 - 起案: 将軍 2026-07-14 01:3x JST

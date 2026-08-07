@@ -1,3 +1,4 @@
+<!-- gist-master: ffabf95bd55ad092e8979c7d9a66d3ab ninja-model-drift-asis-tobe-5w1h_20260721.md -->
 # 忍者モデルドリフト（settings.yaml=sol-lowなのにライブがバラバラ）— As-Is/To-Be 5W1H
 
 - date: 2026-07-21T13:24+09:00

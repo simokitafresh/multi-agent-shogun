@@ -1,3 +1,4 @@
+<!-- gist-master: 59217417ce219afcd4fde024b8d932bb multi-cli-account-failover-asis-tobe-5w1h-20260731.md -->
 # Multi-CLI・複数アカウント切替の簡素化 — As-Is / To-Be 5W1H
 
 - 作成日: 2026-07-31

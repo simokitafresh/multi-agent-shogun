@@ -1,3 +1,4 @@
+<!-- gist-master: acd53cfa55ea7c05941af5f047bae2e3 three-layer-per-action-lookup-asis-tobe-5w1h_20260801.md -->
 # 行動時三層確認(per-action lookup)設計書 — AsIs/ToBe 5W1H
 
 - 版: v1.2 (2026-08-01 16:19 multi-CLI大原則を反映。v1.1=16:02自己敵対レビュー6穴是正、v1.0=15:46起草)

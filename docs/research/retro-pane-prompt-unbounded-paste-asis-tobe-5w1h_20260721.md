@@ -1,3 +1,4 @@
+<!-- gist-master: c56808c97ba5075e0cb9382d737ded25 retro-pane-prompt-unbounded-paste-asis-tobe-5w1h_20260721.md -->
 # retro遅延分析プロンプト無制限張り付きバグ — As-Is/To-Be 5W1H
 
 - date: 2026-07-21T12:47+09:00

@@ -1,3 +1,4 @@
+<!-- gist-master: 11530a03621ad438ed09928c7e5c8986 three-layer-memory-utilization-acceleration-asis-tobe-5w1h_20260707.md -->
 # 三層記憶 有効利用加速 設計書 — AsIs/ToBe 5W1H（全ロール・全CLI・自動想起版）
 
 origin: [[殿指示_三層記憶有効利用加速_20260707]] <- [[three-layer-memory-l0-l7-penetration-design_20260604]] + [[three_layer_memory_first_priority_design_20260606]] + [[three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707]]

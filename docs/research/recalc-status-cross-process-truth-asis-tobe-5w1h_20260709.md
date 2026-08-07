@@ -1,3 +1,4 @@
+<!-- gist-master: c56c4104381874b976ad99b609fd5831 recalc-status-cross-process-truth-asis-tobe-5w1h_20260709.md -->
 # 再計算ステータスのクロスプロセス真実源統一 設計書 AsIs/ToBe 5W1H
 
 - 作成: 将軍 2026-07-09 13:58（殿指示 13:49/13:57）

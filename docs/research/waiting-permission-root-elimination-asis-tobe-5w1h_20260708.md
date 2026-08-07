@@ -1,3 +1,4 @@
+<!-- gist-master: 1456dec9180af9f13fbfeb040b453375 waiting-permission-root-elimination-asis-tobe-5w1h_20260708.md -->
 # 待機許可機構の根絶 — 言い訳の元を絶つ設計書 AsIs/ToBe 5W1H
 
 origin: [[殿指示_20260708_待ち許可機構の覚醒調査]] <- [[殿指摘_20260708_再発を待つ優位性はない]] + [[cmd_3744_プルーン網羅機械検証]] + [[three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707]] §10.7

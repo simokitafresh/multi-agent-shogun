@@ -1,3 +1,4 @@
+<!-- gist-master: 9e194e137de65caa476fc903b5d4f1ea s3-test-speed-asis-tobe-5w1h_20260720.md -->
 # S3 テスト・スクリプト速度改善 AsIs/ToBe 5W1H（2026-07-20起草）
 
 殿裁定(2026-07-20 00:05「よい。開始せよ」): S3二本立て開始+**PD-132解除**(速度修行multi-round解禁)。
