@@ -52,7 +52,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:03ac8d210fd28553"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "superseded: pair set re-emitted twice more (source=skill_script_refs:57d145ba0d5207a9 on 08-06 13:44 → INS-20260806-134404824-687b; source=skill_script_refs:2d7c3c4d8c5e4b42 on 08-07 12:49 → INS-20260807-124906799-15fd, both still pending, both supersets covering all d890 pairs plus newer script changes). Root cause found: gate_skill_script_refs.sh's followup_writer sets source=skill_script_refs:<digest-of-current-pairset>, and insight_write.sh dedup requires exact source+message match, so any script change anywhere shifts the digest and spawns a fresh duplicate instead of updating the existing pending entry (queue/insights.yaml:L51 vs L297 vs L886 all near-identical). Actual contract review/approval (SKILL.md edits + logs/skill_script_refs_verified.json commit) needs broader scope than this task's queue/insights.yaml-only planned_paths; precedent=commit 55f2c1c1a (cmd_4202, 2026-08-01) which approved 13 pairs under a dedicated cmd with docs/logs/skills write scope. Decision_candidate raised for karo: (1) deploy a cmd_4202-style batch review for current pending pairs in INS-20260807-124906799-15fd, (2) fix gate_skill_script_refs.sh to use a stable source string (e.g. skill_script_refs without digest suffix) so insight_write.sh dedup can consolidate future re-emissions instead of piling up duplicates."
+  action_artifact: "superseded_by=INS-20260806-134404824-687b,INS-20260807-124906799-15fd;precedent_commit=55f2c1c1a;root_cause=gate_skill_script_refs.sh:followup_writer digest-in-source breaks insight_write.sh dedup(source==exact match)"
+  resolved_at: "2026-08-07T14:01:37+09:00"
 - id: INS-20260806-112958555-98d1
   ts: "2026-08-06T11:29:58+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bz1p1i4l3 task id tool use id toolu 014EaHTTXLxgyhMVn1 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
