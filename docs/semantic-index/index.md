@@ -10261,6 +10261,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608061416_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071151_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071510_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608071540_hayate` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
@@ -10639,6 +10640,8 @@ codd:
 | cmd | `cmd_karo_run_tests_atomic_receipt_202607181608` (`scripts/run_tests.sh`, `scripts/run_with_receipt.sh`, `tests/unit/test_run_tests.bats`) |
 | causal | [[cmd_reflux_backlink_202608071540_hayate]] -> [[provisional_run_tests]] -> [[retro-unit-receipt-reuse-saizo]] |
 | file | `docs/research/retro-unit-receipt-reuse-saizo.md` — unit receipt再利用・最終checkpoint短縮の隔離fixture実験(偵察のみ)。HEAD-keyed single-flight receiptをintegration generation内へ拡張する適用境界(二値5条件)を定義 |
+| causal | [[cmd_karo_retro_worktree_single_worker_202607202105]] -> [[provisional_run_tests]] -> [[retro-worktree-single-worker-kotaro]] |
+| file | `docs/research/retro-worktree-single-worker-kotaro.md` — `git worktree add`偽完了の根因特定。`checkout.workers=true`はnumeric config違反でrc128即失敗(非同期完了モードではない)、旧観測の「dirty worktree」はrc未保持の失敗を成功と誤認した結果。安全側は`checkout.workers=1`(またはrc保持)を採用しworker並列化は速度目的で使わない。姉妹実験は[[retro-worktree-stability-hayate]](index.lock消失待ちでの完了検出) |
 | causal | `cmd_karo_v21_c6_01_symlink_guard_202607181802` files_modified: [[provisional_run_tests]] |
 | cmd | `cmd_karo_v21_c6_01_symlink_guard_202607181802` (`scripts/run_tests.sh`, `tests/unit/test_run_tests_symlink_guard.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-19T04:11:27+09:00 afc57229e176abfe9 toolu_01FQ3Wn9QjCcRk2n1th7EPn5 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb5474c2-0222-4126-ab9 |
@@ -11179,6 +11182,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202608061239_hayate` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202608061340_hayate` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202608071151_hayate` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202608071540_hayate` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
@@ -12720,6 +12724,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T14:14:46+09:00 b0xqftjtw toolu_01PLB6noGMKe2W78VxhU2Qb8 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/bc13fabe-a490-4fe3-9d92-8cbbb1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T15:09:01+09:00 bf1xt4r4b toolu_016suZMxZ48SR7vwe5G1uybM /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/bc13fabe-a490-4fe3-9d92-8cbbb1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-07T06:20:31.114004+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-07T06:47:41.237798+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
