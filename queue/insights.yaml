@@ -346,7 +346,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'a192244ae6671450da16408af0744dd66cd2b117388b11d1e14794b3544403ad' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -356,6 +356,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "criterion(delivery succeeds and duplicate event count is 0)を一次情報(logs/self_retro.jsonl)で実測確認: cause_class=review_notifyの539件全てevent_id重複0、verify_commandハッシュ一致(exit 0)。review_notifyが継続検出されるのはgunshi_review_bundle配信自体が他フェーズより重いという構造的事実であり、criterion自体は既に満たされている。improvement_candidate(review phase削減)はSG7検証維持前提の実装変更を要し忍者task scope(queue/insights.yaml)外のためdecision_candidateへ切り出す"
+  action_artifact: "queue/reports/hayate_report_cmd_reflux_insight_202608071301_hayate.yaml AC1 evidence"
+  resolved_at: "2026-08-07T13:05:29+09:00"
 - id: INS-20260806-134314305-fc6e
   ts: "2026-08-06T13:43:14+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[reflux_inventory集計値のchurn混入]] は既存aliasesに一致なし。類似概念TOP3: infra_throughput_outcome_design(インフラスループット・アウトカム設計; alias=C5 knowledge reflux; score=15.1) / semantic_dictionary_design(セマンティック辞書構想; alias=P2 reflux SSOT修正 才蔵; score=11.6) / infra_design_intent(インフラ設計意図カタログ; alias=codex delivery unverified; score=5.5)。概念定義とaliases追加を検討せよ"
