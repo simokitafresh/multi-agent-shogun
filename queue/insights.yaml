@@ -301,7 +301,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:57d145ba0d5207a9"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "superseded by INS-20260807-124906799-15fd: pairset diff verified programmatically (python3 set diff) — all 38 pairs in this insight are a strict subset of 15fd's 39 pairs (15fd adds only skills/shogun-clear-prep/SKILL.md <- scripts/clear_prep_check.sh). Same root cause as INS-20260806-090258369-d890 (resolved 2026-08-07T14:01:37): gate_skill_script_refs.sh's followup_writer sets source=skill_script_refs:<digest-of-current-pairset>, so each new script change spawns a fresh insight instead of updating the pending one via insight_write.sh dedup(exact source+message match). Actual review/approval scope (SKILL.md edits + logs/skill_script_refs_verified.json commit) exceeds this task's queue/insights.yaml-only planned_paths; decision_candidate for karo already raised on d890's resolution (batch review INS-20260807-124906799-15fd + stabilize gate source string) — not duplicated here to avoid decision_candidate churn."
+  action_artifact: "superseded_by=INS-20260807-124906799-15fd;subset_verified=python3_set_diff(38/38 pairs contained,1 new pair added by 15fd);root_cause=gate_skill_script_refs.sh:followup_writer digest-in-source breaks insight_write.sh dedup(source==exact match);precedent_resolution=INS-20260806-090258369-d890"
+  resolved_at: "2026-08-07T14:33:42+09:00"
 - id: INS-20260806-134447565-cf3e
   ts: "2026-08-06T13:44:47+09:00"
   insight: "[[C \\Python app 内はどうだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Python_app\"内はどうだ？"
