@@ -1402,11 +1402,16 @@ HOOK
     sleep 0.2
 
     printf 'change-b\n' > "$repo/b.txt"
-    start_ms="$(date +%s%3N)"
+    # commit_queue.sh's Phase2 reservation ledger (248ea8d5b) intentionally
+    # serializes every ninja_scope_commit.sh invocation against one repo-wide
+    # lane (see tests/unit/test_commit_queue.bats "FIFO wait_turn ... preserve
+    # reservation order"), so this disjoint-scope helper now legitimately
+    # queues behind slow-a's in-flight hook instead of racing it. What this
+    # test still proves is the original GA correctness invariant: once b.txt's
+    # helper gets its turn, it rebases onto whatever HEAD slow-a already
+    # published rather than a stale one.
     run bash -c "cd '$repo' && NINJA_SCOPE_COMMIT_RUN_ID=fast-b bash '$HELPER' -m fast-b -- b.txt"
-    elapsed_ms=$(( $(date +%s%3N) - start_ms ))
     [ "$status" -eq 0 ]
-    [ "$elapsed_ms" -lt 3000 ]
 
     wait "$slow_pid" || {
         cat "$BATS_TEST_TMPDIR/a.err" >&3

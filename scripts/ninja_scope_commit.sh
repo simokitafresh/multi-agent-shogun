@@ -15,7 +15,7 @@ _ninja_scope_commit_script_dir="$(cd "$(dirname "$_ninja_scope_commit_self")" &&
 # The wrapper owns the EXIT/INT/TERM release trap, so every early return in the
 # large scoped-commit state machine releases the reservation without having to
 # duplicate cleanup calls at each existing exit point.
-if [[ -z "${COMMIT_QUEUE_ACTIVE:-}" && -x "$_ninja_scope_commit_script_dir/commit_queue.sh" ]]; then
+if [[ -z "${COMMIT_QUEUE_ACTIVE:-}" && -f "$_ninja_scope_commit_script_dir/commit_queue.sh" ]]; then
     _ninja_scope_commit_repo="$(git rev-parse --show-toplevel 2>/dev/null || true)"
     if [[ -n "$_ninja_scope_commit_repo" ]]; then
         _ninja_scope_commit_agent_base="${COMMIT_QUEUE_AGENT_ID:-${AGENT_ID:-}}"
