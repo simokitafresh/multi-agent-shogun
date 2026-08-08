@@ -289,7 +289,7 @@ YAML
 
 # test_necessity: 時間窓分類はAC未達ではない一方、真の未完了はBLOCKする不変量。
 @test "LG043 ignores temporal-window classifications only" {
-  for expression in "2026未完了当年102 PF年は確定年から分離" "未完了年度は別集計" "進行中月は対象外"; do
+  for expression in "2026未完了当年102 PF年は確定年から分離" "未完了年度は別集計" "進行中月は対象外" "判明したのは実行後であり、事前検証不可能だった"; do
     run_engine "$expression"
     [ "$status" -eq 0 ]
     [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
