@@ -500,3 +500,6 @@ cmd_4174/4175/4176の3弾全てで忍者3名が報告gate commit_contract FAIL�
 
 ## §LS114 detail全文 (2026-08-08移設)
 殿下知のセーブとしてcommitした04fa975fc(B台帳WIP 3件)のgate_report_format.sh:1065にyaml.safe_dump直呼びが含まれ、gate_no_direct_yaml_dump.shのBLOCK対象となり全忍者の選択実行AC5にFAIL 1件が恒常発生。半蔵は正直報告を貫いたため報告を閉じられなくなった(正直さが罰される構造の引き金を将軍が作った)。修正=セーブcommit前に該当ファイルへguard系gateを1回実行して持込み違反を検知する
+
+## §LS089 detail全文 (2026-08-08移設)
+promotion在庫189停滞の根因修正で3段連鎖バグを体験: (1)delegated判定がpipeline workをブロック→修正→(2)estimated_minutes欠落でTEN_MIN_CONTRACT BLOCK→修正→(3)purpose文のgate+実装共起でQUALITY_CONTRACT FP→修正。deepdive Phase6「動いて初めて次の気づきが生まれる」の3段実証。教訓: 修正後は必ず次の障壁の有無をログで確認せよ。1段修正で完了と断定するな(洗脳#8完了急ぎ)。修正→ログ確認→次の障壁特定→修正のサイクルを障壁ゼロまで回せ
