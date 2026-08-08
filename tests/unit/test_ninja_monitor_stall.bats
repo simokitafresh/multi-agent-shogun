@@ -2862,6 +2862,103 @@ fi
     [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
 }
 
+# test_necessity: canonical fingerprint-bound review progress is not a pending
+# completion event; audit-log-only review evidence remains visible to Karo.
+@test "check_inbox_renudge: canonical review in progress is excluded without hiding audit-only review" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"; trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" \
+    "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/gates/cmd_canonical/review_approvals/reports" \
+    "$SCRIPT_DIR/scripts" "$STATE_DIR"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+printf "task:\n  status: done\n  parent_cmd: cmd_canonical\n  report_filename: kagemaru_report_cmd_canonical.yaml\n" > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_canonical.yaml" <<'EOF'
+worker_id: kagemaru
+task_id: cmd_canonical_full
+parent_cmd: cmd_canonical
+task_type: scout
+status: completed
+verdict: PASS
+files_modified: []
+binary_checks: {}
+EOF
+report="$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_canonical.yaml"
+fp=$(review_report_fingerprint "$report")
+key=$(review_report_key "queue/reports/kagemaru_report_cmd_canonical.yaml")
+mkdir -p "$SCRIPT_DIR/queue/gates/cmd_canonical/review_approvals/reports/$key"
+cat > "$SCRIPT_DIR/queue/gates/cmd_canonical/review_approvals/reports/$key/gunshi.yaml" <<EOF
+result: LGTM
+fingerprint: $fp
+report: queue/reports/kagemaru_report_cmd_canonical.yaml
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s msg=%s\n" "\$1" "\$3" "\$2" >> "$TMP_ROOT/inbox.log"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+NINJA_NAMES=(); KARO_PANE=karo
+declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() { return 0; }
+check_inbox_renudge
+
+grep -q "KARO-PENDING-SKIP-CANONICAL-REVIEW: cmd_canonical state=gunshi_lgtm_pending_karo_accept" "$LOG"
+test ! -e "$TMP_ROOT/inbox.log"
+printf "canonical_review=0 false_positive=0\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"canonical_review=0 false_positive=0"* ]]
+}
+
+# test_necessity: a true completed_unarchived notification carries the latest
+# gate BLOCK reason so Karo can act without reconstructing historical state.
+@test "check_inbox_renudge: true pending notice includes latest gate BLOCK reason" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"; trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" \
+    "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+printf "task:\n  status: done\n  parent_cmd: cmd_blocked_notice\n" > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+printf "2026-08-09T00:00:00\tcmd_blocked_notice\tCLEAR\told_clear\n2026-08-09T00:01:00\tcmd_blocked_notice\tBLOCK\tcanonical_review_missing\n" > "$SCRIPT_DIR/logs/gate_metrics.log"
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s msg=%s\n" "\$1" "\$3" "\$2" >> "$TMP_ROOT/inbox.log"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+NINJA_NAMES=(); KARO_PANE=karo
+declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() { return 0; }
+check_inbox_renudge
+
+grep -q "latest_gate_BLOCK=canonical_review_missing" "$TMP_ROOT/inbox.log"
+test "$(grep -c "INBOX-WRITE-CALLED: to=karo type=pending_work" "$TMP_ROOT/inbox.log")" -eq 1
+printf "gate_block_notice=1 reason_attached=1\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"gate_block_notice=1 reason_attached=1"* ]]
+}
+
 @test "check_inbox_renudge: gate CLEAR done task does not create duplicate karo pending inbox" {
     run bash -lc '
 set -euo pipefail

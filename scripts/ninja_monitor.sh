@@ -2711,6 +2711,77 @@ _pending_task_has_terminal_archive() {
         [ -f "$SCRIPT_DIR/queue/gates/${parent_cmd}/archive.done" ]
 }
 
+# Return a state only when the active report has a fingerprint-bound canonical
+# review approval.  gunshi_review_log.yaml is an audit log, not a lifecycle
+# lock: using it here caused completed_unarchived to notify while the formal
+# review/ACCEPT transition was already in progress.  A missing or mismatched
+# fingerprint fails closed and remains visible to Karo.
+_pending_task_canonical_review_state() {
+    local parent_cmd="$1" report="$2" logical key approval_dir fingerprint
+    local role_file result stored_fp stored_report
+    [ -n "$parent_cmd" ] && [ -f "$report" ] || return 1
+    command -v review_report_key >/dev/null 2>&1 || return 1
+    command -v review_report_fingerprint >/dev/null 2>&1 || return 1
+
+    logical="queue/reports/$(basename "$report")"
+    key=$(review_report_key "$logical" 2>/dev/null) || return 1
+    fingerprint=$(review_report_fingerprint "$report" 2>/dev/null) || return 1
+    [ -n "$fingerprint" ] || return 1
+    approval_dir="$SCRIPT_DIR/queue/gates/${parent_cmd}/review_approvals/reports/${key}"
+
+    for role_file in gunshi.yaml karo.yaml; do
+        [ -f "$approval_dir/$role_file" ] || continue
+        stored_report=$(review_approval_value "$approval_dir/$role_file" report 2>/dev/null || true)
+        stored_fp=$(review_approval_value "$approval_dir/$role_file" fingerprint 2>/dev/null || true)
+        [ "$stored_fp" = "$fingerprint" ] || continue
+        [ "$stored_report" = "$logical" ] || [ "$stored_report" = "$(basename "$report")" ] || continue
+        result=$(review_approval_value "$approval_dir/$role_file" result 2>/dev/null || true)
+        case "$role_file:$result" in
+            gunshi.yaml:LGTM)
+                printf 'gunshi_lgtm_pending_karo_accept\n'
+                return 0
+                ;;
+            karo.yaml:ACCEPT|karo.yaml:RC)
+                printf 'karo_%s_pending_terminal_gate\n' "$(printf '%s' "$result" | tr '[:upper:]' '[:lower:]')"
+                return 0
+                ;;
+        esac
+    done
+    return 1
+}
+
+# Attach the latest gate outcome to a true pending notification.  The gate
+# metrics log is the primary durable source; absence of a matching row is
+# intentionally reported as UN-GATED instead of inferred from report text.
+_pending_task_gate_reason() {
+    local parent_cmd="$1" metrics_file="$SCRIPT_DIR/logs/gate_metrics.log"
+    local ts cmd result reason _rest
+    local latest_result="" latest_reason=""
+    [ -f "$metrics_file" ] || { printf 'UN-GATED\n'; return 0; }
+    while IFS=$'\t' read -r ts cmd result reason _rest; do
+        [ "$cmd" = "$parent_cmd" ] || continue
+        latest_result="$result"
+        latest_reason="$reason"
+    done < "$metrics_file"
+    case "$latest_result" in
+        BLOCK)
+            printf 'latest_gate_BLOCK=%s\n' "${latest_reason:-unspecified}"
+            ;;
+        CLEAR)
+            printf 'latest_gate_CLEAR_archive_pending\n'
+            ;;
+        WAIT)
+            printf 'latest_gate_WAIT=%s\n' "${latest_reason:-unspecified}"
+            ;;
+        '')
+            printf 'UN-GATED\n'
+            ;;
+        *)
+            printf 'latest_gate_%s=%s\n' "$latest_result" "${latest_reason:-unspecified}"
+            ;;
+    esac
+}
+
 # ─── failed respawn通知のdurable dedupe (karo実運転RC 2026-07-12 09:04) ───
 # 同一failed世代(=task_id+parent_cmd+deployed_atが不変の間)がidle+failedのまま繰り返し
 # respawnされ続けると、修正直後は同一通知が毎サイクル複数回karoへ届いていた(exactly-once不変量違反)。
@@ -7193,7 +7264,7 @@ check_inbox_renudge() {
                     if compgen -G "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* > /dev/null 2>&1; then
                         continue  # archived=GATE CLEAR済み
                     fi
-                    if awk -F '\t' -v cmd="$_kpcmd" '$2 == cmd && $3 == "CLEAR" { found=1; exit } END { exit(found ? 0 : 1) }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then
+                    if awk -F '\t' -v cmd="$_kpcmd" '$2 == cmd { latest=$3 } END { exit(latest == "CLEAR" ? 0 : 1) }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then
                         log "KARO-PENDING-SKIP-GATE-CLEAR: $_kpcmd already has gate CLEAR"
                         continue
                     fi
@@ -7206,6 +7277,11 @@ check_inbox_renudge() {
                         _kreport_filename="${_kworker}_report_${_kpcmd}.yaml"
                     fi
                     _kreport_path="$SCRIPT_DIR/queue/reports/${_kreport_filename}"
+                    local _kcanonical_review_state
+                    if _kcanonical_review_state=$(_pending_task_canonical_review_state "$_kpcmd" "$_kreport_path"); then
+                        log "KARO-PENDING-SKIP-CANONICAL-REVIEW: $_kpcmd state=$_kcanonical_review_state report=$(basename "$_kreport_path")"
+                        continue
+                    fi
                     # archive済みterminal FAILだけを処理済みとする。active側に残るFAILは
                     # 家老のレビュー/完了処理が未完なのでpendingを維持する。RC/reopenで
                     # task YAMLがarchive markerより新しくなった場合も新世代として再通知する。
@@ -7248,7 +7324,11 @@ check_inbox_renudge() {
                     if [[ "$_reviewed_report_cmds" == *"|$_kpcmd|"* ]]; then
                         log "KARO-PENDING-REVIEWED-COMPLETION: $_kpcmd has gunshi report review; requesting cmd completion"
                     fi
-                    _kentry_lines+=("${_kworker}|${_ktid}|${_kpcmd}|${_kts}|${_kreport_path}")
+                    local _kentry_reason
+                    _kentry_reason=$(_pending_task_gate_reason "$_kpcmd")
+                    _kentry_reason="${_kentry_reason//$'|'/'/'}"
+                    _kentry_reason="${_kentry_reason//$'\n'/ }"
+                    _kentry_lines+=("${_kworker}|${_ktid}|${_kpcmd}|${_kts}|${_kreport_path}|${_kentry_reason}")
                     [ -f "$_kreport_path" ] && _kreport_paths_needed+=("$_kreport_path")
                 done < <(awk '
                     function emit() {
@@ -7296,12 +7376,14 @@ check_inbox_renudge() {
                 done
 
                 local _karo_pending_entries=""
-                local _kline _ew _etid _epcmd _ets _erpath _erfp
+                local _kline _ew _etid _epcmd _ets _erpath _erfp _ereason
+                local _karo_pending_reason_text=""
                 for _kline in "${_kentry_sorted[@]+"${_kentry_sorted[@]}"}"; do
-                    IFS='|' read -r _ew _etid _epcmd _ets _erpath <<< "$_kline"
+                    IFS='|' read -r _ew _etid _epcmd _ets _erpath _ereason <<< "$_kline"
                     _erfp="${_kreport_hash_map[$_erpath]:-missing}"
-                    _karo_pending_entries="${_karo_pending_entries}${_ew}|${_etid}|${_epcmd}|${_ets}|${_erfp}
+                    _karo_pending_entries="${_karo_pending_entries}${_ew}|${_etid}|${_epcmd}|${_ets}|${_erfp}|${_ereason}
 "
+                    _karo_pending_reason_text="${_karo_pending_reason_text}${_epcmd}:${_ereason};"
                 done
                 if [ -n "$_karo_pending_entries" ]; then
                     local _karo_pending_fp
@@ -7317,7 +7399,7 @@ check_inbox_renudge() {
                         # notify_karo_durableがreturn 0(direct成功またはoutbox永続化成功)の
                         # 場合のみ世代を確定する。return 1(outbox永続化自体が失敗)ならmarkerを
                         # 書かず、次サイクルで同一fpのまま再試行させる(AC3)。
-                        if notify_karo_durable pending_work karo "未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。"; then
+                        if notify_karo_durable pending_work karo "未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。gate_detail=${_karo_pending_reason_text:-UN-GATED}"; then
                             _karo_pending_work_mark_notified "$_karo_pending_fp"
                         else
                             log "KARO-PENDING-INBOX-RETRY: notify_karo_durable failed to persist (outbox append failed), generation not marked, will retry next cycle"
