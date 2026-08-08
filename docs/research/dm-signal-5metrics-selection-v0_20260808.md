@@ -1,7 +1,7 @@
 <!-- gist-master: 574b417f1d1377c59b64c4d88f9d4bc5 dm-signal-5metrics-selection-v0_20260808.md -->
-# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.5
+# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.6
 
-- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老所見8件+軍師所見B反映(18:25) / v0.5: 家老再レビューBLOCK4件反映(18:30)
+- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老所見8件+軍師所見B反映(18:25) / v0.5: 家老再レビューBLOCK4件反映(18:30) / v0.6: 家老P3限定BLOCK4件反映(18:35)
 - **現況: 設計フェーズ(殿指示18:17「まだ起票しない。設計のみ」)。P1起票は殿の別途下知まで行わない**
 - 仕様正本(殿原文・改変禁止): `docs/research/dm-signal-5metrics-v0-original_20260808.md`(gist dae809c3)
 - 本書の位置づけ: 殿v0仕様を正とし、DM-Signalへの実装工程・AC・検証契約を定義する。**仕様の変更は殿裁定のみ**。指標定義の解釈が原文と食い違う場合は常に原文が勝つ。
@@ -77,7 +77,7 @@
 | ~~P0偵察~~ | **完了(2026-08-08 v0.2調査)**: 既存実装・データ経路・PF列挙・出力慣行を§3-§4に確定 | 済 | (本書調査で代替) |
 | P1 | **計算実装**: `scripts/analysis/`に5指標計算モジュール+出力Schema(原文§15全列+§5-3/3bの追加列+layer=classify_layer流用)+Quality Check(原文§16)の自動テスト。単一時点t(直近確定月末)での102PF計算 | 原文§15全列+追加列出力+§16全チェックPASS+**既存値突合の二値定義(家老所見⑤)**: 同一入力から再計算した全期間版Alpha/VDrag/MDD/AvgUWPと`portfolio_metrics.metrics_json`現物値の相対誤差が全PF・全4指標で1e-9以下(分母0時は絶対誤差1e-12以下)、**不一致0件**+**DB read-only検証(軍師所見B)**: 実行ログ上でINSERT/UPDATE/DELETE文の発行が0件であることを機械確認。突合の同値規則(家老追加確認): 両側NULLは一致、片側NULLまたはmetrics_json側のkey欠落は不一致として計数し理由を記録 | (未起票) |
 | P2 | **PIT時系列生成**: 各月末t×102PF(is_active=True)の5指標を全履歴分生成。出力=`outputs/analysis/`にCSV+meta.yaml+SQLite(`gs_sqlite_output.py`慣行)+DATA_CATALOG追記。**lookahead検査は全月×全102PF(家老所見④: サンプル月方式は探索縮小禁止に反するため全量へ)**: 入力系列をt月で物理切断した再計算値と、全履歴上でas-of計算したt時点値の完全一致を全(t, PF)組で機械検証 | 全月×102PF出力存在+lookahead検査**全組PASS(不一致0件)**+NULL契約通りのNULL分布記録(reason code別集計)+MTD最終行除外の証跡 | (未起票) |
-| P3 | **評価**: 原文§9.4 Forward Evaluation(t+1/3/6/12)+§10 Benchmark Rules(Control A-F vs Experimental G-K)+§11評価7項目+§12冗長性RankCorr 12ペア(比較相手は§4の通りmetrics_impl側の値)。**Forward cohort契約(家老BLOCK③)**: 各horizon hの評価cohortは「tで指標が非NULL かつ t+1〜t+hの全月にPF・benchmark両方の月次Close確定値が存在する(t, PF)組」のみ。末尾censor(t+hが未来)・inception欠損・指標NULLは評価から除くが、**月×horizon別の欠落理由集計(censored/inception_gap/metric_null別の件数)と期待行数(有効PF数×有効月数)vs実行数の照合**を必須出力とする。**Cross-sectional Rank契約(家老BLOCK④)**: rank対象=当月の指標非NULL PFのみ(NULL除外)、tie method=average、方向=原文§9.3(DDAのみascending)、月ごとの有効PF数`n_ranked`を全出力行に併記。RankCorrはSpearman(scipy.stats.spearmanr、tie=average前提) | §11の7出力+§12の12ペアRankCorr表が再現可能スクリプトで生成+cohort契約の照合(期待vs実行数、差分が欠落理由集計で全件説明され残差0件)+§9(原文§17)観察項目の報告 | (未起票) |
+| P3 | **評価**: 原文§9.4 Forward Evaluation(t+1/3/6/12)+§10 Benchmark Rules(Control A-F vs Experimental G-K)+§11評価7項目+§12冗長性RankCorr 12ペア(比較相手は§4の通りmetrics_impl側の値)。**Forward cohort契約(家老BLOCK③)**: 各horizon hの評価cohortは「tで指標が非NULL かつ t+1〜t+hの全月にPF・benchmark両方の月次Close確定値が存在する(t, PF)組」のみ。末尾censor(t+hが未来)・inception欠損・指標NULLは評価から除くが、**月×horizon別の欠落理由集計(censored/inception_gap/metric_null別の件数)と期待行数(有効PF数×有効月数)vs実行数の照合**を必須出力とする。**Cross-sectional Rank契約(家老BLOCK④)**: rank対象=当月の指標非NULL PFのみ(NULL除外)、tie method=average、方向=原文§9.3(DDAのみascending)、月ごとの有効PF数`n_ranked`を全出力行に併記。RankCorrはSpearman(scipy.stats.spearmanr、tie=average前提)。**群境界契約(家老BLOCK②)**: Top/Middle/Bottomは当月rank対象n_rankedのtercile分割 — rank昇順配列をk=floor(n/3)で切り、余りr=n mod 3はMiddleへ配分(r=1→Middle+1、r=2→Middle+2)。tieはaverage rank値の順序で機械分割(境界を跨ぐtieもrank値順で確定的に切る)。各群のnを月ごとに出力。**Random/EqualWeight契約(家老BLOCK③)**: Control E=seed 0〜99の100回draw(各月、当月rank対象からTop群と同数を非復元抽出)、集約はmean/median/90%CI(percentile法)の3点を全て報告、比較の主読みはmedian。Control F=各月の当月rank対象全PFの等ウェイト(月次リバランス)。**cohort partition式(家老BLOCK④)**: 各hについて候補全集合U_h={(t,p): tでrank対象}を起点に、候補総数 = 実行数 + censored(t+hが末尾超) + inception_gap(t+1..t+h内に欠損月) の重複なし分割で照合(metric_nullはrank対象定義で既に除外済みのため候補外として別掲)。「有効PF数×有効月数」の積算式は使わない | §11の7出力+§12の12ペアRankCorr表が再現可能スクリプトで生成+cohort partition照合(残差0件)+§9(原文§17)観察項目の報告 | (未起票) |
 
 - P1→P2→P3直列。P3はP2出力に対する読み取り専用。各Phase=1cmd原則。
 - v0は本番DB**読み取りのみ**・書込みは`outputs/`研究層のみ。本番DBへのINSERT/UPDATEは一切行わない(∴バックアップ対象外だが、DB接続はread-onlyクエリに限定することをACに含める)。
@@ -91,8 +91,8 @@
 **主仮説**: Metric rank at t → future benchmark-relative performance。
 
 **Outcome階層(P3実行前に固定・変更禁止)**:
-- **Primary Outcome: Forward Excess Return**。定義(家老所見②で確定): 各horizon h∈{1,3,6,12}について**複利リターン差** = Π(1+r_p)−Π(1+r_b)(t+1〜t+hの月次Close系列の複利累積同士の差)。単純和・relative wealth比は不採用。理由: 既存IRのActive Return(True CAGR差=複利系、`metrics_impl.py:1370`)と同じ複利差系譜であり冗長性比較が整合する。生死判定はこれ一本。
-- **Secondary Outcomes**: Forward CAGR / Forward MaxDD / Forward Calmar / Forward Avg UWP / next_return等(ρ(1)実験系の指標群)。参考観察のみ。結果を見てからPrimaryを差し替えることは最も危険なチェリーピッキングとして禁止。
+- **Primary Outcome: Forward Excess Return at h=1(t+1のみ)**(家老BLOCK①で一本化)。定義: **複利リターン差** = Π(1+r_p)−Π(1+r_b)(h=1では単月の r_p−r_b に一致。月次Close系列)。単純和・relative wealth比は不採用。理由: 既存IRのActive Return(True CAGR差=複利系、`metrics_impl.py:1370`)と同じ複利差系譜であり冗長性比較が整合する。**生死判定はh=1のForward Excess Return一本**(原文§9.4「v0では最初にt+1のみでもよい」に整合)。
+- **Secondary Outcomes**: h∈{3,6,12}のForward Excess Return(Multiple Horizon比較=原文§9.4の通り別Experimentとして明示)/ Forward CAGR / Forward MaxDD / Forward Calmar / Forward Avg UWP / next_return等(ρ(1)実験系の指標群)。参考観察のみ。結果を見てからPrimaryを差し替えることは最も危険なチェリーピッキングとして禁止。
 
 固定Thresholdなし。観察: Forward RankCorr方向/正月率/Top-Bottom Spread/前半後半一貫性/Layer横断一貫性/既存Metricsとの差別化。核心=「過去Performanceとの相関が低いのにForward Qualityとの関係があるか」。CAGR/Sharpeと同じPFしか選ばない指標は不要と判定する。
 
@@ -119,3 +119,4 @@
 | 2026-08-08 18:25 | 家老レビューREVISE所見8件→v0.4反映: ①ヘッダの起票状態矛盾解消 ②Primary=複利リターン差と定義 ③RRS Reliability Flag復元(§5-3b) ④P2 lookahead検査を全月×全PFへ ⑤P1突合ACを相対誤差1e-9・不一致0件で二値化 ⑥ecr_null_reason追加 ⑦Regime行番号をL106-122/L132へ訂正 ⑧monthly_returns置換をPF単位と明記。再レビューへ |
 | 2026-08-08 18:22 | 軍師レビューAPPROVE+所見6件(A=lookahead全量化は家老④と同一でv0.4反映済/B=P1にDB read-only検証AC追加→反映/C-F=問題なし確認)。v0.4に(B)を追加反映 |
 | 2026-08-08 18:30 | 家老再レビューREVISE(新規BLOCK4件)→v0.5反映: ①RF契約を現物挙動複製に一本化(§6-2裁定と同一原理で将軍裁定) ②LOW_SAMPLE事前固定基準(0<min_n<12、表示のみ)追加 ③P3 forward cohort契約(欠落理由集計+期待vs実行照合) ④Cross-sectional Rank契約(tie=average/NULL除外/n_ranked併記)。+P1突合のNULL同値規則。再々レビューへ |
+| 2026-08-08 18:35 | 家老v0.5レビューREVISE(P3限定BLOCK4件)→v0.6反映: ①Primary=h=1一本固定(h=3/6/12はSecondary=別Experiment) ②tercile群境界契約(floor(n/3)+余りMiddle配分+tie機械分割) ③Random E=seed0-99×100draw・median主読み/EqualWeight F=当月rank対象等ウェイト月次リバランス ④cohort partition式(候補総数=実行+censored+inception_gapの重複なし分割・残差0件)。再レビューへ |
