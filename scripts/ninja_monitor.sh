@@ -1712,6 +1712,7 @@ _respawn_with_cli_verification() {
 
 # ─── /clear送信ラッパー（idle確認はcheck_idle()に一本化） ───
 # $1: pane_target, $2: agent_name, $3: reason(任意)
+# $4: allow_active_task (任意, default=false。DEPLOY-STALL復旧だけ明示true)
 # 戻り値: 0=送信, 1=ブロック（次サイクル再試行）
 # HOTFIX 2026-03-01: tail -3でステータスバーしか見えずidle prompt検出不能だった
 #   → check_idle()に一本化。idle判定ロジックの重複を排除。
@@ -1719,10 +1720,25 @@ safe_send_clear() {
     local pane="$1"
     local agent_name="$2"
     local reason="${3:-UNKNOWN}"
+    local allow_active_task="${4:-false}"
 
     if [ -z "$pane" ] || [ -z "$agent_name" ]; then
         log "CLEAR-BLOCKED: missing pane/agent, reason=$reason"
         return 1
+    fi
+
+    # 作業中忍者のclearは最下層でもfail-closedにする。_handle_auto_clearの
+    # 上位ガードだけでは、手動/別callerからsafe_send_clearを直呼びすると迂回できる。
+    # DEPLOY-STALLはactive taskの停止復旧そのものなので、callerが明示許可する。
+    local active_task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+    local active_task_status=""
+    if [ "$agent_name" != "karo" ] && [ -f "$active_task_file" ]; then
+        active_task_status=$(yaml_field_get "$active_task_file" "status" "" 2>/dev/null || true)
+        if [[ "$active_task_status" =~ ^(assigned|acknowledged|in_progress)$ ]] && \
+           [ "$allow_active_task" != "true" ]; then
+            log "CLEAR-BLOCKED-ACTIVE-TASK: $agent_name status=$active_task_status reason=$reason caller_must_explicitly_allow=false"
+            return 1
+        fi
     fi
 
     # idle判定をcheck_idle()に委譲（idle flag + capture-pane + busy pattern除外）
@@ -3897,7 +3913,8 @@ _handle_deploy_stall() {
             return 0
         fi
         local target="${PANE_TARGETS[$name]}"
-        if ! safe_send_clear "$target" "$name" "DEPLOY-STALL-CLEAR"; then
+        # active taskをclearできる唯一の通常caller。停止debounce経過後の復旧なので明示許可。
+        if ! safe_send_clear "$target" "$name" "DEPLOY-STALL-CLEAR" true; then
             PREV_STATE[$name]="busy"
             return 0
         fi

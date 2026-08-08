@@ -2379,7 +2379,8 @@ echo "PASS: dedupe holds within generation, resets on new generation"
     [[ "$output" == *"PASS: dedupe holds within generation, resets on new generation"* ]]
 }
 
-@test "safe_send_clear codex in_progress uses respawn-pane" {
+# test_necessity: safe_send_clear直呼びでもactive taskを既定BLOCKし、停止復旧callerの明示許可だけを通す
+@test "safe_send_clear active task is fail-closed unless deploy-stall explicitly allows it" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -2421,7 +2422,17 @@ respawn_recovery_wait_ready() { return 0; }
 respawn_recovery_generation() { echo "123:456"; }
 respawn_recovery_notify() { return 0; }
 
-safe_send_clear "shogun:2.3" "hayate" "TEST"
+BLOCKED=0
+safe_send_clear "shogun:2.3" "hayate" "TEST" || BLOCKED=$?
+
+test "$BLOCKED" -eq 1
+grep -q "CLEAR-BLOCKED-ACTIVE-TASK: hayate status=in_progress reason=TEST" "$LOG"
+if grep -q "RESPAWN:respawn-pane" "$LOG"; then
+    cat "$LOG"
+    exit 1
+fi
+
+safe_send_clear "shogun:2.3" "hayate" "DEPLOY-STALL-CLEAR" true
 
 grep -q "CODEX-RESPAWN: hayate respawn-pane" "$LOG"
 grep -q "RESPAWN:respawn-pane" "$LOG"
@@ -2429,10 +2440,11 @@ if grep -q "SEND:/new" "$LOG"; then
     cat "$LOG"
     exit 1
 fi
-echo "PASS: in_progress respawns"
+test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 1
+echo "PASS: active task blocked by default and explicit deploy-stall recovery allowed"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: in_progress respawns"* ]]
+    [[ "$output" == *"PASS: active task blocked by default and explicit deploy-stall recovery allowed"* ]]
 }
 
 @test "max_clear_per_cmd reads settings value and defaults to 3" {
@@ -2516,9 +2528,9 @@ respawn_recovery_wait_ready() { return 0; }
 respawn_recovery_generation() { echo "123:456"; }
 respawn_recovery_notify() { return 0; }
 
-safe_send_clear "shogun:2.3" "hayate" "TEST-FIRST"
+safe_send_clear "shogun:2.3" "hayate" "TEST-FIRST" true
 BLOCKED=0
-safe_send_clear "shogun:2.3" "hayate" "TEST-SECOND" || BLOCKED=$?
+safe_send_clear "shogun:2.3" "hayate" "TEST-SECOND" true || BLOCKED=$?
 
 test "$BLOCKED" -eq 1
 test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 1
