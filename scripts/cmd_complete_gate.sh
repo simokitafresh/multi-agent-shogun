@@ -6126,22 +6126,68 @@ collect_report_modified_files() {
 load_validated_sg7_context() {
     local bundle_path="$1"
     local spec_json="$2"
+    local -a _sg7_lines
 
-    CMD_PROJECT=$(SPEC_JSON="$spec_json" python3 -c 'import json,os; print(str(json.loads(os.environ["SPEC_JSON"]).get("project") or "").strip())')
-    SG7_SPEC_SOURCE=$(BUNDLE_PATH="$bundle_path" python3 -c 'import json,os; print(str(json.load(open(os.environ["BUNDLE_PATH"], encoding="utf-8"))["review"].get("cmd_spec_source") or "").strip())')
-    SG7_REVIEWED_AT=$(BUNDLE_PATH="$bundle_path" python3 -c 'import json,os; print(str(json.load(open(os.environ["BUNDLE_PATH"], encoding="utf-8"))["review"].get("reviewed_at") or "").strip())')
-    SG7_SPEC_SCOPE=$(SPEC_JSON="$spec_json" python3 - <<'PY'
+    # cmd_karo_hotfix_speed_cmd_complete_gate_r1_20260809: 4 python3起動を1回へ
+    # 統合(interpreter起動コストが支配的)。各フィールドはtry/exceptで独立に
+    # 失敗を吸収し、元の4プロセスがそれぞれ独立失敗した場合と同じ挙動(該当
+    # フィールドのみ空文字)を維持する。
+    mapfile -t _sg7_lines < <(SPEC_JSON="$spec_json" BUNDLE_PATH="$bundle_path" python3 - <<'PY'
 import json
 import os
 
-scope = json.loads(os.environ["SPEC_JSON"]).get("scope")
-if isinstance(scope, list):
-    for item in scope:
-        value = str(item or "").strip()
-        if value:
-            print(value)
+spec_json = os.environ.get("SPEC_JSON", "")
+bundle_path = os.environ.get("BUNDLE_PATH", "")
+
+
+def safe(fn):
+    try:
+        return fn()
+    except Exception:
+        return ""
+
+
+def get_project():
+    return str(json.loads(spec_json).get("project") or "").strip()
+
+
+def get_spec_source():
+    with open(bundle_path, encoding="utf-8") as f:
+        return str(json.load(f)["review"].get("cmd_spec_source") or "").strip()
+
+
+def get_reviewed_at():
+    with open(bundle_path, encoding="utf-8") as f:
+        return str(json.load(f)["review"].get("reviewed_at") or "").strip()
+
+
+def get_scope():
+    scope = json.loads(spec_json).get("scope")
+    out = []
+    if isinstance(scope, list):
+        for item in scope:
+            value = str(item or "").strip()
+            if value:
+                out.append(value)
+    return out
+
+
+print(safe(get_project))
+print(safe(get_spec_source))
+print(safe(get_reviewed_at))
+for _value in (safe(get_scope) or []):
+    print(_value)
 PY
 )
+    CMD_PROJECT="${_sg7_lines[0]:-}"
+    SG7_SPEC_SOURCE="${_sg7_lines[1]:-}"
+    SG7_REVIEWED_AT="${_sg7_lines[2]:-}"
+    if [ "${#_sg7_lines[@]}" -gt 3 ]; then
+        SG7_SPEC_SCOPE=$(printf '%s\n' "${_sg7_lines[@]:3}")
+    else
+        SG7_SPEC_SCOPE=""
+    fi
+
     case "$SG7_SPEC_SOURCE" in
         queue/reports/*.yaml|queue/archive/reports/*.yaml) SG7_DIRECT_REPORT_SPEC=true ;;
         *) SG7_DIRECT_REPORT_SPEC=false ;;
