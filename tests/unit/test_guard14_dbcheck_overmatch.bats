@@ -35,6 +35,29 @@ run_hook() {
   [ "$output" = "not_connection" ]
 }
 
+@test "canonical launcher ignores known Python option values before script operand" {
+  local args="scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce n1 --credential-file /tmp/dm-signal-db-check.env"
+  cd /tmp
+  for prefix in "-X utf8" "-W ignore" "--check-hash-based-pycs never"; do
+    classify "python3 $prefix $args"
+    [ "$output" = "not_connection" ]
+  done
+}
+
+@test "launcher contract rejects unknown capability flags and shell chaining" {
+  local base="python3 scripts/db_capability_launcher.py"
+  local commands=(
+    "$base --capability unknown --mode readonly --confirm READONLY_DB_CHECK --nonce n1 --credential-file /tmp/dm-signal-db-check.env"
+    "$base --capability readonly_query --mode writable --confirm READONLY_DB_CHECK --nonce n1 --credential-file /tmp/dm-signal-db-check.env"
+    "$base --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce n1 --credential-file /tmp/dm-signal-db-check.env --unexpected value"
+    "$base --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce n1 --credential-file /tmp/dm-signal-db-check.env && python3 -c 'psycopg.connect(host=\"prod-db.example\")'"
+  )
+  for command in "${commands[@]}"; do
+    classify "$command"
+    [ "$output" = "connection:untrusted" ]
+  done
+}
+
 @test "canonical prepare-only and two-step db-check remain exempt" {
   local prepare="python3 scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --prepare-only --credential-source-file backend/.env --credential-file /tmp/dm-signal-db-check.env"
   local query="printf 'SELECT 1' | python3 scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce n2 --credential-file /tmp/dm-signal-db-check.env"

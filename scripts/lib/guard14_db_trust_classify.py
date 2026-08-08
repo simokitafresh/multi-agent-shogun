@@ -704,39 +704,63 @@ def _segment_is_exempt(tokens: list[str]) -> bool:
     if cmd0 not in {"python", "python3", "python.exe"}:
         return False
     rest = stripped[1:]
-    if "-c" in rest:
-        return False
-    for tok in rest:
-        if tok.startswith("-"):
-            continue
-        clean = tok.strip("'\"")
-        if os.path.basename(clean) not in EXEMPT_SCRIPT_BASENAMES:
-            return False
-        # review_correction(2026-07-12 09:24, karo): basename一致だけでは同名の別ファイル
-        # (例: /tmp/check_pf_config.py)でも免除されてしまう。実行operandのrealpathを
-        # 正規パスとsamefile同一性確認(両方の実在確認込み)した場合のみ免除する。
-        canonical = _canonical_exempt_script_path(os.path.basename(clean))
-        if not canonical or not os.path.exists(canonical):
-            return False
-        # Hook callers do not have a stable cwd.  A repository-relative script
-        # operand is defined relative to the classifier's repository SSOT, while
-        # an absolute operand remains absolute.  Cwd-relative realpath made the
-        # documented `python3 scripts/db_capability_launcher.py ...` form fail
-        # whenever the hook process happened to start outside the repository.
-        resolved = os.path.realpath(
-            clean if os.path.isabs(clean) else os.path.join(_REPO_ROOT, clean)
-        )
-        if not os.path.exists(resolved):
-            return False
-        try:
-            if not os.path.samefile(resolved, canonical):
+    # Python accepts several interpreter options whose values do not start with
+    # a dash (for example ``-X utf8`` and ``-W ignore``).  Treating the value as
+    # the first executable operand makes an otherwise canonical launcher look
+    # like an arbitrary script and causes Guard14 to fail closed.  Consume only
+    # Python's documented option/value pairs; unknown options remain rejected.
+    value_options = {"-X", "-W", "--check-hash-based-pycs"}
+    no_value_options = {
+        "-B", "-b", "-d", "-E", "-h", "-I", "-i", "-O", "-OO", "-P",
+        "-q", "-s", "-S", "-u", "-v", "-V", "-VV", "--help", "--version",
+    }
+    script_index: int | None = None
+    i = 0
+    while i < len(rest):
+        tok = rest[i]
+        if tok in value_options:
+            if i + 1 >= len(rest) or rest[i + 1].startswith("-"):
                 return False
-        except OSError:
+            i += 2
+            continue
+        if tok in no_value_options:
+            i += 1
+            continue
+        if tok.startswith("-"):
             return False
-        if os.path.basename(clean) == "db_capability_launcher.py":
-            return _db_launcher_invocation_valid(rest[rest.index(tok) + 1 :])
-        return True
-    return False
+        script_index = i
+        break
+    if script_index is None:
+        return False
+
+    tok = rest[script_index]
+    clean = tok.strip("'\"")
+    if os.path.basename(clean) not in EXEMPT_SCRIPT_BASENAMES:
+        return False
+    # review_correction(2026-07-12 09:24, karo): basename一致だけでは同名の別ファイル
+    # (例: /tmp/check_pf_config.py)でも免除されてしまう。実行operandのrealpathを
+    # 正規パスとsamefile同一性確認(両方の実在確認込み)した場合のみ免除する。
+    canonical = _canonical_exempt_script_path(os.path.basename(clean))
+    if not canonical or not os.path.exists(canonical):
+        return False
+    # Hook callers do not have a stable cwd.  A repository-relative script
+    # operand is defined relative to the classifier's repository SSOT, while
+    # an absolute operand remains absolute.  Cwd-relative realpath made the
+    # documented `python3 scripts/db_capability_launcher.py ...` form fail
+    # whenever the hook process happened to start outside the repository.
+    resolved = os.path.realpath(
+        clean if os.path.isabs(clean) else os.path.join(_REPO_ROOT, clean)
+    )
+    if not os.path.exists(resolved):
+        return False
+    try:
+        if not os.path.samefile(resolved, canonical):
+            return False
+    except OSError:
+        return False
+    if os.path.basename(clean) == "db_capability_launcher.py":
+        return _db_launcher_invocation_valid(rest[script_index + 1 :])
+    return True
 
 
 _REDIRECT_RE = re.compile(r"^[0-9]*[><]")
