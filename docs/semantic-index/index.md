@@ -13144,3 +13144,19 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T15:36:37+09:00 正しくnatural-japaneseを利用してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-06T12:39:15+09:00 記事を書いたらnatural languageで修正せよ。三層記憶を確認せよ |
 
+## active_task_clear_fail_closed — 作業中忍者clearの最下層防止
+
+| 属性 | 値 |
+|------|---|
+| id | active_task_clear_fail_closed |
+| label | 作業中忍者clearの最下層防止 |
+| aliases | ニンジャの作業中にauto clearされるのが最悪, 作業中忍者をauto clearするな, 即時に忍者がauto clear, safe_send_clear直呼び, active task clear禁止, clear_debounceは再送抑制, task statusをidleにしてclearするな |
+| related_concepts | agent_formation_management, infrastructure_ops, defense_hierarchy |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/ninja_monitor.sh` — `safe_send_clear`最下層active-taskガード。DEPLOY-STALLのみ明示許可 |
+| file | `tests/unit/test_ninja_monitor_clear_guard.bats` — 既定BLOCK/明示復旧許可の二値contract |
+| file | `context/infrastructure.md` — 全ロール共通の運用不変量と因果リンク |
+| memory | `knowledge:a8580ff88baa3d20` |
+| discussion | 殿指示2026-08-09「ニンジャの作業中にauto clearされるのが最悪」。一回限りの即時clear指示を恒久設定へ一般化し、共通関数を直呼びできた穴を根治。origin: [[殿指示_即時auto_clear_20260809]] -> [[safe_send_clear直呼びと恒久設定化の穴]] -> [[active_task_clear_fail_closed]] |
