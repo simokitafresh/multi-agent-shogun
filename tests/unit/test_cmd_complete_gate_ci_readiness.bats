@@ -48,6 +48,88 @@ block_message() {
     [[ "$output" != *"is not GREEN"* ]]
 }
 
+# cmd_karo_* has no SG7 bundle.  Exercise the production resolver with a
+# mocked report/approval boundary so this test covers the fingerprint binding
+# and timestamp selection without mutating the repository queue.
+load_karo_reviewed_at_resolver() {
+    local helper="$BATS_TEST_TMPDIR/resolve_karo_reviewed_at.sh"
+    sed -n '/^resolve_karo_reviewed_at()/,/^}$/p' "$GATE" > "$helper"
+    # shellcheck disable=SC1090
+    source "$helper"
+}
+
+write_karo_approval() {
+    local role="$1" result="$2" timestamp="$3" fingerprint="${4:-fp-current}"
+    mkdir -p "$BATS_TEST_TMPDIR/queue/gates/cmd_karo_fixture/review_approvals/reports/key-current"
+    printf 'timestamp: %s\nresult: %s\nfingerprint: %s\n' \
+        "$timestamp" "$result" "$fingerprint" \
+        >"$BATS_TEST_TMPDIR/queue/gates/cmd_karo_fixture/review_approvals/reports/key-current/$role.yaml"
+}
+
+mock_karo_review_boundary() {
+    review_report_fingerprint() { printf 'fp-current\n'; }
+    review_report_logical_path() { printf 'queue/reports/report.yaml\n'; }
+    review_report_key() { printf 'key-current\n'; }
+    review_approval_value() {
+        awk -F': ' -v key="$2" '$1 == key {print $2; exit}' "$1"
+    }
+}
+
+@test "cmd_karo review boundary uses the later matching approval timestamp" {
+    load_karo_reviewed_at_resolver
+    mock_karo_review_boundary
+    write_karo_approval gunshi LGTM '2026-08-08T12:00:00+09:00'
+    write_karo_approval karo ACCEPT '2026-08-08T12:05:00+09:00'
+
+    run resolve_karo_reviewed_at cmd_karo_fixture "$BATS_TEST_TMPDIR" report.yaml
+    [ "$status" -eq 0 ]
+    [ "$output" = '2026-08-08T03:05:00Z' ]
+}
+
+@test "cmd_karo review boundary fails closed on missing or mismatched approval evidence" {
+    load_karo_reviewed_at_resolver
+    mock_karo_review_boundary
+    write_karo_approval gunshi LGTM '2026-08-08T12:00:00+09:00'
+    write_karo_approval karo ACCEPT '2026-08-08T12:05:00+09:00' wrong-fingerprint
+
+    run resolve_karo_reviewed_at cmd_karo_fixture "$BATS_TEST_TMPDIR" report.yaml
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'review_approval_fingerprint_mismatch'* ]]
+}
+
+@test "cmd_karo review boundary rejects a timezone-less approval timestamp" {
+    load_karo_reviewed_at_resolver
+    mock_karo_review_boundary
+    write_karo_approval gunshi LGTM '2026-08-08T12:00:00'
+    write_karo_approval karo ACCEPT '2026-08-08T12:05:00+09:00'
+
+    run resolve_karo_reviewed_at cmd_karo_fixture "$BATS_TEST_TMPDIR" report.yaml
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'timezone missing'* ]]
+}
+
+@test "cmd_karo CI states keep WAIT READY and BLOCK semantics after review timestamp resolution" {
+    load_karo_reviewed_at_resolver
+    mock_karo_review_boundary
+    write_karo_approval gunshi LGTM '2026-08-08T12:00:00+09:00'
+    write_karo_approval karo ACCEPT '2026-08-08T12:05:00+09:00'
+    run resolve_karo_reviewed_at cmd_karo_fixture "$BATS_TEST_TMPDIR" report.yaml
+    [ "$status" -eq 0 ]
+    local resolved="$output"
+
+    evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$resolved\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"in_progress\",\"conclusion\":\"\",\"head_sha\":\"abc\",\"created_at\":\"2026-08-08T03:06:00Z\"}}"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_absent="* ]]
+
+    evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$resolved\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"success\",\"head_sha\":\"abc\",\"created_at\":\"2026-08-08T03:06:00Z\"}}"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"target_result=GREEN workflow_result=GREEN"* ]]
+
+    evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$resolved\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"failure\",\"head_sha\":\"abc\",\"created_at\":\"2026-08-08T03:06:00Z\"}}"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"workflow_result is not GREEN"* ]]
+}
+
 # ─── cmd_karo_impl_gate_metrics_record_split_20260725 (B20/B25) ───
 # 判定が3状態でも、記録が全てBLOCKなら台帳は嘘をつく。判定→記録の写像を固定する。
 

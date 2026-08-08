@@ -6148,6 +6148,88 @@ PY
     esac
 }
 
+# cmd_karo_* has no SG7 bundle, but its CI freshness boundary is still the
+# exact two-phase review boundary.  Resolve that boundary from the same
+# fingerprint-bound approval files used by review_all_reports_ready().  The
+# later of Gunshi LGTM and Karo ACCEPT is the first instant at which the
+# report is fully reviewed, so a CI run must be compared against that instant.
+# Missing, mismatched, or malformed approval evidence is terminal: an empty
+# timestamp must never reach evaluate_ci_readiness_json as a misleading
+# datetime parse failure.
+resolve_karo_reviewed_at() {
+    local cmd_id="$1" root="$2" report fingerprint logical key dir role result approval
+    local timestamp
+    shift 2
+
+    [[ "$cmd_id" == cmd_karo_* ]] || return 1
+    [ "$#" -gt 0 ] || {
+        echo "BLOCK: ${cmd_id}:two_phase_review_reports_missing" >&2
+        return 1
+    }
+
+    local -a timestamps=()
+    for report in "$@"; do
+        fingerprint=$(review_report_fingerprint "$report") || {
+            echo "BLOCK: ${cmd_id}:review_fingerprint_unresolvable report=${report}" >&2
+            return 1
+        }
+        logical=$(PROJECT_ROOT="$root" review_report_logical_path "$report") || {
+            echo "BLOCK: ${cmd_id}:review_report_logical_path_unresolvable report=${report}" >&2
+            return 1
+        }
+        key=$(review_report_key "$logical") || return 1
+        dir="$root/queue/gates/$cmd_id/review_approvals/reports/$key"
+
+        for role in gunshi karo; do
+            case "$role" in
+                gunshi) result=LGTM ;;
+                karo) result=ACCEPT ;;
+            esac
+            approval="$dir/$role.yaml"
+            [ -f "$approval" ] || {
+                echo "BLOCK: ${cmd_id}:review_approval_missing role=${role} report=${logical}" >&2
+                return 1
+            }
+            [ "$(review_approval_value "$approval" result 2>/dev/null || true)" = "$result" ] || {
+                echo "BLOCK: ${cmd_id}:review_approval_result_mismatch role=${role} report=${logical}" >&2
+                return 1
+            }
+            [ "$(review_approval_value "$approval" fingerprint 2>/dev/null || true)" = "$fingerprint" ] || {
+                echo "BLOCK: ${cmd_id}:review_approval_fingerprint_mismatch role=${role} report=${logical}" >&2
+                return 1
+            }
+            timestamp=$(review_approval_value "$approval" timestamp 2>/dev/null || true)
+            [ -n "$timestamp" ] || {
+                echo "BLOCK: ${cmd_id}:review_approval_timestamp_missing role=${role} report=${logical}" >&2
+                return 1
+            }
+            timestamps+=("$timestamp")
+        done
+    done
+
+    python3 - "${timestamps[@]}" <<'PY'
+from datetime import datetime, timezone
+import sys
+
+values = sys.argv[1:]
+if not values:
+    print("BLOCK: review approval timestamps missing", file=sys.stderr)
+    raise SystemExit(1)
+parsed = []
+for value in values:
+    try:
+        item = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        print("BLOCK: review approval timestamp datetime parse failed", file=sys.stderr)
+        raise SystemExit(1)
+    if item.tzinfo is None:
+        print("BLOCK: review approval timestamp timezone missing", file=sys.stderr)
+        raise SystemExit(1)
+    parsed.append(item.astimezone(timezone.utc))
+print(max(parsed).isoformat(timespec="seconds").replace("+00:00", "Z"))
+PY
+}
+
 resolve_sg7_completion_identity() {
     local bundle_path="$1"
     local bundle_cmd_id bundle_generation
@@ -6866,6 +6948,14 @@ if [ "$HAS_IMPLEMENT" = "true" ]; then
             exit 1
         fi
         export SHOGUN_COMPLETION_GENERATION="$_karo_direct_generation"
+    fi
+    if [[ "$CMD_ID" == cmd_karo_* ]]; then
+        _karo_reviewed_at=$(resolve_karo_reviewed_at "$CMD_ID" "$SCRIPT_DIR" "${_two_phase_reports[@]}" 2>&1) || {
+            echo "GATE BLOCK: ${CMD_ID}:karo_reviewed_at_invalid: ${_karo_reviewed_at}"
+            append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "karo_reviewed_at_invalid")"
+            exit 1
+        }
+        export SG7_REVIEWED_AT="$_karo_reviewed_at"
     fi
 fi
 
