@@ -22,7 +22,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1576 -->
+<!-- last_synced_lesson: L1577 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -36,6 +36,7 @@
 
 結論: 詳細は `docs/research/infrastructure-agents-delivery.md` に保存。原文を省略せず移設済み。
 見出し: deploy_task.sh --direct mode（cmd_1672） / /henseiスキル（cmd_1673） / Claude CLIモデル指定とコンテキスト（ci_fix_200k） / Codex multi-CLI統合(2026-05-11確立) / 直近24日間の主要裁定/実装（2026-05-01〜2026-05-24） / Claude Code バージョン固定と復帰 / 忍者個別弱点自動注入（cmd_1307） / gate強化（cmd_1178〜cmd_1180） / 知識サイクル現状（cmd_531/533/541/1111/1113/1117 反映） / 稼働中の仕組み / 現行メトリクス（2026-03-30時点） / 設計思想 / SessionStart hook — startup gate自動実行（cmd_2683） / 二重配備防止3層防御（cmd_2681/2682/2684） / 暗黒物質Phase 2: 高優先度60関数（cmd_2777） / ninja_monitor.sh: 状態管理・配備・監視・自動化（26件） / deploy_task.sh: 注入・ゲート・配備制御（20件） / inbox_write.sh: メッセージ管理・重複検出（9件） / cmd_save.sh: 品質ゲート補助（5件） / ninja_monitor.sh / inbox_watcher.sh / ntfy.sh / ログローテーション / field_deps.tsv
+- 作業中忍者clear不変量: `safe_send_clear`は`assigned|acknowledged|in_progress`を既定BLOCKし、停止を計測したDEPLOY-STALLだけ明示許可する。即時clear指示を恒久設定変更へ一般化せず、task statusをidleへ改変して適格化しない。`clear_debounce`は再送抑制であり完了待ちではない。origin: [[殿指示_即時auto_clear_20260809]] -> [[safe_send_clear直呼びと恒久設定化の穴]] -> [[active_task_clear_fail_closed]]
 
 ## プラットフォーム運用
 
@@ -57,7 +58,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1576 -->
+<!-- last_synced_lesson: L1577 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -132,6 +133,7 @@
 - L1574: reflux_insight task(AC2:reflux_inventory計測)のrelated_lessons injectionにL968/L134が含まれていない（cmd_reflux_insight_202608071447_kagemaru）
 - L1575: GitHub Gists APIの一覧はupdated_at順を提供しない（cmd_karo_gist_reorder_20260807）
 - L1576: 偵察専用AC(報告のみ)にtask_type=fullを使うとcommit_contract.required=trueが実態と乖離する（cmd_4240）
+- L1577: recalculation_status.modeをSSOT突合せずfull完了と表記しない（cmd_karo_retro_cmd4242_recalc_label_20260809）
 
 ## 設計標準・テスト・因果
 
