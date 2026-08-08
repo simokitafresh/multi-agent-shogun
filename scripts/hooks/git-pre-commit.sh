@@ -626,7 +626,9 @@ resolve_precommit_task_file() {
 # A timeout is a hard failure, with a durable local evidence path for diagnosis.
 run_precommit_tests_bounded() {
     local run_tests="$1" mode="$2"; shift 2
-    local timeout_seconds="${PRECOMMIT_TEST_TIMEOUT_SECONDS:-60}"
+    # 60→180秒に引き上げ(2026-08-09 殿指示: テスト高速化が根治だがD0でタイムアウト緩和も併用)
+    # test_heavy_job_admission.bats単体で61秒(実測)のため60秒では常にタイムアウト
+    local timeout_seconds="${PRECOMMIT_TEST_TIMEOUT_SECONDS:-180}"
     local agent timestamp evidence timeout_marker rc
     [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]] || {
         echo "BLOCK: PRECOMMIT_TEST_TIMEOUT_SECONDS must be a positive integer" >&2
