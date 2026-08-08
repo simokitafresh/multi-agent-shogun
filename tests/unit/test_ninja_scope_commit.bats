@@ -128,6 +128,43 @@ YAML
     [ -f "$REPO/tests/test_transient.bats" ]
 }
 
+# test_necessity: cmd_karo_hotfix_speed_ninja_scope_commit_r2_20260809 introduced
+# scoped receipt reuse (target path bytes + verified test bytes + source
+# fingerprint all unchanged since verification_head). This is a new invariant:
+# an unrelated commit between test verification and commit time must not force
+# a stale-BLOCK when nothing the receipt actually covers has changed, while a
+# real drift in either the target scope or the verified test bytes must still
+# BLOCK. No equivalent contract existed before this task (the prior behavior
+# demanded byte-for-byte source_head equality with no path-scoped exception).
+@test "unrelated commit with unchanged scope/test/fingerprint reuses receipt; scope drift still blocks" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'change\n' >> "$REPO/own.txt"
+    printf proof > "$REPO/tests/test_transient.bats"
+    git -C "$REPO" add tests/test_transient.bats
+    git -C "$REPO" commit -qm seed-test
+    printf 'task:\n  planned_paths: [own.txt]\n' > "$REPO/queue/tasks/hayate.yaml"
+    source_head="$(git -C "$REPO" rev-parse HEAD)"
+    fingerprint="$(git -C "$REPO" ls-files --format='%(objectname)' -- scripts lib tests/helpers ':!scripts/run_tests.sh' | sha256sum | awk '{print $1}')"
+    printf 'complete: true\nresult: PASS\nrc: 0\nskip_count: 0\nobserved_test_count: 1\ntest_paths: [tests/test_transient.bats]\nsource_head: %s\nsource_fingerprint: %s\n' \
+        "$source_head" "$fingerprint" > "$REPO/receipt.yaml"
+
+    printf 'unrelated production change\n' >> "$REPO/other.txt"
+    git -C "$REPO" add other.txt
+    git -C "$REPO" commit -qm unrelated-production-drift
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m fingerprint-reuse -- own.txt' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"stale test receipt source_head"* ]]
+    [ "$(git -C "$REPO" show --format= --name-only HEAD)" = own.txt ]
+
+    printf 'change2\n' >> "$REPO/own.txt"
+    printf 'task:\n  planned_paths: [own.txt]\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'unowned drift after verification\n' >> "$REPO/own.txt"
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m fingerprint-scope-drift -- own.txt' _ "$REPO" "$HELPER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"stale test receipt source_head"* ]]
+}
+
 @test "transient削除はHEAD証跡欠落をfail closedする" {
     mkdir -p "$REPO/tests" "$REPO/queue/tasks"
     printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"

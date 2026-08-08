@@ -236,8 +236,12 @@ acquire_transaction_lock_and_rebase_index() {
 
     current_head="$(git rev-parse HEAD)"
     if [[ -n "${verification_head:-}" && "$verification_head" != "$current_head" ]]; then
-        echo "BLOCK: HEAD advanced after test verification; rerun verification against $current_head" >&2
-        return 2
+        # cmd_karo_hotfix_speed_ninja_scope_commit_r2_20260809: lock取得までの
+        # 間に無関係commitがHEADを進めただけなら再テストを強制しない。判定は
+        # ninja_scope_commit_receipt_stale_reason(下方で定義、呼出し時点では既に
+        # 利用可能)で対象path/検証済みtest/source fingerprintの3点一致を確認する。
+        lock_stale_reason="$(ninja_scope_commit_receipt_stale_reason "$verification_head" "$current_head")" \
+            || { echo "BLOCK: HEAD advanced after test verification; rerun verification against $current_head ($lock_stale_reason)" >&2; return 2; }
     fi
     transaction_head="$current_head"
     for operation_state in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do
@@ -668,6 +672,8 @@ requested_paths=("${paths[@]}")
 transient_task_file="${NINJA_SCOPE_TASK_FILE:-}"
 transient_receipt_file="${NINJA_TEST_RECEIPT:-}"
 verification_head="${NINJA_SCOPE_EXPECTED_HEAD:-}"
+verification_test_paths=()
+verification_source_fingerprint=""
 if [[ -z "$verification_head" && -n "$transient_receipt_file" && -f "$transient_receipt_file" ]]; then
     verification_head="$(python3 - "$transient_receipt_file" <<'PY'
 import sys, yaml
@@ -682,6 +688,23 @@ if isinstance(manifest, dict):
 print(head)
 PY
 )" || exit 2
+    if [[ -n "$verification_head" ]]; then
+        mapfile -t verification_test_paths < <(python3 - "$transient_receipt_file" <<'PY'
+import sys, yaml
+d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+for p in (d.get('test_paths') or []):
+    p=str(p or '').strip()
+    if p:
+        print(p)
+PY
+)
+        verification_source_fingerprint="$(python3 - "$transient_receipt_file" <<'PY'
+import sys, yaml
+d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+print(str(d.get('source_fingerprint') or '').strip())
+PY
+)"
+    fi
 fi
 if [[ -z "$verification_head" && -n "$transient_task_file" && -f "$transient_task_file" ]]; then
     verification_head="$(python3 - "$transient_task_file" <<'PY'
@@ -691,11 +714,46 @@ print(t.get('deployed_head') or t.get('source_head') or t.get('source_commit') o
 PY
 )"
 fi
+# cmd_karo_hotfix_speed_ninja_scope_commit_r2_20260809: 無関係commitで
+# transaction_headが進んだだけでは再テストを強制しない。verification_headから
+# 比較先headまでの間に(1)対象scope path (2)receiptが検証したtest_paths
+# (3)既存source_fingerprint機構(scripts/lib/tests-helpers全体)の3点全てが
+# byte単位で不変なら、test結果は依然有効として再利用する(L1439: 対象path
+# 限定diffで判定)。いずれか1つでも変化していれば従来通りBLOCKする。receiptに
+# test_paths/source_fingerprintが無ければ(旧形式receiptやtask fileの
+# deployed_head経由)、この限定判定の材料が無いため安全側へ倒し従来どおり
+# 厳密一致を要求する。lock取得直前の再検証(acquire_transaction_lock_and_rebase_index)
+# でも同じ判定を使い、二重に定義しない。
+ninja_scope_commit_receipt_stale_reason() {
+    local from_head="$1" to_head="$2"
+    if [[ "$from_head" == "$to_head" ]]; then
+        return 0
+    fi
+    if ((${#verification_test_paths[@]} == 0)) || [[ -z "$verification_source_fingerprint" ]]; then
+        echo "receipt lacks test_paths/source_fingerprint for scoped reuse"
+        return 1
+    fi
+    if ! git diff --quiet "$from_head" "$to_head" -- "${paths[@]}" 2>/dev/null; then
+        echo "target scope path bytes changed between verification and transaction head"
+        return 1
+    fi
+    if ! git diff --quiet "$from_head" "$to_head" -- "${verification_test_paths[@]}" 2>/dev/null; then
+        echo "verified test path bytes changed between verification and transaction head"
+        return 1
+    fi
+    local current_source_fingerprint
+    current_source_fingerprint="$(git -C "$repo_root" ls-files --format='%(objectname)' -- scripts lib tests/helpers ':!scripts/run_tests.sh' 2>/dev/null | sha256sum | awk '{print $1}')"
+    if [[ "$current_source_fingerprint" != "$verification_source_fingerprint" ]]; then
+        echo "source fingerprint changed (scripts/lib/tests-helpers dependency drift)"
+        return 1
+    fi
+    return 0
+}
 if [[ -n "$verification_head" ]]; then
     [[ "$verification_head" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "${verification_head}^{commit}" 2>/dev/null \
         || { echo "BLOCK: test verification HEAD evidence is invalid: ${verification_head:-<missing>}" >&2; exit 2; }
-    [[ "$verification_head" == "$transaction_head" ]] \
-        || { echo "BLOCK: stale test receipt source_head: expected $transaction_head got $verification_head" >&2; exit 2; }
+    stale_reason="$(ninja_scope_commit_receipt_stale_reason "$verification_head" "$transaction_head")" \
+        || { echo "BLOCK: stale test receipt source_head: expected $transaction_head got $verification_head ($stale_reason)" >&2; exit 2; }
 fi
 if [[ -n "$transient_task_file" && -f "$transient_task_file" ]]; then
     deletion_justification="$(python3 - "$transient_task_file" <<'PY'
