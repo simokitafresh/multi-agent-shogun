@@ -1,3 +1,4 @@
+<!-- gist-master: dae809c3dae0b3befa4c45fc7f3a42a7 dm-signal-5metrics-v0-original_20260808.md -->
 # DM-Signal 新規5指標 設計書 v0 — 殿原文(2026-08-08 17:00頃受領・改変禁止)
 
 > 保存者: shogun。殿がターミナルへ直接投入した原文の全文保存。歴史修正禁止原則によりタイムスタンプ・内容の事後修正を禁ずる。

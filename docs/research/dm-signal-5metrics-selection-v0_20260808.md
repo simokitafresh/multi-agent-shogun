@@ -1,3 +1,4 @@
+<!-- gist-master: 574b417f1d1377c59b64c4d88f9d4bc5 dm-signal-5metrics-selection-v0_20260808.md -->
 # DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.1
 
 - 作成: shogun 2026-08-08
