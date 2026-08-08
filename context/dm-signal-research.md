@@ -1,6 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-04 cmd_4234 reviewed source boundary -->
 <!-- source_commit:bf0ffefc reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
+<!-- dm_signal_research_reflux: fingerprint=53171da9e7f4ca2e195e4e83c36294f552c277dab2ef82c77b1628d37d26c7e6; mode=non-target; evidence_b64=Y21k5Zu65pyJ44Gu5LiA5Zue6ZmQ44KK5YG15a+f57WQ5p6cKOWRveWQjeimj+WJh+OBrmNtZOeVquWPt+S7mOOBjT3mgZLkuYXlj4Lnhafjgafjga/jgarjgYQp44CC5qyh5q61Y21kIEEvQi9D6LW356Wo44Gu5YWD6LOH5paZ44Gn44GC44KKY29udGV4dC8qLm1k57Si5byV44G444Gu5Y+N5pig44Gv5LiN6KaB -->
 <!-- dm_signal_research_reflux: fingerprint=9619729322f7d2b1ceb6dec58e1895f9efa6c01a974c6b1cb09b461ebbd3f8f1; mode=non-target; evidence_b64=5Y2Y55m6cmVjb24y44Gu5LiA5qyh6Kq/5p+7ZG9j44Gn44GC44KK56CU56m257Si5byVKGRtLXNpZ25hbC1yZXNlYXJjaC5tZOetiSnjgbjjga7mgZLkuYXntbHlkIjjga/mrKHjg6njgqbjg7Pjg4njga7lrp/oo4VjbWQv5a626ICB5Yik5pat5b6F44Gh -->
 <!-- dm_signal_research_reflux: fingerprint=bc2411b6f0d53fcfc9af1e47dd6be9f71c79763208e4d6228ba831e2e605265a; mode=non-target; evidence_b64=cmVjb24y44Gu5Y2Y55m66Kq/5p+7ZG9j44CCZG9jcy9yZXNlYXJjaOe0ouW8leOBr2NtZOeVquWPt+S7mOOBjeaBkuS5heS/neWtmOWFiOOBqOOBl+OBpumBi+eUqOOBleOCjOeglOeptue0ouW8lShjb250ZXh0LyoubWQp44G444Gu5ZCM5pyf5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=a60c44c4561dac9424a720625fcb776586a31381058ab27a83e7ae1f02fac05c; mode=non-target; evidence_b64=Y21kXzQyMzcgQUMx5qC55Zug6Kq/5p+744GucmVjb24y57WQ5p6c44CC5Y2Y55m65oqA6KGTdHJhY2Xmlofmm7jjgafjgYLjgorjgIFjb250ZXh0LyoubWTntKLlvJXjgbjjga7mgZLkuYXnmbvpjLLlr77osaHjgafjga/jgarjgYQo5a626ICB44GM5a6f6KOFY21k5YyW44GZ44KL6Zqb44Gr5Y+C54Wn44GZ44KL5LiA5pmC55qE5qC55Zug5paH5pu4KQ== -->
@@ -16,7 +17,6 @@
 <!-- dm_signal_research_reflux: fingerprint=1aeaa9dd1355644a90751caff57ffdae06c0cf5891ee20ffb45c7640ffa6b389; mode=non-target; evidence_b64=5Y2Y55m644Gu5pys55Wq5YWo5pWw5qSc5YiG5oiQ5p6c54mp44Gn44GC44KK5pei5a2Y56CU56m257Si5byV44Gu5oGS5LmF5qaC5b+16L+95Yqg44KS5Ly044KP44Gq44GE -->
 <!-- dm_signal_research_reflux: fingerprint=008c796f9dadc6ace8c3639e55d98e2351e2a7182f3df7f547433089b0bbf1f0; mode=non-target; evidence_b64=c2luZ2xlLWNvbW1hbmQgQjRlIGNoZWNrcG9pbnQgZXZpZGVuY2U7IGN1cnJlbnQgcmVhZG9ubHkgcmVjZWlwdCBpcyBsaW5rZWQgZnJvbSB0YXNrIHJlcG9ydCBhbmQgbm90IGEgZHVyYWJsZSBwcm9qZWN0IGNvbmNlcHQgdW50aWwgYmFzZWxpbmUgaXMgc3VwcGxpZWQ= -->
 <!-- dm_signal_research_reflux: fingerprint=9df93b50be42b7dcc4b451ac61c08c2de7721ef512b5baa1b3720fc13a24eebd; mode=non-target; evidence_b64=b25lLW9mZiBleGFjdCB2ZXJpZmllcjsgcmVzZWFyY2ggaW5kZXggc3luY2hyb25pemF0aW9uIGlzIG91dHNpZGUgYXNzaWduZWQgc2NvcGU= -->
-<!-- dm_signal_research_reflux: fingerprint=2ee0720df2a3fb2d13188a3bff55a4a996a13ea917daee3e6aa551abd0678c5d; mode=non-target; evidence_b64=dGFzay1vd25lZCBvbmUtc2hvdCBCNGUgY2hlY2twb2ludCBldmlkZW5jZTsgbm8gcGVybWFuZW50IHJlc2VhcmNoIGluZGV4IGVudHJ5IHJlcXVpcmVk -->
 <!-- source_commit:df59f94a reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:5b393e7ccd2160778060cc7d5522b32254d72c2e reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:5b393e7c reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
