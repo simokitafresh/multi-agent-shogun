@@ -1,7 +1,7 @@
 <!-- gist-master: 574b417f1d1377c59b64c4d88f9d4bc5 dm-signal-5metrics-selection-v0_20260808.md -->
-# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.2
+# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.3
 
-- 作成: shogun 2026-08-08 / v0.2: 現物調査反映(未調査ゼロ化、殿下知17:10)
+- 作成: shogun 2026-08-08 / v0.2: 現物調査反映(未調査ゼロ化、殿下知17:10) / v0.3: 殿裁定4点反映(18:15)。**P1着手可(殿承認済み)**
 - 仕様正本(殿原文・改変禁止): `docs/research/dm-signal-5metrics-v0-original_20260808.md`(gist dae809c3)
 - 本書の位置づけ: 殿v0仕様を正とし、DM-Signalへの実装工程・AC・検証契約を定義する。**仕様の変更は殿裁定のみ**。指標定義の解釈が原文と食い違う場合は常に原文が勝つ。
 - v0.2調査方法: Exploreエージェント2体でDM-Signalコード現物を精読(2026-08-08 17:15-17:30)。以下の§3/§4/§8の全ファイルパス・行番号は現物確認済み。
@@ -54,17 +54,19 @@
 
 1. **PIT絶対**(原文§13): §3.1の定義でas-of切断。禁止6項は自動Quality Check(原文§16)+lookahead検査(§7 P2)でFAILさせる。
 2. **最適化禁止**(§1.2/§18): Weight合成・パラメータ探索・Layer別定義・Threshold探索・Best Lookback/Horizon選択を実装しない。コードに最適化フックを作らない。
-3. **NULL契約**: MAD=0→NULL(RRR/ACS)、mu<=0→NULL(ECR)、history<36M→NULL(RRR/ACS)。特殊値・Infinity・符号反転Raw値を作らない。
+3. **NULL契約**: MAD=0→NULL(RRR/ACS)、mu<=0→NULL(ECR)、history<36M→NULL(RRR/ACS)。特殊値・Infinity・符号反転Raw値を作らない。**NULL reason code必須(殿裁定2026-08-08 18:15)**: 出力Schemaに`rrr_null_reason`/`acs_null_reason`列を追加し、値は`INSUFFICIENT_HISTORY`/`INSUFFICIENT_WINDOWS`/`ZERO_MAD`/`INVALID_INPUT`の4種(非NULL時は空)。データ不足・計算不能・極端に安定(ZERO_MAD)を区別可能にする。指標定義・式・Thresholdの変更ではなく解析不能理由の保存のみ。ECRのNULL理由はmu<=0で一意のためreason列は設けない。
 4. **方向統一はRank層のみ**(§1.3): Raw値は元の意味を保持。DDAはRank時ascending。
 5. **既存定義の再利用**: §4の表の通り既存実装と同一演算・同一パラメータを使う。**新定義を作らない**。唯一の例外はRegimeのPIT化(§6-1の裁定事項)。
 6. **パラメータ空間縮小禁止**(殿厳命2026-04-04): 102PF全量(is_active=True)・利用可能全月・Forward horizonはt+1/t+3/t+6/t+12全量(t+1先行可、ただし残りを切り捨てず同一ランナーで継続。Multiple Horizonは別Experimentとして明示=原文§9.4)。
 7. **Sample Count併記**(§14/§5.7): rrr_window_count/acs_window_count/regime n_*を必ず出力し、恣意的Minimum Count Filterを置かない。
 8. **研究5原則**(run_077準拠): 再現可能・データ+インデックス完結・第三者可読・**過去データを上書きしない**・過剰設計回避。データソースは本番PostgreSQL直接読込(CSV利用禁止=cmd_214殿裁定)。
 
-## §6. 殿裁定が必要な解釈事項(実装前に確定)
+## §6. 解釈事項 — **全て殿裁定済み(2026-08-08 18:15)**
 
-1. **RegimeのPIT化方式**: 既存Regime定義はfull-period μ±0.5σ(現物: `regime_analysis_service.py:148-155`)で、そのまま使うとRRSがlook-ahead汚染される(原文§13のPIT絶対と§5.1の既存定義使用が現行実装上衝突)。**推薦**: 分類規則(band_sigma=0.5・benchmark月次・3分類)は不変のまま、μ/σを各観測時点tの「t以前全履歴」で計算するexpanding-window PIT版を採用する。理由: これは定義変更(原文§18で禁止)ではなく統計量の計算時点制約であり、§13と§5.1を両立する最小の解。殿の意に沿わねば申されよ。
-2. **ACSの年率化方式**: 既存Alphaは月次×12の単純年率化(`metrics_impl.py:978`)。**推薦**: 原文§4.3「年率化Alpha」は既存の×12に揃える。理由: 冗長性測定(corr_rank(ACS, Alpha))で既存Alphaと同一の年率化基準でなければ比較が歪む。
+1. **RegimeのPIT化方式 → 裁定: expanding-window PIT版を採用**。分類規則(band_sigma=0.5・benchmark月次・3分類)は固定のまま、各時点tでμ/σをt以前のexpanding windowから計算(information set=F_tへの制限であり定義変更ではない)。full-period μ/σはRRSのみ明確なlook-aheadとなるため、PIT絶対の上位原則を優先。
+2. **ACSの年率化方式 → 裁定: 既存metrics_impl.pyと同じ×12を採用**。ACSの目的は新しいAlphaの定義ではなく既存Alphaの時間的一貫性の測定であり、Rolling Alphaだけ別の年率化を入れる理由がない(alpha_annual = 12×alpha_monthly)。
+3. **NULL reason code → 裁定: 追加**(§5-3へ反映済み)。
+4. **Forward Outcomeの事前固定 → 裁定: Primary=Forward Excess Return一本**(§9へ反映済み)。結果を見てからQuality定義を選ぶことは最も危険なチェリーピッキングであり禁止。
 
 ## §7. 工程表(Phase分解)
 
@@ -82,7 +84,13 @@
 
 実験で有効性が確認され殿が採用を裁定した場合の組込み点(調査済み): `metrics_impl.py add_metric()`(L281)→`portfolio_metrics.metrics_json`(JSON一括のためカラム追加不要)→`api/metrics.py:302 _cache_has_required_metrics`の必須キー更新(**更新漏れは旧キャッシュ配信バグになる**)→`frontend/lib/api-client.ts`→metrics表示+`tier_visibility_settings`(tier別マスキング)。UI表示名は原文§2.9/§3.8/§4.10/§5.8/§6.7。
 
-## §9. 実験成功条件(原文§17転記)
+## §9. 実験成功条件(原文§17転記)+Forward Outcome階層(殿裁定2026-08-08 18:15)
+
+**主仮説**: Metric rank at t → future benchmark-relative performance。
+
+**Outcome階層(P3実行前に固定・変更禁止)**:
+- **Primary Outcome: Forward Excess Return**(PF月次リターン−ベンチ月次リターンのforward期間累積)。生死判定はこれ一本。
+- **Secondary Outcomes**: Forward CAGR / Forward MaxDD / Forward Calmar / Forward Avg UWP / next_return等(ρ(1)実験系の指標群)。参考観察のみ。結果を見てからPrimaryを差し替えることは最も危険なチェリーピッキングとして禁止。
 
 固定Thresholdなし。観察: Forward RankCorr方向/正月率/Top-Bottom Spread/前半後半一貫性/Layer横断一貫性/既存Metricsとの差別化。核心=「過去Performanceとの相関が低いのにForward Qualityとの関係があるか」。CAGR/Sharpeと同じPFしか選ばない指標は不要と判定する。
 
@@ -93,6 +101,8 @@
 - **IR/Capture/RF二重実装の混線**: 冗長性測定・突合の相手を§4で固定済み。実装時に`risk_metrics.py`系の値と取り違えるとRankCorrが歪む。
 - **102PFのinception分散**: RRR/ACSのNULL期間が長いPFが出る→NULL契約通り出力(除外Filterなし)。
 - **layer判定の脆弱性**: PF名プレフィックス判定のため改名で壊れる(既知の構造)。実験時点のclassify_layer結果を出力Schemaに焼き込むことで実験内の一貫性は保つ。
+- **★Rolling windowの重複(殿注意2026-08-08)**: RRR/ACSの隣接windowは35/36ヶ月が共通で強く依存する。仕様注記: "Rolling windows are intentionally overlapping; window_count is an observation count, not an effective independent sample size." MADやwindow_countを独立サンプル数のように解釈しない。screening metricとしての記述的使用は問題ない。
+- **★ECRの解釈(殿注意2026-08-08)**: ECRはPerformance indicatorではなく**conversion efficiency indicator**。μ=1%,g=0.99%はμ=10%,g=9%よりECRが高くなるが仕様通り。ECR単独で「良いPF」を意味すると解釈しない。
 
 ## §11. 進捗台帳
 
@@ -102,3 +112,4 @@
 | 2026-08-08 17:05 | 実装設計書v0.1作成(commit 64a1072dd)、gist 574b417f発行 |
 | 2026-08-08 17:10 | 殿下知「未調査がないように覚醒してアップデート→家老忖度なしレビュー」 |
 | 2026-08-08 17:30 | Explore 2体調査完了→v0.2全面更新(§3データ層/§4既存実装接続/§6裁定事項2件/P0偵察完了扱い)。家老レビューへ |
+| 2026-08-08 18:15 | 殿裁定4点: §6-1 Regime expanding-PIT採用 / §6-2 ACS ×12採用 / NULL reason code追加(§5-3) / Primary Outcome=Forward Excess Return固定(§9)。+注意2点(§10: overlapping window注記・ECR解釈)。**「v0.2でP1へ進めてよい」承認**→v0.3反映、P1起票へ |
