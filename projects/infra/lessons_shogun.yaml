@@ -403,7 +403,7 @@ lessons:
 - id: 'LS113'
   title: '起票target_pathに絶対directoryを書くな'
   origin: '[[cmd_4176]]'
-  detail: 'cmd_4174/4175/4176の3弾全てで忍者3名が報告gate commit_contract FAILで詰んだ。真因=将軍がtarget_path: /mnt/c/tools/multi-agent-shogun/scripts(絶対パス+directory)で起票→deploy_task.sh:4032がそのままplanned_pathsへ伝播→相対files_modifiedはscope外FAIL・絶対files_modifiedはisabs INVALID FAILの両立不能二重契約。修正=target_pathはrepo相対(例: scripts)で書く'
+  detail: 'target_pathはrepo相対(例: scripts)で書け。絶対パス+directoryはscope二重契約で忍者全FAIL(3弾3名実証)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS113 detail全文'
   source_cmd: 'cmd_4176'
   created_at: '2026-07-27'
   automated: true
@@ -411,7 +411,7 @@ lessons:
 - id: 'LS114'
   title: 'セーブcommitでもWIP内容の既存guard違反を持ち込む'
   origin: '[[cmd_4176]]'
-  detail: '殿下知のセーブとしてcommitした04fa975fc(B台帳WIP 3件)のgate_report_format.sh:1065にyaml.safe_dump直呼びが含まれ、gate_no_direct_yaml_dump.shのBLOCK対象となり全忍者の選択実行AC5にFAIL 1件が恒常発生。半蔵は正直報告を貫いたため報告を閉じられなくなった(正直さが罰される構造の引き金を将軍が作った)。修正=セーブcommit前に該当ファイルへguard系gateを1回実行して持込み違反を検知する'
+  detail: 'セーブcommit前に該当ファイルへguard系gateを1回実行して持込み違反を検知せよ。WIP持込みで全忍者に恒常FAILを撒いた実証あり。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS114 detail全文'
   source_cmd: 'cmd_4176'
   created_at: '2026-07-27'
   automated: true

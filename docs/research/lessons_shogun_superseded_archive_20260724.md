@@ -494,3 +494,9 @@ Level5: deploy_task.sh経由のscripts/lib/inject_task_modifiers.py lsa16_produc
 
 ## §LS111 旧detail全文 (2026-08-04移設・lessons 55KB超過圧縮)
 2026-07-24全量テスト事故: 将軍がcmd_4154-4163のAC2へrun_tests.sh unit(約2454s)を焼込み忍者が反復フル実行(延べ80-100分浪費)。直接原因=cmd_save.sh test_ci_execution_contract(将軍のcmd_3867由来)+hookガイダンスの全量字句強制に将軍がBLOCK回避で盲従。真因=起票の分岐点で三層記憶が構造発火しない(knowledge:59515c96途中affected/最終unit二段設計・才蔵二段設計提案・05-19全量26分問題が既存なのに未参照)。付随=是正時に殿発言を殿裁定としてコードへ焼込む帰属捏造→即削除。強制のみ有効: gate反転(全量指定BLOCK)+起票Edit時の記憶DB自動注入拡張で意志依存ゼロ化
+
+## §LS113 detail全文 (2026-08-08移設)
+cmd_4174/4175/4176の3弾全てで忍者3名が報告gate commit_contract FAILで詰んだ。真因=将軍がtarget_path: /mnt/c/tools/multi-agent-shogun/scripts(絶対パス+directory)で起票→deploy_task.sh:4032がそのままplanned_pathsへ伝播→相対files_modifiedはscope外FAIL・絶対files_modifiedはisabs INVALID FAILの両立不能二重契約。修正=target_pathはrepo相対(例: scripts)で書く
+
+## §LS114 detail全文 (2026-08-08移設)
+殿下知のセーブとしてcommitした04fa975fc(B台帳WIP 3件)のgate_report_format.sh:1065にyaml.safe_dump直呼びが含まれ、gate_no_direct_yaml_dump.shのBLOCK対象となり全忍者の選択実行AC5にFAIL 1件が恒常発生。半蔵は正直報告を貫いたため報告を閉じられなくなった(正直さが罰される構造の引き金を将軍が作った)。修正=セーブcommit前に該当ファイルへguard系gateを1回実行して持込み違反を検知する
