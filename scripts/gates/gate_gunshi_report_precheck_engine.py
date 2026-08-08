@@ -458,19 +458,6 @@ def main():
                     metalinguistic += 1
             if occurrences and metalinguistic == len(occurrences):
                 return True
-        if term == '後で':
-            # 「実行後であり」「確認後であり」「判明後であり」等の時間副詞用法は
-            # 委譲語(「後で対応する」)ではない。偽陽性実例: kagemaru gist_reorder
-            # assumption_check「判明したのは実行後であり」(2026-08-08)
-            occurrences = list(re.finditer(re.escape(lower_term), lower_text))
-            temporal_count = 0
-            for occurrence in occurrences:
-                start, end = occurrence.span()
-                after = lower_text[end:min(len(lower_text), end + 8)]
-                if after.startswith(('であり', 'である', 'だった', 'あり', 'ある', 'に', 'の')):
-                    temporal_count += 1
-            if occurrences and temporal_count == len(occurrences):
-                return True
         if term in ('todo', 'fill_this'):
             # 機能名/識別子、引用、検出器の説明に現れる予約語は未完了作業ではない。
             # 各出現の局所文脈を判定し、1件でも実作業の用法なら検出を維持する。
