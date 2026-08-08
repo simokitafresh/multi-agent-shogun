@@ -1,7 +1,7 @@
 <!-- gist-master: 574b417f1d1377c59b64c4d88f9d4bc5 dm-signal-5metrics-selection-v0_20260808.md -->
-# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.9
+# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.10
 
-- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老所見8件+軍師所見B反映(18:25) / v0.5: 家老再レビューBLOCK4件反映(18:30) / v0.6: 家老P3限定BLOCK4件反映(18:35) / v0.7: 家老P3再現性BLOCK4件反映(18:40) / v0.8: 文中矛盾1件解消(18:42)・**家老+軍師両APPROVE確定(18:41)** / v0.9: 36M Window固定理由の明文化のみ追加(殿指示21:47、契約変更なし)
+- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老所見8件+軍師所見B反映(18:25) / v0.5: 家老再レビューBLOCK4件反映(18:30) / v0.6: 家老P3限定BLOCK4件反映(18:35) / v0.7: 家老P3再現性BLOCK4件反映(18:40) / v0.8: 文中矛盾1件解消(18:42)・**家老+軍師両APPROVE確定(18:41)** / v0.9: 36M Window固定理由の明文化のみ追加(殿指示21:47、契約変更なし) / v0.10: timing(Close/Open)切替対応(殿裁定22:14)
 - **現況: 設計フェーズ(殿指示18:17「まだ起票しない。設計のみ」)。P1起票は殿の別途下知まで行わない**
 - 仕様正本(殿原文・改変禁止): `docs/research/dm-signal-5metrics-v0-original_20260808.md`(gist dae809c3)
 - 本書の位置づけ: 殿v0仕様を正とし、DM-Signalへの実装工程・AC・検証契約を定義する。**仕様の変更は殿裁定のみ**。指標定義の解釈が原文と食い違う場合は常に原文が勝つ。
@@ -49,7 +49,7 @@
 | DDA: Drawdown | `jobs/generators/drawdowns.py:50`(cummax方式、月次cumulative)。metrics側MDD/UWP=`metrics_impl.py:513-`/L659- | DDAは同じcummax方式のD_t系列からmean(abs(D_t))。既存MDD/AvgUWPは冗長性測定(原文§12)の比較相手 |
 | ECR: Arithmetic/Geometric | `metrics_impl.py:342`(月次算術平均)/L370(月次幾何平均)/L1219-1229(Volatility Drag=月次のまま算術−幾何) | ECR=g/mu を**月次同士**で計算(原文§6.2の同一Frequency要件は既存実装と整合)。既存VDragは冗長性測定の比較相手 |
 | 冗長性測定の既存値 | ★IR/Captureは二重実装が併存: `metrics_impl.py:1362-1391/1127-1164`(True CAGR差/TE、幾何年率化比)と`jobs/generators/risk_metrics.py:143-172`(平均差/TE、単純和比)。Benchmark Win Rate該当は`risk_metrics.py:152-154 win_percent`(metrics_implに同名指標なし) | 原文§12のRankCorr比較相手は**metrics_impl.py側の値を正**とする(本番metrics表の表示元=`portfolio_metrics.metrics_json`の生成元のため)。win_rate系のみrisk_metrics側 |
-| timing(Close/Open) | monthly_returnsにClose/Open二重系列。既存Alpha/BetaはCloseのみ(metrics_impl.py L961/L980がopen引数未指定) | v0の5指標は**Close系列のみ**で計算(既存Alpha/Betaと同基準)。Open拡張は別実験 |
+| timing(Close/Open) | monthly_returnsにClose/Open二重系列。既存Alpha/Beta/R²はCloseのみ=**本番の整合性不足**(殿裁定2026-08-08 22:14「DM-signalのリターン計算の基本はopen to open、close to closeと即時切替可能が特徴。Alpha/Betaも同じだ」)。本番是正はcmd_4240偵察→修正cmdの別レーンで進行 | **5指標は全てClose/Open両系列で計算**(殿裁定22:14「実験や新指標も同じようにopenとcloseが切り替え可能にしよう」)。出力Schemaはtiming列(close/open)を主キーに追加し、(portfolio_id, date, layer, timing)で1行。全契約(NULL・rank・cohort・partition・group境界・RNG)はtimingごとに独立適用。**Primary Outcomeの生死判定はopen系列を主とする**(製品基本=open to open)。close系列は同一ランナーで並行出力し対称比較。ACSのOpen版と既存Alpha(Open版)の冗長性比較は、本番Alpha Open対応の是正完了後に実測値と突合(それまでは実験側の自前Open計算値のみで実施し、その旨を結果に明記) |
 
 ### §4.1 36M Window固定の理由(殿明文化指示2026-08-08 21:47。RRRとACSで理由は別)
 
@@ -130,3 +130,4 @@
 | 2026-08-08 18:42 | 家老v0.7レビューREVISE(残1件=L80文中矛盾のみ、他全PASS)→v0.8: 旧句「期待行数(有効PF数×有効月数)」を削除しpartition式照合へ一本化+Control E/F/F'にも同ルール適用を明記 |
 | 2026-08-08 18:41 | **v0.8 家老APPROVE(blt_184108「設計書として実装分岐なし」)+軍師APPROVE(18:22)確定** |
 | 2026-08-08 21:47 | 殿指示: 36M Window固定理由の明文化のみ追加(RRR=Start-Date Robustness / ACS=Alpha推定安定性と時間分解能の折衷、で理由分離)→v0.9(§4.1新設、契約変更なし) |
+| 2026-08-08 22:14 | 殿裁定: DM-Signalの基本はopen to open+close即時切替。既存Alpha/Beta/R²のClose固定は本番整合性不足→是正偵察cmd_4240起票(22:19配備)。5指標もClose/Open両系列計算+timing主キー追加+Primary生死判定はopen主→v0.10(§4 timing行全面更新) |
