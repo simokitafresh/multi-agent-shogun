@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-04 cmd_4234 reviewed source boundary -->
+<!-- last_updated: 2026-08-08 cmd_4240 reviewed source boundary -->
+<!-- source_commit:8277734a reason:cmd_4240 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=8277734a -->
 <!-- source_commit:bf0ffefc reason:cmd_4234 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- dm_signal_research_reflux: fingerprint=53171da9e7f4ca2e195e4e83c36294f552c277dab2ef82c77b1628d37d26c7e6; mode=non-target; evidence_b64=Y21k5Zu65pyJ44Gu5LiA5Zue6ZmQ44KK5YG15a+f57WQ5p6cKOWRveWQjeimj+WJh+OBrmNtZOeVquWPt+S7mOOBjT3mgZLkuYXlj4Lnhafjgafjga/jgarjgYQp44CC5qyh5q61Y21kIEEvQi9D6LW356Wo44Gu5YWD6LOH5paZ44Gn44GC44KKY29udGV4dC8qLm1k57Si5byV44G444Gu5Y+N5pig44Gv5LiN6KaB -->
 <!-- dm_signal_research_reflux: fingerprint=9619729322f7d2b1ceb6dec58e1895f9efa6c01a974c6b1cb09b461ebbd3f8f1; mode=non-target; evidence_b64=5Y2Y55m6cmVjb24y44Gu5LiA5qyh6Kq/5p+7ZG9j44Gn44GC44KK56CU56m257Si5byVKGRtLXNpZ25hbC1yZXNlYXJjaC5tZOetiSnjgbjjga7mgZLkuYXntbHlkIjjga/mrKHjg6njgqbjg7Pjg4njga7lrp/oo4VjbWQv5a626ICB5Yik5pat5b6F44Gh -->

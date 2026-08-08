@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-08 -->
+<!-- last_updated: 2026-08-09 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,17 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_3782 | 殿裁可(2026-07-08 23:40「許可する」、棚卸し表=docs/research/s4-question-pruning-inventory_20260708.md)。throughput設計書v1.2 §0.5の1問置換を実装する。洗脳8パターンの毎プロンプト全文注入は形骸化80%実測(brainwash_check 140件中数値なし)かつ最大のスループット税であり、情報を失わずに縮約する: (1)毎プロンプトは単一自問1行 (2)8パターン全文はstartup Q6に集約済み (3)検出時のみ全文表示。表示層のみの変更で検証ロジックは不変、効果指標が下がれば1 commit revert | infra | 07-09 | 将軍向けbrainwash注入を通常時1行自問へ縮約し、Q6 |
-| cmd_3787 | 殿裁定(2026-07-09 13:40)による設計書docs/research/monthly-trade-missing-ticker-calc-asis-tobe-5w1h_20260709.mdのR1-R4実装。tickerが1件でも欠落していたら計算を続行せず、`calculated_return_open/close`を`None`とし、欠落ticker一覧を返す。未正規化の部分加重和(サイレント汚染データ)を撤廃する | dm-signal | 07-09 | Monthly Trade検証用return計算をfail- |
-| cmd_3788 | 殿裁定(2026-07-09 13:57)による設計書docs/research/recalc-status-cross-process-truth-asis-tobe-5w1h_20260709.mdのR1-R3実装。Render`uvicorn --workers 2`構成下で`/admin/recalculate-status`と起票時ガードがワーカーローカルのメモリのみを参照し、他ワーカー実行中でも誤って200 acceptedを返しサイレントno-opする欠陥を、DB(recalculation_status最新行)をクロスプロセス真実源として統一することで解消する | dm-signal | 07-09 | 再計算ステータス/起票ガードをDB recalculatio |
-| cmd_3790 | 殿裁定(2026-07-09 13:40)を受けた道具磨きD1偵察。cmd_3785で月次パリティ全件不一致が判明。download_all_prices.pyは本番同一APIを指すがパリティ不一致の矛盾を解明する | dm-signal | 07-09 | GS参照経路を全9スクリプトで確認し、local SQLit |
-| cmd_3793 | cmd_3790偵察で確定した根因(experiments.db daily_pricesが110日古い+同一日でも価格値が乖離)を修正する。download_all_prices.py再実行で本番pricesと同期し、GS実行前に自動突合する入力検証スクリプトを追加してD1(入力パリティ)を恒久保証する。意図的にscripts/analysis/grid_search/gs_price_preflight.pyを新設する(cmd_3790偵察AC3 fix direction 3で設計済み) | dm-signal | 07-09 | GS価格入力を本番pricesへ同期し、GS実行前prefl |
-| cmd_3794 | D1修正(cmd_3793)で入力パリティ復元済み。cmd_3755(T1)でPI-009突合5/7一致だったが旧pricesでの結果だったため、同期済みpricesで再検証しD3(出力パリティ)を確定する | dm-signal | 07-09 | D3出力パリティ再検証完了。gs_price_preflig |
-| cmd_3795 | 道具磨きD4軸の残4忍法(kawarimi・nukimi・yotsume・weighted_yotsume)のパターン数棚卸しと全量ベンチマーク。5分超過があればE2/E3系技法(チャンク伝播・GC条件化・グローバル配列化)を同型適用する | dm-signal | 07-09 | kawarimi/nukimi/yotsumeはcmd_37 |
-| cmd_3797 | 道具磨き5軸完了を受けGS再キャリブレーション計画Phase Aを再実行する。同期済みpricesとバンド込みでL0四神全量GSを実行し、旧基準と新基準で各チャンピオンを選出する | dm-signal | 07-09 | cmd_3762/3763(20260708)は本番未同期の |
-| cmd_3800 | 殿指摘(2026-07-09 21:33)を受けpf_L1 GS前にpf_L0新12体チャンピオンの本番突合を実施する。3点検証: (1)全期間holding_signal完全一致 (2)全期間monthly_return 1e-6以内 (3)config threshold_band一致 | dm-signal | 07-09 | cmd_3797選出のpf_L0旧基準12体チャンピオンを本 |
-| cmd_3798 | 殿裁定(2026-07-09 21:16)により全レイヤーを現行3基準(CAGR/MaxDD/NHF)+バンドで進める。cmd_3797で選出したL0旧基準12体チャンピオンを構成PFとし、7忍法GSを直列実行してL1チャンピオンを選出する。L2・L3も同基準で続行予定 | dm-signal | 07-09 | cmd_3798 Phase B L1 GSを7忍法直列で完 |
-| cmd_3803 | 殿指示(2026-07-09 22:47)。cmd_3797 GS SQLite内から本番現行シン四神12体と同一パラメータ(safe_haven+top_n+rebalance+lookback)のpattern_idを特定し、そのmonthly_return_openを本番DBのmonthly_returnと全期間で突合する。cmd_3800で玄武2体のみ確認済み(171/171)だが残り10体が未確認 | dm-signal | 07-09 | GS SQLite(gs_DM2/DM3/DM6/DM7P. |
 | cmd_3805 | cmd_3803(2026-07-09 23:24 CLEAR)で、パラメータ完全一致でも複数期間加重lookbackの6体(青龍+白虎)だけGSと本番のreturnが乖離(最悪137/171≈20%不一致)、単一期間lookbackの6体(玄武+朱雀)は高精度一致(166-171/171)と判明した。GSエンジンと本番エンジンの多期間加重ロジックの相違箇所をコード現物で特定する偵察 | dm-signal | 07-10 | GS側の複数期間加重lookback計算ロジックにバグは無い |
 | cmd_3804 | 殿厳命(2026-07-09 23:12、軍師経由blt_20260709_231431)。cmd_3800で唯一config完全一致したシン玄武-鉄壁の新チャンピオン1体を本番に試験登録し、fullrecalculate実行後の本番出力(holding_signal+monthly_return)とGS出力の完全パリティを確認する。cmd_3785事故(パリティ0/75)の再発防止として、全面入替の前にエンジン正当性を本番経路で直接検証する | dm-signal | 07-10 | シン玄武-鉄壁を本番既存PFと完全同一のpipeline_c |
 | cmd_3807 | 軍師実測13.4秒/将軍再現10.9秒(2026-07-10 00:26-00:32)。毎レビュー実行されるgateがgit全履歴走査を多重実行しており軍師レビューのスループットを恒常的に阻害している。将軍のPS4行別プロファイルでホットスポット4箇所を特定済み: L627(per-file git log 2回3.8s)+L563(git log --grep全履歴numstat 2回1.2s)+L347(因果リンク解決timeout 3s)+L176(0.85s)。走査を1回に統合し出力等価のまま高速化する | infra | 07-10 | gate_gunshi_report_precheck.sh |

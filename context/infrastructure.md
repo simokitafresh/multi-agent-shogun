@@ -1,5 +1,8 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-08 cmd_karo_hotfix_gate_report_cross_repo_cwd_20260808 reviewed source boundary -->
+<!-- last_updated: 2026-08-08 reviewed_source_boundary -->
+<!-- source_commit:ce4ba6d2b reason:reviewed_source_boundary evidence:cmd_karo_hotfix_insights_rotation_archive_gate_20260808 -->
+<!-- source_commit:b35dc70be reason:reviewed_source_boundary evidence:cmd_karo_hotfix_insights_concurrent_dirty_gate_20260808 -->
+<!-- source_commit:6ab875128 reason:reviewed_source_boundary evidence:cmd_karo_hotfix_guard14_launcher_operand_20260808 -->
 <!-- source_commit:27299673b reason:cmd_karo_hotfix_gate_report_cross_repo_cwd_20260808 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=27299673b -->
 <!-- source_commit:51a7acee8 reason:cmd_karo_hotfix_ci_reviewed_at_direct_20260808 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=51a7acee8 -->
 <!-- source_commit:5e57ee7df37d02135910876cc431cf36ed400411 reason:GA-446 context freshness update evidence:gate_alert GA-446 -->
@@ -19,7 +22,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1575 -->
+<!-- last_synced_lesson: L1576 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
@@ -54,7 +57,7 @@
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1575 -->
+<!-- last_synced_lesson: L1576 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -128,6 +131,7 @@
 - L1573: insight_write.shのdedupはsource完全一致のため、followup writerがsourceへ内容依存digestを埋め込むと重複insightが際限なく積み上がる（cmd_reflux_insight_202608071355_hanzo）
 - L1574: reflux_insight task(AC2:reflux_inventory計測)のrelated_lessons injectionにL968/L134が含まれていない（cmd_reflux_insight_202608071447_kagemaru）
 - L1575: GitHub Gists APIの一覧はupdated_at順を提供しない（cmd_karo_gist_reorder_20260807）
+- L1576: 偵察専用AC(報告のみ)にtask_type=fullを使うとcommit_contract.required=trueが実態と乖離する（cmd_4240）
 
 ## 設計標準・テスト・因果
 
