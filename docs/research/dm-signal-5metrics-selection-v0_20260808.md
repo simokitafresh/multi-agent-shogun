@@ -1,9 +1,10 @@
 <!-- gist-master: 574b417f1d1377c59b64c4d88f9d4bc5 dm-signal-5metrics-selection-v0_20260808.md -->
-# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.1
+# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.2
 
-- 作成: shogun 2026-08-08
-- 仕様正本(殿原文・改変禁止): `docs/research/dm-signal-5metrics-v0-original_20260808.md`
-- 本書の位置づけ: 殿v0仕様を正とし、DM-Signalへの実装工程・AC・検証契約を定義する。**仕様の変更は殿裁定のみ**。本書はHOWの工程分解であり、指標定義の解釈が原文と食い違う場合は常に原文が勝つ。
+- 作成: shogun 2026-08-08 / v0.2: 現物調査反映(未調査ゼロ化、殿下知17:10)
+- 仕様正本(殿原文・改変禁止): `docs/research/dm-signal-5metrics-v0-original_20260808.md`(gist dae809c3)
+- 本書の位置づけ: 殿v0仕様を正とし、DM-Signalへの実装工程・AC・検証契約を定義する。**仕様の変更は殿裁定のみ**。指標定義の解釈が原文と食い違う場合は常に原文が勝つ。
+- v0.2調査方法: Exploreエージェント2体でDM-Signalコード現物を精読(2026-08-08 17:15-17:30)。以下の§3/§4/§8の全ファイルパス・行番号は現物確認済み。
 
 ## §1. 5W1H
 
@@ -11,51 +12,93 @@
 |----|------|
 | Why | 102PFからのPortfolio Selection問題。過去Performanceの別表現ではなく「将来もEdgeが残るPFをPoint-in-Timeで識別できるか」の検証 |
 | What | 新規5指標: RRR(開始時点頑健性)/DDA(DD経路負担)/ACS(Alpha時間一貫性)/RRS(Regime頑健性)/ECR(複利変換効率) + PIT Selection実験基盤 |
-| Where | `/mnt/c/Python_app/DM-signal`。計算層は既存metrics engine系(現物特定はPhase 0偵察)。実験出力は`outputs/`研究層。**研究出力を本番に流さない(LS-A15)** |
-| Who | 将軍=設計書+cmd起票 / 家老=分解配備 / 忍者=実装・実験 / 軍師=レビュー(特にPIT契約) |
-| When | Phase 0偵察→P1計算実装→P2 PIT時系列生成→P3評価。各Phase完了時に殿へ結果報告、次Phaseは結果を見てから |
-| How | 定義固定・最適化禁止・全PF同一適用(原文§1.2)。実験ファースト: 設計書完璧化に回らずP0偵察から即回す(LS115) |
+| Where | `/mnt/c/Python_app/DM-signal`。v0は**研究層**(`scripts/analysis/` + `outputs/analysis/`)で完結し本番テーブルへ書かない。本番組込み(metrics_impl+portfolio_metrics+UI表示)は実験結果を見た殿裁定後の別工程(→§8) |
+| Who | 将軍=設計書 / 家老=分解配備+忖度なしレビュー / 忍者=実装・実験 / 軍師=PIT契約レビュー |
+| When | P1計算実装→P2 PIT時系列生成→P3評価。各Phase完了時に殿へ結果報告(v0.1のP0偵察は本書v0.2調査で完了済み) |
+| How | 定義固定・最適化禁止・全PF同一適用(原文§1.2)。データは本番PostgreSQL直接読込(CSV利用禁止=cmd_214殿裁定、run_077の5原則準拠) |
 
 ## §2. AsIs / ToBe
 
-- **AsIs**: 102PF・既存30指標弱は「過去の記述」。t時点順位→将来品質の関係を検証する仕組みが存在しない。選択基準が定義されていない。
-- **ToBe**: 各月末t・102PF全量の5指標PIT値+Cross-sectional Rankが出力Schema(原文§15)で保存され、Forward Evaluation(§9.4)・Benchmark Rules比較(§10)・評価7項目(§11)・冗長性RankCorr(§12)が機械再現可能なスクリプトで出力される。
+- **AsIs**: 102PF・既存指標群は「過去の記述」。t時点順位→将来品質の関係を検証する仕組みが存在しない。選択基準が定義されていない。
+- **ToBe**: 各月末t・102PF全量の5指標PIT値+Cross-sectional Rankが出力Schema(原文§15)で保存され、Forward Evaluation(原文§9.4)・Benchmark Rules比較(§10)・評価7項目(§11)・冗長性RankCorr(§12)が機械再現可能なスクリプトで出力される。
 
-## §3. 実装契約(原文からの絶対制約)
+## §3. データ層の現物(調査済み事実)
 
-1. **PIT絶対**(原文§13): t月末指標はt以前データのみ。禁止6項(full-history逆流/future regime/future window/full-period normalization・percentile/全期間Rank逆流)は自動Quality Check(原文§16)でFAILさせる。
+| 項目 | 現物 |
+|------|------|
+| 月次リターンSSOT | `monthly_returns`テーブル(`backend/app/db/models.py:252-285`)。`monthly_return`(Close)/`monthly_return_open`/`cumulative_return`/`benchmark_return`/`benchmark_cumulative`等。年次は動的計算(AnnualReturnテーブルは廃止済み=models.py:337-339) |
+| NAV(wealth index) | テーブルに存在しない。`cumulative_return × initial_balance`で導出(`services/monthly_returns_calculator.py:226`)。**DDAはcumulative_return系列から直接計算する** |
+| 102PFの列挙 | `portfolios`テーブル `is_active == True`(models.py:77-99)。102本の整合チェック前例=`scripts/oneshot/cmd_3785_execute_pf_replacement.py:440` |
+| layer | **DB列ではない**。PF名プレフィックス判定: `scripts/oneshot/cmd_3225_layer_managed_vol.py:22-33 classify_layer()`(シン/ノンレバレッジシン→L0_四神、GSシン→L1_忍法、奥義-GS-/秘奥義→L3_奥義、他→L2_スタンダード)。出力Schemaの`layer`列はこの関数を流用して埋める |
+| Benchmark | PFごとに`portfolios.config["benchmark_ticker"]`、未指定はSPY(`constants.py:33`)。ベンチ月次リターンは`monthly_returns.benchmark_return`にPF行と同居 |
+| Risk-Free | DTB3(`constants.py:34`)。`economic_indicators`テーブル(models.py:46-54、年率値)。月次化は`metrics_impl.py:219-222`の日次複利→月次複利方式を**正**とする(`risk_metrics.py:67/80`の年率/12単純除算は別系統であり不採用。→§4) |
+| ★PITの構造制約 | `monthly_returns`は毎ETLで**全履歴DELETE→再INSERT**(`jobs/generators/monthly_returns.py:692`)。vintage/as_of列なし。∴「当時に観測された値」の復元は構造的に不可能 |
+
+### §3.1 PITの定義(本実験における)
+
+本実験のPoint-in-Timeは「**現行確定月次リターン系列のas-of切断**」と定義する: 各観測時点tの指標は系列のt以前の行のみを入力とする(将来行の参照=lookaheadを排除)。データvintage(過去時点で実際に観測された値)の再現は上表の構造制約により**不可能**であり、価格の遡及調整リスクは本実験の限界として結果に明記する。原文§13の禁止6項はas-of切断の枠内で全て機械検証する。当月未確定値(MTD)の混入防止は既存規約に従い系列最終行を捨てる(`services/benchmark_returns.py:67-69`の「最終行=MTDは必ず捨てる」規約を全系列へ適用)。
+
+## §4. 既存指標実装の現物と5指標の接続(調査済み事実)
+
+| 5指標の依存 | 既存実装の現物 | 5指標での扱い |
+|------------|----------------|---------------|
+| RRR: Rolling 3Y CAGR | `jobs/generators/rolling_returns.py:102-108`(`cumulative_return`のshift(months)比の(12/months)乗根)。保存先`rolling_returns_summary`は要約統計のみで**各windowの時系列は保存されない** | Rolling Excess CAGR系列はRRR側で同一式(L106-108と同じ演算)により月次cumulativeから再計算する。既存rolling_returns_summaryは検証時の突合先 |
+| ACS: Alpha/RF | `services/metrics_impl.py:946-984`。Beta=Cov/Var(L959-961)+Jensen Alpha=平均超過差(L976)+**×12単純年率化**(L978)。単回帰ではOLS切片と数学同値 | 36M窓の各windowで既存と同一演算(Cov/Var+平均差)を行う=原文§4.2「OLS推定」と数学的に一致。年率化も既存の×12に揃える(→§6-2)。RF月次化は`metrics_impl.py:219-222`方式 |
+| RRS: Regime分類 | `services/regime_analysis_service.py:148-155`。benchmark月次リターンの**全期間μ±0.5σ**でbull/neutral/bear 3分類(=Up/Sideways/Down)。Active Return=portfolio−benchmark(L171-)。**full-period定義でありPIT版は実装に存在しない** | ★解釈事項(§6-1)。分類規則(band_sigma=0.5・benchmark月次・3分類)は不変のまま、μ/σの計算範囲をt以前に制限したPIT版をRRS側で実装する |
+| DDA: Drawdown | `jobs/generators/drawdowns.py:50`(cummax方式、月次cumulative)。metrics側MDD/UWP=`metrics_impl.py:513-`/L659- | DDAは同じcummax方式のD_t系列からmean(abs(D_t))。既存MDD/AvgUWPは冗長性測定(原文§12)の比較相手 |
+| ECR: Arithmetic/Geometric | `metrics_impl.py:342`(月次算術平均)/L370(月次幾何平均)/L1219-1229(Volatility Drag=月次のまま算術−幾何) | ECR=g/mu を**月次同士**で計算(原文§6.2の同一Frequency要件は既存実装と整合)。既存VDragは冗長性測定の比較相手 |
+| 冗長性測定の既存値 | ★IR/Captureは二重実装が併存: `metrics_impl.py:1362-1391/1127-1164`(True CAGR差/TE、幾何年率化比)と`jobs/generators/risk_metrics.py:143-172`(平均差/TE、単純和比)。Benchmark Win Rate該当は`risk_metrics.py:152-154 win_percent`(metrics_implに同名指標なし) | 原文§12のRankCorr比較相手は**metrics_impl.py側の値を正**とする(本番metrics表の表示元=`portfolio_metrics.metrics_json`の生成元のため)。win_rate系のみrisk_metrics側 |
+| timing(Close/Open) | monthly_returnsにClose/Open二重系列。既存Alpha/BetaはCloseのみ(metrics_impl.py L961/L980がopen引数未指定) | v0の5指標は**Close系列のみ**で計算(既存Alpha/Betaと同基準)。Open拡張は別実験 |
+
+## §5. 実装契約(原文からの絶対制約+現物接続)
+
+1. **PIT絶対**(原文§13): §3.1の定義でas-of切断。禁止6項は自動Quality Check(原文§16)+lookahead検査(§7 P2)でFAILさせる。
 2. **最適化禁止**(§1.2/§18): Weight合成・パラメータ探索・Layer別定義・Threshold探索・Best Lookback/Horizon選択を実装しない。コードに最適化フックを作らない。
-3. **NULL契約**: MAD=0→NULL(RRR/ACS)、mu<=0→NULL(ECR)、history<36M→NULL。特殊値・Infinity・符号反転Raw値を作らない。
+3. **NULL契約**: MAD=0→NULL(RRR/ACS)、mu<=0→NULL(ECR)、history<36M→NULL(RRR/ACS)。特殊値・Infinity・符号反転Raw値を作らない。
 4. **方向統一はRank層のみ**(§1.3): Raw値は元の意味を保持。DDAはRank時ascending。
-5. **既存定義の再利用**(§4.2/§5.1): Benchmark・Risk-Free・Regime分類・Active Returnは既存実装と完全同一仕様。**新定義を作らない**。Phase 0で既存実装の現物(関数・テーブル)を特定し、5指標コードはそれを呼ぶ。
-6. **パラメータ空間縮小禁止**(殿厳命2026-04-04): 102PF全量・利用可能全月・Forward horizonはt+1/t+3/t+6/t+12全量(t+1先行は許可されるが残りを切り捨てない。Multiple Horizonは別Experimentとして明示=原文§9.4)。
-7. **Sample Count併記**(§14/§5.7): window_count・regime n_*を必ず出力し、恣意的Minimum Count Filterを置かない。
+5. **既存定義の再利用**: §4の表の通り既存実装と同一演算・同一パラメータを使う。**新定義を作らない**。唯一の例外はRegimeのPIT化(§6-1の裁定事項)。
+6. **パラメータ空間縮小禁止**(殿厳命2026-04-04): 102PF全量(is_active=True)・利用可能全月・Forward horizonはt+1/t+3/t+6/t+12全量(t+1先行可、ただし残りを切り捨てず同一ランナーで継続。Multiple Horizonは別Experimentとして明示=原文§9.4)。
+7. **Sample Count併記**(§14/§5.7): rrr_window_count/acs_window_count/regime n_*を必ず出力し、恣意的Minimum Count Filterを置かない。
+8. **研究5原則**(run_077準拠): 再現可能・データ+インデックス完結・第三者可読・**過去データを上書きしない**・過剰設計回避。データソースは本番PostgreSQL直接読込(CSV利用禁止=cmd_214殿裁定)。
 
-## §4. 工程表(Phase分解)
+## §6. 殿裁定が必要な解釈事項(実装前に確定)
+
+1. **RegimeのPIT化方式**: 既存Regime定義はfull-period μ±0.5σ(現物: `regime_analysis_service.py:148-155`)で、そのまま使うとRRSがlook-ahead汚染される(原文§13のPIT絶対と§5.1の既存定義使用が現行実装上衝突)。**推薦**: 分類規則(band_sigma=0.5・benchmark月次・3分類)は不変のまま、μ/σを各観測時点tの「t以前全履歴」で計算するexpanding-window PIT版を採用する。理由: これは定義変更(原文§18で禁止)ではなく統計量の計算時点制約であり、§13と§5.1を両立する最小の解。殿の意に沿わねば申されよ。
+2. **ACSの年率化方式**: 既存Alphaは月次×12の単純年率化(`metrics_impl.py:978`)。**推薦**: 原文§4.3「年率化Alpha」は既存の×12に揃える。理由: 冗長性測定(corr_rank(ACS, Alpha))で既存Alphaと同一の年率化基準でなければ比較が歪む。
+
+## §7. 工程表(Phase分解)
 
 | Phase | 内容 | 完了条件(二値) | 起票cmd(起票時に実番号記入=予約禁止LS-A04(46)) |
 |-------|------|----------------|------|
-| P0 | **偵察**: (1)既存Rolling Return/Alpha(OLS+RF)/Regime Active Return/Arithmetic・Geometric Mean実装の関数名・ファイル・行番号 (2)月次return・NAVデータ取得経路とPIT可用性 (3)102PF・layerの列挙元 (4)出力先候補(テーブル/parquet) (5)偵察5要件(変更対象/波及先/テスト/エッジケース/依存順序) | 偵察報告YAMLに5要件全記載+既存定義の現物引用あり | (未起票) |
-| P1 | **計算実装**: 5指標計算モジュール+出力Schema(原文§15全列)+Quality Check(§16)の自動テスト。単一時点tでの102PF計算が通る | §15全列出力+§16全チェックPASS+既存指標との突合(Alpha/VDrag等は既存値再現)一致 | (未起票) |
-| P2 | **PIT時系列生成**: 各月末t×102PFの5指標を全履歴分生成。lookahead検査(t時点値がt+1以降データ変更で不変であること)をサンプル月で機械検証 | 全月×102PF出力存在+lookahead検査PASS+NULL契約通りのNULL分布記録 | (未起票) |
-| P3 | **評価**: §9.4 Forward Evaluation(t+1先行、t+3/6/12は同一ランナーで継続)+§10 Benchmark Rules(A-F vs G-K)+§11評価7項目+§12冗長性RankCorr表 | §11の7出力+§12の12ペアRankCorr表が再現可能スクリプトで生成 | (未起票) |
+| ~~P0偵察~~ | **完了(2026-08-08 v0.2調査)**: 既存実装・データ経路・PF列挙・出力慣行を§3-§4に確定 | 済 | (本書調査で代替) |
+| P1 | **計算実装**: `scripts/analysis/`に5指標計算モジュール+出力Schema(原文§15全列+layer=classify_layer流用)+Quality Check(原文§16)の自動テスト。単一時点t(直近確定月末)での102PF計算 | 原文§15全列出力+§16全チェックPASS+既存値突合(全期間版のAlpha/VDrag/MDD/AvgUWPを`portfolio_metrics.metrics_json`現物値と照合し差異を説明可能な状態) | (未起票) |
+| P2 | **PIT時系列生成**: 各月末t×102PF(is_active=True)の5指標を全履歴分生成。出力=`outputs/analysis/`にCSV+meta.yaml+SQLite(`gs_sqlite_output.py`慣行)+DATA_CATALOG追記。lookahead検査=入力系列をt月で物理切断した再計算値と、全履歴上でas-of計算したt時点値の完全一致をサンプル月(先頭/中間/末尾を含む)で機械検証 | 全月×102PF出力存在+lookahead検査PASS+NULL契約通りのNULL分布記録+MTD最終行除外の証跡 | (未起票) |
+| P3 | **評価**: 原文§9.4 Forward Evaluation(t+1/3/6/12)+§10 Benchmark Rules(Control A-F vs Experimental G-K)+§11評価7項目+§12冗長性RankCorr 12ペア(比較相手は§4の通りmetrics_impl側の値) | §11の7出力+§12の12ペアRankCorr表が再現可能スクリプトで生成+§9(原文§17)観察項目の報告 | (未起票) |
 
-- P0-P1は直列。P2はP1完了後。P3はP2出力に対する読み取り専用。
-- 各Phase=1cmd原則(1道具1CMD)。P0は偵察cmd、P1-P3は実装cmd。
-- DB書込みが発生する場合は直列配備(DB排他)+バックアップファースト。ただしv0は研究層出力(outputs/)を基本とし本番テーブルへ書かない。本番metrics層への昇格は殿裁定後の別工程。
+- P1→P2→P3直列。P3はP2出力に対する読み取り専用。各Phase=1cmd原則。
+- v0は本番DB**読み取りのみ**・書込みは`outputs/`研究層のみ。本番DBへのINSERT/UPDATEは一切行わない(∴バックアップ対象外だが、DB接続はread-onlyクエリに限定することをACに含める)。
 
-## §5. 実験成功条件(原文§17転記)
+## §8. 本番組込み時の入口(v0スコープ外・将来参照)
+
+実験で有効性が確認され殿が採用を裁定した場合の組込み点(調査済み): `metrics_impl.py add_metric()`(L281)→`portfolio_metrics.metrics_json`(JSON一括のためカラム追加不要)→`api/metrics.py:302 _cache_has_required_metrics`の必須キー更新(**更新漏れは旧キャッシュ配信バグになる**)→`frontend/lib/api-client.ts`→metrics表示+`tier_visibility_settings`(tier別マスキング)。UI表示名は原文§2.9/§3.8/§4.10/§5.8/§6.7。
+
+## §9. 実験成功条件(原文§17転記)
 
 固定Thresholdなし。観察: Forward RankCorr方向/正月率/Top-Bottom Spread/前半後半一貫性/Layer横断一貫性/既存Metricsとの差別化。核心=「過去Performanceとの相関が低いのにForward Qualityとの関係があるか」。CAGR/Sharpeと同じPFしか選ばない指標は不要と判定する。
 
-## §6. リスク・伏兵
+## §10. リスク・限界(調査で確定した事実ベース)
 
-- 既存Regime分類・Active ReturnがPIT再計算可能な形で保存されていない可能性(full-period定義の場合、RRSのPIT化には「t時点までのregime分類」が必要)。→ P0偵察の最重要確認事項。full-periodでしか取れない場合は殿へ報告し裁定を仰ぐ(勝手にRegime定義を作らない=§3-5)。
-- 既存3Y Rollingデータ(原文§2.2)の粒度・保存範囲が不足する場合は5指標側で月次returnから再計算(定義は既存と同一に)。
-- 102PFのinception分散によりRRR/ACSのNULL期間が長いPFが出る→NULL契約通り出力し、実験側でSample Count併記(除外Filterは置かない)。
+- **vintage不可**(§3.1): 遡及価格調整の影響は除去できない。結果報告に限界として明記。
+- **Regime PIT初期期間**: expanding-window方式は初期のμ/σが少サンプルで不安定。n_up/n_side/n_downのSample Count併記で可視化(Threshold除外はしない=原文§5.7)。
+- **IR/Capture/RF二重実装の混線**: 冗長性測定・突合の相手を§4で固定済み。実装時に`risk_metrics.py`系の値と取り違えるとRankCorrが歪む。
+- **102PFのinception分散**: RRR/ACSのNULL期間が長いPFが出る→NULL契約通り出力(除外Filterなし)。
+- **layer判定の脆弱性**: PF名プレフィックス判定のため改名で壊れる(既知の構造)。実験時点のclassify_layer結果を出力Schemaに焼き込むことで実験内の一貫性は保つ。
 
-## §7. 進捗台帳
+## §11. 進捗台帳
 
 | 日時 | 事象 |
 |------|------|
-| 2026-08-08 | 殿原文受領・全文保存(`dm-signal-5metrics-v0-original_20260808.md`)。本設計書v0.1作成 |
+| 2026-08-08 17:00 | 殿原文受領・全文保存(`dm-signal-5metrics-v0-original_20260808.md`) |
+| 2026-08-08 17:05 | 実装設計書v0.1作成(commit 64a1072dd)、gist 574b417f発行 |
+| 2026-08-08 17:10 | 殿下知「未調査がないように覚醒してアップデート→家老忖度なしレビュー」 |
+| 2026-08-08 17:30 | Explore 2体調査完了→v0.2全面更新(§3データ層/§4既存実装接続/§6裁定事項2件/P0偵察完了扱い)。家老レビューへ |
