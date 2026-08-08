@@ -173,6 +173,9 @@ try:
             raise ValueError("batch field names must be non-empty strings")
         if key.startswith("binary_checks.") and key.endswith(".result") and isinstance(value, bool):
             value = "yes" if value else "no"
+        # LG048 D0根治(2026-08-09): batch経路でもsemantic_validation.resultをPASS/FAILに制限
+        if key == "semantic_validation.result" and isinstance(value, str) and value.strip() not in ("PASS", "FAIL"):
+            raise ValueError(f"semantic_validation.result must be PASS or FAIL, got: {value!r}")
         value = canonicalize_hook_result(key, value)
         set_dot(data, key, value)
 except ValueError as exc:
@@ -1138,6 +1141,19 @@ for i, item in enumerate(data):
             if [[ "$val" != "PASS" ]] && [[ "$val" != "FAIL" ]]; then
                 echo "BLOCK: self_gate_check は PASS/FAIL のみ。受信: $val" >&2
                 return 1
+            fi
+            ;;
+        semantic_validation)
+            # LG048 D0根治(2026-08-09): semantic_validation.resultに散文を書く忍者パターンが
+            # 4cmd(gist_reorder/cmd_4239/cmd_4240/cmd_4241)で繰り返し発生。
+            # report_field_set.sh経由の書込み時にPASS/FAILリテラルを強制し、散文をBLOCKする。
+            if [[ "$dot_key" == "semantic_validation.result" ]]; then
+                local sv_result
+                sv_result="$(echo "$val" | xargs)"
+                if [[ "$sv_result" != "PASS" && "$sv_result" != "FAIL" ]]; then
+                    echo "BLOCK: semantic_validation.result は PASS/FAIL のみ。散文は不可(LG048)。受信: $val" >&2
+                    return 1
+                fi
             fi
             ;;
         lesson_candidate)
