@@ -75,10 +75,10 @@ commit_contract:
   - /mnt/c/Python_app/DM-signal
   repo_root: /mnt/c/Python_app/DM-signal
 cross_repo_commits:
-- repo: /mnt/c/Python_app/DM-signal
-  commit_hash: ''
+- repo: /mnt/c/tools/multi-agent-shogun
+  commit_hash: 4bfd444466c17afd792aca766bac6e2b91943aaa
   paths:
-  - /mnt/c/Python_app/DM-signal
+  - queue/reports/kagemaru_report_cmd_4239.yaml
 ac_evidence_mapping:
   AC1: 'invalidate_precomputed_raw: precompute_raw.py:414-433; metrics cache更新: metrics.py:157-164;
     PortfolioMetrics生成: generators/portfolio_metrics.py:70-78; metadata-only保存: portfolios.py:334-344;
@@ -216,7 +216,7 @@ binary_checks:
     result: 'yes'
   commit:
   - check: git commitが完了したか(untracked/modified=0)
-    result: 'no'
+    result: 'yes'
 self_gate_check:
   lesson_ref: PASS
   lesson_candidate: PASS
@@ -228,7 +228,7 @@ parent_ac_coverage:
 - AC2
 - AC3
 parent_contract_fingerprint: 3a958df2d1f48034
-commit_hash: 373145ab6c129bc6524593d899d9da9073b4d760
+commit_hash: 4bfd444466c17afd792aca766bac6e2b91943aaa
 test_results:
   command: ADMIN_USER=$(grep -m1 '^ADMIN_USER=' backend/.env | cut -d= -f2-); ADMIN_PASS=$(grep
     -m1 '^ADMIN_PASS=' backend/.env | cut -d= -f2-); curl -sS --max-time 30 -u "$ADMIN_USER:$ADMIN_PASS"
