@@ -657,9 +657,11 @@ run_precommit_tests_bounded() {
 # AC1: resolve staged paths (plus AC2's reverse-dependency expansion) to
 # affected tests and run them, reusing scripts/run_tests.sh's existing
 # `affected` mode (which itself delegates to scripts/test_select.sh) instead
-# of reimplementing selection here. AC4: SHOGUN_PRECOMMIT_AFFECTED_BYPASS
+# of reimplementing selection here. AC4: PRECOMMIT_TIMEOUT_OVERRIDE
+# (renamed from SHOGUN_PRECOMMIT_AFFECTED_BYPASS 2026-08-09 殿指示: 目的明示名へ変更)
 # mirrors the escape-hatch pattern established for SHOGUN_PUSH_DIRTY_TREE_BYPASS
 # (cmd_karo_impl_commander_scope_commit_20260725) — logged, not silent.
+# 使用条件: (1) rc≠0がタイムアウト起因 (2) 対象テストを個別実行でPASS確認済み (3) 理由をjsonlに記録
 check_precommit_affected_tests() {
     local -a target_files=() reverse_deps=()
     local staged reverse scope_count has_relevant=false task_file task_rc
@@ -715,22 +717,24 @@ check_precommit_affected_tests() {
         target_files+=("${reverse_deps[@]}")
     fi
 
-    if [[ -n "${SHOGUN_PRECOMMIT_AFFECTED_BYPASS:-}" ]]; then
+    # Accept both new (PRECOMMIT_TIMEOUT_OVERRIDE) and legacy name for backward compat
+    local _override_reason="${PRECOMMIT_TIMEOUT_OVERRIDE:-${SHOGUN_PRECOMMIT_AFFECTED_BYPASS:-}}"
+    if [[ -n "$_override_reason" ]]; then
         mkdir -p "$REPO_ROOT/logs"
-        SHOGUN_PRECOMMIT_AFFECTED_BYPASS="$SHOGUN_PRECOMMIT_AFFECTED_BYPASS" \
+        PRECOMMIT_TIMEOUT_OVERRIDE="$_override_reason" \
         TMUX_AGENT_ID="${TMUX_AGENT_ID:-}" \
         python3 - "$REPO_ROOT/logs/precommit_affected_bypass.jsonl" <<'PY' 2>/dev/null || true
 import json, os, sys, datetime
 path = sys.argv[1]
 entry = {
     "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    "reason": os.environ.get("SHOGUN_PRECOMMIT_AFFECTED_BYPASS", ""),
+    "reason": os.environ.get("PRECOMMIT_TIMEOUT_OVERRIDE", ""),
     "agent": os.environ.get("TMUX_AGENT_ID") or "unknown",
     }
 with open(path, "a", encoding="utf-8") as fh:
     fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
 PY
-        echo "[pre-commit] WARN(GA-PRECOMMIT1): affected-test bypass used (SHOGUN_PRECOMMIT_AFFECTED_BYPASS set). Logged to logs/precommit_affected_bypass.jsonl" >&2
+        echo "[pre-commit] WARN(GA-PRECOMMIT1): affected-test timeout override used (PRECOMMIT_TIMEOUT_OVERRIDE). Logged to logs/precommit_affected_bypass.jsonl" >&2
         return 0
     fi
 
@@ -747,7 +751,7 @@ PY
     if ! run_precommit_tests_bounded "$run_tests" affected "${target_files[@]}"; then
         echo "BLOCK(GA-PRECOMMIT1): staged changes broke an affected test (directly, or via a scripts/lib/ reverse dependency)." >&2
         echo "  action: fix the failing test and re-commit." >&2
-        echo "  emergency: SHOGUN_PRECOMMIT_AFFECTED_BYPASS='<reason>' git commit ... (logged to logs/precommit_affected_bypass.jsonl)" >&2
+        echo "  emergency: PRECOMMIT_TIMEOUT_OVERRIDE='<reason>' git commit ... (logged to logs/precommit_affected_bypass.jsonl)" >&2
         return 1
     fi
     return 0
