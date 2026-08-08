@@ -1,7 +1,7 @@
 <!-- gist-master: 574b417f1d1377c59b64c4d88f9d4bc5 dm-signal-5metrics-selection-v0_20260808.md -->
-# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.8
+# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.9
 
-- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老所見8件+軍師所見B反映(18:25) / v0.5: 家老再レビューBLOCK4件反映(18:30) / v0.6: 家老P3限定BLOCK4件反映(18:35) / v0.7: 家老P3再現性BLOCK4件反映(18:40) / v0.8: 文中矛盾1件解消(18:42)
+- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老所見8件+軍師所見B反映(18:25) / v0.5: 家老再レビューBLOCK4件反映(18:30) / v0.6: 家老P3限定BLOCK4件反映(18:35) / v0.7: 家老P3再現性BLOCK4件反映(18:40) / v0.8: 文中矛盾1件解消(18:42)・**家老+軍師両APPROVE確定(18:41)** / v0.9: 36M Window固定理由の明文化のみ追加(殿指示21:47、契約変更なし)
 - **現況: 設計フェーズ(殿指示18:17「まだ起票しない。設計のみ」)。P1起票は殿の別途下知まで行わない**
 - 仕様正本(殿原文・改変禁止): `docs/research/dm-signal-5metrics-v0-original_20260808.md`(gist dae809c3)
 - 本書の位置づけ: 殿v0仕様を正とし、DM-Signalへの実装工程・AC・検証契約を定義する。**仕様の変更は殿裁定のみ**。指標定義の解釈が原文と食い違う場合は常に原文が勝つ。
@@ -50,6 +50,12 @@
 | ECR: Arithmetic/Geometric | `metrics_impl.py:342`(月次算術平均)/L370(月次幾何平均)/L1219-1229(Volatility Drag=月次のまま算術−幾何) | ECR=g/mu を**月次同士**で計算(原文§6.2の同一Frequency要件は既存実装と整合)。既存VDragは冗長性測定の比較相手 |
 | 冗長性測定の既存値 | ★IR/Captureは二重実装が併存: `metrics_impl.py:1362-1391/1127-1164`(True CAGR差/TE、幾何年率化比)と`jobs/generators/risk_metrics.py:143-172`(平均差/TE、単純和比)。Benchmark Win Rate該当は`risk_metrics.py:152-154 win_percent`(metrics_implに同名指標なし) | 原文§12のRankCorr比較相手は**metrics_impl.py側の値を正**とする(本番metrics表の表示元=`portfolio_metrics.metrics_json`の生成元のため)。win_rate系のみrisk_metrics側 |
 | timing(Close/Open) | monthly_returnsにClose/Open二重系列。既存Alpha/BetaはCloseのみ(metrics_impl.py L961/L980がopen引数未指定) | v0の5指標は**Close系列のみ**で計算(既存Alpha/Betaと同基準)。Open拡張は別実験 |
+
+### §4.1 36M Window固定の理由(殿明文化指示2026-08-08 21:47。RRRとACSで理由は別)
+
+**RRR 36M固定の理由**: RRR v0のRolling Windowは36ヶ月に固定する。目的は短期Performance Stabilityではなく、「投資開始時点をずらしても中期的なBenchmark超過Performanceが維持されたか」というStructural Robustnessの測定である。12M Windowは単年のMomentum Shock・Regime・少数の極端月の影響を受けやすく、RRRの主目的であるStart-Date RobustnessよりRecent Robustnessの性格が強くなる。したがってv0では36Mのみを採用し、12M/24M/60Mとの比較・Best Window探索は行わない。将来12M RRRを検証する場合は、36Mの代替候補探索ではなく別仮説「Recent Robustness」として別Experimentで扱う。
+
+**ACS 36M固定の理由(RRRとは別概念)**: ACSの36Mは「Alpha推定の安定性」と「時間分解能」の折衷である。Rolling OLS(Cov/Var)によるAlpha/Beta推定は観測点が少ないと推定誤差が支配的になり、窓が長すぎるとAlphaの時間変化を均してしまい一貫性測定の分解能が落ちる。36点はこの両者の折衷として固定するのであり、RRRの「開始時点頑健性」とは採用理由が異なる。同じ36Mであっても両指標の窓は概念的に独立であり、片方の窓変更の議論をもう片方へ波及させない。窓探索の禁止はRRRと同様(§5-2)。
 
 ## §5. 実装契約(原文からの絶対制約+現物接続)
 
@@ -121,4 +127,6 @@
 | 2026-08-08 18:30 | 家老再レビューREVISE(新規BLOCK4件)→v0.5反映: ①RF契約を現物挙動複製に一本化(§6-2裁定と同一原理で将軍裁定) ②LOW_SAMPLE事前固定基準(0<min_n<12、表示のみ)追加 ③P3 forward cohort契約(欠落理由集計+期待vs実行照合) ④Cross-sectional Rank契約(tie=average/NULL除外/n_ranked併記)。+P1突合のNULL同値規則。再々レビューへ |
 | 2026-08-08 18:35 | 家老v0.5レビューREVISE(P3限定BLOCK4件)→v0.6反映: ①Primary=h=1一本固定(h=3/6/12はSecondary=別Experiment) ②tercile群境界契約(floor(n/3)+余りMiddle配分+tie機械分割) ③Random E=seed0-99×100draw・median主読み/EqualWeight F=当月rank対象等ウェイト月次リバランス ④cohort partition式(候補総数=実行+censored+inception_gapの重複なし分割・残差0件)。再レビューへ |
 | 2026-08-08 18:40 | 家老v0.6レビューREVISE(P3再現性4件)→v0.7反映: ①tie全順序化(secondary key=portfolio_id昇順) ②Random決定論化(候補ID昇順正規化+default_rng([seed, month_index])月ごと再初期化+percentile linear法固定) ③Control F裁定=原文準拠の全eligible共通control、metric-matched版はF'として分離並記 ④partition排他優先順位(censored先)+n_ranked<3月のSKIPPED_SMALL_N定義。再レビューへ |
-| 2026-08-08 18:42 | 家老v0.7レビューREVISE(残1件=L80文中矛盾のみ、他全PASS)→v0.8: 旧句「期待行数(有効PF数×有効月数)」を削除しpartition式照合へ一本化+Control E/F/F'にも同ルール適用を明記。家老APPROVE見込み |
+| 2026-08-08 18:42 | 家老v0.7レビューREVISE(残1件=L80文中矛盾のみ、他全PASS)→v0.8: 旧句「期待行数(有効PF数×有効月数)」を削除しpartition式照合へ一本化+Control E/F/F'にも同ルール適用を明記 |
+| 2026-08-08 18:41 | **v0.8 家老APPROVE(blt_184108「設計書として実装分岐なし」)+軍師APPROVE(18:22)確定** |
+| 2026-08-08 21:47 | 殿指示: 36M Window固定理由の明文化のみ追加(RRR=Start-Date Robustness / ACS=Alpha推定安定性と時間分解能の折衷、で理由分離)→v0.9(§4.1新設、契約変更なし) |
