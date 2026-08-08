@@ -237,4 +237,5 @@ test_results:
     L3 last_success_at=2026-08-07T11:33:01.772126Z, last_error=null; recalculate-status
     success=true,running=false.
   result: PASS
-diagnose_reason: report_field_set batchはcompleted reportのrevision_requested遷移後にstatusを自動復帰させず、cross_repo修正後もrevision_requestedが残った。cross_repo整合自体はPASSであり、terminal status復帰が必要だった。
+diagnose_reason: report_field_set batchはcompleted reportのrevision_requested遷移後にstatusを自動復帰させず、cross_repo修正後もrevision_requestedが残った。cross_repo整合自体はPASSであり、terminal
+  status復帰が必要だった。
