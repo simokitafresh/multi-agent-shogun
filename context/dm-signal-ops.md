@@ -38,6 +38,7 @@ commitをpushしRender deployを確認後、同一`target_date`・全78PF・直�
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを確認し復元判断まで行う（cmd_2450）
 - L783: fullrecalculate完了確認はtiming-history DB記録が一次証跡。recalculate-statusはLB別インスタンス不正確（cmd_3546, 102PF完全一致証明済み）
 - cmd_3788以後: running状態の可視性はDB `recalculation_status`を参照するためworker-local誤答は修正済み。ただし完了証跡は引き続きDB行/timing-historyで確認する。
+- トラブル・データ不整合の初動では、直近コード変更後のfull再計算忘れを第一容疑として、DB `recalculation_status` の最新行の`mode`・開始/完了時刻を確認する（殿裁定2026-08-09）。
 ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
 ### DM-Signal本番FE CDP確認手順（2026-05-05実証済み）
 **殿のChromeを使わない。隔離プロファイルEdgeを自動起動する。**
@@ -1100,3 +1101,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `50002dc6`,`4c1cac7f`,`274062e4`,`9a27eb4f`: runの`end_date`をMonthlyの時計とし最新営業日へclamp。未価格未来月/初回有効holding前はskip、開始後欠落はfail-closed。詳細→`/mnt/c/Python_app/DM-signal/docs/research/dm-monthly-trade-bug-genko-chain-archive_20260803.md`
 ## §88 cmd_4243 SIGNAL CHANGE ALERT 08-01〜08-06偵察 (2026-08-09)
 - 08-05/08-07/08-09の3警報(count=3/15/48)305行は全件recalculation_status+git commit+signal_decision_ledgerの相関で正常確定更新と判定(異常書換え0)。08-03=cmd_4224(ledger境界失効)デプロイ検証recalc、08-08=cmd_4241(L5 regen)デプロイ検証portfolio recalc(ledger未確定域につきPI-P06非抵触)。判定手法・run対応表→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4243_signal_alert_recon_20260809.md`
+## §89 monthly_returns系統的退行(cmd_4244, 2026-08-09)
+- mode='full'(run226/230)で復元した全履歴monthly_returnsが、その後のmode='portfolio'実行(run227/228/229)のたびに2022-10以降だけへ切り詰められる退行を実測確認(DM2/DM3/basicデュアルモメンタム等で完全履歴→47行/2022-10始まりへ縮小→run230で再復元を直接観測)。真因=`monthly_returns.py:692`のPF単位DELETE→INSERTが「狭い計算結果での広い既存履歴の上書き」を防いでいない(0件生成時のみガード)。秘奥義-抜き身-激攻の完全ゼロ行も同一メカニズムの極端ケース。y5リターン欠落は調査時点で102/102PF・y3は50/102PFに達した。暫定対策=mode='full'のみ本番実行、恒久対策=692行のガード拡張。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4244_compare_na_recon_20260809.md`
+## §90 トラブル時の第一容疑=fullrecalculate忘れ・mode違い (殿裁定2026-08-09 03:03)
+- 何かトラブル・エラー・データ不整合(N/A表示・計算されていないPF・履歴欠落)を見たら、第一容疑として直近コード変更後のfullrecalculate忘れとmode違い(portfolio≠full)を疑い、`recalculation_status`のmode・時刻をDBで確認する。§89の系統的退行が実証例。機構化・自動実行は禁止(殿裁定: 意思依存にならぬようsemantic-map aliasで本則が自動注入される)。
