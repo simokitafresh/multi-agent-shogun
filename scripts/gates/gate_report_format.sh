@@ -424,8 +424,11 @@ try:
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         fail()
     snapshot_ids = set(re.findall(r"INS-[0-9A-Za-z-]+", str(snapshot)))
-    if not snapshot_ids:
-        fail()
+    # When the task does not name specific INS-IDs (e.g. bulk dirty-finish
+    # hotfixes that target the entire file), fall back to deriving owned IDs
+    # from the commit diff.  This prevents false BLOCK when reflux adds or
+    # resolves entries between the worker's commit and the gate run.
+    snapshot_ids_empty = not snapshot_ids
     parent_text = subprocess.check_output(
         ["git", "-C", repo, "show", f"{commit}^:{path}"], text=True,
         stderr=subprocess.DEVNULL,
@@ -489,6 +492,64 @@ changed_ids = {
     identity for identity in set(before) | set(committed)
     if preimage_multiset_changed(before.get(identity, []), committed.get(identity))
 }
+if snapshot_ids_empty:
+    # Bulk dirty-finish reports do not identify one owned insight.  They still
+    # need a fail-closed delta check: only an automatic reflux producer may add
+    # a new record, and an existing record may only receive a known lifecycle
+    # update.  A bare sys.exit(0) here made every existing-entry edit look like
+    # harmless concurrent reflux and allowed the worker's result to be altered.
+    auto_source = lambda entry: (
+        entry.get("source") == "self_retro"
+        or entry.get("source") == "semantic_index_update"
+        or entry.get("source") == "gate_loop_health"
+        or str(entry.get("source") or "").startswith("cmd_complete_gate:")
+    )
+
+    # The bounded queue may only grow/rotate through a producer that is part of
+    # the reflux path.  indexed() already fail-closes malformed YAML, duplicate
+    # current/commit IDs, non-mapping entries, and missing IDs.
+    if set(committed) - set(current):
+        fail()
+    for identity in set(current) - set(committed):
+        entry = current[identity]
+        if not auto_source(entry) or not str(identity).startswith("INS-"):
+            fail()
+
+    allowed_resolution_fields = {"status", "resolved_reason", "action_artifact", "resolved_at"}
+    for identity in set(committed) & set(current):
+        committed_entry = committed[identity]
+        current_entry = current[identity]
+        if committed_entry == current_entry:
+            continue
+        changed = {
+            key for key in set(committed_entry) | set(current_entry)
+            if committed_entry.get(key) != current_entry.get(key)
+        }
+        # self_retro may refresh occurrence metadata after the report commit;
+        # the identity and producer marker remain stable.
+        if (
+            committed_entry.get("source") == "self_retro"
+            and current_entry.get("source") == "self_retro"
+            and changed
+            and changed <= {"occurrence_count", "last_seen"}
+        ):
+            continue
+        # Reflux resolution is a lifecycle transition, not permission to edit
+        # the insight body or arbitrary metadata.  Keep the source and ID
+        # stable and require pending -> resolved with only the four resolution
+        # fields changed.
+        if (
+            auto_source(committed_entry)
+            and auto_source(current_entry)
+            and committed_entry.get("source") == current_entry.get("source")
+            and committed_entry.get("status") == "pending"
+            and current_entry.get("status") == "resolved"
+            and changed
+            and changed <= allowed_resolution_fields
+        ):
+            continue
+        fail()
+    sys.exit(0)
 owned_ids = snapshot_ids & changed_ids
 if not owned_ids:
     fail()
@@ -544,6 +605,10 @@ for identity in owned_ids:
         # Absence from the live bounded queue is safe only when the archive
         # contains exactly one copy of the record written by the report commit.
         fail()
+# Non-owned IDs may change freely (reflux status transitions, new entries
+# added by concurrent workers).  Only owned_ids require identity preservation.
+# This prevents false BLOCK when reflux resolves a pending insight or adds
+# new entries between the worker's commit and the gate run.
 sys.exit(0)
 PY
         then

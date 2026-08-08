@@ -708,6 +708,143 @@ EOF
     [[ "$output" == *'filter_report_commit_nonoverlap_uncommitted'* ]]
 }
 
+_write_bulk_insights_fixture() {
+    local workdir="$1"
+    local report="$workdir/queue/reports/bulk_report.yaml"
+    mkdir -p "$workdir/queue/archive" "$workdir/queue/reports"
+    cat > "$workdir/queue/insights.yaml" <<'EOF'
+insights:
+  - id: INS-owned
+    insight: worker-owned baseline
+    priority: medium
+    source: manual
+    status: pending
+    ts: '2026-08-08T00:00:00+09:00'
+  - id: INS-retro
+    insight: self retro baseline
+    priority: low
+    source: self_retro
+    status: pending
+    occurrence_count: 1
+    last_seen: '2026-08-08T00:00:00+09:00'
+    ts: '2026-08-08T00:00:00+09:00'
+EOF
+    cp "$workdir/queue/insights.yaml" "$workdir/queue/archive/insights_archive.yaml"
+    git -C "$workdir" add queue/insights.yaml queue/archive/insights_archive.yaml
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m init
+    printf '%s\n' "$report"
+}
+
+_write_bulk_report() {
+    local report="$1"
+    local commit_hash="$2"
+    cat > "$report" <<EOF
+worker_id: saizo
+parent_cmd: cmd_karo_hotfix_insights_dirty_finish
+task_id: cmd_karo_hotfix_insights_dirty_finish_normal
+commit_hash: ${commit_hash}
+task_contract_snapshot:
+  acceptance_criteria:
+    - id: AC1
+      description: bulk queue integrity
+  task_id: cmd_karo_hotfix_insights_dirty_finish_normal
+reflux_commit_contract: null
+EOF
+}
+
+# test_necessity: bulk queue dirty-finish must retain only producer-owned reflux
+# additions and lifecycle metadata updates; otherwise report commit results can
+# be silently replaced by a concurrent writer.
+# regression_justification: the former snapshot_ids_empty sys.exit(0) accepted
+# every concurrent edit, including ordinary existing-entry mutations.
+@test "cmd_3264 bulk insights allows reflux new ID and lifecycle metadata refresh" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_bulk_valid_test"
+    local report
+    rm -rf "$workdir"
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$workdir/scripts/gates/gate_report_format.sh"
+    git -C "$workdir" init -q
+    report=$(_write_bulk_insights_fixture "$workdir")
+    python3 - "$workdir/queue/insights.yaml" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+data = yaml.safe_load(open(path, encoding='utf-8'))
+data['insights'][1]['occurrence_count'] = 2
+data['insights'][1]['last_seen'] = '2026-08-08T23:00:00+09:00'
+data['insights'].append({
+    'id': 'INS-auto', 'insight': 'automatic reflux entry', 'priority': 'low',
+    'source': 'cmd_complete_gate:l6_horizontal:cmd_bulk', 'status': 'pending',
+    'fix_known': False, 'ts': '2026-08-08T23:00:00+09:00'
+})
+with open(path, 'w', encoding='utf-8') as stream:
+    yaml.safe_dump(data, stream, allow_unicode=True, sort_keys=False)
+PY
+    git -C "$workdir" add queue/insights.yaml
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m cmd_bulk
+    local commit_hash
+    commit_hash=$(git -C "$workdir" rev-parse HEAD)
+    python3 - "$workdir/queue/insights.yaml" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+data = yaml.safe_load(open(path, encoding='utf-8'))
+data['insights'][1]['occurrence_count'] = 3
+data['insights'].append({
+    'id': 'INS-auto-2', 'insight': 'automatic reflux entry 2', 'priority': 'low',
+    'source': 'semantic_index_update', 'status': 'resolved',
+    'resolved_reason': 'absorbed', 'action_artifact': 'index',
+    'resolved_at': '2026-08-08T23:01:00+09:00', 'fix_known': False,
+    'ts': '2026-08-08T23:01:00+09:00'
+})
+with open(path, 'w', encoding='utf-8') as stream:
+    yaml.safe_dump(data, stream, allow_unicode=True, sort_keys=False)
+PY
+    _write_bulk_report "$report" "$commit_hash"
+
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
+        bash "$workdir/scripts/gates/gate_report_format.sh" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *' M queue/insights.yaml'* ]]
+}
+
+# test_necessity: an existing insight body mutation is not a reflux lifecycle
+# transition and must remain visible to the contamination gate.
+# regression_justification: reproduces the false-PASS path introduced when
+# bulk dirty-finish ownership checks were skipped.
+@test "cmd_3264 bulk insights blocks hostile existing-entry body mutation" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_bulk_hostile_test"
+    local report
+    rm -rf "$workdir"
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$workdir/scripts/gates/gate_report_format.sh"
+    git -C "$workdir" init -q
+    report=$(_write_bulk_insights_fixture "$workdir")
+    printf '\n# worker commit\n' >> "$workdir/queue/insights.yaml"
+    git -C "$workdir" add queue/insights.yaml
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m cmd_bulk
+    local commit_hash
+    commit_hash=$(git -C "$workdir" rev-parse HEAD)
+    python3 - "$workdir/queue/insights.yaml" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+data = yaml.safe_load(open(path, encoding='utf-8'))
+data['insights'][0]['insight'] = 'hostile body mutation'
+with open(path, 'w', encoding='utf-8') as stream:
+    yaml.safe_dump(data, stream, allow_unicode=True, sort_keys=False)
+PY
+    _write_bulk_report "$report" "$commit_hash"
+
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
+        bash "$workdir/scripts/gates/gate_report_format.sh" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *' M queue/insights.yaml'* ]]
+}
+
 # === Test 4: PASS_NO_IMPROVEMENT はゲートとしてexit 0 (PASSと同等) ===
 @test "PASS_NO_IMPROVEMENTのときゲートはexit 0を返す" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"
