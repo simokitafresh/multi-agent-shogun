@@ -508,8 +508,15 @@ if snapshot_ids_empty:
     # The bounded queue may only grow/rotate through a producer that is part of
     # the reflux path.  indexed() already fail-closes malformed YAML, duplicate
     # current/commit IDs, non-mapping entries, and missing IDs.
-    if set(committed) - set(current):
-        fail()
+    rotated_ids = set(committed) - set(current)
+    for identity in rotated_ids:
+        # A bounded queue may evict a committed record after the worker
+        # finishes.  Treat that as safe only when the archive contains exactly
+        # one byte-for-byte equivalent record; absence, duplication, or any
+        # field mutation remains visible as contamination.
+        archived = [entry for entry in archive_entries if entry.get("id") == identity]
+        if len(archived) != 1 or archived[0] != committed[identity]:
+            fail()
     for identity in set(current) - set(committed):
         entry = current[identity]
         if not auto_source(entry) or not str(identity).startswith("INS-"):

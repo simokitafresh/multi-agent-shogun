@@ -752,6 +752,143 @@ reflux_commit_contract: null
 EOF
 }
 
+_commit_bulk_owned_change() {
+    local workdir="$1"
+    python3 - "$workdir/queue/insights.yaml" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+data = yaml.safe_load(open(path, encoding='utf-8'))
+data['insights'][0]['insight'] = 'worker-owned committed update'
+with open(path, 'w', encoding='utf-8') as stream:
+    yaml.safe_dump(data, stream, allow_unicode=True, sort_keys=False)
+PY
+    git -C "$workdir" add queue/insights.yaml
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m cmd_bulk
+    git -C "$workdir" rev-parse HEAD
+}
+
+_rotate_bulk_owned_record() {
+    local workdir="$1"
+    local commit_hash="$2"
+    local mode="$3"
+    python3 - "$workdir" "$commit_hash" "$mode" <<'PY'
+import subprocess, sys, yaml
+workdir, commit_hash, mode = sys.argv[1:]
+commit = yaml.safe_load(subprocess.check_output(
+    ['git', '-C', workdir, 'show', f'{commit_hash}:queue/insights.yaml'], text=True
+))
+current_path = f'{workdir}/queue/insights.yaml'
+archive_path = f'{workdir}/queue/archive/insights_archive.yaml'
+current = yaml.safe_load(open(current_path, encoding='utf-8'))
+archive = yaml.safe_load(open(archive_path, encoding='utf-8'))
+owned = next(entry for entry in commit['insights'] if entry['id'] == 'INS-owned')
+current['insights'] = [entry for entry in current['insights'] if entry['id'] != 'INS-owned']
+archive['insights'] = [entry for entry in archive['insights'] if entry['id'] != 'INS-owned']
+if mode == 'exact':
+    archive['insights'].append(owned)
+elif mode == 'duplicate':
+    archive['insights'].extend([owned, dict(owned)])
+elif mode == 'mutated':
+    altered = dict(owned)
+    altered['insight'] = 'archive content mutation'
+    archive['insights'].append(altered)
+elif mode != 'missing':
+    raise SystemExit(f'unknown mode: {mode}')
+for path, data in ((current_path, current), (archive_path, archive)):
+    with open(path, 'w', encoding='utf-8') as stream:
+        yaml.safe_dump(data, stream, allow_unicode=True, sort_keys=False)
+PY
+}
+
+# test_necessity: bounded queue rotation is safe only when the committed
+# record is preserved exactly once in the archive.
+# regression_justification: reproduces the Saizo dirty-finish false BLOCK.
+@test "cmd_3264 bulk insights allows exact archive rotation" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_bulk_rotation_pass"
+    local report commit_hash
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$workdir/scripts/gates/gate_report_format.sh"
+    git -C "$workdir" init -q
+    report=$(_write_bulk_insights_fixture "$workdir")
+    commit_hash=$(_commit_bulk_owned_change "$workdir")
+    _rotate_bulk_owned_record "$workdir" "$commit_hash" exact
+    _write_bulk_report "$report" "$commit_hash"
+
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
+        bash "$workdir/scripts/gates/gate_report_format.sh" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *' M queue/insights.yaml'* ]]
+}
+
+# test_necessity: archive absence must not suppress a missing committed ID.
+# regression_justification: prevents rotation acceptance without durable copy.
+@test "cmd_3264 bulk insights blocks archive-missing rotation" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_bulk_rotation_missing"
+    local report commit_hash
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$workdir/scripts/gates/gate_report_format.sh"
+    git -C "$workdir" init -q
+    report=$(_write_bulk_insights_fixture "$workdir")
+    commit_hash=$(_commit_bulk_owned_change "$workdir")
+    _rotate_bulk_owned_record "$workdir" "$commit_hash" missing
+    _write_bulk_report "$report" "$commit_hash"
+
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
+        bash "$workdir/scripts/gates/gate_report_format.sh" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *' M queue/insights.yaml'* ]]
+}
+
+# test_necessity: duplicate archive IDs make exact-one preservation ambiguous.
+# regression_justification: prevents duplicate archival copies from clearing BLOCK.
+@test "cmd_3264 bulk insights blocks duplicate archive rotation" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_bulk_rotation_duplicate"
+    local report commit_hash
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$workdir/scripts/gates/gate_report_format.sh"
+    git -C "$workdir" init -q
+    report=$(_write_bulk_insights_fixture "$workdir")
+    commit_hash=$(_commit_bulk_owned_change "$workdir")
+    _rotate_bulk_owned_record "$workdir" "$commit_hash" duplicate
+    _write_bulk_report "$report" "$commit_hash"
+
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
+        bash "$workdir/scripts/gates/gate_report_format.sh" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *' M queue/insights.yaml'* ]]
+}
+
+# test_necessity: archived body mutation is not a bounded queue rotation.
+# regression_justification: prevents modified records from being accepted as copies.
+@test "cmd_3264 bulk insights blocks mutated archive rotation" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_bulk_rotation_mutated"
+    local report commit_hash
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$workdir/scripts/gates/gate_report_format.sh"
+    git -C "$workdir" init -q
+    report=$(_write_bulk_insights_fixture "$workdir")
+    commit_hash=$(_commit_bulk_owned_change "$workdir")
+    _rotate_bulk_owned_record "$workdir" "$commit_hash" mutated
+    _write_bulk_report "$report" "$commit_hash"
+
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
+        bash "$workdir/scripts/gates/gate_report_format.sh" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *' M queue/insights.yaml'* ]]
+}
+
 # test_necessity: bulk queue dirty-finish must retain only producer-owned reflux
 # additions and lifecycle metadata updates; otherwise report commit results can
 # be silently replaced by a concurrent writer.
