@@ -1,7 +1,7 @@
 <!-- gist-master: 574b417f1d1377c59b64c4d88f9d4bc5 dm-signal-5metrics-selection-v0_20260808.md -->
-# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.4
+# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.5
 
-- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老レビュー所見8件反映(18:25)
+- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老所見8件+軍師所見B反映(18:25) / v0.5: 家老再レビューBLOCK4件反映(18:30)
 - **現況: 設計フェーズ(殿指示18:17「まだ起票しない。設計のみ」)。P1起票は殿の別途下知まで行わない**
 - 仕様正本(殿原文・改変禁止): `docs/research/dm-signal-5metrics-v0-original_20260808.md`(gist dae809c3)
 - 本書の位置づけ: 殿v0仕様を正とし、DM-Signalへの実装工程・AC・検証契約を定義する。**仕様の変更は殿裁定のみ**。指標定義の解釈が原文と食い違う場合は常に原文が勝つ。
@@ -32,7 +32,7 @@
 | 102PFの列挙 | `portfolios`テーブル `is_active == True`(models.py:77-99)。102本の整合チェック前例=`scripts/oneshot/cmd_3785_execute_pf_replacement.py:440` |
 | layer | **DB列ではない**。PF名プレフィックス判定: `scripts/oneshot/cmd_3225_layer_managed_vol.py:22-33 classify_layer()`(シン/ノンレバレッジシン→L0_四神、GSシン→L1_忍法、奥義-GS-/秘奥義→L3_奥義、他→L2_スタンダード)。出力Schemaの`layer`列はこの関数を流用して埋める |
 | Benchmark | PFごとに`portfolios.config["benchmark_ticker"]`、未指定はSPY(`constants.py:33`)。ベンチ月次リターンは`monthly_returns.benchmark_return`にPF行と同居 |
-| Risk-Free | DTB3(`constants.py:34`)。`economic_indicators`テーブル(models.py:46-54、年率値)。月次化は`metrics_impl.py:219-222`の日次複利→月次複利方式を**正**とする(`risk_metrics.py:67/80`の年率/12単純除算は別系統であり不採用。→§4) |
+| Risk-Free | DTB3(`constants.py:34`)。`economic_indicators`テーブル(models.py:46-54、年率値)。**RF契約(家老BLOCK①で一本化)**: ACSのRFは`metrics_impl.py`の**現物挙動を忠実に複製**する(load_monthly_as_dfの月末index化L233-257→DTB3 join→L217-228のresample連鎖の実装をそのまま関数呼出しまたは同一コードパスで再現し、既存Alphaとの突合はbit一致水準=相対誤差1e-9を要求)。「理論的に正しい日次複利→月次複利RF」への是正は行わない。理由: ACSの目的は既存Alphaの時間的一貫性測定(殿裁定§6-2と同一原理)であり、RF算出だけ別実装にすると冗長性測定が歪む。既存RF算出自体の理論的是正は本実験のスコープ外(必要なら別件)。`risk_metrics.py:67/80`の年率/12単純除算は不採用 |
 | ★PITの構造制約 | `monthly_returns`は毎ETLで**当該portfolio_idの全履歴をDELETE→再INSERT**(`jobs/generators/monthly_returns.py:692`はPF単位の置換。テーブル全体の一括削除ではない)。vintage/as_of列なし。∴「当時に観測された値」の復元は構造的に不可能 |
 
 ### §3.1 PITの定義(本実験における)
@@ -56,7 +56,7 @@
 1. **PIT絶対**(原文§13): §3.1の定義でas-of切断。禁止6項は自動Quality Check(原文§16)+lookahead検査(§7 P2)でFAILさせる。
 2. **最適化禁止**(§1.2/§18): Weight合成・パラメータ探索・Layer別定義・Threshold探索・Best Lookback/Horizon選択を実装しない。コードに最適化フックを作らない。
 3. **NULL契約**: MAD=0→NULL(RRR/ACS)、mu<=0→NULL(ECR)、history<36M→NULL(RRR/ACS)。特殊値・Infinity・符号反転Raw値を作らない。**NULL reason code必須(殿裁定2026-08-08 18:15)**: 出力Schemaに`rrr_null_reason`/`acs_null_reason`列(値=`INSUFFICIENT_HISTORY`/`INSUFFICIENT_WINDOWS`/`ZERO_MAD`/`INVALID_INPUT`、非NULL時は空)と、`ecr_null_reason`列(値=`NON_POSITIVE_MEAN`(mu<=0)/`INVALID_INPUT`(欠損・非有限入力)、家老所見⑥で追加)を設ける。RRSは`rrs_null_reason`列(値=`NO_REGIME_SAMPLE`(いずれかのregimeが未出現)/`INVALID_INPUT`)。データ不足・計算不能・極端に安定(ZERO_MAD)を区別可能にする。指標定義・式・Thresholdの変更ではなく解析不能理由の保存のみ。
-3b. **RRS Reliability Flag(原文§5.7、家老所見③で復元)**: Schemaに`rrs_min_regime_n`(=min(n_up, n_side, n_down)の生値)と`rrs_reliability_flag`を追加。フラグの機械基準=`min_regime_n == 0`のとき`NO_SAMPLE`(このときRRS=NULL・reason=NO_REGIME_SAMPLE)。それ以外は空とし「極端に少ない」の程度判断は生値`rrs_min_regime_n`の併記で読み手に委ねる(恣意的閾値を作らない=原文§5.7「Thresholdによる除外はしない」と整合)。
+3b. **RRS Reliability Flag(原文§5.7、家老所見③で復元・BLOCK②で基準確定)**: Schemaに`rrs_min_regime_n`(=min(n_up, n_side, n_down)の生値)と`rrs_reliability_flag`を追加。フラグの機械基準(事前固定・実験開始後の変更禁止): `min_regime_n == 0`→`NO_SAMPLE`(RRS=NULL・reason=NO_REGIME_SAMPLE) / `0 < min_regime_n < 12`→`LOW_SAMPLE`(RRSは計算し表示のみ。12ヶ月=年率統計の最小慣行を事前固定基準として採用) / それ以外→空。**除外には一切使わない**(原文§5.7「Thresholdによる除外はしない」)。
 4. **方向統一はRank層のみ**(§1.3): Raw値は元の意味を保持。DDAはRank時ascending。
 5. **既存定義の再利用**: §4の表の通り既存実装と同一演算・同一パラメータを使う。**新定義を作らない**。唯一の例外はRegimeのPIT化(§6-1の裁定事項)。
 6. **パラメータ空間縮小禁止**(殿厳命2026-04-04): 102PF全量(is_active=True)・利用可能全月・Forward horizonはt+1/t+3/t+6/t+12全量(t+1先行可、ただし残りを切り捨てず同一ランナーで継続。Multiple Horizonは別Experimentとして明示=原文§9.4)。
@@ -75,9 +75,9 @@
 | Phase | 内容 | 完了条件(二値) | 起票cmd(起票時に実番号記入=予約禁止LS-A04(46)) |
 |-------|------|----------------|------|
 | ~~P0偵察~~ | **完了(2026-08-08 v0.2調査)**: 既存実装・データ経路・PF列挙・出力慣行を§3-§4に確定 | 済 | (本書調査で代替) |
-| P1 | **計算実装**: `scripts/analysis/`に5指標計算モジュール+出力Schema(原文§15全列+§5-3/3bの追加列+layer=classify_layer流用)+Quality Check(原文§16)の自動テスト。単一時点t(直近確定月末)での102PF計算 | 原文§15全列+追加列出力+§16全チェックPASS+**既存値突合の二値定義(家老所見⑤)**: 同一入力から再計算した全期間版Alpha/VDrag/MDD/AvgUWPと`portfolio_metrics.metrics_json`現物値の相対誤差が全PF・全4指標で1e-9以下(分母0時は絶対誤差1e-12以下)、**不一致0件**+**DB read-only検証(軍師所見B)**: 実行ログ上でINSERT/UPDATE/DELETE文の発行が0件であることを機械確認 | (未起票) |
+| P1 | **計算実装**: `scripts/analysis/`に5指標計算モジュール+出力Schema(原文§15全列+§5-3/3bの追加列+layer=classify_layer流用)+Quality Check(原文§16)の自動テスト。単一時点t(直近確定月末)での102PF計算 | 原文§15全列+追加列出力+§16全チェックPASS+**既存値突合の二値定義(家老所見⑤)**: 同一入力から再計算した全期間版Alpha/VDrag/MDD/AvgUWPと`portfolio_metrics.metrics_json`現物値の相対誤差が全PF・全4指標で1e-9以下(分母0時は絶対誤差1e-12以下)、**不一致0件**+**DB read-only検証(軍師所見B)**: 実行ログ上でINSERT/UPDATE/DELETE文の発行が0件であることを機械確認。突合の同値規則(家老追加確認): 両側NULLは一致、片側NULLまたはmetrics_json側のkey欠落は不一致として計数し理由を記録 | (未起票) |
 | P2 | **PIT時系列生成**: 各月末t×102PF(is_active=True)の5指標を全履歴分生成。出力=`outputs/analysis/`にCSV+meta.yaml+SQLite(`gs_sqlite_output.py`慣行)+DATA_CATALOG追記。**lookahead検査は全月×全102PF(家老所見④: サンプル月方式は探索縮小禁止に反するため全量へ)**: 入力系列をt月で物理切断した再計算値と、全履歴上でas-of計算したt時点値の完全一致を全(t, PF)組で機械検証 | 全月×102PF出力存在+lookahead検査**全組PASS(不一致0件)**+NULL契約通りのNULL分布記録(reason code別集計)+MTD最終行除外の証跡 | (未起票) |
-| P3 | **評価**: 原文§9.4 Forward Evaluation(t+1/3/6/12)+§10 Benchmark Rules(Control A-F vs Experimental G-K)+§11評価7項目+§12冗長性RankCorr 12ペア(比較相手は§4の通りmetrics_impl側の値) | §11の7出力+§12の12ペアRankCorr表が再現可能スクリプトで生成+§9(原文§17)観察項目の報告 | (未起票) |
+| P3 | **評価**: 原文§9.4 Forward Evaluation(t+1/3/6/12)+§10 Benchmark Rules(Control A-F vs Experimental G-K)+§11評価7項目+§12冗長性RankCorr 12ペア(比較相手は§4の通りmetrics_impl側の値)。**Forward cohort契約(家老BLOCK③)**: 各horizon hの評価cohortは「tで指標が非NULL かつ t+1〜t+hの全月にPF・benchmark両方の月次Close確定値が存在する(t, PF)組」のみ。末尾censor(t+hが未来)・inception欠損・指標NULLは評価から除くが、**月×horizon別の欠落理由集計(censored/inception_gap/metric_null別の件数)と期待行数(有効PF数×有効月数)vs実行数の照合**を必須出力とする。**Cross-sectional Rank契約(家老BLOCK④)**: rank対象=当月の指標非NULL PFのみ(NULL除外)、tie method=average、方向=原文§9.3(DDAのみascending)、月ごとの有効PF数`n_ranked`を全出力行に併記。RankCorrはSpearman(scipy.stats.spearmanr、tie=average前提) | §11の7出力+§12の12ペアRankCorr表が再現可能スクリプトで生成+cohort契約の照合(期待vs実行数、差分が欠落理由集計で全件説明され残差0件)+§9(原文§17)観察項目の報告 | (未起票) |
 
 - P1→P2→P3直列。P3はP2出力に対する読み取り専用。各Phase=1cmd原則。
 - v0は本番DB**読み取りのみ**・書込みは`outputs/`研究層のみ。本番DBへのINSERT/UPDATEは一切行わない(∴バックアップ対象外だが、DB接続はread-onlyクエリに限定することをACに含める)。
@@ -118,3 +118,4 @@
 | 2026-08-08 18:17 | 殿指示「まだ起票しない。設計のみ」→P1起票保留。家老+軍師へレビュー依頼 |
 | 2026-08-08 18:25 | 家老レビューREVISE所見8件→v0.4反映: ①ヘッダの起票状態矛盾解消 ②Primary=複利リターン差と定義 ③RRS Reliability Flag復元(§5-3b) ④P2 lookahead検査を全月×全PFへ ⑤P1突合ACを相対誤差1e-9・不一致0件で二値化 ⑥ecr_null_reason追加 ⑦Regime行番号をL106-122/L132へ訂正 ⑧monthly_returns置換をPF単位と明記。再レビューへ |
 | 2026-08-08 18:22 | 軍師レビューAPPROVE+所見6件(A=lookahead全量化は家老④と同一でv0.4反映済/B=P1にDB read-only検証AC追加→反映/C-F=問題なし確認)。v0.4に(B)を追加反映 |
+| 2026-08-08 18:30 | 家老再レビューREVISE(新規BLOCK4件)→v0.5反映: ①RF契約を現物挙動複製に一本化(§6-2裁定と同一原理で将軍裁定) ②LOW_SAMPLE事前固定基準(0<min_n<12、表示のみ)追加 ③P3 forward cohort契約(欠落理由集計+期待vs実行照合) ④Cross-sectional Rank契約(tie=average/NULL除外/n_ranked併記)。+P1突合のNULL同値規則。再々レビューへ |
