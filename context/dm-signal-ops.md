@@ -78,7 +78,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L1544 -->
+<!-- last_synced_lesson: L1547 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -104,6 +104,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L1542: 0件保全ガードは上流cleanupのcommit後では既存行を保全できない（cmd_karo_recon2_atomic_recalc_design_saizo_20260803）
 - L1543: template対clone parityだけでは現HEAD schema driftを検出できない（cmd_karo_recon2_b4_schema_divergence_tobisaru_20260803）
 - L1544: raw cache失効と再生成は同一契約で強制する（cmd_4239）
+- L1547: SIGNAL CHANGE ALERTはrun起因(cron/デプロイ検証/ledger未確定域)を判別できず毎回フル偵察を要する（cmd_4243）
 
 ## §36 API認証
 - admin系API: Basic Auth(`ADMIN_API_KEY`)
@@ -1097,3 +1098,5 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - run 226は920秒でcompleted。`monthly_returns` 16,874行・102/102 PF、5Y欠落0/102、負geometric mean 0/102、metrics 204/204へ復旧。raceは`8d994f35`の原子UPSERTでRender反映済み。
 ## §87 Monthly生成のlogical date運用境界 (2026-08-04)
 - `50002dc6`,`4c1cac7f`,`274062e4`,`9a27eb4f`: runの`end_date`をMonthlyの時計とし最新営業日へclamp。未価格未来月/初回有効holding前はskip、開始後欠落はfail-closed。詳細→`/mnt/c/Python_app/DM-signal/docs/research/dm-monthly-trade-bug-genko-chain-archive_20260803.md`
+## §88 cmd_4243 SIGNAL CHANGE ALERT 08-01〜08-06偵察 (2026-08-09)
+- 08-05/08-07/08-09の3警報(count=3/15/48)305行は全件recalculation_status+git commit+signal_decision_ledgerの相関で正常確定更新と判定(異常書換え0)。08-03=cmd_4224(ledger境界失効)デプロイ検証recalc、08-08=cmd_4241(L5 regen)デプロイ検証portfolio recalc(ledger未確定域につきPI-P06非抵触)。判定手法・run対応表→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4243_signal_alert_recon_20260809.md`
