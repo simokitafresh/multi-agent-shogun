@@ -1105,3 +1105,5 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - mode='full'(run226/230)で復元した全履歴monthly_returnsが、その後のmode='portfolio'実行(run227/228/229)のたびに2022-10以降だけへ切り詰められる退行を実測確認(DM2/DM3/basicデュアルモメンタム等で完全履歴→47行/2022-10始まりへ縮小→run230で再復元を直接観測)。真因=`monthly_returns.py:692`のPF単位DELETE→INSERTが「狭い計算結果での広い既存履歴の上書き」を防いでいない(0件生成時のみガード)。秘奥義-抜き身-激攻の完全ゼロ行も同一メカニズムの極端ケース。y5リターン欠落は調査時点で102/102PF・y3は50/102PFに達した。暫定対策=mode='full'のみ本番実行、恒久対策=692行のガード拡張。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4244_compare_na_recon_20260809.md`
 ## §90 トラブル時の第一容疑=fullrecalculate忘れ・mode違い (殿裁定2026-08-09 03:03)
 - 何かトラブル・エラー・データ不整合(N/A表示・計算されていないPF・履歴欠落)を見たら、第一容疑として直近コード変更後のfullrecalculate忘れとmode違い(portfolio≠full)を疑い、`recalculation_status`のmode・時刻をDBで確認する。§89の系統的退行が実証例。機構化・自動実行は禁止(殿裁定: 意思依存にならぬようsemantic-map aliasで本則が自動注入される)。
+## §91 月次リターン基本原理の現物境界 (cmd_4246, 2026-08-09)
+- `MonthlyReturn`は確定/MTDの値を保存するがstatus/provenanceを持たず、価格未到着新月はMonthly Returns APIでは欠落（全rowなしは404）、Monthly Tradeだけが動的`is_pending=true`を返す。`historical_backfill`は同じledger resolver候補へ流入するため、履歴修復・通常計算・pending/confirmed lifecycleを分離する設計検討が必要。詳細→`docs/research/cmd_4246_monthly_return_principles_recon_20260809.md`
