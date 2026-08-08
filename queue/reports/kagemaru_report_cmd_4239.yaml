@@ -1,0 +1,242 @@
+worker_id: kagemaru
+report_id: rpt-caf772ff-bb66-438d-845c-e12f1623556a
+report_identity_version: 2
+task_id: cmd_4239_full
+parent_cmd: cmd_4239
+task_type: full
+timestamp: '2026-08-08T22:20:00+09:00'
+status: failed
+ac_version_read: af94db90
+task_contract_snapshot:
+  ac_fingerprint: af94db90
+  acceptance_criteria:
+  - checks:
+    - check: キャッシュの失効経路と再生成経路の現物を全列挙し(invalidate呼出し箇所・再生成トリガーの種別と起動条件をファイルと行番号引用で)、報告YAMLに記載して引用行の実在をrgで確認する
+    description: キャッシュの失効経路と再生成経路の現物を全列挙し(invalidate呼出し箇所・再生成トリガーの種別と起動条件をファイルと行番号引用で)、報告YAMLに記載して引用行の実在をrgで確認する
+    id: AC1
+  - checks:
+    - check: 今回の失効イベントの時系列を一次データで復元し(precomputed_rawテーブルのcomputed_at、recalculation_status、関連ログの現物)、失効時刻から復旧時刻までの空白期間と、その間に再生成が起動しなかった理由を報告YAMLへ記載して確認する
+    description: 今回の失効イベントの時系列を一次データで復元し(precomputed_rawテーブルのcomputed_at、recalculation_status、関連ログの現物)、失効時刻から復旧時刻までの空白期間と、その間に再生成が起動しなかった理由を報告YAMLへ記載して確認する
+    id: AC2
+  - checks:
+    - check: 偵察5要件(修正候補ファイルと行番号・波及先・関連テスト有無と修正要否・エッジケース副作用・依存順序制約)を報告YAMLに全件記載し、修正方針の選択肢を根拠付きで確認する
+    description: 偵察5要件(修正候補ファイルと行番号・波及先・関連テスト有無と修正要否・エッジケース副作用・依存順序制約)を報告YAMLに全件記載し、修正方針の選択肢を根拠付きで確認する
+    id: AC3
+  issued_cmd_id: cmd_4239
+  parent_cmd: cmd_4239
+  project: dm-signal
+  purpose: 殿指示2026-08-08 22:01「(キャッシュ自動再生成が走らなかった理由の深掘り)を行おう」。本番compare summaryページが表示不能となった事象について、metrics
+    summary一括キャッシュの失効から手動呼出しによる復旧までの間、自動再生成が走らなかった構造的理由を現物とDB痕跡で特定する
+  reflux_commit_contract: null
+  task_id: cmd_4239_full
+reflux_commit_contract: null
+result:
+  summary: AC1とAC3は現物コード・行番号・関連テストで確認済み。AC2は本番readonly DB launcherがGuard14の正規launcher免除誤判定で拒否され、precomputed_raw.computed_atの直接照会を完了できないためFAIL。公開sync-statusではL5最終成功が2026-08-08T01:16:13Z、L3最終成功が2026-08-07T11:33:01Zで、失効後のL5自動起動がないことを補強する。
+  details: 'AC1: invalidate_precomputed_rawの汎用削除(backend/app/jobs/precompute_raw.py:414-433)、metrics
+    cache更新後(backend/app/api/metrics.py:157-164)、PortfolioMetrics生成後(backend/app/jobs/generators/portfolio_metrics.py:70-78)、metadata-only保存後(backend/app/api/portfolios.py:334-344)、L5再生成前のbulk置換(backend/app/jobs/precompute_raw.py:458-487)を列挙。再生成はL5明示API(backend/app/api/etl_trigger.py:723-750)、FoF同期成功後のenqueue(同:644-648)、recalculate_fast内L5呼出し(backend/app/jobs/recalculate_fast.py:3242-3260)のみ。
+
+    AC2: 本番API /admin/sync-status を2026-08-08T22:12:47+09:00にreadonly GETし、L2=2026-08-08T01:16:13Z、L3=2026-08-07T11:33:01Z、L5=2026-08-08T01:16:13Z、L5
+    rows=363、last_error=null、recalculate-status running=falseを確認。DB直接launcherはGuard14
+    BLOCKのためprecomputed_raw/recalculation_status行の直接取得は未完了。失効時刻は将軍一次実測の2026-08-08
+    21:56頃、復旧確認は22:01頃として空白約5分。コード上、metrics summary GETのraw miss分岐は通常計算とPortfolioMetrics
+    upsertのみ(backend/app/api/metrics.py:520-560)で、bulk raw再生成を行わない。
+
+    AC3: 修正候補は(1)共通invalidationからL5をdedup付き非同期enqueueする案、(2)summary raw miss時にlazy
+    rebuildする案、(3)旧raw保持+stale-while-revalidate案。波及先はetl_trigger.pyのL5 lock/status、precompute_raw.pyのreplace/commit、metrics.pyのGET内commit、portfolio_metrics.pyとportfolios.pyの既存呼出し、関連契約テスト。最小実装は(1)だが、同時更新の重複enqueue・失効前commit・L5失敗時の空白を追加契約で防ぐ必要がある。'
+purpose_validation:
+  cmd_purpose: 本番compare summaryの一括raw cache失効から復旧までに自動再生成が起動しなかった構造的理由を、現物コードと本番一次状態で特定する。
+  fit: true
+  purpose_gap: AC2のprecomputed_raw.computed_atとrecalculation_statusの直接DB証跡だけ、Guard14の正規launcher誤BLOCKにより未取得。公開APIと現物コードで代替証跡を記録した。
+simplicity_check: 変更は行わず、既存のinvalidation/rebuild境界とL5スケジューラを現物照合した。推測で実装案を確定せず、候補を3案に分離した。
+assumption_check: 将軍のコールド106秒/キャッシュ3秒の実測はtrust:verifiedとして受領したが、現HEADのsummary GET
+  fallbackにはbulk raw upsertがないため、手動GET自体がrawを再生成したという解釈はDB行で再確認が必要。
+task_clarity:
+  score: 5
+  unclear_points: 失効を発生させた本番操作の正確なendpointとRender application log、precomputed_rawの失効直前/直後computed_atはDB
+    launcher復旧後に補完が必要。
+  discretion_fills: 再実装は行わず、修正候補と必要契約の提示までを今回の偵察成果とした。
+status_detail: AC1/AC3はPASS相当、AC2は本番DB一次証跡不足でFAIL。Guard14の正規launcher免除誤判定が外部阻害。
+test_triage: '直接実行: test_metrics_summary_bulk_raw_hit_bypasses_loop_builders PASS、test_metrics_summary_stale_bulk_raw_falls_back_to_loop
+  PASS、test_metrics_update_invalidates_metrics_summary_bulk_raw PASS。標準 bash scripts/run_tests.sh
+  task queue/tasks/kagemaru.yaml は external_scope_no_mapped_tests のためBLOCK(コードFAIL/SKIPではない)。関連契約テストは
+  test_contract_portfolios_admin.py:134-164 と test_metrics_summary_additional_benchmarks.py:337-544
+  に存在する。'
+causal_verification:
+  cause_checked: true
+  design_intent_checked: true
+  evidence: 現物コードのinvalidation呼出し・L5 enqueue条件・summary GET fallbackと、2026-08-08T22:12:47+09:00のsync-status/recalculate-status
+    API一次応答を照合した。L3成功後だけL5をenqueueする構造に対し、当日L3成功が未確認。
+  origin: '[[cmd_4239]] -> [[metrics_summary_bulk失効]] -> [[L3成功後のみL5起動]] -> [[手動復旧まで空白]]'
+commit_contract:
+  required: true
+  reason: implementation_path_present
+  task_type: full
+  planned_paths:
+  - /mnt/c/Python_app/DM-signal
+  repo_root: /mnt/c/Python_app/DM-signal
+cross_repo_commits:
+- repo: /mnt/c/Python_app/DM-signal
+  commit_hash: ''
+  paths:
+  - /mnt/c/Python_app/DM-signal
+ac_evidence_mapping:
+  AC1: 'invalidate_precomputed_raw: precompute_raw.py:414-433; metrics cache更新: metrics.py:157-164;
+    PortfolioMetrics生成: generators/portfolio_metrics.py:70-78; metadata-only保存: portfolios.py:334-344;
+    bulk再生成: precompute_raw.py:436-513; explicit/sync-fof/recalculate triggers: etl_trigger.py:644-648,723-750
+    and recalculate_fast.py:3242-3260. rg実行で全引用行の存在を確認。'
+  AC2: 'API一次応答取得時刻2026-08-08T22:12:47+09:00: L2 last_success_at=2026-08-08T01:16:13.382571Z、L3=2026-08-07T11:33:01.772126Z、L5=2026-08-08T01:16:13.100652Z
+    rows=363 last_error=null; recalculate-status running=false. precomputed_raw.computed_atとDB
+    recalculation_statusの直接行はGuard14 BLOCKで未取得。'
+  AC3: 修正候補3案、波及先5箇所、関連テスト4群、エッジケース(重複enqueue/同時GET/失効前commit/L5失敗)、依存順序(L2/L3成功→L5、raw
+    replace→commit)を記載。
+semantic_validation:
+  classification_axis: invalidation(削除) / regeneration(L5生成) / serving(GET hit/fallback)
+    / observation(status DB/API)の4層に分類した。
+  recount: invalidate呼出し5系統、再生成トリガー3系統、fallback 1系統、関連テスト4系統を再集計。
+  actual: source rgとnl -baで全対象行を照合し、直接テスト3件を実行して3/3 PASS。
+  result: 分類軸と再集計件数が一致。DB直接行のみGuard14 BLOCKで未完。
+files_modified:
+- path: queue/reports/kagemaru_report_cmd_4239.yaml
+  change: 本cmdの現物コード・本番API状態・AC証跡を報告YAMLへ記録した。DM-Signalコードは変更していない。
+lesson_candidate:
+  found: true
+  no_lesson_reason: ''
+  title: raw cache失効と再生成は同一契約で強制する
+  detail: invalidate_precomputed_rawはDB行を削除するが、metrics summary更新経路からL5 enqueueへ接続していない。削除側の成功だけで復旧を完了と扱わず、失効イベントごとにdedup済み再生成起動とcomputed_at確認を同一契約へ組み込むべきである。
+  project: dm-signal
+  origin: '[[cmd_4239]] -> [[metrics_summary_bulk失効]] -> [[L5自動起動欠落]] -> [[空白期間]]'
+lessons_useful:
+- id: L098
+  useful: false
+  reason: SVMF fallbackのtarget_date問題は今回のmetrics summary raw cache失効経路に該当しない。
+- id: L085
+  useful: true
+  reason: 削除対象の依存範囲を列挙する観点が、bulk raw削除と再生成の波及範囲確認に有用だった。
+- id: L075
+  useful: false
+  reason: 新規PFの月次return生成契約であり、今回の既存summary bulk rawの失効トリガーとは別問題。
+- id: L054
+  useful: false
+  reason: nukimi戦略ロジック差分は今回のcache scheduler調査に無関係。
+- id: L044
+  useful: false
+  reason: nukimi skip_months固有の高速化知見で今回のcache経路には適用しない。
+- id: L043
+  useful: false
+  reason: kawarimi tie-breakの性能差は今回のinvalidation/rebuild契約に無関係。
+- id: L032
+  useful: false
+  reason: tuple化による後続データ型問題は今回のDB/API cache調査に無関係。
+- id: L019
+  useful: false
+  reason: acceleration_resultsの決定性問題は今回のmetrics summary cache失効とは無関係。
+memory_references:
+- id: MEM001
+  source: semantic_search
+  query: 殿指示2026-08-08 22:01「(キャッシュ自動再生成が走らなかった理由の深掘り)を行おう」。本番compare summaryページが表示不能となった事象について、metrics
+    summary一括キャッシュの失効から手動呼出しによる復旧までの間、自動再生成が走らなかった構造的理由を現物とDB痕跡で特定する
+  summary: 'matched: recalculation_status'
+  used: false
+  useful: false
+  reason: ''
+- id: MEM002
+  source: semantic_search
+  query: 殿指示2026-08-08 22:01「(キャッシュ自動再生成が走らなかった理由の深掘り)を行おう」。本番compare summaryページが表示不能となった事象について、metrics
+    summary一括キャッシュの失効から手動呼出しによる復旧までの間、自動再生成が走らなかった構造的理由を現物とDB痕跡で特定する
+  summary: '- file: `/mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py`'
+  used: false
+  useful: false
+  reason: ''
+- id: MEM003
+  source: semantic_search
+  query: 殿指示2026-08-08 22:01「(キャッシュ自動再生成が走らなかった理由の深掘り)を行おう」。本番compare summaryページが表示不能となった事象について、metrics
+    summary一括キャッシュの失効から手動呼出しによる復旧までの間、自動再生成が走らなかった構造的理由を現物とDB痕跡で特定する
+  summary: '- file: `docs/research/gunshi_precompute_L5_parallel_design_v1.3_20260711.md`'
+  used: false
+  useful: false
+  reason: ''
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  detail: 次cmdで、失効時にL5を非同期enqueueするか、stale-while-revalidateで旧rawを保持するかを選ぶ必要がある。今回の偵察では選択しない。
+knowledge_candidate:
+  found: true
+  items:
+  - fact: metrics summary bulk rawの生成paramsはyears=0とyears=10の2行で、GET fallbackはbulk
+      rawをupsertしない。
+    source: backend/app/jobs/precompute_raw.py:104,458-487; backend/app/api/metrics.py:477-560
+  - fact: 本番sync-statusの2026-08-08T22:12:47+09:00応答でL5最終成功は2026-08-08T01:16:13.100652Z、L3最終成功は2026-08-07T11:33:01.772126Zだった。
+    source: GET https://dm-signal-backend.onrender.com/admin/sync-status (Basic Auth,
+      2026-08-08T22:12:47+09:00)
+  origin: '[[metrics_summary_bulk]] -> [[L5 precompute]] -> [[sync-fof enqueue]]'
+assumption_invalidation:
+  found: true
+  affected_cmds:
+  - cmd_4239
+  detail: 「手動metrics summary GETがcacheを再生成した」という解釈は現HEADコードのbulk miss分岐と一致しない。GETはraw
+    hitなら返すが、miss時は通常計算とPortfolioMetrics upsertを行い、bulk raw builderを呼ばない。production
+    DBのcomputed_at直接確認が必要。
+hook_failures:
+  count: 1
+  details:
+    cause: Guard14の正規db_capability_launcher免除判定が--capability等のflag値を実行operandと誤認しconnection:untrustedを返した。
+    independent_verification: guard14_db_trust_classify.py:695-737のoperand走査と同一正規launcherコマンド2回の再実行で再現。
+    bypass_record: DB接続を迂回せず、production status APIと現物コード確認へ限定した。
+    post_verification: API status GETと直接テスト3件を実施。
+    post_verification_result: all_pass
+    post_verification_head: 373145ab6c12
+post_deploy_evidence:
+  required: false
+  deploy_live_at: ''
+  evidence_run_start_at: ''
+  evidence_run_completed_at: ''
+  run_completed: false
+  source: ''
+operational_simulation:
+  command: ADMIN_USER=$(grep -m1 '^ADMIN_USER=' backend/.env | cut -d= -f2-); ADMIN_PASS=$(grep
+    -m1 '^ADMIN_PASS=' backend/.env | cut -d= -f2-); curl -sS --max-time 30 -u "$ADMIN_USER:$ADMIN_PASS"
+    https://dm-signal-backend.onrender.com/admin/sync-status; curl -sS --max-time
+    30 -u "$ADMIN_USER:$ADMIN_PASS" https://dm-signal-backend.onrender.com/admin/recalculate-status
+  expected: HTTP success JSON with L5/L3 layer timestamps and recalculation running
+    state; no write operation.
+  actual: sync-status success=true; L5 rows_processed=363, last_success_at=2026-08-08T01:16:13.100652Z,
+    L3 last_success_at=2026-08-07T11:33:01.772126Z, last_error=null; recalculate-status
+    success=true,running=false.
+  result: PASS
+binary_checks:
+  AC1:
+  - check: キャッシュの失効経路と再生成経路の現物を全列挙し(invalidate呼出し箇所・再生成トリガーの種別と起動条件をファイルと行番号引用で)、報告YAMLに記載して引用行の実在をrgで確認する
+    result: 'yes'
+  AC2:
+  - check: 今回の失効イベントの時系列を一次データで復元し(precomputed_rawテーブルのcomputed_at、recalculation_status、関連ログの現物)、失効時刻から復旧時刻までの空白期間と、その間に再生成が起動しなかった理由を報告YAMLへ記載して確認する
+    result: 'no'
+  AC3:
+  - check: 偵察5要件(修正候補ファイルと行番号・波及先・関連テスト有無と修正要否・エッジケース副作用・依存順序制約)を報告YAMLに全件記載し、修正方針の選択肢を根拠付きで確認する
+    result: 'yes'
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'no'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: FAIL
+verdict: FAIL
+parent_ac_coverage:
+- AC1
+- AC2
+- AC3
+parent_contract_fingerprint: 3a958df2d1f48034
+commit_hash: 373145ab6c129bc6524593d899d9da9073b4d760
+test_results:
+  command: ADMIN_USER=$(grep -m1 '^ADMIN_USER=' backend/.env | cut -d= -f2-); ADMIN_PASS=$(grep
+    -m1 '^ADMIN_PASS=' backend/.env | cut -d= -f2-); curl -sS --max-time 30 -u "$ADMIN_USER:$ADMIN_PASS"
+    https://dm-signal-backend.onrender.com/admin/sync-status; curl -sS --max-time
+    30 -u "$ADMIN_USER:$ADMIN_PASS" https://dm-signal-backend.onrender.com/admin/recalculate-status
+  expected: HTTP success JSON with L5/L3 layer timestamps and recalculation running
+    state; no write operation.
+  actual: sync-status success=true; L5 rows_processed=363, last_success_at=2026-08-08T01:16:13.100652Z,
+    L3 last_success_at=2026-08-07T11:33:01.772126Z, last_error=null; recalculate-status
+    success=true,running=false.
+  result: PASS
