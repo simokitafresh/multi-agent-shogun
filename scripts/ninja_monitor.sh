@@ -1167,6 +1167,7 @@ declare -A STALL_NOTIFIED    # 停滞通知時刻（epoch秒）— key: "ninja:t
 declare -A ACTIVE_STALL_FIRST_SEEN  # activeペイン静止の初回観測時刻 — key: "ninja:task_id"
 declare -A ACTIVE_STALL_PANE_FP     # activeペイン静止の表示fingerprint — key: "ninja:task_id"
 declare -A ACTIVE_STALL_NOTIFIED    # activeペイン静止の家老通知済み世代 — key: "ninja:task_id"
+declare -A ACK_STALL_WARNED  # acknowledged→in_progress遷移未達の将軍WARN送信済みフラグ — key: "ninja:task_id"
 declare -A STALE_CMD_NOTIFIED  # stale cmd通知済み世代 — key: "cmd_XXX", value: 状態fingerprint
 declare -A UNDEPLOYED_CMD_NOTIFIED  # pending+delegated_at超過cmdのntfy送信済みフラグ — key: "cmd_XXX", value: epoch秒
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
@@ -5903,6 +5904,11 @@ _cleanup_stale_keys() {
         [ -z "${active[$agent_part]}" ] && unset "STALL_COUNT[$key]"
     done
 
+    for key in "${!ACK_STALL_WARNED[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "ACK_STALL_WARNED[$key]"
+    done
+
     for key in "${!DESTRUCTIVE_WARN_LAST[@]}"; do
         agent_part="${key%%:*}"
         [ -z "${active[$agent_part]}" ] && unset "DESTRUCTIVE_WARN_LAST[$key]"
@@ -6163,6 +6169,45 @@ _check_active_busy_stall() {
     return 0
 }
 
+# AC2: task_assignedのinbox_write受信でacknowledged_atが刻まれた後、5分以内に
+# status: acknowledged → in_progress へ遷移しない構造バグ(殿指摘)を検知し将軍へWARN。
+# pane idle/busy状態には依存せず、acknowledged_atとEPOCHSECONDSの時刻比較のみで判定する。
+ACK_TO_PROGRESS_WARN_MIN=${ACK_TO_PROGRESS_WARN_MIN:-5}
+_check_ack_to_progress_stall() {
+    local name="$1" task_id="$2" status="$3" acknowledged_at_val="$4"
+    local warn_key="${name}:${task_id}"
+
+    if [ "$status" != "acknowledged" ]; then
+        unset "ACK_STALL_WARNED[$warn_key]"
+        return 0
+    fi
+    [ -n "$acknowledged_at_val" ] || return 0
+
+    local ack_epoch
+    ack_epoch=$(date -d "$acknowledged_at_val" +%s 2>/dev/null || echo "")
+    [ -n "$ack_epoch" ] || return 0
+
+    local now_epoch elapsed_min
+    now_epoch=$EPOCHSECONDS
+    elapsed_min=$(( (now_epoch - ack_epoch) / 60 ))
+    [ "$elapsed_min" -ge "$ACK_TO_PROGRESS_WARN_MIN" ] || return 0
+
+    if [ "${ACK_STALL_WARNED[$warn_key]:-}" = "1" ]; then
+        log "ACK-TO-PROGRESS-STALL-DEDUPE: $name task=$task_id elapsed=${elapsed_min}min warned=1"
+        return 0
+    fi
+
+    log "ACK-TO-PROGRESS-STALL: $name task=$task_id acknowledged_at=$acknowledged_at_val elapsed=${elapsed_min}min status=acknowledged (>=${ACK_TO_PROGRESS_WARN_MIN}min未in_progress)"
+    local message="【ACK-STALL】${name}がtask=${task_id}をacknowledgedのままin_progressへ${elapsed_min}分未遷移(閾値${ACK_TO_PROGRESS_WARN_MIN}分、acknowledged_at=${acknowledged_at_val})。"
+    if send_inbox_message shogun "$message" stall_alert; then
+        ACK_STALL_WARNED[$warn_key]=1
+        log "ACK-TO-PROGRESS-STALL-NOTIFIED: $name task=$task_id notified_shogun=1"
+    else
+        log "ACK-TO-PROGRESS-STALL-NOTIFY-BLOCK: $name task=$task_id notified_shogun=0"
+    fi
+    return 0
+}
+
 check_stall() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
@@ -6191,9 +6236,9 @@ check_stall() {
     # awk単一パスで残りフィールドを一括取得（従来: yaml_field_get×5=最大5サブシェル → awk×1）
     # L4-R24最適化パターン（write_karo_snapshot/write_state_fileと同方式）
     # 意図的停止は status を壊さず、明示フラグ+理由+遮断元cmdの3点契約で表す。
-    local deployed_at_val last_progress stall_detection_paused pause_reason paused_by_cmd
-    IFS='|' read -r task_id deployed_at_val last_progress stall_detection_paused pause_reason paused_by_cmd < <(awk '
-        BEGIN { t=""; da=""; pa=""; sp=""; pr=""; pb="" }
+    local deployed_at_val last_progress stall_detection_paused pause_reason paused_by_cmd acknowledged_at_val
+    IFS='|' read -r task_id deployed_at_val last_progress stall_detection_paused pause_reason paused_by_cmd acknowledged_at_val < <(awk '
+        BEGIN { t=""; da=""; pa=""; sp=""; pr=""; pb=""; ak="" }
         /^[ \t]*subtask_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
         /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
         /^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
@@ -6203,7 +6248,8 @@ check_stall() {
         /^[ \t]*stall_detection_paused:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); sp=tolower(v) }
         /^[ \t]*pause_reason:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pr=v }
         /^[ \t]*paused_by_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pb=v }
-        END { print t "|" da "|" pa "|" sp "|" pr "|" pb }
+        /^[ \t]*acknowledged_at:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ak=v }
+        END { print t "|" da "|" pa "|" sp "|" pr "|" pb "|" ak }
     ' "$task_file")
 
     # Ghost Filter: task_id空のSTALL誤検知を排除(cmd_1150)
@@ -6292,6 +6338,10 @@ check_stall() {
             fi
         fi
     fi
+
+    # AC2: inbox_write送信(acknowledged_at記録)→in_progress遷移の5分監視。
+    # pane idle/busy判定より前に置き、busy state中の構造バグも見逃さない。
+    _check_ack_to_progress_stall "$name" "$task_id" "$status" "$acknowledged_at_val"
 
     # active状態はcheck_idle()がBUSYを返すため、idle-stall経路の前に
     # pane静止専用の検知を行う。status変化/idle遷移では観測世代を破棄する。

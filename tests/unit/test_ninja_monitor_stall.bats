@@ -1138,6 +1138,115 @@ printf "initial_idle_recovery=2 duplicate=0 busy_recovery_duplicate=0 false_posi
     [ "$output" = "initial_idle_recovery=2 duplicate=0 busy_recovery_duplicate=0 false_positive=0" ]
 }
 
+# test_necessity: acknowledged_atからin_progressに5分以内に遷移しない構造バグ(殿指摘)を
+# pane idle/busy状態に依存せず検知し、将軍へ一度だけWARNする不変量を守る。
+@test "check_stall: acknowledged status warns shogun once after 5-minute ack-to-progress threshold" {
+    ACK_AT=$(date -d "6 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    DEPLOYED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+ACK_AT="'"$ACK_AT"'"
+DEPLOYED_AT="'"$DEPLOYED_AT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/ack-to-progress-warn"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+TEST_LOG="$SCRIPT_DIR/logs/monitor.log"
+TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"
+: > "$TEST_LOG"
+: > "$TEST_MESSAGES"
+log() { printf "%s\n" "$1" >> "$TEST_LOG"; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 1; }
+_pane_has_active_background_compute() { return 1; }
+_pane_has_confirmation_prompt() { return 1; }
+PANE_TARGETS[kagemaru]="shogun:2.4"
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT ACK_STALL_WARNED
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: acknowledged
+  task_id: cmd_ack_stall_001
+  deployed_at: "$DEPLOYED_AT"
+  acknowledged_at: "$ACK_AT"
+EOF
+
+check_stall kagemaru
+check_stall kagemaru
+
+echo "SHOGUN_ALERTS=$(grep -c "^shogun|stall_alert|" "$TEST_MESSAGES" || true)"
+grep "^shogun|stall_alert|" "$TEST_MESSAGES" || true
+echo "NOTIFIED_LOG=$(grep -c "ACK-TO-PROGRESS-STALL-NOTIFIED" "$TEST_LOG" || true)"
+echo "DEDUPE_LOG=$(grep -c "ACK-TO-PROGRESS-STALL-DEDUPE" "$TEST_LOG" || true)"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SHOGUN_ALERTS=1"* ]]
+    [[ "$output" == *"acknowledgedのままin_progress"* ]]
+    [[ "$output" == *"NOTIFIED_LOG=1"* ]]
+    [[ "$output" == *"DEDUPE_LOG=1"* ]]
+}
+
+# test_necessity: 5分未満のacknowledged、およびin_progress遷移後はWARNを送らず
+# dedupeフラグも解放される不変量を守る（誤検知/リーク防止）。
+@test "check_stall: ack-to-progress warn stays silent before threshold and clears after in_progress transition" {
+    ACK_AT=$(date -d "2 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    DEPLOYED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    NOW_TS=$(date "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+ACK_AT="'"$ACK_AT"'"
+DEPLOYED_AT="'"$DEPLOYED_AT"'"
+NOW_TS="'"$NOW_TS"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/ack-to-progress-grace"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+TEST_LOG="$SCRIPT_DIR/logs/monitor.log"
+TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"
+: > "$TEST_LOG"
+: > "$TEST_MESSAGES"
+log() { printf "%s\n" "$1" >> "$TEST_LOG"; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 1; }
+_pane_has_active_background_compute() { return 1; }
+_pane_has_confirmation_prompt() { return 1; }
+PANE_TARGETS[kagemaru]="shogun:2.4"
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT ACK_STALL_WARNED
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: acknowledged
+  task_id: cmd_ack_stall_002
+  deployed_at: "$DEPLOYED_AT"
+  acknowledged_at: "$ACK_AT"
+EOF
+check_stall kagemaru
+echo "PRE_TRANSITION_ALERTS=$(grep -c "^shogun|stall_alert|" "$TEST_MESSAGES" || true)"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: in_progress
+  task_id: cmd_ack_stall_002
+  deployed_at: "$DEPLOYED_AT"
+  acknowledged_at: "$ACK_AT"
+  progress_updated_at: "$NOW_TS"
+EOF
+check_stall kagemaru
+echo "WARN_KEY_AFTER=${ACK_STALL_WARNED[kagemaru:cmd_ack_stall_002]:-unset}"
+echo "POST_TRANSITION_ALERTS=$(grep -c "^shogun|stall_alert|" "$TEST_MESSAGES" || true)"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PRE_TRANSITION_ALERTS=0"* ]]
+    [[ "$output" == *"WARN_KEY_AFTER=unset"* ]]
+    [[ "$output" == *"POST_TRANSITION_ALERTS=0"* ]]
+}
+
 # test_necessity: confirmation prompt中のnudgeは選択肢入力になり得るため送出を禁止する
 @test "check_stall: confirmation prompt suppresses in_progress recovery nudge" {
     run bash -lc '
