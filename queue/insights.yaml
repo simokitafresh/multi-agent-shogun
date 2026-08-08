@@ -797,8 +797,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '5acc71d5719653f7b729cd2eeafe4d3e9efb5b3459719b80a155d4030803a587' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 5
-  last_seen: "2026-08-08T22:16:06+09:00"
+  occurrence_count: 6
+  last_seen: "2026-08-08T22:25:21+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -823,8 +823,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '92042e18fad57daba1ac7dde37af2e7f60039a99e7fa0d33c0848f25fc76112d' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 3
-  last_seen: "2026-08-08T22:10:41+09:00"
+  occurrence_count: 4
+  last_seen: "2026-08-08T22:25:01+09:00"
   verification:
     status: "passed"
     exit_code: 0
