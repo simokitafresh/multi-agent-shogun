@@ -91,8 +91,7 @@ semantic_validation:
   recount: invalidate呼出し5系統、再生成トリガー3系統、fallback 1系統、関連テスト4系統を再集計。
   actual: source rg/nl -baで全引用行の存在を確認し、PostgreSQL readonly_queryでprecomputed_raw全1546行の時刻範囲、metrics_summary_bulk=0、失効後raw=0、etl_layer_status
     L3/L5、recalculation_status失効後0件を確認。関連契約テスト3件もPASS。
-  result: 分類軸(invalidation/regeneration/serving/observation)と再集計件数(invalidate 5系統、再生成3系統、fallback
-    1系統、関連テスト3件)が一致し、AC2の直接DB証跡不足を解消した。
+  result: PASS
 files_modified:
 - path: queue/reports/kagemaru_report_cmd_4239.yaml
   change: 本cmdの現物コード・本番API状態・AC証跡を報告YAMLへ記録した。DM-Signalコードは変更していない。
