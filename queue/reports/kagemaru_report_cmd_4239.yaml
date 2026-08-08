@@ -225,7 +225,7 @@ parent_ac_coverage:
 - AC2
 - AC3
 parent_contract_fingerprint: 3a958df2d1f48034
-commit_hash: 4bfd444466c17afd792aca766bac6e2b91943aaa
+commit_hash: 285918c6c48665e32704674f7c33b76c0a74991f
 test_results:
   command: ADMIN_USER=$(grep -m1 '^ADMIN_USER=' backend/.env | cut -d= -f2-); ADMIN_PASS=$(grep
     -m1 '^ADMIN_PASS=' backend/.env | cut -d= -f2-); curl -sS --max-time 30 -u "$ADMIN_USER:$ADMIN_PASS"
