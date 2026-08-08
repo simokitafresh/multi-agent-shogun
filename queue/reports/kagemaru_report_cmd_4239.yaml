@@ -5,7 +5,7 @@ task_id: cmd_4239_full
 parent_cmd: cmd_4239
 task_type: full
 timestamp: '2026-08-08T23:45:00+09:00'
-status: completed
+status: revision_requested
 ac_version_read: af94db90
 task_contract_snapshot:
   ac_fingerprint: af94db90
@@ -72,7 +72,7 @@ commit_contract:
   repo_root: /mnt/c/Python_app/DM-signal
 cross_repo_commits:
 - repo: /mnt/c/tools/multi-agent-shogun
-  commit_hash: 4bfd444466c17afd792aca766bac6e2b91943aaa
+  commit_hash: 285918c6c48665e32704674f7c33b76c0a74991f
   paths:
   - queue/reports/kagemaru_report_cmd_4239.yaml
 ac_evidence_mapping:
