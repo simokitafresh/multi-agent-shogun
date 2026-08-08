@@ -2475,15 +2475,14 @@ inject_task_id() {
         return 1
     fi
 
-    local subtask_id
-    subtask_id=$(field_get "$task_file" "subtask_id" "")
+    local subtask_id existing_task_id task_id
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" subtask_id task_id 2>/dev/null)" || true
     if [ -z "$subtask_id" ]; then
         log "inject_task_id: no subtask_id found, skipping"
         return 0
     fi
 
-    local existing_task_id
-    existing_task_id=$(field_get "$task_file" "task_id" "")
+    existing_task_id="${task_id:-}"
     if [ -n "$existing_task_id" ] && [ "$existing_task_id" != "idle" ]; then
         log "inject_task_id: task_id already set ($existing_task_id), skipping"
         return 0
@@ -2501,18 +2500,17 @@ infer_ac_assigned_from_chunk_task_id() {
         return 0
     fi
 
-    local existing_ac existing_assigned task_id ac_id ac_value
-    existing_ac=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_assigned" "" 2>/dev/null || true)
-    existing_assigned=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "assigned_acs" "" 2>/dev/null || true)
+    local existing_ac existing_assigned task_id _ac_task_id ac_id ac_value ac_assigned assigned_acs
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        ac_assigned assigned_acs task_id _ac_task_id 2>/dev/null)" || true
+    existing_ac="${ac_assigned:-}"
+    existing_assigned="${assigned_acs:-}"
     if [ -n "$existing_ac" ] || [ -n "$existing_assigned" ]; then
         log "infer_ac_assigned: existing assignment found, skipping"
         return 0
     fi
 
-    task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "" 2>/dev/null || true)
-    if [ -z "$task_id" ]; then
-        task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "" 2>/dev/null || true)
-    fi
+    task_id="${task_id:-${_ac_task_id:-}}"
 
     # cmd_karo_hotfix_chunk_marker_boundary_202607121210: 旧regexはunderscoreを非alnum境界として
     # 任意のac+数字(gate_ac3_hunk等の通常説明語)を拾い誤検知した。明示chunk命名規約
@@ -2524,10 +2522,9 @@ infer_ac_assigned_from_chunk_task_id() {
     fi
 
     ac_value="$ac_id"
-    yaml_field_set "$task_file" "task" "ac_assigned" "$ac_value" \
-        || { log "FATAL: yaml_field_set failed for ac_assigned"; return 1; }
-    yaml_field_set "$task_file" "task" "assigned_acs" "$ac_value" \
-        || { log "FATAL: yaml_field_set failed for assigned_acs"; return 1; }
+    yaml_field_set_batch "$task_file" "task" \
+        "ac_assigned=$ac_value" "assigned_acs=$ac_value" \
+        || { log "FATAL: yaml_field_set_batch failed for AC assignment"; return 1; }
     log "infer_ac_assigned: task_id=${task_id} -> ac_assigned=${ac_value}"
 }
 
@@ -4357,7 +4354,8 @@ PY
     # The task and report must expose one typed contract.  Previously only the
     # report template received this block, so report review read a different
     # SSOT from commit helpers after deployment.
-    yaml_field_set "$task_file" "task" "commit_contract" "$_commit_contract_json" \
+    yaml_field_set_batch "$task_file" "task" \
+        "commit_contract=$_commit_contract_json" \
         || { log "FATAL: failed to publish task commit_contract"; return 1; }
     local _commit_contract_block
     _commit_contract_block=$(cat <<EOF
@@ -4426,7 +4424,8 @@ print(json.dumps({
 }, ensure_ascii=False, separators=(",", ":")))
 PY
 ) || return 1
-    yaml_field_set "$task_file" "task" "report_contract_templates" "$_level5_report_contract_json" \
+    yaml_field_set_batch "$task_file" "task" \
+        "report_contract_templates=$_level5_report_contract_json" \
         || { log "FATAL: failed to publish Level5 report contract templates"; return 1; }
 
     # Build the complete canonical template off-path.  Readers must observe
@@ -9768,15 +9767,15 @@ inject_report_filename() {
         return 0
     fi
 
-    local existing
-    existing=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_filename" "")
+    local existing parent_cmd report_filename
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        report_filename parent_cmd 2>/dev/null)" || true
+    existing="${report_filename:-}"
     if [ -n "$existing" ]; then
         log "[REPORT_FN] Already exists, skipping"
         return 0
     fi
 
-    local parent_cmd report_filename
-    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
     if [ -n "$parent_cmd" ]; then
         report_filename="${NINJA_NAME}_report_${parent_cmd}.yaml"
     else
@@ -9815,10 +9814,9 @@ deploy_task_normalize_report_metadata() {
     if deploy_task_speed_campaign_report_is_explicit "$task_file"; then
         log "[REPORT_FN] Preserving explicit speed campaign round report"
     else
-        yaml_field_set "$task_file" "task" "report_filename" "" \
-            || { log "FATAL: yaml_field_set failed for report_filename"; return 1; }
-        yaml_field_set "$task_file" "task" "report_path" "" \
-            || { log "FATAL: yaml_field_set failed for report_path"; return 1; }
+        yaml_field_set_batch "$task_file" "task" \
+            "report_filename=" "report_path=" \
+            || { log "FATAL: yaml_field_set_batch failed for report metadata"; return 1; }
     fi
     inject_report_filename "$task_file" || true
 }
@@ -9855,9 +9853,10 @@ inject_execution_controls() {
         return 0
     }
 
-    local purpose command_text haystack
-    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
-    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    local purpose command_text haystack command
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        purpose command 2>/dev/null)" || true
+    command_text="${command:-}"
     haystack="${purpose} ${command_text}"
 
     # GS/忍法/DB操作を検出
