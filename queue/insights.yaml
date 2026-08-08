@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260807-111848457-46ac
-  ts: "2026-08-07T11:18:48+09:00"
-  insight: "semantic_index_update新概念候補: discussion:半減期探索範囲の根拠が薄いな。0が既存とすれば10刻みで10 200までの10パターンやらないか？計算資源はそれほど変わらないよな？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-07T11:24:38+09:00"
 - id: INS-20260807-113047092-33df
   ts: "2026-08-07T11:30:47+09:00"
   insight: "[[画像が１枚しか挿入されてないよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=画像が１枚しか挿入されてないよ"
@@ -817,8 +807,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '5acc71d5719653f7b729cd2eeafe4d3e9efb5b3459719b80a155d4030803a587' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 4
-  last_seen: "2026-08-08T17:50:46+09:00"
+  occurrence_count: 5
+  last_seen: "2026-08-08T22:16:06+09:00"
   verification:
     status: "passed"
     exit_code: 0
