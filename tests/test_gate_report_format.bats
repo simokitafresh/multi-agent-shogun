@@ -1670,3 +1670,54 @@ raise SystemExit(0 if repo == root and error is None else 1)
 PY
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: a report-only commit may live in the control-plane repo while
+# the task's explicit project repo remains the authoritative primary repo.
+@test "cross repo report-only commit falls back to its declared repository" {
+    local report_repo="$TMPDIR_BATS/report_repo"
+    local project_repo="$TMPDIR_BATS/project_repo"
+    _init_fixture_repo "$report_repo"
+    _init_fixture_repo "$project_repo"
+    mkdir -p "$report_repo/queue/reports"
+    printf '%s\n' 'report: cross-repo' > "$report_repo/queue/reports/cross.yaml"
+    git -C "$report_repo" add queue/reports/cross.yaml
+    git -C "$report_repo" commit -q -m 'cmd_cross_repo report-only evidence'
+    local commit_hash
+    commit_hash="$(git -C "$report_repo" rev-parse HEAD)"
+    run python3 - "$report_repo" "$project_repo" "$commit_hash" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+spec = importlib.util.spec_from_file_location("gate_main", "scripts/gates/gate_report_format_main.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+report_repo, project_repo, commit_hash = map(pathlib.Path, sys.argv[1:])
+report = {
+    "task_id": "cmd_cross_repo",
+    "parent_cmd": "cmd_cross_repo",
+    "commit_hash": str(commit_hash),
+    "commit_contract": {"required": True, "repo_root": str(project_repo)},
+    "cross_repo_commits": [{
+        "repo": str(report_repo),
+        "commit_hash": str(commit_hash),
+        "paths": ["queue/reports/cross.yaml"],
+    }],
+    "files_modified": [{"path": "queue/reports/cross.yaml"}],
+}
+task = {
+    "task_id": "cmd_cross_repo",
+    "parent_cmd": "cmd_cross_repo",
+    "commit_contract": {
+        "required": True,
+        "planned_paths": [str(project_repo)],
+        "repo_root": str(project_repo),
+    },
+}
+errors = module.commit_contract_errors(report, task, pathlib.Path.cwd())
+print(errors)
+raise SystemExit(0 if not errors else 1)
+PY
+    echo "$output"
+    [ "$status" -eq 0 ]
+}

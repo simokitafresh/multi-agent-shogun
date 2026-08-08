@@ -247,6 +247,65 @@ def _resolved_commit_contract(report, task):
     return report_contract, None
 
 
+def _resolve_declared_cross_repo_identity(report, identity):
+    """Return a declared report-only repository for a missing primary identity.
+
+    A report can be produced in this repository while its task's project
+    repository is elsewhere.  The task/report repo_root remains authoritative
+    for normal commits; this narrow lane only accepts an identity explicitly
+    declared in cross_repo_commits, whose changed paths are all report files.
+    """
+    identity = str(identity or "").strip()
+    if not identity:
+        return None
+    validation_errors, owned = validate_cross_repo_commit_ownership(report)
+    if validation_errors or not owned:
+        return None
+    for entry in report.get("cross_repo_commits") or []:
+        if not isinstance(entry, dict) or str(entry.get("commit_hash") or "").strip() != identity:
+            continue
+        paths = entry.get("paths")
+        if not isinstance(paths, list) or not paths:
+            return None
+        normalized = {
+            str(path or "").replace("\\", "/").strip().lstrip("./")
+            for path in paths
+        }
+        if not normalized or not all(path.startswith("queue/reports/") for path in normalized):
+            return None
+        declared_files = {
+            str(item.get("path") or "").replace("\\", "/").strip().lstrip("./")
+            for item in report.get("files_modified") or []
+            if isinstance(item, dict)
+        }
+        if not declared_files or not declared_files.issubset(normalized):
+            return None
+        repo, repo_error = _canonical_commit_repo(entry.get("repo"))
+        if repo_error:
+            return None
+        try:
+            changed = {
+                path
+                for path in subprocess.run(
+                    [
+                        "git", "-C", str(repo), "diff-tree", "--no-commit-id",
+                        "--name-only", "-r", "--root", identity,
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                ).stdout.splitlines()
+                if path
+            }
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return None
+        if changed != normalized:
+            return None
+        return repo
+    return None
+
+
 def _verified_revert_identity(commit_repo, identity, contract):
     """Allow only an explicitly contracted, standard Git revert identity."""
     if not isinstance(contract, dict):
@@ -310,7 +369,15 @@ def commit_contract_errors(report, task, root):
         subject = subprocess.run(["git", "-C", str(commit_repo), "show", "-s", "--format=%s", identity], check=True, capture_output=True, text=True, timeout=5).stdout.strip()
         changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        return errors + ["commit_hash does not resolve to a readable commit"]
+        fallback_repo = _resolve_declared_cross_repo_identity(report, identity)
+        if fallback_repo is None:
+            return errors + ["commit_hash does not resolve to a readable commit"]
+        commit_repo = fallback_repo
+        try:
+            subject = subprocess.run(["git", "-C", str(commit_repo), "show", "-s", "--format=%s", identity], check=True, capture_output=True, text=True, timeout=5).stdout.strip()
+            changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return errors + ["commit_hash does not resolve to a readable commit"]
     subject_identifies_task = _subject_identifies_cmd(
         subject, expected_run_id
     ) or _subject_identifies_cmd(subject, report.get("parent_cmd"))
@@ -328,7 +395,7 @@ def commit_contract_errors(report, task, root):
         cross_repo_owned = set()
     scope_violations = set()
     for modified in modified_targets:
-        if allowed_targets and not any(
+        if allowed_targets and modified not in cross_repo_owned and not any(
             _literal_path_within(modified, allowed, commit_repo)
             for allowed in allowed_targets
         ):
