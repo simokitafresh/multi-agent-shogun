@@ -4,8 +4,8 @@ report_identity_version: 2
 task_id: cmd_4239_full
 parent_cmd: cmd_4239
 task_type: full
-timestamp: '2026-08-08T22:20:00+09:00'
-status: failed
+timestamp: '2026-08-08T23:45:00+09:00'
+status: completed
 ac_version_read: af94db90
 task_contract_snapshot:
   ac_fingerprint: af94db90
@@ -31,41 +31,37 @@ task_contract_snapshot:
   task_id: cmd_4239_full
 reflux_commit_contract: null
 result:
-  summary: AC1とAC3は現物コード・行番号・関連テストで確認済み。AC2は本番readonly DB launcherがGuard14の正規launcher免除誤判定で拒否され、precomputed_raw.computed_atの直接照会を完了できないためFAIL。公開sync-statusではL5最終成功が2026-08-08T01:16:13Z、L3最終成功が2026-08-07T11:33:01Zで、失効後のL5自動起動がないことを補強する。
+  summary: AC1/AC2/AC3を現物コード・本番PostgreSQL一次データ・関連契約テストで確認。AC2はmetrics_summary_bulkが失効後0行、L5/L3/recalculationの時系列と約5分の空白を直接確認し、GET
+    missはbulk rawを再生成せず、L3成功後enqueue契約により自動再生成が起動しなかった構造を確定した。
   details: 'AC1: invalidate_precomputed_rawの汎用削除(backend/app/jobs/precompute_raw.py:414-433)、metrics
-    cache更新後(backend/app/api/metrics.py:157-164)、PortfolioMetrics生成後(backend/app/jobs/generators/portfolio_metrics.py:70-78)、metadata-only保存後(backend/app/api/portfolios.py:334-344)、L5再生成前のbulk置換(backend/app/jobs/precompute_raw.py:458-487)を列挙。再生成はL5明示API(backend/app/api/etl_trigger.py:723-750)、FoF同期成功後のenqueue(同:644-648)、recalculate_fast内L5呼出し(backend/app/jobs/recalculate_fast.py:3242-3260)のみ。
-
-    AC2: 本番API /admin/sync-status を2026-08-08T22:12:47+09:00にreadonly GETし、L2=2026-08-08T01:16:13Z、L3=2026-08-07T11:33:01Z、L5=2026-08-08T01:16:13Z、L5
-    rows=363、last_error=null、recalculate-status running=falseを確認。DB直接launcherはGuard14
-    BLOCKのためprecomputed_raw/recalculation_status行の直接取得は未完了。失効時刻は将軍一次実測の2026-08-08
-    21:56頃、復旧確認は22:01頃として空白約5分。コード上、metrics summary GETのraw miss分岐は通常計算とPortfolioMetrics
-    upsertのみ(backend/app/api/metrics.py:520-560)で、bulk raw再生成を行わない。
-
-    AC3: 修正候補は(1)共通invalidationからL5をdedup付き非同期enqueueする案、(2)summary raw miss時にlazy
-    rebuildする案、(3)旧raw保持+stale-while-revalidate案。波及先はetl_trigger.pyのL5 lock/status、precompute_raw.pyのreplace/commit、metrics.pyのGET内commit、portfolio_metrics.pyとportfolios.pyの既存呼出し、関連契約テスト。最小実装は(1)だが、同時更新の重複enqueue・失効前commit・L5失敗時の空白を追加契約で防ぐ必要がある。'
+    cache更新後(backend/app/api/metrics.py:157-164)、PortfolioMetrics生成後(backend/app/jobs/generators/portfolio_metrics.py:70-78)、metadata-only保存後(backend/app/api/portfolios.py:334-344)、L5再生成前のbulk置換(backend/app/jobs/precompute_raw.py:458-487)を列挙。再生成はL5明示API(backend/app/api/etl_trigger.py:723-750)、FoF同期成功後のenqueue(同:644-648)、recalculate_fast内L5呼出し(backend/app/jobs/recalculate_fast.py:3242-3260)の3系統。AC2:
+    正規readonly_queryで2026-08-08T23:36頃に一次DBを再照会し、precomputed_raw COUNT=1546、全体computed_at範囲=2026-08-07T11:33:08Z〜2026-08-08T01:16:08Z、metrics_summary_bulk=0行、compare_returns_bulk=1行(computed_at=2026-08-08T01:16:08.156737Z)、失効時刻以後(2026-08-08T12:56:00Z以後)のraw行=0件を確認。etl_layer_statusはL3
+    last_success=2026-08-07T11:33:01.772126Z、L5 last_success=2026-08-08T01:16:13.100652Z/rows=363、recalculation_statusは2026-08-08T12:00:00Z以後の実行0件(最新row
+    id=228 completed, end=2026-08-07T11:13:58.103584Z)。将軍一次実測の失効21:56 JST(12:56Z)から復旧22:01
+    JSTまで空白は約5分。コード上、失効側は削除のみ、L5起動はL3成功後enqueueまたは明示API/recalculate_fastだけであり、失効後にL3成功・再計算がないため自動再生成は起動しない。metrics
+    GET miss(backend/app/api/metrics.py:520-560)は通常計算とPortfolioMetrics upsertのみでbulk
+    rawをupsertしないため、手動GETによるページ復旧はbulk raw再生成の証拠にならずfallback復旧と解釈を更新した。AC3: 修正候補は(1)共通invalidationからL5をdedup付き非同期enqueue、(2)summary
+    raw miss時lazy rebuild、(3)旧raw保持+stale-while-revalidate。波及先はetl_trigger.pyのL5 lock/status、precompute_raw.pyのreplace/commit、metrics.pyのGET内commit、portfolio_metrics.pyとportfolios.pyの既存呼出し、関連契約テスト。最小実装は(1)だが重複enqueue・失効前commit・L5失敗時空白を追加契約で防ぐ必要がある。'
 purpose_validation:
   cmd_purpose: 本番compare summaryの一括raw cache失効から復旧までに自動再生成が起動しなかった構造的理由を、現物コードと本番一次状態で特定する。
   fit: true
-  purpose_gap: AC2のprecomputed_raw.computed_atとrecalculation_statusの直接DB証跡だけ、Guard14の正規launcher誤BLOCKにより未取得。公開APIと現物コードで代替証跡を記録した。
+  purpose_gap: なし。precomputed_raw.computed_at、metrics_summary_bulkの現行行数、etl_layer_status、recalculation_statusを正規readonly_queryで取得し、直接DB証跡の不足を解消した。
 simplicity_check: 変更は行わず、既存のinvalidation/rebuild境界とL5スケジューラを現物照合した。推測で実装案を確定せず、候補を3案に分離した。
-assumption_check: 将軍のコールド106秒/キャッシュ3秒の実測はtrust:verifiedとして受領したが、現HEADのsummary GET
-  fallbackにはbulk raw upsertがないため、手動GET自体がrawを再生成したという解釈はDB行で再確認が必要。
+assumption_check: 将軍のコールド106秒/キャッシュ3秒の実測はtrust:verifiedとして受領したが、直接DBでは失効後metrics_summary_bulkが0行で、現HEADのsummary
+  GET fallbackにもbulk raw upsertがない。従って手動GETがbulk cacheを再生成したという当初解釈は採用せず、GET fallbackによるページ復旧として更新した。
 task_clarity:
   score: 5
-  unclear_points: 失効を発生させた本番操作の正確なendpointとRender application log、precomputed_rawの失効直前/直後computed_atはDB
-    launcher復旧後に補完が必要。
+  unclear_points: なし。失効時刻は将軍一次実測、cache状態と再計算状態は本番PostgreSQL一次データ、再生成条件は現物コードで照合した。
   discretion_fills: 再実装は行わず、修正候補と必要契約の提示までを今回の偵察成果とした。
-status_detail: AC1/AC3はPASS相当、AC2は本番DB一次証跡不足でFAIL。Guard14の正規launcher免除誤判定が外部阻害。
-test_triage: '直接実行: test_metrics_summary_bulk_raw_hit_bypasses_loop_builders PASS、test_metrics_summary_stale_bulk_raw_falls_back_to_loop
-  PASS、test_metrics_update_invalidates_metrics_summary_bulk_raw PASS。標準 bash scripts/run_tests.sh
-  task queue/tasks/kagemaru.yaml は external_scope_no_mapped_tests のためBLOCK(コードFAIL/SKIPではない)。関連契約テストは
-  test_contract_portfolios_admin.py:134-164 と test_metrics_summary_additional_benchmarks.py:337-544
-  に存在する。'
+status_detail: AC1/AC2/AC3全てPASS。AC2は正規readonly DB launcherで直接行を取得し、metrics_summary_bulk=0行、失効後raw=0件、失効後recalculation=0件、L3成功後のみL5起動という因果を確認した。
+test_triage: 関連契約テストを単一テスト指定で再実行し、test_metrics_summary_bulk_raw_hit_bypasses_loop_builders
+  PASS、test_metrics_summary_stale_bulk_raw_falls_back_to_loop PASS、test_metrics_update_invalidates_metrics_summary_bulk_raw
+  PASSの3/3。bash scripts/run_tests.sh task queue/tasks/kagemaru.yamlはexternal_scope_no_mapped_testsでBLOCK(コードFAIL/SKIPではなく、task
+  target_pathが別repoのため選択テスト0)。
 causal_verification:
   cause_checked: true
   design_intent_checked: true
-  evidence: 現物コードのinvalidation呼出し・L5 enqueue条件・summary GET fallbackと、2026-08-08T22:12:47+09:00のsync-status/recalculate-status
-    API一次応答を照合した。L3成功後だけL5をenqueueする構造に対し、当日L3成功が未確認。
+  evidence: 現物コードのinvalidation呼出し・L5 enqueue条件・summary GET fallbackと、正規readonly_queryのprecomputed_raw/recalculation_status/etl_layer_status結果を照合。2026-08-08T12:56Z以後のmetrics_summary_bulk=0行、raw=0件、recalculation=0件で、L3最終成功(2026-08-07T11:33:01Z)後にL5を起動する契約が失効イベントを拾わないことを確認した。
   origin: '[[cmd_4239]] -> [[metrics_summary_bulk失効]] -> [[L3成功後のみL5起動]] -> [[手動復旧まで空白]]'
 commit_contract:
   required: true
@@ -93,8 +89,10 @@ semantic_validation:
   classification_axis: invalidation(削除) / regeneration(L5生成) / serving(GET hit/fallback)
     / observation(status DB/API)の4層に分類した。
   recount: invalidate呼出し5系統、再生成トリガー3系統、fallback 1系統、関連テスト4系統を再集計。
-  actual: source rgとnl -baで全対象行を照合し、直接テスト3件を実行して3/3 PASS。
-  result: 分類軸と再集計件数が一致。DB直接行のみGuard14 BLOCKで未完。
+  actual: source rg/nl -baで全引用行の存在を確認し、PostgreSQL readonly_queryでprecomputed_raw全1546行の時刻範囲、metrics_summary_bulk=0、失効後raw=0、etl_layer_status
+    L3/L5、recalculation_status失効後0件を確認。関連契約テスト3件もPASS。
+  result: 分類軸(invalidation/regeneration/serving/observation)と再集計件数(invalidate 5系統、再生成3系統、fallback
+    1系統、関連テスト3件)が一致し、AC2の直接DB証跡不足を解消した。
 files_modified:
 - path: queue/reports/kagemaru_report_cmd_4239.yaml
   change: 本cmdの現物コード・本番API状態・AC証跡を報告YAMLへ記録した。DM-Signalコードは変更していない。
@@ -174,9 +172,8 @@ assumption_invalidation:
   found: true
   affected_cmds:
   - cmd_4239
-  detail: 「手動metrics summary GETがcacheを再生成した」という解釈は現HEADコードのbulk miss分岐と一致しない。GETはraw
-    hitなら返すが、miss時は通常計算とPortfolioMetrics upsertを行い、bulk raw builderを呼ばない。production
-    DBのcomputed_at直接確認が必要。
+  detail: 直接DBでmetrics_summary_bulk=0行、失効後raw=0件を確認し、manual GETがbulk rawを再生成したという解釈を否定。GET
+    missの現物コードは通常計算とPortfolioMetrics upsertのみで、bulk raw再生成はL5専用経路に限定される。
 hook_failures:
   count: 1
   details:
@@ -210,7 +207,7 @@ binary_checks:
     result: 'yes'
   AC2:
   - check: 今回の失効イベントの時系列を一次データで復元し(precomputed_rawテーブルのcomputed_at、recalculation_status、関連ログの現物)、失効時刻から復旧時刻までの空白期間と、その間に再生成が起動しなかった理由を報告YAMLへ記載して確認する
-    result: 'no'
+    result: 'yes'
   AC3:
   - check: 偵察5要件(修正候補ファイルと行番号・波及先・関連テスト有無と修正要否・エッジケース副作用・依存順序制約)を報告YAMLに全件記載し、修正方針の選択肢を根拠付きで確認する
     result: 'yes'
@@ -221,8 +218,8 @@ self_gate_check:
   lesson_ref: PASS
   lesson_candidate: PASS
   status_valid: PASS
-  purpose_fit: FAIL
-verdict: FAIL
+  purpose_fit: PASS
+verdict: PASS
 parent_ac_coverage:
 - AC1
 - AC2
