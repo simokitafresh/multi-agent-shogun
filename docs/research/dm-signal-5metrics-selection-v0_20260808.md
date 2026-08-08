@@ -1,7 +1,8 @@
 <!-- gist-master: 574b417f1d1377c59b64c4d88f9d4bc5 dm-signal-5metrics-selection-v0_20260808.md -->
-# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.3
+# DM-Signal 新規5指標(RRR/DDA/ACS/RRS/ECR) 実装設計書 v0.4
 
-- 作成: shogun 2026-08-08 / v0.2: 現物調査反映(未調査ゼロ化、殿下知17:10) / v0.3: 殿裁定4点反映(18:15)。**P1着手可(殿承認済み)**
+- 作成: shogun 2026-08-08 / v0.2: 現物調査反映 / v0.3: 殿裁定4点反映(18:15) / v0.4: 家老レビュー所見8件反映(18:25)
+- **現況: 設計フェーズ(殿指示18:17「まだ起票しない。設計のみ」)。P1起票は殿の別途下知まで行わない**
 - 仕様正本(殿原文・改変禁止): `docs/research/dm-signal-5metrics-v0-original_20260808.md`(gist dae809c3)
 - 本書の位置づけ: 殿v0仕様を正とし、DM-Signalへの実装工程・AC・検証契約を定義する。**仕様の変更は殿裁定のみ**。指標定義の解釈が原文と食い違う場合は常に原文が勝つ。
 - v0.2調査方法: Exploreエージェント2体でDM-Signalコード現物を精読(2026-08-08 17:15-17:30)。以下の§3/§4/§8の全ファイルパス・行番号は現物確認済み。
@@ -32,7 +33,7 @@
 | layer | **DB列ではない**。PF名プレフィックス判定: `scripts/oneshot/cmd_3225_layer_managed_vol.py:22-33 classify_layer()`(シン/ノンレバレッジシン→L0_四神、GSシン→L1_忍法、奥義-GS-/秘奥義→L3_奥義、他→L2_スタンダード)。出力Schemaの`layer`列はこの関数を流用して埋める |
 | Benchmark | PFごとに`portfolios.config["benchmark_ticker"]`、未指定はSPY(`constants.py:33`)。ベンチ月次リターンは`monthly_returns.benchmark_return`にPF行と同居 |
 | Risk-Free | DTB3(`constants.py:34`)。`economic_indicators`テーブル(models.py:46-54、年率値)。月次化は`metrics_impl.py:219-222`の日次複利→月次複利方式を**正**とする(`risk_metrics.py:67/80`の年率/12単純除算は別系統であり不採用。→§4) |
-| ★PITの構造制約 | `monthly_returns`は毎ETLで**全履歴DELETE→再INSERT**(`jobs/generators/monthly_returns.py:692`)。vintage/as_of列なし。∴「当時に観測された値」の復元は構造的に不可能 |
+| ★PITの構造制約 | `monthly_returns`は毎ETLで**当該portfolio_idの全履歴をDELETE→再INSERT**(`jobs/generators/monthly_returns.py:692`はPF単位の置換。テーブル全体の一括削除ではない)。vintage/as_of列なし。∴「当時に観測された値」の復元は構造的に不可能 |
 
 ### §3.1 PITの定義(本実験における)
 
@@ -44,7 +45,7 @@
 |------------|----------------|---------------|
 | RRR: Rolling 3Y CAGR | `jobs/generators/rolling_returns.py:102-108`(`cumulative_return`のshift(months)比の(12/months)乗根)。保存先`rolling_returns_summary`は要約統計のみで**各windowの時系列は保存されない** | Rolling Excess CAGR系列はRRR側で同一式(L106-108と同じ演算)により月次cumulativeから再計算する。既存rolling_returns_summaryは検証時の突合先 |
 | ACS: Alpha/RF | `services/metrics_impl.py:946-984`。Beta=Cov/Var(L959-961)+Jensen Alpha=平均超過差(L976)+**×12単純年率化**(L978)。単回帰ではOLS切片と数学同値 | 36M窓の各windowで既存と同一演算(Cov/Var+平均差)を行う=原文§4.2「OLS推定」と数学的に一致。年率化も既存の×12に揃える(→§6-2)。RF月次化は`metrics_impl.py:219-222`方式 |
-| RRS: Regime分類 | `services/regime_analysis_service.py:148-155`。benchmark月次リターンの**全期間μ±0.5σ**でbull/neutral/bear 3分類(=Up/Sideways/Down)。Active Return=portfolio−benchmark(L171-)。**full-period定義でありPIT版は実装に存在しない** | ★解釈事項(§6-1)。分類規則(band_sigma=0.5・benchmark月次・3分類)は不変のまま、μ/σの計算範囲をt以前に制限したPIT版をRRS側で実装する |
+| RRS: Regime分類 | `services/regime_analysis_service.py:106-122`(regime定義=benchmark月次リターンの**全期間μ±0.5σ**でbull/neutral/bear 3分類)、L132(active_return=portfolio−benchmark)。※行番号は家老抜き打ち検証で訂正済み(2026-08-08)。**full-period定義でありPIT版は実装に存在しない** | 裁定済み(§6-1): 分類規則(band_sigma=0.5・benchmark月次・3分類)は不変のまま、μ/σの計算範囲をt以前に制限したexpanding-window PIT版をRRS側で実装する |
 | DDA: Drawdown | `jobs/generators/drawdowns.py:50`(cummax方式、月次cumulative)。metrics側MDD/UWP=`metrics_impl.py:513-`/L659- | DDAは同じcummax方式のD_t系列からmean(abs(D_t))。既存MDD/AvgUWPは冗長性測定(原文§12)の比較相手 |
 | ECR: Arithmetic/Geometric | `metrics_impl.py:342`(月次算術平均)/L370(月次幾何平均)/L1219-1229(Volatility Drag=月次のまま算術−幾何) | ECR=g/mu を**月次同士**で計算(原文§6.2の同一Frequency要件は既存実装と整合)。既存VDragは冗長性測定の比較相手 |
 | 冗長性測定の既存値 | ★IR/Captureは二重実装が併存: `metrics_impl.py:1362-1391/1127-1164`(True CAGR差/TE、幾何年率化比)と`jobs/generators/risk_metrics.py:143-172`(平均差/TE、単純和比)。Benchmark Win Rate該当は`risk_metrics.py:152-154 win_percent`(metrics_implに同名指標なし) | 原文§12のRankCorr比較相手は**metrics_impl.py側の値を正**とする(本番metrics表の表示元=`portfolio_metrics.metrics_json`の生成元のため)。win_rate系のみrisk_metrics側 |
@@ -54,7 +55,8 @@
 
 1. **PIT絶対**(原文§13): §3.1の定義でas-of切断。禁止6項は自動Quality Check(原文§16)+lookahead検査(§7 P2)でFAILさせる。
 2. **最適化禁止**(§1.2/§18): Weight合成・パラメータ探索・Layer別定義・Threshold探索・Best Lookback/Horizon選択を実装しない。コードに最適化フックを作らない。
-3. **NULL契約**: MAD=0→NULL(RRR/ACS)、mu<=0→NULL(ECR)、history<36M→NULL(RRR/ACS)。特殊値・Infinity・符号反転Raw値を作らない。**NULL reason code必須(殿裁定2026-08-08 18:15)**: 出力Schemaに`rrr_null_reason`/`acs_null_reason`列を追加し、値は`INSUFFICIENT_HISTORY`/`INSUFFICIENT_WINDOWS`/`ZERO_MAD`/`INVALID_INPUT`の4種(非NULL時は空)。データ不足・計算不能・極端に安定(ZERO_MAD)を区別可能にする。指標定義・式・Thresholdの変更ではなく解析不能理由の保存のみ。ECRのNULL理由はmu<=0で一意のためreason列は設けない。
+3. **NULL契約**: MAD=0→NULL(RRR/ACS)、mu<=0→NULL(ECR)、history<36M→NULL(RRR/ACS)。特殊値・Infinity・符号反転Raw値を作らない。**NULL reason code必須(殿裁定2026-08-08 18:15)**: 出力Schemaに`rrr_null_reason`/`acs_null_reason`列(値=`INSUFFICIENT_HISTORY`/`INSUFFICIENT_WINDOWS`/`ZERO_MAD`/`INVALID_INPUT`、非NULL時は空)と、`ecr_null_reason`列(値=`NON_POSITIVE_MEAN`(mu<=0)/`INVALID_INPUT`(欠損・非有限入力)、家老所見⑥で追加)を設ける。RRSは`rrs_null_reason`列(値=`NO_REGIME_SAMPLE`(いずれかのregimeが未出現)/`INVALID_INPUT`)。データ不足・計算不能・極端に安定(ZERO_MAD)を区別可能にする。指標定義・式・Thresholdの変更ではなく解析不能理由の保存のみ。
+3b. **RRS Reliability Flag(原文§5.7、家老所見③で復元)**: Schemaに`rrs_min_regime_n`(=min(n_up, n_side, n_down)の生値)と`rrs_reliability_flag`を追加。フラグの機械基準=`min_regime_n == 0`のとき`NO_SAMPLE`(このときRRS=NULL・reason=NO_REGIME_SAMPLE)。それ以外は空とし「極端に少ない」の程度判断は生値`rrs_min_regime_n`の併記で読み手に委ねる(恣意的閾値を作らない=原文§5.7「Thresholdによる除外はしない」と整合)。
 4. **方向統一はRank層のみ**(§1.3): Raw値は元の意味を保持。DDAはRank時ascending。
 5. **既存定義の再利用**: §4の表の通り既存実装と同一演算・同一パラメータを使う。**新定義を作らない**。唯一の例外はRegimeのPIT化(§6-1の裁定事項)。
 6. **パラメータ空間縮小禁止**(殿厳命2026-04-04): 102PF全量(is_active=True)・利用可能全月・Forward horizonはt+1/t+3/t+6/t+12全量(t+1先行可、ただし残りを切り捨てず同一ランナーで継続。Multiple Horizonは別Experimentとして明示=原文§9.4)。
@@ -73,8 +75,8 @@
 | Phase | 内容 | 完了条件(二値) | 起票cmd(起票時に実番号記入=予約禁止LS-A04(46)) |
 |-------|------|----------------|------|
 | ~~P0偵察~~ | **完了(2026-08-08 v0.2調査)**: 既存実装・データ経路・PF列挙・出力慣行を§3-§4に確定 | 済 | (本書調査で代替) |
-| P1 | **計算実装**: `scripts/analysis/`に5指標計算モジュール+出力Schema(原文§15全列+layer=classify_layer流用)+Quality Check(原文§16)の自動テスト。単一時点t(直近確定月末)での102PF計算 | 原文§15全列出力+§16全チェックPASS+既存値突合(全期間版のAlpha/VDrag/MDD/AvgUWPを`portfolio_metrics.metrics_json`現物値と照合し差異を説明可能な状態) | (未起票) |
-| P2 | **PIT時系列生成**: 各月末t×102PF(is_active=True)の5指標を全履歴分生成。出力=`outputs/analysis/`にCSV+meta.yaml+SQLite(`gs_sqlite_output.py`慣行)+DATA_CATALOG追記。lookahead検査=入力系列をt月で物理切断した再計算値と、全履歴上でas-of計算したt時点値の完全一致をサンプル月(先頭/中間/末尾を含む)で機械検証 | 全月×102PF出力存在+lookahead検査PASS+NULL契約通りのNULL分布記録+MTD最終行除外の証跡 | (未起票) |
+| P1 | **計算実装**: `scripts/analysis/`に5指標計算モジュール+出力Schema(原文§15全列+§5-3/3bの追加列+layer=classify_layer流用)+Quality Check(原文§16)の自動テスト。単一時点t(直近確定月末)での102PF計算 | 原文§15全列+追加列出力+§16全チェックPASS+**既存値突合の二値定義(家老所見⑤)**: 同一入力から再計算した全期間版Alpha/VDrag/MDD/AvgUWPと`portfolio_metrics.metrics_json`現物値の相対誤差が全PF・全4指標で1e-9以下(分母0時は絶対誤差1e-12以下)、**不一致0件**+**DB read-only検証(軍師所見B)**: 実行ログ上でINSERT/UPDATE/DELETE文の発行が0件であることを機械確認 | (未起票) |
+| P2 | **PIT時系列生成**: 各月末t×102PF(is_active=True)の5指標を全履歴分生成。出力=`outputs/analysis/`にCSV+meta.yaml+SQLite(`gs_sqlite_output.py`慣行)+DATA_CATALOG追記。**lookahead検査は全月×全102PF(家老所見④: サンプル月方式は探索縮小禁止に反するため全量へ)**: 入力系列をt月で物理切断した再計算値と、全履歴上でas-of計算したt時点値の完全一致を全(t, PF)組で機械検証 | 全月×102PF出力存在+lookahead検査**全組PASS(不一致0件)**+NULL契約通りのNULL分布記録(reason code別集計)+MTD最終行除外の証跡 | (未起票) |
 | P3 | **評価**: 原文§9.4 Forward Evaluation(t+1/3/6/12)+§10 Benchmark Rules(Control A-F vs Experimental G-K)+§11評価7項目+§12冗長性RankCorr 12ペア(比較相手は§4の通りmetrics_impl側の値) | §11の7出力+§12の12ペアRankCorr表が再現可能スクリプトで生成+§9(原文§17)観察項目の報告 | (未起票) |
 
 - P1→P2→P3直列。P3はP2出力に対する読み取り専用。各Phase=1cmd原則。
@@ -89,7 +91,7 @@
 **主仮説**: Metric rank at t → future benchmark-relative performance。
 
 **Outcome階層(P3実行前に固定・変更禁止)**:
-- **Primary Outcome: Forward Excess Return**(PF月次リターン−ベンチ月次リターンのforward期間累積)。生死判定はこれ一本。
+- **Primary Outcome: Forward Excess Return**。定義(家老所見②で確定): 各horizon h∈{1,3,6,12}について**複利リターン差** = Π(1+r_p)−Π(1+r_b)(t+1〜t+hの月次Close系列の複利累積同士の差)。単純和・relative wealth比は不採用。理由: 既存IRのActive Return(True CAGR差=複利系、`metrics_impl.py:1370`)と同じ複利差系譜であり冗長性比較が整合する。生死判定はこれ一本。
 - **Secondary Outcomes**: Forward CAGR / Forward MaxDD / Forward Calmar / Forward Avg UWP / next_return等(ρ(1)実験系の指標群)。参考観察のみ。結果を見てからPrimaryを差し替えることは最も危険なチェリーピッキングとして禁止。
 
 固定Thresholdなし。観察: Forward RankCorr方向/正月率/Top-Bottom Spread/前半後半一貫性/Layer横断一貫性/既存Metricsとの差別化。核心=「過去Performanceとの相関が低いのにForward Qualityとの関係があるか」。CAGR/Sharpeと同じPFしか選ばない指標は不要と判定する。
@@ -112,4 +114,7 @@
 | 2026-08-08 17:05 | 実装設計書v0.1作成(commit 64a1072dd)、gist 574b417f発行 |
 | 2026-08-08 17:10 | 殿下知「未調査がないように覚醒してアップデート→家老忖度なしレビュー」 |
 | 2026-08-08 17:30 | Explore 2体調査完了→v0.2全面更新(§3データ層/§4既存実装接続/§6裁定事項2件/P0偵察完了扱い)。家老レビューへ |
-| 2026-08-08 18:15 | 殿裁定4点: §6-1 Regime expanding-PIT採用 / §6-2 ACS ×12採用 / NULL reason code追加(§5-3) / Primary Outcome=Forward Excess Return固定(§9)。+注意2点(§10: overlapping window注記・ECR解釈)。**「v0.2でP1へ進めてよい」承認**→v0.3反映、P1起票へ |
+| 2026-08-08 18:15 | 殿裁定4点: §6-1 Regime expanding-PIT採用 / §6-2 ACS ×12採用 / NULL reason code追加(§5-3) / Primary Outcome=Forward Excess Return固定(§9)。+注意2点(§10: overlapping window注記・ECR解釈)→v0.3反映 |
+| 2026-08-08 18:17 | 殿指示「まだ起票しない。設計のみ」→P1起票保留。家老+軍師へレビュー依頼 |
+| 2026-08-08 18:25 | 家老レビューREVISE所見8件→v0.4反映: ①ヘッダの起票状態矛盾解消 ②Primary=複利リターン差と定義 ③RRS Reliability Flag復元(§5-3b) ④P2 lookahead検査を全月×全PFへ ⑤P1突合ACを相対誤差1e-9・不一致0件で二値化 ⑥ecr_null_reason追加 ⑦Regime行番号をL106-122/L132へ訂正 ⑧monthly_returns置換をPF単位と明記。再レビューへ |
+| 2026-08-08 18:22 | 軍師レビューAPPROVE+所見6件(A=lookahead全量化は家老④と同一でv0.4反映済/B=P1にDB read-only検証AC追加→反映/C-F=問題なし確認)。v0.4に(B)を追加反映 |
