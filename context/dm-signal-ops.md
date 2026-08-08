@@ -1,5 +1,7 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-04 cmd_4234 reviewed sync/run boundary -->
+<!-- last_updated: 2026-08-09 cmd_4241_reviewed_boundary -->
+<!-- source_commit:bf4ed6a6 reason:cmd_4241_reviewed_boundary evidence:backend/app/api/etl_trigger.py+backend/app/jobs/precompute_raw.py -->
+<!-- source_commit:16b62fca reason:cmd_4241_reviewed_boundary evidence:backend/app/jobs/precompute_raw_queue.py -->
 <!-- source_commit:5b393e7ccd2160778060cc7d5522b32254d72c2e reason:cmd_4234 reviewed sync/run boundary evidence:cmd_complete_gate -->
 <!-- source_commit:5b393e7c reason:cmd_4234 reviewed sync/run boundary evidence:cmd_complete_gate -->
 <!-- source_commit:a111173509e7337dcc2e964a83c3ed043b940fd7 reason:Monthly Trade current-month backend deployment reviewed boundary evidence:deploy dep-d9oa3njbc2fs73eu4vhg live; all 102 PF current month -->
@@ -76,7 +78,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L1543 -->
+<!-- last_synced_lesson: L1544 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -101,6 +103,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L952: snapshot存在確認と再生成能力を分離する（cmd_karo_recon_dual_b4_10pf_omission_root_20260803）
 - L1542: 0件保全ガードは上流cleanupのcommit後では既存行を保全できない（cmd_karo_recon2_atomic_recalc_design_saizo_20260803）
 - L1543: template対clone parityだけでは現HEAD schema driftを検出できない（cmd_karo_recon2_b4_schema_divergence_tobisaru_20260803）
+- L1544: raw cache失効と再生成は同一契約で強制する（cmd_4239）
+
 ## §36 API認証
 - admin系API: Basic Auth(`ADMIN_API_KEY`)
 - viewer系API: Bearer Token(`VIEWER_TOKEN`)

@@ -1,5 +1,7 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-04 cmd_4234 reviewed no core change -->
+<!-- last_updated: 2026-08-09 cmd_4241_reviewed_boundary -->
+<!-- source_commit:bf4ed6a6 reason:cmd_4241_reviewed_boundary evidence:backend/app/api/etl_trigger.py+backend/app/jobs/precompute_raw.py -->
+<!-- source_commit:16b62fca reason:cmd_4241_reviewed_boundary evidence:backend/app/jobs/precompute_raw_queue.py -->
 <!-- source_commit:5b393e7ccd2160778060cc7d5522b32254d72c2e reason:cmd_4234 reviewed no core change evidence:cmd_complete_gate -->
 <!-- source_commit:5b393e7c reason:cmd_4234 reviewed no core change evidence:cmd_complete_gate -->
 <!-- source_commit:a111173509e7337dcc2e964a83c3ed043b940fd7 reason:Monthly Trade current-month backend row reviewed boundary evidence:43/43 tests; Render live; all 102 PF current month; gunshi APPROVE -->
