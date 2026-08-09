@@ -827,16 +827,19 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '560b12c8e536befd9000d800d8e5da213347e7de42fb75b7f6cf9f26873fc9e0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 12
-  last_seen: "2026-08-10T04:59:49+09:00"
+  occurrence_count: 13
+  last_seen: "2026-08-10T05:11:50+09:00"
   verification:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次確認済み: logs/self_retro.jsonlの検証hashが存在し、cmd_4123の実測でreview_notifyは95/95件がwall_ms>0の実信号。SG7順序・通知marker重複防止・正式CLIのduplicate 0は現行実装と監査資料で既に保持されているため、この候補は既存契約へ還流済みとして解決。速度短縮自体は別判断候補として残す。"
+  action_artifact: "context/infrastructure.md:79;docs/research/cmd_4123_self_retro_signal.md:24-40;docs/research/archive-review-reapproval-path-audit-20260801.md:53,59;scripts/lib/gunshi_notify.sh:21-27;scripts/review_bundle.py:403-424;verify=grep -Fq:PASS"
+  resolved_at: "2026-08-10T05:15:13+09:00"
 - id: INS-20260810-033215446-988a
   ts: "2026-08-10T03:32:15+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_今クリアされても強くてニューゲーム_20260810_0330]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=今クリアされても強くてニューゲーム; score=50.2) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_強くてニューゲーム_20260730_1355; score=23.8) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.3)。概念定義とaliases追加を検討せよ"
