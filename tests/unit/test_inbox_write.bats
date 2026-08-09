@@ -132,7 +132,6 @@ MOCK
     chmod +x "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_autofix.sh"
     printf '#!/bin/bash\necho "PASS: all checks passed"\n' > "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_format.sh"
     chmod +x "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_format.sh"
-    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$GIT_TEMPLATE_DIR/scripts/memory_db_live_insert.py"
 
     cat > "$GIT_TEMPLATE_DIR/queue/tasks/testninja.yaml" << 'YAML'
 task:
