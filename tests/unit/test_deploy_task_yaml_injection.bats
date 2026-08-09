@@ -206,8 +206,15 @@ PY
 import pathlib, sys, yaml
 root = pathlib.Path(sys.argv[1])
 ci = yaml.safe_load((root/'ci_fix.yaml').read_text())['task']
-assert ci['ci_fix_clean_repro_evidence']['e2_harness_command'] == ''
-assert [x['id'] for x in ci['acceptance_criteria']] == ['AC1', 'AC_CI_FIX_CLEAN_REPRO']
+assert ci['final_checkpoint'] == {
+    'type': 'ci_fix_clean_repro',
+    'required': True,
+    'evidence_field': 'ci_fix_clean_repro_evidence',
+    'validator': 'deploy_task_ci_fix_clean_repro_evidence_validate',
+    'phase': 'terminal_report_gate',
+}
+assert 'ci_fix_clean_repro_evidence' not in ci
+assert [x['id'] for x in ci['acceptance_criteria']] == ['AC1']
 for kind in ('impl', 'recon', 'training'):
     task = yaml.safe_load((root/f'{kind}.yaml').read_text())['task']
     assert 'ci_fix_clean_repro_evidence' not in task

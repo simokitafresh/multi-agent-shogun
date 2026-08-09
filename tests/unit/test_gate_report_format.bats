@@ -20,6 +20,47 @@ print(mod._zero_tolerance_conflict_errors(report, task))
 PY
 }
 
+# test_necessity: ci_fix clean-repro is a typed terminal checkpoint rather than
+# a normal AC, so it must not create an intermediate binary check and must be
+# validated exactly at the completed-report boundary.
+@test "ci_fix final checkpoint validates report evidence without AC injection" {
+    run python3 - "$MAIN" <<'PY'
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("gate_report_format_main", sys.argv[1])
+mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+task = {
+    "task_type": "ci_fix",
+    "acceptance_criteria": [{"id": "AC1", "description": "existing contract"}],
+    "final_checkpoint": {
+        "type": "ci_fix_clean_repro",
+        "required": True,
+        "evidence_field": "ci_fix_clean_repro_evidence",
+    },
+}
+assert len(task["acceptance_criteria"]) == 1
+valid = {
+    "e2_harness_command": "bash tests/e2_clean_ci.sh",
+    "pre_fix_receipt": {"path": "pre.json", "status": "FAIL", "source_commit": "a" * 40,
+                         "fixed_target": "tests/unit/x.bats#10", "started_at": "2026-07-20T01:00:00+09:00",
+                         "failures": 1, "skips": 0},
+    "post_fix_receipt": {"path": "post.json", "status": "PASS", "source_commit": "a" * 40,
+                          "fixed_target": "tests/unit/x.bats#10", "started_at": "2026-07-20T01:10:00+09:00",
+                          "failures": 0, "skips": 0},
+    "push_started_at": "2026-07-20T01:20:00+09:00",
+}
+assert mod._ci_fix_final_checkpoint_issues(task, {"status": "completed", "ci_fix_clean_repro_evidence": valid}) == []
+invalid = dict(valid)
+invalid["post_fix_receipt"] = dict(valid["post_fix_receipt"], skips=1)
+errors = mod._ci_fix_final_checkpoint_issues(task, {"status": "completed", "ci_fix_clean_repro_evidence": invalid})
+assert any("post receipt must be PASS FAIL0 SKIP0" in error for error in errors), errors
+assert mod._ci_fix_final_checkpoint_issues(task, {"status": "in_progress"}) == []
+assert mod._ci_fix_final_checkpoint_issues({"task_type": "impl", "acceptance_criteria": []}, {"status": "completed"}) == []
+print("checkpoint PASS; invalid evidence BLOCK; intermediate AC count=1")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"checkpoint PASS; invalid evidence BLOCK; intermediate AC count=1"* ]]
+}
+
 @test "positive structured mismatch with zero-tolerance yes is blocked" {
     run_detector 1 "許容誤差はゼロ"
     [ "$status" -eq 0 ]
