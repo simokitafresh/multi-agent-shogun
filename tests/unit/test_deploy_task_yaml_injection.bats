@@ -71,21 +71,21 @@ PY
     export DEPLOY_TASK_LIB_ONLY=1
     source "$PROJECT_ROOT/scripts/deploy_task.sh"
     SCRIPT_DIR="$tmpdir"
-    run_necessity_check() {
-      local expected="$1" actual rc
+    run_necessity_case() {
+      local expected="$1" task_file="$2" actual rc
       set +e
-      actual="$(deploy_task_test_necessity_precheck "$tmpdir/task.yaml" 2>&1)"
+      actual="$(deploy_task_test_necessity_precheck "$task_file" 2>&1)"
       rc=$?
       set -e
       [ "$rc" -eq "$expected" ] || {
-        printf 'expected_rc=%s actual_rc=%s output=%s\n' "$expected" "$rc" "$actual"
+        printf 'task=%s expected_rc=%s actual_rc=%s output=%s\n' "$task_file" "$expected" "$rc" "$actual"
         return 1
       }
     }
 
-    run_necessity_check 1
+    run_necessity_case 1 "$tmpdir/missing.yaml"
 
-    cat > "$tmpdir/task.yaml" <<'YAML'
+    cat > "$tmpdir/valid.yaml" <<'YAML'
 task:
   planned_paths: [tests/test_new.bats]
   test_necessity:
@@ -95,21 +95,28 @@ task:
     fixture_self_reference: false
     deprecated_mechanism: false
 YAML
-    run_necessity_check 0
-
-    for mutation in 'overlaps_existing: true' 'fixture_self_reference: true' 'deprecated_mechanism: true'; do
-      sed -i -E "s/(overlaps_existing|fixture_self_reference|deprecated_mechanism): (false|true)/\1: false/g" "$tmpdir/task.yaml"
-      key="${mutation%%:*}"; sed -i "s/$key: false/$mutation/" "$tmpdir/task.yaml"
-      run_necessity_check 1
+    for mutation in overlaps_existing fixture_self_reference deprecated_mechanism; do
+      cp "$tmpdir/valid.yaml" "$tmpdir/$mutation.yaml"
+      sed -i "s/$mutation: false/$mutation: true/" "$tmpdir/$mutation.yaml"
     done
 
-    sed -i -E 's/(fixture_self_reference|deprecated_mechanism): true/\1: false/; s/overlaps_existing: false/overlaps_existing: true\n    regression_justification: regression reproduces an intentional legacy boundary/' "$tmpdir/task.yaml"
-    run_necessity_check 0
+    cp "$tmpdir/valid.yaml" "$tmpdir/justified.yaml"
+    sed -i '/overlaps_existing: false/a\    regression_justification: regression reproduces an intentional legacy boundary' "$tmpdir/justified.yaml"
+    sed -i 's/overlaps_existing: false/overlaps_existing: true/' "$tmpdir/justified.yaml"
 
-    printf 'task:\n  planned_paths: [tests/test_existing.bats]\n' > "$tmpdir/task.yaml"
-    run_necessity_check 0
-    printf 'task:\n  planned_paths: [scripts/foo.sh]\n' > "$tmpdir/task.yaml"
-    run_necessity_check 0
+    printf 'task:\n  planned_paths: [tests/test_existing.bats]\n' > "$tmpdir/existing.yaml"
+    printf 'task:\n  planned_paths: [scripts/foo.sh]\n' > "$tmpdir/non_test.yaml"
+    pids=()
+    run_necessity_case 0 "$tmpdir/valid.yaml" & pids+=("$!")
+    for mutation in overlaps_existing fixture_self_reference deprecated_mechanism; do
+      run_necessity_case 1 "$tmpdir/$mutation.yaml" & pids+=("$!")
+    done
+    run_necessity_case 0 "$tmpdir/justified.yaml" & pids+=("$!")
+    run_necessity_case 0 "$tmpdir/existing.yaml" & pids+=("$!")
+    run_necessity_case 0 "$tmpdir/non_test.yaml" & pids+=("$!")
+    failed=0
+    for pid in "${pids[@]}"; do wait "$pid" || failed=1; done
+    [ "$failed" -eq 0 ]
 }
 
 @test "test necessity classifier has zero false positives and false negatives at path boundaries" {
@@ -122,24 +129,30 @@ YAML
     export DEPLOY_TASK_LIB_ONLY=1
     source "$PROJECT_ROOT/scripts/deploy_task.sh"
     SCRIPT_DIR="$tmpdir"
-    run_necessity_check() {
-      local expected="$1" needle="$2" actual rc
+    run_necessity_case() {
+      local expected="$1" needle="$2" task_file="$3" actual rc
       set +e
-      actual="$(deploy_task_test_necessity_precheck "$tmpdir/task.yaml" 2>&1)"
+      actual="$(deploy_task_test_necessity_precheck "$task_file" 2>&1)"
       rc=$?
       set -e
       [ "$rc" -eq "$expected" ] && [[ "$actual" == *"$needle"* ]]
     }
 
+    pids=()
     for path in logs/test_timing_ledger.tsv docs/test-plan.md contest/data.tsv; do
-      printf 'task:\n  planned_paths: [%s]\n' "$path" > "$tmpdir/task.yaml"
-      run_necessity_check 0 ""
+      task_file="$tmpdir/$(basename "$path").yaml"
+      printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task_file"
+      run_necessity_case 0 "" "$task_file" & pids+=("$!")
     done
 
     for path in tests/unit/test_new.bats tests/test_new.sh test_new.py; do
-      printf 'task:\n  planned_paths: [%s]\n' "$path" > "$tmpdir/task.yaml"
-      run_necessity_check 0 "transient=$path"
+      task_file="$tmpdir/$(basename "$path").yaml"
+      printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task_file"
+      run_necessity_case 0 "transient=$path" "$task_file" & pids+=("$!")
     done
+    failed=0
+    for pid in "${pids[@]}"; do wait "$pid" || failed=1; done
+    [ "$failed" -eq 0 ]
 }
 
 @test "multiple new tests require independent path declarations" {
