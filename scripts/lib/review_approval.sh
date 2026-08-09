@@ -309,6 +309,31 @@ for task_path in sorted((root / "queue" / "tasks").glob("*.yaml")):
         continue
     filename = str(task.get("report_filename") or "").strip()
     live_names.add(filename or f"{task_path.stem}_report_{cmd_id}.yaml")
+
+# A report can be revised after an earlier completion attempt has already
+# published an immutable archive generation.  The active task slot then owns
+# a new report_id, while the archived generation remains history.  Keep the
+# archive on disk, but do not require a second pair of approvals for that old
+# generation.  Same-id copies are deliberately not suppressed: they remain an
+# identity ambiguity and fail closed below.
+active_generations = {}
+for live_name in sorted(live_names):
+    live_path = reports_dir / live_name
+    if not live_path.is_file() or live_path.is_symlink():
+        continue
+    try:
+        live_doc = yaml.safe_load(live_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    if not isinstance(live_doc, dict) or str(live_doc.get("parent_cmd") or "") != cmd_id:
+        continue
+    generation_key = (
+        str(live_doc.get("worker_id") or "").strip(),
+        str(live_doc.get("task_id") or "").strip(),
+    )
+    live_report_id = str(live_doc.get("report_id") or "").strip()
+    if all(generation_key) and live_report_id:
+        active_generations[generation_key] = live_report_id
 candidates = list(reports_dir.glob("*.yaml")) + list(archive_dir.glob("*.yaml"))
 # A matching nested archive is an invalid ambiguous storage location, not a
 # candidate to silently ignore.
@@ -374,6 +399,14 @@ for report_path in sorted(candidates):
     }:
         continue
     report_id = str(doc.get("report_id") or "").strip()
+    if not is_live and report_id:
+        generation_key = (
+            str(doc.get("worker_id") or "").strip(),
+            str(doc.get("task_id") or "").strip(),
+        )
+        active_report_id = active_generations.get(generation_key)
+        if active_report_id and active_report_id != report_id:
+            continue
     if not report_id and not is_live:
         version = int(doc.get("report_identity_version") or 1)
         if version >= 2:

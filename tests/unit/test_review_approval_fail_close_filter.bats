@@ -86,3 +86,39 @@ YAML
     run review_resolve_reports cmd_legacy
     [ "$status" -eq 1 ]
 }
+
+# test_necessity: a revised live report with a new v2 identity supersedes its
+# immutable archived generation for approval, without deleting that history.
+@test "canonical registry reviews only active v2 generation for same worker task" {
+    mkdir -p "$PROJECT_ROOT/queue/tasks"
+    cat > "$PROJECT_ROOT/queue/tasks/current.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_revised
+  report_filename: ninja_report_cmd_revised.yaml
+YAML
+    cat > "$PROJECT_ROOT/queue/reports/ninja_report_cmd_revised.yaml" <<'YAML'
+worker_id: ninja
+task_id: cmd_revised_full
+report_id: rpt-current
+report_identity_version: 2
+parent_cmd: cmd_revised
+status: completed
+verdict: PASS
+commit_hash: 0123456789012345678901234567890123456789
+YAML
+    cat > "$PROJECT_ROOT/queue/archive/reports/ninja_report_cmd_revised_20260810.yaml" <<'YAML'
+worker_id: ninja
+task_id: cmd_revised_full
+report_id: rpt-archived
+report_identity_version: 2
+parent_cmd: cmd_revised
+status: completed
+verdict: PASS
+commit_hash: 0123456789012345678901234567890123456789
+YAML
+
+    run review_resolve_reports cmd_revised
+    [ "$status" -eq 0 ]
+    [ "$output" = "$PROJECT_ROOT/queue/reports/ninja_report_cmd_revised.yaml" ]
+    [ -f "$PROJECT_ROOT/queue/archive/reports/ninja_report_cmd_revised_20260810.yaml" ]
+}
