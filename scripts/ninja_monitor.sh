@@ -4522,7 +4522,7 @@ _reflux_checkpoint_dirty_target() {
     [ "$target" = "queue/insights.yaml" ] || return 1
     [ -x "$helper" ] || return 1
 
-    if ! bash "$helper" -m "chore(insights): checkpoint operational reflux state" -- "$target" \
+    if ! (cd "$SCRIPT_DIR" && bash "$helper" -m "chore(insights): checkpoint operational reflux state" -- "$target") \
         >> "$SCRIPT_DIR/logs/deploy_reflux_auto.log" 2>&1; then
         log "REFLUX-AUTO-CHECKPOINT-FAIL: target=$target fingerprint=$fingerprint"
         return 1

@@ -589,7 +589,7 @@ SH
 
         run_reflux() {
             REFLUX_IDLE_FIRST_SEEN[hayate]=0
-            _handle_reflux_auto_deploy hayate "$1" || true
+            (cd / && _handle_reflux_auto_deploy hayate "$1") || true
         }
         run_reflux 100
         [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
