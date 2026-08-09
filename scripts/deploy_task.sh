@@ -4098,6 +4098,7 @@ snapshot = {
     "purpose": str(task.get("purpose") or task.get("title") or task.get("command") or sys.argv[3]).strip(),
     "project": str(task.get("project") or sys.argv[6] or "unknown").strip(),
     "acceptance_criteria": task.get("acceptance_criteria"),
+    "investigation_contract": task.get("investigation_contract"),
     "reflux_commit_contract": task.get("reflux_commit_contract"),
 }
 print(json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
@@ -4134,6 +4135,18 @@ causal_verification:
   design_intent_checked: ""  # 守るべき設計意図/既存防御を記入
   evidence: ""  # bounded確認: git log/blame, rg, causal_backlinks, semantic_search(timeout/scope限定)
   origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+EOF
+)
+    fi
+    local _investigation_outcome_block=""
+    if [[ "${task_type,,}" =~ ^(recon|recon2|scout)$ ]]; then
+        _investigation_outcome_block=$(cat <<'EOF'
+investigation_outcome:
+  # 発見件数は合否条件ではない。指定範囲を調べ切り、一次証拠で問いを解決したかが合否。
+  outcome: ""  # found / zero_found / not_present / external_boundary / unknown_after_exhaustion
+  method_completed: false  # 指定された探索方法・範囲を完遂した時だけtrue
+  primary_evidence: []  # [{source: "file:line/query/output", observation: "観測事実"}] 最低1件
+  remaining_unknowns: []  # 無ければ[]。unknown_after_exhaustionなら残存不明点を列挙
 EOF
 )
     fi
@@ -4554,6 +4567,7 @@ post_deploy_evidence:
   source: ""  # timing-history id / Render log timestamp / DB queryなど一次証跡
 ${_opsim_block}
 ${_variation_checks_block}
+${_investigation_outcome_block}
 binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
 # ⚠ result値は "yes" or "no" のみ。true/false/PASS/FAIL/OK等はBLOCKされる
 # 例: echo '[{check: "コメント追加済みか", result: "yes"}]' | \$RFS binary_checks.AC1 -
@@ -5384,7 +5398,7 @@ PY_LEARNED_PREFILL
     # cmd_1983: field_get_multiで一括取得済み → task_type/type/scope_mode変数を参照
     local report_task_type="${task_type:-${type:-${scope_mode}}}"
     report_task_type=$(echo "$report_task_type" | tr '[:upper:]' '[:lower:]')
-    if [ "$report_task_type" = "recon" ] || [ "$report_task_type" = "scout" ]; then
+    if [ "$report_task_type" = "recon" ] || [ "$report_task_type" = "recon2" ] || [ "$report_task_type" = "scout" ]; then
         cat >> "$report_file" <<'RECON_EOF'
 # ─── 偵察 実装直結5要件（cmd_754+cmd_1476: 必須。空欄でWARN） ───
 implementation_readiness:
@@ -12287,6 +12301,7 @@ deploy_task_apply_task_mutations() {
 
     # Level5: investigation tasks receive an executable, bounded code-location
     # path before publication.  Raw recursive grep is intentionally forbidden.
+    inject_outcome_neutral_investigation_contract "$task_file" || return 1
     inject_code_location_contract "$task_file" || return 1
     inject_scope_contract_fields "$task_file" || return 1
 
@@ -12319,6 +12334,27 @@ inject_code_location_contract() {
     fi
     contract='Code-locationは `bash scripts/code_locate.sh "QUERY" [PATHSPEC ...]`（追跡対象限定、git grep）を使う。`grep -r`/`grep -R`は禁止。追跡外生成物が必要な場合のみ `bash scripts/code_locate.sh --include-untracked --reason "必要理由" "QUERY" [PATH ...]` を使う（node_modules/.git/.*_worktreesは既定除外）。exit 0=match、1=no match、2以上=実行異常として区別する。'
     yaml_field_set "$task_file" "task" "code_location_contract" "$contract"
+}
+
+# Read-only investigation succeeds by resolving the assigned question, not by
+# producing the answer the issuer hoped to find.  Keep the authored scope/ACs
+# intact for ancestry and review traceability, while making their success
+# semantics outcome-neutral at deployment time.  The report gate consumes the
+# same typed contract from task_contract_snapshot, so this cannot degrade into
+# a worker/reviewer convention.
+inject_outcome_neutral_investigation_contract() {
+    local task_file="$1" task_type contract
+    [ -f "$task_file" ] || return 0
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    task_type="${task_type,,}"
+    case "$task_type" in
+        recon|recon2|scout) ;;
+        *) return 0 ;;
+    esac
+
+    contract='{"version":1,"required":true,"outcome_neutral":true,"success_basis":"assigned_method_completed_with_primary_evidence","discovery_required":false,"allowed_outcomes":["found","zero_found","not_present","external_boundary","unknown_after_exhaustion"],"minimum_primary_evidence":1}'
+    yaml_field_set "$task_file" "task" "investigation_contract" "$contract" || return 1
+    log "investigation_contract: outcome-neutral contract injected (${task_type})"
 }
 
 # cmd_4215: only an explicit boolean declaration may opt a task into fixed-HEAD

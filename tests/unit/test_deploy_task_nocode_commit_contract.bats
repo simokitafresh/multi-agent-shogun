@@ -174,6 +174,46 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: readonly偵察の成功を期待発見へ再結合すると、ゼロ件という
+# 正しい調査結果が再びFAILになる。配備されたtaskと凍結report snapshotが同じ
+# outcome-neutral契約を持ち、報告欄も自動生成される不変量を守る。
+@test "recon deployment freezes one outcome-neutral investigation contract into task and report" {
+  cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  assigned_to: sasuke
+  task_id: cmd_recon_outcome_neutral
+  parent_cmd: cmd_recon_outcome_neutral
+  project: infra
+  task_type: recon
+  title: locate an optional caller
+  target_path: scripts/deploy_task.sh
+  ac_version: fixture-v1
+  acceptance_criteria:
+    - id: AC1
+      description: resolve whether the optional caller exists
+EOF
+
+  inject_outcome_neutral_investigation_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  generate_report_template sasuke cmd_recon_outcome_neutral cmd_recon_outcome_neutral infra >/dev/null
+  local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_recon_outcome_neutral.yaml"
+
+  run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" "$report" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))["task"]
+report = yaml.safe_load(open(sys.argv[2]))
+contract = task["investigation_contract"]
+assert contract["outcome_neutral"] is True
+assert contract["discovery_required"] is False
+assert contract == report["task_contract_snapshot"]["investigation_contract"]
+assert report["investigation_outcome"] == {
+    "outcome": "", "method_completed": False,
+    "primary_evidence": [], "remaining_unknowns": [],
+}
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
+
 @test "same-command retry rehydrates task commit contract from preserved report" {
   # test_necessity: reset_stale_fields clears the task contract before a retry,
   # while L060 preserves the report; both SSOTs must be synchronized again.

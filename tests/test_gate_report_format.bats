@@ -1671,6 +1671,48 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: 偵察結果が0件でも探索完遂+一次証拠なら成功し、同じ0件主張でも
+# 探索未完了または証拠なしなら失敗する outcome-neutral 境界を固定する。
+@test "investigation contract accepts evidenced zero findings and rejects unevidenced claims" {
+    run python3 <<'PY'
+import importlib.util
+
+spec = importlib.util.spec_from_file_location("gate_main", "scripts/gates/gate_report_format_main.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+contract = {
+    "version": 1,
+    "required": True,
+    "outcome_neutral": True,
+    "discovery_required": False,
+    "allowed_outcomes": ["found", "zero_found", "not_present", "external_boundary", "unknown_after_exhaustion"],
+    "minimum_primary_evidence": 1,
+}
+base = {"task_contract_snapshot": {"investigation_contract": contract}}
+valid = dict(base, investigation_outcome={
+    "outcome": "zero_found",
+    "method_completed": True,
+    "primary_evidence": [{"source": "git grep rc=1", "observation": "bounded target has zero matches"}],
+    "remaining_unknowns": [],
+})
+assert module._investigation_contract_issues(valid) == []
+
+no_evidence = dict(base, investigation_outcome={
+    "outcome": "zero_found", "method_completed": True,
+    "primary_evidence": [], "remaining_unknowns": [],
+})
+assert any("primary_evidence" in issue for issue in module._investigation_contract_issues(no_evidence))
+
+not_completed = dict(base, investigation_outcome={
+    "outcome": "zero_found", "method_completed": False,
+    "primary_evidence": [{"source": "query", "observation": "partial"}],
+    "remaining_unknowns": [],
+})
+assert any("method_completed" in issue for issue in module._investigation_contract_issues(not_completed))
+PY
+    [ "$status" -eq 0 ]
+}
+
 # test_necessity: a report-only commit may live in the control-plane repo while
 # the task's explicit project repo remains the authoritative primary repo.
 @test "cross repo report-only commit falls back to its declared repository" {

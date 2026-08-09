@@ -888,6 +888,56 @@ def _binary_checks_full_cmd(report_path):
     )
 
 
+def _investigation_contract_issues(report):
+    """Validate the deployment-frozen outcome-neutral investigation contract.
+
+    Absence is valid for legacy/non-investigation reports.  When the typed
+    contract is present, zero findings and external boundaries are first-class
+    successful outcomes; only incomplete method/evidence is rejected.
+    """
+    snapshot = report.get("task_contract_snapshot")
+    contract = snapshot.get("investigation_contract") if isinstance(snapshot, dict) else None
+    if not isinstance(contract, dict) or contract.get("required") is not True:
+        return []
+
+    issues = []
+    if contract.get("outcome_neutral") is not True or contract.get("discovery_required") is not False:
+        issues.append("task contract is not outcome-neutral")
+
+    result = report.get("investigation_outcome")
+    if not isinstance(result, dict):
+        return issues + ["investigation_outcome mapping is missing"]
+
+    allowed = contract.get("allowed_outcomes") or []
+    outcome = str(result.get("outcome") or "").strip()
+    if outcome not in allowed:
+        issues.append("outcome must be one of: " + ", ".join(map(str, allowed)))
+    if result.get("method_completed") is not True:
+        issues.append("method_completed must be true")
+
+    evidence = result.get("primary_evidence")
+    minimum = contract.get("minimum_primary_evidence", 1)
+    try:
+        minimum = max(1, int(minimum))
+    except (TypeError, ValueError):
+        minimum = 1
+    valid_evidence = [
+        item for item in evidence or []
+        if isinstance(item, dict)
+        and str(item.get("source") or "").strip()
+        and str(item.get("observation") or "").strip()
+    ] if isinstance(evidence, list) else []
+    if len(valid_evidence) < minimum:
+        issues.append(f"primary_evidence requires at least {minimum} source+observation item(s)")
+
+    unknowns = result.get("remaining_unknowns")
+    if not isinstance(unknowns, list):
+        issues.append("remaining_unknowns must be a list")
+    elif outcome == "unknown_after_exhaustion" and not any(str(item).strip() for item in unknowns):
+        issues.append("unknown_after_exhaustion requires a non-empty remaining_unknowns list")
+    return issues
+
+
 def main(report_data=None) -> int:
     if len(sys.argv) < 2:
         print("FAIL: report path required")
@@ -911,6 +961,14 @@ def main(report_data=None) -> int:
     if not data or not isinstance(data, dict):
         print("FAIL: report is empty or not a dict")
         return 1
+
+    for issue in _investigation_contract_issues(data):
+        errors.append("investigation_contract: " + issue)
+    if any(error.startswith("investigation_contract:") for error in errors):
+        hints.append(
+            "FIX (investigation_outcome): 発見件数ではなく探索完遂を報告せよ。"
+            "outcome/method_completed/primary_evidence/remaining_unknownsを構造記入する"
+        )
 
     required = [
         "worker_id",
