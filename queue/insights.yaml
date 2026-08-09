@@ -244,7 +244,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4260"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存GP-180/181のLevel4防御を確認。deploy_task.sh reset_stale_fields()が全配備経路でSTALE_RESETを実行し、最終AC3ゲートが未実行をBLOCKするため追加修正不要"
+  action_artifact: "scripts/deploy_task.sh:L1625-L1782,L13280-L13286;tests/unit/test_deploy_task_lifecycle.bats:L1472-L1487,L2193-L2214;context/senkyoku-log.md:L1022;memory_db_query=GP-180 STALE_RESET cmd_1861;semantic-map.md:L103;docs/semantic-index/index.md:L3339"
+  resolved_at: "2026-08-10T07:05:31+09:00"
 - id: INS-20260810-004640774-c51b
   ts: "2026-08-10T00:46:40+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿下知_並列起票_20260810_0009]] は既存aliasesに一致なし。類似概念TOP3: gist_master_three_step_rule(gist正本3点セット規律; alias=殿下知_月次リターン基本原理再整理_20260809; score=21.0) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=3.7) / push_batch_operation(正規push batch運用; alias=push_batch_20260719; score=2.6)。概念定義とaliases追加を検討せよ"
