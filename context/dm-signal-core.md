@@ -1,5 +1,7 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-10 cmd_karo_ci_fix_dm_signal_run_31326903152 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_4283 reviewed source boundary -->
+<!-- source_commit:ec72faa2 reason:cmd_4283 reviewed source boundary evidence:cmd_complete_gate -->
+<!-- source_commit:d62065b4 reason:cmd_4282 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:8e30a242 reason:cmd_karo_ci_fix_dm_signal_run_31326903152 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=8e30a242 -->
 <!-- source_commit:a926d06c reason:cmd_4255 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=a926d06c -->
 <!-- source_commit:aca163ab reason:cmd_4254 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=aca163ab -->
