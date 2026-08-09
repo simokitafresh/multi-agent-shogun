@@ -294,7 +294,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4259"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で候補前提を反証。logs/gunshi_review_log.yamlのcmd_4259(2026-08-10T00:42:00+09:00)にadversarialが記録され、対象時点までの本番report直近10件も10/10で同観点を含む。実修正不要。"
+  action_artifact: "logs/gunshi_review_log.yaml:2273-2303; cmd_4259 reviewed_at=2026-08-10T00:42:00+09:00; primary recount=10/10 adversarial"
+  resolved_at: "2026-08-10T07:36:45+09:00"
 - id: INS-20260810-005019167-1618
   ts: "2026-08-10T00:50:19+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bu983athq task id tool use id toolu 01HtmoUH2CAtr5NDYg は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
