@@ -526,8 +526,8 @@ SH
     [ "$status" -eq 0 ]
 }
 
-# test_necessity: reflux insight配備は共有queueのforeign dirty世代を公開せず、同一世代通知を重複せず、clean復帰と無関係なdirtyを許可する不変量を守る。
-@test "reflux insight dirty target blocks publication and notifies once per generation" {
+# test_necessity: reflux insight配備は共有queueのdirty世代をscope限定checkpointで保存し、checkpoint失敗時だけ同一世代通知を重複せずBLOCKする不変量を守る。
+@test "reflux insight dirty target checkpoints before publication and fails closed" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         set -euo pipefail
         export NINJA_MONITOR_LIB_ONLY=1
@@ -560,6 +560,13 @@ SH
 printf "%s\\n" "\$*" >> "$root/notifications.log"
 SH
         chmod +x "$root/scripts/inbox_write.sh"
+        cat > "$root/scripts/ninja_scope_commit.sh" <<SH
+#!/usr/bin/env bash
+if [ -e "$root/checkpoint.fail" ]; then exit 1; fi
+git -C "$root" add -- queue/insights.yaml
+git -C "$root" commit -qm checkpoint
+SH
+        chmod +x "$root/scripts/ninja_scope_commit.sh"
 
         git -C "$root" init -q
         git -C "$root" config user.email test@example.com
@@ -589,30 +596,33 @@ SH
 
         printf "# foreign generation one\\n" >> "$root/queue/insights.yaml"
         run_reflux 200
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
+        [ ! -s "$root/notifications.log" ]
+        grep -q "REFLUX-AUTO-CHECKPOINT:.*result=clean" "$root/test.log"
+
+        touch "$root/checkpoint.fail"
+        printf "# foreign generation blocked\\n" >> "$root/queue/insights.yaml"
+        run_reflux 300
         [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
         grep -q "target=queue/insights.yaml" "$root/notifications.log"
         grep -q "task_publication=0" "$root/test.log"
 
-        run_reflux 300
-        [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
-
-        printf "# foreign generation two\\n" >> "$root/queue/insights.yaml"
         run_reflux 400
-        [ "$(wc -l < "$root/notifications.log")" -eq 2 ]
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
+        [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
 
+        rm -f "$root/checkpoint.fail"
         cp "$root/clean-insights.yaml" "$root/queue/insights.yaml"
         run_reflux 500
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 3 ]
 
         printf unrelated > "$root/unrelated.txt"
         run_reflux 600
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 3 ]
-        [ "$(wc -l < "$root/notifications.log")" -eq 2 ]
-        echo "REFLUX_DIRTY_GENERATIONS_OK deploys=3 notifications=2"
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 4 ]
+        [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
+        echo "REFLUX_DIRTY_GENERATIONS_OK deploys=4 notifications=1"
     '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"REFLUX_DIRTY_GENERATIONS_OK deploys=3 notifications=2"* ]]
+    [[ "$output" == *"REFLUX_DIRTY_GENERATIONS_OK deploys=4 notifications=1"* ]]
 }

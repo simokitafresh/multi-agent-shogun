@@ -4510,6 +4510,31 @@ _reflux_target_dirty_fingerprint() {
     printf '%s\t%s\n' "$fingerprint" "$status"
 }
 
+# queue/insights.yaml is a live operational ledger: trusted producers may
+# append or resolve entries while no reflux worker owns it.  Preserve that
+# generation in a scope-only checkpoint before publishing the next worker
+# instead of requiring Karo to make the worktree clean by hand.  The existing
+# dirty guard remains fail-closed when the checkpoint fails or a producer
+# changes the file again before publication.
+_reflux_checkpoint_dirty_target() {
+    local target="$1" fingerprint="$2"
+    local helper="$SCRIPT_DIR/scripts/ninja_scope_commit.sh"
+    [ "$target" = "queue/insights.yaml" ] || return 1
+    [ -x "$helper" ] || return 1
+
+    if ! bash "$helper" -m "chore(insights): checkpoint operational reflux state" -- "$target" \
+        >> "$SCRIPT_DIR/logs/deploy_reflux_auto.log" 2>&1; then
+        log "REFLUX-AUTO-CHECKPOINT-FAIL: target=$target fingerprint=$fingerprint"
+        return 1
+    fi
+    if _reflux_target_dirty_fingerprint "$target" >/dev/null; then
+        log "REFLUX-AUTO-CHECKPOINT-RACED: target=$target fingerprint=$fingerprint"
+        return 1
+    fi
+    log "REFLUX-AUTO-CHECKPOINT: target=$target fingerprint=$fingerprint result=clean"
+    return 0
+}
+
 _reflux_dirty_notice_state_file() {
     local target="$1" target_key
     target_key=$(printf '%s' "$target" | sha256sum | awk '{print $1}')
@@ -5524,11 +5549,13 @@ EOF
     # immediately before publication so a foreign edit cannot create another
     # in-progress worker that is guaranteed to fail its commit contract.
     if [ "$kind" = "insight" ] && IFS=$'\t' read -r dirty_fingerprint dirty_status < <(_reflux_target_dirty_fingerprint "$target_path"); then
-        _reflux_notify_dirty_target_once "$name" "$target_path" "$dirty_fingerprint" "$dirty_status" "$cmd_id" || true
-        rm -f "$tmp_task"
-        _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
-        log "REFLUX-AUTO-BLOCK: $name target=$target_path dirty_fingerprint=$dirty_fingerprint task_publication=0"
-        return 1
+        if ! _reflux_checkpoint_dirty_target "$target_path" "$dirty_fingerprint"; then
+            _reflux_notify_dirty_target_once "$name" "$target_path" "$dirty_fingerprint" "$dirty_status" "$cmd_id" || true
+            rm -f "$tmp_task"
+            _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
+            log "REFLUX-AUTO-BLOCK: $name target=$target_path dirty_fingerprint=$dirty_fingerprint task_publication=0"
+            return 1
+        fi
     fi
 
     log "REFLUX-AUTO-DEPLOY: $name cmd=${cmd_id} kind=${kind} target=${target_path}"
