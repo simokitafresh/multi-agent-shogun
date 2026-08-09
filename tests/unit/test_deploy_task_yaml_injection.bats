@@ -2552,7 +2552,8 @@ for i in range(len(canonical),1357):
     canonical[row['id']]=row
 unique=list(canonical.values())[:1357]
 fixture_rows=list(canonical.values())
-dupes=[row for row in records + fixture_rows if str(row['id']) in {str(x['id']) for x in unique}]
+unique_ids={str(x['id']) for x in unique}
+dupes=[row for row in records + fixture_rows if str(row['id']) in unique_ids]
 corpus=unique + dupes[:978]
 assert len(corpus)==2335 and len({str(x['id']) for x in corpus})==1357
 
