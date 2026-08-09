@@ -1619,15 +1619,35 @@ successful_attempts.sort()
 current_attempt_deploy_ts = successful_attempts[-1][0] if successful_attempts else None
 current_attempt_issue_ts = successful_attempts[-1][1] if successful_attempts else None
 
-# Report timestamps are the durable done event. Include archives and choose the
-# latest valid completion/revision for duplicate reports of the same cmd.
+# Report timestamps are the durable done event. Prefer reports whose filename
+# carries this cmd id; only legacy filenames fall back to the full recursive
+# scan. This keeps the latest valid completion/revision semantics unchanged
+# while avoiding YAML parsing for unrelated historical reports.
 report_done_values = []
-report_patterns = (
-    os.path.join(root_dir, "queue/reports/*.yaml"),
-    os.path.join(root_dir, "archive/reports/**/*.yaml"),
+preferred_patterns = (
+    os.path.join(root_dir, "queue/reports", f"*{cmd_id}*.yaml"),
+    os.path.join(root_dir, "archive/reports", "**", f"*{cmd_id}*.yaml"),
 )
-for pattern in report_patterns:
-    for path in glob.glob(pattern, recursive=True):
+preferred_paths = []
+for pattern in preferred_patterns:
+    preferred_paths.extend(glob.glob(pattern, recursive=True))
+
+if preferred_paths:
+    report_paths = sorted(set(preferred_paths))
+    report_scan_mode = "cmd_filename_preferred"
+else:
+    legacy_patterns = (
+        os.path.join(root_dir, "queue/reports/*.yaml"),
+        os.path.join(root_dir, "archive/reports/**/*.yaml"),
+    )
+    report_paths = sorted({
+        path
+        for pattern in legacy_patterns
+        for path in glob.glob(pattern, recursive=True)
+    })
+    report_scan_mode = "legacy_full_scan"
+
+for path in report_paths:
         try:
             with open(path, encoding="utf-8") as f:
                 report = yaml.safe_load(f) or {}
