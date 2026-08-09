@@ -4127,6 +4127,7 @@ snapshot = {
     "purpose": str(task.get("purpose") or task.get("title") or task.get("command") or sys.argv[3]).strip(),
     "project": str(task.get("project") or sys.argv[6] or "unknown").strip(),
     "acceptance_criteria": task.get("acceptance_criteria"),
+    "final_checkpoint": task.get("final_checkpoint"),
     "investigation_contract": task.get("investigation_contract"),
     "reflux_commit_contract": task.get("reflux_commit_contract"),
 }
@@ -4213,6 +4214,54 @@ operational_simulation:
   result: ""  # PASS or FAIL
 EOF
 )
+
+    # Typed terminal checkpoints are report evidence, not worker ACs.  Keep
+    # the evidence scaffold in the report so the terminal gate can validate
+    # it against the frozen task_contract_snapshot exactly once.
+    local _final_checkpoint_block=""
+    if python3 - "$task_file" <<'PY'
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+checkpoint = task.get("final_checkpoint")
+raise SystemExit(0 if isinstance(checkpoint, dict)
+                 and checkpoint.get("required") is True
+                 and checkpoint.get("type") == "ci_fix_clean_repro" else 1)
+PY
+    then
+        _final_checkpoint_block=$(cat <<'EOF'
+ci_fix_clean_repro_evidence:
+  e2_harness_command: ""
+  pre_fix_receipt:
+    path: ""
+    status: ""
+    source_commit: ""
+    fixed_target: ""
+    started_at: ""
+    failures: null
+    skips: null
+  post_fix_receipt:
+    path: ""
+    status: ""
+    source_commit: ""
+    fixed_target: ""
+    started_at: ""
+    failures: null
+    skips: null
+  push_started_at: ""
+  outcome: ""
+  not_reproducible:
+    independent_receipts: []
+    ci_green:
+      run_id: ""
+      status: ""
+      observed_at: ""
+      commit: ""
+    diagnostics:
+      path: ""
+      emits: []
+EOF
+)
+    fi
 
     # The task contract is the SSOT when it explicitly carries required.
     # Only legacy tasks without that key fall back to type/path inference.
@@ -4598,6 +4647,7 @@ post_deploy_evidence:
   run_completed: false
   source: ""  # timing-history id / Render log timestamp / DB queryなど一次証跡
 ${_opsim_block}
+${_final_checkpoint_block}
 ${_variation_checks_block}
 ${_investigation_outcome_block}
 binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
@@ -12539,8 +12589,8 @@ deploy_task_ci_red_followup_push_guard() {
 }
 
 # E3 Level5: ci_fixはclean-CI相当の同一harnessで修正前FAIL→修正後PASSを
-# push前に証明する。配備時点では空scaffoldを与え、専用ACがreport templateの
-# binary_checksへ展開される。完成証跡は下のvalidatorでfail-closed検証する。
+# push前に証明する。途中AC/binary_checksへ混入させず、型付きfinal_checkpoint
+# として配備する。完成証跡は報告終端gateが一度だけfail-closed検証する。
 inject_ci_fix_clean_repro_contract() {
     local task_file="$1" task_type
     [ -f "$task_file" ] || return 0
@@ -12553,30 +12603,13 @@ path = sys.argv[1]
 raw = open(path, encoding='utf-8').read()
 d = yaml.safe_load(raw) or {}
 t = d.get('task', d)
-evidence = {
-    'e2_harness_command':'',
-    'pre_fix_receipt':{'path':'','status':'','source_commit':'','fixed_target':'','started_at':'','failures':None,'skips':None},
-    'post_fix_receipt':{'path':'','status':'','source_commit':'','fixed_target':'','started_at':'','failures':None,'skips':None},
-    'push_started_at':'',
-    'outcome':'',
-    'not_reproducible':{'independent_receipts':[],'ci_green':{'run_id':'','status':'','observed_at':'','commit':''},'diagnostics':{'path':'','emits':[]}},
-    'validation_command':'deploy_task_ci_fix_clean_repro_evidence_validate <task_yaml>'}
-acs = t.get('acceptance_criteria') or []
-if isinstance(acs, dict):
-    acs = [{'id': str(k), 'description': str(v)} for k, v in acs.items()]
-elif not isinstance(acs, list):
-    acs = []
-acs = [x for x in acs if not (isinstance(x, dict) and x.get('id') == 'AC_CI_FIX_CLEAN_REPRO')]
-acs.append({
-    'id': 'AC_CI_FIX_CLEAN_REPRO',
-    'description': ('push前に同一E2 clean-CI harness/同一source_commit/同一fixed_targetで'
-                    '修正前FAIL receipt(failures>=1,SKIP0)→修正後PASS receipt(FAIL0,SKIP0)を生成し、'
-                    'ci_fix_clean_repro_evidenceの全必須欄を埋めvalidator PASSをreportへ記録する。'
-                    '空欄・pre-fix PASS・post-fix FAIL/SKIP・異なるsource/target・push後開始は禁止。'
-                    'CI失敗が再現しない場合のみ outcome: not_reproducible を宣言してよい。'
-                    'その場合は3点(3環境以上の独立検証receipt(全PASS)・CI本番GREENの実測・'
-                    '失敗時にrc/stderr/reason_codeを出す診断計装)を not_reproducible へ記入せよ。1つでも欠ければBLOCKされる。')
-})
+checkpoint = {
+    'type': 'ci_fix_clean_repro',
+    'required': True,
+    'evidence_field': 'ci_fix_clean_repro_evidence',
+    'validator': 'deploy_task_ci_fix_clean_repro_evidence_validate',
+    'phase': 'terminal_report_gate',
+}
 
 def replace_task_field(text, key, value):
     encoded = json.dumps(value, ensure_ascii=False, separators=(',', ':'))
@@ -12596,8 +12629,29 @@ def replace_task_field(text, key, value):
         out.append('  ' + key + ': ' + encoded)
     return '\n'.join(out) + '\n'
 
-raw = replace_task_field(raw, 'ci_fix_clean_repro_evidence', evidence)
-raw = replace_task_field(raw, 'acceptance_criteria', acs)
+def remove_task_field(text, key):
+    lines = text.splitlines()
+    out, i = [], 0
+    while i < len(lines):
+        line = lines[i]
+        if re.match(r'^  ' + re.escape(key) + r':(?:\s|$)', line):
+            i += 1
+            while i < len(lines):
+                stripped = lines[i].lstrip(' ')
+                indent = len(lines[i]) - len(stripped)
+                if stripped and (indent < 2 or (indent == 2 and not stripped.startswith('- '))):
+                    break
+                i += 1
+            continue
+        out.append(line)
+        i += 1
+    return '\n'.join(out) + '\n'
+
+# A retry may start from a task produced by the old AC-based implementation.
+# Remove that obsolete contract and its task-local evidence so the report is
+# the sole terminal evidence owner for the new typed checkpoint.
+raw = remove_task_field(raw, 'ci_fix_clean_repro_evidence')
+raw = replace_task_field(raw, 'final_checkpoint', checkpoint)
 yaml.safe_load(raw)
 fd, tmp = tempfile.mkstemp(prefix=os.path.basename(path)+'.', dir=os.path.dirname(path) or '.')
 try:
@@ -12606,77 +12660,33 @@ try:
 finally:
     if os.path.exists(tmp): os.unlink(tmp)
 PY
-    log "inject_ci_fix_clean_repro_contract: Level5 scaffold+AC injected"
+    log "inject_ci_fix_clean_repro_contract: typed final_checkpoint injected"
 }
 
 deploy_task_ci_fix_clean_repro_evidence_validate() {
     local task_file="$1"
-    python3 - "$task_file" <<'PY'
-import datetime as dt, re, sys, yaml
-d = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
-t = d.get('task', d)
-if str(t.get('task_type') or '').strip().lower() != 'ci_fix':
+    # Keep the worker-facing helper compatible while sharing the one canonical
+    # validator with the terminal report gate.
+    PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}" python3 - "$task_file" <<'PY'
+import sys, yaml
+from scripts.gates.gate_report_format_main import ci_fix_clean_repro_evidence_errors
+
+doc = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+task = doc.get('task', doc)
+if str(task.get('task_type') or '').strip().lower() != 'ci_fix':
     raise SystemExit(0)
-e = t.get('ci_fix_clean_repro_evidence')
-def block(msg):
-    print('BLOCK: ci_fix clean repro evidence ' + msg, file=sys.stderr)
+evidence = task.get('ci_fix_clean_repro_evidence')
+errors = ci_fix_clean_repro_evidence_errors(evidence)
+if errors:
+    for error in errors:
+        print('BLOCK: ' + error, file=sys.stderr)
     raise SystemExit(1)
-if isinstance(e, dict) and str(e.get('outcome') or '').strip().lower() == 'not_reproducible':
-    # 将軍裁定 2026-07-26 (blt_20260726_170522): a CI failure that does not reproduce
-    # must be reportable instead of forcing an honest reporter into a permanent FAIL.
-    # The escape is fixed to three proofs and blocks when any single one is missing.
-    # The FAIL->PASS path below is untouched; this terminal only applies when the
-    # task explicitly declares outcome: not_reproducible.
-    nr = e.get('not_reproducible')
-    if not isinstance(nr, dict): block('not_reproducible block missing')
-    receipts = nr.get('independent_receipts')
-    if not isinstance(receipts, list) or len(receipts) < 3: block('not_reproducible needs >=3 independent verification receipts')
-    environments = set()
-    for idx, receipt in enumerate(receipts):
-        if not isinstance(receipt, dict): block('not_reproducible receipt[%d] must be a mapping' % idx)
-        for key in ('path', 'environment', 'status', 'started_at'):
-            if str(receipt.get(key) or '').strip() == '': block('not_reproducible receipt[%d].%s missing' % (idx, key))
-        if str(receipt['status']).upper() != 'PASS': block('not_reproducible receipt[%d] must be PASS (the failure did not reproduce)' % idx)
-        environments.add(str(receipt['environment']).strip())
-    if len(environments) < 3: block('not_reproducible needs 3 distinct environments, got %d' % len(environments))
-    ci = nr.get('ci_green')
-    if not isinstance(ci, dict): block('not_reproducible ci_green missing')
-    for key in ('run_id', 'status', 'observed_at', 'commit'):
-        if str(ci.get(key) or '').strip() == '': block('not_reproducible ci_green.' + key + ' missing')
-    if str(ci['status']).upper() != 'GREEN': block('not_reproducible ci_green.status must be GREEN')
-    if not re.fullmatch(r'[0-9a-f]{40}', str(ci['commit'])): block('not_reproducible ci_green.commit must be a full sha')
-    diagnostics = nr.get('diagnostics')
-    if not isinstance(diagnostics, dict): block('not_reproducible diagnostics missing')
-    if str(diagnostics.get('path') or '').strip() == '': block('not_reproducible diagnostics.path missing')
-    emits = diagnostics.get('emits')
-    if not isinstance(emits, list): block('not_reproducible diagnostics.emits missing')
-    emitted = {str(x).strip() for x in emits}
-    absent = [key for key in ('rc', 'stderr', 'reason_code') if key not in emitted]
-    if absent: block('not_reproducible diagnostics must emit ' + ','.join(absent))
+if isinstance(evidence, dict) and str(evidence.get('outcome') or '').strip().lower() == 'not_reproducible':
     print('PASS: ci_fix clean repro not_reproducible evidence valid')
-    raise SystemExit(0)
-if not isinstance(e, dict) or not str(e.get('e2_harness_command') or '').strip(): block('harness command missing')
-pre, post = e.get('pre_fix_receipt'), e.get('post_fix_receipt')
-if not isinstance(pre, dict) or not isinstance(post, dict): block('receipt mapping missing')
-required = ('path','status','source_commit','fixed_target','started_at','failures','skips')
-for name, receipt in (('pre', pre), ('post', post)):
-    for key in required:
-        if receipt.get(key) in (None, ''): block(f'{name}.{key} missing')
-if str(pre['status']).upper() != 'FAIL' or int(pre['failures']) < 1 or int(pre['skips']) != 0: block('pre receipt must be FAIL failures>=1 SKIP0')
-if str(post['status']).upper() != 'PASS' or int(post['failures']) != 0 or int(post['skips']) != 0: block('post receipt must be PASS FAIL0 SKIP0')
-if pre['path'] == post['path']: block('pre/post receipt paths must differ')
-if pre['source_commit'] != post['source_commit'] or not re.fullmatch(r'[0-9a-f]{40}', str(pre['source_commit'])): block('source_commit mismatch or invalid')
-if pre['fixed_target'] != post['fixed_target'] or not str(pre['fixed_target']).strip(): block('fixed_target mismatch')
-def stamp(value, label):
-    try: return dt.datetime.fromisoformat(str(value).replace('Z', '+00:00'))
-    except Exception: block(label + ' timestamp invalid')
-push = stamp(e.get('push_started_at'), 'push_started_at')
-for name, receipt in (('pre', pre), ('post', post)):
-    started = stamp(receipt['started_at'], name + '.started_at')
-    if started.tzinfo is None or push.tzinfo is None: block('timestamps require timezone')
-    if started >= push: block(name + ' harness must start before push')
-print('PASS: ci_fix clean repro evidence valid')
+else:
+    print('PASS: ci_fix clean repro evidence valid')
 PY
+    return $?
 }
 
 # D006 is an unconditional safety boundary.  Reject task sources that require

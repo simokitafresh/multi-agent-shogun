@@ -938,6 +938,133 @@ def _investigation_contract_issues(report):
     return issues
 
 
+def ci_fix_clean_repro_evidence_errors(evidence):
+    """Validate the typed ci_fix terminal checkpoint evidence once.
+
+    The deploy path owns only the checkpoint schema.  This function is the
+    shared validator used by the report terminal gate; keeping the rules here
+    prevents deployment-time AC generation and report-time validation from
+    drifting apart.
+    """
+    errors = []
+
+    def add(message):
+        errors.append("ci_fix clean repro evidence " + message)
+
+    if not isinstance(evidence, dict):
+        add("evidence mapping missing")
+        return errors
+
+    if str(evidence.get("outcome") or "").strip().lower() == "not_reproducible":
+        nr = evidence.get("not_reproducible")
+        if not isinstance(nr, dict):
+            add("not_reproducible block missing")
+            return errors
+        receipts = nr.get("independent_receipts")
+        if not isinstance(receipts, list) or len(receipts) < 3:
+            add("not_reproducible needs >=3 independent verification receipts")
+            return errors
+        environments = set()
+        for idx, receipt in enumerate(receipts):
+            if not isinstance(receipt, dict):
+                add(f"not_reproducible receipt[{idx}] must be a mapping")
+                continue
+            for key in ("path", "environment", "status", "started_at"):
+                if not str(receipt.get(key) or "").strip():
+                    add(f"not_reproducible receipt[{idx}].{key} missing")
+            if str(receipt.get("status") or "").upper() != "PASS":
+                add(f"not_reproducible receipt[{idx}] must be PASS (the failure did not reproduce)")
+            environments.add(str(receipt.get("environment") or "").strip())
+        if len(environments - {""}) < 3:
+            add(f"not_reproducible needs 3 distinct environments, got {len(environments - {''})}")
+        ci = nr.get("ci_green")
+        if not isinstance(ci, dict):
+            add("not_reproducible ci_green missing")
+        else:
+            for key in ("run_id", "status", "observed_at", "commit"):
+                if not str(ci.get(key) or "").strip():
+                    add("not_reproducible ci_green." + key + " missing")
+            if str(ci.get("status") or "").upper() != "GREEN":
+                add("not_reproducible ci_green.status must be GREEN")
+            if not re.fullmatch(r"[0-9a-f]{40}", str(ci.get("commit") or "")):
+                add("not_reproducible ci_green.commit must be a full sha")
+        diagnostics = nr.get("diagnostics")
+        if not isinstance(diagnostics, dict):
+            add("not_reproducible diagnostics missing")
+        else:
+            if not str(diagnostics.get("path") or "").strip():
+                add("not_reproducible diagnostics.path missing")
+            emits = diagnostics.get("emits")
+            if not isinstance(emits, list):
+                add("not_reproducible diagnostics.emits missing")
+            else:
+                absent = [key for key in ("rc", "stderr", "reason_code") if key not in {str(x).strip() for x in emits}]
+                if absent:
+                    add("not_reproducible diagnostics must emit " + ",".join(absent))
+        return errors
+
+    if not str(evidence.get("e2_harness_command") or "").strip():
+        add("harness command missing")
+    pre = evidence.get("pre_fix_receipt")
+    post = evidence.get("post_fix_receipt")
+    if not isinstance(pre, dict) or not isinstance(post, dict):
+        add("receipt mapping missing")
+        return errors
+    required = ("path", "status", "source_commit", "fixed_target", "started_at", "failures", "skips")
+    for name, receipt in (("pre", pre), ("post", post)):
+        for key in required:
+            if receipt.get(key) in (None, ""):
+                add(f"{name}.{key} missing")
+    try:
+        pre_failures, pre_skips = int(pre.get("failures")), int(pre.get("skips"))
+        post_failures, post_skips = int(post.get("failures")), int(post.get("skips"))
+    except (TypeError, ValueError):
+        add("receipt failures/skips must be integers")
+        return errors
+    if str(pre.get("status") or "").upper() != "FAIL" or pre_failures < 1 or pre_skips != 0:
+        add("pre receipt must be FAIL failures>=1 SKIP0")
+    if str(post.get("status") or "").upper() != "PASS" or post_failures != 0 or post_skips != 0:
+        add("post receipt must be PASS FAIL0 SKIP0")
+    if pre.get("path") == post.get("path"):
+        add("pre/post receipt paths must differ")
+    if pre.get("source_commit") != post.get("source_commit") or not re.fullmatch(r"[0-9a-f]{40}", str(pre.get("source_commit") or "")):
+        add("source_commit mismatch or invalid")
+    if pre.get("fixed_target") != post.get("fixed_target") or not str(pre.get("fixed_target") or "").strip():
+        add("fixed_target mismatch")
+
+    def stamp(value, label):
+        try:
+            return dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            add(label + " timestamp invalid")
+            return None
+
+    push = stamp(evidence.get("push_started_at"), "push_started_at")
+    for name, receipt in (("pre", pre), ("post", post)):
+        started = stamp(receipt.get("started_at"), name + ".started_at")
+        if started is not None and push is not None:
+            if started.tzinfo is None or push.tzinfo is None:
+                add("timestamps require timezone")
+            elif started >= push:
+                add(name + " harness must start before push")
+    return errors
+
+
+def _ci_fix_final_checkpoint_issues(task, report):
+    """Return terminal errors for the task's typed final checkpoint."""
+    if str(report.get("status") or "").strip().lower() not in {"completed", "done"}:
+        return []
+    checkpoint = task.get("final_checkpoint") if isinstance(task, dict) else None
+    if not isinstance(checkpoint, dict):
+        return []
+    if checkpoint.get("required") is not True:
+        return []
+    if str(checkpoint.get("type") or "").strip() != "ci_fix_clean_repro":
+        return ["final_checkpoint: unsupported type"]
+    field = str(checkpoint.get("evidence_field") or "ci_fix_clean_repro_evidence").strip()
+    return ci_fix_clean_repro_evidence_errors(report.get(field))
+
+
 def main(report_data=None) -> int:
     if len(sys.argv) < 2:
         print("FAIL: report path required")
@@ -1153,6 +1280,19 @@ def main(report_data=None) -> int:
                 "normal_pass/quoted_or_heredoc/linked_worktree/parallel_or_respawn/abnormal_exit "
                 "の全resultをyes/noで記入せよ"
             )
+    # final_checkpoint is deliberately outside acceptance_criteria and
+    # therefore outside binary_checks. Validate its evidence exactly once,
+    # and only at the terminal report boundary. The frozen deploy-generation
+    # snapshot is authoritative for terminal checkpoint validation. Falling
+    # back to the live task would allow a
+    # reused ninja task YAML to silently remove a required checkpoint.
+    _checkpoint_contract = task_data
+    _snapshot = data.get("task_contract_snapshot")
+    if isinstance(_snapshot, dict) and "final_checkpoint" in _snapshot:
+        _checkpoint_contract = _snapshot
+    _final_checkpoint_errors = _ci_fix_final_checkpoint_issues(_checkpoint_contract, data)
+    for _checkpoint_error in _final_checkpoint_errors:
+        errors.append("final_checkpoint: " + _checkpoint_error)
 
     # Multi-round speed callbacks consume a stricter measurement schema than
     # the generic operational_simulation contract.  A prose PASS row cannot
