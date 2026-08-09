@@ -1455,7 +1455,11 @@ def main(report_data=None) -> int:
         # cmd_karo_hotfix_lg051_skill_fp: skills/gate-sync/SKILL.md のように
         # スキル名に gate/hook を含むだけのドキュメントを偽陽性対象から除外。
         # SKILL.md はコードではなく説明文書であり caller 数は無意味。
-        r"|(?:^|/)skills/[^/]+/SKILL\.md$",
+        r"|(?:^|/)skills/[^/]+/SKILL\.md$"
+        # cmd_4248偽陽性根治: docs/research/cmd_4248_shogun_gate_triage_*.md のように
+        # 成果物・ドキュメント・報告のファイル名にgate/hookを含むだけで発火する偽陽性を排除。
+        # LG051の対象はコード変更(scripts/hooks/gates/)であり、ドキュメントは対象外。
+        r"|(?:^|/)(?:docs|context|queue|logs|memory|archive|projects|instructions)/",
         re.I,
     )
     _caller_scope = any(
