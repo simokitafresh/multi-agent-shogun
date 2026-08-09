@@ -318,6 +318,7 @@ effective_end=NULL無期限適用バグ(異常25PF)は修正deploy済み(run224�
 - **遡及原則の実装**: recalc invocationへ明示mode(price_retro=guard / rule_correction=適用+ledger再基線 / 未知=fail-closed。v5.22 B2e)。
 - **常設監視は最小2つ**: 正規形違反INSERT拒否gate+月次1サイクル自然検証。
 - **migration(lifecycle導入時)**: API status追加・cache整合・既存行の扱いは§7裁定後に本節の移行計画として設計(backup+可逆。実装は別途下知)。
+- **migration(T-α9・2026-08-10実測)**: `monthly_returns`の進行月`2026-08`在庫は本番readonly照会で**102行/102 PF**(標準・fof混在、`year_month >= '2026-08'`の将来月は0件)だった。T-α3のAPI動的生成後は生成側をCONFIRMED(`NORMAL/PARTIAL`)限定へ変更し、MTD/PENDING_VALUEをUPSERTしない契約テストを追加した。既存102行は暫定値でありCONFIRMED昇格根拠がないため、**バックアップ後に殿裁可を得た別工程で全102行を削除**する(本cmdでは本番書込み・削除を実行しない)。削除工程の完了条件はバックアップhash・削除前後件数・API動的pending表示の3点記録とする。
 - **migration(FoF momentum入力正規化=§2.3)**: 切替はFoF signalを変え得るため、切替前にS-lane型dual replay(旧入力/新入力の2系で全FoF×全判断日を再走し、signal差の全数表を作成)で影響を確定してから、遡及原則に従い適用する。表示デフォルトのopen to open切替(§1-4)も本migrationの一部。
 
 ---
