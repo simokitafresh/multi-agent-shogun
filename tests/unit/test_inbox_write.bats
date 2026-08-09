@@ -2835,10 +2835,14 @@ _autoread_env() {
     export INBOX_REVIEW_CONTEXT_DISABLE=1
     mkdir -p "$AR_ROOT/queue/inbox" "$AR_ROOT/queue/reports" "$AR_ROOT/logs" "$AR_ROOT/scripts"
     [ -L "$AR_ROOT/scripts/lib" ] || ln -s "$PROJECT_ROOT/scripts/lib" "$AR_ROOT/scripts/lib"
+    # report_received reaches only these top-level helpers in this fixture.
+    # Avoid materializing every script on the WSL-mounted project tree; the
+    # full glob made the two structural auto-read controls pay setup cost for
+    # unrelated tools while preserving the same isolated root.
     local _s
-    for _s in "$PROJECT_ROOT"/scripts/*.sh "$PROJECT_ROOT"/scripts/*.py; do
-        [ -e "$_s" ] || continue
-        [ -e "$AR_ROOT/scripts/${_s##*/}" ] || ln -s "$_s" "$AR_ROOT/scripts/${_s##*/}"
+    for _s in retro_write.sh ntfy.sh memory_db_live_insert_async.py memory_db_live_insert.py; do
+        [ -e "$PROJECT_ROOT/scripts/$_s" ] || continue
+        [ -e "$AR_ROOT/scripts/$_s" ] || ln -s "$PROJECT_ROOT/scripts/$_s" "$AR_ROOT/scripts/$_s"
     done
     printf 'messages: []\n' > "$AR_ROOT/queue/inbox/karo.yaml"
     printf '%s\n' \
