@@ -424,7 +424,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4264"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既知概念へ分類。GP-210の掲示板同一内容dedupは実装済みだが、bulletin_write.shの新規投稿後inbox_write bulletin_notifyは新規エントリごとに実行され、同一原因の起床通知抑止は未実装。既存設計へ吸収し、送信側dedupは別cmdのdecision_candidateとして記録する。"
+  action_artifact: "scripts/bulletin_write.sh:454-502,604-652; docs/research/commander-inbox-flood-asis-tobe-5w1h_20260727.md §1 F1/§2 T1; context/semantic-map.md:92"
+  resolved_at: "2026-08-10T08:26:21+09:00"
 - id: INS-20260810-013000047-eb2f
   ts: "2026-08-10T01:30:00+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id be7wdcluk task id tool use id toolu 01BUCLEJ4SJE9YBJV6 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
