@@ -61,7 +61,8 @@ operational_simulation: {result: PASS}
 YAML
   export TEST_ROOT="$root" TEST_CALLS="$root/calls"
 
-  run python3 "$root/scripts/review_bundle.py" --root "$root" single \
+  run env -u REVIEW_APPROVAL_CANONICAL_ENTRY -u REVIEW_APPROVAL_SKIP_LEDGER_CHECK \
+    python3 "$root/scripts/review_bundle.py" --root "$root" single \
     --cmd cmd_one --verdict APPROVE --report queue/reports/worker_report_cmd_one.yaml \
     --review-entry "$root/review-entry.yaml"
   echo "$output" >&3
@@ -78,7 +79,7 @@ YAML
   mkdir -p "$root/queue/gates"
   cat >"$root/entries.yaml" <<'YAML'
 - {cmd_id: other, verdict: LGTM}
-- {cmd_id: cmd_one, verdict: LGTM, observations: [measured]}
+- {cmd_id: cmd_one, verdict: LGTM, observations: [measured], reviewed_at: 2026-08-09 17:00:00}
 YAML
   run python3 - "$root" <<'PY'
 import argparse, sys
@@ -111,4 +112,95 @@ PY
   [ "$status" -eq 2 ]
   [[ "$output" == *"direct Gunshi LGTM is not a normal entry point"* ]]
   [[ "$output" == *"review_bundle.py single"* ]]
+}
+
+@test "single keeps warning-only precheck non-blocking but rejects real errors" {
+  run python3 - <<'PY'
+import argparse
+from pathlib import Path
+from types import SimpleNamespace
+from scripts import review_bundle
+
+class Proc:
+    def __init__(self, output, rc):
+        self.stdout = output
+        self.returncode = rc
+
+item = {"cmd": "cmd_warning", "report": "report.yaml", "verdict": "APPROVE"}
+old_run = review_bundle.subprocess.run
+try:
+    review_bundle.subprocess.run = lambda *args, **kwargs: Proc(
+        "WARN: advisory only\n=== 総合: ERRORS=0 ===\n", 1
+    )
+    result = review_bundle._batch_precheck(Path("."), item)
+    assert result["status"] == "WARN", result
+
+    review_bundle.subprocess.run = lambda *args, **kwargs: Proc(
+        "ERROR: report defect\n=== 総合: ERRORS=1 ===\n", 1
+    )
+    try:
+        review_bundle._batch_precheck(Path("."), item)
+    except ValueError as exc:
+        assert "precheck failed cmd=cmd_warning" in str(exc)
+    else:
+        raise AssertionError("positive ERRORS must remain blocked")
+finally:
+    review_bundle.subprocess.run = old_run
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "snapshot identity permits terminal-idle report reuse but stays fail-closed" {
+  run python3 - <<'PY'
+import tempfile
+from pathlib import Path
+import yaml
+from scripts import review_bundle
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    (root / "queue/tasks").mkdir(parents=True)
+    snapshot = {
+        "task_id": "cmd_old_normal", "parent_cmd": "cmd_old",
+        "issued_cmd_id": "cmd_old", "ac_fingerprint": "v1",
+        "purpose": "old purpose", "acceptance_criteria": [{"id": "AC1"}],
+        "project": "infra", "report_id": "rpt-old",
+        "report_identity_version": 2, "report_fingerprint": "fp-old",
+    }
+    report = {
+        "worker_id": "kotaro", "task_id": "cmd_old_normal",
+        "ac_version_read": "v1", "report_id": "rpt-old",
+        "report_identity_version": 2, "report_fingerprint": "fp-old",
+        "task_contract_snapshot": snapshot,
+    }
+    task_path = root / "queue/tasks/kotaro.yaml"
+    task_path.write_text(yaml.safe_dump({"task": {
+        "task_id": "cmd_old_normal", "parent_cmd": "cmd_old",
+        "ac_version": "v1", "report_id": "rpt-old",
+    }}), encoding="utf-8")
+    review_bundle._snapshot_command(root, report, "cmd_old")
+
+    mismatch = dict(report, report_id="rpt-other")
+    try:
+        review_bundle._snapshot_command(root, mismatch, "cmd_old")
+    except ValueError as exc:
+        assert "identity mismatch" in str(exc)
+    else:
+        raise AssertionError("same-generation report identity mismatch must block")
+
+    task_path.write_text(yaml.safe_dump({"task": {
+        "task_id": "cmd_new_normal", "parent_cmd": "cmd_new",
+        "ac_version": "v2", "report_id": "rpt-new",
+    }}), encoding="utf-8")
+    review_bundle._snapshot_command(root, report, "cmd_old")
+
+    tampered = dict(report, task_contract_snapshot=dict(snapshot, report_fingerprint="fp-tampered"))
+    try:
+        review_bundle._snapshot_command(root, tampered, "cmd_old")
+    except ValueError as exc:
+        assert "report-generation identity" in str(exc)
+    else:
+        raise AssertionError("tampered immutable snapshot must block")
+PY
+  [ "$status" -eq 0 ]
 }
