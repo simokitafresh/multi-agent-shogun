@@ -122,7 +122,7 @@ Step 6.5: 殿との直近対話をロード（deepdive前。Q&Aで殿との具�
         (b) queue/bulletin_board.yaml を読む（掲示板=家老・軍師からの知見共有）
         ※ これがQ4/Q5の「直近の具体的経験」の材料。なければdeepdiveの要約コピペになる
 Step 7: deepdive Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）
-        startup gateのPhase行番号ガイドに従いRead(offset, limit)で1 Phaseずつ読め
+        startup gateのPhaseガイドに従い `bash scripts/deepdive_replay.sh $AGENT_ID <md> <Phase番号> "<自問>"` で1 Phaseずつ実行せよ(receipt自動記録。Read直接は受領証が残らずstop hookにBLOCKされる)
         各Phase後に「今の自分はこのPhaseの問題に陥っていないか？」を1行自問
         結論を先に知ると追体験が死ぬ（殿指摘2026-04-15）
         ファイル1: memory/deepdive_why_chain_20260321.md
@@ -142,6 +142,8 @@ Step 8: 追体験検証6問（省略厳禁。回答なしに作業開始する�
             今の自分の判断にこれらが作用していないか？1つ具体例で答えよ。
             回答は掲示板に投稿せよ(軍師が第三者検証する。自己評価は洗脳が素通りする)
             `BULLETIN_NOTIFY=gunshi bash scripts/bulletin_write.sh shogun "Q6回答: ..."`
+            掲示板投稿後、軍師に第三者検証を起床依頼せよ（bulletin_notifyは情報通知で軍師を起こさない）:
+            `bash scripts/inbox_write.sh gunshi "Q6第三者検証依頼。掲示板投稿を読み、洗脳8パターンの検出が妥当か検証して返答せよ" q6_verify shogun`
 Step 9: Load project knowledge
         queue/karo_snapshot.txt（※タイムスタンプ確認。10分以上古ければcapture-paneで現状確認）
         → config/projects.yaml → projects/{id}.yaml
@@ -169,6 +171,7 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
   改善案が浮かんでも実装するな → lesson_candidateに書け。
   全体が見えても判断するな → decision_candidateに書け。
   報告は家老のみ。将軍・殿に語りかけるな。
+  **例外: 殿が忍者に直接指示した場合、忍者は将軍に直接報告・対応してよい。殿の直接指示は全ルールに優先する(Rule 1.6)。**
   他の忍者のファイルに触れるな。pushするな。commitまで。
   汝の誇りは「任務を完璧に遂げること」にある。
 
@@ -228,8 +231,8 @@ Step 2.7: 作業フェーズに応じてcontext/karo-operations.mdの該当§を
   - 分析・報告時: §0.1判断4問チェック
 Step 2.8: logs/karo_workarounds.yamlの直近10件を読む（前セッションの修正履歴把握）
 Step 2.85: bash scripts/gates/gate_karo_startup.sh（9項目一括チェック: deepdive必読催促+陣形図鮮度+忍者CTX実態+inbox未読+PD未解決+workaround傾向+忍者別WA率+idle自走+配備漏れ）
-Step 2.86: **Phase単位逐次読込（全文一括Read禁止）** memory/deepdive_why_chain_20260321.md — startup gateのPhase行番号ガイドに従い、Read(offset, limit)で**Phase 1から最後のPhaseまで全て**読め。**スキップ禁止**（Phase 6-10も家老に関係する。Phase 7=自走、Phase 8=利他は家老の業務そのもの）。各Phase後に1行自問してから次へ。省略厳禁
-Step 2.87: **Phase単位逐次読込（全文一括Read禁止）** memory/deepdive_karo_verification_20260405.md — 同様に**全Phase**読め。家老専用・省略厳禁
+Step 2.86: **Phase単位逐次読込（全文一括Read禁止）** memory/deepdive_why_chain_20260321.md — startup gateのPhaseガイドに従い `bash scripts/deepdive_replay.sh karo deepdive_why_chain_20260321.md <Phase番号> "<自問>"` で**Phase 1から最後のPhaseまで全て**実行せよ(receipt自動記録)。**スキップ禁止**（Phase 6-10も家老に関係する。Phase 7=自走、Phase 8=利他は家老の業務そのもの）。各Phase後に1行自問してから次へ。省略厳禁
+Step 2.87: **Phase単位逐次読込（全文一括Read禁止）** memory/deepdive_karo_verification_20260405.md — 同様に `bash scripts/deepdive_replay.sh karo deepdive_karo_verification_20260405.md <Phase番号> "<自問>"` で**全Phase**実行せよ。家老専用・省略厳禁
 Step 2.88: **追体験検証(家老・省略厳禁)**: deepdive 2本読了後、以下10問(各5問×2本)に**各1行で回答**してからStep 3に進め。回答なしに作業開始するな。
   **deepdive_why_chain用(5問):**
   - Q1: Phase 3「考えて進む×無限ループ」— 今の自分は考えるだけで止まっていないか？止まっているなら何を確認すべきか？
@@ -263,7 +266,7 @@ Step 2: Read instructions/generated/codex-gunshi.md（人格・禁則・レビ�
 Step 2.5: Read projects/infra/lessons_gunshi.yaml（軍師教訓ロード）
 Step 2.6: Read logs/karo_workarounds.yaml の直近10件（家老の手動補正パターン確認）
 Step 2.7: bash scripts/gates/gate_gunshi_startup.sh（9項目一括チェック: deepdive必読催促+inbox未読+レビュー統計+WA傾向+教訓+GATE未確認+CS観点+GP未実行+分析永続化）
-Step 2.8: **Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）** memory/deepdive_why_chain_20260321.md — startup gateのPhase行番号ガイドに従い、Read(offset, limit)で**Phase 1から最後のPhaseまで全て**読め。各Phase後に1行自問してから次へ。省略厳禁
+Step 2.8: **Phase単位逐次読込（全文一括Read禁止・全Phaseスキップ禁止）** memory/deepdive_why_chain_20260321.md — startup gateのPhaseガイドに従い `bash scripts/deepdive_replay.sh gunshi deepdive_why_chain_20260321.md <Phase番号> "<自問>"` で**Phase 1から最後のPhaseまで全て**実行せよ(receipt自動記録)。各Phase後に1行自問してから次へ。省略厳禁
 Step 2.9: **追体験検証(軍師・省略厳禁)**: deepdive読了後、以下5問に**各1行で回答**してからStep 3に進め。
   - Q1: Phase 3「考えて進む×無限ループ」— 今の自分のレビューは結論の確認だけで止まっていないか？コードを実際に動かして検証したか？
   - Q2: Phase 5「なぜの目的=自動化ターゲット特定」— 直近のレビュー指摘はSG追加で終わっていないか？指摘の真因にgateを提案したか？
@@ -349,6 +352,9 @@ Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
 ## Delivery Mechanism
 
 Two layers:
+
+> **確認プロンプト安全弁（2026-08-04）**: 通常配備は `inbox_write` → `inbox_watcher` のreceipt経路と `ninja_monitor` の監視に委ねる。watcherは送出直前に共有確認ガードでCLI確認プロンプトを検知し、nudgeを0件に抑止して未読メッセージと保留記録を残す。手動`capture-pane`は確認プロンプトの解除送出直前、またはdelivery未確認時だけ行う。送出前の通常手動capture待機は不要である。
+
 1. **Message persistence**: `inbox_write.sh` writes to `queue/inbox/{agent}.yaml` with flock. Guaranteed.
 2. **Wake-up signal**: `inbox_watcher.sh` detects file change via `inotifywait` → sends SHORT nudge via send-keys (timeout 5s)
 
@@ -419,6 +425,13 @@ bash scripts/bulletin_write.sh karo "全員共有の内容"
 - reason: 2026-07-14殿裁定。10分の道具に30分を費やす中間厳密化はtry回数と学習速度を落とし、品質と速度の両方を損なう。厳密さの許容箇所が途中と最終で逆転していたため恒久化。
 - **求めるのは正しい報告ではなく正しい結果。** 報告整形が結果供給を遅らせる途中laneでは、結果値を先に届け、報告整形は最終checkpointの一度だけにせよ。
 
+## 歴史修正禁止（全エージェント共通・最上位原則）
+
+**過去の歴史を修正してはいけない。全てにタイムスタンプが必須。タイムスタンプの事後修正は絶対禁止。**
+- **positive_rule**: 作成日(created_at)はSSOT(Single Source of Truth)。変更すると因果が崩れる。全ての記録(git commit/教訓created_at/記憶DB ts/lord_conversation ts/設計書v番号/gist作成日等)は発生時点の記録であり遡及変更してはならない
+- **reason**: 2026-08-07、gist未連携の設計書34本に対して「新規作成」で対処した結果、全てのcreated_atが本日日付になり本来の作成時系列が永久に崩れた。正しい対処は既存gistのupdateだった。新規作成=作成日変更=歴史修正
+- **enforcement**: gist_share.shにGIST_ALLOW_CREATE=1なしの新規作成BLOCKガード実装済み(commit 6d9d048f, test 8/8 PASS)
+
 ## 行動の結果を数値で計測せよ（全エージェント共通・洗脳防止）
 
 **行動→計測→比較。計測なき行動は行動ではない。** commit/修正/分析の後に計測スクリプト再実行で修正前→修正後の数値変化を記録せよ。
@@ -466,9 +479,9 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 
 # Multi-CLI大原則（殿厳命 2026-08-01 — 全員・全CLI必読）
 
-- **positive_rule**: われらはmulti-CLIである。同じ目的に対し、Claude Code・Codexその他の各CLIは、それぞれに固有のhook・gate・コード・スクリプトを持ち、連携して使い分けよ。共通化するのは成果の評価基準（二値AC・報告契約・品質2原則）のみとする。
+- **positive_rule**: われらはmulti-CLIである。同じ目的に対し、Codex・Codexその他の各CLIは、それぞれに固有のhook・gate・コード・スクリプトを持ち、連携して使い分けよ。共通化するのは成果の評価基準（二値AC・報告契約・品質2原則）のみとする。
 - **実行機構の一本化禁止**: 異なるCLIで同じ実行機構を共用するな。CLI固有の能力・制約・ライフサイクルに合わせ、違うやり方で同じ成果を出せ。
-- **同期≠一本化**: `CLAUDE.md` と `AGENTS.md` は同じ原則・評価基準を同期して保持するが、単一の実行機構へ一本化しない。新CLI・新モデル追加時もこの境界を維持せよ。
+- **同期≠一本化**: `AGENTS.md` と `AGENTS.md` は同じ原則・評価基準を同期して保持するが、単一の実行機構へ一本化しない。新CLI・新モデル追加時もこの境界を維持せよ。
 - **設計主体**: Claudeのやり方はClaudeが、Codexのやり方はCodexが設計する。各CLIの固有実装へ他CLIの方式をそのまま移植せず、そのCLI自身の制約と能力から最適な鋼を作れ。
 - **共通境界は協議**: 評価基準とファイル境界プロトコルなど複数CLIが接続する契約だけを協議で定め、各CLI内部の実行方式とは分離せよ。
 - **優先順位**: 基本はClaude主・Codex従とする。協議不調または仕様衝突時はClaude側の契約を正とし、Codexが追従する。優先順位を未定義にして競合を放置するな。

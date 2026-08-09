@@ -142,6 +142,8 @@ Step 8: 追体験検証6問（省略厳禁。回答なしに作業開始する�
             今の自分の判断にこれらが作用していないか？1つ具体例で答えよ。
             回答は掲示板に投稿せよ(軍師が第三者検証する。自己評価は洗脳が素通りする)
             `BULLETIN_NOTIFY=gunshi bash scripts/bulletin_write.sh shogun "Q6回答: ..."`
+            掲示板投稿後、軍師に第三者検証を起床依頼せよ（bulletin_notifyは情報通知で軍師を起こさない）:
+            `bash scripts/inbox_write.sh gunshi "Q6第三者検証依頼。掲示板投稿を読み、洗脳8パターンの検出が妥当か検証して返答せよ" q6_verify shogun`
 Step 9: Load project knowledge
         queue/karo_snapshot.txt（※タイムスタンプ確認。10分以上古ければcapture-paneで現状確認）
         → config/projects.yaml → projects/{id}.yaml
