@@ -6847,6 +6847,44 @@ find_deployed_task_status() {
     ' "${task_files[@]}" 2>/dev/null | head -n 1
 }
 
+# A worker task is a mutable lease: after the worker receives the next cmd,
+# the old cmd no longer appears in queue/tasks/{worker}.yaml.  A terminal
+# report plus durable review evidence is nevertheless a completed deployment
+# for the old parent_cmd and must suppress stale/undeployed warnings.
+find_closed_parent_cmd_status() {
+    local target_cmd="$1"
+    local report_file report_parent report_status report_verdict logical key approval
+    [ -n "$target_cmd" ] || return 0
+
+    if [ -f "$SCRIPT_DIR/queue/gates/$target_cmd/archive.done" ] ||
+       [ -f "$SCRIPT_DIR/queue/gates/$target_cmd/review_gate.done" ]; then
+        printf 'completed_reviewed\n'
+        return 0
+    fi
+
+    for report_file in "$SCRIPT_DIR/queue/reports"/*_report_*.yaml \
+                       "$SCRIPT_DIR/queue/archive/reports"/*_report_*.yaml; do
+        [ -f "$report_file" ] || continue
+        report_parent=$(yaml_field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
+        [ "$report_parent" = "$target_cmd" ] || continue
+        report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
+        [[ "$report_status" =~ ^(completed|done|success)$ ]] || continue
+        report_verdict=$(yaml_field_get "$report_file" "verdict" "" 2>/dev/null || true)
+        [[ "$report_verdict" =~ ^(PASS|PASS_NO_IMPROVEMENT)$ ]] || continue
+
+        # Prefer the exact per-report Gunshi approval record.  The gate marker
+        # path above handles terminal snapshots whose live report was archived.
+        logical=$(PROJECT_ROOT="$SCRIPT_DIR" review_report_logical_path "$report_file" 2>/dev/null || true)
+        key=$(review_report_key "$logical" 2>/dev/null || true)
+        approval="$SCRIPT_DIR/queue/gates/$target_cmd/review_approvals/reports/$key/gunshi.yaml"
+        if [ "$(review_approval_value "$approval" result 2>/dev/null || true)" = LGTM ]; then
+            printf 'completed_reviewed\n'
+            return 0
+        fi
+    done
+    return 1
+}
+
 check_stale_cmds() {
     local now
     now=$EPOCHSECONDS
@@ -6884,6 +6922,11 @@ check_stale_cmds() {
            [ "$restart_met" -eq 0 ] && \
            { [ "$defer_deadline_epoch" -eq 0 ] || [ "$now" -lt "$defer_deadline_epoch" ]; }; then
             log "STALE-CMD-DEFERRED: ${cmd_id} intentional defer active until=${deferred_until:-unspecified} restart=${restart_condition:-unspecified}"
+            continue
+        fi
+
+        if [ -n "$(find_closed_parent_cmd_status "$cmd_id" 2>/dev/null || true)" ]; then
+            log "STALE-CMD-SKIP: ${cmd_id} has completed report/review evidence"
             continue
         fi
 
@@ -6936,6 +6979,9 @@ check_undeployed_cmds() {
         # 実配備済み。未配備通知のdedupeより先に照合し、status遷移後の再誤通知も防ぐ。
         local deployed_task_status
         deployed_task_status=$(find_deployed_task_status "$cmd_id")
+        if [ -z "$deployed_task_status" ]; then
+            deployed_task_status=$(find_closed_parent_cmd_status "$cmd_id" 2>/dev/null || true)
+        fi
         if [ -n "$deployed_task_status" ]; then
             if [ -n "${UNDEPLOYED_CMD_NOTIFIED[$cmd_id]:-}" ]; then
                 unset "UNDEPLOYED_CMD_NOTIFIED[$cmd_id]"

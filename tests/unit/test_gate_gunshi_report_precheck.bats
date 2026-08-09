@@ -16,6 +16,42 @@ task:
 YAML
 }
 
+# test_necessity: report review must compare ac_version_read with the immutable
+# report.parent_cmd contract, not the worker's mutable next-assignment lease.
+@test "ac_version check accepts completed reports after worker redeployment" {
+  cat > "$TMP_DIR/tasks/saizo.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_4277
+  task_id: cmd_4277_full
+  ac_version: cf5a1428
+  binary_checks: {AC1: [{result: yes}]}
+YAML
+  for old_cmd in cmd_4274 cmd_karo_dashboard_freshness_speed; do
+    case "$old_cmd" in
+      cmd_4274) old_ac=b4003b4b; old_task=cmd_4274_full ;;
+      cmd_karo_dashboard_freshness_speed) old_ac=816b63f9; old_task=cmd_karo_dashboard_freshness_speed_normal ;;
+    esac
+    cat > "$TMP_DIR/report.yaml" <<YAML
+worker_id: saizo
+parent_cmd: $old_cmd
+task_id: $old_task
+ac_version_read: $old_ac
+task_contract_snapshot:
+  parent_cmd: $old_cmd
+  task_id: $old_task
+  issued_cmd_id: $old_cmd
+  ac_fingerprint: $old_ac
+  purpose: completed old command
+  project: infra
+  acceptance_criteria: [{id: AC1}]
+binary_checks: {AC1: [{result: yes}]}
+YAML
+    run python3 "$ENGINE" --report "$TMP_DIR/report.yaml" --tasks-dir "$TMP_DIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AC_VERSION_MSG='  PASS: ac_version一致 ($old_ac) source=report.parent_cmd contract'"* ]]
+  done
+}
+
 teardown() {
   find "$TMP_DIR" -depth -delete
 }

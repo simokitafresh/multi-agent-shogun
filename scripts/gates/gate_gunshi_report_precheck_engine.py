@@ -9,10 +9,91 @@
 import os
 import glob
 import argparse
+import hashlib
 import json
+import pathlib
 import re
 import shlex
 import yaml
+
+
+def _ac_version_from_criteria(criteria):
+    """Match deploy_task.sh's parsed-AC md5 contract for legacy reports."""
+    if isinstance(criteria, dict):
+        items = list(criteria.values())
+    elif isinstance(criteria, list):
+        items = criteria
+    else:
+        items = []
+    values = []
+    for item in items:
+        if not isinstance(item, dict):
+            values.append(str(item))
+            continue
+        description = str(item.get('description', '') or '').strip()
+        if description:
+            values.append(description)
+            continue
+        checks = item.get('checks', [])
+        if isinstance(checks, list):
+            values.append('|'.join(
+                str(check.get('check', '') or '').strip()
+                if isinstance(check, dict) else str(check).strip()
+                for check in checks
+            ))
+        else:
+            values.append(str(item.get('check', '') or '').strip())
+    return hashlib.md5('|'.join(sorted(values)).encode()).hexdigest()[:8]
+
+
+def _command_from(data, cmd_id):
+    commands = data.get('commands', data) if isinstance(data, dict) else {}
+    if isinstance(commands, dict):
+        item = commands.get(cmd_id)
+        return item if isinstance(item, dict) else None
+    if isinstance(commands, list):
+        return next((item for item in commands
+                     if isinstance(item, dict) and str(item.get('id')) == cmd_id), None)
+    return None
+
+
+def _parent_contract_ac_version(report, tasks_dir):
+    """Resolve AC identity from report.parent_cmd, never the worker lease.
+
+    A worker task file is a mutable deployment slot.  Completed reports keep
+    their immutable task_contract_snapshot, which is the first-party contract
+    for the report generation.  Legacy reports without that snapshot fall
+    back to the saved parent command rather than comparing against a later
+    worker assignment.
+    """
+    parent_cmd = str(report.get('parent_cmd') or '').strip()
+    if not parent_cmd:
+        return '', 'parent_cmd missing'
+
+    snapshot = report.get('task_contract_snapshot')
+    if isinstance(snapshot, dict):
+        snapshot_parent = str(snapshot.get('parent_cmd') or '').strip()
+        snapshot_ac = str(snapshot.get('ac_fingerprint') or '').strip()
+        if snapshot_parent != parent_cmd:
+            return '', 'report.parent_cmd contract mismatch'
+        if snapshot_ac:
+            return snapshot_ac, 'report.parent_cmd contract'
+
+    root = pathlib.Path(tasks_dir).resolve().parent if tasks_dir else pathlib.Path.cwd()
+    candidates = [
+        root / 'queue' / 'shogun_to_karo.yaml',
+        root / 'queue' / 'reopened_cmds' / f'{parent_cmd}.yaml',
+    ]
+    candidates.extend(pathlib.Path(path) for path in sorted(
+        root.glob(f'queue/archive/cmds/{parent_cmd}_*.yaml'), reverse=True))
+    for path in candidates:
+        try:
+            command = _command_from(yaml.safe_load(path.read_text(encoding='utf-8')) or {}, parent_cmd)
+        except (OSError, yaml.YAMLError):
+            continue
+        if isinstance(command, dict) and command.get('acceptance_criteria'):
+            return _ac_version_from_criteria(command['acceptance_criteria']), 'report.parent_cmd saved contract'
+    return '', 'parent contract unavailable'
 
 
 def main():
@@ -537,25 +618,27 @@ def main():
     result['WAIVE_COMMIT_CONTRADICTION'] = waive_commit_contradiction
 
     # ── 2c. ac_version照合 → ac_version_mismatch BLOCK予防 ─────────────
-    ac_ver_msg = '  SKIP: task YAML not loaded'
-    if task_file and os.path.exists(task_file):
-        try:
-            acv_task = str(task.get('ac_version', '')).strip()
-            acv_report = str(report.get('ac_version_read', '')).strip()
-            if not acv_task:
-                ac_ver_msg = '  SKIP: task.ac_version未設定'
-            elif not acv_report:
-                ac_ver_msg = '  WARN: report.ac_version_read未記載'
-            elif acv_task == acv_report:
-                ac_ver_msg = f'  PASS: ac_version一致 ({acv_task[:8]})'
-            else:
-                ac_ver_msg = (
-                    f'  ★ FAIL: ac_version不一致! '
-                    f'task={acv_task[:8]} report={acv_report[:8]} '
-                    '→ gate BLOCK確実。忍者がtask更新後のACで作業していない可能性'
-                )
-        except Exception:
-            ac_ver_msg = '  SKIP: ac_version解析エラー'
+    # queue/tasks/{worker}.yaml is a mutable lease and may already describe a
+    # later assignment.  Resolve the expected value from report.parent_cmd's
+    # immutable snapshot (or the saved parent command for legacy reports).
+    ac_ver_msg = '  SKIP: parent contract unavailable'
+    try:
+        expected_ac, contract_source = _parent_contract_ac_version(report, args.tasks_dir)
+        acv_report = str(report.get('ac_version_read', '') or '').strip()
+        if not expected_ac:
+            ac_ver_msg = f'  SKIP: {contract_source}'
+        elif not acv_report:
+            ac_ver_msg = '  WARN: report.ac_version_read未記載'
+        elif expected_ac == acv_report:
+            ac_ver_msg = f'  PASS: ac_version一致 ({expected_ac[:8]}) source={contract_source}'
+        else:
+            ac_ver_msg = (
+                f'  ★ FAIL: ac_version不一致! '
+                f'parent={expected_ac[:8]} report={acv_report[:8]} '
+                f'source={contract_source}'
+            )
+    except Exception:
+        ac_ver_msg = '  SKIP: ac_version解析エラー'
     result['AC_VERSION_MSG'] = ac_ver_msg
 
     # ── 2d. lessons_useful format検証 → draft_lessons BLOCK予防 ──────────

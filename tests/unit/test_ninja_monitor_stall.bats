@@ -40,6 +40,73 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
+# test_necessity: a completed report with durable Gunshi LGTM is terminal
+# evidence for its parent_cmd even after the worker lease points at a later cmd.
+@test "old reviewed parent cmd is not reported as undeployed after worker redeploy" {
+    DELEGATED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+DELEGATED_AT="'"$DELEGATED_AT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/reviewed-parent"
+SCRIPT_DIR="$TMP_ROOT"; PROJECT_ROOT="$TMP_ROOT"; LOG="$TMP_ROOT/monitor.log"; STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/queue/reports" "$TMP_ROOT/queue/gates/cmd_4274/review_approvals/reports" "$TMP_ROOT/scripts" "$TMP_ROOT/logs" "$STATE_DIR"
+cat > "$TMP_ROOT/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_4274:
+    status: delegated
+    timestamp: "2026-04-03T01:12:00"
+    delegated_at: "$DELEGATED_AT"
+EOF
+cat > "$TMP_ROOT/queue/tasks/saizo.yaml" <<EOF
+task:
+  parent_cmd: cmd_4277
+  task_id: cmd_4277_full
+  ac_version: cf5a1428
+  status: acknowledged
+EOF
+cat > "$TMP_ROOT/queue/reports/saizo_report_cmd_4274.yaml" <<EOF
+worker_id: saizo
+parent_cmd: cmd_4274
+task_id: cmd_4274_full
+ac_version_read: b4003b4b
+status: completed
+verdict: PASS
+EOF
+key=$(printf "%s" "queue/reports/saizo_report_cmd_4274.yaml" | sha256sum | awk "{print \$1}")
+mkdir -p "$TMP_ROOT/queue/gates/cmd_4274/review_approvals/reports/$key"
+printf "result: LGTM\\n" > "$TMP_ROOT/queue/gates/cmd_4274/review_approvals/reports/$key/gunshi.yaml"
+cat > "$TMP_ROOT/scripts/ntfy.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\${1:-}" >> "$TMP_ROOT/ntfy.log"
+EOF
+cat > "$TMP_ROOT/scripts/inbox_write.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\$*" >> "$TMP_ROOT/inbox.log"
+EOF
+chmod +x "$TMP_ROOT/scripts/ntfy.sh" "$TMP_ROOT/scripts/inbox_write.sh"
+before=$(sha256sum "$TMP_ROOT/queue/tasks/saizo.yaml")
+log(){ printf "%s\\n" "$1" >> "$LOG"; }
+declare -A UNDEPLOYED_CMD_NOTIFIED STALE_CMD_NOTIFIED
+cycle=1
+check_undeployed_cmds
+STALE_CMD_THRESHOLD=1
+check_stale_cmds
+after=$(sha256sum "$TMP_ROOT/queue/tasks/saizo.yaml")
+test "$before" = "$after"
+test ! -s "$TMP_ROOT/ntfy.log"
+test ! -s "$TMP_ROOT/inbox.log"
+grep -q "completed report/review evidence" "$LOG"
+printf "reviewed_parent_suppressed=true task_unchanged=true\\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"reviewed_parent_suppressed=true task_unchanged=true"* ]]
+}
+
 # test_necessity: active taskがpane静止・子処理なし・確認promptなしで長時間BUSY化した
 # ときだけ家老へ一度通知し、pane変化/子処理/prompt/重複では通知しない不変量を守る。
 @test "check_stall: stale active pane notifies karo once without self action" {

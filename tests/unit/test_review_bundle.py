@@ -27,6 +27,46 @@ def _register(root: Path, report: Path, report_id="rpt-ok"):
         )
 
 
+def test_review_bundle_uses_parent_cmd_contract_after_worker_redeployment(tmp_path):
+    """test_necessity: old report review must not mutate a later worker lease."""
+    root = _root(tmp_path)
+    (root / "queue/gates/cmd_4274").mkdir(parents=True, exist_ok=True)
+    (root / "queue/shogun_to_karo.yaml").write_text(
+        "commands:\n"
+        "  cmd_4274:\n"
+        "    acceptance_criteria: [{id: AC1, description: old contract}]\n"
+        "    target_path: scripts/review_bundle.py\n"
+        "    project: infra\n",
+        encoding="utf-8",
+    )
+    report = root / "queue/reports/saizo_report_cmd_4274.yaml"
+    report.write_text(
+        "worker_id: saizo\nparent_cmd: cmd_4274\ntask_id: cmd_4274_full\n"
+        "ac_version_read: b4003b4b\nreport_id: rpt-4274\nstatus: completed\nverdict: PASS\n"
+        "binary_checks: {AC1: [{result: yes}]}\nresult: {summary: old report measured}\n",
+        encoding="utf-8",
+    )
+    task = root / "queue/tasks/saizo.yaml"
+    task.write_text(
+        "task:\n  parent_cmd: cmd_4277\n  task_id: cmd_4277_full\n"
+        "  ac_version: cf5a1428\n  status: acknowledged\n",
+        encoding="utf-8",
+    )
+    report_before = report.read_bytes()
+    task_before = task.read_bytes()
+    args = SimpleNamespace(
+        root=str(root), report=str(report), cmd="cmd_4274", verdict="APPROVE",
+        allow_archived=False, fail_reason=None,
+    )
+
+    assert review_bundle.generate(args) == 0
+    assert report.read_bytes() == report_before
+    assert task.read_bytes() == task_before
+    bundle = review_bundle.load(root / "queue/gates/cmd_4274/sg7_bundle.json")
+    assert bundle["review"]["cmd_id"] == "cmd_4274"
+    assert bundle["review"]["cmd_spec_summary"]["project"] == "infra"
+
+
 @pytest.mark.parametrize("archived", [False, True])
 def test_resolve_report_accepts_direct_live_and_archive(tmp_path, archived):
     root = _root(tmp_path)
