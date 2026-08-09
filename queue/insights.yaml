@@ -980,3 +980,10 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608100609_kotaro"
   fix_known: false
   status: pending
+- id: INS-20260810-081259220-2da7
+  ts: "2026-08-10T08:12:59+09:00"
+  insight: "[[T δ2はどうなってる？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T-δ2はどうなってる？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
