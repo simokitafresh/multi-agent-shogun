@@ -8,6 +8,45 @@ setup() {
     MAIN="$REPO_ROOT/scripts/gates/gate_report_format_main.py"
 }
 
+setup_file() {
+    DUPLICATE_FIXTURE_TEMPLATE="$BATS_FILE_TMPDIR/reflux-duplicate-template"
+    UNIQUE_FIXTURE_TEMPLATE="$BATS_FILE_TMPDIR/reflux-unique-template"
+    export DUPLICATE_FIXTURE_TEMPLATE UNIQUE_FIXTURE_TEMPLATE
+
+    for template in "$DUPLICATE_FIXTURE_TEMPLATE" "$UNIQUE_FIXTURE_TEMPLATE"; do
+        mkdir -p "$template/queue/archive"
+        printf 'insights: []\n' > "$template/queue/archive/insights_archive.yaml"
+        git -C "$template" init -q
+        git -C "$template" config user.email test@example.invalid
+        git -C "$template" config user.name test
+    done
+
+    cat > "$UNIQUE_FIXTURE_TEMPLATE/queue/insights.yaml" <<'YAML'
+insights:
+- id: INS-20260804-142209841-2aaf
+  source: self_retro
+  status: resolved
+  priority: high
+  occurrence_count: 15
+  last_seen: "2026-08-04T17:44:06+09:00"
+YAML
+    cp "$UNIQUE_FIXTURE_TEMPLATE/queue/insights.yaml" \
+        "$DUPLICATE_FIXTURE_TEMPLATE/queue/insights.yaml"
+    cat >> "$DUPLICATE_FIXTURE_TEMPLATE/queue/insights.yaml" <<'YAML'
+- id: INS-20260804-142209841-2aaf
+  source: self_retro
+  status: resolved
+  priority: high
+  occurrence_count: 15
+  last_seen: "2026-08-04T17:44:06+09:00"
+YAML
+
+    git -C "$UNIQUE_FIXTURE_TEMPLATE" add queue/insights.yaml
+    git -C "$UNIQUE_FIXTURE_TEMPLATE" commit -qm baseline
+    git -C "$DUPLICATE_FIXTURE_TEMPLATE" add queue/insights.yaml
+    git -C "$DUPLICATE_FIXTURE_TEMPLATE" commit -qm baseline
+}
+
 run_detector() {
     run python3 - "$MAIN" "$1" "$2" <<'PY'
 import importlib.util, sys
@@ -154,32 +193,11 @@ make_duplicate_preimage_fixture() {
     local fixture="$1"
     local mode="$2"
     local insight_id="INS-20260804-142209841-2aaf"
-    mkdir -p "$fixture/queue/archive"
-    cat > "$fixture/queue/insights.yaml" <<YAML
-insights:
-- id: $insight_id
-  source: self_retro
-  status: resolved
-  priority: high
-  occurrence_count: 15
-  last_seen: "2026-08-04T17:44:06+09:00"
-YAML
+    local template="$UNIQUE_FIXTURE_TEMPLATE"
     if [[ "$mode" == "duplicate" || "$mode" == "archive" || "$mode" == "missing" || "$mode" == "field-change" || "$mode" == "duplicate-increase" ]]; then
-        cat >> "$fixture/queue/insights.yaml" <<YAML
-- id: $insight_id
-  source: self_retro
-  status: resolved
-  priority: high
-  occurrence_count: 15
-  last_seen: "2026-08-04T17:44:06+09:00"
-YAML
+        template="$DUPLICATE_FIXTURE_TEMPLATE"
     fi
-    printf 'insights: []\n' > "$fixture/queue/archive/insights_archive.yaml"
-    git -C "$fixture" init -q
-    git -C "$fixture" config user.email test@example.invalid
-    git -C "$fixture" config user.name test
-    git -C "$fixture" add queue/insights.yaml
-    git -C "$fixture" commit -qm baseline
+    cp -a "$template" "$fixture"
 
     if [[ "$mode" == "duplicate-increase" ]]; then
         cat >> "$fixture/queue/insights.yaml" <<YAML
