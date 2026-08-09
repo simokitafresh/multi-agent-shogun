@@ -100,6 +100,12 @@ lessons:
   detail: |
     先走りは究極の害。殿の指示範囲を完遂してから次を考える。
     殿が話していないことを記録するな(知識記録での先走り)。
+    (3)家老レーン奪取も先走りの変形(殿指摘2026-08-09 18:36『CIやpushは将軍の責務だったっけ？』):
+    push実行・CI GREEN確認は家老の完了処理レーン(CLAUDE.md CI RED忍者修正フロー)。
+    将軍のGATE CLEAR後自走範囲=直轄成果物のcommit+gist同期+成果物の一次検分まで。
+    将軍が保留push実行→pre-push対処→CIバックグラウンド監視まで抱えたのは越権であり、
+    殿との会話帯域をCI待ちに費やし高速回転に反する。F004の『鎖の中の自走』は
+    自分が出したcmdの結果確認であり、家老レーンの代行ではない。
     (全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS-A08)
   source_ids: [LS053, LS054, LS055, LS046, LS070, LS074]
   created_at: '2026-04-24'
