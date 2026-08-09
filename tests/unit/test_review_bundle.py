@@ -5,6 +5,7 @@ the bundle's logical report key, while rejecting path and identity escapes.
 """
 from pathlib import Path
 from types import SimpleNamespace
+import hashlib
 import json
 import subprocess
 
@@ -65,6 +66,51 @@ def test_review_bundle_uses_parent_cmd_contract_after_worker_redeployment(tmp_pa
     bundle = review_bundle.load(root / "queue/gates/cmd_4274/sg7_bundle.json")
     assert bundle["review"]["cmd_id"] == "cmd_4274"
     assert bundle["review"]["cmd_spec_summary"]["project"] == "infra"
+
+
+def test_autogen_review_uses_durable_report_receipt_after_worker_redeployment(tmp_path):
+    """test_necessity: a cmd_karo report receipt must survive the next worker lease."""
+    root = _root(tmp_path)
+    report = root / "queue/reports/saizo_report_cmd_karo_speed.yaml"
+    report.write_text(
+        "worker_id: saizo\nparent_cmd: cmd_karo_speed\ntask_id: cmd_karo_speed_normal\n"
+        "report_id: rpt-speed\nreport_identity_version: 2\n"
+        "timestamp: '2026-08-10T03:20:00+09:00'\nstatus: completed\nverdict: PASS\n"
+        "ac_version_read: old-ac\ntask_contract_snapshot:\n"
+        "  parent_cmd: cmd_karo_speed\n  issued_cmd_id: cmd_karo_speed\n"
+        "  task_id: cmd_karo_speed_normal\n  ac_fingerprint: old-ac\n"
+        "  purpose: speed up one test\n  project: infra\n"
+        "  acceptance_criteria: [{id: AC1}]\n",
+        encoding="utf-8",
+    )
+    (root / "queue/tasks/saizo.yaml").write_text(
+        "task:\n  parent_cmd: cmd_next\n  task_id: cmd_next_normal\n"
+        "  ac_version: next-ac\n  report_id: rpt-next\n",
+        encoding="utf-8",
+    )
+    receipt = root / "archive/inbox/karo_20260810.yaml"
+    receipt.parent.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(report.read_bytes()).hexdigest()
+    receipt.write_text(
+        "messages:\n- type: report_received\n  report_id: rpt-speed\n"
+        "  report_identity_version: 2\n"
+        f"  report_fingerprint: {digest}\n"
+        "  report_path: queue/reports/saizo_report_cmd_karo_speed.yaml\n"
+        "  task_id: cmd_karo_speed_normal\n  parent_cmd: cmd_karo_speed\n",
+        encoding="utf-8",
+    )
+
+    report_data = review_bundle.load(report)
+    command, task_path = review_bundle.find_command(
+        root, "cmd_karo_speed", report_data, report, requested_verdict="APPROVE"
+    )
+    assert command["project"] == "infra"
+    assert command["acceptance_criteria"] == [{"id": "AC1"}]
+    assert task_path == root / "queue/tasks/saizo.yaml"
+
+    receipt.write_text("messages: []\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="immutable report-generation identity"):
+        review_bundle.find_command(root, "cmd_karo_speed", report_data, report, requested_verdict="APPROVE")
 
 
 @pytest.mark.parametrize("archived", [False, True])
