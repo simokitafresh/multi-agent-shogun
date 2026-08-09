@@ -265,8 +265,8 @@ function flush_message(    mid) {
     ids[count] = mid
     if (msg["type"] == "task_assigned") has_task = "true"
     if (msg["type"] != "bulletin_notify") all_batchable = "false"
-    if (msg["type"] ~ /^(task_assigned|task_supplement|report_received|investigation_result|report_review|verify_request|cmd_new|escalation|recovery)$/) high_count++
-    else if (msg["type"] ~ /^(gate_clear|info|heartbeat|status_update)$/) low_count++
+    if (msg["type"] ~ /^(task_assigned|task_supplement|report_received|investigation_result|report_review|verify_request|cmd_new|escalation|recovery|gate_clear)$/) high_count++
+    else if (msg["type"] ~ /^(info|heartbeat|status_update)$/) low_count++
     else normal_count++
 }
 BEGIN { count = 0; high_count = 0; normal_count = 0; low_count = 0; has_task = "false"; all_batchable = "true"; in_msg = 0 }
@@ -414,8 +414,9 @@ try:
             lines.append(f\"{s.get('id', '')}\t{s.get('type', '')}\t{content_b64}\")
         specials_tsv = base64.b64encode('\n'.join(lines).encode('utf-8')).decode('ascii')
     has_task_assigned = 'true' if task_nudge_ids else 'false'
-    high_types = {'task_assigned', 'task_supplement', 'report_received', 'investigation_result', 'report_review', 'verify_request', 'cmd_new', 'escalation', 'recovery'}
-    low_types = {'gate_clear', 'info', 'heartbeat', 'status_update'}
+    # gate_clear is an actionable completion event, not informational noise.
+    high_types = {'task_assigned', 'task_supplement', 'report_received', 'investigation_result', 'report_review', 'verify_request', 'cmd_new', 'escalation', 'recovery', 'gate_clear'}
+    low_types = {'info', 'heartbeat', 'status_update'}
     priority = 'normal'
     if any(t in high_types for t in normal_types):
         priority = 'high'

@@ -15,7 +15,8 @@ setup() {
 
 run_fixture() {
     local confirmation="$1"
-    CONFIRMATION_PROMPT="$confirmation" bash -c '
+    local message_type="${2:-report_received}"
+    CONFIRMATION_PROMPT="$confirmation" MESSAGE_TYPE="$message_type" bash -c '
 set -euo pipefail
 root="'"$PROJECT_ROOT"'"
 tmp="$(mktemp -d)"
@@ -23,12 +24,18 @@ trap "rm -rf \"$tmp\"" EXIT
 mkdir -p "$tmp/queue/inbox" "$tmp/state"
 cat > "$tmp/queue/inbox/fixture.yaml" <<YAML
 messages:
-- {id: msg_fixture, type: report_received, read: false, content: fixture}
+- id: msg_fixture
+  type: "$MESSAGE_TYPE"
+  read: false
+  content: fixture
 YAML
 export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
 source "$root/scripts/inbox_watcher.sh" fixture dummy-pane
 unset INBOX_WATCHER_LIB_ONLY
 INBOX="$tmp/queue/inbox/fixture.yaml"
+raw_info="$(get_unread_info)"
+tab=$(printf "\\t")
+IFS="$tab" read -r _count _specials _fingerprint _special_payload _has_task priority _batchable <<< "$raw_info"
 
 ensure_current_pane_target() { return 0; }
 get_effective_cli_type() { printf "codex\n"; }
@@ -62,13 +69,14 @@ tmux() {
 }
 
 rc=0
-send_wakeup 1 false fixture-fp high false false || rc=$?
+send_wakeup 1 false fixture-fp "$priority" false false || rc=$?
 nudge_count="$(awk "/^paste-buffer$/ {n++} END {print n+0}" "$TMUX_LOG")"
 unread_count="$(awk "/read: false/ {n++} END {print n+0}" "$INBOX")"
 held=0
 [ -s "$DEFERRED_NUDGE_FILE" ] && held=1
-printf "prompt=%s rc=%s nudge=%s unread=%s held=%s reason=%s\n" \
+printf "prompt=%s rc=%s nudge=%s unread=%s held=%s priority=%s reason=%s\n" \
     "$CONFIRMATION_PROMPT" "$rc" "$nudge_count" "$unread_count" "$held" \
+    "$priority" \
     "$(awk -F= "/^reason=/ {print \$2}" "$DEFERRED_NUDGE_FILE" 2>/dev/null || true)"
 '
 }
@@ -76,8 +84,13 @@ printf "prompt=%s rc=%s nudge=%s unread=%s held=%s reason=%s\n" \
 @test "通常paneはnudge 1件、確認promptはnudge 0件かつ未読保持" {
     normal_output="$(run_fixture 0)"
     prompt_output="$(run_fixture 1)"
-    [[ "$normal_output" == *"prompt=0 rc=0 nudge=1 unread=1 held=0"* ]]
-    [[ "$prompt_output" == *"prompt=1 rc=2 nudge=0 unread=1 held=1 reason=confirmation_prompt"* ]]
+    [[ "$normal_output" == *"prompt=0 rc=0 nudge=1 unread=1 held=0 priority=high reason="* ]]
+    [[ "$prompt_output" == *"prompt=1 rc=2 nudge=0 unread=1 held=1 priority=high reason=confirmation_prompt"* ]]
+}
+
+@test "gate_clear is high-priority wakeup and remains unread" {
+    output="$(run_fixture 0 gate_clear)"
+    [[ "$output" == *"prompt=0 rc=0 nudge=1 unread=1 held=0 priority=high reason="* ]]
 }
 
 @test "shared guardは確認promptを検知し通常paneを通す" {

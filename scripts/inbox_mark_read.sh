@@ -140,7 +140,9 @@ auto_digest_info_messages() {
     python3 - "$INBOX" "$digest" >"$ids_file" <<'PY' || return $?
 import fcntl, json, os, sys, yaml
 inbox, digest = sys.argv[1:]
-allowed = {"low", "info", "gate_clear", "heartbeat", "status_update", "retro_answer"}
+# gate_clear is an actionable completion event: preserve it unread so the
+# recipient can self-drive the post-clear workflow after the watcher nudge.
+allowed = {"low", "info", "heartbeat", "status_update", "retro_answer"}
 try:
     data = yaml.safe_load(open(inbox, encoding="utf-8")) or {}
 except Exception as exc:

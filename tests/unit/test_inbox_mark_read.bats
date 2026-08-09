@@ -458,3 +458,59 @@ assert data["task"]["acknowledged_at"] is None
 PY
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: gate_clear is an actionable completion event and must remain
+# unread for the recipient's self-drive, while the four informational types
+# continue to be auto-acknowledged and digested.
+@test "auto-info preserves gate_clear and acknowledges informational types" {
+    cat > "$TEST_ROOT/queue/inbox/alpha.yaml" <<'YAML'
+messages:
+- id: gate
+  from: karo
+  type: gate_clear
+  timestamp: '2026-08-09T00:00:00'
+  content: done
+  read: false
+- id: info
+  from: karo
+  type: info
+  timestamp: '2026-08-09T00:00:00'
+  content: info
+  read: false
+- id: heartbeat
+  from: karo
+  type: heartbeat
+  timestamp: '2026-08-09T00:00:00'
+  content: heartbeat
+  read: false
+- id: status
+  from: karo
+  type: status_update
+  timestamp: '2026-08-09T00:00:00'
+  content: status
+  read: false
+- id: retro
+  from: karo
+  type: retro_answer
+  timestamp: '2026-08-09T00:00:00'
+  content: retro
+  read: false
+YAML
+
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" alpha --auto-info
+    [ "$status" -eq 0 ]
+    [ "$(_get_read_status alpha gate)" = "false" ]
+    [ "$(_get_read_status alpha info)" = "true" ]
+    [ "$(_get_read_status alpha heartbeat)" = "true" ]
+    [ "$(_get_read_status alpha status)" = "true" ]
+    [ "$(_get_read_status alpha retro)" = "true" ]
+    run python3 - "$TEST_ROOT/logs/inbox_info_digest.jsonl" <<'PY'
+import json, sys
+rows = [json.loads(line) for line in open(sys.argv[1])]
+assert {row['msg_id'] for row in rows} == {'info', 'heartbeat', 'status', 'retro'}
+assert all(row['type'] != 'gate_clear' for row in rows)
+print('gate_clear_auto_ack=0 info_auto_ack=4')
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"gate_clear_auto_ack=0 info_auto_ack=4"* ]]
+}
