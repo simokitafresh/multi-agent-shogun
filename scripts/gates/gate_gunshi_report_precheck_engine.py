@@ -9,6 +9,7 @@
 import os
 import glob
 import argparse
+import json
 import re
 import shlex
 import yaml
@@ -103,7 +104,17 @@ def main():
                 'readonly', 'read_only', 'recon', 'recon2', 'scout',
             }
             report_contract = report.get('commit_contract') or {}
+            if isinstance(report_contract, str):
+                try:
+                    report_contract = json.loads(report_contract)
+                except (json.JSONDecodeError, TypeError):
+                    report_contract = {}
             task_contract = task.get('commit_contract') or {}
+            if isinstance(task_contract, str):
+                try:
+                    task_contract = json.loads(task_contract)
+                except (json.JSONDecodeError, TypeError):
+                    task_contract = {}
             report_task_type = str(
                 report_contract.get('task_type') or report.get('task_type') or ''
             ).strip()
