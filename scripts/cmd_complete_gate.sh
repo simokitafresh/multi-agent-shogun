@@ -6387,8 +6387,13 @@ target_paths = [p.strip().strip("`'\"") for p in target_paths if str(p).strip()]
 
 pattern = re.compile(
     r"(?<![A-Za-z0-9_./-])"
-    r"((?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+"
-    r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))"
+    r"("
+    # Absolute paths are explicit references even when their basename has no
+    # extension (for example, /tmp/fixture/README).
+    r"/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+"
+    r"|(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+"
+    r"|[A-Za-z0-9_.-]+\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv)"
+    r")"
     r"(?![A-Za-z0-9_.-])"
 )
 read_markers = (
@@ -6457,23 +6462,6 @@ def ref_matches_verified_dependency(ref):
         ):
             return True
     return False
-
-def token_has_target_file(token):
-    if not script_dir or not target_paths:
-        return False
-    candidates = []
-    for target in target_paths:
-        clean_target = target.strip().strip("./")
-        if not clean_target:
-            continue
-        target_abs = clean_target if os.path.isabs(clean_target) else os.path.join(script_dir, clean_target)
-        if os.path.isdir(target_abs):
-            candidates.extend(glob.glob(os.path.join(target_abs, f"*{token}*.*")))
-        else:
-            base = os.path.basename(target_abs)
-            if token in base:
-                return True
-    return any(os.path.isfile(path) for path in candidates)
 
 def is_probable_product_token(ref):
     # "Next.js" のようなフレームワーク名をファイル参照として誤検出しない。
@@ -6560,18 +6548,6 @@ for idx, match in enumerate(matches):
         )
     )
     refs.append((ref, readonly_ref))
-
-token_pattern = re.compile(r"(?<![A-Za-z0-9_./-])([a-z][a-z0-9]*(?:_[a-z0-9]+)+)(?![A-Za-z0-9_./-])")
-for match in token_pattern.finditer(command):
-    ref = match.group(1).strip()
-    if not ref or ref in seen:
-        continue
-    if ref_matches_verified_dependency(ref):
-        continue
-    if not token_has_target_file(ref):
-        continue
-    seen.add(ref)
-    refs.append((ref, False))
 
 target_refs = []
 if target_paths:

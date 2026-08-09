@@ -1217,29 +1217,57 @@ EOF
     [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
-@test "command/files_modified coverage accepts abbreviated test name by substring match" {
-    mkdir -p "$TEST_PROJECT/tests/unit"
-    touch "$TEST_PROJECT/tests/unit/test_semantic_index_update.bats"
-
+@test "command/files_modified coverage ignores cmd_4250 bareword session_alerts false positive" {
+    # test_necessity: command_refs must contain only explicit paths; a common
+    # noun that happens to resemble a file stem must not BLOCK completion.
+    mkdir -p "$TEST_PROJECT/queue"
+    touch "$TEST_PROJECT/queue/session_alerts_shogun.txt"
     _write_command_coverage_fixture \
-        "semantic_index_updateテストを高速化" \
-        "  - file: tests/unit/test_semantic_index_update.bats
+        "session_alertsを処理" \
+        "  - path: scripts/gates/gate_shogun_startup.sh
+    change: modified
+  - path: scripts/gates/gate_karo_startup.sh
+    change: modified
+  - path: scripts/gates/gate_gunshi_startup.sh
+    change: modified
+  - path: tests/unit/test_gate_shogun_startup.bats
+    change: modified
+  - path: context/infrastructure.md
     change: modified" \
-        "tests/unit"
+        "queue"
 
     run _run_command_files_modified_coverage_with_state
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" == *"SKIP (command欄に拡張子付きファイル参照なし)"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
     [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
-@test "command/files_modified coverage blocks unrelated file despite substring mode" {
+@test "command/files_modified coverage keeps explicit relative and absolute paths strict" {
+    local absolute_target="$TEST_PROJECT/scripts/absolute_target"
+    mkdir -p "$(dirname "$absolute_target")"
+    touch "$absolute_target"
+
+    _write_command_coverage_fixture \
+        "$absolute_target と scripts/cmd_complete_gate.sh を修正" \
+        "  - path: scripts/absolute_target
+    change: modified
+  - path: scripts/cmd_complete_gate.sh
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全2件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+@test "command/files_modified coverage blocks unrelated explicit path" {
     mkdir -p "$TEST_PROJECT/tests/unit"
     touch "$TEST_PROJECT/tests/unit/test_semantic_index_update.bats"
 
     _write_command_coverage_fixture \
-        "semantic_index_updateテストを高速化" \
+        "tests/unit/test_semantic_index_update.batsを高速化" \
         "  - file: tests/unit/test_unrelated.bats
     change: modified" \
         "tests/unit"
@@ -1247,7 +1275,7 @@ EOF
     run _run_command_files_modified_coverage_with_state
     [ "$status" -eq 0 ]
     [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
-    [[ "$output" == *"missing: semantic_index_update"* ]]
+    [[ "$output" == *"missing: tests/unit/test_semantic_index_update.bats"* ]]
     [[ "$output" == *"ALL_CLEAR=false"* ]]
     [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
 }
