@@ -79,7 +79,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L1549 -->
+<!-- last_synced_lesson: L1550 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -106,6 +106,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L1543: template対clone parityだけでは現HEAD schema driftを検出できない（cmd_karo_recon2_b4_schema_divergence_tobisaru_20260803）
 - L1544: raw cache失効と再生成は同一契約で強制する（cmd_4239）
 - L1547: SIGNAL CHANGE ALERTはrun起因(cron/デプロイ検証/ledger未確定域)を判別できず毎回フル偵察を要する（cmd_4243）
+- L1550: 偵察タスクリストの件数表記と実ID行を別々に計測する（cmd_4247）
 
 ## §36 API認証
 - admin系API: Basic Auth(`ADMIN_API_KEY`)
@@ -1110,3 +1111,6 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 何かトラブル・エラー・データ不整合(N/A表示・計算されていないPF・履歴欠落)を見たら、第一容疑として直近コード変更後のfullrecalculate忘れとmode違い(portfolio≠full)を疑い、`recalculation_status`のmode・時刻をDBで確認する。§89の系統的退行が実証例。機構化・自動実行は禁止(殿裁定: 意思依存にならぬようsemantic-map aliasで本則が自動注入される)。
 ## §91 月次リターン基本原理の現物境界 (cmd_4246, 2026-08-09)
 - `MonthlyReturn`は確定/MTDの値を保存するがstatus/provenanceを持たず、価格未到着新月はMonthly Returns APIでは欠落（全rowなしは404）、Monthly Tradeだけが動的`is_pending=true`を返す。`historical_backfill`は同じledger resolver候補へ流入するため、履歴修復・通常計算・pending/confirmed lifecycleを分離する設計検討が必要。詳細→`docs/research/cmd_4246_monthly_return_principles_recon_20260809.md`
+## §92 cmd_4247 月次リターン再設計タスクリスト現物偵察 (2026-08-09)
+- Dashboardは専用1 APIではなく`/api/signals`・`/api/performance/{portfolio_id}`・`/api/mtd/{portfolio_id}`の3系統、FE系列初期値は共有Providerの`CLOSE`、FoFはcomponent monthly-return入力、ledger初期書込みは`effective_start_date=rebalance_decision_date`複写、HEADのportfolio cleanupは7 PF依存テーブルをmode無条件DELETEする。正本ヘッダは28タスクと称するが実ID行は30（α8+β5+γ5+δ4+ε4+ζ4）。全30行の突合と検証コマンド/隠れ依存→`docs/research/cmd_4247_tasklist_recon_20260809.md`
+- 影丸現物追補(2026-08-09, HEAD `45ad390e`): FoF momentumは月末`MonthlyReturn.cumulative_return`を`ComponentPriceBlock`経由で月数窓評価し、日次loopは月初rebalance時のみpipeline実行。ledger `effective_start_date`はdaily planの`rebalance_decision_date`複写で、入口APIのcron直結は未確認。指定タスクリスト本体は作業木に存在せず、AC2行突合はBLOCKとして成果物へ記録。
