@@ -68,8 +68,22 @@ PY
     check="$tmpdir/check.sh"
     sed "s|local task_file=\"\$1\"|local task_file=\"\$1\"; SCRIPT_DIR='$tmpdir'|" /dev/null >/dev/null
 
-    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'" 2>/dev/null
-    [ "$status" -ne 0 ]
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/deploy_task.sh"
+    SCRIPT_DIR="$tmpdir"
+    run_necessity_check() {
+      local expected="$1" actual rc
+      set +e
+      actual="$(deploy_task_test_necessity_precheck "$tmpdir/task.yaml" 2>&1)"
+      rc=$?
+      set -e
+      [ "$rc" -eq "$expected" ] || {
+        printf 'expected_rc=%s actual_rc=%s output=%s\n' "$expected" "$rc" "$actual"
+        return 1
+      }
+    }
+
+    run_necessity_check 1
 
     cat > "$tmpdir/task.yaml" <<'YAML'
 task:
@@ -81,26 +95,21 @@ task:
     fixture_self_reference: false
     deprecated_mechanism: false
 YAML
-    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
-    [ "$status" -eq 0 ]
+    run_necessity_check 0
 
     for mutation in 'overlaps_existing: true' 'fixture_self_reference: true' 'deprecated_mechanism: true'; do
       sed -i -E "s/(overlaps_existing|fixture_self_reference|deprecated_mechanism): (false|true)/\1: false/g" "$tmpdir/task.yaml"
       key="${mutation%%:*}"; sed -i "s/$key: false/$mutation/" "$tmpdir/task.yaml"
-      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
-      [ "$status" -ne 0 ]
+      run_necessity_check 1
     done
 
     sed -i -E 's/(fixture_self_reference|deprecated_mechanism): true/\1: false/; s/overlaps_existing: false/overlaps_existing: true\n    regression_justification: regression reproduces an intentional legacy boundary/' "$tmpdir/task.yaml"
-    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
-    [ "$status" -eq 0 ]
+    run_necessity_check 0
 
     printf 'task:\n  planned_paths: [tests/test_existing.bats]\n' > "$tmpdir/task.yaml"
-    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
-    [ "$status" -eq 0 ]
+    run_necessity_check 0
     printf 'task:\n  planned_paths: [scripts/foo.sh]\n' > "$tmpdir/task.yaml"
-    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
-    [ "$status" -eq 0 ]
+    run_necessity_check 0
 }
 
 @test "test necessity classifier has zero false positives and false negatives at path boundaries" {
@@ -110,17 +119,26 @@ YAML
     git -C "$tmpdir" config user.name test
     git -C "$tmpdir" commit --allow-empty -qm base
 
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/deploy_task.sh"
+    SCRIPT_DIR="$tmpdir"
+    run_necessity_check() {
+      local expected="$1" needle="$2" actual rc
+      set +e
+      actual="$(deploy_task_test_necessity_precheck "$tmpdir/task.yaml" 2>&1)"
+      rc=$?
+      set -e
+      [ "$rc" -eq "$expected" ] && [[ "$actual" == *"$needle"* ]]
+    }
+
     for path in logs/test_timing_ledger.tsv docs/test-plan.md contest/data.tsv; do
       printf 'task:\n  planned_paths: [%s]\n' "$path" > "$tmpdir/task.yaml"
-      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
-      [ "$status" -eq 0 ]
+      run_necessity_check 0 ""
     done
 
     for path in tests/unit/test_new.bats tests/test_new.sh test_new.py; do
       printf 'task:\n  planned_paths: [%s]\n' "$path" > "$tmpdir/task.yaml"
-      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
-      [ "$status" -eq 0 ]
-      [[ "$output" == *"transient=$path"* ]]
+      run_necessity_check 0 "transient=$path"
     done
 }
 
@@ -166,15 +184,26 @@ YAML
         esac
     done
 
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/deploy_task.sh"
+    run_ci_run_id_check() {
+        local expected="$1" value="$2" actual rc
+        set +e
+        actual="$(deploy_task_ci_fix_run_id_precheck "$tmpdir/$value.yaml" 2>&1)"
+        rc=$?
+        set -e
+        [ "$rc" -eq "$expected" ] || return 1
+        if [ "$expected" -eq 1 ]; then
+            [[ "$actual" == *"BLOCK: task_type=ci_fix requires ci_run_id as a positive integer"* ]]
+        fi
+    }
+
     for value in missing empty text zero; do
-        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_run_id_precheck '$tmpdir/'\"$value\"'.yaml'"
-        [ "$status" -eq 1 ]
-        [[ "$output" == *"BLOCK: task_type=ci_fix requires ci_run_id as a positive integer"* ]]
+        run_ci_run_id_check 1 "$value"
     done
 
     for value in positive non_ci; do
-        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_run_id_precheck '$tmpdir/'\"$value\"'.yaml'"
-        [ "$status" -eq 0 ]
+        run_ci_run_id_check 0 "$value"
     done
 }
 
