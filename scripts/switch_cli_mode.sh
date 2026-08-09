@@ -422,6 +422,8 @@ fi
 
 if [[ "$NO_RELAUNCH" == true ]]; then
     echo "[switch_cli_mode] --no-relaunch: skipped pane restart."
+    # settings-only でも tmux 変数を同期する（verify_switch_result が tmux 変数を検査するため）
+    bash "${SCRIPT_DIR}/scripts/sync_pane_vars.sh" >/dev/null 2>&1 || true
 else
     for agent in "${TARGET_AGENTS[@]}"; do
         restart_agent_cli "$agent"

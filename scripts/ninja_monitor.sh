@@ -7751,8 +7751,8 @@ check_inbox_watcher_health() {
         return 0
     fi
 
-    # shogun + karo + 全忍者/軍師のwatcherを確認
-    local all_agents=("shogun" "karo" "${NINJA_NAMES[@]}")
+    # shogun + karo + gunshi + 全忍者のwatcherを確認
+    local all_agents=("shogun" "karo" "gunshi" "${NINJA_NAMES[@]}")
     local dead=()
 
     for agent in "${all_agents[@]}"; do
