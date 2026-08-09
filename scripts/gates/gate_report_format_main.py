@@ -203,6 +203,18 @@ def _resolved_commit_contract(report, task):
     task_contract = task.get("commit_contract") if isinstance(task, dict) else None
     report_contract = report.get("commit_contract") if isinstance(report, dict) else None
 
+    # Some deployed task YAMLs contain the structurally valid contract as a
+    # JSON scalar (the field helper's legacy output) instead of a YAML mapping.
+    # Decode only JSON objects so the gate preserves the same typed contract
+    # instead of treating it as absent and demanding report-only snapshots.
+    if isinstance(task_contract, str):
+        try:
+            decoded_contract = json.loads(task_contract)
+        except (TypeError, ValueError):
+            decoded_contract = None
+        if isinstance(decoded_contract, dict):
+            task_contract = decoded_contract
+
     if isinstance(task_contract, dict):
         if (
             isinstance(report_contract, dict)

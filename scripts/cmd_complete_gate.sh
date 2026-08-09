@@ -300,6 +300,14 @@ if task_file:
         raise SystemExit
     report_contract = report.get("commit_contract")
     task_contract = task.get("commit_contract") if isinstance(task, dict) else None
+    if isinstance(task_contract, str):
+        try:
+            import json
+            decoded_contract = json.loads(task_contract)
+        except (TypeError, ValueError):
+            decoded_contract = None
+        if isinstance(decoded_contract, dict):
+            task_contract = decoded_contract
     report_type = str(
         (report_contract or {}).get("task_type") or report.get("task_type") or ""
     ).strip()

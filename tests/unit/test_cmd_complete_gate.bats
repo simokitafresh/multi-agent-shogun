@@ -4329,6 +4329,21 @@ run_ci_push_state() {
     [ "$output" = "UNPUSHED: commit_contract no-code task" ]
 }
 
+# test_necessity: deployed task YAMLs that carry the same typed contract as a
+# JSON scalar must retain the readonly exemption; serialization is not a
+# semantic change and must not crash the CI boundary classifier.
+@test "CI push detection skips serialized symmetric no-code scout contract" {
+    local repo="$BATS_TEST_TMPDIR/no-code-serialized-contract"
+    local report="$BATS_TEST_TMPDIR/no-code-serialized-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-serialized-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: scout\ncommit_hash: no-code-change\nfiles_modified: [{path: %s}]\ncommit_contract: {required: false, task_type: scout}\n' "$report" > "$report"
+    printf 'task:\n  task_type: scout\n  commit_contract: '\''{"required":false,"task_type":"scout"}'\''\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "UNPUSHED: commit_contract no-code task" ]
+}
+
 # test_necessity: readonly recon reports may list the report itself as their
 # sole artifact without turning a no-code project task into a commit task.
 @test "CI push detection skips symmetric no-code recon with only its own report artifact" {
