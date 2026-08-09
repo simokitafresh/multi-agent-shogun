@@ -68,7 +68,7 @@ flowchart LR
 | T-β2 | ✅ | **statusバッジ共通コンポーネント**(cmd_4257・commit 85ef51ec・Jest 6 PASS/SKIP0)。Start: 設計書の⏳◧✓意味論。Goal: `StatusBadge`(status+as_of表示。⏳=開始待ち/◧=暫定/✓=確定)を新設、storybookまたはユニットテストで4状態描画PASS | 新規1コンポーネント | T-α1(契約参照のみ・stub可) | FEユニットテストPASS |
 | T-β3 | ✅ | **Monthly Returnsページのpending表示**(cmd_4259・commit 0287a039・FEテスト+build成功)。Start: T-α3のstatus付き応答。Goal: PENDING_VALUE行=◧+as_of、START_WAITING行=⏳(値なし)で表示。404時の空白画面が消える | `frontend/app/monthly-returns/page.tsx`, `monthly-returns-table.tsx` | T-α3,T-β2 | FEユニット+手動確認手順書1項 |
 | T-β4 | ✅ | **Monthly Tradeページのstatus統一表示**(cmd_4264・commit 523f1e7e・Jest 12 PASS/SKIP0)。Start: T-α4。Goal: 既存Pendingバッジを共通StatusBadgeへ置換。表示情報は不変+as_of追加 | `frontend/components/monthly-trade-table.tsx` | T-α4,T-β2 | FEユニットPASS |
-| T-β5 | ⬜ | **Dashboard 2スロット表示**。Start: T-α7の応答field。Goal: 「現在の保有(効力中)」と「次回リバランス(計算済み・施行待ち)」を別カードで表示。次回がnullなら「未定(次回計算=翌月初)」表示 | dashboard系FEコンポーネント | T-α7,T-β2 | FEユニットPASS |
+| T-β5 | ✅ | **Dashboard 2スロット表示**(cmd_4277・commit 2e494a5f・Jest 11 PASS/SKIP0+build exit0)。Start: T-α7の応答field。Goal: 「現在の保有(効力中)」と「次回リバランス(計算済み・施行待ち)」を別カードで表示。次回がnullなら「未定(次回計算=翌月初)」表示 | dashboard系FEコンポーネント | T-α7,T-β2 | FEユニットPASS |
 
 ## Lane γ: FoF momentum入力正規化 — 設計書§2.3(切替γ5まで本番影響ゼロ)
 
