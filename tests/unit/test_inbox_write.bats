@@ -2810,6 +2810,9 @@ YAML
 # report mentioning cmd_4173 was delivered read:true as cmd_4173's completion.
 _autoread_env() {
     AR_ROOT="$BATS_TEST_TMPDIR/autoread"
+    # These cases exercise structural auto-read only; skip unrelated review
+    # context lookups so their timing reflects the contract under test.
+    export INBOX_REVIEW_CONTEXT_DISABLE=1
     mkdir -p "$AR_ROOT/queue/inbox" "$AR_ROOT/queue/reports" "$AR_ROOT/logs" "$AR_ROOT/scripts"
     [ -L "$AR_ROOT/scripts/lib" ] || ln -s "$PROJECT_ROOT/scripts/lib" "$AR_ROOT/scripts/lib"
     local _s
