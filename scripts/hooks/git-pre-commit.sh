@@ -22,7 +22,7 @@ source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
 declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
-_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax sourced_dep affected_tests instruction_sync context_metadata codd_context_freshness semantic)
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax sourced_dep instruction_sync context_metadata codd_context_freshness semantic)
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
@@ -1350,15 +1350,10 @@ main() {
     fi
     precommit_step_end 0
 
-    # affected_tests: AC1+AC2 (cmd_karo_impl_precommit_affected_link_20260725).
-    # staged→affected test resolution (reusing scripts/run_tests.sh's existing
-    # `affected` mode) plus the scripts/lib/ reverse-dependency expansion.
-    precommit_step_begin affected_tests
-    if ! check_precommit_affected_tests; then
-        precommit_step_end 1
-        exit 1
-    fi
-    precommit_step_end 0
+    # Intermediate commit lane must stay below three seconds. Runtime/task/
+    # affected tests belong to the final checkpoint, never to commit creation.
+    # Scope isolation, syntax and secret guards remain active above.
+    echo "[pre-commit] runtime tests deferred to final checkpoint; launches=0" >&2
 
     precommit_step_begin instruction_sync
     if [[ "$_instructions_changed" == "true" ]]; then

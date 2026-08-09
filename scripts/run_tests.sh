@@ -204,9 +204,9 @@ PY
 }
 
 # Resolve only tests explicitly named by the task author or final report.
-# commit_contract.planned_paths/files_to_modify are ownership boundaries and
-# may be inferred by deployment (for example B32); they are not execution
-# requests and must never be promoted to direct contract tests.
+# Top-level planned_paths belongs to the authored task and its test entries are
+# direct execution requests. The nested commit_contract remains an inferred
+# ownership boundary and is deliberately excluded.
 task_explicit_test_paths() {
     local task_file="$1"
     local scope_root
@@ -255,6 +255,10 @@ if not isinstance(task, dict):
 values = []
 declared_values = []
 collect(task.get("test_path"), declared_values)
+collect(task.get("test_necessity"), declared_values)
+planned_values = []
+collect(task.get("planned_paths"), planned_values)
+declared_values.extend(path for path in planned_values if is_test(path))
 for raw in declared_values:
     path = raw if os.path.isabs(raw) else os.path.join(root, raw)
     resolved = os.path.realpath(path)
@@ -1859,6 +1863,15 @@ _run_tests_main() {
             shift || true
             [ "$#" -eq 1 ] || { echo "Usage: bash scripts/run_tests.sh task <task_yaml>" >&2; exit 2; }
             [ -r "$1" ] || { echo "BLOCK: task scope file is unreadable: $1" >&2; exit 2; }
+            # Six ninjas may validate concurrently. Giving every task runner
+            # all host CPUs creates 48 workers on the normal 8-core host and
+            # reduces fleet throughput. Keep one worker per task by default;
+            # the six-agent fleet then stays within the host CPU budget while
+            # full/wave checkpoints retain host-wide parallelism.
+            if [[ -z "${BATS_MAX_TEST_JOBS:-}" ]]; then
+                MAX_TEST_JOBS=1
+            fi
+            printf 'TEST_CONCURRENCY mode=task jobs=%s fleet_budget=6\n' "$MAX_TEST_JOBS"
             if task_is_readonly_probe "$1"; then
                 echo "TEST_SCOPE result=readonly_probe files=0 task=$1"
                 echo "TEST_SELECTION result=selected reason=readonly_probe_no_source_tests files=0"
