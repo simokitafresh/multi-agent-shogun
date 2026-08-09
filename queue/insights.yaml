@@ -246,7 +246,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "一次確認で既存GP-180/181のLevel4防御を確認。deploy_task.sh reset_stale_fields()が全配備経路でSTALE_RESETを実行し、最終AC3ゲートが未実行をBLOCKするため追加修正不要"
-  action_artifact: "scripts/deploy_task.sh:L1625-L1782,L13280-L13286;tests/unit/test_deploy_task_lifecycle.bats:L1472-L1487,L2193-L2214;context/senkyoku-log.md:L1022;memory_db_query=GP-180 STALE_RESET cmd_1861;semantic-map.md:L103;docs/semantic-index/index.md:L3339"
+  action_artifact: "scripts/deploy_task.sh:L1625-L1782,L13280-L13286;tests/unit/test_deploy_task_lifecycle.bats:L1472-L1487,L2193-L2214;context/senkyoku-log.md:L1022;memory_db_query=GP-180 STALE_RESET cmd_1861;semantic-map.md:L103;docs/semantic-index/index.md:L3339;commit_owner=cmd_reflux_insight_202608100658_hanzo_exact"
   resolved_at: "2026-08-10T07:05:31+09:00"
 - id: INS-20260810-004640774-c51b
   ts: "2026-08-10T00:46:40+09:00"
