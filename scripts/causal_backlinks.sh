@@ -92,15 +92,26 @@ RG_COMMON_ARGS=(
 )
 
 run_backlink_search() {
-    if [ "$DETAIL" -eq 1 ]; then
-        "$RG_BIN" -n "${RG_COMMON_ARGS[@]}" "$needle" "${existing_search_paths[@]}" 2>/dev/null \
-            | sort -u \
-            || true
-    else
-        "$RG_BIN" -l "${RG_COMMON_ARGS[@]}" "$needle" "${existing_search_paths[@]}" 2>/dev/null \
-            | sort -u \
-            || true
-    fi
+    local tmpdir idx=0 search_path
+    tmpdir="$(mktemp -d)"
+
+    # Top-level areas are independent. Search them concurrently so one slow
+    # 9P subtree does not hold every other result behind it, then retain the
+    # existing deterministic, de-duplicated output contract at the join.
+    for search_path in "${existing_search_paths[@]}"; do
+        if [ "$DETAIL" -eq 1 ]; then
+            ("$RG_BIN" -n "${RG_COMMON_ARGS[@]}" "$needle" "$search_path" 2>/dev/null || true) \
+                > "$tmpdir/$idx" &
+        else
+            ("$RG_BIN" -l "${RG_COMMON_ARGS[@]}" "$needle" "$search_path" 2>/dev/null || true) \
+                > "$tmpdir/$idx" &
+        fi
+        idx=$((idx + 1))
+    done
+    wait || true
+    sort -u "$tmpdir"/* 2>/dev/null || true
+    find "$tmpdir" -type f -delete 2>/dev/null || true
+    rmdir "$tmpdir" 2>/dev/null || true
 }
 
 if [ "$DETAIL" -eq 1 ]; then
