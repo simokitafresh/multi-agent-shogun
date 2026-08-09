@@ -1,3 +1,4 @@
+<!-- gist-master: d26e786a4da934eaa2e5863b8d31d7bd dm-monthly-return-v6-tasklist_20260809.md -->
 # DM-Signal 月次リターン再設計 実装タスクリスト v1.0
 
 > **正本設計書**: `docs/research/dm-monthly-return-design-v6_20260809.md` v6.9(gist d23c8d20)。本書は設計書の実装分解であり、**仕様の正は常に設計書**。矛盾を見つけたら実装せず報告する。
