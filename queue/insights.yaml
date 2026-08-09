@@ -95,7 +95,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4257"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でcmd_4257の現taskを確認した結果、StatusBadge新設のみで月次リターン差分ACは存在せずsource_cmdの帰属が不一致。進行中月差異の実知識は既存L607(cmd_1855)とL512へ還流済みのため新規修正不要として解決する。"
+  action_artifact: "context/dm-signal-ops.md:L607;context/dm-signal-core.md:L75;docs/research/dm-monthly-return-v6-tasklist_20260809.md:T-beta2"
+  resolved_at: "2026-08-10T05:46:24+09:00"
 - id: INS-20260810-000936253-c664
   ts: "2026-08-10T00:09:36+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4257; matched=status,signal; current_pattern=月次リターンT-β2 — statusバッジ共通コンポーネント; candidate_level=4; candidate=TRF dict.get()がPI L573違反で12体Cash100%。MF/SVMF/MVMFは修正済みだがTRF/MAFが漏れた。DM-signalリポジトリのpre-commit hookでblocks/+jobs/内のdict.get(target_date)パターンをBLOCK。横展開漏れの構造的防止。DM-signalリポジトリ変更のためcmd; source=gunshi_gp_tracker.yaml"
