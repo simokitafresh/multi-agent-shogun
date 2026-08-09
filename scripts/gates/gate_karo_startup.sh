@@ -40,6 +40,10 @@ source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 source "$SCRIPT_DIR/scripts/lib/task_cmd_match.sh"
 _KARO_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 
+# cmd_4250: K/D分類の受領証を家老レーンで一次記録する。検知本体は
+# このgateとninja_monitorの既存機構が担当し、将軍gateへ戻さない。
+KARO_MIGRATION_LOG_FIRE=1 bash "$SCRIPT_DIR/scripts/gates/gate_karo_startup_migrated_checks.sh" "$SCRIPT_DIR"
+
 overall="OK"
 alerts=()
 # shellcheck source=/dev/null
@@ -2454,10 +2458,24 @@ for _cur_ninja in $_KARO_NINJA_NAMES; do
         break
     done < <(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -type f -name "${_cur_ninja}_report_${_cur_parent_cmd}*.yaml" -print 2>/dev/null)
     [ -n "$_cur_active_report" ] || continue
-    echo "  ALERT: ${_cur_ninja} completed_unarchived task=${_cur_parent_cmd} report=$(basename "$_cur_active_report") action=archive_terminal"
-    overall="ALERT"
-    alerts+=("${_cur_ninja}: completed_unarchived task=${_cur_parent_cmd} report=$(basename "$_cur_active_report") action=archive_terminal")
-    _completed_unarchived_count=$((_completed_unarchived_count + 1))
+    _cur_archive_script="$SCRIPT_DIR/scripts/archive_completed.sh"
+    _cur_generation="$(sha256sum "$_cur_active_report" | awk '{print $1}')"
+    _cur_archive_ok=0
+    if [[ -x "$_cur_archive_script" && "$_cur_generation" =~ ^[0-9a-f]{64}$ ]]; then
+        if env ARCHIVE_COMPLETED_PROJECT_DIR="$SCRIPT_DIR" \
+            SHOGUN_COMPLETION_GENERATION="$_cur_generation" \
+            bash "$_cur_archive_script" "$_cur_parent_cmd" >/dev/null 2>&1; then
+            _cur_archive_ok=1
+        fi
+    fi
+    if [ "$_cur_archive_ok" -eq 1 ] && [ -f "$_cur_gate_dir/archive.done" ]; then
+        echo "  OK: ${_cur_ninja} completed_unarchived task=${_cur_parent_cmd} auto_archived report=$(basename "$_cur_active_report")"
+    else
+        echo "  ALERT: ${_cur_ninja} completed_unarchived task=${_cur_parent_cmd} report=$(basename "$_cur_active_report") action=archive_terminal_failed"
+        overall="ALERT"
+        alerts+=("${_cur_ninja}: completed_unarchived task=${_cur_parent_cmd} report=$(basename "$_cur_active_report") action=archive_terminal_failed")
+        _completed_unarchived_count=$((_completed_unarchived_count + 1))
+    fi
 done
 [ "$_completed_unarchived_count" -gt 0 ] || echo "  OK: completed_unarchived 0件"
 echo ""
@@ -3041,6 +3059,40 @@ _session_alerts_file="$SCRIPT_DIR/queue/session_alerts_karo.txt"
 render_session_alerts_file "$_session_alerts_file" "session_alerts_karo" "$_startup_run_id" "${alerts[@]}"
 
 # --- L1先送り自動エスカレーション: 先送りCRITICAL検出→将軍にinbox送信 ---
+KARO_STARTUP_ESCALATION_CORRECTION_COMMAND="${KARO_STARTUP_ESCALATION_CORRECTION_COMMAND:-}"
+karo_startup_correction_command() {
+    local alert="$1" cmd_id="" report_name="" report_file="" generation=""
+    if [ -n "$KARO_STARTUP_ESCALATION_CORRECTION_COMMAND" ]; then
+        printf '%s\n' "$KARO_STARTUP_ESCALATION_CORRECTION_COMMAND"
+        return 0
+    fi
+    case "$alert" in
+        *"completed_unarchived task="*)
+            cmd_id="${alert##*completed_unarchived task=}"
+            cmd_id="${cmd_id%% *}"
+            report_name="${alert##* report=}"
+            report_name="${report_name%% *}"
+            if [[ "$report_name" =~ ^[A-Za-z0-9_.-]+\.yaml$ ]]; then
+                report_file="$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -type f -name "$report_name" -print -quit 2>/dev/null || true)"
+            fi
+            [ -n "$report_file" ] && generation="$(sha256sum "$report_file" | awk '{print $1}')"
+            if [[ "$cmd_id" == cmd_* ]]; then
+                if [[ "$generation" =~ ^[0-9a-f]{64}$ ]]; then
+                    printf 'ARCHIVE_COMPLETED_PROJECT_DIR=%q SHOGUN_COMPLETION_GENERATION=%q bash scripts/archive_completed.sh %q\n' \
+                        "$SCRIPT_DIR" "$generation" "$cmd_id"
+                else
+                    printf 'false # report generation unavailable for %q\n' "$report_name"
+                fi
+                return 0
+            fi
+            ;;
+    esac
+    # All other alert classes use the already-owned Karo migration lane as a
+    # bounded corrective verification.  A non-zero result is required before
+    # the escalation branch is allowed to notify Shogun.
+    printf 'bash scripts/gates/gate_karo_startup_migrated_checks.sh %q\n' "$SCRIPT_DIR"
+}
+
 _deferred_alerts_file="$(mktemp)"
 for a in "${alerts[@]}"; do
     case "$a" in 先送りCRITICAL:*) printf '%s\n' "$a" >> "$_deferred_alerts_file" ;; esac
@@ -3136,7 +3188,21 @@ PY
  )"
 while IFS=$'\t' read -r _action _key _generation _alert; do
     [ "$_action" = "SEND" ] || continue
-    _deferred_message="家老startup先送りCRITICAL案件: key=${_key} generation=${_generation}; ${_alert}。家老が対処できないため将軍cmd起票を検討せよ"
+    _correction_command="$(karo_startup_correction_command "$_alert")"
+    _correction_output=""
+    _correction_rc=0
+    if [ -n "$_correction_command" ]; then
+        _correction_output="$(cd "$SCRIPT_DIR" && bash -c "$_correction_command" 2>&1)" || _correction_rc=$?
+    else
+        _correction_rc=127
+    fi
+    # A successful Karo-lane correction closes the alert without escalating.
+    # Only a measured non-zero correction is eligible for Shogun escalation.
+    [ "$_correction_rc" -ne 0 ] || continue
+    _correction_gap="${_correction_output//$'\n'/ }"
+    _correction_gap="${_correction_gap:0:400}"
+    [ -n "$_correction_gap" ] || _correction_gap="家老レーン是正コマンドが非0終了したが出力なし"
+    _deferred_message="家老startup先送りCRITICAL案件: key=${_key} generation=${_generation}; ${_alert}。試行コマンド: ${_correction_command}; exit_code: ${_correction_rc}; 特定した不足: ${_correction_gap}; 次の行動: 是正結果を確認し既存cmdへ接続する; 実行者: karo"
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "$_deferred_message" escalation karo 2>/dev/null || true
 done <<< "$_transition_output"
 ) 9>"$_deferred_lock"

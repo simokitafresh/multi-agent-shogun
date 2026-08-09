@@ -39,6 +39,26 @@ run_escalation_dedupe() {
     run python3 "$FUNCTION_ROOT/escalation_dedupe.py" "$TEST_ROOT/queue/karo.yaml" "$1"
 }
 
+# test_necessity: K/D分類は将軍gateの実行・表示から外し、家老laneの受領証と
+# J判定を同時に維持する不変量を守る。
+@test "cmd_4250 suppresses Karo-owned K/D startup output" {
+    grep -q 'local SHOGUN_KD_SUPPRESSED=1' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh"
+    run env SHOGUN_STARTUP_LIGHTWEIGHT=1 SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=1 \
+        SHOGUN_STARTUP_ROOT="$PROJECT_ROOT" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'■ daemon_watchdog heartbeat鮮度'* ]]
+    [[ "$output" != *'■ テスト時間台帳鮮度'* ]]
+    [[ "$output" != *'■ 将軍watcher環境変数'* ]]
+    [[ "$output" != *'■ 将軍教訓'* ]]
+    [[ "$output" != *'■ 教訓Stats'* ]]
+    [[ "$output" != *'■ DIGEST:'* ]]
+    run bash "$PROJECT_ROOT/scripts/gates/gate_karo_startup_migrated_checks.sh" "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'K-LANE RECEIPT: classified=39'*'result=PASS'* ]]
+    [[ "$output" == *'D-LANE RECEIPT: classified=9'*'result=PASS'* ]]
+}
+
 # test_necessity: escalationはread状態に依存せず意味キーをbounded cooldown中だけ重複抑制し、新規キーと期限後の再通知を失わない不変量を守る。
 @test "startup escalation dedupes same unresolved key despite companion warning changes" {
     cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'

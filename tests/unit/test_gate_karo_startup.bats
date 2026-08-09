@@ -93,6 +93,18 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: startup escalation must expose the Karo-lane corrective
+# command receipt and never emit the former blame-shifting instruction.
+@test "startup escalation is gated by non-zero corrective command evidence" {
+  ! grep -q '家老が対処できないため将軍cmd起票を検討せよ' "$ROOT/scripts/gates/gate_karo_startup.sh"
+  grep -q '試行コマンド:' "$ROOT/scripts/gates/gate_karo_startup.sh"
+  grep -q 'exit_code:' "$ROOT/scripts/gates/gate_karo_startup.sh"
+  grep -q '特定した不足:' "$ROOT/scripts/gates/gate_karo_startup.sh"
+  grep -q '次の行動:' "$ROOT/scripts/gates/gate_karo_startup.sh"
+  grep -q '実行者: karo' "$ROOT/scripts/gates/gate_karo_startup.sh"
+  grep -q '\[ "\$_correction_rc" -ne 0 \] || continue' "$ROOT/scripts/gates/gate_karo_startup.sh"
+}
+
 @test "assigned CTX0はSTALL加算前にpane一次再照合しWorking中を除外する" {
   helper="$TMPDIR_CASE/pane-active.sh"
   sed -n '/^karo_startup_pane_is_active()/,/^}/p' \
@@ -183,6 +195,37 @@ YAML
   run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/check.sh"' _ "$fixture"
   [ "$status" -eq 0 ]
   [[ "$output" == *'OK: completed_unarchived 0件'* ]]
+}
+
+# test_necessity: completed_unarchived is a mechanical archive transition owned
+# by Karo; a successful archive must not become a Shogun escalation.
+@test "startup gate auto-archives completed report and stays clear on success" {
+  fixture="$TMPDIR_CASE/completed-unarchived-success"
+  mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/gates/cmd_auto" \
+    "$fixture/scripts/lib" "$fixture/scripts"
+  awk '/^# --- Check 9.2b:/{copy=1} /^# --- Check 9.3:/{copy=0} copy' \
+    "$ROOT/scripts/gates/gate_karo_startup.sh" > "$fixture/check.sh"
+  cat > "$fixture/queue/tasks/alpha.yaml" <<'YAML'
+task:
+  status: done
+  task_id: task_auto
+  parent_cmd: cmd_auto
+YAML
+  printf 'status: completed\nverdict: PASS\n' > "$fixture/queue/reports/alpha_report_cmd_auto.yaml"
+  cat > "$fixture/scripts/archive_completed.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+touch "$ARCHIVE_COMPLETED_PROJECT_DIR/queue/gates/cmd_auto/archive.done"
+EOF
+  chmod +x "$fixture/scripts/archive_completed.sh"
+
+  run env ARCHIVE_COMPLETED_PROJECT_DIR="$fixture" bash -c \
+    'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/check.sh"' \
+    _ "$fixture"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'OK: alpha completed_unarchived task=cmd_auto auto_archived'* ]]
+  [[ "$output" == *'OK: completed_unarchived 0件'* ]]
+  [[ "$output" != *'ALERT: alpha completed_unarchived'* ]]
 }
 
 @test "startup gate excludes an older failed generation after same task_id reassignment" {

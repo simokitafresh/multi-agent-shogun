@@ -368,6 +368,15 @@ _shogun_recovery_attempt_tmp="${_shogun_recovery_attempt}.tmp.${BASHPID}"
 : > "$_shogun_recovery_attempt_tmp"
 mv -f "$_shogun_recovery_attempt_tmp" "$_shogun_recovery_attempt"
 local GATE_DIR="$SCRIPT_DIR/scripts/gates"
+# cmd_4250: K/D分類は家老laneへ移管済みとして、将軍laneでは実行しない。
+# J判定・追体験だけをこのgateの責務として残す。
+local SHOGUN_KD_SUPPRESSED=1
+export SHOGUN_KD_SUPPRESSED
+KARO_MIGRATION_RECEIPT=/dev/null \
+    SHOGUN_D_SUPPRESSION_EVIDENCE="${SHOGUN_D_SUPPRESSION_EVIDENCE:-$SCRIPT_DIR/logs/shogun_startup_d_suppressed.tsv}" \
+    bash "$GATE_DIR/gate_karo_startup_migrated_checks.sh" "$SCRIPT_DIR" >/dev/null 2>&1 || {
+        echo "  ALERT: K/D分類移管受領証の生成に失敗"
+    }
 local _STARTUP_GATE_STARTED_MS
 _STARTUP_GATE_STARTED_MS=$(date +%s%3N)
 SHOGUN_STARTUP_TIMING_FILE="${SHOGUN_STARTUP_TIMING_FILE:-$(mktemp "${TMPDIR:-/tmp}/shogun-startup-timing.XXXXXX")}"
@@ -431,13 +440,16 @@ fi
 
 overall="OK"
 alerts=()
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ daemon_watchdog heartbeat鮮度"
 if ! check_daemon_watchdog_heartbeat "$SCRIPT_DIR"; then
     overall="WARN"
     alerts+=("daemon_watchdog heartbeat停止: cron/crontabを確認せよ")
 fi
+fi
 # cmd_3895: the timing ledger is useful only while its writer is alive.  This
 # read-only startup check detects a stopped writer without launching tests.
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ テスト時間台帳鮮度"
 if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
     if [ "$TIMING_HEALTH_CACHE_TTL" -gt 0 ]; then
@@ -456,6 +468,7 @@ if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
     fi
 else
     echo "  INFO: timing ledger未生成（初回all/unit完走後に監視開始）"
+fi
 fi
 # /mnt/c capacity is a startup invariant: danger blocks normal work, warning is visible.
 # shellcheck source=/dev/null
@@ -783,8 +796,10 @@ _TMP_STARTUP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/shogun-startup.XXXXXX")
 # 家老startup gate (gate_karo_startup.sh) が検知→忍者配備する。
 
 # --- Gate 0.5: 将軍watcher環境変数 ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ 将軍watcher環境変数"
 check_shogun_watcher_escalation_env
+fi
 
 # --- Parallel launch: independent sub-gates ---
 _TMP_G1="$_TMP_STARTUP_DIR/g1" _TMP_G2="$_TMP_STARTUP_DIR/g2" _TMP_G3="$_TMP_STARTUP_DIR/g3"
@@ -806,6 +821,7 @@ _TMP_ENFORCE_LEVEL="$_TMP_STARTUP_DIR/enforce_level"
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 	"$GATE_DIR/gate_p_average_freshness.sh" > "$_TMP_G2" 2>&1 &
 	_PID_G2=$!
 	"$GATE_DIR/gate_cmd_state.sh" > "$_TMP_G3" 2>&1 &
@@ -827,6 +843,9 @@ _TMP_ENFORCE_LEVEL="$_TMP_STARTUP_DIR/enforce_level"
 	fi
 	"$GATE_DIR/gate_knowledge_freshness.sh" > "$_TMP_G25" 2>&1 &
 	_PID_G25=$!
+else
+	_PID_G2=""; _PID_G3=""; _PID_G12=""; _PID_G13=""; _PID_ENFORCE_LEVEL=""; _PID_G25=""
+fi
 	karo_inbox_file="$SCRIPT_DIR/queue/inbox/karo.yaml"
 	bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
 	inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
@@ -843,6 +862,7 @@ _TMP_ENFORCE_LEVEL="$_TMP_STARTUP_DIR/enforce_level"
 EOF
 	) > "$_TMP_GATE4_YAML" &
 	_PID_GATE4_YAML=$!
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 	show_semantic_no_match_metrics > "$_TMP_SEMANTIC_NO_MATCH" 2>&1 &
 	_PID_SEMANTIC_NO_MATCH=$!
 	_skill_recommend_metrics="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
@@ -874,6 +894,11 @@ EOF
 	else
 	    _PID_LOOP_LEDGER=""
 	fi
+else
+	_PID_SEMANTIC_NO_MATCH=""; _PID_SKILL_REC=""; _PID_SKILL_USAGE=""
+	_PID_WEEKLY_METRICS=""; _PID_LOOP_LEDGER=""
+fi
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 	awk '
 function flush_run() {
     if (current_run != "") {
@@ -989,7 +1014,10 @@ if [ -x "$GATE_DIR/gate_three_layer_health.sh" ]; then
     ) &
     _PID_THREE_LAYER=$!
 else
-    _PID_THREE_LAYER=""
+	_PID_THREE_LAYER=""
+fi
+else
+	_PID_DEFERRED_HOLES=""; _PID_BACKLINK_ZERO=""; _PID_THREE_LAYER=""
 fi
 if [ -f "$SCRIPT_DIR/logs/cmd_design_quality.yaml" ]; then
     tail -n "${SHOGUN_STARTUP_DQ_TAIL_LINES:-5000}" "$SCRIPT_DIR/logs/cmd_design_quality.yaml" > "$_TMP_DQ_RECENT"
@@ -1004,11 +1032,15 @@ if [ -f "$SCRIPT_DIR/logs/skill_execution_log.yaml" ]; then
             | awk 'BEGIN{in_entry=0} /^executions:[[:space:]]*$/{next} /^[[:space:]]*-[[:space:]]+ts:/{in_entry=1} in_entry{print}'
     } > "$_TMP_SKILL_EXEC_RECENT"
 fi
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 	(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?") > "$_TMP_UNPUSHED" &
-_PID_UNPUSHED=$!
-(cd "$SCRIPT_DIR" && git ls-files -m -o --exclude-standard -- scripts/ 2>/dev/null | sed 's/^/ M /') > "$_TMP_SCRIPTS_STATUS" &
-_PID_SCRIPTS_STATUS=$!
-if [ "$LIGHT_MODE" != "1" ]; then
+	_PID_UNPUSHED=$!
+	(cd "$SCRIPT_DIR" && git ls-files -m -o --exclude-standard -- scripts/ 2>/dev/null | sed 's/^/ M /') > "$_TMP_SCRIPTS_STATUS" &
+	_PID_SCRIPTS_STATUS=$!
+else
+	_PID_UNPUSHED=""; _PID_SCRIPTS_STATUS=""
+fi
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ] && [ "$LIGHT_MODE" != "1" ]; then
     python3 - "$SCRIPT_DIR/context" > "$_TMP_GUNSHI_INFO" <<'PY' &
 from pathlib import Path
 import sys
@@ -1093,7 +1125,7 @@ else
     _PID_EVO_SCAN=""
 fi
 _skill_ref_gate="$SCRIPT_DIR/scripts/gates/gate_skill_script_refs.sh"
-if [ "$LIGHT_MODE" != "1" ] && [ -x "$_skill_ref_gate" ]; then
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ] && [ "$LIGHT_MODE" != "1" ] && [ -x "$_skill_ref_gate" ]; then
     bash "$_skill_ref_gate" "$SCRIPT_DIR" > "$_TMP_SKILL_REFS" 2>&1 &
     _PID_SKILL_REFS=$!
 else
@@ -1110,6 +1142,7 @@ if echo "$result1" | grep -q "ALERT"; then
     alerts+=("Memory健全度: ALERT")
 fi
 
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 # --- Gate 2: p̄鮮度 (Step 2.57) ---
 echo "■ p̄鮮度"
 wait $_PID_G2 || true
@@ -1182,10 +1215,14 @@ if echo "$result3" | grep -q "ALERT"; then
     alerts+=("cmd委任状態: ALERT")
 fi
 
+fi
 # --- Gate 4: 未読inbox ---
-echo "■ inbox未読"
 inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
-if [ -f "$inbox_file" ]; then
+if [ "$SHOGUN_KD_SUPPRESSED" = "1" ]; then
+    _d_inbox=0
+else
+    echo "■ inbox未読"
+    if [ -f "$inbox_file" ]; then
     unread=$(count_unread_inbox_messages "$inbox_file")
     _d_inbox=$unread
     echo "  未読: ${unread}件"
@@ -1195,6 +1232,7 @@ if [ -f "$inbox_file" ]; then
     fi
 else
     echo "  未読: 0件"
+fi
 fi
 
 wait "$_PID_GATE4_YAML" || true
@@ -1211,6 +1249,7 @@ if [ -z "$_gate4_yaml_batch" ]; then
 fi
 
 # --- Gate 4.05: shogun cmd_new gate bypass history ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ shogun cmd_new gate迂回履歴"
 if [ -f "$karo_inbox_file" ]; then
     cmd_new_bypass_result=$(printf '%s\n' "$_gate4_yaml_batch" | awk '/^##CMD_NEW##$/{flag=1;next}/^##/{flag=0}flag')
@@ -1227,6 +1266,7 @@ if [ -f "$karo_inbox_file" ]; then
     fi
 else
     echo "  OK: karo inboxなし"
+fi
 fi
 
 # --- Gate 4.1: 未確認GATE CLEAR ---
@@ -1292,6 +1332,7 @@ fi
 unset _gate4_yaml_batch
 
 # --- Gate 5: 陣形図鮮度 ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ 陣形図鮮度"
 snapshot="$SCRIPT_DIR/queue/karo_snapshot.txt"
 if [ -f "$snapshot" ]; then
@@ -1312,12 +1353,12 @@ else
         alerts+=("陣形図不在")
     fi
 fi
+fi
 
-# --- Gate 6: 必読ファイル存在チェック ---
-echo "■ 必読ファイル"
+# --- Gate 6: 必読ファイル存在チェック (Jの追体験入力を保全) ---
 REQUIRED_READ="$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"
 if [ -f "$REQUIRED_READ" ]; then
-    echo "  OK: $(basename "$REQUIRED_READ") 存在確認"
+    :
 else
     overall="ALERT"
     alerts+=("必読ファイル不在: memory/deepdive_why_chain_20260321.md")
@@ -1325,7 +1366,7 @@ else
 fi
 REQUIRED_READ2="$SCRIPT_DIR/memory/deepdive_causal_tracing_20260415.md"
 if [ -f "$REQUIRED_READ2" ]; then
-    echo "  OK: $(basename "$REQUIRED_READ2") 存在確認"
+    :
 else
     overall="ALERT"
     alerts+=("必読ファイル不在: memory/deepdive_causal_tracing_20260415.md")
@@ -2208,6 +2249,7 @@ else
 fi
 
 # --- Gate 8: 気づきキュー（自動アーカイブ付き） ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
 INSIGHTS_ARCHIVE="$SCRIPT_DIR/queue/archive/insights_archive.yaml"
 INSIGHTS_CORRUPT_ARCHIVE_DIR="$SCRIPT_DIR/queue/archive/insights_corrupt"
@@ -2399,6 +2441,7 @@ else
 fi
 fi
 
+fi
 # --- Gate 9: 将軍パフォーマンスフィードバック ---
 echo "■ 将軍パフォーマンスフィードバック"
 if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
@@ -2577,6 +2620,7 @@ else
 fi
 
 # --- Gate 10.2: 週次品質指標トレンド ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ 週次品質指標トレンド"
 if [ -n "${_PID_WEEKLY_METRICS:-}" ]; then
     if wait "$_PID_WEEKLY_METRICS"; then
@@ -2815,7 +2859,9 @@ END { emit() }
     fi
 fi
 
+fi
 # --- Gate 12: 三層学習ループ健全性 ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ 三層学習ループ"
 if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  SKIP(lightweight)"
@@ -2866,6 +2912,7 @@ else
     alerts+=("三層記憶DB健全性: gate不在")
 fi
 
+fi
 # --- Gate 12.2: 三層記憶引用率([MEM]タグ計測) (cmd_3199, Step 1.7 / cmd_3738 定型応答除外) ---
 echo "■ 三層記憶引用率([MEM]タグ)"
 # 正本はqueue/lord_conversation.jsonl(書式は "direction": "response" とコロン後スペースあり)。
@@ -2905,6 +2952,7 @@ else
 fi
 
 # --- Gate 12.5: 遡及学習 — WARN/BLOCK頻度TOP 5 + 再発率/有効率 (殿裁定2026-04-21, cmd_2289拡張) ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 # 目的: 毎セッション起動時に「何を根本修正すべきか」+「ワクチンが効いているか」を自動表示
 # 再発率=前50cmdに出現したパターンが直近50cmdにも再出現した割合(将軍定義 2026-04-26)
 # 有効率=前50cmdに出現したパターンが直近50cmdで消滅した割合
@@ -3081,7 +3129,9 @@ else
     echo "  gate_lesson_enforcement_level.sh不在"
 fi
 
+fi
 # --- Gate 13.5: 将軍教訓ファイル存在+件数チェック ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ 将軍教訓"
 _LS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
 if [ -f "$_LS_FILE" ]; then
@@ -3107,7 +3157,9 @@ else
     if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
 fi
 
+fi
 # --- Gate 13.5b: 将軍教訓 origin 因果リンク健全度 ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ 将軍教訓origin"
 if [ -f "$_LS_FILE" ]; then
     _origin_result=$(python3 - "$_LS_FILE" <<'PY' 2>/dev/null || true
@@ -3167,7 +3219,9 @@ else
     echo "  SKIP: lessons_shogun.yaml不在"
 fi
 
+fi
 # --- Gate 13.6: 教訓Stats (type別/活用率) ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 # GStack/GBrain takeaway #12 (教訓Stats — type別/信頼度/活用率)
 echo "■ 教訓Stats"
 if [ -f "$_LS_FILE" ]; then
@@ -3225,6 +3279,7 @@ if [ -f "$_LS_FILE" ]; then
     fi
 fi
 
+fi
 # --- Gate 13.7: cmd品質直近BLOCK（将軍のworkarounds相当） ---
 echo "■ cmd品質(直近10件)"
 if [ "$LIGHT_MODE" = "1" ]; then
@@ -3252,6 +3307,7 @@ fi
 fi
 
 # --- Gate 13.8: Gate偽陽性率（事後→事前フィードバック） ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 # 起源: cmd_2181バンドル偽陽性12回蓄積→累計昇格BLOCK。gateの精度劣化を計測する仕組みがなかった
 # 目的: cmd_save WARNを出したcmdがcmd_complete_gateでCLEARした場合、そのWARNは偽陽性候補。FP率が高いWARN typeをALERT
 echo "■ gate偽陽性率"
@@ -3285,7 +3341,9 @@ else
 fi
 fi
 
+fi
 # --- Gate 14: 軍師分析状態（知識循環チェック） ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 # 起源: cmd_1451事件 — 軍師OPT-6分析完了済みなのに将軍が偵察cmd重複起票
 # 目的: 起動時に軍師の最新分析テーマを表示し、cmd起票前の情報基盤を整える
 echo "■ 軍師分析状態"
@@ -3305,7 +3363,9 @@ else
 fi
 fi
 
+fi
 # --- Context著者: 遅延取得（孤立ファイルのみgit log -1） ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 # 高速化: 全履歴走査(2.5s/1965行)→孤立時のみper-file git log -1(0s〜0.1s)
 # 根因: Gate15は孤立ファイル(通常0-5件)の著者だけ必要。42ファイル全履歴は過剰
 _get_context_author() {
@@ -3356,7 +3416,9 @@ else
     echo "  孤立context/ファイルなし（知識マップ完全同期）"
 fi
 
+fi
 # --- Gate 16: AC注入検証（配備済みタスク vs cmdソース, cmd_1668） ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 # 起源: AC注入失敗WA 6件 — _overwrite_ac_from_cmdのネスト形式未対応/stale AC残留
 # 目的: 起動時に稼働中タスクのACがcmdソースと一致するか検証。不一致時WARNING（BLOCK不要）
 echo "■ AC注入検証"
@@ -3444,7 +3506,9 @@ else
     echo "  SKIP: task/cmd不在"
 fi
 
+fi
 # --- Gate 17: scripts/未コミット変更チェック (cmd_1675) ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 # 起源: scripts/配下に未コミットの変更があると気付かずに消失するリスク
 # 目的: 起動時にscripts/の変更をWARNして把握漏れを防止。変更なしなら無音通過
 wait $_PID_SCRIPTS_STATUS || true
@@ -4339,6 +4403,8 @@ PY
     fi
 fi
 
+fi
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ 前セッションの先送り穴一覧"
 wait "$_PID_DEFERRED_HOLES" || true
 _deferred_holes=$(cat "$_TMP_DEFERRED_HOLES" 2>/dev/null)
@@ -4364,9 +4430,11 @@ else
     echo "  SKIP: causal_backlink_counts.sh不在"
 fi
 
+fi
 # CI RED async回収: 除去(殿裁定2026-07-16。家老の責務)
 
 # --- 三層記憶使用義務リマインダー(殿厳命2026-06-10: 使用しないのはバグ) ---
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo ""
 echo "■ 三層記憶使用義務(L0-L7貫通)"
 echo "  ★ 全行動で三層記憶を検索してから行動せよ。使用しないのはバグ"
@@ -4375,8 +4443,10 @@ echo "  (2) bash scripts/semantic_search.sh \"キーワード\""
 echo "  (3) 回答に[MEM: memory_db ts=YYYY-MM-DD]タグで引用"
 echo "  理解を出力するな。使え。contextファイル更新だけでは三層貫通ではない"
 
-echo "■ startup check timings"
+fi
 startup_timing_close_check
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
+echo "■ startup check timings"
 if [ -s "$SHOGUN_STARTUP_TIMING_FILE" ]; then
     awk -F '\t' 'NR>1 {printf "  TIMING check=%s duration_ms=%s rc=%s source=%s\n", $1,$2,$3,$4}' "$SHOGUN_STARTUP_TIMING_FILE" | sort
     _startup_gate_now_ms=$(date +%s%3N)
@@ -4384,8 +4454,9 @@ if [ -s "$SHOGUN_STARTUP_TIMING_FILE" ]; then
     _STARTUP_TIMING_FINALIZED=1
 else
     echo "  TIMING unavailable"
-    _STARTUP_TIMING_FINALIZED=1
 fi
+fi
+_STARTUP_TIMING_FINALIZED=1
 
 echo ""
 # Later checks may assign WARN/ALERT directly; disk danger is an overriding invariant.
@@ -4398,6 +4469,7 @@ if [ ${#alerts[@]} -gt 0 ]; then
 fi
 echo ""
 # ─── ダイジェスト: 全項目1行（grepフィルタ不要化。殿裁定2026-03-24） ───
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 wait "$_PID_UNPUSHED" || true
 if [ -z "${_d_unpushed:-}" ] || [ "${_d_unpushed:-?}" = "?" ]; then
     _d_unpushed=$(cat "$_TMP_UNPUSHED" 2>/dev/null)
@@ -4410,7 +4482,9 @@ if [[ "$_d_unpushed" =~ ^[0-9]+$ ]] && [ "$_d_unpushed" -ge "${UNPUSHED_WARN_THR
     alerts+=("未push滞留: ${_d_unpushed}件(RED先送り。CI GREEN確認後にpush)")
 fi
 echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
+fi
 echo ""
+if [ "$SHOGUN_KD_SUPPRESSED" != "1" ]; then
 echo "■ 必読: projects/infra/lessons_shogun.yaml（将軍教訓。deepdive前に通読せよ=Step 2.45。superseded_by付きは参考扱い）"
 # 必読ファイル肥大チェック(2026-07-10): Read toolは1回25,000トークン(日本語YAML実測2.22bytes/token≒55KB)が上限。
 # 必読が55KBを超えると「全文通読せよ」が物理的に1回で不可能になり、復帰のたびに分割読みの試行錯誤が再発する
@@ -4420,7 +4494,7 @@ if [ "${_lessons_bytes:-0}" -gt "${LESSONS_SHOGUN_READ_CAP_BYTES:-55000}" ]; the
     echo "  ALERT: lessons_shogun.yaml ${_lessons_bytes}bytes — Read 1回上限(約55KB)超過。/lesson-sortで統合圧縮せよ(全文通読が物理的に分割必須の状態)"
     alerts+=("必読lessons肥大: ${_lessons_bytes}bytes>55KB(/lesson-sortで統合圧縮)")
 fi
-echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
+fi
 
 # --- deepdive追体験受領証検証(殿裁定2026-07-26 23:28: クリア後毎回強制。stop hookがBLOCK層) ---
 echo "■ deepdive追体験受領証"
