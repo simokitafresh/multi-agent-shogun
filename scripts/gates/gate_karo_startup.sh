@@ -1186,9 +1186,12 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
     }
     function should_count_read_actionable(msg_type, msg_content, cmd_id) {
         if (msg_content == "") return 0
+        # task_assigned and other actionable notifications can repeat after the
+        # referenced command has already been deployed.  Suppress that stale
+        # read=true item for every message type, not only cmd_new.
+        cmd_id = extract_cmd_id(msg_content)
+        if (cmd_id != "" && (cmd_id in deployed_parent_cmd)) return 0
         if (msg_type == "cmd_new") {
-            cmd_id = extract_cmd_id(msg_content)
-            if (cmd_id != "" && (cmd_id in deployed_parent_cmd)) return 0
             # Explicit dependencies are work sequencing, not postponement.  Keep the
             # read cmd_new quiet only while its dependency is unresolved; once the
             # dependency records CLEAR the same inbox item becomes actionable again.
