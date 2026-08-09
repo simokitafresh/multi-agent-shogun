@@ -12552,7 +12552,7 @@ PY
 # push本数を数えられる唯一の一次情報がgit履歴である(新規台帳を作らない)。
 deploy_task_ci_red_followup_push_guard() {
     local source_file="${1:-}"
-    local task_type="" runs conclusion red_sha followups limit
+    local task_type="" runs run_status conclusion red_sha followups limit
     [ "${DEPLOY_TASK_SKIP_CI_RED_GUARD:-0}" = "1" ] && return 0
     limit="${DEPLOY_TASK_CI_RED_FOLLOWUP_LIMIT:-2}"
 
@@ -12565,9 +12565,14 @@ deploy_task_ci_red_followup_push_guard() {
     runs="${DEPLOY_TASK_CI_RED_JSON:-}"
     if [ -z "$runs" ]; then
         command -v gh >/dev/null 2>&1 || return 0
-        runs=$(timeout "${DEPLOY_TASK_GH_TIMEOUT:-8}" gh run list             --repo "${DEPLOY_TASK_CI_REPO:-simokitafresh/multi-agent-shogun}"             --branch main --status completed --limit 1             --json conclusion,databaseId,headSha 2>/dev/null || true)
+        runs=$(timeout "${DEPLOY_TASK_GH_TIMEOUT:-8}" gh run list             --repo "${DEPLOY_TASK_CI_REPO:-simokitafresh/multi-agent-shogun}"             --branch main --limit 1             --json status,conclusion,databaseId,headSha 2>/dev/null || true)
         [ -n "$runs" ] || return 0
     fi
+    run_status=$(printf '%s' "$runs" | jq -r 'if type=="array" and length>0 then (.[0].status // "completed") else "" end' 2>/dev/null || true)
+    # A newer run for the current branch head supersedes the older completed
+    # RED as the active CI state.  Let normal work continue while that run is
+    # queued/in_progress; its completed verdict will govern the next deploy.
+    [ "$run_status" = "completed" ] || return 0
     conclusion=$(printf '%s' "$runs" | jq -r 'if type=="array" and length>0 then (.[0].conclusion // "") else "" end' 2>/dev/null || true)
     [ "$conclusion" = "failure" ] || return 0
     red_sha=$(printf '%s' "$runs" | jq -r 'if type=="array" and length>0 then (.[0].headSha // "") else "" end' 2>/dev/null || true)

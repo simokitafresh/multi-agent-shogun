@@ -5,6 +5,7 @@ setup() {
     REPO_ROOT="$BATS_TEST_DIRNAME/../.."
     RED='[{"conclusion":"failure","databaseId":1,"headSha":"deadbeefdeadbeef"}]'
     GREEN='[{"conclusion":"success","databaseId":1,"headSha":"deadbeefdeadbeef"}]'
+    IN_PROGRESS='[{"status":"in_progress","conclusion":"","databaseId":2,"headSha":"feedfacefeedface"}]'
     printf 'task:\n  task_type: hotfix\n' > "$BATS_TEST_TMPDIR/hotfix.yaml"
     printf 'task:\n  task_type: ci_fix\n' > "$BATS_TEST_TMPDIR/ci_fix.yaml"
 }
@@ -41,5 +42,11 @@ guard() {
 @test "ci_fix deployment is always allowed so RED can be repaired" {
     SOURCE_YAML="$BATS_TEST_TMPDIR/ci_fix.yaml"
     guard DEPLOY_TASK_CI_RED_JSON="$RED" DEPLOY_TASK_CI_FOLLOWUP_PUSHES=9
+    [ "$status" -eq 0 ]
+}
+
+@test "newer in-progress CI supersedes an older completed RED" {
+    SOURCE_YAML="$BATS_TEST_TMPDIR/hotfix.yaml"
+    guard DEPLOY_TASK_CI_RED_JSON="$IN_PROGRESS" DEPLOY_TASK_CI_FOLLOWUP_PUSHES=19
     [ "$status" -eq 0 ]
 }
