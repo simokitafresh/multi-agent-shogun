@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-10 cmd_4273_reviewed_source_boundary -->
+<!-- last_updated: 2026-08-10 cmd_4279 reviewed source boundary -->
+<!-- source_commit:6ad7fe26 reason:cmd_4279 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=6ad7fe26 -->
 <!-- source_commit:84292989 reason:cmd_4273_reviewed_source_boundary evidence:dual replay classification artifact reviewed; 8951 pairs = 6883 unchanged + 2068 correction-derived -->
 <!-- source_commit:8277734a reason:cmd_4240 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=8277734a -->
 <!-- dm_signal_research_reflux: fingerprint=aafc3f846526e79d4dc5980f9f9aab156c415b7e828fddc6b41bb2e3b4461d87; mode=non-target; evidence_b64=Y21kXzQyNzPjga9kb2NzL3Jlc2VhcmNo44Gu5paw6KaPZGF0YS1vbmx544Os44Od44O844OIMeODleOCoeOCpOODq+OBruOBv+OCkui/veWKoOOBl+OAgWNvbnRleHQvKi5tZOOBr+WkieabtOOBl+OBquOBhOOBn+OCgeWQjOacn+WvvuixoeWklg== -->

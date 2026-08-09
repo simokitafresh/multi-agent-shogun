@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-10 cmd_4257 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_4277 reviewed source boundary -->
+<!-- source_commit:2e494a5f reason:cmd_4277 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=2e494a5f -->
 <!-- source_commit:85ef51ec reason:cmd_4257 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=85ef51ec -->
 <!-- source_commit:16e8a561 reason:cmd_4256 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=16e8a561 -->
 <!-- source_commit:07b13601 reason:GA-429 source commits since 2026-08-02 evidence:Render live + CDP DM-safe Simple Aug 2026/GLD -->
