@@ -1,7 +1,7 @@
 <!-- gist-master: d26e786a4da934eaa2e5863b8d31d7bd dm-monthly-return-v6-tasklist_20260809.md -->
-# DM-Signal 月次リターン再設計 実装タスクリスト v1.2
+# DM-Signal 月次リターン再設計 実装タスクリスト v1.3
 
-> **正本設計書**: `docs/research/dm-monthly-return-design-v6_20260809.md` v6.11(gist d23c8d20)。本書は設計書の実装分解であり、**仕様の正は常に設計書**。矛盾を見つけたら実装せず報告する。
+> **正本設計書**: `docs/research/dm-monthly-return-design-v6_20260809.md` v6.12(gist d23c8d20)。本書は設計書の実装分解であり、**仕様の正は常に設計書**。矛盾を見つけたら実装せず報告する。
 > **状態**: 準備物。**実装・deployは殿の別途下知まで開始しない**。下知後、本書のStatus列が進捗の正本となる。
 > **対象repo**: `/mnt/c/Python_app/DM-signal`(タスク中のパスは全てこのrepo相対)
 > **読者**: 前提知識ゼロのコーディングLLM。各タスクはStart(前提)とGoal(二値判定)だけで完結し、設計判断を含まない — 判断が必要になったら実装を止めて報告する。
@@ -46,7 +46,7 @@ flowchart LR
 | ID | St | タスク(Start→Goal) | 影響範囲 | 依存 | 検証コマンド |
 |---|---|---|---|---|---|
 | T-α1 | ⬜ | **status契約module新設**。Start: 設計書§3.1の4意味論表。Goal: `backend/app/services/return_status.py`を新設し、定数`START_WAITING/PENDING_VALUE/CONFIRMED/ERROR`+応答用dataclass(`value, status, as_of, provisional_source, missing_requirement, price_type, start_date, end_date`)を定義、serialize往復のunit testが通る | 新規1ファイル+テスト1ファイル | なし | `pytest tests/ -k return_status` FAIL0/SKIP0 |
-| T-α2 | ⬜ | **系列別provisional評価解決関数(共通評価日契約)**。Start: `PriceCache`のbackward解決が既存(price_ratio_impl.py:22-91)+設計書§3.3の共通評価日契約(**銘柄別の独立backward解決は禁止**=異時点混合NAVを生む)。Goal: `resolve_provisional_valuation(symbols, as_of, series)`が**共通評価日(全構成銘柄のデータが揃う最新取引日)を先に解決**し、`(共通評価日, {symbol: 値})`を返す純関数。単一(date,value)返却は不可。共通評価日で欠損する銘柄はERROR(fail-visible)。境界テスト(休日連続・当日open未到着・銘柄間で直近日が異なるケース)PASS | `backend/app/services/return_status.py`追記+テスト | T-α1 | `pytest tests/ -k provisional_valuation` FAIL0/SKIP0 |
+| T-α2 | ⬜ | **系列別provisional評価解決関数(1点契約・責務境界準拠)**。Start: `PriceCache`のbackward解決が既存(price_ratio_impl.py:22-91)+設計書§3.3の1点契約(**銘柄別の独立backward解決は禁止**=異時点混合NAV防止。**揃う日への後退探索も禁止**=上流供給欠陥の吸収・殿指摘12:47)。Goal: `resolve_provisional_valuation(symbols, as_of, series)`が**as_of以前のSPY基準直近営業日ただ1点**を解決し、その1点の`(評価日, {symbol: 値})`を返す純関数。単一(date,value)返却は不可。**その1点に価格が欠ける銘柄が1つでもあれば供給異常としてERROR**(fail-visible。古い日への後退で誤魔化さない)。テスト3件: 全銘柄揃い正常系・1銘柄欠損→ERROR・休日連続(SPY基準日の解決) | `backend/app/services/return_status.py`追記+テスト | T-α1 | `pytest tests/ -k provisional_valuation` FAIL0/SKIP0 |
 | T-α3 | ⬜ | **Monthly Returns APIのpending対応**。Start: 現行は当月row不在でpending生成せず全row不在なら404(api/monthly_returns.py:84-93)。Goal: 当月=PENDING_VALUE行(系列別provisional)・境界未形成月=START_WAITING行を動的生成しstatus付きで返す。404は「PF不存在」のみに限定。既存確定行の値は1バイトも変わらない | `backend/app/api/monthly_returns.py`, `backend/app/services/monthly_returns_calculator.py` | T-α1,T-α2 | `pytest tests/ -k monthly_returns_pending` FAIL0/SKIP0+既存テスト回帰FAIL0 |
 | T-α4 | ⬜ | **Monthly Trade APIのstatus統一**。Start: 現行`is_pending=true`動的生成(monthly_trade_impl.py:793-954)。Goal: 既存pending機構の出力をT-α1のstatus契約へ載せ替え(is_pendingは後方互換で残す)。挙動不変+status field追加のみ | `backend/app/services/monthly_trade_impl.py`, `backend/app/api/monthly_trade.py` | T-α1 | `pytest tests/ -k monthly_trade` FAIL0/SKIP0 |
 | T-α5 | ⬜ | **/api/mtdの系列純度是正**。Start: Open系列に最終確定日Close/Open比を使う`is_preliminary=true`行が存在(mtd_returns.py:100-208)=設計書が「純度違反の暫定ハック」と認定。Goal: Open系列のprovisionalをT-α2のopen解決へ置換し、Close/Open比借用コードを削除。両系列のMTDがそれぞれ純系列で返る | `backend/app/services/mtd_returns.py` | T-α2 | `pytest tests/ -k mtd` FAIL0/SKIP0 |
@@ -115,6 +115,7 @@ flowchart LR
 
 ## 改訂履歴
 
+- v1.3 (2026-08-09 12:52): 殿責務指摘12:47反映 — T-α2を1点契約へ書換え(SPY基準直近営業日ただ1点+全銘柄存在検証+欠損=供給異常ERROR。「揃う日への後退探索」=上流欠陥吸収として禁止)。正本参照をv6.12へ更新
 - v1.2 (2026-08-09 12:25): 家老先行BLOCKER 3件(blt_121927)反映 — T-α2を共通評価日契約へ書換え(銘柄別独立backward解決の禁止・(共通評価日,銘柄別価格map)返却・欠損=ERROR)、T-γ1へ施行日2区間積定義+fixture追加(旧構成prevClose→Open × 新構成Open→Close)、T-α8新設(Open欠損Close代用の全数sweep。cmd_4247列挙待ち・分類なき一括除去禁止)。タスク数26→27。正本参照をv6.11へ更新
 - v1.1 (2026-08-09 12:06): T-γ1へ設計書v6.10のchain-link NAV定義を反映(自己金融連続系列+境界跨ぎ人工ジャンプなしfixture必須化。家老指摘伍→殿裁可12:03)。正本参照をv6.10へ更新
 - v1.0 (2026-08-09 11:50): 初版(将軍直轄)。設計書v6.9(裁定論点ゼロ)から26タスク・6レーンへ分解。粒度=1タスク1commit・二値Goal・検証コマンド固定・SEALED2件明示
