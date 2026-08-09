@@ -34,7 +34,46 @@ def _report_identity(report, snapshot):
     }
 
 
-def _snapshot_command(root, report, cmd_id):
+def _receipt_generation_matches(root, report_path, report):
+    """Verify a redeployed worker's report against its durable inbox receipt."""
+    report_path = Path(report_path).resolve()
+    try:
+        report_ref = str(report_path.relative_to(Path(root).resolve()))
+    except ValueError:
+        return False
+    report_id = str(report.get("report_id") or "").strip()
+    version = str(report.get("report_identity_version") or "").strip()
+    if not report_id or not version or not report_path.is_file():
+        return False
+    fingerprint = hashlib.sha256(report_path.read_bytes()).hexdigest()
+    candidates = [Path(root) / "queue/inbox/karo.yaml"]
+    timestamp = str(report.get("timestamp") or "")
+    day = re.sub(r"[^0-9]", "", timestamp[:10])
+    if len(day) == 8:
+        candidates.append(Path(root) / f"archive/inbox/karo_{day}.yaml")
+    for receipt_path in candidates:
+        if not receipt_path.is_file():
+            continue
+        payload = load(receipt_path)
+        messages = payload.get("messages", payload) if isinstance(payload, dict) else payload
+        if not isinstance(messages, list):
+            continue
+        for message in messages:
+            if not isinstance(message, dict):
+                continue
+            if (
+                str(message.get("report_id") or "") == report_id
+                and str(message.get("report_identity_version") or "") == version
+                and str(message.get("report_fingerprint") or "") == fingerprint
+                and str(message.get("report_path") or "") == report_ref
+                and str(message.get("parent_cmd") or "") == str(report.get("parent_cmd") or "")
+                and str(message.get("task_id") or "") == str(report.get("task_id") or "")
+            ):
+                return True
+    return False
+
+
+def _snapshot_command(root, report, cmd_id, report_path=None):
     snapshot = report.get("task_contract_snapshot") if isinstance(report, dict) else None
     if not isinstance(snapshot, dict):
         raise ValueError("immutable task contract snapshot is missing")
@@ -82,7 +121,13 @@ def _snapshot_command(root, report, cmd_id):
                 raise ValueError(f"immutable task/report identity mismatch: {key}")
     else:
         identity = _report_identity(report, snapshot)
-        if not all(expected and actual and expected == actual for expected, actual in identity.values()):
+        embedded_identity_matches = all(
+            expected and actual and expected == actual for expected, actual in identity.values()
+        )
+        receipt_identity_matches = bool(
+            report_path is not None and _receipt_generation_matches(root, report_path, report)
+        )
+        if not (embedded_identity_matches or receipt_identity_matches):
             raise ValueError("immutable report-generation identity missing or mismatched")
     return {"acceptance_criteria": criteria, "command": purpose, "project": project}, task_path
 
@@ -112,7 +157,7 @@ def _split_command(root, report, cmd_id, report_path):
     snapshot = report.get("task_contract_snapshot") if isinstance(report, dict) else None
     if not isinstance(snapshot, dict) or str(snapshot.get("issued_cmd_id") or "") != cmd_id:
         return None
-    _, task_path = _snapshot_command(root, report, cmd_id)
+    _, task_path = _snapshot_command(root, report, cmd_id, report_path)
     task = load(task_path).get("task")
     split_identities = {
         "issued_cmd_id": (cmd_id, task.get("issued_cmd_id")),
@@ -164,7 +209,7 @@ def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=
         if state not in allowed:
             expected = " or ".join(f"{status}/{verdict}" for status, verdict in sorted(allowed))
             raise ValueError(f"autogen spec fallback requires {expected} report")
-        return _snapshot_command(root, report, cmd_id)
+        return _snapshot_command(root, report, cmd_id, report_path)
     if isinstance(report, dict) and report_path is not None:
         split = _split_command(root, report, cmd_id, report_path)
         if split:
