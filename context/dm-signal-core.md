@@ -1,5 +1,7 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-09 cmd_4241_reviewed_boundary -->
+<!-- last_updated: 2026-08-09 cmd_4254 reviewed source boundary -->
+<!-- source_commit:aca163ab reason:cmd_4254 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=aca163ab -->
+<!-- source_commit:94cb88bb reason:cmd_4253 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=94cb88bb -->
 <!-- source_commit:bf4ed6a6 reason:cmd_4241_reviewed_boundary evidence:backend/app/api/etl_trigger.py+backend/app/jobs/precompute_raw.py -->
 <!-- source_commit:16b62fca reason:cmd_4241_reviewed_boundary evidence:backend/app/jobs/precompute_raw_queue.py -->
 <!-- source_commit:5b393e7ccd2160778060cc7d5522b32254d72c2e reason:cmd_4234 reviewed no core change evidence:cmd_complete_gate -->
