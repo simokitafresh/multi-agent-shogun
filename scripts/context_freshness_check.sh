@@ -361,31 +361,51 @@ def source_commit_frontier(
     if not markers:
         return (), "missing"
     repo_path, _pathspecs, _root_fallback = source_repo_for_context(project_id, rel_path)
+    cache_key = (repo_path, tuple(markers))
+    cached = _SOURCE_FRONTIER_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
     resolved: list[str] = []
     for marker in markers:
-        result = subprocess.run(
-            ["git", "-C", repo_path, "rev-parse", "--verify", f"{marker}^{{commit}}"],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            return (), "invalid"
-        commit = result.stdout.strip()
-        if commit and commit not in resolved:
-            resolved.append(commit)
-    frontier: list[str] = []
-    for candidate in resolved:
-        if any(
-            candidate != other
-            and subprocess.run(
-                ["git", "-C", repo_path, "merge-base", "--is-ancestor", candidate, other],
+        marker_key = (repo_path, marker)
+        commit = _SOURCE_MARKER_CACHE.get(marker_key)
+        if commit is None and marker_key not in _SOURCE_MARKER_CACHE:
+            result = subprocess.run(
+                ["git", "-C", repo_path, "rev-parse", "--verify", f"{marker}^{{commit}}"],
                 capture_output=True,
-            ).returncode == 0
-            for other in resolved
-        ):
-            continue
-        frontier.append(candidate)
-    return (tuple(frontier), None) if frontier else ((), "invalid")
+                text=True,
+            )
+            commit = result.stdout.strip() if result.returncode == 0 else ""
+            _SOURCE_MARKER_CACHE[marker_key] = commit
+        if not commit:
+            outcome = ((), "invalid")
+            _SOURCE_FRONTIER_CACHE[cache_key] = outcome
+            return outcome
+        if commit not in resolved:
+            resolved.append(commit)
+
+    # `--independent` returns exactly the commits which are not ancestors of
+    # any other supplied commit. It is equivalent to the old pairwise
+    # `merge-base --is-ancestor` loop, while resolving the whole frontier in a
+    # single git process (23 markers otherwise caused 253 subprocesses).
+    result = _run_git_with_bounded_retry(
+        ["git", "-C", repo_path, "merge-base", "--independent", *resolved],
+        f"source_commit_frontier: {repo_path}",
+    )
+    if result is None:
+        outcome = ((), "invalid")
+        _SOURCE_FRONTIER_CACHE[cache_key] = outcome
+        return outcome
+
+    frontier = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    if not frontier:
+        outcome = ((), "invalid")
+        _SOURCE_FRONTIER_CACHE[cache_key] = outcome
+        return outcome
+    outcome = (tuple(frontier), None)
+    _SOURCE_FRONTIER_CACHE[cache_key] = outcome
+    return outcome
 
 
 def load_project_paths() -> dict[str, str]:
@@ -647,6 +667,10 @@ def _run_git_with_bounded_retry(cmd: list[str], label: str) -> subprocess.Comple
 
 
 _SOURCE_TIP_CACHE: dict[str, str] = {}
+_SOURCE_MARKER_CACHE: dict[tuple[str, str], str | None] = {}
+_SOURCE_FRONTIER_CACHE: dict[
+    tuple[str, tuple[str, ...]], tuple[tuple[str, ...], str | None]
+] = {}
 
 
 def source_tip_ref(repo_path: str) -> str:
