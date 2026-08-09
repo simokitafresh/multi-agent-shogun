@@ -254,17 +254,43 @@ task_contract_snapshot:
 YAML
 }
 
+run_duplicate_preimage_case() {
+    local fixture="$1"
+    local mode="$2"
+    local output
+    local rc
+    make_duplicate_preimage_fixture "$fixture" "$mode"
+    if output="$(GATE_NO_LOG=1 \
+        env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+            GATE_REPO_ROOT_OVERRIDE="$fixture" \
+            GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
+            bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$fixture/report.yaml" 2>&1)"; then
+        rc=0
+    else
+        rc=$?
+    fi
+    printf '%s\n' "$rc" > "$fixture/.rc"
+    printf '%s' "$output" > "$fixture/.output"
+}
+
 @test "reflux duplicate preimage six-case boundary is fail-closed" {
     local cases=(current archive missing field-change duplicate-increase unique)
     local expect_path=(0 0 1 1 1 0)
     local i fixture
+    local -a pids=()
     for i in "${!cases[@]}"; do
         fixture="$BATS_TEST_TMPDIR/reflux-duplicate-${cases[$i]}"
-        make_duplicate_preimage_fixture "$fixture" "${cases[$i]}"
-        run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
-            GATE_REPO_ROOT_OVERRIDE="$fixture" \
-            GATE_REFLUX_UNCOMMITTED_PATHS=' M queue/insights.yaml' \
-            bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$fixture/report.yaml"
+        run_duplicate_preimage_case "$fixture" "${cases[$i]}" &
+        local pid=$!
+        pids+=("$pid")
+    done
+    for pid in "${pids[@]}"; do
+        wait "$pid" || true
+    done
+    for i in "${!cases[@]}"; do
+        fixture="$BATS_TEST_TMPDIR/reflux-duplicate-${cases[$i]}"
+        [ "$(<"$fixture/.rc")" -eq 0 ]
+        output="$(<"$fixture/.output")"
         if [ "${expect_path[$i]}" -eq 1 ]; then
             [[ "$output" == *"queue/insights.yaml"* ]]
         else
