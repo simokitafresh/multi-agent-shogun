@@ -40,7 +40,11 @@ for key in _NON_CONTENT:
 result = data.get("result")
 if isinstance(result, dict):
     result.pop("commit_hash", None)
-payload = json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+def _default(o):
+    if hasattr(o, 'isoformat'):
+        return o.isoformat()
+    raise TypeError(type(o))
+payload = json.dumps(data, default=_default, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 print(hashlib.sha256(payload.encode("utf-8")).hexdigest())
 PY
     ) || return 1
@@ -162,7 +166,21 @@ if operational_runtime_files and not _valid_hex_identity:
 # Legacy scout/recon reports may identify no-code work through their task type
 # or explicit commit check.  Operational reports do not use this second
 # contract: permits_no_code_identity above is their single structural SSOT.
-if no_code_files and not commit_claimed and (
+# commit_contract.required=false with a no-code task type is an explicit
+# structural declaration that no commit exists.  files_modified may contain
+# descriptive text instead of real paths (GPT ninja pattern), so do not
+# require path-level no_code_files matching for these typed contracts.
+commit_contract = d.get("commit_contract") or {}
+if isinstance(commit_contract, str):
+    import json as _json
+    try: commit_contract = _json.loads(commit_contract)
+    except Exception: commit_contract = {}
+typed_no_code = (
+    isinstance(commit_contract, dict)
+    and commit_contract.get("required") is False
+    and task_type in no_code_task_types
+)
+if (no_code_files or typed_no_code) and not commit_claimed and (
     task_type in no_code_task_types or no_commit_asserted
 ):
     print("no-code-change")
@@ -233,7 +251,11 @@ for key in (
 result = data.get("result")
 if isinstance(result, dict):
     result.pop("commit_hash", None)
-payload = json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+def _default(o):
+    if hasattr(o, 'isoformat'):
+        return o.isoformat()
+    raise TypeError(type(o))
+payload = json.dumps(data, default=_default, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 print(hashlib.sha256(payload.encode("utf-8")).hexdigest())
 PY
 }
