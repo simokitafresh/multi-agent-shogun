@@ -23,6 +23,30 @@ HEARTBEAT_FILE="${DAEMON_WATCHDOG_HEARTBEAT_FILE:-/tmp/daemon_watchdog_heartbeat
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/daemon_maintenance_lock.sh"
 
+close_inherited_restart_watchers_lock() {
+    local lock_path="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
+    local fd_path fd target
+    for fd_path in /proc/$$/fd/*; do
+        fd="${fd_path##*/}"
+        [[ "$fd" =~ ^[0-9]+$ && "$fd" != 0 && "$fd" != 1 && "$fd" != 2 ]] || continue
+        target="$(readlink "$fd_path" 2>/dev/null || true)"
+        [[ "$target" == "$lock_path" ]] || continue
+        eval "exec ${fd}>&-"
+    done
+}
+close_inherited_restart_watchers_lock
+
+restart_watchers_lock_is_active() {
+    local lock_path="$1"
+    local pid cmd
+    flock -n "$lock_path" -c ':' 2>/dev/null && return 1
+    for pid in $(fuser "$lock_path" 2>/dev/null || true); do
+        cmd="$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)"
+        [[ "$cmd" == *"/scripts/restart_watchers.sh"* ]] && return 0
+    done
+    return 2
+}
+
 # 多重起動防止: 手動実行時も短時間で完了するため内部lockは持たない。
 # 各デーモンの重複防止はPIDファイル/プロセス生存確認に寄せる。
 
@@ -356,9 +380,14 @@ check_inbox_watchers() {
         log "BLOCK: corrupt daemon maintenance marker; inbox_watcher restart refused"
         return 1
     fi
-    if ! flock -n /tmp/restart_watchers.lock -c ':' 2>/dev/null; then
+    local restart_lock="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
+    restart_watchers_lock_is_active "$restart_lock"
+    local lock_state=$?
+    if (( lock_state == 0 )); then
         log "SKIP: restart_watchers.sh is running; inbox_watcher supervision deferred"
         return 0
+    elif (( lock_state == 2 )); then
+        log "WARN: restart lock held by non-restart process; continuing watcher supervision"
     fi
 
     # shellcheck source=/dev/null

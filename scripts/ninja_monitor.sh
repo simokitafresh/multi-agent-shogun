@@ -79,6 +79,30 @@ source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_confirmation_guard.sh"
 
+close_inherited_restart_watchers_lock() {
+    local lock_path="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
+    local fd_path fd target
+    for fd_path in /proc/$$/fd/*; do
+        fd="${fd_path##*/}"
+        [[ "$fd" =~ ^[0-9]+$ && "$fd" != 0 && "$fd" != 1 && "$fd" != 2 ]] || continue
+        target="$(readlink "$fd_path" 2>/dev/null || true)"
+        [[ "$target" == "$lock_path" ]] || continue
+        eval "exec ${fd}>&-"
+    done
+}
+close_inherited_restart_watchers_lock
+
+restart_watchers_lock_is_active() {
+    local lock_path="$1"
+    local pid cmd
+    flock -n "$lock_path" -c ':' 2>/dev/null && return 1
+    for pid in $(fuser "$lock_path" 2>/dev/null || true); do
+        cmd="$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)"
+        [[ "$cmd" == *"/scripts/restart_watchers.sh"* ]] && return 0
+    done
+    return 2
+}
+
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ] \
     && [ "${NINJA_MONITOR_BOUNDED_DONE_CHECK:-0}" != "1" ] \
     && [ "${NINJA_MONITOR_HOT_RELOAD_SUCCESSOR:-0}" != "1" ]; then
@@ -7737,11 +7761,14 @@ check_ntfy_listener_health() {
 # ─── inbox_watcher生死監視+自動再起動 (おしお殿知見) ───
 # watcher_supervisor.sh相当。プロセス生存をpgrepで確認、死亡→個別再起動。
 check_inbox_watcher_health() {
-    local restart_lock_dir="${SHOGUN_STATE_DIR:-/tmp}"
-    mkdir -p "$restart_lock_dir" 2>/dev/null || restart_lock_dir="/tmp"
-    if ! flock -n "$restart_lock_dir/restart_watchers.lock" -c ':' 2>/dev/null; then
+    local restart_lock="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
+    restart_watchers_lock_is_active "$restart_lock"
+    local lock_state=$?
+    if (( lock_state == 0 )); then
         log "SKIP: restart_watchers.sh is running; inbox_watcher health check deferred"
         return 0
+    elif (( lock_state == 2 )); then
+        log "WARN: restart lock held by non-restart process; continuing watcher health check"
     fi
 
     # クールダウン期間内ならスキップ

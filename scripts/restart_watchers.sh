@@ -76,6 +76,13 @@ if ! flock -n 200; then
     exit 1
 fi
 
+# The restart lock is a short-lived coordinator lock.  Never let it escape
+# into a watcher or the status-sync helper that this script detaches.
+release_restart_watchers_lock() {
+    flock -u 200 2>/dev/null || true
+    exec 200>&-
+}
+
 # WSL shutdownで/tmp cacheが消えた直後も、三層記憶preflightより先に生成を始める。
 # 非同期かつ共通ライブラリのflock single-flightなのでwatcher再起動を待たせない。
 # shellcheck source=/dev/null
@@ -281,6 +288,10 @@ fi
 
 # ペイン変数同期（バックグラウンド — model_detect capture-pane高コスト回避）
 echo "[+] ペイン変数同期 (バックグラウンド)..."
+# All rolling-handoff children have been verified above; release the
+# coordinator before starting this long-lived helper as a final inheritance
+# barrier.  A stale holder must not make watchdog supervision skip forever.
+release_restart_watchers_lock
 nohup bash "$SCRIPT_DIR/scripts/sync_pane_vars.sh" \
     &>> "$SCRIPT_DIR/logs/sync_pane_vars.log" 200>&- &
 disown

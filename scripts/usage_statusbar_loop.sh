@@ -11,6 +11,19 @@ set -euo pipefail
 
 SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+close_inherited_restart_watchers_lock() {
+  local lock_path="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
+  local fd_path fd target
+  for fd_path in /proc/$$/fd/*; do
+    fd="${fd_path##*/}"
+    [[ "$fd" =~ ^[0-9]+$ && "$fd" != 0 && "$fd" != 1 && "$fd" != 2 ]] || continue
+    target="$(readlink "$fd_path" 2>/dev/null || true)"
+    [[ "$target" == "$lock_path" ]] || continue
+    eval "exec ${fd}>&-"
+  done
+}
+close_inherited_restart_watchers_lock
+
 INTERVAL_SEC="${INTERVAL_SEC:-600}"
 MAX_LOOPS="${MAX_LOOPS:-0}" # 0 = run forever
 DRY_RUN="${DRY_RUN:-0}"     # 1 = use mock payload

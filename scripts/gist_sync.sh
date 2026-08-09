@@ -12,6 +12,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DASHBOARD="$SCRIPT_DIR/dashboard.md"
 LOG="$SCRIPT_DIR/logs/gist_sync.log"
 
+# This process is long-lived and may be started from a restart transaction.
+# Close only descriptors that actually point at the coordinator lock.
+close_inherited_restart_watchers_lock() {
+    local lock_path="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
+    local fd_path fd target
+    for fd_path in /proc/$$/fd/*; do
+        fd="${fd_path##*/}"
+        [[ "$fd" =~ ^[0-9]+$ && "$fd" != 0 && "$fd" != 1 && "$fd" != 2 ]] || continue
+        target="$(readlink "$fd_path" 2>/dev/null || true)"
+        [[ "$target" == "$lock_path" ]] || continue
+        eval "exec ${fd}>&-"
+    done
+}
+close_inherited_restart_watchers_lock
+
 # ─── GIST_ID動的解決関数 ───
 # sync毎にcurrent_project → gist_url → GIST_IDを再解決する
 # 引数指定時は固定値を使用（後方互換）

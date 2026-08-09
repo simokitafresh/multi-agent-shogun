@@ -27,6 +27,22 @@ STATE_DIR="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/daemon_maintenance_lock.sh"
 
+# A daemon may be launched from restart_watchers.sh or another shell that
+# inherited its coordinator lock.  The lock belongs only to the restart
+# transaction, never to a long-lived daemon.
+close_inherited_restart_watchers_lock() {
+    local lock_path="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
+    local fd_path fd target
+    for fd_path in /proc/$$/fd/*; do
+        fd="${fd_path##*/}"
+        [[ "$fd" =~ ^[0-9]+$ && "$fd" != 0 && "$fd" != 1 && "$fd" != 2 ]] || continue
+        target="$(readlink "$fd_path" 2>/dev/null || true)"
+        [[ "$target" == "$lock_path" ]] || continue
+        eval "exec ${fd}>&-"
+    done
+}
+close_inherited_restart_watchers_lock
+
 [[ "${DAEMON_SUPERVISOR_LIB_ONLY:-0}" == "1" ]] || mkdir -p "$SCRIPT_DIR/logs"
 
 ds_log() {
@@ -174,7 +190,7 @@ ds_start_inbox_watcher() {
     cli="$(ds_cli_for_pane "$pane")"
     unset ASW_DISABLE_ESCALATION
     nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "$agent" "$pane" "$cli" \
-        &>> "$SCRIPT_DIR/logs/inbox_watcher_${agent}.log" &
+        &>> "$SCRIPT_DIR/logs/inbox_watcher_${agent}.log" 200>&- &
     disown
     ds_log "START: inbox_watcher(${agent}) pane=${pane} cli=${cli} pid=$!"
     return 0
