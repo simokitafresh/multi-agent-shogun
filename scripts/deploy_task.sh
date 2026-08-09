@@ -4367,8 +4367,11 @@ PY
     # The task and report must expose one typed contract.  Previously only the
     # report template received this block, so report review read a different
     # SSOT from commit helpers after deployment.
-    yaml_field_set_batch "$task_file" "task" \
-        "commit_contract=$_commit_contract_json" \
+    # commit_contract is a typed mapping.  The scalar-oriented batch writer
+    # quotes JSON punctuation and turns it into a string, which makes a real
+    # recon report fail only after deployment.  Use the shared structural
+    # writer already used by every typed task contract.
+    yaml_field_set "$task_file" "task" "commit_contract" "$_commit_contract_json" \
         || { log "FATAL: failed to publish task commit_contract"; return 1; }
     local _commit_contract_block
     _commit_contract_block=$(cat <<EOF

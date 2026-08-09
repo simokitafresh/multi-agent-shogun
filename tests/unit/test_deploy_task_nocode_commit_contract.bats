@@ -204,6 +204,8 @@ report = yaml.safe_load(open(sys.argv[2]))
 contract = task["investigation_contract"]
 assert contract["outcome_neutral"] is True
 assert contract["discovery_required"] is False
+assert isinstance(task["commit_contract"], dict)
+assert task["commit_contract"] == report["commit_contract"]
 assert contract == report["task_contract_snapshot"]["investigation_contract"]
 assert report["investigation_outcome"] == {
     "outcome": "", "method_completed": False,
