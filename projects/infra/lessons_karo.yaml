@@ -79,16 +79,17 @@ lessons:
     吸収(2026-07-27, cmd_karo_recon2_r7_inject_byte_cap_measure_20260727, origin: [[cmd_karo_recon2_r7_inject_byte_cap_measure_20260727]]): 2026-07-27、家老は疾風の報告を2度差し戻し、2度目は家老自身の見落としが原因であった。1度目の通達で軍師のFAIL理由(ac_evidence_mapping欠落)だけを伝え、★家老が同じACに書いた quality_gate.fp_measurement(境界1件の現物照合とfalse_positive件数の報告)を挙げなかった。疾風はac_evidence_mappingを追記して再提出したが軍師は同じ弾を再びFAILとした(理由=fp_measurement未実施)。★1往復は完全に家老の見落としで生じた。機序は本日の他の誤りと同一 — 通達すべき集合をレビュアの指摘だけに狭め、自分が発行した契約の全体を見なかった。★手順で塞げ: 差し戻し通達の前にtaskの acceptance_criteria と quality_gate の全キーを列挙し、報告側に各充足記述が存在するかgrepで突合してから通達文を書く。★是正要求には正解例を添えよ(2度目に抽出コマンド例を渡した後は1往復で収束した)。★同日の別型(同根): 家老は軍師paneが空プロンプトで停止しているのを見て未処理と判断し起床を促したが★軍師は既に13:53:50に判定結果をinboxへ送っていた。pane=残像/ファイル=現在(LG007)を家老が自分で破った。★他者の作業状況を判断する前にその他者からの受信箱を先に読め。★もう1件: grep 'yaml.dump' が0件だったため才蔵の真因特定を疑ったが、実体は yaml_module.dump という別名importであり★検索式が取りこぼしただけで才蔵が正しかった(guard hookとgateも同じ文字列照合ゆえ2箇所が素通りしていた)。検知語彙は実データ1件から作るな。
     吸収(2026-07-27, cmd_karo_hotfix_auto_clear_interrupted_batch_recovery_20260727, origin: [[INS-20260727-105844609-fa2c]] -> [[中断batch_staged残骸]] -> [[艦隊CLEAR_BLOCKED再発]] -> [[LK-A01]]): 2026-07-27、共有indexのcontext/infrastructure.mdとcontext/lord-conversation-index.mdがMMで残り、CLEAR-BLOCKEDが複数忍者へ反復した。既存INS-20260727-105844609-fa2cに174件の同型実測があったのにinsight在庫のままで本日再発した。positive_rule: staged残骸を手動解除して終えず、発生元writerの一次特定と、worktree不変・他者stage不変を満たす自動回復または発生不能化を実装し、staged 2→0かつworktree hash前後一致をcontract testで強制する。
     吸収(2026-07-27, cmd_karo_reload_ninja_monitor_20260727, origin: [[cmd_karo_reload_ninja_monitor_20260727]] -> [[HOT_RELOAD_bootstrap_gap]] -> [[owner_generation_handoff]]): daemon起動後にhot-reload実装を追加しても、旧bashプロセスは導入前のwhile構文を保持するためmtime差を検知できない。script mtime>daemon startかつHOT-RELOAD=0を一次確認したら、停止シグナルを使わずNINJA_MONITOR_HEARTBEAT_STALE_SECONDS=-1の独立新プロセスでownerを原子的取得し、旧世代のSINGLETON-FENCEと単一新PIDを確認する。2026-07-27実測: PID469247→2939962、old_self_fence 0→1、反映後AUTO-COMMIT-FAIL=0、CLEAR-BLOCKED=0。
+    吸収(2026-07-28, cmd_karo_hotfix_throughput_t3b_fingerprint_hit_20260728, origin: [[cmd_karo_hotfix_throughput_t3b_fingerprint_hit_20260728]] -> [[task_design_precondition]] -> [[LK-A01]]): T3bでfingerprint cache実体はgate_report_format.shだったがmain.pyをtarget指定し1配備を無駄にした。起票前に識別子を候補全ファイルへrgし、実在件数N/Nとtarget_path一致を数値確認してから配備する。今回0/1→1/1、誤taskはFAIL-close。
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015, LK004i, LK006i, LK013i]
   created_at: '2026-04-24'
   automated: true
-  enforcement: "Level4予定: scripts/ninja_monitor.shのauto-clear前処理へ安全な残骸判定と回復を埋込み、tests/unit/test_ninja_monitor_stall.batsで共有index/worktree不変とCLEAR継続をBLOCK強制"
+  enforcement: "Level5: 起動時lessons_karo全文ロードと配備前一次確認によりtarget_path誤認を予防"
 
 # === 配備技術 ===
   when: 行動する前、状態確認が必要な全場面。CI赤/STALL/idle通知受信時
   how: capture-pane/grep/gh run viewで一次データ確認→行動。pane tail -3で判断するな。配備前陣形図再取得
   origin: "[[LK065]] -> [[確認しない]] -> [[pane残像で誤判断]]"
-  enforcement_level: 4
+  enforcement_level: 5
 - id: LK-A02
   title: deploy_task.sh正しい使い方 — cmd_id引数+全フィールドリセット
   detail: |
@@ -201,15 +202,17 @@ lessons:
     - 根因=duplicate_deploy_gate(GP-042/cmd_2684)が同一parent_cmdの二重配備をBLOCK
     - LK010(並列E2Eテストfixture)と同パターン。ガードを緩めず配備側で分離が正解
     吸収(2026-07-26, cmd_karo_impl_fingerprint_fanout_fix_20260726, origin: [[共有worktreeの巻き込み3例]] -> [[統合commitの帰属記録]] -> [[事後同値確認で回帰検出]] -> [[代理変数を書き換えない判定]] -> [[LK-A06]]): 2026-07-26、共有worktree上で複数名の変更が同一ファイルに混在する事象が**本日3例**発生した: (1)将軍の設計書commitが才蔵のstage済み削除922行を巻き込み (2)半蔵と飛猿の変更が scripts/review_approval.sh 上で噛み合い(飛猿の実装が半蔵の fail_close 変数を参照する形で積み上がっていた) (3)疾風の3テストが才蔵のcommit(dcdc73421/29d201289)へ巻き込まれ、疾風のcmdではなく才蔵のcmdの成果物として記録された。【原因】ninja_scope_commit は明示pathspecで対象を絞るが**ファイル単位が最小粒度**であり、同一ファイル内で2名の変更が混在した場合はpath単位で分離できない。hunk単位分割は共有worktree上での部分stageを要し他者のindexを壊す。∴**構造的に起きる。**【対処1: 統合commitの帰属記録形式(将軍が推奨形として教訓化を指示)】実例=8203a2a3e。commit messageへ **(a)両cmd_idを併記 (b)各成果に担当者名を付す (c)統合に至った理由を書く**。実際の文面: 『cmd_karo_impl_b28_failed_report_close_20260726 + cmd_karo_impl_fingerprint_fanout_fix_20260726: failed報告の正規クローズ経路(B28/半蔵)+no-code表現の明文化(B29/半蔵)+stale test是正(半蔵)+fingerprint恒偽是正 review_report_commit_identity 新設(飛猿)。共有worktreeで2名の変更が同一ファイル上で噛み合ったため家老裁定により統合commitとする』。**同日B31で問題にした帰属不明の init commit の対極である。**【対処2: 巻き込まれた側は報告に事実を書く。台帳補正はしない】git履歴は書き換えない(D003)。**報告が正本として残るため帰属は補える。**疾風は「悪意も過失もないが帰属が実態とずれるため申告する」と線引きして申告し、家老は台帳補正ではなく報告への明記を指示した。【★対処3: 統合後は必ず事後同値確認を行え(半蔵の実例)】半蔵は統合commit後にbypassの(d)事後確認を実施し、**既存RED 3件の同値は証明したが別に新規回帰2件(test_report_commit_identity 15/16)を検出**して『悪化させていないとは言えない。(d)は不成立である』と正直に報告した。**踏まずに通していれば見逃していた。**【★対処4: 代理変数を実装都合で書き換えるな(飛猿の判定)】上記回帰の是正で飛猿は2案から(a)を選んだ。判定理由: 『test の -eq 1 検査は「1つの (realpath, content_hash) 組 = ちょうど1 cacheエントリ」という境界を**ファイル数を代理変数として**検査している。∴testの本質はファイル数ではなく**cache keyの一意性と無効化**である。私のsidecarはエントリを増やさず**代理変数だけを壊した**が、「1エントリ=1ファイル」が崩れると**以後この境界をファイル数で検査できなくなり、将来の追加cacheで同じ検査が更に緩む**。∴testを -eq 2 に緩めるのは**契約の代理変数を実装都合で書き換える行為**である』。**「テストを緩めて通すな」の理由を実装者が自分で導出した例である。**さらに選んだ2行方式は publish が mv 1回で**両値が原子的に同時公開される**(sidecarは2回mvで一瞬の不整合窓があった)ため、**契約維持のために選んだ方式が原子性でも優れていた。**
+    吸収(2026-08-04, cmd_karo_round8_redeploy_first_20260804, origin: [[殿指摘_車輪の再発明_20260804]] -> [[家老D0再実走]] -> [[RC再配備優先]]): 吸収(2026-08-04, cmd_karo_round8_redeploy_first_20260804, origin: [[殿指摘_車輪の再発明_20260804]] -> [[家老D0再実走]] -> [[RC再配備優先]]): 忍者報告の共有test FAILを家老がheavy_job_admission経由で再実走し、忍者再配備より遅い経路を作った。途中検証はkaro RC→同一cmd再配備を第一選択とし、家老の実走はwave最終checkpointの統合検証1回へ限定する。
   source_ids: [LK022, LK046, LK050, LK051, LK066, LK067, LK068, LK079, LK010]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'deploy_task.sh重複ガード(GP-042)+karo.md §10 DB排他+karo-operations.md並列配備ルール'
+  enforcement: "Level4: 家老がfailed task存在中に重量testを直接再実走する経路をBLOCKし、RC再配備を案内する"
 
 # === cmd設計/品質の鎖 ===
   when: 複数忍者への同時配備計画時。DB操作/gate系/ビルド含むcmd。万全偵察はparent_cmd分離
   how: DB=直列。gate系=直列。Androidビルド=排他。R000は優先順位であり排他ではない
   origin: "[[LK022]] -> [[並列DB操作]] -> [[タイムアウト]]"
+  enforcement_level: 4
 - id: LK-A07
   title: 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す
   detail: |
@@ -226,6 +229,7 @@ lessons:
     吸収(2026-07-26, cmd_karo_impl_partial_push_safety_20260726, origin: [[cmd_karo_impl_partial_push_safety_20260726]]): 2026-07-26、commit_contract.planned_paths がACの要求と乖離して忍者がBLOCKされる事象が本日4件目(疾風=tests/unit/test_pre_push_guard.bats)。機序: planned_paths は target_path から生成されるが、ACが『対照fixtureを必須』と命じている場合そのtest pathは含まれない。∴ACは追加を命じ契約は追加を禁じるという構造的矛盾が、対照fixture運動(v3.0)を回すほど確実に発生する。疾風は別typeへ逃げずescalationで正しく上げ(status_updateへ逃げれば消えていた)、家老は git show --stat d7ac06552 で新規2ファイルのみを一次確認してから契約を拡張した。★是正手順は正しかったが、起票時にACと契約を突き合わせていれば1往復が消えた。★恒久策は deploy_task の commit_contract 生成側で『ACが対照fixture/testを要求していれば planned_paths へ tests/ の対応pathを自動含有』であり、家老の意志ではなく契約生成側に置く。新規バッチに当たるため第1セーブポイント成立後の起票として将軍へ提案する。
     吸収(2026-07-26, cmd_karo_recon_pending_decisions_triage_20260726, origin: [[cmd_karo_recon_pending_decisions_triage_20260726]]): 2026-07-26、家老はAC5へ『binary_checks.commit はテンプレートが task_type=recon2 を見て自動でcommit N/A証跡を出すため、そのまま使ってよい』と書いた。★これは指示でも二値条件でもなく環境についての事実主張であり、記入時点(11:46)で偽であった — テンプレートは実際には『git commitが完了したか / result: no』を出していた。★才蔵はそれをnoとして正直に記録し、報告は5時間revision_requestedで止まり第1セーブポイント成立条件に掛かった。★★真因は才蔵自身が同日別弾で修正した実装バグ(commit 8fc63d07d: deploy_task.sh のgitignore免除が commit_contract.required=false のno-commit契約を無条件で上書きしていた)であり、家老はそのバグの存在を知らずに『テンプレートは自動で出す』と断定していた。★家老が実測して確認した事実: 8fc63d07dは実在し内容も一致、現HEADで境界fixture『gitignore exemption does not overwrite the no-commit contract of a read-only task』がok、才蔵の報告は現在 verdict PASS / bc:no=0 / status completed。★★才蔵の言語化(家老はこれを新族として受け入れる): 『形を要求するが正解例を示さない』族とは別型で、『検証されていない事実主張をACへ書く』族である。偽のとき忍者が検出するのは指示不履行ではなく主張の誤りであり、忍者側からは是正できない。★∴起票時、ACに環境についての事実主張(〜が自動で出る/〜は存在する/〜はそのまま使える)を書くなら、その主張自体を1度通して実測してから書け。1度通せば偽と分かった。★家老の限界宣言の形(『家老は確認していない』)と組み合わせるなら、実測していない主張は主張として書かず『貴殿が確認せよ』と渡すのが正しい。
     吸収(2026-07-27, cmd_karo_hotfix_auto_clear_interrupted_batch_recovery_20260727, origin: [[cmd_karo_hotfix_auto_clear_interrupted_batch_recovery_20260727]] -> [[gunshi_REQ_CHANGES]] -> [[karo_report_only_RC]]): 軍師レビューがREQ_CHANGESでも正規review_approvalのrole/resultはgunshi:RCではなくkaro:RCである。報告payloadだけの是正なら第5引数reportを付け、同一implementation commitを棄却しない。2026-07-27実測: gunshi RCはinvalid role/resultでBLOCK、karo RC ... reportはstatus revision_requested・task再開・nudge送達を完了。
+    吸収(2026-07-29, cmd_karo_hotfix_fullunit_scope_guard_20260729, origin: [[cmd_karo_hotfix_fullunit_scope_guard_20260729]] -> [[全unit禁止違反]] -> [[品質の鎖]]): 個別taskで禁止行為の実行証跡と成功値が併存したら、成果値は保持する一方で該当AC=no・verdict FAILへ訂正する。その後、成果を対象contractで独立検証し、禁止行為を許したrunner経路を実行前BLOCKへ変える。
   source_ids: [LK007, LK017, LK038]
   created_at: '2026-04-24'
   automated: true
@@ -267,11 +271,12 @@ lessons:
     - 軍師review-bundleのinbox_write未送信が4回連続発生(cmd_3109/3110/3111/3112)。軍師paneが❯待ちでreview_log記載済みだがinbox未到達。v5と同根因だが頻度が激増(2回→4回連続)。stop hook status=done検知→軍師pane❯確認→手動GATE実行が定常パターン化。根本対処=review-bundleスキルのinbox_write送信保証(構造穴。CMD起票候補)
     v7吸収(2026-06-02):
     - 本セッションで9回連続発生(cmd_3114-3122全cmd)。v6(4回)→v7(9回)で100%再現。軍師がprecheck実行→分析完了→❯停止→inbox_write未到達の完全なパターン。家老の定常対処(stop hook→pane確認→手動GATE)は機能するが対症療法。★CMD起票必須: review-bundleスキルにinbox_write送信保証(送信完了までretry)を追加する修正cmd。掲示板投稿で止まるな(洗脳#6)
+    吸収(2026-08-04, cmd_karo_hotfix_draft_review_receipt_atomic_20260804, origin: [[軍師draft_APPROVE]] -> [[pre_implementation_review_receipt欠落]] -> [[配備BLOCK再発]]): v8吸収(2026-08-04): gist backfillとcmd_4228で軍師APPROVEのinbox通知は到着したがtask.pre_implementation_review mappingが欠落/旧taskのままでdeploy_taskがBLOCK。人間向けAPPROVEと機械receiptは別状態。軍師がtask_id+AC fingerprintを検証しtask YAMLへreceiptを原子的記録した後だけ通知する専用入口へ統合せよ。家老手動転記は禁止。
   source_ids: [LK056, LK081, LK088, LK089, LK091, LK010b, LK012]
   created_at: '2026-04-24'
   automated: true
-  enforcement_level: 4
-  enforcement: 'Level4(フロー内BLOCK/自動ゲート解放): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090514_kagemaru)。deploy_task.sh maybe_notify_draft_review() は通常配備(task_assigned)時にreview_draftを軍師へinbox_writeし、mark_draft_review_once()で重複送信を防ぐ。EXIT trap fallbackも同関数へ接続され、配備完了前の異常終了でもdraft review依頼を送る。scripts/lib/gunshi_notify.sh notify_gunshi_for_report() は報告YAML存在時点でreport_reviewを軍師へ送信し、queue/gates/<cmd>/gunshi_report_review_notify_<ninja>.doneで重複を防ぐ。scripts/inbox_write.sh はreport_review_result(LGTM)受信時にqueue/gates/<cmd>/review_gate.doneを作成し、cmd_complete_gateをbackground起動するため、軍師レビュー完了がGATE処理へ自動接続される。回帰テスト: tests/unit/test_deploy_task_draft_review.bats はnormal deploy sends review_draft to gunshi/EXIT trap fallback/重複抑止/既レビューskip等を検証し、tests/unit/test_inbox_write.bats はreport_received: auto-sends report_review to gunshi と report_review_result: LGTM updates placeholder and starts cmd_complete_gate in background を検証する。従来enforcement本文にLevel判定キーワードが無くgate_lesson_enforcement_level.shがL1誤分類していたため、enforcement_levelフィールドを明示追加。'
+  enforcement_level: 5
+  enforcement: "Level5: LK-A09起動時注入。次hotfixでLevel4専用script+fixtureへ昇格する"
 
   when: 忍者配備完了直後。deploy_task.sh実行後
   how: deploy_task.shが自動でdraft review+report_review送信。karo_directでは手動review依頼
@@ -283,11 +288,12 @@ lessons:
     (2)ACに出力ファイル名プレフィックス(cmd_XXXX_*)を明記
     (3)研究cmd完了時のcontext還流が仕組み化されていない→gate_freshness WARNは遅い
     (4)DC前に既存裁定との重複チェック必須
+    吸収(2026-08-05, lord_20260805_design_update_d0, origin: [[殿裁定_設計書更新は家老D0_20260805]] -> [[設計書更新の忍者配備禁止]] -> [[家老直接gist同期]]): 殿裁定2026-08-05 00:21。今後、進捗台帳を含む設計書の更新は忍者へ配備せず、家老が一次YAML/GATEを確認して正本を直接編集し、scope限定commit後にgist-shareでGIST_SHAREDとsha256一致まで自ら検証する。レビューだけ必要に応じ軍師へ依頼する。
   source_ids: [LK058, LK069, LK071, LK072]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'Level4(フロー内BLOCK): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090600_hayate)。scripts/cmd_save.sh の check_research_artifact_reflux_ac() が研究/分析cmd保存時にAC内の(1)成果物ファイル名プレフィックス(cmd_XXXX_*等) (2)成果物現物確認(ls/head/test -s等) (3)context還流(context/・knowledge/lesson_candidate等)を検査し、不足があればBLOCKして保存を止める。完了時側は既存の gate_gunshi_report_precheck.sh PRE3 が files_modified の実在を検査し、SG7 context_reflux がレビューで還流確認する。回帰テスト: tests/unit/test_cmd_save_research_artifact_reflux.bats で欠落BLOCK/三要素ありPASS/非研究cmd対象外を固定。'
-  enforcement_level: L4
+  enforcement: "Level2: lessons_karo自動ロードで毎session注入。設計書更新時はgist-shareを必須実行"
+  enforcement_level: 2
 
   when: 研究cmd完了時のレビュー。成果物確認時
   how: 成果物のls+headで現物確認。ACに出力ファイル名プレフィックス明記。context還流チェック
@@ -303,11 +309,12 @@ lessons:
     吸収(2026-07-26, cmd_karo_impl_b40_failed_status_close_deadlock_20260726, origin: [[cmd_karo_impl_b40_failed_status_close_deadlock_20260726]] -> [[RCとACCEPTの動詞を取り違え]] -> [[出口ゼロの誤った起票]]): 2026-07-26、家老は status=failed かつ verdict=FAIL の報告を閉じようとして review_approval.sh に karo RC を渡し『BLOCK: formal review requires status=completed』を得た。これを『レビュー証跡を作る唯一の入口が failed を拒む』と解釈し、合成デッドロック第5例(B40)として起票・配備した。疾風がAC1の一次確認で前提を崩した。実際には karo ACCEPT(scope省略)が正規の出口であり、B28がまさに failed×FAIL 用に開けた口であった。RCは差し戻し先(生きたhandoff)を要求するため completed 限定に合理性があり、ACCEPTは終端受理である。家老は一つの入口が閉じているのを見て他の入口を数えなかった。軍師も同じ誤りを追認した。
     吸収(2026-07-26, cmd_karo_impl_b38_ci_cache_staleness_20260726, origin: [[cmd_karo_impl_b38_ci_cache_staleness_20260726]] -> [[承認の伝達で止まり書換え未実行]] -> [[半蔵のcommitを不作為で停止]]): 2026-07-26、家老は半蔵のplanned_paths拡張の上申に対し『承認する。家老が追加する』とinboxで返答したが、実際にはtask YAMLへ追加していなかった。半蔵が実測して『現在も3本のまま』と指摘するまで気づかず、その間半蔵のcommitを止めていた。承認の伝達は出力であって行動ではない。掲示板投稿・返信・分析報告は出力であり行動ではない(CLAUDE.md)と同じ構造が、承認にも当てはまる。
     吸収(2026-07-26, cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726, origin: [[cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726]] -> [[未クォートのコロンを検証前に書込み]] -> [[忍者作業中task YAMLのparse不能]]): 2026-07-26、家老が忍者(影丸)の作業中task YAMLへACを追記した際、追記文に 'git show HEAD:logs/...' というコロンを含む文字列をクォートせずに書き込み、queue/tasks/kagemaru.yaml が ScannerError で parse不能になった。家老は書込み後に safe_load を呼ぶ順序だったため、検証が失敗した時点で既にファイルが壊れていた。忍者が作業中のファイルであり、壊れた入力で判断していた可能性があるため事故として申告し修復した。家老は同日、忍者に対し繰り返し『書き込む前に確認せよ』と課していた。
+    吸収(2026-07-28, cmd_karo_hotfix_round2_commit_hash_20260728, origin: [[cmd_karo_hotfix_round2_commit_hash_20260728]] -> [[conditional_commit_contract_deadlock]] -> [[LK-A11]]): AC内に『一次証明できなければ実装せず報告』という停止条件があるtaskへimplementation path由来のcommit必須契約を投影すると、正しいno-change結果が架空commit要求で閉じられない。まずcommit_contract.required=falseのno-code偵察taskで前提を検証し、陽性時だけ別の実装taskを配備する。今回task/report契約 required true→false、planned_paths 22→0で正規no-change出口を回復した。
   source_ids: [LK006, LK042, LK020, LK078, LK014]
   created_at: '2026-04-24'
   automated: true
-  enforcement_level: 4
-  enforcement: "Level4(フロー内BLOCK、二層防御): (1)配備テンプレート層=deploy_task.sh L3011-3058がtarget_path全件gitignore対象時にcommit checkのresultを自動で'no'(gate通過値)へ設定し、達成不可能なcommit ACそのものを生成しない(cmd_1838由来)。回帰テストtests/unit/test_deploy_task_template_generation.bats のgitignore commit check系2テスト実行確認済み('gitignore対象ファイルのみ変更するcmdでcommit check=noが自動設定される'/'gitignore対象外ファイルのcmdではcommit checkは空のまま' 両PASS)。(2)レビュー層=instructions/gunshi.md L387「AC実行可能性チェック（必須）」がgitignore対象へのcommit要求・進行中月データの完全一致要求・推奨事項の必須混同をNG→REQUEST_CHANGES、L389-393「ACスコープ完結性チェック（必須）」が速度目標AC+scope外律速/全量テストAC+環境依存ツール/本番確認AC+権限外を検出しREQUEST_CHANGES(家老実施ACへの分離指示付き)で停止。この軍師draft reviewはdeploy_task.sh maybe_notify_draft_review()がtask_assigned配備時にinbox_write経由で自動起動する(LK-A09と同一の自動ゲート経路)ため、家老の恣意判断を介さず全impl task配備時に強制発火する。一次情報再検証(2026-07-09 cmd_reflux_promotion_202607090621_saizo): 該当行を現物grep確認、かつ回帰テスト実行確認済み(2/2 PASS)。enforcement本文にLevel判定キーワードが無くgate_lesson_enforcement_level.shがデフォルトL1に誤分類していたため、enforcement_levelフィールドを明示追加(field優先ルール)。同日のLK-A07/LK-A09と同型の誤判定パターン。"
+  enforcement_level: 5
+  enforcement: "Level5: AC設計時に停止条件付き実装は偵察taskと実装taskへ分割し、各taskのcommit_contractを単一意味にする"
 
 # === infra修正実績 ===
   when: AC設計時。cmdのbinary_checks設計時
@@ -386,6 +393,8 @@ lessons:
     - gate修正後は対象回帰テスト+所要時間の実測をセットで記録せよ(速度もバグ: 殿厳命2026-07-10)
     - 実装証拠: e34933ff3,70bfa75f4,790504963,f025df5aa,64eb1316a,0a41c0110
     吸収(2026-07-16, cmd_karo_recon2_ga267_scheduler_rc_audit_202607160130, origin: [[GA-267 addendum]] -> [[shell quote不整合]] -> [[heavy-job偽診断]]): 吸収(2026-07-16, GA-267 addendum): 引用符不整合でshlex解析不能なread-only rgをheavyと分類するとwrapperを誤案内し、根因修正を妨げる。classifierにmalformed三値を追加し、hookはBLOCK(shell-syntax)を返す。修正後admission 58/58 PASS、shellcheck 2/2、FAIL0/SKIP0。
+    吸収(2026-07-30, cmd_round7_lane2_deploy_task_ac_20260730, origin: [[cmd_round7_lane2_deploy_task_ac_20260730]] -> [[task_design_precondition]] -> [[archive_report_symlink_false_positive]]): 配備前の未処理report判定は通常ファイルだけを対象とし、archive互換symlinkを除外する。archive target実在を確認済みのsymlinkをactiveと誤認すると全忍者配備が0/6で停止する。deploy guardは -f だけでなく ! -L を契約化し、focused testでactive symlink除外を検証する。
+    吸収(2026-08-01, cmd_karo_multi_cli_principle_20260801, origin: [[殿教え_multi_cli_同期非一本化_20260801]] -> [[multi_cli大原則]] -> [[CLI固有実装と共通成果基準]]): 異なるCLIへ同じhook・gate・スクリプト機構を共用すると、仕様差・終了コード差・セッション差で一方の最適化が他方を壊す。CLAUDE.mdとAGENTS.mdへ同一原則を同期しつつ、実装は各CLI固有に分離する。
   source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b, LK007, LK009, LK010, LK005i]
   created_at: '2026-04-24'
   automated: true
@@ -421,14 +430,16 @@ lessons:
   detail: |
     status未設定cmd蓄積の根因を両端自動化で解消。新しい仕組みゼロ。
     吸収(2026-07-16, cmd_4000, origin: [[cmd_4000配備BLOCK]] -> [[起票と配備の必須契約不一致]] -> [[委任前estimated_minutes検証]]): cmd_4000でestimated_minutes欠落がcmd_save/委任を通過し、家老のdeploy_taskで初めてBLOCKした。cmd_delegate.shが委任前に正の数値estimated_minutesをfail-closed検証し、欠落時はcmd_save呼出0・inbox送信0にする。修正前33/35→修正後35/35 PASS、SKIP0。commit 2595f4b97。
+    吸収(2026-08-09, cmd_4255, origin: [[殿指摘_本業完了1時間滞留_20260809]] -> [[hotfix自走優先逆転]] -> [[cmd_4255完了遅延]]): cmd_4255は忍者done 22:24後もCLEARが1時間超滞留し、軍師計測では直近16commit中hotfix 44%に対し本業完了0件だった。project=dm-signalのdone検知後は次の処理枠でレビュー・GATE・完了報告へ着手し、hotfix自走・修行・refluxより優先する。
   source_ids: [LK059]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh status:pending自動注入+cmd_complete_gate.sh status:completed自動設定'
+  enforcement: "Level5: instructions/karo.md運用要点へ本業cmd完了最優先を自動ロード"
 
   when: cmd起票時(cmd_save.sh)とGATE CLEAR時(cmd_complete_gate.sh)
   how: cmd_save.sh pending自動注入+cmd_complete_gate.sh completed自動設定。手動status管理不要
   origin: "[[LK059]] -> [[status未設定蓄積]] -> [[ライフサイクル両端自動化]]"
+  enforcement_level: 5
 - id: LK-A16
   title: Step 0無限ループ回避 — 配備後は即思考ステップへ
   detail: |
@@ -638,6 +649,7 @@ lessons:
     吸収(2026-07-16, cmd_karo_hotfix_codd_context_freshness_202607160030, origin: [[GA-264]] -> [[source commit実契約差分]] -> [[本文同期チェック]]): GA-264横展開でsource 786a4ef4aを確認したところ、codd-refactorはfile内部jobs=8からfile間aggregate budget=8/file内部jobs=1へ実契約が変わっていた。次回はsource差分に既存context本文と矛盾する追加削除が1行以上あるかをyes/no判定し、yesなら本文更新後にのみsource_commit境界を進める。修正前codd ALERT=1、本文同期後=0、関連Bats=49/49 PASS、SKIP=0。
     吸収(2026-07-16, cmd_3997, origin: [[GA-276]] -> [[進行中commitの共有済み誤認]] -> [[global_cmd鮮度境界分離]]): dashboard/startupのglobal鮮度監視がローカルHEADを見ると、忍者commit直後かつcmd_complete_gate前の未還流変更を誤ALERTにする。globalはorigin/mainまたはorigin/masterの共有完了境界、cmd-warnings/cmd-commit-listはHEADを使う。修正前4 ALERT→修正後2 ALERT、dm-signal-core/ops誤検知2件消失。回帰67/67 PASS・SKIP0。
     吸収(2026-07-19, cmd_karo_hotfix_ga301_context_freshness_timeout_202607190431, origin: [[GA-301]] -> [[async_snapshot_miss_first_run]] -> [[bounded_sync_snapshot_consumption]]): GA-301でgateがasync refresh要求直後のNoneを消費しcodd.mdを偽BLOCK。producer予算を渡すだけでは結果契約にならない。gateのcache有無2経路へCFC_HISTORY_REFRESH_SYNC=1を強制し、空cache 8/8 rebuilt、codd BLOCK 1→0、source_commit一次照合を維持。次回追加チェック: new source tip+empty cacheの初回実行で対象BLOCK0を二値検証する。
+    吸収(2026-08-02, cmd_karo_hotfix_context_freshness_ga426_20260802, origin: [[GA-426]] -> [[完了後直投入commit]] -> [[canonical_context_reflux_action]]): GA-426で完了境界caa26b5b後に外部repoへ直投入された155ab5e0はtask/report/cmd_complete相関0件のためown-commit gateでは捕捉不能だった。source backlog検出時はcontext/hashを結合したcanonical context_source_commit_set actionを自動提示する。実測はALERT 1→0、contract 57/57 PASS、SKIP0。
   source_cmd: 'cmd_karo_hotfix_ga120_context_freshness_recon_20260623'
   when: 'context_freshness ALERT調査・報告レビュー時'
   how: '報告YAMLの原因欄に timeout秒数/root_fallback有無/repo path/commit_count/source commits を数値で記録し、cache有無だけで判定しない'
