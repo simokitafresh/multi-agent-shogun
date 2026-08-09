@@ -676,16 +676,19 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'ddb17f588401a8f4807811895e55a230717648420ae3af0f7dac9df01fbc79eb' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 22
-  last_seen: "2026-08-09T23:28:54+09:00"
+  occurrence_count: 23
+  last_seen: "2026-08-09T23:57:24+09:00"
   verification:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "fix_known=true; primary self_retro event verified; existing cmd_4123 context confirms review_notify is a real signal and SG7 validation remains preserved; current self_retro review_notify records=604 with unique_event_ids=604 and duplicate_event_ids=0; no new implementation or decision_candidate required"
+  action_artifact: "logs/self_retro.jsonl#event_id=ddb17f588401a8f4807811895e55a230717648420ae3af0f7dac9df01fbc79eb;docs/research/cmd_4123_self_retro_signal.md;context/infrastructure.md"
+  resolved_at: "2026-08-10T00:02:21+09:00"
 - id: INS-20260809-193655423-96df
   ts: "2026-08-09T19:36:55+09:00"
   insight: "[[comitに関する無駄なテストを排除せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=comitに関する無駄なテストを排除せよ。高速回転を意識して、完璧主義こそ最悪の行為だと気づこう"
