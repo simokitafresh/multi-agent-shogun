@@ -262,47 +262,6 @@ PY
     return 0
 }
 
-# bugfix/hotfix/ci_fix are implementation changes made under incident pressure.
-# Bind the Gunshi pre-implementation decision to the exact task contract so a
-# receipt for another task, or one issued before an AC edit, cannot authorize
-# deployment.  The post-implementation report review remains independently
-# enforced by cmd_complete_gate.sh.
-deploy_task_require_pre_implementation_review() {
-    local task_file="$1"
-    python3 - "$task_file" <<'PY'
-import sys, yaml
-
-path = sys.argv[1]
-doc = yaml.safe_load(open(path, encoding="utf-8")) or {}
-task = doc.get("task") or doc
-task_type = str(task.get("task_type") or task.get("type") or "").strip().lower()
-if task_type not in {"bugfix", "hotfix", "ci_fix"}:
-    raise SystemExit(0)
-
-receipt = task.get("pre_implementation_review")
-fingerprint = str(task.get("ac_version") or task.get("ac_fingerprint") or "").strip()
-if not isinstance(receipt, dict):
-    print("BLOCK: pre-implementation Gunshi LGTM receipt missing", file=sys.stderr)
-    raise SystemExit(2)
-if str(receipt.get("result") or "").strip().upper() != "LGTM" or str(receipt.get("reviewer") or "").strip() != "gunshi":
-    print("BLOCK: pre-implementation review must be gunshi LGTM", file=sys.stderr)
-    raise SystemExit(2)
-receipt_fp = str(receipt.get("task_fingerprint") or receipt.get("fingerprint") or "").strip()
-receipt_task = str(receipt.get("task_id") or "").strip()
-task_id = str(task.get("task_id") or task.get("_ac_task_id") or "").strip()
-if not fingerprint or receipt_fp != fingerprint:
-    print("BLOCK: pre-implementation review fingerprint missing or stale", file=sys.stderr)
-    raise SystemExit(2)
-if not task_id or receipt_task != task_id:
-    print("BLOCK: pre-implementation review belongs to another task", file=sys.stderr)
-    raise SystemExit(2)
-if not str(receipt.get("evidence_message_id") or "").strip():
-    print("BLOCK: pre-implementation review evidence_message_id missing", file=sys.stderr)
-    raise SystemExit(2)
-print(f"PASS: pre-implementation Gunshi LGTM receipt task={task_id} fingerprint={fingerprint}")
-PY
-}
-
 deploy_task_idle_codex_ninjas() {
     local target_ninja="$1"
     local task_file candidate status
@@ -1016,6 +975,14 @@ deploy_task_has_completed_peer_report() {
                 log "continuation_deploy: ${parent_cmd} continues ${report_base} with explicit AC mapping — allowing"
                 continue
             fi
+            # A karo-RC'd FAIL report is a formal instruction to rework the
+            # command, not a settled outcome — allow redeploying it to a
+            # different idle ninja without disturbing the original report.
+            if [ "$report_status" = "revision_requested" ] && [ "$report_verdict" = "FAIL" ] \
+                && deploy_task_has_formal_karo_rc_for_peer_report "$parent_cmd" "$report_ninja" "$report_file"; then
+                log "formal_karo_rc_peer_redeploy: ${parent_cmd} peer=${report_ninja} report=${report_base} — allowing"
+                continue
+            fi
             log "BLOCK: ${parent_cmd} already has completed peer report ${report_base} (status=${report_status:-empty}, verdict=${report_verdict:-empty})"
             echo "BLOCK: ${parent_cmd} already has completed report from ${report_ninja}: ${report_base}" >&2
             return 0
@@ -1082,6 +1049,56 @@ valid = (
     and os.path.realpath(approved_report) == os.path.realpath(report_path)
     and str(report.get("status") or "").strip() == "revision_requested"
     and str(report.get("verdict") or "").strip() in {"PASS", "FAIL"}
+    and str(report.get("parent_cmd") or "").strip() == parent_cmd
+    and str(report.get("worker_id") or "").strip() == ninja_name
+)
+raise SystemExit(0 if valid else 1)
+PY
+        then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Peer variant of deploy_task_has_formal_karo_rc_for_report: the redeploy
+# target is a different idle ninja, not the report's own worker, so ownership
+# is bound to the report's worker_id instead of the deploying ninja's task
+# file. Only a FAIL verdict qualifies — a formally RC'd PASS report has no
+# rework reason to hand to a peer.
+deploy_task_has_formal_karo_rc_for_peer_report() {
+    local parent_cmd="$1"
+    local peer_ninja="$2"
+    local report_file="$3"
+    local report_abs approval_file
+
+    [ -n "$parent_cmd" ] || return 1
+    [ -n "$peer_ninja" ] || return 1
+    [ -f "$report_file" ] || return 1
+
+    report_abs=$(realpath "$report_file" 2>/dev/null) || return 1
+
+    for approval_file in "$SCRIPT_DIR/queue/gates/$parent_cmd/review_approvals/reports/"*/karo.yaml; do
+        [ -f "$approval_file" ] || continue
+        if python3 - "$approval_file" "$report_abs" "$parent_cmd" "$peer_ninja" "$SCRIPT_DIR" <<'PY'
+import os
+import sys
+import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
+
+approval_path, report_path, parent_cmd, ninja_name, root = sys.argv[1:]
+approval = yaml.safe_load(open(approval_path, encoding="utf-8")) or {}
+report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+approved_report = str(approval.get("report") or "").strip()
+if approved_report and not os.path.isabs(approved_report):
+    approved_report = os.path.join(root, approved_report)
+valid = (
+    str(approval.get("role") or "").strip() == "karo"
+    and str(approval.get("result") or "").strip() == "RC"
+    and os.path.realpath(approved_report) == os.path.realpath(report_path)
+    and str(report.get("status") or "").strip() == "revision_requested"
+    and str(report.get("verdict") or "").strip() == "FAIL"
     and str(report.get("parent_cmd") or "").strip() == parent_cmd
     and str(report.get("worker_id") or "").strip() == ninja_name
 )
@@ -13267,12 +13284,10 @@ except Exception:
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     }
-    deploy_task_require_pre_implementation_review "$task_yaml" || {
-        DEPLOY_TASK_EXIT_NUDGE_ARMED=0
-        DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
-        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-        return 2
-    }
+    # Deployment and Gunshi draft review now run in parallel; deployment does
+    # not wait for an APPROVE/LGTM receipt (殿裁定2026-08-09 14:05). Review
+    # still happens via maybe_notify_draft_review below, and REQUEST_CHANGES
+    # reaches the running ninja through the existing task_supplement inbox path.
     # Publication identity (active status + deployed_at) must become visible
     # under the same per-ninja/deploy lock.  Previously deployed_at was written
     # after lock release and inbox delivery, allowing revision/respawn to see an

@@ -1,5 +1,10 @@
 #!/usr/bin/env bats
 # test_necessity: Draft APPROVE must atomically bind an exact Gunshi receipt to the assigned task before one review_result notification; mismatch, stale state, races, and writer failure must leave task/notification state unchanged.
+# cmd_karo_hotfix_rc_peer_report_redeploy_20260809: deployment no longer waits
+# on this receipt (deploy_task_require_pre_implementation_review was removed —
+# see test_deploy_task_pre_implementation_review.bats). This receipt is now
+# purely an idempotent audit record of Gunshi's APPROVE, kept so a re-review
+# does not produce a duplicate review_result notification.
 
 setup() {
   export ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -12,7 +17,6 @@ setup() {
 printf '%s\n' "$*" >> "$CALLS"
 SH
   chmod +x "$INBOX_WRITE_CMD"
-  source <(sed -n '/^deploy_task_require_pre_implementation_review()/,/^}/p' "$ROOT/scripts/deploy_task.sh")
   write_task assigned fp-new ""
 }
 
@@ -31,24 +35,10 @@ YAML
 approve() { bash "$ROOT/scripts/draft_review_approval.sh" "$TASK" cmd-new fp-new msg-proof; }
 sha() { sha256sum "$TASK" | awk '{print $1}'; }
 
-@test "APPROVE inbox alone reproduces missing-receipt deploy block" {
-  "$INBOX_WRITE_CMD" karo "cmd-new draft review verdict: APPROVE" review_result gunshi notify_karo
-  run deploy_task_require_pre_implementation_review "$TASK"
-  [ "$status" -eq 2 ]; [ "$(wc -l < "$CALLS")" -eq 1 ]
-}
-
-@test "APPROVE inbox with stale old-task receipt reproduces deploy block" {
-  write_task assigned fp-new $'  pre_implementation_review:\n    reviewer: gunshi\n    result: LGTM\n    task_id: cmd-old\n    task_fingerprint: fp-old\n    evidence_message_id: msg-old'
-  before="$(sha)"; "$INBOX_WRITE_CMD" karo "cmd-new draft review verdict: APPROVE" review_result gunshi notify_karo
-  run deploy_task_require_pre_implementation_review "$TASK"
-  [ "$status" -eq 2 ]; [ "$(sha)" = "$before" ]
-}
-
-@test "exact assigned task records receipt before one notification and deploy passes" {
+@test "exact assigned task records receipt before one notification" {
   run approve
   [ "$status" -eq 0 ]; [[ "$output" == *"APPROVAL_RECORDED"* ]]
-  run deploy_task_require_pre_implementation_review "$TASK"
-  [ "$status" -eq 0 ]; [ "$(wc -l < "$CALLS")" -eq 1 ]
+  [ "$(wc -l < "$CALLS")" -eq 1 ]
   python3 - "$TASK" <<'PY'
 import sys,yaml
 r=yaml.safe_load(open(sys.argv[1]))['task']['pre_implementation_review']
@@ -100,7 +90,6 @@ PY
   wait "$p1"; wait "$p2"
   [ "$(wc -l < "$CALLS")" -eq 1 ]
   [ "$(cat "$F/a" "$F/b" | grep -Ec 'APPROVAL_(RECORDED|IDEMPOTENT)')" -eq 2 ]
-  run deploy_task_require_pre_implementation_review "$TASK"; [ "$status" -eq 0 ]
 }
 
 @test "cmd_4224 generation reset removes predecessor cmd_4228 receipt before publication" {
