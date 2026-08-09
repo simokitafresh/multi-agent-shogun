@@ -12,6 +12,7 @@ setup() {
     cp "$PROJECT_ROOT/scripts/inbox_mark_read.sh" "$TEST_TMP/scripts/inbox_mark_read.sh"
     cp "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$TEST_TMP/scripts/lib/lock_path.sh"
     cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$TEST_TMP/scripts/lib/report_completion_events.sh"
+    # inbox_write.sh sources this helper; copy it to keep the isolated fixture CI-complete.
     cp "$PROJECT_ROOT/scripts/lib/escalation_evidence.sh" "$TEST_TMP/scripts/lib/escalation_evidence.sh"
     chmod +x "$TEST_TMP/scripts/inbox_write.sh" "$TEST_TMP/scripts/inbox_mark_read.sh"
 }
