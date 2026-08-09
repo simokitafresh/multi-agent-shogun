@@ -223,13 +223,20 @@ PY
 
 @test "E3 Level5 injects clean repro scaffold and AC only into ci_fix tasks" {
     tmpdir="$(mktemp -d)"
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/deploy_task.sh"
+    pids=()
     for kind in ci_fix impl recon training; do
         printf 'task:\n  task_type: %s\n  acceptance_criteria:\n  - id: AC1\n    description: existing contract\n' "$kind" > "$tmpdir/$kind.yaml"
-        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; inject_ci_fix_clean_repro_contract '$tmpdir/$kind.yaml'"
-        [ "$status" -eq 0 ]
+        (inject_ci_fix_clean_repro_contract "$tmpdir/$kind.yaml") &
+        pids+=("$!")
     done
-    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; inject_ci_fix_clean_repro_contract '$tmpdir/ci_fix.yaml'"
-    [ "$status" -eq 0 ]
+    failed=0
+    for pid in "${pids[@]}"; do
+        wait "$pid" || failed=1
+    done
+    [ "$failed" -eq 0 ]
+    inject_ci_fix_clean_repro_contract "$tmpdir/ci_fix.yaml"
 
     python3 - "$tmpdir" <<'PY'
 import pathlib, sys, yaml
@@ -657,9 +664,16 @@ YAML
         set -e
         export DEPLOY_TASK_LIB_ONLY=1
         source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        pids=()
         for task_file in '$tmpdir'/scripts_codd.yaml '$tmpdir'/skills_codd_SKILL.md.yaml '$tmpdir'/skills_codd-refactor_SKILL.md.yaml; do
-            inject_context_hints \"\$task_file\"
+            (inject_context_hints \"\$task_file\") &
+            pids+=(\"\$!\")
         done
+        failed=0
+        for pid in \"\${pids[@]}\"; do
+            wait \"\$pid\" || failed=1
+        done
+        [ \"\$failed\" -eq 0 ]
         inject_context_hints '$plain_task'
     "
     [ "$status" -eq 0 ]
@@ -707,21 +721,23 @@ PY
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/cred-a" "$tmpdir/cred-b"
     touch "$tmpdir/cred-a/.env.alpha" "$tmpdir/cred-b/.env.beta"
 
-    for shape in scalar list; do
+    run_credential_case() {
+        local shape="$1" task_file target_yaml
         task_file="$tmpdir/queue/tasks/$shape.yaml"
-        if [ "$shape" = scalar ]; then
-            target_yaml="target_path: $tmpdir/cred-a"
-        else
-            target_yaml="$(printf 'target_path:\n  - %s/cred-a\n  - %s/cred-b' "$tmpdir" "$tmpdir")"
-        fi
+        case "$shape" in
+          scalar) target_yaml="target_path: $tmpdir/cred-a" ;;
+          list) target_yaml="$(printf 'target_path:\n  - %s/cred-a\n  - %s/cred-b' "$tmpdir" "$tmpdir")" ;;
+          missing) target_yaml="" ;;
+          non_directory) target_yaml="$(printf 'target_path:\n  - %s/not-a-directory\n  - %s/also-missing' "$tmpdir" "$tmpdir")" ;;
+        esac
         printf 'task:\n  command: receipt download\n  %s\n' "$target_yaml" > "$task_file"
 
-        run env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$tmpdir" \
+        env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$tmpdir" \
             INJECT_TASK_MODIFIERS_ONLY="credential_files" \
-            python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
-        [ "$status" -eq 0 ]
+            python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py" >/dev/null
 
-        run python3 - "$task_file" "$shape" <<'PY'
+        if [ "$shape" = scalar ] || [ "$shape" = list ]; then
+            python3 - "$task_file" "$shape" <<'PY'
 import sys
 import yaml
 
@@ -733,24 +749,8 @@ assert len(paths) == len(set(paths)), paths
 assert all(path.endswith(('.env.alpha', '.env.beta')) for path in paths), paths
 assert 'credential_warning' not in task, task
 PY
-        [ "$status" -eq 0 ]
-    done
-
-    for shape in missing non_directory; do
-        task_file="$tmpdir/queue/tasks/$shape.yaml"
-        if [ "$shape" = missing ]; then
-            target_yaml=""
         else
-            target_yaml="$(printf 'target_path:\n  - %s/not-a-directory\n  - %s/also-missing' "$tmpdir" "$tmpdir")"
-        fi
-        printf 'task:\n  command: receipt download\n  %s\n' "$target_yaml" > "$task_file"
-
-        run env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$tmpdir" \
-            INJECT_TASK_MODIFIERS_ONLY="credential_files" \
-            python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
-        [ "$status" -eq 0 ]
-
-        run python3 - "$task_file" <<'PY'
+            python3 - "$task_file" <<'PY'
 import sys
 import yaml
 
@@ -758,8 +758,19 @@ task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
 assert 'credential_warning' in task, task
 assert not task.get('context_files'), task
 PY
-        [ "$status" -eq 0 ]
+        fi
+    }
+
+    pids=()
+    for shape in scalar list missing non_directory; do
+        (run_credential_case "$shape") &
+        pids+=("$!")
     done
+    failed=0
+    for pid in "${pids[@]}"; do
+        wait "$pid" || failed=1
+    done
+    [ "$failed" -eq 0 ]
 }
 
 @test "direct --yaml caller role_reminder survives post-publication field clear" {
@@ -1810,7 +1821,10 @@ YAML
 # test_necessity: growth_loop_defense再注入は既存listのquote/styleに依存せずYAMLキー全体を置換し、孤立要素を残さない不変量を守る。
 @test "growth loop defense replaces single-quoted lists by YAML node boundary" {
     tmpdir="$(mktemp -d)"
-    for style in single plain block; do
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/deploy_task.sh"
+    run_growth_case() {
+        local style="$1" task_file old_value
         task_file="$tmpdir/$style.yaml"
         case "$style" in
           single) old_value="  - 'old one'" ;;
@@ -1820,13 +1834,22 @@ YAML
         printf '%s\n' 'task:' '  purpose: gate hook defense' '  project: infra' '  growth_loop_defense:' >"$task_file"
         printf '%b\n' "$old_value" >>"$task_file"
         printf '%s\n' '  description: gate task' >>"$task_file"
-        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; inject_growth_loop_defense '$task_file'; inject_growth_loop_defense '$task_file'; python3 -c \"import yaml; d=yaml.safe_load(open('$task_file'))['task']; assert 'growth_loop_defense' in d; assert len(d['growth_loop_defense']) >= 1; assert not any('old' in str(x) for x in d['growth_loop_defense'])\""
-        [ "$status" -eq 0 ]
-        run python3 -c "import yaml; yaml.safe_load(open('$task_file'))"
-        [ "$status" -eq 0 ]
-        run grep -c "old one\|old-one\|old block" "$task_file"
-        [ "$status" -eq 1 ]
+        inject_growth_loop_defense "$task_file"
+        inject_growth_loop_defense "$task_file"
+        python3 -c "import yaml; d=yaml.safe_load(open('$task_file'))['task']; assert 'growth_loop_defense' in d; assert len(d['growth_loop_defense']) >= 1; assert not any('old' in str(x) for x in d['growth_loop_defense'])"
+        python3 -c "import yaml; yaml.safe_load(open('$task_file'))"
+        ! grep -q "old one\|old-one\|old block" "$task_file"
+    }
+    pids=()
+    for style in single plain block; do
+        (run_growth_case "$style") &
+        pids+=("$!")
     done
+    failed=0
+    for pid in "${pids[@]}"; do
+        wait "$pid" || failed=1
+    done
+    [ "$failed" -eq 0 ]
 }
 
 # test_necessity: cmd_karo_impl_related_lessons_snapshot_20260727。
