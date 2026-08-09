@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-08-03 D0 route preflight formal review accepted after C-x preflight commit -->
-<!-- last_synced_lesson: L1551 -->
+<!-- last_synced_lesson: L1553 -->
 <!-- source_commit:d7cab63f3aaacf8392a98bf455035317c5d5e2d7 reason:D0 route preflight formal review accepted after C-x preflight commit evidence:D0 report d3d2567c; latest DM-Signal source d7cab63f; runner17/17; writes0 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -342,6 +342,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L950: logical as_ofとsuccessor load-throughを同一時計にしない（cmd_karo_recon2_cx_logical_asof_partial_diff_review_20260803）
 - L953: fixture IDは分類軸を含めて一意化する（cmd_karo_cx_w4_w5_oracle_ready_20260803）
 - L1551: 外部repo偵察は正本入力とrunner scopeを先に二値確認する（cmd_4247）
+- L1553: task test_necessityのrepo境界検証不足（cmd_4268）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 
