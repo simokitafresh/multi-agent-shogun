@@ -45,6 +45,8 @@ if [[ $# -lt 1 ]]; then
 fi
 
 SCRIPT_DIR="${BULLETIN_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/escalation_evidence.sh"
 BULLETIN_FILE="$SCRIPT_DIR/queue/bulletin_board.yaml"
 LOCK_FILE="${BULLETIN_FILE}.lock"
 AGENT_CONFIG="$SCRIPT_DIR/scripts/lib/agent_config.sh"
@@ -143,6 +145,9 @@ normalize_action_type() {
             ;;
         action_required)
             printf '%s\n' "action_required"
+            ;;
+        escalation)
+            printf '%s\n' "escalation"
             ;;
         *)
             echo "ERROR: invalid action_type: $raw (expected info or action_required)" >&2
@@ -390,6 +395,13 @@ if [[ "$ACTION_TYPE" == "info" ]] && gunshi_action_required_content "$POSTED_BY"
     ACTION_TYPE="action_required"
 fi
 
+# Escalation messages must carry the self-trial receipt before bulletin or
+# notification persistence.  BLOCK/FAIL prose in other action types is not
+# rejected (cmd_4251 review ruling).
+if ! escalation_evidence_validate_or_block bulletin_write "$ACTION_TYPE" "$CONTENT"; then
+    exit 2
+fi
+
 # 【家老D0止血 2026-07-27 09:05・実害進行中の緊急阻止・影丸へ引継ぎ前提】
 # スクリプトが自動生成する定型通知(review_approval.sh:291 等)は人が本文を書けないため、
 # AC2/AC3の検査対象から除外する。除外しないと構造的に必ずBLOCKし、
@@ -398,6 +410,7 @@ fi
 if [[ "${BULLETIN_AUTOGEN:-0}" != "1" ]]; then
     # AC2: 指揮官発信+数値主張 → 3点セット必須(起動時義務投稿=自己検証は免除)
     if is_commander_poster "$POSTED_BY" \
+        && [[ "$ACTION_TYPE" != "escalation" ]] \
         && ! is_startup_verification_post "$CONTENT" \
         && ! commander_post_is_review_request "$CONTENT" \
         && post_has_numeric_claim "$CONTENT"; then
@@ -414,7 +427,9 @@ if [[ "${BULLETIN_AUTOGEN:-0}" != "1" ]]; then
     fi
 
     # AC3: 指揮官発信投稿は現在指示との関連宣言(cmd_id/下知)を必須化
-    if is_commander_poster "$POSTED_BY" && ! commander_post_has_related_declaration "$CONTENT"; then
+    if is_commander_poster "$POSTED_BY" \
+        && [[ "$ACTION_TYPE" != "escalation" ]] \
+        && ! commander_post_has_related_declaration "$CONTENT"; then
         echo "BLOCK: 指揮官(${POSTED_BY})発信投稿に現在指示との関連宣言(cmd_id/下知)がありません。insight_write.sh で在庫化せよ。実害進行中なら本文先頭行に [URGENT-HARM] を付けて再送せよ。" >&2
         exit 1
     fi

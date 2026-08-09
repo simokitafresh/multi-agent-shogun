@@ -6,6 +6,9 @@ setup() {
     TEST_ROOT="$(mktemp -d)"
     mkdir -p "$TEST_ROOT/scripts" "$TEST_ROOT/queue" "$TEST_ROOT/logs"
     cp "$BATS_TEST_DIRNAME/../../scripts/bulletin_write.sh" "$TEST_ROOT/scripts/bulletin_write.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/escalation_evidence.sh" "$TEST_ROOT/scripts/escalation_evidence.sh"
+    mkdir -p "$TEST_ROOT/scripts/lib"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/escalation_evidence.sh" "$TEST_ROOT/scripts/lib/escalation_evidence.sh"
     cat > "$TEST_ROOT/scripts/inbox_write_fixture.sh" <<'SH'
 #!/bin/bash
 printf '%s\n' "$1|$3|$4|$5" >> "$BULLETIN_NOTIFY_CAPTURE"
@@ -16,6 +19,39 @@ SH
 
 teardown() {
     rm -r -- "$TEST_ROOT"
+}
+
+@test "typed escalation bulletin rejects incomplete evidence and accepts complete evidence" {
+    run env \
+        BULLETIN_ROOT_OVERRIDE="$TEST_ROOT" \
+        BULLETIN_NOTIFY=shogun \
+        BULLETIN_INBOX_WRITE="$TEST_ROOT/scripts/inbox_write_fixture.sh" \
+        BULLETIN_NOTIFY_FAILURE_LOG="$TEST_ROOT/logs/failures.yaml" \
+        bash "$TEST_ROOT/scripts/bulletin_write.sh" karo 'CRITICAL escalation' false escalation
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'Template:'* ]]
+    [ ! -e "$BULLETIN_NOTIFY_CAPTURE" ]
+
+    local good=$'試行コマンド: bash scripts/check.sh\nexit_code: 1\n特定した不足: gate state remains open\n次の行動: 家老レーンで是正する\n実行者: karo'
+    run env \
+        BULLETIN_ROOT_OVERRIDE="$TEST_ROOT" \
+        BULLETIN_NOTIFY=shogun \
+        BULLETIN_INBOX_WRITE="$TEST_ROOT/scripts/inbox_write_fixture.sh" \
+        BULLETIN_NOTIFY_FAILURE_LOG="$TEST_ROOT/logs/failures.yaml" \
+        bash "$TEST_ROOT/scripts/bulletin_write.sh" karo "$good" false escalation
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$BULLETIN_NOTIFY_CAPTURE")" -eq 1 ]
+}
+
+@test "bulletin BLOCK prose in info lane is not an escalation false positive" {
+    run env \
+        BULLETIN_ROOT_OVERRIDE="$TEST_ROOT" \
+        BULLETIN_NOTIFY=shogun \
+        BULLETIN_INBOX_WRITE="$TEST_ROOT/scripts/inbox_write_fixture.sh" \
+        BULLETIN_NOTIFY_FAILURE_LOG="$TEST_ROOT/logs/failures.yaml" \
+        bash "$TEST_ROOT/scripts/bulletin_write.sh" saizo 'gate BLOCK通知' false info
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$BULLETIN_NOTIFY_CAPTURE")" -eq 1 ]
 }
 
 @test "ninja-authored bulletins use trusted transport identity and each deliver once" {

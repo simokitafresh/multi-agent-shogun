@@ -55,6 +55,8 @@ else
     # Telemetry must never turn a valid durable delivery into a failure.
     defense_overhead_write_async() { return 0; }
 fi
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/escalation_evidence.sh"
 IW_TOTAL_STARTED_US="${EPOCHREALTIME/./}"
 IW_ROOT_BASHPID="${BASHPID:-$$}"
 
@@ -1992,6 +1994,13 @@ if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ] && printf '%s'
     PROJECT_ROOT="$SCRIPT_DIR" review_two_phase_ready_gunshi "$_guard_cmd" "$SCRIPT_DIR/$_guard_report" || { echo "BLOCK: LGTM approval marker missing, stale, or mismatched for $_guard_report" >&2; exit 2; }
 fi
 ACTION="${5:-}"
+
+# Escalation messages must carry the self-trial receipt before any durable
+# mailbox write.  The shared helper intentionally scopes the check to
+# type=escalation; ordinary BLOCK/FAIL notifications use their existing lanes.
+if ! escalation_evidence_validate_or_block inbox_write "$TYPE" "$CONTENT"; then
+    exit 2
+fi
 
 # A ninja process becoming idle does not close a failed task.  The monitor
 # deliberately excludes failed tasks from stall/idle handling, so the durable

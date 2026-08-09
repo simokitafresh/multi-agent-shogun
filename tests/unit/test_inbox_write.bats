@@ -111,7 +111,7 @@ setup_file() {
 
     mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
     # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
-    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh retro_pane_prompt.sh retro_verbatim_prompt.sh gate_report_format_classify.sh; do
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh retro_pane_prompt.sh retro_verbatim_prompt.sh gate_report_format_classify.sh escalation_evidence.sh; do
         cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
     done
     cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$GIT_TEMPLATE_DIR/scripts/inbox_write.sh"
@@ -215,6 +215,41 @@ setup() {
     init_test_env
 }
 
+# test_necessity: typed escalation delivery is fail-closed until the three
+# self-trial fields plus next action/owner are present; non-escalation BLOCK
+# prose remains deliverable after the cmd_4251 review clarification.
+@test "escalation requires self-trial receipt and records BLOCK/PASS telemetry" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs"
+    export DEFENSE_OVERHEAD_REPO_ROOT="$TEST_TMPDIR"
+    export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
+    local bad='先送りCRITICAL案件'
+    run bash "$TEST_INBOX_WRITE" karo "$bad" escalation testninja notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'Template:'* ]]
+    [[ "$output" == *'試行コマンド:'* ]]
+    [ ! -e "$TEST_INBOX_DIR/karo.yaml" ]
+
+    local good=$'試行コマンド: bash scripts/check.sh\nexit_code: 1\n特定した不足: queue item remains unresolved\n次の行動: 家老レーンで是正する\n実行者: karo'
+    run bash "$TEST_INBOX_WRITE" karo "$good" escalation testninja notify_karo
+    [ "$status" -eq 0 ]
+    grep -q "type: 'escalation'" "$TEST_INBOX_DIR/karo.yaml"
+    for _i in 1 2 3 4 5; do
+        [ "$(grep -c 'escalation_evidence_contract' "$DEFENSE_OVERHEAD_LEDGER" 2>/dev/null || true)" -ge 2 ] && break
+        sleep 0.05
+    done
+    [ "$(grep -c 'escalation_evidence_contract' "$DEFENSE_OVERHEAD_LEDGER")" -eq 2 ]
+    [ "$(grep -c 'check_id":"escalation_evidence_contract".*"verdict":"BLOCK"' "$DEFENSE_OVERHEAD_LEDGER")" -eq 1 ]
+    [ "$(grep -c 'check_id":"escalation_evidence_contract".*"verdict":"PASS"' "$DEFENSE_OVERHEAD_LEDGER")" -eq 1 ]
+}
+
+@test "non-escalation BLOCK prose is not a false positive" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" karo 'gate BLOCK通知: FAILではなく監視継続' gate_block testninja notify_karo
+    [ "$status" -eq 0 ]
+    grep -q "type: 'gate_block'" "$TEST_INBOX_DIR/karo.yaml"
+}
+
 @test "failed unclosed idle_notice is converted to review alert while formal FAIL close is preserved" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
@@ -293,7 +328,7 @@ YAML
     done
 
     # 回答族でないtypeは同じ保留があってもretro扱いしない(誤判定0)。
-    for other_type in escalation bulletin_notify status_update analysis_result; do
+    for other_type in gate_block bulletin_notify status_update analysis_result; do
         rm -f "$TEST_INBOX_DIR/karo.yaml"
         run bash "$TEST_INBOX_WRITE" karo "unrelated $other_type" "$other_type" testninja notify_karo
         [ "$status" -eq 0 ]
@@ -2079,6 +2114,70 @@ print("caller_values=4 total_rows=4 additive_rows=1 unknown=1")
 PY
 }
 
+# test_necessity: commander sends must retain a live pre-send pane observation
+# while exposing its bounded cost as a non-additive child slice.
+@test "commander pre-send capture uses live pane resolver and records its slice" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/bin" "$TEST_TMPDIR/logs"
+    cp "$PROJECT_ROOT/scripts/lib/pane_lookup.sh" "$TEST_TMPDIR/scripts/lib/pane_lookup.sh"
+    export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  capture-pane) echo "› CTX:42%" ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    local send_index
+    for send_index in $(seq 1 20); do
+        run env PATH="$TEST_TMPDIR/bin:$PATH" \
+            INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR" \
+            bash "$TEST_INBOX_WRITE" testninja "pre-send capture fixture-${send_index}" info karo notify_karo
+        [ "$status" -eq 0 ]
+    done
+    [[ "$output" == *"[pre-send capture] testninja pane state BEFORE message:"* ]]
+    grep -q 'list-panes' "$TMUX_LOG"
+    grep -q 'capture-pane' "$TMUX_LOG"
+
+    local attempt
+    for attempt in $(seq 1 100); do
+        [ -f "$DEFENSE_OVERHEAD_LEDGER" ] \
+            && [ "$(grep -c '"check_id":"inbox_write_pre_send_capture"' "$DEFENSE_OVERHEAD_LEDGER" || true)" -ge 20 ] \
+            && [ "$(grep -c '"check_id":"inbox_write_persist"' "$DEFENSE_OVERHEAD_LEDGER" || true)" -ge 20 ] \
+            && [ "$(grep -c '"check_id":"inbox_write_total"' "$DEFENSE_OVERHEAD_LEDGER" || true)" -ge 20 ] \
+            && break
+        sleep 0.02
+    done
+
+    python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json, sys
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8")]
+by_id = {}
+for row in rows:
+    by_id.setdefault(row["check_id"], []).append(row)
+expected = ("inbox_write_pre_send_capture", "inbox_write_persist", "inbox_write_total")
+assert all(len(by_id.get(key, [])) == 20 for key in expected), {key: len(by_id.get(key, [])) for key in expected}
+assert all(isinstance(row["wall_ms"], int) and row["wall_ms"] >= 0
+           for key in expected for row in by_id[key])
+totals = sorted(row["wall_ms"] for row in by_id["inbox_write_total"])
+pre_send = sorted(row["wall_ms"] for row in by_id["inbox_write_pre_send_capture"])
+persist = sorted(row["wall_ms"] for row in by_id["inbox_write_persist"])
+percentile = lambda values, q: values[int((len(values) - 1) * q)]
+assert percentile(totals, .50) >= percentile(pre_send, .50)
+assert percentile(totals, .95) >= percentile(pre_send, .95)
+print("pre_send_capture=20 persist=20 total=20 safety_observation=20 false_positive=0 "
+      f"total_p50_ms={percentile(totals, .50)} total_p95_ms={percentile(totals, .95)} "
+      f"pre_send_p50_ms={percentile(pre_send, .50)} pre_send_p95_ms={percentile(pre_send, .95)} "
+      f"persist_p50_ms={percentile(persist, .50)} persist_p95_ms={percentile(persist, .95)}")
+PY
+    [ "$(grep -c '^- ' "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 20 ]
+}
+
 @test "task_assigned: codex non-ninja delivery verification uses inbox read only" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/bin"
@@ -2648,6 +2747,7 @@ YAML
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/inbox"
     cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$TEST_TMPDIR/scripts/lib/report_completion_events.sh"
+    cp "$PROJECT_ROOT/scripts/lib/escalation_evidence.sh" "$TEST_TMPDIR/scripts/lib/escalation_evidence.sh"
     unset INBOX_WRITE_TEST
 
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
@@ -2670,6 +2770,7 @@ YAML
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks"
     cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$TEST_TMPDIR/scripts/lib/report_completion_events.sh"
+    cp "$PROJECT_ROOT/scripts/lib/escalation_evidence.sh" "$TEST_TMPDIR/scripts/lib/escalation_evidence.sh"
     unset INBOX_WRITE_TEST
 
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'

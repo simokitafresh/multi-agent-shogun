@@ -12,6 +12,7 @@ setup() {
     cp "$PROJECT_ROOT/scripts/inbox_mark_read.sh" "$FIXTURE_ROOT/scripts/inbox_mark_read.sh"
     cp "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$FIXTURE_ROOT/scripts/lib/lock_path.sh"
     cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$FIXTURE_ROOT/scripts/lib/report_completion_events.sh"
+    cp "$PROJECT_ROOT/scripts/lib/escalation_evidence.sh" "$FIXTURE_ROOT/scripts/lib/escalation_evidence.sh"
 }
 
 teardown() {
