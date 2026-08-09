@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-08 reviewed_source_boundary -->
+<!-- last_updated: 2026-08-09 cmd_karo_hotfix_speed_deploy_task_r1b_20260809 reviewed source boundary -->
+<!-- source_commit:4848ca902 reason:cmd_karo_hotfix_speed_deploy_task_r1b_20260809 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=4848ca902 -->
 <!-- source_commit:ce4ba6d2b reason:reviewed_source_boundary evidence:cmd_karo_hotfix_insights_rotation_archive_gate_20260808 -->
 <!-- source_commit:b35dc70be reason:reviewed_source_boundary evidence:cmd_karo_hotfix_insights_concurrent_dirty_gate_20260808 -->
 <!-- source_commit:6ab875128 reason:reviewed_source_boundary evidence:cmd_karo_hotfix_guard14_launcher_operand_20260808 -->

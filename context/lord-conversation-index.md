@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-09 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-09T04:18:11+09:00 -->
+<!-- generated_at: 2026-08-09T09:21:19+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-09T04:18:11+09:00 | terminal | response | [MEM: memory_db ts=2026-08-09T04:07 "inbox1のnudgeはcmd_4245レビュー処理完了分だった" — 同型のnudge処理として対応] [MEM: obsidian link=[[cmd_42…
-- 2026-08-09T04:17:10+09:00 | terminal | response | 未読0件。本番復旧確認済み。次修正の再設計(Phase0のMonthlyReturn一括DELETE除外 or mode=portfolio時の保全)はcmd起票待ち。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-09T04:12:00+09:00 | terminal | response | [MEM: memory_db ts=2026-08-08T17:11 "inbox3はこの3件だった。全て処理済み" — 同型の3件一括nudgeとして処理] [MEM: obsidian link=[[inbox処理の意志依存]] —…
-- 2026-08-09T04:10:23+09:00 | terminal | response | 将軍/家老の因果確定と自分のレビュー証拠に矛盾なし。真因=Phase0一括DELETEがガードより先行し既存行をゼロ化→ガードのexisting_min=NULLスキップにより保護無効。cmd_4245のガードは「_generate_mo…
-- 2026-08-09T04:09:48+09:00 | terminal | response | 未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-09T04:08:49+09:00 | terminal | response | [MEM: memory_db ts=2026-08-08T17:11 "inbox3はこの3件だった。全て処理済み" — 同型の3件一括nudgeとして処理] [MEM: obsidian link=[[inbox処理の意志依存]] —…
-- 2026-08-09T04:07:12+09:00 | ntfy | outbound | 【家老CRITICAL】先送り1セッション連続検出。起動は許可するが即対処必須
-- 2026-08-09T04:07:06+09:00 | terminal | response | 未読0件。inbox1のnudgeはcmd_4245レビュー処理完了分だった。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-09T04:05:46+09:00 | terminal | response | [MEM: memory_db ts=2026-08-09T02:57 "monthly_returns欠落・部分再計算偽装事案の根治" — 本下知を同事案の設計層再整理として遂行] [MEM: obsidian link=[[殿裁定_月…
-- 2026-08-09T04:05:05+09:00 | terminal | response | 家老のQ1-Q10回答の掲示板通知。情報通知として記録。
+- 2026-08-09T09:21:18+09:00 | terminal | response | cmd_4246偵察成果(16.5KB・8系統接続マップ)読了。v0.4統合版へ即時反映する。 [meta] stop_reason=tool_use
+- 2026-08-09T09:18:08+09:00 | terminal | response | 未読0件。GA-449は事前レビューAPPROVE+正規receipt記録済み。hanzoが実装中。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-09T09:17:55+09:00 | terminal | inbound | 今は設計書の再構築が目的だよな。進捗は
+- 2026-08-09T09:17:41+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_ga449_context_freshness_20260809 初回配備開始 (title=(untitled), ninja=hanzo)
+- 2026-08-09T09:17:17+09:00 | terminal | response | 未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-09T09:16:42+09:00 | terminal | response | GA-449 draft APPROVE送信済み。未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-09T09:14:54+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率98% 連勝4
+- 2026-08-09T09:14:36+09:00 | terminal | response | 未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-09T09:12:58+09:00 | terminal | response | review-bundle完了。cmd_karo_hotfix_speed_deploy_task_r1b_20260809のLGTMを正規入口(review_bundle.py single)で記録し、sg7_bundle.json生成…
+- 2026-08-09T09:09:10+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-449)
 
 ## 未解決確認事項
 - [MEM: memory_db ts=2026-08-09T04:07 "inbox1のnudgeはcmd_4245レビュー処理完了分だった" — 同型のnudge処理として対応] [MEM: obsidian link=[[cmd_4245ガード拡張]] — 本報の中心事実は…
