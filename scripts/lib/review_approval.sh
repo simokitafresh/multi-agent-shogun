@@ -266,10 +266,17 @@ review_report_key() {
 }
 
 review_report_logical_path() {
-    local report="$1" root resolved base
+    local report="$1" root resolved base report_parent
     root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
     resolved=$(realpath "$report") || return 1
     base=$(basename "$report")
+    if [ -L "$report" ]; then
+        report_parent=$(realpath "$(dirname "$report")") || return 1
+        [ "$report_parent" = "$root/queue/reports" ] || return 1
+        [ "$(dirname "$resolved")" = "$root/queue/archive/reports" ] || return 1
+        printf 'queue/reports/%s\n' "$base"
+        return 0
+    fi
     [[ "$resolved" == "$root/queue/reports/$base" \
         || "$resolved" == "$root/queue/archive/reports/$base" ]] || return 1
     printf 'queue/reports/%s\n' "$base"
@@ -306,6 +313,12 @@ candidates = list(reports_dir.glob("*.yaml")) + list(archive_dir.glob("*.yaml"))
 # A matching nested archive is an invalid ambiguous storage location, not a
 # candidate to silently ignore.
 candidates += list(archive_dir.glob("**/*.yaml"))
+archive_alias_targets = set()
+for alias in reports_dir.glob("*.yaml"):
+    if alias.is_symlink():
+        target = alias.resolve()
+        if target.parent == archive_dir.resolve():
+            archive_alias_targets.add(target)
 # The shared archive contains reports for every command.  Select by the
 # basename-owned command token before touching the path or payload so a broken
 # report belonging to another command cannot poison this command's recovery.
@@ -320,9 +333,19 @@ for report_path in sorted(candidates):
     # Authenticate the storage boundary before reading attacker-controlled
     # content.  In particular, a symlink carrying another command's payload
     # must not escape validation through the parent_cmd mismatch branch.
-    if report_path.is_symlink() or report_path.parent not in (reports_dir, archive_dir):
+    if report_path.is_symlink():
+        # archive_completed publishes a canonical live alias to the immutable
+        # flat archive. Keep that canonical logical name and suppress its
+        # physical target below so one report cannot appear twice.
+        resolved = report_path.resolve()
+        if report_path.parent != reports_dir or resolved.parent != archive_dir.resolve():
+            raise SystemExit(1)
+    elif report_path.parent not in (reports_dir, archive_dir):
         raise SystemExit(1)
-    resolved = report_path.resolve()
+    else:
+        resolved = report_path.resolve()
+        if resolved in archive_alias_targets:
+            continue
     if resolved.parent not in (reports_dir.resolve(), archive_dir.resolve()):
         raise SystemExit(1)
     try:
@@ -413,15 +436,20 @@ PY
 }
 
 review_validate_report() {
-    local cmd_id="$1" report="$2" root reports_dir archive_dir resolved parent base
+    local cmd_id="$1" report="$2" root reports_dir archive_dir resolved parent base report_parent
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     review_validate_cmd_id "$cmd_id" || return 1
     reports_dir=$(realpath "$root/queue/reports") || return 1
     archive_dir=$(realpath -m "$root/queue/archive/reports") || return 1
     resolved=$(realpath "$report") || return 1
     base=$(basename "$report")
-    [ ! -L "$report" ] || return 1
-    [[ "$resolved" == "$reports_dir/$base" || "$resolved" == "$archive_dir/$base" ]] || return 1
+    if [ -L "$report" ]; then
+        report_parent=$(realpath "$(dirname "$report")") || return 1
+        [ "$report_parent" = "$reports_dir" ] || return 1
+        [ "$(dirname "$resolved")" = "$archive_dir" ] || return 1
+    else
+        [[ "$resolved" == "$reports_dir/$base" || "$resolved" == "$archive_dir/$base" ]] || return 1
+    fi
     parent=$(python3 - "$resolved" <<'PY'
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
