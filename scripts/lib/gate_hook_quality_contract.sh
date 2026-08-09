@@ -54,7 +54,7 @@ gate_hook_quality_contract_evaluate() {
     fi
 
     measurement_text="$(gate_hook_quality_contract_measurement_text "$block_text")"
-    if ! printf '%s\n' "$measurement_text" | grep -qiE 'FP[率計測]|false[ _-]?positive|偽陽性|誤発報|detector_fp_rate|gate_fire_log|loop_ledger|cmd_design_quality'; then
+    if ! printf '%s\n' "$measurement_text" | grep -qiE 'FP[率計測]|false[ _-]?positive|偽陽性|誤発報|誤BLOCK|誤遮断|detector_fp_rate|gate_fire_log|loop_ledger|cmd_design_quality'; then
         measurement=missing
     fi
 
