@@ -843,7 +843,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'c9b788292fa14cd3e14adbf1ef0130df366787a073c5e0dc8931e6fb07d7c49b' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -853,6 +853,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次情報logs/self_retro.jsonlのevent_id c9b788292fa14cd3e14adbf1ef0130df366787a073c5e0dc8931e6fb07d7c49bでwall_ms=49800、dashboard=21207ms、全checkpoint完了かつduplicate event=0を確認。completion_pipelineの既存設計・計測・防御契約で既知化済みのため新規修正不要。"
+  action_artifact: "logs/self_retro.jsonl#c9b788292fa14cd3e14adbf1ef0130df366787a073c5e0dc8931e6fb07d7c49b;docs/research/cmd_4123_self_retro_signal.md;docs/research/throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md"
+  resolved_at: "2026-08-10T05:34:15+09:00"
 - id: INS-20260810-035934204-d03b
   ts: "2026-08-10T03:59:34+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_review_overlap_contract_fix_20260810; matched=ninja_monitor; current_pattern=; candidate_level=3; candidate=hayate事故(2026-04-28): bypass flag欠落→確認プロンプトで停止。pstreeで起動時自動検出; source=gunshi_gp_tracker.yaml"
