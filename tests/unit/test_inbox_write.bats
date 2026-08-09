@@ -2074,16 +2074,27 @@ PY
     mkdir -p "$TEST_TMPDIR/logs"
     export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
 
-    local caller content
+    local caller content caller_index=0 rc
+    local -a caller_pids=()
     for caller in cmd_complete_gate ninja_monitor deploy_task; do
+        caller_index=$((caller_index + 1))
         content="caller-$caller"
-        run env INBOX_WRITE_RUNTIME_CALLER="$caller" bash "$TEST_INBOX_WRITE" \
-            test_agent "$content" info testninja notify_karo
-        [ "$status" -eq 0 ]
+        (
+            env INBOX_WRITE_RUNTIME_CALLER="$caller" bash "$TEST_INBOX_WRITE" \
+                test_agent "$content" info testninja notify_karo
+        ) >"$TEST_TMPDIR/caller_${caller_index}.out" 2>&1 &
+        caller_pids+=("$!")
     done
-    run env INBOX_WRITE_RUNTIME_CALLER='invalid caller' bash "$TEST_INBOX_WRITE" \
-        test_agent caller-unknown info testninja notify_karo
-    [ "$status" -eq 0 ]
+    (
+        env INBOX_WRITE_RUNTIME_CALLER='invalid caller' bash "$TEST_INBOX_WRITE" \
+            test_agent caller-unknown info testninja notify_karo
+    ) >"$TEST_TMPDIR/caller_4.out" 2>&1 &
+    caller_pids+=("$!")
+    for caller_pid in "${caller_pids[@]}"; do
+        rc=0
+        wait "$caller_pid" || rc=$?
+        [ "$rc" -eq 0 ]
+    done
 
     local attempt
     for attempt in $(seq 1 100); do
@@ -2133,14 +2144,23 @@ exit 0
 EOF
     chmod +x "$TEST_TMPDIR/bin/tmux"
 
-    local send_index
+    local send_index rc
+    local -a send_pids=()
+    mkdir -p "$TEST_TMPDIR/pre_send_outputs"
     for send_index in $(seq 1 20); do
-        run env PATH="$TEST_TMPDIR/bin:$PATH" \
-            INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR" \
-            bash "$TEST_INBOX_WRITE" testninja "pre-send capture fixture-${send_index}" info karo notify_karo
-        [ "$status" -eq 0 ]
+        (
+            env PATH="$TEST_TMPDIR/bin:$PATH" \
+                INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR" \
+                bash "$TEST_INBOX_WRITE" testninja "pre-send capture fixture-${send_index}" info karo notify_karo
+        ) >"$TEST_TMPDIR/pre_send_outputs/${send_index}.out" 2>&1 &
+        send_pids+=("$!")
     done
-    [[ "$output" == *"[pre-send capture] testninja pane state BEFORE message:"* ]]
+    for send_pid in "${send_pids[@]}"; do
+        rc=0
+        wait "$send_pid" || rc=$?
+        [ "$rc" -eq 0 ]
+    done
+    [ "$(rg -l -F '[pre-send capture] testninja pane state BEFORE message:' "$TEST_TMPDIR/pre_send_outputs" | wc -l)" -eq 20 ]
     grep -q 'list-panes' "$TMUX_LOG"
     grep -q 'capture-pane' "$TMUX_LOG"
 
