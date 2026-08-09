@@ -6812,6 +6812,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-09T20:02:14+09:00 忍者を監視する必要はあるのか？報告を待て。家老は家老自身の高速化をすすめよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-09T20:22:33+09:00 配備器の同一cmdロックwo |
 | cmd | `cmd_karo_hotfix_test_speed_deploy_cycle2_20260809` (`tests/unit/test_deploy_task_yaml_injection.bats`) |
+| cmd | `cmd_karo_hotfix_test_speed_deploy_cycle3_20260809` (`tests/unit/test_deploy_task_yaml_injection.bats`) |
+| cmd | `cmd_karo_hotfix_test_speed_deploy_cycle4_20260809` (`tests/unit/test_deploy_task_yaml_injection.bats`) |
+| cmd | `cmd_karo_hotfix_test_speed_deploy_cycle5_20260809` (`tests/unit/test_deploy_task_yaml_injection.bats`) |
 | causal_chain | `[[cmd_3726]]` (L956) |
 | causal_chain | `[[cmd_3765]]` (L985) |
 | causal_chain | `[[cmd_karo_hotfix_fill_this_202607151848]]` (L1037) |
@@ -8783,6 +8786,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-09T19:37:27+09:00 なぜ家老が出てくる？軍師が自分で即時実行せよ |
 | cmd | `cmd_karo_hotfix_test_speed_gate_20260809` (`tests/unit/test_gate_report_format.bats`) |
 | cmd | `cmd_karo_hotfix_test_speed_gate_cycle2_20260809` (`tests/unit/test_gate_report_format.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-09T22:25:08+09:00 進捗はどうなった？ |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
 | causal_chain | `[[cmd_karo_ci_fix_29472330522_root_gate_report_format_202607161359]]` (L1156) |
@@ -10065,6 +10069,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga432_context_freshness` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_karo_fix_capture_verification_scope_20260804` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_karo_hotfix_gate_clear_wakeup_contract_20260809` files_modified: [[multi_cli_event_commonization]] |
+| causal | [[multi_cli_event_commonization]] -> [[multi-cli-account-failover-asis-tobe-5w1h-20260731]] (`docs/research/multi-cli-account-failover-asis-tobe-5w1h-20260731.md`) — `cmd_reflux_backlink_202608092245_hanzo` |
 
 ## codex_goal_mode — Codex /goal 自律目標モード
 
@@ -10507,6 +10512,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608071550_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071604_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608071649_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608092134_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
@@ -13024,6 +13030,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-09T07:38:42.364079+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-09T08:50:05.749913+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-09T19:15:14+09:00 いい加減忍者のコミットを通したいな。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-09T12:49:28.961761+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_task_pointer_rollback_202607151907]]` (L1036) |
