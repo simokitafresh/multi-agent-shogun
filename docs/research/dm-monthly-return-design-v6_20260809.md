@@ -1,3 +1,4 @@
+<!-- gist-master: d23c8d202b0e99b0007ef77a2d14d39a dm-monthly-return-design-v6_20260809.md -->
 # DM-Signal 月次リターン設計書 v6.0 — 基本原理再構築版(6層分離)
 
 > **位置づけ**: 殿最優先下知2026-08-09 03:43(原文=`docs/research/dm-monthly-return-first-principles-original_20260809.md`・改変禁止)に基づく再構築版設計書。**旧v5.22(`docs/research/dm-monthly-trade-bug-asis-tobe-5w1h_20260802.md`)は保持され一切変更しない** — 事故対応の全証跡・WBS・棄却表・改訂履歴約90版の正本であり続ける。本書は「月次リターンの計算仕様」を通常運用と修復・監査から分離して再定義するもの。前提知識ゼロのLLMが本書だけで§1-§3の通常モデルを理解できることを設計要件とする。
