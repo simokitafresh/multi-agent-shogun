@@ -234,7 +234,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4260"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認でcmd_2284の旧continuation残留は既存GP-234で根治済み。現行root/nested両経路に除去実装があり、multiline回帰7/7 PASSのため追加修正不要としてresolve"
+  action_artifact: "scripts/report_field_set.sh:L2032-L2038,L2135-L2141;git show 5bf5715afeaf570d04d521df947b6a1aa3979289;tests/unit/test_report_field_set_multiline.bats:7/7 PASS;queue/reports/hayate_report_cmd_reflux_insight_202608100642_hayate.yaml"
+  resolved_at: "2026-08-10T06:46:35+09:00"
 - id: INS-20260810-004622923-c078
   ts: "2026-08-10T00:46:22+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4260; matched=系列; current_pattern=月次リターンT-α5 — mtd応答の系列純度是正(Close比借用の除去と両到達経路の置換); candidate_level=4; candidate=なぜなぜ7回の根因=新パス追加時に既存防御層との整合性チェックがない。GP-180(即効)に加え、STALE_RESET実行済みフラグ(例: _STALE_RESET_DONE=1)を配備最終段階で確認→未実行ならBLOCK。今後DIRECT_MODE3やCMD_FORCED2が追加されても防御層迂回を構造的に検出; source=gunshi_gp_tracker.yaml"
