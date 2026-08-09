@@ -334,7 +334,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4261"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次資料で重複候補を確認。実修正はlesson_write.shの内容dedup設計判断を要するため本cmdではdecision_candidateへ整理し、対象insightを解消
+  action_artifact: "docs/research/gunshi_idle_lesson_dedup_20260413.md;context/infrastructure.md:L1573;decision_candidate:lesson_write.sh内容dedup(Jaccard)"
+  resolved_at: "2026-08-10T07:51:28+09:00"
 - id: INS-20260810-011543194-7f12
   ts: "2026-08-10T01:15:43+09:00"
   insight: "[[cmd complete gateのtiming計測が全report YAMLを毎回parseするボトルネックを]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gateがcommand本文中の裸語session alertsをファイル参照と誤認して正しい; score=21.2) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=12.9) / agent_formation_management(編成管理; alias=same_cmd_redeploy; score=12.2)。既存概念aliasesへの自動昇格候補"
