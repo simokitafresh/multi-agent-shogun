@@ -1,7 +1,7 @@
 <!-- gist-master: d26e786a4da934eaa2e5863b8d31d7bd dm-monthly-return-v6-tasklist_20260809.md -->
-# DM-Signal 月次リターン再設計 実装タスクリスト v1.1
+# DM-Signal 月次リターン再設計 実装タスクリスト v1.2
 
-> **正本設計書**: `docs/research/dm-monthly-return-design-v6_20260809.md` v6.10(gist d23c8d20)。本書は設計書の実装分解であり、**仕様の正は常に設計書**。矛盾を見つけたら実装せず報告する。
+> **正本設計書**: `docs/research/dm-monthly-return-design-v6_20260809.md` v6.11(gist d23c8d20)。本書は設計書の実装分解であり、**仕様の正は常に設計書**。矛盾を見つけたら実装せず報告する。
 > **状態**: 準備物。**実装・deployは殿の別途下知まで開始しない**。下知後、本書のStatus列が進捗の正本となる。
 > **対象repo**: `/mnt/c/Python_app/DM-signal`(タスク中のパスは全てこのrepo相対)
 > **読者**: 前提知識ゼロのコーディングLLM。各タスクはStart(前提)とGoal(二値判定)だけで完結し、設計判断を含まない — 判断が必要になったら実装を止めて報告する。
@@ -46,12 +46,13 @@ flowchart LR
 | ID | St | タスク(Start→Goal) | 影響範囲 | 依存 | 検証コマンド |
 |---|---|---|---|---|---|
 | T-α1 | ⬜ | **status契約module新設**。Start: 設計書§3.1の4意味論表。Goal: `backend/app/services/return_status.py`を新設し、定数`START_WAITING/PENDING_VALUE/CONFIRMED/ERROR`+応答用dataclass(`value, status, as_of, provisional_source, missing_requirement, price_type, start_date, end_date`)を定義、serialize往復のunit testが通る | 新規1ファイル+テスト1ファイル | なし | `pytest tests/ -k return_status` FAIL0/SKIP0 |
-| T-α2 | ⬜ | **系列別provisional end解決関数**。Start: `PriceCache`のbackward解決が既存(price_ratio_impl.py:22-91)。Goal: `resolve_provisional_end(symbol_set, as_of, series)`が series='close'なら直近利用可能close、'open'なら直近利用可能openの(取引日,値)を返す純関数+境界テスト(休日連続・当日open未到着)PASS | `backend/app/services/return_status.py`追記+テスト | T-α1 | `pytest tests/ -k provisional_end` FAIL0/SKIP0 |
+| T-α2 | ⬜ | **系列別provisional評価解決関数(共通評価日契約)**。Start: `PriceCache`のbackward解決が既存(price_ratio_impl.py:22-91)+設計書§3.3の共通評価日契約(**銘柄別の独立backward解決は禁止**=異時点混合NAVを生む)。Goal: `resolve_provisional_valuation(symbols, as_of, series)`が**共通評価日(全構成銘柄のデータが揃う最新取引日)を先に解決**し、`(共通評価日, {symbol: 値})`を返す純関数。単一(date,value)返却は不可。共通評価日で欠損する銘柄はERROR(fail-visible)。境界テスト(休日連続・当日open未到着・銘柄間で直近日が異なるケース)PASS | `backend/app/services/return_status.py`追記+テスト | T-α1 | `pytest tests/ -k provisional_valuation` FAIL0/SKIP0 |
 | T-α3 | ⬜ | **Monthly Returns APIのpending対応**。Start: 現行は当月row不在でpending生成せず全row不在なら404(api/monthly_returns.py:84-93)。Goal: 当月=PENDING_VALUE行(系列別provisional)・境界未形成月=START_WAITING行を動的生成しstatus付きで返す。404は「PF不存在」のみに限定。既存確定行の値は1バイトも変わらない | `backend/app/api/monthly_returns.py`, `backend/app/services/monthly_returns_calculator.py` | T-α1,T-α2 | `pytest tests/ -k monthly_returns_pending` FAIL0/SKIP0+既存テスト回帰FAIL0 |
 | T-α4 | ⬜ | **Monthly Trade APIのstatus統一**。Start: 現行`is_pending=true`動的生成(monthly_trade_impl.py:793-954)。Goal: 既存pending機構の出力をT-α1のstatus契約へ載せ替え(is_pendingは後方互換で残す)。挙動不変+status field追加のみ | `backend/app/services/monthly_trade_impl.py`, `backend/app/api/monthly_trade.py` | T-α1 | `pytest tests/ -k monthly_trade` FAIL0/SKIP0 |
 | T-α5 | ⬜ | **/api/mtdの系列純度是正**。Start: Open系列に最終確定日Close/Open比を使う`is_preliminary=true`行が存在(mtd_returns.py:100-208)=設計書が「純度違反の暫定ハック」と認定。Goal: Open系列のprovisionalをT-α2のopen解決へ置換し、Close/Open比借用コードを削除。両系列のMTDがそれぞれ純系列で返る | `backend/app/services/mtd_returns.py` | T-α2 | `pytest tests/ -k mtd` FAIL0/SKIP0 |
 | T-α6 | ⬜ | **cacheのpending非混入検証**。Start: precomputed_rawはconfirmed成分のみ保持が設計(§3.4)。Goal: cache書込み経路にpending行が入らないことのassertion+テスト(pending行を含む応答を書き込もうとするとエラー) | `backend/app/api/monthly_returns.py`, `backend/app/api/monthly_trade.py`のcache書込み箇所 | T-α3,T-α4 | `pytest tests/ -k cache_no_pending` FAIL0/SKIP0 |
 | T-α7 | ⬜ | **Dashboard 2スロットのデータ供給**。Start: 設計書§3.5(現在の保有=効力中構成/次回リバランス=計算済み・施行待ちシグナル)。Goal: 既存dashboard系APIの応答に`current_holdings`(効力中)と`next_rebalance`(decision済み未施行。なければnull)を分離して返すfield追加。既存fieldは不変 | dashboard系API 1ファイル(実装時に特定・報告) | T-α1 | `pytest tests/ -k dashboard_slots` FAIL0/SKIP0 |
+| T-α8 | ⬜ | **Open欠損Close代用の全数sweep(v2.0で細分化予定)**。Start: 設計書§3.3(系列純度の適用範囲=全経路)+家老一次特定(ticker_returns.py:42,208-209・component_price_cache.py:113-115・recalculate_fof.py:630・monthly_returns_calculator.py:657,724-729・metrics/API等)+**cmd_4247偵察AC2の全数列挙**。Goal: 全代用箇所を(i)純度違反=修正 (ii)歴史データ政策(Open系列の適用開始境界・fail-visible)へ分類し、箇所ごとの修正サブタスクへ分割する(分類なき一括除去は禁止)。本行はcmd_4247報告受領後にv2.0で箇所別サブタスク群へ置換される | cmd_4247列挙結果に依存(複数ファイル) | cmd_4247成果+T-α2 | 分類表の全数一致(代用箇所数=分類済み数) |
 
 ## Lane β: FE表示 — 設計書§3.5(T-β1以外はT-α1のAPI契約後)
 
@@ -67,7 +68,7 @@ flowchart LR
 
 | ID | St | タスク(Start→Goal) | 影響範囲 | 依存 | 検証コマンド |
 |---|---|---|---|---|---|
-| T-γ1 | ⬜ | **子PF日次NAV構成関数**。Start: ticker再帰展開の既存実装(price_ratio_impl.py:1096-1112)+設計書§2.3のNAV定義(**自己金融型chain-link連続系列**: `NAV(t+1)=NAV(t)×(1+r(t→t+1))`、rは当該日に効力を持つ構成のリターン。静的バスケット評価は不適格)。Goal: `build_child_daily_nav(pf_id, date_range)`がpricesとexpanded weightsから日次NAV系列を返す純関数(nested再帰対応)。fixture必須2件: (1)小PF(2ticker)の手計算全日一致 (2)**子のexecution boundaryを跨ぐ期間で人工ジャンプなし**(境界日のNAV連続性assert) | 新規1ファイル+テスト | なし | `pytest tests/ -k daily_nav` FAIL0/SKIP0 |
+| T-γ1 | ⬜ | **子PF日次NAV構成関数**。Start: ticker再帰展開の既存実装(price_ratio_impl.py:1096-1112)+設計書§2.3のNAV定義(**自己金融型chain-link連続系列**: `NAV(t+1)=NAV(t)×(1+r(t→t+1))`。**施行日のrは2区間の積**=`r_旧構成(前日Close→当日Open)×r_新構成(当日Open→当日Close)`。単一weightの施行日全体適用は禁止。静的バスケット評価は不適格)。Goal: `build_child_daily_nav(pf_id, date_range)`がpricesとexpanded weightsから日次NAV系列を返す純関数(nested再帰対応)。fixture必須3件: (1)小PF(2ticker)の手計算全日一致 (2)**子のexecution boundaryを跨ぐ期間で人工ジャンプなし**(境界日のNAV連続性assert) (3)**施行日の2区間積の手計算一致**(旧構成と新構成が異なるfixture) | 新規1ファイル+テスト | なし | `pytest tests/ -k daily_nav` FAIL0/SKIP0 |
 | T-γ2 | ⬜ | **NAV上のmomentum計算adapter**。Start: standard窓ルール実装(momentum_cache.py:79-93/212-230)。Goal: T-γ1のNAV系列へ**同一の窓関数を呼ぶだけ**のadapter(窓ロジックのコピー実装禁止=既存関数を呼ぶ)。standard PFに適用すると既存momentumと完全一致するテストPASS | 新規1ファイル+テスト | T-γ1 | `pytest tests/ -k nav_momentum` FAIL0/SKIP0 |
 | T-γ3 | ⬜ | **dual replay道具(readonly)**。Start: S-lane dual replayの先例(v5.22)。Goal: 全FoF×全判断日を旧入力(月次擬似価格)/新入力(日次NAV)の2系で再走し、score/rank/selected/signalの差分全数表CSVを出力するスクリプト。本番write=0 | 新規スクリプト1本 | T-γ2 | スクリプト実行で全FoF×全判断日の行数=母集団一致+write0証明 |
 | T-γ4 | ⬜ | **差分分類レポート**。Start: T-γ3のCSV。Goal: 差分を(不変/是正由来変化)に分類し件数・PF別内訳のレポートmd生成。**完了時に殿へ提示(γ5の裁可材料)** | 新規レポートmd | T-γ3 | 分類合計=差分総数の恒等式PASS |
@@ -114,5 +115,6 @@ flowchart LR
 
 ## 改訂履歴
 
+- v1.2 (2026-08-09 12:25): 家老先行BLOCKER 3件(blt_121927)反映 — T-α2を共通評価日契約へ書換え(銘柄別独立backward解決の禁止・(共通評価日,銘柄別価格map)返却・欠損=ERROR)、T-γ1へ施行日2区間積定義+fixture追加(旧構成prevClose→Open × 新構成Open→Close)、T-α8新設(Open欠損Close代用の全数sweep。cmd_4247列挙待ち・分類なき一括除去禁止)。タスク数26→27。正本参照をv6.11へ更新
 - v1.1 (2026-08-09 12:06): T-γ1へ設計書v6.10のchain-link NAV定義を反映(自己金融連続系列+境界跨ぎ人工ジャンプなしfixture必須化。家老指摘伍→殿裁可12:03)。正本参照をv6.10へ更新
 - v1.0 (2026-08-09 11:50): 初版(将軍直轄)。設計書v6.9(裁定論点ゼロ)から26タスク・6レーンへ分解。粒度=1タスク1commit・二値Goal・検証コマンド固定・SEALED2件明示
