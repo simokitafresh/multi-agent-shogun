@@ -1,5 +1,5 @@
 <!-- gist-master: d23c8d202b0e99b0007ef77a2d14d39a dm-monthly-return-design-v6_20260809.md -->
-# DM-Signal 月次リターン設計書 v6.2 — 営業日ベース時間軸+6層分離
+# DM-Signal 月次リターン設計書 v6.7 — 営業日ベース時間軸+6層分離
 
 > **位置づけ**: 殿最優先下知2026-08-09 03:43(原文=`docs/research/dm-monthly-return-first-principles-original_20260809.md`・改変禁止)+殿設計是正指示2026-08-09 09:50(営業日ベース時間軸)に基づく再構築版設計書。**旧v5.22(`docs/research/dm-monthly-trade-bug-asis-tobe-5w1h_20260802.md`)は事故対応・migration・auditの証跡正本として保持し変更しない**。前提知識ゼロのLLMが本書だけで§1-§3の通常モデルを理解できることを設計要件とする。
 > **状態**: 設計案(殿裁定待ち論点=§7の2件のみ)。**実装・実装起票・deployは殿の別途下知まで禁止**。
@@ -117,8 +117,8 @@ flowchart TD
 
 1. **Return = EndValue / StartValue − 1**。それ以上の数学はない。複雑なのは計算式ではなく周辺状態(Start/Endがいつ成立するか・どのholdingが効力を持つか・入力がpendingかconfirmedか・壊れた履歴の復元)であり、**この複雑性をreturn engine本体へ押し込まない**。
 2. **monthly_returnの意味(一意)**: **当月のexecution boundary→翌月のexecution boundaryの実保有期間成績を、当月ラベルYYYY-MMへ帰属させた値**である(下記「Q12回答」)。市場カレンダー月の成績ではない。
-3. **execution boundary**: 全ての暦月に必ず1つ。保有切替がある月=切替が実際に効力を持った取引日。切替がない月=当月の月初(初回取引日。RULE06月次リセットの効力日=殿裁定2026-08-03 02:14、drift変更なし)。**切替なし月はexecution boundaryが月初と一致するが、これは特殊ケースの一致であり定義の同一視ではない。**
-4. **系列分離**: Close系列=境界日のclose同士、Open系列=境界日のopen同士。確定returnにおいて混在禁止(RULE09)。
+3. **execution boundary**: 全ての暦月に必ず1つ。保有切替がある月=切替が実際に効力を持った取引日。切替がない月=当月の月初(初回取引日。RULE06月次リセットの効力日=殿裁定2026-08-03 02:14、drift変更なし)。**切替なし月はexecution boundaryが月初と一致するが、これは特殊ケースの一致であり定義の同一視ではない。** **将来の規範(殿裁定2026-08-09 11:07)**: 施行日=**シグナル計算後の最初の取引日に固定**する。遅延施行は正規状態ではなく検知すべき異常(ERROR側)。歴史の遅延実例(2022-04の4/4)は§4の事実として保持し、書き換えない。
+4. **系列分離**: Close系列=境界日のclose同士、Open系列=境界日のopen同士。確定returnにおいて混在禁止(RULE09)。**主従(殿裁定2026-08-09 11:07)**: **Open系列=主**(規範執行シミュレーションの体験系列 — 計算日後の初回取引日の寄付きで執行する仮想投資家の実体験)、Close系列=副(慣行・比較用)。**FE表示デフォルト=open to open**へ変更する(従来のClose優先表示からの変更はmigration対象)。
 5. **gapゼロ**: 連続する計算期間は**同一の境界時点を共有し、市場時間上のgapを作らない**(2022-04実例: 4/1→4/4の騰落は「2022-03」期間が吸収)。※保証されるのは時点の共有であり、境界でholdingsが変わるため「終点価格=起点価格」という数値同一性ではない。
 6. **momentum分離**: Standard PFのmomentum判定は市場カレンダー(概念2)の住人 — 終点=月末(最終取引日)の確定価格、始点=lookback依存の営業日価格。**今回変更しない**(現行実装=裁定と一致)。FoFのsignal差は「momentum algorithm変更」ではなく「子PFのmonthly return系列是正によるinput変化の二次効果」。
 7. **一次データ不可侵**: pricesは事実のみ。存在しない営業日・価格の行を作らない。仮計算値と仮の市場価格は別物。
@@ -127,7 +127,7 @@ flowchart TD
 
 ### Q12回答: monthly_returnとは何か(実装前に固定すべき一点)
 
-**C: execution boundary間の実保有期間成績をYYYY-MMへ帰属させた値**。根拠: ①殿裁定§0.6(区間=境界日→翌月境界日・空白ゼロ、実例2022-03≈+13.34%は4/4まで延長した値) ②生成コード現物=boundary解決→区間return→year_monthへUPSERT(cmd_4246 §2.2) ③RULE06毎月リセットの効力日が期間起点。**市場カレンダー月の成績(A)はsymbol層のticker_monthly_returnsが担う** — システム内にAとCの2意味論が共存し、PF層=C・ticker層=A・momentum=市場カレンダー(A空間)と住み分ける。この共存の明示こそがv5系の混乱(「月中トレード」誤認・境界と月初の混同)の再発防止である。
+**C: execution boundary間の「規範執行シミュレーション上の保有期間」の成績を、YYYY-MMへ帰属させた値**。**「実保有」とはバックテストシミュレーションの話であり、ユーザーが実際に売買したかは原理的に観測不能**(殿明確化2026-08-09 11:02) — 本値は「規範(シグナル計算→初回取引日の寄付きで執行)通りに行動する仮想投資家」のシミュレーション成績である。根拠: ①殿裁定§0.6(区間=境界日→翌月境界日・空白ゼロ、実例2022-03≈+13.34%は4/4まで延長した値) ②生成コード現物=boundary解決→区間return→year_monthへUPSERT(cmd_4246 §2.2) ③RULE06毎月リセットの効力日が期間起点。**市場カレンダー月の成績(A)はsymbol層のticker_monthly_returnsが担う** — システム内にAとCの2意味論が共存し、PF層=C・ticker層=A・momentum=市場カレンダー(A空間)と住み分ける。この共存の明示こそがv5系の混乱(「月中トレード」誤認・境界と月初の混同)の再発防止である。
 
 ### §1.1 前提知識(自己完結)
 
@@ -151,6 +151,7 @@ calculate_return(start_input, end_input, holdings) = end_value / start_value −
 
 - pending用の別計算式を作らない。provisional/MTD/historical calculatorという分岐は禁止。**same engine, different input certainty**。
 - 現物根拠(cmd_4246): 現行MTDは既に同一`calculate_monthly_return`で動的再計算しており、実装距離は近い。
+- **FoFの期間合成(概念確定2026-08-09 11:00・家老概念質問への回答)**: 期間境界はPFごとに**自分のexecution boundaryのみ**が決める。子PFは親にとって「価格系列を持つ一つの資産」であり、子の内部切替(子自身の施行日)は子の擬似価格の**値の動き**として親へ届く — **期間としてではない**。子のmonthly_return期間をそのまま親へ合成しない。合成の正しさは恒等式(構成weight×子PF確定値=親月次)が機械検査する(§5)。層分離(L0→L1→L2/L3の順に確定)が必要なのは、子の値が確定しないと親の値が定義できないため。momentum二次効果とも一貫: 子系列の是正は親のmomentum**入力**を変え得るが、親の期間境界・momentum窓の**定義**は不変。
 - **通常経路の分岐の全量** = 系列(Close/Open)×入力確定度(confirmed/provisional)の直積のみ。これで説明できない分岐は§4/§5からの漏出=削除対象。
 - 通常運用の理解に必要な概念は**7つ**まで: 取引日系列・market month start/end・execution boundary・holdings・price series・input certainty・single engine。ledger resolver・anchor・oracle・checkpoint・historical backfillを通常経路の説明へ持ち込まない。
 
@@ -174,6 +175,15 @@ calculate_return(start_input, end_input, holdings) = end_value / start_value −
 | **ERROR** | 到着済みであるべき入力の欠損(holding_signal欠損・weights空・必須過去価格欠落・config破損) | fail-visible | pendingで握りつぶさない |
 
 START_WAITINGとPENDING_VALUEの分離が本設計の要: 前者は「期間が始まっていない」(値を出せば捏造に近づく)、後者は「始まったが終わっていない」(値を出さなければUIが不当に消える)。v6.0の単一PENDING_EXPECTEDはこの2つを潰していた(§6是正一覧#3)。status名・実装方式は固定しない — 意味論の分離が要件であり、表現は§3.4の最小提案に従う。
+
+**保有の決定は全域(total)である — holding=Noneは理論上存在しない(殿指摘2026-08-09 11:07)**: 決定関数は毎月必ず「何かを選ぶ」(リスク資産、または防御資産・明示的Cash)。RULE06が同一シグナル月ですらリセットを執行する以上、「決定が無い月」は定義上あり得ない。ledgerはappend-onlyの決定記録であり、決定の不在(None)は「何も持たない決定」ではなく「記録の喪失」しか意味できない:
+
+| 状態 | 実体 | 扱い |
+|---|---|---|
+| Cash/防御月 | 明示的決定(signalに値がある) | **正規**。return=0%(Cashの場合)または防御資産のreturn |
+| holding=None | 決定の不在 | **理論上存在しない。観測=即ERROR・fail-visible・調査対象** |
+
+Noneの出現経路は3つで全てERROR側: ①データ破損(実例: 2026-07-04のSIGNAL CHANGE ALERT洪水「QQQ→None」「GLD,XLU→None」=確定holdingの破壊の症状) ②計算失敗(L5 failed群の家系) ③未開始の誤扱い(実運用開始前は「行が無い」が正しく、None行を作るのは誤り)。この整理はNoneを「退避かもしれない」と好意的解釈で握りつぶす余地を消す — fallback禁止原則の保有版である。
 
 ### §3.2 実例タイムライン
 
@@ -199,7 +209,7 @@ START_WAITINGとPENDING_VALUEの分離が本設計の要: 前者は「期間が�
 
 ### §3.5 FE表示リファレンス(殿承認2026-08-09 10:47 — 具体2時点のあるべき表示)
 
-前提例: 8/1(土)=calendar rollover+月初cron(シグナル計算日)、8/3(月)=8月初回取引日=施行日。
+前提例: 8/1(土)=calendar rollover+月初cron(シグナル計算日)、8/3(月)=8月初回取引日=施行日。※本節のリターン数値は例示。**表示デフォルト系列=open to open**(殿裁定11:07、§1-4)であり、以下の表のリターン列は既定でOpen系列値を指す(Close系列はトグルで副表示)。
 
 **時点A: 8/1のcron fullrecalculate直後**(8月シグナル=算出済み、施行=未発生、7月=暫定、8月=開始待ち。**どこにも異常なし — エラー・N/A・404を見せたら設計の負け**)
 
@@ -245,7 +255,7 @@ START_WAITINGとPENDING_VALUEの分離が本設計の要: 前者は「期間が�
 今回事故の複雑性は全てここに住む。**正本・全証跡=旧v5.22**(本節は要点のみ)。
 
 ### §4.1 historical boundary resolver
-歴史データからexecution boundaryを**導出**する機構(§1の定義とは別物): verification付き導出式=`verified(ledger.effective_start_date == expanded実切替日) ? ledger値 : expanded実切替日`。無条件ledger優先・単純COALESCE禁止・root日付不採用(2022-04実証)。理由=**§0概念表#3と#4の混同の歴史**: 歴史backfillが施行日(`effective_start_date`=#4)を計算日(`rebalance_decision_date`=#3)の複写で埋めたため、歴史15,212行のledger値が信頼できない。将来月は施行時に効力日(#4)を直接記録すればresolver不要(cmd_4246: backfill eventを読み側resolverがevent_type区別なく通常候補へ入れる混入も確認→source/provenance分離が必要)。
+歴史データからexecution boundaryを**導出**する機構(§1の定義とは別物): verification付き導出式=`verified(ledger.effective_start_date == expanded実切替日) ? ledger値 : expanded実切替日`。無条件ledger優先・単純COALESCE禁止・root日付不採用(2022-04実証)。理由=**§0概念表#3と#4の混同の歴史**: 歴史backfillが施行日(`effective_start_date`=#4)を計算日(`rebalance_decision_date`=#3)の複写で埋めたため、歴史15,212行のledger値が信頼できない。**本resolverは歴史専用であることが裁定で確定した(殿裁定2026-08-09 11:07: 将来の施行規範=計算後最初の取引日に固定・遅延=異常)** — 将来月には適用せず、施行時に効力日(#4)を直接記録する(cmd_4246: backfill eventを読み側resolverがevent_type区別なく通常候補へ入れる混入も確認→source/provenance分離が必要)。
 
 ### §4.2 stale ledger失効(修正済み)
 effective_end=NULL無期限適用バグ(異常25PF)は修正deploy済み(run224完走・境界テスト121件PASS)。
@@ -324,13 +334,23 @@ effective_end=NULL無期限適用バグ(異常25PF)は修正deploy済み(run224�
 
 ---
 
-## §7 殿裁定が必要な論点(最小2件)
+## §7 裁定状況(残る裁定論点=1件)
 
-1. **monthly_return意味論の確認**: §1のQ12回答=**C(execution boundary間の実保有期間成績をYYYY-MMへ帰属)**でよいか。既存裁定(§0.6)の再確認であり新裁定ではないが、全設計の土台ゆえ固定の確認を乞う。
-2. **Open系列のpending方式**: 案A=系列純度厳守(provisional end=as_of以前の最新利用可能Open。欠点: 当日Closeまでの値動き不反映) / 案B=pending表示は系列別returnでなく「provisional valuation」1本(最新確定価格ベース。Open/Close確定returnとは別ラベル。現行`/api/mtd`のis_preliminary運用に近い)。※その他の旧未決(Close provisional source・DB永続化方式・未開始月表示)は§3.3-§3.4の設計既定値として吸収済み — 既定値の否認があれば申されよ。
+**解決済み(2026-08-09 11:02-11:07の殿裁定)**:
+- ~~monthly_return意味論の確認~~ → **確定**: C=規範執行シミュレーション上の保有期間の成績をYYYY-MMへ帰属(§1 Q12回答)。ユーザー実売買は観測不能=本値はシミュレーション成績
+- 施行日の将来規範 → **確定**: シグナル計算後の最初の取引日に固定。遅延=検知すべき異常(§1-3)
+- 系列の主従 → **確定**: Open=主(体験系列)・Close=副。**FE表示デフォルト=open to open**(§1-4)
+- 退避月 → **確定**: Cash/防御=明示的決定で正規、holding=None=理論上不在・観測即ERROR(§3.1)
+
+**残る裁定論点(1件)**:
+1. **Open系列(主系列)のpending方式**: 案A=系列純度厳守(provisional end=as_of以前の最新利用可能Open。欠点: 当日Closeまでの値動き不反映) / 案B=pending表示は系列別returnでなく「provisional valuation」1本(最新確定価格ベース。Open/Close確定returnとは別ラベル。現行`/api/mtd`のis_preliminary運用に近い)。Openが主系列+表示デフォルトとなったため優先度が上がった。
+
+**保留事項(殿指示により継続検討・実装しない)**:
+- **バックテスト期間とライブ期間の区別**(殿2026-08-09 11:07): 極めてセンシティブな問題。今後も改修があるため考え直しを要する。provenance分離の実装機構(§4.1のsource分離)は存在するが、区別の意味論・表示方針は殿の継続検討に委ねる
 
 ## 改訂履歴
 
+- v6.7 (2026-08-09 11:1x): 殿とのchat質疑(11:02-11:07)の裁定群を焼込み — ①Q12を「規範執行シミュレーション上の保有期間」へ精密化(実保有=シミュレーション・ユーザー実売買は観測不能) ②施行日の将来規範=計算後最初の取引日に固定・遅延=異常(§1-3、§4.1 resolver歴史専用が裁定確定) ③Open=主系列・Close=副+FE表示デフォルト=open to open(§1-4) ④holding=None理論不在の表とNone出現3経路=全てERROR(§3.1) ⑤FoF期間合成の概念確定(親の期間は親のboundaryのみ・子は価格系列を持つ資産=§2.1) ⑥§7を裁定状況へ再構成(残る裁定論点=Open pending方式1件、保留=バックテスト/ライブ区別)。タイトル版数をv6.7へ是正(v6.3-v6.6は履歴のみ更新でタイトル未更新だった)
 - v6.6 (2026-08-09 10:5x): 「本書の読み方」凡例を冒頭へ新設(殿指示10:50「他CLI・他モデル・記憶のないLLM・人間も読む。利他の精神で誤解を生まない形へ」) — 内部用語(殿・下知■N・cmd/run ID・fullrecalculate・RULE番号)+状態記号⏳◧✓の凡例+ティッカー例示注記
 - v6.5 (2026-08-09 10:48): §3.5 FE表示リファレンス新設(殿承認済みchat検証10:41-10:47の焼込み) — 8/1 cron直後と8/5の2時点のMonthly Trade+Dashboardワイヤーフレーム、規範4点(シグナル即表示・暫定バッジ・保有2スロット分離・⏳と◧の区別)、遷移2つ(⏳→◧・◧→✓)の単一トリガー=施行日価格到着
 - v6.4 (2026-08-09 10:4x): §6.1概念混同→実害の対応表8件を新設(殿下問10:37への回答焼込み)
