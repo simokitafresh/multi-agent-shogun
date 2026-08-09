@@ -18,6 +18,22 @@ def command_from(data, cmd_id):
     if isinstance(commands, list):
         return next((x for x in commands if isinstance(x, dict) and str(x.get("id")) == cmd_id), None)
 
+def _report_identity(report, snapshot):
+    """Read the immutable report-generation identity, if the deployer supplied it."""
+    nested = snapshot.get("report_identity") if isinstance(snapshot.get("report_identity"), dict) else {}
+    root = report.get("report_identity") if isinstance(report.get("report_identity"), dict) else {}
+    def value(source, *names):
+        for name in names:
+            if str(source.get(name) or "").strip():
+                return str(source[name]).strip()
+        return ""
+    return {
+        "report_id": (value(snapshot, "report_id") or value(nested, "report_id"), value(report, "report_id") or value(root, "report_id")),
+        "version": (value(snapshot, "report_identity_version", "identity_version") or value(nested, "report_identity_version", "identity_version"), value(report, "report_identity_version", "identity_version") or value(root, "report_identity_version", "identity_version")),
+        "fingerprint": (value(snapshot, "report_fingerprint", "report_generation_fingerprint", "identity_fingerprint", "fingerprint") or value(nested, "report_fingerprint", "report_generation_fingerprint", "identity_fingerprint", "fingerprint"), value(report, "report_fingerprint", "report_generation_fingerprint", "identity_fingerprint", "fingerprint") or value(root, "report_fingerprint", "report_generation_fingerprint", "identity_fingerprint", "fingerprint")),
+    }
+
+
 def _snapshot_command(root, report, cmd_id):
     snapshot = report.get("task_contract_snapshot") if isinstance(report, dict) else None
     if not isinstance(snapshot, dict):
@@ -52,9 +68,22 @@ def _snapshot_command(root, report, cmd_id):
         "ac_version": (str(report.get("ac_version_read") or ""), task.get("ac_version")),
         "report_id": (str(report.get("report_id") or ""), task.get("report_id")),
     }
-    for key, (expected_value, actual_value) in identities.items():
-        if not expected_value or str(actual_value or "") != expected_value:
-            raise ValueError(f"immutable task/report identity mismatch: {key}")
+    # A terminal-idle worker may already carry a later assignment.  The old
+    # report remains valid only when its deploy-time report identity is
+    # self-consistent; a same-generation mismatch remains fail-closed.
+    core_matches = (
+        report_task == str(task.get("task_id") or "")
+        and cmd_id == str(task.get("parent_cmd") or "")
+        and str(report.get("ac_version_read") or "") == str(task.get("ac_version") or "")
+    )
+    if core_matches:
+        for key, (expected_value, actual_value) in identities.items():
+            if not expected_value or str(actual_value or "") != expected_value:
+                raise ValueError(f"immutable task/report identity mismatch: {key}")
+    else:
+        identity = _report_identity(report, snapshot)
+        if not all(expected and actual and expected == actual for expected, actual in identity.values()):
+            raise ValueError("immutable report-generation identity missing or mismatched")
     return {"acceptance_criteria": criteria, "command": purpose, "project": project}, task_path
 
 # Commands the system generates for itself never pass through cmd_save, so they
