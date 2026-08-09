@@ -1,53 +1,4 @@
 insights:
-- id: INS-20260809-193233810-cec1
-  ts: "2026-08-09T19:32:33+09:00"
-  insight: "semantic_index_update新概念候補: discussion:速くなりましたはナンセンス。必要最小限は残しているか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-09T19:32:51+09:00"
-- id: INS-20260809-193333568-5053
-  ts: "2026-08-09T19:33:33+09:00"
-  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
-  priority: "high"
-  source: "self_retro"
-  fix_known: true
-  status: resolved
-  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
-  verify_command: "grep -Fq 'ddb17f588401a8f4807811895e55a230717648420ae3af0f7dac9df01fbc79eb' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
-  insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 40
-  last_seen: "2026-08-10T02:35:15+09:00"
-  verification:
-    status: "passed"
-    exit_code: 0
-    output: ""
-  resolved_reason: "fix_known=true; primary self_retro event verified; existing cmd_4123 context confirms review_notify is a real signal and SG7 validation remains preserved; current self_retro review_notify records=604 with unique_event_ids=604 and duplicate_event_ids=0; no new implementation or decision_candidate required"
-  action_artifact: "logs/self_retro.jsonl#event_id=ddb17f588401a8f4807811895e55a230717648420ae3af0f7dac9df01fbc79eb;docs/research/cmd_4123_self_retro_signal.md;context/infrastructure.md"
-  resolved_at: "2026-08-10T00:02:21+09:00"
-- id: INS-20260809-193655423-96df
-  ts: "2026-08-09T19:36:55+09:00"
-  insight: "[[comitに関する無駄なテストを排除せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=comitに関する無駄なテストを排除せよ。高速回転を意識して、完璧主義こそ最悪の行為だと気づこう"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-09T19:37:30+09:00"
-- id: INS-20260809-193657517-6f95
-  ts: "2026-08-09T19:36:57+09:00"
-  insight: "[[それだけか？忍者は六人いるぞ？過去の事例やその他の高速回転に違反するhookやgateの作成を家老は本当にしていないのか]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=それだけか？忍者は六人いるぞ？過去の事例やその他の高速回転に違反するhookやgateの作成を家老は本当にしていないのか？"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-09T19:37:30+09:00"
 - id: INS-20260809-193742814-3f66
   ts: "2026-08-09T19:37:42+09:00"
   insight: "[[スループットを意識せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=スループットを意識せよ。ボトルネックの位置を動かしてもスループットは変わらないinbox2"
@@ -151,16 +102,19 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '835fbc313147c59941ffa24ef7211860bdb7fcbe6fff8c7a7f3df238739ef503' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 33
-  last_seen: "2026-08-10T02:33:21+09:00"
+  occurrence_count: 34
+  last_seen: "2026-08-10T02:54:02+09:00"
   verification:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "既存のcompletion_pipeline是正を一次確認済み。既存commitとretro設計でcheckpointを弱めず速度改善済み。対象eventのverify_commandもrc=0。"
+  action_artifact: "git:d6683ff548771d7fc50af5aef7c188a88d9bf33f;docs/research/retro-completion-fail4-hayate.md"
+  resolved_at: "2026-08-10T02:52:09+09:00"
 - id: INS-20260809-202258574-09a8
   ts: "2026-08-09T20:22:58+09:00"
   insight: "[[殿下知2026 08 09 20 12『DM Signal 月次リターン再設計 実装タスクリストを開始しよう』]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿下知2026-08-09 20:12『DM-Signal 月次リターン再設計 実装タスクリストを開始しよう』。実装封印を解除し、タスクリスト正本(/mnt/c/tools/multi-agent-shogun/docs/research/dm-monthly-return-v6-tasklist_20260809.md、設計書は同directoryのdm"
@@ -963,3 +917,37 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-10T02:39:34+09:00"
+- id: INS-20260810-024759440-1eb4
+  ts: "2026-08-10T02:47:59+09:00"
+  insight: "[[殿下知2026 08 09 20 12 月次リターン実装フェーズ のタスクリストv2 3 T ε1]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿下知2026-08-09 20:12(月次リターン実装フェーズ)のタスクリストv2.3 T-ε1。R11(cmd_4245 FAIL-close・run231全PF履歴消失)の因果根治。mode='portfolio'再計算時にprecompute複数テーブルの一括DELETEをスキップし、生成側の期間置換UPSERTのみで更新する構造へ変更する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-10T02:50:07+09:00"
+- id: INS-20260810-024759969-97ad
+  ts: "2026-08-10T02:47:59+09:00"
+  insight: "[[T ε1実装 — mode portfolio経路の履歴一括DELETE除去 期間置換UPSERTのみへ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=T-ε1実装 — mode=portfolio経路の履歴一括DELETE除去(期間置換UPSERTのみへ)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-10T02:50:45+09:00"
+- id: INS-20260810-025007829-313e
+  ts: "2026-08-10T02:50:07+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b7tow0q1t task id tool use id toolu 01D4B8pWv7bXrLHgoz は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260810-025045981-83bc
+  ts: "2026-08-10T02:50:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:idle忍者が4名いる は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
