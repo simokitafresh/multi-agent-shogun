@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-09 cmd_4254 reviewed source boundary -->
+<!-- last_updated: 2026-08-09 cmd_4255 reviewed source boundary -->
+<!-- source_commit:a926d06c reason:cmd_4255 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=a926d06c -->
 <!-- source_commit:aca163ab reason:cmd_4254 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=aca163ab -->
 <!-- source_commit:94cb88bb reason:cmd_4253 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=94cb88bb -->
 <!-- source_commit:bf4ed6a6 reason:cmd_4241_reviewed_boundary evidence:backend/app/api/etl_trigger.py+backend/app/jobs/precompute_raw.py -->
