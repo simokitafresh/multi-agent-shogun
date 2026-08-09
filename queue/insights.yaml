@@ -105,7 +105,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4257"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現HEADのDM-Signal実コードを再確認し、dict.get(target_date)およびdict.get(context.target_date)の残存は0件（pre-commit検査コメントを除外）。TRF/MAFの過去漏れとCash 100%事故は既存の修正記録・横展開教訓により既知で、現行経路はget_momentum_value_at_date()へ是正済みのため、新規実修正・decision_candidateは不要として解決。"
+  action_artifact: "DM-Signal現物: /mnt/c/Python_app/DM-signal/backend/app/services/pipeline/blocks/trend_reversal_filter.py; /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py; /mnt/c/Python_app/DM-signal/scripts/run_precommit_checks.sh:84-112; 既存根拠: docs/research/gunshi_trf_date_mismatch_fix_20260414.md; tasks/lessons.md:L-KL052"
+  resolved_at: "2026-08-10T06:04:12+09:00"
 - id: INS-20260810-000954444-581e
   ts: "2026-08-10T00:09:54+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指摘_最速か_20260809_2337]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_X投稿取込_20260730; score=4.0) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=3.0) / infrastructure_ops(インフラ運用基盤; alias=殿指示20260715_1724_gist実装開始; score=2.7)。概念定義とaliases追加を検討せよ"
