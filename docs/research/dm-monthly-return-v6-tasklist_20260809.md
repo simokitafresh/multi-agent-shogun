@@ -1,5 +1,5 @@
 <!-- gist-master: d26e786a4da934eaa2e5863b8d31d7bd dm-monthly-return-v6-tasklist_20260809.md -->
-# DM-Signal 月次リターン再設計 実装タスクリスト v2.2
+# DM-Signal 月次リターン再設計 実装タスクリスト v2.3
 
 > **正本設計書**: `docs/research/dm-monthly-return-design-v6_20260809.md` v6.13(gist d23c8d20)。本書は設計書の実装分解であり、**仕様の正は常に設計書**。矛盾を見つけたら実装せず報告する。
 > **状態**: 準備物。**実装・deployは殿の別途下知まで開始しない**。下知後、本書のStatus列が進捗の正本となる。
@@ -19,6 +19,7 @@
 5. DB schemaの変更は本リストに**存在しない**(設計: DB=CONFIRMEDのみ保存、status列追加なし)。schema変更を提案したくなったら設計書§3.4を再読して報告せよ
 6. **検証コマンド共通前提(cmd_4247偵察§2.6で確定)**: backendのpytestは**必ずrepo rootから** `cd /mnt/c/Python_app/DM-signal && PYTHONPATH=. pytest backend/tests -k <keyword>` で実行する。`backend/`配下から実行するとconftest.py:9-13のroot-qualified plugin importが`No module named 'backend'`で失敗する。FEは `cd frontend && npm test -- --runInBand <対象testファイル>` + `npm run build`。以下の表の検証コマンドは全てこの前提の短縮表記
 7. **新keyword(-k指定)のexactテストは現在0件**(cmd_4247実測: return_status等13 keywordでno tests collected)。検証コマンドは「そのタスクで新設するテストの実行方法」であり、既存PASSの意味ではない
+8. **配備契約の固定(殿指摘2026-08-09 18:26: AC増殖によるスループット低下の禁止)**: 本書の各行(Start/Goal/影響範囲/検証コマンド)が配備時ACの**正本かつ全量**である。家老は行内容をそのままtask YAMLへ転写し、**AC・binary_check・検証手順の追加を禁止**する(安全底線=SEALED/本番無接触/可逆性のみ例外)。検証コマンドFAIL時は**同一契約のまま同一忍者で再走**し、AC増補付き再配備をしない。厳密さは各タスクの検証コマンド1点と🔒SEALED裁可の2箇所へ集中し、途中工程へ契約を足さない(殿厳命2026-07-14「厳密さは最終checkpointへ集中」の適用)。追加防御が必要と感じたら配備せず本書へ**行の修正として**提案せよ(正本は1つ)
 
 ## レーン構成と並列性(mermaid)
 
@@ -123,6 +124,7 @@ flowchart LR
 
 ## 改訂履歴
 
+- v2.3 (2026-08-09 18:30): 殿指摘18:26(家老の過剰防御AC再配備でスループット激減)を受け運用制約8「配備契約の固定」新設 — 本書の行=配備時ACの正本かつ全量、家老のAC/binary_check/検証手順の追加禁止、FAILは同一契約で再走(AC増補付き再配備禁止)、厳密点=検証コマンド1点+SEALED裁可のみ(殿厳命2026-07-14適用)。追加防御は配備でなく本書の行修正として提案
 - v2.2 (2026-08-09 15:55): **cmd_4249観点四(replay母集団)焼込みでv2.1の残gap解消** — T-γ3へ半蔵readonly実測(軍師LGTM・正本=queue/reports/hanzo_report_cmd_4249_recon4.yaml)を反映: dual replay母集団=歴史keys 8951×{old,oracle}=17902行、FoF78・判断日332・nested親53/辺189/深度4。既存PASS成果物と独立再集計の一致確認済み。nested構成はcurrent config backup時点値(歴史CSVに構成欄なし)の保留を明記。cmd_4249偵察5観点は全て焼込み完了
 - v2.1 (2026-08-09 15:40): **cmd_4249第二次偵察4報告(壱影丸・弐疾風・参才蔵・伍飛猿)の全行焼込み(殿指示15:31覚醒行動)** — (1)T-α8を3サブタスクへ展開: α8a=backend純度違反30箇所(file:line全数)、α8b=frontend26箇所、α8c=歴史政策3箇所の明文化(計59件=偵察全数と一致) (2)T-δ4を2サブタスクへ展開: δ4a=置換対象22件(共通selector=business_day_utils.py:57,64,70先行)、δ4b=期待グリッド24件の台帳化(計46件一致) (3)T-δ1a完了化(才蔵確定: producer=generator境界計算・成功後callerのledger呼出し0件・writer候補配線)+δ1bへ配線焼込み (4)T-ζ1へ本番実測期待値ソース4件+2022-04型=signals層実例ゼロ(合成fixture維持+由来注記必須化。expand層由来の可能性を保留) (5)T-ζ3(c)へholding=None本番在庫12行の折り合い設計 (6)**T-α9新設**: 進行月行のDB保存在庫(§3.4 AsIs違反)の書込み停止+掃除migration (7)T-β1へFE基盤確定(jest 30.2.0実PASS・非互換否定)。タスク数31→35(α8→3分割+α9新設+δ4→2分割、δ1a完了)。残gap=観点四(replay母集団)は配備漏れ疑いで家老へ指示済み、報告受領後に追記
 - v2.0.1 (2026-08-09 14:15): 殿指示14:09(設計書との整合覚醒確認)による不整合3件の是正 — (1)T-α2へ系列別完全性判定を明記(Open評価日=全銘柄Open充足日・Close評価日=全銘柄Close充足日・as_of系列別。設計書§3.3系列別純度維持との整合) (2)T-α3/T-α5へ単一エンジン制約を契約化(設計書§2.1: provisional/MTD専用calculator新設禁止=same engine, different input certainty) (3)T-ζ1/T-ζ3へ数値意味論を固定(設計書§5: float64・round(x,10)=round-half-even量子化後exact一致)。第4の検出事項(設計書§2.3 AsIs行番号とcmd_4247実測の別系統疑い)はcmd_4249観点壱で現HEAD突合する
