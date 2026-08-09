@@ -588,6 +588,18 @@ deploy_task_guard_worker_assignment() {
             fi
             ;;
         done|PASS)
+            # A terminal task and an idle runtime are reusable even while the
+            # immutable report awaits archive/review.  Report generation froze
+            # its task_contract_snapshot, and completed reports are preserved
+            # under command-specific filenames; keeping the worker blocked no
+            # longer protects evidence, it only removes throughput.  Runtime
+            # busy remains fail-closed below.
+            if [ "${is_idle:-false}" = true ] \
+                && [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
+                && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent"; then
+                log "TERMINAL_IDLE_REUSE: ${worker_name:-worker} ${current_status} task ${current_parent} report preserved; allowing ${incoming_cmd}"
+                return 0
+            fi
             # B26 escape hatch (将軍裁可 blt_20260725_234849): CI REDのときGATEが通らず
             # 報告がarchiveできない。その状態でこのガードが全配備を拒むと「CI修正を
             # 配備できないからCI REDが直らない」という自己矛盾で全忍者が詰む(2026-07-25実証)。

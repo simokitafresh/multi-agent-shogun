@@ -1069,6 +1069,36 @@ EOF
     [[ "$output" == *"完了済み(status=done)だが報告未archive"* ]]
 }
 
+# test_necessity: 完了報告はcommand固有ファイル+task_contract_snapshotで保全される。
+# runtime-idleの忍者をarchive待ちだけで塞がず、busy時の既存BLOCKは上の陰性対照で守る。
+@test "terminal idle worker is immediately reusable while completed report remains preserved" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_old
+task_contract_snapshot: {task_id: cmd_old, parent_cmd: cmd_old}
+verdict: PASS
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        is_idle=true
+        before=$(sha256sum "$1/queue/reports/hayate_report_cmd_old.yaml")
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new
+        after=$(sha256sum "$1/queue/reports/hayate_report_cmd_old.yaml")
+        [ "$before" = "$after" ]
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TERMINAL_IDLE_REUSE"* ]]
+}
+
 # test_necessity: archive_completed keeps a bounded number of completed reports
 # active; archive.done plus the exact terminal checkpoint must release the worker.
 @test "done task with retained report allows next cmd after exact cmd-complete terminal checkpoint" {
