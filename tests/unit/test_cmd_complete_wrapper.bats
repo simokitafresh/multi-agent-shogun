@@ -542,18 +542,18 @@ PY
 
 # test_necessity: cmd_karo_hotfix_karo_direct_gate_bypass_20260807 — karo_direct起源cmd
 # (CMD_ID=cmd_karo_*)はSG7レビューフローを経由しないためqueue/gates/<cmd>/sg7_bundle.jsonが
-# 存在しない。この不変量を固定する: cmd_karo_*はSG7バンドル必須チェックをスキップし、
+# 存在しない場合がある。この不変量を固定する: SG7なしのcmd_karo_*は必須チェックをスキップし、
 # review_two_phase(gunshi LGTM + karo ACCEPT)確認済みreport群のfingerprintから合成した
-# 64桁hexをSHOGUN_COMPLETION_GENERATIONとして採用する。
-@test "karo_direct origin cmd bypasses SG7 bundle requirement via review_two_phase fingerprint" {
+# 64桁hexをSHOGUN_COMPLETION_GENERATIONとして採用する。SG7が存在する場合は消費する。
+@test "karo_direct origin cmd consumes SG7 when present and otherwise uses review_two_phase fingerprint" {
     local gate="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
     run python3 - "$gate" <<'PY'
 import pathlib, sys
 text = pathlib.Path(sys.argv[1]).read_text()
 
-guard = text.index('[[ "$CMD_ID" != cmd_karo_* ]] && [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ]')
+guard = text.index('[[ "$CMD_ID" != cmd_karo_* ]] || [ -f "$_sg7_bundle" ]')
 sg7 = text.index("sg7_bundle_missing_or_invalid")
-assert guard < sg7, "cmd_karo_* exemption guard must wrap the SG7 bundle mandatory block"
+assert guard < sg7, "cmd_karo_* SG7-present guard must wrap bundle validation"
 
 fallback = text.index('[[ "$CMD_ID" == cmd_karo_* ]] && [ -z "${SHOGUN_COMPLETION_GENERATION:-}" ]')
 window = text[fallback:fallback + 900]
@@ -561,7 +561,7 @@ assert 'review_manifest_fingerprint' in window
 assert '^[0-9a-f]{64}$' in window
 assert 'karo_direct_completion_generation_invalid' in window
 assert 'export SHOGUN_COMPLETION_GENERATION' in window
-print("PASS: karo_direct cmds skip SG7 bundle and derive generation from review_two_phase")
+print("PASS: karo_direct cmds consume present SG7 or derive generation from review_two_phase")
 PY
     [ "$status" -eq 0 ]
 }

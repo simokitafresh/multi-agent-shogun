@@ -6961,11 +6961,12 @@ fi
 # Therefore CLEAR must never be published before that exact bundle exists and
 # validates.  Otherwise archive_completed replaces the current report with an
 # archive symlink and /cmd-complete receives an impossible instruction.
-# karo_direct起源cmd(CMD_ID=cmd_karo_*)はSG7レビューフローを経由しないため
-# バンドル自体が存在しない。review_two_phase(gunshi LGTM+karo ACCEPT)のみで
-# GATE CLEARする(cmd_karo_hotfix_karo_direct_gate_bypass_20260807)。
-if [[ "$CMD_ID" != cmd_karo_* ]] && [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ]; then
-    _sg7_bundle="$GATES_DIR/sg7_bundle.json"
+# karo_direct起源cmd(CMD_ID=cmd_karo_*)は通常SG7を持たないためlegacy fallbackを
+# 維持する。一方、正式レビューでSG7が生成済みならcmd_karo_*でもその正本を消費し、
+# worker再配備後にtask検出が0件でもcompletion generationを失わない。
+_sg7_bundle="$GATES_DIR/sg7_bundle.json"
+if [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ] \
+    && { [[ "$CMD_ID" != cmd_karo_* ]] || [ -f "$_sg7_bundle" ]; }; then
     if [ ! -f "$SCRIPT_DIR/scripts/review_bundle.py" ] \
         || ! _SG7_SPEC_JSON=$(python3 "$SCRIPT_DIR/scripts/review_bundle.py" consume \
             --cmd "$CMD_ID" --bundle "$_sg7_bundle" --expect-verdict APPROVE); then
