@@ -32,6 +32,8 @@
 
 # --- セットアップ ---
 
+# test_necessity: informational types are auto-acknowledged while the
+# actionable gate_clear completion event remains unread for self-drive.
 @test "info auto-ack digests safe types and preserves work types" {
     root="$BATS_TEST_TMPDIR/autoack"
     mkdir -p "$root/scripts/lib" "$root/queue/inbox" "$root/logs"
@@ -39,7 +41,7 @@
     cp "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$root/scripts/lib/lock_path.sh"
     python3 - "$root/queue/inbox/alpha.yaml" <<'PY'
 import sys,yaml
-safe=['info','gate_clear','heartbeat','status_update','retro_answer','low']
+safe=['info','heartbeat','status_update','retro_answer','low']
 work=['task_assigned','task_supplement','verify_request','cmd_new','escalation','recovery','report_received','task_failed']
 msgs=[]
 for i,t in enumerate(safe+work):
@@ -50,11 +52,11 @@ PY
     [ "$status" -eq 0 ]
     run python3 - "$root/queue/inbox/alpha.yaml" "$root/logs/inbox_info_digest.jsonl" <<'PY'
 import json,sys,yaml
-d=yaml.safe_load(open(sys.argv[1])); safe=d['messages'][:6]; work=d['messages'][6:]
+d=yaml.safe_load(open(sys.argv[1])); safe=d['messages'][:5]; work=d['messages'][5:]
 rows=[json.loads(x) for x in open(sys.argv[2])]
-assert len(rows)==6 and all(m['read'] for m in safe) and all(not m['read'] for m in work)
+assert len(rows)==5 and all(m['read'] for m in safe) and all(not m['read'] for m in work)
 assert all(set(r)=={'msg_id','from','type','timestamp','content'} for r in rows)
-print('digest=6 auto_ack=6 work_unread=8 false_positive=0 nudge_eligible=8')
+print('digest=5 auto_ack=5 gate_clear_unread=1 work_unread=9 false_positive=0 nudge_eligible=10')
 PY
     [ "$status" -eq 0 ]
 }
