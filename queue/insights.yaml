@@ -222,7 +222,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4260"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で現行deploy_task防御に吸収済み。deploy_task.sh L127のWSL2 NTFS依存ログ抑制、L324-382の/tmp lock経路と300秒期限を確認し、cmd_4260実測deploy_sec=48かつGATE CLEAR(L452)で30秒timeout再発を確認できなかったため"
+  action_artifact: "scripts/deploy_task.sh:L127-139,L324-382;logs/gate_metrics.log:L452(cmd_4260 deploy_sec=48 GATE CLEAR)"
+  resolved_at: "2026-08-10T06:32:46+09:00"
 - id: INS-20260810-004622422-0752
   ts: "2026-08-10T00:46:22+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4260; matched=除去,経路; current_pattern=月次リターンT-α5 — mtd応答の系列純度是正(Close比借用の除去と両到達経路の置換); candidate_level=4; candidate=hayate cmd_2284でresult.details上書き時に旧continuation行が残留しYAML破損。手動4行削除が必要だった; source=gunshi_gp_tracker.yaml"
