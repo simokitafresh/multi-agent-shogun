@@ -354,7 +354,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4261"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存のGP-196構造変換が実装済みで新規修正不要。cmd_1921由来候補は現行防御で解消済み"
+  action_artifact: "scripts/gates/gate_report_autofix_main.py; scripts/report_field_set.sh; docs/research/gunshi_idle_lu_dict_pattern_20260415.md"
+  resolved_at: "2026-08-10T08:09:19+09:00"
 - id: INS-20260810-011545167-b34d
   ts: "2026-08-10T01:15:45+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4261_T-δ4a実装]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=commit a4ababd16; score=4.7) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=4.1) / infrastructure_ops(インフラ運用基盤; alias=gist_2232467c_P1a-2_共通maintenance_lock; score=3.7)。概念定義とaliases追加を検討せよ"
