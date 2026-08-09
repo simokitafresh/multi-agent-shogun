@@ -1,5 +1,7 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-10 cmd_karo_ci_fix_dm_signal_run_31326903152 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_4283 reviewed source boundary -->
+<!-- source_commit:ec72faa2 reason:cmd_4283 reviewed source boundary evidence:cmd_complete_gate -->
+<!-- source_commit:d62065b4 reason:cmd_4282 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:8e30a242 reason:cmd_karo_ci_fix_dm_signal_run_31326903152 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=8e30a242 -->
 <!-- source_commit:a926d06c reason:cmd_4255 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=a926d06c -->
 <!-- source_commit:aca163ab reason:cmd_4254 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=aca163ab -->
@@ -323,6 +325,7 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - L900: subprocess moduleはpackage名でなくapp-dirで探索根を固定する（cmd_karo_ci_red_dm_p4_uvicorn_import）
 - L901: 永続helperはchecked-in source同期後に実行する。live PIDだけのhealthy判定とpgserver cleanupのno-opに注意（cmd_karo_ci_fix_ga256_cmd3907）
 - L943: runner等で成果byteが変わるとprepare fingerprintが失効する。検証完了後にprivate prepareして直ちにscope commitする順序を守れ（cmd_karo_recon_cx_oracle_lane_preflight_20260803）
+- L947: scope fingerprintはprivate-index所有path集合と同じ集合で算出する。集合が異なると正当commitがBLOCKする（cmd_karo_recon_dx_transaction_topology_preflight_20260803）
 <!-- lesson-sort 2026-04-27: 40件振り分け(30件移動+5件削除+2件重複除去+3件既存確認)
   §6-7: L634,L636,L357,L261 (L645既存,L637≈L638重複削除)
   §9: L136,L137,L138,L545,L589,L649
@@ -579,6 +582,11 @@ import metrics_research_engine as MRE
 <!-- GStack/GBrain takeaway #8 (パターン認識表 — バグ署名→初期仮説6パターン) -->
 > 偵察開始時: 症状を見て下表の「共通パターン」「DM-signal固有パターン」に当てはめ、初期仮説を立ててから調査に入れ。想像で進むな — 仮説1つに絞って検証→結果見て次仮説へ。
 - L935: 要調査を許す分類ACは全行要調査でも形式PASSになる。四分類和=N AND 要調査=0 AND 証拠欠損=0を同一gateで強制せよ（cmd_4220）
+- L946: preflight母数の文言と実走値(対象集合SSOT・assert・表示件数)は同一計数値から生成する。文言78vs実走93の乖離実例あり（cmd_karo_recon_b4_route_sequence_harness_rc_20260803）
+- L950: logical as_ofとsuccessor load-throughを同一時計にしない。入力ロード上限=出力許可上限だと未来情報防止を守るほどsuccessorが読めない（cmd_karo_recon2_cx_logical_asof_partial_diff_review_20260803）
+- L953: fixture IDは分類軸(lane等)を含めて一意化する。laneごとの同一連番は正常fixture自身が重複BLOCKになる（cmd_karo_cx_w4_w5_oracle_ready_20260803）
+- L1551: 外部repo偵察は正本入力とrunner scopeを先に二値確認する。正本欠落時は二次記録から推測せず入力欠落をFAILへ固定（cmd_4247）
+- L1553: 外部repo対象taskのtest_necessityは明示contract testを持たせよ。無いとrun_tests.sh taskが境界検証を素通しする（cmd_4268）
 - L857: 既存スクリプトの再利用はexec文字列置換でなく環境変数overrideで差し替える。exec置換はpre-commit S102でBLOCK（cmd_3815）
 - L891: pytest node idは推測せず`--collect-only -q`の実在収集結果から固定する。collected 0は指定ミスのサイン（cmd_3896）
 - L899: subprocessのready待ちloopはtimeout後の無条件継続を禁止し、成功条件を二値assert+child早期exitを即伝播する（cmd_karo_ci_red_dm_p4_uvicorn_29326659277）
