@@ -7022,6 +7022,16 @@ check_karo_pending_cmd() {
             fi
         fi
 
+        # cmd正本がpendingのままでも、exact parent_cmdのtaskが既に配備済みなら
+        # 家老への「新規pending」通知は偽陽性になる。未配備/stale判定と同じ
+        # 一次task照合を使い、assigned以降の実態を優先する。
+        local deployed_status
+        deployed_status=$(find_deployed_task_status "$cmd_id")
+        if [ -n "$deployed_status" ]; then
+            log "PENDING-CMD-DEPLOYED: ${cmd_id} task_status=${deployed_status}; suppressing cmd_pending notification"
+            continue
+        fi
+
         current_ids+=("$cmd_id")
 
         # 既知のpending → スキップ（遷移なし。stale_cmdsがエスカレーション担当）

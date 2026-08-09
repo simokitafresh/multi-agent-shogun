@@ -797,6 +797,57 @@ grep -q "PENDING-CMD-NEW: cmd_old" "$LOG"
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: pending正本と配備済みtaskが並存しても家老へ偽の配備漏れ通知を送らない不変量
+# overlaps_existing: true
+# regression_justification: 既存猶予テストは時刻だけを覆い、exact parent_cmdのacknowledged/in_progress taskを照合しない欠落がcmd_4255/cmd_4256で同時発火したため
+@test "check_karo_pending_cmd: exact parent taskが配備済みなら通知しない" {
+    OLD_TS=$(date -d "45 seconds ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+OLD_TS="'"$OLD_TS"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+KARO_PENDING_CMD_GRACE_SEC=30
+KARO_PANE="karo-pane"
+export SCRIPT_DIR
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_deployed:
+    status: pending
+    timestamp: "$OLD_TS"
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  parent_cmd: cmd_deployed
+  status: acknowledged
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+declare -A PREV_PENDING_SET STALE_CMD_NOTIFIED
+
+check_karo_pending_cmd
+
+test ! -f "$SCRIPT_DIR/inbox.log"
+grep -q "PENDING-CMD-DEPLOYED: cmd_deployed task_status=acknowledged" "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "speed training auto-pause when retrospective recurrence rate exceeds 10 percent" {
     run bash -lc '
 set -euo pipefail
