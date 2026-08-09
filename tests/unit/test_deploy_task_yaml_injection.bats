@@ -263,14 +263,35 @@ for name, evidence in cases.items():
         else: lines.append(f'    {key}: {scalar(value)}')
     (root/f'{name}.yaml').write_text('\n'.join(lines)+'\n')
 PY
-    for invalid in pass_only source_mismatch pre_pass post_fail post_skip after_push; do
-        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/'\"$invalid\"'.yaml'"
-        [ "$status" -eq 1 ]
-        [[ "$output" == *"BLOCK: ci_fix clean repro evidence"* ]]
-    done
-    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/valid.yaml'"
+    validate_case() {
+        local expected_rc="$1" needle="$2" case_file="$3" actual rc
+        set +e
+        actual="$(deploy_task_ci_fix_clean_repro_evidence_validate "$case_file" 2>&1)"
+        rc=$?
+        set -e
+        if [ "$rc" -ne "$expected_rc" ] || [[ "$actual" != *"$needle"* ]]; then
+            printf 'case=%s expected_rc=%s actual_rc=%s output=%s\n' "$case_file" "$expected_rc" "$rc" "$actual"
+            return 1
+        fi
+    }
+    run_validator_cases() {
+        local -a pids=()
+        local invalid pid failed=0
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        for invalid in pass_only source_mismatch pre_pass post_fail post_skip after_push; do
+            validate_case 1 'BLOCK: ci_fix clean repro evidence' "$tmpdir/${invalid}.yaml" &
+            pids+=("$!")
+        done
+        validate_case 0 'PASS: ci_fix clean repro evidence valid' "$tmpdir/valid.yaml" &
+        pids+=("$!")
+        for pid in "${pids[@]}"; do
+            wait "$pid" || failed=1
+        done
+        return "$failed"
+    }
+    run run_validator_cases
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: ci_fix clean repro evidence valid"* ]]
 }
 
 @test "not_reproducible terminal accepts only the three fixed proofs and never relaxes FAIL to PASS" {
@@ -305,14 +326,35 @@ for name, evidence in cases.items():
     # YAMLはJSONの上位互換。運用YAMLと同じくyaml.dump系は使わない(CLAUDE.md YAML書込み安全規則)
     (root/f'{name}.yaml').write_text(json.dumps({'task': {'task_type': 'ci_fix', 'ci_fix_clean_repro_evidence': evidence}}, ensure_ascii=False))
 PY
-    for invalid in nr_two_envs nr_two_receipts nr_no_diag nr_ci_red; do
-        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/'\"$invalid\"'.yaml'"
-        [ "$status" -eq 1 ]
-        [[ "$output" == *"BLOCK: ci_fix clean repro evidence not_reproducible"* ]]
-    done
-    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/nr_valid.yaml'"
+    validate_case() {
+        local expected_rc="$1" needle="$2" case_file="$3" actual rc
+        set +e
+        actual="$(deploy_task_ci_fix_clean_repro_evidence_validate "$case_file" 2>&1)"
+        rc=$?
+        set -e
+        if [ "$rc" -ne "$expected_rc" ] || [[ "$actual" != *"$needle"* ]]; then
+            printf 'case=%s expected_rc=%s actual_rc=%s output=%s\n' "$case_file" "$expected_rc" "$rc" "$actual"
+            return 1
+        fi
+    }
+    run_validator_cases() {
+        local -a pids=()
+        local invalid pid failed=0
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        for invalid in nr_two_envs nr_two_receipts nr_no_diag nr_ci_red; do
+            validate_case 1 'BLOCK: ci_fix clean repro evidence not_reproducible' "$tmpdir/${invalid}.yaml" &
+            pids+=("$!")
+        done
+        validate_case 0 'PASS: ci_fix clean repro not_reproducible evidence valid' "$tmpdir/nr_valid.yaml" &
+        pids+=("$!")
+        for pid in "${pids[@]}"; do
+            wait "$pid" || failed=1
+        done
+        return "$failed"
+    }
+    run run_validator_cases
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: ci_fix clean repro not_reproducible evidence valid"* ]]
 }
 
 @test "not_reproducible is opt-in: without the declaration a FAIL-free task still blocks" {
