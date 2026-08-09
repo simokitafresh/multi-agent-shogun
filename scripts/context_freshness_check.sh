@@ -895,6 +895,15 @@ def source_commit_summary_since(
             changed_paths, plain_pathspecs, cited_dirs, cited_files
         ):
             return
+        # Keep the external split-context path on the same reflection
+        # contract as the infra root-fallback path.  Without this check,
+        # a source commit whose cmd id/hash is already present in the context
+        # body is counted as stale again, even though its reflection evidence
+        # is already recorded (GA-449).
+        if commit_is_reflected_or_lesson_only(
+            rel_path, current_hash, subject, changed_paths
+        ):
+            return
         count += 1
         if len(details) < max_details:
             details.append(f"{current_hash} {subject}".strip())

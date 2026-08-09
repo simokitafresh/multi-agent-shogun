@@ -1020,6 +1020,26 @@ PROJ
     [[ "$output" != *"context/dm-signal-core.md"* ]]
 }
 
+@test "external split context excludes source commits already reflected in its body" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo/backend/app" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'runtime update\n' > "$source_repo/backend/app/runtime.py"
+    git -C "$source_repo" add backend/app/runtime.py
+    git -C "$source_repo" commit -q -m "cmd_995_reflected: runtime update"
+
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    _create_context "context/dm-signal-core.md" "$STALE_DATE"
+    printf '\n- cmd_995_reflected: runtime behavior already indexed\n' >> "$TEST_TMPDIR/context/dm-signal-core.md"
+    _create_shogun_to_karo "cmd_995" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_995
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/dm-signal-core.md source commits"* ]]
+}
+
 @test "unmapped infra fallback context does not inherit root source alerts" {
     _create_context "context/saxo-trade-engine.md" "$STALE_DATE"
     _create_context "context/infrastructure.md" "$STALE_DATE"
