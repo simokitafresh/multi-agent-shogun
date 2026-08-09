@@ -2,8 +2,9 @@
 """Generate and validate the SG7 completion bundle used by Gunshi and Karo."""
 from __future__ import annotations
 import argparse, fcntl, glob, hashlib, json, os, subprocess, sys, time
+import re
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 import yaml
 
@@ -162,12 +163,22 @@ def dashboard_line(report, cmd_id):
     if not text: raise ValueError("report result.summary is missing for dashboard_line")
     return f"- **{cmd_id}**: 完了。{text}"
 
+def _json_default(value):
+    # PyYAML parses unquoted ISO timestamps in review ledgers as datetime
+    # objects.  The single-review manifest is JSON, so normalize that YAML
+    # scalar at the boundary while still rejecting unrelated unsupported
+    # objects instead of silently stringifying them.
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
 def atomic_json(path, value):
     path.parent.mkdir(parents=True, exist_ok=True); lock_path = path.with_suffix(path.suffix + ".lock")
     with lock_path.open("a+", encoding="utf-8") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX); temp = path.with_name(f".{path.name}.tmp.{os.getpid()}")
         try:
-            temp.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            temp.write_text(json.dumps(value, default=_json_default, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             os.replace(temp, path)
         finally:
             if temp.exists(): temp.unlink()
@@ -367,6 +378,14 @@ def _batch_precheck(root, item):
         # The precheck observation is recorded but does not prevent bundle generation.
         if str(item.get("verdict", "")).upper() == "FAIL":
             return {"status": "BLOCK_ACCEPTED", "reason": f"precheck BLOCK accepted for FAIL verdict (rc={proc.returncode})", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
+        # A precheck can exit non-zero after emitting only advisory warnings.
+        # The shell gate's authoritative result is its final ERRORS count, not
+        # the process status alone.  Treat only the explicit zero-error case as
+        # a warning; missing or positive ERRORS remains fail-closed so a real
+        # report defect cannot be hidden by the review-bundle entry point.
+        match = re.search(r"(?:総合|総計|TOTAL)\s*:\s*ERRORS\s*=\s*(\d+)", evidence, re.IGNORECASE)
+        if match and int(match.group(1)) == 0:
+            return {"status": "WARN", "reason": f"precheck exited rc={proc.returncode} with ERRORS=0; advisory warning retained", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
         raise ValueError(f"precheck failed cmd={item['cmd']}: {evidence[-500:]}")
     return {"status": "PASS", "reason": "all checks passed", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
 
