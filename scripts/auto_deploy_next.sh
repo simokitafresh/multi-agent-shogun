@@ -507,12 +507,18 @@ WRITE_EXIT=0
         bash "$local_yfs" "$TARGET_YAML" "task" "assigned_to" "$SELECTED_NINJA" 2>> "$LOG"
     fi
 
-    bash "$local_yfs" "$TARGET_YAML" "task" "status" "owner_prepared" 2>> "$LOG"
-    bash "$local_yfs" "$TARGET_YAML" "task" "owner_generation" "$owner_fence" 2>> "$LOG"
-    bash "$local_yfs" "$TARGET_YAML" "task" "owner_fence" "$owner_fence" 2>> "$LOG"
-    bash "$local_yfs" "$TARGET_YAML" "task" "owner_subject_id" "$owner_subject" 2>> "$LOG"
-    bash "$local_yfs" "$TARGET_YAML" "task" "owner_state_root" "$OWNER_STATE_ROOT" 2>> "$LOG"
-    bash "$local_yfs" "$TARGET_YAML" "task" "owner_transaction_status" "prepared" 2>> "$LOG"
+    # Publish the non-executable owner metadata in one atomic YAML transaction.
+    # The six scalar writes previously paid six lock/rewrite/parse cycles for
+    # every deployment; batching preserves the same fields and fail-closed
+    # validation while removing that repeated shared-I/O cost.
+    source "$local_yfs"
+    yaml_field_set_batch "$TARGET_YAML" "task" \
+        "status=owner_prepared" \
+        "owner_generation=$owner_fence" \
+        "owner_fence=$owner_fence" \
+        "owner_subject_id=$owner_subject" \
+        "owner_state_root=$OWNER_STATE_ROOT" \
+        "owner_transaction_status=prepared" 2>> "$LOG"
     owner_failpoint after_target_before_pointer || exit $?
     owner_ledger="[\"owner_pointer:$TARGET_YAML\",\"source_pending:$TASK_FILE\",\"payload:$source_hash\"]"
     bash "$SCRIPT_DIR/scripts/lib/durable_state.sh" mutate "$OWNER_STATE_ROOT" \

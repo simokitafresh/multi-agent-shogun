@@ -1984,7 +1984,8 @@ if [ -f "$SCRIPT_DIR/queue/inbox/karo.yaml" ]; then
         [ -n "${read_actionable_items:-}" ] && echo "    ${read_actionable_items}"
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
-            alerts+=("既読actionable候補: ${read_actionable}件")
+            _read_actionable_ids=$(printf '%s\n' "${read_actionable_items:-}" | grep -oE 'msg_[A-Za-z0-9_]+' | paste -sd, -)
+            alerts+=("既読actionable候補: id=${_read_actionable_ids:-unidentified}")
         fi
     fi
 else
