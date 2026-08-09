@@ -226,6 +226,8 @@ insights:
   resolved_reason: "一次確認で旧現象は現行deploy_task防御に部分吸収されているがLevel5完全吸収は未証明。deploy_task.sh L127の依存ログ抑制、L139/L374の300秒期限、L324-327のqueue/locks経路を確認し、cmd_4260実測deploy_sec=48かつGATE CLEAR(L452)を確認。残るWSL2 NTFS上のlock/I-O蓄積をLevel5へ引き上げる要否はdecision_candidateとして報告へ整理したため"
   action_artifact: "scripts/deploy_task.sh:L127-139,L324-382;logs/gate_metrics.log:L452(cmd_4260 deploy_sec=48 GATE CLEAR);queue/reports/saizo_report_cmd_reflux_insight_202608100629_saizo.yaml(decision_candidate)"
   resolved_at: "2026-08-10T06:34:21+09:00"
+  occurrence_count: 1
+  last_seen: "2026-08-10T06:37:10+09:00"
 - id: INS-20260810-004622422-0752
   ts: "2026-08-10T00:46:22+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4260; matched=除去,経路; current_pattern=月次リターンT-α5 — mtd応答の系列純度是正(Close比借用の除去と両到達経路の置換); candidate_level=4; candidate=hayate cmd_2284でresult.details上書き時に旧continuation行が残留しYAML破損。手動4行削除が必要だった; source=gunshi_gp_tracker.yaml"
