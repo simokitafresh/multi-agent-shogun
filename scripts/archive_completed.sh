@@ -2065,7 +2065,9 @@ if [ -n "$CMD_ID" ]; then
         "{\"cmd_id\":\"${CMD_ID}\",\"generation\":\"${SHOGUN_COMPLETION_GENERATION}\"}" \
         || _archive_writer_rc=$?
     if [ "${_archive_writer_rc:-0}" -ne 0 ]; then
-        if [ "$_archive_writer_rc" -ne 4 ]; then
+        if [ "$_archive_writer_rc" -eq 3 ]; then
+            echo "[archive] WARN: completion telemetry unavailable (rc=3); material archive succeeded, continuing marker publication" >&2
+        elif [ "$_archive_writer_rc" -ne 4 ]; then
             echo "ERROR: archive completion event write failed (rc=${_archive_writer_rc})" >&2
             exit 1
         fi
