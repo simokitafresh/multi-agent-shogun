@@ -15,6 +15,7 @@ import yaml
 
 
 NULLISH = {"", "none", "n/a", "na", "null", "unknown", "tbd", "fill_this"}
+AC_GUARDED_TASK_TYPES = {"full", "hotfix"}
 
 
 def unwrap(data, block_id=""):
@@ -68,6 +69,27 @@ def serial_evidence(task):
     return raw.strip()
 
 
+def enforce_ac_shard_contract(task):
+    """Reject oversized full/hotfix tasks before runtime shortcuts apply."""
+    task_type = str(task.get("task_type", "")).strip().lower()
+    ac_count = len(ac_rows(task))
+    if task_type not in AC_GUARDED_TASK_TYPES or ac_count < 3:
+        return None
+
+    evidence = serial_evidence(task)
+    if evidence:
+        return {
+            "status": "serial",
+            "serial_dependency_evidence": evidence,
+            "acceptance_criteria_count": ac_count,
+        }
+
+    raise ValueError(
+        "full/hotfix task with 3 or more acceptance criteria requires "
+        "a <=2-AC shard task or explicit serial_dependency_evidence"
+    )
+
+
 def idle_workers(tasks_dir):
     workers = []
     for path in sorted(Path(tasks_dir).glob("*.yaml")):
@@ -83,6 +105,10 @@ def idle_workers(tasks_dir):
 
 
 def build(task, workers, source_id):
+    ac_contract = enforce_ac_shard_contract(task)
+    if ac_contract is not None:
+        return ac_contract
+
     estimated = task.get("estimated_minutes")
     try:
         estimated = float(estimated)
