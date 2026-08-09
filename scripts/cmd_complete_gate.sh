@@ -6506,6 +6506,21 @@ def is_probable_product_token(ref):
             candidates.extend(glob.glob(os.path.join(target_abs, "**", clean_ref), recursive=True))
     return not any(os.path.isfile(path) for path in candidates)
 
+def is_probable_slash_enum(ref):
+    # Domain alternatives such as "full/ticker" use a slash but are not file
+    # references.  Keep explicit/extension-bearing paths and extensionless
+    # paths whose leading directory actually exists in the control repo.
+    clean_ref = ref.strip().strip("`'\".,:;()[]{}")
+    if clean_ref.startswith("/") or "/" not in clean_ref:
+        return False
+    basename = os.path.basename(clean_ref)
+    if "." in basename:
+        return False
+    if any(ref_matches_target(clean_ref, target) for target in target_paths):
+        return False
+    first_component = clean_ref.split("/", 1)[0]
+    return not (script_dir and os.path.isdir(os.path.join(script_dir, first_component)))
+
 matches = list(pattern.finditer(command))
 seen = set()
 refs = []
@@ -6514,6 +6529,8 @@ for idx, match in enumerate(matches):
     if not ref or ref in seen:
         continue
     if is_probable_product_token(ref):
+        continue
+    if is_probable_slash_enum(ref):
         continue
     seen.add(ref)
     if ref_matches_verified_dependency(ref):

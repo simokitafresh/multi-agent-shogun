@@ -1243,6 +1243,22 @@ EOF
     [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
+@test "command/files_modified coverage ignores slash-delimited domain alternatives but keeps real paths" {
+    # test_necessity: slash-delimited enum values must not BLOCK completion,
+    # while an explicit repository path in the same command remains enforced.
+    _write_command_coverage_fixture \
+        "full/tickerの挙動を維持し scripts/cmd_complete_gate.sh を修正" \
+        "  - path: scripts/cmd_complete_gate.sh
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" != *"missing: full/ticker"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
 @test "command/files_modified coverage keeps explicit relative and absolute paths strict" {
     local absolute_target="$TEST_PROJECT/scripts/absolute_target"
     mkdir -p "$(dirname "$absolute_target")"
