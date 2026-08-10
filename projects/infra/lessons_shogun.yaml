@@ -275,6 +275,7 @@ lessons:
     計測値は「計測条件が実運用を代表し、条件が実際に機能した証拠がある」ときだけ意味を持つ。
     (1)条件の代表性(LS074吸収): FE体感計測はmobileエミュレーション+CPUスロットリング+実運用相当URL(PF指定クエリ)をデフォルトにせよ。desktop preset平均98.5がmobile実測60/TBT 7274msだった(cmd_3647→殿実測)。desktop計測はモバイルCPUメインスレッド実行時間(チャンク7023 scripting 131s)を全く捕捉しない。desktop高スコアを実運用達成と報告するな
     (2)条件の有効性証拠(LS076吸収): 計測系cmdのACには条件が機能した証拠の確認を含めよ。cmd_3653はURLにportfolio_id=を付けたがFE現物はportfolioのみ解釈しPF未指定数値が原票化。忍者bc yesも家老GATEも「URLにクエリが付いている」しか見ていなかった。network-requestsに指定PFのAPI呼び出しがあることまで確認(cmd_3654 AC2で是正)。URLに付けた=有効ではない(LS-A09(17)と同根)
+    (3)テストPASSは実行された行しか守らない(cmd_4272吸収2026-08-10): 本番500(signals.py:67 TypeError=タプル格納4要素vs比較existing[0-2]のインデックスずれ)がdashboard_slots 2件+回帰7件FAIL0/SKIP0を素通し。壊れた比較分岐は同一PFにledger候補2行以上で初めて実行されるがfixtureは候補1行のみ=バグ行が一度も実行されずPASS。さらにdeploy後に主要APIの200を確認するsmokeが鎖のどこにも無く検知は殿のRenderログ目視。切り分け=タスクリスト無罪/設計書無罪/忍者=直接原因(完璧は求めない)/チェック=構造原因。対策: 比較・選択ロジックを含むcmdのACに分岐発火条件を満たすfixture(候補複数行・境界同値)を明記+deploy後smoke(主要エンドポイント200確認)を完了処理へ組込む。(1)(2)と同根=「PASSした」ではなく「検証がバグ経路を実行した証拠」を要求せよ
     (全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS-A24)
   source_ids: [LS074, LS076, LS077, LS102]
   created_at: '2026-07-03'
