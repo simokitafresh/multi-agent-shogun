@@ -70,8 +70,22 @@ json_escape() {
     printf '%s' "$value"
 }
 
+_three_layer_is_git_checkout=""
 is_git_checkout() {
-    git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1
+    # rev-parse costs about 0.5s on DrvFS and issue() asks this same immutable
+    # question several times.  Cache the answer for this process; background
+    # search subshells inherit it, so Git availability is still detected once
+    # per preflight without paying repeated 9P process/filesystem round trips.
+    if [[ -n "$_three_layer_is_git_checkout" ]]; then
+        [[ "$_three_layer_is_git_checkout" == 1 ]]
+        return
+    fi
+    if git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+        _three_layer_is_git_checkout=1
+        return 0
+    fi
+    _three_layer_is_git_checkout=0
+    return 1
 }
 
 memory_timeout_fallback() {
@@ -176,7 +190,18 @@ memory_cache_is_healthy() {
     [[ "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" ]] || return 1
     [[ -s "$cache_path" && -f "${cache_path}.boot_id" ]] || return 1
     [[ "$(cat "${cache_path}.boot_id" 2>/dev/null || true)" == "$boot_id" ]] || return 1
-    timeout 0.4s python3 - "$cache_path" <<'PY' >/dev/null 2>&1
+    local generation health_file="${cache_path}.health" health_tmp
+    generation="$(stat -c '%i:%s:%y' "$cache_path" 2>/dev/null || true)"
+    [[ -n "$generation" ]] || return 1
+    # The cache is published by atomic replace.  Validate each inode once and
+    # persist that receipt next to it; six simultaneous prompt hooks then do
+    # not race six 0.4s SQLite probes.  A rebuild/corruption write changes the
+    # inode, size, or mtime and therefore invalidates this receipt.  Real MATCH
+    # errors remain covered by the query-level rc=2 rebuild below.
+    if [[ "$(cat "$health_file" 2>/dev/null || true)" == "$boot_id $generation" ]]; then
+        return 0
+    fi
+    timeout 1.5s python3 - "$cache_path" <<'PY' >/dev/null 2>&1 || return 1
 import sqlite3, sys
 with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro&immutable=1", uri=True, timeout=0.2) as conn:
     tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
@@ -187,6 +212,9 @@ with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro&immutable=1", uri=True, timeou
     if row is None or conn.execute("SELECT 1 FROM events WHERE rowid=?", row).fetchone() is None:
         raise SystemExit(1)
 PY
+    health_tmp="${health_file}.$$.$RANDOM.tmp"
+    printf '%s %s\n' "$boot_id" "$generation" >"$health_tmp" 2>/dev/null || return 1
+    mv -f "$health_tmp" "$health_file" 2>/dev/null || { rm -f "$health_tmp"; return 1; }
 }
 
 resolve_memory_cache_path() {
@@ -349,8 +377,13 @@ obsidian_cached_search() {
             return 1
         fi
     fi
-    local obsidian_lines="${THREE_LAYER_INJECT_OBSIDIAN_LINES:-3}"
-    QUERY="$query" CACHE="$built_cache" OBSIDIAN_LINES="$obsidian_lines" python3 - <<'PY' >"$result_file"
+    local obsidian_lines="${THREE_LAYER_INJECT_OBSIDIAN_LINES:-3}" read_timeout="$timeout_seconds"
+    # Test/probe callers may intentionally shrink the primary build timeout
+    # below Python startup cost.  Keep cached-snapshot parsing bounded but give
+    # it a small independent floor; production's 2.2s remains unchanged.
+    read_timeout="$(awk -v value="$read_timeout" 'BEGIN { print value < 0.5 ? "0.5" : value }')"
+    QUERY="$query" CACHE="$built_cache" OBSIDIAN_LINES="$obsidian_lines" \
+        timeout "${read_timeout}s" python3 - <<'PY' >"$result_file"
 import base64, datetime, os, pathlib, re
 query = os.environ["QUERY"]
 path = pathlib.Path(os.environ["CACHE"])
@@ -362,15 +395,18 @@ for key, values in aliases.items():
 candidates.extend(re.findall(r"[A-Za-z_]{4,}|[一-龥ぁ-んァ-ヶ]{4,}", query))
 count, used, total = 0, "-", 0
 top_b64 = ""
+# Read the DrvFS snapshot once.  The former loop reopened and rescanned the
+# entire causal index for every token extracted from a long prompt, making
+# latency proportional to prompt word count and sometimes outliving the hook.
+lines = path.read_bytes().splitlines()
 for candidate in dict.fromkeys(c[:200] for c in candidates if c.strip()):
     encoded = candidate.encode()
     matches = []
-    with path.open("rb") as handle:
-        for raw_line in handle:
-            if encoded in raw_line:
-                matches.append(raw_line.decode(errors="replace").rstrip("\n")[:300])
-                if len(matches) >= obsidian_lines:
-                    break
+    for raw_line in lines:
+        if encoded in raw_line:
+            matches.append(raw_line.decode(errors="replace")[:300])
+            if len(matches) >= obsidian_lines:
+                break
     if matches:
         count, used, total = 1, candidate, len(matches)
         top_b64 = base64.b64encode("\n".join(matches).encode()).decode()

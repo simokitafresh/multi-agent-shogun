@@ -738,7 +738,7 @@ PY
     printf 'fixture\tdocs/fixture.md\n' > "$tmp_root/stale.tsv"
     : > "$tmp_root/docs/semantic-index/index.md"
     local evidence_dir="$TMP_EVIDENCE/stale_causal_evidence"
-    run env THREE_LAYER_BATCH_PRIMARY=0 THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_GLOBAL_BUDGET_MS=900 THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="stale" TMUX_PANE="%stale" \
+    run env THREE_LAYER_BATCH_PRIMARY=0 THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.2 THREE_LAYER_GLOBAL_BUDGET_MS=900 THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="stale" TMUX_PANE="%stale" \
         bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture"
     echo "$output" >&3
     [ "$status" -eq 0 ]
@@ -851,6 +851,54 @@ PY
     [ "$successes" -eq 20 ]
     [ "$memory_124" -eq 0 ]
 
+}
+
+# test_necessity: Long prompts must scan one causal snapshot, not reopen it per
+# token; otherwise DrvFS latency can exceed UserPromptSubmit's fixed timeout.
+@test "長文obsidian検索はcausal indexを1回だけopenする" {
+    local source
+    source="$(awk '/^obsidian_cached_search\(\)/,/^}/ { print }' "$ROOT/scripts/hooks/three_layer_preflight.sh")"
+    [ "$(grep -c 'path.read_bytes().splitlines()' <<<"$source")" -eq 1 ]
+    [ "$(grep -c 'with path.open' <<<"$source")" -eq 0 ]
+    [ "$(grep -c 'timeout.*python3' <<<"$source")" -eq 1 ]
+}
+
+# test_necessity: A validated atomic memory-cache generation must be reusable
+# across prompt processes while a changed generation must invalidate receipt.
+@test "memory cache health receiptは同一generationのみ再利用する" {
+    local tmp_root="$TMP_EVIDENCE/health_receipt" cache="$TMP_EVIDENCE/health-cache.db"
+    local evidence_dir="$TMP_EVIDENCE/health-evidence" boot_id health first_receipt
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/data" "$tmp_root/.git"
+    git -C "$tmp_root" init -q
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cp "$ROOT/scripts/lib/memory_db_cache.sh" "$tmp_root/scripts/lib/memory_db_cache.sh"
+    cp "$ROOT/scripts/memory_db_live_insert.py" "$tmp_root/scripts/memory_db_live_insert.py"
+    cp "$THREE_LAYER_DB_FIXTURE" "$tmp_root/data/multi_agent_shogun_memory.db"
+    cp "$THREE_LAYER_DB_FIXTURE" "$cache"
+    boot_id="$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || printf unknown)"
+    printf '%s\n' "$boot_id" > "$cache.boot_id"
+    printf 'fixture\n' > "$tmp_root/docs/semantic-index/index.md"
+    printf 'fixture\tdocs/fixture.md\n' > "$tmp_root/stale.tsv"
+    printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$2"\n' > "$tmp_root/scripts/lib/causal_index.sh"
+    chmod +x "$tmp_root/scripts/lib/causal_index.sh"
+
+    run env MEMORY_DB_QUERY_DB="$tmp_root/data/multi_agent_shogun_memory.db" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="health1" TMUX_PANE="%health1" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture"
+    [ "$status" -eq 0 ]
+    health="$cache.health"
+    [ -s "$health" ]
+    first_receipt="$(cat "$health")"
+
+    run env MEMORY_DB_QUERY_DB="$tmp_root/data/multi_agent_shogun_memory.db" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="health2" TMUX_PANE="%health2" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture"
+    [ "$status" -eq 0 ]
+    [ "$(cat "$health")" = "$first_receipt" ]
+
+    touch "$cache"
+    run env MEMORY_DB_QUERY_DB="$tmp_root/data/multi_agent_shogun_memory.db" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="health3" TMUX_PANE="%health3" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture"
+    [ "$status" -eq 0 ]
+    [ "$(cat "$health")" != "$first_receipt" ]
 }
 
 @test "memory cache query rc2は原子的再構築後に同一issueで一度だけ再試行する" {
