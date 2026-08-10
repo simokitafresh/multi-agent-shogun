@@ -1514,9 +1514,11 @@ check_idle() {
             fi
             # pstree cross-check: @agent_state=idleでも子プロセス存在時はBUSY
             # cmd_1671: 30分以上実行中のプロセスは除外（永久BUSY化防止）
+            local _idle_pstree_override=0
             if _agent_state_has_busy_subprocess "$pane_target"; then
                 if _all_subprocesses_long_running "$pane_target"; then
                     log "PSTREE-LONGRUN: ${agent_name} bash subprocess detected but all running >=${PSTREE_LONGRUN_THRESHOLD}s, treating as IDLE"
+                    _idle_pstree_override=1
                 else
                     # cmd_2279: task status=idle/completed/doneならbash subprocessがあっても/clearを許可
                     # GP-233: yaml_field_get→grep簡素化(WSL2 NTFS遅延でfield_getが空文字を返すバグ修正)
@@ -1527,12 +1529,39 @@ check_idle() {
                     fi
                     if [[ "$_pstree_task_status" =~ ^(idle|completed|done)$ ]]; then
                         log "PSTREE-OVERRIDE-SKIP: ${agent_name} task.status=${_pstree_task_status}, bash subprocess ignored, treating as IDLE"
+                        _idle_pstree_override=1
                     else
                         log "PSTREE-OVERRIDE: ${agent_name} @agent_state=idle but bash subprocess detected, task.status=${_pstree_task_status:-EMPTY}, treating as BUSY"
                         return 1
                     fi
                 fi
             fi
+
+            # Preserve the established subprocess/task-status override contract.
+            [ "$_idle_pstree_override" -eq 1 ] && return 0
+
+            # @agent_state=idle can be stale while Codex still renders a live
+            # `Working` pane. Reconcile the hook state with the current pane
+            # after the established subprocess/task-status override contract.
+            # check_agent_busy returns 1 for pane-busy and 2 when unknown;
+            # both are fail-closed here because a false idle is unsafe.
+            local _idle_pane_rc
+            if check_agent_busy "$pane_target" "$agent_name"; then
+                _idle_pane_rc=0
+            else
+                _idle_pane_rc=$?
+            fi
+            case "$_idle_pane_rc" in
+                1)
+                    log "IDLE-STATE-BUT-PANE-BUSY: ${agent_name} @agent_state=idle, pane confirms busy"
+                    return 1
+                    ;;
+                2)
+                    log "IDLE-STATE-PANE-UNKNOWN: ${agent_name} @agent_state=idle, pane state unknown -> keep busy"
+                    return 1
+                    ;;
+            esac
+
             return 0  # IDLE確定（grace period経過）
         fi
         # ─── bash_running: Bashフック設定中はBUSY扱い（STALL誤判定防止） ───

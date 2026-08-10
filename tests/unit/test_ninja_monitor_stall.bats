@@ -5046,6 +5046,87 @@ printf "elapsed_under_0.5s=true single_flight_skip=confirmed\n"
 
 # test_necessity: idle継続の一次判定、明示的次標的のOPEN集合、掲示板宣言を同一世代へ
 # 固定し、3分到達後のpending_work ALERTを一世代一回にする不変量を守る。
+@test "check_idle_backlog_alert: stale idle属性でもWorking 3/3は警告せず真idleは1通" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/idle-backlog-pane-reconcile"
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: newest
+  content: "次標的: cmd_open"
+EOF
+
+NINJA_NAMES=(kagemaru hanzo kotaro); declare -A PANE_TARGETS
+PANE_TARGETS[kagemaru]=pane-kagemaru
+PANE_TARGETS[hanzo]=pane-hanzo
+PANE_TARGETS[kotaro]=pane-kotaro
+PANE_MODE=busy
+_agent_state_has_busy_subprocess() { return 1; }
+tmux() {
+    local command="${1:-}" target="" format=""
+    shift || true
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -t) target="$2"; shift 2 ;;
+            -p)
+                if [ "$command" = display-message ]; then
+                    format="$2"; shift 2
+                else
+                    shift
+                fi
+                ;;
+            *) shift ;;
+        esac
+    done
+    case "$command:$format" in
+        display-message:\#\{@agent_state\}) printf "idle\\n" ;;
+        display-message:\#\{@last_active\}) printf "\\n" ;;
+        display-message:\#\{pane_id\}) printf "%s\\n" "$target" ;;
+        *)
+            if [ "$command" = capture-pane ]; then
+                if [ "$PANE_MODE" = busy ]; then printf "• Working (test)\\n"; else printf "❯\\n"; fi
+            fi
+            ;;
+    esac
+}
+list_pending_cmds_cached() { printf "%s\\n" "cmd_open|2026-08-10T22:00:00||"; }
+find_deployed_task_status() { return 1; }
+find_closed_parent_cmd_status() { return 1; }
+notify_karo_durable() { printf "%s\\n" "$3" >> "$TMP_ROOT/messages.log"; return 0; }
+log() { printf "%s\\n" "$1" >> "$LOG"; }
+
+# AC2 busy fixture: all 3 panes render Working despite stale idle attributes.
+IDLE_BACKLOG_ALERT_NOW=1000; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=1180; check_idle_backlog_alert
+busy_alerts=$(test -f "$TMP_ROOT/messages.log" && wc -l < "$TMP_ROOT/messages.log" || printf "0")
+test "$(printf "%s" "$busy_alerts" | tr -d " ")" -eq 0
+busy_false_positives=0
+
+# AC2 true-idle fixture: one alert at threshold and no duplicate next cycle.
+PANE_MODE=idle
+rm -f "$STATE_DIR"/karo_idle_backlog_since.tsv "$STATE_DIR"/karo_idle_backlog_generation.tsv "$STATE_DIR"/karo_idle_backlog_last_alert.epoch "$TMP_ROOT/messages.log"
+IDLE_BACKLOG_ALERT_NOW=2000; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=2180; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=2181; check_idle_backlog_alert
+test "$(wc -l < "$TMP_ROOT/messages.log" | tr -d " ")" -eq 1
+true_idle_alerts=1
+duplicate_alerts=0
+failures=0
+skips=0
+printf "busy3of3=%s busy_false_positives=%s true_idle_alerts=%s duplicate_alerts=%s failures=%s skips=%s\\n" \
+    3 "$busy_false_positives" "$true_idle_alerts" "$duplicate_alerts" "$failures" "$skips"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"busy3of3=3 busy_false_positives=0 true_idle_alerts=1 duplicate_alerts=0 failures=0 skips=0"* ]]
+}
+
 @test "check_idle_backlog_alert: 3分継続後にOPEN次標的を一世代一回だけ通知する" {
     run bash -lc '
 set -euo pipefail
