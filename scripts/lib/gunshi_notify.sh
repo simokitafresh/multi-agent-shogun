@@ -22,7 +22,16 @@ notify_gunshi_for_report() {
     local gates_dir="$project_root/queue/gates/${cmd_id}"
     mkdir -p "$gates_dir"
     local flag_file="${gates_dir}/gunshi_report_review_notify_${ninja_name}.done"
+    local lock_file="${gates_dir}/gunshi_report_review_notify_${ninja_name}.lock"
+    local lock_fd
+    if ! exec {lock_fd}>"$lock_file" || ! flock -w "${GUNSHI_NOTIFY_LOCK_TIMEOUT_SEC:-5}" "$lock_fd"; then
+        echo "  gunshi_notify: WARN (notification claim lock unavailable for ${ninja_name})" >&2
+        [ -n "${lock_fd:-}" ] && eval "exec ${lock_fd}>&-"
+        return 1
+    fi
     if [ -f "$flag_file" ]; then
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
         return 0
     fi
 
@@ -45,6 +54,8 @@ notify_gunshi_for_report() {
         esac
     done < "$report_path"
     if [ "$report_status" = "failed" ] || [ "$report_status" = "cancelled" ]; then
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
         return 0
     fi
 
@@ -58,4 +69,6 @@ notify_gunshi_for_report() {
     else
         echo "  gunshi_notify: WARN (inbox_write failed for ${ninja_name})"
     fi
+    flock -u "$lock_fd"
+    eval "exec ${lock_fd}>&-"
 }
