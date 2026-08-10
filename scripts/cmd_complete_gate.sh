@@ -6965,6 +6965,181 @@ run_cdp_production_check() {
     return 1
 }
 
+# dm-signal deploy cmd専用の本番到達性チェック。CDPはFEの画面検分であり、
+# APIのHTTP応答とRender live revisionの一致を代替しないため、別ゲートとして
+# fail-closedにする。適用条件はtask/reportのpost_deploy_evidence.required=true
+# (またはproduction_deploy.required=true)に限定し、非deploy cmdを誤BLOCKしない。
+cmd_requires_dm_signal_production_smoke() {
+    [ "${CMD_PROJECT:-}" = "dm-signal" ] || return 1
+
+    DM_SIGNAL_SMOKE_REQUIREMENT_REASON=""
+    local task_file report_file
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        report_file=$(resolve_report_file "$(basename "$task_file" .yaml)" 2>/dev/null || true)
+        if TASK_FILE="$task_file" REPORT_FILE="$report_file" python3 - <<'PY' 2>/dev/null
+import os
+import yaml
+
+def truthy(value):
+    if isinstance(value, bool):
+        return value
+    return str(value or "").strip().lower() in {"1", "true", "yes", "y"}
+
+def load(path):
+    if not path or not os.path.isfile(path):
+        return {}
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    return data.get("task", data) if isinstance(data, dict) else {}
+
+task = load(os.environ.get("TASK_FILE", ""))
+report = load(os.environ.get("REPORT_FILE", ""))
+for data in (task, report):
+    for key in ("post_deploy_evidence", "production_deploy", "production_deployment"):
+        value = data.get(key)
+        if isinstance(value, dict) and truthy(value.get("required")):
+            raise SystemExit(0)
+        if key != "post_deploy_evidence" and truthy(value):
+            raise SystemExit(0)
+raise SystemExit(1)
+PY
+        then
+            DM_SIGNAL_SMOKE_REQUIREMENT_REASON="task=$(basename "$task_file") report=${report_file:-missing} field=post_deploy_evidence.required_or_production_deploy.required"
+            return 0
+        fi
+    done
+    return 1
+}
+
+dm_signal_report_deploy_sha() {
+    local report_file="$1" which="$2"
+    [ -f "$report_file" ] || return 1
+    REPORT_FILE="$report_file" WHICH_SHA="$which" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["REPORT_FILE"], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+
+def lookup(mapping, keys):
+    if not isinstance(mapping, dict):
+        return ""
+    for key in keys:
+        value = mapping.get(key)
+        if value:
+            return str(value).strip()
+    return ""
+
+pde = data.get("post_deploy_evidence") or {}
+prod = data.get("production_deploy") or data.get("production_deployment") or {}
+keys = {
+    "origin": ("origin_sha", "origin_commit", "origin_head", "origin_revision"),
+    "live": ("live_sha", "live_commit", "live_head", "live_revision", "deployed_sha"),
+}
+value = lookup(pde, keys[os.environ["WHICH_SHA"]]) or lookup(prod, keys[os.environ["WHICH_SHA"]])
+print(value)
+PY
+}
+
+resolve_dm_signal_render_live_sha() {
+    # Unit/controlled production runs may provide an independently measured
+    # live revision.  Otherwise query Render's deploy list and select the newest
+    # deploy whose status is live; a failed newest deploy must not be accepted.
+    if [ -n "${DM_SIGNAL_SMOKE_LIVE_SHA:-}" ]; then
+        printf '%s\n' "$DM_SIGNAL_SMOKE_LIVE_SHA"
+        return 0
+    fi
+    local api_key="${RENDER_API_KEY:-}"
+    local service_id="${DM_SIGNAL_RENDER_SERVICE_ID:-srv-d4ja7q15pdvs739a4q1g}"
+    local api_url="${DM_SIGNAL_RENDER_API_URL:-https://api.render.com/v1/services/${service_id}/deploys?limit=20}"
+    [ -n "$api_key" ] || return 1
+    local curl_bin="${DM_SIGNAL_SMOKE_CURL_BIN:-curl}" response
+    response=$("$curl_bin" -sS -H "Authorization: Bearer ${api_key}" -H "Accept: application/json" "$api_url" 2>/dev/null) || return 1
+    RENDER_RESPONSE="$response" python3 - <<'PY'
+import json
+import os
+import sys
+
+try:
+    payload = json.loads(os.environ["RENDER_RESPONSE"])
+except Exception:
+    raise SystemExit(1)
+rows = payload if isinstance(payload, list) else payload.get("deploys", [])
+for row in rows:
+    deploy = row.get("deploy", row) if isinstance(row, dict) else {}
+    status = str(deploy.get("status") or deploy.get("state") or "").lower()
+    commit = deploy.get("commit") or {}
+    sha = commit.get("id") if isinstance(commit, dict) else commit
+    sha = sha or deploy.get("commitId")
+    if status == "live" and sha:
+        print(str(sha).strip())
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+run_dm_signal_production_smoke_check() {
+    echo ""
+    echo "dm-signal production smoke check:"
+    if ! cmd_requires_dm_signal_production_smoke; then
+        echo "  SKIP (not a dm-signal production-deploy cmd)"
+        return 0
+    fi
+    echo "  REQUIRED (basis: ${DM_SIGNAL_SMOKE_REQUIREMENT_REASON})"
+
+    local task_file report_file repo origin_sha live_sha report_origin report_live
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        repo=$(resolve_task_repo_dir "$task_file" 2>/dev/null || true)
+        break
+    done
+    repo="${repo:-${DM_SIGNAL_REPO:-}}"
+
+    origin_sha="${DM_SIGNAL_SMOKE_ORIGIN_SHA:-}"
+    if [ -z "$origin_sha" ] && [ -n "$repo" ]; then
+        origin_sha=$(git -C "$repo" rev-parse refs/remotes/origin/main 2>/dev/null \
+            || git -C "$repo" rev-parse refs/remotes/origin/master 2>/dev/null || true)
+    fi
+
+    live_sha="${DM_SIGNAL_SMOKE_LIVE_SHA:-}"
+    if [ -z "$live_sha" ]; then
+        live_sha="$(resolve_dm_signal_render_live_sha 2>/dev/null || true)"
+    fi
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        report_file=$(resolve_report_file "$(basename "$task_file" .yaml)" 2>/dev/null || true)
+        report_origin="$(dm_signal_report_deploy_sha "$report_file" origin 2>/dev/null || true)"
+        report_live="$(dm_signal_report_deploy_sha "$report_file" live 2>/dev/null || true)"
+        [ -n "$origin_sha" ] || origin_sha="$report_origin"
+        [ -n "$live_sha" ] || live_sha="$report_live"
+    done
+
+    local smoke_script="$SCRIPT_DIR/scripts/gates/gate_dm_signal_production_smoke.sh"
+    local smoke_output smoke_rc=0 log_checks
+    if [ ! -x "$smoke_script" ]; then
+        echo "  [CRITICAL] smoke helper is not executable: $smoke_script"
+        smoke_output="BLOCK: smoke_helper_missing"
+        smoke_rc=1
+    else
+        smoke_output=$(bash "$smoke_script" "$CMD_ID" \
+            --origin-sha "$origin_sha" --live-sha "$live_sha" 2>&1) || smoke_rc=$?
+    fi
+    printf '%s\n' "$smoke_output"
+    log_checks=$(printf '%s' "$smoke_output" | tr '\n' ' ' | tr -cd '[:print:]' | sed 's/"/'"'"'/g')
+    if [ "$smoke_rc" -eq 0 ]; then
+        append_line_locked "$LOG_DIR/gate_fire_log.yaml" \
+            "- ts: \"$(date '+%Y-%m-%dT%H:%M:%S')\", file: \"${CMD_ID}\", gate: \"dm_signal_production_smoke\", result: PASS, detector: \"dm_signal_production_smoke\", checks: \"detector_fp_rate=tracked ${log_checks}\""
+        echo "  dm-signal production smoke: PASS"
+        return 0
+    fi
+
+    append_line_locked "$LOG_DIR/gate_fire_log.yaml" \
+        "- ts: \"$(date '+%Y-%m-%dT%H:%M:%S')\", file: \"${CMD_ID}\", gate: \"dm_signal_production_smoke\", result: FAIL, detector: \"dm_signal_production_smoke\", checks: \"detector_fp_rate=tracked ${log_checks}\""
+    echo "  [CRITICAL] dm-signal production smoke: BLOCK"
+    return 1
+}
+
 # ─── 必須フラグ構築 ───
 ALWAYS_REQUIRED=("archive" "lesson")
 
@@ -9385,6 +9560,15 @@ check_wtf_likelihood
 # Compare reported files against `git show -w --name-only` so formatting-only/no-op claims become visible.
 level_heading "[L2]" "Self-grade commit/files verification:"
 check_self_grade_commit_file_coverage
+
+# dm-signalの本番deploy cmdだけ、CLEAR公開直前にAPI実測とorigin/live一致を
+# 必ず通す。非deploy cmdは関数内でSKIPされ、既存の完了判定を変えない。
+if [ "$ALL_CLEAR" = true ]; then
+    if ! run_dm_signal_production_smoke_check; then
+        record_block_reason "dm_signal_production_smoke_failed"
+        ALL_CLEAR=false
+    fi
+fi
 
 # ─── 軍師verdict事前チェック（cmd_3248: GATE判定前にWARN表示） ───
 # GATE CLEAR後の記録処理(L6585/L6888)とは別。家老がGATE判断前に軍師指摘を把握するためのWARN。

@@ -2,6 +2,8 @@
 # test_necessity: CI readiness applies only to remote-contained report commits, never free text, and fails closed when commit or remote identity is unknowable; violation is BLOCK.
 # regression_justification: The existing completion-gate suite did not cover a dirty shared worktree whose local HEAD diverged from the pushed origin/main boundary.
 # test_cmd_complete_gate.bats - cmd_complete_gate.sh partial unit tests
+# test_necessity: dm-signal production-deploy completion must bind origin/live identity and API 2xx responses; this is a permanent contract gate.
+# regression_justification: test coverage previously allowed test+GATE CLEAR while the deployed Render revision still served an error response.
 # Optimized: gate全体実行をやめ、重い責務を関数/局所フェーズ単位で直接検証する
 
 load '../helpers/cmd_gate_scaffold'
@@ -19,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = Path(sys.argv[1]).read_text(encoding="utf-8")
-names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring cmd_requires_cdp_production_check run_cdp_production_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event""".split()
+names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event""".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -33,6 +35,8 @@ PY
     # Build the invariant scaffold once on ext4. Each test still receives an
     # isolated copy, but avoids repeating mkdir/symlink/stub process setup.
     cmd_gate_scaffold "cmd_gate_master"
+    ln -s "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        "$TEST_PROJECT/scripts/gates/gate_dm_signal_production_smoke.sh"
     cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
 projects:
   - id: infra
@@ -3113,6 +3117,88 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"REQUIRED: dm-signal frontend change with production deploy/live evidence"* ]]
     [[ "$output" == *"REPORT_CDP:$TEST_CMD_ID"* ]]
+}
+
+@test "dm-signal production smoke passes only when origin/live match and every API is 2xx" {
+    source "$GATE_HELPERS_FILE"
+    export SCRIPT_DIR="$TEST_PROJECT" LOG_DIR="$TEST_PROJECT/logs" CMD_ID="$TEST_CMD_ID"
+    export CMD_PROJECT="dm-signal" TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export DM_SIGNAL_SMOKE_ORIGIN_SHA="0123456789abcdef0123456789abcdef01234567"
+    export DM_SIGNAL_SMOKE_LIVE_SHA="$DM_SIGNAL_SMOKE_ORIGIN_SHA"
+    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/health=200,/api/signals=204"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+post_deploy_evidence:
+  required: true
+EOF
+
+    run run_dm_signal_production_smoke_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"http_status=200 result=PASS"* ]]
+    [[ "$output" == *"http_status=204 result=PASS"* ]]
+    grep -q 'gate: "dm_signal_production_smoke", result: PASS' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+    grep -q 'detector_fp_rate=tracked' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+}
+
+@test "dm-signal production smoke blocks a live API error and records a measurable fire" {
+    source "$GATE_HELPERS_FILE"
+    export SCRIPT_DIR="$TEST_PROJECT" LOG_DIR="$TEST_PROJECT/logs" CMD_ID="$TEST_CMD_ID"
+    export CMD_PROJECT="dm-signal" TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export DM_SIGNAL_SMOKE_ORIGIN_SHA="0123456789abcdef0123456789abcdef01234567"
+    export DM_SIGNAL_SMOKE_LIVE_SHA="$DM_SIGNAL_SMOKE_ORIGIN_SHA"
+    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/health=200,/api/signals=500"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+post_deploy_evidence:
+  required: true
+EOF
+
+    run run_dm_signal_production_smoke_check
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"http_status=500 result=BLOCK"* ]]
+    [[ "$output" == *"production_api_smoke_failed"* ]]
+    grep -q 'gate: "dm_signal_production_smoke", result: FAIL' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+    grep -q 'detector_fp_rate=tracked' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+}
+
+@test "dm-signal production smoke blocks origin/live mismatch before API acceptance" {
+    source "$GATE_HELPERS_FILE"
+    export SCRIPT_DIR="$TEST_PROJECT" LOG_DIR="$TEST_PROJECT/logs" CMD_ID="$TEST_CMD_ID"
+    export CMD_PROJECT="dm-signal" TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export DM_SIGNAL_SMOKE_ORIGIN_SHA="0123456789abcdef0123456789abcdef01234567"
+    export DM_SIGNAL_SMOKE_LIVE_SHA="fedcba9876543210fedcba9876543210fedcba98"
+    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/health=200,/api/signals=200"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+post_deploy_evidence:
+  required: true
+EOF
+
+    run run_dm_signal_production_smoke_check
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"deploy_unreached"* ]]
+    grep -q 'gate: "dm_signal_production_smoke", result: FAIL' "$TEST_PROJECT/logs/gate_fire_log.yaml"
 }
 
 teardown() {
