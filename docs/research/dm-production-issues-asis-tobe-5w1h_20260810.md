@@ -1,5 +1,5 @@
 <!-- gist-master: 2d1e7458976b45751cebbffd8c118fa3 dm-production-issues-asis-tobe-5w1h_20260810.md -->
-# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.0
+# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.2
 
 - 作成: 2026-08-10 14:16 JST(将軍直轄)
 - 位置づけ: 月次リターン基本原理設計書v6.13の**補填**。v6本文は変更しない。本日殿観測+一次計測で確定した本番問題群のAsIs/ToBeを固定し、修復レーンの正本とする
@@ -143,6 +143,16 @@
 - C2: 定型行の追加前後で再計算の結果データが不変か(completeness gate PASS+所要秒の悪化が誤差内)。
 - C3: 意図的なエラー(テスト環境)で固定プレフィックスERROR行が出るか。
 
+## P5. 殿改善候補メモ(今後直す候補・実装は別途下知待ち)
+
+殿観測による改善候補の正本棚。**実装・起票は殿の別途下知まで禁止**。各件は三層記憶にも記録済み。
+
+| # | 件名 | AsIs | ToBe(候補) | 出典 |
+|---|---|---|---|---|
+| M1 | pending表示の意味論乖離 | pendingは【当月リターン未確定】の意だが、現UIでは保有シグナルまで未確定に見える | pendingラベルの適用範囲を月次リターン欄に限定し、保有シグナル欄は確定表示を維持する等。UI/UXは殿専権ゆえ裁定板で殿がfix | 殿メモ2026-08-11 02:39(knowledge:41353b1a) |
+| M2 | ALM deadcode残存 | ALMディスコン裁定(2026-05-10)後もrecalculate_fast.pyにALM実装一式が残存(Phase 4.6 second passブロック+candidate cache構築+momentum_data payload等+Phase 2の候補lookback事前計算)。ログの`[MEMORY] Phase 4.6: Start ALM second pass`は条件分岐外の無条件メモリマーカーでありALM実行の証拠ではない(実行時のみ`[ALM] Starting second pass for N portfolio(s)`が出る) | 本番DBでALM有効config PF=0を確認の上deadcode除去。Phase 2の候補cache事前計算も消えるためL3高速化に寄与 — L3/L5レーンの1 hotfix候補 | 殿指摘2026-08-11 03:35(knowledge:ad48fed2) |
+| M3 | SIGNAL DECISION DRIFTのCRITICALログ冗長 | 同一(portfolio,date)の組で繰り返し出るCRITICALログは2回目以降情報量ゼロでログを埋め、Render確認コストを上げる | 初回のみCRITICAL(同一キー抑止)またはサマリ行のみCRITICALで個別行はINFO/DEBUGへ降格。P4ログ契約と同レーンで扱う | 殿指示2026-08-11 03:40(knowledge:dd046ff1) |
+
 ## v6設計書・タスクリストの検討不足の知見化(殿指示14:17「成長のチャンスだ」)
 
 本日の問題群を生んだのは実装ミスだけではない。設計書v6(dm-monthly-return-design-v6_20260809.md)とタスクリスト(dm-monthly-return-v6-tasklist_20260809.md)の**検討不足**が上流原因である。AsIs/ToBe/5W1Hで固定し、次の設計書起草の知見とする。
@@ -199,6 +209,7 @@
 10. K7(CI性能回帰検知)を検討不足表へ追加済み。
 
 ## 改訂履歴
+- v1.2 (2026-08-11 03:43): **P5. 殿改善候補メモ棚を新設** — M1 pending表示意味論(02:39)、M2 ALM deadcode残存+ログ行は無条件マーカーの切り分け(03:35)、M3 SIGNAL DECISION DRIFT CRITICALログ冗長(03:40)。いずれも実装は別途下知待ち。ヘッダversionをv1.2へ是正(v1.1改訂時にヘッダ未更新だった点も是正)。
 - v1.1 (2026-08-11 01:22): **UI-5誤読源の訂正(殿裁定01:18)** — 「cmd_4278本来目的(OPEN欠損時CLOSE代用の除去)は維持」の記述が「benchmark=CLOSE固定でよい」と誤読され、小太郎がbenchmark drawdown_open 0/10を正常と判定する事故が発生。正仕様を明記: ベンチマーク(SPY等)もOtO/CtCトグルに追従する。「代用除去」はOPEN欠損日にCLOSE値を混ぜない意であり、benchmark全体をCLOSE固定にする意ではない。benchmarkのOtOデータは供給・表示する。UI-5表と3e確認手順の両方へ焼き込み。
 - v1.0 (2026-08-11 00:02): **S5.7工程確定と改訂を追加** — 上流確定積上げ工程(22:14)→L2撤収+L3/L5独立二正面(23:48)+L5目標60秒とエラーコスト実証(failed=0で439s vs failed=102で2257s)+1体基準値3層(L2=10.7s/L3=8.92s/L5=1.4-5.65s)+fullrecalculate見込み13〜26分+parent展開波及の教訓。進捗台帳を深夜実績(L5バグ3件根治・cache計装Live・L2全PF24/24完走・L3-r1完走8.92s・instructions焼き込み)へ全面更新。deploy便8本/夜・CI非同期(殿裁定22:55「CI redは無視、デプロイを止めるな」)・周回タスク軽量契約3点(殿裁定22:59)も正本化。
 - v0.9 (2026-08-10 21:35): **S5.6回転プロトコル確定を追加**(殿裁定21:17-21:29: 計算速度最優先・家老ハブ・1体×L5 10秒ループ・忍者非同期修正工場・定刻発車・タイムボックス・L5→L3→L2巡回・代表PFローテ+最終full 1回)。進捗台帳へL5 hotfix再配備(21:24)と第1周障害検知(21:32)を追記。v0.8でヘッダ・履歴が未更新だった点も是正。
