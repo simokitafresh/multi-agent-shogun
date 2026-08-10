@@ -1,6 +1,8 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-10 cmd_4285 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_karo_recon2_cmd4284_final_evidence_202608101034 reviewed source boundary -->
+<!-- source_commit:00cecab1 reason:cmd_karo_recon2_cmd4284_final_evidence_202608101034 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=00cecab1 -->
 <!-- source_commit:f22a0ca3 reason:cmd_4285 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=f22a0ca3 -->
+<!-- dm_signal_research_reflux: fingerprint=1449de45c4d97edb4c68c7df2b84b46596e4f1e79138b3ecb36469e98b5ded8f; mode=non-target; evidence_b64=5pysYXJ0aWZhY3Tjga9jbWRfNDI4NOOBruS4gOasoURC5a6M5LqG5YCk44Go5YmN5b6M5Lu25pWw44KS5L+d5a2Y44GZ44KL5oiQ5p6c54mp44Gn44GC44KK44CB56CU56m257Si5byV44G444Gu5Yil6YCU5Y+N5pig5a++6LGh44Gn44Gv44Gq44GE44CC -->
 
 <!-- retrieval: section -->
 <!-- detail: docs/research/cmd_karo_hotfix_vercel_debt_reason_202608100949_dm_signal_research_full.md -->
