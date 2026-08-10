@@ -618,7 +618,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "一次確認で既存GP-233実装により解消済み。scripts/ninja_monitor.shのPSTREE-OVERRIDE status取得はyaml_field_get/field_getのawk経路を使わずgrep -m1+sed+trへ置換済みで、対象の構造的懸念は現行コードに残存しない。"
-  action_artifact: "scripts/ninja_monitor.sh:1520-1529,4236-4244,6361-6369; commit=42d621b1fb25883749237bc3c395c4dc7cd4e0c0; bats --filter PSTREE-OVERRIDE tests/unit/test_ninja_monitor_clear_guard.bats => 2/2 PASS"
+  action_artifact: "scripts/ninja_monitor.sh:1520-1529,4236-4244,6361-6369; implementation_commit=42d621b1fb25883749237bc3c395c4dc7cd4e0c0; focused_test=2/2 PASS; shared_reflux_commit=4a148f1b72f7fbcf11f5fcb0a31017cef1f1c072"
   resolved_at: "2026-08-10T10:16:04+09:00"
 - id: INS-20260810-034509092-5836
   ts: "2026-08-10T03:45:09+09:00"
