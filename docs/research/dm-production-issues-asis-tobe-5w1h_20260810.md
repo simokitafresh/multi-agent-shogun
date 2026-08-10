@@ -130,7 +130,7 @@
 |---|---|---|
 | P1偵察 | cmd_4293(飛猿→完了) | **完了: dataframe_prep 1.87s→1366.43s(約730倍)が最大回帰と確定** |
 | P1修正第1弾 | 疾風hotfix(家老自走配備) | 走行中: NAV DataFrame cache共有。是正後も残余律速の再計測必須(複数原因前提) |
-| P2因果写像再構築 | 影丸偵察GATE CLEAR(15:27): signal_change_log.date=対象signal日と確定、写像=PF別判断区間包含。実測: alert562のうち区間内assigned=91・**before_first=471**(最初の是正判断日より前)・same_month=0・月差+1〜+17 | **cutover・本番書込みは停止維持**。次の二値判定=471件がγ4 replayカバレッジ外か真の想定外か(家老へ発令msg_152826) |
+| P2因果写像再構築 | 影丸partition確定(15:51): **全562件がγ4 replay範囲外**(起点前471+終端後91・inside=0)。分類=各alert行を同PFのCSV min/max日で三分割 | **カバレッジ不足が確定**(真の想定外は未確定)。次=dual replayをalert全期間(2012-04〜2026-08-07)へ両側延伸するread-only再replay(家老へ発令msg_155203)。inside=562/562なら想定内確定→backup4点→γ5再実行。**cutover・本番write停止維持**。終端後91件(13PF・2026-08月)は最優先確認 |
 | P2 γ5再実行 | (写像確定後) | 未起票・🔒backup4点(manifest実パス/DB同一性/cutoff/restore rehearsal)必須 |
 | P3 CDP read-only偵察 | 半蔵・才蔵(殿提案14:28採用・家老へ配備指示14:37) | 配備指示済み: 4画面AsIs機械固定 |
 | P3a-3e修正 | (偵察+γ5決着後に採番) | 未起票 |
