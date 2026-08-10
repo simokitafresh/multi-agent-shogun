@@ -686,6 +686,95 @@ PY
     [ "$(git -C "$REPO" status --porcelain -- own.txt)" = "" ]
 }
 
+# test_necessity: multi-path normal commits must advance the exact owned paths in one shared-index transaction while preserving every foreign staged entry and leaving no index lock; violation restores O(paths) DrvFS latency or clobbers another worker.
+@test "multi-path shared index advance is one exact batch and preserves foreign stage" {
+    mkdir -p "$REPO/bulk" "$REPO/trace-bin"
+    owned=()
+    for i in $(seq -w 1 24); do
+        path="bulk/owned-${i}.txt"
+        owned+=("$path")
+        printf 'base-%s\n' "$i" > "$REPO/$path"
+    done
+    git -C "$REPO" add -- bulk
+    git -C "$REPO" commit -qm bulk-base
+
+    for path in "${owned[@]}"; do
+        printf 'changed\n' >> "$REPO/$path"
+    done
+    printf 'foreign staged\n' >> "$REPO/other.txt"
+    git -C "$REPO" add -- other.txt
+    foreign_before="$(git -C "$REPO" ls-files -s -- other.txt)"
+    mkdir -p "$REPO/.git/hooks"
+    cat > "$REPO/.git/hooks/post-commit" <<'POST_COMMIT'
+#!/usr/bin/env bash
+printf 'same-path foreign stage\n' >> bulk/owned-01.txt
+unset GIT_INDEX_FILE
+git add -- bulk/owned-01.txt
+POST_COMMIT
+    chmod +x "$REPO/.git/hooks/post-commit"
+
+    cat > "$REPO/trace-bin/git" <<'GIT_WRAPPER'
+#!/usr/bin/env bash
+if [[ "${GIT_INDEX_FILE:-}" == "${TRACE_SHARED_INDEX:-}" && " $* " == *" update-index "* ]]; then
+    printf '%s\n' "$*" >> "$TRACE_LOG"
+fi
+exec "$REAL_GIT" "$@"
+GIT_WRAPPER
+    chmod +x "$REPO/trace-bin/git"
+
+    run bash -c 'cd "$1" && shift; TRACE_SHARED_INDEX="$PWD/.git/index" TRACE_LOG="$PWD/shared-index.trace" REAL_GIT="$(command -v git)" PATH="$PWD/trace-bin:$PATH" bash "$1" -m bulk-index -- "${@:2}"' _ "$REPO" "$HELPER" "${owned[@]}"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD | sort)" = "$(printf '%s\n' "${owned[@]}" | sort)" ]
+    [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$foreign_before" ]
+    [ "$(git -C "$REPO" diff --cached --name-only | sort)" = $'bulk/owned-01.txt\nother.txt' ]
+    [ "$(git -C "$REPO" show :bulk/owned-01.txt | tail -1)" = "same-path foreign stage" ]
+    [[ "$output" == *"preserving newer staged entry: bulk/owned-01.txt"* ]]
+    [ "$(grep -c -- '--index-info' "$REPO/shared-index.trace")" -eq 1 ]
+    ! grep -q -- '--cacheinfo' "$REPO/shared-index.trace"
+    [ ! -e "$REPO/.git/index.lock" ]
+}
+
+# test_necessity: an exact-path scoped commit must never refresh the whole shared worktree through status/non-cached diff while preserving foreign staged, tracked-worktree, and untracked bytes outside its owned path.
+@test "exact owned path post-check uses no shared worktree scan and preserves every foreign dirty class" {
+    mkdir -p "$REPO/trace-bin"
+    printf 'foreign worktree\n' >> "$REPO/other.txt"
+    printf 'foreign staged\n' > "$REPO/staged.txt"
+    printf 'foreign untracked\n' > "$REPO/untracked.txt"
+    git -C "$REPO" add -- staged.txt
+    foreign_stage_before="$(git -C "$REPO" ls-files -s -- staged.txt)"
+    foreign_worktree_before="$(git -C "$REPO" hash-object -- other.txt)"
+    foreign_untracked_before="$(git -C "$REPO" hash-object -- untracked.txt)"
+    printf 'owned change\n' >> "$REPO/own.txt"
+
+    cat > "$REPO/trace-bin/git" <<'GIT_WRAPPER'
+#!/usr/bin/env bash
+if [[ "${1:-}" == status ]]; then
+    printf 'status %s\n' "$*" >> "$TRACE_STATUS_LOG"
+    exit 97
+fi
+if [[ "${1:-}" == diff && " $* " != *" --cached "* ]]; then
+    printf 'worktree-diff %s\n' "$*" >> "$TRACE_STATUS_LOG"
+    exit 98
+fi
+exec "$REAL_GIT" "$@"
+GIT_WRAPPER
+    chmod +x "$REPO/trace-bin/git"
+
+    run bash -c 'cd "$1" && TRACE_STATUS_LOG="$PWD/status.trace" REAL_GIT="$(command -v git)" PATH="$PWD/trace-bin:$PATH" bash "$2" -m no-status -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ ! -e "$REPO/status.trace" ]
+    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = own.txt ]
+    [ "$(git -C "$REPO" ls-files -s -- staged.txt)" = "$foreign_stage_before" ]
+    [ "$(git -C "$REPO" hash-object -- other.txt)" = "$foreign_worktree_before" ]
+    [ "$(git -C "$REPO" hash-object -- untracked.txt)" = "$foreign_untracked_before" ]
+    [ "$(git -C "$REPO" diff --cached --name-only)" = staged.txt ]
+    [ -n "$(git -C "$REPO" diff --name-only -- other.txt)" ]
+    [ -n "$(git -C "$REPO" ls-files --others --exclude-standard -- untracked.txt)" ]
+    [ ! -e "$REPO/.git/index.lock" ]
+}
+
 @test "2並列の事前stage済みcommitはsubject/pathを分離しforeign stageを保持する" {
     printf 'alpha change\n' >> "$REPO/own.txt"
     printf 'beta change\n' >> "$REPO/other.txt"

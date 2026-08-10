@@ -464,6 +464,7 @@ current_phase="read_tree"
 phase_started_epoch_ms="$(date +%s%3N)"
 telemetry_started_epoch_ms="$phase_started_epoch_ms"
 terminal_event_emitted=false
+terminal_status_clean_hint=false
 published_commit_hash=""
 telemetry_overhead_us=0
 telemetry_clock_calls=0
@@ -496,14 +497,8 @@ record_git_exit() {
 
 write_terminal_ledger() {
     local rc="$1" commit_hash="${2:-}" complete="$3" phase="$4"
-    local tmp head_generation status_clean=false scope_args=()
+    local tmp head_generation status_clean="${terminal_status_clean_hint:-false}"
     head_generation="$(git rev-parse HEAD 2>/dev/null || printf unavailable)"
-    if declare -p paths >/dev/null 2>&1 && ((${#paths[@]} > 0)); then
-        scope_args=(-- "${paths[@]}")
-        if git diff --quiet "${scope_args[@]}" && git diff --cached --quiet "${scope_args[@]}"; then
-            status_clean=true
-        fi
-    fi
     [[ "$commit_hash" =~ ^[0-9a-f]{40}$ ]] || commit_hash=none
     tmp="${terminal_ledger}.tmp.$$"
     printf 'version=1\nrun_id=%s\ncommit_hash=%s\nrc=%s\nphase=%s\nstatus_clean=%s\nhead_generation=%s\ncomplete=%s\n' \
@@ -666,6 +661,64 @@ if [[ -e "$shared_index_lock" ]]; then
     rm -f -- "$shared_index_lock"
 fi
 
+# Compare exact owned paths without porcelain status or diff's whole-index
+# refresh. HEAD and the shared index are read once; only named worktree blobs
+# are hashed. Foreign paths are never enumerated.
+collect_owned_paths_not_at_head() {
+    local record meta path mode blob work_mode work_blob
+    local -a exact_paths=("$@")
+    local -A head_entries=() index_entries=()
+    ((${#exact_paths[@]} > 0)) || return 0
+    if [[ "${terminal_head_snapshot_ready:-false}" == true ]]; then
+        for path in "${exact_paths[@]}"; do
+            [[ -z "${terminal_head_entries[$path]-}" ]] || head_entries["$path"]="${terminal_head_entries[$path]}"
+        done
+    else
+        while IFS= read -r -d '' record; do
+            meta="${record%%$'\t'*}"
+            path="${record#*$'\t'}"
+            read -r mode _ blob <<<"$meta"
+            head_entries["$path"]="$mode $blob"
+        done < <(git ls-tree -rz HEAD -- "${exact_paths[@]}")
+    fi
+    if [[ "${terminal_index_snapshot_ready:-false}" == true &&
+          "$(stat -c '%y:%s' "$shared_index_file" 2>/dev/null || printf missing)" == "$terminal_index_signature" ]]; then
+        for path in "${exact_paths[@]}"; do
+            [[ -z "${terminal_index_entries[$path]-}" ]] || index_entries["$path"]="${terminal_index_entries[$path]}"
+        done
+    else
+        while IFS= read -r -d '' record; do
+            meta="${record%%$'\t'*}"
+            path="${record#*$'\t'}"
+            index_entries["$path"]="${meta% 0}"
+        done < <(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -z -- "${exact_paths[@]}")
+    fi
+    for path in "${exact_paths[@]}"; do
+        if [[ "${index_entries[$path]-}" != "${head_entries[$path]-}" ]]; then
+            printf '%s\n' "$path"
+            continue
+        fi
+        if [[ -z "${head_entries[$path]-}" ]]; then
+            [[ ! -e "$path" && ! -L "$path" ]] || printf '%s\n' "$path"
+            continue
+        fi
+        if [[ ! -e "$path" && ! -L "$path" ]]; then
+            printf '%s\n' "$path"
+            continue
+        fi
+        read -r mode blob <<<"${head_entries[$path]}"
+        if [[ -L "$path" ]]; then
+            work_mode=120000
+        elif [[ -x "$path" ]]; then
+            work_mode=100755
+        else
+            work_mode=100644
+        fi
+        work_blob="$(git hash-object -- "$path" 2>/dev/null || printf unavailable)"
+        [[ "$work_mode $work_blob" == "$mode $blob" ]] || printf '%s\n' "$path"
+    done
+}
+
 advance_shared_index_entry() {
     local path="$1" expected_entry="$2" current_entry new_blob new_mode attempt
     local attempts="${NINJA_SCOPE_COMMIT_INDEX_RETRY_ATTEMPTS:-50}"
@@ -694,6 +747,115 @@ advance_shared_index_entry() {
         ((attempt < attempts)) && sleep "$delay"
     done
     echo "BLOCK: shared index did not converge after $attempts attempts: $path" >&2
+    return 1
+}
+
+declare -A terminal_head_entries=()
+terminal_head_snapshot_ready=false
+declare -A terminal_index_entries=()
+terminal_index_snapshot_ready=false
+terminal_index_signature=""
+
+# Normal-mode commits can contain hundreds of exact files.  Advancing them via
+# advance_shared_index_entry() rereads the shared index and HEAD tree once per
+# file; on DrvFS that turns a bounded index reconciliation into O(paths) Git
+# process and filesystem round trips.  Reconcile the same exact committed paths
+# as one index transaction instead.  The ownership/CAS contract is unchanged:
+# each path is updated only while its current shared entry still equals the
+# pre-commit snapshot, and every changed entry (including a same-path foreign
+# stage) is preserved.  Unspecified index entries are never part of
+# --index-info, so unrelated staged work remains byte-for-byte untouched.
+advance_shared_index_entries() {
+    local attempts="${NINJA_SCOPE_COMMIT_INDEX_RETRY_ATTEMPTS:-50}"
+    local delay="${NINJA_SCOPE_COMMIT_INDEX_RETRY_DELAY:-0.02}"
+    local attempt index_record index_meta path mode blob
+    local expected_entry current_entry target_entry
+    local -a exact_paths=("$@") update_paths=() update_modes=() update_blobs=()
+    local -A head_entries=() current_entries=() warned_paths=()
+
+    [[ "$attempts" =~ ^[1-9][0-9]*$ ]] \
+        || { echo "BLOCK: index retry attempts must be a positive integer" >&2; return 2; }
+    ((${#exact_paths[@]} > 0)) || return 0
+
+    # HEAD cannot advance while the caller holds commit_lock_fd.  Resolve all
+    # target mode/blob pairs once, NUL-delimited so exact Git paths are retained.
+    while IFS= read -r -d '' index_record; do
+        index_meta="${index_record%%$'\t'*}"
+        path="${index_record#*$'\t'}"
+        read -r mode _ blob <<<"$index_meta"
+        head_entries["$path"]="$mode $blob"
+    done < <(git ls-tree -rz HEAD -- "${exact_paths[@]}")
+    terminal_head_entries=()
+    for path in "${exact_paths[@]}"; do
+        [[ -z "${head_entries[$path]-}" ]] || terminal_head_entries["$path"]="${head_entries[$path]}"
+    done
+    terminal_head_snapshot_ready=true
+
+    for ((attempt=1; attempt<=attempts; attempt++)); do
+        current_entries=()
+        while IFS= read -r -d '' index_record; do
+            index_meta="${index_record%%$'\t'*}"
+            path="${index_record#*$'\t'}"
+            current_entries["$path"]="${index_meta% 0}"
+        done < <(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -z -- "${exact_paths[@]}")
+
+        update_paths=()
+        update_modes=()
+        update_blobs=()
+        terminal_index_entries=()
+        for path in "${exact_paths[@]}"; do
+            [[ -z "${current_entries[$path]-}" ]] || terminal_index_entries["$path"]="${current_entries[$path]}"
+        done
+        for path in "${exact_paths[@]}"; do
+            expected_entry="${shared_index_before[$path]-}"
+            current_entry="${current_entries[$path]-}"
+            if [[ "$current_entry" != "$expected_entry" ]]; then
+                if [[ -z "${warned_paths[$path]-}" ]]; then
+                    echo "WARN: shared index changed concurrently; preserving newer staged entry: $path" >&2
+                    warned_paths["$path"]=1
+                fi
+                continue
+            fi
+
+            target_entry="${head_entries[$path]-}"
+            [[ "$current_entry" != "$target_entry" ]] || continue
+            update_paths+=("$path")
+            if [[ -n "$target_entry" ]]; then
+                read -r mode blob <<<"$target_entry"
+                update_modes+=("$mode")
+                update_blobs+=("$blob")
+            else
+                update_modes+=(0)
+                update_blobs+=(0000000000000000000000000000000000000000)
+            fi
+        done
+
+        if ((${#update_paths[@]} == 0)); then
+            terminal_index_signature="$(stat -c '%y:%s' "$shared_index_file" 2>/dev/null || printf missing)"
+            terminal_index_snapshot_ready=true
+            return 0
+        fi
+        if {
+            for i in "${!update_paths[@]}"; do
+                printf '%s %s\t%s\0' "${update_modes[$i]}" "${update_blobs[$i]}" "${update_paths[$i]}"
+            done
+        } | GIT_INDEX_FILE="$shared_index_file" git update-index -z --index-info 2>/dev/null; then
+            for i in "${!update_paths[@]}"; do
+                path="${update_paths[$i]}"
+                target_entry="${head_entries[$path]-}"
+                if [[ -n "$target_entry" ]]; then
+                    terminal_index_entries["$path"]="$target_entry"
+                else
+                    unset 'terminal_index_entries[$path]'
+                fi
+            done
+            terminal_index_signature="$(stat -c '%y:%s' "$shared_index_file" 2>/dev/null || printf missing)"
+            terminal_index_snapshot_ready=true
+            return 0
+        fi
+        ((attempt < attempts)) && sleep "$delay"
+    done
+    echo "BLOCK: shared index did not converge after $attempts attempts: ${exact_paths[*]}" >&2
     return 1
 }
 
@@ -1087,41 +1249,15 @@ if ! flock -n "$scope_lock_fd"; then
 fi
 
 if [[ -z "$patch_file" && "$repair_index" == false ]]; then
-    scope_has_changes=false
     for scope_path in "${paths[@]}"; do
         scope_is_tracked_deletion=false
         if [[ ! -e "$scope_path" && ! -L "$scope_path" ]] &&
-           git cat-file -e "HEAD:$scope_path" 2>/dev/null &&
-           git status --porcelain=v1 -- "$scope_path" | awk 'substr($0,1,2) ~ /D/ {found=1} END{exit !found}'; then
+           git cat-file -e "HEAD:$scope_path" 2>/dev/null; then
             scope_is_tracked_deletion=true
         fi
         [[ -e "$scope_path" || -L "$scope_path" || "$scope_is_tracked_deletion" == true ]] \
             || { echo "BLOCK: scope path does not exist: $scope_path" >&2; exit 2; }
-        if [[ -n "$(git status --porcelain --ignored -- "$scope_path")" ]]; then
-            scope_has_changes=true
-        fi
     done
-    if [[ "$scope_has_changes" == false ]]; then
-        if [[ -f "$scope_content_receipt" ]]; then
-            content_receipt_hash="$(awk -F= '$1 == "commit_hash" {print $2; exit}' "$scope_content_receipt")"
-            if [[ "$content_receipt_hash" =~ ^[0-9a-f]{40}$ ]] && \
-               git cat-file -e "${content_receipt_hash}^{commit}" 2>/dev/null && \
-               git merge-base --is-ancestor "$content_receipt_hash" HEAD 2>/dev/null; then
-                published_commit_hash="$content_receipt_hash"
-                write_terminal_ledger 0 "$content_receipt_hash" true complete
-                printf 'event=terminal_ledger run_id=%s rc=0 commit_hash=%s complete=true ledger=%s\n' \
-                    "$terminal_run_id" "$content_receipt_hash" "$terminal_ledger" >&2
-                printf 'event=scope_content_receipt role=follower key=%s rc=0 commit_hash=%s receipt=%s\n' \
-                    "$scope_content_key" "$content_receipt_hash" "$scope_content_receipt" >&2
-                terminal_event_emitted=true
-                printf '%s\n' "$content_receipt_hash"
-                trap - EXIT
-                exit 0
-            fi
-        fi
-        echo "BLOCK: scope paths have no changes" >&2
-        exit 2
-    fi
 fi
 
 # Repair the proven residual state where worktree bytes already equal HEAD but
@@ -1144,8 +1280,9 @@ if [[ "$repair_index" == true ]]; then
         head_mode="$(git ls-tree HEAD -- "$scope_path" | awk 'NR==1 {print $1}')"
         GIT_INDEX_FILE="$shared_index_file" git update-index --add --cacheinfo "$head_mode,$head_blob,$scope_path"
     done
-    [[ -z "$(git status --porcelain -- "${paths[@]}")" ]] \
+    [[ -z "$(collect_owned_paths_not_at_head "${paths[@]}")" ]] \
         || { echo "BLOCK: scoped index repair did not converge to clean state" >&2; exit 1; }
+    terminal_status_clean_hint=true
     [[ ! -e "$shared_index_lock" ]] \
         || { echo "BLOCK: shared index lock remained after repair: $shared_index_lock" >&2; exit 1; }
     publish_terminal_success "$(git rev-parse HEAD)"
@@ -1350,6 +1487,34 @@ begin_phase add
 # when the fixed checkout intentionally carries a broad `.gitignore` (for
 # example `*`).  Never force-add a discovered or repository-wide path.
 git add -f -- "${paths[@]}"
+# The private index is already HEAD + exact owned worktree paths.  Its cached
+# tree is therefore the no-change oracle; unlike porcelain status/diff against
+# the shared index, this cannot refresh or lock foreign worktree entries.
+if git diff --cached --quiet HEAD -- "${paths[@]}"; then
+    if [[ -f "$scope_content_receipt" ]]; then
+        content_receipt_hash="$(awk -F= '$1 == "commit_hash" {print $2; exit}' "$scope_content_receipt")"
+        if [[ "$content_receipt_hash" =~ ^[0-9a-f]{40}$ ]] && \
+           git cat-file -e "${content_receipt_hash}^{commit}" 2>/dev/null && \
+           git merge-base --is-ancestor "$content_receipt_hash" HEAD 2>/dev/null; then
+            published_commit_hash="$content_receipt_hash"
+            terminal_status_clean_hint=true
+            unset GIT_INDEX_FILE
+            rm -f "$temp_index" "$temp_index.lock"
+            trap - EXIT
+            write_terminal_ledger 0 "$content_receipt_hash" true complete
+            printf 'event=terminal_ledger run_id=%s rc=0 commit_hash=%s complete=true ledger=%s\n' \
+                "$terminal_run_id" "$content_receipt_hash" "$terminal_ledger" >&2
+            printf 'event=scope_content_receipt role=follower key=%s rc=0 commit_hash=%s receipt=%s\n' \
+                "$scope_content_key" "$content_receipt_hash" "$scope_content_receipt" >&2
+            terminal_event_emitted=true
+            ninja_scope_commit_record_total 0
+            printf '%s\n' "$content_receipt_hash"
+            exit 0
+        fi
+    fi
+    echo "BLOCK: scope paths have no changes" >&2
+    exit 2
+fi
 finish_phase 0
 begin_phase scope_sync
 
@@ -1512,10 +1677,7 @@ unset GIT_INDEX_FILE
 # commit中に別processがscopeの共有index entryを書き換えた場合は、その新しい
 # stageを上書きせず保持する。事前stageがprivate entryと同一なら既にnew HEADと
 # 一致するためupdate不要、cleanな旧HEAD entryだけをnew HEADへ進める。
-for committed_path in "${committed[@]}"; do
-    shared_entry_before="${shared_index_before[$committed_path]-}"
-    advance_shared_index_entry "$committed_path" "$shared_entry_before"
-done
+advance_shared_index_entries "${committed[@]}"
 finish_phase 0
 begin_phase post_check
 cleanup_normal_index
@@ -1530,10 +1692,10 @@ done
 
 # Commit公開後に到着したdirty hunkは別eventであり、既にterminalなcommitを
 # 失敗へ巻き戻さない。重複は可視WARNに留め、最終report/checkpointで照合する。
+dirty_scope_paths="$(collect_owned_paths_not_at_head "${committed[@]}" | sort -u | sed '/^$/d')"
 if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh" ]]; then
     # shellcheck source=scripts/lib/report_commit_nonoverlap_filter.sh
     source "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh"
-    dirty_scope_paths="$({ git diff --name-only -- "${paths[@]}"; git diff --cached --name-only -- "${paths[@]}"; } | sort -u | sed '/^$/d')"
     if [[ -n "$dirty_scope_paths" ]]; then
         commit_probe="$(mktemp)"
         trap 'rm -f "${commit_probe:-}"' EXIT
@@ -1554,5 +1716,6 @@ fi
 [[ ! -e "$shared_index_lock" ]] \
     || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
 
+[[ -n "${dirty_scope_paths:-}" ]] || terminal_status_clean_hint=true
 publish_terminal_success "$commit_hash"
 trap - EXIT
