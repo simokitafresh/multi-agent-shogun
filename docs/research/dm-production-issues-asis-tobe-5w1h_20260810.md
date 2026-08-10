@@ -1,5 +1,5 @@
 <!-- gist-master: 2d1e7458976b45751cebbffd8c118fa3 dm-production-issues-asis-tobe-5w1h_20260810.md -->
-# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.4
+# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.5
 
 - 作成: 2026-08-10 14:16 JST(将軍直轄)
 - 位置づけ: 月次リターン基本原理設計書v6.13の**補填**。v6本文は変更しない。本日殿観測+一次計測で確定した本番問題群のAsIs/ToBeを固定し、修復レーンの正本とする
@@ -157,6 +157,8 @@
 
 将軍がrecalculate_fast.py / recalculate_fof.py現物から読み取った実行順。行番号は2026-08-11時点のmain。
 
+### P6-AsIs: 現行フロー
+
 ```mermaid
 flowchart TD
     P0["Phase 0: cleanup<br/>monthly_returns等をDELETE<br/>★fallback前提条件(行不在)がここで発生"] --> P12
@@ -197,6 +199,30 @@ flowchart TD
 
 - 効果: fallback根絶(症状でなく発生条件の根絶)+層内並列の前提+部分再計算(下層不変なら上層のみ)の三点が同一構造から出る。
 - 位置づけ: 現行のkey不一致hotfix(対症)完了後の構造改修候補。実装起票は殿の別途下知。
+
+### P6-ToBe: 層確定カスケードフロー(mermaid)
+
+```mermaid
+flowchart TD
+    L0["L0: 価格・シグナル基盤(計算固定済み)<br/>価格データ+vectorized signals"] --> G1{"確定gate:<br/>L0成果物存在検証<br/>(欠落=fail-fast停止)"}
+    G1 --> L2["L2: standard 24体<br/>日次ループ+monthly_returns生成<br/>→完了時に確定commit"] --> G2{"確定gate:<br/>standard monthly確定検証"}
+    G2 --> L3A["L3a: leaf FoF層(FoF of Standard)<br/>★確定済みstandard monthlyのみ参照<br/>層内は相互独立=並列可<br/>→完了時に確定commit"] --> G3{"確定gate:<br/>L3a monthly/NAV確定検証"}
+    G3 --> L3B["L3b: nested FoF層(FoF of FoF)<br/>★確定済みL3a成果物のみ参照<br/>深さdepth=2,3…も同様に層順<br/>→完了時に確定commit"] --> G4{"確定gate:<br/>全FoF確定検証"}
+    G4 --> L5["L5: 積み木(102PF)<br/>drawdown/rolling/metrics/trade_performance<br/>★下層確定済みが契約保証→fallback構造的に発生不能<br/>PF間独立=並列可"]
+
+    L5 -.->|"fallback経路は契約違反の<br/>ERROR検知器へ転換(silent廃止)"| L5
+    L2 -.->|"確定cache(DB+メモリ・キー契約統一)"| L3A
+    L3A -.->|"確定cache"| L3B
+    L3B -.->|"確定cache"| L5
+    L2 -.->|"確定cache"| L5
+
+    style G1 fill:#f9f0d0
+    style G2 fill:#f9f0d0
+    style G3 fill:#f9f0d0
+    style G4 fill:#f9f0d0
+```
+
+**AsIsとの差分(要点)**: (1)各層の間に確定gate — 上層は下層の確定を検証してから開始(現行は暗黙の順序依存のみ) (2)FoFをフラット1本列でなくL3a/L3b…の深さ層に分割し層内並列 (3)cache受渡しをキー契約で統一(メモリ引数+DB行の混在廃止) (4)fallbackはsilent動的再計算からERROR検知器へ転換 (5)層単位の部分再実行(下層不変なら上層のみ)が構造的に可能になり、1層×少PFの高速検証が標準になる。
 
 ## v6設計書・タスクリストの検討不足の知見化(殿指示14:17「成長のチャンスだ」)
 
@@ -254,6 +280,7 @@ flowchart TD
 10. K7(CI性能回帰検知)を検討不足表へ追加済み。
 
 ## 改訂履歴
+- v1.5 (2026-08-11 04:52): **P6-ToBe層確定カスケードのmermaid図を追加**(殿指示04:50「AsIs/ToBe両方書け」) — 既存図をP6-AsIsと明記し、確定gate4つ+L3a/L3b層分割+並列可否+fallback→ERROR転換を図示。AsIs/ToBe差分5点を要点化。
 - v1.4 (2026-08-11 04:48): **P6-ToBe: 層確定カスケード実行モデルを追加**(殿提案04:47「L0を計算固定してるようにL1→L2→L3とやれば常にキャッシュが使える」) — 各層完了時に成果物を確定commitし上層は確定済み下層のみ参照する契約。fallbackを対症でなく発生条件ごと根絶し、層単位検証・層内並列・部分再計算の構造基盤を兼ねる。実装起票は別途下知。
 - v1.3 (2026-08-11 04:42): **P6. fullrecalculate計算順序フロー(mermaid)を新設**(殿指示04:39) — Phase 0〜積み木までの実行順+データ受渡し+fallback発生点を1図に固定。殿の2仮説(順序入替え/構成FoF先行)は共に実装済みと現物確認、真因=cacheキー不一致を図中に明記。最適化候補3点(ALM除去/FoF drift状態保存/L5並列化)を付記。
 - v1.2 (2026-08-11 03:43): **P5. 殿改善候補メモ棚を新設** — M1 pending表示意味論(02:39)、M2 ALM deadcode残存+ログ行は無条件マーカーの切り分け(03:35)、M3 SIGNAL DECISION DRIFT CRITICALログ冗長(03:40)。いずれも実装は別途下知待ち。ヘッダversionをv1.2へ是正(v1.1改訂時にヘッダ未更新だった点も是正)。
