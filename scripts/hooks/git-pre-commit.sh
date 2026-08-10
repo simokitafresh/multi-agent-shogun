@@ -310,8 +310,31 @@ staged_hook_related_exists() {
     return 1
 }
 
+precommit_shell_syntax_cache_hit() {
+    local cache_file="$1" blob_oid="$2" content_sha="$3"
+    local version="" cached_oid="" cached_sha="" cached_bash="" extra=""
+    [[ -f "$cache_file" ]] || return 1
+    IFS=$'\t' read -r version cached_oid cached_sha cached_bash extra < "$cache_file" || return 1
+    [[ -z "$extra" && "$version" == v1 ]] || return 1
+    [[ "$cached_oid" == "$blob_oid" && "$cached_sha" == "$content_sha" ]] || return 1
+    [[ "$cached_bash" == "$BASH_VERSION" ]] || return 1
+}
+
+precommit_shell_syntax_cache_publish() {
+    local cache_file="$1" blob_oid="$2" content_sha="$3"
+    local cache_dir cache_tmp
+    cache_dir="${cache_file%/*}"
+    mkdir -p "$cache_dir" 2>/dev/null || return 0
+    cache_tmp="$(mktemp "$cache_dir/.shell-syntax.XXXXXX" 2>/dev/null)" || return 0
+    if printf 'v1\t%s\t%s\t%s\n' "$blob_oid" "$content_sha" "$BASH_VERSION" > "$cache_tmp"; then
+        mv "$cache_tmp" "$cache_file" 2>/dev/null || rm -f "$cache_tmp"
+    else
+        rm -f "$cache_tmp"
+    fi
+}
+
 check_staged_shell_syntax() {
-    local staged_sh
+    local staged_sh blob_oid content_sha bash_key cache_root cache_file syntax_input tmp_input
     local -a staged_shells=()
     local -A worktree_differs=()
 
@@ -331,15 +354,52 @@ check_staged_shell_syntax() {
         done < <(git diff --name-only -- "${staged_shells[@]}" 2>/dev/null)
     fi
 
+    cache_root="${PRECOMMIT_SHELL_SYNTAX_CACHE_DIR:-$REPO_ROOT/.cache/precommit-shell-syntax}"
+    bash_key="$(printf '%s' "$BASH_VERSION" | sha256sum | awk '{print $1}')" || bash_key=""
+
     for staged_sh in "${staged_shells[@]}"; do
+        blob_oid="$(git rev-parse ":$staged_sh" 2>/dev/null || true)"
+        if [[ ! "$blob_oid" =~ ^[0-9a-fA-F]{40,64}$ || -z "$bash_key" ]]; then
+            printf '%s\n' "$staged_sh"
+            continue
+        fi
+
+        syntax_input=""
+        tmp_input=""
         if ((${#staged_shells[@]} > 1)) &&
             [[ -f "$REPO_ROOT/$staged_sh" ]] &&
             [[ ! -v "worktree_differs[$staged_sh]" ]]; then
-            bash -n "$REPO_ROOT/$staged_sh" 2>/dev/null || printf '%s\n' "$staged_sh"
+            syntax_input="$REPO_ROOT/$staged_sh"
         else
-            git show ":$staged_sh" 2>/dev/null | bash -n 2>/dev/null ||
+            tmp_input="$(mktemp "${TMPDIR:-/tmp}/precommit-shell-syntax.XXXXXX")" || {
                 printf '%s\n' "$staged_sh"
+                continue
+            }
+            if ! git show ":$staged_sh" > "$tmp_input" 2>/dev/null; then
+                rm -f "$tmp_input"
+                printf '%s\n' "$staged_sh"
+                continue
+            fi
+            syntax_input="$tmp_input"
         fi
+
+        content_sha="$(sha256sum "$syntax_input" 2>/dev/null | awk '{print $1}')"
+        if [[ ! "$content_sha" =~ ^[0-9a-f]{64}$ ]]; then
+            [[ -z "$tmp_input" ]] || rm -f "$tmp_input"
+            printf '%s\n' "$staged_sh"
+            continue
+        fi
+        cache_file="$cache_root/${blob_oid}.${bash_key}.pass"
+        if precommit_shell_syntax_cache_hit "$cache_file" "$blob_oid" "$content_sha"; then
+            [[ -z "$tmp_input" ]] || rm -f "$tmp_input"
+            continue
+        fi
+        if bash -n "$syntax_input" 2>/dev/null; then
+            precommit_shell_syntax_cache_publish "$cache_file" "$blob_oid" "$content_sha"
+        else
+            printf '%s\n' "$staged_sh"
+        fi
+        [[ -z "$tmp_input" ]] || rm -f "$tmp_input"
     done
 }
 

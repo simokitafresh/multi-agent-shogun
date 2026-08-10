@@ -59,7 +59,7 @@ extract_funcs() {
   git -C "$REPO" add scripts/valid.sh scripts/dirty.sh
   printf '#!/bin/bash\nif true; then\n' >"$REPO/scripts/dirty.sh"
 
-  FUNCS="$(extract_funcs check_staged_shell_syntax)"
+  FUNCS="$(extract_funcs precommit_shell_syntax_cache_hit precommit_shell_syntax_cache_publish check_staged_shell_syntax)"
   run bash -c "
     REPO_ROOT='$REPO'
     $FUNCS
@@ -89,7 +89,7 @@ extract_funcs() {
 
 run_affected() {
   local env_prefix="$1"
-  FUNCS="$(extract_funcs staged_file_could_have_tests resolve_reverse_lib_deps reverse_lib_dep_scan_scope is_doc_only_fastpath_path all_staged_files_are_doc_only_fastpath resolve_precommit_task_file check_precommit_affected_tests)"
+  FUNCS="$(extract_funcs staged_file_could_have_tests resolve_reverse_lib_deps reverse_lib_dep_scan_scope is_doc_only_fastpath_path all_staged_files_are_doc_only_fastpath resolve_precommit_task_file precommit_staged_tree_hash precommit_staged_blob_hashes precommit_receipt_matches precommit_publish_receipt_identity run_precommit_tests_bounded check_precommit_affected_tests)"
   bash -c "
     REPO_ROOT='$REPO'
     _PRECOMMIT_COMMAND_ID='test-precommit'
