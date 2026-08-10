@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260810-004023896-bb71
-  ts: "2026-08-10T00:40:23+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id blqcbx7pk task id tool use id toolu 01F2Xtpwc9EanDkHC5 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T00:47:06+09:00"
 - id: INS-20260810-004621940-8f1f
   ts: "2026-08-10T00:46:21+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4260; matched=close,到達; current_pattern=月次リターンT-α5 — mtd応答の系列純度是正(Close比借用の除去と両到達経路の置換); candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
@@ -677,8 +667,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'c9b788292fa14cd3e14adbf1ef0130df366787a073c5e0dc8931e6fb07d7c49b' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 36
-  last_seen: "2026-08-10T10:47:58+09:00"
+  occurrence_count: 37
+  last_seen: "2026-08-10T10:55:13+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -986,3 +976,13 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_4285"
   fix_known: false
   status: pending
+- id: INS-20260810-105410147-036f
+  ts: "2026-08-10T10:54:10+09:00"
+  insight: "[[parity check列名修正後に顕在化したreturns FAIL102とsignals SKIP24を]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731(仮: Hidden Infrastructure Gate Hook Canonical Manifest 20260731; alias=docs research hidden infrastructure gate hook canonical manifest 20260731.yaml; score=4.5) / recalculate_pipeline(再計算パイプライン; alias=sync_layers.py L243がrecalculate_history_fastを呼ぶ; score=4.2) / growth_loop(学習ループ; alias=docs research three layer per action lookup asis tobe 5w1h 2; score=4.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-10T10:54:20+09:00"
