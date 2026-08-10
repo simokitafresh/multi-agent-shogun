@@ -656,7 +656,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:2d7c3c4d8c5e4b42"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で現行gate_skill_script_refs.shを再実行。RC=2(REVIEW_REQUIRED)だが、走査41 SKILL.md/78参照、参照先実在・SKILL.md鮮度・静的パス・実走マーカーは全てOK、WARN/ERRORは0件。既存skill_design_rules経路へ整理し追加修正不要と判定
+  action_artifact: "scripts/gates/gate_skill_script_refs.sh:RC2 REVIEW_REQUIRED; output=41 SKILL.md/78 refs, missing=0, WARN=0, ERROR=0; context/semantic-map.md:55; docs/semantic-index/index.md:5291-5447; context/infrastructure.md:L1566-L1567"
+  resolved_at: "2026-08-10T11:31:00+09:00"
 - id: INS-20260810-035013885-e83c
   ts: "2026-08-10T03:50:13+09:00"
   insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
