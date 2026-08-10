@@ -299,7 +299,12 @@ staged_hook_related_exists() {
     load_staged_file_cache
     for staged_file in "${_STAGED_FILES[@]}"; do
         case "$staged_file" in
-            scripts/hooks/*|.githooks/*) return 0 ;;
+            # Keep this list identical to sync_git_hooks.sh's HOOK_MANIFEST.
+            # scripts/hooks/ also contains Codex/runtime hooks that Git never
+            # installs.  Treating that whole directory as git-hook-related
+            # forced a redundant full synchronizer inside pre-commit after
+            # ninja_scope_commit had already synchronized the real manifest.
+            scripts/hooks/git-pre-commit.sh|.githooks/post-commit|.githooks/pre-push) return 0 ;;
         esac
     done
     return 1
@@ -338,9 +343,9 @@ check_staged_shell_syntax() {
     done
 }
 
-# Return 1 only when the sole hook-related staged path is the pre-commit SSOT
-# and its index blob already equals the installed hook.  Any other hook path,
-# unreadable identity, or byte difference remains a full-sync decision.
+# Return 1 only when the sole manifest-backed staged path is the pre-commit
+# SSOT and its index blob already equals the installed hook.  Any other
+# manifest path, unreadable identity, or byte difference remains fail-closed.
 staged_hook_sync_required() {
     local installed_hook="$1" staged_file saw_precommit=false
     load_staged_file_cache
@@ -349,7 +354,7 @@ staged_hook_sync_required() {
             scripts/hooks/git-pre-commit.sh)
                 saw_precommit=true
                 ;;
-            scripts/hooks/*|.githooks/*)
+            .githooks/post-commit|.githooks/pre-push)
                 return 0
                 ;;
         esac

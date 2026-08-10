@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # test_necessity: pre-commit self-sync must skip its full synchronizer only when
-# the installed hook equals the repo SSOT and no hook-related path is staged; stale,
-# staged, and unreadable identities must remain fail-closed sync decisions.
+# the installed hook equals the repo SSOT and no manifest-backed Git hook path is
+# staged; stale, manifest-staged, and unreadable identities remain fail-closed.
 # Production acceptance additionally reads PRECOMMIT_RECEIPT self_sync_ms on DrvFS.
 
 setup() {
@@ -50,6 +50,18 @@ decision() {
   run decision .githooks/pre-push
   [ "$status" -eq 0 ]
   [ "$output" = sync ]
+}
+
+@test "manifest post-commit path requires sync" {
+  run decision .githooks/post-commit
+  [ "$status" -eq 0 ]
+  [ "$output" = sync ]
+}
+
+@test "non-manifest scripts hook does not trigger git hook sync" {
+  run decision scripts/hooks/three_layer_preflight.sh
+  [ "$status" -eq 0 ]
+  [ "$output" = skip ]
 }
 
 @test "staged pre-commit SSOT already equal to installed hook skips full sync" {
