@@ -1962,6 +1962,31 @@ else
     echo "  karo_snapshot.txt不在 — 判定不可"
 fi
 
+# --- Gate 10.1: 便回転チェック(GATE CLEAR済み未回収在庫) ---
+# 2026-08-11: 便1時間ゼロを殿指摘まで検出できなかった事故の環境埋込み(Q6自動化ターゲット)。
+# 掲示板の「完了レビュー LGTM」status:open = 軍師LGTM済みだが家老ACCEPT/GATE未了の在庫。
+# 在庫が残ったまま長時間経過 = 便停止の疑い。将軍が殿指摘前に検出する。
+echo "■ 便回転チェック(LGTM未回収在庫)"
+BULLETIN_FILE="${BULLETIN_FILE:-queue/bulletin_board.yaml}"
+if [ -f "$BULLETIN_FILE" ]; then
+    lgtm_stock=$(awk '/完了レビュー LGTM/{lgtm=1} /^  status:/{if(lgtm && $2 ~ /open/){c++}; lgtm=0} END{print c+0}' "$BULLETIN_FILE")
+    latest_lgtm_ts=$(awk '/完了レビュー LGTM/{lgtm=1} /^  posted_at:/{if(lgtm){gsub(/'"'"'/,"",$2); print $2; exit}}' "$BULLETIN_FILE")
+    if [ "$lgtm_stock" -gt 0 ] && [ -n "$latest_lgtm_ts" ]; then
+        lgtm_epoch=$(date -d "$latest_lgtm_ts" +%s 2>/dev/null || echo 0)
+        now_epoch=$(date +%s)
+        age_min=$(( (now_epoch - lgtm_epoch) / 60 ))
+        if [ "$lgtm_epoch" -gt 0 ] && [ "$age_min" -ge 60 ]; then
+            echo "  WARN: LGTM未回収在庫 ${lgtm_stock}件、最新LGTMから${age_min}分経過 — 便停止の疑い。家老paneをcapture-paneで一次確認せよ"
+        else
+            echo "  OK: LGTM未回収在庫 ${lgtm_stock}件(最新から${age_min}分)"
+        fi
+    else
+        echo "  OK: LGTM未回収在庫 0件"
+    fi
+else
+    echo "  bulletin_board.yaml不在 — 判定不可"
+fi
+
 # --- Gate 10.2: 週次品質指標トレンド ---
 # cmd_4250: K/D block migrated to the Karo lane; no Shogun execution.
 # --- Gate 12: 三層学習ループ健全性 ---
