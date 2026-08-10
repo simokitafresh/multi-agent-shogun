@@ -87,7 +87,11 @@ OPERATORS = {"&&", "||", ";", "|", "&"}
 
 # These scripts are trusted capability boundaries, not free-text exceptions.
 # The executed operand must still resolve to the canonical file below.
-EXEMPT_SCRIPT_BASENAMES = {"check_pf_config.py", "db_capability_launcher.py"}
+EXEMPT_SCRIPT_BASENAMES = {
+    "check_pf_config.py",
+    "db_capability_launcher.py",
+    "dm_signal_adapters.py",
+}
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -133,6 +137,8 @@ def _configured_project_roots() -> list[str]:
 def _canonical_exempt_script_path(basename: str) -> str | None:
     if basename == "db_capability_launcher.py":
         return os.path.realpath(os.path.join(_REPO_ROOT, "scripts", basename))
+    if basename == "dm_signal_adapters.py":
+        return os.path.realpath(os.path.join(_REPO_ROOT, "scripts", "cdp", basename))
     if basename != "check_pf_config.py":
         return None
     # config/projects.yaml (SSOT) の dm-signal.path から正規check_pf_config.pyパスを導出する。
@@ -760,6 +766,8 @@ def _segment_is_exempt(tokens: list[str]) -> bool:
         return False
     if os.path.basename(clean) == "db_capability_launcher.py":
         return _db_launcher_invocation_valid(rest[script_index + 1 :])
+    if os.path.basename(clean) == "dm_signal_adapters.py":
+        return _cdp_auth_adapter_invocation_valid(rest[script_index + 1 :])
     return True
 
 
@@ -839,6 +847,41 @@ def _db_launcher_invocation_valid(argv: list[str]) -> bool:
         child[j] in allowed_flags and not child[j + 1].startswith("--")
         for j in range(1, len(child), 2)
     )
+
+
+def _cdp_auth_adapter_invocation_valid(argv: list[str]) -> bool:
+    """Prove the canonical adapter is restricted to its auth-strategy contract.
+
+    The adapter performs viewer/admin HTTP and CDP WebSocket authentication; it
+    is not a database client.  Keep this boundary exact so an arbitrary Python
+    script, a different adapter subcommand, or an appended child command cannot
+    inherit the exemption.
+    """
+    argv = _strip_shell_redirects(argv)
+    if len(argv) < 2 or argv[0] != "--receipt" or argv[1].startswith("--"):
+        return False
+    index = 2
+    if index >= len(argv) or argv[index] != "auth-strategy":
+        return False
+    index += 1
+
+    value_flags = {"--target-url", "--required-capability", "--env-file"}
+    parsed: dict[str, str] = {}
+    while index < len(argv):
+        token = argv[index]
+        if token not in value_flags or token in parsed or index + 1 >= len(argv):
+            return False
+        value = argv[index + 1]
+        if not value or value.startswith("--"):
+            return False
+        parsed[token] = value
+        index += 2
+
+    if set(parsed) != value_flags:
+        return False
+    if parsed["--required-capability"] not in {"viewer", "admin"}:
+        return False
+    return parsed["--target-url"].startswith(("http://", "https://"))
 
 
 def _url_host_candidate(url: str) -> str:
