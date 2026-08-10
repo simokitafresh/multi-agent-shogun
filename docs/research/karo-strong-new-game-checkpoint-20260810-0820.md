@@ -129,3 +129,20 @@
 1. inboxをID単位処理する。
 2. `cmd_4287`は影丸報告を待つ。AC1のbackup識別子・復元手順・commit・選択テストを先にformal reviewし、AC2本番実行との境界を混同しない。
 3. 疾風の`cmd_karo_recon2_parity_remaining_split_202608101052`報告は別cmdとして個別処理し、cmd_4287の本番DB laneへ混ぜない。
+
+## 2026-08-10 11:48 増分 — cmd_4287 live・CI待ち
+
+- `cmd_4287`実装はDM-Signal HEAD `9f2891d274e9570deb77f4cc1dc904fd98ee6e31`（補助整形commit `103d70c4e837d5ff1e23764d27d9ea9701e0ae55`）としてmainへ通常push済み。Render deploy `dep-d9sjl3mq1p3s73fqku0g`は`9f2891d2`でLive。
+- backup artifact=`/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_4287_pre_cutover_backup_20260810`。一次manifestは`monthly_returns=16976`、`signal_decision_ledger=15212`を含む主要18表のCOPY+schema/data SHAを保持。
+- 選択テスト`backend/tests/test_recalculate_fof_nav_input.py`は3/3 PASS、SKIP0、27.01秒。
+- GitHub CI run=`31350509548`。11:48時点で6 shard中5 completed success、shard4だけin_progress。**CI GREEN前にfullrecalculateを開始しない**。
+- CI GREEN後は`admin/recalculate-sync?start_date=2000-01-01`を1回だけ実行し、run id・DB terminal completed/errorなし・前後行数を取得する。その後、影丸へ実測値を返してγ3 dual replay全FoF×全判断日差分0とappend-only ledger再基線の報告を完成させる。
+- 疾風は`cmd_karo_hotfix_commit_subject_contract_202608101133`を実行中。才蔵でcommit helperが後段subject Gateに拒否されるcommitを作成でき、同一BLOCK4回となった前後段契約不一致を根治する。配備paneでnudge到達・作業開始を確認済み。
+- 才蔵reflux `cmd_reflux_insight_202608101121_saizo`は軍師LGTM→家老ACCEPT→GATE CLEAR、`/cmd-complete` tail実行中。pending 10→9、25/25 PASS。
+
+### /new後の最初の一手（11:48版）
+
+1. inboxをID単位処理する。
+2. CI run `31350509548`のterminalを確認する。GREENならRender live SHA `9f2891d2`を再照合し、本番fullrecalculateを1回だけ開始する。REDなら疾風以外のidle忍者へCI fixを直配備し、本番実行は保留する。
+3. 本番run中はDB terminalをイベント駆動で確認し、別runを重ねない。完了後はγ3 dual replayを影丸へ継続させる。
+4. 才蔵completion tailがCOMPLETEなら個別将軍報告を出す。疾風hotfix報告は別cmdとしてformal review→GATE→個別完了する。
