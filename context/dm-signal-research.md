@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-10 cmd_4279 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_4285 reviewed source boundary -->
+<!-- source_commit:f22a0ca3 reason:cmd_4285 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=f22a0ca3 -->
 <!-- source_commit:6ad7fe26 reason:cmd_4279 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=6ad7fe26 -->
 <!-- dm_signal_research_reflux: fingerprint=57376f6d7c3737419932dd5a92cbded1d3d284cfb1345a032326822c579f0521; mode=non-target; evidence_b64=5pys55WqZGVwbG955YmN5o+QRkFJTOOBruS4gOasoeiovOi3oeOCkmNtZF80Mjg05aCx5ZGK44G46KiY6Yyy44GZ44KL44Gf44KB56CU56m257Si5byV44G444Gu5qiq5bGV6ZaL5a++6LGh5aSW -->
 <!-- dm_signal_research_reflux: fingerprint=aafc3f846526e79d4dc5980f9f9aab156c415b7e828fddc6b41bb2e3b4461d87; mode=non-target; evidence_b64=Y21kXzQyNzPjga9kb2NzL3Jlc2VhcmNo44Gu5paw6KaPZGF0YS1vbmx544Os44Od44O844OIMeODleOCoeOCpOODq+OBruOBv+OCkui/veWKoOOBl+OAgWNvbnRleHQvKi5tZOOBr+WkieabtOOBl+OBquOBhOOBn+OCgeWQjOacn+WvvuixoeWklg== -->
