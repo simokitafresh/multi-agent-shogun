@@ -65,7 +65,7 @@
 | # | AsIs(殿観測・スクショ証跡あり) | ToBe | 切り分けの第一問 |
 |---|---|---|---|
 | 3a | FoF保有シグナルが子PFのUUID生文字列×weight表示(裏Ave-X実証) | 末端ticker×実効weightへ再帰分解表示。実効weight合計=1 | データ層(分解データ有無)かFE表示層か |
-| 3b | monthly tradeでFoFのみ「No monthly trade data available」 | Standard/FoF同等に表示 | γ5決着後に再現するか(過渡状態の可能性) |
+| 3b | monthly tradeでFoFのみ「No monthly trade data available」。**CDP実測(15:33 GATE CLEAR)で層確定: 同一セッションでAPI HTTP200・entries=24なのにUI表示0行=FE表示層のバグ**(過渡状態説を棄却) | Standard/FoF同等に表示 | 確定済み: FE表示条件の修正のみ。証跡=outputs/cmd_karo_recon_cdp_asis_p3_202608101438_normal_inspection/(receipt+API body+スクショ) |
 | 3c | 8/10時点でmonthly tradeにconfirmed/pending PFが混在 | 混在理由がPFの利用銘柄充足日で説明可能、または確定処理修正 | 同一条件PF間で状態が割れているか(割れ=バグ) |
 | 3d | monthly return月表示欄に日本語「✓確定」挿入・デザイン崩れ+Aug=MTDと確定の同時表示 | 月ラベルと状態ラベルの分離表示。状態論理の矛盾解消。UI文言は既存基準(英語)準拠 | どのcommitで混入したか |
 | 3e | drawdownページでDrawdowns for SPY非表示 | SPY系列表示回復 | API応答有無(データ層/FE層切り分け)。cmd_4278(OPEN欠損時CLOSE代用除去)前後差分 |
