@@ -92,6 +92,7 @@ queue() {
     queue_path="$TMPROOT/integration-queue.tsv"
     run env COMMIT_QUEUE_PATH="$queue_path" \
         COMMIT_QUEUE_LOCK_PATH="$queue_path.lock" \
+        NINJA_SCOPE_COMMIT_USE_OUTER_QUEUE=1 \
         COMMIT_QUEUE_ACTIVE= \
         COMMIT_QUEUE_AGENT_ID=integration-agent \
         bash -c 'cd "$1" && bash "$2" -m "phase2 queue integration" -- owned.txt' \

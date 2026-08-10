@@ -170,6 +170,60 @@ YAML
     [ -f "$REPO/tests/test_transient.bats" ]
 }
 
+# test_necessity: broad cache fingerprints must not make an unrelated agent's source commit invalidate a focused PASS receipt.
+@test "unrelated committed source selected to a disjoint test reuses focused receipt" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'proof\n' >"$REPO/tests/test_owned.bats"
+    printf 'other\n' >"$REPO/tests/test_other.bats"
+    cat >"$REPO/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s/tests/test_other.bats\n' "$(git rev-parse --show-toplevel)"
+SH
+    chmod +x "$REPO/scripts/test_select.sh"
+    git -C "$REPO" add scripts/test_select.sh tests/test_owned.bats tests/test_other.bats
+    git -C "$REPO" commit -qm selector-base
+    source_head="$(git -C "$REPO" rev-parse HEAD)"
+    source_fp="$(git -C "$REPO" ls-files --format='%(objectname)' -- scripts lib tests/helpers ':!scripts/run_tests.sh' | sha256sum | awk '{print $1}')"
+    printf 'parallel\n' >"$REPO/scripts/unrelated.sh"
+    git -C "$REPO" add scripts/unrelated.sh
+    git -C "$REPO" commit -qm unrelated-source
+    printf 'change\n' >>"$REPO/own.txt"
+    printf 'task:\n  planned_paths: [own.txt]\n' >"$REPO/queue/tasks/hayate.yaml"
+    printf 'complete: true\nresult: PASS\nrc: 0\nskip_count: 0\nobserved_test_count: 1\ntest_paths: [tests/test_owned.bats]\nsource_head: %s\nsource_fingerprint: %s\n' "$source_head" "$source_fp" >"$REPO/receipt.yaml"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m disjoint -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" show --format= --name-only HEAD)" = own.txt ]
+}
+
+# test_necessity: receipt reuse must remain fail-closed when dependency selection maps a concurrent source change to the verified test.
+@test "committed dependency selected to verified test invalidates focused receipt" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'proof\n' >"$REPO/tests/test_owned.bats"
+    cat >"$REPO/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s/tests/test_owned.bats\n' "$(git rev-parse --show-toplevel)"
+SH
+    chmod +x "$REPO/scripts/test_select.sh"
+    git -C "$REPO" add scripts/test_select.sh tests/test_owned.bats
+    git -C "$REPO" commit -qm selector-base
+    source_head="$(git -C "$REPO" rev-parse HEAD)"
+    source_fp="$(git -C "$REPO" ls-files --format='%(objectname)' -- scripts lib tests/helpers ':!scripts/run_tests.sh' | sha256sum | awk '{print $1}')"
+    printf 'dependency\n' >"$REPO/scripts/dependency.sh"
+    git -C "$REPO" add scripts/dependency.sh
+    git -C "$REPO" commit -qm dependency-source
+    printf 'change\n' >>"$REPO/own.txt"
+    printf 'task:\n  planned_paths: [own.txt]\n' >"$REPO/queue/tasks/hayate.yaml"
+    printf 'complete: true\nresult: PASS\nrc: 0\nskip_count: 0\nobserved_test_count: 1\ntest_paths: [tests/test_owned.bats]\nsource_head: %s\nsource_fingerprint: %s\n' "$source_head" "$source_fp" >"$REPO/receipt.yaml"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m dependency -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"verified test dependency changed: tests/test_owned.bats"* ]]
+    [ -n "$(git -C "$REPO" status --short -- own.txt)" ]
+}
+
 @test "transient削除はHEAD証跡欠落をfail closedする" {
     mkdir -p "$REPO/tests" "$REPO/queue/tasks"
     printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"

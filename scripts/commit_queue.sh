@@ -117,7 +117,7 @@ _cq_find_row() {
 }
 
 wait_turn() {
-    local reservation_id="${1:-}" started now first row
+    local reservation_id="${1:-}" started now first row repo_root
     _cq_validate_identity "$reservation_id"
     started="$(_cq_now)"
     _cq_validate_positive_int COMMIT_QUEUE_WAIT_SECONDS "$COMMIT_QUEUE_WAIT_SECONDS"
@@ -131,7 +131,10 @@ wait_turn() {
         _cq_lock_open
         _cq_gc_locked "$now"
         row="$(_cq_find_row "$reservation_id")"
-        first="$(awk -F '\t' '$5 == "waiting" || $5 == "running" {print $1; exit}' "$COMMIT_QUEUE_PATH")"
+        repo_root="$(printf '%s\n' "$row" | awk -F '\t' 'NR == 1 {print $3}')"
+        first="$(awk -F '\t' -v repo="$repo_root" \
+            '$3 == repo && ($5 == "waiting" || $5 == "running") {print $1; exit}' \
+            "$COMMIT_QUEUE_PATH")"
         _cq_lock_close
         [[ -n "$row" ]] || { echo "BLOCK: reservation disappeared id=$reservation_id" >&2; return 2; }
         [[ "$first" == "$reservation_id" ]] && return 0

@@ -15,7 +15,16 @@ _ninja_scope_commit_script_dir="$(cd "$(dirname "$_ninja_scope_commit_self")" &&
 # The wrapper owns the EXIT/INT/TERM release trap, so every early return in the
 # large scoped-commit state machine releases the reservation without having to
 # duplicate cleanup calls at each existing exit point.
-if [[ -z "${COMMIT_QUEUE_ACTIVE:-}" && -f "$_ninja_scope_commit_script_dir/commit_queue.sh" ]]; then
+# The helper already keeps hooks/tests outside its repository transaction lock
+# and serializes only the final ref publication in
+# acquire_transaction_lock_and_rebase_index().  Wrapping the entire helper in
+# commit_queue serialized six agents' pre-commit suites and turned a seconds-
+# long atomic boundary into a multi-minute global lane.  Keep the legacy outer
+# queue as an explicit diagnostic opt-in only; the internal lock is the normal
+# safe and high-throughput path.
+if [[ "${NINJA_SCOPE_COMMIT_USE_OUTER_QUEUE:-0}" == "1" \
+    && -z "${COMMIT_QUEUE_ACTIVE:-}" \
+    && -f "$_ninja_scope_commit_script_dir/commit_queue.sh" ]]; then
     _ninja_scope_commit_repo="$(git rev-parse --show-toplevel 2>/dev/null || true)"
     if [[ -n "$_ninja_scope_commit_repo" ]]; then
         _ninja_scope_commit_agent_base="${COMMIT_QUEUE_AGENT_ID:-${AGENT_ID:-}}"
@@ -787,8 +796,47 @@ ninja_scope_commit_receipt_stale_reason() {
     local current_source_fingerprint
     current_source_fingerprint="$(git -C "$repo_root" ls-files --format='%(objectname)' -- scripts lib tests/helpers ':!scripts/run_tests.sh' 2>/dev/null | sha256sum | awk '{print $1}')"
     if [[ "$current_source_fingerprint" != "$verification_source_fingerprint" ]]; then
-        echo "source fingerprint changed (scripts/lib/tests-helpers dependency drift)"
-        return 1
+        # The receipt fingerprint is intentionally broad for test-cache safety,
+        # but commit reuse must not inherit that blast radius.  Resolve only the
+        # committed source paths that changed since verification through the
+        # repository's dependency selector.  A disjoint test set is safe to
+        # reuse; a selected dependency (or missing selector evidence) remains
+        # fail-closed.  This keeps parallel agents from invalidating every
+        # receipt merely by committing an unrelated script.
+        local selector="$repo_root/scripts/test_select.sh"
+        local selector_output selector_rc=0 changed_path affected_path verified_path
+        local -a changed_source_paths=()
+        mapfile -t changed_source_paths < <(
+            git -C "$repo_root" diff --name-only "$from_head" "$to_head" -- \
+                scripts lib tests/helpers ':!scripts/run_tests.sh' 2>/dev/null
+        )
+        if ((${#changed_source_paths[@]} == 0)); then
+            echo "source fingerprint changed without committed dependency paths"
+            return 1
+        fi
+        [[ -x "$selector" || -f "$selector" ]] || {
+            echo "source fingerprint changed and dependency selector is unavailable"
+            return 1
+        }
+        set +e
+        selector_output="$(bash "$selector" "${changed_source_paths[@]}" 2>/dev/null)"
+        selector_rc=$?
+        set -e
+        if [[ "$selector_rc" -ne 0 ]]; then
+            echo "source fingerprint changed and dependency selector failed rc=$selector_rc"
+            return 1
+        fi
+        while IFS= read -r affected_path; do
+            [[ -n "$affected_path" ]] || continue
+            affected_path="${affected_path#"$repo_root"/}"
+            for verified_path in "${verification_test_paths[@]}"; do
+                verified_path="${verified_path#"$repo_root"/}"
+                if [[ "$affected_path" == "$verified_path" ]]; then
+                    echo "verified test dependency changed: $verified_path"
+                    return 1
+                fi
+            done
+        done <<<"$selector_output"
     fi
     return 0
 }
@@ -1000,15 +1048,10 @@ fi
 
 # Content-only receipt: unlike the singleflight receipt above (keyed on
 # run id/message too), this is keyed purely on normalized paths + worktree
-# blob content.  ninja_scope_commit.sh routes every invocation through
-# commit_queue.sh's global reservation ledger (see script top), so two
-# helpers racing the same owned bytes under different run ids/messages never
-# actually execute this section concurrently — by the time the second one
-# runs, the first has already released its reservation.  A wait-based lock
-# therefore can never observe contention here; only a persisted receipt of
-# "these exact bytes were already published by a scoped commit" can tell a
-# genuine no-op invocation apart from a race follower whose intended change
-# was already committed by a differently-identified peer.
+# blob content.  Same-scope callers must not run their hooks concurrently:
+# the final publication lock is intentionally short and therefore cannot
+# prevent duplicate pre-commit execution.  Serialize only identical
+# normalized scopes here, leaving disjoint scopes free to run in parallel.
 scope_content_material="$(printf '%s\n' "${paths[@]}")"
 for scope_path in "${paths[@]}"; do
     if [[ -f "$scope_path" || -L "$scope_path" ]]; then
@@ -1024,6 +1067,24 @@ scope_content_key="$(printf '%s' "$scope_content_material" | sha256sum | awk '{p
 scope_content_receipt_dir="$(lock_path "$git_common_dir/ninja-scope-content-receipts")"
 mkdir -p -- "$scope_content_receipt_dir"
 scope_content_receipt="$scope_content_receipt_dir/$scope_content_key.receipt"
+
+# A repository-wide transaction lock protects ref publication, but it is too
+# narrow to deduplicate two helpers that race the same owned bytes: both can
+# reach pre-commit before either publishes HEAD.  Lock the normalized scope
+# set only, so same-scope hooks are single-flight while unrelated scopes retain
+# parallel pre-commit throughput.  The descriptor is closed automatically on
+# every process exit, including fail-closed and signal paths.
+scope_lock_material="$(printf '%s\n' "${paths[@]}" | LC_ALL=C sort -u)"
+scope_lock_key="$(printf '%s' "$scope_lock_material" | sha256sum | awk '{print $1}')"
+scope_lock_path="$(lock_path "$git_common_dir/ninja-scope-owned-$scope_lock_key")"
+exec {scope_lock_fd}>"$scope_lock_path" \
+    || { echo "BLOCK: cannot open ninja owned-scope lock" >&2; exit 2; }
+scope_lock_waited=false
+if ! flock -n "$scope_lock_fd"; then
+    scope_lock_waited=true
+    flock -w 120 "$scope_lock_fd" \
+        || { echo "BLOCK: cannot acquire ninja owned-scope lock" >&2; exit 2; }
+fi
 
 if [[ -z "$patch_file" && "$repair_index" == false ]]; then
     scope_has_changes=false
