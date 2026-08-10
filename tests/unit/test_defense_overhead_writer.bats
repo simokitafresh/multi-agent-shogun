@@ -27,6 +27,37 @@ assert set(rows[0])=={'timestamp','source','check_id','wall_ms','verdict','event
 PY
 }
 
+# test_necessity: event_id deduplication must parse the full historical JSON schema (including legacy whitespace), reconcile a sidecar-stale ledger tail, and never append a second exact identity.
+@test "exact sidecar dedup covers legacy whitespace and crash-stale ledger tail" {
+  printf '{"timestamp":"legacy","event_id": "legacy-spaced"}\n' > "$DEFENSE_OVERHEAD_LEDGER"
+  bytes_before="$(stat -c %s "$DEFENSE_OVERHEAD_LEDGER")"
+  run defense_overhead_write test exact 1 PASS legacy-spaced
+  [ "$status" -eq 4 ]
+  [ "$(stat -c %s "$DEFENSE_OVERHEAD_LEDGER")" -eq "$bytes_before" ]
+
+  run defense_overhead_write test exact 1 PASS indexed-first
+  [ "$status" -eq 0 ]
+  # Simulate the only crash window: JSONL append reached durable history but
+  # the derived SQLite offset/event row did not.  The next locked append must
+  # ingest that tail before checking the incoming identity.
+  printf '{"timestamp":"legacy-tail","event_id":"tail-only"}\n' >> "$DEFENSE_OVERHEAD_LEDGER"
+  bytes_before="$(stat -c %s "$DEFENSE_OVERHEAD_LEDGER")"
+  run defense_overhead_write test exact 1 PASS tail-only
+  [ "$status" -eq 4 ]
+  [ "$(stat -c %s "$DEFENSE_OVERHEAD_LEDGER")" -eq "$bytes_before" ]
+  [ "$(grep -c '"event_id":"tail-only"' "$DEFENSE_OVERHEAD_LEDGER")" -eq 1 ]
+}
+
+# test_necessity: the full-ledger sidecar preparation must occur before the append flock, and the lock-held path must contain no ledger grep/full scan; otherwise a 69MB writer can starve every startup receipt.
+@test "full ledger scan is structurally outside the append lock" {
+  writer="$BATS_TEST_DIRNAME/../../scripts/lib/defense_overhead_writer.sh"
+  prepare_line="$(grep -n 'python3 .* prepare ' "$writer" | head -1 | cut -d: -f1)"
+  append_lock_line="$(grep -n 'exec {DEFENSE_OVERHEAD_FD}>>' "$writer" | head -1 | cut -d: -f1)"
+  [ -n "$prepare_line" ] && [ -n "$append_lock_line" ]
+  [ "$prepare_line" -lt "$append_lock_line" ]
+  ! sed -n "${append_lock_line},/^}/p" "$writer" | grep -Eq 'grep .*\$ledger'
+}
+
 # test_necessity: optional identity metadata must extend, never replace, the stable six-column event schema while five-argument callers remain byte-contract compatible.
 @test "optional metadata adds identity columns without breaking five-argument callers" {
   run defense_overhead_write legacy check 1 PASS legacy-1

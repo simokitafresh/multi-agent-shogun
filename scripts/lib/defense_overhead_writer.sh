@@ -8,7 +8,7 @@ defense_overhead_write() {
     local source_name="${1:-}" check_id="${2:-}" wall_ms="${3:-}"
     local verdict="${4:-}" event_id="${5:-}" metadata_json="${6-}"
     local ledger="${DEFENSE_OVERHEAD_LEDGER:-${DEFENSE_OVERHEAD_REPO_ROOT}/logs/defense_overhead.jsonl}"
-    local lock_file="${ledger}.lock" line
+    local lock_file="${ledger}.lock" line index_file index_lock helper prepare_rc append_rc
 
     [ "${DEFENSE_OVERHEAD_ENABLED:-1}" = "1" ] || return 0
     [[ "$source_name" =~ ^[A-Za-z0-9_.:-]+$ ]] || return 2
@@ -44,18 +44,48 @@ print(json.dumps(row, ensure_ascii=False, separators=(",", ":")))
 PY
     )" || return 3
 
+    # The 69MB production ledger lives on DrvFS.  Scanning it while holding the
+    # append lock made otherwise unrelated writers exceed their 2s lock budget.
+    # Keep an exact UNIQUE event_id index on ext4 and build/rebuild it outside
+    # the ledger lock.  The helper records ledger device/inode/offset and, while
+    # the append lock is held below, reconciles every tail row before querying
+    # or appending.  Thus a crash after the JSONL append can only make the
+    # sidecar stale; the next writer repairs it from the immutable ledger tail.
+    helper="${DEFENSE_OVERHEAD_REPO_ROOT}/scripts/lib/defense_overhead_event_index.py"
+    [ -f "$helper" ] || return 3
+    if [ -n "${DEFENSE_OVERHEAD_INDEX:-}" ]; then
+        index_file="$DEFENSE_OVERHEAD_INDEX"
+    elif [[ "$ledger" == /mnt/c/* || "$ledger" == /mnt/d/* ]] \
+        && [ -f "${DEFENSE_OVERHEAD_REPO_ROOT}/scripts/lib/lock_path.sh" ]; then
+        # shellcheck source=scripts/lib/lock_path.sh
+        source "${DEFENSE_OVERHEAD_REPO_ROOT}/scripts/lib/lock_path.sh"
+        index_lock="$(lock_path "${ledger}.event-index")"
+        index_file="${index_lock%.lock}.sqlite3"
+    else
+        index_file="${ledger}.event-index.sqlite3"
+    fi
+    index_lock="${index_file}.build.lock"
+    exec {DEFENSE_OVERHEAD_INDEX_FD}>>"$index_lock" || return 3
+    flock -w "${DEFENSE_OVERHEAD_INDEX_BUILD_TIMEOUT:-120}" "$DEFENSE_OVERHEAD_INDEX_FD" || {
+        eval "exec ${DEFENSE_OVERHEAD_INDEX_FD}>&-"; return 3;
+    }
+    prepare_rc=0
+    python3 "$helper" prepare "$ledger" "$index_file" || prepare_rc=$?
+    flock -u "$DEFENSE_OVERHEAD_INDEX_FD"
+    eval "exec ${DEFENSE_OVERHEAD_INDEX_FD}>&-"
+    [ "$prepare_rc" -eq 0 ] || return 3
+
     exec {DEFENSE_OVERHEAD_FD}>>"$lock_file" || return 3
     flock -w "${DEFENSE_OVERHEAD_LOCK_TIMEOUT:-2}" "$DEFENSE_OVERHEAD_FD" || {
         eval "exec ${DEFENSE_OVERHEAD_FD}>&-"; return 3;
     }
-    if [ -f "$ledger" ] && grep -Fq "\"event_id\":\"${event_id}\"" "$ledger"; then
-        flock -u "$DEFENSE_OVERHEAD_FD"; eval "exec ${DEFENSE_OVERHEAD_FD}>&-"; return 4
-    fi
-    printf '%s\n' "$line" >>"$ledger" || {
-        flock -u "$DEFENSE_OVERHEAD_FD"; eval "exec ${DEFENSE_OVERHEAD_FD}>&-"; return 3;
-    }
+    append_rc=0
+    python3 "$helper" append "$ledger" "$index_file" "$line" "$event_id" || append_rc=$?
     flock -u "$DEFENSE_OVERHEAD_FD"
     eval "exec ${DEFENSE_OVERHEAD_FD}>&-"
+    [ "$append_rc" -eq 0 ] && return 0
+    [ "$append_rc" -eq 4 ] && return 4
+    return 3
 }
 
 defense_overhead_write_async() {

@@ -298,6 +298,9 @@ git_history_cache_path = Path(
         str(repo_root / "logs/skill_script_refs_git_history.json"),
     )
 )
+git_history_cache_lock_path = git_history_cache_path.with_suffix(
+    git_history_cache_path.suffix + ".lock"
+)
 cat_file_process: subprocess.Popen[bytes] | None = None
 
 
@@ -337,7 +340,12 @@ def git_history_cache_key(since_epoch: int) -> str | None:
     head = git_head_sha()
     if head is None:
         return None
-    payload = "\0".join([head, str(since_epoch), *git_history_paths])
+    # A pathspec walk deliberately omits --since and returns the complete
+    # history for the path set.  Its answer is therefore determined by exactly
+    # HEAD + canonical pathset; including the oldest marker timestamp creates
+    # distinct cache entries for byte-identical history queries.
+    boundary = "all-history" if git_history_paths else str(since_epoch)
+    payload = "\0".join([head, boundary, *git_history_paths])
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -350,8 +358,26 @@ def git_history_cache_load(key: str) -> list[tuple[int, str]] | None:
     if not isinstance(entry, list):
         return None
     try:
-        return [(int(ts), str(sha)) for ts, sha in entry]
+        history = [(int(ts), str(sha)) for ts, sha in entry]
     except (TypeError, ValueError):
+        return None
+    if any(ts < 0 or not re.fullmatch(r"[0-9a-f]{40}", sha) for ts, sha in history):
+        return None
+    return history
+
+
+def git_history_cache_lock():
+    """Serialize only a cold HEAD+pathset query, preventing cache stampede."""
+    try:
+        git_history_cache_lock_path.parent.mkdir(parents=True, exist_ok=True)
+        handle = git_history_cache_lock_path.open("a+")
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        return handle
+    except OSError:
+        try:
+            handle.close()
+        except (NameError, OSError):
+            pass
         return None
 
 
@@ -369,7 +395,7 @@ def git_history_cache_store(key: str, history: list[tuple[int, str]]) -> None:
             blob.pop(stale_key, None)
     try:
         git_history_cache_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = git_history_cache_path.with_suffix(".tmp")
+        tmp = git_history_cache_path.with_suffix(f".{os.getpid()}.tmp")
         tmp.write_text(json.dumps(blob), encoding="utf-8")
         os.replace(tmp, git_history_cache_path)
     except OSError:
@@ -388,34 +414,50 @@ def git_snapshot_before(checked_iso: str) -> str | None:
             if git_history is None:
                 cache_key = git_history_cache_key(since_epoch)
                 cached = git_history_cache_load(cache_key) if cache_key else None
-                if cached is not None:
-                    # HEAD不変の間、履歴系gitの呼出しは0回になる。
-                    git_history = cached
-                    git_history_boundary_done = True
-                else:
-                    # pathspec付きwalkはsinceを付けても全履歴を辿るため(実測: 窓を
-                    # 2026-06-07→07-18へ狭めても28.8s→34.0sで改善なし)、sinceは
-                    # 出力を間引くだけで走査費用を下げない。よってpathspecがある時は
-                    # sinceを外し、境界commitを同じ1回の出力へ含めて呼出しを2→1へ統合する。
-                    argv = ["git", "-C", str(repo_root), "rev-list", "--timestamp"]
-                    if not git_history_paths:
-                        argv.append(f"--since=@{since_epoch}")
-                    argv.append("HEAD")
-                    if git_history_paths:
-                        argv.extend(["--", *git_history_paths])
-                    git_history_git_calls += 1
-                    output = subprocess.run(
-                        argv, check=True, text=True,
-                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                    ).stdout
-                    git_history = []
-                    for line in output.splitlines():
-                        timestamp, sha = line.split(" ", 1)
-                        git_history.append((int(timestamp), sha))
-                    # pathspecありなら全履歴を持っているので境界クエリは不要。
-                    git_history_boundary_done = bool(git_history_paths)
-                    if cache_key:
-                        git_history_cache_store(cache_key, git_history)
+                cache_lock = None
+                try:
+                    if cached is None and cache_key:
+                        # A lock-free first lookup keeps warm reads cheap.  On
+                        # a miss, re-check after taking the shared lock: exactly
+                        # one concurrent review performs the expensive walk.
+                        cache_lock = git_history_cache_lock()
+                        if cache_lock is not None:
+                            cached = git_history_cache_load(cache_key)
+                    if cached is not None:
+                        # HEAD不変の間、履歴系gitの呼出しは0回になる。
+                        git_history = cached
+                        git_history_boundary_done = bool(git_history_paths)
+                    else:
+                        # pathspec付きwalkはsinceを付けても全履歴を辿るため(実測: 窓を
+                        # 2026-06-07→07-18へ狭めても28.8s→34.0sで改善なし)、sinceは
+                        # 出力を間引くだけで走査費用を下げない。よってpathspecがある時は
+                        # sinceを外し、境界commitを同じ1回の出力へ含めて呼出しを2→1へ統合する。
+                        argv = ["git", "-C", str(repo_root), "rev-list", "--timestamp"]
+                        if not git_history_paths:
+                            argv.append(f"--since=@{since_epoch}")
+                        argv.append("HEAD")
+                        if git_history_paths:
+                            argv.extend(["--", *git_history_paths])
+                        git_history_git_calls += 1
+                        output = subprocess.run(
+                            argv, check=True, text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                        ).stdout
+                        git_history = []
+                        for line in output.splitlines():
+                            timestamp, sha = line.split(" ", 1)
+                            git_history.append((int(timestamp), sha))
+                        # pathspecありなら全履歴を持っているので境界クエリは不要。
+                        git_history_boundary_done = bool(git_history_paths)
+                        # Never publish without owning the miss lock.  If locking
+                        # itself is unavailable, the computed answer is valid for
+                        # this invocation but cannot race a shared cache rewrite.
+                        if cache_key and cache_lock is not None:
+                            git_history_cache_store(cache_key, git_history)
+                finally:
+                    if cache_lock is not None:
+                        fcntl.flock(cache_lock.fileno(), fcntl.LOCK_UN)
+                        cache_lock.close()
             commit = next((sha for timestamp, sha in git_history if timestamp <= cutoff), None)
             if commit is None and not git_history_boundary_done:
                 # since窓の外にしか答えがない場合だけ、境界を1回だけ取りに行く。
@@ -433,7 +475,7 @@ def git_snapshot_before(checked_iso: str) -> str | None:
                     if cache_key:
                         git_history_cache_store(cache_key, git_history)
                 commit = next((sha for timestamp, sha in git_history if timestamp <= cutoff), None)
-        except (OSError, subprocess.CalledProcessError):
+        except (OSError, ValueError, subprocess.CalledProcessError):
             pass
     git_snapshot_cache[checked_iso] = commit
     return commit

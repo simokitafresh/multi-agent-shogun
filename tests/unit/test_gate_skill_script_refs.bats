@@ -132,6 +132,60 @@ establish_verified() {
   [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 1 ]
 }
 
+# test_necessity: concurrent review prechecks for one HEAD+canonical pathset must
+# execute at most one history walk, while marker-only changes and corrupt cache
+# data can neither multiply the walk nor produce a false cache hit.
+@test "same HEAD and pathset share one fail-closed history result across marker changes and concurrent cold misses" {
+  git -C "$FIXTURE" init -q
+  git -C "$FIXTURE" config user.email fixture@example.invalid
+  git -C "$FIXTURE" config user.name fixture
+  git -C "$FIXTURE" add scripts/demo.sh skills/demo/SKILL.md
+  GIT_AUTHOR_DATE=2025-01-01T00:00:00Z GIT_COMMITTER_DATE=2025-01-01T00:00:00Z \
+    git -C "$FIXTURE" commit -qm fixture
+  mkdir -p "$FIXTURE/bin"
+  real_git="$(command -v git)"
+  printf '#!/usr/bin/env bash\nif [[ " $* " == *" rev-list "* ]]; then printf "walk\\n" >> %q; sleep 0.4; fi\nexec %q "$@"\n' \
+    "$FIXTURE/rev-list.log" "$real_git" > "$FIXTURE/bin/git"
+  chmod +x "$FIXTURE/bin/git"
+  export SKILL_REF_GIT_HISTORY_CACHE="$FIXTURE/logs/git_history.json"
+
+  PATH="$FIXTURE/bin:$PATH" SKILL_REF_DISABLE_CACHE=1 run_gate
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 1 ]
+
+  # pathspec walk output is complete history, so changing only the cutoff
+  # marker keeps the exact same HEAD+pathset cache identity.
+  sed -i 's/2099-01-01/2098-01-01/' "$FIXTURE/skills/demo/SKILL.md"
+  PATH="$FIXTURE/bin:$PATH" SKILL_REF_DISABLE_CACHE=1 run_gate
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 1 ]
+
+  # Invalid cached tuples are unknown, not hits.  Six simultaneous cold
+  # readers re-check under the miss lock and only the lock owner walks Git.
+  python3 - "$SKILL_REF_GIT_HISTORY_CACHE" <<'PY'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+data = json.loads(p.read_text())
+for key in list(data):
+    data[key] = [[-1, "not-a-commit"]]
+p.write_text(json.dumps(data))
+PY
+  : > "$FIXTURE/rev-list.log"
+  pids=()
+  for i in $(seq 1 6); do
+    PATH="$FIXTURE/bin:$PATH" SKILL_REF_DISABLE_CACHE=1 \
+      bash "$FIXTURE/gate.sh" "$FIXTURE" >"$FIXTURE/concurrent-$i.out" 2>&1 &
+    pids+=("$!")
+  done
+  for pid in "${pids[@]}"; do
+    wait "$pid"
+  done
+  [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 1 ]
+  for i in $(seq 1 6); do
+    grep -q -- '--- 総合判定: PASS ---' "$FIXTURE/concurrent-$i.out"
+  done
+}
+
 @test "verified contract state bypasses the aggregate Git history walk" {
   git -C "$FIXTURE" init -q
   git -C "$FIXTURE" config user.email fixture@example.invalid

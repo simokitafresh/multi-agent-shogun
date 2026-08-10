@@ -21,3 +21,11 @@ setup_file() {
     [ "$status" -eq 0 ]
     [ "$output" -ge 1 ]
 }
+
+# test_necessity: the asynchronous completion gate must never inherit the
+# report-approval flock descriptor after the durable review transaction ends.
+@test "completion trigger closes approval lock fd before asynchronous execution" {
+    run grep -E -c 'setsid nohup bash .*cmd_complete_gate\.sh.*200>&- &$' "$REVIEW_APPROVAL_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+}

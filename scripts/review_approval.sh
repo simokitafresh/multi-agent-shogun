@@ -629,7 +629,11 @@ elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then
       # setsidで呼び出し元(caller shell)とは別のセッション/プロセスグループに切り離す。
       # nohup単体はSIGHUPしか無視せず、呼び出し元プロセスグループへのkill(短命CLI/tool
       # 呼出し終了後にharnessが行うグループ単位のクリーンアップ等)には巻き込まれて死ぬ。
-      setsid nohup bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$trigger_log" 2>&1 </dev/null &
+      # fd 200 owns the synchronous approval transaction only.  A background
+      # completion gate inheriting it keeps the report lock after this process
+      # exits (including throughout slow Git history scans), making the other
+      # approver time out despite all approval writes already being durable.
+      setsid nohup bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$trigger_log" 2>&1 </dev/null 200>&- &
       trigger_pid=$!
       # 起動直後の即死(exec失敗/構文エラー・未捕捉例外等)だけを検知する短時間ポーリング。
       # フルGATE実行の完了は待たない(非同期起動の意図を維持)。
