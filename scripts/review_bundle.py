@@ -401,16 +401,35 @@ def notify(args):
     allow_archived = Path(report_ref).parent == Path("queue/archive/reports")
     _, report = _resolve_report(root, report_ref, args.cmd, allow_archived=allow_archived)
     if hashlib.sha256(report.read_bytes()).hexdigest() != review.get("report_fingerprint"): raise ValueError("bundle report fingerprint is stale")
+    # The canonical approval entry publishes immediately, while the legacy
+    # batch caller may still invoke notify after approval returns.  Serialize
+    # both callers and bind the durable marker to the report generation so a
+    # retry is exactly-once without suppressing a genuinely revised review.
+    marker = root / f"queue/gates/{args.cmd}/sg7_notify.done"
+    lock_path = marker.with_suffix(marker.suffix + ".lock")
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        fingerprint = str(review.get("report_fingerprint") or "")
+        if marker.is_file() and marker.read_text(encoding="utf-8").strip() == fingerprint:
+            print(f"{args.cmd} SG7 notification: SKIP (already published for report generation)")
+            return 0
     # Step 1.5 observations and Step 2 review_log happen before the skill calls
     # formal review_approval.  This final boundary merely verifies that exact
     # marker; it never creates approvals itself.
-    approval_check = f'''source "{root / 'scripts/lib/review_approval.sh'}"
+        approval_check = f'''source "{root / 'scripts/lib/review_approval.sh'}"
 PROJECT_ROOT="{root}" review_two_phase_ready_gunshi "{args.cmd}" "{report}"
 '''
-    subprocess.run(["bash", "-c", approval_check], cwd=root, check=True)
-    spec = review["cmd_spec_summary"]; relative = str(path.relative_to(root))
-    message = f"{args.cmd} SG7 bundle. verdict: LGTM. report: {review['report']} bundle: {relative} cmd_spec_summary: acceptance_criteria_count={spec['acceptance_criteria_count']}, scope={json.dumps(spec['scope'], ensure_ascii=False, separators=(',', ':'))}, project={spec['project']}"
-    subprocess.run(["bash", str(root / "scripts/inbox_write.sh"), "karo", message, "report_review_result", "gunshi"], cwd=root, check=True)
+        subprocess.run(["bash", "-c", approval_check], cwd=root, check=True)
+        spec = review["cmd_spec_summary"]; relative = str(path.relative_to(root))
+        message = f"{args.cmd} SG7 bundle. verdict: LGTM. report: {review['report']} bundle: {relative} cmd_spec_summary: acceptance_criteria_count={spec['acceptance_criteria_count']}, scope={json.dumps(spec['scope'], ensure_ascii=False, separators=(',', ':'))}, project={spec['project']}"
+        subprocess.run(["bash", str(root / "scripts/inbox_write.sh"), "karo", message, "report_review_result", "gunshi"], cwd=root, check=True)
+        marker_tmp = marker.with_name(f".{marker.name}.tmp.{os.getpid()}")
+        try:
+            marker_tmp.write_text(fingerprint + "\n", encoding="utf-8")
+            os.replace(marker_tmp, marker)
+        finally:
+            if marker_tmp.exists(): marker_tmp.unlink()
     _emit_self_retro(root, "gunshi_review_bundle", args.cmd, round((time.monotonic()-started)*1000), "review_notify")
     print(message); return 0
 
