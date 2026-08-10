@@ -1,34 +1,4 @@
 insights:
-- id: INS-20260810-004640774-c51b
-  ts: "2026-08-10T00:46:40+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[殿下知_並列起票_20260810_0009]] は既存aliasesに一致なし。類似概念TOP3: gist_master_three_step_rule(gist正本3点セット規律; alias=殿下知_月次リターン基本原理再整理_20260809; score=21.0) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=3.7) / push_batch_operation(正規push batch運用; alias=push_batch_20260719; score=2.6)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T00:47:07+09:00"
-- id: INS-20260810-004641513-7c62
-  ts: "2026-08-10T00:46:41+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[T-α2完了で解放]] は既存aliasesに一致なし。類似概念TOP3: gs_recalibration_plan(GS再キャリブレーション計画; alias=Phase T+0着手裁可; score=12.2) / test_quality_framework(テスト品質統合フレームワーク; alias=TAP計画行は完了証跡ではない; score=2.1) / gate_quality_framework(ゲート品質統合フレームワーク; alias=完了時統合gate; score=2.0)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T00:47:08+09:00"
-- id: INS-20260810-004642120-d593
-  ts: "2026-08-10T00:46:42+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[cmd_4260_T-α5実装]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=4.1) / infrastructure_ops(インフラ運用基盤; alias=殿指示20260715_1724_gist実装開始; score=3.8) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_3659_LGTM撤回; score=3.5)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T00:47:09+09:00"
 - id: INS-20260810-004911484-d912
   ts: "2026-08-10T00:49:11+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4259; matched=表示; current_pattern=月次リターンT-β3 — Monthly Returnsページのpending表示; candidate_level=4; candidate=GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格; source=gunshi_gp_tracker.yaml"
@@ -987,3 +957,38 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-10T12:04:05+09:00"
+- id: INS-20260810-120720087-6d93
+  ts: "2026-08-10T12:07:20+09:00"
+  insight: "軍師セッション知見: review_bundle.py singleのapproval receipt生成パスはreview_approvals/reports/{fingerprint}/gunshi.yaml。家老がreview_approvals/gunshi.yamlを直下で探すとBLOCK。家老への正しいパス通知が必要だった(飛猿reflux事案)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260810-120722084-4427
+  ts: "2026-08-10T12:07:22+09:00"
+  insight: "軍師セッション知見: status=in_progress+commit=noの報告はreview_bundle.py singleがBLOCK(autogen spec fallback requires completed/PASS or failed/FAIL)。忍者にstatus+commit修正後の再提出を指示する必要あり(飛猿・疾風reflux事案)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260810-120742635-6da1
+  ts: "2026-08-10T12:07:42+09:00"
+  insight: "軍師セッション知見: GPTモデル忍者のgate BLOCK DIVERGENT(同一理由3回以上)は家老へ早期報告が有効。影丸cmd_4284(4回)・才蔵reflux(5回)で実証。GPTモデルは構造的にcommit subject契約を自力修正しにくいパターンがある"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260810-120946533-13b3
+  ts: "2026-08-10T12:09:46+09:00"
+  insight: "本番deploy後検知の構造原因還流: cmd_complete最終checkpointへ主要API smoke HTTP 200確認を接続し、CI/単体testでは露見しない本番データ依存500を完了前に検出する。origin=[[cmd_4272]] -> [[deploy後smoke不在]] -> [[本番signals_API_500]]"
+  priority: "high"
+  source: "shogun_bulletin_bl2_A24_3"
+  fix_known: false
+  status: pending
+- id: INS-20260810-120946545-0668
+  ts: "2026-08-10T12:09:46+09:00"
+  insight: "本番500の構造原因還流: 比較・選択ロジックを変更するcmdのACへ、候補複数行で実際に比較分岐を発火させるfixtureを必須化する。単一行fixtureのPASSだけではtuple indexずれ等の分岐内バグを守れない。origin=[[cmd_4272]] -> [[単一行fixtureで比較分岐未発火]] -> [[本番signals_API_500]]"
+  priority: "high"
+  source: "shogun_bulletin_bl2_A24_3"
+  fix_known: false
+  status: pending
