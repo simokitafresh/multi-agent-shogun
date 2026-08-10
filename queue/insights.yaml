@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260810-000958452-fb6d
-  ts: "2026-08-10T00:09:58+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[cmd_4257_T-β2並行実装]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_4237_3回BLOCK実証; score=3.6) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=3.5) / semantic_dictionary_design(セマンティック辞書構想; alias=cmd 4227はdraft保留; score=3.3)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T00:10:18+09:00"
 - id: INS-20260810-001331565-3393
   ts: "2026-08-10T00:13:31+09:00"
   insight: "[[進捗の管理はしているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗の管理はしているか？"
@@ -648,8 +638,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '560b12c8e536befd9000d800d8e5da213347e7de42fb75b7f6cf9f26873fc9e0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 31
-  last_seen: "2026-08-10T09:33:07+09:00"
+  occurrence_count: 32
+  last_seen: "2026-08-10T09:38:43+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -758,8 +748,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'c9b788292fa14cd3e14adbf1ef0130df366787a073c5e0dc8931e6fb07d7c49b' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 28
-  last_seen: "2026-08-10T09:35:46+09:00"
+  occurrence_count: 30
+  last_seen: "2026-08-10T09:42:17+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -989,3 +979,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-10T09:11:03+09:00"
+- id: INS-20260810-094103918-e135
+  ts: "2026-08-10T09:41:03+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_deploy_inrepo_absolute_path_202608100924; matched=deploy_task; current_pattern=; candidate_level=4; candidate=CDP/OOM等3文字アクロニムがmin_len>3フィルタで除外され教訓スコア0。CDP計測タスクにCDP教訓が注入されない根因; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_deploy_inrepo_absolute_path_202608100924"
+  fix_known: false
+  status: pending
