@@ -319,6 +319,21 @@ PY
 # wrapper: dashboard, ntfy, and COMPLETE must not become public before the
 # report lifecycle is closed.  Re-run only the real archive worker and accept
 # success only after both durable postconditions are visible.
+archive_terminal_has_reopened_report() {
+    local report status
+    while IFS= read -r report; do
+        status="$(awk -F: '$1 ~ /^[[:space:]]*status[[:space:]]*$/ { print $2; exit }' "$report" 2>/dev/null \
+            | tr -d '[:space:]' | tr -d "\"'")"
+        case "$status" in
+            pending|revision_requested|assigned|acknowledged|in_progress)
+                return 0
+                ;;
+        esac
+    done < <(find "$ROOT_DIR/queue/reports" -maxdepth 1 -type f \
+        -name "*_report_${CMD_ID}*.yaml" -print 2>/dev/null)
+    return 1
+}
+
 archive_terminal() {
     local archive_script="$SCRIPT_DIR/archive_completed.sh"
     local marker="$CHECKPOINT_DIR/archive.done"
@@ -355,6 +370,11 @@ archive_terminal() {
         if [[ -f "$marker" && "$active_count" -eq 0 ]]; then
             printf '[cmd_complete] PASS archive_terminal marker=present active_reports=0 attempt=%d\n' "$attempt" >&2
             return 0
+        fi
+        if [[ "$active_count" -gt 0 ]] && archive_terminal_has_reopened_report; then
+            printf '[cmd_complete] BLOCK archive_terminal reopened_report_preserved active_reports=%s attempt=%d\n' \
+                "$active_count" "$attempt" >&2
+            return 1
         fi
         [[ "$attempt" -lt "$attempts" ]] && sleep "$delay"
     done

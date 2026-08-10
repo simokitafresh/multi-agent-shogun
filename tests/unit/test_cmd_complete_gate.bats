@@ -4805,3 +4805,44 @@ SH
     for _ in $(seq 1 50); do [ -e "$root/queue/gates/$cmd/archive.done" ] && break; sleep 0.02; done
     [ -e "$root/queue/gates/$cmd/archive.done" ]
 }
+
+# test_necessity: a report reopened during archive selection must remain live
+# and block completion once, rather than triggering three identical retries.
+# regression_justification: the live-direct reproduction left archive.done and
+# active_reports=1 while every retry logged report changed during selection;
+# retrying cannot make a revision_requested report eligible for archive.
+@test "archive terminal blocks once when report reopens during selection" {
+    local root="$BATS_TEST_TMPDIR/archive-reopened"
+    local cmd="cmd_archive_reopened"
+    local report="$root/queue/reports/saizo_report_${cmd}.yaml"
+    local calls="$root/archive_calls.log"
+    mkdir -p "$root/scripts" "$root/queue/reports" "$root/queue/gates/$cmd"
+    touch "$root/queue/gates/$cmd/archive.done"
+    cat > "$report" <<'EOF'
+worker_id: saizo
+parent_cmd: cmd_archive_reopened
+status: revision_requested
+result:
+  summary: reopened during archive selection
+EOF
+    cp "$report" "$root/report.before"
+    cat > "$root/scripts/archive_completed.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "${ARCHIVE_TEST_CALLS:?}"
+exit 0
+SH
+    chmod +x "$root/scripts/archive_completed.sh"
+
+    eval "$(sed -n '/^archive_terminal_has_reopened_report()/,/^}/p; /^archive_terminal()/,/^}/p' \
+        "$PROJECT_ROOT/scripts/cmd_complete.sh")"
+    export ROOT_DIR="$root" SCRIPT_DIR="$root/scripts" CHECKPOINT_DIR="$root/queue/gates/$cmd"
+    export CMD_ID="$cmd" BUNDLE_IDENTITY=fixture CMD_COMPLETE_ARCHIVE_ATTEMPTS=3
+    export ARCHIVE_TEST_CALLS="$calls"
+
+    run archive_terminal
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK archive_terminal reopened_report_preserved"* ]]
+    [ "$(wc -l < "$calls")" -eq 1 ]
+    cmp -s "$root/report.before" "$report"
+    [ ! -e "$root/queue/archive/reports/saizo_report_${cmd}.yaml" ]
+}
