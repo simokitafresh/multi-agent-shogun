@@ -1,5 +1,5 @@
 <!-- gist-master: 2d1e7458976b45751cebbffd8c118fa3 dm-production-issues-asis-tobe-5w1h_20260810.md -->
-# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v0.9
+# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.0
 
 - 作成: 2026-08-10 14:16 JST(将軍直轄)
 - 位置づけ: 月次リターン基本原理設計書v6.13の**補填**。v6本文は変更しない。本日殿観測+一次計測で確定した本番問題群のAsIs/ToBeを固定し、修復レーンの正本とする
@@ -40,6 +40,13 @@
    - **定刻発車**: deploy時点で完成済みの修正だけを載せる。遅い忍者の修正は次便へ。タイムボックス超過(目安30分)はRUNTIME実測で検知し別idle忍者へ再配備or次周持ち越し。禁じ手=「全員の完成を待って1回deploy」。
    - **巡回**: L5→L3→L2→L5と層を巡回(S6の層別トライを巡回形に拡張)。代表PFは2-3体ローテーション(1体固定はその体で発現しないバグを見ない=K6と同根)。全層完了後にfull recalculate 1回で締めて本番実稼働の証拠とする。
    - 1周ごとに数値(所要秒・エラー件数)を掲示板1行報告し回転を見える化。
+5.7. **S5.7 工程確定と改訂(殿裁定22:14→23:48・現行正)**: 上流から確定させて積む工程を確定後、同日23:48に二正面へ改訂。
+   - **確定工程(22:14)**: L0/L1一回確定(第0段=対象PF利用銘柄の充足確認のみ、全銘柄不要) → L2高速化(1体ループ) → L2全PF実行 → L2データ固定 → L3高速化 → L3全PF → 固定 → L5 → 最終full recalculate 1回。「固定」=改善中の上流再実行禁止(計測差分の帰属純化)。上流バグ発覚時の巻戻しは受容。
+   - **L3内部分割(22:15)**: standard→通常FoF→nested FoFの依存ゆえ、L3a(leaf-only FoF)→L3b(nested FoF)の2段。実行順は常にトポロジカル順。
+   - **改訂(23:48)**: **L2は撤収・固定**(全PF107.2s≈2分で十分、これ以上磨かない)。**L3とL5は独立二正面**で並行高速化 — L3=L2固定を入力にFoF 1体周回、L5=現行DB成果物を入力に1体周回。互いの完了を待たない。条件: L3にデータ形・値を変える正しさ系修正が入った時のみ当該FoFのL5再検証。周回番号はL3-r1/L5-r1と層別採番。
+   - **L5目標=全102PF 60秒以内(殿23:50)**: エラーコスト仮説を本番ログで実証済み — failed=0のrun=439s、failed=102のrun=1265〜2257s(5倍遅い)。道筋: ①failed×elapsed相関の機械集計 ②エラー源全根絶でクリーンrunのベース実測 ③warm cache最大化+fingerprint skip(既存設計書gunshi_precompute_fingerprint_skip_design_20260711)+unaccounted分解。
+   - **1体基準値(本番実測2026-08-10深夜)**: L2=10.7s(TIMING SUMMARY: L2 2.9s+L5 3.1s+unaccounted 4.7s=43.7%が未帰属)、L3=8.92s(Ave-X leaf-only、sync-fof 200)、L5=1.4〜5.65s(builder None掃討後)。fullrecalculate見込み=約13〜26分(幅の原因=L3のnav_frame_cache修正効果が全78FoF未実測+unaccountedの全PF時挙動)。
+   - **POST運用の教訓**: parent展開trueのPOSTは1体指定でも実処理が波及する(60体run・failed59の因果)。以後のPOSTは展開フラグを明示し、周回報告に自POST以外の同時間帯runの有無確認を含める。
 6. **S6 層別トライ方式(殿裁定16:22)**: 一つの層(L)の隔離プロファイル見込みが5分を切ったら、全層完成を待たずその層単独の本番実測を実施してよい。先行対象=**L5(precompute単独)のみ** — L2はL1548(mode=portfolioの履歴退行バグ・cmd_4245ガード未実装)のため実装後まで除外、L3(FoF)はγ5決着後。P4計時ログ同梱後に実行し、層試験runからも区間内訳を取得する。
 
 ### P1 確認手順(二値)
@@ -160,8 +167,14 @@
 | P1偵察 | cmd_4293 | **GATE CLEAR(17:04)**: dataframe_prep 1.87s→1366.43s(約730倍)が最大回帰と確定。成果物=docs/research/cmd_4293_fullrecalc_speed_regression.md(将軍一次検分済み) |
 | P1修正第1弾 | 疾風hotfix(家老自走配備) | **実装完了**: nav_frame_cacheをFoF反復外へ移設(commit fdbf3022・隔離実験でcache共有動作確認)。push済み・本番実測はP4計時ログ同梱後 |
 | P1 L5方針 | 疾風偵察(fingerprint回帰) | **前提反証で完了(17:00)**: 本番L5経路にskip機構は不存在。是正=skip設計の本番実装 or 再生成対象絞り込み(S2.5)。7/27 L5=42.3sの別因特定が方式選定材料 |
-| P1 L5 hotfix(holding_signal欠落) | 疾風(家老配備) | **再配備・作業中(21:24)**: commit 8fab0268b実装LGTM、test_path欠落BLOCKをtest_path明示で是正し再走。完了後deploy→1体×L5本番実測(S5.6第1周) |
-| 回転プロトコル第1周 | 家老ハブ(S5.6) | **障害検知(21:32)**: POST accepted後47秒locked=false・error_count=1。既知バグ(holding_signal欠落)未deployの露出が最有力仮説→hotfix deploy先行を将軍が指示(msg_213301) |
+| P1 L5 hotfix(holding_signal欠落) | 疾風(家老配備) | **完了**: test_path是正→再走→deploy済み。以後のbuilder None系掃討へ接続 |
+| 回転プロトコル(S5.6) | 家老ハブ | **稼働・実績多数(21:31〜)**: L5バグ3件根治(rolling_returns 3a0cb44f→drawdowns 9a09a00a→monthly_trade才蔵掃討中)、cache計装Live(7d169165: cache_state/warm_state/rss/elapsedが毎POSTログ化)、L3a leaf-scope修正(879b2d14: TQQQ/XLU欠落経路根治) |
+| L2全PF実行(S5.7) | 将軍執行(殿直接指示22:41) | **完了**: sync-standard全量POST→約2分で完走。DB照合24/24一致(standard=24体・FoF=78体)。L2固定へ移行 |
+| L2 unaccounted分解 | 影丸(cmd_karo_hotfix_l2_unaccounted_timing) | **実装中**: 1体10.7s中4.7s(43.7%)のLayerTimer未登録区間へlayer登録追加、目標=unaccounted10%未満 |
+| L3-r1 | 家老ハブ | **完走(23:53)**: Ave-X(leaf-only, components=6)へsync-fof POST 200、8.92s、実処理1/1。後段No MonthlyReturn warningはL5レーンへ接続 |
+| L5-r1 | 才蔵 | monthly_trade builder None掃討中。目標=全102PF 60秒以内(S5.7) |
+| 60体run事案 | 家老回答済み(23:46) | parent展開trueの波及と判明(故意の1体違反ではない)。POST展開フラグ明示を運用化 |
+| ルール恒久化 | 家老 | **完了(23:22)**: 今夜の回転裁定をinstructions/karo.md L148-175へ焼き込み(検証6/6)。軍師第三者検証依頼済み |
 | P1 L2/L3知見 | 参照パック送達済み(msg_161111) | trade_perf 7倍回帰(117s→862s)は「適用済み共有cache/N+1除去の失効」を第一仮説に才蔵レーンで調査 |
 | P2因果写像再構築 | 影丸partition確定(15:51): **全562件がγ4 replay範囲外**(起点前471+終端後91・inside=0)。半蔵が頭打ち原因を確定(19:22): **道具限界ではなくhistorical-config入力終端(config_max=2026-07-02)**。source_max=2026-08-07との差36-66日(代表3PF実測) | **config延伸replay走行中**(隔離configを08-07へ延伸→同一代表3PFでreplay、将軍承認msg_192238)。inside=562/562なら想定内確定→backup4点→γ5再実行。**cutover・本番write停止維持**。UI-4の正仕様(8月初回取引日終了後の再計算で全confirmed)を確定処理側の契約として整合させる |
 | P2 γ5再実行 | (写像確定後) | 未起票・🔒backup4点(manifest実パス/DB同一性/cutoff/restore rehearsal)必須 |
@@ -186,6 +199,7 @@
 10. K7(CI性能回帰検知)を検討不足表へ追加済み。
 
 ## 改訂履歴
+- v1.0 (2026-08-11 00:02): **S5.7工程確定と改訂を追加** — 上流確定積上げ工程(22:14)→L2撤収+L3/L5独立二正面(23:48)+L5目標60秒とエラーコスト実証(failed=0で439s vs failed=102で2257s)+1体基準値3層(L2=10.7s/L3=8.92s/L5=1.4-5.65s)+fullrecalculate見込み13〜26分+parent展開波及の教訓。進捗台帳を深夜実績(L5バグ3件根治・cache計装Live・L2全PF24/24完走・L3-r1完走8.92s・instructions焼き込み)へ全面更新。deploy便8本/夜・CI非同期(殿裁定22:55「CI redは無視、デプロイを止めるな」)・周回タスク軽量契約3点(殿裁定22:59)も正本化。
 - v0.9 (2026-08-10 21:35): **S5.6回転プロトコル確定を追加**(殿裁定21:17-21:29: 計算速度最優先・家老ハブ・1体×L5 10秒ループ・忍者非同期修正工場・定刻発車・タイムボックス・L5→L3→L2巡回・代表PFローテ+最終full 1回)。進捗台帳へL5 hotfix再配備(21:24)と第1周障害検知(21:32)を追記。v0.8でヘッダ・履歴が未更新だった点も是正。
 - v0.8 (2026-08-10 20:26): S5.5運用モデル(deploy→L毎計測→改善反復)+殿裁定20:21(本番復旧最優先・停止解除)。
 - v0.1 (2026-08-10 14:16): 初版。P1-P4のAsIs/ToBe/5W1H+v6検討不足K1-K6+進捗台帳。
