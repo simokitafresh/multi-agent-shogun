@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-10 cmd_karo_hotfix_vercel_debt_reason_202608100949 -->
+<!-- last_updated: 2026-08-10 cmd_4285 reviewed source boundary -->
+<!-- source_commit:f22a0ca3 reason:cmd_4285 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=f22a0ca3 -->
 
 <!-- retrieval: section -->
 <!-- detail: docs/research/cmd_karo_hotfix_vercel_debt_reason_202608100949_dm_signal_research_full.md -->
