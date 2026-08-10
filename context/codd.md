@@ -1,6 +1,7 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-07-29 cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection -->
+<!-- source_commit:1dae80c86 reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source diff reviewed: skills/codd-refactor/SKILL.md external backend contract pytest/PYTHONPATH boundary -->
 <!-- source_commit:35d4b10fc reason:cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/codd.md commit=35d4b10fc -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
@@ -91,6 +92,11 @@
 GA-299再分類: `81b1ea6d9` は `codd-refactor` の参照済みテスト契約注記のみで、CoDDのCLI・操作体系・副作用に実内容変更なし。
 
 GA-300再分類: `ff52b26b3` は `run_tests.sh` の参照鮮度再検分（境界後の対象commit 0件）だけで、CoDDのCLI・操作体系・副作用に実内容変更なし。
+
+### 2026-08-01 `run_tests.sh` 外部contract実行境界
+
+- `skills/codd-refactor/SKILL.md` の外部backend contract testは、対象PJの`.venv` pytestとproject-root `PYTHONPATH`で実行する。`task` mode・明示test選択・FAIL/SKIP時の終了契約は不変。
+- 参照: `skills/codd-refactor/SKILL.md`、source commit `1dae80c86`。
 
 ## §3 核心原理 (記事#1-#5)
 

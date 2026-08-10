@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-10 cmd_karo_hotfix_cmd4284_market_grid_202608100902 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection -->
+<!-- source_commit:4d81c32c reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source commits 4d81,c469,aaef,28b58 reviewed and indexed -->
 <!-- source_commit:bda69c42 reason:cmd_karo_hotfix_cmd4284_market_grid_202608100902 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=bda69c42 -->
 <!-- source_commit:ec72faa2 reason:cmd_4283 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:d62065b4 reason:cmd_4282 reviewed source boundary evidence:cmd_complete_gate -->
@@ -1128,3 +1129,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 ## §92 cmd_4247 月次リターン再設計タスクリスト現物偵察 (2026-08-09)
 - Dashboardは専用1 APIではなく`/api/signals`・`/api/performance/{portfolio_id}`・`/api/mtd/{portfolio_id}`の3系統、FE系列初期値は共有Providerの`CLOSE`、FoFはcomponent monthly-return入力、ledger初期書込みは`effective_start_date=rebalance_decision_date`複写、HEADのportfolio cleanupは7 PF依存テーブルをmode無条件DELETEする。正本ヘッダは28タスクと称するが実ID行は30（α8+β5+γ5+δ4+ε4+ζ4）。全30行の突合と検証コマンド/隠れ依存→`docs/research/cmd_4247_tasklist_recon_20260809.md`
 - 影丸現物追補(2026-08-09, HEAD `45ad390e`): FoF momentumは月末`MonthlyReturn.cumulative_return`を`ComponentPriceBlock`経由で月数窓評価し、日次loopは月初rebalance時のみpipeline実行。ledger `effective_start_date`はdaily planの`rebalance_decision_date`複写で、入口APIのcron直結は未確認。指定タスクリスト本体は作業木に存在せず、AC2行突合はBLOCKとして成果物へ記録。
+
+## §93 2026-08-09 backend運用境界の追加反映
+
+- `4d81c32c` は`c469ba6f`のmonthly_returns履歴保全guardをrevertした。狭いportfolio計算で既存履歴を削る危険が現行に残るため、fullrecalculate運用と`monthly_returns`行数/最古月の事後確認を継続する。参照: `backend/app/jobs/generators/monthly_returns.py`, commits `c469ba6f`→`4d81c32c`。
+- `aaef7932` はGroup-AのOpen系列メトリクス(Correlation/Beta/Alpha/R²/Treynor/Calmar/Positive Periods/Gain-Loss Ratio)をClose系列と独立算出する。運用検証ではmetricのopen/close両値を混同せず確認する。参照: `backend/app/services/metrics_impl.py`, `backend/tests/test_metrics_continuity_risk.py`、commit `aaef7932`。
+- `28b58ee0` はFoF Monthly Trade表示を`position_start_date`のSignalへ寄せ、月初が週末のときの旧holding表示を防ぐ。月境界の本番確認はDashboard holdingとの一致を確認する。参照: `backend/app/api/monthly_trade.py`, `backend/tests/test_monthly_trade_calculator.py`、commit `28b58ee0`。

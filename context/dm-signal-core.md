@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-10 cmd_karo_hotfix_cmd4284_market_grid_202608100902 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection -->
+<!-- source_commit:4d81c32c reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source commits 4d81,c469,aaef,28b58,9f81 reviewed and indexed -->
 <!-- source_commit:bda69c42 reason:cmd_karo_hotfix_cmd4284_market_grid_202608100902 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=bda69c42 -->
 <!-- source_commit:ec72faa2 reason:cmd_4283 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:d62065b4 reason:cmd_4282 reviewed source boundary evidence:cmd_complete_gate -->
@@ -503,6 +504,13 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 ## 31. Monthly生成のlogical date・未初期化境界 (2026-08-04)
 - `50002dc6`〜`9a27eb4f`: run logical dateを営業日へclamp、未価格未来月/初回有効holding前はskip、開始後欠落はfail-visible。詳細→`/mnt/c/Python_app/DM-signal/docs/research/dm-monthly-trade-bug-genko-chain-archive_20260803.md`
 ---
+## §93 2026-08-09〜10 source boundary反映
+
+- **monthly_returns履歴保全**: `c469ba6f` は新計算範囲が既存履歴を包含しない場合にPF全履歴DELETEを拒否し、計算できた月だけUPSERTするguardと回帰testを追加した。しかし `4d81c32c` がこのguardとtestをrevertしたため、現行は狭い`mode='portfolio'`結果で広い履歴を再び切り詰め得る。運用上は§89の暫定`mode='full'`制限と履歴行数確認を維持する。参照: `backend/app/jobs/generators/monthly_returns.py`、`backend/tests/test_monthly_returns_history_guard.py`、commits `c469ba6f`→`4d81c32c`。
+- **Group-A Open metrics**: `aaef7932` はCorrelation/Beta/Alpha/R²/Treynor/Calmar/Positive Periods/Gain-Loss Ratioを`*_open`系列から独立計算し、close/open値を同一metricへ格納する。回帰testはOpen値がClose値の複製でないことを検証する。参照: `backend/app/services/metrics_impl.py`, `backend/tests/test_metrics_continuity_risk.py`、commit `aaef7932`。
+- **FoF表示日の正本**: `28b58ee0` はMonthly Trade FoFの表示weights照会候補に`position_start_date`を最優先で加え、月初カレンダー日(週末)の旧holdingではなく実保有開始日のSignalを採用する。参照: `backend/app/api/monthly_trade.py`, `backend/tests/test_monthly_trade_calculator.py`、commit `28b58ee0`。
+- **ledger次回rebalance境界**: `9f81c106` はtrigger別の次回rebalance月を判定し、openな旧confirmed eventが次回決定月へ持ち越されるのを止める。非rebalance月はcarry、次回rebalance月は新eventが入るまでpendingとする。参照: `backend/app/services/signal_decision_ledger.py`, `backend/app/jobs/recalculate_fast.py`, `backend/tests/test_signal_decision_ledger_guard.py`、commit `9f81c106`。
+
 ## 因果リンク
 - ← [[dm-signal]] メインPJの核心層
 - → [[dm-signal-ops]] コア→運用への接続

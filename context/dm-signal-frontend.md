@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-10 cmd_4278 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection -->
+<!-- source_commit:21e80e30 reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source commits 21e80,9f09 reviewed and indexed -->
 <!-- source_commit:9b094cff reason:cmd_4278 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=9b094cff -->
 <!-- source_commit:2e494a5f reason:cmd_4277 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=2e494a5f -->
 <!-- source_commit:85ef51ec reason:cmd_4257 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=85ef51ec -->
@@ -424,3 +425,8 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 → 実装: `/mnt/c/Python_app/DM-signal/frontend/lib/monthly-trade-display.ts`、`/mnt/c/Python_app/DM-signal/frontend/components/monthly-trade-table.tsx`
 → 本番証跡: `/tmp/dm-signal-monthly-trade-after-07b13601.png`
+
+## §25 Monthly Trade stale cacheとDashboard同期 (2026-08-04)
+
+- `9f09b128` はFoF Monthly Tradeのcurrent-month holdingをDashboardの`selectedPortfolio.signal`と正規化比較し、raw UUID混入またはholding不一致のcached responseを表示せずfresh再取得へ回す。freshでも不一致なら表示をnullにしてstale値を露出しない。参照: `frontend/app/monthly-trade/page.tsx`, `frontend/lib/monthly-trade-display.ts`, `frontend/lib/__tests__/monthly-trade-display.test.ts`、commit `9f09b128`。
+- `21e80e30` はfresh responseが表示妥当ならholding不一致でも先に表示し、`SignalsProvider`のstableな`refresh()`でDashboard signalsをbackground再取得する。これによりMonthly Tradeを古い信号へ戻さず、両表示を再同期する。参照: `frontend/app/monthly-trade/page.tsx`, `frontend/contexts/signals-context.tsx`、commit `21e80e30`。
