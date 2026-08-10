@@ -1190,7 +1190,11 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         # referenced command has already been deployed.  Suppress that stale
         # read=true item for every message type, not only cmd_new.
         cmd_id = extract_cmd_id(msg_content)
-        if (cmd_id != "" && (cmd_id in deployed_parent_cmd)) return 0
+        # A completed command is no longer present in the ninja current task YAML.
+        # Treat its durable CLEAR/archive/quality receipt as terminal too; otherwise
+        # every completed cmd_new becomes a permanent "read actionable" warning as
+        # soon as the ninja is reused for the next task.
+        if (cmd_id != "" && ((cmd_id in deployed_parent_cmd) || gate_clear_recorded(cmd_id))) return 0
         if (msg_type == "cmd_new") {
             # Explicit dependencies are work sequencing, not postponement.  Keep the
             # read cmd_new quiet only while its dependency is unresolved; once the
