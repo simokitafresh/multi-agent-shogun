@@ -524,7 +524,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4270"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存防御へ吸収済み: stale AC混入の根因とcmd原本外AC ID検出は既知のcmd_2286パターンであり、SG-PRE17がcmd仕様AC IDと報告binary_checks AC IDをcomm -23で照合するため追加実装修正不要"
+  action_artifact: "scripts/gates/gate_gunshi_report_precheck.sh:936-957 (SG-PRE17/GP-235);docs/research/gunshi_idle_stale_ac_analysis_20260426.md:28-36;context/semantic-map.md;docs/semantic-index/index.md"
+  resolved_at: "2026-08-10T09:18:13+09:00"
 - id: INS-20260810-022418920-ca15
   ts: "2026-08-10T02:24:18+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指摘_idle4名充填_20260810_0152]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=殿指示20260715_1724_gist実装開始; score=3.7) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=3.6) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=3.5)。概念定義とaliases追加を検討せよ"
