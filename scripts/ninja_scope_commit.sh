@@ -150,6 +150,49 @@ done
 if [[ "$repair_index" == false ]]; then
     [[ -n "$message" ]] || { echo "BLOCK: commit message is required" >&2; exit 2; }
 fi
+
+# The report gate requires every ninja-task commit to identify its task_id or
+# parent_cmd in the subject.  Inject that identity from the reviewed task
+# contract so callers do not need to remember a second, manually maintained
+# subject token.  An unset task file means an ordinary/manual or karo commit;
+# preserve that legacy path exactly.
+if [[ -n "${NINJA_SCOPE_TASK_FILE:-}" && "$repair_index" == false ]]; then
+    message="$(python3 - "$NINJA_SCOPE_TASK_FILE" "$message" <<'PY'
+import re
+import sys
+
+import yaml
+
+task_path, subject = sys.argv[1:]
+try:
+    with open(task_path, encoding="utf-8") as handle:
+        raw = yaml.safe_load(handle) or {}
+except (OSError, yaml.YAMLError) as exc:
+    print(f"BLOCK: cannot read NINJA_SCOPE_TASK_FILE: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+
+task = raw.get("task", raw) if isinstance(raw, dict) else {}
+identity = ""
+for key in ("task_id", "parent_cmd"):
+    value = str(task.get(key) or "").strip()
+    if value:
+        identity = value
+        break
+if not identity:
+    # Some legacy helper fixtures pass a task file only for transient-test
+    # cleanup/receipt validation.  Without a task identity this is not a
+    # ninja commit contract, so preserve the historical subject unchanged.
+    print(subject)
+    raise SystemExit(0)
+
+# Match the same identifier boundary used by gate_report_format_main.py so a
+# shorter task id cannot be mistaken for a prefix of another id.
+if re.search(rf"\b{re.escape(identity)}\b", subject) is None:
+    subject = f"{identity}: {subject}"
+print(subject)
+PY
+)" || exit 2
+fi
 if [[ -n "$reflux_mode" || -n "$reflux_evidence" ]]; then
     [[ "$reflux_mode" =~ ^(synced|non-target)$ && -n "$reflux_evidence" ]] \
         || { echo "BLOCK: --reflux-mode and --reflux-evidence must be supplied together" >&2; exit 2; }
