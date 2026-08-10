@@ -550,6 +550,22 @@ def main():
                     metalinguistic += 1
             if occurrences and metalinguistic == len(occurrences):
                 return True
+            # 分布・母集団の定義では、未完了の現行taskを計測対象から
+            # 除外することがあり、これは業務未完了の申告ではない。
+            # ただし「作業未完了」「実装未完了」等の実作業語が同じ局所文脈に
+            # あれば、分類語を含んでいてもBLOCKを維持する。
+            population_markers = ('分布', '母集団', '集計', '分類')
+            exclusion_markers = ('除外', '対象外', '別集計', '分離')
+            work_markers = ('作業', '実装', '検証', '実施', '対応', 'ac')
+            delegation_markers = ('後で', '未実施', '保留', '家老実施', '家老が実施')
+            population_context = lower_text[max(0, occurrence.start() - 16):min(len(lower_text), occurrence.end() + 96)] if occurrences else ''
+            if (
+                any(marker in population_context for marker in population_markers)
+                and any(marker in population_context for marker in exclusion_markers)
+                and not any(marker in population_context for marker in work_markers)
+                and not any(marker in population_context for marker in delegation_markers)
+            ):
+                return True
         if term == '後で':
             # 「実行後であり」「確認後であり」「判明後であり」等の時間副詞用法は
             # 委譲語(「後で対応する」)ではない。偽陽性実例: kagemaru gist_reorder

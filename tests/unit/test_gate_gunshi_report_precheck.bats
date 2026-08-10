@@ -332,6 +332,20 @@ YAML
   done
 }
 
+# test_necessity: 分布母集団からの未完了task除外は業務未完了ではない一方、
+# 同じ文脈の実作業未完了はBLOCKする不変量。
+@test "LG043 distinguishes population exclusion from incomplete work" {
+  run_engine "未完了の現taskは分布から除外した"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+
+  run_engine "実装未完了の現taskは分布から除外した"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
 @test "LG043 keeps blocking concrete incomplete, deferred, and delegated work" {
   for expression in "作業未完了" "検証未完了" "後で実施" "家老へ委譲し、家老が実施"; do
     run_engine "$expression"
