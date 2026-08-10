@@ -1,5 +1,5 @@
 <!-- gist-master: 0a7397f5583fb69d370b385d2a9b34a3 lord-memo-fullrecalc-log-fe-concerns_20260810.md -->
-# 殿メモ — 気になる点7件（観察のみ・今は動かない）
+# 殿メモ — 気になる点8件（観察のみ・今は動かない）
 
 - 記録日: 2026-08-10 13:28 JST
 - 発端: 殿の直接指摘（原文趣旨: fullrecalculateに長時間かかっている / logの出力が直感的ではない / FEのデザインが独自に変わっている。今動かず気になる点のメモとしてまとめよ）
@@ -64,6 +64,13 @@
 - 関連する既知文脈: pending/confirmed三状態の実装(月次リターン基本原理・31タスク)でconfirmed状態のラベルが月ラベル欄へ混入した可能性。§3/§6と同じ「指示外の表示差分が検知されない」構造。UI文言は英語表記が既存基準のため、日本語「確定」の出現自体が実装時の仕様逸脱の疑い。
 - 将来確認する観点: 該当セルのレンダリング条件(月ラベルと状態ラベルの分離)、どのcommitで混入したか。
 - 位置づけ: 未調査の観察メモ。調査・起票は殿の下知を待つ。
+
+## 8. monthly trade画面でFoFのみ「No monthly trade data available for this portfolio.」（殿追記 13:43）
+
+- 事象（殿の観察・未調査）: monthly trade画面でStandard PFはデータ表示されるが、FoFは「No monthly trade data available for this portfolio.」となりデータが見えない。
+- 関連する既知文脈: γ5 cutover(cmd_4287=FoF momentum daily NAV化)のfullrecalculateが走行中であり、FoF系データの再生成途中・切替過渡の可能性。§5(confirmed/pending混在)・SIGNAL CHANGE ALERT(confirmed-month 562件/32PF)と同じタイミングで観測されており、FoF系レーンの整合が揃っていない兆候として一括で見るべき。
+- 将来確認する観点: γ5完了後に再現するか。再現するならAPI応答(データ層)とFE表示条件の切り分け。
+- 位置づけ: 未調査の観察メモ。調査・起票は殿の下知を待つ(γ5完了検分は家老レーンへ指示済み)。
 
 ## まとめ（共通構造）
 
