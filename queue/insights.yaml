@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260810-234959696-2ac8
-  ts: "2026-08-10T23:49:59+09:00"
-  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[lord_ruling_20260810_2348]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=lord_ruling_20260810_2136; score=44.4) / destructive_operations(破壊的操作安全機構; alias=lord_approval; score=20.1) / local_memory_db(ローカル記憶DB; alias=lord_conversation 202行で溢れ; score=15.1)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T23:50:23+09:00"
 - id: INS-20260810-235018310-403c
   ts: "2026-08-10T23:50:18+09:00"
   insight: "[[今のうちに将軍がL2のみ全PF計算しといてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今のうちに将軍がL2のみ全PF計算しといてくれ"
@@ -949,8 +939,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '43ff109e569fec8dd11513d868a8f087b0e910203eda992479c82d9a7dc55caf' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 1
-  last_seen: "2026-08-11T05:23:22+09:00"
+  occurrence_count: 2
+  last_seen: "2026-08-11T06:11:27+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -981,3 +971,10 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+- id: INS-20260811-061341880-01a4
+  ts: "2026-08-11T06:13:41+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608110554_kagemaru; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608110554_kagemaru"
+  fix_known: false
+  status: pending
