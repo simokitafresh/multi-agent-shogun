@@ -74,3 +74,23 @@
 - [x] `queue/compact_state/karo.yaml`と互換正本のpointer/hash更新（08:29 JSTに同一pointer/hashへ同期）
 
 未完taskがあることではなく、未完の種類・裁可境界・次の一手を一次情報から即復元できることを「今より強い」と定義する。
+
+## 2026-08-10 09:22 増分 — ε4第2実行と根因修正lane
+
+- `cmd_4284` の統合commit `ad976db77ada023db620bffaa1129ddb8df3b618` はGitHub CI run `31342631865`が6/6 GREEN、Render live SHAも`ad976db7`。
+- 第2実行はrun id `202608092355302165EA`、約1.36秒で中断。DB前後は `16976 rows / 102 PF / min_year_month 2003-09` で不変、データ損失0。
+- 一次DBでは2026-07-03が対象13銘柄中`^VIX`だけ1件、株式ETF12銘柄0件。2026-07-02/06は13/13。`business_day_utils.py`がrequested symbolsのunion dateを共有calendar完全性判定へ使うため、VIX単独特別sessionをportfolio営業日と誤認した。
+- 根治hotfix `cmd_karo_hotfix_cmd4284_market_grid_202608100902` は小太郎へ配備済み。SPY観測日を期待グリッドにし、VIX-only日を無視しつつSPY-open日の他symbol欠損検出を維持する2AC契約。contract test 2caseとscope commitまで一件で閉じる。
+- 独立調査はDM側`cmd_4285`=才蔵、database供給側`cmd_4286`=影丸で並列。結果を突合してhotfix後に同じ`cmd_4284`を再実行し、別cmd化して失敗を隠さない。
+- `cmd_reflux_insight_202608100803_hanzo` はGATE CLEAR、cmd_complete COMPLETE、個別将軍報告`blt_20260810_091714_9484c4`まで完了。
+- `cmd_reflux_insight_202608100839_tobisaru` は軍師LGTM+家老ACCEPT済み。completion gate lock実行中で、terminal CLEAR確認後に個別将軍報告する。
+- GA-452 context freshness ALERT 4件は半蔵へ`cmd_karo_recon2_ga452_context_freshness_202608100915`として根治配備。単なる日付更新ではなく更新トリガー/所有境界を修正し4→0を要求。
+- 配備インフラ穴: `deploy_task.sh:9406`がPJ内絶対test pathも`os.path.isabs(path)`だけでBLOCKし、表示も「outside project repo」と誤診する。相対pathでhotfix本線は復旧済みだが、飛猿reflux完了後に独立hotfixとして「PJ内絶対pathは正規化、PJ外のみBLOCK」のcontract test付き根治を配備する。
+
+### 09:22以降の厳密な再開順
+
+1. inboxをID単位処理し、飛猿completion gateのterminal状態を確認して個別完了報告。
+2. 小太郎hotfix報告→軍師formal review→家老ACCEPT→GATE→push/CI/Render SHA確認。
+3. 才蔵cmd_4285と影丸cmd_4286の独立一次結果を突合。供給欠損そのものとcalendar誤判定を混同しない。
+4. 同一`cmd_4284`で本番portfolio再実行し、DB前後不変とrun completeを二値確認。
+5. 空いた飛猿へPJ内絶対path誤BLOCKのインフラhotfixを配備し、相対/内側絶対/外側絶対の3境界を固定する。
