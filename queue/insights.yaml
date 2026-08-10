@@ -961,7 +961,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7d294328daa749be1c8d5a197b01e32aa28a24fbe6dd15ef7f4ac6d512cb6443' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -971,6 +971,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: 一次確認済み。self_retro event_id=7d294328daa749be1c8d5a197b01e32aa28a24fbe6dd15ef7f4ac6d512cb6443 が completion_pipeline の実測(5435ms; dashboard=3018ms, ntfy=1189ms, inbox_archive=208ms)であり、binary criterion all ordered checkpoints complete and duplicate event count is 0 を満たす。fix_known=trueかつverify_command rc=0のため既存修正へ吸収済み。
+  action_artifact: "logs/self_retro.jsonl:event_id=7d294328daa749be1c8d5a197b01e32aa28a24fbe6dd15ef7f4ac6d512cb6443; verify_command=rc0; phase_ms=sg7_consume:0,lesson_review:0,cmd_complete_gate:0,quality_log:0,dashboard:3018,ntfy:1189,inbox_archive:208"
+  resolved_at: "2026-08-11T06:30:13+09:00"
 - id: INS-20260811-061341880-01a4
   ts: "2026-08-11T06:13:41+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608110554_kagemaru; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
