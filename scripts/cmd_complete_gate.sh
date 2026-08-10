@@ -9703,6 +9703,31 @@ if [ "$ALL_CLEAR" = true ]; then
         append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\trework_event_capture_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
         exit 1
     fi
+    # The wrapper's durable worker waits for this generation-bound marker,
+    # rather than for this gate process to finish. Everything above this point
+    # is fail-closed; everything below remains in that same durable worker.
+    if [ -n "${CMD_COMPLETE_GATE_CLEAR_MARKER:-}" ]; then
+        if ! python3 - "$CMD_COMPLETE_GATE_CLEAR_MARKER" "$CMD_ID" \
+            "$SHOGUN_COMPLETION_GENERATION" <<'PY'
+import json, os, sys, tempfile, time
+path, cmd_id, generation = sys.argv[1:]
+data = {"version": 1, "state": "clear", "cmd_id": cmd_id,
+        "completion_generation": generation, "persisted_at_ns": time.time_ns()}
+os.makedirs(os.path.dirname(path), exist_ok=True)
+fd, tmp = tempfile.mkstemp(prefix=".gate_worker_clear.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+PY
+        then
+            echo "GATE BLOCK: ${CMD_ID}:durable_clear_marker_persist_failed"
+            append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tdurable_clear_marker_persist_failed' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID")"
+            exit 1
+        fi
+    fi
     echo "GATE CLEAR: cmd完了許可"
     # Post-decision and detached: telemetry failure must never reverse CLEAR.
     # shellcheck source=scripts/lib/defense_overhead_writer.sh

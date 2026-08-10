@@ -18,6 +18,24 @@ PY
     for name in lesson_review.sh cmd_complete_gate.sh cmd_quality_log.sh dashboard_update.sh ntfy_cmd.sh inbox_mark_read.sh inbox_archive.sh karo_workaround_log.sh; do
         make_stub "$FIXTURE/scripts/$name" "$name"
     done
+    cat > "$FIXTURE/scripts/cmd_complete_gate.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'cmd_complete_gate.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+if [[ -n "${CMD_COMPLETE_GATE_CLEAR_MARKER:-}" ]]; then
+    python3 - "$CMD_COMPLETE_GATE_CLEAR_MARKER" "$1" "$SHOGUN_COMPLETION_GENERATION" <<'PY'
+import json, os, sys, tempfile
+path, cmd_id, generation = sys.argv[1:]
+data = {"version": 1, "state": "clear", "cmd_id": cmd_id,
+        "completion_generation": generation}
+fd, tmp = tempfile.mkstemp(prefix=".clear.", dir=os.path.dirname(path))
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    json.dump(data, fh); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+os.replace(tmp, path)
+PY
+fi
+[[ "${CMD_COMPLETE_FAIL_STEP:-}" != 'cmd_complete_gate.sh' ]]
+SH
+    chmod +x "$FIXTURE/scripts/cmd_complete_gate.sh"
     make_stub "$FIXTURE/scripts/gates/gate_context_freshness.sh" gate_context_freshness.sh
     make_stub "$FIXTURE/scripts/gates/gate_yaml_status.sh" gate_yaml_status.sh
 }
@@ -43,6 +61,149 @@ SH
     [ "$elapsed_ms" -lt 5000 ]
     [[ "$output" == *"QUEUED completion_tail"* ]]
     [ ! -e "$CMD_COMPLETE_TEST_LOG" ] || ! grep -q '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG"
+}
+
+# test_necessity: a wrapper-aware gate must publish a durable CLEAR receipt before the public caller returns, while exactly one worker owns every post-CLEAR gate and terminal completion side effect.
+# regression_justification: cmd_4293 printed CLEAR but the synchronous wrapper still waited 12.054s for post-CLEAR gate work.
+@test "public caller returns at durable gate CLEAR while one worker completes the ordered tail" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/post-clear-worker.log"
+    cat > "$FIXTURE/scripts/cmd_complete_gate.sh" <<'SH'
+#!/usr/bin/env bash
+# CMD_COMPLETE_GATE_CLEAR_MARKER is the wrapper/gate contract token.
+printf 'cmd_complete_gate.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+printf 'invoked\n' >> "$(dirname "$CMD_COMPLETE_GATE_CLEAR_MARKER")/gate_invocations.log"
+python3 - "$CMD_COMPLETE_GATE_CLEAR_MARKER" "$1" "$SHOGUN_COMPLETION_GENERATION" <<'PY'
+import json, os, sys, tempfile
+path, cmd_id, generation = sys.argv[1:]
+data = {"version": 1, "state": "clear", "cmd_id": cmd_id,
+        "completion_generation": generation}
+fd, tmp = tempfile.mkstemp(prefix=".clear.", dir=os.path.dirname(path))
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    json.dump(data, fh); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+os.replace(tmp, path)
+PY
+sleep 6
+SH
+    chmod +x "$FIXTURE/scripts/cmd_complete_gate.sh"
+
+    local start_ns clear_end_ns worker_end_ns elapsed_ms worker_elapsed_ms checkpoint i
+    start_ns="$(date +%s%N)"
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
+    clear_end_ns="$(date +%s%N)"
+    [ "$status" -eq 0 ]
+    echo "public_clear_ms=$elapsed_ms"
+    [ "$elapsed_ms" -lt 5000 ]
+    [[ "$output" == *"GATE CLEAR durable_worker_receipt_verified"* ]]
+    [[ "$output" == *"QUEUED completion_tail"* ]]
+
+    checkpoint="$FIXTURE/queue/gates/cmd_fixture/completion_checkpoint.json"
+    for i in $(seq 1 300); do
+        grep -q '^\[cmd_complete\] COMPLETE cmd_fixture$' \
+            "$FIXTURE/queue/gates/cmd_fixture/completion_tail.log" 2>/dev/null && break
+        sleep 0.05
+    done
+    [ "$(wc -l < "$FIXTURE/queue/gates/cmd_fixture/gate_invocations.log")" -eq 1 ]
+    grep -q '^\[cmd_complete\] COMPLETE cmd_fixture$' \
+        "$FIXTURE/queue/gates/cmd_fixture/completion_tail.log"
+    worker_end_ns="$(date +%s%N)"
+    worker_elapsed_ms=$(( (worker_end_ns - start_ns) / 1000000 ))
+    echo "public_clear_ms=$elapsed_ms worker_complete_ms=$worker_elapsed_ms post_clear_ms=$(( (worker_end_ns - clear_end_ns) / 1000000 ))"
+    run python3 - "$checkpoint" <<'PY'
+import json, sys
+completed = json.load(open(sys.argv[1], encoding="utf-8"))["completed"]
+assert completed == ["sg7_consume", "lesson_review", "cmd_complete_gate", "quality_log",
+                     "status_completed", "archive_terminal", "dashboard", "ntfy", "inbox_archive"]
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: CLEAR must be persisted only after all pre-CLEAR fail-closed checks and before public CLEAR output.
+@test "gate durable CLEAR marker precedes output and post-CLEAR body" {
+    local gate="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+    run python3 - "$gate" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+normal = text.index('CMD_COMPLETE_GATE_CLEAR_MARKER', text.index('if [ "$ALL_CLEAR" = true ]'))
+clear_output = text.index('echo "GATE CLEAR: cmd完了許可"', normal)
+post_clear = text.index('Status completed (post-GATE CLEAR)', clear_output)
+assert normal < clear_output < post_clear
+assert text.index('capture_completed_rework_event', text.index('if [ "$ALL_CLEAR" = true ]')) < normal
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: a parent crash after worker launch but before launch-receipt persistence must recover the generation-bound private session and must not invoke the gate twice.
+# regression_justification: the original launch-then-receipt ordering exposed an exactly-once gap where the next caller could launch a duplicate worker.
+@test "receipt-window crash recovers one reserved private gate worker without relaunch" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/receipt-crash.log"
+    cat > "$FIXTURE/scripts/cmd_complete_gate.sh" <<'SH'
+#!/usr/bin/env bash
+# CMD_COMPLETE_GATE_CLEAR_MARKER is the wrapper/gate contract token.
+printf 'invoked\n' >> "$(dirname "$CMD_COMPLETE_GATE_CLEAR_MARKER")/gate_invocations.log"
+python3 - "$CMD_COMPLETE_GATE_CLEAR_MARKER" "$1" "$SHOGUN_COMPLETION_GENERATION" <<'PY'
+import json, os, sys, tempfile
+path, cmd_id, generation = sys.argv[1:]
+data = {"version": 1, "state": "clear", "cmd_id": cmd_id,
+        "completion_generation": generation}
+fd, tmp = tempfile.mkstemp(prefix=".clear.", dir=os.path.dirname(path))
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    json.dump(data, fh); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+os.replace(tmp, path)
+PY
+sleep 4
+SH
+    chmod +x "$FIXTURE/scripts/cmd_complete_gate.sh"
+
+    run env CMD_COMPLETE_TEST_CRASH_AFTER_GATE_LAUNCH=1 \
+        CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 96 ]
+    [[ "$output" == *"TEST_CRASH after durable gate launch before receipt"* ]]
+    [ -f "$FIXTURE/queue/gates/cmd_fixture/gate_worker.reserved.json" ]
+    [ ! -f "$FIXTURE/queue/gates/cmd_fixture/gate_worker.launch.json" ]
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"launcher=tmux-"*"-recovered"* ]]
+    [[ "$output" == *"GATE CLEAR durable_worker_receipt_verified"* ]]
+
+    local i
+    for i in $(seq 1 300); do
+        grep -q '^\[cmd_complete\] COMPLETE cmd_fixture$' \
+            "$FIXTURE/queue/gates/cmd_fixture/completion_tail.log" 2>/dev/null && break
+        sleep 0.05
+    done
+    [ "$(wc -l < "$FIXTURE/queue/gates/cmd_fixture/gate_invocations.log")" -eq 1 ]
+    grep -q '^\[cmd_complete\] COMPLETE cmd_fixture$' \
+        "$FIXTURE/queue/gates/cmd_fixture/completion_tail.log"
+}
+
+# test_necessity: the public observer must release the real completion_checkpoint flock before CLEAR wait so continuation can acquire it and finish while the observer process is still alive.
+# regression_justification: contract-runner test2 deadlocked with public fd9 held while the stable tmux continuation blocked acquiring the same checkpoint lock.
+@test "real checkpoint flock is handed off before public CLEAR wait" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/real-flock.log"
+    local public_log="$BATS_TEST_TMPDIR/public.log" public_pid i tail_log
+
+    env CMD_COMPLETE_TEST_HOLD_AFTER_LOCK_RELEASE=8 \
+        CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture >"$public_log" 2>&1 &
+    public_pid=$!
+    tail_log="$FIXTURE/queue/gates/cmd_fixture/completion_tail.log"
+    for i in $(seq 1 140); do
+        grep -q '^\[cmd_complete\] COMPLETE cmd_fixture$' "$tail_log" 2>/dev/null && break
+        sleep 0.05
+    done
+    grep -q '^\[cmd_complete\] COMPLETE cmd_fixture$' "$tail_log"
+    [ -d "/proc/$public_pid" ]
+    wait "$public_pid"
+    [ "$?" -eq 0 ]
+    grep -q '^\[cmd_complete\] RELEASED checkpoint_lock before_clear_wait$' "$public_log"
 }
 
 # test_necessity: the detached tail must outlive its public parent and complete all ordered terminal side effects.
@@ -77,24 +238,24 @@ PY
     [ "$status" -eq 0 ]
 }
 
-# test_necessity: the production launcher must use setsid's fork mode so the worker is not the exec-session's directly tracked child.
-# regression_justification: a plain setsid child disappeared when the caller exec-session closed despite nohup.
-@test "completion tail launcher uses the tmux server boundary" {
-    run grep -F '"$_tmux_bin" run-shell -b' "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
+# test_necessity: the production launcher must use a stable named private tmux session so receipt-window recovery cannot start a second worker.
+# regression_justification: launch followed by parent crash before receipt persistence left no durable evidence and allowed duplicate relaunch.
+@test "completion tail launcher uses generation-bound private tmux singleflight" {
+    run grep -F '"$tmux_bin" -L "$socket" new-session -d -s completion' "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
     [ "$status" -eq 0 ]
     [ "$(printf '%s\n' "$output" | wc -l)" -eq 1 ]
 }
 
-# test_necessity: hosts without tmux must complete synchronously rather than lose terminal side effects.
-@test "completion tail falls back synchronously when tmux is unavailable" {
+# test_necessity: durable worker launch failure must remain synchronous and fail closed before any terminal side effect is published.
+@test "completion worker launch fails closed when tmux is unavailable" {
     unset CMD_COMPLETE_SYNC_TAIL
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/no-tmux-fallback.log"
     run env CMD_COMPLETE_TMUX_BIN="$BATS_TEST_TMPDIR/missing-tmux" \
         CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
         bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"FALLBACK completion_tail mode=sync"* ]]
-    grep -q '^inbox_archive.sh|karo$' "$CMD_COMPLETE_TEST_LOG"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FAILED durable gate worker tmux unavailable"* ]]
+    ! grep -q '^inbox_archive.sh|karo$' "$CMD_COMPLETE_TEST_LOG"
 }
 
 # test_necessity: all known slow/failing tail variants must remain outside the public caller while the worker preserves checkpoints.
@@ -111,6 +272,7 @@ PY
             CMD_COMPLETE_TEST_VARIANT="$variant" bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd"
         elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
         [ "$status" -eq 0 ]
+        echo "variant=$variant public_clear_ms=$elapsed_ms"
         [ "$elapsed_ms" -lt 5000 ]
         [[ "$output" == *"QUEUED completion_tail"* ]]
     done

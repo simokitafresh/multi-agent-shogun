@@ -20,6 +20,50 @@ declare -A CMD_COMPLETE_STEP_MS=()
 BUNDLE_PATH="${2:-queue/gates/${CMD_ID}/sg7_bundle.json}"
 [[ "$BUNDLE_PATH" = /* ]] || BUNDLE_PATH="$ROOT_DIR/$BUNDLE_PATH"
 
+# Internal entry point for the one durable completion worker. It runs the
+# whole gate exactly once, persists its terminal result, then re-enters the
+# checkpointed wrapper to finish quality/status/archive/dashboard/notification.
+if [[ "${CMD_COMPLETE_GATE_WORKER:-0}" = "1" ]]; then
+    _worker_checkpoint_dir="${CMD_COMPLETE_CHECKPOINT_DIR:?}"
+    _worker_generation="${SHOGUN_COMPLETION_GENERATION:?}"
+    _worker_snapshot="${CMD_COMPLETE_SOURCE_SNAPSHOT:?}"
+    _worker_clear_marker="$_worker_checkpoint_dir/gate_worker.clear.json"
+    _worker_success_marker="$_worker_checkpoint_dir/gate_worker.success.json"
+    _worker_failure_marker="$_worker_checkpoint_dir/gate_worker.failed.json"
+    _write_worker_marker() {
+        python3 - "$1" "$2" "$CMD_ID" "$_worker_generation" "$3" <<'PY'
+import json, os, sys, tempfile, time
+path, state, cmd_id, generation, rc = sys.argv[1:]
+data = {"version": 1, "state": state, "cmd_id": cmd_id,
+        "completion_generation": generation, "rc": int(rc),
+        "persisted_at_ns": time.time_ns()}
+fd, tmp = tempfile.mkstemp(prefix=".gate_worker_marker.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+PY
+    }
+    if env CMD_COMPLETE_WRAPPER_ACTIVE=1 \
+        CMD_COMPLETE_GATE_CLEAR_MARKER="$_worker_clear_marker" \
+        SHOGUN_COMPLETION_GENERATION="$_worker_generation" \
+        bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"; then
+        _write_worker_marker "$_worker_success_marker" success 0 || exit 98
+    else
+        _worker_rc=$?
+        _write_worker_marker "$_worker_failure_marker" failed "$_worker_rc" || exit 99
+        exit "$_worker_rc"
+    fi
+    exec env CMD_COMPLETE_GATE_WORKER=0 CMD_COMPLETE_GATE_CONTINUATION=1 \
+        CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
+        CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
+        CMD_COMPLETE_CHECKPOINT_DIR="$_worker_checkpoint_dir" \
+        CMD_COMPLETE_SOURCE_SNAPSHOT="$_worker_snapshot" \
+        bash "$_worker_snapshot" "$CMD_ID" "$BUNDLE_PATH"
+fi
+
 CHECKPOINT_DIR="${CMD_COMPLETE_CHECKPOINT_DIR:-$ROOT_DIR/queue/gates/$CMD_ID}"
 CHECKPOINT_PATH="$CHECKPOINT_DIR/completion_checkpoint.json"
 CHECKPOINT_LOCK="$CHECKPOINT_DIR/completion_checkpoint.lock"
@@ -354,6 +398,180 @@ PY
     fi
 }
 
+gate_worker_marker_matches() {
+    local marker="$1" expected_state="$2"
+    python3 - "$marker" "$expected_state" "$CMD_ID" "$BUNDLE_IDENTITY" <<'PY'
+import json, sys
+try:
+    data = json.load(open(sys.argv[1], encoding="utf-8"))
+except (OSError, ValueError):
+    raise SystemExit(1)
+expected = {
+    "version": 1,
+    "state": sys.argv[2],
+    "cmd_id": sys.argv[3],
+    "completion_generation": sys.argv[4],
+}
+raise SystemExit(0 if all(data.get(k) == v for k, v in expected.items()) else 1)
+PY
+}
+
+launch_or_observe_durable_gate_worker() {
+    local worker_log="$CHECKPOINT_DIR/completion_tail.log"
+    local reservation="$CHECKPOINT_DIR/gate_worker.reserved.json"
+    local launch_receipt="$CHECKPOINT_DIR/gate_worker.launch.json"
+    local clear_marker="$CHECKPOINT_DIR/gate_worker.clear.json"
+    local success_marker="$CHECKPOINT_DIR/gate_worker.success.json"
+    local failure_marker="$CHECKPOINT_DIR/gate_worker.failed.json"
+    local tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
+    local launcher="" socket="" worker_cmd="" worker_log_q="" worker_target="" worker_scope=""
+    local deadline now
+
+    if gate_worker_marker_matches "$failure_marker" failed; then
+        printf '[cmd_complete] FAILED durable gate worker marker=%s\n' "$failure_marker" >&2
+        return 1
+    fi
+
+    if ! gate_worker_marker_matches "$launch_receipt" launched; then
+        if ! command -v "$tmux_bin" >/dev/null 2>&1; then
+            printf '[cmd_complete] FAILED durable gate worker tmux unavailable\n' >&2
+            return 1
+        fi
+        # Reserve this generation before launch.  O_EXCL closes the
+        # launch-before-receipt crash gap; the stable private tmux session name
+        # is the recoverable single-flight identity on the next invocation.
+        if ! python3 - "$reservation" "$CMD_ID" "$BUNDLE_IDENTITY" <<'PY'
+import json, os, sys, time
+path, cmd_id, generation = sys.argv[1:]
+expected = {"version": 1, "state": "reserved", "cmd_id": cmd_id,
+            "completion_generation": generation}
+try:
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+except FileExistsError:
+    try:
+        data = json.load(open(path, encoding="utf-8"))
+    except (OSError, ValueError):
+        raise SystemExit(1)
+    raise SystemExit(0 if all(data.get(k) == v for k, v in expected.items()) else 1)
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    data = dict(expected, persisted_at_ns=time.time_ns())
+    json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+PY
+        then
+            printf '[cmd_complete] FAILED durable gate worker reservation invalid\n' >&2
+            return 1
+        fi
+        printf -v worker_cmd '%q ' env CMD_COMPLETE_GATE_WORKER=1 \
+            CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
+            CMD_COMPLETE_CHECKPOINT_DIR="$CHECKPOINT_DIR" \
+            CMD_COMPLETE_SOURCE_SNAPSHOT="$CMD_COMPLETE_SOURCE_SNAPSHOT" \
+            SHOGUN_COMPLETION_GENERATION="$BUNDLE_IDENTITY" \
+            bash "$CMD_COMPLETE_SOURCE_SNAPSHOT" "$CMD_ID" "$BUNDLE_PATH"
+        if [[ -n "${CMD_COMPLETE_TEST_LOG:-}" ]]; then
+            printf -v _gate_test_env '%q ' "CMD_COMPLETE_TEST_LOG=$CMD_COMPLETE_TEST_LOG"
+            worker_cmd="env $_gate_test_env${worker_cmd#env }"
+        fi
+        printf -v worker_log_q '%q' "$worker_log"
+        # Include the checkpoint path identity as well as cmd/generation.
+        # Isolated roots can legitimately exercise the same logical command;
+        # sharing a global tmux target would recover the wrong root's worker.
+        worker_scope="$(printf '%s' "$CHECKPOINT_DIR" | sha256sum | cut -c1-8)"
+        worker_target="cc_${CMD_ID//[^A-Za-z0-9_-]/_}_${BUNDLE_IDENTITY:0:8}_${worker_scope}"
+        if "$tmux_bin" display-message -p '#S' >/dev/null 2>&1; then
+            if "$tmux_bin" has-session -t "$worker_target" >/dev/null 2>&1; then
+                launcher="tmux-session-recovered"
+            elif "$tmux_bin" new-session -d -s "$worker_target" \
+                "$worker_cmd </dev/null >>$worker_log_q 2>&1"; then
+                launcher="tmux-session"
+            else
+                launcher="failed"
+            fi
+        else
+            socket="cmd-complete-gate-${CMD_ID//[^A-Za-z0-9_-]/_}-${BUNDLE_IDENTITY:0:12}-${worker_scope}"
+            if "$tmux_bin" -L "$socket" has-session -t completion >/dev/null 2>&1; then
+                launcher="tmux-private-recovered"
+            elif "$tmux_bin" -L "$socket" new-session -d -s completion \
+                "$worker_cmd </dev/null >>$worker_log_q 2>&1" 9>&-; then
+                launcher="tmux-private"
+            else
+                launcher="failed"
+            fi
+        fi
+        if [[ "$launcher" = "failed" ]]; then
+                python3 - "$failure_marker" "$CMD_ID" "$BUNDLE_IDENTITY" <<'PY'
+import json, os, sys, tempfile, time
+path, cmd_id, generation = sys.argv[1:]
+data = {"version": 1, "state": "failed", "cmd_id": cmd_id,
+        "completion_generation": generation, "rc": 1,
+        "reason": "launch_failed", "persisted_at_ns": time.time_ns()}
+fd, tmp = tempfile.mkstemp(prefix=".gate_worker_failed.", dir=os.path.dirname(path))
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+os.replace(tmp, path)
+PY
+            printf '[cmd_complete] FAILED durable gate worker launch\n' >&2
+            return 1
+        fi
+        if [[ "${CMD_COMPLETE_TEST_CRASH_AFTER_GATE_LAUNCH:-0}" = "1" ]]; then
+            printf '[cmd_complete] TEST_CRASH after durable gate launch before receipt\n' >&2
+            return 96
+        fi
+        python3 - "$launch_receipt" "$CMD_ID" "$BUNDLE_IDENTITY" "$launcher" <<'PY'
+import json, os, sys, tempfile, time
+path, cmd_id, generation, launcher = sys.argv[1:]
+data = {"version": 1, "state": "launched", "cmd_id": cmd_id,
+        "completion_generation": generation, "launcher": launcher,
+        "persisted_at_ns": time.time_ns()}
+fd, tmp = tempfile.mkstemp(prefix=".gate_worker_launch.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+PY
+        gate_worker_marker_matches "$launch_receipt" launched || {
+            printf '[cmd_complete] FAILED durable gate worker launch receipt invalid\n' >&2
+            return 1
+        }
+        printf '[cmd_complete] QUEUED completion_tail launcher=%s log=%s\n' "$launcher" "$worker_log"
+    fi
+
+    # The public observer has persisted the generation-bound reservation and
+    # launch receipt and will not mutate checkpoints again. Release fd9 before
+    # waiting for CLEAR so the same durable worker can re-enter this script,
+    # acquire the lock, and continue the ordered checkpoint tail. Reservation
+    # plus the stable tmux target prevent a concurrent caller from relaunching.
+    if ! flock -u 9; then
+        printf '[cmd_complete] FAILED durable gate worker checkpoint lock release\n' >&2
+        return 1
+    fi
+    exec 9>&-
+    printf '[cmd_complete] RELEASED checkpoint_lock before_clear_wait\n' >&2
+    if [[ -n "${CMD_COMPLETE_TEST_HOLD_AFTER_LOCK_RELEASE:-}" ]]; then
+        sleep "$CMD_COMPLETE_TEST_HOLD_AFTER_LOCK_RELEASE"
+    fi
+
+    deadline=$(( $(date +%s) + ${CMD_COMPLETE_GATE_CLEAR_TIMEOUT:-3600} ))
+    while :; do
+        if gate_worker_marker_matches "$clear_marker" clear; then
+            printf '[cmd_complete] GATE CLEAR durable_worker_receipt_verified\n'
+            return 0
+        fi
+        if gate_worker_marker_matches "$failure_marker" failed; then
+            printf '[cmd_complete] FAILED durable gate worker before CLEAR marker=%s\n' "$failure_marker" >&2
+            return 1
+        fi
+        now=$(date +%s)
+        if (( now >= deadline )); then
+            printf '[cmd_complete] FAILED durable gate worker CLEAR marker timeout=%ss\n' \
+                "${CMD_COMPLETE_GATE_CLEAR_TIMEOUT:-3600}" >&2
+            return 1
+        fi
+        sleep 0.05
+    done
+}
+
 if checkpoint_has sg7_consume; then
     printf '[cmd_complete] SKIP sg7_consume checkpoint_verified\n' >&2
     PROJECT_ID="$(checkpoint_project)"
@@ -377,8 +595,23 @@ if [[ -n "${CMD_COMPLETE_WORKAROUND_NINJA:-}" ]]; then
         "${CMD_COMPLETE_WORKAROUND_METHOD:?}"
 fi
 
-run_checkpointed cmd_complete_gate env CMD_COMPLETE_WRAPPER_ACTIVE=1 \
-    bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"
+if checkpoint_has cmd_complete_gate; then
+    printf '[cmd_complete] SKIP cmd_complete_gate checkpoint_verified\n' >&2
+elif [[ "${CMD_COMPLETE_GATE_CONTINUATION:-0}" = "1" ]]; then
+    if ! gate_worker_marker_matches "$CHECKPOINT_DIR/gate_worker.success.json" success; then
+        printf '[cmd_complete] FAILED cmd_complete_gate durable success marker missing\n' >&2
+        exit 1
+    fi
+    checkpoint_mark cmd_complete_gate
+    printf '[cmd_complete] PASS cmd_complete_gate durable_success_marker_verified\n' >&2
+elif [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
+    && grep -q 'CMD_COMPLETE_GATE_CLEAR_MARKER' "$SCRIPT_DIR/cmd_complete_gate.sh"; then
+    launch_or_observe_durable_gate_worker
+    exit $?
+else
+    run_checkpointed cmd_complete_gate env CMD_COMPLETE_WRAPPER_ACTIVE=1 \
+        bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"
+fi
 # cmd_complete_gate performs the fail-closed, command-correlated freshness
 # check before CLEAR. Do not run the dashboard-wide freshness monitor here:
 # an unrelated commit after another context's source_commit would otherwise
