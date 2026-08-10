@@ -146,3 +146,18 @@
 2. CI run `31350509548`のterminalを確認する。GREENならRender live SHA `9f2891d2`を再照合し、本番fullrecalculateを1回だけ開始する。REDなら疾風以外のidle忍者へCI fixを直配備し、本番実行は保留する。
 3. 本番run中はDB terminalをイベント駆動で確認し、別runを重ねない。完了後はγ3 dual replayを影丸へ継続させる。
 4. 才蔵completion tailがCOMPLETEなら個別将軍報告を出す。疾風hotfix報告は別cmdとしてformal review→GATE→個別完了する。
+
+## 2026-08-10 12:22 増分 — cmd_4287 CI RED・本番500の分離根治
+
+- CI run `31350509548` はterminal FAILURE。shard 0/1/2/3/5はsuccess、shard4は`1 failed / 276 passed / 3 xpassed`。失敗は`test_cmd_3854_fof_golden_baseline_exact_regression`で、日次NAV cutover後に旧golden比`extra_count=568`。本番fullrecalculateは未実行のまま保留。
+- CI修正は飛猿へ`cmd_karo_ci_fix_31350509548_fof_golden_nav_cutover`として配備済み。全78 FoF・全日付のmissing/extra/mismatch/rows/hashを同一generationで分類し、意図したNAV cutoverだけならappend-only証跡を保ってgoldenを再基線化する。軍師draft LGTM済み。
+- 本番`/api/signals` 500の真因は4要素tuple `(signal,start_date,recorded_at,id)` に対してcurrentだけ`existing[0:3]`を比較していた不整合。才蔵commit `d42a6882310297b4a3899458300e33f53d4d4f33`で`existing[1:4]`へ修正し、不整合`1→0`、回帰`1/1 PASS・FAIL0・SKIP0`。軍師formal review待ちで、未push。
+- 疾風のcommit subject契約hotfixはcommit `0e0f4e7679d51afe4822d9ec3c8bfd2509858da2`、識別率`0/2→2/2`、回帰`4/4 PASS・SKIP0`。軍師LGTM・家老ACCEPT・review gate成立済み。`cmd_complete_gate`は12:20以降P9読取中で、terminal確定後に同一cmdだけ完了報告する。
+- **fullrecalculate開始条件は二重**: (1)本番500 hotfixをformal review→push→Render live→`/api/signals` HTTP200、(2)golden修正をformal review→push→CI全shard GREEN。双方成立前は`admin/recalculate-sync`を呼ばない。
+
+### /new後の最初の一手（12:22版）
+
+1. inboxをID単位処理する。
+2. 才蔵formal LGTM受領→家老ACCEPT→GATE→DM main push→CI/Render live→`/api/signals` HTTP200を確認する。
+3. 飛猿report受領→全78 FoF差分の説明可能性を確認→formal review→家老ACCEPT→GATE→push→CI全shard GREENを確認する。
+4. 二条件成立後だけfullrecalculateを1回実行し、DB terminal completed/errorなし→影丸dual replay→append-only ledger再基線へ進む。

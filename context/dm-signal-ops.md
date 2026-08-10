@@ -1135,3 +1135,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `4d81c32c` は`c469ba6f`のmonthly_returns履歴保全guardをrevertした。狭いportfolio計算で既存履歴を削る危険が現行に残るため、fullrecalculate運用と`monthly_returns`行数/最古月の事後確認を継続する。参照: `backend/app/jobs/generators/monthly_returns.py`, commits `c469ba6f`→`4d81c32c`。
 - `aaef7932` はGroup-AのOpen系列メトリクス(Correlation/Beta/Alpha/R²/Treynor/Calmar/Positive Periods/Gain-Loss Ratio)をClose系列と独立算出する。運用検証ではmetricのopen/close両値を混同せず確認する。参照: `backend/app/services/metrics_impl.py`, `backend/tests/test_metrics_continuity_risk.py`、commit `aaef7932`。
 - `28b58ee0` はFoF Monthly Trade表示を`position_start_date`のSignalへ寄せ、月初が週末のときの旧holding表示を防ぐ。月境界の本番確認はDashboard holdingとの一致を確認する。参照: `backend/app/api/monthly_trade.py`, `backend/tests/test_monthly_trade_calculator.py`、commit `28b58ee0`。
+
+## §94 cmd_4293 fullrecalculate速度回帰の区間分解 (2026-08-10)
+- 本番DB/Render同一run `20260810035234909371`（live `d42a6882`）はtotal **2778.02s**。L2=958.157s、L3 FoF=1702.754s（61.3%、BOTTLENECK）、L5はconfirmed-only pending-row error。L3内訳は`dataframe_prep=1366.43s`、daily_loop=107.80s、signals_flush=185.86s、monthly_returns=4.28s。RenderのPrecomputeは914.12s中trade_perf=862.74s(94.4%)。
+- 前run `2026081000375024E52B`(3051.31s)との同一run lineage比較で、L3 dataframe_prep **1.87→1366.43s(+1364.56s)**、L3 total 335.208→1702.754s。一方L5は2257.204→57.355sへ減少し、T-γ5がL5 cold costをL3へ移した構造と確定。
+- 最大回帰の発端はcommit `9f2891d2`（FoF momentum daily NAV cutover）。`backend/app/jobs/recalculate_fof.py:979`でFoF毎に`nav_frame_cache`を初期化し、再帰daily NAV構築を78 FoF間で共有しない。修正候補は有効calendar/rangeを含む共有cache（またはglobal frame+slice）で、NAV parityを保ったまま重複materializationを除く。詳細・一次コマンド・生値→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4293_fullrecalc_speed_regression.md`。
+- 因果リンク: `[[T-γ5_daily_NAV_cutover]] -> [[FoF毎nav_frame_cache再初期化]] -> [[L3_dataframe_prep_1366.43s]] -> [[fullrecalculate_2778.02s]]`。
