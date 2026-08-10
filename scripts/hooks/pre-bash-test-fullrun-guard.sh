@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# PreToolUse[Bash]: bats直接実行をBLOCK（run_tests.sh経由は許可）
-# 変更対象のテストファイルはrun_tests.sh file経由で実行する。
+# PreToolUse[Bash]: 重量bats直接実行をBLOCK（run_tests.sh経由は許可）
+# 単一の具体的な.batsと--countは軽量照会/実行としてcombined Guard 17へ渡す。
 payload="$(cat)"
 # JSONをregexで切り出すと、escaped quote/newlineを含むcommandを壊す。
 # payloadはPreToolUseの正規JSONなので、標準ライブラリで一度だけ復元する。
@@ -55,6 +55,29 @@ def split_segments(source):
 def assignment(token):
     return bool(re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", token))
 
+def bats_is_lightweight(args):
+    # --count/-c only reports metadata and never executes test bodies.
+    if any(arg.split("=", 1)[0] in {"--count", "-c"} for arg in args):
+        return True
+    targets = []
+    options_with_value = {
+        "-f", "--filter", "--filter-status", "--formatter", "-j", "--jobs",
+        "-o", "--output", "--report-formatter", "--setup-suite-file",
+    }
+    skip_value = False
+    for arg in args:
+        if skip_value:
+            skip_value = False
+            continue
+        option = arg.split("=", 1)[0]
+        if option in options_with_value:
+            skip_value = "=" not in arg
+            continue
+        if arg.startswith("-"):
+            continue
+        targets.append(arg)
+    return len(targets) == 1 and targets[0].endswith(".bats") and "*" not in targets[0]
+
 def nested(tokens, depth=0):
     if depth > 8:
         return "none"
@@ -67,7 +90,7 @@ def nested(tokens, depth=0):
     if head == "run_tests.sh":
         return "allow"
     if head == "bats":
-        return "block"
+        return "allow" if bats_is_lightweight(tokens[1:]) else "block"
     if head in {"env", "command", "exec", "time", "nice"}:
         rest = tokens[1:]
         while rest and rest[0].startswith("-") and rest[0] != "--":
@@ -124,7 +147,7 @@ print(classify(text))
 ' 2>/dev/null)"
 
 if [[ "$classification" == "block" ]]; then
-    echo "BLOCK: batsの直接実行は禁止（個別・filter・verboseを含む）。"
+    echo "BLOCK(heavy-job-admission): 重量bats直接実行（複数ファイル/全量）はhost-wide排他制御が必要。'bash scripts/heavy_job_admission.sh -- <元のコマンド全体>' の形で実行せよ。単一の.batsファイル1つや--countは対象外。"
     echo "正規代替: bash scripts/run_tests.sh file <対象の.bats>"
     echo "全量代替: bash scripts/run_tests.sh unit"
     exit 2
