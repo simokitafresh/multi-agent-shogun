@@ -316,7 +316,7 @@ if [ ! "$role:$result" = "karo:RC" ] && [ "$fail_close" != 1 ] && [ "$correction
     exit 1
   fi
 fi
-if [ ! "$role:$result" = "karo:RC" ] && [ "$correction_scope" = report ]; then
+if [ ! "$role:$result" = "karo:RC" ] && [ "$fail_close" != 1 ] && [ "$correction_scope" = report ]; then
   if [ "$role" = gunshi ]; then
     if [ -f "$rejected_payload_file" ]; then
       rejected_payload=$(head -n 1 "$rejected_payload_file" 2>/dev/null || true)
