@@ -180,7 +180,8 @@ def fetch_batch_prod_returns(pg_conn, pf_ids):
         return {}
     with pg_conn.cursor() as cur:
         cur.execute(
-            "SELECT portfolio_id, year_month, return_open, return_close "
+            "SELECT portfolio_id, year_month, monthly_return_open AS return_open, "
+            "monthly_return AS return_close "
             "FROM monthly_returns WHERE portfolio_id = ANY(%s) "
             "ORDER BY portfolio_id, year_month",
             (list(pf_ids),),
