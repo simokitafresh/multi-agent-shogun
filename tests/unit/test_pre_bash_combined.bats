@@ -20,6 +20,33 @@ run_hook() {
     run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK"
 }
 
+run_dispatch() {
+    local command="$1" payload
+    payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$command")"
+    run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$ROOT/.claude/hooks/pretool-dispatch.sh"
+}
+
+@test "Claude pretool dispatchのlive chainは直接batsをBLOCKしrunner file modeを許可" {
+    run_dispatch "env FOO=bar bash -c 'timeout 30 bats tests/unit/test_pre_bash_combined.bats'"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK: batsの直接実行は禁止"* ]]
+    [[ "$output" == *"bash scripts/run_tests.sh file"* ]]
+
+    run_dispatch "env FOO=bar bash scripts/run_tests.sh file tests/unit/test_pre_bash_combined.bats"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK: batsの直接実行は禁止"* ]]
+}
+
+@test "Codex/Claudeのcombined callerは各1件でclassifier接続が重複しない" {
+    local codex_callers claude_callers classifier_callers
+    codex_callers="$(rg -n 'pre-bash-combined\.sh' .codex/hooks.json | awk 'END {print NR+0}')"
+    claude_callers="$(rg -n 'pre-bash-combined\.sh' .claude/hooks/pretool-dispatch.sh | awk 'END {print NR+0}')"
+    classifier_callers="$(rg -nF 'scripts/hooks/pre-bash-test-fullrun-guard.sh' .claude/hooks/pre-bash-combined.sh | awk 'END {print NR+0}')"
+    [ "$codex_callers" -eq 1 ]
+    [ "$claude_callers" -eq 1 ]
+    [ "$classifier_callers" -eq 1 ]
+}
+
 @test "shell payload境界は3 toolとcommand/cmdで同じ禁止commit契約を強制する" {
     # test_necessity: Codexの3 shell tool payloadが入口名やcommand field差でPreToolUseを迂回できない不変量。
     for spec in "Bash command" "exec_command cmd" "unified_exec cmd"; do
@@ -51,9 +78,10 @@ run_hook() {
     done
 }
 
-@test "正規bats実行とrun_tests file modeは許可" {
+@test "直接batsはclassifierでBLOCKしrun_tests file modeは許可" {
     run_hook "bats tests/unit/test_example.bats"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK: batsの直接実行は禁止"* ]]
     run_hook "bash scripts/run_tests.sh file tests/unit/test_example.bats"
     [ "$status" -eq 0 ]
 }

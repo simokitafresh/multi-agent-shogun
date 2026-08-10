@@ -814,6 +814,9 @@ fi
 # accounting. Classify argv positions after quote/heredoc-aware segmentation;
 # raw command text would recreate Guard 5's message/heredoc false positives.
 if [[ -n "${command:-}" && "$command" == *'.bats'* ]]; then
+    # This branch owns the distinct bash/sh <tests/**/*.bats> file-mode
+    # boundary. It runs first so malformed shell syntax retains the specific
+    # fail-closed Guard 5.1 reason below.
     _bats_direct_path="$({ COMMAND="$command" PYTHONPATH="$SCRIPT_DIR/scripts/lib${PYTHONPATH:+:$PYTHONPATH}" python3 - 2>/dev/null <<'PY'
 import os
 from pathlib import PurePosixPath
@@ -866,6 +869,26 @@ PY
         emit_deny "BLOCK(bats-file-mode): .batsをbash/shで直接実行してはならない。修正: bash scripts/run_tests.sh file ${_bats_direct_path}"
     fi
     unset _bats_direct_path
+
+    # The wrapper-aware direct-bats classifier is the single owner of bats
+    # executable classification. Keep this call at the Guard 5.1 boundary so
+    # Claude and Codex both share the same implementation, and fail closed if
+    # the classifier itself cannot complete.
+    _direct_bats_guard_output=""
+    _direct_bats_guard_rc=0
+    if _direct_bats_guard_output="$(printf '%s' "$payload" | bash "$SCRIPT_DIR/scripts/hooks/pre-bash-test-fullrun-guard.sh" 2>&1)"; then
+        _direct_bats_guard_rc=0
+    else
+        _direct_bats_guard_rc=$?
+    fi
+    if (( _direct_bats_guard_rc != 0 )); then
+        _direct_bats_guard_reason="${_direct_bats_guard_output//$'\n'/ }"
+        if [[ -z "$_direct_bats_guard_reason" ]]; then
+            _direct_bats_guard_reason="BLOCK(bats-classifier): 直接bats実行を安全に分類できない。bash scripts/run_tests.sh file <path> を使え。"
+        fi
+        emit_deny "$_direct_bats_guard_reason"
+    fi
+    unset _direct_bats_guard_output _direct_bats_guard_rc _direct_bats_guard_reason
 fi
 
 # === Guard 6: capture-pane minimum 30 lines (LK037/LK018: 末尾数行で状態を誤判断する防止) ===
