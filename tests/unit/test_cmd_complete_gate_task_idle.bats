@@ -216,7 +216,8 @@ dashboard_step = text.index("if checkpoint_has dashboard;", archive_step)
 assert "archive_terminal" in text[step_line:dashboard_step]
 assert archive_step < dashboard_step
 assert 'bash "$archive_script" 3 "$CMD_ID"' in text
-assert 'active_count=$(find "$ROOT_DIR/queue/reports"' in text
+assert "completion_active_report_count()" in text
+assert 'active_count="$(completion_active_report_count)"' in text
 assert '[[ -f "$marker" && "$active_count" -eq 0 ]]' in text
 print("archive_terminal_before_dashboard=1 retry_postcondition=1 positional_cmd_id=1")
 PY
