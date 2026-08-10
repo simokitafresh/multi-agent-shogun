@@ -1,5 +1,5 @@
 <!-- gist-master: 2d1e7458976b45751cebbffd8c118fa3 dm-production-issues-asis-tobe-5w1h_20260810.md -->
-# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.2
+# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.3
 
 - 作成: 2026-08-10 14:16 JST(将軍直轄)
 - 位置づけ: 月次リターン基本原理設計書v6.13の**補填**。v6本文は変更しない。本日殿観測+一次計測で確定した本番問題群のAsIs/ToBeを固定し、修復レーンの正本とする
@@ -153,6 +153,37 @@
 | M2 | ALM deadcode残存 | ALMディスコン裁定(2026-05-10)後もrecalculate_fast.pyにALM実装一式が残存(Phase 4.6 second passブロック+candidate cache構築+momentum_data payload等+Phase 2の候補lookback事前計算)。ログの`[MEMORY] Phase 4.6: Start ALM second pass`は条件分岐外の無条件メモリマーカーでありALM実行の証拠ではない(実行時のみ`[ALM] Starting second pass for N portfolio(s)`が出る) | 本番DBでALM有効config PF=0を確認の上deadcode除去。Phase 2の候補cache事前計算も消えるためL3高速化に寄与 — L3/L5レーンの1 hotfix候補 | 殿指摘2026-08-11 03:35(knowledge:ad48fed2) |
 | M3 | SIGNAL DECISION DRIFTのCRITICALログ冗長 | 同一(portfolio,date)の組で繰り返し出るCRITICALログは2回目以降情報量ゼロでログを埋め、Render確認コストを上げる | 初回のみCRITICAL(同一キー抑止)またはサマリ行のみCRITICALで個別行はINFO/DEBUGへ降格。P4ログ契約と同レーンで扱う | 殿指示2026-08-11 03:40(knowledge:dd046ff1) |
 
+## P6. fullrecalculate計算順序フロー(殿指示2026-08-11 04:39・コード現物より起図)
+
+将軍がrecalculate_fast.py / recalculate_fof.py現物から読み取った実行順。行番号は2026-08-11時点のmain。
+
+```mermaid
+flowchart TD
+    P0["Phase 0: cleanup<br/>monthly_returns等をDELETE<br/>★fallback前提条件(行不在)がここで発生"] --> P12
+    P12["Phase 1-2: 価格データロード<br/>PriceCache構築(DTB3含む・OPT-G)"] --> P35
+    P35["Phase 3.5: shared executor用<br/>precomputed pipeline inputs"] --> P37
+    P37["Phase 3.7: vectorized signals一括事前計算<br/>(OPT-E・全日付)"] --> P3
+    P3["Phase 3: 状態初期化"] --> P4
+    P4["Phase 4: 日次ループ(standard 24体)<br/>L2=107.2s固定"] --> P41
+    P41["Phase 4.1: 月初signal行自動作成"] --> P45
+    P45["Phase 4.5: monthly_returns生成<br/>(standard全PF・L2.phase45)"] --> P46
+    P46["Phase 4.6: ALM second pass<br/>★deadcode(M2)・通常はneeds=Falseで0秒スキップ<br/>ログ行だけ無条件出力"] --> P5F
+    P5F["Phase 5: FoF再計算(L3・78体)<br/>_topological_sort_fofs(Kahn法・dependency.py:9)<br/>★構成FoF→nested FoFの依存順は実装済み<br/>ただし深さレイヤー(L3a leaf FoF→L3b FoF of FoF→…)は<br/>明示されずフラットな直列1本列<br/>各FoF内部でmonthly_returns生成<br/>常に2000-01-01から全期間(drift状態非保存のため)"] --> GUARD
+    GUARD["snapshot guard検証<br/>confirmed月履歴保存の不変量チェック<br/>→SourceSelectGuard解除"] --> P5P
+    P5P["Phase 5(積み木): L5 precompute(102PF)<br/>PF毎に直列: drawdown→rolling summary→<br/>rolling chart→metrics→trade_performance<br/>monthly_return_cacheを引数で受渡し<br/>20PF毎にバッチcommit"]
+
+    P45 -.->|"monthly_return_cache(メモリ)"| P5P
+    P5F -.->|"FoF monthly(メモリ+DB)"| P5P
+    P5P -.->|"★fallback発生点: cacheキー<br/>(pf,year,month,as_of,None)の<br/>as_of成分不一致で常時miss→動的再計算<br/>(是正中=cmd_karo_hotfix_fallback_prod_key_rc)"| P5P
+```
+
+**読み取れた事実(殿の問いへの回答)**:
+1. 「monthly保存→trade_performance」の順序は既に正しい(Phase 4.5/5→積み木)。順序入替え改修は不要。
+2. 「nested FoFの構成FoF先行」も_topological_sort_fofsで実装済み。
+3. fallback残存の真因は順序ではなくcacheキー受渡しの不一致(as_of成分)。
+4. **深さレイヤーの明示不在(殿指摘04:43)**: トポロジカルソートはKahn法でフラットな直列1本列を返すのみで、深さ層(L3a=FoF of Standard/leaf → L3b=FoF of FoF → …)がコード上の構造として存在しない。順序の正しさは保証されるが、(i)同一層内のFoFは相互独立なのに並列化・層単位バッチができない (ii)L3a確定→L3b着手という工程管理(殿裁定22:15のトポロジカル運用)がコードと写像しない。層アノテーション(depth算出)を入れれば層内並列とL3a/L3b分割実行が構造化できる。
+5. **最適化余地(候補)**: (a)Phase 4.6 ALM deadcode除去=M2 (b)FoF「常に全期間再計算」はdrift状態非保存が理由 — 状態保存を実装すれば部分再計算が可能になる(L3高速化の構造標的) (c)L5積み木はPF間独立のため並列化余地(現在は直列+20PFバッチcommit) (d)FoF層内並列(上記4)。
+
 ## v6設計書・タスクリストの検討不足の知見化(殿指示14:17「成長のチャンスだ」)
 
 本日の問題群を生んだのは実装ミスだけではない。設計書v6(dm-monthly-return-design-v6_20260809.md)とタスクリスト(dm-monthly-return-v6-tasklist_20260809.md)の**検討不足**が上流原因である。AsIs/ToBe/5W1Hで固定し、次の設計書起草の知見とする。
@@ -209,6 +240,7 @@
 10. K7(CI性能回帰検知)を検討不足表へ追加済み。
 
 ## 改訂履歴
+- v1.3 (2026-08-11 04:42): **P6. fullrecalculate計算順序フロー(mermaid)を新設**(殿指示04:39) — Phase 0〜積み木までの実行順+データ受渡し+fallback発生点を1図に固定。殿の2仮説(順序入替え/構成FoF先行)は共に実装済みと現物確認、真因=cacheキー不一致を図中に明記。最適化候補3点(ALM除去/FoF drift状態保存/L5並列化)を付記。
 - v1.2 (2026-08-11 03:43): **P5. 殿改善候補メモ棚を新設** — M1 pending表示意味論(02:39)、M2 ALM deadcode残存+ログ行は無条件マーカーの切り分け(03:35)、M3 SIGNAL DECISION DRIFT CRITICALログ冗長(03:40)。いずれも実装は別途下知待ち。ヘッダversionをv1.2へ是正(v1.1改訂時にヘッダ未更新だった点も是正)。
 - v1.1 (2026-08-11 01:22): **UI-5誤読源の訂正(殿裁定01:18)** — 「cmd_4278本来目的(OPEN欠損時CLOSE代用の除去)は維持」の記述が「benchmark=CLOSE固定でよい」と誤読され、小太郎がbenchmark drawdown_open 0/10を正常と判定する事故が発生。正仕様を明記: ベンチマーク(SPY等)もOtO/CtCトグルに追従する。「代用除去」はOPEN欠損日にCLOSE値を混ぜない意であり、benchmark全体をCLOSE固定にする意ではない。benchmarkのOtOデータは供給・表示する。UI-5表と3e確認手順の両方へ焼き込み。
 - v1.0 (2026-08-11 00:02): **S5.7工程確定と改訂を追加** — 上流確定積上げ工程(22:14)→L2撤収+L3/L5独立二正面(23:48)+L5目標60秒とエラーコスト実証(failed=0で439s vs failed=102で2257s)+1体基準値3層(L2=10.7s/L3=8.92s/L5=1.4-5.65s)+fullrecalculate見込み13〜26分+parent展開波及の教訓。進捗台帳を深夜実績(L5バグ3件根治・cache計装Live・L2全PF24/24完走・L3-r1完走8.92s・instructions焼き込み)へ全面更新。deploy便8本/夜・CI非同期(殿裁定22:55「CI redは無視、デプロイを止めるな」)・周回タスク軽量契約3点(殿裁定22:59)も正本化。
