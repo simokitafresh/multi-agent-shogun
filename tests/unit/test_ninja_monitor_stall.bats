@@ -5043,3 +5043,132 @@ printf "elapsed_under_0.5s=true single_flight_skip=confirmed\n"
     [ "$status" -eq 0 ]
     [[ "$output" == *"elapsed_under_0.5s=true single_flight_skip=confirmed"* ]]
 }
+
+# test_necessity: idle継続の一次判定、明示的次標的のOPEN集合、掲示板宣言を同一世代へ
+# 固定し、3分到達後のpending_work ALERTを一世代一回にする不変量を守る。
+@test "check_idle_backlog_alert: 3分継続後にOPEN次標的を一世代一回だけ通知する" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/idle-backlog-generation"
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: newest
+  content: "次標的: cmd_open"
+EOF
+
+NINJA_NAMES=(n1); declare -A PANE_TARGETS
+PANE_TARGETS[n1]=pane-n1
+POLL_INTERVAL=20
+check_idle() { return 0; }
+list_pending_cmds_cached() {
+    printf "%s\n" "cmd_open|2026-08-10T22:00:00||" "cmd_closed|2026-08-10T21:00:00||"
+}
+find_deployed_task_status() {
+    [ "$1" = cmd_closed ] && printf "completed\n"
+}
+find_closed_parent_cmd_status() { return 1; }
+notify_karo_durable() { printf "%s\n" "$3" >> "$TMP_ROOT/messages.log"; return 0; }
+log() { printf "%s\n" "$1" >> "$LOG"; }
+
+IDLE_BACKLOG_ALERT_NOW=1000; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=1179; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=1180; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=1181; check_idle_backlog_alert
+
+test "$(wc -l < "$TMP_ROOT/messages.log" | tr -d " ")" -eq 1
+grep -q "掲示板宣言=cmd_open" "$TMP_ROOT/messages.log"
+! grep -q "cmd_closed" "$TMP_ROOT/messages.log"
+grep -q "poll_interval=20" "$LOG"
+printf "alerts=1 threshold=180 poll=20 closed_suppressed=1\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"alerts=1 threshold=180 poll=20 closed_suppressed=1"* ]]
+}
+
+# test_necessity: idle不在・backlog不在・既配備taskを通知候補から除外し、条件が揃った
+# 世代だけを通知することで、既配備済み誤警報を0件に固定する。
+@test "check_idle_backlog_alert: idleなし・backlogなし・既配備は0通" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/idle-backlog-filters"
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+NINJA_NAMES=(n1); declare -A PANE_TARGETS
+PANE_TARGETS[n1]=pane-n1
+IDLE_MODE=0; TASK_STATUS=in_progress; PENDING_MODE=open; DEPLOYED_MODE=0
+check_idle() { [ "$IDLE_MODE" -eq 1 ]; }
+yaml_field_get() { [ "$2" = status ] && printf "%s\n" "$TASK_STATUS"; }
+list_pending_cmds_cached() {
+    [ "$PENDING_MODE" = empty ] && return 0
+    [ "$PENDING_MODE" = deployed ] && printf "%s\n" "cmd_deployed|2026-08-10T22:00:00||" ||
+        printf "%s\n" "cmd_open|2026-08-10T22:00:00||"
+}
+find_deployed_task_status() {
+    [ "$DEPLOYED_MODE" -eq 1 ] && printf "in_progress\n"
+}
+find_closed_parent_cmd_status() { return 1; }
+notify_karo_durable() { printf "%s\n" "$3" >> "$TMP_ROOT/messages.log"; return 0; }
+log() { printf "%s\n" "$1" >> "$LOG"; }
+
+# idleなし、active task、backlogなし、既配備を各々1回ずつ確認する。
+IDLE_BACKLOG_ALERT_NOW=1000; check_idle_backlog_alert
+IDLE_MODE=1; check_idle_backlog_alert
+TASK_STATUS=done; PENDING_MODE=empty; IDLE_BACKLOG_ALERT_NOW=1200; check_idle_backlog_alert
+PENDING_MODE=deployed; DEPLOYED_MODE=1; IDLE_BACKLOG_ALERT_NOW=1300; check_idle_backlog_alert
+
+# 最後にOPENかつ未配備だけを成立させ、idle継続180秒で1通だけ送る。
+PENDING_MODE=open; DEPLOYED_MODE=0; IDLE_BACKLOG_ALERT_NOW=1480; check_idle_backlog_alert
+test "$(wc -l < "$TMP_ROOT/messages.log" | tr -d " ")" -eq 1
+grep -q "IDLE-BACKLOG-ALERT" "$LOG"
+printf "alerts=1 idle_absent=0 backlog_absent=0 deployed_false_alert=0\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"alerts=1 idle_absent=0 backlog_absent=0 deployed_false_alert=0"* ]]
+}
+
+# test_necessity: backlog世代が変わっても直前通知からcooldown内は0通、cooldown後に
+# 新世代だけを通知し、monitor周期内の重複通知を防ぐ不変量を守る。
+@test "check_idle_backlog_alert: backlog新世代はcooldown後だけ通知する" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/idle-backlog-cooldown"
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; mkdir -p "$SCRIPT_DIR/queue" "$STATE_DIR"
+NINJA_NAMES=(n1); declare -A PANE_TARGETS; PANE_TARGETS[n1]=pane-n1
+PENDING_MODE=a
+check_idle() { return 0; }
+list_pending_cmds_cached() {
+    if [ "$PENDING_MODE" = a ]; then printf "%s\n" "cmd_a|2026-08-10T22:00:00||"; else printf "%s\n" "cmd_b|2026-08-10T22:01:00||"; fi
+}
+find_deployed_task_status() { return 0; }
+find_closed_parent_cmd_status() { return 1; }
+notify_karo_durable() { printf "%s\n" "$3" >> "$TMP_ROOT/messages.log"; return 0; }
+log() { :; }
+
+IDLE_BACKLOG_ALERT_NOW=1000; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=1180; check_idle_backlog_alert
+PENDING_MODE=b; IDLE_BACKLOG_ALERT_NOW=1181; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=1479; check_idle_backlog_alert
+IDLE_BACKLOG_ALERT_NOW=1480; check_idle_backlog_alert
+test "$(wc -l < "$TMP_ROOT/messages.log" | tr -d " ")" -eq 2
+printf "alerts=2 same_generation=1 cooldown_suppressed=1\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"alerts=2 same_generation=1 cooldown_suppressed=1"* ]]
+}

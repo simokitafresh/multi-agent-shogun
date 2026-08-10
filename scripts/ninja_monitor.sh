@@ -1311,6 +1311,8 @@ STALE_CMD_DEBOUNCE=1800     # stale cmd同一cmd再通知抑制（30分）
 DESTRUCTIVE_DEBOUNCE=300    # 破壊コマンド同一パターン連続通知抑制（5分=300秒）
 REPORT_DONE_MISMATCH_DEBOUNCE=300  # report done+status未idleの同一ninja×cmd再通知抑制（5分=300秒）
 IDLE_ACTIVE_COOLDOWN=300           # active mode idle再通知間隔（5分=300秒）— pipeline有時の圧力
+IDLE_BACKLOG_ALERT_THRESHOLD_SEC=${IDLE_BACKLOG_ALERT_THRESHOLD_SEC:-180} # idle継続閾値（3分）
+IDLE_BACKLOG_ALERT_COOLDOWN_SEC=${IDLE_BACKLOG_ALERT_COOLDOWN_SEC:-300}   # 同一条件の再通知抑制（5分）
 SHOGUN_ALERT_DEBOUNCE=1800  # 将軍CTXアラート再送信抑制（30分）— 殿を煩わせない
 
 LAST_KARO_CLEAR=0           # 家老の最終/clear送信時刻（epoch秒）
@@ -3002,6 +3004,163 @@ _karo_pending_work_clear_marker() {
     local marker_file
     marker_file=$(_karo_pending_work_notice_marker_file)
     rm -f "$marker_file" 2>/dev/null || true
+}
+
+# idle忍者×未配備の明示的次標的を、pending_workの別世代として監視する。
+# 既存のkaro_pending_work_notice.tsvはdone/failed報告集合の正本なので共有しない。
+_idle_backlog_alert_state_file() {
+    printf '%s\n' "${IDLE_BACKLOG_ALERT_STATE_FILE:-$STATE_DIR/karo_idle_backlog_since.tsv}"
+}
+
+_idle_backlog_alert_marker_file() {
+    printf '%s\n' "${IDLE_BACKLOG_ALERT_MARKER_FILE:-$STATE_DIR/karo_idle_backlog_generation.tsv}"
+}
+
+_idle_backlog_alert_last_file() {
+    printf '%s\n' "${IDLE_BACKLOG_ALERT_LAST_FILE:-$STATE_DIR/karo_idle_backlog_last_alert.epoch}"
+}
+
+_idle_backlog_latest_next_target() {
+    local bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
+    [ -f "$bulletin_file" ] || return 0
+    # 掲示板はprepend順。最初の明示宣言だけを使い、古い宣言を現行在庫と混ぜない。
+    awk '
+        match($0, /(次標的|next_target):[[:space:]]*/) {
+            value=substr($0, RSTART + RLENGTH)
+            gsub(/[[:space:]]+$/, "", value)
+            if (value != "") { print value; exit }
+        }
+    ' "$bulletin_file" 2>/dev/null
+}
+
+_idle_backlog_alert_write_since() {
+    local state_file="$1" tmp_file
+    mkdir -p "$(dirname "$state_file")" 2>/dev/null || return 1
+    tmp_file="${state_file}.tmp.$$"
+    : > "$tmp_file" || return 1
+    local name
+    for name in "${!_IDLE_BACKLOG_FIRST_SEEN[@]}"; do
+        printf '%s|%s\n' "$name" "${_IDLE_BACKLOG_FIRST_SEEN[$name]}" >> "$tmp_file" || return 1
+    done
+    sort -o "$tmp_file" "$tmp_file" 2>/dev/null || return 1
+    mv -f "$tmp_file" "$state_file"
+}
+
+_idle_backlog_alert_atomic_write() {
+    local target="$1" value="$2" tmp_file
+    mkdir -p "$(dirname "$target")" 2>/dev/null || return 1
+    tmp_file="${target}.tmp.$$"
+    printf '%s\n' "$value" > "$tmp_file" || return 1
+    mv -f "$tmp_file" "$target"
+}
+
+# AC1/AC2: check_idleの実測結果を使い、idle継続3分以上かつ未配備cmdがある時だけ
+# 家老へpending_work ALERTを送る。通知世代は未配備cmd集合+掲示板宣言で固定し、
+# report pending_workのdedupeとは別markerで管理する。
+check_idle_backlog_alert() {
+    local now=${IDLE_BACKLOG_ALERT_NOW:-$EPOCHSECONDS}
+    local threshold=${IDLE_BACKLOG_ALERT_THRESHOLD_SEC:-180}
+    local cooldown=${IDLE_BACKLOG_ALERT_COOLDOWN_SEC:-300}
+    local state_file marker_file last_file
+    state_file=$(_idle_backlog_alert_state_file)
+    marker_file=$(_idle_backlog_alert_marker_file)
+    last_file=$(_idle_backlog_alert_last_file)
+
+    declare -A _IDLE_BACKLOG_FIRST_SEEN=()
+    declare -A _IDLE_BACKLOG_CURRENT_IDLE=()
+    if [ -f "$state_file" ]; then
+        while IFS='|' read -r _idle_name _idle_since; do
+            [[ "$_idle_name" =~ ^[A-Za-z0-9_-]+$ ]] || continue
+            [[ "$_idle_since" =~ ^[0-9]+$ ]] || continue
+            _IDLE_BACKLOG_FIRST_SEEN["$_idle_name"]="$_idle_since"
+        done < "$state_file"
+    fi
+
+    local name target task_file task_status
+    for name in "${NINJA_NAMES[@]}"; do
+        target="${PANE_TARGETS[$name]:-}"
+        [ -n "$target" ] || continue
+        if check_idle "$target" "$name"; then
+            task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+            task_status=""
+            [ -f "$task_file" ] && task_status=$(yaml_field_get "$task_file" "status" 2>/dev/null || true)
+            case "$task_status" in
+                assigned|acknowledged|in_progress|pending)
+                    log "IDLE-BACKLOG-SKIP: $name pane_idle=1 task_status=$task_status (already deployed)"
+                    continue
+                    ;;
+            esac
+            _IDLE_BACKLOG_CURRENT_IDLE["$name"]=1
+            if [ -z "${_IDLE_BACKLOG_FIRST_SEEN[$name]:-}" ]; then
+                _IDLE_BACKLOG_FIRST_SEEN["$name"]="$now"
+                log "IDLE-BACKLOG-WATCH: $name first_seen=$now poll_interval=${POLL_INTERVAL:-20}s"
+            fi
+        fi
+    done
+    _idle_backlog_alert_write_since "$state_file" || log "IDLE-BACKLOG-STATE-BLOCK: failed to persist $state_file"
+
+    local -a backlog_lines=()
+    local cmd_id cmd_timestamp delegated_at deferred_until defer_reason restart_condition
+    while IFS='|' read -r cmd_id cmd_timestamp delegated_at deferred_until defer_reason restart_condition; do
+        [ -n "$cmd_id" ] || continue
+        # OPENのpending/delegatedだけを残す。exact parent taskまたは完了reviewがあれば既配備/ CLOSED。
+        [ -n "$(find_deployed_task_status "$cmd_id" 2>/dev/null || true)" ] && continue
+        [ -n "$(find_closed_parent_cmd_status "$cmd_id" 2>/dev/null || true)" ] && continue
+        local defer_epoch=0 restart_met=0
+        if [ -n "$deferred_until" ]; then
+            defer_epoch=$(date -d "$deferred_until" +%s 2>/dev/null || echo 0)
+            [[ "$defer_epoch" =~ ^[0-9]+$ ]] || defer_epoch=0
+        fi
+        case "${restart_condition,,}" in true|met|ready|satisfied) restart_met=1 ;; esac
+        if [ -n "$deferred_until$defer_reason$restart_condition" ] && [ "$restart_met" -eq 0 ] &&
+           { [ "$defer_epoch" -eq 0 ] || [ "$now" -lt "$defer_epoch" ]; }; then
+            log "IDLE-BACKLOG-SKIP: $cmd_id deferred until=${deferred_until:-unspecified}"
+            continue
+        fi
+        backlog_lines+=("$cmd_id|${cmd_timestamp:-}|${delegated_at:-}")
+    done < <(list_pending_cmds_cached)
+
+    if [ "${#backlog_lines[@]}" -eq 0 ]; then
+        [ -f "$marker_file" ] && rm -f "$marker_file" 2>/dev/null || true
+        [ -f "$last_file" ] && rm -f "$last_file" 2>/dev/null || true
+        log "IDLE-BACKLOG-NONE: idle_count=${#_IDLE_BACKLOG_CURRENT_IDLE[@]} backlog_count=0 false_alert=0"
+        return 0
+    fi
+
+    local -a eligible_idle=()
+    for name in "${!_IDLE_BACKLOG_CURRENT_IDLE[@]}"; do
+        local first_seen=${_IDLE_BACKLOG_FIRST_SEEN[$name]:-$now}
+        local elapsed=$((now - first_seen))
+        [ "$elapsed" -ge "$threshold" ] || continue
+        eligible_idle+=("$name:$elapsed")
+    done
+    [ "${#eligible_idle[@]}" -gt 0 ] || return 0
+
+    local next_target backlog_fp generation prior_generation last_alert last_elapsed
+    next_target=$(_idle_backlog_latest_next_target | cut -c1-240)
+    backlog_fp=$(printf '%s\0' "${backlog_lines[@]}" | sort -z | sha256sum | awk '{print $1}')
+    generation=$(printf '%s\0' "$backlog_fp" "$next_target" | sha256sum | awk '{print $1}')
+    prior_generation=$(cat "$marker_file" 2>/dev/null || true)
+    [ "$prior_generation" = "$generation" ] && {
+        log "IDLE-BACKLOG-DEDUPE: generation=$generation idle=${eligible_idle[*]} backlog_count=${#backlog_lines[@]}"
+        return 0
+    }
+    last_alert=$(cat "$last_file" 2>/dev/null || echo 0)
+    [[ "$last_alert" =~ ^[0-9]+$ ]] || last_alert=0
+    last_elapsed=$((now - last_alert))
+    if [ "$last_alert" -gt 0 ] && [ "$last_elapsed" -lt "$cooldown" ]; then
+        log "IDLE-BACKLOG-COOLDOWN: elapsed=${last_elapsed}s < ${cooldown}s generation=$generation"
+        return 0
+    fi
+
+    local backlog_ids
+    backlog_ids=$(printf '%s\n' "${backlog_lines[@]}" | cut -d'|' -f1 | paste -sd, -)
+    local message="【IDLE-BACKLOG-ALERT】idle継続${threshold}秒超: ${eligible_idle[*]}。未配備次標的=${backlog_ids}。掲示板宣言=${next_target:-未宣言}。監視周期=${POLL_INTERVAL:-20}秒。配備判断せよ。"
+    log "IDLE-BACKLOG-ALERT: generation=$generation idle=${eligible_idle[*]} backlog_count=${#backlog_lines[@]} false_alert=0"
+    if notify_karo_durable pending_work karo "$message"; then
+        _idle_backlog_alert_atomic_write "$marker_file" "$generation" || return 1
+        _idle_backlog_alert_atomic_write "$last_file" "$now" || return 1
+    fi
 }
 
 # ─── 軍師LGTM後の家老未通知検知 (cmd_karo_hotfix_completion_notify_gap) ───
@@ -10400,6 +10559,9 @@ while true; do
 
     # ═══ 未配備cmd常時監視（pending+delegated_at 10分超） ═══
     check_undeployed_cmds
+
+    # ═══ idle忍者×明示的次標的バックログALERT（3分継続、世代dedupe） ═══
+    check_idle_backlog_alert
 
     # ═══ Pending cmd検知チェック（2分間隔） ═══
     if [ $((cycle % 6)) -eq 0 ]; then
