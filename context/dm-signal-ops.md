@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-10 cmd_4283 reviewed source boundary -->
+<!-- last_updated: 2026-08-10 cmd_karo_hotfix_cmd4284_market_grid_202608100902 reviewed source boundary -->
+<!-- source_commit:bda69c42 reason:cmd_karo_hotfix_cmd4284_market_grid_202608100902 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=bda69c42 -->
 <!-- source_commit:ec72faa2 reason:cmd_4283 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:d62065b4 reason:cmd_4282 reviewed source boundary evidence:cmd_complete_gate -->
 <!-- source_commit:8e30a242 reason:cmd_karo_ci_fix_dm_signal_run_31326903152 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=8e30a242 -->
