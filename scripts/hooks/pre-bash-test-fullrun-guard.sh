@@ -1,25 +1,132 @@
 #!/usr/bin/env bash
-# PreToolUse[Bash]: bats全量実行をBLOCK（run_tests.sh経由は許可）
-# 変更対象のテストファイルのみ実行を強制
-IFS= read -r payload || true
-# Hook payloadの通常形は1行JSON。単純なcommandならbash組込みだけで抽出し、
-# jq process起動をhot pathから除く。escaped quote等の複雑形だけjqへfallback。
-if [[ "$payload" =~ \"command\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
-    command="${BASH_REMATCH[1]}"
-else
-    command=$(jq -r '.tool_input.command // empty' <<<"$payload" 2>/dev/null)
-fi
+# PreToolUse[Bash]: bats直接実行をBLOCK（run_tests.sh経由は許可）
+# 変更対象のテストファイルはrun_tests.sh file経由で実行する。
+payload="$(cat)"
+# JSONをregexで切り出すと、escaped quote/newlineを含むcommandを壊す。
+# payloadはPreToolUseの正規JSONなので、標準ライブラリで一度だけ復元する。
+command="$(printf '%s' "$payload" | python3 -c '
+import json
+import sys
+
+try:
+    payload = json.load(sys.stdin)
+except (json.JSONDecodeError, TypeError):
+    raise SystemExit(0)
+
+tool_input = payload.get("tool_input") or payload.get("toolInput") or {}
+command = tool_input.get("command") or tool_input.get("cmd") or ""
+if isinstance(command, str):
+    sys.stdout.write(command)
+' 2>/dev/null)"
 [[ -z "$command" ]] && exit 0
 
-# run_tests.sh経由は許可（--jobs 8が自動適用される正規ルート）
-[[ "$command" == *run_tests.sh* ]] && exit 0
+# 実際のコマンド位置だけを判定する。単純な文字列包含では、echo/rgの
+# 説明文までBLOCKし、run_tests.shを引数に含めただけの偽許可も起きる。
+# env prefix、timeout wrapper、bash -cを再帰的にほどき、直接batsだけを検出する。
+classification="$(printf '%s' "$command" | python3 -c '
+import os
+import re
+import shlex
+import sys
 
-# bats tests/unit/ (末尾スラッシュ=ディレクトリ全量)をBLOCK
-if [[ "$command" =~ bats[[:space:]]+tests/unit/?[[:space:]]*$ ]] || \
-   [[ "$command" =~ bats[[:space:]]+tests/unit/\*  ]]; then
-    echo "BLOCK: bats tests/unit/ 全量実行は禁止。bash scripts/run_tests.sh を使え（--jobs 8自動適用）。"
-    echo "個別ファイル: bats tests/unit/test_specific_file.bats"
-    echo "全量: bash scripts/run_tests.sh unit"
+text = sys.stdin.read()
+
+def split_segments(source):
+    try:
+        lexer = shlex.shlex(source, posix=True, punctuation_chars=";&|()<>")
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        tokens = list(lexer)
+    except ValueError:
+        return None
+    segments, current = [], []
+    operators = {";", "&&", "||", "|", "&", "(", ")"}
+    for token in tokens:
+        if token in operators:
+            if current:
+                segments.append(current)
+                current = []
+        else:
+            current.append(token)
+    if current:
+        segments.append(current)
+    return segments
+
+def assignment(token):
+    return bool(re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", token))
+
+def nested(tokens, depth=0):
+    if depth > 8:
+        return "none"
+    tokens = list(tokens)
+    while tokens and assignment(tokens[0]):
+        tokens.pop(0)
+    if not tokens:
+        return "none"
+    head = os.path.basename(tokens[0])
+    if head == "run_tests.sh":
+        return "allow"
+    if head == "bats":
+        return "block"
+    if head in {"env", "command", "exec", "time", "nice"}:
+        rest = tokens[1:]
+        while rest and rest[0].startswith("-") and rest[0] != "--":
+            option = rest.pop(0)
+            if head == "env" and option in {"-u", "--unset", "-S"} and rest:
+                rest.pop(0)
+            elif head == "nice" and option in {"-n", "--adjustment"} and rest:
+                rest.pop(0)
+        if rest and rest[0] == "--":
+            rest.pop(0)
+        if head == "env":
+            while rest and assignment(rest[0]):
+                rest.pop(0)
+        return nested(rest, depth + 1)
+    if head == "timeout":
+        rest = tokens[1:]
+        while rest and rest[0].startswith("-") and rest[0] != "--":
+            option = rest.pop(0)
+            if option in {"-k", "--kill-after"} and rest:
+                rest.pop(0)
+        if rest:
+            rest.pop(0)  # duration
+        if rest and rest[0] == "--":
+            rest.pop(0)
+        return nested(rest, depth + 1)
+    if head in {"bash", "sh", "dash", "zsh", "ksh"}:
+        rest = tokens[1:]
+        while rest and rest[0].startswith("-"):
+            option = rest.pop(0)
+            if option in {"-c", "--command"} and rest:
+                inner = rest.pop(0)
+                result = classify(inner, depth + 1)
+                if result != "none":
+                    return result
+                break
+        if rest:
+            return nested(rest, depth + 1)
+    return "none"
+
+def classify(source, depth=0):
+    segments = split_segments(source)
+    if segments is None:
+        return "block"
+    saw_allow = False
+    for segment in segments:
+        result = nested(segment, depth)
+        if result == "block":
+            return "block"
+        if result == "allow":
+            saw_allow = True
+    return "allow" if saw_allow else "none"
+
+print(classify(text))
+' 2>/dev/null)"
+
+if [[ "$classification" == "block" ]]; then
+    echo "BLOCK: batsの直接実行は禁止（個別・filter・verboseを含む）。"
+    echo "正規代替: bash scripts/run_tests.sh file <対象の.bats>"
+    echo "全量代替: bash scripts/run_tests.sh unit"
     exit 2
 fi
 
