@@ -551,8 +551,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '560b12c8e536befd9000d800d8e5da213347e7de42fb75b7f6cf9f26873fc9e0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 38
-  last_seen: "2026-08-10T10:50:00+09:00"
+  occurrence_count: 39
+  last_seen: "2026-08-10T11:08:35+09:00"
   verification:
     status: "passed"
     exit_code: 0
