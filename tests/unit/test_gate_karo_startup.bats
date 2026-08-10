@@ -15,6 +15,21 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
 
 transition() { python3 "$PY" "$STATE" "$ALERTS" "${1:-}" "${2:-3600}"; }
 
+@test "migration receipt duplicate is durable success while write failures remain blocked" {
+  # test_necessity: 同一秒の並行startupが既存receiptを欠損と誤判定して起動をBLOCKしない契約を固定する。
+  local source="$ROOT/scripts/gates/gate_karo_startup_migrated_checks.sh"
+  run python3 - "$source" <<'PY'
+from pathlib import Path
+import sys
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+assert 'migration_write_rc=$?' in text
+assert '"$migration_write_rc" -ne 0 && "$migration_write_rc" -ne 4' in text
+assert 'BLOCK: defense_overhead receipt write failed' in text
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "同一keyは最初の一件だけ送信し可変率・件数・順序差を正規化する" {
   printf '%s\n' \
     '先送りCRITICAL: WA率 12.5% / 未処理 3件 が3セッション連続' \

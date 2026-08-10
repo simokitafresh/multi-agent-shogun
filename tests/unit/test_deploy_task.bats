@@ -1552,6 +1552,67 @@ YAML
   [ -f "$completed" ]
 }
 
+# test_necessity: lesson injection_countは同一attempt/task generationを一度だけ数え、
+# project単位の一括drainでも各lessonの既存値を正確に1増分する不変量を守る。
+@test "deferred lesson scores deduplicate generation and batch one project" {
+  local archive task
+  archive="$TEST_PROJECT/projects/infra/lessons_archive.yaml"
+  task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  mkdir -p "$(dirname "$archive")"
+  cat > "$archive" <<'YAML'
+- id: L001
+  injection_count: 2
+  last_referenced: 'old'
+- id: L002
+  detail: second
+YAML
+  cat > "$task" <<'YAML'
+task:
+  parent_cmd: cmd_deferred_score
+  task_id: cmd_deferred_score_normal
+  ac_version: abc123
+YAML
+
+  run bash -c '
+    export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_ISSUE_ATTEMPT_ID=attempt-1
+    source "$1/scripts/deploy_task.sh"
+    deploy_task_queue_lesson_scores "$2" infra "L001 L002"
+    deploy_task_queue_lesson_scores "$2" infra "L001 L002"
+    DEPLOY_TASK_ISSUE_ATTEMPT_ID=attempt-2
+    deploy_task_queue_lesson_scores "$2" infra "L001 L002"
+    deploy_task_drain_deferred
+  ' _ "$TEST_PROJECT" "$task"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^  injection_count: 4$' "$archive")" -eq 1 ]
+  [ "$(grep -c '^  injection_count: 2$' "$archive")" -eq 1 ]
+  [ "$(find "$TEST_PROJECT/.cache/deploy-lesson-scores" -name '*.done' | wc -l)" -eq 2 ]
+  [ ! -s "$TEST_PROJECT/queue/deferred/lesson_scores.tsv" ]
+}
+
+# test_necessity: lesson archiveの一括更新が失敗した場合、counterを部分更新せず、
+# 元のevent rowを失わず次回drainへ残すfail-closed不変量を守る。
+@test "deferred lesson score failure retains row without partial archive update" {
+  local archive task before after
+  archive="$TEST_PROJECT/projects/infra/lessons_archive.yaml"
+  task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  mkdir -p "$(dirname "$archive")"
+  printf '%s\n' '- id: L001' '  injection_count: 4' > "$archive"
+  printf '%s\n' 'task:' '  parent_cmd: cmd_deferred_score_fail' '  task_id: normal' '  ac_version: def456' > "$task"
+  before=$(sha256sum "$archive" | awk '{print $1}')
+
+  run bash -c '
+    export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_ISSUE_ATTEMPT_ID=attempt-fail
+    source "$1/scripts/deploy_task.sh"
+    deploy_task_queue_lesson_scores "$2" infra "L001 L404"
+    deploy_task_drain_deferred
+  ' _ "$TEST_PROJECT" "$task"
+  [ "$status" -eq 0 ]
+  after=$(sha256sum "$archive" | awk '{print $1}')
+  [ "$after" = "$before" ]
+  [ "$(wc -l < "$TEST_PROJECT/queue/deferred/lesson_scores.tsv")" -eq 1 ]
+  [ "$(find "$TEST_PROJECT/.cache/deploy-lesson-scores" -name '*.done' | wc -l)" -eq 0 ]
+}
+
 @test "parallel append and drain rotation loses zero deferred items" {
   run bash -c '
     export DEPLOY_TASK_LIB_ONLY=1

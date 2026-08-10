@@ -233,7 +233,7 @@ sync_chronicle_entries_batch() {
     (
         flock -w 10 200 || { echo "[chronicle] WARN: flock timeout on chronicle" >&2; return 1; }
 
-        python3 - "$CHRONICLE_FILE" "$REPORTS_DIR" "$batch_file" <<'PY'
+        python3 - "$CHRONICLE_FILE" "$REPORTS_DIR" "$batch_file" "${CMD_ID:-}" "${_TARGET_REPORT_MANIFEST:-}" <<'PY'
 import glob
 import os
 import re
@@ -242,7 +242,7 @@ from datetime import datetime
 
 import yaml
 
-chronicle_path, report_dir, batch_file = sys.argv[1:4]
+chronicle_path, report_dir, batch_file, target_cmd_id, target_manifest = sys.argv[1:6]
 today = datetime.now().strftime("%Y-%m-%d")
 date_mm_dd = datetime.now().strftime("%m-%d")
 year_month = datetime.now().strftime("%Y-%m")
@@ -266,39 +266,68 @@ def normalize(value):
 
 def load_report_summaries():
     summaries = {}
-    patterns = [
-        os.path.join(report_dir, "*_report_*.yaml"),
-        os.path.join(report_dir, "subtask_*.yaml"),
-    ]
-    for pattern in patterns:
-        for path in sorted(glob.glob(pattern)):
-            try:
-                with open(path, encoding="utf-8") as f:
-                    data = yaml.safe_load(f) or {}
-            except Exception:
+    if target_cmd_id:
+        # The completion caller already knows the immutable cmd generation.
+        # Reuse its cmd/worker/report manifest instead of parsing every report
+        # merely to discard unrelated parent_cmd values afterwards.
+        paths = []
+        try:
+            with open(target_manifest, encoding="utf-8") as f:
+                for line in f:
+                    parts = line.rstrip("\n").split("\t", 2)
+                    if len(parts) == 3 and parts[0] == target_cmd_id:
+                        paths.append(parts[2])
+        except OSError:
+            pass
+        # archive_cmds can batch several already-terminal STK entries during
+        # one targeted completion. Preserve their chronicle summaries without
+        # returning to a directory-wide payload scan: resolve each batch cmd
+        # first, then use its boundary-safe canonical basename patterns.
+        try:
+            with open(batch_file, encoding="utf-8") as f:
+                archive_paths = [line.strip() for line in f if line.strip()]
+        except OSError:
+            archive_paths = []
+        for archive_path in archive_paths:
+            batch_cmd_id, _entry = load_archived_entry(archive_path)
+            if not batch_cmd_id:
                 continue
-            if not isinstance(data, dict):
-                continue
+            paths.extend(glob.glob(os.path.join(report_dir, f"*_report_{batch_cmd_id}.yaml")))
+            paths.extend(glob.glob(os.path.join(report_dir, f"*_report_{batch_cmd_id}_*.yaml")))
+    else:
+        patterns = [
+            os.path.join(report_dir, "*_report_*.yaml"),
+            os.path.join(report_dir, "subtask_*.yaml"),
+        ]
+        paths = [path for pattern in patterns for path in glob.glob(pattern)]
+    for path in sorted(set(paths)):
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
 
-            parent_cmd = normalize(data.get("parent_cmd"))
-            if not parent_cmd:
-                match = re.match(r".*_report_(cmd_[^.]+)\.yaml$", os.path.basename(path))
-                if match:
-                    parent_cmd = match.group(1)
-            if not parent_cmd or parent_cmd in summaries:
-                continue
+        parent_cmd = normalize(data.get("parent_cmd"))
+        if not parent_cmd:
+            match = re.match(r".*_report_(cmd_[^.]+)\.yaml$", os.path.basename(path))
+            if match:
+                parent_cmd = match.group(1)
+        if not parent_cmd or parent_cmd in summaries:
+            continue
 
-            nested_report = data.get("report") if isinstance(data.get("report"), dict) else {}
-            nested_result = data.get("result") if isinstance(data.get("result"), dict) else {}
-            for candidate in (
-                data.get("summary"),
-                nested_report.get("summary"),
-                nested_result.get("summary"),
-            ):
-                text = normalize(candidate)
-                if text and text != "|":
-                    summaries[parent_cmd] = text[:30]
-                    break
+        nested_report = data.get("report") if isinstance(data.get("report"), dict) else {}
+        nested_result = data.get("result") if isinstance(data.get("result"), dict) else {}
+        for candidate in (
+            data.get("summary"),
+            nested_report.get("summary"),
+            nested_result.get("summary"),
+        ):
+            text = normalize(candidate)
+            if text and text != "|":
+                summaries[parent_cmd] = text[:30]
+                break
     return summaries
 
 
@@ -900,10 +929,20 @@ archive_reports() {
     declare -A _gate_metrics_clear=()
     declare -A _stale_gate_incomplete=()
 
-    # One find process for all stale checks. Per-report find calls are expensive on WSL2/NTFS.
-    while IFS= read -r _stale_path; do
-        [ -n "$_stale_path" ] && _stale_gate_incomplete["$_stale_path"]=1
-    done < <(find "$REPORTS_DIR" -daystart -maxdepth 1 -type f -name '*.yaml' -mtime +13 -print 2>/dev/null || true)
+    # One find process for stale checks. In targeted completion mode the
+    # report manifest is the scope boundary; sweep mode retains the global
+    # stale-recovery behavior.
+    if [ -n "$CMD_ID" ]; then
+        if [ ${#_TARGET_REPORT_FILES[@]} -gt 0 ]; then
+            while IFS= read -r _stale_path; do
+                [ -n "$_stale_path" ] && _stale_gate_incomplete["$_stale_path"]=1
+            done < <(find "${_TARGET_REPORT_FILES[@]}" -daystart -maxdepth 0 -type f -mtime +13 -print 2>/dev/null || true)
+        fi
+    else
+        while IFS= read -r _stale_path; do
+            [ -n "$_stale_path" ] && _stale_gate_incomplete["$_stale_path"]=1
+        done < <(find "$REPORTS_DIR" -daystart -maxdepth 1 -type f -name '*.yaml' -mtime +13 -print 2>/dev/null || true)
+    fi
 
     load_gate_metrics_clear_cache() {
         [ "$_gate_metrics_loaded" -eq 1 ] && return 0
@@ -1103,20 +1142,29 @@ PY
     # and mutate the historical report instead of publishing a fresh one.
 
     # --- 非YAMLファイルの掃除 (忍者の成果物混入防止) ---
-    shopt -s nullglob
-    local all_files=("$REPORTS_DIR"/*)
-    shopt -u nullglob
-    for f in "${all_files[@]}"; do
-        [ -f "$f" ] || continue
-        case "$f" in *.yaml) continue ;; esac
-        mv "$f" "$ARCHIVE_REPORT_DIR/" || { echo "[archive] WARN: mv failed: $f" >&2; continue; }
-        junk=$((junk + 1))
-    done
+    # cmd指定は対象reportだけを動かす単一完了処理。無関係junkの回収は
+    # sweep modeへ委ね、運用成果物をtargeted callの走査対象へ戻さない。
+    if [ -z "$CMD_ID" ]; then
+        shopt -s nullglob
+        local all_files=("$REPORTS_DIR"/*)
+        shopt -u nullglob
+        for f in "${all_files[@]}"; do
+            [ -f "$f" ] || continue
+            case "$f" in *.yaml) continue ;; esac
+            mv "$f" "$ARCHIVE_REPORT_DIR/" || { echo "[archive] WARN: mv failed: $f" >&2; continue; }
+            junk=$((junk + 1))
+        done
+    fi
 
     # --- YAML報告のアーカイブ ---
-    shopt -s nullglob
-    local report_files=("$REPORTS_DIR"/*_report*.yaml "$REPORTS_DIR"/subtask_*.yaml)
-    shopt -u nullglob
+    local report_files=()
+    if [ -n "$CMD_ID" ]; then
+        report_files=("${_TARGET_REPORT_FILES[@]}")
+    else
+        shopt -s nullglob
+        report_files=("$REPORTS_DIR"/*_report*.yaml "$REPORTS_DIR"/subtask_*.yaml)
+        shopt -u nullglob
+    fi
 
     if [ ${#report_files[@]} -eq 0 ] && [ "$junk" -eq 0 ]; then
         echo "[archive] reports: none"
@@ -1138,7 +1186,7 @@ PY
     declare -A _task_parent _task_status
     declare -A _queue_cmd_status _parent_has_active_child
     local _task_glob=("$PROJECT_DIR/queue/tasks"/*.yaml)
-    if [ -f "${_task_glob[0]}" ]; then
+    if [ -z "$CMD_ID" ] && [ -f "${_task_glob[0]}" ]; then
         local _task_tsv="$TMP/task_fields.tsv"
         gawk '
             BEGINFILE {
@@ -1166,7 +1214,7 @@ PY
         done < "$_task_tsv"
     fi
 
-    if [ -f "$QUEUE_FILE" ]; then
+    if [ -z "$CMD_ID" ] && [ -f "$QUEUE_FILE" ]; then
         while IFS='|' read -r _cid _cs; do
             [ -n "$_cid" ] || continue
             _queue_cmd_status["$_cid"]="$_cs"
@@ -1481,7 +1529,15 @@ PY
         esac
     done
 
-    archive_overflow_reports_to_cap
+    if [ -z "$CMD_ID" ]; then
+        archive_overflow_reports_to_cap
+    else
+        # Targeted completion moves zero or more physical reports out of the
+        # live set and therefore cannot increase the eligible-report count.
+        # The cap invariant is monotonic here; global overflow repair remains
+        # in sweep mode without paying full YAML parse cost per completion.
+        echo "[archive] overflow-cap: targeted monotonic-decrease; sweep deferred"
+    fi
 
     echo "[archive] reports: archived=$archived kept=$kept skipped=$skipped junk=$junk"
 }
@@ -1749,16 +1805,128 @@ trim_stk_old_entries() {
 # ============================================================
 # Main
 # ============================================================
+_TARGET_REPORT_MANIFEST="$TMP/target_report_manifest.tsv"
+_TARGET_REPORT_FILES=()
+
+# CMD_ID指定時のreport集合は、完了generationが既に持つidentityから先に確定する。
+# 優先順は (1) terminal review manifest、(2) worker taskのreport_path、
+# (3) cmd_idを境界付きで含む標準basename。report本文の全走査からparent_cmdを
+# 後判定する旧経路は、無関係reportのyaml.safe_loadを発生させるため使わない。
+build_target_report_manifest() {
+    [ -n "$CMD_ID" ] || return 0
+    local raw="$TMP/target_report_manifest.raw.tsv"
+    : > "$raw"
+
+    local terminal_manifest="$PROJECT_DIR/queue/gates/${CMD_ID}/terminal_review_manifest.json"
+    if [ -f "$terminal_manifest" ]; then
+        python3 - "$terminal_manifest" "$CMD_ID" "$PROJECT_DIR" <<'PY' >> "$raw"
+import json
+import os
+import sys
+
+manifest_path, cmd_id, project_dir = sys.argv[1:4]
+try:
+    with open(manifest_path, encoding="utf-8") as f:
+        data = json.load(f)
+except (OSError, ValueError):
+    raise SystemExit(0)
+if not isinstance(data, dict) or str(data.get("cmd_id") or "") != cmd_id:
+    raise SystemExit(0)
+for row in data.get("reports") or []:
+    if not isinstance(row, dict):
+        continue
+    logical = str(row.get("logical_path") or "").strip()
+    if logical.startswith("queue/reports/"):
+        print(f"{cmd_id}\tmanifest\t{os.path.join(project_dir, logical)}")
+PY
+    fi
+
+    shopt -s nullglob
+    local task_files=("$PROJECT_DIR/queue/tasks"/*.yaml)
+    shopt -u nullglob
+    if [ ${#task_files[@]} -gt 0 ]; then
+        gawk -v want="$CMD_ID" -v reports="$REPORTS_DIR" '
+            BEGINFILE {
+                worker=FILENAME; sub(/.*\//,"",worker); sub(/\.yaml$/,"",worker)
+                parent=""; report_path=""; report_name=""
+            }
+            /^[[:space:]]{2}parent_cmd:[[:space:]]*/ && parent=="" {
+                parent=$0; sub(/^[^:]*:[[:space:]]*/,"",parent); gsub(/["'"'"'[:space:]]/,"",parent)
+            }
+            /^[[:space:]]{2}report_path:[[:space:]]*/ && report_path=="" {
+                report_path=$0; sub(/^[^:]*:[[:space:]]*/,"",report_path)
+                gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/,"",report_path)
+            }
+            /^[[:space:]]{2}report_filename:[[:space:]]*/ && report_name=="" {
+                report_name=$0; sub(/^[^:]*:[[:space:]]*/,"",report_name)
+                gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/,"",report_name)
+            }
+            ENDFILE {
+                if (parent == want) {
+                    if (report_path != "") {
+                        if (report_path ~ /^\//) path=report_path
+                        else {
+                            sub(/^queue\/reports\//,"",report_path)
+                            path=reports "/" report_path
+                        }
+                    } else if (report_name != "") path=reports "/" report_name
+                    else path=reports "/" worker "_report_" want ".yaml"
+                    print want "\t" worker "\t" path
+                }
+            }
+        ' "${task_files[@]}" >> "$raw"
+    fi
+
+    shopt -s nullglob
+    local path base worker
+    local named_reports=(
+        "$REPORTS_DIR"/*_report_"$CMD_ID".yaml
+        "$REPORTS_DIR"/*_report_"$CMD_ID"_*.yaml
+    )
+    shopt -u nullglob
+    for path in "${named_reports[@]}"; do
+        base="${path##*/}"
+        worker="${base%%_report_*}"
+        printf '%s\t%s\t%s\n' "$CMD_ID" "$worker" "$path" >> "$raw"
+    done
+
+    local candidate rest
+    while IFS=$'\t' read -r _cmd worker candidate; do
+        [ "$_cmd" = "$CMD_ID" ] || continue
+        case "$candidate" in
+            "$PROJECT_DIR"/queue/reports/*) ;;
+            "$REPORTS_DIR"/*) ;;
+            *) continue ;;
+        esac
+        rest="${candidate#"$REPORTS_DIR"/}"
+        [[ "$rest" != */* && "$rest" == *.yaml ]] || continue
+        [ -f "$candidate" ] || [ -L "$candidate" ] || continue
+        printf '%s\t%s\t%s\n' "$CMD_ID" "$worker" "$candidate"
+    done < "$raw" | awk -F '\t' '!seen[$3]++' > "$_TARGET_REPORT_MANIFEST"
+
+    if [ -s "$_TARGET_REPORT_MANIFEST" ]; then
+        mapfile -t _TARGET_REPORT_FILES < <(cut -f3 "$_TARGET_REPORT_MANIFEST")
+    fi
+    echo "[archive] target-report-manifest: cmd=$CMD_ID reports=${#_TARGET_REPORT_FILES[@]}"
+}
+
 echo "[archive_completed] $(date '+%Y-%m-%d %H:%M:%S') start"
 
 # GP-080: 報告ファイルのstatus/parent_cmdを一括抽出 (実行内共有キャッシュ)
 # sync_stk Source 2 + archive_reports L582-583 の両方が消費
 # cmd_2529: /tmp永続キャッシュはsymlink残置や内容変更をファイル数だけで検知できず、古いreport状態を再利用する。
 _REPORT_CACHE="$TMP/report_fields_cache.tsv"
-if compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$REPORTS_DIR/subtask_*.yaml" > /dev/null 2>&1; then
+if [ -n "$CMD_ID" ]; then
+    build_target_report_manifest
+    _rpt_files=("${_TARGET_REPORT_FILES[@]}")
+elif compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$REPORTS_DIR/subtask_*.yaml" > /dev/null 2>&1; then
     shopt -s nullglob
     _rpt_files=("$REPORTS_DIR"/*.yaml)
     shopt -u nullglob
+else
+    _rpt_files=()
+fi
+if [ ${#_rpt_files[@]} -gt 0 ]; then
     gawk '
         BEGINFILE {
             fname = FILENAME; sub(/.*\//, "", fname)

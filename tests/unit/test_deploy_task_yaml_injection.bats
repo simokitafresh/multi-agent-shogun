@@ -552,7 +552,9 @@ assert guard_idx < report_idx, (guard_idx, report_idx)
 PY
 }
 
-@test "postcondition_lesson_inject consumes current deploy postcondition after lesson injection and score update" {
+# test_necessity: lesson injectionのpostconditionは、同一attempt/generationのscore更新をdurable queueへ記録した後に評価し、
+# 大容量archive更新を配備critical pathへ戻さない順序不変量を守る。
+@test "postcondition_lesson_inject follows durable deferred score enqueue" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys
 
@@ -561,7 +563,7 @@ main_start = script.index("deploy_task_apply_task_mutations() {")
 main = script[main_start:]
 
 inject_idx = main.index('inject_related_lessons "$task_file"')
-score_idx = main.index('bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$inj_project" "$lid" inject')
+score_idx = main.index('deploy_task_queue_lesson_scores "$task_file" "$inj_project" "$inj_ids"')
 post_idx = main.index('postcondition_lesson_inject "$task_file"')
 
 assert inject_idx < score_idx < post_idx, (inject_idx, score_idx, post_idx)

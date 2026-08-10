@@ -87,8 +87,13 @@ if [[ "${KARO_MIGRATION_LOG_FIRE:-0}" == "1" ]]; then
     # Keep this optional so fixture runs remain side-effect free.
     # shellcheck source=/dev/null
     source "$ROOT/scripts/lib/defense_overhead_writer.sh"
-    if ! defense_overhead_write gate_karo_startup migrated_classification \
-        0 PASS "karo-migration-${now//+/}-${k_total}-${d_total}"; then
+    migration_write_rc=0
+    defense_overhead_write gate_karo_startup migrated_classification \
+        0 PASS "karo-migration-${now//+/}-${k_total}-${d_total}" || migration_write_rc=$?
+    # rc=4 means the exact append-only event already exists. Concurrent startup
+    # receivers may race on the same second, so this is durable success rather
+    # than a missing receipt. Every other non-zero result remains fail-closed.
+    if [[ "$migration_write_rc" -ne 0 && "$migration_write_rc" -ne 4 ]]; then
         echo "BLOCK: defense_overhead receipt write failed" >&2
         exit 2
     fi

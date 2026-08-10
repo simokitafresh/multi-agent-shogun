@@ -673,6 +673,7 @@ deploy_task_exit_cleanup() {
     if [ "$exit_status" -ne 0 ]; then
         deploy_task_yaml_transaction_rollback || true
     fi
+    deploy_task_postcondition_cleanup
     deploy_task_exit_nudge
     deploy_task_release_ninja_lock
 }
@@ -842,6 +843,136 @@ deploy_task_queue_stale_report() {
     deploy_task_deferred_append stale_reports "path=$1" "parent=$2" "verdict=${3:-empty}"
 }
 
+# Queue lesson injection counters by deployment attempt/task generation.  The
+# counter is provenance telemetry, not a deployment gate, so rewriting the two
+# large lesson archives must not delay task delivery.  A durable done marker
+# makes enqueue idempotent even when the same attempt is re-entered while a
+# prior row is being drained.
+deploy_task_queue_lesson_scores() {
+    local task_file="$1" project="$2" ids="$3"
+    local parent_cmd task_id ac_version attempt_key event_key queue_file done_dir ids_csv
+    [ -n "$project" ] && [ -n "$ids" ] || return 0
+
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" parent_cmd task_id ac_version 2>/dev/null)" || true
+    attempt_key="${DEPLOY_TASK_ISSUE_ATTEMPT_ID:-${parent_cmd:-unknown}:${task_id:-unknown}:${BASHPID}}"
+    ids_csv=$(printf '%s\n' "$ids" | awk '{$1=$1; gsub(/[[:space:]]+/, ","); print}')
+    event_key=$(printf '%s\0%s\0%s\0%s\0%s\0%s' \
+        "$attempt_key" "${parent_cmd:-}" "${task_id:-}" "${ac_version:-}" "$project" "$ids_csv" \
+        | sha256sum | awk '{print $1}')
+    queue_file="$SCRIPT_DIR/queue/deferred/lesson_scores.tsv"
+    done_dir="$SCRIPT_DIR/.cache/deploy-lesson-scores"
+    mkdir -p "$(dirname "$queue_file")" "$done_dir"
+
+    (
+        flock -x 9
+        [ ! -f "$done_dir/${event_key}.done" ] || exit 0
+        if [ -f "$queue_file" ] && awk -F '\t' -v key="$event_key" '$2 == key { found=1; exit } END { exit !found }' "$queue_file"; then
+            exit 0
+        fi
+        printf '%s\t%s\t%s\t%s\n' \
+            "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$event_key" "$project" "$ids_csv" >> "$queue_file"
+    ) 9>"${queue_file}.lock"
+    log "injection_count: deferred project=${project} ids=${ids_csv} event=${event_key}"
+}
+
+# Apply all increments for one project under one lock and one archive rewrite.
+# Repeated lesson IDs intentionally add more than one: distinct deployment
+# attempts retain the historical injection_count semantics when batched.
+deploy_task_batch_lesson_score_update() {
+    local project="$1"
+    shift
+    local archive fallback lock_file tmp_file ts spec="" id
+    local -A deltas=()
+    [ "$#" -gt 0 ] || return 0
+    for id in "$@"; do
+        [[ "$id" =~ ^[A-Za-z0-9_.-]+$ ]] || return 1
+        deltas["$id"]=$(( ${deltas["$id"]:-0} + 1 ))
+    done
+    for id in "${!deltas[@]}"; do
+        spec+="${spec:+,}${id}=${deltas[$id]}"
+    done
+
+    archive="$SCRIPT_DIR/projects/${project}/lessons_archive.yaml"
+    fallback="$SCRIPT_DIR/projects/${project}/lessons.yaml"
+    [ -f "$archive" ] || archive="$fallback"
+    [ -f "$archive" ] || return 1
+    lock_file="${archive}.lock"
+    ts="$(date '+%Y-%m-%dT%H:%M:%S')"
+    tmp_file="$(mktemp "${archive}.XXXXXX.tmp")" || return 1
+
+    if (
+        flock -w 10 200 || exit 1
+        awk -v spec="$spec" -v ts="$ts" '
+function flush_target() {
+    if (current == "") return
+    if (!count_done) print "  injection_count: " delta[current]
+    if (!ts_done) print "  last_referenced: \047" ts "\047"
+    current=""
+}
+BEGIN {
+    n=split(spec, pairs, ",")
+    for (i=1; i<=n; i++) {
+        split(pairs[i], kv, "=")
+        wanted[kv[1]]=1
+        delta[kv[1]]=kv[2]+0
+    }
+}
+{
+    line=$0
+    sub(/\r$/, "", line)
+    if (line ~ /^- id:[[:space:]]*/) {
+        flush_target()
+        lesson_id=line
+        sub(/^- id:[[:space:]]*/, "", lesson_id)
+        gsub(/^[\047"]|[\047"]$/, "", lesson_id)
+        if (lesson_id in wanted) {
+            current=lesson_id
+            found[lesson_id]=1
+            count_done=0
+            ts_done=0
+        }
+        print
+        next
+    }
+    if (current != "" && line != "" && line !~ /^[ \t#]/) {
+        flush_target()
+        print
+        next
+    }
+    if (current != "" && line ~ /^  injection_count:[[:space:]]*[0-9]+/) {
+        value=line
+        sub(/^  injection_count:[[:space:]]*/, "", value)
+        print "  injection_count: " (value + delta[current])
+        count_done=1
+        next
+    }
+    if (current != "" && line ~ /^  last_referenced:/) {
+        print "  last_referenced: \047" ts "\047"
+        ts_done=1
+        next
+    }
+    print
+}
+END {
+    flush_target()
+    missing=0
+    for (lesson_id in wanted) {
+        if (!(lesson_id in found)) {
+            print "ERROR: " lesson_id " not found in " FILENAME > "/dev/stderr"
+            missing=1
+        }
+    }
+    if (missing) exit 1
+}
+' "$archive" > "$tmp_file" || exit 1
+        mv "$tmp_file" "$archive"
+    ) 200>"$lock_file"; then
+        return 0
+    fi
+    rm -f "$tmp_file"
+    return 1
+}
+
 deploy_task_rotate_deferred_queue() {
     local queue_file="$1" work_file="$2"
     (
@@ -853,7 +984,7 @@ deploy_task_rotate_deferred_queue() {
 
 deploy_task_drain_deferred() {
     local queue_dir="$SCRIPT_DIR/queue/deferred" drain_lock="$SCRIPT_DIR/queue/locks/deploy_deferred_drain.lock"
-    local history_q="$queue_dir/git_history.tsv" stale_q="$queue_dir/stale_reports.tsv"
+    local history_q="$queue_dir/git_history.tsv" stale_q="$queue_dir/stale_reports.tsv" lesson_q="$queue_dir/lesson_scores.tsv"
     local processed=0 skipped=0 failed=0 backlog=0 line repo head_oid rel commit key cache_dir cache_file
     mkdir -p "$(dirname "$drain_lock")" "$SCRIPT_DIR/archive/reports/stale" "$SCRIPT_DIR/.cache/deploy-history"
     exec {drain_fd}>"$drain_lock"
@@ -901,6 +1032,58 @@ deploy_task_drain_deferred() {
             mv "$report" "$dest" && processed=$((processed + 1)) || failed=$((failed + 1))
         done < "$stale_work"
         rm -f "$stale_work"
+    fi
+
+    local lesson_work="${lesson_q}.work.$BASHPID" lesson_done_dir="$SCRIPT_DIR/.cache/deploy-lesson-scores"
+    local event_key project ids extra marker row
+    local -a batch_ids=()
+    local -A lesson_rows=() lesson_ids=() lesson_seen=()
+    mkdir -p "$lesson_done_dir"
+    if deploy_task_rotate_deferred_queue "$lesson_q" "$lesson_work"; then
+        while IFS=$'\t' read -r _ts event_key project ids extra; do
+            row=$(printf '%s\t%s\t%s\t%s' "$_ts" "$event_key" "$project" "$ids")
+            if [ -n "$extra" ] || [[ ! "$event_key" =~ ^[0-9a-f]{64}$ ]] || [ -z "$project" ] || [ -z "$ids" ]; then
+                lesson_rows["__invalid__"]+="${row}"$'\n'
+                failed=$((failed + 1))
+                continue
+            fi
+            marker="$lesson_done_dir/${event_key}.done"
+            if [ -f "$marker" ] || [ -n "${lesson_seen[$event_key]:-}" ]; then
+                skipped=$((skipped + 1))
+                continue
+            fi
+            lesson_seen["$event_key"]=1
+            lesson_rows["$project"]+="${row}"$'\n'
+            lesson_ids["$project"]+="${ids//,/ } "
+        done < "$lesson_work"
+        rm -f "$lesson_work"
+
+        for project in "${!lesson_rows[@]}"; do
+            if [ "$project" = "__invalid__" ]; then
+                while IFS= read -r row; do
+                    [ -n "$row" ] || continue
+                    ( flock -x 9; printf '%s\n' "$row" >> "$lesson_q" ) 9>"${lesson_q}.lock"
+                done <<< "${lesson_rows[$project]}"
+                continue
+            fi
+            read -r -a batch_ids <<< "${lesson_ids[$project]}"
+            if deploy_task_batch_lesson_score_update "$project" "${batch_ids[@]}"; then
+                while IFS=$'\t' read -r _ts event_key _project ids; do
+                    [ -n "$event_key" ] || continue
+                    printf '%s\t%s\t%s\n' "$_ts" "$_project" "$ids" \
+                        > "$lesson_done_dir/${event_key}.done.tmp.$BASHPID"
+                    mv "$lesson_done_dir/${event_key}.done.tmp.$BASHPID" \
+                        "$lesson_done_dir/${event_key}.done"
+                    processed=$((processed + 1))
+                done <<< "${lesson_rows[$project]}"
+            else
+                while IFS= read -r row; do
+                    [ -n "$row" ] || continue
+                    ( flock -x 9; printf '%s\n' "$row" >> "$lesson_q" ) 9>"${lesson_q}.lock"
+                done <<< "${lesson_rows[$project]}"
+                failed=$((failed + 1))
+            fi
+        done
     fi
     backlog=$(find "$queue_dir" -maxdepth 1 -name '*.tsv' -type f -exec awk 'END{n+=NR} END{print n+0}' {} \; 2>/dev/null | awk '{s+=$1} END{print s+0}')
     log "DEFERRED_DRAIN processed=${processed} skipped=${skipped} failed=${failed} backlog=${backlog}"
@@ -3893,6 +4076,165 @@ deploy_task_publish_report_metadata() {
     mv "$tmp" "$task_file"
 }
 
+# A report template may be reused only while both its generator source and the
+# task-generation query are unchanged.  The marker is deliberately separate
+# from report YAML: worker edits remain byte-for-byte untouched and the report
+# schema gains no cache-only fields.
+deploy_task_report_generation_identity() {
+    local task_file="$1"
+    local source_file="${DEPLOY_TASK_REPORT_SOURCE_FILE:-$SCRIPT_DIR/scripts/deploy_task.sh}"
+    local source_fp query_key
+
+    [ -f "$source_file" ] || return 1
+    source_fp="$(stat --printf='%d:%i:%s:%y:%z  %n\n' "$source_file" \
+        | sha256sum | awk '{print $1}')" || return 1
+    query_key="$(python3 - "$task_file" <<'PY'
+import hashlib
+import json
+import sys
+
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+if not isinstance(task, dict):
+    raise SystemExit("task entry must be a mapping")
+
+# These fields are lifecycle/derived publication state, not generation input.
+# commit_contract is validated against the report separately when present: it
+# is removed by reset_stale_fields on a same-generation retry and then safely
+# rehydrated by the reconciliation path.
+for key in (
+    "status", "progress", "started_at", "acknowledged_at", "completed_at",
+    "done_at", "deployed_at", "session_state", "previous_failures",
+    "report_id", "report_identity_version", "report_path",
+    "variation_checks_required",
+    "commit_contract",
+):
+    task.pop(key, None)
+
+payload = json.dumps(task, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+print(hashlib.sha256(payload.encode("utf-8")).hexdigest())
+PY
+    )" || return 1
+    printf '%s\t%s\n' "$source_fp" "$query_key"
+}
+
+deploy_task_publish_report_generation_marker() {
+    local marker_file="$1" report_rel_path="$2" source_fp="$3" query_key="$4" report_id="$5"
+    local marker_tmp="${marker_file}.tmp.${BASHPID}"
+    printf '%s\t%s\t%s\t%s\n' "$report_rel_path" "$source_fp" "$query_key" "$report_id" \
+        > "$marker_tmp" || return 1
+    mv "$marker_tmp" "$marker_file"
+}
+
+# Return values:
+#   0 = exact same generation and all report/task contracts are current
+#   2 = exact same generation, report is sound, task metadata needs reconcile
+#   1 = source/task generation mismatch or report contract is stale/corrupt
+deploy_task_report_generation_state() {
+    local task_file="$1" report_file="$2" marker_file="$3" report_rel_path="$4"
+    local expected_source_fp="$5" expected_query_key="$6"
+    local marked_path="" marked_source_fp="" marked_query_key="" marked_report_id=""
+
+    [ -f "$marker_file" ] || return 1
+    IFS=$'\t' read -r marked_path marked_source_fp marked_query_key marked_report_id < "$marker_file" || return 1
+    [ "$marked_path" = "$report_rel_path" ] || return 1
+    [ "$marked_source_fp" = "$expected_source_fp" ] || return 1
+    [ "$marked_query_key" = "$expected_query_key" ] || return 1
+    [ -n "$marked_report_id" ] || return 1
+
+    python3 - "$task_file" "$report_file" "$marked_report_id" "$report_rel_path" <<'PY'
+import sys
+
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+report = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
+marked_report_id = sys.argv[3]
+if not isinstance(task, dict) or not isinstance(report, dict):
+    raise SystemExit(1)
+
+required = {
+    "worker_id", "report_id", "report_identity_version", "task_id",
+    "parent_cmd", "task_type", "ac_version_read", "task_contract_snapshot",
+    "result", "purpose_validation", "files_modified", "lesson_candidate",
+    "lessons_useful", "skill_candidate", "decision_candidate",
+    "knowledge_candidate", "assumption_invalidation", "operational_simulation",
+    "binary_checks", "self_gate_check", "verdict",
+}
+if not required.issubset(report):
+    raise SystemExit(1)
+
+expected_worker = str(task.get("assigned_to") or task.get("worker_id") or "").strip()
+expected_task_id = str(
+    task.get("task_id") or task.get("_ac_task_id") or task.get("subtask_id") or ""
+).strip()
+expected_parent = str(task.get("parent_cmd") or task.get("cmd_id") or "").strip()
+expected_ac = str(task.get("ac_version") or "").strip()
+actual_identity = (
+    str(report.get("worker_id") or "").strip(),
+    str(report.get("task_id") or "").strip(),
+    str(report.get("parent_cmd") or "").strip(),
+    str(report.get("ac_version_read") or "").strip(),
+)
+if actual_identity != (expected_worker, expected_task_id, expected_parent, expected_ac):
+    raise SystemExit(1)
+if str(report.get("report_id") or "").strip() != marked_report_id:
+    raise SystemExit(1)
+if str(report.get("report_identity_version") or "").strip() != "2":
+    raise SystemExit(1)
+
+snapshot = report.get("task_contract_snapshot")
+if not isinstance(snapshot, dict):
+    raise SystemExit(1)
+if str(snapshot.get("ac_fingerprint") or "").strip() != expected_ac:
+    raise SystemExit(1)
+if snapshot.get("acceptance_criteria") != task.get("acceptance_criteria"):
+    raise SystemExit(1)
+
+checks = report.get("binary_checks")
+if not isinstance(checks, dict) or "commit" not in checks:
+    raise SystemExit(1)
+raw_criteria = task.get("acceptance_criteria") or []
+criterion_ids = []
+if isinstance(raw_criteria, list):
+    for position, item in enumerate(raw_criteria, 1):
+        if isinstance(item, dict):
+            criterion_ids.append(str(item.get("id") or item.get("ac") or f"AC{position}").split(":", 1)[0].strip())
+        else:
+            criterion_ids.append(f"AC{position}")
+elif isinstance(raw_criteria, dict):
+    criterion_ids = [str(key).strip() for key in raw_criteria]
+assigned = task.get("assigned_acs") or task.get("ac_assigned") or []
+if isinstance(assigned, str):
+    assigned = [part.strip() for part in assigned.strip("[]").split(",") if part.strip()]
+if assigned:
+    selected = []
+    for value in assigned:
+        value = str(value).strip()
+        if value in criterion_ids:
+            selected.append(value)
+        elif value.upper().startswith("AC") and value[2:].isdigit():
+            index = int(value[2:]) - 1
+            if 0 <= index < len(criterion_ids):
+                selected.append(criterion_ids[index])
+    criterion_ids = selected
+if any(ac_id not in checks for ac_id in criterion_ids):
+    raise SystemExit(1)
+
+# A missing task-side publication patch is repairable without replacing the
+# sound report generation.  The caller takes the existing reconciliation path.
+task_contract = task.get("commit_contract")
+if task_contract is None or task_contract != report.get("commit_contract"):
+    raise SystemExit(2)
+if str(task.get("report_id") or "").strip() != marked_report_id:
+    raise SystemExit(2)
+if str(task.get("report_path") or "").strip() != sys.argv[4]:
+    raise SystemExit(2)
+raise SystemExit(0)
+PY
+}
+
 generate_report_template() {
     local ninja_name="$1"
     local task_id="$2"
@@ -3961,6 +4303,11 @@ generate_report_template() {
     declare -A _rpt_verdict _rpt_pcmd
     local _gawk_output _scan_report _report_scan_files=()
     local _active_report_index="$SCRIPT_DIR/queue/reports/.deploy_active_${ninja_name}"
+    local _generation_marker="$SCRIPT_DIR/queue/reports/.deploy_generation_$(basename "$report_file")"
+    local _generation_source_fp="" _generation_query_key=""
+    IFS=$'\t' read -r _generation_source_fp _generation_query_key \
+        < <(deploy_task_report_generation_identity "$task_file") \
+        || { log "FATAL: report generation identity unavailable"; return 1; }
     local _indexed_report=""
     if [ -f "$_active_report_index" ]; then
         IFS= read -r _indexed_report < "$_active_report_index" || true
@@ -4069,18 +4416,52 @@ generate_report_template() {
         log "report_template: stale own report archived (${stale_own_basename}, old_cmd=${stale_own_pcmd})"
     done
 
-    # 冪等性: 既存テンプレートがあれば本文は上書きしない（L060）。
-    # ただし同一cmd retryではreset_stale_fieldsがtask側commit_contractを消すため、
-    # 保持したreportの型付き契約をtaskへ再投影して二つのSSOTを再同期する。
+    # Exact generation hit: source_fp + query_key and the report's schema,
+    # AC/binary-check contract and v2 identity all match.  No report/task YAML
+    # or pointer rewrite is needed.  A key miss is a new generation: archive
+    # the old artifact and mint a fresh identity instead of silently reusing it.
     if [ -f "$report_file" ]; then
-        log "report_template: already exists, skipping (${report_file})"
-        report_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "report_id" "" 2>/dev/null || true)
-        ensure_report_template_completeness "$report_file" "$task_file"
-        rehydrate_task_commit_contract_from_report "$task_file" "$report_file" || return 1
-        deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
-        deploy_task_publish_active_report_pointer "$_active_report_index" "$report_rel_path" || return 1
-        log "report_path: set (${report_rel_path})"
-        return 0
+        local _generation_state=1 _active_pointer_value=""
+        if deploy_task_report_generation_state "$task_file" "$report_file" \
+            "$_generation_marker" "$report_rel_path" \
+            "$_generation_source_fp" "$_generation_query_key"; then
+            _generation_state=0
+        else
+            _generation_state=$?
+        fi
+        if [ "$_generation_state" -eq 0 ]; then
+            [ -f "$_active_report_index" ] \
+                && IFS= read -r _active_pointer_value < "$_active_report_index" \
+                || _active_pointer_value=""
+            if [ "$_active_pointer_value" = "$report_rel_path" ]; then
+                log "report_template: generation cache hit source_fp=${_generation_source_fp} query_key=${_generation_query_key} (${report_file})"
+                return 0
+            fi
+            _generation_state=2
+        fi
+        if [ "$_generation_state" -eq 2 ]; then
+            log "report_template: same generation requires metadata reconcile (${report_file})"
+            report_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "report_id" "" 2>/dev/null || true)
+            ensure_report_template_completeness "$report_file" "$task_file"
+            rehydrate_task_commit_contract_from_report "$task_file" "$report_file" || return 1
+            deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
+            deploy_task_publish_active_report_pointer "$_active_report_index" "$report_rel_path" || return 1
+            IFS=$'\t' read -r _generation_source_fp _generation_query_key \
+                < <(deploy_task_report_generation_identity "$task_file") \
+                || return 1
+            deploy_task_publish_report_generation_marker "$_generation_marker" \
+                "$report_rel_path" "$_generation_source_fp" "$_generation_query_key" "$report_id" \
+                || return 1
+            log "report_path: set (${report_rel_path})"
+            return 0
+        fi
+
+        local _stale_generation_dir="$SCRIPT_DIR/archive/reports/stale"
+        local _stale_generation_file
+        mkdir -p "$_stale_generation_dir"
+        _stale_generation_file="$_stale_generation_dir/$(basename "$report_file").generation-${_generation_source_fp:0:12}-${_generation_query_key:0:12}-${BASHPID}-$(date +%s%N)"
+        mv "$report_file" "$_stale_generation_file" || return 1
+        log "report_template: generation changed; archived stale report ($(basename "$_stale_generation_file"))"
     fi
 
     # `new` in report_unique_identity.py is only uuid.uuid4().  Read the
@@ -5513,6 +5894,12 @@ RECON_EOF
 
     deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
     deploy_task_publish_active_report_pointer "$_active_report_index" "$report_rel_path" || return 1
+    IFS=$'\t' read -r _generation_source_fp _generation_query_key \
+        < <(deploy_task_report_generation_identity "$task_file") \
+        || return 1
+    deploy_task_publish_report_generation_marker "$_generation_marker" \
+        "$report_rel_path" "$_generation_source_fp" "$_generation_query_key" "$report_id" \
+        || return 1
     log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
 }
@@ -7215,6 +7602,47 @@ PY
     log "[INJECT_READONLY_REF] injected command readonly refs"
 }
 
+# One deploy generation owns one postcondition marker.  The old fixed
+# queue/tasks/.postcond_lesson_inject path let parallel --yaml deployments
+# overwrite and consume each other's task/project/lesson identity.
+deploy_task_postcondition_prepare() {
+    local task_file="$1"
+    local task_dir task_key ninja_key cmd_key generation
+
+    if [ "${DEPLOY_TASK_POSTCOND_TASK_FILE:-}" = "$task_file" ] \
+        && [ -n "${DEPLOY_TASK_POSTCOND_FILE:-}" ]; then
+        return 0
+    fi
+
+    deploy_task_postcondition_cleanup
+    task_dir="${task_file%/*}"
+    [ "$task_dir" != "$task_file" ] || task_dir="."
+    task_key="${task_file##*/}"
+    task_key="${task_key%.yaml}"
+    ninja_key="${NINJA_NAME:-$task_key}"
+    cmd_key="${CMD_ID:-unknown}"
+    generation="${DEPLOY_TASK_STARTED_US:-${EPOCHREALTIME/./}}_${BASHPID}"
+    task_key="${task_key//[^a-zA-Z0-9_.-]/_}"
+    ninja_key="${ninja_key//[^a-zA-Z0-9_.-]/_}"
+    cmd_key="${cmd_key//[^a-zA-Z0-9_.-]/_}"
+    generation="${generation//[^a-zA-Z0-9_.-]/_}"
+    # Keep the filename below common 255-byte limits even for descriptive cmd IDs.
+    cmd_key="${cmd_key:0:80}"
+
+    DEPLOY_TASK_POSTCOND_TASK_FILE="$task_file"
+    DEPLOY_TASK_POSTCOND_FILE="${task_dir}/.postcond_lesson_inject.${task_key}.${ninja_key}.${cmd_key}.${generation}"
+    export DEPLOY_TASK_POSTCOND_TASK_FILE DEPLOY_TASK_POSTCOND_FILE
+}
+
+deploy_task_postcondition_cleanup() {
+    if [ -n "${DEPLOY_TASK_POSTCOND_FILE:-}" ]; then
+        rm -f -- "$DEPLOY_TASK_POSTCOND_FILE"
+    fi
+    DEPLOY_TASK_POSTCOND_FILE=""
+    DEPLOY_TASK_POSTCOND_TASK_FILE=""
+    export DEPLOY_TASK_POSTCOND_FILE DEPLOY_TASK_POSTCOND_TASK_FILE
+}
+
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
 # cmd_349: タグマッチによる選択的教訓注入
 inject_related_lessons() {
@@ -7224,9 +7652,11 @@ inject_related_lessons() {
         return 0
     fi
 
+    deploy_task_postcondition_prepare "$task_file"
+
     local py_output
     py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" POSTCOND_FILE_ENV="$DEPLOY_TASK_POSTCOND_FILE" python3 - <<'PY'; then
 import csv
 import datetime
 import fnmatch
@@ -7241,6 +7671,7 @@ yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-2026
 
 task_file = os.environ['TASK_FILE_ENV']
 script_dir = os.environ['SCRIPT_DIR_ENV']
+postcond_file = os.environ['POSTCOND_FILE_ENV']
 
 DEDUP_THRESHOLD = 0.25
 USEFUL_RATE_THRESHOLD = 0.40  # effectiveness_score below this → exclude from injection candidates
@@ -8818,9 +9249,8 @@ try:
         raise
 
     # Postcondition data (cmd_378)
-    _pc_path = os.path.join(os.path.dirname(task_file), '.postcond_lesson_inject')
     try:
-        with open(_pc_path, 'w') as _pf:
+        with open(postcond_file, 'w') as _pf:
             _pf.write(f'available={len(tag_candidates) + universal_total_count}\n')
             _pf.write(f'injected={len(related)}\n')
             _pf.write(f'task_id={task.get("task_id", "unknown")}\n')
@@ -11176,10 +11606,12 @@ check_scout_gate() {
 postcondition_lesson_inject() {
     local task_file="$1"
     local postcond_file
-    postcond_file="$(dirname "$task_file")/.postcond_lesson_inject"
+    deploy_task_postcondition_prepare "$task_file"
+    postcond_file="$DEPLOY_TASK_POSTCOND_FILE"
 
     if [ ! -f "$postcond_file" ]; then
         # inject early exit (no project/no lessons) → postcond data not written → OK
+        deploy_task_postcondition_cleanup
         return 0
     fi
 
@@ -11187,7 +11619,7 @@ postcondition_lesson_inject() {
     available=$(grep '^available=' "$postcond_file" 2>/dev/null | head -1 | cut -d= -f2)
     injected=$(grep '^injected=' "$postcond_file" 2>/dev/null | head -1 | cut -d= -f2)
     task_id=$(grep '^task_id=' "$postcond_file" 2>/dev/null | head -1 | cut -d= -f2)
-    rm -f "$postcond_file"
+    deploy_task_postcondition_cleanup
 
     available="${available:-0}"
     injected="${injected:-0}"
@@ -12329,20 +12761,17 @@ deploy_task_apply_task_mutations() {
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
         local pc_file inj_project inj_ids lid
-        pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
+        deploy_task_postcondition_prepare "$task_file"
+        pc_file="$DEPLOY_TASK_POSTCOND_FILE"
         if [ -f "$pc_file" ]; then
             inj_project=$(grep '^project=' "$pc_file" | cut -d= -f2)
             inj_ids=$(grep '^injected_ids=' "$pc_file" | cut -d= -f2)
             if [ -n "$inj_ids" ] && [ -n "$inj_project" ]; then
-                for lid in $inj_ids; do
-                    bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$inj_project" "$lid" inject 2>/dev/null || true
-                done
+                deploy_task_queue_lesson_scores "$task_file" "$inj_project" "$inj_ids" || true
                 if [ "$inj_project" != "infra" ]; then
-                    for lid in $inj_ids; do
-                        bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" infra "$lid" inject 2>/dev/null || true
-                    done
+                    deploy_task_queue_lesson_scores "$task_file" infra "$inj_ids" || true
                 fi
-                log "injection_count: incremented for ${inj_ids}"
+                log "injection_count: queued for deferred batch (${inj_ids})"
             fi
         fi
         postcondition_lesson_inject "$task_file" || true
@@ -12832,6 +13261,8 @@ deploy_task_main() {
     DEPLOY_TASK_YAML_TX_ARMED=0
     DEPLOY_TASK_YAML_TX_ISSUED_AT=""
     DEPLOY_TASK_YAML_TX_ISSUED_CMD=""
+    DEPLOY_TASK_POSTCOND_FILE=""
+    DEPLOY_TASK_POSTCOND_TASK_FILE=""
     trap deploy_task_exit_cleanup EXIT
 
     local pane_target ctx_pct
