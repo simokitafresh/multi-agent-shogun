@@ -2,6 +2,7 @@
 # Common, sourceable JSONL writer for defense/gate timing events.
 
 DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+DEFENSE_OVERHEAD_ASYNC_PIDS=()
 SELF_RETRO_ASYNC_PIDS=()
 
 defense_overhead_write() {
@@ -91,7 +92,20 @@ PY
 defense_overhead_write_async() {
     [ "${DEFENSE_OVERHEAD_ENABLED:-1}" = "1" ] || return 0
     ( defense_overhead_write "$@" ) >/dev/null 2>&1 &
+    DEFENSE_OVERHEAD_ASYNC_PIDS+=("$!")
     return 0
+}
+
+# The caller owns the temporary ledger directory and must wait for every
+# detached telemetry writer before its process exits.  This preserves the
+# non-blocking call contract while preventing the shell from orphaning the
+# writer during parallel inbox delivery.
+defense_overhead_drain_async() {
+    local pid
+    for pid in "${DEFENSE_OVERHEAD_ASYNC_PIDS[@]}"; do
+        wait "$pid" || true
+    done
+    DEFENSE_OVERHEAD_ASYNC_PIDS=()
 }
 
 # Submit multiple five-field events through one detached subshell so hot-path
@@ -105,6 +119,7 @@ defense_overhead_write_batch_async() {
             shift 5
         done
     ) >/dev/null 2>&1 &
+    DEFENSE_OVERHEAD_ASYNC_PIDS+=("$!")
     return 0
 }
 

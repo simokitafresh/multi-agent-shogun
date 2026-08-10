@@ -111,7 +111,7 @@ setup_file() {
 
     mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
     # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
-    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh retro_pane_prompt.sh retro_verbatim_prompt.sh gate_report_format_classify.sh escalation_evidence.sh; do
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh retro_pane_prompt.sh retro_verbatim_prompt.sh gate_report_format_classify.sh escalation_evidence.sh defense_overhead_writer.sh defense_overhead_event_index.py; do
         cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
     done
     cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$GIT_TEMPLATE_DIR/scripts/inbox_write.sh"
@@ -2180,6 +2180,12 @@ by_id = {}
 for row in rows:
     by_id.setdefault(row["check_id"], []).append(row)
 expected = ("inbox_write_pre_send_capture", "inbox_write_persist", "inbox_write_total")
+event_ids = [row["event_id"] for row in rows]
+assert len(event_ids) == len(set(event_ids)), len(event_ids) - len(set(event_ids))
+selected_rows = [row for row in rows if row.get("check_id") in expected]
+assert len(selected_rows) == 60, len(selected_rows)
+selected_ids = [row["event_id"] for row in selected_rows]
+assert len(selected_ids) == len(set(selected_ids)), len(selected_ids) - len(set(selected_ids))
 assert all(len(by_id.get(key, [])) == 20 for key in expected), {key: len(by_id.get(key, [])) for key in expected}
 assert all(isinstance(row["wall_ms"], int) and row["wall_ms"] >= 0
            for key in expected for row in by_id[key])
@@ -2189,7 +2195,8 @@ persist = sorted(row["wall_ms"] for row in by_id["inbox_write_persist"])
 percentile = lambda values, q: values[int((len(values) - 1) * q)]
 assert percentile(totals, .50) >= percentile(pre_send, .50)
 assert percentile(totals, .95) >= percentile(pre_send, .95)
-print("pre_send_capture=20 persist=20 total=20 safety_observation=20 false_positive=0 "
+print(f"pre_send_capture=20 persist=20 total=20 missing=0 duplicate=0 ledger_rows={len(rows)} "
+      "safety_observation=20 false_positive=0 "
       f"total_p50_ms={percentile(totals, .50)} total_p95_ms={percentile(totals, .95)} "
       f"pre_send_p50_ms={percentile(pre_send, .50)} pre_send_p95_ms={percentile(pre_send, .95)} "
       f"persist_p50_ms={percentile(persist, .50)} persist_p95_ms={percentile(persist, .95)}")

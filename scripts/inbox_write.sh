@@ -54,6 +54,7 @@ else
     # Some isolated contract fixtures intentionally copy only inbox_write.sh.
     # Telemetry must never turn a valid durable delivery into a failure.
     defense_overhead_write_async() { return 0; }
+    defense_overhead_drain_async() { return 0; }
 fi
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/escalation_evidence.sh"
@@ -88,6 +89,7 @@ iw_record_total_on_exit() {
     [ "${BASHPID:-$$}" = "$IW_ROOT_BASHPID" ] || return "$rc"
     iw_record_timing inbox_write_total "$IW_TOTAL_STARTED_US" \
         "$([ "$rc" -eq 0 ] && printf PASS || printf BLOCK)"
+    defense_overhead_drain_async
     return "$rc"
 }
 trap iw_record_total_on_exit EXIT
