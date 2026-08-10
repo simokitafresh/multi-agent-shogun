@@ -155,6 +155,31 @@ YAML
     [ "$failed" -eq 0 ]
 }
 
+# test_necessity: preserve the test-lifecycle boundary while accepting project-internal absolute paths.
+@test "test necessity classifier normalizes project-internal absolute paths" {
+    tmpdir="$(mktemp -d)"
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/deploy_task.sh"
+    SCRIPT_DIR="$PROJECT_ROOT"
+
+    printf 'task:\n  project: infra\n  planned_paths: [%s]\n' \
+        "$PROJECT_ROOT/tests/unit/test_deploy_task_yaml_injection.bats" > "$tmpdir/inside_absolute.yaml"
+    printf 'task:\n  project: infra\n  planned_paths: [tests/unit/test_deploy_task_yaml_injection.bats]\n' \
+        > "$tmpdir/relative.yaml"
+    printf 'task:\n  project: infra\n  planned_paths: [/tmp/deploy-task-outside-test.bats]\n' \
+        > "$tmpdir/outside_absolute.yaml"
+
+    run deploy_task_test_necessity_precheck "$tmpdir/inside_absolute.yaml"
+    [ "$status" -eq 0 ]
+
+    run deploy_task_test_necessity_precheck "$tmpdir/relative.yaml"
+    [ "$status" -eq 0 ]
+
+    run deploy_task_test_necessity_precheck "$tmpdir/outside_absolute.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: test path is outside project repo: /tmp/deploy-task-outside-test.bats"* ]]
+}
+
 @test "multiple new tests require independent path declarations" {
     tmpdir="$(mktemp -d)"
     git -C "$tmpdir" init -q

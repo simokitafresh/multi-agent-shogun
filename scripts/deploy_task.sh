@@ -9402,16 +9402,23 @@ for path in paths:
     if not is_test(path):
         continue
     normalized = path.replace("\\", "/")
-    candidate = os.path.realpath(os.path.join(project_repo, normalized))
-    if os.path.isabs(path) or normalized.startswith("../") or candidate == project_repo or not candidate.startswith(project_repo + os.sep):
+    # Accept absolute paths that resolve inside the selected project, but
+    # normalize them to repo-relative paths before the HEAD/new-test checks.
+    # Absolute paths outside the project remain a hard boundary violation.
+    if os.path.isabs(path):
+        candidate = os.path.realpath(path)
+    else:
+        candidate = os.path.realpath(os.path.join(project_repo, normalized))
+    if candidate == project_repo or not candidate.startswith(project_repo + os.sep):
         print(f"BLOCK: test path is outside project repo: {path}", file=sys.stderr)
         raise SystemExit(1)
+    repo_relative = os.path.relpath(candidate, project_repo).replace(os.sep, "/")
     exists = subprocess.run(
-        ["git", "-C", project_repo, "cat-file", "-e", f"HEAD:{normalized}"],
+        ["git", "-C", project_repo, "cat-file", "-e", f"HEAD:{repo_relative}"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     ).returncode == 0
     if not exists:
-        new_tests.append(path)
+        new_tests.append(repo_relative)
 
 if not new_tests:
     raise SystemExit(0)
