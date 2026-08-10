@@ -199,6 +199,21 @@ format_gate_block_message() {
     esac
 }
 
+# Vercel phase emits a machine-readable reason before returning non-zero.
+# Preserve the human output while preventing line-limit debt from being
+# misclassified as a broken research reference in the completion ledger.
+classify_vercel_phase_output() {
+    local output="$1"
+    case "$output" in
+        *"GATE_REASON=vercel_phase:line_limit_exceeded"*)
+            printf 'vercel_phase:line_limit_exceeded\n' ;;
+        *"GATE_REASON=vercel_phase:broken_references"*)
+            printf 'vercel_phase:broken_references\n' ;;
+        *)
+            printf 'vercel_phase:unknown_failure\n' ;;
+    esac
+}
+
 # CI is shared at the pushed branch boundary, not at a dirty/shared
 # worktree's local HEAD.  Missing remote refs deliberately resolve to empty;
 # evaluate_ci_readiness_json then fails closed on that empty expectation.
@@ -472,6 +487,10 @@ fi
 if [ "${CMD_COMPLETE_GATE_BLOCK_MESSAGE_ONLY:-0}" = "1" ]; then
     format_gate_block_message "${CMD_COMPLETE_GATE_BLOCK_CMD_ID:-cmd_test}" \
         "${CMD_COMPLETE_GATE_BLOCK_REASON:-}" "${CMD_COMPLETE_GATE_BLOCK_MISSING:-}"
+    exit $?
+fi
+if [ "${CMD_COMPLETE_GATE_VERCEL_REASON_ONLY:-0}" = "1" ]; then
+    classify_vercel_phase_output "${CMD_COMPLETE_GATE_VERCEL_OUTPUT:-}"
     exit $?
 fi
 if [ "${CMD_COMPLETE_GATE_CI_EXPECTED_HEAD_ONLY:-0}" = "1" ]; then
@@ -9122,11 +9141,16 @@ if [ -n "$changed_contexts" ]; then
     if [ -f "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" ]; then
         # cmd変更context fileのみ走査（全context走査→偽陽性BLOCK防止, GP-137）
         # shellcheck disable=SC2086
-        if bash "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" $changed_contexts; then
+        _vercel_output=""
+        _vercel_rc=0
+        _vercel_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" $changed_contexts 2>&1) || _vercel_rc=$?
+        printf '%s\n' "$_vercel_output"
+        if [ "$_vercel_rc" -eq 0 ]; then
             echo "  OK (gate_vercel_phase passed for cmd-changed files)"
         else
-            echo "  [CRITICAL] ALERT: gate_vercel_phase failed (broken docs/research refs in cmd-changed files)"
-            record_block_reason "vercel_phase:broken_references"
+            _vercel_reason=$(classify_vercel_phase_output "$_vercel_output")
+            echo "  [CRITICAL] ALERT: gate_vercel_phase failed (reason=${_vercel_reason})"
+            record_block_reason "$_vercel_reason"
             ALL_CLEAR=false
         fi
     else

@@ -78,6 +78,9 @@ check_context_line_limits() {
             violations=$((violations + 1))
         fi
     done
+    if (( violations > 0 )); then
+        echo "GATE_REASON=vercel_phase:line_limit_exceeded"
+    fi
     (( violations == 0 ))
 }
 
@@ -140,6 +143,10 @@ candidate_display_path() {
 
 suggest_ref_candidates() {
     local ref="$1"
+    # Tests that exercise reason classification do not need the expensive
+    # fuzzy candidate scan; reference existence and failure classification
+    # remain fully exercised.
+    [ "${VERCEL_PHASE_SKIP_CANDIDATE_SUGGESTIONS:-0}" = "1" ] && return 0
     build_file_cache
     local ref_base ref_stem ref_stem_lc tokens
     ref_base="$(basename "$ref")"
@@ -277,6 +284,7 @@ main() {
 
     echo "[ALERT] gate_vercel_phase: ${BROKEN_REFS} broken refs found"
     printf '%s\n' "${BROKEN_DETAILS[@]}"
+    echo "GATE_REASON=vercel_phase:broken_references"
     return 1
 }
 
