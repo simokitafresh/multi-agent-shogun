@@ -72,6 +72,27 @@ if [ -n "$CMD_ID" ] && [[ ! "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}
     exit 1
 fi
 
+# A completed report remains at queue/reports as a compatibility symlink.
+# Accept it as terminal only when it resolves inside the archive report root,
+# points at a regular file, and both hashes match the exact completion
+# generation. Outside, dangling, or stale links remain live and are never
+# opened or moved.
+archive_report_symlink_is_terminal() {
+    local report_file="$1" archive_dir target target_hash link_hash
+    [ -L "$report_file" ] || return 1
+    archive_dir="$(realpath -e -- "$ARCHIVE_REPORT_DIR" 2>/dev/null)" || return 1
+    target="$(realpath -e -- "$report_file" 2>/dev/null)" || return 1
+    case "$target" in
+        "$archive_dir"/*) ;;
+        *) return 1 ;;
+    esac
+    [ -f "$target" ] || return 1
+    target_hash="$(sha256sum -- "$target" 2>/dev/null | awk '{print $1}')" || return 1
+    link_hash="$(sha256sum -- "$report_file" 2>/dev/null | awk '{print $1}')" || return 1
+    [[ "$target_hash" =~ ^[0-9a-f]{64}$ ]] || return 1
+    [[ "$link_hash" == "$target_hash" && "$target_hash" == "${SHOGUN_COMPLETION_GENERATION:-}" ]]
+}
+
 mkdir -p "$ARCHIVE_DIR" "$ARCHIVE_CMD_DIR" "$ARCHIVE_REPORT_DIR"
 
 # postcondition用グローバル変数（archive_cmdsが設定）
@@ -104,6 +125,8 @@ def normalize(value):
 
 for pattern in patterns:
     for path in sorted(glob.glob(pattern)):
+        if os.path.islink(path):
+            continue
         try:
             with open(path, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
@@ -301,6 +324,8 @@ def load_report_summaries():
         ]
         paths = [path for pattern in patterns for path in glob.glob(pattern)]
     for path in sorted(set(paths)):
+        if os.path.islink(path):
+            continue
         try:
             with open(path, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
@@ -1331,6 +1356,15 @@ PY
     fi
 
     for report_file in "${report_files[@]}"; do
+        if [ -L "$report_file" ]; then
+            if archive_report_symlink_is_terminal "$report_file"; then
+                echo "[archive] terminal symlink retained: ${report_file##*/}"
+            else
+                kept=$((kept + 1))
+                echo "[archive] SKIP: invalid report symlink retained: ${report_file##*/}"
+            fi
+            continue
+        fi
         [ -f "$report_file" ] || continue
 
         local status_val parent_cmd base_name target_name dest_path
@@ -1926,7 +1960,16 @@ elif compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$R
 else
     _rpt_files=()
 fi
-if [ ${#_rpt_files[@]} -gt 0 ]; then
+_rpt_read_files=()
+for _rpt_file in "${_rpt_files[@]}"; do
+    # Never dereference queue symlinks during the metadata cache pass. The
+    # archive_reports loop classifies them under the same fail-closed
+    # terminal predicate, including dangling and outside targets.
+    [ -L "$_rpt_file" ] && continue
+    [ -f "$_rpt_file" ] || continue
+    _rpt_read_files+=("$_rpt_file")
+done
+if [ ${#_rpt_read_files[@]} -gt 0 ]; then
     gawk '
         BEGINFILE {
             fname = FILENAME; sub(/.*\//, "", fname)
@@ -1938,7 +1981,7 @@ if [ ${#_rpt_files[@]} -gt 0 ]; then
         !pc && /^parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
         !printed && st && pc { print fname "|" st "|" pc; printed = 1; nextfile }
         ENDFILE { if (!printed) print fname "|" st "|" pc }
-    ' "${_rpt_files[@]}" 2>/dev/null > "$_REPORT_CACHE"
+    ' "${_rpt_read_files[@]}" 2>/dev/null > "$_REPORT_CACHE"
 fi
 
 # ============================================================

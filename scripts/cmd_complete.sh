@@ -50,6 +50,11 @@ PY
         CMD_COMPLETE_GATE_CLEAR_MARKER="$_worker_clear_marker" \
         SHOGUN_COMPLETION_GENERATION="$_worker_generation" \
         bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"; then
+        # cmd_complete_gate may return from its Already-CLEAR fast path before
+        # it sees CMD_COMPLETE_GATE_CLEAR_MARKER. The worker itself owns the
+        # generation-bound success boundary, so publish the same durable clear
+        # receipt on every successful gate return before continuation.
+        _write_worker_marker "$_worker_clear_marker" clear 0 || exit 98
         _write_worker_marker "$_worker_success_marker" success 0 || exit 98
     else
         _worker_rc=$?
@@ -86,6 +91,41 @@ PY
 )" || exit 1
 export SHOGUN_COMPLETION_GENERATION="$BUNDLE_IDENTITY"
 BUNDLE_FINGERPRINT="$(sha256sum "$BUNDLE_PATH" | awk '{print $1}')"
+
+# A completed report remains at its logical queue path as a compatibility
+# symlink. It is terminal only when it resolves inside the archive report
+# root and matches the exact completion generation. Other links stay active
+# so completion fails closed instead of trusting a stale or escaped target.
+completion_report_symlink_is_terminal() {
+    local report_file="$1" archive_dir target expected target_hash link_hash
+    [[ -L "$report_file" ]] || return 1
+    archive_dir="$(realpath -e -- "$ROOT_DIR/queue/archive/reports" 2>/dev/null)" || return 1
+    target="$(realpath -e -- "$report_file" 2>/dev/null)" || return 1
+    case "$target" in
+        "$archive_dir"/*) ;;
+        *) return 1 ;;
+    esac
+    [[ -f "$target" ]] || return 1
+    expected="${SHOGUN_COMPLETION_GENERATION:-${BUNDLE_IDENTITY:-}}"
+    [[ "$expected" =~ ^[0-9a-f]{64}$ ]] || return 1
+    target_hash="$(sha256sum -- "$target" 2>/dev/null | awk '{print $1}')" || return 1
+    link_hash="$(sha256sum -- "$report_file" 2>/dev/null | awk '{print $1}')" || return 1
+    [[ "$target_hash" =~ ^[0-9a-f]{64}$ ]] || return 1
+    [[ "$link_hash" == "$target_hash" && "$target_hash" == "$expected" ]]
+}
+
+completion_active_report_count() {
+    local report_file count=0
+    while IFS= read -r -d '' report_file; do
+        if [[ -L "$report_file" ]] && completion_report_symlink_is_terminal "$report_file"; then
+            continue
+        fi
+        count=$((count + 1))
+    done < <(find "$ROOT_DIR/queue/reports" -maxdepth 1 \
+        \( -type f -o -type l \) ! -name '.*' \
+        -name "*_report_${CMD_ID}*.yaml" -print0 2>/dev/null)
+    printf '%s\n' "$count"
+}
 
 # Bash reads a script incrementally.  A deploy/rebuild which replaces this
 # canonical file while the detached tail is still running can therefore make
@@ -354,8 +394,7 @@ archive_terminal() {
     fi
 
     for ((attempt = 1; attempt <= attempts; attempt++)); do
-        active_count=$(find "$ROOT_DIR/queue/reports" -maxdepth 1 -type f \
-            -name "*_report_${CMD_ID}*.yaml" -print 2>/dev/null | wc -l | tr -d ' ')
+        active_count="$(completion_active_report_count)"
         if [[ -f "$marker" && "$active_count" -eq 0 ]]; then
             printf '[cmd_complete] PASS archive_terminal marker=present active_reports=0 attempt=%d\n' "$attempt" >&2
             return 0
@@ -365,8 +404,7 @@ archive_terminal() {
         env ARCHIVE_COMPLETED_PROJECT_DIR="$ROOT_DIR" \
             SHOGUN_COMPLETION_GENERATION="$BUNDLE_IDENTITY" \
             bash "$archive_script" 3 "$CMD_ID" || true
-        active_count=$(find "$ROOT_DIR/queue/reports" -maxdepth 1 -type f \
-            -name "*_report_${CMD_ID}*.yaml" -print 2>/dev/null | wc -l | tr -d ' ')
+        active_count="$(completion_active_report_count)"
         if [[ -f "$marker" && "$active_count" -eq 0 ]]; then
             printf '[cmd_complete] PASS archive_terminal marker=present active_reports=0 attempt=%d\n' "$attempt" >&2
             return 0
