@@ -556,7 +556,9 @@ fi
 # A regenerated report can change its fingerprint without representing a new
 # review lifecycle.  Keep a durable marker per report path and make the
 # bulletin body fingerprint-independent, so retries remain exactly-once.
-if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_NOTIFY:-0}" != 1 ]; then
+if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
+  && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" != review_bundle ] \
+  && [ "${REVIEW_APPROVAL_NO_NOTIFY:-0}" != 1 ]; then
   notice_marker="$dir/gunshi_notice.sent"
   if [ ! -f "$notice_marker" ]; then
     review_notice="$cmd_id 完了レビュー LGTM — report=$report_rel。家老ACCEPT/GATE判定待ち。"
@@ -575,6 +577,23 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_NOTIF
   else
     echo "gunshi LGTM notice: SKIP (already notified for report lifecycle)"
   fi
+fi
+# The canonical APPROVE entry owns SG7 publication.  This keeps bundle
+# generation and formal Karo notification in the same immediate transaction;
+# review_bundle.batch may still retry notify, but its generation-bound marker
+# makes that compatibility call a no-op.
+if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
+  && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" = review_bundle ]; then
+  sg7_bundle="$ROOT/queue/gates/$cmd_id/sg7_bundle.json"
+  [ -f "$sg7_bundle" ] || {
+    echo "BLOCK: canonical SG7 bundle missing before publication: $cmd_id" >&2
+    exit 1
+  }
+  python3 "$ROOT/scripts/review_bundle.py" notify \
+    --cmd "$cmd_id" --bundle "$sg7_bundle" >/dev/null || {
+      echo "BLOCK: canonical SG7 publication failed: $cmd_id $report_rel" >&2
+      exit 1
+    }
 fi
 echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
