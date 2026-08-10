@@ -1,34 +1,4 @@
 insights:
-- id: INS-20260810-235018310-403c
-  ts: "2026-08-10T23:50:18+09:00"
-  insight: "[[今のうちに将軍がL2のみ全PF計算しといてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今のうちに将軍がL2のみ全PF計算しといてくれ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T23:51:30+09:00"
-- id: INS-20260810-235018773-0a61
-  ts: "2026-08-10T23:50:18+09:00"
-  insight: "[[計算は自分でするルールだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=計算は自分でするルールだ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T23:51:31+09:00"
-- id: INS-20260810-235131464-7e5d
-  ts: "2026-08-10T23:51:31+09:00"
-  insight: "semantic_index_update新概念候補: discussion:もう unaccounted 7s % の内訳が明確になっているのか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-10T23:54:58+09:00"
 - id: INS-20260810-235513154-f7f5
   ts: "2026-08-10T23:55:13+09:00"
   insight: "semantic_index_update新概念候補: discussion:家老にナッジしとけ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -939,8 +909,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '43ff109e569fec8dd11513d868a8f087b0e910203eda992479c82d9a7dc55caf' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 2
-  last_seen: "2026-08-11T06:11:27+09:00"
+  occurrence_count: 6
+  last_seen: "2026-08-11T07:09:56+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -965,8 +935,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7d294328daa749be1c8d5a197b01e32aa28a24fbe6dd15ef7f4ac6d512cb6443' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 1
-  last_seen: "2026-08-11T05:30:02+09:00"
+  occurrence_count: 2
+  last_seen: "2026-08-11T06:48:47+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -981,3 +951,30 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608110554_kagemaru"
   fix_known: false
   status: pending
+- id: INS-20260811-062928415-3675
+  ts: "2026-08-11T06:29:28+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_ci_fix_31431140453_heavy_guard; matched=bash,guard; current_pattern=; candidate_level=4; candidate=LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_ci_fix_31431140453_heavy_guard"
+  fix_known: false
+  status: pending
+- id: INS-20260811-062928425-7f6f
+  ts: "2026-08-11T06:29:28+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_ci_fix_31431140453_heavy_guard は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-11T06:29:38+09:00"
+- id: INS-20260811-063227994-2d06
+  ts: "2026-08-11T06:32:27+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_ci_fix_31431140453_completion_archive は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-11T06:32:41+09:00"
