@@ -855,7 +855,7 @@ PY
     run python3 - "$SRC_SCRIPT" "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" <<'PY'
 import ast, re, sys
 text=open(sys.argv[1], encoding='utf-8').read()
-registered=dict(line.rstrip().split('\t') for line in open(sys.argv[2], encoding='utf-8') if line.strip() and not line.startswith('#'))
+registered={parts[0]: parts[1] for parts in (line.rstrip().split('\t') for line in open(sys.argv[2], encoding='utf-8') if line.strip() and not line.startswith('#'))}
 def mapping(name):
     match=re.search(rf'{name}: dict\[str, list\[str\]\] = (\{{.*?\n\}})', text, re.S)
     return ast.literal_eval(match.group(1))
@@ -867,6 +867,27 @@ print(f'registered={len(registered)} enforced={len(expected)}')
 PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"registered=10 enforced=10"* ]]
+}
+
+@test "GA-452 registered source boundary carries owner and update trigger" {
+    run python3 - "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" <<'PY'
+import sys
+rows = [
+    line.rstrip().split("\t")
+    for line in open(sys.argv[1], encoding="utf-8")
+    if line.strip() and not line.lstrip().startswith("#")
+]
+assert len(rows) == 10
+assert all(len(row) == 4 and row[2] and row[3] for row in rows), rows
+by_path = {row[0]: row[1:] for row in rows}
+assert by_path["context/dm-signal-core.md"][1] == "dm-signal-core"
+assert "backend/app" in by_path["context/dm-signal-core.md"][2].split("|")
+assert by_path["context/codd.md"][1] == "infra-codd"
+assert "skills/codd" in by_path["context/codd.md"][2].split("|")
+print("owner_trigger_contract=10/10")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"owner_trigger_contract=10/10"* ]]
 }
 
 @test "GA-320 cmd commit-list cache is isolated by project override" {

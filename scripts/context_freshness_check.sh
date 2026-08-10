@@ -571,21 +571,45 @@ def expected_source_contexts() -> dict[str, str]:
             | {"context/infrastructure.md": "infra"})
 
 
+SOURCE_CONTEXT_METADATA: dict[str, tuple[str, str, str]] = {}
+
+
 def load_registered_source_contexts() -> frozenset[str]:
+    """Load the source boundary plus its owner and update trigger.
+
+    A path-only registry detects drift after the fact but cannot tell the
+    completion flow who owns the context or which source paths require a
+    review.  Keep those two routing facts beside the exact boundary and fail
+    closed when either is absent.
+    """
+    global SOURCE_CONTEXT_METADATA
     try:
         with open(SOURCE_CONTEXT_REGISTRY, encoding="utf-8") as f:
             rows = [line.rstrip("\n").split("\t") for line in f
                     if line.strip() and not line.lstrip().startswith("#")]
     except FileNotFoundError:
         raise SystemExit("BLOCK: source context registry missing")
-    if any(len(row) != 2 or not row[0] or not row[1] for row in rows):
-        raise SystemExit("BLOCK: malformed source context registry row")
+    if any(
+        len(row) != 4
+        or not row[0]
+        or not row[1]
+        or not row[2]
+        or not row[3]
+        for row in rows
+    ):
+        raise SystemExit(
+            "BLOCK: malformed source context registry row "
+            "(expected path/project/owner/update_trigger)"
+        )
     actual = {row[0]: row[1] for row in rows}
     if len(actual) != len(rows):
         raise SystemExit("BLOCK: duplicate source context registry path")
     unknown = set(actual.values()) - {"infra", "dm-signal"}
     if unknown:
         raise SystemExit(f"BLOCK: unknown source context project: {sorted(unknown)}")
+    SOURCE_CONTEXT_METADATA = {
+        row[0]: (row[1], row[2], row[3]) for row in rows
+    }
     expected = expected_source_contexts()
     if actual != expected:
         missing = sorted(set(expected.items()) - set(actual.items()))
@@ -600,6 +624,12 @@ REQUIRE_SOURCE_COMMIT = os.environ.get("CFC_REQUIRE_SOURCE_COMMIT", "1") != "0"
 
 def is_registered_source_context(rel_path: str) -> bool:
     return rel_path in REGISTERED_SOURCE_CONTEXTS
+
+
+def source_context_contract(rel_path: str) -> tuple[str, str]:
+    """Return (owner, update_trigger) for a registered context path."""
+    _project, owner, trigger = SOURCE_CONTEXT_METADATA.get(rel_path, ("", "", ""))
+    return owner, trigger
 
 
 def build_missing_source_commit_warning(rel_path: str) -> str:
@@ -1556,11 +1586,13 @@ def build_source_warning(
     details: list[str] | None = None,
 ) -> str:
     repo_path, _pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
+    owner, trigger = source_context_contract(rel_path)
     message = (
         f"ALERT: {rel_path} source commits {commit_count}件 "
         f"since last_updated={updated_at.isoformat()} "
         f"repo={repo_path} root_fallback={'yes' if root_fallback else 'no'} "
-        f"timeout={_GIT_TIMEOUT:g}s/{_GIT_RETRY_TIMEOUT:g}s。更新要否を確認せよ"
+        f"timeout={_GIT_TIMEOUT:g}s/{_GIT_RETRY_TIMEOUT:g}s "
+        f"owner={owner} update_trigger={trigger}。更新要否を確認せよ"
     )
     if details:
         message += f" latest: {' | '.join(details)}"
