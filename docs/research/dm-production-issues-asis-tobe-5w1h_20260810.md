@@ -1,3 +1,4 @@
+<!-- gist-master: 2d1e7458976b45751cebbffd8c118fa3 dm-production-issues-asis-tobe-5w1h_20260810.md -->
 # DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v0.1
 
 - 作成: 2026-08-10 14:16 JST(将軍直轄)
