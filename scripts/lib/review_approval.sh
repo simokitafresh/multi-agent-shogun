@@ -334,12 +334,19 @@ for live_name in sorted(live_names):
     live_report_id = str(live_doc.get("report_id") or "").strip()
     if all(generation_key) and live_report_id:
         active_generations[generation_key] = live_report_id
-candidates = list(reports_dir.glob("*.yaml")) + list(archive_dir.glob("*.yaml"))
+
+def visible_yaml_paths(paths):
+    # pathlib.Path.glob("*.yaml") includes dotfiles, unlike a shell glob.
+    # Deployment-generation markers are tab-separated metadata, not reports;
+    # exclude hidden basenames before parsing candidate content as YAML.
+    return [path for path in paths if not path.name.startswith(".")]
+
+candidates = visible_yaml_paths(list(reports_dir.glob("*.yaml")) + list(archive_dir.glob("*.yaml")))
 # A matching nested archive is an invalid ambiguous storage location, not a
 # candidate to silently ignore.
-candidates += list(archive_dir.glob("**/*.yaml"))
+candidates += visible_yaml_paths(archive_dir.glob("**/*.yaml"))
 archive_alias_targets = set()
-for alias in reports_dir.glob("*.yaml"):
+for alias in visible_yaml_paths(reports_dir.glob("*.yaml")):
     if alias.is_symlink():
         target = alias.resolve()
         if target.parent == archive_dir.resolve():

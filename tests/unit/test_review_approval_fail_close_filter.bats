@@ -122,3 +122,33 @@ YAML
     [ "$output" = "$PROJECT_ROOT/queue/reports/ninja_report_cmd_revised.yaml" ]
     [ -f "$PROJECT_ROOT/queue/archive/reports/ninja_report_cmd_revised_20260810.yaml" ]
 }
+
+# test_necessity: review_resolve_reports must ignore hidden deployment metadata
+# that shares the .yaml suffix while retaining the task-owned visible report.
+# regression_justification: pathlib.Path.glob("*.yaml") includes the TSV
+# .deploy_generation marker and its tab character makes yaml.safe_load fail
+# before the visible report can be resolved.
+@test "canonical registry excludes hidden deployment TSV markers" {
+    mkdir -p "$PROJECT_ROOT/queue/tasks"
+    cat > "$PROJECT_ROOT/queue/tasks/current.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_hidden_glob
+  report_filename: current_report_cmd_hidden_glob.yaml
+YAML
+    cat > "$PROJECT_ROOT/queue/reports/current_report_cmd_hidden_glob.yaml" <<'YAML'
+report_id: rpt-visible
+report_identity_version: 2
+parent_cmd: cmd_hidden_glob
+status: completed
+verdict: PASS
+commit_hash: 0123456789012345678901234567890123456789
+YAML
+    printf '%s\t%s\t%s\t%s\n' \
+        "$PROJECT_ROOT/queue/reports/current_report_cmd_hidden_glob.yaml" \
+        content-sha commit-id rpt-visible \
+        > "$PROJECT_ROOT/queue/reports/.deploy_generation_ninja_report_cmd_hidden_glob.yaml"
+
+    run review_resolve_reports cmd_hidden_glob
+    [ "$status" -eq 0 ]
+    [ "$output" = "$PROJECT_ROOT/queue/reports/current_report_cmd_hidden_glob.yaml" ]
+}
