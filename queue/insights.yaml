@@ -626,7 +626,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4276"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で現行cmd_complete_gate.sh L8741-L8744にdraft_lessonsの外部依存BLOCKと「忍者では解消不可。家老に報告して待機」ガイダンスが存在することを確認した。現象の記述は現行挙動に対応するが、gate_diagnose_check.shの契約・環境BLOCK除外語にはdraft_lessonsがなく、外部依存BLOCKをDIVERGENT対象外にするかは別設計判断として残るため、本taskではコード修正せずdecision_candidateへ整理した。"
+  action_artifact: "scripts/cmd_complete_gate.sh:L8741-L8744; scripts/gates/gate_diagnose_check.sh:_is_contract_or_env_block; context/codd.md:120-122; queue/reports/kagemaru_report_cmd_reflux_insight_202608101032_kagemaru.yaml:decision_candidate"
+  resolved_at: "2026-08-10T10:37:51+09:00"
 - id: INS-20260810-034524007-0018
   ts: "2026-08-10T03:45:24+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[T-z1_境界fixture完了_cmd_4262]] は既存aliasesに一致なし。類似概念TOP3: ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4098_境界fixture固定; score=14.1) / agent_formation_management(編成管理; alias=per-agent launch_cmd; score=12.1) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=11.9)。概念定義とaliases追加を検討せよ"
