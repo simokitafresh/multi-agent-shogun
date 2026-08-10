@@ -415,16 +415,25 @@ PROJECT_ROOT="{root}" review_two_phase_ready_gunshi "{args.cmd}" "{report}"
     print(message); return 0
 
 def _emit_self_retro(root, endpoint, cmd_id, wall_ms, cause_class):
-    script = root / "scripts/lib/defense_overhead_writer.sh"
-    payload = f'''source "{script}"
+    writer = root / "scripts/lib/defense_overhead_writer.sh"
+    prompt = root / "scripts/lib/retro_pane_prompt.sh"
+    # These are post-delivery telemetry/reminder side effects.  Detach one
+    # process after the SG7 inbox boundary so their startup cannot extend the
+    # measured review-notify phase; each helper retains its own durable
+    # exactly-once guard.
+    payload = f'''source "{writer}"
 self_retro_write_async {endpoint} {cmd_id} {wall_ms} '{{"review_bundle":{wall_ms}}}' {cause_class} "review bundle generated and delivered" "reduce dominant review phase while preserving SG7 validation" "delivery succeeds and duplicate event count is 0" "[[review_bundle]] -> [[review_delivery]] -> [[fix_known]]"
-'''
-    subprocess.run(["bash", "-c", payload], cwd=root, check=False)
-    subprocess.Popen(
-        ["bash", "-c", f'''source "{root / 'scripts/lib/retro_pane_prompt.sh'}"
+source "{prompt}"
 retro_pane_prompt_async "{root}" gunshi "review_bundle:{cmd_id}" review_bundle
-wait
-'''], cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+'''
+    subprocess.Popen(
+        ["bash", "-c", payload],
+        cwd=root,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        close_fds=True,
+        start_new_session=True,
     )
 
 def consume(args):
