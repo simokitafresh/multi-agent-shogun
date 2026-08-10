@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-10 -->
+<!-- last_updated: 2026-08-11 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,10 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_3841 | 殿裁可(2026-07-11 00:48「②を起票せよ」)。工程4等で削除されたPFのID宛に残る可視性設定エントリ(孤児)が各tierの対応表を肥大させ、admin保存payloadの無駄と調査時の混乱(設定件数と実PF数の乖離)を生んでいる。現行portfoliosに存在しないID宛のエントリのみを退避付きで除去し、対応表を実PFと一致させる | dm-signal | 07-11 | 本番可視性設定の孤児tier428件+global102件を |
-| cmd_3842 | 殿裁可(2026-07-11 11:46「3をやろう」)。cmd_3831偵察で特定済みの計測バグを根治する: precompute_raw区間(Layer5)がLayerTimerのLAYER_ORDERと登録リストに含まれず、TIMING SUMMARYに全体の過半を占める区間が表示されないままL2が誤ってBOTTLENECKとマークされる。集計ハブへのLayer5登録と欠落検知テストで、再計算の時間内訳が正しく可視化される状態にする | dm-signal | 07-11 | TIMING SUMMARYのLayer5(precompu |
-| cmd_3846 | 発端(a) loop health通知2026-07-11 10:00『result.summary欠落の発火が反復。テンプレートの警告と入力の導線を強化せよ』。発端(b) 家老エスカレーション2026-07-11 15:46『report-writeのFAILがSKILL.md改善で閉じていない』だがlast_failが2026-05-02の古い時刻を指す。書込み時の空summary BLOCKは既に実在するため、強化cmdを書く前に、発火が作業途中の正常発火か完了後も残る異常発火か、および検出器が古い時刻を報告する原因を一次ログで特定する | infra | 07-11 | 直近summary欠落32発火を分類し31件は完了時解消・1 |
-| cmd_3849 | 殿裁可(2026-07-11 16:08 P1a追補+P1b起票裁可)。設計書v1.4.6(正本commit 33a859c9)のP1b: run開始時に全入力とledgerをimmutable snapshotへmaterializeし、canonical SHA-256のstrict manifestを永続化、snapshot確定後のsource SELECTをquery guardで禁止、全呼出し元へsource identity契約を伝播、cronはrun-lineage契約(run_id予約→manifest_id atomic bind→terminal poll)へ移行、RSS hard capをfail-closedで導入する。P1c以降の差分検証の土台 | dm-signal | 07-11 | PASS: P1b immutable snapshot・s |
 | cmd_3852 | 殿CP裁定(2026-07-11 23:30 許可する)。設計書v1.4.8のP2b RED: persisted table inventory(§9.7、writer対象表+immutable input表)の全表に対し、分類(A exact/B append-only/C semantic/D telemetry/E cache)に従うexact比較テストをRED状態で整備する。TradePerformanceの判定は新manifest下のexact(旧baselineとの一致要求はP1c局在確定により不成立)。tolerance緩和禁止・対象縮小禁止。P2aと並行RED化可 | dm-signal | 07-12 | §9.7全18表のP2b exact比較契約を固定し、表別注 |
 | cmd_3853 | 殿裁可(2026-07-12 00:55 やろう)。設計書v1.4.11で確定したP2a母集団(標準PF adapter経路+valid_start filter後日付)に基づき、cmd_3851のテストオラクルの契約バグを修正して比較を成立させる。偵察A/B統合の確定事実: mismatchは全数オラクルのweights抽出契約バグ(adapter側_pre_sigが文字列型で空リスト化)、missingは全数warm-up期間日付の母集団誤混入。実装ロジック側の不一致はゼロのため、修正はテスト側のみでGREEN到達見込み | dm-signal | 07-12 | P2a GREEN化完了。オラクル契約バグ2点(weight |
 | cmd_3858 | cmd_3857の全表実データ実測(家老ACCEPT、設計書v1.4.12同期済み)で非exactが残る箇所が確定: signals.momentum_dataの配列順不安定とrecalculation_timingsのtelemetry値(実行時間等の実行ごと固有値)。前者は配列順の決定的安定化で根因修正し、後者は決定性契約の対象外telemetryとして比較設計上分離(tolerance緩和ではなく分類の是正)した上で、除外なしの同一全表・全field再実測でP2b GREEN化する | dm-signal | 07-12 | cmd_3857が検出したmomentum_data配列順非 |
