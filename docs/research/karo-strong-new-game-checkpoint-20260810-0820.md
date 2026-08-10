@@ -4,7 +4,7 @@
 - status: active
 - owner: karo
 - source: 殿指示「今 クリアされても 今より強くてニューゲームができるようにせよ」
-- current_goal: cmd_4284/T-ε4本番検証は完了。パリティ検証道具の残差（returns 102・signals SKIP 24）を小実験単位で根治する
+- current_goal: cmd_4287/T-γ5 cutoverをbackup-first・本番DB直列で完遂しつつ、パリティ残差分離はread-only並行継続する
 - origin: `[[殿指示_今クリアされても強くてニューゲーム_20260810_0818]] -> [[月次リターン実装フェーズ高速回転]] -> [[strong_new_game_completion_contract]]`
 
 ## 復帰直後の結論
@@ -115,3 +115,17 @@
 2. 疾風の`cmd_karo_recon2_parity_remaining_split_202608101052`報告をformal review→家老判定→GATEへ個別処理する。
 3. returnsとsignalsを1つの修正に混ぜない。一次分布で根因が確定した側を1改善だけ起票し、再度`parity_check.sh --all`を実走する。
 4. `cmd_4284`本番再計算を再実行しない。原cmdはarchive済みで、production credential一時ファイルも削除済み。
+
+## 2026-08-10 11:03 増分 — cmd_4287/T-γ5着手
+
+- 将軍から`cmd_4287`受領（殿裁可済み）。目的はFoF momentum入力を旧月次擬似価格からT-γ2日次NAV adapterへcutoverし、ledger再基線をappend-onlyで記録すること。
+- 影丸へ11:03:05配備済み。paneでtask受信・作業開始を一次確認。軍師draft reviewも同時送信済み。
+- AC1はbackup-first固定: `signal_decision_ledger`と`monthly_returns`を先にbackupし、復元手順を証跡化してから切替commit。選択テストFAIL0/SKIP0。
+- AC2はdeploy後fullrecalculate 1回のみ。terminal completed/errorなし、γ3 dual replayの全FoF×全判断日差分0、前後集計・identityを記録。異常時だけbackup復元。
+- 本番DB書込み担当は影丸1名。疾風のパリティ残差偵察はread-onlyであり、書込み・再計算を行わない。
+
+### /new後の最初の一手（11:03版）
+
+1. inboxをID単位処理する。
+2. `cmd_4287`は影丸報告を待つ。AC1のbackup識別子・復元手順・commit・選択テストを先にformal reviewし、AC2本番実行との境界を混同しない。
+3. 疾風の`cmd_karo_recon2_parity_remaining_split_202608101052`報告は別cmdとして個別処理し、cmd_4287の本番DB laneへ混ぜない。
