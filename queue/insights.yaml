@@ -182,8 +182,11 @@ insights:
   insight: "高頻度FAIL: lessons_useful[N]: missing \"id\" field (must have lesson ID like L074) (12回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
   priority: "high"
   source: "gate_loop_health"
-  fix_known: false
-  status: pending
+  fix_known: true
+  status: resolved
+  resolved_reason: 一次検証で現行gate_report_format_main.pyがlessons_useful各要素のid/useful/reasonを必須検証し、missing idをBLOCKすることを確認。gate_report_autofix_main.pyもUNKNOWN付番とlessons_useful欠落のスケルトン補完を撤去済み。専用回帰23/23およびLU警告4/4 PASSのため、追加実修正は不要。
+  action_artifact: scripts/gates/gate_report_format_main.py; scripts/gates/gate_report_autofix_main.py; tests/unit/test_gate_report_autofix.bats; tests/unit/test_gate_report_format_lu_warn.bats
+  resolved_at: "2026-08-10T22:20:32Z"
 - id: INS-20260811-005627684-4292
   ts: "2026-08-11T00:56:27+09:00"
   insight: "semantic_index_update新概念候補: discussion:FEのほうはどうだ？monthly trade画面の正常化は？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
