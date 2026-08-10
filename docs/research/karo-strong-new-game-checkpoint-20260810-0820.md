@@ -4,7 +4,7 @@
 - status: active
 - owner: karo
 - source: 殿指示「今 クリアされても 今より強くてニューゲームができるようにせよ」
-- current_goal: 月次リターン通常実装33/33後、裁可済みT-ε4本番検証と還流2laneを混同せず個別に閉じる
+- current_goal: cmd_4284/T-ε4本番検証は完了。パリティ検証道具の残差（returns 102・signals SKIP 24）を小実験単位で根治する
 - origin: `[[殿指示_今クリアされても強くてニューゲーム_20260810_0818]] -> [[月次リターン実装フェーズ高速回転]] -> [[strong_new_game_completion_contract]]`
 
 ## 復帰直後の結論
@@ -94,3 +94,24 @@
 3. 才蔵cmd_4285と影丸cmd_4286の独立一次結果を突合。供給欠損そのものとcalendar誤判定を混同しない。
 4. 同一`cmd_4284`で本番portfolio再実行し、DB前後不変とrun completeを二値確認。
 5. 空いた飛猿へPJ内絶対path誤BLOCKのインフラhotfixを配備し、相対/内側絶対/外側絶対の3境界を固定する。
+
+## 2026-08-10 10:57 増分 — cmd_4284終端と次の唯一残件
+
+- `cmd_4284 / T-ε4` はcompleted archive。正本=`queue/archive/cmds/cmd_4284_completed_20260810.yaml`。
+- live実装はmerge `ee41b02d`、CI run `31344545956` は6/6 GREEN、Render liveを確認済み。
+- 本番portfolio再計算はrun id `2026081000375024E52B`、DB status id=234、`completed`、errorなし。開始`00:37:50.210986Z`、終了`01:28:42.698384Z`、所要`3052.487秒`。
+- `monthly_returns`はbefore/afterとも`16976行 / 102 PF / min 2003-09`、差減0。完全性Gateはsignals 102/102、monthly_returns 102/102、FoF component_weights 78/78 PASS。
+- 最終証跡artifact commit=`00cecab13876338e0ffd07f028e7adfb8a2198d4`、context索引commit=`759b311e3aa10c4f0465c5e131416ff396a8fc7c`。補完子`cmd_karo_recon2_cmd4284_final_evidence_202608101034`は軍師LGTM→家老ACCEPT→GATE CLEAR→cmd-complete完了。
+- 供給側`cmd_4286`はFAIL_CLOSE履歴を保持し、補完子CLEARでEODHD 13/13を確定。ETF12はupstream missing、取込skip 0。
+- GA-452は初回FAILを保持し、後続hotfixでfreshness ALERT 4→0、78/78 PASS。
+- Vercel debtは`context/dm-signal-research.md`を892→37 raw行へ可逆圧縮し、詳細を`docs/research/cmd_karo_hotfix_vercel_debt_reason_202608100949_dm_signal_research_full.md`へSHA保存。理由分類もline-limit/broken-refへ分離済み。
+- startup gateの既読actionable偽警告はcommit `139e858121c37c2bc6d05300e7ec2da31447bb52`で、current taskだけでなくdurable CLEAR/archive/quality receiptを照合するよう根治。偽警告2→0。
+- パリティ道具は不存在列2件をcommit `4b188a1329882930d4675d9c9cb693fbcac8ba97`で現行schemaへ追随し、例外停止を解消。全102 PF実走で新たにreturns FAIL102・signals SKIP24を検出したため、CLEARを捏造せずFAIL_CLOSE。
+- 現在の唯一の継続調査は`cmd_karo_recon2_parity_remaining_split_202608101052`（疾風）。returns 102/102の差分分布とsignals 24/24の欠損境界を分離し、次の1修正だけを確定する。再計算は再実行しない。
+
+### /new後の最初の一手（10:57版）
+
+1. inboxをID単位処理する。
+2. 疾風の`cmd_karo_recon2_parity_remaining_split_202608101052`報告をformal review→家老判定→GATEへ個別処理する。
+3. returnsとsignalsを1つの修正に混ぜない。一次分布で根因が確定した側を1改善だけ起票し、再度`parity_check.sh --all`を実走する。
+4. `cmd_4284`本番再計算を再実行しない。原cmdはarchive済みで、production credential一時ファイルも削除済み。
