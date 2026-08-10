@@ -37,6 +37,48 @@ teardown() {
     rm -rf "$REPO"
 }
 
+@test "ninja task commit subject automatically identifies task_id" {
+    mkdir -p "$REPO/queue/tasks"
+    printf 'task:\n  task_id: task-subject-contract\n  parent_cmd: cmd_parent-contract\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'task subject change\n' >> "$REPO/own.txt"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m "implement subject contract" -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" log -1 --format=%s)" = 'task-subject-contract: implement subject contract' ]
+}
+
+@test "ninja task commit subject does not duplicate an existing task identifier" {
+    mkdir -p "$REPO/queue/tasks"
+    printf 'task:\n  task_id: task-subject-contract\n  parent_cmd: cmd_parent-contract\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'already tagged\n' >> "$REPO/own.txt"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m "task-subject-contract: already tagged" -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" log -1 --format=%s)" = 'task-subject-contract: already tagged' ]
+}
+
+@test "ninja task commit subject falls back to parent_cmd when task_id is absent" {
+    mkdir -p "$REPO/queue/tasks"
+    printf 'task:\n  parent_cmd: cmd_parent-contract\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'parent command subject change\n' >> "$REPO/own.txt"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m "implement parent contract" -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" log -1 --format=%s)" = 'cmd_parent-contract: implement parent contract' ]
+}
+
+@test "task外commit without a task file preserves the caller subject" {
+    printf 'manual subject change\n' >> "$REPO/own.txt"
+
+    run bash -c 'cd "$1" && env -u NINJA_SCOPE_TASK_FILE bash "$2" -m "manual subject" -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" log -1 --format=%s)" = 'manual subject' ]
+}
+
 @test "transient PASS receipt deletes only untracked test and commits production scope" {
     mkdir -p "$REPO/tests" "$REPO/queue/tasks"
     printf 'change\n' >> "$REPO/own.txt"
