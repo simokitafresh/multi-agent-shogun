@@ -10,6 +10,7 @@
 #
 # Production values are resolved by the caller/Render API.  The explicit
 # SHA arguments make the check deterministic and keep unit fixtures offline.
+# Contract: this gate is invoked through executable-path checks and must stay 100755.
 set -euo pipefail
 
 CMD_ID="${1:-}"
