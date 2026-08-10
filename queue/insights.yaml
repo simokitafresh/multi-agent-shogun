@@ -945,7 +945,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '43ff109e569fec8dd11513d868a8f087b0e910203eda992479c82d9a7dc55caf' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -955,6 +955,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "既存修正で候補を解消済み。review_bundleのSG7通知はreport fingerprint結合のflock+markerで同一生成をexactly-once化し、canonical approvalで一度だけ公開、delivery後telemetryは非同期化されている。対象self_retro verify_commandも終了0。"
+  action_artifact: "scripts/review_bundle.py:397-452; scripts/lib/gunshi_notify.sh:21-36; commits 02e8b2bd6,54be9ba3d,b0b9b42ff; logs/self_retro.jsonl:event_id=43ff109e569fec8dd11513d868a8f087b0e910203eda992479c82d9a7dc55caf"
+  resolved_at: "2026-08-11T06:02:38+09:00"
 - id: INS-20260811-052538936-eb7d
   ts: "2026-08-11T05:25:38+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_dashboard_completion_coalesce_202608110345; matched=cmd_complete; current_pattern=; candidate_level=2; candidate=cmd_1955で影丸が13回連続BLOCK(draft_lessons:1)。忍者にはdraft教訓の査読権限がなく全リトライが無駄。GP-200(DIVERGENT)は忍者修正可能なBLOCKが前提であり外部依存BLOCKには効かない。cmd_complete_gate.sh L3158のBLOCKメッセージに「忍者は解消不可。家老に報告して待機」ガイダ; source=gunshi_gp_tracker.yaml"
