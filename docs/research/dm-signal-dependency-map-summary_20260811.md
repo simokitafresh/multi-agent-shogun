@@ -1,3 +1,4 @@
+<!-- gist-master: b6a70eb3c6bebc9aff702042f525baa1 dm-signal-dependency-map-summary_20260811.md -->
 # DM-Signal依存マップ 将軍まとめ資料(cmd_4294成果物の要約)
 
 作成: 将軍 2026-08-11 23:56 | 一次成果物: `DM-signal/docs/research/cmd_4294_dm-signal-page-data-api-map.md`(疾風・gist [4bb22f90](https://gist.github.com/4bb22f907b2b6a4d9bb899cf6cc70a41)) | 関連: 補填設計書§10(gist 2d1e7458)
