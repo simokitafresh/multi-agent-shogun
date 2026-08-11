@@ -62,7 +62,7 @@
 | B1 早期完了 | summaryがTOTAL 9m20sで閉じるがL5はその後も24/102→102/102と15分継続(L5行なしのsummary) | 05:59:08 summary vs 06:14:46 L5_COMPLETE(elapsed 1411s) | 本体最終L5が既存cross-process lockへ合流(raw_precompute_deferred)する際、合流generationを**awaitせずsummary/statusを閉じる** |
 | B2 直列重複 | 第一世代完了直後に同一all-scope第二世代の全量L5を開始 | 06:14:46 "request arrived during generation=1; draining next generation" | _drain_queueが完了scope=None(all)で実行中到着要求を**充足済み判定せず**次generationへ残す |
 
-- **B4 失敗握り潰し(00:57 run277で実証)**: standard 0/1失敗(ValueError)でもrecalculation_statusは`completed`/error_message=NULLで閉じる — 層内失敗がrun statusへ伝播しない。B1と同族。**04:12根治承認(将軍)**: T7はfullのcompleted判定を信用する前提のためT7前に必要。条件=本線と別commit・最小変更(既存statusへ正直に書くだけ・新監視機構なし)・失敗経路を実行するfixture+canary三値。
+- **B4 失敗握り潰し(00:57 run277で実証)**: standard 0/1失敗(ValueError)でもrecalculation_statusは`completed`/error_message=NULLで閉じる — 層内失敗がrun statusへ伝播しない。B1と同族。**✅根治完了(04:32・59db624d Live)**: run292本番1PF canary PASS(TOTAL 23.7s・ERROR 0・completed/failed整合)。失敗経路fixture実証=L3 aggregate raise/L5 bulk raiseでfailure summary保存+status伝播を確認。テスト223 PASS/FAIL0/SKIP0。層内失敗の握り潰しは根治済み — T7のcompleted判定が信用可能になった。
 - 対照(健全形): 10PF run 20260811045510はinline L5→L5_COMPLETE→L5行付きsummaryの正順。
 - **修正**: cmd_karo_hotfix_full_l5_join_await(才蔵)実装done。coalescing+advisory lock+cross-process single-flight(b0e7e85f, bc7a0cc3)も影丸が実装済み。
 - **検証規範(殿原則15:30の適用)**: 部分runのPASSは経路を通らないだけで証明にならない(LS-A24)。deferred合流経路が実際に発火する条件(実行中lock保持状態でall-scope要求投入の最小fixture、またはfull)でB1/B2消滅を二値確認。**この再現ゼロ=full解禁の条件**。
