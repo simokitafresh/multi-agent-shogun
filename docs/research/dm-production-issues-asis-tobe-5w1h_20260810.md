@@ -1,5 +1,5 @@
 <!-- gist-master: 2d1e7458976b45751cebbffd8c118fa3 dm-production-issues-asis-tobe-5w1h_20260810.md -->
-# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.6
+# DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v1.7
 
 - 作成: 2026-08-10 14:16 JST(将軍直轄)
 - 位置づけ: 月次リターン基本原理設計書v6.13の**補填**。v6本文は変更しない。本日殿観測+一次計測で確定した本番問題群のAsIs/ToBeを固定し、修復レーンの正本とする
@@ -154,6 +154,8 @@
 | M3 | SIGNAL DECISION DRIFTのCRITICALログ冗長 | 同一(portfolio,date)の組で繰り返し出るCRITICALログは2回目以降情報量ゼロでログを埋め、Render確認コストを上げる | 初回のみCRITICAL(同一キー抑止)またはサマリ行のみCRITICALで個別行はINFO/DEBUGへ降格。P4ログ契約と同レーンで扱う。★実害実証13:00: ログ窓400行がCRITICALで埋まり--textフィルタなしでprofiling行に到達不能 | 殿指示2026-08-11 03:40(knowledge:dd046ff1) |
 | M4 | **[修正指示済み]** Compare SummaryでUp Cap/Down Cap非表示 | up_capture実装はHEAD現存・8月以降変更0件(将軍切り分け13:36)。原因はデータ/生成系 — revert後の部分再計算でportfolio_metrics未再生成/NULLの疑い | 原因層(metrics生成/API/FE)を特定し是正。家老へ調査配備済み(msg_133646) | 殿観測2026-08-11 13:35+修正指示13:37(knowledge:c44d4292) |
 | M5 | **[修正指示済み]** DrawdownページでSPY(ベンチマーク)のdrawdown%数値が非表示 | benchmark drawdown系の欠損。殿裁定01:18『benchmarkもOtO/CtCトグル追従、benchmark drawdown_open欠落は正常ではなくバグ』(UI-5系)と同根の可能性 | UI-5小太郎レーンの仕様訂正と合流して是正。修正完遂まで追跡・抜け禁止 | 殿観測+修正指示2026-08-11 13:37(knowledge:c44d4292) |
+| M6 | **[修正指示済み]** monthly trade画面: FoF PFで8月以前の表示がない(standard PFは8月以前も表示あり) | FoF系のmonthly_trade履歴欠損。候補: revert後の部分再計算でFoFのmonthly_trade未再生成、またはL5 monthly_trade builder None系(3a0cb44f根治)の残穴 | FoF/standardの生成経路差を特定し是正。修正完遂まで追跡・抜け禁止 | 殿観測+修正指示2026-08-11 13:39(knowledge:fe6a5b25) |
+| M7 | **[修正指示済み]** monthly trade画面: 8月(当月)のリターンとprice movementが非表示 | 当月行のデータ欠損。候補: MTD expansion cache系(半蔵根治レーン)またはpending意味論(M1)系 | 当月データの生成/表示経路を特定し是正。修正完遂まで追跡・抜け禁止 | 殿観測+修正指示2026-08-11 13:39(knowledge:fe6a5b25) |
 
 ## P6. fullrecalculate計算順序フロー(殿指示2026-08-11 04:39・コード現物より起図)
 
@@ -283,6 +285,7 @@ flowchart TD
 10. K7(CI性能回帰検知)を検討不足表へ追加済み。
 
 ## 改訂履歴
+- v1.7 (2026-08-11 13:40): P5棚へM6(monthly trade: FoFの8月以前非表示)・M7(monthly trade: 8月リターン/price movement非表示)を追加(殿修正指示13:39)。修正指示済み在庫はM4-M7の4件。
 - v1.6 (2026-08-11 13:38): P5棚へM4(Compare Summary Up/Down Cap非表示)・M5(Drawdown SPY%非表示)を追加 — いずれも殿の修正指示済み(13:37)であり実装解禁・完遂まで追跡。M3へ実害実証(13:00 CRITICAL洪水でログ窓埋没)を追記。
 - v1.5 (2026-08-11 04:52): **P6-ToBe層確定カスケードのmermaid図を追加**(殿指示04:50「AsIs/ToBe両方書け」) — 既存図をP6-AsIsと明記し、確定gate4つ+L3a/L3b層分割+並列可否+fallback→ERROR転換を図示。AsIs/ToBe差分5点を要点化。
 - v1.4 (2026-08-11 04:48): **P6-ToBe: 層確定カスケード実行モデルを追加**(殿提案04:47「L0を計算固定してるようにL1→L2→L3とやれば常にキャッシュが使える」) — 各層完了時に成果物を確定commitし上層は確定済み下層のみ参照する契約。fallbackを対症でなく発生条件ごと根絶し、層単位検証・層内並列・部分再計算の構造基盤を兼ねる。実装起票は別途下知。
