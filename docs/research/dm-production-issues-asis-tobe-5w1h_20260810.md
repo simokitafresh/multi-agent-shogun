@@ -151,7 +151,74 @@ flowchart TD
     style G4 fill:#f9f0d0
 ```
 
+## §10. キャッシュの流れ AsIs/ToBe(殿指示22:59・細粒度。殿裁定22:54-22:57「シンプル・再利用・新規コード最小」「複雑は修正せず、シンプルを追加して複雑を捨てる」の実装設計)
+
+### §10-AsIs: cacheがflush境界で切れ、3系統再構築される(コード現物・行番号は2026-08-11 main)
+
+齟齬の核心: **L2はcacheをDBへflushして手放し、L3/L5がDBから読み戻して別のcacheを作り直す**。同一データのcacheが3系統(opt6版/fof_shared版/L5 payload版)存在し、系統間の橋渡し(setdefaultマージ・date_index永続)がrun273混線と速度損失を生んだ。
+
+```mermaid
+flowchart TD
+    subgraph L2["L2: standard 24体(recalculate_fast.py)"]
+        A1["日次ループ計算<br/>signals(メモリ)"] --> A2["_flush_batch<br/>(L2806/2828/3111)<br/>DBへCOPY書込み"]
+        A2 --> A3[("DB: signals")]
+        A2 -.->|"★メモリcacheは<br/>ここで実質手放す"| X1[" "]
+    end
+    A3 --> B1["OPT-4 Signal preload(L3001-3008)<br/>★DBから全signals再クエリ"]
+    B1 --> B2["signal_cache_opt6を再構築<br/>(L3022-3026)<br/>=cache系統①"]
+    B2 --> B3["Phase 4.5: monthly_returns生成<br/>(signal_cache=opt6を引数供給)"]
+    subgraph L3["L3: FoF 78体(recalculate_fof.py)"]
+        C0["fof_shared_signal_cache = { }<br/>(L3017)★空dictから開始<br/>=cache系統②"] --> C1["FoF毎に計算<br/>recalculate_fof.py:430 /<br/>monthly_returns.py:527が<br/>PF毎に別cacheを渡す"]
+        C1 --> C2["price_ratio_impl.py<br/>L1111-1114: date_indexを<br/>初回cacheから永続<br/>★cache Aのindexをcache Bへ適用<br/>=run273混線(41PF/328件偽Cash)"]
+        C1 --> C3["_flush_batch(FoF deferred)"]
+    end
+    B3 --> L3
+    C3 --> D0[("DB: signals/monthly_returns")]
+    subgraph L5["L5: precompute(102PF・precompute_raw.py)"]
+        D1["precompute_signal_payload_cache<br/>(L167で毎回上書き)<br/>=cache系統③"] --> D2["builder: monthly_trade.calculate(pid,0)<br/>(L512)★DB再読込+再計算<br/>過去1.0s/PF→現行8.9s/PF"]
+        D2 --> D3["snapshot validator(306608a3)<br/>★複雑機構186行・raise 8箇所<br/>payload_only合法ケースで誤発火<br/>→L5停止(22:46殿報告)"]
+    end
+    D0 --> L5
+    style A2 fill:#f9d0d0
+    style B1 fill:#f9d0d0
+    style C0 fill:#f9d0d0
+    style C2 fill:#f9d0d0
+    style D2 fill:#f9d0d0
+    style D3 fill:#f9d0d0
+```
+
+赤=齟齬点6箇所。(1)flushでcache手放し (2)DB再クエリ (3)L3空開始 (4)date_index別cache適用=バグの直接機構 (5)L5のDB再読込再計算=速度損失の主因 (6)混線への対症validator=複雑コードがさらにバグを生んだ。
+
+### §10-ToBe: 同一cacheオブジェクト一本受渡し(flushは永続化のみ・再構築ゼロ)
+
+原理1行: **cacheは一度だけ作り、L2→L3→L5が同じオブジェクトを読み書きする。flushはDBへの永続化であって、cacheの破棄・再構築の合図ではない。**
+
+```mermaid
+flowchart TD
+    S0["run開始: signal_cache = { } を1個生成<br/>(唯一のcache。以後、再生成・複製禁止)"] --> S1
+    subgraph L2T["L2: standard 24体"]
+        S1["日次ループ計算<br/>→signal_cacheへ直接書込み"] --> S2["_flush_batch: DBへ永続化のみ<br/>★cacheはそのまま保持"]
+    end
+    S2 --> S3
+    subgraph L3T["L3: FoF 78体"]
+        S3["同一signal_cacheを引数で受領<br/>(空開始・別cache生成を廃止)"] --> S4["FoF計算: 構成PFのsignalは<br/>cacheから直接読む(DB再クエリなし)<br/>FoF自身の結果も同一cacheへ追記"]
+        S4 --> S5["_flush_batch: DBへ永続化のみ"]
+    end
+    S5 --> S6
+    subgraph L5T["L5: precompute 102PF"]
+        S6["同一signal_cache+monthly_return_cache<br/>+price_cacheを引数で受領"] --> S7["builderは読むだけ<br/>(monthly_trade.calculateの<br/>DB再読込を廃止=cache引数供給の復元<br/>cmd_3543と同型)"]
+    end
+    S7 --> S8["date_index: 独立キャッシュ廃止<br/>sorted(payload.keys())から都度導出<br/>(cacheが1個なら世代・整合検証は不要)"]
+    S8 --> S9["★複雑機構を捨てる:<br/>snapshot validator(186行)/generation束縛/<br/>OPT-4再クエリ/opt6再構築/setdefaultマージ<br/>=全て削除(コード純減)"]
+    style S2 fill:#d0f0d0
+    style S7 fill:#d0f0d0
+    style S9 fill:#d0e8f9
+```
+
+効果(構造から導出): (1)混線=構造的に不可能(cacheが1個なのでA→B適用が存在しない) (2)速度=DB再クエリ3系統+L5 PF毎再計算が消える(L5 monthly_trade 8.9s→過去実績1.0s/PFが目標基準) (3)保守性=validator/generation束縛の削除でコード純減。5W1H: Who=家老レーン(忍者配備)、What=cache一本化+複雑機構削除、When=run274帰属確定後の根治便、Where=recalculate_fast.py/recalculate_fof.py/precompute_raw.py/price_ratio_impl.py、Why=殿裁定22:54-22:57、How=既存signal_cache引数受け口への同一オブジェクト供給(新規機構ゼロ)。注意: DB上の汚染signals(bad 328キー)はcache一本化後も残るため、復旧(子→親depth順)は別途必要(軍師指摘blt_225517)。
+
 ## 改訂履歴
+- v2.1 (2026-08-11 23:01): §10キャッシュ流れAsIs/ToBe細粒度mermaid追加(殿指示22:59)。齟齬6箇所の行番号特定+一本受渡しToBe+複雑機構削除リスト。
 - v2.0 (2026-08-11 15:55): **全面再構築(殿指示「覚醒して再構築せよ」)** — 現在地§1/現行裁定§2/300秒現在値§3/B1/B2§4/M4-M8台帳§5/UI統治§6/突合台帳§7を前面化し、完了済み経過(P1の51分事案工程S0-S6・P2 γ5中断・K1-K7知見・fallback経緯)を§8歴史へ圧縮。P6図は現役参照として保持しB1/B2の棲家を追記。上書き済み裁定(S5.7のL2磨き等)は§2から除外し§8とgit履歴に保存。情報の削除なし(圧縮+参照)。
 - v1.7 (2026-08-11 13:40): P5棚へM6/M7追加(殿修正指示13:39)+M8追加(13:42)。
 - v1.6 (2026-08-11 13:38): P5棚へM4/M5追加+M3実害実証追記。
