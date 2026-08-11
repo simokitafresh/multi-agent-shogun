@@ -162,11 +162,11 @@
 
 | # | 状態 | 担当/task | 最終更新 |
 |---|---|---|---|
-| M4 Up/Down Cap | 配備指示済み・着手待ち | 家老編成中(msg_133646) | 2026-08-11 13:45 |
-| M5 Drawdown SPY% | 配備指示済み・着手待ち | 家老編成中(msg_133906) | 2026-08-11 13:45 |
-| M6 FoF月次履歴 | 配備指示済み・着手待ち | 家老編成中(msg_134201) | 2026-08-11 13:45 |
-| M7 8月リターン非表示 | 配備指示済み・着手待ち | 家老編成中(msg_134201) | 2026-08-11 13:45 |
-| M8 8/10重複 | 配備指示済み・着手待ち | 家老編成中(msg_134342) | 2026-08-11 13:45 |
+| M4 Up/Down Cap | **着手(acknowledged)** | 影丸/cmd_karo_hotfix_display_missing_m4_m7_202608111342 | 2026-08-11 13:50 |
+| M5 Drawdown SPY% | **着手(acknowledged)** | 小太郎/cmd_karo_hotfix_m5_benchmark_drawdown_202608111348 | 2026-08-11 13:50 |
+| M6 FoF月次履歴 | **着手(acknowledged)** | 疾風/cmd_karo_hotfix_m6_fof_monthly_trade_202608111348 | 2026-08-11 13:50 |
+| M7 8月リターン非表示 | **着手(in_progress)** | 半蔵/cmd_karo_hotfix_m7_current_mtd_202608111348 | 2026-08-11 13:50 |
+| M8 8/10重複 | **着手(acknowledged)** | 飛猿/cmd_karo_hotfix_m8_mtd_duplicate_202608111348 | 2026-08-11 13:50 |
 
 - クローズ条件(各件共通): 原因特定→修正→deploy→**殿の画面で表示正常を確認**の4段完了。
 - 完了のたびに本表を将軍が更新しcommit+gist同期する。
