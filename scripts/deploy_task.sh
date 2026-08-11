@@ -1885,6 +1885,10 @@ STALE_FIELDS = [
     # 第15.5層: cmd固有の変更対象・detector品質契約。前cmdの値が残ると
     # 教訓target filterと忍者の作業scopeを別cmdへ向ける（cmd_3997/3998で連続再現）。
     'files_to_modify', 'files_modified', 'quality_gate',
+    # DM-Signal canary rotation contract is task-generation scoped.  Keeping a
+    # prior contract on a reused worker would impose a DM-Signal-only workflow
+    # on an unrelated task (false positive at the deployment boundary).
+    'dm_signal_canary_rotation_contract',
     # 第17層: 独立偵察契約。前taskのtrack/base/embargoを次cmdへ漏らさず、
     # --yaml sourceに明示された新契約だけをpublish後に保持する。
     'independence_group', 'independence_track', 'independence_base_commit',
@@ -6785,6 +6789,109 @@ inject_dm_signal_golden_baseline_contract() {
     insert_task_block_before_description "$tmp_file" "$inject_block"
     _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_dm_signal_golden_baseline_contract: L877 Level5 contract injected"
+}
+
+# ─── DM-Signal 5PF canary rotation contract ───
+# Level5: every DM-Signal verification/performance task receives the same
+# reversible one-commit → Live → fixed-five-PF --get → layer-total tracking
+# contract.  Scope is structural (project/target_path) plus an explicit
+# verification/performance term; prose-only references from infra tasks must
+# never opt them into production validation obligations.
+inject_dm_signal_canary_rotation_contract() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+    task_targets_are_documentation_only "$task_file" && {
+        log "inject_dm_signal_canary_rotation_contract: documentation-only target, skip"
+        return 0
+    }
+
+    local project target_path task_type title purpose command_text parent_cmd parent_text scope_text
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    target_path=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null || true)
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null || true)
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+
+    # A resolved task may carry only parent_cmd/purpose while the command text
+    # remains in the command SSOT.  Read the parent entry without mutating it.
+    parent_text=$(python3 - "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$parent_cmd" <<'PY' 2>/dev/null || true
+import sys
+import yaml
+
+path, cmd = sys.argv[1:]
+if not cmd or not cmd.startswith('cmd_'):
+    raise SystemExit(0)
+try:
+    data = yaml.safe_load(open(path, encoding='utf-8')) or {}
+except Exception:
+    raise SystemExit(0)
+entry = (data.get('commands') or {}).get(cmd, {})
+if isinstance(entry, dict):
+    for key in ('title', 'purpose', 'command', 'description'):
+        value = entry.get(key)
+        if value is not None:
+            print(value)
+PY
+)
+
+    # project/target_path define ownership; the terms define this narrower
+    # verification/performance lane.  This prevents an unrelated DM-Signal
+    # feature task from inheriting canary/full-recalc obligations.
+    if ! printf '%s\n%s\n' "$project" "$target_path" | grep -Eqi '(^|[^a-z0-9])dm-signal([^a-z0-9]|$)'; then
+        return 0
+    fi
+    scope_text="${task_type}
+${title}
+${purpose}
+${command_text}
+${parent_text}"
+    if ! printf '%s\n' "$scope_text" | grep -Eqi '検証|verify|validation|parity|canary|高速化|speed|performance|perf|bottleneck|hot[ -]?path|cache|ledger|計測|cost'; then
+        return 0
+    fi
+
+    local indent="  " tmp_file inject_block
+    tmp_file=$(mktemp "${task_file}.XXXXXX") || return 1
+    awk '
+        /^  dm_signal_canary_rotation_contract:/ { skip=1; next }
+        skip && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file" || { rm -f "$tmp_file"; return 1; }
+
+    inject_block="${indent}dm_signal_canary_rotation_contract:"
+    inject_block="${inject_block}"$'\n'"${indent}  scope: \"DM-Signal verification/performance tasks only\""
+    inject_block="${inject_block}"$'\n'"${indent}  revision:"
+    inject_block="${inject_block}"$'\n'"${indent}    max_commits: 1"
+    inject_block="${inject_block}"$'\n'"${indent}    allowed_changes:"
+    inject_block="${inject_block}"$'\n'"${indent}      - \"cache reuse\""
+    inject_block="${inject_block}"$'\n'"${indent}      - \"duplicate computation removal\""
+    inject_block="${inject_block}"$'\n'"${indent}    new_mechanism: false"
+    inject_block="${inject_block}"$'\n'"${indent}  deploy_live: required"
+    inject_block="${inject_block}"$'\n'"${indent}  canary:"
+    inject_block="${inject_block}"$'\n'"${indent}    pf_count: 5"
+    inject_block="${inject_block}"$'\n'"${indent}    query: \"--get\""
+    inject_block="${inject_block}"$'\n'"${indent}    duration_minutes: 3"
+    inject_block="${inject_block}"$'\n'"${indent}    binary_checks:"
+    inject_block="${inject_block}"$'\n'"${indent}      error_count: 0"
+    inject_block="${inject_block}"$'\n'"${indent}      new_cash_delta: 0"
+    inject_block="${inject_block}"$'\n'"${indent}      valid_start: normal"
+    inject_block="${inject_block}"$'\n'"${indent}    layer_timings: [L2, L3, L5, other, TOTAL]"
+    inject_block="${inject_block}"$'\n'"${indent}  feedback:"
+    inject_block="${inject_block}"$'\n'"${indent}    numeric_one_line_report: true"
+    inject_block="${inject_block}"$'\n'"${indent}    next_target: \"maximum bottleneck across L2/L3/L5/other/TOTAL\""
+    inject_block="${inject_block}"$'\n'"${indent}  full:"
+    inject_block="${inject_block}"$'\n'"${indent}    checkpoint: \"T7 final checkpoint only\""
+    inject_block="${inject_block}"$'\n'"${indent}    max_runs: 1"
+
+    insert_task_block_before_description "$tmp_file" "$inject_block"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || {
+        rm -f "$tmp_file"
+        return 1
+    }
+    rm -f "$tmp_file"
+    log "inject_dm_signal_canary_rotation_contract: injected (project=${project:-none}, task_type=${task_type:-none})"
 }
 
 # ─── context hints注入（purpose/project/task_typeから必読contextをLevel5化） ───
@@ -12741,6 +12848,7 @@ deploy_task_apply_task_mutations() {
         inject_causal_verification_template "$task_file" || true  # Level5: infra変更前の因果確認をCLI非依存で注入
         inject_dm_signal_pf_operation_guardrails "$task_file" || true  # Level5: PF削除/復元/rollback前提知識を自動注入(cmd_3786)
         inject_dm_signal_golden_baseline_contract "$task_file" || true  # Level5: L877巨大golden-baseline二層契約
+        inject_dm_signal_canary_rotation_contract "$task_file" || handle_yaml_injection_failure "inject_dm_signal_canary_rotation_contract" "$task_file" "$ninja_name"
         inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
         inject_reflux_commit_contract "$task_file" || handle_yaml_injection_failure "inject_reflux_commit_contract" "$task_file" "$ninja_name"
         inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
