@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-11 -->
+<!-- last_updated: 2026-08-12 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,12 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_3852 | 殿CP裁定(2026-07-11 23:30 許可する)。設計書v1.4.8のP2b RED: persisted table inventory(§9.7、writer対象表+immutable input表)の全表に対し、分類(A exact/B append-only/C semantic/D telemetry/E cache)に従うexact比較テストをRED状態で整備する。TradePerformanceの判定は新manifest下のexact(旧baselineとの一致要求はP1c局在確定により不成立)。tolerance緩和禁止・対象縮小禁止。P2aと並行RED化可 | dm-signal | 07-12 | §9.7全18表のP2b exact比較契約を固定し、表別注 |
-| cmd_3853 | 殿裁可(2026-07-12 00:55 やろう)。設計書v1.4.11で確定したP2a母集団(標準PF adapter経路+valid_start filter後日付)に基づき、cmd_3851のテストオラクルの契約バグを修正して比較を成立させる。偵察A/B統合の確定事実: mismatchは全数オラクルのweights抽出契約バグ(adapter側_pre_sigが文字列型で空リスト化)、missingは全数warm-up期間日付の母集団誤混入。実装ロジック側の不一致はゼロのため、修正はテスト側のみでGREEN到達見込み | dm-signal | 07-12 | P2a GREEN化完了。オラクル契約バグ2点(weight |
-| cmd_3858 | cmd_3857の全表実データ実測(家老ACCEPT、設計書v1.4.12同期済み)で非exactが残る箇所が確定: signals.momentum_dataの配列順不安定とrecalculation_timingsのtelemetry値(実行時間等の実行ごと固有値)。前者は配列順の決定的安定化で根因修正し、後者は決定性契約の対象外telemetryとして比較設計上分離(tolerance緩和ではなく分類の是正)した上で、除外なしの同一全表・全field再実測でP2b GREEN化する | dm-signal | 07-12 | cmd_3857が検出したmomentum_data配列順非 |
-| cmd_3863 | 殿裁可(2026-07-12 15:02)のS1。改修修正系の配備入口(karo_direct等)がcmd_saveの品質検査(検知器の行動変換・FP計測接続チェック)を通らず、検知器品質バグが本日の手戻り最多分類(A分類=過半)を生んだ。既存検査を共通関数へ抽出し、三入口全てで同一契約を働かせる(blt_20260712_141859 S1、家老合意blt_20260712_142049) | infra | 07-12 | cmd_save・直接配備・draft reviewで検知器 |
-| cmd_3867 | 殿裁可(2026-07-12 15:02)のS4。cmd_3861で将軍がACに全量実行コマンドとFAIL0/SKIP0と中断再開成果物を固定しなかったため忍者3名のリレーが発生し、P4本番ACではrestore/identity証跡なしで起票し影丸が安全停止した(B分類=検証・成果物契約の曖昧さ、家老指摘blt_20260712_141750 Q3(2)(3))。既存の起票前確認とcmd_skeleton雛形へ、該当cmd種別のときだけ効く設計契約の問いを統合する(問い増設でなく既存問い群への統合) | infra | 07-12 | テスト/CIと本番DB書込みの種別連動AC契約をcmd_sa |
-| cmd_3864 | 殿裁可(2026-07-12 15:02)のS2。本日の手戻り最多分類(A分類=過半)は検知器がBLOCK試験のみで出荷され、実運用の変形(引用符付きcommit・linked worktree・併走respawn・異常exit)と正常系PASS(偽陽性)を未検証だったこと。enforcement層(gate/hook/detector/guard/watcher/state-machine)のコード変更に限り、変形検査の二値結果を報告・レビューの必須契約にする。決定的コードは各セル1回、並行・タイミング依存セルのみ反復(将軍反証R1/R2を家老合意済み: blt_20260712_141859/142049) | infra | 07-12 | enforcement層コード変更に5セル変形検査契約を配備 |
 | cmd_3872 | cmd_3870 verdict FAIL(2026-07-13 11:46家老最終クローズ: expected input_snapshot_id=75886e9fとactual=c2b66a69の不一致でcanonical comparator fail-closed、P5進行禁止)の根因を確定する偵察。仮説=expected artifact生成(cmd_3859 shadow、2026-07-12)と本番run213(2026-07-13)の間に日次ETLで入力データが更新され、入力そのものが別物だった(=決定性の反証ではなく照合契約の入力固定不備)。両snapshotの実差分を現物で特定し、P4 AC2再挑戦の照合契約(同一入力の固定方法)の設計材料を確定する | dm-signal | 07-13 | input snapshot不一致は日跨ぎlogical_d |
 | cmd_3875 | C:満杯事故(2026-07-12 23:07、空き0でシステム全停止、cmd_3869で240.5GB回収済み)の恒久策のうち未実装の事前検知層。現状scripts/gates/gate_shogun_startup.sh・scripts/ninja_monitor.shにdf監視は存在しない(rg確認2026-07-13)。/mnt/cの残量を起動時と常駐監視で計測し、閾値割れでALERTを出す層を既存gateへ組み込む | infra | 07-13 | startup gate 2本とninja_monitorを |
 | cmd_3868 | 殿指示(2026-07-13 00:43『非CSV 62.4GB: gs_*.dbが日付dirごとに同一DB重複保存 — 世代検分の上で更に約50GB回収余地。後続cmdで解消せよ』)。CSV削除(殿裁定でGSはlocal SQL化済み・過去CSV不要、将軍実行済み68.1GB回収)に続く第2弾。grid_search配下のSQLite DB(将軍実測146ファイル40.8GB、同名gs_DM2.db 1.41GBが複数日付dirに重複等)を世代検分し、重複・旧世代を解消して容量を回収する | dm-signal | 07-13 | RC修正: commit済み正本の削除候補一覧を0件から9件 |
@@ -245,3 +239,4 @@
 | cmd_4286 | 殿指示2026-08-10 09:12「いまのうちにstock data api(database)側も独立調査しておこう」。DM-Signal側のε4本番検証がprice supply incomplete on 2026-07-03でinterruptedした事象について、供給側(database PJ=Supabase+Render)を独立に調査する。DM側偵察(cmd_4285)とは独立の両面調査であり、供給欠陥がdatabase PJのDB在庫・EODHD取込・API応答のどの層にあるかを一次データで確定する | database | 08-10 | 本番APIのreadonly相当照会で2026-07-03は |
 | cmd_4284 | 殿裁可2026-08-10 08:19(封印3件一括裁可)。タスクリストv2.3 T-ε4。ε1-ε3の三重防御(portfolio時一括DELETE除去+破壊シナリオ回帰+full rebuild guard)を本番で最終証明する。本番でmode='portfolio'再計算を1回実行し、monthly_returnsの行数・最古year_monthが前後で減少しないことをDB前後比較で証明する(cmd_4245 AC2の完遂)。PASSでmode='full'限定の暫定運用を解除する | dm-signal | 08-10 | 再開実測: CI 31342631865 GREEN、Ren |
 | cmd_4292 | 殿下知の高速回転Round次弾(家老中継msg_20260810_134704)。Track C(履歴分解)とは独立に、固定baseの隔離fixtureでfinalize境界を構成する機構(レビュー通知・完了gate・complete処理・notify)を代表入力で直接実行して計時し、最大待ち一件を特定して反証する。Track C(cmd_4291)との相互参照禁止。途中は可逆実験のみ・実装なし・共有context還流は家老release後 | infra | 08-11 | — |
+| cmd_4294 | 殿指示2026-08-11 23:26『どのページにどのデータが、どのAPIを使って表示されているかの依存・影響範囲マップは存在していないのではないか。フローチャートのようにマーメイド図で粒度を小さく作成したほうがいい。のちの役に立つ』。FE全ページ→使用API endpoint→BEハンドラ→参照テーブル/計算元の依存関係を読み取り偵察で網羅し、mermaid細粒度図の恒久参照資産を作る | dm-signal | 08-12 | FE現物21 routeを列挙し、route/API対応表と |
