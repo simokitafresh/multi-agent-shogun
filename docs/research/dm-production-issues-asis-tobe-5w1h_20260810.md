@@ -5,18 +5,20 @@
 - 位置づけ: 月次リターン基本原理設計書v6.13の**補填**。v6本文は変更しない。本番問題群の修復レーンの正本
 - 再構築方針: **現在有効な工程・裁定・在庫を前面**に置き、完了済み経過は§8歴史へ圧縮(情報は削らず参照で残す=リンク先なき圧縮禁止)
 
-## §1. 現在地(2026-08-11 15:55)
+## §1. 現在地(2026-08-12 00:10)
 
-**本番は「確実に計算できた状態」へrevert済み(12:45 Live)。fullは封印中。表示欠損5件(M4-M8)+full固有バグ2件(B1/B2)の掃討が走行中。**
+**主戦線=cache一本化(§10.1 T0-T8)。本番普及に向けfullバグなし完走が第一目標(殿下知00:01)。fullは封印中(T7 PASSが解除材料)。**
 
 | レーン | 状態 |
 |---|---|
-| 本番コード | revert deploy済み(dep-d9t9kp9s, commit 03133653)。backend/scripts treeは実績SHA 6908c5c8(552秒run時点)と一致。health 200・重複起動停止を一次確認済み(12:46) |
-| fallback(旧病態) | **根絶維持** — n=157/11.3s→n=0を本番実測(12:48試験窓でも再確認。残余はDM-safe n=17等の正当な端数のみ) |
-| full封印 | **殿裁定12:41: 確信(再現ゼロ+発火条件の因果説明)が立つまでfullrecalculateはやらない** |
-| B1/B2(full固有バグ) | ログ一次証明済み(15:27)+修正実装done(才蔵)・経路検証待ち → §4 |
-| M4-M8(表示欠損) | 5レーン並列: 実装done4件+実装中1件 → §5台帳 |
-| SIGNAL CHANGE突合 | 累計1,748件を最終checkpoint台帳へ積載(殿裁定02:48: 途中の正否調査禁止) → §7 |
+| 本番コード | revert版(dep-d9t9kp9s系)+hotfix便多数Live(KeyError群b3146fc9/f645d92b・snapshot integrity 306608a3=c83e350dでLive) |
+| 偽Cash機構 | **3経路特定済み**: ①run273=cache混線(date_index別cache適用) ②run274復元失敗=汚染子depth1-2引継ぎ ③run275=**範囲契約不一致**(部分runの短snapshot 1,535行をL3全期間計算が完全cacheとして再利用→fail-openで500行Cash化。00:06家老二段掘りで確定) |
+| canary | run274/275とも**FAIL・停止中**(遮断弁機能)。再発進条件=T0根治Live後、同一5PFでCash差分0+valid_start正常+I1-I5適合 |
+| cache一本化 | §10.1タスクリストT0-T8が工程正本。T2-T6は家老が隔離WTで4commit分離実装済み(I1-I5適合検分が持込条件) |
+| full封印 | **殿裁定12:41維持**。解除材料=T7 canary PASS+B1/B2再現ゼロ |
+| M4-M10(表示欠損) | M10=deploy済み本番API検証PASS(欠落7→0)・M9=実装done・M4/M5/M7=done deploy待ち・M6=B3修正済み+FoF再生成run待ち → §5台帳 |
+| SIGNAL CHANGE突合 | 累計2,576件を最終checkpoint台帳へ積載(殿裁定02:48維持) → §7 |
+| 依存マップ | cmd_4294完了(gist 4bb22f90+将軍まとめb6a70eb3)。cmd_4295(項目単位SSOT監査)走行中 → §10.1参考資料 |
 
 ## §2. 現行有効の殿裁定(上書き済みのものは除外)
 
@@ -32,6 +34,12 @@
 | 08-11 15:30 | **バグの原因は「fullと部分runの経路差分」にある**。検証は部分runでなくfull固有経路(deferred合流)の発火条件で行う | 現行(B1/B2検証の規範) |
 | 08-10 19:43/19:57 | **UI統治**: UI/UXは殿専権・忍者判断のUI変更禁止。裁定板artifact(e9e784ab)で殿がfix→裁定原文をACへ引用したtaskのみ実装可 | 恒久 → §6 |
 | 08-11 01:18 | benchmark(SPY等)もOtO/CtCトグル追従。benchmark drawdown_open欠落は正常ではなくバグ | 恒久(M5の仕様根拠) |
+| 08-11 22:54 | **シンプル・既存再利用・新規コード最小が速さとバグ修正容易さを生む**(validator誤発火への裁定) | 恒久(knowledge:e8ea9347) |
+| 08-11 22:55 | **L2/L3をキャッシュ化→L5はそのキャッシュを使う。この流れの齟齬が根源。キャッシュフル利用で複雑コード無しに速度大幅向上** | 恒久(§10の設計根拠・knowledge:4469e4c4) |
+| 08-11 22:57 | **複雑なコードは修正するな。シンプルなコードを追加して複雑なコードを捨てろ**(rewrite-and-discard) | 恒久(T6の根拠・knowledge:1ab7ec6e) |
+| 08-11 23:19 | **L3カスケード不採用。現状のL3(トポロジカル直列)は当面このまま。cache一本化(§10-ToBe)だけに集中** | 現行(§10.1が工程正本) |
+| 08-11 23:21-24 | **不変契約**: UI/UX不変・log出力スタイル不変・速度非退行・完全性(FE全データ充足)。前々回の大修整の再発防止・最短一発クリア | 恒久(§10.1 I1-I5) |
+| 08-12 00:01 | **本番普及を目指しfullrecalculateをバグなく計算できるようにする**が第一目標 | 現行(工程=§10.1) |
 
 ## §3. 速度: 300秒切りへの現在値
 
@@ -100,7 +108,7 @@
 | 08-11 13:27 | 246件/2PF | 同逆流 |
 | 08-11 14:59 | 32件/2PF | 同逆流(707→246→32と逓減=収束末期) |
 | 08-11 21:36 | 328件/41PF | **run273 cache混線=当月誤Cash化(帰属確定済み・T8復旧対象)** |
-| 08-11 23:31 | 500件/1PF(2014-04〜2016-03) | **帰属確定(blt_233517): run275=家老の葉5PF canary(nested/parent=false)。奥義-GS-加速D-鉄壁の500行が全てCash化=混線型偽Cashが過去月で再発。canary=FAIL、追加batch 0で停止済み。T2-T6のI1-I5不適合原因固定へ** |
+| 08-11 23:31 | 500件/1PF(2014-04〜2016-03) | **帰属確定→根因更新(00:06 blt_000657)**: run275=家老5PF canary。当初「混線型」と推定したが二段掘りで**範囲契約不一致**と確定 — 5FoF指定runはstandard=0のためL2既定252日の短snapshot(1,535行)を作り、L3全期間計算(要25,346行)がそれを完全cacheとして再利用→fail-openで500行Cash化。canary=FAIL・停止済み。根治=T0 |
 | **累計** | **2,576件** | 突合は最終checkpoint一回のみ |
 
 ## §8. 歴史(完了・上書き済みの経過。詳細は改訂履歴の各版とgit履歴参照)
@@ -191,6 +199,8 @@ flowchart TD
 
 赤=齟齬点6箇所。(1)flushでcache手放し (2)DB再クエリ (3)L3空開始 (4)date_index別cache適用=バグの直接機構 (5)L5のDB再読込再計算=速度損失の主因 (6)混線への対症validator=複雑コードがさらにバグを生んだ。
 
+**齟齬(7)範囲契約不一致(00:06確定・run275根因)**: price snapshotの構築範囲がrun構成に依存する — 5FoF指定runではstandard=0のためL2既定252日ぶんの短いsnapshot(1,535行)を構築するが、L3は常に全期間(2000年〜・要25,346行)を計算する契約であり、この短いsnapshotを「完全なcache」として再利用した。履歴不足→`_resolve_fof_valid_start_date`のfail-openでsignal_readyへ落ち全期間Cash化。**cacheの範囲の正が一つでない**ことが原因であり、(1)-(6)と同じ「cacheの正が複数ある」齟齬の入力範囲版。根治=§10.1 T0。
+
 ### §10-ToBe: 同一cacheオブジェクト一本受渡し(flushは永続化のみ・再構築ゼロ)
 
 原理1行: **cacheは一度だけ作り、L2→L3→L5が同じオブジェクトを読み書きする。flushはDBへの永続化であって、cacheの破棄・再構築の合図ではない。**
@@ -227,16 +237,17 @@ flowchart TD
 
 | # | タスク | 対象 | AC(二値) | Status |
 |---|--------|------|----------|--------|
-| T1 | run274復元失敗の帰属確定(deploy SHA突合+子PF汚染引継ぎ経路検証) | DB/render logs | 帰属が一次証跡で確定したか | 🔶走行中(家老) |
+| T0 | **範囲統一snapshot(run275根治・将軍承認00:08)**: FoF対象が1件以上あればprice/economic snapshotを2000-01-01から一度だけ構築しL2→L3→L5で共有(新機構なし)。同便でfail-open(`_resolve_fof_valid_start_date`履歴不足→signal_ready)を閉じる(既存signals保持+ERROR可視化) | recalculate_fast.py | N-PF runとfullの入力範囲が同一化し、同一5PF canaryでCash差分0+valid_start正常か | 🔶実装指示済み(家老) |
+| T1 | run274/275復元失敗の帰属確定 | DB/render logs | 帰属が一次証跡で確定したか | ✅完了(run274=汚染子引継ぎ・run275=範囲契約不一致=§10-AsIs齟齬(7)) |
 | T2 | L2: flush後もcacheを保持し、OPT-4 DB再クエリ+signal_cache_opt6再構築を廃止(L2計算がsignal_cacheへ直接書込み) | recalculate_fast.py | OPT-4/opt6再構築の削除後、Phase4.5が同一cacheで動きbaseline一致か | ⬜ |
 | T3 | L3: fof_shared_signal_cache空開始を廃止し、L2と同一signal_cacheを受渡し。FoF結果も同一cacheへ追記(PF毎の別cache生成を廃止) | recalculate_fast.py / recalculate_fof.py / monthly_returns.py | L3が同一cacheオブジェクトのみ参照しDB signals再クエリ0か | ⬜ |
 | T4 | L5: builderのDB再読込再計算を廃止し、signal/monthly/price cacheを引数供給(cmd_3543と同型の受け口復元) | precompute_raw.py / monthly_trade_impl.py | builder内monthly_trade.calculateのDB再読込0+1PF L5時間が改善したか | ⬜ |
 | T5 | date_index独立キャッシュ廃止 — sorted(payload.keys())から導出のみ | price_ratio_impl.py | date_index永続化コードの削除+全参照が導出経由か | ⬜ |
 | T6 | 複雑機構削除: snapshot validator(186行)/generation束縛/setdefaultマージの撤去(コード純減) | price_ratio_impl.py ほか | validator/generation関連コードが削除されテストFAIL0か | ⬜ |
-| T7 | 最終checkpoint: 5PF canary(nested depth3系譜1本必須)→baseline全量突合+速度実測(TOTAL/L5 per-PF) | 本番 | canary四値PASS+baseline不一致0+速度前後値記録か | ⬜ |
-| T8 | DB汚染復旧: bad 328キーを子→親depth順・closure53PF小batchで復元(遮断弁=batch境界) | 本番DB | current_matches_old=328/bad=0+下流API正常化か | ⬜ |
+| T7 | 最終checkpoint: 5PF canary(nested depth3系譜1本必須)→baseline全量突合+速度実測(TOTAL/L5 per-PF)+FE全画面データ充足(I5) | 本番 | canary四値PASS+Cash差分0+valid_start正常+baseline不一致0+速度前後値記録+欠落endpoint 0か | ⬜ |
+| T8 | DB汚染復旧: bad 328キー(run273)+500行(run275)を子→親depth順・closure53PF小batchで復元(遮断弁=batch境界) | 本番DB | current_matches_old全数/bad=0+下流API正常化か | ⬜ |
 
-順序契約: T2→T3→T4は流れ順に直列(各1commit)。T5/T6はT4後(cacheが1個になった時点でvalidatorの存在理由が消える)。T7 PASSまでdeployはstaging的扱い(full封印維持)。T8はT7 PASS後(修正済みコードで復旧しないと再汚染)。
+順序契約: **T0が最優先**(canary再発進とT2-T6検証の前提)。T2→T3→T4は流れ順に直列(各1commit)。T5/T6はT4後(cacheが1個になった時点でvalidatorの存在理由が消える)。T7 PASSまでdeployはstaging的扱い(full封印維持)。T8はT7 PASS後(修正済みコードで復旧しないと再汚染)。T7 PASS+B1/B2再現ゼロ=full解封の材料として殿へ諮る。
 
 **不変契約I1-I4(殿下知23:21「前回はUI/UX不変と速度を忘れていた。前々回の大修整が今の事態を生んだ。最短一発クリア」— T2-T6全taskのACへ必須注入)**:
 - **I1 計算結果不変**: 変更前後で同一入力→同一出力(signals/monthly_returns/precomputed_raw全テーブル)。各taskのcommit前にローカル突合、T7で全量突合。
@@ -247,6 +258,8 @@ flowchart TD
 一発クリアの既知知見(失敗の再発防止): (a)cmd_4245=Phase0一括cleanupがガードより先に走る素通し→実行順を現物で確認してからAC化 (b)run273=cache橋渡しの暗黙共有→本改修の対象そのもの (c)validator誤発火=保護追加は不変契約違反として禁止・削除のみ (d)テストPASSはバグ経路実行の証拠必須(LS-A24(3)=候補複数行fixture)。
 
 ## 改訂履歴
+- v2.4 (2026-08-12 00:13): **覚醒更新(殿指示00:09)** — §1現在地を00:10へ全面更新(偽Cash 3経路確定・canary FAIL停止・M台帳現況)。§2へ殿裁定7件追記(22:54シンプル原則/22:55 cache指針/22:57 rewrite-and-discard/23:19カスケード不採用/23:21-24不変契約/00:01 full第一目標)。§7の23:31行を範囲契約不一致へ根因更新。§10-AsIsへ齟齬(7)範囲契約不一致を追加。§10.1へT0(範囲統一snapshot+fail-open閉鎖)新設・T1完了化・T7基準拡充(Cash差分0+I5充足)・T8へrun275の500行追加。
+- v2.3 (2026-08-11 23:21-23:25): §10.1不変契約I1-I5追加+I5へ欠け在庫追記+§7台帳2件追記+参考資料リンク(v2.3/v2.3b/参考資料/台帳の各commit統合)。
 - v2.2 (2026-08-11 23:20): §10.1 cache一本化タスクリスト新設(殿裁定23:19「L3カスケードはやらない。cache一本化だけに集中」)。T1-T8・順序契約・Status列=進捗正本。
 - v2.1 (2026-08-11 23:01): §10キャッシュ流れAsIs/ToBe細粒度mermaid追加(殿指示22:59)。齟齬6箇所の行番号特定+一本受渡しToBe+複雑機構削除リスト。
 - v2.0 (2026-08-11 15:55): **全面再構築(殿指示「覚醒して再構築せよ」)** — 現在地§1/現行裁定§2/300秒現在値§3/B1/B2§4/M4-M8台帳§5/UI統治§6/突合台帳§7を前面化し、完了済み経過(P1の51分事案工程S0-S6・P2 γ5中断・K1-K7知見・fallback経緯)を§8歴史へ圧縮。P6図は現役参照として保持しB1/B2の棲家を追記。上書き済み裁定(S5.7のL2磨き等)は§2から除外し§8とgit履歴に保存。情報の削除なし(圧縮+参照)。
