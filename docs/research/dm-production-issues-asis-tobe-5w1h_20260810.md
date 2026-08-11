@@ -156,6 +156,7 @@
 | M5 | **[修正指示済み]** DrawdownページでSPY(ベンチマーク)のdrawdown%数値が非表示 | benchmark drawdown系の欠損。殿裁定01:18『benchmarkもOtO/CtCトグル追従、benchmark drawdown_open欠落は正常ではなくバグ』(UI-5系)と同根の可能性 | UI-5小太郎レーンの仕様訂正と合流して是正。修正完遂まで追跡・抜け禁止 | 殿観測+修正指示2026-08-11 13:37(knowledge:c44d4292) |
 | M6 | **[修正指示済み]** monthly trade画面: FoF PFで8月以前の表示がない(standard PFは8月以前も表示あり) | FoF系のmonthly_trade履歴欠損。候補: revert後の部分再計算でFoFのmonthly_trade未再生成、またはL5 monthly_trade builder None系(3a0cb44f根治)の残穴 | FoF/standardの生成経路差を特定し是正。修正完遂まで追跡・抜け禁止 | 殿観測+修正指示2026-08-11 13:39(knowledge:fe6a5b25) |
 | M7 | **[修正指示済み]** monthly trade画面: 8月(当月)のリターンとprice movementが非表示 | 当月行のデータ欠損。候補: MTD expansion cache系(半蔵根治レーン)またはpending意味論(M1)系 | 当月データの生成/表示経路を特定し是正。修正完遂まで追跡・抜け禁止 | 殿観測+修正指示2026-08-11 13:39(knowledge:fe6a5b25) |
+| M8 | **[調査指示済み]** dashboardページ: MTD Daily Returnsで8/10の日付行が2つ重複表示 | 日次行の重複。候補: precompute重複起動期間の二重INSERT残骸、またはFE集計キー重複 | 重複行の由来をDB一次データで特定(同一日の行数・created_at比較)→データ修復かFE修正かを切り分け | 殿観測+調査指示2026-08-11 13:42(knowledge:dbf855f3) |
 
 ## P6. fullrecalculate計算順序フロー(殿指示2026-08-11 04:39・コード現物より起図)
 
@@ -285,7 +286,7 @@ flowchart TD
 10. K7(CI性能回帰検知)を検討不足表へ追加済み。
 
 ## 改訂履歴
-- v1.7 (2026-08-11 13:40): P5棚へM6(monthly trade: FoFの8月以前非表示)・M7(monthly trade: 8月リターン/price movement非表示)を追加(殿修正指示13:39)。修正指示済み在庫はM4-M7の4件。
+- v1.7 (2026-08-11 13:40): P5棚へM6(monthly trade: FoFの8月以前非表示)・M7(monthly trade: 8月リターン/price movement非表示)を追加(殿修正指示13:39)。修正指示済み在庫はM4-M7の4件。同13:42にM8(dashboard MTD Daily Returns 8/10重複表示・調査指示)を追加、在庫M4-M8の5件。
 - v1.6 (2026-08-11 13:38): P5棚へM4(Compare Summary Up/Down Cap非表示)・M5(Drawdown SPY%非表示)を追加 — いずれも殿の修正指示済み(13:37)であり実装解禁・完遂まで追跡。M3へ実害実証(13:00 CRITICAL洪水でログ窓埋没)を追記。
 - v1.5 (2026-08-11 04:52): **P6-ToBe層確定カスケードのmermaid図を追加**(殿指示04:50「AsIs/ToBe両方書け」) — 既存図をP6-AsIsと明記し、確定gate4つ+L3a/L3b層分割+並列可否+fallback→ERROR転換を図示。AsIs/ToBe差分5点を要点化。
 - v1.4 (2026-08-11 04:48): **P6-ToBe: 層確定カスケード実行モデルを追加**(殿提案04:47「L0を計算固定してるようにL1→L2→L3とやれば常にキャッシュが使える」) — 各層完了時に成果物を確定commitし上層は確定済み下層のみ参照する契約。fallbackを対症でなく発生条件ごと根絶し、層単位検証・層内並列・部分再計算の構造基盤を兼ねる。実装起票は別途下知。
