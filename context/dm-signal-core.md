@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-11 cmd_karo_hotfix_l3_deferred_flush_wall_202608110643 reviewed source boundary -->
+<!-- last_updated: 2026-08-11 GA-455 content reflection -->
+<!-- source_commit:b7067c99 reason:GA-455 content reflection evidence:source frontier review: 40 commits; durable L5/L3/P4/API knowledge indexed in context §0.1 -->
 <!-- source_commit:309a8d6c reason:cmd_karo_hotfix_l3_deferred_flush_wall_202608110643 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=309a8d6c -->
 <!-- source_commit:4d81c32c reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source commits 4d81,c469,aaef,28b58,9f81 reviewed and indexed -->
 <!-- source_commit:bda69c42 reason:cmd_karo_hotfix_cmd4284_market_grid_202608100902 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=bda69c42 -->
@@ -18,6 +19,13 @@
 <!-- source_commit:6f628677362b2ef936d0de5ef2f80e17d00fa944 reason:C-x W4/W5 oracle reviewed source boundary evidence:fixture6/6 pytest1/1 FAIL0 SKIP0 -->
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 タスクに `project: dm-signal` がある場合このファイルを読め。パス: `/mnt/c/Python_app/DM-signal/`
+
+## 0.1 GA-455 source frontier review (2026-08-11)
+- 一次境界: `/mnt/c/Python_app/DM-Signal` `origin/main=b7067c99`。cache無効dashboard gateの未反映source commitは **40件**（last_updated=2026-08-11との差異）。内容確認後、以下の durable knowledge だけを本索引へ反映した。
+- L5 cache/data契約: `b7067c99` はcold contextで未初期化cacheを防ぎ、`7bb8b73a` はno-context monthly cache/buildersをPF一括共有、`b65ac45c`/`143f60ad`/`9a09a00a`/`3a0cb44f`/`bcb75220` はno-data `None`をL5 sentinelへ変換してstale rawを残さない。`7d169165` はcache状態を観測可能化、`fd43f7ae` はconfirmed FoF holding_signal cache、`37680998`/`4ea744fb` は狭い再計算で履歴を削らないcleanup guardを追加した。
+- L3/P4計測・再利用: `ed8f513d` はFoF間NAV frame cache共有、`2542509c`/`879b2d14` はimmutable snapshotへFoF leaf価格とcontract testを追加、`175e82d8`/`1088595e` はNAV materialization/allocationを最適化。`fb3c5cdd`/`ac017707`/`96aa5d61`/`bda7112b`、`5d931a66`、`72c0f288`/`6e501b63`、`771fba52`/`c76fdac3`/`dcb3b914` はP4/L3/L5の固定phase・subphase・wrapper timingを同一summaryへ帰属する。
+- 周辺契約: `09cfa765` はRender debug API露出を閉じ、`31b606c3` はFoF sync後だけL5 enqueue、`f76df2a7` はadmin L5 precomputeをPF単位へ限定、`20a26556` はfull recalculate timing summary schemaを保持、`79971b6c`/`bd9d0dbf` はL5 run lineageを機械結合可能にした。`5de2cbe2` は空FoF monthly calendarを再構築し、`198fc455`/`14d365a8`/`b431b1f9`/`de6b7774` はfallback/MTD/benchmark freshnessを維持する。
+- 監査順序（origin/main `git log` 新→旧）: `b7067c99,7bb8b73a,6908c5c8,b65ac45c,5bd7cd1e,198fc455,14d365a8,20a26556,5de2cbe2,1088595e,de6b7774,175e82d8,365e1c8f,c3001c87,09cfa765,b431b1f9,5d931a66,79971b6c,bd9d0dbf,6e501b63,72c0f288,143f60ad,771fba52,c76fdac3,dcb3b914,31b606c3,879b2d14,2542509c,7d169165,9a09a00a,3a0cb44f,f76df2a7,bcb75220,fd43f7ae,37680998,4ea744fb,fb3c5cdd,ac017707,96aa5d61,bda7112b,ed8f513d`。各commitの変更本文・変更pathをsource repoで照合済み。
 ## 0. 研究レイヤー構造
 | Layer | 名前 | 内容 | 状態 |
 |-------|------|------|------|

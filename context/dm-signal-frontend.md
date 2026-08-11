@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-10 cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection -->
+<!-- last_updated: 2026-08-11 GA-455 content reflection -->
+<!-- source_commit:21892719 reason:GA-455 content reflection evidence:source frontier review: 3 commits; UI behavior indexed in context §0.1 -->
 <!-- source_commit:21e80e30 reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source commits 21e80,9f09 reviewed and indexed -->
 <!-- source_commit:9b094cff reason:cmd_4278 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=9b094cff -->
 <!-- source_commit:2e494a5f reason:cmd_4277 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=2e494a5f -->
@@ -10,6 +11,11 @@
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
 > **速度改善設計書**: `docs/research/fe-speed-improvement-design.md` — 計測データ(cmd_2262)+FE/BEコード分析+改善ロードマップ(§1-§5)。ボトルネック: `/api/signals`が全ページ共通律速(500-700ms)。
+
+## 0.1 GA-455 source frontier review (2026-08-11)
+- 一次境界: `/mnt/c/Python_app/DM-Signal` `origin/main=21892719`。cache無効dashboard gateの未反映source commitは **3件**（last_updated=2026-08-10との差異）。source本文・変更pathを照合し、UI仕様として次を反映した。
+- `ec418726`（時系列最古）は Monthly Returns の `CONFIRMED` 行からStatusBadgeを除外し、未確定状態だけを表示する。`987c0237` は Monthly Trade のstale/mismatch拒否・fresh再取得・Signals refresh依存を除き、API応答を直接表示する。`21892719`（最新）はDashboardのobsolete holding/next-rebalance cardsと専用component/testを削除する。いずれも表示仕様の変更であり、旧カード・旧確認ラベルを現行UIの正本とみなさない。
+- 監査順序（sourceの時系列、旧→新）: `ec418726 -> 987c0237 -> 21892719`。参照path: `frontend/components/monthly-returns-table.tsx`, `frontend/app/monthly-trade/page.tsx`, `frontend/app/dashboard/page.tsx`, `frontend/components/dashboard-holding-slots.tsx`。
 
 パス: `/mnt/c/Python_app/DM-signal/frontend/`
 

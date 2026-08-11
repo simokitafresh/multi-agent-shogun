@@ -72,7 +72,28 @@ case "$project" in
 esac
 [[ -d "$repo/.git" ]] || { echo "BLOCK: source repo missing: $repo" >&2; exit 1; }
 git -C "$repo" cat-file -e "${commit}^{commit}" 2>/dev/null || { echo "BLOCK: commit does not exist in $project repo" >&2; exit 1; }
-git -C "$repo" merge-base --is-ancestor "$commit" HEAD || { echo "BLOCK: commit is not an ancestor of $project HEAD" >&2; exit 1; }
+# The freshness checker uses origin/main (or origin/master) for dashboard
+# freshness, while a shared worktree may have a divergent local HEAD.  Validate
+# the boundary against the same inspected tip; otherwise a reviewed remote
+# commit is rejected before it can close the alert (GA-455).
+source_tip="${CONTEXT_SOURCE_COMMIT_TIP:-}"
+if [[ -z "$source_tip" ]]; then
+  for candidate in origin/main origin/master; do
+    if git -C "$repo" rev-parse --verify "${candidate}^{commit}" >/dev/null 2>&1; then
+      source_tip="$candidate"
+      break
+    fi
+  done
+fi
+source_tip="${source_tip:-HEAD}"
+git -C "$repo" rev-parse --verify "${source_tip}^{commit}" >/dev/null 2>&1 || {
+  echo "BLOCK: freshness source tip does not exist: $project $source_tip" >&2
+  exit 1
+}
+git -C "$repo" merge-base --is-ancestor "$commit" "$source_tip" || {
+  echo "BLOCK: commit is not an ancestor of $project freshness tip $source_tip" >&2
+  exit 1
+}
 
 file="$ROOT/$context_path"
 [[ -f "$file" ]] || { echo 'BLOCK: context file missing' >&2; exit 1; }

@@ -46,6 +46,47 @@ SH
   [[ "$output" != *"ALERT:"* ]]
 }
 
+@test "source boundary setter accepts the dashboard freshness tip on divergent HEAD" {
+  # test_necessity: the source_commit setter must accept a reviewed origin/main
+  # boundary when the shared worktree HEAD is on a divergent local branch.
+  mkdir -p "$FIXTURE_ROOT/scripts/lib" "$FIXTURE_ROOT/scripts/config" "$FIXTURE_ROOT/config"
+  cp "$ROOT/scripts/context_source_commit_set.sh" "$FIXTURE_ROOT/scripts/context_source_commit_set.sh"
+  cp "$ROOT/scripts/lib/project_path.sh" "$FIXTURE_ROOT/scripts/lib/project_path.sh"
+  cp "$ROOT/scripts/lib/repo_root.sh" "$FIXTURE_ROOT/scripts/lib/repo_root.sh"
+  cp "$ROOT/scripts/config/context_source_commits.tsv" "$FIXTURE_ROOT/scripts/config/context_source_commits.tsv"
+  cat > "$FIXTURE_ROOT/config/projects.yaml" <<'YAML'
+projects:
+  - id: infra
+    type: platform
+    path: __FIXTURE_ROOT__
+    context_file: context/infrastructure.md
+    status: active
+YAML
+  sed -i "s#__FIXTURE_ROOT__#$FIXTURE_ROOT#g" "$FIXTURE_ROOT/config/projects.yaml"
+  git -C "$FIXTURE_ROOT" init -q
+  git -C "$FIXTURE_ROOT" config user.email fixture@example.invalid
+  git -C "$FIXTURE_ROOT" config user.name fixture
+  git -C "$FIXTURE_ROOT" add context/infrastructure.md scripts/check.sh scripts/context_source_commit_set.sh scripts/lib/project_path.sh scripts/config/context_source_commits.tsv config/projects.yaml
+  git -C "$FIXTURE_ROOT" commit -qm baseline
+  base_sha="$(git -C "$FIXTURE_ROOT" rev-parse HEAD)"
+  printf 'remote-reviewed\n' > "$FIXTURE_ROOT/source.txt"
+  git -C "$FIXTURE_ROOT" add source.txt
+  git -C "$FIXTURE_ROOT" commit -qm "reviewed remote source"
+  remote_sha="$(git -C "$FIXTURE_ROOT" rev-parse HEAD)"
+  git -C "$FIXTURE_ROOT" update-ref refs/remotes/origin/main "$remote_sha"
+  git -C "$FIXTURE_ROOT" checkout -q -b local-divergent "$base_sha"
+  printf 'local-only\n' > "$FIXTURE_ROOT/local.txt"
+  git -C "$FIXTURE_ROOT" add local.txt
+  git -C "$FIXTURE_ROOT" commit -qm "local divergent worktree"
+
+  run env CONTEXT_SOURCE_COMMIT_TIP=origin/main \
+    bash "$FIXTURE_ROOT/scripts/context_source_commit_set.sh" \
+    context/infrastructure.md "$remote_sha" "fixture review" "GA-455 fixture"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SOURCE_COMMIT_SET path=context/infrastructure.md"* ]]
+  grep -q "source_commit:${remote_sha}" "$FIXTURE_ROOT/context/infrastructure.md"
+}
+
 @test "a later context commit closes source candidates in its ancestry" {
   git -C "$FIXTURE_ROOT" init -q
   git -C "$FIXTURE_ROOT" config user.email fixture@example.com

@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-11 cmd_karo_hotfix_l3_deferred_flush_wall_202608110643 reviewed source boundary -->
+<!-- last_updated: 2026-08-11 GA-455 content reflection -->
+<!-- source_commit:b7067c99 reason:GA-455 content reflection evidence:source frontier review: 39 commits; operational invariants indexed in context §0.1 -->
 <!-- source_commit:309a8d6c reason:cmd_karo_hotfix_l3_deferred_flush_wall_202608110643 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=309a8d6c -->
 <!-- source_commit:4d81c32c reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source commits 4d81,c469,aaef,28b58 reviewed and indexed -->
 <!-- source_commit:bda69c42 reason:cmd_karo_hotfix_cmd4284_market_grid_202608100902 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=bda69c42 -->
@@ -19,6 +20,12 @@
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 コア定義(§0-5,8,10-11,13,15,18) → `context/dm-signal-core.md`
 研究・検証結果(§19-24) → `context/dm-signal-research.md`
+
+## §0.1 GA-455 source frontier review (2026-08-11)
+- 一次境界: `/mnt/c/Python_app/DM-Signal` `origin/main=b7067c99`。cache無効dashboard gateの未反映source commitは **39件**（last_updated=2026-08-11との差異）。coreと共有するsource変更は重複調査せず、運用上の反映点だけを本索引へ記録した。
+- 運用上の不変量: L5はno-data sentinelを15 endpoint/hash集合へ完結させ、no-context cache/buildersをPF batchで共有し、狭いportfolio再計算が既存monthly historyを削らないこと（`b7067c99,7bb8b73a,b65ac45c,143f60ad,9a09a00a,3a0cb44f,bcb75220,fd43f7ae,37680998,4ea744fb`）。cache state・run lineage・phase timingは後段判定の一次証跡として保存する（`7d169165,79971b6c,bd9d0dbf,20a26556,72c0f288,6e501b63,771fba52,c76fdac3,dcb3b914,fb3c5cdd,ac017707,96aa5d61,bda7112b,5d931a66`）。
+- 実行順序・安全境界: FoF sync後にL5をenqueueし（`31b606c3`）、NAV frame/leaf snapshotはFoF間で共有してもimmutable入力とtiming帰属を維持する（`ed8f513d,175e82d8,1088595e,2542509c,879b2d14`）。Render debug APIは本番露出させず（`09cfa765`）、admin L5 precomputeはPF単位、MTD/fallback/benchmark freshnessと空FoF calendarは各source契約に従う（`f76df2a7,b431b1f9,198fc455,14d365a8,de6b7774,5de2cbe2`）。
+- 監査順序（origin/main `git log` 新→旧、39件）: `b7067c99,7bb8b73a,6908c5c8,b65ac45c,5bd7cd1e,198fc455,14d365a8,20a26556,5de2cbe2,1088595e,de6b7774,175e82d8,365e1c8f,c3001c87,09cfa765,b431b1f9,5d931a66,79971b6c,bd9d0dbf,6e501b63,72c0f288,143f60ad,771fba52,c76fdac3,dcb3b914,31b606c3,879b2d14,2542509c,7d169165,9a09a00a,3a0cb44f,f76df2a7,bcb75220,fd43f7ae,37680998,4ea744fb,ac017707,96aa5d61,bda7112b,ed8f513d`。各commitの変更本文・変更pathをsource repoで照合済み。実装詳細は `context/dm-signal-core.md` §0.1を参照する。
 ## §6-7 recalculate_fast.py + OPT-E
 6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。最新本番: **357.28s/124PF**(2026-03-29 cmd_1478, OPT-12~15全反映)。
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
