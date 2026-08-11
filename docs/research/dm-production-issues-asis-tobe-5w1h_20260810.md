@@ -15,7 +15,7 @@
 | 偽Cash機構 | **3経路特定済み**: ①run273=cache混線(date_index別cache適用) ②run274復元失敗=汚染子depth1-2引継ぎ ③run275=**範囲契約不一致**(部分runの短snapshot 1,535行をL3全期間計算が完全cacheとして再利用→fail-openで500行Cash化。00:06家老二段掘りで確定) |
 | canary | run274/275とも**FAIL・停止中**(遮断弁機能)。再発進条件=T0根治Live後、同一5PFでCash差分0+valid_start正常+I1-I5適合 |
 | cache一本化 | §10.1タスクリストT0-T8が工程正本。T2-T6は家老が隔離WTで4commit分離実装済み(I1-I5適合検分が持込条件) |
-| full封印 | **殿裁定12:41維持**。解除材料=T7 canary PASS+B1/B2再現ゼロ |
+| full封印 | **解封裁可材料が完備(08-12 07:22)** — canary run294/295 PASS(depth3含む5PF・再実行change=0)/B1(terminal前publish 0→後1)/B2(再周回0)/B4(失敗伝播済)/純関数化(ledger有無で同値)/v4 golden CI-template exact 243,861行mismatch 0/I2-I4適合。残るT7本体=full一回そのもの(I1全量突合+I5全endpoint欠落0+速度実測)。**殿の解封裁可待ち** |
 | M4-M10(表示欠損) | M10=deploy済み本番API検証PASS(欠落7→0)・M9=実装done・M4/M5/M7=done deploy待ち・M6=B3修正済み+FoF再生成run待ち → §5台帳 |
 | SIGNAL CHANGE突合 | 累計2,576件を最終checkpoint台帳へ積載(殿裁定02:48維持) → §7 |
 | 依存マップ | cmd_4294完了(gist 4bb22f90+将軍まとめb6a70eb3)。cmd_4295(項目単位SSOT監査)走行中 → §10.1参考資料 |
