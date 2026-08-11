@@ -223,6 +223,8 @@ flowchart TD
 
 前提: 1タスク1cmd・1commitずつ・直列。途中は軽量(1行ログ)、厳密検証はT7最終checkpointのみ。L3の実行順序(トポロジカル直列)は不変更。
 
+**参考資料**: ①ページ→API→テーブル→生成層 依存マップ(cmd_4294・疾風): 一次成果物=`DM-signal/docs/research/cmd_4294_dm-signal-page-data-api-map.md`(gist 4bb22f90)、将軍まとめ=`docs/research/dm-signal-dependency-map-summary_20260811.md`(gist b6a70eb3。全表示系endpointがL5 snapshot+fallback再計算の二重経路=SSOT温床の発見、欠け3系cut point分類)。②表示項目単位SSOT監査マップ=cmd_4295走行中(項目×API×生成元ファイル+関数名+ファイル&フォルダー構造)。
+
 | # | タスク | 対象 | AC(二値) | Status |
 |---|--------|------|----------|--------|
 | T1 | run274復元失敗の帰属確定(deploy SHA突合+子PF汚染引継ぎ経路検証) | DB/render logs | 帰属が一次証跡で確定したか | 🔶走行中(家老) |
