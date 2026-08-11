@@ -603,7 +603,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'ff6a5c49e8f6a48dcaa21c645dc0463d8737b645b1b98ddee0117e71693e8826' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -613,6 +613,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: 一次情報でself_retro原文・semantic/memory照合・現行実装を確認。SG7境界後のself-retro副作用は非同期化済み、通知重複はper-cmd lockとdone markerで防止済み。review_bundle本体の短縮は別実装cmdで扱うため本insightの追加修正は不要。
+  action_artifact: "logs/self_retro.jsonl:event_id=ff6a5c49e8f6a48dcaa21c645dc0463d8737b645b1b98ddee0117e71693e882; scripts/review_bundle.py:L440-L455; scripts/lib/gunshi_notify.sh:L21-L30; docs/research/cmd_4123_self_retro_signal.md:L24-L40"
+  resolved_at: "2026-08-12T01:08:27+0900"
 - id: INS-20260811-215954520-1a54
   ts: "2026-08-11T21:59:54+09:00"
   insight: "[[fullracalculateせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=fullracalculateせよ"
@@ -965,6 +968,13 @@ insights:
 - id: INS-20260812-005602389-3bf6
   ts: "2026-08-12T00:56:02+09:00"
   insight: "semantic_index_update新概念候補: discussion:T2 canaryって何だ？説明して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260812-011040952-b669
+  ts: "2026-08-12T01:10:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:もう一回デプロイすると強制ストップできるよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
