@@ -1659,6 +1659,85 @@ assert len(task['acceptance_criteria']) == 5, task['acceptance_criteria']
 PY
 }
 
+# test_necessity: the canary contract is a persistent deployment invariant;
+# every verification/performance task must receive it while unrelated and
+# documentation-only tasks must receive zero injections.
+@test "5PF canary rotation contract injects only DM-Signal verification or performance tasks" {
+    tmpdir="$(mktemp -d)"
+    printf '%s\n' \
+        'task:' \
+        '  project: dm-signal' \
+        '  task_type: impl' \
+        '  target_path: backend/app/jobs/recalculate.py' \
+        '  purpose: 高速化の検証' \
+        '  description: canary fixture' > "$tmpdir/target.yaml"
+    printf '%s\n' \
+        'task:' \
+        '  project: infra' \
+        '  task_type: hotfix' \
+        '  target_path: scripts/deploy_task.sh' \
+        '  purpose: DM-Signalの検証fixtureを使うinfra修正' \
+        '  description: prose-only reference' > "$tmpdir/prose_only.yaml"
+    printf '%s\n' \
+        'task:' \
+        '  project: dm-signal' \
+        '  task_type: impl' \
+        '  target_path: frontend/app.tsx' \
+        '  purpose: UI表示文言を更新する' \
+        '  description: unrelated feature' > "$tmpdir/unrelated.yaml"
+    printf '%s\n' \
+        'task:' \
+        '  project: dm-signal' \
+        '  task_type: impl' \
+        '  target_path: docs/canary.md' \
+        '  purpose: 高速化の検証手順を文書化する' \
+        '  description: documentation-only' > "$tmpdir/docs.yaml"
+
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/deploy_task.sh"
+    SCRIPT_DIR="$PROJECT_ROOT"
+    inject_dm_signal_canary_rotation_contract "$tmpdir/target.yaml"
+    inject_dm_signal_canary_rotation_contract "$tmpdir/prose_only.yaml"
+    inject_dm_signal_canary_rotation_contract "$tmpdir/unrelated.yaml"
+    inject_dm_signal_canary_rotation_contract "$tmpdir/docs.yaml"
+
+    run python3 - "$tmpdir" <<'PY'
+import pathlib
+import sys
+import yaml
+
+root = pathlib.Path(sys.argv[1])
+docs = {
+    path.name: (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("task", {})
+    for path in root.glob("*.yaml")
+}
+positive = sum("dm_signal_canary_rotation_contract" in task for name, task in docs.items() if name == "target.yaml")
+negative = sum("dm_signal_canary_rotation_contract" in task for name, task in docs.items() if name != "target.yaml")
+print(f"fixture_injection: positive={positive}/1 negative={negative}/0")
+assert positive == 1, docs
+assert negative == 0, docs
+contract = docs["target.yaml"]["dm_signal_canary_rotation_contract"]
+assert contract["revision"] == {
+    "max_commits": 1,
+    "allowed_changes": ["cache reuse", "duplicate computation removal"],
+    "new_mechanism": False,
+}
+assert contract["deploy_live"] == "required"
+assert contract["canary"]["pf_count"] == 5
+assert contract["canary"]["query"] == "--get"
+assert contract["canary"]["binary_checks"] == {
+    "error_count": 0,
+    "new_cash_delta": 0,
+    "valid_start": "normal",
+}
+assert contract["canary"]["layer_timings"] == ["L2", "L3", "L5", "other", "TOTAL"]
+assert contract["feedback"]["numeric_one_line_report"] is True
+assert contract["full"] == {"checkpoint": "T7 final checkpoint only", "max_runs": 1}
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"positive=1/1 negative=0/0"* ]]
+}
+
 # ── cmd_karo_hotfix_deploy_task_atomic_publish_202607111645 回帰テスト ──
 # Origin: cmd_3847偵察で、旧direct_modeは$YAML_FILEを検証前に$task_yamlへ直接cpし
 # (fail-open)、repair失敗時は壊れた内容がtask_yamlに居座っていた。
