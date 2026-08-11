@@ -252,7 +252,8 @@ flowchart TD
 | T5 | date_index独立キャッシュ廃止 — sorted(payload.keys())から導出のみ | price_ratio_impl.py | date_index永続化コードの削除+全参照が導出経由か | ⬜ |
 | T6 | 複雑機構削除: snapshot validator(186行)/generation束縛/setdefaultマージの撤去(コード純減) | price_ratio_impl.py ほか | validator/generation関連コードが削除されテストFAIL0か | ⬜ |
 | T7 | 最終checkpoint: 5PF canary(nested depth3系譜1本必須)→baseline全量突合+速度実測(TOTAL/L5 per-PF)+FE全画面データ充足(I5) | 本番 | canary四値PASS+Cash差分0+valid_start正常+baseline不一致0+速度前後値記録+欠落endpoint 0か | ⬜ |
-| T8 | DB汚染復旧: bad 328キー(run273)+500行(run275)を子→親depth順・closure53PF小batchで復元(遮断弁=batch境界) | 本番DB | current_matches_old全数/bad=0+下流API正常化か | ⬜ |
+| T7.5 | **DRIFT遮断の検出のみ降格(殿裁定02:06)**: バグベースledgerでのインライン遮断は正しい再計算を拒否する(cmd_3827同型)ため、T7前に遮断→検出のみ(log+alert)へ降格。hot pathからledger照合分離の第一歩 | signal_decision_ledger関連 | 遮断呼出しが検出のみになりcanary/fullが誤遮断で止まらないか | ⬜(計測偵察msg_020340の結果で実装形を確定) |
+| T8 | **DB汚染復旧+ledger再構築(02:06拡張)**: ①bad 328キー(run273)+残存汚染を子→親depth順・closure53PF小batchで復元(遮断弁=batch境界) ②現ledger全件退避→修正済みコードのfull結果から確定月判定を再登録(cmd_3817/3827前例手順・バックアップファースト) ③再構築後、guardを別実行post-run監査(change_log突合+alert+old値自動復元)として復活 | 本番DB | current_matches_old全数/bad=0+下流API正常化+ledger再構築の照合一致+post-run監査の稼働確認か | ⬜ |
 
 順序契約: **T0が最優先**(canary再発進とT2-T6検証の前提)。T2→T3→T4は流れ順に直列(各1commit)。T5/T6はT4後(cacheが1個になった時点でvalidatorの存在理由が消える)。T7 PASSまでdeployはstaging的扱い(full封印維持)。T8はT7 PASS後(修正済みコードで復旧しないと再汚染)。T7 PASS+B1/B2再現ゼロ=full解封の材料として殿へ諮る。
 
