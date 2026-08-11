@@ -162,11 +162,12 @@
 
 | # | 状態 | 担当/task | 最終更新 |
 |---|---|---|---|
-| M4 Up/Down Cap | **着手(acknowledged)** | 影丸/cmd_karo_hotfix_display_missing_m4_m7_202608111342 | 2026-08-11 13:50 |
-| M5 Drawdown SPY% | **着手(acknowledged)** | 小太郎/cmd_karo_hotfix_m5_benchmark_drawdown_202608111348 | 2026-08-11 13:50 |
-| M6 FoF月次履歴 | **着手(acknowledged)** | 疾風/cmd_karo_hotfix_m6_fof_monthly_trade_202608111348 | 2026-08-11 13:50 |
-| M7 8月リターン非表示 | **着手(in_progress)** | 半蔵/cmd_karo_hotfix_m7_current_mtd_202608111348 | 2026-08-11 13:50 |
-| M8 8/10重複 | **着手(acknowledged)** | 飛猿/cmd_karo_hotfix_m8_mtd_duplicate_202608111348 | 2026-08-11 13:50 |
+| M4 Up/Down Cap | **実装done・家老レビュー/deploy待ち** | 影丸/cmd_karo_hotfix_display_missing_m4_m7_202608111342 | 2026-08-11 15:45 |
+| M5 Drawdown SPY% | **実装完了・deploy待ち**(status=failedはAC2がdeploy後検証のため。根因特定済み: SPY OPEN系列0/2欠落→cache key benchmark-open-v1で是正、commit 6dfa8265、tests 6/6 PASS) | 小太郎/cmd_karo_hotfix_m5_benchmark_drawdown_202608111348 | 2026-08-11 15:45 |
+| M6 FoF月次履歴 | **実装中(in_progress)** | 疾風/cmd_karo_hotfix_m6_fof_monthly_trade_202608111348 | 2026-08-11 15:45 |
+| M7 8月リターン非表示 | **実装done・家老レビュー/deploy待ち** | 半蔵/cmd_karo_hotfix_m7_current_mtd_202608111348 | 2026-08-11 15:45 |
+| M8 8/10重複 | **実装done・家老レビュー/deploy待ち** | 飛猿/cmd_karo_hotfix_m8_mtd_duplicate_202608111348 | 2026-08-11 15:45 |
+| (関連)full L5合流バグB1/B2 | **実装done・経路検証待ち**(才蔵/cmd_karo_hotfix_full_l5_join_await_202608111505。検証はdeferred合流経路の発火条件で実施=殿原則15:30) | 才蔵 | 2026-08-11 15:45 |
 
 - クローズ条件(各件共通): 原因特定→修正→deploy→**殿の画面で表示正常を確認**の4段完了。
 - 完了のたびに本表を将軍が更新しcommit+gist同期する。
