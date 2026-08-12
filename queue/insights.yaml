@@ -957,7 +957,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '48de2cf949741410fd31577b3e7bc64c80791a23d5c10f7060817ccdfaceca36' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -967,6 +967,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: existing review_notify telemetry and SG7-preserving design already absorb this known candidate; no additional code change is in scope
+  action_artifact: "scripts/review_bundle.py:453-463;docs/research/cmd_4123_self_retro_signal.md:17-40;docs/research/hot-script-speedup-round8-asis-tobe-5w1h_20260804.md:112"
+  resolved_at: "2026-08-12T15:06:00+09:00"
 - id: INS-20260812-144421609-4de9
   ts: "2026-08-12T14:44:21+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id boomodch0 task id tool use id toolu 01AHXs9cSF5AhMbWJN は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
