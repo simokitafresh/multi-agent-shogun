@@ -522,6 +522,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
+- v2.36 (2026-08-13 00:15): **L5単独run遅延の真因確定(将軍独立生log分析→家老レビュー同意→殿00:12同結論の三者一致)** — L5.monthly_tradeがPF時間の86.6-95.0%(27-31/102実測)。真因=単独入口(etl_trigger.py:848-852)がPrecomputeRawContextなしで、precompute_raw.py:1078-1127がshared_builders=NoneのままPF毎冷間再構築(全PF builder_cache_shared=0)。full経路(recalculate_fast.py:3605-3621)は配管済み。対策=単独入口で既存warm-context builder(context全体:59-77)を呼ぶ・新機構なし。実装AC罠3点: 共有対象=context全体/lock後同一logical_dateで一度構築・世代間非共有/partial時confirmed preload補完(:1081-1088)維持。実装便配備GO(msg_001531)。
 - v2.34 (2026-08-12 22:20): **P6本番Liveと段階canary一次結果を反映** — latest main統合`c9c21acd`+`dee70369`、Render deploy `dep-d9u6vi8ae00c73bml7j0` Live、focused 10/10 PASS。§0(1b)をrun311発進中から現在状態へ差替え、§9.0 As-Is HEAD/Mermaid/赤node行番号/commit chainをLiveコードへ更新。run312/313/314 ledger追加。run314はbody1/cold0/shared5/5/ERROR0/P4error0/failed0を満たすがpre-history WARNING 28でSTOP、10PF/full未発進。飛猿hotfixで全数分類中。
 - v2.33 (2026-08-12 20:01): §0(6b)へ修正方式の型を追記(家老blt_200024の定式化) — As-Is=Start/To-Be=Goal固定・差分のみ実装・実装後As-Is図更新→To-Beとの構造一致=完了。並行実装: 疾風=owner/token/takeover、才蔵=Missing holding silent-stale。
 - v2.32 (2026-08-12 20:00): **§0(6b)parity基準訂正(殿裁定19:58)** — バグを含む現本番値とのparityを完了基準にすることを禁止。修正対象=To-Be不変量+正しい計算oracle判定、変更非対象のみ前後不変(I1)。最終判定=実装後As-Is図とTo-Be図の構造一致。疾風・才蔵のACは家老が訂正済み(blt_195928)。
