@@ -1192,6 +1192,7 @@ declare -A ACTIVE_STALL_FIRST_SEEN  # activeペイン静止の初回観測時刻
 declare -A ACTIVE_STALL_PANE_FP     # activeペイン静止の表示fingerprint — key: "ninja:task_id"
 declare -A ACTIVE_STALL_NOTIFIED    # activeペイン静止の家老通知済み世代 — key: "ninja:task_id"
 declare -A ACK_STALL_WARNED  # acknowledged→in_progress遷移未達の将軍WARN送信済みフラグ — key: "ninja:task_id"
+declare -A ACK_STALL_IDLE_SEEN  # ACK-STALL idle観測1回目フラグ(2周期連続idleで警報。瞬間idle FP対策) — key: "ninja:task_id"
 declare -A STALE_CMD_NOTIFIED  # stale cmd通知済み世代 — key: "cmd_XXX", value: 状態fingerprint
 declare -A UNDEPLOYED_CMD_NOTIFIED  # pending+delegated_at超過cmdのntfy送信済みフラグ — key: "cmd_XXX", value: epoch秒
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
@@ -6508,6 +6509,7 @@ _check_ack_to_progress_stall() {
 
     if [ "$status" != "acknowledged" ]; then
         unset "ACK_STALL_WARNED[$warn_key]"
+        unset "ACK_STALL_IDLE_SEEN[$warn_key]"
         return 0
     fi
     [ -n "$acknowledged_at_val" ] || return 0
@@ -6526,10 +6528,19 @@ _check_ack_to_progress_stall() {
     if [ -n "$ack_target" ] && [ -n "$task_file" ] && ! check_idle "$ack_target" "$name"; then
         if yaml_field_set "$task_file" "task" "status" "in_progress" 2>/dev/null; then
             unset "ACK_STALL_WARNED[$warn_key]"
+            unset "ACK_STALL_IDLE_SEEN[$warn_key]"
             log "ACK-TO-PROGRESS-AUTOHEAL: $name task=$task_id pane=busy status acknowledged→in_progress (elapsed=${elapsed_min}min, FP suppressed)"
         else
             log "ACK-TO-PROGRESS-AUTOHEAL-FAIL: $name task=$task_id yaml_field_set failed; keeping acknowledged"
         fi
+        return 0
+    fi
+
+    # 瞬間idleサンプリングFP対策(2026-08-12 18:27 hanzo実証: ターン間の一瞬のprompt表示で警報):
+    # idle観測は2周期連続で初めて警報する。busy観測(上のautoheal)でカウンタは消える
+    if [ "${ACK_STALL_IDLE_SEEN[$warn_key]:-0}" != "1" ]; then
+        ACK_STALL_IDLE_SEEN["$warn_key"]=1
+        log "ACK-TO-PROGRESS-IDLE-FIRST: $name task=$task_id elapsed=${elapsed_min}min idle観測1回目、次周期も idle なら警報"
         return 0
     fi
 
