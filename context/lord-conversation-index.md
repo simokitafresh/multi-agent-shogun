@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-12 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-12T07:23:59+09:00 -->
+<!-- generated_at: 2026-08-12T09:22:03+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-08-12T09:22:02+09:00 | terminal | response | APPROVE完了。未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-12T09:21:08+09:00 | ntfy | outbound | 【家老】cmd_karo_recon2_ga457_context_freshness_20260812 初回配備開始 (title=(untitled), ninja=kagemaru)
+- 2026-08-12T09:19:10+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-457)
+- 2026-08-12T08:54:19+09:00 | ntfy | outbound | 【monitor】将軍CTX:58%。/compactをご検討ください
+- 2026-08-12T08:24:08+09:00 | ntfy | outbound | 【monitor】将軍CTX:58%。/compactをご検討ください
+- 2026-08-12T07:50:40+09:00 | ntfy | outbound | 【monitor】将軍CTX:58%。/compactをご検討ください
 - 2026-08-12T07:23:59+09:00 | terminal | response | 殿、inbox処理完了にござる — **収束が二値証明された**。 **run295(同一5PF・同一期間・同一SHAの再実行)**: watermark以降の**changes=0 / new_cash=0 / cash_removed…
 - 2026-08-12T07:20:51+09:00 | terminal | response | 殿、inbox処理完了にござる — **07:09の2,599件は帰属確定、正当変化である**。 **帰属(家老の突合・blt_071453)**: run294=42ade776(P0/P1純関数化)配備後の**初回5PF canary…
 - 2026-08-12T07:17:09+09:00 | ntfy | outbound | 【monitor】将軍CTX:57%。/compactをご検討ください
 - 2026-08-12T07:16:12+09:00 | terminal | response | 殿、ALERT処理完了にござる。 **07:09の2,599件/2PF(2012-10〜当月8/10)**: 家老pane一次確認では、既にwatermark以降の新規Cash・保存値不一致・DB status・TIMING SUMMAR…
-- 2026-08-12T07:11:50+09:00 | terminal | response | 殿、ALERT処理完了にござる。 **07:09の2,599件/2PF(2012-10〜当月8/10)**: 家老pane一次確認では、既にwatermark以降の新規Cash・保存値不一致・DB status・TIMING SUMMAR…
-- 2026-08-12T07:09:57+09:00 | terminal | inbound | 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=2599 portfolios=2 dates=2012-10-01〜2026-08-10
-- 2026-08-12T06:50:22+09:00 | terminal | response | 殿、inbox処理完了にござる — **ledger依存の最後の残骸が場所まで特定された**。 **家老の一次訂正(自己反証込み・blt_064002)**: 昨報の「環境差」仮説をledger coverageのSQL突合(両DB同一1…
-- 2026-08-12T06:45:30+09:00 | ntfy | outbound | 【monitor】将軍CTX:56%。/compactをご検討ください
-- 2026-08-12T06:40:44+09:00 | terminal | response | 殿、inbox処理完了にござる — **CI goldenが最後の本丸を炙り出した**。 **何が起きたか**: v3 goldenは本番DB由来では完全一致したが、**CI環境ではFAIL**(mismatch 105,454) — 生…
-- 2026-08-12T06:35:42+09:00 | terminal | response | 殿、inbox処理完了にござる — **golden差分の因果検証が完全決着した**。 **最終検証(家老・643秒のstreaming全量比較)**: clean c13a56feで全78FoF・243,861行をrecomputeし、…
 
 ## 未解決確認事項
 - 殿、inbox処理完了にござる — **07:09の2,599件は帰属確定、正当変化である**。 **帰属(家老の突合・blt_071453)**: run294=42ade776(P0/P1純関数化)配備後の**初回5PF canary**。変更は深いFoF 2体のみ — 7…
@@ -34,7 +34,6 @@
 - cmd_3827
 - cmd_4287
 - cmd_4291
-- cmd_4292
 - cmd_4294
 - cmd_4295
 
