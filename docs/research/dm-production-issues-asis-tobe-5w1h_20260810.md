@@ -7,7 +7,8 @@
 
 ## §0. 不変事項(最初に必ず読む5行。ここ以外の現在地記述は参照情報 — 矛盾したら本欄が正)
 
-1. **full=再封印(殿裁定2026-08-12 12:48)** — run301が意図5 seed→L3 65FoF/L5 68PFへ非意図展開し変更64,590件/50FoF(710秒・ERROR0)を生んだため、12:30の条件付き解封を撤回しfull発進禁止。**新解錠条件(4つ全て成立)**: ①N指定→N実行(scope暴発なし) ②同一少数PFの連続canary ERROR0 ③同一canary再実行でchange 0(収束) ④実行時間の安定。run296教訓(裁可範囲外full禁止)は引き続き有効
+1. **優先順位の正(殿下知2026-08-12 18:07)**: **高速化は本番バグ修正を高速回転するための手段。優先=fullで全量バグ露出→計算/API/UI/DBの完全正常化→正常化後のみ速度改善**。速度改善を先行させない。
+1b. **full=発進中(run311・run_id=202608120906075DA6E3・09:06 UTC開始・DB id311)** — 解錠経緯: 5PF canary(TOTAL 1m30s)+10PF canary(TOTAL 2m31s)の2連ERROR0/WARNING0/failed0で解錠(家老blt_180911)。走行中所見=fullでのみ初期履歴のNo holding_signal/No last_generated_signal WARNINGが複数PFに出現 — 完走後に正当pre-historyか実欠損かを判定。旧12:48再封印+解錠4条件の経緯=改訂履歴v2.15参照。run296教訓(裁可範囲外full禁止)は引き続き有効
 2. **正順序**: run296根因→T3.6(TradePerf FoF展開)→T4→T5→T6→full(T7)→T8
 3. **主戦の本質(殿15:06で判定原理を精緻化)**: 唯一のLazySignalArtifactCacheをL2→L3→L5→trade_perfまでidentity同一で一本受渡し。**判定原理=「上流で計算済みのものは再計算しない」** — 再計算1件=上流で既に得た同一論理値を下流consumerが再導出またはDBから再取得する1経路。残存cacheは名前で裁定せず、上流確定値の再計算物=逸脱として削除、上流に存在しない局所メモ化のみ個別証明で許容。第二cache新設は逸脱(e84f335a先例)。T4-T6の受入基準はこの原理で統一
 4. **不変契約I1-I5**は§10.1末尾。例外承認権は殿のみ
@@ -292,6 +293,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
+- v2.25 (2026-08-12 18:10): **§0(1)を優先順位の正へ差替え(殿下知18:07・家老blt_180911)** — 高速化=バグ修正高速回転の手段。優先=full全量バグ露出→完全正常化→正常化後のみ速度改善。full=run311発進中(5PF+10PF canary 2連ERROR0/WARNING0で解錠)。走行中所見=full限定のpre-history WARNING(No holding_signal/No last_generated_signal)は完走後判定。旧再封印条項はv2.15経緯として保存。
 - v2.24 (2026-08-12 17:16): **L5再実装a4fcbabb=配備見送りを記録(家老blt_171525)** — diff実態はコメント2行+型注釈のみでbehavior変更0件(実行時の値・分岐・call回数を変える独立差分なし)、速度改善不能と機械判定。run308実測はL5_precompute_raw 39.2s/monthly_trade 26.1s/TOTAL 92sで据置き。**T4系の現在地: §10-ToBeのartifact配線は8fcf99e1で既達、残=consumer重複(展開再導出58.7万回等)の解消**。次revision=支配call/queryを実測してbehavior差分を作ってから配備(出力=仕事の錯覚をdiff計測で構造排除)。
 - v2.23 (2026-08-12 15:09): **§0(3)へToBe判定原理を精緻化(殿下知15:06「上流で計算済みのものは再計算しない」・家老blt_150839)** — 残存cacheの裁定基準=上流確定値の再計算物なら削除/局所メモ化のみ個別証明で許容。T4-T6受入基準を本原理で統一。run307実測(TOTAL 93.76s: L5_raw 39.4/L3_fof 27.9/monthly_trade 27.2/trade_perf 12.0)により**次主戦=monthly_trade/trade_perf内の上流確定値再計算経路の全除去**。才蔵旧FAILはRC是正済み(全bc=yes/PASS/軍師LGTM)。flush再構築ゼロは維持(main全経路最終証明は残存callsite帰属完了後)。
 - v2.22 (2026-08-12 14:43): **run304成功=hole根治実証(家老blt_144238・才蔵便commit 97c11c91 Live)** — post-established hole(過去日に非NULL holdingが在るのに当日NULL)の全数検証: total 5780行中post_established_null=**0**。run304=completed・Phase4.5 1/1 failed0・L5 failed0 rows18・ERROR/P4error=0・TIMING SUMMARY=1・TOTAL 8.0s=§0(6)四点一致成立。§10-ToBe同一artifact維持。二偵察(疾風effective_start境界+半蔵再演:2470特定)→才蔵修正の三段で、run296以来の2007-01-26 Missing holding_signal根因が決着。**full未解錠**(新解錠条件②③④=連続ERROR0・再実行change0・時間安定の実証はこれから)。
