@@ -112,3 +112,38 @@ def validate_cross_repo_commit_ownership(
 def validate_cross_repo_commits(report: Mapping[str, Any]) -> list[str]:
     errors, _owned = validate_cross_repo_commit_ownership(report)
     return errors
+
+
+def auto_generate_cross_repo_entries(
+    repo: str | pathlib.Path,
+    commit_hashes: list[str],
+) -> list[dict[str, Any]]:
+    """Generate correct cross_repo_commits entries from actual commit data.
+
+    Each commit is queried via git diff-tree for its changed paths, and one
+    entry per commit is returned with the repo, hash, and changed paths.
+    Commits that cannot be resolved are silently skipped.
+    """
+    repo = pathlib.Path(repo).resolve()
+    entries: list[dict[str, Any]] = []
+    for commit in commit_hashes:
+        commit = commit.strip()
+        if not re.fullmatch(r"[0-9a-f]{40}", commit):
+            continue
+        try:
+            changed = [
+                p for p in subprocess.run(
+                    ["git", "-C", str(repo), "diff-tree", "--no-commit-id",
+                     "--name-only", "-r", "--root", commit],
+                    check=True, capture_output=True, text=True, timeout=5,
+                ).stdout.splitlines() if p.strip()
+            ]
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            continue
+        if changed:
+            entries.append({
+                "repo": str(repo),
+                "commit_hash": commit,
+                "paths": sorted(changed),
+            })
+    return entries

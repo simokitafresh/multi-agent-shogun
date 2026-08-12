@@ -290,6 +290,16 @@ def _resolve_report(root, report_ref, cmd_id, *, allow_archived=False):
     identity = (str(report), logical)
     registry = _review_registry(root, cmd_id)
     archived = (root / "queue/archive/reports").resolve()
+    # When called with an archive path (e.g. from review_approval.sh report_rel),
+    # report_arg.name carries the archive date suffix, so the logical path won't
+    # match. Fall back to registry lookup by realpath to recover the canonical
+    # logical identity.
+    if identity not in registry:
+        realpath_str = str(report)
+        for reg_real, reg_logical in registry:
+            if reg_real == realpath_str:
+                identity = (realpath_str, reg_logical)
+                break
     if (report.parent == archived and not allow_archived) or identity not in registry or not report.is_file():
         raise ValueError("report identity is not in the canonical report registry")
     return report_arg, report
