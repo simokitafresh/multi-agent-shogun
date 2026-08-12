@@ -397,7 +397,7 @@ case "$role:$result" in
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
     # Throughput fix: auto-trigger after gunshi LGTM too — if karo ACCEPT
     # arrived first, this second trigger completes the gate. Idempotent.
-    if [ -f "$ROOT/scripts/cmd_complete_gate.sh" ]; then
+    if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ] && [ -f "$ROOT/scripts/cmd_complete_gate.sh" ]; then
       (bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$ROOT/logs/gate_auto_trigger.log" 2>&1 || true) &
     fi
     ;;
@@ -408,7 +408,7 @@ case "$role:$result" in
     # Throughput fix: auto-trigger cmd_complete_gate in background after karo
     # ACCEPT so GATE CLEAR does not wait for karo's manual /cmd-complete.
     # The gate script is idempotent; if it BLOCKs, karo still runs it manually.
-    if [ -f "$ROOT/scripts/cmd_complete_gate.sh" ]; then
+    if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ] && [ -f "$ROOT/scripts/cmd_complete_gate.sh" ]; then
       (bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$ROOT/logs/gate_auto_trigger.log" 2>&1 || true) &
     fi
     ;;
