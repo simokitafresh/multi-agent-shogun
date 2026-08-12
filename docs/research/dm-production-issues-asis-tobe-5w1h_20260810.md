@@ -1,6 +1,8 @@
 <!-- gist-master: 2d1e7458976b45751cebbffd8c118fa3 dm-production-issues-asis-tobe-5w1h_20260810.md -->
 # DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v2.0
 
+> **⚠ 本書はv2系=凍結(2026-08-13 00:23)。以後の進捗正本は後継 `docs/research/dm-production-recovery-v3_20260813.md`(殿指示による最新状況フォーカス版)。本書は歴史・経緯・図の原本として参照のみ。**
+
 ## 追補 v2.35 — 2026-08-12 run316とL5単独復旧線（23:50 JST）
 
 > 既存の履歴を遡及変更せず、v2.34以後の本番一次結果を追記する。進捗の正は本追補と§10.1を突合すること。
