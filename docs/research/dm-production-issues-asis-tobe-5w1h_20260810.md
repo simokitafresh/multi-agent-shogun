@@ -1,6 +1,39 @@
 <!-- gist-master: 2d1e7458976b45751cebbffd8c118fa3 dm-production-issues-asis-tobe-5w1h_20260810.md -->
 # DM-Signal本番問題群 補填設計書 — AsIs/ToBe/5W1H v2.0
 
+## 追補 v2.35 — 2026-08-12 run316とL5単独復旧線（23:50 JST）
+
+> 既存の履歴を遡及変更せず、v2.34以後の本番一次結果を追記する。進捗の正は本追補と§10.1を突合すること。
+
+| 項目 | 一次結果 |
+|---|---|
+| full run | API run_id=`2026081214204929458E`、DB id=`316`、23:20:49–23:26:45 JST、最終status=`failed` |
+| L2 | `count=102`, `elapsed_sec=85.022891`。Standard 24/24、monthly returns 24/24、失敗0 |
+| L3 | `count=78`, `elapsed_sec=204.599013`。FoF 78/78、monthly returns 78/78、失敗0 |
+| L5 | `failed=102`, `rows=0`, `elapsed_sec=3.085548`。`015e74dc-26f3-47c5-98ea-414dc4fdf579`で`Missing holding_signal in expansion cache` |
+| 判定 | signals / monthly_returns / FoF構成の正本はL2/L3完了時点で復旧済み。未復旧はL5配信cacheのみ |
+| 修正 | DM-Signal `730f3632d1b297f2224498b5a7125688381dedd2`、Render deploy `dep-d9u8ah1srm7s73b5u6og`、23:39:48 JST Live |
+| focused test | ReturnCalculator 12/12 + MonthlyTrade 43/43 = 55/55 PASS、SKIP 0 |
+| 終端検証 | 問題PF L5単独canary→PASS後L5全件。未実行。L2/L3および`recalculate-sync`は再実行しない |
+
+```mermaid
+flowchart TD
+    A[run316] --> B[L2 PASS: 102]
+    B --> C[L3 PASS: 78]
+    C --> D[L5 monthly_trade]
+    D --> E[complete cache属性の伝播欠落]
+    E --> F[日次null payloadで例外]
+    F --> G[run status failed / L5 rows 0]
+    G --> H[730f3632 Live]
+    H --> I[問題PF L5 canary]
+    I -->|PASS| J[L5全102PF]
+    I -->|FAIL| K[L2/L3を触らずL5だけ再切り分け]
+```
+
+根因は、完全履歴を持つ`LazySignalArtifactCache`の`signal_cache_is_complete`が`MonthlyTradeCalculator`から`calculate_monthly_return()`へ伝わらず、比較日ループとposition startのnested FoF展開が既定の不完全cache扱いになったこと。`730f3632`はこの属性を両展開へ伝播する。
+
+既存の層別入口をそのまま使う。L2=`POST /admin/sync-standard`、L3=`POST /admin/sync-fof`（`enqueue_l5=false`可）、L5=`POST /admin/precompute-raw`（`portfolio_id` canary可）。今回の復旧はL5入口だけを使い、成功済みL2/L3を巻き戻さない。
+
 - 作成: 2026-08-10 14:16 JST(将軍直轄) / v2.0再構築: 2026-08-11 15:55(殿指示「覚醒して再構築せよ」)
 - 位置づけ: 月次リターン基本原理設計書v6.13の**補填**。v6本文は変更しない。本番問題群の修復レーンの正本
 - 再構築方針: **現在有効な工程・裁定・在庫を前面**に置き、完了済み経過は§8歴史へ圧縮(情報は削らず参照で残す=リンク先なき圧縮禁止)
