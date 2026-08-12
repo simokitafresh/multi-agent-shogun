@@ -309,7 +309,7 @@ YAML
 
   # 修正前: 同じfixtureはWARN率だけを返し、終端ギャップ件数を可視化しない。
   run bash -c \
-    'eval "$(git -C "$1" show HEAD:scripts/gates/gate_karo_startup.sh | sed -n "/^review_quality_scale_summary()/,/^if .*GATE_KARO_STARTUP_LIB_ONLY/p" | head -n -1)"; review_quality_scale_summary "$2" 20 "$3" "$4"' \
+    'eval "$(git -C "$1" cat-file blob 0dc09272c7c0dbda79feef617f5394c6fa78ff98 | sed -n "/^review_quality_scale_summary()/,/^if .*GATE_KARO_STARTUP_LIB_ONLY/p" | head -n -1)"; review_quality_scale_summary "$2" 20 "$3" "$4"' \
     _ "$ROOT" "$fixture/review.yaml" "$fixture/status.yaml" "$fixture/metrics.log"
   [ "$status" -eq 0 ]
   [[ "$output" != *" 4 "* ]]
