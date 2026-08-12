@@ -14075,7 +14075,7 @@ codd:
 | 種別 | パス/参照 |
 |------|----------|
 | file | `docs/research/month-end-n-day-momentum-sensitivity-asis-tobe-5w1h_20260731.md` §24 — L0-L3のtype分布(Standard 12 + FoF 63) |
-| file | `docs/research/partial-turnover-phase1-75pf-results-20260806.md` — Phase 1実験結果(75/75 parity) |
+| file | `docs/research/partial-turnover-experiment-asis-tobe-5w1h_20260805.md` §2.6 — Phase 1対象PF(75体・完了済み) |
 | file | `docs/research/partial-turnover-experiment-summary-20260806.md` — Phase 0+Phase 1結果総括。alpha=0(現行一括入替)が全層で最良、段階的リバランス導入は見送り |
 | causal | [[殿裁定_L0L3構成_20260806]] -> [[Phase1_DM2_DM6完了_cmd_4198]] -> [[Phase2_75体拡張v4.0]] |
 | cmd | `cmd_4198` N-day感度分析Phase 1(DM2/DM6), `cmd_partial_turnover_phase1` 75体partial turnover |
