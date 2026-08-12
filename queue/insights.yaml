@@ -266,8 +266,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 30
-  last_seen: "2026-08-13T00:26:58+09:00"
+  occurrence_count: 31
+  last_seen: "2026-08-13T00:41:44+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -920,7 +920,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '01f6bbc7c68f9ea6966b1f97169b3bbcb4ff25d943ce3848a96bb87b4e1769f0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -930,6 +930,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: 一次ログのverifyがpassedし、改善候補は既存research/context/semantic-mapへ反映済み。新規実修正・decision_candidateは不要
+  action_artifact: "self_retro=logs/self_retro.jsonl:2813;research=docs/research/hot-script-speedup-round8-asis-tobe-5w1h_20260804.md:112;context=docs/research/infrastructure-context-memory.md:83;semantic=context/semantic-map.md:91"
+  resolved_at: "2026-08-13T00:42:00+09:00"
 - id: INS-20260813-002240789-79cd
   ts: "2026-08-13T00:22:40+09:00"
   insight: "semantic_index_update新概念候補: discussion:dm production issues asis tobe 5w1h mdが複雑になりすぎた。最新状況にフォーカスしたver3 0をinbox1 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
