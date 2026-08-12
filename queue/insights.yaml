@@ -345,7 +345,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存対応を確認: queue/lord_conversation.jsonl:275-277 の殿指示と軍師完了報告、およびDM-Signal作業ツリーのscripts/check_ruff_ratchet.py・scripts/check_ruff_format_ratchet.py差分が一致。新規実装修正・decision_candidateは不要。"
+  action_artifact: "source=queue/lord_conversation.jsonl:275-277;implementation=/mnt/c/Python_app/DM-signal:scripts/check_ruff_ratchet.py,scripts/check_ruff_format_ratchet.py;measurement=43s->22s,14 launches->2"
+  resolved_at: "2026-08-12T21:48:47+09:00"
 - id: INS-20260812-135954033-5b39
   ts: "2026-08-12T13:59:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:いいな。全体のスループットを遅くしているボトルネックをを一つ見つけよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
