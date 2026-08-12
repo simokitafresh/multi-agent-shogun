@@ -6497,11 +6497,13 @@ _check_active_busy_stall() {
 }
 
 # AC2: task_assignedのinbox_write受信でacknowledged_atが刻まれた後、5分以内に
-# status: acknowledged → in_progress へ遷移しない構造バグ(殿指摘)を検知し将軍へWARN。
-# pane idle/busy状態には依存せず、acknowledged_atとEPOCHSECONDSの時刻比較のみで判定する。
+# status: acknowledged → in_progress へ遷移しない構造バグ(殿指摘)を検知する。
+# 2026-08-12殿裁定「偽陽性はバグ。根治しよう」: pane busy=作業開始済みの一次事実であり、
+# その場合はstatusを機械がin_progressへ自動整合(忍者の記入規律=意思依存を排除)して警報しない。
+# 警報はpane idle(真の未着手)のみ。当日6連続FP(全busy中のstatus欄遅延)=LS096粒度バグの根治。
 ACK_TO_PROGRESS_WARN_MIN=${ACK_TO_PROGRESS_WARN_MIN:-5}
 _check_ack_to_progress_stall() {
-    local name="$1" task_id="$2" status="$3" acknowledged_at_val="$4"
+    local name="$1" task_id="$2" status="$3" acknowledged_at_val="$4" task_file="$5"
     local warn_key="${name}:${task_id}"
 
     if [ "$status" != "acknowledged" ]; then
@@ -6518,6 +6520,18 @@ _check_ack_to_progress_stall() {
     now_epoch=$EPOCHSECONDS
     elapsed_min=$(( (now_epoch - ack_epoch) / 60 ))
     [ "$elapsed_min" -ge "$ACK_TO_PROGRESS_WARN_MIN" ] || return 0
+
+    # pane busy = 作業開始の一次事実 → statusを真実へ自動整合し警報しない
+    local ack_target="${PANE_TARGETS[$name]:-}"
+    if [ -n "$ack_target" ] && [ -n "$task_file" ] && ! check_idle "$ack_target" "$name"; then
+        if yaml_field_set "$task_file" "task" "status" "in_progress" 2>/dev/null; then
+            unset "ACK_STALL_WARNED[$warn_key]"
+            log "ACK-TO-PROGRESS-AUTOHEAL: $name task=$task_id pane=busy status acknowledged→in_progress (elapsed=${elapsed_min}min, FP suppressed)"
+        else
+            log "ACK-TO-PROGRESS-AUTOHEAL-FAIL: $name task=$task_id yaml_field_set failed; keeping acknowledged"
+        fi
+        return 0
+    fi
 
     if [ "${ACK_STALL_WARNED[$warn_key]:-}" = "1" ]; then
         log "ACK-TO-PROGRESS-STALL-DEDUPE: $name task=$task_id elapsed=${elapsed_min}min warned=1"
@@ -6668,7 +6682,7 @@ check_stall() {
 
     # AC2: inbox_write送信(acknowledged_at記録)→in_progress遷移の5分監視。
     # pane idle/busy判定より前に置き、busy state中の構造バグも見逃さない。
-    _check_ack_to_progress_stall "$name" "$task_id" "$status" "$acknowledged_at_val"
+    _check_ack_to_progress_stall "$name" "$task_id" "$status" "$acknowledged_at_val" "$task_file"
 
     # active状態はcheck_idle()がBUSYを返すため、idle-stall経路の前に
     # pane静止専用の検知を行う。status変化/idle遷移では観測世代を破棄する。
