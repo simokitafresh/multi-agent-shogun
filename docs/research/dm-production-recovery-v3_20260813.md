@@ -1,3 +1,4 @@
+<!-- gist-master: 42d6311b00c806ac9371d6f87df444ee dm-production-recovery-v3_20260813.md -->
 # DM-Signal本番復旧 v3.0 — 最新状況フォーカス版
 <!-- semantic-links: [[recalculate_pipeline]] [[production_parity]] -->
 
