@@ -291,6 +291,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
+- v2.18 (2026-08-12 13:27): **run302=FAIL(偽completed)を記録(家老blt_132620)** — 6.033秒でDB=(302,completed,error NULL)だが、Phase4.5でstandard PF e0826b59のcache holding_signal=None(date=2003-08-22)がValueError→recalculate_fast:2927-2952のcatchが失敗を吸収して継続=偽completed。B4根治(59db624d=interrupted正直記録)とは別経路の失敗吸収バグ。是正便=才蔵配備済み(既存iter_cacheable_signals再利用+Phase4.5 aggregate raiseで失敗を可視化)。新解錠条件②(連続ERROR0)は本FAILによりリセット。
 - v2.17 (2026-08-12 13:02): §0(6)へ殿裁定12:55の本質3点(旧値未信頼/LLM注意固定/速度低下)と機構削除GOを追記。T7.5行へsuperseded注記(検出・ALERT自体も撤去へ、§0(6)が正)。歴史は削除せず注記で残す(歴史修正禁止)。
 - v2.16 (2026-08-12 12:55): **§0(6)新設 — 旧値比較・SIGNAL CHANGE生成のhot path撤去(殿直接裁定12:52/12:53)**。バグベースbaselineとの比較は無意味が原理。将軍02:09整理『遮断のみ解除・ALERT維持』は誤変換と認め本裁定で上書き(家老blt_125437の三層検索突合: 現main=signal_flush.py ALERT refs2+collector refs6が撤去対象)。監査はT8の別実行レーンで再設計。
 - v2.15 (2026-08-12 12:50): **§0 full再封印(殿裁定12:48)** — run301の非意図展開(5 seed→L3 65FoF/L5 68PF・710s・ERROR0・変更64,590件/50FoF・current_eq_new全数・newCash0)を受け12:30条件付き解封を撤回。新解錠条件4つ=①N指定→N実行 ②同一少数PF連続ERROR0 ③再実行change0 ④時間安定。
