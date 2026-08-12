@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-09 cmd_karo_hotfix_speed_deploy_task_r1b_20260809 reviewed source boundary -->
+<!-- last_updated: 2026-08-12 cmd_karo_hotfix_ga457_context_update_autowire_20260812 reviewed source boundary -->
+<!-- source_commit:66c9455ae reason:cmd_karo_hotfix_ga457_context_update_autowire_20260812 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=66c9455ae -->
 <!-- source_commit:4848ca902 reason:cmd_karo_hotfix_speed_deploy_task_r1b_20260809 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=4848ca902 -->
 <!-- source_commit:ce4ba6d2b reason:reviewed_source_boundary evidence:cmd_karo_hotfix_insights_rotation_archive_gate_20260808 -->
 <!-- source_commit:b35dc70be reason:reviewed_source_boundary evidence:cmd_karo_hotfix_insights_concurrent_dirty_gate_20260808 -->
@@ -26,6 +27,7 @@
 <!-- last_synced_lesson: L1586 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
+source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
 参照: 見出し名を `rg` し、該当する詳細ファイルを読む。全見出し対応は `docs/research/infrastructure-section-manifest-20260801.yaml` が正本。
 
 ## コンテキスト・記憶・品質基盤
