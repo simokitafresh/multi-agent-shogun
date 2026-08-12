@@ -5,20 +5,21 @@
 - 位置づけ: 月次リターン基本原理設計書v6.13の**補填**。v6本文は変更しない。本番問題群の修復レーンの正本
 - 再構築方針: **現在有効な工程・裁定・在庫を前面**に置き、完了済み経過は§8歴史へ圧縮(情報は削らず参照で残す=リンク先なき圧縮禁止)
 
-## §1. 現在地(2026-08-12 00:10)
+## §1. 現在地(2026-08-12 10:45)
 
-**主戦線=cache一本化(§10.1 T0-T8)。本番普及に向けfullバグなし完走が第一目標(殿下知00:01)。fullは封印中(T7 PASSが解除材料)。**
+**full封印解除(殿裁可10:39)。T7最終checkpointとしてfull実行へ発進中(家老号令msg_104020)。偽Cash 3経路・B1/B2/B4・ledger依存はすべて根治済み。**
 
 | レーン | 状態 |
 |---|---|
-| 本番コード | revert版(dep-d9t9kp9s系)+hotfix便多数Live(KeyError群b3146fc9/f645d92b・snapshot integrity 306608a3=c83e350dでLive) |
-| 偽Cash機構 | **3経路特定済み**: ①run273=cache混線(date_index別cache適用) ②run274復元失敗=汚染子depth1-2引継ぎ ③run275=**範囲契約不一致**(部分runの短snapshot 1,535行をL3全期間計算が完全cacheとして再利用→fail-openで500行Cash化。00:06家老二段掘りで確定) |
-| canary | run274/275とも**FAIL・停止中**(遮断弁機能)。再発進条件=T0根治Live後、同一5PFでCash差分0+valid_start正常+I1-I5適合 |
-| cache一本化 | §10.1タスクリストT0-T8が工程正本。T2-T6は家老が隔離WTで4commit分離実装済み(I1-I5適合検分が持込条件) |
-| full封印 | **解除(殿裁可2026-08-12 10:39・knowledge:81a8d47e)** — T7最終checkpointとしてfull実行へ発進(家老号令msg_104020)。実行契約=Live SHA確認→Query形式全量→判定3点(I1全量突合102PF/I5全endpoint欠落0/TOTAL・層別・L5 per-PF実測)+status×層ログ突合。異常時=再deploy停止+change_log復元で可逆 |
-| M4-M10(表示欠損) | M10=deploy済み本番API検証PASS(欠落7→0)・M9=実装done・M4/M5/M7=done deploy待ち・M6=B3修正済み+FoF再生成run待ち → §5台帳 |
-| SIGNAL CHANGE突合 | 累計2,576件を最終checkpoint台帳へ積載(殿裁定02:48維持) → §7 |
-| 依存マップ | cmd_4294完了(gist 4bb22f90+将軍まとめb6a70eb3)。cmd_4295(項目単位SSOT監査)走行中 → §10.1参考資料 |
+| 本番コード | main 8f938184系Live(夜通しのhotfix便: T0範囲統一e3f4ebe9→T2 cache保持073006bd+8ad3561d→T3.5 O(N²)修正e84f335a→T3.6 trade_perf a0cb97a6→T7.5 ledger分離e487ee73→B4根治59db624d→P0/P1純関数化42ade776→ログ集約e79ffc9c) |
+| 偽Cash機構 | **3経路すべて根治済み**: ①run273 cache混線→T2/T3一本化 ②汚染子引継ぎ→T8復旧で解消予定 ③run275範囲契約不一致→T0範囲統一(run276で594行復元実証) |
+| canary回転 | **確立・収束済み**: run276/279/289/290/292/293/294すべてPASS。run295(同一5PF再実行)で**changes=0**=収束の二値証明。1周約3分の標準の型(§2 02:11裁定) |
+| 計算の純関数化 | **達成(42ade776)**: 計算経路のledger書換えゼロ(monthly_returns.py:699-705/:440-443除去)。repro=ledger有.075/無.1→両方.1。v4 goldenがCI-templateと243,861行exact一致(mismatch 0) |
+| full封印 | **解除(殿裁可2026-08-12 10:39・knowledge:81a8d47e)** — T7としてfull実行発進。実行契約=Live SHA確認→Query形式全量→判定3点(I1全量突合102PF/I5全endpoint欠落0/TOTAL・層別・L5 per-PF実測)+status×層ログ突合。異常時=再deploy停止+change_log復元で可逆 |
+| M4-M10(表示欠損) | M10=本番API検証PASS・M9/M4/M5/M7=実装done(過去欠損行の充填はT7 fullで一括)・M6=B3修正済み+充填待ち。read-side 4PF可視差はT8 ledger再構築で自然解消 → §5台帳 |
+| SIGNAL CHANGE突合 | 累計**11,104件**(大半は根治による正値復元と帰属確定済み)。全量突合は最終checkpoint一回(殿裁定02:48維持) → §7 |
+| golden oracle | v2(ledger置換世代)=archive、v3(誤生成)=archive、**v4=現行正**(純関数化コード+CI-template生成・exact一致)。GitHub CIは課金障壁で未実行(ローカルexactで代替済み) |
+| 依存マップ/SSOT監査 | cmd_4294完了(gist 4bb22f90+将軍まとめb6a70eb3)。cmd_4295=項目粒度不足で家老BLOCK差し戻し・再作成中 |
 
 ## §2. 現行有効の殿裁定(上書き済みのものは除外)
 
@@ -43,17 +44,22 @@
 | 08-12 01:27 | **L2を磨く** — L5はcache効果で既に高速化済み、支配項はL2側。L2磨き便をT3.5後・T4前に挿入(標的=trade_perf 29.2s→standard 27.45s→残余約25s。過去のL2単独最速値を回復目標に特定) | 現行(§10.1 T3.6) |
 | 08-12 01:53 | **ボトルネック追尾**: 速度改善はスループット(full TOTAL)を意識せよ。ボトルネックの位置がずれてもスループットは改善しない — 各便後に全層内訳を再計測し、次便標的を常に最大ボトルネック層へ向ける。成果指標は局所%減ではなくfull相当TOTALの変化 | 恒久(knowledge:08388850) |
 | 08-12 02:11 | **5PF canary回転=検証と高速化の標準の型**: 1commit修正(cache再利用・重複削除のみ)→deploy→同一5PF canary(--get固定・約3分・二値: ERROR 0/新規Cash差分0/valid_start正常/各層時間)→数値1行報告→全層再計測で次便を最大ボトルネックへ。1時間10数周。fullはT7最終checkpointの一回のみ | 恒久(家老へ型伝達済みmsg_021254) |
-| 08-12 02:02 | **ledgerガード別実行(殿提案・方向合意)**: 計算(高速再現)と保有シグナル固定(監査)は別問題 — hot pathのインラインDRIFT照合を外し、run完了直後のpost-run監査(change_log抽出→ledger突合→不当変更alert+old値自動復旧)へ分離。run276の594行復元がdetect-and-repairの実証。着手前にhot path実コスト計測(呼出回数・累積秒・層別)でL3=304sと比較し順位決定 | 現行(計測偵察走行中・knowledge:8dfa02cf) |
+| 08-12 02:02 | **ledgerガード別実行(殿提案)**: 計算(高速再現)と保有シグナル固定(監査)は別問題 — hot path照合を外しpost-run監査へ分離 | **実装完了**(T7.5+P0/P1で達成・knowledge:8dfa02cf) |
+| 08-12 02:06 | **現ledgerはバグベースで信頼性が低い** — 工程順序確定: 計算を正す→正しいfull結果からledger再構築(T8)→guardはpost-run監査として復活。過渡期のインライン遮断は検出のみへ降格 | 恒久(knowledge:0bdb8c04)。run286の押さえ込み4,494行復元が実証 |
+| 08-12 02:08 | **T7.5は今すぐ** — 計測ノイズ源の除去は速度改善レーンの最初のタスク(計測環境を先に清浄化してから磨く) | 実行済み(knowledge:2c6ca9b7) |
+| 08-12 10:39 | **full封印解除を裁可** — T7最終checkpointとしてfull一回を実行 | 現行・実行中(knowledge:81a8d47e) |
 
-## §3. 速度: 300秒切りへの現在値
+## §3. 速度: 300秒切りへの現在値(08-12 10:45更新)
 
-- **確実な実測床**: 552秒(run id=254・JST07:20・静穏条件・現revert版と同一tree)。300秒まで**あと約250秒**。
-- 833秒run(id=255)は不採用 — 家老帰属検分(12:22): browser 655リクエスト+cold precompute重複3本の併走環境であり同条件比較不能。全層同時悪化(+49/+143/+45/+35秒)=commit単独回帰と不整合。
-- **支配項=L3(FoF 78体・直列・前回実測304秒=55%)**。次点L2=102-151秒(固定)、L5=60秒目標(1/5/10PF実測でwarm時1PF 2.3-9.1秒級・増分逓減3.6秒/PF)。
-- 巻き戻したL3改良群(deferred flush 132s短縮等)は、B1/B2根治後に**1commitずつ再適用→10PF検証→次**で積み直す(§4の根治が前提)。
-- 1体基準値(08-10深夜実測): L2=10.7s / L3=8.92s(leaf FoF) / L5=1.4-5.65s。
+- **24PF相当TOTALの推移(今夜のcanary実測)**: 38.23s→34.39s(T3.6 trade_perf)→23.4s→**22.9s** — 一晩で約40%短縮。旧全量実測552秒(run254)に対する新full実測は**T7 full(実行中)で確定する**。
+- **層別現在値(24PF/5PF canary)**: Phase4.5=**2.69s**(退行前baseline 6.32sの57%減・O(N²)根治e84f335a) / L2=14.4s(24PF) / L3=30.4s(5PF) / L5=23.4s(5PF)。
+- **L2磨き(T3.6)**: 第一便trade_perf -27.7%済み。回復目標=**過去L2最速54.225s**(102PF full・run 20260803114758)。次便=standard計算27.45s。
+- **規範**: ボトルネック追尾(殿裁定01:53) — 各便後に全層内訳を再計測し、次便標的を最大ボトルネック層へ。成果指標はfull相当TOTALの変化。full時の支配項はL3(前回304s)の見込みで、T7実測で再判定。
+- 旧記録(552s床・833s不採用・1体基準値)は§8歴史参照。
 
-## §4. B1/B2: full固有のL5合流バグ(15:27ログ一次証明済み)
+## §4. B1/B2/B4: full固有バグ群(**全根治済み** — 08-12 07:22解封審査で二値確認)
+
+**根治確認(07:22)**: B1=terminal前publish 0→terminal後publish 1(正順化)。B2=all-scope+subset投入でもL5 body 1回・再周回0。B4=失敗経路fixtureで伝播実証。以下は原因記録。
 
 **殿原則(15:30)**: 1/5/10PFで起きずfullでだけ起きる — **差分に原因がある**。差分は特定済み: 部分run=L5をinline実行(バグの通り道なし)、full=最終L5だけがdeferred合流経路を通る。
 
@@ -126,6 +132,8 @@
 - **P2 γ5 cutover**: 影丸partition確定(562件全てγ4 replay範囲外)→半蔵が頭打ち原因確定(config_max=2026-07-02)→config延伸replay→**cutover・本番write停止維持のまま本レーンは中断中**(高速回転レーン優先の殿裁定)。再開時はbackup4点(manifest実パス/DB同一性/cutoff/restore rehearsal)必須。
 - **v6設計書の検討不足知見(K1-K7)**: 過渡期FE表示の契約欠落/alert期待集合の事前契約欠落/速度予算欠落/UI状態表示仕様欠落/表示粒度仕様欠落/検証がバグ経路を実行する保証の欠落/CI性能回帰検知欠落。共通構造=「計算の正しさ」は完備だが**運用面(時間・過渡状態・表示・alert対応)を設計対象から落とした**。次の設計書は「殿がその日どの画面を見て何を確認できるか」を第一級対象にする。還流先=軍師SGレビュー観点(起票は殿下知後)。
 - 軍師レビュー10件(v0.3)は全件反映済み。
+- **旧速度記録(08-12 §3更新で移設)**: 実測床552秒(run254・革命前基準)。833秒run(id=255)は併走負荷で不採用。1体基準値(08-10深夜): L2=10.7s/L3=8.92s/L5=1.4-5.65s。
+- **golden oracle世代交代の経緯(08-12早朝)**: v2(旧ledger置換世代の値を焼いた基準)がT7.5後の計算と105,433行不一致→field分布でSTOP発火(非holding差検出)→履歴二分でdisplay差=revert混入(復元済み)/signal差=正当変化と切分け→clean c13全量recompute=現DB完全一致でpost-c13回帰0を証明→v3生成もsource世代誤りでFAIL→**残存ledger override(monthly_returns.py:699-705)を発見・除去(P0/P1・42ade776)=計算の純関数化**→v4をCI-templateから生成しexact一致。v2/v3はarchive保持(歴史修正禁止)。教訓: goldenの環境差はledger依存の検出器として機能した。
 
 ## §9. P6. fullrecalculate計算順序フロー(現役参照図)
 
@@ -254,11 +262,12 @@ flowchart TD
 | T4 | L5: builderのDB再読込再計算を廃止し、signal/monthly/price cacheを引数供給(cmd_3543と同型の受け口復元) | precompute_raw.py / monthly_trade_impl.py | builder内monthly_trade.calculateのDB再読込0+1PF L5時間が改善したか | ⬜(T3.6後) |
 | T5 | date_index独立キャッシュ廃止 — sorted(payload.keys())から導出のみ | price_ratio_impl.py | date_index永続化コードの削除+全参照が導出経由か | ⬜ |
 | T6 | 複雑機構削除: snapshot validator(186行)/generation束縛/setdefaultマージの撤去(コード純減) | price_ratio_impl.py ほか | validator/generation関連コードが削除されテストFAIL0か | ⬜ |
-| T7 | 最終checkpoint: 5PF canary(nested depth3系譜1本必須)→baseline全量突合+速度実測(TOTAL/L5 per-PF)+FE全画面データ充足(I5) | 本番 | canary四値PASS+Cash差分0+valid_start正常+baseline不一致0+速度前後値記録+欠落endpoint 0か | ⬜ |
+| T4.5 | **P0/P1純関数化(golden環境差で発見・02:02原則の完遂)**: monthly_returns.py:699-705(computed weightsのledger上書き)+:440-443(ledger-only ticker混入)を除去 — 計算経路のledger書換えゼロ | monthly_returns.py | ledger有無で出力同値+canary PASSか | ✅**完了(42ade776・06:49)**: repro=.075/.1→両方.1。run293/294 PASS+run295でchange=0収束。v4 golden exact一致243,861行mismatch 0 |
+| T7 | 最終checkpoint: **full一回**(殿裁可10:39で発進)→I1全量突合(102PF vs baseline+正当変化の差分説明)+I5全endpoint欠落0(FE全画面充足)+TOTAL・層別・L5 per-PF実測+status×層ログ突合 | 本番 | 3判定すべてPASSか | 🔶**実行中(家老・msg_104020)** |
 | T7.5 | **DRIFT遮断の検出のみ降格(殿裁定02:06→02:08で即時実行へ前倒し)**: バグベースledgerでのインライン遮断は正しい再計算を拒否する(cmd_3827同型)。先に降格すれば以後の全速度計測から遮断分岐コスト+誤遮断ノイズが消えピュアになる。実装形=書込み許可+検出log(既存log形式不変=I3)+SIGNAL CHANGE ALERT事後検知は現行維持。最小・可逆 | signal_decision_ledger関連 | 遮断が検出のみになりcanary ERROR 0+changes想定内か | ✅**完了(03:57終報)**: e487ee73(ledger監査分類をflush pathから除去)+10f74f70(alert分類はsnapshot再利用)で**hot path再SELECT 1→0**。canary run289/290=ERROR 0/WARNING 0/completed。副産物=run286で旧ledger押さえ込み4,494行が正値へ復元(§7)。run285のSOURCE_SELECT衝突も根治 |
 | T8 | **DB汚染復旧+ledger再構築(02:06拡張)**: ①bad 328キー(run273)+残存汚染を子→親depth順・closure53PF小batchで復元(遮断弁=batch境界) ②現ledger全件退避→修正済みコードのfull結果から確定月判定を再登録(cmd_3817/3827前例手順・バックアップファースト) ③再構築後、guardを別実行post-run監査(change_log突合+alert+old値自動復元)として復活 | 本番DB | current_matches_old全数/bad=0+下流API正常化+ledger再構築の照合一致+post-run監査の稼働確認+**read-side mismatch 4PF→0の全数検証**(04:08確定: dashboard mismatch fof4/78のみ・signals.py current_holdings/monthly_tradeの旧ledger優先はT8再構築で自然解消・/api/signals個別変更はUI二重変更のため実装しない) | ⬜ |
 
-順序契約: **T0が最優先**(canary再発進とT2-T6検証の前提)。T2→T3→T4は流れ順に直列(各1commit)。T5/T6はT4後(cacheが1個になった時点でvalidatorの存在理由が消える)。T7 PASSまでdeployはstaging的扱い(full封印維持)。T8はT7 PASS後(修正済みコードで復旧しないと再汚染)。T7 PASS+B1/B2再現ゼロ=full解封の材料として殿へ諮る。
+順序契約(10:45更新): 完了=T0/T1/T2/T3/T3.5/T4.5/T7.5+B4。走行中=**T7 full(殿裁可10:39で解封済み)**+T3.6続便(standard計算)。残=T4(L5 builder cache供給)・T5(date_index導出化)・T6(validator削除)はT7結果を見て順に、T8(DB復旧+ledger再構築+read-side 4PF解消)はT7 PASS後。
 
 **不変契約I1-I4(殿下知23:21「前回はUI/UX不変と速度を忘れていた。前々回の大修整が今の事態を生んだ。最短一発クリア」— T2-T6全taskのACへ必須注入)**:
 - **I1 計算結果不変**: 変更前後で同一入力→同一出力(signals/monthly_returns/precomputed_raw全テーブル)。各taskのcommit前にローカル突合、T7で全量突合。
@@ -269,6 +278,7 @@ flowchart TD
 一発クリアの既知知見(失敗の再発防止): (a)cmd_4245=Phase0一括cleanupがガードより先に走る素通し→実行順を現物で確認してからAC化 (b)run273=cache橋渡しの暗黙共有→本改修の対象そのもの (c)validator誤発火=保護追加は不変契約違反として禁止・削除のみ (d)テストPASSはバグ経路実行の証拠必須(LS-A24(3)=候補複数行fixture)。
 
 ## 改訂履歴
+- v2.5 (2026-08-12 10:48): **覚醒更新(殿指示10:43)** — §1現在地を10:45へ全面更新(偽Cash 3経路根治済み・canary回転収束・純関数化達成・full解封発進・golden v4)。§2へ裁定4件追記/更新(02:02実装完了・02:06 ledgerバグベース・02:08 T7.5即時・10:39 full解封裁可)。§3速度を新実測へ全面書換(24PF 38.2→22.9s・Phase4.5 2.69s・L2目標54.225s、旧記録は§8へ)。§4をB1/B2/B4全根治済みへ。§8へgolden oracle世代交代の経緯を追記。§10.1へT4.5(P0/P1純関数化)✅追加・T7実行中・順序契約を現在地へ更新。
 - v2.4 (2026-08-12 00:13): **覚醒更新(殿指示00:09)** — §1現在地を00:10へ全面更新(偽Cash 3経路確定・canary FAIL停止・M台帳現況)。§2へ殿裁定7件追記(22:54シンプル原則/22:55 cache指針/22:57 rewrite-and-discard/23:19カスケード不採用/23:21-24不変契約/00:01 full第一目標)。§7の23:31行を範囲契約不一致へ根因更新。§10-AsIsへ齟齬(7)範囲契約不一致を追加。§10.1へT0(範囲統一snapshot+fail-open閉鎖)新設・T1完了化・T7基準拡充(Cash差分0+I5充足)・T8へrun275の500行追加。
 - v2.3 (2026-08-11 23:21-23:25): §10.1不変契約I1-I5追加+I5へ欠け在庫追記+§7台帳2件追記+参考資料リンク(v2.3/v2.3b/参考資料/台帳の各commit統合)。
 - v2.2 (2026-08-11 23:20): §10.1 cache一本化タスクリスト新設(殿裁定23:19「L3カスケードはやらない。cache一本化だけに集中」)。T1-T8・順序契約・Status列=進捗正本。
