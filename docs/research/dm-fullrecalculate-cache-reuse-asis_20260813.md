@@ -1,3 +1,4 @@
+<!-- gist-master: 1b875a44252ab4320408d385bba96ccf dm-fullrecalculate-cache-reuse-asis_20260813.md -->
 # DM-Signal fullrecalculate キャッシュ・計算済みデータ再利用 AsIs v1.0
 <!-- semantic-links: [[recalculate_pipeline]] [[fullrecalculate_L5_cold再生成]] [[code_rollback]] -->
 
