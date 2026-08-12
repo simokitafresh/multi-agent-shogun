@@ -154,7 +154,7 @@
 
 **状態の読み方**: 赤=`run311でバグ確定`、黄=`明示ERRORはないが正しさ未証明`、緑=`To-Beの合格境界`。障害が表面化した層はL5だが、根因は**fullの上流cache一本受渡し経路と、UI起因の別process queue経路がL5手前で分岐すること**にある。DB advisory lockは同時実行を止めるだけで、先行bodyの完了結果を後続workerへ共有しない。
 
-#### As-Is: full中のUIアクセスが別workerのcold L5を先取りし、full本体が全量二周目を実行
+#### Start snapshot (pre-implementation As-Is): full中のUIアクセスが別workerのcold L5を先取りし、full本体が全量二周目を実行
 
 ```mermaid
 flowchart TD
@@ -200,6 +200,79 @@ flowchart TD
     style L2U fill:#fff0b3
     style L3U fill:#fff0b3
 ```
+
+#### As-Is (P6 owner/token実装後の現コード、DM-Signal HEAD `4ba63e86`)
+
+現コードは、full開始時にL5 generation/owner tokenをL2/L3より前にdurable予約し、UI invalidationをfull所有中はdirty scopeへmergeする。非owner workerは同generationのdurable terminalを待ち、raw bodyを実行しない。lease喪失時はheartbeatが失敗を伝播し、旧owner tokenのterminal publishは拒否される。
+
+```mermaid
+flowchart TD
+    START["full開始"] --> RESERVE["L3前にdurable L5 generationを予約<br/>owner_token / lease / scope"]
+    RESERVE --> CACHE["full runのwarm cacheを構築<br/>L2→L3→L5へ受渡し"]
+    CACHE --> L2["L2"] --> L3["L3"] --> L5WAIT["L5 ownerがraw lock待ち"]
+
+    UI["full中のUI GET / invalidation"] --> RUNNING{"full generationがrunningか"}
+    RUNNING -->|"Yes"| MERGE["warm rawを削除せず<br/>dirty_scopeへunion記録"]
+    MERGE --> SCOPE["durable scope union<br/>None=ALL支配"]
+    SCOPE --> RESERVE
+    RUNNING -->|"No"| DELETE["対象rawを削除し<br/>after_commitでqueue登録"]
+    DELETE --> CLAIM["workerがdurable claim"]
+
+    L5WAIT --> COVERAGE{"lock取得後に<br/>body coverage/ownerを再確認"}
+    CLAIM --> COVERAGE
+    COVERAGE -->|"covered"| WAIT["既存body rowsを再利用<br/>追加body=0"]
+    COVERAGE -->|"uncovered + owner有効"| BODY["同generationの未処理scopeだけ<br/>L5 bodyを実行"]
+    BODY --> MARK["cumulative rows/scopeをdurable保存"]
+    MARK --> HEART["heartbeatがbody中leaseを更新"]
+    HEART --> TERMINAL["開始時owner tokenで<br/>completedをatomic publish"]
+    WAIT --> TERMINAL
+    COVERAGE -->|"lease喪失/世代不一致"| FAIL["L5LeaseLostError<br/>success terminal不可"]
+    HEART -->|"renew失敗"| FAIL
+    FAIL --> FAILED["同一token以外のterminalを拒否<br/>waiterはfailed/cancelledを受領"]
+
+    BODY --> MTD{"必須holding_signalがあるか"}
+    MTD -->|"No"| MTDFAIL["例外をL5 failureへ伝播<br/>WARNING後のrows成功扱いなし"]
+    MTDFAIL --> FAILED
+    MTD -->|"Yes"| MARK
+
+    style RESERVE fill:#d5f0d0
+    style MERGE fill:#d5f0d0
+    style SCOPE fill:#d5f0d0
+    style COVERAGE fill:#d5f0d0
+    style WAIT fill:#d5f0d0
+    style TERMINAL fill:#d5f0d0
+    style MTDFAIL fill:#d5f0d0
+    style DELETE fill:#fff0b3
+    style FAIL fill:#f9d0d0
+    style FAILED fill:#f9d0d0
+```
+
+**Start As-Isの赤ノード全件分類（実装後）**:
+
+| 旧赤node/branch | 実装後の現物判定 | 一次証拠 |
+|---|---|---|
+| `INVALIDATE`（full中のraw物理削除） | **解消（full owner中）**。`dirty_scope`へmergeしwarm rawを保持。full非実行時の通常invalidation削除は仕様として残存 | `backend/app/jobs/precompute_raw.py:758-801` |
+| `COLLAPSE`（scope消失→`None`全量enqueue） | **解消**。active generationのscopeをunionし、`None=ALL`を保持。新generationは新要求scopeから開始 | `backend/app/jobs/precompute_raw_queue.py:63-108` |
+| `COLD`（full cacheを持たない別workerの先取り） | **解消（full競合経路）**。full ownerをL3前に予約し、非ownerはwaitへ。単独workerのcold実行は別経路として残存 | `backend/app/jobs/recalculate_fast.py:1724-1733,3549-3566` |
+| `NO_SHARE`（process-local terminalのみ） | **解消**。`_persistent_wait`がDB durable terminalを受領し、非ownerの追加bodyを禁止 | `backend/app/jobs/precompute_raw_queue.py:226-307` |
+| `BODY2`（同一fullの全量二周目） | **解消**。lock取得後のcoverage再確認でcovered bodyを再利用し、未処理scopeだけを実行 | `backend/app/jobs/precompute_raw_queue.py:141-177,180-223` |
+| `SWALLOW`（`Missing holding_signal`をWARNING化） | **対象事象は解消**。当該例外は再raiseしてL5 failureへ伝播。ただし一般例外のwarning fallbackは残存 | `backend/app/jobs/precompute_raw.py:1122-1129` |
+| `STALE`（欠損時に既存rawを残しrows成功扱い） | **対象事象は解消**。`Missing holding_signal`ではbody成功・stale成功を許さない。一般例外のstale保持は残存 | `backend/app/jobs/precompute_raw.py:1122-1129` |
+| `FALSE_OK`（欠損をPF failureへ集計せず成功汚染） | **対象事象は解消**。L5 exceptionがdurable failedへ進み、waiterにもerrorを返す。一般例外fallbackの網羅性は未解消 | `backend/app/jobs/recalculate_fast.py:3590-3659,3679-3690` |
+
+**実装後As-IsとTo-Beのnode/edge/failure branch差分**:
+
+| 軸 | To-Be | 実装後As-Is | 差分/次の最小境界 |
+|---|---|---|---|
+| node | full ownerをL3前に予約 | `claim_l5_generation(None, owner_kind="full")`を実行 | 一致 |
+| edge | UI invalidation→dirty scope union→同generation | full running時は保持・merge、非実行時は削除→queue | **条件分岐として残存**。非実行時削除は別境界 |
+| edge | non-owner→durable terminal wait→追加body 0 | `wait_l5_generation`とcoverage再利用 | 一致 |
+| edge | `None=ALL`支配、covered scopeは再実行しない | `_scope_union`と`_persistent_body_coverage`で実装 | 一致 |
+| failure branch | heartbeat/lease喪失→成功terminal不可 | heartbeat失敗を`L5LeaseLostError`へ伝播 | 一致 |
+| failure branch | stale owner terminal=0 | `_persistent_terminal`がtoken不一致を拒否 | 一致 |
+| failure branch | 必須入力欠損→failed、stale success=0 | `Missing holding_signal`を再raiseしfailedへ | 一致（一般例外fallbackは非対象残存） |
+
+**commit chain / 実装境界**: `c1fc1fcc`（full owner予約・warm terminal）、`d5704ae2`（durable ownership/scope）、`0804cfeb`（lease/finalizer）、`63e29fb3`（terminal/coverage tests）、`2d9f96c0`（takeover二周防止）、`b4e39cd5`/`62924934`/`4ba63e86`（owner token・scope・cumulative rows）、`4b69fa06`（MTD failure伝播）。これらを含む現HEADは `4ba63e86ce7a58d18dbaafe3658b137fc6f2b5c4`。旧P6層確定カスケードはこの差分判定の対象外とする。
 
 | 層 | run311一次値 | 現在の判定 | 未完条件 |
 |---|---:|---|---|
