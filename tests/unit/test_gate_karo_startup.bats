@@ -272,3 +272,58 @@ YAML
   [[ "$output" == *'OK: failed_unclosed 0件'* ]]
   [[ "$output" != *'ALERT: alpha failed_unclosed'* ]]
 }
+
+# test_necessity: review品質WARNを実装修正失敗と終端検証ギャップへ分解し、
+# 同型4件を可視化しつつレビュー専用cmdと無関係な実装FAILを誤検知しない契約を固定する。
+@test "review quality summary exposes terminal verification gaps without false positives" {
+  fixture="$TMPDIR_CASE/review-quality"
+  mkdir -p "$fixture"
+  cat > "$fixture/review.yaml" <<'YAML'
+- cmd_id: cmd_impl_prod_rerun
+  review_type: report
+  verdict: FAIL
+  findings_summary: "production rerun未確認でFAIL"
+- cmd_id: cmd_impl_preflight
+  review_type: report
+  verdict: FAIL
+  findings_summary: "test_results: FAIL_PRECONDITION"
+- cmd_id: cmd_impl_tests
+  review_type: report
+  verdict: FAIL
+  findings_summary: "既存test未達、commit=no"
+- cmd_id: cmd_impl_parity
+  review_type: report
+  verdict: FAIL
+  findings_summary: "production parity検証未完了"
+- cmd_id: cmd_impl_logic
+  review_type: report
+  verdict: FAIL
+  findings_summary: "実装結果が期待値と不一致"
+- cmd_id: cmd_recon2_review_only
+  review_type: report
+  verdict: FAIL
+  findings_summary: "関連unit未達のreadonly偵察"
+YAML
+  : > "$fixture/status.yaml"
+  : > "$fixture/metrics.log"
+
+  # 修正前: 同じfixtureはWARN率だけを返し、終端ギャップ件数を可視化しない。
+  run bash -c \
+    'eval "$(git -C "$1" show HEAD:scripts/gates/gate_karo_startup.sh | sed -n "/^review_quality_scale_summary()/,/^if .*GATE_KARO_STARTUP_LIB_ONLY/p" | head -n -1)"; review_quality_scale_summary "$2" 20 "$3" "$4"' \
+    _ "$ROOT" "$fixture/review.yaml" "$fixture/status.yaml" "$fixture/metrics.log"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *" 4 "* ]]
+
+  run bash -c \
+    'GATE_KARO_STARTUP_LIB_ONLY=1 source "$1/scripts/gates/gate_karo_startup.sh" >/dev/null; review_quality_scale_summary "$2" 20 "$3" "$4"' \
+    _ "$ROOT" "$fixture/review.yaml" "$fixture/status.yaml" "$fixture/metrics.log"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *" 4 "* ]]
+  [[ "$output" == *"cmd_impl_preflight:FAIL"* ]]
+  [[ "$output" == *"cmd_impl_parity:FAIL"* ]]
+  [[ "$output" == *"cmd_impl_prod_rerun:FAIL"* ]]
+  [[ "$output" == *"cmd_impl_tests:FAIL"* ]]
+  [[ "$output" != *"cmd_impl_logic:FAIL"* ]]
+  gap_output="${output#* 4 }"
+  [[ "$gap_output" != *"cmd_recon2_review_only:FAIL"* ]]
+}

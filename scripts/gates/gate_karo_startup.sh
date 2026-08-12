@@ -787,12 +787,13 @@ function flush_entry() {
         v[n] = verdict
         cid[n] = current_cmd_id
         gr[n] = gate_result
+        fs[n] = findings_summary " " confidence_reason " " evidence
         if (review_type ~ /^(draft|report)$/) {
             old_n++
             old_v[old_n] = verdict
         }
     }
-    review_type = ""; verdict = ""; current_cmd_id = ""; gate_result = ""
+    review_type = ""; verdict = ""; current_cmd_id = ""; gate_result = ""; findings_summary = ""; confidence_reason = ""; evidence = ""
 }
 /^[[:space:]]*-[[:space:]]*cmd_id:/ {
     flush_entry()
@@ -807,6 +808,15 @@ function flush_entry() {
 }
 /^  gate_result:/ {
     s=$0; sub(/^  gate_result:[[:space:]]*/, "", s); gate_result=trim(s); next
+}
+/^  findings_summary:/ {
+    s=$0; sub(/^  findings_summary:[[:space:]]*/, "", s); findings_summary=trim(s); next
+}
+/^  confidence_reason:/ {
+    s=$0; sub(/^  confidence_reason:[[:space:]]*/, "", s); confidence_reason=trim(s); next
+}
+/未確認|未達|未完了|preflight[[:space:]]+FAIL|commit=no|FAIL_PRECONDITION|test未達/ {
+    evidence = evidence " " trim($0)
 }
 END {
     flush_entry()
@@ -828,6 +838,7 @@ END {
     }
     new_total = 0; new_warn = 0
     review_only_total = 0; review_only_warn = 0; review_only_cmds = ""
+    terminal_gap_warn = 0; terminal_gap_cmds = ""
     for (key in last_idx) {
         i = last_idx[key]
         ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
@@ -857,6 +868,16 @@ END {
         }
         new_total++
         if (!ok) new_warn++
+        # A FAIL after implementation work is often caused by the terminal
+        # evidence boundary being left incomplete (production rerun/test
+        # evidence/preflight/commit proof), not by the code change itself.
+        # Keep it in the WARN denominator; expose the count separately so
+        # Karo can block or repair the next deployment without rewriting the
+        # historical FAIL or weakening the quality threshold.
+        if (!ok && tolower(fs[i]) ~ /(未確認|未達|未完了|preflight[[:space:]]+fail|commit=no|fail_precondition|test未達)/) {
+            terminal_gap_warn++
+            terminal_gap_cmds = terminal_gap_cmds ((terminal_gap_cmds == "") ? "" : ",") cid[i] ":" v[i]
+        }
     }
     if (new_total == 0) {
         print "DATA_MISSING"
@@ -865,7 +886,7 @@ END {
     new_rate = int(new_warn * 100 / new_total)
     old_rate = (old_total > 0) ? int(old_warn * 100 / old_total) : 0
     if (review_only_cmds == "") review_only_cmds = "-"
-    printf "RATE %d %d %d %d %d %d %s\n", new_rate, new_warn, new_total, old_rate, review_only_warn, review_only_total, review_only_cmds
+    printf "RATE %d %d %d %d %d %d %s %d %s\n", new_rate, new_warn, new_total, old_rate, review_only_warn, review_only_total, review_only_cmds, terminal_gap_warn, (terminal_gap_cmds == "" ? "-" : terminal_gap_cmds)
 }
 ' "$status_file" "$gate_metrics_file" "$review_log"
 }
@@ -2068,13 +2089,19 @@ fi
 echo "■ レビュー品質スケール"
 _review_quality_line="$(review_quality_scale_summary "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 20 "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo "DATA_MISSING")"
 if [[ "$_review_quality_line" == RATE* ]]; then
-    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate _rq_review_warn _rq_review_total _rq_review_cmds <<< "$_review_quality_line"
+    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate _rq_review_warn _rq_review_total _rq_review_cmds _rq_terminal_gap_warn _rq_terminal_gap_cmds <<< "$_review_quality_line"
     if [ -n "${_rq_old_rate:-}" ] && [ "${_rq_old_rate}" != "${_rq_rate}" ] 2>/dev/null; then
         echo "  実装品質WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 実装cmdのみ・cmd_id単位最終verdict集計, 旧方式=${_rq_old_rate}%)"
     else
         echo "  実装品質WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 実装cmdのみ・cmd_id単位最終verdict集計)"
     fi
     echo "  レビュー専用cmd分離 ${_rq_review_total:-0}件 (WARN ${_rq_review_warn:-0}件): ${_rq_review_cmds:--}"
+    if [ "${_rq_terminal_gap_warn:-0}" -gt 0 ] 2>/dev/null; then
+        echo "  終端検証ギャップ ${_rq_terminal_gap_warn}件: ${_rq_terminal_gap_cmds:--}"
+        alerts+=("レビュー終端検証ギャップ: ${_rq_terminal_gap_warn}件")
+    else
+        echo "  OK: 終端検証ギャップ 0件"
+    fi
     if [ "${_rq_rate:-0}" -gt 30 ] 2>/dev/null; then
         echo "  WARN: レビュー品質WARN率が30%超"
         if [ "$overall" != "ALERT" ]; then
