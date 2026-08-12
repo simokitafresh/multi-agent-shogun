@@ -12,7 +12,7 @@
 3. **主戦の本質**: 唯一のLazySignalArtifactCacheをL2→L3→L5→trade_perfまでidentity同一で一本受渡し。第二cache新設は逸脱(e84f335a先例)
 4. **不変契約I1-I5**は§10.1末尾。例外承認権は殿のみ
 5. **進捗の正**=§10.1 Status表のみ。他所の進捗記述を根拠にするな
-6. **旧値比較・SIGNAL CHANGE生成の撤去(殿直接裁定2026-08-12 12:52/12:53)** — 現ledger/旧signalsはバグベースで確からしさ未担保、比較自体が無意味。旧値比較・signal_change_log生成・run-level ALERT/ntfyを**再計算hot pathから外す**。02:09の将軍整理(遮断のみ解除しALERT維持)は誤変換であり本裁定が上書きする。監査は正しいbaseline確立後の別実行レーンで再設計(T8)
+6. **旧値比較・SIGNAL CHANGE生成の撤去(殿直接裁定2026-08-12 12:52/12:53→12:55実装GO)** — 本質3点: ①旧値(ledger/旧signals)が未信頼で比較自体が無意味 ②発報がLLMの注意を固定し主戦から逸脱させる ③hot path比較が速度低下。旧値比較・signal_change_log生成・collector・ALERT・ntfyの機構削除を忍者へGO済み(家老blt_130111・commit 9cc27779系)。**旧『ALERT維持』(02:09将軍整理・T7.5)はsuperseded** — 歴史注記としてのみ残す。監査は正しいbaseline確立後の別実行レーンで再設計(T8)
 - 更新: 2026-08-12 12:05 JST(v2.10)
 
 ## §1. 現在地(2026-08-12 10:45時点の記録 — 進捗の正は§0/§10.1)
@@ -275,7 +275,7 @@ flowchart TD
 | (T2続便) | single-chunk PostgreSQL signal flush復元 | recalculate_fast.py | flush 1論理=1物理chunkか | ✅113b42c1 Live(11:02 commit棚卸しで設計書へ反映) |
 | T4.5 | **P0/P1純関数化(golden環境差で発見・02:02原則の完遂)**: monthly_returns.py:699-705(computed weightsのledger上書き)+:440-443(ledger-only ticker混入)を除去 — 計算経路のledger書換えゼロ | monthly_returns.py | ledger有無で出力同値+canary PASSか | ✅**完了(42ade776・06:49)**: repro=.075/.1→両方.1。run293/294 PASS+run295でchange=0収束。v4 golden exact一致243,861行mismatch 0 |
 | T7 | 最終checkpoint: **full一回**(殿裁可10:39で発進)→I1全量突合(102PF vs baseline+正当変化の差分説明)+I5全endpoint欠落0(FE全画面充足)+TOTAL・層別・L5 per-PF実測+status×層ログ突合 | 本番 | 3判定すべてPASSか | 🔴**run296 STOP(10:56便)**: Phase4.5 22/24成功・2PF失敗(45eb/e082=2007-01-26 Missing holding_signal・P4_TIMING_ERROR 2件)。家老が同一SHA redeployで即停止、DB無変更確認(change_log差分0・restore不要)。B4根治によりstatus=interruptedが正直に記録。次=2PFの2007-01-26欠落根因の特定→修正→canary→full再発進 |
-| T7.5 | **DRIFT遮断の検出のみ降格(殿裁定02:06→02:08で即時実行へ前倒し)**: バグベースledgerでのインライン遮断は正しい再計算を拒否する(cmd_3827同型)。先に降格すれば以後の全速度計測から遮断分岐コスト+誤遮断ノイズが消えピュアになる。実装形=書込み許可+検出log(既存log形式不変=I3)+SIGNAL CHANGE ALERT事後検知は現行維持。最小・可逆 | signal_decision_ledger関連 | 遮断が検出のみになりcanary ERROR 0+changes想定内か | ✅**完了(03:57終報)**: e487ee73(ledger監査分類をflush pathから除去)+10f74f70(alert分類はsnapshot再利用)で**hot path再SELECT 1→0**。canary run289/290=ERROR 0/WARNING 0/completed。副産物=run286で旧ledger押さえ込み4,494行が正値へ復元(§7)。run285のSOURCE_SELECT衝突も根治 |
+| T7.5 | **(superseded 12:52/12:55: 検出・ALERT自体もhot pathから撤去へ — §0(6)が正。以下は当時の記録)** DRIFT遮断の検出のみ降格(殿裁定02:06→02:08で即時実行へ前倒し): バグベースledgerでのインライン遮断は正しい再計算を拒否する(cmd_3827同型)。先に降格すれば以後の全速度計測から遮断分岐コスト+誤遮断ノイズが消えピュアになる。実装形=書込み許可+検出log(既存log形式不変=I3)+SIGNAL CHANGE ALERT事後検知は現行維持。最小・可逆 | signal_decision_ledger関連 | 遮断が検出のみになりcanary ERROR 0+changes想定内か | ✅**完了(03:57終報)**: e487ee73(ledger監査分類をflush pathから除去)+10f74f70(alert分類はsnapshot再利用)で**hot path再SELECT 1→0**。canary run289/290=ERROR 0/WARNING 0/completed。副産物=run286で旧ledger押さえ込み4,494行が正値へ復元(§7)。run285のSOURCE_SELECT衝突も根治 |
 | T8 | **DB汚染復旧+ledger再構築(02:06拡張)**: ①bad 328キー(run273)+残存汚染を子→親depth順・closure53PF小batchで復元(遮断弁=batch境界) ②現ledger全件退避→修正済みコードのfull結果から確定月判定を再登録(cmd_3817/3827前例手順・バックアップファースト) ③再構築後、guardを別実行post-run監査(change_log突合+alert+old値自動復元)として復活 | 本番DB | current_matches_old全数/bad=0+下流API正常化+ledger再構築の照合一致+post-run監査の稼働確認+**read-side mismatch 4PF→0の全数検証**(04:08確定: dashboard mismatch fof4/78のみ・signals.py current_holdings/monthly_tradeの旧ledger優先はT8再構築で自然解消・/api/signals個別変更はUI二重変更のため実装しない) | ⬜ |
 
 順序契約(**11:08殿裁定で復帰**): run296は順序違反(T4-T6未完のままfull実行)だった — 将軍の裁可申請不備(未完タスク非明示=洗脳#8)であり教訓登録済み。**正順序へ復帰: run296失敗2PF根因特定(継続)→T3.6完遂(standard便)→T4本体(L5 builder cache供給)→T5(date_index導出化)→T6(validator/generation削除)→full再発進(T7)→T8**。fullはT6完了までやらない。完了済=T0/T1/T2(+続便113b42c1)/T3/T3.5/T4.5/T7.5+B4。裁可申請の恒久ルール: 未完タスク一覧+飛ばすリスク評価を必須セクションとする。
@@ -291,6 +291,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
+- v2.17 (2026-08-12 13:02): §0(6)へ殿裁定12:55の本質3点(旧値未信頼/LLM注意固定/速度低下)と機構削除GOを追記。T7.5行へsuperseded注記(検出・ALERT自体も撤去へ、§0(6)が正)。歴史は削除せず注記で残す(歴史修正禁止)。
 - v2.16 (2026-08-12 12:55): **§0(6)新設 — 旧値比較・SIGNAL CHANGE生成のhot path撤去(殿直接裁定12:52/12:53)**。バグベースbaselineとの比較は無意味が原理。将軍02:09整理『遮断のみ解除・ALERT維持』は誤変換と認め本裁定で上書き(家老blt_125437の三層検索突合: 現main=signal_flush.py ALERT refs2+collector refs6が撤去対象)。監査はT8の別実行レーンで再設計。
 - v2.15 (2026-08-12 12:50): **§0 full再封印(殿裁定12:48)** — run301の非意図展開(5 seed→L3 65FoF/L5 68PF・710s・ERROR0・変更64,590件/50FoF・current_eq_new全数・newCash0)を受け12:30条件付き解封を撤回。新解錠条件4つ=①N指定→N実行 ②同一少数PF連続ERROR0 ③再実行change0 ④時間安定。
 - v2.14 (2026-08-12 12:37): §0を「full=条件付き解封」へ更新 — 殿→家老直接下知12:30頃の原文(家老blt_123607提示)を時刻付き記録。解錠条件=run301 completed+ERROR0確認後のみ。将軍のfull保留指示(msg_123517)は原文提示により解除、条件成立時は家老が発進する。
