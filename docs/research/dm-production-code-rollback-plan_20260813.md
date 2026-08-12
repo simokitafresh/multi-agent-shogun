@@ -1,3 +1,4 @@
+<!-- gist-master: 0c98ab3686bcaff3aa1ddd36e1a53570 dm-production-code-rollback-plan_20260813.md -->
 # DM-Signal本番コードロールバック設計 v1.0
 <!-- semantic-links: [[recalculate_pipeline]] [[production_parity]] [[code_rollback]] -->
 
