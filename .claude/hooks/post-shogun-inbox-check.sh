@@ -181,6 +181,11 @@ if [ "${UNREAD:-0}" -gt 0 ]; then
                     EFFECT_REMIND="${EFFECT_REMIND:+${EFFECT_REMIND}\\n}⚠効果再確認: ${_gc_cmd}は数値改善目的(${_kws:-metrics})。計測スクリプト再実行で修正前→後の差分を確認せよ。例: bash scripts/gates/gate_shogun_startup.sh"
                 fi
             done
+            # LS-A09(41): 相互検証強制(殿指摘2026-08-12 11:57) — gate_clear検分は速度/機能ACだけでなく
+            # 目的AC(工程ToBeとdiffの整合)と報告数値1点の自己再実行を要求する
+            if [ -n "$_gc_cmds" ]; then
+                EFFECT_REMIND="${EFFECT_REMIND:+${EFFECT_REMIND}\\n}★相互検証(LS-A09(41)): GATE CLEAR検分前に(1)このcommitは工程の目的(ToBe)へ近づくか離れるかをdiff現物で判定 (2)報告の核心数値を最低1点、自分のコマンドで再実行して突合せよ。速度/機能AC PASSは目的整合の証明ではない"
+            fi
             printf '%s\n' "$EFFECT_REMIND" > "$_EFFECT_CACHE" 2>/dev/null
             printf '%s\n' "$_EFFECT_KEY" > "$_EFFECT_META" 2>/dev/null
         fi
