@@ -485,7 +485,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "三層一次確認済み: 発端の殿発言は既存の高速回転・学習ループ・三層記憶の原則へ収載済みで、新規実装修正およびdecision_candidateは不要"
+  action_artifact: "source=queue/lord_conversation.jsonl:324;semantic_index=docs/semantic-index/index.md:789,1521,1780,4170;context=context/growth-loop.md:24;memory_db=insight:INS-20260812-134000101-b8f1"
+  resolved_at: "2026-08-12T19:51:38+09:00"
 - id: INS-20260812-135105929-1771
   ts: "2026-08-12T13:51:05+09:00"
   insight: "lord_conversation教訓候補: target=gunshi trigger=inbound_lord detail=precommitの速度が遅い。これは作業のボトルネックになる。家老はメイン作業に集中。軍師独自で改善せよ"
