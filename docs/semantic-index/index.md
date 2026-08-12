@@ -11013,6 +11013,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608130402_hayate` — [[semantic_causal_automation]] -> `docs/research/dm-production-code-rollback-plan_20260813.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
+| causal | `cmd_reflux_backlink_202608130518_kagemaru_exact` — [[semantic_causal_automation]] -> `docs/research/ninja-model-drift-asis-tobe-5w1h_20260721.md` |
 ## provisional_gist_index_update — 仮: Gist Index Update
 
 | 属性 | 値 |
