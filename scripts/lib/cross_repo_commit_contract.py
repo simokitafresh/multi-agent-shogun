@@ -9,6 +9,9 @@ from collections.abc import Mapping
 from typing import Any
 
 
+_git_repo_cache: dict[str, bool] = {}
+
+
 def _git(repo: pathlib.Path, *args: str) -> bool:
     return (
         subprocess.run(
@@ -19,6 +22,14 @@ def _git(repo: pathlib.Path, *args: str) -> bool:
         ).returncode
         == 0
     )
+
+
+def _is_git_repo(repo: pathlib.Path) -> bool:
+    """Cache git repo existence check to avoid repeated subprocess on WSL2 /mnt/c."""
+    key = str(repo)
+    if key not in _git_repo_cache:
+        _git_repo_cache[key] = (repo / ".git").is_dir() or _git(repo, "rev-parse", "--git-dir")
+    return _git_repo_cache[key]
 
 
 def validate_cross_repo_commit_ownership(
@@ -45,15 +56,15 @@ def validate_cross_repo_commit_ownership(
         repo = pathlib.Path(str(entry.get("repo") or "")).expanduser()
         commit = str(entry.get("commit_hash") or "").strip()
         paths = entry.get("paths")
-        if not repo.is_absolute() or not _git(repo, "rev-parse", "--git-dir"):
+        if not repo.is_absolute() or not _is_git_repo(repo):
             errors.append(f"{label}.repo is not an absolute Git repository")
             continue
-        if not re.fullmatch(r"[0-9a-f]{40}", commit) or not _git(
-            repo, "cat-file", "-e", f"{commit}^{{commit}}"
-        ):
+        if not re.fullmatch(r"[0-9a-f]{40}", commit):
             errors.append(f"{label}.commit_hash is not a resolvable 40-hex commit")
             continue
-        commits.add(commit)
+        # Combine cat-file check and diff-tree into one subprocess call.
+        # diff-tree on a valid commit succeeds; on an invalid one it fails —
+        # so a single diff-tree covers both existence and changed-file listing.
         try:
             changed = set(
                 subprocess.run(
@@ -68,8 +79,9 @@ def validate_cross_repo_commit_ownership(
                 ).stdout.splitlines()
             )
         except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
-            errors.append(f"{label} commit diff-tree is not readable")
+            errors.append(f"{label}.commit_hash is not a resolvable 40-hex commit")
             continue
+        commits.add(commit)
         if not isinstance(paths, list) or not paths:
             errors.append(f"{label}.paths must be a non-empty list")
             continue

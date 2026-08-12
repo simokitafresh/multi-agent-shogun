@@ -185,8 +185,12 @@ def _split_command(root, report, cmd_id, report_path):
         str(item.get("id")) for item in criteria or [] if isinstance(item, dict) and item.get("id")
     }
     assigned = task.get("assigned_acs")
-    if not isinstance(assigned, list) or not assigned or not set(map(str, assigned)).issubset(ancestor_ids):
-        raise ValueError("split task assigned_acs are not a subset of ancestor acceptance criteria")
+    # assigned_acs=None means the split task covers all ancestor ACs (common for
+    # recon/scout splits that explore the full scope).  Only validate subset when
+    # an explicit list is provided.
+    if isinstance(assigned, list) and assigned:
+        if not set(map(str, assigned)).issubset(ancestor_ids):
+            raise ValueError("split task assigned_acs are not a subset of ancestor acceptance criteria")
     return command, source
 
 
@@ -424,6 +428,19 @@ PROJECT_ROOT="{root}" review_two_phase_ready_gunshi "{args.cmd}" "{report}"
         spec = review["cmd_spec_summary"]; relative = str(path.relative_to(root))
         message = f"{args.cmd} SG7 bundle. verdict: LGTM. report: {review['report']} bundle: {relative} cmd_spec_summary: acceptance_criteria_count={spec['acceptance_criteria_count']}, scope={json.dumps(spec['scope'], ensure_ascii=False, separators=(',', ':'))}, project={spec['project']}"
         subprocess.run(["bash", str(root / "scripts/inbox_write.sh"), "karo", message, "report_review_result", "gunshi"], cwd=root, check=True)
+        # --- Finalize auto-execute: LGTM → cmd_complete_gate (includes archive+ntfy) ---
+        # Mechanical processing after judgment (LGTM) is complete.
+        # cmd_complete_gate.sh already calls archive_completed.sh and ntfy on CLEAR.
+        # GATE BLOCK is reported to karo for manual handling.
+        gate_script = root / "scripts/cmd_complete_gate.sh"
+        if gate_script.is_file():
+            gate_result = subprocess.run(
+                ["bash", str(gate_script), args.cmd],
+                cwd=root, capture_output=True, text=True,
+            )
+            gate_outcome = "CLEAR" if gate_result.returncode == 0 else "BLOCK"
+            print(f"{args.cmd} finalize auto-execute: {gate_outcome}")
+        # --- end finalize auto-execute ---
         marker_tmp = marker.with_name(f".{marker.name}.tmp.{os.getpid()}")
         try:
             marker_tmp.write_text(fingerprint + "\n", encoding="utf-8")

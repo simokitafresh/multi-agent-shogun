@@ -229,12 +229,17 @@ def _resolved_commit_contract(report, task):
             if task_repo and report_repo:
                 task_repo_path = pathlib.Path(task_repo).expanduser()
                 report_repo_path = pathlib.Path(report_repo).expanduser()
-                if (
-                    not task_repo_path.is_absolute()
-                    or not report_repo_path.is_absolute()
-                    or task_repo_path.resolve() != report_repo_path.resolve()
-                ):
+                if not task_repo_path.is_absolute() or not report_repo_path.is_absolute():
                     return None, "task/report commit_contract repo_root mismatch"
+                # WSL2 /mnt/c is case-insensitive (NTFS) but pathlib.resolve()
+                # preserves case, causing DM-signal vs DM-Signal mismatches.
+                # os.path.samefile compares by inode, handling case correctly.
+                try:
+                    if not os.path.samefile(task_repo_path, report_repo_path):
+                        return None, "task/report commit_contract repo_root mismatch"
+                except OSError:
+                    if task_repo_path.resolve() != report_repo_path.resolve():
+                        return None, "task/report commit_contract repo_root mismatch"
         return task_contract, None
 
     if not isinstance(report_contract, dict):
