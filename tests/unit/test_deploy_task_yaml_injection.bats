@@ -1662,9 +1662,8 @@ PY
 # test_necessity: the canary contract is a persistent deployment invariant;
 # every verification/performance task must receive it while unrelated and
 # documentation-only tasks must receive zero injections.
-# test_necessity: source-boundary changes must route the registered context owner
-# and trigger into the task contract, while explicit and unrelated cases remain
-# deterministic and idempotent.
+# test_necessity: A source path matching a registry trigger must emit the owning
+# context path with owner, update_trigger, and source_paths metadata.
 @test "GA-457 source registry autowires candidates only for matching task sources" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/scripts/config" "$tmpdir/queue/tasks"
@@ -1694,6 +1693,8 @@ assert all(item['owner'] and item['update_trigger'] and item['source_paths']
 PY
 }
 
+# test_necessity: Unrelated sources and explicitly processed context paths must
+# produce zero candidates so completion cannot gain a false context obligation.
 @test "GA-457 source registry keeps unrelated and explicitly processed tasks at zero candidates" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/scripts/config" "$tmpdir/queue/tasks"

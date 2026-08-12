@@ -3721,6 +3721,8 @@ YAML
     [[ "$output" == *"owner=infra-platform"* ]]
 }
 
+# test_necessity: An explicitly processed candidate must clear the completion
+# obligation without mutating the context file or reporting an unprocessed block.
 @test "GA-457 explicit task context update resolves its candidate without mutation" {
     write_cmd_yaml "with_context"
     write_context_file "2026-03-05"
@@ -3745,6 +3747,8 @@ YAML
     [[ "$output" != *"unprocessed"* ]]
 }
 
+# test_necessity: An unrelated task with an empty candidate set must keep the
+# context gate clear and must not emit a synthetic candidate obligation.
 @test "GA-457 unrelated task with zero candidates keeps context gate clear" {
     write_cmd_yaml "without_context"
     write_context_file "2025-01-01"
