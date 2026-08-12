@@ -8,7 +8,7 @@
 ## §0. 不変事項(最初に必ず読む5行。ここ以外の現在地記述は参照情報 — 矛盾したら本欄が正)
 
 1. **優先順位の正(殿下知2026-08-12 18:07)**: **高速化は本番バグ修正を高速回転するための手段。優先=fullで全量バグ露出→計算/API/UI/DBの完全正常化→正常化後のみ速度改善**。速度改善を先行させない。
-1b. **full=発進中(run311・run_id=202608120906075DA6E3・09:06 UTC開始・DB id311)** — 解錠経緯: 5PF canary(TOTAL 1m30s)+10PF canary(TOTAL 2m31s)の2連ERROR0/WARNING0/failed0で解錠(家老blt_180911)。**現在の確定バグはL5全量body二周+別worker cold実行+MTD欠損握り潰し**: 第一周102PF/1,533 rows/cold/2,721.784秒が09:53:14 UTCにterminal、その3秒後に第二周`L5.bulk_raw breakdown`開始。各周で`Missing holding_signal in expansion cache`をWARNINGに留め`rows=15`成功扱いするためsilent-stale rawの可能性がある。L2(102PF/80.986秒)・L3(78PF/239.652秒)はrun311で明示ERROR 0だが、出力完全一致が未完のため「正常確定」ではない。詳細フロー=§9.0。旧12:48再封印+解錠4条件の経緯=改訂履歴v2.15参照。run296教訓(裁可範囲外full禁止)は引き続き有効
+1b. **P6根治コードは本番Live、fullは未発進（2026-08-12 22:20 JST現在）** — `c9c21acd`+`dee70369`をmainへfast-forwardし、Render deploy `dep-d9u6vi8ae00c73bml7j0`がcommit `dee70369ffa2cbf5cf18ffc59cb626812a0760fb`で13:08:20 UTCにLive。durable L5 owner/token/lease/scope/terminal、full開始時予約、coverage再確認、同一warm cache受渡し、MTD欠損failure伝播を実装した。真の5PF run314(`2026081213173523F76E`)はERROR/P4_TIMING_ERROR/L5 failed=`0`、L5 body=`1`、cold=`0`、`builder_cache_shared=1`=`5/5`、TOTAL=`37.8s`まで一次確認したが、**初回成立前pre-history WARNINGが28件残るため未合格**。10PF/fullは開始していない。飛猿hotfixでpre-historyと成立後の真正な欠損を全数分類中。詳細=§9.0。run311の旧二重L5実測はStart snapshotとして保存し、履歴を書き換えない
 2. **正順序**: run296根因→T3.6(TradePerf FoF展開)→T4→T5→T6→full(T7)→T8
 3. **主戦の本質(殿15:06で判定原理を精緻化)**: 唯一のLazySignalArtifactCacheをL2→L3→L5→trade_perfまでidentity同一で一本受渡し。**判定原理=「上流で計算済みのものは再計算しない」** — 再計算1件=上流で既に得た同一論理値を下流consumerが再導出またはDBから再取得する1経路。残存cacheは名前で裁定せず、上流確定値の再計算物=逸脱として削除、上流に存在しない局所メモ化のみ個別証明で許容。第二cache新設は逸脱(e84f335a先例)。T4-T6の受入基準はこの原理で統一
 4. **不変契約I1-I5**は§10.1末尾。例外承認権は殿のみ
@@ -150,7 +150,7 @@
 
 ## §9. P6. fullrecalculate計算順序フロー(現役参照図)
 
-### §9.0 run311で露出した現在のバグ状態 — As-Is/To-Be（2026-08-12 19:14 JST一次確定）
+### §9.0 run311で露出したStartからP6本番Liveまで — As-Is/To-Be（2026-08-12 22:20 JST更新）
 
 **状態の読み方**: 赤=`run311でバグ確定`、黄=`明示ERRORはないが正しさ未証明`、緑=`To-Beの合格境界`。障害が表面化した層はL5だが、根因は**fullの上流cache一本受渡し経路と、UI起因の別process queue経路がL5手前で分岐すること**にある。DB advisory lockは同時実行を止めるだけで、先行bodyの完了結果を後続workerへ共有しない。
 
@@ -201,9 +201,9 @@ flowchart TD
     style L3U fill:#fff0b3
 ```
 
-#### As-Is (P6 owner/token実装後の現コード、DM-Signal HEAD `4ba63e86`)
+#### As-Is (P6 owner/token実装後の本番Live、DM-Signal `dee70369`)
 
-現コードは、full開始時にL5 generation/owner tokenをL2/L3より前にdurable予約し、UI invalidationをfull所有中はdirty scopeへmergeする。非owner workerは同generationのdurable terminalを待ち、raw bodyを実行しない。lease喪失時はheartbeatが失敗を伝播し、旧owner tokenのterminal publishは拒否される。
+本番Liveコードは、full開始時にL5 generation/owner tokenをL2/L3より前にdurable予約し、UI invalidationをfull所有中はdirty scopeへmergeする。非owner workerは同generationのdurable terminalを待ち、raw bodyを実行しない。lease喪失時はheartbeatが失敗を伝播し、旧owner tokenのterminal publishは拒否される。Render起動時migrationで既存`etl_layer_status`へ`generation/status/result`を追加済み。5PFでは所有権/cache構造が実測PASSしたが、pre-history WARNINGの意味分類が未完のため10PFへの関門は閉じたままである。
 
 ```mermaid
 flowchart TD
@@ -235,6 +235,10 @@ flowchart TD
     MTDFAIL --> FAILED
     MTD -->|"Yes"| MARK
 
+    TERMINAL --> CANARY5["真の5PF run314<br/>body=1 / cold=0 / shared=5/5"]
+    CANARY5 --> PREWARN["pre-history WARNING=28<br/>成立後欠損との分類中"]
+    PREWARN --> HOLD10["10PF/fullは未発進"]
+
     style RESERVE fill:#d5f0d0
     style MERGE fill:#d5f0d0
     style SCOPE fill:#d5f0d0
@@ -243,6 +247,8 @@ flowchart TD
     style TERMINAL fill:#d5f0d0
     style MTDFAIL fill:#d5f0d0
     style DELETE fill:#fff0b3
+    style PREWARN fill:#fff0b3
+    style HOLD10 fill:#fff0b3
     style FAIL fill:#f9d0d0
     style FAILED fill:#f9d0d0
 ```
@@ -256,9 +262,9 @@ flowchart TD
 | `COLD`（full cacheを持たない別workerの先取り） | **解消（full競合経路）**。full ownerをL3前に予約し、非ownerはwaitへ。単独workerのcold実行は別経路として残存 | `backend/app/jobs/recalculate_fast.py:1724-1733,3549-3566` |
 | `NO_SHARE`（process-local terminalのみ） | **解消**。`_persistent_wait`がDB durable terminalを受領し、非ownerの追加bodyを禁止 | `backend/app/jobs/precompute_raw_queue.py:226-307` |
 | `BODY2`（同一fullの全量二周目） | **解消**。lock取得後のcoverage再確認でcovered bodyを再利用し、未処理scopeだけを実行 | `backend/app/jobs/precompute_raw_queue.py:141-177,180-223` |
-| `SWALLOW`（`Missing holding_signal`をWARNING化） | **対象事象は解消**。当該例外は再raiseしてL5 failureへ伝播。ただし一般例外のwarning fallbackは残存 | `backend/app/jobs/precompute_raw.py:1122-1129` |
-| `STALE`（欠損時に既存rawを残しrows成功扱い） | **対象事象は解消**。`Missing holding_signal`ではbody成功・stale成功を許さない。一般例外のstale保持は残存 | `backend/app/jobs/precompute_raw.py:1122-1129` |
-| `FALSE_OK`（欠損をPF failureへ集計せず成功汚染） | **対象事象は解消**。L5 exceptionがdurable failedへ進み、waiterにもerrorを返す。一般例外fallbackの網羅性は未解消 | `backend/app/jobs/recalculate_fast.py:3590-3659,3679-3690` |
+| `SWALLOW`（`Missing holding_signal`をWARNING化） | **対象事象は解消**。当該例外は再raiseしてL5 failureへ伝播。ただし一般例外のwarning fallbackは残存 | `backend/app/jobs/precompute_raw.py:1219-1234` |
+| `STALE`（欠損時に既存rawを残しrows成功扱い） | **対象事象は解消**。`Missing holding_signal`ではbody成功・stale成功を許さない。一般例外のstale保持は残存 | `backend/app/jobs/precompute_raw.py:1219-1234` |
+| `FALSE_OK`（欠損をPF failureへ集計せず成功汚染） | **対象事象は解消**。L5 exceptionがdurable failedへ進み、waiterにもerrorを返す。一般例外fallbackの網羅性は未解消 | `backend/app/jobs/recalculate_fast.py:3630-3670` |
 
 **実装後As-IsとTo-Beのnode/edge/failure branch差分**:
 
@@ -272,13 +278,23 @@ flowchart TD
 | failure branch | stale owner terminal=0 | `_persistent_terminal`がtoken不一致を拒否 | 一致 |
 | failure branch | 必須入力欠損→failed、stale success=0 | `Missing holding_signal`を再raiseしfailedへ | 一致（一般例外fallbackは非対象残存） |
 
-**commit chain / 実装境界**: `c1fc1fcc`（full owner予約・warm terminal）、`d5704ae2`（durable ownership/scope）、`0804cfeb`（lease/finalizer）、`63e29fb3`（terminal/coverage tests）、`2d9f96c0`（takeover二周防止）、`b4e39cd5`/`62924934`/`4ba63e86`（owner token・scope・cumulative rows）、`4b69fa06`（MTD failure伝播）。これらを含む現HEADは `4ba63e86ce7a58d18dbaafe3658b137fc6f2b5c4`。旧P6層確定カスケードはこの差分判定の対象外とする。
+**commit chain / 実装境界**: 開発系列の`c1fc1fcc`（full owner予約・warm terminal）、`d5704ae2`（durable ownership/scope）、`0804cfeb`（lease/finalizer）、`63e29fb3`（terminal/coverage tests）、`2d9f96c0`（takeover二周防止）、`b4e39cd5`/`62924934`/`4ba63e86`（owner token・scope・cumulative rows）、`4b69fa06`（MTD failure伝播）を、最新main `8fcf99e1`上へ`c9c21acd`（ownership foundation）+`dee70369`（recalculate接続）として統合した。本番Live SHA=`dee70369ffa2cbf5cf18ffc59cb626812a0760fb`。統合focused tests=`10 passed / 0 failed / 0 skipped`、isolated worktree clean、pushはfast-forward。旧P6層確定カスケードはこの差分判定の対象外とする。
+
+**本番段階canary ledger（全て`start_date=2000-01-01`、`mode=portfolio`、FoF自動展開なし、requested=実行PF数を固定）**:
+
+| DB id / run_id | scope | 構造判定 | log判定 | TOTAL | 次段階 |
+|---|---|---|---|---:|---|
+| 312 / `20260812131214AE5760` | 5PF（DM2-test含む） | L5 body=1 / cold=0 / shared=5/5 / failed=0 | ERROR=0、P4error=0、WARNING=21（DM2-test初回境界） | 38.1s | STOP |
+| 313 / `2026081213152550FED3` | 5PF（DM5-006へ差替え） | L5 body=1 / cold=0 / shared=5/5 / failed=0 | ERROR=0、P4error=0、WARNING=4（DM5-006初回境界） | 40.5s | STOP |
+| 314 / `2026081213173523F76E` | **真の5PF**（実在2FoF+3standard） | **L5 body=1 / cold=0 / shared=5/5 / precompute=5/5 / failed=0 / rows=78** | **ERROR=0、P4error=0、WARNING=28**（青龍2PFの初回signal/last_generated/holding pre-history） | **37.8s**（L2 3.9 / L3 14.4 / L5 raw 8.0） | **10PF未発進** |
+
+真の5PF UUIDは`2da02afe-6ae3-4a29-a0ab-9e80809a9dc6`、`7a21f247-5fd0-4ce1-b9b1-6ca95ebc2d3d`、`e0826b59-93a2-4565-9c07-832eaf69af73`、`a3c4e3d3-f6df-4e6a-912b-de93fe47e386`、`4d686575-c2b6-404d-8cbf-6bf2088771d9`。run314のWARNING 28件は現在までの分類では開始日以前/初回成立前だけで、P6が対象としたL5 `Missing holding_signal in expansion cache`の握り潰しではない。ただし**severityだけ下げて合格扱いすることは禁止**。飛猿の`cmd_karo_hotfix_p6_prehistory_warning_classification_202608122223`で28/28全数分類→既存`test_cash_fallback_warning`契約照合→成立後欠損の敵対probeを順に実施中。成立後欠損が1件でも混在すれば変更せずBLOCKする。
 
 | 層 | run311一次値 | 現在の判定 | 未完条件 |
 |---|---:|---|---|
 | L2 | 102PF / 80.986秒 / 明示ERROR 0 | 完走。ただし正常確定ではない | 909行出力parity、未計上時間の帰属、同一artifact消費の本番確認 |
 | L3 | 78PF / 239.652秒 / 明示ERROR 0 | 完走。ただし正常確定ではない | cache/NAV schedule再構築除去後の出力parityと本番時間比較 |
-| L5 | body #1=1,533 rows / 2,721.784秒、3秒後にbody #2開始 | **バグ確定** | 二周目0、cold body 0、MTD欠損握り潰し0、stale成功0 |
+| L5 | run311: body #1=1,533 rows / 2,721.784秒、3秒後にbody #2開始 | **根治コードLive。run314でbody=1/cold=0/shared=5/5/failed=0を確認** | pre-history WARNING 28→0の意味的解消、10PF、fullで二周目0/cold0/未処理scope0を最終確認 |
 
 #### To-Be: fullがL3前にL5所有権を予約し、同一cacheの一回bodyへ全要求を吸収
 
@@ -456,7 +472,7 @@ flowchart TD
 | T6 | 複雑機構削除: snapshot validator(186行)/generation束縛/setdefaultマージの撤去(コード純減)。**残存2機構(signal_valid_dates_cache 16箇所+setdefaultマージ)の削除はT4/T5のidentity一本受渡しへの置換として実施**(単純削除ではなく同一cache objectのview参照へ差替え) | price_ratio_impl.py ほか | validator/generation関連コードが削除されテストFAIL0か | 🔶**部分完了(検証2026-08-12 11:32 JST・家老origin/main現物grep)**: validate_signal_snapshot=0・precompute_signal_payload_cache=0・precompute_signal_date_index=0(旧validator/payload/date-index state削除済み)。残存=signal_valid_dates_cache 16箇所+signal_cache.setdefaultマージ |
 | (T2続便) | single-chunk PostgreSQL signal flush復元 | recalculate_fast.py | flush 1論理=1物理chunkか | ✅113b42c1 Live(11:02 commit棚卸しで設計書へ反映) |
 | T4.5 | **P0/P1純関数化(golden環境差で発見・02:02原則の完遂)**: monthly_returns.py:699-705(computed weightsのledger上書き)+:440-443(ledger-only ticker混入)を除去 — 計算経路のledger書換えゼロ | monthly_returns.py | ledger有無で出力同値+canary PASSか | ✅**完了(42ade776・06:49)**: repro=.075/.1→両方.1。run293/294 PASS+run295でchange=0収束。v4 golden exact一致243,861行mismatch 0 |
-| T7 | 最終checkpoint: **full一回**(殿裁可10:39で発進)→I1全量突合(102PF vs baseline+正当変化の差分説明)+I5全endpoint欠落0(FE全画面充足)+TOTAL・層別・L5 per-PF実測+status×層ログ突合 | 本番 | 3判定すべてPASSか | 🔴**run296 STOP(10:56便)**: Phase4.5 22/24成功・2PF失敗(45eb/e082=2007-01-26 Missing holding_signal・P4_TIMING_ERROR 2件)。家老が同一SHA redeployで即停止、DB無変更確認(change_log差分0・restore不要)。B4根治によりstatus=interruptedが正直に記録。次=2PFの2007-01-26欠落根因の特定→修正→canary→full再発進 |
+| T7 | 最終checkpoint: **full一回**→I1全量突合(102PF vs正しいoracle+変更非対象の不変)+I5全endpoint欠落0(FE全画面充足)+TOTAL・層別・L5 per-PF実測+status×層ログ突合 | 本番 | 3判定すべてPASSか | 🔶**P6本番Live・5PF関門で停止(22:20便)**: `dee70369` Live。run314真の5PFはERROR0/P4error0/L5 failed0/body1/cold0/shared5/5/TOTAL37.8sだが、初回成立前WARNING 28件のため未合格。飛猿が28/28分類+最小hotfix中。**10PF/full未発進**。過去run296 STOPはv2.22以前の履歴として保持 |
 | T7.5 | **(superseded 12:52/12:55: 検出・ALERT自体もhot pathから撤去へ — §0(6)が正。以下は当時の記録)** DRIFT遮断の検出のみ降格(殿裁定02:06→02:08で即時実行へ前倒し): バグベースledgerでのインライン遮断は正しい再計算を拒否する(cmd_3827同型)。先に降格すれば以後の全速度計測から遮断分岐コスト+誤遮断ノイズが消えピュアになる。実装形=書込み許可+検出log(既存log形式不変=I3)+SIGNAL CHANGE ALERT事後検知は現行維持。最小・可逆 | signal_decision_ledger関連 | 遮断が検出のみになりcanary ERROR 0+changes想定内か | ✅**完了(03:57終報)**: e487ee73(ledger監査分類をflush pathから除去)+10f74f70(alert分類はsnapshot再利用)で**hot path再SELECT 1→0**。canary run289/290=ERROR 0/WARNING 0/completed。副産物=run286で旧ledger押さえ込み4,494行が正値へ復元(§7)。run285のSOURCE_SELECT衝突も根治 |
 | T8 | **DB汚染復旧+ledger再構築(02:06拡張)**: ①bad 328キー(run273)+残存汚染を子→親depth順・closure53PF小batchで復元(遮断弁=batch境界) ②現ledger全件退避→修正済みコードのfull結果から確定月判定を再登録(cmd_3817/3827前例手順・バックアップファースト) ③再構築後、guardを別実行post-run監査(change_log突合+alert+old値自動復元)として復活 | 本番DB | current_matches_old全数/bad=0+下流API正常化+ledger再構築の照合一致+post-run監査の稼働確認+**read-side mismatch 4PF→0の全数検証**(04:08確定: dashboard mismatch fof4/78のみ・signals.py current_holdings/monthly_tradeの旧ledger優先はT8再構築で自然解消・/api/signals個別変更はUI二重変更のため実装しない) | ⬜ |
 
@@ -473,6 +489,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
+- v2.34 (2026-08-12 22:20): **P6本番Liveと段階canary一次結果を反映** — latest main統合`c9c21acd`+`dee70369`、Render deploy `dep-d9u6vi8ae00c73bml7j0` Live、focused 10/10 PASS。§0(1b)をrun311発進中から現在状態へ差替え、§9.0 As-Is HEAD/Mermaid/赤node行番号/commit chainをLiveコードへ更新。run312/313/314 ledger追加。run314はbody1/cold0/shared5/5/ERROR0/P4error0/failed0を満たすがpre-history WARNING 28でSTOP、10PF/full未発進。飛猿hotfixで全数分類中。
 - v2.33 (2026-08-12 20:01): §0(6b)へ修正方式の型を追記(家老blt_200024の定式化) — As-Is=Start/To-Be=Goal固定・差分のみ実装・実装後As-Is図更新→To-Beとの構造一致=完了。並行実装: 疾風=owner/token/takeover、才蔵=Missing holding silent-stale。
 - v2.32 (2026-08-12 20:00): **§0(6b)parity基準訂正(殿裁定19:58)** — バグを含む現本番値とのparityを完了基準にすることを禁止。修正対象=To-Be不変量+正しい計算oracle判定、変更非対象のみ前後不変(I1)。最終判定=実装後As-Is図とTo-Be図の構造一致。疾風・才蔵のACは家老が訂正済み(blt_195928)。
 - v2.31 (2026-08-12 19:52): **rootfix第一稿=家老実コードレビューでBLOCK(blt_195123・軍師LGTM後の二層目検出)** — 未閉鎖穴: precompute_raw_queue._drain_queueが開始時owner tokenでなくterminal直前の現owner tokenを再取得するため、lease takeover後の旧workerが新owner名義でterminalを書ける。heartbeat喪失検知もraw内部commit後で、旧body保存後に新ownerが再実行しうる。push停止。疾風へ再指示: ①開始token固定 ②raw lock取得後にdurable terminal/coverage再確認 ③競合probe。受入は§9.0 To-Beの単一owner/単一terminal条件を正とする。
