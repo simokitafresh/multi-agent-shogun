@@ -268,7 +268,7 @@ flowchart TD
 | T7.5 | **DRIFT遮断の検出のみ降格(殿裁定02:06→02:08で即時実行へ前倒し)**: バグベースledgerでのインライン遮断は正しい再計算を拒否する(cmd_3827同型)。先に降格すれば以後の全速度計測から遮断分岐コスト+誤遮断ノイズが消えピュアになる。実装形=書込み許可+検出log(既存log形式不変=I3)+SIGNAL CHANGE ALERT事後検知は現行維持。最小・可逆 | signal_decision_ledger関連 | 遮断が検出のみになりcanary ERROR 0+changes想定内か | ✅**完了(03:57終報)**: e487ee73(ledger監査分類をflush pathから除去)+10f74f70(alert分類はsnapshot再利用)で**hot path再SELECT 1→0**。canary run289/290=ERROR 0/WARNING 0/completed。副産物=run286で旧ledger押さえ込み4,494行が正値へ復元(§7)。run285のSOURCE_SELECT衝突も根治 |
 | T8 | **DB汚染復旧+ledger再構築(02:06拡張)**: ①bad 328キー(run273)+残存汚染を子→親depth順・closure53PF小batchで復元(遮断弁=batch境界) ②現ledger全件退避→修正済みコードのfull結果から確定月判定を再登録(cmd_3817/3827前例手順・バックアップファースト) ③再構築後、guardを別実行post-run監査(change_log突合+alert+old値自動復元)として復活 | 本番DB | current_matches_old全数/bad=0+下流API正常化+ledger再構築の照合一致+post-run監査の稼働確認+**read-side mismatch 4PF→0の全数検証**(04:08確定: dashboard mismatch fof4/78のみ・signals.py current_holdings/monthly_tradeの旧ledger優先はT8再構築で自然解消・/api/signals個別変更はUI二重変更のため実装しない) | ⬜ |
 
-順序契約(10:45更新): 完了=T0/T1/T2/T3/T3.5/T4.5/T7.5+B4。走行中=**T7 full(殿裁可10:39で解封済み)**+T3.6続便(standard計算)。残=T4(L5 builder cache供給)・T5(date_index導出化)・T6(validator削除)はT7結果を見て順に、T8(DB復旧+ledger再構築+read-side 4PF解消)はT7 PASS後。
+順序契約(**11:08殿裁定で復帰**): run296は順序違反(T4-T6未完のままfull実行)だった — 将軍の裁可申請不備(未完タスク非明示=洗脳#8)であり教訓登録済み。**正順序へ復帰: run296失敗2PF根因特定(継続)→T3.6完遂(standard便)→T4本体(L5 builder cache供給)→T5(date_index導出化)→T6(validator/generation削除)→full再発進(T7)→T8**。fullはT6完了までやらない。完了済=T0/T1/T2(+続便113b42c1)/T3/T3.5/T4.5/T7.5+B4。裁可申請の恒久ルール: 未完タスク一覧+飛ばすリスク評価を必須セクションとする。
 
 **不変契約I1-I4(殿下知23:21「前回はUI/UX不変と速度を忘れていた。前々回の大修整が今の事態を生んだ。最短一発クリア」— T2-T6全taskのACへ必須注入)**:
 - **I1 計算結果不変**: 変更前後で同一入力→同一出力(signals/monthly_returns/precomputed_raw全テーブル)。各taskのcommit前にローカル突合、T7で全量突合。
