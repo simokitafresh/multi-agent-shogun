@@ -8,7 +8,7 @@
 ## §0. 不変事項(最初に必ず読む5行。ここ以外の現在地記述は参照情報 — 矛盾したら本欄が正)
 
 1. **優先順位の正(殿下知2026-08-12 18:07)**: **高速化は本番バグ修正を高速回転するための手段。優先=fullで全量バグ露出→計算/API/UI/DBの完全正常化→正常化後のみ速度改善**。速度改善を先行させない。
-1b. **full=発進中(run311・run_id=202608120906075DA6E3・09:06 UTC開始・DB id311)** — 解錠経緯: 5PF canary(TOTAL 1m30s)+10PF canary(TOTAL 2m31s)の2連ERROR0/WARNING0/failed0で解錠(家老blt_180911)。走行中所見=fullでのみ初期履歴のNo holding_signal/No last_generated_signal WARNINGが複数PFに出現 — 完走後に正当pre-historyか実欠損かを判定。旧12:48再封印+解錠4条件の経緯=改訂履歴v2.15参照。run296教訓(裁可範囲外full禁止)は引き続き有効
+1b. **full=発進中(run311・run_id=202608120906075DA6E3・09:06 UTC開始・DB id311)** — 解錠経緯: 5PF canary(TOTAL 1m30s)+10PF canary(TOTAL 2m31s)の2連ERROR0/WARNING0/failed0で解錠(家老blt_180911)。**現在の確定バグはL5全量body二周+別worker cold実行+MTD欠損握り潰し**: 第一周102PF/1,533 rows/cold/2,721.784秒が09:53:14 UTCにterminal、その3秒後に第二周`L5.bulk_raw breakdown`開始。各周で`Missing holding_signal in expansion cache`をWARNINGに留め`rows=15`成功扱いするためsilent-stale rawの可能性がある。L2(102PF/80.986秒)・L3(78PF/239.652秒)はrun311で明示ERROR 0だが、出力完全一致が未完のため「正常確定」ではない。詳細フロー=§9.0。旧12:48再封印+解錠4条件の経緯=改訂履歴v2.15参照。run296教訓(裁可範囲外full禁止)は引き続き有効
 2. **正順序**: run296根因→T3.6(TradePerf FoF展開)→T4→T5→T6→full(T7)→T8
 3. **主戦の本質(殿15:06で判定原理を精緻化)**: 唯一のLazySignalArtifactCacheをL2→L3→L5→trade_perfまでidentity同一で一本受渡し。**判定原理=「上流で計算済みのものは再計算しない」** — 再計算1件=上流で既に得た同一論理値を下流consumerが再導出またはDBから再取得する1経路。残存cacheは名前で裁定せず、上流確定値の再計算物=逸脱として削除、上流に存在しない局所メモ化のみ個別証明で許容。第二cache新設は逸脱(e84f335a先例)。T4-T6の受入基準はこの原理で統一
 4. **不変契約I1-I5**は§10.1末尾。例外承認権は殿のみ
@@ -148,6 +148,112 @@
 - **golden oracle世代交代の経緯(08-12早朝)**: v2(旧ledger置換世代の値を焼いた基準)がT7.5後の計算と105,433行不一致→field分布でSTOP発火(非holding差検出)→履歴二分でdisplay差=revert混入(復元済み)/signal差=正当変化と切分け→clean c13全量recompute=現DB完全一致でpost-c13回帰0を証明→v3生成もsource世代誤りでFAIL→**残存ledger override(monthly_returns.py:699-705)を発見・除去(P0/P1・42ade776)=計算の純関数化**→v4をCI-templateから生成しexact一致。v2/v3はarchive保持(歴史修正禁止)。教訓: goldenの環境差はledger依存の検出器として機能した。
 
 ## §9. P6. fullrecalculate計算順序フロー(現役参照図)
+
+### §9.0 run311で露出した現在のバグ状態 — As-Is/To-Be（2026-08-12 19:14 JST一次確定）
+
+**状態の読み方**: 赤=`run311でバグ確定`、黄=`明示ERRORはないが正しさ未証明`、緑=`To-Beの合格境界`。障害が表面化した層はL5だが、根因は**fullの上流cache一本受渡し経路と、UI起因の別process queue経路がL5手前で分岐すること**にある。DB advisory lockは同時実行を止めるだけで、先行bodyの完了結果を後続workerへ共有しない。
+
+#### As-Is: full中のUIアクセスが別workerのcold L5を先取りし、full本体が全量二周目を実行
+
+```mermaid
+flowchart TD
+    START["full run311開始<br/>DB recalculation_status id=311"] --> CACHE["run内で上流cacheを構築<br/>price / signal / monthly return"]
+    CACHE --> L3["L3: FoF 78PF<br/>239.652秒 / 明示ERROR 0"]
+    L3 --> L2["L2: 102PF<br/>80.986秒 / 明示ERROR 0"]
+    L2 --> FULL_L5_WAIT["full本体は上流cacheを保持してL5へ"]
+
+    UI["L3走行中にUI<br/>GET /api/metrics"] --> INVALIDATE["metrics_summary_bulkの<br/>global rawを物理DELETE"]
+    INVALIDATE --> COMMIT["transaction after_commit"]
+    COMMIT --> COLLAPSE["portfolio/endpoint scopeを失い<br/>None=全量enqueue"]
+    COLLAPSE --> WA["Render worker A<br/>process-local generation=1"]
+    WA --> LOCK_A["DB advisory raw lock取得"]
+    LOCK_A --> COLD["上流run cacheを持たない<br/>cold L5 body #1"]
+    COLD --> BODY1["102PF / 1,533 rows<br/>2,721.784秒"]
+    BODY1 --> TERM_A["09:53:14 terminal<br/>結果はworker Aのmemoryのみ"]
+
+    FULL_L5_WAIT --> WB["Render worker B<br/>別process-local state"]
+    WB --> POLL["raw lockを0.2秒間隔poll"]
+    TERM_A --> UNLOCK["DB lock解放"]
+    POLL --> UNLOCK
+    UNLOCK --> NO_SHARE{"worker Aのterminalを<br/>worker Bが共有できるか"}
+    NO_SHARE -->|"No"| BODY2["09:53:17からcold L5 body #2<br/>全102PFを再計算"]
+
+    COLD --> MTD1["monthly_trade MTD<br/>Missing holding_signal"]
+    BODY2 --> MTD2["monthly_trade MTD<br/>Missing holding_signal"]
+    MTD1 --> SWALLOW["例外をWARNINGで握り潰す"]
+    MTD2 --> SWALLOW
+    SWALLOW --> STALE["既存monthly_returnを残し<br/>rows=15 success扱い<br/>silent-stale raw疑い"]
+    STALE --> FALSE_OK["PF failureに集計されず<br/>run成功判定を汚染"]
+
+    L2 -.-> L2U["未証明: 本番909行の<br/>修正前後完全一致"]
+    L3 -.-> L3U["未証明: cache/NAV schedule<br/>再構築除去後の本番完全一致"]
+
+    style INVALIDATE fill:#f8cccc
+    style COLLAPSE fill:#f8cccc
+    style COLD fill:#f8cccc
+    style NO_SHARE fill:#f8cccc
+    style BODY2 fill:#f8cccc
+    style SWALLOW fill:#f8cccc
+    style STALE fill:#f8cccc
+    style FALSE_OK fill:#f8cccc
+    style L2U fill:#fff0b3
+    style L3U fill:#fff0b3
+```
+
+| 層 | run311一次値 | 現在の判定 | 未完条件 |
+|---|---:|---|---|
+| L2 | 102PF / 80.986秒 / 明示ERROR 0 | 完走。ただし正常確定ではない | 909行出力parity、未計上時間の帰属、同一artifact消費の本番確認 |
+| L3 | 78PF / 239.652秒 / 明示ERROR 0 | 完走。ただし正常確定ではない | cache/NAV schedule再構築除去後の出力parityと本番時間比較 |
+| L5 | body #1=1,533 rows / 2,721.784秒、3秒後にbody #2開始 | **バグ確定** | 二周目0、cold body 0、MTD欠損握り潰し0、stale成功0 |
+
+#### To-Be: fullがL3前にL5所有権を予約し、同一cacheの一回bodyへ全要求を吸収
+
+```mermaid
+flowchart TD
+    START["full開始"] --> RESERVE["L3前にdurable L5 ownerを予約<br/>run_id / generation / lease / scope=ALL"]
+    RESERVE --> ONECACHE["LazySignalArtifactCacheを1個生成<br/>price / signal / monthly / index viewを内包"]
+    ONECACHE --> L2["L2が同一objectへ追記<br/>flushはDB永続化のみ"]
+    L2 --> L3["L3が同一objectを受領・追記<br/>DB再読込・別cache再構築なし"]
+    L3 --> L5["full ownerだけが同一objectを受領<br/>warm L5 bodyを1回実行"]
+
+    UI["full中のUI GET"] --> DIRTY["rawを削除せず旧rawを継続提供<br/>dirty scopeをdurable registryへmerge"]
+    DIRTY --> UNION["scope union<br/>None=ALLが常に支配"]
+    UNION --> RESERVE
+
+    L5 --> VALIDATE{"各builderの必須入力は完全か"}
+    VALIDATE -->|"Yes"| ATOMIC["全endpoint rawを原子的に保存"]
+    VALIDATE -->|"No: holding等欠損"| FAIL["WARNING継続禁止<br/>L5 failureへ伝播<br/>stale rawを成功保存しない"]
+    ATOMIC --> TERMINAL["durable terminal=completed<br/>result / covered_scopeを保存"]
+    FAIL --> FAILED["durable terminal=failed<br/>errorを保存・偽completed 0"]
+
+    TERMINAL --> WAITER["他worker/UI waiterはterminal共有<br/>追加body=0"]
+    FAILED --> RETRY["lease付き再claim<br/>owner消失でも永久wait 0"]
+    RESERVE --> LEASE{"owner heartbeat/lease有効か"}
+    LEASE -->|"期限切れ"| RETRY
+    RETRY --> RESERVE
+
+    WAITER --> CANARY["5PF→10PF canary<br/>ERROR/P4error/WARNING/failed=0<br/>L2/L3/L5出力parity"]
+    CANARY --> FULL["full最終checkpoint<br/>L5 body=1 / cold=0 / 未処理scope=0"]
+
+    style RESERVE fill:#d5f0d0
+    style ONECACHE fill:#d5f0d0
+    style L2 fill:#d5f0d0
+    style L3 fill:#d5f0d0
+    style L5 fill:#d5f0d0
+    style TERMINAL fill:#d5f0d0
+    style WAITER fill:#d5f0d0
+    style FAIL fill:#f9d0d0
+    style FAILED fill:#f9d0d0
+```
+
+**To-Be二値AC**:
+
+1. full中にUI invalidationがN件発生しても、L5全量bodyは`2→1`、別worker cold bodyは`1→0`。
+2. L2→L3→L5のartifact identityは全境界で同一。flush後のDB再読込・別cache再構築は`0`。
+3. dirty scopeは欠落`0`、`None=ALL`支配、terminal直前のscope拡張もcovered_scopeへ吸収。
+4. worker停止・deploy・例外時もleaseで回収し、永久wait`0`、偽completed`0`。
+5. `Missing holding_signal`等の必須入力欠損はL5 failureとなり、WARNING後の`rows=15 success`は`0`。
+6. 5PF→10PF→fullの順で、ERROR/P4_TIMING_ERROR/WARNING/failed=`0`、L2/L3/L5の出力parityを全件確認する。
 
 ### P6-AsIs: 現行フロー(コード現物・2026-08-11 main)
 
@@ -293,7 +399,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
-- v2.30 (2026-08-12 19:10): **二重L5の真因完全形+根治便着手(家老blt_190949)** — 機構の全連鎖確定: ①L3走行中にUI metrics GETがglobal rawを削除し全量queueを起動 ②別workerがDB lockを取得しcold全量body(2721.78s)を実行 ③fullのworkerはlock待ち後もterminalを共有できず(generation/events/resultsが**process-local**、DB lockは直列化のみ)もう一周開始=全量body 2周。**真因=full owner予約・cross-process terminal共有・scope mergeの三機構不在**。加えてsilent staleバグ確定: 多数PFのMissing holding_signalをmonthly_tradeがWARNINGで握り潰しrows15成功化。ToBe受入基準: full本体1回だけが同一cache objectでL5・waiter body 0・owner消失/失敗/scope拡張/terminal競合での永久wait/未処理/偽completed各0・MTD欠損はfailure伝播。**根治第一便=疾風実装中**(cmd_karo_hotfix_l5_full_owner_rootfix)→commit→deploy→5PF/10PF canaryの型で検証。
+- v2.30 (2026-08-12 19:10、19:14図解追記): **二重L5の真因完全形+根治便着手(家老blt_190949)** — 機構の全連鎖確定: ①L3走行中にUI metrics GETがglobal rawを削除し全量queueを起動 ②別workerがDB lockを取得しcold全量body(2721.78s)を実行 ③fullのworkerはlock待ち後もterminalを共有できず(generation/events/resultsが**process-local**、DB lockは直列化のみ)もう一周開始=全量body 2周。**真因=full owner予約・cross-process terminal共有・scope mergeの三機構不在**。加えてsilent staleバグ確定: 多数PFのMissing holding_signalをmonthly_tradeがWARNINGで握り潰しrows15成功化。ToBe受入基準: full本体1回だけが同一cache objectでL5・waiter body 0・owner消失/失敗/scope拡張/terminal競合での永久wait/未処理/偽completed各0・MTD欠損はfailure伝播。**§9.0へAs-Is/To-Be Mermaid図とL2/L3/L5層別判定表、二値ACを追加**し、L2/L3の「明示ERROR 0」と「正常未証明」を分離。**根治第一便=疾風実装中**(cmd_karo_hotfix_l5_full_owner_rootfix)→commit→deploy→5PF/10PF canaryの型で検証。
 - v2.29 (2026-08-12 18:58): **L5 invalidation機構の因果訂正(家老blt_185802・live SHA 8fcf99e1のgit grep全数+疾風独立監査PASS)** — 再帰の正体は「fallback→enqueue」ではなく**delete visibility gap+after_commit全量enqueue**(direct callsites=6、enqueue default=5/false=1、explicit portfolio scope=1、after_commitでscope Noneへの collapse=5/5、consumer fallback 8 modulesの直接re-enqueue=0)。ToBeへ反映: dirty scope=(portfolio_id,endpoint,params_hash)粒度・delete前もold raw可視維持・scope union/None dominance・rollback復元・internal upsertはenqueue false。v2.26-2.28のownership ToBeと合流し、L5正常化便の設計材料が完備。
 - v2.28 (2026-08-12 18:54): **本番二重L5を一次証明(家老blt_185408・run311生ログ)** — 第一周L5全量body(cold 2721.784s・count1533・09:53:14 terminal)の**3秒後(09:53:17)に二周目bodyがL5.bulk_raw breakdownで開始=duplicate 1件確定**。process-local single-flightは「解決済」認識を**未達へ差戻し**。ToBe確定: full開始時owner予約+cross-process terminal共有+dirty scope合流+owner lease(v2.26 ToBe①-⑤を本証拠で確定)。**別バグ検出**: 09:52:06 PF fc0e4d80でMTD calculation failed後も99/102 rows15成功=silent-stale raw疑い(失敗の握り潰し系・§0(6)四点契約のL5版が必要な兆候)。fullは殿指示どおり最後まで完走させ生ログでバグ露出を継続。
 - v2.27 (2026-08-12 18:46): v2.26⑤の因果を訂正(家老blt_184558) — 「migration 0件」の表現誤りを「durable 3列のALTER migration定義欠落」へ。runnerは起動時稼働、欠けているのは既存etl_layer_status表への3列追加定義のみ(information_schema実測0/3)。
