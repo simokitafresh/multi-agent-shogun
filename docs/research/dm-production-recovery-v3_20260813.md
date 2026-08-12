@@ -1,5 +1,5 @@
 <!-- gist-master: 42d6311b00c806ac9371d6f87df444ee dm-production-recovery-v3_20260813.md -->
-# DM-Signal本番復旧 v3.0 — 最新状況フォーカス版
+# DM-Signal本番復旧 v3.1 — 最新状況フォーカス版
 <!-- semantic-links: [[recalculate_pipeline]] [[production_parity]] -->
 
 - 作成: 2026-08-13 00:23 JST(将軍直轄・殿指示「複雑になりすぎた。最新状況にフォーカスしたver3.0を新規作成しよう」)
@@ -15,7 +15,7 @@
 5. **cache一本原理**: 唯一のLazySignalArtifactCacheをL2→L3→L5→trade_perfまでidentity同一で受渡し。「上流で計算済みのものは再計算しない」(殿15:06)。旧値比較・SIGNAL CHANGE生成はhot pathから撤去(殿12:52-12:55)
 6. **L2/L3は再実行しない**。復旧はL5入口(`POST /admin/precompute-raw`)のみ。`recalculate-sync`再実行禁止
 
-## §1. 現在地(2026-08-13 00:23 JST)
+## §1. 現在地(2026-08-13 00:40 JST)
 
 **run316(full)でL2/L3は完全復旧、残るのはL5配信cacheのみ。**
 
@@ -36,7 +36,10 @@
 
 ```mermaid
 flowchart TD
-    A["単独L5入口 POST /admin/precompute-raw<br/>etl_trigger.py:848-852"] -->|"PrecomputeRawContext=None"| B["precompute_raw.py:1078-1127<br/>shared_builders=None"]
+    A["POST /admin/precompute-raw<br/>etl_trigger.py:784-803"] --> Q["enqueue_precompute_raw"]
+    Q --> L["_precompute_raw_background<br/>LayerLock + cross-process advisory lock<br/>etl_trigger.py:806-824"]
+    L --> W["_run_precompute_raw_job<br/>etl_trigger.py:848-852"]
+    W -->|"PrecomputeRawContext=None"| B["precompute_raw.py:1078-1127<br/>shared_builders=None"]
     B --> C{"PFループ 1..102"}
     C --> D["PF毎に冷間再構築:<br/>monthly_return DB読込<br/>+FoF展開 expand_portfolio_to_tickers<br/>+履歴builder再生成"]
     D --> E["L5.monthly_trade 12.9-36.2s/PF<br/>=PF時間の86.6-95.0%"]
@@ -53,7 +56,7 @@ flowchart TD
 flowchart TD
     A["単独L5入口 POST /admin/precompute-raw"] --> B["advisory lock取得後、同一logical_dateで<br/>warm-context builderを一度だけ構築<br/>PrecomputeRawContext全体 precompute_raw.py:59-77:<br/>monthly_return/portfolio/signal preload<br/>/artifact/business_days/ledger"]
     B --> C{"PFループ 1..102"}
-    C --> D["同一context objectを共有<br/>builder_cache_shared=1<br/>再構築・DB再読込ゼロ"]
+    C --> D["同一context objectを共有<br/>builder_cache_shared=1<br/>PF毎のmonthly_return再読込・builder再生成ゼロ"]
     D --> E["L5.monthly_trade warm実行<br/>full経路run314実績: 5PF TOTAL 37.8s・cold=0"]
     E --> C
     C -->|全PF完了| F["四点一致判定<br/>ERROR0+P4error0+terminal+成果物整合"]
@@ -69,18 +72,22 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    CRON["cron定期実行"] --> L2["L2: POST /admin/sync-standard<br/>standard PF計算(102PF)"]
-    CRON --> L3["L3: POST /admin/sync-fof<br/>FoF計算(78体・enqueue_l5=false可)"]
-    CRON --> L5["L5: POST /admin/precompute-raw<br/>配信cache生成(portfolio_id canary可)"]
-    L2 -->|"確定値をDBへ永続化"| DB[("signals / monthly_returns")]
-    L3 -->|"L2確定値を読む(再計算しない)"| DB
-    L3 -->|"確定値を永続化"| DB
-    L5 -->|"warm-context一度構築(R1)<br/>L2/L3確定値をpreload・再計算しない"| DB
+    C2["01:10 L2 cron"] --> W2["etl_layer_sync_wait<br/>L1_ticker当日成功を確認"] --> L2["L2: POST /admin/sync-standard"]
+    L2 -->|"standard確定値を永続化"| DB[("signals / monthly_returns")]
+    C3["01:40 L3 cron"] --> W3["etl_layer_sync_wait<br/>L2_standard当日成功を確認"]
+    W3 --> L3["L3: POST /admin/sync-fof<br/>FoF計算(78体)"]
+    DB -->|"L2確定値を読む"| L3
+    L3 -->|"FoF確定値を永続化"| DB
+    L3 -->|"完了hook: enqueue_l5=true(既定)"| L5["L5: POST /admin/precompute-raw相当のqueue body<br/>配信cache生成(portfolio_id canary可)"]
+    C5["02:00 L5 fallback cron"] --> S5{"L5 last_success_date=当日?"}
+    S5 -->|yes| SKIP["skip"]
+    S5 -->|no| L5
+    DB -->|"R1: run-local warm-contextを一度構築<br/>L2/L3確定値をpreload"| L5
     L5 --> RAW[("precomputed_raw<br/>=FE配信cache")]
     NOTE1["各層とも失敗はdurable failedへ終端<br/>(四点一致・偽completed禁止)"] -.-> L2
     NOTE1 -.-> L3
     NOTE1 -.-> L5
-    NOTE2["下位層のみ再実行可<br/>(上位層成功を巻き戻さない<br/>=run316でL2/L3を保持しL5のみ復旧の型)"] -.-> L5
+    NOTE2["下流層のみ再実行可<br/>(上流成功を巻き戻さない<br/>=run316でL2/L3を保持しL5のみ復旧の型)"] -.-> L5
 ```
 
 ### 実行形態別To-Be② — fullrecalculate ver(P6根治コードLive・run314で5PF実証済み)
@@ -104,7 +111,7 @@ flowchart TD
 
 | # | タスク | 担当 | AC(二値) | 状態 |
 |---|---|---|---|---|
-| R1 | **L5 warm-context配管**: 単独L5入口で既存warm-context builder(context全体=monthly_return/portfolio/signal preload/artifact/business_days/ledger、precompute_raw.py:59-77)を呼ぶ。罠3点: ①共有対象=context全体 ②advisory lock後に同一logical_dateで一度構築・世代間非共有 ③partial時の依存FoF confirmed preload補完(:1081-1088)維持 | 家老レーン(GO済みmsg_001531) | builder_cache_shared=1化+同一PF群でmonthly_trade前後実測短縮+出力一致 | 配備中 |
+| R1 | **L5 warm-context配管**: 単独L5入口で既存warm-context builder(context全体=monthly_return/portfolio/signal preload/artifact/business_days/ledger、precompute_raw.py:59-77)を呼ぶ。罠3点: ①共有対象=context全体 ②advisory lock後に同一logical_dateで一度構築・世代間非共有 ③partial時の依存FoF confirmed preload補完(:1081-1088)維持 | 家老レーン(GO済みmsg_001531) | builder_cache_shared=1化+同一PF群でmonthly_trade前後実測短縮+出力一致 | 実装5417194f・focused 30/30 PASS。最新main統合競合2塊を解消中 |
 | R2 | 問題PF(015e74dc)のL5単独canary→PASS後にL5全102PF | 家老 | canary四点一致→全件failed 0 | R1後 |
 | R3 | pre-history WARNING 28件の全数分類(真正欠損か正当pre-historyか) | 飛猿系 | 全数分類+真正欠損0または修正 | 走行中 |
 | R4 | 10PF canary→full再発進(P6根治コードLive済み: durable owner/token/lease/scope/terminal・c9c21acd+dee70369) | 家老 | §9.0二値AC(waiter body 0・偽completed 0・単一owner/単一terminal) | R2/R3後 |
@@ -124,5 +131,6 @@ flowchart TD
 - 数値4規律: 集計コマンド併記・出力生貼付・1件の定義・網羅範囲明示
 
 ## 改訂履歴
+- v3.1-review (2026-08-13 00:40): コード現物レビュー。単独L5をAPI→queue→lock→workerの実経路へ訂正、cronを`etl_layer_sync_wait`依存+L3完了hook+02:00 fallbackへ訂正、「全DB再読込ゼロ」をPF毎の対象処理へ限定、R1統合状況を更新。
 - v3.1 (2026-08-13 00:37): §1.5新設(殿指示00:35) — R1のAs-Is/To-Be図+実行形態別To-Be2図(cron層別ver・fullrecalculate ver)。家老レビュー依頼中。
 - v3.0 (2026-08-13 00:23): 新規作成。v2系(v2.0-v2.36)の現役情報のみ抽出。歴史はv2系凍結参照。
