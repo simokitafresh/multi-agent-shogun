@@ -9,7 +9,7 @@
 
 1. **full=再封印(殿裁定2026-08-12 12:48)** — run301が意図5 seed→L3 65FoF/L5 68PFへ非意図展開し変更64,590件/50FoF(710秒・ERROR0)を生んだため、12:30の条件付き解封を撤回しfull発進禁止。**新解錠条件(4つ全て成立)**: ①N指定→N実行(scope暴発なし) ②同一少数PFの連続canary ERROR0 ③同一canary再実行でchange 0(収束) ④実行時間の安定。run296教訓(裁可範囲外full禁止)は引き続き有効
 2. **正順序**: run296根因→T3.6(TradePerf FoF展開)→T4→T5→T6→full(T7)→T8
-3. **主戦の本質**: 唯一のLazySignalArtifactCacheをL2→L3→L5→trade_perfまでidentity同一で一本受渡し。第二cache新設は逸脱(e84f335a先例)
+3. **主戦の本質(殿15:06で判定原理を精緻化)**: 唯一のLazySignalArtifactCacheをL2→L3→L5→trade_perfまでidentity同一で一本受渡し。**判定原理=「上流で計算済みのものは再計算しない」** — 再計算1件=上流で既に得た同一論理値を下流consumerが再導出またはDBから再取得する1経路。残存cacheは名前で裁定せず、上流確定値の再計算物=逸脱として削除、上流に存在しない局所メモ化のみ個別証明で許容。第二cache新設は逸脱(e84f335a先例)。T4-T6の受入基準はこの原理で統一
 4. **不変契約I1-I5**は§10.1末尾。例外承認権は殿のみ
 5. **進捗の正**=§10.1 Status表のみ。他所の進捗記述を根拠にするな
 6. **run成功判定契約(2026-08-12 13:31確立→13:42拡張)** — **DB status=completed単独での成功判定禁止**。成功=「ERROR 0かつP4_TIMING_ERROR 0かつterminal成功(TIMING SUMMARY到達)」のログ突合+**成果物整合(monthly_returns>0、L5更新はPhase4.5成功後のみ)**の四点一致。根拠=run302がPhase4.5例外握り潰しでcompleted/error NULLの偽成功(実ログERROR=1/P4error=1)、かつDB実害=不完全中間状態(target signals 4916更新・monthly_returns 0行・L5 raw target15+bulk3が中途続行、holding NULL 4)。N=N scopeは正常(target外更新0)。是正=才蔵便(全PF試行後aggregate raise+Phase4.5失敗時はL5へ進まない)実装中
@@ -292,6 +292,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
+- v2.23 (2026-08-12 15:09): **§0(3)へToBe判定原理を精緻化(殿下知15:06「上流で計算済みのものは再計算しない」・家老blt_150839)** — 残存cacheの裁定基準=上流確定値の再計算物なら削除/局所メモ化のみ個別証明で許容。T4-T6受入基準を本原理で統一。run307実測(TOTAL 93.76s: L5_raw 39.4/L3_fof 27.9/monthly_trade 27.2/trade_perf 12.0)により**次主戦=monthly_trade/trade_perf内の上流確定値再計算経路の全除去**。才蔵旧FAILはRC是正済み(全bc=yes/PASS/軍師LGTM)。flush再構築ゼロは維持(main全経路最終証明は残存callsite帰属完了後)。
 - v2.22 (2026-08-12 14:43): **run304成功=hole根治実証(家老blt_144238・才蔵便commit 97c11c91 Live)** — post-established hole(過去日に非NULL holdingが在るのに当日NULL)の全数検証: total 5780行中post_established_null=**0**。run304=completed・Phase4.5 1/1 failed0・L5 failed0 rows18・ERROR/P4error=0・TIMING SUMMARY=1・TOTAL 8.0s=§0(6)四点一致成立。§10-ToBe同一artifact維持。二偵察(疾風effective_start境界+半蔵再演:2470特定)→才蔵修正の三段で、run296以来の2007-01-26 Missing holding_signal根因が決着。**full未解錠**(新解錠条件②③④=連続ERROR0・再実行change0・時間安定の実証はこれから)。
 - v2.21 (2026-08-12 14:09): **run303時系列を記録(家老blt_140850)** — 才蔵便SHA 387aa5e4・requested/actual=1/1。leading None(2003-08-22)は解消、成立後真正hole(2007-01-26=run296と同一日付)がValueErrorとして露出し、Phase4.5 0/1→aggregate RuntimeError→**DB/L2 status=error・L5実行0** — §0(6)四点契約どおり失敗が正直に記録され偽completed/L5中途続行は根治。残=producer側のholding_signal hole(2007-01-26)根治、才蔵継続。
 - v2.20 (2026-08-12 13:43): §0(6)を四点一致へ拡張(家老blt_134223のDB実害確定) — run302はtarget外更新0(N=N正常)だがtarget signals 4916更新・monthly_returns 0・L5中途続行の不完全中間状態でcompleted。成功判定へ成果物整合(monthly_returns>0・L5はPhase4.5成功後のみ)を追加。
