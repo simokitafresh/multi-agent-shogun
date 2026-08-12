@@ -292,6 +292,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
+- v2.21 (2026-08-12 14:09): **run303時系列を記録(家老blt_140850)** — 才蔵便SHA 387aa5e4・requested/actual=1/1。leading None(2003-08-22)は解消、成立後真正hole(2007-01-26=run296と同一日付)がValueErrorとして露出し、Phase4.5 0/1→aggregate RuntimeError→**DB/L2 status=error・L5実行0** — §0(6)四点契約どおり失敗が正直に記録され偽completed/L5中途続行は根治。残=producer側のholding_signal hole(2007-01-26)根治、才蔵継続。
 - v2.20 (2026-08-12 13:43): §0(6)を四点一致へ拡張(家老blt_134223のDB実害確定) — run302はtarget外更新0(N=N正常)だがtarget signals 4916更新・monthly_returns 0・L5中途続行の不完全中間状態でcompleted。成功判定へ成果物整合(monthly_returns>0・L5はPhase4.5成功後のみ)を追加。
 - v2.19 (2026-08-12 13:32): **§0(6)run成功判定契約を新設(家老blt_133146の全数集計)** — run302一次確定(requested/actual=1/1・TOTAL 6.0s・ERROR=1・P4_TIMING_ERROR=1・WARNING=8・ALERT=0)によりcompleted単独判定禁止、成功=ERROR0+P4error0+terminal成功の三点一致へ。旧(6)撤去条項は(7)へ繰下げ。
 - v2.18 (2026-08-12 13:27): **run302=FAIL(偽completed)を記録(家老blt_132620)** — 6.033秒でDB=(302,completed,error NULL)だが、Phase4.5でstandard PF e0826b59のcache holding_signal=None(date=2003-08-22)がValueError→recalculate_fast:2927-2952のcatchが失敗を吸収して継続=偽completed。B4根治(59db624d=interrupted正直記録)とは別経路の失敗吸収バグ。是正便=才蔵配備済み(既存iter_cacheable_signals再利用+Phase4.5 aggregate raiseで失敗を可視化)。新解錠条件②(連続ERROR0)は本FAILによりリセット。
