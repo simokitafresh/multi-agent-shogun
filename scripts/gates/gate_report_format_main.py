@@ -2171,6 +2171,18 @@ _h(r'worker_id: MISSING',
 _h(r'parent_cmd: MISSING',
    'FIX (parent_cmd): bash scripts/report_field_set.sh <report> parent_cmd <cmd_id>')
 
+# cross_repo_commits
+_h(r'cross_repo_commits: (?:cross_repo_commits\[\d+\] commit does not change path|files_modified path lacks cross-repo ownership)',
+   'FIX (cross_repo_commits): pathsを手書きで補正せず、'
+   'scripts.lib.cross_repo_commit_contract.auto_generate_cross_repo_entries(repo, [commit_hash]) '
+   'でcommit実体からentriesを再生成し、report_field_set.sh経由でcross_repo_commitsへ設定せよ。'
+   'repoは絶対Git repository path、commit_hashは40-hexを渡すこと')
+_h(r'cross_repo_commits: cross_repo_commits\[\d+\]\.(?:repo is not an absolute Git repository|commit_hash is not a resolvable 40-hex commit)',
+   'FIX (cross_repo_commits): repo/commit_hashを推測で直さず、実在repoの絶対pathと'
+   'git rev-parse <commit>の40-hexを確認してから '
+   'scripts.lib.cross_repo_commit_contract.auto_generate_cross_repo_entries(repo, [commit_hash]) '
+   'でentriesを再生成せよ')
+
 # assumption_invalidation / self_gate_check / knowledge_candidate
 _h(r'assumption_invalidation: is \w+',
    'FIX (assumption_invalidation): dict 形式で記入:\n'
