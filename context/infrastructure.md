@@ -24,7 +24,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1586 -->
+<!-- last_synced_lesson: L1587 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -62,7 +62,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1586 -->
+<!-- last_synced_lesson: L1587 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -147,6 +147,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1584: report_publicationは子process合計と未計測残差を分離してから最適化候補を選ぶ（cmd_karo_recon_report_publication_latency_202608101813）
 - L1585: helper抽出fixtureと静的契約は実装refactorと同一commit波で同期する（cmd_karo_ci_fix_31431140453_completion_archive）
 - L1586: 共有insight YAMLのsafe helperにも世代競合防御が必要（cmd_reflux_insight_202608110625_hanzo）
+- L1587: source context update triggerを完了経路へ自動接続する（cmd_karo_hotfix_ga457_context_update_autowire_20260812）
 
 ## 設計標準・テスト・因果
 
