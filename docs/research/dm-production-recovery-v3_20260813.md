@@ -30,6 +30,76 @@
 - 単独L5入口(etl_trigger.py:848-852)が**PrecomputeRawContextなし**→precompute_raw.py:1078-1127がshared_builders=NoneでPF毎に履歴+FoF展開を冷間再構築(全PF builder_cache_shared=0)
 - full経路(recalculate_fast.py:3605-3621)は配管済み — **単独経路だけ素通り**
 
+## §1.5 As-Is/To-Beフローチャート(R1=L5 warm-context配管。修正方式の型: As-Is=Start/To-Be=Goal)
+
+### As-Is(実測run実証・全PF cold)
+
+```mermaid
+flowchart TD
+    A["単独L5入口 POST /admin/precompute-raw<br/>etl_trigger.py:848-852"] -->|"PrecomputeRawContext=None"| B["precompute_raw.py:1078-1127<br/>shared_builders=None"]
+    B --> C{"PFループ 1..102"}
+    C --> D["PF毎に冷間再構築:<br/>monthly_return DB読込<br/>+FoF展開 expand_portfolio_to_tickers<br/>+履歴builder再生成"]
+    D --> E["L5.monthly_trade 12.9-36.2s/PF<br/>=PF時間の86.6-95.0%"]
+    E --> F["precompute_raw: X/102<br/>cache_state=cold・builder_cache_shared=0"]
+    F --> C
+    C -->|全PF完了| G["102PF×平均約26s ≒ 44分"]
+    style D fill:#8b2635,color:#fff
+    style E fill:#8b2635,color:#fff
+```
+
+### To-Be(R1実装後=Goal・full経路と同じwarm受渡し)
+
+```mermaid
+flowchart TD
+    A["単独L5入口 POST /admin/precompute-raw"] --> B["advisory lock取得後、同一logical_dateで<br/>warm-context builderを一度だけ構築<br/>PrecomputeRawContext全体 precompute_raw.py:59-77:<br/>monthly_return/portfolio/signal preload<br/>/artifact/business_days/ledger"]
+    B --> C{"PFループ 1..102"}
+    C --> D["同一context objectを共有<br/>builder_cache_shared=1<br/>再構築・DB再読込ゼロ"]
+    D --> E["L5.monthly_trade warm実行<br/>full経路run314実績: 5PF TOTAL 37.8s・cold=0"]
+    E --> C
+    C -->|全PF完了| F["四点一致判定<br/>ERROR0+P4error0+terminal+成果物整合"]
+    G["partial実行時"] -.->|"依存FoFはconfirmed preload補完<br/>:1081-1088 を維持"| B
+    H["世代間"] -.->|"contextは世代間非共有<br/>lock境界で破棄"| B
+    style B fill:#1b4d3e,color:#fff
+    style D fill:#1b4d3e,color:#fff
+```
+
+完了判定=実装後にAs-Is図を現コードへ更新し、本To-Be図と構造一致すること(§0(4))。
+
+### 実行形態別To-Be① — cron層別実行ver(各層独立入口・上流確定値を再計算しない)
+
+```mermaid
+flowchart TD
+    CRON["cron定期実行"] --> L2["L2: POST /admin/sync-standard<br/>standard PF計算(102PF)"]
+    CRON --> L3["L3: POST /admin/sync-fof<br/>FoF計算(78体・enqueue_l5=false可)"]
+    CRON --> L5["L5: POST /admin/precompute-raw<br/>配信cache生成(portfolio_id canary可)"]
+    L2 -->|"確定値をDBへ永続化"| DB[("signals / monthly_returns")]
+    L3 -->|"L2確定値を読む(再計算しない)"| DB
+    L3 -->|"確定値を永続化"| DB
+    L5 -->|"warm-context一度構築(R1)<br/>L2/L3確定値をpreload・再計算しない"| DB
+    L5 --> RAW[("precomputed_raw<br/>=FE配信cache")]
+    NOTE1["各層とも失敗はdurable failedへ終端<br/>(四点一致・偽completed禁止)"] -.-> L2
+    NOTE1 -.-> L3
+    NOTE1 -.-> L5
+    NOTE2["下位層のみ再実行可<br/>(上位層成功を巻き戻さない<br/>=run316でL2/L3を保持しL5のみ復旧の型)"] -.-> L5
+```
+
+### 実行形態別To-Be② — fullrecalculate ver(P6根治コードLive・run314で5PF実証済み)
+
+```mermaid
+flowchart TD
+    START["full開始"] --> OWN["L5所有権をL3前に予約<br/>durable owner/token/lease"]
+    OWN --> L2F["L2: standard全PF計算<br/>共有snapshot 2000-01-01から一度構築(T0)"]
+    L2F --> L3F["L3: FoFトポロジカル直列<br/>同一signal_cacheをL2から受渡し(T3)"]
+    L3F --> P45["Phase4.5: MonthlyReturn生成<br/>失敗はaggregate raise→L5へ進まない"]
+    P45 --> L5F["L5: full本体1回だけ<br/>同一warm cache object(identity)でbody実行<br/>waiter body=0・二周目なし"]
+    L5F --> TERM["cross-process durable terminal共有<br/>単一owner/単一terminal"]
+    TERM --> CHK["四点一致+I1全量突合+I5全endpoint欠落0<br/>(T7最終checkpoint)"]
+    UI["full走行中のUI invalidate"] -.->|"raw削除せずdirty scopeへmerge<br/>全量enqueue collapse禁止"| L5F
+    CRASH["owner消失"] -.->|"lease/timeoutでtakeover<br/>開始token固定(旧worker terminal書込み不可)"| TERM
+    style OWN fill:#1b4d3e,color:#fff
+    style L5F fill:#1b4d3e,color:#fff
+```
+
 ## §2. 走行中タスク(これだけ見る)
 
 | # | タスク | 担当 | AC(二値) | 状態 |
@@ -54,4 +124,5 @@
 - 数値4規律: 集計コマンド併記・出力生貼付・1件の定義・網羅範囲明示
 
 ## 改訂履歴
+- v3.1 (2026-08-13 00:37): §1.5新設(殿指示00:35) — R1のAs-Is/To-Be図+実行形態別To-Be2図(cron層別ver・fullrecalculate ver)。家老レビュー依頼中。
 - v3.0 (2026-08-13 00:23): 新規作成。v2系(v2.0-v2.36)の現役情報のみ抽出。歴史はv2系凍結参照。
