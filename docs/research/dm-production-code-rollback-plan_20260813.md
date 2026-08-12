@@ -1,5 +1,5 @@
 <!-- gist-master: 0c98ab3686bcaff3aa1ddd36e1a53570 dm-production-code-rollback-plan_20260813.md -->
-# DM-Signal本番コードロールバック設計 v1.0
+# DM-Signal本番コードロールバック設計 v1.3
 <!-- semantic-links: [[recalculate_pipeline]] [[production_parity]] [[code_rollback]] -->
 
 - 作成: 2026-08-13 01:22 JST
@@ -153,16 +153,33 @@ flowchart TD
 | # | 工程 | 二値出口 | 状態 |
 |---|---|---|---|
 | RB1 | rollback先決定 | `21e80e30`、前後3 runtime commitと境界を記録 | **完了** |
-| RB2 | runtime closure manifest作成 | 対象N/N、manifest外runtime差分0 | 未着手 |
-| RB3 | rollback commit構築 | tree一致N/N、build/startup PASS、SKIP 0 | 未着手 |
-| RB4 | 本番deploy | live SHA一致、health/schema互換PASS | 未着手 |
-| RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | 未着手 |
+| RB2 | runtime closure manifest作成 | 対象N/N、manifest外runtime差分0 | **完了** |
+| RB3 | rollback commit構築 | tree一致N/N、build/startup PASS、SKIP 0 | **完了**（`233c2303`） |
+| RB4 | 本番deploy | live SHA一致、health/schema互換PASS | **完了** |
+| RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | **部分完了**（L5 standard 24 PF failed。§9.1残件1） |
 | RB6 | prices独立oracle全量 | monthly/metrics不一致0 | 未着手 |
 | RB7 | 本番API/UI確認 | 8画面欠損0・例外0 | 未着手 |
 | RB8 | 最終checkpoint | §8 AC1-8全PASS | 未着手 |
 
+### §9.1 実行記録と残件（2026-08-13 03:55時点）
+
+**実行記録（一次証拠付き）**:
+
+1. 殿裁可 01:47「では本番をロールバックしよう。ロールバックしたらfullrecalculateしよう」→ 即実行。
+2. rollback commit `233c2303`（`rollback(dm-signal): restore production tree to 21e80e30`）をorigin/mainへpush、退避branch `archive/pre-rollback-20260813-0148-7003cf69` を作成（revert経路確保）。
+3. 本番deploy後、fullrecalculate実行。走行中に`SIGNAL CHANGE ALERT count=9343 portfolios=50 dates=2011-08-31〜2026-08-11`が発報 → **正当変化と判定**（旧値=バグコード出力への書戻し差分。ALERT機構自体もrollbackで復活した撤去前機構であり異常ではない。03:06殿へ言上済み）。
+4. L5終端: `precompute_raw completed: rows=1173 portfolios=102 failed=24 elapsed=624.79s`。failed 24件は全てstandard PF。
+5. 原因確定: standard 24 PFの系列先頭行がholding_signal NULLかつmonthly_return=0（本番readonly再集計 `(24, 24, 24)`、将軍が独立確認）。baseline `21e80e30`に含まれる8/3 fail-visible化（`3efd01e0` performance.py全NULL例外化）と「保有確立前leading NULL=正常」（`85a15e50`）の契約不整合。Aug 2 backupにも先頭NULLがあり、rollbackが壊したのではなくbaseline内在の不整合。
+
+**残件**:
+
+1. **L5先頭NULL最小修正**（家老実装中・将軍承認済み・殿裁定03:46「シンプルな対応がベスト」準拠）: 既存raise箇所に「系列先頭からの連続NULL（保有確立前）はスキップ」の最小分岐のみ追加。確立後NULLはraise維持。追加fixtureは境界1本のみ。追加機構（ヘルパー集約・ログ機構等）は作らない。二値AC: L5 102/102・failed 0・Unknown出力0・確立後NULL fixtureはraise。
+2. 修正deploy→L5再走でRB5のfailed 0を確認後、RB6（prices独立oracle全量）へ進む。
+3. RB6→RB7（8画面確認）→RB8（§8 AC1-8同一世代PASS）。
+
 ## §10. 改訂履歴
 
+- v1.3 (2026-08-13 03:55): 実行実績を反映。RB2-RB4完了（rollback commit `233c2303`・退避branch記録）、RB5部分完了（L5 standard 24 PF failed=先頭NULL契約不整合、本番readonly再集計 `(24,24,24)`）、SIGNAL CHANGE ALERT 9343件=正当書戻しの判定、残件（先頭連続NULLスキップの最小修正=殿裁定03:46シンプル対応準拠）を§9.1へ追記。
 - v1.2 (2026-08-13 01:40): 将軍レビューを反映。`bf4ed6a6`境界時刻を1秒訂正、full再生成中のcron混線防止を追記。Render deploys API一次結果により、8/4 CDP証跡の直接帰属を`28b58ee0`へ訂正し、`21e80e30`は8/9 00:21一括deployで初live・8/10 02:39まで正常表示継続と記録。
 - v1.1 (2026-08-13 01:25): rollback先を`21e80e30`へ決定。production runtime基準の前後3 commitをtimestamp・変更内容付きで固定し、Monthly Trade修正完了点とL5 queue新設開始点の境界を明文化。
 - v1.0 (2026-08-13 01:22): 新前提に基づくロールバック専用設計を新規作成。旧L5局所修復laneの全判断を失効し、baseline選定→runtime復帰commit→派生全再生成→prices独立oracle→本番UI確認の新工程へ再構築。
