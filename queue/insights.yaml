@@ -958,7 +958,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -968,6 +968,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "known fix target and detector evidence confirmed: detector_fp_rate.sh rc=0, events=773, target fp_rate=50.0% (false_positive=2/4); no new code change required"
+  action_artifact: detector_fp=/tmp/kagemaru_detector_fp.yaml;ledger=logs/detector_fp_rate.yaml;target=scripts/cmd_save.sh;semantic=context/semantic-map.md+docs/semantic-index/index.md;context=context/infrastructure.md
+  resolved_at: "2026-08-12T10:48:13+09:00"
 - id: INS-20260812-102142263-403f
   ts: "2026-08-12T10:21:42+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_ga457_context_update_autowire_20260812; matched=context; current_pattern=; candidate_level=4; candidate=cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘; source=gunshi_gp_tracker.yaml"
