@@ -12,7 +12,8 @@
 3. **主戦の本質**: 唯一のLazySignalArtifactCacheをL2→L3→L5→trade_perfまでidentity同一で一本受渡し。第二cache新設は逸脱(e84f335a先例)
 4. **不変契約I1-I5**は§10.1末尾。例外承認権は殿のみ
 5. **進捗の正**=§10.1 Status表のみ。他所の進捗記述を根拠にするな
-6. **旧値比較・SIGNAL CHANGE生成の撤去(殿直接裁定2026-08-12 12:52/12:53→12:55実装GO)** — 本質3点: ①旧値(ledger/旧signals)が未信頼で比較自体が無意味 ②発報がLLMの注意を固定し主戦から逸脱させる ③hot path比較が速度低下。旧値比較・signal_change_log生成・collector・ALERT・ntfyの機構削除を忍者へGO済み(家老blt_130111・commit 9cc27779系)。**旧『ALERT維持』(02:09将軍整理・T7.5)はsuperseded** — 歴史注記としてのみ残す。監査は正しいbaseline確立後の別実行レーンで再設計(T8)
+6. **run成功判定契約(2026-08-12 13:31確立)** — **DB status=completed単独での成功判定禁止**。成功=「ERROR 0かつP4_TIMING_ERROR 0かつterminal成功(TIMING SUMMARY到達)」のログ突合まで含む三点一致。根拠=run302がPhase4.5例外握り潰しでcompleted/error NULLの偽成功(実ログ: ERROR=1/P4_TIMING_ERROR=1)。是正=才蔵便(全PF試行後aggregate raise)実装中
+7. **旧値比較・SIGNAL CHANGE生成の撤去(殿直接裁定2026-08-12 12:52/12:53→12:55実装GO)** — 本質3点: ①旧値(ledger/旧signals)が未信頼で比較自体が無意味 ②発報がLLMの注意を固定し主戦から逸脱させる ③hot path比較が速度低下。旧値比較・signal_change_log生成・collector・ALERT・ntfyの機構削除を忍者へGO済み(家老blt_130111・commit 9cc27779系)。**旧『ALERT維持』(02:09将軍整理・T7.5)はsuperseded** — 歴史注記としてのみ残す。監査は正しいbaseline確立後の別実行レーンで再設計(T8)
 - 更新: 2026-08-12 12:05 JST(v2.10)
 
 ## §1. 現在地(2026-08-12 10:45時点の記録 — 進捗の正は§0/§10.1)
@@ -291,6 +292,7 @@ flowchart TD
 **正本注記(2026-08-12 11:32 JST)**: 本ファイル(multi-agent-shogun/docs/research/、302行系・gist 2d1e7458)が工程正本。DM-Signal側に同名の旧160行文書が併存しているが旧版であり、進捗参照は本ファイルのみとする(履歴改変はしない)。
 
 ## 改訂履歴
+- v2.19 (2026-08-12 13:32): **§0(6)run成功判定契約を新設(家老blt_133146の全数集計)** — run302一次確定(requested/actual=1/1・TOTAL 6.0s・ERROR=1・P4_TIMING_ERROR=1・WARNING=8・ALERT=0)によりcompleted単独判定禁止、成功=ERROR0+P4error0+terminal成功の三点一致へ。旧(6)撤去条項は(7)へ繰下げ。
 - v2.18 (2026-08-12 13:27): **run302=FAIL(偽completed)を記録(家老blt_132620)** — 6.033秒でDB=(302,completed,error NULL)だが、Phase4.5でstandard PF e0826b59のcache holding_signal=None(date=2003-08-22)がValueError→recalculate_fast:2927-2952のcatchが失敗を吸収して継続=偽completed。B4根治(59db624d=interrupted正直記録)とは別経路の失敗吸収バグ。是正便=才蔵配備済み(既存iter_cacheable_signals再利用+Phase4.5 aggregate raiseで失敗を可視化)。新解錠条件②(連続ERROR0)は本FAILによりリセット。
 - v2.17 (2026-08-12 13:02): §0(6)へ殿裁定12:55の本質3点(旧値未信頼/LLM注意固定/速度低下)と機構削除GOを追記。T7.5行へsuperseded注記(検出・ALERT自体も撤去へ、§0(6)が正)。歴史は削除せず注記で残す(歴史修正禁止)。
 - v2.16 (2026-08-12 12:55): **§0(6)新設 — 旧値比較・SIGNAL CHANGE生成のhot path撤去(殿直接裁定12:52/12:53)**。バグベースbaselineとの比較は無意味が原理。将軍02:09整理『遮断のみ解除・ALERT維持』は誤変換と認め本裁定で上書き(家老blt_125437の三層検索突合: 現main=signal_flush.py ALERT refs2+collector refs6が撤去対象)。監査はT8の別実行レーンで再設計。
