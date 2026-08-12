@@ -1662,6 +1662,74 @@ PY
 # test_necessity: the canary contract is a persistent deployment invariant;
 # every verification/performance task must receive it while unrelated and
 # documentation-only tasks must receive zero injections.
+# test_necessity: source-boundary changes must route the registered context owner
+# and trigger into the task contract, while explicit and unrelated cases remain
+# deterministic and idempotent.
+@test "GA-457 source registry autowires candidates only for matching task sources" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/scripts/config" "$tmpdir/queue/tasks"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" \
+        "$tmpdir/scripts/config/context_source_commits.tsv"
+
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  project: dm-signal
+  target_path: backend/app/jobs/recalculate.py
+  task_id: ga457_production
+  status: assigned
+YAML
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" \
+        INJECT_TASK_MODIFIERS_ONLY=context_update \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+candidates = task['context_update_candidates']
+assert {item['path'] for item in candidates} == {
+    'context/dm-signal-core.md', 'context/dm-signal-ops.md'
+}
+assert all(item['owner'] and item['update_trigger'] and item['source_paths']
+           for item in candidates)
+PY
+}
+
+@test "GA-457 source registry keeps unrelated and explicitly processed tasks at zero candidates" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/scripts/config" "$tmpdir/queue/tasks"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" \
+        "$tmpdir/scripts/config/context_source_commits.tsv"
+
+    cat > "$tmpdir/queue/tasks/unrelated.yaml" <<'YAML'
+task:
+  project: dm-signal
+  target_path: README.md
+  task_id: ga457_unrelated
+  status: assigned
+YAML
+    cat > "$tmpdir/queue/tasks/processed.yaml" <<'YAML'
+task:
+  project: dm-signal
+  target_path: backend/app/jobs/recalculate.py
+  context_update:
+    - context/dm-signal-core.md
+    - context/dm-signal-ops.md
+  task_id: ga457_processed
+  status: assigned
+YAML
+    for worker in unrelated processed; do
+        run env TASK_FILE_ENV="$tmpdir/queue/tasks/$worker.yaml" SCRIPT_DIR_ENV="$tmpdir" \
+            INJECT_TASK_MODIFIERS_ONLY=context_update \
+            python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+        [ "$status" -eq 0 ]
+        python3 - "$tmpdir/queue/tasks/$worker.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+assert task.get('context_update_candidates') == [], task
+PY
+    done
+}
+
 @test "5PF canary rotation contract injects only DM-Signal verification or performance tasks" {
     tmpdir="$(mktemp -d)"
     printf '%s\n' \

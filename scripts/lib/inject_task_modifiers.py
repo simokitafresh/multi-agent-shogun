@@ -520,14 +520,17 @@ def inject_context_update(task, script_dir):
         return []
 
     parent_cmd = str(task.get('parent_cmd', '') or '').strip()
-    if not parent_cmd:
-        return False
+    changed = False
 
     def find_cmd_source(parent_cmd, script_dir):
         stk = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
         if os.path.exists(stk):
             obj = load_yaml_safe(stk)
             commands = obj.get('commands', [])
+            if isinstance(commands, dict):
+                entry = commands.get(parent_cmd)
+                if isinstance(entry, dict):
+                    return entry, stk
             if isinstance(commands, list):
                 for cmd in commands:
                     if (isinstance(cmd, dict) and
@@ -541,6 +544,10 @@ def inject_context_update(task, script_dir):
         for cpath in candidates:
             obj = load_yaml_safe(cpath)
             commands = obj.get('commands', [])
+            if isinstance(commands, dict):
+                entry = commands.get(parent_cmd)
+                if isinstance(entry, dict):
+                    return entry, cpath
             if isinstance(commands, list):
                 for cmd in commands:
                     if (isinstance(cmd, dict) and
@@ -549,24 +556,167 @@ def inject_context_update(task, script_dir):
 
         return None, ''
 
-    cmd_entry, source_path = find_cmd_source(parent_cmd, script_dir)
-    if cmd_entry is None:
-        return False
+    if parent_cmd:
+        cmd_entry, source_path = find_cmd_source(parent_cmd, script_dir)
+        if cmd_entry is not None:
+            context_update = normalize_list(cmd_entry.get('context_update', []))
+            if context_update:
+                existing = normalize_list(task.get('context_update', []))
+                if existing != context_update:
+                    task['context_update'] = context_update
+                    changed = True
+                    rel_source = (os.path.relpath(source_path, script_dir)
+                                  if source_path else source_path)
+                    print(f'[INJECT_CONTEXT_UPDATE] Injected {len(context_update)} entries '
+                          f'from {rel_source}', file=sys.stderr)
 
-    context_update = normalize_list(cmd_entry.get('context_update', []))
-    if not context_update:
-        return False
+    # GA-457: an explicit cmd context_update is still authoritative, but a
+    # source-boundary match must produce a durable candidate for tasks which
+    # have no explicit update.  Keep this in the task YAML (the existing task
+    # contract) instead of creating a parallel ledger or modifying context.
+    candidates = inject_context_update_candidates(task, script_dir)
+    if candidates is not None:
+        existing_candidates = task.get('context_update_candidates')
+        if existing_candidates != candidates:
+            task['context_update_candidates'] = candidates
+            changed = True
+        if candidates:
+            print(f'[INJECT_CONTEXT_UPDATE] Auto-generated {len(candidates)} '
+                  'registry candidates', file=sys.stderr)
+    return changed
 
-    existing = normalize_list(task.get('context_update', []))
-    if existing == context_update:
-        return False
 
-    task['context_update'] = context_update
-    rel_source = (os.path.relpath(source_path, script_dir)
-                  if source_path else source_path)
-    print(f'[INJECT_CONTEXT_UPDATE] Injected {len(context_update)} entries '
-          f'from {rel_source}', file=sys.stderr)
-    return True
+def _task_source_paths(task, script_dir):
+    """Return normalized source paths declared by a task.
+
+    target_path is the normal deployment boundary; planned_paths and the
+    other path-bearing fields are accepted so split/legacy task shapes use
+    the same registry matcher.  Paths are data only: no filesystem access is
+    needed to classify a source boundary.
+    """
+    values = []
+    for key in ('target_path', 'planned_paths', 'source_paths',
+                'files_to_modify', 'files_modified'):
+        value = task.get(key)
+        if isinstance(value, str):
+            values.append(value)
+        elif isinstance(value, list):
+            values.extend(value)
+    result = []
+    seen = set()
+    for value in values:
+        if isinstance(value, dict):
+            value = value.get('path', '')
+        path = str(value or '').strip().replace('\\', '/')
+        if not path:
+            continue
+        if os.path.isabs(path):
+            try:
+                path = os.path.relpath(path, script_dir).replace('\\', '/')
+            except ValueError:
+                path = path.lstrip('/')
+        marker = '/DM-signal/'
+        if marker in path:
+            path = path.split(marker, 1)[1]
+        path = path.lstrip('./')
+        if path not in seen:
+            seen.add(path)
+            result.append(path)
+    return result
+
+
+def _context_registry(script_dir):
+    registry_path = os.path.join(
+        script_dir, 'scripts', 'config', 'context_source_commits.tsv')
+    if not os.path.isfile(registry_path):
+        return []
+    rows = []
+    with open(registry_path, encoding='utf-8') as registry:
+        for line_number, raw in enumerate(registry, 1):
+            line = raw.rstrip('\n')
+            if not line.strip() or line.lstrip().startswith('#'):
+                continue
+            fields = line.split('\t')
+            if len(fields) != 4 or not all(field.strip() for field in fields):
+                print(f'[INJECT_CONTEXT_UPDATE] WARN: malformed registry row '
+                      f'{line_number}', file=sys.stderr)
+                continue
+            context_path, project, owner, triggers = [field.strip() for field in fields]
+            rows.append({
+                'path': context_path,
+                'project': project,
+                'owner': owner,
+                'update_trigger': triggers,
+            })
+    return rows
+
+
+def _source_matches_trigger(source_path, trigger):
+    trigger = trigger.strip().replace('\\', '/')
+    if not trigger:
+        return False
+    if trigger == 'root-fallback':
+        return not source_path.startswith('context/')
+    if trigger.startswith('cited:'):
+        trigger = trigger[len('cited:'):]
+    return (
+        source_path == trigger
+        or source_path.startswith(trigger.rstrip('/') + '/')
+        or (trigger.endswith(('_', '-')) and source_path.startswith(trigger))
+    )
+
+
+def inject_context_update_candidates(task, script_dir):
+    """Build context-update candidates from the registered source boundary.
+
+    ``[]`` is meaningful (a previously generated candidate set is stale),
+    while ``None`` means the registry is unavailable and leaves the task
+    untouched.  Explicit context_update paths are treated as already routed
+    and are never duplicated as candidates.
+    """
+    registry = _context_registry(script_dir)
+    if not registry:
+        return None
+    project = str(task.get('project', '') or '').strip()
+    source_paths = _task_source_paths(task, script_dir)
+    explicit = set(normalize_context_paths(task.get('context_update', [])))
+    candidates = []
+    for row in registry:
+        if project and row['project'] != project:
+            continue
+        matched = [
+            source for source in source_paths
+            if source != row['path'] and any(
+                _source_matches_trigger(source, trigger)
+                for trigger in row['update_trigger'].split('|')
+            )
+        ]
+        if not matched or row['path'] in explicit:
+            continue
+        candidates.append({
+            'path': row['path'],
+            'owner': row['owner'],
+            'update_trigger': row['update_trigger'],
+            'source_paths': sorted(set(matched)),
+        })
+    return candidates
+
+
+def normalize_context_paths(value):
+    if isinstance(value, list):
+        values = value
+    elif isinstance(value, str):
+        values = [value]
+    else:
+        values = []
+    result = []
+    for item in values:
+        if isinstance(item, dict):
+            item = item.get('path', item.get('context_path', ''))
+        path = str(item or '').strip().lstrip('./')
+        if path:
+            result.append(path)
+    return result
 
 
 # ─── report_template ───

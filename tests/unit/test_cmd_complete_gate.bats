@@ -3697,6 +3697,73 @@ run_report_format_validation() {
     [[ "$output" == *"SKIP (context_update not set)"* ]]
 }
 
+# test_necessity: a registry candidate is a completion contract, so an
+# unprocessed candidate must fail closed before the cmd can clear.
+@test "GA-457 unprocessed registry candidate blocks completion" {
+    write_cmd_yaml "without_context"
+    write_context_file "2026-03-05"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: __TEST_CMD_ID__
+  project: infra
+  context_update_candidates:
+    - path: context/infrastructure.md
+      owner: infra-platform
+      update_trigger: root-fallback
+      source_paths: [scripts/lib/inject_task_modifiers.py]
+YAML
+    sed -i "s/__TEST_CMD_ID__/$TEST_CMD_ID/" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+
+    run run_context_update_check
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"context_update_candidate:context/infrastructure.md:unprocessed"* ]]
+    [[ "$output" == *"owner=infra-platform"* ]]
+}
+
+@test "GA-457 explicit task context update resolves its candidate without mutation" {
+    write_cmd_yaml "with_context"
+    write_context_file "2026-03-05"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: __TEST_CMD_ID__
+  project: infra
+  context_update:
+    - context/infrastructure.md
+  context_update_candidates:
+    - path: context/infrastructure.md
+      owner: infra-platform
+      update_trigger: root-fallback
+      source_paths: [scripts/lib/inject_task_modifiers.py]
+YAML
+    sed -i "s/__TEST_CMD_ID__/$TEST_CMD_ID/" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+
+    run run_context_update_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context_update_candidate:context/infrastructure.md:explicitly_processed"* ]]
+    [[ "$output" != *"unprocessed"* ]]
+}
+
+@test "GA-457 unrelated task with zero candidates keeps context gate clear" {
+    write_cmd_yaml "without_context"
+    write_context_file "2025-01-01"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: __TEST_CMD_ID__
+  project: dm-signal
+  target_path: README.md
+  context_update_candidates: []
+YAML
+    sed -i "s/__TEST_CMD_ID__/$TEST_CMD_ID/" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+
+    run run_context_update_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (context_update not set)"* ]]
+    [[ "$output" != *"context_update_candidate"* ]]
+}
+
 @test "GATE CLEAR emits non-blocking context freshness warning when project context is stale" {
     write_cmd_yaml "without_context"
     write_context_file "2026-03-01"

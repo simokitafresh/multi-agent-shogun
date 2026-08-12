@@ -5720,7 +5720,7 @@ check_context_update() {
                 ;;
         esac
     done < <(
-        python3 - "$SCRIPT_DIR" "$cmd_id" <<'PY'
+        python3 - "$SCRIPT_DIR" "$cmd_id" "${MATCHING_TASK_FILES[@]}" <<'PY'
 import glob
 import os
 import re
@@ -5731,6 +5731,7 @@ yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-2026
 
 root = sys.argv[1]
 cmd_id = sys.argv[2]
+task_paths = sys.argv[3:]
 
 def load_yaml(path):
     try:
@@ -5764,15 +5765,88 @@ if not cmd:
     sys.exit(0)
 
 context_update = cmd.get("context_update")
-if not context_update:
-    print("SKIP\tcontext_update not set")
-    sys.exit(0)
 
 if isinstance(context_update, str):
     targets = [context_update]
 elif isinstance(context_update, list):
     targets = [str(v).strip() for v in context_update if str(v).strip()]
+elif isinstance(context_update, dict):
+    targets = [str(context_update.get("path", "")).strip()]
 else:
+    targets = []
+
+def context_paths(value):
+    if isinstance(value, str):
+        values = [value]
+    elif isinstance(value, list):
+        values = value
+    else:
+        values = []
+    result = []
+    for item in values:
+        if isinstance(item, dict):
+            item = item.get("path", item.get("context_path", ""))
+        path = str(item or "").strip().lstrip("./")
+        if path:
+            result.append(path)
+    return result
+
+explicit_targets = set(context_paths(context_update))
+candidate_count = 0
+candidate_blocked = False
+for task_path in task_paths:
+    if not task_path or not os.path.isfile(task_path):
+        continue
+    task_data = load_yaml(task_path).get("task", {})
+    if not isinstance(task_data, dict):
+        continue
+    task_explicit = set(context_paths(task_data.get("context_update")))
+    task_explicit.update(explicit_targets)
+    candidates = task_data.get("context_update_candidates", [])
+    if not isinstance(candidates, list):
+        print(f"BLOCK\tcontext_update_candidates:{os.path.basename(task_path)}:invalid_type")
+        candidate_blocked = True
+        continue
+    for candidate in candidates:
+        if isinstance(candidate, dict):
+            rel = str(candidate.get("path", candidate.get("context_path", ""))).strip()
+            owner = str(candidate.get("owner", "")).strip()
+            trigger = str(candidate.get("update_trigger", "")).strip()
+            sources = ",".join(str(v).strip() for v in candidate.get("source_paths", []) if str(v).strip())
+        else:
+            rel = str(candidate or "").strip()
+            owner = trigger = sources = ""
+        rel = rel.lstrip("./")
+        if not rel:
+            print(f"BLOCK\tcontext_update_candidates:{os.path.basename(task_path)}:empty_path")
+            candidate_blocked = True
+            continue
+        candidate_count += 1
+        if rel in task_explicit:
+            if rel not in targets:
+                targets.append(rel)
+            print(f"INFO\tcontext_update_candidate:{rel}:explicitly_processed")
+            continue
+        detail = f"context_update_candidate:{rel}:unprocessed"
+        if owner:
+            detail += f" owner={owner}"
+        if trigger:
+            detail += f" update_trigger={trigger}"
+        if sources:
+            detail += f" source_paths={sources}"
+        print(f"BLOCK\t{detail}")
+        candidate_blocked = True
+
+if candidate_blocked and not targets:
+    sys.exit(0)
+
+if not context_update:
+    if not targets:
+        if candidate_count:
+            sys.exit(0)
+        print("SKIP\tcontext_update not set")
+        sys.exit(0)
+elif not targets:
     print("WARN\tcontext_update has invalid type (expected list/string)")
     sys.exit(0)
 
