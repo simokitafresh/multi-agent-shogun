@@ -1581,6 +1581,7 @@ codd:
 | file | `docs/research/fullrecalculate-architecture-2026-03-28.md` |
 | file | `context/dm-signal-research.md` §因果リンク `P4_writer_fence_v1.4.22` |
 | causal | [[recalculate_pipeline]] -> [[lord-memo-fullrecalc-log-fe-concerns_20260810]] — 殿メモのfullrecalculate速度・ログ可読性・FE観察事項 |
+| causal | [[recalculate_pipeline]] -> [[dm-fullrecalculate-cache-reuse-asis_20260813]] — fullrecalculateのキャッシュ・計算済みデータ再利用フローAs-Is |
 | causal | `cmd_3881` origin: [[cmd_3881性能FAIL]] -> [[常設trigger通常時課税]] -> [[P4窓限定role trigger]] |
 | causal | [[fof-acceleration-oscillation-experiment-asis-tobe-5w1h_20260805]] — FoF加速度フィルタ振動問題の実験設計書 |
 | memory | `knowledge:eedddad94e78cfbb` — 旧値比較とSIGNAL CHANGE ALERTを再計算hot pathから除去する殿裁定 |
