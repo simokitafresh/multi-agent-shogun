@@ -418,7 +418,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 ## 22. cmd_4153 admin UI全数偵察 (2026-07-24)
 
-結論: admin 4ルート・17 TSX全数調査。一覧性低下根因=FoFカード縦積み/DB Status collapsed default/folders全collapsed/modal退避。改善提案5案 (FoF→table canonical/DB Status展開default/split-view編集/nav compact/folders全展開) を5要件形式で記載。→ `docs/research/cmd_4153_admin_ui_recon_20260724.md`
+結論: admin 4ルート・17 TSX全数調査。一覧性低下根因=FoFカード縦積み/DB Status collapsed default/folders全collapsed/modal退避。改善提案5案 (FoF→table canonical/DB Status展開default/split-view編集/nav compact/folders全展開) を5要件形式で記載。→ `docs/research/admin-ui-redesign-asis-tobe-5w1h_20260724.md`
 
 ## 23. N2/N5 モバイルsticky根治+rolling列幅統一 (2026-07-24 殿実機確認済)
 
