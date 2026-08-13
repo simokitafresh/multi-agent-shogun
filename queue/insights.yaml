@@ -420,8 +420,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '01f6bbc7c68f9ea6966b1f97169b3bbcb4ff25d943ce3848a96bb87b4e1769f0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 13
-  last_seen: "2026-08-13T12:48:05+09:00"
+  occurrence_count: 15
+  last_seen: "2026-08-13T13:31:28+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -848,8 +848,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 7
-  last_seen: "2026-08-13T13:00:10+09:00"
+  occurrence_count: 9
+  last_seen: "2026-08-13T13:23:22+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1014,3 +1014,13 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-13T12:32:43+09:00"
+- id: INS-20260813-132440908-2a45
+  ts: "2026-08-13T13:24:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:RB6「prices独立oracle全量ってなんだ？説明して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T13:25:52+09:00"
