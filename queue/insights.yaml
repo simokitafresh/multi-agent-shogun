@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260813-214720724-bd9e
-  ts: "2026-08-13T21:47:20+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[殿指示_NxE二次元ロバストネス実行_20260813]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=24.9) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=20.6) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.4)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-13T21:47:43+09:00"
 - id: INS-20260813-214721654-4015
   ts: "2026-08-13T21:47:21+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[nxe-2d-robustness-asis-tobe-5w1h_20260801]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=nxe 2d robustness asis tobe 5w1h 20260801 mdを実行したい; score=36.9) / admin_ui_redesign_asis_tobe(DM-Signal Admin画面一覧性改修設計書; alias=admin ui redesign asis tobe 5w1h 20260724 mdを確認せよ; score=20.8) / tier_plan_mapping(Tier-プラン対応; alias=asis tobe 5W1Hでプランを作成; score=15.5)。概念定義とaliases追加を検討せよ"
@@ -678,8 +668,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '90d67283d9af8739da943c989225980b35d350ff3bd3f3364269a8af98e37f7e' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 11
-  last_seen: "2026-08-14T05:23:22+09:00"
+  occurrence_count: 13
+  last_seen: "2026-08-14T06:29:04+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -998,8 +988,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 18
-  last_seen: "2026-08-14T05:59:59+09:00"
+  occurrence_count: 25
+  last_seen: "2026-08-14T06:46:16+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1012,5 +1002,12 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_backlink_202608140450_kotaro; matched=docs; current_pattern=; candidate_level=2; candidate=workaround=true+category=clean矛盾9件(112件中8%)。2026-04-17に7件集中。根因=家老が--cleanではなく通常モードでcleanカテゴリを渡した; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608140450_kotaro"
+  fix_known: false
+  status: pending
+- id: INS-20260814-064659608-f12f
+  ts: "2026-08-14T06:46:59+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_review_quality_warn_20260814; matched=gates; current_pattern=; candidate_level=3; candidate=cmd_2286でAC5(cmd原本に不在)がtask YAMLに混入→影丸verdict:FAIL→家老waive。根因=忍者がtask YAMLにACを手動追加。comm -23でcmd原本にないAC IDを検出→WARN; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_review_quality_warn_20260814"
   fix_known: false
   status: pending
