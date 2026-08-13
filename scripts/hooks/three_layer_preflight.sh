@@ -479,6 +479,51 @@ prompt_from_payload() {
     fi
 }
 
+is_ninja_agent() {
+    case "$1" in
+        hayate|kagemaru|hanzo|saizo|kotaro|tobisaru) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+task_context_query() {
+    local task_dir="${THREE_LAYER_TASK_DIR:-$ROOT/queue/tasks}"
+    local task_file="$task_dir/$1.yaml"
+    [[ -f "$task_file" ]] || return 1
+    python3 - "$task_file" <<'PY'
+import re
+import sys
+import yaml
+
+task_file = sys.argv[1]
+with open(task_file, encoding="utf-8") as handle:
+    document = yaml.safe_load(handle) or {}
+task = document.get("task") or {}
+
+parts = []
+purpose = task.get("purpose")
+if purpose:
+    parts.append(str(purpose))
+for criterion in task.get("acceptance_criteria") or []:
+    if isinstance(criterion, dict):
+        value = criterion.get("description") or criterion.get("purpose") or criterion.get("id")
+    else:
+        value = criterion
+    if value:
+        parts.append(str(value))
+target_path = task.get("target_path")
+if isinstance(target_path, (list, tuple)):
+    parts.extend(str(value) for value in target_path if value)
+elif target_path:
+    parts.append(str(target_path))
+
+query = re.sub(r"\s+", " ", " ".join(parts)).strip()
+if not query:
+    raise SystemExit("current task has no searchable purpose, acceptance criteria, or target_path")
+print(query)
+PY
+}
+
 # cmd_karo_hotfix_evidence_utf8_truncate: head -c byte-truncates and can split a
 # multi-byte UTF-8 codepoint in half, producing invalid UTF-8 in the evidence
 # JSON (json.load then fails for every downstream consumer). Truncate at the
@@ -502,7 +547,7 @@ else:
 
 issue() {
     local prompt_arg="${1:-}"
-    local payload prompt prompt_hash issued_at tmp_file rg_cmd
+    local payload prompt search_prompt prompt_hash issued_at tmp_file rg_cmd
     local started_ms deadline_ms global_budget_ms="${THREE_LAYER_GLOBAL_BUDGET_MS:-2800}"
     started_ms="$(date +%s%3N)"
     local causal_cache="${THREE_LAYER_CAUSAL_INDEX_CACHE:-$ROOT/.cache/causal_index.tsv}" cold_cache=0
@@ -530,6 +575,13 @@ issue() {
         printf 'three_layer_preflight: empty prompt\n' >&2
         return 1
     fi
+    search_prompt="$prompt"
+    if is_ninja_agent "$agent_id" && [[ "$prompt" =~ ^inbox[0-9]+$ ]]; then
+        search_prompt="$(task_context_query "$agent_id")" || {
+            printf 'three_layer_preflight: current task context unavailable for %s\n' "$agent_id" >&2
+            return 1
+        }
+    fi
     issued_at="$(date -Iseconds)"
     prompt_hash="$(printf '%s\n%s\n%s' "$prompt" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
     local nonce
@@ -554,7 +606,7 @@ issue() {
     # literal to search for, so give it the prompt's first line, CR-stripped
     # and capped; this does not change what memory_db_query.sh/semantic_search.sh
     # receive (their own query parsers already tokenize multi-line input safely).
-    local obsidian_query="${prompt%%$'\n'*}"
+    local obsidian_query="${search_prompt%%$'\n'*}"
     obsidian_query="${obsidian_query//$'\r'/}"
     obsidian_query="${obsidian_query:0:200}"
 
@@ -584,13 +636,13 @@ issue() {
     [[ "$cold_cache" == 1 ]] && obsidian_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-3.5}"
     if is_git_checkout && [[ "${THREE_LAYER_BATCH_PRIMARY:-1}" == 1 ]]; then
         batch_result="$(mktemp "$EVIDENCE_DIR/.batch-result.XXXXXX")"
-        ( batch_index_search "$prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 ) &
+        ( batch_index_search "$search_prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 ) &
         batch_pid=$!
     else
-        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 ) &
+        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --search "$search_prompt" >/dev/null 2>&1 ) &
         memory_pid=$!
         semantic_raw_output="$EVIDENCE_DIR/.semantic-raw.$$"
-        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$prompt" >"$semantic_raw_output" 2>/dev/null ) &
+        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$search_prompt" >"$semantic_raw_output" 2>/dev/null ) &
         semantic_pid=$!
     fi
     # Root cause fix: rg fs-walk on 9P (/mnt/c) times out under IO saturation
@@ -628,7 +680,7 @@ issue() {
             if rebuild_memory_cache_sync "$source_db" "$memory_cache" "$boot_id" "$failed_cache_generation"; then
                 batch_result="$(mktemp "$EVIDENCE_DIR/.batch-retry.XXXXXX")"
                 local retry_rc=0
-                batch_index_search "$prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 || retry_rc=$?
+                batch_index_search "$search_prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 || retry_rc=$?
                 if [[ -s "$batch_result" ]]; then
                     IFS=$'\t' read -r memory_rc semantic_rc memory_count semantic_count memory_query semantic_query memory_ts semantic_ts memory_wall_ms semantic_wall_ms memory_top_b64 semantic_top_b64 memory_total_hits semantic_total_hits <"$batch_result"
                 else
@@ -643,9 +695,9 @@ issue() {
         wait "$semantic_pid" || semantic_rc=$?
         # Portable isolated roots expose only command completion, not the
         # indexed hit metadata available in the production batch reader.
-        [[ "$memory_rc" == 0 ]] && { memory_count=1; memory_query="$prompt"; memory_ts="$issued_at"; memory_total_hits=1; }
+        [[ "$memory_rc" == 0 ]] && { memory_count=1; memory_query="$search_prompt"; memory_ts="$issued_at"; memory_total_hits=1; }
         if [[ "$semantic_rc" == 0 ]]; then
-            semantic_count=1; semantic_query="$prompt"; semantic_ts="$issued_at"; semantic_total_hits=1
+            semantic_count=1; semantic_query="$search_prompt"; semantic_ts="$issued_at"; semantic_total_hits=1
             if [[ -n "$semantic_raw_output" ]] && grep -q '^MEMORY_DB_MATCH:' "$semantic_raw_output" 2>/dev/null; then
                 semantic_layer="memory_db"
             fi
@@ -700,8 +752,8 @@ issue() {
     local fallback_memory_result="" fallback_semantic_result="" fallback_obsidian_result=""
     if (( remaining_ms > 0 )); then
         fallback_seconds="$(awk -v ms="$remaining_ms" 'BEGIN { printf "%.3f", ms / 1000 }')"
-        [[ "$memory_rc" == 124 ]] && { fallback_memory_result="$(mktemp "$EVIDENCE_DIR/.memory-fallback.XXXXXX")"; memory_timeout_fallback "$prompt" "$fallback_seconds" "$fallback_memory_result" & fallback_memory_pid=$!; }
-        [[ "$semantic_rc" == 124 ]] && { fallback_semantic_result="$(mktemp "$EVIDENCE_DIR/.semantic-fallback.XXXXXX")"; text_index_timeout_fallback "$prompt" "$fallback_seconds" "$fallback_semantic_result" "$semantic_index" & fallback_semantic_pid=$!; }
+        [[ "$memory_rc" == 124 ]] && { fallback_memory_result="$(mktemp "$EVIDENCE_DIR/.memory-fallback.XXXXXX")"; memory_timeout_fallback "$search_prompt" "$fallback_seconds" "$fallback_memory_result" & fallback_memory_pid=$!; }
+        [[ "$semantic_rc" == 124 ]] && { fallback_semantic_result="$(mktemp "$EVIDENCE_DIR/.semantic-fallback.XXXXXX")"; text_index_timeout_fallback "$search_prompt" "$fallback_seconds" "$fallback_semantic_result" "$semantic_index" & fallback_semantic_pid=$!; }
         [[ "$obsidian_rc" == 124 ]] && { fallback_obsidian_result="$(mktemp "$EVIDENCE_DIR/.obsidian-fallback.XXXXXX")"; text_index_timeout_fallback "$obsidian_query" "$fallback_seconds" "$fallback_obsidian_result" "$ROOT/context/semantic-map.md" "$ROOT/docs" & fallback_obsidian_pid=$!; }
         if [[ -n "$fallback_memory_pid" ]]; then wait "$fallback_memory_pid" && memory_rc=0 || memory_rc=$?; [[ -s "$fallback_memory_result" ]] && IFS=$'\t' read -r memory_count memory_query _memory_source memory_ts memory_top_b64 memory_total_hits <"$fallback_memory_result"; rm -f "$fallback_memory_result"; fi
         if [[ -n "$fallback_semantic_pid" ]]; then wait "$fallback_semantic_pid" && semantic_rc=0 || semantic_rc=$?; [[ -s "$fallback_semantic_result" ]] && IFS=$'\t' read -r semantic_count semantic_query _semantic_source semantic_ts semantic_top_b64 semantic_total_hits <"$fallback_semantic_result"; rm -f "$fallback_semantic_result"; fi

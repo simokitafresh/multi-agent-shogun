@@ -55,6 +55,68 @@ issue_with_fixtures() {
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "$@"
 }
 
+# test_necessity: inboxN must search the current ninja task context across all
+# three layers, while the same prompt for a non-ninja role remains unchanged.
+@test "inboxNの忍者preflightは現taskの3項目を三層queryへ置換する" {
+    local tmp_root="$TMP_EVIDENCE/task-context-root"
+    local task_dir="$tmp_root/queue/tasks"
+    local evidence_dir="$tmp_root/evidence"
+    mkdir -p "$task_dir" "$tmp_root/scripts/hooks" "$tmp_root/context" "$tmp_root/docs"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cat > "$task_dir/hayate.yaml" <<'YAML'
+task:
+  purpose: task aware purpose
+  acceptance_criteria:
+    - id: AC1
+      description: task aware acceptance
+  target_path: task/target
+YAML
+    cat > "$tmp_root/scripts/memory_db_query.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" > "$QUERY_LOG"
+exit 0
+SH
+    cat > "$tmp_root/scripts/semantic_search.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" > "$SEMANTIC_LOG"
+exit 0
+SH
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+    printf '%s\n' 'task aware purpose task aware acceptance task/target' > "$tmp_root/context/semantic-map.md"
+    printf '%s\n' 'task aware purpose' > "$tmp_root/docs/task.md"
+
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_TASK_DIR="$task_dir" THREE_LAYER_AGENT_ID=hayate TMUX_PANE=%fixture \
+        QUERY_LOG="$TMP_EVIDENCE/memory-query.log" SEMANTIC_LOG="$TMP_EVIDENCE/semantic-query.log" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue inbox1
+    [ "$status" -eq 0 ]
+    [ -s "$TMP_EVIDENCE/memory-query.log" ]
+    [ -s "$TMP_EVIDENCE/semantic-query.log" ]
+    run cat "$TMP_EVIDENCE/memory-query.log"
+    [[ "$output" == *"task aware purpose"* ]]
+    [[ "$output" == *"task aware acceptance"* ]]
+    [[ "$output" == *"task/target"* ]]
+    [[ "$output" != *"inbox1"* ]]
+    run python3 - "$evidence_dir/evidence_hayate__fixture.json" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["status"] == "success"
+assert data["memory_query"] != "inbox1"
+assert data["semantic_query"] != "inbox1"
+assert data["obsidian_query"] != "inbox1"
+PY
+    [ "$status" -eq 0 ]
+
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir/non-ninja" \
+        THREE_LAYER_TASK_DIR="$task_dir" THREE_LAYER_AGENT_ID=shogun TMUX_PANE=%non_ninja \
+        QUERY_LOG="$TMP_EVIDENCE/non-ninja-memory-query.log" SEMANTIC_LOG="$TMP_EVIDENCE/non-ninja-semantic-query.log" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue inbox1
+    [ "$status" -eq 0 ]
+    run cat "$TMP_EVIDENCE/non-ninja-memory-query.log"
+    [[ "$output" == *"inbox1"* ]]
+}
+
 @test "有効なSQLite DBでも全層NO_MATCHはfail-closed" {
     run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "definitely-absent-memory-query"
