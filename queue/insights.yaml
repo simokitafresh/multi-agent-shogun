@@ -644,7 +644,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で再確認したところ、ext4 cache上のSQLiteはSELECT sqlite_master・PRAGMA quick_check・PRAGMA integrity_checkが全てrc=0/okで、memory_db_query.sh --searchもrc=0。9p上の本体はSELECTのみrc=0だがquick_check/integrity_checkは各20秒timeoutで、破損ではなく9pランダムアクセス遅延。既存のcache経路で検索欠損は解消済みのため追加修正不要。
+  action_artifact: "data/multi_agent_shogun_memory.db(1,117,204,480 bytes);/tmp/shogun_memory_db_cache/_mnt_c_tools_multi-agent-shogun_multi_agent_shogun_memory.db:PRAGMA quick_check=ok,integrity_check=ok;scripts/memory_db_query.sh:348-352,318-320"
+  resolved_at: "2026-08-14T05:55:07+09:00"
 - id: INS-20260814-014428328-0c26
   ts: "2026-08-14T01:44:28+09:00"
   insight: "[[そうすると]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=そうすると、本番から逆算してprice×weightに分解したときに一致するかをみればいいのでは？"
@@ -995,8 +998,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 16
-  last_seen: "2026-08-14T05:47:16+09:00"
+  occurrence_count: 18
+  last_seen: "2026-08-14T05:59:59+09:00"
   verification:
     status: "passed"
     exit_code: 0
