@@ -125,7 +125,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608122221_hayate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認済み: DM-Signal教訓L650(cmd_2271)が現行projects/dm-signal/lessons.yamlに存在し、現行scripts/deploy_task.shのGP-223/225語彙分割とtarget_files一致必須フィルタでoutputs/対象の教訓注入漏れを防御済み。既存防御でresolve。"
+  action_artifact: "projects/dm-signal/lessons.yaml:L650;scripts/deploy_task.sh:L8449-L8476,L8912-L9062,L9234-L9248;tests/unit/test_deploy_task_yaml_injection.bats:L2609-L2697"
+  resolved_at: "2026-08-13T13:38:00+09:00"
 - id: INS-20260812-225243674-d813
   ts: "2026-08-12T22:52:43+09:00"
   insight: "[[P6本番5PFで残った初回成立前pre history警告と成立後の真正なholding欠損を意味的に分離し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=既存policy gate PASSでもFNを検出しなかった; score=3.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTのdm signal ops mdを一次情報で照合し; score=3.1) / cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gate自動pushがGA PUSH1成立済みのdirty overlapを毎回hook失敗と; score=3.0)。既存概念aliasesへの自動昇格候補"
