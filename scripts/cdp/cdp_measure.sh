@@ -105,8 +105,9 @@ if [[ "$HTTP_CODE" != "200" ]]; then
 fi
 echo "OK (HTTP 200)"
 
-# 1c. CDP認証 — cdp_helper.ui_login（CDP哲学の共通基盤）
-#     人間と同じ: ブラウザ起動→ページ開く→フォーム入力→ボタン押す
+# 1c. CDP認証 — shared receipt adapter（CDP哲学の共通基盤）
+#     認証も正本adapterへ集約し、inline Python + env-file読取による
+#     Guard14のDB接続誤分類と、requested/actual portの分岐を作らない。
 CDP_PORT="${CDP_PORT:-9222}"
 CDP_REQUESTED_PORT="$CDP_PORT"
 CDP_RECEIPT="$(mktemp /tmp/cdp-measure-receipt.XXXXXX)"
@@ -133,42 +134,9 @@ ENV_FILE="$(get_project_path 'dm-signal')/backend/.env"
 ADMIN_URL="${FRONTEND_URL}/admin"
 echo -n "  CDP Admin Login (UI): "
 set +e
-LOGIN_RESULT=$(PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 - "$CDP_PORT" "$ENV_FILE" "$ADMIN_URL" <<'LOGINPY'
-import sys, time
-from pathlib import Path
-from cdp import cdp_helper
-
-port = int(sys.argv[1])
-env_file = Path(sys.argv[2])
-admin_url = sys.argv[3]
-
-# shared session receipt already qualified this endpoint; auth is an adapter only.
-actual_port = port
-
-# admin loginページにナビゲート
-tab_id = cdp_helper.create_tab(url=admin_url, port=actual_port, timeout=30)
-time.sleep(4)
-
-# .envからcredentials読取り
-env = {}
-for line in env_file.read_text().splitlines():
-    line = line.strip()
-    if not line or line.startswith("#") or "=" not in line:
-        continue
-    k, _, v = line.partition("=")
-    env[k.strip()] = v.strip().strip('"').strip("'")
-
-user = env.get("ADMIN_USER", "")
-pw = env.get("ADMIN_PASS", "")
-if not user or not pw:
-    print("FAIL: ADMIN_USER or ADMIN_PASS missing in .env")
-    sys.exit(1)
-
-# ui_login: CDP哲学の共通実装
-cdp_helper.ui_login(tab_id, user, pw, port=actual_port)
-print(f"OK:port={actual_port}")
-LOGINPY
-)
+LOGIN_RESULT=$(python3 "${SCRIPT_DIR}/scripts/cdp/dm_signal_adapters.py" \
+    --receipt "$CDP_RECEIPT" auth-strategy \
+    --target-url "$ADMIN_URL" --required-capability admin --env-file "$ENV_FILE")
 LOGIN_RC=$?
 set -e
 if [[ "$LOGIN_RC" -ne 0 ]]; then
@@ -176,8 +144,7 @@ if [[ "$LOGIN_RC" -ne 0 ]]; then
     echo "  → ${LOGIN_RESULT}" >&2
     exit 1
 fi
-CDP_PORT=$(echo "$LOGIN_RESULT" | grep -oP 'port=\K[0-9]+' | tail -1)
-CDP_PORT="${CDP_PORT:-9222}"
+CDP_PORT=$(python3 -c 'import json,sys; print(int(json.load(open(sys.argv[1]))["daemon_cdp_port"]))' "$CDP_RECEIPT")
 echo "OK (port ${CDP_PORT})"
 
 echo ""

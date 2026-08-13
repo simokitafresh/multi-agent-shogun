@@ -14,7 +14,9 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 from typing import Callable
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 import websocket
@@ -51,26 +53,139 @@ def _load_env_value(path: str, key: str) -> str:
     raise AdapterError(f"{key} is missing from the configured environment file")
 
 
+def _cdp_endpoint(receipt: dict) -> str:
+    endpoint = str(receipt.get("endpoint", "")).strip().rstrip("/")
+    parsed = urlsplit(endpoint)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise AdapterError("CDP foundation receipt has an invalid endpoint")
+    return endpoint
+
+
+def _cdp_request(ws, method: str, params: dict | None = None) -> dict:
+    request_id = int(time.time_ns() % 1_000_000_000)
+    ws.send(json.dumps({"id": request_id, "method": method, "params": params or {}}))
+    while True:
+        message = json.loads(ws.recv())
+        if message.get("id") == request_id:
+            if message.get("error"):
+                raise AdapterError(f"CDP {method} failed: {message['error']}")
+            return message.get("result", {})
+
+
+def _page_targets(endpoint: str) -> list[dict]:
+    try:
+        with urlopen(f"{endpoint}/json/list", timeout=5) as response:
+            payload = json.load(response)
+    except Exception as exc:
+        raise AdapterError(f"CDP endpoint is unreachable: {type(exc).__name__}") from exc
+    return [row for row in payload if row.get("type") == "page"]
+
+
+def _page_ws(endpoint: str, target_url: str) -> str:
+    host = urlsplit(target_url).netloc
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        pages = _page_targets(endpoint)
+        for row in pages:
+            if host in str(row.get("url", "")) and row.get("webSocketDebuggerUrl"):
+                return str(row["webSocketDebuggerUrl"])
+        time.sleep(0.2)
+    raise AdapterError("CDP page target did not become available")
+
+
+def _open_admin_page(endpoint: str, target_url: str) -> str:
+    pages = _page_targets(endpoint)
+    ws_url = next((str(row["webSocketDebuggerUrl"]) for row in pages
+                   if row.get("webSocketDebuggerUrl")), None)
+    if ws_url is None:
+        try:
+            with urlopen(f"{endpoint}/json/version", timeout=5) as response:
+                browser_ws = json.load(response)["webSocketDebuggerUrl"]
+            ws = websocket.create_connection(browser_ws, timeout=15)
+            try:
+                target = _cdp_request(ws, "Target.createTarget", {"url": target_url})
+                if not target.get("targetId"):
+                    raise AdapterError("CDP Target.createTarget returned no target")
+            finally:
+                ws.close()
+        except AdapterError:
+            raise
+        except Exception as exc:
+            raise AdapterError(f"CDP admin page creation failed: {type(exc).__name__}") from exc
+        return _page_ws(endpoint, target_url)
+
+    ws = websocket.create_connection(ws_url, timeout=15)
+    try:
+        _cdp_request(ws, "Page.navigate", {"url": target_url})
+    finally:
+        ws.close()
+    return _page_ws(endpoint, target_url)
+
+
+def _admin_ui_auth(target_url: str, env_file: str, receipt: dict) -> tuple[bool, str]:
+    try:
+        user = _load_env_value(env_file, "ADMIN_USER")
+        password = _load_env_value(env_file, "ADMIN_PASS")
+    except AdapterError as exc:
+        return False, str(exc)
+    endpoint = _cdp_endpoint(receipt)
+    ws_url = _open_admin_page(endpoint, target_url)
+    ws = websocket.create_connection(ws_url, timeout=30)
+    script = """
+    (async () => {
+      const deadline = Date.now() + 10000;
+      let passwordInput, userInput, button;
+      while (Date.now() < deadline) {
+        const inputs = [...document.querySelectorAll('input')];
+        passwordInput = inputs.find(x => x.type === 'password');
+        userInput = inputs.find(x => x !== passwordInput &&
+          ['text', 'email'].includes(x.type)) || inputs.find(x => x !== passwordInput);
+        button = [...document.querySelectorAll('button')].find(x =>
+          /login/i.test((x.innerText || x.textContent || '').trim()));
+        if (userInput && passwordInput && button) break;
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      if (!userInput || !passwordInput || !button)
+        return {ok:false, reason:'admin login form not found'};
+      const set = (el, value) => {
+        const setter = Object.getOwnPropertyDescriptor(
+          window.HTMLInputElement.prototype, 'value').set;
+        setter.call(el, value);
+        el.dispatchEvent(new Event('input', {bubbles:true}));
+        el.dispatchEvent(new Event('change', {bubbles:true}));
+      };
+      set(userInput, %s); set(passwordInput, %s); button.click();
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      return {ok: !document.querySelector('input[type="password"]'),
+              url: location.href};
+    })()
+    """ % (json.dumps(user), json.dumps(password))
+    try:
+        result = _cdp_request(ws, "Runtime.evaluate", {
+            "expression": script, "awaitPromise": True, "returnByValue": True,
+        })
+    finally:
+        ws.close()
+    value = result.get("result", {}).get("value", {})
+    if not value.get("ok"):
+        raise AdapterError(f"admin authentication failed: {value.get('reason', 'form rejected')}")
+    return True, f"admin UI authenticated at {value.get('url', target_url)}"
+
+
 def _admin_auth(target_url: str, env_file: str, receipt: dict) -> tuple[bool, str]:
-    cli = Path("/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh")
-    if not cli.is_file():
-        raise AdapterError("DM-Signal admin authentication helper is unavailable")
-    port = str(receipt.get("daemon_cdp_port") or
-               str(receipt["endpoint"]).rsplit(":", 1)[-1])
-    result = subprocess.run(
-        ["bash", str(cli), "auth", "--env", env_file, "--port", port,
-         "--api-base-url", target_url],
-        text=True, capture_output=True,
-        # auth+warmup is ~5min in production (semantic知見: CDP長時間化の根因は
-        # warm-up+viewer auth+計測の積み上げ約5分). A fixed 30s guaranteed timeout.
-        timeout=int(os.environ.get("CDP_AUTH_TIMEOUT_SEC", "360")), check=False,
-    )
-    combined = f"{result.stdout}\n{result.stderr}"
-    if result.returncode == 0:
-        return True, "admin helper authenticated"
-    if "401" in combined or "unauthor" in combined.lower():
-        return False, "admin helper reported unauthorized"
-    raise AdapterError(f"admin authentication failed (exit={result.returncode})")
+    # The auto-ops CLI performs its CDP HTTP preflight through Windows
+    # PowerShell.  A Windows localhost endpoint is not authoritative from the
+    # WSL caller: the same receipt can be reachable natively in WSL while the
+    # PowerShell request times out.  Authenticate through the receipt endpoint
+    # directly so endpoint, port, and process boundaries cannot drift.
+    try:
+        return _admin_ui_auth(target_url, env_file, receipt)
+    except AdapterError:
+        raise
+    except subprocess.TimeoutExpired as exc:
+        raise AdapterError("admin authentication failed (timeout)") from exc
+    except Exception as exc:
+        raise AdapterError(f"admin authentication failed ({type(exc).__name__})") from exc
 
 
 def _page_websocket(endpoint: str, target_url: str) -> str:
