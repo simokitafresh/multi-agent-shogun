@@ -923,7 +923,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:60f2769e3008a419"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次検証で全79参照先・鮮度・静的パス・副作用マーカーがOK。rc=2は42件の追従レビュー在庫で、既存semantic/contextが同概念と履歴を保持するため実修正不要として解決。
+  action_artifact: "gate_skill_script_refs.sh /mnt/c/tools/multi-agent-shogun => rc=2 REVIEW_REQUIRED; 41 SKILL.md/79 refs/42 followups, all four checks OK; semantic-map.md:L55; semantic-index.md:L2534,L5653"
+  resolved_at: "2026-08-14T07:55:27+09:00"
 - id: INS-20260814-035435009-1709
   ts: "2026-08-14T03:54:35+09:00"
   insight: "[[SPYとTQQQのmonthly returnはrecalculateのL1で再計算されるんだったか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=SPYとTQQQのmonthly returnはrecalculateのL1で再計算されるんだったか？"
@@ -991,8 +994,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 34
-  last_seen: "2026-08-14T07:47:14+09:00"
+  occurrence_count: 35
+  last_seen: "2026-08-14T07:56:30+09:00"
   verification:
     status: "passed"
     exit_code: 0
