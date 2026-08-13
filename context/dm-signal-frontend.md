@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-11 GA-455 content reflection -->
+<!-- last_updated: 2026-08-13 cmd_4297 reviewed source boundary -->
+<!-- source_commit:33ba0d96 reason:cmd_4297 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=33ba0d96 -->
 <!-- source_commit:21892719 reason:GA-455 content reflection evidence:source frontier review: 3 commits; UI behavior indexed in context §0.1 -->
 <!-- source_commit:21e80e30 reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source commits 21e80,9f09 reviewed and indexed -->
 <!-- source_commit:9b094cff reason:cmd_4278 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=9b094cff -->
