@@ -1,5 +1,7 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-12 cmd_karo_hotfix_ga457_context_update_autowire_20260812 reviewed source boundary -->
+<!-- last_updated: 2026-08-14 cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary -->
+<!-- source_commit:9f39c1a071cf4c0f6cc1afbdad39a295ff29cc2a reason:cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=9f39c1a071cf4c0f6cc1afbdad39a295ff29cc2a -->
+<!-- source_commit:e8cbaf7eb5fbd1a907f06d75240d609ef316700c reason:cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=e8cbaf7eb5fbd1a907f06d75240d609ef316700c -->
 <!-- source_commit:66c9455ae reason:cmd_karo_hotfix_ga457_context_update_autowire_20260812 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=66c9455ae -->
 <!-- source_commit:4848ca902 reason:cmd_karo_hotfix_speed_deploy_task_r1b_20260809 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=4848ca902 -->
 <!-- source_commit:ce4ba6d2b reason:reviewed_source_boundary evidence:cmd_karo_hotfix_insights_rotation_archive_gate_20260808 -->
@@ -149,6 +151,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1586: 共有insight YAMLのsafe helperにも世代競合防御が必要（cmd_reflux_insight_202608110625_hanzo）
 - L1587: source context update triggerを完了経路へ自動接続する（cmd_karo_hotfix_ga457_context_update_autowire_20260812）
 - L1588: RB6配備前提カードはcohort・定義・入力coverageの3項目に固定する（cmd_karo_recon2_ninja_prerequisite_audit_20260814）
+- L1589: レビュー品質WARN率は同一cmd_idの終端結果を実装cmd単位で集計し、証拠付き別件FAILを偽陽性としてWARN分子から分離、未終端draftは終端report/verifyまで分母から除外する（cmd_karo_hotfix_review_quality_warn_20260814_normal; source=e8cbaf7eb/9f39c1a07）
 
 ## 設計標準・テスト・因果
 
