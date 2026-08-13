@@ -73,7 +73,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4300"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GP-220で既に根治済み。対象insightのworkaround=true/category=clean矛盾は現行入力経路で再発防止され、現行データ品質検査もPASS"
+  action_artifact: "primary=logs/gunshi_gp_tracker.yaml:535-545;implementation=scripts/karo_workaround_log.sh:677-682,765-781;verification=bash scripts/gates/gate_wa_data_quality.sh -> PASS;commit=3961e597"
+  resolved_at: "2026-08-14T03:54:26+09:00"
 - id: INS-20260813-214703077-7a7d
   ts: "2026-08-13T21:47:03+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4300; matched=分析,実行; current_pattern=モメンタム感度分析第三弾の実行 — 測定日Nと執行日Eの二次元ロバストネス面をDM2とDM6で作成; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
