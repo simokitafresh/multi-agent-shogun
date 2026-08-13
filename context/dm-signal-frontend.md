@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-13 cmd_4297 reviewed source boundary -->
+<!-- last_updated: 2026-08-13 cmd_4298 reviewed source boundary -->
+<!-- source_commit:c22362a9 reason:cmd_4298 reviewed source boundary evidence:SG7 LGTM and Karo ACCEPT; frontend scope one-file commit -->
 <!-- source_commit:33ba0d96 reason:cmd_4297 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=33ba0d96 -->
 <!-- source_commit:21892719 reason:GA-455 content reflection evidence:source frontier review: 3 commits; UI behavior indexed in context §0.1 -->
 <!-- source_commit:21e80e30 reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source commits 21e80,9f09 reviewed and indexed -->
@@ -438,3 +439,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 - `9f09b128` はFoF Monthly Tradeのcurrent-month holdingをDashboardの`selectedPortfolio.signal`と正規化比較し、raw UUID混入またはholding不一致のcached responseを表示せずfresh再取得へ回す。freshでも不一致なら表示をnullにしてstale値を露出しない。参照: `frontend/app/monthly-trade/page.tsx`, `frontend/lib/monthly-trade-display.ts`, `frontend/lib/__tests__/monthly-trade-display.test.ts`、commit `9f09b128`。
 - `21e80e30` はfresh responseが表示妥当ならholding不一致でも先に表示し、`SignalsProvider`のstableな`refresh()`でDashboard signalsをbackground再取得する。これによりMonthly Tradeを古い信号へ戻さず、両表示を再同期する。参照: `frontend/app/monthly-trade/page.tsx`, `frontend/contexts/signals-context.tsx`、commit `21e80e30`。
+
+## 26. Admin Visibility両面実測 (cmd_4299, 2026-08-13)
+
+結論: `/admin/visibility`は本番CDPで全開scrollHeight=`6556px`・全閉=`980px`、PF行=`54.33–54.67px`、folder header=`40px`、viewport内PF完全表示=`2行`（交差=`3行`）だった。`collapsedFolders`はReact stateのみでSave永続化経路はコード上0件。→ `docs/research/admin-ui-redesign-asis-tobe-5w1h_20260724.md` §5
