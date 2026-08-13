@@ -849,6 +849,7 @@ END {
     }
     new_total = 0; new_warn = 0
     review_only_total = 0; review_only_warn = 0; review_only_cmds = ""
+    false_positive_warn = 0; false_positive_cmds = ""
     terminal_gap_warn = 0; terminal_gap_cmds = ""
     for (key in last_idx) {
         i = last_idx[key]
@@ -878,7 +879,20 @@ END {
             continue
         }
         new_total++
-        if (!ok) new_warn++
+        # A report can be FAIL while the implementation itself is already
+        # proven successful: an unrelated/out-of-scope startup condition may
+        # leave one AC unmet.  Counting that terminal report as an
+        # implementation-quality WARN creates a false positive and makes the
+        # metric punish honest fail-closed reporting.  Keep the command in
+        # the denominator, but remove only this explicitly evidenced class
+        # from the WARN numerator and expose it for the review audit.
+        if (!ok && tolower(fs[i]) ~ /(修正自体は成功|implementation[[:space:]]+itself[[:space:]]+succeed)/ \
+            && tolower(fs[i]) ~ /(別件|scope外|out[- _]?of[- _]?scope|unrelated)/) {
+            false_positive_warn++
+            false_positive_cmds = false_positive_cmds ((false_positive_cmds == "") ? "" : ",") cid[i] ":" v[i]
+        } else if (!ok) {
+            new_warn++
+        }
         # A FAIL after implementation work is often caused by the terminal
         # evidence boundary being left incomplete (production rerun/test
         # evidence/preflight/commit proof), not by the code change itself.
@@ -897,7 +911,7 @@ END {
     new_rate = int(new_warn * 100 / new_total)
     old_rate = (old_total > 0) ? int(old_warn * 100 / old_total) : 0
     if (review_only_cmds == "") review_only_cmds = "-"
-    printf "RATE %d %d %d %d %d %d %s %d %s\n", new_rate, new_warn, new_total, old_rate, review_only_warn, review_only_total, review_only_cmds, terminal_gap_warn, (terminal_gap_cmds == "" ? "-" : terminal_gap_cmds)
+    printf "RATE %d %d %d %d %d %d %s %d %s %d %s\n", new_rate, new_warn, new_total, old_rate, review_only_warn, review_only_total, review_only_cmds, terminal_gap_warn, (terminal_gap_cmds == "" ? "-" : terminal_gap_cmds), false_positive_warn, (false_positive_cmds == "" ? "-" : false_positive_cmds)
 }
 ' "$status_file" "$gate_metrics_file" "$review_log"
 }
@@ -2100,13 +2114,14 @@ fi
 echo "■ レビュー品質スケール"
 _review_quality_line="$(review_quality_scale_summary "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 20 "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo "DATA_MISSING")"
 if [[ "$_review_quality_line" == RATE* ]]; then
-    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate _rq_review_warn _rq_review_total _rq_review_cmds _rq_terminal_gap_warn _rq_terminal_gap_cmds <<< "$_review_quality_line"
+    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate _rq_review_warn _rq_review_total _rq_review_cmds _rq_terminal_gap_warn _rq_terminal_gap_cmds _rq_fp_warn _rq_fp_cmds <<< "$_review_quality_line"
     if [ -n "${_rq_old_rate:-}" ] && [ "${_rq_old_rate}" != "${_rq_rate}" ] 2>/dev/null; then
         echo "  実装品質WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 実装cmdのみ・cmd_id単位最終verdict集計, 旧方式=${_rq_old_rate}%)"
     else
         echo "  実装品質WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 実装cmdのみ・cmd_id単位最終verdict集計)"
     fi
     echo "  レビュー専用cmd分離 ${_rq_review_total:-0}件 (WARN ${_rq_review_warn:-0}件): ${_rq_review_cmds:--}"
+    echo "  集計偽陽性分離 ${_rq_fp_warn:-0}件: ${_rq_fp_cmds:--}"
     if [ "${_rq_terminal_gap_warn:-0}" -gt 0 ] 2>/dev/null; then
         echo "  終端検証ギャップ ${_rq_terminal_gap_warn}件: ${_rq_terminal_gap_cmds:--}"
         alerts+=("レビュー終端検証ギャップ: ${_rq_terminal_gap_warn}件")
