@@ -156,7 +156,7 @@ flowchart TD
 | RB2 | runtime closure manifest作成 | 対象N/N、manifest外runtime差分0 | **完了** |
 | RB3 | rollback commit構築 | tree一致N/N、build/startup PASS、SKIP 0 | **完了**（`233c2303`） |
 | RB4 | 本番deploy | live SHA一致、health/schema互換PASS | **完了** |
-| RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | **部分完了**（L5 standard 24 PF failed。§9.1残件1） |
+| RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | **完了**（2026-08-13 12:10 JST: `precompute_raw completed: rows=1533 portfolios=102 failed=0 elapsed=436.51s`、API永続status `last_error=null rows_processed=1533`。経路: 先頭NULL両経路修正`9b881979`/`5c0af039`＋valid_start境界holding seed修正`071f2ca4`→L1再生成4,795行→24PF L3再生成→rolling欠損0→L5再走） |
 | RB6 | prices独立oracle全量 | monthly/metrics不一致0 | 未着手 |
 | RB7 | 本番API/UI確認 | 8画面欠損0・例外0 | 未着手 |
 | RB8 | 最終checkpoint | §8 AC1-8全PASS | 未着手 |
