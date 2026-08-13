@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260812-215134464-ab59
-  ts: "2026-08-12T21:51:34+09:00"
-  insight: "[[いまの問題点はL2 L3 L5のどこにある？L2 L3にバグはないのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いまの問題点はL2,L3,L5のどこにある？L2,L3にバグはないのか？"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-12T21:56:46+09:00"
 - id: INS-20260812-215135310-ac66
   ts: "2026-08-12T21:51:35+09:00"
   insight: "[[将軍にも現況と進捗]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍にも現況と進捗、現在の方向性を明確に伝えよ"
@@ -447,8 +437,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '01f6bbc7c68f9ea6966b1f97169b3bbcb4ff25d943ce3848a96bb87b4e1769f0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 10
-  last_seen: "2026-08-13T11:58:10+09:00"
+  occurrence_count: 11
+  last_seen: "2026-08-13T12:13:13+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -871,7 +861,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -881,6 +871,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "L990に従いdetector_fp_rate.shを再実行して対象を一次確認。cmd_save:check_ac_test_scope category=new_behaviorはfires=4 false_positive=2 true_positive=0 unknown=2 fp_rate=50.0%で、既知の検知器FP計測対象として既存のcmd_save実装・L990経路に整理済み。新規実装不要。"
+  action_artifact: "scripts/detector_fp_rate.sh --out /tmp/hayate_detector_20260813.yaml; scripts/cmd_save.sh:7248-7302; docs/semantic-index/index.md:L990; memory_db:b ulletin blt_20260813_034457_8f0a57"
+  resolved_at: "2026-08-13T12:19:42+09:00"
 - id: INS-20260813-034703984-f7d7
   ts: "2026-08-13T03:47:03+09:00"
   insight: "semantic_index_update新概念候補: discussion:複雑化していないか？シンプルな対応がベストだ。すでに我らは大幅なロールバックをした直後だ。戻せるものに過剰な対策をし過ぎてバグにバグを重ね続けたからロールバック は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
