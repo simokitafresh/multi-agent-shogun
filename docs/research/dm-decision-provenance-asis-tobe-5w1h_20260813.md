@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v1.7
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v1.8
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -66,6 +66,29 @@ ToBeはゼロから作るのではない。**保存の器は既に存在し、�
 
 ∴ 保存benchmark列は「**B2適用月=TMR満月値**」と「**B2非適用の初月stub行等=B1同窓値**」の**混在**である。RB6実測: 混在の同窓側=50行(初月stub48+44fa8aad境界異常2)で、全行がPF `actual_start/end`同窓のSPY値と10dp一致(逆算検証済み)。殿裁定02:59により**同窓が正**(比較の公平性)。将来の完全整合(全行同窓化=B2撤去)は表示影響の検証を要する別件であり、現状は⑤bの契約明文化で運用する。stub行がB2を受けない機構の詳細(生成経路の分岐点)は44fa8aad窓異常RCAと併せて別件調査。
 
+### §2.5 AsIsフロー図(何が消えるか)
+
+```mermaid
+flowchart TB
+  subgraph CALC["fullrecalculate 判定時(メモリ上)"]
+    P[prices/DTB3] --> M["momentum scalar計算<br/>(Phase 3.7 pure executor / FoFループ)"]
+    M --> S["選抜判定(block pipeline)"]
+    S --> W["選抜weights確定"]
+  end
+  subgraph SAVE["保存されるもの"]
+    W --> HS["signals.holding_signal ✅"]
+    W --> FCW["fof_component_weights ✅"]
+    HS --> MR["MonthlyReturn<br/>(B1同窓benchmark→B2でTMR満月上書き §2.4) ✅"]
+  end
+  subgraph LOST["消えるもの ❌"]
+    M -.->|"破棄"| X1["momentum scalar<br/>(momentum_data.relative=null)"]
+    S -.->|"破棄"| X2["判定入力<br/>(start/end日付・引いた価格)"]
+    W -.->|"破棄"| X3["standard展開後ticker×weight"]
+    CALC -.->|"Renderログ流失"| X4["層別runサマリ/TIMING"]
+  end
+  X1 & X2 & X3 --> D["検算・障害調査のたびに<br/>独立再実装+手計算で再導出<br/>(RB6実証: H1〜H6・撤回騒動・failed配備)"]
+```
+
 ## §3 ToBe
 
 ### §3.1 保存内容(判定プロヴェナンス・4点)
@@ -125,6 +148,34 @@ full/portfolio再計算の終端で、`recalculation_status`行へ`summary` JSON
 - oracle検算: 保存scalarと独立再計算の直接parity(cmd_4296 AC4が初めて実行可能になる)。
 - run間比較: `recalculation_status.summary`同士のdiff。
 
+### §3.4 ToBeフロー図(3器を埋める+速度転用)
+
+```mermaid
+flowchart TB
+  subgraph CALC["fullrecalculate 判定時(計算は現行と同一・追加計算ゼロ §4)"]
+    P[prices/DTB3] --> M["momentum scalar計算<br/>(pure executor既存)"]
+    M --> S["選抜判定"]
+    S --> W["選抜weights確定"]
+  end
+  subgraph SAVE["保存(既存の器3つを埋める §2.1.5)"]
+    W --> HS["signals.holding_signal(現行どおり)"]
+    M -->|"副産物を書き出すだけ"| PD["signals.momentum_data<br/>relative/absolute/risk_free/safe_haven<br/>+window+expanded_ticker_weights+fingerprint<br/>(sanitize正規構造準拠・判定日のみ)"]
+    S --> SNAP["month_start_input_snapshots<br/>momentum_inputs完全化(入力の生値)"]
+    CALC --> SUM["recalculation_status.summary<br/>rows/failed/TIMING+metricsマニフェスト⑦<br/>(migration 1本)"]
+    HS --> MR["MonthlyReturn<br/>+⑤窓境界の行内正本化<br/>+⑤b benchmark同窓契約(裁定済)"]
+  end
+  subgraph USE["使い方"]
+    PD --> Q1["なぜこの保有か=SELECT一発"]
+    PD --> Q2["oracle検算=保存scalarと直接parity<br/>(⑧契約ラベル+SHA固定)"]
+    SUM --> Q3["run間比較=summaryのdiff"]
+  end
+  subgraph SPEED["速度転用(P7・§4.5)"]
+    PD --> FP{"保存fingerprint<br/>== 現入力fingerprint?"}
+    FP -->|"一致(確定月の大半)"| SKIP["判定月を丸ごとskip<br/>full=分→数十秒オーダーへ"]
+    FP -->|"不一致/ledger correction/config変更"| RECALC["その月だけ再計算"]
+  end
+```
+
 ## §4 計算速度を低下させない工夫(殿要件・設計制約)
 
 fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026081304021264BB4C`)。**目標: +5%(≈23s)以内**。
@@ -167,6 +218,7 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 
 ## §6 改訂履歴
 
+- v1.8 (2026-08-14 03:12): 殿指示03:10 — AsIs/ToBeのMermaidフロー図を追加。§2.5=AsIsフロー(計算→保存✅→破棄❌→再導出の苦労)、§3.4=ToBeフロー(3器を埋める→SQL一発検証→fingerprint skip速度転用)。契約変更なし。
 - v1.7 (2026-08-14 03:08): 殿指示03:04「最新の知見上で実際のコード元に覚醒してアップデート」— §2.4新設=benchmark列のB1同窓/B2満月上書き混在機構をコード現物(行番号付き)で確定。⑤bへ実装根拠・表示2系統(compare=TMR直参照/行内benchmark=同窓)の役割分担・TQQQ横展開不要の証明を追記。冒頭状態注記をmetrics shard A/B/D CLEAR+benchmark同窓裁定クローズ+RB6完全収束目前へ更新。
 - v1.6 (2026-08-14 03:01): §3.25⑤b新設 — 殿裁定02:59「benchmark同窓比較」を明文化(knowledge:a58d14f58926acb2)。
 - v1.5 (2026-08-14 02:13): §3.25新設(殿指示02:10) — RB6月次検算の躓き4件(窓規則写し漏れ101件/as-of誤仮定none25/metrics母集団3転/契約混同の撤回騒動)を消す保存項目⑤-⑧を追加。⑧は実装解禁前でも検証側規約として先行採用可。Whatへ⑤-⑧を追記。
