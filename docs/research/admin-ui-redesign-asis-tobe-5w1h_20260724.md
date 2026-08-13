@@ -1,5 +1,17 @@
 <!-- gist-master: 6c30b09414a9404d21389bce3f9aa53f admin-ui-redesign-asis-tobe-5w1h_20260724.md -->
-# DM-Signal Admin画面 一覧性改修 — AsIs/ToBe 5W1H設計書 v1.0
+# DM-Signal Admin画面 一覧性改修 — AsIs/ToBe 5W1H設計書 v1.1
+
+## §0 殿裁定 2026-08-13 17:04 — /admin/fof(案B)実装GO
+
+殿原文(2026-08-13 17:04): 「/admin/fofが縦に長くスクロールが大変だ。カードスタイルの廃止、Weight Breakdown表のアコーディオン（基本はclose）とフォントサイズなどの他ページとの共通化をやりたい」
+
+これにより以下が裁定確定:
+1. **案B採用・実装GO**(/admin/fof): カードスタイル廃止→一覧テーブル/行リスト化。
+2. **未決事項3の裁定**: Weight Breakdown表=**アコーディオン・既定close**で確定。
+3. **設計原則P2の適用確定**: フォントサイズ等はviewer表canonical(14px/罫線slate-700/800/padding 12-8/sticky thead、正本=dm-signal-page-style-diff-mece_20260722.md)へ共通化。
+4. 案A/C/Dと未決事項1・2・4は引き続き裁定待ち(実装禁止のまま)。
+
+実装cmd=cmd_4297(2026-08-13起票)。RB6/RB8復旧レーン(backend)とはFE専用ゆえ独立並行可。
 
 > ★前提情報のないLLM/人へ: このドキュメントだけで理解できるよう自己完結している。§1(5W1H)→§2(AsIs実測)→§3(ToBe案)の順に読め。ToBeは**未裁定の候補案**であり、殿(オーナー)の裁定で確定する。**実装はまだ始めない**(殿指示 2026-07-24 12:43「実装にはいらず修正案を練ろう」)。
 
