@@ -643,16 +643,25 @@ function finish() {
         if (r == "PASS" && source != "") {
             pass_source[skill, source] = 1
         }
-    }
-    if (r == "FAIL" && u != "false" && skill != "" && !is_fake) {
-        count[skill]++
-        if (ts >= last[skill]) last[skill] = ts
-        if (point != "") {
-            key = skill SUBSEP point
-            c = ++point_count[key]
-            if (c > top_count[skill] || (c == top_count[skill] && (top_point[skill] == "" || point < top_point[skill]))) {
-                top_point[skill] = point
-                top_count[skill] = c
+        # 過去累積FAILではなく、直近PASS以降の未解消FAILだけを通知する。
+        # dashboard-updateは履歴に多数の再試行/一時FAILを残すため、累積値
+        # (例: FAIL:392)をstartup ALERTへ昇格すると、現行状態と乖離する。
+        if (r == "PASS" || r == "SKIP") {
+            active_fail_count[skill] = 0
+            active_epoch[skill]++
+            active_last[skill] = ""
+            active_top_point[skill] = ""
+            active_top_count[skill] = 0
+        } else if (r == "FAIL") {
+            active_fail_count[skill]++
+            active_last[skill] = ts
+            if (point != "") {
+                key = skill SUBSEP active_epoch[skill] SUBSEP point
+                c = ++active_point_count[key]
+                if (c > active_top_count[skill] || (c == active_top_count[skill] && (active_top_point[skill] == "" || point < active_top_point[skill]))) {
+                    active_top_point[skill] = point
+                    active_top_count[skill] = c
+                }
             }
         }
     }
@@ -698,7 +707,7 @@ in_entry && /^  source:/ {
 }
 END {
     if (in_entry) finish()
-    for (s in count) {
+    for (s in active_fail_count) {
         # 最新結果がPASS/SKIPなら過去FAILは解消済み→除外
         if (latest_result[s] == "PASS" || latest_result[s] == "SKIP") continue
         # 短縮cmdで後発FAILしても、同一skillに完全cmdのPASSがあれば解消済みとして扱う
@@ -718,7 +727,9 @@ END {
             }
         }
         if (resolved_by_alias) continue
-        printf "%d|%s|%s|%s\n", count[s], last[s], s, top_point[s]
+        if (active_fail_count[s] > 0) {
+            printf "%d|%s|%s|%s\n", active_fail_count[s], active_last[s], s, active_top_point[s]
+        }
     }
 }
 ' \
