@@ -10812,6 +10812,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608060250_hanzo` — [[semantic_causal_automation]] -> `docs/research/retro-ninja-monitor-stall-saizo.md` |
 | causal | `cmd_reflux_backlink_202608071649_hanzo` — [[semantic_causal_automation]] -> `docs/research/shogun-adversarial-review-hidden-infra-design-20260801.md` |
 | causal | `cmd_reflux_backlink_202608111311_tobisaru_exact` — [[semantic_causal_automation]] -> `docs/research/cmd_4290_mechanism_profile_recon.md` |
+| causal | `cmd_reflux_backlink_202608140659_saizo_exact` — [[semantic_causal_automation]] -> `docs/research/shogun_rb6_benchmark_ssot_deepdive_20260814.md` |
 | causal | `docs/research/defense-enforcement-classification_20260720.md` — [[defense_hierarchy]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_control_plane_20260723.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_task_mutation_20260721.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
