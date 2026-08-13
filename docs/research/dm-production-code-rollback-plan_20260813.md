@@ -159,8 +159,8 @@ flowchart TD
 | RB3 | rollback commit構築 | tree一致N/N、build/startup PASS、SKIP 0 | **完了**（`233c2303`） |
 | RB4 | 本番deploy | live SHA一致、health/schema互換PASS | **完了** |
 | RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | **完了**（2026-08-13 12:10 JST: `precompute_raw completed: rows=1533 portfolios=102 failed=0 elapsed=436.51s`、API永続status `last_error=null rows_processed=1533`。経路: 先頭NULL両経路修正`9b881979`/`5c0af039`＋valid_start境界holding seed修正`071f2ca4`→L1再生成4,795行→24PF L3再生成→rolling欠損0→L5再走） |
-| RB6 | prices独立oracle全量 | monthly/metrics不一致0 | 未着手 |
-| RB7 | 本番API/UI確認 | 8画面欠損0・例外0 | 未着手 |
+| RB6 | prices独立oracle全量 | monthly/metrics不一致0 | 着手中（家老へ2026-08-13 13:26配備） |
+| RB7 | 本番API/UI確認 | 8画面欠損0・例外0 | **完了**（殿自身が2026-08-13 13:33「問題ないことを確認した」と裁定） |
 | RB8 | 最終checkpoint | §8 AC1-8全PASS | 未着手 |
 
 ### §9.1 実行記録と残件（2026-08-13 03:55時点）
@@ -180,8 +180,47 @@ flowchart TD
 3. **TIMING SUMMARY復元完了**（2026-08-13 13:15 JST）: rollback前実績4 commit（`365e1c8f`→`20a26556`→`695933d3`→`88d38b77`）の最終形を忠実復元（復元commit `15e612f9`、計測・ログ・testのみ、業務計算式変更ゼロ）。canary 5PF hash一致5/5・ERROR 0（run `2026081303593369C961`）→full本走（run `2026081304021264BB4C`）completed・failed 0・TIMING SUMMARY出力復活（`L2=2m5s L3=4m21s L5=41.3s unaccounted=38.0s TOTAL=7m45s`）。SIGNAL CHANGE ALERT 5,890件/39PFはFoFのみ・standard 0=holding seed修正の波及書戻しで正当（ALERT機構自体はbaseline残存機構）。
 4. 残: RB6（prices独立oracle全量）→RB7（8画面確認）→RB8（§8 AC1-8同一世代PASS）。全数数値正当性の最終GATEはRB6完了まで未CLEAR。
 
+### §9.2 修正記録 — 何をどう直したか（知見用・2026-08-13 13:30時点）
+
+**現段階の総括: 主要バグは全て解消。** full本走（run `2026081304021264BB4C`）completed・102/102 PF・failed 0・ERROR 0・TIMING SUMMARY復活。残るは数値正当性の最終GATE（RB6独立oracle）と殿画面確認（RB7）のみ。
+
+rollback後に露出したbaseline内在バグは**3本で、根はすべて1つ** — 「保有確立前の先頭holding NULL=正常」（`85a15e50`の判定）と「holding NULLは全てraise」（`3efd01e0`のfail-visible化）という**同日8/3に入った2つの契約の不整合**。それが3つの経路で別々に発火した。
+
+| # | 現象（発火点） | 真因 | どう直したか（修正commit） | 検証 |
+|---|---|---|---|---|
+| 1 | L5でstandard 24PF failed（performance系列構築の`performance.py:66` raise） | 系列先頭の保有確立前行はholding NULLが正常なのに、fail-visible契約が全NULLをraise | **先頭からの連続NULL行のみスキップする最小分岐**を既存raise箇所へ追加。確立後NULLはraise維持。境界fixture1本（`9b881979`） | binary_checks 11/11 yes。ただしL5再走でfailed 24残→#2発覚 |
+| 2 | 修正#1後もL5 24PF failed（`rolling_returns params={} builder None`）。rolling_summary/chart双方欠損24PF | 同じ先頭NULLが**cache経路**（`iter_cacheable_signals`→`require_holding_signal`）からPhase 4.5を落としrolling生成が止まっていた。#1は直接経路のみの修正だった | cache走査にも**同じ「先頭未確立行のみ除外」契約を適用**（`5c0af039`）。隠蔽sentinel・旧最適化復活なし | before再現FAIL→after PASS、pytest 33/0 skip。ただしL3再生成で#3発覚 |
+| 3 | 24PF L3再生成がinterrupted（確立後NULL 8行/2PF、2007-01-26〜31） | 価格欠損ではない（5銘柄×555日欠落0を独立確認）。**PF固有valid_start境界でholding seedが欠落** — 有効開始日直後の再計算で直前の確立済みholdingを継承できず確立後NULLが生成される | **valid_start前の最新非NULL holdingをseedとして継承**する改訂（`071f2ca4`） | 2人目忍者の独立再検証13/0 skip PASS＋本番再計算で実証 |
+
+**修正後の再生成順序（依存を守った復旧手順そのものが知見）**: L1再生成（`ticker_monthly_returns` 0行→4,795行。run318失敗後の未再生成残骸も解消）→24PF L3/portfolio再生成（rolling欠損24→0）→L5一回再走（failed 24→**0**、rows=1533）。L5は既存rolling表を読むだけで再生成しないため、**生成側修正→上流再生成→L5の順serial実行が必須**だった。
+
+**TIMING SUMMARY復元（計測は計算を変えない証明つき）**: rollback前実績4 commit（`365e1c8f`→`20a26556`→`695933d3`→`88d38b77`）の最終形を新規書き直しせず忠実復元（`15e612f9`、diff=計測・ログ・testのみ）。canary 5PFでmonthly_returns before/after **hash一致5/5**・ERROR 0を確認してからfull。fullで`L2=2m5s L3=4m21s L5=41.3s TOTAL=7m45s`が従来粒度・従来位置に出力。
+
+**今後への知見（原則の実証）**:
+1. **fail-visibleは正しかった** — 3本とも「エラーを隠さずraiseする設計」が隠れていた欠損・契約不整合を表に出した。2007年のseed欠落はUnknown fallback時代には見えなかった。
+2. **同じ契約は全経路に一度に適用せよ** — #1→#2は同一契約の直接経路とcache経路への適用漏れ。契約変更時は`grep`で全消費点を列挙してから直す。
+3. **シンプル最小修正で足りた**（殿裁定03:46） — 3本とも既存raise箇所への最小分岐＋fixture1本。ヘルパー新設・ログ機構・sentinelは一切不要だった。
+4. **「完走」と「正しい」を分離** — failed 0はエラーなしの証明であり、数値正しさはRB6独立oracleで別途証明する。
+
+### §9.3 現行正常ベースライン（今後のrollback先・2026-08-13 13:35固定）
+
+**今後障害が起きた場合のrollback先はここ**（殿指示13:34「今後何か起こった時にロールバックできるように現在のコミット・デプロイも明確にしておいてくれ」）:
+
+| 項目 | 値 |
+|---|---|
+| **正常ベースラインcommit（origin/main HEAD）** | **`15e612f9` (restore canonical timing summary measurement schema)** |
+| 構成commit列（rollback commit以降） | `233c2303`(tree=21e80e30復帰) → `238e6236`(先頭NULL直接経路) → `5c0af039`(先頭NULLcache経路) → `071f2ca4`(valid_start holding seed) → `15e612f9`(TIMING SUMMARY復元) |
+| 正常性の証拠run | full `2026081304021264BB4C` completed（04:02-04:09 UTC）・102/102 PF・failed 0・ERROR 0・TIMING SUMMARY出力あり |
+| 殿画面確認 | 2026-08-13 13:33 RB7 PASS |
+| Renderデプロイ | backend srv-d4ja7q15pdvs739a4q1g にこのSHAがLive（dep-d9ugdqeq1p3s73bor6pg以降の連続deploy） |
+| 旧退避branch | `archive/pre-rollback-20260813-0148-7003cf69`（rollback前main。歴史参照のみ、復帰先にしない） |
+| 未CLEAR残 | RB6独立oracle（数値正当性の最終GATE）のみ |
+
+**rollback手順（再発時）**: `15e612f9`との差分commitを通常revertして push→Render自動deploy→必要層のみ再生成（§9.2の順序: 生成側修正→L1→L3→L5 serial）。force push/resetは使わない（§0-4）。
+
 ## §10. 改訂履歴
 
+- v1.4 (2026-08-13 13:35): §9.2修正記録を新設（バグ3本の現象→真因→修正→検証、根は8/3の2契約不整合1つ。再生成順序と知見4点）。RB5完了・TIMING SUMMARY復元完了・RB7完了（殿画面確認13:33）・RB6着手中を反映。§7へRB6平易説明追記。
 - v1.3 (2026-08-13 03:55): 実行実績を反映。RB2-RB4完了（rollback commit `233c2303`・退避branch記録）、RB5部分完了（L5 standard 24 PF failed=先頭NULL契約不整合、本番readonly再集計 `(24,24,24)`）、SIGNAL CHANGE ALERT 9343件=正当書戻しの判定、残件（先頭連続NULLスキップの最小修正=殿裁定03:46シンプル対応準拠）を§9.1へ追記。
 - v1.2 (2026-08-13 01:40): 将軍レビューを反映。`bf4ed6a6`境界時刻を1秒訂正、full再生成中のcron混線防止を追記。Render deploys API一次結果により、8/4 CDP証跡の直接帰属を`28b58ee0`へ訂正し、`21e80e30`は8/9 00:21一括deployで初live・8/10 02:39まで正常表示継続と記録。
 - v1.1 (2026-08-13 01:25): rollback先を`21e80e30`へ決定。production runtime基準の前後3 commitをtimestamp・変更内容付きで固定し、Monthly Trade修正完了点とL5 queue新設開始点の境界を明文化。
