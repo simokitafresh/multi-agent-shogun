@@ -1,3 +1,4 @@
+<!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
 # DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v1.0
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
 
