@@ -109,6 +109,16 @@ SPYも同一E執行規則のopen-to-openで計算する(セルの執行日とSPY
 - AC2: 64セル×2PFの全セルが同一closed cohortで計算され、セル間の月数差=0
 - AC3: §4の全出力(セル5指標×128+要約7値×2)が欠損なく出力される(FAIL/欠損セル=0)
 
+## §6.5 実行結果 (cmd_4300, 2026-08-13)
+
+- Third common cohort: DM2=`2011-04..2026-05` 182か月、DM6=`2010-04..2026-05` 194か月。全128セルで同一PF内の月数差は0、欠損セル=0、非有限値=0。
+- AC1: Third common cohort内のN=0/E=0は、signal正本・実験1 N=0・実験2 E=0とのreturn/holding/signal比較が全て mismatch=0。native全期間の境界差分4件は現行月のcohort外であり、AC1判定には持ち込まない。
+- AC2/AC3: DM2、DM6ともN=0..7×E=0..7の64/64セルで計算完了。全セルでSPY CAGR超過（DM2=64/64、DM6=64/64）、性能崩壊領域なし。
+- DM2: CAGR=`0.358829027..0.544905796`、alpha最小=`0.219128680` (N=7,E=7)、MaxDD=`-0.667097709..-0.540487907`。相互作用contrast範囲=`-0.131168560..0.008238636`。
+- DM6: CAGR=`0.360740788..0.575990467`、alpha最小=`0.219291561` (N=6,E=4)、MaxDD=`-0.588186161..-0.419621281`。事前脆弱候補E=4近傍でもalphaは正。相互作用contrast範囲=`-0.007674547..0.018111132`。
+- 判定: N単独/E単独では見えない相互作用は数値上存在するが、全セルでSPY超過を失う崩壊領域はなく、戦略優位性は二次元でも維持。E方向は§2の仮想保有区間モデル限界を付記して解釈する。
+- 成果物: `/mnt/c/Python_app/DM-Signal/scripts/analysis/cmd_4300_nxe_2d_robustness.py`、`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4300_nxe_cells.csv`、`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4300_nxe_robustness_20260813.md`。
+
 ## §7 5W1H
 
 - WHY: 単独N・単独Eでロバストと確認済みの戦略が、二次元同時摂動でも優位性を保つかの確認(相互作用の検出)
