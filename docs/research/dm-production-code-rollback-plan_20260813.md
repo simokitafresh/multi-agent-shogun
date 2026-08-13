@@ -1,5 +1,5 @@
 <!-- gist-master: 0c98ab3686bcaff3aa1ddd36e1a53570 dm-production-code-rollback-plan_20260813.md -->
-# DM-Signal本番コードロールバック設計 v1.3
+# DM-Signal本番コードロールバック設計 v1.5
 <!-- semantic-links: [[recalculate_pipeline]] [[production_parity]] [[code_rollback]] -->
 
 - 作成: 2026-08-13 01:22 JST
@@ -138,6 +138,17 @@ flowchart TD
 
 独立月次列からtotal return/CAGR/年率平均/volatility/Sharpe/Sortino/MaxDDを直接算出する。初月を0へ置換しない。候補baseline自体にmetrics不一致があれば、rollback成功とは別にせず、最小修正を積んで再び本節全量を通す。
 
+### §7.1 検算方式の改訂 — 逆算検算（殿裁定 2026-08-13 22:40-22:44・以後の正）
+
+**RCAで判明した事実**: run358/359採点の残差（FoF mismatch 935・親固有601等）の代表分解で、第一分岐は本番コードではなく**oracle側のFoF weight展開仮定の不足**と2レーンが独立確定した（本番実weightを同一価格へ代入するとclose/open双方10dp完全一致）。§7原案の「nested PFを再帰展開して最終ticker weightを独立導出」は、selection規則の再実装を必要とし、**違うコードで同じものを計算する複雑化**へ向かっていた。
+
+**殿裁定（3点・原文準拠）**:
+1. 22:19「総当たりではなく原理を理論とコードベースで仮説検証の形で繰り返せ」→ variant総当たり禁止。代表1件の項分解→第一分岐段特定→コード仮説→最小再現の順で回す。
+2. 22:40-22:42「本番から逆算してprice×weightに分解したときに一致するかを見ればよい。目的からずれて正確に計算することにとらわれると、単に違うコードで同じものを計算しているだけになる。本番の現在のコードが正しいか検算するだけだ」→ **RB6の目的=本番現行コードの検算**。oracleの完全独立再実装（selection規則のフル再導出）は目的外として撤回。
+3. 22:44「極限までシンプルな実装がもっとも正しい」→ 検算は**単一スクリプト・単一パス**: 全PF×全月について保存weight×独立prices（入力SSOT・無汚染）の積和を計算→保存monthlyと10dp比較→出力は「一致N/不一致N/不一致一覧(PF×月×delta)」の3点のみ。depth分類・variant・世代管理等の付帯機構は検算に入れない。
+
+**改訂後のRB6判定基準**: (a)standard全PF全確定月の10dp一致0不一致（達成済み: 4713/4713） (b)FoF全PF全確定月の**逆算parity**（保存weight×独立price returnの積和=保存monthly、10dp）不一致0 (c)metricsは独立月次列からの算出一致。weight自体の選抜規則正当性の検証はRB6の範囲外（検証したければ別工程）。三層記憶: knowledge:c7a5d6a5（逆算検算原理）・knowledge:55af7b46（極限シンプル実装）。
+
 ## §8. 本番復旧AC
 
 1. 選定baseline SHAとruntime manifest hashが一意に記録され、production runtime treeの一致率N/N。
@@ -159,7 +170,7 @@ flowchart TD
 | RB3 | rollback commit構築 | tree一致N/N、build/startup PASS、SKIP 0 | **完了**（`233c2303`） |
 | RB4 | 本番deploy | live SHA一致、health/schema互換PASS | **完了** |
 | RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | **完了**（2026-08-13 12:10 JST: `precompute_raw completed: rows=1533 portfolios=102 failed=0 elapsed=436.51s`、API永続status `last_error=null rows_processed=1533`。経路: 先頭NULL両経路修正`9b881979`/`5c0af039`＋valid_start境界holding seed修正`071f2ca4`→L1再生成4,795行→24PF L3再生成→rolling欠損0→L5再走） |
-| RB6 | prices独立oracle全量 | monthly/metrics不一致0 | 着手中（家老へ2026-08-13 13:26配備） |
+| RB6 | prices独立oracle全量（§7.1逆算検算方式へ改訂） | monthly逆算parity/metrics不一致0 | 着手中（standard 4713/4713達成。FoF/metricsは§7.1方式で再採点中・22:45時点） |
 | RB7 | 本番API/UI確認 | 8画面欠損0・例外0 | **完了**（殿自身が2026-08-13 13:33「問題ないことを確認した」と裁定） |
 | RB8 | 最終checkpoint | §8 AC1-8全PASS | 未着手 |
 
@@ -179,6 +190,7 @@ flowchart TD
 2. ~~修正deploy→L5再走でRB5のfailed 0を確認~~ **完了**（12:10 JST failed 0）。
 3. **TIMING SUMMARY復元完了**（2026-08-13 13:15 JST）: rollback前実績4 commit（`365e1c8f`→`20a26556`→`695933d3`→`88d38b77`）の最終形を忠実復元（復元commit `15e612f9`、計測・ログ・testのみ、業務計算式変更ゼロ）。canary 5PF hash一致5/5・ERROR 0（run `2026081303593369C961`）→full本走（run `2026081304021264BB4C`）completed・failed 0・TIMING SUMMARY出力復活（`L2=2m5s L3=4m21s L5=41.3s unaccounted=38.0s TOTAL=7m45s`）。SIGNAL CHANGE ALERT 5,890件/39PFはFoFのみ・standard 0=holding seed修正の波及書戻しで正当（ALERT機構自体はbaseline残存機構）。
 4. 残: RB6（prices独立oracle全量）→RB7（8画面確認）→RB8（§8 AC1-8同一世代PASS）。全数数値正当性の最終GATEはRB6完了まで未CLEAR。
+5. **RB6経過（2026-08-13 22:45追記）**: run358採点=standard 14/FoF 939/metrics 740 → 修正`c9a0da8d`（standard stock readinessのDTB3除外+full-prefix/bounded-native分離）の独立レビューAPPROVE→run359でstandard 4713/4713 exact・mismatch 0達成。FoF残935の代表分解2レーンが「第一分岐=oracle側weight展開仮定不足・本番欠陥なし」へ独立収束、missing 21=7PF×2012-04/05/06のproduction不正保存×oracle前史不足の複合と確定。以後§7.1の逆算検算方式で全量再採点中。
 
 ### §9.2 修正記録 — 何をどう直したか（知見用・2026-08-13 13:30時点）
 
@@ -220,6 +232,7 @@ rollback後に露出したbaseline内在バグは**3本で、根はすべて1つ
 
 ## §10. 改訂履歴
 
+- v1.5 (2026-08-13 22:50): §7.1新設 — RB6検算方式を殿裁定3点（仮説検証22:19/逆算検算22:40-42/極限シンプル22:44）に基づき逆算parity方式へ改訂。selection規則の独立フル再導出は目的外として撤回。§9工程表RB6行と§9.1へrun358/359経過（standard 4713/4713達成・FoF RCA 2レーン収束・missing21確定）を追記。
 - v1.4 (2026-08-13 13:35): §9.2修正記録を新設（バグ3本の現象→真因→修正→検証、根は8/3の2契約不整合1つ。再生成順序と知見4点）。RB5完了・TIMING SUMMARY復元完了・RB7完了（殿画面確認13:33）・RB6着手中を反映。§7へRB6平易説明追記。
 - v1.3 (2026-08-13 03:55): 実行実績を反映。RB2-RB4完了（rollback commit `233c2303`・退避branch記録）、RB5部分完了（L5 standard 24 PF failed=先頭NULL契約不整合、本番readonly再集計 `(24,24,24)`）、SIGNAL CHANGE ALERT 9343件=正当書戻しの判定、残件（先頭連続NULLスキップの最小修正=殿裁定03:46シンプル対応準拠）を§9.1へ追記。
 - v1.2 (2026-08-13 01:40): 将軍レビューを反映。`bf4ed6a6`境界時刻を1秒訂正、full再生成中のcron混線防止を追記。Render deploys API一次結果により、8/4 CDP証跡の直接帰属を`28b58ee0`へ訂正し、`21e80e30`は8/9 00:21一括deployで初live・8/10 02:39まで正常表示継続と記録。

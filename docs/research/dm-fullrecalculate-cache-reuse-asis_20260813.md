@@ -162,6 +162,8 @@ production cacheが高速であることと、値が独立oracleへ一致する�
 
 従って本書は「現行計算経路とcache契約」のAsIsであり、**RB6 GATEは未CLEAR**である。
 
+**追記(2026-08-13 22:50・殿裁定による検算方式改訂)**: RB6検算は逆算parity方式（保存weight×独立pricesの積和と保存monthlyの10dp比較・単一スクリプト単一パス）へ改訂された。oracleのselection規則独立再実装は目的外として撤回（殿裁定22:40-22:44、正本=rollback計画書v1.5 §7.1）。run359でstandard 4713/4713 exact達成。FoF残935の第一分岐はoracle側weight展開仮定不足と2レーン独立確定（本番欠陥なし）。
+
 ## §7. 改訂履歴
 
 - v1.0 (2026-08-13 04:09): rollback後のproduction tree `21e80e30`を記録。
