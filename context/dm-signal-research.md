@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-10 cmd_karo_recon2_cmd4284_final_evidence_202608101034 reviewed source boundary -->
+<!-- last_updated: 2026-08-13 cmd_4296 reviewed source boundary -->
+<!-- source_commit:37bc59cc reason:cmd_4296 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=37bc59cc -->
 <!-- source_commit:00cecab1 reason:cmd_karo_recon2_cmd4284_final_evidence_202608101034 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=00cecab1 -->
 <!-- dm_signal_research_reflux: fingerprint=13249b8967e9138d6819e2183c09fe4338c5034f5dac0ae5ee1499a5fd344616; mode=non-target; evidence_b64=ZG9jc+iqv+afu+abuOOBuOOBruWbs+ihqOi/veiomOOBruOBvyjmrr/mjIfnpLoxNDoxNinjgILmnKznlarjgrPjg7zjg4npnZ7lr77osaE= -->
 <!-- dm_signal_research_reflux: fingerprint=353b5ce6d595366a1396278a5b807ab6298805c7c476d8a63be4f571e1761fbe; mode=non-target; evidence_b64=ZG9jc+iqv+afu+abuOOBruWbs+ihqOaLoeW8teOBruOBvyjmrr/mjIfnpLoxNDoxNCnjgILmnKznlarjgrPjg7zjg4npnZ7lr77osaE= -->
