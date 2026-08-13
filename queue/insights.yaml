@@ -736,7 +736,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '54c3c3d52369eac24ba800df3d851674e84f5b18f2fcd5a9f007b37263f7a65e' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -746,6 +746,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "既存completion_pipeline対策へ吸収済み。一次self-retro実測で全ordered checkpoints完了かつcompletion_pipeline event_id重複0を確認し、新規修正は不要"
+  action_artifact: "logs/self_retro.jsonl#event_id=54c3c3d52369eac24ba800df3d851674e84f5b18f2fcd5a9f007b37263f7a65e; scripts/cmd_complete.sh:L154,L678-L734; docs/research/next-throughput-hayate.md:L7-L27; context/infrastructure.md:L1566-L1571; docs/semantic-index/index.md:L4110-L4118"
+  resolved_at: "2026-08-13T23:48:01+09:00"
 - id: INS-20260813-220155309-a3f3
   ts: "2026-08-13T22:01:55+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bmd0get1v task id tool use id toolu 01XfmtbiDzJ2wBPk8B は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
