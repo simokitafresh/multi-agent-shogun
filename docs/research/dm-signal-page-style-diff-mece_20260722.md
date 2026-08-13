@@ -16,6 +16,7 @@
 | **v3.0** | **2026-07-24 19:25** | **完成版へ再構築(殿指示「次回同じようなことがあっても役に立つ資料として完成させよ」): §RETRO(なぜ時間がかかったか=7根因の実証データ)+§PLAYBOOK(次回のUI統一を最短で回す手順)を新設。N2 v2=compare系2表PASS(殿実機確認19:10)・deterioration残。N5列幅=クローズ(殿実機確認19:10)。cmd_4145 loading=クローズ(殿実機確認19:14)** | 殿指示+将軍実測 |
 | **v3.1** | **2026-08-01** | **残差N6/N7をコードcanonicalへ補正。N6=Monthly Trade simpleでは先頭可視列Position Startの左罫線を除去し、fullのみSignal群との境界slate-700を維持。N7=Compare Returns数値列のth/body/loadingを右寄せ・mobile px-1/desktop px-2・68px幅へ統一。deploy後のsimple/full表示とx座標は家老integration taskで実測する。** | 殿指摘+cmd_karo_hotfix_dm_signal_ui_alignment_batch_n_20260801 |
 | **v3.2** | **2026-08-01** | **残差N8をcanonicalへ補正。metrics Market Type表はtable SSOT `[&_th]:px-2 [&_th]:py-3 [&_td]:px-2 [&_td]:py-3` と各cellの`py-2 px-3`が競合していたため、個別指定40件を0件へ統一。表・chartは既にbareで、`bg-card/95`はhover tooltip固有のため維持する。contract testもSSOT存在+個別padding残存0を守る形へ更新。** | 殿指摘+cmd_karo_hotfix_dm_signal_market_type_ui_batch_n_20260801 |
+| **v3.4** | **2026-08-13 16:45** | **覚醒更新(殿指示)。抜け漏れ3点を現物確認で解消: (1)N9クローズ反映=cmd_4209実装commit `fc5e6e57`/`0816caec`(desktop表内スクロール化+page-sticky維持)を確認、UIバッチ全クローズ。(2)§6.1「要CDP実測」3表の宙吊り解消=risk-management-table/model-trades-tableは**全page.tsxからimport 0件のデッドコード(非描画・測定不能かつ不要)**、mtd-daily-tableの実ルートは`/mtd`でなく**`/dashboard`**(dynamic import L78-81・L735)。(3)本番rollback(2026-08-13、tree=`21e80e30`)とUI修正の関係を明記=v2.2〜v3.3の全UI hotfix(be95e33f/04e98d37/e8721ae5/25d0c8bb/fc5e6e57/0816caec)は8/4以前のcommitゆえ**全てrollback tree(origin/main)に残存**をgit merge-base --is-ancestorで全数確認。UI統一成果はrollbackで失われていない。残バックログ=§6未着手18サブタスク(B2-L1)+admin ToBe未決4項(裁定artifact 0d0e39af・殿裁定待ち・実装禁止)** | 殿指示+将軍現物確認 |
 | **v3.3** | **2026-08-01 21:20** | **N6/N7/N8=本番検分PASSで全クローズ(段階deploy live=e8721ae5→25d0c8bb、家老CDP全数走査: MonthlyTrade simple左端0px/full境界0.667px slate-700・Compare Returns数値列8/8 header/body位置幅一致・Metrics padding署名統一+表内card背景0。証跡=blt_20260801_204342)。新規N9起票=Compare Summary PC幅でPF列がサイドメニュー裏に隠れる(殿指摘21:09)。将軍CDP実測で真因確定: 表コンテナ`md:overflow-x-auto lg:overflow-visible`(L258/L336)によりlg以上でページ全体が横スクロール(viewport 1036px vs docW 1633px実測)、sticky left-0のPF列がviewport左端基準で張付き固定サイドメニューと重畳。N2 v1(2026-07-24 mobileでth sticky不発)と同根=overflowコンテキスト設計。修正=表コンテナ内横スクロール化(cmd_4209配備済み)。** | 殿指摘+将軍CDP実測 |
 
 ## §RETRO — なぜここまで時間がかかったか(7根因・全て本PJの実証データ)
@@ -335,9 +336,9 @@ canonical=本体数値14px/ui-monospace/tabular-nums、本体文字14px/Inter、
 | 10 | drawdowns-table | /drawdowns | ✅canonical | — | cmd_4122 |
 | 11 | compare-returns-table | /compare-returns | ✅canonical | — | cmd_4122 |
 | 12 | compare-summary-table | /compare-summary | ✅canonical | — | cmd_4122 |
-| 13 | risk-management-table | (risk管理面) | 要CDP実測 | 旧grepでgetValueColor7+基準外混在。CDPで再測要 | cmd_4122 |
-| 14 | model-trades-table | /trades | 要CDP実測 | 旧grep✅(5)。CDPで再測要 | cmd_4122 |
-| 15 | mtd-daily-table | /mtd | 要CDP実測 | 旧grep✅(6)。CDPで再測要 | cmd_4122 |
+| 13 | risk-management-table | **なし(デッドコード)** | **測定不能=非描画** | 全page.tsxからimport 0件を2026-08-13 grep全数確認。§6.1手順5の架空ルート事故(risk-management)と同根=componentは実在するが未使用。削除candidateとして集約対象(rm禁止・殿手動削除フロー) | v3.4確定 |
+| 14 | model-trades-table | **なし(デッドコード)** | **測定不能=非描画** | 同上(import 0件確認済み)。/tradesはblocked静的ページで表0 | v3.4確定 |
+| 15 | mtd-daily-table | **/dashboard**(旧記載/mtdは誤り) | ✅canonical扱い | /dashboardのdynamic import(L78-81)で描画。§2の/dashboard行でMTD sticky tableとして実測対象化済み(v2.2罫線全数probe 11ページ18表に包含) | v3.4確定 |
 
 **教訓(cmd_4128で確定)**: 1ページに複数の表コンポーネントが同居する(例:/metricsはmetrics-table + up-down-market-chart)。**修正対象componentもソースgrep(ページ名→単一component連想)でなくCDP DOM文脈(近傍見出し/firstRow/parentClass)で実体特定せよ**。ページ名≠component名。将軍がcmd_4127起票時にページ名基準でmetrics-tableを対象化し、実体のup-down-market-chartを外した=同一の取りこぼし構造の再現。
 
