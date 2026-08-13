@@ -121,3 +121,40 @@ runner exit 0だけで結論せず、次の集合をJSONから数値で掲示板
 - [x] `queue/compact_state/karo.yaml`が本書pointer/hashへ更新され、YAML parse PASS。
 
 未完であることを隠すのではなく、復帰した次の自分が一手目を迷わず、古いartifactで誤判定せず、同じ数値契約から再開できることを「今より強い」と定義する。
+
+## 2026-08-13 17:04増分 — post-355再採点実測、RB6 BLOCK
+
+`db-check` readonly capability launcherでrun 355後の本番DBを新規抽出し、旧`/tmp` artifactを使わずrunnerを再実行した。DB write 0、credential cleanup PASS。
+
+### artifact
+
+- snapshot: `/tmp/rb6_snapshot_post355.json`
+- snapshot SHA256: `87b31e886001bf1dbd859ebd66cb4385bb8dd62067ac829a39efc7afdffc9873`
+- result: `/tmp/rb6_result_post355.json`
+- result SHA256: `a86fc943c9aeedb1a079d58d2607cfc3801be8207dc6dd57393fa9c456412a6d`
+- primitive counts: portfolios 102 / prices 100,196 / economic DTB3 15,156 / monthly_returns 16,976 / years=0 metrics 102
+
+### 結果
+
+| 契約 | 修正前 | post-355 | 判定 |
+|---|---:|---:|---|
+| standard monthly mismatch | 0 / 4,713 | 0 / 4,713 | CLEAR維持 |
+| FoF selection monthly mismatch | 970 | 970 | BLOCK |
+| FoF selection missing_expected | 21 | 21 | BLOCK |
+| metrics mismatch | 1,338 / 1,428 | 980 / 1,428 | 358改善、なおBLOCK |
+| metrics exact | 90 / 1,428 | 448 / 1,428 | 改善 |
+
+metrics残980は排他的に次へ分解できる。
+
+1. risk-free契約差: Sharpe/Sortinoのclose/openが全102 PFで不一致、`102×4=408`件。productionの月末1点DTB3 samplingと、RB6 oracleの営業日複利月次RFが異なる。
+2. FoF selection月次差の伝播: monthly mismatchを持つ69 FoFでtotal/CAGR/annual mean/volatilityのclose/openが不一致、`69×8=552`件。
+3. FoF MDD差: close 10 + open 10 = 20件。
+
+`408+552+20=980`で残差を全件説明した。standard metricsは14値×24 PF=336比較のうち240 exact / 96 mismatchで、96はSharpe/Sortino `24×4`だけ。従って初月return・confirmed boundary・open MDD修正は数値上効いているが、RB6全体はCLEARではない。
+
+### 復帰後の次の一手（17:04版）
+
+1. 掲示板へ上記数値を報告し、RB6をBLOCKとして固定する。
+2. RF 408件はproduction側を営業日複利月次RFへ合わせるか、RB6契約を変えるかの判断を勝手に混ぜず、現ACどおりならproduction修正対象とする。
+3. FoFはselection oracleの970+21を残差keyで原因分類する。display所与12,161 exactをselection CLEARとして代用しない。
+4. RB6 CLEAR前にRB8、PD-137、insight/action_requiredへ進まない。
