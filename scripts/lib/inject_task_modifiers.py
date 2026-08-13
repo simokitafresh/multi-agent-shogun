@@ -666,6 +666,28 @@ def _source_matches_trigger(source_path, trigger):
     )
 
 
+_CONTEXT_FRONTIER_TASK_SOURCES = frozenset({
+    'scripts/context_freshness_check.sh',
+    'scripts/gates/gate_context_freshness.sh',
+    'scripts/cmd_complete_gate.sh',
+})
+
+
+def _is_context_frontier_task(task, source_paths):
+    """Return whether an infra task owns the cross-project freshness boundary.
+
+    Context freshness scans both this repository and the external DM-Signal
+    repository. A task that changes that scanner/gate therefore needs the
+    complete DM-Signal registry frontier even when its own ``project`` and
+    ``target_path`` are infra-local. Keep this opt-in structural: prose must
+    not make an unrelated infra task inherit external context obligations.
+    """
+    project = str(task.get('project', '') or '').strip().lower()
+    return project == 'infra' and any(
+        source in _CONTEXT_FRONTIER_TASK_SOURCES for source in source_paths
+    )
+
+
 def inject_context_update_candidates(task, script_dir):
     """Build context-update candidates from the registered source boundary.
 
@@ -679,10 +701,16 @@ def inject_context_update_candidates(task, script_dir):
         return None
     project = str(task.get('project', '') or '').strip()
     source_paths = _task_source_paths(task, script_dir)
+    frontier_task = _is_context_frontier_task(task, source_paths)
+    frontier_sources = [
+        source for source in source_paths
+        if source in _CONTEXT_FRONTIER_TASK_SOURCES
+    ]
     explicit = set(normalize_context_paths(task.get('context_update', [])))
     candidates = []
     for row in registry:
-        if project and row['project'] != project:
+        is_external_frontier = frontier_task and row['project'] == 'dm-signal'
+        if project and row['project'] != project and not is_external_frontier:
             continue
         matched = [
             source for source in source_paths
@@ -691,6 +719,11 @@ def inject_context_update_candidates(task, script_dir):
                 for trigger in row['update_trigger'].split('|')
             )
         ]
+        if is_external_frontier:
+            # The freshness scanner is the source boundary for all external
+            # DM-Signal contexts. Preserve scanner paths as provenance; do not
+            # pretend the infra task changed backend/frontend source files.
+            matched = frontier_sources
         if not matched or row['path'] in explicit:
             continue
         candidates.append({

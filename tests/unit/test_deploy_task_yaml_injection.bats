@@ -1731,6 +1731,56 @@ PY
     done
 }
 
+# test_necessity: the freshness scanner owns both the infra repository and the
+# external DM-Signal repository; every registered external context must become
+# a completion candidate even when the task target is an infra-local helper.
+@test "GA-461 infra freshness task autowires the complete DM-Signal frontier" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/scripts/config" "$tmpdir/queue/tasks"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" \
+        "$tmpdir/scripts/config/context_source_commits.tsv"
+
+    cat > "$tmpdir/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  project: infra
+  target_path: scripts/lib/inject_task_modifiers.py
+  planned_paths:
+    - scripts/context_freshness_check.sh
+    - scripts/cmd_complete_gate.sh
+  task_id: ga461_frontier
+  status: assigned
+YAML
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/hayate.yaml" SCRIPT_DIR_ENV="$tmpdir" \
+        INJECT_TASK_MODIFIERS_ONLY=context_update \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+    python3 - "$tmpdir/queue/tasks/hayate.yaml" <<'PY'
+import sys, yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+candidates = task['context_update_candidates']
+by_path = {item['path']: item for item in candidates}
+dm_paths = {
+    'context/dm-signal.md',
+    'context/dm-signal-core.md',
+    'context/dm-signal-frontend.md',
+    'context/dm-signal-ops.md',
+    'context/dm-signal-research.md',
+}
+assert dm_paths <= set(by_path), by_path
+for path in dm_paths:
+    item = by_path[path]
+    assert item['owner'] and item['update_trigger'], item
+    assert set(item['source_paths']) == {
+        'scripts/context_freshness_check.sh',
+        'scripts/cmd_complete_gate.sh',
+    }, item
+# The infra registry candidate remains present; the external frontier is 5/5.
+assert 'context/infrastructure.md' in by_path, by_path
+print(f'dm_signal_frontier={len(dm_paths)}/{len(dm_paths)} total={len(candidates)}')
+PY
+}
+
 @test "5PF canary rotation contract injects only DM-Signal verification or performance tasks" {
     tmpdir="$(mktemp -d)"
     printf '%s\n' \
