@@ -95,7 +95,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存修正を確認済み。2026-08-12のFAIL再提出ボトルネックはcross_repo_commits手動帰属誤りと再提出摩擦であり、現行環境へ自動帰属生成を反映済み。"
+  action_artifact: "semantic_dictionary_design;queue/lord_conversation.jsonl:210-211;commit:f8424a7932ba5f26986a124dc9f89e932cb327ae;scripts/lib/cross_repo_commit_contract.py:auto_generate_cross_repo_entries;skills/ninja-commit/SKILL.md:Step6"
+  resolved_at: "2026-08-13T13:06:26+09:00"
 - id: INS-20260812-225016479-226b
   ts: "2026-08-12T22:50:16+09:00"
   insight: "semantic_index_update新概念候補: discussion:検証したか は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
