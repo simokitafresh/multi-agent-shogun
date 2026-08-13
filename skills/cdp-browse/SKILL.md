@@ -13,6 +13,21 @@ allowed-tools:
 
 # /cdp-browse — CDP session単一契約
 
+## 実行前の前提(必須・殿裁定2026-08-13「三層記憶をスキル実行前に確認することがそもそもの前提」)
+
+**スキル実行前に三層記憶(記憶DB・セマンティック・Obsidian)を確認せよ。** CDPの落とし穴と正解は三層に蓄積済みであり、検索せずに実行すると既知の問題で必ず試行錯誤する(2026-08-13将軍が実証: 検索せず3欠陥全てを踏んだが、全て三層に答えが既在した)。
+
+```bash
+bash scripts/memory_db_query.sh "CDP <今回の目的>"   # 記憶DB(例: knowledge:776999ee=CDP正本)
+bash scripts/semantic_search.sh "CDP"                # セマンティック(auth約5分等の運用知見)
+# Obsidian: ヒットしたorigin [[リンク]]をたどる(例: LS098=powershell失敗≠CDP不可能)
+```
+
+既知の落とし穴(三層より。コード側にも内在化済み 2026-08-13):
+1. **powershell.exe不可視**: sandbox shellはPATHにWindows dirがない。`cdp_helper.ps_run`が絶対パスfallbackを内蔵。それでも失敗する場合はLS098のchrome.exe直接起動が最終fallback。
+2. **auth所要≈5分**: adapterのsubprocess timeoutは`CDP_AUTH_TIMEOUT_SEC`(既定360秒)。短縮するな。
+3. **WSL/Windows境界**: endpoint生存判定(WSL側)とPowerShell経由アクセス(Windows側)は見える世界が異なる。片側の成功を全体の成功と判定するな。
+
 CDP操作の入口は共有foundationだけである。用途wrapperは下記と同じsession確立を内部実行し、`cdp_session_foundation`発行のreceiptがない接続をfail-closedで拒否する。
 
 ```bash

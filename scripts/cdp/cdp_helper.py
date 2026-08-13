@@ -12,8 +12,27 @@ Usage:
 
 import json
 import os
+import shutil
 import subprocess
 import time
+
+# powershell.exe resolution: sandboxed shells strip Windows dirs from PATH
+# (LS098: powershell失敗≠CDP不可能). Resolve by PATH first, then absolute path.
+_POWERSHELL_CANDIDATES = (
+    "powershell.exe",
+    "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+)
+
+
+def _resolve_powershell() -> str:
+    for candidate in _POWERSHELL_CANDIDATES:
+        found = shutil.which(candidate) or (candidate if os.path.isfile(candidate) else None)
+        if found:
+            return found
+    raise RuntimeError(
+        "powershell.exe not found on PATH nor at "
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/ (LS098)"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -35,7 +54,7 @@ def ps_run(cmd: str, timeout: int = 30) -> str:
         RuntimeError: PowerShell returned non-zero exit code.
     """
     result = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-Command", cmd],
+        [_resolve_powershell(), "-NoProfile", "-Command", cmd],
         capture_output=True,
         timeout=timeout,
     )

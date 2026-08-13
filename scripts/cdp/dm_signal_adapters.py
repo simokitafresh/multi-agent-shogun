@@ -60,7 +60,10 @@ def _admin_auth(target_url: str, env_file: str, receipt: dict) -> tuple[bool, st
     result = subprocess.run(
         ["bash", str(cli), "auth", "--env", env_file, "--port", port,
          "--api-base-url", target_url],
-        text=True, capture_output=True, timeout=30, check=False,
+        text=True, capture_output=True,
+        # auth+warmup is ~5min in production (semantic知見: CDP長時間化の根因は
+        # warm-up+viewer auth+計測の積み上げ約5分). A fixed 30s guaranteed timeout.
+        timeout=int(os.environ.get("CDP_AUTH_TIMEOUT_SEC", "360")), check=False,
     )
     combined = f"{result.stdout}\n{result.stderr}"
     if result.returncode == 0:
