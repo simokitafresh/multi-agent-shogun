@@ -319,8 +319,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 44
-  last_seen: "2026-08-13T18:38:11+09:00"
+  occurrence_count: 45
+  last_seen: "2026-08-13T18:49:04+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -952,7 +952,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '12f00e6577da3eb56d5f1692f75a341d4bbf27cf3e30f04584d75e7ce6fef6ae' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -962,6 +962,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次情報ログでイベント存在とverification passed exit_code=0を確認。SG7通知のexactly-once markerとレビュー後テレメトリ分離は既存実装済みで追加修正不要。"
+  action_artifact: "logs/self_retro.jsonl:2850; docs/semantic-index/index.md:11519-11520; commits=54dbe9a3e,b0b9ba42e"
+  resolved_at: "2026-08-13T18:50:46+09:00"
 - id: INS-20260813-180226535-4590
   ts: "2026-08-13T18:02:26+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4297; matched=管理; current_pattern=admin FoF管理画面の一覧化 — カード廃止・一覧行リスト化・Weight Breakdownアコーディオン化・viewer表canonical共通化; candidate_level=2; candidate=dashboard-updateスキルのSSoT二重管理(archive+gp_tracker)を一本化済み。根因解消により再発リスク消失。defense_level: 2文書追加は不要; source=gunshi_gp_tracker.yaml"
@@ -1040,3 +1043,20 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-13T18:30:47+09:00"
+- id: INS-20260813-185153201-5fdc
+  ts: "2026-08-13T18:51:53+09:00"
+  insight: "semantic_index_update新概念候補: discussion:フォルダー単位の開閉はすでに実装されている。開閉はsaveで任意に固定できる は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T18:54:04+09:00"
+- id: INS-20260813-185325776-f973
+  ts: "2026-08-13T18:53:25+09:00"
+  insight: "[[RB6の残り RF契約差408＋FoF月次差伝播552＋FoF MDD20も進めているか？進捗を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=RB6の残り RF契約差408＋FoF月次差伝播552＋FoF MDD20も進めているか？進捗を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
