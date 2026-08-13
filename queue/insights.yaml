@@ -683,7 +683,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次ログ queue/lord_conversation.jsonl:339 (2026-08-14T01:51:22+09:00) に殿の原文が実在し、context/karo-operations.md:38 と context/semantic-map.md:31 の既存防御（完了急ぎ・検証スキップ回避）および記憶DB検索結果と整合。queue/lord_conversation.jsonl:343 (01:52:34) でH6契約が正しいと判明後にH7再実装を中止しており、今回の教訓を既存ルール適用として解決した。"
+  action_artifact: "resolved_existing_rule=queue/lord_conversation.jsonl:339,343;context=karo-operations.md:38,semantic-map.md:31;memory_db=insight:INS-20260814-015123003-cd5e;decision_candidate=none"
+  resolved_at: "2026-08-14T06:57:16+09:00"
 - id: INS-20260814-015146637-ddcc
   ts: "2026-08-14T01:51:46+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b3t8fq3ch task id tool use id toolu 015mXZxjXYYab6oJ7A は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -988,8 +991,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 25
-  last_seen: "2026-08-14T06:46:16+09:00"
+  occurrence_count: 26
+  last_seen: "2026-08-14T06:56:34+09:00"
   verification:
     status: "passed"
     exit_code: 0
