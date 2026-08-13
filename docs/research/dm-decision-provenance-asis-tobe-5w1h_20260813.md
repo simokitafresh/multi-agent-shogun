@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v1.0
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v1.1
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
 
 > ★前提情報のないLLM/人へ: 本書だけで自己完結する。§1(5W1H)→§2(AsIs)→§3(ToBe)→§4(速度保護)→§5(工程)の順に読め。ToBeは**殿裁定済みの方向**(2026-08-13 17:36「専用の設計書を作ろう。実装にあたって計算速度が低下しない工夫も必要だ」)だが、**実装はRB6収束後**(生成コード変更がoracle突合の安定を乱すため)。
@@ -29,6 +29,20 @@
 | 非リバランス日の判定痕跡 | `{"skipped":true}`のみ | cmd_4296 §3 |
 | 層別run結果(rows/failed/TIMING) | Renderログのみ(流失する) | recalculation_statusには件数サマリなし |
 
+### §2.1.5 重要発見 — 「器」は既に3つ実装済みで中身が空(コード現物読解 2026-08-13 17:45)
+
+ToBeはゼロから作るのではない。**保存の器は既に存在し、埋まっていないだけ**である。
+
+| 既存の器 | 実装現物 | 現状 |
+|---|---|---|
+| ①momentum_dataの正規スキーマ | `sanitize_momentum_data`(`utils/sanitize.py:51-59`)のfast-pathが期待する構造=`{"relative":[{"symbol","value"}...], "absolute":{...}, "risk_free":{...}, "safe_haven":{...}, "weights":{...}}` — **scalarを入れる形が既に定義済み** | pipeline経路のpm_dataがこの形を埋めず、relative=null/values={}のまま保存(cmd_4296実測) |
+| ②pipeline診断(block_results) | `pipeline/engine.py:128-142` — 各blockの`input_tickers/output_tickers/filtered_out/params/momentum_values/execution_ms`と最終`weights`(`:183-190`)を組み立てて返す機構が完備 | `momentum_values = context.momentum_data.get("values",{})`が**空**(blockがvaluesへscalarを書いていない)。またvectorized経路は`skip_diagnostics`で診断ごと省略 |
+| ③月初入力スナップショット | `recalculate_fast.py:403-471`の`_build_month_start_input_snapshot`+`_upsert_month_start_input_snapshots` — **判定入力(momentum_inputs+economic_indicator_inputs+価格payload)を専用表へUPSERTする機構が既に稼働** | 格納する`momentum_inputs`の中身が上記①同様に空の構造を写しているため、入力スナップショットとして不完全 |
+
+さらに速度面の既存資産: `skip_diagnostics`フラグ(`engine.py:111以降の分岐`)が「診断を組むか否か」を既に切替可能 — **§4の速度保護はこのフラグ設計に乗るだけでよい**。
+
+∴ 本設計の実装実体は「新機構の追加」ではなく「**(a)pipeline blockが`context.momentum_data["values"]`へ計算済みscalarを書く (b)判定日のみdiagnosticsを有効化する (c)既存スナップショット表の中身を完全化する**」の3点埋めである。
+
 ### §2.2 AsIsの帰結(実害の実証)
 
 1. RB6検算(2026-08-13)で独立runnerを一から実装する必要が生じた(保存値とのparityが構造的に不可能)。
@@ -45,29 +59,33 @@
 
 ### §3.1 保存内容(判定プロヴェナンス・4点)
 
-**書込み先は既存の`signals.momentum_data`(JSON)を埋める。新テーブルは作らない**(シンプル最優先=殿裁定2026-08-13 03:46の延長。schema migration不要・読み出しAPIも既存)。
+**書込み先は既存の`signals.momentum_data`(JSON)を埋める。新テーブルは作らない**(シンプル最優先=殿裁定2026-08-13 03:46の延長。schema migration不要・読み出しAPIも既存)。**スキーマは発明せず、`sanitize_momentum_data`が既に期待する正規構造(§2.1.5①)へ準拠して埋める** — sanitizerのfast-pathをそのまま通り、既存読み出しコードとの互換も保たれる。
 
-リバランス判定日の行に以下を格納:
+リバランス判定日の行に以下を格納(既存キーは既存の意味のまま、追加は`window`/`provenance_version`のみ):
 
 ```json
 {
   "provenance_version": 1,
+  "relative": [
+    {"symbol": "TECL", "value": -0.1112306076},
+    {"symbol": "TQQQ", "value": "..."}
+  ],
+  "absolute": {"symbol": "...", "value": "..."},
+  "risk_free": {"symbol": "DTB3", "value": "..."},
+  "safe_haven": {"symbol": "..."},
+  "weights": {"TQQQ": 1.0},
   "window": {"lookback": [{"months": 12, "weight": 1.0}],
               "end_date": "2026-07-31", "end_actual": "2026-07-30",
-              "start_date": "...", "start_actual": "..."},
-  "candidates": {
-    "TECL": {"momentum": -0.1112306076, "start_px": 195.2700042725, "end_px": 173.5500030518},
-    "TQQQ": {"momentum": "..."}
-  },
-  "absolute": {"asset": "...", "momentum": "...", "threshold": "..."},
-  "selection": {"relative": "TECL", "final": "TQQQ", "reason": "absolute<threshold→safe_haven"},
-  "expanded_weights": {"TQQQ": 1.0}
+              "start_actual_by_symbol": {"TECL": "2026-07-02"}}
 }
 ```
 
-- FoFは`candidates`のキーが子PF ID、価格の代わりに`cumulative_return`のstart/end値。
-- `expanded_weights`=standardにも展開後ticker×weightを保存(§2.1の欠落③の解消)。
+- `relative/absolute/risk_free/safe_haven/weights`は§2.1.5①の既存定義そのもの — 実装は「blockが計算済みscalarを`context.momentum_data`へ書く」だけ(engine→`sanitize_momentum_data`→UPSERTの既存経路、`recalculate_fast.py:2653-2660`のsignals_batchが無改造で運ぶ)。
+- **start/endの実価格**は`momentum_data`へ重複格納せず、**既存の月初入力スナップショット表(§2.1.5③)の`momentum_inputs`を完全化**して持つ(器の役割分担: signals=判定結果と根拠scalar、snapshot表=入力の生値)。
+- FoFは`relative`のsymbolが子PF ID、valueが`cumulative_return`月次差分のscalar。
+- `weights`=展開後ticker×weight(standardにも格納。§2.1の欠落③の解消)。
 - 非リバランス日は現行`{"skipped":true}`を維持(容量とhot pathを守る。§4)。
+- pipeline診断の詳細(block別のfiltered_out/execution_ms)は§2.1.5②の`block_results`機構が既にあり、**判定日のみ`skip_diagnostics=False`にする**ことで追加実装なしで残せる。
 
 ### §3.2 層別runサマリの台帳化
 
@@ -83,7 +101,7 @@ full/portfolio再計算の終端で、`recalculation_status`行(既存)へ`summa
 
 fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026081304021264BB4C`)。**目標: +5%(≈23s)以内**。
 
-1. **新規計算ゼロの原則**: 保存する値は全てPhase 3.7/Phase 4/FoFループが**既に計算しているメモリ上の値**(vectorized momentum dict・選抜結果・展開weight)。プロヴェナンスは「計算の副産物の書き出し」であり、追加の価格照会・momentum再計算を1回もしない。dictから辞書を組むだけ=CPUコストはO(判定数×候補数)の辞書構築のみ。
+1. **新規計算ゼロの原則**: 保存する値は全てPhase 3.7/Phase 4/FoFループが**既に計算しているメモリ上の値**(vectorized momentum dict・選抜結果・展開weight)。プロヴェナンスは「計算の副産物の書き出し」であり、追加の価格照会・momentum再計算を1回もしない。dictから辞書を組むだけ=CPUコストはO(判定数×候補数)の辞書構築のみ。**速度制御の実装は既存`skip_diagnostics`フラグの粒度変更(全日skip→非判定日のみskip)であり、新フラグを作らない**(§2.1.5)。sanitize経路も既存fast-path(475K+回実行実績の高速版)をそのまま通る。
 2. **書込み回数を増やさない**: `signals`行は現行もUPSERTされている。momentum_dataフィールドの中身が大きくなるだけで、**INSERT/UPDATE文の回数は不変**。JSON構築はDB書込みバッチに同乗。
 3. **リバランス判定日のみ**: 非リバランス日(圧倒的多数)は現行の`{"skipped":true}`のまま。書込み増分は約240判定月×102PF規模に限定され、日次行の膨張なし。
 4. **同期経路に検証を入れない**: 保存時の整合チェック(scalar→選抜の再導出確認)はhot pathで行わず、事後の検証クエリ(§3.3)に任せる — 厳密さは最終checkpointへ集中(殿裁定2026-07-14)。
@@ -117,6 +135,7 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 
 ## §6 改訂履歴
 
+- v1.1 (2026-08-13 17:48): 殿指示「実施のコードを読み解き整合性があるように覚醒してアップデート」を受け実装現物と突合。§2.1.5新設=**器は既に3つ実装済みで中身が空**(sanitize_momentum_data正規スキーマ・pipeline block_results診断機構・month_start_input_snapshots表)を発見。§3.1のJSONスキーマを発明形から**sanitize既存構造準拠**へ全面改訂(relative/absolute/risk_free/safe_haven/weights)、価格生値はsnapshot表側へ役割分担、速度制御は既存skip_diagnosticsフラグの粒度変更で実現へ修正。実装は「新機構追加」から「既存3器の3点埋め」へ縮小。
 - v1.0 (2026-08-13 17:40): 殿指示(17:32「どのようなデータがfullrecalculateの時に取得できていると便利だ」→17:36「専用の設計書を作ろう。計算速度が低下しない工夫も必要」)を受け新規作成。AsIsはcmd_4296調査(gist bf4ac198)とRB6 oracle構築の実証に基づく。
 
 origin: `[[殿指示_判定プロヴェナンス設計_20260813]] -> [[cmd_4296_momentum_scalar未保存確定]] -> [[dm-decision-provenance-asis-tobe-5w1h]]`
