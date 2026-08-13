@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260812-215135310-ac66
-  ts: "2026-08-12T21:51:35+09:00"
-  insight: "[[将軍にも現況と進捗]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍にも現況と進捗、現在の方向性を明確に伝えよ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-12T21:56:48+09:00"
-- id: INS-20260812-215135958-2df6
-  ts: "2026-08-12T21:51:35+09:00"
-  insight: "[[スループットのボトルネックになっているものを覚醒して調査せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=スループットのボトルネックになっているものを覚醒して調査せよ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-12T21:56:48+09:00"
 - id: INS-20260812-215136774-091b
   ts: "2026-08-12T21:51:36+09:00"
   insight: "[[出来る範囲でのプッシュデプロイ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=出来る範囲でのプッシュデプロイ、canaryは回しておるか？"
@@ -437,8 +417,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '01f6bbc7c68f9ea6966b1f97169b3bbcb4ff25d943ce3848a96bb87b4e1769f0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 11
-  last_seen: "2026-08-13T12:13:13+09:00"
+  occurrence_count: 13
+  last_seen: "2026-08-13T12:48:05+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -865,8 +845,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 1
-  last_seen: "2026-08-13T03:44:57+09:00"
+  occurrence_count: 7
+  last_seen: "2026-08-13T13:00:10+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1014,3 +994,20 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-13T12:00:05+09:00"
+- id: INS-20260813-123209341-614e
+  ts: "2026-08-13T12:32:09+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608131207_hayate; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608131207_hayate"
+  fix_known: false
+  status: pending
+- id: INS-20260813-123223240-414b
+  ts: "2026-08-13T12:32:23+09:00"
+  insight: "[[ロールバックでtreeから消えた実績済みTIMING SUMMARY計測系を指定4 commitの最終形へ忠実に復元し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: skill_routing(スキルルーティング; alias=commit; score=6.7) / ultimate_state_principle(究極系原則; alias=最終形; score=3.4) / cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gateのtiming計測が全report YAMLを毎回parseするボトルネックを; score=3.3)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T12:32:43+09:00"
