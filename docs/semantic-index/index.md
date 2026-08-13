@@ -91,6 +91,7 @@ codd:
 | 種別 | パス/参照 |
 |------|-----------|
 | file | `docs/research/three-layer-access-route-asis-tobe-5w1h_20260727.md` — gist fd2b85f6の正本 |
+| file | `docs/research/three-layer-per-action-lookup-asis-tobe-5w1h_20260801.md` — 行動前の三層確認(per-action lookup)設計書 |
 | file | `docs/research/clear-prep-common-skill-asis-tobe-5w1h_20260727.md` — gist 7b60a79cの正本 |
 | memory | `knowledge:3e2990abd69a51e7` |
 | discussion | 殿下知2026-07-27 11:30「gistとローカルの整合性を保とう」。正本=docs/research/のmd、gist=殿閲覧用ミラー。編集は(1)正本Edit(2)gh gist edit同期(3)commitの3点セット。検証=gh api gists content diff(末尾空行1行差はAPI仕様)。commit 8f8767fa4で固定。origin: [[殿下知_gist正本整合_20260727]] -> [[gist_master_three_step_rule]] -> [[docs_research正本規律]] |
