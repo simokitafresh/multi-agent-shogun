@@ -18,15 +18,22 @@ def session_receipt(requested_port=9222, consumer="inspection"):
     return establish(consumer, ports=(requested_port,))
 
 
-def receipt_port(receipt):
+def receipt_endpoint(receipt):
     if receipt.get("issuer") != "cdp_session_foundation":
         raise RuntimeError("CDP connection requires a foundation receipt")
-    return int(receipt["endpoint"].rsplit(":", 1)[1])
+    endpoint = str(receipt.get("endpoint", "")).strip().rstrip("/")
+    if not endpoint:
+        raise RuntimeError("CDP foundation receipt has no endpoint")
+    return endpoint
 
 
-def _get_page_ws(port: int, url_substr: str):
+def receipt_port(receipt):
+    return int(receipt_endpoint(receipt).rsplit(":", 1)[1])
+
+
+def _get_page_ws(endpoint: str, url_substr: str):
     try:
-        with urllib.request.urlopen(f"http://localhost:{port}/json/list", timeout=10) as fh:
+        with urllib.request.urlopen(f"{endpoint}/json/list", timeout=10) as fh:
             targets = json.load(fh)
     except Exception:
         return None
@@ -93,11 +100,11 @@ JSON.stringify([...document.querySelectorAll("table")].map(function(t){
 _COUNT_JS = 'JSON.stringify({t:document.querySelectorAll("table").length,c:document.querySelectorAll("table td,table th").length})'
 
 
-def _poll_until_stable(port, url_substr, max_wait, interval):
+def _poll_until_stable(endpoint, url_substr, max_wait, interval):
     prev = None; waited = 0.0
     while waited < max_wait:
         time.sleep(interval); waited += interval
-        ws = _get_page_ws(port, url_substr)
+        ws = _get_page_ws(endpoint, url_substr)
         if not ws:
             continue
         try:
@@ -122,7 +129,9 @@ def main() -> int:
     ap.add_argument("--max-wait", type=float, default=20.0)
     ap.add_argument("--interval", type=float, default=1.0)
     args = ap.parse_args()
-    args.port = receipt_port(session_receipt(args.port))
+    receipt = session_receipt(args.port)
+    endpoint = receipt_endpoint(receipt)
+    args.port = receipt_port(receipt)
 
     try:
         import websocket  # noqa: F401
@@ -135,7 +144,7 @@ def main() -> int:
     host = base.split("//", 1)[-1].split("/", 1)[0]
     out = {}
     for route in routes:
-        ws = _get_page_ws(args.port, host)
+        ws = _get_page_ws(endpoint, host)
         if not ws:
             out[route] = {"error": "no page target"}; continue
         try:
@@ -146,8 +155,8 @@ def main() -> int:
             ev(f"location.href={json.dumps(base + route + '?_ed=' + str(int(time.time()*1000)))};0", await_promise=False)
         finally:
             conn.close()
-        _poll_until_stable(args.port, route.split("?", 1)[0], args.max_wait, args.interval)
-        ws2 = _get_page_ws(args.port, route.split("?", 1)[0])
+        _poll_until_stable(endpoint, route.split("?", 1)[0], args.max_wait, args.interval)
+        ws2 = _get_page_ws(endpoint, route.split("?", 1)[0])
         if not ws2:
             out[route] = {"error": "post-nav target"}; continue
         try:

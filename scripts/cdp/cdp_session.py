@@ -69,9 +69,30 @@ def endpoint_present(port: int, timeout: float = 1.0) -> bool:
         return False
 
 
+def _windows_profile_path(profile_path: str) -> str:
+    """Translate a WSL profile path before passing it to Windows Chrome."""
+    if not Path(profile_path).exists():
+        return profile_path
+    try:
+        result = subprocess.run(
+            ["wslpath", "-w", profile_path],
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise SessionError("cannot translate WSL Chrome profile path") from exc
+    translated = result.stdout.strip()
+    if result.returncode != 0 or not translated:
+        detail = result.stderr.strip() or f"exit={result.returncode}"
+        raise SessionError(f"cannot translate WSL Chrome profile path: {detail}")
+    return translated
+
+
 def launch_windows_chrome(port: int, profile_path: str) -> int:
     executable = detect_browser("chrome")
-    escaped_profile = profile_path.replace("'", "''")
+    escaped_profile = _windows_profile_path(profile_path).replace("'", "''")
     escaped_executable = executable.replace("'", "''")
     command = (
         f"$p=Start-Process -FilePath '{escaped_executable}' -PassThru "
