@@ -30,6 +30,7 @@
 - **残課題(殿指摘)**: 「**縦スクロールが長く一覧性に劣る**」— 102PF行の縦の長さ自体は未解消。原因はcmd_4298のスコープが§0.1裁定で3点に限定され、案C原案にあった**行高圧縮(密度改善)が対象外**だったため。
 - **次の改善候補(未裁定・実装禁止)**: (a)行高圧縮=cell paddingの縮小(canonicalのpadding 12-8より密なadmin専用密度。AsIs 8画面→4-5画面が案C原案の目標値) (c)PF名検索/フォルダフィルタ(案C原案・機能追加ゆえ別裁定)。
 - **訂正(殿指摘2026-08-13 18:51)**: 当初候補に挙げた「フォルダ単位の折りたたみ」は**既に実装済み**であり、**開閉状態はsaveで任意に固定できる**(将軍の現物未確認による候補誤り。設計書§2.2(D)のAsIs記述も折りたたみ機構に未言及だった=AsIs調査の抜け)。∴縦スクロール改善の残候補は(a)行高圧縮と(c)検索/フィルタの2つ。殿の裁定で次スコープを確定する。
+- **cmd_4299一次確認(2026-08-13 19:30)**: 現物コードでは`collapsedFolders`がReact stateに留まり、visibility page/components内の保存payload・local/session storageに開閉状態の経路は無かった。Save永続化は未確認のため、殿確認との不一致を§5および`docs/research/cmd_4299_visibility_density_recon_20260813.md`へ記録した。
 
 > ★前提情報のないLLM/人へ: このドキュメントだけで理解できるよう自己完結している。§1(5W1H)→§2(AsIs実測)→§3(ToBe案)の順に読め。ToBeは**未裁定の候補案**であり、殿(オーナー)の裁定で確定する。**実装はまだ始めない**(殿指示 2026-07-24 12:43「実装にはいらず修正案を練ろう」)。
 
@@ -67,6 +68,7 @@
 
 **(D) /admin/visibility** — 構成: tierタブ(Global Default/Standard/premium/AddOn/Basic/NewStandard+Manage Tiers) → L1: Global Page Visibility(Core/Info Pagesのチェックボックスをグリッド配置) → L2-L4: Global Portfolio Settings(PF×L2:Hide/L3:MaskPF/L4:MaskCompのトグル表、フォルダ見出し行つき102行)。
 **評価**: 既に表形式で方向性は正しい。弱点: (1)行高が大きく102行=8画面(viewer canonicalのpadding 12-8適用で圧縮余地) (2)theadがstickyでないため深部でヘッダ不明 (3)tier切替時に現在タブ以外の設定状態が俯瞰できない。
+**cmd_4299実測追記**: 本番viewport `1036×906`では全開document scrollHeight=`6556px`、全閉=`980px`、PF行=`54.33–54.67px`、folder header=`40px`、完全表示=`2 PF行`（交差=`3 PF行`）。開閉UIは既存だが、visibility page/components内のSave payload・local/session storageに`collapsedFolders`永続化経路は無い。詳細→`docs/research/cmd_4299_visibility_density_recon_20260813.md`。
 
 ### §2.3 共通AsIs
 - 表canonical(viewer側で統一済みの罫線・フォント・padding)がadminには**未適用**。カード(`rounded-lg border`系)が全ページの基本骨格。
@@ -110,3 +112,47 @@
 - コード全数偵察: cmd_4153(進行中) → `docs/research/cmd_4153_admin_ui_recon_20260724.md`
 
 origin: `[[殿指示_admin一覧性改善_20260724]] -> [[将軍CDP4ページ実測+cmd_4153コード偵察]] -> [[admin-ui-redesign-asis-tobe-5w1h]]`
+
+## §5 cmd_4299 visibility両面実測 (2026-08-13 19:30 JST)
+
+### 5.1 調査範囲と一次ソース
+
+- 対象: 本番 `https://dm-signal-frontend.onrender.com/admin/visibility`、認証済みCDP、DOM/getComputedStyle実測。実装・Save実行はしていない。
+- コード正本: `/mnt/c/Python_app/DM-signal/frontend/app/admin/visibility/page.tsx`、同 `components/TierSelector.tsx` / `ManageTiersModal.tsx`。
+- CDP実測条件: viewport `1036×906px`、DPR `1.5`、scrollY `0`。対象PFはDOM上102行、folder headerは6行。
+
+### 5.2 コード機能インベントリ（grep/行番号確認済み）
+
+| 機能 | 現物証跡 |
+|---|---|
+| Global/Tier状態・取得 | `page.tsx:71-108`（selectedTierId、global/tier settings、collapsedFolders）、`:134-195`（tiers/folders/global/tier fetch）、`:218-228`（未保存時Tier切替confirm） |
+| L1 page visibility | `page.tsx:237-249`, `:660-741`（Core/Info checkbox、togglePageVisibility） |
+| PF 3トグル | `page.tsx:251-275`（state更新）、`:1222-1333`（`hide_portfolio` / `hide_signal` / `hide_components`の個別UI） |
+| 全PF一括トグル | `page.tsx:303-352`, `:767-865`（L2/L3/L4 header toggle、階層ルールで下位変更を抑止） |
+| Folder一括トグル・hide | `page.tsx:287-300`, `:419-447`, `:911-1133`（folder settings、L2/L3/L4 bulk、L1.5 hide） |
+| Folder開閉 | `page.tsx:107-110`（`Set<string>`）、`:450-460`（toggle）、`:473-480`（uncategorized/partial例外）、`:911-1042`（header button）、`:1135-1137`（collapsed時PF行を非描画） |
+| Saveフロー | `page.tsx:482-548`, Save button `:600`。Tier/globalとも `hidden_pages`・`portfolio_settings`・`folder_settings`・`updated_at` のみ送信 |
+| Tier切替・Manage起動 | `TierSelector.tsx:16-61`、`page.tsx:615-620`、Manage modal起動 `:1352-1357` |
+| ManageTiers CRUD/並べ替え/パスワード | `ManageTiersModal.tsx:20-208`（load/create/update/delete/copy/reorder/copy-all/rotate-all）、描画 `:309-437` |
+| 行スタイル | PF cell `page.tsx:1176,1210,1223,1259,1297`=`px-2 py-2`、thead `:770,773,776,806,836`=`px-2 py-3`、table `:767`、sticky thead `:768` |
+
+### 5.3 CDP実測値
+
+| 状態 | document/body scrollHeight | table scrollHeight | DOM行数 | 備考 |
+|---|---:|---:|---:|---|
+| 全フォルダ開 | 6,556px | 5,862px | 109 (`thead 1 + folder 6 + PF 102`) | PF行高は54.33–54.67px、folder headerは40px |
+| 全フォルダ閉 | 980px | 286px | 7 (`thead 1 + folder 6`) | PF行はDOMから除去（`collapsed`条件） |
+
+Computed styleはPF cell `padding-top/bottom=8px/8px`、`line-height=20px`、`font-size=14px`。thead cellは `12px/12px`、実測高さ46.33px、`position=static`（コード上は `sticky top-0`だが、computed styleのpositionはstatic）。viewport上端で完全に収まるPF行は2行、viewport内に一部交差するPF行は3行だった。
+
+### 5.4 開閉状態の永続化確認（不一致を記録）
+
+`rg`一次確認では `collapsedFolders` の参照は `page.tsx:108,450-460,479` のみで、`localStorage`/`sessionStorage`/API payloadへの参照は0件。`handleSave`（`:482-548`）にも `collapsedFolders` は含まれない。∴現行実装の開閉はReact stateによるセッション内表示制御であり、Saveによる開閉状態の永続化経路は確認できない。殿確認の「Saveで任意に固定」という前提とはコード一次情報が不一致のため、実装・補正は次の裁定へ持ち越す。
+
+### 5.5 改善材料（実装しない）
+
+- 行高圧縮: 現状PF行54.33–54.67px。`px-2 py-2`（上下8px）をadmin専用密度へ縮小する場合、canonical `py-3`を下回る変更なので、候補案として別裁定・再CDPが必要。
+- 折りたたみ活用: 全開6,556px→全閉980px（5,576px、約85.0%減）。6 folder headerは全て40pxで、開閉は既存UIで実行可能。ただし現状は永続化されない。
+- 検索/フィルタ: 102 PFを全開で1画面に完全表示できるのは2行のみ。PF名検索またはfolder filterは一覧性改善候補だが機能追加のため未裁定・未実装。
+
+origin: `[[殿指示_visibility両面実測_20260813]] -> [[cmd_4299両面偵察]] -> [[AsIs調査の抜け_フォルダ開閉未言及]]`
