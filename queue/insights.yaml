@@ -671,8 +671,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 12
-  last_seen: "2026-08-13T14:04:44+09:00"
+  occurrence_count: 13
+  last_seen: "2026-08-13T14:14:48+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1016,5 +1016,29 @@ insights:
   insight: "[[我らの三層全体を通してのスループットを阻害するボトルネックを調査しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=我らの三層全体を通してのスループットを阻害するボトルネックを調査しよう"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T14:10:50+09:00"
+- id: INS-20260813-141050750-b823
+  ts: "2026-08-13T14:10:50+09:00"
+  insight: "semantic_index_update新概念候補: discussion:月末というのは月の最終取引日の終値という理解でいいか？例えば７月３１日が土曜日だとしたら、月の最終取引日は7 30だ。理論上は7 31には正しい数値で計算可能。 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260813-141234144-f8e8
+  ts: "2026-08-13T14:12:34+09:00"
+  insight: "semantic_index_update新概念候補: discussion:その旨をcmd momentum window recon mdに詳しく追加してくれ。目視できるように図表も入れてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260813-141644712-8739
+  ts: "2026-08-13T14:16:44+09:00"
+  insight: "semantic_index_update新概念候補: discussion:それぞれのリターンの計算期間も同じ図表に組み入れてくれ、月末と月初も明確にしよう。カレンダーと営業日の違いも明確になるように両方をわかりやすく図表に組み入れてく は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
