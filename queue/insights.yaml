@@ -195,7 +195,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:2d7c3c4d8c5e4b42"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証でgate_skill_script_refs.shを実行し、rc=2の理由がFOLLOWUP_ACTIVE(39組、route=insight->reflux)であることを確認。39組すべて参照先実在・SKILL.md鮮度PASSで、cmd_4193の既存還流経路とsemantic/因果索引に同型の解消手段が記録済み。新規コード修正・decision_candidateは不要。"
+  action_artifact: "gate_skill_script_refs.sh実測(2026-08-13):39組・参照実在・鮮度PASS・FOLLOWUP_ACTIVE; context/cmd-chronicle.md:135(cmd_4193); docs/semantic-index/index.md:4493-4494; context/semantic-map.md; .cache/causal_index.tsv"
+  resolved_at: "2026-08-13T14:24:48+09:00"
 - id: INS-20260813-001027564-f027
   ts: "2026-08-13T00:10:27+09:00"
   insight: "semantic_index_update新概念候補: discussion:monthly tradeってのは何を計算しているんだ？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -1027,18 +1030,51 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T14:27:07+09:00"
 - id: INS-20260813-141234144-f8e8
   ts: "2026-08-13T14:12:34+09:00"
   insight: "semantic_index_update新概念候補: discussion:その旨をcmd momentum window recon mdに詳しく追加してくれ。目視できるように図表も入れてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T14:27:07+09:00"
 - id: INS-20260813-141644712-8739
   ts: "2026-08-13T14:16:44+09:00"
   insight: "semantic_index_update新概念候補: discussion:それぞれのリターンの計算期間も同じ図表に組み入れてくれ、月末と月初も明確にしよう。カレンダーと営業日の違いも明確になるように両方をわかりやすく図表に組み入れてく は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T14:27:07+09:00"
+- id: INS-20260813-142450525-fb44
+  ts: "2026-08-13T14:24:50+09:00"
+  insight: "semantic_index_update新概念候補: discussion:この理解の上で家老に利他の精神で情報提供できないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T14:27:08+09:00"
+- id: INS-20260813-142633144-05d1
+  ts: "2026-08-13T14:26:33+09:00"
+  insight: "[[この理解の上で家老に利他の精神で情報提供できないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この理解の上で家老に利他の精神で情報提供できないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260813-142633821-b738
+  ts: "2026-08-13T14:26:33+09:00"
+  insight: "[[それぞれのリターンの計算期間も同じ図表に組み入れてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=それぞれのリターンの計算期間も同じ図表に組み入れてくれ、月末と月初も明確にしよう。カレンダーと営業日の違いも明確になるように両方をわかりやすく図表に組み入れてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
