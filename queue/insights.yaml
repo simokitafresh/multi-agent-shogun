@@ -225,7 +225,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存実装を一次検証して解消済み: f8424a793でauto_generate_cross_repo_entries()を追加済み。現HEAD 7b5b056a2a1efdbb6362623d3eacf2248f2140c3への実probeでqueue/insights.yamlの実変更pathを生成し、ownership errors=[]を確認。新規修正・decision_candidate不要。"
+  action_artifact: "scripts/lib/cross_repo_commit_contract.py:auto_generate_cross_repo_entries; scripts/gates/gate_report_format_main.py:2174-2184; docs/semantic-index/index.md:13799; context/infrastructure.md:L1535; probe_head=7b5b056a2a1efdbb6362623d3eacf2248f2140c3"
+  resolved_at: "2026-08-13T14:41:35+09:00"
 - id: INS-20260813-001228368-af99
   ts: "2026-08-13T00:12:28+09:00"
   insight: "semantic_index_update新概念候補: discussion:L2de は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
