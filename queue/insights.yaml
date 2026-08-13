@@ -1,34 +1,4 @@
 insights:
-- id: INS-20260812-213905939-70f9
-  ts: "2026-08-12T21:39:05+09:00"
-  insight: "semantic_index_update新概念候補: discussion:家老のバックグラウンドターミナルまだ動いてるぞ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-12T21:43:44+09:00"
-- id: INS-20260812-214236735-1df2
-  ts: "2026-08-12T21:42:36+09:00"
-  insight: "semantic_index_update新概念候補: discussion:検証して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-12T21:43:05+09:00"
-- id: INS-20260812-214305884-68df
-  ts: "2026-08-12T21:43:05+09:00"
-  insight: "semantic_index_update新概念候補: discussion:家老へ通知せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-12T21:43:44+09:00"
 - id: INS-20260812-215134464-ab59
   ts: "2026-08-12T21:51:34+09:00"
   insight: "[[いまの問題点はL2 L3 L5のどこにある？L2 L3にバグはないのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いまの問題点はL2,L3,L5のどこにある？L2,L3にバグはないのか？"
@@ -477,8 +447,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '01f6bbc7c68f9ea6966b1f97169b3bbcb4ff25d943ce3848a96bb87b4e1769f0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 7
-  last_seen: "2026-08-13T05:33:31+09:00"
+  occurrence_count: 10
+  last_seen: "2026-08-13T11:58:10+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -546,8 +516,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '8e11ee8e1f7fa214f8db26b6e766690ea468de9ac98e671a5c3c14818b721e43' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 1
-  last_seen: "2026-08-13T00:25:19+09:00"
+  occurrence_count: 2
+  last_seen: "2026-08-13T08:54:54+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1011,3 +981,43 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-13T05:18:00+09:00"
+- id: INS-20260813-090527023-f878
+  ts: "2026-08-13T09:05:27+09:00"
+  insight: "semantic_index_update新概念候補: discussion:家老も独立して原因調査せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T09:11:30+09:00"
+- id: INS-20260813-091121448-de90
+  ts: "2026-08-13T09:11:21+09:00"
+  insight: "semantic_index_update新概念候補: discussion:ticker priceのデータ欠損はないのか？stock data api側と、DM signal側の両方を調べてみて は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T09:11:30+09:00"
+- id: INS-20260813-094942179-1769
+  ts: "2026-08-13T09:49:42+09:00"
+  insight: "[[GA 461で判明した外部source contextの未反映frontierをtask target path依存なし]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTの根因を調査し; score=10.8) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=GA 436のcontext dm signal ops鮮度警報を一次情報で検証し; score=10.6) / bulletin_communication(掲示板通信基盤; alias=notification target scoping; score=10.5)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T09:49:54+09:00"
+- id: INS-20260813-115959784-9753
+  ts: "2026-08-13T11:59:59+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_reflux_backlink_202608131010_hanzo は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T12:00:05+09:00"
