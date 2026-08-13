@@ -246,8 +246,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '01f6bbc7c68f9ea6966b1f97169b3bbcb4ff25d943ce3848a96bb87b4e1769f0' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 16
-  last_seen: "2026-08-13T13:51:00+09:00"
+  occurrence_count: 17
+  last_seen: "2026-08-13T14:33:45+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -674,8 +674,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 13
-  last_seen: "2026-08-13T14:14:48+09:00"
+  occurrence_count: 14
+  last_seen: "2026-08-13T14:31:00+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1070,11 +1070,17 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T14:34:35+09:00"
 - id: INS-20260813-142633821-b738
   ts: "2026-08-13T14:26:33+09:00"
   insight: "[[それぞれのリターンの計算期間も同じ図表に組み入れてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=それぞれのリターンの計算期間も同じ図表に組み入れてくれ、月末と月初も明確にしよう。カレンダーと営業日の違いも明確になるように両方をわかりやすく図表に組み入れてくれ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-13T14:34:36+09:00"
