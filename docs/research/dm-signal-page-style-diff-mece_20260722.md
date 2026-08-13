@@ -1,3 +1,4 @@
+<!-- gist-master: c50699ea4e13d003a7864996b93ba19f dm-signal-page-style-diff-mece_20260722.md -->
 # DM-Signal page style MECE v2 — 全21 page × A–L 12軸 スタイル統一設計書
 
 > ★このドキュメントを初めて読むLLM/人へ: まず本§METAを最後まで読め。前提を飛ばすと必ず誤解する。特に「測定はgrep禁止・CDP必須」「canonical(正)は殿裁定で確定済み」の2点を外すと過去の事故(本番色崩れ・フォント不統一)を再生産する。
