@@ -634,7 +634,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で掲示板の不一致一覧1093件と当時のshogun inbox 2255行を確認。現行bulletin_write.shに本文4KB超警告は未実装のため、実装判断は報告のdecision_candidateへ分離した。"
+  action_artifact: "queue/bulletin_board.yaml:2152;queue/bulletin_board.yaml:2532;scripts/bulletin_write.sh:348-665;decision_candidate: bulletin_write本文4KB超WARNを別cmdで実装判断"
+  resolved_at: "2026-08-14T05:19:08+09:00"
 - id: INS-20260814-014238541-caaa
   ts: "2026-08-14T01:42:38+09:00"
   insight: "記憶DB検索(--search)がsqlite3.DatabaseError: database disk image is malformedで失敗(2026-08-14 01:40頃)。直SQLのSELECT sqlite_masterも120s超過。三層記憶Layer1の検索欠損=インフラ障害。integrity_check実行中。要修復cmd"
@@ -992,8 +995,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 10
-  last_seen: "2026-08-14T05:12:54+09:00"
+  occurrence_count: 11
+  last_seen: "2026-08-14T05:19:28+09:00"
   verification:
     status: "passed"
     exit_code: 0
