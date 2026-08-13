@@ -1,5 +1,5 @@
 <!-- gist-master: 0c98ab3686bcaff3aa1ddd36e1a53570 dm-production-code-rollback-plan_20260813.md -->
-# DM-Signal本番コードロールバック設計 v1.5
+# DM-Signal本番コードロールバック設計 v1.6
 <!-- semantic-links: [[recalculate_pipeline]] [[production_parity]] [[code_rollback]] -->
 
 - 作成: 2026-08-13 01:22 JST
@@ -149,6 +149,23 @@ flowchart TD
 
 **改訂後のRB6判定基準**: (a)standard全PF全確定月の10dp一致0不一致（達成済み: 4713/4713） (b)FoF全PF全確定月の**逆算parity**（保存weight×独立price returnの積和=保存monthly、10dp）不一致0 (c)metricsは独立月次列からの算出一致。weight自体の選抜規則正当性の検証はRB6の範囲外（検証したければ別工程）。三層記憶: knowledge:c7a5d6a5（逆算検算原理）・knowledge:55af7b46（極限シンプル実装）。
 
+### §7.2 月次検算の決着 — H6でCLEAR確定（2026-08-14 01:52 殿裁定・以後の正）
+
+> ★前提情報のないLLMへ: 本節がRB6**月次**検算の最終結論である。§7.1の方式で仮説H1〜H6を回した顛末と、途中の撤回騒動の教訓を1節で自己完結させる。
+
+**確定結論（2026-08-14 01:52 殿裁定）**: RB6月次検算は**CLEAR**。
+`Standard 9426 exact / FoF 24322 exact / total 33748 exact, coverage 33748/33748, duplicate 0, skip 0, mismatch 0`
+（1件の定義: 1 timing=1 portfolio_id×1 year_month×close又はopen。33748=16874確定月×2 timing）
+
+**H6最終合成式（何と何を突き合わせたか）**:
+- Standard 4713月: 保存weight（等weight 1/N）×raw prices月初/翌月初境界の積和=保存monthly（v4方式・2独立実装で9426/9426一致）。
+- FoF 12161月: 保存済み派生（H1 full artifact）を基礎に、旧残差101 timingの真因=**検算式側の窓規則（`monthly_boundary.py:45-108` §0.6）写し漏れ**と**FoF初月stubはstub開始日時点のas-of weightを使う**の2規則で全量解消（本番バグゼロ）。missing 21=display一段式+SPY境界式で42/42一致クローズ済み。
+- 両集合は排他的で計16874月、同一の保存weight×raw prices契約で完全被覆。
+
+**撤回騒動の記録（歴史として保持・教訓）**: 01:50に家老が「H6は単一runner実走でなく部分artifactの算術合成だから証拠除外、H7単一runnerで置換」と一旦BLOCKへ差し戻したが、01:52殿裁定で**逆転**: (1)算術合成は排他的部分集合の合算であり正当 (2)疾風freshの`mismatch 935+missing 21`は**configからselectionを再生成する別契約**の数値でありH6（保存値検算）を反証しない (3)「正しいと判明した時点で終わり。きれいな証明は不要」→H7単一runner再実装は**中止**。原因=家老の過剰検証判断。教訓: 検算の反証は**同一契約の数値**でのみ成立する。契約が違う数値の不一致は反証ではない。
+
+**残るRB6未CLEAR範囲=metricsのみ**: 本番`portfolio_metrics`の実体は102PF×years{0,10}=**204行・metric name 47個**（当初「7指標」「35キー」とされた前提は現物確認で2度訂正済み）。H6証明済み月次artifactだけを入力とし（pricesから月次を再発明しない）、47指標を重複なし4 shardで並列検算する: A=return/distribution、B=RF/excess/benchmark、C=drawdown/recovery、D=全204行の型/NULL/文字列/coverage統合。全laneに同一artifact SHA256を強制し、最終unionで47/47・重複0・欠落0を検証してRB6完全CLEARとする。
+
 ## §8. 本番復旧AC
 
 1. 選定baseline SHAとruntime manifest hashが一意に記録され、production runtime treeの一致率N/N。
@@ -170,7 +187,7 @@ flowchart TD
 | RB3 | rollback commit構築 | tree一致N/N、build/startup PASS、SKIP 0 | **完了**（`233c2303`） |
 | RB4 | 本番deploy | live SHA一致、health/schema互換PASS | **完了** |
 | RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | **完了**（2026-08-13 12:10 JST: `precompute_raw completed: rows=1533 portfolios=102 failed=0 elapsed=436.51s`、API永続status `last_error=null rows_processed=1533`。経路: 先頭NULL両経路修正`9b881979`/`5c0af039`＋valid_start境界holding seed修正`071f2ca4`→L1再生成4,795行→24PF L3再生成→rolling欠損0→L5再走） |
-| RB6 | prices独立oracle全量（§7.1逆算検算方式へ改訂） | monthly逆算parity/metrics不一致0 | 着手中（standard 4713/4713達成。FoF/metricsは§7.1方式で再採点中・22:45時点） |
+| RB6 | prices独立oracle全量（§7.1逆算検算方式・§7.2で月次決着） | monthly逆算parity/metrics不一致0 | **月次CLEAR**（33748/33748 exact・殿裁定2026-08-14 01:52）。残=metrics 47指標×204行の4 shard検算のみ |
 | RB7 | 本番API/UI確認 | 8画面欠損0・例外0 | **完了**（殿自身が2026-08-13 13:33「問題ないことを確認した」と裁定） |
 | RB8 | 最終checkpoint | §8 AC1-8全PASS | 未着手 |
 
@@ -191,6 +208,7 @@ flowchart TD
 3. **TIMING SUMMARY復元完了**（2026-08-13 13:15 JST）: rollback前実績4 commit（`365e1c8f`→`20a26556`→`695933d3`→`88d38b77`）の最終形を忠実復元（復元commit `15e612f9`、計測・ログ・testのみ、業務計算式変更ゼロ）。canary 5PF hash一致5/5・ERROR 0（run `2026081303593369C961`）→full本走（run `2026081304021264BB4C`）completed・failed 0・TIMING SUMMARY出力復活（`L2=2m5s L3=4m21s L5=41.3s unaccounted=38.0s TOTAL=7m45s`）。SIGNAL CHANGE ALERT 5,890件/39PFはFoFのみ・standard 0=holding seed修正の波及書戻しで正当（ALERT機構自体はbaseline残存機構）。
 4. 残: RB6（prices独立oracle全量）→RB7（8画面確認）→RB8（§8 AC1-8同一世代PASS）。全数数値正当性の最終GATEはRB6完了まで未CLEAR。
 5. **RB6経過（2026-08-13 22:45追記）**: run358採点=standard 14/FoF 939/metrics 740 → 修正`c9a0da8d`（standard stock readinessのDTB3除外+full-prefix/bounded-native分離）の独立レビューAPPROVE→run359でstandard 4713/4713 exact・mismatch 0達成。FoF残935の代表分解2レーンが「第一分岐=oracle側weight展開仮定不足・本番欠陥なし」へ独立収束、missing 21=7PF×2012-04/05/06のproduction不正保存×oracle前史不足の複合と確定。以後§7.1の逆算検算方式で全量再採点中。
+6. **RB6月次決着（2026-08-14 01:52追記）**: H6合成式で33748/33748 exact・mismatch 0 → 一時撤回騒動（01:50家老「算術合成は証拠除外」）を経て殿裁定01:52で**月次CLEAR確定**。詳細と教訓は§7.2。残=metrics 47指標×204行の4 shard検算のみ。
 
 ### §9.2 修正記録 — 何をどう直したか（知見用・2026-08-13 13:30時点）
 
@@ -226,12 +244,13 @@ rollback後に露出したbaseline内在バグは**3本で、根はすべて1つ
 | 殿画面確認 | 2026-08-13 13:33 RB7 PASS |
 | Renderデプロイ | backend srv-d4ja7q15pdvs739a4q1g にこのSHAがLive（dep-d9ugdqeq1p3s73bor6pg以降の連続deploy） |
 | 旧退避branch | `archive/pre-rollback-20260813-0148-7003cf69`（rollback前main。歴史参照のみ、復帰先にしない） |
-| 未CLEAR残 | RB6独立oracle（数値正当性の最終GATE）のみ |
+| 未CLEAR残 | RB6のmetrics検算（47指標×204行・4 shard）のみ。月次は2026-08-14 01:52殿裁定でCLEAR（§7.2） |
 
 **rollback手順（再発時）**: `15e612f9`との差分commitを通常revertして push→Render自動deploy→必要層のみ再生成（§9.2の順序: 生成側修正→L1→L3→L5 serial）。force push/resetは使わない（§0-4）。
 
 ## §10. 改訂履歴
 
+- v1.6 (2026-08-14 01:58): §7.2新設 — RB6月次検算をH6合成式でCLEAR確定（殿裁定01:52: 算術合成正当・別契約数値は反証にならず・H7単一runner中止）。工程表RB6行を「月次CLEAR・残=metrics 47指標4 shard」へ更新。metrics実体=47 name×204行を現物確認値として固定（旧7指標/35キー前提を訂正）。
 - v1.5 (2026-08-13 22:50): §7.1新設 — RB6検算方式を殿裁定3点（仮説検証22:19/逆算検算22:40-42/極限シンプル22:44）に基づき逆算parity方式へ改訂。selection規則の独立フル再導出は目的外として撤回。§9工程表RB6行と§9.1へrun358/359経過（standard 4713/4713達成・FoF RCA 2レーン収束・missing21確定）を追記。
 - v1.4 (2026-08-13 13:35): §9.2修正記録を新設（バグ3本の現象→真因→修正→検証、根は8/3の2契約不整合1つ。再生成順序と知見4点）。RB5完了・TIMING SUMMARY復元完了・RB7完了（殿画面確認13:33）・RB6着手中を反映。§7へRB6平易説明追記。
 - v1.3 (2026-08-13 03:55): 実行実績を反映。RB2-RB4完了（rollback commit `233c2303`・退避branch記録）、RB5部分完了（L5 standard 24 PF failed=先頭NULL契約不整合、本番readonly再集計 `(24,24,24)`）、SIGNAL CHANGE ALERT 9343件=正当書戻しの判定、残件（先頭連続NULLスキップの最小修正=殿裁定03:46シンプル対応準拠）を§9.1へ追記。

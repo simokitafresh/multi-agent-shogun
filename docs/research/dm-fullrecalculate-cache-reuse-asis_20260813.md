@@ -160,12 +160,15 @@ production cacheが高速であることと、値が独立oracleへ一致する�
 - standard 14 mismatchはrun 357のDTB3 prefix signal混入と対応し、`a974e7e8`修正後run 358での再採点待ち。従って上記はrun 358の予測値ではなく、run 357 snapshotに対する固定結果である。
 - RF月次契約は`52e80ce9`で日次DTB3 factorの複利積へ修正し、固定replay上でRF差408→0、全1,428 metrics計算値が一致することを確認した。ただしend-to-endのRB6 CLEARはFoF残差とrun 358終端確認を含む。
 
-従って本書は「現行計算経路とcache契約」のAsIsであり、**RB6 GATEは未CLEAR**である。
+従って本書は「現行計算経路とcache契約」のAsIsである。（★状態更新2026-08-14 01:52: RB6**月次**はH6合成式で33748/33748 exact・mismatch 0のCLEAR確定=殿裁定。本節の旧mismatch値はrun357 snapshot固定結果の歴史記録であり現状ではない。残=metrics 47指標×204行検算のみ。正本=rollback計画書v1.6 §7.2）
 
-**追記(2026-08-13 22:50・殿裁定による検算方式改訂)**: RB6検算は逆算parity方式（保存weight×独立pricesの積和と保存monthlyの10dp比較・単一スクリプト単一パス）へ改訂された。oracleのselection規則独立再実装は目的外として撤回（殿裁定22:40-22:44、正本=rollback計画書v1.5 §7.1）。run359でstandard 4713/4713 exact達成。FoF残935の第一分岐はoracle側weight展開仮定不足と2レーン独立確定（本番欠陥なし）。
+**追記(2026-08-13 22:50・殿裁定による検算方式改訂)**: RB6検算は逆算parity方式（保存weight×独立pricesの積和と保存monthlyの10dp比較・単一スクリプト単一パス）へ改訂された。oracleのselection規則独立再実装は目的外として撤回（殿裁定22:40-22:44、正本=rollback計画書v1.6 §7.1）。run359でstandard 4713/4713 exact達成。FoF残935の第一分岐はoracle側weight展開仮定不足と2レーン独立確定（本番欠陥なし）。
+
+**追記(2026-08-14 01:52・月次決着)**: H6最終合成式（Standard v4+FoF窓規則§0.6+初月stub as-of weight）で33748/33748 exact・mismatch 0。殿裁定により排他的部分集合の算術合成は正当、単一runner再実装(H7)は中止。configからselectionを再生成する別契約の数値(mismatch 935+missing 21)はH6の反証にならない。詳細=rollback計画書v1.6 §7.2。
 
 ## §7. 改訂履歴
 
 - v1.0 (2026-08-13 04:09): rollback後のproduction tree `21e80e30`を記録。
 - v2.0 (2026-08-13 15:18): production `7bd60e96`へ再構築。signals保持UPSERT、mode別ticker分岐、immutable input manifest、metrics確定月/MDD契約、非fatal境界、RB6未CLEAR、本番run 355終端実測を反映。
+- v3.1 (2026-08-14 01:58): §6へRB6月次CLEAR確定(殿裁定01:52)の状態更新注記と月次決着追記を追加。旧mismatch値を歴史記録と明示。
 - v3.0 (2026-08-13 19:45): production `ff290e60`へ再構築。DTB3完全prefixとsignal bounded viewの分離、SPY全履歴snapshot、run 357終端実測、run 358監視中、循環を除去したRB6 oracle固定artifact、RF修正済みとFoF残差未CLEARを反映。原作成時刻と既存gist IDは変更せず保持。

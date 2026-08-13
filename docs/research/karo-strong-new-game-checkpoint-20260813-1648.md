@@ -1,7 +1,9 @@
 # 家老 強くてニューゲーム復帰点 — 2026-08-13 16:48 JST
 
+> ★時系列ナビ(2026-08-14 01:58追記): 本書は16:48時点の歴史記録。以後、RB6検算方式は殿裁定22:40-22:44で逆算parity方式へ改訂され、2026-08-14 01:52殿裁定で**月次CLEAR確定**(33748/33748 exact)。本書の目標値・artifact参照は現状ではない。現行正本=`dm-production-code-rollback-plan_20260813.md` v1.6 §7.1-§7.2。残=metrics 47指標×204行の4 shard検算のみ。
+
 - created_at: 2026-08-13 16:48 JST
-- status: active
+- status: superseded (歴史参照のみ。現行正本はrollback計画書v1.6)
 - owner: karo
 - source: 殿指示「いまクリアされても今より強くてニューゲームできるようにせよ」
 - current_goal: RB6をrun 355後の新鮮な本番snapshotで再採点し、metrics修正の効果とFoF残差を数値確定してRB6 CLEAR/BLOCKを判定する
