@@ -4056,6 +4056,7 @@ codd:
 | file | `CLAUDE.md` 実験ファースト原則 |
 | file | `docs/research/next-throughput-hanzo.md` — 半蔵の次スループット候補 |
 | file | `docs/research/next-throughput-hayate.md` — 完了pipelineのrelated-only最終checkpoint候補 |
+| file | `docs/research/retro-pane-prompt-unbounded-paste-asis-tobe-5w1h_20260721.md` |
 | lesson | `LS100` — 二重ループが止まらず超高速回転するのが仕組みの本体 |
 | causal | [[殿定義_二重ループ_20260720_2033]] -> [[メイン作業へ全力集中して完了]] -> [[完全な別retro_task]] -> [[即インフラ改善]] -> [[次の主作業加速]] |
 | causal | [[fe3943375_retro_pane_cut]] -> [[self_retro_inline一タスク化]] -> [[二重ループ破壊]] -> [[retro_pane_prompt復元]] |
