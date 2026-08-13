@@ -189,7 +189,7 @@ flowchart TD
 | RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | **完了**（2026-08-13 12:10 JST: `precompute_raw completed: rows=1533 portfolios=102 failed=0 elapsed=436.51s`、API永続status `last_error=null rows_processed=1533`。経路: 先頭NULL両経路修正`9b881979`/`5c0af039`＋valid_start境界holding seed修正`071f2ca4`→L1再生成4,795行→24PF L3再生成→rolling欠損0→L5再走） |
 | RB6 | prices独立oracle全量（§7.1逆算検算方式・§7.2で月次決着） | monthly逆算parity/metrics不一致0 | **月次CLEAR**（33748/33748 exact・殿裁定2026-08-14 01:52）。残=metrics 47指標×204行の4 shard検算のみ |
 | RB7 | 本番API/UI確認 | 8画面欠損0・例外0 | **完了**（殿自身が2026-08-13 13:33「問題ないことを確認した」と裁定） |
-| RB8 | 最終checkpoint | §8 AC1-8全PASS | 未着手 |
+| RB8 | 最終checkpoint | §8 AC1-8全PASS | **BLOCK**（2026-08-14 08:47 JST: AC2/AC3/AC4未達。証跡=`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4301_rb8_generation_evidence_20260814.md`） |
 
 ### §9.1 実行記録と残件（2026-08-13 03:55時点）
 
@@ -209,6 +209,7 @@ flowchart TD
 4. 残: RB6（prices独立oracle全量）→RB7（8画面確認）→RB8（§8 AC1-8同一世代PASS）。全数数値正当性の最終GATEはRB6完了まで未CLEAR。
 5. **RB6経過（2026-08-13 22:45追記）**: run358採点=standard 14/FoF 939/metrics 740 → 修正`c9a0da8d`（standard stock readinessのDTB3除外+full-prefix/bounded-native分離）の独立レビューAPPROVE→run359でstandard 4713/4713 exact・mismatch 0達成。FoF残935の代表分解2レーンが「第一分岐=oracle側weight展開仮定不足・本番欠陥なし」へ独立収束、missing 21=7PF×2012-04/05/06のproduction不正保存×oracle前史不足の複合と確定。以後§7.1の逆算検算方式で全量再採点中。
 6. **RB6月次決着（2026-08-14 01:52追記）**: H6合成式で33748/33748 exact・mismatch 0 → 一時撤回騒動（01:50家老「算術合成は証拠除外」）を経て殿裁定01:52で**月次CLEAR確定**。詳細と教訓は§7.2。残=metrics 47指標×204行の4 shard検算のみ。
+7. **RB8実測（2026-08-14 08:47 JST）**: live deploy `216ac4add78d89acd8df01674ca2562029d3d317`、latest full run `202608131108178016A6`/DB id=359 (`completed`, `full`)、run manifest `3d7e7a0e...`, input snapshot `90fc126b...` を固定。runtime closure 159/159一致。DBは102 PF、monthly 16976/102 NULL 0、metrics 204/102、L5 completed rows=1533/PF=102。代表API routeは11/11 HTTP 200。しかし `precomputed_raw` に削除済みPF `5bec6843-a3d3-4d46-8cfc-2a9ec26bd294` の孤児18行が残り、AC7 orphan=0未達。同一世代metrics全数artifactと全PF API sweepも現証跡へ再リンクできず、AC2/AC3/AC4をFAIL。production mutationは0。詳細は `cmd_4301_rb8_generation_evidence_20260814.md`。
 
 ### §9.2 修正記録 — 何をどう直したか（知見用・2026-08-13 13:30時点）
 
@@ -250,6 +251,7 @@ rollback後に露出したbaseline内在バグは**3本で、根はすべて1つ
 
 ## §10. 改訂履歴
 
+- v1.7 (2026-08-14 08:47): RB8最終checkpointを実測。世代固定とDB/API代表確認は実施したが、削除済みPFの`precomputed_raw`孤児18行および同一世代全数証跡不足によりBLOCK。production mutation 0。
 - v1.6 (2026-08-14 01:58): §7.2新設 — RB6月次検算をH6合成式でCLEAR確定（殿裁定01:52: 算術合成正当・別契約数値は反証にならず・H7単一runner中止）。工程表RB6行を「月次CLEAR・残=metrics 47指標4 shard」へ更新。metrics実体=47 name×204行を現物確認値として固定（旧7指標/35キー前提を訂正）。
 - v1.5 (2026-08-13 22:50): §7.1新設 — RB6検算方式を殿裁定3点（仮説検証22:19/逆算検算22:40-42/極限シンプル22:44）に基づき逆算parity方式へ改訂。selection規則の独立フル再導出は目的外として撤回。§9工程表RB6行と§9.1へrun358/359経過（standard 4713/4713達成・FoF RCA 2レーン収束・missing21確定）を追記。
 - v1.4 (2026-08-13 13:35): §9.2修正記録を新設（バグ3本の現象→真因→修正→検証、根は8/3の2契約不整合1つ。再生成順序と知見4点）。RB5完了・TIMING SUMMARY復元完了・RB7完了（殿画面確認13:33）・RB6着手中を反映。§7へRB6平易説明追記。
