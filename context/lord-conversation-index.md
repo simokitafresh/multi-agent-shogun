@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-14 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-14T03:55:13+09:00 -->
+<!-- generated_at: 2026-08-14T04:52:08+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-14T03:55:11+09:00 | terminal | response | `cmd_karo_recon2_rb6_metrics_same_window_final_v3_20260814` → **GATE CLEAR**。RB6 metrics 47指標+top-level11が30192/30192 e…
-- 2026-08-14T03:54:40+09:00 | terminal | response | 殿、**RB6完全CLEARにござる**。[MEM: memory_db ts=2026-08-14T03:53 "RB6完全CLEAR_20260814_0353 (knowledge:8bc2da6a4a6e871c)" — 本ターン…
-- 2026-08-14T03:54:32+09:00 | ntfy | outbound | 【RB6完全CLEAR】metrics最終判定v3 GATE CLEAR。coverage 30192/30192 mismatch0(A8160+B13056+C8976)+stub48別契約48/48。月次33748+metrics全…
-- 2026-08-14T03:51:41+09:00 | ntfy | outbound | 【gunshi】cmd_reflux_insight_202608140351_kotaro 初回配備開始 (title=(untitled), ninja=kotaro)
-- 2026-08-14T03:44:36+09:00 | terminal | response | metrics v3 → **APPROVE**。stub48修正反映確認済み。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-14T03:43:42+09:00 | ntfy | outbound | 【家老】cmd_karo_recon2_rb6_metrics_same_window_final_v3_20260814 初回配備開始 (title=(untitled), ninja=saizo)
-- 2026-08-14T03:41:22+09:00 | terminal | response | AC2: A+B+C合成=30192、期待30240との差=**48**。これは初月stub 48行に対応する可能性が高い。AC2の期待値30240は「旧benchmark除外後の全exact」だが、初月stub行がshard計上から漏れ…
-- 2026-08-14T03:38:48+09:00 | terminal | response | hayate dashboard hotfix → **FAIL**(別件未解消1件)。修正自体は成功。idle待機。 [meta] stop_reason=end_turn
-- 2026-08-14T03:37:58+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-14 03:28:44|GATE CLEAR — cmd_karo_recon2_rb6_44fa_boundary_rca_20260814 完了
-- 2026-08-14T03:37:11+09:00 | terminal | response | quality_monitor情報記録。hayateがLG051でBLOCK中(dashboard hotfix)、忍者自己修正待ち。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-14T04:52:07+09:00 | terminal | response | backlinksゼロ文書への参照追加。provenance設計書のbacklink整備。
+- 2026-08-14T04:51:15+09:00 | ntfy | outbound | 【gunshi】cmd_reflux_backlink_202608140450_kotaro 初回配備開始 (title=(untitled), ninja=kotaro)
+- 2026-08-14T04:33:57+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-14 04:26:39|GATE CLEAR — cmd_reflux_insight_202608140413_saizo 完了
+- 2026-08-14T04:27:51+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率87% 連勝4
+- 2026-08-14T04:27:50+09:00 | terminal | response | `cmd_reflux_insight_202608140413_saizo` GATE CLEAR。未読0件。idle待機。
+- 2026-08-14T04:27:19+09:00 | terminal | response | 殿、未読は**cmd_reflux_insight（才蔵の知見還流タスク）のGATE CLEAR** — 先刻の小太郎分に続く定常整備で、戦況への影響なしにござる。[MEM: memory_db ts=2026-08-14T03:53 "…
+- 2026-08-14T04:25:21+09:00 | terminal | response | 未読0件。`cmd_reflux_insight_202608140413_saizo` → **LGTM**。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-14T04:18:15+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-14 04:03:44|GATE CLEAR — cmd_reflux_insight_202608140351_kotaro 完了
+- 2026-08-14T04:14:47+09:00 | terminal | response | `cmd_reflux_insight_202608140413_saizo` → **APPROVE**。idle待機。 [meta] stop_reason=end_turn
+- 2026-08-14T04:13:55+09:00 | ntfy | outbound | 【gunshi】cmd_reflux_insight_202608140413_saizo 初回配備開始 (title=(untitled), ninja=saizo)
 
 ## 未解決確認事項
 - 殿、**RB6完全CLEARにござる**。[MEM: memory_db ts=2026-08-14T03:53 "RB6完全CLEAR_20260814_0353 (knowledge:8bc2da6a4a6e871c)" — 本ターンで記録済み] ## RB6 metric…
