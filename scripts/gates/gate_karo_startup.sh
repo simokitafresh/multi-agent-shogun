@@ -797,8 +797,12 @@ function flush_entry() {
         n++
         v[n] = verdict
         cid[n] = current_cmd_id
+        rt[n] = review_type
         gr[n] = gate_result
         fs[n] = findings_summary " " confidence_reason " " evidence
+        if (review_type ~ /^(report|verify)$/ && current_cmd_id != "") {
+            terminal_review[current_cmd_id] = 1
+        }
         if (review_type ~ /^(draft|report)$/) {
             old_n++
             old_v[old_n] = verdict
@@ -850,9 +854,19 @@ END {
     new_total = 0; new_warn = 0
     review_only_total = 0; review_only_warn = 0; review_only_cmds = ""
     false_positive_warn = 0; false_positive_cmds = ""
+    pending_draft_total = 0; pending_draft_cmds = ""
     terminal_gap_warn = 0; terminal_gap_cmds = ""
     for (key in last_idx) {
         i = last_idx[key]
+        # A draft approval is not a terminal quality outcome.  Do not let a
+        # currently active cmd change the denominator while its implementation
+        # report is still pending; once report/verify or gate CLEAR exists it
+        # is included normally.
+        if (rt[i] == "draft" && !terminal_review[key] && gr[i] !~ /^(CLEAR|PASS)$/) {
+            pending_draft_total++
+            pending_draft_cmds = pending_draft_cmds ((pending_draft_cmds == "") ? "" : ",") cid[i] ":" v[i]
+            continue
+        }
         ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
         if (!ok && gr[i] ~ /^(CLEAR|PASS)$/) ok = 1
         if (!ok && cid[i] != "" && cmd_status[cid[i]] ~ /^(done|completed|cancelled)$/) ok = 1
@@ -911,7 +925,7 @@ END {
     new_rate = int(new_warn * 100 / new_total)
     old_rate = (old_total > 0) ? int(old_warn * 100 / old_total) : 0
     if (review_only_cmds == "") review_only_cmds = "-"
-    printf "RATE %d %d %d %d %d %d %s %d %s %d %s\n", new_rate, new_warn, new_total, old_rate, review_only_warn, review_only_total, review_only_cmds, terminal_gap_warn, (terminal_gap_cmds == "" ? "-" : terminal_gap_cmds), false_positive_warn, (false_positive_cmds == "" ? "-" : false_positive_cmds)
+    printf "RATE %d %d %d %d %d %d %s %d %s %d %s %d %s\n", new_rate, new_warn, new_total, old_rate, review_only_warn, review_only_total, review_only_cmds, terminal_gap_warn, (terminal_gap_cmds == "" ? "-" : terminal_gap_cmds), false_positive_warn, (false_positive_cmds == "" ? "-" : false_positive_cmds), pending_draft_total, (pending_draft_cmds == "" ? "-" : pending_draft_cmds)
 }
 ' "$status_file" "$gate_metrics_file" "$review_log"
 }
@@ -2114,7 +2128,7 @@ fi
 echo "■ レビュー品質スケール"
 _review_quality_line="$(review_quality_scale_summary "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 20 "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo "DATA_MISSING")"
 if [[ "$_review_quality_line" == RATE* ]]; then
-    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate _rq_review_warn _rq_review_total _rq_review_cmds _rq_terminal_gap_warn _rq_terminal_gap_cmds _rq_fp_warn _rq_fp_cmds <<< "$_review_quality_line"
+    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate _rq_review_warn _rq_review_total _rq_review_cmds _rq_terminal_gap_warn _rq_terminal_gap_cmds _rq_fp_warn _rq_fp_cmds _rq_pending_draft_total _rq_pending_draft_cmds <<< "$_review_quality_line"
     if [ -n "${_rq_old_rate:-}" ] && [ "${_rq_old_rate}" != "${_rq_rate}" ] 2>/dev/null; then
         echo "  実装品質WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 実装cmdのみ・cmd_id単位最終verdict集計, 旧方式=${_rq_old_rate}%)"
     else
@@ -2122,6 +2136,7 @@ if [[ "$_review_quality_line" == RATE* ]]; then
     fi
     echo "  レビュー専用cmd分離 ${_rq_review_total:-0}件 (WARN ${_rq_review_warn:-0}件): ${_rq_review_cmds:--}"
     echo "  集計偽陽性分離 ${_rq_fp_warn:-0}件: ${_rq_fp_cmds:--}"
+    echo "  未終端draft除外 ${_rq_pending_draft_total:-0}件: ${_rq_pending_draft_cmds:--}"
     if [ "${_rq_terminal_gap_warn:-0}" -gt 0 ] 2>/dev/null; then
         echo "  終端検証ギャップ ${_rq_terminal_gap_warn}件: ${_rq_terminal_gap_cmds:--}"
         alerts+=("レビュー終端検証ギャップ: ${_rq_terminal_gap_warn}件")
