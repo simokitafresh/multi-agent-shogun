@@ -280,6 +280,26 @@ inbox_yaml_field_get() {
         | sed "s/^['\"]//;s/['\"]$//"
 }
 
+# task_assigned notifications carry the destination task generation so the
+# receiver can reject stale or cross-task mail without inferring identity from
+# prose.  This is deliberately separate from report identity: report fields
+# must continue to come from the referenced report YAML, while assignment
+# fields come only from queue/tasks/{agent}.yaml at send time.
+inbox_task_assignment_identity_fields() {
+    local target="$1"
+    local task_yaml="$SCRIPT_DIR/queue/tasks/${target}.yaml"
+    local task_id="" parent_cmd=""
+
+    if [ -f "$task_yaml" ]; then
+        task_id=$(inbox_yaml_field_get "$task_yaml" "task_id" "")
+        parent_cmd=$(inbox_yaml_field_get "$task_yaml" "parent_cmd" "")
+    fi
+
+    # Explicit empty fields are the no-task contract.  The receiver must not
+    # treat an unbound assignment as belonging to its current task.
+    printf '%s\n' "$task_id" "$parent_cmd"
+}
+
 report_yaml_is_template() {
     local report_path="$1"
     local verdict=""
@@ -2699,6 +2719,13 @@ _identity_fields=()
 STRUCTURED_REPORT_FINGERPRINT=""
 STRUCTURED_REVISION_FINGERPRINT=""
 case "$TYPE" in
+    task_assigned)
+        # Bind assignment identity from the destination task only.  In
+        # particular, never copy report_id/task_id from sender prose or a
+        # report notification into this deployment event.
+        mapfile -t _assignment_values < <(inbox_task_assignment_identity_fields "$TARGET")
+        _identity_fields=(task_id "${_assignment_values[0]:-}" parent_cmd "${_assignment_values[1]:-}")
+        ;;
     report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
         if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
             _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")

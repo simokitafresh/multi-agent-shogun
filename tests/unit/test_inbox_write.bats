@@ -1027,6 +1027,100 @@ YAML
     grep -q "^  type: 'task_assigned'" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
 }
 
+# test_necessity: task_assignedの任務帰属は送信時点の送信先task YAMLに固定し、
+# report identityや本文のcmd記述を混入させない。
+@test "task_assigned: stamps current destination task identity" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  task_id: cmd_task_identity_001_normal
+  parent_cmd: cmd_task_identity_001
+YAML
+
+    run _run_inbox_write testninja "report_id=rpt-not-task task_id=cmd-prose" task_assigned karo
+    [ "$status" -eq 0 ]
+    grep -q "^  task_id: 'cmd_task_identity_001_normal'" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
+    grep -q "^  parent_cmd: 'cmd_task_identity_001'" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
+    [ "$(grep -c '^  report_id:' "$TEST_TMPDIR/queue/inbox/testninja.yaml" || true)" -eq 0 ]
+    [ "$(grep -c "^  task_id: 'cmd-prose'" "$TEST_TMPDIR/queue/inbox/testninja.yaml" || true)" -eq 0 ]
+}
+
+# test_necessity: task YAML不在/identity不在場合を明示空契約に固定し、受信側の
+# 現task照合が空通知を誤受理しないようにする。
+@test "task_assigned: missing destination task uses explicit empty identity" {
+    setup_basic_test_env
+
+    run _run_inbox_write testninja "taskなし" task_assigned karo
+    [ "$status" -eq 0 ]
+    grep -q "^  task_id: ''" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
+    grep -q "^  parent_cmd: ''" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
+}
+
+# test_necessity: 再配備後の送信は古いtask identityを再利用せず、stale/別task
+# 通知を受信側が構造的に識別できる。
+@test "task_assigned: stale destination task is replaced by current identity" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  task_id: cmd_task_identity_old_normal
+  parent_cmd: cmd_task_identity_old
+YAML
+    run _run_inbox_write testninja "old assignment" task_assigned karo
+    [ "$status" -eq 0 ]
+
+    sed -i 's/cmd_task_identity_old/cmd_task_identity_new/g' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    run _run_inbox_write testninja "new assignment" task_assigned karo
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "^  task_id: 'cmd_task_identity_old_normal'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+    [ "$(grep -c "^  task_id: 'cmd_task_identity_new_normal'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+    [ "$(grep -c "^  parent_cmd: 'cmd_task_identity_new'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+}
+
+# test_necessity: 途中補足はtask_assignedの帰属fieldを再生成せず、既存の
+# task_supplement transportを維持する。
+@test "task_supplement: mid-task supplement does not borrow assignment identity" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: in_progress
+  task_id: cmd_task_identity_002_normal
+  parent_cmd: cmd_task_identity_002
+YAML
+
+    run _run_inbox_write testninja "配備" task_assigned karo
+    [ "$status" -eq 0 ]
+    run _run_inbox_write testninja "途中補足" task_supplement gunshi
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "^  type: 'task_assigned'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+    [ "$(grep -c "^  type: 'task_supplement'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+    [ "$(grep -c "^  task_id: 'cmd_task_identity_002_normal'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+}
+
+# test_necessity: 同一通知の再送は既存のexactly-once pending dedupeを維持し、
+# task identity付きメッセージを二重配達しない。
+@test "task_assigned: duplicate notification remains exactly once" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  task_id: cmd_task_identity_003_normal
+  parent_cmd: cmd_task_identity_003
+YAML
+
+    run _run_inbox_write testninja "同一配備" task_assigned karo
+    [ "$status" -eq 0 ]
+    run _run_inbox_write testninja "同一配備" task_assigned karo
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^  type: '\''task_assigned'\''' "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+    [ "$(grep -c "^  task_id: 'cmd_task_identity_003_normal'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+}
+
 # ============================================================
 # Git uncommitted check tests (merged from tests/unit/ cmd_cycle_001)
 # ============================================================
