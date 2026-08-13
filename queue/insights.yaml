@@ -995,7 +995,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -1005,3 +1005,6 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "既存D7テスト作成規律へ吸収済み。現行scripts/cmd_save.shのcheck_ac_test_scope L7248-L7303にnew_behavior適用表が実装済みで、設計正本cmd_3913のP3完了記録と照合した。今回のFP計測は既知の同型反復であり、本insight起因の追加実修正は不要。"
+  action_artifact: "scripts/cmd_save.sh:L7248-L7303; docs/research/test-suite-time-immune-asis-tobe-5w1h_20260714.md:L62,L80; git:7e06f232c5172335cb9eaa8b42a480c79ac27491; logs/detector_fp_rate.yaml:L55-L60"
+  resolved_at: "2026-08-14T04:19:12+09:00"
