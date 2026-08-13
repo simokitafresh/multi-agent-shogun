@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260813-214718903-d48a
-  ts: "2026-08-13T21:47:18+09:00"
-  insight: "[[RB6レーンCとしてrun359 metrics不一致716件を指標・timing・PF型別に完全分解し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: growth_loop(学習ループ; alias=hot script speedup round9 asis tobe 5w1h 20260804 mdをレーン形式で開; score=3.6) / provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731(仮: Hidden Infrastructure Gate Hook Canonical Manifest 20260731; alias=provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731; score=3.1) / semantic_dictionary_design(セマンティック辞書構想; alias=source kotaro r6 timing probe; score=3.0)。既存概念aliasesへの自動昇格候補"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-13T21:47:43+09:00"
 - id: INS-20260813-214720724-bd9e
   ts: "2026-08-13T21:47:20+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_NxE二次元ロバストネス実行_20260813]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=24.9) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=20.6) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.4)。概念定義とaliases追加を検討せよ"
@@ -682,8 +672,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '90d67283d9af8739da943c989225980b35d350ff3bd3f3364269a8af98e37f7e' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 8
-  last_seen: "2026-08-14T04:00:58+09:00"
+  occurrence_count: 10
+  last_seen: "2026-08-14T05:05:37+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -941,7 +931,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-14T04:27:07+09:00"
 - id: INS-20260814-035436269-a385
   ts: "2026-08-14T03:54:36+09:00"
   insight: "[[dm decision provenance asis tobe 5w1h 20260813 mdを最新の知見上で]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=dm-decision-provenance-asis-tobe-5w1h_20260813.mdを最新の知見上で、実際のコード元に覚醒してアップデートせよ"
@@ -999,8 +992,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 1
-  last_seen: "2026-08-14T04:09:11+09:00"
+  occurrence_count: 10
+  last_seen: "2026-08-14T05:12:54+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1008,3 +1001,10 @@ insights:
   resolved_reason: "既存D7テスト作成規律へ吸収済み。現行scripts/cmd_save.shのcheck_ac_test_scope L7248-L7303にnew_behavior適用表が実装済みで、設計正本cmd_3913のP3完了記録と照合した。今回のFP計測は既知の同型反復であり、本insight起因の追加実修正は不要。"
   action_artifact: "scripts/cmd_save.sh:L7248-L7303; docs/research/test-suite-time-immune-asis-tobe-5w1h_20260714.md:L62,L80; git:7e06f232c5172335cb9eaa8b42a480c79ac27491; logs/detector_fp_rate.yaml:L55-L60"
   resolved_at: "2026-08-14T04:19:12+09:00"
+- id: INS-20260814-050805434-f085
+  ts: "2026-08-14T05:08:05+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_backlink_202608140450_kotaro; matched=docs; current_pattern=; candidate_level=2; candidate=workaround=true+category=clean矛盾9件(112件中8%)。2026-04-17に7件集中。根因=家老が--cleanではなく通常モードでcleanカテゴリを渡した; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608140450_kotaro"
+  fix_known: false
+  status: pending
