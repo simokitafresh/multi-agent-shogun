@@ -523,6 +523,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - **ledger次回rebalance境界**: `9f81c106` はtrigger別の次回rebalance月を判定し、openな旧confirmed eventが次回決定月へ持ち越されるのを止める。非rebalance月はcarry、次回rebalance月は新eventが入るまでpendingとする。参照: `backend/app/services/signal_decision_ledger.py`, `backend/app/jobs/recalculate_fast.py`, `backend/tests/test_signal_decision_ledger_guard.py`、commit `9f81c106`。
 
 ## 因果リンク
+- **cmd_4296 モメンタム窓調査 (2026-08-13)**: standardは日次close-to-close営業日行数、leaf/nested FoFは子PFの`monthly_returns.cumulative_return`を月末close系列として月数行差分。三系統の独立選抜結果はDB signalと一致したが、`signals.momentum_data`にモメンタム数値は保存されず保存値との数値parityは検証不能。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4296_momentum-window-recon_20260813.md`
 - ← [[dm-signal]] メインPJの核心層
 - → [[dm-signal-ops]] コア→運用への接続
 - → [[dm_signal_db_schema]] DM-Signal DBスキーマ全文(テーブル構造・カラム定義)
