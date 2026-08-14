@@ -12,8 +12,8 @@ cmd_id=$1
 [[ "$cmd_id" =~ ^cmd_[0-9]+$ ]] || { echo "BLOCK: numbered cmd_id required" >&2; exit 2; }
 mapfile -t archives < <(find "$ROOT/queue/archive/cmds" -maxdepth 1 -type f -name "${cmd_id}_*.yaml" -print | sort)
 [ "${#archives[@]}" -gt 0 ] || { echo "BLOCK: archived parent SSOT missing" >&2; exit 1; }
+[ "${#archives[@]}" -eq 1 ] || { echo "BLOCK: archived parent SSOT has multiple candidates" >&2; exit 1; }
 mapfile -t tasks < <(list_task_files_for_cmd "$ROOT/queue/tasks" "$cmd_id" | sort || true)
-[ "${#tasks[@]}" -gt 0 ] || { echo "BLOCK: matching task missing" >&2; exit 1; }
 echo "reopen plan: cmd=$cmd_id archives=${#archives[@]} tasks=${#tasks[@]} dry_run=$DRY_RUN"
 [ "$DRY_RUN" -eq 1 ] && exit 0
 stamp=$(date +%Y%m%dT%H%M%S)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Dry-run changes zero files and reopen invalidates every completion layer atomically; violation is BLOCK.
+# test_necessity: The reopen contract requires one archive SSOT, permits zero matching active tasks, preserves the existing-task path, and BLOCKs missing/multiple archives or invalid IDs.
 setup() {
   ROOT=$(cd "$BATS_TEST_DIRNAME/../.." && pwd); T=$(mktemp -d)
   mkdir -p "$T/queue/archive/cmds" "$T/queue/archive/reports" "$T/queue/tasks" "$T/queue/gates/cmd_3869/review_approvals" "$T/logs"
@@ -20,4 +20,32 @@ teardown() { rm -rf "$T"; }
   # Historical CLEAR must not short-circuit a reopened cmd's next completion.
   run env GATE_METRICS_LOG="$T/logs/gate_metrics.log" bash -c 'CMD_ID=cmd_3869; SCRIPT_DIR="$1"; if [ -f "$GATE_METRICS_LOG" ] && [ ! -f "$SCRIPT_DIR/queue/reopened_cmds/${CMD_ID}.yaml" ] && grep -Fq $'"'"'\t'"'"'"${CMD_ID}"$'"'"'\tCLEAR\t'"'"' "$GATE_METRICS_LOG"; then exit 1; fi' _ "$T"
   [ "$status" -eq 0 ]
+}
+
+@test "reopens archived parent when no active task matches" {
+  rm "$T/queue/tasks/ninja.yaml"
+  run env CMD_REOPEN_ROOT="$T" bash "$ROOT/scripts/cmd_reopen.sh" cmd_3869
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"archives=1 tasks=0"* ]]
+  [ -f "$T/queue/reopened_cmds/cmd_3869.yaml" ]
+}
+
+@test "BLOCKs when archived parent SSOT is missing" {
+  rm "$T/queue/archive/cmds/cmd_3869_completed_x.yaml"
+  run env CMD_REOPEN_ROOT="$T" bash "$ROOT/scripts/cmd_reopen.sh" cmd_3869
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"BLOCK: archived parent SSOT missing"* ]]
+}
+
+@test "BLOCKs when archived parent SSOT has multiple candidates" {
+  printf 'commands:\n  cmd_3869:\n    status: completed\n' > "$T/queue/archive/cmds/cmd_3869_done_y.yaml"
+  run env CMD_REOPEN_ROOT="$T" bash "$ROOT/scripts/cmd_reopen.sh" cmd_3869
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"BLOCK: archived parent SSOT has multiple candidates"* ]]
+}
+
+@test "BLOCKs an invalid command ID" {
+  run env CMD_REOPEN_ROOT="$T" bash "$ROOT/scripts/cmd_reopen.sh" cmd_not_numbered
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: numbered cmd_id required"* ]]
 }
