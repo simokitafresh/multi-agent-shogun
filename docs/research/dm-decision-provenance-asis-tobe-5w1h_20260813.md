@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.1
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.2
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -239,6 +239,21 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 6. **full実行をP5より前のACに入れるな**。途中工程の検証はfixture/選択テストのみ(full 1回≈8分×検証回数が回転を殺す)。
 7. **世代・環境が動く前提を置くACには「固定方法」を同文で書け**(L3 sync-fof cron 01:40UTCが確定月signalsを正規再展開し世代を切り直す — RB8実証。世代固定なしの証拠ACは原理的failしうる)。
 
+### §5.06 中断安全区切り(どこで止めても本番が壊れない境界 — v2.2新設・殿指示2026-08-14 15:01)
+
+> **設計原理**: P7以前の全工程は**record-only(記録の追加のみ、判定・選抜・リターン計算の挙動変更ゼロ)**として設計されている。∴**任意の工程のcommit境界で作業を中断しても、本番の計算結果は1バイトも変わらない**。中断=そこまでの記録機能がdeployされているだけの状態であり、rollback不要・復旧作業不要。
+
+| 工程 | 中断した場合の本番状態 | 本番影響 |
+|---|---|---|
+| P0〜P0.6 | 裁定・fixture・読解のみ。deployすら不要 | **ゼロ**(本番コード無変更。P0.5のB2条件分岐のみ「現挙動の固定」でありregression fixtureが不変を証明) |
+| P1a/P1b/P2a/P2b | 一部経路(例: standardのみ)でprovenance/snapshotが埋まり、残り(FoF)は現状のnullのまま | **ゼロ**(判定結果・保存行数・既存カラム値は不変。埋まっていない側は現状維持=AsIsと同じ) |
+| P3a/P3b | summary列が存在するが一部runでnull | **ゼロ**(nullable列+失敗時WARN契約。読み手は未知キー無視契約§3.1) |
+| P4/P5 | 検証runのみ(read-only+通常のfull実行) | **ゼロ**(mutation なし。fullは通常運用と同一) |
+| P6 | スキル追記のみ(shogun repo側) | **ゼロ**(DM-signal本番に非接触) |
+| **P7** | **唯一の挙動変更工程**(skip=判定そのものを飛ばす) | skip有効化flagの**deploy前まではゼロ**。有効化はA/B multi-table hash完全一致の証明後のみ。中断するならflag無効のままdeploy=record-only状態へ即戻せる(可逆) |
+
+**中断の作法**: (1)中断区切り=各工程の「二値出口PASS+commit」時点。工程の途中(テスト未PASS)ではcommitせず中断せよ — 未完コードはbranchに置き、mainへ混ぜない。(2)中断再開時は本表の依存列から再開位置を引く(前工程のPASS証跡=報告YAML+commit hashが再開点)。(3)中断中の本番障害時は復帰点宣言(rollback計画書v1.8 §-1)が常に有効 — 本設計の全工程はrecord-onlyゆえ復帰点の正基準(6cc6b576)との突合を汚さない。
+
 ## §5.5 車輪の再発明防止 — RB6/RB8検証資産カタログ(2026-08-14 v2.0新設・殿指示「車輪の再発明を今後繰り返したくない」)
 
 > 本書の実装(P0.5〜P7)と以後の全検証で、以下の**既存資産を先に探して使え**。ゼロから独立runner・検算式・fixture・母集団定義を再実装するのは、RB6で仮説H1〜H6・撤回騒動・failed配備を生んだ工程の反復である。
@@ -257,6 +272,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 ## §6 改訂履歴
 
+- v2.2 (2026-08-14 15:03): 殿指示15:01「作業を途中でやめても本番に影響しない区切りも明確にしよう」— §5.06中断安全区切り新設: P7以前は全工程record-only(挙動変更ゼロ)ゆえ任意のcommit境界で中断しても本番不変を工程別表で明示。中断の作法3則(二値出口PASS+commitが区切り/再開は依存列から/中断中も復帰点宣言v1.8が有効)。「今日はここまで」の区切りを設計に内蔵。
 - v2.1 (2026-08-14 14:52): 殿指示「工程の依存関係・影響範囲・並列可能性を明確に。他のコーディングLLMへ利他で覚醒アップデート。家老が過剰要求・過剰AC・AC順で原理的にfailになる要求をしない仕組みを盛り込め」— §5工程表を依存DAG+影響ファイル+並列グループ(A/B)付きへ全面改訂(本表だけで配備判断が完結する自己完結形式。二値出口=ACそのもの・発明禁止を明記。クリティカルパス=P0→P0.5→P1b→P2b→P4→P5)。§5.05配備規則新設=7則(1工程1cmd/二値出口を写す/AC順序=実行順序/docAC禁止=cmd_4302機械BLOCK/影響範囲競合の同時配備禁止/full実行はP5のみ/世代固定の同文化)。技術契約は無変更。
 - v2.0 (2026-08-14 14:45): 殿指示「現状を確認して覚醒アップデート。車輪の再発明を今後繰り返したくない」— (1)冒頭状態注記を「実装解禁条件成立」へ更新: RB6完全CLEAR(月次+metrics全exact・同窓裁定・44fa意図仕様確定)+RB8 cmd_4301 completed(14:29・AC1-4全PASS)。残gate=P0殿裁定のみ (2)§5.5新設=RB6/RB8検証資産カタログ(算術合成正基準・逆算検算方式・窓規則正本・契約ラベル規約・fixture要件・完了処理高速回転契約)と「起票前に既存資産を探す」運用規則 (3)doc更新=将軍lane契約(殿裁定14:24・cmd_4302)を状態注記へ反映。§1-§5の技術契約は無変更(v1.9両者LGTMのまま)。
 - v1.9 (2026-08-14 03:30): 家老独立レビュー(BLOCK・必須9件、blt_20260814_032002)+軍師独立レビュー(6/7一致・注記3件、blt_20260814_032508)を全反映 — (1)skip_diagnostics案の残骸を全文撤回しpure executor構築へ一本化 (2)snapshot実態(価格latest1点・FoF呼出0)を§2.1.5③へ確定しP1b/P2b新設 (3)B2無条件上書きの契約リスク+stub/44fa fixture必須を§2.4へ (4)⑤保存先SSOT=precomputed_rawに裁定(MonthlyReturn列追加禁止)、Mermaid図も分離 (5)summary=migration+writer引数+caller+失敗時WARN契約 (6)safe_haven例へvalue追加 (7)工程をP0.5〜P3bの8分割+canary構成具体化 (8)速度計測をoff/on各3run median+pg_column_size/pg_stat_wal/TOAST分位へ (9)fingerprint生成O(N)対策=versioned watermark+precomputed manifest、A/B hashをmulti-table化。軍師: engine.py terminal block注記+DTB3明示列挙。44fa8aad境界=expanded_switch意図仕様確定(GATE CLEAR)を反映。
