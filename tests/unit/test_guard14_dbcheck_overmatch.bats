@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Guard14 must admit only structurally proven local read-only DB capabilities, including canonical launchers and file-backed SQLite URIs confined to configured project roots, while blocking writable, dynamic, escaped-path, and unknown direct connections.
+# test_necessity: Guard14 must admit only structurally proven local read-only DB capabilities, including canonical launchers, literal file-backed SQLite URIs, and the exact argv heredoc probe confined to configured project roots, while blocking writable, dynamic, escaped-path, and unknown direct connections.
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -95,6 +95,29 @@ run_hook() {
   [ "$status" -eq 0 ]
 }
 
+@test "literal readonly SQLite URI in a heredoc is local ephemeral" {
+  local command="python3 - <<'PY'
+import sqlite3
+sqlite3.connect(\"file:$SQLITE_DB?mode=ro\", uri=True)
+PY"
+  classify "$command"
+  [ "$output" = "connection:local_ephemeral" ]
+  run_hook "$command"
+  [ "$status" -eq 0 ]
+}
+
+@test "literal project SQLite argv f-string heredoc is local ephemeral" {
+  local command="python3 - $SQLITE_DB <<'PY'
+import sqlite3, sys
+with sqlite3.connect(f\"file:{sys.argv[1]}?mode=ro\", uri=True) as conn:
+  print(conn.execute(\"PRAGMA schema_version\").fetchone()[0])
+PY"
+  classify "$command"
+  [ "$output" = "connection:local_ephemeral" ]
+  run_hook "$command"
+  [ "$status" -eq 0 ]
+}
+
 @test "readonly SQLite trust proof rejects writable missing-uri dynamic and escaped paths" {
   local outside_db="$BATS_TEST_TMPDIR/outside.db"
   local escaped_db="$FIXTURE_ROOT/analysis_runs/escaped.db"
@@ -108,6 +131,50 @@ run_hook() {
   [ "$output" = "connection:untrusted" ]
 
   classify "python3 -c 'import sqlite3, sys; sqlite3.connect(sys.argv[1], uri=True)' 'file:$SQLITE_DB?mode=ro'"
+  [ "$output" = "connection:untrusted" ]
+
+  local heredoc_dynamic="python3 - <<'PY'
+import sqlite3, sys
+sqlite3.connect(sys.argv[1], uri=True)
+PY"
+  classify "$heredoc_dynamic"
+  [ "$output" = "connection:untrusted" ]
+
+  local heredoc_writable="python3 - <<'PY'
+import sqlite3
+sqlite3.connect(\"file:$SQLITE_DB?mode=rwc\", uri=True)
+PY"
+  classify "$heredoc_writable"
+  [ "$output" = "connection:untrusted" ]
+
+  local heredoc_argv_dynamic="python3 - \"$SQLITE_DB\" <<'PY'
+import sqlite3, sys
+sqlite3.connect(f\"file:{sys.argv[1]}?mode=ro\", uri=True)
+PY"
+  classify "$heredoc_argv_dynamic"
+  [ "$output" = "connection:untrusted" ]
+
+  local heredoc_argv_extra="python3 - $SQLITE_DB extra <<'PY'
+import sqlite3, sys
+sqlite3.connect(f\"file:{sys.argv[1]}?mode=ro\", uri=True)
+PY"
+  classify "$heredoc_argv_extra"
+  [ "$output" = "connection:untrusted" ]
+
+  local heredoc_argv_other_index="python3 - $SQLITE_DB <<'PY'
+import sqlite3, sys
+sqlite3.connect(f\"file:{sys.argv[2]}?mode=ro\", uri=True)
+PY"
+  classify "$heredoc_argv_other_index"
+  [ "$output" = "connection:untrusted" ]
+
+  local heredoc_argv_remote="python3 - $SQLITE_DB <<'PY'
+import sqlite3, sys
+from sqlalchemy import create_engine
+sqlite3.connect(f\"file:{sys.argv[1]}?mode=ro\", uri=True)
+create_engine(\"postgresql://prod-db.example/app\")
+PY"
+  classify "$heredoc_argv_remote"
   [ "$output" = "connection:untrusted" ]
 
   classify "python3 -c 'import sqlite3; sqlite3.connect(\"file:$outside_db?mode=ro\", uri=True)'"

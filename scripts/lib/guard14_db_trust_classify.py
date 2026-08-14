@@ -406,6 +406,39 @@ def _python_inline_code(tokens: list[str]) -> str | None:
     return stripped[index + 1] if index + 1 < len(stripped) else ""
 
 
+PYTHON_HEREDOC_NO_ARG_HEADER_RE = re.compile(
+    r"^(?:(?:[A-Za-z_][A-Za-z0-9_]*)=\S+\s+)*"
+    r"(?:python|python3|python\.exe)(?:\s+-)?\s+<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1$"
+)
+PYTHON_HEREDOC_ARG_HEADER_RE = re.compile(
+    r"^(?:(?:[A-Za-z_][A-Za-z0-9_]*)=\S+\s+)*"
+    r"(?:python|python3|python\.exe)\s+-\s+(\S+)\s+<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2$"
+)
+
+
+def _python_heredoc_parts(command: str) -> tuple[str, str | None] | None:
+    """Extract code only from a standalone, unindented Python heredoc invocation."""
+    lines = command.splitlines()
+    if len(lines) < 3:
+        return None
+    header_line = lines[0].strip()
+    arg_header = PYTHON_HEREDOC_ARG_HEADER_RE.fullmatch(header_line)
+    no_arg_header = PYTHON_HEREDOC_NO_ARG_HEADER_RE.fullmatch(header_line)
+    header = arg_header or no_arg_header
+    if header is None:
+        return None
+    tag = header.group(3) if arg_header else header.group(2)
+    if lines[-1].strip() != tag:
+        return None
+    argv = arg_header.group(1) if arg_header else None
+    return "\n".join(lines[1:-1]), argv
+
+
+def _python_heredoc_code(command: str) -> str | None:
+    parts = _python_heredoc_parts(command)
+    return parts[0] if parts is not None else None
+
+
 def _readonly_sqlite_uri_is_confined(value: str) -> bool:
     """Prove a literal SQLite file URI is read-only and resolves inside a configured project."""
     from urllib.parse import parse_qs, unquote, urlsplit
@@ -511,6 +544,95 @@ def _python_readonly_sqlite_capability(tokens: list[str]) -> bool:
             return False
         saw_sqlite_connect = True
     return saw_sqlite_connect
+
+
+def _python_readonly_sqlite_heredoc_capability(command: str) -> bool:
+    """Apply the -c AST proof to a standalone Python heredoc body."""
+    code = _python_heredoc_code(command)
+    if code is None:
+        return False
+    return _python_readonly_sqlite_capability(["python3", "-c", code])
+
+
+def _literal_project_file(value: str) -> bool:
+    """Prove a shell-header argument is a literal existing file inside a project root."""
+    if (
+        not value
+        or not os.path.isabs(value)
+        or any(marker in value for marker in ("$", "`", "*", "?", ";", "|", "&", "<", ">"))
+    ):
+        return False
+    resolved = os.path.realpath(value)
+    if not os.path.isfile(resolved):
+        return False
+    for root in _configured_project_roots():
+        try:
+            if os.path.commonpath((root, resolved)) == root:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def _python_readonly_sqlite_argv_heredoc_capability(command: str) -> bool:
+    """Rewrite one proven argv[1] URI and reuse the established Python AST proof."""
+    parts = _python_heredoc_parts(command)
+    if parts is None or parts[1] is None or not _literal_project_file(parts[1]):
+        return False
+    code = parts[0]
+    try:
+        tree = ast.parse(code)
+    except (SyntaxError, ValueError):
+        return False
+
+    literal_uri = f"file:{parts[1]}?mode=ro"
+    replaced = 0
+
+    class _ArgvUriRewriter(ast.NodeTransformer):
+        def visit_Call(self, node: ast.Call) -> ast.AST:
+            nonlocal replaced
+            if not (
+                isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "sqlite3"
+                and node.func.attr == "connect"
+                and node.args
+            ):
+                return self.generic_visit(node)
+            database = node.args[0]
+            if not isinstance(database, ast.JoinedStr) or len(database.values) != 3:
+                return self.generic_visit(node)
+            prefix, dynamic, suffix = database.values
+            if not (
+                isinstance(prefix, ast.Constant)
+                and prefix.value == "file:"
+                and isinstance(dynamic, ast.FormattedValue)
+                and dynamic.conversion == -1
+                and dynamic.format_spec is None
+                and isinstance(dynamic.value, ast.Subscript)
+                and isinstance(dynamic.value.value, ast.Attribute)
+                and isinstance(dynamic.value.value.value, ast.Name)
+                and dynamic.value.value.value.id == "sys"
+                and dynamic.value.value.attr == "argv"
+                and isinstance(dynamic.value.slice, ast.Constant)
+                and dynamic.value.slice.value == 1
+                and isinstance(suffix, ast.Constant)
+                and suffix.value == "?mode=ro"
+            ):
+                return self.generic_visit(node)
+            node.args[0] = ast.copy_location(ast.Constant(value=literal_uri), database)
+            replaced += 1
+            return self.generic_visit(node)
+
+    tree = _ArgvUriRewriter().visit(tree)
+    ast.fix_missing_locations(tree)
+    if replaced != 1:
+        return False
+    try:
+        rewritten = ast.unparse(tree)
+    except (AttributeError, ValueError):
+        return False
+    return _python_readonly_sqlite_capability(["python3", "-c", rewritten])
 
 
 def _python_http_only_capability(tokens: list[str]) -> bool:
@@ -977,7 +1099,11 @@ def classify(command: str) -> str:
     for seg in connection_segments:
         if _segment_is_exempt(seg):
             continue
-        if _python_readonly_sqlite_capability(seg):
+        if (
+            _python_readonly_sqlite_capability(seg)
+            or _python_readonly_sqlite_heredoc_capability(command)
+            or _python_readonly_sqlite_argv_heredoc_capability(command)
+        ):
             continue
         candidates = _extract_candidates(seg)
         if not candidates:
