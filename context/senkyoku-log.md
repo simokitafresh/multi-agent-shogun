@@ -1,6 +1,12 @@
 # 戦局日誌 (Campaign Log)
 <!-- last_updated: 2026-08-03 karo_strong_new_game_dm_monthly_boundary -->
 
+## 2026-08-14
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_karo_p3b_metrics_manifest_20260814_normal | P3b run summaryへmetrics_manifestを保存 | metric names=47、full=204行、partial=1PF×2行、入力月次系列SHA256非nullをfixture確認。対象pytest 7+21 passed、gate PASS、commit `211e574d3bebcdef018d1e779a5177207987ad78` | [[metrics生成結果のvoid化]] -> [[run summary manifest集約]] -> [[RecalculationStatus.summary監査証跡]] |
+
 ## 2026-08-05
 
 | cmd/action | 意図 | 結果 | 因果 |
@@ -1539,3 +1545,4 @@
 - 2026-08-14 01:58 RB6月次検算CLEAR確定+関連4文書覚醒更新: H6最終合成式で33748/33748 exact・mismatch 0(殿裁定01:52: 算術合成正当・別契約数値は反証にならず・H7中止)。rollback計画v1.6 §7.2新設、cache-reuse v3.1、provenance v1.4、家老checkpoint superseded化。残=metrics 47指標×204行の4 shard検算のみ。origin: [[殿裁定_H6算術合成正当_20260814_0152]] -> [[RB6月次CLEAR]] -> [[rollback計画v1.6_§7.2]]
 - 2026-08-14 13:16 cmd_karo_hotfix_reopen_archived_parent_20260814完了: archive候補一意化とmatching task 0件許容を実装。cmd_4301はarchive 1・matching task 1・active 0、contract test 5/5 PASS・SKIP0、commit 72850860192ff47f05dbc313cb1868b27246b209、report gate PASS。
 - 2026-08-14 19:29 cmd_karo_p2a_fof_scalar_20260814完了: P2a FoF scalar provenance実装commit 99a01a1eを維持し、異なるnested depth1/2/4入力のpersistent contract fixtureを868f74f7で追加。明示test 1 passed/SKIP0、既存FoF nested/persistence 36 passed/SKIP0、report gate PASS。origin: [[cmd_karo_p2a_fof_scalar_20260814]] -> [[depth1/2/4 nested contract fixture]] -> [[same-schema scalar provenance]]
+- 2026-08-14 21:11 cmd_karo_hotfix_review_quality_verification_classification_20260814完了: report task_type=verificationをSSOTにした非実装分類を追加し、実測WARN 5/10・終端gap1→2/7・gap0、task test 366/366 PASS・SKIP0、commit 183fa8cf。origin: [[cmd_karo_hotfix_review_quality_verification_classification_20260814]] -> [[report_task_type未参照]] -> [[verification FAILの非実装分類]]
