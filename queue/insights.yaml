@@ -314,7 +314,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: queue/lord_conversation.jsonlのcmd_4308根因追跡で、mode=portfolioがstandard_portfolios由来の価格集合のみを収集しFoF展開後のGLDをsnapshot/PriceCacheへ含めず、monthly_trade_implのprice_movementからGLDが欠落してmatched_weight警報になった事象を確認した。後続のrun400で価格行38744→61268、警報472→0、run401で業務値hash完全一致を実測し、追加修正・decision_candidateは不要と判定した。"
+  action_artifact: "evidence=queue/lord_conversation.jsonl:2026-08-14T21:10:51,2026-08-15T01:43:40;semantic_search:INS-20260814-210651541-06cb;memory_db:2026-08-14T23:32:35;decision=no_additional_change"
+  resolved_at: "2026-08-15T07:32:28+09:00"
 - id: INS-20260814-210652376-f98a
   ts: "2026-08-14T21:06:52+09:00"
   insight: "semantic_index_update新概念候補: discussion:今取り組むべきは、WARNING app services monthly trade impl Ticker GLD in weights but not i は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -911,8 +914,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 14
-  last_seen: "2026-08-15T07:23:54+09:00"
+  occurrence_count: 15
+  last_seen: "2026-08-15T07:31:53+09:00"
   verification:
     status: "passed"
     exit_code: 0
