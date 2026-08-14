@@ -337,7 +337,8 @@ A案(§3.29)は**T1の最小実装**に相当し、T2・T3は満たさない。�
 | どのPFを対象にするか | mode・target・closureの判定が要る | **判断しない**(常に全standard PFのconfigから取る) |
 | FoF展開 | 再帰か上界かの設計が要る | **不要**(FoFは`relative_assets`が空。実測78体すべて増分0) |
 | どの銘柄種別か | — | **殿が定義済み**(保有しうるのはrelative momentumとsafe havenのみ) |
-| normal と replay の経路差 | 母集団の再導出が経路ごとに異なる | **消える**(mode分岐の外に置くため同一パス) |
+| normal内のfull/partialの経路差 | 母集団の再導出がmodeごとに異なる | **消える**(mode分岐の外に置くため同一パス) |
+| bundle replayとの経路差 | — | **今回は対象外**((2-b)の通りproduction caller 0。穴として明記) |
 | 既存経路への影響 | `_collect_all_symbols`とLayer 1の改修が要る | **不要**(別ルートとして分離) |
 
 **根本原因の言い換え**: 欠落したのは「GLDの価格」である。母集団を賢く算出できなかったことが問題なのではなく、**Layer 1をスキップするpartialに対して、Layer 2が保有しうる銘柄の価格を用意する経路が存在しなかった**ことが問題だった。
