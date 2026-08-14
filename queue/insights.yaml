@@ -953,7 +953,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'a2b3a963f9f20455cdbcebc1af3189f6a5ed419b5714bef9a75243de051c1d11' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -963,6 +963,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "verify_command exit 0。self_retroに同一review_notify候補と二値基準が実在し、既存実装記録も確認できたため既知fixとして解決"
+  action_artifact: "logs/self_retro.jsonl:review_notify;docs/semantic-index/index.md:11789"
+  resolved_at: "2026-08-15T02:12:24+09:00"
 - id: INS-20260815-014854761-b73a
   ts: "2026-08-15T01:48:54+09:00"
   insight: "[[P4をcanaryでやらずにfullでやればいいのでは？今は1分台だろ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=P4をcanaryでやらずにfullでやればいいのでは？今は1分台だろ？"
