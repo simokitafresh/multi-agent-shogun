@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.17
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.18
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -272,6 +272,8 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 実装+fixture PASS → commit → push → 本番deploy → canary小確認(3分) → 次工程へ
 ```
 
+**★検証run起動の二値規則(v2.18・殿裁定2026-08-14 17:50「冗長な再計算=長大な無駄時間」)**: **検証目的で再計算runを新規起動するな。** deploy後検証は**既存の直近full結果**(復元run・定期cron等、自然に発生したrun)へのSELECT突合のみで行う。新規runを起動してよいのは「deploy後にrunが一度も存在しない」場合に限る(二値判定可能)。理由: `mode=full`は常に全102PF+FoF78の全再計算(約7-8分)であり**PF範囲を絞れない** — 検証の道具ではない。scoped検証(5PF・include_parent_fof=false)はcmd_4245 AC2検証PASSによるportfolioモード解禁後に初めて可能になる。「canary」という独立作業は存在しない — 本書でcanary三値と呼ぶものは「直近full結果への三値SELECT確認」の別名である(独立runと誤読した冗長full起動がcmd_4245/4305検証で実際に発生した)。
+
 **★canary実行モードの禁止事項(v2.16・cmd_4303事故2026-08-14 16:17のRCAで確定)**: **`mode=portfolio`のcanary実行を禁止する** — cmd_4245の系統的退行(portfolio部分再計算がPF単位DELETE→INSERTで広い既存履歴を狭く上書き)が**未修正**であり、暫定制約「本番はmode=fullのみ実行」(cmd_4245 assumptions 2026-08-09確定)が生きている。cmd_4303 canary(mode=portfolio 5PF)はこの制約を見落として設計され、run361がSOURCE_SELECT_AFTER_SNAPSHOT(部分モードでDTB3が不変snapshot外)で中断→FoF depth4の172月欠落を起こした。**canaryの書込み確認は復元full run(または次回定期full)後のSELECTで行う**。3分portfolio canaryへの短縮は、cmd_4245ガード根治+部分モードのDTB3 manifest gap根治の両方が完了してから解禁する(この2根治を前提工程P0.4として§5表へ追加)。
 
 **canary呼び出しの固定値**: 対象5PF(standard2+FoF depth1/2/4)のUUID5件をP0裁定後に固定してcmd定型のスタート欄へ記載する。`include_parent_fof=true`既定(`etl_trigger.py:86`)による親closure拡張(`recalculate_fast.py:1653-1665`)の存在に注意(部分モード解禁後に適用)。
@@ -312,6 +314,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.18 (2026-08-14 17:53): 殿裁定17:48-17:52「fullで確認済みなのにcanaryを要求した」「FoF全部再計算=長大な無駄。冗長再計算を将軍が要求+全PF計算の2問題」「再発防止を将軍・家老両側へ徹底」— §5.07冒頭へ検証run起動の二値規則を新設: 検証目的の新規run起動禁止(既存直近full結果へのSELECT突合のみ)、mode=full=全PF不可分(約7-8分)の明記、「canary=独立作業」の誤読を用語ごと訂正(canary三値=直近full結果への三値SELECT確認の別名)。発生源=将軍の指示文言がcanaryを別作業のように再要求した+設計書用語が実態とずれていたこと。
 - v2.17 (2026-08-14 16:45): 家老fixture独立レビュー(blt_20260814_164253・50行全てが同一sanitized期待値へ縮退する偽陽性fixture)を規則8で処理 — 真因=v2.8でB2をP0.7へ分離した際、B2契約のfixture(stub48+44fa2行)をP0.5に置き忘れた将軍の設計残渣。sanitizerは非allowlistキー(benchmark_close/open・start/end)を落とすため、この層のfixtureでは保存値契約を検証できない。是正: stub48/44fa fixtureをP0.7(monthly_returns生成層)へ移設し「各行が異なる期待値を持つことのfixture自己検査」を追加、P0.5はsanitizer入出力契約のみへ限定。**fixture配置原則: fixtureは検証対象の契約と同じ層に書く**。cmd_4303のcommit 05ca166f(偽陽性fixture)は隔離branch維持・main反映禁止。
 - v2.16 (2026-08-14 16:36): 殿指示16:33「RB6-RB8で得た知見を使わずに作業をしている可能性がある。将軍が深ぼれ」— 将軍深掘りの結論: cmd_4303事故の破壊経路はP0.5のsanitize変更ではなく**canaryのmode=portfolio実行**(将軍が§5.07に書いた設計)であり、cmd_4245の既知暫定制約「本番はmode=fullのみ」(2026-08-09)の見落とし=RB知見不使用。証拠: (a)deploy差分はsanitize.py+testsのみ20行(diff実測) (b)同じruntime上のrun362(full)は完走=sanitize無罪の傍証 (c)run361(portfolio 5PF)のFoF部分欠落はcmd_4245の系統的退行機構と一致。是正: §5.07へmode=portfolio canary禁止を明記、前提工程P0.4(cmd_4245ガード+DTB3部分モードmanifest gap根治)を§5表へ新設。RCA最終確定は家老の一次検証(run361トリガーパラメータ+stack trace)で行う。
 - v2.15 (2026-08-14 16:32): 殿裁定16:30「revert deploy後にfull recalculateをじっと待って時間を破壊するな。その暇に新たな実装を準備せよ」— 規則11(復元run待機中の並行準備)新設: RCA・fixture是正・次工程実装をbranch上で並行、終端監視は自動通知、mainへは復元完了+RCA確定後。
