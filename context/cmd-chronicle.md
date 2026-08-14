@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-14 -->
+<!-- last_updated: 2026-08-15 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,13 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_3932 | 殿指示(2026-07-14 22:34 家老ー軍師ー忍者間のボトルネック解消)と軍師特定Top3(blt_20260714_224715)の残項目。cmd_3931(SG7バンドルSSOT化、commit 6ada5c78b GATE CLEAR済み)で家老の報告YAML再読は解消済み。残るdashboard読み書きサイクルを、SG7バンドルのdashboard_lineを入力とするscript側append操作へ寄せ、家老LLMがdashboard.mdを開かずに完了処理を終えられるようにする | infra | 07-15 | SG7 bundleのdashboard_line生成・検証 |
-| cmd_3943 | スループット免疫系のFP計測(INS-20260714-223520338、priority high)が、cmd_save.shの既存資産流用促し検出器(L6656-6703)のfp_rate=100.0%(発火全件が偽陽性、真陽性ゼロ)を検出した。将軍が検出ロジック現物とpreflight実出力で根因候補を確定済み: (a)L6681の除外パターンがquality_gateフィールド名の全体形を除外できず(qと数字と下線の後に説明語が続く実フィールド名が除外パターン末尾の区切り記号と一致しない)、(b)AC区間抽出がquality_gate行を混入させる(LS087と同根)。この二重欠陥によりq5等の説明文が検査対象へ漏れて発火する。是正cmd自身も発火して累計昇格BLOCKとなる自己言及ループを確認済み(cmd_3934 cancel、LS-A22(11))。殿原則: FP率計測は削るための装置 | infra | 07-15 | FP率100%だったnew-file検出器のAC境界漏れを修 |
-| cmd_3942 | 殿指示(2026-07-15 01:19『台帳が18時台で記録停止しているのはインフラバグだな。バグは即時修正して二度と同じミスが起きないようにしよう』)。台帳追記はrun_tests.sh経由(L346-347のtest_timing_ledger_write.sh呼出し)のみで、修行忍者のbats直接実行は台帳を素通りする。その結果07-14夜戦の攻略30本超の実測が全て台帳未記録となり、台帳のafter値が午後の並列負荷値のまま凍結して回帰WARN誤発報の原因にもなった。計測が台帳に載らない経路をなくす | infra | 07-15 | 直接Bats計測wrapper・生成task強制・経路カバレ |
-| cmd_3908 | 殿承認のledger-bound freeze方向(2026-07-14 11:51裁定+12:35起票指示)の構成要素。確定域holding_signalの過去訂正を、reason・actor・対象(portfolio_id・date)必須のappend-only correction eventだけに限定する専用経路を実装し、それ以外の確定域変更手段(一般full rebuildでの確定域上書き等)をテストで封鎖する。ledgerは物理削除不能のため、baseline凍結(後続cmd)の誤りを含む全ての過去是正がこの経路に一本化される | dm-signal | 07-15 | correction event専用append経路を実装し |
-| cmd_3948 | 殿指示(2026-07-15 03:06『覚醒してスキルの品質を磨こう』+03:10 残りのスキル品質の点検指示)。将軍の一次点検で2種の品質劣化を確定: (a)gate_skill_script_refs.sh実行でWARN対象のSKILL.md群(dashboard-update・dream・gate-sync・idle-persist・karo-direct・ninja-commit・pf-registration・recon-dual・report-write・review-bundle・shogun-cli-switchほか)が、昨夜の速度改修による参照script更新後に再検分されずstale (b)gs-bench-gateのSKILL.mdがGS共通コード一覧にengine.pyを記載するがDM-Signal現物に存在しない(find該当ゼロ。cmd_3856のP3a共通executor統合で改名された疑い)。文書と実装の乖離はdb-check事故(2026-07-15 03:05、BLOCK往復を誘発し将軍が是正済み)と同型のため全件解消する | infra | 07-15 | gate_skill_script_refs WARN 17 |
-| cmd_3951 | 殿指示(2026-07-15 03:33 デーモン棚卸し)の一次点検で、番人であるdaemon_watchdog.sh自体の実バグを毎分cronの実ログで確定した(gist 2232467c §6): (a)L251で算術評価がsyntax errorを毎分出力=カウント変数への複数行値混入で判定がエラー (b)L84で/proc配下のcmdline読み取りがプロセス消滅とrace。番人が病むと全デーモンの死が無音化する(テスト時間台帳writer停止と同型の『計測が止まっても検出されない』クラス)。加えて監視対象リストと実デーモン一覧の突合が無く、登録漏れデーモンは監視外で死ねる | infra | 07-15 | watchdog算術/proc raceを修正し、5種のデー |
-| cmd_3968 | 殿指示(2026-07-15 17:24 gist 2232467c実装開始)のP1a-2。restart_watchers.sh専用のflock(L55-57)とdaemon_watchdog.shのskip判定(L336-337)が個別対応で、daemon_supervisor.shやmanual restartとの競合を防ぐ共通マーカーがない(gist §7-4 家老R1-4指摘)。共通maintenance markerを導入し全restart経路の競合を防止する | infra | 07-15 | 共通maintenance marker/APIを3再起動経 |
 | cmd_3998 | 軍師独立監査(blt_20260716_092229 穴6)で指摘: gate_alerts 275件中improvement_done=true 4件(1.5%)、investigation_cmd=null 271件(98.5%)。検知のみで閉鎖フローが存在しない=意志依存(Phase 4)。275件の内訳を分類し閉鎖自動化の設計入力を作る | infra | 07-16 | 配備時点276件を全件分類: closed 4 (1.45% |
 | cmd_4000 | cmd_3998偵察で確定: gate_alerts 276件中272件(98.5%)がaction_required未閉鎖。根因はgate_improvement_trigger.shがALERT記録時にimprovement_done=falseで生成するが閉鎖更新フローが存在しないこと。cmd完了時に対象gate・checkを突合し該当alertのimprovement_doneを自動更新する閉鎖フローを追加する | infra | 07-16 | cmd完了時にfiles_modifiedとgate/che |
 | cmd_4034 | 家老起票依頼(blt_20260717_151012)。設計書campaign-lane-residual-resolution-design_20260717.md §5.1 S0。F1の6 adapter/writerが共通基盤なしに並列実装できないため、全shardの前提を確定する | infra | 07-17 | S0共通5契約を7ファイルで凍結し、新規9/9・既存15/1 |
