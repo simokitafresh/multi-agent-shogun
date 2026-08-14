@@ -183,8 +183,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 57
-  last_seen: "2026-08-15T02:05:43+09:00"
+  occurrence_count: 58
+  last_seen: "2026-08-15T02:15:02+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -957,8 +957,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'a2b3a963f9f20455cdbcebc1af3189f6a5ed419b5714bef9a75243de051c1d11' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 2
-  last_seen: "2026-08-15T01:52:23+09:00"
+  occurrence_count: 3
+  last_seen: "2026-08-15T02:20:39+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -998,5 +998,12 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4309; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4309"
+  fix_known: false
+  status: pending
+- id: INS-20260815-022219636-968f
+  ts: "2026-08-15T02:22:19+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608150208_kagemaru; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608150208_kagemaru"
   fix_known: false
   status: pending
