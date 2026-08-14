@@ -68,6 +68,21 @@ if [[ ! -f "$ALERTS_FILE" ]] || [[ ! -s "$ALERTS_FILE" ]]; then
     exit 0
 fi
 
+# --- 機械検証可能TODOの自動再検証（偽陽性根治 殿下知2026-08-14「バグは迂回せず根治」） ---
+# session_alertsは起動時スナップショットであり、deepdive追体験TODOは全Phase実行後も
+# [TODO]のまま陳腐化する。receipt正本(gate_deepdive_replay.sh)がPASSなら実態は完了済み
+# =偽陽性のため、手動[DONE]書換(迂回)を要求せず自動でDONEへ更新する。
+# fail-open: gate不在/FAIL/ERROR時は何もしない(従来通りBLOCK)。
+if grep -q '^\[TODO\] deepdive追体験未完了' "$ALERTS_FILE" 2>/dev/null; then
+    _DD_GATE="$SHOGUN_ROOT/scripts/gates/gate_deepdive_replay.sh"
+    if [[ -f "$_DD_GATE" ]]; then
+        _dd_reverify="$(bash "$_DD_GATE" "$AGENT_ID" 2>/dev/null || true)"
+        if [[ "$_dd_reverify" == "DEEPDIVE-REPLAY: PASS"* ]]; then
+            sed -i 's/^\[TODO\] deepdive追体験未完了/[DONE] deepdive追体験未完了/' "$ALERTS_FILE" 2>/dev/null || true
+        fi
+    fi
+fi
+
 # --- 未完了アイテムを確認 ---
 TODO_COUNT=0
 TODO_COUNT=$(grep -c '^\[TODO\]' "$ALERTS_FILE" 2>/dev/null || true)
