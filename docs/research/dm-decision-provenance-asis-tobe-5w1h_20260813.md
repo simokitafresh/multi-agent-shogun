@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.21
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.22
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -321,6 +321,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | 検算契約ラベル規約(⑧) | 本書§3.25⑧(DB非接触・即日採用可) | 別契約の数値を反証と誤認する事故(H6撤回騒動)の機械遮断 |
 | B2上書き/初月stubのregression fixture要件 | 本書§2.4(stub48行+44fa8aad2行・10dp固定) | P0.5で作るfixtureの仕様。benchmark検算の再誤診防止 |
 | 完了処理の高速回転契約 | cmd_4302(freshness非同期化+doc要求AC配備BLOCK)+knowledge:56abcd272b26ef71 | 実装cmd起票時、doc更新をACへ書かない(将軍lane) |
+| **FoF入れ子構造の即時表示** | `scripts/fof_tree.py`(DM-signal repo・commit dd0664f3・readonly) | `python3 scripts/fof_tree.py [PF名部分一致]`で全FoFの木を深い順に一発表示。実typeはportfolios JOIN(component_type列は鵜呑み禁止)・循環防御付き。入れ子調査の再帰クエリを毎回書くな |
 
 **運用規則**: 新しい検証cmdを起票する前に、本表とknowledge検索(`bash scripts/memory_db_query.sh --search "<対象>"`)で既存資産の有無を確認し、q11(車輪確認)へ照合結果を記載する。
 
@@ -365,6 +366,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.22 (2026-08-14 20:14): 殿指示20:08「入れ子構造を一瞬で把握できる仕組みを。どこにも保存されていないのか」— 回答: 木としては未保存(fof_component_weightsに親子1段のみ)。将軍D0で`scripts/fof_tree.py`をDM-signal repoへ新設(commit dd0664f3・main push済み・readonly・実typeはportfolios JOIN・循環防御)し§5.5資産カタログへ登録。当該depth4 PFで動作実証済み。
 - v2.21 (2026-08-14 20:07): 殿指摘20:03「当該PF→秘奥義→奥義→シン四神の四段では」— 将軍のv2.20実測(depth1)は誤り。portfolios実typeとの再帰JOINで**FoF入れ子4段**(当該PF→秘奥義fof→奥義-GS fof→GSシン fof→シン四神standard)を確定。誤答原因=fof_component_weights.component_type列とcheck_pf_config表示の鵜呑み(列値'standard'が実態fofと乖離)。§3.28へ訂正+計測時の罠(実typeはportfolios JOINで確認)を明記。最深PFのRB6検算通過=深度非依存の本番実証として記録。
 - v2.20 (2026-08-14 20:00): 殿指示19:55「深度非依存を設計書に記しておけ+New Fund of Funds_copy_copy_copyは一段深いのでは確認せよ」— §3.28深度非依存契約を新設(計測契約・provenance書込み・fingerprint連鎖の3層で深度非依存、拡張時はfixture1本のみ、既知深度リスクは根治済み)。本番実測: 当該PFはdepth1(直接構成=秘奥義4 standard均等25%、readonly照会)。「Total Return (PF名)」はUI表示ラベルと注記。
 - v2.19 (2026-08-14 18:42): 殿指示18:38「進捗と経緯をアップデートせよ。知見を漏らすな」— §5.9進捗台帳新設: 工程別ステータス(P0.4前半後半・P3a=GATE CLEAR+本番稼働、P0.6完了、P0.5=v2.17スコープで飛猿再配備中、他未着手)+本日のcanary事故2件と復旧の時系列(run361破壊→revert→復元/run365実値汚染98596件→遮断→全数復帰、実害滞在約16分)+殿裁定群7点の知見要約(小deploy即revert・最速revert push・run待機禁止・検証run起動禁止・過剰防御禁止・fixture配置原則・前提変更停止/車輪再発明禁止)。
