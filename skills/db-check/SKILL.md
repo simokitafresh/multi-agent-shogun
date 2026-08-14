@@ -352,6 +352,141 @@ curl -s -u "$ADMIN_USER:$ADMIN_PASS" "$BASE/api/admin/signals/$PF_ID?months=12"
 - FoFのholding_signal同一判定は展開後ticker×weightで行う（L703）
 - fullrecalculate完了はrecalculation_status DB行で二重確認（L690）
 
+## Provenance検証クエリ（設計書§3.3 / P6）
+
+設計書の用途（なぜこの保有か・oracle検算・run間比較）と、cmd_4313で実測した充足確認を、読み取り専用の定型としてまとめる。以下は全て`readonly_query`へstdinで渡すSQLであり、`<...>`は実行時に対象値へ置換する。
+
+### 1. なぜこの保有か（判定根拠の取得）
+
+用途: 指定PF・判定日の保存provenanceを一度に取得し、holding_signalとmomentum scalar、window、選抜weight、展開後ticker×weightを同じ行で説明する。
+
+```sql
+SELECT portfolio_id,
+       date,
+       holding_signal,
+       momentum_data::jsonb -> 'provenance_version' AS provenance_version,
+       momentum_data::jsonb -> 'relative' AS relative,
+       momentum_data::jsonb -> 'absolute' AS absolute,
+       momentum_data::jsonb -> 'risk_free' AS risk_free,
+       momentum_data::jsonb -> 'safe_haven' AS safe_haven,
+       momentum_data::jsonb -> 'weights' AS selected_weights,
+       momentum_data::jsonb -> 'expanded_ticker_weights' AS expanded_ticker_weights,
+       momentum_data::jsonb -> 'window' AS window
+FROM signals
+WHERE portfolio_id = '<PF_ID>'
+  AND date = '<YYYY-MM-DD>';
+```
+
+1件の定義: `signals`の1行（=1 PF×1判定日）。戻り行が0件なら対象PF・日付の判定記録が存在せず、複数件ならPKまたは対象値の指定を再確認する。
+
+### 2. oracle検算（保存scalarを独立計算へ渡す）
+
+用途: 保存された候補scalarと選抜weightを、独立oracleの入力として取り出す。parity判定そのものは独立計算値との完全一致（許容差は本スキルのゼロ差契約）で行う。
+
+```sql
+SELECT s.portfolio_id,
+       s.date,
+       entry ->> 'symbol' AS symbol,
+       (entry ->> 'value')::double precision AS saved_scalar,
+       s.momentum_data::jsonb -> 'weights' AS selected_weights
+FROM signals AS s
+CROSS JOIN LATERAL jsonb_array_elements(
+    COALESCE(s.momentum_data::jsonb -> 'relative', '[]'::jsonb)
+) AS relative(entry)
+WHERE s.portfolio_id = '<PF_ID>'
+  AND s.date = '<YYYY-MM-DD>'
+ORDER BY symbol;
+```
+
+1件の定義: `relative`配列の1要素（=1 PF×1判定日×1候補symbolの保存scalar）。oracle側で同じsymbolの独立計算値と`0`差（IEEE 754ノイズのみ`1e-12`）を比較し、候補全件と選抜結果を突合する。
+
+### 3. run間比較（summaryの差分）
+
+用途: `recalculation_status.summary`を2 run分取得し、層別件数・失敗件数・timing・metrics_manifestを同一形式で比較する。
+
+```sql
+SELECT id,
+       status,
+       mode,
+       start_time,
+       end_time,
+       summary::jsonb -> 'rows' AS rows,
+       summary::jsonb -> 'portfolios' AS portfolios,
+       summary::jsonb -> 'failed' AS failed,
+       summary::jsonb -> 'timing' AS timing,
+       summary::jsonb -> 'metrics_manifest' AS metrics_manifest
+FROM recalculation_status
+WHERE id IN (<RUN_ID_A>, <RUN_ID_B>)
+ORDER BY id;
+```
+
+1件の定義: `recalculation_status`の1行（=1 run）。出力の2行をrun A/BとしてJSONフィールド単位にdiffし、`summary`がNULLまたは指定runが欠ける場合は比較不能として扱う。
+
+### 4. provenance key coverage（cmd_4313実測の再利用）
+
+用途: P4後の保存充足をPF単位で確認する。all scopeの`provenance_version`/`relative`/`weights`/`expanded_ticker_weights`は全PF、standard scopeの`absolute`/`risk_free`/`safe_haven`/`window`はstandard PFだけを母集団とする。
+
+```sql
+WITH required(scope, key_name) AS (
+    VALUES
+      ('all', 'provenance_version'),
+      ('all', 'relative'),
+      ('all', 'weights'),
+      ('all', 'expanded_ticker_weights'),
+      ('standard', 'absolute'),
+      ('standard', 'risk_free'),
+      ('standard', 'safe_haven'),
+      ('standard', 'window')
+), population AS (
+    SELECT r.scope, r.key_name, p.id, p.type
+    FROM required AS r
+    CROSS JOIN portfolios AS p
+    WHERE r.scope = 'all' OR p.type = 'standard'
+), qualified AS (
+    SELECT DISTINCT pop.scope, pop.key_name, pop.id
+    FROM population AS pop
+    JOIN signals AS s ON s.portfolio_id = pop.id
+    WHERE s.momentum_data IS NOT NULL
+      AND s.momentum_data::jsonb ? pop.key_name
+      AND (s.momentum_data::jsonb -> pop.key_name) <> 'null'::jsonb
+)
+SELECT pop.scope,
+       pop.key_name,
+       COUNT(DISTINCT pop.id) AS population_pf_count,
+       COUNT(DISTINCT q.id) AS qualifying_pf_count,
+       COUNT(DISTINCT pop.id) - COUNT(DISTINCT q.id) AS missing_pf_count,
+       COALESCE(
+         ARRAY_AGG(DISTINCT pop.id::text) FILTER (WHERE q.id IS NULL),
+         ARRAY[]::text[]
+       ) AS missing_portfolios
+FROM population AS pop
+LEFT JOIN qualified AS q
+  ON q.scope = pop.scope AND q.key_name = pop.key_name AND q.id = pop.id
+GROUP BY pop.scope, pop.key_name
+ORDER BY pop.scope, pop.key_name;
+```
+
+1件の定義: `population_pf_count`/`qualifying_pf_count`はPF IDの1件（=1 PF）。qualifyingは、そのPFの任意の`signals`行で指定JSON keyが存在し、JSON nullでないこと。`missing_portfolios`が空配列かつ`missing_pf_count=0`なら、そのkeyの母集団を全て充足する。
+
+### 5. summary metrics_manifest coverage（cmd_4313実測の再利用）
+
+用途: 指定した完了full runの`summary`とmetrics manifestの必須値を、cmd_4313で記録した`metric_name_count=47`、`metrics_row_count=204`、`expected_row_count=204`、入力SHA256長64の形で確認する。実JSONのキーは`metric_names`（配列）、`row_count`、`expected_row_count`、`input_monthly_series_sha256`である。
+
+```sql
+SELECT id,
+       status,
+       mode,
+       (summary::jsonb IS NOT NULL) AS summary_nonnull,
+       jsonb_array_length(summary::jsonb -> 'metrics_manifest' -> 'metric_names') AS metric_name_count,
+       summary::jsonb -> 'metrics_manifest' ->> 'row_count' AS metrics_row_count,
+       summary::jsonb -> 'metrics_manifest' ->> 'expected_row_count' AS expected_row_count,
+       LENGTH(summary::jsonb -> 'metrics_manifest' ->> 'input_monthly_series_sha256') AS input_sha256_length
+FROM recalculation_status
+WHERE id = <RUN_ID> AND status = 'completed' AND mode = 'full';
+```
+
+1件の定義: `recalculation_status`の1行（=1 run）。`summary_nonnull=true`、manifest各値が非NULL、`metrics_row_count=expected_row_count`、`input_sha256_length=64`を同時に満たしたrunだけを充足とする。
+
 ### 12. PF構成一括確認（名前で全情報を一発取得）
 ```bash
 # スクリプトで実行（推奨）
