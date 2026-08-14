@@ -82,7 +82,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で殿原文・semantic検索・既存LS-A07の同一原則を確認し新規変更不要"
+  action_artifact: "queue/lord_conversation.jsonl:172;projects/infra/lessons_shogun.yaml:LS-A07;context/semantic-map.md:creator_brainwashing_defense"
+  resolved_at: "2026-08-14T21:05:47+09:00"
 - id: INS-20260814-134209233-75fd
   ts: "2026-08-14T13:42:09+09:00"
   insight: "lord_conversation教訓候補: target=gunshi trigger=inbound_lord detail=誤認や偽陽性はバグだな。バグは即時根治しよう。迂回は負\n  の複利を生むから禁止"
