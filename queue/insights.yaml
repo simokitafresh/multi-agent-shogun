@@ -968,7 +968,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -978,3 +978,6 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次確認でverify成功を確認したが修正済みとは判定しなかった。cmd_save.sh:7292-7302,7332のnew_behavior判定は現行有効でgate_fire_logに同検知WARNが反復するため実修正はスコープ外としてdecision_candidateに整理した。"
+  action_artifact: "queue/reports/kagemaru_report_cmd_reflux_insight_202608150515_kagemaru.yaml#decision_candidate,logs/detector_fp_rate.yaml,logs/gate_fire_log.yaml,scripts/cmd_save.sh:L7292-L7302"
+  resolved_at: "2026-08-15T05:25:10+09:00"
