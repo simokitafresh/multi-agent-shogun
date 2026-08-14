@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.5
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.7
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -212,7 +212,7 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | # | 工程 | 依存 | 並列 | 影響範囲(触るファイル) | 二値出口(=ACそのもの。追加検証禁止) |
 |---|---|---|---|---|---|
 | P0 | 本設計書の殿裁定 | — | — | なし(裁定のみ) | §3の保存内容・§4の速度制約が承認される |
-| P0.5 | sanitizer/reader/window契約の先行固定 | P0 | A | `utils/sanitize.py`+fixtureファイル+`generators/monthly_returns.py`(B2条件分岐) | sanitize allowlist拡張+旧出力不変fixture+未知キー無視fixture+B2条件分岐(canonical月のみ満月上書き)+初月stub48行・44fa8aad2行regression fixture(§2.4)がFAIL0/SKIP0 |
+| P0.5 | sanitizer/reader/window契約の先行固定 | P0 | A | `utils/sanitize.py`+fixtureファイル+`generators/monthly_returns.py`(B2条件分岐) | sanitize allowlist拡張+旧出力不変fixture+未知キー無視fixture+B2条件分岐(canonical月のみ満月上書き)+初月stub48行・44fa8aad2行regression fixture(§2.4)がFAIL0/SKIP0。**fixtureは「非canonical月にTickerMonthlyReturnが存在する」エッジケースを必ず含む**(存在時は出力変更になるため — 軍師レビュー(1)条件) |
 | P0.6 | fof_component_weightsのtemporal性質確定 | P0 | A | なし(コード読解のみ・read-only) | 判定時点snapshotか最新値上書きかをコード現物で二値確定(§3.1懸案クローズ) |
 | P3a | runサマリmigration | P0 | A | `backend/app/db/models.py:1191-1205`(RecalculationStatus。※`schemas/models.py`と併存するため正本はdb側)+`backend/app/db/migrations.py:1062-1085`+`backend/app/utils/recalc_status.py:204-255,407-427`+caller=`backend/app/api/etl_trigger.py:230`と`backend/app/services/portfolio_restore.py:250`(いずれも`end_recalculation()`) | ADD COLUMN summary(nullable)+ADD COLUMN分岐追加+writer引数+caller更新+失敗時二値契約(WARN+null、runは止めない)+起動互換PASS |
 | P1a | 書込み実装(standard scalar) | P0.5 | B | `recalculate_fast.py`(Phase 3.7/4判定ループ) | pure executor結果から月初判定日のprovenance構築+momentum_data埋め込み+対象テストFAIL0/SKIP0 |
@@ -249,7 +249,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | **P0.5** | **本番コード変更を含む工程**(`monthly_returns.py:613-619`のB2条件分岐+sanitize allowlist拡張 — 家老レビュー②で「deploy不要」から訂正) | **出力はゼロ差**(B2条件分岐は「現挙動の固定」: stub月は現状もdictに不在=B1同窓のまま。regression fixture stub48+44fa2行の10dp一致がバイト不変を証明)。**ただしdeployは発生するため§5.07のcommit→deploy→canary三値の対象**。中断時はrevert 1手で復帰 |
 | P1a/P1b/P2a/P2b | 一部経路(例: standardのみ)でprovenance/snapshotが埋まり、残り(FoF)は現状のnullのまま | **ゼロ**(判定結果・保存行数・既存カラム値は不変。埋まっていない側は現状維持=AsIsと同じ) |
 | P3a/P3b | summary列が存在するが一部runでnull | **ゼロ**(nullable列+失敗時WARN契約。読み手は未知キー無視契約§3.1) |
-| P4/P5 | 検証runのみ(read-only+通常のfull実行) | **ゼロ**(mutation なし。fullは通常運用と同一) |
+| P4/P5 | 検証run(**検証操作自体はstate-mutating** — portfolio/full再計算は対象PFのSignal/MonthlyReturn/PortfolioMetrics等をDELETE→再生成する(`recalculate_fast.py:1194-1242`。家老レビュー三次①で訂正)) | **正常完了時の業務値は正基準6cc6b576と一致を要求**(=出力不変の証明)。中断/失敗時は通常再計算のrollback/recovery契約に従う(full再実行で復元可能) |
 | P6 | スキル追記のみ(shogun repo側) | **ゼロ**(DM-signal本番に非接触) |
 | **P7** | **唯一の挙動変更工程**(skip=判定そのものを飛ばす) | skip有効化flagの**deploy前まではゼロ**。有効化はA/B multi-table hash完全一致の証明後のみ。中断するならflag無効のままdeploy=record-only状態へ即戻せる(可逆) |
 
@@ -257,7 +257,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 ### §5.07 工程ごとの本番デプロイ+小単位確認(段階deploy運用 — v2.3新設・殿指示2026-08-14 15:03)
 
-> **殿の原則**: 「最後まで実装してからトラブルが見つかると手戻りが多い。速めに本番で確認すれば知見もたまり以後の作業にも複利がある」。record-only設計(§5.06)だからこそ、**各工程の完了=即commit+push+本番deploy+小確認**が安全にできる。P4/P5まで本番投入を溜め込むな。
+> **殿の原則**: 「最後まで実装してからトラブルが見つかると手戻りが多い。速めに本番で確認すれば知見もたまり以後の作業にも複利がある」。**P7前のoutput-invariant設計**(§5.06 — record-only+P0.5のbehavior-preservingを包含)だからこそ、**各工程の完了=即commit+push+本番deploy+小確認**が安全にできる。P4/P5まで本番投入を溜め込むな。
 
 **各工程の標準サイクル**(**P0.5**/P1a/P1b/P2a/P2b/P3a/P3bの全コード変更工程に適用 — P0.5も本番コード変更を含むため対象。家老レビュー②):
 
@@ -269,10 +269,10 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 **canary小確認の三値**(08-12に確立した canary回転の型「1commit→5PF 3分→三値」の再利用):
 1. **壊していないか**: smoke=API代表画面2xx+non-empty(RB8の8画面チェックの縮小版でよい。全画面は不要)
-2. **書けているか**: 当該工程が埋める対象(momentum_data/snapshot/summary)を代表5PF(standard2+FoF depth1/2/4)で`SELECT`し非null/期待形を確認 — deploy後の次回再計算1サイクルを待つか、対象5PFのみportfolio再計算で即時確認
+2. **書けているか**: 当該工程が埋める対象(momentum_data/snapshot/summary)を代表5PF(standard2+FoF depth1/2/4)で`SELECT`し非null/期待形を確認 — deploy後の次回再計算1サイクルを待つか、対象5PFのみportfolio再計算で即時確認。**L3 sync-fof cron(01:40UTC)直前のdeployでは即時再計算経路を推奨**(cron世代切り直しの影響を受けない — 軍師レビュー(3)推奨)
 3. **変えていないか**: 代表1PFのmonthly_returnsを復帰点正基準(6cc6b576)と突合し不変を確認(全量突合はP5のみ。ここは1PFでよい — 過剰確認は§5.05-2違反)
 
-**失敗時**: record-only工程のdeployはrevert 1手で復帰点状態へ戻る(可逆)。revert→原因修正→再deploy。裁可待ち不要(可逆行動の裁可待ち禁止・殿裁定2026-07-10)。
+**失敗時**: output-invariant工程のdeployはrevert 1手で復帰点状態へ戻る(可逆)。revert→原因修正→再deploy。裁可待ち不要(可逆行動の裁可待ち禁止・殿裁定2026-07-10)。
 
 **複利の回収**: 各工程のcanary確認で得た「本番でしか出ない知見」(payload実サイズ・TOAST発生・cron世代との相互作用等)は次工程のcmd起票時assumptionsへ引き継ぐ — P5の速度検証が「初めての本番接触」ではなく「6回目の本番確認」になることで、最終checkpointの不確実性が消える。
 
@@ -302,6 +302,8 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 ## §6 改訂履歴
 
+- v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.6 (2026-08-14 15:24): 軍師レビュー(blt_20260814_152133・docs/research/gunshi_provenance_review.md・4観点全CONFIRM)の条件+推奨2点を反映 — (1)P0.5二値出口へ「非canonical月にTickerMonthlyReturn存在」エッジケースのfixture必須化(存在時は出力変更になる=record-only主張の唯一の反例可能性を封じる) (3)§5.07 canary②へ「cron直前deployは即時再計算経路推奨」を追記。軍師の反証検証実績: B2現物・依存DAG書き出し(循環なし)・signal_flush.py UPSERT set_のprovenance非参照・API層非読取をgrep/Readで一次確認済み。
 - v2.5 (2026-08-14 15:22): 家老再レビュー(blt_20260814_151931・残存2件、前回4/4反映確認済み)を将軍現物突合で反映 — ①P3a影響範囲を完全自己完結化: 正本=`backend/app/db/models.py:1191-1205`(schemas/models.py併存の誤誘導を注記)+`db/migrations.py:1062-1085`+`utils/recalc_status.py:204-255,407-427`+caller 2箇所(`etl_trigger.py:230`/`portfolio_restore.py:250`の`end_recalculation()`。将軍がls+grepで実在確認) ②§5.06の「P7以前すべてrecord-only」とP0.5行の矛盾を解消: P0.5のみbehavior-preserving production change、他はrecord-onlyへ統一(冒頭・末尾の2箇所)。中断契約が一意化。
 - v2.4 (2026-08-14 15:16): 家老レビュー(blt_20260814_151124・穴あり4件)を将軍がコード現物突合で全件正当と確認し反映 — ①依存DAG訂正: 同一ファイル直列はP1a→P1b(`recalculate_fast.py`)とP2a→P2b(`recalculate_fof.py`)の2組。P3b影響範囲を実ファイル3箇所へ具体化 ②P0.5は本番コード変更工程(B2条件分岐)と訂正し§5.06の「deploy不要」から分離、§5.07 canary対象へ追加(出力ゼロ差はfixtureが証明) ③canary固定値の明文化: `include_parent_fof=false`+`include_nested_fof=false`必須(既定trueで親closure拡張=5PF固定にならない。`etl_trigger.py:86`+`recalculate_fast.py:1653-1665`を将軍実読)。P3b canary期待行数=対象PF×2行へ分離 ④cmd定型スタート欄へcanary UUID・固定クエリ・baseline hash必須化。将軍側の裏取り=B2無条件上書き(`monthly_returns.py:618`)とNULL月dict不在コメントを実読済み。
 - v2.3 (2026-08-14 15:06): 殿指示15:03-15:05「小さい単位でcommit/push/本番deployして早く確認。手戻り防止・知見の複利。スタートとゴールが明確で家老・忍者が誤解や過剰対応をしないこと」— §5.07段階deploy運用新設: 各実装工程の標準サイクル=実装→commit→push→本番deploy→canary小確認3分(三値: smoke縮小版/代表5PF書込み確認/1PF正基準突合)。失敗時はrevert 1手(可逆・裁可待ち不要)。工程cmd定型3欄(スタート=依存PASS証跡/ゴール=二値出口+canary三値のみ/スコープ外=明示列挙5項)で誤解・過剰対応を構造防止。canary回転の型(08-12確立)の再利用。
