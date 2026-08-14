@@ -26,7 +26,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1590 -->
+<!-- last_synced_lesson: L1591 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -64,7 +64,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1590 -->
+<!-- last_synced_lesson: L1591 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -153,6 +153,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1588: RB6配備前提カードはcohort・定義・入力coverageの3項目に固定する（cmd_karo_recon2_ninja_prerequisite_audit_20260814）
 - L1589: レビュー品質WARN率は同一cmd_idの終端結果を実装cmd単位で集計し、証拠付き別件FAILを偽陽性としてWARN分子から分離、未終端draftは終端report/verifyまで分母から除外する（cmd_karo_hotfix_review_quality_warn_20260814_normal; source=e8cbaf7eb/9f39c1a07）
 - L1590: 外部repo鮮度検査のlesson-only除外と本文cmd ID照合をroot fallbackと共通化する（cmd_karo_recon2_ga463_context_freshness_20260814）
+- L1591: 世代境界のtest lifecycle契約をSTALE_FIELDSへ登録する（cmd_karo_hotfix_deploy_stale_test_lifecycle_20260815）
 
 ## 設計標準・テスト・因果
 
