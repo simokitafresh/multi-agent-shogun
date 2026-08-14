@@ -340,11 +340,30 @@ A案(§3.29)は**T1の最小実装**に相当し、T2・T3は満たさない。�
 
 **根本原因の言い換え**: 欠落したのは「GLDの価格」である。母集団を賢く算出できなかったことが問題なのではなく、**用意する価格を選別しようとしたこと自体が問題**だった。選別しなければ落ちない。
 
-#### (2) 実装(判断ゼロ)
+#### (2) 実装(確定形 — 殿の整理2026-08-14 23:26)
 
-`recalculate_fast.py:1977`の `_collect_all_symbols(standard_portfolios)` を **`_collect_all_symbols(payload.portfolios)`** とする。対象PFではなく**全PF**を渡す。`_collect_all_symbols`自体は無変更で、FoFは`relative_assets`等が空なので渡しても集合は増えない(standard/FoF判定すら不要)。DTB3除外とSPY常時materializeも既存のまま。
+**殿の言**: 「どれを使うかを判断するためにconfigを取得するツールを作っただろ。使い方は簡単だ。**本番にあるstandard PFの全てのconfigを取得して、relative assetとsafe haven assetの一覧を取得。そのtickerを準備するtickerとする。それだけだ**」
 
-**規模の実測(2026-08-14)**: 価格表は**全18銘柄・約10万行**。config由来の全銘柄はこれとほぼ一致する。∴「全部準備」しても価格表全体を読むだけであり、絶対量は小さい。現行のpartialが読む38744行との差は実装後に計測して記録する。
+**準備するticker = 全standard PFの `relative_assets` ∪ `safe_haven_asset`(Cash除く)**。`scripts/pf_assets.py`が出力する集合そのものである。
+
+**実測(2026-08-14 22:28 `pf_assets.py`)**: **9銘柄** = `['GDX','GLD','QLD','QQQ','SPY','TECL','TMV','TQQQ','XLU']`。
+
+**具体形 ⚠v2.37で配置を訂正(殿指示2026-08-14 23:28「それは別ルートにすればいい。計算のL1とL2の間に入れればいいのでは」)**:
+
+既存の`_collect_all_symbols`経路へ**混ぜない**。**独立した別ルートとしてLayer 1とLayer 2の間に置く。**
+
+**層の現物確認(将軍・`recalculate_fast.py`)**: `Layer 1 = ティッカー層`(mode=TICKER・`:690,698`)、`Layer 2 = ポートフォリオ層`(mode=PORTFOLIO・`:691,699`)。そして**`mode=PORTFOLIO`はLayer 1をスキップし既存cacheに依存する**(`:1276` "mode=PORTFOLIO skips Layer 1 regeneration"、`:1340-1341`)。
+
+**∴根因の本質が層構造で説明できる**: partial(=Layer 2のみ)はLayer 1(価格・ティッカー層の準備)を意図的に飛ばす設計であり、その速度上の利点は正しい。欠けていたのは「**Layer 2が必要とする保有可能tickerの価格だけは、L1を飛ばしても用意されている**」という保証である。
+
+**配置**: Layer 1スキップ後・Layer 2開始前に、**全standard PFのrelative ∪ safe haven(9銘柄)の価格を準備する軽量ルート**を1本置く。これにより:
+- 既存の`_collect_all_symbols`とLayer 1の設計は**一切変更しない**(速度上の利点を壊さない)
+- 責務が分離される(L1=ティッカー層全体の再生成 / 新ルート=L2が保有しうる銘柄の価格保証 / L2=ポートフォリオ層)
+- normal・partialのどちらでも同じルートが通るため、経路差が生じない
+
+DTB3除外・SPY常時materialize・lookback(target基準)は既存のまま。
+
+**⚠v2.36で自己訂正**: v2.34-35では「判断を一切せず」を**全銘柄(config由来14種: `DTB3,GDX,GLD,LQD,QLD,QQQ,SPXL,SPY,TECL,TMF,TMV,TQQQ,^VIX,XLU`)を準備する」と解釈したが行き過ぎであった。殿の「判断を一切せず」が指すのは**どのPFを対象にするかを判断しないこと**(=全standard PFから取る)であり、銘柄種別は既に殿が定義済み(保有しうるのはrelative momentumとsafe havenだけ・2026-08-14 22:17)。∴準備集合は14ではなく**9**が正しい。absolute・risk-free・benchmarkは保有されないため、保有可能性を担保する目的の集合には含めない(計算入力としては既存経路が対象PFぶん集める)。
 
 #### (2-b) bundle replayの扱い(三者確認済み・今回対象外)
 
