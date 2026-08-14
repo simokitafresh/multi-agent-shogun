@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.19
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.20
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -143,6 +143,18 @@ full/portfolio再計算の終端で、`recalculation_status`行へ`summary` JSON
 | ⑧ | **検算契約ラベル+artifact SHA固定**: 検証artifactに`contract`名(例: `saved-value-reverse-parity` / `config-regeneration`)とsource snapshot SHA256を必須メタ化 | 検証runner出力JSONの必須ヘッダ(oracle側規約。DB変更なし) | **H6撤回騒動**(01:50-01:52): 別契約(config再生成)のmismatch 935+21を保存値検算H6の反証と誤認し、CLEARを一時撤回→殿裁定で逆転。契約ラベルが双方のartifactにあれば「契約が違う数値は反証にならない」が機械判定になる |
 
 適用順の含意: ⑤⑥は判定時保存(P1/P2へ統合)、⑦はP3のmigrationへ同乗、⑧はDB非接触ゆえ即日規約化可能(実装解禁前でも検証側規約として先行採用してよい)。
+
+### §3.28 深度非依存契約(recursion-agnostic — 殿指示2026-08-14 19:55で明文化)
+
+**本設計と実装はネステッドFoFの深度に依存しない。深度が何段増えても構造変更は不要である。** 根拠:
+
+1. **計測契約が深度非依存**: FoFのmomentumは「直下の子PFの`monthly_returns.cumulative_return`暦月差分」(§2.3)であり、子がstandardでもFoFでも同一式。親は直下の子の系列だけを読み、孫以深を意識しない再帰構造。§2.3の「深度差なし」が契約の根。
+2. **provenance書込みも深度非依存**: P2a実装(GATE CLEAR 2026-08-14 19:36)は「nested深度差なし」をfixtureで確認済み。`relative`のsymbolが子PF ID・valueが月次差分scalarという形は深度に無関係。
+3. **fingerprint連鎖も再帰**: P7のchild chain(子PFのprovenance fingerprintを親のfingerprint構成要素へ含める)は深度が増えても連鎖が1段伸びるだけ(§4.5-1)。
+4. **深度拡張時の唯一の作業**: 新しい深度のPFを追加したら**その深度のfixtureを1本追加するだけ**(現行はdepth1/2/4を列挙 — 実在PFの深度に合わせたもの)。コード・スキーマ・契約の変更は不要。
+5. **深度依存の既知リスクは根治済み**: partial modeの親closure拡張(深いほど巻き込み拡大)はmode=portfolio運用停止で遮断、DTB3のsnapshot外SELECTはP0.4後半で束縛済み。full再計算は子→親の依存順処理ゆえ深度増でも順序不変。
+
+**本番実測(2026-08-14 19:57・readonly)**: `New Fund of Funds_copy_copy_copy`(id=9324015c)の直接構成は秘奥義4 standard PF均等25%=**depth1のFoF**(一段深くない)。`fof_component_weights`は直接子を保持し(`child_components`/`nested_depth`列で入れ子表現)、当該PFの子はcomponent_type全て'standard'。なお表示名「Total Return (PF名)」はUI表示ラベルでありPF名とは別物。
 
 ### §3.3 使い方(完成後のデバッグ手順)
 
@@ -352,6 +364,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.20 (2026-08-14 20:00): 殿指示19:55「深度非依存を設計書に記しておけ+New Fund of Funds_copy_copy_copyは一段深いのでは確認せよ」— §3.28深度非依存契約を新設(計測契約・provenance書込み・fingerprint連鎖の3層で深度非依存、拡張時はfixture1本のみ、既知深度リスクは根治済み)。本番実測: 当該PFはdepth1(直接構成=秘奥義4 standard均等25%、readonly照会)。「Total Return (PF名)」はUI表示ラベルと注記。
 - v2.19 (2026-08-14 18:42): 殿指示18:38「進捗と経緯をアップデートせよ。知見を漏らすな」— §5.9進捗台帳新設: 工程別ステータス(P0.4前半後半・P3a=GATE CLEAR+本番稼働、P0.6完了、P0.5=v2.17スコープで飛猿再配備中、他未着手)+本日のcanary事故2件と復旧の時系列(run361破壊→revert→復元/run365実値汚染98596件→遮断→全数復帰、実害滞在約16分)+殿裁定群7点の知見要約(小deploy即revert・最速revert push・run待機禁止・検証run起動禁止・過剰防御禁止・fixture配置原則・前提変更停止/車輪再発明禁止)。
 - v2.18 (2026-08-14 17:53): 殿裁定17:48-17:52「fullで確認済みなのにcanaryを要求した」「FoF全部再計算=長大な無駄。冗長再計算を将軍が要求+全PF計算の2問題」「再発防止を将軍・家老両側へ徹底」— §5.07冒頭へ検証run起動の二値規則を新設: 検証目的の新規run起動禁止(既存直近full結果へのSELECT突合のみ)、mode=full=全PF不可分(約7-8分)の明記、「canary=独立作業」の誤読を用語ごと訂正(canary三値=直近full結果への三値SELECT確認の別名)。発生源=将軍の指示文言がcanaryを別作業のように再要求した+設計書用語が実態とずれていたこと。
 - v2.17 (2026-08-14 16:45): 家老fixture独立レビュー(blt_20260814_164253・50行全てが同一sanitized期待値へ縮退する偽陽性fixture)を規則8で処理 — 真因=v2.8でB2をP0.7へ分離した際、B2契約のfixture(stub48+44fa2行)をP0.5に置き忘れた将軍の設計残渣。sanitizerは非allowlistキー(benchmark_close/open・start/end)を落とすため、この層のfixtureでは保存値契約を検証できない。是正: stub48/44fa fixtureをP0.7(monthly_returns生成層)へ移設し「各行が異なる期待値を持つことのfixture自己検査」を追加、P0.5はsanitizer入出力契約のみへ限定。**fixture配置原則: fixtureは検証対象の契約と同じ層に書く**。cmd_4303のcommit 05ca166f(偽陽性fixture)は隔離branch維持・main反映禁止。
