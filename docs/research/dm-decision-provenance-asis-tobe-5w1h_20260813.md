@@ -187,7 +187,21 @@ full再計算では全PFが対象に入るためFoFの終端standard PFも母集
 
 #### (4) A案(候補・確定扱い禁止): 母集団をFoF展開後の集合へ揃える
 
-**変更点**: `:1977`が`_collect_all_symbols`へ渡す集合を、FoF展開後の終端standard PF群を含む集合へ変える。展開には**既存のFoF解決結果**(同関数内で既に解決している親子関係、またはweights側が使う`expand_portfolio_to_tickers`(`backend/app/services/price_ratio_impl.py:1078`))を再利用し、新しい閉包計算を書き起こさない。
+**⚠v2.27訂正(2026-08-14 21:31 家老BLOCK+軍師REQUEST CHANGESを将軍が現物確認して受諾)**: 初版で再利用先に挙げた`expand_portfolio_to_tickers`は**誤りである**。同関数は単一`target_date`のsignal依存な実保有を返すため、**全履歴の価格母集団を確定する用途に使うと過去に保有していたtickerを取りこぼす**。将軍が用途を確認せず「weights側が使う関数」という理由だけで指名したのが原因(LS-A09(17)の再発 — 手段がその主張を証明できるかを先に確かめよ)。
+
+**変更点(訂正後)**: `:1977`の`_collect_all_symbols(standard_portfolios)`が作る集合へ、**`target_portfolios`の各PFへ`get_portfolio_all_tickers`(`backend/app/services/price_ratio_impl.py:961`)を適用したunionを加えて**`stock_symbols`をmaterializeする。既存関数は変更せず**呼び出しの追加だけ**で済ませる。
+
+**なぜこの関数が正しいか(現物確認 2026-08-14 21:31)**:
+- **signal非依存**: docstringに「`expand_portfolio_to_tickers()`とは異なり、シグナルに依存せずconfigから全候補ティッカーを再帰的に抽出する」と明記(`:968-971`)。価格母集団に必要なのは「その期間に持ちうる全候補」であり、ある日の実保有ではない。
+- **nested FoF再帰**: `portfolio.type == "fof"`分岐で構成PFへ再帰する。深度非依存が関数側で担保される。
+- **循環防御**: `MAX_DEPTH=10`と`_visited`集合で循環参照を遮断(`:983-991`)。
+- **session cache**: `cache_key=(portfolio.id, include_benchmark)`でPF単位にキャッシュされ、呼び出し追加による実行コストが抑えられる。
+- **contract test現存**: 価格取得用途の専用テストが既にある(家老確認)。
+
+**benchmark・risk-free・preloadの扱い(コード現物)**:
+- **benchmark**: 同関数は`include_benchmark`引数を持ち、**FoF構成PFのbenchmarkは含めない**(再帰呼び出しで`include_benchmark=False`を明示)。親PFのbenchmarkのみが母集団に入る現行意味論を変更しない。呼び出し時の指定値は実装時に固定し設計書へ記録する。
+- **risk-free/DTB3**: `:1981`の「DTB3を`stock_symbols`から除外し、SPYは常時materialize」の既存扱いを変更しない。Cashは価格母集団ではなくDTB3経路(`price_ratio_impl`のDTB3 cache)で扱われるため、price-free契約は維持される。
+- **`precompute_portfolio_preload`**(`backend/app/jobs/precompute_raw.py:235`): PF情報を`db.info`へ載せる既存経路。母集団を広げた結果がpreloadの内容と齟齬しないか(preloadに無いPFの銘柄が母集団へ入る等)を実装時にコード現物で確認する。**この確認はA案採否の条件に含める。**
 
 **変更しない点(副作用の遮断面)**:
 - weightsと`price_movement`を別ソースから取り両者を照合する設計(`monthly_trade_impl.py:1420-1442`の設計原則)は維持する。**これは検出機構であり、経路統合で失えば異常が見えなくなる。** 揃えるのは入力集合であって経路ではない。
@@ -218,6 +232,9 @@ full再計算では全PFが対象に入るためFoFの終端standard PFも母集
 |------|---------|---------------------|
 | weights(何を持っているか) | `expand_portfolio_to_tickers`(`price_ratio_impl.py:1078`) | **知っている**(再帰展開) |
 | 価格母集団(何の価格を用意するか) | `standard_portfolios`抽出(`recalculate_fast.py:1963`)→`_collect_all_symbols`(`:1977`) | **知らない**(type!=fofで落とす) |
+| (参考)価格取得専用の正しい収集 | `get_portfolio_all_tickers`(`price_ratio_impl.py:961`) | **知っている**(config再帰・signal非依存・循環防御) |
+
+**∴第二AsIsの核心は「規則が二つある」ことではなく、「正しい規則が既に存在するのに、価格母集団を組む箇所がそれを使っていない」ことである**(v2.27で訂正 — 初版は前者と書いた)。
 
 **同一の問い「この計算に必要な銘柄は何か」に対し、答えを出す規則が二つ存在し、片方だけがFoF展開を内包している。** fullでは全PFが対象に入るため二つの答えがたまたま一致し、partialでのみ乖離が表面化する。∴これは「partialのバグ」ではなく**規則が二重であることの帰結**であり、partialは乖離を可視化した条件にすぎない。同じ構造がある限り、別のmode・別の呼び出し元・新しい深度で再発しうる。
 
@@ -225,8 +242,19 @@ full再計算では全PFが対象に入るためFoFの終端standard PFも母集
 
 #### (2) 真のToBe — 原理3則
 
-**T1. 必要価格集合の導出規則を一つにする(SSOT)**
-「対象PF集合Sに対し必要な銘柄集合」を返す導出は**唯一とする**。weights側が既に持つ再帰展開を唯一の源とし、価格母集団はその出力を受け取る。**新しい型・新しい閉包計算・新しい状態を作らない。二つある規則の片方を消して一方へ寄せるだけである。**(原理: 既存を磨け・新しい箱を作るな)
+**T1. 価格母集団の導出規則を一つにする(SSOT) ⚠v2.27で定義を訂正**
+初版のT1は「weights側の展開へ寄せる」と書いたが**これは誤りである**。weightsと価格母集団は**異なる問いに答えている**:
+
+| 問い | 答える関数 | 時間軸 | signal依存 |
+|------|-----------|-------|-----------|
+| ある日に何を持っているか | `expand_portfolio_to_tickers` | 単一target_date | 依存する |
+| 期間中に何の価格が要るか | `get_portfolio_all_tickers` | 全履歴の候補全集合 | **依存しない** |
+
+**∴二つの関数が存在すること自体は正しい。統一すべきではない。** 誤りは「価格母集団を問う側(`recalculate_fast.py:1963-1977`)が、価格用の再帰収集関数を使わず、自前のtype判定でPFを絞っていること」である。T1の正しい定義はこうなる:
+
+> **価格母集団の導出は`get_portfolio_all_tickers`を唯一の源とする。呼び出し側が独自にPFを絞り込んで母集団を組み立てることを禁じる。**
+
+これなら新しい型も新しい閉包計算も要らず、**既存の正しい関数を使っていなかった箇所を使うように直すだけ**になる(原理: 既存を磨け・新しい箱を作るな)。この訂正は、統一の対象を「関数の数」ではなく「同じ問いに対する答えの出所」だと捉え直したことによる。
 
 **T2. 加法性 — partialはfullの部分である**
 導出規則 f は次を満たすことを契約とする: **f(S) = ⋃_{p∈S} f({p})**。すなわち対象をどう分割して呼んでも、得られる母集団は分割前の対応部分と一致する。この性質が成り立てば**modeによる差は原理的に消滅する**(「partialでも同じになるよう気をつける」という規律を、代数的性質へ置き換える)。深度非依存も f の再帰性からの帰結として自動的に従うため、深度ごとの個別対応が不要になる。
