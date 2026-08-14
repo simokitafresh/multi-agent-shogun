@@ -227,6 +227,24 @@ safe havenはtop-levelとpipeline(`SafeHavenSwitch.config`)の2箇所に存在�
 2. snapshot公開前のsubset fail-closeが実装されている。
 3. 本番反映後、家老が起動した直近の完了runに対する読み取り突合で、対象PF月のmatched weightが満額(=警報解消)であることが確認されている。
 
+#### 根治の実証(2026-08-15 01:43 P4 CLEAR時点)
+
+| 検証 | 結果 |
+|------|------|
+| full run401(completed・611秒・ERROR0) | 月次16874行/metrics102行のsha256が**run364と完全一致**(cmp_rc=0)=記録追加による業務値変化ゼロ |
+| partial run400 | 価格行 38744→61268、**警報 472→0**、fail0 |
+| 将軍の独立実測(`precomputed_raw`の`monthly_trade`→`entries`全展開) | 全19424 entries中 `matched_weight < 1.0` は111件。**うち欠落銘柄が実銘柄のものは0件** |
+
+**∴実銘柄(GLD等)の価格欠落は根絶された。**
+
+#### 既知の残存: Cash由来の`matched_weight < 1.0` 111件(本工程とは別事象)
+
+将軍の独立実測で、残る111件は**すべて`missing_tickers=["Cash"]`**であった(2011-10〜2016-03・15PF・`computed_at`はrun401の産物)。集計コマンド=`precomputed_raw`(endpoint='monthly_trade')の`raw_json->'entries'`を`jsonb_array_elements`で全展開し`missing_tickers`でGROUP BY。1件の定義=entries配列の1要素(=1 PF×1 year_month)。
+
+Cashはprice-free資産であり実銘柄の欠落とは性質が異なる。2026-08-02の根治(cmd_karo_hotfix_matched_weight_warn_448)でCashは**警報から除外**されており、家老報告の「警報0」(ログ上のWARNイベント数)と将軍実測の「111」(データ上の`matched_weight`値)は**数えている対象が異なるだけで矛盾しない**。
+
+**ただし表示値としての妥当性は別問題である**: Cashは保有しており価格変動が無いだけなので、`matched_weight`は満額であるべきという解釈が成り立つ。**本工程(価格母集団の完全性)の対象外として切り分け、別途扱う。** P4のCLEAR判定はこれを理由に留保しない。
+
 #### 本事象がP4に及ぼす影響
 
 P4(canary)の基準run(id=399)は**mode=portfolioで実行された**ため、上記の欠落の影響下にある。∴**P4は本工程の完了後にやり直す**。今回のP4結果は破棄する。復元は「full再計算で業務値を再生成し、独立検証commit `6cc6b576`が記録するRB6 oracleの合否基準へ再採点する」ことで行う(正基準はoracleでありバックアップではない)。途中runの保全は不要である。
@@ -427,7 +445,8 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | **P3b** metricsマニフェスト | ✅**GATE CLEAR**(20:39) | commit 211e574d・3ファイル83行・metric names47/full row_count204 | 小太郎。summary非null確認 |
 | **P2b+P3b 本番反映** | ✅完了(20:43) | main=347404af・Render dep-d9vftme7bikc73c2mkug live・health 200 | 選択実行pytest 50 passed |
 | **P0.9** L2供給価格の別ルート | 🟡**設計確定・実装解禁待ち** | 三者合意(2026-08-14 23:31・残疑義0)。設計=**§3.29**、AsIs=§2.9、経緯=§6。挿入点=`recalculate_fast.py:1977`直後/`:1981`直前 | 実測: 準備集合9銘柄、partial時+58.1%(38744→61268行)、full時増分0、FoF78体増分0 |
-| **P4** full検証(最終checkpoint①) | 🔴**やり直し必要** | 旧基準run399(mode=portfolio)は母集団欠落の影響下で実行されたため破棄 | **v2.44でcanary=portfolioからmode=full 1回へ変更**(殿指示01:25)。理由=portfolioは本日2度本番を破壊、fullは6回走って破壊ゼロ。full実測469-482秒 |
+| **P0.9** L2供給価格の別ルート | ✅**GATE CLEAR+本番live**(01:22) | commit bc90641e(main)・deploy dep-d9vk0hjncjis73cv1fv0 live・実装61行 | fail-close=`PRICE_SUPPLY_MISSING`稼働 |
+| **P4** full検証(最終checkpoint①) | ✅**CLEAR**(01:43) | run401(full・completed・611秒・ERROR0)。月次16874/metrics102のsha256がrun364と完全一致。partial run400で警報472→0。将軍独立実測=実銘柄欠落0件(Cash由来111件は別事象) | **v2.44でcanary=portfolioからmode=full 1回へ変更**(殿指示01:25)。理由=portfolioは本日2度本番を破壊、fullは6回走って破壊ゼロ。full実測469-482秒 |
 | P5/P6/P7 | ⬜未着手 | — | P5はP4完了後 |
 
 ### 本日の経緯(時刻は全てJST)
@@ -869,6 +888,7 @@ weightsと`price_movement`の別ソース照合、Cashのprice-free契約、real
 ## §7 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- **v2.45 (2026-08-15 01:50): P0.9本番live(bc90641e)とP4 CLEAR(run401)を反映。** §3.29へ根治の実証表と既知の残存(Cash由来111件・本工程対象外)を追記。将軍の独立実測(entries全展開19424件中matched_weight<1.0が111件・実銘柄0件)を記録し、家老報告の「警報0」との差が数える対象の違いであることを明記。
 - **v2.44 (2026-08-15 01:27): 殿指示「P4をcanaryでやらずにfullでやればいいのでは」** — P4をmode=portfolioの5PF canaryから**mode=full 1回**へ変更。根拠=本日portfolioは2度本番を破壊(run361/run365)、fullは6回で破壊ゼロ。full所要は実測469-482秒(1分台ではない旨も実測で確認)。あわせて§5.05規則6を改訂し「本番検証はfullに一本化・本番でmode=portfolioを走らせない・partial固有挙動はfixtureで担保」を明記。進捗台帳のP4行も更新。
 - v2.43 (2026-08-15 01:16): §5.05規則12を強化(忍者ACは自力完結のみ。他ロール完了前提は読み取りでも禁止。cmd_4309 AC3の実証)。
 - v2.42 (2026-08-15 00:15): §5.9進捗台帳を全面更新(P1b/P2b/P3b GATE CLEAR・本番反映・P4やり直し判定・三幕構成の経緯・本日裁定4件・新設資産表)。
