@@ -413,7 +413,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608140450_kotaro"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存のGP-220防御へ吸収済み。現行karo_workaround_log.shは通常/--wa経路のcategory=cleanをledger書込み前にBLOCKし、--clean正経路を提示する。関連テスト51/51およびclean矛盾9件検出・修正テスト3/3がPASSしたため追加実修正は不要。"
+  action_artifact: "scripts/karo_workaround_log.sh:L663-L668; tests/unit/test_karo_workaround_validation.bats:L335-L344; tests/unit/test_gate_wa_data_quality.bats:L145-L154; logs/gunshi_gp_tracker.yaml:L69"
+  resolved_at: "2026-08-14T15:00:00+09:00"
 - id: INS-20260814-064659608-f12f
   ts: "2026-08-14T06:46:59+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_review_quality_warn_20260814; matched=gates; current_pattern=; candidate_level=3; candidate=cmd_2286でAC5(cmd原本に不在)がtask YAMLに混入→影丸verdict:FAIL→家老waive。根因=忍者がtask YAMLにACを手動追加。comm -23でcmd原本にないAC IDを検出→WARN; source=gunshi_gp_tracker.yaml"
