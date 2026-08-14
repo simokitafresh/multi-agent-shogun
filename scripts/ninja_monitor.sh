@@ -6492,7 +6492,7 @@ _check_active_busy_stall() {
     fi
 
     local elapsed_min=$(( elapsed / 60 ))
-    local message="【BUSY-STALL】${name}のactive task=${task_id}でpane表示が${elapsed_min}分不変、子処理0、確認prompt0。busyペインへ介入せず実態を確認せよ。"
+    local message="【BUSY-STALL】${name}のactive task=${task_id}でpane表示が${elapsed_min}分不変、子処理0、確認prompt0。busyペインへ介入せず実態を確認せよ。一次確認: bash scripts/stall_probe.sh ${name} (浅いtail capture手診断は誤診の温床。殿裁定2026-08-14)"
     if send_inbox_message karo "$message" stall_alert; then
         ACTIVE_STALL_NOTIFIED[$key]=1
         log "ACTIVE-STALL-DETECTED: ${name} task=${task_id} elapsed=${elapsed}s notified_karo=1 self_action=0"
@@ -6555,7 +6555,7 @@ _check_ack_to_progress_stall() {
     fi
 
     log "ACK-TO-PROGRESS-STALL: $name task=$task_id acknowledged_at=$acknowledged_at_val elapsed=${elapsed_min}min status=acknowledged (>=${ACK_TO_PROGRESS_WARN_MIN}min未in_progress)"
-    local message="【ACK-STALL】${name}がtask=${task_id}をacknowledgedのままin_progressへ${elapsed_min}分未遷移(閾値${ACK_TO_PROGRESS_WARN_MIN}分、acknowledged_at=${acknowledged_at_val})。"
+    local message="【ACK-STALL】${name}がtask=${task_id}をacknowledgedのままin_progressへ${elapsed_min}分未遷移(閾値${ACK_TO_PROGRESS_WARN_MIN}分、acknowledged_at=${acknowledged_at_val})。一次確認: bash scripts/stall_probe.sh ${name} (浅いtail capture手診断は誤診の温床。殿裁定2026-08-14)"
     if send_inbox_message shogun "$message" stall_alert; then
         ACK_STALL_WARNED[$warn_key]=1
         log "ACK-TO-PROGRESS-STALL-NOTIFIED: $name task=$task_id notified_shogun=1"
