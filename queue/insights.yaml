@@ -35,7 +35,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4305"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: scripts/deploy_task.sh:5405-5406,5591-5592,5730-5731 が monthly/月次 AC の説明へ「進行中月除外」を自動注入し、context/karo-operations.md §1 のAC設計チェックが日時依存値の固定一致を拒否する。context/dm-signal-ops.md:607 に cmd_1855 の既存根拠があり、cmd_4305 は queue/lord_conversation.jsonl の 2026-08-14T18:13:57 GATE CLEAR で確認済み。対象候補は既存防御へ吸収済みで、追加コード修正・decision_candidate は不要と判定した。"
+  action_artifact: "evidence=scripts/deploy_task.sh:5405-5406,5591-5592,5730-5731;context/karo-operations.md:AC_design_gate;context/dm-signal-ops.md:607;queue/lord_conversation.jsonl:2026-08-14T18:13:57;decision=no_additional_change"
+  resolved_at: "2026-08-15T05:55:56+09:00"
 - id: INS-20260814-181429440-8a17
   ts: "2026-08-14T18:14:29+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿P0裁定_provenance実装開始_20260814]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4284_AC1_reopened; score=5.0) / creator_brainwashing_defense(創造主の洗脳防御; alias=session_save_20260811_2240; score=5.0) / gs_ninpo_research(GS忍法研究; alias=殿裁定2026 08 08 22 14「DM signalの基本はopen to open; score=4.1)。概念定義とaliases追加を検討せよ"
