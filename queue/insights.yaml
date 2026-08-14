@@ -885,6 +885,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次証拠を再確認。verify_commandがPASSし、logs/self_retro.jsonl:2942のevent_id adeb5f8210f1aaea85462adb26d51888d7fdd460dc188df7755c363029f4faf8 が review_notify の根因候補とcriterionを保持するため、追加実修正・decision_candidateは不要。"
+  action_artifact: "logs/self_retro.jsonl:2942;data/multi_agent_shogun_memory.db:insight:INS-20260814-151326267-e9c3;context/semantic-map.md:104;context/infrastructure.md:L1566-L1567"
+  resolved_at: "2026-08-14T15:54:09+09:00"
 - id: INS-20260814-151603138-c398
   ts: "2026-08-14T15:16:03+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608141454_kotaro; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
