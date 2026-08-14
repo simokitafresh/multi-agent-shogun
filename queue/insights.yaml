@@ -194,7 +194,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報確認済み。cmd_4306のprecheck fork189回/約11秒という計測はMemory DBと掲示板に原文証跡あり。現行gate_gunshi_report_precheck.shはPython engine統合と内容hash cacheを実装済みで、同型の最適化は既存教訓L668/L1460/L1515等およびsemantic concept semantic_dictionary_design/skill_routingへ吸収済み。対象insight固有の未処理実修正・decision_candidateは無し。"
+  action_artifact: "memory_db=INS-20260814-173001446-244f+blt_20260814_173022_5e2553;semantic=semantic_dictionary_design,skill_routing;context=context/infrastructure.md;source=scripts/gates/gate_gunshi_report_precheck.sh;lessons=L668,L1460,L1515"
+  resolved_at: "2026-08-15T03:58:31+09:00"
 - id: INS-20260814-175029780-643e
   ts: "2026-08-14T17:50:29+09:00"
   insight: "[[full recalculateで問題ないことを確認したのに]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=full recalculateで問題ないことを確認したのに、家老にcanalyを要求したのはなぜなのか説明して"
