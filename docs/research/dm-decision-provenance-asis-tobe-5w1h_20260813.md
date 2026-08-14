@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.15
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.16
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -212,6 +212,7 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | # | 工程 | 依存 | 並列 | 影響範囲(触るファイル) | 二値出口(=ACそのもの。追加検証禁止) |
 |---|---|---|---|---|---|
 | P0 | 本設計書の殿裁定 | — | — | なし(裁定のみ) | §3の保存内容・§4の速度制約が承認される |
+| **P0.4** | **部分モード安全化(前提工程・v2.16新設)**: cmd_4245ガード(狭い結果で広い履歴を上書きしない)の実装+部分モードでDTB3が不変snapshot外になるmanifest gapの根治 | P0 | — | `monthly_returns.py`(DELETE→INSERTガード)+DTB3 snapshot経路 | ガード実装+退行再現回帰テストFAIL0/SKIP0+**mode=portfolio単発runが履歴を減少させないDB前後比較**。完了までcanaryのmode=portfolio禁止(§5.07) |
 | P0.5 | sanitizer/reader契約の先行固定 | P0 | A | `utils/sanitize.py`+fixtureファイル | sanitize allowlist拡張+旧出力不変fixture+未知キー無視fixture+初月stub48行・44fa8aad2行の現挙動regression fixture(§2.4)がFAIL0/SKIP0。**B2条件分岐は本工程から除外しP0.7へ分離**(家老四次レビュー: 契約矛盾の解消) |
 | **P0.7** | **B2窓契約の固定(behavior-changing工程)** — canonical月のみ満月上書きへ条件化 | P0.5 | — | `generators/monthly_returns.py:613-619`(B2分岐)のみ | (a)条件分岐実装+**期待差fixture**(非canonical月にTickerMonthlyReturn存在→旧=上書き/新=B1同窓のまま、と**差が出ることを期待値として明記**) (b)**本番該当件数の実測**: 非canonical月(stub/partial/switch月)にTickerMonthlyReturn行が存在する件数をSQLで数え、**0件なら本番出力差0を証明**(非0なら該当行を列挙し将軍へ報告→殿裁定) (c)専用canary三値+revert手順の明記。FAIL0/SKIP0 |
 | P0.6 | fof_component_weightsのtemporal性質確定 | P0 | A | なし(コード読解のみ・read-only) | 判定時点snapshotか最新値上書きかをコード現物で二値確定(§3.1懸案クローズ) |
@@ -271,7 +272,9 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 実装+fixture PASS → commit → push → 本番deploy → canary小確認(3分) → 次工程へ
 ```
 
-**canary呼び出しの固定値(家老レビュー③・誤解余地の排除)**: 対象5PF(standard2+FoF depth1/2/4)のUUID5件を**P0裁定後に固定してcmd定型のスタート欄へ記載**し、API呼び出しは `mode=portfolio` + **`include_parent_fof=false`** + **`include_nested_fof=false`** を明示指定する — 既定は`include_parent_fof=true`(`etl_trigger.py:86`)で親closureへ拡張され(`recalculate_fast.py:1653-1665` `_resolve_parent_fof_dependencies`)、UUID5件指定でも5PF固定にならないため。所要実績=過去固定便169.25s/172.95s≈3分。
+**★canary実行モードの禁止事項(v2.16・cmd_4303事故2026-08-14 16:17のRCAで確定)**: **`mode=portfolio`のcanary実行を禁止する** — cmd_4245の系統的退行(portfolio部分再計算がPF単位DELETE→INSERTで広い既存履歴を狭く上書き)が**未修正**であり、暫定制約「本番はmode=fullのみ実行」(cmd_4245 assumptions 2026-08-09確定)が生きている。cmd_4303 canary(mode=portfolio 5PF)はこの制約を見落として設計され、run361がSOURCE_SELECT_AFTER_SNAPSHOT(部分モードでDTB3が不変snapshot外)で中断→FoF depth4の172月欠落を起こした。**canaryの書込み確認は復元full run(または次回定期full)後のSELECTで行う**。3分portfolio canaryへの短縮は、cmd_4245ガード根治+部分モードのDTB3 manifest gap根治の両方が完了してから解禁する(この2根治を前提工程P0.4として§5表へ追加)。
+
+**canary呼び出しの固定値**: 対象5PF(standard2+FoF depth1/2/4)のUUID5件をP0裁定後に固定してcmd定型のスタート欄へ記載する。`include_parent_fof=true`既定(`etl_trigger.py:86`)による親closure拡張(`recalculate_fast.py:1653-1665`)の存在に注意(部分モード解禁後に適用)。
 
 **canary小確認の三値**(08-12に確立した canary回転の型「1commit→5PF 3分→三値」の再利用):
 1. **壊していないか**: smoke=API代表画面2xx+non-empty(RB8の8画面チェックの縮小版でよい。全画面は不要)
@@ -309,6 +312,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.16 (2026-08-14 16:36): 殿指示16:33「RB6-RB8で得た知見を使わずに作業をしている可能性がある。将軍が深ぼれ」— 将軍深掘りの結論: cmd_4303事故の破壊経路はP0.5のsanitize変更ではなく**canaryのmode=portfolio実行**(将軍が§5.07に書いた設計)であり、cmd_4245の既知暫定制約「本番はmode=fullのみ」(2026-08-09)の見落とし=RB知見不使用。証拠: (a)deploy差分はsanitize.py+testsのみ20行(diff実測) (b)同じruntime上のrun362(full)は完走=sanitize無罪の傍証 (c)run361(portfolio 5PF)のFoF部分欠落はcmd_4245の系統的退行機構と一致。是正: §5.07へmode=portfolio canary禁止を明記、前提工程P0.4(cmd_4245ガード+DTB3部分モードmanifest gap根治)を§5表へ新設。RCA最終確定は家老の一次検証(run361トリガーパラメータ+stack trace)で行う。
 - v2.15 (2026-08-14 16:32): 殿裁定16:30「revert deploy後にfull recalculateをじっと待って時間を破壊するな。その暇に新たな実装を準備せよ」— 規則11(復元run待機中の並行準備)新設: RCA・fixture是正・次工程実装をbranch上で並行、終端監視は自動通知、mainへは復元完了+RCA確定後。
 - v2.14 (2026-08-14 16:30): 殿裁定16:27「最後まで計算させると汚染データが広がる。次からは最速でrevert push」— 規則10へ汚染拡大遮断の根拠を追記し、走行中run保護より最速revert push優先を確定。
 - v2.13 (2026-08-14 16:28): 殿裁定16:25「本番が壊れていることは確定している。revert pushしてから確認しないと復旧が遅くなるだけ」「言い訳のために先にテストするのは本末転倒」— 規則10を強化: 本番破壊確定時はrevert pushが最初の行動。revert前の復元run・検証・調査・言い訳材料集め禁止。cmd_4303実証(壊れたcode上のrun362完走待ちがrevert pushを約8分遅延)を反例として明記。順序固定=revert push→live確認→復元run→正基準突合→RCA。
