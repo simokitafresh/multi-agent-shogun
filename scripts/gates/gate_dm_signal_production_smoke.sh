@@ -54,39 +54,58 @@ if [ "${ORIGIN_SHA,,}" != "${LIVE_SHA,,}" ]; then
 fi
 
 API_BASE="${DM_SIGNAL_SMOKE_API_BASE:-https://dm-signal-backend.onrender.com}"
-ENDPOINTS_RAW="${DM_SIGNAL_SMOKE_ENDPOINTS:-/health /api/signals}"
+ENDPOINTS_RAW="${DM_SIGNAL_SMOKE_ENDPOINTS:-/healthz /api/signals}"
 CURL_BIN="${DM_SIGNAL_SMOKE_CURL_BIN:-curl}"
 CONNECT_TIMEOUT="${DM_SIGNAL_SMOKE_CONNECT_TIMEOUT:-10}"
 MAX_TIME="${DM_SIGNAL_SMOKE_MAX_TIME:-30}"
 AUTH_HEADER="${DM_SIGNAL_SMOKE_AUTH_HEADER:-}"
+if [ -z "$AUTH_HEADER" ] && [ -n "${DM_SIGNAL_SMOKE_VIEWER_TOKEN:-}" ]; then
+    AUTH_HEADER="Authorization: Bearer ${DM_SIGNAL_SMOKE_VIEWER_TOKEN}"
+fi
 STATUS_MAP="${DM_SIGNAL_SMOKE_HTTP_STATUS_MAP:-}"
 
-status_from_map() {
+MAP_STATUS=""
+MAP_BODY_B64=""
+RESPONSE_BODY_FILE=""
+
+response_from_map() {
     local endpoint="$1" item key value
+    MAP_STATUS=""
+    MAP_BODY_B64=""
     [ -n "$STATUS_MAP" ] || return 1
     IFS=',' read -r -a items <<< "$STATUS_MAP"
     for item in "${items[@]}"; do
         key="${item%%=*}"
         value="${item#*=}"
         if [ "$key" = "$endpoint" ]; then
-            printf '%s\n' "$value"
+            MAP_STATUS="${value%%|*}"
+            if [[ "$value" == *"|"* ]]; then
+                MAP_BODY_B64="${value#*|}"
+            fi
             return 0
         fi
     done
     return 1
 }
 
-http_status() {
-    local endpoint="$1" url="$endpoint" status curl_rc
+fetch_response() {
+    local endpoint="$1" url status curl_rc
+    url="$endpoint"
     if [[ "$url" != http://* && "$url" != https://* ]]; then
         url="${API_BASE%/}/${url#/}"
     fi
-    if status=$(status_from_map "$endpoint"); then
-        printf '%s\n' "$status"
+    RESPONSE_BODY_FILE="$(mktemp "${TMPDIR:-/tmp}/dm-signal-smoke.XXXXXX")"
+    if response_from_map "$endpoint"; then
+        RESPONSE_STATUS="$MAP_STATUS"
+        if [ -n "$MAP_BODY_B64" ]; then
+            if ! printf '%s' "$MAP_BODY_B64" | base64 --decode >"$RESPONSE_BODY_FILE" 2>/dev/null; then
+                RESPONSE_STATUS="invalid_map_body"
+            fi
+        fi
         return 0
     fi
 
-    local -a curl_args=(-sS -o /dev/null -w '%{http_code}'
+    local -a curl_args=(-sS --compressed -o "$RESPONSE_BODY_FILE" -w '%{http_code}'
         --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" "$url")
     if [ -n "$AUTH_HEADER" ]; then
         curl_args=(-H "$AUTH_HEADER" "${curl_args[@]}")
@@ -95,10 +114,59 @@ http_status() {
     curl_rc=0
     status=$("$CURL_BIN" "${curl_args[@]}" 2>/dev/null) || curl_rc=$?
     if [ "$curl_rc" -ne 0 ]; then
-        printf 'curl_error:%s\n' "$curl_rc"
+        RESPONSE_STATUS="curl_error:$curl_rc"
         return 0
     fi
-    printf '%s\n' "$status"
+    RESPONSE_STATUS="$status"
+}
+
+validate_auth_header() {
+    [[ "${1:-}" =~ ^[Aa]uthorization:[[:space:]]+[Bb]earer[[:space:]]+[^[:space:]]+$ ]]
+}
+
+validate_payload() {
+    local endpoint="$1" body_file="$2"
+    python3 - "$endpoint" "$body_file" <<'PY'
+import json
+import sys
+
+endpoint, body_path = sys.argv[1:]
+
+def invalid(reason):
+    print(reason)
+    raise SystemExit(1)
+
+try:
+    with open(body_path, encoding="utf-8") as handle:
+        raw_payload = handle.read()
+except OSError:
+    invalid("invalid_json_payload")
+
+if not raw_payload.strip():
+    invalid("empty_required_payload")
+
+try:
+    payload = json.loads(raw_payload)
+except json.JSONDecodeError:
+    invalid("invalid_json_payload")
+
+if not isinstance(payload, dict) or not payload:
+    invalid("empty_required_payload")
+
+if endpoint == "/healthz":
+    if payload.get("status") != "ok":
+        invalid("health_status_not_ok")
+elif endpoint == "/api/signals":
+    data = payload.get("data")
+    if payload.get("success") is not True or not isinstance(data, dict):
+        invalid("signals_success_data_missing")
+    if not isinstance(data.get("as_of"), str) or not data["as_of"]:
+        invalid("signals_as_of_missing")
+    if not isinstance(data.get("server_date"), str) or not data["server_date"]:
+        invalid("signals_server_date_missing")
+    if not isinstance(data.get("portfolios"), list):
+        invalid("signals_portfolios_missing")
+PY
 }
 
 echo "DM-Signal production smoke: cmd=${CMD_ID} origin_sha=${ORIGIN_SHA} live_sha=${LIVE_SHA}"
@@ -110,13 +178,30 @@ fi
 
 failed=0
 for endpoint in "${ENDPOINTS[@]}"; do
-    status="$(http_status "$endpoint")"
-    if [[ "$status" =~ ^2[0-9][0-9]$ ]]; then
-        echo "endpoint=${endpoint} http_status=${status} result=PASS"
+    if [[ "$endpoint" == /api/* ]] && [ -z "$AUTH_HEADER" ]; then
+        echo "endpoint=${endpoint} http_status=credential_missing result=BLOCK reason=credential_missing"
+        failed=1
+        continue
+    fi
+    if [[ "$endpoint" == /api/* ]] && ! validate_auth_header "$AUTH_HEADER"; then
+        echo "endpoint=${endpoint} http_status=credential_invalid result=BLOCK reason=credential_invalid"
+        failed=1
+        continue
+    fi
+
+    fetch_response "$endpoint"
+    status="$RESPONSE_STATUS"
+    if [[ "$status" =~ ^2[0-9][0-9]$ ]] && validate_payload "$endpoint" "$RESPONSE_BODY_FILE"; then
+        echo "endpoint=${endpoint} http_status=${status} result=PASS payload=valid"
     else
-        echo "endpoint=${endpoint} http_status=${status:-missing} result=BLOCK"
+        payload_reason=""
+        if [[ "$status" =~ ^2[0-9][0-9]$ ]]; then
+            payload_reason="$(validate_payload "$endpoint" "$RESPONSE_BODY_FILE" 2>/dev/null || true)"
+        fi
+        echo "endpoint=${endpoint} http_status=${status:-missing} result=BLOCK${payload_reason:+ reason=${payload_reason}}"
         failed=1
     fi
+    rm -f "$RESPONSE_BODY_FILE"
 done
 
 if [ "$failed" -ne 0 ]; then

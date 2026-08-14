@@ -3119,14 +3119,18 @@ EOF
     [[ "$output" == *"REPORT_CDP:$TEST_CMD_ID"* ]]
 }
 
-@test "dm-signal production smoke passes only when origin/live match and every API is 2xx" {
+@test "dm-signal production smoke passes only when origin/live match and required payloads are valid" {
     source "$GATE_HELPERS_FILE"
     export SCRIPT_DIR="$TEST_PROJECT" LOG_DIR="$TEST_PROJECT/logs" CMD_ID="$TEST_CMD_ID"
     export CMD_PROJECT="dm-signal" TASKS_DIR="$TEST_PROJECT/queue/tasks"
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
     export DM_SIGNAL_SMOKE_ORIGIN_SHA="0123456789abcdef0123456789abcdef01234567"
     export DM_SIGNAL_SMOKE_LIVE_SHA="$DM_SIGNAL_SMOKE_ORIGIN_SHA"
-    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/health=200,/api/signals=204"
+    local health_body signals_body
+    health_body="$(printf '%s' '{"status":"ok"}' | base64 -w0)"
+    signals_body="$(printf '%s' '{"success":true,"data":{"as_of":"2026-08-14","server_date":"2026-08-14","portfolios":[]}}' | base64 -w0)"
+    export DM_SIGNAL_SMOKE_AUTH_HEADER="Authorization: Bearer test-token"
+    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/healthz=200|${health_body},/api/signals=200|${signals_body}"
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
   parent_cmd: $TEST_CMD_ID
@@ -3141,8 +3145,8 @@ EOF
 
     run run_dm_signal_production_smoke_check
     [ "$status" -eq 0 ]
-    [[ "$output" == *"http_status=200 result=PASS"* ]]
-    [[ "$output" == *"http_status=204 result=PASS"* ]]
+    [[ "$output" == *"endpoint=/healthz http_status=200 result=PASS payload=valid"* ]]
+    [[ "$output" == *"endpoint=/api/signals http_status=200 result=PASS payload=valid"* ]]
     grep -q 'gate: "dm_signal_production_smoke", result: PASS' "$TEST_PROJECT/logs/gate_fire_log.yaml"
     grep -q 'detector_fp_rate=tracked' "$TEST_PROJECT/logs/gate_fire_log.yaml"
 }
@@ -3154,7 +3158,10 @@ EOF
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
     export DM_SIGNAL_SMOKE_ORIGIN_SHA="0123456789abcdef0123456789abcdef01234567"
     export DM_SIGNAL_SMOKE_LIVE_SHA="$DM_SIGNAL_SMOKE_ORIGIN_SHA"
-    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/health=200,/api/signals=500"
+    local health_body
+    health_body="$(printf '%s' '{"status":"ok"}' | base64 -w0)"
+    export DM_SIGNAL_SMOKE_AUTH_HEADER="Authorization: Bearer test-token"
+    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/healthz=200|${health_body},/api/signals=500"
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
   parent_cmd: $TEST_CMD_ID
@@ -3169,7 +3176,7 @@ EOF
 
     run run_dm_signal_production_smoke_check
     [ "$status" -eq 1 ]
-    [[ "$output" == *"http_status=500 result=BLOCK"* ]]
+    [[ "$output" == *"endpoint=/api/signals http_status=500 result=BLOCK"* ]]
     [[ "$output" == *"production_api_smoke_failed"* ]]
     grep -q 'gate: "dm_signal_production_smoke", result: FAIL' "$TEST_PROJECT/logs/gate_fire_log.yaml"
     grep -q 'detector_fp_rate=tracked' "$TEST_PROJECT/logs/gate_fire_log.yaml"
@@ -3182,7 +3189,8 @@ EOF
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
     export DM_SIGNAL_SMOKE_ORIGIN_SHA="0123456789abcdef0123456789abcdef01234567"
     export DM_SIGNAL_SMOKE_LIVE_SHA="fedcba9876543210fedcba9876543210fedcba98"
-    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/health=200,/api/signals=200"
+    export DM_SIGNAL_SMOKE_AUTH_HEADER="Authorization: Bearer test-token"
+    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/healthz=200,/api/signals=200"
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
   parent_cmd: $TEST_CMD_ID
