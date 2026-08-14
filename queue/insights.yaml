@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260814-180652279-2656
-  ts: "2026-08-14T18:06:52+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bnnhumcsr task id tool use id toolu 01EUXTvegDEgPciA7v は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-14T18:14:48+09:00"
-- id: INS-20260814-181412800-73ba
-  ts: "2026-08-14T18:14:12+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_4305; matched=更新; current_pattern=provenance工程P3a — recalculation_status runサマリのsummary列migrationとwriter経路更新; candidate_level=2; candidate=cmd_1855のverdict_override根因。AC『全期間月次リターン差』が進行中月を含み、GS作成日vs本番更新日の差異で常にFAIL。AC標準文言を『完了月(最終月除外)』に変更。cmd起票テンプレート修正が必要→家老担当; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_4305"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: scripts/deploy_task.sh:5405-5406,5591-5592,5730-5731 が monthly/月次 AC の説明へ「進行中月除外」を自動注入し、context/karo-operations.md §1 のAC設計チェックが日時依存値の固定一致を拒否する。context/dm-signal-ops.md:607 に cmd_1855 の既存根拠があり、cmd_4305 は queue/lord_conversation.jsonl の 2026-08-14T18:13:57 GATE CLEAR で確認済み。対象候補は既存防御へ吸収済みで、追加コード修正・decision_candidate は不要と判定した。"
-  action_artifact: "evidence=scripts/deploy_task.sh:5405-5406,5591-5592,5730-5731;context/karo-operations.md:AC_design_gate;context/dm-signal-ops.md:607;queue/lord_conversation.jsonl:2026-08-14T18:13:57;decision=no_additional_change"
-  resolved_at: "2026-08-15T05:55:56+09:00"
 - id: INS-20260814-181429440-8a17
   ts: "2026-08-14T18:14:29+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿P0裁定_provenance実装開始_20260814]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4284_AC1_reopened; score=5.0) / creator_brainwashing_defense(創造主の洗脳防御; alias=session_save_20260811_2240; score=5.0) / gs_ninpo_research(GS忍法研究; alias=殿裁定2026 08 08 22 14「DM signalの基本はopen to open; score=4.1)。概念定義とaliases追加を検討せよ"
@@ -314,7 +294,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: cmd_4308でstandard_portfolios由来の価格symbol収集がFoF展開後GLDをsnapshot/PriceCacheへ含めず、monthly_trade_implがDB fallbackを抑止するためprice_movementからGLDが欠落する根因を確認。後続のcandidate母集団設計で全standard PFのrelative_assetsとsafe_haven_asset(Cash除外)を価格準備集合へ採用する方針が確定し、追加修正・decision_candidateは不要。"
+  action_artifact: "evidence=semantic_search:INS-20260814-210551148-b5b0;queue/bulletin_board.yaml:blt_20260814_210946_64a0a5,blt_20260814_222638_346314;memory_db:2026-08-14T23:32:35;decision=no_additional_change"
+  resolved_at: "2026-08-15T07:05:06+09:00"
 - id: INS-20260814-210552014-03c8
   ts: "2026-08-14T21:05:52+09:00"
   insight: "semantic_index_update新概念候補: discussion:では未来に向けて前進しよう。今チームとして取り組むべきはWARNING app services monthly trade impl Ticker GLD i は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -986,5 +969,15 @@ insights:
   insight: "semantic_index_update新概念候補: discussion:task notification task id bmmuzlet2 task id tool use id toolu 01WLPffh6QkL26UN6A は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T07:04:09+09:00"
+- id: INS-20260815-070335269-8b52
+  ts: "2026-08-15T07:03:35+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4315; matched=検証,check; current_pattern=provenance工程P6 — 検証クエリをdb-checkスキルへ定型化する; candidate_level=4; candidate=FIX hint=答え注入(情報注入)→退化リスク(#3)。思考構造の強制=退化しない(#5)。diagnose_reason必須化で忍者に根本原因の言語化を強制。段階的導入(初回=警告のみ)。gate_report_format.sh FAIL後に1行呼出追加で有効化; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4315"
   fix_known: false
   status: pending
