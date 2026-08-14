@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.8
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.9
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -221,12 +221,12 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | P2a | 書込み実装(FoF scalar) | P0.5, P0.6 | B | `recalculate_fof.py`(FoFループ) | FoFループで同スキーマ+nested深度差なしをfixture確認 |
 | P2b | snapshot新設(FoF/nested) | **P2a**(同一ファイル`recalculate_fof.py`のため直列), P1b(payload形式を継承), P0.6 | — | `recalculate_fof.py`(snapshot呼出追加。現状0件) | FoF経路のsnapshot呼出追加+depth1/2/4 fixture PASS |
 | P3b | metricsマニフェスト(⑦) | P3a | B | `generators/portfolio_metrics.py:20-83`+`recalculate_fast.py:542-549`+`utils/recalc_status.py:230-255`(metrics算出→summary書込みの経路) | summaryへmetrics_manifest(47name+204行+入力SHA256)が非null。**canary時の期待行数は対象PF×years2=対象PF×2行へ分離**(5PF partialでは204行にならない — 家老レビュー③) |
-| P4 | canary(最終checkpoint①) | P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | standard2+FoF depth1/2/4計5PF・stub月/normal月両方・親closure固定。multi-table hash一致5/5+provenance非null+ERROR0 |
+| P4 | canary(最終checkpoint①) | **P0.7**,P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | standard2+FoF depth1/2/4計5PF・stub月/normal月両方・親closure固定。multi-table hash一致5/5+provenance非null+ERROR0 |
 | P5 | full+速度検証(最終checkpoint②) | P4 | — | なし(実行+検証のみ) | 102/102・failed0・off/on各3run medianでTOTAL増分+5%以内・payload/WAL/TOAST分位(§4-7)・500B見積のcanary実測後外挿再検証・保存値から選抜再導出全数一致 |
 | P6 | 検証クエリの定型化 | P5 | — | db-checkスキル(shogun repo側) | §3.3のSQLをdb-checkスキルへ追記 |
 | P7 | fingerprint skip有効化(速度向上・別cmd) | P5 | — | fingerprint基盤+skip判定 | versioned watermark+precomputed manifest実装(§4.5-3)+skip有効/無効A/B fullでmulti-table hash完全一致+TOTAL短縮幅の実測記録 |
 
-**並列グループの読み方**: P0裁定直後にグループA(P0.5+P0.6+P3a=3タスク同時配備可、影響ファイル無競合)。P0.5完了後にグループB(P1a+P2a+P3bのうち依存満了分を同時配備可)。同一ファイル直列制約は**P1a→P1b**(`recalculate_fast.py`)と**P2a→P2b**(`recalculate_fof.py`)の2組(家老レビュー①で訂正)。クリティカルパス=P0→P0.5→{P1a→P1b, P2a→P2b}→P4→P5(P2bはP1bのpayload形式継承も要するため実質最長路=P0→P0.5→P1a→P1b→P2b…だがP2a完了も前提)。
+**並列グループの読み方**: P0裁定直後にグループA(P0.5+P0.6+P3a=3タスク同時配備可、影響ファイル無競合)。P0.5完了後にグループB(**P0.7**+P1a+P2a+P3bのうち依存満了分を同時配備可 — P0.7の影響ファイルは`monthly_returns.py`のみで他と無競合)。同一ファイル直列制約は**P1a→P1b**(`recalculate_fast.py`)と**P2a→P2b**(`recalculate_fof.py`)の2組(家老レビュー①で訂正)。クリティカルパス=P0→P0.5→{P1a→P1b, P2a→P2b}→P4→P5(P2bはP1bのpayload形式継承も要するため実質最長路=P0→P0.5→P1a→P1b→P2b…だがP2a・**P0.7**完了もP4の前提)。
 
 ### §5.05 配備規則(家老向け・過剰要求と原理的failの構造防止 — v2.1新設)
 
@@ -255,13 +255,13 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | P6 | スキル追記のみ(shogun repo側) | **ゼロ**(DM-signal本番に非接触) |
 | **P7** | behavior-changing工程その2(skip=判定そのものを飛ばす) | skip有効化flagの**deploy前まではゼロ**。有効化はA/B multi-table hash完全一致の証明後のみ。中断するならflag無効のままdeploy=record-only状態へ即戻せる(可逆) |
 
-**中断の作法**: (1)中断区切り=各工程の「二値出口PASS+commit」時点。工程の途中(テスト未PASS)ではcommitせず中断せよ — 未完コードはbranchに置き、mainへ混ぜない。(2)中断再開時は本表の依存列から再開位置を引く(前工程のPASS証跡=報告YAML+commit hashが再開点)。(3)中断中の本番障害時は復帰点宣言(rollback計画書v1.8 §-1)が常に有効 — 本設計の工程は出力不変(record-only+P0.5のbehavior-preserving固定)ゆえ復帰点の正基準(6cc6b576)との突合を汚さない。
+**中断の作法**: (1)中断区切り=各工程の「二値出口PASS+commit」時点。工程の途中(テスト未PASS)ではcommitせず中断せよ — 未完コードはbranchに置き、mainへ混ぜない。(2)中断再開時は本表の依存列から再開位置を引く(前工程のPASS証跡=報告YAML+commit hashが再開点)。(3)中断中の本番障害時は復帰点宣言(rollback計画書v1.8 §-1)が常に有効 — record-only工程は定義上、behavior-changing工程(P0.7/P7)は本番差0実測またはflag無効を通過条件とするゆえ、いずれの中断状態でも復帰点の正基準(6cc6b576)との突合を汚さない(工程3分類=§5.06設計原理に従う)。
 
 ### §5.07 工程ごとの本番デプロイ+小単位確認(段階deploy運用 — v2.3新設・殿指示2026-08-14 15:03)
 
 > **殿の原則**: 「最後まで実装してからトラブルが見つかると手戻りが多い。速めに本番で確認すれば知見もたまり以後の作業にも複利がある」。**§5.06の工程3分類(record-only / behavior-changingは本番差0実測 / 検証run)**だからこそ、**各工程の完了=即commit+push+本番deploy+小確認**が安全にできる。P4/P5まで本番投入を溜め込むな。
 
-**各工程の標準サイクル**(**P0.5**/P1a/P1b/P2a/P2b/P3a/P3bの全コード変更工程に適用 — P0.5も本番コード変更を含むため対象。家老レビュー②):
+**各工程の標準サイクル**(**P0.5/P0.7**/P1a/P1b/P2a/P2b/P3a/P3bの全コード変更工程に適用。P0.7はbehavior-changingゆえ§5表(a)(b)(c)の専用出口を標準サイクルのcanary三値に**追加**して実行する):
 
 ```
 実装+fixture PASS → commit → push → 本番deploy → canary小確認(3分) → 次工程へ
@@ -305,6 +305,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.9 (2026-08-14 15:35): 家老五次レビュー(blt_20260814_153014・残存2件、四次1/1解消確認済み)を反映 — ①P0.7のDAG接続完了: P4依存へ追加/並列グループBへ配置(monthly_returns.pyのみで無競合)/クリティカルパス前提へ明記/§5.07標準サイクル対象へ追加(専用出口(a)(b)(c)をcanary三値に追加実行) ②§5.06中断の作法末尾の旧契約表現(behavior-preserving固定)を工程3分類準拠へ置換。
 - v2.8 (2026-08-14 15:33): 家老四次レビュー(blt_20260814_152513・契約自己矛盾1件=「非canonical月TMR存在で出力変更」fixture条件 vs 「P0.5=バイト不変/P7のみ挙動変更/output-invariant」)を将軍が二択裁定Bで解消 — **P0.7新設**: B2窓契約固定をP0.5から分離しbehavior-changing工程化。二値出口=(a)期待差fixture(差が出ることを期待値として明記) (b)本番該当件数SQL実測(0件=本番出力差0の証明、非0なら殿裁定へ) (c)専用canary+revert。§5.06設計原理を工程3分類(record-only/behavior-changing=本番差0実測/検証run)へ一意化し「P7のみ挙動変更」「output-invariant」表現を全廃。軍師の条件fixtureは期待差fixtureとしてP0.7へ移設(反例を封じるのではなく反例を証明する — 家老の指摘通り)。軍師追認(blt_20260814_152517「穴なし」)受領済み。
 - v2.6 (2026-08-14 15:24): 軍師レビュー(blt_20260814_152133・docs/research/gunshi_provenance_review.md・4観点全CONFIRM)の条件+推奨2点を反映 — (1)P0.5二値出口へ「非canonical月にTickerMonthlyReturn存在」エッジケースのfixture必須化(存在時は出力変更になる=record-only主張の唯一の反例可能性を封じる) (3)§5.07 canary②へ「cron直前deployは即時再計算経路推奨」を追記。軍師の反証検証実績: B2現物・依存DAG書き出し(循環なし)・signal_flush.py UPSERT set_のprovenance非参照・API層非読取をgrep/Readで一次確認済み。
 - v2.5 (2026-08-14 15:22): 家老再レビュー(blt_20260814_151931・残存2件、前回4/4反映確認済み)を将軍現物突合で反映 — ①P3a影響範囲を完全自己完結化: 正本=`backend/app/db/models.py:1191-1205`(schemas/models.py併存の誤誘導を注記)+`db/migrations.py:1062-1085`+`utils/recalc_status.py:204-255,407-427`+caller 2箇所(`etl_trigger.py:230`/`portfolio_restore.py:250`の`end_recalculation()`。将軍がls+grepで実在確認) ②§5.06の「P7以前すべてrecord-only」とP0.5行の矛盾を解消: P0.5のみbehavior-preserving production change、他はrecord-onlyへ統一(冒頭・末尾の2箇所)。中断契約が一意化。
