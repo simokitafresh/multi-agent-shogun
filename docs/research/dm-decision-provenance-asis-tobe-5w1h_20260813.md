@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.18
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.19
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -311,9 +311,46 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 **運用規則**: 新しい検証cmdを起票する前に、本表とknowledge検索(`bash scripts/memory_db_query.sh --search "<対象>"`)で既存資産の有無を確認し、q11(車輪確認)へ照合結果を記載する。
 
+## §5.9 進捗台帳(2026-08-14 18:40現在 — 実装初日の全記録)
+
+### 工程別ステータス
+
+| 工程 | 状態 | cmd/成果物 | 備考 |
+|---|---|---|---|
+| P0 殿裁定 | ✅完了(15:40) | 「では開始しよう」 | — |
+| **P0.4前半** cmd_4245ガード | ✅**GATE CLEAR**(18:34) | commit c17a32f7・deploy 484f7e45 | 狭い履歴での全削除拒否。テスト14 passed |
+| **P0.4後半** DTB3 snapshot束縛 | ✅**GATE CLEAR**(cmd_4306) | 才蔵実装・deploy 484f7e45 | テスト15/15 PASS |
+| P0.5 sanitizer契約 | 🔄**再配備中**(飛猿・v2.17スコープ) | sanitize変更本体=commit 2c218922(RCAで無罪確定・cherry-pick起点可)。偽陽性fixture 05ca166fは破棄 | 初回deployはcanary事故で撤回(下記経緯) |
+| P0.6 temporal偵察 | ✅完了(cmd_4304) | docs/research/cmd_4304_fof_weights_temporal_20260814.md | — |
+| P0.7 B2窓契約固定 | ⬜未着手 | stub48/44fa fixtureはここ(v2.17移設) | P0.5後 |
+| **P3a** runサマリ台帳 | ✅**GATE CLEAR+本番稼働**(cmd_4305) | commits 6d92c190+b6770fe1・deploy 484f7e45 | run364でsummary非NULL初記録(signals_upserted99406・total_time444.290s) |
+| P3b metricsマニフェスト | ⬜未着手 | — | P3a済み・P1b待ち(直列鎖) |
+| P1a/P1b/P2a/P2b | ⬜未着手 | — | P0.5後にグループB |
+| P4/P5/P6/P7 | ⬜未着手 | — | — |
+
+### 本日の経緯(canary事故と復旧 — 時刻は全てJST)
+
+1. **16:17 cmd_4303(P0.5初回)のcanary(mode=portfolio 5PF)が本番run361を破壊** — SOURCE_SELECT_AFTER_SNAPSHOT(部分モードでDTB3が不変snapshot外)で中断、FoF depth4の172月欠落。
+2. **RCA**: 破壊経路はsanitize変更(20行)ではなく**canaryのmode=portfolio実行**。cmd_4245既知暫定制約「本番はmode=fullのみ」(2026-08-09)の見落とし=RB知見不使用(将軍の設計ミス)。同runtimeのrun362 full完走がsanitize無罪の傍証。
+3. **復旧**: exact revert bec344dd push(16:25)→復元run363で**run360状態へ月次16874/16874完全一致**復元(16:40)。
+4. **17:38 将軍の曖昧文言(canary別作業誤読)が検証目的run365(portfolio)を誘発** → 確定月holding_signalを**98596件実値汚染**(18:06検知)。
+5. **遮断・復元**: run365停止(18:09)→復元full起動(18:12)→**98596/98596全キー旧値復帰・汚染残存0・ledger書込0**(18:31全数照合)。実害滞在約16分。
+6. **P0.4根治**: cmd_4245ガード+cmd_4306 DTB3束縛を実装・deploy・run364検証PASS(月次/metrics sha一致+summary非NULL)。
+
+### 本日確定の知見(殿裁定群 — 全て§5.05規則8-11と§5.07に反映済み)
+
+- **小deploy・即revert・一歩ずつ**: sanitize20行の小deployゆえ3分検知・revert1手・手戻り1工程。事故が既存欠陥2件の発見=前進に変換された。
+- **最速revert push**: 壊れたrunの完走待ちは保護価値ゼロ、汚染はDBへ書き広がる。revert前の検証・言い訳材料集め禁止(run362待ちで8分遅延の実証)。
+- **run待機=時間破壊**: 待機中はbranch上で次実装を準備。
+- **検証run起動禁止**: deploy後検証=既存直近full結果へのSELECT突合のみ。mode=fullは全102PF不可分(約7-8分)、portfolioも旗未指定なら親closure拡張。
+- **過剰防御禁止(18:32)**: 根因(バグコードで計算)への対策=即stop+revert確立で因果は切れた。ledger凍結エンフォース等の防御層追加は複雑化=バグの温床であり**実装しない**(将軍提案を撤回)。
+- **fixture配置原則**: fixtureは検証対象の契約と同じ層に書く(sanitizer層のstub48 fixtureは全行同一期待値へ縮退する偽陽性だった)。
+- **前提変更=停止→設計書更新→再開** / **車輪の再発明禁止**(RB6/RB8資産+記憶DBを先に引く)。
+
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.19 (2026-08-14 18:42): 殿指示18:38「進捗と経緯をアップデートせよ。知見を漏らすな」— §5.9進捗台帳新設: 工程別ステータス(P0.4前半後半・P3a=GATE CLEAR+本番稼働、P0.6完了、P0.5=v2.17スコープで飛猿再配備中、他未着手)+本日のcanary事故2件と復旧の時系列(run361破壊→revert→復元/run365実値汚染98596件→遮断→全数復帰、実害滞在約16分)+殿裁定群7点の知見要約(小deploy即revert・最速revert push・run待機禁止・検証run起動禁止・過剰防御禁止・fixture配置原則・前提変更停止/車輪再発明禁止)。
 - v2.18 (2026-08-14 17:53): 殿裁定17:48-17:52「fullで確認済みなのにcanaryを要求した」「FoF全部再計算=長大な無駄。冗長再計算を将軍が要求+全PF計算の2問題」「再発防止を将軍・家老両側へ徹底」— §5.07冒頭へ検証run起動の二値規則を新設: 検証目的の新規run起動禁止(既存直近full結果へのSELECT突合のみ)、mode=full=全PF不可分(約7-8分)の明記、「canary=独立作業」の誤読を用語ごと訂正(canary三値=直近full結果への三値SELECT確認の別名)。発生源=将軍の指示文言がcanaryを別作業のように再要求した+設計書用語が実態とずれていたこと。
 - v2.17 (2026-08-14 16:45): 家老fixture独立レビュー(blt_20260814_164253・50行全てが同一sanitized期待値へ縮退する偽陽性fixture)を規則8で処理 — 真因=v2.8でB2をP0.7へ分離した際、B2契約のfixture(stub48+44fa2行)をP0.5に置き忘れた将軍の設計残渣。sanitizerは非allowlistキー(benchmark_close/open・start/end)を落とすため、この層のfixtureでは保存値契約を検証できない。是正: stub48/44fa fixtureをP0.7(monthly_returns生成層)へ移設し「各行が異なる期待値を持つことのfixture自己検査」を追加、P0.5はsanitizer入出力契約のみへ限定。**fixture配置原則: fixtureは検証対象の契約と同じ層に書く**。cmd_4303のcommit 05ca166f(偽陽性fixture)は隔離branch維持・main反映禁止。
 - v2.16 (2026-08-14 16:36): 殿指示16:33「RB6-RB8で得た知見を使わずに作業をしている可能性がある。将軍が深ぼれ」— 将軍深掘りの結論: cmd_4303事故の破壊経路はP0.5のsanitize変更ではなく**canaryのmode=portfolio実行**(将軍が§5.07に書いた設計)であり、cmd_4245の既知暫定制約「本番はmode=fullのみ」(2026-08-09)の見落とし=RB知見不使用。証拠: (a)deploy差分はsanitize.py+testsのみ20行(diff実測) (b)同じruntime上のrun362(full)は完走=sanitize無罪の傍証 (c)run361(portfolio 5PF)のFoF部分欠落はcmd_4245の系統的退行機構と一致。是正: §5.07へmode=portfolio canary禁止を明記、前提工程P0.4(cmd_4245ガード+DTB3部分モードmanifest gap根治)を§5表へ新設。RCA最終確定は家老の一次検証(run361トリガーパラメータ+stack trace)で行う。
