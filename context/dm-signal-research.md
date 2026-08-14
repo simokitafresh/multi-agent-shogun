@@ -1,5 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-13 cmd_4296 reviewed source boundary -->
+<!-- last_updated: 2026-08-14 cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) -->
+<!-- source_commit:99199a9c reason:cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) evidence:cmd_4301: context_freshness_check --cmd-commit-list cmd_4301の最新行=99199a9c。doc-only 8commitをmainへff-push済み(e3dccd87..99199a9c) -->
+
 <!-- source_commit:37bc59cc reason:cmd_4296 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=37bc59cc -->
 <!-- dm_signal_research_reflux: fingerprint=68ecb4ad52970c90d6a1c246346a6f5a13798a3d9be1d61d196780923774c20e; mode=non-target; evidence_b64=Y3VycmVudCBwb3N0LXJ1bjM2MCtMM+S4luS7o+OBrlJDQeeiuuWumuOCkuiomOmMsuOAgnYz5YWo6YeP6Ki85piO5pyq6YGU44Gu44Gf44KB56CU56m257Si5byV5pu05paw44Gv5a626ICB5Yik5pat44Gr5aeU44Gt44KL44CC -->
 <!-- dm_signal_research_reflux: fingerprint=2c3ed29871afd45266d6672267a8db8f57aa45629eb1f4073866c4fde506bd3e; mode=non-target; evidence_b64=5ZCM5LiA5LiW5Luj44Gu5LiA5qyhc25hcHNob3TmnKrlj5blvpfjgafmpJznrpfjga9CTE9DS+OAgueglOeptue0ouW8leabtOaWsOOBr+WutuiAgeWIpOaWreOBq+WnlOOBreOCi+OAgg== -->

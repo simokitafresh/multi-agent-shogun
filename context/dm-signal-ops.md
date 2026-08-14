@@ -1,5 +1,7 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-13 cmd_karo_hotfix_timing_summary_restore_20260813 reviewed source boundary -->
+<!-- last_updated: 2026-08-14 cmd_karo_hotfix_rb8_context_freshness_20260814_normal -->
+<!-- source_commit:e3dccd87 reason:cmd_karo_hotfix_rb8_context_freshness_20260814_normal evidence:cmd_4301_context_freshness_AC2_ops -->
+
 <!-- source_commit:15e612f9 reason:cmd_karo_hotfix_timing_summary_restore_20260813 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=15e612f9 -->
 
 <!-- source_commit:b7067c99 reason:GA-455 content reflection evidence:source frontier review: 39 commits; operational invariants indexed in context §0.1 -->
