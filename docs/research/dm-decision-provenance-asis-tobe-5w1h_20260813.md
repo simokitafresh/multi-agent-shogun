@@ -91,6 +91,25 @@ flowchart TB
   X1 & X2 & X3 --> D["検算・障害調査のたびに<br/>独立再実装+手計算で再導出<br/>(RB6実証: H1〜H6・撤回騒動・failed配備)"]
 ```
 
+### §2.9 価格母集団の欠落(matched-weight事象 — 2026-08-14に殿の本番ログ提示で発覚)
+
+**現象**: 本番ログ原文 `Ticker GLD in weights but not in price_movement` に続き `Matched weight 0.2500 != 1.0, missing_tickers=['GLD'], portfolio_id=ed2079af-6ea0-4ae4-a7e6-e9bb4935f5a7, year_month=2026-03, weights_sum=1.0000, weights_keys=['GLD','TQQQ']`(同PF 2026-07は0.5000・`['GLD','XLU']`)。規模はwarn=472、precomputed_raw monthly_trade要素で raw_rows=299、distinct(portfolio_id,year_month)=257、影響portfolios=3。
+
+**GLDの価格自体は実在する**(prices表に2004-11-18〜2026-08-13の5467行)。weightsも満額1.0000で健全。欠けているのは`price_movement`側だけである。
+
+**根因(コード現物)**:
+1. `recalculate_fast.py:1963` が `standard_portfolios = [p for p in target_portfolios if p.type != "fof"]` で対象を絞り、`:1977` が `_collect_all_symbols(standard_portfolios)` で価格母集団を作る。**FoFの終端standard PFが保有する銘柄は、この集合に入らない。**
+2. `mode=PORTFOLIO`はLayer 1(ティッカー層)をスキップし既存cacheに依存する(`:1276` "mode=PORTFOLIO skips Layer 1 regeneration")。∴partialでは価格を作り直す機会もない。
+3. `PriceCache.load`のsnapshot経路(`price_ratio_impl.py:162-176`)は、snapshotに**実在する行だけ**を格納する一方 `self._loaded_tickers = set(tickers)` で**要求tickerを全てloaded扱い**にする。∴行ゼロのtickerも「読込済み」として通過し、DBへ引き直されない。
+
+**構造的必然であること**: 本番の木は例えば `New Fund of Funds[fof] → 秘奥義-加速D-激攻[fof] → 奥義-GS-抜き身-激攻[fof] → GSシン加速R-激攻[fof] → シン朱雀-常勝[standard]` であり(`scripts/fof_tree.py`実測)、銘柄を保有する終端standardは親から4段下にある。∴**FoF親を対象とするpartial全般で構造的に発生する**。影響が3PFに見えるのは警報条件を満たしたPFがその数だっただけである。
+
+**業務値への伝播(表示層に閉じない)**: FoF monthly return経路は欠落ratioを無変動へ置換して`MonthlyReturn`をcommitし、その子系列が親のselection・signals・metricsへ渡る。∴multi-table hash対象(`monthly_returns`・`signals`・`portfolio_metrics`)へsilentに混入しうる。
+
+**既存照合機構は正しく働いている**: weightsと`price_movement`は別ソースから取得し照合することで不整合を検出する設計であり(`monthly_trade_impl.py:1420-1442`)、本warningはその検出が機能した結果である。壊れているのは母集団であって照合ではない。
+
+→ **あるべき姿と根治工程は §3.29、実装工程は §5 の P0.9、議論の経緯は §7。**
+
 ## §3 ToBe
 
 ### §3.1 保存内容(判定プロヴェナンス・4点)
@@ -157,388 +176,60 @@ full/portfolio再計算の終端で、`recalculation_status`行へ`summary` JSON
 **本番実測(2026-08-14 20:05・readonly・v2.21で訂正)**: `New Fund of Funds_copy_copy_copy`(id=9324015c)は**FoF入れ子4段**の頂点である — 連鎖=当該PF→秘奥義(fof)→奥義-GS(fof)→GSシン(fof)→シン四神(standard)。portfolios表の実typeと再帰JOINで全連鎖を実測(殿指摘2026-08-14 20:03が契機)。この最深PFがRB6全量検算(33748月exact)を通過済みであることが、§3.28深度非依存の**本番実証**である。
 **⚠計測時の罠(v2.20誤記の原因)**: `fof_component_weights.component_type`列は当該PFの直接子(実type=fof)を'standard'と表示し、`check_pf_config.py`のtype表示も同様だった — **子の実typeはportfolios表とのJOINで確認せよ。component_type列を鵜呑みにするな**(列値と実態の乖離は別途データ品質事象として記録)。なお表示名「Total Return (PF名)」はUI表示ラベルでありPF名とは別物。
 
-### §3.29 価格入力母集団の契約(matched-weight事象 — 殿指示2026-08-14 21:17で新設。実装・配備は三者納得まで禁止)
+### §3.29 価格母集団の完全性(matched-weight事象の根治 — 三者合意2026-08-14 23:31)
 
-**位置づけ**: 本節は設計の穴の告白である。P1b/P2bで「snapshotに何を保存するか」を定義したが、**「snapshotに何が入っているべきか(母集団)」を定義していなかった**。その欠落が本番warningとして現れた。
+> **本節はToBe(あるべき姿)である。** 現象・根因はAsIsとして§2.9へ、この結論に至る議論の経過は§7へ分離した(殿指摘2026-08-14 23:51「ToBeとはあるべき姿を書くもので現状を書く場所ではない」)。
 
-#### (1) 現象(一次データ)
+#### あるべき姿(3行)
 
-殿提示の本番ログ原文: `Ticker GLD in weights but not in price_movement` に続き `Matched weight 0.2500 != 1.0, missing_tickers=['GLD'], portfolio_id=ed2079af-6ea0-4ae4-a7e6-e9bb4935f5a7, year_month=2026-03, weights_sum=1.0000, weights_keys=['GLD','TQQQ']`(同PF 2026-07は0.5000・`['GLD','XLU']`)。
+1. **どの再計算modeであっても、standard PFが保有しうる銘柄の価格は必ず用意されている。**
+2. 用意する集合は対象PFに依存しない — **全standard PFのconfigから`relative_assets`と`safe_haven_asset`を集めた固定集合**である(実測9銘柄)。
+3. 用意できなかった場合は**snapshot公開前に停止する**。欠落を無変動として業務値へ書き込まない。
 
-規模(家老・疾風の一次照会 2026-08-14 21:18): warn=472、precomputed_raw monthly_trade要素で raw_rows=299、distinct(portfolio_id,year_month)=257、影響portfolios=3、prices上のGLD=5467行。1件の定義=JSON配列要素1行/PF月一意組1件/PF一意値1件。
+#### なぜこれで完全なのか
 
-#### (2) 根因(コード現物・行番号つき)
+FoFは自身では銘柄を保有せず、保有の実体は必ず終端のstandard PFにある。∴**全standard PFが保有しうる銘柄の集合は、系全体で必要になりうる価格の上界**である。上界を用意すれば、どのPFを対象に選ぼうと、FoFが何段深くなろうと、母集団は不足しない。深度非依存はこの性質から自動的に従う(§3.28)。
 
-`backend/app/jobs/recalculate_fast.py`
-- `:1963` 対象PFを `standard_portfolios = [p for p in target_portfolios if p.type != "fof"]` で分離する。
-- `:1977` `all_symbols = _collect_all_symbols(standard_portfolios)` — **価格の母集団をFoFを除いた集合からのみ作る**。
-- `:1981` その結果が `stock_symbols` としてsnapshotへmaterializeされる。
+保有しうるのは**relative momentum assetとsafe haven assetの2種のみ**である。`absolute_asset`は判定基準、`risk_free_asset`はprice-free経路、`benchmark_ticker`は比較用であり、いずれも保有されない。∴これらは本集合に含めない(計算入力としては既存経路が対象PFぶん収集する)。
 
-full再計算では全PFが対象に入るためFoFの終端standard PFも母集団に含まれ、GLDは自然に収集される。**partial(mode=portfolio)でFoFを指定した場合、その終端standard PFは`target_portfolios`に含まれないため保有銘柄が母集団から落ちる。** `monthly_trade_impl`はsnapshot公開後のDB fallbackを抑止する(fail-close)ため、本番pricesにGLDが実在しても`price_movement`が作られず、weights(満額1.0000)との照合が不一致となってwarningになる。**照合機構は正しく働いている。壊れているのは母集団である。**
+safe havenはtop-levelとpipeline(`SafeHavenSwitch.config`)の2箇所に存在しvalidatorが一致を強制していない。∴**両方のunionを取る**。上界であるからextraは無害であり、将来driftしても欠落しない。
 
-**構造的必然であることの可視化(`scripts/fof_tree.py` 実行結果 2026-08-14 21:23)**: 本番の木は例えば `New Fund of Funds[fof] → 秘奥義-加速D-激攻[fof] → 奥義-GS-抜き身-激攻[fof] → GSシン加速R-激攻[fof] → シン朱雀-常勝[standard]` であり、**実際に銘柄を保有する終端standard PFは親から4段下にある**。partialで親FoFを指定すると`target_portfolios`にはその親(と解決範囲のFoF)しか入らず、4段下の終端standardは`:1963`のstandard抽出に現れない。∴**本事象は特定PFの偶然ではなく、FoF親を対象とするpartial全般で構造的に発生する。** 影響が3PFに留まって見えるのは、warningを生む条件(該当月にmonthly_tradeが再構築された)を満たしたPFがその数だっただけであり、母集団欠落そのものはより広い。
+#### 実装(1箇所)
 
-#### (3) 見落としていた視点(4点・正直な記載)
+| 項目 | 内容 |
+|------|------|
+| 位置 | `recalculate_fast.py:1977`(`all_symbols`算出)の直後、`:1981`(`stock_symbols`確定)の直前 |
+| 処理 | 全standard PFの`relative_assets` ∪ `safe_haven_asset`(top-level) ∪ `SafeHavenSwitch.config.safe_haven_asset`、Cash除外。これを既存`stock_symbols`へunion |
+| 検査 | `df_prices`確定後・snapshot公開/business write前に、price-free除外後の当該集合が materialized symbols の部分集合であることを**一度だけ**fail-close |
+| 変更しない | 既存`_collect_all_symbols(standard_portfolios)`、Layer 1、weightsと`price_movement`の別ソース照合、Cashのprice-free契約、DTB3除外、SPY常時materialize、lookback(target基準) |
 
-1. **運用規律を構造的遮断と誤記していた**: §3.28-5に「partial modeの親closure拡張はmode=portfolio運用停止で遮断」と書いたが、運用停止は**規律であって構造ではない**。実際にrun399(mode=portfolio・completed)が走り、規律の外側で露呈した。「遮断済み」の語は実態と乖離しており、本節をもって訂正する。
-2. **snapshot契約に母集団の定義がなかった**: P1b/P2bはpayloadの**形**(start/end実価格対・月初snapshot)を契約したが、**どのsymbolが入るべきかという集合の契約**を持たない。形が正しくても集合が欠ければ下流は欠損する。
-3. **深度非依存契約が計算側だけを見ていた**: §3.28は「momentum計測・provenance書込み・fingerprint連鎖」が深度非依存であることを論じたが、**価格入力の収集がFoF展開に追随するか**は論じていない。収集が展開に追随しなければ、計算が深度非依存でも入力が深度依存になる。
-4. **fail-closeの適用点が母集団確定より後ろにあった**: snapshot公開後のfallback抑止は正しい。しかし母集団が不完全な場合に**その場で止まらず**、表示層のwarningとして下流へ漏れる。fail-closeは「引けなかった」ではなく「母集団に入っているべきものが入っていない」を検知すべきである。
+**配置の理由**: `mode=PORTFOLIO`はLayer 1(ティッカー層)をスキップしLayer 2(ポートフォリオ層)のみを実行する(`:1276`)。この速度上の設計は正しく、変えない。足りないのは「L1を飛ばしてもL2が保有しうる銘柄の価格は用意されている」という保証だけであり、それをL1とL2の間に別ルートとして置く(殿指示2026-08-14 23:28)。mode分岐の外にあるためnormalのfull/partialが同一パスを通る。
 
-#### (4) A案(候補・確定扱い禁止): 母集団をFoF展開後の集合へ揃える
+**禁止**: 表示上のLayer境界(`:3466`/`:3496`)への挿入。そこはFoF月次生成の後であり、誤った`MonthlyReturn`の生成を防げない。
 
-**⚠v2.27訂正(2026-08-14 21:31 家老BLOCK+軍師REQUEST CHANGESを将軍が現物確認して受諾)**: 初版で再利用先に挙げた`expand_portfolio_to_tickers`は**誤りである**。同関数は単一`target_date`のsignal依存な実保有を返すため、**全履歴の価格母集団を確定する用途に使うと過去に保有していたtickerを取りこぼす**。将軍が用途を確認せず「weights側が使う関数」という理由だけで指名したのが原因(LS-A09(17)の再発 — 手段がその主張を証明できるかを先に確かめよ)。
+#### 適用範囲と既知の穴
 
-**変更点(訂正後)**: `:1977`の`_collect_all_symbols(standard_portfolios)`が作る集合へ、**`target_portfolios`の各PFへ`get_portfolio_all_tickers`(`backend/app/services/price_ratio_impl.py:961`)を適用したunionを加えて**`stock_symbols`をmaterializeする。既存関数は変更せず**呼び出しの追加だけ**で済ませる。
+**bundle replay経路は本節の対象外**である。replayの`payload`はbundleの`portfolio_config`のみで構成されるため上界を構築できない。ただし**production callerは0**(将軍・家老が独立実測: `input_bundle_path`は`recalculate_fast.py:1786,1867,1872,2078`のみ、API/services/scriptsからの呼出なし)。∴**replayをproductionで使用開始する前に、価格集合をbundle contractへ固定する実装が必須**である。この穴を承知のうえで今回のスコープから外す。
 
-**なぜこの関数が正しいか(現物確認 2026-08-14 21:31)**:
-- **signal非依存**: docstringに「`expand_portfolio_to_tickers()`とは異なり、シグナルに依存せずconfigから全候補ティッカーを再帰的に抽出する」と明記(`:968-971`)。価格母集団に必要なのは「その期間に持ちうる全候補」であり、ある日の実保有ではない。
-- **nested FoF再帰**: `portfolio.type == "fof"`分岐で構成PFへ再帰する。深度非依存が関数側で担保される。
-- **循環防御**: `MAX_DEPTH=10`と`_visited`集合で循環参照を遮断(`:983-991`)。
-- **session cache**: `cache_key=(portfolio.id, include_benchmark)`でPF単位にキャッシュされ、呼び出し追加による実行コストが抑えられる。
-- **contract test現存**: 価格取得用途の専用テストが既にある(家老確認)。
+#### 影響(実測)
 
-**benchmark・risk-free・preloadの扱い(コード現物)**:
-- **benchmark**: 同関数は`include_benchmark`引数を持ち、**FoF構成PFのbenchmarkは含めない**(再帰呼び出しで`include_benchmark=False`を明示)。親PFのbenchmarkのみが母集団に入る現行意味論を変更しない。呼び出し時の指定値は実装時に固定し設計書へ記録する。
-- **risk-free/DTB3**: `:1981`の「DTB3を`stock_symbols`から除外し、SPYは常時materialize」の既存扱いを変更しない。Cashは価格母集団ではなくDTB3経路(`price_ratio_impl`のDTB3 cache)で扱われるため、price-free契約は維持される。
-- **`precompute_portfolio_preload`**(`backend/app/jobs/precompute_raw.py:235`): PF情報を`db.info`へ載せる既存経路。母集団を広げた結果がpreloadの内容と齟齬しないか(preloadに無いPFの銘柄が母集団へ入る等)を実装時にコード現物で確認する。**この確認はA案採否の条件に含める。**
+| 条件 | 価格行数 | 増分 |
+|------|---------|------|
+| full再計算 | 変化なし | **0**(9銘柄が既存13銘柄の部分集合) |
+| partial再計算(run399条件) | 38744 → 61268 | +22524(**+58.1%**) |
+| FoF 78体の寄与 | — | **0**(`relative_assets`が空) |
 
-**変更しない点(副作用の遮断面)**:
-- weightsと`price_movement`を別ソースから取り両者を照合する設計(`monthly_trade_impl.py:1420-1442`の設計原則)は維持する。**これは検出機構であり、経路統合で失えば異常が見えなくなる。** 揃えるのは入力集合であって経路ではない。
-- `_collect_all_symbols`自身のロジック(relative_assets等の収集規則)は変更しない。
-- Cash契約: Cashはprice-freeであり価格母集団に含めない。2026-08-02の根治(Cashを価格欠落扱いしない)を巻き戻さない。
-- real ticker契約: 実銘柄が母集団に無い場合のfail-closeは維持する。母集団を広げることで欠損を隠す方向へ倒さない。
-- DTB3・SPYの既存扱い(`:1981`のDTB3除外とSPY常時materialize)は変更しない。
+∴負担が増えるのは、まさに欠落が起きていたpartial経路のみである。実装後にcache_initと総時間を計測して記録する。
 
-**full/partialの集合契約(本節で新設)**: 同一PF集合を対象とするとき、**partialが構築する価格母集団はfullが構築する母集団の当該部分と一致しなければならない**。これを回帰の判定式とする。
+#### 二値出口(工程P0.9)
 
-**深度非依存**: 既存の展開結果を再利用する限り、深度が増えても母集団が自動的に追随する。独自の閉包を書けばそこが新たな深度依存点になるため書かない。
+1. 上記の集合が`stock_symbols`へunionされ、選択実行テストがFAIL0・SKIP0でcommitされている。
+2. snapshot公開前のsubset fail-closeが実装されている。
+3. 本番反映後、家老が起動した直近の完了runに対する読み取り突合で、対象PF月のmatched weightが満額(=警報解消)であることが確認されている。
 
-**波及先 ⚠v2.28で撤回・訂正(2026-08-14 21:37 家老の独立波及レビュー[URGENT-HARM]を将軍がコード現物で確認して受諾)**:
+#### 本事象がP4に及ぼす影響
 
-初版の「表示層に閉じるか要確定」「multi-table hash対象6表に`monthly_trade`は含まれないためP4判定は直接影響を受けない」という記述を**撤回する**。**不完全な価格母集団は業務値へ伝播する。**
-
-将軍の現物確認(`price_ratio_impl.py` `PriceCache.load`):
-- snapshot経路(`:162-176`)は、snapshotに**実在する行だけ**を`self._prices`へ格納する一方、`self._loaded_tickers = set(tickers)`で**要求tickerを全てloaded扱いとして記録する**。∴snapshotに1行も無いtickerも「読み込み済み」となり、以後の消費者はDBへ引き直さない(fail-closeが「欠落」ではなく「読み込み済みで空」として通過する)。
-- 家老のレビュー: FoF monthly return経路は欠落ratioを**無変動へ置換して`MonthlyReturn`をcommit**し、その子系列が親のselection・signals・metricsへ渡る。
-
-∴影響は表示層の`monthly_trade`に閉じず、**multi-table hash対象(`monthly_returns`・`signals`・`portfolio_metrics`)へsilentに混入しうる**。「hash対象外だから無害」という推論を私は書いてしまったが、これは検知器の盲点をそのまま継承する誤りであった。
-
-**P4への影響(要判断)**: P4のcanary基準run(id=399)は**mode=portfolioで実行されている**。上記の伝播経路が成立するなら、そのrunが書いた業務値は不完全母集団の影響を受けている可能性がある。**P4の合否判定は、この点を評価してから確定する**(基準runの再取得要否を含め三者で判断)。
-
-**rollback**: 変更は収集元の集合指定1点であり、revert 1手で現状へ戻る。
-
-**検証値(実装時のAC候補)**: (a)同一PF集合でpartialとfullの母集団が一致 (b)殿提示PF(ed2079af)の2026-03と2026-07でmatched weightが満額 (c)影響257 PF月の実銘柄欠落が解消 (d)Cashがprice-freeのまま (e)real ticker欠落時のfail-closeが維持。
-
-**状態**: 候補。殿・将軍・家老の三者が明示的に納得するまで、実装・配備・commit・push・deployを行わない(殿裁定2026-08-14 21:19)。
-
-### §3.30 第二AsIsと真のToBe(殿指示2026-08-14 21:25。実装・配備は三者納得まで禁止)
-
-> **⚠本節の実装方針はv2.29でsupersededである。実装の正本は§3.32(B案)。** 本節はAsIsの分析とToBe3則(T1/T2/T3)の導出過程として保持する(歴史修正禁止のため削除しない)。以下に現れるA案由来の手順は**実行禁止**であり、参照する場合は§3.32の確定形と読み替えよ。
-
-§3.29はA案という**対症の最小修正**までしか書いていない。殿指示により、いま判明した構造を**第二のAsIs**として据え直し、そこから真に求めるToBeを定義する。
-
-#### (1) 第二AsIs — 価格母集団には導出規則が二つある
-
-| 対象 | 導出経路 | FoF展開を知っているか |
-|------|---------|---------------------|
-| weights(何を持っているか) | `expand_portfolio_to_tickers`(`price_ratio_impl.py:1078`) | **知っている**(再帰展開) |
-| 価格母集団(何の価格を用意するか) | `standard_portfolios`抽出(`recalculate_fast.py:1963`)→`_collect_all_symbols`(`:1977`) | **知らない**(type!=fofで落とす) |
-| (参考)価格取得専用の正しい収集 | `get_portfolio_all_tickers`(`price_ratio_impl.py:961`) | **知っている**(config再帰・signal非依存・循環防御) |
-
-**∴第二AsIsの核心は「規則が二つある」ことではなく、「正しい規則が既に存在するのに、価格母集団を組む箇所がそれを使っていない」ことである**(v2.27で訂正 — 初版は前者と書いた)。
-
-**⚠v2.28で表現訂正(自己矛盾の解消 — 家老指摘)**: 初版は「同一の問いに規則が二つある」と書いたが**誤りである**。weightsと価格母集団は§3.30 T1表のとおり**別の問い**に答えており、二つ在ること自体は正しい。正しい記述は次のとおり:
-
-**「FoF配下の候補銘柄は何か」という一つの問いに対し、正しい答えを出す関数(`get_portfolio_all_tickers`)が既に存在するにもかかわらず、価格母集団を組む箇所(`recalculate_fast.py:1963-1977`)がそれを使わず自前のtype判定で代用している。** fullでは全PFが対象に入るため代用でもたまたま答えが一致し、partialでのみ乖離が表面化する。∴これは「partialのバグ」ではなく**正しい規則を使っていないことの帰結**であり、partialは乖離を可視化した条件にすぎない。同じ代用が残る限り、別のmode・別の呼び出し元・新しい深度で再発しうる。
-
-**乖離が下流へ漏れる経路**: snapshot公開後は`monthly_trade_impl`がDB fallbackを抑止する(fail-close)。この設計自体は正しいが、**検知するのは「引けなかった」時点であり「母集団が不足している」時点ではない**。ゆえに不足は停止ではなくwarningとして下流へ流れ、表示値(matched_weight)の欠損として初めて人間に届く。
-
-#### (2) 真のToBe — 原理3則
-
-**T1. 価格母集団の導出規則を一つにする(SSOT) ⚠v2.27で定義を訂正**
-初版のT1は「weights側の展開へ寄せる」と書いたが**これは誤りである**。weightsと価格母集団は**異なる問いに答えている**:
-
-| 問い | 答える関数 | 時間軸 | signal依存 |
-|------|-----------|-------|-----------|
-| ある日に何を持っているか | `expand_portfolio_to_tickers` | 単一target_date | 依存する |
-| 期間中に何の価格が要るか | `get_portfolio_all_tickers` | 全履歴の候補全集合 | **依存しない** |
-
-**∴二つの関数が存在すること自体は正しい。統一すべきではない。** 誤りは「価格母集団を問う側(`recalculate_fast.py:1963-1977`)が、価格用の再帰収集関数を使わず、自前のtype判定でPFを絞っていること」である。T1の正しい定義はこうなる:
-
-> **FoF候補価格集合の導出は`get_portfolio_all_tickers`を唯一の源とする。呼び出し側が独自のtype判定でFoF配下を絞り込んで母集団を組み立てることを禁じる。**
-
-**⚠v2.28で更に精密化(家老指摘)**: 「価格母集団の唯一源」という表現は不正確であった。A案は既存`_collect_all_symbols`との**union**であり、単一関数が母集団の全てを作るわけではない。正しい切り分けはこうである:
-
-| 母集団の構成要素 | 導出 | 変更 |
-|-----------------|------|------|
-| standard計算入力(relative_assets等) | 既存`_collect_all_symbols(standard_portfolios)` | **維持(変更しない)** |
-| FoF候補価格集合 | `get_portfolio_all_tickers`を**唯一源**とする | **追加** |
-| 最終的な`stock_symbols` | 上記2つのunion(既存のDTB3除外・SPY常時materializeを適用) | union箇所のみ変更 |
-
-これなら新しい型も新しい閉包計算も要らず、**既存の正しい関数を使っていなかった箇所を使うように直すだけ**になる(原理: 既存を磨け・新しい箱を作るな)。統一の対象は「関数の数」ではなく「FoF配下の候補集合という一つの問いに対する答えの出所」である。
-
-**実装前契約(v2.28で新設)**: 母集団確定後・business write前において、**実際に使用されるnon-price-freeなtickerの集合が、candidate snapshot universeの部分集合であること**。price-free(Cash等)は明示規則で除外され、暗黙の欠落と区別できること。
-
-**三者判断事項**: 上記subset検査を母集団確定後・business write前に**単一の検査として置くか否か**。これは新機構の積み増しに見えるが、実態は**現行のsilent無変動混入(欠落を無変動として業務値へ書き込む経路)を止める安全底線**である。過剰防御か必須ハーネスかの判定を殿・将軍・家老で行う。私の見解は「PriceCacheが欠落を`loaded`として通す構造が残る限り、検知点はどこかに1つ要る」である。
-
-**T2. 加法性 — partialはfullの部分である**
-導出規則 f は次を満たすことを契約とする: **f(S) = ⋃_{p∈S} f({p})**。すなわち対象をどう分割して呼んでも、得られる母集団は分割前の対応部分と一致する。この性質が成り立てば**modeによる差は原理的に消滅する**(「partialでも同じになるよう気をつける」という規律を、代数的性質へ置き換える)。深度非依存も f の再帰性からの帰結として自動的に従うため、深度ごとの個別対応が不要になる。
-
-**T3. 完全性はsnapshot公開の前提条件である**
-snapshotは「用意できたもの」ではなく「宣言した対象に必要なものが揃っていること」を満たして初めて公開される。**不足は公開前に検知し、その時点で停止する**(fail-closeの適用点を、消費時点から母集団確定時点へ前倒しする)。下流のwarningは最後の網であって一次の検知器ではない。ただしCashのようにprice-freeな要素は必要集合から除外され、除外は明示的な規則によって行う(暗黙の欠落と区別できること)。
-
-#### (3) ToBeとA案の関係(サンクコストを恐れず整理)
-
-A案(§3.29)は**T1の最小実装**に相当し、T2・T3は満たさない。よってA案を「根治」と呼ぶのは誤りであり、**T1到達の第一歩**と位置づけを改める。
-
-| 則 | A案で満たされるか | 残る作業 |
-|----|------------------|---------|
-| T1 単一導出 | 部分的に満たす(価格側がweights側の展開を使う) | 二重規則の完全解消(片方を呼び出し側から消す)まで到達するか要判断 |
-| T2 加法性 | 満たさない(結果的に一致するだけで契約がない) | 加法性をfixtureで検証し契約として明記 |
-| T3 完全性前提 | 満たさない(検知点は消費時点のまま) | fail-close前倒しの是非。**新gateを増やす形なら採らない** — 既存のfail-close地点を移すだけで実現できるかがA案採否の分岐点 |
-
-**判断が必要な点(殿・家老と協議したい本丸)**: T3を今回に含めるか、T1のみで一度止めるか。含めれば根治に近づくが変更面が広がる。含めなければ**同じクラスの欠落が次は別の消費者で再発しうる**。私の見解は「T1とT2を今回、T3は既存fail-close地点の移設で実現できる場合のみ今回」である。T3のために新しい検査機構を足すなら、それは過剰対策であり殿裁定に反する。
-
-#### (4) ToBeで増やさないもの(副作用の遮断面)
-
-- weightsと`price_movement`の**別ソース照合は維持する**。T1は入力集合の統一であって経路統合ではない。照合を失えば異常が見えなくなる。
-- `_collect_all_symbols`の収集規則(relative_assets等)自体は変更しない。
-- Cash=price-free、real ticker=fail-closeの既存契約を変えない(2026-08-02根治を巻き戻さない)。
-- DTB3除外とSPY常時materializeを変えない。
-- 新しいテーブル・新しい設定・新しい閾値を作らない。
-
-#### (5) 移行順序 ⚠【SUPERSEDED v2.29 — 実行禁止】
-
-> **この手順はA案前提の旧版であり実行してはならない。** 「weights側再帰へ寄せる」「加法性fixture」「T3は見送り可」はいずれもB案で置き換え済み(§3.32)。実装順序の正本は**§3.32(4)(5)**である。歴史として残すが命令として読むな。
-
-1. T1: 価格母集団の導出をweights側の再帰展開へ寄せる。
-2. T2: 加法性fixture(同一PF集合をpartialとfullで導出し集合一致)を追加。深度はfof_tree.py実測の最深(depth4)を含める。
-3. T3: 既存fail-close地点の移設で完全性検査が実現できるかをコード現物で判定。**できなければ今回は見送り、設計書に未達として残す**(隠さない)。
-4. 検証: 殿提示PF(ed2079af)の該当2月が満額、影響257 PF月の実銘柄欠落が解消、Cashがprice-free維持、real ticker fail-close維持。
-
-**状態**: 候補。殿・将軍・家老の三者が明示的に納得するまで実装・配備・commit・push・deployを行わない。
-
-### §3.33 【確定・三者合意 2026-08-14 23:31】保有しうる価格を、対象を選ばず全standard PFから集めて準備する
-
-**殿の言(3段階で設計が定まった)**:
-1. 23:21「たぶん議論を複雑にしすぎてるぞ。問題はシンプルで**goldのpriceが保存されていなかった**。それだけだ。解決方法は**判断を一切せず**」
-2. 23:26「**本番にあるstandard PFの全てのconfigを取得して、relative assetとsafe haven assetの一覧を取得。そのtickerを準備するtickerとする。それだけだ**」
-3. 23:28「それは**別ルート**にすればいい。計算の**L1とL2の間**に入れればいいのでは」
-
-**本節が実装の正本である。§3.32(B案)および§3.30の移行順序はsuperseded。三者(将軍・家老・軍師)の残疑義ゼロ。**
-
-#### (1) 設計原理 — 判断を減らすほど設計が単純になる
-
-3者は「どの銘柄を母集団に入れるか」の**判断ロジック**を精密化し続け、対象PFの絞り込み・FoF展開・上界の定義・normalとreplayの経路差・bundle契約と論点を増やした。殿の3指摘は**判断そのものを削る方向**であり、削るたびに論点が消滅した。
-
-| 論点 | 判断を残した場合 | **確定案(判断を削った結果)** |
-|------|----------------|--------------------------|
-| どのPFを対象にするか | mode・target・closureの判定が要る | **判断しない**(常に全standard PFのconfigから取る) |
-| FoF展開 | 再帰か上界かの設計が要る | **不要**(FoFは`relative_assets`が空。実測78体すべて増分0) |
-| どの銘柄種別か | — | **殿が定義済み**(保有しうるのはrelative momentumとsafe havenのみ) |
-| normal内のfull/partialの経路差 | 母集団の再導出がmodeごとに異なる | **消える**(mode分岐の外に置くため同一パス) |
-| bundle replayとの経路差 | — | **今回は対象外**((2-b)の通りproduction caller 0。穴として明記) |
-| 既存経路への影響 | `_collect_all_symbols`とLayer 1の改修が要る | **不要**(別ルートとして分離) |
-
-**根本原因の言い換え**: 欠落したのは「GLDの価格」である。母集団を賢く算出できなかったことが問題なのではなく、**Layer 1をスキップするpartialに対して、Layer 2が保有しうる銘柄の価格を用意する経路が存在しなかった**ことが問題だった。
-
-**将軍の逸脱記録(v2.34-35)**: 「判断を一切せず」を「全銘柄14種を準備」と解釈したが行き過ぎであった。判断しないのは**対象PFの選び方**であり、銘柄種別は殿が既に定義していた。9が正しく14は過剰である。
-
-#### (2) 実装(確定形 — 殿の整理2026-08-14 23:26)
-
-**殿の言**: 「どれを使うかを判断するためにconfigを取得するツールを作っただろ。使い方は簡単だ。**本番にあるstandard PFの全てのconfigを取得して、relative assetとsafe haven assetの一覧を取得。そのtickerを準備するtickerとする。それだけだ**」
-
-**準備するticker = 全standard PFの `relative_assets` ∪ `safe_haven_asset`(Cash除く)**。`scripts/pf_assets.py`が出力する集合そのものである。
-
-**実測(2026-08-14 22:28 `pf_assets.py`)**: **9銘柄** = `['GDX','GLD','QLD','QQQ','SPY','TECL','TMV','TQQQ','XLU']`。
-
-**具体形 ⚠v2.37で配置を訂正(殿指示2026-08-14 23:28「それは別ルートにすればいい。計算のL1とL2の間に入れればいいのでは」)**:
-
-既存の`_collect_all_symbols`経路へ**混ぜない**。**独立した別ルートとしてLayer 1とLayer 2の間に置く。**
-
-**層の現物確認(将軍・`recalculate_fast.py`)**: `Layer 1 = ティッカー層`(mode=TICKER・`:690,698`)、`Layer 2 = ポートフォリオ層`(mode=PORTFOLIO・`:691,699`)。そして**`mode=PORTFOLIO`はLayer 1をスキップし既存cacheに依存する**(`:1276` "mode=PORTFOLIO skips Layer 1 regeneration"、`:1340-1341`)。
-
-**∴根因の本質が層構造で説明できる**: partial(=Layer 2のみ)はLayer 1(価格・ティッカー層の準備)を意図的に飛ばす設計であり、その速度上の利点は正しい。欠けていたのは「**Layer 2が必要とする保有可能tickerの価格だけは、L1を飛ばしても用意されている**」という保証である。
-
-**配置(v2.38で行番号を確定 — 家老・軍師が独立に同一結論)**: **`recalculate_fast.py:1977`(`all_symbols`算出)の直後、`:1981`(`stock_symbols`確定)の直前**に、全standard PFのrelative ∪ safe haven(9銘柄)を別算出してunionする。
-
-**⚠表示上のLayer境界(`:3466`/`:3496`)へ入れてはならない(家老指摘)**: そこは**FoF月次生成後**であり、警告と誤`MonthlyReturn`の発生を防げない。安全な一箇所は**価格snapshot確定前(1977-2007)**である。∴殿の「L1とL2の間」という設計原則は正しく、それをコード上で実現する点が価格snapshot構築の内側にあたる。mode分岐の外にあるため**normal/partialが同一パスを通る**(軍師確認)。
-
-**規模の実測(家老)**: FoF78体のconfigはrelative空・abs/safe/rf空・benchmark SPYのみ=**stock増分0**(FoFを渡しても集合が増えないことの実証)。run399条件では既存7銘柄+不足4=11銘柄、価格行38744→61268(+22524行/+58.1%)。**全standard対象時(full)は9銘柄が既存13銘柄の部分集合となり増分0。** ∴コスト増はpartialのときだけ生じる。
-
-この配置により:
-- 既存の`_collect_all_symbols`とLayer 1の設計は**一切変更しない**(速度上の利点を壊さない)
-- 責務が分離される(L1=ティッカー層全体の再生成 / 新ルート=L2が保有しうる銘柄の価格保証 / L2=ポートフォリオ層)
-- normal・partialのどちらでも同じルートが通るため、経路差が生じない
-
-DTB3除外・SPY常時materialize・lookback(target基準)は既存のまま。
-
-**⚠v2.36で自己訂正**: v2.34-35では「判断を一切せず」を**全銘柄(config由来14種: `DTB3,GDX,GLD,LQD,QLD,QQQ,SPXL,SPY,TECL,TMF,TMV,TQQQ,^VIX,XLU`)を準備する」と解釈したが行き過ぎであった。殿の「判断を一切せず」が指すのは**どのPFを対象にするかを判断しないこと**(=全standard PFから取る)であり、銘柄種別は既に殿が定義済み(保有しうるのはrelative momentumとsafe havenだけ・2026-08-14 22:17)。∴準備集合は14ではなく**9**が正しい。absolute・risk-free・benchmarkは保有されないため、保有可能性を担保する目的の集合には含めない(計算入力としては既存経路が対象PFぶん集める)。
-
-#### (2-b) bundle replayの扱い(三者確認済み・今回対象外)
-
-replay経路の`payload`はbundleの`portfolio_config`のみであるため、C案の「全PFを渡す」がそのままでは成立しない。ただし**replay時の`df_prices`はbundle artifactから直接取得される**(`recalculate_fast.py:1983`・軍師確認)ため、bundleに価格が揃っていれば足りる。そして**bundle replayは本番で使われていない** — 集計コマンド=`rg -n "input_bundle_path|materialize_input_bundle" backend/app backend/scripts` と `rg -n input_bundle backend/app/api backend/app/services`、出力行=`input_bundle_path`は`recalculate_fast.py:1786,1867,1872,2078`、`materialize_input_bundle`は`input_bundle_materializer.py:16`、**API/services/scriptsからの呼出は出力なし**(1件の定義=rgが返した1行を1箇所)。将軍・家老の双方が独立に実測し一致した。
-
-∴**今回はnormal経路のみを対象とする。** replayは「非対応・production caller=0を三者実測・productionで使用開始する前に価格集合の契約実装が必須」と本節に明記して穴を可視化する。**使われていない経路のために契約機構を今作らない**(殿の複雑化回避指示)。
-
-#### (3) 残る唯一の検査
-
-snapshot公開前に「**用意されるはずの銘柄が実際にmaterializeされたか**」を一度だけfail-closeする(§3.30 T3)。C案では候補集合が「全部」なので、検査は候補の定義を要さず、**供給故障(API・prices・snapshotが行を返さない)の検出だけ**を担う。
-
-#### (4) 変更しない点
-
-weightsと`price_movement`の別ソース照合、Cashのprice-free契約、real tickerのfail-close、`_collect_all_symbols`の収集規則、lookback期間の算出元(target基準)。
-
-**状態**: 殿指示による確定案。実装・配備は殿の解禁指示を待つ。
-
----
-
-### §3.32 【SUPERSEDED v2.34 — §3.33 C案が正本】B案 — 全standard PFの候補価格を最初から取る(殿指示2026-08-14 21:42)
-
-> **本節は§3.33(C案)でsupersededである。** 保有可能性による選別(relative∪safe haven)という判断自体が不要になった。歴史として残すが実装指針として読むな。
-
-**殿の原理**: 「原理的に全てのFoFの元はstandard PFである。つまり全standard PFで保有する可能性のあるticker priceを最初から取得しておけばシンプルだ。物事はシンプルにやると解決する。」
-
-**将軍はA案を取り下げ、B案を推奨する。** 理由は下の実測値が示すとおり、B案はA案より単純で、しかも失うものが無いからである。
-
-#### (1) 原理
-
-FoFは**自分では銘柄を持たない**。保有の実体は必ず終端のstandard PFにある。∴**全standard PFの候補ticker集合は、系全体で必要になりうる価格の上界である。** この上界を最初にmaterializeしておけば、どのPFを対象に選ぼうと母集団は決して不足しない。
-
-#### (2) 実測(2026-08-14 21:43・readonly)
-
-| 集計 | 出力行 | 1件の定義 |
-|------|-------|----------|
-| active PFの内訳 | `('standard', 24)` / `('fof', 78)` | is_active=trueのPF 1件 |
-| 価格表の全銘柄と行数 | `(18, 100209)` | distinct symbol 1件 / prices 1行 |
-
-**銘柄を実際に持つPFは24個だけであり、価格表に存在する銘柄はわずか18種・約10万行である。** 全standard PFの候補を最初に取っても、母集団はたかだかこの18種に収まる。partialが現在ロードしている集合との差は実質的に無視できる規模であり、**「上界を取る」ことのコストがほぼゼロである**ことが数字で示された。
-
-#### (3) B案がA案より優れる点
-
-| 観点 | A案(FoF配下を再帰展開して足す) | **B案(全standard PFの候補を最初に取る)** |
-|------|------------------------------|--------------------------------|
-| FoF再帰 | 必要(`get_portfolio_all_tickers`を呼ぶ) | **不要**(FoFを一切辿らない) |
-| 深度非依存 | 関数の再帰性に依存して成立 | **自明**(深度という概念が現れない) |
-| 加法性T2 | 対象集合ごとに変わるため要fixture検証 | **自明**(母集団が対象に依存しない定数) |
-| 呼び出し側の絞り込み | 「禁じる」という規律が要る | **概念自体が消える** |
-| 完全性検査T3 | 不足しうるので検知点が要る | **宣言集合の不足は消える**(上界のため)。ただし供給故障は残る=検査は必要(v2.29訂正) |
-| コード | 呼び出し追加+union | **type判定を`standard`全件へ変えるだけ**(むしろ減る) |
-| 将来の再発 | 新しい呼び出し元が同じ誤りをしうる | **母集団が対象非依存なので再発経路が無い** |
-
-**∴B案はT1・T2を同時に満たす。** A案が要求していた「唯一源の規律」と「加法性fixture」という論点は、**上界を取るという一手で消滅する**。これが殿の言う「シンプルにやると解決する」の内実である。
-
-**⚠v2.29訂正(家老レビュー2026-08-14 21:49を将軍が受諾)**: 初版はここに「T3の必要性そのものを消す」と書いたが**誤りである**。**上界が保証するのは「宣言集合が不足しないこと」だけであり、「宣言した銘柄の価格が実際に供給されること」は保証しない。** 二つは別の失敗モードである:
-
-| 失敗モード | B案で消えるか |
-|-----------|-------------|
-| 宣言の不足(必要な銘柄を母集団に入れ忘れる) | **消える**(上界を取るため) |
-| 供給の故障(Stock Data API・`prices`・snapshotが候補銘柄の行を返さない) | **残る** |
-
-供給が欠けたとき`PriceCache`は行ゼロのtickerを`loaded`扱いで通し(§3.29(4)の実測)、下流が無変動として永続化しうる。**この経路はB案でも塞がれない。** ∴B案に加えて**snapshot公開条件としてのsubset検査**を置く。
-
-**T3の確定形(v2.29)**: `df_prices`確定後・snapshot公開/business write前に、**price-free(Cash・DTB3)を除外した候補symbol集合が、materialized symbol集合の部分集合であること**を**一度だけ**fail-close検査する。これは新しいサブシステムではなく**snapshotを公開してよいかの条件**であり、過剰防御には当たらない(現行のsilent無変動混入を止める安全底線)。
-
-**上界の妥当性(家老の本番readonly突合 2026-08-14 21:49)**: `candidate_count=13` に対し `held_count=9`(全期間の実保有)で候補外はゼロ行、`expanded_count=7`(FoF display展開)でも候補外はゼロ行。1件の定義=uppercase正規化しCashとDTB3を除いた実ticker 1銘柄。**∴現行configの候補集合は歴史的保有とFoF展開の双方を完全に覆っており、上界として妥当である**ことが本番データで実証された。
-
-#### (4) 具体形(実装解禁後) ⚠v2.31で精密化(殿指示2026-08-14 22:17)
-
-**殿の指摘**: 「俺はstandard PFで**保有する可能性のある**tickerと言った。保有する可能性のないabsolute momentum assetやリスクフリーアセットを分けて考えているか。保有する可能性があるのは**relative momentum assetと退避先資産であるsafe haven asset**だけだ。」
-
-**`_collect_all_symbols`(`recalculate_fast.py:3896-3919`)の収集内訳を現物確認した結果、config上の銘柄は5種に分かれ、保有しうるのは2種だけである**:
-
-| config項目 | 役割 | 保有しうるか | 上界に含めるか |
-|-----------|------|------------|--------------|
-| `relative_assets`(複数) | 相対momentumで選抜される候補 | **する**(選抜されれば保有) | **含める** |
-| `safe_haven_asset`(Cash以外) | absolute判定で退避する先 | **する**(退避時に保有) | **含める** |
-| `absolute_asset` | absolute momentumの判定基準 | **しない**(判定に使うだけ) | 含めない |
-| `risk_free_asset`(既定`DTB3`) | 無リスク金利 | **しない**(price-free経路) | 含めない |
-| `benchmark_ticker` | 比較対象 | **しない**(表示・比較用) | 含めない |
-
-**⚠v2.32訂正(家老レビュー2026-08-14 22:22を将軍が現物確認して受諾)**: safe havenのSSOTは**top-levelだけではない**。pipeline standardでは実行時のsafe havenが`SafeHavenSwitch`のconfigに存在する(`backend/app/services/pipeline/blocks/safe_haven_switch.py:36` `safe_haven = self.config.get("safe_haven_asset", "Cash")`を将軍が現物確認)。現本番はstandard全24でtop-levelとpipelineの不一致ゼロだが、**schema validatorは一致を強制していない**。∴将来のdriftで両者がずれた瞬間に、top-levelだけを見る上界は欠落する。
-
-**∴B案の上界の確定定義(v2.32)**: **全standard PFの `relative_assets` ∪ `safe_haven_asset`(top-level) ∪ `SafeHavenSwitch.config.safe_haven_asset`(実効pipeline値)**、Cashは除外。**上界であるからextraが入っても害はなく、driftしても欠落しない。** これが「保有しうる=`price_movement`に現れうる」銘柄の全体であり、matched_weightの照合対象と一致する。
-
-**具体形**: `recalculate_fast.py:1963-1977`で、既存の`_collect_all_symbols(standard_portfolios)`(対象PFの**計算入力**。absolute・risk-free・benchmarkを含む。**維持**)に加え、**全standard PFの保有可能集合(上記2項目のみ)**をunionして`stock_symbols`をmaterializeする。`_collect_all_symbols`自体は無変更。期間(lookback/buffer)の算出、DTB3除外、SPY常時materializeも既存のまま。
-
-**この精密化の効果**: 上界がさらに小さくなるうえ、**意味が一意になる**。「計算に要る価格」(対象PF基準・全5種)と「保有しうる銘柄の価格」(全standard基準・2種)を混ぜずに済み、なぜその銘柄が母集団にいるのかが説明可能になる。将軍は当初この区別をせず全候補を上界にしようとしていた(殿の指摘で是正)。
-
-**変更しない点**(§3.29と同じ): weightsと`price_movement`の別ソース照合、Cashのprice-free契約、real tickerのfail-close、`_collect_all_symbols`の収集規則。
-
-#### (4-b) 三者独立コード確認の結果(2026-08-14 22:26 将軍・家老・軍師。殿指示22:20)
-
-殿の指示により三者が**独立して**コードを確認した。**将軍の見立ての誤りが2点確定した。**
-
-**A. 入口は二つある — 将軍の「payloadは全PF」は片手落ちであった(家老発見・軍師も見落としを認めて支持)**
-
-| 経路 | payloadの中身 | B案の上界を作れるか |
-|------|-------------|------------------|
-| normal | `PortfolioRepository.load()`→`PortfolioDB.all()`(`repository.py:82`)で**全PF** | **作れる** |
-| **bundle replay** | bundleの`portfolio_config`のみ(`recalculate_fast.py:1872-1876`)。生成側が`portfolio_config IDs == target IDs`を強制(`input_bundle_materializer.py:37-39`) | **作れない**(全standardが存在しない) |
-
-**run399のmanifest実値も`portfolio_config row_count=5`/target IDs=5**であり、replay経路では対象PFしかpayloadに入らない。∴**B案をnormalだけに実装すると、replay経路で母集団が再び不足する。**
-
-**対処(家老の最小案・将軍受諾)**: normal producer側で**`required_price_symbols`をbundle contractへ保存**し、**replayはその集合でsubset検査を行い、target configから再導出しない**。旧contractに当該フィールドが無い場合は**fail-closeで拒否**する。現`ALLOWED_ARTIFACTS`にsymbol契約は無い(`safe_bundle_v2.py:20,144-152`)ため、契約の追加が要る。
-
-**B. 保有可能集合の定義はv2.32のままAPPROVE(三者一致)**。`executor.py:338-347`と`safe_haven_switch.py:36-55`より、holding出力に現れるのは**relative current tickers・実効pipeline safe・CashTerminalのCash**のみで、absolute/risk-free/benchmarkは出ない。
-
-**実測(将軍が`scripts/pf_assets.py`を新規作成して取得 2026-08-14 22:28)**: active standard 24PFの**保有しうる銘柄は9種**=`['GDX','GLD','QLD','QQQ','SPY','TECL','TMV','TQQQ','XLU']`。top-level safeとpipeline safeの**不一致は0件**(ただしvalidator強制が無いため上界に両方含める方針は維持)。
-
-**C. コスト「ほぼゼロ」は誤りであった(将軍の誤り・家老実測)**: run399のcurrent symbolsは`LQD,SPY,TECL,TMF,TMV,TQQQ,XLU`でprice artifact=38744行。上界化で追加されるのは`GDX 5089 + GLD 5467 + QLD 5068 + QQQ 6900 = 22524行`、**推定合計61268行(+58.1%)**。絶対量は価格表全体(10万行)の範囲内だが、**「ほぼゼロ」と断定してはならない。実装後にcache_initと総時間を計測して記録する**。期間はtarget lookback基準のままで不変。
-
-**D. subset fail-closeの配置(三者一致)**: `df_prices`確定直後(`recalculate_fast.py:2003`の後)、`spy_snapshot`/`db.info`公開(2004-2007)の**前**。既存の`load_prices_as_df`はempty許容(`data_loader.py:80-84`)、PriceCache snapshot経路は要求ticker全てをloaded扱い(`price_ratio_impl.py:155-175`)、**一般stockのsubset fail-closeは現在0件**。DTB3 coverageのみ2005-2006に存在し重複しない。
-
-**E. 実装規模(訂正)**: normal経路のみなら holdable集合inline 12-18行 + subset検査 5-8行 = **約17-26行・新規query0**。**ただしbundle replay parityの契約追加が別途必要であり、将軍の「十数行・1ファイル」見積りは過少であった。**
-
-**三者判定**: **normal経路はAPPROVE、bundle replay未設計のため全体はBLOCK**(家老・軍師とも同結論)。
-
-#### (5) 残る検討事項(三者で確認)
-
-1. **lookback期間の算出元 → v2.29で決着(家老提案を将軍受諾)**: **対象standard PF基準のまま据え置く。** 全standardへ広げるのは**symbol母集団だけ**である。期間まで広げると、partialで再計算しないstandard PFのsignal warmupを増やすことになり、目的(母集団の完全性)と無関係なコストが載る。∴広げる次元を母集団に限定する。
-2. **ロードコストの実測**: 18銘柄・10万行という規模から見て無視できると考えるが、実装後に再計算時間の増分を計測して記録する。
-3. **将来のticker増加**: 銘柄が大幅に増えた場合も上界方式が妥当か。現状の規模では問題にならないが、増加時の再評価点を設計書に残す。
-
-**状態**: 推奨案。殿・将軍・家老の三者が明示的に納得するまで実装・配備・commit・push・deployを行わない。
-
-### §3.31 復旧方針とrollback選択肢(殿指示2026-08-14 21:39「戻ることを積極的に受け入れろ。確実なところまでロールバックしてやり直せばいい」)
-
-§3.29(4)の波及撤回により、**現在の本番データが既に影響を受けている可能性**が論点として立った。設計を完成させる前に、戻す範囲を三者で確定する。
-
-#### (1) 現在地(一次データ)
-
-`recalculation_status`の最新は**id=399 / mode=portfolio / completed / 2026-08-14 11:52:19–11:53:36 UTC**であり、**これ以降にfull再計算は実行されていない**。∴現在の本番DBは**partial実行(=不完全母集団の条件を満たす実行)の書き込みを最後に含んだ状態**である。その前の全体復元はid=364(full/completed)。
-
-#### (2) 戻す対象の切り分け(混同を避ける)
-
-| 対象 | 戻す必要があるか | 根拠 |
-|------|----------------|------|
-| **業務データ**(monthly_returns・signals・portfolio_metrics等) | **要判定** | run399がpartialで書いており、§3.29(4)の伝播経路が成立するなら影響を受けうる |
-| **実装commit群**(P0.5/P1a/P1b/P2a/P2b/P3a/P3b) | **不要と考える** | §5.06の工程3分類でrecord-only=挙動不変。これらは母集団欠陥の原因ではなく、欠陥は`:1963-1977`の既存構造に元からあった |
-| **P0.7**(behavior-changing) | **要判断** | 唯一の挙動変更工程。ただし対象はB2窓契約であり価格母集団とは別系統。切り分けて評価する |
-
-**重要**: 母集団の欠陥は本日の実装が作り込んだものではなく、**元から存在した構造をpartial実行が露呈させた**ものである。∴「本日の実装を戻せば直る」ではない。戻すべきは**データ**であって**実装**ではない、というのが将軍の見解である(三者で検証されたい)。
-
-#### (3) 復旧手段は既に確立している
-
-**full再計算では全PFが`target_portfolios`に入るため、FoF終端standardも母集団に含まれる。** ∴fullを1回実行すれば、不完全母集団に由来する値は正しい母集団で上書きされる。これは本日既に2回実証した手順(run363・run364による復元)であり、新しい機構を要しない。**「細かくデプロイしてきたから戻せる」という殿の言のとおり、復元経路は確立済みである。**
-
-#### (4) 三者で確定したい判断事項
-
-1. **汚染の有無をread-onlyで先に判定するか、判定せずfullで戻すか。** 判定手段=run399の対象PFのmonthly_returns等を**正基準**と突合。将軍見解: **先に判定する。** 影響の有無と範囲が分からないまま戻すと、次に同じことが起きたときの判断材料が残らない。
-
-**⚠v2.31で明確化 → v2.32で型を訂正(殿指摘2026-08-14 22:17「元々何と比較してたんだ。それが残っていれば工程の途中経過のデータは不要なはずだ」+ 家老の型指摘22:22)**:
-
-本工程が**一貫して比較してきた基準は独立検証commit `6cc6b576`(RB6全量検証: 月次33748+metrics30240 exact)である**。∴**途中run(run363・run364)の出力は「基準と一致することを確認するための通過点」にすぎず、保全する価値を持たない。**
-
-**ただしv2.31の「復元先は正基準である」という書き方は型誤りであった**(将軍が`git show --stat 6cc6b576`で確認: 変更は`docs/research/rb6-v3-full-revalidation-evidence_20260813.md`の**1ファイル35行のみ**=docs-only commitであり、DB値を復元できるartifactではない)。**正基準は「採点表(oracle)」であって「バックアップ」ではない。** 将軍は基準と復元元を同一視していた。
-
-**復元手順の確定形(v2.32)**: 修正を入れた後に**full再計算で業務値を再生成**し、その結果を**`6cc6b576`が記録する独立RB6 oracleの合否基準へ再採点する**。復元は再生成によって行われ、正基準はその正しさを判定する物差しとして働く。**途中runの保全は不要**という結論は変わらない。
-2. **P0.7を戻すか。** 将軍見解: 別系統ゆえ**戻さない**。ただしP0.7のcanary結果を再確認する。
-3. **修正の実装をどの時点から積むか。** 将軍見解: データ復元と設計確定を先に済ませ、**確実な地点から修正を1つだけ載せる**。復元前に修正を重ねると、どちらの効果か判別できなくなる。
-4. **P4のやり直し。** 基準runがpartialである以上、母集団修正後に**P4をやり直す**のが筋である。今回のP4結果は破棄してよい(サンクコストを恐れない)。
-
-**状態**: 判断事項。実装・配備・commit・push・deployは三者納得まで行わない。
+P4(canary)の基準run(id=399)は**mode=portfolioで実行された**ため、上記の欠落の影響下にある。∴**P4は本工程の完了後にやり直す**。今回のP4結果は破棄する。復元は「full再計算で業務値を再生成し、独立検証commit `6cc6b576`が記録するRB6 oracleの合否基準へ再採点する」ことで行う(正基準はoracleでありバックアップではない)。途中runの保全は不要である。
 
 ### §3.3 使い方(完成後のデバッグ手順)
 
@@ -618,7 +309,7 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | P2a | 書込み実装(FoF scalar) | P0.5, P0.6 | B | `recalculate_fof.py`(FoFループ) | FoFループで同スキーマ+nested深度差なしをfixture確認 |
 | P2b | snapshot新設(FoF/nested) | **P2a**(同一ファイル`recalculate_fof.py`のため直列), P1b(payload形式を継承), P0.6 | — | `recalculate_fof.py`(snapshot呼出追加。現状0件) | FoF経路のsnapshot呼出追加+depth1/2/4 fixture PASS |
 | P3b | metricsマニフェスト(⑦) | P3a, **P1b**(同一ファイル`recalculate_fast.py`の直列鎖P1a→P1b→P3b — 家老六次レビュー) | — | `generators/portfolio_metrics.py:20-83`+`recalculate_fast.py:542-549`+`utils/recalc_status.py:230-255`(metrics算出→summary書込みの経路) | summaryへmetrics_manifest(47name+204行+入力SHA256)が非null。**canary時の期待行数は対象PF×years2=対象PF×2行へ分離**(5PF partialでは204行にならない — 家老レビュー③) |
-| **P0.9** | **L2供給価格の別ルート追加(matched-weight根治。設計=§3.33・三者合意2026-08-14 23:31)** | P0.5 | — | `recalculate_fast.py:1977-1981`(価格snapshot構築) | 全standard PFのconfigから`relative_assets`∪`safe_haven_asset`(Cash除外)を別集合として算出し`stock_symbols`へunion。既存`_collect_all_symbols(standard_portfolios)`とLayer 1は無変更。加えてsnapshot公開前に候補⊆materializedを一度fail-close。選択実行テストFAIL0・SKIP0。**表示Layer境界(:3466/:3496)への挿入は禁止**(FoF月次生成後で警告と誤MonthlyReturnを防げない) |
+| **P0.9** | **L2供給価格の別ルート追加(matched-weight根治。設計=§3.29・三者合意2026-08-14 23:31)** | P0.5 | — | `recalculate_fast.py:1977-1981`(価格snapshot構築) | 全standard PFのconfigから`relative_assets`∪`safe_haven_asset`(Cash除外)を別集合として算出し`stock_symbols`へunion。既存`_collect_all_symbols(standard_portfolios)`とLayer 1は無変更。加えてsnapshot公開前に候補⊆materializedを一度fail-close。選択実行テストFAIL0・SKIP0。**表示Layer境界(:3466/:3496)への挿入は禁止**(FoF月次生成後で警告と誤MonthlyReturnを防げない) |
 | P4 | canary(最終checkpoint①) | **P0.7**,**P0.9**,P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | standard2+FoF depth1/2/4計5PF・stub月/normal月両方・親closure固定。multi-table hash一致5/5+provenance非null+ERROR0。**加えてmatched weight警報が対象PF月で満額(=解消)であること** |
 | P5 | full+速度検証(最終checkpoint②) | P4 | — | なし(実行+検証のみ) | 102/102・failed0・off/on各3run medianでTOTAL増分+5%以内・payload/WAL/TOAST分位(§4-7)・500B見積のcanary実測後外挿再検証・保存値から選抜再導出全数一致 |
 | P6 | 検証クエリの定型化 | P5 | — | db-checkスキル(shogun repo側) | §3.3のSQLをdb-checkスキルへ追記 |
@@ -749,9 +440,401 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 - **fixture配置原則**: fixtureは検証対象の契約と同じ層に書く(sanitizer層のstub48 fixtureは全行同一期待値へ縮退する偽陽性だった)。
 - **前提変更=停止→設計書更新→再開** / **車輪の再発明禁止**(RB6/RB8資産+記憶DBを先に引く)。
 
-## §6 改訂履歴
+## §6 設計の経緯(matched-weight事象・2026-08-14の議論記録)
+
+> **本節はToBeではない。** 2026-08-14に殿・将軍・家老・軍師で交わした議論の断面をそのまま保持する(歴史修正禁止)。
+> 実装の正本はAsIs=§2.9 / ToBe=§3.29 / 工程=§5のP0.9である。**本節の手順を実行指示として読むな。**
+> 経過の要旨: A案(FoF展開して母集団へ足す)→B案(全standard PFの候補で上界を取る)→確定形(判断を減らし、保有しうる2種のみを別ルートで用意)。
+> 将軍の逸脱2件も記録として残す — (a)用途を確認せず`expand_portfolio_to_tickers`を再利用先に指名 (b)「判断を一切せず」を全銘柄14種と解釈。
+
+### 経緯1 [旧§3.29] 価格入力母集団の契約(matched-weight事象 — 殿指示2026-08-14 21:17で新設。実装・配備は三者納得まで禁止)
+
+**位置づけ**: 本節は設計の穴の告白である。P1b/P2bで「snapshotに何を保存するか」を定義したが、**「snapshotに何が入っているべきか(母集団)」を定義していなかった**。その欠落が本番warningとして現れた。
+
+#### (1) 現象(一次データ)
+
+殿提示の本番ログ原文: `Ticker GLD in weights but not in price_movement` に続き `Matched weight 0.2500 != 1.0, missing_tickers=['GLD'], portfolio_id=ed2079af-6ea0-4ae4-a7e6-e9bb4935f5a7, year_month=2026-03, weights_sum=1.0000, weights_keys=['GLD','TQQQ']`(同PF 2026-07は0.5000・`['GLD','XLU']`)。
+
+規模(家老・疾風の一次照会 2026-08-14 21:18): warn=472、precomputed_raw monthly_trade要素で raw_rows=299、distinct(portfolio_id,year_month)=257、影響portfolios=3、prices上のGLD=5467行。1件の定義=JSON配列要素1行/PF月一意組1件/PF一意値1件。
+
+#### (2) 根因(コード現物・行番号つき)
+
+`backend/app/jobs/recalculate_fast.py`
+- `:1963` 対象PFを `standard_portfolios = [p for p in target_portfolios if p.type != "fof"]` で分離する。
+- `:1977` `all_symbols = _collect_all_symbols(standard_portfolios)` — **価格の母集団をFoFを除いた集合からのみ作る**。
+- `:1981` その結果が `stock_symbols` としてsnapshotへmaterializeされる。
+
+full再計算では全PFが対象に入るためFoFの終端standard PFも母集団に含まれ、GLDは自然に収集される。**partial(mode=portfolio)でFoFを指定した場合、その終端standard PFは`target_portfolios`に含まれないため保有銘柄が母集団から落ちる。** `monthly_trade_impl`はsnapshot公開後のDB fallbackを抑止する(fail-close)ため、本番pricesにGLDが実在しても`price_movement`が作られず、weights(満額1.0000)との照合が不一致となってwarningになる。**照合機構は正しく働いている。壊れているのは母集団である。**
+
+**構造的必然であることの可視化(`scripts/fof_tree.py` 実行結果 2026-08-14 21:23)**: 本番の木は例えば `New Fund of Funds[fof] → 秘奥義-加速D-激攻[fof] → 奥義-GS-抜き身-激攻[fof] → GSシン加速R-激攻[fof] → シン朱雀-常勝[standard]` であり、**実際に銘柄を保有する終端standard PFは親から4段下にある**。partialで親FoFを指定すると`target_portfolios`にはその親(と解決範囲のFoF)しか入らず、4段下の終端standardは`:1963`のstandard抽出に現れない。∴**本事象は特定PFの偶然ではなく、FoF親を対象とするpartial全般で構造的に発生する。** 影響が3PFに留まって見えるのは、warningを生む条件(該当月にmonthly_tradeが再構築された)を満たしたPFがその数だっただけであり、母集団欠落そのものはより広い。
+
+#### (3) 見落としていた視点(4点・正直な記載)
+
+1. **運用規律を構造的遮断と誤記していた**: §3.28-5に「partial modeの親closure拡張はmode=portfolio運用停止で遮断」と書いたが、運用停止は**規律であって構造ではない**。実際にrun399(mode=portfolio・completed)が走り、規律の外側で露呈した。「遮断済み」の語は実態と乖離しており、本節をもって訂正する。
+2. **snapshot契約に母集団の定義がなかった**: P1b/P2bはpayloadの**形**(start/end実価格対・月初snapshot)を契約したが、**どのsymbolが入るべきかという集合の契約**を持たない。形が正しくても集合が欠ければ下流は欠損する。
+3. **深度非依存契約が計算側だけを見ていた**: §3.28は「momentum計測・provenance書込み・fingerprint連鎖」が深度非依存であることを論じたが、**価格入力の収集がFoF展開に追随するか**は論じていない。収集が展開に追随しなければ、計算が深度非依存でも入力が深度依存になる。
+4. **fail-closeの適用点が母集団確定より後ろにあった**: snapshot公開後のfallback抑止は正しい。しかし母集団が不完全な場合に**その場で止まらず**、表示層のwarningとして下流へ漏れる。fail-closeは「引けなかった」ではなく「母集団に入っているべきものが入っていない」を検知すべきである。
+
+#### (4) A案(候補・確定扱い禁止): 母集団をFoF展開後の集合へ揃える
+
+**⚠v2.27訂正(2026-08-14 21:31 家老BLOCK+軍師REQUEST CHANGESを将軍が現物確認して受諾)**: 初版で再利用先に挙げた`expand_portfolio_to_tickers`は**誤りである**。同関数は単一`target_date`のsignal依存な実保有を返すため、**全履歴の価格母集団を確定する用途に使うと過去に保有していたtickerを取りこぼす**。将軍が用途を確認せず「weights側が使う関数」という理由だけで指名したのが原因(LS-A09(17)の再発 — 手段がその主張を証明できるかを先に確かめよ)。
+
+**変更点(訂正後)**: `:1977`の`_collect_all_symbols(standard_portfolios)`が作る集合へ、**`target_portfolios`の各PFへ`get_portfolio_all_tickers`(`backend/app/services/price_ratio_impl.py:961`)を適用したunionを加えて**`stock_symbols`をmaterializeする。既存関数は変更せず**呼び出しの追加だけ**で済ませる。
+
+**なぜこの関数が正しいか(現物確認 2026-08-14 21:31)**:
+- **signal非依存**: docstringに「`expand_portfolio_to_tickers()`とは異なり、シグナルに依存せずconfigから全候補ティッカーを再帰的に抽出する」と明記(`:968-971`)。価格母集団に必要なのは「その期間に持ちうる全候補」であり、ある日の実保有ではない。
+- **nested FoF再帰**: `portfolio.type == "fof"`分岐で構成PFへ再帰する。深度非依存が関数側で担保される。
+- **循環防御**: `MAX_DEPTH=10`と`_visited`集合で循環参照を遮断(`:983-991`)。
+- **session cache**: `cache_key=(portfolio.id, include_benchmark)`でPF単位にキャッシュされ、呼び出し追加による実行コストが抑えられる。
+- **contract test現存**: 価格取得用途の専用テストが既にある(家老確認)。
+
+**benchmark・risk-free・preloadの扱い(コード現物)**:
+- **benchmark**: 同関数は`include_benchmark`引数を持ち、**FoF構成PFのbenchmarkは含めない**(再帰呼び出しで`include_benchmark=False`を明示)。親PFのbenchmarkのみが母集団に入る現行意味論を変更しない。呼び出し時の指定値は実装時に固定し設計書へ記録する。
+- **risk-free/DTB3**: `:1981`の「DTB3を`stock_symbols`から除外し、SPYは常時materialize」の既存扱いを変更しない。Cashは価格母集団ではなくDTB3経路(`price_ratio_impl`のDTB3 cache)で扱われるため、price-free契約は維持される。
+- **`precompute_portfolio_preload`**(`backend/app/jobs/precompute_raw.py:235`): PF情報を`db.info`へ載せる既存経路。母集団を広げた結果がpreloadの内容と齟齬しないか(preloadに無いPFの銘柄が母集団へ入る等)を実装時にコード現物で確認する。**この確認はA案採否の条件に含める。**
+
+**変更しない点(副作用の遮断面)**:
+- weightsと`price_movement`を別ソースから取り両者を照合する設計(`monthly_trade_impl.py:1420-1442`の設計原則)は維持する。**これは検出機構であり、経路統合で失えば異常が見えなくなる。** 揃えるのは入力集合であって経路ではない。
+- `_collect_all_symbols`自身のロジック(relative_assets等の収集規則)は変更しない。
+- Cash契約: Cashはprice-freeであり価格母集団に含めない。2026-08-02の根治(Cashを価格欠落扱いしない)を巻き戻さない。
+- real ticker契約: 実銘柄が母集団に無い場合のfail-closeは維持する。母集団を広げることで欠損を隠す方向へ倒さない。
+- DTB3・SPYの既存扱い(`:1981`のDTB3除外とSPY常時materialize)は変更しない。
+
+**full/partialの集合契約(本節で新設)**: 同一PF集合を対象とするとき、**partialが構築する価格母集団はfullが構築する母集団の当該部分と一致しなければならない**。これを回帰の判定式とする。
+
+**深度非依存**: 既存の展開結果を再利用する限り、深度が増えても母集団が自動的に追随する。独自の閉包を書けばそこが新たな深度依存点になるため書かない。
+
+**波及先 ⚠v2.28で撤回・訂正(2026-08-14 21:37 家老の独立波及レビュー[URGENT-HARM]を将軍がコード現物で確認して受諾)**:
+
+初版の「表示層に閉じるか要確定」「multi-table hash対象6表に`monthly_trade`は含まれないためP4判定は直接影響を受けない」という記述を**撤回する**。**不完全な価格母集団は業務値へ伝播する。**
+
+将軍の現物確認(`price_ratio_impl.py` `PriceCache.load`):
+- snapshot経路(`:162-176`)は、snapshotに**実在する行だけ**を`self._prices`へ格納する一方、`self._loaded_tickers = set(tickers)`で**要求tickerを全てloaded扱いとして記録する**。∴snapshotに1行も無いtickerも「読み込み済み」となり、以後の消費者はDBへ引き直さない(fail-closeが「欠落」ではなく「読み込み済みで空」として通過する)。
+- 家老のレビュー: FoF monthly return経路は欠落ratioを**無変動へ置換して`MonthlyReturn`をcommit**し、その子系列が親のselection・signals・metricsへ渡る。
+
+∴影響は表示層の`monthly_trade`に閉じず、**multi-table hash対象(`monthly_returns`・`signals`・`portfolio_metrics`)へsilentに混入しうる**。「hash対象外だから無害」という推論を私は書いてしまったが、これは検知器の盲点をそのまま継承する誤りであった。
+
+**P4への影響(要判断)**: P4のcanary基準run(id=399)は**mode=portfolioで実行されている**。上記の伝播経路が成立するなら、そのrunが書いた業務値は不完全母集団の影響を受けている可能性がある。**P4の合否判定は、この点を評価してから確定する**(基準runの再取得要否を含め三者で判断)。
+
+**rollback**: 変更は収集元の集合指定1点であり、revert 1手で現状へ戻る。
+
+**検証値(実装時のAC候補)**: (a)同一PF集合でpartialとfullの母集団が一致 (b)殿提示PF(ed2079af)の2026-03と2026-07でmatched weightが満額 (c)影響257 PF月の実銘柄欠落が解消 (d)Cashがprice-freeのまま (e)real ticker欠落時のfail-closeが維持。
+
+**状態**: 候補。殿・将軍・家老の三者が明示的に納得するまで、実装・配備・commit・push・deployを行わない(殿裁定2026-08-14 21:19)。
+
+### 経緯2 [旧§3.30] 第二AsIsと真のToBe(殿指示2026-08-14 21:25。実装・配備は三者納得まで禁止)
+
+> **⚠本節の実装方針はv2.29でsupersededである。実装の正本は§3.32(B案)。** 本節はAsIsの分析とToBe3則(T1/T2/T3)の導出過程として保持する(歴史修正禁止のため削除しない)。以下に現れるA案由来の手順は**実行禁止**であり、参照する場合は§3.32の確定形と読み替えよ。
+
+§3.29はA案という**対症の最小修正**までしか書いていない。殿指示により、いま判明した構造を**第二のAsIs**として据え直し、そこから真に求めるToBeを定義する。
+
+#### (1) 第二AsIs — 価格母集団には導出規則が二つある
+
+| 対象 | 導出経路 | FoF展開を知っているか |
+|------|---------|---------------------|
+| weights(何を持っているか) | `expand_portfolio_to_tickers`(`price_ratio_impl.py:1078`) | **知っている**(再帰展開) |
+| 価格母集団(何の価格を用意するか) | `standard_portfolios`抽出(`recalculate_fast.py:1963`)→`_collect_all_symbols`(`:1977`) | **知らない**(type!=fofで落とす) |
+| (参考)価格取得専用の正しい収集 | `get_portfolio_all_tickers`(`price_ratio_impl.py:961`) | **知っている**(config再帰・signal非依存・循環防御) |
+
+**∴第二AsIsの核心は「規則が二つある」ことではなく、「正しい規則が既に存在するのに、価格母集団を組む箇所がそれを使っていない」ことである**(v2.27で訂正 — 初版は前者と書いた)。
+
+**⚠v2.28で表現訂正(自己矛盾の解消 — 家老指摘)**: 初版は「同一の問いに規則が二つある」と書いたが**誤りである**。weightsと価格母集団は§3.30 T1表のとおり**別の問い**に答えており、二つ在ること自体は正しい。正しい記述は次のとおり:
+
+**「FoF配下の候補銘柄は何か」という一つの問いに対し、正しい答えを出す関数(`get_portfolio_all_tickers`)が既に存在するにもかかわらず、価格母集団を組む箇所(`recalculate_fast.py:1963-1977`)がそれを使わず自前のtype判定で代用している。** fullでは全PFが対象に入るため代用でもたまたま答えが一致し、partialでのみ乖離が表面化する。∴これは「partialのバグ」ではなく**正しい規則を使っていないことの帰結**であり、partialは乖離を可視化した条件にすぎない。同じ代用が残る限り、別のmode・別の呼び出し元・新しい深度で再発しうる。
+
+**乖離が下流へ漏れる経路**: snapshot公開後は`monthly_trade_impl`がDB fallbackを抑止する(fail-close)。この設計自体は正しいが、**検知するのは「引けなかった」時点であり「母集団が不足している」時点ではない**。ゆえに不足は停止ではなくwarningとして下流へ流れ、表示値(matched_weight)の欠損として初めて人間に届く。
+
+#### (2) 真のToBe — 原理3則
+
+**T1. 価格母集団の導出規則を一つにする(SSOT) ⚠v2.27で定義を訂正**
+初版のT1は「weights側の展開へ寄せる」と書いたが**これは誤りである**。weightsと価格母集団は**異なる問いに答えている**:
+
+| 問い | 答える関数 | 時間軸 | signal依存 |
+|------|-----------|-------|-----------|
+| ある日に何を持っているか | `expand_portfolio_to_tickers` | 単一target_date | 依存する |
+| 期間中に何の価格が要るか | `get_portfolio_all_tickers` | 全履歴の候補全集合 | **依存しない** |
+
+**∴二つの関数が存在すること自体は正しい。統一すべきではない。** 誤りは「価格母集団を問う側(`recalculate_fast.py:1963-1977`)が、価格用の再帰収集関数を使わず、自前のtype判定でPFを絞っていること」である。T1の正しい定義はこうなる:
+
+> **FoF候補価格集合の導出は`get_portfolio_all_tickers`を唯一の源とする。呼び出し側が独自のtype判定でFoF配下を絞り込んで母集団を組み立てることを禁じる。**
+
+**⚠v2.28で更に精密化(家老指摘)**: 「価格母集団の唯一源」という表現は不正確であった。A案は既存`_collect_all_symbols`との**union**であり、単一関数が母集団の全てを作るわけではない。正しい切り分けはこうである:
+
+| 母集団の構成要素 | 導出 | 変更 |
+|-----------------|------|------|
+| standard計算入力(relative_assets等) | 既存`_collect_all_symbols(standard_portfolios)` | **維持(変更しない)** |
+| FoF候補価格集合 | `get_portfolio_all_tickers`を**唯一源**とする | **追加** |
+| 最終的な`stock_symbols` | 上記2つのunion(既存のDTB3除外・SPY常時materializeを適用) | union箇所のみ変更 |
+
+これなら新しい型も新しい閉包計算も要らず、**既存の正しい関数を使っていなかった箇所を使うように直すだけ**になる(原理: 既存を磨け・新しい箱を作るな)。統一の対象は「関数の数」ではなく「FoF配下の候補集合という一つの問いに対する答えの出所」である。
+
+**実装前契約(v2.28で新設)**: 母集団確定後・business write前において、**実際に使用されるnon-price-freeなtickerの集合が、candidate snapshot universeの部分集合であること**。price-free(Cash等)は明示規則で除外され、暗黙の欠落と区別できること。
+
+**三者判断事項**: 上記subset検査を母集団確定後・business write前に**単一の検査として置くか否か**。これは新機構の積み増しに見えるが、実態は**現行のsilent無変動混入(欠落を無変動として業務値へ書き込む経路)を止める安全底線**である。過剰防御か必須ハーネスかの判定を殿・将軍・家老で行う。私の見解は「PriceCacheが欠落を`loaded`として通す構造が残る限り、検知点はどこかに1つ要る」である。
+
+**T2. 加法性 — partialはfullの部分である**
+導出規則 f は次を満たすことを契約とする: **f(S) = ⋃_{p∈S} f({p})**。すなわち対象をどう分割して呼んでも、得られる母集団は分割前の対応部分と一致する。この性質が成り立てば**modeによる差は原理的に消滅する**(「partialでも同じになるよう気をつける」という規律を、代数的性質へ置き換える)。深度非依存も f の再帰性からの帰結として自動的に従うため、深度ごとの個別対応が不要になる。
+
+**T3. 完全性はsnapshot公開の前提条件である**
+snapshotは「用意できたもの」ではなく「宣言した対象に必要なものが揃っていること」を満たして初めて公開される。**不足は公開前に検知し、その時点で停止する**(fail-closeの適用点を、消費時点から母集団確定時点へ前倒しする)。下流のwarningは最後の網であって一次の検知器ではない。ただしCashのようにprice-freeな要素は必要集合から除外され、除外は明示的な規則によって行う(暗黙の欠落と区別できること)。
+
+#### (3) ToBeとA案の関係(サンクコストを恐れず整理)
+
+A案(§3.29)は**T1の最小実装**に相当し、T2・T3は満たさない。よってA案を「根治」と呼ぶのは誤りであり、**T1到達の第一歩**と位置づけを改める。
+
+| 則 | A案で満たされるか | 残る作業 |
+|----|------------------|---------|
+| T1 単一導出 | 部分的に満たす(価格側がweights側の展開を使う) | 二重規則の完全解消(片方を呼び出し側から消す)まで到達するか要判断 |
+| T2 加法性 | 満たさない(結果的に一致するだけで契約がない) | 加法性をfixtureで検証し契約として明記 |
+| T3 完全性前提 | 満たさない(検知点は消費時点のまま) | fail-close前倒しの是非。**新gateを増やす形なら採らない** — 既存のfail-close地点を移すだけで実現できるかがA案採否の分岐点 |
+
+**判断が必要な点(殿・家老と協議したい本丸)**: T3を今回に含めるか、T1のみで一度止めるか。含めれば根治に近づくが変更面が広がる。含めなければ**同じクラスの欠落が次は別の消費者で再発しうる**。私の見解は「T1とT2を今回、T3は既存fail-close地点の移設で実現できる場合のみ今回」である。T3のために新しい検査機構を足すなら、それは過剰対策であり殿裁定に反する。
+
+#### (4) ToBeで増やさないもの(副作用の遮断面)
+
+- weightsと`price_movement`の**別ソース照合は維持する**。T1は入力集合の統一であって経路統合ではない。照合を失えば異常が見えなくなる。
+- `_collect_all_symbols`の収集規則(relative_assets等)自体は変更しない。
+- Cash=price-free、real ticker=fail-closeの既存契約を変えない(2026-08-02根治を巻き戻さない)。
+- DTB3除外とSPY常時materializeを変えない。
+- 新しいテーブル・新しい設定・新しい閾値を作らない。
+
+#### (5) 移行順序 ⚠【SUPERSEDED v2.29 — 実行禁止】
+
+> **この手順はA案前提の旧版であり実行してはならない。** 「weights側再帰へ寄せる」「加法性fixture」「T3は見送り可」はいずれもB案で置き換え済み(§3.32)。実装順序の正本は**§3.32(4)(5)**である。歴史として残すが命令として読むな。
+
+1. T1: 価格母集団の導出をweights側の再帰展開へ寄せる。
+2. T2: 加法性fixture(同一PF集合をpartialとfullで導出し集合一致)を追加。深度はfof_tree.py実測の最深(depth4)を含める。
+3. T3: 既存fail-close地点の移設で完全性検査が実現できるかをコード現物で判定。**できなければ今回は見送り、設計書に未達として残す**(隠さない)。
+4. 検証: 殿提示PF(ed2079af)の該当2月が満額、影響257 PF月の実銘柄欠落が解消、Cashがprice-free維持、real ticker fail-close維持。
+
+**状態**: 候補。殿・将軍・家老の三者が明示的に納得するまで実装・配備・commit・push・deployを行わない。
+
+### 経緯3 [旧§3.31] 復旧方針とrollback選択肢(殿指示2026-08-14 21:39「戻ることを積極的に受け入れろ。確実なところまでロールバックしてやり直せばいい」)
+
+§3.29(4)の波及撤回により、**現在の本番データが既に影響を受けている可能性**が論点として立った。設計を完成させる前に、戻す範囲を三者で確定する。
+
+#### (1) 現在地(一次データ)
+
+`recalculation_status`の最新は**id=399 / mode=portfolio / completed / 2026-08-14 11:52:19–11:53:36 UTC**であり、**これ以降にfull再計算は実行されていない**。∴現在の本番DBは**partial実行(=不完全母集団の条件を満たす実行)の書き込みを最後に含んだ状態**である。その前の全体復元はid=364(full/completed)。
+
+#### (2) 戻す対象の切り分け(混同を避ける)
+
+| 対象 | 戻す必要があるか | 根拠 |
+|------|----------------|------|
+| **業務データ**(monthly_returns・signals・portfolio_metrics等) | **要判定** | run399がpartialで書いており、§3.29(4)の伝播経路が成立するなら影響を受けうる |
+| **実装commit群**(P0.5/P1a/P1b/P2a/P2b/P3a/P3b) | **不要と考える** | §5.06の工程3分類でrecord-only=挙動不変。これらは母集団欠陥の原因ではなく、欠陥は`:1963-1977`の既存構造に元からあった |
+| **P0.7**(behavior-changing) | **要判断** | 唯一の挙動変更工程。ただし対象はB2窓契約であり価格母集団とは別系統。切り分けて評価する |
+
+**重要**: 母集団の欠陥は本日の実装が作り込んだものではなく、**元から存在した構造をpartial実行が露呈させた**ものである。∴「本日の実装を戻せば直る」ではない。戻すべきは**データ**であって**実装**ではない、というのが将軍の見解である(三者で検証されたい)。
+
+#### (3) 復旧手段は既に確立している
+
+**full再計算では全PFが`target_portfolios`に入るため、FoF終端standardも母集団に含まれる。** ∴fullを1回実行すれば、不完全母集団に由来する値は正しい母集団で上書きされる。これは本日既に2回実証した手順(run363・run364による復元)であり、新しい機構を要しない。**「細かくデプロイしてきたから戻せる」という殿の言のとおり、復元経路は確立済みである。**
+
+#### (4) 三者で確定したい判断事項
+
+1. **汚染の有無をread-onlyで先に判定するか、判定せずfullで戻すか。** 判定手段=run399の対象PFのmonthly_returns等を**正基準**と突合。将軍見解: **先に判定する。** 影響の有無と範囲が分からないまま戻すと、次に同じことが起きたときの判断材料が残らない。
+
+**⚠v2.31で明確化 → v2.32で型を訂正(殿指摘2026-08-14 22:17「元々何と比較してたんだ。それが残っていれば工程の途中経過のデータは不要なはずだ」+ 家老の型指摘22:22)**:
+
+本工程が**一貫して比較してきた基準は独立検証commit `6cc6b576`(RB6全量検証: 月次33748+metrics30240 exact)である**。∴**途中run(run363・run364)の出力は「基準と一致することを確認するための通過点」にすぎず、保全する価値を持たない。**
+
+**ただしv2.31の「復元先は正基準である」という書き方は型誤りであった**(将軍が`git show --stat 6cc6b576`で確認: 変更は`docs/research/rb6-v3-full-revalidation-evidence_20260813.md`の**1ファイル35行のみ**=docs-only commitであり、DB値を復元できるartifactではない)。**正基準は「採点表(oracle)」であって「バックアップ」ではない。** 将軍は基準と復元元を同一視していた。
+
+**復元手順の確定形(v2.32)**: 修正を入れた後に**full再計算で業務値を再生成**し、その結果を**`6cc6b576`が記録する独立RB6 oracleの合否基準へ再採点する**。復元は再生成によって行われ、正基準はその正しさを判定する物差しとして働く。**途中runの保全は不要**という結論は変わらない。
+2. **P0.7を戻すか。** 将軍見解: 別系統ゆえ**戻さない**。ただしP0.7のcanary結果を再確認する。
+3. **修正の実装をどの時点から積むか。** 将軍見解: データ復元と設計確定を先に済ませ、**確実な地点から修正を1つだけ載せる**。復元前に修正を重ねると、どちらの効果か判別できなくなる。
+4. **P4のやり直し。** 基準runがpartialである以上、母集団修正後に**P4をやり直す**のが筋である。今回のP4結果は破棄してよい(サンクコストを恐れない)。
+
+**状態**: 判断事項。実装・配備・commit・push・deployは三者納得まで行わない。
+
+### 経緯4 [旧§3.32] B案 — 全standard PFの候補価格を最初から取る(殿指示2026-08-14 21:42。確定案へ吸収済み)
+
+> **本節は§3.33(C案)でsupersededである。** 保有可能性による選別(relative∪safe haven)という判断自体が不要になった。歴史として残すが実装指針として読むな。
+
+**殿の原理**: 「原理的に全てのFoFの元はstandard PFである。つまり全standard PFで保有する可能性のあるticker priceを最初から取得しておけばシンプルだ。物事はシンプルにやると解決する。」
+
+**将軍はA案を取り下げ、B案を推奨する。** 理由は下の実測値が示すとおり、B案はA案より単純で、しかも失うものが無いからである。
+
+#### (1) 原理
+
+FoFは**自分では銘柄を持たない**。保有の実体は必ず終端のstandard PFにある。∴**全standard PFの候補ticker集合は、系全体で必要になりうる価格の上界である。** この上界を最初にmaterializeしておけば、どのPFを対象に選ぼうと母集団は決して不足しない。
+
+#### (2) 実測(2026-08-14 21:43・readonly)
+
+| 集計 | 出力行 | 1件の定義 |
+|------|-------|----------|
+| active PFの内訳 | `('standard', 24)` / `('fof', 78)` | is_active=trueのPF 1件 |
+| 価格表の全銘柄と行数 | `(18, 100209)` | distinct symbol 1件 / prices 1行 |
+
+**銘柄を実際に持つPFは24個だけであり、価格表に存在する銘柄はわずか18種・約10万行である。** 全standard PFの候補を最初に取っても、母集団はたかだかこの18種に収まる。partialが現在ロードしている集合との差は実質的に無視できる規模であり、**「上界を取る」ことのコストがほぼゼロである**ことが数字で示された。
+
+#### (3) B案がA案より優れる点
+
+| 観点 | A案(FoF配下を再帰展開して足す) | **B案(全standard PFの候補を最初に取る)** |
+|------|------------------------------|--------------------------------|
+| FoF再帰 | 必要(`get_portfolio_all_tickers`を呼ぶ) | **不要**(FoFを一切辿らない) |
+| 深度非依存 | 関数の再帰性に依存して成立 | **自明**(深度という概念が現れない) |
+| 加法性T2 | 対象集合ごとに変わるため要fixture検証 | **自明**(母集団が対象に依存しない定数) |
+| 呼び出し側の絞り込み | 「禁じる」という規律が要る | **概念自体が消える** |
+| 完全性検査T3 | 不足しうるので検知点が要る | **宣言集合の不足は消える**(上界のため)。ただし供給故障は残る=検査は必要(v2.29訂正) |
+| コード | 呼び出し追加+union | **type判定を`standard`全件へ変えるだけ**(むしろ減る) |
+| 将来の再発 | 新しい呼び出し元が同じ誤りをしうる | **母集団が対象非依存なので再発経路が無い** |
+
+**∴B案はT1・T2を同時に満たす。** A案が要求していた「唯一源の規律」と「加法性fixture」という論点は、**上界を取るという一手で消滅する**。これが殿の言う「シンプルにやると解決する」の内実である。
+
+**⚠v2.29訂正(家老レビュー2026-08-14 21:49を将軍が受諾)**: 初版はここに「T3の必要性そのものを消す」と書いたが**誤りである**。**上界が保証するのは「宣言集合が不足しないこと」だけであり、「宣言した銘柄の価格が実際に供給されること」は保証しない。** 二つは別の失敗モードである:
+
+| 失敗モード | B案で消えるか |
+|-----------|-------------|
+| 宣言の不足(必要な銘柄を母集団に入れ忘れる) | **消える**(上界を取るため) |
+| 供給の故障(Stock Data API・`prices`・snapshotが候補銘柄の行を返さない) | **残る** |
+
+供給が欠けたとき`PriceCache`は行ゼロのtickerを`loaded`扱いで通し(§3.29(4)の実測)、下流が無変動として永続化しうる。**この経路はB案でも塞がれない。** ∴B案に加えて**snapshot公開条件としてのsubset検査**を置く。
+
+**T3の確定形(v2.29)**: `df_prices`確定後・snapshot公開/business write前に、**price-free(Cash・DTB3)を除外した候補symbol集合が、materialized symbol集合の部分集合であること**を**一度だけ**fail-close検査する。これは新しいサブシステムではなく**snapshotを公開してよいかの条件**であり、過剰防御には当たらない(現行のsilent無変動混入を止める安全底線)。
+
+**上界の妥当性(家老の本番readonly突合 2026-08-14 21:49)**: `candidate_count=13` に対し `held_count=9`(全期間の実保有)で候補外はゼロ行、`expanded_count=7`(FoF display展開)でも候補外はゼロ行。1件の定義=uppercase正規化しCashとDTB3を除いた実ticker 1銘柄。**∴現行configの候補集合は歴史的保有とFoF展開の双方を完全に覆っており、上界として妥当である**ことが本番データで実証された。
+
+#### (4) 具体形(実装解禁後) ⚠v2.31で精密化(殿指示2026-08-14 22:17)
+
+**殿の指摘**: 「俺はstandard PFで**保有する可能性のある**tickerと言った。保有する可能性のないabsolute momentum assetやリスクフリーアセットを分けて考えているか。保有する可能性があるのは**relative momentum assetと退避先資産であるsafe haven asset**だけだ。」
+
+**`_collect_all_symbols`(`recalculate_fast.py:3896-3919`)の収集内訳を現物確認した結果、config上の銘柄は5種に分かれ、保有しうるのは2種だけである**:
+
+| config項目 | 役割 | 保有しうるか | 上界に含めるか |
+|-----------|------|------------|--------------|
+| `relative_assets`(複数) | 相対momentumで選抜される候補 | **する**(選抜されれば保有) | **含める** |
+| `safe_haven_asset`(Cash以外) | absolute判定で退避する先 | **する**(退避時に保有) | **含める** |
+| `absolute_asset` | absolute momentumの判定基準 | **しない**(判定に使うだけ) | 含めない |
+| `risk_free_asset`(既定`DTB3`) | 無リスク金利 | **しない**(price-free経路) | 含めない |
+| `benchmark_ticker` | 比較対象 | **しない**(表示・比較用) | 含めない |
+
+**⚠v2.32訂正(家老レビュー2026-08-14 22:22を将軍が現物確認して受諾)**: safe havenのSSOTは**top-levelだけではない**。pipeline standardでは実行時のsafe havenが`SafeHavenSwitch`のconfigに存在する(`backend/app/services/pipeline/blocks/safe_haven_switch.py:36` `safe_haven = self.config.get("safe_haven_asset", "Cash")`を将軍が現物確認)。現本番はstandard全24でtop-levelとpipelineの不一致ゼロだが、**schema validatorは一致を強制していない**。∴将来のdriftで両者がずれた瞬間に、top-levelだけを見る上界は欠落する。
+
+**∴B案の上界の確定定義(v2.32)**: **全standard PFの `relative_assets` ∪ `safe_haven_asset`(top-level) ∪ `SafeHavenSwitch.config.safe_haven_asset`(実効pipeline値)**、Cashは除外。**上界であるからextraが入っても害はなく、driftしても欠落しない。** これが「保有しうる=`price_movement`に現れうる」銘柄の全体であり、matched_weightの照合対象と一致する。
+
+**具体形**: `recalculate_fast.py:1963-1977`で、既存の`_collect_all_symbols(standard_portfolios)`(対象PFの**計算入力**。absolute・risk-free・benchmarkを含む。**維持**)に加え、**全standard PFの保有可能集合(上記2項目のみ)**をunionして`stock_symbols`をmaterializeする。`_collect_all_symbols`自体は無変更。期間(lookback/buffer)の算出、DTB3除外、SPY常時materializeも既存のまま。
+
+**この精密化の効果**: 上界がさらに小さくなるうえ、**意味が一意になる**。「計算に要る価格」(対象PF基準・全5種)と「保有しうる銘柄の価格」(全standard基準・2種)を混ぜずに済み、なぜその銘柄が母集団にいるのかが説明可能になる。将軍は当初この区別をせず全候補を上界にしようとしていた(殿の指摘で是正)。
+
+**変更しない点**(§3.29と同じ): weightsと`price_movement`の別ソース照合、Cashのprice-free契約、real tickerのfail-close、`_collect_all_symbols`の収集規則。
+
+#### (4-b) 三者独立コード確認の結果(2026-08-14 22:26 将軍・家老・軍師。殿指示22:20)
+
+殿の指示により三者が**独立して**コードを確認した。**将軍の見立ての誤りが2点確定した。**
+
+**A. 入口は二つある — 将軍の「payloadは全PF」は片手落ちであった(家老発見・軍師も見落としを認めて支持)**
+
+| 経路 | payloadの中身 | B案の上界を作れるか |
+|------|-------------|------------------|
+| normal | `PortfolioRepository.load()`→`PortfolioDB.all()`(`repository.py:82`)で**全PF** | **作れる** |
+| **bundle replay** | bundleの`portfolio_config`のみ(`recalculate_fast.py:1872-1876`)。生成側が`portfolio_config IDs == target IDs`を強制(`input_bundle_materializer.py:37-39`) | **作れない**(全standardが存在しない) |
+
+**run399のmanifest実値も`portfolio_config row_count=5`/target IDs=5**であり、replay経路では対象PFしかpayloadに入らない。∴**B案をnormalだけに実装すると、replay経路で母集団が再び不足する。**
+
+**対処(家老の最小案・将軍受諾)**: normal producer側で**`required_price_symbols`をbundle contractへ保存**し、**replayはその集合でsubset検査を行い、target configから再導出しない**。旧contractに当該フィールドが無い場合は**fail-closeで拒否**する。現`ALLOWED_ARTIFACTS`にsymbol契約は無い(`safe_bundle_v2.py:20,144-152`)ため、契約の追加が要る。
+
+**B. 保有可能集合の定義はv2.32のままAPPROVE(三者一致)**。`executor.py:338-347`と`safe_haven_switch.py:36-55`より、holding出力に現れるのは**relative current tickers・実効pipeline safe・CashTerminalのCash**のみで、absolute/risk-free/benchmarkは出ない。
+
+**実測(将軍が`scripts/pf_assets.py`を新規作成して取得 2026-08-14 22:28)**: active standard 24PFの**保有しうる銘柄は9種**=`['GDX','GLD','QLD','QQQ','SPY','TECL','TMV','TQQQ','XLU']`。top-level safeとpipeline safeの**不一致は0件**(ただしvalidator強制が無いため上界に両方含める方針は維持)。
+
+**C. コスト「ほぼゼロ」は誤りであった(将軍の誤り・家老実測)**: run399のcurrent symbolsは`LQD,SPY,TECL,TMF,TMV,TQQQ,XLU`でprice artifact=38744行。上界化で追加されるのは`GDX 5089 + GLD 5467 + QLD 5068 + QQQ 6900 = 22524行`、**推定合計61268行(+58.1%)**。絶対量は価格表全体(10万行)の範囲内だが、**「ほぼゼロ」と断定してはならない。実装後にcache_initと総時間を計測して記録する**。期間はtarget lookback基準のままで不変。
+
+**D. subset fail-closeの配置(三者一致)**: `df_prices`確定直後(`recalculate_fast.py:2003`の後)、`spy_snapshot`/`db.info`公開(2004-2007)の**前**。既存の`load_prices_as_df`はempty許容(`data_loader.py:80-84`)、PriceCache snapshot経路は要求ticker全てをloaded扱い(`price_ratio_impl.py:155-175`)、**一般stockのsubset fail-closeは現在0件**。DTB3 coverageのみ2005-2006に存在し重複しない。
+
+**E. 実装規模(訂正)**: normal経路のみなら holdable集合inline 12-18行 + subset検査 5-8行 = **約17-26行・新規query0**。**ただしbundle replay parityの契約追加が別途必要であり、将軍の「十数行・1ファイル」見積りは過少であった。**
+
+**三者判定**: **normal経路はAPPROVE、bundle replay未設計のため全体はBLOCK**(家老・軍師とも同結論)。
+
+#### (5) 残る検討事項(三者で確認)
+
+1. **lookback期間の算出元 → v2.29で決着(家老提案を将軍受諾)**: **対象standard PF基準のまま据え置く。** 全standardへ広げるのは**symbol母集団だけ**である。期間まで広げると、partialで再計算しないstandard PFのsignal warmupを増やすことになり、目的(母集団の完全性)と無関係なコストが載る。∴広げる次元を母集団に限定する。
+2. **ロードコストの実測**: 18銘柄・10万行という規模から見て無視できると考えるが、実装後に再計算時間の増分を計測して記録する。
+3. **将来のticker増加**: 銘柄が大幅に増えた場合も上界方式が妥当か。現状の規模では問題にならないが、増加時の再評価点を設計書に残す。
+
+**状態**: 推奨案。殿・将軍・家老の三者が明示的に納得するまで実装・配備・commit・push・deployを行わない。
+
+### 経緯5 [旧§3.33] 確定案の導出過程(三者合意 2026-08-14 23:31)
+
+**殿の言(3段階で設計が定まった)**:
+1. 23:21「たぶん議論を複雑にしすぎてるぞ。問題はシンプルで**goldのpriceが保存されていなかった**。それだけだ。解決方法は**判断を一切せず**」
+2. 23:26「**本番にあるstandard PFの全てのconfigを取得して、relative assetとsafe haven assetの一覧を取得。そのtickerを準備するtickerとする。それだけだ**」
+3. 23:28「それは**別ルート**にすればいい。計算の**L1とL2の間**に入れればいいのでは」
+
+**本節が実装の正本である。§3.32(B案)および§3.30の移行順序はsuperseded。三者(将軍・家老・軍師)の残疑義ゼロ。**
+
+#### (1) 設計原理 — 判断を減らすほど設計が単純になる
+
+3者は「どの銘柄を母集団に入れるか」の**判断ロジック**を精密化し続け、対象PFの絞り込み・FoF展開・上界の定義・normalとreplayの経路差・bundle契約と論点を増やした。殿の3指摘は**判断そのものを削る方向**であり、削るたびに論点が消滅した。
+
+| 論点 | 判断を残した場合 | **確定案(判断を削った結果)** |
+|------|----------------|--------------------------|
+| どのPFを対象にするか | mode・target・closureの判定が要る | **判断しない**(常に全standard PFのconfigから取る) |
+| FoF展開 | 再帰か上界かの設計が要る | **不要**(FoFは`relative_assets`が空。実測78体すべて増分0) |
+| どの銘柄種別か | — | **殿が定義済み**(保有しうるのはrelative momentumとsafe havenのみ) |
+| normal内のfull/partialの経路差 | 母集団の再導出がmodeごとに異なる | **消える**(mode分岐の外に置くため同一パス) |
+| bundle replayとの経路差 | — | **今回は対象外**((2-b)の通りproduction caller 0。穴として明記) |
+| 既存経路への影響 | `_collect_all_symbols`とLayer 1の改修が要る | **不要**(別ルートとして分離) |
+
+**根本原因の言い換え**: 欠落したのは「GLDの価格」である。母集団を賢く算出できなかったことが問題なのではなく、**Layer 1をスキップするpartialに対して、Layer 2が保有しうる銘柄の価格を用意する経路が存在しなかった**ことが問題だった。
+
+**将軍の逸脱記録(v2.34-35)**: 「判断を一切せず」を「全銘柄14種を準備」と解釈したが行き過ぎであった。判断しないのは**対象PFの選び方**であり、銘柄種別は殿が既に定義していた。9が正しく14は過剰である。
+
+#### (2) 実装(確定形 — 殿の整理2026-08-14 23:26)
+
+**殿の言**: 「どれを使うかを判断するためにconfigを取得するツールを作っただろ。使い方は簡単だ。**本番にあるstandard PFの全てのconfigを取得して、relative assetとsafe haven assetの一覧を取得。そのtickerを準備するtickerとする。それだけだ**」
+
+**準備するticker = 全standard PFの `relative_assets` ∪ `safe_haven_asset`(Cash除く)**。`scripts/pf_assets.py`が出力する集合そのものである。
+
+**実測(2026-08-14 22:28 `pf_assets.py`)**: **9銘柄** = `['GDX','GLD','QLD','QQQ','SPY','TECL','TMV','TQQQ','XLU']`。
+
+**具体形 ⚠v2.37で配置を訂正(殿指示2026-08-14 23:28「それは別ルートにすればいい。計算のL1とL2の間に入れればいいのでは」)**:
+
+既存の`_collect_all_symbols`経路へ**混ぜない**。**独立した別ルートとしてLayer 1とLayer 2の間に置く。**
+
+**層の現物確認(将軍・`recalculate_fast.py`)**: `Layer 1 = ティッカー層`(mode=TICKER・`:690,698`)、`Layer 2 = ポートフォリオ層`(mode=PORTFOLIO・`:691,699`)。そして**`mode=PORTFOLIO`はLayer 1をスキップし既存cacheに依存する**(`:1276` "mode=PORTFOLIO skips Layer 1 regeneration"、`:1340-1341`)。
+
+**∴根因の本質が層構造で説明できる**: partial(=Layer 2のみ)はLayer 1(価格・ティッカー層の準備)を意図的に飛ばす設計であり、その速度上の利点は正しい。欠けていたのは「**Layer 2が必要とする保有可能tickerの価格だけは、L1を飛ばしても用意されている**」という保証である。
+
+**配置(v2.38で行番号を確定 — 家老・軍師が独立に同一結論)**: **`recalculate_fast.py:1977`(`all_symbols`算出)の直後、`:1981`(`stock_symbols`確定)の直前**に、全standard PFのrelative ∪ safe haven(9銘柄)を別算出してunionする。
+
+**⚠表示上のLayer境界(`:3466`/`:3496`)へ入れてはならない(家老指摘)**: そこは**FoF月次生成後**であり、警告と誤`MonthlyReturn`の発生を防げない。安全な一箇所は**価格snapshot確定前(1977-2007)**である。∴殿の「L1とL2の間」という設計原則は正しく、それをコード上で実現する点が価格snapshot構築の内側にあたる。mode分岐の外にあるため**normal/partialが同一パスを通る**(軍師確認)。
+
+**規模の実測(家老)**: FoF78体のconfigはrelative空・abs/safe/rf空・benchmark SPYのみ=**stock増分0**(FoFを渡しても集合が増えないことの実証)。run399条件では既存7銘柄+不足4=11銘柄、価格行38744→61268(+22524行/+58.1%)。**全standard対象時(full)は9銘柄が既存13銘柄の部分集合となり増分0。** ∴コスト増はpartialのときだけ生じる。
+
+この配置により:
+- 既存の`_collect_all_symbols`とLayer 1の設計は**一切変更しない**(速度上の利点を壊さない)
+- 責務が分離される(L1=ティッカー層全体の再生成 / 新ルート=L2が保有しうる銘柄の価格保証 / L2=ポートフォリオ層)
+- normal・partialのどちらでも同じルートが通るため、経路差が生じない
+
+DTB3除外・SPY常時materialize・lookback(target基準)は既存のまま。
+
+**⚠v2.36で自己訂正**: v2.34-35では「判断を一切せず」を**全銘柄(config由来14種: `DTB3,GDX,GLD,LQD,QLD,QQQ,SPXL,SPY,TECL,TMF,TMV,TQQQ,^VIX,XLU`)を準備する」と解釈したが行き過ぎであった。殿の「判断を一切せず」が指すのは**どのPFを対象にするかを判断しないこと**(=全standard PFから取る)であり、銘柄種別は既に殿が定義済み(保有しうるのはrelative momentumとsafe havenだけ・2026-08-14 22:17)。∴準備集合は14ではなく**9**が正しい。absolute・risk-free・benchmarkは保有されないため、保有可能性を担保する目的の集合には含めない(計算入力としては既存経路が対象PFぶん集める)。
+
+#### (2-b) bundle replayの扱い(三者確認済み・今回対象外)
+
+replay経路の`payload`はbundleの`portfolio_config`のみであるため、C案の「全PFを渡す」がそのままでは成立しない。ただし**replay時の`df_prices`はbundle artifactから直接取得される**(`recalculate_fast.py:1983`・軍師確認)ため、bundleに価格が揃っていれば足りる。そして**bundle replayは本番で使われていない** — 集計コマンド=`rg -n "input_bundle_path|materialize_input_bundle" backend/app backend/scripts` と `rg -n input_bundle backend/app/api backend/app/services`、出力行=`input_bundle_path`は`recalculate_fast.py:1786,1867,1872,2078`、`materialize_input_bundle`は`input_bundle_materializer.py:16`、**API/services/scriptsからの呼出は出力なし**(1件の定義=rgが返した1行を1箇所)。将軍・家老の双方が独立に実測し一致した。
+
+∴**今回はnormal経路のみを対象とする。** replayは「非対応・production caller=0を三者実測・productionで使用開始する前に価格集合の契約実装が必須」と本節に明記して穴を可視化する。**使われていない経路のために契約機構を今作らない**(殿の複雑化回避指示)。
+
+#### (3) 残る唯一の検査
+
+snapshot公開前に「**用意されるはずの銘柄が実際にmaterializeされたか**」を一度だけfail-closeする(§3.30 T3)。C案では候補集合が「全部」なので、検査は候補の定義を要さず、**供給故障(API・prices・snapshotが行を返さない)の検出だけ**を担う。
+
+#### (4) 変更しない点
+
+weightsと`price_movement`の別ソース照合、Cashのprice-free契約、real tickerのfail-close、`_collect_all_symbols`の収集規則、lookback期間の算出元(target基準)。
+
+**状態**: 殿指示による確定案。実装・配備は殿の解禁指示を待つ。
+
+---
+
+## §7 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- **v2.41 (2026-08-14 23:56): 殿指摘「追記ばかりで構造が破綻」「工程の順序もバラバラ」「ToBeはあるべき姿を書く場所であり現状を書く場所ではない」を受けて文書構造を再編。①現象と根因を**§2.9 AsIs**へ分離 ②あるべき姿・実装・二値出口を**§3.29 ToBe**へ統合(節番号の乱れ §3.29→3.30→3.33→3.32→3.31 を解消) ③議論の断面5本を**§6 設計の経緯**へ移し時系列順(経緯1〜5)へ整列、内部見出しの番号衝突も解消 ④改訂履歴を§7へ改番。内容の削除はせず配置のみ変更(歴史修正禁止)。
+- v2.40 (2026-08-14 23:39): §3.33(1)表と(2-b)の相反を解消(normal内full/partialの経路差とbundle replayを分離。家老指摘)。
 - **v2.39 (2026-08-14 23:35): 三者合意成立(残疑義0)を受けて工程化。** §3.33見出しと(1)を確定形(9銘柄・別ルート)へ整合(v2.34-35の「全銘柄14種」解釈は将軍の逸脱として記録保持)。**§5工程表へP0.9(L2供給価格の別ルート追加)を新設**し、P4依存へP0.9を追加、クリティカルパスと進捗台帳も更新。P4は基準runがpartialのためやり直しが前提であることを台帳へ明記。
 - v2.38 (2026-08-14 23:31): 家老・軍師が独立に同一結論へ到達し挿入点確定 — `recalculate_fast.py:1977`直後/`:1981`直前。表示Layer境界(:3466/:3496)はFoF月次生成後のため禁止(家老)。mode分岐外ゆえnormal/partial同一パス(軍師)。実測=partial+58.1%(38744→61268)、full増分0、FoF78体増分0。
 - v2.37 (2026-08-14 23:28): 殿指示「別ルートにしてL1とL2の間へ」— 層を現物確認(L1=ティッカー層/L2=ポートフォリオ層、mode=PORTFOLIOはL1をスキップ `:1276`)。根因を層構造で説明し、既存`_collect_all_symbols`とLayer 1を無変更のまま別ルートを1本置く方針へ。準備集合も9銘柄へ訂正(殿の整理23:26)。
