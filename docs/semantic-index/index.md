@@ -8572,6 +8572,7 @@ codd:
 | file | `scripts/cmd_publish.sh` |
 | file | `skills/cmd-complete/SKILL.md` |
 | file | `scripts/cmd_complete_gate.sh` |
+| file | `docs/research/cmd_4292_finalize_mechanism_recon.md` — 完了処理の各機構を隔離fixtureで計測した再構築レポート |
 | file | `scripts/gates/gate_yaml_status.sh` |
 | file | `tests/unit/test_cmd_complete_skill.bats` |
 | file | `logs/cmd_design_quality.yaml` |
