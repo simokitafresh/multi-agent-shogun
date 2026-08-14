@@ -346,6 +346,12 @@ A案(§3.29)は**T1の最小実装**に相当し、T2・T3は満たさない。�
 
 **規模の実測(2026-08-14)**: 価格表は**全18銘柄・約10万行**。config由来の全銘柄はこれとほぼ一致する。∴「全部準備」しても価格表全体を読むだけであり、絶対量は小さい。現行のpartialが読む38744行との差は実装後に計測して記録する。
 
+#### (2-b) bundle replayの扱い(三者確認済み・今回対象外)
+
+replay経路の`payload`はbundleの`portfolio_config`のみであるため、C案の「全PFを渡す」がそのままでは成立しない。ただし**replay時の`df_prices`はbundle artifactから直接取得される**(`recalculate_fast.py:1983`・軍師確認)ため、bundleに価格が揃っていれば足りる。そして**bundle replayは本番で使われていない** — 集計コマンド=`rg -n "input_bundle_path|materialize_input_bundle" backend/app backend/scripts` と `rg -n input_bundle backend/app/api backend/app/services`、出力行=`input_bundle_path`は`recalculate_fast.py:1786,1867,1872,2078`、`materialize_input_bundle`は`input_bundle_materializer.py:16`、**API/services/scriptsからの呼出は出力なし**(1件の定義=rgが返した1行を1箇所)。将軍・家老の双方が独立に実測し一致した。
+
+∴**今回はnormal経路のみを対象とする。** replayは「非対応・production caller=0を三者実測・productionで使用開始する前に価格集合の契約実装が必須」と本節に明記して穴を可視化する。**使われていない経路のために契約機構を今作らない**(殿の複雑化回避指示)。
+
 #### (3) 残る唯一の検査
 
 snapshot公開前に「**用意されるはずの銘柄が実際にmaterializeされたか**」を一度だけfail-closeする(§3.30 T3)。C案では候補集合が「全部」なので、検査は候補の定義を要さず、**供給故障(API・prices・snapshotが行を返さない)の検出だけ**を担う。
