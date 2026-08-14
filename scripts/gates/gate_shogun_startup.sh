@@ -1938,6 +1938,8 @@ echo "  軍師draft RC傾向(直近20件): ${rc_data}"
 fi
 
 # --- Gate 10: idle自走トリガー ---
+# 2026-08-15: snapshot変数が未代入でGate 10が常に「不在 — 判定不可」に落ちていたため代入を追加。
+snapshot="${snapshot:-$SCRIPT_DIR/queue/karo_snapshot.txt}"
 echo "■ idle自走トリガー"
 IDLE_TRIGGER="OFF"
 if [ -f "$snapshot" ]; then
@@ -1957,6 +1959,25 @@ if [ -f "$snapshot" ]; then
         echo "  Step 7: Score Matrix + Design Diversity Map — bash scripts/score_matrix.sh && bash scripts/design_diversity_map.sh (Loop Engineering §X judgment集中投資)"
     else
         echo "  稼働中cmd: ${active_cmds}件、idle忍者: ${idle_or_done}/${total_ninjas}"
+    fi
+else
+    echo "  karo_snapshot.txt不在 — 判定不可"
+fi
+
+# --- Gate 10.05: 走行中cmdのcapture-pane実測突合 ---
+# 2026-08-15: 将軍がkaro_snapshot(二次情報)のin_progress表示だけで状況を語り、
+# 実態の停滞を殿指摘(「止まってるぞ。バグだな」04:24)まで検出できなかった事故の環境埋込み(Q6自動化ターゲット)。
+# snapshotはninja_monitor生成の二次情報でありタイムラグを持つ。走行中cmdがある限り一次情報で裏取りせよ。
+echo "■ 走行中cmd実測突合"
+if [ -f "$snapshot" ]; then
+    _busy_lines=$(awk -F'|' '/^ninja\|/ && /RUNTIME:busy/ {n++} END {print n+0}' "$snapshot" 2>/dev/null)
+    _snap_ts=$(grep -m1 '^# Generated:' "$snapshot" 2>/dev/null | sed 's/^# Generated: *//')
+    if [ "${_busy_lines:-0}" -gt 0 ]; then
+        echo "  WARN: 走行中(RUNTIME:busy)忍者 ${_busy_lines}名。snapshot生成=${_snap_ts:-不明}(二次情報)"
+        echo "  → 状況を語る前にcapture-paneで一次情報を確認せよ(paneは scripts/lib/pane_lookup.sh の pane_lookup で解決)"
+        alerts+=("走行中cmd実測突合: busy ${_busy_lines}名。capture-pane未確認で状況報告するな")
+    else
+        echo "  OK: 走行中(busy)忍者なし — 突合不要"
     fi
 else
     echo "  karo_snapshot.txt不在 — 判定不可"
