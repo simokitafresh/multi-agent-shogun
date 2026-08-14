@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.20
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.21
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -154,7 +154,8 @@ full/portfolio再計算の終端で、`recalculation_status`行へ`summary` JSON
 4. **深度拡張時の唯一の作業**: 新しい深度のPFを追加したら**その深度のfixtureを1本追加するだけ**(現行はdepth1/2/4を列挙 — 実在PFの深度に合わせたもの)。コード・スキーマ・契約の変更は不要。
 5. **深度依存の既知リスクは根治済み**: partial modeの親closure拡張(深いほど巻き込み拡大)はmode=portfolio運用停止で遮断、DTB3のsnapshot外SELECTはP0.4後半で束縛済み。full再計算は子→親の依存順処理ゆえ深度増でも順序不変。
 
-**本番実測(2026-08-14 19:57・readonly)**: `New Fund of Funds_copy_copy_copy`(id=9324015c)の直接構成は秘奥義4 standard PF均等25%=**depth1のFoF**(一段深くない)。`fof_component_weights`は直接子を保持し(`child_components`/`nested_depth`列で入れ子表現)、当該PFの子はcomponent_type全て'standard'。なお表示名「Total Return (PF名)」はUI表示ラベルでありPF名とは別物。
+**本番実測(2026-08-14 20:05・readonly・v2.21で訂正)**: `New Fund of Funds_copy_copy_copy`(id=9324015c)は**FoF入れ子4段**の頂点である — 連鎖=当該PF→秘奥義(fof)→奥義-GS(fof)→GSシン(fof)→シン四神(standard)。portfolios表の実typeと再帰JOINで全連鎖を実測(殿指摘2026-08-14 20:03が契機)。この最深PFがRB6全量検算(33748月exact)を通過済みであることが、§3.28深度非依存の**本番実証**である。
+**⚠計測時の罠(v2.20誤記の原因)**: `fof_component_weights.component_type`列は当該PFの直接子(実type=fof)を'standard'と表示し、`check_pf_config.py`のtype表示も同様だった — **子の実typeはportfolios表とのJOINで確認せよ。component_type列を鵜呑みにするな**(列値と実態の乖離は別途データ品質事象として記録)。なお表示名「Total Return (PF名)」はUI表示ラベルでありPF名とは別物。
 
 ### §3.3 使い方(完成後のデバッグ手順)
 
@@ -364,6 +365,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.21 (2026-08-14 20:07): 殿指摘20:03「当該PF→秘奥義→奥義→シン四神の四段では」— 将軍のv2.20実測(depth1)は誤り。portfolios実typeとの再帰JOINで**FoF入れ子4段**(当該PF→秘奥義fof→奥義-GS fof→GSシン fof→シン四神standard)を確定。誤答原因=fof_component_weights.component_type列とcheck_pf_config表示の鵜呑み(列値'standard'が実態fofと乖離)。§3.28へ訂正+計測時の罠(実typeはportfolios JOINで確認)を明記。最深PFのRB6検算通過=深度非依存の本番実証として記録。
 - v2.20 (2026-08-14 20:00): 殿指示19:55「深度非依存を設計書に記しておけ+New Fund of Funds_copy_copy_copyは一段深いのでは確認せよ」— §3.28深度非依存契約を新設(計測契約・provenance書込み・fingerprint連鎖の3層で深度非依存、拡張時はfixture1本のみ、既知深度リスクは根治済み)。本番実測: 当該PFはdepth1(直接構成=秘奥義4 standard均等25%、readonly照会)。「Total Return (PF名)」はUI表示ラベルと注記。
 - v2.19 (2026-08-14 18:42): 殿指示18:38「進捗と経緯をアップデートせよ。知見を漏らすな」— §5.9進捗台帳新設: 工程別ステータス(P0.4前半後半・P3a=GATE CLEAR+本番稼働、P0.6完了、P0.5=v2.17スコープで飛猿再配備中、他未着手)+本日のcanary事故2件と復旧の時系列(run361破壊→revert→復元/run365実値汚染98596件→遮断→全数復帰、実害滞在約16分)+殿裁定群7点の知見要約(小deploy即revert・最速revert push・run待機禁止・検証run起動禁止・過剰防御禁止・fixture配置原則・前提変更停止/車輪再発明禁止)。
 - v2.18 (2026-08-14 17:53): 殿裁定17:48-17:52「fullで確認済みなのにcanaryを要求した」「FoF全部再計算=長大な無駄。冗長再計算を将軍が要求+全PF計算の2問題」「再発防止を将軍・家老両側へ徹底」— §5.07冒頭へ検証run起動の二値規則を新設: 検証目的の新規run起動禁止(既存直近full結果へのSELECT突合のみ)、mode=full=全PF不可分(約7-8分)の明記、「canary=独立作業」の誤読を用語ごと訂正(canary三値=直近full結果への三値SELECT確認の別名)。発生源=将軍の指示文言がcanaryを別作業のように再要求した+設計書用語が実態とずれていたこと。
