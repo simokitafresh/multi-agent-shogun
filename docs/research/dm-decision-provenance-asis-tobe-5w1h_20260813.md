@@ -401,7 +401,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 **運用規則**: 新しい検証cmdを起票する前に、本表とknowledge検索(`bash scripts/memory_db_query.sh --search "<対象>"`)で既存資産の有無を確認し、q11(車輪確認)へ照合結果を記載する。
 
-## §5.9 進捗台帳(2026-08-14 18:40現在 — 実装初日の全記録)
+## §5.9 進捗台帳(2026-08-15 00:15現在 — 実装初日の全記録)
 
 ### 工程別ステータス
 
@@ -409,36 +409,66 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 |---|---|---|---|
 | P0 殿裁定 | ✅完了(15:40) | 「では開始しよう」 | — |
 | **P0.4前半** cmd_4245ガード | ✅**GATE CLEAR**(18:34) | commit c17a32f7・deploy 484f7e45 | 狭い履歴での全削除拒否。テスト14 passed |
-| **P0.4後半** DTB3 snapshot束縛 | ✅**GATE CLEAR**(cmd_4306) | 才蔵実装・deploy 484f7e45 | テスト15/15 PASS |
-| P0.5 sanitizer契約 | ✅**GATE CLEAR**(19:02・cmd_karo_hotfix_p05_v217_sanitizer) | commit 97c1fd9f・テスト4/4 PASS・SKIP0(v2.17スコープ=sanitizer層契約のみ) | 初回deploy(cmd_4303)はcanary事故で撤回→v2.17スコープで再実装完了(下記経緯)。main反映は§5.07標準サイクルで家老レーン |
+| **P0.4後半** DTB3 snapshot束縛 | ✅**GATE CLEAR**(cmd_4306・17:10) | 才蔵実装・deploy 484f7e45 | テスト15/15 PASS |
+| P0.5 sanitizer契約 | ✅**GATE CLEAR**(19:02・cmd_karo_hotfix_p05_v217_sanitizer) | commit 97c1fd9f・テスト4/4 PASS・SKIP0 | 初回deploy(cmd_4303)はcanary事故で撤回→v2.17スコープで再実装 |
 | P0.6 temporal偵察 | ✅完了(cmd_4304) | docs/research/cmd_4304_fof_weights_temporal_20260814.md | — |
-| P0.7 B2窓契約固定 | ✅**GATE CLEAR**(19:45・cmd_karo_p07_b2_window_contract) | (b)SQL実測=非0の50件は殿裁定02:59の既知同窓行(stub48+44fa2)と完全一致→将軍裁定で既裁定適用・続行(19:27)。fixture5/5 PASS+50行現状値10dp固定 | behavior-changing工程だが本番出力差0を実証して通過 |
-| **P3a** runサマリ台帳 | ✅**GATE CLEAR+本番稼働**(cmd_4305) | commits 6d92c190+b6770fe1・deploy 484f7e45 | run364でsummary非NULL初記録(signals_upserted99406・total_time444.290s) |
-| P3b metricsマニフェスト | ⬜未着手 | — | P3a済み・P1b待ち(直列鎖) |
-| P1a standard scalar | ✅**GATE CLEAR**(19:28・cmd_karo_p1a_standard_scalar) | provenance書込み実装(standard経路) | — |
-| P2a FoF scalar | ✅**GATE CLEAR**(19:36・cmd_karo_p2a_fof_scalar) | provenance書込み実装(FoF経路) | — |
-| P1b/P2b | ⬜次工程 | P1b=snapshot完全化(P1a後の直列鎖)、P2b=P2a+P1b後 | — |
-| **P0.9** | 🟡設計確定・実装解禁待ち | 三者合意2026-08-14 23:31(残疑義0)。設計=§3.33。挿入点=`recalculate_fast.py:1977`直後/`:1981`直前 | 実測: 準備集合9銘柄、partial時+58.1%(38744→61268行)、full時増分0、FoF78体は増分0 |
-| P4/P5/P6/P7 | ⬜未着手 | — | P4はP0.9完了が前提(基準runがpartialのため要やり直し — §3.31) |
+| P0.7 B2窓契約固定 | ✅**GATE CLEAR**(19:45) | fixture5/5 PASS+50行現状値10dp固定 | 非0の50件は既知同窓行(stub48+44fa2)と完全一致→既裁定適用で続行 |
+| **P3a** runサマリ台帳 | ✅**GATE CLEAR+本番稼働**(cmd_4305・18:13) | commits 6d92c190+b6770fe1・deploy 484f7e45 | run364でsummary非NULL初記録 |
+| P1a standard scalar | ✅**GATE CLEAR**(19:28) | provenance書込み実装(standard経路) | — |
+| P2a FoF scalar | ✅**GATE CLEAR**(19:36) | provenance書込み実装(FoF経路) | — |
+| **P1b** standard snapshot完全化 | ✅**GATE CLEAR**(20:07) | canonical commit 4e835bb0・pytest 29 passed | Render dep-d9vfblgae00c7380ein0 live・health 200 |
+| **P2b** FoF/nested snapshot新設 | ✅**GATE CLEAR**(20:33) | commit 35ffafdf・recalculate_fof.py +197行・pytest 9件FAIL0/SKIP0 | 才蔵 |
+| **P3b** metricsマニフェスト | ✅**GATE CLEAR**(20:39) | commit 211e574d・3ファイル83行・metric names47/full row_count204 | 小太郎。summary非null確認 |
+| **P2b+P3b 本番反映** | ✅完了(20:43) | main=347404af・Render dep-d9vftme7bikc73c2mkug live・health 200 | 選択実行pytest 50 passed |
+| **P0.9** L2供給価格の別ルート | 🟡**設計確定・実装解禁待ち** | 三者合意(2026-08-14 23:31・残疑義0)。設計=**§3.29**、AsIs=§2.9、経緯=§6。挿入点=`recalculate_fast.py:1977`直後/`:1981`直前 | 実測: 準備集合9銘柄、partial時+58.1%(38744→61268行)、full時増分0、FoF78体増分0 |
+| **P4** canary(最終checkpoint①) | 🔴**やり直し必要** | 基準run399(mode=portfolio・20:52:19-20:53:36・completed)は母集団欠落の影響下で実行された | P0.9完了後に再実行。今回結果は破棄(§3.29末尾) |
+| P5/P6/P7 | ⬜未着手 | — | P5はP4完了後 |
 
-### 本日の経緯(canary事故と復旧 — 時刻は全てJST)
+### 本日の経緯(時刻は全てJST)
+
+**第一幕: canary事故と復旧(16:17-18:31)**
 
 1. **16:17 cmd_4303(P0.5初回)のcanary(mode=portfolio 5PF)が本番run361を破壊** — SOURCE_SELECT_AFTER_SNAPSHOT(部分モードでDTB3が不変snapshot外)で中断、FoF depth4の172月欠落。
 2. **RCA**: 破壊経路はsanitize変更(20行)ではなく**canaryのmode=portfolio実行**。cmd_4245既知暫定制約「本番はmode=fullのみ」(2026-08-09)の見落とし=RB知見不使用(将軍の設計ミス)。同runtimeのrun362 full完走がsanitize無罪の傍証。
 3. **復旧**: exact revert bec344dd push(16:25)→復元run363で**run360状態へ月次16874/16874完全一致**復元(16:40)。
 4. **17:38 将軍の曖昧文言(canary別作業誤読)が検証目的run365(portfolio)を誘発** → 確定月holding_signalを**98596件実値汚染**(18:06検知)。
 5. **遮断・復元**: run365停止(18:09)→復元full起動(18:12)→**98596/98596全キー旧値復帰・汚染残存0・ledger書込0**(18:31全数照合)。実害滞在約16分。
-6. **P0.4根治**: cmd_4245ガード+cmd_4306 DTB3束縛を実装・deploy・run364検証PASS(月次/metrics sha一致+summary非NULL)。
+6. **P0.4根治**: cmd_4245ガード+cmd_4306 DTB3束縛を実装・deploy・run364検証PASS。
 
-### 本日確定の知見(殿裁定群 — 全て§5.05規則8-11と§5.07に反映済み)
+**第二幕: 実装工程の完走(19:28-20:43)**
+
+7. P1a(19:28)→P1b(20:07)→P2a(19:36)→P2b(20:33)→P3a(18:13)→P3b(20:39)がすべてGATE CLEAR。**実装工程11本が初日で完了**。
+8. 20:43 P2b+P3bを一便で本番反映(main=347404af・deploy live・health 200・pytest 50 passed)。
+
+**第三幕: matched-weight事象と設計(20:52-23:56)**
+
+9. **20:52 P4 canaryとしてrun399(mode=portfolio)が起動** — 将軍がcmd_4307のAC1へ「再計算を実行し」と書き、忍者が本番recalculate APIを叩いた。**本番操作は家老レーンという裁定に反する将軍の起票ミス**(→§5.05規則12を新設)。
+10. **20:53 殿ntfyでMatched weight WARN 472件を受領**。GLDが`price_movement`から欠落。
+11. **21:03-21:18 偵察cmd_4308**で根因確定 — 部分再計算が価格symbolをstandard_portfoliosのみから収集し、FoF展開後の銘柄が母集団から落ちる。
+12. **21:17-23:31 設計** — 殿の指摘で3度の方向転換(A案→B案→確定形)。将軍の誤り3件(用途未確認の関数指名/「判断を一切せず」の過大解釈/波及を表示層限定と誤記)を訂正しつつ、**三者(将軍・家老・軍師)の残疑義ゼロで確定**。
+13. **23:56 文書構造の再編** — 殿指摘「追記ばかりで構造が破綻」「ToBeは現状を書く場所ではない」を受け、AsIs=§2.9 / ToBe=§3.29 / 工程=§5 P0.9 / 経緯=§6 / 改訂履歴=§7へ再配置。
+
+### 本日確定の知見(殿裁定群 — §5.05規則8-12と§5.07に反映済み)
 
 - **小deploy・即revert・一歩ずつ**: sanitize20行の小deployゆえ3分検知・revert1手・手戻り1工程。事故が既存欠陥2件の発見=前進に変換された。
 - **最速revert push**: 壊れたrunの完走待ちは保護価値ゼロ、汚染はDBへ書き広がる。revert前の検証・言い訳材料集め禁止(run362待ちで8分遅延の実証)。
 - **run待機=時間破壊**: 待機中はbranch上で次実装を準備。
-- **検証run起動禁止**: deploy後検証=既存直近full結果へのSELECT突合のみ。mode=fullは全102PF不可分(約7-8分)、portfolioも旗未指定なら親closure拡張。
-- **過剰防御禁止(18:32)**: 根因(バグコードで計算)への対策=即stop+revert確立で因果は切れた。ledger凍結エンフォース等の防御層追加は複雑化=バグの温床であり**実装しない**(将軍提案を撤回)。
-- **fixture配置原則**: fixtureは検証対象の契約と同じ層に書く(sanitizer層のstub48 fixtureは全行同一期待値へ縮退する偽陽性だった)。
+- **検証run起動禁止**: deploy後検証=既存直近full結果へのSELECT突合のみ。
+- **本番操作をACに入れるな(21:01・規則12)**: push/deploy/本番recalc起動は家老lane。検証ACが忍者へ課してよいのは直近完了runへの読み取り突合だけ。
+- **過剰防御禁止(18:32)**: 根因対策が済めば防御層を重ねない。「対策をした雰囲気を得るための不要な対策を重ねるな」。
+- **判断を減らすほど設計は単純になる(23:21-23:28)**: 母集団の判断ロジックを精密化するほど論点が増えた。殿の3指摘(全FoFの元はstandard/保有しうるのはrelativeとsafe havenだけ/別ルートでL1とL2の間へ)で論点が消滅した。
+- **ToBeはあるべき姿を書く場所(23:51)**: 現状・経緯・訂正履歴をToBe節へ混ぜると構造が破綻する。AsIs/ToBe/工程/経緯を分離せよ。
+- **用途を確認せず基準を当てはめるな(23:16)**: 手元確認用の単品ツールへproduction基準を適用した家老の判断は「慎重」ではなく異常。将軍もそれに追従した。→ ツールへ`用途区分`を宣言する構造化で根治。
+- **fixture配置原則**: fixtureは検証対象の契約と同じ層に書く。
 - **前提変更=停止→設計書更新→再開** / **車輪の再発明禁止**(RB6/RB8資産+記憶DBを先に引く)。
+
+### 新設資産(本日)
+
+| 資産 | commit | 用途 |
+|---|---|---|
+| `scripts/fof_tree.py` | dd0664f3 | FoF入れ子構造の即時表示(OPERATOR_TOOL・readonly) |
+| `scripts/pf_assets.py` | 4b06de75 | standard PFの資産項目一覧・保有可能上界・safe haven二重SSOTの不一致検出(OPERATOR_TOOL・readonly) |
+| `scripts/stall_probe.sh` | — | 停止検知 |
 
 ## §6 設計の経緯(matched-weight事象・2026-08-14の議論記録)
 
