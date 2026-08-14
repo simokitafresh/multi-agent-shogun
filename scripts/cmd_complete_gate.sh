@@ -7344,12 +7344,9 @@ if [ "$HAS_IMPLEMENT" = "true" ] \
     exit 1
 fi
 
-# ─── GA-238/239/241/242: context freshness own-commit block ───
-# 既存の「Context freshness nudge」(後段、非同期・出力破棄)は可視性のみで
-# CLEARを止めない設計だった。完了しようとしているcmd自身のcommitが、
-# 未反映のsplit context候補(context/*.mdのsource commit ALERT)として
-# 残っている場合はCLEARさせない — last_updated/source_commitの手動更新だけで
-# 閉じることを防ぐ「cmd完了前の強制提示」導線。
+# ─── context freshness doc-lane diagnostics ───
+# context freshness は本体クローズの直列条件にしない。完了結果を遅らせず、
+# CLEAR後の非同期doc laneで警告と安全な更新候補を将軍へ通知する。
 #
 # 無関係cmd誤BLOCK0の設計: (1) project定義(DM_SIGNAL_CONTEXT_PATHS/
 # INFRA_CONTEXT_PATHS)を持つinfra/dm-signalのみ対象、他projectは無条件通過。
@@ -7513,12 +7510,6 @@ check_context_freshness_own_commit() {
 
     return "$_any_block"
 }
-
-if ! check_context_freshness_own_commit "$CMD_ID"; then
-    echo "GATE BLOCK: context_freshness_own_commit_unreflected"
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "context_freshness_own_commit_unreflected")"
-    exit 1
-fi
 
 # ─── 忍者報告からlesson_candidate自動draft登録 ───
 # 循環防止: 前回BLOCKがdraft_lessons起因なら自動draft生成をスキップ
@@ -7849,9 +7840,6 @@ for gate in "${ALL_GATES[@]}"; do
         fi
     fi
 done
-
-# ─── context_update freshness check（検証対象は書換えず、欠落・staleをBLOCK） ───
-check_context_update "$CMD_ID"
 
 # ─── 報告YAML存在チェック（cmd_1192: タスクあり報告なしをBLOCK, GP-026: 活動中忍者はWAIT） ───
 level_heading "[L1]" "Report YAML existence check:"
@@ -9919,10 +9907,32 @@ PY
     fi
 
     echo ""
-    echo "Context freshness nudge (GATE CLEAR):"
+    echo "Context freshness doc-lane warning (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/context_freshness_check.sh" ]; then
-        (bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$CMD_ID" >/dev/null 2>&1 || true) &
-        echo "  queued (async)"
+        (
+            warning_output=$(bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$CMD_ID" 2>&1 || true)
+            warning_file="$GATES_DIR/context_freshness_doc_lane.warning"
+            warning_tmp="${warning_file}.tmp.$$"
+            {
+                printf 'cmd_id: %s\n' "$CMD_ID"
+                printf 'timestamp: %s\n' "$(date -Iseconds)"
+                if [ -n "$warning_output" ]; then
+                    printf 'result: warning\n'
+                    printf '%s\n' "$warning_output"
+                else
+                    printf 'result: clear\n'
+                fi
+            } > "$warning_tmp" && mv "$warning_tmp" "$warning_file"
+
+            if [ -n "$warning_output" ] && [ -x "$SCRIPT_DIR/scripts/bulletin_write.sh" ]; then
+                warning_summary=$(printf '%s\n' "$warning_output" | head -80)
+                BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
+                    cmd_complete_gate \
+                    "DOC_LANE_WARNING: ${CMD_ID} のcontext freshness警告。doc更新は将軍laneで処理されたし。${warning_summary}" \
+                    false action_required >/dev/null 2>&1 || true
+            fi
+        ) &
+        echo "  queued (async; warning receipt=$GATES_DIR/context_freshness_doc_lane.warning, route=shogun-doc-lane)"
     else
         echo "  [INFO] context_freshness_check.sh not found (skip)"
     fi

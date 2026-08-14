@@ -58,6 +58,35 @@ teardown() {
 
 # ─── Helper functions for ac_version tests ───
 
+# test_necessity: 忍者ACへdoc-lane作業が混入した配備をBLOCKし、通常の実装ACを
+# PASSさせる不変量を守る。これを失うとdoc更新が忍者laneへ流入し、freshness待ちが再発する。
+@test "cmd_4302: doc-lane update AC is BLOCKed while normal AC passes" {
+    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard.yaml"
+    cat > "$task_path" <<'EOF'
+task:
+  acceptance_criteria:
+    - id: AC1
+      description: "context boundary updateを完了する"
+EOF
+
+    run deploy_task_guard_doc_update_ac "$task_path"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"DOC_LANE_ROUTING"* ]]
+    [[ "$output" == *"shogun doc lane"* ]]
+
+    cat > "$task_path" <<'EOF'
+task:
+  purpose: "context freshness gateの実装"
+  acceptance_criteria:
+    - id: AC1
+      description: "completion regression testsを全量実行する"
+EOF
+
+    run deploy_task_guard_doc_update_ac "$task_path"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 task_file() {
     printf '%s\n' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }

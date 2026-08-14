@@ -2364,13 +2364,13 @@ for marker in [
 PY
 }
 
-@test "cmd_complete_gate early-exit BLOCK rows use printf so tabs are real bytes" {
+@test "cmd_complete_gate early-exit BLOCK rows use printf and freshness is post-CLEAR" {
     # test_necessity: cmd_karo_hotfix_gate_metrics_literal_tab_20260725 found
-    # 5 early-exit BLOCK append_line_locked calls interpolating "\t" inside a
+    # 4 early-exit BLOCK append_line_locked calls interpolating "\t" inside a
     # plain double-quoted string (bash never expands \t there), producing a
     # literal backslash-t two-char sequence that breaks every downstream
-    # awk -F'\t' consumer of gate_metrics.log. This guards the printf fix so
-    # a future edit cannot silently reintroduce the naked-interpolation form.
+    # awk -F'\t' consumer of gate_metrics.log. Freshness is intentionally
+    # excluded: it is a post-CLEAR warning routed to the shogun doc lane.
     python3 - "$SRC_GATE_SCRIPT" <<'PY'
 import sys
 script = open(sys.argv[1], encoding='utf-8').read()
@@ -2379,7 +2379,6 @@ reasons = [
     'sg7_bundle_missing_or_invalid',
     'review_two_phase_pending',
     'review_fingerprint_changed_after_normalize',
-    'context_freshness_own_commit_unreflected',
 ]
 for reason in reasons:
     fixed = (
@@ -2389,6 +2388,11 @@ for reason in reasons:
     assert fixed in script, 'missing printf fix for ' + reason
     broken = ')\\t${CMD_ID}\\tBLOCK\\t' + reason + '"'
     assert broken not in script, 'literal backslash-t regression for ' + reason
+
+assert 'check_context_freshness_own_commit "$CMD_ID"' not in script
+assert 'check_context_update "$CMD_ID"' not in script
+assert '--cmd-warnings "$CMD_ID"' in script
+assert 'BULLETIN_NOTIFY=shogun' in script
 PY
 }
 
