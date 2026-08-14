@@ -36,6 +36,26 @@ python3 scripts/cdp/cdp_session.py establish --consumer "$CONSUMER" --ports 9222
 
 `CONSUMER`は`inspection`、`measurement`、`note`、`generic`のいずれか、`RECEIPT`は当該実行だけが読める一時ファイルとする。個別にブラウザ、daemon、port、credentialを準備してはならない。終了時はwrapperのtrapまたは `cdp_session.py cleanup --receipt "$RECEIPT"` に任せる。
 
+### Evidence state gate (必須)
+
+foundation receiptの発行はtransportの成立だけを示し、作業成功ではない。全ての用途は共通判定器を段階ごとに通し、`transport_only` → `dom_observed` → `artifact_complete` を明示する。`transport_only` と `dom_observed` は継続状態であり、終了成功は `artifact_complete` のexit 0だけである。
+
+```bash
+STATUS=0
+python3 scripts/cdp/cdp_evidence_status.py --receipt "$RECEIPT" || STATUS=$?
+test "$STATUS" -eq 10  # transport_only: receiptのみ、処理を続行
+# DOM実値を保存後:
+STATUS=0
+python3 scripts/cdp/cdp_evidence_status.py --receipt "$RECEIPT" \
+  --dom-evidence "$DOM_EVIDENCE" || STATUS=$?
+test "$STATUS" -eq 11  # dom_observed: artifact保存を続行
+# artifactを保存後。ここだけexit 0で完了扱い:
+python3 scripts/cdp/cdp_evidence_status.py --receipt "$RECEIPT" \
+  --dom-evidence "$DOM_EVIDENCE" --artifact "$ARTIFACT"
+```
+
+判定器はfoundation receiptを検証し、DOM実値と読み取り可能な非空artifactを機械判定する。receiptだけ、またはDOMだけで後続処理を省略してはならない。
+
 ## 用途写像
 
 - DM-Signal検分: `inspection` receiptを消費するカード=`scripts/cdp/cdp_card_probe.py`、contrast=`scripts/cdp/cdp_contrast_probe.py`、ED=`scripts/cdp/cdp_ed_probe.py`、font=`scripts/cdp/cdp_font_probe.py`、最大表示=`scripts/cdp/cdp_maxdisplay_probe.py`、tier=`scripts/cdp/cdp_tier_probe.py`から選び、認証が必要なら `scripts/cdp/dm_signal_adapters.py` のauth/deploy adapterを使う。
