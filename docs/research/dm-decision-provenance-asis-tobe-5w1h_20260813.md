@@ -320,7 +320,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | P0 殿裁定 | ✅完了(15:40) | 「では開始しよう」 | — |
 | **P0.4前半** cmd_4245ガード | ✅**GATE CLEAR**(18:34) | commit c17a32f7・deploy 484f7e45 | 狭い履歴での全削除拒否。テスト14 passed |
 | **P0.4後半** DTB3 snapshot束縛 | ✅**GATE CLEAR**(cmd_4306) | 才蔵実装・deploy 484f7e45 | テスト15/15 PASS |
-| P0.5 sanitizer契約 | 🔄**再配備中**(飛猿・v2.17スコープ) | sanitize変更本体=commit 2c218922(RCAで無罪確定・cherry-pick起点可)。偽陽性fixture 05ca166fは破棄 | 初回deployはcanary事故で撤回(下記経緯) |
+| P0.5 sanitizer契約 | ✅**GATE CLEAR**(19:02・cmd_karo_hotfix_p05_v217_sanitizer) | commit 97c1fd9f・テスト4/4 PASS・SKIP0(v2.17スコープ=sanitizer層契約のみ) | 初回deploy(cmd_4303)はcanary事故で撤回→v2.17スコープで再実装完了(下記経緯)。main反映は§5.07標準サイクルで家老レーン |
 | P0.6 temporal偵察 | ✅完了(cmd_4304) | docs/research/cmd_4304_fof_weights_temporal_20260814.md | — |
 | P0.7 B2窓契約固定 | ⬜未着手 | stub48/44fa fixtureはここ(v2.17移設) | P0.5後 |
 | **P3a** runサマリ台帳 | ✅**GATE CLEAR+本番稼働**(cmd_4305) | commits 6d92c190+b6770fe1・deploy 484f7e45 | run364でsummary非NULL初記録(signals_upserted99406・total_time444.290s) |
