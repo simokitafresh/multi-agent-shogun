@@ -74,7 +74,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608141454_kotaro"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次証拠を再確認。logs/gunshi_gp_tracker.yaml:GP-224 は status=obsolete、closed_at=2026-04-26T21:05:00、直近10件5-14秒(max14秒)で30秒timeout到達0件と記録しており、旧候補は既に無効化済み。現行logs/deploy_task.logの2026-08-14配備receiptもsuccessで、追加実修正・decision_candidateは不要。"
+  action_artifact: "logs/gunshi_gp_tracker.yaml:GP-224;logs/deploy_task.log:2935-3910;logs/ninja_monitor.log:3872-3876"
+  resolved_at: "2026-08-14T21:48:11+09:00"
 - id: INS-20260814-152213935-109d
   ts: "2026-08-14T15:22:13+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bkkmcjcsi task id tool use id toolu 01Bm1rg4ufkBt2hWQb は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -383,8 +386,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 20
-  last_seen: "2026-08-14T21:37:08+09:00"
+  occurrence_count: 21
+  last_seen: "2026-08-14T21:49:15+09:00"
   verification:
     status: "passed"
     exit_code: 0
