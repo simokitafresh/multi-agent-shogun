@@ -94,6 +94,7 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_delegate.sh guard(status=delegated未満はinbox_write BLOCK)+pre-bash-combined.sh Guard 4(shogun_to_karo regex BLOCK)'
+  superseded_by: 'gate迂回禁止 — 正規フロー不通=調査対象。stop hook偽陽性も手動書換で迂回せずreceipt正本の自動再検証で根治 (LS-A07統合+2026-08-14実例追加: deepdive全16Phase実行済み(receipt有)なのにstop_session_alertsが静的[TODO]だけを見てBLOCK→将軍が[TODO]→[DONE]手動書換で迂回。殿下知『偽陽性はバグ。迂回すると負の複利。根治せよ』。真因=session_alerts起動時スナップショットが完了正本(gate_deepdive_replay.sh receipt)を再検証しない構造。根治=stop hookがBLOCK前にreceipt gate再実行→PASSで自動[DONE]化(commit b53eec96)。原則: 静的alertに基づくBLOCKには正本再検証の自動解消経路を併設せよ。手動書換を通常経路と案内するhookは迂回の制度化)'
 - id: LS-A08
   title: 殿の指示範囲厳守 — 近道を最後にする、100億回従う
   origin: '[[cmd_2142]] [[cmd_2150]]'
@@ -453,3 +454,11 @@ lessons:
   created_at: '2026-08-04'
   automated: true
   enforcement: '未自動化 — 次の自動化ターゲット: レビューAPPROVE投稿時の未対応所見検出(掲示板本文に軽微/許容語+cmd未起票の組合せをWARN)'
+- id: 'LS118'
+  title: '検証cmdのACに本番操作を書くな — 実行主体は家老レーン'
+  origin: '[[cmd_4307]]'
+  detail: '2026-08-14 cmd_4307(provenance P4最終checkpoint)のAC1へ『mode=portfolio再計算を実行し』と書き、忍者に本番操作を指示する形になった。これは現行裁定(本番push・deploy・recalcは家老レーン/検証目的の新規run起動は禁止/検証は直近完了runへのread-only突合)と矛盾する。家老が境界訂正を掲示板blt_20260814_205823で通知し、飛猿は新runを起動せず既存完了runのread-only突合のみ実施した(実害なし)。原因=設計書§5表のP4行の二値出口(canary実行+hash一致)を写す際、実行主体の裁定を突合せずAC本文へ実行動詞を持ち込んだ。正=検証cmdのACは観測と突合だけを忍者へ課し、runの起動は家老handoffとしてAC外に置く。LS-A09(42)の系(前提の所有者を越えない)であり、実行主体もまた前提である'
+  source_cmd: 'cmd_4307'
+  created_at: '2026-08-14'
+  automated: true
+  enforcement: '自動化ターゲット: cmd_save gateで本番操作動詞(再計算実行・deploy・push)がAC本文に現れた場合に実行主体の明示を要求するWARN'
