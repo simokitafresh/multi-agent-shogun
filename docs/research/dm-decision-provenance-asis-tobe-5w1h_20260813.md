@@ -310,7 +310,7 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | P2b | snapshot新設(FoF/nested) | **P2a**(同一ファイル`recalculate_fof.py`のため直列), P1b(payload形式を継承), P0.6 | — | `recalculate_fof.py`(snapshot呼出追加。現状0件) | FoF経路のsnapshot呼出追加+depth1/2/4 fixture PASS |
 | P3b | metricsマニフェスト(⑦) | P3a, **P1b**(同一ファイル`recalculate_fast.py`の直列鎖P1a→P1b→P3b — 家老六次レビュー) | — | `generators/portfolio_metrics.py:20-83`+`recalculate_fast.py:542-549`+`utils/recalc_status.py:230-255`(metrics算出→summary書込みの経路) | summaryへmetrics_manifest(47name+204行+入力SHA256)が非null。**canary時の期待行数は対象PF×years2=対象PF×2行へ分離**(5PF partialでは204行にならない — 家老レビュー③) |
 | **P0.9** | **L2供給価格の別ルート追加(matched-weight根治。設計=§3.29・三者合意2026-08-14 23:31)** | P0.5 | — | `recalculate_fast.py:1977-1981`(価格snapshot構築) | 全standard PFのconfigから`relative_assets`∪`safe_haven_asset`(Cash除外)を別集合として算出し`stock_symbols`へunion。既存`_collect_all_symbols(standard_portfolios)`とLayer 1は無変更。加えてsnapshot公開前に候補⊆materializedを一度fail-close。選択実行テストFAIL0・SKIP0。**表示Layer境界(:3466/:3496)への挿入は禁止**(FoF月次生成後で警告と誤MonthlyReturnを防げない) |
-| P4 | canary(最終checkpoint①) | **P0.7**,**P0.9**,P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | standard2+FoF depth1/2/4計5PF・stub月/normal月両方・親closure固定。multi-table hash一致5/5+provenance非null+ERROR0。**加えてmatched weight警報が対象PF月で満額(=解消)であること** |
+| P4 | **full検証(最終checkpoint① — v2.44でcanary=portfolioから変更。殿指示2026-08-15 01:25)** | **P0.7**,**P0.9**,P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | **mode=fullを1回**。全102PF・failed0・ERROR0。multi-table hash(signals/ledger/fof_component_weights/monthly_returns/portfolio_metrics/provenance)が正基準と一致し、provenanceが非null。**加えてmatched weight警報件数がゼロ、代表PF月の重み整合が満額**。stub月/normal月はfullが全期間を含むため自動的に被覆される |
 | P5 | full+速度検証(最終checkpoint②) | P4 | — | なし(実行+検証のみ) | 102/102・failed0・off/on各3run medianでTOTAL増分+5%以内・payload/WAL/TOAST分位(§4-7)・500B見積のcanary実測後外挿再検証・保存値から選抜再導出全数一致 |
 | P6 | 検証クエリの定型化 | P5 | — | db-checkスキル(shogun repo側) | §3.3のSQLをdb-checkスキルへ追記 |
 | P7 | fingerprint skip有効化(速度向上・別cmd) | P5 | — | fingerprint基盤+skip判定 | versioned watermark+precomputed manifest実装(§4.5-3)+skip有効/無効A/B fullでmulti-table hash完全一致+TOTAL短縮幅の実測記録 |
@@ -326,7 +326,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 3. **AC順序=実行順序**。AC nが要求する入力がAC n-1までで生成されない構成(原理的fail)を配備前に確認せよ。特に「後工程の成果物を検証せよ」というACを前工程cmdへ入れるな(RB8 AC3が世代切り直しで証拠未達になった構造と同型)。
 4. **doc更新(設計書改訂・context境界・gist同期・計画書更新)をACに入れるな** — 将軍laneの仕事(殿裁定2026-08-14 14:24、cmd_4302でdeploy_task.shが機械BLOCK)。
 5. **影響範囲列が重なる工程を同時配備するな**(同一ファイル編集競合)。並列は本表の並列列に従う。
-6. **full実行をP5より前のACに入れるな**。途中工程の検証はfixture/選択テストのみ(full 1回≈8分×検証回数が回転を殺す)。
+6. **途中工程の検証はfixture/選択テストのみ**(本番run 1回の実行コストが回転を殺す)。**ただし本番検証が必要な最終checkpointではmode=fullを使え(v2.44で改訂・殿指示2026-08-15 01:25)**。理由=**mode=portfolioは本日2度本番を破壊した**(run361=depth4の172月欠落、run365=確定月シグナル98596件の実値汚染)のに対し、同日fullは6回走って破壊ゼロ。partial固有の欠陥は本日だけで3件(monthly_returns系統的退行・DTB3のsnapshot外SELECT・価格母集団の欠落)見つかっており、4件目が無い保証はない。**full 1回≈8分(実測: run358-364で469-482秒)を払う方が、数分を節約してportfolioを走らせるより期待値が高い。** ∴本番での検証はfullに一本化し、**本番でmode=portfolioを走らせない**。partial固有の挙動(母集団補完が効いているか等)はfixtureとテストで担保する。
 7. **世代・環境が動く前提を置くACには「固定方法」を同文で書け**(L3 sync-fof cron 01:40UTCが確定月signalsを正規再展開し世代を切り直す — RB8実証。世代固定なしの証拠ACは原理的failしうる)。
 8. **前提変更発見時の停止規則(殿裁定2026-08-14 16:14)**: 偵察・実装のどの工程でも、**設計書の前提(§2 AsIs・§3契約・§5依存/影響範囲)を変える発見があったら、その工程を停止して将軍へ報告せよ**。将軍が設計書を更新し(必要なら家老・軍師再レビュー)、更新後の設計書を正として工程を再開する。発見を握ったまま実装を進めるな — RB6/RB8では前提変更(検算式の窓規則写し漏れ・世代切り直し・帰属誤り等)を走りながら吸収しようとして往復が膨らんだ。**立ち止まって設計書から直す方が総所要は短い**(RB8までの道のりの実証知見)。前提を変えない発見はlesson_candidateへ書き、止まらず進め。
 9. **車輪の再発明禁止(殿裁定2026-08-14 16:16)**: 工程中に未知(検算方法・窓規則・世代固定・fixture値・API挙動)へ突き当たったら、**再導出する前に§5.5資産カタログとRB6/RB8証跡(rb6-v3-full-revalidation-evidence・cmd_4301_rb8_generation_evidence・rollback計画書v1.8)と記憶DB(`bash scripts/memory_db_query.sh --search "<対象>"`)を先に引け**。RB8までの道のりにほとんどの答えが既にある — 独立再実装・再検算・再調査はカタログに無いと確認してからにせよ。配備者(家老)はタスクYAMLのrelated資料へ該当資産を注入せよ。
@@ -427,7 +427,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | **P3b** metricsマニフェスト | ✅**GATE CLEAR**(20:39) | commit 211e574d・3ファイル83行・metric names47/full row_count204 | 小太郎。summary非null確認 |
 | **P2b+P3b 本番反映** | ✅完了(20:43) | main=347404af・Render dep-d9vftme7bikc73c2mkug live・health 200 | 選択実行pytest 50 passed |
 | **P0.9** L2供給価格の別ルート | 🟡**設計確定・実装解禁待ち** | 三者合意(2026-08-14 23:31・残疑義0)。設計=**§3.29**、AsIs=§2.9、経緯=§6。挿入点=`recalculate_fast.py:1977`直後/`:1981`直前 | 実測: 準備集合9銘柄、partial時+58.1%(38744→61268行)、full時増分0、FoF78体増分0 |
-| **P4** canary(最終checkpoint①) | 🔴**やり直し必要** | 基準run399(mode=portfolio・20:52:19-20:53:36・completed)は母集団欠落の影響下で実行された | P0.9完了後に再実行。今回結果は破棄(§3.29末尾) |
+| **P4** full検証(最終checkpoint①) | 🔴**やり直し必要** | 旧基準run399(mode=portfolio)は母集団欠落の影響下で実行されたため破棄 | **v2.44でcanary=portfolioからmode=full 1回へ変更**(殿指示01:25)。理由=portfolioは本日2度本番を破壊、fullは6回走って破壊ゼロ。full実測469-482秒 |
 | P5/P6/P7 | ⬜未着手 | — | P5はP4完了後 |
 
 ### 本日の経緯(時刻は全てJST)
@@ -869,6 +869,9 @@ weightsと`price_movement`の別ソース照合、Cashのprice-free契約、real
 ## §7 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- **v2.44 (2026-08-15 01:27): 殿指示「P4をcanaryでやらずにfullでやればいいのでは」** — P4をmode=portfolioの5PF canaryから**mode=full 1回**へ変更。根拠=本日portfolioは2度本番を破壊(run361/run365)、fullは6回で破壊ゼロ。full所要は実測469-482秒(1分台ではない旨も実測で確認)。あわせて§5.05規則6を改訂し「本番検証はfullに一本化・本番でmode=portfolioを走らせない・partial固有挙動はfixtureで担保」を明記。進捗台帳のP4行も更新。
+- v2.43 (2026-08-15 01:16): §5.05規則12を強化(忍者ACは自力完結のみ。他ロール完了前提は読み取りでも禁止。cmd_4309 AC3の実証)。
+- v2.42 (2026-08-15 00:15): §5.9進捗台帳を全面更新(P1b/P2b/P3b GATE CLEAR・本番反映・P4やり直し判定・三幕構成の経緯・本日裁定4件・新設資産表)。
 - **v2.41 (2026-08-14 23:56): 殿指摘「追記ばかりで構造が破綻」「工程の順序もバラバラ」「ToBeはあるべき姿を書く場所であり現状を書く場所ではない」を受けて文書構造を再編。①現象と根因を**§2.9 AsIs**へ分離 ②あるべき姿・実装・二値出口を**§3.29 ToBe**へ統合(節番号の乱れ §3.29→3.30→3.33→3.32→3.31 を解消) ③議論の断面5本を**§6 設計の経緯**へ移し時系列順(経緯1〜5)へ整列、内部見出しの番号衝突も解消 ④改訂履歴を§7へ改番。内容の削除はせず配置のみ変更(歴史修正禁止)。
 - v2.40 (2026-08-14 23:39): §3.33(1)表と(2-b)の相反を解消(normal内full/partialの経路差とbundle replayを分離。家老指摘)。
 - **v2.39 (2026-08-14 23:35): 三者合意成立(残疑義0)を受けて工程化。** §3.33見出しと(1)を確定形(9銘柄・別ルート)へ整合(v2.34-35の「全銘柄14種」解釈は将軍の逸脱として記録保持)。**§5工程表へP0.9(L2供給価格の別ルート追加)を新設**し、P4依存へP0.9を追加、クリティカルパスと進捗台帳も更新。P4は基準runがpartialのためやり直しが前提であることを台帳へ明記。
