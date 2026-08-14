@@ -1,11 +1,26 @@
 <!-- gist-master: 0c98ab3686bcaff3aa1ddd36e1a53570 dm-production-code-rollback-plan_20260813.md -->
-# DM-Signal本番コードロールバック設計 v1.6
+# DM-Signal本番コードロールバック設計 v1.8
 <!-- semantic-links: [[recalculate_pipeline]] [[production_parity]] [[code_rollback]] -->
 
 - 作成: 2026-08-13 01:22 JST
 - 発端: 殿裁定「新しいロールバック案が出た以上、前提条件が変わった。以前の前提下での判断は全てゼロに戻る」
 - 目的: 正常だった時点の**コード**へ本番を戻し、入力SSOTから派生データを全再生成し、ticker `prices`を起点とする独立oracleと本番画面で正常性を証明する
 - 旧文書: `dm-production-recovery-v3_20260813.md`は旧L5局所修復laneの歴史記録として凍結する。本書へ旧工程・旧PASS・旧ACを継承しない
+
+## §-1. ★復帰点宣言(RESTORE POINT) — 2026-08-14 14:29 RB1〜RB8全完了
+
+> **今後、本番に何かあった時に戻るべき場所はここである。** 本計画の全工程(RB1〜RB8)は2026-08-14 14:29に完了し、この時点の本番は「入力SSOTから独立検算で全量証明された、既知バグゼロの状態」である。
+
+| 復帰点の構成要素 | 値 | 証拠 |
+|---|---|---|
+| **本番runtimeコード** | `3e28b6172889df3d544cc04ae31567252073ac7b`(2026-08-14 09:42 JST deploy済み)。main tip `99199a9c`はこの上にdocs/tasksのみ(runtime同一、git diff --name-only実測) | RB8 AC1世代固定 |
+| **DB派生データ世代** | run360系+L3 sync-fof cron正規再展開後の現行世代。orphan `precomputed_raw`=0件(18→0根治済み) | RB8 AC2機械検証 |
+| **全量検算の正基準** | 月次33748/33748 exact+metrics 30192/30192+stub48/48=30240/30240 exact(mismatch0/missing0/duplicate0) | 独立証拠commit `6cc6b576`+`rb6-v3-full-revalidation-evidence_20260813.md` |
+| **benchmark契約** | 同窓比較が正(殿裁定2026-08-14 02:59)。B2満月上書き/B1同窓の混在はprovenance設計書§2.4の契約で固定予定 | knowledge:a58d14f58926acb2 |
+| **API/画面** | 8画面 HTTP 2xx=8/8・non-empty=8/8・例外0(固定世代で確認) | `cmd_4301_rb8_generation_evidence_20260814.md` |
+| **完了cmd** | cmd_4301 completed(2026-08-14 14:29、AC1-AC4全PASS・軍師LGTM) | queue/archive + 掲示板blt_20260814_142907 |
+
+**将来の障害時の使い方**: (1)コードはこの復帰点SHAとの差分から容疑を絞る (2)派生データは本表の正基準(6cc6b576の算術合成)との突合で「どこから壊れたか」を特定する (3)検算は§7.1逆算parity方式とprovenance設計書§5.5資産カタログを再利用し、独立runnerを再発明しない。
 
 ## §0. 前提リセット
 
@@ -175,7 +190,7 @@ flowchart TD
 5. 全102 PF・全確定月でopen/close monthly returnのprices独立oracle不一致0。
 6. 全102 PFの全期間metricsが独立月次列からの算出値と不一致0。
 7. `precomputed_raw` orphan 0、obsolete hash 0、global duplicate 0、expected key欠損0。
-8. 本番API/UIのDashboard、Signals、Monthly Returns、Monthly Trade、Metrics、Drawdowns、Compareで欠損0・例外0。
+8. 本番API/UIの現行8画面（Dashboard、Summary、Monthly Returns、Monthly Trade、Metrics、Drawdowns、Compare Chart、Compare Summary）で欠損0・例外0。Signalsは廃止済みで対象外。
 9. AC1-8を同一deploy/run世代で満たした時だけ復旧完了とする。
 
 ## §9. 新工程表
@@ -189,7 +204,7 @@ flowchart TD
 | RB5 | 入力SSOT固定・派生全再生成 | L1→L5全対象、failed 0 | **完了**（2026-08-13 12:10 JST: `precompute_raw completed: rows=1533 portfolios=102 failed=0 elapsed=436.51s`、API永続status `last_error=null rows_processed=1533`。経路: 先頭NULL両経路修正`9b881979`/`5c0af039`＋valid_start境界holding seed修正`071f2ca4`→L1再生成4,795行→24PF L3再生成→rolling欠損0→L5再走） |
 | RB6 | prices独立oracle全量（§7.1逆算検算方式・§7.2で月次決着） | monthly逆算parity/metrics不一致0 | **月次CLEAR**（33748/33748 exact・殿裁定2026-08-14 01:52）。残=metrics 47指標×204行の4 shard検算のみ |
 | RB7 | 本番API/UI確認 | 8画面欠損0・例外0 | **完了**（殿自身が2026-08-13 13:33「問題ないことを確認した」と裁定） |
-| RB8 | 最終checkpoint | §8 AC1-8全PASS | **BLOCK**（2026-08-14 08:47 JST: AC2/AC3/AC4未達。証跡=`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4301_rb8_generation_evidence_20260814.md`） |
+| RB8 | 最終checkpoint | §8 AC1-8全PASS | **完了**（2026-08-14 13:55 JST: AC1/AC2/AC3/AC4統合PASS。旧BLOCK記録は§9.1に保持） |
 
 ### §9.1 実行記録と残件（2026-08-13 03:55時点）
 
@@ -249,9 +264,40 @@ rollback後に露出したbaseline内在バグは**3本で、根はすべて1つ
 
 **rollback手順（再発時）**: `15e612f9`との差分commitを通常revertして push→Render自動deploy→必要層のみ再生成（§9.2の順序: 生成側修正→L1→L3→L5 serial）。force push/resetは使わない（§0-4）。
 
+
+### 2026-08-14 13:34 JST — RB7/API/UI全対象再確認（cmd_4301 AC4）
+
+固定世代は本書§9.1記載のlive deploy `216ac4add78d89acd8df01674ca2562029d3d317` とし、隔離CDPセッション（port 9223、専用profile）で対象8画面を順次実行した。CDP計測器は対象8画面（Dashboard、Summary、Metrics、Compare Chart、Compare Summary、Monthly Returns、Monthly Trade、Drawdowns）まで完走した後、対象外Trades遷移のNetwork.enable応答待ちで停止したため、対象8件の結果だけを採用し、停止後の対象外結果は採用しない。
+
+| 画面 | route | HTTP | body bytes | CDP APIs | API time ms |
+|---|---|---:|---:|---:|---:|
+| Dashboard | `/dashboard` | 200 | 24798 | 1 | 562 |
+| Summary | `/summary` | 200 | 24587 | 3 | 1255 |
+| Metrics | `/metrics` | 200 | 24174 | 8 | 2207 |
+| Compare Chart | `/compare` | 200 | 22886 | 7 | 1789 |
+| Compare Summary | `/compare-summary` | 200 | 38134 | 6 | 2401 |
+| Monthly Returns | `/monthly-returns` | 200 | 24101 | 5 | 1531 |
+| Monthly Trade | `/monthly-trade` | 200 | 24216 | 8 | 1528 |
+| Drawdowns | `/drawdowns` | 200 | 24187 | 5 | 1723 |
+
+二値結果: HTTP 2xx `8/8`、non-empty `8/8`、直接HTTP例外 `0`。CDP画面遷移は対象8件すべて結果行を取得し、対象8件の画面側HTTP/API例外は `0`。このAC4の画面/API確認はPASS。ただしRB8全体は、同一世代metrics全数証跡・precomputed_raw orphan 18件など§9記載の残件があるためBLOCKのまま維持する。production DB write `0`。
+
+一次証跡: `cmd_4301_rb8_generation_evidence_20260814.md`、2026-08-14 13:34 JST direct HTTP sweep、同時刻CDP output。
+
+### 2026-08-14 13:55 JST — RB8終端統合（cmd_4301 AC4最終follow-up）
+
+RB8の終端判定を、同一AC4レビューで確定した現行の正本へ統合した。歴史上の08:47 JST BLOCK記録およびその時点の残件説明は保持し、現行の終端判定のみを更新する。
+
+- **AC1/AC2 PASS**: `queue/archive/reports/hayate_report_cmd_4301_20260814.yaml` の fresh generation record を正本とする。live deploy `3e28b6172889df3d544cc04ae31567252073ac7b`、latest full run DB id `360`、runtime closure `159`、`orphan_missing_pf=0`、`inactive_pf_rows=0`、`duplicate_groups=0`、Monthly Trade 非Cash price欠損 `0`。
+- **AC3 PASS**: `queue/reports/hayate_report_cmd_4301.yaml` を正本とする。月次 `33748/33748` exact、metrics `30192/30192` exact、別契約stub `48/48`、不一致・欠損・重複・skip `0`。
+- **AC4 PASS**: 現行8画面（Dashboard、Summary、Monthly Returns、Monthly Trade、Metrics、Drawdowns、Compare Chart、Compare Summary）を `8/8` 実行、HTTP/API例外 `0`。Signalsは廃止済み・対象外。証跡は現行reportおよびcommit `97544e7544dd762cfe62df2167cfd014949d38cf`。
+
+以上により、AC1/AC2/AC3/AC4のcoverageは全てPASS、RB8を完了とする。本終端記録の反映は計画書1ファイルのみを更新し、production mutationは `0`。既存Gistは同一IDをupdate同期する。
+
 ## §10. 改訂履歴
 
-- v1.7 (2026-08-14 08:47): RB8最終checkpointを実測。世代固定とDB/API代表確認は実施したが、削除済みPFの`precomputed_raw`孤児18行および同一世代全数証跡不足によりBLOCK。production mutation 0。
+- v1.8 (2026-08-14 14:50): 殿指示「RB8まで完了した今が、今後何かあった時に戻るべき場所だとわかるようにしよう」— §-1復帰点宣言を新設: RB1〜RB8全完了(cmd_4301 completed 14:29)を宣言し、復帰点の構成要素(runtime SHA 3e28b617/DB世代run360系+orphan0/正基準6cc6b576=月次33748+metrics30240全exact/同窓契約/8画面PASS)を証拠付きで固定。将来障害時の使い方(差分絞り込み・正基準突合・§7.1+資産カタログ再利用)を明文化。v1.7のBLOCK(orphan18)はcmd_karo_hotfix_rb8_precomputed_orphan15_cleanup+再検証で解消済み。ヘッダ版数がv1.7追記時にv1.6のまま残っていた不整合も是正。
+- v1.7 (2026-08-14 08:47): RB8最終checkpointを実測。世代固定とDB/API代表確認は実施したが、削除済みPFの`precomputed_raw`孤児18行および同一世代全数証跡不足によりBLOCK。production mutation 0。→ v1.8で解消(orphan18→0・cmd_4301全AC PASS)
 - v1.6 (2026-08-14 01:58): §7.2新設 — RB6月次検算をH6合成式でCLEAR確定（殿裁定01:52: 算術合成正当・別契約数値は反証にならず・H7単一runner中止）。工程表RB6行を「月次CLEAR・残=metrics 47指標4 shard」へ更新。metrics実体=47 name×204行を現物確認値として固定（旧7指標/35キー前提を訂正）。
 - v1.5 (2026-08-13 22:50): §7.1新設 — RB6検算方式を殿裁定3点（仮説検証22:19/逆算検算22:40-42/極限シンプル22:44）に基づき逆算parity方式へ改訂。selection規則の独立フル再導出は目的外として撤回。§9工程表RB6行と§9.1へrun358/359経過（standard 4713/4713達成・FoF RCA 2レーン収束・missing21確定）を追記。
 - v1.4 (2026-08-13 13:35): §9.2修正記録を新設（バグ3本の現象→真因→修正→検証、根は8/3の2契約不整合1つ。再生成順序と知見4点）。RB5完了・TIMING SUMMARY復元完了・RB7完了（殿画面確認13:33）・RB6着手中を反映。§7へRB6平易説明追記。
