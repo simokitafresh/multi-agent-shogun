@@ -379,7 +379,9 @@ FoFは**自分では銘柄を持たない**。保有の実体は必ず終端のs
 | `risk_free_asset`(既定`DTB3`) | 無リスク金利 | **しない**(price-free経路) | 含めない |
 | `benchmark_ticker` | 比較対象 | **しない**(表示・比較用) | 含めない |
 
-**∴B案の上界の確定定義**: **全standard PFの`relative_assets` ∪ `safe_haven_asset`(Cash除く)**。これが「保有しうる=`price_movement`に現れうる」銘柄の全体であり、matched_weightの照合対象と正確に一致する。
+**⚠v2.32訂正(家老レビュー2026-08-14 22:22を将軍が現物確認して受諾)**: safe havenのSSOTは**top-levelだけではない**。pipeline standardでは実行時のsafe havenが`SafeHavenSwitch`のconfigに存在する(`backend/app/services/pipeline/blocks/safe_haven_switch.py:36` `safe_haven = self.config.get("safe_haven_asset", "Cash")`を将軍が現物確認)。現本番はstandard全24でtop-levelとpipelineの不一致ゼロだが、**schema validatorは一致を強制していない**。∴将来のdriftで両者がずれた瞬間に、top-levelだけを見る上界は欠落する。
+
+**∴B案の上界の確定定義(v2.32)**: **全standard PFの `relative_assets` ∪ `safe_haven_asset`(top-level) ∪ `SafeHavenSwitch.config.safe_haven_asset`(実効pipeline値)**、Cashは除外。**上界であるからextraが入っても害はなく、driftしても欠落しない。** これが「保有しうる=`price_movement`に現れうる」銘柄の全体であり、matched_weightの照合対象と一致する。
 
 **具体形**: `recalculate_fast.py:1963-1977`で、既存の`_collect_all_symbols(standard_portfolios)`(対象PFの**計算入力**。absolute・risk-free・benchmarkを含む。**維持**)に加え、**全standard PFの保有可能集合(上記2項目のみ)**をunionして`stock_symbols`をmaterializeする。`_collect_all_symbols`自体は無変更。期間(lookback/buffer)の算出、DTB3除外、SPY常時materializeも既存のまま。
 
@@ -421,7 +423,13 @@ FoFは**自分では銘柄を持たない**。保有の実体は必ず終端のs
 
 1. **汚染の有無をread-onlyで先に判定するか、判定せずfullで戻すか。** 判定手段=run399の対象PFのmonthly_returns等を**正基準**と突合。将軍見解: **先に判定する。** 影響の有無と範囲が分からないまま戻すと、次に同じことが起きたときの判断材料が残らない。
 
-**⚠v2.31で明確化(殿指摘2026-08-14 22:17「元々何と比較してたんだ。それが残っていれば工程の途中経過のデータは不要なはずだ」)**: 本工程が**一貫して比較してきた基準は独立検証commit `6cc6b576`(RB6全量検証: 月次33748+metrics30240 exact)である**(§5.5資産カタログ)。∴**復元先はrun364やrun363といった途中経過ではなく、この正基準である。** 途中runの出力は「正基準と一致することを確認するための通過点」にすぎず、保全する価値を持たない。正基準が手元にある限り、**途中経過データは捨ててよい**。これにより「どこまで戻すか」の議論は解消する — **戻る先は最初から一つに決まっていた**。
+**⚠v2.31で明確化 → v2.32で型を訂正(殿指摘2026-08-14 22:17「元々何と比較してたんだ。それが残っていれば工程の途中経過のデータは不要なはずだ」+ 家老の型指摘22:22)**:
+
+本工程が**一貫して比較してきた基準は独立検証commit `6cc6b576`(RB6全量検証: 月次33748+metrics30240 exact)である**。∴**途中run(run363・run364)の出力は「基準と一致することを確認するための通過点」にすぎず、保全する価値を持たない。**
+
+**ただしv2.31の「復元先は正基準である」という書き方は型誤りであった**(将軍が`git show --stat 6cc6b576`で確認: 変更は`docs/research/rb6-v3-full-revalidation-evidence_20260813.md`の**1ファイル35行のみ**=docs-only commitであり、DB値を復元できるartifactではない)。**正基準は「採点表(oracle)」であって「バックアップ」ではない。** 将軍は基準と復元元を同一視していた。
+
+**復元手順の確定形(v2.32)**: 修正を入れた後に**full再計算で業務値を再生成**し、その結果を**`6cc6b576`が記録する独立RB6 oracleの合否基準へ再採点する**。復元は再生成によって行われ、正基準はその正しさを判定する物差しとして働く。**途中runの保全は不要**という結論は変わらない。
 2. **P0.7を戻すか。** 将軍見解: 別系統ゆえ**戻さない**。ただしP0.7のcanary結果を再確認する。
 3. **修正の実装をどの時点から積むか。** 将軍見解: データ復元と設計確定を先に済ませ、**確実な地点から修正を1つだけ載せる**。復元前に修正を重ねると、どちらの効果か判別できなくなる。
 4. **P4のやり直し。** 基準runがpartialである以上、母集団修正後に**P4をやり直す**のが筋である。今回のP4結果は破棄してよい(サンクコストを恐れない)。
