@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.14
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.15
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -242,6 +242,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 8. **前提変更発見時の停止規則(殿裁定2026-08-14 16:14)**: 偵察・実装のどの工程でも、**設計書の前提(§2 AsIs・§3契約・§5依存/影響範囲)を変える発見があったら、その工程を停止して将軍へ報告せよ**。将軍が設計書を更新し(必要なら家老・軍師再レビュー)、更新後の設計書を正として工程を再開する。発見を握ったまま実装を進めるな — RB6/RB8では前提変更(検算式の窓規則写し漏れ・世代切り直し・帰属誤り等)を走りながら吸収しようとして往復が膨らんだ。**立ち止まって設計書から直す方が総所要は短い**(RB8までの道のりの実証知見)。前提を変えない発見はlesson_candidateへ書き、止まらず進め。
 9. **車輪の再発明禁止(殿裁定2026-08-14 16:16)**: 工程中に未知(検算方法・窓規則・世代固定・fixture値・API挙動)へ突き当たったら、**再導出する前に§5.5資産カタログとRB6/RB8証跡(rb6-v3-full-revalidation-evidence・cmd_4301_rb8_generation_evidence・rollback計画書v1.8)と記憶DB(`bash scripts/memory_db_query.sh --search "<対象>"`)を先に引け**。RB8までの道のりにほとんどの答えが既にある — 独立再実装・再検算・再調査はカタログに無いと確認してからにせよ。配備者(家老)はタスクYAMLのrelated資料へ該当資産を注入せよ。
 10. **壊れたらrevert-first(殿裁定2026-08-14 16:17/16:25)**: deploy後にcanary三値FAIL・想定外エラー・出力差が出たら、**本番破壊が確定した時点でrevert pushが最初の行動である**。追加修正(hotfix重ね掛け)禁止に加え、**revertの前に復元run・検証・調査・言い訳材料集めを挟むな** — 壊れたコードがliveである1秒ごとに被害面が広がり、壊れたruntime上のrun出力は完走しても信用できない(cmd_4303実証16:17-16:25: 壊れたcode上のrun362完走待ちがrevert pushを約8分遅らせた。『途中deploy=worker切断』は健全runを守る論理であり壊れたrunには適用外)。順序は常に: revert push→live確認→復元run→正基準突合→RCA。**壊れたrunは完走させるほど汚染データがDBへ書き広がる(殿裁定16:27)— 走行中runの保護より汚染拡大の遮断を優先し、最速でrevert pushせよ。**
+11. **復元run待機中の並行準備(殿裁定2026-08-14 16:30)**: revert deploy後のfull recalculate完走を**じっと待つのは時間破壊**。待機時間は次の実装準備に使え — RCA(何がallowlist変更以外に混入したか)・fixture是正・次工程の実装を**branch上で**進める(mainへ混ぜない=§5.06中断作法(1)。復元完了とRCA確定後にmainへ乗せる)。監視は終端検知の自動通知に任せ、人手のポーリングをしない。
 
 ### §5.06 中断安全区切り(どこで止めても本番が壊れない境界 — v2.2新設・殿指示2026-08-14 15:01)
 
@@ -308,6 +309,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- v2.15 (2026-08-14 16:32): 殿裁定16:30「revert deploy後にfull recalculateをじっと待って時間を破壊するな。その暇に新たな実装を準備せよ」— 規則11(復元run待機中の並行準備)新設: RCA・fixture是正・次工程実装をbranch上で並行、終端監視は自動通知、mainへは復元完了+RCA確定後。
 - v2.14 (2026-08-14 16:30): 殿裁定16:27「最後まで計算させると汚染データが広がる。次からは最速でrevert push」— 規則10へ汚染拡大遮断の根拠を追記し、走行中run保護より最速revert push優先を確定。
 - v2.13 (2026-08-14 16:28): 殿裁定16:25「本番が壊れていることは確定している。revert pushしてから確認しないと復旧が遅くなるだけ」「言い訳のために先にテストするのは本末転倒」— 規則10を強化: 本番破壊確定時はrevert pushが最初の行動。revert前の復元run・検証・調査・言い訳材料集め禁止。cmd_4303実証(壊れたcode上のrun362完走待ちがrevert pushを約8分遅延)を反例として明記。順序固定=revert push→live確認→復元run→正基準突合→RCA。
 - v2.12 (2026-08-14 16:20): 殿裁定16:17「壊れたときはさらなる修正はしない。一回revertしてやり直すほうが早い」— §5.05へ規則10(壊れたらrevert-first)を新設: canary FAIL・想定外エラー時はhotfix重ね掛け禁止、revert 1手→現物で原因特定→やり直し。§5.06のrevert 1手設計と接続。
