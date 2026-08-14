@@ -319,26 +319,30 @@ A案(§3.29)は**T1の最小実装**に相当し、T2・T3は満たさない。�
 
 **状態**: 候補。殿・将軍・家老の三者が明示的に納得するまで実装・配備・commit・push・deployを行わない。
 
-### §3.33 【確定】C案 — 判断を一切せず、利用される可能性のある価格を全部準備する(殿指示2026-08-14 23:21)
+### §3.33 【確定・三者合意 2026-08-14 23:31】保有しうる価格を、対象を選ばず全standard PFから集めて準備する
 
-**殿の言**: 「たぶん議論を複雑にしすぎてるぞ。問題はシンプルで**goldのpriceが保存されていなかった**。それだけだ。解決方法は**判断を一切せず**、**利用される可能性のあるpriceを全部準備すればいい**。シンプルだろ」
+**殿の言(3段階で設計が定まった)**:
+1. 23:21「たぶん議論を複雑にしすぎてるぞ。問題はシンプルで**goldのpriceが保存されていなかった**。それだけだ。解決方法は**判断を一切せず**」
+2. 23:26「**本番にあるstandard PFの全てのconfigを取得して、relative assetとsafe haven assetの一覧を取得。そのtickerを準備するtickerとする。それだけだ**」
+3. 23:28「それは**別ルート**にすればいい。計算の**L1とL2の間**に入れればいいのでは」
 
-**本節が実装の正本である。§3.32(B案)以下はsuperseded。**
+**本節が実装の正本である。§3.32(B案)および§3.30の移行順序はsuperseded。三者(将軍・家老・軍師)の残疑義ゼロ。**
 
-#### (1) なぜC案が正しいか — 判断を消せば、判断に伴う問題が全部消える
+#### (1) 設計原理 — 判断を減らすほど設計が単純になる
 
-将軍・家老・軍師の3者は「どの銘柄を母集団に入れるか」の**判断ロジック**を精密化し続けた。その結果、対象PFの絞り込み・FoF展開・保有可能性の区別・normalとreplayの経路差・bundle契約と、論点が増え続けた。**しかし判断そのものを行わなければ、これらは1つ残らず消滅する。**
+3者は「どの銘柄を母集団に入れるか」の**判断ロジック**を精密化し続け、対象PFの絞り込み・FoF展開・上界の定義・normalとreplayの経路差・bundle契約と論点を増やした。殿の3指摘は**判断そのものを削る方向**であり、削るたびに論点が消滅した。
 
-| 論点 | B案(判断あり) | **C案(判断なし)** |
-|------|-------------|-----------------|
-| 対象PFの絞り込み | type判定が要る | **不要**(全PFを渡す) |
-| FoF展開 | 再帰か上界かの設計が要る | **不要**(FoFは銘柄を持たないので渡しても増えない) |
-| 保有しうるかの区別 | relative/safe havenの選別が要る | **不要**(利用されうるものは全部入れる) |
-| normal と replay の経路差 | 母集団の再導出が経路ごとに異なる | **不要**(常に全部) |
-| bundle契約(`required_price_symbols`) | 追加が要る | **不要**(bundleにも全部入る) |
-| subset fail-close | 候補集合の定義が要る | **単純化**(全部を用意できたかだけ) |
+| 論点 | 判断を残した場合 | **確定案(判断を削った結果)** |
+|------|----------------|--------------------------|
+| どのPFを対象にするか | mode・target・closureの判定が要る | **判断しない**(常に全standard PFのconfigから取る) |
+| FoF展開 | 再帰か上界かの設計が要る | **不要**(FoFは`relative_assets`が空。実測78体すべて増分0) |
+| どの銘柄種別か | — | **殿が定義済み**(保有しうるのはrelative momentumとsafe havenのみ) |
+| normal と replay の経路差 | 母集団の再導出が経路ごとに異なる | **消える**(mode分岐の外に置くため同一パス) |
+| 既存経路への影響 | `_collect_all_symbols`とLayer 1の改修が要る | **不要**(別ルートとして分離) |
 
-**根本原因の言い換え**: 欠落したのは「GLDの価格」である。母集団を賢く算出できなかったことが問題なのではなく、**用意する価格を選別しようとしたこと自体が問題**だった。選別しなければ落ちない。
+**根本原因の言い換え**: 欠落したのは「GLDの価格」である。母集団を賢く算出できなかったことが問題なのではなく、**Layer 1をスキップするpartialに対して、Layer 2が保有しうる銘柄の価格を用意する経路が存在しなかった**ことが問題だった。
+
+**将軍の逸脱記録(v2.34-35)**: 「判断を一切せず」を「全銘柄14種を準備」と解釈したが行き過ぎであった。判断しないのは**対象PFの選び方**であり、銘柄種別は殿が既に定義していた。9が正しく14は過剰である。
 
 #### (2) 実装(確定形 — 殿の整理2026-08-14 23:26)
 
@@ -613,12 +617,13 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | P2a | 書込み実装(FoF scalar) | P0.5, P0.6 | B | `recalculate_fof.py`(FoFループ) | FoFループで同スキーマ+nested深度差なしをfixture確認 |
 | P2b | snapshot新設(FoF/nested) | **P2a**(同一ファイル`recalculate_fof.py`のため直列), P1b(payload形式を継承), P0.6 | — | `recalculate_fof.py`(snapshot呼出追加。現状0件) | FoF経路のsnapshot呼出追加+depth1/2/4 fixture PASS |
 | P3b | metricsマニフェスト(⑦) | P3a, **P1b**(同一ファイル`recalculate_fast.py`の直列鎖P1a→P1b→P3b — 家老六次レビュー) | — | `generators/portfolio_metrics.py:20-83`+`recalculate_fast.py:542-549`+`utils/recalc_status.py:230-255`(metrics算出→summary書込みの経路) | summaryへmetrics_manifest(47name+204行+入力SHA256)が非null。**canary時の期待行数は対象PF×years2=対象PF×2行へ分離**(5PF partialでは204行にならない — 家老レビュー③) |
-| P4 | canary(最終checkpoint①) | **P0.7**,P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | standard2+FoF depth1/2/4計5PF・stub月/normal月両方・親closure固定。multi-table hash一致5/5+provenance非null+ERROR0 |
+| **P0.9** | **L2供給価格の別ルート追加(matched-weight根治。設計=§3.33・三者合意2026-08-14 23:31)** | P0.5 | — | `recalculate_fast.py:1977-1981`(価格snapshot構築) | 全standard PFのconfigから`relative_assets`∪`safe_haven_asset`(Cash除外)を別集合として算出し`stock_symbols`へunion。既存`_collect_all_symbols(standard_portfolios)`とLayer 1は無変更。加えてsnapshot公開前に候補⊆materializedを一度fail-close。選択実行テストFAIL0・SKIP0。**表示Layer境界(:3466/:3496)への挿入は禁止**(FoF月次生成後で警告と誤MonthlyReturnを防げない) |
+| P4 | canary(最終checkpoint①) | **P0.7**,**P0.9**,P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | standard2+FoF depth1/2/4計5PF・stub月/normal月両方・親closure固定。multi-table hash一致5/5+provenance非null+ERROR0。**加えてmatched weight警報が対象PF月で満額(=解消)であること** |
 | P5 | full+速度検証(最終checkpoint②) | P4 | — | なし(実行+検証のみ) | 102/102・failed0・off/on各3run medianでTOTAL増分+5%以内・payload/WAL/TOAST分位(§4-7)・500B見積のcanary実測後外挿再検証・保存値から選抜再導出全数一致 |
 | P6 | 検証クエリの定型化 | P5 | — | db-checkスキル(shogun repo側) | §3.3のSQLをdb-checkスキルへ追記 |
 | P7 | fingerprint skip有効化(速度向上・別cmd) | P5 | — | fingerprint基盤+skip判定 | versioned watermark+precomputed manifest実装(§4.5-3)+skip有効/無効A/B fullでmulti-table hash完全一致+TOTAL短縮幅の実測記録 |
 
-**並列グループの読み方**: P0裁定直後にグループA(P0.5+P0.6+P3a=3タスク同時配備可、影響ファイル無競合)。P0.5完了後にグループB(**P0.7+P1a+P2a**の3本同時配備可 — 影響ファイルはmonthly_returns.py/recalculate_fast.py/recalculate_fof.pyで相互無競合。**P3bはグループBから除外** — 家老六次レビュー)。同一ファイル直列鎖は**P1a→P1b→P3b**(`recalculate_fast.py`)と**P2a→P2b**(`recalculate_fof.py`)の2組。クリティカルパス=P0→P0.5→P1a→P1b→{P2b, P3b}→P4→P5(P2bはP2a完了・P3bはP3a完了も前提。P4はP0.7完了も前提)。
+**並列グループの読み方**: P0裁定直後にグループA(P0.5+P0.6+P3a=3タスク同時配備可、影響ファイル無競合)。P0.5完了後にグループB(**P0.7+P1a+P2a**の3本同時配備可 — 影響ファイルはmonthly_returns.py/recalculate_fast.py/recalculate_fof.pyで相互無競合。**P3bはグループBから除外** — 家老六次レビュー)。同一ファイル直列鎖は**P1a→P1b→P3b**(`recalculate_fast.py`)と**P2a→P2b**(`recalculate_fof.py`)の2組。クリティカルパス=P0→P0.5→P1a→P1b→{P2b, P3b}→P4→P5(P2bはP2a完了・P3bはP3a完了も前提。P4はP0.7と**P0.9**の完了も前提)。**P0.9(v2.39追加)は`recalculate_fast.py:1977-1981`を触るため、同ファイル直列鎖P1a→P1b→P3bの完了後に単独配備せよ**(3工程とも本日GATE CLEAR済みのため現時点で競合なし)。
 
 ### §5.05 配備規則(家老向け・過剰要求と原理的failの構造防止 — v2.1新設)
 
@@ -721,7 +726,8 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | P1a standard scalar | ✅**GATE CLEAR**(19:28・cmd_karo_p1a_standard_scalar) | provenance書込み実装(standard経路) | — |
 | P2a FoF scalar | ✅**GATE CLEAR**(19:36・cmd_karo_p2a_fof_scalar) | provenance書込み実装(FoF経路) | — |
 | P1b/P2b | ⬜次工程 | P1b=snapshot完全化(P1a後の直列鎖)、P2b=P2a+P1b後 | — |
-| P4/P5/P6/P7 | ⬜未着手 | — | — |
+| **P0.9** | 🟡設計確定・実装解禁待ち | 三者合意2026-08-14 23:31(残疑義0)。設計=§3.33。挿入点=`recalculate_fast.py:1977`直後/`:1981`直前 | 実測: 準備集合9銘柄、partial時+58.1%(38744→61268行)、full時増分0、FoF78体は増分0 |
+| P4/P5/P6/P7 | ⬜未着手 | — | P4はP0.9完了が前提(基準runがpartialのため要やり直し — §3.31) |
 
 ### 本日の経緯(canary事故と復旧 — 時刻は全てJST)
 
@@ -745,6 +751,13 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 ## §6 改訂履歴
 
 - v2.7 (2026-08-14 15:28): 家老三次レビュー(blt_20260814_152226・残存2件、前回2/2反映確認済み)を将軍現物突合(recalculate_fast.py:1194-1242のDELETE+commitをgrep実読)で反映 — ①§5.06 P4/P5行を訂正: 検証操作自体はstate-mutating(portfolio/full再計算はDELETE→再生成)。正常完了時の業務値=正基準一致を要求、中断/失敗時は通常再計算のrollback/recovery契約に従う ②§5.07の「record-only設計だから」「record-only工程」2箇所を「P7前のoutput-invariant設計」(record-only+behavior-preservingを包含)へ統一し、P0.5包含との再矛盾を解消。
+- **v2.39 (2026-08-14 23:35): 三者合意成立(残疑義0)を受けて工程化。** §3.33見出しと(1)を確定形(9銘柄・別ルート)へ整合(v2.34-35の「全銘柄14種」解釈は将軍の逸脱として記録保持)。**§5工程表へP0.9(L2供給価格の別ルート追加)を新設**し、P4依存へP0.9を追加、クリティカルパスと進捗台帳も更新。P4は基準runがpartialのためやり直しが前提であることを台帳へ明記。
+- v2.38 (2026-08-14 23:31): 家老・軍師が独立に同一結論へ到達し挿入点確定 — `recalculate_fast.py:1977`直後/`:1981`直前。表示Layer境界(:3466/:3496)はFoF月次生成後のため禁止(家老)。mode分岐外ゆえnormal/partial同一パス(軍師)。実測=partial+58.1%(38744→61268)、full増分0、FoF78体増分0。
+- v2.37 (2026-08-14 23:28): 殿指示「別ルートにしてL1とL2の間へ」— 層を現物確認(L1=ティッカー層/L2=ポートフォリオ層、mode=PORTFOLIOはL1をスキップ `:1276`)。根因を層構造で説明し、既存`_collect_all_symbols`とLayer 1を無変更のまま別ルートを1本置く方針へ。準備集合も9銘柄へ訂正(殿の整理23:26)。
+- v2.36 (2026-08-14 23:26): 殿の整理「全standard PFのconfigからrelativeとsafe havenの一覧を取得しそれを準備するtickerとする」— v2.34-35の全銘柄14種解釈を将軍の行き過ぎとして訂正し9銘柄へ。
+- v2.34-35 (2026-08-14 23:21-23:24): 殿指示「判断を一切せず全部準備」でC案新設、bundle replayの本番caller0を三者実測しscope外を明記。
+- v2.28-33 (2026-08-14 21:37-22:30): 波及の撤回(業務値へ伝播・PriceCacheが行ゼロtickerをloaded扱い)、上界へpipeline SafeHavenSwitch実効値を追加、復元先の型訂正(正基準はoracleでありバックアップではない)、三者独立コード確認(bundle replay経路の見落とし・コスト+58.1%・実装規模訂正)。
+- v2.23-27 (2026-08-14 21:01-21:31): §5.05-12(本番操作をACに入れるな)、§3.29(価格入力母集団の契約)、§3.30(第二AsIsと真のToBe)、§3.31(復旧方針)、A案の再利用関数訂正(`get_portfolio_all_tickers`)。
 - v2.22 (2026-08-14 20:14): 殿指示20:08「入れ子構造を一瞬で把握できる仕組みを。どこにも保存されていないのか」— 回答: 木としては未保存(fof_component_weightsに親子1段のみ)。将軍D0で`scripts/fof_tree.py`をDM-signal repoへ新設(commit dd0664f3・main push済み・readonly・実typeはportfolios JOIN・循環防御)し§5.5資産カタログへ登録。当該depth4 PFで動作実証済み。
 - v2.21 (2026-08-14 20:07): 殿指摘20:03「当該PF→秘奥義→奥義→シン四神の四段では」— 将軍のv2.20実測(depth1)は誤り。portfolios実typeとの再帰JOINで**FoF入れ子4段**(当該PF→秘奥義fof→奥義-GS fof→GSシン fof→シン四神standard)を確定。誤答原因=fof_component_weights.component_type列とcheck_pf_config表示の鵜呑み(列値'standard'が実態fofと乖離)。§3.28へ訂正+計測時の罠(実typeはportfolios JOINで確認)を明記。最深PFのRB6検算通過=深度非依存の本番実証として記録。
 - v2.20 (2026-08-14 20:00): 殿指示19:55「深度非依存を設計書に記しておけ+New Fund of Funds_copy_copy_copyは一段深いのでは確認せよ」— §3.28深度非依存契約を新設(計測契約・provenance書込み・fingerprint連鎖の3層で深度非依存、拡張時はfixture1本のみ、既知深度リスクは根治済み)。本番実測: 当該PFはdepth1(直接構成=秘奥義4 standard均等25%、readonly照会)。「Total Return (PF名)」はUI表示ラベルと注記。
