@@ -11,7 +11,7 @@
 | # | 証拠 | 数値 | 取得コマンド |
 |---|---|---|---|
 | E0 | throughput計器(母集団368完了cmd) | `e2e_median=2210s / work_median=552.5s / finalize_median=663.5s / overhead_rate_median=56.9%` — **finalizeがworkを上回る** | `bash scripts/loop_ledger_update.sh` 出力の生貼付。1件=完了cmd 1件 |
-| E1 | gate空振り | `review_two_phase_pending` BLOCK **本日45件中32件(71%)**、うち27件が1cmdに集中し**05:10:22〜05:16:59の6分37秒・約12秒間隔** | `grep '2026-07-27' logs/gate_metrics.log \| grep BLOCK \| awk '{print $4}' \| sort \| uniq -c`(家老blt_110002)+将軍再読。1件=gate_metrics BLOCK行1行 |
+| E1 | gate空振り | `review_two_phase_pending` BLOCK **45件中32件(71%)【取得時刻14:40。分母は動く生データ — 軍師検算15:04時点で47件中33件。結論(最大の汚染源・1cmd集中)は不変】**、うち27件が1cmdに集中し**05:10:22〜05:16:59の6分37秒** | `grep '2026-07-27' logs/gate_metrics.log \| grep BLOCK \| awk '{print $4}' \| sort \| uniq -c`(家老blt_110002)+将軍再読+軍師検算(blt_150456)。1件=gate_metrics BLOCK行1行 |
 | E2 | rc=75偽BLOCK | CLEAR成立後のcmd_complete再実行4回→`review_two_phase_pending`偽BLOCK 1件がgate_metricsへ記録→追記型訂正が必要化 | 家老自己申告blt_103624+knowledge:a00a2948ba1c5b36。1件=誤BLOCK記録1行 |
 | E3 | auto-push空振り | pre-push BLOCK **32件/日**(全てGA-PUSH1=未commit重複path)。cmd_complete_gateのauto-pushが完了処理のたびに試行 | 家老blt_102353(全数集計45件中32件)。1件=hook_failures.yamlレコード1行 |
 | E4 | self_retro支配因 | dominant cause=**completion_pipeline**(13:23)と**review_notify**(13:38)、いずれもverification=passed | logs/self_retro.jsonl(INSIGHT_FIX_KNOWN自動分析2本) |
@@ -22,7 +22,7 @@
 - 正規経路(1): `scripts/cmd_complete.sh:258`(run_checkpointed経由。checkpoint成功時マークのためBLOCK時は再入で再実行)
 - 正規経路(2): `scripts/review_approval.sh:471`(LGTM+ACCEPT両承認成立時にsetsid非同期起動。`.gate_triggered.$manifest`のnoclobberで同一manifest 1回に制限=**ここは既にイベント駆動かつexactly-once**)
 - **第三経路(未特定=特定不能が確定事実)**: E1の27回連続BLOCKは、(a)当該cmdのtrigger.logに`review_two_phase_pending`が0件(grep -c実測)、(b)completion_tail.logはSKIP群のみのclean実行、のため正規経路2本のどちらにも帰属しない。将軍がlogs/全体を横断走査(05:10:34/05:10:49の秒一致grep)しても主体は出ない。**理由はcmd_complete_gate.shが起動主体(pid/ppid/呼出し元)をどこにも記録しないこと**。∴「誰が27回叩いたか」は現行実装では観測不能 — これ自体がASISの欠陥である(T0で是正)
-- 12秒間隔の解釈: gateはBLOCK時に即exit 1(`cmd_complete_gate.sh:6452-6457`現物)で自己リトライを持たない。∴約12秒はgate 1実行のwall time≒呼び手が終了を待って即再実行する密ループの周期(27回の間隔実測 12〜15s)
+- 12秒間隔の解釈(軍師反証で改訂 blt_150456): 27回の隣接間隔はmin=1.0s/median=12.0s/max=17.0s。**1.0秒間隔が1件存在するため「単一の逐次呼び手が終了を待って再実行する密ループ」は成立しない**(逐次ならwall time未満の間隔は出ない)。∴約12秒は「呼び手のリトライ周期(sleep+ジッタ)」と読むのが妥当で、**少なくとも1回は並行呼出し(または高速早期exit経路)が起きている**。単一呼び手の仮定は捨てる
 
 **D2. 二相承認チェックがgate実行の深部にあり、空振りでもフル実行コストを払う**
 - `cmd_complete_gate.sh:6443-6457`: `review_all_reports_ready`判定はtask_type検出・report解決の後段。未承認状態での起動1回ごとに約12秒(E1周期実測)と、gate_metricsへのBLOCK行1本(統計汚染)を必ず支払う
@@ -39,14 +39,16 @@
 二相承認の実質(gunshi LGTM+karo ACCEPT+fingerprint一致)・fail-closed・既存checkpoint機構は一切緩めない(殿裁定07-21「削るな、速くしろ」)。
 
 ### T0. 起動主体の記録(D1の観測不能性是正・最初に入れる)
-- `cmd_complete_gate.sh`冒頭に1行: `caller pid=$$ ppid=$PPID cmdline=$(tr '\0' ' ' </proc/$PPID/cmdline)` を当該cmdのtrigger.logへ追記
-- 効果: 第三経路の次回発火時に主体が自動特定される。追加コスト=/proc読み1回(ms未満)
+- `cmd_complete_gate.sh`冒頭に1行: `caller pid=$$ ppid=$PPID start_ts=$(date +%s.%N) cmdline=$(tr '\0' ' ' </proc/$PPID/cmdline)` を当該cmdのtrigger.logへ追記
+- **pid+ppid+開始時刻の3点セット必須**(軍師指摘): pidだけでは同時刻の重複起動(並行呼出し)を見分けられない。D1改訂で並行呼出しの実在が示唆されているため、識別可能な形で記録する
+- 効果: 第三経路の次回発火時に主体+並行性が自動特定される。追加コスト=/proc読み1回(ms未満)
 - 決定: 記録先は既存trigger.log(新ファイルを作らない)
 
 ### T1. 二相承認pre-checkのfast-path化(D2是正・主軸)
 - gate冒頭(重い処理の前)で承認台帳(`queue/gates/<cmd>/review_approvals/{gunshi,karo}.yaml`)の存在+fingerprint一致を軽量チェック
-- **未承認なら即exit**: フル実行に入らない。gate_metricsへは**同一承認状態での2回目以降は記録しない**(初回のみ`BLOCK review_two_phase_pending`を記録。判定: `.pending_recorded.$manifest_state`のnoclobber — review_approval.sh:465の既存`.gate_triggered.$manifest`と同一パターンの再利用)
-- 決定(忖度なしの断): 2回目以降を「skip行として記録」ではなく**無記録**とする。理由=E1の27件はスパムであり、初回BLOCK+T0のcaller記録で監査性は足りる。反証歓迎
+- **未承認なら即exit**: フル実行に入らない。gate_metricsへは同一承認状態での2回目以降のBLOCK行を積まない(初回のみ`BLOCK review_two_phase_pending`を記録。判定: `.pending_recorded.$manifest_state`のnoclobber — review_approval.sh:465の既存`.gate_triggered.$manifest`と同一パターンの再利用)
+- **決定改訂(軍師最重大指摘の採用)**: 当初の完全無記録案は**Goodhartの典型**(T4目標「空振りBLOCK 0件/日」が変更それ自体で自動達成され、「空振りが減った」のか「数えなくなった」のかを後から誰も区別できない)。∴**空振り回数そのものは残す**: 2回目以降のfast-path skipごとに既存`logs/defense_overhead.jsonl`へ`source:cmd_complete_gate check_id:two_phase_fastpath_skip`で1行記録。gate_metricsの統計汚染除去と空振り実数の観測を両立(新台帳なし)
+- T1のfast-path自体が並行して複数走る前提(D1改訂)で、`.pending_recorded`のnoclobberが同時起動2本で二重記録/取りこぼしを起こさないことをfixtureで確認する
 - 効果見込み(算術): E1型の空振り1件あたり約12秒×26回=約5分/cmdの尾を除去+品質統計の汚染源71%を根絶
 
 ### T2. rc=75/再入時の終局状態先読み(D3是正)
@@ -55,12 +57,13 @@
 - 効果: E2の偽BLOCK機序を機械的に封じる(SKILL.md Step5の意志依存を構造化)
 
 ### T3. auto-pushの事前判定(D4是正)
-- push試行前に`git status --porcelain`と対象pathの重複を照合し、**GA-PUSH1確定の状態なら試行せず1行ログでスキップ**(判定はpre-push hookと同一条件の先読み)
+- push試行前に`git status --porcelain`と対象pathの重複を照合し、**GA-PUSH1確定の状態なら試行せず1行ログでスキップ**
+- **判定の正本はhook側に置く**(軍師指摘a): 独自に条件を複製するとhook側の将来変更で先読みだけ古くなる(本日のreview_approval/cmd_complete_gate別契約事故と同型)。pre-push hookの判定関数を共有sourceで呼ぶ形とし、不可能な場合は「hook条件と先読み条件の一致」をfixtureで固定する
 - 効果: hook_failures 32件/日とGA再通知の源泉除去。push自体の契約(CI GREEN・保留裁定)は不変更
 
 ### T4. 効果計測(既存計装のみ)
-- before固定値(本設計書§1): finalize_median=663.5s / review_two_phase_pending BLOCK 45件中32件 / pre-push BLOCK 32件/日
-- after: 同一コマンド(`loop_ledger_update.sh` / gate_metrics grep / hook_failures集計)で前後比較。目標=**空振りBLOCK 0件/日・finalize_median 20%以上短縮**
+- before固定値(本設計書§1、取得時刻2026-07-27 14:40): finalize_median=663.5s / review_two_phase_pending BLOCK 45件中32件 / pre-push BLOCK 32件/日
+- after: 同一コマンド(`loop_ledger_update.sh` / gate_metrics grep / hook_failures集計)+**defense_overhead.jsonlの`two_phase_fastpath_skip`実数**で前後比較。目標=**gate_metrics空振りBLOCK行 0件/日かつfastpath_skip実数の減少トレンド・finalize_median 20%以上短縮**。skip実数を残すことで「減った」と「数えなくなった」を区別可能にする(軍師指摘反映)
 - 記録先: 既存logs/defense_overhead.jsonl(`source:cmd_complete_gate`)。新台帳なし(knowledge:fbb5716c)
 
 ## §3 5W1H
@@ -74,15 +77,21 @@
 | **WHO** | 将軍=設計+起票、家老=分解配備、忍者=実装、軍師=本設計レビュー+実装レビュー |
 | **HOW** | 境界fixture(§4) + 前後実測(§2 T4) |
 
-## §4 境界fixture(実装ACへ転記する。最低8件)
+## §4 境界fixture(実装ACへ転記する。最低14件 — 軍師レビューで6件追加)
 
-1. 承認0/2でgate起動→即exit・フル実行なし・gate_metricsにBLOCK 1行(初回)
-2. 同一承認状態で2回目起動→即exit・gate_metrics追記なし・trigger.logにcaller行あり
+1. 承認0/2でgate起動→即exit・フル実行なし・gate_metricsにBLOCK 1行(初回)・defense_overheadにskip行なし
+2. 同一承認状態で2回目起動→即exit・gate_metrics追記なし・**defense_overheadに`two_phase_fastpath_skip`1行**・trigger.logにcaller行(pid+ppid+開始時刻)あり
 3. 承認1/2(LGTMのみ)→fixture 1と同挙動(部分承認は未承認扱い)
+3b. **承認1/2(ACCEPT単独=karoのみ)**→fixture 1と同挙動(二相の非対称性を両方向で固定。軍師不足1)
 4. 承認2/2揃い→フル実行に入る(fast-pathが誤って塞がない)
+4b. **差分fixture(最優先追加・軍師不足2)**: 同一入力(同一報告セット)に対しfast-pathの結論と深部判定(review_all_reports_ready/review_gate_manifest_ready)の結論が**一致する**ことを固定。本日実証済みの「2入口別契約でLGTM後BLOCK」(commit 00c9fff99で統一)と同型の分岐がT1で新たに生まれることを防ぐ
 5. 承認2/2だがfingerprint不一致→BLOCK(二相の実質は緩めない)
+5b. **承認1/2かつfingerprint不一致**→BLOCK(軍師不足3)
+5c. **承認台帳が破損・空ファイル**→fail-closed(未承認扱いでBLOCK。CLEARへ倒れないことを固定)(軍師不足3)
+5d. **fast-path同時起動2本**→`.pending_recorded`のnoclobberにより記録は初回BLOCK 1行のみ・取りこぼしなし(軍師指摘b)
 6. CLEAR済みcmdへのcmd_complete再入→gate再実行なし・残checkpointのみ進む・偽BLOCK 0
 7. GA-PUSH1確定状態でのCLEAR後push→試行せずスキップ1行(hook_failures増加0)
+7b. **T3先読み条件とpre-push hook条件の一致fixture**(共有source不可能な場合の防衛線。軍師指摘a)
 8. 重複pathなし+CI GREEN→pushは従来通り実行される(T3が正常pushを塞がない)
 
 ## §5 不変更契約
@@ -98,7 +107,7 @@
 
 | 論点 | 決定 | 根拠 |
 |---|---|---|
-| 空振り2回目以降のgate_metrics記録 | **無記録**(初回のみ記録) | E1の27件はスパム。監査はT0のcaller記録+初回BLOCKで足りる |
+| 空振り2回目以降のgate_metrics記録 | gate_metricsへは初回のみ。**2回目以降はdefense_overhead.jsonlへ`two_phase_fastpath_skip`として実数記録**(軍師レビューで完全無記録案を撤回) | 完全無記録はGoodhart(T4目標が変更自体で自動達成)。統計汚染除去と空振り実数観測を両立 |
 | T1判定の実装位置 | cmd_complete_gate.sh冒頭(CMD_ID解決直後) | 空振り時のコストを最小化。判定関数は既存を呼ぶだけ |
 | pending_recordedのリセット条件 | 承認manifest状態の変化(=fingerprint集合が変わる) | review_approval.sh:465の既存manifest計算を再利用 |
 | 弾の分割 | T0+T1/T2/T3の3弾 | 1道具1CMD(LS-A04(14))。T4は各弾のACに内蔵 |

@@ -176,6 +176,8 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
+- 2026-08-14: gate=gate_report_format result=FAIL executor=kagemaru reason=cross_repo_commits: cross_repo_commits[0].commit_hash is not a resolvable 40-hex commit; operational_simulation: MISSING (command,expected,actual; integration cmd requires comma...
+- 2026-08-13: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: commit owned/planned scope is missing; LK-A14: 横展開/修正前パターンを扱う報告にはgrep/rg残存0件の一次証跡が必須
 - 2026-08-12: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: commit/task history does not contain owned/planned path: logs/cmd_4291_finalize_boundary_r...
 - 2026-08-11: gate=gate_report_format result=FAIL executor=saizo reason=cross_repo_commits: cross_repo_commits[0] commit does not change path: backend/app; timestamp: completed/revision_requested report requires a parseable ISO timestamp; operationa...
 - 2026-08-11: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: commit subject does not identify task_id/parent_cmd; cross_repo_commits: primary commit_hash is absent from cross_repo_commits
@@ -194,8 +196,6 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - 2026-08-09: gate=gate_report_format result=FAIL executor=hayate reason=final_checkpoint: ci_fix clean repro evidence pre receipt must be FAIL failures>=1 SKIP0; final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid; final_...
 - 2026-08-09: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: commit/task history does not contain owned/planned path: scripts/gates/gate_karo_startup.s...
 - 2026-08-09: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: required commit_hash is missing or invalid; completion_evidence: SSOT match is unverified or false
-- 2026-08-08: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: commit_hash does not resolve to a readable commit; cross_repo_commits: primary commit_hash is absent from cross_repo_commits
-- 2026-08-06: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_hash: 'no-code-change' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ; knowledge_candidate.items[0].fact: empty
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。binary_checks.resultはyes/noのみ、verdictはgate_report_format.sh自動導出、報告追記はhelper経由に限定する。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パスを検出し、個別dict変換する。ninja-commitのcommit_hash記録手順への影響なし。

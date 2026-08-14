@@ -1,4 +1,4 @@
-# 忍者auto clear — 恒久是正 設計書 (2026-07-27)【✅ 全クローズ(19:05) — T1-T4全CLOSED+T4本番到達確認済み。以後の再発監視はT1-T3検知網が恒久継続】
+# 忍者auto clear — 恒久是正 設計書 (2026-07-27)【⚠ D5追記(2026-07-28) — T1-T4全CLOSED。D5=task.status残存による新型封鎖を追記。T1-T3検知網は恒久継続】
 
 - 起案: 軍師(gunshi)
 - 殿下問: 2026-07-27 11:16「auto clearの設計書はできたか？」
@@ -252,9 +252,55 @@ fi
 - 還流済み: LK-A01教訓統合+記憶DB knowledge:7ef7d60ea35ea402+半蔵の恒久hotfix(新旧daemon前提分離を通知済み)
 - origin: `[[殿下問_auto_clear_20260727]] -> [[T1-T4全実装+本番到達]] -> [[全クローズ_検知網恒久化]]`
 
+## §13 新型封鎖D5: task.status残存によるauto clear阻害(2026-07-28 軍師発見・殿下問)
+
+**T1-T4が対処した「staged残置によるCLEAR-BLOCKED」とは別の封鎖パターンを発見。**
+
+### D5: task.yaml status=in_progressの残存
+
+**現象(2026-07-28 11:14 殿下問→軍師一次確認)**:
+idle忍者(Codexプロンプト待ち)がauto clearされずCTX>0%で放置される。
+
+| 忍者 | CTX | tmux task_status | task.yaml status | ninja_monitorの判定 |
+|---|---|---|---|---|
+| hayate | 15% | 空 | **in_progress** | `STAGE1-IN-PROGRESS: idle observation while task is active, /clear禁止` |
+| hanzo | 65% | 空 | **done** | `PSTREE-OVERRIDE: bash subprocess detected, treating as BUSY` |
+| saizo | 14% | 空 | **in_progress** | `STAGE1-IN-PROGRESS: /clear禁止` |
+| kotaro | 27% | 空 | **in_progress** | `STAGE1-IN-PROGRESS: /clear禁止` |
+| tobisaru | 0% | 空 | idle | 正常(CODEX-RESPAWN済み) |
+
+**根因**: ninja_monitorは`task.yaml`のstatusフィールドを参照してauto clearの可否を判定する。cmd完了後にtask.yamlのstatusがidleに戻るのは**cmd-complete処理(cmd_complete_gate.sh GATE CLEAR→archive→status idle)**を経由する。GATE未到達(報告YAML BLOCK反復・家老のcmd-complete処理待ち)の場合、statusがin_progress/doneのまま残存し、**CLIは既にプロンプト待ち(idle)なのにninja_monitorがtask activeとみなしてclearを禁止する**。
+
+**D4との違い**:
+- **D4**: staged残置 → `auto_commit_before_clear`のpre-existing stage guardが発火 → CLEAR-BLOCKED
+- **D5**: task.status残存 → `STAGE1-IN-PROGRESS`判定が発火 → auto clear候補にすらならない(CLEAR-BLOCKEDより上流で弾かれる)
+
+**∴ D5はT1-T3の検知網の外にある。** T1カウンタはCLEAR-BLOCKEDイベントを数えるが、STAGE1-IN-PROGRESSはCLEAR-BLOCKEDを発生させずログだけ出して通過する。
+
+### D5の発生条件
+
+1. 忍者が報告提出→GATE FAIL→反復修正中にCLIが停止(Codexプロンプト待ちへ移行)
+2. 家老のcmd-complete処理が未実行(GATE未到達 or 家老のqueue遅延)
+3. task.yaml status=in_progress/done/assigned のまま残存
+
+### 是正方針(T5案)
+
+**ninja_monitorにCLI状態×task.status乖離の検知を追加する:**
+- CLI状態=プロンプト待ち(idle) かつ task.status=in_progress → **一定時間(M=30分)持続で家老へ通知**
+- 通知type: `stall_detection`(既存のDEPLOY-STALLとは別。タスク完了→CLI停止→status未更新のパターン)
+- auto clearの直接実行は**しない**(task.statusがin_progressである以上、未完了の可能性がある。家老が判断)
+
+**★当面の即時対処(2026-07-28 11:33 軍師→家老通知済み)**:
+- hayate: deploy_fixture_case51 → stall → respawn+再配備
+- saizo: memory_db_token_search → 報告あり・GATE未到達 → cmd-complete実施
+- kotaro: gunshi_d0_no_semantics → 報告あり・GATE未到達 → cmd-complete実施
+
+- origin: `[[殿下問_auto_clear_20260728]] -> [[task_status残存]] -> [[STAGE1-IN-PROGRESSによるauto_clear上流阻害]]`
+
 ## §8 因果リンク
 
 - → [[gunshi_auto_clear_blocked_investigation_20260727]] 本設計の前提となる調査書
 - → [[LG032]] 新しい強制の仕組みを作るな。既に強制されている行動に乗せよ
 - → [[GA-231c]] 指揮官のcommit直書き禁止(同じ「他者stage保護」思想)
 - → [[実装ありだが効いていない]] 本件の型=検知は出力されるが消費者が不在
+- → [[殿下問_auto_clear_20260728]] D5: task.status残存によるauto clear上流阻害(T1-T3検知網の外)

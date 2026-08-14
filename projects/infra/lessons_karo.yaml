@@ -431,6 +431,7 @@ lessons:
     status未設定cmd蓄積の根因を両端自動化で解消。新しい仕組みゼロ。
     吸収(2026-07-16, cmd_4000, origin: [[cmd_4000配備BLOCK]] -> [[起票と配備の必須契約不一致]] -> [[委任前estimated_minutes検証]]): cmd_4000でestimated_minutes欠落がcmd_save/委任を通過し、家老のdeploy_taskで初めてBLOCKした。cmd_delegate.shが委任前に正の数値estimated_minutesをfail-closed検証し、欠落時はcmd_save呼出0・inbox送信0にする。修正前33/35→修正後35/35 PASS、SKIP0。commit 2595f4b97。
     吸収(2026-08-09, cmd_4255, origin: [[殿指摘_本業完了1時間滞留_20260809]] -> [[hotfix自走優先逆転]] -> [[cmd_4255完了遅延]]): cmd_4255は忍者done 22:24後もCLEARが1時間超滞留し、軍師計測では直近16commit中hotfix 44%に対し本業完了0件だった。project=dm-signalのdone検知後は次の処理枠でレビュー・GATE・完了報告へ着手し、hotfix自走・修行・refluxより優先する。
+    吸収(2026-08-13, cmd_4297, origin: [[cmd_4297]] -> [[report_lifecycle_scope_mismatch]] -> [[failed_unclosed_startup_alert]]): 2026-08-13 cmd_4297でfrontend専用cmdへbackend post-deploy flagを誤適用しreport statusを先行更新した結果、GATE CLEAR後もtask=failed/report=completedが乖離した。positive_rule: 対象scope別post-deploy契約を先に確定し、殿の本番実測CLEAR受領後は同一ターンでtask.status・report.status・gate_resultの三点一致を二値確認する。reason: 成果がCLEARでも運用状態failed残存はstartup gateを継続ALERTさせる。今回 task failed→done、report completed維持、gate CLEARの3/3一致へ補正。
   source_ids: [LK059]
   created_at: '2026-04-24'
   automated: true

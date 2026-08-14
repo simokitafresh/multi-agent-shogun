@@ -435,6 +435,8 @@ draft内の数値を再計算。分母・分子の定義、除外条件に注意
 ### Step 3.5: Command×成果物突合（report review時必須）
 報告のresult.summaryに記載されたカラム/フィールド/機能が、command欄の要求を全て満たしているか**1対1で突合**せよ。cmd_3149(固定行番号sed見落とし)、cmd_3150(elapsed_ms欠落見落とし)で2回家老BLOCKされた(2026-06-03)
 
+**purpose_gap×binary_checks整合チェック(必須)**: purpose_gapに「別作業として残す」「scope外」と記載した項目がbinary_checksでresult=yesになっていないか照合せよ。両立は矛盾であり、yesなら同期済み/noなら未完了のどちらかに統一を要求する(2026-08-09 GA-449事故: purpose_gapで別作業と申告した本文/marker同期がbc=yesで通過→家老BLOCKで発覚)
+
 **SG-PRE25 INFO→verdict判定ルール（殿厳命2026-06-08洗脳監査で確立）**:
 SG-PRE25がINFO(command欄ファイルがfiles_modifiedに不在)を1件以上出した場合:
 - LG037で3分類(変更対象/実行のみ/既存依存)を実施

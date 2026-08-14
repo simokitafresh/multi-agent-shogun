@@ -171,13 +171,10 @@ noteはCommonMark仕様に従うため、太字の配置に制約がある。
 - コラム: 2,000〜3,500文字
 - 解説記事: 3,500〜5,500文字
 
-### Step 3.5: natural-japanese lint（AI臭除去）
+### Step 3.5: natural-japanese フル検査（AI臭除去・省略厳禁）
 
-執筆後、殿に提示する前にnatural-japaneseでAI臭を検出・修正する。
-
-```bash
-cd /tmp/natural-japanese && /tmp/uv-env/bin/uv run --no-project /tmp/natural-japanese/skills/natural-japanese/scripts/lint.py "$OUT_FILE"
-```
+元リポジトリ: https://github.com/coji/natural-japanese
+設計思想: 「検出は機械、判断は人間(またはAI)」。検出結果は疑いであり、直すか理由をつけて残すかを判断する。
 
 初回セットアップ（セッション内1回）:
 ```bash
@@ -185,24 +182,70 @@ python3 -m venv /tmp/uv-env && /tmp/uv-env/bin/pip install uv -q
 cd /tmp && git clone --depth 1 https://github.com/coji/natural-japanese.git
 ```
 
-**収束ループ**: lint→修正→再lint→…を検出0件（critical/warn 0件）まで繰り返す。1回で終わるな。
+共通実行パス:
+```bash
+NJ="/tmp/natural-japanese/skills/natural-japanese/scripts"
+UV="/tmp/uv-env/bin/uv run --no-project"
+```
 
-**核心指標（--json出力）**:
-- `burstiness`: 負=文長が均質すぎ（AI傾向）。-0.2以上を目指す
-- `nominal_ending_ratio`: 0.1以上（体言止めゼロはAI典型パターン）
-- `paragraph_sentence_count_cv`: 高いほど人間的（段落長のばらつき）
-- `bold_per_1000_chars`: 太字の乱用を数値で検出
+#### Step 3.5a: lint（必須・省略禁止）
+
+```bash
+cd /tmp/natural-japanese && $UV $NJ/lint.py "$OUT_FILE" --genre essay --json
+```
+
+- `--genre essay`はnote/ブログ記事に必須（コーパス校正済み閾値プロファイルに切替わる）
+- `--json`で全指標を取得し、findings以外の数値も必ず確認する
+
+**収束ループ**: lint→修正→再lint→findings 0件まで繰り返す。1回で終わるな。
+
+**核心指標と閾値**:
+- `burstiness`: -0.24以上が目標（ソースコード実測閾値）。文長のメリハリ
+- `nominal_ending_ratio`: 0.1以上。体言止めゼロはAI典型パターン
+- `paragraph_sentence_count_cv`: 0.4以上が望ましい。段落長のばらつき
+- `bold_per_1000_chars`: 太字の乱用検出
+
+**リズム改善手法**（burstinessが低い場合）:
+- 超短文（5〜10モーラ）を要所に挿入: 「全敗でした。」「割に合わない。」
+- 長文（60モーラ超）と混在させてメリハリを作る
+- 体言止めを自然に混ぜる: 「〜の一途。」「〜の源泉。」
 
 **主要検出カテゴリ**:
-- `forbidden_phrase`: LLM常套句（「大切なのは」等）
-- `antithesis_repetition`: 「〜ではなく」の反復（3回以上で発火）
+- `forbidden_phrase`: LLM常套句（「根本的な」「大切なのは」「いかがでしょうか」等）
+- `antithesis_repetition`: 「〜ではなく」の反復
 - `low_burstiness`: 文長リズムの均質性
-- `translationese`: 翻訳調（「〜を持つこと」等）
-- `repeated_sentence_lead`: 文頭パターンの反復（info。マークダウン記法なら無視可）
+- `translationese`: 翻訳調（「〜することができる」「〜を持つこと」等）
 
-**補助コマンド**:
-- `terms.py`: 未説明用語の検出
-- `outline.py`: 構造分析+テンプレ見出し検出
+#### Step 3.5b: terms（必須）
+
+```bash
+cd /tmp/natural-japanese && $UV $NJ/terms.py "$OUT_FILE"
+```
+
+カタカナ複合語/ASCII略語/固有名詞を初出順に抽出する。判定ではなく素材抽出。
+- 「説明手掛かり: なし」の用語を確認し、初出で括弧内説明を追加するか、理由をつけて不要と判断する
+- 内部用語（PF, L0-L3等）はメンバー向け表記に変換するか文脈説明を添える
+- 製品名・一般語は説明不要と判断してよい
+
+#### Step 3.5c: outline（必須）
+
+```bash
+cd /tmp/natural-japanese && $UV $NJ/outline.py "$OUT_FILE"
+```
+
+見出し構造とテンプレ見出し検出。確認ポイント:
+- boilerplate_heading（「まとめ」等）が多すぎないか
+- 見出しの長さ・体言止め率に過度な均質性がないか
+- 見出しだけ読んで論旨が通るか（文体憲法§2）
+
+#### Step 3.5d: 収束判定
+
+以下を全て満たすまでStep 3.5a-cを繰り返す:
+- lint findings: 0件
+- burstiness: -0.24以上
+- nominal_ending_ratio: 0.1以上
+- terms: 全未説明用語に対処済み（説明追加 or 理由つき不要判断）
+- outline: boilerplate見出し・構造問題なし
 
 ### Step 4: 殿に提示
 

@@ -4,7 +4,7 @@ argument-hint: "[repo-relative-local-master-path]"
 user-invocable: true
 description: |
   ローカルのcommit済み正本をsecret GitHub Gistへ新規共有、または自己記述metaに従って既存Gistへ検証付き同期する能力拡張スキル。
-  TRIGGER: /gist-share、正本をgist共有、secret gistへ同期、gist正本同期
+  TRIGGER: /gist-share、正本をgist共有、secret gistへ同期、gist正本同期、設計書を更新、設計書にも追記、設計書をアップデート、gistを更新、gistに反映、gistも更新、設計書の更新
   DO NOT TRIGGER: gist一覧・閲覧、公開gist作成、gistからローカルへの逆同期、gist indexだけの更新、通常のgit commit
 allowed-tools:
   - Bash

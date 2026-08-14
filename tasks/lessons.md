@@ -8858,6 +8858,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **origin**: [[cmd_karo_hotfix_semantic_stress_pending_202606270905]]
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-08-06
 - タスクACがpending 36件を前提にしていたが、queue/insights.yamlの一次データでは13件だった。stress_testキューは短時間で変動するため、報告ではAC文面の固定件数ではなく実測母数・抽出条件・時刻を必ず記録する。
 
 ### L868: コマンド置換内のバックグラウンド処理はstdout継承で待たれる
@@ -9167,6 +9169,8 @@ origin: [[cmd_3614]] -> [[bash_function_definition_order]] -> [[cmd_save_preflig
 - **origin**: [[cmd_3622_saizo_r3]]
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-07-25
 - logs/cmd_design_quality.yamlはcmd_quality_log.sh(静的/tmp/cmd_design_quality.lock)とcmd_complete_gate.shのGunshi verdict update/record(lock_path()のhash lock)という別ロックで保護され、Gunshi側の全文os.replace/open('w')がcmd_quality_log.shのasync appendを上書き消失させ18件/3セッション品質記録漏れを起こした。教訓:(1)同一ファイルの全writerは必ず同一ヘルパー(lock_path)でロックを共有させる(2)非同期fire-and-forget化は『flockがあるから安全』を、他writerが同じロックを使うかまで検証してから採用する(3)ベストエフォート処理でも失敗を>/dev/null 2>&1で握り潰すと無音で長期化する→失敗はログへ。再発防止は静的lock文字列の存在をgrepでBLOCKする構造ガードテストでLevel3-4化。
 
 ### L895: cmd_complete_gate.sh内にgunshi_verdict更新ロジックが2箇所重複し、優先順位ロジックが不一致(cmd品質記録漏れ恒久修正の副次発見)
@@ -10004,6 +10008,8 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **enforcement**: 未自動化
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-08-02
 - insight source=semantic_map_generate:new_fileの解消時、docs/semantic-index/index.mdへfile行を追加した後にbash scripts/semantic_map_generate.shを実行してもcontext/semantic-map.mdの差分がゼロになるケースがある。原因はscripts/semantic_map_generate.sh L603 'files = [value for kind, value in resources if kind=="file"][:3]' により、概念あたり上位3件のみが索引層(主要ファイル列)へ採用される仕様のため。既に3件以上file行がある概念へ新規追加しても索引層には表示されない。詳細層(index.md)への到達性は確保されているため、これはbugではなくresolve可能な状態と判断してよい。同種insight解消時、semantic-map.md diffが空でも異常ではないと確認してから進めよ。誤ってbugと誤認しコード修正に走らないよう次回忍者への注意喚起とする。
 
 ### L970: report template placeholder除去はmemory_references queryも対象にする
@@ -10220,6 +10226,8 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **enforcement**: 未自動化
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-07-30
 - queue/insights.yamlのverification.statusをstatusとして誤読するとpending判定が崩れる。awk等の簡易YAML走査では対象階層のインデントを固定し、nested fixtureをテストに含める。origin: [[INS-20260708-112032141-a1a5]] -> [[nested status誤読]] -> [[fix_known選定順序回帰テスト]]
 
 ### L988: insight_write.sh --resolveは既にline-by-line editでyaml.dump問題を解消済み(L351は陳腐化)
@@ -11207,3 +11215,3800 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 途中検証(反復)では direct bats が4.9x高速。
 最終checkpointのみ run_tests.sh unit (ミス許容の安全網=CI)。
 殿裁定「途中=try数最大・厳密さは最終のみ」の数値的根拠。
+
+### L1297: cross_repo_commits契約はci_push_stateに未接続だった(grep 0件確認)
+- **日付**: 2026-07-24
+- **出典**: cmd_4155
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,deploy,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_4155]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task.sh+cross_repo_commit_contract.pyはcross_repo_commitsを検証するが、cmd_complete_gate.sh report_ci_push_stateはtask_repo_dir単一での解決しか試みなかった。今後: cross-repo commitを含む設計のgapはcontract+実装の両方をgrepで確認する
+
+### L1298: CI環境でbats skipを使うとreceipt result=FAILになる — SKIP=FAIL policyに従いreturn 0で代替せよ
+- **日付**: 2026-07-24
+- **出典**: cmd_karo_ci_fix_sample_bats_20260724
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,grid_search]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_defense_overhead_writer.bats]
+- **origin**: [[cmd_karo_ci_fix_sample_bats_20260724]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- CI環境にないlocal-only file(logs/self_retro.jsonlなど)の存在チェックにbats skipを使うと、skip_count>=1→write_receipt result=FAIL→verify_run_tests_receipt ValueError→RECEIPT_FAIL terminal contractでCI FAILになる。正しい対処: if [ ! -f "" ]; then return 0; fi でCI不在時をsilent pass扱いにせよ。
+
+### L1299: yaml_field_set.shのfield引数にネストlist添字([N])を渡すと黙ってリテラルキー化する(修正済み)
+- **日付**: 2026-07-24
+- **出典**: cmd_4162
+- **記録者**: hanzo
+- **tags**: [infra,testing,gate,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/yaml_field_set.sh,tests/unit/test_yaml_field_set.bats]
+- **origin**: [[cmd_4162]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- yaml_field_set.sh/yaml_field_set_batchのfield引数はawk側で常に完全一致キーとして扱われるため、 "planned_paths[1]"のようなlist添字表記を渡すと一致するブロックが見つからずroot-level fallbackが働き、 添字表記の文字列そのものが新規のリテラルキーとして黙って書き込まれてしまう(list要素更新にはならない)。 cmd_4162で_yaml_field_set_reject_bracket_fieldガードを追加し、添字表記検出時は即FATAL/exit1で fail-closedするよう修正済み。今後list要素単位の更新が必要な場合は、リスト全体を書き直す (yaml_field_set <file> <block_id> <field> '[...]')か、report_field_set.sh(dot notation + bracket index対応、 ただしreport YAML向け設計)の利用を検討すること。
+
+### L1300: set -euo pipefailの環境でgrep|tailのようなno-match前提パイプラインを`local var; var=$(cmd | cmd2)`へ入れるとpipefailで即死する
+- **日付**: 2026-07-24
+- **出典**: cmd_4161
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats,instructions/ashigaru.md]
+- **origin**: [[cmd_4161]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- grep(no match時rc=1)|tail(常にrc=0)のパイプラインをvar=$(...)へ直接代入すると、pipefail環境ではtailのrc=0ではなくgrepのrc=1がパイプライン全体の終了statusとして採用される(bashのpipefail仕様=右端のnon-zeroを採用)。この結果が`local var`を伴わない代入行で発生すると`set -e`によりスクリプト全体が即座に終了する。本taskでlog_scope_expansion_fire()にこのバグを作り込み、無関係に見える7件のtask-mode系bats(mismatchと無関係なkagemaru.yaml等)まで巻き添えでBLOCKした。コミット前にHEAD版との比較で自己検出し`| | true`で修正。今後、set -euo pipefail環境でgrep/awk等no-match前提のパイプラインをvar=$(...)へ代入する箇所は`|| true`を機械的に付与するか、gate/lintでの横展開検知を検討
+
+### L1301: 周期チェックがバナーパース優先だと正本焼込みを無効化する
+- **日付**: 2026-07-24
+- **出典**: cmd_4160
+- **記録者**: kagemaru
+- **tags**: [infra,ninja-monitor,frontend,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/cli_lookup.sh,scripts/agent_respawn.sh,scripts/switch_cli_mode.sh,scripts/ninja_monitor.sh,tests/unit/test_model_name_tag.bats]
+- **origin**: [[cmd_4160]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- respawn時にsettings.yaml model_nameを@model_nameへ正しく焼き込んでも、ninja_monitor.shのcheck_model_names()(20秒周期)がresolve_model_display経由でバナーパースを最優先評価すると、フォーマットの異なる表示値で即座に上書きされ正本焼込みが無効化される。正本の一元化は書込みチョークポイントだけでなく、既存の自動修正ロジック(周期チェック等)も同じ優先順位で揃える必要がある。
+
+### L1302: cmd_save_output_filterはBLOCK時にINFO系新規出力を無条件で隠す
+- **日付**: 2026-07-24
+- **出典**: cmd_4164
+- **記録者**: saizo
+- **tags**: [infra,cmd-quality,db,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save_memory_db_token_gate.bats,logs/defense_overhead.jsonl]
+- **origin**: [[cmd_4164]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shはexec > >(cmd_save_output_filter >&9)でstdout/stderrを常時フィルタしており、判定がBLOCK(failed=1)になった実行では止まるな/BLOCK:/WARN(ING)?:/ERROR:等の固定パターン以外の行を全て捨てる(cmd_save.sh:139-164)。新規INFO系出力(今回のshow_memory_db_command_token_matches等)を追加した場合、テストや手動実行でcmdがBLOCKされる構成のままだと出力が一切見えず「機能が発火していない」ように誤診断する。再現/検証時は必ずBLOCKなしの完全PASS fixtureで確認する必要がある。今回はこれが原因で20分近くデバッグに要した
+
+### L1303: cmd生成時のtarget_path単数推定はAC本文が複数ファイル(2表)を指す場合にミスマッチする
+- **日付**: 2026-07-24
+- **出典**: cmd_karo_hotfix_n5_rolling_colwidth_20260724
+- **記録者**: kotaro
+- **tags**: [infra,db,deploy,bash]
+- **subdomain**: infra
+- **target_files**: [frontend/components/rolling-returns-summary-table.tsx,frontend/components/rolling-returns-distribution-table.tsx]
+- **origin**: [[cmd_karo_hotfix_n5_rolling_colwidth_20260724]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_hotfix_n5_rolling_colwidth_20260724のtarget_pathはrolling-return-chart.tsx(SVGチャート、テーブル要素なし)だったが、AC本文は「Summary StatisticsとDistributionの2表」「Roll Period」列幅統一を要求しており、実際の対象はrolling-returns-summary-table.tsx/rolling-returns-distribution-table.tsxの2ファイルだった。purpose文言に「rolling return」が含まれることから同名系統の別ファイル(chart)へ自動推定されたと推測。今後、cmd生成(deploy_task.sh等)がtarget_pathを1ファイルに絞る際、AC本文中の固有名詞(表題・列名等)とtarget_pathのファイル内容が一致するか軽量チェック(grep)を挟むと早期検出できる
+
+### L1304: 台帳長期集計ウィンドウは既存fix投入時刻を跨ぐと支配項判定を誤る
+- **日付**: 2026-07-25
+- **出典**: cmd_4168
+- **記録者**: saizo
+- **tags**: [infra,git]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh]
+- **origin**: [[cmd_4168]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_4168のtask assumptionは『直近3000行台帳』の集計(self_sync avg4.75秒x229回≒task記載の249回)を根拠に第3支配項と判定していたが、このウィンドウは2026-07-21T20:07投入済みのcmd_karo_hotfix_precommit_self_sync_fastpath_202607211946を跨いでいた。fastpath投入後のみでフィルタするとself_sync avg=460msに激減し、post-fastpath降順ランキングでは最早最大支配項ではない(instruction_syncがsum95.76sで最大)。台帳高速化レーンの支配項分析は、対象check_idの直近既知fix投入timestampで集計ウィンドウを区切るか、直近N件(fix後のみ)に絞るべき。区切らないと既に解消済みのコストを新規cmdとして二重に狙い、redundant workを生む構造的リスクがある。origin: [[cmd_4168]] -> [[台帳集計ウィンドウがfix跨ぎ]] -> [[assumption_invalidation]]
+
+### L1305: 配備ガードのstatus case網羅性: 進行中状態だけでなく完了直後archive未了も保護対象に含めよ
+- **日付**: 2026-07-25
+- **出典**: cmd_4170
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,deploy,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh]
+- **origin**: [[cmd_4170]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task_guard_worker_assignment(scripts/deploy_task.sh)はGA-257実装時にassigned|acknowledged|in_progressのみをBLOCK対象としていた。status=doneかつ報告未archiveの窓は無保護のまま放置され、kagemaruのreflux上書き事故(blt_20260725_130046)を招いた。新規に配備ガード/状態遷移チェックを設計・拡張する際は、'進行中'状態だけでなく'完了直後・archive未了'のような中間terminal状態も列挙し、case網羅性を確認すること。
+
+### L1306: 教訓選定scoringのtarget_files宣言は、広範なsemantic-index概念エイリアス一致で無条件バイパスされていた
+- **日付**: 2026-07-25
+- **出典**: cmd_4172
+- **記録者**: kagemaru
+- **tags**: [infra,testing,deploy,yaml,security]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/deploy_task_related_lessons_fast.py,tests/unit/test_deploy_task_related_lessons_fast.py]
+- **origin**: [[cmd_4172]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-07-25
+- scripts/lib/deploy_task_related_lessons_fast.pyのselect()で、教訓が明示的にtarget_filesを宣言していても、docs/semantic-index/index.mdの概念がtask本文のごく一般的な語(例: "配備","deploy","settings.yaml"等を含む300語超のaliasリストを持つ"agent_formation_management"概念)にマッチするだけでboostが付与され、"lid not in boosts"の分岐がtarget不一致判定を無条件で迂回していた。実データ(logs/lesson_impact.tsv)でこのクラスタはuseful 9/23=39.1%(除外解析で3/16=18.75%)と低精度だった。修正: target_files宣言済み教訓の不一致は常に絶対的除外とし、boostによる迂回を廃止。横展開の観点: 他の選定器/フィルタでも「宣言されたスコープ」と「キーワード/意味索引ベースのboost」が併存する箇所は、宣言側を優先させる同型の脆弱性がないか点検の価値がある
+
+### L1307: bashの\tはprintf/echo -e経由でのみ実タブへ展開される。二重引用符+コマンド置換の生文字列補間では文字通り残る
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_hotfix_gate_metrics_literal_tab_20260725
+- **記録者**: saizo
+- **tags**: [infra,cmd-quality,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_gate_metrics_literal_tab_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gate.shのBLOCK系gate_metrics書込み5箇所が "$(date ...)\t${CMD_ID}\tBLOCK\t reason" という二重引用符の生文字列補間で\tを埋め込んでいたため、bashはこれを展開せずリテラルなbackslash+t 2文字として書き込んでいた(CLEAR系はprintf '%s\t...'を使っており正常だった)。同一ファイル内の similar な append_line_locked呼び出しをgrepで横並び比較したことで、CLEAR系とBLOCK系の書式差が一目で判明した。tab区切りログをbashで生成する箇所は必ずprintfのフォーマット文字列側に\tを書き、date等の値展開は引数側で渡す形に統一すべき。
+
+### L1308: 高頻度runの生スキャン系stockには単純隣接snapshot比較ではなくgrace-hour以上前baseline比較を使う
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_hotfix_loop_ledger_stock_metric_20260725
+- **記録者**: kotaro
+- **tags**: [infra,testing,bash,fullrecalculate]
+- **subdomain**: infra
+- **target_files**: [scripts/loop_ledger_update.sh,tests/unit/test_loop_ledger_promotion.bats]
+- **origin**: [[cmd_karo_hotfix_loop_ledger_stock_metric_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- loop_ledger_update.shのような1日に何度も実行されるscriptで、stockが「produced-consumed累積カウンタ」ではなく「現在の生スキャン値」(promotion.stockのように、set差分の履歴を持たない外部scanが元)の場合、隣接するsnapshot同士を比較するALERTはsnapshot間隔(数分〜数時間)のnoiseに反応し、いったんconsumption(last_consumption_ts)が停滞するとgrace_hours条件が恒久的に破れて解除不能ALERTになる。対策はfind_baseline_stock的に「grace_hours以上前の最新snapshot」をbaselineとして比較すること。origin: [[cmd_karo_hotfix_loop_ledger_stock_metric_20260725]] -> [[L1154差分在庫grace設計の限界(last_consumption停滞で恒久stale)]] -> [[grace-hour-old baseline snapshot比較への設計変更]]
+
+### L1309: test_cmd_publish_preflight.batsが殿裁定2026-07-23のlesson-cap撤去(commit 4f4aae961)に未追随のまま2日間スコープ外FAILを出し続けている
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_hotfix_reflux_deploy_race_20260725
+- **記録者**: hanzo
+- **tags**: [infra,ninja-monitor,testing,bash,git]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,scripts/deploy_task.sh,tests/unit/test_ninja_monitor_training_auto.bats,tests/unit/test_deploy_task_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_reflux_deploy_race_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.sh/cmd_publish.shは殿裁定2026-07-23提案Aによりcmd_shared_preflightのlesson-cap呼出しを意図的に撤去済みだが、tests/unit/test_cmd_publish_preflight.batsのAC1/AC3(grep -c 'cmd_shared_preflight '==1を要求)が未更新のまま残存。全忍者の『報告直前run_tests.sh unit 1回証明』契約で毎回スコープ外FAILとして検出され、個々が手動でexclusion理由付けする無駄が反復している。origin: [[殿裁定2026-07-23提案A]] -> [[commit_4f4aae961]] -> [[test_cmd_publish_preflight.bats未追随]]。家老へinbox通知済み(msg_20260725_152103)。
+
+### L1310: 共有worktreeの検証は隔離cloneで行え。他忍者の未commit差分がテスト結果を汚染する
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_ci_fix_30148392707_classify_scaffold_20260725
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,process,git]
+- **subdomain**: infra
+- **target_files**: [tests/helpers/cmd_gate_scaffold.bash,tests/unit/test_cmd_complete_gate.bats,scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_sourced_dep.bats,tests/unit/test_cmd_gate_scaffold_lib_mirror.bats]
+- **origin**: [[cmd_karo_ci_fix_30148392707_classify_scaffold_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- affected実行で12件FAILしたが全て他忍者の未commit WIP由来だった。共有worktreeでgit stashは禁止のため差分を退けられず、自分の変更の回帰有無を判定できない。HEADへのisolated clone + 自分のpatchのみapplyで pre/post を取ると、他者差分に汚染されない一次証拠になる。家老・軍師も同日に他者ツリー状態で誤診を重ねており、CI RED診断の標準手順とすべき。
+
+### L1311: DrvFs(/mnt/c)上のatomic replaceでmode継承chmodを書くな
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_hotfix_lesson_write_chmod_eperm_20260725
+- **記録者**: tobisaru
+- **tags**: [infra,lesson,git,wsl2,lesson]
+- **subdomain**: infra
+- **target_files**: [scripts/lesson_write_karo.sh,scripts/lesson_write.sh,scripts/cmd_quality_log.sh,projects/infra/lessons_karo.yaml]
+- **origin**: [[cmd_karo_hotfix_lesson_write_chmod_eperm_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- /mnt/cはファイル所有者root・mode 777を強制し、非所有者(uid1000)のchmodはEPERM。さらにos.replace後のmodeもFS側が777へ固定するため、mode継承コードは達成不能かつ無意味。mkstemp→fsync→os.replaceのatomic writeを書く際、mode継承chmodは必ずtry/except PermissionErrorで包むか省略せよ。今回これが教訓登録経路(--merge-into)を完全停止させ、家老の学習が一件も環境に埋め込めない状態を生んだ。origin: [[cmd_karo_hotfix_lesson_write_chmod_eperm_20260725]] -> [[DrvFs非所有者chmod EPERM]] -> [[教訓登録経路の完全停止]]
+
+### L1312: 一発限りsentinelは作成時に保持期限を決めないと必ず無期限累積する
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_hotfix_queue_flag_retention_20260725
+- **記録者**: kotaro
+- **tags**: [infra,testing,frontend,review,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/archive_completed.sh,tests/unit/test_archive_completed_queue_flag_retention.bats]
+- **origin**: [[cmd_karo_hotfix_queue_flag_retention_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- queue/gates・dispatch_ntfy_started・draft_review_started・locksはいずれもper-cmdの一回性マーカーで、書き手はあるが消し手がいなかった。結果12万ファイルまで累積しqueue全走査が全gate・全配備のpreflightコストを押し上げた。次回チェック: 新しくsentinel/flagを作るPRでは『誰がいつ消すか』を同一変更内に実装しているかを確認する。origin: [[cmd_karo_hotfix_queue_flag_retention_20260725]] -> [[書き手のみで消し手不在のsentinel]] -> [[queue 12万ファイル累積]]
+
+### L1313: 共有indexにgit rmでstageした削除は、他エージェントのcommitに吸収されて帰属が失われる
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_hotfix_boost_bypass_production_path_20260725
+- **記録者**: saizo
+- **tags**: [infra,deploy-task,testing,bash,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats,tests/helpers/deploy_task_scaffold.bash]
+- **origin**: [[cmd_karo_hotfix_boost_bypass_production_path_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- AC4でgit rmした3ファイルの削除をstageしたまま実装・検証を続けた結果、その間に走った他エージェントのcommit 0f1c3ea65が共有indexごと削除を取り込み、自分のcommit 75ab9dccには削除が含まれなくなった。ninja_scope_commit.shは自分のcommit作成時のscope混入は防ぐが、git rmで先にstageした変更が他者commitへ吸収される経路は塞げない。教訓: 削除もninja_scope_commit.shのscopeに渡して最後にまとめてcommitするか、git rm --cached を避けて作業ツリー削除のみ先行させ、commit時にhelperへpathを渡す。stage状態を長時間放置しないこと
+
+### L1314: run_tests.sh taskは対象外の既知不具合をFAILへ混入させうる。binary_checksのAC5結果は事前にHEAD比較で無関係性を検証してからno/yesを判断せよ
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_hotfix_singleflight_fail_misattribution_20260725
+- **記録者**: kagemaru
+- **tags**: [infra,gate,db,testing,process]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format.sh,scripts/lib/gate_report_format_classify.sh,scripts/inbox_write.sh,scripts/ninja_done.sh,scripts/cmd_complete_gate.sh]
+- **origin**: [[cmd_karo_hotfix_singleflight_fail_misattribution_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task-scoped test runで2件のFAIL(test_skill_feedback_loop.bats#14: model_injection_profile_intensityのcase文とcase "$block_reason" in のtext解析衝突、test_gate_report_format_learning.bats系: WSL2 NTFS環境でのchmod Operation not permitted)を検出したが、両方ともgit HEAD(自分の変更適用前)へ一時的に対象ファイルを差し戻して同一コマンドを再実行し、同一失敗が再現することを確認して無関係と確定した。この『HEAD比較による原因切り分け』はscope外FAILの誤帰属を防ぐ具体的手順として汎用性が高い
+
+### L1315: 『条件を外して速くせよ』というACは、その条件が後段判定の帰属条件でないかを先に確認せよ
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_push_through_ci_followup_20260725
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/deploy_task.sh,tests/unit/test_cmd_complete_gate_ci_result_type.bats,tests/unit/test_cmd_complete_gate_ci_readiness.bats,tests/unit/test_deploy_task_ci_red_followup_guard.bats]
+- **origin**: [[cmd_karo_impl_push_through_ci_followup_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ci_readinessのhead SHA照合は単独のBLOCK条件に見えて、実際は後段のconclusion判定が『どのcommitのCI結果か』を保証する帰属条件だった。単純削除すると stale GREEN で未検証CLEAR、stale RED で誤帰属BLOCKになる。速度改善で条件を外す指示を受けたら、その条件が後続guardの前提になっていないかをコード順序で確認し、削除ではなく状態化(第3状態の導入)で速度と品質を両立できないかを先に検討せよ。origin: [[cmd_karo_impl_push_through_ci_followup_20260725]] -> [[SHA照合を独立BLOCK条件と誤認]] -> [[stale評価によるCLEAR/誤帰属BLOCKの危険]]
+
+### L1316: fallback経路は「一致しなかった入力」を黙って別物として成功させうる
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_yaml_field_set_list_nested_20260725
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/yaml_field_set.sh,tests/unit/test_yaml_field_set_nested_list.bats]
+- **origin**: [[cmd_karo_impl_yaml_field_set_list_nested_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- yaml_field_setのroot fallbackは平坦YAML互換のために置かれたが、dotted pathのように「どの段にも一致しないが意味のある入力」を受けるとトップレベルにリテラルキーを作りRC=0を返した。fallbackを書くときは『一致しなかった入力すべてが最終段の意味論に適合するか』を検証し、適合しない形は最終段より前に非ゼロで弾け。成功を返しながら意図と異なる結果を残すのは、失敗するより危険である。
+
+### L1317: 計装の上限値を決める前に、既存receiptに『内包区間』の本番実測が眠っていないか探せ
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_singleflight_hold_instrumentation_20260725
+- **記録者**: saizo
+- **tags**: [infra,gate,deploy,gate,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format.sh,tests/unit/test_gate_report_format_singleflight.bats]
+- **origin**: [[cmd_karo_impl_singleflight_hold_instrumentation_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 60秒という上限は他phase(inbox_write max 45,700ms)からの外挿で決められていたが、実際には/dev/shm/rfs-terminal-receipt.*.tsvにlocal_gate(=gate呼出し全体=ロック保持区間を内包する上界)がn=113蓄積されており、p95 9,100ms/max 35,460msという判定に十分な本番実測が既に存在した。新規計装を入れても直後は自分で作った少数サンプル(n=10)しか無く尾を代表できない。∴上限判定では『測りたい区間そのもの』が無くても『それを内包する区間』の既存実測を上界として使える。新台帳を作る前に既存台帳・既存receiptをgrepせよ(車輪の再発明防止と同型)
+
+### L1318: gateを緩めるときは『そのgateが守りたかった目的』を別証跡で満たせるかを問え。CLEARの捏造で通すな
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_fail_close_path_20260725
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,review,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/archive_completed.sh,tests/unit/test_archive_completed_fail_close.bats,skills/cmd-complete/SKILL.md]
+- **origin**: [[cmd_karo_impl_fail_close_path_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- FAIL verdictのcmdが閉じられない問題に対し、安易な解法は『review_gate.doneをbackfillしてCLEARを書く』ことだが、それはFAILをCLEARに化けさせ品質記録とgate_metricsを汚染する。正しくは、review_gate.done検査の目的(=家老レビュー未完了の報告を退避させない)に立ち返り、その目的を満たす別証跡(fingerprint束縛のkaro.yaml)の存在で条件を置き換え、CLEARマーカーは一切作らないこと。『閉じる』と『合格にする』は別軸である。緩和時はverdict=FAIL等のAND条件で対象象限を1つに限定し、他象限が非緩和であることをtestで固定せよ
+
+### L1319: hookのidentity依存guardを追加したら、agent identityをハードコードしている既存testを同時に洗え
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_ci_fix_30153849352_ga231c_false_positive_20260725
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,git]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_heavy_job_admission.bats]
+- **origin**: [[cmd_karo_ci_fix_30153849352_ga231c_false_positive_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-231c(指揮官のgit commit直書き禁止)追加でCIが赤化した。原因はhookの偽陽性ではなく、tests/unit/test_heavy_job_admission.bats:48 の _run_hook が TMUX_AGENT_ID=shogun を固定していたため。identityで発火するguardを新設・拡張する際は grep -rn 'TMUX_AGENT_ID=' tests/ で偽装identityを使うtestを列挙し、guardの検証を意図しないtestは鎖の外のidentityへ退避させる。逆に、guardを緩める是正は禁止(実害への対処を無効化する)。
+
+### L1320: 判定を多状態化したら記録も同時に多状態化せよ。判定だけ直すと台帳が嘘をつく
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_gate_metrics_record_split_20260725
+- **記録者**: kotaro
+- **tags**: [infra,cmd-quality,review,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_ci_readiness.bats,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_impl_gate_metrics_record_split_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 実装弾①がevaluate_ci_readiness_jsonを3状態(READY/WAIT/BLOCK)にした際、記録側は固定文字列BLOCKのままだった。結果、ci_readiness BLOCK 106件のうち75件(70.8%)が実際にはWAITで、BLOCK率・再発検知・軍師accuracyの分母がすべて汚染された。判定と記録は同じ真理値表を共有すべき対であり、片方だけの変更はレビューでも気づかれにくい。判定の状態数を増やすcmdでは『この状態はどこに記録されるか』を必ずACへ含めよ。
+
+### L1321: grepベースの逆依存検出は『マッチ0件=依存なし』で自己欺瞞できる。実データでの正規表現検証が計測より先
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_precommit_affected_link_20260725
+- **記録者**: kagemaru
+- **tags**: [infra,testing,frontend,testing,review]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_affected_deps.bats]
+- **origin**: [[cmd_karo_impl_precommit_affected_link_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_impl_precommit_affected_link_20260725のAC2で、resolve_reverse_lib_deps()の正規表現を(source|\.)のみで実装し、隔離fake repoの単一テストケース(source形式)ではPASSしたため実装は正しいと判断した。しかし軍師レビューでscripts/lib/yaml_field_set.shの実callerを尋ねられ実測すると0件ヒットし、初めて『実際の呼出しの大半はbash x.sh形式のサブプロセス呼出であり、sourceではない』という前提の誤りが判明した。さらに調査すると正規表現自体にも文字クラスの二重終端バグ([[:space:]]"'という誤記述、意図は[[:space:]"']1個の文字クラス)があり、境界マッチが事実上機能していなかった。原因: 自作した単一テストケースが自分の実装の設計思想(sourceのみ検出)をそのまま反映していたため、テストが実装の誤った前提を追認するだけになっていた(fixtureの多様性不足)。対処: 広く使われる実在ファイル(yaml_field_set.sh)でgit grep -hFにより実際の呼出し形式分布を先に確認してからfixtureを設計し直した。今後、grepベースの検出ロジックを書く際は、自作の最小fixtureだけでPASSを確認して終えず、対象パターンが実際に多発する実データ(git grep -hF等)で分布を先に確認し、その分布を反映したfixtureをテストに追加する。
+
+### L1322: cmd起票前に『解決済みでないか』をgit logで一次確認せよ。台帳・設計書は写しであり実体ではない
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_fail_verdict_close_path_20260725
+- **記録者**: hanzo
+- **tags**: [infra,instructions,gate,bash,git]
+- **subdomain**: infra
+- **target_files**: [instructions/karo.md]
+- **origin**: [[cmd_karo_impl_fail_verdict_close_path_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_impl_fail_verdict_close_path_20260725 は、同内容の cmd_karo_impl_fail_close_path_20260725(commit 82ad6750a、GATE CLEAR済み)の重複起票だった。家老は設計書§2台帳のB21行『正規経路は存在しない』という写しを読み、実体(archive_completed.sh:1326/1343のFAIL_CLOSE分岐)を確認しなかった。忍者側の防御は『着手前に git log --oneline | grep <主題> と対象ファイルの現物確認を行い、既達なら実装せず上申する』こと。ACが『存在しない停止点を示せ』と要求する場合、停止点を捏造せず『現行に停止点なし、pre-fix commitではここ』と事実を記す。
+
+### L1323: preflightの支配相はファイル数ではなくgit履歴walk回数。pathspec付きgit logは9p上で1回12-19秒
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_deploy_preflight_scan_20260725
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,deploy,yaml,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh]
+- **origin**: [[cmd_karo_impl_deploy_preflight_scan_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd purposeは'queue配下125,527ファイル走査'を真因と仮置きしていたが、一次実測では走査対象ファイル数ではなくpathspec付き git log -1 の呼出し回数が支配相だった(1回12-19秒×4回=21秒)。速度改善では『何件走査するか』ではなく『高コスト外部プロセスを何回呼ぶか』を先に数えよ。絞り込みは必要条件による早期棄却(安いgit呼出しで全体を棄却)で、検査項目を1つも削らずに-83.9%を得た。origin: [[cmd_karo_impl_deploy_preflight_scan_20260725]] -> [[check_yaml_freshness_git_log_pathspec_walk]] -> [[deploy_preflight_wall短縮]]
+
+### L1324: 同一概念の判定が複数箇所にある時は、集合の一致をtestで固定してから中身を直せ
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_retro_answer_type_match_20260725
+- **記録者**: tobisaru
+- **tags**: [infra,inbox,deploy,testing,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,scripts/retro_write.sh,scripts/deploy_task.sh,tests/unit/test_retro_answer_type_parity.bats,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_impl_retro_answer_type_match_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- retro回答の受理typeは送信側(inbox_write.sh)・判定側(retro_write.sh)・配備hold解除側(deploy_task.sh)の3箇所で独立に書かれ、3つとも異なる集合だった。1箇所だけ直しても回答は機械判定に乗らず、しかも失敗が無音(holdが解けないだけ)なので気付けない。是正は『集合の一致をparity testで固定する』を先に置き、その上で中身を揃える。件数(実データ)から入るとlive 0件のような場合に停滞するため、判定箇所のtype集合突合という構造側の一次情報を先に見よ。origin: [[cmd_karo_impl_retro_answer_type_match_20260725]] -> [[3箇所の受理type集合が独立に定義され不一致]] -> [[回答が機械判定に乗らず家老が手動復元]]
+
+### L1325: スコープregexを広げる修正では、広げた側と広げすぎない側の両方をtestで固定せよ。『gate』は delegate に含まれる
+- **日付**: 2026-07-25
+- **出典**: cmd_karo_impl_lg051_scope_basename_20260725
+- **記録者**: saizo
+- **tags**: [infra,gate,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format_main.py,tests/unit/test_gate_report_format_lg051_scope.bats]
+- **origin**: [[cmd_karo_impl_lg051_scope_basename_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LG051のスコープ漏れを直す際、単純に部分文字列一致へ広げると cmd_delegate.sh / aggregate_metrics.sh / propagate.sh / navigate.py / mitigate_*.sh が『gate』を含むため一斉に誤検出対象になる。実際、漏れを数える最初の判定式でこの誤りを踏み、13/125という誤った件数を出した。正解はトークン境界([_.-]または境界)を必須にすること。教訓の一般形: 検出範囲を広げる修正のfixtureは『新たに拾えること』だけでなく『拾ってはいけないものを拾わないこと』を必ず対で書き、旧実装へのmutationで前者のみが落ちることを確認せよ。後者が両方でPASSすることが回帰なし・FP非増加の証明になる
+
+### L1326: 退避・削除系の作業は『積集合0件』の陰性対照を実行前に必須とせよ。task YAMLのgrepだけでは登録済みworktreeを1件も検出できない
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_scratch_retention_cleanup_20260725
+- **記録者**: hanzo
+- **tags**: [infra,ninja-monitor,yaml,git]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_scratch_retention.bats]
+- **origin**: [[cmd_karo_impl_scratch_retention_cleanup_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_impl_scratch_retention_cleanup_20260725 で退避対象10件のうち3件がgit worktree登録済みだった。衝突検査をqueue/tasks/*.yamlのgrepだけで設計するとtask YAMLに書かれていない登録済みworktree(全体で42件)を1件も検出できない。退避・削除系は『退避対象リスト ∩ git worktree list = 0件』を実行の前提(陰性対照)とし、0件でなければ実行前に停止して上申せよ。陽性対照(参照しているtaskの検出)だけでは『検出されてはならないものが混じっていないこと』を保証できない。実装側にも同じ陰性対照を埋め、fixtureで固定すること。
+
+### L1327: 9p+大容量packのrepoでは、履歴系gitのコストはwalk範囲ではなく呼出し回数で決まる。窓を狭めても速くならない
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_skill_refs_walk_scope_20260725
+- **記録者**: hayate
+- **tags**: [infra,gate,gate,bash,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_skill_script_refs.sh,tests/unit/test_gate_skill_script_refs.bats]
+- **origin**: [[cmd_karo_impl_skill_refs_walk_scope_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_skill_script_refs.shの66sの99%はgit rev-listだった。窓を2026-06-07→07-18へ狭めても28.8s→34.0sで改善せず、pathspec付きwalkはsinceを付けても全履歴を辿ることが実証された(.git=1.5GB/pack1.30GiB/9p)。逆に呼出しを2→1→0へ減らすと66.6-99.1s→6.5sになった。∴速度改善では『走査範囲を狭める』より先に『高コスト外部プロセスの呼出し回数』を数えよ。加えて、自分の初案(marker毎に境界クエリ1回)は実装して測ったら66.6s→99.6sと悪化した。提案は測るまで信じるな。origin: [[cmd_karo_impl_skill_refs_walk_scope_20260725]] -> [[git_rev_list_call_count_dominates]] -> [[gate 66s→6.5s]]
+
+### L1328: 計器の相定義が跨いだ区間に支配相が隠れる。相合計と総時間の差を必ず見よ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_report_publish_latency_20260725
+- **記録者**: kotaro
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh,tests/unit/test_report_field_set_batch_throughput.bats]
+- **origin**: [[cmd_karo_impl_report_publish_latency_20260725]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- publish経路は4相を計測していたが、相合計495msに対し総時間1043msで、548ms(52.5%)が『どの相にも属さない区間』だった。そこに支配相(3回の重複再読込)が丸ごと隠れていた。相を足すたびに『相合計=総時間か』を検算していれば、計器を持ちながら半分を見落とす状態は起きない。速度改善では最初に総時間と相合計の差を出し、差が大きければ相定義の穴を疑え。
+
+### L1329: quarantine退避先はソースと同一FSに置け(cross-device mvは実コピーになる)
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_tmp_cache_retention_20260726
+- **記録者**: tobisaru
+- **tags**: [infra,ninja-monitor,wsl2,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_scratch_retention.bats]
+- **origin**: [[cmd_karo_impl_tmp_cache_retention_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 半蔵のrun_scratch_retentionはquarantineを/mnt/c/tools/shogun-scratch-quarantine/auto(drvfs)に置いた。対象がlockディレクトリ数個なら問題ないが、同じ設計で/tmp(ext4)の2万件超のcacheを退避するとcross-device mvが全件実コピーになりWSL2 drvfs越しで桁違いに遅くなる。cache retentionでは退避先を同一FS配下(/tmp/.shogun_tmp_cache_quarantine)にしてrename(2)で済ませた。retention/quarantine系を追加する際は『対象件数×FS境界』を先に見よ。
+
+### L1330: 契約(planned_paths)は宣言であり作業ツリーの実体ではない。終端statusのtaskでも未commit変更は残る
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b32_planned_paths_test_20260726
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,deploy,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_nocode_commit_contract.bats,tests/unit/test_deploy_task_checkpoint_barrier.bats]
+- **origin**: [[cmd_karo_impl_b32_planned_paths_test_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task_guard_target_path_collisionはactive statusのtaskだけを比較していたため、終端statusのpeerが未commitで保持中のファイルへ別忍者を配備できた(2026-07-26 半蔵5本未commit×飛猿配備)。契約照合に作業ツリー照合(git status)を足して初めて『記録≠状態』が閉じる。ただしgit status全体は本環境で54.3秒でありpathspec限定(0.6s)かつ重複候補が出た時だけ実行する非対称条件が必須。origin: [[cmd_karo_impl_b32_planned_paths_test_20260726]] -> [[記録≠状態]] -> [[未commit衝突]]
+
+### L1331: fixture repoは git -C ではなく toplevel 実体検査で守れ(git initの失敗が本番repoへの逸脱commitになる)
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b31_commit_attribution_20260726
+- **記録者**: saizo
+- **tags**: [infra,testing,db,deploy,testing]
+- **subdomain**: infra
+- **target_files**: [tests/test_gate_report_format.bats]
+- **origin**: [[cmd_karo_impl_b31_commit_attribution_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- tests/test_gate_report_format.bats のfixtureは /mnt/c(DrvFs)で git init が chmod EPERM rc=128 になり、以降の git -C $repo commit が本番mainへ他者のstage済み変更を message='init' でcommitしていた(9e88ddc28 / da5dbb369)。しかもT-AC3-1はその汚染commitによってokになっていた(緑が汚染の産物)。E型(実体でなく写しを見る)の一種で、'git -C dir' というオプションを『dirのrepoを操作する指定』という写しとして信じたことが原因。git -C はcwdを変えるだけでrepoは discovery が決める。教訓: fixture repo生成後は toplevel==fixture dir を必ず実体検査し、逸脱ならcommit到達前に落とす。
+
+### L1332: bypassの事後確認は『既存FAILが同値か』だけでなく『新規FAILが0件か』まで見よ。同値確認だけでは自分のcommitが壊した回帰を見逃す
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b28_failed_report_close_20260726
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,git,reporting]
+- **subdomain**: infra
+- **target_files**: [scripts/review_approval.sh,scripts/lib/review_approval.sh,tests/unit/test_archive_completed_fail_close.bats,tests/unit/test_report_commit_identity.bats,skills/report-write/SKILL.md]
+- **origin**: [[cmd_karo_impl_b28_failed_report_close_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 統合commit 8203a2a3e の事後確認で、既存RED 3件は同値だったが別に2件(test_report_commit_identity 15/16)が新たにFAILしていた。既存FAILの同値だけを見ていれば見逃していた。しかもその2件は表面的には『testが落ちた』だけだが、実体はcache境界を検査する代理変数(1報告=1cacheファイル)が壊れ、以後この境界をファイル数で検査できなくなる=検査能力そのものが段階的に失われる経路であった。∴bypass時の(d)事後確認は必ず『既存FAILの同値』+『新規FAIL 0件』の二本立てで測れ。共有worktreeで他者と同一ファイルを触った統合commitでは特に必須である。
+
+### L1333: 検知器の判定入力が『診断文の写し』だと、契約/環境が原因の正しい反復まで誤検出する。実体(何がブロックしているか)を見よ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_divergent_detector_fix_20260726
+- **記録者**: hayate
+- **tags**: [infra,gate,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_diagnose_check.sh]
+- **origin**: [[cmd_karo_impl_divergent_detector_fix_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- DIVERGENT v2は prior_attempts の diagnose_reason/approach_summary の類似度だけで『同じ仮説の繰り返し=アプローチが誤り』と判定していた。しかし契約(planned_paths欠落)や環境(DrvFs)がブロックしている間は、忍者側に是正手段がないため同一診断の反復こそが正しい。実データ(hanzo attempt6-8はsim=1.00)で誤検出を再現し、判定をBLOCK理由の実体(契約/環境起因か・前回から壁が変化したか)へ移すことで、誤信号のみ消し真の足踏みは残せた(陽性対照で実証)。★併せて2つの自戒: (1)自分の是正案も実装して測るまで信じるな — 『fixtureをrepo外へ出せば1行で解ける』と述べたが、測ったら5件直って6件壊れた(repo内依存の判定が複数あった)ため即revert・撤回した。(2)抑止は必ず可視化せよ。黙って消すと検知器が何を見送ったか追えなくなる(LG038)。origin: [[cmd_karo_impl_divergent_detector_fix_20260726]] -> [[divergent_v2_similarity_of_copy]] -> [[誤信号3件(半蔵2・疾風1)]]
+
+### L1334: gateの判定入力に自由文字列を使うなら、必ず二値enumの結論欄を併置せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b33_hook_failure_state_20260726
+- **記録者**: kotaro
+- **tags**: [infra,testing,gate,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/review_bundle.py,tests/unit/test_skill_feedback_loop.bats]
+- **origin**: [[cmd_karo_impl_b33_hook_failure_state_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- hook_failures.detailsは自由文字列で判定に使えず、countという記録数が判定軸に据えられていた(記録≠状態の4例目)。是正では(a)証跡を構造化し(b)(d)の結論をenum化した。★核心は『失敗した状態を正直に宣言できる値をenumへ含める』こと。半蔵B28の(d)不成立は、宣言できる値が無ければ隠すか詰むかの二択になる。regression_detectedを持たせてAPPROVEは拒みつつBLOCKメッセージで是正→新HEADで再実測という出口を示した。あわせて測定HEADを必須にし、再実測が『同じ数値が出るか』ではなく『今の実体は何か』の測定であることを強制した
+
+### L1335: 境界検査に代理変数(ファイル数)を使うと、境界の中身が壊れても緑のままになる
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_fingerprint_fanout_ac4_20260726
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,git,cache]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_report_commit_identity.bats]
+- **origin**: [[cmd_karo_impl_fingerprint_fanout_ac4_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 既存test 15/16 は cache境界を『ファイル数 -eq 1/2』で検査していた。これは(realpath,content_hash)組ごとに1エントリという境界の代理変数であり、エントリの中身(1行目=fingerprint/2行目=commit identity)が壊れてもファイル数は変わらないため緑のままになる。実際 sidecar廃止(868d0213e)前後でファイル数条件は同じ値を取りうる。IF 境界をファイル数・件数・存在有無といった代理変数で検査している THEN その境界が守る実体(中身の構造・読み出し経路)を直接検査するtestを1本足せ。origin: [[cmd_4156 fingerprint形式変更]] -> [[代理変数検査が中身の破壊を見逃す]] -> [[test18でcache_file本体の2行構造を実体検査]]
+
+### L1336: 検出器を廃止する前に、その目的を果たす受け皿が実在することを実測せよ。廃止の是非より受け皿の有無が先である
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b37_error_report_false_fire_20260726
+- **記録者**: hanzo
+- **tags**: [infra,testing,monitor,tmux]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/stop_check_inbox.sh,tests/unit/test_stop_check_inbox.bats]
+- **origin**: [[cmd_karo_impl_b37_error_report_false_fire_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- B37で発言マッチのerror_reportを廃止するにあたり、廃止が正しいかだけを論じると『真のエラー停止が誰にも検出されない』状態を作りうる。実際にはninja_monitorのSTALL検知(active task+idle pane、pane抜粋つき)が受け皿として実在し、本日のログにも STALL-DETECTED が2件あった。∴検出器の廃止判断は(1)その検出器が写し基準か実体基準か(2)同じ目的を果たす実体基準の経路が実在するかを実測してから下せ。実在確認なしの廃止は消火であり、実在確認つきの廃止は役割重複の解消である。
+
+### L1337: derived dataをgit追跡すると、常時dirtyがdirty-tree系gateと噛み合って構造的なpushデッドロックになる
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_recon_index_regen_race_20260726
+- **記録者**: saizo
+- **tags**: [infra,gate,bash,git]
+- **subdomain**: infra
+- **target_files**: [queue/reports/saizo_report_cmd_karo_recon_index_regen_race_20260726.yaml]
+- **origin**: [[cmd_karo_recon_index_regen_race_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- context/lord-conversation-index.md は generated_at を毎回書き直す自動生成索引でありcommit直後に必ずMへ戻る。これ単体は無害だが、/clear前のcontext一括auto-commitでcommitに混入すると、GA-PUSH1(pushするcommitのpath ∩ dirty path でBLOCK)が構造的に発火し、追いかけてcommitしても収束しない。IF 自動生成物をgit追跡下に置く THEN dirty-tree/uncommitted系のgate全てに同じ除外リストが適用されているかを確認せよ。除外リストが1箇所(cmd_complete_gate.sh:3268)にしか無い状態は、他のgateで同じ問題が再発することを意味する。origin: [[88a1990da 生成物のgit追跡]] -> [[generated_atによる常時dirty × auto-commit混入]] -> [[GA-PUSH1デッドロックとescape hatch常態化]]
+
+### L1338: キャッシュを読む前に『それは何の値か』を書込み側の実装で確かめよ。通知履歴と現在状態は別物である
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b38_ci_cache_staleness_20260726
+- **記録者**: hanzo
+- **tags**: [infra,testing,bash,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/ci_status_check.sh,scripts/hooks/stop_check_inbox.sh,tests/unit/test_stop_check_inbox.bats]
+- **origin**: [[cmd_karo_impl_b38_ci_cache_staleness_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- B38の真因は鮮度境界の欠如ではなく、/tmp/last_ci_notify_state という『最後に通知した状態』を『現在のCI状態』として読んでいたカテゴリ誤りだった。書込み側(ci_status_check.sh)は状態が変化したときしか書かないため、mtimeも『最後に確認した時刻』ではなく『最後に状態が変わった時刻』である。∴mtime基準の鮮度上限を足すと、値が正しく安定しているほど古くなり正しい値を不明化する(実データ反例: 86分経過だが値は正しい)。恒久則: 他人が書いたキャッシュを判定に使うときは、(1)何を表す値か (2)いつ書かれるか(毎回か変化時のみか) (3)失敗時に何が残るか を書込み側の実装で確認してから使え。読み側だけを見て鮮度を足すのは対症療法である。
+
+### L1339: 同一値の共有化はcommit前に新旧regex/リストの完全一致を実測せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_prepush_autogen_exclude_20260726
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality,process,gate,bash]
+- **subdomain**: infra
+- **target_files**: [.githooks/pre-push,scripts/lib/autogen_paths.sh,scripts/cmd_complete_gate.sh,scripts/conversation_retention.sh,tests/unit/test_pre_push_dirty_tree_guard.bats]
+- **origin**: [[cmd_karo_impl_prepush_autogen_exclude_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 既存の重複ロジック(cmd_complete_gate.shの除外regex)を共有libへ切り出す際、文字列コピーだけでは「共有化したつもりで片方の挙動を変えていた」という別種の回帰を作り得る(タイポ・エスケープ差・順序差等)。家老の指示により、旧regex(git show HEAD~1)と新lib変数の(1)文字列完全一致 (2)複数サンプルpathでのgrep出力完全一致、の2段で実測確認してからcommitした。共有化(挙動不変が前提のリファクタ)と挙動変更は別弾として扱うべきであり、共有化のPRには常にこの等価性実測を1行残す運用が有効。
+
+### L1340: tmp残骸の不在は生成の不在ではない。生成経路の現役性は出力先のmtimeで測れ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_recon_queue_tmp_leak_20260726
+- **記録者**: saizo
+- **tags**: [infra,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [queue/reports/saizo_report_cmd_karo_recon_queue_tmp_leak_20260726.yaml]
+- **origin**: [[cmd_karo_recon_queue_tmp_leak_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-07-26
+- queue/insights.yaml.tmp.* は07-24以降0件だったが、生成経路(yaml_auto_archive.sh:67)は現役だった。tmpは正常時にmvで即座に消えるため、残骸の不在は『生成していない』と『生成して正常に消えている』を区別できない。IF tmp残骸の有無から機序の生死を判定する THEN 残骸のmtimeではなく、その処理の最終出力先(本件では queue/archive/insights_archive.yaml)のmtimeと件数を測れ。出力先が更新されているなら経路は現役であり、失敗経路も生きている。origin: [[家老AC2(c)が07-24以降0件を修正済みの根拠として提示]] -> [[軍師が不在は区別できないと指摘]] -> [[archive mtime 04:21で生成経路の現役性を実測確定]]
+
+### L1341: 同じファイルを正しいparserと自作awkが逆順で読むと、実体と検知結果が真逆になる(YAML後勝ち vs 行の先勝ち)
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_recon_cs_lgtm_block_attribution_20260726
+- **記録者**: hayate
+- **tags**: [infra,review,recon,gate]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_recon_cs_lgtm_block_attribution_20260726.yaml]
+- **origin**: [[cmd_karo_recon_cs_lgtm_block_attribution_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- logs/gunshi_review_log.yamlの同一エントリ内にgate_resultが2回書かれ(BLOCK→CLEAR)、YAML意味論では後勝ちでCLEARが実体であるのに、gate_gunshi_cs_checklist.sh:1260のawkは最初に現れたBLOCKを掴んだまま解除しないためLGTM→BLOCKとして誤検知した。awkはYAMLの意味論ではなく行の並びを見ている=E型統一原理(実体でなく写しを見る)の一形である。★さらに同一ファイル:1198には逆方向のCLEAR先勝ちラッチがあり、CLEAR→BLOCK順のとき検査を素通りさせる見逃しを生む。★ここから得た新観点: **騒ぐ検知器の欠陥は誰かが困るので見つかるが、黙る検知器の欠陥は誰も困らないので見つからない。**誤検知を調べる時は必ず同じ機序の見逃し側も探せ(将軍裁定でA8『沈黙の検査』として第二段階設計書§1へ採用)。★恒久則: 構造化データを行ベースで読むな。読むなら『最後の値を採用する』ことを明示的に実装せよ。origin: [[cmd_karo_recon_cs_lgtm_block_attribution_20260726]] -> [[yaml_last_wins_vs_awk_first_wins]] -> [[L4b_false_positive_3sessions]]
+
+### L1342: 同一ファイル内の逆向きラッチは片方だけ直すと別方向のバグを見逃す
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726
+- **記録者**: kagemaru
+- **tags**: [infra,gate,gate,bash,reporting]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_cs_checklist.sh,scripts/gunshi_gate_sync.sh,tests/unit/test_gate_gunshi_cs_checklist.bats,tests/unit/test_gunshi_gate_reflux.bats]
+- **origin**: [[cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_gunshi_cs_checklist.shには「CLEARのみ代入」「BLOCKのみ代入」という2つの独立したawkブロックが存在し、それぞれが逆方向の片翼latchバグを持っていた(誤検知と見逃し)。片方のバグ報告(誤検知)だけを見て修正すると、もう一方(見逃し)は誰にも観測されないまま残り続ける(見逃しはWARNが出ないため検知不能)。将軍裁定「同一ファイル・同一機序は両方向一括是正」の背景にはこの構造があり、今後同種のgate_result等の重複キー解釈ロジックを修正する際は、その値を代入する全ての条件分岐が対称(両方の値に対応するルールが揃っているか)を確認すべきである。
+
+### L1343: mtimeで鮮度を比べるな。cacheのmtimeは『作業が終わった時刻』でありデータの時点ではない(WAL下では本体mtimeも書込み時刻を表さない)
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_recon_memory_cache_mtime_freshness_20260726
+- **記録者**: hayate
+- **tags**: [infra,db,recon,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_recon_memory_cache_mtime_freshness_20260726.yaml]
+- **origin**: [[cmd_karo_recon_memory_cache_mtime_freshness_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- memory_db_query.sh:87-89 は cache と本体(+-wal/-shm)の mtime を大小比較して delta 経路の要否を決めていた。しかし cache の mtime は os.replace(memory_db_live_insert.py:436-445) による公開時刻=コピーが終わった時刻であり、中身のスナップショット時刻より必ず後ろへずれる(コピー実測66秒級)。さらにSQLiteのWALモードでは書込みが-walへ入るため本体.dbのmtimeはcheckpointまで更新されない(実測: 書込み05:28:01に対し本体mtime 05:27:15)。∴意味の違う2つの時計を比較しており、コピーに時間がかかるほど『古い中身のcacheが新しい』と判定される。実害は read-after-write の破れで、CLAUDE.mdが必須とする三層記憶検索において『検索したが無かった』が『存在しない』と誤読される。★是正原理は半蔵B38と同一: 時刻ではなく内容の水位(cacheが取り込んだ最終rowid/max(ts))で比較せよ。★副次1: 症状は間欠であり、壊れる窓はcache公開から次の書込みまで。★副次2(軍師の新事実): 判定は [ -f source-wal ] && [ -nt ] の形であるためWAL/SHMが不在なら当該条件は無条件に偽となり、checkpoint後のWAL消滅期間は判定が本体mtime単独へ縮退する。∴再現条件は『cache再生成直後』と『WALの生存状態』の2軸であり、同じコマンドが時刻によって別の分岐を通る。★ゆえに測定時はWAL/SHMの存在有無を必ず併記せよ — なければ後から『不在だったのか、存在して古かったのか』を区別できず解釈不能になる。origin: [[cmd_karo_recon_memory_cache_mtime_freshness_20260726]] -> [[mtime_is_completion_time_not_data_time]] -> [[read_after_write_broken]]
+
+### L1344: 同一の脆弱パターン(mtime staleness判定)が同一システム内に複数箇所存在しうる。1箇所修正時に類似箇所を横断的に探索せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b45_memory_cache_rowid_watermark_20260726
+- **記録者**: kagemaru
+- **tags**: [infra,gate,db,recon,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_query.sh,scripts/gates/gate_three_layer_health.sh,tests/unit/test_memory_db_query_rowid_watermark.bats]
+- **origin**: [[cmd_karo_impl_b45_memory_cache_rowid_watermark_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- B45はscripts/memory_db_query.sh:87-89のmtime3条件を修正対象として起票されたが、実装調査の過程でscripts/lib/memory_db_cache.shに同型のmtime3条件が2箇所(memory_db_cache_is_current関数、prepare_memory_db_for_read関数内のasync refreshトリガー判定)存在することを発見した。これらはB45のtarget_path/planned_pathsに含まれておらずスコープ外としたが、もし非同期refresh機構自体がこの同型バグでトリガーされない場合、本タスクで追加したgate_three_layer_health.shの追随検知器が唯一の防波堤になる可能性がある。教訓: ある脆弱パターン(この場合mtime-based staleness判定)が発見されたら、`grep -rn`でシステム内の全出現箇所を横断的に洗い出し、修正対象外の箇所は明示的にdecision_candidate/次弾候補として記録すべきである。1箇所だけ直して終わりにすると、同型バグが別箇所で生き残る。
+
+### L1345: 観測手段そのものが観測を残さないと、次の判断ができない。欠測は無記録ではなく明示記録にせよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_cache_gap_telemetry_20260726
+- **記録者**: hayate
+- **tags**: [infra,gate,gate,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_three_layer_health.sh,tests/unit/test_gate_three_layer_health_capacity.bats]
+- **origin**: [[cmd_karo_impl_cache_gap_telemetry_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- B45が追加したcache追随チェックは判定値をechoするだけで、startup gateの出力は流れて消えるため『しばらく様子を見て次弾の要否を決める』が実行できなかった。既存台帳へ1行足すだけで解決する(新ledger不要)。★設計上の要点2つ: (1)欠測を『行を書かない』で表すと、後から『測ってgap=0だった』と『測れなかった』が区別できない。沈黙は解釈不能なので gap-na として明示記録した。(2)観測を足す変更は判定を1ミリも変えてはならない。HEAD版と同一envで実行し正規化diffが完全一致・rcも一致することを実測して初めて『観測のみ』と言える。★もう1つの学び: 記録を始めても**分解能が足りなければ基準を判定できない**。本件では理論窓長75秒に対しgate実行間隔のmedianが97秒であり、粗い。記録の追加とあわせて『その記録で基準を判定できるか』を必ず実測せよ。origin: [[cmd_karo_impl_cache_gap_telemetry_20260726]] -> [[observer_leaves_no_observation]] -> [[cannot_decide_next_step]]
+
+### L1346: hookのtestは『実行者のtmux identity』に依存しうる。判定が読む環境変数を実装で確かめ、testで固定せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_d00x_coverage_on_live_impl_20260726
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,git]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_pre_bash_destructive_approval.bats]
+- **origin**: [[cmd_karo_impl_d00x_coverage_on_live_impl_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- G2(main branch protection)のtestが、当方(忍者pane)ではPASSし家老(家老pane)ではFAILした。真因は、G2判定が TMUX_AGENT_ID ではなく TMUX_PANE を読みtmuxへ問い合わせたagent_idが指揮官なら設計上allowするためで、testがTMUX_PANEを継承したまま実行されると結果が実行者に依存する。∴agent identityで分岐するhookのtestでは、(1)判定が実際に読む環境変数を実装で確認し (2)その変数をtest側で明示的に固定せよ。似た名前の変数(TMUX_AGENT_ID/TMUX_PANE)を取り違えると、testは通るのに守っている条件が別物になる。加えて『自分の環境ではPASSした』は『他者の環境でもPASSする』を意味しない — 差し戻しを受けたら、まず相手の実行環境を模擬して再現せよ。
+
+### L1347: git logのpathspec検索はbounded(-n N)でも高負荷下で重い。graph walk+選択的diff-treeへ分解せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b46_commit_ownership_all_history_20260726
+- **記録者**: kagemaru
+- **tags**: [infra,gate,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format_main.py,tests/unit/test_report_commit_identity.bats]
+- **origin**: [[cmd_karo_impl_b46_commit_ownership_all_history_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- commit所有判定でgit log -nN --format=%s <identity> -- <target>のようなpathspec付きgit logは、Nを絞っても各commitのtree-diff計算をhistory simplificationのため遡りながら行うため、高負荷(load average 8以上)下ではNに関係なく数秒〜タイムアウトしうる。対策: (1)pathspec無しのgit log -nN --format=%H\x1f%s(純粋なcommit-graph walk、tree-diff不要)で候補commitを軽量に絞り込み、(2)候補commitの中でsubject等の条件に一致したものだけにgit diff-tree(単一commit差分、軽量)を個別実行する二段構成にすると、正確性を落とさず速度も安定する。B46で実測: 旧pathspec単発git log -1 avg1272ms→新graph-walk+選択的diff-tree avg943ms(同条件、最悪ケース)。gate/hookでcommit履歴からファイル所有・変更を判定する処理全般に適用可能。
+
+### L1348: 理論窓長からの導出は実測窓長の半分だった — 窓は導出せず両端で測れ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_b48_refresh_window_2point_telemetry_20260726
+- **記録者**: hayate
+- **tags**: [infra,testing,deploy,gate,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_live_insert.py,tests/unit/test_memory_db_cache_root_identity.py]
+- **origin**: [[cmd_karo_impl_b48_refresh_window_2point_telemetry_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cache追随の判定は『理論窓長75秒』を前提に組まれていたが、事象駆動で両端を測ったところ本番の実窓長は143.9秒(約1.9倍)で、しかも実行ごとに16.5秒〜143.9秒と一桁変動した。単一の理論値から閾値を導く設計は、この分散の下ではどんな値を選んでも誤判定する。窓の長さと窓中の到着件数を両端で実測すれば、閾値なしで『遅延か欠落か』が次の記録との突合だけで決まる。origin: [[startup gate依存の観測]] -> [[記録の空白と事象の不在が区別不能]] -> [[refresh事象での2点計測]]
+
+### L1349: 境界hashはgate出力の転記だけでなく実装ロジックから素性を確認せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_ctx_infrastructure_freshness_20260726
+- **記録者**: kagemaru
+- **tags**: [infra,context,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [context/infrastructure.md]
+- **origin**: [[cmd_karo_impl_ctx_infrastructure_freshness_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_context_freshness.shが提示するsource_commit候補hashは、dashboard-warningsモードのtip_ref=origin/mainを基準に、自己言及commit(commit_is_reflected_or_lesson_only)やROOT_FALLBACK_IGNORED_PREFIXES該当pathのみのcommitを除外した後に残る最新の関連commitである。指示側がgate出力を転記するだけで境界を更新すると、何が除外された結果の値なのかが不明なまま採用してしまう。次回はcontext_source_commit_set.sh実行前に、候補hashをgit log -1で確認し、除外ロジックがどう働いたかをscripts/context_freshness_check.shの実装から検証してから採用する
+
+### L1350: 非同期起動されたgateの『待ち』は工程和ではなくgate本体の実行時間で上限が決まる
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_recon_finalize_polling_to_event_20260726
+- **記録者**: hayate
+- **tags**: [infra,review,gate,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_recon_finalize_polling_to_event_20260726.yaml]
+- **origin**: [[cmd_karo_recon_finalize_polling_to_event_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- finalize_secが大きいと『家老が同期的にポーリングしているせい』と読みたくなるが、review_approval.sh:301-310でgateは承認と同時にsetsid nohupで起動される。∴家老の待ちはgate本体の実行時間(本日 median 92.7秒)を超えられず、finalize median 642秒の14.4%にすぎなかった。支配していたのは承認より前のレビュー往復(report→notify 425.8秒 + notify→SG7 159.7秒)である。★待ちの疑いは、まず『その待ちの上限は何で決まるか』を実装から確定してから配分せよ。また工程分解は入れ子とは限らない: revision再提出でdone_tsが後ろへ動くと工程和がfinalizeを超える(b28: 1585.7秒 > 177秒)。
+
+### L1351: python heredocのrepo内import は cwd に依存する — repo rootで叩けば通るため導入時に露見せず、別cwdの常駐プロセスからだけ恒久的に落ちる
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_hotfix_deploy_task_pythonpath_20260726
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,deploy,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh]
+- **origin**: [[cmd_karo_hotfix_deploy_task_pythonpath_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/deploy_task.sh の python heredoc は `python3 -` で起動する。python3 - は cwd を sys.path へ追加するため、repo rootから手で叩くと `from scripts.lib...` が通る。しかし別cwdで動く常駐プロセス(ninja_monitor)から呼ばれると必ず ModuleNotFoundError になる。実測: :8849 TARGET_COLLISION_PY は 2026-07-04 導入(da70ad039d)、:6483 INJECT_EFP_PY は 2026-07-20 導入(3c2d553f3f)で、いずれも既存 :3401 の PYTHONPATH=$SCRIPT_DIR 方式を踏襲していなかった。結果として promotion還流の消費路が8日間(last_consumption 2026-07-18、stock 226)停止し、失敗は REFLUX-AUTO-DEPLOY-FAIL ... (non-blocking) としてninja_monitor.logに書かれるだけで shogun_startup_alert_history.tsv には0件しか残らなかった。★対処: repo内モジュールをimportする python heredoc を追加するときは、呼出し側へ PYTHONPATH="$SCRIPT_DIR" を必ず前置きする。★検証は repo root だけでなく必ず repo外(/tmp)からも実行して二点で確かめる。origin: [[cmd_karo_hotfix_deploy_task_pythonpath_20260726]] -> [[python3 - がcwdをsys.pathへ追加する仕様]] -> [[promotion還流8日停止]]
+
+### L1352: 検知器の重複抑止は『黙らせる』ではなく『1件へ集約して数を持たせる』
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_pd_duplicate_create_20260726
+- **記録者**: kotaro
+- **tags**: [infra,testing,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/karo_workaround_log.sh,scripts/pending_decision_write.sh,tests/unit/test_pending_decision_write.bats,tests/unit/test_karo_workaround_validation.bats]
+- **origin**: [[cmd_karo_impl_pd_duplicate_create_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- karo_workaround_log.sh:735が同一root_signatureでも毎回PDをcreateし、pending 13件/実体5事象へ膨れた。単純なskipで黙らせると『3→10件へ悪化した』という新情報まで消える。集約先PDのsummaryとoccurrenceを更新する形にすれば、件数は1件・情報は最新という両立ができる。またntfy(一過性ストリーム)とPD(永続状態)は同じ発火点でも扱いを分けてよい — 重複が害になるのは永続状態を持つ側だけである。origin: [[cmd_karo_impl_pd_duplicate_create_20260726]] -> [[記録≠状態]] -> [[PD重複増殖]]
+
+### L1353: 『特定文字列が0件』は『無検査』の証明にならない。実行フロー全体で他guardの防御有無を確認せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_pd106_shared_tree_git_guard_20260726
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [.claude/hooks/pre-bash-combined.sh,tests/unit/test_pre_bash_destructive_approval.bats]
+- **origin**: [[cmd_karo_impl_pd106_shared_tree_git_guard_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- PD-106でgit commit --amendの検査追加を計画したが、cmd起票の『amendという文字列が同ファイル(pre-bash-combined.sh)に0件』という前提診断は文字列一致としては正しかったものの、同ファイル内のcheck_gitより手前で評価されるGA-231/GA-231cガード(L493-580)がgit commitサブコマンド全体(amend含む)を忍者/指揮官問わず無条件blockしている事実を見落としていた。amendはgit commitの一形態であり、字面grepだけでなく実行順序を追って『他のguardが既にこの操作クラスを止めているか』を確認しないと、既に閉じている穴に対して冗長な実装(過剰対策)を積んでしまう。実際に検証: TMUX_AGENT_ID=kagemaruでgit commit --amendを実行→即BLOCK(GA-231)を確認後、amend用の新規D011ロジックを撤回した。また副次的教訓として、cd <dir> && git ... 形式のcommand文字列を解析するguardを新設する際は、pythonのos.getcwd()がhookプロセス自身の起動ディレクトリを返すだけでcommand文字列中のcd先を反映しないため、既存G2(check_main_branch_protection)と同じcdプレフィックス解析を再利用しないとtest fixtureと無関係な実行中リポジトリ状態を誤参照する(bats経由の実測で発覚し、_git_guard_effective_cwdヘルパーで解消)。
+
+### L1354: 自分が書いた出力を自分で読み直す処理は、同一emitterなら往復が恒等変換であり、parse+再renderは丸ごと削れる
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_loop_ledger_two_bugs_20260726
+- **記録者**: hayate
+- **tags**: [infra,gate,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/loop_ledger_update.sh]
+- **origin**: [[cmd_karo_impl_loop_ledger_two_bugs_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/loop_ledger_update.sh は履歴100件を1ファイルに持ち、毎回 yaml.safe_load(7.6MB=22.6秒)して dict にし、同じ emit_snapshot で再renderして書き戻していた。★入力も出力も同じ emitter の産物であるため、この往復は恒等変換であり、前回renderしたテキストをそのまま持ち回れば結果は byte 単位で同一になる。実測 33.2秒→11.8秒(-64.5%)、A/B 3組で stdout・出力YAMLとも byte 一致。★上限値(MAX_SNAPSHOTS=100)は『履歴を100件保つ』ための上限であって『毎回100件parseする』ことは意図ではない — ★上限の意味を取り違えると保持と再計算が同一視される。★あわせて: 本弾の起票文は『mtime順の上位N件を選ぶため8416件を全stat(35.1秒)』としていたが、実装のソートキーは str(path) であり mtime stat は存在しなかった(grep実測でglobは1行のみ)。★実コストは glob 0.34秒 + 上位500件parse 5.6秒であった。★起票の機序が実装と食い違うことがあるため、直す前に必ず自分で分解計測せよ。★A/Bの罠: 旧版を別ディレクトリから実行すると SCRIPT_ROOT が解決できず全ループが produced=0/'not found' になり『速くなった』ように見える — 正本path上で入替えて実行せよ。origin: [[cmd_karo_impl_loop_ledger_two_bugs_20260726]] -> [[同一emitterでの自己出力dict往復]] -> [[startup gate毎回33.7秒]]
+
+### L1355: 計装は『既存台帳へ乗せる』が要件であり『既存writer関数を呼ぶ』は要件ではない
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_report_field_set_telemetry_20260726
+- **記録者**: tobisaru
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh]
+- **origin**: [[cmd_karo_impl_report_field_set_telemetry_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 既存writer(defense_overhead_write)はイベント毎にpython3起動+event_id重複検査で台帳全走査grepを行う。低頻度のpublish計装では無視できたが、1提出で数十回走る単一キー経路では +50〜90ms/回(emit単体 9.0ms)になり、計装が経路を遅くする本末転倒に陥る。台帳・schema・lockfileを同一に保てば printf 追記で 0.11ms/回に落ちる(80倍)。★『既存の仕組みに乗せよ』の遵守対象はデータの合流点(台帳とschema)であって実装関数ではない。高頻度経路へ低頻度向けwriterを流用する前に emit 単体コストを測れ。
+
+### L1356: fallbackを『厳格化』する変更は、その fallback だけが支えていた経路を無言で落とす — 絞る前に『誰が今この経路に乗っているか』を列挙せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_reflux_review_path_20260726
+- **記録者**: hayate
+- **tags**: [infra,testing,review,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/review_bundle.py]
+- **origin**: [[cmd_karo_impl_reflux_review_path_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 2026-07-19 12:08:07 commit 3966a06f7 『harden direct task spec fallback』は、review_bundle.py の find_command が持っていた『cmd_id を問わず報告から spec を再構成する』fallback を cmd_karo_ 限定へ絞り、immutable task_contract_snapshot の同一性検証を課した。★厳格化自体は正しい。★しかし当時その fallback に乗っていたのは karo-direct だけではなく、★自動生成の還流弾 cmd_reflux_promotion_* も乗っていた(archive込みのgate_metricsに 2026-07-08〜07-18 の CLEAR が★87件実在する)。★絞り込みの瞬間、還流弾は承認経路を失った。★★さらに厄介なのは、★同時期に配備側も壊れていたため 07-19〜07-25 にその閉塞へぶつかった弾が0件で、★閉塞が実害として現れたのは7日後の最初の1件だった点である。★『壊れているのに誰も気づかない』のではなく『壊れているのに到達する者がいない』。★★もう1つの一般化: ★今回 allowlist の識別子として使えたのは cmd_id の命名規則だけであった。★自動生成の構造的証拠(ninja_monitor が書く reflux_inventory_before)は★配備時のtask YAMLにしか存在せず、次の配備で消え、★永続化されるimmutable snapshotへ写されていない。∴★『生成時には構造的事実が分かっているのに、それを永続化していないと、後段は命名規則という誰でも複製できる文字列に頼らざるを得なくなる』。★対策の型: (1)fallbackを絞る変更では、絞る前に『現に fallback を通っている cmd_id 群』を実測列挙する(archive込みのgate_metrics CLEAR実績で足りる) (2)許可条件は暗黙判定ではなく意図をコメント付きで宣言した定数として1箇所に置く (3)★生成側が知っている構造的事実(配備経路)は、生成時にimmutable snapshotへ焼き込み、後段が命名に頼らずに済むようにする。★★件数の教訓もある: 家老16件・私の初報13件はいずれも現行ログのみを見た過少計数で、正しくは87件だった。★logs/archive/*.log を含めずに『実績件数』を語るな。origin: [[cmd_karo_impl_reflux_review_path_20260726]] -> [[3966a06f7でfallbackをcmd_karo_限定へ絞った]] -> [[還流弾の承認経路が07-19から閉塞し7日後に初めて顕在化]]
+
+### L1357: 防御レベルの分類は実装ではなくenforcement文字列を見ている — 記述の陳腐化が偽の未昇格を生む
+- **日付**: 2026-07-26
+- **出典**: cmd_reflux_promotion_202607261200_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,bash,monitor,lesson]
+- **subdomain**: infra
+- **target_files**: [projects/infra/lessons_shogun.yaml]
+- **origin**: [[cmd_reflux_promotion_202607261200_hanzo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LS097は還流台帳でL1(事後検出)と分類されていたが、現物では(A)retro機構がninja_monitor.sh:8901-8923等でLevel5実装済であった。原因はenforcement欄が『idle時配送工事』と工事中のまま更新されていなかったこと。∴実装完了時にenforcement欄を同時更新しないと、昇格済の教訓が永久に昇格候補として在庫に滞留し、還流cmdを空振りさせる。教訓の防御レベルは実装の現物で判定し、enforcement欄は実装完了と同時に更新せよ
+
+### L1358: 監査スクリプト自身が『黙る検知器』になる — 測れない状態をrc=0で結果として出力するな
+- **日付**: 2026-07-26
+- **出典**: cmd_4173
+- **記録者**: kotaro
+- **tags**: [infra,git]
+- **subdomain**: infra
+- **target_files**: [outputs/analysis/cmd_4173_detector_control_audit.py,outputs/analysis/cmd_4173_detector_control_fixture_audit.tsv]
+- **origin**: [[cmd_4173]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 検知器の対照有無を機械判定するスクリプトを書いたところ、(1)tests/が無い環境では全件『無対照』をrc=0で出力し、(2)linked worktreeでは.git/hooksを見つけられず検知器を4件少なく列挙して、いずれも静かに成功終了していた。監査対象に要求する構造型(陽性1+陰性1)を、監査する側が満たしていなかった。variation_checksのlinked_worktree/abnormal_exitを実際に走らせたことで両方が露見した。∴入力が欠けたらfail-closedで止める・環境依存パスはgitに解決させる。origin: [[cmd_4173]] -> [[検知器は自分の間違いを検知されない存在]] -> [[監査スクリプト自身の黙る欠陥]]
+
+### L1359: 昇格候補には『防御が無い』と『防御は在るが台帳の記述が古い』の2種がある — 実装側を先に見よ
+- **日付**: 2026-07-26
+- **出典**: cmd_reflux_promotion_202607261446_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,bash,lesson,cdp]
+- **subdomain**: infra
+- **target_files**: [projects/infra/lessons_shogun.yaml]
+- **origin**: [[cmd_reflux_promotion_202607261446_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LS098はL1(将軍の記憶頼み)として234件の昇格候補に載り続けていたが、実装側(auto-ops preflight_cdp_flow→launch_browserの_has_powershell()分岐)を現物確認するとLevel5が既に存在した。∴昇格タスクで最初にやるべきは新しい防御の設計ではなく『教訓が指す経路が実装に入っているかの一次確認』である。記述が実装より古いまま放置されると、次の担当者は在る機能を無いと判断して手作業へ逃げ、さらに重複実装(本件では scripts/note_draft.sh:238 の独自cmd.exe fallback)を生む。台帳の陳腐化は在庫件数を水増しし、還流ループの分母そのものを歪める。
+
+### L1360: 対照testを消すと検知器は無対照になる — default-delete施行時に『その検知器の唯一の対照だったtest』まで一緒に消えていないか確認せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_control_fixture_gunshi_accuracy_20260726
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_gate_gunshi_accuracy.bats]
+- **origin**: [[cmd_karo_impl_control_fixture_gunshi_accuracy_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/gates/gate_gunshi_accuracy.sh は本日『無対照46件』の1つとして是正対象になったが、★対照testは元から無かったのではない。★tests/unit/test_gate_gunshi_accuracy.bats が5ケース構成で実在し、★2026-07-19 commit 36fe2add4『default-deleteテスト原則の正本作成』で削除されていた(git log --diff-filter=D で確定)。★default-delete原則そのものは正しい(実装時に価値を消費したtestを残さない)。★しかし『検知器に対する唯一の対照』は実装用testではなく contract test であり、★削除対象ではなかった。★見分ける問い: 『このtestが無くなったとき、そのコードの誤りを検知できる者が他にいるか』。★検知器の場合その答えは常にいないである — 検知器は自分の間違いを誰にも検知されない唯一の存在だからである。★あわせて本弾で分かった同型2件: (1)この検知器は偽陽性を検出しても rc=0 を返し、誰も止まらない(L282のPostToolUseと同型=検知しても止められない) (2)空・解析不能な入力を『データなし』rc=0 で返し、★『データが無い』と『全件正解』を呼出し側が区別できない(cmd_4173の判定器が tests/ 欠落時に rc=0 を出していたのと同じ穴)。★★対照を書く際の型: 陽性/陰性を並べるだけでは不十分で、★『検知器を意図的に壊したとき対照が実際に落ちるか』を変異注入で確かめよ。★本弾では correct=True(検出を殺す)で陽性が、correct=False(過検出)で陰性が、それぞれ not ok になることを実測した。★これをやらないと『常にPASSする対照』を作っても気づけない。origin: [[cmd_karo_impl_control_fixture_gunshi_accuracy_20260726]] -> [[36fe2add4のdefault-delete施行で唯一の対照testが削除された]] -> [[gate_gunshi_accuracy.shが無対照検知器になった]]
+
+### L1361: 対照fixtureは変異試験まで通して初めて『空でない』と言える
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_control_fixture_stop_session_alerts_20260726
+- **記録者**: kotaro
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_stop_session_alerts.bats]
+- **origin**: [[cmd_karo_impl_control_fixture_stop_session_alerts_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 陽性1+陰性1のテストを書いてPASSしても、それが検知器の挙動と本当に結びついているかは分からない(assertionが常に真になる書き方をすればPASSは作れる)。検知器を壊した複製で走らせ、陽性だけが落ちる/常時発火なら陰性も落ちることを確認して初めて対照が空でないと言える。今回は隔離複製へのsed変異2種で証明した。origin: [[cmd_karo_impl_control_fixture_stop_session_alerts_20260726]] -> [[対照fixture必須の構造型]] -> [[空回りする対照の検出]]
+
+### L1362: 設計意図をコメントに書いた時点で実装したつもりになる — コメントと条件分岐は同一commitでも別物であり、片方だけが入る
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_gitignore_exempt_readonly_20260726
+- **記録者**: saizo
+- **tags**: [infra,deploy-task,recon,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_nocode_commit_contract.bats]
+- **origin**: [[cmd_karo_impl_gitignore_exempt_readonly_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 880976003(2026-07-14)は『read-only taskは上でno-commit契約を生成するため、gitignore免除で上書きしない』とコメントを書きながら、その条件分岐を実装しなかった。以後12日間、required=false かつ target_pathが全てgitignore対象のtask(recon2 + queue/*.yaml)では N/A証跡checkが result:no へ上書きされ、忍者は達成不能なcheckでBLOCKされ続けた(実害3件・3回別々に調査)。★コメントは意図の記録であって強制ではない。★検出可能性を下げたのは『result: no としか言わずなぜnoかを言わない』ことで、理由が無いため毎回ゼロから真因を掘り直す羽目になった。★対策=(1)意図を書いたらその場で境界fixtureを書く(コメントではなくテストが強制になる) (2)自動設定した値には必ず理由を同じ場所に添える。origin: [[設計意図のコメント化]] -> [[条件分岐の実装漏れ]] -> [[達成不能checkによる反復BLOCKと重複調査]]
+
+### L1363: 共有worktreeの生きたログ/台帳を検証対象にする場合、実行タイミングで前提数値が変わりうることを踏まえ、commit直前に必ず再実測せよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_gunshi_accuracy_verdict_norm_20260726
+- **記録者**: kagemaru
+- **tags**: [infra,gate,testing,review,process]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_accuracy.sh,tests/unit/test_gate_gunshi_accuracy_verdict_norm.bats]
+- **origin**: [[cmd_karo_impl_gunshi_accuracy_verdict_norm_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- AC4検証の初回実測時(作業途中)は修正前後とも61/61(100%)で差分なしと観測したが、logs/gunshi_review_log.yamlは他agentが並行して追記し続ける共有運用ファイルであり、対象entry(cmd_karo_impl_gitignore_exempt_readonly_20260726)にgate_result:CLEARが後から同期された結果、commit直前の再実測では63/64(98%)→64/64(100%)へ実際に変化していた。もし初回の『変化なし』観測を最終報告として採用していたら、AC4が求める『実測値をそのまま出せ』を満たしつつも、実際には既に発生していた改善を見落として報告することになっていた。★静的なコード/設定ファイルと異なり、共有worktree上で他agentが継続的に書き込むログ・台帳・review_log等を検証対象にする場合は、report提出直前(commit直前)のタイミングで必ず再実測し、途中経過の数値を最終報告に固定しないこと。
+
+### L1364: 配送の判定を本文から取ると、語順で結果が変わり、送った側には成功に見える — 判定は送信者が明示した構造参照から取れ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_autoread_structural_field_20260726
+- **記録者**: hayate
+- **tags**: [infra,inbox,testing,review,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_impl_autoread_structural_field_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/inbox_write.sh の auto-read判定は本文を grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 して完了通知のcmdを決めていた。★結果、別cmdに言及しただけの報告が『その別cmdの完了通知』と判定され read:true で着信し、誰にも読まれず消えた(2026-07-26 小太郎の報告がcmd_4173の完了通知と誤判定)。★★本弾の実測で分かった3点を残す。★(1)誤りは語順依存である — 別cmd_idが自cmd_idより先に書かれた時だけ発火する。∴同じ内容でも書き方次第で再現したりしなかったりし、事後追跡が難しい。★(2)同じ本文grepは構造化identityにも使われており、着信メッセージのparent_cmdと、そこから生成される軍師へのreview子まで誤cmdになっていた。★『表層判定は1箇所では終わらない』。★(3)本文grepは偽陽性(言及だけで既読化)だけでなく★偽陰性(真の重複通知を既読化しない)も起こしていた。旧実装での対照実行で実測。★★対処の型: 判定に使うcmd_idは『送信者が明示した報告への参照』から取る — 第1に報告YAMLのparent_cmd、第2に報告pathのファイル名。★どちらも得られなければ判定せずfail-closedにする。★『本文に書いてあること』は状態ではない(B37同族)。★★もう1つ: 既存testが落ちた時、fixtureを書き換えて通す誘惑が実際に生じた。★私は一度その案を採りかけて撤回し、実装側で両立させた。★既存testが落ちるのは『実装が既存の正しい挙動を壊した』信号であって『testが古い』信号ではないことが多い。origin: [[cmd_karo_impl_autoread_structural_field_20260726]] -> [[本文最初のcmd_idをgrepして完了通知と判定していた]] -> [[別cmdに言及しただけの報告がread:trueで着信し黙殺された]]
+
+### L1365: 『存在するが効いていない』には実装漏れと意図的撤去の2通りがあり、grepでは区別できない — 撤去意図はgit logにしか無い
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_cifix_cmd_publish_preflight_invariant_20260726
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_cmd_publish_preflight.bats]
+- **origin**: [[cmd_karo_cifix_cmd_publish_preflight_invariant_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 軍師は grep -c cmd_shared_preflight = 0 を見て『gateが死んでいる(A10実例)』と診断し、家老が追認し、将軍が cap を満たすため lessons を35→32へ統合した。★答えは grep した同じファイルの同じ関数内に6行のコメント(cmd_publish.sh:223-228)で書かれており、しかもそれは『教訓統合を強要される空転が再発した』と★今回起きたことを事前に警告していた。★★トークンの有無だけを見てファイルを読まなかったことが原因である。★対策=『存在するが効いていない』を見たら、A10と断ずる前に git log -S <記号> で撤去commitの有無と本文を先に確認する。★もう一つの層: 裁定Aの時にtestを更新しなかったため3日後の面検証で誤診を誘発した=前提変更の後方伝播失敗。★契約を撤去したら、その契約を守っているtestを同じcommitで畳め。origin: [[殿裁定2026-07-23_提案A]] -> [[testを後方伝播させず放置]] -> [[3日後の面検証でA10と誤診し裁定が禁じた統合を実行]]
+
+### L1366: 隣接ログ行の『別々の系列』仮説は、同一呼び出し内で値の意味領域が切り替わる形の可能性を先に潰せ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_watcher_log_series_kind_20260726
+- **記録者**: hanzo
+- **tags**: [infra,inbox,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_watcher.sh,tests/unit/test_watcher_log_series_kind.bats]
+- **origin**: [[cmd_karo_impl_watcher_log_series_kind_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- inbox_watcherの attempted(fp=X) → Skipping(fp=Y) の隣接は『inbox nudgeとtask nudgeという独立2系列の交互出力』と見えたが、実装では同一send_wakeup呼び出しであり、送信ロック内の再取得でfingerprintがunread集合fp→task_publication_fingerprintへ切り替わっていた。実測でも別fp隣接873件の100%が inbox→task の一方向で、交互出力なら現れるはずの逆方向は0件であった。∴『2つの系列が混ざっている』と『1つの流れの途中で値の意味が変わる』は外形が同一であり、後者は方向の偏りで判別できる。ログの誤読を疑ったら、まず隣接の方向分布を数えよ
+
+### L1367: 不可分化には『無ければ作る』と『無ければ止める』の2つの向きがあり、生成できない内容を持つ側は必ず後者
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_approval_log_atomic_20260726
+- **記録者**: tobisaru
+- **tags**: [infra,review]
+- **subdomain**: infra
+- **target_files**: [scripts/review_approval.sh]
+- **origin**: [[cmd_karo_impl_approval_log_atomic_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 『承認と記録を不可分に』という指示から反射的に『承認側が記録を書く』と設計したが、記録の中身(observations/brainwash_check/verified_files)はレビュー者にしか書けず、機械生成すれば中身の無いエントリを量産して accuracy から静かに落ちる行を増やすだけだった(実物が既に台帳先頭に存在する)。∴不可分化の向きは『欠けている側の中身を誰が生成できるか』で決まる。生成できないなら『無ければ止める』(fail-closed)しかない。前例(lgtm_bundle_guard, 0e489017a)も exit 2 であり、AC1の『同じ形に寄せよ』は向きまで含めて読むべきだった。
+
+### L1368: 『昇格しない』も一次確認の成果 — 在庫を減らすために形だけLevelを上げるな
+- **日付**: 2026-07-26
+- **出典**: cmd_reflux_promotion_202607261757_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [projects/infra/lessons_shogun.yaml]
+- **origin**: [[cmd_reflux_promotion_202607261757_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 還流弾は在庫を減らすことが目的に見えるため、enforcementへLevel4以上と書けば候補一覧から消えて完了に見える。しかし実装が無いまま書けば『記録≠状態』を自分で作り、次に読む者は在ると信じて確認をやめる。LS098は『実装は在るが記述が古い』で昇格でき、LS101は『記述どおり実装が無い』で昇格できなかった。∴還流弾の最初の判定は昇格の可否ではなく、実装が在るか無いかの一次確認であり、無いと確認できたなら在庫が減らないことこそ正しい結果である。
+
+### L1369: 契約の終端を足しても、既存タスクは配備時のscaffoldのまま — 契約変更は再配備しない限り既存の弾へ届かない
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_clean_repro_not_reproducible_20260726
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_karo_impl_clean_repro_not_reproducible_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ci_fixのclean-repro契約へ終端 not_reproducible を追加したが、小太郎の実タスクは変更前のscaffoldで配備済みのため outcome/not_reproducible 欄を持たず、実測でも従来どおり harness command missing でBLOCKされた。∴validatorを直しても、既に配備済みのtask YAMLは古い契約形のまま取り残される。契約(validator)とscaffold(inject)の両方を直しても、既存タスクには『再配備』または『欄の追記』という第三の操作が要る。契約変更cmdでは『既存の被害者タスクが救われるか』を必ず実タスクに対して実行して確認せよ。設計上通るはずという推論では確認にならない
+
+### L1370: gitはprefixしか送れない — 『無関係だから救える』は順序を確かめるまで言えない
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_partial_push_safety_20260726
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,review,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/pre_push_guard.sh,tests/unit/test_pre_push_guard.bats]
+- **origin**: [[cmd_karo_impl_partial_push_safety_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-PUSH1(pre-push)は push対象commitが触るpathと作業ツリーの未commit pathが1つでも重なると push 全体をBLOCKする。★『阻害しているのは1ファイルだから、それと無関係な残りのcommitは部分pushで救える』という発想は自然だが、★gitはprefixしか送れないため★阻害commitより後ろにある無関係commitは順序ゆえ一緒に止まる。★救えるのは阻害commitが歴史の末尾寄りにある時だけである。★実測(2026-07-26): 16:39は未push14件中、阻害commitが5番目で★4件しか進まない(残り10件のうち8件は阻害ファイルと無関係)。16:47は10件中9番目で★8件進む。★同じ仕組みが同じ日に4/14と8/10になる。★★もう1つ実測で分かったこと: ★阻害pathの主は短時間で入れ替わる。16:39=scripts/review_approval.sh → 16:47=tests/unit/test_cmd_publish_preflight.bats → 16:52=重複0件。★8分で入れ替わり13分で消えた。∴『どのファイルが悪いか』を固定して対策を組むと外れる。★共有worktreeでは阻害は個体ではなく現象である。★★対処の型: (1)『無関係だから救える』と言う前に★阻害commitの位置を機械判定せよ(git status の dirty path と各commitの diff --name-only の積を古い順に取るだけでよい) (2)境界計算は★push直前に行え — 判断時点と実行時点で境界が変わる (3)部分pushは詰まりを解く仕組みではなく★部分的に流す仕組みである、と期待値を先に下げて渡せ。★★安全性については別に確かめること: FF成立(merge-base --is-ancestor)、hookが縮めた範囲を再評価すること、送るcommit自体が検証されること、脱出路が無改変であること。★『安全』と『有効』は別の問いである。origin: [[cmd_karo_impl_partial_push_safety_20260726]] -> [[GA-PUSH1の粒度がpush単位]] -> [[無関係commitが順序ゆえ巻き添えで停止する]]
+
+### L1371: bash -c 内のassertion列は set -e が無いと最後の1行しか効かない — 途中のgrepは飾りになる
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_codex_ssot_test_fixture_20260726
+- **記録者**: tobisaru
+- **tags**: [infra,testing,testing,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_codex_config_ssot.bats]
+- **origin**: [[cmd_karo_impl_codex_ssot_test_fixture_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- run env ... bash -c '...' で複数のgrep/testを並べ、bats側で [ "$status" -eq 0 ] を見る書き方は、set -e が無いと★最後のコマンドの終了状態だけがstatusになる。本弾の旧testはこの形で effort検査(中間行)が事実上無効であり、変異注入(effort適用を停止)しても陽性対照がokのままだった。★実測で気づけたのは変異注入をしたからであり、健全時PASSだけを見ていれば永久に気づけない。∴(1)bash -c のassertion列には set -e を必ず入れる (2)対照testは『健全でPASS』だけでなく『壊したらFAILする』を必ず実測する。
+
+### L1372: 共有worktreeで『無関係な変更を検知しないための絞り込み』を実装する際は、テスト自身が生成する副産物(receipt/lock/sidecar)や、対象がrepo外パスでありうることを、実データで先に確認してから絞り込み範囲を決めよ
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_impl_singleflight_tree_identity_20260726
+- **記録者**: kagemaru
+- **tags**: [infra,testing,deploy,testing,process]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests_singleflight_tree_identity.bats,tests/unit/test_heavy_job_admission.bats]
+- **origin**: [[cmd_karo_impl_singleflight_tree_identity_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 本弾で2つの独立した見落としを実測で発見した。(1)AC2実装当初、tree-identityの突合対象を『HEAD+git status --porcelain全体』としたところ、自分のbats対照実験でrun_tests.sh自身が書くreceipts/やsingle-flight coordinationファイルが同じ作業木にあるだけでdirty判定に混入し、無関係な変更が無いはずの陰性対照でも誤ってmismatchが検出された。本番ではlogs/test_receiptsがgitignore済みのため顕在化しないが、bats fixtureでは.gitignoreを明示しない限り再現しない偽陽性を生んだ。(2)_mode==fileの対象パスは実運用でもrepo外(bats一時ディレクトリ等)になりうるが、git status --porcelain -- <外部path>はgit fatalを返しset -euo pipefailでスクリプト全体が即死する。この2点はいずれも『新しい照合ロジックを足すとき、対象範囲に何が含まれ得るか(自分自身の副産物/対象外パス)を先に実データで洗い出す』という同じ教訓に帰着する。既存test群をfull実行して初めて発覚したため、AC7の『既存テストにリグレッションなし』の全数実行を省略していたら本番に重大バグ(exit 128でrun_tests.sh file <外部path>が全滅)を混入させていた。
+
+### L1373: 教訓のenforcement_level表示は二次情報 — 昇格候補を見たらまず判定器の分類ロジックと実gate実装を読め
+- **日付**: 2026-07-26
+- **出典**: cmd_reflux_promotion_202607261830_hayate
+- **記録者**: hayate
+- **tags**: [infra,gate,bash,lesson]
+- **subdomain**: infra
+- **target_files**: [projects/infra/lessons_shogun.yaml]
+- **origin**: [[cmd_reflux_promotion_202607261830_hayate]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 還流でLS110が『L1:事後検出の昇格候補』として配備されたが、一次確認すると★主要部は既にLG020でBLOCK強制されており実効Level4であった。★L1に分類されていた理由は実態ではなく、gate_lesson_enforcement_level.sh の分類が enforcement 文の字句マッチ(L4は BLOCK|ガード|guard|即停止)に依存し、LS110の『自動検知』という語がどのパターンにも掛からず default=1 へ落ちるためであった。★∴昇格候補リストは『強制が弱い教訓』ではなく『enforcement文がキーワードに掛からない教訓』を並べている面がある。★★対処の型: (1)昇格候補を受け取ったら、まず判定器の分類ロジックを読み、次に enforcement に書かれたgateの実装を読む。★教訓側の表示は二次情報である (2)1つの教訓が不均質でありうる — LS110は数値リテラル=L4(LG020)/数値絶対値一般=informational WARN/識別子実在確認=強制ゼロ、と3層に分かれていた。★『この教訓のLevelは幾つか』という問いが成立しない場合がある (3)★強制ゼロの発見: ac_physical_verify.sh は実在するのに呼出し元0件だった。★スクリプトの存在は強制の存在ではない。★grepで呼出し元を数えるまで『ある』と言うな。origin: [[cmd_reflux_promotion_202607261830_hayate]] -> [[enforcement文の字句マッチで教訓Levelを分類している]] -> [[実効L4の教訓がL1昇格候補として配備された]]
+
+### L1374: CI単発失敗は『直前runとの差分』を先に見よ — 無関係な1行差分ならcommit起因ではない
+- **日付**: 2026-07-26
+- **出典**: cmd_karo_cifix_campaign_lane_shard_item_20260726
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing,process,yaml]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_campaign_lane_shard_item.bats]
+- **origin**: [[cmd_karo_cifix_campaign_lane_shard_item_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- CI RED を受けたとき、対象テストの実装を読む前に『直前の成功runとのheadSha差分』を見ると、コード起因か非決定的失敗かが数十秒で切り分けられる。今回は差分がlessons_shogun.yamlの1行のみで、campaign laneと無関係だった。∴原因commitは存在せず、再現しないまま直せば当て推量になる。再現しない場合の正しい成果物は『修正』ではなく『次に落ちたとき機序が分かる診断』である(bats の run は出力を飲むため、reason_codeを明示的に出さないと永遠に分からない)。origin: [[cmd_karo_cifix_campaign_lane_shard_item_20260726]] -> [[CI単発失敗]] -> [[非決定的失敗の切り分け手順]]
+
+### L1375: 『どの検査が落ちたか』の前に『検査に到達したか』を見よ — setup失敗はテスト名のせいで実装の欠陥に見える
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_cifix_gate_metrics_model_labels_20260726
+- **記録者**: tobisaru
+- **tags**: [infra,testing,testing,yaml,reporting]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_gate_small_consolidated.bats]
+- **origin**: [[cmd_karo_cifix_gate_metrics_model_labels_20260726]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 本件は『(a)TSV列ずれ (b)duration記録が落ちている』と報告されたが、実際にはsetupのchmodがEPERMで落ちており★どちらの検査も一度も実行されていなかった。testの名前は『何を検査するか』を語るため、FAIL一覧だけを見ると実装の欠陥に見える。★最初に見るべきは失敗行が setup か本体かであり、setupなら真因は環境・fixture側にある。★加えて本件の環境依存は『drvfs上のroot所有ツリーでsymlink先/コピー先へchmodする』形で、CI(runner所有)では通るためCI success/ローカルFAILの乖離として現れる。編成依存(codex_ssot弾)と同じ族の第2軸である。
+
+### L1376: gate_report_format.sh修正後もB7破損データは自動修復されない。修復経路が存在しないままの旧破損が残存する
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_cycle2_bugverify_b7_b19_20260727
+- **記録者**: hayate
+- **tags**: [infra,process,gate,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_cycle2_bugverify_b7_b19_20260727.yaml]
+- **origin**: [[cmd_karo_cycle2_bugverify_b7_b19_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_report_format.sh:1065でdumper化しB7の新規発生原因(_sq()手組み+不完全skip条件)は是正済み(commit 04fa975fc, 2026-07-27T02:01:30)。しかしqueue/tasks/saizo.yamlのmtimeは19:37:42と修正前であり、既存の破損データ(line143-144)はそのまま残存している。yaml_field_set.shはパース失敗時に即exit1するため、壊れたtask YAMLを対象にした修復手段は存在しない(実測確認済み)。∴writerのバグ修正だけでは既存の破損在庫は解消されない。破損を検出したら、運用YAMLの安全書込み規則に反しない別経路の復旧手段(次回書込みでのフル上書き、または手動でのブロック単位置換等)の設計が必要。
+
+### L1377: B16は手段が無いではなく単純な機械的問合せだけでは不正確が実態。ninja_monitor.shの複合補正ロジックが証拠
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_cycle2_bugverify_b16_b18_20260727
+- **記録者**: hayate
+- **tags**: [infra,process,bash,monitor]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_cycle2_bugverify_b16_b18_20260727.yaml]
+- **origin**: [[cmd_karo_cycle2_bugverify_b16_b18_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/agent_status.shは実在しtmux agent_state変数を1コマンドで一覧表示できるが、scripts/ninja_monitor.sh:1193と1224と1258はpstree cross-checkとstalenessによる補正ロジックを持つ。これはagent_state単独の値が実態とズレるケースが実運用で発生することをシステム自身が織り込んでいる証拠。家老はこの複合ロジック相当の判定手段を持たずpane目視推定に頼っていたため誤判定した(台帳記載)。今後同種の機械的手段が無い系バグ報告は、単純な変数参照の有無だけでなく、その変数を正しく使うための補正ロジックが家老向けツールとして提供されているかまで確認する必要がある。
+
+### L1378: 運用台帳の代表値表記が中央値でなく平均(外れ値driven)である場合、典型コストを過大/過小評価する
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_cycle2_bugverify_perf_20260727
+- **記録者**: kagemaru
+- **tags**: [infra,process,grid_search]
+- **subdomain**: infra
+- **target_files**: [logs/defense_overhead.jsonl]
+- **origin**: [[cmd_karo_cycle2_bugverify_perf_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- logs/defense_overhead.jsonlのrefresh_window/affected_testsは強い右裾分布(大半0ms〜数秒、稀に100秒超)であり、台帳記載の47.9秒/185.8秒はmedianではなくmean相当で、母集団の74%(refresh_windowのnonzero=0の割合)を代表していない。今後の速度改善判断で台帳数値をそのまま『1回あたりの典型コスト』として使うと過大評価になりうる。台帳作成時はmedianとmeanを両方併記するか分布の歪度を明記すべき。
+
+### L1379: 検出gateの稼働有無と接続有無は別軸で確認せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_reflux_promotion_202607270511_hayate
+- **記録者**: hayate
+- **tags**: [infra,deploy,gate,bash]
+- **subdomain**: infra
+- **target_files**: [projects/infra/lessons_shogun.yaml]
+- **origin**: [[cmd_reflux_promotion_202607270511_hayate]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LS114のenforcementはLevel1(検出なし)と書かれていたが実際はgate_no_direct_yaml_dump.shが既に稼働しexit1でBLOCKしていた。旧記述は誤り。検出gateの存在確認だけでなく(1)実行して動くか(2)commit/deploy等の強制経路に接続されているか、を分けて確認しないと昇格要否を誤診する
+
+### L1380: sync_lessons.sh経路外の書込みでlessons.yaml indexがformat逸脱(header/flow-style消失)しうる。id集合比較で検証すべき
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_cycle3_lessons_yaml_anomaly_probe_20260727
+- **記録者**: tobisaru
+- **tags**: [infra,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/tobisaru_report_cmd_karo_cycle3_lessons_yaml_anomaly_probe_20260727.yaml]
+- **origin**: [[cmd_karo_cycle3_lessons_yaml_anomaly_probe_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- sync_lessons.sh:552-637はindex_file(projects/dm-signal/lessons.yaml)へFlowDict/FlowList representerでflow-style+2行header(# Index — full detail in lessons_archive.yaml / # Auto-generated by sync_lessons.sh — DO NOT EDIT DIRECTLY)を必ず付与する。作業ツリー版はheader無し・block-style・archive相当の全フィールド重複展開であり正規出力と形が異なる。id集合は894=894で消失0/追加0のためデータ被害はなくformat逸脱のみ。書込み主体は特定不能(実行ログ不在=系の観測可能性の限界)。archive(914件・894active+20非active)とDM-Signal側SSOT(10395行)は健全。
+
+### L1381: gate_report_format_main.pyとcmd_complete_gate.shのlesson_candidate必須条件がOR/AND不一致
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_cycle4_mtime_and_contract_survey_20260727
+- **記録者**: hayate
+- **tags**: [infra,gate,bash,lesson]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_cycle4_mtime_and_contract_survey_20260727.yaml]
+- **origin**: [[cmd_karo_cycle4_mtime_and_contract_survey_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_report_format_main.py:817-819はfound=trueの場合detail OR summaryのいずれかで足りるが、cmd_complete_gate.sh:7432-7466のawkはsummaryを一切参照せずdetail単独必須。upstream(gate_report_format)がPASSしてもdownstream(cmd_complete_gate)がfound_true_empty:detailでBLOCKしうる。修正は忍者の作業ではなくgate側の契約統一(cmd_complete_gate.shのawkにsummary許容分岐を追加)。
+
+### L1382: deepdive_replay.shのinstructions/への転用は対象パス決め打ち・jsonl/marker共有という3つの構造的制約を持つ
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_cycle5_instructions_receipt_feasibility_20260727
+- **記録者**: hayate
+- **tags**: [infra,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_cycle5_instructions_receipt_feasibility_20260727.yaml]
+- **origin**: [[cmd_karo_cycle5_instructions_receipt_feasibility_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- deepdive_replay.shはmemory/配下決め打ちのパス解決・agentごと単一jsonl・単一session markerという設計で、deepdive専用に最適化されている。instructions/読了検証への横展開を検討する際は、(1)対象パス切替、(2)受領証ファイル分離(混在防止)、(3)marker分離(誤判定防止)の3点を先に設計しないと、既存deepdive検証との判別不能・誤PASSが生じる。追加知見: 軍師のREAD_REQUIRED/--recovery-cache-mark機構(gate_gunshi_startup.sh)はcontent-hashベースの読了検証土台を持つが、stop hook等のBLOCKに未接続であり「実在する」ことと「機械強制されている」ことは別問題。機構の実在確認だけでBLOCK強度を判定してはならない。
+
+### L1383: 数値主張の誤検知は識別子(cmd_id/msg_id等)内の数字を除外しないと発生する
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_commander_post_contract_20260727
+- **記録者**: kagemaru
+- **tags**: [infra,bulletin,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/bulletin_write.sh]
+- **origin**: [[cmd_karo_impl_commander_post_contract_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- IF: 投稿本文に『数値を含むか』を機械判定する場合 THEN: cmd_id/msg_id/blt_id等の識別子トークン内の数字を先に除去してから判定せよ BECAUSE: fixture実測でcmd_test_fixture3のような識別子内の数字が誤って『数値主張』と判定され、意図しないBLOCK対象になるバグを本タスクで発見・修正した(post_has_numeric_claim関数)。origin: [[cmd_karo_impl_commander_post_contract_20260727]] -> [[識別子内数字の誤検知]] -> [[数値判定関数への除外処理追加]]
+
+### L1384: preflight系hookの結果注入設計は外部消費者(json.loadする別hook)への影響を実測で先に潰すべき
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_t1_preflight_result_injection_20260727
+- **記録者**: saizo
+- **tags**: [infra,testing,review,bash,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/three_layer_preflight.sh,tests/unit/test_three_layer_preflight.bats]
+- **origin**: [[cmd_karo_impl_t1_preflight_result_injection_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 軍師draftレビューで指摘された懸念(evidence本体をappend型に変えるとstop_check_inbox.shのjson.loadが例外化しconsumerがfalse固定化する)は、実装が本体書式を維持し別ファイルへappendする設計を採ったことで発生しなかったが、この非発生は実測で確認するまで自明ではなかった。preflight/evidence系のhook変更では、書込み側の契約だけでなく grep -rn 'evidence_star.json' scripts/hooks/ 等で外部消費者を列挙し、consumer側の判定を是正前後で実行して一致を確認するfixtureを常設すべき。
+
+### L1385: sqlite3 .backup() APIは/mnt/c(9p)上でpage単位I/Oのため、shutil.copyfileのbyte単位 sequential readより桁違いに遅い(実測7倍)
+- **日付**: 2026-07-27
+- **出典**: cmd_4174
+- **記録者**: kotaro
+- **tags**: [infra,db,api,wsl2]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_live_insert.py]
+- **origin**: [[cmd_4174]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- WSL2の/mnt/c(9p)上にある大容量sqlite DBを毎回の書込み後に丸ごとキャッシュへコピーする処理で、
+sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscallが9pの往復遅延をそのまま
+払うため、同一バイト量のshutil.copyfile()(大きな逐次バッファでの読出し)よりも約7倍遅い
+(843MBで59.8s vs 8.8s、実測)。WAL modeのDBを安全にbyteコピーする場合は、読取トランザクション
+(BEGIN; SELECT 1 FROM sqlite_master;)を張ったまま db/-wal/-shm の順でコピーすればチェックポイントに
+よる書き換えを避けられる(readerが必要とするフレームはcheckpointで上書きされないため)。
+コピー先が私用の一時ファイルで、公開前に quick_check + FTS integrity-check を必ず通す設計であれば、
+この置換は安全网付きで低リスクに導入できる。
+
+### L1386: 再配備で『上書きされるべきでないフィールド』はACだけでなく、報告と照合される全フィールド(related_lessons等)を洗い出して総点検すべき
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_related_lessons_snapshot_20260727
+- **記録者**: saizo
+- **tags**: [infra,deploy-task,db,gate,lesson]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_impl_related_lessons_snapshot_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task_contract_snapshot/should_skip_same_cmd_resolveは『同一cmd再配備でACやtask_idを上書きしない』設計を既に持っていたが、related_lessonsだけがその保護対象から漏れていた。GATE側が生きているtask_fileの特定フィールドをreportと照合する設計(validate_lesson_feedback_set等)がある場合、そのフィールドが再配備で書き換わり得るか(inject_*系関数が毎回無条件で上書きしていないか)を、AC/task_id以外にも横展開して点検すべき。同種の照合ロジックが今後追加された際、同じ穴を作らないための恒久チェックリスト化を推奨。
+
+### L1387: 9Pマウント上の静的ファイル読込は同時多エージェント負荷でtimeoutの支配的要因になりうる。memory_db同様/tmpローカルcache化で対処せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_a6_preflight_timeout_20260727
+- **記録者**: hayate
+- **tags**: [infra,testing,db,bash,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/three_layer_preflight.sh,tests/unit/test_three_layer_preflight.bats]
+- **origin**: [[cmd_karo_impl_a6_preflight_timeout_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- three_layer_preflight.shでmemory_dbは既に/tmp cacheがあったがsemantic-index.md(1.3MB、9P直読み)は未対策で放置されていた。実データでmemory_db/semantic timeoutの66%が同時発生しており、単一プロセス内の順次実行構造が9P I/O競合下で両層を道連れにしていた。origin: [[cmd_karo_impl_a6_preflight_timeout_20260727]] -> [[9Pマウント上の静的読込みは同時負荷下でcache化しないとtimeout要因になる]] -> [[今後9P上のファイルを繰返し読む処理を新設する際はmemory_db_cacheパターンを最初から適用する]]
+
+### L1388: ninja_scope_commit.sh実行前の他ninja並行commit巻き込みは、対象ファイルが自分のscope外でもcommit_hash帰属を汚染する
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_lg048_fail_receivable_20260727
+- **記録者**: hanzo
+- **tags**: [infra,gate,deploy,bash,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh,tests/unit/test_gate_gunshi_report_precheck.bats]
+- **origin**: [[cmd_karo_impl_lg048_fail_receivable_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- AC3でscripts/deploy_task.shを編集したが、commit実行前に他忍者(cmd_karo_impl_related_lessons_snapshot_20260727)の並行commitがworking tree全体を巻き込み、自分の編集内容を先にcommitしてしまった。ninja_scope_commit.shは指定pathのみをcommitするため自分のcommitには含まれず、結果的に2ファイル中1ファイルだけ自分のcommit、もう1ファイルは他者commitに属すという分裂状態が生じた。また、GUNSHI_PRECHECK_ONLY早期exitブロックを機能追加した際、既存の配置(スクリプト末尾寄り)のまま実装すると、無関係な先行チェック(SG-PRE1等)のERRORSに引きずられてfocused-modeの独立性が壊れることに後から気づいた。対処=(1)commit前にgit statusで対象ファイルの状態を都度確認し、既にcommit_hash不在(diff無し)なら他者commit由来と判断してreportにその旨明記する。(2)GUNSHI_PRECHECK_ONLY早期exitを追加する際は、既存の同種ブロック(SG-PRE33/35等)と同じ位置(SG-PRE1より前)に配置し、単独判定できることをfixtureで確認する
+
+### L1389: lessons.yaml経路外書込みの発生元特定はコード検索だけでは困難。実行ログ/監査証跡が必要
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_lessons_yaml_format_restore_20260727
+- **記録者**: hayate
+- **tags**: [infra,yaml,grid_search]
+- **subdomain**: infra
+- **target_files**: [projects/dm-signal/lessons.yaml]
+- **origin**: [[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- L1380はlessons.yaml形式逸脱の検出方法(id集合比較)を教えるが、発生元特定の手段が無い。6候補スクリプトをgrepで洗い出したが、実行痕跡(生成物の副次フィールド有無)からしか間接推測できず確定に至らなかった。次回は書込み系スクリプト実行時にlogs/へ操作ログ(who/when/how)を残す仕組みがあれば特定できる可能性がある
+
+### L1390: 保全宣言は自由文だけでなく機械可読な正本(queue/preserved_paths.yaml)へ登録し配備経路で照合せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_preserved_path_deploy_guard_20260727
+- **記録者**: saizo
+- **tags**: [infra,deploy-task,api,deploy,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,queue/preserved_paths.yaml]
+- **origin**: [[cmd_karo_impl_preserved_path_deploy_guard_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 掲示板・inboxの散文宣言(『保全中』『触るな』等)は宣言者本人が失念すると防御にならない(実例=cmd_karo_hotfix_lessons_yaml_format_restore_20260727)。構造化正本+既存guard照合で機械的に防止できる。既存deploy_task_guard_target_path_collisionのパターン(target_path+planned_pathsをexplicit集合として合算)を再利用でき、新規機構は最小(1関数+1ファイル)で済んだ。
+
+### L1391: Pythonの呼出元計装はinspect.stack()ではなくinspect.currentframe().f_back連鎖を使え(性能差75%実測)
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_atomic_yaml_write_caller_log_20260727
+- **記録者**: hanzo
+- **tags**: [infra,testing,yaml,grid_search]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/yaml_atomic.py,tests/unit/test_yaml_atomic_caller_log.py]
+- **origin**: [[cmd_karo_impl_atomic_yaml_write_caller_log_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- atomic_yaml_write(高頻度呼出しのホットパス関数)へ呼出元記録を追加する際、最初にinspect.stack()[N]を使ったところ中央値+75%(26.49ms→46.4ms)の有意な性能劣化を実測した。inspect.stack()はデフォルトでソースコードのコンテキスト行を読み込むため1回あたり4-10msのオーバーヘッドがある(単体計測で確認)。inspect.currentframe().f_back.f_back(N回分.f_backを連ねる)に置き換えるとオーバーヘッドがほぼ解消した(24.87→25.69ms、有意差なし)。加えてos.makedirs(exist_ok=True)を書込みの都度呼ぶのも不要な syscallであり、ログ先ディレクトリが常に存在する前提(logs/は常設)なら省略できる。今後Pythonのホットパスへ呼出元/スタック計装を追加する際は、まずinspect.stack()を避けcurrentframe().f_backを使うこと、と before/after中央値3回以上比較で確認すること。
+
+### L1392: 実装検証でmemory_db_knowledge_write.shを直接実行するテストは本番記憶DBを汚染しうる。python3 sqlite3でevents/events_ftsテーブルのスキーマのみ抽出すれば0.06秒で隔離DBを作れる
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_r6_knowledge_write_penetration_visible_20260727
+- **記録者**: kotaro
+- **tags**: [infra,testing,db,deploy,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_knowledge_write.sh,tests/unit/test_three_layer_knowledge_chain.bats]
+- **origin**: [[cmd_karo_impl_r6_knowledge_write_penetration_visible_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- memory_db_knowledge_write.shはSHOGUN_MEMORY_DB未指定時、本番data/multi_agent_shogun_memory.db(906MB)へ直接書き込む。動作確認のため本番DBパスのまま4回実行してしまい、5件のテスト用knowledgeイベントを本番へ混入させた(後でDELETEにより是正)。906MBの本番DBを丸ごとコピーするのはコスト高だが(cmd_4174で問題視されたのと同種)、python3のsqlite3.connect().execute("SELECT sql FROM sqlite_master WHERE type='table' AND name IN (...)")でスキーマ文字列だけ抽出し空DBへ再生成すれば0.06秒で済む。以後memory_db_knowledge_write.sh等を対象にしたテスト・動作確認では、SHOGUN_MEMORY_DB環境変数で必ず隔離DBを指すよう最初から徹底すべき。
+
+### L1393: primary_timeout=0.05sのtiming依存bats testはsystem load変動でflakyになる
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_a2_semantic_fallback_visible_20260727
+- **記録者**: hayate
+- **tags**: [infra,semantic,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/semantic_search.sh,scripts/hooks/three_layer_preflight.sh,tests/unit/test_three_layer_preflight.bats]
+- **origin**: [[cmd_karo_impl_a2_semantic_fallback_visible_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- test_three_layer_preflight.bats「3層primary timeoutは実データfallback完了時のみsuccess」はTHREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05sという極めてタイトな予算に依存しており、system load(他忍者の並行cmd実行等)が高い時間帯には無変更のHEADでも再現性なくFAILする。次回このtestに遭遇したら、まずgit show HEAD版へ一時差替えて同一環境で再実行し、diff起因かenvironment起因かを一次実測で切り分けよ(diff起因でなければSHOGUN_PRECOMMIT_AFFECTED_BYPASSを証跡付きで使用してよい)
+
+### L1394: bashのhead -cはUTF-8マルチバイト文字境界を割る。truncateはPython decode(errors='ignore')で文字境界を確認せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_evidence_utf8_truncate_20260727
+- **記録者**: tobisaru
+- **tags**: [infra,testing,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/three_layer_preflight.sh,tests/unit/test_three_layer_preflight.bats]
+- **origin**: [[cmd_karo_hotfix_evidence_utf8_truncate_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- byte単位truncate(head -c/cut -b/dd)は日本語等マルチバイト文字の途中で切れ、後段でjson.load等が例外を投げ消費者が沈黙する実害がある(evidence_kotaro__7.json実例)。${var:0:N}はUTF-8ロケール下では文字単位で安全(bash内蔵)だが、パイプ経由のバイトストリームtruncate(head -c等)は常にバイト単位である点に注意。是正はdata[:byte_cap].decode('utf-8',errors='ignore')パターンで文字境界に丸める。origin: [[cmd_karo_impl_a5_mem_evidence_raw_field_20260727]] -> [[head_c_byte_truncate_utf8破損]] -> [[cmd_karo_hotfix_evidence_utf8_truncate_20260727]]
+
+### L1395: bash引数のデフォルト値展開は${var:-default}(空文字列も置換)と${var-default}(未指定のみ置換)を区別せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_impl_rc_revoke_command_20260727
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/review_approval.sh,tests/unit/test_review_approval_rc_revoke.bats]
+- **origin**: [[cmd_karo_impl_rc_revoke_command_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- RC_REVOKEの理由引数(第5引数)を必須・非空とする検証を実装した際、requested_scope=${5:-auto}という既存コードの記法をそのまま使ったところ、明示的に空文字列("")を渡した場合でも「auto」へ置換されてしまい、空欄チェックが機能しなかった(fixture3の当初実装で発覚)。原因はbashの${var:-default}構文が「未設定(unset)」と「設定済みだが空文字列(null)」の両方でdefaultへ置換する仕様であるため。「引数が省略された場合のみdefault」という意図で書くなら${var-default}(コロンなし)を使う必要がある。今後、CLI引数の「空文字列を明示的な値として区別したい」設計(例: 理由必須引数、空文字BLOCK)では、まず${var:-default}と${var-default}のどちらが意図と一致するかを確認してから実装せよ。
+
+### L1396: L3/L2等『完了』を宣言する述語は、複数対象(候補リスト)の全件判定と、索引の列構造に基づく完全一致を最初から要求すること。先頭1件のみの判定や部分一致は軍師のような敵対的レビューで即座に破られる
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_r6_l3_wording_ruling_align_20260727
+- **記録者**: kotaro
+- **tags**: [infra,testing,review]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_knowledge_write.sh,tests/unit/test_three_layer_knowledge_chain.bats]
+- **origin**: [[cmd_karo_hotfix_r6_l3_wording_ruling_align_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_hotfix_r6_l3_wording_ruling_align_20260727の初回実装は、複数[[リンク]]がある知見でsort -u済み候補の先頭1件のみをcausal_index.tsvへgrep -qF(部分一致)で判定していた。軍師が『[[rules]](到達済)と[[zzz_gunshi_unreached_20260727]](未到達)』という多リンク入力で実機再現し、未到達候補を無視して『貫通完了』と誤表示するバグを発見した。加えてgrep -qFは行内部分一致のため一般語が無関係な行にヒットしうる欠陥もあった。是正はfixtureの母集団に『複数対象のうち一部のみ真』というケースを含めることでしか発見できない種類のバグであり、単一対象のfixtureだけでは偽陰性(バグを見逃す)になる。今後『完了』を宣言する判定ロジックを書く際は、(1)対象が複数ありうるか (2)索引の列構造上どこで完全一致すべきか、の2点を実装前に自問すべき。
+
+### L1397: 上書き型ログ(overwrite snapshot)だけを見て履歴不在と結論するな。append型の兄弟ログの有無を実装(grep -n append/log)で確認せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_recon2_r5_three_layer_acceptance_20260727
+- **記録者**: kagemaru
+- **tags**: [infra,recon,bash]
+- **subdomain**: infra
+- **target_files**: [docs/research/three-layer-access-route-asis-tobe-5w1h_20260727.md]
+- **origin**: [[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- IF: あるログ機構が「上書き型で最新1件しか残らない」と分かった場合 THEN: 同じ書込み関数内に別のappend型ログが並走していないか実装コード(grep -n append/jsonl/log)で確認せよ BECAUSE: 本タスクでevidence_*.json(上書き型313件)だけを見て「50件以上の履歴源は構造的に存在しない」と誤って結論しかけたが、three_layer_preflight.sh:684に同一関数内でevidence_log_*.jsonl(append型、907行)が実装済みだった。上書き型の存在は履歴不在を意味しない。origin: [[cmd_karo_recon2_r5_three_layer_acceptance_20260727]] -> [[上書き型ログのみ確認し履歴源不在と誤判定しかけた]] -> [[append型兄弟ログの実装確認で回避]]
+
+### L1398: preflight evidence logの『最新行』はissued_atで全ファイル横断比較する必要がある。単一ファイルのtailでは誤る
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_recon2_r7_inject_byte_cap_measure_20260727
+- **記録者**: hayate
+- **tags**: [infra,frontend,grid_search]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_recon2_r7_inject_byte_cap_measure_20260727.yaml]
+- **origin**: [[cmd_karo_recon2_r7_inject_byte_cap_measure_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- logs/preaction_memory/evidence_log_*.jsonlは9エージェント×9ファイルに分散しており、ある1ファイルのtail -1は『そのagentの最新』であって『全体の最新』ではない。家老の当初測定(336バイト)はたまたま全体最新と一致したが、一般には全ファイルをissued_atでソートして最大値を取る必要がある。次回この種のjsonl群を扱う際はglob+全行走査+ts比較を徹底せよ
+
+### L1399: 複数フィールドの状態遷移書込みは個別呼出しの列ではなく単一のbatch呼出しにせよ(flock解放窓の連鎖が競合を生む)
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_rc_task_status_reset_20260727
+- **記録者**: hanzo
+- **tags**: [infra,testing,deploy,review,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/review_approval.sh,tests/unit/test_review_approval_rc_task_status_atomic.bats]
+- **origin**: [[cmd_karo_hotfix_rc_task_status_reset_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- review_approval.shのkaro:RC経路は、task_fileの8フィールド(deployed_at/retry_deployed_at/status/reviewed/review_result/acknowledged_at/completed_at/done_at)をyaml_field_set.shへの8回の個別呼出しで更新していた。各呼出しは独立してflockを取得・解放するため、呼出し間に7つの競合窓が生じ、その窓の間に別プロセス(ninja_monitor.shのAUTO-DONE、または再開直後の忍者セッション自身)が同一task_fileへ書き込むと、一部のフィールドだけRC後の値、他は古い値という不整合状態が生じ得た(2026-07-27 13:39のkotaro停止事故、13:55のhayate類似事象で実測)。対処は、複数フィールドを同一トランザクションとして更新する必要がある箇所では、個別呼出しの列ではなく既存のyaml_field_set_batch(1 flock+1 read-modify-write)を使うこと。今後、複数フィールドの状態遷移(reopen/reset/rollback等)を実装する際は、まず『これらのフィールドは1つの意味的トランザクションか』を自問し、YESなら必ずbatch呼出し1回に集約せよ。
+
+### L1400: 検知器の語彙拡張は自分のcommitを新たにBLOCKしうる。拡張直後に自分のscope内commitでgate再走査せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_lesson_impact_yaml_dump_20260727
+- **記録者**: tobisaru
+- **tags**: [infra,lesson,process,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/lesson_impact_analysis.sh,tests/unit/test_lesson_impact_rotate.bats,.claude/hooks/pre-bash-yaml-dump-guard.sh,scripts/gates/gate_no_direct_yaml_dump.sh,scripts/semantic_index_update.sh]
+- **origin**: [[cmd_karo_hotfix_lesson_impact_yaml_dump_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_no_direct_yaml_dump.shの検知語彙を別名import対応へ拡張した結果、拡張前は素通りしていた既存の違反(semantic_index_update.sh:1058)を拡張後に検知し、target_path外だが同一commitに巻き込まれてBLOCKされた。検知器拡張タスクでは『拡張後に自分のcommit経路(pre-commit gate含む)で即座に副作用を確認する』手順を明示的に組み込むべきである。今回は自動消火(検知器を緩めて回避)せず族ごと是正して解消したが、事前に想定していれば無駄な往復を減らせた。origin: [[cmd_karo_hotfix_lesson_impact_yaml_dump_20260727]] -> [[検知器拡張の自己ブロック]] -> [[族修正で解消]]
+
+### L1401: decode(errors=replace)によるUTF-8破損行の暗黙成功扱い
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_recon2_r5_utf8_revalidation_20260727
+- **記録者**: saizo
+- **tags**: [infra,recon,process]
+- **subdomain**: infra
+- **target_files**: [queue/reports/saizo_report_cmd_karo_recon2_r5_utf8_revalidation_20260727.yaml]
+- **origin**: [[cmd_karo_recon2_r5_utf8_revalidation_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- R5検収の再現手順コード(docs/research/three-layer-access-route-asis-tobe-5w1h_20260727.md)はraw.decode('utf-8',errors='replace')でJSONLをパースしていた。UTF-8破損は日本語等マルチバイト文字の境界破損が典型で、置換文字(U+FFFD)がstring value内に挿入されるだけならjson.loads()は例外を投げず成功する。∴破損行が『成功』として集計に混入し得る。数値検収を目的とするスクリプトでは、集計前にraw.decode('utf-8')を厳格モードで先に試み、失敗行を明示的に除外・別集計する二段構えが必要。origin: [[cmd_karo_recon2_r5_utf8_revalidation_20260727]] -> [[decode_errors_replace_silent_success]] -> [[数値検収の信頼性毀損]]
+
+### L1402: gate/monitorでsubshell実行結果を判定する時はexit codeでなく出力文字列の非空/内容で判定せよ(L583同型落とし穴の回避形)
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_auto_clear_recovery_20260727
+- **記録者**: kagemaru
+- **tags**: [infra,ninja-monitor,gate,bash,monitor]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,scripts/gates/lib/clear_blocked_summary.sh,scripts/gates/gate_karo_startup.sh,scripts/gates/gate_gunshi_startup.sh,tests/unit/test_ninja_monitor_clear_blocked_notify.bats]
+- **origin**: [[cmd_karo_hotfix_auto_clear_recovery_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cs_result=$(bash gate || true); cs_exit=$? は||trueによりcs_exitが常に0になる(L583)。同じsubshell+||trueパターンでも、変数へ代入した出力文字列自体を判定に使う設計(例: _clear_blocked_line=$(... || true); [ -n "$_clear_blocked_line" ])ならこの落とし穴に該当しない。新規gate/hookでsubshell出力を判定条件に使う際は、この2パターンの違いを設計時に意識せよ
+
+### L1403: 同一契約の複数入口は共有述語へ一本化する
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727
+- **記録者**: kotaro
+- **tags**: [infra,gate,gate,reporting]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh,scripts/gates/gate_dc_duplicate.sh,tests/unit/test_report_field_set_batch_throughput.bats,tests/unit/test_gate_dc_duplicate.bats]
+- **origin**: [[cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 2入口だけ共有述語化して第3入口にローカル条件を残すと、同一報告が入口ごとにPASS/BLOCKへ分岐する。全入口を単一述語へ委譲し、陽性・各条件欠落の陰性を入口横断で計測すべき。
+
+### L1404: 判定件数は全代入と結論変更を分離定義する
+- **日付**: 2026-07-27
+- **出典**: cmd_4177
+- **記録者**: hayate
+- **tags**: [infra,gate,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh,scripts/gates/gate_gunshi_report_precheck_engine.py,tests/unit/test_gate_gunshi_report_precheck.bats]
+- **origin**: [[cmd_4177]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 同じgate_pred代入でも初期CLEARを含む全代入7と結論変更6は別母集団。件数だけをACにすると矛盾するため、定義と内訳を必須化する。
+
+### L1405: 埋込みPythonの引数追加時は全抽出callerを列挙せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_4178
+- **記録者**: hanzo
+- **tags**: [infra,gate,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_karo_startup.sh,tests/unit/test_gate_karo_startup.bats,tests/unit/test_escalation_decision_ledger.bats]
+- **origin**: [[cmd_4178]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- transition Pythonへ第4引数を追加した初回unitで、別contract testの3引数callerが4/5 FAILした。rgで抽出callerを全列挙し2箇所へ収束。次回は実装前に非test/test双方のcaller countを証跡化する。
+
+### L1406: 構造contract testは同名構文のfirst occurrenceへ依存させない
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_unit_skill_feedback_routing_20260727
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_skill_feedback_loop.bats]
+- **origin**: [[cmd_karo_hotfix_unit_skill_feedback_routing_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 大規模shell内のcase/functionを検査するtestは固有section markerか関数境界へanchorし、後発の同名構文追加で誤対象を解析しない二値checkを追加すべき
+
+### L1407: wait -nの回収対象と独自PID台帳を二重管理しない
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_unit_run_tests_contract_20260727
+- **記録者**: hayate
+- **tags**: [infra,pipeline]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh]
+- **origin**: [[cmd_karo_hotfix_unit_run_tests_contract_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- wait -nが短命childを回収した後にfallbackで別PIDをwaitするとno such jobとなり、実行・timing記録が欠落した。独自台帳を持つschedulerは台帳上の1 PIDを直接waitしexactly-onceで除去する。次回チェック: 並列回帰でno such job=0かつ全選択数=実行数を二値確認する。
+
+### L1408: ライフサイクルeventと論理sessionを同一視しない
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727
+- **記録者**: hayate
+- **tags**: [infra,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_startup.sh,scripts/hooks/session_start_inject.sh,tests/unit/test_gunshi_deepdive_session_contract.bats]
+- **origin**: [[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- SessionStartのresume/compactまでfresh markerを更新すると同一sessionの完了receiptを誤失効する。marker更新対象を意味分類で限定するチェックを次回追加すべき。
+
+### L1409: 専用index commitでも共有indexはHEAD前進後に残骸化する
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_auto_clear_interrupted_batch_recovery_20260727
+- **記録者**: hanzo
+- **tags**: [infra,ninja-monitor,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_auto_commit_recovery.bats,tests/unit/test_ninja_monitor_clear_guard.bats]
+- **origin**: [[cmd_karo_hotfix_auto_clear_interrupted_batch_recovery_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 別index commitはshared index非接触でもHEADを前進させる。shared indexが旧HEADなら対象pathがstaged差分化するため、path限定commitでHEADと対象entryを原子的に整合し他stage保持を検証する。
+
+### L1410: grep -c は0件一致でもstdoutへ'0'を出力しつつ非0終了するため、`|| echo N`型フォールバックは二重出力を生む
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_snapshot_unread_zero_doubleline_20260727
+- **記録者**: kagemaru
+- **tags**: [infra,ninja-monitor,deploy,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_snapshot.bats]
+- **origin**: [[cmd_karo_hotfix_snapshot_unread_zero_doubleline_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- `x=$(grep -c PATTERN file 2>/dev/null || echo 0)`という慣用パターンは、grep -cが0件一致時に(1)カウント値'0'をstdoutへ出力し(2)exit status 1を返す、という仕様を見落としている。bashの`||`はexit status非0で右辺を実行するが、左辺のstdoutは既にcommand substitutionへ流れ込んでいるため、右辺の`echo 0`が追加され結果は'0\n0'(2行)になる。この二重値が複数フィールドを1行へ連結するecho/printf文の入力に使われると、その1レコードが2行に分裂し、単一行前提の下流パーサ(dashboard/gate/snapshot読取)を壊す。正しい対処は`x=$(grep -c PATTERN file 2>/dev/null); x="${x:-0}"`(catch対象をexit statusではなく『出力が空か』に変える)。同型パターンがscripts/配下に本件含め12箇所存在することをgrepで確認した(clear_prep_check.sh:940, deploy_task.sh:1053/5695, inbox_write.sh:1225, inbox_mark_read.sh:303, lesson_write_shogun.sh:147, pending_decision_write.sh:82, gate_gunshi_startup.sh:1262, gate_immunity_depth.sh:88-90, gate_test_health.sh:65, stop_check_inbox.sh:660)。全てが同じ二重行corruptionを起こすとは限らない(出力が単独スカラー代入のみで複数フィールド行へ連結されない箇所はリスクが低い)ため個別のリスク評価は本タスクのスコープ外としdecision_candidateへ委ねる
+
+### L1411: 文書系パスへのtest_selectマッピング追加は、マッピング先テストの実行コストとheavy_job_admissionの排他待ち行列を必ず一緒に評価せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_4182
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_affected_deps.bats]
+- **origin**: [[cmd_4182]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 2026-07-27、将軍のdocs/research/*.md単一行注記commitがpre-commitのaffected_tests経由で test_semantic_index_update.bats(43 tests)を実走し83.9秒、context/*.mdならtest_context_freshness_check.bats +test_gate_context_freshness.bats(61 tests)で41.2秒を要した。さらにheavy_job_admission.shのhost-wide 排他ロックへ入って順番待ちが発生し、共有ninja-scope-commit lockを11分12秒保持して疾風(cmd_4181)のcommitを 120秒timeoutで2回弾いた(blt_20260727_201344, PID 3923473)。根本原因はtest_select.shがcontext/*.md・ docs/rule/*.md・docs/research/*.mdを「focused」な少数テストへ意図的にマッピングしていた一方、そのマッピング先 テスト自体が43〜61ケースの大規模fixtureスイートであり、単発の1行docs変更に対して秒単位で完了する設計になって いなかったこと。かつそのテスト実行がheavy_job_admissionの排他ロック経由で他エージェントのcommitと直列化される 構造のため、遅いdocsテストが無関係な忍者のcommitを連鎖的にブロックした。対処としてis_doc_only_fastpath_path() でdocs/context/memory/archive配下(非.sh/.py)のみのstaged diffを検出し、affected_tests(と、その内部でのみ 発火するheavy_job_admission)を構造的にスキップするfast-pathを追加した。他のguard(yaml dump検査・scope検証・ destructive検査等)は維持。教訓: 文書系パスへテストマッピングを追加/拡張する判断をする際は、(1)マッピング先 テストの実行コスト(ケース数)と(2)そのテスト実行が経由する排他制御機構(heavy_job_admission等)の待ち行列の 2点を必ず一緒に評価せよ。片方だけを見て「focusedだから軽い」と判断すると、実際には大規模fixtureスイート+ host-wide直列化という組合せで、無関係な作業を連鎖停止させる。
+
+### L1412: 成果物commit repoとproject repoを全consumerで分離せよ
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_gate_commit_repo_root_20260727
+- **記録者**: hanzo
+- **tags**: [infra,gate,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format_main.py,tests/test_gate_report_format.bats,scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_gate_commit_repo_root_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- projectは業務文脈であり成果物commit所有repoとは限らない。明示commit_contract.repo_rootを単一resolverで検証し、report gateだけでなく完了gate・CI publication等の全consumerへ貫通しなければ後段で同型偽BLOCKが再発する。
+
+### L1413: enforcement text内のL/Level数字言及がgate_lesson_enforcement_level.shのEXPLICIT_REを誤検知させ、昇格を見送る否定文脈でも明示Level4等に誤分類されうる
+- **日付**: 2026-07-27
+- **出典**: cmd_reflux_promotion_202607272134_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,gate,bash,lesson]
+- **subdomain**: infra
+- **target_files**: [projects/dm-signal/lessons.yaml]
+- **origin**: [[cmd_reflux_promotion_202607272134_kagemaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- L917のenforcement textへ『Level4以上への昇格は見送る』という否定文脈で記述したところ、gate_lesson_enforcement_level.shのEXPLICIT_RE(L[1-6]/Level[1-6]を前後非英数字境界で抽出しmaxを採用)が文中の『L1のまま』『L3_fof』等の言及も含めてmax=4と誤って明示Level4判定してしまうことをpython3再現で実測確認した(意図は『昇格しない』のに機械判定は『昇格済み』相当になる)。是正: entry.enforcement_level(構造化int field)を明示付与するとrule0優先で正しい値に固定される。同種のenforcement text編集を行う全てのreflux_promotion/lesson_write系タスクは、text中にL[1-6]/Level[1-6]と読める語(L3, L4, Level5等の教訓ID・層名・見送り表現含む)を含める場合、必ずenforcement_level構造化fieldも明示付与すべき
+
+### L1414: 外れ値台帳には枝選択コンテキストが必要
+- **日付**: 2026-07-27
+- **出典**: cmd_4185
+- **記録者**: tobisaru
+- **tags**: [infra,context,testing,cache]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_4185_outlier_conditions.md,context/infrastructure.md]
+- **origin**: [[cmd_4185]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- wall_msとevent_idだけではtest_granularity/self_syncの重い枝を完全特定できない。計測writerは枝選択・staged paths・cache hit/sync/reexecを同eventへ記録すべき。次回追加check=外れ値checkのeventレコードに原因枝フィールドがあるか二値確認。
+
+### L1415: lock取得後の基準差分はcurrent HEADで再列挙しない
+- **日付**: 2026-07-27
+- **出典**: cmd_karo_hotfix_scope_lock_precommit_order_20260727
+- **記録者**: saizo
+- **tags**: [infra,testing,git,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_scope_commit.sh,tests/unit/test_ninja_scope_commit.bats]
+- **origin**: [[cmd_karo_hotfix_scope_lock_precommit_order_20260727]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- pre-commit中にHEADが進むとgit diff --cachedの暗黙基準が変わり、親commitの差分を逆stageと誤認する。所有scope SSOTからentryを復元する
+
+### L1416: AC文言・タスク設計に記載された仕様(5キー)を鵜呑みにせず、実装対象の一次コード(review_bundle.pyのfail-closed契約)を自分で読んで齟齬を検出すべきだった
+- **日付**: 2026-07-27
+- **出典**: cmd_4187
+- **記録者**: kagemaru
+- **tags**: [infra,deploy-task,review,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task.bats,projects/infra/lessons_gunshi.yaml]
+- **origin**: [[cmd_4187]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_4187のAC1/task descriptionは一貫して「cause/independent_verification/bypass_record/post_verification/post_verification_resultの5キー」と明記しており、私はこれをそのまま実装した。しかし実装前にreview_bundle.py _require_hook_failures_resolved/_HOOK_HEAD_KEYを読んだ際、post_verification_head(7-40文字hexのcommit hash)という6キー目の必須フィールドが実際のfail-closed契約に存在することを確認していた(会話ログ上でこの関数を読み現物確認済みだった)にもかかわらず、AC文言の「5キー」に引きずられてそのまま5キーで実装・commit・報告完了まで進めてしまった。家老が別ルートでcmd_4184の実BLOCK実測を根拠に6キー不足を指摘して初めて気づいた。★AC/task descriptionは「殿・将軍・家老が意図した仕様」であり、実装対象コードの現物とは独立に間違いうる。一次コード(この場合review_bundle.py)を読んだ時点でAC記載とのズレに気づいていたなら、実装前に家老へ確認するか、AC記載を上書きして実契約に合わせるべきだった。「一次情報で確認してから行動」の原則は、自タスクのAC文言そのものにも適用すべきだった。
+
+### L1417: command substitution内lazy cacheは親へ残らない
+- **日付**: 2026-07-28
+- **出典**: cmd_4189
+- **記録者**: saizo
+- **tags**: [infra,cmd-quality,bash,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_save.sh]
+- **origin**: [[cmd_4189]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 同一抽出のcacheは関数内代入ではsubshell終了時に消える。親shellで一度primeしてREADYと値を後続subshellへ継承させる。
+
+### L1418: 非同期cache生成は公開前重複missと子孫pipe寿命を同時に防ぐ
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728
+- **記録者**: kotaro
+- **tags**: [infra,cmd-quality,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_save.sh]
+- **origin**: [[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 完了後cacheだけでは並行cold missが全leader化する。query単位の非待機single-flightに加え、command substitutionを避けた出力ファイル化とleader完了checkpointが必要。
+
+### L1419: self_sync分岐の独立再検証は共有git indexへの実stagingを避け、関数抽出モック+実sync_git_hooks.sh直接実行で安全に再現できる
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_hot_script_git_self_sync_reverify_20260728
+- **記録者**: kagemaru
+- **tags**: [infra,testing,bash,git]
+- **subdomain**: infra
+- **target_files**: [logs/defense_overhead.jsonl]
+- **origin**: [[cmd_karo_hotfix_hot_script_git_self_sync_reverify_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- AC1の「既存台帳から独立再集計」要求に対し、staged_hook_related=true分岐(hanzoが2144→165msと主張した分岐)は自然発生ログに存在しなかった(git log 0233c7b9c..HEAD -- scripts/hooks/git-pre-commit.shが0件のため)。共有worktreeでgit addにより実際にstageすると他忍者の並行commitへ意図せず混入するリスク(L1310と同型)があるため、(1)sync_git_hooks.sh直接実行(installed hook==HEAD一致時は冪等no-opで安全)でsync分岐コストを実測、(2)load_staged_file_cacheのみを安全にモックしつつ他の関数(git show/cmp)は本物を実行してskip分岐コストを実測、という2つのindex非変更手法で同等の実測データを得られた。同様の「hookのself-staged挙動を検証したいがindexは汚染したくない」ケースで再利用可能。
+
+### L1420: 非同期testはevidence読取だけでなくteardown所有変数へworker PIDを移譲する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_ntfy_async_teardown_race_20260728
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_ntfy_async_dispatch.bats]
+- **origin**: [[cmd_karo_hotfix_ntfy_async_teardown_race_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- marker完了はworker終了を意味しない。fixture削除前のworker drainを有効化するには、公開evidenceのPIDをcleanup契約が参照する所有変数へ必ず接続する。次回チェック: 非同期workerを起動する全testでlaunch PID→cleanup ownershipの到達を二値確認する。
+
+### L1421: fixtureの親transport境界はprefix単位で初期化する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_run_tests_parent_env_isolation_20260728
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_run_tests_parent_env_isolation_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 親runnerが将来export変数を追加してもfixtureへ漏れないよう、個別列挙ではなく所有prefixをsetupで列挙unsetする。
+
+### L1422: 『staged path一致=生成物が変わる』と混同するな。生成の実入力サブ範囲を確認せよ
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_hot_script_instruction_sync_20260728
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,process,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/build_instructions.sh,scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_instruction_sync.bats]
+- **origin**: [[cmd_karo_hotfix_hot_script_instruction_sync_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- git_pre_commit:instruction_syncはinstructions/*.md(generated除外)がstagedなら常にbuild_instructions.shのfull rebuild(全20生成物)を実行していたが、build_instruction_fileは実際にはinstructions/{role}.mdのfrontmatter部分(1個目と2個目の---の間)+instructions/roles/{role}_role.mdのみを生成入力とし、frontmatter以降のbody(手順書本文)は生成物に一切反映されない。過去の同ファイル変更commit15件を実地検証したところ15/15(100%)がbody領域のみの変更であり、生成物は毎回無変化なのにfull rebuildが発生していた。教訓: 『ファイルXがstagedされたらYを再生成する』というトリガ条件を書くとき、Yの実際の生成入力がXの一部(サブ範囲)に限定される場合は、ファイル単位ではなく生成入力サブ範囲単位でhash比較すべき。ファイルパス一致だけで重い処理を起動する設計は、対象ファイルが『生成に無関係な領域』を含む場合に無駄な処理を量産する
+
+### L1423: GATE CLEAR通知dedupはlive inbox限定だと恒久flagへ移行してもrollback漏れ・migration競合の2段の穴が残る
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_gate_clear_notify_dedup_20260728
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality,review,gate,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_warning_levels.bats]
+- **origin**: [[cmd_karo_hotfix_gate_clear_notify_dedup_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- notify系のdedupをlive inbox grepから永続flag(queue/gates/{key}/notify_{recipient}.done)へ移行する際、最初の実装は(1)送信失敗時にflagが残り通知が永久欠落する穴、(2)移行前に配送済みのcmdをbackfillするためのglobal marker/lock方式が(a)marker未確定中の他プロセスの素通り競合(b)1ファイルparse失敗の握り潰しによるmarker確定後の欠落永続化、という2つの穴を持っていた。家老の3段階レビュー(diff review→migration review→migration diff review)で順に発見。最終解: atomic claim(set -C)自体を排他境界として使い、勝者だけがそのkeyの履歴を1回走査してbackfill判定する設計にすると、グローバルな移行状態管理が不要になり穴が構造的に消える。教訓: 「新しい永続状態を導入する」変更は、通常系だけでなく(a)書込み失敗時のロールバック(b)導入前に存在した旧状態からの移行(c)複数プロセスの同時初回実行、の3点を最初から設計に含めるべき。origin: [[cmd_karo_hotfix_gate_clear_notify_dedup_20260728]] -> [[永続flag冪等境界の設計]] -> [[karo3段階diffレビューでrollback漏れ→migration競合を発見]]
+
+### L1424: 速度計測は運用競合窓と同一fixture交互A/Bを分離する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_round2_parent_ac_coverage_20260728
+- **記録者**: saizo
+- **tags**: [infra,process,git]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh]
+- **origin**: [[cmd_karo_hotfix_round2_parent_ac_coverage_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ledger直近窓は並列競合でmedian2120msまで膨らみ、経路固有差を表さなかった。同一fixtureでcontrol/optimizedを交互実行するとcommit後median15.0%、p95 24.0%短縮を再現した。次回は履歴窓と交互A/Bを二値で併記する
+
+### L1425: 資源claim後は実行開始前の全return出口にもcompensationを置く
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_reflux_reserved_head_skip_20260728
+- **記録者**: hayate
+- **tags**: [infra,ninja-monitor,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor.bats,tests/unit/test_ninja_monitor_training_auto.bats]
+- **origin**: [[cmd_karo_hotfix_reflux_reserved_head_skip_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 成功後/実行失敗時だけreleaseしても、準備段階の不可読・mkdir・mktemp・生成・parse失敗でleaseが残る。claim済みフラグを共通compensation helperへ渡し、claim後からhandoffまでの全return出口をfixtureで列挙検証する。
+
+### L1426: 外部プロセス呼出し結果を一時ディレクトリ経由で並列合流する実装で、後始末にrm -rfを使うとD002(project外への再帰削除絶対禁則)へ抵触しうる
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_round2_full_precheck_20260728
+- **記録者**: kagemaru
+- **tags**: [infra,gate,review,lesson]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh,tests/unit/test_gate_gunshi_report_precheck_direct_hash.bats]
+- **origin**: [[cmd_karo_hotfix_round2_full_precheck_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- SG-PRE21のcausal_backlinks並列化で、mktemp -d /tmpで作った作業ディレクトリの後始末にrm -rf(再帰削除)を使ったところ、家老レビューでD002(project working tree外へのrm -rf絶対禁則)違反と指摘された。mktempで自分が作った既知のディレクトリであっても、rm -rfという操作自体がD001-009の絶対禁則パターンに機械的にマッチする(意図が安全でも操作の形が禁則)。是正: ループで書き込んだ既知のファイル名だけをrm -f(非再帰・単一ファイル)し、その後rmdir(非再帰・空でなければ失敗するfail-safe)でディレクトリを閉じる。教訓: 一時ディレクトリを使うbackground並列パターン(SG-PRE26で既に使われていた既存パターンも同型のrm -rfを持つ)を新規実装で複製する際は、既存パターンをそのまま踏襲せず、後始末の安全性(絶対禁則抵触の有無)を毎回個別に確認せよ。origin: [[cmd_karo_hotfix_round2_full_precheck_20260728]] -> [[SG-PRE21並列化実装でrm -rfを踏襲]] -> [[家老RCでD002違反指摘、rm -f+rmdirへ是正]]
+
+### L1427: 速度fixtureは同一時間帯で交互比較する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_round2_publish_total_20260728
+- **記録者**: saizo
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh]
+- **origin**: [[cmd_karo_hotfix_round2_publish_total_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 併走負荷でend-to-end単発p50/p95が逆転したが、before/after importを同一ループで交互に各30回測るとmedian -41.4msを識別できた。速度判定は同一負荷の交互fixtureで行う。
+
+### L1428: 部分凍結markerは共通入口returnでなく対象kindをdispatchable inventoryから除外する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_reflux_promotion_freeze_guard_20260728
+- **記録者**: saizo
+- **tags**: [infra,ninja-monitor,frontend,pipeline]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_training_auto.bats]
+- **origin**: [[cmd_karo_hotfix_reflux_promotion_freeze_guard_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 複数kindを扱うschedulerで一部だけ凍結する際、handler全体をreturnすると他kind還流まで止まる。snapshot後・選択前に対象count/targetだけを無効化し、抑止件数ログと陰性対照で強制する。
+
+### L1429: 同一indexのpath別再走査は順序付き単一snapshotへ集約する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_round3_ninja_scope_commit_20260728
+- **記録者**: tobisaru
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_scope_commit.sh]
+- **origin**: [[cmd_karo_hotfix_round3_ninja_scope_commit_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- shared indexをpathごとと全scopeで重複走査するとDrvFS恒常課税になる。順序を保持した単一snapshotからpathspec集約を再構成すれば契約不変でscope_sync p50を10%短縮できた
+
+### L1430: 区間telemetryは各列を個別補正せず同一attemptの境界集合で選ぶ
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_throughput_t3a_gate_metrics_writer_20260728
+- **記録者**: saizo
+- **tags**: [infra,cmd-quality,deploy]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_throughput_t3a_gate_metrics_writer_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- deployだけattempt logへ移行するとwork/e2eの旧境界と重複し、負残差やretry待ちのwork混入が起きる。attempt選択時にissue/deploy/work下限/e2e起点を一括決定し、残差0 fixtureで守る。
+
+### L1431: 既存計装パターン(defense_overhead_write_async)への追加はsource+関数呼出しの2行構成で既存ヘルパーを再利用するのが低リスク
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728
+- **記録者**: kagemaru
+- **tags**: [infra,gate,gate,bash,lesson]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format.sh]
+- **origin**: [[cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728で、既存のsingleflight_hold計装パターン(scripts/lib/defense_overhead_writer.shをlazy-sourceしdefense_overhead_write_asyncを呼ぶ)をそのまま踏襲してfingerprint hit/miss計装を追加した。新規ヘルパー・新規ledgerを作らず、GATE_VALIDATED_FINGERPRINT未設定時(reuse未試行)は計装対象外とすることで、既存の判定ロジック・出力・exit codeを一切変更せずに計測可能にできた。前弾でtarget_pathの実装対象ファイル不一致によりBLOCKした経験(lesson済み)が、本弾で正しいファイルへの実装を素早く進める土台になった。
+
+### L1432: 自動配備taskのtarget_pathがゼロ対象自身だと自己参照除外で不変量が0のまま再配備ループになる
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_reflux_backlink_external_source_20260728
+- **記録者**: kagemaru
+- **tags**: [infra,ninja-monitor,bash,monitor]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_training_auto.bats,tests/unit/test_ninja_monitor_stall.bats]
+- **origin**: [[cmd_karo_hotfix_reflux_backlink_external_source_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- causal_backlink_counts.sh L192のsources.discard(rel)はself-referenceを常に除外するため、backlinksゼロ文書自身をtarget_pathに設定して編集させる自動task設計は、ゼロ対象内へどれだけリンクを追加してもincomingが0→0のまま変わらず同一対象へ再配備され続ける(実証: hanzo/saizo/kotaro 3件、対象context/shogun-awakening-check.md)。恒久的に「不変量を変えるにはどのファイルを変更すべきか」を配備ロジック側で明示的に選ぶ必要がある。修正はscripts/ninja_monitor.shの_reflux_backlink_external_source()で、ゼロ対象は変更せずincoming元となる既存の外部索引文書へ変更先を切替えた。同種の『測定対象自身を編集させる自動task』設計は同じ罠を持ちうる
+
+### L1433: outgoing semantic-linksはincoming backlinkを増やさない
+- **日付**: 2026-07-28
+- **出典**: cmd_reflux_backlink_202607281529_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,context]
+- **subdomain**: infra
+- **target_files**: [context/shogun-awakening-check.md]
+- **origin**: [[cmd_reflux_backlink_202607281529_hanzo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 対象文書自身にsemantic-linksを追加してもcausal_backlink_countsはself-referenceを除外するためincomingは0のまま。incoming解消taskは参照元文書をplanned_pathsへ含める必要がある
+
+### L1434: 生成物だけを編集せずSSOTから再生成する
+- **日付**: 2026-07-28
+- **出典**: cmd_reflux_backlink_202607281828_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,context,bash]
+- **subdomain**: infra
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_reflux_backlink_202607281828_hanzo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-07-28
+- context/semantic-map.mdは生成物であり、外部リンク追加はdocs/semantic-index/index.mdを先に更新してsemantic_map_generate.shを実行する。
+
+### L1435: reflux_inventory_beforeのtimeout/失敗値が0として記録されAC2証跡を汚染する
+- **日付**: 2026-07-28
+- **出典**: cmd_reflux_insight_202607281837_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,bash,yaml,monitor]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607281837_kagemaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ninja_monitor.shの_reflux_zero_backlink_inventory()はcausal_backlink_counts.shがtimeout(REFLUX_BACKLINK_TIMEOUT=20s)超過するとstatus_124を返しzero_backlinks=0として記録する(実測: logs/ninja_monitor.log:9821 REFLUX-AUTO-COUNT-WARN発火、9822でzero_backlinks=0記載)。同時刻のpromotionsも0で記録されたが、同cmdの5分後のAFTER計測(log:9824)ではzero_backlinks=50・promotions=378と大きく乖離。task YAMLのreflux_inventory_beforeを無条件に転記するとAC2『作業前後の還流在庫残数』の証跡が実態と大きく乖離する。忍者はAC2記入前にlogs/ninja_monitor.logのREFLUX-AUTO-COUNT-WARN/status_*有無を確認し、timeout/失敗由来の0値は実測で裏取りしてから報告すべき。origin: [[cmd_reflux_insight_202607281837_kagemaru]] -> [[REFLUX-AUTO-COUNT-WARN status_124]] -> [[reflux_inventory_before信頼性低下]]
+
+### L1436: active watcher時はdelivery verifyをwriter critical pathから分離する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_round4_impl_inbox_write_20260728
+- **記録者**: hanzo
+- **tags**: [infra,inbox,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_round4_impl_inbox_write_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- watcherがpane wake-upを所有する状態でwriterが同じretry deadlineを同期待機すると、送達保証を増やさずtotalだけを課税する。永続化同期・verify非同期・watcher sole senderを二値contract化する
+
+### L1437: 時刻推測ではなくevent-ready証跡で並行testを同期する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_ci_fix_30357551416_ninja_scope_precommit_race
+- **記録者**: hayate
+- **tags**: [infra,testing,pipeline,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_scope_commit.sh,tests/unit/test_ninja_scope_commit.bats]
+- **origin**: [[cmd_karo_ci_fix_30357551416_ninja_scope_precommit_race]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- hook sleepと観測deadlineを同じ5秒にすると全量CI scheduler遅延だけでFAILする。snapshot成立やphase到達はready markerを発行し、testはその一次eventを待つ。内部snapshot envはhook子へ漏らさない。
+
+### L1438: 非terminal batchをterminal singleflightへ混入させない
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_round4_impl_publish_total_20260728
+- **記録者**: saizo
+- **tags**: [infra,frontend]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh]
+- **origin**: [[cmd_karo_round4_impl_publish_total_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- report単体lockで保全できる非terminal更新までterminal lifecycle lockへ入れると、正当な排他に見えてpublish_total尾とasync子へのFD継承を生む。lockは守る不変量の境界ごとに分離し、非同期spawn前に不要FDを閉じる。
+
+### L1439: 空commit判定はlock後の明示HEAD対private-index tree差分で行う
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_ninja_scope_empty_commit_guard_20260728
+- **記録者**: hayate
+- **tags**: [infra,testing,git,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_scope_commit.sh,tests/unit/test_ninja_scope_commit.bats]
+- **origin**: [[cmd_karo_hotfix_ninja_scope_empty_commit_guard_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- git diff-indexはworktree/stat差を含み空treeを非空と誤判定し得る。並行HEADを最新化したlock内で、git diff --cached --quiet transaction_head -- owned_pathsを使いcommit-tree直前の実tree差分だけを判定する。
+
+### L1440: AC文言grepを所有権へ使うとfocused taskが全量化する
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_deploy_b32_scope_reason_retry_20260728
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,frontend,deploy,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_nocode_commit_contract.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_b32_scope_reason_retry_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- test要求語とsource参照だけで所有権を推論するとdeploy_taskのようなhot dispatcherで23 files/708 testsへ拡張した。明示所有をSSOTとし、完全欠落時だけ推論補完するチェックを追加する。
+
+### L1441: 親task selectorをmanual negative-control fixtureへ継承させない
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_hotfix_precommit_task_selector_20260728
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_affected_deps.bats]
+- **origin**: [[cmd_karo_hotfix_precommit_task_selector_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- hookからtask runnerを起動するとNINJA_SCOPE_TASK_FILEがBats子プロセスへ残り、手動commit fixture 11/17件をtask modeへ誤分類した。fixture冒頭でunsetし必要ケースだけ設定するチェックを次回追加すべき。
+
+### L1442: task selectorとpre-commit selectorの同一正本化
+- **日付**: 2026-07-28
+- **出典**: cmd_karo_round4_impl_commit_hash_20260728
+- **記録者**: saizo
+- **tags**: [infra,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh,tests/unit/test_report_field_set_batch_throughput.bats]
+- **origin**: [[cmd_karo_round4_impl_commit_hash_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task runnerを2-path契約へ縮小しても旧pre-commitがchanged-files依存で22本へ再拡大した。task selector修正f5328f066/c3bb17b16後はpre-commitもfiles_selected=1へ一致。次回追加チェックはtask runnerとpre-commitのfiles_selected一致を二値確認する
+
+### L1443: 非同期子プロセスは親のlock FDを明示的に閉じる
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_heavy_admission_lock_release_20260729
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/heavy_job_admission.sh,tests/unit/test_heavy_job_admission.bats]
+- **origin**: [[cmd_karo_hotfix_heavy_admission_lock_release_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 非同期台帳writerは処理対象と無関係な親のflock FDも継承し、親exit後のlock解放を遅延させる。fork直後に所有外FDをcloseする二値契約を追加する。
+
+### L1444: identity検証追加時はfallback解決順序を先に保つ
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_archive_report_identity_race_20260728
+- **記録者**: saizo
+- **tags**: [infra,inbox,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_hotfix_archive_report_identity_race_20260728]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- active path前提のidentity検証をfallbackより前へ追加するとarchive移動raceで正規遅延通知が到達不能になる。候補解決→identity完全一致→副作用の順序をcontract test化する
+
+### L1445: batsテストfixtureは本番の.gitignore済みDBファイルへ絶対に依存させない(ローカルPASS・CI FAILの発生源)
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_ci_fix_30374243969_three_layer_knowledge_chain
+- **記録者**: kagemaru
+- **tags**: [infra,testing,db,deploy,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_three_layer_knowledge_chain.bats]
+- **origin**: [[cmd_karo_ci_fix_30374243969_three_layer_knowledge_chain]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- test_three_layer_knowledge_chain.batsのsetup_knowledge_write_fixtureは、data/multi_agent_shogun_memory.db(.gitignoreがwhitelist方式で個別許可していない本番運用ファイル)からCREATE TABLE文をsqlite3経由でコピーしていた。開発者のローカル環境には常にこのファイルが存在するためテストは常にPASSしていたが、fresh CI checkoutにはdata/ディレクトリ自体が存在せず、sqlite3.connect()が親ディレクトリ不在でOperationalErrorを送出し7/13 FAILした。教訓: テストfixtureがDBスキーマを必要とする場合は、本番ファイルを開いて複製するのではなく、正本スキーマ定義(例: scripts/memory_db_import.pyのCREATE TABLE文)をfixture内に直接インラインする。同リポジトリ内の他fixture(test_semantic_index_update.bats/test_insight_write.bats)は既にこのパターンを採用しており、今回はそれに合わせて統一した。次回同種のfixtureを書く際は『本番/gitignore済みファイルをテストのsetupで開いていないか』を一次チェック項目に加えるべき
+
+### L1446: run_tests.sh task経由の外部pytestプロジェクト実行は成功時でも偽FAIL(rc=2)になりうる
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_rebalancer_market_phase_refresh_20260729
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [backend/app/services/alpaca_stream.py,backend/tests/test_alpaca_stream_contract.py]
+- **origin**: [[cmd_karo_hotfix_rebalancer_market_phase_refresh_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/run_tests.shのreceipt生成(--receipt-inner)は、外部project(TEST_SELECTION result=external runner=pytest、例: rebalancer)でpytestを実行した際のサマリ行を、Jest形式の正規表現(L1208-1217)でしか解析しない。pytestの'N passed, M failed in Xs'形式は捕捉されずdeclared_test_count/observed_test_countが共に0のまま残り、L1223-1227の安全弁(『選択testが0件なら成功ではない』)がrc=2/result=FAILへ強制上書きする。実測: kagemaru task cmd_karo_hotfix_rebalancer_market_phase_refresh_20260729で`bash scripts/run_tests.sh task queue/tasks/kagemaru.yaml`を実行したところ、埋め込み生出力は'17 passed, 3 warnings'(実際は全PASS)だったがreceiptはrc=2/FAILだった。直接`python -m pytest`実行では同一条件で17 passed/0 failed/0 skippedを2回確認した。本タスクのplanned_pathsはrebalancer側2ファイルのみのためscripts/run_tests.shは対象外とし、karoへ報告する。
+
+### L1447: 外部pytest runnerはPASS件数をreceiptへ取り込めずfalse FAILになり得る
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_recalculate_sync_end_date_20260729
+- **記録者**: hayate
+- **tags**: [infra,testing,bash]
+- **subdomain**: infra
+- **target_files**: [backend/app/api/etl_trigger.py]
+- **origin**: [[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- run_tests.sh taskでpytest stdout 2 passed/FAIL0/SKIP0でもobserved_test_count=0, rc=2。次回追加チェック: external pytest stdout件数とreceipt observed_test_count一致を二値検証する
+
+### L1448: yaml_field_set.shは'-'をstdin規約として扱わない。literal値としてYAML parseされ[None]で静かに破損する
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_report_hook_result_canonicalization_20260729
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh,tests/unit/test_report_field_set_hook_canon.bats]
+- **origin**: [[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- report_field_set.shは第3引数に'-'を渡すとstdinを読む規約があるが、yaml_field_set.shには同じ規約が無い。yaml_field_set.sh <file> <block> test_necessity - のように'-'を位置引数の値として渡すと、structured type(list_or_mapping)がyaml.safe_load('-')を実行し、これは有効なYAML(1要素・値null のリスト)としてパースされて[None]になる。rc=0で成功したように見えるため、書込み後に値を確認しないと気づけない。両スクリプトのstdin規約を混同せず、yaml_field_set.shへ複数行/構造値を渡す時は必ずheredoc等でシェル変数へ展開してから位置引数として渡すこと
+
+### L1449: 外部source taskの暗黙full-suite fallback禁止
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_fullunit_scope_guard_20260729
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_fullunit_scope_guard_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次回チェック: 明示test 0なら全量へ拡大せず実行前BLOCKし、例外はHEAD一致fixed-SHA wave-final mappingだけ許可する。
+
+### L1450: task test_necessity構造値はstdin dashでなくJSON値を渡す
+- **日付**: 2026-07-29
+- **出典**: cmd_4192
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh,tests/unit/test_report_field_set_validation.bats,skills/report-write/SKILL.md]
+- **origin**: [[cmd_4192]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- yaml_field_set.shへdash stdinを渡すとtask.test_necessityが[None]になった。JSON list引数なら構造listとしてexact保存された。次回追加チェック: helper stdout直後に型とpathを読み戻し、list[dict]でなければcommit前停止。
+
+### L1451: 所有scopeとtest実行意思を同じpath集合で表現しない
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_task_selection_inferred_scope_20260729
+- **記録者**: saizo
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_task_selection_inferred_scope_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- planned_pathsのような推論可能な所有境界をtest実行入力へ流すと、scope拡張が全量test要求へ化ける。次回チェック: direct test集合のsourceをtest_path/files_modifiedに限定し、推論所有pathとの交差件数をfixtureで0と検証する。
+
+### L1452: CoDD SKILL同期taskはcontext/codd.mdを初期scopeへ含める
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729
+- **記録者**: tobisaru
+- **tags**: [infra,skill,gate,git]
+- **subdomain**: infra
+- **target_files**: [skills/codd-refactor/SKILL.md,context/codd.md]
+- **origin**: [[cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-288はCoDD source変更とcontext/codd.mdの同一commit同期を強制する。SKILL単独scopeではcommit段階で必ずBLOCKするため、配備テンプレートでcontext/codd.mdを事前注入すべき。
+
+### L1453: Level5 context注入はcommit所有scopeまで接続する
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_ga293_codd_scope_contract_20260729
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_karo_hotfix_ga293_codd_scope_contract_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 必読contextをcontext_hintsへ加えるだけでは同一commitを要求するpre-commit契約を満たせない。注入時にplanned_pathsと既存commit_contractへ冪等接続し、既存scope_expansion_reasonを保持する二値fixtureを置く。
+
+### L1454: context自己更新証拠は単体除外でなくeffective boundaryへ昇格せよ
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_ga414_context_freshness_20260729
+- **記録者**: tobisaru
+- **tags**: [infra,context,git]
+- **subdomain**: infra
+- **target_files**: [context/infrastructure.md,scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_ga414_context_freshness_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- context-writing commitを反映済みと分類しながら、その祖先候補を残すと同じALERTが再発する。source markerとalert latestの双方がcontext commit祖先である時だけ自動閉鎖し、後続sourceはALERT維持する。
+
+### L1455: 空lessons_usefulのbatch terminal readiness契約矛盾
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_round5_v5_fixed_window_track_a_20260729_recon2
+- **記録者**: hanzo
+- **tags**: [infra,gate,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hanzo_report_cmd_karo_round5_v5_fixed_window_track_a_20260729_recon2.yaml]
+- **origin**: [[cmd_karo_round5_v5_fixed_window_track_a_20260729_recon2]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- related_lessons空ではlessons_useful: []が正当とprecheck/templateが明記する一方、report_field_set.sh --batchのterminal readinessは空listをmissing扱いしてBLOCKする。次回追加すべきチェックはrelated_lessons空+lessons_useful空+terminal batchが正当に通る二値fixture。
+
+### L1456: 統合済みtest pathは実行前に実在確認する
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_hotfix_report_write_feedback_dirty_20260729
+- **記録者**: saizo
+- **tags**: [infra,skill,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/skill_gate_feedback.sh,skills/report-write/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_report_write_feedback_dirty_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 個別test名を推測して1回FAILさせた。次回はrgで現行test正本を特定し、test -f後にfile/filter実行するcheckを追加すべき
+
+### L1457: 並列検索のfallback重複は異なる層を取得しているように見えて同一I/Oを二重化する
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_round5_lane_inbox_write_total_20260729
+- **記録者**: tobisaru
+- **tags**: [infra,inbox,db]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_round5_lane_inbox_write_total_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- Memory検索とsemantic検索を並列化していても、semantic miss時のMemory fallbackが別プロセスで同じ大容量DB freshness/FTSを再実行した。各workerのfallback到達先まで分類し、専用ownerがある層は重複fallbackを無効化するチェックを追加すべき。
+
+### L1458: 診断検索の出力を次の検索入力へ再投入しない
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_round5_lane_cmd_save_checks_main_20260729
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save.bats]
+- **origin**: [[cmd_karo_round5_lane_cmd_save_checks_main_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- INFO専用semantic検索の広い関連結果をcausal検索へ再投入すると検索空間が自己増幅し、品質gate本体より大きい外れ値を作る。次回は外部検索childの入力が一次入力由来かをcontract testで固定する。
+
+### L1459: tmpdir cleanupの局所contractでは同一target内の別区間再発を防げない
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_round5_lane_full_precheck_20260729
+- **記録者**: hayate
+- **tags**: [infra,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh,tests/unit/test_gate_gunshi_report_precheck_cache.bats,tests/unit/test_gate_gunshi_report_precheck_direct_hash.bats]
+- **origin**: [[cmd_karo_round5_lane_full_precheck_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- SG-PRE21だけを検査するD002 contractが存在した一方、SG-PRE26に同じ再帰cleanupが残存した。禁止パターンはtarget全体を走査するcontractにせよ。次回追加チェック: target全実行コードの再帰削除0件。
+
+### L1460: 不変indexへの辺ごとgit照会を一括集合へ変換する
+- **日付**: 2026-07-29
+- **出典**: cmd_karo_round5_lane_git_precommit_sourced_dep_20260729
+- **記録者**: hanzo
+- **tags**: [infra,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_sourced_dep.bats]
+- **origin**: [[cmd_karo_round5_lane_git_precommit_sourced_dep_20260729]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 同一hook実行中に不変なgit indexを依存辺ごとにgit ls-filesすると辺数比例の子process外れ値になる。最初の必要時に全indexを1回loadしexact-key lookupする二値contractを追加せよ。
+
+### L1461: 台帳schema移行前にhash付きsnapshotと復元検証を必須化する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_round7_bullet0_run_identity_20260729
+- **記録者**: karo
+- **tags**: [schema-migration, data-loss, ledger]
+- **subdomain**: infra
+- **target_files**: [scripts/test_timing_ledger_write.sh,scripts/test_suite_timing_ledger_write.sh]
+- **origin**: [[弾0_schema移行]] -> [[snapshot_0件]] -> [[旧台帳完全復元不能]]
+- **enforcement**: Level2(検出): 復元不能を教訓化。Level4実装hotfixを直後配備する
+- **when**: 運用台帳のheader/schemaを変更するとき
+- **how**: publish前にhash付きsnapshotを作成し、旧行数とsnapshot行数一致、復元dry-run、移行後一意key整合を確認。1つでも不成立ならBLOCK
+- 弾#0でheader不一致を空台帳扱いした初回publishによりper-file 20731行・per-suite 1637行が失われ、8518個のreceipt/output/tap、Git、open inode、tmp/cache、ログ埋込を全数走査しても旧完全行0で復元不能だった。schema変更はpublish前snapshot、行数/hash検証、復元試験が揃わなければBLOCKする。
+
+### L1462: 分類語は問題説明本文ではなく目的宣言位置で判定する
+- **日付**: 2026-07-30
+- **出典**: cmd_4194
+- **記録者**: hayate
+- **tags**: [infra,gate,review]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_karo_startup.sh]
+- **origin**: [[cmd_4194]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- title/purpose全文の単純語彙一致は、分類器修正cmd自身の問題説明をレビュー専用と誤分類した。titleの専用語またはpurpose文頭の目的宣言へ限定し、実rawで偽陽性1→0を確認した。次回は分類対象自身をnegative fixtureへ必ず追加する。
+
+### L1463: task selector 0件は直接filter PASSで代替完了にしない
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_hotfix_ledger_schema_snapshot_guard_20260730
+- **記録者**: tobisaru
+- **tags**: [infra,testing,git,reporting]
+- **subdomain**: infra
+- **target_files**: [scripts/test_timing_ledger_write.sh,scripts/test_suite_timing_ledger_write.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_ledger_schema_snapshot_guard_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 直接filterとpre-commit affectedがPASSでも、配備契約のreport直前task selectorが0件ならL1449どおりFAIL報告するチェックを維持する
+
+### L1464: fixed-window弾の世代ラベルと数値を4点契約で照合する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_round5_lane_git_precommit_shell_syntax_20260730
+- **記録者**: saizo
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_affected_deps.bats]
+- **origin**: [[cmd_karo_round5_lane_git_precommit_shell_syntax_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- v5と指示されたn66五指標はv4正本値で、v5正本はn15だった。最適化前にexact境界・row_count・cohort hash・採用HEADを照合する二値チェックを次回追加すべき。
+
+### L1465: 失敗receiptとtiming cohortの公開条件を分離する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_ci_fix_round7_identity_atomic_publish_20260730
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_ci_fix_round7_identity_atomic_publish_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- receiptは失敗診断のためterminal公開が必要だが、性能序列用timing ledgerは成功時だけ公開する。次回チェックはpublisher直前にterminal success判定を二値確認する。
+
+### L1466: detached完了計測はqueue時でなく実処理後に記録する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_hotfix_round6_finalize_async_identity_20260730
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/archive_completed.sh,tests/unit/test_archive_completed_fail_close.bats,tests/unit/test_cmd_complete_gate_task_idle.bats]
+- **origin**: [[cmd_karo_hotfix_round6_finalize_async_identity_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 非同期queue投入を完了eventにすると未完了を成功計測する。次回チェックは子へcanonical identityを明示伝播し、実処理後だけ決定的event_idを記録、missing identityはBLOCKする。
+
+### L1467: 親runnerの計器イベントは凍結selected境界で集計する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_hotfix_scope_identity_nested_start_20260730
+- **記録者**: kotaro
+- **tags**: [infra,testing,fof]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_scope_identity_nested_start_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- nested childが親と同じSTART/DONE形式を出すため、artifact全体regex集合では外側scopeが膨張する。次回は親runの凍結selected集合へ所属するイベントだけを計器値へ採用するcontractを置く。
+
+### L1468: test-only task selectorは対象test自身をdirect選択せよ
+- **日付**: 2026-07-30
+- **出典**: cmd_round7_lane1_inbox_write_20260730
+- **記録者**: hayate
+- **tags**: [infra,testing,db,testing,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_round7_lane1_inbox_write_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- tracked testだけをtarget_pathに持つtaskでrun_tests.sh taskがfiles=0となり正規commitが停止した。共通修正dbf26c3de後はdirect=1 selected=1、102/102 PASS。次回チェックはtest-only scopeでselected=1をfixture化する。
+
+### L1469: 競合fixtureの固定sleepは待機対象eventを直接観測せよ
+- **日付**: 2026-07-30
+- **出典**: cmd_round7_lane3_heavy_job_20260730
+- **記録者**: hanzo
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_heavy_job_admission.bats]
+- **origin**: [[cmd_round7_lane3_heavy_job_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- owner保持時間をsleepで推測すると2件で8.394sを消費した。waiter票countを一次観測してreleaseすることでpriority/FIFO oracleを強化しつつmedian 15.569s短縮した。次回チェック: 固定sleepを見つけたら待機対象eventの実在を二値確認する。
+
+### L1470: timeout境界は実時計時でなく決定的失敗fixtureで検証する
+- **日付**: 2026-07-30
+- **出典**: cmd_round7_lane5_cmd_complete_gate_20260730
+- **記録者**: saizo
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_round7_lane5_cmd_complete_gate_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- flock -w 5の失敗oracleに実lock+sleep7を使うと毎走5秒を消費する。flock関数をreturn 1へ差替えて同一失敗分岐とstdout/exit oracleを即時検証する。
+
+### L1471: test-only taskをtask selectorが0件選択した
+- **日付**: 2026-07-30
+- **出典**: cmd_round7_lane6_report_batch_20260730
+- **記録者**: kotaro
+- **tags**: [infra,testing,db,testing,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_report_field_set_batch_throughput.bats]
+- **origin**: [[cmd_round7_lane6_report_batch_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- run_tests.sh taskは修正前にtarget testをfiles=1と読むがselected=0だった。共通修正dbf26c3de後selected=1。次回チェックはtest-only target自身がdirect選択されること。
+
+### L1472: 並行性fixtureは固定sleepでなく到達barrierを検証せよ
+- **日付**: 2026-07-30
+- **出典**: cmd_round7_lane7_run_tests_20260730
+- **記録者**: tobisaru
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_round7_lane7_run_tests_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 2 callerの重なりを固定1秒sleepで推測すると3 trialで6秒の人工待機になる。共有countをflock下で更新しcount=2到達をbarrierとして直接検証すれば、並行性oracleを強化しつつ待機を削減できる。次回チェック: sleepを見つけたら時間経過が契約か状態到達が契約かを二値分類する。
+
+### L1473: sed+eval関数再抽出は本番sourceで既に定義済みの関数を隠れて二重定義しWSL2 9p I/O課税を生みうる
+- **日付**: 2026-07-30
+- **出典**: cmd_round7_lane2_deploy_task_ac_20260730
+- **記録者**: kagemaru
+- **tags**: [infra,testing,deploy,testing,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_deploy_task_ac_handling.bats]
+- **origin**: [[cmd_round7_lane2_deploy_task_ac_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- test_deploy_task_ac_handling.batsのsetup()はverify_ac_consistencyを毎test`eval "$(sed -n ... "$SRC_DEPLOY_SCRIPT")"`で再抽出していたが、対象関数はdeploy_task_scaffold内の`source "$TEST_PROJECT/scripts/deploy_task.sh"`で既に通常関数として定義済みであり、抽出は死んだ二重定義だった。加えて抽出元が/mnt/c実体(WSL2 9p)を指していたため1回210-260msのI/O課税が全49testに波及していた。次回チェック: 特定関数だけをeval抽出するコードを見たら、まず`declare -F <関数名>`または実際に呼び出して既に利用可能か確認し、かつ読取元がnative fs(/tmp配下の既存コピー)かWSL2 9pマウント(/mnt/c)かを区別する
+
+### L1474: 小型git fixtureもclone反復をCOWコピーへ置換して境界を敵対確認する
+- **日付**: 2026-07-30
+- **出典**: cmd_round7_lane9_campaign_shard_20260730
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,git]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_campaign_lane_shard_item.bats]
+- **origin**: [[cmd_round7_lane9_campaign_shard_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 全test setupのgit cloneは小型fixtureでも反復I/Oになる。cp --reflink=autoへ置換し、複製側git config変更後に正本fixtureが不変であるassertionを同時追加する
+
+### L1475: テスト内で本番関数のrepo/quarantineパスをオーバーライドし忘れると実repoへのgit走査で重量化する
+- **日付**: 2026-07-30
+- **出典**: cmd_round7_lane10_ninja_monitor_stall_20260730
+- **記録者**: kagemaru
+- **tags**: [infra,testing,deploy,testing,git]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_ninja_monitor_stall.bats]
+- **origin**: [[cmd_round7_lane10_ninja_monitor_stall_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- test_ninja_monitor_stall.bats の run_lock_cleanup テストは、内部で呼ばれるrun_scratch_retentionのSCRATCH_RETENTION_REPO/SCRATCH_QUARANTINE_DIR環境変数(本番コード側で既にオーバーライド可能に設計済み)を未設定のまま実行しており、repo=${SCRIPT_DIR}(実リポジトリ)へフォールバックしてgit worktree list --porcelainを実行、drvfs上で約2.1秒を消費していた(78test中2位の重量、bats -T実測2138ms)。同時にmkdir -p /mnt/c/tools/shogun-scratch-quarantine/autoという実ホストパスへの副作用も毎回発生していた。テスト側でSCRATCH_RETENTION_REPO=隔離tmp, SCRATCH_QUARANTINE_DIR=隔離tmp配下を明示設定しgit init -qで最小repo化することで167-203msへ短縮し実repoへの副作用も消えた。教訓: 「関数呼び出しテストで、SCRIPT_DIR等グローバルパスに依存する関数を呼ぶ際、その関数がオーバーライド変数を提供しているかを確認し、明示設定してテストを実repoから隔離すべき」。同様の罠が他のtestファイル(SCRIPT_DIR依存関数を呼ぶがオーバーライドしていないテスト)にも存在しうる
+
+### L1476: early precheckは初期化済みroot SSOTだけを参照する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_hotfix_cmd_save_deploy_time_contract_parity_20260730
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_save.sh,scripts/deploy_task.sh,scripts/lib/time_contract_validator.py,tests/unit/test_time_contract_validator.bats]
+- **origin**: [[cmd_karo_hotfix_cmd_save_deploy_time_contract_parity_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- direct --yamlはPROJECT_DIR設定前にtime precheckへ到達するため、ファイル先頭で確立済みSCRIPT_DIRを使わないとvalidator実行前に未定義変数でBLOCKする。次回はearly callerごとに初期化順fixtureを追加する。
+
+### L1477: bashの$$はbackgroundサブシェル間で不変。ninja_name等の共有識別子だけをkeyにしたtmpファイル名は&並列化で即座に衝突する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_recon_test7_parallel_race_20260730_recon2
+- **記録者**: kagemaru
+- **tags**: [infra,deploy,testing,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/kagemaru_report_cmd_karo_recon_test7_parallel_race_20260730_recon2.yaml]
+- **origin**: [[cmd_karo_recon_test7_parallel_race_20260730_recon2]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- test_deploy_task.bats test7の5並列fixtureは全てninja_name=sasuke固定で呼ばれ、deploy_task.shのqueue/reports/.deploy_active_sasuke(.tmp)という単一flight indexを共有していた。修正候補として.tmpサフィックスを$$で一意化しようとしたが、bashの$$はトップレベルシェルのPIDで&でbackground化した子プロセス間でも不変(変化するのは$BASHPIDのみ)であるため無効だった。教訓: 並列化されたbashコードで一時ファイル名を一意化する際は$$ではなく$BASHPIDを使う。加えてset -euo pipefailがsource元プロセス全体に効くため、if/&&/||で保護されていないmv/rm等の1回の失敗がbackgroundジョブ全体を無警告でabortさせる点も、並列化コミット(cmd_round7_lane4_deploy_task_20260730)の'independent'という前提評価に見落としがあったことを示す
+
+### L1478: 共有pointerのatomic mvはwriter固有tmpを必要とする
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_hotfix_deploy_active_pointer_tmp_race_20260730
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_active_pointer_tmp_race_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- atomic mvでも複数writerが同じtmp pathnameを共有すると、一方が他方のtmpをmoveして残るwriterが失敗する。pointer writerはBASHPID等でtmpを固有化し、並列反復とstale tmp非干渉をcontract化する。
+
+### L1479: 計装前固定歴史窓は自然蓄積でcoverageが増えない
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_recon_round6_p1b_readiness_20260730
+- **記録者**: saizo
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [docs/research/throughput-bottleneck-part2-asis-tobe-5w1h_20260728.md]
+- **origin**: [[cmd_karo_recon_round6_p1b_readiness_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 固定母集団を計装前に完了した53弾へ固定したまま自然蓄積を待つと、後続cmdのidentity eventは分母へ入らずcoverageは永久に0/53である。次回は固定窓の時点と計装開始時点の整合を二値確認し、過去窓ならbackfill可否を先に判定する。
+
+### L1480: gate診断接頭辞は最終分類前にALERT/WARNを使わない
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_hotfix_ga416_p_average_dns_fallback_20260730
+- **記録者**: karo
+- **tags**: [gate, api, classification]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_p_average_freshness.sh,tests/unit/test_gate_p_average_freshness_dns_fallback.bats]
+- **origin**: [[GA-416]] -> [[分類前ALERT接頭辞]] -> [[fresh誤ALERT]]
+- **enforcement**: 未自動化
+- **when**: gate出力を後段が接頭辞で分類する時
+- **how**: 診断はDIAG、最終分類だけALERT/WARN、到達性分岐を全数fixture検証
+- **if**: 最終分類前に状態接頭辞を出す
+- **then**: 中立接頭辞へ変更し分類関数へ一元化
+- **because**: 先出し状態文字列が後段判定を汚染するため
+- 最終分類前の診断行にALERTまたはWARN接頭辞を付けると、消費側のテキスト一致判定がfresh結果まで異常扱いする。中立DIAGを使い、最終分類の一箇所だけで状態接頭辞を出力する。到達性障害はDNS・timeout・5xxを全数走査しDB鮮度fallbackと独立判定する。
+
+### L1481: gate改修時はALERT/WARN確定を分類ロジック内に一元化せよ。診断echoの先出しに'ALERT:'接頭辞を使うと消費側テキスト一致検出が誤発火する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_hotfix_ga416_p_average_dns_fallback_20260730
+- **記録者**: kagemaru
+- **tags**: [infra,gate,db,api,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_p_average_freshness.sh,tests/unit/test_gate_p_average_freshness_dns_fallback.bats]
+- **origin**: [[cmd_karo_hotfix_ga416_p_average_dns_fallback_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-416: gate_p_average_freshness.shのDNS障害診断が分類結果(fresh/stale/判定不能)確定前に'ALERT: p̄鮮度: API_BASE DNS解決失敗'を無条件echoしていた。scripts/gate_improvement_trigger.sh:397 evaluate_gate_result()は'exit_code==1 OR output中に"ALERT:"を含む'をALERT判定条件とするため、DB fallbackがfresh(exit 2/WARN)と正しく判定してもこの先出し行のせいでgate_alerts.yamlへ誤ってGA-IDが記録される構造だった。教訓: 複数分岐で最終判定が後段まで確定しないgateスクリプトは、確定前の診断出力に'ALERT:'/'WARN:'接頭辞を使うな(DIAG:等の中立接頭辞を使い、ALERT:/WARN:は最終分類の1箇所でのみ出力せよ)。同種の消費側テキスト一致(output_has_alert_prefix)を持つ他gateでも同型バグが潜在しうるため横展開候補。
+
+### L1482: timeoutの137はkill-after完了を示す正常timeout境界
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_hotfix_prepush_snapshot_cleanup_timeout_20260730
+- **記録者**: hanzo
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [.githooks/pre-push,tests/unit/test_pre_push_dirty_tree_guard.bats]
+- **origin**: [[cmd_karo_hotfix_prepush_snapshot_cleanup_timeout_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- timeout --kill-afterでTERM無視子孫をKILLした場合rc137となる。124だけをtimeout扱いすると正常な強制静止を実failureへ誤分類するため、124/137をtimeout契約として二値fixtureで守る。
+
+### L1483: 自己参照checkpointのHEAD/aheadは基準時点値として扱い復帰時に再計測する
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_persist_strong_new_game_checkpoint_20260730
+- **記録者**: hayate
+- **tags**: [infra,process,git]
+- **subdomain**: infra
+- **target_files**: [docs/research/karo-strong-new-game-checkpoint-20260730-1225.md]
+- **origin**: [[cmd_karo_persist_strong_new_game_checkpoint_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- checkpoint自身のcommitでHEADとaheadが即変化するため固定値を現在地と表記するとcommit直後にstale化する。固定値は基準時点を明記し、復帰手順へgit rev-parse HEADとgit rev-list --count origin/main..HEADの実走を組み込む。
+
+### L1484: hook fixtureはtracked正本の実行modeを暗黙継承せず自己完結させる
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_ci_fix_30514131026_cmd_complete_gate_baseline
+- **記録者**: saizo
+- **tags**: [infra,testing,frontend,monitor]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_ci_fix_30514131026_cmd_complete_gate_baseline]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- tracked hookが100644でも開発作業木では777が残り、絶対core.hooksPath fixtureがローカルPASS/clean CI FAILになった。fixture専用hooksへ明示modeでinstallし、clean harnessでFAIL→PASSを測るチェックを次回から追加する。
+
+### L1485: 永続contract宣言とCI実行集合を同一SSOTから生成せよ
+- **日付**: 2026-07-30
+- **出典**: cmd_karo_recon_hidden_infra_test_ci_quality_20260730
+- **記録者**: kotaro
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [queue/reports/kotaro_report_cmd_karo_recon_hidden_infra_test_ci_quality_20260730.yaml]
+- **origin**: [[cmd_karo_recon_hidden_infra_test_ci_quality_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- test_necessity宣言177 filesのうち97 filesがpush CI集合外だった。次回チェック: 全永続contractをrunner種別付きで列挙しCI所属N/Nを二値検査する。
+
+### L1486: 外側flock内で同一lock取得helperを子process起動すると自己timeoutし、OR-list文脈はerrexitも無効化する
+- **日付**: 2026-07-31
+- **出典**: cmd_karo_recon_hidden_infra_deploy_lifecycle_20260730
+- **記録者**: hanzo
+- **tags**: [infra,api,testing,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hanzo_report_cmd_karo_recon_hidden_infra_deploy_lifecycle_20260730.yaml]
+- **origin**: [[cmd_karo_recon_hidden_infra_deploy_lifecycle_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 共有YAMLのtransactionを外側flockで包む際、同じ.lockを取得するyaml_field_set.shを子processで呼ばない。さらに `(commands) || rc=$?` はsubshell内set -eを抑止するため、各mutation RCを明示集約し、失敗時byte restoreを二値検証する。今回2 setter/2 timeoutが偽成功rc=0へ進んだ。次回追加check=外lock中のnested setter 0件、mutation failure注入時publication 0件・before=after。
+
+### L1487: 解決状態と棄却状態を混同しない
+- **日付**: 2026-07-31
+- **出典**: cmd_karo_recon_hidden_infra_learning_observability_20260730
+- **記録者**: tobisaru
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [queue/reports/tobisaru_report_cmd_karo_recon_hidden_infra_learning_observability_20260730.yaml]
+- **origin**: [[cmd_karo_recon_hidden_infra_learning_observability_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- semantic候補を索引変更なしでresolvedにするとaction_artifactが虚偽になる。discarded_noiseを別状態とし理由・証拠を機械生成すべき
+
+### L1488: hook matcher到達可能性とexit契約を静的監査せよ
+- **日付**: 2026-07-31
+- **出典**: cmd_karo_recon_hidden_infra_gate_hooks_20260730
+- **記録者**: hayate
+- **tags**: [infra,gate]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_recon_hidden_infra_gate_hooks_20260730.yaml]
+- **origin**: [[cmd_karo_recon_hidden_infra_gate_hooks_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- script内に拒否分岐があってもmanifest matcherが到達させず、既存policy gate 5/5 PASSでもFNを検出しなかった。command exit1とmatcher到達可能性を生成時に二値検査する。
+
+### L1489: 完了証跡は完全一致かつdurable receipt後に公開せよ
+- **日付**: 2026-07-31
+- **出典**: cmd_karo_recon_hidden_infra_completion_review_20260730
+- **記録者**: saizo
+- **tags**: [infra,frontend]
+- **subdomain**: infra
+- **target_files**: [queue/reports/saizo_report_cmd_karo_recon_hidden_infra_completion_review_20260730.yaml]
+- **origin**: [[cmd_karo_recon_hidden_infra_completion_review_20260730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd ID部分一致とdispatch前marker/親exit0はいずれも受付を完了証跡と誤認する。同一identityの完全一致とterminal receiptをcheckpoint公開条件へ強制する。
+
+### L1490: test_select.shの依存マップがscripts/report_field_set.shに対しtest_report_field_set_validation.batsを含まない
+- **日付**: 2026-07-31
+- **出典**: cmd_karo_hotfix_rfs_idkey_normalization_20260731
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh,tests/unit/test_report_field_set_validation.bats]
+- **origin**: [[cmd_karo_hotfix_rfs_idkey_normalization_20260731]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- bash scripts/test_select.sh scripts/report_field_set.sh の出力(22/185)にtest_report_field_set_validation.batsが含まれない。同ファイルは$SCRIPT変数経由でreport_field_set.shを直接呼ぶ既存46テストを持つにもかかわらず対象外。run_tests.sh task モードのdependency_map選定もこれを継承し、当該taskの明示的attribution対象から漏れる。修正時は依存マップに頼らず対象スクリプトのbasename規則(test_<script>*.bats)を手動grep確認し、直接bats実行で二重検証すべき。
+
+### L1491: external taskのcontext還流commitがtest selectorで構造BLOCK
+- **日付**: 2026-07-31
+- **出典**: cmd_4199
+- **記録者**: hanzo
+- **tags**: [dm-signal,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/analysis/cmd_4199_execution_delay_sensitivity.py,docs/research/cmd_4199_execution_delay_returns.csv,docs/research/cmd_4199_execution_delay_metrics.csv,docs/research/cmd_4199_execution_delay_split_metrics.csv,docs/research/cmd_4199_execution_delay_sensitivity.md]
+- **origin**: [[cmd_4199]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- external_scope_no_mapped_testsは実行対象0件なのにrc=2 FAILとなり、context-only reflux commitを正規helperが拒否する。次回はexternal taskの本陣context pathをtask test ownershipへ含めるチェックが必要。
+
+### L1492: reflux inventoryのzero_backlinks指標はcausal_backlink_counts.sh --limit 50の頭打ちで個別解消の効果を隠しうる
+- **日付**: 2026-07-31
+- **出典**: cmd_reflux_backlink_202607311036_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,context,bash]
+- **subdomain**: infra
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_reflux_backlink_202607311036_kagemaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_reflux_backlink_202607311036_kagemaruで対象文書のincomingを0→2に解消したが、AC2で参照するzero_backlinks在庫数(bash scripts/causal_backlink_counts.sh --zero --limit 50 | wc -l)は解消前後とも50のままで変化が見えなかった(実際の総backlog>50でlimitに頭打ちのため)。AC2の在庫サマリだけを見ると『進捗なし』に誤読されうる。今後この種のtaskでは在庫サマリに加え、対象文書個別のincoming実測(causal_backlink_counts.sh全件出力からgrep)を一次証拠として必ず併記すべき
+
+### L1493: 完了reflux非発火と鮮度gate検出を混同しない
+- **日付**: 2026-07-31
+- **出典**: cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427
+- **記録者**: saizo
+- **tags**: [infra,context,gate,git,cache]
+- **subdomain**: infra
+- **target_files**: [context/infrastructure.md]
+- **origin**: [[cmd_karo_hotfix_ga418_infrastructure_freshness_202607311427]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 完了refluxは当該cmd自身の未反映commitだけをBLOCKし、後続別cmd/direct fixを先行contextへ自動追記しない。cache無効gateで次の境界差分を全件検出してからexact source_commitを進める。
+
+### L1494: fail-closed依存のfixtureはproduction前提を明示生成する
+- **日付**: 2026-07-31
+- **出典**: cmd_karo_ci_fix_30608934057_deploy_task_backlink_selector
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_deploy_task.bats]
+- **origin**: [[cmd_karo_ci_fix_30608934057_deploy_task_backlink_selector]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 依存scriptが欠落入力をfail-closed化した際、呼出側test fixtureが必須dirを生成せずfallback経路へ落ちた。次回はselector依存追加時にrequired input dirsをfixture helperで全件生成し、focused clean-CIでprimary selector成功を二値確認する。横展開候補はcausal_backlink_counts.shを直接/間接利用する全fixture。防御層はLevel5の共通fixture生成。
+
+### L1495: LG051はdocs basenameだけでgate/hook/dispatcher実装変更と判定して偽陽性になる
+- **日付**: 2026-07-31
+- **出典**: cmd_4200
+- **記録者**: hanzo
+- **tags**: [infra,frontend,gate]
+- **subdomain**: infra
+- **target_files**: [docs/research/hidden-infrastructure-gate-hook-remediation-design-20260730.md,docs/research/hidden-infrastructure-gate-hook-r01-receipt-20260731.txt]
+- **origin**: [[cmd_4200]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- docs/research/hidden-infrastructure-gate-hook-*のみの変更でもLG051が発火した。次回は変更pathの拡張子と実行可能性を先に分類し、docs/data-onlyならcaller一次証跡要求を適用しない二値チェックをgateへ追加すべき。本taskではscope外実装を行わず候補記録のみ。
+
+### L1496: task/inbox指示の『前報告は有効・再利用可』前提は実体確認してから従え
+- **日付**: 2026-07-31
+- **出典**: cmd_4200
+- **記録者**: kagemaru
+- **tags**: [infra,testing,gate,git,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/durable_state.py,scripts/lib/durable_state.sh,tests/unit/test_durable_state.bats]
+- **origin**: [[cmd_4200]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_4200 kagemaru AC2で、家老からのinbox指示は『前報告の実測・成果物は有効。commit a4aca2ccは保持し、L039だけ除外して再提出せよ』だったが、実際にはgit全履歴・reflog・fsck(unreachable含む)・全worktree・報告archiveのどこにもcommit a4aca2ccや対象3ファイルの実体が存在しなかった。指示を鵜呑みにしてL039だけ除外して再提出していれば、存在しない成果物についてPASS報告を捏造することになっていた。実体確認→矛盾発見→家老へblocked typeで報告(report_received系typeはgate_report_format完了強制がかかり使えないため注意)→家老から『外部repo混同、無関係』の回答を得て新規実装に切替、で正しく解決した。
+
+### L1497: artifact後続更新時のmanifest SHA追随検査
+- **日付**: 2026-07-31
+- **出典**: cmd_4200
+- **記録者**: saizo
+- **tags**: [infra,gate,git]
+- **subdomain**: infra
+- **target_files**: [docs/research/hidden-infrastructure-gate-hook-canonical-manifest-20260731.yaml]
+- **origin**: [[cmd_4200]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 外部artifactの内容を後続commitで変えた際、参照manifestのSHA再計測を同一commit gateで強制すべき。修正前sha_bad=1から修正後0。
+
+### L1498: review manifest集合は全callerでtask report_filename正本へ統一する
+- **日付**: 2026-07-31
+- **出典**: cmd_karo_recon2_cmd_complete_manifest_resume_20260731
+- **記録者**: kotaro
+- **tags**: [infra,testing,review,gate]
+- **subdomain**: infra
+- **target_files**: [queue/reports/kotaro_report_cmd_karo_recon2_cmd_complete_manifest_resume_20260731.yaml]
+- **origin**: [[cmd_karo_recon2_cmd_complete_manifest_resume_20260731]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 固定basename globとtask report_filename resolverが併存すると派生名報告がmarker集合から欠落し、CLEAR後resumeで集合差BLOCKになる。marker生成と再検証は共有resolverを使い、canonical archive containmentも同時検証する
+
+### L1499: realpath正規化だけではdot-segment入力を拒否できない
+- **日付**: 2026-08-01
+- **出典**: cmd_karo_hotfix_archive_review_canonical_allowlist_20260801
+- **記録者**: tobisaru
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/review_bundle.py,tests/unit/test_review_bundle.py,docs/research/archive-review-reapproval-path-audit-20260801.md]
+- **origin**: [[cmd_karo_hotfix_archive_review_canonical_allowlist_20260801]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 正規化結果の一致前にlexical入力自身のcanonical性を二値検証し、共有registry identityとの組で照合する
+
+### L1500: task契約改訂時はnested commit_contractも同時更新
+- **日付**: 2026-08-01
+- **出典**: cmd_4202
+- **記録者**: kagemaru
+- **tags**: [infra,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_4202_skill_script_followup_inspection.md]
+- **origin**: [[cmd_4202]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- planned_paths改訂後にcommit_contractが旧値のままでrun_testsがBLOCK。改訂helperは両者一致を二値検証すべき
+
+### L1501: 終端FAILはimplementation identity更新を要求せず正式close可能にせよ
+- **日付**: 2026-08-01
+- **出典**: cmd_4204
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/review_approval.sh,tests/unit/test_archive_completed_fail_close.bats,tests/unit/test_review_approval_rc_task_status_atomic.bats]
+- **origin**: [[cmd_4204]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- RC後に実装不能/失敗を正直にFAIL報告した場合、同一commit拒否guardを適用するとfail-close証跡が到達不能になる。CLEARを作らないfail_close分岐だけをidentity guardから免除するcontract testを次回も維持する。
+
+### L1502: 関連度boostは適用可能性の証拠ではない
+- **日付**: 2026-08-01
+- **出典**: cmd_karo_hotfix_lesson_injection_precision_20260801
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,research]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats,tests/unit/test_deploy_task_ac_handling.bats,tests/unit/test_deploy_task.bats]
+- **origin**: [[cmd_karo_hotfix_lesson_injection_precision_20260801]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- keyword/semantic boostやproject一致は、task種別×tagsと具体的when/scope/target_filesを通過した候補の順位だけを変えるべき。候補入口を代替させると全corpusでFPが増える。次回は全corpus confusion matrixをcontractとして先に実走する。
+
+### L1503: 既存legacy欠損は不変multisetで隔離せよ
+- **日付**: 2026-08-01
+- **出典**: cmd_karo_hotfix_shared_operational_log_ownership_20260801
+- **記録者**: tobisaru
+- **tags**: [infra,gate,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/report_commit_nonoverlap_filter.sh,scripts/gates/gate_report_format.sh,tests/unit/test_report_commit_nonoverlap_filter.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats]
+- **origin**: [[cmd_karo_hotfix_shared_operational_log_ownership_20260801]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 新identity契約導入時、既存欠損を全体BLOCKすると安全な追記まで停止する。欠損entryのcanonical multisetが前後不変の場合だけgrandfatheringし、新規欠損・変更はBLOCKする。
+
+### L1504: appendとarchiveはreaderを含むgeneration transactionにせよ
+- **日付**: 2026-08-01
+- **出典**: cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801
+- **記録者**: saizo
+- **tags**: [infra,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_cs_checklist.sh,scripts/gunshi_log_append.sh,tests/unit/test_gate_gunshi_cs_checklist.bats,logs/gunshi_review_log.yaml]
+- **origin**: [[cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- writer間flockだけではappend後archive前をreaderが観測できる。reader shared lockとwriter exclusive lockを同じauthorityに置き、archive/mainをatomic renameする
+
+### L1505: 永続test宣言はtask正本に置く
+- **日付**: 2026-08-01
+- **出典**: cmd_4206
+- **記録者**: hanzo
+- **tags**: [infra,context,testing,git]
+- **subdomain**: infra
+- **target_files**: [context/infrastructure.md,docs/research/infrastructure-context-memory.md,docs/research/infrastructure-agents-delivery.md,docs/research/infrastructure-platforms-operations.md,docs/research/infrastructure-lessons-deploy-gates.md]
+- **origin**: [[cmd_4206]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ninja_scope_commitはreportでなくtask.test_necessityを読む。reportだけへ宣言するとtransient削除されるため、配備時taskへ構造注入するチェックが必要。
+
+### L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ
+- **日付**: 2026-08-01
+- **出典**: cmd_karo_hotfix_active_context_gate_transient_20260801
+- **記録者**: kagemaru
+- **tags**: [infra,gate,deploy]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_lesson_health.sh,scripts/gates/gate_context_freshness.sh,scripts/deploy_task.sh,scripts/lib/yaml_field_set.sh,tests/unit/test_gate_lesson_health_active_context_owner.bats]
+- **origin**: [[cmd_karo_hotfix_active_context_gate_transient_20260801]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- owner存在だけでは完了済みclean状態を誤って隠す。deploy時blobとprogress_updated_atをauthorityにし、terminal後再検出を必須化する
+
+### L1507: chunk値の安全性はcommit・unit PASSでなく本番rows>0・terminal完走で確定する
+- **日付**: 2026-08-01
+- **出典**: cmd_karo_hotfix_ga422_context_freshness_20260801
+- **記録者**: kagemaru
+- **tags**: [infra,context,deploy,testing,git]
+- **subdomain**: infra
+- **target_files**: [context/dm-signal-core.md,context/dm-signal-ops.md]
+- **origin**: [[cmd_karo_hotfix_ga422_context_freshness_20260801]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次回はchunk境界変更後、開始時刻後のupdated_at、例外0、rows>0、terminal完走を二値チェックし、1件でも未確認ならcontextへ再検証中と記載する。active DEFER後もterminal遷移で必ず再検出する。
+
+### L1508: prepared publication key
+- **日付**: 2026-08-01
+- **出典**: cmd_4205
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality,git]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd-save-check-inventory-v1.yaml,scripts/cmd_skeleton.sh,scripts/cmd_save.sh,tests/unit/test_cmd_skeleton.bats]
+- **origin**: [[cmd_4205]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ledger commit前のqueue entryはprepared_cmd_N非公開キーへ置き、commit後にcmd_Nへatomic昇格すると、既存consumerを全改修せず部分公開0を保証できる。
+
+### L1509: 実装前review receiptはtask identityとAC fingerprintの双方へ結合する
+- **日付**: 2026-08-01
+- **出典**: cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,review]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_pre_implementation_review.bats]
+- **origin**: [[cmd_karo_hotfix_bugfix_dual_review_enforcement_20260801]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LGTM存在だけでは別task・task変更後stale receiptを再利用できる。task_idとac_versionをreceiptへ保存し配備入口で一致を強制する
+
+### L1510: field存在率100%とcanonical pair成立を分離計測せよ
+- **日付**: 2026-08-01
+- **出典**: cmd_4210
+- **記録者**: hanzo
+- **tags**: [infra,gate]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_4210_p1b_identity_coverage_snapshot_20260801.md]
+- **origin**: [[cmd_4210]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 5 phaseすべてcmd_id+64hex generationが100%でも、karo_accept→task_idleは同一cmd 99件のgeneration一致が0件だった。次回gateはfield completenessだけでなく隣接phase exact (cmd_id,generation) pairを二値検査すべき。
+
+### L1511: 未読0は任務なしの証拠ではない
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_tobisaru_failed_recovery_20260802
+- **記録者**: tobisaru
+- **tags**: [infra,testing,yaml,inbox,reporting]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_durable_state.bats]
+- **origin**: [[cmd_karo_hotfix_tobisaru_failed_recovery_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task YAMLがfailedなのにinbox未読0だけを見て新規任務なしと判断しidle_noticeを送った。待機前は必ず自task statusとreport終端を一次確認し、failed/pendingなら回復報告へ進むチェックを追加すべき。
+
+### L1512: 同期fallback前に親lockを解放せよ
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_completion_workers_tmux_detach_20260802
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete.sh,scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_wrapper.bats,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_completion_workers_tmux_detach_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- async workerの同期fallbackは親が保持する同一checkpoint lockを子が再取得して自己deadlockする。fallback前にflock -uとfd closeを必須確認する
+
+### L1513: writer rc=0は成果receiptではない
+- **日付**: 2026-08-02
+- **出典**: cmd_4214
+- **記録者**: hanzo
+- **tags**: [infra,gate,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_skill_script_refs.sh,scripts/gates/gate_karo_startup.sh,tests/unit/test_gate_skill_script_refs.bats]
+- **origin**: [[cmd_4214]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- followup writerがSKIP:INS-*でもrc=0を返す境界では、rcだけで新規投入成功と判定すると未処理を隠す。stdout receiptを新規/既存/失敗へ型分けし、未解消状態はPASSへ落とさないチェックを次回gate writer連携へ追加する。
+
+### L1514: 進捗freshnessとSTALL閾値を直列加算するな
+- **日付**: 2026-08-02
+- **出典**: cmd_4213
+- **記録者**: tobisaru
+- **tags**: [infra,ninja-monitor,monitor]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_stall.bats]
+- **origin**: [[cmd_4213]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- RUNTIME idleを単一時計で測る。次回checkはidle継続N分fixtureでalert/nudgeを二値化。
+
+### L1515: 高価なcache整合処理は書込ごとのpushではなく読取stale検知で需要駆動せよ
+- **日付**: 2026-08-02
+- **出典**: cmd_4212
+- **記録者**: kagemaru
+- **tags**: [infra,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_live_insert.py]
+- **origin**: [[cmd_4212]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- IF 大容量cacheが既にstale拒否・single-flight・atomic fallbackを持つ THEN live eventごとの全量同期refreshを重ねず、reader demand時だけ更新する。次回checkはtrigger別件数を台帳で分離する。
+
+### L1516: 削除必須一時testをtask selector planned pathへ残すと最終receiptが自己矛盾する
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_viewer_rotation_recovery_20260802
+- **記録者**: kagemaru
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [backend/app/jobs/password_rotation.py]
+- **origin**: [[cmd_karo_hotfix_viewer_rotation_recovery_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 一時test 2/2 PASS後にACどおり削除したがrun_tests taskがplanned pathを選択しfile not found rc4。次回はtransient testをselector所有pathから除外する契約を追加する。
+
+### L1517: 自動配備inventoryは分析helper出力をGit追跡境界で再検証する
+- **日付**: 2026-08-02
+- **出典**: cmd_reflux_backlink_202608020948_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,ninja-monitor,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_training_auto.bats,docs/semantic-index/index.md]
+- **origin**: [[cmd_reflux_backlink_202608020948_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 分析helperがuntracked成果物を意図的に可視化しても、自動配備は他cloneで実在するtracked候補だけを採用するcontract testを置く
+
+### L1518: terminal report fixtureはtask side effectも隔離する
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_fail_close_truthful_terminal_20260802
+- **記録者**: saizo
+- **tags**: [infra,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh,scripts/gates/gate_report_format.sh,tests/unit/test_report_field_set_batch.bats]
+- **origin**: [[cmd_karo_hotfix_fail_close_truthful_terminal_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- report出力だけをtmp化してもreport_field_setのfailed publishは既定queue/tasks/{worker}.yamlを更新する。次回はRFS_TASK_FILE_PATHを一時taskへ必ず向け、実task status不変をfixture後に二値確認する
+
+### L1519: canonical receiptへidentityを追記せずsidecarで厳密再利用する
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_precommit_receipt_index_latency_20260802
+- **記録者**: hanzo
+- **tags**: [infra,skill,git]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,skills/ninja-commit/SKILL.md,tests/unit/test_git_pre_commit_affected.bats]
+- **origin**: [[cmd_karo_hotfix_precommit_receipt_index_latency_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- strict schemaのreceiptを直接拡張すると既存verifyを壊す。commit-boundary identityはatomic sidecarに分離し全一致時のみ再利用する
+
+### L1520: task runner終端receiptを明示パスで検証する
+- **日付**: 2026-08-02
+- **出典**: cmd_4215
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/head_fixed_validation.sh,tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_4215]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- leader表示だけではPASSでない。明示receiptのcomplete=true、rc=0、skip_count=0を二値確認する
+
+### L1521: shared-file帰属はpath/blob全体でなくtask-owned normalized hunkで判定する
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_report_shared_provenance_fp_20260802
+- **記録者**: kotaro
+- **tags**: [infra,gate,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh,scripts/gates/gate_report_format.sh,.claude/hooks/post-bash-commit-reminder.sh,tests/unit/test_report_field_set_validation.bats,tests/unit/test_post_bash_commit_reminder.bats]
+- **origin**: [[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- planned path全件やHEAD blob全体比較は後着appendを本人未commitと誤認する。report申告とcommit変更の片側欠落をBLOCKし、両側不存在は除外、同一pathは空白正規化changed tokenで本人hunkとの交差を判定する。
+
+### L1522: async送達の最終判定は同一tickの複合証拠で行う
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_async_delivery_verify_20260802
+- **記録者**: kagemaru
+- **tags**: [infra,inbox,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_hotfix_async_delivery_verify_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- watcher委譲後にread/taskだけを待機中確認するとpane working遷移を最終境界で見落とす。各wait tickでread/task/paneを同じhelperにより評価する。
+
+### L1523: CDP target closeはbrowser cleanupではない
+- **日付**: 2026-08-02
+- **出典**: cmd_4218
+- **記録者**: tobisaru
+- **tags**: [infra,api,cdp]
+- **subdomain**: infra
+- **target_files**: [scripts/cdp/cdp_session.py]
+- **origin**: [[cmd_4218]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- target close後もendpoint/profileが残存した。Browser.closeをWebSocketで送信し応答確認後にendpoint停止を測定してからprofileを削除するチェックを次回追加すべき。
+
+### L1524: 再検証対象は固定archive pathとSHAを対で注入する
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_verify_fixed_infra_bugs_20260802
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_verify_fixed_infra_bugs_20260802.yaml]
+- **origin**: [[cmd_karo_verify_fixed_infra_bugs_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- agent current taskは再配備で変わる。固定pathだけでも改変余地があるためSHAを対で与え、実走前後0/3不一致を二値検証するcheckが必要。
+
+### L1525: 外部repo鮮度判定は既存commit receiptを消費せよ
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_context_freshness_ga425_20260802
+- **記録者**: kotaro
+- **tags**: [infra,gate,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_context_freshness_ga425_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- commit前guardが厳密receiptを残していても後段gateが独自source_commit ancestryだけを見ると処理済み更新を再ALERTする。producer receiptをconsumerが同一canonical fingerprintで検証するcontractを追加すべき。
+
+### L1526: 並列runnerはfail-fastとselection receipt完全性を両立できない
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_run_tests_terminal_receipt_partial_exit_20260802
+- **記録者**: saizo
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_run_tests_terminal_receipt_partial_exit_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- frozen selectionのreceiptを出すrunnerは初回失敗で未起動queueを捨てず、全件終端後にrc集約すべき。次回はselected=executedを陰性経路でも強制確認する。
+
+### L1527: 完了後source commitにも行動receiptを提示せよ
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_context_freshness_ga426_20260802
+- **記録者**: saizo
+- **tags**: [infra,context,git,reporting]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh,context/dm-signal-frontend.md,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_context_freshness_ga426_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 報告commit相関だけでは完了後直投入を捕捉できない。source backlog検出時にcontext/hashを結合したcanonical setter actionを自動提示する。
+
+### L1528: deployed_at graceだけではgate中task差替え競合を防げない
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_hotfix_stall_transition_fp_20260802
+- **記録者**: saizo
+- **tags**: [infra,gate,deploy,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_karo_startup.sh,tests/unit/test_gate_karo_startup.bats]
+- **origin**: [[cmd_karo_hotfix_stall_transition_fp_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 長時間gateの初回snapshot/pane観測後にtask YAMLが新世代へ差替わると、古いtaskのgrace判定で稼働中paneをSTALL加算しうる。不可逆な世代加算直前に一次paneを再照合するチェックを維持する。
+
+### L1529: 不適格な占有endpointを空portと同一視しない
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_cdp_t5_endpoint_qualification_20260802
+- **記録者**: tobisaru
+- **tags**: [infra,testing,api,cdp]
+- **subdomain**: infra
+- **target_files**: [scripts/cdp/cdp_session.py,tests/unit/test_cdp_session_contract.bats]
+- **origin**: [[cmd_karo_cdp_t5_endpoint_qualification_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- HTTP応答はあるがWebSocket/CDP資格を満たさないportは再利用不可である一方、非所有なので同portへの再起動も不可。資格・占有・所有を別軸で判定し、占有中なら次の有限fallbackへ進むチェックを追加すべき
+
+### L1530: task runnerはplanned test pathを直接選択しない場合がある
+- **日付**: 2026-08-02
+- **出典**: cmd_karo_cdp_t5_auth_dom_probe_20260802
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/cdp/dm_signal_adapters.py,tests/unit/test_dm_signal_cdp_adapters.bats]
+- **origin**: [[cmd_karo_cdp_t5_auth_dom_probe_20260802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- planned_pathsにtest自身があってもtask_scope_no_mapped_testsで0件選択となった。次回はtask selectorのdirect test ownershipを二値検査へ追加すべき。
+
+### L1531: 大規模DB出力は母集団を縮めずhash chunk化する
+- **日付**: 2026-08-03
+- **出典**: cmd_4221
+- **記録者**: kagemaru
+- **tags**: [dm-signal,db]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_4221_a0_0b_boundary_shift_inventory.csv]
+- **origin**: [[cmd_4221]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 単発stdoutは2,814/8,847行で上限切断された。PF hash 16分割しunique(PF,month)=8,847/8,847を再構成する二値チェックを次回追加する。
+
+### L1532: 外部repo taskのrun_tests ownership mapping欠落
+- **日付**: 2026-08-03
+- **出典**: cmd_karo_goal_w0_b1
+- **記録者**: tobisaru
+- **tags**: [infra,testing,testing,bash]
+- **subdomain**: infra
+- **target_files**: [backend/app/services/monthly_boundary.py,backend/tests/test_monthly_boundary_contract.py]
+- **origin**: [[cmd_karo_goal_w0_b1]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- DM-Signal backend所有test 11件はPASSしたが、shogun run_tests.sh taskはexternal_scope_no_mapped_testsで選択0件・rc2。次回追加すべきcheckは外部repo target_pathからrepo内test pathを解決できること。
+
+### L1533: 外部source鮮度は検出だけでなく承認receiptを更新要求へ接続する
+- **日付**: 2026-08-03
+- **出典**: cmd_karo_hotfix_context_freshness_ga427_20260803
+- **記録者**: kagemaru
+- **tags**: [infra,gate,git,oauth]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_context_freshness_ga427_20260803]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- research専用receiptだけではruntime分類の承認済みcommitが毎回ALERT化した。次回checkは全source分類N/Nについて承認証拠のconsumer有無を列挙し、承認済みはupdate request、未承認はALERTへ二値分岐する。
+
+### L1534: refluxはcommit専用index scopeでfingerprint生成
+- **日付**: 2026-08-03
+- **出典**: cmd_karo_goal_a1_l0_boundary_reverify_commit_rc3_20260803
+- **記録者**: kotaro
+- **tags**: [infra,git]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_karo_goal_a1_l0_boundary_reverify.py,docs/research/cmd_karo_goal_a1_l0_boundary_reverify.csv,docs/research/cmd_karo_goal_a1_l0_boundary_reverify.md]
+- **origin**: [[cmd_karo_goal_a1_l0_boundary_reverify_commit_rc3_20260803]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- worktree全docsではhelper専用indexと不一致。隔離indexへ対象pathだけaddしてprepareする。
+
+### L1535: cross-repo git判定はtask project working treeをSSOTにする
+- **日付**: 2026-08-03
+- **出典**: cmd_karo_hotfix_sgpre35_cross_repo_head_20260803
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats,tests/unit/test_gate_gunshi_report_precheck.bats]
+- **origin**: [[cmd_karo_hotfix_sgpre35_cross_repo_head_20260803]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- git cat-file等のHEAD判定をplatform repo固定にすると外部project既存pathを新規と誤判定する。project path解決不能とrepo外pathをsilent fallbackせずBLOCKするfixtureを持つ。
+
+### L1536: task runnerの外部repo contract選択を配備時に注入する
+- **日付**: 2026-08-03
+- **出典**: cmd_karo_goal_b3_fallback_remove_rc_20260803
+- **記録者**: kagemaru
+- **tags**: [infra,deploy,testing]
+- **subdomain**: infra
+- **target_files**: [backend/app/jobs/generators/monthly_returns.py,backend/app/services/price_ratio_impl.py,backend/app/services/mtd_returns.py,backend/app/api/signals.py,backend/app/api/performance.py]
+- **origin**: [[cmd_karo_goal_b3_fallback_remove_rc_20260803]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 対象test 47 PASS後もrun_tests taskがexplicit contract未指定でRC2。deploy時にtest_execution選択を必須化すべき
+
+### L1537: 不可逆境界の前で候補object全体をscope検査する
+- **日付**: 2026-08-03
+- **出典**: cmd_karo_hotfix_scope_commit_cross_path_contamination_rc_20260803
+- **記録者**: hayate
+- **tags**: [infra,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_scope_commit.sh,tests/unit/test_ninja_scope_commit.bats]
+- **origin**: [[cmd_karo_hotfix_scope_commit_cross_path_contamination_rc_20260803]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- private index隔離だけでは候補tree汚染を証明できない。commit-tree/update-ref前にparentとの差分全pathを所有scope SSOTへ照合し、公開後検査を最後の防壁にしない。
+
+### L1538: atomic renameだけでは共有markerのlost updateを防げない
+- **日付**: 2026-08-03
+- **出典**: cmd_karo_context_source_marker_concurrency_tobisaru_20260803
+- **記録者**: tobisaru
+- **tags**: [infra,gate]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_karo_context_source_marker_concurrency_tobisaru_20260803.md]
+- **origin**: [[cmd_karo_context_source_marker_concurrency_tobisaru_20260803]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 複数writerが同一contextをread-modify-writeすると全marker削除とlockなしreplaceにより逐次でも2/3消失、並行時はreason/evidenceもlast-writer-wins。次回は集合保持+path単位flock+各GATE要求hashの独立closure checkを追加する
+
+### L1540: append型receiptは集合として全件照合する
+- **日付**: 2026-08-03
+- **出典**: cmd_karo_direct_ga428_context_freshness_fix_20260803
+- **記録者**: hanzo
+- **tags**: [infra,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_direct_ga428_context_freshness_fix_20260803]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次回追加チェック: 複数receiptを蓄積するconsumerでは先頭/末尾1件へ縮約せず、正規化した全集合からexact identityを照合し、先頭stale+後続valid fixtureを必須化する。
+
+### L1541: 既存tracked test内の新関数はtask-level test_necessity path宣言とcommit helperが衝突する
+- **日付**: 2026-08-04
+- **出典**: cmd_4225_backend_impl
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [backend/app/api/rebalance.py,backend/app/models.py,backend/app/services/alpaca_stream.py,backend/tests/test_api.py,backend/tests/test_price_provenance_contract.py]
+- **origin**: [[cmd_4225_backend_impl]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 既存test fileにcontract関数を追加した場合、helperはpathをnew testでもsame-task historyでもないとしてBLOCKする。関数docstring N/Nを正本としtask-level path entryを空listへ正規化するチェックが必要。
+
+### L1542: dependency lock変更のtask test selectorはファイル名filterにしてはならない
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_ci_fix_rebalancer_30841850798
+- **記録者**: kotaro
+- **tags**: [infra,testing,bash]
+- **subdomain**: infra
+- **target_files**: [frontend/package-lock.json]
+- **origin**: [[cmd_karo_ci_fix_rebalancer_30841850798]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- run_tests.sh taskがpackage-lock.json/package.jsonをVitest filterとして渡し、実テスト10/10 PASS済みでもNo test files foundでrc2となる。dependency manifest/lockはpackage scripts全体またはaudit/buildへmappingすべき
+
+### L1543: full-corpus testはtracked境界を固定せよ
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_ci_fix_30844464109_yaml_injection
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,git]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_karo_ci_fix_30844464109_yaml_injection]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- projects配下のfilesystem globは開発環境のgit-ignore正本を拾いclean CIと母集団が変わる。固定cardinality評価はgit ls-filesでtracked sliceを固定し、明示fixtureで不足境界を補うチェックを次回追加する。
+
+### L1544: binary存在とdaemon稼働を同一視しない
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_ci_fix_30844464109_wrapper_run_tests
+- **記録者**: hayate
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_ci_fix_30844464109_wrapper_run_tests]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- tmux導入済みでもserver不在を独立variationとして検証する
+
+### L1545: 共有運用YAMLはcommit前にID集合scopeを二値検査する
+- **日付**: 2026-08-04
+- **出典**: cmd_reflux_insight_202608040505_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,process,yaml,git]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202608040505_kagemaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- L351を知っていてもdirty queue/insights.yamlをfull-file stageすると、path scope helperでは同一file内の他者差分を分離できず対象外104削除/96追加を取り込んだ。次回はcommit前に親..indexのID集合を比較し、許可対象以外のadd/delete/changeが各0でなければ停止する。
+
+### L1546: 複数source markerは行順でなくcommit ancestryから単調境界を選べ
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_hotfix_ga432_context_freshness
+- **記録者**: saizo
+- **tags**: [infra,context,review,git]
+- **subdomain**: infra
+- **target_files**: [context/dm-signal-core.md,context/dm-signal-ops.md,scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats,context/infrastructure.md]
+- **origin**: [[cmd_karo_hotfix_ga432_context_freshness]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 独立review markerを保持するcontextで先頭行だけを境界にすると、後書きされた古いhashが新しいhashより上に来た際に境界が後退し、同じcommit群を再ALERTする。全markerをresolveし、全候補のdescendantである最新境界を選び、分岐や解決不能はfail-closedにするチェックを次回から追加する。
+
+### L1547: 同一cmd再配備時のreport snapshot世代一致を報告前に検査する
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_hotfix_review_bundle_split_subtask
+- **記録者**: kotaro
+- **tags**: [infra,testing,reporting]
+- **subdomain**: infra
+- **target_files**: [scripts/review_bundle.py,tests/unit/test_review_bundle.py]
+- **origin**: [[cmd_karo_hotfix_review_bundle_split_subtask]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- AC変更を伴う同一cmd再配備時、既存report templateを再利用するとtask_contract_snapshotが旧世代に残る。報告前にac_version_read==task_contract_snapshot.ac_fingerprintを二値検査する。
+
+### L1548: 新規daemon境界では親のlock FD継承を二値検査する
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_ci_fix_30852904481_completion_tail_race
+- **記録者**: kagemaru
+- **tags**: [infra,testing,bash,tmux]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete.sh,tests/unit/test_cmd_complete_wrapper.bats]
+- **origin**: [[cmd_karo_ci_fix_30852904481_completion_tail_race]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 既存daemonへのrun-shellは親FDを継承しないが、新規private tmux serverは親のcheckpoint FD9を継承しworkerを自己lock待機させた。次回追加check: 新規daemon起動後にworker完了かつdaemon/process残存0を隔離serverなし環境で二値確認する。
+
+### L1549: 永続contract testはコメントだけでなくtask.test_necessity構造宣言が必要
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_hotfix_gist_index_redesign_20260804
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gist_index_update.sh,tests/unit/test_gist_index_update.bats]
+- **origin**: [[cmd_karo_hotfix_gist_index_redesign_20260804]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 初回commitでtest内のtest_necessityコメント3/3だけを用意したがninja_scope_commitはtask.test_necessityを正本として一時test判定し削除、pre-commitが欠落BLOCKした。次回は配備時またはcommit前にpath/defense_target/overlap_evidence/overlaps_existing/fixture_self_reference/deprecated_mechanismをtaskへ構造宣言するチェックを追加すべき。
+
+### L1550: 新規tracked hook初回導入はHEAD不存在よりindex所有を先に判定する
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_hotfix_gist_post_commit_trigger_20260804
+- **記録者**: hanzo
+- **tags**: [infra,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [.githooks/post-commit,scripts/gist_post_commit_sync.sh,scripts/sync_git_hooks.sh,tests/unit/test_gist_post_commit_sync.bats,tests/unit/test_sync_git_hooks.bats]
+- **origin**: [[cmd_karo_hotfix_gist_post_commit_trigger_20260804]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- manifestへ新hookを追加すると初回commitだけHEADに正本がなく既存drift防御がBLOCKする。current commit scopeかつindex blob存在を先に二値判定し、専用contractで固定すべき。
+
+### L1551: DrvFS frontend fallbackは依存もext4でなければworker stallを防げない
+- **日付**: 2026-08-04
+- **出典**: cmd_4228
+- **記録者**: hanzo
+- **tags**: [rebalancer,testing,frontend,yaml,wsl2]
+- **subdomain**: infra
+- **target_files**: [backend/app/api/rebalance.py,backend/app/services/alpaca_stream.py,backend/tests/test_alpaca_stream_contract.py,backend/tests/test_api.py,frontend/components/ResultsDisplay.tsx]
+- **origin**: [[cmd_4228]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- sourceを/tmpへcloneしてもnode_modulesを/mnt/cへsymlinkするとVitest fork/threadsがともに60秒worker timeout。package-lock一致のext4 node_modulesで6/6が1.35秒PASSした。
+
+### L1552: 成果物commit repoとproject repoの分離をtask契約へ反映する
+- **日付**: 2026-08-04
+- **出典**: cmd_4232
+- **記録者**: hanzo
+- **tags**: [rebalancer,context,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [context/rebalancer.md]
+- **origin**: [[cmd_4232]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- project=rebalancerでも成果物context/rebalancer.mdはinfra repo所有。配備時にproject repoをcommit_contract.repo_rootへ自動注入するとpre-commitが指定test pathまたはcommit ownershipを誤判定する。target_pathの実体repoをSSOTとしてtask/report双方のrepo_rootへ設定し、runnerとcommit gateを同一repoへ接続する。
+
+### L1553: Bash caseのYAML tildeは引用して全表現を個別計測する
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_hotfix_acknowledged_at_null_20260804
+- **記録者**: tobisaru
+- **tags**: [infra,inbox,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_mark_read.sh,tests/unit/test_inbox_mark_read.bats]
+- **origin**: [[cmd_karo_hotfix_acknowledged_at_null_20260804]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 未引用~はcase patternで展開されnull判定から漏れた。次回はnull/Null/NULL/~/空値を独立fixtureで5/5計測し、YAML timestampはdatetime.isoformatで型差を吸収する。
+
+### L1554: reflux insight生成は注入判定対象のpurpose scalar形式を保持する
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_fix_reflux_insight_scope_20260804
+- **記録者**: tobisaru
+- **tags**: [infra,ninja-monitor,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_training_auto.bats]
+- **origin**: [[cmd_karo_fix_reflux_insight_scope_20260804]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- block scalar purposeをfield_getで読むと値が|-となり、reflux insight marker検出を通らない。shared queue scopeを自動注入する生成taskは、既存inject_reflux_commit_contractの判定語をquoted単一行scalarで保持し、生成前後の検証境界を分離する。
+
+### L1555: RCとarchiveはreport pathの世代transactionとして直列化する
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_fix_rc_archive_report_race_20260804
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,deploy,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/archive_completed.sh,scripts/deploy_task.sh,scripts/review_approval.sh]
+- **origin**: [[cmd_karo_fix_rc_archive_report_race_20260804]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 互換symlinkの無条件掃除とrealpath先更新がarchive旧reportを変更し得るため、archive/RC/deployを同一report-unit lockとlogical live pathで世代transaction化する。
+
+### L1556: same-cmd pending report symlinkはformal RCと同じreport-unit境界で再生成する
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_fix_same_cmd_pending_symlink_20260804
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_lifecycle.bats]
+- **origin**: [[cmd_karo_fix_same_cmd_pending_symlink_20260804]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- generate_report_templateの存在判定はsymlinkをfollowするため、same-cmd retryではlive symlinkが残る。active/pending/same parent-worker-taskをlock内で判定してから切離す必要がある。
+
+### L1557: 親子計測は同一event_groupをdurableに持たせる
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_round9_lane3_deploy_total_recon_20260804
+- **記録者**: kotaro
+- **tags**: [infra,deploy]
+- **subdomain**: infra
+- **target_files**: [queue/reports/kotaro_report_cmd_karo_round9_lane3_deploy_total_recon_20260804.yaml]
+- **origin**: [[cmd_karo_round9_lane3_deploy_total_recon_20260804]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- deploy_total親はattempt_idをevent_idへ含む一方、TASK_MUTATION_PHASE子区分はテキストログのみで親JSONLと結合できない。親子の全件残差を再現可能にするには、既存DEPLOY_TASK_ISSUE_ATTEMPT_IDをevent_group metadataとして親・子へ付与する必要がある。
+
+### L1558: 明示成果再利用は成果物と最新終端証跡を対で検証する
+- **日付**: 2026-08-04
+- **出典**: cmd_karo_fix_scout_report_reuse_gate_20260804
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,testing,review,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_scout_gate.bats]
+- **origin**: [[cmd_karo_fix_scout_report_reuse_gate_20260804]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 別cmd成果をpathだけで再利用するとstale/未review/再OPENを受理しうる。明示path、distinct identity、成果status/verdict、対応cmd最新CLEAR、最新review LGTMを同時に二値検証するチェックを次回追加する。
+
+### L1559: Bats固定抽出はsetup_fileへ分離する
+- **日付**: 2026-08-05
+- **出典**: cmd_karo_round8_speed_gate_startup_20260805
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing,gate]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_gate_shogun_startup.bats]
+- **origin**: [[cmd_karo_round8_speed_gate_startup_20260805]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- setup()で本体gate由来の不変embedded Pythonを各testで抽出していたため16件で48回awk実行となった。setup_file()へ移すと抽出は3回になり、16/16 PASS・SKIP0を維持したままtarget suite中央値が5.00秒から2.31秒へ短縮した。
+
+### L1560: commit予約識別子はUSERでなくtmux agent_idを使う
+- **日付**: 2026-08-05
+- **出典**: cmd_shogun_commit_reservation_ledger_phase1_20260805
+- **記録者**: kagemaru
+- **tags**: [infra,testing,git,tmux]
+- **subdomain**: infra
+- **target_files**: [scripts/commit_queue.sh,scripts/ninja_scope_commit.sh,scripts/run_tests.sh,scripts/hooks/git-pre-commit.sh,tests/unit/test_commit_queue.bats]
+- **origin**: [[cmd_shogun_commit_reservation_ledger_phase1_20260805]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 複数agentが同一OS USERで動くためUSER既定値は別agent予約をduplicate扱いにした。tmux @agent_idを優先すれば予約所有者を分離できる。
+
+### L1561: restricted PATH下の既存writer計装はPATH復元をfixtureで守る
+- **日付**: 2026-08-05
+- **出典**: cmd_karo_round9_lane0pp_impl_common_20260805
+- **記録者**: hayate
+- **tags**: [infra,api]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/session_start_inject.sh]
+- **origin**: [[cmd_karo_round9_lane0pp_impl_common_20260805]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- hook計装が既存writerをsourceする際、callerが制限PATHでもwriter内部のdirname等を解決できる一時PATH補助と元PATH復元を行い、stdout/stderr・rcを不変にするfocused fixtureを必須化する。
+
+### L1562: private cache公開前のWAL統合とappend判定snapshot
+- **日付**: 2026-08-06
+- **出典**: cmd_karo_round10_lane2_refresh_copy_impl_20260805
+- **記録者**: kagemaru
+- **tags**: [infra,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_live_insert.py]
+- **origin**: [[cmd_karo_round10_lane2_refresh_copy_impl_20260805]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- WAL sidecarを公開後に消す前にprivate checkpoint+fsyncし、source transaction内で件数を取り、補助表ごとにdelta件数を判定する。
+
+### L1563: context reflux後に到着する外部source commitの自動task化
+- **日付**: 2026-08-06
+- **出典**: cmd_karo_recon_context_freshness_ga437
+- **記録者**: saizo
+- **tags**: [infra,frontend,git]
+- **subdomain**: infra
+- **target_files**: [queue/reports/saizo_report_cmd_karo_recon_context_freshness_ga437.yaml]
+- **origin**: [[cmd_karo_recon_context_freshness_ga437]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- context同期7c6f49d3後にsource repoへ9f09b128と21e80e30が到着し、手動境界07bのままfrontend ALERTになった。source eventごとにpathspec別差分とcontext update candidateを既存Level5入力へ接続する二値checkが必要。
+
+### L1564: context freshnessはsource path一致だけでなく本文反映要否を分類する
+- **日付**: 2026-08-06
+- **出典**: cmd_karo_recon2_ga438_ga439_context_freshness
+- **記録者**: hanzo
+- **tags**: [infra,monitor]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hanzo_report_cmd_karo_recon2_ga438_ga439_context_freshness.yaml]
+- **origin**: [[cmd_karo_recon2_ga438_ga439_context_freshness]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- codd.mdはskills/codd-refactorを監視対象に含むため、script_refsコメントだけを変更した1dae80c8でもsource ALERTになった。source boundary更新前に本文契約を変える差分かをyes/no分類し、metadata-only差分は偽陽性として別集計するチェックを後続hotfixへ追加する
+
+### L1565: WARN/BLOCKエスカレーション前に一次情報を再確認し、解消済みなら過去断面のまま裁定要求しない
+- **日付**: 2026-08-06
+- **出典**: cmd_karo_recon2_disk_recovery_20260806
+- **記録者**: hanzo
+- **tags**: [infra,frontend,gate,wsl2]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hanzo_report_cmd_karo_recon2_disk_recovery_20260806.yaml]
+- **origin**: [[cmd_karo_recon2_disk_recovery_20260806]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 初回計測(07:06)ではWARN未解消(23.4GB)、その後07:17には danger域(11.3GB/BLOCK)まで悪化したが、 RC是正の再配備後にdisk_space_watch_measureを再実行すると12:26/12:30時点でOK(148.79GB)へ解消していた。 回収対象のdu合計は57344 bytesのみで、138GB規模の変動は本task/project scope外の並行活動(/mnt/cは共有ドライブ)によるものと判定した。 次回以降、WARN/BLOCK起点の回収taskがLordへ追加回収源のエスカレーションを行う前には、報告確定直前に一次情報(disk_space_watch_measure)を再実行し、 断面が古いまま(数時間前のBLOCK値)でエスカレーションしないよう確認するチェックを組み込む。
+
+### L1566: reflux inventoryのpromotions指標はledger-reconciliation短絡経路で実値と大きく乖離しうる
+- **日付**: 2026-08-06
+- **出典**: cmd_reflux_backlink_202608061239_hayate
+- **記録者**: hayate
+- **tags**: [infra,context,recon,gate,bash]
+- **subdomain**: infra
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_reflux_backlink_202608061239_hayate]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_reflux_backlink_202608061239_hayateのtask snapshot(_reflux_inventory_snapshot生成)ではpromotions:0だったが、bash scripts/gates/gate_lesson_enforcement_level.shを直接実行するとENFORCEMENT_LEVEL_BELOW4_COUNT=559だった。ninja_monitor.shの_reflux_promotion_inventory()はreconcile_marker(logs/reflux_promotion_completed.tsv.reconciled-v1)が存在しないか_reflux_promotion_backfill_and_checkが失敗すると即座に'0\t-\tledger-inconsistent'を返す短絡経路を持ち、実際のenforcement below4件数を反映しない。AC2等でbefore/afterの還流在庫比較をする際、promotionsの数値差分だけで効果判定すると、この短絡経路由来のゼロ値と実測値の混在で誤判定しうる。L1492(zero_backlinksの--limit頭打ち)と同系統だが、promotions指標固有の別経路の問題として区別して記録する
+
+### L1567: reflux_inventory(insights_pending/zero_backlinks/promotions/total)のうちzero_backlinks以外は並行稼働中の他忍者churnが支配的で単体タスクの効果測定に使えない
+- **日付**: 2026-08-06
+- **出典**: cmd_reflux_backlink_202608061316_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,bash,yaml,monitor]
+- **subdomain**: infra
+- **target_files**: [docs/semantic-index/index.md]
+- **origin**: [[cmd_reflux_backlink_202608061316_kagemaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_reflux_backlink_202608061316_kagemaruでbacklinksゼロ文書1件を解消。ninja_monitor.shの_reflux_insight_pending_count/_reflux_zero_backlink_inventory/_reflux_promotion_inventoryを同一ロジックで再実行し前後比較した結果、zero_backlinksは14→13(-1)で対象1件解消と一致したが、insights_pending9→8(-1)とpromotions0→557(+557)は本タスクが一切触れていないqueue/insights.yaml・projects/*/lessons*.yamlの並行更新(他忍者の同時稼働)による変動だった。totalは578とpromotionsの急変が支配し、AC2の『作業前後の在庫残数』を単純にtotalで語ると1タスクの効果が完全に埋もれる。L1492はzero_backlinksの--limit 50頭打ちを指摘したが、本件はpromotions/insights_pendingという別カウンタでも同種の『集計値は自タスクの効果とシステム全体のchurnを区別しない』問題が起きることを示した。origin: [[cmd_reflux_backlink_202608061316_kagemaru]] -> [[reflux_inventory集計値のchurn混入]] -> [[AC2証跡はtotalでなく対象カウンタ(zero_backlinks)単体の前後差分で語るべき]]
+
+### L1568: task_type=recon2の commit_contract.required=false 既定分類は、AC自体がcommitを要求する'hotfix型recon2'では実態と乖離する
+- **日付**: 2026-08-06
+- **出典**: cmd_karo_hotfix_uncommitted_scripts_20260806
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,testing,recon,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/draft_review_approval.sh,scripts/gates/gate_gunshi_startup.sh,scripts/gates/gate_karo_startup.sh,scripts/gates/gate_report_format.sh]
+- **origin**: [[cmd_karo_hotfix_uncommitted_scripts_20260806]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_hotfix_uncommitted_scripts_20260806はtask_type=recon2で配備され、commit_contract.required=falseかつreason=allowed_no_code_task_typeが自動注入されていたが、AC2は明示的に「意図的変更をcommitし」と実コード変更のcommitを要求していた。gate_report_format_main.pyのcommit_contract_errorsはrequired=falseなら検証をスキップするため矛盾は検出されず、report作成時にbinary_checks.commitの文言(「...を実行していないことを確認」)がyes/noどちらでも不自然になった。過去のprecedent(hanzo_report_cmd_4153)でも同様のrequired=false+実commitのケースがありyes判定で処理されていた。今後同種のhotfix型recon2タスク配備時は、AC文言にcommit操作が含まれる場合commit_contract.requiredをtrueへ再分類するか、binary_checks.commitのcheck文言を条件分岐させることを検討すべき
+
+### L1569: commitタイムアウト時にbypass/他者委任するな
+- **日付**: 2026-08-07
+- **出典**: cmd_gunshi_d0_20260807
+- **記録者**: scripts
+- **tags**: [infra,process,git]
+- **origin**: [[cmd_gunshi_d0_20260807]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 軍師D0修正commitでpre-commit 60秒タイムアウト→bypass使用→殿指摘→家老委任→殿再指摘(F-G06違反)。根因=洗脳#3(他者依存)。enforcement: gunshi.md D0プロトコルにcommitタイムアウト時の対処手順追記
+
+### L1570: commit_queue.sh Phase2の全体直列化導入時、既存のwait-based race dedup機構(flock)が黙って機能不全化した
+- **日付**: 2026-08-07
+- **出典**: cmd_karo_ci_fix_31076764177_scope_commit_race
+- **記録者**: kagemaru
+- **tags**: [infra,testing,bash,git]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_scope_commit.sh]
+- **origin**: [[cmd_karo_ci_fix_31076764177_scope_commit_race]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 07-28にninja_scope_commit.shへ導入されたscope-path単位のflock+follower-success機構は「複数helperの同時実行」を前提にwait-based(flock -n失敗時)で追突を検知していた。08-05のcommit_queue.sh Phase2(reservation ledger)がninja_scope_commit.sh全体をトップレベルでグローバルFIFO直列化するよう変更した際、実装者はこのflock機構を『冗長』と判断し削除したが、直列化モデルでは後続呼出しのコアロジックが前呼出し完全終了後にしか実行されないため、そもそも『待機』というシグナル自体が原理的に発生しなくなっていた。同じ日でなくとも、並行性モデルを変更する修正(直列化の導入・撤去等)は、その並行性を前提に組まれた既存のwait/flock/race検知ロジックを全て洗い出し、機能するかを再検証すべき。今回はテストが機能不全を捕捉しCI REDとして顕在化したが、テストが無ければ気づかれずに黙って壊れていた
+
+### L1571: reflux inventory事後計測でninja_monitor.sh内部関数を呼ぶ安全な手段が未整備
+- **日付**: 2026-08-07
+- **出典**: cmd_reflux_insight_202608071301_hayate
+- **記録者**: hayate
+- **tags**: [infra,testing,bash,monitor]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202608071301_hayate]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- AC2(作業前後の還流在庫残数)のpromotions/zero_backlinks値を再計算しようとした際、正規の取得手段が_reflux_promotion_inventory等のninja_monitor.sh内部関数しか存在せず、個別に呼び出すには同ファイルをsourceする以外の経路が用意されていなかった。誤ってsourceを実行した結果L968(既知教訓: ninja_monitor.shをsourceすると重複デーモンプロセス発生)通りの事故を実際に再現し、PID 761198/761917の重複プロセスが発生(家老へinbox報告済み、msg_20260807_130724_766249_1ab35b69)。origin: [[AC2還流在庫計測要求]] -> [[内部関数への安全な単独呼出し手段の不在]] -> [[L968既知事故の再現]]。対策候補: _reflux_promotion_inventory/_reflux_zero_backlink_inventory相当を独立スクリプト(scripts/lib/reflux_inventory.sh等)に切り出し、忍者task検証時にsourceせず直接呼べるようにする
+
+### L1572: GPトラッカーのdefense_level記載は実装の後発強化を自動追従しない
+- **日付**: 2026-08-07
+- **出典**: cmd_reflux_insight_202608071332_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,gate,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202608071332_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gunshi_gp_tracker.yamlのGP-220はdefense_level:2(proposed 2026-04-25)のまま記載され続けていたが、実装(scripts/karo_workaround_log.sh)は別cmd(cmd_karo_hotfix_wa_clean_contradiction_202607191718, commit d3c4d6976, 2026-07-19)でWARNからBLOCK guardへ強化済みだった。insight/gate判定でtracker記載のdefense_levelを鵜呑みにすると、既に解決済みの問題を『Level5未満候補』として再フラグする陳腐化が起きる。resolve/判定前に対象コードのgrep一次確認を要する。origin: [[GP-220]] -> [[commit d3c4d6976によるhardening未反映]] -> [[insight再フラグの陳腐化リスク]]
+
+### L1573: insight_write.shのdedupはsource完全一致のため、followup writerがsourceへ内容依存digestを埋め込むと重複insightが際限なく積み上がる
+- **日付**: 2026-08-07
+- **出典**: cmd_reflux_insight_202608071355_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,gate,bash,lesson]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202608071355_hanzo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/insight_write.sh L328-329のdedupはsource==source_info かつ message hash一致の場合のみ発動する。scripts/gates/gate_skill_script_refs.shはfollowup insight生成時にsource='skill_script_refs:<現在のpair集合のsha256digest先頭16桁>'を使っており、対象となるSKILL.md×script対の集合が1件でも変化するとdigestが変わりdedupが効かず新規insightとして積み上がる。実測: 2026-08-06/08-07の3日間でINS-20260806-090258369-d890(36対)→INS-20260806-134404824-687b(38対)→INS-20260807-124906799-15fd(39対)と、内容がほぼ同一のまま3件が別々にpendingとして残存していた(先発が後発の真部分集合)。教訓: insight/task等の自動followup生成ロジックを新設する際はsourceフィールドに内容依存ハッシュを含めず、種別を表す固定文字列にとどめること(dedupが機能する前提)。内容差分の追跡が必要なら別フィールド(digest/detailsサブフィールド等)に格納し、dedup判定キーには使わない
+
+### L1574: reflux_insight task(AC2:reflux_inventory計測)のrelated_lessons injectionにL968/L134が含まれていない
+- **日付**: 2026-08-07
+- **出典**: cmd_reflux_insight_202608071447_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,deploy,process,gate]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202608071447_kagemaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 本task(cmd_reflux_insight_202608071447_kagemaru)のAC2は「作業前後のreflux在庫(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録」を要求するが、related_lessonsにはL351/L1013/L1545のみが注入されており、この計測作業で直接必要になるL968(ninja_monitor.sh内部関数目的でのsource絶対禁止)とL134(NINJA_MONITOR_LIB_ONLY=1 sourceによる安全な関数ロード手順)は含まれていなかった。実際にpromotions計測のため一度NINJA_MONITOR_LIB_ONLY無指定でsourceしたが、既存のsingleton lock機構(acquire_singleton_lock→healthy owner pid=9453検出→SINGLETON-BLOCK)が正しく機能し実害(重複daemon常駐等)は発生しなかったことをps確認済み(該当プロセスは短時間で自然終了)。ただしL968を先に知っていればこの試行自体が不要だった。L1008は別task種別(cmd_reflux_promotion)で同じ落とし穴を既に記録済みだが、reflux_insight task向けのrelated_lessons選定ロジックには反映されていない。deploy_task.shのrelated_lessons選定で「ACにreflux_inventory/在庫計測を含むtask」全般にL968+L134を横展開すべき
+
+### L1575: GitHub Gists APIの一覧はupdated_at順を提供しない
+- **日付**: 2026-08-08
+- **出典**: cmd_karo_gist_reorder_20260807
+- **記録者**: kagemaru
+- **tags**: [infra,api]
+- **subdomain**: infra
+- **target_files**: [queue/reports/kagemaru_report_cmd_karo_gist_reorder_20260807.yaml]
+- **origin**: [[cmd_karo_gist_reorder_20260807]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 41本を古い順に直列PATCHして個別updated_atはtask順に非減少となったが、gh gist list --limit 50の返却順はupdated_at時系列ではなかった。touch更新で一覧表示順を制御できないため、必要ならローカルindex側で明示ソートする。
+
+### L1576: 偵察専用AC(報告のみ)にtask_type=fullを使うとcommit_contract.required=trueが実態と乖離する
+- **日付**: 2026-08-08
+- **出典**: cmd_4240
+- **記録者**: kotaro
+- **tags**: [dm-signal,deploy,recon,bash]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_4240_open_metrics_recon_20260808.md]
+- **origin**: [[cmd_4240]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_4240_full(AC1-3が全て「報告YAMLへ記載/確認する」のみで実装非要求)にdeploy_task.shがtarget_path指定のみを根拠にcommit_contract.required=true(reason=implementation_path_present)を自動付与していた。AC文言の実装要求有無は見ていないため。本cmdはDM-signal側差分0のまま報告のみで完結し、報告側でcommit_contract.requiredをfalseへ訂正して対応した。同様の偵察専用task_type=fullを今後配備する際はtask_type=scoutの使用、またはcommit_contract判定にAC文言の実装要求有無を加える改善が望ましい
+
+### L1577: recalculation_status.modeをSSOT突合せずfull完了と表記しない
+- **日付**: 2026-08-09
+- **出典**: cmd_karo_retro_cmd4242_recalc_label_20260809
+- **記録者**: saizo
+- **tags**: [infra,gate,reporting]
+- **subdomain**: infra
+- **target_files**: [queue/reports/saizo_report_cmd_karo_retro_cmd4242_recalc_label_20260809.yaml]
+- **origin**: [[cmd_karo_retro_cmd4242_recalc_label_20260809]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 報告受理時に主張run_idをrecalculation_statusへ結合し、同一行のstatus=completed、end_time非NULL、mode=fullを全て実測して一致しない場合はBLOCKする。id=229はcompletedでもportfolio、id=230はfullでもrunningだったため全条件の同時確認が必要である。
+
+### L1578: startup gate移管はalert連鎖の受け皿を先に固定する
+- **日付**: 2026-08-09
+- **出典**: cmd_4248
+- **記録者**: saizo
+- **tags**: [infra,context,gate]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_4248_shogun_gate_triage_20260809.md,context/infrastructure.md,queue/reports/saizo_report_cmd_4248.yaml]
+- **origin**: [[cmd_4248]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 機械検知をKaroへ移す際は検知コードだけを移すと、session_alerts生成・stop hook BLOCK・先送りdedup・escalation receiptが分断する。受け皿→stop hook→dedup→escalation→是正の順序を一つの設計契約として記録する。
+
+### L1579: 同一意味論のBLOCKチェックがスクリプト内に独立して複数箇所存在しうる。1箇所の修正だけでは不十分
+- **日付**: 2026-08-09
+- **出典**: cmd_karo_hotfix_speed_ninja_scope_commit_r2_20260809
+- **記録者**: tobisaru
+- **tags**: [infra,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_scope_commit.sh]
+- **origin**: [[cmd_karo_hotfix_speed_ninja_scope_commit_r2_20260809]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ninja_scope_commit.shには「verification_head(receiptのtest検証時HEAD)とtransaction_head(commit時HEAD)の一致」を確認するチェックが2箇所独立に存在した: (1)receipt解析直後(697行目付近、通常フロー用) (2)acquire_transaction_lock_and_rebase_index()内(239行目、lock取得直前のレース対策用、pre-commit hook実行中にHEADが進むケースに対応)。片方だけ「対象path/test/fingerprint一致なら再利用」へ緩和しても、もう片方が旧来の完全一致要求のまま残っていたため、focused testがBLOCKし続けた。原因特定にはBLOCKメッセージの文言差異(『stale test receipt source_head』vs『HEAD advanced after test verification』)に気づき、grepで2箇所目を発見する必要があった。次回同様の修正では、grep -c "<変更対象と同じ目的のBLOCK文言>" で類似チェックが複数箇所に存在しないか事前に確認し、共通関数へ抽出してから両方に適用すべき。
+
+### L1580: pre-commit全量timeout時のscope commit再開経路
+- **日付**: 2026-08-09
+- **出典**: cmd_4250
+- **記録者**: kagemaru
+- **tags**: [infra,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_karo_startup.sh,scripts/gates/gate_shogun_startup.sh,scripts/gates/gate_karo_startup_migrated_checks.sh,tests/unit/test_gate_karo_startup.bats,tests/unit/test_gate_shogun_startup.bats]
+- **origin**: [[cmd_4250]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task契約全量pre-commit timeout後、独立成果を再利用してselected receiptを確認しscope commitを再実行できた。次回はselected receiptと重い全量契約の時間制約を開始時に分離計測する。
+
+### L1581: typed escalationは本文語彙でなくtype境界を正本にする
+- **日付**: 2026-08-09
+- **出典**: cmd_4251
+- **記録者**: hayate
+- **tags**: [infra,inbox,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/escalation_evidence.sh,scripts/inbox_write.sh,scripts/bulletin_write.sh,tests/unit/test_inbox_write.bats,tests/unit/test_bulletin_write_notify_contract.bats]
+- **origin**: [[cmd_4251]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- BLOCK/FAIL本文の語彙検出は正当なgate通知を偽陽性化する。type=escalationだけを検査し、3点証跡+次行動+実行者を共通helperで強制する。
+
+### L1582: reflux判定ではdeploy_taskの実lock pathを現物確認する
+- **日付**: 2026-08-10
+- **出典**: cmd_reflux_insight_202608100629_saizo
+- **記録者**: saizo
+- **tags**: [infra,deploy,bash,wsl2]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202608100629_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- WSL2 NTFS蓄積の一次確認で、設定や一般論からlock pathを推測せずscripts/deploy_task.shの現物を確認する必要がある。今回queue/locks実装を確認し、誤ったtmp前提を訂正した。今後はLevel5判定時に実path・期限・実測wall timeを同一報告へ必須化する。
+
+### L1584: report_publicationは子process合計と未計測残差を分離してから最適化候補を選ぶ
+- **日付**: 2026-08-10
+- **出典**: cmd_karo_recon_report_publication_latency_202608101813
+- **記録者**: saizo
+- **tags**: [infra,cache]
+- **subdomain**: infra
+- **target_files**: [queue/reports/saizo_report_cmd_karo_recon_report_publication_latency_202608101813.yaml]
+- **origin**: [[cmd_karo_recon_report_publication_latency_202608101813]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 同一fixture 3回でgenerate_report_template median7433msを測定し、python3 65.7%、awk5.1%、grep1.9%、sed0.3%、残差27.5%を分離した。既存wave cacheのsource_fp+query_keyを安全境界としてmemory_context再書込み省略案へ接続する。
+
+### L1585: helper抽出fixtureと静的契約は実装refactorと同一commit波で同期する
+- **日付**: 2026-08-11
+- **出典**: cmd_karo_ci_fix_31431140453_completion_archive
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,git]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_cmd_complete_gate.bats,tests/unit/test_cmd_complete_gate_task_idle.bats]
+- **origin**: [[cmd_karo_ci_fix_31431140453_completion_archive]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- completion_active_report_countへ責務を移した後、テスト185が依存helperを抽出せず空値を0扱いし、test9が旧inline find文字列を要求してCIで2件FAILした。実装の新helper依存と静的契約を同じ回帰波で更新し、pre 2 FAILからpost 201/201 PASSへ戻した。
+
+### L1586: 共有insight YAMLのsafe helperにも世代競合防御が必要
+- **日付**: 2026-08-11
+- **出典**: cmd_reflux_insight_202608110625_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,yaml,git]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202608110625_hanzo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- yaml_field_setはflock下でatomic publishするが、読み出し時点の世代比較がないため、共有writerの並行更新後に別の更新を行うと他insight差分を作業ツリーから消し得る。対象taskではHEADとの差分と一次バックアップを照合し、失われた2件を復元してからpatch-mode commitを使った。次回はbase blob/世代一致をhelper側でfail-closedにするチェックを追加候補とする。
+
+### L1587: source context update triggerを完了経路へ自動接続する
+- **日付**: 2026-08-12
+- **出典**: cmd_karo_hotfix_ga457_context_update_autowire_20260812
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/inject_task_modifiers.py,scripts/cmd_complete_gate.sh,tests/unit/test_deploy_task_yaml_injection.bats,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_ga457_context_update_autowire_20260812]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- registryのowner/update_triggerは検出表示だけでは再発を防げない。source boundaryに一致するtaskへ候補を自動注入し、未処理候補をcompletion gateでBLOCKする機械checkを追加した。
+
+### L1588: RB6配備前提カードはcohort・定義・入力coverageの3項目に固定する
+- **日付**: 2026-08-14
+- **出典**: cmd_karo_recon2_ninja_prerequisite_audit_20260814
+- **記録者**: saizo
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [queue/reports/saizo_report_cmd_karo_recon2_ninja_prerequisite_audit_20260814.yaml]
+- **origin**: [[cmd_karo_recon2_ninja_prerequisite_audit_20260814]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- RB6では固定cohort不在、boundary定義の途中訂正、H6独立月次未供給が別々に再走を生んだ。task生成時にcohort/snapshot identity、canonical formula/boundary version、required input coverageを自動添付すれば、家老の手入力を増やさず開始前に検出できる。
+
+### L1590: 外部repo鮮度検査のlesson-only除外と本文cmd ID照合をroot fallbackと共通化する
+- **日付**: 2026-08-14
+- **出典**: cmd_karo_recon2_ga463_context_freshness_20260814
+- **記録者**: kagemaru
+- **tags**: [infra,bash,git,lesson]
+- **subdomain**: infra
+- **target_files**: [queue/reports/kagemaru_report_cmd_karo_recon2_ga463_context_freshness_20260814.yaml]
+- **origin**: [[cmd_karo_recon2_ga463_context_freshness_20260814]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- context_freshness_check.shはtasks/lessons.mdのlesson-only除外をis_root_fallback_source_path条件内でのみ適用するため、外部DM-Signal contextのpathspecに同ファイルを含むops/researchではlesson-only commit 472a2117を鮮度ALERTへ算入した。またcmd_4300_readonlyの全文tokenとcontext本文の基底cmd_4300が一致せず、反映済みb06764f0も残る。次回は外部repo経路でもlesson-only判定と基底cmd ID照合を共通契約にする。

@@ -583,7 +583,6 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 
 ## Deployment Rules
 - **忍者に記憶の連続性はない**|忍者は毎回/clearで全記憶消失。知識は報告YAML+タスクYAML注入で引き継ぐ。cmd設計で担当者を指名するな。配備は家老の判断に委ねよ
-- **配備とdraft reviewの並列化(殿裁定2026-08-09 14:05、14:04裁定を全task_typeへ拡張)**|全task_type(`bugfix`/`hotfix`/`ci_fix`含む)で軍師へのdraft review依頼と忍者配備を同時実行し、APPROVEを待たない。`pre_implementation_review` receiptの有無・結果は配備BLOCK条件ではない(deploy_task_require_pre_implementation_reviewは削除済み)。REQUEST_CHANGES時は既存task_supplement経路で稼働中忍者へ届く|→ `context/karo-operations.md` §1
 - DB排他|本番DB操作は直列配備（並列タイムアウト実証済み）|karo.md参照
 - 進捗報告|忍者はAC完了ごとにtask YAMLのprogress欄を更新|ashigaru.md Step 4.5参照
 - 偵察デフォルト品質5要件|偵察は現象特定で止めるな|(1)変更対象ファイル・行番号 (2)波及先ファイル (3)関連テスト有無・修正要否 (4)エッジケース・副作用 (5)依存関係・順序制約(flush順序・キャッシュ共有・ネスト読み書き等)|テンプレート+ゲートWARNで自動化×強制

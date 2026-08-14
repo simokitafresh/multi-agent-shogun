@@ -534,3 +534,21 @@ Read/Grep/Globが5回連続でEdit/Write/Bashなし→即停止。何がブロ�
 
 DISPLAY_MODE=shout→`bash scripts/shout.sh {ninja_name}`をLAST tool callで実行。silent/未設定→スキップ。
 → `instructions/ashigaru-procedures.md` §Shout Mode
+
+## 三層記憶の実効ルート（A3是正・2026-07-27 殿下知11:23 R4）
+
+**★手順書を読んで答えると実態を外す。** 実効ルートは**hookの自動注入**であり、手動検索は補助である。
+
+| 経路 | 実体 | 役割 |
+|------|------|------|
+| **自動注入(実効ルート)** | `scripts/hooks/three_layer_preflight.sh` | UserPromptSubmit毎に三層検索を実行し**結果をターンへ注入**する(T1導入済) |
+| 強制 | `.claude/hooks/pre-bash-combined.sh:117-119` | 証跡なしBash/Editを**fail-closed BLOCK** |
+| 注入呼出し | `scripts/hooks/prompt_state_inject.sh:196` | preflightを呼ぶ唯一の経路 |
+| 引用強制 | `scripts/hooks/stop_check_inbox.sh:25`(`has_successful_three_layer_preflight`) / `:453`([MEM:]検査) | preflight成功済みの非定型回答に[MEM:]を要求 |
+| 手動検索(補助) | `bash scripts/memory_db_query.sh` / `bash scripts/semantic_search.sh` | 注入で足りない時に**自分で選んで**引く |
+
+- **positive_rule**: **注入された結果を読め。** `[MEM:]` は**注入された実結果からの引用**のみ有効とする。読まずに札だけ貼るな。`[MEM: n/a — 理由]` の正直な逃げ道は維持されている。
+- **書込みルート**: 知識を残す目的=`bash scripts/memory_db_knowledge_write.sh`(**Layer1→2→3を連鎖する唯一の経路**)。誰かに伝える目的=`bulletin_write.sh`(通知+Layer1のみ)。**両方必要なら両方呼べ。片方で済ませるな。**
+- **標準手順**: `/three-layer-penetrate`(`skills/three-layer-penetrate/SKILL.md`)
+- **reason**: 2026-07-27、実効ルートがhook4本へ移っているのに`instructions/*.md`に一文字も無く、家老が手順書だけを見て「すり替わりは無い」と誤答した(02:30→02:33訂正)。**hookのpath+行番号を明記するのは、次に手順書を読む者が実態へ到達できるようにするためである。** hook変更時は本表も同期せよ。
+- origin: `[[殿指摘_三層アクセスルートすり替わり_20260727]] -> [[A3手順書未記載]] -> [[R4実効ルート明記]]`
