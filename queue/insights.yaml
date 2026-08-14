@@ -135,7 +135,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608141835_saizo"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認でGP-220の現行防御を確認。scripts/karo_workaround_log.sh:677-681が通常/--wa経路のcategory=cleanを事前BLOCKし、test_gate_wa_data_quality.batsは3/3 PASS。既存実装へ吸収済みで追加修正とdecision_candidateは不要。"
+  action_artifact: "scripts/karo_workaround_log.sh:L677-L681; scripts/gates/gate_wa_data_quality.sh; tests/unit/test_gate_wa_data_quality.bats (3/3 PASS); logs/gunshi_gp_tracker.yaml:GP-220"
+  resolved_at: "2026-08-15T06:23:07+09:00"
 - id: INS-20260814-185732775-af90
   ts: "2026-08-14T18:57:32+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bd2szudyz task id tool use id toolu 01QtZxpqm5MGMkwPjz は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
