@@ -548,6 +548,7 @@ command: "直近30日のパフォーマンス推移を計測し結果を報告�
 - **/clear(忍者切替)**: Read→Write task→inbox clear_command。skip:短時間/同PJ/軽量CTX
 - **失敗ループ学習(retry_loop)**: cmdに`retry_policy: retry_loop`がある場合、複数忍者を異なるアプローチで並列配備し各自ループ。先に失敗した者の知見が後続全員に流れる。1名成功→全停止。max_retries:3/名、「人間必要」で即停止→殿報告。詳細→§13
 - **recalculate後チェック**: recalculate-sync完了後に `bash scripts/post_recalculate_checks.sh` を実行。FAIL→将軍報告。WARN→ダッシュボード記載。PASS→記録のみ
+- **検証目的の再計算run新規起動禁止**: deploy後検証は、deploy後に既に存在する直近full runへread-only SELECTで突合する。API起動前に「deploy後runが存在するか」をDBで二値確認し、存在するなら新規runは0件とする。存在しない場合だけ、対象scope・親FoF closure・modeをコード/API契約で一次確認して起動する。`mode=full`は全102PF+FoF78の不可分再計算、`mode=portfolio`も対象未指定なら親closureで全FoFへ拡張されるため、検証専用の軽量runではない。理由: 2026-08-14、将軍の曖昧なcanary文言と家老の範囲未確認が重なり、run364で検証済みなのに不要なrun365を起動して本番計算資源と時間を消費した。
 - **PF登録パリティチェック**: PF新規登録cmdの完了時に `bash scripts/parity_check.sh <PF名 or UUID>` を実行。FAIL→登録差し戻し。PASS→完了扱い可
 
 → 軍師レビュー・通信詳細: `instructions/karo-procedures.md`

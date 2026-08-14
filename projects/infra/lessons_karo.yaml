@@ -483,6 +483,8 @@ lessons:
   detail: |
     revert前に理由通知(代替案が出る可能性)。revert後はbefore/after再計測必須(SG-PRE14)。
     吸収(2026-07-27, cmd_reflux_promotion_202607271512_saizo, origin: [[LK-A18]] -> [[Level4実装0件]] -> [[PD-110継続]]): 2026-07-27再検証: gate総候補354件、家老候補2件、LK-A18はL1残存。scripts配下のgit revert実行経路0件、SG-PRE14はWARNのみ、PD-110はpending。既存設計判断を覆す新実装なしのためLevel4昇格せず、PD-110で一元管理を継続する。
+    吸収(2026-08-14, cmd_4303, origin: [[cmd_4303]] -> [[run361_partial_production_mutation]] -> [[revert_first_rule]]): cmd_4303でP0.5 canaryが本番monthly_returnsを部分破壊したと確定後、走行中run362の完走を待ってからrevert pushし、約8分遅延した。壊れたruntimeのrun完走は保護対象ではなく、その出力も放棄された。次回は本番破壊確定時点で、検証・復元run・説明材料収集より先にexact revertをpushしlive確認、その後revert版でfull復旧する。
+    吸収(2026-08-14, cmd_4245, origin: [[cmd_4245]] -> [[run365不要起動]] -> [[deploy後run存在時はSELECTのみ]]): deploy後の品質検証は既存の直近full結果へのSELECT突合のみで行う。mode=fullは全102PF+FoF78不可分、mode=portfolioも対象未指定なら親closureで全FoFへ拡張される。run365では将軍の曖昧文言を家老が範囲確認せず実行し、不要runを起動した。
   source_ids: [LK062, LK087]
   created_at: '2026-04-24'
   automated: true
