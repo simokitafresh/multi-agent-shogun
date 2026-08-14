@@ -90,12 +90,11 @@ def nested(tokens, depth=0):
     if head == "run_tests.sh":
         return "allow"
     if head == "bats":
-        # --count is metadata-only; every other direct bats invocation must
-        # use run_tests.sh so the runner owns PASS/FAIL/SKIP accounting.
-        return "allow" if any(
-            arg.split("=", 1)[0] in {"--count", "-c"}
-            for arg in tokens[1:]
-        ) else "block"
+        # --count/-c only reports metadata and never executes test bodies.
+        # A single concrete file is also lightweight; multi-file/full-suite
+        # execution remains blocked here and is admitted by the host-wide
+        # heavy-job guard when invoked through the combined hook.
+        return "allow" if bats_is_lightweight(tokens[1:]) else "block"
     if head in {"env", "command", "exec", "time", "nice"}:
         rest = tokens[1:]
         while rest and rest[0].startswith("-") and rest[0] != "--":
@@ -152,7 +151,7 @@ print(classify(text))
 ' 2>/dev/null)"
 
 if [[ "$classification" == "block" ]]; then
-    echo "BLOCK: batsの直接実行は禁止。'bash scripts/run_tests.sh file <対象の.bats>' を使え。"
+    echo "BLOCK(heavy-job-admission): 重量bats直接実行（複数ファイル/全量）はhost-wide排他制御が必要。'bash scripts/heavy_job_admission.sh -- <元のコマンド全体>' の形で実行せよ。単一の.batsファイル1つや--countは対象外。"
     echo "正規代替: bash scripts/run_tests.sh file <対象の.bats>"
     echo "全量代替: bash scripts/run_tests.sh unit"
     exit 2

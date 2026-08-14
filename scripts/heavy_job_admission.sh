@@ -33,6 +33,7 @@ set -euo pipefail
 # (SHOGUN_HEAVY_JOB_ADMISSION_METRICS=1) so this can never write duplicate/
 # unrelated noise into a caller's own ledger context by accident.
 _hja_metrics_enabled=0
+_hja_metrics_pids=()
 if [[ "${SHOGUN_HEAVY_JOB_ADMISSION_METRICS:-0}" == "1" ]]; then
     _hja_self="${BASH_SOURCE[0]:-$0}"
     _hja_lib="$(cd "$(dirname "$_hja_self")" && pwd)/lib/defense_overhead_writer.sh"
@@ -43,6 +44,14 @@ if [[ "${SHOGUN_HEAVY_JOB_ADMISSION_METRICS:-0}" == "1" ]]; then
     fi
     unset _hja_self _hja_lib
 fi
+
+_hja_drain_metrics() {
+    local pid
+    for pid in "${_hja_metrics_pids[@]}"; do
+        wait "$pid" || true
+    done
+    _hja_metrics_pids=()
+}
 
 # v2: 2026-07-15、旧lockのFDがdurable背景workerへ継承され、そのworkerが
 # SHOGUN_HEAVY_JOB_LOCK_HELD=0で再入して自己デッドロックした。現在の旧inodeを
@@ -291,6 +300,7 @@ if [[ "$_hja_metrics_enabled" == "1" ]]; then
         defense_overhead_write heavy_job_admission queue_wait "$((_hja_queue_age_sec * 1000))" \
             PASS "hja-${owner_generation}-queue"
     ) >/dev/null 2>&1 &
+    _hja_metrics_pids+=("$!")
 fi
 
 p9_pids=""
@@ -331,6 +341,7 @@ if [[ "$_hja_metrics_enabled" == "1" ]]; then
             "$(( ($(date +%s) - owner_started) * 1000 ))" \
             "$([[ "$rc" -eq 0 ]] && echo PASS || echo FAIL)" "hja-${owner_generation}-exec"
     ) >/dev/null 2>&1 &
+    _hja_metrics_pids+=("$!")
 fi
 drain_started=$SECONDS
 while process_group_has_live_member "$leader_pid"; do
@@ -341,4 +352,5 @@ while process_group_has_live_member "$leader_pid"; do
     fi
     sleep 0.05
 done
+_hja_drain_metrics
 exit "$rc"
