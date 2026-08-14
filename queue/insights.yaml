@@ -169,8 +169,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 65
-  last_seen: "2026-08-15T03:19:59+09:00"
+  occurrence_count: 68
+  last_seen: "2026-08-15T03:47:32+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -943,8 +943,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'a2b3a963f9f20455cdbcebc1af3189f6a5ed419b5714bef9a75243de051c1d11' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 5
-  last_seen: "2026-08-15T03:07:33+09:00"
+  occurrence_count: 6
+  last_seen: "2026-08-15T03:40:11+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -991,5 +991,76 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608150208_kagemaru; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608150208_kagemaru"
+  fix_known: false
+  status: pending
+- id: INS-20260815-032527539-47a8
+  ts: "2026-08-15T03:25:27+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4311; matched=生成; current_pattern=FoF月初入力記録の生成コスト是正 — 判定ループ内での価格系列まるごと再構築をやめる; candidate_level=2; candidate=620教訓中9重複ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複。lesson_write.sh AC2=ID dedupのみ→内容dedup不在→同一テーマ重複。cmd_save.sh Check12(Jaccard≥50%)と同構造で実装可能; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4311"
+  fix_known: false
+  status: pending
+- id: INS-20260815-032527930-59a3
+  ts: "2026-08-15T03:25:27+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4311; matched=系列; current_pattern=FoF月初入力記録の生成コスト是正 — 判定ループ内での価格系列まるごと再構築をやめる; candidate_level=4; candidate=なぜなぜ7回の根因=新パス追加時に既存防御層との整合性チェックがない。GP-180(即効)に加え、STALE_RESET実行済みフラグ(例: _STALE_RESET_DONE=1)を配備最終段階で確認→未実行ならBLOCK。今後DIRECT_MODE3やCMD_FORCED2が追加されても防御層迂回を構造的に検出; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4311"
+  fix_known: false
+  status: pending
+- id: INS-20260815-032537052-330a
+  ts: "2026-08-15T03:25:37+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿指摘_新しい仕組みを作るな因果をたどれ_20260815]] は既存aliasesに一致なし。類似概念TOP3: infra_design_intent(インフラ設計意図カタログ; alias=因果をたどれ; score=13.8) / growth_loop(学習ループ; alias=殿指示 20 08『nxe 2d robustness asis tobe 5w1h 20260801 mdを実行したい; score=2.7) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=2.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T03:25:45+09:00"
+- id: INS-20260815-032537371-5c46
+  ts: "2026-08-15T03:25:37+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[FoF月初記録が判定毎に系列全体を再構築]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=FoF; score=9.3) / lesson_lifecycle(教訓ライフサイクル管理; alias=忍者がlessons_usefulに活用結果を記入していない; score=1.7) / creator_brainwashing_defense(創造主の洗脳防御; alias=教訓 『再構築』指示に追記で応えるな; score=1.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T03:25:45+09:00"
+- id: INS-20260815-032537653-3a1e
+  ts: "2026-08-15T03:25:37+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4311生成コスト是正]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=21.6) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=表コンテナ内スクロール是正_cmd_4209; score=21.0) / dm_fusion_app(DM-Fusionアプリ; alias=cmd_3586スコープ分離; score=20.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T03:25:45+09:00"
+- id: INS-20260815-033336079-2ae1
+  ts: "2026-08-15T03:33:36+09:00"
+  insight: "semantic_index_update新概念候補: discussion:run369の頃にgoldの値がないだけの時には1分台だった は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T03:39:51+09:00"
+- id: INS-20260815-033613180-2e49
+  ts: "2026-08-15T03:36:13+09:00"
+  insight: "semantic_index_update新概念候補: discussion:4311は終わっているのでは？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T03:39:51+09:00"
+- id: INS-20260815-034908794-d883
+  ts: "2026-08-15T03:49:08+09:00"
+  insight: "semantic_index_update新概念候補: discussion:設計書の更新は随時アップデートしているか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
