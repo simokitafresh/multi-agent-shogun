@@ -904,7 +904,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608140351_kotaro"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で現行scripts/archive_completed.sh:788-878のarchive_cmds()はQUEUE_FILE読込・分類・更新mvを同一flock(/tmp/mas-stk.lock)内に包含し、TOCTOU懸念は既存修正で解消済み。既存修正のため追加コード変更なし。"
+  action_artifact: "scripts/archive_completed.sh:788-878;git_commit=29d15d42d32dc79aabaa775fae2a21b19ad9f1fe;context/senkyoku-log.md:1021;queue/archive/reports/hanzo_report_cmd_reflux_insight_202608021606_hanzo_20260802.yaml"
+  resolved_at: "2026-08-14T09:39:23+09:00"
 - id: INS-20260814-040911217-a24a
   ts: "2026-08-14T04:09:11+09:00"
   insight: "THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify='test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh' source=S2_detector_fp_rate"
@@ -915,8 +918,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 41
-  last_seen: "2026-08-14T09:19:59+09:00"
+  occurrence_count: 42
+  last_seen: "2026-08-14T09:39:06+09:00"
   verification:
     status: "passed"
     exit_code: 0
