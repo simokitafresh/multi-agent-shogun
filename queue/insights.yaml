@@ -95,7 +95,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4306"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存修正GP-234で解消済み。一次台帳logs/gunshi_gp_tracker.yaml L641-L651はhayate cmd_2284の旧continuation残留によるYAML破損、修正commit 5bf5715af、bats 22/22 PASSを記録。現行scripts/report_field_set.shにもroot/nested両経路のskip_continuationが存在し、新規修正・decision_candidateは不要。"
+  action_artifact: "logs/gunshi_gp_tracker.yaml:L641-L651;commit=5bf5715af;scripts/report_field_set.sh:2032-2038,2135-2143;docs/semantic-index/index.md:L6343-L6344;docs/obsidian-promoted/provenance-p0.4-fof-dtb3-snapshot-db-select-cmd_save-cmd_4306-2026-08-14t16-51-17.md"
+  resolved_at: "2026-08-15T03:31:30+09:00"
 - id: INS-20260814-171101403-dc4a
   ts: "2026-08-14T17:11:01+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[P0.4後半根治]] は既存aliasesに一致なし。類似概念TOP3: dm_signal_refactor_mission(DM-Signalリファクタ任務; alias=WP-0; score=2.0) / db_price_data_range(DB価格データ範囲; alias=504日; score=2.0) / agent_formation_management(編成管理; alias=GPT 5.5 vs Opus 4.8; score=1.9)。概念定義とaliases追加を検討せよ"
