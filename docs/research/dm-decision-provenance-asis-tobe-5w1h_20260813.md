@@ -176,6 +176,8 @@ full/portfolio再計算の終端で、`recalculation_status`行へ`summary` JSON
 
 full再計算では全PFが対象に入るためFoFの終端standard PFも母集団に含まれ、GLDは自然に収集される。**partial(mode=portfolio)でFoFを指定した場合、その終端standard PFは`target_portfolios`に含まれないため保有銘柄が母集団から落ちる。** `monthly_trade_impl`はsnapshot公開後のDB fallbackを抑止する(fail-close)ため、本番pricesにGLDが実在しても`price_movement`が作られず、weights(満額1.0000)との照合が不一致となってwarningになる。**照合機構は正しく働いている。壊れているのは母集団である。**
 
+**構造的必然であることの可視化(`scripts/fof_tree.py` 実行結果 2026-08-14 21:23)**: 本番の木は例えば `New Fund of Funds[fof] → 秘奥義-加速D-激攻[fof] → 奥義-GS-抜き身-激攻[fof] → GSシン加速R-激攻[fof] → シン朱雀-常勝[standard]` であり、**実際に銘柄を保有する終端standard PFは親から4段下にある**。partialで親FoFを指定すると`target_portfolios`にはその親(と解決範囲のFoF)しか入らず、4段下の終端standardは`:1963`のstandard抽出に現れない。∴**本事象は特定PFの偶然ではなく、FoF親を対象とするpartial全般で構造的に発生する。** 影響が3PFに留まって見えるのは、warningを生む条件(該当月にmonthly_tradeが再構築された)を満たしたPFがその数だっただけであり、母集団欠落そのものはより広い。
+
 #### (3) 見落としていた視点(4点・正直な記載)
 
 1. **運用規律を構造的遮断と誤記していた**: §3.28-5に「partial modeの親closure拡張はmode=portfolio運用停止で遮断」と書いたが、運用停止は**規律であって構造ではない**。実際にrun399(mode=portfolio・completed)が走り、規律の外側で露呈した。「遮断済み」の語は実態と乖離しており、本節をもって訂正する。
