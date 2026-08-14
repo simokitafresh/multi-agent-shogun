@@ -176,8 +176,19 @@ def establish(
     raise SessionError(f"no qualified CDP endpoint in finite ports: {list(ports)}")
 
 
+def _profile_root() -> Path:
+    # Windows Chrome rejects a UNC (\\wsl.localhost\...) user-data-dir with a
+    # "cannot open your profile" popup, so profiles for Windows Chrome must
+    # live on a local Windows drive.  Prefer /mnt/c/temp (-> C:\temp) when the
+    # Windows filesystem is mounted; fall back to the POSIX tempdir otherwise.
+    windows_temp = Path("/mnt/c/temp")
+    if windows_temp.is_dir():
+        return windows_temp / "cdp-session-profiles"
+    return Path(tempfile.gettempdir()) / "cdp-session-profiles"
+
+
 def _new_profile(port: int) -> str:
-    root = Path(tempfile.gettempdir()) / "cdp-session-profiles"
+    root = _profile_root()
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     return tempfile.mkdtemp(prefix=f"p{port}-", dir=root)
 
@@ -210,8 +221,11 @@ def cleanup(receipt: dict, session_close: Callable[[str], None] | None = None) -
     if not isinstance(pid, int) or not profile:
         raise SessionError("owned receipt lacks cleanup identity")
     profile_path = Path(profile).resolve()
-    allowed_root = (Path(tempfile.gettempdir()) / "cdp-session-profiles").resolve()
-    if allowed_root not in profile_path.parents:
+    allowed_roots = {
+        (Path(tempfile.gettempdir()) / "cdp-session-profiles").resolve(),
+        _profile_root().resolve(),
+    }
+    if not any(root in profile_path.parents for root in allowed_roots):
         raise SessionError("profile is outside the owned cleanup boundary")
     (session_close or _close_owned_session)(receipt["endpoint"])
     if session_close is None:
