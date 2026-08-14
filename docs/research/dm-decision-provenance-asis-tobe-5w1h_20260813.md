@@ -506,7 +506,10 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | **P0.9** L2供給価格の別ルート | 🟡**設計確定・実装解禁待ち** | 三者合意(2026-08-14 23:31・残疑義0)。設計=**§3.29**、AsIs=§2.9、経緯=§6。挿入点=`recalculate_fast.py:1977`直後/`:1981`直前 | 実測: 準備集合9銘柄、partial時+58.1%(38744→61268行)、full時増分0、FoF78体増分0 |
 | **P0.9** L2供給価格の別ルート | ✅**GATE CLEAR+本番live**(01:22) | commit bc90641e(main)・deploy dep-d9vk0hjncjis73cv1fv0 live・実装61行 | fail-close=`PRICE_SUPPLY_MISSING`稼働 |
 | **P4** full検証(最終checkpoint①) | ✅**CLEAR**(01:43) | run401(full・completed・611秒・ERROR0)。月次16874/metrics102のsha256がrun364と完全一致。partial run400で警報472→0。将軍独立実測=実銘柄欠落0件(Cash由来111件は別事象) | **v2.44でcanary=portfolioからmode=full 1回へ変更**(殿指示01:25)。理由=portfolioは本日2度本番を破壊、fullは6回走って破壊ゼロ。full実測469-482秒 |
-| P5/P6/P7 | ⬜未着手 | — | P5はP4完了後 |
+| **P4 補足確認**(cmd_4313) | ⚠️**重複工程**(05:30 GATE CLEAR) | run402へのread-only突合。全102PFでprovenance required keys充足・missing0、standard限定4キーは24/24、metrics_manifest metric_names47/row_count204/expected204/sha256長64/errors0。将軍が独立SQLで同値を再実測 | **起票の誤り**: P4は01:43にrun401で既にCLEAR済みであったのに、将軍が本§進捗台帳を読まずに「P4未了」と誤認して起票した(LS115の再発)。成果自体は無駄ではない(run402での独立再確認になった)が、**工程としては重複**である |
+| P5 | — | **P7へ統合済み**(v2.46) | 未着手表記は誤り。§5表を見よ |
+| P6 検証クエリ定型化 | ⬜未着手 | 前提P4は充足済み=**着手可能** | cmd_4313が実測で通したSQLがそのまま素材になる |
+| P7 fingerprint skip | ⬜未着手 | 前提P4は充足済み=**着手可能**。速度向上の本体 | 残る唯一のToBe未達(§4.5-1) |
 
 ### 本日の経緯(時刻は全てJST)
 
