@@ -322,10 +322,12 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | **P0.4後半** DTB3 snapshot束縛 | ✅**GATE CLEAR**(cmd_4306) | 才蔵実装・deploy 484f7e45 | テスト15/15 PASS |
 | P0.5 sanitizer契約 | ✅**GATE CLEAR**(19:02・cmd_karo_hotfix_p05_v217_sanitizer) | commit 97c1fd9f・テスト4/4 PASS・SKIP0(v2.17スコープ=sanitizer層契約のみ) | 初回deploy(cmd_4303)はcanary事故で撤回→v2.17スコープで再実装完了(下記経緯)。main反映は§5.07標準サイクルで家老レーン |
 | P0.6 temporal偵察 | ✅完了(cmd_4304) | docs/research/cmd_4304_fof_weights_temporal_20260814.md | — |
-| P0.7 B2窓契約固定 | ⬜未着手 | stub48/44fa fixtureはここ(v2.17移設) | P0.5後 |
+| P0.7 B2窓契約固定 | ✅**GATE CLEAR**(19:45・cmd_karo_p07_b2_window_contract) | (b)SQL実測=非0の50件は殿裁定02:59の既知同窓行(stub48+44fa2)と完全一致→将軍裁定で既裁定適用・続行(19:27)。fixture5/5 PASS+50行現状値10dp固定 | behavior-changing工程だが本番出力差0を実証して通過 |
 | **P3a** runサマリ台帳 | ✅**GATE CLEAR+本番稼働**(cmd_4305) | commits 6d92c190+b6770fe1・deploy 484f7e45 | run364でsummary非NULL初記録(signals_upserted99406・total_time444.290s) |
 | P3b metricsマニフェスト | ⬜未着手 | — | P3a済み・P1b待ち(直列鎖) |
-| P1a/P1b/P2a/P2b | ⬜未着手 | — | P0.5後にグループB |
+| P1a standard scalar | ✅**GATE CLEAR**(19:28・cmd_karo_p1a_standard_scalar) | provenance書込み実装(standard経路) | — |
+| P2a FoF scalar | ✅**GATE CLEAR**(19:36・cmd_karo_p2a_fof_scalar) | provenance書込み実装(FoF経路) | — |
+| P1b/P2b | ⬜次工程 | P1b=snapshot完全化(P1a後の直列鎖)、P2b=P2a+P1b後 | — |
 | P4/P5/P6/P7 | ⬜未着手 | — | — |
 
 ### 本日の経緯(canary事故と復旧 — 時刻は全てJST)
