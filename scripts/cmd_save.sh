@@ -2619,7 +2619,8 @@ print_recent_block_pattern_summary() {
     local scan_file
     scan_file="$(make_quality_log_scan_file)" || return 0
 
-    CMD_SAVE_QUALITY_LOG="$scan_file" python3 - <<'PY'
+    CMD_SAVE_QUALITY_LOG="$scan_file" \
+    CMD_SAVE_ACK_LEDGER="$CMD_SAVE_SHOGUN_LESSON_ACK_FILE" python3 - <<'PY'
 import json
 import os
 import re
@@ -2649,7 +2650,31 @@ blocks = [
     entry for entry in entries
     if isinstance(entry, dict) and str(entry.get("gate_result", "")).strip() == "BLOCK"
 ]
-recent = blocks[-10:]
+
+# 2026-08-15 殿下知: 解決済みcmdがBLOCK SUMMARYへ永久に居座る不具合の修正。
+# 原因=ack台帳(shogun_lesson_ack.yaml)に解決記録があってもこの表示側が一切参照していなかった。
+# 実例=cmd_4302(ack 2026-08-14T06:45:18Z)とcmd_4303(同06:50:54Z)が翌日も毎回表示され続けた。
+# 窓が件数基準(直近10件)であるため、品質が上がりBLOCKが減るほど古い項目が長く残る逆転も併発する。
+# ∴解決済みcmdを除外する。除外後に残らなければ未解決ゼロとして何も表示しない。
+_ack_path = os.environ.get("CMD_SAVE_ACK_LEDGER", "")
+_acked = set()
+if _ack_path and os.path.exists(_ack_path):
+    try:
+        with open(_ack_path, encoding="utf-8") as fh:
+            _ack_data = yaml.load(fh, Loader=_CSAFE) or {}
+        for _row in (_ack_data.get("acks") or []):
+            if isinstance(_row, dict):
+                _cmd = str(_row.get("cmd_id", "") or "").strip()
+                if _cmd:
+                    _acked.add(_cmd)
+    except Exception:
+        _acked = set()
+
+_unresolved = [
+    entry for entry in blocks
+    if str(entry.get("cmd_id", "") or "").strip() not in _acked
+]
+recent = _unresolved[-10:]
 if not recent:
     raise SystemExit(0)
 
