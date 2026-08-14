@@ -152,10 +152,59 @@ full/portfolio再計算の終端で、`recalculation_status`行へ`summary` JSON
 2. **provenance書込みも深度非依存**: P2a実装(GATE CLEAR 2026-08-14 19:36)は「nested深度差なし」をfixtureで確認済み。`relative`のsymbolが子PF ID・valueが月次差分scalarという形は深度に無関係。
 3. **fingerprint連鎖も再帰**: P7のchild chain(子PFのprovenance fingerprintを親のfingerprint構成要素へ含める)は深度が増えても連鎖が1段伸びるだけ(§4.5-1)。
 4. **深度拡張時の唯一の作業**: 新しい深度のPFを追加したら**その深度のfixtureを1本追加するだけ**(現行はdepth1/2/4を列挙 — 実在PFの深度に合わせたもの)。コード・スキーマ・契約の変更は不要。
-5. **深度依存の既知リスクは根治済み**: partial modeの親closure拡張(深いほど巻き込み拡大)はmode=portfolio運用停止で遮断、DTB3のsnapshot外SELECTはP0.4後半で束縛済み。full再計算は子→親の依存順処理ゆえ深度増でも順序不変。
+5. **深度依存の既知リスク(⚠2026-08-14 21:17に一部訂正 — §3.29参照)**: partial modeの親closure拡張(深いほど巻き込み拡大)は**mode=portfolio運用停止という規律で抑えているだけであり構造的遮断ではない**(run399で実際にpartialが走り価格母集団の深度依存が露呈した)。DTB3のsnapshot外SELECTはP0.4後半で束縛済み。full再計算は子→親の依存順処理ゆえ深度増でも順序不変。
 
 **本番実測(2026-08-14 20:05・readonly・v2.21で訂正)**: `New Fund of Funds_copy_copy_copy`(id=9324015c)は**FoF入れ子4段**の頂点である — 連鎖=当該PF→秘奥義(fof)→奥義-GS(fof)→GSシン(fof)→シン四神(standard)。portfolios表の実typeと再帰JOINで全連鎖を実測(殿指摘2026-08-14 20:03が契機)。この最深PFがRB6全量検算(33748月exact)を通過済みであることが、§3.28深度非依存の**本番実証**である。
 **⚠計測時の罠(v2.20誤記の原因)**: `fof_component_weights.component_type`列は当該PFの直接子(実type=fof)を'standard'と表示し、`check_pf_config.py`のtype表示も同様だった — **子の実typeはportfolios表とのJOINで確認せよ。component_type列を鵜呑みにするな**(列値と実態の乖離は別途データ品質事象として記録)。なお表示名「Total Return (PF名)」はUI表示ラベルでありPF名とは別物。
+
+### §3.29 価格入力母集団の契約(matched-weight事象 — 殿指示2026-08-14 21:17で新設。実装・配備は三者納得まで禁止)
+
+**位置づけ**: 本節は設計の穴の告白である。P1b/P2bで「snapshotに何を保存するか」を定義したが、**「snapshotに何が入っているべきか(母集団)」を定義していなかった**。その欠落が本番warningとして現れた。
+
+#### (1) 現象(一次データ)
+
+殿提示の本番ログ原文: `Ticker GLD in weights but not in price_movement` に続き `Matched weight 0.2500 != 1.0, missing_tickers=['GLD'], portfolio_id=ed2079af-6ea0-4ae4-a7e6-e9bb4935f5a7, year_month=2026-03, weights_sum=1.0000, weights_keys=['GLD','TQQQ']`(同PF 2026-07は0.5000・`['GLD','XLU']`)。
+
+規模(家老・疾風の一次照会 2026-08-14 21:18): warn=472、precomputed_raw monthly_trade要素で raw_rows=299、distinct(portfolio_id,year_month)=257、影響portfolios=3、prices上のGLD=5467行。1件の定義=JSON配列要素1行/PF月一意組1件/PF一意値1件。
+
+#### (2) 根因(コード現物・行番号つき)
+
+`backend/app/jobs/recalculate_fast.py`
+- `:1963` 対象PFを `standard_portfolios = [p for p in target_portfolios if p.type != "fof"]` で分離する。
+- `:1977` `all_symbols = _collect_all_symbols(standard_portfolios)` — **価格の母集団をFoFを除いた集合からのみ作る**。
+- `:1981` その結果が `stock_symbols` としてsnapshotへmaterializeされる。
+
+full再計算では全PFが対象に入るためFoFの終端standard PFも母集団に含まれ、GLDは自然に収集される。**partial(mode=portfolio)でFoFを指定した場合、その終端standard PFは`target_portfolios`に含まれないため保有銘柄が母集団から落ちる。** `monthly_trade_impl`はsnapshot公開後のDB fallbackを抑止する(fail-close)ため、本番pricesにGLDが実在しても`price_movement`が作られず、weights(満額1.0000)との照合が不一致となってwarningになる。**照合機構は正しく働いている。壊れているのは母集団である。**
+
+#### (3) 見落としていた視点(4点・正直な記載)
+
+1. **運用規律を構造的遮断と誤記していた**: §3.28-5に「partial modeの親closure拡張はmode=portfolio運用停止で遮断」と書いたが、運用停止は**規律であって構造ではない**。実際にrun399(mode=portfolio・completed)が走り、規律の外側で露呈した。「遮断済み」の語は実態と乖離しており、本節をもって訂正する。
+2. **snapshot契約に母集団の定義がなかった**: P1b/P2bはpayloadの**形**(start/end実価格対・月初snapshot)を契約したが、**どのsymbolが入るべきかという集合の契約**を持たない。形が正しくても集合が欠ければ下流は欠損する。
+3. **深度非依存契約が計算側だけを見ていた**: §3.28は「momentum計測・provenance書込み・fingerprint連鎖」が深度非依存であることを論じたが、**価格入力の収集がFoF展開に追随するか**は論じていない。収集が展開に追随しなければ、計算が深度非依存でも入力が深度依存になる。
+4. **fail-closeの適用点が母集団確定より後ろにあった**: snapshot公開後のfallback抑止は正しい。しかし母集団が不完全な場合に**その場で止まらず**、表示層のwarningとして下流へ漏れる。fail-closeは「引けなかった」ではなく「母集団に入っているべきものが入っていない」を検知すべきである。
+
+#### (4) A案(候補・確定扱い禁止): 母集団をFoF展開後の集合へ揃える
+
+**変更点**: `:1977`が`_collect_all_symbols`へ渡す集合を、FoF展開後の終端standard PF群を含む集合へ変える。展開には**既存のFoF解決結果**(同関数内で既に解決している親子関係、またはweights側が使う`expand_portfolio_to_tickers`(`backend/app/services/price_ratio_impl.py:1078`))を再利用し、新しい閉包計算を書き起こさない。
+
+**変更しない点(副作用の遮断面)**:
+- weightsと`price_movement`を別ソースから取り両者を照合する設計(`monthly_trade_impl.py:1420-1442`の設計原則)は維持する。**これは検出機構であり、経路統合で失えば異常が見えなくなる。** 揃えるのは入力集合であって経路ではない。
+- `_collect_all_symbols`自身のロジック(relative_assets等の収集規則)は変更しない。
+- Cash契約: Cashはprice-freeであり価格母集団に含めない。2026-08-02の根治(Cashを価格欠落扱いしない)を巻き戻さない。
+- real ticker契約: 実銘柄が母集団に無い場合のfail-closeは維持する。母集団を広げることで欠損を隠す方向へ倒さない。
+- DTB3・SPYの既存扱い(`:1981`のDTB3除外とSPY常時materialize)は変更しない。
+
+**full/partialの集合契約(本節で新設)**: 同一PF集合を対象とするとき、**partialが構築する価格母集団はfullが構築する母集団の当該部分と一致しなければならない**。これを回帰の判定式とする。
+
+**深度非依存**: 既存の展開結果を再利用する限り、深度が増えても母集団が自動的に追随する。独自の閉包を書けばそこが新たな深度依存点になるため書かない。
+
+**波及先(要確定)**: 母集団はsnapshot経由で複数の生成物の入力になりうる。表示層の`monthly_trade`に閉じるのか、他系統へ及ぶのかは実装前に切り分ける。設計書のmulti-table hash対象6表に`monthly_trade`は含まれないためP4判定は直接影響を受けないが、**hash対象外だから無害という推論はしない**(検知器の盲点を継承するため)。
+
+**rollback**: 変更は収集元の集合指定1点であり、revert 1手で現状へ戻る。
+
+**検証値(実装時のAC候補)**: (a)同一PF集合でpartialとfullの母集団が一致 (b)殿提示PF(ed2079af)の2026-03と2026-07でmatched weightが満額 (c)影響257 PF月の実銘柄欠落が解消 (d)Cashがprice-freeのまま (e)real ticker欠落時のfail-closeが維持。
+
+**状態**: 候補。殿・将軍・家老の三者が明示的に納得するまで、実装・配備・commit・push・deployを行わない(殿裁定2026-08-14 21:19)。
 
 ### §3.3 使い方(完成後のデバッグ手順)
 
