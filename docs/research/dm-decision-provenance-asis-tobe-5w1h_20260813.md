@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.4
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.5
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -214,7 +214,7 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | P0 | 本設計書の殿裁定 | — | — | なし(裁定のみ) | §3の保存内容・§4の速度制約が承認される |
 | P0.5 | sanitizer/reader/window契約の先行固定 | P0 | A | `utils/sanitize.py`+fixtureファイル+`generators/monthly_returns.py`(B2条件分岐) | sanitize allowlist拡張+旧出力不変fixture+未知キー無視fixture+B2条件分岐(canonical月のみ満月上書き)+初月stub48行・44fa8aad2行regression fixture(§2.4)がFAIL0/SKIP0 |
 | P0.6 | fof_component_weightsのtemporal性質確定 | P0 | A | なし(コード読解のみ・read-only) | 判定時点snapshotか最新値上書きかをコード現物で二値確定(§3.1懸案クローズ) |
-| P3a | runサマリmigration | P0 | A | `models.py`+`migrations.py`+`recalc_status.py`+caller群 | ADD COLUMN summary(nullable)+ADD COLUMN分岐追加+writer引数+caller更新+失敗時二値契約(WARN+null、runは止めない)+起動互換PASS |
+| P3a | runサマリmigration | P0 | A | `backend/app/db/models.py:1191-1205`(RecalculationStatus。※`schemas/models.py`と併存するため正本はdb側)+`backend/app/db/migrations.py:1062-1085`+`backend/app/utils/recalc_status.py:204-255,407-427`+caller=`backend/app/api/etl_trigger.py:230`と`backend/app/services/portfolio_restore.py:250`(いずれも`end_recalculation()`) | ADD COLUMN summary(nullable)+ADD COLUMN分岐追加+writer引数+caller更新+失敗時二値契約(WARN+null、runは止めない)+起動互換PASS |
 | P1a | 書込み実装(standard scalar) | P0.5 | B | `recalculate_fast.py`(Phase 3.7/4判定ループ) | pure executor結果から月初判定日のprovenance構築+momentum_data埋め込み+対象テストFAIL0/SKIP0 |
 | P1b | snapshot完全化(standard) | P0.5, **P1a**(同一ファイル`recalculate_fast.py`のため直列) | — | `recalculate_fast.py:403-471`(snapshot builder) | 月初snapshot表へstart/end実価格対payload(現状latest1点:426-440の拡張)+fixture PASS |
 | P2a | 書込み実装(FoF scalar) | P0.5, P0.6 | B | `recalculate_fof.py`(FoFループ) | FoFループで同スキーマ+nested深度差なしをfixture確認 |
@@ -241,7 +241,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 ### §5.06 中断安全区切り(どこで止めても本番が壊れない境界 — v2.2新設・殿指示2026-08-14 15:01)
 
-> **設計原理**: P7以前の全工程は**record-only(記録の追加のみ、判定・選抜・リターン計算の挙動変更ゼロ)**として設計されている。∴**任意の工程のcommit境界で作業を中断しても、本番の計算結果は1バイトも変わらない**。中断=そこまでの記録機能がdeployされているだけの状態であり、rollback不要・復旧作業不要。
+> **設計原理**: P7以前の工程は**P0.5を除き全てrecord-only(記録の追加のみ、判定・選抜・リターン計算の挙動変更ゼロ)**。P0.5のみ**behavior-preserving production change**(B2分岐の条件明示化=現挙動の固定。regression fixtureがバイト不変を証明)であり、record-onlyではないが出力は変わらない。∴**任意の工程のcommit境界で作業を中断しても、本番の計算結果は1バイトも変わらない**。中断=そこまでの記録機能(P0.5は挙動固定)がdeployされているだけの状態であり、rollback不要・復旧作業不要。
 
 | 工程 | 中断した場合の本番状態 | 本番影響 |
 |---|---|---|
@@ -253,7 +253,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 | P6 | スキル追記のみ(shogun repo側) | **ゼロ**(DM-signal本番に非接触) |
 | **P7** | **唯一の挙動変更工程**(skip=判定そのものを飛ばす) | skip有効化flagの**deploy前まではゼロ**。有効化はA/B multi-table hash完全一致の証明後のみ。中断するならflag無効のままdeploy=record-only状態へ即戻せる(可逆) |
 
-**中断の作法**: (1)中断区切り=各工程の「二値出口PASS+commit」時点。工程の途中(テスト未PASS)ではcommitせず中断せよ — 未完コードはbranchに置き、mainへ混ぜない。(2)中断再開時は本表の依存列から再開位置を引く(前工程のPASS証跡=報告YAML+commit hashが再開点)。(3)中断中の本番障害時は復帰点宣言(rollback計画書v1.8 §-1)が常に有効 — 本設計の全工程はrecord-onlyゆえ復帰点の正基準(6cc6b576)との突合を汚さない。
+**中断の作法**: (1)中断区切り=各工程の「二値出口PASS+commit」時点。工程の途中(テスト未PASS)ではcommitせず中断せよ — 未完コードはbranchに置き、mainへ混ぜない。(2)中断再開時は本表の依存列から再開位置を引く(前工程のPASS証跡=報告YAML+commit hashが再開点)。(3)中断中の本番障害時は復帰点宣言(rollback計画書v1.8 §-1)が常に有効 — 本設計の工程は出力不変(record-only+P0.5のbehavior-preserving固定)ゆえ復帰点の正基準(6cc6b576)との突合を汚さない。
 
 ### §5.07 工程ごとの本番デプロイ+小単位確認(段階deploy運用 — v2.3新設・殿指示2026-08-14 15:03)
 
@@ -302,6 +302,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 ## §6 改訂履歴
 
+- v2.5 (2026-08-14 15:22): 家老再レビュー(blt_20260814_151931・残存2件、前回4/4反映確認済み)を将軍現物突合で反映 — ①P3a影響範囲を完全自己完結化: 正本=`backend/app/db/models.py:1191-1205`(schemas/models.py併存の誤誘導を注記)+`db/migrations.py:1062-1085`+`utils/recalc_status.py:204-255,407-427`+caller 2箇所(`etl_trigger.py:230`/`portfolio_restore.py:250`の`end_recalculation()`。将軍がls+grepで実在確認) ②§5.06の「P7以前すべてrecord-only」とP0.5行の矛盾を解消: P0.5のみbehavior-preserving production change、他はrecord-onlyへ統一(冒頭・末尾の2箇所)。中断契約が一意化。
 - v2.4 (2026-08-14 15:16): 家老レビュー(blt_20260814_151124・穴あり4件)を将軍がコード現物突合で全件正当と確認し反映 — ①依存DAG訂正: 同一ファイル直列はP1a→P1b(`recalculate_fast.py`)とP2a→P2b(`recalculate_fof.py`)の2組。P3b影響範囲を実ファイル3箇所へ具体化 ②P0.5は本番コード変更工程(B2条件分岐)と訂正し§5.06の「deploy不要」から分離、§5.07 canary対象へ追加(出力ゼロ差はfixtureが証明) ③canary固定値の明文化: `include_parent_fof=false`+`include_nested_fof=false`必須(既定trueで親closure拡張=5PF固定にならない。`etl_trigger.py:86`+`recalculate_fast.py:1653-1665`を将軍実読)。P3b canary期待行数=対象PF×2行へ分離 ④cmd定型スタート欄へcanary UUID・固定クエリ・baseline hash必須化。将軍側の裏取り=B2無条件上書き(`monthly_returns.py:618`)とNULL月dict不在コメントを実読済み。
 - v2.3 (2026-08-14 15:06): 殿指示15:03-15:05「小さい単位でcommit/push/本番deployして早く確認。手戻り防止・知見の複利。スタートとゴールが明確で家老・忍者が誤解や過剰対応をしないこと」— §5.07段階deploy運用新設: 各実装工程の標準サイクル=実装→commit→push→本番deploy→canary小確認3分(三値: smoke縮小版/代表5PF書込み確認/1PF正基準突合)。失敗時はrevert 1手(可逆・裁可待ち不要)。工程cmd定型3欄(スタート=依存PASS証跡/ゴール=二値出口+canary三値のみ/スコープ外=明示列挙5項)で誤解・過剰対応を構造防止。canary回転の型(08-12確立)の再利用。
 - v2.2 (2026-08-14 15:03): 殿指示15:01「作業を途中でやめても本番に影響しない区切りも明確にしよう」— §5.06中断安全区切り新設: P7以前は全工程record-only(挙動変更ゼロ)ゆえ任意のcommit境界で中断しても本番不変を工程別表で明示。中断の作法3則(二値出口PASS+commitが区切り/再開は依存列から/中断中も復帰点宣言v1.8が有効)。「今日はここまで」の区切りを設計に内蔵。
