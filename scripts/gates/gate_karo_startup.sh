@@ -742,10 +742,52 @@ review_quality_scale_summary() {
     local limit="${2:-20}"
     local status_file="${3:-$SCRIPT_DIR/queue/shogun_to_karo.yaml}"
     local gate_metrics_file="${4:-$SCRIPT_DIR/logs/gate_metrics.log}"
+    local report_task_type_file=""
+    local report_cmd_ids_file=""
     [ -f "$review_log" ] || { echo "DATA_MISSING"; return 0; }
     [ -f "$status_file" ] || status_file="/dev/null"
     [ -f "$gate_metrics_file" ] || gate_metrics_file="/dev/null"
     [[ "$limit" =~ ^[0-9]+$ ]] || limit=20
+    # Report task_type is the SSOT for verification classification. Missing
+    # reports intentionally leave the existing fallback classification intact.
+    report_task_type_file="$(mktemp)"
+    report_cmd_ids_file="$(mktemp)"
+    awk -v limit="$limit" '/^[[:space:]]*-[[:space:]]*cmd_id:/ {
+        s = $0
+        sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/, "", s)
+        gsub(/^['"'"']|['"'"']$/, "", s)
+        n++
+        ids[n] = s
+    }
+    END {
+        start = n - limit + 1
+        if (start < 1) start = 1
+        for (i = start; i <= n; i++) print ids[i]
+    }' "$review_log" > "$report_cmd_ids_file"
+    while IFS= read -r _review_cmd_id; do
+        [ -n "$_review_cmd_id" ] || continue
+        for _report_dir in "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/archive/reports"; do
+            [ -d "$_report_dir" ] || continue
+            for _report_file in "$_report_dir"/*"$_review_cmd_id"*.yaml; do
+                [ -f "$_report_file" ] || continue
+                awk '
+function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^['"'"']|['"'"']$/, "", s); return s }
+/^[[:space:]]*parent_cmd:/ {
+    s = $0
+    sub(/^[[:space:]]*parent_cmd:[[:space:]]*/, "", s)
+    parent_cmd = trim(s)
+}
+/^[[:space:]]*task_type:/ {
+    s = $0
+    sub(/^[[:space:]]*task_type:[[:space:]]*/, "", s)
+    task_type = tolower(trim(s))
+}
+END {
+    if (parent_cmd ~ /^cmd_/ && task_type != "") print parent_cmd "\t" task_type
+}' "$_report_file" >> "$report_task_type_file"
+            done
+        done
+    done < "$report_cmd_ids_file"
     awk -v limit="$limit" '
 function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
 FILENAME == ARGV[1] {
@@ -789,6 +831,14 @@ FILENAME == ARGV[2] {
     }
     if (cmd != "" && result ~ /^(CLEAR|PASS)$/) {
         gate_clear[cmd] = 1
+    }
+    next
+}
+FILENAME == ARGV[4] {
+    if (NF >= 2 && $1 ~ /^cmd_/) {
+        # Active reports are listed before archive reports. Keep the first
+        # canonical value when a command has both generations present.
+        if (!(trim($1) in report_task_type)) report_task_type[trim($1)] = tolower(trim($2))
     }
     next
 }
@@ -881,8 +931,10 @@ END {
         # 正当なFAIL（仮説棄却/入力不足）を実装品質WARNへ混ぜない。一方で
         # hotfix/implのFAILは除外せず、品質劣化をそのまま残す。
         non_impl_id = tolower(cid[i])
+        report_task_type_value = report_task_type[cid[i]]
         review_only = (review_basis ~ /(delta[_ -]?review|independent[_ -]?review|design[_ -]?review|設計書.*検分|独立レビュー|敵対レビュー)/ \
             || review_purpose ~ /^(設計書(の|を)?.*(検分|独立レビュー)|独立レビュー|敵対レビュー|delta[_ -]?review|independent[_ -]?review|design[_ -]?review)/ \
+            || report_task_type_value == "verification" \
             || non_impl_id ~ /^cmd_reflux_/ \
             || non_impl_id ~ /_recon[0-9]*_/ \
             || non_impl_id ~ /_affected_tests_/)
@@ -927,7 +979,8 @@ END {
     if (review_only_cmds == "") review_only_cmds = "-"
     printf "RATE %d %d %d %d %d %d %s %d %s %d %s %d %s\n", new_rate, new_warn, new_total, old_rate, review_only_warn, review_only_total, review_only_cmds, terminal_gap_warn, (terminal_gap_cmds == "" ? "-" : terminal_gap_cmds), false_positive_warn, (false_positive_cmds == "" ? "-" : false_positive_cmds), pending_draft_total, (pending_draft_cmds == "" ? "-" : pending_draft_cmds)
 }
-' "$status_file" "$gate_metrics_file" "$review_log"
+' "$status_file" "$gate_metrics_file" "$review_log" "$report_task_type_file"
+    rm -f "$report_task_type_file" "$report_cmd_ids_file"
 }
 
 if [[ "${GATE_KARO_STARTUP_LIB_ONLY:-0}" == "1" ]]; then
