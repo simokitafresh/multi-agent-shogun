@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.3
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.4
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -216,16 +216,16 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | P0.6 | fof_component_weightsのtemporal性質確定 | P0 | A | なし(コード読解のみ・read-only) | 判定時点snapshotか最新値上書きかをコード現物で二値確定(§3.1懸案クローズ) |
 | P3a | runサマリmigration | P0 | A | `models.py`+`migrations.py`+`recalc_status.py`+caller群 | ADD COLUMN summary(nullable)+ADD COLUMN分岐追加+writer引数+caller更新+失敗時二値契約(WARN+null、runは止めない)+起動互換PASS |
 | P1a | 書込み実装(standard scalar) | P0.5 | B | `recalculate_fast.py`(Phase 3.7/4判定ループ) | pure executor結果から月初判定日のprovenance構築+momentum_data埋め込み+対象テストFAIL0/SKIP0 |
-| P1b | snapshot完全化(standard) | P0.5 | — (P1aと同一ファイルのため直列) | `recalculate_fast.py:403-471`(snapshot builder) | 月初snapshot表へstart/end実価格対payload(現状latest1点:426-440の拡張)+fixture PASS |
+| P1b | snapshot完全化(standard) | P0.5, **P1a**(同一ファイル`recalculate_fast.py`のため直列) | — | `recalculate_fast.py:403-471`(snapshot builder) | 月初snapshot表へstart/end実価格対payload(現状latest1点:426-440の拡張)+fixture PASS |
 | P2a | 書込み実装(FoF scalar) | P0.5, P0.6 | B | `recalculate_fof.py`(FoFループ) | FoFループで同スキーマ+nested深度差なしをfixture確認 |
-| P2b | snapshot新設(FoF/nested) | P1b(payload形式を継承), P0.6 | — | `recalculate_fof.py`(snapshot呼出追加。現状0件) | FoF経路のsnapshot呼出追加+depth1/2/4 fixture PASS |
-| P3b | metricsマニフェスト(⑦) | P3a | B | metrics writer→summary書込み箇所 | summaryへmetrics_manifest(47name+204行+入力SHA256)が非null |
+| P2b | snapshot新設(FoF/nested) | **P2a**(同一ファイル`recalculate_fof.py`のため直列), P1b(payload形式を継承), P0.6 | — | `recalculate_fof.py`(snapshot呼出追加。現状0件) | FoF経路のsnapshot呼出追加+depth1/2/4 fixture PASS |
+| P3b | metricsマニフェスト(⑦) | P3a | B | `generators/portfolio_metrics.py:20-83`+`recalculate_fast.py:542-549`+`utils/recalc_status.py:230-255`(metrics算出→summary書込みの経路) | summaryへmetrics_manifest(47name+204行+入力SHA256)が非null。**canary時の期待行数は対象PF×years2=対象PF×2行へ分離**(5PF partialでは204行にならない — 家老レビュー③) |
 | P4 | canary(最終checkpoint①) | P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | standard2+FoF depth1/2/4計5PF・stub月/normal月両方・親closure固定。multi-table hash一致5/5+provenance非null+ERROR0 |
 | P5 | full+速度検証(最終checkpoint②) | P4 | — | なし(実行+検証のみ) | 102/102・failed0・off/on各3run medianでTOTAL増分+5%以内・payload/WAL/TOAST分位(§4-7)・500B見積のcanary実測後外挿再検証・保存値から選抜再導出全数一致 |
 | P6 | 検証クエリの定型化 | P5 | — | db-checkスキル(shogun repo側) | §3.3のSQLをdb-checkスキルへ追記 |
 | P7 | fingerprint skip有効化(速度向上・別cmd) | P5 | — | fingerprint基盤+skip判定 | versioned watermark+precomputed manifest実装(§4.5-3)+skip有効/無効A/B fullでmulti-table hash完全一致+TOTAL短縮幅の実測記録 |
 
-**並列グループの読み方**: P0裁定直後にグループA(P0.5+P0.6+P3a=3タスク同時配備可、影響ファイル無競合)。P0.5完了後にグループB(P1a+P2a+P3bのうち依存満了分を同時配備可)。P1b/P2bは同一ファイル直列制約に従う。クリティカルパス=P0→P0.5→P1b→P2b→P4→P5。
+**並列グループの読み方**: P0裁定直後にグループA(P0.5+P0.6+P3a=3タスク同時配備可、影響ファイル無競合)。P0.5完了後にグループB(P1a+P2a+P3bのうち依存満了分を同時配備可)。同一ファイル直列制約は**P1a→P1b**(`recalculate_fast.py`)と**P2a→P2b**(`recalculate_fof.py`)の2組(家老レビュー①で訂正)。クリティカルパス=P0→P0.5→{P1a→P1b, P2a→P2b}→P4→P5(P2bはP1bのpayload形式継承も要するため実質最長路=P0→P0.5→P1a→P1b→P2b…だがP2a完了も前提)。
 
 ### §5.05 配備規則(家老向け・過剰要求と原理的failの構造防止 — v2.1新設)
 
@@ -245,7 +245,8 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 | 工程 | 中断した場合の本番状態 | 本番影響 |
 |---|---|---|
-| P0〜P0.6 | 裁定・fixture・読解のみ。deployすら不要 | **ゼロ**(本番コード無変更。P0.5のB2条件分岐のみ「現挙動の固定」でありregression fixtureが不変を証明) |
+| P0/P0.6 | 裁定・読解のみ。deploy不要 | **ゼロ**(本番コード無変更) |
+| **P0.5** | **本番コード変更を含む工程**(`monthly_returns.py:613-619`のB2条件分岐+sanitize allowlist拡張 — 家老レビュー②で「deploy不要」から訂正) | **出力はゼロ差**(B2条件分岐は「現挙動の固定」: stub月は現状もdictに不在=B1同窓のまま。regression fixture stub48+44fa2行の10dp一致がバイト不変を証明)。**ただしdeployは発生するため§5.07のcommit→deploy→canary三値の対象**。中断時はrevert 1手で復帰 |
 | P1a/P1b/P2a/P2b | 一部経路(例: standardのみ)でprovenance/snapshotが埋まり、残り(FoF)は現状のnullのまま | **ゼロ**(判定結果・保存行数・既存カラム値は不変。埋まっていない側は現状維持=AsIsと同じ) |
 | P3a/P3b | summary列が存在するが一部runでnull | **ゼロ**(nullable列+失敗時WARN契約。読み手は未知キー無視契約§3.1) |
 | P4/P5 | 検証runのみ(read-only+通常のfull実行) | **ゼロ**(mutation なし。fullは通常運用と同一) |
@@ -258,11 +259,13 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 > **殿の原則**: 「最後まで実装してからトラブルが見つかると手戻りが多い。速めに本番で確認すれば知見もたまり以後の作業にも複利がある」。record-only設計(§5.06)だからこそ、**各工程の完了=即commit+push+本番deploy+小確認**が安全にできる。P4/P5まで本番投入を溜め込むな。
 
-**各工程の標準サイクル**(P1a/P1b/P2a/P2b/P3a/P3bの全実装工程に適用):
+**各工程の標準サイクル**(**P0.5**/P1a/P1b/P2a/P2b/P3a/P3bの全コード変更工程に適用 — P0.5も本番コード変更を含むため対象。家老レビュー②):
 
 ```
 実装+fixture PASS → commit → push → 本番deploy → canary小確認(3分) → 次工程へ
 ```
+
+**canary呼び出しの固定値(家老レビュー③・誤解余地の排除)**: 対象5PF(standard2+FoF depth1/2/4)のUUID5件を**P0裁定後に固定してcmd定型のスタート欄へ記載**し、API呼び出しは `mode=portfolio` + **`include_parent_fof=false`** + **`include_nested_fof=false`** を明示指定する — 既定は`include_parent_fof=true`(`etl_trigger.py:86`)で親closureへ拡張され(`recalculate_fast.py:1653-1665` `_resolve_parent_fof_dependencies`)、UUID5件指定でも5PF固定にならないため。所要実績=過去固定便169.25s/172.95s≈3分。
 
 **canary小確認の三値**(08-12に確立した canary回転の型「1commit→5PF 3分→三値」の再利用):
 1. **壊していないか**: smoke=API代表画面2xx+non-empty(RB8の8画面チェックの縮小版でよい。全画面は不要)
@@ -277,8 +280,8 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 | 欄 | 書くこと | 例(P1a) |
 |---|---|---|
-| **スタート** | 依存工程のPASS証跡(commit hash+報告YAML)。これが揃っていなければ着手せずBLOCK報告 | 「P0.5のfixture commit `<hash>`がPASS済みであること」 |
-| **ゴール** | 本表の二値出口+canary三値(§5.07)。**これ以上でもこれ以下でもない** | 「momentum_data埋め込み+対象テストFAIL0/SKIP0+deploy後canary三値PASS」 |
+| **スタート** | 依存工程のPASS証跡(commit hash+報告YAML)+**canary固定値(対象5PFのUUID・start/end・mode=portfolio・include_parent_fof=false・include_nested_fof=false)+baseline artifact(正基準6cc6b576のhash)**。これが揃っていなければ着手せずBLOCK報告 | 「P0.5のfixture commit `<hash>`がPASS済み+canary UUID5件と固定クエリが本文に記載済みであること」 |
+| **ゴール** | 本表の二値出口+canary三値(§5.07)。**これ以上でもこれ以下でもない**。P3bのcanary期待行数は対象PF×2行(204行はP5のみ) | 「momentum_data埋め込み+対象テストFAIL0/SKIP0+deploy後canary三値PASS」 |
 | **スコープ外(明示列挙)** | ①次工程の内容(先回り実装禁止) ②doc更新(将軍lane) ③全量突合・独立oracle(P5のみ) ④fixture以外のテスト新設 ⑤本表にない検証の発明 | 「FoF経路(P2a)に触れるな。設計書更新は将軍が行う。全量検証は書くな」 |
 
 ## §5.5 車輪の再発明防止 — RB6/RB8検証資産カタログ(2026-08-14 v2.0新設・殿指示「車輪の再発明を今後繰り返したくない」)
@@ -299,6 +302,7 @@ RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序�
 
 ## §6 改訂履歴
 
+- v2.4 (2026-08-14 15:16): 家老レビュー(blt_20260814_151124・穴あり4件)を将軍がコード現物突合で全件正当と確認し反映 — ①依存DAG訂正: 同一ファイル直列はP1a→P1b(`recalculate_fast.py`)とP2a→P2b(`recalculate_fof.py`)の2組。P3b影響範囲を実ファイル3箇所へ具体化 ②P0.5は本番コード変更工程(B2条件分岐)と訂正し§5.06の「deploy不要」から分離、§5.07 canary対象へ追加(出力ゼロ差はfixtureが証明) ③canary固定値の明文化: `include_parent_fof=false`+`include_nested_fof=false`必須(既定trueで親closure拡張=5PF固定にならない。`etl_trigger.py:86`+`recalculate_fast.py:1653-1665`を将軍実読)。P3b canary期待行数=対象PF×2行へ分離 ④cmd定型スタート欄へcanary UUID・固定クエリ・baseline hash必須化。将軍側の裏取り=B2無条件上書き(`monthly_returns.py:618`)とNULL月dict不在コメントを実読済み。
 - v2.3 (2026-08-14 15:06): 殿指示15:03-15:05「小さい単位でcommit/push/本番deployして早く確認。手戻り防止・知見の複利。スタートとゴールが明確で家老・忍者が誤解や過剰対応をしないこと」— §5.07段階deploy運用新設: 各実装工程の標準サイクル=実装→commit→push→本番deploy→canary小確認3分(三値: smoke縮小版/代表5PF書込み確認/1PF正基準突合)。失敗時はrevert 1手(可逆・裁可待ち不要)。工程cmd定型3欄(スタート=依存PASS証跡/ゴール=二値出口+canary三値のみ/スコープ外=明示列挙5項)で誤解・過剰対応を構造防止。canary回転の型(08-12確立)の再利用。
 - v2.2 (2026-08-14 15:03): 殿指示15:01「作業を途中でやめても本番に影響しない区切りも明確にしよう」— §5.06中断安全区切り新設: P7以前は全工程record-only(挙動変更ゼロ)ゆえ任意のcommit境界で中断しても本番不変を工程別表で明示。中断の作法3則(二値出口PASS+commitが区切り/再開は依存列から/中断中も復帰点宣言v1.8が有効)。「今日はここまで」の区切りを設計に内蔵。
 - v2.1 (2026-08-14 14:52): 殿指示「工程の依存関係・影響範囲・並列可能性を明確に。他のコーディングLLMへ利他で覚醒アップデート。家老が過剰要求・過剰AC・AC順で原理的にfailになる要求をしない仕組みを盛り込め」— §5工程表を依存DAG+影響ファイル+並列グループ(A/B)付きへ全面改訂(本表だけで配備判断が完結する自己完結形式。二値出口=ACそのもの・発明禁止を明記。クリティカルパス=P0→P0.5→P1b→P2b→P4→P5)。§5.05配備規則新設=7則(1工程1cmd/二値出口を写す/AC順序=実行順序/docAC禁止=cmd_4302機械BLOCK/影響範囲競合の同時配備禁止/full実行はP5のみ/世代固定の同文化)。技術契約は無変更。
