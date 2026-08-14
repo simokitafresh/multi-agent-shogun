@@ -92,6 +92,14 @@ inbox_watcher_process_count() {
 stop_existing_inbox_watchers() {
     local remaining
 
+    # ninja_monitor.sh / daemon_watchdog.sh のwatcher自動再起動を抑止する。
+    # 両者は /tmp/restart_watchers.lock 保持中は再起動を控える契約のため、
+    # kill〜再起動完了までロックを保持しないと sleep 1 の間に復活し
+    # remaining=1 → set -e で本スクリプトが途中死する。
+    # fd 9 はスクリプト終了まで保持（exit時に自動解放）。
+    exec 9>/tmp/restart_watchers.lock
+    flock -w 30 9 || log_war "restart_watchers.lock取得に30秒失敗（続行）"
+
     pkill -TERM -f "[i]nbox_watcher\.sh" 2>/dev/null || true
     pkill -TERM -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
     sleep 1

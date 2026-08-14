@@ -15,6 +15,45 @@
 #
 # cmd_102: 殿の哲学「人が従う」ではなく「仕組みが強制する」
 
+# A long-lived deployment must never continue parsing the mutable working-tree
+# file after delivery.  Bash reads large scripts incrementally, so an in-place
+# edit can otherwise splice a newer tail onto the already-running process.
+# Validate one private /tmp copy, then execute only that immutable inode.
+if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" \
+    && "${DEPLOY_TASK_SELF_SNAPSHOT_ACTIVE:-0}" != "1" ]]; then
+    _dt_original_self="$0"
+    [[ "$_dt_original_self" != /* ]] && _dt_original_self="$PWD/$_dt_original_self"
+    _dt_original_root="${_dt_original_self%/scripts/deploy_task.sh}"
+    _dt_snapshot="$(mktemp /tmp/deploy_task.self.XXXXXXXX.sh)" || {
+        echo "BLOCK: deploy_task self-snapshot allocation failed" >&2
+        exit 2
+    }
+    if ! cp -- "$_dt_original_self" "$_dt_snapshot" || ! bash -n "$_dt_snapshot"; then
+        rm -f -- "$_dt_snapshot"
+        echo "BLOCK: deploy_task self-snapshot validation failed" >&2
+        exit 2
+    fi
+    export DEPLOY_TASK_SELF_SNAPSHOT_ACTIVE=1
+    export DEPLOY_TASK_ROOT_OVERRIDE="${DEPLOY_TASK_ROOT_OVERRIDE:-$_dt_original_root}"
+    export DEPLOY_TASK_ORIGINAL_SOURCE="$_dt_original_self"
+    exec bash "$_dt_snapshot" "$@"
+fi
+
+# The interpreter already owns an open descriptor for this unique snapshot;
+# unlinking its pathname prevents later writers from finding or changing it.
+if [[ "${DEPLOY_TASK_SELF_SNAPSHOT_ACTIVE:-0}" == "1" \
+    && "${BASH_SOURCE[0]}" == /tmp/deploy_task.self.*.sh ]]; then
+    _dt_live_snapshot="${BASH_SOURCE[0]}"
+    rm -f -- "$_dt_live_snapshot"
+    unset _dt_live_snapshot
+    if [ -n "${DEPLOY_TASK_SELF_SNAPSHOT_TEST_HOLD_DIR:-}" ]; then
+        : > "$DEPLOY_TASK_SELF_SNAPSHOT_TEST_HOLD_DIR/ready"
+        while [ ! -e "$DEPLOY_TASK_SELF_SNAPSHOT_TEST_HOLD_DIR/release" ]; do
+            sleep 0.01
+        done
+    fi
+fi
+
 set -euo pipefail
 
 # cmd_2078: SCRIPT_DIR string ops — $(cd dirname pwd)サブシェル2個→bash文字列演算 (~10ms節約)
@@ -93,7 +132,8 @@ deploy_task_early_target_known() {
     grep -qE "^    ${target}:[[:space:]]*$" "$SCRIPT_DIR/config/settings.yaml"
 }
 
-if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
+if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" \
+    && "${DEPLOY_TASK_SELF_SNAPSHOT_TEST_ONLY:-0}" != "1" ]]; then
     deploy_task_guard_yaml_arg_order "$@" || exit $?
     deploy_task_guard_direct_yaml_misuse "$@" || exit $?
     _dt_early_target="$(deploy_task_early_target_from_args "$@")"
@@ -164,23 +204,56 @@ deploy_task_wave_cache() {
     local namespace="$1" target_key="$2" source_list="$3"
     shift 3
     local cache_root="${DEPLOY_TASK_WAVE_CACHE_DIR:-/tmp/deploy_task_wave_cache}"
-    local source_fp key cache_file lock_file tmp_file source
+    local source_fp key cache_file lock_file tmp_file
     mkdir -p "$cache_root"
-    source_fp="$({
-        while IFS= read -r source; do
-            [ -n "$source" ] || continue
-            if [ -f "$source" ]; then
-                # Hashing the whole memory DB on shared 9P storage took up to
-                # 58s per deployment, before the bounded query even started.
-                # Nanosecond mtime/ctime + size + inode/device is a bounded
-                # snapshot identity: any atomic replacement or in-place write
-                # invalidates the wave cache without rereading the full file.
-                stat --printf='%d:%i:%s:%y:%z  %n\n' "$source"
-            else
-                printf 'missing  %s\n' "$source"
-            fi
-        done <<< "$source_list"
-    } | sha256sum | cut -d' ' -f1)"
+    # One interpreter batches every metadata lookup.  Spawning stat/find once
+    # per source on DrvFS cost seconds and could exceed the lookup itself.
+    # The generation remains exact: content edits change mtime/ctime+size;
+    # atomic replacement changes inode; skill additions/removals change the
+    # sorted tree member set.
+    source_fp="$(DEPLOY_TASK_WAVE_SOURCE_LIST="$source_list" python3 - <<'PY'
+import hashlib
+import os
+from pathlib import Path
+
+records = []
+for source in os.environ.get("DEPLOY_TASK_WAVE_SOURCE_LIST", "").splitlines():
+    if not source:
+        continue
+    if source.startswith("fingerprint:"):
+        records.append(source)
+        continue
+    if source.startswith("skill-tree:"):
+        root = Path(source.removeprefix("skill-tree:"))
+        try:
+            members = sorted(
+                entry / "SKILL.md"
+                for entry in root.iterdir()
+                if (entry / "SKILL.md").is_file()
+            )
+        except OSError:
+            records.append(f"missing-tree  {root}")
+            continue
+        for member in members:
+            stat = member.stat()
+            records.append(
+                f"{stat.st_dev}:{stat.st_ino}:{stat.st_size}:"
+                f"{stat.st_mtime_ns}:{stat.st_ctime_ns}  {member}"
+            )
+        continue
+    try:
+        stat = os.stat(source)
+    except OSError:
+        records.append(f"missing  {source}")
+    else:
+        records.append(
+            f"{stat.st_dev}:{stat.st_ino}:{stat.st_size}:"
+            f"{stat.st_mtime_ns}:{stat.st_ctime_ns}  {source}"
+        )
+payload = "\n".join(records).encode("utf-8", errors="surrogateescape")
+print(hashlib.sha256(payload).hexdigest())
+PY
+)"
     key="$(printf '%s\0%s\0%s' "$namespace" "$source_fp" "$target_key" | sha256sum | cut -d' ' -f1)"
     cache_file="$cache_root/${namespace}_${key}.snapshot"
     lock_file="$cache_file.lock"
@@ -3525,7 +3598,7 @@ inject_ac_version() {
 inject_parent_contract() {
     local task_file="$1" report_file="${2:-}" worker_id="${3:-}"
     local contract coverage fingerprint cmd_bound tool_root
-    tool_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+    tool_root="$SCRIPT_DIR"
     contract=$(python3 - "$task_file" "$SCRIPT_DIR" <<'PARENT_CONTRACT_PY'
 import hashlib, json, os, sys, yaml
 task_path, root = sys.argv[1:]
@@ -4052,29 +4125,52 @@ report_lesson_ids_for_task() {
 # are machine-generated safe scalars (UUID/version/repo-relative path).
 deploy_task_publish_report_metadata() {
     local task_file="$1" report_id="$2" version="$3" report_path="$4" variation="${5:-false}"
+    local commit_json="${6:-}" report_contract_json="${7:-}"
     local tmp="${task_file}.report-meta.$$"
+    DEPLOY_TASK_META_COMMIT_JSON="$commit_json" \
+    DEPLOY_TASK_META_REPORT_CONTRACT_JSON="$report_contract_json" \
     awk -v rid="$report_id" -v ver="$version" -v rpath="$report_path" -v variation="$variation" '
-        BEGIN { in_task=0; seen_id=seen_ver=seen_path=seen_variation=0 }
-        /^task:[[:space:]]*$/ { in_task=1; print; next }
-        in_task && /^[^[:space:]#][^:]*:/ {
+        BEGIN {
+            in_task=0; skip_struct=0
+            seen_id=seen_ver=seen_path=seen_variation=seen_commit=seen_report_contract=0
+            commit_json=ENVIRON["DEPLOY_TASK_META_COMMIT_JSON"]
+            report_contract_json=ENVIRON["DEPLOY_TASK_META_REPORT_CONTRACT_JSON"]
+        }
+        function emit_missing() {
             if (rid != "" && !seen_id) print "  report_id: " rid
             if (rid != "" && !seen_ver) print "  report_identity_version: " ver
             if (!seen_path) print "  report_path: " rpath
             if (!seen_variation) print "  variation_checks_required: " variation
+            if (commit_json != "" && !seen_commit) print "  commit_contract: " commit_json
+            if (report_contract_json != "" && !seen_report_contract) print "  report_contract_templates: " report_contract_json
+        }
+        /^task:[[:space:]]*$/ { in_task=1; print; next }
+        in_task && skip_struct {
+            if ($0 ~ /^  [A-Za-z_][A-Za-z0-9_]*:/ || $0 ~ /^[^[:space:]#][^:]*:/) {
+                skip_struct=0
+            } else {
+                next
+            }
+        }
+        in_task && /^[^[:space:]#][^:]*:/ {
+            emit_missing()
             in_task=0
         }
         in_task && /^  report_id:/ { if (rid != "") print "  report_id: " rid; else print; seen_id=1; next }
         in_task && /^  report_identity_version:/ { if (rid != "") print "  report_identity_version: " ver; else print; seen_ver=1; next }
         in_task && /^  report_path:/ { print "  report_path: " rpath; seen_path=1; next }
         in_task && /^  variation_checks_required:/ { print "  variation_checks_required: " variation; seen_variation=1; next }
+        in_task && /^  commit_contract:/ && commit_json != "" {
+            print "  commit_contract: " commit_json
+            seen_commit=1; skip_struct=1; next
+        }
+        in_task && /^  report_contract_templates:/ && report_contract_json != "" {
+            print "  report_contract_templates: " report_contract_json
+            seen_report_contract=1; skip_struct=1; next
+        }
         { print }
         END {
-            if (in_task) {
-                if (rid != "" && !seen_id) print "  report_id: " rid
-                if (rid != "" && !seen_ver) print "  report_identity_version: " ver
-                if (!seen_path) print "  report_path: " rpath
-                if (!seen_variation) print "  variation_checks_required: " variation
-            }
+            if (in_task) emit_missing()
         }
     ' "$task_file" > "$tmp" || { rm -f "$tmp"; return 1; }
     mv "$tmp" "$task_file"
@@ -4239,6 +4335,119 @@ raise SystemExit(0)
 PY
 }
 
+# Optional phase telemetry for isolated report-publication benchmarks.  The
+# caller owns the output path; normal deployments pay only the empty-variable
+# branch and never create operational state.
+deploy_task_report_phase_mark() {
+    local label="$1" now_us elapsed_ms
+    [ -n "${DEPLOY_TASK_REPORT_PHASE_FILE:-}" ] || return 0
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    elapsed_ms=$(( (now_us - _deploy_report_phase_last_us + 999) / 1000 ))
+    printf '%s\t%s\n' "$label" "$elapsed_ms" >> "$DEPLOY_TASK_REPORT_PHASE_FILE"
+    _deploy_report_phase_last_us="$now_us"
+}
+
+# Parse immutable cold-generation inputs in one PyYAML process.  Cache hits
+# return before this helper is called; a cold publication previously started
+# separate interpreters for snapshot, checkpoint, commit JSON, AC mapping,
+# Level5 contract, and reflux contract despite all reading the same task bytes.
+deploy_task_report_scope_seed() {
+    local task_file="$1" import_root="$2"
+    python3 - "$task_file" "$import_root" <<'PY'
+import shlex, sys, yaml
+sys.path.insert(0, sys.argv[2])
+from scripts.gates.gate_report_format_main import commit_owned_paths
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+contract = task.get("commit_contract")
+explicit = ""
+if isinstance(contract, dict) and "required" in contract:
+    value = contract["required"]
+    if isinstance(value, bool):
+        explicit = str(value).lower()
+    elif str(value).strip().lower() in {"true", "false"}:
+        explicit = str(value).strip().lower()
+print("_commit_explicit_required=" + shlex.quote(explicit))
+print("_commit_planned_paths=" + shlex.quote(" ".join(commit_owned_paths(task))))
+PY
+}
+
+deploy_task_report_cold_plan() {
+    python3 - "$@" <<'PY'
+import hashlib, json, shlex, sys, yaml
+
+(task_file, resolved_parent, resolved_task, issued_cmd, ac_version, project,
+ required, reason, task_type, planned_raw, repo_root, expansion_reason) = sys.argv[1:]
+task = (yaml.safe_load(open(task_file, encoding="utf-8")) or {}).get("task", {})
+criteria = task.get("acceptance_criteria")
+if not ac_version:
+    payload = json.dumps(criteria, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    ac_version = hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+snapshot = {
+    "parent_cmd": resolved_parent,
+    "task_id": resolved_task,
+    "issued_cmd_id": issued_cmd,
+    "ac_fingerprint": ac_version,
+    "purpose": str(task.get("purpose") or task.get("title") or task.get("command") or resolved_task).strip(),
+    "project": str(task.get("project") or project or "unknown").strip(),
+    "acceptance_criteria": criteria,
+    "final_checkpoint": task.get("final_checkpoint"),
+    "investigation_contract": task.get("investigation_contract"),
+    "reflux_commit_contract": task.get("reflux_commit_contract"),
+}
+checkpoint = task.get("final_checkpoint")
+checkpoint_required = bool(
+    isinstance(checkpoint, dict)
+    and checkpoint.get("required") is True
+    and checkpoint.get("type") == "ci_fix_clean_repro"
+)
+paths = [path for path in planned_raw.split() if path]
+commit_contract = {
+    "required": required == "true",
+    "reason": reason,
+    "task_type": task_type,
+    "planned_paths": paths,
+    "repo_root": repo_root,
+}
+if expansion_reason:
+    commit_contract["scope_expansion_reason"] = expansion_reason
+
+mapping = {}
+for item in criteria or []:
+    if isinstance(item, dict):
+        key = str(item.get("id") or item.get("ac") or "").strip()
+        if key:
+            mapping[key] = ""
+ac_block = "ac_evidence_mapping:"
+for key in mapping:
+    ac_block += f'\n  {key}: ""  # このACの一次証拠を1:1で記入'
+level5 = {
+    "ac_evidence_mapping": mapping,
+    "semantic_validation": {
+        "classification_axis": "", "recount": "", "actual": "", "result": "",
+    },
+}
+level5_json = json.dumps(level5, ensure_ascii=False, separators=(",", ":"))
+reflux = task.get("reflux_commit_contract")
+values = {
+    "ac_version": ac_version,
+    "task_contract_snapshot": json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+    "final_checkpoint_required": str(checkpoint_required).lower(),
+    "commit_contract_json": json.dumps(commit_contract, ensure_ascii=False, separators=(",", ":")),
+    "commit_paths_json": json.dumps(paths, ensure_ascii=False, separators=(",", ":")),
+    "ac_evidence_mapping_block": ac_block,
+    # Preserve the existing task-side contract: yaml_field_set_batch stored
+    # this payload as a scalar JSON string, while the report has typed maps.
+    "level5_report_contract_json": json.dumps(level5_json, ensure_ascii=False),
+    "reflux_commit_contract_json": json.dumps(reflux, ensure_ascii=False, separators=(",", ":")) if isinstance(reflux, dict) else "null",
+}
+for key, value in values.items():
+    print(f"_plan_{key}=" + shlex.quote(value))
+PY
+}
+
 generate_report_template() {
     local ninja_name="$1"
     local task_id="$2"
@@ -4247,6 +4456,8 @@ generate_report_template() {
     local task_file="${5:-$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml}"
     local report_file=""
     local report_rel_path=""
+    local _deploy_report_phase_last_us="${EPOCHREALTIME/./}"
+    _deploy_report_phase_last_us="${_deploy_report_phase_last_us:0:16}"
 
     # cmd_1983: 12+ field_get → field_get_multi 1回 (WSL2 subprocess削減)
     # task_id・parent_cmd はパラメータと同名のため上書き前にコピー
@@ -4312,6 +4523,7 @@ generate_report_template() {
     IFS=$'\t' read -r _generation_source_fp _generation_query_key \
         < <(deploy_task_report_generation_identity "$task_file") \
         || { log "FATAL: report generation identity unavailable"; return 1; }
+    deploy_task_report_phase_mark task_parse_identity
     local _indexed_report=""
     if [ -f "$_active_report_index" ]; then
         IFS= read -r _indexed_report < "$_active_report_index" || true
@@ -4419,6 +4631,7 @@ generate_report_template() {
         mv "$stale_own_report" "$SCRIPT_DIR/archive/reports/stale/"
         log "report_template: stale own report archived (${stale_own_basename}, old_cmd=${stale_own_pcmd})"
     done
+    deploy_task_report_phase_mark report_scan_archive
 
     # Exact generation hit: source_fp + query_key and the report's schema,
     # AC/binary-check contract and v2 identity all match.  No report/task YAML
@@ -4488,37 +4701,10 @@ generate_report_template() {
         resolved_task_id="${_ac_task_id}"
     fi
     local resolved_parent_cmd="${parent_cmd:-${cmd_id:-$_p_parent_cmd}}"
-    if [ -z "${ac_version:-}" ]; then
-        ac_version=$(python3 - "$task_file" <<'PY'
-import hashlib, json, sys, yaml
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-payload = json.dumps(task.get("acceptance_criteria"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-print(hashlib.sha256(payload.encode()).hexdigest()[:16])
-PY
-        ) || return 1
-    fi
     # Freeze the deploy-generation contract inside the report.  A worker task
     # is mutable by design and may already describe the next assignment when
     # SG7 is generated; review must never recover an old contract from it.
-    local _task_contract_snapshot
-    _task_contract_snapshot=$(python3 - "$task_file" "$resolved_parent_cmd" "$resolved_task_id" "${issued_cmd_id:-}" "${ac_version:-}" "${project:-}" <<'PY'
-import json, sys, yaml
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-snapshot = {
-    "parent_cmd": sys.argv[2],
-    "task_id": sys.argv[3],
-    "issued_cmd_id": sys.argv[4],
-    "ac_fingerprint": sys.argv[5],
-    "purpose": str(task.get("purpose") or task.get("title") or task.get("command") or sys.argv[3]).strip(),
-    "project": str(task.get("project") or sys.argv[6] or "unknown").strip(),
-    "acceptance_criteria": task.get("acceptance_criteria"),
-    "final_checkpoint": task.get("final_checkpoint"),
-    "investigation_contract": task.get("investigation_contract"),
-    "reflux_commit_contract": task.get("reflux_commit_contract"),
-}
-print(json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
-PY
-    ) || return 1
+    local _task_contract_snapshot=""
     # Level 5: report generation must hand the worker task-specific summary
     # context instead of manufacturing the known-bad FILL_THIS token.  This is
     # deliberately phrased as the task outcome to record; measured evidence is
@@ -4604,77 +4790,14 @@ EOF
     # the evidence scaffold in the report so the terminal gate can validate
     # it against the frozen task_contract_snapshot exactly once.
     local _final_checkpoint_block=""
-    if python3 - "$task_file" <<'PY'
-import sys, yaml
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-checkpoint = task.get("final_checkpoint")
-raise SystemExit(0 if isinstance(checkpoint, dict)
-                 and checkpoint.get("required") is True
-                 and checkpoint.get("type") == "ci_fix_clean_repro" else 1)
-PY
-    then
-        _final_checkpoint_block=$(cat <<'EOF'
-ci_fix_clean_repro_evidence:
-  e2_harness_command: ""
-  pre_fix_receipt:
-    path: ""
-    status: ""
-    source_commit: ""
-    fixed_target: ""
-    started_at: ""
-    failures: null
-    skips: null
-  post_fix_receipt:
-    path: ""
-    status: ""
-    source_commit: ""
-    fixed_target: ""
-    started_at: ""
-    failures: null
-    skips: null
-  push_started_at: ""
-  outcome: ""
-  not_reproducible:
-    independent_receipts: []
-    ci_green:
-      run_id: ""
-      status: ""
-      observed_at: ""
-      commit: ""
-    diagnostics:
-      path: ""
-      emits: []
-EOF
-)
-    fi
 
     # The task contract is the SSOT when it explicitly carries required.
     # Only legacy tasks without that key fall back to type/path inference.
     local _commit_required=true _commit_reason="code_or_unclassified_task"
-    local _commit_explicit_required=""
-    _commit_explicit_required=$(python3 - "$task_file" <<'PY'
-import sys, yaml
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-contract = task.get("commit_contract")
-if isinstance(contract, dict) and "required" in contract:
-    value = contract["required"]
-    if isinstance(value, bool):
-        print(str(value).lower())
-    elif str(value).strip().lower() in {"true", "false"}:
-        print(str(value).strip().lower())
-PY
-)
+    local _commit_explicit_required="" _commit_planned_paths=""
+    eval "$(deploy_task_report_scope_seed "$task_file" "${PROJECT_ROOT:-$SCRIPT_DIR}")" || return 1
     local _commit_task_type="${task_type:-${type:-${scope_mode:-unknown}}}"
     _commit_task_type="${_commit_task_type,,}"
-    local _commit_planned_paths
-    _commit_planned_paths=$(python3 - "$task_file" "${PROJECT_ROOT:-$SCRIPT_DIR}" <<'PY'
-import sys, yaml
-sys.path.insert(0, sys.argv[2])
-from scripts.gates.gate_report_format_main import commit_owned_paths
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-print(" ".join(commit_owned_paths(task)))
-PY
-)
     local _commit_original_planned_paths="$_commit_planned_paths"
     local _commit_scope_expansion_reason=""
     # B32 asymmetric expansion: an AC that orders the worker to extend tests
@@ -4809,24 +4932,58 @@ PY
     fi
     [ -n "$_commit_repo_root" ] || _commit_repo_root="$SCRIPT_DIR"
     _commit_repo_root=$(git -C "$_commit_repo_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$_commit_repo_root")
-    local _commit_contract_json
-    _commit_contract_json=$(python3 - "$_commit_required" "$_commit_reason" "$_commit_task_type" "$_commit_planned_paths" "$_commit_repo_root" "$_commit_scope_expansion_reason" <<'PY'
-import json, sys
-required, reason, task_type, paths, repo_root, expansion_reason = sys.argv[1:]
-contract = {
-    "required": required == "true",
-    "reason": reason,
-    "task_type": task_type,
-    "planned_paths": [path for path in paths.split() if path],
-    "repo_root": repo_root,
-}
-if expansion_reason:
-    contract["scope_expansion_reason"] = expansion_reason
-print(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
-PY
+    deploy_task_report_phase_mark commit_scope_derivation
+    local _plan_ac_version="" _plan_task_contract_snapshot="" \
+        _plan_final_checkpoint_required=false _plan_commit_contract_json="" \
+        _plan_commit_paths_json="" _plan_ac_evidence_mapping_block="" \
+        _plan_level5_report_contract_json="" _plan_reflux_commit_contract_json=null
+    eval "$(deploy_task_report_cold_plan "$task_file" "$resolved_parent_cmd" "$resolved_task_id" \
+        "${issued_cmd_id:-}" "${ac_version:-}" "${project:-}" "$_commit_required" \
+        "$_commit_reason" "$_commit_task_type" "$_commit_planned_paths" \
+        "$_commit_repo_root" "$_commit_scope_expansion_reason")" || return 1
+    ac_version="$_plan_ac_version"
+    _task_contract_snapshot="$_plan_task_contract_snapshot"
+    local _commit_contract_json="$_plan_commit_contract_json"
+    local _commit_paths_json="$_plan_commit_paths_json"
+    local _ac_evidence_mapping_block="$_plan_ac_evidence_mapping_block"
+    local _level5_report_contract_json="$_plan_level5_report_contract_json"
+    local _reflux_commit_contract_json="$_plan_reflux_commit_contract_json"
+    if [ "$_plan_final_checkpoint_required" = true ]; then
+        _final_checkpoint_block=$(cat <<'EOF'
+ci_fix_clean_repro_evidence:
+  e2_harness_command: ""
+  pre_fix_receipt:
+    path: ""
+    status: ""
+    source_commit: ""
+    fixed_target: ""
+    started_at: ""
+    failures: null
+    skips: null
+  post_fix_receipt:
+    path: ""
+    status: ""
+    source_commit: ""
+    fixed_target: ""
+    started_at: ""
+    failures: null
+    skips: null
+  push_started_at: ""
+  outcome: ""
+  not_reproducible:
+    independent_receipts: []
+    ci_green:
+      run_id: ""
+      status: ""
+      observed_at: ""
+      commit: ""
+    diagnostics:
+      path: ""
+      emits: []
+EOF
 )
-    local _commit_paths_json
-    _commit_paths_json=$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["planned_paths"], separators=(",", ":")))' "$_commit_contract_json")
+    fi
+    deploy_task_report_phase_mark cold_plan
     # The task and report must expose one typed contract.  Previously only the
     # report template received this block, so report review read a different
     # SSOT from commit helpers after deployment.
@@ -4834,8 +4991,7 @@ PY
     # quotes JSON punctuation and turns it into a string, which makes a real
     # recon report fail only after deployment.  Use the shared structural
     # writer already used by every typed task contract.
-    yaml_field_set "$task_file" "task" "commit_contract" "$_commit_contract_json" \
-        || { log "FATAL: failed to publish task commit_contract"; return 1; }
+    deploy_task_report_phase_mark commit_contract_built
     local _commit_contract_block
     _commit_contract_block=$(cat <<EOF
 commit_contract:
@@ -4857,19 +5013,6 @@ EOF
 )
     fi
 
-    local _ac_evidence_mapping_block
-    _ac_evidence_mapping_block=$(python3 - "$task_file" <<'PY'
-import sys, yaml
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-print("ac_evidence_mapping:")
-for item in task.get("acceptance_criteria") or []:
-    if not isinstance(item, dict):
-        continue
-    key = str(item.get("id") or item.get("ac") or "").strip()
-    if key:
-        print(f'  {key}: ""  # このACの一次証拠を1:1で記入')
-PY
-) || return 1
     local _semantic_validation_block
     _semantic_validation_block=$(cat <<'EOF'
 semantic_validation:
@@ -4882,31 +5025,6 @@ semantic_validation:
   result: ""  # PASS or FAIL(リテラルのみ受理。★空欄・散文不可)
 EOF
 )
-    local _level5_report_contract_json
-    _level5_report_contract_json=$(python3 - "$task_file" <<'PY'
-import json, sys, yaml
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-mapping = {}
-for item in task.get("acceptance_criteria") or []:
-    if isinstance(item, dict):
-        key = str(item.get("id") or item.get("ac") or "").strip()
-        if key:
-            mapping[key] = ""
-print(json.dumps({
-    "ac_evidence_mapping": mapping,
-    "semantic_validation": {
-        "classification_axis": "",
-        "recount": "",
-        "actual": "",
-        "result": "",
-    },
-}, ensure_ascii=False, separators=(",", ":")))
-PY
-) || return 1
-    yaml_field_set_batch "$task_file" "task" \
-        "report_contract_templates=$_level5_report_contract_json" \
-        || { log "FATAL: failed to publish Level5 report contract templates"; return 1; }
-
     # Build the complete canonical template off-path.  Readers must observe
     # either no report or one complete report; never a partially appended
     # template.  New templates already emit candidate fields as mappings, so
@@ -4946,13 +5064,7 @@ timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
 task_contract_snapshot: ${_task_contract_snapshot}
-reflux_commit_contract: $(python3 - "$task_file" <<'PY'
-import json, sys, yaml
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-value = task.get("reflux_commit_contract")
-print(json.dumps(value, ensure_ascii=False, separators=(",", ":")) if isinstance(value, dict) else "null")
-PY
-)
+reflux_commit_contract: ${_reflux_commit_contract_json}
 result:
   summary: "${_summary_context} — 実施・検証結果を本報告へ記録"  # Level5: task context pre-supplied; 完了前に実測を追記
   details: ""
@@ -5054,6 +5166,7 @@ verdict: ""
 EOF
     local _report_final_file="$report_file"
     report_file="$_report_publish_file"
+    deploy_task_report_phase_mark initial_template_write
 
     # cmd_1131+cmd_1393: related_lessonsが存在する場合、lessons_usefulを記入用雛形に差替え（Python→bash/awk）
     local _lu_ids
@@ -5205,6 +5318,7 @@ PY_MEMORY_REFS
         ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
         log "report_template: memory_references template injected"
     fi
+    deploy_task_report_phase_mark lessons_memory_rewrites
 
     # cmd_1260+cmd_1393: acceptance_criteriaのbinary_checksをreportに事前展開（Python→bash/awk）
     # GP-194: ac_assigned フィールド読み込み（分割配備時の担当AC範囲制限）
@@ -5389,7 +5503,7 @@ PY_MEMORY_REFS
             if [ ${#_tp_paths[@]} -gt 0 ]; then
                 local _all_ignored=true
                 local _gitignore_root
-                _gitignore_root=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "commit_contract.repo_root" "$SCRIPT_DIR" 2>/dev/null || true)
+                _gitignore_root="$_commit_repo_root"
                 [ -n "$_gitignore_root" ] || _gitignore_root="$SCRIPT_DIR"
                 for _tp_p in "${_tp_paths[@]}"; do
                     if ! git -C "$_gitignore_root" check-ignore -q "$_tp_p" 2>/dev/null; then
@@ -5689,6 +5803,7 @@ ${_commit_bc}"
         fi
         log "report_template: binary_checks template injected"
     fi
+    deploy_task_report_phase_mark binary_checks_rewrite
 
     # cmd_1734: ninja_weak_points.gate_fail_top3 を報告テンプレートの該当フィールド直上コメントへ注入
     if grep -q 'gate_fail_top3:' "$task_file" 2>/dev/null; then
@@ -5884,6 +5999,7 @@ verified_existing_dependency: []
 RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
     fi
+    deploy_task_report_phase_mark optional_enrichments
 
     # Canonical new templates contain all three candidate mappings by
     # construction.  Structural sentinels catch truncated generation without
@@ -5896,7 +6012,8 @@ RECON_EOF
     mv "$report_file" "$_report_final_file" || return 1
     report_file="$_report_final_file"
 
-    deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
+    deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" \
+        "$_variation_checks_required" "$_commit_contract_json" "$_level5_report_contract_json" || return 1
     deploy_task_publish_active_report_pointer "$_active_report_index" "$report_rel_path" || return 1
     IFS=$'\t' read -r _generation_source_fp _generation_query_key \
         < <(deploy_task_report_generation_identity "$task_file") \
@@ -5904,6 +6021,7 @@ RECON_EOF
     deploy_task_publish_report_generation_marker "$_generation_marker" \
         "$report_rel_path" "$_generation_source_fp" "$_generation_query_key" "$report_id" \
         || return 1
+    deploy_task_report_phase_mark final_publication
     log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
 }
@@ -6212,52 +6330,117 @@ PY
 
 # ─── セマンティクスインデックス概念注入（task YAMLにsemantic_conceptsを挿入） ───
 # Level5: 忍者が関連ファイルを自動で知る。意志依存ゼロ。
+deploy_task_semantic_phase_mark() {
+    local phase="$1" started_ms="$2" cache_state="${3:-na}" now_ms
+    now_ms="$(date +%s%3N)"
+    log "semantic_context_phase: phase=${phase} wall_ms=$((now_ms - started_ms)) cache=${cache_state}"
+    printf '%s\n' "$now_ms"
+}
+
+deploy_task_semantic_context_generate() {
+    local purpose="$1" index_path="$2" helper="$3" search_script="$4" skills_root="$5"
+    local raw_file rc
+    raw_file="$(mktemp /tmp/deploy-semantic-raw.XXXXXX)" || return 1
+    # A regular temporary output avoids a semantic-search background telemetry
+    # child retaining a pipeline FD and making the caller wait after timeout.
+    # Either producer or parser failure rejects cache publication.
+    if env SEMANTIC_DISABLE_LLM=1 \
+        SEMANTIC_INDEX_PATH="$index_path" \
+        timeout "${DEPLOY_TASK_SEMANTIC_SEARCH_TIMEOUT_SEC:-5}" \
+        bash "$search_script" "$purpose" > "$raw_file"; then
+        if python3 "$helper" from-search-output \
+            --purpose "$purpose" --skills-root "$skills_root" < "$raw_file"; then
+            rc=0
+        else
+            rc=$?
+        fi
+    else
+        rc=$?
+    fi
+    rm -f "$raw_file"
+    return "$rc"
+}
+
 inject_semantic_concepts() {
     local task_file="$1"
     [ -f "$task_file" ] || return 0
 
-    local index_path="$SCRIPT_DIR/docs/semantic-index/index.md"
+    local _sem_phase_ms
+    _sem_phase_ms="$(date +%s%3N)"
+
+    local index_path="${SEMANTIC_INDEX_PATH:-$SCRIPT_DIR/docs/semantic-index/index.md}"
     [ -f "$index_path" ] || return 0
 
-    # purpose から検索テキストを取得
-    local purpose target_path
+    # Read the query identity once.  project belongs in the cache key: an
+    # identical sentence deployed to a different project is not the same
+    # semantic-context request even when today's global index happens to make
+    # both results equal.
+    local purpose target_path project
     purpose=$(awk '/^  purpose:/{sub(/^  purpose: /,""); p=$0; next} p && /^  [a-z]/{exit} p{p=p " " $0} END{print p}' "$task_file" 2>/dev/null)
     [ -z "$purpose" ] && return 0
     target_path=$(awk '/^  target_path:/{sub(/^  target_path: /,""); print; exit}' "$task_file" 2>/dev/null)
     target_path="${target_path:-none}"
+    project=$(awk '/^  project:/{sub(/^  project: /,""); print; exit}' "$task_file" 2>/dev/null)
+    project="${project:-none}"
+    _sem_phase_ms="$(deploy_task_semantic_phase_mark task_query "$_sem_phase_ms")"
 
-    # semantic_search.sh でマッチする概念+ファイル+スキルを取得
-    # cmd_3758: 同一purposeで2回呼んでいた(matches用+recommended_skills用)のを1回のraw出力共有に統合
-    local semantic_raw
-    semantic_raw=$(deploy_task_wave_cache semantic "$purpose|$target_path" "$index_path" \
-        env SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null) || semantic_raw=""
+    # One Python process reads/parses the index and scans all recommended skill
+    # contracts.  The cached value is query data only, never task bytes.  Thus
+    # same-query deploys share the expensive read without leaking task fields.
+    # NO_MATCH/helper failure exits nonzero, so wave_cache never publishes a
+    # negative or partial snapshot and a later corrected source is retried.
+    local semantic_helper="${DEPLOY_TASK_SEMANTIC_HELPER:-$SCRIPT_DIR/scripts/lib/deploy_task_semantic_context_fast.py}"
+    local semantic_search_script="${DEPLOY_TASK_SEMANTIC_SEARCH_SCRIPT:-$SCRIPT_DIR/scripts/semantic_search.sh}"
+    local semantic_skills_root="${DEPLOY_TASK_SKILLS_ROOT:-$SCRIPT_DIR/skills}"
+    local semantic_sources semantic_json
+    semantic_sources=$(printf '%s\n' \
+        "$index_path" \
+        "$SCRIPT_DIR/context/semantic-map.md" \
+        "$semantic_search_script" \
+        "$SCRIPT_DIR/scripts/semantic_index.py" \
+        "$semantic_helper" \
+        "${SEMANTIC_MEMORY_DB_PATH:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}" \
+        "skill-tree:$semantic_skills_root")
+    semantic_json=$(deploy_task_wave_cache semantic_context_v2 \
+        "$purpose|$target_path|$project" "$semantic_sources" \
+        deploy_task_semantic_context_generate \
+            "$purpose" "$index_path" "$semantic_helper" \
+            "$semantic_search_script" "$semantic_skills_root") || semantic_json=""
+    _sem_phase_ms="$(deploy_task_semantic_phase_mark semantic_query_cache "$_sem_phase_ms" wave)"
 
-    local matches
-    matches=$(printf '%s\n' "$semantic_raw" | awk '
-        /^## /{label=$0; sub(/^## /,"",label); next}
-        /^- skills:/{sub(/^- skills: /,""); if($0!="なし") skills=skills " " $0; next}
-        /^- file:/{gsub(/`/,"",$0); sub(/^- file: /,""); files=files " " $0; next}
-        /^$/{if(label!="" && files!="") print label ": " files; label=""; files=""}
-        END{if(label!="" && files!="") print label ": " files}
-    ' | head -5)
+    local matches="" recommended_skills="" record_type record_value
+    if [ -n "$semantic_json" ]; then
+        while IFS=$'\t' read -r record_type record_value; do
+            case "$record_type" in
+                C) matches+="${record_value}"$'\n' ;;
+                S) recommended_skills+="${record_value}"$'\n' ;;
+            esac
+        done < <(printf '%s\n' "$semantic_json" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+if not isinstance(value, dict):
+    raise SystemExit(2)
+concepts = value.get("concept_lines")
+skills = value.get("skills")
+if not isinstance(concepts, list) or not concepts or not isinstance(skills, list):
+    raise SystemExit(2)
+for concept in concepts:
+    if not isinstance(concept, str) or "\t" in concept or "\n" in concept:
+        raise SystemExit(2)
+    print("C\t" + concept)
+for skill in skills:
+    if not isinstance(skill, str) or "\t" in skill or "\n" in skill:
+        raise SystemExit(2)
+    print("S\t" + skill)
+')
+    fi
+    matches="${matches%$'\n'}"
+    recommended_skills="${recommended_skills%$'\n'}"
+    _sem_phase_ms="$(deploy_task_semantic_phase_mark result_decode "$_sem_phase_ms")"
     if [ -z "$matches" ]; then
         log "inject_semantic_concepts: NO_MATCH purpose=${purpose//$'\n'/ } target_path=${target_path//$'\n'/ }"
         return 0
     fi
-
-    local recommended_skills
-    recommended_skills=$(printf '%s\n' "$semantic_raw" | awk '
-        /^- skills:/ {
-            sub(/^- skills: /,"")
-            if ($0 == "" || $0 == "なし") next
-            n=split($0, parts, ",")
-            for (i=1; i<=n; i++) {
-                skill=parts[i]
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", skill)
-                if (skill != "") print skill
-            }
-        }
-    ' | awk '!seen[$0]++' | head -10)
 
     # task YAMLに semantic_concepts フィールドとして注入
     local indent="  "
@@ -6267,48 +6450,11 @@ inject_semantic_concepts() {
     done <<< "$matches"
 
     if [ -n "$recommended_skills" ]; then
-        # Bug fix: filter out role-restricted skills (軍師専用/家老専用/将軍専用)
-        local filtered_skills=""
+        inject_block="${inject_block}"$'\n'"${indent}recommended_skills:"
         while IFS= read -r skill; do
             [ -z "$skill" ] && continue
-            local skill_md="$SCRIPT_DIR/skills/${skill}/SKILL.md"
-            if [ -f "$skill_md" ] && grep -q '軍師専用\|家老専用\|将軍専用' "$skill_md" 2>/dev/null; then
-                continue
-            fi
-            filtered_skills="${filtered_skills}${skill}"$'\n'
+            inject_block="${inject_block}"$'\n'"${indent}- \"${skill}\""
         done <<< "$recommended_skills"
-        recommended_skills="$filtered_skills"
-        # TRIGGER cross-validation: semantic matchだけでなくTRIGGERキーワードがpurposeに含まれるか確認
-        if [ -n "$recommended_skills" ]; then
-            local _tv_out="" _tv_skill _tv_file _tv_tl _tv_term
-            while IFS= read -r _tv_skill; do
-                [ -z "$_tv_skill" ] && continue
-                _tv_file="$SCRIPT_DIR/skills/${_tv_skill}/SKILL.md"
-                if [ ! -f "$_tv_file" ]; then
-                    # SKILL.MD不在(テスト環境等)→フィルタせず通す
-                    _tv_out+="${_tv_skill}"$'\n'
-                    continue
-                fi
-                _tv_tl="$(sed -nE '/^\s*TRIGGER\s*:/{ s/^[^:]*:\s*//; p; q }' "$_tv_file" 2>/dev/null)" || continue
-                IFS='、,' read -ra _tv_terms <<< "$_tv_tl"
-                local _tv_hit=false
-                for _tv_term in "${_tv_terms[@]}"; do
-                    _tv_term="${_tv_term#"${_tv_term%%[![:space:]]*}"}"
-                    _tv_term="${_tv_term%"${_tv_term##*[![:space:]]}"}"
-                    _tv_term="${_tv_term%% project:*}"
-                    [ -n "$_tv_term" ] && [[ "$purpose" == *"$_tv_term"* ]] && { _tv_hit=true; break; }
-                done
-                "$_tv_hit" && _tv_out+="${_tv_skill}"$'\n'
-            done <<< "$recommended_skills"
-            recommended_skills="${_tv_out%$'\n'}"
-        fi
-        if [ -n "$recommended_skills" ]; then
-            inject_block="${inject_block}"$'\n'"${indent}recommended_skills:"
-            while IFS= read -r skill; do
-                [ -z "$skill" ] && continue
-                inject_block="${inject_block}"$'\n'"${indent}- \"${skill}\""
-            done <<< "$recommended_skills"
-        fi
     fi
 
     # 既存のsemantic_concepts/recommended_skillsを除去してから追加
@@ -6343,6 +6489,7 @@ inject_semantic_concepts() {
     fi
 
     _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
+    _sem_phase_ms="$(deploy_task_semantic_phase_mark yaml_publish "$_sem_phase_ms")"
     log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
 
     # 推薦ログにninja_name付きで記録 (cmd_3244: precision照合キー修正)
@@ -6375,7 +6522,7 @@ inject_semantic_concepts() {
     echo "INFO: [SEMANTIC_CONTEXT] 配備cmd関連概念:" >&2
     printf '%s\n' "$matches" | sed 's/^/  /' >&2
     local _causal_script="${SCRIPT_DIR}/scripts/causal_backlinks.sh"
-    if [ -f "$_causal_script" ]; then
+    if [ "${SEMANTIC_DISABLE_CAUSAL:-0}" != "1" ] && [ -f "$_causal_script" ]; then
         local _target_stem
         _target_stem=$(awk '/^  target_path:/{sub(/^  target_path: /,""); gsub(/.*\//,""); sub(/\.[^.]*$/,""); print; exit}' "$task_file" 2>/dev/null)
         if [ -n "$_target_stem" ]; then
@@ -6384,6 +6531,7 @@ inject_semantic_concepts() {
             [ -n "$_causal_out" ] && { echo "INFO: [CAUSAL_CONTEXT] target因果辺:" >&2; printf '%s\n' "$_causal_out" | sed 's/^/  → /' >&2; }
         fi
     fi
+    _sem_phase_ms="$(deploy_task_semantic_phase_mark causal_context "$_sem_phase_ms")"
     # The injection operation succeeds even when no causal backlinks are
     # available.  Do not leak the status of the optional empty-output branch
     # as the function result; callers and fixed-SHA parity tests require a
@@ -9919,6 +10067,13 @@ if report_file and os.path.isfile(report_file):
         paths = [x.get("path") for x in report.get("files_modified") or [] if isinstance(x, dict) and x.get("path")]
         paths += [str(x) for x in report.get("transient_tests_deleted") or []]
 
+# A task with no declared or reported paths has no new-test contract to
+# validate. Keep minimal lifecycle/direct fixtures (which intentionally omit
+# project metadata) on the existing deployment path instead of inventing a
+# project repository solely for an empty check.
+if not paths:
+    raise SystemExit(0)
+
 def is_test(path):
     path = str(path).strip()
     if not path:
@@ -13383,7 +13538,13 @@ deploy_task_main() {
     fi
 
     ctx_pct=$(get_ctx_pct "$pane_target" "$NINJA_NAME")
-    check_idle "$pane_target" && is_idle=true
+    # Direct YAML/reflux promotion is an explicit replay of a command source;
+    # do not let a transient idle pane observation bypass the terminal-report
+    # guard before the source task has been validated. Normal delivery keeps
+    # the terminal-idle reuse path.
+    if [ "$DIRECT_MODE" != true ]; then
+        check_idle "$pane_target" && is_idle=true
+    fi
 
     local task_yaml pre_resolve_status pre_resolve_cmd task_status verify_status current_cmd
     local deploy_parent_cmd deploy_task_id deploy_scope_mode dd_task dd_ninja dd_pcmd dd_tid dd_status
@@ -13939,6 +14100,11 @@ except Exception:
         log "${NINJA_NAME}: delayed re-nudge not scheduled (delivery evidence already present)"
     fi
 }
+
+if [[ "${DEPLOY_TASK_SELF_SNAPSHOT_TEST_ONLY:-0}" == "1" ]]; then
+    printf 'SELF_SNAPSHOT_OK\n'
+    exit 0
+fi
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
     deploy_task_main "$@"

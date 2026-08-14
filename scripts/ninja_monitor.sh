@@ -6237,6 +6237,11 @@ _cleanup_stale_keys() {
         [ -z "${active[$agent_part]}" ] && unset "ACK_STALL_WARNED[$key]"
     done
 
+    for key in "${!ACK_STALL_IDLE_SEEN[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "ACK_STALL_IDLE_SEEN[$key]"
+    done
+
     for key in "${!DESTRUCTIVE_WARN_LAST[@]}"; do
         agent_part="${key%%:*}"
         [ -z "${active[$agent_part]}" ] && unset "DESTRUCTIVE_WARN_LAST[$key]"

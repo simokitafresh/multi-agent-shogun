@@ -1256,9 +1256,11 @@ printf "initial_idle_recovery=2 duplicate=0 busy_recovery_duplicate=0 false_posi
     [ "$output" = "initial_idle_recovery=2 duplicate=0 busy_recovery_duplicate=0 false_positive=0" ]
 }
 
-# test_necessity: acknowledged_atからin_progressに5分以内に遷移しない構造バグ(殿指摘)を
-# pane idle/busy状態に依存せず検知し、将軍へ一度だけWARNする不変量を守る。
-@test "check_stall: acknowledged status warns shogun once after 5-minute ack-to-progress threshold" {
+# test_necessity: acknowledged_atから5分経過してもbusy paneが一次事実なら
+# statusをin_progressへ自動整合し、旧状態の将軍WARNを抑止する不変量を守る。
+# regression_justification: 32348fc1bでbusy autoheal契約が導入され、e46e06016で
+# idle観測2周期デバウンスが追加されたため、旧SHOGUN_ALERTS=1期待を現行契約へ更新する。
+@test "check_stall: acknowledged busy status autoheals without shogun warning" {
     ACK_AT=$(date -d "6 minutes ago" "+%Y-%m-%dT%H:%M:%S")
     DEPLOYED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '
@@ -1299,12 +1301,13 @@ echo "SHOGUN_ALERTS=$(grep -c "^shogun|stall_alert|" "$TEST_MESSAGES" || true)"
 grep "^shogun|stall_alert|" "$TEST_MESSAGES" || true
 echo "NOTIFIED_LOG=$(grep -c "ACK-TO-PROGRESS-STALL-NOTIFIED" "$TEST_LOG" || true)"
 echo "DEDUPE_LOG=$(grep -c "ACK-TO-PROGRESS-STALL-DEDUPE" "$TEST_LOG" || true)"
+echo "AUTOHEAL_LOG=$(grep -c "ACK-TO-PROGRESS-AUTOHEAL: kagemaru task=cmd_ack_stall_001" "$TEST_LOG" || true)"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SHOGUN_ALERTS=1"* ]]
-    [[ "$output" == *"acknowledgedのままin_progress"* ]]
-    [[ "$output" == *"NOTIFIED_LOG=1"* ]]
-    [[ "$output" == *"DEDUPE_LOG=1"* ]]
+    [[ "$output" == *"SHOGUN_ALERTS=0"* ]]
+    [[ "$output" == *"NOTIFIED_LOG=0"* ]]
+    [[ "$output" == *"DEDUPE_LOG=0"* ]]
+    [[ "$output" == *"AUTOHEAL_LOG=1"* ]]
 }
 
 # test_necessity: 5分未満のacknowledged、およびin_progress遷移後はWARNを送らず

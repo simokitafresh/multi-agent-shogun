@@ -30,6 +30,36 @@ teardown() {
     [ "$output" = "PASS (fingerprint reuse)" ]
 }
 
+# cmd_karo_round11_lane3_singleflight_hold_20260805 AC2/AC3
+# test_necessity: a caller that missed the fingerprint cache before waiting must
+# reuse the leader's exact validated generation after joining the report lock,
+# rather than launching a duplicate validation while preserving single-flight
+# exclusion.
+@test "single-flight join rechecks a fingerprint published by the leader" {
+    : >"${REPORT}.validated_fingerprints"
+
+    flock "${REPORT}.gate.lock" sleep 0.5 &
+    lock_pid=$!
+    sleep 0.1
+    (
+        sleep 0.2
+        printf '%s\n' "$FP" >"${REPORT}.validated_fingerprints"
+    ) &
+    cache_pid=$!
+
+    run env \
+        GATE_SINGLEFLIGHT_TIMEOUT=2 \
+        GATE_VALIDATED_FINGERPRINT="$FP" \
+        GATE_FAST_EXIT=1 \
+        GATE_NO_LOG=1 \
+        bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
+
+    wait "$cache_pid"
+    wait "$lock_pid"
+    [ "$status" -eq 0 ]
+    [ "$output" = "PASS (fingerprint reuse)" ]
+}
+
 # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (provenance: 118dc5ff8)
 # test_necessity: a single-flight lock timeout is infrastructure contention, not a report
 # quality problem, and must be distinguishable by callers via exit code alone (not string

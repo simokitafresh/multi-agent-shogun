@@ -1246,6 +1246,17 @@ if [[ -n "${command:-}" && "$command" == *'stash'* ]]; then
     fi
 fi
 
+# === Guard 19: gh gist create/edit bypass block ===
+# gist操作はgist-shareスキル(scripts/gist_share.sh)経由が正規フロー。
+# gist_share.shは`gh api --method POST gists`を使うためこのguardに干渉しない。
+# 素の`gh gist create`/`gh gist edit`は重複チェック・meta管理・verified writeを迂回する。
+# origin: [[殿指摘_gist重複_20260806]] -> [[gh_gist_create直接実行]] -> [[Guard19_gist_skill_bypass_block]]
+if [[ -n "${command:-}" && "$command" == *'gh gist'* ]]; then
+    if [[ "$command" == *'gh gist create'* || "$command" == *'gh gist edit'* ]]; then
+        emit_deny "BLOCK [Guard19]: 素の gh gist create/edit は重複・meta管理を迂回する。/gist-share スキル(scripts/gist_share.sh)を使え。削除は gh gist delete を直接実行してよい。"
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \

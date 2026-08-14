@@ -58,6 +58,7 @@ assert_complete_contract() {
   TASK="$TEST_PROJECT/queue/tasks/saizo.yaml" \
   EXPECTED_AC="$expected_ac" python3 - <<'PY'
 import os
+import json
 import yaml
 
 report = yaml.safe_load(open(os.environ["REPORT"], encoding="utf-8"))
@@ -76,6 +77,13 @@ assert report["ac_version_read"] == task["ac_version"]
 assert report["report_identity_version"] == 2
 assert report["report_id"] == task["report_id"]
 assert report["task_contract_snapshot"]["acceptance_criteria"] == task["acceptance_criteria"]
+assert isinstance(task["commit_contract"], dict)
+assert task["commit_contract"] == report["commit_contract"]
+templates = task["report_contract_templates"]
+if isinstance(templates, str):
+    templates = json.loads(templates)
+assert isinstance(templates, dict)
+assert templates["ac_evidence_mapping"] == report["ac_evidence_mapping"]
 expected = set(os.environ["EXPECTED_AC"].split(",")) | {"commit"}
 assert expected <= report["binary_checks"].keys(), report["binary_checks"].keys()
 PY

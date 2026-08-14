@@ -109,7 +109,7 @@ if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report|self_study|consultation)$ ]]; then
     fi
     # --- 8パターン番号強制(2026-07-20 D0): #Nno/#Nyes形式が最低1つ必要 ---
     if ! echo "$BC_LINE" | grep -qP '#[1-8](no|yes)'; then
-        echo "BLOCK: brainwash_checkに8パターン番号(#1~#8 yes/no)がない。具体的にどのパターンを検査したか明記せよ" >&2
+        echo "BLOCK: brainwash_checkに8パターン番号(#1no/#1yes形式、スペースなし連結)がない。例: #1no #2no #3no ... 具体的にどのパターンを検査したか明記せよ" >&2
         exit 2
     fi
 fi

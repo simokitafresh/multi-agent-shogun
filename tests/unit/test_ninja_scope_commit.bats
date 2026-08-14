@@ -738,6 +738,8 @@ GIT_WRAPPER
 # test_necessity: an exact-path scoped commit must never refresh the whole shared worktree through status/non-cached diff while preserving foreign staged, tracked-worktree, and untracked bytes outside its owned path.
 @test "exact owned path post-check uses no shared worktree scan and preserves every foreign dirty class" {
     mkdir -p "$REPO/trace-bin"
+    git -C "$REPO" config core.filemode false
+    chmod +x "$REPO/own.txt"
     printf 'foreign worktree\n' >> "$REPO/other.txt"
     printf 'foreign staged\n' > "$REPO/staged.txt"
     printf 'foreign untracked\n' > "$REPO/untracked.txt"
@@ -764,6 +766,7 @@ GIT_WRAPPER
     run bash -c 'cd "$1" && TRACE_STATUS_LOG="$PWD/status.trace" REAL_GIT="$(command -v git)" PATH="$PWD/trace-bin:$PATH" bash "$2" -m no-status -- own.txt' _ "$REPO" "$HELPER"
 
     [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN(GA-260)"* ]]
     [ ! -e "$REPO/status.trace" ]
     [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = own.txt ]
     [ "$(git -C "$REPO" ls-files -s -- staged.txt)" = "$foreign_stage_before" ]

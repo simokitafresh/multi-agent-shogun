@@ -648,6 +648,7 @@ publish_terminal_success() {
 # because HEAD advanced.
 shared_index_file="$(git rev-parse --git-path index)"
 [[ "$shared_index_file" = /* ]] || shared_index_file="$repo_root/$shared_index_file"
+repo_core_filemode="$(git config --bool core.filemode 2>/dev/null || printf false)"
 
 # A killed git process may leave index.lock behind.  Under the repository-wide
 # helper lock it cannot belong to another scoped commit.  Remove it only when
@@ -709,10 +710,15 @@ collect_owned_paths_not_at_head() {
         read -r mode blob <<<"${head_entries[$path]}"
         if [[ -L "$path" ]]; then
             work_mode=120000
-        elif [[ -x "$path" ]]; then
+        elif [[ "$repo_core_filemode" == true && -x "$path" ]]; then
             work_mode=100755
-        else
+        elif [[ "$repo_core_filemode" == true ]]; then
             work_mode=100644
+        else
+            # DrvFS commonly exposes every file as executable while Git has
+            # core.filemode=false.  In that mode Git deliberately ignores the
+            # filesystem execute bit, so preserve the HEAD mode for comparison.
+            work_mode="$mode"
         fi
         work_blob="$(git hash-object -- "$path" 2>/dev/null || printf unavailable)"
         [[ "$work_mode $work_blob" == "$mode $blob" ]] || printf '%s\n' "$path"

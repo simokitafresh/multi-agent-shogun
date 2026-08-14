@@ -10,7 +10,11 @@ no filesystem or logging side effects; the caller owns publication.
 
 from __future__ import annotations
 
+import argparse
+import json
 import re
+import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Mapping
@@ -285,9 +289,12 @@ def _replace_task_section(task_bytes: bytes, concept_lines: list[str], skills: l
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
-def _default_skill_allowed(skill: str, purpose: str) -> bool:
+def _default_skill_allowed(
+    skill: str, purpose: str, *, skills_root: Path | None = None
+) -> bool:
     """Apply the fixed-SHA role/TRIGGER filter when the repo is available."""
-    skill_file = Path(__file__).resolve().parents[2] / "skills" / skill / "SKILL.md"
+    root = skills_root or (Path(__file__).resolve().parents[2] / "skills")
+    skill_file = root / skill / "SKILL.md"
     if not skill_file.is_file():
         return True
     content = skill_file.read_text(encoding="utf-8", errors="replace")
@@ -334,3 +341,148 @@ def load_and_inject(task_path: str | Path, index_path: str | Path) -> bytes:
     task = Path(task_path).read_bytes()
     index = Path(index_path).read_bytes()
     return inject_semantic_concepts(task, index)
+
+
+def query_semantic_context(
+    semantic_index_bytes: bytes,
+    purpose: str,
+    *,
+    skills_root: Path | None = None,
+) -> tuple[list[str], list[str], dict[str, float]]:
+    """Return one cacheable semantic result without task-specific bytes.
+
+    A successful result contains at least one concept.  Callers must not cache
+    an empty result: the absence can also be caused by a bounded lookup failure
+    in the adapter and therefore is deliberately represented by a nonzero CLI
+    status below.
+    """
+    started = time.perf_counter()
+    concepts = parse_semantic_index(semantic_index_bytes)
+    parsed = time.perf_counter()
+    concept_lines, skills = _semantic_output(concepts, purpose)
+    matched = time.perf_counter()
+    if concept_lines:
+        skills = [
+            skill
+            for skill in skills
+            if _default_skill_allowed(skill, purpose, skills_root=skills_root)
+        ]
+    filtered = time.perf_counter()
+    timings = {
+        "alias_parse_ms": (parsed - started) * 1000,
+        "semantic_match_ms": (matched - parsed) * 1000,
+        "skills_scan_ms": (filtered - matched) * 1000,
+    }
+    return concept_lines, skills, timings
+
+
+def context_from_search_output(
+    search_output: str,
+    purpose: str,
+    *,
+    skills_root: Path | None = None,
+) -> tuple[list[str], list[str], float]:
+    """Decode one two-layer semantic_search result and batch skill checks."""
+    started = time.perf_counter()
+    concept_lines: list[str] = []
+    skills: list[str] = []
+    label = ""
+    files: list[str] = []
+    for line in [*search_output.splitlines(), ""]:
+        if line.startswith("## "):
+            label = line[3:]
+            files = []
+            continue
+        if line.startswith("- file: "):
+            files.append(line[len("- file: ") :].replace("`", ""))
+            continue
+        if line.startswith("- skills: "):
+            value = line[len("- skills: ") :]
+            if value and value != "なし":
+                skills.extend(item.strip() for item in value.split(",") if item.strip())
+            continue
+        if not line and label and files:
+            if len(concept_lines) < 5:
+                concept_lines.append(f"{label}:  {' '.join(files)}")
+            label = ""
+            files = []
+
+    unique_skills = list(dict.fromkeys(skills))[:10]
+    allowed_skills = [
+        skill
+        for skill in unique_skills
+        if _default_skill_allowed(skill, purpose, skills_root=skills_root)
+    ]
+    return concept_lines, allowed_skills, (time.perf_counter() - started) * 1000
+
+
+def _query_cli(arguments: argparse.Namespace) -> int:
+    index_bytes = Path(arguments.index).read_bytes()
+    concept_lines, skills, timings = query_semantic_context(
+        index_bytes,
+        arguments.purpose,
+        skills_root=Path(arguments.skills_root),
+    )
+    for phase, wall_ms in timings.items():
+        print(
+            f"semantic_context_helper_phase: phase={phase.removesuffix('_ms')} "
+            f"wall_ms={wall_ms:.3f} cache=miss",
+            file=sys.stderr,
+        )
+    if not concept_lines:
+        # NO_MATCH is intentionally not a successful cache value.  The shell
+        # adapter preserves the historical no-injection return contract while
+        # deploy_task_wave_cache discards this temporary output.
+        return 20
+    json.dump(
+        {"concept_lines": concept_lines, "skills": skills},
+        sys.stdout,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    sys.stdout.write("\n")
+    return 0
+
+
+def _from_search_cli(arguments: argparse.Namespace) -> int:
+    search_output = sys.stdin.read()
+    concept_lines, skills, skills_ms = context_from_search_output(
+        search_output,
+        arguments.purpose,
+        skills_root=Path(arguments.skills_root),
+    )
+    print(
+        "semantic_context_helper_phase: phase=search_output_parse_and_skills_scan "
+        f"wall_ms={skills_ms:.3f} cache=miss",
+        file=sys.stderr,
+    )
+    if not concept_lines:
+        return 20
+    json.dump(
+        {"concept_lines": concept_lines, "skills": skills},
+        sys.stdout,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    sys.stdout.write("\n")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    query = subparsers.add_parser("query")
+    query.add_argument("--index", required=True)
+    query.add_argument("--purpose", required=True)
+    query.add_argument("--skills-root", required=True)
+    query.set_defaults(handler=_query_cli)
+    from_search = subparsers.add_parser("from-search-output")
+    from_search.add_argument("--purpose", required=True)
+    from_search.add_argument("--skills-root", required=True)
+    from_search.set_defaults(handler=_from_search_cli)
+    arguments = parser.parse_args(argv)
+    return arguments.handler(arguments)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

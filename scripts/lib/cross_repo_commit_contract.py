@@ -111,6 +111,27 @@ def validate_cross_repo_commit_ownership(
 
 def validate_cross_repo_commits(report: Mapping[str, Any]) -> list[str]:
     errors, _owned = validate_cross_repo_commit_ownership(report)
+    if errors:
+        # Collect repo+commit pairs from the report so the FIX hint is actionable.
+        fix_parts: list[str] = []
+        for entry in report.get("cross_repo_commits") or []:
+            if not isinstance(entry, Mapping):
+                continue
+            repo = str(entry.get("repo") or "").strip()
+            commit = str(entry.get("commit_hash") or "").strip()
+            if repo and commit:
+                fix_parts.append(
+                    f'python3 -c "from scripts.lib.cross_repo_commit_contract import '
+                    f"auto_generate_cross_repo_entries; import json; "
+                    f"print(json.dumps(auto_generate_cross_repo_entries("
+                    f"'{repo}', ['{commit}']), indent=2, ensure_ascii=False))\""
+                )
+        if fix_parts:
+            errors.append(
+                "FIX hint: cross_repo_commitsのpathsが実際のcommit内容と不一致。"
+                "以下を実行して正しいentriesを取得し、報告YAMLのcross_repo_commitsを置換せよ: "
+                + " ; ".join(fix_parts)
+            )
     return errors
 
 
