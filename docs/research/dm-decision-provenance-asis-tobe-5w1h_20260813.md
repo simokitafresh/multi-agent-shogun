@@ -389,6 +389,33 @@ FoFは**自分では銘柄を持たない**。保有の実体は必ず終端のs
 
 **変更しない点**(§3.29と同じ): weightsと`price_movement`の別ソース照合、Cashのprice-free契約、real tickerのfail-close、`_collect_all_symbols`の収集規則。
 
+#### (4-b) 三者独立コード確認の結果(2026-08-14 22:26 将軍・家老・軍師。殿指示22:20)
+
+殿の指示により三者が**独立して**コードを確認した。**将軍の見立ての誤りが2点確定した。**
+
+**A. 入口は二つある — 将軍の「payloadは全PF」は片手落ちであった(家老発見・軍師も見落としを認めて支持)**
+
+| 経路 | payloadの中身 | B案の上界を作れるか |
+|------|-------------|------------------|
+| normal | `PortfolioRepository.load()`→`PortfolioDB.all()`(`repository.py:82`)で**全PF** | **作れる** |
+| **bundle replay** | bundleの`portfolio_config`のみ(`recalculate_fast.py:1872-1876`)。生成側が`portfolio_config IDs == target IDs`を強制(`input_bundle_materializer.py:37-39`) | **作れない**(全standardが存在しない) |
+
+**run399のmanifest実値も`portfolio_config row_count=5`/target IDs=5**であり、replay経路では対象PFしかpayloadに入らない。∴**B案をnormalだけに実装すると、replay経路で母集団が再び不足する。**
+
+**対処(家老の最小案・将軍受諾)**: normal producer側で**`required_price_symbols`をbundle contractへ保存**し、**replayはその集合でsubset検査を行い、target configから再導出しない**。旧contractに当該フィールドが無い場合は**fail-closeで拒否**する。現`ALLOWED_ARTIFACTS`にsymbol契約は無い(`safe_bundle_v2.py:20,144-152`)ため、契約の追加が要る。
+
+**B. 保有可能集合の定義はv2.32のままAPPROVE(三者一致)**。`executor.py:338-347`と`safe_haven_switch.py:36-55`より、holding出力に現れるのは**relative current tickers・実効pipeline safe・CashTerminalのCash**のみで、absolute/risk-free/benchmarkは出ない。
+
+**実測(将軍が`scripts/pf_assets.py`を新規作成して取得 2026-08-14 22:28)**: active standard 24PFの**保有しうる銘柄は9種**=`['GDX','GLD','QLD','QQQ','SPY','TECL','TMV','TQQQ','XLU']`。top-level safeとpipeline safeの**不一致は0件**(ただしvalidator強制が無いため上界に両方含める方針は維持)。
+
+**C. コスト「ほぼゼロ」は誤りであった(将軍の誤り・家老実測)**: run399のcurrent symbolsは`LQD,SPY,TECL,TMF,TMV,TQQQ,XLU`でprice artifact=38744行。上界化で追加されるのは`GDX 5089 + GLD 5467 + QLD 5068 + QQQ 6900 = 22524行`、**推定合計61268行(+58.1%)**。絶対量は価格表全体(10万行)の範囲内だが、**「ほぼゼロ」と断定してはならない。実装後にcache_initと総時間を計測して記録する**。期間はtarget lookback基準のままで不変。
+
+**D. subset fail-closeの配置(三者一致)**: `df_prices`確定直後(`recalculate_fast.py:2003`の後)、`spy_snapshot`/`db.info`公開(2004-2007)の**前**。既存の`load_prices_as_df`はempty許容(`data_loader.py:80-84`)、PriceCache snapshot経路は要求ticker全てをloaded扱い(`price_ratio_impl.py:155-175`)、**一般stockのsubset fail-closeは現在0件**。DTB3 coverageのみ2005-2006に存在し重複しない。
+
+**E. 実装規模(訂正)**: normal経路のみなら holdable集合inline 12-18行 + subset検査 5-8行 = **約17-26行・新規query0**。**ただしbundle replay parityの契約追加が別途必要であり、将軍の「十数行・1ファイル」見積りは過少であった。**
+
+**三者判定**: **normal経路はAPPROVE、bundle replay未設計のため全体はBLOCK**(家老・軍師とも同結論)。
+
 #### (5) 残る検討事項(三者で確認)
 
 1. **lookback期間の算出元 → v2.29で決着(家老提案を将軍受諾)**: **対象standard PF基準のまま据え置く。** 全standardへ広げるのは**symbol母集団だけ**である。期間まで広げると、partialで再計算しないstandard PFのsignal warmupを増やすことになり、目的(母集団の完全性)と無関係なコストが載る。∴広げる次元を母集団に限定する。
