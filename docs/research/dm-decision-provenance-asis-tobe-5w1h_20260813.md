@@ -1,5 +1,5 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.0
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.1
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
@@ -205,25 +205,39 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 
 **注記(2026-08-13 22:50)**: RB6 CLEARの判定基準は殿裁定(22:40-22:44)で逆算parity方式へ簡素化された(正本=rollback計画書v1.5 §7.1)。本書のWHY(§1)にある「oracleが独立再実装を要した」経緯は歴史的事実として有効だが、以後のRB6検算はselection再実装を要しない。provenance保存の価値(検証のSQL一発化)は不変。
 
-## §5 工程(実装はRB6 CLEAR後)
+## §5 工程(実装解禁済み。依存DAG+影響範囲+並列可否 — v2.1)
 
-工程分割はv1.9で家老レビュー(7)の8分割+canary構成へ更新:
+> ★他のコーディングLLMへ(利他前提): 本表は**この表だけで配備判断が完結する**ように書いてある。各工程の「二値出口」がそのままACである — **ACを発明するな、増やすな、順番を変えるな**。「依存」列が空の工程は即配備可、「並列」列が同じグループ記号の工程は同時配備可。「影響範囲」列が重なる工程は同一ファイル競合ゆえ同時配備禁止。
 
-| # | 工程 | 二値出口 |
-|---|---|---|
-| P0 | 本設計書の殿裁定 | §3の保存内容・§4の速度制約が承認される |
-| P0.5 | sanitizer/reader/**window契約**の先行固定 | sanitize allowlist拡張+旧出力不変fixture+未知キー無視fixture+**B2条件分岐(canonical月のみ満月上書き)+初月stub48行・44fa8aad2行のregression fixture(§2.4)**がFAIL0/SKIP0 |
-| P0.6 | fof_component_weightsのtemporal性質確定 | 判定時点snapshotか最新値上書きかをコード現物で二値確定(§3.1の懸案クローズ) |
-| P1a | 書込み実装(standard scalar) | pure executor結果から月初判定日のprovenance構築+momentum_data埋め込み+対象テストFAIL0/SKIP0 |
-| P1b | snapshot完全化(standard) | 月初snapshot表へ**start/end実価格対**payload(現状latest1点 `recalculate_fast.py:426-440`の拡張)+fixture PASS |
-| P2a | 書込み実装(FoF scalar) | FoFループで同スキーマ+nested深度差なしをfixture確認 |
-| P2b | snapshot新設(FoF/nested) | FoF経路のsnapshot呼出追加(現状0件)+depth1/2/4 fixture PASS |
-| P3a | runサマリmigration | ADD COLUMN summary(nullable)+`migrations.py`のADD COLUMN分岐追加+writer引数+caller更新+**失敗時二値契約(WARN+null、runは止めない)**+起動互換PASS |
-| P3b | metricsマニフェスト(⑦) | summaryへmetrics_manifest(47name+204行+入力SHA256)が非null |
-| P4 | canary | **standard2+FoF depth1/2/4の計5PF、stub月/normal月両方含む、親closure固定**(家老構成)。multi-table hash一致5/5+provenance非null+ERROR0 |
-| P5 | full+速度検証 | 102/102・failed0・**off/on各3run medianでTOTAL増分+5%以内**・payload=pg_column_size分位・flush=batch分位・WAL=pg_stat_wal run差分median・TOAST=count/rate/bytes(§4-7)・500B見積はcanary p95/max実測後に外挿再検証・保存値から選抜再導出全数一致 |
-| P6 | 検証クエリの定型化 | §3.3のSQLをdb-checkスキルへ追記 |
-| P7 | fingerprint skip有効化(速度向上・別cmd) | versioned watermark+precomputed manifest実装(§4.5-3)+skip有効/無効A/B fullで**multi-table hash完全一致**+TOTAL短縮幅の実測記録 |
+| # | 工程 | 依存 | 並列 | 影響範囲(触るファイル) | 二値出口(=ACそのもの。追加検証禁止) |
+|---|---|---|---|---|---|
+| P0 | 本設計書の殿裁定 | — | — | なし(裁定のみ) | §3の保存内容・§4の速度制約が承認される |
+| P0.5 | sanitizer/reader/window契約の先行固定 | P0 | A | `utils/sanitize.py`+fixtureファイル+`generators/monthly_returns.py`(B2条件分岐) | sanitize allowlist拡張+旧出力不変fixture+未知キー無視fixture+B2条件分岐(canonical月のみ満月上書き)+初月stub48行・44fa8aad2行regression fixture(§2.4)がFAIL0/SKIP0 |
+| P0.6 | fof_component_weightsのtemporal性質確定 | P0 | A | なし(コード読解のみ・read-only) | 判定時点snapshotか最新値上書きかをコード現物で二値確定(§3.1懸案クローズ) |
+| P3a | runサマリmigration | P0 | A | `models.py`+`migrations.py`+`recalc_status.py`+caller群 | ADD COLUMN summary(nullable)+ADD COLUMN分岐追加+writer引数+caller更新+失敗時二値契約(WARN+null、runは止めない)+起動互換PASS |
+| P1a | 書込み実装(standard scalar) | P0.5 | B | `recalculate_fast.py`(Phase 3.7/4判定ループ) | pure executor結果から月初判定日のprovenance構築+momentum_data埋め込み+対象テストFAIL0/SKIP0 |
+| P1b | snapshot完全化(standard) | P0.5 | — (P1aと同一ファイルのため直列) | `recalculate_fast.py:403-471`(snapshot builder) | 月初snapshot表へstart/end実価格対payload(現状latest1点:426-440の拡張)+fixture PASS |
+| P2a | 書込み実装(FoF scalar) | P0.5, P0.6 | B | `recalculate_fof.py`(FoFループ) | FoFループで同スキーマ+nested深度差なしをfixture確認 |
+| P2b | snapshot新設(FoF/nested) | P1b(payload形式を継承), P0.6 | — | `recalculate_fof.py`(snapshot呼出追加。現状0件) | FoF経路のsnapshot呼出追加+depth1/2/4 fixture PASS |
+| P3b | metricsマニフェスト(⑦) | P3a | B | metrics writer→summary書込み箇所 | summaryへmetrics_manifest(47name+204行+入力SHA256)が非null |
+| P4 | canary(最終checkpoint①) | P1a,P1b,P2a,P2b,P3a,P3b | — | なし(実行+検証のみ) | standard2+FoF depth1/2/4計5PF・stub月/normal月両方・親closure固定。multi-table hash一致5/5+provenance非null+ERROR0 |
+| P5 | full+速度検証(最終checkpoint②) | P4 | — | なし(実行+検証のみ) | 102/102・failed0・off/on各3run medianでTOTAL増分+5%以内・payload/WAL/TOAST分位(§4-7)・500B見積のcanary実測後外挿再検証・保存値から選抜再導出全数一致 |
+| P6 | 検証クエリの定型化 | P5 | — | db-checkスキル(shogun repo側) | §3.3のSQLをdb-checkスキルへ追記 |
+| P7 | fingerprint skip有効化(速度向上・別cmd) | P5 | — | fingerprint基盤+skip判定 | versioned watermark+precomputed manifest実装(§4.5-3)+skip有効/無効A/B fullでmulti-table hash完全一致+TOTAL短縮幅の実測記録 |
+
+**並列グループの読み方**: P0裁定直後にグループA(P0.5+P0.6+P3a=3タスク同時配備可、影響ファイル無競合)。P0.5完了後にグループB(P1a+P2a+P3bのうち依存満了分を同時配備可)。P1b/P2bは同一ファイル直列制約に従う。クリティカルパス=P0→P0.5→P1b→P2b→P4→P5。
+
+### §5.05 配備規則(家老向け・過剰要求と原理的failの構造防止 — v2.1新設)
+
+RB6/RB8で実証された失敗パターン(過剰AC・ロール外AC・順序不能AC)を配備段階で遮断する規則。**cmd起票者と家老の双方がチェックする**:
+
+1. **1工程=1cmd**。工程をまたぐバンドル配備禁止(LS-A04(14))。分割したくなったら本表の行が分割単位である。
+2. **ACは本表の「二値出口」をそのまま写せ**。検証の追加発明(全量突合・独立oracle再実装・contract test新設等)は過剰AC — 厳密さは最終checkpoint P4/P5の2箇所に集中済みであり、途中工程は fixture/選択テストFAIL0/SKIP0 だけでよい(殿裁定2026-07-14「厳密さは最終チェックのみ」)。
+3. **AC順序=実行順序**。AC nが要求する入力がAC n-1までで生成されない構成(原理的fail)を配備前に確認せよ。特に「後工程の成果物を検証せよ」というACを前工程cmdへ入れるな(RB8 AC3が世代切り直しで証拠未達になった構造と同型)。
+4. **doc更新(設計書改訂・context境界・gist同期・計画書更新)をACに入れるな** — 将軍laneの仕事(殿裁定2026-08-14 14:24、cmd_4302でdeploy_task.shが機械BLOCK)。
+5. **影響範囲列が重なる工程を同時配備するな**(同一ファイル編集競合)。並列は本表の並列列に従う。
+6. **full実行をP5より前のACに入れるな**。途中工程の検証はfixture/選択テストのみ(full 1回≈8分×検証回数が回転を殺す)。
+7. **世代・環境が動く前提を置くACには「固定方法」を同文で書け**(L3 sync-fof cron 01:40UTCが確定月signalsを正規再展開し世代を切り直す — RB8実証。世代固定なしの証拠ACは原理的failしうる)。
 
 ## §5.5 車輪の再発明防止 — RB6/RB8検証資産カタログ(2026-08-14 v2.0新設・殿指示「車輪の再発明を今後繰り返したくない」)
 
@@ -243,6 +257,7 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 
 ## §6 改訂履歴
 
+- v2.1 (2026-08-14 14:52): 殿指示「工程の依存関係・影響範囲・並列可能性を明確に。他のコーディングLLMへ利他で覚醒アップデート。家老が過剰要求・過剰AC・AC順で原理的にfailになる要求をしない仕組みを盛り込め」— §5工程表を依存DAG+影響ファイル+並列グループ(A/B)付きへ全面改訂(本表だけで配備判断が完結する自己完結形式。二値出口=ACそのもの・発明禁止を明記。クリティカルパス=P0→P0.5→P1b→P2b→P4→P5)。§5.05配備規則新設=7則(1工程1cmd/二値出口を写す/AC順序=実行順序/docAC禁止=cmd_4302機械BLOCK/影響範囲競合の同時配備禁止/full実行はP5のみ/世代固定の同文化)。技術契約は無変更。
 - v2.0 (2026-08-14 14:45): 殿指示「現状を確認して覚醒アップデート。車輪の再発明を今後繰り返したくない」— (1)冒頭状態注記を「実装解禁条件成立」へ更新: RB6完全CLEAR(月次+metrics全exact・同窓裁定・44fa意図仕様確定)+RB8 cmd_4301 completed(14:29・AC1-4全PASS)。残gate=P0殿裁定のみ (2)§5.5新設=RB6/RB8検証資産カタログ(算術合成正基準・逆算検算方式・窓規則正本・契約ラベル規約・fixture要件・完了処理高速回転契約)と「起票前に既存資産を探す」運用規則 (3)doc更新=将軍lane契約(殿裁定14:24・cmd_4302)を状態注記へ反映。§1-§5の技術契約は無変更(v1.9両者LGTMのまま)。
 - v1.9 (2026-08-14 03:30): 家老独立レビュー(BLOCK・必須9件、blt_20260814_032002)+軍師独立レビュー(6/7一致・注記3件、blt_20260814_032508)を全反映 — (1)skip_diagnostics案の残骸を全文撤回しpure executor構築へ一本化 (2)snapshot実態(価格latest1点・FoF呼出0)を§2.1.5③へ確定しP1b/P2b新設 (3)B2無条件上書きの契約リスク+stub/44fa fixture必須を§2.4へ (4)⑤保存先SSOT=precomputed_rawに裁定(MonthlyReturn列追加禁止)、Mermaid図も分離 (5)summary=migration+writer引数+caller+失敗時WARN契約 (6)safe_haven例へvalue追加 (7)工程をP0.5〜P3bの8分割+canary構成具体化 (8)速度計測をoff/on各3run median+pg_column_size/pg_stat_wal/TOAST分位へ (9)fingerprint生成O(N)対策=versioned watermark+precomputed manifest、A/B hashをmulti-table化。軍師: engine.py terminal block注記+DTB3明示列挙。44fa8aad境界=expanded_switch意図仕様確定(GATE CLEAR)を反映。
 - v1.8 (2026-08-14 03:12): 殿指示03:10 — AsIs/ToBeのMermaidフロー図を追加。§2.5=AsIsフロー(計算→保存✅→破棄❌→再導出の苦労)、§3.4=ToBeフロー(3器を埋める→SQL一発検証→fingerprint skip速度転用)。契約変更なし。
