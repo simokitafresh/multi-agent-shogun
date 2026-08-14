@@ -95,7 +95,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4306"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行scripts/cmd_complete_gate.sh:8980が同型BLOCKをGP-203として「この問題は忍者では解消できない。家老に報告して待機せよ。リトライは無駄」と実装済み。対象insightのLevel5未満候補は既存防御へ吸収済みで新規修正不要。"
+  action_artifact: "cmd=cmd_reflux_insight_202608150222_hanzo;gate=scripts/cmd_complete_gate.sh:8980;observed=GP-203;target=INS-20260814-171100467-151d"
+  resolved_at: "2026-08-15T02:27:18+09:00"
 - id: INS-20260814-171100894-62e0
   ts: "2026-08-14T17:11:00+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[DTB3_snapshot外SELECT既存欠陥]] は既存aliasesに一致なし。類似概念TOP3: db_price_data_range(DB価格データ範囲; alias=DTB3; score=28.8) / semantic_dictionary_design(セマンティック辞書構想; alias=related_concepts; score=5.5) / lesson_lifecycle(教訓ライフサイクル管理; alias=lesson_deprecate; score=5.5)。概念定義とaliases追加を検討せよ"
