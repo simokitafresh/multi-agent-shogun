@@ -2215,6 +2215,31 @@ EOF
     rm -rf "$direct_root"
 }
 
+@test "reset_stale_fields clears stale test lifecycle fields before next task generation" {
+    local direct_root
+    direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_test_lifecycle.XXXXXX")"
+    prepare_source_fixture "$direct_root"
+
+    local file="$direct_root/queue/tasks/tobisaru.yaml"
+    cat >> "$file" <<'YAML'
+  test_necessity:
+  - defense_target: predecessor-only contract
+  deletion_justification: predecessor transient proof
+  transient_tests_deleted:
+  - tests/unit/test_predecessor_only.bats
+YAML
+
+    SCRIPT_DIR="$direct_root"
+    log() { :; }
+    eval "$(extract_function reset_stale_fields)"
+    reset_stale_fields "tobisaru"
+
+    run python3 -c 'import sys, yaml; task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]; fields = ("test_necessity", "deletion_justification", "transient_tests_deleted"); assert sum(field in task for field in fields) == 0, task' "$file"
+    [ "$status" -eq 0 ]
+
+    rm -rf "$direct_root"
+}
+
 @test "--directモード + 異なるCMD_ID: acceptance_criteriaをクリアする（旧AC残存バグ修正）" {
     local direct_root
     direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_direct_newcmd.XXXXXX")"

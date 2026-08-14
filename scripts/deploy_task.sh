@@ -1978,6 +1978,9 @@ STALE_FIELDS = [
     # Reusing it across task generations makes a valid new APPROVE collide with
     # the predecessor receipt before the new task can be published.
     'pre_implementation_review',
+    # Test lifecycle fields are generation-scoped. If omitted here, a new
+    # task can inherit predecessor evidence and fail its own commit gate.
+    'test_necessity', 'deletion_justification', 'transient_tests_deleted',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
