@@ -1,10 +1,10 @@
 <!-- gist-master: 35d37064b80a2d576eca667db2a655f9 dm-decision-provenance-asis-tobe-5w1h_20260813.md -->
-# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v1.9
+# DM-Signal 判定プロヴェナンス保存 — AsIs/ToBe 5W1H設計書 v2.0
 
 > ★v1.3重要: 家老独立レビュー(2026-08-13 17:55・BLOCK 7件)によりv1.2の3つの事実誤認を訂正済み — (誤1)sanitizerは未知キーを通さない=allowlist方式(`sanitize.py:83-106`) (誤2)`context.momentum_data`は"values"キー構造でなく**ticker直下scalarのflat map** (誤3)`recalculation_status`へのsummary追加は**migration必須**(列はid/start_time/end_time/status/mode/error_messageのみ、`models.py:1200-1205`)。以下本文は訂正済みの正。
 <!-- semantic-links: [[recalculate_pipeline]] [[momentum_window]] [[dm-fullrecalculate-cache-reuse-asis_20260813]] -->
 
-> ★前提情報のないLLM/人へ: 本書だけで自己完結する。§1(5W1H)→§2(AsIs)→§3(ToBe)→§4(速度保護)→§5(工程)の順に読め。ToBeは**殿裁定済みの方向**(2026-08-13 17:36「専用の設計書を作ろう。実装にあたって計算速度が低下しない工夫も必要だ」)だが、**実装はRB6収束後**(生成コード変更がoracle突合の安定を乱すため)。★状態更新2026-08-14 03:05: RB6月次=33748/33748 exactでCLEAR確定(殿裁定)。metrics 47指標検算=shard A portfolio側8160/8160・shard B 13056/13056(GATE CLEAR)・shard D union47(重複0欠落0)全てexact。benchmark残差(top-level104+A班1323起点の保存月次50行)は将軍D0逆算検証で全50行がPF同窓値と一致→**殿裁定02:59「同窓比較が正」で仕様クローズ**(knowledge:a58d14f58926acb2、§3.25⑤b)。残=44fa8aad窓境界異常のPF側別件RCAのみで、RB6完全収束=本書P0着手可能が目前(正本=rollback計画書v1.6 §7.2)。
+> ★前提情報のないLLM/人へ: 本書だけで自己完結する。§1(5W1H)→§2(AsIs)→§3(ToBe)→§4(速度保護)→§5(工程)の順に読め。ToBeは**殿裁定済みの方向**(2026-08-13 17:36「専用の設計書を作ろう。実装にあたって計算速度が低下しない工夫も必要だ」)だが、**実装はRB6収束後**(生成コード変更がoracle突合の安定を乱すため)。★状態更新2026-08-14 14:45(v2.0): **実装解禁条件は成立した**。RB6=完全CLEAR(月次33748/33748+metrics30192/30192+stub48/48=30240/30240全exact・同窓裁定02:59・44fa8aad=expanded_switch意図仕様確定・本番バグゼロ、knowledge:cb56743dbce67217)。RB8=cmd_4301 completed(2026-08-14 14:29、AC1世代固定/AC2 orphan0/AC3証拠正規帰属/AC4 API8画面8/8全PASS、独立証拠commit 6cc6b576)。本書はv1.9で家老BLOCK9件+軍師注記3件を全反映済み・**両者LGTM=実装配備可能**(commit 9cda286f)。残る唯一のgate=**P0殿裁定**。なお運用契約の追加(殿裁定2026-08-14 14:24): 設計書・context境界・gist同期等のdoc更新は将軍laneの仕事であり、実装cmdの忍者ACへ盛り込まない(cmd_4302で配備契約化)。
 
 ## §1 5W1H(前提)
 
@@ -225,8 +225,25 @@ fullの現行実測=TOTAL 7m45s(L2=2m5s/L3=4m21s/L5=41.3s、2026-08-13 run `2026
 | P6 | 検証クエリの定型化 | §3.3のSQLをdb-checkスキルへ追記 |
 | P7 | fingerprint skip有効化(速度向上・別cmd) | versioned watermark+precomputed manifest実装(§4.5-3)+skip有効/無効A/B fullで**multi-table hash完全一致**+TOTAL短縮幅の実測記録 |
 
+## §5.5 車輪の再発明防止 — RB6/RB8検証資産カタログ(2026-08-14 v2.0新設・殿指示「車輪の再発明を今後繰り返したくない」)
+
+> 本書の実装(P0.5〜P7)と以後の全検証で、以下の**既存資産を先に探して使え**。ゼロから独立runner・検算式・fixture・母集団定義を再実装するのは、RB6で仮説H1〜H6・撤回騒動・failed配備を生んだ工程の反復である。
+
+| 資産 | 場所 | 再利用場面 |
+|---|---|---|
+| RB6算術合成の完全検算結果(月次33748+metrics30240 exact) | 独立証拠commit `6cc6b576`(DM-signal repo)+`docs/research/rb6-v3-full-revalidation-evidence_20260813.md` | P4/P5/P7のA/B検証で「正」の基準値。再検算を一から走らせる前にこの成分合成を照合 |
+| RB8世代固定+8画面APIチェックポイント | `docs/research/cmd_4301_rb8_generation_evidence_20260814.md` | 世代切り直し(sync-fof cron等)後の証拠再帰属手順の雛形 |
+| 逆算検算方式(殿裁定2026-08-13 22:40) | rollback計画書(gist 0c98ab36)§7.1+knowledge:a58d14f58926acb2 | selection再実装なしの保存値逆算parity。oracleの独立再実装を要しない |
+| 窓規則の正本 | `backend/app/jobs/monthly_boundary.py:45-108`(§0.6)+本書§2.3/§2.4 | 検算式へ窓規則を「写す」な、境界日付は⑤の行内正本(実装後)またはこのコードを直接引け |
+| 検算契約ラベル規約(⑧) | 本書§3.25⑧(DB非接触・即日採用可) | 別契約の数値を反証と誤認する事故(H6撤回騒動)の機械遮断 |
+| B2上書き/初月stubのregression fixture要件 | 本書§2.4(stub48行+44fa8aad2行・10dp固定) | P0.5で作るfixtureの仕様。benchmark検算の再誤診防止 |
+| 完了処理の高速回転契約 | cmd_4302(freshness非同期化+doc要求AC配備BLOCK)+knowledge:56abcd272b26ef71 | 実装cmd起票時、doc更新をACへ書かない(将軍lane) |
+
+**運用規則**: 新しい検証cmdを起票する前に、本表とknowledge検索(`bash scripts/memory_db_query.sh --search "<対象>"`)で既存資産の有無を確認し、q11(車輪確認)へ照合結果を記載する。
+
 ## §6 改訂履歴
 
+- v2.0 (2026-08-14 14:45): 殿指示「現状を確認して覚醒アップデート。車輪の再発明を今後繰り返したくない」— (1)冒頭状態注記を「実装解禁条件成立」へ更新: RB6完全CLEAR(月次+metrics全exact・同窓裁定・44fa意図仕様確定)+RB8 cmd_4301 completed(14:29・AC1-4全PASS)。残gate=P0殿裁定のみ (2)§5.5新設=RB6/RB8検証資産カタログ(算術合成正基準・逆算検算方式・窓規則正本・契約ラベル規約・fixture要件・完了処理高速回転契約)と「起票前に既存資産を探す」運用規則 (3)doc更新=将軍lane契約(殿裁定14:24・cmd_4302)を状態注記へ反映。§1-§5の技術契約は無変更(v1.9両者LGTMのまま)。
 - v1.9 (2026-08-14 03:30): 家老独立レビュー(BLOCK・必須9件、blt_20260814_032002)+軍師独立レビュー(6/7一致・注記3件、blt_20260814_032508)を全反映 — (1)skip_diagnostics案の残骸を全文撤回しpure executor構築へ一本化 (2)snapshot実態(価格latest1点・FoF呼出0)を§2.1.5③へ確定しP1b/P2b新設 (3)B2無条件上書きの契約リスク+stub/44fa fixture必須を§2.4へ (4)⑤保存先SSOT=precomputed_rawに裁定(MonthlyReturn列追加禁止)、Mermaid図も分離 (5)summary=migration+writer引数+caller+失敗時WARN契約 (6)safe_haven例へvalue追加 (7)工程をP0.5〜P3bの8分割+canary構成具体化 (8)速度計測をoff/on各3run median+pg_column_size/pg_stat_wal/TOAST分位へ (9)fingerprint生成O(N)対策=versioned watermark+precomputed manifest、A/B hashをmulti-table化。軍師: engine.py terminal block注記+DTB3明示列挙。44fa8aad境界=expanded_switch意図仕様確定(GATE CLEAR)を反映。
 - v1.8 (2026-08-14 03:12): 殿指示03:10 — AsIs/ToBeのMermaidフロー図を追加。§2.5=AsIsフロー(計算→保存✅→破棄❌→再導出の苦労)、§3.4=ToBeフロー(3器を埋める→SQL一発検証→fingerprint skip速度転用)。契約変更なし。
 - v1.7 (2026-08-14 03:08): 殿指示03:04「最新の知見上で実際のコード元に覚醒してアップデート」— §2.4新設=benchmark列のB1同窓/B2満月上書き混在機構をコード現物(行番号付き)で確定。⑤bへ実装根拠・表示2系統(compare=TMR直参照/行内benchmark=同窓)の役割分担・TQQQ横展開不要の証明を追記。冒頭状態注記をmetrics shard A/B/D CLEAR+benchmark同窓裁定クローズ+RB6完全収束目前へ更新。
