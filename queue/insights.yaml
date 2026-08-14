@@ -1,4 +1,21 @@
 insights:
+- id: INS-20260814-081458650-0f15
+  ts: "2026-08-14T08:14:58+09:00"
+  insight: "semantic_index_update新概念候補: discussion:RB8 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-14T08:39:45+09:00"
+- id: INS-20260814-085045467-9256
+  ts: "2026-08-14T08:50:45+09:00"
+  insight: "cmd_karo_recon2_rb6_metrics_shard_d_20260814 GATE BLOCK(tobisaru bc_fail)。本セッション序盤で複数回gate FAIL→最終報告のLGTM有無とgate_result照合が必要。LGTM→BLOCK確認時はLG006適用(見落とし原因分析)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
 - id: INS-20260814-092754259-ea1f
   ts: "2026-08-14T09:27:54+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_cli_switch_dirty_contract_20260814; matched=shogun; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
@@ -934,8 +951,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 1
-  last_seen: "2026-08-14T17:21:01+09:00"
+  occurrence_count: 2
+  last_seen: "2026-08-14T17:36:27+09:00"
   verification:
     status: "passed"
     exit_code: 0
