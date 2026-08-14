@@ -2674,6 +2674,34 @@ _unresolved = [
     entry for entry in blocks
     if str(entry.get("cmd_id", "") or "").strip() not in _acked
 ]
+
+# 窓が件数基準だけだと、ack手段を持たない家老側cmd等が無期限に居座る。
+# entryはtimestampを持つため日数でも切る。両方を満たしたものだけを「直近の未解決」とする。
+_max_age_days = 7
+try:
+    _max_age_days = int(os.environ.get("CMD_SAVE_BLOCK_SUMMARY_MAX_AGE_DAYS", "7"))
+except ValueError:
+    _max_age_days = 7
+if _max_age_days > 0:
+    import datetime as _dt
+    _now = _dt.datetime.now(_dt.timezone.utc)
+    _fresh = []
+    for _entry in _unresolved:
+        _raw_ts = str(_entry.get("timestamp", "") or "").strip()
+        if not _raw_ts:
+            _fresh.append(_entry)  # 時刻不明は落とさない(判断材料を黙って捨てない)
+            continue
+        try:
+            _parsed = _dt.datetime.fromisoformat(_raw_ts.replace("Z", "+00:00"))
+        except ValueError:
+            _fresh.append(_entry)
+            continue
+        if _parsed.tzinfo is None:
+            _parsed = _parsed.replace(tzinfo=_dt.timezone.utc)
+        if (_now - _parsed).days < _max_age_days:
+            _fresh.append(_entry)
+    _unresolved = _fresh
+
 recent = _unresolved[-10:]
 if not recent:
     raise SystemExit(0)
