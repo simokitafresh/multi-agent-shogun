@@ -100,7 +100,7 @@ esac
 SH
     cat >"$fixture/bin/ps" <<'SH'
 #!/usr/bin/env bash
-printf '/home/simokitafresh/bin/claude --dangerously-skip-permissions --model opus --effort high\n'
+printf "/home/simokitafresh/bin/claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]' --effort high\n"
 SH
     chmod +x "$fixture/bin/tmux" "$fixture/bin/ps"
     before="$(sha256sum "$fixture/config/settings.yaml" | awk '{print $1}')"

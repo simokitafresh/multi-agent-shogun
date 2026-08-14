@@ -11,7 +11,7 @@ PROBE_MODEL=""
 PROBE_EFFORT=""
 PROBE_TIER="default"
 CODEX_BIN="${CODEX_BIN:-codex}"
-OPUS46_1M_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions --model opus --effort high"
+OPUS46_1M_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]' --effort high"
 
 PINNED_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions"
 LATEST_CMD="/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions"
@@ -292,7 +292,7 @@ pin_opus46_1m() {
   if [[ "$capture" == *"Claude Code v2.1.87"* &&
         "$capture" == *"Opus 4.6 (1M context) with high effort"* &&
         "$process_args" == *"/home/simokitafresh/bin/claude"* &&
-        "$process_args" == *"--model opus"* &&
+        "$process_args" == *--model*claude-opus-4-6* &&
         "$process_args" == *"--effort high"* ]]; then
     log "PASS agent=$TARGET_AGENT version=2.1.87 model='Opus 4.6' context=1M effort=high confirmations=2/2 fast_path=already_correct"
     return 0
@@ -322,7 +322,7 @@ pin_opus46_1m() {
   # If the live process is already the pinned Opus command, do not respawn.
   # Otherwise mark this as a CLI switch so SessionStart skips heavy Recovery.
   if [[ "$process_args" != *"/home/simokitafresh/bin/claude"* ||
-        "$process_args" != *"--model opus"* ||
+        "$process_args" != *--model*claude-opus-4-6* ||
         "$process_args" != *"--effort high"* ]]; then
     tmux set-option -p -t "$pane" @agent_state idle >/dev/null 2>&1 || true
     tmux set-option -p -t "$pane" @cli_switch_pending true >/dev/null 2>&1 || true
@@ -369,7 +369,7 @@ pin_opus46_1m() {
 
   process_args=$(ps -o args= -g "$(tmux display-message -t "$pane" -p '#{pane_pid}')" 2>/dev/null || true)
   [[ "$process_args" == *"/home/simokitafresh/bin/claude"* &&
-        "$process_args" == *"--model opus"* &&
+        "$process_args" == *--model*claude-opus-4-6* &&
         "$process_args" == *"--effort high"* ]] || {
     echo "[ERROR] runtime process does not match pinned Opus 4.6 high command" >&2
     return 1
