@@ -275,7 +275,9 @@ commander_post_is_review_request() {
 #  先頭固定プレフィックスのみ=本文中の言及では発火しない)
 is_startup_verification_post() {
     local first_line="${1%%$'\n'*}"
-    [[ "$first_line" == Q6回答:* || "$first_line" == 洗脳チェック回答* ]]
+    # Q6回答/Q6検証/Q6第三者検証 — 全て起動時義務投稿またはその応答
+    # 旧: Q6回答:* のみ → Q6回答(将軍/clear復帰): や Q6第三者検証 がBLOCKされる偽陽性を根治
+    [[ "$first_line" == Q6* || "$first_line" == 洗脳チェック回答* ]]
 }
 
 commander_post_has_related_declaration() {

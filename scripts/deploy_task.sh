@@ -4912,9 +4912,10 @@ PY
     elif echo "$_commit_scope_text" | grep -qiE 'コード変更.*禁止|変更.*禁止.*(調査|報告)|no[[:space:]_-]?code|read[[:space:]_-]?only'; then
         _commit_required=false
         _commit_reason="explicit_no_code_scope"
-    elif [[ "$_commit_task_type" =~ ^(no[_-]?code|decision|decision_candidate|data[_-]?readonly|readonly|read_only|recon|recon2|scout)$ ]]; then
-        # recon2/scout等は読み取り専用。inspection_path/readonly_refsにscripts/パスがあっても
+    elif [[ "$_commit_task_type" =~ ^(no[_-]?code|decision|decision_candidate|data[_-]?readonly|readonly|read_only|recon|recon2|scout|verification|verify)$ ]]; then
+        # recon2/scout/verification等は読み取り専用。inspection_path/readonly_refsにscripts/パスがあっても
         # コード変更しないためhas_code_pathに関係なくrequired=false (2026-07-23 軍師D0)
+        # verification/verify追加: 2026-08-14 偽陽性根治。tobisaru guard14で3回BLOCK→家老手動修正が必要だった
         _commit_required=false
         _commit_reason="allowed_no_code_task_type"
     elif [ "$_commit_has_code_path" = true ]; then
@@ -10102,6 +10103,18 @@ for path in paths:
     else:
         candidate = os.path.realpath(os.path.join(project_repo, normalized))
     if candidate == project_repo or not candidate.startswith(project_repo + os.sep):
+        # Project外パスはinfra repo(REPO_ROOT)でフォールバック確認。
+        # task project=dm-signalだがfiles_modifiedにinfra testがある場合の偽陽性根治。
+        infra_repo = os.path.realpath(repo)
+        infra_candidate = os.path.realpath(os.path.join(infra_repo, normalized))
+        if infra_repo != project_repo and infra_candidate.startswith(infra_repo + os.sep):
+            infra_relative = os.path.relpath(infra_candidate, infra_repo).replace(os.sep, "/")
+            infra_exists = subprocess.run(
+                ["git", "-C", infra_repo, "cat-file", "-e", f"HEAD:{infra_relative}"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            ).returncode == 0
+            if infra_exists:
+                continue  # infra既存テスト — new_testではない
         print(f"BLOCK: test path is outside project repo: {path}", file=sys.stderr)
         raise SystemExit(1)
     repo_relative = os.path.relpath(candidate, project_repo).replace(os.sep, "/")
@@ -10110,6 +10123,17 @@ for path in paths:
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     ).returncode == 0
     if not exists:
+        # project HEADに不在でもinfra HEADに存在すれば既存テスト(cross-repo偽陽性根治)
+        infra_repo = os.path.realpath(repo)
+        if infra_repo != project_repo:
+            infra_candidate = os.path.realpath(os.path.join(infra_repo, normalized))
+            if infra_candidate.startswith(infra_repo + os.sep):
+                infra_relative = os.path.relpath(infra_candidate, infra_repo).replace(os.sep, "/")
+                if subprocess.run(
+                    ["git", "-C", infra_repo, "cat-file", "-e", f"HEAD:{infra_relative}"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                ).returncode == 0:
+                    continue  # infra既存テスト — new_testではない
         new_tests.append(repo_relative)
 
 if not new_tests:
@@ -12153,6 +12177,68 @@ print(count)
 PY
 }
 
+# 殿裁定(2026-08-14): 忍者ACにdoc laneの仕事を混ぜない。
+# context境界更新・gist同期・計画書/文書更新は将軍laneへ戻し、通常の実装ACや
+# doc参照ACは通す。検査対象はtaskのacceptance_criteriaだけに限定し、purposeや
+# commandの説明語で過検知しない。
+deploy_task_guard_doc_update_ac() {
+    local task_file="$1"
+    local result
+    [ -f "$task_file" ] || return 0
+
+    result="$(python3 - "$task_file" <<'DOC_UPDATE_AC_PY'
+import re
+import sys
+import yaml
+
+try:
+    data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit(0)
+
+task = data.get("task", data) if isinstance(data, dict) else {}
+ac = task.get("acceptance_criteria") if isinstance(task, dict) else None
+
+def descriptions(value):
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in {"description", "check", "title", "criteria"}:
+                yield from descriptions(item)
+            elif str(key).startswith("AC"):
+                yield from descriptions(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from descriptions(item)
+    elif value not in (None, ""):
+        yield str(value)
+
+# Keep the target vocabulary narrow: "context freshness" by itself is an
+# implementation concern, while an explicit update/sync/edit request is doc-lane work.
+patterns = [
+    ("context-boundary", r"(?:context|コンテキスト).{0,100}(?:境界|更新|反映|改訂|update|refresh|source[_ -]?commit)"),
+    ("gist-sync", r"gist.{0,100}(?:同期|更新|反映|sync|upload|share)"),
+    ("plan-update", r"(?:計画書|計画|plan|roadmap).{0,100}(?:更新|反映|改訂|変更|update|edit|revise)"),
+    ("document-update", r"(?:documentation|docs?|ドキュメント|文書).{0,100}(?:更新|反映|改訂|変更|update|edit|revise)"),
+]
+
+hits = []
+for text in descriptions(ac):
+    normalized = re.sub(r"\s+", " ", text).strip()
+    for label, pattern in patterns:
+        if re.search(pattern, normalized, re.IGNORECASE):
+            hits.append(label)
+if hits:
+    print(",".join(dict.fromkeys(hits)))
+DOC_UPDATE_AC_PY
+)"
+    if [ -n "$result" ]; then
+        log "BLOCK(DOC_LANE_ROUTING): acceptance_criteria requests ${result}"
+        echo "BLOCK: task AC requests ${result}; doc update is not a ninja lane. Route the documentation update to the shogun doc lane." >&2
+        return 2
+    fi
+    return 0
+}
+
 mark_draft_review_once() {
     local cmd_id="$1"
     local ninja_name="$2"
@@ -12331,6 +12417,8 @@ deploy_task_ten_min_contract_precheck() {
     local task_file="$1"
     local cmd_id="${2:-}"
     local result rc
+
+    deploy_task_guard_doc_update_ac "$task_file" || return $?
 
     local cmd_args=()
     [[ -n "$cmd_id" ]] && cmd_args=(--cmd-id "$cmd_id")

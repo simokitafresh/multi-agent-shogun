@@ -831,10 +831,17 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
                     awk -v f="$fpath" '$3==f {a+=$1; d+=$2} END{print a+0, d+0}'
                 )
                 if [ "$deleted" -gt 0 ]; then
-                    total_before=$((added + deleted))  # 近似: 追加+削除≈変更前行数
+                    # 実ファイル行数で削減率を計算(旧: added+deleted近似→+6/-7=53%偽陽性。修正: wc -lで実態計測)
+                    if [ -f "$fpath" ]; then
+                        file_lines=$(wc -l < "$fpath" 2>/dev/null || echo 0)
+                        total_before=$((file_lines + deleted - added))  # 変更前行数 = 現在行数 + 削除 - 追加
+                    else
+                        total_before=$((added + deleted))  # ファイル不在時はfallback
+                    fi
+                    [ "$total_before" -le 0 ] && total_before=1  # ゼロ除算防止
                     delete_ratio=$((deleted * 100 / total_before))
                     if [ "$delete_ratio" -gt 50 ]; then
-                        echo "  ★★★ WARN: $fpath — 削減率${delete_ratio}%(+${added}/-${deleted})。hook/gateの大規模削減は機能破壊の可能性。git diffで現物確認せよ"
+                        echo "  ★★★ WARN: $fpath — 削減率${delete_ratio}%(+${added}/-${deleted}, 変更前${total_before}行)。hook/gateの大規模削減は機能破壊の可能性。git diffで現物確認せよ"
                         HOOK_GATE_WARN=1
                     fi
                 fi
