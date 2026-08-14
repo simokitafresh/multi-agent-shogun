@@ -104,6 +104,7 @@ lessons:
     v3統合吸収(2026-06-09, cmd_3253):
     - deploy_task.sh exit 1でもnudge送信済みの場合あり(LK010: deploy出力に'codex nudge retry'/'delivery verified'があれば手動nudge不要。殿に指摘されるまで毎回重複送信)
     吸収(2026-07-27, cmd_reflux_promotion_202607272304_kotaro, origin: [[LK-A02]] -> [[旧taskフィールド残存]] -> [[deploy_taskフロー内BLOCKと再注入]]): 一次情報再検証: reset_stale_fields()のSTALE_FIELDSがscope/context/acceptance_criteria等を構造的に除去し、deploy_task_main()は同一task_idかつactive statusの二重配備をtask idleへロールバックしてreturn 1でBLOCKする。related_lessons/ninja_weak_points/role_reminderも毎配備で再注入されるため、LK-A02の主要不変量は人手依存でなくフロー内強制(Level4)へ到達済み。
+    吸収(2026-08-14, cmd_4301, origin: [[cmd_4301]] -> [[context_freshness直列BLOCK]] -> [[doc更新将軍lane分離]]): positive_rule: 本体結果が確定した後のcontext境界・Gist同期・計画書更新は将軍doc laneへ分離し、忍者ACへ盛り込まず、本体cmdのCLEARを待たせない。reason: cmd_4301では本体AC完了後、context freshnessを忍者へ配備して実質クリア13:48から正式クリア14:29まで41分遅延した。殿裁定2026-08-14 14:24/14:27により、結果後doc更新は将軍の仕事であり無関係な作業を本体完了条件にしない。
   source_ids: [LK002, LK008, LK011, LK021, LK023, LK028, LK029, LK045, LK053, LK060, LK061, LK063, LK092, LK005b, LK008b, LK010i]
   created_at: '2026-04-24'
   automated: true
