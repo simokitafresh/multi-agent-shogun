@@ -92,6 +92,9 @@ setup_gap_ledger() {
   mkdir -p "$fixture_root/scripts/lib"
   cp "$BATS_TEST_DIRNAME/../../scripts/lib/defense_overhead_writer.sh" \
     "$fixture_root/scripts/lib/"
+  # writerはevent_id重複排除のためsidecar helperも直接ロードする。
+  cp "$BATS_TEST_DIRNAME/../../scripts/lib/defense_overhead_event_index.py" \
+    "$fixture_root/scripts/lib/"
 }
 
 @test "measurable cache gap appends exactly one ledger line carrying gap and both rowids" {
