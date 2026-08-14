@@ -404,8 +404,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'adeb5f8210f1aaea85462adb26d51888d7fdd460dc188df7755c363029f4faf8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 13
-  last_seen: "2026-08-14T19:39:38+09:00"
+  occurrence_count: 14
+  last_seen: "2026-08-14T20:01:39+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -728,8 +728,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 10
-  last_seen: "2026-08-14T19:53:56+09:00"
+  occurrence_count: 11
+  last_seen: "2026-08-14T20:05:26+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -964,7 +964,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'b72f96e01bb9b4edfeb38089dcdc73d48dce481ee4ee5f25507b4c8a5370efaf' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -974,6 +974,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次確認: logs/self_retro.jsonl:2962 の event_id b72f96e01bb9b4edfeb38089dcdc73d48dce481ee4ee5f25507b4c8a5370efaf は実在し、completion_total=818ms・phase_ms全項目0msを確認。候補文は検証済みだが削減対象のdominant phaseを示す実測がなく、現時点で安全な実装対象を特定できないため、推測実装せず本insightを解決した。"
+  action_artifact: "evidence=logs/self_retro.jsonl:2962;verify=grep -Fq-b72f96e01bb9b4edfeb38089dcdc73d48dce481ee4ee5f25507b4c8a5370efaf;decision=実装対象未特定のため修正なし;report=queue/reports/kotaro_report_cmd_reflux_insight_202608141958_kotaro.yaml"
+  resolved_at: "2026-08-14T20:04:04+09:00"
 - id: INS-20260814-193059367-f142
   ts: "2026-08-14T19:30:59+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bub774jxz task id tool use id toolu 015Qxat88efE4Qei7W は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
