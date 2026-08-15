@@ -6,20 +6,23 @@
 - **ToBeは、構造的に不可能でない限り妥協しない。現実の関数名・行番号・今の実測値で理想を縛らない。理想は磨く。**
 - **AsIsは現実のコードそのもの。間違いがあれば現実に合わせて直す。**
 
-親文書: `dm-unified-tobe-flow_20260815`（gist 12cb3fc4）。本書はその ToBe の最上段4行だけを対象にする。
+親文書: `dm-unified-tobe-flow_20260815`（gist 12cb3fc4・ToBe v3.11）。本書はその ToBe の最上段5行（L0 / L1.1 / L1.2 / L1 / L1.3）だけを対象にする。
+
+**スタート**: `origin/main = 5da7f107` の現物（AsIs）。**ゴール**: 5層が独立し直列に並び、業務値が1件も変わらないこと（二値の合否）。この2点から逸脱しない。
 
 ---
 
-## AsIs **v1.0** — 2026-08-15T16:00+09:00 / 対象 `origin/main = 5da7f107`
+## AsIs **v1.1** — 2026-08-15T17:20+09:00 / 対象 `origin/main = 5da7f107`
 
-**現状、4つの仕事が1箇所に混ざっている。**
+**現状、5つの仕事のうち3つが1箇所に混ざり、2つ（L0 config snapshot / L1.2 深度）は存在しない。**
 
 | ToBeでの居場所 | 現状の実体 | 位置 |
 |---|---|---|
+| L0 config snapshot | **存在しない**（config は各所が都度読む。`ImmutableInputManifest` は config の hash を artifact として持つのみ） | — |
 | L1.1 ticker解決 | `_collect_all_symbols(standard_portfolios)` | `recalculate_fast.py:1978`（定義 :3902） |
 | L1.1 ticker解決 | `_collect_standard_price_supply_symbols(price_supply_portfolios)` | `:1979`（定義 :3928） |
 | L1 入力materialize | `stock_symbols` 確定 → `load_prices_as_df` ほか | `:1986` 以降 |
-| run identity | `ImmutableInputManifest.build` が `input_snapshot_id` と `execution_fingerprint` を算出 | `input_manifest.py:228-258` |
+| L1.3 run identity | `ImmutableInputManifest.build` が `input_snapshot_id` と `execution_fingerprint` を算出 | `input_manifest.py:228-258` |
 | **L1.2 深度解決** | **存在しない** | — |
 
 **確認できた事実（現物grep・2026-08-15）**
@@ -31,9 +34,9 @@
 
 ---
 
-## ToBe **v1.0** — 2026-08-15T16:00+09:00
+## ToBe **v1.1** — 2026-08-15T17:20+09:00
 
-**4つを、それぞれ独立した層にする。順序と依存だけを固定し、計算そのものは変えない。**
+**5つを、それぞれ独立した層にし、直列に並べる。順序と依存だけを固定し、計算そのものは変えない。**（親文書 ToBe v3.11 の最上段5行と同一）
 
 ```mermaid
 flowchart TB
@@ -41,39 +44,53 @@ flowchart TB
   classDef calc fill:#12233d,stroke:#4a90d9,color:#ffffff
   classDef rule fill:#2a2a2a,stroke:#888888,color:#ffffff
 
+  INV1["<b>この分割の不変量</b><br/>① L1.1 と L1.2 は<b>価格を読まない</b>。C0 の config snapshot だけで解ける<br/>② 5層は<b>直列</b>。並列にできても、あえて直列（一本道で混乱を生まない）<br/>③ L1 が materialize する範囲は<b>L1.1 の出力（price consumer 依存集合）が決める</b>（mode に依存しない）"]:::rule
+  INV2["④ run identity は<b>1つ</b>。C0+C1 の入力一式の同一性だけを表す。PF×月の依存fingerprint とは別物<br/>⑤ 循環は invalid graph として run 停止（fail-closed）<br/>⑥ この分割で<b>計算結果は1件も変わらない</b>"]:::rule
+
+  subgraph R0["L0 run開始 — 構造の入力を固定"]
+    direction LR
+    C0["<b>cache を1個だけ生成</b><br/>+ <b>config snapshot</b>（全PF構成・重み・momentum規則・rule version）<br/>+ ledger snapshot / watermark<br/>+ source version"]:::cache
+    X0["config と ledger を<b>一度だけ</b>読み snapshot 化<br/>以後の全層はこの snapshot だけを見る"]:::calc
+    C0 <-.-|"合流"| X0
+  end
+
   subgraph R11["L1.1 ticker解決層"]
     direction LR
-    C11["+ 保有しうる ticker 集合"]:::cache
-    X11["PF構成だけで解く<br/>standard PF を構成tickerへ分解<br/><b>価格を1行も読まない</b>"]:::calc
-    X11 -.->|"合流"| C11
+    C11["+ <b>price consumer 依存集合</b><br/>= 保有しうる ticker ∪ benchmark ∪ canonical calendar 銘柄 ∪ economic / DTB3 系列"]:::cache
+    X11["config snapshot だけで解く<br/>standard PF を構成tickerへ分解 → 保有しうる ticker<br/>+ benchmark / calendar / economic の依存を列挙<br/><b>価格を1行も読まない</b>"]:::calc
+    C11 <-.-|"合流"| X11
   end
 
   subgraph R12["L1.2 深度解決層"]
     direction LR
-    C12["+ depth 表 と 実行順序"]:::cache
-    X12["PF構成だけで解く<br/>子・孫・ひ孫まで全経路を辿る（循環に耐える）<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/><b>同一PFが複数世代に現れる。全経路の最大を採る</b>"]:::calc
-    X12 -.->|"合流"| C12
+    C12["+ depth 表 と 実行順序<br/>循環検出結果"]:::cache
+    X12["config snapshot だけで解く<br/>子・孫・ひ孫まで全経路を辿る<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/>同一PFが複数世代に現れる → 全経路の最大<br/><b>循環を検出したら invalid graph として run 停止（fail-closed）</b>"]:::calc
+    C12 <-.-|"合流"| X12
   end
 
   subgraph R1["L1 入力層"]
     direction LR
-    C1["+ 不変入力snapshot"]:::cache
-    X1["<b>L1.1が出した ticker 集合の範囲だけ</b><br/>prices / DTB3 を一度だけ materialize"]:::calc
-    X1 -.->|"合流"| C1
+    C1["+ 不変入力snapshot<br/>prices / DTB3 / economic（C11 の依存集合の範囲）"]:::cache
+    X1["C11 の依存集合の範囲だけ prices / DTB3 / economic を一度だけ materialize（mode に依存しない）"]:::calc
+    C12 -.->|"読む"| X1
+    C1 <-.-|"合流"| X1
   end
 
-  subgraph R13["run identity 層"]
+  subgraph R13["L1.3 run identity"]
     direction LR
-    C13["+ run identity（1つ）"]:::cache
-    X13["入力一式から1回だけ導く<br/><b>PF×月の依存fingerprintとは別物</b>"]:::calc
-    X13 -.->|"合流"| C13
+    C13["+ <b>run identity</b>（1つ）<br/>入力一式（C0 + C1）の同一性（run単位・O(1)）"]:::cache
+    X13["C0 と C1 の入力一式から1回だけ導く<br/><b>PF×月の依存fingerprint とは別物</b>"]:::calc
+    C1 -.->|"読む"| X13
+    C13 <-.-|"合流"| X13
   end
 
-  C11 --> C12 --> C1 --> C13
-  X11 --> X12 --> X1 --> X13
-
-  INV["<b>この分割の不変量</b><br/>① L1.1とL1.2は<b>価格を読まない</b>。PF構成だけで解ける<br/>② L1.1とL1.2は互いに独立ゆえ<b>並列でよい</b><br/>③ L1が materialize する範囲は<b>L1.1の出力が決める</b>（modeに依存しない）<br/>④ run identity は<b>1つ</b>。入力一式の同一性だけを表す<br/>⑤ この分割で<b>計算結果は1件も変わらない</b>"]:::rule
+  INV1 ~~~ R0
+  INV2 ~~~ R0
+  C0 --> C11 --> C12 --> C1 --> C13
+  X0 --> X11 --> X12 --> X1 --> X13
 ```
+
+（親文書 L1 の「前回確定成果物 snapshot の read-once」は judge/fingerprint の領域なので本書の対象外。次の設計書で扱う）
 
 ---
 
@@ -81,12 +98,14 @@ flowchart TB
 
 | # | やること | 種別 |
 |---|---|---|
-| 1 | ticker解決を独立層へ切り出す。既存2関数の呼び出しを前段へ移すだけ | **移動**（新規ロジックなし） |
-| 2 | materializeする銘柄範囲を、L1.1の出力から決める形にする | **接続の付け替え** |
-| 3 | 深度解決層を新設する。PF構成だけを入力に depth と実行順序を出す純関数 | **新規** |
-| 4 | run identity を1つに整理する | **整理** |
+| 0 | L0: config / ledger を run 冒頭で一度だけ読み snapshot 化する。以後の層は snapshot だけを見る | **新規**（読み出しの一元化。値は変えない） |
+| 1 | L1.1: ticker解決を独立層へ切り出す。既存2関数の呼び出しを前段へ移し、入力を config snapshot にする。benchmark / calendar / economic の依存も同じ場所で列挙する | **移動+拡張**（既存5分類の集約先を1箇所にする。新規ロジックなし） |
+| 2 | L1: materialize する銘柄範囲を、L1.1 の出力から決める形にする | **接続の付け替え** |
+| 3 | L1.2: 深度解決層を新設する。config snapshot だけを入力に depth と実行順序を出す純関数。循環は fail-closed | **新規** |
+| 4 | L1.3: run identity を1つに整理し、C0+C1 から導く | **整理** |
+| 5 | 5層を **直列** に並べる（L0→L1.1→L1.2→L1→L1.3）。並列化しない | **順序固定** |
 
-**3だけが新規である。1・2・4は既存物の置き場所と接続の変更にすぎない。**
+**0と3が新規である。1・2・4・5は既存物の置き場所・接続・順序の変更にすぎない。**
 
 ---
 
@@ -102,10 +121,11 @@ flowchart TB
 | 判定 | 内容 |
 |---|---|
 | **値** | full 1回で `monthly_returns` / `portfolio_metrics` が基準と完全一致（cmp_rc=0）。1件でも差が出たら不合格 |
-| **範囲** | L1.1が出す ticker 集合が、現行 `stock_symbols` と**同一集合**であること |
+| **範囲** | L1.1が出す price consumer 依存集合が、現行 `stock_symbols`（保有＋benchmark＋リスクフリー等の5分類）と**同一集合**であること。1銘柄でも増減したら不合格 |
 | **深度** | L1.2が出す depth 表が、本番の樹形図と一致すること。混在深度の親（実測1件）と、同一PFが複数世代に現れる組（実測14件）を正しく扱えること |
-| **独立性** | L1.1とL1.2が価格を1行も読まないこと |
-| **identity** | run identity が1つになり、PF×月の依存fingerprintと混ざっていないこと |
+| **独立性** | L1.1とL1.2が価格を1行も読まないこと。入力は C0 の config snapshot のみ |
+| **順序** | L0→L1.1→L1.2→L1→L1.3 が直列であること（並列枝なし） |
+| **identity** | run identity が1つになり、C0+C1 から導かれ、PF×月の依存fingerprintと混ざっていないこと |
 
 ## この設計が触れないもの
 
@@ -114,4 +134,6 @@ flowchart TB
 - cacheの一本化そのもの（L2→L3→L5の受渡し）
 - 台帳・guard・ALERT
 
-**それらは次の設計書で扱う。ここは最上段4行だけ。**
+- 前回確定成果物 snapshot の read-once（judge の復元元）
+
+**それらは次の設計書で扱う。ここは最上段5行だけ。**
