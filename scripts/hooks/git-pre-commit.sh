@@ -22,7 +22,7 @@ source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
 declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
-_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax sourced_dep instruction_sync context_metadata codd_context_freshness tobe_no_line_numbers semantic)
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax sourced_dep instruction_sync context_metadata codd_context_freshness tobe_no_line_numbers doc_no_changelog semantic)
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
@@ -1462,6 +1462,13 @@ main() {
     check_tobe_no_line_numbers
     precommit_step_end 0
 
+    precommit_step_begin doc_no_changelog
+    if ! check_doc_no_changelog; then
+        precommit_step_end 1
+        exit 1
+    fi
+    precommit_step_end 0
+
     precommit_step_begin semantic
     run_semantic_propagation_for_staged_files
     precommit_step_end "$?"
@@ -1484,6 +1491,26 @@ check_tobe_no_line_numbers() {
         fi
     done < <(git diff --cached --name-only --diff-filter=AM)
     return 0
+}
+
+# 設計書(docs/research/*.md)へ変更履歴を書き込んだらBLOCK。
+# 殿指示2026-08-15 16:33「変更点を文書で書く必要はない。粒度が足りなければ一番下にAsIs注釈/ToBe注釈をレイヤー単位で書け」
+# 発端: 同日16:33以降も将軍が見出しへ「（v3.x=…殿指示hh:mm ← v3.y=…）」を書き続け17:00に殿再指摘。指示違反=バグ→構造で根治。
+# 検出: 見出し(## / ###)に 変更/←/→ v/殿指示/殿指摘 を含む、または行頭「変更:」「変更履歴」。版番号+タイムスタンプのみは許可。
+check_doc_no_changelog() {
+    local f hits rc=0
+    while IFS= read -r f; do
+        [[ "$f" == docs/research/*.md ]] || continue
+        hits=$(git show ":$f" 2>/dev/null | awk '
+            /^#{2,3} / && (/変更/ || /←/ || /→ *v[0-9]/ || /殿指示/ || /殿指摘/) {print NR": "$0; next}
+            /^変更[:：]/ || /^変更履歴/ || /^#{2,3} .*変更履歴/ {print NR": "$0}' | head -5)
+        if [[ -n "$hits" ]]; then
+            echo "  BLOCK(doc_no_changelog): $f に変更履歴の記述。変更点は文書に書かない(殿指示2026-08-15 16:33)。見出しは版番号+タイムスタンプのみ。粒度不足は末尾の注釈(レイヤー単位)へ:" >&2
+            echo "$hits" | cut -c1-160 | sed 's/^/    /' >&2
+            rc=1
+        fi
+    done < <(git diff --cached --name-only --diff-filter=AM)
+    return $rc
 }
 
 # --- Failure recording trap (cmd_1117) ---
