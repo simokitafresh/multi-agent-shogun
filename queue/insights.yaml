@@ -374,7 +374,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4311"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で再検証した結果、候補の根拠はdocs/research/gunshi_idle_lesson_dedup_20260413.mdに9重複ペアとして記録済みで、推奨されたlesson_write.shのタイトルJaccard警告(閾値0.6)は現行scripts/lesson_write.sh:L1267-L1305に実装済み。L551/L549およびL579/L582/L584の重複例は原本で退役済みであり、今回の追加コード修正・decision_candidateは不要として解決する。"
+  action_artifact: "evidence=docs/research/gunshi_idle_lesson_dedup_20260413.md:L1-L32;scripts/lesson_write.sh:L1216-L1305;source=/mnt/c/Python_app/DM-Signal/tasks/lessons.md:L6207-L6238,L6527-L6600;verification=bash -n scripts/lesson_write.sh scripts/insight_resolve.sh PASS;decision=no_additional_change"
+  resolved_at: "2026-08-15T15:04:52+09:00"
 - id: INS-20260815-032527930-59a3
   ts: "2026-08-15T03:25:27+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4311; matched=系列; current_pattern=FoF月初入力記録の生成コスト是正 — 判定ループ内での価格系列まるごと再構築をやめる; candidate_level=4; candidate=なぜなぜ7回の根因=新パス追加時に既存防御層との整合性チェックがない。GP-180(即効)に加え、STALE_RESET実行済みフラグ(例: _STALE_RESET_DONE=1)を配備最終段階で確認→未実行ならBLOCK。今後DIRECT_MODE3やCMD_FORCED2が追加されても防御層迂回を構造的に検出; source=gunshi_gp_tracker.yaml"
@@ -563,8 +566,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 72
-  last_seen: "2026-08-15T14:55:23+09:00"
+  occurrence_count: 73
+  last_seen: "2026-08-15T15:03:30+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1009,4 +1012,7 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T15:03:29+09:00"
