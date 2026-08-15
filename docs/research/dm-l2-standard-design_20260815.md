@@ -14,26 +14,19 @@
 
 ---
 
-## AsIs **v1.0** — 2026-08-15T22:45+09:00 / 対象 `origin/main = 925b8338`
+## AsIs **v1.1** — 2026-08-16T03:55+09:00 / 対象 `origin/main = e571b56f`（L2 4手 全て本番 live: #1 0f47de79 / #2 3a5ebd05 / #1b+#3 a71b56fd / #4 1cb7b430+d74e6a79+e571b56f。各手 full→業務値突合 差分0＝**ゴール到達**。run419: C2 signals=99,004(確立前空holding除外426)/monthly=4,737=Phase4.5生成行と一致）
 
-**現状、L2 は「日次ループで signal を出し、月初 rebalance 行にだけ provenance を添えて DB へ flush する」一本の流れ。PF×月の依存fingerprint は無く、judge も無く、C2 相当の左列 cache も無い。前回確定成果物は run 中に読み返されない（L1 に無い）。**
+**現状、L1 に前回確定成果物の read-once があり、L2 は a 現fingerprint → b judge(record-only) → 判定 → c 価格適用 → d 記録の順で、C2（`db.info["c2_standard"]`）へ signals / monthly / provenance / fingerprint / judge を produce している。DB flush と Phase 4.5 は不変。誰もまだ C2 を読まない（継ぎ目設計 S1 から）。**
 
-| ToBeでの居場所 | 現状の実体 | 位置（`recalculate_fast.py`） |
+| ToBeでの居場所 | 現状の実体 | 位置（`recalculate_fast.py` / `input_manifest.py`） |
 |---|---|---|
-| L1 前回確定成果物 snapshot | **存在しない**。前回 run の W / monthly / cumulative / provenance は DB にあるが、L1 で read-once されない | — |
-| L2-a 現fingerprint（PF×月） | **存在しない**。run単位の `run_identity`（L1.3、`input_manifest.py:425-438`）のみ | — |
-| L2-b judge | **存在しない**。全PF×全日を常に計算する | — |
-| L2 判定（momentum→判定→規則1 W） | 日次ループ `for current_date`(:2818 付近) × `for portfolio in standard_portfolios`(:2849)。月変わり `month_changed`(:2862)・`is_reb_month`(:2863)。pipeline 実行 → `signal` / `pm_data`(:3040-3050、OPT-E date miss fallback :2996-3010) | `:2849-3050` |
-| L2-d 記録（provenance） | 月初 rebalance 行だけ `_build_standard_scalar_provenance`(:1742) を `pm_data` へ合成(:3057-3069)。`provenance_version` / `weights` / `expanded_ticker_weights` / `window`(:1843-1855) | `:3057-3069` |
-| L2 → DB | `signals_batch` を batch ごとに `_flush_batch`(:3101、cleanup_mode=False=UPSERT)→`signals_batch.clear()`(:3108)、末尾 flush(:3122)。flush 直前に ledger freeze guard（`signal_decision_ledger.py:409-447`） | `:3101-3122` |
-| L2-c 価格適用（monthly / cumulative） | signals を DB へ書いた後、OPT-4 `db.query(Signal)`(:3278) で再クエリ→`signal_cache_opt6` 再構築→Phase 4.5 `_generate_monthly_returns`(:3321 / :3392) | `:3278-3392`（=L2→L3 継ぎ目。本書では触れない） |
+| L1 前回確定成果物 snapshot | `_load_previous_confirmed_artifact_snapshot`(:248) → `db.info["previous_confirmed_artifact_snapshot"]`(:2238)、行数を stats へ | `recalculate_fast.py:248 / :2233-2244` |
+| L2-a 現fingerprint（PF×月） | `current_pf_month_fingerprints[(pf, year_month)]`(:2061 / :3080) → `db.info["current_pf_month_fingerprints"]`(:2240) | `:2061 / :2240 / :3080` |
+| L2-b judge（record-only） | `_judge_pf_month_fingerprint`(:720) を判定より前に呼び `current_fingerprint["judge"]` へ記録(:3074-3080)。判定は judge 結果に関わらず実行(:3073) | `:720 / :3073-3080` |
+| L2 判定 / L2 → DB | 既存のまま（日次ループ・pipeline・`_flush_batch` UPSERT・ledger freeze guard） | 変更なし |
+| L2-c/d 記録 → C2 | `build_c2_standard_cache`(input_manifest.py:276) で `db.info["c2_standard"]`(:2253) を作り、flush 時に `append_c2_standard_signal_rows`(input_manifest.py:219、`build_signal_cache_value` 形・確立前空holdingは除外)、Phase 4.5 後に `enrich_c2_standard_cache`(input_manifest.py:251) で monthly / fingerprint / judge を合流。読み側helper `_build_c2_standard_signal_cache`(:1448)は S1 用（未接続） | `recalculate_fast.py:2253 / :1448`、`input_manifest.py:206-300` |
 
-**確認できた事実（現物grep・2026-08-15 22:45）**
-
-1. signals はメモリ(`signals_batch`)に持ち、batch 単位で DB へ書き、cache には残らない。monthly / cumulative は DB を再読して作る。
-2. provenance は月初 rebalance 行にだけ添える additive payload で、月次(PF×月)の依存fingerprint ではない。
-3. 前回 run の成果物を「入力として一度だけ読む」箇所は run 冒頭に無い。
-4. `run_identity` は run 全体の同一性であり PF×月の判定には使えない（親 ToBe 不変量⑬）。
+**確認できた事実（現物grep・2026-08-16 03:55）**: 上表の全行番号は origin/main=e571b56f の現物。二値の合否=値(run413〜419 差分0) / fingerprint・judge(record-only で記録、決定論と一致率は次runで読む) / 独立性(read-once は L1 のみ) / 契約(monthly と cumulative は C2 の monthly 行(MonthlyReturn)に別列として在る) 全項目PASS。
 
 ---
 
@@ -77,12 +70,12 @@ flowchart TB
 
 | # | やること | 種別 |
 |---|---|---|
-| 1 | L1: 前回確定成果物（PF×月の W / monthly / cumulative / provenance）を run 冒頭で一度だけ読み C1 へ置く。誰も消費しない | **新規**（read-once の produce のみ。値は変えない） |
-| 2 | L2-a: PF×月の現fingerprint を、その月の判定より前に作り C2 へ置く。誰も消費しない | **新規**（produce のみ） |
-| 3 | L2-b: C1 の前回fingerprint と現fingerprint を比較し一致/不一致を C2 へ記録する。計算は常に実行 | **新規**（record-only） |
-| 4 | L2-c/d: signals / W / monthly / cumulative / provenance を C2（左列 cache）へも合流させる。DB flush と Phase 4.5 は現状のまま | **produce の追加**（consumer 変更なし） |
+| 1 | ~~L1: 前回確定成果物を run 冒頭で一度だけ読み C1 へ置く~~ **本番 live（0f47de79 + 前回fp merge a71b56fd）** | 完了 |
+| 2 | ~~L2-a: PF×月の現fingerprint を判定より前に作り C2 へ置く~~ **本番 live（3a5ebd05）** | 完了 |
+| 3 | ~~L2-b: judge record-only~~ **本番 live（a71b56fd）** | 完了 |
+| 4 | ~~L2-c/d: C2 へ合流~~ **本番 live（1cb7b430 + d74e6a79 + e571b56f、run419 差分0）** | 完了 |
 
-**全て produce の追加であり consumer は増えない。∴ 業務値は1件も変わらないはず。**
+**全4手完了（2026-08-15 22:37 下知 → 2026-08-16 03:50 #4 PASS）。**
 
 ## 二値の合否
 
