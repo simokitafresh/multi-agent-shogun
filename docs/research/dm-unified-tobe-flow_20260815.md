@@ -10,7 +10,7 @@
 
 統合元: `dm-fullrecalculate-cache-reuse-asis_20260813` / `cmd_4296_momentum-window-recon_20260813` / `dm-decision-provenance-asis-tobe-5w1h_20260813` / `dm-weight-expansion-first-principles-asis-tobe_20260815`
 
-## AsIs **v1.4** — 2026-08-15T16:55+09:00（v1.4=ToBeと同じレイヤー帯枠+凡例を付与し配色を統一 ← v1.3=16:35） / 対象 `origin/main = 5da7f107`（code固定。DB実測は observed_at 付きで別記）
+## AsIs **v1.5** — 2026-08-15T16:58+09:00（v1.5=v1.4の黒枠を撤去し元の配色へ戻す。殿指示16:56 ← v1.4=16:55 ← v1.3=16:35） / 対象 `origin/main = 5da7f107`（code固定。DB実測は observed_at 付きで別記）
 
 ```mermaid
 flowchart TB
@@ -62,15 +62,10 @@ flowchart TB
 
   ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② run単位の fingerprint は在る（input_manifest.py:228 ImmutableInputManifest.build :235 → input_snapshot_id :251 / execution_fingerprint :256）。<b>無いのは PF×月 の依存fingerprint</b>。∴ run全体の同一性は判るが、確定月を PF×月 単位で skip する判断はできない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
 
-  %% 凡例(AsIs/ToBe共通): 緑=cache / 青=計算 / 赤=DB(sink) / 橙=guard・skip / 灰=注記・不変量 / 破線枠=レイヤー帯
-  style AL1 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style AL2 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style AL3 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style AL5 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
 
 ```
 
-## ToBe **v3.9** — 2026-08-15T16:52+09:00（v3.9=不変量ノードを3列横並びにして縦長を解消。殿指示16:51 ← v3.8=各レイヤー帯に枠線を付け、左cache縦流/右計算縦流/横のレイヤー区切りを明示。殿指示16:48 ← v3.7=C11→X1 読み出しedgeを撤去。L1.1/L1.2が図上で並列に見えるため。X1はC12(C11を含む一つのcache)だけを読む。殿指摘16:45 ← v3.6=X1がC11(依存集合)も読むedgeを明示(軍師O1を将軍判断で採用) ← v3.5=不変量を図の最上段へ移動(殿指示16:40) ← v3.3=16:26 レビュー12件反映 → v3.4=L1.1→L1.2 を直列へ戻す。殿指摘16:35）
+## ToBe **v3.11** — 2026-08-15T17:05+09:00（v3.11=描画を自分の目で確認し是正: 合流edgeを反転して左=cache/右=計算を実現・不変量を3ノード横並びで最上段へ ← v3.10=黒枠撤去で元の配色へ・不変量を3ノード横並びsubgraphへ(自分の目で描画確認)。殿指示16:56 ← v3.9=不変量ノードを3列横並びにして縦長を解消。殿指示16:51 ← v3.8=各レイヤー帯に枠線を付け、左cache縦流/右計算縦流/横のレイヤー区切りを明示。殿指示16:48 ← v3.7=C11→X1 読み出しedgeを撤去。L1.1/L1.2が図上で並列に見えるため。X1はC12(C11を含む一つのcache)だけを読む。殿指摘16:45 ← v3.6=X1がC11(依存集合)も読むedgeを明示(軍師O1を将軍判断で採用) ← v3.5=不変量を図の最上段へ移動(殿指示16:40) ← v3.3=16:26 レビュー12件反映 → v3.4=L1.1→L1.2 を直列へ戻す。殿指摘16:35）
 
 **読み方**: 横の破線枠=1レイヤー(L)。枠の左=cache列(C*)は上から下へ一本、枠の右=計算列(X*)も上から下へ一本。枠の中だけで「計算→合流(cacheへ追記)」と「cache→読み出し」が交わる。枠をまたぐのは縦の一本ずつのみ。上から下へ一度も戻らない。
 
@@ -82,28 +77,32 @@ flowchart TB
   classDef sink fill:#3d0b1e,stroke:#d94a6a,color:#ffffff
   classDef rule fill:#2a2a2a,stroke:#888888,color:#ffffff
 
-  INV["<b>不変量</b>（3列×横並び）<br/>① W の定義は 規則1 と 規則2 のみ　｜　② 控え（前回確定成果物）を使うのは fingerprint 一致を示せた時だけ。復元元は L1 で read-once した snapshot　｜　③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力・規則・規則実装の版 が変わらない限り変わらない（fingerprint の入力に rule/source version を含む）　｜　⑤ 深度は浅い順に直列。depth ごとに1行。graph は topological fold を一方向に unroll した形で書く　｜　⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが上段の cache に在ること。欠けたら停止　｜　⑧ config だけで解けるものは計算前の構造解決層で解く。構造解決の入力（config/ledger snapshot）は L0 で先に固定する　｜　⑨ 全経路の最大を採る。循環は invalid graph として run 停止（fail-closed）<br/>⑩ L1.1 → L1.2 も直列。並列にできるが<b>あえて直列</b>にする。混乱を生まない一本道が優先　｜　⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない　｜　⑫ 左=cache は縦に一本、右=計算は縦に一本。例外なし。交わるのは各L内の合流と読み出しだけ<br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない　｜　⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している　｜　⑮ price consumer の依存集合は L1.1 が全消費者分を列挙する（保有ticker だけではない）<br/>⑯ cache 契約は producer の出力と consumer の入力が同じ語で一致する（monthly と cumulative は別々に列挙）"]:::rule
-  INV ~~~ R0
+  INV1["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控え（前回確定成果物）を使うのは fingerprint 一致を示せた時だけ。復元元は L1 で read-once した snapshot<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力・規則・規則実装の版 が変わらない限り変わらない（fingerprint の入力に rule/source version を含む）<br/>⑤ 深度は浅い順に直列。depth ごとに1行。graph は topological fold を一方向に unroll した形で書く<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）"]:::rule
+  INV2["⑦ 計算開始の前提は全構成PFが上段の cache に在ること。欠けたら停止<br/>⑧ config だけで解けるものは計算前の構造解決層で解く。構造解決の入力（config/ledger snapshot）は L0 で先に固定する<br/>⑨ 全経路の最大を採る。循環は invalid graph として run 停止（fail-closed）<br/>⑩ L1.1 → L1.2 も直列。並列にできるが<b>あえて直列</b>にする。混乱を生まない一本道が優先<br/>⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない"]:::rule
+  INV3["⑫ 左=cache は縦に一本、右=計算は縦に一本。例外なし。交わるのは各L内の合流と読み出しだけ<br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない<br/>⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している<br/>⑮ price consumer の依存集合は L1.1 が全消費者分を列挙する（保有ticker だけではない）<br/>⑯ cache 契約は producer の出力と consumer の入力が同じ語で一致する（monthly と cumulative は別々に列挙）"]:::rule
+  INV1 ~~~ R0
+  INV2 ~~~ R0
+  INV3 ~~~ R0
 
   subgraph R0["L0 run開始 — 構造の入力を固定"]
     direction LR
     C0["<b>cache を1個だけ生成</b><br/>再生成・複製・空初期化は禁止。identity は最後まで不変<br/>+ <b>config snapshot</b>（全PF構成・重み・momentum規則・rule version）<br/>+ <b>ledger snapshot / watermark</b><br/>+ <b>source version</b>（規則実装の版）"]:::cache
     X0["config と ledger を<b>一度だけ</b>読み snapshot 化<br/>以後の全層はこの snapshot だけを見る"]:::calc
-    X0 -.->|"合流"| C0
+    C0 <-.-|"合流"| X0
   end
 
   subgraph R11["L1.1 ticker解決層"]
     direction LR
     C11["+ <b>price consumer 依存集合</b><br/>= 保有しうる ticker ∪ benchmark ∪ canonical calendar 銘柄 ∪ economic / DTB3 系列<br/>（価格・系列を読む全consumerの和集合）"]:::cache
     X11["config snapshot だけで解く<br/>standard PF を構成tickerへ分解 → 保有しうる ticker<br/>+ benchmark / calendar / economic の依存を列挙"]:::calc
-    X11 -.->|"合流"| C11
+    C11 <-.-|"合流"| X11
   end
 
   subgraph R12["L1.2 深度解決層"]
     direction LR
     C12["+ depth 表 と 実行順序<br/>循環検出結果"]:::cache
     X12["config snapshot だけで解く<br/>子・孫・ひ孫まで全経路を辿る<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/>同一PFが複数世代に現れる → 全経路の最大<br/><b>循環を検出したら invalid graph として run 停止（fail-closed）</b><br/>depth と topological 実行順序は停止しない場合のみ確定"]:::calc
-    X12 -.->|"合流"| C12
+    C12 <-.-|"合流"| X12
   end
 
   subgraph R1["L1 入力層 — 不変入力と前回確定成果物を read-once"]
@@ -111,7 +110,7 @@ flowchart TB
     C1["+ 不変入力snapshot<br/>prices / DTB3 / economic（C11 の依存集合の範囲）<br/>+ <b>前回確定成果物snapshot</b>（PF×月の W / monthly / cumulative / provenance / 依存fingerprint）<br/>= judge 一致時の<b>復元元</b>。ここで一度だけ読み、以後は左列にしか無い"]:::cache
     X1["C11 の依存集合の範囲だけ prices / DTB3 / economic を一度だけ materialize（modeに依存しない）<br/>+ 前回確定成果物を一度だけ materialize<br/>（永続層を読むのは run 全体でここ一回）"]:::calc
     C12 -.->|"読む"| X1
-    X1 -.->|"合流"| C1
+    C1 <-.-|"合流"| X1
   end
 
   subgraph R13["L1.3 run identity"]
@@ -119,7 +118,7 @@ flowchart TB
     C13["+ <b>run identity</b><br/>入力一式（C0 + C1）の同一性（run単位・O(1)）"]:::cache
     X13["C0 と C1 の入力一式から1回だけ導く"]:::calc
     C1 -.->|"読む"| X13
-    X13 -.->|"合流"| C13
+    C13 <-.-|"合流"| X13
   end
 
   subgraph R2["L2 standard（depth 0）"]
@@ -127,7 +126,7 @@ flowchart TB
     C2["+ standard の signals / W / monthly / <b>cumulative</b><br/>+ provenance / <b>PF×月の依存fingerprint</b>"]:::cache
     X2["<b>a 現fingerprint</b>　PF×月ごとに 入力(C1) + rule version + source version(C0) から<b>先に</b>作る<br/><b>b judge</b>　現fingerprint と C1 の前回fingerprint が一致 → C1 の前回成果物を<b>復元</b>（計算しない）<br/>不一致 → momentum（日次close・months×21営業日・on-or-before）→ 判定 → <b>規則1</b> W=選定銘柄へ1.0<br/><b>c 価格適用</b>　W と価格から monthly / cumulative<br/><b>d 記録</b>　provenance と現fingerprint を合流"]:::calc
     C13 -.->|"読む"| X2
-    X2 -.->|"合流"| C2
+    C2 <-.-|"合流"| X2
   end
 
   subgraph R3A["L3a leaf FoF（depth 1）"]
@@ -135,7 +134,7 @@ flowchart TB
     C3A["+ leaf FoF の signals / W / monthly / cumulative<br/>+ provenance / 依存fingerprint"]:::cache
     X3A["a 現fingerprint（子standardの fingerprint ∪ 自PF config ∪ rule/source version）→ b judge（一致=C1から復元）<br/>→ 不一致: momentum（入力=子standardの monthly cumulative・窓=月数の行差分）→ 判定 → <b>規則2</b> W=Σ w_i × W(C_i)<br/>→ c 価格適用 → d 記録"]:::calc
     C2 -.->|"読む"| X3A
-    X3A -.->|"合流"| C3A
+    C3A <-.-|"合流"| X3A
   end
 
   subgraph R3B2["L3b-2 nested FoF（depth 2）"]
@@ -143,7 +142,7 @@ flowchart TB
     C3B2["+ depth 2 FoF の同上"]:::cache
     X3B2["<b>前提</b>: 全構成PFの W / monthly / cumulative が C2 ∪ C3A に在ること。欠けたら停止（永続層へ取りに行かない・空で代替しない）<br/>a 現fingerprint → b judge → 不一致: momentum → 判定 → <b>規則2</b> → c 価格適用 → d 記録"]:::calc
     C3A -.->|"読む"| X3B2
-    X3B2 -.->|"合流"| C3B2
+    C3B2 <-.-|"合流"| X3B2
   end
 
   subgraph R3B3["L3b-3 nested FoF（depth 3）"]
@@ -151,7 +150,7 @@ flowchart TB
     C3B3["+ depth 3 FoF の同上"]:::cache
     X3B3["前提: 全構成PFが C2 ∪ C3A ∪ C3B2 に在ること。欠けたら停止<br/>同じ規則2の再適用（a→b→c→d）"]:::calc
     C3B2 -.->|"読む"| X3B3
-    X3B3 -.->|"合流"| C3B3
+    C3B3 <-.-|"合流"| X3B3
   end
 
   subgraph R3B4["L3b-4 nested FoF（depth 4 = 現最大。深度が増えれば行を1つ足す）"]
@@ -159,7 +158,7 @@ flowchart TB
     C3B4["+ depth 4 FoF の同上"]:::cache
     X3B4["前提: 全構成PFが C2 ∪ C3A ∪ C3B2 ∪ C3B3 に在ること。欠けたら停止<br/>同じ規則2の再適用（a→b→c→d）"]:::calc
     C3B3 -.->|"読む"| X3B4
-    X3B4 -.->|"合流"| C3B4
+    C3B4 <-.-|"合流"| X3B4
   end
 
   subgraph R5A["L5a 分析派生層"]
@@ -167,13 +166,14 @@ flowchart TB
     C5A["+ drawdown / rolling / metrics / risk / trade_perf"]:::cache
     X5A["cache の確定値（monthly / cumulative / W）から導く<br/><b>導出だけ。判定へ戻さない</b>"]:::calc
     C3B4 -.->|"読む"| X5A
-    X5A -.->|"合流"| C5A
+    C5A <-.-|"合流"| X5A
   end
 
   subgraph R5B["L5b 表示投影・永続化層"]
     direction LR
     C5B["（cacheへの追記なし）"]:::cache
     X5B["cache から表示成果物を組み立てる<br/><b>永続層を読まない</b>"]:::calc
+    C5B ~~~ X5B
     C5A -.->|"読む"| X5B
   end
 
@@ -184,27 +184,13 @@ flowchart TB
     direction LR
     CDB["（cacheへの追記なし）"]:::cache
     DB[("<b>DB</b>　書き切り。run の途中で誰も読み返さない<br/><b>禁止</b>: L2 以降のどの層も永続層を読まない。必要な値は必ず左列の cache に在る<br/>永続層を読むのは L0（config/ledger）と L1（prices/前回確定成果物）の read-once だけ")]:::sink
+    CDB ~~~ DB
   end
 
   C5B --> CDB
   X5B -.->|"書き切り（永続化はここだけ）"| DB
 
 
-  %% 凡例(AsIs/ToBe共通): 緑=cache / 青=計算 / 赤=DB(sink) / 橙=guard・skip / 灰=注記・不変量 / 破線枠=レイヤー帯
-  %% レイヤー帯: 各subgraph=1レイヤー。左=cache列(C*)、右=計算列(X*)。帯の中だけで合流/読み出しが交わる
-  style R0 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R11 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R12 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R1 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R13 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R2 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R3A fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R3B2 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R3B3 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R3B4 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R5A fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style R5B fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
-  style RDB fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
 
 ```
 
