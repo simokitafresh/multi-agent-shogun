@@ -611,7 +611,7 @@ if [[ "$has_unread" == "true" ]]; then
     # cmd_2111: python3 2回→1回に統合(サブプロセス削減)
     # cmd_karo_hotfix_speed_stop_check_inbox_20260613: 同一未読inboxの再Stopでは生成済みJSONを再利用する。
     INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" UNREAD_COUNT="$unread_count" python3 - <<'PY' | tee "$_summary_cache"
-import os, json, yaml
+import os, json, re, yaml
 
 inbox_path = os.environ["INBOX_FILE"]
 limit = int(os.environ["SUMMARY_LIMIT_ENV"])
@@ -641,6 +641,16 @@ for msg in data.get("messages", []):
 result = " | ".join(parts)
 if has_conclusion:
     result += " | ★結論を含む通知あり。自分の証拠と突合せよ。矛盾があれば問い返せ。撤回は突合後。"
+
+# 殿下知2026-08-15 16:06: レビュー受領時に設計の原則を必ず思い出す。
+# 将軍が同日、軍師の「緊急性が低い」を理想の図へ適用し、またToBeへ実装の関数名・行番号を
+# 持ち込んだ。指摘をAsIs側とToBe側へ振り分けずに反映したことが原因。
+if re.search(r'レビュー|review|指摘|APPROVE|BLOCK|LGTM|REQUEST_CHANGES', result or "", re.IGNORECASE):
+    result += ("\n★設計原則(殿裁定2026-08-15)を思い出せ: "
+               "**ToBeは構造的に不可能でない限り妥協しない。現実の関数名・行番号・今の実測値で理想を縛らない。理想は磨く。** "
+               "**AsIsは現実のコードそのもの。間違いがあれば現実に合わせて直す。** "
+               "指摘は必ずAsIs側(現実へ合わせる)とToBe側(理想として磨く)へ振り分けてから反映せよ。"
+               "『緊急性が低い』『今はできない』を理想の妥協理由にするな。")
 
 if result:
     reason_text = f"inbox未読{unread_count}件あり。内容: {result}\n★Read toolで全文読め。mark_readだけするな。各メッセージが今の作業にどう影響するか自問せよ。起動時と同じ態度で(LS048)"
