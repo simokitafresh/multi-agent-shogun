@@ -13752,6 +13752,18 @@ except Exception:
         return 1
     fi
     if [ -n "$CMD_ID" ] && { [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; }; then
+        # --direct without --yaml mutates the worker task while deriving the
+        # training template below.  Arm the same task/report transaction used
+        # by --yaml before issued_at or template injection so a later
+        # preflight BLOCK restores the exact pre-deploy bytes and cannot leak
+        # an EXIT fallback publication.
+        if [ "$DIRECT_MODE" = true ] && [ -z "$YAML_FILE" ] &&
+           [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" != "1" ]; then
+            deploy_task_yaml_transaction_begin "$task_yaml" "$task_yaml" "$NINJA_NAME" "$CMD_ID" || {
+                deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                return 1
+            }
+        fi
         record_issued_at_once "$task_yaml" "$CMD_ID" "$(date '+%Y-%m-%dT%H:%M:%S')" || return 1
     fi
 
@@ -13988,7 +14000,6 @@ except Exception:
     DEPLOY_TASK_DRAFT_REVIEW_NINJA="$NINJA_NAME"
     DEPLOY_TASK_DRAFT_REVIEW_TYPE="$TYPE"
     DEPLOY_TASK_DRAFT_REVIEW_SENT=0
-    DEPLOY_TASK_DRAFT_REVIEW_ARMED=1
 
     # _ac_task_id必須チェック: 分割配備の判定に必要。scope_mode=exactはAC分割しないため対象外。
     if [ -z "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]; then
@@ -14083,11 +14094,22 @@ except Exception:
         return 1
     fi
 
-    DEPLOY_TASK_EXIT_NUDGE_ARMED=1
     [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_ten_min_contract_precheck "$task_yaml" || {
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 2
     }
+
+    # Do not let a preflight failure publish a report or task_assigned nudge.
+    # Both EXIT fallbacks are armed only after the final contract gate passes.
+    DEPLOY_TASK_DRAFT_REVIEW_ARMED=1
+    DEPLOY_TASK_EXIT_NUDGE_ARMED=1
+    if [ "$DIRECT_MODE" = true ] && [ -z "$YAML_FILE" ]; then
+        # The direct no-YAML transaction protects preflight only.  Once the
+        # final contract gate passes, preserve the established post-mutation
+        # EXIT fallback contract instead of rolling back after a later
+        # deadline/interruption.
+        deploy_task_yaml_transaction_commit
+    fi
 
     DEPLOY_TASK_PHASE=task_mutations
     deploy_task_wall_phase_checkpoint preflight
