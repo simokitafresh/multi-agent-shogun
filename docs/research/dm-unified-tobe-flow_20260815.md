@@ -103,6 +103,7 @@ flowchart TB
     direction LR
     C1["+ 不変入力snapshot<br/>prices / DTB3 / economic（C11 の依存集合の範囲）<br/>+ <b>前回確定成果物snapshot</b>（PF×月の W / monthly / cumulative / provenance / 依存fingerprint）<br/>= judge 一致時の<b>復元元</b>。ここで一度だけ読み、以後は左列にしか無い"]:::cache
     X1["C11 の依存集合の範囲だけ prices / DTB3 / economic を一度だけ materialize（modeに依存しない）<br/>+ 前回確定成果物を一度だけ materialize<br/>（永続層を読むのは run 全体でここ一回）"]:::calc
+    C11 -.->|"読む"| X1
     C12 -.->|"読む"| X1
     X1 -.->|"合流"| C1
   end
