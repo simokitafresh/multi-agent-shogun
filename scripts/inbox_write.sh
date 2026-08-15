@@ -1997,7 +1997,10 @@ fi
 # 最小限にシンプルで最高速度のtry&errorを強制しろ」「将軍が真因だった。将軍にもルールを強制せよ」):
 # 将軍→家老の委任本文(および本文中で参照する将軍scratchpadの詳細ファイル)に、途中laneへ
 # 儀式(1体×1層の直列配備・層ごとのGATE/報告YAML/レビュー・新規テスト/contract test/fixture作成)を
-# 課す文言があればBLOCK。厳密さは最終checkpoint(full→business parity)1点のみ。
+# 課す文言、または「一括実装」(小さく一歩ずつ=殿裁定2026-08-14 16:53 に反する)があればBLOCK。
+# 小さく1層ずつ配備するのは正しい(1体×1層はBLOCK対象ではない)。削るのは儀式だけ。
+# さらに将軍→家老のtask_assignedには三層記憶の引用[MEM: ...]を必須とする(殿下知2026-08-15 19:05
+# 「すべての作業の前に三層記憶を確認する。人間が無意識に0秒でやることをやるだけだ」)。
 # 発端: 2026-08-15 L1分割で将軍が『1体×1層で順に』を設計書に書き、層ごとの配備→報告→レビュー→
 # GATEで1h38mかけて2/6しか進まなかった(殿見込み=20分+full)。
 if [ "$FROM" = "shogun" ] && [ "$TARGET" = "karo" ] && [ "${INBOX_WRITE_SKIP_SPEED_GUARD:-0}" != "1" ]; then
@@ -2009,14 +2012,24 @@ $(cat "$_ref" 2>/dev/null)"
 ' "$CONTENT" | grep -oE '/tmp/claude-1000/[^ ]*scratchpad/[^ ]+' | tr -d '"' )
     _speed_hit=$(printf '%s\n' "$_speed_text" | python3 -c '
 import re,sys
-pat=re.compile(r"(1体×1層|1体x1層|一体×一層|層ごと(の|に)(GATE|報告|レビュー|配備)|contract test|新規テスト(を|作成)|fixture(を|作成)|pytest全量|テストを作成)(?!.{0,30}(禁止|廃止|不要|課すな|するな|使うな|なし|の直列儀式))")
-hits=[f"{n}: {l.rstrip()}" for n,l in enumerate(sys.stdin,1) if pat.search(l)]
+pat=re.compile(r"(一括(実装|で実装|配備)(させ|せよ|する|しろ)|まとめて実装|層ごと(の|に)(GATE|報告YAML|レビュー)(を|必須|せよ)|contract test(を|必須|作成)|新規テスト(を|作成)|fixture(を|作成)|pytest全量|テストを作成)")
+neg=re.compile(r"禁止|廃止|不要|課すな|するな|使うな|なし|撤回|違反|削")
+hits=[]
+for n,l in enumerate(sys.stdin,1):
+    for sent in re.split(r"[。\n]",l):
+        s2=re.sub(r"[（(][^）)]*[）)]","",sent)
+        if pat.search(s2) and not neg.search(s2):
+            hits.append(f"{n}: {sent.strip()[:160]}"); break
 print("\n".join(hits[:3]))
 ')
     if [ -n "$_speed_hit" ]; then
-        echo "BLOCK(speed_guard): 将軍→家老の委任に途中laneの儀式(層ごと直列配備/層ごとGATE・報告/新規テスト・contract test・fixture)が含まれる。殿下知2026-08-15 18:59: 最小限・最高速度のtry&error。厳密さは最終checkpoint(full→business parity)1点のみ。該当行:" >&2
+        echo "BLOCK(speed_guard): 将軍→家老の委任に『一括実装』または途中laneの儀式(層ごとGATE・報告YAML・レビュー/新規テスト・contract test・fixture)が含まれる。殿裁定: 小さく1層ずつ→push→full→parity→次(2026-08-14 16:53)、儀式は削る(2026-08-15 18:59)。該当行:" >&2
         printf '%s
 ' "$_speed_hit" | cut -c1-200 | sed 's/^/    /' >&2
+        exit 1
+    fi
+    if [ "$TYPE" = "task_assigned" ] && ! printf '%s' "$_speed_text" | grep -q '\[MEM:'; then
+        echo "BLOCK(three_layer_guard): 将軍→家老のtask_assignedに三層記憶の引用[MEM: ...]がない。殿下知2026-08-15 19:05『すべての作業の前に三層記憶を確認する』。memory_db_query.sh --search / semantic_search.sh で裁定を引いて本文へ[MEM: source ts \"原文\"]を添えよ。" >&2
         exit 1
     fi
     unset _speed_text _speed_hit _ref
