@@ -1161,3 +1161,6 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 前run `2026081000375024E52B`(3051.31s)との同一run lineage比較で、L3 dataframe_prep **1.87→1366.43s(+1364.56s)**、L3 total 335.208→1702.754s。一方L5は2257.204→57.355sへ減少し、T-γ5がL5 cold costをL3へ移した構造と確定。
 - 最大回帰の発端はcommit `9f2891d2`（FoF momentum daily NAV cutover）。`backend/app/jobs/recalculate_fof.py:979`でFoF毎に`nav_frame_cache`を初期化し、再帰daily NAV構築を78 FoF間で共有しない。修正候補は有効calendar/rangeを含む共有cache（またはglobal frame+slice）で、NAV parityを保ったまま重複materializationを除く。
 - 因果リンク: `[[T-γ5_daily_NAV_cutover]] -> [[FoF毎nav_frame_cache再初期化]] -> [[L3_dataframe_prep_1366.43s]] -> [[fullrecalculate_2778.02s]]`。
+## §96 cmd_4320 保存済み展開値vslegacy再展開 (2026-08-15)
+- 本番保存値15,768組の突合は一致14,955、不一致813（ticker集合731、weight64、legacy空18）。保存値の無条件入力昇格は不可。詳細→`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4320_saved_vs_legacy_weights_20260815.md`
+- 全不一致は`pipeline_config`有効PFで発生し、基準読込11:22:17 JST〜比較終了11:23:46 JSTに01:10/01:40 UTC日次cronの通過なし。因果リンク: `[[cmd_4318_saved_expanded_weights]] -> [[cmd_4320本番全件突合813不一致]] -> [[保存値無条件昇格不可]]`。
