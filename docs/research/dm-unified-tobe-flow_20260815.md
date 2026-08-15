@@ -73,7 +73,11 @@ flowchart TB
     SNAP["<b>唯一のcache object</b><br/>不変入力snapshot<br/>+ 用途別view（DTB3完全prefix / signal bounded）"]:::cache
   end
 
-  SNAP --> FPG["<b>入力fingerprint</b>（run単位で1回生成 O(1)）<br/>prices区間hash + config hash + source identity<br/>+ ledger watermark + rebalance trigger + DTB3系列hash"]:::cache
+  SNAP --> TREE["<b>【最初にやる】FoFを全分解して樹形図を確定する</b><br/>scripts/fof_tree.py 相当（循環防御つき）<br/>子・孫・ひ孫まで全経路を辿る<br/>出力=各PFの depth と <b>実行順序（depth昇順）</b>"]:::cache
+
+  TREE --> DAGN["<b>同一PFが複数世代に現れる（DAG合流）</b><br/>本番実測: 同一rootの下で世代が割れる (root,node) 組=<b>14件</b><br/>例: New Fund of Funds 配下の GSシン加速R-激攻 は <b>gen 2 と gen 3</b> の両方<br/>シン朱雀-常勝(standard) は <b>gen 3 と gen 4</b> の両方<br/><b>最初に出会った世代で確定させるな。全経路の最大を採る</b>"]:::rule
+
+  DAGN --> FPG["<b>入力fingerprint</b>（run単位で1回生成 O(1)）<br/>prices区間hash + config hash + source identity<br/>+ ledger watermark + rebalance trigger + DTB3系列hash"]:::cache
 
   subgraph L2["L2 standard 24PF"]
     FPG --> Q2{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?"}
@@ -98,7 +102,7 @@ flowchart TB
   W3A --> CACHE3A["cache object へ追記<br/>leaf FoF の signals / W / <b>monthly cumulative_return</b> / provenance<br/><b>同一オブジェクト・identity不変</b>"]:::cache
 
   subgraph L3B["L3b nested FoF（depth 2 → 3 → 4 を浅い順に直列。本番最深=4）"]
-    CACHE3A --> DEF["<b>深度の定義</b>　depth(P) = 1 + max( depth(C_i) )<br/>standard は depth 0<br/>∴ P が計算可能になるのは <b>最も深い構成PFが確定した後</b>"]:::rule
+    CACHE3A --> DEF["<b>深度の定義（L1のTREEで確定済みの値を使う）</b><br/>depth(P) = 1 + max( depth(C_i) ) = <b>全経路の世代の最大値</b><br/>子・孫・ひ孫を遡って一番深いものが基準。standard は depth 0<br/>∴ P が計算可能になるのは <b>最も深い構成PFが確定した後</b>"]:::rule
     DEF --> PAT{"構成PFの深度は<br/>同一か 混在か"}
     PAT -- "<b>同一深度</b>（本番77件）" --> PRE
     PAT -- "<b>混在深度</b>（本番1件: New Fund of Funds 親depth=4 / 子depth={2,3}）<br/>standard(0)と2と3の混在も同じ扱い" --> WAIT["<b>最も深い構成PFの確定を待つ</b><br/>浅い子（standard含む）は既に cache 済み<br/>そのまま使う。再計算も再読込もしない"]:::skip
@@ -128,5 +132,5 @@ flowchart TB
   DB x--x|"<b>禁止</b>：下流が書いた値を読み返す<br/>（flush→再読込・再構築）"| L3A
   DB x--x|"<b>禁止</b>：一段浅い深度の結果をDBから読み戻す"| L3B
 
-  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ <b>深度は浅い順に直列。</b>depth(P)=1+max(depth(C_i))、standardは0<br/>⑥ <b>構成PFの深度が混在してもよい（standard と 2 と 3 の同居を含む）。</b>親は最も深い構成PFの確定後に計算する<br/>⑦ <b>計算開始の前提は「全構成PFがcacheに在ること」。1つでも欠けたら停止する。</b>DBへ取りに行かない・空dictで代替しない"]:::rule
+  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ <b>深度は浅い順に直列。</b>depth(P)=1+max(depth(C_i))、standardは0<br/>⑥ <b>構成PFの深度が混在してもよい（standard と 2 と 3 の同居を含む）。</b>親は最も深い構成PFの確定後に計算する<br/>⑦ <b>計算開始の前提は「全構成PFがcacheに在ること」。1つでも欠けたら停止する。</b>DBへ取りに行かない・空dictで代替しない<br/>⑧ <b>FoFは最初に全分解して樹形図を確定してから計算に入る。</b>同一PFが複数世代に現れるため、最初に出会った世代で確定させず全経路の最大を採る"]:::rule
 ```
