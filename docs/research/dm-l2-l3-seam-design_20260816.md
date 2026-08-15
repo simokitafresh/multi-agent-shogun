@@ -1,3 +1,4 @@
+<!-- gist-master: 4735a7fcd4da60120345699baf49ac44 dm-l2-l3-seam-design_20260816.md -->
 # 継ぎ目設計 — L2→L3→L5 の受渡しを DB 経由から左列 cache へ（cache 3系統の一本化）
 
 ## 原則（親文書と同じ。殿裁定 2026-08-15）
