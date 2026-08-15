@@ -82,13 +82,17 @@ flowchart TB
     X0 -.->|"合流"| C0
   end
 
-  subgraph R1S["L1.1 ‖ L1.2 構造解決層（並列。どちらも C0 だけで解ける）"]
+  subgraph R11["L1.1 ticker解決層"]
     direction LR
     C11["+ <b>price consumer 依存集合</b><br/>= 保有しうる ticker ∪ benchmark ∪ canonical calendar 銘柄 ∪ economic / DTB3 系列<br/>（価格・系列を読む全consumerの和集合）"]:::cache
-    C12["+ depth 表 と 実行順序<br/>循環検出結果"]:::cache
     X11["config snapshot だけで解く<br/>standard PF を構成tickerへ分解 → 保有しうる ticker<br/>+ benchmark / calendar / economic の依存を列挙"]:::calc
-    X12["config snapshot だけで解く<br/>子・孫・ひ孫まで全経路を辿る<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/>同一PFが複数世代に現れる → 全経路の最大<br/><b>循環を検出したら invalid graph として run 停止（fail-closed）</b><br/>depth と topological 実行順序は停止しない場合のみ確定"]:::calc
     X11 -.->|"合流"| C11
+  end
+
+  subgraph R12["L1.2 深度解決層"]
+    direction LR
+    C12["+ depth 表 と 実行順序<br/>循環検出結果"]:::cache
+    X12["config snapshot だけで解く<br/>子・孫・ひ孫まで全経路を辿る<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/>同一PFが複数世代に現れる → 全経路の最大<br/><b>循環を検出したら invalid graph として run 停止（fail-closed）</b><br/>depth と topological 実行順序は停止しない場合のみ確定"]:::calc
     X12 -.->|"合流"| C12
   end
 
@@ -96,7 +100,6 @@ flowchart TB
     direction LR
     C1["+ 不変入力snapshot<br/>prices / DTB3 / economic（C11 の依存集合の範囲）<br/>+ <b>前回確定成果物snapshot</b>（PF×月の W / monthly / cumulative / provenance / 依存fingerprint）<br/>= judge 一致時の<b>復元元</b>。ここで一度だけ読み、以後は左列にしか無い"]:::cache
     X1["C11 の依存集合の範囲だけ prices / DTB3 / economic を一度だけ materialize（modeに依存しない）<br/>+ 前回確定成果物を一度だけ materialize<br/>（永続層を読むのは run 全体でここ一回）"]:::calc
-    C11 -.->|"読む"| X1
     C12 -.->|"読む"| X1
     X1 -.->|"合流"| C1
   end
@@ -164,16 +167,8 @@ flowchart TB
     C5A -.->|"読む"| X5B
   end
 
-  C0 --> C11
-  C0 --> C12
-  C11 --> C1
-  C12 --> C1
-  C1 --> C13 --> C2 --> C3A --> C3B2 --> C3B3 --> C3B4 --> C5A --> C5B
-  X0 --> X11
-  X0 --> X12
-  X11 --> X1
-  X12 --> X1
-  X1 --> X13 --> X2 --> X3A --> X3B2 --> X3B3 --> X3B4 --> X5A --> X5B
+  C0 --> C11 --> C12 --> C1 --> C13 --> C2 --> C3A --> C3B2 --> C3B3 --> C3B4 --> C5A --> C5B
+  X0 --> X11 --> X12 --> X1 --> X13 --> X2 --> X3A --> X3B2 --> X3B3 --> X3B4 --> X5A --> X5B
 
   subgraph RDB["永続化（最下段）"]
     direction LR
@@ -184,7 +179,7 @@ flowchart TB
   C5B --> CDB
   X5B -.->|"書き切り（永続化はここだけ）"| DB
 
-  INV["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控え（前回確定成果物）を使うのは fingerprint 一致を示せた時だけ。復元元は L1 で read-once した snapshot<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力・規則・規則実装の版 が変わらない限り変わらない（fingerprint の入力に rule/source version を含む）<br/>⑤ 深度は浅い順に直列。depth ごとに1行。graph は topological fold を一方向に unroll した形で書く<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが上段の cache に在ること。欠けたら停止<br/>⑧ config だけで解けるものは計算前の構造解決層で解く。構造解決の入力（config/ledger snapshot）は L0 で先に固定する<br/>⑨ 全経路の最大を採る。循環は invalid graph として run 停止（fail-closed）<br/>⑩ L1.1 と L1.2 は並列（同一行の枝。どちらも C0 だけを読む）<br/>⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない<br/>⑫ 左=cache は縦に一本、右=計算は縦に一本（L1.1‖L1.2 の同一行内の並列枝を除く）。交わるのは各L内の合流と読み出しだけ<br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない<br/>⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している<br/>⑮ price consumer の依存集合は L1.1 が全消費者分を列挙する（保有ticker だけではない）<br/>⑯ cache 契約は producer の出力と consumer の入力が同じ語で一致する（monthly と cumulative は別々に列挙）"]:::rule
+  INV["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控え（前回確定成果物）を使うのは fingerprint 一致を示せた時だけ。復元元は L1 で read-once した snapshot<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力・規則・規則実装の版 が変わらない限り変わらない（fingerprint の入力に rule/source version を含む）<br/>⑤ 深度は浅い順に直列。depth ごとに1行。graph は topological fold を一方向に unroll した形で書く<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが上段の cache に在ること。欠けたら停止<br/>⑧ config だけで解けるものは計算前の構造解決層で解く。構造解決の入力（config/ledger snapshot）は L0 で先に固定する<br/>⑨ 全経路の最大を採る。循環は invalid graph として run 停止（fail-closed）<br/>⑩ L1.1 → L1.2 も直列。並列にできるが<b>あえて直列</b>にする。混乱を生まない一本道が優先<br/>⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない<br/>⑫ 左=cache は縦に一本、右=計算は縦に一本。例外なし。交わるのは各L内の合流と読み出しだけ<br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない<br/>⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している<br/>⑮ price consumer の依存集合は L1.1 が全消費者分を列挙する（保有ticker だけではない）<br/>⑯ cache 契約は producer の出力と consumer の入力が同じ語で一致する（monthly と cumulative は別々に列挙）"]:::rule
 ```
 
 ## 注釈（レイヤー単位。図で足りない粒度はここに書く）
@@ -202,7 +197,7 @@ flowchart TB
 ### ToBe 注釈
 - **L0 run開始**: cache は1個。config（全PF構成・重み・momentum規則・rule version）と ledger（snapshot/watermark）と source version（規則実装の版）を一度だけ読み snapshot 化。以後どの層も生の config/ledger を読まない。構造解決層(L1.1/L1.2)の入力はここで固定される。
 - **L1.1 構造解決（依存集合）**: 保有しうる ticker だけでなく、価格・系列を読む全 consumer（benchmark、canonical calendar 銘柄、economic/DTB3 系列）の和集合を列挙する。L1 が materialize する範囲はこの集合。
-- **L1.2 構造解決（深度）**: depth(P)=1+max(depth(C_i))、standard=0。同一PFが複数世代に現れたら全経路の最大。循環を検出したら invalid graph として run を停止（fail-closed）。depth 表と topological 実行順序は停止しない場合のみ確定。L1.1 と L1.2 は並列（どちらも C0 だけを読む）。
+- **L1.2 構造解決（深度）**: depth(P)=1+max(depth(C_i))、standard=0。同一PFが複数世代に現れたら全経路の最大。循環を検出したら invalid graph として run を停止（fail-closed）。depth 表と topological 実行順序は停止しない場合のみ確定。L1.1 → L1.2 は直列。並列可能でもあえて直列（一本道で混乱を生まない）。
 - **L1 入力層**: C11 の範囲で prices/DTB3/economic を一度だけ materialize。加えて前回確定成果物（PF×月の W/monthly/cumulative/provenance/依存fingerprint）を一度だけ read-once。judge 一致時の復元元はここにしか無い。永続層を読むのは L0 と L1 の read-once だけ。
 - **L1.3 run identity**: C0+C1 の入力一式から run 単位で1回導く（O(1)）。PF×月の依存fingerprint とは別物。
 - **L2 standard**: PF×月ごとに **a** 現fingerprint（入力(C1)+rule version+source version(C0)）を先に作る → **b** judge：C1 の前回fingerprint と一致なら前回成果物を復元し計算しない。不一致なら momentum（日次close・months×21営業日・on-or-before）→判定→規則1（W=選定銘柄へ1.0）→ **c** 価格適用（monthly/cumulative）→ **d** provenance と現fingerprint を合流。cache 契約は signals/W/monthly/cumulative/provenance/依存fingerprint を別々に列挙。
