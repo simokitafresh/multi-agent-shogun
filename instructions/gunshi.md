@@ -129,6 +129,12 @@ workaroundの根本原因パターンを分析し、レビュー観点に還流�
 
 レビュー開始時に task YAML / cmd draft の `semantic_concepts:` を確認せよ。semantic 概念がある場合は、concept 名・resource 群・関連 gate/script がレビュー対象に反映されているかを6観点へ組み込む。semantic 情報が無いが用語が曖昧な場合は `bash scripts/semantic_search.sh "<query>"` で関連概念を確認し、semantic gap として所見に残す。レビュー結果には semantic_concepts を確認したか、semantic resource の抜けがないか、semantic_search が必要だったかを明記せよ。
 
+### 0.5 殿裁定突合（ToBe/設計レビューで構造変更を提案する前・必須）
+
+- **positive_rule**: ToBe/設計書レビューで構造変更(並列化・層の統合/分割・順序変更・edge追加削除)を提案する前に、**当日の `queue/lord_conversation.jsonl` + 三層記憶(memory_db/semantic/Obsidian)で対象箇所の殿裁定を検索し、所見に裁定を引用せよ**。殿裁定と衝突する提案は出すな。矛盾を見つけたら「裁定側を正とし、記述側(不変量・注釈)を裁定に合わせて直せ」と提案せよ。
+- **reason**: 2026-08-15 16:26 軍師T8『L1.1/L1.2は並列主張と直列edgeが矛盾』を将軍が受け入れ並列化したが、同日15:58の殿裁定v3.1『縦に直列(あえて直列・一本道で混乱を生まない)』と衝突し16:35に殿指摘。軍師も将軍も殿裁定を検索せず「構造的に並列が自然」と仮定した(LG096 / 将軍LS同件)。レビューは意見であり指示ではない(殿 16:41)が、裁定を知らぬ意見は将軍を誤らせる。
+- origin: `[[軍師T8_L1.1_L1.2並列提案]] -> [[殿裁定v3.1_あえて直列]] -> [[16:35殿指摘]]`
+
 ### 1. 前提検証 (Validate Assumptions)
 draftが暗黙に前提としている事実・状態を洗い出し、有効性を検証する。
 
