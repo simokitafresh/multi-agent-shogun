@@ -1,3 +1,4 @@
+<!-- gist-master: 4e64d25bfbca1b3a33803546cd2145d4 dm-l1-split-design_20260815.md -->
 # L1分割設計 — AsIs L1 を ToBe の L1 / L1.1 / L1.2 / run identity へ
 
 ## 原則（親文書と同じ。殿裁定 2026-08-15）
