@@ -11475,6 +11475,8 @@ codd:
 | causal | `cmd_reflux_backlink_202608142009_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608152345_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608160333_hanzo_exact` — [[semantic_causal_automation]] -> `docs/research/dm-speed-line-timeline_20260815.md` |
+| causal | `cmd_reflux_backlink_202608160333_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608160350_kotaro_exact` — [[semantic_causal_automation]] -> `docs/research/dm-weight-expansion-first-principles-asis-tobe_20260815.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
