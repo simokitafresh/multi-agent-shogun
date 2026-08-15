@@ -7,42 +7,52 @@
 
 ```mermaid
 flowchart TB
-  classDef bad fill:#3d0b1e,stroke:#d94a6a,color:#ffffff,stroke-width:2px
-  classDef ok fill:#0b3d2e,stroke:#19a974,color:#ffffff
+  classDef cache fill:#0b3d2e,stroke:#19a974,color:#ffffff,stroke-width:2px
+  classDef skip fill:#3d2b0b,stroke:#f5a623,color:#ffffff
   classDef calc fill:#12233d,stroke:#4a90d9,color:#ffffff
-  classDef sink fill:#2a2a2a,stroke:#888888,color:#ffffff
+  classDef sink fill:#3d0b1e,stroke:#d94a6a,color:#ffffff
+  classDef rule fill:#2a2a2a,stroke:#888888,color:#ffffff
+
+  subgraph AL1["L1 入力層 — run冒頭に materialize"]
+    APR[("prices")] --> ASNAP
+    AEC[("economic / DTB3")] --> ASNAP
+    ACF[("PF config")] --> ASNAP
+    ASNAP["ImmutableInputManifest<br/>input_manifest.py:228<br/>+ 用途別view（df_dtb3_raw / df_dtb3_signal）<br/>recalculate_fast.py:1989-2012"]:::cache
+  end
 
   subgraph AL2["L2 standard（recalculate_fast.py）"]
-    A1["日次ループ計算 → signals（メモリ）"]:::calc
-    A1 --> A2["_flush_batch<br/>:2999 / :3020<br/>DBへ書込み"]:::bad
+    ASNAP --> A1["日次ループ計算 → signals（メモリ）"]:::calc
+    A1 --> A2["_flush_batch<br/>:2999 / :3020<br/><b>ここでメモリcacheを手放す</b>"]:::calc
   end
 
   A2 --> ADB[("DB: signals")]:::sink
 
-  ADB --> A3["<b>OPT-4: db.query(Signal)...all()</b><br/>:3170-3187<br/>全signalsをDBから再クエリ"]:::bad
-  A3 --> A4["signal_cache_opt6 を空dictから再構築<br/>:3202-3206<br/><b>= cache系統①</b>"]:::bad
+  ADB --> A3["<b>OPT-4: db.query(Signal)...all()</b><br/>:3170-3187<br/>全signalsをDBから再クエリ"]:::calc
+  A3 --> A4["signal_cache_opt6 を空dictから再構築<br/>:3202-3206<br/><b>cache系統①</b>"]:::cache
 
-  subgraph AL3["L3 FoF（recalculate_fof.py / recalculate_fast.py）"]
-    A5["fof_shared_signal_cache = {}<br/>:3197 空dictから開始<br/><b>= cache系統②</b>"]:::bad
+  subgraph AL3["L3 FoF（recalculate_fast.py / recalculate_fof.py）"]
+    A5["fof_shared_signal_cache = {}<br/>:3197<br/><b>cache系統② — 空dictから開始</b>"]:::cache
     A4 --> A6["Phase 4.5 monthly_returns 生成<br/>signal_cache=opt6 を引数供給<br/>:3228 / :3299"]:::calc
     A5 --> A6
-    A6 --> A7["_reload_signal_cache_entries<br/>:3291<br/>DBから再ロード"]:::bad
-    A7 --> A8["FoF deferred flush"]:::bad
+    A6 --> A7["_reload_signal_cache_entries<br/>:3291<br/>DBから再ロード"]:::calc
+    A7 --> A8["FoF deferred flush"]:::calc
   end
 
   A8 --> ADB2[("DB: signals / monthly_returns")]:::sink
 
   subgraph AL5["L5 precompute（precompute_raw.py）"]
-    ADB2 --> A9["signal_preload（DBロード）"]:::bad
-    A9 --> A10["<b>LazySignalArtifactCache を L5内で新規生成</b><br/>:245<br/>L2/L3からの受渡しではない"]:::bad
-    A10 --> A11["artifact_signal_cache として builder へ供給<br/>:246 / :281<br/><b>この供給自体はT4の成果で残存</b>"]:::ok
+    ADB2 --> A9["signal_preload（DBロード）"]:::calc
+    A9 --> A10["LazySignalArtifactCache を <b>L5内で新規生成</b><br/>:245<br/><b>cache系統③ — L2/L3からの受渡しではない</b>"]:::cache
+    A10 --> A11["artifact_signal_cache を builder へ引数供給<br/>:246 / :281"]:::calc
     A11 --> A12["MonthlyTradeCalculator.calculate<br/>:321"]:::calc
-    A12 --> A13["precompute_signal_payload_cache 経路<br/>price_ratio_impl.py:1116-1120<br/><b>= cache系統③</b>"]:::bad
+    A12 --> A13["precompute_signal_payload_cache 経路<br/>price_ratio_impl.py:1116-1120"]:::cache
   end
 
-  A2 -.-> ALERT["<b>SIGNAL CHANGE ALERT / signal_change_log</b><br/>signal_flush.py:431 / :565<br/>2026-08-12に撤去裁定 → 08-13 rollback 233c2303 で復活し現存"]:::bad
+  A2 -.->|"確定月の書換えを事後検知して発報"| ALERT["SIGNAL CHANGE ALERT / signal_change_log<br/>signal_flush.py:431 / :565<br/>2026-08-12撤去裁定 → 08-13 rollback 233c2303 で復活し現存"]:::skip
 
-  NOTE["<b>確認できた残存/消失（現物grep）</b><br/>残存: signal_cache_opt6=6件 / fof_shared_signal_cache=4件 / precompute_signal_payload_cache=2件<br/>消失(T5/T6の成果が生存): signal_valid_dates_cache=0件 / validate_signal_snapshot=0件<br/>ledger guard は detect-only（c13a56fe。台帳値ではなく計算値を返す）<br/>signal_decision_ledger = 0行"]:::sink
+  ADB2 -.->|"確定月は素通り"| LEDG["ledger guard = detect-only（c13a56fe）<br/>台帳値ではなく計算値を返す<br/>signal_decision_ledger = 0行"]:::skip
+
+  ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② 入力fingerprintが無く、確定月をskipする判断ができない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
 ```
 
 ## ToBe
