@@ -78,6 +78,18 @@ source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
 source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_confirmation_guard.sh"
+source "$SCRIPT_DIR/scripts/lib/project_path.sh"
+
+# DM-Signal Render live transition watcher.  The repository path comes from
+# config/projects.yaml via project_path.sh; the service id matches the
+# existing cmd_complete_gate Render SSOT.  Credentials stay in the Render
+# CLI's existing authenticated profile and are never read by this monitor.
+DM_SIGNAL_RENDER_CLI="${DM_SIGNAL_RENDER_CLI:-/home/simokitafresh/.local/bin/render}"
+DM_SIGNAL_RENDER_SERVICE_ID="${DM_SIGNAL_RENDER_SERVICE_ID:-srv-d4ja7q15pdvs739a4q1g}"
+DM_SIGNAL_RENDER_CHECK_INTERVAL_SEC="${DM_SIGNAL_RENDER_CHECK_INTERVAL_SEC:-60}"
+DM_SIGNAL_RENDER_STATE_FILE="${DM_SIGNAL_RENDER_STATE_FILE:-$STATE_DIR/ninja_monitor_dm_signal_render_live.tsv}"
+DM_SIGNAL_RENDER_INBOX_WRITE="${DM_SIGNAL_RENDER_INBOX_WRITE:-$SCRIPT_DIR/scripts/inbox_write.sh}"
+DM_SIGNAL_RENDER_LAST_CHECK_EPOCH=0
 
 close_inherited_restart_watchers_lock() {
     local lock_path="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
@@ -608,6 +620,117 @@ send_inbox_message() {
     local msg_type="$3"
     local from="${4:-ninja_monitor}"
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$to" "$message" "$msg_type" "$from" >> "$LOG" 2>&1
+}
+
+# Convert a DM-Signal origin/main == Render Live transition into one durable
+# wake-up event for Karo.  All negative cases fail closed: an unavailable repo,
+# empty origin SHA, Render CLI failure/empty response, non-live deploy, or
+# non-matching SHA produces no inbox event.  The tab-separated ledger is the
+# exactly-once identity store and is protected by a lock across monitor reloads.
+check_dm_signal_render_live_transition() {
+    local now repo origin_sha render_payload live_record live_sha live_at cadence timeout_sec
+    local state_file lock_file lock_fd
+    now=$EPOCHSECONDS
+    cadence="${DM_SIGNAL_RENDER_CHECK_INTERVAL_SEC:-60}"
+    [[ "$cadence" =~ ^[0-9]+$ ]] || cadence=60
+    if [[ "${DM_SIGNAL_RENDER_LAST_CHECK_EPOCH:-0}" =~ ^[0-9]+$ ]] \
+        && (( now - DM_SIGNAL_RENDER_LAST_CHECK_EPOCH < cadence )); then
+        return 0
+    fi
+    DM_SIGNAL_RENDER_LAST_CHECK_EPOCH=$now
+
+    repo="${DM_SIGNAL_REPO:-}"
+    if [ -z "$repo" ]; then
+        repo=$(get_project_path dm-signal 2>/dev/null || true)
+    fi
+    if [ -z "$repo" ] || [ ! -d "$repo/.git" ]; then
+        log "RENDER-LIVE-WATCH: origin repo unavailable; notification=0"
+        return 0
+    fi
+    origin_sha=$(git -C "$repo" rev-parse refs/remotes/origin/main 2>/dev/null || true)
+    if ! [[ "$origin_sha" =~ ^[0-9a-fA-F]{7,64}$ ]]; then
+        log "RENDER-LIVE-WATCH: origin/main SHA unavailable; notification=0"
+        return 0
+    fi
+    if [ ! -x "$DM_SIGNAL_RENDER_CLI" ]; then
+        log "RENDER-LIVE-WATCH: Render CLI unavailable; notification=0"
+        return 0
+    fi
+    timeout_sec="${DM_SIGNAL_RENDER_TIMEOUT_SEC:-20}"
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
+    render_payload=$(timeout "$timeout_sec" \
+        "$DM_SIGNAL_RENDER_CLI" --output json deploys list "$DM_SIGNAL_RENDER_SERVICE_ID" 2>/dev/null) || {
+        log "RENDER-LIVE-WATCH: Render CLI failed; notification=0"
+        return 0
+    }
+    live_record=$(RENDER_DEPLOYS_JSON="$render_payload" python3 - <<'PY' 2>/dev/null
+import json
+import os
+import re
+
+try:
+    payload = json.loads(os.environ.get("RENDER_DEPLOYS_JSON", ""))
+except (TypeError, json.JSONDecodeError):
+    raise SystemExit(1)
+rows = payload if isinstance(payload, list) else payload.get("deploys", [])
+for row in rows:
+    deploy = row.get("deploy", row) if isinstance(row, dict) else {}
+    status = str(deploy.get("status") or deploy.get("state") or "").strip().lower()
+    if status != "live":
+        continue
+    commit = deploy.get("commit") or {}
+    sha = commit.get("id") if isinstance(commit, dict) else commit
+    sha = sha or deploy.get("commitId")
+    live_at = deploy.get("finishedAt") or deploy.get("updatedAt") or deploy.get("createdAt")
+    if sha and live_at and re.fullmatch(r"[0-9a-fA-F]{7,64}", str(sha).strip()):
+        print(f"{str(sha).strip()}\t{str(live_at).strip()}")
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+    ) || {
+        log "RENDER-LIVE-WATCH: Render response has no valid live SHA/time; notification=0"
+        return 0
+    }
+    IFS=$'\t' read -r live_sha live_at <<< "$live_record"
+    if [ -z "$live_sha" ] || [ "$live_sha" != "$origin_sha" ]; then
+        log "RENDER-LIVE-WATCH: origin=${origin_sha} live=${live_sha:-empty}; notification=0"
+        return 0
+    fi
+
+    state_file="$DM_SIGNAL_RENDER_STATE_FILE"
+    lock_file="${state_file}.lock"
+    mkdir -p "${state_file%/*}" 2>/dev/null || true
+    exec {lock_fd}>"$lock_file" || {
+        log "RENDER-LIVE-WATCH: state lock unavailable; notification=0"
+        return 0
+    }
+    if ! flock -n "$lock_fd"; then
+        eval "exec ${lock_fd}>&-"
+        return 0
+    fi
+    if [ -f "$state_file" ] && awk -F'\t' -v sha="$origin_sha" '$1 == sha { found=1 } END { exit !found }' "$state_file"; then
+        log "RENDER-LIVE-WATCH: origin=${origin_sha} already notified; notification=0"
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+        return 0
+    fi
+
+    local message
+    message="【Render Live遷移】DM-Signal origin/main=${origin_sha} と Render Live commit=${live_sha} が一致。Live時刻=${live_at}; action=resume_post_deploy"
+    if ! bash "$DM_SIGNAL_RENDER_INBOX_WRITE" karo "$message" render_live_transition ninja_monitor resume_post_deploy >> "$LOG" 2>&1; then
+        log "RENDER-LIVE-WATCH: inbox delivery failed for ${origin_sha}; state not advanced"
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+        return 0
+    fi
+    if ! printf '%s\t%s\t%s\n' "$origin_sha" "$live_at" "$(date -Iseconds)" >> "$state_file"; then
+        log "RENDER-LIVE-WATCH: state write failed after delivery for ${origin_sha}"
+    else
+        log "RENDER-LIVE-WATCH: notified karo origin=${origin_sha} live_at=${live_at} action=resume_post_deploy"
+    fi
+    flock -u "$lock_fd"
+    eval "exec ${lock_fd}>&-"
+    return 0
 }
 
 yaml_field_get() {
@@ -10318,6 +10441,10 @@ while true; do
 
     # Primary task state is observed before pane waits and maintenance.
     monitor_task_state_fast_path
+
+    # Convert the DM-Signal origin/main -> Render Live transition into a
+    # durable Karo wake-up event without waiting for a human nudge.
+    check_dm_signal_render_live_transition
 
     # GP-239: 復旧失敗はmarkerを残さず次cycleで再試行する。
     check_all_codex_bypass_flags
