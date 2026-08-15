@@ -454,7 +454,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4309"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で候補を再検証したが、cmd_4309の配備ログはrc=0で全体35.315秒・task_mutations21.021秒、30秒timeoutや配備不完了を示す記録は無かった。現行lock_path.shは/mnt/c対象のflockを/tmpへ移し、今回のreflux配備もrc=0・14.7秒で完了したため、当該候補は現時点で再現不能・追加修正不要として解決する。配備ロック(queue/locks)の残余I/Oリスクは別cmdで専用計測する。"
+  action_artifact: "evidence=logs/deploy_task.log:cmd_4309(task_mutations=21021ms,post_delivery=5796ms,rc=0);logs/deploy_reflux_auto.log:cmd_reflux_insight_202608151250_kagemaru(deploy_wall=14744ms,rc=0);scripts/lib/lock_path.sh;context/semantic-map.md:infrastructure_ops;decision=separate_measurement_for_deploy_queue_locks"
+  resolved_at: "2026-08-15T12:56:32+09:00"
 - id: INS-20260815-022219636-968f
   ts: "2026-08-15T02:22:19+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608150208_kagemaru; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
@@ -657,8 +660,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 53
-  last_seen: "2026-08-15T12:46:03+09:00"
+  occurrence_count: 54
+  last_seen: "2026-08-15T12:53:43+09:00"
   verification:
     status: "passed"
     exit_code: 0
