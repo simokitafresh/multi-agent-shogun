@@ -524,7 +524,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_deploy_stale_test_lifecycle_20260815"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存根治を確認: scripts/deploy_task.sh の研究scope/研究成果物判定が commit binary check を研究cmdに限定して no(研究cmd: commit不要)へ変換し、通常実装には適用しない。scripts/cmd_save.sh LK-A10 は研究cmdの成果物・現物確認・context還流を要求する。反復候補であり追加修正不要。"
+  action_artifact: "scripts/deploy_task.sh:3828-3944; scripts/cmd_save.sh:6670-6745; context/infrastructure.md:L1591; tests/unit/test_deploy_task_template_generation.bats は現worktreeに不在のため既存回帰テスト実行不可"
+  resolved_at: "2026-08-15T11:47:43+09:00"
 - id: INS-20260815-015519817-b67d
   ts: "2026-08-15T01:55:19+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4309; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
@@ -734,8 +737,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 43
-  last_seen: "2026-08-15T11:34:47+09:00"
+  occurrence_count: 44
+  last_seen: "2026-08-15T11:47:14+09:00"
   verification:
     status: "passed"
     exit_code: 0
