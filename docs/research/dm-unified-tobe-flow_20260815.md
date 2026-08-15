@@ -63,7 +63,7 @@ flowchart TB
   ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② run単位の fingerprint は在る（input_manifest.py:228 ImmutableInputManifest.build :235 → input_snapshot_id :251 / execution_fingerprint :256）。<b>無いのは PF×月 の依存fingerprint</b>。∴ run全体の同一性は判るが、確定月を PF×月 単位で skip する判断はできない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
 ```
 
-## ToBe **v3.8** — 2026-08-15T16:50+09:00（v3.8=各レイヤー帯に枠線を付け、左cache縦流/右計算縦流/横のレイヤー区切りを明示。殿指示16:48 ← v3.7=C11→X1 読み出しedgeを撤去。L1.1/L1.2が図上で並列に見えるため。X1はC12(C11を含む一つのcache)だけを読む。殿指摘16:45 ← v3.6=X1がC11(依存集合)も読むedgeを明示(軍師O1を将軍判断で採用) ← v3.5=不変量を図の最上段へ移動(殿指示16:40) ← v3.3=16:26 レビュー12件反映 → v3.4=L1.1→L1.2 を直列へ戻す。殿指摘16:35）
+## ToBe **v3.9** — 2026-08-15T16:52+09:00（v3.9=不変量ノードを3列横並びにして縦長を解消。殿指示16:51 ← v3.8=各レイヤー帯に枠線を付け、左cache縦流/右計算縦流/横のレイヤー区切りを明示。殿指示16:48 ← v3.7=C11→X1 読み出しedgeを撤去。L1.1/L1.2が図上で並列に見えるため。X1はC12(C11を含む一つのcache)だけを読む。殿指摘16:45 ← v3.6=X1がC11(依存集合)も読むedgeを明示(軍師O1を将軍判断で採用) ← v3.5=不変量を図の最上段へ移動(殿指示16:40) ← v3.3=16:26 レビュー12件反映 → v3.4=L1.1→L1.2 を直列へ戻す。殿指摘16:35）
 
 **読み方**: 横の破線枠=1レイヤー(L)。枠の左=cache列(C*)は上から下へ一本、枠の右=計算列(X*)も上から下へ一本。枠の中だけで「計算→合流(cacheへ追記)」と「cache→読み出し」が交わる。枠をまたぐのは縦の一本ずつのみ。上から下へ一度も戻らない。
 
@@ -75,7 +75,7 @@ flowchart TB
   classDef sink fill:#3d0b1e,stroke:#d94a6a,color:#ffffff
   classDef rule fill:#2a2a2a,stroke:#888888,color:#ffffff
 
-  INV["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控え（前回確定成果物）を使うのは fingerprint 一致を示せた時だけ。復元元は L1 で read-once した snapshot<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力・規則・規則実装の版 が変わらない限り変わらない（fingerprint の入力に rule/source version を含む）<br/>⑤ 深度は浅い順に直列。depth ごとに1行。graph は topological fold を一方向に unroll した形で書く<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが上段の cache に在ること。欠けたら停止<br/>⑧ config だけで解けるものは計算前の構造解決層で解く。構造解決の入力（config/ledger snapshot）は L0 で先に固定する<br/>⑨ 全経路の最大を採る。循環は invalid graph として run 停止（fail-closed）<br/>⑩ L1.1 → L1.2 も直列。並列にできるが<b>あえて直列</b>にする。混乱を生まない一本道が優先<br/>⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない<br/>⑫ 左=cache は縦に一本、右=計算は縦に一本。例外なし。交わるのは各L内の合流と読み出しだけ<br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない<br/>⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している<br/>⑮ price consumer の依存集合は L1.1 が全消費者分を列挙する（保有ticker だけではない）<br/>⑯ cache 契約は producer の出力と consumer の入力が同じ語で一致する（monthly と cumulative は別々に列挙）"]:::rule
+  INV["<b>不変量</b>（3列×横並び）<br/>① W の定義は 規則1 と 規則2 のみ　｜　② 控え（前回確定成果物）を使うのは fingerprint 一致を示せた時だけ。復元元は L1 で read-once した snapshot　｜　③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力・規則・規則実装の版 が変わらない限り変わらない（fingerprint の入力に rule/source version を含む）　｜　⑤ 深度は浅い順に直列。depth ごとに1行。graph は topological fold を一方向に unroll した形で書く　｜　⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが上段の cache に在ること。欠けたら停止　｜　⑧ config だけで解けるものは計算前の構造解決層で解く。構造解決の入力（config/ledger snapshot）は L0 で先に固定する　｜　⑨ 全経路の最大を採る。循環は invalid graph として run 停止（fail-closed）<br/>⑩ L1.1 → L1.2 も直列。並列にできるが<b>あえて直列</b>にする。混乱を生まない一本道が優先　｜　⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない　｜　⑫ 左=cache は縦に一本、右=計算は縦に一本。例外なし。交わるのは各L内の合流と読み出しだけ<br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない　｜　⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している　｜　⑮ price consumer の依存集合は L1.1 が全消費者分を列挙する（保有ticker だけではない）<br/>⑯ cache 契約は producer の出力と consumer の入力が同じ語で一致する（monthly と cumulative は別々に列挙）"]:::rule
   INV ~~~ R0
 
   subgraph R0["L0 run開始 — 構造の入力を固定"]
