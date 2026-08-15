@@ -12,25 +12,25 @@
 
 ---
 
-## AsIs **v1.1** — 2026-08-15T17:20+09:00 / 対象 `origin/main = 5da7f107`
+## AsIs **v1.2** — 2026-08-15T18:45+09:00 / 対象 `origin/main = f0194282`（L0 live: run405/406 業務値突合 monthly 16,976行・metrics 204行 差分0）
 
-**現状、5つの仕事のうち3つが1箇所に混ざり、2つ（L0 config snapshot / L1.2 深度）は存在しない。**
+**現状、L0 は本番に入った。L1.1 と L1.3 は 1箇所に混ざったまま、L1.2 は存在しない。**
 
 | ToBeでの居場所 | 現状の実体 | 位置 |
 |---|---|---|
-| L0 config snapshot | **存在しない**（config は各所が都度読む。`ImmutableInputManifest` は config の hash を artifact として持つのみ） | — |
-| L1.1 ticker解決 | `_collect_all_symbols(standard_portfolios)` | `recalculate_fast.py:1978`（定義 :3902） |
-| L1.1 ticker解決 | `_collect_standard_price_supply_symbols(price_supply_portfolios)` | `:1979`（定義 :3928） |
-| L1 入力materialize | `stock_symbols` 確定 → `load_prices_as_df` ほか | `:1986` 以降 |
-| L1.3 run identity | `ImmutableInputManifest.build` が `input_snapshot_id` と `execution_fingerprint` を算出 | `input_manifest.py:228-258` |
+| **L0 config snapshot** | **存在する**。`snapshot_portfolio_configs(payload.portfolios)` → `db.info["portfolio_config_snapshot"]`、ledger 全行 → `db.info["signal_decision_ledger_snapshot"]`。以後の generator preload は `build_portfolio_config_preload(config_snapshot)` を読む | `recalculate_fast.py:1901`（config）/ `:1922`（ledger）/ `:3197`（preload）。定義 `input_manifest.py:28`（`PortfolioConfigSnapshot`）/ `:62` / `:67` |
+| L1.1 ticker解決 | `_collect_all_symbols(standard_portfolios)` | `recalculate_fast.py:2014`（定義 :3903） |
+| L1.1 ticker解決 | `_collect_standard_price_supply_symbols(price_supply_portfolios)`（`price_supply_portfolios` は config_snapshot から :2001 で抽出） | 定義 `:3929` |
+| L1 入力materialize | `stock_symbols` 確定 → `load_prices_as_df` ほか | `:2022` → `:2031` 以降 |
+| L1.3 run identity | `ImmutableInputManifest.build` が `input_snapshot_id` と `execution_fingerprint` を算出 | 呼出 `recalculate_fast.py:2110`、定義 `input_manifest.py:277-305` |
 | **L1.2 深度解決** | **存在しない** | — |
 
-**確認できた事実（現物grep・2026-08-15）**
+**確認できた事実（現物grep・2026-08-15 18:45）**
 
-1. ticker解決は既にL1直前で動いているが、**独立した層になっておらず**、価格materializeと同じ関数の流れの中にある。
-2. `_collect_all_symbols` が集めるのは **relative / 絶対アセット(:3910) / safe_haven / リスクフリー(:3916) / ベンチマーク(:3921) の5分類**。`relative ∪ safe_haven` ではない。
+1. L0: config は run 冒頭で一度だけ detach され、以後の PF 選択・generator preload は snapshot を消費する（`:1895-1925` のコメント「Do not re-read Portfolio rows after L0」）。ledger は全行を1回読み snapshot 化。
+2. ticker解決は既に L1 直前で動いているが、**独立した層になっておらず**、価格 materialize と同じ関数の流れの中にある。入力は config_snapshot 由来だが、benchmark / DTB3 の依存は `_collect_all_symbols` の5分類（relative / 絶対アセット / safe_haven / リスクフリー / ベンチマーク）と `:2022` の `| {"SPY"}` に分散している。
 3. run identity 相当は **2つある**。`input_snapshot_id`（input_snapshot_version / logical_date / target_portfolio_ids / artifacts hashes）と `execution_fingerprint`（source_identity + environment）。
-4. 深度解決は**本番経路に無い**。`portfolios` の `nested_depth` カラムは default 0 で本番実測も全29543行が0。`scripts/fof_tree.py` は `用途区分: OPERATOR_TOOL（本番実行経路から呼ばれない）` で、しかも `fof_component_weights` の最新日を読むためconfig-onlyではない。`price_ratio_impl.py:1877` の `resolve_holding(depth,...)` は展開処理内の局所再帰であり、実行順序を決める深度ではない。
+4. 深度解決は**本番経路に無い**。`portfolios.nested_depth` は default 0（本番実測 全29543行が0）。`scripts/fof_tree.py` は OPERATOR_TOOL で本番経路から呼ばれず、`fof_component_weights` の最新日を読むため config-only ではない。`price_ratio_impl.py` の `resolve_holding(depth,...)` は展開処理内の局所再帰であり、実行順序を決める深度ではない。
 
 ---
 
@@ -98,7 +98,7 @@ flowchart TB
 
 | # | やること | 種別 |
 |---|---|---|
-| 0 | L0: config / ledger を run 冒頭で一度だけ読み snapshot 化する。以後の層は snapshot だけを見る | **新規**（読み出しの一元化。値は変えない） |
+| 0 | ~~L0: config / ledger を run 冒頭で一度だけ読み snapshot 化する~~ **本番 live（f0194282、業務値差分0）** | 完了 |
 | 1 | L1.1: ticker解決を独立層へ切り出す。既存2関数の呼び出しを前段へ移し、入力を config snapshot にする。benchmark / calendar / economic の依存も同じ場所で列挙する | **移動+拡張**（既存5分類の集約先を1箇所にする。新規ロジックなし） |
 | 2 | L1: materialize する銘柄範囲を、L1.1 の出力から決める形にする | **接続の付け替え** |
 | 3 | L1.2: 深度解決層を新設する。config snapshot だけを入力に depth と実行順序を出す純関数。循環は fail-closed | **新規** |
