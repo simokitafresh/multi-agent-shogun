@@ -27,7 +27,7 @@ flowchart TB
 
   A2 --> ADB[("DB: signals")]:::sink
 
-  ADB --> A3["<b>OPT-4: db.query(Signal)...all()</b><br/>:3170-3187<br/>全signalsをDBから再クエリ"]:::calc
+  ADB --> A3["<b>OPT-4: db.query(Signal)...all()</b><br/>:3176（同型が :1236 / :3452 にも存在）<br/>全signalsをDBから再クエリ"]:::calc
   A3 --> A4["signal_cache_opt6 を空dictから再構築<br/>:3202-3206<br/><b>cache系統①</b>"]:::cache
 
   subgraph AL3["L3 FoF（recalculate_fast.py / recalculate_fof.py）"]
@@ -48,7 +48,7 @@ flowchart TB
     A12 --> A13["precompute_signal_payload_cache 経路<br/>price_ratio_impl.py:1116-1120"]:::cache
   end
 
-  A2 -.->|"確定月の書換えを事後検知して発報"| ALERT["SIGNAL CHANGE ALERT / signal_change_log<br/>signal_flush.py:431 / :565<br/>2026-08-12撤去裁定 → 08-13 rollback 233c2303 で復活し現存"]:::skip
+  A2 -.->|"確定月の書換えを事後検知して発報"| ALERT["SIGNAL CHANGE ALERT / signal_change_log<br/>backend/app/jobs/flush/signal_flush.py:431 / :565<br/>2026-08-12撤去裁定 → 08-13 rollback 233c2303 で復活し現存"]:::skip
 
   ADB2 -.->|"確定月は素通り"| LEDG["ledger guard = detect-only（c13a56fe）<br/>台帳値ではなく計算値を返す<br/>signal_decision_ledger = 0行"]:::skip
 
@@ -98,7 +98,9 @@ flowchart TB
     S2 --> W2
   end
 
-  W2 -->|"追記"| CACHE["<b>唯一のcache object（run開始時に1個だけ生成）</b><br/>L1.1のticker集合 / L1.2のdepth表と実行順序 / 不変入力snapshot<br/>+ 各層が書き足す signals / W / monthly / provenance / fingerprint<br/><b>再生成・複製・空初期化は禁止。identityは最後まで不変</b>"]:::cache
+  W2 --> MR2["<b>月次集約</b>　W と価格から monthly_return / cumulative_return を生成<br/>_generate_monthly_returns（recalculate_fast.py:134 import・Phase 4.5）<br/><b>これが L3a の入力になる</b>"]:::calc
+
+  MR2 -->|"追記"| CACHE["<b>唯一のcache object（run開始時に1個だけ生成）</b><br/>L1.1のticker集合 / L1.2のdepth表と実行順序 / 不変入力snapshot<br/>+ 各層が書き足す signals / W / monthly / provenance / fingerprint<br/><b>再生成・複製・空初期化は禁止。identityは最後まで不変</b>"]:::cache
 
   subgraph L3A["L3a leaf FoF（depth 1 — 子が全て standard）"]
     CACHE --> Q3A{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>子standardのfingerprint</b> を含む）"}
@@ -109,7 +111,9 @@ flowchart TB
     S3A --> W3A
   end
 
-  W3A -->|"追記（leaf FoF の signals / W / monthly cumulative_return / provenance）"| CACHE
+  W3A --> MR3A["<b>月次集約</b>　leaf FoF の monthly_return / cumulative_return を生成<br/><b>これが L3b の入力になる</b>"]:::calc
+
+  MR3A -->|"追記（signals / W / monthly / provenance）"| CACHE
 
   subgraph L3B["L3b nested FoF（depth 2 → 3 → 4 を浅い順に直列。本番最深=4）"]
     CACHE --> DEF["<b>深度は構造解決層で確定済み。ここでは求めない</b><br/>受け取るのは depth 表と実行順序だけ<br/>∴ P を計算するのは <b>最も深い構成PFが確定した後</b>"]:::rule
@@ -129,7 +133,9 @@ flowchart TB
     W3B -.->|"次の深度へ（depth+1）<br/>浅い順に直列。飛び越えない"| DEF
   end
 
-  W3B -->|"追記（nested FoF の signals / W / monthly / provenance）"| CACHE
+  W3B --> MR3B["<b>月次集約</b>　nested FoF の monthly_return / cumulative_return を生成<br/><b>これが一段深い depth の入力になる</b>"]:::calc
+
+  MR3B -->|"追記（signals / W / monthly / provenance）"| CACHE
 
   subgraph L5["L5 表示・成果物層"]
     CACHE --> B5["builder / precomputed_raw / trade_perf<br/><b>引数で cache を受け取る</b>"]:::calc
