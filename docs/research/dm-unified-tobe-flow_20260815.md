@@ -63,9 +63,9 @@ flowchart TB
   ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② 入力fingerprintが無く、確定月をskipする判断ができない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
 ```
 
-## ToBe **v3.0** — 2026-08-15T15:25+09:00
+## ToBe **v3.1** — 2026-08-15T16:05+09:00
 
-変更: v2.0=縦二本へ再構成+家老指摘反映 → **v3.0=左右二軸へ再構成（殿裁定15:20）。行=L、左列=cache、右列=計算。L単位で分離**
+変更: v2.0=縦二本へ再構成+家老指摘反映 → v3.0=左右二軸へ再構成（殿裁定15:20） → **v3.1=順序を L1.1→L1.2→L1→run identity へ是正し折り返しを解消（殿指摘15:58）。上から下へ一度も戻らない**
 
 **左がcache、右が計算。同じ行が同じL。各Lの中で「計算→合流」と「cache→読み出し」が閉じる。cacheは左を縦に、計算は右を縦に流れる。**
 
@@ -82,13 +82,6 @@ flowchart TB
     C0["<b>cache を1個だけ生成</b><br/>再生成・複製・空初期化は禁止<br/>identity は最後まで不変"]:::cache
   end
 
-  subgraph R1["L1 入力層"]
-    direction LR
-    C1["+ 不変入力snapshot<br/>prices / DTB3 / config / ledger watermark"]:::cache
-    X1["必要な銘柄と期間を<br/>一度だけ materialize"]:::calc
-    X1 -.->|"合流"| C1
-  end
-
   subgraph R11["L1.1 ticker解決層"]
     direction LR
     C11["+ 保有しうる ticker 集合"]:::cache
@@ -101,6 +94,14 @@ flowchart TB
     C12["+ depth 表 と 実行順序"]:::cache
     X12["PF構成だけで解く<br/>子・孫・ひ孫まで全経路を辿る（循環に耐える）<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/><b>同一PFが複数世代に現れる。全経路の最大を採る</b>"]:::calc
     X12 -.->|"合流"| C12
+  end
+
+  subgraph R1["L1 入力層"]
+    direction LR
+    C1["+ 不変入力snapshot<br/>prices / DTB3 / config / ledger watermark"]:::cache
+    X1["<b>L1.1が出した ticker 集合の範囲だけ</b><br/>prices / DTB3 を一度だけ materialize<br/>（modeに依存しない）"]:::calc
+    C12 -.->|"読む"| X1
+    X1 -.->|"合流"| C1
   end
 
   subgraph R13["run identity"]
@@ -149,11 +150,11 @@ flowchart TB
     C5A -.->|"読む"| X5B
   end
 
-  C0 --> C1 --> C11 --> C12 --> C13 --> C2 --> C3A --> C3B --> C5A --> C5B
-  X1 --> X11 --> X12 --> X13 --> X2 --> X3A --> X3B --> X5A --> X5B
+  C0 --> C11 --> C12 --> C1 --> C13 --> C2 --> C3A --> C3B --> C5A --> C5B
+  X11 --> X12 --> X1 --> X13 --> X2 --> X3A --> X3B --> X5A --> X5B
 
   X5B -.->|"書き切り（永続化はここだけ）"| DB[("DB")]:::sink
   DB x--x|"<b>禁止</b>：右列がDBを読み返す"| X2
 
-  INV["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控えを使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ 深度は浅い順に直列<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが cache に在ること。欠けたら停止<br/>⑧ PF構成だけで解けるものは計算前の独立レイヤーで解く<br/>⑨ 全経路の最大を採る<br/>⑩ L1.1 と L1.2 は並列でよい<br/>⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない<br/>⑫ <b>左=cache は縦に一本、右=計算は縦に一本。交わるのは各L内の合流と読み出しだけ</b><br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない"]:::rule
+  INV["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控えを使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ 深度は浅い順に直列<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが cache に在ること。欠けたら停止<br/>⑧ PF構成だけで解けるものは計算前の独立レイヤーで解く<br/>⑨ 全経路の最大を採る<br/>⑩ L1.1 と L1.2 は並列でよい<br/>⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない<br/>⑫ <b>左=cache は縦に一本、右=計算は縦に一本。交わるのは各L内の合流と読み出しだけ</b><br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない<br/>⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している"]:::rule
 ```
