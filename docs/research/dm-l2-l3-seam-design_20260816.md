@@ -14,22 +14,24 @@
 
 ---
 
-## AsIs **v1.0** — 2026-08-16T00:40+09:00 / 対象 `origin/main = 430c8950`（継ぎ目の現物。L2 #4 完了時に更新）
+## AsIs **v1.1** — 2026-08-16T02:15+09:00 / 対象 `origin/main = a71b56fd`（継ぎ目の現物。疾風 readonly 偵察 `cmd_karo_recon2_dm_l2_l3_seam_202608160159` で全行再照合。L2 #4 完了時に SHA を更新）
 
-**現状、L2 が DB へ書いた signals / monthly を、後段が4箇所で DB から読み返している（cache 3系統）。**
+**現状、L2 が DB へ書いた signals / monthly を、後段が4箇所で DB から読み返している（cache 3系統）。C2 に在るのは L2 #2/#3 の fingerprint / judge 記録のみで、signals / monthly / W / provenance の producer はまだ無い（L2 #4 待ち）。**
 
 | 継ぎ目 | 現状の実体 | 位置 |
 |---|---|---|
-| S1: L2 → Phase 4.5 monthly_returns | OPT-4 `db.query(Signal)`(:3412) → `signal_preload` → `signal_cache_opt6` を空dictから再構築(:3434-3438) → `_generate_monthly_returns(signal_cache=signal_cache_opt6)`(:3455 / :3526)。ALM 条件内で `_reload_signal_cache_entries`(:1414、:3523)が再度 `db.query(Signal)`(:1424) | `recalculate_fast.py:3406-3438`（cache系統①） |
-| S2: L2 → L3 FoF | `_recalculate_fof_history`(recalculate_fof.py:619) が独自に `signal_cache` を空dictから作り `preload_fof_signals_for_portfolios`(DB) で埋める(:714-723)。構成PFの価格は `ComponentPriceCache`(DB, :727) | `recalculate_fof.py:705-730`。`fof_shared_signal_cache={}`(:3429)は precompute 側へ渡る（cache系統②） |
-| S3: L2/L3 → trade_perf / monthly cache | 2回目の OPT-4 `db.query(Signal)`(:3684) と `db.query(MonthlyReturn)`(:3670 付近) → `signal_preload` / `monthly_return_cache` → trade_perf 系 generator(:3789-3791) | `recalculate_fast.py:3660-3695` |
-| S4: → L5 precompute | `precompute_raw_for_portfolios(signal_preload=...)`(:3902) が S3 の preload を受け、L5 内で `LazySignalArtifactCache` を新規生成（precompute_raw.py:245、cache系統③） | `recalculate_fast.py:3887-3912` |
+| S1: L2 → Phase 4.5 monthly_returns | OPT-4 `db.query(Signal)` → `list[Signal]`(:3453-3485)、`db.expunge`(:3465) → `signal_cache_opt6 = dict[pf_id][date] = build_signal_cache_value(...)` を空dictから再構築 → `_generate_monthly_returns(signal_cache=signal_cache_opt6)`(:3502-3510)。ALM 条件内で `_reload_signal_cache_entries`(:1447-1462 の `db.query(Signal)`) を :3570 から呼ぶ | `recalculate_fast.py:3453-3510` / `:1447-1462` / `:3570`（cache系統①） |
+| S2: L2 → L3 FoF | :3632-3641 は `_recalculate_fof_history` へ cache を渡さない。`recalculate_fof.py:714-724` が空 `signal_cache` を作り `shared.py:179-196 preload_fof_signals_for_portfolios`(DB) で埋める（`shared.py:165-176` の query 結果を `build_signal_cache_value` で dict 化、expunge 無し）。消費側=`_merge_component_signal_rows`(recalculate_fof.py:588-616、同run cache優先・holding_signal_raw 補完・0件は ValueError) と ticker 抽出(:779-801) | `recalculate_fast.py:3632-3641` / `recalculate_fof.py:588-616, 714-724, 779-801` / `shared.py:160-196`（cache系統②） |
+| S3: L2/L3 → 分析派生 | `db.query(MonthlyReturn)` 一括取得(:3708-3723、expunge :3720) と `db.query(Signal)` 再取得(:3725-3742、expunge :3737) → `_run_precompute_generators_for_portfolio`(:783-872) が `monthly_return_cache` を drawdown/rolling/metrics/trade/risk へ、`signal_preload` を trade へ渡す | `recalculate_fast.py:3708-3742` / `:783-872` |
+| S4: → L5 precompute | :3938-3956 が S3 の `monthly_return_cache` / `signal_preload` を `PrecomputeRawContext` へ渡す。`precompute_raw.py:51-80 LazySignalArtifactCache` が `signal_preload` から要求時 dict を新規生成(:238-246)、monthly_trade へ共有(:274-283) | `recalculate_fast.py:3938-3956` / `precompute_raw.py:51-80, 238-283`（cache系統③） |
 
-**確認できた事実（現物grep・2026-08-16 00:40）**
+**確認できた事実（現物grep・2026-08-16 02:15。集計=`git grep -n -E "db\.query\((Signal|MonthlyReturn)\)|preload_fof_signals_for_portfolios|LazySignalArtifactCache" origin/main -- backend/app/jobs`）**
 
-1. run 中の signals の DB 読み返しは S1・S1(ALM)・S2・S3 の4箇所、monthly の読み返しは S3 の1箇所。
-2. 各読み返し先は空 dict から再構築され、互いに共有されない（3系統）。
-3. L2設計書の #4 が入ると、同じ内容が左列 C2 に在る（signals / W / monthly / cumulative / provenance）。読み返す必要がなくなる。
+1. `recalculate_fast.py` の再クエリ=Signal 4 / MonthlyReturn 2。preload 呼出=1（recalculate_fof.py）/定義=1（shared.py）。Lazy 定義+生成=2（precompute_raw.py）。
+2. 消費側の型: S1/S2 は `build_signal_cache_value` の dict（ORM 不要）、S3/S4 は expunge 済み ORM list（`MonthlyReturn` / `Signal`）。S3/S4 を dict 化するには consumer の row shape（holding_signal / weights 等）を全 generator で照合する必要がある。
+3. C2 の現物 producer は `current_pf_month_fingerprints`(:2056) と `db.info` 登録(:2234) のみ。signals / monthly / W / provenance の producer は L2 #4 で入る。
+4. 欠け停止の分岐は現状どこにも無い（S1: cache 構築直後 or consumer 入口、S2: `_merge_component_signal_rows` 入口、S3/S4: preload 入口）。
+5. 関連テスト: `backend/tests/test_monthly_returns_signal_cache_preload.py:442-540`（S2）、`test_precompute_raw.py:267-298`（S4 共有）、`test_recalculate_precompute_savepoint.py:58-74`（context）。S1/S3 の直接テストは無い。
 
 ---
 
@@ -134,6 +136,8 @@ flowchart TB
 ## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T00:40+09:00
 
 ### AsIs 注釈
+- **型の境界（偵察 2026-08-16 02:09）**: S1/S2 は dict 消費で C2 直結が容易。S3/S4 は ORM(expunge済み) 消費が残るため、C2∪C3 を渡すには「ORM互換の row shape を持つ dict」か「consumer側のattr参照を dict 参照へ」のどちらかが要る。S3 は generator 5系統(drawdown/rolling/metrics/trade/risk)の参照属性を先に列挙してから付け替える。
+- **import closure**: 新helperは `backend/app/jobs/input_manifest.py`(L0/L1/L2 の snapshot 群と同居・起動時import済み) か `shared.py` に置く。新moduleを切るなら同一commitに含めることを push 前 import 検証で確認する（L2 #2/#1b/#3 の起動失敗の教訓）。
 - **S1**: OPT-4 は「trade_performance + monthly_returns 用」の一括ロードとして入った最適化で、L2 が書いた直後の signals を DB から読み直している。`_reload_signal_cache_entries` は ALM second-pass 条件内のみ。
 - **S2**: FoF は「常に全期間再計算」（drift 状態を保存していないため）。入力の signal_cache と構成PF価格を FoF 層の中で DB から組み立てる。
 - **S3/S4**: 2回目の OPT-4 と MonthlyReturn 一括ロードが trade_perf・risk・L5 の共通入力。L5 はさらに独自 cache を生成する。
