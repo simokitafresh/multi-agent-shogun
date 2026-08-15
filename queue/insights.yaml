@@ -409,8 +409,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'a2b3a963f9f20455cdbcebc1af3189f6a5ed419b5714bef9a75243de051c1d11' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 28
-  last_seen: "2026-08-15T12:34:14+09:00"
+  occurrence_count: 29
+  last_seen: "2026-08-15T13:01:17+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -660,8 +660,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 54
-  last_seen: "2026-08-15T12:53:43+09:00"
+  occurrence_count: 64
+  last_seen: "2026-08-15T13:52:21+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -966,3 +966,80 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-15T12:14:45+09:00"
+- id: INS-20260815-131546311-c5e9
+  ts: "2026-08-15T13:15:46+09:00"
+  insight: "[[kagemaruの下記のものはバグではないか調査してバグなら根治してくれ 品質ゲートは「同 一test pathが旧co]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=kagemaruの下記のものはバグではないか調査してバグなら根治してくれ 品質ゲートは「同 一test pathが旧commitと補足commitの両方に出る」重複 だけを検出してFAILしました"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T13:18:12+09:00"
+- id: INS-20260815-131546621-df49
+  ts: "2026-08-15T13:15:46+09:00"
+  insight: "[[設計書の更新は随時アップデートしているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書の更新は随時アップデートしているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T13:18:12+09:00"
+- id: INS-20260815-131812557-ff01
+  ts: "2026-08-15T13:18:12+09:00"
+  insight: "semantic_index_update新概念候補: discussion:それをやったのがRB6だったよな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T13:22:42+09:00"
+- id: INS-20260815-132150332-397a
+  ts: "2026-08-15T13:21:50+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=堂々巡りをしていないか？俺は計算速度を早くしたい。L3が遅いのは保存されていない項目があるから→さきに保存しておいたものを再利用すれば速くなる。それが元の流れだ。目的がふらふらしている。どれが基本で戻るべきポイントは決まっている。ゴールも明確だ。何がゴールだ？どこに戻る？答えてみよ"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
+- id: INS-20260815-132328896-5c2f
+  ts: "2026-08-15T13:23:28+09:00"
+  insight: "[[それをやったのがRB6だったよな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=それをやったのがRB6だったよな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T13:31:52+09:00"
+- id: INS-20260815-133152634-83a4
+  ts: "2026-08-15T13:31:52+09:00"
+  insight: "semantic_index_update新概念候補: discussion:完全一致を証明はもうRB6でやったんだよ。答えはそこにある。答えと違ったら必ずどこかに間違えがある。自己防御鵜や他責目的のやり切った満足感や雰囲気づくりの証明は は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T13:35:02+09:00"
+- id: INS-20260815-133320303-f932
+  ts: "2026-08-15T13:33:20+09:00"
+  insight: "semantic_index_update新概念候補: discussion:だからキャッシュを有効活用するんだ、計算をフラッシュして読み込んでというやり方はL2→L3de は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T13:35:02+09:00"
+- id: INS-20260815-133935822-8dc3
+  ts: "2026-08-15T13:39:35+09:00"
+  insight: "semantic_index_update新概念候補: discussion:〜L5を貫く1つのキャッシュは途中で失敗しただろ？それでprovenanceを実装しようとなった。すべての因果は時系列順でつながってる は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-15T13:45:30+09:00"
