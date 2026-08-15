@@ -3,6 +3,50 @@
 
 統合元: `dm-fullrecalculate-cache-reuse-asis_20260813` / `cmd_4296_momentum-window-recon_20260813` / `dm-decision-provenance-asis-tobe-5w1h_20260813` / `dm-weight-expansion-first-principles-asis-tobe_20260815`
 
+## AsIs（確認日 2026-08-15 / 対象 `origin/main = 5da7f107`。全ノードは現物grepの行番号）
+
+```mermaid
+flowchart TB
+  classDef bad fill:#3d0b1e,stroke:#d94a6a,color:#ffffff,stroke-width:2px
+  classDef ok fill:#0b3d2e,stroke:#19a974,color:#ffffff
+  classDef calc fill:#12233d,stroke:#4a90d9,color:#ffffff
+  classDef sink fill:#2a2a2a,stroke:#888888,color:#ffffff
+
+  subgraph AL2["L2 standard（recalculate_fast.py）"]
+    A1["日次ループ計算 → signals（メモリ）"]:::calc
+    A1 --> A2["_flush_batch<br/>:2999 / :3020<br/>DBへ書込み"]:::bad
+  end
+
+  A2 --> ADB[("DB: signals")]:::sink
+
+  ADB --> A3["<b>OPT-4: db.query(Signal)...all()</b><br/>:3170-3187<br/>全signalsをDBから再クエリ"]:::bad
+  A3 --> A4["signal_cache_opt6 を空dictから再構築<br/>:3202-3206<br/><b>= cache系統①</b>"]:::bad
+
+  subgraph AL3["L3 FoF（recalculate_fof.py / recalculate_fast.py）"]
+    A5["fof_shared_signal_cache = {}<br/>:3197 空dictから開始<br/><b>= cache系統②</b>"]:::bad
+    A4 --> A6["Phase 4.5 monthly_returns 生成<br/>signal_cache=opt6 を引数供給<br/>:3228 / :3299"]:::calc
+    A5 --> A6
+    A6 --> A7["_reload_signal_cache_entries<br/>:3291<br/>DBから再ロード"]:::bad
+    A7 --> A8["FoF deferred flush"]:::bad
+  end
+
+  A8 --> ADB2[("DB: signals / monthly_returns")]:::sink
+
+  subgraph AL5["L5 precompute（precompute_raw.py）"]
+    ADB2 --> A9["signal_preload（DBロード）"]:::bad
+    A9 --> A10["<b>LazySignalArtifactCache を L5内で新規生成</b><br/>:245<br/>L2/L3からの受渡しではない"]:::bad
+    A10 --> A11["artifact_signal_cache として builder へ供給<br/>:246 / :281<br/><b>この供給自体はT4の成果で残存</b>"]:::ok
+    A11 --> A12["MonthlyTradeCalculator.calculate<br/>:321"]:::calc
+    A12 --> A13["precompute_signal_payload_cache 経路<br/>price_ratio_impl.py:1116-1120<br/><b>= cache系統③</b>"]:::bad
+  end
+
+  A2 -.-> ALERT["<b>SIGNAL CHANGE ALERT / signal_change_log</b><br/>signal_flush.py:431 / :565<br/>2026-08-12に撤去裁定 → 08-13 rollback 233c2303 で復活し現存"]:::bad
+
+  NOTE["<b>確認できた残存/消失（現物grep）</b><br/>残存: signal_cache_opt6=6件 / fof_shared_signal_cache=4件 / precompute_signal_payload_cache=2件<br/>消失(T5/T6の成果が生存): signal_valid_dates_cache=0件 / validate_signal_snapshot=0件<br/>ledger guard は detect-only（c13a56fe。台帳値ではなく計算値を返す）<br/>signal_decision_ledger = 0行"]:::sink
+```
+
+## ToBe
+
 ```mermaid
 flowchart TB
   classDef cache fill:#0b3d2e,stroke:#19a974,color:#ffffff,stroke-width:2px
