@@ -8384,6 +8384,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-14T22:17:34+09:00 戻すものはあるだろう？元々何と比較してたんだ？工程の途中で何と比較していたか思い出せ。それが残っていれば工程の途中経過のでーたは不要なはずだ。あとおれはstandardPFで保有する可能性のあるtickerといった。保有する可能性のないab |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-14T22:25:45+09:00 standardPFのconfig項目 は一瞬で把握できるのか？ |
 | lesson | `L1592` context source registryをfreshness detectorのpathspec SSOTにする |
+| cmd | `cmd_karo_hotfix_dm_l2_step4_c2_standard_202608160218` |
 | causal_chain | `[[cmd_reflux_backlink_202607281529_hanzo]]` (L1433) |
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
@@ -11473,6 +11474,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608141835_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608142009_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202608152345_kagemaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202608160333_hanzo_exact` — [[semantic_causal_automation]] -> `docs/research/dm-speed-line-timeline_20260815.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
@@ -14283,6 +14285,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-14T11:16:07.820271+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-14T23:38:25+09:00 gistも更新せよ。ルールだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-15T16:20:12+09:00 将軍を最新版のfable 5 lowにrespawnせよ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-15T16:51:49.924414+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
