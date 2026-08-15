@@ -1,6 +1,13 @@
 <!-- gist-master: 12cb3fc496e1ce991b1b70480a7b43ce dm-unified-tobe-flow_20260815.md -->
 # DM-Signal 統合ToBeフロー（キャッシュ一本化 × provenance）
 
+## 原則（この文書の読み書きを支配する。殿裁定 2026-08-15）
+
+- **ToBeは、構造的に不可能でない限り妥協しない。現実の関数名・行番号・今の実測値で理想を縛らない。理想は磨く。**
+- **AsIsは現実のコードそのもの。間違いがあれば現実に合わせて直す。**
+
+---
+
 統合元: `dm-fullrecalculate-cache-reuse-asis_20260813` / `cmd_4296_momentum-window-recon_20260813` / `dm-decision-provenance-asis-tobe-5w1h_20260813` / `dm-weight-expansion-first-principles-asis-tobe_20260815`
 
 ## AsIs（確認日 2026-08-15 / 対象 `origin/main = 5da7f107`。全ノードは現物grepの行番号）
@@ -57,6 +64,8 @@ flowchart TB
 
 ## ToBe
 
+**縦に二本。cacheの流れと計算の流れ。各層の計算結果がcacheへ合流していくだけ。**
+
 ```mermaid
 flowchart TB
   classDef cache fill:#0b3d2e,stroke:#19a974,color:#ffffff,stroke-width:2px
@@ -65,92 +74,49 @@ flowchart TB
   classDef sink fill:#3d0b1e,stroke:#d94a6a,color:#ffffff
   classDef rule fill:#2a2a2a,stroke:#888888,color:#ffffff
 
-  subgraph L1["L1 入力層 — run冒頭に一度だけ materialize"]
-    PR[("prices")] --> SNAP
-    EC[("economic / DTB3")] --> SNAP
-    CF[("PF config")] --> SNAP
-    LG[("ledger watermark")] --> SNAP
-    SNAP["<b>唯一のcache object</b><br/>不変入力snapshot<br/>+ 用途別view（DTB3完全prefix / signal bounded）"]:::cache
+  subgraph CACHELANE["cache の流れ（縦に一本・最初から最後まで<b>同一object</b>）"]
+    direction TB
+    C0["run開始: cache を <b>1個だけ</b>生成<br/>再生成・複製・空初期化は禁止"]:::cache
+    C1["+ 不変入力snapshot（prices / DTB3 / config / ledger watermark）"]:::cache
+    C11["+ 保有しうる ticker 集合"]:::cache
+    C12["+ depth 表 と 実行順序"]:::cache
+    C13["+ 入力 fingerprint"]:::cache
+    C2["+ standard の signals / W / monthly / provenance / fingerprint"]:::cache
+    C3A["+ leaf FoF の signals / W / monthly / provenance / fingerprint"]:::cache
+    C3B["+ nested FoF の同上（depth 昇順に追記されていく）"]:::cache
+    C0 --> C1 --> C11 --> C12 --> C13 --> C2 --> C3A --> C3B
   end
 
-  subgraph L11["L1.1 ticker解決層 — <b>PF構成だけで解ける。価格も判定も要らない</b>"]
-    CF -.->|"standard PFのconfigのみ"| TK["<b>standard PF を構成tickerへ分解</b><br/>= 保有する可能性のある ticker の抽出<br/>定義=全standard PFの relative_assets ∪ safe_haven_asset（Cash除外）"]:::calc
-    TK --> TKOUT["<b>出力はこれだけ</b><br/>保有しうる ticker 集合<br/>→ L1のprice materialize範囲を決める"]:::cache
+  subgraph CALCLANE["計算の流れ（縦に一本）"]
+    direction TB
+    X1["<b>L1 入力層</b><br/>必要な銘柄と期間を一度だけ materialize"]:::calc
+    X11["<b>L1.1 ticker解決層</b>　PF構成だけで解ける<br/>standard PF を構成tickerへ分解し保有しうる ticker を出す<br/>定義=全standard PFの relative_assets ∪ safe_haven_asset（Cash除外）"]:::calc
+    X12["<b>L1.2 深度解決層</b>　PF構成だけで解ける<br/>子・孫・ひ孫まで全経路を辿り（循環に耐える）<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/><b>同一PFが複数世代に現れる。最初に出会った世代で確定させず全経路の最大を採る</b>"]:::calc
+    X2["<b>L2 standard</b>　判定だけ（分解は済んでいる）<br/>judge → 一致なら計算せず復元 / 不一致なら momentum（日次close・months×21営業日・on-or-before）<br/>→ 判定 → <b>規則1</b> W = 選定銘柄へ1.0 → 月次集約"]:::calc
+    X3A["<b>L3a leaf FoF（depth 1）</b><br/>judge → momentum（入力=子standardの monthly cumulative_return・窓=月数の行差分）<br/>→ 判定 → <b>規則2</b> W = Σ w_i × W(C_i) → 月次集約"]:::calc
+    X3B["<b>L3b nested FoF（depth 2→3→4 を浅い順に直列）</b><br/><b>前提</b>: 全構成PFの W と monthly が cache に在ること。欠けたら停止（DBへ取りに行かない・空dictで代替しない）<br/>混在深度は最も深い構成PFの確定を待つ。浅い子は cache 済みをそのまま使う<br/>judge → momentum → 判定 → <b>規則2</b>（同じ規則の再適用）→ 月次集約"]:::calc
+    X5A["<b>L5a 永続化層</b>　書くだけ。誰も読み返さない"]:::calc
+    X5B["<b>L5b 表示層</b>　cache から組み立てる。DBを読まない"]:::calc
+    X1 --> X11 --> X12 --> X2 --> X3A --> X3B --> X5A --> X5B
   end
 
-  subgraph L12["L1.2 深度解決層 — <b>PF構成だけで解ける。価格も判定も要らない</b>"]
-    CF -.->|"FoF構成のみ"| TREE["<b>FoFを全分解して樹形図を確定</b><br/>子・孫・ひ孫まで全経路を辿る（循環に耐えること）"]:::calc
-    TREE --> DAGN["<b>同一PFが複数世代に現れる（DAG合流）</b><br/>本番実測: 同一rootの下で世代が割れる (root,node) 組=<b>14件</b><br/>例: New Fund of Funds 配下の GSシン加速R-激攻 は <b>gen 2 と gen 3</b> の両方<br/>シン朱雀-常勝(standard) は <b>gen 3 と gen 4</b> の両方<br/><b>最初に出会った世代で確定させるな。全経路の最大を採る</b>"]:::rule
-    DAGN --> DEPTH["<b>出力はこれだけ</b><br/>各PFの depth = 1 + max( depth(C_i) )、standard は 0<br/>= <b>構成PFの一番深い世代の深度</b><br/>+ それに基づく <b>実行順序（depth昇順）</b>"]:::cache
-  end
+  X1 -.->|"合流"| C1
+  X11 -.->|"合流"| C11
+  X12 -.->|"合流"| C12
+  X2 -.->|"合流"| C2
+  X3A -.->|"合流"| C3A
+  X3B -.->|"合流"| C3B
 
-  TKOUT -.->|"materializeすべき銘柄を先に決める"| SNAP
+  C13 -.->|"読む"| X2
+  C2 -.->|"読む"| X3A
+  C3A -.->|"読む"| X3B
+  C3B -.->|"読む"| X5A
+  C3B -.->|"読む"| X5B
 
-  SNAP --> FPG
-  DEPTH --> FPG["<b>入力fingerprint</b>（run単位で1回生成 O(1)）<br/>prices区間hash + config hash + source identity<br/>+ ledger watermark + rebalance trigger + DTB3系列hash"]:::cache
+  X5A -.->|"書き切り"| DB[("DB")]:::sink
+  DB x--x|"<b>禁止</b>：計算の流れがDBを読み返す"| CALCLANE
 
-  subgraph L2["L2 standard 24PF — <b>tickerへの分解は済んでいる。ここは判定だけ</b>"]
-    FPG --> Q2{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?"}
-    Q2 -- "一致（skip）" --> S2["保存済み判定 と W を cache へ復元<br/><b>計算しない</b>"]:::skip
-    Q2 -- "不一致 / 未確定月" --> M2["momentum<br/>入力=日次 close<br/>窓=months × 21営業日<br/>target非取引日は on-or-before"]:::calc
-    M2 --> D2["判定 → holding"]:::calc
-    D2 --> W2["<b>規則1</b>　W(P,d) = 選定銘柄 → 1.0"]:::rule
-    S2 --> W2
-  end
+  JUDGE["<b>各層の judge（橙の分岐）</b><br/>確定月 かつ 保存fingerprint == 現fingerprint なら<br/><b>計算せず cache の値を使う</b>。これが速度の本体"]:::skip
 
-  W2 --> MR2["<b>月次集約</b>　W と価格から monthly_return / cumulative_return を導く<br/><b>これが L3a の入力になる</b>"]:::calc
-
-  MR2 -->|"追記"| CACHE["<b>唯一のcache object（run開始時に1個だけ生成）</b><br/>L1.1のticker集合 / L1.2のdepth表と実行順序 / 不変入力snapshot<br/>+ 各層が書き足す signals / W / monthly / provenance / fingerprint<br/><b>再生成・複製・空初期化は禁止。identityは最後まで不変</b>"]:::cache
-
-  subgraph L3A["L3a leaf FoF（depth 1 — 子が全て standard）"]
-    CACHE --> Q3A{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>子standardのfingerprint</b> を含む）"}
-    Q3A -- "一致（skip）" --> S3A["保存済み判定 と W を cache へ復元<br/><b>計算しない</b>"]:::skip
-    Q3A -- "不一致 / 未確定月" --> M3A["momentum<br/>入力=<b>cacheから読む</b>子standardの monthly cumulative_return<br/>（close=cumulative_return, open=cumulative_return_open）<br/>窓=月数の行差分"]:::calc
-    M3A --> D3A["判定 → 構成PFと目標比率 w_i"]:::calc
-    D3A --> W3A["<b>規則2</b>　W(P,d) = Σ w_i × W(C_i,d)<br/>C_i は standard ゆえ右辺は規則1で即終端"]:::rule
-    S3A --> W3A
-  end
-
-  W3A --> MR3A["<b>月次集約</b>　leaf FoF の monthly_return / cumulative_return を生成<br/><b>これが L3b の入力になる</b>"]:::calc
-
-  MR3A -->|"追記（signals / W / monthly / provenance）"| CACHE
-
-  subgraph L3B["L3b nested FoF（depth 2 → 3 → 4 を浅い順に直列。本番最深=4）"]
-    CACHE --> DEF["<b>深度は構造解決層で確定済み。ここでは求めない</b><br/>受け取るのは depth 表と実行順序だけ<br/>∴ P を計算するのは <b>最も深い構成PFが確定した後</b>"]:::rule
-    DEF --> PAT{"構成PFの深度は<br/>同一か 混在か"}
-    PAT -- "<b>同一深度</b>（本番77件）" --> PRE
-    PAT -- "<b>混在深度</b>（本番1件: New Fund of Funds 親depth=4 / 子depth={2,3}）<br/>standard(0)と2と3の混在も同じ扱い" --> WAIT["<b>最も深い構成PFの確定を待つ</b><br/>浅い子（standard含む）は既に cache 済み<br/>そのまま使う。再計算も再読込もしない"]:::skip
-    WAIT --> PRE
-    PRE{"<b>実行前提（fail-closed）</b><br/>全構成PFの W と monthly が<br/><b>cache に存在するか</b>"}
-    PRE -- "1つでも欠落" --> STOP["<b>計算を開始せず停止</b><br/>欠落は順序違反の証拠<br/>DBへ取りに行かない・空dictで代替しない<br/>（ここを埋めるとAsIsの崩壊が再発する）"]:::sink
-    PRE -- "全て存在" --> Q3B
-    Q3B{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>全構成PFのfingerprint</b> を含む）"}
-    Q3B -- "一致（skip）" --> S3B["保存済み判定 と W を cache へ復元<br/><b>計算しない</b>"]:::skip
-    Q3B -- "不一致 / 未確定月" --> M3B["momentum<br/>入力=<b>cacheから読む</b>各構成PFの monthly cumulative_return<br/>系列の定義は leaf と同一。<b>違うのは依存順序だけ</b>"]:::calc
-    M3B --> D3B["判定 → 構成PFと目標比率 w_i"]:::calc
-    D3B --> W3B["<b>規則2</b>（同じ規則の再適用）<br/>W(P,d) = Σ w_i × W(C_i,d)<br/>C_i は <b>全て自分より浅い深度で確定済み</b>"]:::rule
-    S3B --> W3B
-    W3B -.->|"次の深度へ（depth+1）<br/>浅い順に直列。飛び越えない"| DEF
-  end
-
-  W3B --> MR3B["<b>月次集約</b>　nested FoF の monthly_return / cumulative_return を生成<br/><b>これが一段深い depth の入力になる</b>"]:::calc
-
-  MR3B -->|"追記（signals / W / monthly / provenance）"| CACHE
-
-  subgraph L5A["L5a 永続化層 — <b>書くだけ。誰も読み返さない</b>"]
-    CACHE --> P5["cacheの確定内容をDBへ書き切る"]:::calc
-  end
-
-  subgraph L5B["L5b 表示層 — <b>cacheから組み立てる。DBを読まない</b>"]
-    CACHE --> B5["表示成果物の組み立て<br/><b>引数で cache を受け取る</b>"]:::calc
-    B5 --> OUT["表示成果物"]:::calc
-  end
-
-  P5 -.->|"永続化のみ（書き切り）"| DB[("DB<br/>signals / monthly_returns<br/>portfolio_metrics / provenance")]:::sink
-  OUT -.->|"必要なら成果物も書き切り"| DB
-
-  DB x--x|"<b>禁止</b>：下流が書いた値を読み返す<br/>（flush→再読込・再構築）"| L3A
-  DB x--x|"<b>禁止</b>：一段浅い深度の結果をDBから読み戻す"| L3B
-
-  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ <b>深度は浅い順に直列。</b>depth(P)=1+max(depth(C_i))、standardは0<br/>⑥ <b>構成PFの深度が混在してもよい（standard と 2 と 3 の同居を含む）。</b>親は最も深い構成PFの確定後に計算する<br/>⑦ <b>計算開始の前提は「全構成PFがcacheに在ること」。1つでも欠けたら停止する。</b>DBへ取りに行かない・空dictで代替しない<br/>⑧ <b>PF構成だけで解けるものは、計算に入る前の独立レイヤーで解く。</b>L1.1=保有しうるticker、L1.2=最大深度。価格も判定も要らない<br/>⑨ 同一PFが複数世代に現れるため、<b>最初に出会った世代で確定させず全経路の最大を採る</b><br/>⑩ L1.1とL1.2は互いに独立ゆえ<b>並列でよい</b>。両方が揃って初めてL2以降が動く<br/>⑪ <b>永続化と表示は別の責務。</b>永続化は書くだけ、表示はcacheから組み立てDBを読まない"]:::rule
+  INV["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控えを使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ 深度は浅い順に直列<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが cache に在ること。欠けたら停止<br/>⑧ PF構成だけで解けるものは計算前の独立レイヤーで解く<br/>⑨ 全経路の最大を採る<br/>⑩ L1.1 と L1.2 は並列でよい<br/>⑪ 永続化と表示は別責務<br/>⑫ <b>cacheは縦に一本。計算は縦に一本。交わるのは合流と読み出しだけ</b>"]:::rule
 ```
