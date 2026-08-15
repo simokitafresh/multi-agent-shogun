@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260815-032537052-330a
-  ts: "2026-08-15T03:25:37+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[殿指摘_新しい仕組みを作るな因果をたどれ_20260815]] は既存aliasesに一致なし。類似概念TOP3: infra_design_intent(インフラ設計意図カタログ; alias=因果をたどれ; score=13.8) / growth_loop(学習ループ; alias=殿指示 20 08『nxe 2d robustness asis tobe 5w1h 20260801 mdを実行したい; score=2.7) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=2.3)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-15T03:25:45+09:00"
 - id: INS-20260815-032537371-5c46
   ts: "2026-08-15T03:25:37+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[FoF月初記録が判定毎に系列全体を再構築]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=FoF; score=9.3) / lesson_lifecycle(教訓ライフサイクル管理; alias=忍者がlessons_usefulに活用結果を記入していない; score=1.7) / creator_brainwashing_defense(創造主の洗脳防御; alias=教訓 『再構築』指示に追記で応えるな; score=1.6)。概念定義とaliases追加を検討せよ"
@@ -180,8 +170,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 98
-  last_seen: "2026-08-15T18:04:49+09:00"
+  occurrence_count: 99
+  last_seen: "2026-08-15T18:17:11+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -913,7 +903,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '0888538f5d02f2aae3b3c69a2ea5e07b48d5fc8c84d88034e0d9b8003574fa13' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -923,6 +913,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次情報でself_retro event_id=0888538f5d02f2aae3b3c69a2ea5e07b48d5fc8c84d88034e0d9b8003574fa13を確認しverify_command exit 0。既存contextのreview_notify改善候補と一致し、SG7保持条件・duplicate event count 0の実証があるため新規実装やdecision_candidateは不要"
+  action_artifact: "logs/self_retro.jsonl:event_id=0888538f5d02f2aae3b3c69a2ea5e07b48d5fc8c84d88034e0d9b8003574fa13;context/infrastructure.md:L1573;docs/research/cmd_4123_self_retro_signal.md:L17-L40"
+  resolved_at: "2026-08-15T18:17:53+09:00"
 - id: INS-20260815-175506389-7a90
   ts: "2026-08-15T17:55:06+09:00"
   insight: "[[俺の指示を守れ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=俺の指示を守れ。v3.11=描画を自分の目で確認し是正: 合流edgeを反転して左=cache/右=計算を実現・不変量を3ノード横並びで最上段へ ← v3.10=黒枠撤去で元の配色へ・不変量を3ノード横並びsubgraphへ(自分の目で描画確認)。殿指示16:56 ← v3.9…"
@@ -963,3 +956,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-15T18:09:54+09:00"
+- id: INS-20260815-181322195-b6c5
+  ts: "2026-08-15T18:13:22+09:00"
+  insight: "semantic_index_update新概念候補: discussion:gistに共有してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
