@@ -264,7 +264,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4311"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存防御を再検証済み。deploy_task.shのreset_stale_fieldsがSTALE_RESET完了フラグを設定し(L2045)、配備最終段階のゲートが未実行時にBLOCKする(L14078-L14083)ため、候補の防御意図は既にLevel4相当で実装済み。追加コード修正・decision_candidateは不要として解決。"
+  action_artifact: "evidence=scripts/deploy_task.sh:L1881-L2045,L14078-L14083;verification=git blame/rgでフラグ設定とBLOCKゲートを確認;decision=no_additional_change"
+  resolved_at: "2026-08-15T16:19:22+09:00"
 - id: INS-20260815-032537052-330a
   ts: "2026-08-15T03:25:37+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指摘_新しい仕組みを作るな因果をたどれ_20260815]] は既存aliasesに一致なし。類似概念TOP3: infra_design_intent(インフラ設計意図カタログ; alias=因果をたどれ; score=13.8) / growth_loop(学習ループ; alias=殿指示 20 08『nxe 2d robustness asis tobe 5w1h 20260801 mdを実行したい; score=2.7) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=2.3)。概念定義とaliases追加を検討せよ"
