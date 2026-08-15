@@ -98,10 +98,10 @@ flowchart TB
     S2 --> W2
   end
 
-  W2 --> CACHE2["cache object へ追記<br/>signals / W / provenance / fingerprint<br/><b>同一オブジェクト・identity不変</b>"]:::cache
+  W2 -->|"追記"| CACHE["<b>唯一のcache object（run開始時に1個だけ生成）</b><br/>L1.1のticker集合 / L1.2のdepth表と実行順序 / 不変入力snapshot<br/>+ 各層が書き足す signals / W / monthly / provenance / fingerprint<br/><b>再生成・複製・空初期化は禁止。identityは最後まで不変</b>"]:::cache
 
   subgraph L3A["L3a leaf FoF（depth 1 — 子が全て standard）"]
-    CACHE2 --> Q3A{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>子standardのfingerprint</b> を含む）"}
+    CACHE --> Q3A{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>子standardのfingerprint</b> を含む）"}
     Q3A -- "一致（skip）" --> S3A["保存済み判定 と W を cache へ復元<br/><b>計算しない</b>"]:::skip
     Q3A -- "不一致 / 未確定月" --> M3A["momentum<br/>入力=<b>cacheから読む</b>子standardの monthly cumulative_return<br/>（close=cumulative_return, open=cumulative_return_open）<br/>窓=月数の行差分"]:::calc
     M3A --> D3A["判定 → 構成PFと目標比率 w_i"]:::calc
@@ -109,10 +109,10 @@ flowchart TB
     S3A --> W3A
   end
 
-  W3A --> CACHE3A["cache object へ追記<br/>leaf FoF の signals / W / <b>monthly cumulative_return</b> / provenance<br/><b>同一オブジェクト・identity不変</b>"]:::cache
+  W3A -->|"追記（leaf FoF の signals / W / monthly cumulative_return / provenance）"| CACHE
 
   subgraph L3B["L3b nested FoF（depth 2 → 3 → 4 を浅い順に直列。本番最深=4）"]
-    CACHE3A --> DEF["<b>深度は構造解決層で確定済み。ここでは求めない</b><br/>受け取るのは depth 表と実行順序だけ<br/>∴ P を計算するのは <b>最も深い構成PFが確定した後</b>"]:::rule
+    CACHE --> DEF["<b>深度は構造解決層で確定済み。ここでは求めない</b><br/>受け取るのは depth 表と実行順序だけ<br/>∴ P を計算するのは <b>最も深い構成PFが確定した後</b>"]:::rule
     DEF --> PAT{"構成PFの深度は<br/>同一か 混在か"}
     PAT -- "<b>同一深度</b>（本番77件）" --> PRE
     PAT -- "<b>混在深度</b>（本番1件: New Fund of Funds 親depth=4 / 子depth={2,3}）<br/>standard(0)と2と3の混在も同じ扱い" --> WAIT["<b>最も深い構成PFの確定を待つ</b><br/>浅い子（standard含む）は既に cache 済み<br/>そのまま使う。再計算も再読込もしない"]:::skip
@@ -129,14 +129,14 @@ flowchart TB
     W3B -.->|"次の深度へ（depth+1）<br/>浅い順に直列。飛び越えない"| DEF
   end
 
-  W3B --> CACHE3["cache object へ追記<br/>nested FoF の signals / W / monthly / provenance<br/><b>同一オブジェクト・identity不変</b>"]:::cache
+  W3B -->|"追記（nested FoF の signals / W / monthly / provenance）"| CACHE
 
   subgraph L5["L5 表示・成果物層"]
-    CACHE3 --> B5["builder / precomputed_raw / trade_perf<br/><b>引数で cache を受け取る</b>"]:::calc
+    CACHE --> B5["builder / precomputed_raw / trade_perf<br/><b>引数で cache を受け取る</b>"]:::calc
     B5 --> OUT["表示成果物"]:::calc
   end
 
-  CACHE3 -.->|"永続化のみ（書き切り）"| DB[("DB<br/>signals / monthly_returns<br/>portfolio_metrics / provenance")]:::sink
+  CACHE -.->|"永続化のみ（書き切り）"| DB[("DB<br/>signals / monthly_returns<br/>portfolio_metrics / provenance")]:::sink
   OUT -.->|"永続化のみ（書き切り）"| DB
 
   DB x--x|"<b>禁止</b>：下流が書いた値を読み返す<br/>（flush→再読込・再構築）"| L3A
