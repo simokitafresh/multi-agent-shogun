@@ -10,9 +10,7 @@
 
 統合元: `dm-fullrecalculate-cache-reuse-asis_20260813` / `cmd_4296_momentum-window-recon_20260813` / `dm-decision-provenance-asis-tobe-5w1h_20260813` / `dm-weight-expansion-first-principles-asis-tobe_20260815`
 
-## AsIs **v1.3** — 2026-08-15T16:35+09:00 / 対象 `origin/main = 5da7f107`（code固定AsIs。DB実測は observed_at 付きで別記）
-
-変更: v1.0=初版(15:05) → v1.1=軍師指摘3件反映(15:10) → v1.2=家老指摘 code_mismatch 5件反映(15:20) → **v1.3=軍師独立レビュー第2回 A1〜A3 反映(16:35)**: ledger guardはdetect-onlyではなく台帳値へ置換するfreeze guard / fingerprintは存在する（無いのはPF×月依存fingerprint）/ DB実測はcodeと分離しobserved_at付記。全ノードは現物grepの行番号。
+## AsIs **v1.3** — 対象 `origin/main = 5da7f107`（code固定。DB実測は observed_at 付きで別記）
 
 ```mermaid
 flowchart TB
@@ -65,9 +63,7 @@ flowchart TB
   ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② run単位の fingerprint は在る（input_manifest.py:228 ImmutableInputManifest.build :235 → input_snapshot_id :251 / execution_fingerprint :256）。<b>無いのは PF×月 の依存fingerprint</b>。∴ run全体の同一性は判るが、確定月を PF×月 単位で skip する判断はできない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
 ```
 
-## ToBe **v3.3** — 2026-08-15T16:40+09:00
-
-変更: v2.0=縦二本へ再構成+家老指摘反映 → v3.0=左右二軸へ再構成（殿裁定15:20） → v3.1=順序是正で折り返し解消（殿指摘15:58） → v3.2=DBを最下段の独立行にした（殿指摘16:01） → **v3.3=軍師独立レビュー第2回 T1〜T9 反映（16:40）**: config/ledger snapshot を構造解決より前へ（T1）/ ticker集合を全price consumer依存集合へ拡張（T2）/ 前回確定成果物snapshotをL1で read-once し復元元を明示（T3）/ 現fingerprintは judge の前に作る・rule/source version を比較入力に含む（T4）/ cache契約に cumulative を明記（T5）/ 循環=invalid graph で停止（T6）/ C1→X13 読み出しedge（T7）/ L1.1‖L1.2 を同一行の並列枝に（T8）/ nested FoF を depth 2・3・4 の別行へ unroll（T9）。原則: ToBeは妥協せず理想を磨いた。行番号・関数名は持ち込まない。
+## ToBe **v3.3**
 
 **左がcache、右が計算。同じ行が同じL。各Lの中で「計算→合流」と「cache→読み出し」が閉じる。cacheは左を縦に、計算は右を縦に流れる。上から下へ一度も戻らない。**
 
@@ -191,21 +187,27 @@ flowchart TB
   INV["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控え（前回確定成果物）を使うのは fingerprint 一致を示せた時だけ。復元元は L1 で read-once した snapshot<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力・規則・規則実装の版 が変わらない限り変わらない（fingerprint の入力に rule/source version を含む）<br/>⑤ 深度は浅い順に直列。depth ごとに1行。graph は topological fold を一方向に unroll した形で書く<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが上段の cache に在ること。欠けたら停止<br/>⑧ config だけで解けるものは計算前の構造解決層で解く。構造解決の入力（config/ledger snapshot）は L0 で先に固定する<br/>⑨ 全経路の最大を採る。循環は invalid graph として run 停止（fail-closed）<br/>⑩ L1.1 と L1.2 は並列（同一行の枝。どちらも C0 だけを読む）<br/>⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない<br/>⑫ 左=cache は縦に一本、右=計算は縦に一本（L1.1‖L1.2 の同一行内の並列枝を除く）。交わるのは各L内の合流と読み出しだけ<br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない<br/>⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している<br/>⑮ price consumer の依存集合は L1.1 が全消費者分を列挙する（保有ticker だけではない）<br/>⑯ cache 契約は producer の出力と consumer の入力が同じ語で一致する（monthly と cumulative は別々に列挙）"]:::rule
 ```
 
-## レビュー反映履歴
+## 注釈（レイヤー単位。図で足りない粒度はここに書く）
 
-### v3.3 レビュー反映表（軍師独立レビュー第2回 blt_20260815_161252 → 12件）
+### AsIs 注釈
+- **L1 入力層**: `ImmutableInputManifest.build`（input_manifest.py:228/235）が prices/economic/config/ledger の artifact hash から `input_snapshot_id`(:251) と `execution_fingerprint`(:256) を作る。run単位の同一性はここで判る。PF×月単位の依存fingerprintは存在しない。DTB3は用途別viewが recalculate_fast.py:1989-2012 で作られる。
+- **L2 standard**: 日次ループ→signals をメモリに持ち `_flush_batch`(:2999/:3020) で DB へ書く。:3006 で消すのは signals_batch のみ。flush 直前に `reconcile_signal_batch_with_ledger`(signal_decision_ledger.py:409-447) が台帳行のある (PF,date) の holding_signal を台帳値へ置換し drift を記録する。台帳行なしは素通り。
+- **L2→L3 の受渡し**: DB へ書いた signals を OPT-4 `db.query(Signal)...all()`(:3176、同型 :1236/:3452) で再クエリし `signal_cache_opt6` を空dictから再構築(:3202-3206)。cache系統①。
+- **L3 FoF**: `fof_shared_signal_cache={}`(:3197、cache系統②)は precompute trade_perf 側(:3559)へ渡る。Phase 4.5 monthly_returns(:3228/:3299) の引数は signal_cache_opt6。monthly の holding_signal は `resolve_confirmed_holding_signal`(:450-484) が台帳値で返す。`_reload_signal_cache_entries`(:3291) は ALM second-pass 条件内のみ。
+- **L5 precompute**: `signal_preload` が DB を読み、`LazySignalArtifactCache` を L5 内で新規生成(:245、cache系統③)。builder へ引数供給(:246/:281)→`MonthlyTradeCalculator.calculate`(:321)→`precompute_signal_payload_cache`(price_ratio_impl.py:1116-1120)。
+- **事後検知**: 確定月の書換えは SIGNAL CHANGE ALERT / signal_change_log(signal_flush.py:431/:565)が発報。08-12 撤去裁定→08-13 rollback 233c2303 で復活し現存。
+- **DB実測（code ではない）**: signal_decision_ledger=0行。observed_at=2026-08-13 run 355 input manifest 3ced522a…（`dm-fullrecalculate-cache-reuse-asis_20260813` §5.1）。∴現時点の ledger guard は全行素通り。行が入れば freeze が効く。
+- **帰結**: cache が3系統に分裂し層の受渡しが DB 経由。run単位 fingerprint はあるが PF×月の依存fingerprint が無く確定月を PF×月で skip できない。規則1/規則2 の合成結果を保存する器はあるが一致証明なしには使えない。現物grep: opt6=6 / fof_shared=4 / payload_cache=2 / signal_valid_dates_cache=0 / validate_signal_snapshot=0。
 
-| # | 側 | 指摘 | 反映 |
-|---|---|---|---|
-| A1 | AsIs | ledger guard は detect-only ではなく台帳値へ置換 | AsIs v1.3 LEDG ノードを freeze guard へ訂正（:409-447 / :450-484） |
-| A2 | AsIs | fingerprint 無しは偽 | AsIs v1.3 帰結②を「run単位は在る・PF×月が無い」へ訂正（input_manifest.py:228/235/251/256） |
-| A3 | AsIs | ledger=0行はDB実測 | LEDGDB ノードへ分離し observed_at / source を付記 |
-| T1 | ToBe | config/ledger の producer が無い | L0 に X0（config/ledger read-once）を新設。L1.1/L1.2 は C0 だけを読む |
-| T2 | ToBe | benchmark 等の依存が欠落 | C11 を price consumer 依存集合（保有∪benchmark∪calendar∪economic）へ拡張。不変量⑮ |
-| T3 | ToBe | judge 一致時の復元元が無い | C1 に前回確定成果物snapshot（read-once）を追加。不変量②へ復元元を明記 |
-| T4 | ToBe | 現fingerprint を judge 前に作る責務が無い | X2/X3 を a fingerprint → b judge → c 価格適用 → d 記録 へ。rule/source version を入力に含む（不変量④） |
-| T5 | ToBe | C2/C3 に cumulative が無い | 全 cache 契約に cumulative を明記。不変量⑯ |
-| T6 | ToBe | 循環時の出力契約不明 | 循環=invalid graph で run 停止（fail-closed）。不変量⑨ |
-| T7 | ToBe | C1→X13 edge 無し | 追加。X13 は C0+C1 を読む |
-| T8 | ToBe | 並列主張と直列edgeの矛盾 | L1.1‖L1.2 を同一行の並列枝へ（C0→C11/C12、両方→C1）。不変量⑩⑫ |
-| T9 | ToBe | X3B の隠れfeedback | depth 2/3/4 を別行へ unroll。不変量⑤ |
+### ToBe 注釈
+- **L0 run開始**: cache は1個。config（全PF構成・重み・momentum規則・rule version）と ledger（snapshot/watermark）と source version（規則実装の版）を一度だけ読み snapshot 化。以後どの層も生の config/ledger を読まない。構造解決層(L1.1/L1.2)の入力はここで固定される。
+- **L1.1 構造解決（依存集合）**: 保有しうる ticker だけでなく、価格・系列を読む全 consumer（benchmark、canonical calendar 銘柄、economic/DTB3 系列）の和集合を列挙する。L1 が materialize する範囲はこの集合。
+- **L1.2 構造解決（深度）**: depth(P)=1+max(depth(C_i))、standard=0。同一PFが複数世代に現れたら全経路の最大。循環を検出したら invalid graph として run を停止（fail-closed）。depth 表と topological 実行順序は停止しない場合のみ確定。L1.1 と L1.2 は並列（どちらも C0 だけを読む）。
+- **L1 入力層**: C11 の範囲で prices/DTB3/economic を一度だけ materialize。加えて前回確定成果物（PF×月の W/monthly/cumulative/provenance/依存fingerprint）を一度だけ read-once。judge 一致時の復元元はここにしか無い。永続層を読むのは L0 と L1 の read-once だけ。
+- **L1.3 run identity**: C0+C1 の入力一式から run 単位で1回導く（O(1)）。PF×月の依存fingerprint とは別物。
+- **L2 standard**: PF×月ごとに **a** 現fingerprint（入力(C1)+rule version+source version(C0)）を先に作る → **b** judge：C1 の前回fingerprint と一致なら前回成果物を復元し計算しない。不一致なら momentum（日次close・months×21営業日・on-or-before）→判定→規則1（W=選定銘柄へ1.0）→ **c** 価格適用（monthly/cumulative）→ **d** provenance と現fingerprint を合流。cache 契約は signals/W/monthly/cumulative/provenance/依存fingerprint を別々に列挙。
+- **L3a leaf FoF（depth1）**: 現fingerprint=子standardの fingerprint ∪ 自PF config ∪ rule/source version。momentum の入力は子standardの monthly cumulative（窓=月数の行差分）。規則2 W=Σ w_i×W(C_i)。
+- **L3b nested FoF（depth2/3/4）**: depth ごとに1行。前提=全構成PFの W/monthly/cumulative が上段 cache に在ること。欠けたら停止（永続層へ取りに行かない・空で代替しない）。同じ規則2の再適用。graph は topological fold を一方向に unroll し、上へ戻る edge を持たない。深度が増えたら行を1つ足す。
+- **L5a 分析派生**: drawdown/rolling/metrics/risk/trade_perf は cache の確定値から導くだけ。判定へ戻さない。
+- **L5b 表示投影・永続化**: cache から表示成果物を組み立て、DB へ書き切る。run の途中で誰も DB を読み返さない。
+- **不変量**: 図中 INV ①〜⑯。
