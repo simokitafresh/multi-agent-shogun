@@ -431,7 +431,7 @@ PROJ
     [[ "$output" != *"context/dm-signal-research.md"* ]]
 }
 
-# test_necessity: the runtime freshness detector must consume the same source
+# GA-466 test_necessity: the runtime freshness detector must consume the same source
 # registry as task dependency injection; adding a trigger must not require a
 # second hardcoded map or silently produce a false-negative alert.
 @test "GA-466 registry trigger reaches freshness detector without map patch" {

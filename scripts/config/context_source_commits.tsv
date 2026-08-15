@@ -1,5 +1,6 @@
 # Registered context pathspecs requiring an exact source_commit boundary.
 # Columns: context_path<TAB>project<TAB>owner<TAB>update_trigger_pathspecs
+# GA-466: runtime freshness and task injection consume this registry as one frontier.
 context/dm-signal.md	dm-signal	dm-signal-overview	context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md|docs/rule/db-operations-runbook.md
 context/dm-signal-core.md	dm-signal	dm-signal-core	backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md
 context/dm-signal-frontend.md	dm-signal	dm-signal-frontend	frontend|docs/research/frontend-components.md|docs/research/frontend-api-spec.md|docs/research/frontend-deploy.md|docs/research/fe-speed-improvement-design.md
