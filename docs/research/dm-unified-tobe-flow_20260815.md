@@ -98,13 +98,21 @@ flowchart TB
   W3A --> CACHE3A["cache object へ追記<br/>leaf FoF の signals / W / <b>monthly cumulative_return</b> / provenance<br/><b>同一オブジェクト・identity不変</b>"]:::cache
 
   subgraph L3B["L3b nested FoF（depth 2 → 3 → 4 を浅い順に直列。本番最深=4）"]
-    CACHE3A --> Q3B{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>直下の子FoFのfingerprint</b> を含む）"}
+    CACHE3A --> DEF["<b>深度の定義</b>　depth(P) = 1 + max( depth(C_i) )<br/>standard は depth 0<br/>∴ P が計算可能になるのは <b>最も深い構成PFが確定した後</b>"]:::rule
+    DEF --> PAT{"構成PFの深度は<br/>同一か 混在か"}
+    PAT -- "<b>同一深度</b>（本番77件）" --> PRE
+    PAT -- "<b>混在深度</b>（本番1件: New Fund of Funds 親depth=4 / 子depth={2,3}）<br/>standard(0)と2と3の混在も同じ扱い" --> WAIT["<b>最も深い構成PFの確定を待つ</b><br/>浅い子（standard含む）は既に cache 済み<br/>そのまま使う。再計算も再読込もしない"]:::skip
+    WAIT --> PRE
+    PRE{"<b>実行前提（fail-closed）</b><br/>全構成PFの W と monthly が<br/><b>cache に存在するか</b>"}
+    PRE -- "1つでも欠落" --> STOP["<b>計算を開始せず停止</b><br/>欠落は順序違反の証拠<br/>DBへ取りに行かない・空dictで代替しない<br/>（ここを埋めるとAsIsの崩壊が再発する）"]:::sink
+    PRE -- "全て存在" --> Q3B
+    Q3B{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>全構成PFのfingerprint</b> を含む）"}
     Q3B -- "一致（skip）" --> S3B["保存済み判定 と W を cache へ復元<br/><b>計算しない</b>"]:::skip
-    Q3B -- "不一致 / 未確定月" --> M3B["momentum<br/>入力=<b>cacheから読む</b>直下子FoFの monthly cumulative_return<br/>系列の定義は leaf と同一。<b>違うのは依存順序だけ</b>"]:::calc
+    Q3B -- "不一致 / 未確定月" --> M3B["momentum<br/>入力=<b>cacheから読む</b>各構成PFの monthly cumulative_return<br/>系列の定義は leaf と同一。<b>違うのは依存順序だけ</b>"]:::calc
     M3B --> D3B["判定 → 構成PFと目標比率 w_i"]:::calc
-    D3B --> W3B["<b>規則2</b>（同じ規則の再適用）<br/>W(P,d) = Σ w_i × W(C_i,d)<br/>C_i は一段浅い深度で確定済み"]:::rule
+    D3B --> W3B["<b>規則2</b>（同じ規則の再適用）<br/>W(P,d) = Σ w_i × W(C_i,d)<br/>C_i は <b>全て自分より浅い深度で確定済み</b>"]:::rule
     S3B --> W3B
-    W3B -.->|"次の深度へ（depth+1）<br/>浅い順に直列。飛び越えない"| Q3B
+    W3B -.->|"次の深度へ（depth+1）<br/>浅い順に直列。飛び越えない"| DEF
   end
 
   W3B --> CACHE3["cache object へ追記<br/>nested FoF の signals / W / monthly / provenance<br/><b>同一オブジェクト・identity不変</b>"]:::cache
@@ -120,5 +128,5 @@ flowchart TB
   DB x--x|"<b>禁止</b>：下流が書いた値を読み返す<br/>（flush→再読込・再構築）"| L3A
   DB x--x|"<b>禁止</b>：一段浅い深度の結果をDBから読み戻す"| L3B
 
-  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ <b>深度は浅い順に直列。深い側は一段浅い側の確定結果をcacheから読む</b>"]:::rule
+  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ <b>深度は浅い順に直列。</b>depth(P)=1+max(depth(C_i))、standardは0<br/>⑥ <b>構成PFの深度が混在してもよい（standard と 2 と 3 の同居を含む）。</b>親は最も深い構成PFの確定後に計算する<br/>⑦ <b>計算開始の前提は「全構成PFがcacheに在ること」。1つでも欠けたら停止する。</b>DBへ取りに行かない・空dictで代替しない"]:::rule
 ```
