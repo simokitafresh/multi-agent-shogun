@@ -1,3 +1,4 @@
+<!-- gist-master: b4b31391ce3782349b60f638e7e405df dm-l2-standard-design_20260815.md -->
 # L2分割設計 — AsIs L2 standard を ToBe の L1（前回確定成果物 read-once）+ L2（a fingerprint → b judge → c 価格適用 → d 記録）へ
 
 ## 原則（親文書と同じ。殿裁定 2026-08-15）
