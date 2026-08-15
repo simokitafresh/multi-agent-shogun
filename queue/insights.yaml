@@ -55,7 +55,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "logs/gunshi_review_log.yamlの対象後最新10 review entryを一次集計し、finding_categoriesへのnorth_star記録を10/10件で確認。scripts/gunshi_log_append.shの現行レビュー追記経路で必須観点が強制され、次回反映要求は運用へ吸収済み。"
+  action_artifact: "logs/gunshi_review_log.yaml; scripts/gunshi_log_append.sh"
+  resolved_at: "2026-08-15T18:35:48+09:00"
 - id: INS-20260815-042036756-1ae0
   ts: "2026-08-15T04:20:36+09:00"
   insight: "[[4311は終わっているのでは？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=4311は終わっているのでは？"
