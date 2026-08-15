@@ -464,7 +464,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608150208_kagemaru"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で再検証した結果、archive_cmds()のQUEUE_FILE読込み・分類・QUEUE_FILE更新はscripts/archive_completed.sh:786-875の同一flock内に包含され、flock外はアーカイブ先ファイル生成等のQUEUE_FILE以外のI/Oに限定されている(L922)。提案されたflock外読込みによるTOCTOUは現行実装で再現せず、追加コード修正・decision_candidateは不要として解消する。"
+  action_artifact: "evidence=scripts/archive_completed.sh:L786-L875,L922;verification=bash -n scripts/archive_completed.sh scripts/insight_resolve.sh (PASS);inventory_before=insights_pending:18,zero_backlinks:13,promotions:0,total:31;decision=no_additional_change"
+  resolved_at: "2026-08-15T14:03:19+09:00"
 - id: INS-20260815-032527539-47a8
   ts: "2026-08-15T03:25:27+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4311; matched=生成; current_pattern=FoF月初入力記録の生成コスト是正 — 判定ループ内での価格系列まるごと再構築をやめる; candidate_level=2; candidate=620教訓中9重複ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複。lesson_write.sh AC2=ID dedupのみ→内容dedup不在→同一テーマ重複。cmd_save.sh Check12(Jaccard≥50%)と同構造で実装可能; source=gunshi_gp_tracker.yaml"
@@ -660,8 +663,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 64
-  last_seen: "2026-08-15T13:52:21+09:00"
+  occurrence_count: 65
+  last_seen: "2026-08-15T14:03:30+09:00"
   verification:
     status: "passed"
     exit_code: 0
