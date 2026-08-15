@@ -5932,6 +5932,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-05T01:03:12+09:00 リバランサーを裁可する |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-10T08:19:58+09:00 裁可する |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-12T10:39:45+09:00 裁可する |
+| causal | [[cmd_reflux_backlink_202608152345_kagemaru]] -> [[dm-l2-standard-design_20260815]] |
 
 ## file_rename — ファイルリネーム
 
