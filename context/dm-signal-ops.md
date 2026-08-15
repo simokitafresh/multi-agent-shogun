@@ -99,7 +99,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L1593 -->
+<!-- last_synced_lesson: L1595 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -132,6 +132,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L1589: nested FoF初月oracleはsame-run child NAV clockをdepth共通で扱う（cmd_karo_recon2_rb6_parent603_onecase_20260813）
 - L1590: partial-month FoFはprice clockとselection clockを別々に照合する（cmd_karo_recon2_rb6_saved_display_audit_20260813）
 - L1591: 履歴parityのactive母集団は現在visibilityでなく固定run cohortを使う（cmd_karo_recon2_rb6_reverse_parity_full_20260813）
+- L1595: ledger構築endpointのcron接続を保護有効化前に検証する（cmd_4319）
 
 ## §36 API認証
 - admin系API: Basic Auth(`ADMIN_API_KEY`)
@@ -794,6 +795,7 @@ import metrics_research_engine as MRE
 - L1584: FoF API非空でもraw UUID invalid guardがMonthly Tradeを空表示にする（cmd_karo_recon_cdp_asis_p3_202608101438）
 - L1592: RB6 top-level benchmark raw-SPY parity must be checked separately from metric-name union（cmd_karo_recon2_rb6_metrics_shard_d_20260814）
 - L1593: Renderのhost-wide test admissionは本番Web OOM防御にならない（cmd_karo_recon2_render_oom_20260814）
+- L1594: 保存済み展開重みを計算入力へ昇格する前に再計算同値性を強制する（cmd_4318）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
@@ -1161,6 +1163,11 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 前run `2026081000375024E52B`(3051.31s)との同一run lineage比較で、L3 dataframe_prep **1.87→1366.43s(+1364.56s)**、L3 total 335.208→1702.754s。一方L5は2257.204→57.355sへ減少し、T-γ5がL5 cold costをL3へ移した構造と確定。
 - 最大回帰の発端はcommit `9f2891d2`（FoF momentum daily NAV cutover）。`backend/app/jobs/recalculate_fof.py:979`でFoF毎に`nav_frame_cache`を初期化し、再帰daily NAV構築を78 FoF間で共有しない。修正候補は有効calendar/rangeを含む共有cache（またはglobal frame+slice）で、NAV parityを保ったまま重複materializationを除く。
 - 因果リンク: `[[T-γ5_daily_NAV_cutover]] -> [[FoF毎nav_frame_cache再初期化]] -> [[L3_dataframe_prep_1366.43s]] -> [[fullrecalculate_2778.02s]]`。
+
+## §95 cmd_4319 ledger freeze liveness recon (2026-08-15)
+- 現行本番 `signal_decision_ledger=0行`、cmd3704 backup=0行、cmd3711 backup=102行。cmd3711 backupの102 PFは現行PFへ102/102一致（standard 24、FoF 78、active 102）。`signals=385090行/102PF`、`monthly_returns=16976行/102PF`。本番read-only一次証跡と詳細因果追跡→`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4319_ledger_freeze_liveness_recon_20260815_saizo.md`。
+- 凍結機構はmodel append-only listener＋signals flush/monthly/FoFのledger reconcileとして現存。構築機構は`insert_initial_ledger_events()`＋admin endpointとして現存するが、`render.yaml` month-start cronはrecalculate-syncのみでinitial-events endpointへ未接続。ledger 0行の間はguardがpending pass-throughとなるため、保護を有効化する前にinitial-events運用配線を別途確定する必要がある。
+- 0行化の最後の実行イベントは、現行DBスキーマ・backup・runtime codeから特定不能。runtime全消去経路は検出されず、台帳補充・保護有効化・本番変更は本cmdで実施していない。因果リンク: `[[cmd_3711_historical_backfill_20260706]] -> [[cmd_4319_current_ledger_zero_readonly]] -> [[initial-events_cron_wiring未接続]]`。
 ## §96 cmd_4320 保存済み展開値vslegacy再展開 (2026-08-15)
 - 本番保存値15,768組の突合は一致14,955、不一致813（ticker集合731、weight64、legacy空18）。保存値の無条件入力昇格は不可。詳細→`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4320_saved_vs_legacy_weights_20260815.md`
 - 全不一致は`pipeline_config`有効PFで発生し、基準読込11:22:17 JST〜比較終了11:23:46 JSTに01:10/01:40 UTC日次cronの通過なし。因果リンク: `[[cmd_4318_saved_expanded_weights]] -> [[cmd_4320本番全件突合813不一致]] -> [[保存値無条件昇格不可]]`。
