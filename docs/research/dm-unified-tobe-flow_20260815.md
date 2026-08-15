@@ -63,9 +63,9 @@ flowchart TB
   ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② run単位の fingerprint は在る（input_manifest.py:228 ImmutableInputManifest.build :235 → input_snapshot_id :251 / execution_fingerprint :256）。<b>無いのは PF×月 の依存fingerprint</b>。∴ run全体の同一性は判るが、確定月を PF×月 単位で skip する判断はできない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
 ```
 
-## ToBe **v3.7** — 2026-08-15T16:47+09:00（v3.7=C11→X1 読み出しedgeを撤去。L1.1/L1.2が図上で並列に見えるため。X1はC12(C11を含む一つのcache)だけを読む。殿指摘16:45 ← v3.6=X1がC11(依存集合)も読むedgeを明示(軍師O1を将軍判断で採用) ← v3.5=不変量を図の最上段へ移動(殿指示16:40) ← v3.3=16:26 レビュー12件反映 → v3.4=L1.1→L1.2 を直列へ戻す。殿指摘16:35）
+## ToBe **v3.8** — 2026-08-15T16:50+09:00（v3.8=各レイヤー帯に枠線を付け、左cache縦流/右計算縦流/横のレイヤー区切りを明示。殿指示16:48 ← v3.7=C11→X1 読み出しedgeを撤去。L1.1/L1.2が図上で並列に見えるため。X1はC12(C11を含む一つのcache)だけを読む。殿指摘16:45 ← v3.6=X1がC11(依存集合)も読むedgeを明示(軍師O1を将軍判断で採用) ← v3.5=不変量を図の最上段へ移動(殿指示16:40) ← v3.3=16:26 レビュー12件反映 → v3.4=L1.1→L1.2 を直列へ戻す。殿指摘16:35）
 
-**左がcache、右が計算。同じ行が同じL。各Lの中で「計算→合流」と「cache→読み出し」が閉じる。cacheは左を縦に、計算は右を縦に流れる。上から下へ一度も戻らない。**
+**読み方**: 横の破線枠=1レイヤー(L)。枠の左=cache列(C*)は上から下へ一本、枠の右=計算列(X*)も上から下へ一本。枠の中だけで「計算→合流(cacheへ追記)」と「cache→読み出し」が交わる。枠をまたぐのは縦の一本ずつのみ。上から下へ一度も戻らない。
 
 ```mermaid
 flowchart TB
@@ -181,6 +181,22 @@ flowchart TB
 
   C5B --> CDB
   X5B -.->|"書き切り（永続化はここだけ）"| DB
+
+
+  %% レイヤー帯: 各subgraph=1レイヤー。左=cache列(C*)、右=計算列(X*)。帯の中だけで合流/読み出しが交わる
+  style R0 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R11 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R12 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R1 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R13 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R2 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R3A fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R3B2 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R3B3 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R3B4 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R5A fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style R5B fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style RDB fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
 
 ```
 
