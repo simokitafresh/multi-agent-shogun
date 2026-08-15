@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-14 cmd_karo_hotfix_rb8_context_freshness_20260814_normal -->
+<!-- last_updated: 2026-08-16 業務列parity標準+1手の型を§98へ反映 -->
+<!-- source_commit:a9883865 reason:業務列parity標準+1手の型を§98へ反映 evidence:scripts/dm_signal_business_parity.py; blt_20260815_183204 -->
 <!-- source_commit:e3dccd87 reason:cmd_karo_hotfix_rb8_context_freshness_20260814_normal evidence:cmd_4301_context_freshness_AC2_ops -->
 
 <!-- source_commit:15e612f9 reason:cmd_karo_hotfix_timing_summary_restore_20260813 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=15e612f9 -->
@@ -1176,3 +1177,8 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 ## §97 cmd_4321 展開値の分岐段追跡 (2026-08-15)
 - 第一原理規則1/2でnested FoFを最下段standardから手計算した。`奥義-GS-分身-鉄壁/2013-03-01`は再展開`{TMV:.25,XLU:.25,TQQQ:.50}`、保存`{TMV:.25,XLU:.50,TQQQ:.25}`で、分岐は`GSシン加速D-鉄壁`の子選択層から上流へ伝播。`奥義-GS-分身-常勝/2011-10-03`は再展開`{Cash:.75,TQQQ:.25}`、保存`{XLU:.125,TECL:.125,TQQQ:.75}`で、トップ直下の子PFシグナル層に分岐を観測。
 - 全件分類は`ticker_set_mismatch=731`、`weight_mismatch=64`、`legacy_empty=18`、残余0。現行入力を規則1/2へ適用した再展開値が定義整合、保存側の過去入力は全件では判定不能。`legacy_empty`18件だけはraw `signal`と保存値がstandard終端を満たし、legacy空が規則違反。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4321_expansion_divergence_layer_20260815.md`。
+
+## §98 本番突合の標準=業務列parity + 1手の型 (2026-08-15〜16)
+
+- 本番検証の判定は `scripts/dm_signal_business_parity.py compare --before --after`(業務列限定・PK単位・calculated_at/provenance除外)。全列md5比較は非業務列で必ず不一致になる偽FAIL(2026-08-15 L0で実証)。
+- 1手の型(殿裁定): 忍者1体・1タスク・新規テストなし→commit→push→deploy live→full 1回→parity差分0→次手。fullの結果待ちの間に次手を実装(パイプライン)。FAIL→積んだ手を全部revert。push前に production base で import 到達closureを1回確認(欠落helperによる起動失敗が2度発生・a9883865で修復)。

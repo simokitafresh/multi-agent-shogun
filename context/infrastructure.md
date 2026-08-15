@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-14 cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary -->
+<!-- last_updated: 2026-08-16 inbox_write guard/pre-commit guard/契約を追記 -->
+<!-- source_commit:253afbb2c reason:inbox_write guard/pre-commit guard/契約を追記 evidence:commit 75ffff697 ae52b3129 cc13a69cb -->
 <!-- source_commit:9f39c1a071cf4c0f6cc1afbdad39a295ff29cc2a reason:cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=9f39c1a071cf4c0f6cc1afbdad39a295ff29cc2a -->
 <!-- source_commit:e8cbaf7eb5fbd1a907f06d75240d609ef316700c reason:cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=e8cbaf7eb5fbd1a907f06d75240d609ef316700c -->
 <!-- source_commit:66c9455ae reason:cmd_karo_hotfix_ga457_context_update_autowire_20260812 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=66c9455ae -->
@@ -160,3 +161,9 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 
 結論: 詳細は `docs/research/infrastructure-design-standards.md` に保存。原文を省略せず移設済み。
 見出し: 軍師レビュー効果計測（cmd_1144導入） / ベースライン（導入前） / 導入後計測 / 判定基準（30cmd後） / PD裁定反映（cmd_354同期） / skill_gate_feedback.sh 最適化パターン（cmd_2589, 2026-05-06） / SKILL.md品質基準（7項目チェックリスト） / フロントマター必須フィールド / オプションフィールド / North Star / Diff-aware Testing 方針（GStack/GBrain #26） / 適用判断フロー / CI固有FAIL切り分け手順(ローカル未再現時) / WSL2固有の注意点 / 変更ファイルに関連するテスト特定方法 / 変更ファイルのテストを特定 / 制約（SKIP=FAILルール、Test Rules §1） / DB guard = 語彙一致ではなく操作意図×信頼境界で判定せよ（cmd_karo_hotfix_guard14_db_trust_boundary_202607120854） / 重量テストジョブのhost-wide admission契約（cmd_karo_hotfix_heavy_job_admission_202607121348） / 因果リンク
+
+## 2026-08-15 追加ガード(source=253afbb2c以降)
+
+- `scripts/inbox_write.sh` speed_guard(将軍→家老委任に一括実装命令/層ごとGATE・報告YAML・レビュー/新規テスト・contract test・fixture・pytest全量があればBLOCK)+three_layer_guard(将軍→家老task_assignedに`[MEM:`引用なければBLOCK)。
+- `scripts/hooks/git-pre-commit.sh` に `tobe_no_line_numbers`(WARN)と `doc_no_changelog`(BLOCK: docs/research/*.md の見出し/行頭に変更履歴)。
+- 契約: 小さく1手・儀式なし・パイプライン(instructions/shogun.md・karo.md・generated同期)。

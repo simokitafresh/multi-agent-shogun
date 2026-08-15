@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-14 cmd_karo_hotfix_rb8_context_freshness_20260814_normal -->
+<!-- last_updated: 2026-08-16 L1分割6手live+L2分割走行中を§94へ反映 -->
+<!-- source_commit:a9883865 reason:L1分割6手live+L2分割走行中を§94へ反映 evidence:origin/main a9883865 git log; docs/research/dm-l1-split-design_20260815.md AsIs v1.5 -->
 <!-- source_commit:3e28b617 reason:cmd_karo_hotfix_rb8_context_freshness_20260814_normal evidence:cmd_4301_context_freshness_AC2_core -->
 
 <!-- source_commit:15e612f9 reason:cmd_karo_hotfix_timing_summary_restore_20260813 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=15e612f9 -->
@@ -523,6 +524,12 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - **Group-A Open metrics**: `aaef7932` はCorrelation/Beta/Alpha/R²/Treynor/Calmar/Positive Periods/Gain-Loss Ratioを`*_open`系列から独立計算し、close/open値を同一metricへ格納する。回帰testはOpen値がClose値の複製でないことを検証する。参照: `backend/app/services/metrics_impl.py`, `backend/tests/test_metrics_continuity_risk.py`、commit `aaef7932`。
 - **FoF表示日の正本**: `28b58ee0` はMonthly Trade FoFの表示weights照会候補に`position_start_date`を最優先で加え、月初カレンダー日(週末)の旧holdingではなく実保有開始日のSignalを採用する。参照: `backend/app/api/monthly_trade.py`, `backend/tests/test_monthly_trade_calculator.py`、commit `28b58ee0`。
 - **ledger次回rebalance境界**: `9f81c106` はtrigger別の次回rebalance月を判定し、openな旧confirmed eventが次回決定月へ持ち越されるのを止める。非rebalance月はcarry、次回rebalance月は新eventが入るまでpendingとする。参照: `backend/app/services/signal_decision_ledger.py`, `backend/app/jobs/recalculate_fast.py`, `backend/tests/test_signal_decision_ledger_guard.py`、commit `9f81c106`。
+
+## §94 L1分割 全6手 live + L2分割 走行中 (2026-08-15〜16、source=origin/main a9883865)
+
+- **L1分割(全6手 live・各手 full→business parity 差分0)**: L0 config/ledger snapshot(`snapshot_portfolio_configs`/`db.info["portfolio_config_snapshot"]`・f0194282) → L1.1 `resolve_price_consumer_dependencies`→`PriceConsumerDependencySnapshot`(config-only・b3156fb5) → L1 materialize範囲をL1.1出力から(5e307731) → L1.2 `_resolve_fof_dependency_plan`(PFごと最深depth 1値・fail-closed・fbcc8be0) → L1.3 `run_identity` 1つ(2268592d) → 直列固定(925b8338)。設計正本=`docs/research/dm-l1-split-design_20260815.md`(gist 4e64d25b)。
+- **L2分割(走行中)**: #1 前回確定成果物 C1 read-once(0f47de79 live)、#2 PF×月現fingerprint produce(3a5ebd05 live)、#1b/#3(judge record-only)はimport closure欠落で2度revert→helper closure修復(a9883865)後に再push。#4 C2合流は未。設計正本=`docs/research/dm-l2-standard-design_20260815.md`(gist b4b31391)。次=継ぎ目設計 `docs/research/dm-l2-l3-seam-design_20260816.md`(gist 4735a7fc)。
+- 親ToBe=`docs/research/dm-unified-tobe-flow_20260815.md`(gist 12cb3fc4)。読み方: 行=L・左列=cache・右列=計算・上から下へ戻らない。
 
 ## 因果リンク
 - **cmd_4296 モメンタム窓調査 (2026-08-13)**: standardは日次close-to-close営業日行数、leaf/nested FoFは子PFの`monthly_returns.cumulative_return`を月末close系列として月数行差分。三系統の独立選抜結果はDB signalと一致したが、`signals.momentum_data`にモメンタム数値は保存されず保存値との数値parityは検証不能。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4296_momentum-window-recon_20260813.md`
