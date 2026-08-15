@@ -10,7 +10,7 @@
 
 統合元: `dm-fullrecalculate-cache-reuse-asis_20260813` / `cmd_4296_momentum-window-recon_20260813` / `dm-decision-provenance-asis-tobe-5w1h_20260813` / `dm-weight-expansion-first-principles-asis-tobe_20260815`
 
-## AsIs **v1.3** — 2026-08-15T16:35+09:00 / 対象 `origin/main = 5da7f107`（code固定。DB実測は observed_at 付きで別記）
+## AsIs **v1.4** — 2026-08-15T16:55+09:00（v1.4=ToBeと同じレイヤー帯枠+凡例を付与し配色を統一 ← v1.3=16:35） / 対象 `origin/main = 5da7f107`（code固定。DB実測は observed_at 付きで別記）
 
 ```mermaid
 flowchart TB
@@ -61,6 +61,13 @@ flowchart TB
   LEDGDB["<b>DB実測（codeではない）</b><br/>signal_decision_ledger = 0行<br/>observed_at=2026-08-13 run 355 input manifest 3ced522a…（`dm-fullrecalculate-cache-reuse-asis_20260813` §5.1）/ source=本番 recalculation_status 台帳の manifest 固定入力<br/>∴ 現時点では guard は全行素通り（行が入れば freeze が効く）"]:::rule
 
   ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② run単位の fingerprint は在る（input_manifest.py:228 ImmutableInputManifest.build :235 → input_snapshot_id :251 / execution_fingerprint :256）。<b>無いのは PF×月 の依存fingerprint</b>。∴ run全体の同一性は判るが、確定月を PF×月 単位で skip する判断はできない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
+
+  %% 凡例(AsIs/ToBe共通): 緑=cache / 青=計算 / 赤=DB(sink) / 橙=guard・skip / 灰=注記・不変量 / 破線枠=レイヤー帯
+  style AL1 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style AL2 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style AL3 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+  style AL5 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
+
 ```
 
 ## ToBe **v3.9** — 2026-08-15T16:52+09:00（v3.9=不変量ノードを3列横並びにして縦長を解消。殿指示16:51 ← v3.8=各レイヤー帯に枠線を付け、左cache縦流/右計算縦流/横のレイヤー区切りを明示。殿指示16:48 ← v3.7=C11→X1 読み出しedgeを撤去。L1.1/L1.2が図上で並列に見えるため。X1はC12(C11を含む一つのcache)だけを読む。殿指摘16:45 ← v3.6=X1がC11(依存集合)も読むedgeを明示(軍師O1を将軍判断で採用) ← v3.5=不変量を図の最上段へ移動(殿指示16:40) ← v3.3=16:26 レビュー12件反映 → v3.4=L1.1→L1.2 を直列へ戻す。殿指摘16:35）
@@ -183,6 +190,7 @@ flowchart TB
   X5B -.->|"書き切り（永続化はここだけ）"| DB
 
 
+  %% 凡例(AsIs/ToBe共通): 緑=cache / 青=計算 / 赤=DB(sink) / 橙=guard・skip / 灰=注記・不変量 / 破線枠=レイヤー帯
   %% レイヤー帯: 各subgraph=1レイヤー。左=cache列(C*)、右=計算列(X*)。帯の中だけで合流/読み出しが交わる
   style R0 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
   style R11 fill:#0d0d0d,stroke:#c9c9c9,stroke-width:1.5px,stroke-dasharray:6 3
