@@ -9,8 +9,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 125
-  last_seen: "2026-08-15T21:39:12+09:00"
+  occurrence_count: 126
+  last_seen: "2026-08-15T21:47:19+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -24,7 +24,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4313"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存実装済みと判定。cmd_4313はP4補足read-only突合として完了しており、返信先ルールはinstructions/gunshi.md:577-589に現存するため、新規修正・decision_candidateは不要。"
+  action_artifact: "instructions/gunshi.md:L577-L589; context/cmd-chronicle.md:L230; docs/research/dm-decision-provenance-asis-tobe-5w1h_20260813.md:L509"
+  resolved_at: "2026-08-15T21:44:41+09:00"
 - id: INS-20260815-052917490-3ac1
   ts: "2026-08-15T05:29:17+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4313; matched=既存; current_pattern=provenance工程P4再執行 — 既存完了runへのread-only突合で最終checkpointを閉じる; candidate_level=2; candidate=GP-216事故: 既存useful_rate filter未確認→不要提案→家老CTX消費。LG033(Level 2)が行動を変えなかった→フロー3箇所に1行埋込で毎回目に入る構造に; source=gunshi_gp_tracker.yaml"
@@ -746,8 +749,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '0888538f5d02f2aae3b3c69a2ea5e07b48d5fc8c84d88034e0d9b8003574fa13' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 10
-  last_seen: "2026-08-15T21:08:08+09:00"
+  occurrence_count: 11
+  last_seen: "2026-08-15T21:47:09+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -972,3 +975,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-15T21:22:06+09:00"
+- id: INS-20260815-214757806-3f4d
+  ts: "2026-08-15T21:47:57+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id blw7gma3l task id tool use id toolu 01W91vMYwncFBzQuJ5 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
