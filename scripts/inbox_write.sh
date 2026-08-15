@@ -1993,6 +1993,35 @@ if [ "$FROM" = "shogun" ] && [ "$TARGET" = "karo" ] && [ "$TYPE" = "task_assigne
     date +%s > /tmp/shogun_delegation_pending 2>/dev/null || true
 fi
 
+# 高速回転ガード(殿下知2026-08-15 18:58-19:00「冗長なテストは高速回転への重大なルール違反。
+# 最小限にシンプルで最高速度のtry&errorを強制しろ」「将軍が真因だった。将軍にもルールを強制せよ」):
+# 将軍→家老の委任本文(および本文中で参照する将軍scratchpadの詳細ファイル)に、途中laneへ
+# 儀式(1体×1層の直列配備・層ごとのGATE/報告YAML/レビュー・新規テスト/contract test/fixture作成)を
+# 課す文言があればBLOCK。厳密さは最終checkpoint(full→business parity)1点のみ。
+# 発端: 2026-08-15 L1分割で将軍が『1体×1層で順に』を設計書に書き、層ごとの配備→報告→レビュー→
+# GATEで1h38mかけて2/6しか進まなかった(殿見込み=20分+full)。
+if [ "$FROM" = "shogun" ] && [ "$TARGET" = "karo" ] && [ "${INBOX_WRITE_SKIP_SPEED_GUARD:-0}" != "1" ]; then
+    _speed_text="$CONTENT"
+    while IFS= read -r _ref; do
+        [ -f "$_ref" ] && _speed_text="$_speed_text
+$(cat "$_ref" 2>/dev/null)"
+    done < <(printf '%s
+' "$CONTENT" | grep -oE '/tmp/claude-1000/[^ ]*scratchpad/[^ ]+' | tr -d '"' )
+    _speed_hit=$(printf '%s\n' "$_speed_text" | python3 -c '
+import re,sys
+pat=re.compile(r"(1体×1層|1体x1層|一体×一層|層ごと(の|に)(GATE|報告|レビュー|配備)|contract test|新規テスト(を|作成)|fixture(を|作成)|pytest全量|テストを作成)(?!.{0,30}(禁止|廃止|不要|課すな|するな|使うな|なし|の直列儀式))")
+hits=[f"{n}: {l.rstrip()}" for n,l in enumerate(sys.stdin,1) if pat.search(l)]
+print("\n".join(hits[:3]))
+')
+    if [ -n "$_speed_hit" ]; then
+        echo "BLOCK(speed_guard): 将軍→家老の委任に途中laneの儀式(層ごと直列配備/層ごとGATE・報告/新規テスト・contract test・fixture)が含まれる。殿下知2026-08-15 18:59: 最小限・最高速度のtry&error。厳密さは最終checkpoint(full→business parity)1点のみ。該当行:" >&2
+        printf '%s
+' "$_speed_hit" | cut -c1-200 | sed 's/^/    /' >&2
+        exit 1
+    fi
+    unset _speed_text _speed_hit _ref
+fi
+
 # A final report review cannot simultaneously approve the report and predict
 # that its gate will block.  Reject the structured contradiction before any
 # approval lookup or mailbox persistence.  Free-form mentions of "BLOCK" do
