@@ -384,7 +384,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:24ba56acb9c6f56e"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報でgate_skill_script_refs.shを再実行。41 SKILL.md・80参照・30参照あり、missing=0・stale=0・例示パス欠落=0・実走検証マーカー欠落=0、契約hash action=required=0であり、SKILL本文の追従修正は不要。rc=2はdeduped=38の既存insight→reflux follow-up activeによるREVIEW_REQUIREDで、新規修正・decision_candidate不要。
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh (2026-08-15T10:41実測: all structural checks OK; required=0,deduped=38,REVIEW_REQUIRED);context=context/infrastructure.md:L1573;semantic=docs/semantic-index/index.md:L2566;memory=semantic_search gate_skill_script_refs followup contract hash (cmd_4202 evidence)"
+  resolved_at: "2026-08-15T10:44:22+09:00"
 - id: INS-20260814-211831686-910d
   ts: "2026-08-14T21:18:31+09:00"
   insight: "[[では将軍と意見交換せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=では将軍と意見交換せよ。家老のアイデアには納得感がある。ただ修正に修正を重ねるとバグが深く拡散する可能性がある。要注意だ"
