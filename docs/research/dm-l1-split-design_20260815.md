@@ -12,9 +12,9 @@
 
 ---
 
-## AsIs **v1.3** — 2026-08-15T20:20+09:00 / 対象 `origin/main = 5e307731`（L0 f0194282 / #1 b3156fb5 / #2 5e307731 の3手が本番 live。各手 full 1回→業務値突合 差分0）
+## AsIs **v1.4** — 2026-08-15T20:45+09:00 / 対象 `origin/main = fbcc8be0`（L0 f0194282 / #1 b3156fb5 / #2 5e307731 / #3 fbcc8be0 の4手が本番 live。各手 full 1回→業務値突合 差分0）
 
-**現状、L0・L1.1・L1（範囲接続）は本番に入った。L1.2 は存在せず、L1.3 は2つのidentityのまま。**
+**現状、L0・L1.1・L1（範囲接続）・L1.2 は本番に入った。L1.3 は2つのidentityのまま。**
 
 | ToBeでの居場所 | 現状の実体 | 位置 |
 |---|---|---|
@@ -22,7 +22,7 @@
 | **L1.1 ticker解決** | **存在する（config-only）**。`resolve_price_consumer_dependencies(...)` → `PriceConsumerDependencySnapshot`（`stock_symbols` / `consumer_symbols` / `economic_symbols`）。旧 `_collect_all_symbols` 5分類＋`| {"SPY"}` の集約を1箇所へ移した | 呼出 `recalculate_fast.py:2020`、定義 `input_manifest.py:63` / `:83` / `:90` / `:95` |
 | **L1 入力materialize** | **L1.1 出力から範囲を決める**。`stock_symbols = list(price_consumer_dependencies.stock_symbols)`(:2032) → `load_prices_as_df`(:2041)、経済系列は `price_consumer_dependencies.economic_symbols` から（従来の "DTB3" 直書きを置換） | `:2032` → `:2041` 以降 |
 | L1.3 run identity | `ImmutableInputManifest.build` が `input_snapshot_id` と `execution_fingerprint` を算出（2つのまま） | 呼出 `recalculate_fast.py:2120`、定義 `input_manifest.py` |
-| **L1.2 深度解決** | **存在しない** | — |
+| **L1.2 深度解決** | **存在する（config-only）**。`_resolve_fof_dependency_plan(config_snapshot)` が PF ごとの `depth_by_id`（1値=最深）・`max_depth`・依存順 `execution_order` を返す。価格・DB・実行状態を読まない。未知の子・重複id・循環は `ValueError` で run 停止（fail-closed） | 定義 `recalculate_fast.py:165`、呼出 `:1986`、FoF 実行順の消費 `:2254` |
 
 **確認できた事実（現物grep・2026-08-15 20:20）**
 
@@ -30,11 +30,11 @@
 2. L1.1: 価格・系列を読む全 consumer の依存集合を config snapshot だけから解く関数が独立した。価格は読まない。
 3. L1: materialize の銘柄範囲と経済系列は L1.1 の出力で決まる（mode 非依存）。
 4. run identity 相当は **2つある**。`input_snapshot_id` と `execution_fingerprint`。
-5. 深度解決は**本番経路に無い**。`portfolios.nested_depth` は default 0（本番実測 全29543行が0）。`scripts/fof_tree.py` は OPERATOR_TOOL で本番経路から呼ばれず config-only ではない。
+5. 深度解決は本番経路に**入った**（fbcc8be0）。PFごとに depth 1値のみ。旧 `portfolios.nested_depth`（全行0）と `scripts/fof_tree.py`（OPERATOR_TOOL）は本番経路の外のまま。
 
 ---
 
-## ToBe **v1.1** — 2026-08-15T17:20+09:00
+## ToBe **v1.2** — 2026-08-15T20:45+09:00
 
 **5つを、それぞれ独立した層にし、直列に並べる。順序と依存だけを固定し、計算そのものは変えない。**（親文書 ToBe v3.11 の最上段5行と同一）
 
@@ -63,8 +63,8 @@ flowchart TB
 
   subgraph R12["L1.2 深度解決層"]
     direction LR
-    C12["+ depth 表 と 実行順序<br/>循環検出結果"]:::cache
-    X12["config snapshot だけで解く<br/>子・孫・ひ孫まで全経路を辿る<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/>同一PFが複数世代に現れる → 全経路の最大<br/><b>循環を検出したら invalid graph として run 停止（fail-closed）</b>"]:::calc
+    C12["+ depth 表（PF → 最深 depth の1値）"]:::cache
+    X12["config snapshot だけで解く<br/><b>PFごとに depth 1値（最も深い経路の値）だけを記録する</b><br/>depth(P)=1+max(depth(C_i))、standard は 0<br/>経路・世代・混在の分析結果は持たない（L3 は depth 順に回すだけ）<br/><b>循環を検出したら invalid graph として run 停止（fail-closed）</b>"]:::calc
     C12 <-.-|"合流"| X12
   end
 
@@ -101,7 +101,7 @@ flowchart TB
 | 0 | ~~L0: config / ledger を run 冒頭で一度だけ読み snapshot 化する~~ **本番 live（f0194282、業務値差分0）** | 完了 |
 | 1 | ~~L1.1: ticker解決を独立層へ切り出す~~ **本番 live（b3156fb5、業務値差分0、run408）** | 完了 |
 | 2 | ~~L1: materialize する銘柄範囲を、L1.1 の出力から決める形にする~~ **本番 live（5e307731、業務値差分0、run409）** | 完了 |
-| 3 | L1.2: 深度解決層を新設する。config snapshot だけを入力に depth と実行順序を出す純関数。循環は fail-closed | **新規** |
+| 3 | ~~L1.2: 深度解決層を新設する~~ **本番 live（fbcc8be0、業務値差分0、run410）**。PFごとに depth 1値のみ | 完了 |
 | 4 | L1.3: run identity を1つに整理し、C0+C1 から導く | **整理** |
 | 5 | 5層を **直列** に並べる（L0→L1.1→L1.2→L1→L1.3）。並列化しない | **順序固定** |
 

@@ -68,7 +68,7 @@ flowchart TB
 
 ```
 
-## ToBe **v3.11** — 2026-08-15T17:05+09:00
+## ToBe **v3.12** — 2026-08-15T20:45+09:00
 
 **読み方**: 横の破線枠=1レイヤー(L)。枠の左=cache列(C*)は上から下へ一本、枠の右=計算列(X*)も上から下へ一本。枠の中だけで「計算→合流(cacheへ追記)」と「cache→読み出し」が交わる。枠をまたぐのは縦の一本ずつのみ。上から下へ一度も戻らない。
 
@@ -103,8 +103,8 @@ flowchart TB
 
   subgraph R12["L1.2 深度解決層"]
     direction LR
-    C12["+ depth 表 と 実行順序<br/>循環検出結果"]:::cache
-    X12["config snapshot だけで解く<br/>子・孫・ひ孫まで全経路を辿る<br/>depth(P)=1+max(depth(C_i))、standard は 0<br/>同一PFが複数世代に現れる → 全経路の最大<br/><b>循環を検出したら invalid graph として run 停止（fail-closed）</b><br/>depth と topological 実行順序は停止しない場合のみ確定"]:::calc
+    C12["+ depth 表（PF → 最深 depth の1値）"]:::cache
+    X12["config snapshot だけで解く<br/><b>PFごとに depth 1値（最も深い経路の値）だけを記録する</b><br/>depth(P)=1+max(depth(C_i))、standard は 0<br/>経路・世代・混在の分析結果は持たない（L3 は depth 順に回すだけ）<br/><b>循環を検出したら invalid graph として run 停止（fail-closed）</b>"]:::calc
     C12 <-.-|"合流"| X12
   end
 
@@ -213,7 +213,7 @@ flowchart TB
 ### ToBe 注釈
 - **L0 run開始**: cache は1個。config（全PF構成・重み・momentum規則・rule version）と ledger（snapshot/watermark）と source version（規則実装の版）を一度だけ読み snapshot 化。以後どの層も生の config/ledger を読まない。構造解決層(L1.1/L1.2)の入力はここで固定される。
 - **L1.1 構造解決（依存集合）**: 保有しうる ticker だけでなく、価格・系列を読む全 consumer（benchmark、canonical calendar 銘柄、economic/DTB3 系列）の和集合を列挙する。L1 が materialize する範囲はこの集合。
-- **L1.2 構造解決（深度）**: depth(P)=1+max(depth(C_i))、standard=0。同一PFが複数世代に現れたら全経路の最大。循環を検出したら invalid graph として run を停止（fail-closed）。depth 表と topological 実行順序は停止しない場合のみ確定。L1.1 → L1.2 は直列。並列可能でもあえて直列（一本道で混乱を生まない）。
+- **L1.2 構造解決（深度）**: PFごとに depth 1値だけを記録する。depth(P)=1+max(depth(C_i))、standard=0（同一PFが複数世代に現れても最深の値1つ）。経路・世代・混在の分析は持たない。L3 で欲しいのは「どの層で計算するか」だけであり、複雑さはここで削ぎ落とす（殿 2026-08-15 20:36）。循環を検出したら invalid graph として run を停止（fail-closed）。L1.1 → L1.2 は直列（あえて直列）。
 - **L1 入力層**: C11 の範囲で prices/DTB3/economic を一度だけ materialize。加えて前回確定成果物（PF×月の W/monthly/cumulative/provenance/依存fingerprint）を一度だけ read-once。judge 一致時の復元元はここにしか無い。永続層を読むのは L0 と L1 の read-once だけ。
 - **L1.3 run identity**: C0+C1 の入力一式から run 単位で1回導く（O(1)）。PF×月の依存fingerprint とは別物。
 - **L2 standard**: PF×月ごとに **a** 現fingerprint（入力(C1)+rule version+source version(C0)）を先に作る → **b** judge：C1 の前回fingerprint と一致なら前回成果物を復元し計算しない。不一致なら momentum（日次close・months×21営業日・on-or-before）→判定→規則1（W=選定銘柄へ1.0）→ **c** 価格適用（monthly/cumulative）→ **d** provenance と現fingerprint を合流。cache 契約は signals/W/monthly/cumulative/provenance/依存fingerprint を別々に列挙。
