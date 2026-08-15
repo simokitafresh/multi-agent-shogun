@@ -1171,3 +1171,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 ## §96 cmd_4320 保存済み展開値vslegacy再展開 (2026-08-15)
 - 本番保存値15,768組の突合は一致14,955、不一致813（ticker集合731、weight64、legacy空18）。保存値の無条件入力昇格は不可。詳細→`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4320_saved_vs_legacy_weights_20260815.md`
 - 全不一致は`pipeline_config`有効PFで発生し、基準読込11:22:17 JST〜比較終了11:23:46 JSTに01:10/01:40 UTC日次cronの通過なし。因果リンク: `[[cmd_4318_saved_expanded_weights]] -> [[cmd_4320本番全件突合813不一致]] -> [[保存値無条件昇格不可]]`。
+
+## §97 cmd_4321 展開値の分岐段追跡 (2026-08-15)
+- 第一原理規則1/2でnested FoFを最下段standardから手計算した。`奥義-GS-分身-鉄壁/2013-03-01`は再展開`{TMV:.25,XLU:.25,TQQQ:.50}`、保存`{TMV:.25,XLU:.50,TQQQ:.25}`で、分岐は`GSシン加速D-鉄壁`の子選択層から上流へ伝播。`奥義-GS-分身-常勝/2011-10-03`は再展開`{Cash:.75,TQQQ:.25}`、保存`{XLU:.125,TECL:.125,TQQQ:.75}`で、トップ直下の子PFシグナル層に分岐を観測。
+- 全件分類は`ticker_set_mismatch=731`、`weight_mismatch=64`、`legacy_empty=18`、残余0。現行入力を規則1/2へ適用した再展開値が定義整合、保存側の過去入力は全件では判定不能。`legacy_empty`18件だけはraw `signal`と保存値がstandard終端を満たし、legacy空が規則違反。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4321_expansion_divergence_layer_20260815.md`。
