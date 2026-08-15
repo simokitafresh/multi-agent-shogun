@@ -1871,6 +1871,7 @@ codd:
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore, gist_master_sync_asis_tobe |
 | related_lessons | `L317`, `L088`, `L079` |
+| causal | `docs/research/dm-l1-split-design_20260815.md` |
 
 | 種別 | パス/参照 |
 |------|----------|
