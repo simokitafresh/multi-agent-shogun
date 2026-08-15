@@ -74,12 +74,12 @@ flowchart TB
   end
 
   subgraph L11["L1.1 ticker解決層 — <b>PF構成だけで解ける。価格も判定も要らない</b>"]
-    CF -.->|"standard PFのconfigのみ"| TK["<b>standard PF を構成tickerへ分解</b><br/>= 保有する可能性のある ticker の抽出<br/>基礎ツール: _collect_all_symbols（recalculate_fast.py:3902）<br/>定義=全standard PFの relative_assets ∪ safe_haven_asset（Cash除外）"]:::calc
-    TK --> TKOUT["<b>出力はこれだけ</b><br/>保有しうる ticker 集合<br/>本番実測=9銘柄 GDX GLD QLD QQQ SPY TECL TMV TQQQ XLU<br/>→ L1のprice materialize範囲を決める"]:::cache
+    CF -.->|"standard PFのconfigのみ"| TK["<b>standard PF を構成tickerへ分解</b><br/>= 保有する可能性のある ticker の抽出<br/>定義=全standard PFの relative_assets ∪ safe_haven_asset（Cash除外）"]:::calc
+    TK --> TKOUT["<b>出力はこれだけ</b><br/>保有しうる ticker 集合<br/>→ L1のprice materialize範囲を決める"]:::cache
   end
 
   subgraph L12["L1.2 深度解決層 — <b>PF構成だけで解ける。価格も判定も要らない</b>"]
-    CF -.->|"FoF構成のみ"| TREE["<b>FoFを全分解して樹形図を確定</b><br/>基礎ツール: scripts/fof_tree.py（循環防御つき）<br/>子・孫・ひ孫まで全経路を辿る"]:::calc
+    CF -.->|"FoF構成のみ"| TREE["<b>FoFを全分解して樹形図を確定</b><br/>子・孫・ひ孫まで全経路を辿る（循環に耐えること）"]:::calc
     TREE --> DAGN["<b>同一PFが複数世代に現れる（DAG合流）</b><br/>本番実測: 同一rootの下で世代が割れる (root,node) 組=<b>14件</b><br/>例: New Fund of Funds 配下の GSシン加速R-激攻 は <b>gen 2 と gen 3</b> の両方<br/>シン朱雀-常勝(standard) は <b>gen 3 と gen 4</b> の両方<br/><b>最初に出会った世代で確定させるな。全経路の最大を採る</b>"]:::rule
     DAGN --> DEPTH["<b>出力はこれだけ</b><br/>各PFの depth = 1 + max( depth(C_i) )、standard は 0<br/>= <b>構成PFの一番深い世代の深度</b><br/>+ それに基づく <b>実行順序（depth昇順）</b>"]:::cache
   end
@@ -98,7 +98,7 @@ flowchart TB
     S2 --> W2
   end
 
-  W2 --> MR2["<b>月次集約</b>　W と価格から monthly_return / cumulative_return を生成<br/>_generate_monthly_returns（recalculate_fast.py:134 import・Phase 4.5）<br/><b>これが L3a の入力になる</b>"]:::calc
+  W2 --> MR2["<b>月次集約</b>　W と価格から monthly_return / cumulative_return を導く<br/><b>これが L3a の入力になる</b>"]:::calc
 
   MR2 -->|"追記"| CACHE["<b>唯一のcache object（run開始時に1個だけ生成）</b><br/>L1.1のticker集合 / L1.2のdepth表と実行順序 / 不変入力snapshot<br/>+ 各層が書き足す signals / W / monthly / provenance / fingerprint<br/><b>再生成・複製・空初期化は禁止。identityは最後まで不変</b>"]:::cache
 
@@ -137,16 +137,20 @@ flowchart TB
 
   MR3B -->|"追記（signals / W / monthly / provenance）"| CACHE
 
-  subgraph L5["L5 表示・成果物層"]
-    CACHE --> B5["builder / precomputed_raw / trade_perf<br/><b>引数で cache を受け取る</b>"]:::calc
+  subgraph L5A["L5a 永続化層 — <b>書くだけ。誰も読み返さない</b>"]
+    CACHE --> P5["cacheの確定内容をDBへ書き切る"]:::calc
+  end
+
+  subgraph L5B["L5b 表示層 — <b>cacheから組み立てる。DBを読まない</b>"]
+    CACHE --> B5["表示成果物の組み立て<br/><b>引数で cache を受け取る</b>"]:::calc
     B5 --> OUT["表示成果物"]:::calc
   end
 
-  CACHE -.->|"永続化のみ（書き切り）"| DB[("DB<br/>signals / monthly_returns<br/>portfolio_metrics / provenance")]:::sink
-  OUT -.->|"永続化のみ（書き切り）"| DB
+  P5 -.->|"永続化のみ（書き切り）"| DB[("DB<br/>signals / monthly_returns<br/>portfolio_metrics / provenance")]:::sink
+  OUT -.->|"必要なら成果物も書き切り"| DB
 
   DB x--x|"<b>禁止</b>：下流が書いた値を読み返す<br/>（flush→再読込・再構築）"| L3A
   DB x--x|"<b>禁止</b>：一段浅い深度の結果をDBから読み戻す"| L3B
 
-  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ <b>深度は浅い順に直列。</b>depth(P)=1+max(depth(C_i))、standardは0<br/>⑥ <b>構成PFの深度が混在してもよい（standard と 2 と 3 の同居を含む）。</b>親は最も深い構成PFの確定後に計算する<br/>⑦ <b>計算開始の前提は「全構成PFがcacheに在ること」。1つでも欠けたら停止する。</b>DBへ取りに行かない・空dictで代替しない<br/>⑧ <b>PF構成だけで解けるものは、計算に入る前の独立レイヤーで解く。</b>L1.1=保有しうるticker、L1.2=最大深度。価格も判定も要らない<br/>⑨ 同一PFが複数世代に現れるため、<b>最初に出会った世代で確定させず全経路の最大を採る</b><br/>⑩ L1.1とL1.2は互いに独立ゆえ<b>並列でよい</b>。両方が揃って初めてL2以降が動く"]:::rule
+  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ <b>深度は浅い順に直列。</b>depth(P)=1+max(depth(C_i))、standardは0<br/>⑥ <b>構成PFの深度が混在してもよい（standard と 2 と 3 の同居を含む）。</b>親は最も深い構成PFの確定後に計算する<br/>⑦ <b>計算開始の前提は「全構成PFがcacheに在ること」。1つでも欠けたら停止する。</b>DBへ取りに行かない・空dictで代替しない<br/>⑧ <b>PF構成だけで解けるものは、計算に入る前の独立レイヤーで解く。</b>L1.1=保有しうるticker、L1.2=最大深度。価格も判定も要らない<br/>⑨ 同一PFが複数世代に現れるため、<b>最初に出会った世代で確定させず全経路の最大を採る</b><br/>⑩ L1.1とL1.2は互いに独立ゆえ<b>並列でよい</b>。両方が揃って初めてL2以降が動く<br/>⑪ <b>永続化と表示は別の責務。</b>永続化は書くだけ、表示はcacheから組み立てDBを読まない"]:::rule
 ```
