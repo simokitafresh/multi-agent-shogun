@@ -562,7 +562,7 @@ INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
         "scripts/semantic_",
     ],
 }
-# Retain only the legacy key set for detecting stale duplicate declarations.
+# GA-466: retain only the legacy key set for detecting stale duplicate declarations.
 # Runtime pathspecs below come from the registry; a new registry trigger must
 # not require this compatibility map to be edited as well.
 LEGACY_CONTEXT_PATHS = set(DM_SIGNAL_CONTEXT_PATHS) | set(INFRA_CONTEXT_PATHS)
