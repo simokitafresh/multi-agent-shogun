@@ -562,7 +562,56 @@ INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
         "scripts/semantic_",
     ],
 }
+# Retain only the legacy key set for detecting stale duplicate declarations.
+# Runtime pathspecs below come from the registry; a new registry trigger must
+# not require this compatibility map to be edited as well.
+LEGACY_CONTEXT_PATHS = set(DM_SIGNAL_CONTEXT_PATHS) | set(INFRA_CONTEXT_PATHS)
 SOURCE_CONTEXT_REGISTRY = os.path.join(root, "scripts", "config", "context_source_commits.tsv")
+
+
+def load_registry_pathspecs() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    """Use the task dependency registry as the freshness pathspec SSOT.
+
+    The old checker kept a second literal path map above this registry.  A new
+    trigger could therefore be accepted by task injection but omitted from
+    freshness scanning (or fail at the later map-mismatch guard).  Loading the
+    same rows here makes the detector and the completion dependency injector
+    observe one frontier.
+    """
+    try:
+        with open(SOURCE_CONTEXT_REGISTRY, encoding="utf-8") as f:
+            rows = [line.rstrip("\n").split("\t") for line in f
+                    if line.strip() and not line.lstrip().startswith("#")]
+    except FileNotFoundError:
+        raise SystemExit("BLOCK: source context registry missing")
+
+    dm_signal: dict[str, list[str]] = {}
+    infra: dict[str, list[str]] = {}
+    recognized_paths: set[str] = set()
+    for row in rows:
+        if len(row) != 4 or not all(field.strip() for field in row):
+            raise SystemExit(
+                "BLOCK: malformed source context registry row "
+                "(expected path/project/owner/update_trigger)"
+            )
+        path, project, _owner, trigger_text = [field.strip() for field in row]
+        pathspecs = [item.strip() for item in trigger_text.split("|") if item.strip()]
+        if project == "dm-signal":
+            recognized_paths.add(path)
+            dm_signal[path] = pathspecs
+        elif project == "infra":
+            recognized_paths.add(path)
+            if pathspecs != ["root-fallback"]:
+                infra[path] = pathspecs
+    if recognized_paths != {row[0] for row in rows}:
+        raise SystemExit("BLOCK: duplicate or unknown source context registry path")
+    return dm_signal, infra
+
+
+# Keep the registry as the single dependency frontier for both task injection
+# and runtime freshness scanning.  The literal maps above remain only as a
+# compatibility reference for older source snapshots; they are not consulted.
+DM_SIGNAL_CONTEXT_PATHS, INFRA_CONTEXT_PATHS = load_registry_pathspecs()
 
 
 def expected_source_contexts() -> dict[str, str]:
@@ -610,6 +659,12 @@ def load_registered_source_contexts() -> frozenset[str]:
     SOURCE_CONTEXT_METADATA = {
         row[0]: (row[1], row[2], row[3]) for row in rows
     }
+    stale_legacy_paths = LEGACY_CONTEXT_PATHS - set(actual)
+    if stale_legacy_paths:
+        raise SystemExit(
+            "BLOCK: source context registry/map mismatch "
+            f"missing={sorted(stale_legacy_paths)} extra=[]"
+        )
     expected = expected_source_contexts()
     if actual != expected:
         missing = sorted(set(expected.items()) - set(actual.items()))

@@ -431,6 +431,39 @@ PROJ
     [[ "$output" != *"context/dm-signal-research.md"* ]]
 }
 
+# test_necessity: the runtime freshness detector must consume the same source
+# registry as task dependency injection; adding a trigger must not require a
+# second hardcoded map or silently produce a false-negative alert.
+@test "GA-466 registry trigger reaches freshness detector without map patch" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/backend/new_surface"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    # Simulate a newly discovered dependency added to the existing SSOT.
+    sed -i 's#backend/app|backend/tests#backend/app|backend/new_surface|backend/tests#' \
+        "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
+    _create_context "context/dm-signal-core.md" "$STALE_DATE"
+    _create_shogun_to_karo "cmd_ga466_fixture" "dm-signal"
+    _create_archive_cmd "cmd_ga466_fixture" "dm-signal" "completed" "$TODAY"
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'new dependency surface\n' > "$source_repo/backend/new_surface/runtime.py"
+    git -C "$source_repo" add backend/new_surface/runtime.py
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "feature: new core dependency surface"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_ga466_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal-core.md source commits 1件"* ]]
+}
+
 @test "--dashboard-warnings excludes low-frequency context files" {
     _create_context "context/README.md" "$STALE_DATE"
     _create_context "context/cdp-philosophy.md" "$STALE_DATE"
