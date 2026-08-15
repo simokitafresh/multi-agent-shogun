@@ -422,6 +422,30 @@ ORDER BY id;
 
 1件の定義: `recalculation_status`の1行（=1 run）。出力の2行をrun A/BとしてJSONフィールド単位にdiffし、`summary`がNULLまたは指定runが欠ける場合は比較不能として扱う。
 
+### ★基準hash突合の必須注記（2026-08-15 本番実測で判明）
+
+**基準runとのhash一致で「業務値不変」を主張する時は、必ず次の2点を併記せよ。欠けた一致主張は無効とする。**
+
+1. **測定時刻**（いつ測ったか）
+2. **基準測定から今回測定までの間に日次ETL cronが通過したか**
+
+**理由（推測ではなく実測）**: 日次cronは `render cron → etl_layer_sync_wait → etl_trigger → sync_layers → recalculate_history_fast(mode=PORTFOLIO, start=2000-01-01)` の経路で**毎日2000年からの全履歴を再生成**し、`monthly_returns` / `portfolio_metrics` を事前DELETE→再生成する。`signal_decision_ledger` が0行だと reconcile が pass-through となり確定月は凍結されない。
+
+実測値（`signal_change_log` をUTC 01:35-02:15窓で集計）:
+
+| 日付 | 変化件数 | PF数 |
+|---|---|---|
+| 2026-08-15 | 8761 | 38 |
+| 2026-08-14 | 8626 | 40 |
+| 2026-08-13 | 1751 | 16 |
+| 08-12以前 | 0〜21 | 0〜21 |
+
+08-10の不変manifestでは ledger=15212行、現在は0行。**台帳消失後に桁違いのドリフトが始まっている。**
+
+**∴基準run364との一致は「測った瞬間の事実」でしかない。** 2026-08-15はrun404直後に `cmp_rc=0` を確認した約84分後、cronによって monthly 14718行・metrics 102件が基準から乖離した。**cronを跨いだ一致主張は動く的を撃っている。**
+
+**併せて監査範囲の穴も認識せよ**: `signal_change_log` は **holding差しか記録しない**。`monthly_returns` / `portfolio_metrics` の差は SIGNAL CHANGE ALERT の対象外であり、警報が鳴らなくても業務値は動いている場合がある。
+
 ### 4. provenance key coverage（cmd_4313実測の再利用）
 
 用途: P4後の保存充足をPF単位で確認する。all scopeの`provenance_version`/`relative`/`weights`/`expanded_ticker_weights`は全PF、standard scopeの`absolute`/`risk_free`/`safe_haven`/`window`はstandard PFだけを母集団とする。
