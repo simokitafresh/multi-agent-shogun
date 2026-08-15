@@ -11,7 +11,7 @@
 
 統合元: `dm-fullrecalculate-cache-reuse-asis_20260813` / `cmd_4296_momentum-window-recon_20260813` / `dm-decision-provenance-asis-tobe-5w1h_20260813` / `dm-weight-expansion-first-principles-asis-tobe_20260815`
 
-## AsIs **v1.5** — 2026-08-15T16:58+09:00 / 対象 `origin/main = 5da7f107`（code固定。DB実測は observed_at 付きで別記）
+## AsIs **v1.6** — 2026-08-15T19:15+09:00 / 対象 `origin/main = f0194282`（code固定。DB実測は observed_at 付きで別記。L0 live: run405/406 業務値突合 差分0）
 
 ```mermaid
 flowchart TB
@@ -22,26 +22,28 @@ flowchart TB
   classDef rule fill:#2a2a2a,stroke:#888888,color:#ffffff
 
   subgraph AL1["L1 入力層 — run冒頭に materialize"]
+    AL0["<b>L0 config / ledger snapshot（live f0194282）</b><br/>snapshot_portfolio_configs → db.info[portfolio_config_snapshot]<br/>recalculate_fast.py:1901 / ledger :1922 / preload :3197<br/>PortfolioConfigSnapshot input_manifest.py:28 / :62 / :67"]:::cache
+    AL0 --> ASNAP
     APR[("prices")] --> ASNAP
     AEC[("economic / DTB3")] --> ASNAP
     ACF[("PF config")] --> ASNAP
-    ASNAP["ImmutableInputManifest<br/>input_manifest.py:228<br/>+ 用途別view（df_dtb3_raw / df_dtb3_signal）<br/>recalculate_fast.py:1989-2012"]:::cache
+    ASNAP["ImmutableInputManifest<br/>input_manifest.py:277<br/>+ 用途別view（df_dtb3_raw / df_dtb3_signal）<br/>recalculate_fast.py:2025-2048"]:::cache
   end
 
   subgraph AL2["L2 standard（recalculate_fast.py）"]
     ASNAP --> A1["日次ループ計算 → signals（メモリ）"]:::calc
-    A1 --> A2["_flush_batch<br/>:2999 / :3020<br/>:3006 でクリアするのは <b>signals_batch のみ</b><br/>（cache全体を手放すわけではない）"]:::calc
+    A1 --> A2["_flush_batch<br/>:3004 / :3025<br/>:3011 でクリアするのは <b>signals_batch のみ</b><br/>（cache全体を手放すわけではない）"]:::calc
   end
 
   A2 --> ADB[("DB: signals")]:::sink
 
-  ADB --> A3["<b>OPT-4: db.query(Signal)...all()</b><br/>:3176（同型が :1236 / :3452 にも存在）<br/>全signalsをDBから再クエリ"]:::calc
-  A3 --> A4["signal_cache_opt6 を空dictから再構築<br/>:3202-3206<br/><b>cache系統①</b>"]:::cache
+  ADB --> A3["<b>OPT-4: db.query(Signal)...all()</b><br/>:3181（同型が :1237 / :3453 にも存在）<br/>全signalsをDBから再クエリ"]:::calc
+  A3 --> A4["signal_cache_opt6 を空dictから再構築<br/>:3203-3207<br/><b>cache系統①</b>"]:::cache
 
   subgraph AL3["L3 FoF（recalculate_fast.py / recalculate_fof.py）"]
-    A5["fof_shared_signal_cache = {}<br/>:3197<br/><b>cache系統② — 空dictから開始</b><br/>渡り先は :3559 の precompute trade_perf 側"]:::cache
-    A4 --> A6["Phase 4.5 monthly_returns 生成<br/>引数は <b>signal_cache_opt6</b>（fof_sharedではない）<br/>:3228 / :3299"]:::calc
-    A6 --> A7["_reload_signal_cache_entries<br/>:3291<br/><b>一般経路ではなく ALM second-pass 条件内のみ</b>"]:::calc
+    A5["fof_shared_signal_cache = {}<br/>:3198<br/><b>cache系統② — 空dictから開始</b><br/>渡り先は :3560 の precompute trade_perf 側"]:::cache
+    A4 --> A6["Phase 4.5 monthly_returns 生成<br/>引数は <b>signal_cache_opt6</b>（fof_sharedではない）<br/>:3229 / :3300"]:::calc
+    A6 --> A7["_reload_signal_cache_entries<br/>:3292<br/><b>一般経路ではなく ALM second-pass 条件内のみ</b>"]:::calc
     A7 --> A8["FoF deferred flush"]:::calc
   end
 
@@ -61,7 +63,7 @@ flowchart TB
   A6 -.->|"同上"| LEDG
   LEDGDB["<b>DB実測（codeではない）</b><br/>signal_decision_ledger = 0行<br/>observed_at=2026-08-13 run 355 input manifest 3ced522a…（`dm-fullrecalculate-cache-reuse-asis_20260813` §5.1）/ source=本番 recalculation_status 台帳の manifest 固定入力<br/>∴ 現時点では guard は全行素通り（行が入れば freeze が効く）"]:::rule
 
-  ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② run単位の fingerprint は在る（input_manifest.py:228 ImmutableInputManifest.build :235 → input_snapshot_id :251 / execution_fingerprint :256）。<b>無いのは PF×月 の依存fingerprint</b>。∴ run全体の同一性は判るが、確定月を PF×月 単位で skip する判断はできない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
+  ANOTE["<b>AsIsの帰結</b><br/>① cacheが3系統に分裂し、層の受渡しがDB経由（赤ノードが流れの途中にある）<br/>② run単位の fingerprint は在る（input_manifest.py:277 ImmutableInputManifest.build :235 → input_snapshot_id :251 / execution_fingerprint :256）。<b>無いのは PF×月 の依存fingerprint</b>。∴ run全体の同一性は判るが、確定月を PF×月 単位で skip する判断はできない<br/>③ 規則1/規則2の合成結果を保存する器はあるが、一致証明なしには使えない<br/>現物grep: opt6=6件 / fof_shared=4件 / payload_cache=2件<br/>signal_valid_dates_cache=0件 / validate_signal_snapshot=0件（T5/T6の削除は生存）"]:::rule
 
 
 ```
@@ -198,10 +200,11 @@ flowchart TB
 ## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-15T16:37+09:00
 
 ### AsIs 注釈
-- **L1 入力層**: `ImmutableInputManifest.build`（input_manifest.py:228/235）が prices/economic/config/ledger の artifact hash から `input_snapshot_id`(:251) と `execution_fingerprint`(:256) を作る。run単位の同一性はここで判る。PF×月単位の依存fingerprintは存在しない。DTB3は用途別viewが recalculate_fast.py:1989-2012 で作られる。
-- **L2 standard**: 日次ループ→signals をメモリに持ち `_flush_batch`(:2999/:3020) で DB へ書く。:3006 で消すのは signals_batch のみ。flush 直前に `reconcile_signal_batch_with_ledger`(signal_decision_ledger.py:409-447) が台帳行のある (PF,date) の holding_signal を台帳値へ置換し drift を記録する。台帳行なしは素通り。
-- **L2→L3 の受渡し**: DB へ書いた signals を OPT-4 `db.query(Signal)...all()`(:3176、同型 :1236/:3452) で再クエリし `signal_cache_opt6` を空dictから再構築(:3202-3206)。cache系統①。
-- **L3 FoF**: `fof_shared_signal_cache={}`(:3197、cache系統②)は precompute trade_perf 側(:3559)へ渡る。Phase 4.5 monthly_returns(:3228/:3299) の引数は signal_cache_opt6。monthly の holding_signal は `resolve_confirmed_holding_signal`(:450-484) が台帳値で返す。`_reload_signal_cache_entries`(:3291) は ALM second-pass 条件内のみ。
+- **L0 config/ledger snapshot（f0194282 で本番 live）**: `snapshot_portfolio_configs(payload.portfolios)` が run 冒頭で全PF config を一度だけ detach し `db.info["portfolio_config_snapshot"]`(recalculate_fast.py:1901)、ledger 全行を `db.info["signal_decision_ledger_snapshot"]`(:1922) に置く。generator preload は `build_portfolio_config_preload(config_snapshot)`(:3197)。定義 `input_manifest.py:28/62/67`。以後 Portfolio 行を再読しない。業務値は run405/406 で 16,976+204 行差分0。
+- **L1 入力層**: `ImmutableInputManifest.build`（input_manifest.py:277/284）が prices/economic/config/ledger の artifact hash から `input_snapshot_id`(:300) と `execution_fingerprint`(:305) を作る。run単位の同一性はここで判る。PF×月単位の依存fingerprintは存在しない。DTB3は用途別viewが recalculate_fast.py:2025-2048 で作られる。
+- **L2 standard**: 日次ループ→signals をメモリに持ち `_flush_batch`(:3004/:3025) で DB へ書く。:3011 で消すのは signals_batch のみ。flush 直前に `reconcile_signal_batch_with_ledger`(signal_decision_ledger.py:409-447) が台帳行のある (PF,date) の holding_signal を台帳値へ置換し drift を記録する。台帳行なしは素通り。
+- **L2→L3 の受渡し**: DB へ書いた signals を OPT-4 `db.query(Signal)...all()`(:3181、同型 :1237/:3453) で再クエリし `signal_cache_opt6` を空dictから再構築(:3203-3207)。cache系統①。
+- **L3 FoF**: `fof_shared_signal_cache={}`(:3198、cache系統②)は precompute trade_perf 側(:3560)へ渡る。Phase 4.5 monthly_returns(:3229/:3300) の引数は signal_cache_opt6。monthly の holding_signal は `resolve_confirmed_holding_signal`(:450-484) が台帳値で返す。`_reload_signal_cache_entries`(:3292) は ALM second-pass 条件内のみ。
 - **L5 precompute**: `signal_preload` が DB を読み、`LazySignalArtifactCache` を L5 内で新規生成(:245、cache系統③)。builder へ引数供給(:246/:281)→`MonthlyTradeCalculator.calculate`(:321)→`precompute_signal_payload_cache`(price_ratio_impl.py:1116-1120)。
 - **事後検知**: 確定月の書換えは SIGNAL CHANGE ALERT / signal_change_log(signal_flush.py:431/:565)が発報。08-12 撤去裁定→08-13 rollback 233c2303 で復活し現存。
 - **DB実測（code ではない）**: signal_decision_ledger=0行。observed_at=2026-08-13 run 355 input manifest 3ced522a…（`dm-fullrecalculate-cache-reuse-asis_20260813` §5.1）。∴現時点の ledger guard は全行素通り。行が入れば freeze が効く。
