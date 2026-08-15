@@ -12,25 +12,20 @@
 
 ---
 
-## AsIs **v1.4** — 2026-08-15T20:45+09:00 / 対象 `origin/main = fbcc8be0`（L0 f0194282 / #1 b3156fb5 / #2 5e307731 / #3 fbcc8be0 の4手が本番 live。各手 full 1回→業務値突合 差分0）
+## AsIs **v1.5** — 2026-08-15T21:25+09:00 / 対象 `origin/main = 925b8338`（L0 f0194282 / #1 b3156fb5 / #2 5e307731 / #3 fbcc8be0 / #4 2268592d / #5 925b8338 の全6手が本番 live。各手 full 1回→業務値突合 差分0＝**ゴール到達**）
 
-**現状、L0・L1.1・L1（範囲接続）・L1.2 は本番に入った。L1.3 は2つのidentityのまま。**
+**現状、L0 → L1.1 → L1.2 → L1 → L1.3 が独立した層として直列に並び、業務値は1件も変わっていない（run405〜412、各 monthly 16,976行 / metrics 204行 差分0）。**
 
 | ToBeでの居場所 | 現状の実体 | 位置 |
 |---|---|---|
-| **L0 config snapshot** | **存在する**。`snapshot_portfolio_configs(payload.portfolios)` → `db.info["portfolio_config_snapshot"]`、ledger 全行 → `db.info["signal_decision_ledger_snapshot"]`。generator preload は `build_portfolio_config_preload(config_snapshot)` | `recalculate_fast.py:1905` / `:1926` / `:3207`。定義 `input_manifest.py:28` / `:62` / `:67` |
-| **L1.1 ticker解決** | **存在する（config-only）**。`resolve_price_consumer_dependencies(...)` → `PriceConsumerDependencySnapshot`（`stock_symbols` / `consumer_symbols` / `economic_symbols`）。旧 `_collect_all_symbols` 5分類＋`| {"SPY"}` の集約を1箇所へ移した | 呼出 `recalculate_fast.py:2020`、定義 `input_manifest.py:63` / `:83` / `:90` / `:95` |
-| **L1 入力materialize** | **L1.1 出力から範囲を決める**。`stock_symbols = list(price_consumer_dependencies.stock_symbols)`(:2032) → `load_prices_as_df`(:2041)、経済系列は `price_consumer_dependencies.economic_symbols` から（従来の "DTB3" 直書きを置換） | `:2032` → `:2041` 以降 |
-| L1.3 run identity | `ImmutableInputManifest.build` が `input_snapshot_id` と `execution_fingerprint` を算出（2つのまま） | 呼出 `recalculate_fast.py:2120`、定義 `input_manifest.py` |
-| **L1.2 深度解決** | **存在する（config-only）**。`_resolve_fof_dependency_plan(config_snapshot)` が PF ごとの `depth_by_id`（1値=最深）・`max_depth`・依存順 `execution_order` を返す。価格・DB・実行状態を読まない。未知の子・重複id・循環は `ValueError` で run 停止（fail-closed） | 定義 `recalculate_fast.py:165`、呼出 `:1986`、FoF 実行順の消費 `:2254` |
+| **L0 config snapshot** | `snapshot_portfolio_configs(payload.portfolios)` → `db.info["portfolio_config_snapshot"]`、ledger 全行 → `db.info["signal_decision_ledger_snapshot"]`。以後 Portfolio 行を再読しない | `recalculate_fast.py:1985` / `:2006`。定義 `input_manifest.py:28` / `:62` / `:67` |
+| **L1.1 ticker解決（config-only）** | `resolve_price_consumer_dependencies(...)` → `PriceConsumerDependencySnapshot`（`stock_symbols` / `consumer_symbols` / `economic_symbols`）。価格を読まない | 呼出 `recalculate_fast.py:2100`、定義 `input_manifest.py:63` / `:83` / `:90` / `:95` |
+| **L1.2 深度解決（config-only）** | `_resolve_fof_dependency_plan(config_snapshot)` → PFごとの `depth_by_id`（1値=最深）・`max_depth`・依存順 `execution_order`。未知の子・重複id・循環は `ValueError` で run 停止 | 呼出 `recalculate_fast.py:2107`、定義 `:165` |
+| **L1 入力materialize** | 範囲は L1.1 の出力で決まる。`stock_symbols = list(price_consumer_dependencies.stock_symbols)` → `load_prices_as_df`、経済系列は `economic_symbols` から | `:2115` → `:2124` 以降 |
+| **L1.3 run identity（1つ）** | `ImmutableInputManifest.build` が `run_identity`（C0+C1 の入力一式）を1つ算出し `manifest_id = run_identity`。`stats["run_identity"]` に記録 | 呼出 `recalculate_fast.py:2203` / `:2226`、定義 `input_manifest.py:425-438` |
+| **直列固定** | L0(:1985) → L1.1(:2100) → L1.2(:2107) → L1(:2115) → L1.3(:2203) の順に呼び出される | `925b8338` |
 
-**確認できた事実（現物grep・2026-08-15 20:20）**
-
-1. L0: config は run 冒頭で一度だけ detach され、以後の PF 選択・generator preload は snapshot を消費する。ledger は全行を1回読み snapshot 化。
-2. L1.1: 価格・系列を読む全 consumer の依存集合を config snapshot だけから解く関数が独立した。価格は読まない。
-3. L1: materialize の銘柄範囲と経済系列は L1.1 の出力で決まる（mode 非依存）。
-4. run identity 相当は **2つある**。`input_snapshot_id` と `execution_fingerprint`。
-5. 深度解決は本番経路に**入った**（fbcc8be0）。PFごとに depth 1値のみ。旧 `portfolios.nested_depth`（全行0）と `scripts/fof_tree.py`（OPERATOR_TOOL）は本番経路の外のまま。
+**確認できた事実（現物grep・2026-08-15 21:25）**: 上表の全行番号は origin/main=925b8338 の現物。二値の合否表は全項目PASS（値=run405〜412 差分0 / 範囲=L1.1 出力が materialize 範囲 / 深度=depth 1値 / 独立性=価格を読まない / 順序=直列 / identity=1つ）。
 
 ---
 
@@ -102,10 +97,10 @@ flowchart TB
 | 1 | ~~L1.1: ticker解決を独立層へ切り出す~~ **本番 live（b3156fb5、業務値差分0、run408）** | 完了 |
 | 2 | ~~L1: materialize する銘柄範囲を、L1.1 の出力から決める形にする~~ **本番 live（5e307731、業務値差分0、run409）** | 完了 |
 | 3 | ~~L1.2: 深度解決層を新設する~~ **本番 live（fbcc8be0、業務値差分0、run410）**。PFごとに depth 1値のみ | 完了 |
-| 4 | L1.3: run identity を1つに整理し、C0+C1 から導く | **整理** |
-| 5 | 5層を **直列** に並べる（L0→L1.1→L1.2→L1→L1.3）。並列化しない | **順序固定** |
+| 4 | ~~L1.3: run identity を1つに整理し、C0+C1 から導く~~ **本番 live（2268592d、業務値差分0、run411）** | 完了 |
+| 5 | ~~5層を **直列** に並べる~~ **本番 live（925b8338、業務値差分0、run412）** | 完了 |
 
-**0と3が新規である。1・2・4・5は既存物の置き場所・接続・順序の変更にすぎない。**
+**全6手完了（2026-08-15 17:20 下知 → 21:18 #5 PASS）。**
 
 ---
 
