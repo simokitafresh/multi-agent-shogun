@@ -355,7 +355,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存修正で解決: DM-Signal commit 466c8051f04b93570cb9907c7cdb635dd21e10c1 が全standard PFからrelative/safe-haven価格供給上界を収集し、snapshot公開前に不足価格をfail-closed検証する。指摘の根因は現行実装へ吸収済み。"
+  action_artifact: "DM-Signal@466c8051f04b93570cb9907c7cdb635dd21e10c1 backend/app/jobs/recalculate_fast.py:1964-2009,3925-3984"
+  resolved_at: "2026-08-15T11:35:43+09:00"
 - id: INS-20260814-232130051-f809
   ts: "2026-08-14T23:21:30+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id befncbz3n task id tool use id toolu 01S2YrDf656yVgHYMh は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -731,8 +734,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 42
-  last_seen: "2026-08-15T11:24:36+09:00"
+  occurrence_count: 43
+  last_seen: "2026-08-15T11:34:47+09:00"
   verification:
     status: "passed"
     exit_code: 0
