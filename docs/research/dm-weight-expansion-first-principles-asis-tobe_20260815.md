@@ -1,3 +1,4 @@
+<!-- gist-master: 926c109a368f17b85b01ee84da3cc86e dm-weight-expansion-first-principles-asis-tobe_20260815.md -->
 # 保有比率の展開 — 第一原理からのAsIs/ToBe
 
 - 作成: 2026-08-15 将軍直筆（殿下知12:03「シンプルさが足らないのでは？完全に新規で設計書を作成し、asis/tobeを書いてみよ。ticker→standardPF→leaf FOF→nestedFoFを丁寧に分解すれば手で計算できる話だ」）
