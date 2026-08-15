@@ -86,16 +86,28 @@ flowchart TB
 
   W2 --> CACHE2["cache object へ追記<br/>signals / W / provenance / fingerprint<br/><b>同一オブジェクト・identity不変</b>"]:::cache
 
-  subgraph L3["L3 FoF 78PF — leaf → nested の依存順（深度で定義は不変）"]
-    CACHE2 --> Q3{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（子のfingerprintを構成要素に含む）"}
-    Q3 -- "一致（skip）" --> S3["保存済み判定 と W を cache へ復元<br/><b>計算しない</b>"]:::skip
-    Q3 -- "不一致 / 未確定月" --> M3["momentum<br/>入力=子PFの monthly cumulative_return<br/>（close=cumulative_return, open=cumulative_return_open）<br/>窓=月数の行差分"]:::calc
-    M3 --> D3["判定 → 構成PFと目標比率 w_i"]:::calc
-    D3 --> W3["<b>規則2</b>　W(P,d) = Σ w_i × W(C_i,d)<br/>右辺は同じ関数の再帰<br/>終端は必ず規則1"]:::rule
-    S3 --> W3
+  subgraph L3A["L3a leaf FoF（depth 1 — 子が全て standard）"]
+    CACHE2 --> Q3A{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>子standardのfingerprint</b> を含む）"}
+    Q3A -- "一致（skip）" --> S3A["保存済み判定 と W を cache へ復元<br/><b>計算しない</b>"]:::skip
+    Q3A -- "不一致 / 未確定月" --> M3A["momentum<br/>入力=<b>cacheから読む</b>子standardの monthly cumulative_return<br/>（close=cumulative_return, open=cumulative_return_open）<br/>窓=月数の行差分"]:::calc
+    M3A --> D3A["判定 → 構成PFと目標比率 w_i"]:::calc
+    D3A --> W3A["<b>規則2</b>　W(P,d) = Σ w_i × W(C_i,d)<br/>C_i は standard ゆえ右辺は規則1で即終端"]:::rule
+    S3A --> W3A
   end
 
-  W3 --> CACHE3["cache object へ追記<br/>FoF signals / W / monthly / provenance<br/><b>同一オブジェクト・identity不変</b>"]:::cache
+  W3A --> CACHE3A["cache object へ追記<br/>leaf FoF の signals / W / <b>monthly cumulative_return</b> / provenance<br/><b>同一オブジェクト・identity不変</b>"]:::cache
+
+  subgraph L3B["L3b nested FoF（depth 2 → 3 → 4 を浅い順に直列。本番最深=4）"]
+    CACHE3A --> Q3B{"確定月 かつ<br/>保存fingerprint == 現fingerprint ?<br/>（構成要素に <b>直下の子FoFのfingerprint</b> を含む）"}
+    Q3B -- "一致（skip）" --> S3B["保存済み判定 と W を cache へ復元<br/><b>計算しない</b>"]:::skip
+    Q3B -- "不一致 / 未確定月" --> M3B["momentum<br/>入力=<b>cacheから読む</b>直下子FoFの monthly cumulative_return<br/>系列の定義は leaf と同一。<b>違うのは依存順序だけ</b>"]:::calc
+    M3B --> D3B["判定 → 構成PFと目標比率 w_i"]:::calc
+    D3B --> W3B["<b>規則2</b>（同じ規則の再適用）<br/>W(P,d) = Σ w_i × W(C_i,d)<br/>C_i は一段浅い深度で確定済み"]:::rule
+    S3B --> W3B
+    W3B -.->|"次の深度へ（depth+1）<br/>浅い順に直列。飛び越えない"| Q3B
+  end
+
+  W3B --> CACHE3["cache object へ追記<br/>nested FoF の signals / W / monthly / provenance<br/><b>同一オブジェクト・identity不変</b>"]:::cache
 
   subgraph L5["L5 表示・成果物層"]
     CACHE3 --> B5["builder / precomputed_raw / trade_perf<br/><b>引数で cache を受け取る</b>"]:::calc
@@ -105,7 +117,8 @@ flowchart TB
   CACHE3 -.->|"永続化のみ（書き切り）"| DB[("DB<br/>signals / monthly_returns<br/>portfolio_metrics / provenance")]:::sink
   OUT -.->|"永続化のみ（書き切り）"| DB
 
-  DB x--x|"<b>禁止</b>：下流が書いた値を読み返す<br/>（flush→再読込・再構築）"| L3
+  DB x--x|"<b>禁止</b>：下流が書いた値を読み返す<br/>（flush→再読込・再構築）"| L3A
+  DB x--x|"<b>禁止</b>：一段浅い深度の結果をDBから読み戻す"| L3B
 
-  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない"]:::rule
+  INV["<b>不変量</b><br/>① W(P,d) の定義は 規則1 と 規則2 のみ<br/>② 保存値は控え。使うのは fingerprint 一致を示せた時だけ<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力か規則が変わらない限り変わらない<br/>⑤ <b>深度は浅い順に直列。深い側は一段浅い側の確定結果をcacheから読む</b>"]:::rule
 ```
