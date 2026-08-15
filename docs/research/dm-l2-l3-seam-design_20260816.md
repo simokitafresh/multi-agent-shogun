@@ -109,7 +109,7 @@ flowchart TB
 
 | # | やること | 種別 |
 |---|---|---|
-| 1 | S1: Phase 4.5 の `signal_cache` を C2 の signals から組む。OPT-4 再クエリ(:3412)と ALM reload(:3523)を読まない | **読み出し元の付け替え** |
+| 1 | ~~S1: Phase 4.5 の `signal_cache` を C2 の signals から組む~~ **本番 live（1c138127、run420 差分0）** | 完了 |
 | 2 | S2: `_recalculate_fof_history` の `signal_cache` を C2（∪ 浅い depth の C3）から組む。`preload_fof_signals_for_portfolios`(DB) を読まない。FoF の出力を C3 へも合流 | **付け替え + produce** |
 | 3 | S3: trade_perf / risk 系の `signal_preload` / `monthly_return_cache` を C2 ∪ C3 から組む。2回目 OPT-4 と MonthlyReturn 再クエリを読まない | **付け替え** |
 | 4 | S4: L5 precompute の入力を C2 ∪ C3 ∪ C5A から渡す。L5 内の `LazySignalArtifactCache` 新規生成を止める | **付け替え** |
