@@ -446,8 +446,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 82
-  last_seen: "2026-08-15T16:03:37+09:00"
+  occurrence_count: 83
+  last_seen: "2026-08-15T16:10:16+09:00"
   verification:
     status: "passed"
     exit_code: 0
