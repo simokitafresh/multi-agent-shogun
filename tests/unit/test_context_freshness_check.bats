@@ -433,7 +433,7 @@ PROJ
 
 # GA-466 test_necessity: the runtime freshness detector must consume the same source
 # registry as task dependency injection; adding a trigger must not require a
-# second hardcoded map or silently produce a false-negative alert.
+# second hardcoded map or silently produce a false-negative alert (GA-466).
 @test "GA-466 registry trigger reaches freshness detector without map patch" {
     local source_repo="$TEST_TMPDIR/source/dm-signal"
     mkdir -p "$TEST_TMPDIR/projects" "$source_repo/backend/new_surface"

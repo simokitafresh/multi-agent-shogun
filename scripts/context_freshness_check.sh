@@ -565,6 +565,7 @@ INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
 # GA-466: retain only the legacy key set for detecting stale duplicate declarations.
 # Runtime pathspecs below come from the registry; a new registry trigger must
 # not require this compatibility map to be edited as well.
+# The compatibility key check remains intentionally path-only.
 LEGACY_CONTEXT_PATHS = set(DM_SIGNAL_CONTEXT_PATHS) | set(INFRA_CONTEXT_PATHS)
 SOURCE_CONTEXT_REGISTRY = os.path.join(root, "scripts", "config", "context_source_commits.tsv")
 
