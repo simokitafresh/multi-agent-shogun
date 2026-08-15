@@ -191,6 +191,8 @@ flowchart TB
   INV["<b>不変量</b><br/>① W の定義は 規則1 と 規則2 のみ<br/>② 控え（前回確定成果物）を使うのは fingerprint 一致を示せた時だけ。復元元は L1 で read-once した snapshot<br/>③ Σ W = 1.0 を各段で検算<br/>④ 確定した過去は 入力・規則・規則実装の版 が変わらない限り変わらない（fingerprint の入力に rule/source version を含む）<br/>⑤ 深度は浅い順に直列。depth ごとに1行。graph は topological fold を一方向に unroll した形で書く<br/>⑥ 構成PFの深度は混在してよい（standard との同居を含む）<br/>⑦ 計算開始の前提は全構成PFが上段の cache に在ること。欠けたら停止<br/>⑧ config だけで解けるものは計算前の構造解決層で解く。構造解決の入力（config/ledger snapshot）は L0 で先に固定する<br/>⑨ 全経路の最大を採る。循環は invalid graph として run 停止（fail-closed）<br/>⑩ L1.1 と L1.2 は並列（同一行の枝。どちらも C0 だけを読む）<br/>⑪ 分析派生・表示投影・永続化は別責務。分析結果は判定へ戻さない<br/>⑫ 左=cache は縦に一本、右=計算は縦に一本（L1.1‖L1.2 の同一行内の並列枝を除く）。交わるのは各L内の合流と読み出しだけ<br/>⑬ run identity と PF×月の依存fingerprint は別物。混ぜない<br/>⑭ <b>上から下へ一度も戻らない。</b>後段が必要とするものは必ず前段で確定している<br/>⑮ price consumer の依存集合は L1.1 が全消費者分を列挙する（保有ticker だけではない）<br/>⑯ cache 契約は producer の出力と consumer の入力が同じ語で一致する（monthly と cumulative は別々に列挙）"]:::rule
 ```
 
+## レビュー反映履歴
+
 ### v3.3 レビュー反映表（軍師独立レビュー第2回 blt_20260815_161252 → 12件）
 
 | # | 側 | 指摘 | 反映 |

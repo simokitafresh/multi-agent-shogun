@@ -22,7 +22,7 @@ source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
 declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
-_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax sourced_dep instruction_sync context_metadata codd_context_freshness semantic)
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax sourced_dep instruction_sync context_metadata codd_context_freshness tobe_no_line_numbers semantic)
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
@@ -1458,9 +1458,32 @@ main() {
     fi
     precommit_step_end 0
 
+    precommit_step_begin tobe_no_line_numbers
+    check_tobe_no_line_numbers
+    precommit_step_end 0
+
     precommit_step_begin semantic
     run_semantic_propagation_for_staged_files
     precommit_step_end "$?"
+}
+
+
+# ToBe節に現実の行番号(:NNN)/ファイル名.py:が混入したらWARN(BLOCKしない)。
+# 原則(殿裁定2026-08-15): ToBeは現実の関数名・行番号・実測値で理想を縛らない。
+# 発端: v3.1/v3.2でToBe図へ実装の行番号を持ち込み殿16:01/16:06指摘。
+check_tobe_no_line_numbers() {
+    local f hits
+    while IFS= read -r f; do
+        [[ "$f" == docs/research/*.md ]] || continue
+        hits=$(git show ":$f" 2>/dev/null | awk '
+            /^## /{intobe = ($0 ~ /ToBe/) ? 1 : 0}
+            intobe && (/:[0-9][0-9][0-9]+/ || /\.py:/) {print NR": "$0}' | head -5)
+        if [[ -n "$hits" ]]; then
+            echo "  WARN(tobe_no_line_numbers): $f のToBe節に実装の行番号/ファイル参照が混入。ToBeは理想。AsIs側へ移すか削れ:" >&2
+            echo "$hits" | cut -c1-160 | sed 's/^/    /' >&2
+        fi
+    done < <(git diff --cached --name-only --diff-filter=AM)
+    return 0
 }
 
 # --- Failure recording trap (cmd_1117) ---
