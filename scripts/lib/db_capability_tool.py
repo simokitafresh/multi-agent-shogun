@@ -1252,6 +1252,206 @@ def _restore_signal_run430_20260816(dsn: str, output: Path, *, dry_run: bool) ->
         conn.close()
 
 
+def _restore_signal_run430_state_20260816(dsn: str, output: Path, *, dry_run: bool) -> dict:
+    """Restore the complete run430 signal/cache state for the exact EqualWeight change set."""
+    import psycopg2
+
+    expected_rows = 8_145
+    expected_portfolios = 39
+    conn = psycopg2.connect(dsn)
+    conn.autocommit = False
+    cursor = None
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT current_user, session_user, current_database(), "
+            "COALESCE(inet_server_addr()::text, '')"
+        )
+        current_user, session_user, database_name, server_address = cursor.fetchone()
+        if database_name != "dm_signal":
+            raise RuntimeError("run430 state restore requires dm_signal database")
+        cursor.execute("SELECT pg_try_advisory_lock(%s)", (8675309,))
+        if not cursor.fetchone()[0]:
+            raise RuntimeError("recalculate advisory lock is held")
+        cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM recalculation_status "
+            "WHERE status='running' AND end_time IS NULL)"
+        )
+        if cursor.fetchone()[0]:
+            raise RuntimeError("running recalculation exists")
+        cursor.execute("SET LOCAL lock_timeout = '30s'")
+        cursor.execute("LOCK TABLE signals, signal_change_log, portfolios IN SHARE ROW EXCLUSIVE MODE")
+        cursor.execute(
+            """
+            SELECT c.portfolio_id, c.date, c.old_holding_signal,
+                   c.new_holding_signal, c.old_ticker_weights,
+                   c.new_ticker_weights, s.signal, s.holding_signal,
+                   s.momentum_data
+            FROM signal_change_log c
+            JOIN signals s ON s.portfolio_id=c.portfolio_id AND s.date=c.date
+            WHERE c.changed_at >= TIMESTAMP '2026-08-16 01:26:42'
+              AND c.changed_at <  TIMESTAMP '2026-08-16 01:26:44'
+            ORDER BY c.portfolio_id, c.date, c.id
+            """
+        )
+        rows = cursor.fetchall()
+        keys = [(row[0], row[1]) for row in rows]
+        portfolio_ids = {row[0] for row in rows}
+        if len(rows) != expected_rows or len(set(keys)) != expected_rows:
+            raise RuntimeError(
+                f"run430 state cardinality mismatch rows={len(rows)} unique_keys={len(set(keys))}"
+            )
+        if len(portfolio_ids) != expected_portfolios:
+            raise RuntimeError(f"run430 state portfolio cardinality mismatch: {len(portfolio_ids)}")
+        cursor.execute(
+            """
+            SELECT COUNT(*), COUNT(*) FILTER (
+              WHERE p.config#>>'{pipeline_config,terminal_block,type}' = 'EqualWeight'
+            )
+            FROM portfolios p WHERE p.id = ANY(%s)
+            """,
+            (list(portfolio_ids),),
+        )
+        portfolio_count, equal_weight_count = map(int, cursor.fetchone())
+        if (portfolio_count, equal_weight_count) != (expected_portfolios, expected_portfolios):
+            raise RuntimeError(
+                "run430 state reconstruction requires exactly 39 EqualWeight portfolios: "
+                f"portfolios={portfolio_count} equal_weight={equal_weight_count}"
+            )
+
+        current_signal_matches_new = sum(row[6] == row[3] for row in rows)
+        current_holding_matches_new = sum(row[7] == row[3] for row in rows)
+        if current_signal_matches_new != expected_rows or current_holding_matches_new != expected_rows:
+            raise RuntimeError(
+                "run430 current signal-state precondition mismatch: "
+                f"signal={current_signal_matches_new} holding={current_holding_matches_new}"
+            )
+
+        updates = []
+        serialized_rows = []
+        weights_rebuilt = 0
+        for row in rows:
+            portfolio_id, signal_date, old_holding, new_holding, old_ticker_weights, new_ticker_weights = row[:6]
+            old_ids = [part.strip() for part in str(old_holding).split(",") if part.strip()]
+            if not old_ids:
+                raise RuntimeError(f"run430 old holding is empty: {portfolio_id} {signal_date}")
+            momentum_data = dict(row[8]) if isinstance(row[8], dict) else {}
+            restored_momentum = dict(momentum_data)
+            if "signal" in restored_momentum:
+                restored_momentum["signal"] = old_holding
+            if isinstance(restored_momentum.get("weights"), dict) and restored_momentum["weights"]:
+                equal_weight = 1.0 / len(old_ids)
+                restored_momentum["weights"] = {component_id: equal_weight for component_id in old_ids}
+                weights_rebuilt += 1
+            restored_momentum["display_ticker_weights"] = old_ticker_weights
+            restored_momentum["pending_display_ticker_weights"] = old_ticker_weights
+            if "expanded_ticker_weights" in restored_momentum:
+                restored_momentum["expanded_ticker_weights"] = old_ticker_weights
+            updates.append(
+                (old_holding, old_holding, json.dumps(restored_momentum, sort_keys=True), portfolio_id, signal_date)
+            )
+            serialized_rows.append(
+                {
+                    "portfolio_id": str(portfolio_id),
+                    "date": signal_date.isoformat(),
+                    "old_holding_signal": old_holding,
+                    "new_holding_signal": new_holding,
+                    "old_ticker_weights": old_ticker_weights,
+                    "new_ticker_weights": new_ticker_weights,
+                    "pre_restore_signal": row[6],
+                    "pre_restore_holding_signal": row[7],
+                    "pre_restore_momentum_data": momentum_data,
+                }
+            )
+
+        rows_json = json.dumps(serialized_rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        base_result = {
+            "decision": "PASS",
+            "dry_run": dry_run,
+            "target_rows": len(rows),
+            "portfolio_count": len(portfolio_ids),
+            "equal_weight_portfolios": equal_weight_count,
+            "current_signal_matches_new": current_signal_matches_new,
+            "current_holding_matches_new": current_holding_matches_new,
+            "weights_rebuilt": weights_rebuilt,
+            "rows_sha256": hashlib.sha256(rows_json.encode("utf-8")).hexdigest(),
+            "identity": {
+                "current_user": current_user,
+                "session_user": session_user,
+                "database": database_name,
+                "server_address": server_address,
+            },
+        }
+        if dry_run:
+            conn.rollback()
+            return {**base_result, "updated_rows": 0, "restored_exact": 0}
+
+        backup = {
+            **base_result,
+            "capability": "bounded_signal_run430_state_restore_20260816",
+            "window_utc": ["2026-08-16T01:26:42Z", "2026-08-16T01:26:44Z"],
+            "rows": serialized_rows,
+        }
+        output.parent.mkdir(parents=True, exist_ok=True)
+        payload = (json.dumps(backup, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+        fd = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+
+        cursor.executemany(
+            """
+            UPDATE signals
+               SET signal=%s, holding_signal=%s, momentum_data=%s::json
+             WHERE portfolio_id=%s AND date=%s
+            """,
+            updates,
+        )
+        if cursor.rowcount != expected_rows:
+            raise RuntimeError(f"run430 state update cardinality mismatch: {cursor.rowcount}")
+        cursor.execute(
+            """
+            WITH target AS (
+              SELECT c.portfolio_id, c.date, c.old_holding_signal,
+                     c.old_ticker_weights::jsonb AS old_ticker_weights
+              FROM signal_change_log c
+              WHERE c.changed_at >= TIMESTAMP '2026-08-16 01:26:42'
+                AND c.changed_at <  TIMESTAMP '2026-08-16 01:26:44'
+            )
+            SELECT COUNT(*), COUNT(*) FILTER (
+                     WHERE s.signal IS NOT DISTINCT FROM t.old_holding_signal
+                       AND s.holding_signal IS NOT DISTINCT FROM t.old_holding_signal
+                       AND s.momentum_data::jsonb->'display_ticker_weights' = t.old_ticker_weights
+                       AND s.momentum_data::jsonb->'pending_display_ticker_weights' = t.old_ticker_weights
+                   )
+            FROM target t JOIN signals s USING(portfolio_id,date)
+            """
+        )
+        target_count, restored_exact = map(int, cursor.fetchone())
+        if (target_count, restored_exact) != (expected_rows, expected_rows):
+            raise RuntimeError(
+                f"run430 state postcondition mismatch target={target_count} restored={restored_exact}"
+            )
+        conn.commit()
+        return {
+            **base_result,
+            "backup": str(output),
+            "backup_bytes": len(payload),
+            "updated_rows": expected_rows,
+            "restored_exact": restored_exact,
+            "other_table_writes": 0,
+            "recalculate_runs": 0,
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conn.close()
+
+
 def main() -> int:
     capability = os.environ.get("DB_CAPABILITY")
     mode = os.environ.get("DB_CAPABILITY_MODE")
@@ -1317,6 +1517,29 @@ def main() -> int:
         if database_identity != "dm_signal":
             raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
         result = _restore_signal_run430_20260816(dsn, output, dry_run=args.action == "dry-run")
+        print(json.dumps(result, sort_keys=True, ensure_ascii=False))
+        return 0
+    if capability == "bounded_signal_run430_state_restore_20260816":
+        if mode != "bounded_signal_run430_state_restore":
+            raise SystemExit("unknown capability or mode")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("action", choices=("dry-run", "restore"))
+        parser.add_argument("--output", required=True)
+        args = parser.parse_args()
+        project_root = Path(os.environ["DB_CAPABILITY_PROJECT_ROOT"]).resolve()
+        output = Path(args.output).resolve()
+        allowed_output_root = (project_root / "outputs" / "analysis").resolve()
+        if allowed_output_root not in output.parents or output.suffix != ".json":
+            raise SystemExit("BLOCK: backup output must be a JSON file under outputs/analysis")
+        dsn = os.environ["DATABASE_URL"]
+        parsed = urlsplit(dsn)
+        resource_identity = parsed.hostname or ""
+        database_identity = unquote(parsed.path.lstrip("/").split("/", 1)[0])
+        if not resource_identity.endswith(".singapore-postgres.render.com"):
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered Render production resource")
+        if database_identity != "dm_signal":
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
+        result = _restore_signal_run430_state_20260816(dsn, output, dry_run=args.action == "dry-run")
         print(json.dumps(result, sort_keys=True, ensure_ascii=False))
         return 0
     if capability == "bounded_signal_july_drift_restore_20260714":
