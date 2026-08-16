@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-16 -->
+<!-- last_updated: 2026-08-17 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,9 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_4034 | 家老起票依頼(blt_20260717_151012)。設計書campaign-lane-residual-resolution-design_20260717.md §5.1 S0。F1の6 adapter/writerが共通基盤なしに並列実装できないため、全shardの前提を確定する | infra | 07-17 | S0共通5契約を7ファイルで凍結し、新規9/9・既存15/1 |
-| cmd_4039 | cmd_4034(S0) GATE CLEAR後、F1配備前に家老がBLOCK検出(blt_20260717_160214)+軍師3点必須回答(blt_20260717_160627): scripts/campaign_lane_shard_item.shが不在でshard_work dispatch不能。materialize+lifecycle bridge(deploy→忍者実行→report→result.json)を実装しF1を可能にする | infra | 07-17 | cmd_4034(S0) GATE CLEAR後、F1配備前 |
-| cmd_4040 | 家老一次コード確認(blt_20260717_170210)で検出: contracts.py:25がschema+versionのみでhelper/SDK SHA未含、shard_item.shがcontract_fingerprint不一致を検証しない、test_command/read_only_pathsがtask未接続。設計§5.2が要求するfingerprint全要素+wrapper検証を補修しF1配備を可能にする | infra | 07-17 | fingerprintをschema+version+hel |
 | cmd_4085 | 殿質問(2026-07-19 16:51 スループット改善の効果を数値で)への回答で、cmd E2E中央値のうちfinalize段(done→レビュー→GATE→archive→dashboard→ntfy)が最大の時間税と将軍が一次計測で特定した。どの工程が支配的かの内訳実測がなく根治対象を選べないため、工程別の所要時間を一次データで層別実測し短縮候補を特定する | infra | 07-19 | finalize段を一次時刻5種で4/4件結合し、最大rep |
 | cmd_4086 | 殿指示(2026-07-19 17:38): 自立改善ループ(計測→根治→再計測の自走)の適用候補を、家老・軍師・忍者の偵察で他リポジトリ含め広く集め、ドキュメントに蓄積して後日思い出せる状態にする。急がず網羅を優先。将軍起草のカタログdocs/research/self-improvement-loop-candidates-20260719.mdの§3偵察対象を実地確認し候補を拡充する | infra | 07-19 | 全15 PJ pathを現物確認し、15/15実在・15/1 |
 | cmd_4089 | rebalancer価格経路リアルタイム化設計書(正本パスはassumptions.source参照。軍師APPROVE+家老APPROVE WITH CHANGES済み)の工程P1b。P1a(cmd_4088+fix R1、provenance型境界)完了を受け、Alpaca IEX WebSocket購読とメモリlatest store、Alpaca clock/calendar正本による接続制御、healthの状態分離を実装する。家老レビュー④⑤の根治を含む | rebalancer | 07-19 | Alpaca IEX WS/latest store/cal |
