@@ -1180,6 +1180,16 @@ insights:
   resolved_reason: "既存一次設計書docs/research/gunshi_idle_stale_ac_analysis_20260426.mdにcmd_2286のAC5混入・根因・A案（gate_report_formatでcmd原本AC ID照合）が記録済み。現行実装はdeploy時AC_VERIFYとtask/report契約検査を持つが原cmd再照合の実装証跡はなく、本taskのplanned scope外なので新規修正せず設計候補として整理済みと判断"
   action_artifact: "docs/research/gunshi_idle_stale_ac_analysis_20260426.md#修正設計案;context/infrastructure.md:L1545,L1593-L1594;decision_candidate=cmd原本とtask AC ID集合の再照合をLevel5候補として次cmdで設計・実装"
   resolved_at: "2026-08-17T06:57:45+09:00"
+- id: INS-20260817-023016651-11a5
+  ts: "2026-08-17T02:30:16+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=artifactの未決(殿裁定待ち)についてこたえたいから、もう少し詳しく一つづつ質問してくれ"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次情報のqueue/lord_conversation.jsonl:358-360で殿の依頼と将軍の一問ずつ確認する対応を確認。関連するsemantic_index_update候補INS-20260817-023017799-c0bfも既存概念としてresolved済みで、新規実装修正やdecision_candidateは不要。"
+  action_artifact: "queue/lord_conversation.jsonl:358-360;queue/insights.yaml:617-626;context/semantic-map.md:semantic_dictionary_design;decision_candidate=none"
+  resolved_at: "2026-08-17T07:45:49+09:00"
 - id: INS-20260817-041822510-06d9
   ts: "2026-08-17T04:18:22+09:00"
   insight: "高頻度FAIL: binary_checks.ACx[0]: missing \"check\" field (12回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
