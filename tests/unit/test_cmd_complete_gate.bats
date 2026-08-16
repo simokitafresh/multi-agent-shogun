@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = Path(sys.argv[1]).read_text(encoding="utf-8")
-names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event""".split()
+names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity""".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -759,6 +759,78 @@ _run_self_grade_commit_file_coverage_with_state() {
     check_self_grade_commit_file_coverage
     echo "ALL_CLEAR=$ALL_CLEAR"
     echo "BLOCK_REASONS=${BLOCK_REASONS[*]}"
+}
+
+# test_necessity: task.ac_version must remain an immutable fingerprint of the
+# deployed acceptance_criteria namespace; a stale task must BLOCK before the
+# completion gate can consume the report.
+# regression_justification: the prior gate compared only task.ac_version to
+# report.ac_version_read, so both values could remain equal after task AC tampering.
+@test "task AC fingerprint passes unchanged and blocks added or changed AC" {
+    source "$GATE_HELPERS_FILE"
+    local task_file="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    local expected deploy_expected normal_pass=0 tamper_detected=0
+    cat > "$task_file" <<'EOF'
+task:
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "stable criterion"
+  ac_version: PLACEHOLDER
+EOF
+    expected="$(compute_task_ac_version "$task_file")"
+    sed -i "s/ac_version: PLACEHOLDER/ac_version: $expected/" "$task_file"
+    deploy_expected="$(DEPLOY_TASK_LIB_ONLY=1 bash -c 'source "$1"; _compute_ac_hash "$2"' _ "$PROJECT_ROOT/scripts/deploy_task.sh" "$task_file")"
+    [ "$expected" = "$deploy_expected" ]
+
+    run check_task_ac_version_integrity "$task_file" sasuke
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"recomputed=${expected}"* ]]
+    normal_pass=$((normal_pass + 1))
+
+    sed -i '/  ac_version:/i\    - id: AC2\n      checks:\n        - check: "added after deployment"' "$task_file"
+    run check_task_ac_version_integrity "$task_file" sasuke
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"task.ac_version stale"* ]]
+    [[ "$output" == *"computed="* ]]
+    tamper_detected=$((tamper_detected + 1))
+
+    sed -i '/    - id: AC2/,/        - check: "added after deployment"/d' "$task_file"
+    sed -i 's/stable criterion/changed after deployment/' "$task_file"
+    run check_task_ac_version_integrity "$task_file" sasuke
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"task.ac_version stale"* ]]
+    tamper_detected=$((tamper_detected + 1))
+
+    [ "$normal_pass" -eq 1 ]
+    [ "$tamper_detected" -eq 2 ]
+
+    printf 'detector_fp_rate=false_positive=0\nnormal_fixture=%s/1 PASS\ntamper_fixture=%s/2 BLOCK\n' \
+        "$normal_pass" "$tamper_detected" \
+        >&3
+}
+
+# test_necessity: numeric and missing ac_version are legacy-compatible skips;
+# introducing the new detector must not convert those existing contracts into BLOCK.
+@test "task AC fingerprint keeps missing and numeric legacy compatibility" {
+    source "$GATE_HELPERS_FILE"
+    local task_file="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    cat > "$task_file" <<'EOF'
+task:
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "legacy criterion"
+EOF
+
+    run check_task_ac_version_integrity "$task_file" sasuke
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未設定"* ]]
+
+    printf '  ac_version: 2\n' >> "$task_file"
+    run check_task_ac_version_integrity "$task_file" sasuke
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"旧形式(数値)"* ]]
 }
 
 _write_command_coverage_fixture() {
