@@ -3528,6 +3528,7 @@ codd:
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality, terminology_dictionary, shin_shijin_design, alpha_6_metrics, db_price_data_range, dm_signal_refactor_mission, fusion_api_endpoint, dmsignal_fe_experience_deploy, dm_signal_pf_restore_guardrails, partial_turnover_execution_method |
 | causal | [[cmd_reflux_backlink_202608111642_hayate]] -> [[production_parity]] -> [[dm-production-issues-asis-tobe-5w1h_20260810]] |
+| causal | [[production_parity]] -> `docs/research/dm-monthly-trade-pending-simplify-asis-tobe_20260817.md` |
 
 | 種別 | パス/参照 |
 |------|----------|
