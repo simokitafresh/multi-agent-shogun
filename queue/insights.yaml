@@ -1180,3 +1180,22 @@ insights:
   resolved_reason: "一次確認で既存GP-107判定済みの品質パターンと確定。gate_report_format_main.pyはcheck欠落を必須契約違反として検出し、gate_report_autofix_main.pyはcheck内容の推定を行わないため、安全な自動修正や新規gate強化は不要。gate_loop_health.shの汎用MISSING成熟提案が直近12回を再掲したため、既存設計で解決扱いとする。"
   action_artifact: "gate_report_format_main.py:L1497 / gate_report_autofix_main.py:L105-L106 / gate_loop_health.sh:L288-L294 / logs/gate_fire_log.yaml:2026-08-17T04:09:16-04:09:48の12回相当"
   resolved_at: "2026-08-17T04:42:05+09:00"
+- id: INS-20260817-062420170-6940
+  ts: "2026-08-17T06:24:20+09:00"
+  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: resolved
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq '844e3dc339ede79783830daa986ab4969c58838be5cf438290c049367938f5f2' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
+  occurrence_count: 2
+  last_seen: "2026-08-17T06:48:22+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
+  resolved_reason: "一次証拠logs/self_retro.jsonl:3136のevent_id一致、verify_command rc=0、review_notify event_id 934件中934一意で重複0。既存fix_known=trueの結論を確認し追加実修正とdecision_candidateは不要としてresolve"
+  action_artifact: "logs/self_retro.jsonl:3136"
+  resolved_at: "2026-08-17T06:43:39+09:00"
