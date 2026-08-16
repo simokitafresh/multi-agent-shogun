@@ -378,8 +378,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 17
-  last_seen: "2026-08-17T03:35:22+09:00"
+  occurrence_count: 18
+  last_seen: "2026-08-17T03:45:48+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -708,7 +708,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '5d42e6817e36d255981a7addf24514490220928be631b9598b8f10a10d04256b' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -718,6 +718,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次情報でself_retro event_id=5d42e6817e36d255981a7addf24514490220928be631b9598b8f10a10d04256bのcompletion_pipeline候補を確認し、verify_command終了コード0およびfix_known=trueを再確認済み。既知候補のため新規実装・decision_candidateは不要。"
+  action_artifact: "logs/self_retro.jsonl:event_id=5d42e6817e36d255981a7addf24514490220928be631b9598b8f10a10d04256b;verify_command=PASS;insight=INS-20260817-015424325-020b"
+  resolved_at: "2026-08-17T03:45:52+09:00"
 - id: INS-20260817-021018422-e703
   ts: "2026-08-17T02:10:18+09:00"
   insight: "semantic_index_update新概念候補: discussion:過去月バッジは廃し、当月だけ「価格が揃うまで未確定」を示す形へ簡素化するのはいい案だな。 Image を見てくれ。next signalのゾーンは不要だと思う は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
