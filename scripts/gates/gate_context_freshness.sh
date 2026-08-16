@@ -315,10 +315,9 @@ emit_update_cmd_templates() {
     fi
     cmd_date="${today//-/}"
 
-    echo "--- 更新cmdテンプレート TOP3 ---"
+    echo "--- 更新cmdテンプレート 全件 (${#STALE_TEMPLATE_ROWS[@]}件) ---"
     printf '%s\n' "${STALE_TEMPLATE_ROWS[@]}" \
         | sort -t $'\t' -k1,1nr \
-        | head -3 \
         | while IFS=$'\t' read -r _sort_days rel_path days_ago last_updated; do
             local slug project_id last_note owner trigger route alert_line
             slug="$(sanitize_cmd_slug "$rel_path")"

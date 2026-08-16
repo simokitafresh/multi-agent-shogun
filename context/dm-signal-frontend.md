@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-13 cmd_4298 reviewed source boundary -->
+<!-- last_updated: 2026-08-17 cmd_karo_hotfix_ga471_context_freshness_202608170345 reviewed source boundary -->
+<!-- source_commit:62f0fba0 reason:cmd_karo_hotfix_ga471_context_freshness_202608170345 content reflection evidence:Monthly Trade pending display simplified; source frontend tests and component diff reviewed -->
 <!-- source_commit:c22362a9 reason:cmd_4298 reviewed source boundary evidence:SG7 LGTM and Karo ACCEPT; frontend scope one-file commit -->
 <!-- source_commit:33ba0d96 reason:cmd_4297 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=33ba0d96 -->
 <!-- source_commit:21892719 reason:GA-455 content reflection evidence:source frontier review: 3 commits; UI behavior indexed in context §0.1 -->
@@ -443,3 +444,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 ## 26. Admin Visibility両面実測 (cmd_4299, 2026-08-13)
 
 結論: `/admin/visibility`は本番CDPで全開scrollHeight=`6556px`・全閉=`980px`、PF行=`54.33–54.67px`、folder header=`40px`、viewport内PF完全表示=`2行`（交差=`3行`）だった。`collapsedFolders`はReact stateのみでSave永続化経路はコード上0件。→ `docs/research/admin-ui-redesign-asis-tobe-5w1h_20260724.md` §5
+
+## 27. Monthly Trade pending表示の現行境界 (cmd_4324, 2026-08-17)
+
+結論: `MonthlyTradeTable` はdeprecatedなNext Signal panelとdecision-sourceバッジ（Confirmed/Corrected/Historical/Pending）を描画せず、行単位のpending indicatorと指定列のopacityだけで未確定状態を示す。FoFのticker/weight表示とraw UUID非露出は維持する。参照: `frontend/components/monthly-trade-table.tsx`, `frontend/components/__tests__/monthly_trade_table_fof_uuid.test.tsx`、source commit `62f0fba0`。

@@ -52,6 +52,39 @@ SH
   [[ "$output" == *"起票レーン=shogun-doc-lane"* ]]
 }
 
+@test "all stale context candidates remain Level5 inputs when more than three alert" {
+  for path in infrastructure dm-signal-frontend dm-signal-core dm-signal-ops; do
+    printf '<!-- last_updated: 2026-07-19 cmd_fixture -->\n' > "$FIXTURE_ROOT/context/${path}.md"
+  done
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'EOF'
+ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19 repo=/fixture root_fallback=yes owner=infra-platform update_trigger=root-fallback latest: aaa1111 infra
+ALERT: context/dm-signal-frontend.md source commits 1件 since last_updated=2026-07-19 repo=/fixture root_fallback=no owner=dm-signal-frontend update_trigger=frontend latest: bbb2222 frontend
+ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-07-19 repo=/fixture root_fallback=no owner=dm-signal-core update_trigger=backend/app latest: ccc3333 core
+ALERT: context/dm-signal-ops.md source commits 1件 since last_updated=2026-07-19 repo=/fixture root_fallback=no owner=dm-signal-ops update_trigger=backend/app/api latest: ddd4444 ops
+EOF
+SH
+  chmod +x "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-all" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"全件 (4件)"* ]]
+  [[ "$output" == *"context/dm-signal-frontend.md の鮮度ALERT"* ]]
+  [[ "$output" == *"context/dm-signal-core.md の鮮度ALERT"* ]]
+  [[ "$output" == *"context/dm-signal-ops.md の鮮度ALERT"* ]]
+  [[ "$output" == *"context/infrastructure.md の鮮度ALERT"* ]]
+  [ "$(grep -c '^  purpose: ' <<< "$output")" -eq 4 ]
+}
+
 @test "normal checker output produces zero false-positive alerts" {
   printf '#!/usr/bin/env bash\nexit 0\n' > "$FIXTURE_ROOT/scripts/check.sh"
 
