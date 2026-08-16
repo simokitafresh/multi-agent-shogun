@@ -1,3 +1,4 @@
+<!-- gist-master: 0d23e0c34127527dd9031aa7fd9ac269 dm-login-boundary-asis-tobe_20260817.md -->
 # ログイン境界 AsIs/ToBe — tier境界のデータ漏れを構造で塞ぐ
 
 ## 原則（親文書と同じ。殿裁定 2026-08-15）
