@@ -1098,6 +1098,83 @@ def _restore_fof_monthly_20260729(
         conn.close()
 
 
+def _drop_legacy_rows_20260816(dsn: str, output: Path, *, dry_run: bool) -> dict:
+    """Drop rows that fullrecalculate never regenerates (殿裁定 2026-08-16 20:45 drop / 23:14 今消そう).
+
+    Scope (bounded, single transaction, fail-closed):
+      - all signals / monthly_returns / fof_component_weights rows of portfolios.type='fof'
+        (full regenerates the valid_start.. window; pre-valid_start legacy rows disappear)
+      - standard PF weekend signals rows (extract(dow) in 0,6)
+    dry-run counts and rolls back; drop deletes and commits. Evidence JSON always written.
+    """
+    import psycopg2
+
+    allowed_databases = {"dm_signal", "dm_signal_4xdu"}
+    statements = {
+        "fof_component_weights": (
+            "DELETE FROM fof_component_weights w USING portfolios p "
+            "WHERE p.id = w.portfolio_id AND p.type = 'fof'"
+        ),
+        "monthly_returns": (
+            "DELETE FROM monthly_returns m USING portfolios p "
+            "WHERE p.id = m.portfolio_id AND p.type = 'fof'"
+        ),
+        "signals_fof": (
+            "DELETE FROM signals s USING portfolios p "
+            "WHERE p.id = s.portfolio_id AND p.type = 'fof'"
+        ),
+        "signals_standard_weekend": (
+            "DELETE FROM signals s USING portfolios p "
+            "WHERE p.id = s.portfolio_id AND p.type <> 'fof' "
+            "AND EXTRACT(dow FROM s.date) IN (0, 6)"
+        ),
+    }
+    counts_sql = {
+        "fof_component_weights": "SELECT count(*) FROM fof_component_weights w JOIN portfolios p ON p.id=w.portfolio_id WHERE p.type='fof'",
+        "monthly_returns": "SELECT count(*) FROM monthly_returns m JOIN portfolios p ON p.id=m.portfolio_id WHERE p.type='fof'",
+        "signals_fof": "SELECT count(*) FROM signals s JOIN portfolios p ON p.id=s.portfolio_id WHERE p.type='fof'",
+        "signals_standard_weekend": "SELECT count(*) FROM signals s JOIN portfolios p ON p.id=s.portfolio_id WHERE p.type<>'fof' AND EXTRACT(dow FROM s.date) IN (0,6)",
+    }
+    conn = psycopg2.connect(dsn)
+    conn.autocommit = False
+    result: dict = {"dry_run": dry_run, "before": {}, "deleted": {}, "after": {}}
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT current_database()")
+            database_name = cur.fetchone()[0]
+            if database_name not in allowed_databases:
+                raise RuntimeError(f"legacy drop refuses database {database_name}")
+            result["database"] = database_name
+            cur.execute("SELECT count(*) FROM portfolios WHERE type='fof'")
+            result["fof_portfolios"] = cur.fetchone()[0]
+            for key, sql in counts_sql.items():
+                cur.execute(sql)
+                result["before"][key] = cur.fetchone()[0]
+            for key, sql in statements.items():
+                cur.execute(sql)
+                result["deleted"][key] = cur.rowcount
+            for key, sql in counts_sql.items():
+                cur.execute(sql)
+                result["after"][key] = cur.fetchone()[0]
+        for key in statements:
+            if result["after"][key] != 0 or result["deleted"][key] != result["before"][key]:
+                raise RuntimeError(f"legacy drop count mismatch for {key}: {result}")
+        if dry_run:
+            conn.rollback()
+            result["committed"] = False
+        else:
+            conn.commit()
+            result["committed"] = True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(result, sort_keys=True, ensure_ascii=False, indent=2))
+    return result
+
+
 def _restore_signal_run430_20260816(dsn: str, output: Path, *, dry_run: bool) -> dict:
     """Restore the exact run430 holding-signal change set, or fail closed."""
     import psycopg2
@@ -1494,6 +1571,25 @@ def main() -> int:
         if database_identity != "dm_signal":
             raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
         result = _restore_signal_window_20260714(dsn, output)
+        print(json.dumps(result, sort_keys=True, ensure_ascii=False))
+        return 0
+    if capability == "bounded_legacy_rows_drop_20260816":
+        if mode != "bounded_legacy_rows_drop":
+            raise SystemExit("unknown capability or mode")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("action", choices=("dry-run", "drop"))
+        parser.add_argument("--output", required=True)
+        args = parser.parse_args()
+        project_root = Path(os.environ["DB_CAPABILITY_PROJECT_ROOT"]).resolve()
+        output = Path(args.output).resolve()
+        allowed_output_root = (project_root / "outputs" / "analysis").resolve()
+        if allowed_output_root not in output.parents or output.suffix != ".json":
+            raise SystemExit("BLOCK: evidence output must be a JSON file under outputs/analysis")
+        dsn = os.environ["DATABASE_URL"]
+        parsed = urlsplit(dsn)
+        if not (parsed.hostname or "").endswith(".singapore-postgres.render.com"):
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered Render production resource")
+        result = _drop_legacy_rows_20260816(dsn, output, dry_run=args.action == "dry-run")
         print(json.dumps(result, sort_keys=True, ensure_ascii=False))
         return 0
     if capability == "bounded_signal_run430_restore_20260816":
