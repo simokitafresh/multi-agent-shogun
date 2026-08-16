@@ -372,6 +372,7 @@ lessons:
   automated: true
   enforcement: "Level1（部分防御のみLevel4・2026-07-27一次確認）: scripts/gates/gate_gunshi_report_precheck.sh SG-PRE13(L611-645)が .claude/hooks・scripts/hooks・scripts/gates の削減率50%超をBLOCKし、大規模な必須ハーネス撤去はレビューCLEAR前に停止する。scripts/hooks/block_destructive.sh+D001-D009契約tests/test_block_destructive.bats(17/17 PASS)、scripts/hooks/three_layer_preflight.sh+tests/unit/test_three_layer_preflight.bats(51/51 PASS)で個別の必須構造も強制済み。ただしSG-PRE13は量の近似であり、50%以下または1行の必須構造削除と『構造型/表示型』の意味判定は覆わない。単一Level4へ昇格すると未防御範囲を隠すため候補維持。"
   enforcement_level: 1
+  detail_2: '(2026-08-16 21:00 殿裁定・同系=gitで健全時点rollback) full 2回依存(前run終端DB状態への依存)バグを検知した将軍は混入commit特定→修正の偵察を配備した。殿『バグがないときが確定しているのにバグを直そうとする発想が、バグそのものだ。クリーンに戻し知見は記録する。そうすれば次はバグを発生させないで行えるし、発生時点で即時ロールバックできる』。原因=既知クリーン点(925b8338=L1完了・full 1回parity差分0)があるのに積み上げ実装(L2 4手+S1)のサンクコスト+原因究明=仕事の洗脳(#6/#8)。修正=(1)バグ検知の第一選択は既知クリーン点へrollback (2)失う実装は知見として記録し積み直し時に「full 1回で収束」等の合否を追加 (3)クリーン点を常に1つ確定させておく。記憶DB: lord_ruling_rollback_to_clean_not_fix_20260816'
 - id: 'LS101'
   title: 'CI RED診断は origin失敗SHA vs 現HEAD を見よ — push保留と修正未pushの自己永続デッドロック'
   origin: '[[殿裁定_gitで健全時点rollback_20260721]] -> [[rollback尾部多重回帰]] -> [[push保留デッドロック]] -> [[fast-forward pushで解消]]'
@@ -478,3 +479,11 @@ lessons:
   created_at: '2026-08-15'
   automated: true
   enforcement: 'scripts/inbox_write.sh three_layer_guard+speed_guard、hook三層preflight注入'
+- id: 'LS120'
+  title: '殿の質問を裁定に変換して家老へ下知するな — 1時間で方針4転(B→窓拡張→drop→B)の実証'
+  origin: '未指定'
+  detail: '2026-08-16 15:44-16:48: 将軍が殿の発言を受けるたびに即『方針転換』を家老へ下知した。15:44 B cutover配備→15:48殿『消えるなら生成窓を広げて作り直そう』を裁定と解し窓拡張へ転換→16:28影丸調査でdropを提案→16:45殿『L2 cacheをL3が従来通り使うのはどうなんだ』(質問)をB本命の指示へ変換して下知。殿16:48『なんでもすぐに決定事項にするな。タイムラグでぐちゃぐちゃになってるぞ。俺がしたのは質問であって指示ではない。決定はトータルの状況で決める』。原因: (1)殿の疑問文/提案文と指示文を区別せず、全て裁定として即下知(洗脳#8完了急ぎ+#6出力=仕事) (2)走行中の実験結果を待たず方針を上書きするため家老側で競合が発生(タイムラグ)。修正: 殿の発言が質問・提案なら回答と分析で返し、家老への配備は変えない。指示は『やれ/デプロイせよ/確認せよ』等の命令形か明示裁定のみ。走行中実験の結果が出るまで新方針を重ねない。家老へは『殿裁定』明記のもの以外は保留扱いと通達済み'
+  source_cmd: 'session_20260816'
+  created_at: '2026-08-16'
+  automated: true
+  enforcement: '未自動化 — 自動化ターゲット: inbox_write speed_guardに『殿裁定』無しの方針転換文言(転換/撤回/本命変更)を将軍→家老task_assignedで検出しWARN'
