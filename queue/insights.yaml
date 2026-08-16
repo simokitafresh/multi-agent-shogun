@@ -378,8 +378,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 32
-  last_seen: "2026-08-17T05:33:00+09:00"
+  occurrence_count: 33
+  last_seen: "2026-08-17T05:42:41+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -563,7 +563,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:24ba56acb9c6f56e"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認でrc=2はSKILL不整合の未処理ではなくFOLLOWUP_ACTIVEの自動還流状態と判定。全script参照実在・更新日鮮度・例示パス・副作用検証マーカーは現行gateでOK。"
+  action_artifact: "bash scripts/gates/gate_skill_script_refs.sh: rc=2 REVIEW_REQUIRED; pairs=38; FOLLOWUP_COVERS_REVIEW_REQUIRED=yes"
+  resolved_at: "2026-08-17T05:43:53+09:00"
 - id: INS-20260817-011537948-97ef
   ts: "2026-08-17T01:15:37+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactを更新しよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
