@@ -133,7 +133,7 @@ flowchart TB
 
 ---
 
-## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T13:50+09:00
+## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T14:23+09:00
 
 ### AsIs 注釈
 - **型の境界（偵察 2026-08-16 02:09）**: S1/S2 は dict 消費で C2 直結が容易。S3/S4 は ORM(expunge済み) 消費が残るため、C2∪C3 を渡すには「ORM互換の row shape を持つ dict」か「consumer側のattr参照を dict 参照へ」のどちらかが要る。S3 は generator 5系統(drawdown/rolling/metrics/trade/risk)の参照属性を先に列挙してから付け替える。
@@ -147,7 +147,7 @@ flowchart TB
 ### ToBe 注釈
 - **S1**: C2 の signals は L2 が flush 直前に持っていたものと同一（ledger freeze 適用後）。Phase 4.5 の値は変わらない。
 - **S2**: depth 順（L1.2 の depth 表）で回し、depth k の FoF は C2 ∪ C3(depth<k) だけを読む。無ければ停止。
-- **S2 の候補集合（2026-08-16T11:25+09:00）**: C2 ∪ C3 は「同 run 生成分」だけでは DB preload と等価にならない。等価条件は **同 run 生成 ∪ C1 read-once に載っている旧行（valid_start_date 以前の FoF prefix・標準PFの週末行）** で、record-only 全 payload 一致（値・日付 domain とも 0 差分）を確認してから付け替える。observer は consumer へ渡す参照を差し替えない。旧行の要否そのもの（読むべきか捨てるべきか）は本書の対象外＝判定・規則の設計書で扱う。
+- **S2 の候補集合（2026-08-16T14:23+09:00）**: ToBe の候補は **同 run 生成の C2 ∪ C3(depth<k) のみ**。今 run が生成しない旧行（valid_start_date 以前の FoF prefix・標準PFの週末行）を候補へ混ぜて等価を作るのは ToBe を現実へ曲げる妥協であり書かない。旧行を読むべきか捨てるべきかは判定・規則の設計書での殿裁定事項。shadow では「同 run のみ」と「∪ 旧行」の両候補の値差分と cardinality を並記して裁定材料にし、cutover は裁定後。observer は consumer へ渡す参照を差し替えない。
 - **S3/S4**: 分析派生は導出だけ、判定へ戻さない。L5 は受け取るだけで cache を作らない。
 
 ### 継ぎ目の進め方（AsIs/ToBe 共通の契約・将軍×家老協議 2026-08-16T13:48+09:00・run421〜435 の実測から）
