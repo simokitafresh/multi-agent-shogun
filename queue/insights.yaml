@@ -977,7 +977,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4322"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存防御GP-236で解決済み。gate_gunshi_startup.shの現行実装はreview_type=draft/reportを集計し、numbers偽cold streakの根因( draft限定でreport除外)を除去済み。docs/researchの一次記録と現行コードを突合し、新規実修正・decision_candidateは不要。"
+  action_artifact: "scripts/gates/gate_gunshi_startup.sh; docs/research/gunshi_idle_numbers_cold_bugfix_20260426.md; logs/gunshi_gp_tracker.yaml:GP-236"
+  resolved_at: "2026-08-17T05:08:57+09:00"
 - id: INS-20260817-011151668-4d5b
   ts: "2026-08-17T01:11:51+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿観測_低tier再ログインで非公開PFキャッシュ_20260817]] は既存aliasesに一致なし。類似概念TOP3: visibility_tier_masking(Visibility Tier制マスク; alias=Tier; score=7.8) / tier_plan_mapping(Tier-プラン対応; alias=tier; score=7.8) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_fix_2items_20260811_1337; score=3.2)。概念定義とaliases追加を検討せよ"
