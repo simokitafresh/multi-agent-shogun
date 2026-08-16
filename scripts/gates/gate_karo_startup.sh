@@ -2148,6 +2148,33 @@ else
     echo "  未確認: 0件"
 fi
 
+# --- Check 3.55: 修正commitのローカル先行(未push乖離) ---
+# 2026-08-16 将軍自動化ターゲット: 修正commitがローカル止まりのまま放置されるとパイプライン契約(push→deploy→full並走)が止まる。
+echo "■ 対象repo未push乖離"
+source "$SCRIPT_DIR/scripts/lib/project_path.sh" 2>/dev/null || true
+_cur_pj=$(grep -E '^current_project:' "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null | awk '{print $2}' | tr -d '"'"'")
+_pj_path=""
+[ -n "$_cur_pj" ] && command -v get_project_path >/dev/null 2>&1 && _pj_path=$(get_project_path "$_cur_pj" 2>/dev/null || true)
+for _repo in "$_pj_path" "$SCRIPT_DIR"; do
+    [ -n "$_repo" ] && [ -d "$_repo/.git" ] || continue
+    _ahead=$(git -C "$_repo" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)
+    _age_min=0
+    if [ "${_ahead:-0}" -gt 0 ]; then
+        _first_ts=$(git -C "$_repo" log --reverse --format=%ct '@{u}..HEAD' 2>/dev/null | head -1)
+        [ -n "$_first_ts" ] && _age_min=$(( ( $(date +%s) - _first_ts ) / 60 ))
+    fi
+    if [ "${_ahead:-0}" -gt 0 ] && [ "$_age_min" -ge 15 ]; then
+        echo "  WARN: $(basename "$_repo") ローカル先行${_ahead}commit・最古${_age_min}分未push (集計: git rev-list --count @{u}..HEAD)"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("未push乖離: $(basename "$_repo") ${_ahead}commit/${_age_min}分")
+        fi
+    else
+        echo "  OK: $(basename "$_repo") 先行${_ahead:-0}commit"
+    fi
+done
+unset _repo _ahead _age_min _first_ts _cur_pj _pj_path
+
 # --- Check 3.6: 掲示板action_required未対応 ---
 echo "■ 掲示板action_required未対応"
 if [ "${_bulletin_action_count:-0}" -gt 0 ]; then
