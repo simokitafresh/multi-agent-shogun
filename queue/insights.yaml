@@ -1170,6 +1170,16 @@ insights:
   resolved_reason: "一次情報でself_retro event_id=5d42e6817e36d255981a7addf24514490220928be631b9598b8f10a10d04256bのcompletion_pipeline候補を確認し、verify_command終了コード0およびfix_known=trueを再確認済み。既知候補のため新規実装・decision_candidateは不要。"
   action_artifact: "logs/self_retro.jsonl:event_id=5d42e6817e36d255981a7addf24514490220928be631b9598b8f10a10d04256b;verify_command=PASS;insight=INS-20260817-015424325-020b"
   resolved_at: "2026-08-17T03:45:52+09:00"
+- id: INS-20260817-022744222-f369
+  ts: "2026-08-17T02:27:44+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_ga470_infrastructure_freshness_202608170147; matched=gates; current_pattern=; candidate_level=3; candidate=cmd_2286でAC5(cmd原本に不在)がtask YAMLに混入→影丸verdict:FAIL→家老waive。根因=忍者がtask YAMLにACを手動追加。comm -23でcmd原本にないAC IDを検出→WARN; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_ga470_infrastructure_freshness_202608170147"
+  fix_known: false
+  status: resolved
+  resolved_reason: "既存一次設計書docs/research/gunshi_idle_stale_ac_analysis_20260426.mdにcmd_2286のAC5混入・根因・A案（gate_report_formatでcmd原本AC ID照合）が記録済み。現行実装はdeploy時AC_VERIFYとtask/report契約検査を持つが原cmd再照合の実装証跡はなく、本taskのplanned scope外なので新規修正せず設計候補として整理済みと判断"
+  action_artifact: "docs/research/gunshi_idle_stale_ac_analysis_20260426.md#修正設計案;context/infrastructure.md:L1545,L1593-L1594;decision_candidate=cmd原本とtask AC ID集合の再照合をLevel5候補として次cmdで設計・実装"
+  resolved_at: "2026-08-17T06:57:45+09:00"
 - id: INS-20260817-041822510-06d9
   ts: "2026-08-17T04:18:22+09:00"
   insight: "高頻度FAIL: binary_checks.ACx[0]: missing \"check\" field (12回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
