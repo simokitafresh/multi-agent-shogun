@@ -7,20 +7,39 @@
 - 目的: 正常だった時点の**コード**へ本番を戻し、入力SSOTから派生データを全再生成し、ticker `prices`を起点とする独立oracleと本番画面で正常性を証明する
 - 旧文書: `dm-production-recovery-v3_20260813.md`は旧L5局所修復laneの歴史記録として凍結する。本書へ旧工程・旧PASS・旧ACを継承しない
 
-## §-1. ★復帰点宣言(RESTORE POINT) — 2026-08-14 14:29 RB1〜RB8全完了
+## §-1. ★復帰点宣言(RESTORE POINT) — 2026-08-16 22:50 JST（初版 2026-08-14 14:29 RB1〜RB8全完了、2回目の実使用 2026-08-16 21:35〜22:15 で更新）
 
-> **今後、本番に何かあった時に戻るべき場所はここである。** 本計画の全工程(RB1〜RB8)は2026-08-14 14:29に完了し、この時点の本番は「入力SSOTから独立検算で全量証明された、既知バグゼロの状態」である。
+> **今後、本番に何かあった時に戻るべき場所はここである。** 復帰点＝「入力SSOTから独立検算で全量証明された、既知バグゼロの状態」＋**そこへ戻すための現物の所在と手順**。本節だけ読めば、前提知識のないLLMが本番を戻せる粒度で書く。
 
-| 復帰点の構成要素 | 値 | 証拠 |
+### -1.1 復帰点の構成要素（値・証拠・不足時に起きたこと）
+
+| 構成要素 | 値 | 証拠 / 現物の所在 |
 |---|---|---|
-| **本番runtimeコード** | `3e28b6172889df3d544cc04ae31567252073ac7b`(2026-08-14 09:42 JST deploy済み)。main tip `99199a9c`はこの上にdocs/tasksのみ(runtime同一、git diff --name-only実測) | RB8 AC1世代固定 |
-| **DB派生データ世代** | run360系+L3 sync-fof cron正規再展開後の現行世代。orphan `precomputed_raw`=0件(18→0根治済み) | RB8 AC2機械検証 |
-| **全量検算の正基準** | 月次33748/33748 exact+metrics 30192/30192+stub48/48=30240/30240 exact(mismatch0/missing0/duplicate0) | 独立証拠commit `6cc6b576`+`rb6-v3-full-revalidation-evidence_20260813.md` |
-| **benchmark契約** | 同窓比較が正(殿裁定2026-08-14 02:59)。B2満月上書き/B1同窓の混在はprovenance設計書§2.4の契約で固定予定 | knowledge:a58d14f58926acb2 |
-| **API/画面** | 8画面 HTTP 2xx=8/8・non-empty=8/8・例外0(固定世代で確認) | `cmd_4301_rb8_generation_evidence_20260814.md` |
-| **完了cmd** | cmd_4301 completed(2026-08-14 14:29、AC1-AC4全PASS・軍師LGTM) | queue/archive + 掲示板blt_20260814_142907 |
+| **本番runtimeコード** | tree=`3e28b6172889df3d544cc04ae31567252073ac7b`（backend/）。2026-08-14 09:42 JST初deploy。2026-08-16 21:35 JSTに `131e5dbb`（backend/を3e28b617へ全置換した1 commit）として再びmain tipへ積み、Render live | `git diff --stat 3e28b617 <live commit> -- backend` = 0 が判定式 |
+| **DB（入力SSOT＋派生データ）** | 2026-08-16 22:06 JST以降の本番DB= Render Postgres `dm-signal-db-copy`（`dpg-da0qttc9v7es73a0cig0-a`、singapore、basic_1gb、PG18）＝旧DB `dpg-d542chchg0os73979vg0-a` の **PITR restoreTime=2026-08-14T05:35:00Z（14:35 JST）** から作成。旧DBは残置（切戻し用） | Render API `POST /v1/postgres/<id>/recovery`。PITR可用窓は `GET /v1/postgres/<id>/recovery`（旧DB: AVAILABLE, startsAt 2026-08-09T07:54:58Z）。backend env `DATABASE_URL` は Render API `PUT /v1/services/srv-d4ja7q15pdvs739a4q1g/env-vars/DATABASE_URL` で切替、redeployで反映 |
+| **DB派生データ世代（08-14時点）** | run360系＋L3 sync-fof cron正規再展開後の世代。orphan `precomputed_raw`=0件 | RB8 AC2機械検証 |
+| **全量検算の正基準** | 月次33748/33748 exact＋metrics 30192/30192＋stub48/48=30240/30240 exact | 独立証拠commit `6cc6b576`＋`rb6-v3-full-revalidation-evidence_20260813.md` |
+| **fullが再生成しない行（窓外行）の棚卸し** | 08-14時点DBに **FoF `valid_start`前のsignals 30,853行（2010-10〜2011-03）／fof_component_weights 714行／標準PF週末signals 48行** が存在し、どのfullも書き直さない。殿裁定2026-08-16 20:45＝**drop**（現行 `valid_start`＝構成PF signal_ready∧lookback充足 が既に計算可能な最長期間）。復帰直後のDBにはまだ残っている＝**未処理**（削除は既存手段の範囲で別途、追加ツール禁止・殿直命21:24） | 2026-08-16 run438 shadow: 候補A(同run生成のみ)＝legacyより30,853行少・値差0 |
+| **冪等性（full 1回で収束）** | 復帰点コードでは **full 1回で収束すべき**（3e28b617以後のruntime変更下では前run終端のDB状態に一段依存し2回要した: run436→437で465件、run440→441で2,365件）。復帰後の実証＝「同一入力で2回目fullのconfirmed alerts=0」を二値で残す | 2026-08-16 22:07 run 202608161307（491秒・error0）＋価格同期後の2回目full（22:4x起動）で計測中 |
+| **入力SSOT** | L0 prices最終同期日（`GET /admin/sync-status` L0_prices.last_success_date）とrows。08-14 PITR直後=2026-08-14／100,209行 → 22:2x `POST /admin/sync-prices` 後=2026-08-16。比較・parityは **同一 prices 状態のrun同士だけ**（08-16の96分誤診＝価格同期をまたいだ比較） | sync-status / recalculation_status.summary の入力hash |
+| **API/画面** | 8画面（Dashboard/Summary/Monthly Returns/Monthly Trade/Metrics/Drawdowns/Compare Chart/Compare Summary）HTTP 2xx 8/8・non-empty 8/8・例外0。Signalsは廃止済み対象外 | `cmd_4301_rb8_generation_evidence_20260814.md`（08-14）／08-16復帰後の再確認は本節更新後に実施 |
+| **完了cmd / 実施記録** | 08-14: cmd_4301 completed(AC1-AC4 PASS・軍師LGTM)。08-16: 将軍単独実行（家老・忍者停止、殿直命21:30）、§9「2026-08-16 21:00〜22:15」に手順表 | queue/archive＋掲示板 blt_20260814_142907／blt_20260816_213722 |
 
-**将来の障害時の使い方**: (1)コードはこの復帰点SHAとの差分から容疑を絞る (2)派生データは本表の正基準(6cc6b576の算術合成)との突合で「どこから壊れたか」を特定する (3)検算は§7.1逆算parity方式とprovenance設計書§5.5資産カタログを再利用し、独立runnerを再発明しない。
+### -1.2 戻し方（そのまま実行できる順序・新規コード0本）
+
+1. **止める**: 走行中run無しを `GET /admin/recalculate-status` で確認。家老・忍者の配備は止め、実行者を1名にする。
+2. **コード**: `git worktree add /tmp/<name> origin/main`（`/mnt/c` 直下はtimeoutする）→ `git checkout 3e28b617 -- backend` ＋ 3e28b617以後に追加されたファイルをindexから除去 → `git diff --cached --stat 3e28b617 -- backend` が0 → 1 commit（本文にcurrent SHA/baseline SHA/scope/revert手順）→ `git push origin HEAD:main` → Render自動deploy live確認（`render deploys list srv-d4ja7q15pdvs739a4q1g`）。
+3. **DB**: `POST /v1/postgres/dpg-d542chchg0os73979vg0-a/recovery {"restoreTime": <ISO8601Z>}` → 新instance available まで待つ（今回13分）→ 新instanceの `internalConnectionString`（`GET .../connection-info`）を backend env `DATABASE_URL` へ PUT → redeploy → live。旧値は退避して切戻し可能に保つ。**DBは戻ってもコードは戻らない、コードが戻ってもDBは戻らない**。両方やる。
+4. **入力更新**: PITR時点以後の価格を `POST /admin/sync-prices` で取り込む（`sync-status` の L0 last_success_date が当日になるまで）。
+5. **再計算**: `POST /admin/recalculate-sync?mode=full` を1回 → completed/error0 → **同一入力でもう1回**して confirmed alerts=0 を確認（冪等性の実証。0でなければ復帰点コードに履歴依存が混入している＝復帰点の資格を失う）。
+6. **合否**: 正基準（-1.1）との exact 突合、8画面 2xx/non-empty/例外0、orphan 0。PASSで復帰完了。FAILは各層で即停止（§6）。
+
+### -1.3 復帰点を使う時・更新する時の規律
+
+- **バグを直すな、戻せ**（殿裁定2026-08-16 21:00）: バグ無し時点が確定しているならクリーン点へ戻して知見を記録する。戻した後に積み直す各手には「full 1回で収束」「fullが再生成しない行を作らない」を合否として付ける。
+- **復旧に新規コードを書くな**（殿直命2026-08-16 21:24）: 削除ツール・writer・観測拡張は書かない。git checkout／Render PITR／Render API／既存admin endpointだけで完了する。
+- **タイムスタンプ**: 復帰点の更新は本節見出しの版+時刻だけを更新し、旧値は行内に「（08-14時点）」等で残す。変更履歴を別節に書かない。
+- **将来の障害時の使い方**: (1)コードは復帰点SHAとの差分から容疑を絞る (2)派生データは正基準6cc6b576の算術合成との突合で「どこから壊れたか」を特定する (3)検算は§7.1逆算parity方式とprovenance設計書§5.5資産カタログを再利用し独立runnerを再発明しない (4)fullが再生成しない行はPITR以外に戻す手段が無い＝先にPITR可用窓を確認する。
 
 ## §0. 前提リセット
 
