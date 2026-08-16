@@ -967,7 +967,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4322"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存防御で解決済み。cmd_2271の認証不成立とoutputs/ target mismatchは一次記録で確認済み。現行deploy_task.shはGP-223/225/226としてpurpose・target_path・commandを教訓関連度へ統合し、ASCII/CJK境界を分割する。L650も現行lessonsへ登録済みで、当該候補に新規実修正・decision_candidateは不要。"
+  action_artifact: "scripts/deploy_task.sh;projects/dm-signal/lessons.yaml:L650;docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:L30-L39"
+  resolved_at: "2026-08-17T04:55:29+09:00"
 - id: INS-20260817-011138327-3fbd
   ts: "2026-08-17T01:11:38+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4322; matched=only; current_pattern=ログイン導線AsIs棚卸し(read-only) — 認証切替・データ層・HTTPキャッシュの現物契約; candidate_level=4; candidate=numbers偽cold streak(7/10)。根因=adaptive gating windowがdraft限定。report(数値検算の主戦場)を除外していた; source=gunshi_gp_tracker.yaml"
