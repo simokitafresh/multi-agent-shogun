@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260816-210727319-ad4e
-  ts: "2026-08-16T21:07:27+09:00"
-  insight: "semantic_index_update新概念候補: discussion:§ ★復帰点宣言 RESTORE POINT — RB1〜RB8全完了に書いてある情報で必要十分だったか？これは質問だ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-16T21:22:03+09:00"
 - id: INS-20260816-212237693-10cd
   ts: "2026-08-16T21:22:37+09:00"
   insight: "semantic_index_update新概念候補: discussion:DBを消すのにそんなに時間がかかるのか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -209,8 +199,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 35
-  last_seen: "2026-08-17T06:04:20+09:00"
+  occurrence_count: 37
+  last_seen: "2026-08-17T06:20:59+09:00"
   verification:
     status: "passed"
     exit_code: 0
