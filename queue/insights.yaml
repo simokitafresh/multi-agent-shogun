@@ -1151,3 +1151,13 @@ insights:
   resolved_reason: "一次情報でself_retro event_id=5d42e6817e36d255981a7addf24514490220928be631b9598b8f10a10d04256bのcompletion_pipeline候補を確認し、verify_command終了コード0およびfix_known=trueを再確認済み。既知候補のため新規実装・decision_candidateは不要。"
   action_artifact: "logs/self_retro.jsonl:event_id=5d42e6817e36d255981a7addf24514490220928be631b9598b8f10a10d04256b;verify_command=PASS;insight=INS-20260817-015424325-020b"
   resolved_at: "2026-08-17T03:45:52+09:00"
+- id: INS-20260817-041822510-06d9
+  ts: "2026-08-17T04:18:22+09:00"
+  insight: "高頻度FAIL: binary_checks.ACx[0]: missing \"check\" field (12回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
+  priority: "high"
+  source: "gate_loop_health"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次確認で既存GP-107判定済みの品質パターンと確定。gate_report_format_main.pyはcheck欠落を必須契約違反として検出し、gate_report_autofix_main.pyはcheck内容の推定を行わないため、安全な自動修正や新規gate強化は不要。gate_loop_health.shの汎用MISSING成熟提案が直近12回を再掲したため、既存設計で解決扱いとする。"
+  action_artifact: "gate_report_format_main.py:L1497 / gate_report_autofix_main.py:L105-L106 / gate_loop_health.sh:L288-L294 / logs/gate_fire_log.yaml:2026-08-17T04:09:16-04:09:48の12回相当"
+  resolved_at: "2026-08-17T04:42:05+09:00"
