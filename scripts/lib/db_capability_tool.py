@@ -1098,6 +1098,160 @@ def _restore_fof_monthly_20260729(
         conn.close()
 
 
+def _restore_signal_run430_20260816(dsn: str, output: Path, *, dry_run: bool) -> dict:
+    """Restore the exact run430 holding-signal change set, or fail closed."""
+    import psycopg2
+
+    expected_rows = 8_145
+    expected_portfolios = 39
+    conn = psycopg2.connect(dsn)
+    conn.autocommit = False
+    cursor = None
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT current_user, session_user, current_database(), "
+            "COALESCE(inet_server_addr()::text, '')"
+        )
+        current_user, session_user, database_name, server_address = cursor.fetchone()
+        if database_name != "dm_signal":
+            raise RuntimeError("run430 restore requires dm_signal database")
+        cursor.execute("SELECT pg_try_advisory_lock(%s)", (8675309,))
+        if not cursor.fetchone()[0]:
+            raise RuntimeError("recalculate advisory lock is held")
+        cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM recalculation_status "
+            "WHERE status='running' AND end_time IS NULL)"
+        )
+        if cursor.fetchone()[0]:
+            raise RuntimeError("running recalculation exists")
+        cursor.execute("SET LOCAL lock_timeout = '30s'")
+        cursor.execute("LOCK TABLE signals, signal_change_log IN SHARE ROW EXCLUSIVE MODE")
+        cursor.execute(
+            """
+            SELECT c.portfolio_id, c.date, c.old_holding_signal,
+                   c.new_holding_signal, c.old_ticker_weights,
+                   c.new_ticker_weights, s.holding_signal
+            FROM signal_change_log c
+            JOIN signals s ON s.portfolio_id=c.portfolio_id AND s.date=c.date
+            WHERE c.changed_at >= TIMESTAMP '2026-08-16 01:26:42'
+              AND c.changed_at <  TIMESTAMP '2026-08-16 01:26:44'
+            ORDER BY c.portfolio_id, c.date, c.id
+            """
+        )
+        rows = cursor.fetchall()
+        keys = [(row[0], row[1]) for row in rows]
+        portfolio_count = len({row[0] for row in rows})
+        current_matches_new = sum(row[6] == row[3] for row in rows)
+        if len(rows) != expected_rows or len(set(keys)) != expected_rows:
+            raise RuntimeError(
+                f"run430 change-set cardinality mismatch rows={len(rows)} unique_keys={len(set(keys))}"
+            )
+        if portfolio_count != expected_portfolios:
+            raise RuntimeError(f"run430 portfolio cardinality mismatch: {portfolio_count}")
+        if current_matches_new != expected_rows:
+            raise RuntimeError(
+                f"run430 current-value precondition mismatch: {current_matches_new}/{expected_rows}"
+            )
+        serialized_rows = [
+            {
+                "portfolio_id": str(row[0]),
+                "date": row[1].isoformat(),
+                "old_holding_signal": row[2],
+                "new_holding_signal": row[3],
+                "old_ticker_weights": row[4],
+                "new_ticker_weights": row[5],
+                "pre_restore_holding_signal": row[6],
+            }
+            for row in rows
+        ]
+        rows_json = json.dumps(serialized_rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        base_result = {
+            "decision": "PASS",
+            "dry_run": dry_run,
+            "target_rows": len(rows),
+            "portfolio_count": portfolio_count,
+            "current_matches_new": current_matches_new,
+            "rows_sha256": hashlib.sha256(rows_json.encode("utf-8")).hexdigest(),
+            "identity": {
+                "current_user": current_user,
+                "session_user": session_user,
+                "database": database_name,
+                "server_address": server_address,
+            },
+        }
+        if dry_run:
+            conn.rollback()
+            return {**base_result, "updated_rows": 0, "restored_exact": 0}
+        backup = {
+            **base_result,
+            "capability": "bounded_signal_run430_restore_20260816",
+            "window_utc": ["2026-08-16T01:26:42Z", "2026-08-16T01:26:44Z"],
+            "rows": serialized_rows,
+        }
+        output.parent.mkdir(parents=True, exist_ok=True)
+        payload = (json.dumps(backup, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+        fd = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        cursor.execute(
+            """
+            WITH target AS (
+              SELECT c.portfolio_id, c.date, c.old_holding_signal
+              FROM signal_change_log c
+              WHERE c.changed_at >= TIMESTAMP '2026-08-16 01:26:42'
+                AND c.changed_at <  TIMESTAMP '2026-08-16 01:26:44'
+            )
+            UPDATE signals s
+               SET holding_signal=target.old_holding_signal
+              FROM target
+             WHERE s.portfolio_id=target.portfolio_id AND s.date=target.date
+            RETURNING s.portfolio_id, s.date
+            """
+        )
+        updated = cursor.fetchall()
+        if len(updated) != expected_rows or len(set(updated)) != expected_rows:
+            raise RuntimeError(f"run430 restore update cardinality mismatch: {len(updated)}")
+        cursor.execute(
+            """
+            WITH target AS (
+              SELECT c.portfolio_id, c.date, c.old_holding_signal
+              FROM signal_change_log c
+              WHERE c.changed_at >= TIMESTAMP '2026-08-16 01:26:42'
+                AND c.changed_at <  TIMESTAMP '2026-08-16 01:26:44'
+            )
+            SELECT COUNT(*), COUNT(*) FILTER (
+              WHERE s.holding_signal IS NOT DISTINCT FROM target.old_holding_signal
+            )
+            FROM target JOIN signals s USING(portfolio_id,date)
+            """
+        )
+        target_count, restored_exact = map(int, cursor.fetchone())
+        if (target_count, restored_exact) != (expected_rows, expected_rows):
+            raise RuntimeError(
+                f"run430 restore postcondition mismatch target={target_count} restored={restored_exact}"
+            )
+        conn.commit()
+        return {
+            **base_result,
+            "backup": str(output),
+            "backup_bytes": len(payload),
+            "updated_rows": len(updated),
+            "restored_exact": restored_exact,
+            "other_table_writes": 0,
+            "recalculate_runs": 0,
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conn.close()
+
+
 def main() -> int:
     capability = os.environ.get("DB_CAPABILITY")
     mode = os.environ.get("DB_CAPABILITY_MODE")
@@ -1140,6 +1294,29 @@ def main() -> int:
         if database_identity != "dm_signal":
             raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
         result = _restore_signal_window_20260714(dsn, output)
+        print(json.dumps(result, sort_keys=True, ensure_ascii=False))
+        return 0
+    if capability == "bounded_signal_run430_restore_20260816":
+        if mode != "bounded_signal_run430_restore":
+            raise SystemExit("unknown capability or mode")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("action", choices=("dry-run", "restore"))
+        parser.add_argument("--output", required=True)
+        args = parser.parse_args()
+        project_root = Path(os.environ["DB_CAPABILITY_PROJECT_ROOT"]).resolve()
+        output = Path(args.output).resolve()
+        allowed_output_root = (project_root / "outputs" / "analysis").resolve()
+        if allowed_output_root not in output.parents or output.suffix != ".json":
+            raise SystemExit("BLOCK: backup output must be a JSON file under outputs/analysis")
+        dsn = os.environ["DATABASE_URL"]
+        parsed = urlsplit(dsn)
+        resource_identity = parsed.hostname or ""
+        database_identity = unquote(parsed.path.lstrip("/").split("/", 1)[0])
+        if not resource_identity.endswith(".singapore-postgres.render.com"):
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered Render production resource")
+        if database_identity != "dm_signal":
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
+        result = _restore_signal_run430_20260816(dsn, output, dry_run=args.action == "dry-run")
         print(json.dumps(result, sort_keys=True, ensure_ascii=False))
         return 0
     if capability == "bounded_signal_july_drift_restore_20260714":
