@@ -7,7 +7,7 @@
 - 目的: 正常だった時点の**コード**へ本番を戻し、入力SSOTから派生データを全再生成し、ticker `prices`を起点とする独立oracleと本番画面で正常性を証明する
 - 旧文書: `dm-production-recovery-v3_20260813.md`は旧L5局所修復laneの歴史記録として凍結する。本書へ旧工程・旧PASS・旧ACを継承しない
 
-## §-1. ★復帰点宣言(RESTORE POINT) — 2026-08-16 22:50 JST（初版 2026-08-14 14:29 RB1〜RB8全完了、2回目の実使用 2026-08-16 21:35〜22:15 で更新）
+## §-1. ★復帰点宣言(RESTORE POINT) — 2026-08-16 23:30 JST（初版 2026-08-14 14:29 RB1〜RB8全完了、2回目の実使用 2026-08-16 21:35〜22:15 で更新）
 
 > **今後、本番に何かあった時に戻るべき場所はここである。** 復帰点＝「入力SSOTから独立検算で全量証明された、既知バグゼロの状態」＋**そこへ戻すための現物の所在と手順**。本節だけ読めば、前提知識のないLLMが本番を戻せる粒度で書く。
 
@@ -16,10 +16,10 @@
 | 構成要素 | 値 | 証拠 / 現物の所在 |
 |---|---|---|
 | **本番runtimeコード** | tree=`3e28b6172889df3d544cc04ae31567252073ac7b`（backend/）。2026-08-14 09:42 JST初deploy。2026-08-16 21:35 JSTに `131e5dbb`（backend/を3e28b617へ全置換した1 commit）として再びmain tipへ積み、Render live | `git diff --stat 3e28b617 <live commit> -- backend` = 0 が判定式 |
-| **DB（入力SSOT＋派生データ）** | 2026-08-16 22:06 JST以降の本番DB= Render Postgres `dm-signal-db-copy`（`dpg-da0qttc9v7es73a0cig0-a`、singapore、basic_1gb、PG18）＝旧DB `dpg-d542chchg0os73979vg0-a` の **PITR restoreTime=2026-08-14T05:35:00Z（14:35 JST）** から作成。旧DBは残置（切戻し用） | Render API `POST /v1/postgres/<id>/recovery`。PITR可用窓は `GET /v1/postgres/<id>/recovery`（旧DB: AVAILABLE, startsAt 2026-08-09T07:54:58Z）。backend env `DATABASE_URL` は Render API `PUT /v1/services/srv-d4ja7q15pdvs739a4q1g/env-vars/DATABASE_URL` で切替、redeployで反映 |
+| **DB（入力SSOT＋派生データ）** | 2026-08-16 22:06 JST以降の本番DB（backend＋cron `dm-signal-etl`/`dm-signal-password-rotation` の env も同DBへ切替済み 23:26）= Render Postgres `dm-signal-db-copy`（`dpg-da0qttc9v7es73a0cig0-a`、singapore、basic_1gb、PG18）＝旧DB `dpg-d542chchg0os73979vg0-a` の **PITR restoreTime=2026-08-14T05:35:00Z（14:35 JST）** から作成。旧DBは残置（切戻し用） | Render API `POST /v1/postgres/<id>/recovery`。PITR可用窓は `GET /v1/postgres/<id>/recovery`（旧DB: AVAILABLE, startsAt 2026-08-09T07:54:58Z）。backend env `DATABASE_URL` は Render API `PUT /v1/services/srv-d4ja7q15pdvs739a4q1g/env-vars/DATABASE_URL` で切替、redeployで反映 |
 | **DB派生データ世代（08-14時点）** | run360系＋L3 sync-fof cron正規再展開後の世代。orphan `precomputed_raw`=0件 | RB8 AC2機械検証 |
 | **全量検算の正基準** | 月次33748/33748 exact＋metrics 30192/30192＋stub48/48=30240/30240 exact | 独立証拠commit `6cc6b576`＋`rb6-v3-full-revalidation-evidence_20260813.md` |
-| **fullが再生成しない行（窓外行）の棚卸し** | 08-14時点DBに **FoF `valid_start`前のsignals 30,853行（2010-10〜2011-03）／fof_component_weights 714行／標準PF週末signals 48行** が存在し、どのfullも書き直さない。殿裁定2026-08-16 20:45＝**drop**（現行 `valid_start`＝構成PF signal_ready∧lookback充足 が既に計算可能な最長期間）。復帰直後のDBにはまだ残っている＝**未処理**（削除は既存手段の範囲で別途、追加ツール禁止・殿直命21:24） | 2026-08-16 run438 shadow: 候補A(同run生成のみ)＝legacyより30,853行少・値差0 |
+| **fullが再生成しない行（窓外行）の棚卸し** | 殿裁定2026-08-16 20:45＝**drop**、23:14「今消そう」で実施済み: FoF 78体の signals 285,612 / monthly_returns 12,239 / fof_component_weights 29,540 と標準PF週末signals 48 を1トランザクションで削除（bounded capability `bounded_legacy_rows_drop_20260816`、dry-run→drop、証跡 `outputs/analysis/legacy_drop_20260816.json`）→ full run395（23:17-23:24、6分）で窓内を再生成: FoF signals 244,196（2011-04以前 0）/ monthly_fof 11,749（全体16,486）/ weights 26,613 / 標準週末 0 / metrics 204 / 78 FoF全てに行あり。**現在の本番には「fullが再生成しない行」は無い**＝どのfullも同じ集合を作る | readonly SQL 2026-08-16 23:25 |
 | **冪等性（full 1回で収束）** | 復帰点コードでは **full 1回で収束すべき**（3e28b617以後のruntime変更下では前run終端のDB状態に一段依存し2回要した: run436→437で465件、run440→441で2,365件）。復帰後の実証＝「同一入力で2回目fullのconfirmed alerts=0」を二値で残す | 2026-08-16 22:07 run 202608161307（491秒・error0）＋価格同期後の2回目full（22:4x起動）で計測中 |
 | **入力SSOT** | L0 prices最終同期日（`GET /admin/sync-status` L0_prices.last_success_date）とrows。08-14 PITR直後=2026-08-14／100,209行 → 22:2x `POST /admin/sync-prices` 後=2026-08-16。比較・parityは **同一 prices 状態のrun同士だけ**（08-16の96分誤診＝価格同期をまたいだ比較） | sync-status / recalculation_status.summary の入力hash |
 | **API/画面** | 8画面（Dashboard/Summary/Monthly Returns/Monthly Trade/Metrics/Drawdowns/Compare Chart/Compare Summary）HTTP 2xx 8/8・non-empty 8/8・例外0。Signalsは廃止済み対象外 | `cmd_4301_rb8_generation_evidence_20260814.md`（08-14）／08-16復帰後の再確認は本節更新後に実施 |
