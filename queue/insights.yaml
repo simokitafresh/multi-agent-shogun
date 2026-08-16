@@ -169,8 +169,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 47
-  last_seen: "2026-08-17T07:34:25+09:00"
+  occurrence_count: 48
+  last_seen: "2026-08-17T07:44:54+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -613,7 +613,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報のqueue/lord_conversation.jsonl:358-360で殿の依頼と将軍の一問ずつ確認する対応を確認。関連するsemantic_index_update候補INS-20260817-023017799-c0bfも既存概念としてresolved済みで、新規実装修正やdecision_candidateは不要。"
+  action_artifact: "queue/lord_conversation.jsonl:358-360;queue/insights.yaml:617-626;context/semantic-map.md:semantic_dictionary_design;decision_candidate=none"
+  resolved_at: "2026-08-17T07:45:49+09:00"
 - id: INS-20260817-023017799-c0bf
   ts: "2026-08-17T02:30:17+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactの未決 殿裁定待ち についてこたえたいから、もう少し詳しく一つづつ質問してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
