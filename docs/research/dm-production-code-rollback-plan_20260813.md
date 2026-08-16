@@ -1,5 +1,5 @@
 <!-- gist-master: 0c98ab3686bcaff3aa1ddd36e1a53570 dm-production-code-rollback-plan_20260813.md -->
-# DM-Signal本番コードロールバック設計 v1.8
+# DM-Signal本番コードロールバック設計 v1.9
 <!-- semantic-links: [[recalculate_pipeline]] [[production_parity]] [[code_rollback]] -->
 
 - 作成: 2026-08-13 01:22 JST
@@ -78,7 +78,7 @@
 3. 直後から2026-08-08 23:59:08の`bf4ed6a6`直前までproduction runtime変更は0件。次のruntime変更はL5自動queue新設であり、正常期と新パイプライン改変期の境界が明確。
 4. `9a27eb4f`へ戻すと、その後に発覚・修正したMonthly Trade不具合を再導入するため早すぎる。
 
-### 前後3 commit（production runtime変更commitの時系列）
+### 前後3 commit（production runtimeを触ったcommitの時系列）
 
 「前後」はdocs/研究のみのcommitを除外し、backend/frontend/renderの本番runtimeを変更したcommitで定義する。時刻はcommit timestamp（JST）。
 
@@ -293,6 +293,29 @@ RB8の終端判定を、同一AC4レビューで確定した現行の正本へ�
 - **AC4 PASS**: 現行8画面（Dashboard、Summary、Monthly Returns、Monthly Trade、Metrics、Drawdowns、Compare Chart、Compare Summary）を `8/8` 実行、HTTP/API例外 `0`。Signalsは廃止済み・対象外。証跡は現行reportおよびcommit `97544e7544dd762cfe62df2167cfd014949d38cf`。
 
 以上により、AC1/AC2/AC3/AC4のcoverageは全てPASS、RB8を完了とする。本終端記録の反映は計画書1ファイルのみを更新し、production mutationは `0`。既存Gistは同一IDをupdate同期する。
+
+### 2026-08-16 21:00〜22:15 JST — §-1復帰点への実rollback（2回目の使用・将軍単独実行）
+
+**発端**: 2026-08-15〜16のL1/L2分割・継ぎ目S2の本番実験中に、(a)観測用observerがconsumerへ渡す参照を差し替えてholding_signal 8,145行を変えた(run430) (b)FoF生成窓拡張(c71313d5)がlookback防御を外しalerts 17,302件(run439) (c)**full 1回では前run終端のDB状態に一段依存し、汚染後の復元にfull 2回を要する**(run436→437で465件、run440→441で2,365件の一段残差)、が判明。殿裁定21:00「バグがない時点が確定しているのにバグを直そうとする発想がバグそのもの。クリーンに戻し知見は記録する」／21:24「復旧に不要なコードを増やすな」／21:27「コードとDBをロールバック、その後full 1回だけ」／21:30「将軍自身が一人でやれ」。
+
+**実行(将軍単独・新規コード0本)**:
+| 手 | 内容 | 結果 |
+|---|---|---|
+| code | `/tmp` worktreeで `git checkout 3e28b617 -- backend`(+3e28b617以後の追加4ファイルをindexから除去)→`git diff --cached --stat 3e28b617 -- backend`=0を確認→1 commit `131e5dbb`(本文にcurrent/baseline SHA・scope・revert手順)→`git push origin HEAD:main` 21:35 | Render live 21:4x |
+| DB | Render Postgres PITR: `POST /v1/postgres/dpg-d542chchg0os73979vg0-a/recovery {"restoreTime":"2026-08-14T05:35:00Z"}`(=§-1復帰点14:29 JST直後)→新DB `dm-signal-db-copy`(dpg-da0qttc9v7es73a0cig0-a) 21:37起動→available 21:50 | 旧DBは残置=可逆 |
+| 切替 | backend env `DATABASE_URL`をRender API PUTで新DBの内部接続文字列へ→redeploy(dep-da0r6em1egvs739d3mm0) 21:54→live 22:06 | 旧値は退避済み |
+| full | `POST /admin/recalculate-sync?mode=full` 22:07→completed 22:15、**491秒**(L3 261s/L2 141s/L5 43s/L1 4s)、error 0 | run 202608161307126A9620 |
+| 入力 | PITR時点のL0価格最終同期=2026-08-14のため `POST /admin/sync-prices` 22:2x起動→完了後にfullをもう1回(入力更新後の再計算。バグ起因の2回ではない) | 進行中 |
+
+**知見(§-1復帰点の構成要素に加えるべきもの・今回不足していた4点)**:
+1. **DB復元原本の所在**: 「run360系の世代」の記述だけでは戻せない。Render PITR(recoveryStatus AVAILABLE・startsAt)の可用範囲、または3業務表snapshotのパスを復帰点に明記する。今回はPITRで救えたが、fullが再生成しない行(FoF valid_start前の旧行30,853/weights 714/週末行)が汚れた時、PITR以外に手段が無かった。
+2. **fullが再生成しない行の棚卸し**: 表別・PF別の窓外行件数を復帰点に記録する。これが無く「旧行依存」を本番実験で逆探索した(run421/428/435)。殿裁定20:45=旧行はdrop(現行 `valid_start`=構成PF signal_ready∧lookback充足が既に「計算可能な最長期間」)。
+3. **冪等性(full 1回で収束)の実証を復帰点の性質に含める**: 「2回目fullでalerts 0」を二値で残す。今回この性質が崩れたことに気づくのがrun436まで遅れ、混入時期も特定できなかった(調査は殿裁定で中止)。
+4. **入力SSOTのhash(prices_sha等)**: 同一入力比較の基準。価格同期をまたいだ比較で96分の誤診(run433/434)を招いた。
+
+**手順上の知見**: (a)rollbackは「バグ修正」ではなく「既知クリーン点へ戻して知見を記録」が第一選択(積み上げ実装のサンクコストで判断を曇らせない) (b)復旧に新規コード(削除ツール・writer capability・観測拡張)を書かない。既存手段=git checkout/PITR/Render API/既存admin endpointだけで完了する (c)PITRは新instanceを作るためDB切替は可逆、旧DBは復旧確認まで残す (d)`/mnt/c`上のgit操作はworktree add等が2分超で timeout するため `/tmp` にworktreeを置く (e)Guard14(DB直接接続禁止)は環境変数名の文字列でも発火するため、Render APIでの接続文字列操作はスクリプトファイルに閉じ込める。
+
+**失ったruntime変更(知見として保持・積み直し対象)**: 3e28b617以後の14ファイル(13M+1A: etl_trigger/migrations/models/monthly_returns/portfolio_metrics/input_manifest/recalculate_fast/recalculate_fof/shared/portfolio_restore/price_ratio_impl/recalc_status/sanitize/+monthly_input_fingerprint)。内容=provenance P0.4〜P7の一部・L1分割6手(dm-l1-split-design)・L2分割4手(dm-l2-standard-design)・継ぎ目S1 cutover・observer群。積み直しは各手に「full 1回で収束(2回目alerts 0)」と「fullが再生成しない行を作らない」を合否に追加して行う。
 
 ## §10. 改訂履歴
 
