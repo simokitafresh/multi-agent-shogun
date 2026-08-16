@@ -58,6 +58,26 @@ SELECT count(*),min(effective_start_date),max(effective_start_date),count(distin
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+## AsIs **v1.1** — 2026-08-17 03:05+09:00（cmd_4323 read-only偵察・影丸報告 `queue/reports/kagemaru_report_cmd_4323.yaml`・軍師SG7 APPROVE・掲示板blt_20260817_030523）
+
+**AsIs現物表**（行番号は2026-08-17時点の frontend/backend。実装時はこの表を根拠にする）
+
+| 層 | 現物（ファイル:行 / 関数） | 役割 | 消した時の影響 |
+|---|---|---|---|
+| FE バッジ分岐 | `frontend/components/monthly-trade-table.tsx:458-496` `getDecisionBadge` | `decision_source`/`is_pending`/`is_correction` で Historical/Pending/Corrected/Confirmed の4状態 | 表示のみ。撤去可 |
+| FE NEXT SIGNAL | `monthly-trade-table.tsx:244-254` → `NextSignalPanel`（データ源 `data.next_signal`） | 来月候補Preview帯 | 表示のみ。撤去可 |
+| FE MTD判定 | `monthly-trade-table.tsx:565-568`, `757-768`（`is_mtd`/`as_of_date`） | 当月[MTD]チップ | 残す。⏳を隣へ寄せる土台 |
+| BE 当月entry | `backend/app/services/monthly_trade_impl.py:255-283` current entry | 当月行の生成 | — |
+| BE pending候補 | `monthly_trade_impl.py:891-970`（当月初営業日価格なし判定）→ `972-1040`（`is_pending=true`・`position_start_date=null`・`price_movement=null`） | 「価格未到着」の既存判定 | **⏳の点灯条件に転用可**（is_pending=当月初営業日価格なし） |
+| BE 全銘柄到着predicate | なし（`price_movement`のticker別`start_price_open`はAPI型にあるが一括判定は0件） | — | 状態A/B境界の判定を新設するか、既存`is_pending`で代用 |
+| BE ledger field生成 | `monthly_trade_impl.py:658-659/691-694/745`（`decision_source`/`decided_at`/`is_correction`）、builder `255-264/1021-1023` | バッジ用metadata | rg backend/app: decision_source=8件/2files, decided_at=19件/6files, is_correction=8件/2files。専用consumer(dashboard/monthly_returns)=0件 |
+| BE cache | `precompute_raw.py`=generic transport、`api/monthly_trade.py:188-221 _has_ledger_badge_metadata`=cache欠落時fallback | — | **FE表示のみの変更ならcache再生成不要**。BE契約を削る場合は再確認 |
+| L809警報 | `signal_flush.py:318-331` ledger reconcile呼出し → `signal_decision_ledger.py:420-422` no coverageは**no-op**。alert filter `:361-398` はledgerを直接参照せず既存Signal差分をalert化 | 無音書換え警報 | **ledger 0行でも警報は沈黙していない**（ledger非依存）。表示分離で警報系は壊れない |
+| DB一次 | ledger=0 / precomputed monthly_trade raw=204(computed_at 2026-08-16 15:13) / signal_change_log=226,261(08-16以降9,315) | — | — |
+| テスト | backend警報テスト 19 passed / 0 failed / 0 skipped、mutation=0 | — | — |
+
+**偵察の結論**: (1)ToBeはfrontend 1層で閉じる(バッジ分岐撤去・NextSignalPanel撤去・⏳を[MTD]隣へ・列独立の薄色)。(2)⏳の点灯=既存`is_pending`(当月初営業日価格なし)で代用可能、全銘柄一括predicateは未実装。(3)L809はledger非依存、cache再生成不要。(4)BEのledger field削除は次段(consumer 0件だが契約変更のため別手)。
+
 ## ToBe **v0.2** — 2026-08-17 02:40+09:00（殿裁定02:33を反映）
 
 ### ToBe 表示仕様
@@ -132,6 +152,7 @@ SELECT count(*),min(effective_start_date),max(effective_start_date),count(distin
 - 02:39 殿「現状でartifactをとりあえず更新して」→ v0.2反映
 - 02:41 殿「ledgerはとりあえず表示から切り離して、その先のことは後で考えればいい」→ 未決2解消(スコープ=表示分離のみ)
 - 02:44 殿「ログイン境界第0段の前にやろう。関係ないから前後を考える必要もない」→ 未決3解消。**未決0件**。残=偵察cmd_4323の結果待ち→実装は殿合図
+- 03:05 影丸cmd_4323偵察GATE CLEAR(軍師APPROVE)→ AsIs v1.1へ現物行番号を反映。結論=frontend 1層で閉じる・⏳は既存is_pendingで点灯可・L809はledger非依存・cache再生成不要
 
 ## 注釈 — 2026-08-17 02:15+09:00
 - 版番号: AsIsは現物確認のたびにminor更新、ToBeは殿裁定のたびにminor更新。
