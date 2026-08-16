@@ -126,6 +126,21 @@ SELECT count(*),min(effective_start_date),max(effective_start_date),count(distin
 3. ~~第0段の前後~~ → **解消(殿02:44)**: 「第0段の前にやろう。というか関係ないから前後を考える必要もない」= ログイン境界とは独立、順序制約なし。
 4. ~~Signalページ~~ → **解消(殿02:22)**: 存在しない。`projects/dm-signal.yaml` production_pages へ埋込済み。
 
+## 進捗台帳 — 2026-08-17 08:55+09:00
+
+| 工程 | 状態 | 証跡 |
+|---|---|---|
+| 設計書・artifact作成 | 完了(02:15) | gist c85b0cae / artifact c12a2996 |
+| 未決4項の裁定 | 完了(02:22/02:33/02:41/02:44)・未決0件 | 本書「裁定の因果連鎖」 |
+| cmd_4323 read-only偵察 | GATE CLEAR(03:05・影丸・軍師APPROVE) | AsIs v1.1、`queue/reports/kagemaru_report_cmd_4323.yaml` |
+| 実装GO | 殿03:09「本番CDPはいらない。push,deployは家老。あとはいいよ」 | 記憶DB lord_ruling_mt_impl_go_20260817_0309 |
+| cmd_4324 frontend 1層実装 | GATE CLEAR(03:32・影丸・軍師レビュー通過) | commit `550399a8`(worktree)→origin/main `62f0fba0` "cmd_4324_full: simplify Monthly Trade pending display"。`monthly-trade-table.tsx` -207/+67、テスト7 PASS/FAIL0/SKIP0、描画文字列「Pending」0件(残るのは変数名isPendingのみ)。backend無変更 |
+| push / deploy | 完了(家老レーン) | Render FE `srv-d4ja8pp5pdvs739a5fsg` deploy commit `62f0fba0` **status=live** finishedAt 2026-08-17 03:33 JST(Render API実測 07:55) |
+| 本番CDP検分 | 実施しない(殿03:09) | 画面確認は殿の目 |
+| ledgerの将来(再バックフィル/凍結/廃止) | 保留(殿02:41「後で考える」) | 本番ledger=0行のまま。表示は非依存化済みで実害なし |
+
+**ToBe v0.2 → 本番反映済み。** 本設計はCLOSED(残件=ledgerの将来のみ、別議題)。
+
 ## 裁定の因果連鎖 — なぜその判断か（事実→制約→判断→効果）— 2026-08-17 02:15+09:00
 
 | # | 裁定/意見（殿・時刻） | 事実 | 制約 | 判断 | 効果 | Obsidian |
