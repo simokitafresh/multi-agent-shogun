@@ -169,8 +169,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 49
-  last_seen: "2026-08-17T07:58:38+09:00"
+  occurrence_count: 50
+  last_seen: "2026-08-17T08:10:57+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -833,7 +833,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_shared_generated_late_diff_gate_202608170300"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認でcandidate_level=4の診断推論強制は既存実装済みと判定。gate_diagnose_check.shが初回BLOCKを警告し、再BLOCK時はdiagnose_reason必須化・FIX hintコピペ検出・DIVERGENTを実装しており、追加修正やdecision_candidateは不要。"
+  action_artifact: "scripts/gates/gate_diagnose_check.sh:L227-L286;context/codd.md:L121-L131;docs/semantic-index/index.md:L2801-L2806;tests/unit/test_deploy_task_yaml_injection.bats:L2854-L2903"
+  resolved_at: "2026-08-17T08:10:45+09:00"
 - id: INS-20260817-032702161-60e9
   ts: "2026-08-17T03:27:02+09:00"
   insight: "semantic_index_update新概念候補: discussion:cmd 4324に取り掛かろう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
