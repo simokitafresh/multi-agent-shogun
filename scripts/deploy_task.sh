@@ -13629,13 +13629,12 @@ deploy_task_main() {
     fi
 
     ctx_pct=$(get_ctx_pct "$pane_target" "$NINJA_NAME")
-    # Direct YAML/reflux promotion is an explicit replay of a command source;
-    # do not let a transient idle pane observation bypass the terminal-report
-    # guard before the source task has been validated. Normal delivery keeps
-    # the terminal-idle reuse path.
-    if [ "$DIRECT_MODE" != true ]; then
-        check_idle "$pane_target" && is_idle=true
-    fi
+    # Runtime idleness is independent of how the incoming task is sourced.
+    # In particular, --yaml is the canonical karo-direct path; suppressing the
+    # observation there makes every terminal worker with a retained immutable
+    # report permanently unavailable.  Source validation still runs before any
+    # task/report publication, and a busy/unknown pane remains fail-closed.
+    check_idle "$pane_target" && is_idle=true
 
     local task_yaml pre_resolve_status pre_resolve_cmd task_status verify_status current_cmd
     local deploy_parent_cmd deploy_task_id deploy_scope_mode dd_task dd_ninja dd_pcmd dd_tid dd_status

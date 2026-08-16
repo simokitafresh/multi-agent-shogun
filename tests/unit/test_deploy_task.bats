@@ -859,7 +859,10 @@ PY
     run bash -c '
         set -euo pipefail
         script="$1"
-        grep -Fq "if [ \"\$DIRECT_MODE\" != true ]; then" "$script"
+        # test_necessity: karo-direct (--yaml) must observe runtime idle so a
+        # terminal worker with an immutable retained report remains reusable.
+        grep -Fq "check_idle \"\$pane_target\" && is_idle=true" "$script"
+        ! sed -n "/Runtime idleness is independent/,/local task_yaml/p" "$script" | grep -Fq "DIRECT_MODE"
         grep -Fq "repair_training_parent_cmd_from_cmd_id \"\$task_yaml\" || return \$?" "$script"
     ' _ "$PROJECT_ROOT/scripts/deploy_task.sh"
     [ "$status" -eq 0 ]
