@@ -8163,6 +8163,73 @@ fi
 # 旧タスクYAMLにreviewed:falseが残存していても後方互換でブロックしない
 level_heading "[L1]" "Lesson reviewed check: SKIP (push型移行済み — cmd_533)"
 
+# ─── task.ac_version再計算（deploy_task.shと同一canonical AC fingerprint） ───
+# deploy時に保存したac_versionは、完了時点のtask YAMLそのものから再計算する。
+# report.ac_version_readとの照合だけでは、配備後にtask.acceptance_criteriaを
+# 追加・変更しても同じ保存値をreportへ返せるためstale ACを検出できない。
+compute_task_ac_version() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY' | md5sum | cut -c1-8
+import sys
+import yaml
+
+yaml.SafeLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = data.get("task") if isinstance(data, dict) else None
+raw_items = (task or {}).get("acceptance_criteria", []) if isinstance(task, dict) else []
+items = raw_items if isinstance(raw_items, list) else list(raw_items.values()) if isinstance(raw_items, dict) else []
+values = []
+for item in items:
+    if not isinstance(item, dict):
+        values.append(str(item))
+        continue
+    description = str(item.get("description", "")).strip()
+    if description:
+        values.append(description)
+        continue
+    checks = item.get("checks", [])
+    if isinstance(checks, list):
+        values.append("|".join(
+            str(check.get("check", "")).strip() if isinstance(check, dict) else str(check).strip()
+            for check in checks
+        ))
+    else:
+        values.append(str(item.get("check", "")).strip())
+sys.stdout.write("|".join(sorted(values)))
+PY
+}
+
+check_task_ac_version_integrity() {
+    local task_file="$1" ninja_name="$2"
+    local saved_ac_version computed_ac_version
+    saved_ac_version=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_version" "")
+    case "${saved_ac_version,,}" in
+        ""|null|none|"~")
+            echo "  [INFO] ${ninja_name}: task.ac_version未設定のため再計算照合SKIP"
+            return 0
+            ;;
+        [0-9]*)
+            if [[ "$saved_ac_version" =~ ^[0-9]+$ ]]; then
+                echo "  [INFO] ${ninja_name}: 旧形式(数値)ac_version=${saved_ac_version}のため再計算照合SKIP"
+                return 0
+            fi
+            ;;
+    esac
+
+    if ! computed_ac_version=$(compute_task_ac_version "$task_file"); then
+        echo "  [CRITICAL] ${ninja_name}: ac_version再計算失敗"
+        record_block_reason "${ninja_name}:ac_version_recompute_failed"
+        return 1
+    fi
+    if [ "$saved_ac_version" != "$computed_ac_version" ]; then
+        echo "  [CRITICAL] ${ninja_name}: NG ← task.ac_version stale (saved=${saved_ac_version}, computed=${computed_ac_version})"
+        record_block_reason "${ninja_name}:ac_version_stale:task=${saved_ac_version}:computed=${computed_ac_version}"
+        return 1
+    fi
+    echo "  ${ninja_name}: OK (task.ac_version=${saved_ac_version}, recomputed=${computed_ac_version})"
+    return 0
+}
+
 # ─── ac_version照合（task.ac_version vs report.ac_version_read） ───
 level_heading "[L3]" "AC version check:"
 AC_VERSION_CHECKED=false
@@ -8176,6 +8243,9 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     AC_VERSION_CHECKED=true
     ninja_name=$(basename "$task_file" .yaml)
+    if ! check_task_ac_version_integrity "$task_file" "$ninja_name"; then
+        ALL_CLEAR=false
+    fi
     report_file=$(resolve_report_file "$ninja_name")
 
     if [ ! -f "$report_file" ]; then
