@@ -80,6 +80,7 @@ lessons:
     吸収(2026-07-27, cmd_karo_hotfix_auto_clear_interrupted_batch_recovery_20260727, origin: [[INS-20260727-105844609-fa2c]] -> [[中断batch_staged残骸]] -> [[艦隊CLEAR_BLOCKED再発]] -> [[LK-A01]]): 2026-07-27、共有indexのcontext/infrastructure.mdとcontext/lord-conversation-index.mdがMMで残り、CLEAR-BLOCKEDが複数忍者へ反復した。既存INS-20260727-105844609-fa2cに174件の同型実測があったのにinsight在庫のままで本日再発した。positive_rule: staged残骸を手動解除して終えず、発生元writerの一次特定と、worktree不変・他者stage不変を満たす自動回復または発生不能化を実装し、staged 2→0かつworktree hash前後一致をcontract testで強制する。
     吸収(2026-07-27, cmd_karo_reload_ninja_monitor_20260727, origin: [[cmd_karo_reload_ninja_monitor_20260727]] -> [[HOT_RELOAD_bootstrap_gap]] -> [[owner_generation_handoff]]): daemon起動後にhot-reload実装を追加しても、旧bashプロセスは導入前のwhile構文を保持するためmtime差を検知できない。script mtime>daemon startかつHOT-RELOAD=0を一次確認したら、停止シグナルを使わずNINJA_MONITOR_HEARTBEAT_STALE_SECONDS=-1の独立新プロセスでownerを原子的取得し、旧世代のSINGLETON-FENCEと単一新PIDを確認する。2026-07-27実測: PID469247→2939962、old_self_fence 0→1、反映後AUTO-COMMIT-FAIL=0、CLEAR-BLOCKED=0。
     吸収(2026-07-28, cmd_karo_hotfix_throughput_t3b_fingerprint_hit_20260728, origin: [[cmd_karo_hotfix_throughput_t3b_fingerprint_hit_20260728]] -> [[task_design_precondition]] -> [[LK-A01]]): T3bでfingerprint cache実体はgate_report_format.shだったがmain.pyをtarget指定し1配備を無駄にした。起票前に識別子を候補全ファイルへrgし、実在件数N/Nとtarget_path一致を数値確認してから配備する。今回0/1→1/1、誤taskはFAIL-close。
+    吸収(2026-08-14, cmd_4308, origin: [[殿裁定_pf_assets拒否は異常_20260814]] -> [[凍結scope過剰拡張]] -> [[偽陽性差止め根治]]): matched-weight修正の実装凍結をreadonly調査toolへ勝手に拡張し、既存fof_tree.pyが同じcreate_db_engine方式でmain稼働している事実との整合を確認せずpf_assets.pyを拒否した。差止め前に対象scopeを殿の原文どおり限定し、同型既存資産を検索して理由が前例と両立するか二値確認する。両立しなければ止めず、真の差分だけを検証する。
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015, LK004i, LK006i, LK013i]
   created_at: '2026-04-24'
   automated: true
@@ -180,6 +181,7 @@ lessons:
     - 偵察前に家老がなぜなぜ7回で仮説を立て、偵察結果で更新せよ(LK013: 仮説なしの偵察は焦点が散る)
     v3統合吸収(2026-06-09, cmd_3253):
     - 間違いに気づいたら元まで巻き戻せ。対処を重ねるな(LK009: 2026-05-17 deploy不完全→STALL誤判断→Sonnet切替→さらに3名配備。正解=起点まで巻き戻し。殿厳命: 時系列で因果を追い起点を特定)
+    吸収(2026-08-16, cmd_karo_hotfix_dm_fof_full_reset_writer_execute_202608162118, origin: [[殿裁定_バグを直すな戻せ_20260816]] -> [[復旧に新規コード禁止]] -> [[復帰点§-1]]): 2026-08-16 20:47-21:26: full 2回依存バグ検知後、家老は忍者にDB削除ツール(bounded writer capability)を作らせ、別忍者に原因偵察を配備した。殿直命21:24『復旧に不要なコードを増やすな。writer差分は作業前へ即時に戻す。3e28b617への単純ロールバックと既存手段のDB cleanだけへ一本化』、21:30『将軍自身が一人でやれ』。修正: (1)バグ検知時の第一選択=既知クリーン点(rollback計画書§-1)へcode+DBを戻しfull 1回 (2)復旧laneに新規コード・偵察・観測拡張を配備しない。既存手段のみ (3)『fullが再生成しない行』はfullでは消えないので明示DELETEが要る。境界を精密に切らず消しすぎてfullで戻す方が速い(殿20:49) (4)復旧は1名で回す (5)殿の疑問文を裁定に変換して方針を上書きするな(殿16:48)。比較はprices同一状態のrun同士のみ(96分誤診)
   source_ids: [LK064, LK013, LK009i]
   created_at: '2026-04-24'
   automated: true
@@ -485,11 +487,12 @@ lessons:
     吸収(2026-07-27, cmd_reflux_promotion_202607271512_saizo, origin: [[LK-A18]] -> [[Level4実装0件]] -> [[PD-110継続]]): 2026-07-27再検証: gate総候補354件、家老候補2件、LK-A18はL1残存。scripts配下のgit revert実行経路0件、SG-PRE14はWARNのみ、PD-110はpending。既存設計判断を覆す新実装なしのためLevel4昇格せず、PD-110で一元管理を継続する。
     吸収(2026-08-14, cmd_4303, origin: [[cmd_4303]] -> [[run361_partial_production_mutation]] -> [[revert_first_rule]]): cmd_4303でP0.5 canaryが本番monthly_returnsを部分破壊したと確定後、走行中run362の完走を待ってからrevert pushし、約8分遅延した。壊れたruntimeのrun完走は保護対象ではなく、その出力も放棄された。次回は本番破壊確定時点で、検証・復元run・説明材料収集より先にexact revertをpushしlive確認、その後revert版でfull復旧する。
     吸収(2026-08-14, cmd_4245, origin: [[cmd_4245]] -> [[run365不要起動]] -> [[deploy後run存在時はSELECTのみ]]): deploy後の品質検証は既存の直近full結果へのSELECT突合のみで行う。mode=fullは全102PF+FoF78不可分、mode=portfolioも対象未指定なら親closureで全FoFへ拡張される。run365では将軍の曖昧文言を家老が範囲確認せず実行し、不要runを起動した。
+    吸収(2026-08-15, cmd_karo_hotfix_dm_l1_split_step5_fast_202608152059, origin: [[殿裁定_本番full待ち禁止_20260815]] -> [[直列待機による空費]] -> [[実装とfullのパイプライン]]): positive_rule: 各小規模手のfull実行中は次手を別忍者へ即配備し、結果PASSの瞬間に次手をpushする。FAILなら先行PASS以後に積んだ未採用手を捨て、直前本番へ戻す。reason: full完走を待ってから次手を作る直列待機は実装時間を空費し、高速な小手反復という殿の意図を損なう。
   source_ids: [LK062, LK087]
   created_at: '2026-04-24'
   automated: true
-  enforcement_level: 1
-  enforcement: 'Level1(事後検出): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090818_tobisaru)。revert実行経路を確認したところ、revertはinstructions/karo.md L167「Halt受信: 即停止→忍者clear→commit revert→YAML idle化→dashboard更新→待機」記載の家老手動git revertのみで、専用ラッパースクリプトや自動化経路は存在しない(scripts/配下にgit revertを実行するスクリプト0件)。「revert前に変更元エージェントへ通知」を強制する仕組みは皆無(PreToolUse Bashフックでのgit revert検知/BLOCKも未実装)。「revert後の再計測強制」に該当するのはgate_gunshi_report_precheck.sh SG-PRE14(L378-398)のみだが、これは軍師の報告レビュー時(revert実行後・忍者の報告提出タイミング)にfiles_modified内のファイルへ直近revert commitがあるかをgit log grep判定しWARN表示するだけで、BLOCKでも強制でもない(REVERT_FOUND=1でも処理続行)。よってLK-A18は通知/再計測の両輪ともLevel4未到達、報告レビュー時のWARNのみの真正Level1と確定。Level4化には(a)revert実行経路の一元化(karo手動git revertのラッパースクリプト化、またはPreToolUse Bashフックでのgit revert検知)(b)変更元エージェント特定方法(revert対象commitのco-authorやtask_id逆引きによる自動identify)(c)再計測強制の実装対象(revert後の再計測task自動生成、またはcmd_complete_gateでのbefore/after記録必須化)の3点設計が必要なため単独実装を見送りPD-110(escalation)へ整理し家老/将軍判断を要請。'
+  enforcement_level: 5
+  enforcement: "Level5: instructions/karo.md本番高速回転プロトコルを起動時に注入し、full待機中の次手配備を家老判断から契約へ昇格"
 
   when: 忍者の変更をrevertする前。revert後
   how: revert前に変更元忍者に理由通知。revert後はbefore/after再計測必須(SG-PRE14)

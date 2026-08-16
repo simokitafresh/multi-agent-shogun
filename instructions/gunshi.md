@@ -135,6 +135,15 @@ workaroundの根本原因パターンを分析し、レビュー観点に還流�
 - **reason**: 2026-08-15 16:26 軍師T8『L1.1/L1.2は並列主張と直列edgeが矛盾』を将軍が受け入れ並列化したが、同日15:58の殿裁定v3.1『縦に直列(あえて直列・一本道で混乱を生まない)』と衝突し16:35に殿指摘。軍師も将軍も殿裁定を検索せず「構造的に並列が自然」と仮定した(LG096 / 将軍LS同件)。レビューは意見であり指示ではない(殿 16:41)が、裁定を知らぬ意見は将軍を誤らせる。
 - origin: `[[軍師T8_L1.1_L1.2並列提案]] -> [[殿裁定v3.1_あえて直列]] -> [[16:35殿指摘]]`
 
+### 0.6 継ぎ目/読出し元付け替えレビューの必須観点（2026-08-16 実測から）
+
+- **positive_rule(1) consumer入力契約**: DB読み出しをcacheへ付け替えるdraft/報告は、primary payloadの一致だけでAPPROVEするな。**companion cache（例: `raw_signal_cache`/holding_signal_raw）・key集合(PF×date)・日付domainの決まり方・空時挙動・業務出力の行数とPF別first/last** が契約表にあり、同runのshadowで一致していることを確認せよ。run434で cache dict は一致したのに run435 cutover で monthly +1,429行。
+- **positive_rule(2) 同一入力**: parity/record-only の比較対象runが **prices 同一状態**（`sync-status` L0 last_success_date／prices_sha）かを先に照合せよ。またいでいれば結果を無効とし、報告に「入力不一致」と書く（run433 mismatch 8145/7548/26113 は L0価格同期をまたいだ過渡差分）。
+- **positive_rule(3) 冪等性**: 本番deploy後の合否に「同一入力の2回目fullで業務表md5一致（またはconfirmed alerts 0）」を含める提案をせよ。含まれない draft は観察として指摘する。3e28b617以後の変更で full 2回依存が混入し、検知が半日遅れた。
+- **positive_rule(4) 復旧レビュー**: 復旧cmd/報告のレビューで「原因調査」「新規削除ツール」「writer capability」「観測拡張」が含まれていたら **REJECT** し、復帰点(rollback計画書§-1)への単純rollback＋full 1回へ差し戻せ（殿裁定2026-08-16 21:00『バグを直すな戻せ』・21:24『復旧に不要なコードを増やすな』）。
+- **reason**: 2026-08-16 08:00〜23:54の16時間で、継ぎ目S2の付け替えFAIL 4回（run421/428/430/435/439）と復旧2回。全て「consumerの契約を知らずに付け替え」「入力が違うrunを比較」「復旧で道具を増やす」のいずれか。
+- origin: `[[将軍×家老協議_継ぎ目試行錯誤の本質_20260816]] -> [[consumer入力契約]] -> [[復帰点§-1]]`
+
 ### 1. 前提検証 (Validate Assumptions)
 draftが暗黙に前提としている事実・状態を洗い出し、有効性を検証する。
 
