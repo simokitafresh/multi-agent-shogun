@@ -9,28 +9,39 @@
 発端: 殿観測 2026-08-17 00:26 — admin認証→ログアウト→低tierで再ログインすると本来見えないPFのキャッシュが表示され、リロードするまで直らない。
 イメージ図: https://claude.ai/code/artifact/1c498f5f-100f-447a-90ce-75d389a51904
 
-## AsIs **v0.1** — 2026-08-17 00:50+09:00（仮説。cmd_4322 read-only棚卸しで現物確定後にv1.0へ）
+## AsIs **v1.0** — 2026-08-17 01:15+09:00（cmd_4322 read-only棚卸し・飛猿報告 `queue/reports/tobisaru_report_cmd_4322.yaml`・軍師APPROVE・GATE CLEAR 01:11）
 
-**AsIs契約表**（cmd_4322 の報告で埋める）
+**AsIs契約表**（現物。行番号は2026-08-17時点の frontend/backend）
 
 | 層 | 現物（ファイル/関数） | 認証切替の形 | キャッシュキーに主体を含むか | ログアウト時に消えるか |
 |---|---|---|---|---|
-| 認証(admin) | `frontend/contexts/admin-auth-context.tsx`, `frontend/lib/admin-auth.ts`（実在確認済み・中身未確認） | 要確認 | — | 要確認 |
-| 認証(viewer) | `frontend/components/viewer-auth-modal*`（テスト実在）— モーダル=同一ツリー内の疑い | 要確認 | — | 要確認 |
-| データ層 | `frontend/contexts/signals-context.tsx`, `frontend/lib/api-cache.ts`, SWR/Context/localStorage(9ファイルで参照) | — | 要確認 | 要確認 |
-| HTTP | `backend/app/utils/etag.py`, `backend/app/utils/cache.py`(TTLCache 300s) | — | ETag生成入力に主体を含むか要確認 | — |
+| 認証(admin) | `frontend/components/viewer-auth-modal.tsx:97-150`(入力切替) → `adminAuth.login` → `api.adminLogin`(POST /api/admin/login, Basic) → localStorage `admin_session_active` → `AdminAuthProvider.login` → `refreshPortfolios` | **同一ツリー内のstate切替**（遷移なし） | — | logoutは `api.logout`(server cookie削除)+`admin_session_active/admin_user/admin_pass`+viewer token削除+auth event dispatch+AdminAuthContext/useAdminPageのReact state空化。**apiCache・ETag・handoff sessionStorage・Service Worker CacheStorage・selected_portfolio_id は消さない** |
+| 認証(viewer) | `api.verifyViewer` → `viewerAuth.saveToken`(localStorage `dm_viewer_token`: token/expires/tier_name) → `window.location.reload` | **full document reload**（ツリー再生成あり） | — | `viewerAuth.clearToken`+reloadのみ。sessionStorage/IndexedDB/SWは残る |
+| データ層(1) | Signals/ViewerPermissions/AdminAuth の React state/Context | — | **含まない**（キーなし） | React stateはreloadで消える。admin logoutは同一ツリー内なので残り得る |
+| データ層(2) | signals handoff `sessionStorage` key=`dm-signal-signals-handoff-cache` | — | **含まない**（tier/token/userなし） | **消えない**（logout・reloadとも） |
+| データ層(3) | localStorage `selected_portfolio_id`/folder filter/execution_timing/auth flags/token | — | データキャッシュではない（設定・フラグ） | tokenのみ消える |
+| データ層(4) | api-cache Map + IndexedDB responses + manifest（`lib/api-cache.ts`） | — | **tierは含む**（`admin::endpoint` / `viewer:<tier>::endpoint`）、token/userは含まない | **消えない**（scope=adminの永続cacheが残る） |
+| データ層(5) | ETag Map + IndexedDB etags | — | 同上scope（tier有、token/user無） | **消えない** |
+| データ層(6) | Service Worker `dm-signal-v10` の API URL match/put | — | **含まない**（URLのみ） | **消えない** |
+| データ層(7) | ブラウザ private HTTP cache（`Cache-Control: private, max-age=N`） | — | **Varyに主体なし** | ブラウザ依存 |
+| HTTP(backend) | `backend/app/utils/etag.py:15-69` `generate_etag`=sort済みresponse dataのMD5のみ、`check_etag_match`=If-None-Matchと生成ETagの比較のみ。`make_response_with_etag` 利用=tier依存18 endpoint（各handlerはtier_idでvisibility/maskingを計算するがETag utilityへ主体は渡らない）。`compare_returns` のserver TTL keyだけは tier_id/is_admin/visible_ids を含む | — | ETag=**主体なし**、Cache-Control=**主体なし** → **別tier由来の同一ETagで304が成立する** | — |
 
-仮説の因果列: 同一ツリー内で認証だけ切替 → データ層のキーに主体が無い → ログアウトで認証情報のみ削除 → 低tier再ログインで同キーにヒット → 非公開PF表示 → リロード=ツリー全破棄で正常化。
+**漏れの因果列（現物名のみ）**: admin取得データが React Context・handoff sessionStorage・Service Worker URL cache・scope=admin の api-cache/ETag に残る → admin logout は cookie/flags と React admin state を落とすだけで handoff/SW/永続cache を破棄しない → 低tier token 保存+reload 後、`SignalsProvider` が**認証確認前に handoff を適用**し、Service Worker も同一URLの stale response を返せる → 低tier の network response が届く前に admin 時の非公開PFが表示され得る。**reloadで直る理由**: React state/memory が再生成され fresh な低tier request が走り、その応答が勝てば表示が更新される。ただし sessionStorage/IndexedDB/SW は reload では消えないため「勝てなければ残る」。
 
-## ToBe **v0.1** — 2026-08-17 00:50+09:00
+**確認できた事実**: SWR/QueryClient 実装は0件。認証切替はadmin=同一ツリー／viewer=reloadの二値。tier依存ETag endpoint=18。コード変更0・本番操作0（読み取りのみ）。
+
+## ToBe **v0.2** — 2026-08-17 01:15+09:00
 
 - `/login` ルートを境界にする。未認証はデータfetchを走らせない（ルートガード）。
 - 認証成功／ログアウトのたびに **ハードリセット**（データ層・store・localStorage/sessionStorage全消去）してから遷移。
 - キャッシュキー = `[主体(tier/token hash), endpoint, params]`。別主体は別キー。
 - tier依存APIは `Cache-Control: private, no-store` またはETagを主体込みで生成。
+- ハードリセットの対象は AsIs 表の全層: React state/Context・handoff sessionStorage・localStorage/IndexedDB(api-cache/ETag)・**Service Worker CacheStorage（`caches.delete` または SW側で主体scope付きキー）**。
+- `SignalsProvider` の handoff 適用は **認証主体の確定後**にし、主体が保存時と異なれば捨てる（handoff に主体を焼く）。
+- backend: `generate_etag` の入力に主体(tier_id/is_admin/visible_ids)を含める（compare_returns の TTL key と同じ考え方）か、tier依存18 endpointは `no-store`。
 - 合否（各実装手の二値）: admin→ログアウト→低tier再ログインで、非公開PFがリロードなしに表示されない。
 
-## 注釈 — 2026-08-17 00:50+09:00
+## 注釈 — 2026-08-17 01:15+09:00
 
-- AsIs注釈: 上表の「要確認」は cmd_4322 の報告で現物名に置き換える。推測を残さない。
+- AsIs注釈: v1.0 は cmd_4322 の一次証跡（rg/nl による現物読解、行番号付き）で置換済み。SW `dm-signal-v10` と handoff sessionStorage が「主体なし・logoutで消えない」二重の抜け穴。
 - ToBe注釈: ログインページはUIではなく「境界装置」。モーダル方式では消し忘れが意志依存になる。
