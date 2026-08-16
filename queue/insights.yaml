@@ -1125,7 +1125,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存GP-107判定済みの品質パターンと確定。gate_report_format_main.pyはcheck欠落を必須契約違反として検出し、gate_report_autofix_main.pyはcheck内容の推定を行わないため、安全な自動修正や新規gate強化は不要。gate_loop_health.shの汎用MISSING成熟提案が直近12回を再掲したため、既存設計で解決扱いとする。"
+  action_artifact: "gate_report_format_main.py:L1497 / gate_report_autofix_main.py:L105-L106 / gate_loop_health.sh:L288-L294 / logs/gate_fire_log.yaml:2026-08-17T04:09:16-04:09:48の12回相当"
+  resolved_at: "2026-08-17T04:42:05+09:00"
 - id: INS-20260817-041823839-f3e0
   ts: "2026-08-17T04:18:23+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bt2v68lj0 task id tool use id toolu 01G6USutDVXVgATRkH は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
