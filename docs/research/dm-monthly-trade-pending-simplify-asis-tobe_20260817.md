@@ -8,6 +8,7 @@
 - 実装は殿の指示まで行わない（2026-08-17 02:06 殿「今はチャットだ」／02:12「設計書に一旦落としてくれ」）。
 
 発端: 殿観測 2026-08-17 02:06 — 本番Monthly Trade画面で**全PF・全期間にPendingバッジ**が出ている（スクショ: `劇薬DMスムーズ` as of 2026-08-14、May〜Aug 2026 全行Pending、上部にNEXT SIGNAL Sep 2026 / 08/14 Preview）。
+イメージ図(artifact): https://claude.ai/code/artifact/c12a2996-9144-4466-af2a-798aa885e7cb
 関連設計書: `dm-login-boundary-asis-tobe_20260817.md`（gist 0d23e0c3。entitlement=position_month基準がNEXT SIGNAL撤去の根拠の一つ）
 
 ## AsIs **v1.0** — 2026-08-17 02:15+09:00（三層記憶+本番DB一次確認。コード行番号はcontext記載時点のもの、実装前に現物再確認）
