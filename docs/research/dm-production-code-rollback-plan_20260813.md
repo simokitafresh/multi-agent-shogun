@@ -7,7 +7,7 @@
 - 目的: 正常だった時点の**コード**へ本番を戻し、入力SSOTから派生データを全再生成し、ticker `prices`を起点とする独立oracleと本番画面で正常性を証明する
 - 旧文書: `dm-production-recovery-v3_20260813.md`は旧L5局所修復laneの歴史記録として凍結する。本書へ旧工程・旧PASS・旧ACを継承しない
 
-## §-1. ★復帰点宣言(RESTORE POINT) — 2026-08-16 23:30 JST（初版 2026-08-14 14:29 RB1〜RB8全完了、2回目の実使用 2026-08-16 21:35〜22:15 で更新）
+## §-1. ★復帰点宣言(RESTORE POINT) — 2026-08-16 23:58 JST（初版 2026-08-14 14:29 RB1〜RB8全完了、2回目の実使用 2026-08-16 21:35〜22:15 で更新）
 
 > **今後、本番に何かあった時に戻るべき場所はここである。** 復帰点＝「入力SSOTから独立検算で全量証明された、既知バグゼロの状態」＋**そこへ戻すための現物の所在と手順**。本節だけ読めば、前提知識のないLLMが本番を戻せる粒度で書く。
 
@@ -18,11 +18,13 @@
 | **本番runtimeコード** | tree=`3e28b6172889df3d544cc04ae31567252073ac7b`（backend/）。2026-08-14 09:42 JST初deploy。2026-08-16 21:35 JSTに `131e5dbb`（backend/を3e28b617へ全置換した1 commit）として再びmain tipへ積み、Render live | `git diff --stat 3e28b617 <live commit> -- backend` = 0 が判定式 |
 | **DB（入力SSOT＋派生データ）** | 2026-08-16 22:06 JST以降の本番DB（backend＋cron `dm-signal-etl`/`dm-signal-password-rotation` の env も同DBへ切替済み 23:26）= Render Postgres `dm-signal-db-copy`（`dpg-da0qttc9v7es73a0cig0-a`、singapore、basic_1gb、PG18）＝旧DB `dpg-d542chchg0os73979vg0-a` の **PITR restoreTime=2026-08-14T05:35:00Z（14:35 JST）** から作成。旧DBは残置（切戻し用） | Render API `POST /v1/postgres/<id>/recovery`。PITR可用窓は `GET /v1/postgres/<id>/recovery`（旧DB: AVAILABLE, startsAt 2026-08-09T07:54:58Z）。backend env `DATABASE_URL` は Render API `PUT /v1/services/srv-d4ja7q15pdvs739a4q1g/env-vars/DATABASE_URL` で切替、redeployで反映 |
 | **DB派生データ世代（08-14時点）** | run360系＋L3 sync-fof cron正規再展開後の世代。orphan `precomputed_raw`=0件 | RB8 AC2機械検証 |
-| **全量検算の正基準** | 月次33748/33748 exact＋metrics 30192/30192＋stub48/48=30240/30240 exact | 独立証拠commit `6cc6b576`＋`rb6-v3-full-revalidation-evidence_20260813.md` |
+| **全量検算の正基準** | (08-14) 月次33748/33748 exact＋metrics 30192/30192＋stub48/48=30240/30240 exact（独立証拠commit `6cc6b576`）。(08-16 drop後) **4業務表の集合md5＝上記冪等性欄の値が新しい同一性基準**（母集団はFoF valid_start前を含まない）。独立oracle（§7.1逆算parity）での再検算は未実施＝次に価格入力が変わる前に1回回す価値あり | `rb6-v3-full-revalidation-evidence_20260813.md`／`dm-restore-point-baseline-hash_20260816.txt` |
 | **fullが再生成しない行（窓外行）の棚卸し** | 殿裁定2026-08-16 20:45＝**drop**、23:14「今消そう」で実施済み: FoF 78体の signals 285,612 / monthly_returns 12,239 / fof_component_weights 29,540 と標準PF週末signals 48 を1トランザクションで削除（bounded capability `bounded_legacy_rows_drop_20260816`、dry-run→drop、証跡 `outputs/analysis/legacy_drop_20260816.json`）→ full run395（23:17-23:24、6分）で窓内を再生成: FoF signals 244,196（2011-04以前 0）/ monthly_fof 11,749（全体16,486）/ weights 26,613 / 標準週末 0 / metrics 204 / 78 FoF全てに行あり。**現在の本番には「fullが再生成しない行」は無い**＝どのfullも同じ集合を作る | readonly SQL 2026-08-16 23:25 |
-| **冪等性（full 1回で収束）** | 復帰点コードでは **full 1回で収束すべき**（3e28b617以後のruntime変更下では前run終端のDB状態に一段依存し2回要した: run436→437で465件、run440→441で2,365件）。復帰後の実証＝「同一入力で2回目fullのconfirmed alerts=0」を二値で残す | 2026-08-16 22:07 run 202608161307（491秒・error0）＋価格同期後の2回目full（22:4x起動）で計測中 |
+| **冪等性（full 1回で収束）** | **実証済み 2026-08-16 23:54**: 同一入力で run396 と run398 の4業務表md5が完全一致（monthly 16,486 `73e42944` / signals 343,626 `acb124d8` / fof_component_weights 26,613 `b757c911` / portfolio_metrics 204 `7802372c`）。間に OOM で interrupted した run397（metrics 0 まで書いた状態）を挟んでも1回のfullで同一hashへ収束＝復帰点コードに履歴依存なし。3e28b617以後の変更下では2回要した（run436→437で465件、run440→441で2,365件） | `docs/research/dm-restore-point-baseline-hash_20260816.txt`（=`outputs/analysis/baseline_hash_run39{6,8}_20260816.txt`、集計SQL=biz_hash: portfolio_id\|date\|signal\|holding_signal 等の string_agg md5） |
 | **入力SSOT** | L0 prices最終同期日（`GET /admin/sync-status` L0_prices.last_success_date）とrows。08-14 PITR直後=2026-08-14／100,209行 → 22:2x `POST /admin/sync-prices` 後=2026-08-16。比較・parityは **同一 prices 状態のrun同士だけ**（08-16の96分誤診＝価格同期をまたいだ比較） | sync-status / recalculation_status.summary の入力hash |
 | **API/画面** | 8画面（Dashboard/Summary/Monthly Returns/Monthly Trade/Metrics/Drawdowns/Compare Chart/Compare Summary）HTTP 2xx 8/8・non-empty 8/8・例外0。Signalsは廃止済み対象外 | `cmd_4301_rb8_generation_evidence_20260814.md`（08-14）／08-16復帰後の再確認は本節更新後に実施 |
+| **旧DBの扱い** | 旧DB `dpg-d542chchg0os73979vg0-a`（dm-signal-db）は切戻し保険として **2026-08-17 23:00 JST まで残置**、以後は削除（課金とデータ混同の防止）。それまでに新DBで異常があれば env を旧値へ戻して redeploy（`render_env_swap.py revert` 相当＝Render API PUT） | Render dashboard |
+| **runtime注意（メモリ）** | 復帰点コードでfullを同一プロセスで連続実行すると5本目（run397）で 4GB OOM → instance再起動・run interrupted。**fullを連続で回す時は間に deploy/restart を挟むか、1〜3本に留める**。full所要=6〜8分（L3 261s/L2 141s/L5 43s/L1 4s） | Render event 2026-08-16 23:41 "Instance failed: 776l6 Ran out of memory (used over 4GB)" |
 | **完了cmd / 実施記録** | 08-14: cmd_4301 completed(AC1-AC4 PASS・軍師LGTM)。08-16: 将軍単独実行（家老・忍者停止、殿直命21:30）、§9「2026-08-16 21:00〜22:15」に手順表 | queue/archive＋掲示板 blt_20260814_142907／blt_20260816_213722 |
 
 ### -1.2 戻し方（そのまま実行できる順序・新規コード0本）
