@@ -179,8 +179,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 40
-  last_seen: "2026-08-17T06:42:56+09:00"
+  occurrence_count: 41
+  last_seen: "2026-08-17T06:54:45+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -613,7 +613,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_ga470_infrastructure_freshness_202608170147"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存一次設計書docs/research/gunshi_idle_stale_ac_analysis_20260426.mdにcmd_2286のAC5混入・根因・A案（gate_report_formatでcmd原本AC ID照合）が記録済み。現行実装はdeploy時AC_VERIFYとtask/report契約検査を持つが原cmd再照合の実装証跡はなく、本taskのplanned scope外なので新規修正せず設計候補として整理済みと判断"
+  action_artifact: "docs/research/gunshi_idle_stale_ac_analysis_20260426.md#修正設計案;context/infrastructure.md:L1545,L1593-L1594;decision_candidate=cmd原本とtask AC ID集合の再照合をLevel5候補として次cmdで設計・実装"
+  resolved_at: "2026-08-17T06:57:45+09:00"
 - id: INS-20260817-023016651-11a5
   ts: "2026-08-17T02:30:16+09:00"
   insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=artifactの未決(殿裁定待ち)についてこたえたいから、もう少し詳しく一つづつ質問してくれ"
