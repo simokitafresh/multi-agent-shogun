@@ -35,7 +35,7 @@
 
 ---
 
-## ToBe **v1.0** — 2026-08-16T00:40+09:00
+## ToBe **v1.1** — 2026-08-16T16:02+09:00
 
 **継ぎ目を1本ずつ cache へ付け替える。書込みは変えない。読み返しだけを消す。**
 
@@ -67,7 +67,7 @@ flowchart TB
   subgraph R3["S2: L3 FoF（depth 順）"]
     direction LR
     C3["+ FoF の signals / W / monthly / cumulative / provenance"]:::cache
-    X3["<b>C2（∪ 浅い C3）の signals / monthly から</b> 規則2 → 価格適用 → 記録<br/>preload_fof_signals（DB）を読まない"]:::calc
+    X3["<b>C2（∪ 浅い C3）の signals / monthly から</b> 規則2 → 価格適用 → 記録<br/>preload_fof_signals（DB）を読まない<br/>生成窓は FoF の全履歴（2010-10〜）を同 run で作る。前 run の DB 行に依存しない"]:::calc
     C25 -.->|"読む"| X3
     C3 <-.-|"合流"| X3
   end
@@ -110,11 +110,11 @@ flowchart TB
 | # | やること | 種別 |
 |---|---|---|
 | 1 | ~~S1: Phase 4.5 の `signal_cache` を C2 の signals から組む~~ **本番 live（1c138127、run420 差分0）** | 完了 |
-| 2 | S2: `_recalculate_fof_history` の `signal_cache` を C2（∪ 浅い depth の C3）から組む。`preload_fof_signals_for_portfolios`(DB) を読まない。FoF の出力を C3 へも合流 | **付け替え + produce** |
+| 2 | S2: (a) FoF の生成窓を 2010-10 へ広げ、今 run が生成しない旧行を無くす（殿裁定 2026-08-16T15:48） (b) `_recalculate_fof_history` の `signal_cache` を同 run 生成の C2 ∪ C3(depth<k) だけから組む。`preload_fof_signals_for_portfolios`(DB) を読まない。FoF の出力を C3 へ合流。順序: 窓拡張 → 候補A shadow CLEAR → cutover（S1 live・run421/428/430/435 は revert 済み・run438 shadow: A=FAIL(30,853 欠落) / B=CLEAR） | **窓拡張 + 付け替え + produce** |
 | 3 | S3: trade_perf / risk 系の `signal_preload` / `monthly_return_cache` を C2 ∪ C3 から組む。2回目 OPT-4 と MonthlyReturn 再クエリを読まない | **付け替え** |
 | 4 | S4: L5 precompute の入力を C2 ∪ C3 ∪ C5A から渡す。L5 内の `LazySignalArtifactCache` 新規生成を止める | **付け替え** |
 
-**全て「読み出し元の付け替え」。書込みは触れない。∴ 業務値は1件も変わらないはず。**
+**S2(a) 以外は「読み出し元の付け替え」で業務値は1件も変わらない。S2(a) の窓拡張だけは FoF の 2010-10〜2011-03 を作り直すため FoF のその期間の値が変わり得る（意図した変更）。FoF 以外・他期間は差分0。**
 
 ## 二値の合否
 
@@ -124,6 +124,9 @@ flowchart TB
 | **読み返し** | 付け替えた継ぎ目の `db.query(Signal)` / `db.query(MonthlyReturn)` が run 経路で0回（コード上の呼出箇所が消えている） |
 | **欠け** | cache に無い PF×日を要求したら停止する（DB フォールバックが無い） |
 | **cache** | 空dict からの再構築箇所が消え、C2 → C3 → C5A の一本になっている |
+| **同一入力** | 比較する run 同士の prices_sha・portfolio_config sha が一致している（不一致の比較は無効） |
+| **shadow** | cutover 前に同 run の record-only で consumer 入力3軸(companion・domain・merge 行数)と業務出力 rows/PF別 first-last が候補と legacy で一致（clear=true） |
+| **履歴非依存** | 付け替え後の継ぎ目が前 run の DB 状態（今 run が生成しない行）を読まない |
 
 ## この設計が触れないもの
 
@@ -133,14 +136,14 @@ flowchart TB
 
 ---
 
-## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T15:50+09:00
+## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T16:02+09:00
 
 ### AsIs 注釈
 - **型の境界（偵察 2026-08-16 02:09）**: S1/S2 は dict 消費で C2 直結が容易。S3/S4 は ORM(expunge済み) 消費が残るため、C2∪C3 を渡すには「ORM互換の row shape を持つ dict」か「consumer側のattr参照を dict 参照へ」のどちらかが要る。S3 は generator 5系統(drawdown/rolling/metrics/trade/risk)の参照属性を先に列挙してから付け替える。
 - **import closure**: 新helperは `backend/app/jobs/input_manifest.py`(L0/L1/L2 の snapshot 群と同居・起動時import済み) か `shared.py` に置く。新moduleを切るなら同一commitに含めることを push 前 import 検証で確認する（L2 #2/#1b/#3 の起動失敗の教訓）。
 - **S1**: OPT-4 は「trade_performance + monthly_returns 用」の一括ロードとして入った最適化で、L2 が書いた直後の signals を DB から読み直している。`_reload_signal_cache_entries` は ALM second-pass 条件内のみ。
 - **S2**: FoF は「常に全期間再計算」（drift 状態を保存していないため）。入力の signal_cache と構成PF価格を FoF 層の中で DB から組み立てる。
-- **S2 の旧行依存（本番実測 2026-08-16T10:37+09:00・run421/428/430）**: `preload_fof_signals_for_portfolios`(DB) は**今 run が生成しない旧行**にも依存する（FoF prefix 30,853件=`valid_start_date` 以前、標準PFの週末行 40件）。同 run 生成分だけの cache へ付け替えると、当該 FoF 自身の monthly_returns 生成期間に旧 prefix が混入していた分の**日付 domain が変わり業務値が変わる**（付け替え 2回 FAIL・即 revert・復元 PASS、run427 基準 monthly hash fc198a01）。record-only では **候補=同 run 生成 ∪ C1 read-once の旧行** で DB preload と完全一致（run427）。
+- **S2 の旧行依存（本番実測 2026-08-16T10:37+09:00・run421/428/430）**: `preload_fof_signals_for_portfolios`(DB) は**今 run が生成しない旧行**にも依存する（FoF prefix 30,853件=`valid_start_date` 以前、標準PFの週末行 40件）。同 run 生成分だけの cache へ付け替えると、当該 FoF 自身の monthly_returns 生成期間に旧 prefix が混入していた分の**日付 domain が変わり業務値が変わる**（付け替え 2回 FAIL・即 revert・復元 PASS、run427 基準 monthly hash fc198a01）。record-only では **候補=同 run 生成 ∪ C1 read-once の旧行** で DB preload と完全一致（run427・run438 候補B clear）。同 run 生成のみ（run438 候補A）は signal date 欠落 30,853・merge 入力欠落 74,686・FoF 出力 254,759/285,612・first 2011-04-01（legacy 2010-10-01）、値差 0。**履歴依存**: 業務 signals は前 run 終端の DB 状態にも依存し、汚染後の復元は full 2回で収束（run436→437、465 件の一段残差）。
 - **S2 observer の事故（run430）**: 観測目的で consumer へ渡すオブジェクトを差し替えた結果 holding_signal 8,145 行（39 PF）が変わった。観測は別変数で比較のみ、consumer への引数は不変が条件（修正 c053a4a1 系・db7a6ca3 基底）。
 - **S3/S4**: 2回目の OPT-4 と MonthlyReturn 一括ロードが trade_perf・risk・L5 の共通入力。L5 はさらに独自 cache を生成する。S3/S4 の実装は済み（77fd250f / cdd3bd25 系）で S2 完了待ちのため未統合。
 
