@@ -14,7 +14,7 @@
 
 ---
 
-## AsIs **v1.1** — 2026-08-16T02:15+09:00 / 対象 `origin/main = a71b56fd`（継ぎ目の現物。疾風 readonly 偵察 `cmd_karo_recon2_dm_l2_l3_seam_202608160159` で全行再照合。L2 #4 完了時に SHA を更新）
+## AsIs **v1.2** — 2026-08-16T11:25+09:00 / 対象 `origin/main = a71b56fd`（継ぎ目の現物。疾風 readonly 偵察 `cmd_karo_recon2_dm_l2_l3_seam_202608160159` で全行再照合。L2 #4 完了時に SHA を更新）
 
 **現状、L2 が DB へ書いた signals / monthly を、後段が4箇所で DB から読み返している（cache 3系統）。C2 に在るのは L2 #2/#3 の fingerprint / judge 記録のみで、signals / monthly / W / provenance の producer はまだ無い（L2 #4 待ち）。**
 
@@ -133,16 +133,19 @@ flowchart TB
 
 ---
 
-## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T00:40+09:00
+## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T11:25+09:00
 
 ### AsIs 注釈
 - **型の境界（偵察 2026-08-16 02:09）**: S1/S2 は dict 消費で C2 直結が容易。S3/S4 は ORM(expunge済み) 消費が残るため、C2∪C3 を渡すには「ORM互換の row shape を持つ dict」か「consumer側のattr参照を dict 参照へ」のどちらかが要る。S3 は generator 5系統(drawdown/rolling/metrics/trade/risk)の参照属性を先に列挙してから付け替える。
 - **import closure**: 新helperは `backend/app/jobs/input_manifest.py`(L0/L1/L2 の snapshot 群と同居・起動時import済み) か `shared.py` に置く。新moduleを切るなら同一commitに含めることを push 前 import 検証で確認する（L2 #2/#1b/#3 の起動失敗の教訓）。
 - **S1**: OPT-4 は「trade_performance + monthly_returns 用」の一括ロードとして入った最適化で、L2 が書いた直後の signals を DB から読み直している。`_reload_signal_cache_entries` は ALM second-pass 条件内のみ。
 - **S2**: FoF は「常に全期間再計算」（drift 状態を保存していないため）。入力の signal_cache と構成PF価格を FoF 層の中で DB から組み立てる。
-- **S3/S4**: 2回目の OPT-4 と MonthlyReturn 一括ロードが trade_perf・risk・L5 の共通入力。L5 はさらに独自 cache を生成する。
+- **S2 の旧行依存（本番実測 2026-08-16T10:37+09:00・run421/428/430）**: `preload_fof_signals_for_portfolios`(DB) は**今 run が生成しない旧行**にも依存する（FoF prefix 30,853件=`valid_start_date` 以前、標準PFの週末行 40件）。同 run 生成分だけの cache へ付け替えると、当該 FoF 自身の monthly_returns 生成期間に旧 prefix が混入していた分の**日付 domain が変わり業務値が変わる**（付け替え 2回 FAIL・即 revert・復元 PASS、run427 基準 monthly hash fc198a01）。record-only では **候補=同 run 生成 ∪ C1 read-once の旧行** で DB preload と完全一致（run427）。
+- **S2 observer の事故（run430）**: 観測目的で consumer へ渡すオブジェクトを差し替えた結果 holding_signal 8,145 行（39 PF）が変わった。観測は別変数で比較のみ、consumer への引数は不変が条件（修正 c053a4a1 系・db7a6ca3 基底）。
+- **S3/S4**: 2回目の OPT-4 と MonthlyReturn 一括ロードが trade_perf・risk・L5 の共通入力。L5 はさらに独自 cache を生成する。S3/S4 の実装は済み（77fd250f / cdd3bd25 系）で S2 完了待ちのため未統合。
 
 ### ToBe 注釈
 - **S1**: C2 の signals は L2 が flush 直前に持っていたものと同一（ledger freeze 適用後）。Phase 4.5 の値は変わらない。
 - **S2**: depth 順（L1.2 の depth 表）で回し、depth k の FoF は C2 ∪ C3(depth<k) だけを読む。無ければ停止。
+- **S2 の候補集合（2026-08-16T11:25+09:00）**: C2 ∪ C3 は「同 run 生成分」だけでは DB preload と等価にならない。等価条件は **同 run 生成 ∪ C1 read-once に載っている旧行（valid_start_date 以前の FoF prefix・標準PFの週末行）** で、record-only 全 payload 一致（値・日付 domain とも 0 差分）を確認してから付け替える。observer は consumer へ渡す参照を差し替えない。旧行の要否そのもの（読むべきか捨てるべきか）は本書の対象外＝判定・規則の設計書で扱う。
 - **S3/S4**: 分析派生は導出だけ、判定へ戻さない。L5 は受け取るだけで cache を作らない。
