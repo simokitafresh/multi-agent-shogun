@@ -702,6 +702,152 @@ EOF
     rm -rf "$workdir"
 }
 
+# test_necessity: a generated file may receive an unrelated producer append on
+# the same physical line; the committed task fragment must still be retained.
+# regression_justification: reproduces the cmd_3264 false BLOCK caused by
+# line-range and whole-line-token comparisons.
+@test "cmd_3264 AC2 allows same-line generated append when task effect survives" {
+    local worker="cmd3264generatedappend"
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_cmd3264_generated_append"
+    local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
+    local gate="$workdir/scripts/gates/gate_report_format.sh"
+    rm -rf "$workdir"
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" "$workdir/queue/reports" "$workdir/logs" "$workdir/context"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$gate"
+    git -C "$workdir" init -q
+    printf '%s\n' 'generated: {base: stable}' > "$workdir/context/generated.md"
+    git -C "$workdir" add context/generated.md
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m init
+    printf '%s\n' 'generated: {base: stable, task_link: preserved}' > "$workdir/context/generated.md"
+    git -C "$workdir" add context/generated.md
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m 'cmd_3264: generated task effect'
+    local commit_hash
+    commit_hash="$(git -C "$workdir" rev-parse HEAD)"
+    printf '%s\n' 'generated: {base: stable, task_link: preserved, late: producer}' > "$workdir/context/generated.md"
+    cat > "$rpath" <<EOF
+worker_id: ${worker}
+parent_cmd: cmd_3264
+task_id: cmd_3264_generated_append_normal
+ac_version_read: test_hash_abc
+timestamp: 2026-08-17T00:00:00+09:00
+status: completed
+commit_hash: ${commit_hash}
+result:
+  summary: "generated append fixture"
+  details: "task effect remains"
+purpose_validation:
+  cmd_purpose: "generated append fixture"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - path: context/generated.md
+    change: modified
+lesson_candidate:
+  found: false
+  no_lesson_reason: "fixture"
+  title: ""
+  detail: ""
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: fixture
+binary_checks:
+  AC1:
+    - check: fixture
+      result: yes
+  commit:
+    - check: committed
+      result: yes
+verdict: PASS
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+EOF
+
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M context/generated.md' \
+        bash "$gate" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *' M context/generated.md'* ]]
+    rm -rf "$workdir"
+}
+
+# test_necessity: removing the committed generated fragment must remain a
+# contamination BLOCK even when another late edit shares its line.
+# regression_justification: prevents effect-preservation from becoming a dirty
+# path bypass.
+@test "cmd_3264 AC2 blocks same-line generated edit when task effect is lost" {
+    local worker="cmd3264generatedloss"
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_cmd3264_generated_loss"
+    local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
+    local gate="$workdir/scripts/gates/gate_report_format.sh"
+    rm -rf "$workdir"
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" "$workdir/queue/reports" "$workdir/logs" "$workdir/context"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$gate"
+    git -C "$workdir" init -q
+    printf '%s\n' 'generated: {base: stable}' > "$workdir/context/generated.md"
+    git -C "$workdir" add context/generated.md
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m init
+    printf '%s\n' 'generated: {base: stable, task_link: preserved}' > "$workdir/context/generated.md"
+    git -C "$workdir" add context/generated.md
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m 'cmd_3264: generated task effect'
+    local commit_hash
+    commit_hash="$(git -C "$workdir" rev-parse HEAD)"
+    printf '%s\n' 'generated: {base: stable, foreign: replacement, late: producer}' > "$workdir/context/generated.md"
+    cat > "$rpath" <<EOF
+worker_id: ${worker}
+parent_cmd: cmd_3264
+task_id: cmd_3264_generated_loss_normal
+ac_version_read: test_hash_abc
+timestamp: 2026-08-17T00:00:00+09:00
+status: completed
+commit_hash: ${commit_hash}
+result:
+  summary: "generated loss fixture"
+  details: "task effect is absent"
+purpose_validation:
+  cmd_purpose: "generated loss fixture"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - path: context/generated.md
+    change: modified
+lesson_candidate:
+  found: false
+  no_lesson_reason: "fixture"
+  title: ""
+  detail: ""
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: fixture
+binary_checks:
+  AC1:
+    - check: fixture
+      result: yes
+  commit:
+    - check: committed
+      result: yes
+verdict: PASS
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+EOF
+
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M context/generated.md' \
+        bash "$gate" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *' M context/generated.md'* ]]
+    rm -rf "$workdir"
+}
+
 @test "cmd_3264 AC2 delegates exact shared review log ownership to SSOT" {
     run rg -n 'filter_report_commit_nonoverlap_uncommitted.*shared_path' "$PROJECT_ROOT/scripts/gates/gate_report_format.sh"
     [ "$status" -eq 0 ]

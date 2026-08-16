@@ -631,6 +631,7 @@ PY
     fi
     REPO_ROOT="$repo" REPORT_PATH="$report_path" CC_UNCOMMITTED_RAW="$uncommitted_raw" python3 - <<'PY'
 import os
+import difflib
 import re
 import subprocess
 import sys
@@ -678,6 +679,75 @@ def changed_tokens(diff_text):
 
 def overlaps(left, right):
     return any(a <= d and c <= b for a, b in left for c, d in right)
+
+def _blob(revision, path):
+    try:
+        if revision == "WORKTREE":
+            with open(os.path.join(repo, path), encoding="utf-8") as stream:
+                return stream.read()
+        return subprocess.check_output(
+            ["git", "-C", repo, "show", f"{revision}:{path}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return None
+
+def _changed_fragments(before, after):
+    """Return exact additions/deletions, including edits inside generated lines."""
+    before_lines = before.splitlines()
+    after_lines = after.splitlines()
+    additions = []
+    deletions = []
+    line_match = difflib.SequenceMatcher(
+        None, before_lines, after_lines, autojunk=False
+    )
+    for tag, i1, i2, j1, j2 in line_match.get_opcodes():
+        if tag == "equal":
+            continue
+        old_lines = before_lines[i1:i2]
+        new_lines = after_lines[j1:j2]
+        if len(old_lines) == len(new_lines) == 1:
+            char_match = difflib.SequenceMatcher(
+                None, old_lines[0], new_lines[0], autojunk=False
+            )
+            for ctag, ci1, ci2, cj1, cj2 in char_match.get_opcodes():
+                if ctag in ("insert", "replace") and new_lines[0][cj1:cj2].strip():
+                    additions.append(new_lines[0][cj1:cj2])
+                if ctag in ("delete", "replace") and old_lines[0][ci1:ci2].strip():
+                    deletions.append(old_lines[0][ci1:ci2])
+        else:
+            additions.extend(line for line in new_lines if line.strip())
+            deletions.extend(line for line in old_lines if line.strip())
+    return additions, deletions
+
+def commit_effect_preserved(owned_commits, path):
+    """Prove the report commit's content survives later generated-file edits.
+
+    Line ranges are too coarse for generated maps: an unrelated producer can
+    rewrite another field on the same very long line.  Compare the commit's
+    exact changed fragments with the current worktree and fail closed when a
+    committed addition disappeared or a committed deletion returned.
+    """
+    current = _blob("WORKTREE", path)
+    if current is None:
+        return False
+    saw_effect = False
+    for owned in owned_commits:
+        before = _blob(f"{owned}^", path)
+        after = _blob(owned, path)
+        if before is None or after is None:
+            return False
+        additions, deletions = _changed_fragments(before, after)
+        for fragment in additions:
+            saw_effect = True
+            if fragment not in current:
+                return False
+        for fragment in deletions:
+            saw_effect = True
+            if fragment in current:
+                return False
+    return saw_effect
 
 try:
     with open(report_path, encoding="utf-8") as f:
@@ -737,8 +807,13 @@ for line in raw_lines:
     commit_diff = "\n".join(run_git(["diff", "--unified=0", f"{owned}^", owned, "--", path]) for owned in owned_commits)
     dirty_diff = run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path])
     semantic_overlap = bool(changed_tokens(commit_diff) & changed_tokens(dirty_diff))
-    if commit_ranges and dirty_ranges and (not overlaps(commit_ranges, dirty_ranges) or not semantic_overlap):
+    effect_preserved = commit_effect_preserved(owned_commits, path)
+    if commit_ranges and dirty_ranges and effect_preserved:
         suppressed.append(path)
+    elif commit_ranges and dirty_ranges and not overlaps(commit_ranges, dirty_ranges) and not semantic_overlap:
+        # Keep the legacy non-overlap proof only when the task effect is also
+        # present; a missing task effect must remain a BLOCK.
+        kept.append(line)
     else:
         kept.append(line)
 
