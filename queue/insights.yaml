@@ -957,7 +957,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4322"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存Level4防御で解決済み: scripts/karo_workaround_log.sh は category=clean を --clean 専用に制限し、gate_wa_data_quality.sh は矛盾を検出・修復する。現行台帳で workaround=true/category=clean は 0 件で、新規実修正・decision_candidate は不要。"
+  action_artifact: scripts/karo_workaround_log.sh; scripts/gates/gate_wa_data_quality.sh; logs/karo_workarounds.yaml
+  resolved_at: "2026-08-16T19:12:03Z"
 - id: INS-20260817-011138180-fc91
   ts: "2026-08-17T01:11:38+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4322; matched=認証; current_pattern=ログイン導線AsIs棚卸し(read-only) — 認証切替・データ層・HTTPキャッシュの現物契約; candidate_level=4; candidate=cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘; source=gunshi_gp_tracker.yaml"
