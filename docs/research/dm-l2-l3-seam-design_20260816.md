@@ -35,7 +35,7 @@
 
 ---
 
-## ToBe **v1.1** — 2026-08-16T16:02+09:00
+## ToBe **v1.2** — 2026-08-16T20:47+09:00
 
 **継ぎ目を1本ずつ cache へ付け替える。書込みは変えない。読み返しだけを消す。**
 
@@ -67,7 +67,7 @@ flowchart TB
   subgraph R3["S2: L3 FoF（depth 順）"]
     direction LR
     C3["+ FoF の signals / W / monthly / cumulative / provenance"]:::cache
-    X3["<b>C2（∪ 浅い C3）の signals / monthly から</b> 規則2 → 価格適用 → 記録<br/>preload_fof_signals（DB）を読まない<br/>生成窓は FoF の全履歴（2010-10〜）を同 run で作る。前 run の DB 行に依存しない"]:::calc
+    X3["<b>C2（∪ 浅い C3）の signals / monthly から</b> 規則2 → 価格適用 → 記録<br/>preload_fof_signals（DB）を読まない<br/>生成窓＝valid_start（計算可能な最長期間）以後の全履歴を同 run で作る。前 run の DB 行に依存しない"]:::calc
     C25 -.->|"読む"| X3
     C3 <-.-|"合流"| X3
   end
@@ -110,11 +110,11 @@ flowchart TB
 | # | やること | 種別 |
 |---|---|---|
 | 1 | ~~S1: Phase 4.5 の `signal_cache` を C2 の signals から組む~~ **本番 live（1c138127、run420 差分0）** | 完了 |
-| 2 | S2: (a) FoF の生成窓を 2010-10 へ広げ、今 run が生成しない旧行を無くす（殿裁定 2026-08-16T15:48） (b) `_recalculate_fof_history` の `signal_cache` を同 run 生成の C2 ∪ C3(depth<k) だけから組む。`preload_fof_signals_for_portfolios`(DB) を読まない。FoF の出力を C3 へ合流。順序: 窓拡張 → 候補A shadow CLEAR → cutover（S1 live・run421/428/430/435 は revert 済み・run438 shadow: A=FAIL(30,853 欠落) / B=CLEAR） | **窓拡張 + 付け替え + produce** |
+| 2 | S2: (a) 今 run が生成しない旧行を退避の上で削除する（殿裁定 2026-08-16T20:45 drop） (b) `_recalculate_fof_history` の `signal_cache` を同 run 生成の C2 ∪ C3(depth<k) だけから組む。`preload_fof_signals_for_portfolios`(DB) を読まない。FoF の出力を C3 へ合流。順序: 旧行退避+削除 → 候補A shadow CLEAR → cutover（S1 live・run421/428/430/435/439 は revert 済み・run438 shadow: A=旧行分のみ差・B=CLEAR） | **旧行 drop + 付け替え + produce** |
 | 3 | S3: trade_perf / risk 系の `signal_preload` / `monthly_return_cache` を C2 ∪ C3 から組む。2回目 OPT-4 と MonthlyReturn 再クエリを読まない | **付け替え** |
 | 4 | S4: L5 precompute の入力を C2 ∪ C3 ∪ C5A から渡す。L5 内の `LazySignalArtifactCache` 新規生成を止める | **付け替え** |
 
-**S2(a) 以外は「読み出し元の付け替え」で業務値は1件も変わらない。S2(a) の窓拡張だけは FoF の 2010-10〜2011-03 を作り直すため FoF のその期間の値が変わり得る（意図した変更）。FoF 以外・他期間は差分0。**
+**S2(a) 以外は「読み出し元の付け替え」で業務値は1件も変わらない。S2(a) の旧行 drop だけは FoF の valid_start 前（2010-10〜2011-03）の行が消える（意図した変更・現行ルール外の値）。FoF 以外・valid_start 以後は差分0。**
 
 ## 二値の合否
 
@@ -136,7 +136,7 @@ flowchart TB
 
 ---
 
-## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T16:02+09:00
+## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T20:47+09:00
 
 ### AsIs 注釈
 - **型の境界（偵察 2026-08-16 02:09）**: S1/S2 は dict 消費で C2 直結が容易。S3/S4 は ORM(expunge済み) 消費が残るため、C2∪C3 を渡すには「ORM互換の row shape を持つ dict」か「consumer側のattr参照を dict 参照へ」のどちらかが要る。S3 は generator 5系統(drawdown/rolling/metrics/trade/risk)の参照属性を先に列挙してから付け替える。
@@ -150,7 +150,7 @@ flowchart TB
 ### ToBe 注釈
 - **S1**: C2 の signals は L2 が flush 直前に持っていたものと同一（ledger freeze 適用後）。Phase 4.5 の値は変わらない。
 - **S2**: depth 順（L1.2 の depth 表）で回し、depth k の FoF は C2 ∪ C3(depth<k) だけを読む。無ければ停止。
-- **S2 の候補集合（殿裁定 2026-08-16T15:48+09:00）**: ToBe の候補は **同 run 生成の C2 ∪ C3(depth<k) のみ**。今 run が生成しない旧行（FoF の 2010-10〜2011-03、30,853 行）は DB 遺物へ依存せず、**FoF の生成窓を 2010-10 へ広げて run で作り直す**（殿「消えるなら生成窓を広げて作り直そう」）。手順: 生成窓の起点確定 → 窓拡張(FoF 以外の業務値差分0) → 候補A shadow clear → A cutover。候補B（∪旧行）は暫定であり ToBe ではない。observer は consumer へ渡す参照を差し替えない。
+- **S2 の候補集合（殿裁定 2026-08-16T20:45+09:00・drop 確定）**: ToBe の候補は **同 run 生成の C2 ∪ C3(depth<k) のみ**（候補A）。今 run が生成しない旧行（FoF `valid_start` 前の signals 30,853 / fof_component_weights 714 / 標準PFの週末行 40 等）は **drop**＝退避(バックアップ)の上で削除し、以後 DB にも cache にも持たない。根拠: 現行ルール `valid_start`＝構成PF signal_ready ∧ lookback 充足の遅い方（`fof_full_start`=2000-01-01）が既に「計算可能な最長期間」を PF ごとに求めており、旧行はルール外の残骸。生成窓の拡張（c71313d5）は warmup 不足の値を作る誤りで revert 済み（05aede38、run439 alerts 17,302→run441 で 0）。手順: 棚卸し+退避 → 削除+full → 候補A shadow CLEAR → A cutover。候補B は不要。observer は consumer へ渡す参照を差し替えない。
 - **S3/S4**: 分析派生は導出だけ、判定へ戻さない。L5 は受け取るだけで cache を作らない。
 
 ### 継ぎ目の進め方（AsIs/ToBe 共通の契約・将軍×家老協議 2026-08-16T13:48+09:00・run421〜435 の実測から）
