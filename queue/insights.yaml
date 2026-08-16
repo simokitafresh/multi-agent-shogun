@@ -59,8 +59,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '683f3dd33baf684190d600abd4310341683c10b4b949b045cd3f999620e5c542' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 14
-  last_seen: "2026-08-17T04:46:42+09:00"
+  occurrence_count: 15
+  last_seen: "2026-08-17T05:00:24+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -378,8 +378,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 26
-  last_seen: "2026-08-17T04:52:01+09:00"
+  occurrence_count: 27
+  last_seen: "2026-08-17T04:57:28+09:00"
   verification:
     status: "passed"
     exit_code: 0
