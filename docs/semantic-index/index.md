@@ -440,6 +440,7 @@ codd:
 | file | `tests/unit/test_gate_karo_startup.bats` |
 | file | `tests/unit/test_prompt_state_inbox_cmd_new.bats` |
 | causal | `cmd_3457` origin: [[cmd_new未読]] -> [[inbox処理の意志依存]] -> [[配備漏れ]] |
+| causal | [[unread_cmd_new_deployment_guard]] -> `docs/research/karo_inbox_deploy_delay_infra_bug_20260723.md` |
 | causal | L0-L7 penetration: L0=`context/karo-operations.md`, L1=`gate_karo_startup.sh` ALERT/WARN, L2-L3=`stop_check_inbox.sh`補助, L4=semantic concept injection, L5=`prompt_state_inject.sh`追加文脈, L6=Bats regression, L7=lesson/memory write |
 | cmd | `cmd_3349` backfill — | cmd_3349 | 将軍調査(2026-06-13 01:30台)で特定した設計ネックの修正。pre-write-edit-combined.shのGuard 0d(L242-250)は未読メッ |
 | causal | `cmd_3487` files_modified: [[unread_cmd_new_deployment_guard]] |
