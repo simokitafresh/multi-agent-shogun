@@ -133,7 +133,7 @@ flowchart TB
 
 ---
 
-## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T11:25+09:00
+## 注釈（レイヤー単位。図で足りない粒度はここに書く）— 2026-08-16T13:50+09:00
 
 ### AsIs 注釈
 - **型の境界（偵察 2026-08-16 02:09）**: S1/S2 は dict 消費で C2 直結が容易。S3/S4 は ORM(expunge済み) 消費が残るため、C2∪C3 を渡すには「ORM互換の row shape を持つ dict」か「consumer側のattr参照を dict 参照へ」のどちらかが要る。S3 は generator 5系統(drawdown/rolling/metrics/trade/risk)の参照属性を先に列挙してから付け替える。
@@ -149,3 +149,10 @@ flowchart TB
 - **S2**: depth 順（L1.2 の depth 表）で回し、depth k の FoF は C2 ∪ C3(depth<k) だけを読む。無ければ停止。
 - **S2 の候補集合（2026-08-16T11:25+09:00）**: C2 ∪ C3 は「同 run 生成分」だけでは DB preload と等価にならない。等価条件は **同 run 生成 ∪ C1 read-once に載っている旧行（valid_start_date 以前の FoF prefix・標準PFの週末行）** で、record-only 全 payload 一致（値・日付 domain とも 0 差分）を確認してから付け替える。observer は consumer へ渡す参照を差し替えない。旧行の要否そのもの（読むべきか捨てるべきか）は本書の対象外＝判定・規則の設計書で扱う。
 - **S3/S4**: 分析派生は導出だけ、判定へ戻さない。L5 は受け取るだけで cache を作らない。
+
+### 継ぎ目の進め方（AsIs/ToBe 共通の契約・将軍×家老協議 2026-08-16T13:48+09:00・run421〜435 の実測から）
+- **AsIs 側に書くもの＝consumer 入力契約**: 削除する read 1本ごとに、primary payload に加えて同時に形成する companion（例: S2 の `raw_signal_cache`=holding_signal_raw・`portfolio_cache`）、key 集合(PF×date)、日付 domain の決まり方(preload の min/max)、空時挙動(0件 ValueError)、fallback、side effect、後続 consumer と**業務出力の cardinality 予算**（表別 rows・PF別 first/last date）。呼出箇所と行番号だけでは契約にならない（run434 で cache dict 一致・run435 で monthly +1,429 行）。
+- **ToBe 側に書くもの**: producer artifact は AsIs 契約の primary+companion+domain を全て満たす。**今 run が生成しない旧行の keep/drop 方針を明示**（判定・規則の設計書の裁定事項）。cache 内部一致ではなく **consumer 入力3軸(companion・domain・merge 行数)＋業務出力 rows/first-last 一致を同 run の shadow で証明した後にのみ付け替える**。
+- **計器の規律**: 比較は同一入力(prices_sha・portfolio_config sha 一致)の run 間だけ（run433 の mismatch 8145/7548/26113 は L0 価格同期をまたいだ過渡差分・run434 で clear）。
+- **1継ぎ目=3手**: 契約表(10分)→record-only shadow 実装+deploy/full(約31分)→cutover+deploy/full(約21分)。計約62分（full 実測 run435=641.5秒）。
+- **環境へ埋め込むもの**: 偵察テンプレに `seam_contract` 必須欄 / production parity 前段に prices_sha+portfolio_config sha guard / observer CLEAR 条件に consumer 入力+表別 rows+PF別 first/last。
