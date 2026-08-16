@@ -1,3 +1,4 @@
+<!-- gist-master: c85b0caec523248632370c948f826efa dm-monthly-trade-pending-simplify-asis-tobe_20260817.md -->
 # Monthly Trade 確定/未確定表示の簡素化 AsIs/ToBe — 過去月バッジ廃止・NEXT SIGNALゾーン撤去・当月のみ「価格が揃うまで未確定」
 
 ## 原則（親文書と同じ。殿裁定 2026-08-15 / 2026-08-17 01:42）
