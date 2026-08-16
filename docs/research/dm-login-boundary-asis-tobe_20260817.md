@@ -41,16 +41,16 @@
 - backend: `generate_etag` の入力に主体(tier_id/is_admin/visible_ids)を含める（compare_returns の TTL key と同じ考え方）か、tier依存18 endpointは `no-store`。
 - 合否（各実装手の二値）: admin→ログアウト→低tier再ログインで、非公開PFがリロードなしに表示されない。
 
-## この境界の上に積むもの — 2026-08-17 01:20+09:00（殿とのチャット合意 00:56〜01:11・実装は殿の合図まで行わない）
+## この境界の上に積むもの — 2026-08-17 01:26+09:00（殿とのチャット合意 00:56〜01:11・実装は殿の合図まで行わない）
 
 - **第0段（本書）**: /login境界 + 7層ハードリセット + handoff/キャッシュキーに主体 + ETag入力に主体 or no-store。identity導入前でも必要。
-- **第1段 identity + entitlement**: Google login + magic link（rebalancerの既存実装・流儀を流用）。`entitlement(account, tier, valid_until)` を可視性判定の正にする（API側は `valid_until > now`）。admin は role として同じidentityの上へ。
+- **第1段 identity + entitlement**（認証方式はチャット合意 01:20〜01:24）: **identityの正=DM-Signal側の `user_id`**。ログイン手段(プロバイダ)は user_id に紐づく「入口」にすぎず、entitlement(クーポン引き換え/Stripe)は必ず user_id に乗せる（プロバイダを後から足しても外しても権利は動かない）。入口の初期セット=**Google OAuth**（rebalancerで稼働中の実装・設定を流用）+ **magic link**（メールだけでログイン: 一回限り・数分失効の署名付きURLをメールへ送り、クリックで検証・セッション発行。Googleを持たない/使いたくないnote読者の受け皿。SPF/DKIM整備・迷惑メール問い合わせは前提）。メール+パスワードは認証基盤側で有効化できるなら併設可だが、初期は2択に絞り要望で開ける（選択肢が増えるほど問い合わせも増える）。Apple はiOSアプリ化を考える時に必須、X/LINE は読者動線次第。同一人物が別プロバイダで別アカウントにならないようメールで名寄せ。**認証基盤はrebalancerと同じもの**に乗せる（方式差より基盤の一本化がコストを決める。現物確認1手で確定）。`entitlement(user_id, tier, valid_until)` を可視性判定の正にする（API側は `valid_until > now`）。admin は role として同じidentityの上へ。
 - **noteの月次パスワードは「その月だけ使えるクーポンコード」に置き換える**（殿案 01:00・合意）: `coupon(code, tier, valid_month)` を当月のnote記事に載せる → ログイン済みアカウントが引き換え → `valid_until=当月末+猶予`。同一アカウントは同一コードを1回。翌月は新コード＝noteの月額課金と同期。途中参加は当月末まで、退会は翌月コードを引き換えられないだけ、複数tierは(account,tier)ごとに独立（包含はtier包含表）。
 - **redeem_limit（引き換え上限）は置かない**（殿指摘 01:11: 複数tier加入・月途中の参加/退会・noteから購読者数が取れない）。共有への対策は「測る（コード別引き換えアカウント数の可視化）・重くする（本人アカウント1回・同時ログイン数上限は検討可）・失効できる（アカウント単位）」の3つ。
 - **第2段 Stripe**: Checkout/Portal + webhook（署名検証・冪等）→ 同じ entitlement を直接延長。判定ロジックは共通。手動の月次発行はStripe顧客には不要になる。
 - **横断のセキュリティ**: token は httpOnly cookie（短寿命access+refresh）、ログインrate limit、監査ログ、admin 2FA/role化。現行のtier別共有パスワードは「毎月失効する共有秘密」であり、失効の意図は正しく、弱いのは「共有」だけ。
 
-## 注釈 — 2026-08-17 01:20+09:00
+## 注釈 — 2026-08-17 01:26+09:00
 
 - AsIs注釈: v1.0 は cmd_4322 の一次証跡（rg/nl による現物読解、行番号付き）で置換済み。SW `dm-signal-v10` と handoff sessionStorage が「主体なし・logoutで消えない」二重の抜け穴。
 - ToBe注釈: ログインページはUIではなく「境界装置」。モーダル方式では消し忘れが意志依存になる。
