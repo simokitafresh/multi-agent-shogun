@@ -1141,6 +1141,16 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-17T01:45:22+09:00"
+- id: INS-20260817-015215113-9135
+  ts: "2026-08-17T01:52:15+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608170125_tobisaru; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608170125_tobisaru"
+  fix_known: false
+  status: resolved
+  resolved_reason: "現行archive_cmdsは候補生成時点の旧実装と異なり、QUEUE_FILEの読込・分類・更新を同一flock内で実行しておりTOCTOU候補は実装済み。新規修正不要。"
+  action_artifact: "scripts/archive_completed.sh:784-890; commit 29d15d42d32dc79aabaa775fae2a21b19ad9f1fe; tests/unit/test_archive_completed_canceled_status.bats via run_tests.sh file: 2/2 PASS"
+  resolved_at: "2026-08-17T06:15:17+09:00"
 - id: INS-20260817-015424325-020b
   ts: "2026-08-17T01:54:24+09:00"
   insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
