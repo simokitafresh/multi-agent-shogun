@@ -832,8 +832,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 1
-  last_seen: "2026-08-16T23:07:23+09:00"
+  occurrence_count: 3
+  last_seen: "2026-08-17T01:41:33+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1079,3 +1079,53 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-17T01:25:28+09:00"
+- id: INS-20260817-012828469-7c56
+  ts: "2026-08-17T01:28:28+09:00"
+  insight: "semantic_index_update新概念候補: discussion:チャットで話した内容は設計書に記載しておこう。忘れてしまうと車輪の再発明になってしまう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T01:30:08+09:00"
+- id: INS-20260817-013141670-7e1f
+  ts: "2026-08-17T01:31:41+09:00"
+  insight: "semantic_index_update新概念候補: discussion:逆に俺に質問はある？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T01:37:56+09:00"
+- id: INS-20260817-013638858-54a6
+  ts: "2026-08-17T01:36:38+09:00"
+  insight: "semantic_index_update新概念候補: discussion:特に移行せずに半永久的に並列する予定。理由はstripeなどは今後の海外展開、noteは日本人向けのコミュニティでやめるメリットがほぼない。 家族は禁止だな、複 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T01:37:56+09:00"
+- id: INS-20260817-014314075-b1c5
+  ts: "2026-08-17T01:43:14+09:00"
+  insight: "[[magic linkってなんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=magic linkってなんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T01:45:22+09:00"
+- id: INS-20260817-014314687-9321
+  ts: "2026-08-17T01:43:14+09:00"
+  insight: "[[特に移行せずに半永久的に並列する予定]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=特に移行せずに半永久的に並列する予定。理由はstripeなどは今後の海外展開、noteは日本人向けのコミュニティでやめるメリットがほぼない。2,家族は禁止だな、複数端末の同時利用は想定していない。スマホとPCの2台をイメージしているが5代くらいまでにしておけば実質的に上限に届く…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T01:45:22+09:00"
