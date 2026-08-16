@@ -973,7 +973,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '683f3dd33baf684190d600abd4310341683c10b4b949b045cd3f999620e5c542' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -983,6 +983,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "既存実装で解決済み: review_bundle.pyがSG7通知をreport fingerprint単位のexactly-once markerで重複抑止し、配送後self-retro計測を分離していることをコード現物と履歴で確認。指定verifyもrc=0。"
+  action_artifact: "scripts/review_bundle.py@54dbe9ba3d7f5;logs/self_retro.jsonl:event_id=683f3dd33baf684190d600abd4310341683c10b4b949b045cd3f999620e5c542;verify=grep-Fq-rc0"
+  resolved_at: "2026-08-16T18:22:45+09:00"
 - id: INS-20260816-181537715-e161
   ts: "2026-08-16T18:15:37+09:00"
   insight: "semantic_index_update新概念候補: discussion:codexはもうアカウント切り替えたので問題ないよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
