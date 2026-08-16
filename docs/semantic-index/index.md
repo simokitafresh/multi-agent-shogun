@@ -11259,6 +11259,7 @@ codd:
 | causal | `cmd_reflux_backlink_202608142009_tobisaru_exact` — [[semantic_causal_automation]] -> `docs/research/dm-nested-fof-august-daily-pitr_20260813.md` |
 | causal | `cmd_reflux_backlink_202608160504_hanzo_exact` — [[semantic_causal_automation]] -> `docs/research/grid-search-outputs-cleanup-inventory-20260807.md` |
 | causal | `cmd_reflux_backlink_202608161740_hanzo_exact` — [[semantic_causal_automation]] -> `docs/research/karo-one-pf-recovery-20260810-2056.md` |
+| causal | `cmd_reflux_backlink_202608162226_kagemaru_exact` — [[semantic_causal_automation]] -> `docs/research/karo-weekend-resume-checkpoint-20260803-2217.md` |
 | causal | `docs/research/defense-enforcement-classification_20260720.md` — [[defense_hierarchy]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_control_plane_20260723.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_task_mutation_20260721.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
