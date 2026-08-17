@@ -1106,8 +1106,12 @@ lessons:
 - id: 'LG097'
   title: '継ぎ目付け替えレビュー: consumer入力契約・同一入力・冪等性・復旧は戻す'
   origin: '[[将軍×家老協議_継ぎ目試行錯誤の本質_20260816]] -> [[consumer入力契約]] -> [[gunshi.md§0.6]]'
-  detail: '2026-08-16: 軍師はS2付け替え系draft(observer_pure/full_payload_compare/consumer_cutover/domain_expansion)を全てAPPROVEしたが、cache dict一致(run434)の後にcutover(run435)でmonthly +1,429行・alerts 2,454、窓拡張(run439)でalerts 17,302が出た。欠けていた観点: (1)consumer入力契約(companion cache/key集合/日付domain/空時挙動/業務出力rows・first-last)を契約表として要求しなかった (2)比較対象runがprices同一状態か照合しなかった(run433 vs 434) (3)deploy後合否に『2回目fullで業務表md5一致』が無く full 2回依存を半日検知できなかった (4)復旧cmdに削除ツール/原因偵察が混じっても差し戻さなかった(殿直命21:24)。修正: instructions/gunshi.md §0.6の4 positive_ruleを毎レビューで適用'
+  detail: |
+    2026-08-16: 軍師はS2付け替え系draft(observer_pure/full_payload_compare/consumer_cutover/domain_expansion)を全てAPPROVEしたが、cache dict一致(run434)の後にcutover(run435)でmonthly +1,429行・alerts 2,454、窓拡張(run439)でalerts 17,302が出た。欠けていた観点: (1)consumer入力契約(companion cache/key集合/日付domain/空時挙動/業務出力rows・first-last)を契約表として要求しなかった (2)比較対象runがprices同一状態か照合しなかった(run433 vs 434) (3)deploy後合否に『2回目fullで業務表md5一致』が無く full 2回依存を半日検知できなかった (4)復旧cmdに削除ツール/原因偵察が混じっても差し戻さなかった(殿直命21:24)。修正: instructions/gunshi.md §0.6の4 positive_ruleを毎レビューで適用
+    吸収(2026-08-17, cmd_karo_recovery_lg097_enforcement_20260817, origin: [[cmd_karo_hotfix_dm_l3_s2_consumer_cutover_202608161303]] -> [[LG097]] -> [[startup_enforcement_recovery_20260817]]): 既存LG097へ起動時注入経路を明記し、consumer入力契約・同一入力比較・2回目full冪等性・復旧は既知クリーン点へ戻す4観点を次セッションへ必ず届ける
   source_cmd: 'cmd_karo_hotfix_dm_l3_s2_consumer_cutover_202608161303'
   when: '継ぎ目/読出し元付け替え・復旧系のdraft/報告レビュー時'
   how: 'gunshi.md §0.6の4観点をチェックリストとして回答に明記'
   created_at: '2026-08-16'
+  enforcement: "Level5(受動的層): AGENTS.md /new Recovery(gunshi) Step 2.5でprojects/infra/lessons_gunshi.yamlを全文ロードし、家老もStep 2.6で同ファイルを全文ロードする。継ぎ目/読出し元付け替え・復旧系レビューではinstructions/gunshi.md §0.6のconsumer入力契約・同一入力比較・2回目full冪等性・既知クリーン点復旧の4観点を毎セッション事前注入する。"
+  enforcement_level: 5
