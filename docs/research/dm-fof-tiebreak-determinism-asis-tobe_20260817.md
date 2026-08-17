@@ -1,3 +1,4 @@
+<!-- gist-master: 1e0cab30de1efc851d4048858e8ece6d dm-fof-tiebreak-determinism-asis-tobe_20260817.md -->
 # FoF子PF選択の決定性 AsIs/ToBe — 浮動小数点ノイズで確定履歴が動く穴を「同値帯ε+根拠あるtie-break」で閉じる
 
 ## 原則（親文書と同じ。殿裁定 2026-08-15 / 2026-08-17 01:42）
