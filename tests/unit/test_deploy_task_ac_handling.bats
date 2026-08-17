@@ -117,6 +117,34 @@ EOF
     [[ "$output" == *"DOC_LANE_ROUTING"* ]]
 }
 
+# test_necessity: 偵察cmdが成果物の出力先として docs/research/<name>.md を名指しし、同じ文で
+# 「設定変更は行わない/読み取りのみ」と否定を書いても DOC_LANE_ROUTING で BLOCK しない不変量。
+# パスの docs/ は文書更新の依頼ではなく、否定節は依頼ではない(cmd_4348 2026-08-17 23:43 実測)。
+@test "cmd_4348: doc-lane guard ignores docs/ artifact paths and negated change clauses" {
+    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard_artifact_path.yaml"
+    cat > "$task_path" <<'EOF'
+task:
+  acceptance_criteria:
+    - id: AC1
+      description: "各判定に一次証跡を添えて docs/research/cmd_4348_daemon_outage_20260817_1646.md に記録する。読み取りのみで再起動・kill・設定変更は行わない"
+EOF
+
+    run deploy_task_guard_doc_update_ac "$task_path"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+
+    cat > "$task_path" <<'EOF'
+task:
+  acceptance_criteria:
+    - id: AC1
+      description: "docs配下のドキュメントを最新仕様へ更新する"
+EOF
+
+    run deploy_task_guard_doc_update_ac "$task_path"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"DOC_LANE_ROUTING"* ]]
+}
+
 task_file() {
     printf '%s\n' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }

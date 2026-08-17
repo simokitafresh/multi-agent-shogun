@@ -12229,9 +12229,17 @@ patterns = [
 # 依頼ではない。マッチ位置を含む同一節にスコープ外語があれば検知対象から外す。
 SCOPE_OUT = re.compile(
     r"(?:範囲外|対象外|スコープ外|将軍(?:lane|レーン)|将軍が行う|将軍が実施|家老(?:lane|レーン)"
-    r"|(?:は|を)しない|不要|除外|out of scope|not in scope|shogun (?:doc )?lane)",
+    r"|(?:は|を)しない|(?:は|を)?行わない|(?:せず|禁止|禁じ)|不要|除外|out of scope|not in scope|shogun (?:doc )?lane"
+    r"|do(?:es)? not|must not|read[ -]?only|読み取りのみ)",
     re.IGNORECASE,
 )
+
+# A repository path such as ``docs/research/<name>.md`` names an artifact
+# location (where a recon writes its findings), not a request to update
+# documentation.  cmd_4348 (2026-08-17 23:43) was BLOCKed because
+# "docs/research/…md に記録する。読み取りのみで…設定変更は行わない" matched
+# "docs …変更" across the sentence boundary.
+PATH_TOKEN = re.compile(r"^(?:docs?|documentation)/", re.IGNORECASE)
 
 def clause_around(text, start, end, span=60):
     left = text[max(0, start - span):start]
@@ -12245,6 +12253,8 @@ for text in descriptions(ac):
     normalized = re.sub(r"\s+", " ", text).strip()
     for label, pattern in patterns:
         for m in re.finditer(pattern, normalized, re.IGNORECASE):
+            if PATH_TOKEN.match(normalized[m.start():m.start() + 16]):
+                continue
             if SCOPE_OUT.search(clause_around(normalized, m.start(), m.end())):
                 continue
             hits.append(label)
