@@ -87,6 +87,36 @@ EOF
     [ -z "$output" ]
 }
 
+# test_necessity: AC本文の「gist同期は将軍が行う」「〜は本cmd範囲外」のようなスコープ外/他lane
+# 明記は忍者への依頼ではないため DOC_LANE_ROUTING で BLOCK しない不変量。これを失うと
+# 範囲外を正直に書いた偵察cmdが配備できず(cmd_4331 2026-08-17 実測)、書き手が範囲を隠す誘因になる。
+@test "cmd_4331: doc-lane guard ignores explicit out-of-scope / other-lane mentions" {
+    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard_scope_out.yaml"
+    cat > "$task_path" <<'EOF'
+task:
+  acceptance_criteria:
+    - id: AC3
+      description: "集計結果を報告YAMLへ記録し、設計書AsIsへ結論を還流する(gist同期は将軍が行う)"
+    - id: AC4
+      description: "要点を記録する。外部共有同期(gist sync)は本cmd範囲外"
+EOF
+
+    run deploy_task_guard_doc_update_ac "$task_path"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+
+    cat > "$task_path" <<'EOF'
+task:
+  acceptance_criteria:
+    - id: AC1
+      description: "設計書のgistを同期し、context/dm-signal-ops.mdを更新する"
+EOF
+
+    run deploy_task_guard_doc_update_ac "$task_path"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"DOC_LANE_ROUTING"* ]]
+}
+
 task_file() {
     printf '%s\n' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }

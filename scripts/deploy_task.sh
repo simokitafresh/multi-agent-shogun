@@ -12224,12 +12224,31 @@ patterns = [
     ("document-update", r"(?:documentation|docs?|ドキュメント|文書).{0,100}(?:更新|反映|改訂|変更|update|edit|revise)"),
 ]
 
+# 2026-08-17 偽陽性根治(殿裁定「偽陽性は即時根治」・cmd_4331): スコープ外/他lane
+# 担当の明記(例:「gist同期は将軍が行う」「外部共有同期は本cmd範囲外」)は忍者への
+# 依頼ではない。マッチ位置を含む同一節にスコープ外語があれば検知対象から外す。
+SCOPE_OUT = re.compile(
+    r"(?:範囲外|対象外|スコープ外|将軍(?:lane|レーン)|将軍が行う|将軍が実施|家老(?:lane|レーン)"
+    r"|(?:は|を)しない|不要|除外|out of scope|not in scope|shogun (?:doc )?lane)",
+    re.IGNORECASE,
+)
+
+def clause_around(text, start, end, span=60):
+    left = text[max(0, start - span):start]
+    right = text[end:end + span]
+    left = re.split(r"[。．.;；]|(?<=[)）])", left)[-1]
+    right = re.split(r"[。．.;；]|(?=[(（])", right)[0]
+    return left + text[start:end] + right
+
 hits = []
 for text in descriptions(ac):
     normalized = re.sub(r"\s+", " ", text).strip()
     for label, pattern in patterns:
-        if re.search(pattern, normalized, re.IGNORECASE):
+        for m in re.finditer(pattern, normalized, re.IGNORECASE):
+            if SCOPE_OUT.search(clause_around(normalized, m.start(), m.end())):
+                continue
             hits.append(label)
+            break
 if hits:
     print(",".join(dict.fromkeys(hits)))
 DOC_UPDATE_AC_PY
