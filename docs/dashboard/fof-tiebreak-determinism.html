@@ -37,14 +37,14 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 </style>
 <main>
 <header style="display:grid;gap:.6rem">
-  <div class="meta">DM-Signal · 設計書 AsIs v1.3 / ToBe v0.3+手②c · 2026-08-17 22:40 JST · 手①②完了・手③準備A/B/C GATE CLEAR · <b>手③(6段キー切替)実装中 cmd_4344</b>(殿22:03合図)</div>
+  <div class="meta">DM-Signal · 設計書 AsIs v1.4 / ToBe v0.3+手②c · 2026-08-18 00:25 JST · 手①②完了・準備A/B/C完了 · <b>手③(6段キー切替)実装完了・本番live 00:13・full run404で合否検証中</b></div>
   <h1>FoF子PF選択の決定性 — 浮動小数点ノイズで確定履歴が動く穴を「同値帯ε＋根拠あるtie-break」で閉じる</h1>
   <div class="meta" style="text-transform:none;letter-spacing:0">正本 <code>docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md</code> · gist 1e0cab30 · 関連: rollback計画書§-1 / Monthly Trade簡素化(ledger廃止方向)</div>
   <div class="callout"><b>発端(10:47)</b> SIGNAL CHANGE ALERT 6,477件/35 FoF PF。三段確認(cmd_4329)で確定: <b>価格は変わった</b>(11銘柄30,003行、ただし相対差 max 1.9e-06=浮動小数点ノイズ級)／<b>cronとfullは一致</b>／<b>35 FoF全体に広域連鎖</b>(子PF選択の入替)。</div>
 </header>
 
 <section>
-<h2>実装の進捗 — 22:40 時点</h2>
+<h2>実装の進捗 — 08-18 00:25 時点</h2>
 <div class="callout">3段階: <b>手①②=配線を1本にまとめる</b>(結果は変えない、1体ずつ) → <b>手③=中身を6段キーへ切り替える</b>(1回だけ結果が変わる) → <b>手④=GS研究用高速版も同じ関数へ</b>。集約してあるので手③は1か所を変えるだけで全フィルタに効く。</div>
 <div class="tw"><table>
 <tr><th>手</th><th>フィルタ／内容</th><th>状態</th><th>証跡</th></tr>
@@ -55,7 +55,7 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 <tr><td>③準備A</td><td><code>previous_tickers</code>をcontextへ注入(⑤現保有の材料・挙動不変)</td><td><span class="pill done">GATE CLEAR</span></td><td>cmd_4338 commit <code>5d12c79f</code></td></tr>
 <tr><td>③準備B</td><td>6段キーcomparator <code>compare_candidates</code>／<code>select_top_n_deterministic</code>(未配線)</td><td><span class="pill done">GATE CLEAR</span></td><td>cmd_4339 commit <code>16f05e8f</code> · 合成ε <code>SCORE_EPS=1e-9</code>・12M=13観測条件 · 契約テスト7系統(将軍再実行7 passed)</td></tr>
 <tr><td>③準備C</td><td>本番comparatorを全74 FoFへread-only乾式適用→PF×月の期待差分CSV+md · cmd_4331集計(949月)と突合</td><td><span class="pill done">GATE CLEAR 22:13</span></td><td>cmd_4342 commit <code>b0e7e7c9</code> · CSV 8,570行 · <b>本番comparator乾式=959月変化</b>(cmd_4331=949、差+10)。filter別: 加速718(−4)／Momentum37(−18)／MultiView36(+6)／SingleView85(+25)／Trend83(+1)／Weighted0。PF不一致17件(例: 加速R-常勝173→172)。要因はcmd_4331が集計値のみで月別旧新集合を残していないため未確定(ε合成／13観測／previous_tickersの取り方の定義差の可能性)。<b>将軍推奨: 本番comparator(cmd_4342 CSV)を期待差分の正、cmd_4331集計は参考値へ</b></td></tr>
-<tr><td>③切替</td><td>各blockの呼出しを<code>select_top_n_deterministic</code>へ差し替え(単一commit)・既存テスト期待値を6段規則へ</td><td><span class="pill run">実装中</span></td><td><b>cmd_4344</b>(殿22:03「進めてほしい」合図・tobisaru 22:21配備)。22:36 pane実測: 6ブロック全ファイル変更済み(working tree)、期待差分CSVとの突合テスト作成中、commit前。bottom枝=cmd_4342スクリプト259行と同一の符号反転規則。切替で確定履歴が959月(cmd_4342正)組み替わる(殿12:51受容・ALERT 1回)。合否: (a)変化=期待差分CSVとPF×月一致 (b)full 2回目md5一致 (c)標準PF24変化0 (d)full時間≤復帰点2倍。戻し方=revert 1commit→push→deploy→full 1回</td></tr>
+<tr><td>③切替</td><td>各blockの呼出しを<code>select_top_n_deterministic</code>へ差し替え(単一commit)・既存テスト期待値を6段規則へ</td><td><span class="pill run">実装完了・本番live・full検証中</span></td><td><b>cmd_4344</b> commit <code>54e3e663</code>+<code>2f3e3c82</code>(docstring)・origin/main <code>57127ffd</code>。関連テスト68件FAIL0/SKIP0、<b>期待差分CSVとPF×月照合 不一致0件</b>。Render: 23:54 build_failed(<b>GitHub本体障害</b> 13:40Z〜、credential切断ではない)→00:13 再deploy <code>dep-da1iacid</code> <b>live</b>。家老がfull run404を実行中。合否: (a)変化=期待差分CSVとPF×月一致 (b)full 2回目md5一致 (c)標準PF24変化0 (d)full時間≤復帰点2倍。戻し方=revert 2commit→push→deploy→full 1回でbaseline md5へ</td></tr>
 <tr><td>④</td><td>GS高速版</td><td><span class="pill wait">手③後</span></td><td>parityテスト赤→緑</td></tr>
 <tr><td>infra</td><td>run_tests.sh外部backend近接テスト自動探索(軍師提案)</td><td><span class="pill done">GATE CLEAR</span></td><td>cmd_4341 commit <code>bce0cfaa</code>(<code>backend_nearby</code>経路)。殿19:55「インフラバグは迂回せず直せ」</td></tr>
 <tr><td>infra</td><td>cmd_complete.shのdashboard自動更新を既定OFF(コード削除なし)</td><td><span class="pill done">GATE CLEAR 21:50</span></td><td>cmd_4343 commit <code>3ad81b23</code>(<code>CMD_COMPLETE_DASHBOARD_ENABLED</code>既定0・CLAUDE.md同期)。殿裁定21:08「自動更新せずに放置」</td></tr>
@@ -219,7 +219,10 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 <li><b>21:10</b> 準備C cmd_4342 報告PASS(b0e7e7c9・959月) → 殿: artifactの最新状況を報告 → 21:14 殿: artifactを更新してくれ</li>
 <li><b>21:50</b> cmd_4343(dashboard既定OFF) GATE CLEAR</li>
 <li><b>22:03</b> 殿: 進捗は？／artifact 58f94a75を進めてほしい → 将軍: 手③合図と解釈し cmd_4344 起票(depends_on cmd_4342)。cmd_4342の完了gate停滞(review_two_phase_pending 20:51〜)を家老へ催促 → 22:13 cmd_4342 GATE CLEAR → 22:21 cmd_4344 tobisaru配備</li>
-<li><b>22:35</b> 殿: 進捗はどうだ？4342は進んでいるのか？ → 4342完了・4344実装中(6ファイル変更済み) → 22:39 殿: artifactを更新せよ → 本版</li>
+<li><b>22:35</b> 殿: 進捗はどうだ？4342は進んでいるのか？ → 4342完了・4344実装中 → 22:39 殿: artifactを更新せよ</li>
+<li><b>23:13-23:25</b> 殿: 家老と軍師のボトルネックを分析 → 一次ログで工程別リードタイム分析(gate再実行欠落85分/LGTM後BLOCK往復/全デーモン75分停止) → 殿: 1-4を起票せよ → cmd_4345-4348</li>
+<li><b>23:20-23:54</b> cmd_4344 docstring残存→将軍doc lane 2f3e3c82 → push → Render build_failed → 将軍: 真因=GitHub障害(githubstatus)と訂正 → 00:13 再deploy live → full run404</li>
+<li><b>00:20</b> 殿: いまクリアされても今より強くてニューゲームできるようにせよ → AsIs v1.4・本版・記憶DB/MEMORY.md復帰点更新</li>
 </ul>
 </section>
 </main>
