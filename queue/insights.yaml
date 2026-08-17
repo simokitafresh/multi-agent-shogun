@@ -503,7 +503,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4325"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報でGP-220の根因(9/112件、2026-04-17に7件集中)と現行防御を確認。通常経路はcategory=cleanを--clean専用として保存前BLOCKし、gate_wa_data_quality.shも矛盾を検出・clean化するため追加実装修正・decision_candidate不要。
+  action_artifact: "logs/gunshi_gp_tracker.yaml:535-544; scripts/karo_workaround_log.sh:663-671; scripts/gates/gate_wa_data_quality.sh:1-2,340-345"
+  resolved_at: "2026-08-17T04:05:01Z"
 - id: INS-20260817-105245997-e323
   ts: "2026-08-17T10:52:45+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4325; matched=当月; current_pattern=ログイン境界 第0段-手① — /loginルート新設(viewer当月クーポンのみ)+adminログインを/admin配下へ分離+未認証ルートガード(frontend 1層); candidate_level=2; candidate=cmd_1898パリティスクリプトがtarget_date=前月末日でproduction(当月第1営業日)と異なる。skip_months>0で差が増幅→抜き身/四つ目83-99%。パリティスクリプト作成cmdのACに'target_dateがproductionと一致'を標準化; source=gunshi_gp_tracker.yaml"
