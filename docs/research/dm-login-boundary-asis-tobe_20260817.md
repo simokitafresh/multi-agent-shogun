@@ -121,6 +121,7 @@
 - 09:13 殿「では設計書とアーティファクトを更新しよう。一回ログアウト状態は問題がない」→ ToBe v0.3（パスワード不変・再ログイン許容・3手案）
 - 09:16 殿「dm-signal-password-rotation cronの改善も忘れないようにしないとね」→ ToBeに既知欠陥3点(ops §46)と改修方針・位置づけ(第0段と独立、第1段と突合後)を記載
 - 10:02 殿「ではログイン画面の第ゼロ弾をやろう。まずはそこまで」→ **第0段 実装GO**。将軍: tier別snapshot(5tier・expires 2026-08-31・Render env値)を私有0600ファイルへ保存(10:03)。cmd_4325(手①/login+admin分離+ガード) 10:06 delegated / cmd_4326(手②7層リセット, depends_on 4325) / cmd_4327(手③主体キー+ETag, depends_on 4326) 10:12 delegated。パイプライン契約(前手GATE後push/deploy待ちと重ねる)・push/deploy=家老レーン・CDP不要
+- 13:32 殿「artifact 1c498f5f は完了した？adminログインはどこから？『クーポンコード』ではなく『パスワードもしくはクーポンコード』の方が誤解がない」→ 13:34「ではやろう」→ cmd_4332。13:38 殿「/admin/loginから入るとデザインが異なりログイン後にApplication error(useViewerPermissions…)。その後/を開くとログイン済み。修正したい。まず現状確認」→ 将軍read-only現物確認(route-access-boundary.tsx がadmin配下をProviderツリー外描画)→ cmd_4333
 
 ## 進捗台帳(第0段) — 2026-08-17 12:08+09:00
 
@@ -132,6 +133,14 @@
 | ③ 主体キー全層+BE ETag/no-store | cmd_4327 | GATE CLEAR 11:55(疾風) → push `1ab6c278`/`c13fdba4` | BE 14ファイル(+60/-20)のETag/Cache-Control、FE主体キー、test_etag PASS・subject-cache PASS |
 | deploy | 家老レーン | **12:05 origin/main `46a1f213`、Render BE dep-da17hubncjis73979lhg / FE dep-da17hubncjis73979leg 双方live**、/healthz 200 status=ok、/admin/recalculate-status 200 | 掲示板 blt_20260817_120540 |
 | 本番CDP検分 | 実施しない(殿03:09/10:02運用) | 画面確認は殿の目: admin→logout→低tierで非公開PFがリロードなしに表示されないか | — |
+
+### 第0段 是正(殿の実操作起点) — 2026-08-17 13:55+09:00
+
+| 是正 | cmd | 状態 | 内容 |
+|---|---|---|---|
+| A 文言 | cmd_4332 | 13:41 配備(疾風) | 殿13:32「クーポンコードという表現ではなくパスワードもしくはクーポンコードとしたほうが誤解がない」→ `frontend/app/login/page.tsx` の案内・ラベル・エラー・ブラックアウト案内を「パスワードもしくはクーポンコード」へ統一。現行はnote当月パスワード運用のため |
+| B admin/login回帰 | cmd_4333 | 13:46 配備 | 殿観測13:38: `/admin/login`からログインするとデザインが異なり、成功後に Application error(`useViewerPermissions must be used within ViewerPermissionsProvider`)、その後 `/` を直接開くとログイン済み。**原因(現物)**: `frontend/components/route-access-boundary.tsx` が `/admin/*` を access=admin として protectedChildren(SignalsProvider→ExecutionTimingProvider→ViewerPermissionsProvider→Sidebar)ではなく素の children で描画。`app/admin/layout.tsx` がログイン成功で `/admin` へ遷移し、admin配下ページ(page-shell→`components/mobile-menu.tsx` useViewerPermissions)がProvider外で例外。認証自体は成功しtoken保存済みなので `/` は protected ツリーで正常。cmd_4325(commit 0ac12d2d)の分離の副作用=第0段の回帰。**修正**: 認証済み `/admin` 配下は protectedChildren で描画、`/admin/login` のみ素描画、外枠を `/login` と統一、回帰テスト(認証済みadminパス)を `route-access-boundary.test.js` へ追加 |
+| adminの入口 | — | 設計通り | `/admin/login` を直接URLで開く。一般 `/login` からのリンクなし・バンドルにadmin切替なし(ToBe v0.3) |
 
 **第0段 完了(本番live)。第1段(identity/entitlement)以降は殿の合図まで未配備。** 復帰点はBE tree `412cb833`/FE tree `bb4fc5f9`(commit 46a1f213)へ更新(rollback計画書§-1)。
 
