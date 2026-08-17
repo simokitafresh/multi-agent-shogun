@@ -579,6 +579,18 @@ _ninja_monitor_owner_record_matches() {
     _ninja_monitor_pid_is_live "$owner_pid"
 }
 
+# A stale generation can remain inside a slow /mnt/c operation after a hot
+# reload has published its successor. The main-loop heartbeat fence cannot
+# protect notification helpers that resume before the next heartbeat, so each
+# alert route enforces the same owner boundary immediately before reading
+# pending state.
+ninja_monitor_business_owner_is_current() {
+    [ "${_NINJA_MONITOR_LIB_MODE:-${NINJA_MONITOR_LIB_ONLY:-0}}" = "1" ] && return 0
+    _ninja_monitor_owner_record_matches \
+        "${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}" \
+        "${NINJA_MONITOR_GENERATION:-}" "$$"
+}
+
 _ninja_monitor_refresh_owner_lease() {
     local owner_file="$1"
     local pid_file="$2"
@@ -3211,6 +3223,10 @@ _idle_backlog_alert_atomic_write() {
 # 家老へpending_work ALERTを送る。通知世代は未配備cmd集合+掲示板宣言で固定し、
 # report pending_workのdedupeとは別markerで管理する。
 check_idle_backlog_alert() {
+    ninja_monitor_business_owner_is_current || {
+        log "SINGLETON-FENCE-SKIP: check_idle_backlog_alert stale generation"
+        return 0
+    }
     local now=${IDLE_BACKLOG_ALERT_NOW:-$EPOCHSECONDS}
     local threshold=${IDLE_BACKLOG_ALERT_THRESHOLD_SEC:-180}
     local cooldown=${IDLE_BACKLOG_ALERT_COOLDOWN_SEC:-300}
@@ -7236,8 +7252,17 @@ find_closed_parent_cmd_status() {
         report_parent=$(yaml_field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
         [ "$report_parent" = "$target_cmd" ] || continue
         report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
-        [[ "$report_status" =~ ^(completed|done|success)$ ]] || continue
+        [[ "$report_status" =~ ^(completed|done|success|failed)$ ]] || continue
         report_verdict=$(yaml_field_get "$report_file" "verdict" "" 2>/dev/null || true)
+        # A terminal FAIL report is still primary evidence that this exact
+        # parent_cmd was deployed and reached a terminal worker outcome.  It
+        # must suppress undeployed/cmd_pending/idle-backlog alerts, while the
+        # separate check_inbox_renudge path continues to surface the failed
+        # report for review/completion handling.
+        if [ "$report_verdict" = "FAIL" ]; then
+            printf 'completed_terminal_fail\n'
+            return 0
+        fi
         [[ "$report_verdict" =~ ^(PASS|PASS_NO_IMPROVEMENT)$ ]] || continue
 
         # Prefer the exact per-report Gunshi approval record.  The gate marker
@@ -7334,6 +7359,10 @@ check_stale_cmds() {
 }
 
 check_undeployed_cmds() {
+    ninja_monitor_business_owner_is_current || {
+        log "SINGLETON-FENCE-SKIP: check_undeployed_cmds stale generation"
+        return 0
+    }
     local now
     now=$EPOCHSECONDS
     local -A current_pending=()
@@ -7409,6 +7438,10 @@ check_undeployed_cmds() {
 # 新規pending cmd出現時のみ家老に1回通知。同一cmdの繰り返し送信を廃止。
 # 長時間未処理のエスカレーションは check_stale_cmds() が担当。
 check_karo_pending_cmd() {
+    ninja_monitor_business_owner_is_current || {
+        log "SINGLETON-FENCE-SKIP: check_karo_pending_cmd stale generation"
+        return 0
+    }
     local now
     now=$EPOCHSECONDS
 
@@ -7441,6 +7474,9 @@ check_karo_pending_cmd() {
         # 一次task照合を使い、assigned以降の実態を優先する。
         local deployed_status
         deployed_status=$(find_deployed_task_status "$cmd_id")
+        if [ -z "$deployed_status" ]; then
+            deployed_status=$(find_closed_parent_cmd_status "$cmd_id" 2>/dev/null || true)
+        fi
         if [ -n "$deployed_status" ]; then
             log "PENDING-CMD-DEPLOYED: ${cmd_id} task_status=${deployed_status}; suppressing cmd_pending notification"
             continue
