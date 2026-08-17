@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260817-114835376-fb01
-  ts: "2026-08-17T11:48:35+09:00"
-  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿三段確認_価格事実_計算差分_PF連鎖]] は既存aliasesに一致なし。類似概念TOP3: known_unknowns_principle(無知の知; alias=確認; score=6.6) / gate_quality_framework(ゲート品質統合フレームワーク; alias=useful_rate計測min_samples分離; score=1.7) / verify_dont_imagine(想像するな確認せよ; alias=実態確認; score=1.6)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-17T11:48:58+09:00"
 - id: INS-20260817-114835725-308f
   ts: "2026-08-17T11:48:35+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[旧DB残置延長]] は既存aliasesに一致なし。類似概念TOP3: skill_routing(スキルルーティング; alias=DB確認; score=2.2) / known_unknowns_principle(無知の知; alias=DB確認; score=2.2) / dmsignal_operations(DM-Signal運用; alias=DB操作; score=2.2)。概念定義とaliases追加を検討せよ"
@@ -418,8 +408,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '87c2840ffbc671bba0a856e9ae0c620577a6aee60eeb2311f78093aa03bf9b63' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 17
-  last_seen: "2026-08-17T20:51:02+09:00"
+  occurrence_count: 18
+  last_seen: "2026-08-17T21:07:01+09:00"
   verification:
     status: passed
     exit_code: '0'
@@ -697,8 +687,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 3
-  last_seen: "2026-08-17T20:59:08+09:00"
+  occurrence_count: 4
+  last_seen: "2026-08-17T21:12:52+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -862,7 +852,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で2026-08-17 20:06:03-20:09:34のgate_fire_logを確認し、同一報告(hayate_report_cmd_4340.yaml)への10回反復であって独立10件ではない。gate_report_format_main.py L398-L404がtask_id/parent_cmdをcommit subjectへ要求し、ninja_scope_commit.sh L163-L201がNINJA_SCOPE_TASK_FILE時にidentityを自動注入する既存防御を確認。根因はidentity無しcommitの反復再提出であり、現時点で新規gate修正は不要。"
+  action_artifact: "logs/gate_fire_log.yaml; scripts/gates/gate_report_format_main.py:398-404; scripts/ninja_scope_commit.sh:163-201; latest_same_report_hits=10; gate_subject_contract_commit=fcbd886b04eddd54eb59af6d8f2ed46e07103d7d"
+  resolved_at: "2026-08-17T21:11:00+09:00"
 - id: INS-20260817-202006179-61b6
   ts: "2026-08-17T20:20:06+09:00"
   insight: "[[dirtyなせいでgate clearやpushが遅れているならインフラバグだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=dirtyなせいでgate clearやpushが遅れているならインフラバグだ。迂回は負の複利を生む。バグはinbox1"
@@ -984,3 +977,20 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-17T20:38:15+09:00"
+- id: INS-20260817-211130537-58f5
+  ts: "2026-08-17T21:11:30+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_hotfix_autopush_divergence_rootfix_202608172031 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T21:11:35+09:00"
+- id: INS-20260817-211154142-e883
+  ts: "2026-08-17T21:11:54+09:00"
+  insight: "SKILL.md追従task[24ba56acb9c6f56e]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/dashboard_update.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/dream/SKILL.md <- scripts/semantic_search.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/gist-share/SKILL.md <- scripts/gist_share.sh; skills/hot-script-design/SKILL.md <- scripts/gist_share.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/idle-persist/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-clear-prep/SKILL.md <- scripts/clear_prep_check.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_search.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:24ba56acb9c6f56e"
+  fix_known: false
+  status: pending
