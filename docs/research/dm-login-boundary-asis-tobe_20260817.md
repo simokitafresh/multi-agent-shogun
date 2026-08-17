@@ -30,7 +30,7 @@
 
 **確認できた事実**: SWR/QueryClient 実装は0件。認証切替はadmin=同一ツリー／viewer=reloadの二値。tier依存ETag endpoint=18。コード変更0・本番操作0（読み取りのみ）。
 
-## ToBe **v0.2** — 2026-08-17 01:15+09:00
+## ToBe **v0.3** — 2026-08-17 09:15+09:00（v0.2=01:15。09:10-09:13 殿チャットで第0段の前提2点を追加）
 
 - `/login` ルートを境界にする。未認証はデータfetchを走らせない（ルートガード）。**初期形はviewer(当月クーポン=noteパスワード)入力+ブラックアウト中の案内のみ**（現時点の動線はnoteのみ・殿 01:48）。Google/magic linkは第1段で追加。**adminログインは一般`/login`から分離**し `/admin` 配下の別画面（リンクなし・バンドルにadmin切替なし）。
 - 認証成功／ログアウトのたびに **ハードリセット**（データ層・store・localStorage/sessionStorage全消去）してから遷移。
@@ -40,6 +40,17 @@
 - `SignalsProvider` の handoff 適用は **認証主体の確定後**にし、主体が保存時と異なれば捨てる（handoff に主体を焼く）。
 - backend: `generate_etag` の入力に主体(tier_id/is_admin/visible_ids)を含める（compare_returns の TTL key と同じ考え方）か、tier依存18 endpointは `no-store`。
 - 合否（各実装手の二値）: admin→ログアウト→低tier再ログインで、非公開PFがリロードなしに表示されない。
+- **パスワード・tier・expires_atは第0段で変更しない**（殿09:10「現在のパスワードは変更しないままでできる？」→ できる）。第0段が触るのはfrontendの認証切替の形と7層の保持層・キャッシュキー・ETag入力のみ。値はbackend DB `viewer_tiers`系＋Render env（=SSOT、L249）にあり、`api.verifyViewer` も不変。着手前にtier別（tier_name/password/expires_at/updated_at）をread-only snapshotとして残す（保険。復元が要る事態は設計上起きない想定。復元時は `expires_at` をそのまま書き戻し、rotation再実行・再発行をしない）。
+- **既存ログイン中ユーザーが1回ログアウト状態になるのは許容**（殿09:13「一回ログアウト状態は問題がない」）。∴ viewer tokenのlocalStorageキー名/形式は第0段で自由に変えてよい（主体入りキーへ移行可）。ユーザーは同じ当月パスワードを再入力すれば復帰＝パスワード変更ではない。
+- 注意: `dm-signal-password-rotation` cronは毎月1日16:00 UTC（JST 2日01:00・既知の+1日ズレ、ops §901）に全tierを回す。作業が9/2 01:00 JSTをまたぐと第0段と無関係にパスワードは変わる。
+
+### 第0段の実装単位（案・09:15）— 各1体×1層・可逆・push/deployは家老レーン・本番CDPは殿判断
+| 手 | 内容 | 合否(二値) |
+|---|---|---|
+| ① | `/login`ルート新設（viewer=当月クーポン入力＋ブラックアウト中案内のみ）＋adminログインを`/admin`配下の別画面へ分離（一般UIからリンクなし・公開バンドルにadmin切替なし）。未認証はデータfetchを走らせないルートガード | 一般バンドルにadmin切替UIが0件／未認証で`/`を開くと`/login`へ／adminは`/admin/login`のみ |
+| ② | 認証成功・ログアウト・主体切替のたびに7層ハードリセット（React state/Context・handoff sessionStorage・localStorage/IndexedDB api-cache+ETag・SW CacheStorage `caches.delete`）→遷移。handoffは主体確定後に適用し不一致なら捨てる | admin→logout→低tier再ログインで非公開PFがリロードなしに表示されない |
+| ③ | キャッシュキー=`[主体(tier/token hash), endpoint, params]` 全層統一＋backend `generate_etag`入力に主体（or tier依存18 endpointを`no-store`） | 別tierで同endpointの304が成立しない（ETag不一致 or no-store） |
+
 
 ## この境界の上に積むもの — 2026-08-17 01:38+09:00（殿とのチャット合意 00:56〜01:11・実装は殿の合図まで行わない）
 
@@ -100,8 +111,13 @@
 | 01:38 | tierは既存の情報を確認せよ。想像するな | 既定を現物で確認: **tier_plan_mapping(殿裁定2026-05-10, projects/dm-signal.yaml)**= Basic(¥1,000 初月無料・公開)/AddOn 裏・Ave7(¥2,000・非公開)/Standard=古参¥4,000・非公開/NewStandard=¥8,000・公開/premium=ドクタープレミアム¥20,000招待制/劇薬DM¥30,000はdb_tier無し。**可視性=tierごとの独立集合**(`tier_visibility_settings.portfolio_settings`+global+folder非表示、閲覧EP18箇所 `check_hide_portfolio_or_folder`、cmd_3837/3839・note対応表準拠 2026-07-10)。AddOnは追加購読=複数tier同時保有が前提。∴ tier包含の新裁定は不要: entitlementは(user_id,tier,position_month)を複数行、可視性=保有tierの可視集合の和集合 | 既定確認(新裁定なし) |
 | 01:40 | noteのパスワードはDM-Signal側で**月末の最終取引日の深夜0:00に失効**させている。効果=(1)一定期間誰もログインできない=メンテナンス時間 (2)当月結果を確認したい心理を刺激 | 現物: `password_rotation.py`既定は暦月末(`get_current_month_end`、当日有効・翌日JST00:00失効 `timezone.py:32-43`)、`viewer_tiers.py:317` `custom_expiry` でadminが任意期限を指定可=意図は運用で実現、既定には未焼込。設計要件として固定: **ブラックアウト窓**=当月最終取引日 JST 00:00 失効〜翌月権利で再開。entitlement(position_month)の可視期間=前月最終取引日00:00〜当月最終取引日00:00。効果3つ(翌月ポジション保護/メンテ窓/更新動機)を明文化。残論点=「最終取引日」の算出元(価格データ営業日 or 取引所カレンダー)。殿の現行基準に従う | **裁定(ブラックアウト窓)** |
 | 01:46 | 現在adminで期限を決める基準=**月末の最終平日(土日除く)**。祝日や特殊パターンはレアなので簡略。できれば**米国市場の営業日カレンダー**を使いたいが、それはDM-Signalの計算には使わず**パスワード有効期限専用**。現時点で最終決定は不要 | 因果=(事実)祝日ズレはレア (制約)計算系のカレンダー契約と混ぜたくない (判断)期限専用のカレンダー関数として分離、既定は最終平日、将来NYSE営業日へ差替え可 (効果)計算不変量を汚さずに期限だけ精密化できる。設計書に「未決(保留)」として記録 | 保留(最終決定不要) |
+| 09:10-09:13 | 現在のパスワードは変更しないままでできる？難しければtier別パスワードを保存し改良後に戻す（有効期限が変わらないよう注意）。一回ログアウト状態は問題がない | 第0段はfrontendの境界・保持層・キーの改修で、パスワード/tier/expires_atはbackend DB+Render env(SSOT)にあり触らない。唯一の副作用はtokenキー変更時の再ログイン | rotation cronは月初(JST 2日01:00)に走る。復元するならexpires_atは書き戻すのみで再発行しない | パスワード不変で第0段を実施。tokenキー/形式は変えてよい（再ログイン許容）。着手前にtier別snapshotをread-onlyで保存 | 手戻りゼロ・利用者体験はほぼ不変・復元手段は保険として持つ | `[[殿質問_パスワード不変で第0段可能か_20260817]] -> [[第0段は認証後のデータ隔離とUI入口]] -> [[パスワード不変+再ログイン許容]]` |
 | 01:48 | 現時点の動線はnoteのみ。ログインページができればいい。admin認証のポップアップは一般には出ないのがいいよな？ | 同感。現状は`viewer-auth-modal.tsx:97-150`にViewer/Admin切替が同居=adminの存在が一般UIに露出。あるべき形=一般`/login`はviewer(当月クーポン)のみ、adminは`/admin`配下に自分のログイン画面・一般UIからリンクなし・公開バンドルにadmin切替を含めない(殿裁定2026-06-28「設定画面は別ページ、リンクなしで/admin」と同方向)。隠すのは露出削減であって防御ではない=実防御は認証側(rate limit・将来role/2FA)。第0段の同じ改修点なので一緒にやる | **合意** |
 
+
+- 09:10 殿「artifact 1c498f5f の続きをやろう。まずはチャット。現在のパスワードは変更しないままでできる？難しいなら現在のtier別のパスワードを保存して改良後に戻してもいい。有効期限が変わらないよう気を付けないと」
+- 09:12 将軍: できる。第0段はfrontendの境界/保持層/キー改修でパスワード・tier・expires_atはbackend SSOTにあり触らない。唯一の副作用=tokenキー変更時の再ログイン。保険にtier別read-only snapshot。rotation cron(9/2 01:00 JST)をまたぐと別要因で変わる。実装単位①/login+admin分離 ②7層リセット ③主体キー/ETagの3手案
+- 09:13 殿「では設計書とアーティファクトを更新しよう。一回ログアウト状態は問題がない」→ ToBe v0.3（パスワード不変・再ログイン許容・3手案）
 
 ## 注釈 — 2026-08-17 01:30+09:00
 
