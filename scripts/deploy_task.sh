@@ -6762,7 +6762,17 @@ inject_push_allowed() {
 
     # \bpush\b はC.UTF-8ロケールで日本語(カナ/漢字)に直接隣接するとASCII境界を検出できない
     # (例:「pushして」「push完了」がNOMATCH)。ASCII文字以外を境界とみなす自前境界で代替する。
-    if printf '%s\n' "$ac_text" | grep -qiE '(^|[^A-Za-z])push($|[^A-Za-z])'; then
+    # 否定形(push禁止/pushはしない/pushせず/pushしない/push不可/pushは行わない/no push/do not push/
+    # must not push/push未)は「pushを要求していない」ので付与対象から除く。
+    # 2026-08-18 02:55 実測: cmd_4349/4351/4352のAC『(pushはしない)』『push禁止』が語句一致で
+    # push_allowed:true に反転し、cmd_complete_gateのpre-GATE autopushがGitHub不安定中(殿裁定
+    # 00:45 deploy凍結)にorigin/main→Render自動deployまで進んだ。DOC_LANE_ROUTING偽陽性(73449dd3)と同型。
+    local push_positive
+    push_positive="$(printf '%s\n' "$ac_text" \
+        | sed -E 's/(^|[^A-Za-z])(no|do not|must not|never|without)[[:space:]]+push($|[^A-Za-z])/\1__NEGPUSH__\3/Ig' \
+        | sed -E 's/(^|[^A-Za-z])push(は|を|も)?(禁止|不可|しない|せず|しません|未実施|未|は行わない|を行わない|するな)/\1__NEGPUSH__/g' \
+        | grep -ciE '(^|[^A-Za-z])push($|[^A-Za-z])' || true)"
+    if [ "${push_positive:-0}" -gt 0 ]; then
         yaml_field_set "$task_file" "task" "push_allowed" "true" \
             && log "inject_push_allowed: AC内に'push'検出。push_allowed=trueを自動付与(cmd_3820 G2ガード解消)"
     fi

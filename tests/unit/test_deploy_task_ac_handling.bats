@@ -145,6 +145,35 @@ EOF
     [[ "$output" == *"DOC_LANE_ROUTING"* ]]
 }
 
+# test_necessity: ACに「push禁止」「pushはしない」「do not push」のような否定形しかない task には
+# push_allowed:true を自動付与しない不変量。これを失うと、push禁止cmdが配備時に push可へ反転し、
+# cmd_complete_gate の pre-GATE autopush が殿のdeploy凍結裁定を破って本番deployまで進む
+# (2026-08-18 01:24/02:07/02:55 cmd_4349/4351/4352 実測)。肯定形の push 要求だけが付与対象。
+@test "cmd_4352: inject_push_allowed ignores negated push mentions" {
+    local task_path="$TEST_PROJECT/queue/tasks/push_allowed_negation.yaml"
+    cat > "$task_path" <<'EOF'
+task:
+  task_id: cmd_fixture_push_neg
+  acceptance_criteria:
+    - id: AC1
+      description: "選択実行でFAIL0を確認しcommitする(pushはしない)。push禁止。do not push to origin"
+EOF
+    run inject_push_allowed "$task_path"
+    [ "$status" -eq 0 ]
+    ! grep -q '^[[:space:]]*push_allowed:' "$task_path"
+
+    cat > "$task_path" <<'EOF'
+task:
+  task_id: cmd_fixture_push_pos
+  acceptance_criteria:
+    - id: AC1
+      description: "commit後にorigin/mainへpushしCI GREENを確認する"
+EOF
+    run inject_push_allowed "$task_path"
+    [ "$status" -eq 0 ]
+    grep -q '^[[:space:]]*push_allowed: *true' "$task_path"
+}
+
 task_file() {
     printf '%s\n' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
