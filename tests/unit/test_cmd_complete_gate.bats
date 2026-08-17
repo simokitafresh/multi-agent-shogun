@@ -4972,6 +4972,133 @@ EOF
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
 }
 
+# test_necessity: the production queue/insights.yaml uses a mapping root whose
+# insights value is a list; source-only ID merge must preserve that root while
+# adding source IDs and retaining independent remote IDs.
+@test "AC2 insights mapping root: source ID is added and remote-only ID is preserved" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-mapping-add"
+    cat > "$base-base.yaml" <<'EOF'
+insights:
+- id: base
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+insights:
+- id: base
+  value: base
+- id: source-add
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+insights:
+- id: base
+  value: base
+- id: remote-only
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_mapping_add_probe
+    [ "$status" -eq 0 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == insights:* ]]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^- id:')" -eq 3 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: source-add"* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: remote-only"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: mapping-root updates use stable ID conflict rules and must
+# replace only a remote block that still equals the base block.
+@test "AC2 insights mapping root: same ID update replaces base and keeps remote-only" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-mapping-replace"
+    cat > "$base-base.yaml" <<'EOF'
+insights:
+- id: target
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+insights:
+- id: target
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+insights:
+- id: target
+  value: base
+- id: remote-only
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_mapping_replace_probe
+    [ "$status" -eq 0 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *$'id: target\n  value: source'* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: remote-only"* ]]
+}
+
+# test_necessity: a divergent same-ID remote block remains fail-closed for the
+# production mapping root and must never be overwritten by source content.
+@test "AC2 insights mapping root: divergent same ID blocks without push" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-mapping-divergent"
+    cat > "$base-base.yaml" <<'EOF'
+insights:
+- id: target
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+insights:
+- id: target
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+insights:
+- id: target
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_mapping_divergent_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"value: remote"* ]]
+}
+
+# test_necessity: a mapping root without the insights list is an invalid
+# source-only input and must fail closed before publication.
+@test "AC2 insights mapping root: invalid root blocks without push" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-mapping-invalid-root"
+    cat > "$base-base.yaml" <<'EOF'
+insights:
+- id: target
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+other:
+- id: target
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+insights:
+- id: target
+  value: base
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_mapping_invalid_root_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+}
+
 # test_necessity: a source aggregate that already contains every remote hunk
 # is publishable only when every base->remote delta is present in source.
 @test "AC2 cumulative equivalence: aggregate source retains all remote same-path edits" {

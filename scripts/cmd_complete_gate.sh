@@ -1025,6 +1025,8 @@ source_only_insights_id_merge() (
     SOURCE_ONLY_INSIGHTS_OUTPUT="$merged_file" \
     python3 - <<'PY' || return 1
 import os
+import re
+import textwrap
 from pathlib import Path
 
 import yaml
@@ -1041,26 +1043,81 @@ def read(path):
 
 def parse_blocks(text, label):
     lines = text.splitlines(keepends=True)
-    starts = [i for i, line in enumerate(lines) if line.startswith("- id:")]
-    if text.strip():
-        try:
-            document = yaml.safe_load(text)
-        except yaml.YAMLError as exc:
-            raise ValueError(f"{label} YAML parse failed: {exc}") from exc
-        if document is not None and not isinstance(document, list):
-            raise ValueError(f"{label} root is not a list")
-    if not starts:
-        if text.strip():
-            raise ValueError(f"{label} has no top-level - id: blocks")
-        return "", [], {}
-    prefix = "".join(lines[:starts[0]])
+    if not text.strip():
+        return "", [], {}, None, ""
+
+    try:
+        document = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"{label} YAML parse failed: {exc}") from exc
+
+    if isinstance(document, list):
+        root_kind = "list"
+        expected_entries = document
+        region_start = 0
+        region_end = len(lines)
+        item_indent = 0
+    elif isinstance(document, dict) and isinstance(document.get("insights"), list):
+        root_kind = "mapping"
+        expected_entries = document["insights"]
+        key_matches = [
+            (i, len(line) - len(line.lstrip(" \t")))
+            for i, line in enumerate(lines)
+            if re.match(r"^insights\s*:", line)
+        ]
+        if len(key_matches) != 1:
+            raise ValueError(f"{label} mapping root must contain one top-level insights key")
+        region_start, key_indent = key_matches[0]
+        if key_indent != 0:
+            raise ValueError(f"{label} insights key is not top-level")
+        region_end = len(lines)
+        for i in range(region_start + 1, len(lines)):
+            line = lines[i]
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            indent = len(line) - len(line.lstrip(" \t"))
+            if indent <= key_indent and not re.match(r"^[ \t]*-\s+id\s*:", line):
+                region_end = i
+                break
+        item_candidates = [
+            (i, len(line) - len(line.lstrip(" \t")))
+            for i, line in enumerate(lines[region_start + 1:region_end], region_start + 1)
+            if re.match(r"^[ \t]*-\s+id\s*:", line)
+        ]
+        item_indent = item_candidates[0][1] if item_candidates else None
+    else:
+        raise ValueError(f"{label} root must be a list or mapping with insights list")
+
+    if root_kind == "list":
+        starts = [
+            i for i, line in enumerate(lines)
+            if re.match(r"^-\s+id\s*:", line)
+        ]
+    elif item_indent is None:
+        starts = []
+    else:
+        starts = [
+            i for i, line in enumerate(lines[region_start + 1:region_end], region_start + 1)
+            if len(line) - len(line.lstrip(" \t")) == item_indent
+            and re.match(r"^[ \t]*-\s+id\s*:", line)
+        ]
+
+    if not starts and expected_entries:
+        raise ValueError(f"{label} has no top-level - id: blocks")
+    if starts:
+        prefix = "".join(lines[:starts[0]])
+    elif root_kind == "mapping":
+        prefix = "".join(lines[:region_end])
+    else:
+        prefix = ""
     entries = []
     by_id = {}
     for index, start in enumerate(starts):
-        end = starts[index + 1] if index + 1 < len(starts) else len(lines)
+        end = starts[index + 1] if index + 1 < len(starts) else region_end
         raw = "".join(lines[start:end])
         try:
-            item = yaml.safe_load(raw)
+            item = yaml.safe_load(textwrap.dedent(raw))
         except yaml.YAMLError as exc:
             raise ValueError(f"{label} block parse failed: {exc}") from exc
         if isinstance(item, list) and len(item) == 1:
@@ -1073,12 +1130,24 @@ def parse_blocks(text, label):
         entry = {"id": item_id, "raw": raw, "value": item}
         entries.append(entry)
         by_id[item_id] = entry
-    return prefix, entries, by_id
+    if len(entries) != len(expected_entries):
+        raise ValueError(
+            f"{label} entry count mismatch: parsed {len(entries)} expected {len(expected_entries)}"
+        )
+    suffix = "".join(lines[region_end:])
+    if not starts and root_kind == "list":
+        suffix = text
+    return prefix, entries, by_id, root_kind, suffix
 
 
-base_prefix, base_list, base = parse_blocks(read(base_path), "base")
-source_prefix, source_list, source = parse_blocks(read(source_path), "source")
-remote_prefix, remote_list, remote = parse_blocks(read(remote_path), "remote")
+base_prefix, base_list, base, base_root, base_suffix = parse_blocks(read(base_path), "base")
+source_prefix, source_list, source, source_root, source_suffix = parse_blocks(read(source_path), "source")
+remote_prefix, remote_list, remote, remote_root, remote_suffix = parse_blocks(read(remote_path), "remote")
+
+roots = {root for root in (base_root, source_root, remote_root) if root is not None}
+if len(roots) > 1:
+    raise ValueError("base/source/remote root structures differ")
+root_kind = next(iter(roots), "list")
 
 
 def equal(left, right):
@@ -1119,16 +1188,21 @@ for item_id in order:
         raise ValueError(f"source/remote divergent id: {item_id}")
 
 prefix = remote_prefix or source_prefix or base_prefix
+suffix = remote_suffix or source_suffix or base_suffix
 raw_blocks = [chosen[item_id]["raw"] for item_id in order if chosen.get(item_id) is not None]
-merged = prefix + "".join(raw_blocks)
+merged = prefix + "".join(raw_blocks) + suffix
 if raw_blocks and not merged.endswith("\n"):
     merged += "\n"
 try:
     parsed = yaml.safe_load(merged) if merged.strip() else []
 except yaml.YAMLError as exc:
     raise ValueError(f"merged YAML parse failed: {exc}") from exc
-if parsed is not None and not isinstance(parsed, list):
+if root_kind == "list" and parsed is not None and not isinstance(parsed, list):
     raise ValueError("merged root is not a list")
+if root_kind == "mapping" and (
+    not isinstance(parsed, dict) or not isinstance(parsed.get("insights"), list)
+):
+    raise ValueError("merged root is not a mapping with insights list")
 
 for item_id, entry in source.items():
     b = base.get(item_id)
@@ -1176,21 +1250,15 @@ source_only_insights_candidate() {
     [ "${#paths[@]}" -eq 1 ] && [ "${paths[queue/insights.yaml]+yes}" = yes ]
 }
 
-# Use ID merge only after the generic source-history proof fails, and only
-# when the source commit set changes queue/insights.yaml and nothing else.
+# Insights has a schema-sensitive root and stable-ID contract, so validate and
+# merge it before generic path publication. Other paths retain their existing
+# generic/cumulative fallback order.
 source_only_path_snapshot() {
     local repo="$1" clean_repo="$2" remote_tip="$3"
     shift 3
     if source_only_insights_candidate "$repo" "$@"; then
-        if source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"; then
-            return 0
-        fi
-        if source_only_cumulative_equivalence "$repo" "$clean_repo" "$remote_tip" "$@"; then
-            return 0
-        fi
         source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" "queue/insights.yaml" "$@"
-        local merge_rc=$?
-        return "$merge_rc"
+        return $?
     fi
     if source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"; then
         return 0
@@ -1233,20 +1301,30 @@ push_from_clean_worktree() {
     fi
 
     rc=0
-    for source_sha in "$@"; do
-        if ! git -C "$clean_repo" cherry-pick --no-edit "$source_sha" >/dev/null 2>&1; then
-            git -C "$clean_repo" cherry-pick --abort >/dev/null 2>&1 || true
-            if source_only_path_snapshot "$repo" "$clean_repo" "$remote_tip" "$@"; then
-                fallback_used=1
-                published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
-                echo "  git push: conflict fallback (source-only path snapshot)"
-            else
-                rc=1
-            fi
-            break
+    if source_only_insights_candidate "$repo" "$@"; then
+        if source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" "queue/insights.yaml" "$@"; then
+            fallback_used=1
+            published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+            echo "  git push: conflict fallback (source-only insights ID merge)"
+        else
+            rc=1
         fi
-        applied_shas+=("$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)")
-    done
+    else
+        for source_sha in "$@"; do
+            if ! git -C "$clean_repo" cherry-pick --no-edit "$source_sha" >/dev/null 2>&1; then
+                git -C "$clean_repo" cherry-pick --abort >/dev/null 2>&1 || true
+                if source_only_path_snapshot "$repo" "$clean_repo" "$remote_tip" "$@"; then
+                    fallback_used=1
+                    published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+                    echo "  git push: conflict fallback (source-only path snapshot)"
+                else
+                    rc=1
+                fi
+                break
+            fi
+            applied_shas+=("$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)")
+        done
+    fi
 
     if [ "$rc" -eq 0 ] && [ "$fallback_used" -eq 0 ]; then
         published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
