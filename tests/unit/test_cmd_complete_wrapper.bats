@@ -2,6 +2,9 @@
 
 setup() {
     export CMD_COMPLETE_SYNC_TAIL=1
+    # Existing dashboard-tail contracts explicitly exercise the opt-in path.
+    # The default-off contract is covered by the test below with env -u.
+    export CMD_COMPLETE_DASHBOARD_ENABLED=1
     export FIXTURE="$BATS_TEST_TMPDIR/root"
     mkdir -p "$FIXTURE/scripts/gates" "$FIXTURE/scripts/lib" "$FIXTURE/queue/gates/cmd_fixture"
     cp "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh" "$FIXTURE/scripts/cmd_complete.sh"
@@ -38,6 +41,36 @@ SH
     chmod +x "$FIXTURE/scripts/cmd_complete_gate.sh"
     make_stub "$FIXTURE/scripts/gates/gate_context_freshness.sh" gate_context_freshness.sh
     make_stub "$FIXTURE/scripts/gates/gate_yaml_status.sh" gate_yaml_status.sh
+}
+
+# test_necessity: by default the completion tail must checkpoint dashboard without
+# invoking dashboard_update.sh; CMD_COMPLETE_DASHBOARD_ENABLED=1 preserves the
+# explicit opt-in publication behavior.
+@test "dashboard publication is disabled by default and opt-in via environment" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/dashboard-default.log"
+    run env -u CMD_COMPLETE_DASHBOARD_ENABLED \
+        CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP dashboard disabled_by_default(lord ruling 2026-08-17)"* ]]
+    ! grep -q '^dashboard_update.sh|' "$CMD_COMPLETE_TEST_LOG"
+    [ ! -e "$FIXTURE/queue/gates/completion_dashboard.lock" ]
+    run python3 - "$FIXTURE/queue/gates/cmd_fixture/completion_checkpoint.json" <<'PY'
+import json, sys
+completed = json.load(open(sys.argv[1], encoding="utf-8"))["completed"]
+assert completed[-3:] == ["dashboard", "ntfy", "inbox_archive"], completed
+PY
+    [ "$status" -eq 0 ]
+
+    local optin_checkpoint="$BATS_TEST_TMPDIR/dashboard-optin-checkpoint"
+    mkdir -p "$optin_checkpoint"
+    : > "$CMD_COMPLETE_TEST_LOG"
+    run env CMD_COMPLETE_DASHBOARD_ENABLED=1 \
+        CMD_COMPLETE_CHECKPOINT_DIR="$optin_checkpoint" \
+        CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    grep -q '^dashboard_update.sh|' "$CMD_COMPLETE_TEST_LOG"
 }
 
 # test_necessity: the public completion caller must not inherit latency from the durable dashboard/notification tail.
@@ -362,9 +395,10 @@ SH
     grep -q 'inbox_archive.sh|karo' "$CMD_COMPLETE_TEST_LOG"
 }
 
-# test_necessity: normal wrapper and standalone/emergency completion paths must each select exactly one dashboard writer.
+# test_necessity: dashboard publication ownership must remain explicit after the
+# standalone gate path removed its legacy dashboard writers.
 # regression_justification: the pre-fix gate launched dashboard_update twice plus dashboard_auto_section once (3 writers).
-@test "single dashboard writer ownership is explicit for wrapper and standalone gate paths" {
+@test "dashboard writer ownership remains explicit after standalone removal" {
     local wrapper="$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
     local gate="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
     run python3 - "$wrapper" "$gate" <<'PY'
@@ -372,13 +406,13 @@ import pathlib, sys
 wrapper = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 gate = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
 assert 'CMD_COMPLETE_WRAPPER_ACTIVE=1' in wrapper
-assert gate.count('scripts/dashboard_update.sh" "$CMD_ID"') == 2  # emergency + normal standalone
+assert gate.count('scripts/dashboard_update.sh" "$CMD_ID"') == 0
 assert 'scripts/dashboard_auto_section.sh"' not in gate
-assert gate.count('dashboard_update: delegated to cmd_complete wrapper') == 2
-print('before_writer_invocations=3 after_wrapper=1 after_standalone=1')
+assert gate.count('dashboard_update: SKIP') == 2
+print('before_writer_invocations=3 after_wrapper=1 after_standalone=0')
 PY
     [ "$status" -eq 0 ]
-    [ "$output" = "before_writer_invocations=3 after_wrapper=1 after_standalone=1" ]
+    [ "$output" = "before_writer_invocations=3 after_wrapper=1 after_standalone=0" ]
 }
 
 # test_necessity: three distinct completion tails must queue before dashboard publication so no caller enters dashboard's own flock/retry competition and every terminal event remains durable.
@@ -593,11 +627,10 @@ SH
     grep -q 'cmd_complete_gate.sh|cmd_fixture' "$CMD_COMPLETE_TEST_LOG"
 }
 
-@test "archived command not-found continues only with all three CLEAR evidences" {
+@test "archived command not-found continues with archive and gate CLEAR evidence" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/archived.log"
     mkdir -p "$FIXTURE/queue/archive/cmds" "$FIXTURE/logs"
     : > "$FIXTURE/queue/archive/cmds/cmd_fixture_completed.yaml"
-    printf 'cmd_fixture complete\n' > "$FIXTURE/dashboard.md"
     printf 'cmd_fixture CLEAR\n' > "$FIXTURE/logs/gate_metrics.log"
     cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
 #!/usr/bin/env bash

@@ -293,7 +293,7 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 ## cmd完了時の手順（家老・忍者共通）
 
 ```
-1. ダッシュボード更新: `/dashboard-update` スキルを実行（手動Edit禁止。スキルがプライマリYAMLから全セクションを自動生成する）
+1. （既定OFF・殿裁定2026-08-17）dashboard自動更新は行わない。必要時のみ手動で `/dashboard-update`
 2. 戦局日誌更新: context/senkyoku-log.mdにcmdの意図・結果・因果を1-2行で追記
 3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
 4. ntfy送信（cmd完了報告）
