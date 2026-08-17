@@ -1350,6 +1350,10 @@ declare -A GATE_STALL_LAST_NOTIFIED # review_gate.done後の終端なし通知�
 # 出ないまま放置されるGATE-STALLを常時検知する。review_gate.doneは配備時placeholderも
 # あり得るため、archive.done・gate_metrics.logの終端証跡を必ず併せて確認する。
 GATE_STALL_WARN_MIN=${GATE_STALL_WARN_MIN:-10}
+# 2026-08-17 23:54 実測: 過去数か月分の review_gate.done(gate_metrics以前の世代・archive済み)
+# を全件GATE-STALL通知し将軍/家老inboxへ数十件のstorm。監視対象は「直近の両承認」だけで
+# よいので上限窓(既定24h)を置き、queue/archive/cmds に完了記録がある cmd も除外する。
+GATE_STALL_MAX_MIN=${GATE_STALL_MAX_MIN:-1440}
 
 _gate_stall_marker_epoch() {
     local marker="$1" timestamp
@@ -1395,6 +1399,10 @@ check_gate_stall() {
         [[ "$marker_epoch" =~ ^[0-9]+$ ]] || continue
         elapsed_sec=$((now - marker_epoch))
         [ "$elapsed_sec" -ge "$warn_sec" ] || continue
+        [ "$elapsed_sec" -le $((GATE_STALL_MAX_MIN * 60)) ] || continue
+        if compgen -G "$SCRIPT_DIR/queue/archive/cmds/${cmd}_*.yaml" >/dev/null 2>&1; then
+            continue
+        fi
         _gate_stall_has_terminal_metric "$cmd" "$marker_epoch" && continue
         elapsed_min=$((elapsed_sec / 60))
         message="【GATE-STALL】${cmd} 両承認から${elapsed_min}分終端なし。一次確認: cat queue/gates/${cmd}/cmd_complete_gate.trigger.log; bash scripts/cmd_complete_gate.sh ${cmd}"
