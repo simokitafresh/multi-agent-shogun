@@ -25,7 +25,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4334"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でDM-Signal現物を再確認した結果、TRFはtrend_reversal_filter.py:86/129/135でget_momentum_value_at_date()を使用し、blocks/jobs内のdict.get(target_date)残存は0件。scripts/run_precommit_checks.sh:84-107にPI L573検査も実装済みで、追加の本repo修正は不要。"
+  action_artifact: "DM-Signal:backend/app/services/pipeline/blocks/trend_reversal_filter.py;DM-Signal:scripts/run_precommit_checks.sh:84-107;verification=rg exact dict.get(target_date) in blocks/jobs -> 0;source=cmd_4334/e44a7bb7 plus existing PI L573 guard"
+  resolved_at: "2026-08-18T02:43:26+09:00"
 - id: INS-20260817-162824808-4669
   ts: "2026-08-17T16:28:24+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿合図_FoF_tiebreak開始_20260817_1606]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=FoF; score=17.8) / recalculate_pipeline(再計算パイプライン; alias=recalculate_fof; score=14.6) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_fix_2items_20260811_1337; score=4.8)。概念定義とaliases追加を検討せよ"
@@ -269,8 +272,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 27
-  last_seen: "2026-08-18T02:25:12+09:00"
+  occurrence_count: 28
+  last_seen: "2026-08-18T02:45:15+09:00"
   verification:
     status: "passed"
     exit_code: 0
