@@ -262,8 +262,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 30
-  last_seen: "2026-08-18T03:03:56+09:00"
+  occurrence_count: 31
+  last_seen: "2026-08-18T03:17:41+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -956,7 +956,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'dde3b64c3e3336742b3f3799eec08e839a6dc038666f7bd7b87e6318c527a859' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -966,3 +966,6 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次確認: self_retro.jsonlの対象event_idが1件、全3233 event_idでduplicate_event_ids=0。既存SG7検証を維持したreview_notify送達成功の既知修正を確認。"
+  action_artifact: "logs/self_retro.jsonl#event_id=dde3b64c3e3336742b3f3799eec08e839a6dc038666f7bd7b87e6318c527a859; duplicate_event_ids=0"
+  resolved_at: "2026-08-18T03:15:51+09:00"
