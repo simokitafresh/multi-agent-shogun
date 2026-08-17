@@ -1057,9 +1057,11 @@ def parse_blocks(text, label):
         region_start = 0
         region_end = len(lines)
         item_indent = 0
-    elif isinstance(document, dict) and isinstance(document.get("insights"), list):
+    elif isinstance(document, dict) and (
+        isinstance(document.get("insights"), list) or document.get("insights") is None
+    ):
         root_kind = "mapping"
-        expected_entries = document["insights"]
+        expected_entries = document.get("insights") or []
         key_matches = [
             (i, len(line) - len(line.lstrip(" \t")))
             for i, line in enumerate(lines)
@@ -1108,7 +1110,10 @@ def parse_blocks(text, label):
     if starts:
         prefix = "".join(lines[:starts[0]])
     elif root_kind == "mapping":
-        prefix = "".join(lines[:region_end])
+        # Normalize both `insights: []` and an empty `insights:` sequence to
+        # the same mapping header before appending source blocks. Keeping the
+        # inline `[]` bytes would yield `insights: []` followed by `- id:`.
+        prefix = (" " * key_indent) + "insights:\n"
     else:
         prefix = ""
     entries = []
@@ -1200,7 +1205,9 @@ except yaml.YAMLError as exc:
 if root_kind == "list" and parsed is not None and not isinstance(parsed, list):
     raise ValueError("merged root is not a list")
 if root_kind == "mapping" and (
-    not isinstance(parsed, dict) or not isinstance(parsed.get("insights"), list)
+    not isinstance(parsed, dict)
+    or "insights" not in parsed
+    or (parsed.get("insights") is not None and not isinstance(parsed.get("insights"), list))
 ):
     raise ValueError("merged root is not a mapping with insights list")
 

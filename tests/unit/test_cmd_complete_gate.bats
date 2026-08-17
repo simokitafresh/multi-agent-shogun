@@ -5099,6 +5099,71 @@ EOF
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
 }
 
+# test_necessity: the production empty mapping spelling must accept the first
+# source ID without emitting an inline [] plus a sibling sequence.
+@test "AC2 insights empty mapping: first source ID is added with valid root" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-empty-first-id"
+    cat > "$base-base.yaml" <<'EOF'
+insights: []
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+insights:
+- id: first
+  value: source
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_empty_first_id_probe
+    [ "$status" -eq 0 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == $'insights:\n-'* ]]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^- id:')" -eq 1 ]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: empty mapping roots on both sides remain valid and publish no
+# phantom item when only the root spelling changes.
+@test "AC2 insights empty mapping: empty-to-empty remains valid" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-empty-empty"
+    cat > "$base-base.yaml" <<'EOF'
+insights: []
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+insights:
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_empty_empty_probe
+    [ "$status" -eq 0 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^- id:' || true)" -eq 0 ]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: removing the last mapping entry is safe when remote retains
+# the base block, and the published root remains a valid empty mapping.
+@test "AC2 insights empty mapping: last ID deletion is safe" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-empty-delete"
+    cat > "$base-base.yaml" <<'EOF'
+insights:
+- id: delete-me
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+insights: []
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_empty_delete_probe
+    [ "$status" -eq 0 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == "insights:"* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" != *"id: delete-me"* ]]
+}
+
 # test_necessity: a source aggregate that already contains every remote hunk
 # is publishable only when every base->remote delta is present in source.
 @test "AC2 cumulative equivalence: aggregate source retains all remote same-path edits" {
