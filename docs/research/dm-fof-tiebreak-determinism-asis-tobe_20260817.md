@@ -92,6 +92,32 @@
 
 **ロールバック地点と復旧(正本=rollback計画書§-1・15:10版)**: 地点=各手のpush直前origin/main(手①前=backend `46a1f213`/frontend `55b81b43`/DB run400世代 baseline md5 monthly `c3331388`・signals `e03c0a2c`・weights `dab5148e`・metrics `cda1b38a`)。復旧=コードrevert→push→deploy→full 1回→baseline SQLで一致。新規コード禁止・PITR不要(派生表はfullが全再生成)。実行者は将軍単独、家老・忍者は止める。
 
+### 実装前の前提条件とpitfall — 2026-08-17 15:25+09:00（殿15:06「他のコーディングLLMの立場で俯瞰。家老にも同ポジションで。主導権は将軍、家老の意見はコードと理論で将軍が確認。シンプルが一番、過剰な防御案は拒否」）
+
+将軍がコード現物で確認した事実(file:line)。家老の俯瞰(掲示板 blt_20260817_151253)は5点とも将軍が現物で照合し、③は事実で反証(下記)。
+
+| # | 前提条件(確定事実) | 現物 | 実装への帰結 |
+|---|---|---|---|
+| P1 | **FoFと標準PFは別実装**。FoF=block class群(`engine.execute_pipeline`)を月初リバランス日のみ実行。標準PF=純関数executor(Momentum/MAF/Reversal/AbsMom/SafeHavenのみ対応)。executorにもMAFのsort+`>=cutoff`全採用が複製されている | `jobs/recalculate_fof.py:1371`／`jobs/recalculate_fast.py:2001`／`services/pipeline/executor.py:12-17,148-150` | 共通関数はblock class側に置く。**executor(標準PF)は触らない**＝標準PF変化0が構造で保証(近似同値0/4,178)。あえて共通化しない |
+| P2 | block class経路の本番呼出は`recalculate_fof.py:1371`の1か所。他は`scripts/`のGS・parity・oneshot 10か所 | `rg "execute_pipeline\("` | `execute_pipeline`へ**任意引数1本**(`previous_tickers`)を足しても既存呼出は無影響 |
+| P3 | **⑤現保有維持の入力**はcontextに無い(`PipelineContext`=current_tickers/component_order/price_data/momentum_data)。前月保有は日次ループの`prev_holding_signal`にカンマ区切り子PF ID文字列で存在 | `services/pipeline/base.py:106-115`／`recalculate_fof.py:1321,1393-1406`／`engine.py:184`(signal=`","`join) | `execute_pipeline(previous_tickers=set(prev_holding_signal.split(",")))`→`context.previous_tickers`。DB追加読込なし |
+| P4 | **②③④⑥の材料**は注入済み: `ComponentPriceBlock`が子PF`cumulative_return`を`close`列DataFrame(index=月末)で`context.price_data`へ | `component_price.py:19-27` | 12M=`close[t]/close[t-12]`(13観測)、設定来CAGR=first index〜t、MaxDD=`close`水準の高値更新からの下落率、⑥=first index。DBアクセス不要 |
+| P5 | **キャッシュ窓は設定来を含む**(家老③「DB fallback既定730日で設定来を保証しない」は**反証**): FoF再計算は常に`2000-01-01`起点の全期間(fullも部分modeも`fof_full_start=date(2000,1,1)`、cron `POST /admin/sync-fof`のstart_date既定`2000-01-01`)。`global_component_cache`はstart_date−730日〜end_dateを一括ロードし全候補cache時はDB fallbackを読まない。730日fallbackはcache欠落時のみ | `recalculate_fast.py:3823`／`api/etl_trigger.py:684`／`jobs/constants.py:10,30`／`recalculate_fof.py:874-881`／`component_price.py:33-41` | 設定来キーはcacheから計算可。**将来start_dateを遅らせる呼出を作らない**(作れば設定来キーが窓依存になる)＝実装ではなく契約として明記 |
+| P6 | 既存のtie-break痕跡は`trend_reversal_filter.py:78-80`の`component_order`安定ソートのみ(順序安定化であり同値解決ではない) | `base.py:110`／`engine.py:92` | 共通関数の入力順はこの並びを保つ(変えると変わり身の結果が動く)。⑥は配列順ではなく設定来(first index)。ID/配列順は一度も使わない |
+| P7 | 選択結果は`intermediate_results[block_id]={selected, all_scores}`と`context.momentum_data`(→`signals.momentum_data`列)へ流れる | `momentum_acceleration_filter.py:139-150` | 出力の形は変えない(表示契約) |
+
+| # | pitfall(実装LLMが踏む順) | 対策(シンプル側) |
+|---|---|---|
+| A | **相対εは0近傍で効かない**(0と1e-12は相対差1)。乾式も相対のみ(floor 1e-300)。家老④と一致 | 判定=`abs(a-b) <= 1e-9 * max(abs(a), abs(b), 1.0)`(絶対+相対の合成・定数1つ)。加速R系実測(同値側≤1e-14／非同値側≥1e-1)を両方満たす |
+| B | ratio scoreの分母ガード`abs(den)<1e-6`で`num/1e-6`(±1e6級)に張り付く | 触らない。合成εの相対項で同値判定は破綻しない |
+| C | ②12Mは「両者13観測以上」の時のみ(乾式と同じ・skip 264件)。片方不足を負けにすると新設PFが構造的に選ばれない。家老③後半(12/13の表記揺れ)→**13観測(12ヶ月リターン1本が両者で計算できる)に固定** | 関数内で明示 |
+| D | multi-view(4視点→union/vote)・変わり身(top+bottom枝)は**視点/枝ごと**に共通関数を当てて既存の合成を保つ。合成後に当てると意味が変わる。家老⑤と一致 | `multi_view_momentum_filter.py:203-210`／`trend_reversal_filter.py:153-169`の各枝で呼ぶ |
+| E | 既存テストは同率全採用を期待(`test_weighted_multi_view_momentum_filter.py:134-163` top_n=1・3者同値→3者各1/3 等)。家老⑤と一致 | 手①②では変えない(挙動不変)。手③で期待値を6段規則へ更新 |
+| F | 手①②の合否=full 1回で4表md5一致(15:10 baseline SQL)。FoFは月初のみ再計算なので差替ミスは月初1行から連鎖し必ずmd5に出る | 追加観測なし |
+| G | nested FoF: 依存順は既存(`recalculate_fast.py:169`)。共通関数は親子で同じ関数が走るだけ | 順序制約は増えない |
+
+**設計判断(推薦・シンプル)**: 新規ファイル1本 `backend/app/services/pipeline/selection.py`(`select_top_n(scored, top_n, *, previous, price_data, target_date)`・εは定数)＋`execute_pipeline`引数1本＋各blockの`sort…selected=`数行を関数呼出しへ置換。executor.py・取込み・DB・frontend・GS(手④まで)は不変。新gate/新hook/観測拡張/新fixtureなし。
+
 ### ledgerとの比較(殿12:39「ledgerより今回の方向性の方が筋が良いと思う。どう思う？」→ 同意)
 | 観点 | ledger(出力凍結) | 同値帯ε+tie-break(関数の決定化) |
 |---|---|---|
