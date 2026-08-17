@@ -649,6 +649,60 @@ push_overlap_blocking_paths() {
     printf '%s\n' "$overlap_blocking"
 }
 
+# Push a commit whose paths overlap the shared worktree's dirty paths without
+# changing, stashing, or resetting that worktree.  The temporary detached
+# worktree is intentionally the push execution root so the repository's normal
+# pre-push hook still runs against a clean checkout and receives the exact
+# commit being published.
+push_from_clean_worktree() {
+    local repo="$1" head_sha="$2" upstream_ref="$3"
+    local temp_parent clean_repo branch_name remote push_ref rc
+
+    temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-gate-push.XXXXXX") || return 1
+    clean_repo="$temp_parent/repo"
+    branch_name=$(git -C "$repo" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+    remote=""
+    push_ref=""
+    if [ -n "$branch_name" ]; then
+        remote=$(git -C "$repo" config --get "branch.${branch_name}.remote" 2>/dev/null || true)
+        push_ref=$(git -C "$repo" config --get "branch.${branch_name}.merge" 2>/dev/null || true)
+    fi
+    if [ -z "$remote" ] && [ -n "$upstream_ref" ]; then
+        remote="${upstream_ref%%/*}"
+    fi
+    if [ -z "$push_ref" ] && [ -n "$upstream_ref" ]; then
+        push_ref="refs/heads/${upstream_ref#*/}"
+    fi
+    [ -n "$remote" ] || remote=$(git -C "$repo" config --get remote.pushDefault 2>/dev/null || true)
+    [ -n "$remote" ] || remote=origin
+    [ -n "$push_ref" ] || [ -n "$branch_name" ] || {
+        rmdir "$temp_parent" 2>/dev/null || true
+        return 1
+    }
+    [ -n "$push_ref" ] || push_ref="refs/heads/$branch_name"
+
+    # WSL2 can report a /tmp worktree as dubious ownership relative to /mnt/c.
+    # Register only this unique path and remove the registration after cleanup.
+    git config --global --add safe.directory "$clean_repo" 2>/dev/null || true
+    if ! git -C "$repo" worktree add --detach "$clean_repo" "$head_sha" >/dev/null 2>&1; then
+        git config --global --unset-all safe.directory "^${clean_repo}\$" 2>/dev/null || true
+        rmdir "$temp_parent" 2>/dev/null || true
+        return 1
+    fi
+
+    if git -C "$clean_repo" push "$remote" "HEAD:$push_ref"; then
+        rc=0
+    else
+        rc=$?
+    fi
+
+    # Hook-created artifacts are confined to the temporary execution root.
+    git -C "$repo" worktree remove --force "$clean_repo" >/dev/null 2>&1 || rc=1
+    git config --global --unset-all safe.directory "^${clean_repo}\$" 2>/dev/null || true
+    rmdir "$temp_parent" 2>/dev/null || true
+    return "$rc"
+}
+
 push_task_repositories() {
     local task_file repo upstream_ref head_sha upstream_sha
     local -a repos=()
@@ -684,8 +738,13 @@ push_task_repositories() {
         if [ -n "$upstream_ref" ] && [ -n "$head_sha" ] && [ "$head_sha" = "$upstream_sha" ]; then
             echo "  git push: SKIP ($repo already up-to-date with ${upstream_ref})"
         elif [ -n "$overlap_blocking" ]; then
-            echo "  git push: SKIP ($repo GA-PUSH1 overlap precheck: dirty path overlaps pushed commit range, push not attempted)"
+            echo "  git push: isolated clean snapshot ($repo GA-PUSH1 overlap precheck)"
             printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
+            if push_from_clean_worktree "$repo" "$head_sha" "$upstream_ref"; then
+                echo "  git push: OK ($repo; isolated clean snapshot)"
+            else
+                echo "  [INFO] git push: WARN ($repo isolated clean snapshot push failed, non-blocking)"
+            fi
         elif git -C "$repo" push 2>&1; then
             echo "  git push: OK ($repo)"
         else

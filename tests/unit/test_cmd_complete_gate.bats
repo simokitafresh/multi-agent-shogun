@@ -4320,8 +4320,8 @@ YAML
 # test_necessity: reproduces the real incident (logs/hook_artifacts/20260730T115149_pre-push_1478023.log —
 # cmd_complete_gate's auto-push hit a legitimate GA-PUSH1 BLOCK because the pushed
 # commit range and the still-dirty worktree touched the same non-autogen path) as an
-# isolated fixture, and proves the overlap precheck removes both the wasted git push
-# call and the resulting hook-failure artifact without weakening GA-PUSH1 itself.
+# isolated fixture, and proves the overlap path publishes from a clean snapshot
+# without changing the shared dirty worktree or weakening GA-PUSH1 itself.
 _push_overlap_repo_init() {
     local base="$1"
     mkdir -p "$base"
@@ -4387,7 +4387,7 @@ EOF
     [ "$(printf '%s\n' "$output" | grep -c .)" -eq 1 ]
 }
 
-@test "AC1 fixed: push_task_repositories SKIPs the source-overlap repo, calling git push 0 times and writing 0 hook-failure artifacts" {
+@test "AC1 fixed: push_task_repositories publishes the source-overlap repo from a clean snapshot" {
     local base="$BATS_TEST_TMPDIR/ac1-fixed"
     _push_overlap_repo_init "$base"
     _push_overlap_repo_make_source_overlap "$base"
@@ -4398,10 +4398,11 @@ EOF
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
         bash "$SRC_GATE_SCRIPT" cmd_ac1_fixed_probe
     [ "$status" -eq 0 ]
-    [[ "$output" == *"git push: SKIP ($base/repo GA-PUSH1 overlap precheck"* ]]
+    [[ "$output" == *"git push: isolated clean snapshot ($base/repo GA-PUSH1 overlap precheck)"* ]]
     [[ "$output" == *$'\n    shared.txt'* ]]
+    [[ "$output" == *"git push: OK ($base/repo; isolated clean snapshot)"* ]]
 
-    [ ! -s "$base/git_push_calls.log" ]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
     if [ -d "$base/repo/logs/hook_artifacts" ]; then
         run find "$base/repo/logs/hook_artifacts" -name '*.log'
         [ "$status" -eq 0 ]
@@ -4480,7 +4481,8 @@ EOF
         bash "$SRC_GATE_SCRIPT" cmd_ac2_source_not_excluded_probe
     [ "$status" -eq 0 ]
     [[ "$output" == *"shared.txt"* ]]
-    [ ! -s "$base/git_push_calls.log" ]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+    [[ "$output" == *"git push: OK ($base/repo; isolated clean snapshot)"* ]]
 }
 
 # cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730 AC3
