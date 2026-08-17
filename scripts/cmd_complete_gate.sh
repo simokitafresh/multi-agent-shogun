@@ -701,7 +701,9 @@ PY
 # This is deliberately narrower than a three-way merge: only paths changed by
 # the source commits may be staged, and a remote path is accepted only when
 # its blob (or absence) is a state found in that path's source-side history.
-source_only_path_snapshot() {
+# Generic source-only fallback. The insights ID merge wrapper below is kept
+# separate so every other path retains the existing fail-closed proof.
+source_only_path_snapshot_generic() {
     local repo="$1" clean_repo="$2" remote_tip="$3" source_sha path first_commit parent published_sha
     local remote_blob source_blob actual_path actual_blob
     local absent_ancestor common_base
@@ -823,6 +825,217 @@ source_only_path_snapshot() {
     return 0
 }
 
+# Merge queue/insights.yaml without reserializing YAML. Python is used only to
+# parse and compare blocks; every selected top-level `- id:` block is emitted
+# from its original bytes so comments/formatting remain intact.
+source_only_insights_id_merge() (
+    local repo="$1" clean_repo="$2" remote_tip="$3" path="$4" source_sha common_base
+    local base_file source_file remote_file merged_file tmp_dir
+    shift 4
+    local -a source_shas=("$@")
+
+    [ "$path" = "queue/insights.yaml" ] || return 1
+    [ "${#source_shas[@]}" -gt 0 ] || return 1
+    common_base="$(git -C "$repo" merge-base "$remote_tip" "${source_shas[0]}" 2>/dev/null || true)"
+    [ -n "$common_base" ] || return 1
+
+    tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/shogun-insights-merge.XXXXXX")" || return 1
+    trap 'rm -f "$tmp_dir"/*.yaml; rmdir "$tmp_dir" 2>/dev/null || true' EXIT
+    base_file="$tmp_dir/base.yaml"
+    source_file="$tmp_dir/source.yaml"
+    remote_file="$tmp_dir/remote.yaml"
+    merged_file="$tmp_dir/merged.yaml"
+
+    if git -C "$repo" cat-file -e "$common_base:$path" 2>/dev/null; then
+        git -C "$repo" show "$common_base:$path" >"$base_file" || return 1
+    else
+        : >"$base_file"
+    fi
+    source_sha="${source_shas[${#source_shas[@]}-1]}"
+    if git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null; then
+        git -C "$repo" show "$source_sha:$path" >"$source_file" || return 1
+    else
+        : >"$source_file"
+    fi
+    if git -C "$repo" cat-file -e "$remote_tip:$path" 2>/dev/null; then
+        git -C "$repo" show "$remote_tip:$path" >"$remote_file" || return 1
+    else
+        : >"$remote_file"
+    fi
+
+    SOURCE_ONLY_INSIGHTS_BASE="$base_file" \
+    SOURCE_ONLY_INSIGHTS_SOURCE="$source_file" \
+    SOURCE_ONLY_INSIGHTS_REMOTE="$remote_file" \
+    SOURCE_ONLY_INSIGHTS_OUTPUT="$merged_file" \
+    python3 - <<'PY' || return 1
+import os
+from pathlib import Path
+
+import yaml
+
+base_path = Path(os.environ["SOURCE_ONLY_INSIGHTS_BASE"])
+source_path = Path(os.environ["SOURCE_ONLY_INSIGHTS_SOURCE"])
+remote_path = Path(os.environ["SOURCE_ONLY_INSIGHTS_REMOTE"])
+output_path = Path(os.environ["SOURCE_ONLY_INSIGHTS_OUTPUT"])
+
+
+def read(path):
+    return path.read_text(encoding="utf-8") if path.stat().st_size else ""
+
+
+def parse_blocks(text, label):
+    lines = text.splitlines(keepends=True)
+    starts = [i for i, line in enumerate(lines) if line.startswith("- id:")]
+    if text.strip():
+        try:
+            document = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{label} YAML parse failed: {exc}") from exc
+        if document is not None and not isinstance(document, list):
+            raise ValueError(f"{label} root is not a list")
+    if not starts:
+        if text.strip():
+            raise ValueError(f"{label} has no top-level - id: blocks")
+        return "", [], {}
+    prefix = "".join(lines[:starts[0]])
+    entries = []
+    by_id = {}
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(lines)
+        raw = "".join(lines[start:end])
+        try:
+            item = yaml.safe_load(raw)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{label} block parse failed: {exc}") from exc
+        if isinstance(item, list) and len(item) == 1:
+            item = item[0]
+        if not isinstance(item, dict) or str(item.get("id", "")).strip() == "":
+            raise ValueError(f"{label} block has no stable id")
+        item_id = str(item["id"])
+        if item_id in by_id:
+            raise ValueError(f"{label} duplicate id: {item_id}")
+        entry = {"id": item_id, "raw": raw, "value": item}
+        entries.append(entry)
+        by_id[item_id] = entry
+    return prefix, entries, by_id
+
+
+base_prefix, base_list, base = parse_blocks(read(base_path), "base")
+source_prefix, source_list, source = parse_blocks(read(source_path), "source")
+remote_prefix, remote_list, remote = parse_blocks(read(remote_path), "remote")
+
+
+def equal(left, right):
+    return left is not None and right is not None and left["value"] == right["value"]
+
+
+chosen = {}
+order = []
+for entry in remote_list + source_list + base_list:
+    if entry["id"] not in order:
+        order.append(entry["id"])
+
+for item_id in order:
+    b = base.get(item_id)
+    s = source.get(item_id)
+    r = remote.get(item_id)
+    if s is None:
+        if b is None:
+            chosen[item_id] = r
+        elif r is None or equal(r, b):
+            chosen[item_id] = None
+        else:
+            raise ValueError(f"source deletion conflicts with remote id: {item_id}")
+        continue
+    if b is None:
+        if r is None or equal(r, s):
+            chosen[item_id] = s
+        else:
+            raise ValueError(f"source/remote divergent new id: {item_id}")
+        continue
+    if equal(s, b):
+        chosen[item_id] = r
+    elif r is None or equal(r, b):
+        chosen[item_id] = s
+    elif equal(r, s):
+        chosen[item_id] = r
+    else:
+        raise ValueError(f"source/remote divergent id: {item_id}")
+
+prefix = remote_prefix or source_prefix or base_prefix
+raw_blocks = [chosen[item_id]["raw"] for item_id in order if chosen.get(item_id) is not None]
+merged = prefix + "".join(raw_blocks)
+if raw_blocks and not merged.endswith("\n"):
+    merged += "\n"
+try:
+    parsed = yaml.safe_load(merged) if merged.strip() else []
+except yaml.YAMLError as exc:
+    raise ValueError(f"merged YAML parse failed: {exc}") from exc
+if parsed is not None and not isinstance(parsed, list):
+    raise ValueError("merged root is not a list")
+
+for item_id, entry in source.items():
+    b = base.get(item_id)
+    if b is not None and equal(entry, b):
+        continue
+    if chosen.get(item_id) is None or not equal(chosen[item_id], entry):
+        raise ValueError(f"source block not published for id: {item_id}")
+
+output_path.write_text(merged, encoding="utf-8")
+PY
+
+    mkdir -p "$(dirname "$clean_repo/$path")" || return 1
+    cp "$merged_file" "$clean_repo/$path" || return 1
+    git -C "$clean_repo" add -- "$path" || return 1
+
+    local actual_path actual_blob expected_blob published_sha
+    while IFS= read -r -d '' actual_path; do
+        [ "$actual_path" = "$path" ] || return 1
+    done < <(git -C "$clean_repo" diff --cached --name-only -z "$remote_tip")
+    expected_blob="$(git -C "$clean_repo" hash-object "$merged_file")"
+    actual_blob="$(git -C "$clean_repo" rev-parse ":$path" 2>/dev/null || true)"
+    [ "$actual_blob" = "$expected_blob" ] || return 1
+
+    git -C "$clean_repo" commit --allow-empty -m "autopush: source-only insights ID merge" >/dev/null 2>&1 || return 1
+    published_sha="$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)"
+    [ -n "$published_sha" ] || return 1
+    while IFS= read -r -d '' actual_path; do
+        [ "$actual_path" = "$path" ] || return 1
+    done < <(git -C "$clean_repo" diff-tree --no-commit-id --name-only -r -z "$published_sha^" "$published_sha")
+    [ "$(git -C "$clean_repo" rev-parse "$published_sha:$path" 2>/dev/null || true)" = "$expected_blob" ] || return 1
+    return 0
+)
+
+# Return true only when every source commit changes queue/insights.yaml and no
+# other path. This gate is shared by the conflict and patch-id fallback lanes.
+source_only_insights_candidate() {
+    local repo="$1" path source_sha
+    shift
+    local -A paths=()
+    for source_sha in "$@"; do
+        while IFS= read -r -d '' path; do
+            paths["$path"]=1
+        done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    [ "${#paths[@]}" -eq 1 ] && [ "${paths[queue/insights.yaml]+yes}" = yes ]
+}
+
+# Use ID merge only after the generic source-history proof fails, and only
+# when the source commit set changes queue/insights.yaml and nothing else.
+source_only_path_snapshot() {
+    local repo="$1" clean_repo="$2" remote_tip="$3"
+    shift 3
+    if source_only_insights_candidate "$repo" "$@"; then
+        if source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"; then
+            return 0
+        fi
+        source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" "queue/insights.yaml" "$@"
+        local merge_rc=$?
+        return "$merge_rc"
+    fi
+    source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"
+}
+
 task_push_allowed() {
     local task_file="$1"
     python3 - "$task_file" <<'PY'
@@ -890,7 +1103,24 @@ push_from_clean_worktree() {
                 applied_patch=""
             done
             if [ -z "$source_patch" ] || [ "$source_patch" != "$applied_patch" ]; then
-                rc=1
+                if source_only_insights_candidate "$repo" "$@"; then
+                    timeout "${CMD_COMPLETE_GATE_PUSH_CLEANUP_TIMEOUT:-30}" \
+                        git -C "$repo" worktree remove --force "$clean_repo" >/dev/null 2>&1 || rc=1
+                    if [ "$rc" -eq 0 ] \
+                       && ! git -C "$repo" worktree add --detach "$clean_repo" "$remote_tip" >/dev/null 2>&1; then
+                        rc=1
+                    fi
+                    if [ "$rc" -eq 0 ] \
+                       && source_only_path_snapshot "$repo" "$clean_repo" "$remote_tip" "$@"; then
+                        fallback_used=1
+                        published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+                        echo "  git push: conflict fallback (source-only path snapshot)"
+                    else
+                        rc=1
+                    fi
+                else
+                    rc=1
+                fi
                 break
             fi
         done

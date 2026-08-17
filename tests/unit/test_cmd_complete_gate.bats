@@ -4416,6 +4416,36 @@ _push_conflict_source_fixture() {
     _push_overlap_install_git_call_counter "$base"
 }
 
+_push_insights_merge_fixture() {
+    local base="$1" base_file="$2" source_file="$3" remote_file="${4:-}"
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/queue"
+    cp "$base_file" "$base/repo/queue/insights.yaml"
+    git -C "$base/repo" add queue/insights.yaml
+    git -C "$base/repo" commit -q -m "insights base"
+    git -C "$base/repo" push -q origin main
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+
+    cp "$source_file" "$base/repo/queue/insights.yaml"
+    git -C "$base/repo" add queue/insights.yaml
+    git -C "$base/repo" commit -q -m "insights source"
+    git -C "$base/repo" rev-parse HEAD > "$base/source.sha"
+
+    if [ -n "$remote_file" ]; then
+        mkdir -p "$base/remote-clone/queue"
+        cp "$remote_file" "$base/remote-clone/queue/insights.yaml"
+        git -C "$base/remote-clone" add queue/insights.yaml
+        git -C "$base/remote-clone" commit -q -m "insights remote"
+        git -C "$base/remote-clone" push -q origin main
+    fi
+    git -C "$base/repo" fetch -q origin main
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+}
+
 @test "AC2 divergence: remote-tip source-only push excludes unrelated local ahead commits" {
     local base="$BATS_TEST_TMPDIR/ac2-divergence"
     _push_overlap_repo_init "$base"
@@ -4672,6 +4702,239 @@ EOF
     [[ "$output" == *"git push: BLOCK ($base/repo source-only push/verification failed)"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
     ! git --git-dir "$base/origin.git" cat-file -e refs/heads/main:shared.txt
+}
+
+# test_necessity: a source-only insights addition is merged by stable ID while
+# the remote-only entry remains byte-preserved in the published document.
+@test "AC2 insights merge: remote-absent source ID is added and remote-only ID is preserved" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-add"
+    cat > "$base-base.yaml" <<'EOF'
+- id: base
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+- id: base
+  value: base
+- id: source-add
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: base
+  value: base
+- id: remote-only
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_add_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"conflict fallback"* ]]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^\- id:')" -eq 3 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: source-add"* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: remote-only"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: a remote block equal to base is replaced by the source block
+# without discarding a separate remote-only ID.
+@test "AC2 insights merge: remote base block is replaced by source block" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-replace"
+    cat > "$base-base.yaml" <<'EOF'
+- id: target
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+- id: target
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: target
+  value: base
+- id: remote-only
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_replace_probe
+    [ "$status" -eq 0 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^\- id:')" -eq 2 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *$'id: target\n  value: source'* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: remote-only"* ]]
+}
+
+# test_necessity: an already equal source/remote target block is a no-op and
+# must not be treated as a divergent conflict.
+@test "AC2 insights merge: remote source-equal block is a no-op" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-noop"
+    cat > "$base-base.yaml" <<'EOF'
+- id: target
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+- id: target
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: target
+  value: source
+- id: remote-only
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_noop_probe
+    [ "$status" -eq 0 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^\- id:')" -eq 2 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c 'value: source')" -eq 1 ]
+}
+
+# test_necessity: an unproven same-ID remote edit must block rather than
+# overwrite the remote value with the source value.
+@test "AC2 insights merge: divergent same ID blocks" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-divergent"
+    cat > "$base-base.yaml" <<'EOF'
+- id: target
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+- id: target
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: target
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_divergent_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"value: remote"* ]]
+}
+
+# test_necessity: a source deletion is safe only when the remote retains the
+# base block or is absent; independent remote-only additions remain preserved.
+@test "AC2 insights merge: safe source deletion applies and preserves remote-only" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-delete-safe"
+    cat > "$base-base.yaml" <<'EOF'
+- id: delete-me
+  value: base
+- id: keep
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+- id: keep
+  value: base
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: delete-me
+  value: base
+- id: keep
+  value: base
+- id: remote-only
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_delete_safe_probe
+    [ "$status" -eq 0 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" != *"id: delete-me"* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: remote-only"* ]]
+}
+
+# test_necessity: a source deletion conflicting with a remote edit is
+# fail-closed and never publishes a destructive snapshot.
+@test "AC2 insights merge: unsafe source deletion blocks" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-delete-unsafe"
+    cat > "$base-base.yaml" <<'EOF'
+- id: delete-me
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+[]
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: delete-me
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_delete_unsafe_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+}
+
+# test_necessity: duplicate stable IDs are rejected before publication because
+# ID-based merge would otherwise silently collapse user data.
+@test "AC2 insights merge: duplicate ID blocks" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-duplicate"
+    cat > "$base-base.yaml" <<'EOF'
+- id: target
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+- id: target
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: target
+  value: remote-one
+- id: target
+  value: remote-two
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_duplicate_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+}
+
+# test_necessity: a source commit touching any path besides insights.yaml is
+# never widened into ID merge and remains governed by generic path proof.
+@test "AC2 insights merge: other changed path blocks" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-other-path"
+    cat > "$base-base.yaml" <<'EOF'
+- id: target
+  value: base
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+- id: target
+  value: source
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: target
+  value: remote
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+    printf '%s\n' '- id: target' '  value: source2' > "$base/repo/queue/insights.yaml"
+    printf 'unrelated\n' > "$base/repo/other.txt"
+    git -C "$base/repo" add queue/insights.yaml other.txt
+    git -C "$base/repo" commit -q -m "source other path"
+    git -C "$base/repo" rev-parse HEAD > "$base/source.sha"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_other_path_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
 }
 
 # test_necessity: an explicit false permission must short-circuit before
