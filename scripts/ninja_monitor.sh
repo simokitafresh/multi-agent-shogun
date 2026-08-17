@@ -3944,6 +3944,102 @@ report_monitor_state() {
     ' "$report_file"
 }
 
+# AUTO-DONE must validate the worker's owned paths independently of the
+# mutable task status.  auto_commit_scope_paths_for_agent intentionally
+# closes its scope after done, so reusing it here would make a dirty path
+# disappear from the post-done check.
+_task_owned_uncommitted_paths_for_done_check() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local project_id project_path scope_paths
+
+    [ -f "$task_file" ] || return 0
+    project_id=$(yaml_field_get "$task_file" "project" "" 2>/dev/null || true)
+    project_path="$SCRIPT_DIR"
+    if [ -n "$project_id" ]; then
+        local looked_up
+        looked_up=$(grep -A5 "id: ${project_id}$" "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null \
+            | grep "path:" | head -1 | sed 's/.*path: *"\([^"]*\)"/\1/')
+        [ -n "$looked_up" ] && [ -d "$looked_up" ] && project_path="$looked_up"
+    fi
+
+    scope_paths=$(python3 - "$task_file" "$project_path" <<'PY'
+import os
+import pathlib
+import sys
+import yaml
+
+task_data = yaml.safe_load(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")) or {}
+task = task_data.get("task") or task_data
+root = pathlib.Path(sys.argv[2]).resolve()
+seen = set()
+
+for key in ("target_path", "planned_paths"):
+    values = task.get(key) or []
+    if isinstance(values, str):
+        values = [values]
+    if not isinstance(values, list):
+        continue
+    for value in values:
+        raw = str(value or "").strip()
+        if not raw or raw in {"none", "null", "FILL_THIS"}:
+            continue
+        candidate = pathlib.Path(raw)
+        if candidate.is_absolute():
+            resolved = candidate.resolve()
+            try:
+                relative = resolved.relative_to(root)
+            except ValueError:
+                continue
+            raw = str(relative) if relative.parts else "."
+        else:
+            raw = os.path.normpath(raw)
+            if raw == ".." or raw.startswith("../"):
+                continue
+        if raw not in seen:
+            seen.add(raw)
+            print(raw)
+PY
+    )
+    [ -n "${scope_paths//[[:space:]]/}" ] || return 0
+    local -a scope_path_args=()
+    while IFS= read -r scope_path || [ -n "$scope_path" ]; do
+        [ -n "$scope_path" ] && scope_path_args+=("$scope_path")
+    done <<< "$scope_paths"
+    [ "${#scope_path_args[@]}" -gt 0 ] || return 0
+    (cd "$project_path" && git status --porcelain -- "${scope_path_args[@]}" 2>/dev/null || true)
+}
+
+_check_done_task_uncommitted() {
+    local name="$1"
+    local task_uncommitted
+    task_uncommitted=$(_task_owned_uncommitted_paths_for_done_check "$name")
+    [ -n "${task_uncommitted//[[:space:]]/}" ] || return 0
+
+    local file_list
+    file_list=$(printf '%s\n' "$task_uncommitted" | sed 's/^...//' | tr '\n' ' ')
+    log "AUTO-DONE-BLOCK-UNCOMMITTED: $name files=${file_list}"
+    send_inbox_message "$name" \
+        "完了報告後にtask所有pathの未commitを検知: ${file_list}。commit後に報告を再送信せよ。" \
+        uncommitted_block karo || true
+    return 1
+}
+
+_check_done_report_gate() {
+    local name="$1" report_file="$2" task_file="$3"
+    local gate_output
+    gate_output=$(run_report_gate_deduped "$name" "$report_file" "$task_file" 2>&1) || true
+    if echo "$gate_output" | grep -q '^PASS'; then
+        return 0
+    fi
+
+    log "AUTO-DONE-BLOCK-REPORT-GATE: $name report=$(basename "$report_file") output=$gate_output"
+    send_inbox_message "$name" \
+        "完了報告のgate検証が未成立: ${gate_output}。commit identity/報告形式を修正して再送信せよ。" \
+        report_format_fix karo || true
+    return 1
+}
+
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
@@ -3992,6 +4088,11 @@ check_and_update_done_task() (
     report_task_id=$(yaml_field_get "$report_file" "task_id")
     [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ] && return 1
 
+    # done後にdirtyが再発しても、done状態を理由に検査を省略しない。
+    if [ "$task_status" = "done" ] && ! _check_done_task_uncommitted "$name"; then
+        return 1
+    fi
+
     # cmd_1262の重複AUTO-DONE防止はdone taskを報告探索前にreturnしていたため、
     # 忍者が先にdoneへ更新する正常経路でpromotion ledger writerが一度も起動しなかった。
     # parent_cmd/task_id一致を確認後に冪等writerのみ実行し、状態更新は引き続き省略する。
@@ -4039,6 +4140,15 @@ check_and_update_done_task() (
     fi
     case "$report_status" in
         done|completed|success)
+            # report completed -> task done の間に、commit identity/formatと
+            # task-owned dirty pathを確定させる。後段のis_task_deployed gate
+            # だけでは、ここでdone化されたtaskが未commit検査から外れる。
+            if ! _check_done_report_gate "$name" "$report_file" "$task_file"; then
+                return 1
+            fi
+            if ! _check_done_task_uncommitted "$name"; then
+                return 1
+            fi
             # 完了確認 — タスクYAMLをdoneに自動更新（flock排他制御）
             local lock_file="${STATE_DIR:-/tmp}/task_${name}.lock"
             local completed_ts
