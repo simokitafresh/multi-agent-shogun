@@ -806,6 +806,7 @@ run_case() {
         failed)
             printf "status: failed\nverdict: FAIL\nparent_cmd: cmd_case\ntask_id: cmd_case_full\n" > "$root/queue/reports/kagemaru_report_cmd_case.yaml"
             ;;
+        stale_owner) ;;
         undeployed) ;;
         *) return 1 ;;
     esac
@@ -822,6 +823,7 @@ run_case() {
     NINJA_NAMES=(n1); declare -gA PANE_TARGETS=([n1]=pane-n1)
     KARO_PANE=karo-pane
     check_idle() { return 0; }
+    ninja_monitor_business_owner_is_current() { [ "$fixture" != stale_owner ]; }
     notify_karo_durable() { printf "%s|%s\n" "$1" "$3" >> "$TEST_INBOX"; return 0; }
     list_pending_cmds_cached() { printf "cmd_case|2026-08-17T19:00:00|%s||\n" "$TEST_DELEGATED_AT"; }
     log() { printf "%s\n" "$1" >> "$LOG"; }
@@ -844,12 +846,14 @@ run_case() {
 run_case pass_case pass
 run_case active_case active
 run_case failed_case failed
+run_case stale_owner_case stale_owner
 run_case true_undeployed_case undeployed
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"CASE=pass_case fixture=pass undeployed=0 cmd_pending=0 pending_work=0"* ]]
     [[ "$output" == *"CASE=active_case fixture=active undeployed=0 cmd_pending=0 pending_work=0"* ]]
     [[ "$output" == *"CASE=failed_case fixture=failed undeployed=0 cmd_pending=0 pending_work=0"* ]]
+    [[ "$output" == *"CASE=stale_owner_case fixture=stale_owner undeployed=0 cmd_pending=0 pending_work=0"* ]]
     [[ "$output" == *"CASE=true_undeployed_case fixture=undeployed undeployed=1 cmd_pending=1 pending_work=1"* ]]
 }
 

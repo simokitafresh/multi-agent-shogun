@@ -579,6 +579,18 @@ _ninja_monitor_owner_record_matches() {
     _ninja_monitor_pid_is_live "$owner_pid"
 }
 
+# A stale generation can remain inside a slow /mnt/c operation after a hot
+# reload has published its successor. The main-loop heartbeat fence cannot
+# protect notification helpers that resume before the next heartbeat, so each
+# alert route enforces the same owner boundary immediately before reading
+# pending state.
+ninja_monitor_business_owner_is_current() {
+    [ "${_NINJA_MONITOR_LIB_MODE:-${NINJA_MONITOR_LIB_ONLY:-0}}" = "1" ] && return 0
+    _ninja_monitor_owner_record_matches \
+        "${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}" \
+        "${NINJA_MONITOR_GENERATION:-}" "$$"
+}
+
 _ninja_monitor_refresh_owner_lease() {
     local owner_file="$1"
     local pid_file="$2"
@@ -3211,6 +3223,10 @@ _idle_backlog_alert_atomic_write() {
 # 家老へpending_work ALERTを送る。通知世代は未配備cmd集合+掲示板宣言で固定し、
 # report pending_workのdedupeとは別markerで管理する。
 check_idle_backlog_alert() {
+    ninja_monitor_business_owner_is_current || {
+        log "SINGLETON-FENCE-SKIP: check_idle_backlog_alert stale generation"
+        return 0
+    }
     local now=${IDLE_BACKLOG_ALERT_NOW:-$EPOCHSECONDS}
     local threshold=${IDLE_BACKLOG_ALERT_THRESHOLD_SEC:-180}
     local cooldown=${IDLE_BACKLOG_ALERT_COOLDOWN_SEC:-300}
@@ -7343,6 +7359,10 @@ check_stale_cmds() {
 }
 
 check_undeployed_cmds() {
+    ninja_monitor_business_owner_is_current || {
+        log "SINGLETON-FENCE-SKIP: check_undeployed_cmds stale generation"
+        return 0
+    }
     local now
     now=$EPOCHSECONDS
     local -A current_pending=()
@@ -7418,6 +7438,10 @@ check_undeployed_cmds() {
 # 新規pending cmd出現時のみ家老に1回通知。同一cmdの繰り返し送信を廃止。
 # 長時間未処理のエスカレーションは check_stale_cmds() が担当。
 check_karo_pending_cmd() {
+    ninja_monitor_business_owner_is_current || {
+        log "SINGLETON-FENCE-SKIP: check_karo_pending_cmd stale generation"
+        return 0
+    }
     local now
     now=$EPOCHSECONDS
 
