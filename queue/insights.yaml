@@ -544,7 +544,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_ga471_context_freshness_202608170345"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "DM-Signal現行pre-commitがstaged Python全体のdict.get(target_date)をPI L573違反としてBLOCK済みで、現行ソースの禁止パターンは0件。候補は既存防御に吸収済み。"
+  action_artifact: "/mnt/c/Python_app/DM-Signal/scripts/run_precommit_checks.sh#L84-L110; current_source_forbidden_pattern_count=0"
+  resolved_at: "2026-08-17T11:28:15+09:00"
 - id: INS-20260817-060811245-2c3f
   ts: "2026-08-17T06:08:11+09:00"
   insight: "SKILL.md追従task[24ba56acb9c6f56e]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/dashboard_update.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/dream/SKILL.md <- scripts/semantic_search.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/gist-share/SKILL.md <- scripts/gist_share.sh; skills/hot-script-design/SKILL.md <- scripts/gist_share.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/idle-persist/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-clear-prep/SKILL.md <- scripts/clear_prep_check.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_search.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
@@ -1072,3 +1075,38 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-17T11:21:31+09:00"
+- id: INS-20260817-112924689-e605
+  ts: "2026-08-17T11:29:24+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4328; matched=本番,変更; current_pattern=sync-fof(L3増分)がfullと異なるFoF履歴を書く原因のread-only偵察 — cron再開条件の証拠を出す(実装禁止・本番無変更); candidate_level=2; candidate=cmd_1855のverdict_override根因。AC『全期間月次リターン差』が進行中月を含み、GS作成日vs本番更新日の差異で常にFAIL。AC標準文言を『完了月(最終月除外)』に変更。cmd起票テンプレート修正が必要→家老担当; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4328"
+  fix_known: false
+  status: pending
+- id: INS-20260817-112925308-7913
+  ts: "2026-08-17T11:29:25+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4328; matched=変更; current_pattern=sync-fof(L3増分)がfullと異なるFoF履歴を書く原因のread-only偵察 — cron再開条件の証拠を出す(実装禁止・本番無変更); candidate_level=3; candidate=cmd_1975でpre-bash-combined.sh 347→12行(97%削減)をLGTM。忍者の'機能変更なし'を信頼しコード未確認。hook/gateの大規模削減は機能破壊の強いシグナル。自動検出で見落とし防止; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4328"
+  fix_known: false
+  status: pending
+- id: INS-20260817-112941341-e660
+  ts: "2026-08-17T11:29:41+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[sync-fof_cron≠full]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=sync-fof; score=53.6) / lesson_lifecycle(教訓ライフサイクル管理; alias=sync_lessons; score=17.1) / recalculate_pipeline(再計算パイプライン; alias=recalculate_fof; score=16.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260817-112941881-0a58
+  ts: "2026-08-17T11:29:41+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cron suspend+full1回]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=source lord confirm; score=6.2) / test_quality_framework(テスト品質統合フレームワーク; alias=file uncovered phrase; score=6.1) / destructive_operations(破壊的操作安全機構; alias=lord uncovered phrase; score=5.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260817-112942296-6767
+  ts: "2026-08-17T11:29:42+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4328偵察]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_4323偵察後実装; score=24.4) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=21.8) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=21.2)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
