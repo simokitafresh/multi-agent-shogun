@@ -1942,9 +1942,33 @@ _run_tests_main() {
                                 || "$_task_root/.venv/bin/python" -c 'import pytest' >/dev/null 2>&1; }; then
                             _external_python="$_task_root/.venv/bin/python"
                         fi
+                        local -a _external_backend_nearby_tests=()
+                        if [ "${#_external_backend_tests[@]}" -eq 0 ]; then
+                            local _external_backend_module _external_backend_candidate _external_backend_seen
+                            for _external_path in "${scoped_paths[@]}"; do
+                                [[ "$_external_path" == backend/*.py ]] || continue
+                                _external_backend_module="${_external_path##*/}"
+                                _external_backend_module="${_external_backend_module%.py}"
+                                _external_backend_candidate="tests/test_${_external_backend_module}.py"
+                                [ -f "$_task_root/backend/$_external_backend_candidate" ] || continue
+                                _external_backend_seen=0
+                                for _external_backend_existing in "${_external_backend_tests[@]}" \
+                                    "${_external_backend_nearby_tests[@]}"; do
+                                    [ "$_external_backend_existing" = "$_external_backend_candidate" ] \
+                                        && _external_backend_seen=1
+                                done
+                                if [ "$_external_backend_seen" -eq 0 ]; then
+                                    _external_backend_nearby_tests+=("$_external_backend_candidate")
+                                fi
+                            done
+                            _external_backend_tests+=("${_external_backend_nearby_tests[@]}")
+                        fi
                         if [ "${#_external_backend_tests[@]}" -gt 0 ]; then
-                            printf 'TEST_SELECTION result=external runner=pytest scope=backend_contract project_root=%s files=%s\n' \
-                                "$_task_root" "${#_external_backend_tests[@]}"
+                            local _external_backend_scope="backend_contract"
+                            [ "${#_external_backend_nearby_tests[@]}" -gt 0 ] \
+                                && _external_backend_scope="backend_nearby"
+                            printf 'TEST_SELECTION result=external runner=pytest scope=%s project_root=%s files=%s\n' \
+                                "$_external_backend_scope" "$_task_root" "${#_external_backend_tests[@]}"
                             (cd "$_task_root/backend" \
                                 && PYTHONPATH="$_task_root${PYTHONPATH:+:$PYTHONPATH}" \
                                     "$_external_python" -m pytest -q "${_external_backend_tests[@]}") || exit $?

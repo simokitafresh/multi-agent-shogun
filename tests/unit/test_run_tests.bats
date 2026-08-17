@@ -1172,6 +1172,81 @@ YAML
 # test_necessity: 個別external backend taskが暗黙に全pytestへ拡大せず、
 # 明示contractだけを選び、fixed-SHA wave最終checkpointだけが全量を許可される
 # 三分岐の実行境界を守る。
+@test "external backend task selects one nearby module test without a contract" {
+  external="$TMPROOT/external-nearby"
+  mkdir -p "$external/backend/tests" "$external/backend/app" \
+    "$TMPROOT/projects" "$TMPROOT/queue/tasks"
+  printf 'VALUE = 1\n' >"$external/backend/app/source.py"
+  printf 'def test_source():\n    assert True\n' >"$external/backend/tests/test_source.py"
+  printf 'def test_other():\n    assert True\n' >"$external/backend/tests/test_other.py"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add backend
+  git -C "$external" commit -qm init
+  export PYTEST_ARGS_LOG="$TMPROOT/nearby-pytest-args.log"
+  cat >"$TMPROOT/bin/python3" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
+  printf '%s\n' "$*" >>"$PYTEST_ARGS_LOG"
+  printf '1 passed in 0.01s\n'
+  exit 0
+fi
+exec /usr/bin/python3 "$@"
+SH
+  chmod +x "$TMPROOT/bin/python3"
+  cat >"$TMPROOT/projects/external-nearby.yaml" <<YAML
+project:
+  path: $external
+YAML
+  cat >"$TMPROOT/queue/tasks/nearby.yaml" <<'YAML'
+task:
+  task_id: nearby
+  project: external-nearby
+  planned_paths: [backend/app/source.py]
+YAML
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/nearby.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION result=external runner=pytest scope=backend_nearby project_root=$external files=1"* ]]
+  [[ "$output" != *"backend_contract"* ]]
+  [[ "$output" != *"backend_full_unit_checkpoint"* ]]
+  grep -Fq -- "tests/test_source.py" "$PYTEST_ARGS_LOG"
+  ! grep -Fq -- "tests/test_other.py" "$PYTEST_ARGS_LOG"
+}
+
+@test "external backend task without nearby module test preserves the BLOCK" {
+  external="$TMPROOT/external-no-nearby"
+  mkdir -p "$external/backend/tests" "$external/backend/app" \
+    "$TMPROOT/projects" "$TMPROOT/queue/tasks" "$TMPROOT/logs"
+  printf 'VALUE = 1\n' >"$external/backend/app/missing.py"
+  printf 'def test_other():\n    assert True\n' >"$external/backend/tests/test_other.py"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add backend
+  git -C "$external" commit -qm init
+  cat >"$TMPROOT/projects/external-no-nearby.yaml" <<YAML
+project:
+  path: $external
+YAML
+  cat >"$TMPROOT/queue/tasks/no-nearby.yaml" <<'YAML'
+task:
+  task_id: no-nearby
+  project: external-no-nearby
+  planned_paths: [backend/app/missing.py]
+YAML
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/no-nearby.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: external backend task has no explicit contract tests"* ]]
+  [[ "$output" != *"scope=backend_nearby"* ]]
+}
+
 @test "external backend task blocks implicit full unit and preserves explicit contract and checkpoint" {
   external="$TMPROOT/external"
   mkdir -p "$external/backend/tests" "$external/backend/app" \
