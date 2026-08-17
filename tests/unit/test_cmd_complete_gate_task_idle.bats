@@ -306,6 +306,7 @@ SH
         "$TEST_PROJECT/scripts/gates/"*.sh
 
     env \
+        CMD_COMPLETE_DASHBOARD_ENABLED=1 \
         CMD_COMPLETE_ROOT_DIR="$TEST_PROJECT" \
         CMD_COMPLETE_SCRIPT_DIR="$TEST_PROJECT/scripts" \
         CMD_COMPLETE_TMUX_BIN="$fake_tmux" \
