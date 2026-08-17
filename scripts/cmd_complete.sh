@@ -473,6 +473,71 @@ raise SystemExit(0 if all(data.get(k) == v for k, v in expected.items()) else 1)
 PY
 }
 
+# A busy single-flight observer can persist a failed marker before the worker
+# that owns the same generation publishes its terminal CLEAR.  Marker state is
+# generation-bound, so a newer valid CLEAR is the authoritative terminal fact;
+# an older/equal CLEAR must never erase a real failure.
+gate_worker_recover_newer_clear() {
+    local failure_marker="$1" clear_marker="$2" success_marker="$3"
+    python3 - "$failure_marker" "$clear_marker" "$success_marker" "$CMD_ID" "$BUNDLE_IDENTITY" <<'PY'
+import json, os, sys, tempfile, time
+
+failure_path, clear_path, success_path, cmd_id, generation = sys.argv[1:]
+expected = {
+    "version": 1,
+    "cmd_id": cmd_id,
+    "completion_generation": generation,
+}
+
+def read(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            value = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+failure = read(failure_path)
+clear = read(clear_path)
+if not failure or not clear:
+    raise SystemExit(1)
+if any(failure.get(key) != value for key, value in expected.items()):
+    raise SystemExit(1)
+if any(clear.get(key) != value for key, value in expected.items()):
+    raise SystemExit(1)
+if failure.get("state") != "failed" or clear.get("state") != "clear":
+    raise SystemExit(1)
+try:
+    failure_ts = int(failure["persisted_at_ns"])
+    clear_ts = int(clear["persisted_at_ns"])
+except (KeyError, TypeError, ValueError):
+    raise SystemExit(1)
+if clear_ts <= failure_ts:
+    raise SystemExit(1)
+
+existing = read(success_path)
+if existing and all(existing.get(key) == value for key, value in {
+    **expected, "state": "success"
+}.items()):
+    raise SystemExit(0)
+
+data = dict(expected, state="success", rc=0, persisted_at_ns=time.time_ns(),
+            recovered_from="clear")
+os.makedirs(os.path.dirname(success_path), exist_ok=True)
+fd, tmp = tempfile.mkstemp(prefix=".gate_worker_recovered.", dir=os.path.dirname(success_path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True)
+        fh.write("\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, success_path)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+PY
+}
+
 launch_or_observe_durable_gate_worker() {
     local worker_log="$CHECKPOINT_DIR/completion_tail.log"
     local reservation="$CHECKPOINT_DIR/gate_worker.reserved.json"
@@ -483,8 +548,14 @@ launch_or_observe_durable_gate_worker() {
     local tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
     local launcher="" socket="" worker_cmd="" worker_log_q="" worker_target="" worker_scope=""
     local deadline now
+    CMD_COMPLETE_RECOVERED_CLEAR=0
 
     if gate_worker_marker_matches "$failure_marker" failed; then
+        if gate_worker_recover_newer_clear "$failure_marker" "$clear_marker" "$success_marker"; then
+            printf '[cmd_complete] RECOVERED durable gate CLEAR superseded failure marker=%s\n' "$failure_marker" >&2
+            CMD_COMPLETE_RECOVERED_CLEAR=1
+            return 0
+        fi
         printf '[cmd_complete] FAILED durable gate worker marker=%s\n' "$failure_marker" >&2
         return 1
     fi
@@ -663,8 +734,20 @@ elif [[ "${CMD_COMPLETE_GATE_CONTINUATION:-0}" = "1" ]]; then
     printf '[cmd_complete] PASS cmd_complete_gate durable_success_marker_verified\n' >&2
 elif [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
     && grep -q 'CMD_COMPLETE_GATE_CLEAR_MARKER' "$SCRIPT_DIR/cmd_complete_gate.sh"; then
-    launch_or_observe_durable_gate_worker
-    exit $?
+    if launch_or_observe_durable_gate_worker; then
+        if [[ "${CMD_COMPLETE_RECOVERED_CLEAR:-0}" = "1" ]]; then
+            if ! gate_worker_marker_matches "$CHECKPOINT_DIR/gate_worker.success.json" success; then
+                printf '[cmd_complete] FAILED recovered CLEAR success marker missing\n' >&2
+                exit 1
+            fi
+            checkpoint_mark cmd_complete_gate
+            printf '[cmd_complete] PASS cmd_complete_gate recovered_clear_checkpointed\n' >&2
+        else
+            exit 0
+        fi
+    else
+        exit $?
+    fi
 else
     run_checkpointed cmd_complete_gate env CMD_COMPLETE_WRAPPER_ACTIVE=1 \
         bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"

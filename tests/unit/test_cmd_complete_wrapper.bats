@@ -505,6 +505,75 @@ SH
     ! grep -Eq '^(cmd_quality_log|gate_yaml_status|dashboard_update|ntfy_cmd|inbox_archive)\.sh\|' "$CMD_COMPLETE_TEST_LOG"
 }
 
+# test_necessity: a later terminal CLEAR for the same generation must recover a
+# durable busy failure instead of treating the earlier rc75 as final.
+# regression_justification: cmd_4352 observed a failed marker winning over a
+# later CLEAR and preventing the checkpointed completion tail from resuming.
+@test "newer CLEAR supersedes busy failure and resumes completion once" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/recovered-clear.log"
+    local checkpoint="$FIXTURE/queue/gates/cmd_fixture" generation
+    generation="$(python3 - "$checkpoint/sg7_bundle.json" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1], encoding="utf-8"))["review"]["report_fingerprint"])
+PY
+)"
+    python3 - "$checkpoint" "$generation" <<'PY'
+import json, os, sys
+root, generation = sys.argv[1:]
+common = {"version": 1, "cmd_id": "cmd_fixture", "completion_generation": generation}
+with open(os.path.join(root, "gate_worker.failed.json"), "w", encoding="utf-8") as fh:
+    json.dump(dict(common, state="failed", rc=75, persisted_at_ns=100), fh)
+with open(os.path.join(root, "gate_worker.clear.json"), "w", encoding="utf-8") as fh:
+    json.dump(dict(common, state="clear", persisted_at_ns=200), fh)
+PY
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"RECOVERED durable gate CLEAR superseded failure marker"* ]]
+    [[ "$output" == *"PASS cmd_complete_gate recovered_clear_checkpointed"* ]]
+    [ "$(grep -c '^cmd_complete_gate.sh|' "$CMD_COMPLETE_TEST_LOG" 2>/dev/null || true)" -eq 0 ]
+    local i
+    for i in $(seq 1 300); do
+        grep -q '^\[cmd_complete\] COMPLETE cmd_fixture$' \
+            "$FIXTURE/queue/gates/cmd_fixture/completion_tail.log" 2>/dev/null && break
+        sleep 0.05
+    done
+    grep -q '^\[cmd_complete\] COMPLETE cmd_fixture$' \
+        "$FIXTURE/queue/gates/cmd_fixture/completion_tail.log"
+}
+
+# test_necessity: a failed marker without a strictly newer same-generation
+# CLEAR remains terminal failure; recovery must not erase real failures.
+@test "busy failure remains terminal when CLEAR is absent or older" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/terminal-failure.log"
+    local checkpoint="$FIXTURE/queue/gates/cmd_fixture" generation
+    generation="$(python3 - "$checkpoint/sg7_bundle.json" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1], encoding="utf-8"))["review"]["report_fingerprint"])
+PY
+)"
+    python3 - "$checkpoint" "$generation" <<'PY'
+import json, os, sys
+root, generation = sys.argv[1:]
+common = {"version": 1, "cmd_id": "cmd_fixture", "completion_generation": generation}
+with open(os.path.join(root, "gate_worker.failed.json"), "w", encoding="utf-8") as fh:
+    json.dump(dict(common, state="failed", rc=75, persisted_at_ns=200), fh)
+with open(os.path.join(root, "gate_worker.clear.json"), "w", encoding="utf-8") as fh:
+    json.dump(dict(common, state="clear", persisted_at_ns=100), fh)
+PY
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FAILED durable gate worker marker="* ]]
+    [ ! -e "$checkpoint/gate_worker.success.json" ]
+}
+
 @test "transient dashboard lock failure is retried before later steps" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/dashboard-retry.log"
     cat > "$FIXTURE/scripts/dashboard_update.sh" <<'SH'
