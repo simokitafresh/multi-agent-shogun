@@ -4446,6 +4446,41 @@ _push_insights_merge_fixture() {
     _push_overlap_install_git_call_counter "$base"
 }
 
+_push_cumulative_equivalence_fixture() {
+    local base="$1" source_script="$2" source_test="$3" remote1_script="$4" remote1_test="$5" remote2_script="$6" remote2_test="$7"
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/scripts" "$base/repo/tests/unit"
+    printf 'base-script\n' > "$base/repo/scripts/cmd_complete_gate.sh"
+    printf 'base-test\n' > "$base/repo/tests/unit/test_cmd_complete_gate.bats"
+    git -C "$base/repo" add scripts/cmd_complete_gate.sh tests/unit/test_cmd_complete_gate.bats
+    git -C "$base/repo" commit -q -m "cumulative base"
+    git -C "$base/repo" push -q origin main
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+
+    cp "$source_script" "$base/repo/scripts/cmd_complete_gate.sh"
+    cp "$source_test" "$base/repo/tests/unit/test_cmd_complete_gate.bats"
+    git -C "$base/repo" add scripts/cmd_complete_gate.sh tests/unit/test_cmd_complete_gate.bats
+    git -C "$base/repo" commit -q -m "source aggregate"
+    git -C "$base/repo" rev-parse HEAD > "$base/source.sha"
+
+    cp "$remote1_script" "$base/remote-clone/scripts/cmd_complete_gate.sh"
+    cp "$remote1_test" "$base/remote-clone/tests/unit/test_cmd_complete_gate.bats"
+    git -C "$base/remote-clone" add scripts/cmd_complete_gate.sh tests/unit/test_cmd_complete_gate.bats
+    git -C "$base/remote-clone" commit -q -m "remote cumulative one"
+    cp "$remote2_script" "$base/remote-clone/scripts/cmd_complete_gate.sh"
+    cp "$remote2_test" "$base/remote-clone/tests/unit/test_cmd_complete_gate.bats"
+    printf 'remote-only\n' > "$base/remote-clone/remote-only.txt"
+    git -C "$base/remote-clone" add scripts/cmd_complete_gate.sh tests/unit/test_cmd_complete_gate.bats remote-only.txt
+    git -C "$base/remote-clone" commit -q -m "remote cumulative two"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+}
+
 @test "AC2 divergence: remote-tip source-only push excludes unrelated local ahead commits" {
     local base="$BATS_TEST_TMPDIR/ac2-divergence"
     _push_overlap_repo_init "$base"
@@ -4935,6 +4970,99 @@ EOF
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+}
+
+# test_necessity: a source aggregate that already contains every remote hunk
+# is publishable only when every base->remote delta is present in source.
+@test "AC2 cumulative equivalence: aggregate source retains all remote same-path edits" {
+    local base="$BATS_TEST_TMPDIR/ac2-cumulative-equivalence"
+    cat > "$base-source-script" <<'EOF'
+base-script
+remote-one-script
+remote-two-script
+source-final-script
+EOF
+    cat > "$base-source-test" <<'EOF'
+base-test
+remote-one-test
+remote-two-test
+source-final-test
+EOF
+    cat > "$base-remote1-script" <<'EOF'
+base-script
+remote-one-script
+EOF
+    cat > "$base-remote1-test" <<'EOF'
+base-test
+remote-one-test
+EOF
+    cat > "$base-remote2-script" <<'EOF'
+base-script
+remote-one-script
+remote-two-script
+EOF
+    cat > "$base-remote2-test" <<'EOF'
+base-test
+remote-one-test
+remote-two-test
+EOF
+    _push_cumulative_equivalence_fixture "$base" "$base-source-script" "$base-source-test" \
+        "$base-remote1-script" "$base-remote1-test" "$base-remote2-script" "$base-remote2-test"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_cumulative_equivalence_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"conflict fallback"* ]]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:scripts/cmd_complete_gate.sh | grep -c '^remote-two-script$')" -eq 1 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:tests/unit/test_cmd_complete_gate.bats | grep -c '^remote-two-test$')" -eq 1 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:remote-only.txt)" = "remote-only" ]
+    [ "$(git --git-dir "$base/origin.git" diff-tree --no-commit-id --name-only -r refs/heads/main^ refs/heads/main | wc -l)" -eq 2 ]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: omitting even one remote same-path hunk must fail closed and
+# must not publish a source-priority snapshot over the remote tip.
+@test "AC2 cumulative equivalence: missing remote hunk blocks" {
+    local base="$BATS_TEST_TMPDIR/ac2-cumulative-missing"
+    cat > "$base-source-script" <<'EOF'
+base-script
+remote-one-script
+source-final-script
+EOF
+    cat > "$base-source-test" <<'EOF'
+base-test
+remote-one-test
+source-final-test
+EOF
+    cat > "$base-remote1-script" <<'EOF'
+base-script
+remote-one-script
+EOF
+    cat > "$base-remote1-test" <<'EOF'
+base-test
+remote-one-test
+EOF
+    cat > "$base-remote2-script" <<'EOF'
+base-script
+remote-one-script
+remote-two-script
+EOF
+    cat > "$base-remote2-test" <<'EOF'
+base-test
+remote-one-test
+remote-two-test
+EOF
+    _push_cumulative_equivalence_fixture "$base" "$base-source-script" "$base-source-test" \
+        "$base-remote1-script" "$base-remote1-test" "$base-remote2-script" "$base-remote2-test"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_cumulative_missing_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:scripts/cmd_complete_gate.sh | grep -c '^remote-two-script$')" -eq 1 ]
 }
 
 # test_necessity: an explicit false permission must short-circuit before

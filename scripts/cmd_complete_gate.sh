@@ -825,6 +825,162 @@ source_only_path_snapshot_generic() {
     return 0
 }
 
+# Prove that every remote-side edit is already accumulated in the source
+# final blob. The base->remote delta must be present in source with the same
+# multiplicity and order; any missing hunk or path-state conflict fails closed.
+source_only_cumulative_equivalence() (
+    local repo="$1" clean_repo="$2" remote_tip="$3" source_sha common_base path actual_path
+    local base_file source_file remote_file merged_file tmp_dir source_blob actual_blob published_sha
+    local base_exists source_exists remote_exists
+    shift 3
+    local -a source_shas=("$@")
+    local -A allowed_paths=() source_blobs=() actual_paths=()
+
+    [ "${#source_shas[@]}" -gt 0 ] || return 1
+    for source_sha in "${source_shas[@]}"; do
+        while IFS= read -r -d '' path; do
+            allowed_paths["$path"]=1
+        done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    [ "${#allowed_paths[@]}" -gt 0 ] || return 1
+    common_base="$(git -C "$repo" merge-base "$remote_tip" "${source_shas[0]}" 2>/dev/null || true)"
+    [ -n "$common_base" ] || return 1
+    source_sha="${source_shas[${#source_shas[@]}-1]}"
+
+    tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/shogun-cumulative-equivalence.XXXXXX")" || return 1
+    trap 'rm -f "$tmp_dir"/*; rmdir "$tmp_dir" 2>/dev/null || true' EXIT
+
+    local path_index=0
+    for path in "${!allowed_paths[@]}"; do
+        base_file="$tmp_dir/base_${path_index}"
+        source_file="$tmp_dir/source_${path_index}"
+        remote_file="$tmp_dir/remote_${path_index}"
+        merged_file="$tmp_dir/merged_${path_index}"
+        path_index=$((path_index + 1))
+
+        base_exists=false
+        source_exists=false
+        remote_exists=false
+        git -C "$repo" cat-file -e "$common_base:$path" 2>/dev/null && base_exists=true
+        git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null && source_exists=true
+        git -C "$repo" cat-file -e "$remote_tip:$path" 2>/dev/null && remote_exists=true
+        if [ "$base_exists" = true ] && [ "$source_exists" = true ] && [ "$remote_exists" = false ]; then
+            return 1
+        fi
+        if [ "$base_exists" = true ] && [ "$source_exists" = false ] && [ "$remote_exists" = true ]; then
+            return 1
+        fi
+
+        if [ "$base_exists" = true ]; then
+            git -C "$repo" show "$common_base:$path" >"$base_file" || return 1
+        else
+            : >"$base_file"
+        fi
+        if [ "$source_exists" = true ]; then
+            git -C "$repo" show "$source_sha:$path" >"$source_file" || return 1
+            source_blobs["$path"]="$(git -C "$repo" rev-parse "$source_sha:$path")"
+        else
+            : >"$source_file"
+            source_blobs["$path"]="__ABSENT__"
+        fi
+        if [ "$remote_exists" = true ]; then
+            git -C "$repo" show "$remote_tip:$path" >"$remote_file" || return 1
+        else
+            : >"$remote_file"
+        fi
+
+        CUMULATIVE_BASE="$base_file" \
+        CUMULATIVE_SOURCE="$source_file" \
+        CUMULATIVE_REMOTE="$remote_file" \
+        python3 - <<'PY' || return 1
+import difflib
+import os
+from collections import Counter
+from pathlib import Path
+
+base = Path(os.environ["CUMULATIVE_BASE"]).read_bytes().decode("utf-8")
+source = Path(os.environ["CUMULATIVE_SOURCE"]).read_bytes().decode("utf-8")
+remote = Path(os.environ["CUMULATIVE_REMOTE"]).read_bytes().decode("utf-8")
+base_lines = base.splitlines(keepends=True)
+source_counts = Counter(source.splitlines(keepends=True))
+base_counts = Counter(base_lines)
+source_lines = source.splitlines(keepends=True)
+remote_lines = remote.splitlines(keepends=True)
+required_additions = Counter()
+required_deletions = Counter()
+for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+    None, base_lines, remote_lines, autojunk=False
+).get_opcodes():
+    if tag in ("insert", "replace"):
+        added = remote_lines[j1:j2]
+        required_additions.update(added)
+        cursor = 0
+        for line in added:
+            try:
+                cursor = source_lines.index(line, cursor) + 1
+            except ValueError:
+                raise SystemExit(1)
+    if tag in ("delete", "replace"):
+        required_deletions.update(base_lines[i1:i2])
+for line, count in required_additions.items():
+    if source_counts[line] < base_counts[line] + count:
+        raise SystemExit(1)
+for line, count in required_deletions.items():
+    if source_counts[line] > base_counts[line] - count:
+        raise SystemExit(1)
+PY
+    done
+
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            if git -C "$clean_repo" cat-file -e "$remote_tip:$path" 2>/dev/null; then
+                git -C "$clean_repo" rm -f -- "$path" >/dev/null 2>&1 || return 1
+            fi
+        else
+            git -C "$clean_repo" checkout "$source_sha" -- "$path" >/dev/null 2>&1 || return 1
+        fi
+    done
+    git -C "$clean_repo" add -A -- "${!allowed_paths[@]}" || return 1
+
+    while IFS= read -r -d '' actual_path; do
+        actual_paths["$actual_path"]=1
+    done < <(git -C "$clean_repo" diff --cached --name-only -z "$remote_tip")
+    for actual_path in "${!actual_paths[@]}"; do
+        [ "${allowed_paths[$actual_path]+yes}" = yes ] || return 1
+    done
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            ! git -C "$clean_repo" rev-parse ":$path" >/dev/null 2>&1 || return 1
+        else
+            actual_blob="$(git -C "$clean_repo" rev-parse ":$path" 2>/dev/null || true)"
+            [ "$actual_blob" = "$source_blob" ] || return 1
+        fi
+    done
+
+    git -C "$clean_repo" commit --allow-empty -m "autopush: source-only cumulative equivalence" >/dev/null 2>&1 || return 1
+    published_sha="$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)"
+    [ -n "$published_sha" ] || return 1
+    actual_paths=()
+    while IFS= read -r -d '' actual_path; do
+        actual_paths["$actual_path"]=1
+    done < <(git -C "$clean_repo" diff-tree --no-commit-id --name-only -r -z "$published_sha^" "$published_sha")
+    for actual_path in "${!actual_paths[@]}"; do
+        [ "${allowed_paths[$actual_path]+yes}" = yes ] || return 1
+    done
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            ! git -C "$clean_repo" cat-file -e "$published_sha:$path" 2>/dev/null || return 1
+        else
+            actual_blob="$(git -C "$clean_repo" rev-parse "$published_sha:$path" 2>/dev/null || true)"
+            [ "$actual_blob" = "$source_blob" ] || return 1
+        fi
+    done
+    return 0
+)
+
 # Merge queue/insights.yaml without reserializing YAML. Python is used only to
 # parse and compare blocks; every selected top-level `- id:` block is emitted
 # from its original bytes so comments/formatting remain intact.
@@ -1029,11 +1185,17 @@ source_only_path_snapshot() {
         if source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"; then
             return 0
         fi
+        if source_only_cumulative_equivalence "$repo" "$clean_repo" "$remote_tip" "$@"; then
+            return 0
+        fi
         source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" "queue/insights.yaml" "$@"
         local merge_rc=$?
         return "$merge_rc"
     fi
-    source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"
+    if source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"; then
+        return 0
+    fi
+    source_only_cumulative_equivalence "$repo" "$clean_repo" "$remote_tip" "$@"
 }
 
 task_push_allowed() {
