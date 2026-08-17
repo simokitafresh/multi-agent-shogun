@@ -63,6 +63,19 @@
 
 **確定した設計制約(追加)**: (4)変わり身を挙動不変で共通層へ通すには、共通関数側に「同点包含のON/OFF」と「昇順(下位枝)」の入力が要る。同点包含=`True`が既存5フィルタ、`False`が変わり身の現行挙動。手③で6段キー(同率全採用廃止)へ切り替えると変わり身も同じ層で同点が解決されるので、この拡張は手③で自然に吸収される。
 
+## AsIs **v1.3** — 2026-08-17 20:20+09:00（手②c実装・手③準備A/B完了・準備C走行中）
+
+| 項目 | 現物/実測 | 出典 |
+|---|---|---|
+| 手②b 四つ目／新四つ目 | 本番検証PASS: 4表count+md5がbaselineと完全一致(monthly 15977/c3331388・signals 333025/e03c0a2c・weights 25094/dab5148e・metrics 196/cda1b38a、20:11:45 JST) | cmd_4336 GATE CLEAR 19:48・掲示板blt_20260817_201205 |
+| 手②c 変わり身 | 実装済み: `selection.py` `select_top_n_with_ties(scored, top_n, *, include_ties=True, ascending=False)`、`trend_reversal_filter.py` top枝=`include_ties=False`／bottom枝=`include_ties=False, ascending=True`。test_trend_reversal_filter+test_selection_deterministic 21 passed、等価性7/7 | commit `2f0b4f7a`(cmd_4337)。GATE前: cmd_4337は将軍のAC1テストパス誤記(不在ファイル指定)でfailed→回復cmd_4340も検証のみなのにtask_type=fullでcommit契約BLOCK→task_type=verificationで再配備中(20:16) |
+| 手③準備A previous_tickers | 実装済み: `PipelineContext.previous_tickers`、`execute_pipeline(..., previous_tickers=None)`、`recalculate_fof.py`月初呼出しでprev_holding_signalを分解して注入。読み手blockなし=挙動不変 | commit `5d12c79f`(cmd_4338)。家老レーン検証中 |
+| 手③準備B 6段キーcomparator | 実装済み(未配線): `selection.py` `SCORE_EPS=1e-9`・合成ε `abs(a-b) <= SCORE_EPS*max(abs(a),abs(b),1.0)`・`compare_candidates(a,b,*,price_data,target_date,previous_tickers)`・`select_top_n_deterministic(...)`。12Mは13観測以上時のみ(`_twelve_month_return`)。契約テスト`test_selection_deterministic.py` 7系統(将軍再実行7 passed 20:06) | commit `16f05e8f`(cmd_4339)。GATE CLEAR 20:05 |
+| 手③準備C 期待差分 | cmd_4331の乾式スクリプトは一時実行で未保存(集計値のみ残存)。本番comparatorを全74 FoF子PF月次系列へread-only乾式適用しPF×月CSV+md集計を保存、cmd_4331集計(949月・PF別)と突合するcmd_4342を配備中 | cmd_4342 in_progress(tobisaru) |
+| インフラ | run_tests.sh外部backend taskはcontract test未宣言だとBLOCK rc=2の二択構造→cmd_4336/4337でDIVERGENT。近接テスト自動探索の中間経路をcmd_4341で追加中(軍師提案) | cmd_4341 in_progress(saizo) |
+
+**手③の残条件**: 準備A(cmd_4338)GATE CLEAR・準備C(cmd_4342)の期待差分ファイル・手②c(cmd_4340)GATE CLEAR。揃えば手③=各blockの`select_top_n_with_ties`呼出しを`select_top_n_deterministic`へ差し替える配線1か所の単一commit(殿合図)。
+
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
 ### 方針: 出力を凍結するのではなく、関数を決定的にする
@@ -187,9 +200,11 @@
 - 13:08 殿「現行主スコアはたまたま加速で著名なだけで他のどのパターンでも出る。加速がデフォルトに見える表現は良くない」→ ①を『pipeline_configが定める選択スコア(config依存)』へ一般化、tie-breakは全フィルタ共通層に置くと明記
 - 12:43 cmd_4330 GATE CLEAR → AsIs v1.0(ratio score/同率全採用/二次keyなし、2015-04 exact tie両選択・2016-12 1位入替の実測)、ToBe v0.2(ε=相対1e-9級提案)
 - 16:44 殿「今デプロイされた。もう起票を始めよう」→ 手①cmd_4334(e44a7bb7)・手②a cmd_4335(783668bb・GATE CLEAR 18:57)。18:56 殿「進めてくれ」→ 手②b cmd_4336(ff77e7eb)。19:22 殿「もう少しわかりやすく」→変わり身の別パターンを説明→「artifactと設計書も更新。そのうえで進めてよい」→ AsIs v1.2＋手②c追記→cmd_4337起票
+- 19:36 殿「準備は先に始めていいのでは？」→ 手③準備A cmd_4338(5d12c79f)・準備B cmd_4339(16f05e8f・GATE CLEAR 20:05)。19:46 cmd_4337 failed(将軍AC1誤記→LS-A09(37))→回復cmd_4340→commit契約BLOCK→verification再配備。19:55 殿「dirtyなせいでgate clearやpushが遅れているならインフラバグだ。迂回は負の複利」→ 軍師提案run_tests近接探索=cmd_4341。20:05 準備C cmd_4342起票。20:11 手②b本番PASS。20:15 殿「リアルな進捗」→20:19「artifactと設計書を更新して」→ AsIs v1.3
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
 - AsIs v0.9はcmd_4330で機構が確定したらv1.0へ。ToBe v0.1はε・比較キー・CAGR定義が決まったらv0.2へ。
 - AsIs v1.1(14:50)=cmd_4331の全FoF棚卸し・乾式適用。ToBe v0.3は不変(共通選択層の要請がAsIsで裏付けられた)。実装は殿合図で1体1層。
+- AsIs v1.3(20:20)=手②c実装(2f0b4f7a)・準備A(5d12c79f)・準備B(16f05e8f GATE CLEAR)・準備C(cmd_4342走行)。ToBe不変。
 - AsIs v1.2(19:30)=手①②a②b実装済み＋変わり身が切り取り型である事実。ToBe v0.3に手②c(共通関数へ引数2つ・変わり身配線)を追記。6段キー本体は不変。
