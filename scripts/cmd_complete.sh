@@ -299,7 +299,6 @@ run_status_step() {
     fi
     archive_hit="$(find "$ROOT_DIR/queue/archive/cmds" -maxdepth 1 -type f -name "${CMD_ID}_*.yaml" -print -quit 2>/dev/null || true)"
     if [[ -n "$archive_hit" ]] \
-        && grep -Fq "$CMD_ID" "$ROOT_DIR/dashboard.md" \
         && awk -v id="$CMD_ID" 'index($0,id) && /CLEAR/ {found=1} END {exit !found}' "$ROOT_DIR/logs/gate_metrics.log"; then
         printf '[cmd_complete] PASS status_completed (archived CLEAR evidence)\n' >&2
         return 0
@@ -737,26 +736,29 @@ run_checkpointed archive_terminal archive_terminal
 # independent retry loop.  Queue them once at the wrapper boundary instead.
 # The lock is released immediately after dashboard publication; ntfy/archive
 # retain per-command ordering without blocking the next dashboard publisher.
-COMPLETION_DASHBOARD_LOCK="${CMD_COMPLETE_DASHBOARD_LOCK:-$ROOT_DIR/queue/gates/completion_dashboard.lock}"
-mkdir -p "$(dirname "$COMPLETION_DASHBOARD_LOCK")"
-exec 8>"$COMPLETION_DASHBOARD_LOCK"
-_dashboard_queue_started_ms="$(date +%s%3N)"
-printf '[cmd_complete] QUEUED dashboard_singleflight\n' >&2
-flock 8
-printf '[cmd_complete] ACQUIRED dashboard_singleflight wait_ms=%d\n' \
-    "$(( $(date +%s%3N) - _dashboard_queue_started_ms ))" >&2
-
 if checkpoint_has dashboard; then
     printf '[cmd_complete] SKIP dashboard checkpoint_verified\n' >&2
-else
+elif [[ "${CMD_COMPLETE_DASHBOARD_ENABLED:-0}" = "1" ]]; then
+    COMPLETION_DASHBOARD_LOCK="${CMD_COMPLETE_DASHBOARD_LOCK:-$ROOT_DIR/queue/gates/completion_dashboard.lock}"
+    mkdir -p "$(dirname "$COMPLETION_DASHBOARD_LOCK")"
+    exec 8>"$COMPLETION_DASHBOARD_LOCK"
+    _dashboard_queue_started_ms="$(date +%s%3N)"
+    printf '[cmd_complete] QUEUED dashboard_singleflight\n' >&2
+    flock 8
+    printf '[cmd_complete] ACQUIRED dashboard_singleflight wait_ms=%d\n' \
+        "$(( $(date +%s%3N) - _dashboard_queue_started_ms ))" >&2
+
     run_step_with_retry dashboard "${CMD_COMPLETE_DASHBOARD_ATTEMPTS:-3}" \
         "${CMD_COMPLETE_DASHBOARD_RETRY_DELAY:-1}" \
         env DASHBOARD_CALLER_SINGLEFLIGHT=1 \
         bash "$SCRIPT_DIR/dashboard_update.sh" "$CMD_ID" --bundle "$BUNDLE_PATH"
     checkpoint_mark dashboard
+    flock -u 8
+    exec 8>&-
+else
+    printf '[cmd_complete] SKIP dashboard disabled_by_default(lord ruling 2026-08-17)\n' >&2
+    checkpoint_mark dashboard
 fi
-flock -u 8
-exec 8>&-
 if checkpoint_has ntfy; then
     printf '[cmd_complete] SKIP ntfy checkpoint_verified\n' >&2
 else

@@ -8,6 +8,8 @@ setup() {
     # status; the public caller's detached latency contract is covered by
     # test_cmd_complete_wrapper.bats.
     export CMD_COMPLETE_SYNC_TAIL=1
+    # Resume contracts exercise the explicit opt-in dashboard publication path.
+    export CMD_COMPLETE_DASHBOARD_ENABLED=1
     ROOT="$BATS_TEST_TMPDIR/root"
     mkdir -p "$ROOT/scripts/gates" "$ROOT/scripts/lib" "$ROOT/queue/gates/cmd_resume" "$ROOT/queue/archive/cmds" "$ROOT/logs"
     cp "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh" "$ROOT/scripts/cmd_complete.sh"
