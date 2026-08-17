@@ -990,3 +990,30 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-17T12:08:40+09:00"
+- id: INS-20260817-121423002-14e6
+  ts: "2026-08-17T12:14:23+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[価格差はfloatノイズ級]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=ノイズalias除去; score=2.9) / recalculate_pipeline(再計算パイプライン; alias=recalculate_fof; score=2.8) / growth_loop(学習ループ; alias=gate_fire_log; score=2.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T12:14:42+09:00"
+- id: INS-20260817-121423409-7178
+  ts: "2026-08-17T12:14:23+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[FoF tie-breakがノイズ依存]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=FoF; score=21.6) / recalculate_pipeline(再計算パイプライン; alias=recalculate_fof; score=14.7) / self_improving_agent_local_optima(自己改善エージェント局所最適脱出; alias=Feedback Friction; score=4.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T12:14:42+09:00"
+- id: INS-20260817-121525214-c0d5
+  ts: "2026-08-17T12:15:25+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b9hanoctp task id tool use id toolu 011ZsHLLSzDw77NRXT は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
