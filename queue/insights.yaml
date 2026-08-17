@@ -1074,11 +1074,27 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T09:00:55+09:00"
 - id: INS-20260817-090047853-cb5f
   ts: "2026-08-17T09:00:47+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[tobisaru_review_pending]] は既存aliasesに一致なし。類似概念TOP3: provisional_tobisaru(仮: Tobisaru; alias=tobisaru; score=35.8) / provisional_review_bundle(仮: Review Bundle; alias=provisional_review_bundle; score=19.9) / provisional_review_approval(仮: Review Approval; alias=provisional_review_approval; score=18.1)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T09:00:55+09:00"
+- id: INS-20260817-090155614-9d32
+  ts: "2026-08-17T09:01:55+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[reflux_dirty_dispatch_blocked]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=round robin dispatch; score=14.8) / infrastructure_ops(インフラ運用基盤; alias=auto deploy blocked_by control; score=14.0) / gate_bypass_prevention(ゲート迂回防止; alias=shogun_dispatch; score=14.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T09:02:03+09:00"
