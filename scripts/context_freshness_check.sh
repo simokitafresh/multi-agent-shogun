@@ -845,10 +845,94 @@ def is_root_fallback_source_path(path: str) -> bool:
 
 LESSON_ONLY_SOURCE_PATHS = {"tasks/lessons.md"}
 CMD_ID_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
+REFLUX_FINGERPRINT_RE = re.compile(
+    r"dm_signal_research_reflux:\s+fingerprint=([0-9a-f]{64});"
+)
+_REFLUX_FINGERPRINTS_CACHE: set[str] | None = None
+_REFLUX_COMMIT_FINGERPRINT_CACHE: dict[tuple[str, str], str | None] = {}
+
+
+def load_research_reflux_fingerprints() -> set[str]:
+    """Load exact DM-Signal research reflection receipts from the context."""
+    global _REFLUX_FINGERPRINTS_CACHE
+    if _REFLUX_FINGERPRINTS_CACHE is not None:
+        return _REFLUX_FINGERPRINTS_CACHE
+    path = os.path.join(root, "context/dm-signal-research.md")
+    try:
+        text = open(path, encoding="utf-8", errors="ignore").read()
+    except OSError:
+        _REFLUX_FINGERPRINTS_CACHE = set()
+        return _REFLUX_FINGERPRINTS_CACHE
+    _REFLUX_FINGERPRINTS_CACHE = set(REFLUX_FINGERPRINT_RE.findall(text))
+    return _REFLUX_FINGERPRINTS_CACHE
+
+
+def source_commit_reflux_fingerprint(repo_path: str, commit_hash: str) -> str | None:
+    """Recompute the reflux guard's canonical fingerprint for one commit."""
+    cache_key = (repo_path, commit_hash)
+    if cache_key in _REFLUX_COMMIT_FINGERPRINT_CACHE:
+        return _REFLUX_COMMIT_FINGERPRINT_CACHE[cache_key]
+    try:
+        result = subprocess.run(
+            [
+                "git", "-C", repo_path, "diff-tree", "--root", "--no-commit-id",
+                "--name-status", "-r", "-z", commit_hash, "--", "docs/research",
+            ],
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        result = None
+    if result is None or result.returncode != 0:
+        _REFLUX_COMMIT_FINGERPRINT_CACHE[cache_key] = None
+        return None
+
+    raw = result.stdout.decode("utf-8", "surrogateescape").split("\0")
+    entries: list[str] = []
+    index = 0
+    while index < len(raw) and raw[index]:
+        status = raw[index]
+        path = raw[index + 1]
+        index += 2
+        if status.startswith(("R", "C")):
+            if index >= len(raw):
+                _REFLUX_COMMIT_FINGERPRINT_CACHE[cache_key] = None
+                return None
+            path = raw[index]
+            index += 1
+        blob_result = subprocess.run(
+            ["git", "-C", repo_path, "rev-parse", f"{commit_hash}:{path}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        blob = blob_result.stdout.strip() if blob_result.returncode == 0 else "DELETED"
+        entries.append(f"{status}\t{path}\t{blob}")
+    if not entries:
+        _REFLUX_COMMIT_FINGERPRINT_CACHE[cache_key] = None
+        return None
+    canonical = "\n".join(sorted(entries, key=lambda row: row.split("\t", 1)[1])) + "\n"
+    fingerprint = hashlib.sha256(canonical.encode("utf-8", "surrogateescape")).hexdigest()
+    _REFLUX_COMMIT_FINGERPRINT_CACHE[cache_key] = fingerprint
+    return fingerprint
+
+
+def is_research_reflux_reflected(
+    rel_path: str, repo_path: str | None, commit_hash: str
+) -> bool:
+    """Consume an exact reflux receipt for the research context only."""
+    if rel_path != "context/dm-signal-research.md" or not repo_path:
+        return False
+    fingerprint = source_commit_reflux_fingerprint(repo_path, commit_hash)
+    return bool(fingerprint and fingerprint in load_research_reflux_fingerprints())
 
 
 def commit_is_reflected_or_lesson_only(
-    rel_path: str, commit_hash: str, subject: str, changed_paths: list[str]
+    rel_path: str,
+    commit_hash: str,
+    subject: str,
+    changed_paths: list[str],
+    repo_path: str | None = None,
 ) -> bool:
     """Exclude only commits carrying machine-checkable reflection evidence.
 
@@ -860,6 +944,8 @@ def commit_is_reflected_or_lesson_only(
     """
     normalized = {path.strip().lstrip("./") for path in changed_paths if path.strip()}
     if rel_path in normalized:
+        return True
+    if is_research_reflux_reflected(rel_path, repo_path, commit_hash):
         return True
     relevant = {path for path in normalized if is_root_fallback_source_path(path)}
     if relevant and relevant <= LESSON_ONLY_SOURCE_PATHS:
@@ -894,7 +980,7 @@ def _root_fallback_commit_count_since(
             if is_root_fallback_source_path(path)
         ]
         if source_paths and not commit_is_reflected_or_lesson_only(
-            "context/infrastructure.md", current_hash, subject, changed_paths
+            "context/infrastructure.md", current_hash, subject, changed_paths, root
         ):
             count += 1
             if len(details) < 3:
@@ -1011,7 +1097,7 @@ def source_commit_summary_since(
         # body is counted as stale again, even though its reflection evidence
         # is already recorded (GA-449).
         if commit_is_reflected_or_lesson_only(
-            rel_path, current_hash, subject, changed_paths
+            rel_path, current_hash, subject, changed_paths, repo_path
         ):
             return
         count += 1
@@ -1305,7 +1391,7 @@ def _compute_direct_group(
             ):
                 continue
             if commit_is_reflected_or_lesson_only(
-                rel_path, commit_hash, subject, changed_paths
+                rel_path, commit_hash, subject, changed_paths, repo_path
             ):
                 continue
             count += 1
