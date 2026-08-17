@@ -434,7 +434,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "根因に対するreflux共有queue契約が現行実装済み。planned_paths=queue/insights.yamlを注入し、gate_report_formatがreflux_commit_contractのproducer/self_retro・stable id・許可差分occurrence_count/last_seenのみを受理するため、対象のDIVERGENT偽陽性は解消済み。"
+  action_artifact: "scripts/gates/gate_report_format.sh:564-619; queue/tasks/tobisaru.yaml:planned_paths+reflux_commit_contract; tests/unit/test_gate_report_format_pass_no_improvement.bats:bulk insights reflux lifecycle; commit=43f46b0746eaac6d8c69c1a2476ce492a8e922ef"
+  resolved_at: "2026-08-17T12:35:28+09:00"
 - id: INS-20260817-085303334-237d
   ts: "2026-08-17T08:53:03+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactと設計書をアップデートして は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
