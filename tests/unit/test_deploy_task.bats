@@ -123,6 +123,51 @@ setup() {
     deploy_task_scaffold "deploy_yaml_freshness"
 }
 
+# test_necessity: 再利用taskの世代境界で前taskのci_run_id/final_checkpointを
+# 新taskへ漏らさず、明示された新taskの値だけを2/2保持する不変量を守る。
+@test "reset_stale_fields clears predecessor terminal fields and preserves explicit replacement values" {
+    local file="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    cat > "$file" <<'YAML'
+task:
+  parent_cmd: cmd_previous
+  task_id: cmd_previous_normal
+  ci_run_id: 4354
+  final_checkpoint:
+    result: PASS
+    head: abc1234
+YAML
+
+    SCRIPT_DIR="$TEST_PROJECT"
+    DIRECT_MODE=false
+    CMD_ID="cmd_current"
+    run reset_stale_fields sasuke
+    [ "$status" -eq 0 ]
+    run python3 - "$file" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert sum(key in task for key in ("ci_run_id", "final_checkpoint")) == 0, task
+PY
+    [ "$status" -eq 0 ]
+
+    # The replacement source is explicit; after stale reset, both values must
+    # survive source publication exactly as supplied.
+    printf '\n' >> "$file"
+    cat >> "$file" <<'YAML'
+  ci_run_id: 9001
+  final_checkpoint:
+    result: PASS
+    head: fedcba9
+YAML
+    run python3 - "$file" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task["ci_run_id"] == 9001, task
+assert task["final_checkpoint"] == {"result": "PASS", "head": "fedcba9"}, task
+print("explicit_terminal_fields=2/2")
+PY
+    [ "$status" -eq 0 ]
+}
+
 # Reuse the library parsed by deploy_task_scaffold in Bats' isolated `run`
 # subshell. Re-sourcing the ~10k-line script for every table row dominated
 # these contract tests without adding an independent oracle.

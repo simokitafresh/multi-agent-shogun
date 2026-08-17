@@ -1974,6 +1974,9 @@ STALE_FIELDS = [
     # report identityは配備世代ごとの一意契約。旧世代taskからfast publicationへ
     # 渡すと別report pathでも同じUUIDを再利用するため、世代境界で必ず除去する。
     'report_id', 'report_identity_version',
+    # Terminal evidence is generation-scoped. A reused worker must not carry
+    # the predecessor's CI run/checkpoint into a task that omits them.
+    'ci_run_id', 'final_checkpoint',
     # Pre-implementation review is bound to one exact task_id + AC fingerprint.
     # Reusing it across task generations makes a valid new APPROVE collide with
     # the predecessor receipt before the new task can be published.
