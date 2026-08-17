@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-18T02:34:22+09:00 -->
+<!-- generated_at: 2026-08-18T03:30:02+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-18T02:34:22+09:00 | terminal | response | 家老自立hotfix(ga475 context_freshness)GATE CLEAR、既読化。FoF側はrun409(2回目)完走とcmd_4352の突合結果待ち。家老CTX 82%(GPT-5.6)に注意。 [MEM: memor…
-- 2026-08-18T02:32:14+09:00 | terminal | response | inbox 0件。待機。
-- 2026-08-18T02:28:33+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T02:28:03+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T02:27:28+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T02:25:50+09:00 | terminal | response | 家老速報(02:25)受領: run408の222件=4PF・5遷移。GSシン加速R-常勝102+61件・加速R-激攻19件=**cmd_4351の全順序化で旧非推移が決着し直した直接事例**、残2PF(奥義-GS-抜き身-激攻20件・秘…
-- 2026-08-18T02:24:58+09:00 | terminal | response | 殿ntfy(02:23、222件/4PF/2012-09〜2015-01)の解釈: **cmd_4351(比較器の全順序化、f519002b)がRender live(02:11)になった後の初回full(run408)がrun407と異…
-- 2026-08-18T02:23:45+09:00 | terminal | inbound | 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=222 portfolios=4 dates=2012-09-04〜2015-01-30
-- 2026-08-18T02:16:14+09:00 | terminal | response | cmd_4352 APPROVE完了。inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T02:15:10+09:00 | ntfy | outbound | 【家老】cmd_4352 初回配備開始 (title=FoF tie-break 合否(a)oracle補正 — 乾式スクリプトのlookback期間換算(days-only config)を本番block(..., ninja=kota…
+- 2026-08-18T03:30:01+09:00 | terminal | response | APPROVE完了。inbox 0件。待機。
+- 2026-08-18T03:29:10+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_autopush_insights_id_merge_20260818 初回配備開始 (title=(untitled), ninja=hayate)
+- 2026-08-18T03:26:43+09:00 | terminal | response | 同期完了。inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T03:25:07+09:00 | terminal | response | FAIL通知完了。inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T03:24:17+09:00 | terminal | response | inbox 0件。待機。
+- 2026-08-18T03:17:47+09:00 | ntfy | outbound | 【monitor】将軍CTX:77%。/compactをご検討ください
+- 2026-08-18T03:12:11+09:00 | terminal | response | APPROVE完了。inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T03:11:29+09:00 | ntfy | outbound | 【将軍】cmd_reflux_insight_202608180310_saizo 初回配備開始 (title=(untitled), ninja=saizo)
+- 2026-08-18T02:59:43+09:00 | terminal | response | 家老報告(02:55)を受け、autopushの**真因を将軍D0で根治**: - 原因: `deploy_task.sh inject_push_allowed`がAC内の「push」語句だけでpush_allowed:trueを付与し…
+- 2026-08-18T02:59:14+09:00 | terminal | response | 家老報告(02:55)を受け、autopushの**真因を将軍D0で根治**: - 原因: `deploy_task.sh inject_push_allowed`がAC内の「push」語句だけでpush_allowed:trueを付与し…
 
 ## 未解決確認事項
+- 家老報告(02:55)を受け、autopushの**真因を将軍D0で根治**: - 原因: `deploy_task.sh inject_push_allowed`がAC内の「push」語句だけでpush_allowed:trueを付与し、私が書いた「pushはしない/push…
 - 殿ntfy(02:23、222件/4PF/2012-09〜2015-01)の解釈: **cmd_4351(比較器の全順序化、f519002b)がRender live(02:11)になった後の初回full(run408)がrun407と異なった分**。非推移だった箇所(GSシン…
 - 家老の残差確定報告(02:08)を裏取りし、対処・artifact更新済み: - **(a)残不一致130の内訳**: 122件(秘奥義-追い風-鉄壁)は**oracle側の期間換算差** — configの`lookback={days:10, months:0}`を乾式が0…
 - cmd_4351(比較器の全順序化) GATE CLEAR。diff現物: selection.py +53/−7(②③④の段可否を候補集合単位で前判定)+契約テスト54行(24順列不変)。 注記: またgateのpre-GATE autopushで**f519002bがori…
@@ -23,7 +24,6 @@
 - cmd_4350 review bundle完了確認（既にフォアグラウンドで処理済み）。inbox 0件。待機。 [meta] stop_reason=end_turn
 - 殿ntfy(01:36、82件/3PF/2012-09〜2013-06)の解釈: - これは**cmd_4349(component_order整列)がliveになった後の初回full(run406)がrun405と異なった分**=全同値候補の決着が「set順」から「confi…
 - 承知。事実として **cmd_4349(component_order整列)は本番live(a88f300f、01:29 Render確認済み)**。手③本体+補正が本番に乗った状態。 次の一手は家老レーンで進行中: - **(b)収束**: a88f300fで full 2回…
-- バックグラウンドタスク完了確認（CI fix re-bundle、既にフォアグラウンドで処理済み）。 inbox 0件。 [MEM: memory_db ts=2026-08-18 "殿裁定2026-08-18 00:45: GitHubが不安定な間、安易なrevert/dep…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -33,10 +33,8 @@
 - cmd_4241
 - cmd_4324
 - cmd_4325
-- cmd_4326
 - cmd_4327
 - cmd_4328
-- cmd_4330
 - cmd_4331
 - cmd_4332
 - cmd_4333
@@ -59,6 +57,7 @@
 - cmd_4350
 - cmd_4351
 - cmd_4352
+- PD-138
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
