@@ -931,7 +931,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '520a9014f4bd18823224fc5e27229d7c7abef4b28f82b66901ccf8f63e8aa8bd' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -941,6 +941,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: primary self_retro event and completion criterion verified; improvement candidate is a separate design item and no in-scope code fix is required
+  action_artifact: "logs/self_retro.jsonl:3192;verify_command=PASS;decision_candidate recorded in terminal report"
+  resolved_at: "2026-08-17T19:02:00+09:00"
 - id: INS-20260817-185601933-07e4
   ts: "2026-08-17T18:56:01+09:00"
   insight: "semantic_index_update新概念候補: discussion:進めてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
