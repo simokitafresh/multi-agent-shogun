@@ -105,7 +105,10 @@ production_invariants:  # (PI) 上位5件 (全28件→ docs/research/dm_signal_p
       fact: "環境能力実測原理: Render等managed環境固有の権限・接続・可用性を使う方式は、一般仕様やlocal clone成功を能力証明とせず、environment identity付きactual preview/isolated往復artifactを入口で検証してから後段実装・全数試験へ進む"
       covers: [PI-P01, PI-P05]
       production_ground: "cmd_karo_fence_v1427_nologin_rc3_202607140653はRender actual capability artifact 0件を検出し、production mutation 0・retry 0・SKIP 0のまま後続5群をfail-closed BLOCK。根拠: L893、context/dm-signal-ops.md §75、queue/reports/hanzo_report_cmd_karo_fence_v1427_nologin_rc3_202607140653.yaml"
-
+    - id: PI-P09
+      fact: "FoF選択決定性原理: FoF選択フィルタ6種の同点解決は共通select_top_n_deterministicの6段キー(PD-138)を必ず使い、6段全同値の最終決着はcomponent_order(pipeline_config記載順、cmd_4349)とする。第2〜4キーの欠損skipを含む候補集合でも全順序を維持し(cmd_4351)、同率全採用へ戻さない。本番変更後はnested伝播+本番同一期間換算の期待oracle、full recalculate、期待PF×月差分、再実行md5、標準PF不変を確認する。cmd_4354でtarget_dateをdecision_monthの最初のproduction signal日に一致させ、残9件をoracle側month_mapping差分と特定。修正後全8,570行はMATCHED=8,513/MISMATCH=0/MISSING=57、成果物=docs/research/cmd_4354_fof_oracle_residual9_20260818.csv、設計根拠=docs/research/cmd_4354_fof_oracle_residual9_20260818.md"
+      covers: [PI-P03, PI-P04, PI-P05]
+      production_ground: "本番artifact=58f94a75、deployment=f519002b。期待oracleはnested伝播+本番同一期間換算(cmd_4350/4352)。実測: (a)差分8,504行/9PF/57か月、(b)期待oracle一致PASS、(c)再実行md5一致PASS、(d)標準PF不変PASS。根拠: context/dm-signal-ops.md §100、backend/app/services/pipeline/selection.py、docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md、cmd_4334-4352"
 db_schema_quick_ref:  # (h) 主要3テーブル (全7テーブル詳細→ docs/research/dm_signal_db_schema.md)
   detail: "→ docs/research/dm_signal_db_schema.md"
   portfolios:     {pk: "id", columns: "id,name,type,config,folder_id,created_at,updated_at,hide_portfolio,hide_signal,is_active"}
