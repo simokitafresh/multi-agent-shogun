@@ -76,6 +76,18 @@
 
 **手③の残条件**: 準備A(cmd_4338)GATE CLEAR・準備C(cmd_4342)の期待差分ファイル・手②c(cmd_4340)GATE CLEAR。揃えば手③=各blockの`select_top_n_with_ties`呼出しを`select_top_n_deterministic`へ差し替える配線1か所の単一commit(殿合図)。
 
+## AsIs **v1.4** — 2026-08-18 00:25+09:00（手③実装・本番live・full run404走行中）
+
+| 項目 | 現物/実測 | 出典 |
+|---|---|---|
+| 手②c 変わり身 | GATE CLEAR(cmd_4340 20:35)。手②=全6フィルタの共通層集約完了 | commit `2f0b4f7a` |
+| 手③準備A/B/C | 全てGATE CLEAR。準備C=本番comparator乾式で**959月**変化(cmd_4331集計949との差+10はcmd_4331が集計値のみ保存で月別旧新集合なしのため未確定。**cmd_4342 CSVを期待差分の正**とする将軍判断) | commit `5d12c79f`/`16f05e8f`/`b0e7e7c9`、`docs/research/cmd_4342_fof_tiebreak_expected_diff.csv`(8,570行) |
+| **手③ 6段キー切替** | **実装完了・報告PASS**: 6ブロック7か所の呼出しを`select_top_n_deterministic`へ差替(bottom枝=score符号反転規則、cmd_4342スクリプト259行と同一)、既存テスト期待値を6段規則へ更新、関連テスト68件FAIL0/SKIP0、期待差分CSVとPF×月照合**不一致0件**。docstring修正(将軍doc lane) | commit `54e3e663`+`2f3e3c82`(cmd_4344)、origin/main `57127ffd`(同内容) |
+| 本番配備 | Render deploy `dep-da1i16s9…`(23:54)は**GitHub本体障害**(githubstatus 13:40Z〜Partial System Outage: API degraded/Actions・Issues・PR major)でclone不能→build_failed。再deploy `dep-da1iacid0e5s73bdc3l0`(00:13 JST)が**live**(57127ffd)。家老がfull run404を実行・監視中 | Render API deploys / render logs build / githubstatus API |
+| 手③合否(未) | (a)変化=cmd_4342 CSVとPF×月一致 (b)同一入力でfull 2回目md5一致 (c)標準PF24変化0 (d)full時間≤復帰点2倍。SIGNAL CHANGE ALERT 1回は受容済み | 家老レーン(run404完走後) |
+| 戻し方 | `git revert 54e3e663 2f3e3c82`→push→deploy→full 1回でbaseline md5(monthly c3331388/signals e03c0a2c/weights dab5148e/metrics cda1b38a)へ戻る | rollback計画書§-1 |
+| インフラ副産物 | cmd_4341 run_tests近接テスト(bce0cfaa)・cmd_4343 dashboard自動更新既定OFF(3ad81b23)・cmd_4345 gate exit75再試行/cmd_4346 precheck統合/cmd_4347 GATE-STALL検知(通知storm→将軍hotfix 53af18b5)/cmd_4348 全デーモン75分停止の偵察 =忍者実装済み・レビュー中 | 各cmd |
+
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
 ### 方針: 出力を凍結するのではなく、関数を決定的にする
@@ -201,10 +213,12 @@
 - 12:43 cmd_4330 GATE CLEAR → AsIs v1.0(ratio score/同率全採用/二次keyなし、2015-04 exact tie両選択・2016-12 1位入替の実測)、ToBe v0.2(ε=相対1e-9級提案)
 - 16:44 殿「今デプロイされた。もう起票を始めよう」→ 手①cmd_4334(e44a7bb7)・手②a cmd_4335(783668bb・GATE CLEAR 18:57)。18:56 殿「進めてくれ」→ 手②b cmd_4336(ff77e7eb)。19:22 殿「もう少しわかりやすく」→変わり身の別パターンを説明→「artifactと設計書も更新。そのうえで進めてよい」→ AsIs v1.2＋手②c追記→cmd_4337起票
 - 19:36 殿「準備は先に始めていいのでは？」→ 手③準備A cmd_4338(5d12c79f)・準備B cmd_4339(16f05e8f・GATE CLEAR 20:05)。19:46 cmd_4337 failed(将軍AC1誤記→LS-A09(37))→回復cmd_4340→commit契約BLOCK→verification再配備。19:55 殿「dirtyなせいでgate clearやpushが遅れているならインフラバグだ。迂回は負の複利」→ 軍師提案run_tests近接探索=cmd_4341。20:05 準備C cmd_4342起票。20:11 手②b本番PASS。20:15 殿「リアルな進捗」→20:19「artifactと設計書を更新して」→ AsIs v1.3
+- 22:03 殿「進めてほしい」→手③cmd_4344起票→22:21配備→23:20家老「docstring旧契約残存」→将軍doc lane 2f3e3c82→push→23:54 Render build_failed(GitHub障害)→将軍が真因訂正(credential切断ではない)→00:13 再deploy live→full run404。23:54 cmd_4347のGATE-STALL検知が履歴gate全件通知storm→将軍hotfix 53af18b5。00:20 殿「いまクリアされても今より強くてニューゲームできるようにせよ」→本版
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
 - AsIs v0.9はcmd_4330で機構が確定したらv1.0へ。ToBe v0.1はε・比較キー・CAGR定義が決まったらv0.2へ。
 - AsIs v1.1(14:50)=cmd_4331の全FoF棚卸し・乾式適用。ToBe v0.3は不変(共通選択層の要請がAsIsで裏付けられた)。実装は殿合図で1体1層。
+- AsIs v1.4(08-18 00:25)=手③実装済み(54e3e663/2f3e3c82)・本番live 00:13・full run404走行中・合否(a)-(d)待ち。手④(GS)は未着手。
 - AsIs v1.3(20:20)=手②c実装(2f0b4f7a)・準備A(5d12c79f)・準備B(16f05e8f GATE CLEAR)・準備C(cmd_4342走行)。ToBe不変。
 - AsIs v1.2(19:30)=手①②a②b実装済み＋変わり身が切り取り型である事実。ToBe v0.3に手②c(共通関数へ引数2つ・変わり身配線)を追記。6段キー本体は不変。
