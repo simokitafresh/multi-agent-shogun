@@ -42,7 +42,8 @@
 - 合否（各実装手の二値）: admin→ログアウト→低tier再ログインで、非公開PFがリロードなしに表示されない。
 - **パスワード・tier・expires_atは第0段で変更しない**（殿09:10「現在のパスワードは変更しないままでできる？」→ できる）。第0段が触るのはfrontendの認証切替の形と7層の保持層・キャッシュキー・ETag入力のみ。値はbackend DB `viewer_tiers`系＋Render env（=SSOT、L249）にあり、`api.verifyViewer` も不変。着手前にtier別（tier_name/password/expires_at/updated_at）をread-only snapshotとして残す（保険。復元が要る事態は設計上起きない想定。復元時は `expires_at` をそのまま書き戻し、rotation再実行・再発行をしない）。
 - **既存ログイン中ユーザーが1回ログアウト状態になるのは許容**（殿09:13「一回ログアウト状態は問題がない」）。∴ viewer tokenのlocalStorageキー名/形式は第0段で自由に変えてよい（主体入りキーへ移行可）。ユーザーは同じ当月パスワードを再入力すれば復帰＝パスワード変更ではない。
-- 注意: `dm-signal-password-rotation` cronは毎月1日16:00 UTC（JST 2日01:00・既知の+1日ズレ、ops §901）に全tierを回す。作業が9/2 01:00 JSTをまたぐと第0段と無関係にパスワードは変わる。
+- 注意: `dm-signal-password-rotation` cronは毎月1日16:00 UTC（JST 2日01:00・既知の+1日ズレ、ops §46）に全tierを回す。作業が9/2 01:00 JSTをまたぐと第0段と無関係にパスワードは変わる。
+- **password-rotation cronの改善を忘れない**（殿09:16）: 既知の欠陥3点（`context/dm-signal-ops.md` §46 cmd_3634_recon3）= (1)`0 16 1 * *`がJST 2日01:00で意図(1日01:00)より丸1日遅く、前月末expires_at失効後〜実ローテーションまで約25hの全tier失効窓 (2)`monthly_password_rotation()`にtier単位try/exceptなし→途中失敗で先行tierのRender env更新+token revoke済みに対しDB更新だけrollbackする部分失敗 (3)tier数(5)分の個別Render env更新がbackend再deployを連鎖。改修方針=期限の正を「最終取引日 JST 00:00失効」(殿裁定01:40)へ寄せ、cron時刻をその契約に合わせ、tier単位のトランザクション/冪等化とenv更新の一括化。**位置づけ=第0段と独立のbackend改修（identity導入後は月次rotation自体が不要になる可能性があるため、第1段の設計と突合してから着手）**。
 
 ### 第0段の実装単位（案・09:15）— 各1体×1層・可逆・push/deployは家老レーン・本番CDPは殿判断
 | 手 | 内容 | 合否(二値) |
@@ -118,6 +119,7 @@
 - 09:10 殿「artifact 1c498f5f の続きをやろう。まずはチャット。現在のパスワードは変更しないままでできる？難しいなら現在のtier別のパスワードを保存して改良後に戻してもいい。有効期限が変わらないよう気を付けないと」
 - 09:12 将軍: できる。第0段はfrontendの境界/保持層/キー改修でパスワード・tier・expires_atはbackend SSOTにあり触らない。唯一の副作用=tokenキー変更時の再ログイン。保険にtier別read-only snapshot。rotation cron(9/2 01:00 JST)をまたぐと別要因で変わる。実装単位①/login+admin分離 ②7層リセット ③主体キー/ETagの3手案
 - 09:13 殿「では設計書とアーティファクトを更新しよう。一回ログアウト状態は問題がない」→ ToBe v0.3（パスワード不変・再ログイン許容・3手案）
+- 09:16 殿「dm-signal-password-rotation cronの改善も忘れないようにしないとね」→ ToBeに既知欠陥3点(ops §46)と改修方針・位置づけ(第0段と独立、第1段と突合後)を記載
 
 ## 注釈 — 2026-08-17 01:30+09:00
 
