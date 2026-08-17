@@ -1240,6 +1240,8 @@ excluded = {
     "RENUDGE_LAST_SEND", "IDLE_NOTIFY_SENT", "POST_CLEAR_PENDING", "TRAINING_IDLE_FIRST_SEEN",
     "REFLUX_IDLE_FIRST_SEEN", "_INBOX_COUNT_CACHE", "_INBOX_FP_CACHE",
     "CLI_DEAD_RESTART_TIMES", "CLI_DEAD_LOOP_LAST_NTFY",
+    "CLEAR_BLOCKED_TS", "CLEAR_BLOCKED_NOTIFIED",
+    "GATE_STALL_LAST_NOTIFIED", "GATE_STALL_ACTIVE_CMDS",
 }
 missing = sorted(declared - pruned - excluded)
 if missing:
@@ -1253,5 +1255,6 @@ set -e
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"MISSING_PRUNE_COVERAGE:"* ]]
+    [[ "$output" == *"MISSING_PRUNE_COVERAGE:UNREGISTERED_PRUNE_LEAK"* ]]
     [[ "$output" == *"UNREGISTERED_PRUNE_LEAK"* ]]
 }
