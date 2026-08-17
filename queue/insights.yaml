@@ -418,8 +418,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '87c2840ffbc671bba0a856e9ae0c620577a6aee60eeb2311f78093aa03bf9b63' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 16
-  last_seen: "2026-08-17T20:37:34+09:00"
+  occurrence_count: 17
+  last_seen: "2026-08-17T20:51:02+09:00"
   verification:
     status: passed
     exit_code: '0'
@@ -693,16 +693,19 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 1
-  last_seen: "2026-08-17T19:34:05+09:00"
+  occurrence_count: 2
+  last_seen: "2026-08-17T20:57:01+09:00"
   verification:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "known fix verified: detector_fp_rate ledger records cmd_save check_ac_test_scope category=new_behavior at fires=4, false_positive=2, fp_rate=50.0; target and verification artifacts exist"
+  action_artifact: "target=scripts/cmd_save.sh; evidence=logs/detector_fp_rate.yaml; verify=test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh; semantic=growth_loop/detector_fp_rate"
+  resolved_at: "2026-08-17T20:56:34+09:00"
 - id: INS-20260817-193604780-f5cd
   ts: "2026-08-17T19:36:04+09:00"
   insight: "semantic_index_update新概念候補: discussion:準備は先に初めていいのでは？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
