@@ -4334,6 +4334,7 @@ _push_overlap_repo_init() {
     git -C "$base/repo" commit -q -m base
     git -C "$base/repo" remote add origin "$base/origin.git"
     git -C "$base/repo" push -q -u origin main
+    git --git-dir "$base/origin.git" symbolic-ref HEAD refs/heads/main
 }
 
 _push_overlap_repo_make_source_overlap() {
@@ -4341,16 +4342,64 @@ _push_overlap_repo_make_source_overlap() {
     printf 'local change\n' >> "$base/repo/shared.txt"
     git -C "$base/repo" add -A
     git -C "$base/repo" commit -q -m "local change"
+    git -C "$base/repo" rev-parse HEAD > "$base/source.sha"
     printf 'dirty uncommitted\n' >> "$base/repo/shared.txt"
 }
 
 _push_overlap_task_yaml() {
     local base="$1"
+    local source_sha
+    source_sha="$(cat "$base/source.sha" 2>/dev/null || git -C "$base/repo" rev-parse HEAD)"
+    cat > "$base/report.yaml" <<YAML
+commit_hash: $source_sha
+YAML
     cat > "$base/task.yaml" <<YAML
 task:
   project: external
   target_path: $base/repo
+  report_path: $base/report.yaml
 YAML
+}
+
+@test "AC2 divergence: remote-tip source-only push excludes unrelated local ahead commits" {
+    local base="$BATS_TEST_TMPDIR/ac2-divergence"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    printf 'unrelated local ahead\n' > "$base/repo/unrelated-local.txt"
+    git -C "$base/repo" add unrelated-local.txt
+    git -C "$base/repo" commit -q -m "unrelated local ahead"
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'remote ahead\n' > "$base/remote-clone/remote-only.txt"
+    git -C "$base/remote-clone" add remote-only.txt
+    git -C "$base/remote-clone" commit -q -m "remote ahead"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+
+    mkdir -p "$base/hooks"
+    cat > "$base/hooks/pre-push" <<EOF
+#!/usr/bin/env bash
+echo invoked >> "$base/hook.log"
+EOF
+    chmod +x "$base/hooks/pre-push"
+    git -C "$base/repo" config core.hooksPath "$base/hooks"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_divergence_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"remote-tip source-only push"* ]]
+    [[ "$output" == *"remote_contains_source_rc=0"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+    [ "$(grep -c . "$base/hook.log")" -eq 1 ]
+    [ "$(git --git-dir "$base/origin.git" log --format=%s refs/heads/main)" != *"unrelated local ahead"* ]
+    [[ "$(git --git-dir "$base/origin.git" log --format=%s refs/heads/main)" == *"remote ahead"* ]]
+    [[ "$(git --git-dir "$base/origin.git" log --format=%s refs/heads/main)" == *"local change"* ]]
+    [[ "$(git -C "$base/repo" status --porcelain)" == *" M shared.txt"* ]]
 }
 
 _push_overlap_install_git_call_counter() {
@@ -4398,9 +4447,9 @@ EOF
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
         bash "$SRC_GATE_SCRIPT" cmd_ac1_fixed_probe
     [ "$status" -eq 0 ]
-    [[ "$output" == *"git push: isolated clean snapshot ($base/repo GA-PUSH1 overlap precheck)"* ]]
+    [[ "$output" == *"git push: isolated clean snapshot ($base/repo remote-tip source-only push)"* ]]
     [[ "$output" == *$'\n    shared.txt'* ]]
-    [[ "$output" == *"git push: OK ($base/repo; isolated clean snapshot)"* ]]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
 
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
     if [ -d "$base/repo/logs/hook_artifacts" ]; then
@@ -4420,7 +4469,7 @@ EOF
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
         bash "$SRC_GATE_SCRIPT" cmd_ac2_clean_probe
     [ "$status" -eq 0 ]
-    [[ "$output" == *"git push: SKIP ($base/repo already up-to-date with origin/main)"* ]]
+    [[ "$output" == *"git push: SKIP ($base/repo report source commits already remote-contained)"* ]]
     [ ! -s "$base/git_push_calls.log" ]
 }
 
@@ -4438,7 +4487,7 @@ EOF
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
         bash "$SRC_GATE_SCRIPT" cmd_ac2_nonoverlap_probe
     [ "$status" -eq 0 ]
-    [[ "$output" == *"git push: OK ($base/repo)"* ]]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
 }
 
@@ -4454,6 +4503,7 @@ EOF
     git -C "$base/repo" add -A
     git -C "$base/repo" commit -q -m "publish idx update"
     printf 'idx v3 uncommitted\n' > "$base/repo/context/lord-conversation-index.md"
+    git -C "$base/repo" rev-parse HEAD^ > "$base/source.sha"
     _push_overlap_task_yaml "$base"
     _push_overlap_install_git_call_counter "$base"
 
@@ -4461,7 +4511,7 @@ EOF
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
         bash "$SRC_GATE_SCRIPT" cmd_ac2_autogen_probe
     [ "$status" -eq 0 ]
-    [[ "$output" == *"git push: OK ($base/repo)"* ]]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
 }
 
@@ -4482,15 +4532,13 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"shared.txt"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
-    [[ "$output" == *"git push: OK ($base/repo; isolated clean snapshot)"* ]]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
 }
 
-# cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730 AC3
-# test_necessity: the normal CLEAR path and the emergency-override CLEAR path must
-# not grow two divergent overlap implementations. Both call sites route through the
-# single push_task_repositories function, and push_overlap_blocking_paths must be
-# defined exactly once and invoked only from inside it.
-@test "AC3: both CLEAR entry points call push_task_repositories, and the overlap helper is defined exactly once" {
+# cmd_karo_hotfix_autopush_divergence_rootfix AC3
+# test_necessity: source-only push must run once before terminal CLEAR; a second
+# post-CLEAR call would duplicate the source commit or reintroduce CLEAR-first.
+@test "AC3: source-only push is before terminal CLEAR and helpers remain single-source" {
     run grep -Fc 'push_task_repositories "${MATCHING_TASK_FILES[@]}"' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
     [ "$output" -eq 2 ]
@@ -4499,7 +4547,7 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" -eq 1 ]
 
-    run grep -Fc 'overlap_blocking=$(push_overlap_blocking_paths' "$SRC_GATE_SCRIPT"
+    run grep -Fc 'overlap_blocking="$(push_overlap_blocking_paths' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
     [ "$output" -eq 1 ]
 }
