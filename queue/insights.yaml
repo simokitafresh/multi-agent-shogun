@@ -425,7 +425,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:24ba56acb9c6f56e"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "gate現行検証で追加追従不要。rc=2は38件の既存dedup追従レーンによるreview_requiredで、参照欠落・鮮度不整合なし"
+  action_artifact: "gate_skill_script_refs.sh実測: rc=2, required=0, deduped=38, 全検査OK; logs/skill_script_refs_verified.json; memory_db/semantic_index照合済み"
+  resolved_at: "2026-08-17T11:42:55+09:00"
 - id: INS-20260817-062420170-6940
   ts: "2026-08-17T06:24:20+09:00"
   insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
@@ -649,8 +652,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 4
-  last_seen: "2026-08-17T11:30:18+09:00"
+  occurrence_count: 5
+  last_seen: "2026-08-17T11:42:24+09:00"
   verification:
     status: "passed"
     exit_code: 0
