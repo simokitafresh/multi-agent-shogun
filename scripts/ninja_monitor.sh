@@ -1345,6 +1345,7 @@ declare -A CLEAR_BLOCKED_TS        # T1: agent別CLEAR-BLOCKED epoch秒リスト
 declare -A CLEAR_BLOCKED_NOTIFIED  # T2: 窓内しきい値到達→通知済みフラグ(再送抑止) — key: agent_name, value: "1"
 declare -A ACTIVE_IDLE_RECOVERY_SENT # active task+idle時の忍者再通知済みフラグ — key: "ninja:task_id:reason", value: "1"
 declare -A GATE_STALL_LAST_NOTIFIED # review_gate.done後の終端なし通知時刻 — key: "cmd:recipient", value: epoch秒
+declare -A GATE_STALL_ACTIVE_CMDS # 現役cmd集合（active task/queue command/live report）
 
 # review_gate.doneが両承認の完了証跡になった後、cmd_complete_gateのCLEAR/BLOCK終端が
 # 出ないまま放置されるGATE-STALLを常時検知する。review_gate.doneは配備時placeholderも
@@ -1381,18 +1382,75 @@ _gate_stall_has_terminal_metric() {
     return 1
 }
 
+_gate_stall_refresh_active_cmds() {
+    local cmd
+    GATE_STALL_ACTIVE_CMDS=()
+    while IFS= read -r cmd; do
+        [ -n "$cmd" ] && GATE_STALL_ACTIVE_CMDS["$cmd"]=1
+    done < <(python3 - "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/queue/reports" <<'PY'
+import glob
+import os
+import sys
+import yaml
+
+tasks_dir, command_file, reports_dir = sys.argv[1:]
+active_task_states = {"assigned", "acknowledged", "in_progress"}
+active_command_states = {"pending", "approved", "delegated", "acknowledged", "in_progress"}
+active_report_states = {"completed", "done", "revision_requested"}
+active = set()
+
+def load(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            value = yaml.safe_load(fh) or {}
+        return value if isinstance(value, dict) else {}
+    except (OSError, yaml.YAMLError):
+        return {}
+
+for path in glob.glob(os.path.join(tasks_dir, "*.yaml")):
+    task = load(path).get("task", {})
+    if not isinstance(task, dict) or task.get("status") not in active_task_states:
+        continue
+    cmd = str(task.get("parent_cmd") or task.get("cmd_id") or "").strip()
+    if cmd:
+        active.add(cmd)
+
+commands = load(command_file).get("commands", {})
+if isinstance(commands, dict):
+    for cmd, item in commands.items():
+        if isinstance(item, dict) and item.get("status") in active_command_states:
+            active.add(str(cmd).strip())
+
+# A live report with a review marker but no archive is still waiting for the
+# completion gate. Archived reports are intentionally absent from this lane.
+for path in glob.glob(os.path.join(reports_dir, "*_report_*.yaml")):
+    report = load(path)
+    if report.get("status") not in active_report_states:
+        continue
+    cmd = str(report.get("parent_cmd") or report.get("cmd_id") or "").strip()
+    if cmd:
+        active.add(cmd)
+
+for cmd in sorted(active):
+    print(cmd)
+PY
+    )
+}
+
 check_gate_stall() {
     local now=$EPOCHSECONDS warn_min warn_sec marker cmd marker_epoch elapsed_sec elapsed_min
     local message recipient last_sent since_last
     warn_min="$GATE_STALL_WARN_MIN"
     [[ "$warn_min" =~ ^[0-9]+$ ]] || warn_min=10
     warn_sec=$((warn_min * 60))
+    _gate_stall_refresh_active_cmds
 
     while IFS= read -r marker; do
         [ -f "$marker" ] || continue
         cmd=${marker%/review_gate.done}
         cmd=${cmd##*/}
         [[ "$cmd" == cmd_* ]] || continue
+        [ "${GATE_STALL_ACTIVE_CMDS[$cmd]:-}" = "1" ] || continue
         [ -f "${marker%/review_gate.done}/archive.done" ] && continue
 
         marker_epoch=$(_gate_stall_marker_epoch "$marker" 2>/dev/null || true)

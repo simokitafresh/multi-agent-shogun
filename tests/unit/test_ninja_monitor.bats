@@ -12,9 +12,11 @@ setup() {
         export NINJA_MONITOR_LIB_ONLY=1
         source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
         SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
-        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_stall" "$SCRIPT_DIR/logs" "$STATE_DIR"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_old" "$SCRIPT_DIR/queue/gates/cmd_gate_stall" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$STATE_DIR"
         old_ts=$(date -d "11 minutes ago" -Iseconds)
+        printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_old/review_gate.done"
         printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_stall/review_gate.done"
+        printf "task:\n  parent_cmd: cmd_gate_stall\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/active.yaml"
         : > "$SCRIPT_DIR/logs/gate_metrics.log"
         TEST_MESSAGES="$STATE_DIR/messages"
         : > "$TEST_MESSAGES"
@@ -24,6 +26,7 @@ setup() {
         check_gate_stall
         check_gate_stall
         test "$(wc -l < "$TEST_MESSAGES")" -eq 2
+        ! grep -q "cmd_gate_old" "$TEST_MESSAGES"
         grep -q "^shogun|stall_alert|【GATE-STALL】cmd_gate_stall" "$TEST_MESSAGES"
         grep -q "^karo|stall_alert|【GATE-STALL】cmd_gate_stall" "$TEST_MESSAGES"
         printf "notifications=%s\n" "$(wc -l < "$TEST_MESSAGES")"
@@ -36,9 +39,10 @@ setup() {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1
         source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
-        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_clear" "$SCRIPT_DIR/logs"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_clear" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs"
         old_ts=$(date -d "11 minutes ago" -Iseconds); clear_ts=$(date -Iseconds)
         printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_clear/review_gate.done"
+        printf "task:\n  parent_cmd: cmd_gate_clear\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/active.yaml"
         printf "%s\tcmd_gate_clear\tCLEAR\tall_gates_passed\n" "$clear_ts" > "$SCRIPT_DIR/logs/gate_metrics.log"
         TEST_MESSAGES="$BATS_TEST_TMPDIR/messages"; : > "$TEST_MESSAGES"
         log() { :; }; send_inbox_message() { printf "%s\n" "$*" >> "$TEST_MESSAGES"; }
@@ -55,9 +59,10 @@ setup() {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1
         source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
-        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_archive" "$SCRIPT_DIR/logs"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_archive" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs"
         old_ts=$(date -d "11 minutes ago" -Iseconds)
         printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_archive/review_gate.done"
+        printf "task:\n  parent_cmd: cmd_gate_archive\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/active.yaml"
         : > "$SCRIPT_DIR/queue/gates/cmd_gate_archive/archive.done"
         : > "$SCRIPT_DIR/logs/gate_metrics.log"
         TEST_MESSAGES="$BATS_TEST_TMPDIR/messages"; : > "$TEST_MESSAGES"
