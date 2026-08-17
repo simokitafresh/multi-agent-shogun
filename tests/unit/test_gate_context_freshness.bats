@@ -102,6 +102,54 @@ SH
   [[ "$output" != *"ALERT:"* ]]
 }
 
+@test "approved archived infra report routes root-fallback source to its owner" {
+  # test_necessity: an approved terminal report must create a context update
+  # request for every registered context owner, including infra root-fallback;
+  # otherwise GA-475 reappears after the report is archived.
+  # regression_justification: GA-475 emitted an infra ALERT even though the
+  # source commit's terminal report and APPROVE receipt already existed.
+  local repo="$BATS_TEST_TMPDIR/approved-infra"
+  mkdir -p "$repo/context" "$repo/scripts" "$repo/queue/archive/reports" "$repo/logs"
+  printf '<!-- last_updated: 2026-07-19 cmd_fixture -->\n' > "$repo/context/infrastructure.md"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email fixture@example.invalid
+  git -C "$repo" config user.name fixture
+  git -C "$repo" add context/infrastructure.md
+  git -C "$repo" commit -qm "cmd_karo_ci_fix_32035893446_normal: approved infra source"
+  local source_hash
+  source_hash="$(git -C "$repo" rev-parse HEAD)"
+  printf '%s\n' \
+    'status: completed' \
+    'verdict: PASS' \
+    'parent_cmd: cmd_karo_ci_fix_32035893446' \
+    'commit_hash: 0000000000000000000000000000000000000000' \
+    > "$repo/queue/archive/reports/saizo_report_cmd_karo_ci_fix_32035893446_20260818.yaml"
+  printf '%s\n' \
+    '- cmd_id: cmd_karo_ci_fix_32035893446' \
+    '  verdict: APPROVE' \
+    > "$repo/logs/gunshi_review_log.yaml"
+  cat > "$repo/scripts/check.sh" <<SH
+#!/usr/bin/env bash
+printf '%s\\n' 'ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19 repo=$repo root_fallback=yes owner=infra-platform update_trigger=root-fallback latest: $source_hash cmd_karo_ci_fix_32035893446_normal: approved infra source'
+SH
+  chmod +x "$repo/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$repo" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$repo/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-approved-infra" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md"* ]]
+  [[ "$output" == *"parent_cmd=cmd_karo_ci_fix_32035893446"* ]]
+  [[ "$output" == *"総合判定: OK"* ]]
+  [[ "$output" != *"ALERT: context/infrastructure.md"* ]]
+}
+
 @test "source boundary setter accepts the dashboard freshness tip on divergent HEAD" {
   # test_necessity: the source_commit setter must accept a reviewed origin/main
   # boundary when the shared worktree HEAD is on a divergent local branch.

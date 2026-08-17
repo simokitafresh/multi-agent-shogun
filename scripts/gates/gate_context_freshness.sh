@@ -182,18 +182,19 @@ PY
     [[ -n "$actual" ]] && grep -Fqx -- "$actual" <<<"$recorded"
 }
 
-# GA-427: runtime/core/ops commits do not pass through the research-only
-# reflux guard.  Their review evidence already exists in the normal report +
-# gunshi review ledgers, but the dashboard gate previously ignored it and
-# emitted the same ALERT until somebody copied the source hash into context.
-# Consume only an exact, terminal PASS report whose parent command also has an
-# APPROVE review.  This is an automatic update *request* receipt, not a content
-# reflection claim: later commits and unreviewed commits remain stale.
+# GA-427/475: source commits do not all pass through the research-only reflux
+# guard. Their review evidence already exists in terminal reports + the gunshi
+# review ledger, but the dashboard gate previously ignored it for infra
+# root-fallback contexts (and after report archival), emitting the same ALERT
+# until somebody copied the source hash into context. Consume only an exact,
+# terminal PASS report whose parent command also has an APPROVE review. This is
+# an automatic update *request* receipt, not a content reflection claim: later
+# commits and unreviewed commits remain stale.
 approved_report_requests_context_update() {
     local rel_path="$1" alert_line="$2"
     local latest_hash="" repo=""
 
-    [[ "$rel_path" == context/dm-signal*.md ]] || return 1
+    [[ "$rel_path" == context/*.md ]] || return 1
     [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
     latest_hash="${BASH_REMATCH[1]}"
     [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
@@ -202,6 +203,7 @@ approved_report_requests_context_update() {
     python3 - "$ROOT_DIR" "$repo" "$latest_hash" <<'PY'
 import glob
 import os
+import re
 import subprocess
 import sys
 
@@ -233,23 +235,59 @@ for row in reviews if isinstance(reviews, list) else []:
     if verdict in {"APPROVE", "APPROVED", "PASS"}:
         approved.add(str(row.get("cmd_id", row.get("parent_cmd", ""))))
 
-for path in glob.glob(os.path.join(root, "queue", "reports", "*_report_*.yaml")):
+try:
+    subject = subprocess.run(
+        ["git", "-C", repo, "show", "-s", "--format=%s", wanted],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+except (OSError, subprocess.CalledProcessError):
+    raise SystemExit(1)
+
+source_cmds = set(re.findall(r"\bcmd_[A-Za-z0-9_]+\b", subject))
+candidate_cmds = set(source_cmds)
+for cmd in tuple(source_cmds):
+    for suffix in ("_full", "_normal"):
+        if cmd.endswith(suffix):
+            candidate_cmds.add(cmd[:-len(suffix)])
+
+report_paths = set()
+for report_dir in ("queue/reports", "queue/archive/reports"):
+    for cmd in candidate_cmds:
+        report_paths.update(glob.glob(os.path.join(root, report_dir, f"*{cmd}*.yaml")))
+if not report_paths:
+    # Keep compatibility with legacy/nonstandard report filenames only when
+    # the source subject has no command identity to narrow the search.
+    report_paths.update(glob.glob(os.path.join(root, "queue", "reports", "*_report_*.yaml")))
+    report_paths.update(glob.glob(os.path.join(root, "queue", "archive", "reports", "*_report_*.yaml")))
+
+def same_command(source_cmd, parent_cmd):
+    if source_cmd == parent_cmd:
+        return True
+    for suffix in ("_full", "_normal"):
+        if source_cmd == parent_cmd + suffix or parent_cmd == source_cmd + suffix:
+            return True
+    return False
+
+for path in report_paths:
     try:
         report = yaml.safe_load(open(path, encoding="utf-8")) or {}
     except (OSError, yaml.YAMLError):
+        continue
+    if not isinstance(report, dict):
         continue
     if report.get("status") not in {"completed", "done"} or report.get("verdict") != "PASS":
         continue
     if str(report.get("parent_cmd", "")) not in approved:
         continue
+    parent_cmd = str(report.get("parent_cmd", ""))
     hashes = {str(report.get("commit_hash", ""))}
     hashes.update(
         str(row.get("commit_hash", ""))
         for row in report.get("cross_repo_commits", [])
         if isinstance(row, dict) and os.path.realpath(str(row.get("repo", ""))) == os.path.realpath(repo)
     )
-    if wanted in hashes:
-        print(report.get("parent_cmd", ""))
+    if wanted in hashes or any(same_command(cmd, parent_cmd) for cmd in source_cmds):
+        print(parent_cmd)
         raise SystemExit(0)
 raise SystemExit(1)
 PY
@@ -563,8 +601,10 @@ for rel_path in "${target_rel_paths[@]}"; do
             latest_hash=""
             [[ "${source_alerts[$rel_path]}" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] \
                 && latest_hash="${BASH_REMATCH[1]}"
-            printf 'CONTEXT_UPDATE_REQUEST project=dm-signal context=%s source_commit=%s parent_cmd=%s reason=approved_source_commit\n' \
-                "$rel_path" "$latest_hash" "$request_cmd"
+            request_project="infra"
+            [[ "$rel_path" == context/dm-signal*.md ]] && request_project="dm-signal"
+            printf 'CONTEXT_UPDATE_REQUEST project=%s context=%s source_commit=%s parent_cmd=%s reason=approved_source_commit\n' \
+                "$request_project" "$rel_path" "$latest_hash" "$request_cmd"
             echo "OK: ${basename_file} (承認済みsource commitのcontext更新要求を自動発火)"
             continue
         fi
