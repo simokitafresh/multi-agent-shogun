@@ -209,8 +209,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 18
-  last_seen: "2026-08-17T13:30:56+09:00"
+  occurrence_count: 19
+  last_seen: "2026-08-17T13:40:36+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -364,7 +364,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4325"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既知修正済みを確認: docs/research/gunshi_trf_date_mismatch_fix_20260414.md §2/§5 と logs/gunshi_gp_tracker.yaml:330 が根因と修正を記録。現行DM-Signal parity script は scripts/oneshot/cmd_1898_verify_okugi_alm_shin_parity.py:226-228 で production と同じ当月第1営業日 BDay(0) を使用し、前月末日ロジックは残存なし。cmd_1900実測は holding_signal 21/21、monthly_return 21/21、global max_diff=7.50e-11 < 1e-6。追加実装修正・decision_candidate不要。"
+  action_artifact: "docs/research/gunshi_trf_date_mismatch_fix_20260414.md:42-44,155-165;logs/gunshi_gp_tracker.yaml:330; /mnt/c/Python_app/DM-Signal/scripts/oneshot/cmd_1898_verify_okugi_alm_shin_parity.py:226-228; queue/archive/reports/saizo_report_cmd_1900_20260414.yaml:result.summary,binary_checks"
+  resolved_at: "2026-08-17T13:39:28+09:00"
 - id: INS-20260817-105246197-ed03
   ts: "2026-08-17T10:52:46+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4325; matched=境界; current_pattern=ログイン境界 第0段-手① — /loginルート新設(viewer当月クーポンのみ)+adminログインを/admin配下へ分離+未認証ルートガード(frontend 1層); candidate_level=4; candidate=CDP/OOM等3文字アクロニムがmin_len>3フィルタで除外され教訓スコア0。CDP計測タスクにCDP教訓が注入されない根因; source=gunshi_gp_tracker.yaml"
