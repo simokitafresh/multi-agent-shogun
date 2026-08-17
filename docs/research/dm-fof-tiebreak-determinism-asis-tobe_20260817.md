@@ -51,6 +51,18 @@
 
 **確定した設計制約**: (1)tie-breakは**共通選択層**として置く必要があり、各filterがscored candidatesを露出→共通層で6段比較→multi-view union/vote・TrendReversal top/bottomの意味は明示的に保つ。(2)GS fast pathは同じ共通層を通すか、parity testで同一結果を強制する。(3)導入時の組み替え規模=949月/74PF(scalar 837月)。根拠正本: `docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`(DM-Signal repo `6b3537fd`)、`queue/reports/kagemaru_report_cmd_4331.yaml`。
 
+## AsIs **v1.2** — 2026-08-17 19:30+09:00（手①②実装の進捗と、変わり身の選択部が別パターンである事実）
+
+| 項目 | 現物/実測 | 出典 |
+|---|---|---|
+| 手① 加速フィルタ | 共通関数 `backend/app/services/pipeline/selection.py` `select_top_n_with_ties(scored, top_n)` 新設・加速フィルタ差替済み。同率全採用のまま(挙動不変) | cmd_4334 commit `e44a7bb7`・家老レーンfull md5一致 |
+| 手②a Momentum／SingleView | 選択部を共通関数へ差替済み(2ファイル・+6/-18行のみ)。近接pytest 36 passed／0 skip、同値性4/4一致 | cmd_4335 commit `783668bb`・GATE CLEAR 18:57 |
+| 手②b 四つ目／新四つ目 | 視点ループ内(合成前)で共通関数へ差替済み。union／vote集計は不変 | cmd_4336 commit `ff77e7eb`・家老レーン検証中 |
+| **変わり身(TrendReversal)** | **選択部は同率全採用ではない**: `trend_reversal_filter.py:154-160` = score降順sort→`momentum_results[:select_n]`(上位N個をきっちり切る)＋`momentum_results[-select_n:]`(下位N個)→union。同点でもN個で切る。共通関数`select_top_n_with_ties`をそのまま当てると同点時に採用数が増え挙動が変わる | 将軍現物確認 19:00 `sed -n 150,166p` |
+| 標準PF executor | 手①②の対象外(FoF専用block経路のみ)。標準PF24はnear-tie 0 | AsIs v1.1のまま |
+
+**確定した設計制約(追加)**: (4)変わり身を挙動不変で共通層へ通すには、共通関数側に「同点包含のON/OFF」と「昇順(下位枝)」の入力が要る。同点包含=`True`が既存5フィルタ、`False`が変わり身の現行挙動。手③で6段キー(同率全採用廃止)へ切り替えると変わり身も同じ層で同点が解決されるので、この拡張は手③で自然に吸収される。
+
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
 ### 方針: 出力を凍結するのではなく、関数を決定的にする
@@ -118,6 +130,19 @@
 
 **設計判断(推薦・シンプル)**: 新規ファイル1本 `backend/app/services/pipeline/selection.py`(`select_top_n(scored, top_n, *, previous, price_data, target_date)`・εは定数)＋`execute_pipeline`引数1本＋各blockの`sort…selected=`数行を関数呼出しへ置換。executor.py・取込み・DB・frontend・GS(手④まで)は不変。新gate/新hook/観測拡張/新fixtureなし。
 
+
+### 手②c 変わり身の配線 — 2026-08-17 19:30+09:00（殿19:22「artifactと設計書も更新。そのうえで進めてよい」）
+
+事実→制約→判断→効果:
+- 事実: 変わり身の選択部は切り取り型(AsIs v1.2)。設計書v0.3の手②表「残り5フィルタを1体ずつ差替」はこの違いを見落としていた。
+- 制約: 手①②は挙動不変が目標。`select_top_n_with_ties`をそのまま当てると同点時に変わり身の採用数が変わる。
+- 判断: 手②cで共通関数に引数2つを足す — `include_ties: bool`(同点包含。既定True=既存5フィルタ不変)と`ascending: bool`(下位枝用。既定False)。変わり身のtop枝=`include_ties=False, ascending=False`、bottom枝=`include_ties=False, ascending=True`。既存5フィルタの呼出しは引数省略で不変。合否は既存と同じ「full 1回で4表md5がbaseline一致」。
+- 効果: 全6フィルタが1つの選択層を通る。手③はこの層の中身を6段キーへ切り替えるだけで全フィルタに効く。`include_ties`は手③で同率全採用が廃止されるため役目を終える(6段キーが同点を解決)。
+
+| 手 | 内容 | 検知(二値) | 戻し方 |
+|---|---|---|---|
+| ②c | `selection.py`へ`include_ties`／`ascending`引数追加(既定値=現行挙動)＋変わり身の2枝を配線 | 既存test_trend_reversal_filter FAIL0/SKIP0＋full 1回md5一致 | その手だけrevert |
+
 ### ledgerとの比較(殿12:39「ledgerより今回の方向性の方が筋が良いと思う。どう思う？」→ 同意)
 | 観点 | ledger(出力凍結) | 同値帯ε+tie-break(関数の決定化) |
 |---|---|---|
@@ -161,8 +186,10 @@
 - 13:01 殿「まず設計書とartifactに落とそう」→ ToBe v0.3
 - 13:08 殿「現行主スコアはたまたま加速で著名なだけで他のどのパターンでも出る。加速がデフォルトに見える表現は良くない」→ ①を『pipeline_configが定める選択スコア(config依存)』へ一般化、tie-breakは全フィルタ共通層に置くと明記
 - 12:43 cmd_4330 GATE CLEAR → AsIs v1.0(ratio score/同率全採用/二次keyなし、2015-04 exact tie両選択・2016-12 1位入替の実測)、ToBe v0.2(ε=相対1e-9級提案)
+- 16:44 殿「今デプロイされた。もう起票を始めよう」→ 手①cmd_4334(e44a7bb7)・手②a cmd_4335(783668bb・GATE CLEAR 18:57)。18:56 殿「進めてくれ」→ 手②b cmd_4336(ff77e7eb)。19:22 殿「もう少しわかりやすく」→変わり身の別パターンを説明→「artifactと設計書も更新。そのうえで進めてよい」→ AsIs v1.2＋手②c追記→cmd_4337起票
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
 - AsIs v0.9はcmd_4330で機構が確定したらv1.0へ。ToBe v0.1はε・比較キー・CAGR定義が決まったらv0.2へ。
 - AsIs v1.1(14:50)=cmd_4331の全FoF棚卸し・乾式適用。ToBe v0.3は不変(共通選択層の要請がAsIsで裏付けられた)。実装は殿合図で1体1層。
+- AsIs v1.2(19:30)=手①②a②b実装済み＋変わり身が切り取り型である事実。ToBe v0.3に手②c(共通関数へ引数2つ・変わり身配線)を追記。6段キー本体は不変。
