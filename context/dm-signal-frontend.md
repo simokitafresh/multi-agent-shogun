@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-17 cmd_karo_hotfix_ga471_context_freshness_202608170345 reviewed source boundary -->
+<!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
+<!-- source_commit:55b81b43 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=55b81b43 -->
 <!-- source_commit:62f0fba0 reason:cmd_karo_hotfix_ga471_context_freshness_202608170345 content reflection evidence:Monthly Trade pending display simplified; source frontend tests and component diff reviewed -->
 <!-- source_commit:c22362a9 reason:cmd_4298 reviewed source boundary evidence:SG7 LGTM and Karo ACCEPT; frontend scope one-file commit -->
 <!-- source_commit:33ba0d96 reason:cmd_4297 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=33ba0d96 -->
@@ -448,3 +449,8 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 ## 27. Monthly Trade pending表示の現行境界 (cmd_4324, 2026-08-17)
 
 結論: `MonthlyTradeTable` はdeprecatedなNext Signal panelとdecision-sourceバッジ（Confirmed/Corrected/Historical/Pending）を描画せず、行単位のpending indicatorと指定列のopacityだけで未確定状態を示す。FoFのticker/weight表示とraw UUID非露出は維持する。参照: `frontend/components/monthly-trade-table.tsx`, `frontend/components/__tests__/monthly_trade_table_fof_uuid.test.tsx`、source commit `62f0fba0`。
+
+## 28. ログイン境界 第0段 live+是正2件 (cmd_4325-4327/4332/4333, 2026-08-17)
+
+結論: 認証は`/login`ルート境界(`components/route-access-boundary.tsx`)で切替、認証主体が変わる瞬間に7層(React state/handoff sessionStorage/localStorage/api-cache+ETag IndexedDB/SW CacheStorage)をハードリセット(`resetAuthScopedClientState`)、キャッシュキーとBE ETag/Cache-Controlに主体(tier/admin)を含める(no-store)。adminは`/admin/login`のみ(一般UIからリンクなし)。是正: 文言=「パスワードもしくはクーポンコード」(cmd_4332)、`/admin`配下は認証後protectedツリー(Provider内)で描画(cmd_4333、useViewerPermissions Provider外例外の根治)。殿確認14:28 OK。origin/main `55b81b43` FE live。第1段(identity/entitlement)は殿合図待ち。
+→ 正本 `docs/research/dm-login-boundary-asis-tobe_20260817.md`(gist 0d23e0c3)

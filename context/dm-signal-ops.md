@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-17 GA-472 rollback boundary reflected in ops context -->
+<!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
+<!-- source_commit:46a1f213 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=46a1f213 -->
 <!-- source_commit:131e5dbb reason:GA-472 rollback boundary reflected in ops context evidence:git -C /mnt/c/Python_app/DM-signal diff --stat 3e28b617 131e5dbb; rollback commit 131e5dbb; §Current source boundary added -->
 <!-- source_commit:a9883865 reason:業務列parity標準+1手の型を§98へ反映 evidence:scripts/dm_signal_business_parity.py; blt_20260815_183204 -->
 <!-- source_commit:e3dccd87 reason:cmd_karo_hotfix_rb8_context_freshness_20260814_normal evidence:cmd_4301_context_freshness_AC2_ops -->

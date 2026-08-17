@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-14 cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) -->
+<!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
+<!-- source_commit:6b3537fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=6b3537fd -->
 <!-- source_commit:99199a9c reason:cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) evidence:cmd_4301: context_freshness_check --cmd-commit-list cmd_4301の最新行=99199a9c。doc-only 8commitをmainへff-push済み(e3dccd87..99199a9c) -->
 <!-- dm_signal_research_reflux: fingerprint=7b26c254b1af0d1e09ba9effee59c0f2a292c3d53d9946a2498948ad1e61896c; mode=non-target; evidence_b64=Y21kXzQzMzEgcmV2aXNpb24gYXJ0aWZhY3QgZXhwYW5kcyBBQzMgYWNyb3NzIGFsbCA3NCBGb0ZzIHdpdGggYnJhbmNoL3ZpZXcgc2VtYW50aWNzOyBubyByZXNlYXJjaCBpbmRleCBzeW5jaHJvbml6YXRpb24gd2FzIHBlcmZvcm1lZCBpbiB0YXJnZXQgcmVwbw== -->
 <!-- dm_signal_research_reflux: fingerprint=57062b599ca7a88638062f79aa252acfb453d47087a796e1dd2bb61133258d38; mode=non-target; evidence_b64=Y21kXzQzMzEgYXJ0aWZhY3QgZG9jdW1lbnRzIHByb2R1Y3Rpb24gRm9GIHNjb3JlLWdhcCBhbmQgc2l4LWtleSBkcnktcnVuOyBubyByZXNlYXJjaCBpbmRleCBzeW5jaHJvbml6YXRpb24gd2FzIHBlcmZvcm1lZCBpbiB0YXJnZXQgcmVwbw== -->
@@ -60,3 +61,6 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 - 月次研究・GS・パリティ: 詳細層の該当`§`見出しを検索。
 - 運用・設計・因果: 詳細層の`cmd_`、`正本`、`source commit`を検索。
 - 研究教訓・用語辞書: 詳細層の教訓索引・知識辞書節を検索。
+
+## cmd_4331 FoF tie-break dry-run (2026-08-17)
+- 74 FoF(選択block有57/無17)を同一as-of月で6段キー乾式適用: scalar filter 36PFで837月変化(現行同率全採用792月)、全FoF 949月変化。段別解決: ②12M 4,511/③CAGR 668/④MaxDD 0/⑤現保有 7/⑥早い方 7、②skip 264。標準PF24=near-tie 0(ε相対1e-9の根拠)。top-N/tie-breakは各filter+GS fast pathへ分散(共通helperなし)。→ `docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`(DM-Signal repo 6b3537fd) / ops §99 / 設計書 `docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md`

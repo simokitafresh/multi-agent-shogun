@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-17 GA-472 rollback boundary reflected in core context -->
+<!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
+<!-- source_commit:46a1f213 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=46a1f213 -->
 <!-- source_commit:131e5dbb reason:GA-472 rollback boundary reflected in core context evidence:git -C /mnt/c/Python_app/DM-signal diff --stat 3e28b617 131e5dbb; rollback commit 131e5dbb; §Current source boundary added -->
 <!-- source_commit:a9883865 reason:L1分割6手live+L2分割走行中を§94へ反映 evidence:origin/main a9883865 git log; docs/research/dm-l1-split-design_20260815.md AsIs v1.5 -->
 <!-- source_commit:3e28b617 reason:cmd_karo_hotfix_rb8_context_freshness_20260814_normal evidence:cmd_4301_context_freshness_AC2_core -->
@@ -543,3 +544,6 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - → [[dm_signal_pi_full]] DM-Signal 本番不変量(PI)全文(全PI一覧・適用ルール)
 - → [[dm_signal_trade_rules_full]] DM-Signalトレードルール全文(エントリー/エグジット条件)
 - → [[dialogue_preprocessing_research_20260331]] 前処理研究日誌=コア改善の知的基盤
+
+## §95 tier依存endpointのETag/Cache-Controlに主体を含める (cmd_4327, 2026-08-17)
+- `backend/app/utils/etag.py` `generate_etag`入力に主体(tier_id/is_admin/visible_ids)を含め、tier依存endpointは`Cache-Control: no-store`。別主体で同一ETag→304が成立しない不変量(`test_etag` PASS)。→ `docs/research/dm-login-boundary-asis-tobe_20260817.md`
