@@ -105,7 +105,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4330"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認でLG025(WF並列禁止)の既存Level4防御を確認済み。context/dm-signal-ops.md:511の直列実行原則と.claude/hooks/pre-bash-combined.sh:939-946のwf_runner.py BLOCKが候補内容を既に強制しており、本insightの新規実装・decision_candidateは不要。"
+  action_artifact: "primary=context/dm-signal-ops.md:511;guard=.claude/hooks/pre-bash-combined.sh:939-946;target=queue/insights.yaml:INS-20260817-124329849-4d49"
+  resolved_at: "2026-08-17T22:27:57+09:00"
 - id: INS-20260817-124330190-ad74
   ts: "2026-08-17T12:43:30+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4330偵察]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_4323偵察後実装; score=23.7) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=22.1) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=21.5)。概念定義とaliases追加を検討せよ"
