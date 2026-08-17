@@ -7236,8 +7236,17 @@ find_closed_parent_cmd_status() {
         report_parent=$(yaml_field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
         [ "$report_parent" = "$target_cmd" ] || continue
         report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
-        [[ "$report_status" =~ ^(completed|done|success)$ ]] || continue
+        [[ "$report_status" =~ ^(completed|done|success|failed)$ ]] || continue
         report_verdict=$(yaml_field_get "$report_file" "verdict" "" 2>/dev/null || true)
+        # A terminal FAIL report is still primary evidence that this exact
+        # parent_cmd was deployed and reached a terminal worker outcome.  It
+        # must suppress undeployed/cmd_pending/idle-backlog alerts, while the
+        # separate check_inbox_renudge path continues to surface the failed
+        # report for review/completion handling.
+        if [ "$report_verdict" = "FAIL" ]; then
+            printf 'completed_terminal_fail\n'
+            return 0
+        fi
         [[ "$report_verdict" =~ ^(PASS|PASS_NO_IMPROVEMENT)$ ]] || continue
 
         # Prefer the exact per-report Gunshi approval record.  The gate marker
@@ -7441,6 +7450,9 @@ check_karo_pending_cmd() {
         # 一次task照合を使い、assigned以降の実態を優先する。
         local deployed_status
         deployed_status=$(find_deployed_task_status "$cmd_id")
+        if [ -z "$deployed_status" ]; then
+            deployed_status=$(find_closed_parent_cmd_status "$cmd_id" 2>/dev/null || true)
+        fi
         if [ -n "$deployed_status" ]; then
             log "PENDING-CMD-DEPLOYED: ${cmd_id} task_status=${deployed_status}; suppressing cmd_pending notification"
             continue

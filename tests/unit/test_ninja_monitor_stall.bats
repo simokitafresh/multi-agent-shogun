@@ -776,6 +776,83 @@ cat "$LOG"
     [[ "$output" == *"TRUE_UNDEPLOYED_NTFY=3"* ]]
 }
 
+# test_necessity: exact parent_cmdのterminal FAIL reportは配備済み終端証跡として
+# undeployed/cmd_pending/idle-backlogの全経路を閉じ、真の未配備cmdだけを3経路で通知する。
+@test "terminal FAIL report is deployment evidence across undeployed pending and idle backlog" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+run_case() {
+    local case_name="$1" fixture="$2" root="$NINJA_MONITOR_TEST_ROOT/$1"
+    local delegated_at
+    delegated_at=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
+    mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/queue/gates/cmd_case" \
+        "$root/scripts" "$root/logs" "$STATE_DIR"
+    printf "commands:\n  cmd_case:\n    status: pending\n    timestamp: \"2026-08-17T19:00:00\"\n    delegated_at: \"%s\"\n" "$delegated_at" > "$root/queue/shogun_to_karo.yaml"
+    printf "messages: []\n" > "$root/queue/inbox.yaml"
+    case "$fixture" in
+        pass)
+            printf "status: completed\nverdict: PASS\nparent_cmd: cmd_case\ntask_id: cmd_case_full\n" > "$root/queue/reports/kagemaru_report_cmd_case.yaml"
+            : > "$root/queue/gates/cmd_case/archive.done"
+            ;;
+        active)
+            printf "task:\n  parent_cmd: cmd_case\n  status: in_progress\n  task_id: cmd_case_full\n" > "$root/queue/tasks/kagemaru.yaml"
+            ;;
+        failed)
+            printf "status: failed\nverdict: FAIL\nparent_cmd: cmd_case\ntask_id: cmd_case_full\n" > "$root/queue/reports/kagemaru_report_cmd_case.yaml"
+            ;;
+        undeployed) ;;
+        *) return 1 ;;
+    esac
+
+    printf "#!/usr/bin/env bash\nprintf \"%s\\n\" \"\${1:-}\" >> \"\$TEST_NTFY\"\n" > "$root/scripts/ntfy.sh"
+    chmod +x "$root/scripts/ntfy.sh"
+    printf "#!/usr/bin/env bash\nprintf \"%s|%s|%s\\n\" \"\$1\" \"\$3\" \"\$2\" >> \"\$TEST_INBOX\"\n" > "$root/scripts/inbox_write.sh"
+    chmod +x "$root/scripts/inbox_write.sh"
+
+    TEST_NTFY="$root/ntfy.log"; TEST_INBOX="$root/inbox.log"
+    : > "$TEST_NTFY"; : > "$TEST_INBOX"
+    TEST_DELEGATED_AT="$delegated_at"
+    export TEST_NTFY TEST_INBOX TEST_DELEGATED_AT
+    NINJA_NAMES=(n1); declare -gA PANE_TARGETS=([n1]=pane-n1)
+    KARO_PANE=karo-pane
+    check_idle() { return 0; }
+    notify_karo_durable() { printf "%s|%s\n" "$1" "$3" >> "$TEST_INBOX"; return 0; }
+    list_pending_cmds_cached() { printf "cmd_case|2026-08-17T19:00:00|%s||\n" "$TEST_DELEGATED_AT"; }
+    log() { printf "%s\n" "$1" >> "$LOG"; }
+    declare -gA UNDEPLOYED_CMD_NOTIFIED=() PREV_PENDING_SET=()
+
+    check_undeployed_cmds
+    check_karo_pending_cmd
+    IDLE_BACKLOG_ALERT_NOW=1000; check_idle_backlog_alert
+    IDLE_BACKLOG_ALERT_NOW=1180; check_idle_backlog_alert
+    IDLE_BACKLOG_ALERT_NOW=1181; check_idle_backlog_alert
+
+    local ntfy_count cmd_pending_count pending_work_count
+    ntfy_count=$(wc -l < "$TEST_NTFY" | tr -d " ")
+    cmd_pending_count=$(grep -c "PENDING-CMD-NEW" "$LOG" || true)
+    pending_work_count=$(grep -c "^pending_work|" "$TEST_INBOX" || true)
+    printf "CASE=%s fixture=%s undeployed=%s cmd_pending=%s pending_work=%s\n" \
+        "$case_name" "$fixture" "$ntfy_count" "$cmd_pending_count" "$pending_work_count"
+}
+
+run_case pass_case pass
+run_case active_case active
+run_case failed_case failed
+run_case true_undeployed_case undeployed
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CASE=pass_case fixture=pass undeployed=0 cmd_pending=0 pending_work=0"* ]]
+    [[ "$output" == *"CASE=active_case fixture=active undeployed=0 cmd_pending=0 pending_work=0"* ]]
+    [[ "$output" == *"CASE=failed_case fixture=failed undeployed=0 cmd_pending=0 pending_work=0"* ]]
+    [[ "$output" == *"CASE=true_undeployed_case fixture=undeployed undeployed=1 cmd_pending=1 pending_work=1"* ]]
+}
+
 @test "check_karo_pending_cmd: 新規pendingが猶予内ならcmd_pending通知しない" {
     RECENT_TS=$(date -d "10 seconds ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '
