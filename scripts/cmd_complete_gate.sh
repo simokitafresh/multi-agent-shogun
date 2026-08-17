@@ -649,8 +649,133 @@ push_overlap_blocking_paths() {
     printf '%s\n' "$overlap_blocking"
 }
 
+# Push a commit whose paths overlap the shared worktree's dirty paths without
+# changing, stashing, or resetting that worktree.  The temporary detached
+# worktree is intentionally the push execution root so the repository's normal
+# pre-push hook still runs against a clean checkout and receives the exact
+# commit being published.
+resolve_push_source_commit() {
+    local task_file="$1" repo="$2" report_file source_sha
+
+    report_file=$(python3 - "$task_file" "$SCRIPT_DIR" <<'PY'
+import os
+import sys
+import yaml
+
+task_file, script_dir = sys.argv[1:]
+try:
+    with open(task_file, encoding="utf-8") as handle:
+        data = yaml.safe_load(handle) or {}
+except Exception:
+    raise SystemExit(1)
+task = data.get("task", data)
+report = str(task.get("report_path") or task.get("report_filename") or "").strip()
+if report and not os.path.isabs(report):
+    report = os.path.join(script_dir, report)
+print(report)
+PY
+    ) || return 1
+    [ -n "$report_file" ] && [ -f "$report_file" ] || return 1
+
+    source_sha=$(python3 - "$report_file" <<'PY'
+import re
+import sys
+import yaml
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as handle:
+        report = yaml.safe_load(handle) or {}
+except Exception:
+    raise SystemExit(1)
+value = str(report.get("commit_hash") or "").strip().lower()
+if not re.fullmatch(r"[0-9a-f]{40}", value):
+    raise SystemExit(1)
+print(value)
+PY
+    ) || return 1
+    git -C "$repo" cat-file -e "${source_sha}^{commit}" 2>/dev/null || return 1
+    printf '%s\n' "$source_sha"
+}
+
+push_from_clean_worktree() {
+    local repo="$1" upstream_ref="$2" remote="$3" push_ref="$4" remote_tip="$5"
+    shift 5
+    local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha
+    local source_patch applied_patch
+    local -a applied_shas=()
+
+    temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-gate-push.XXXXXX") || return 1
+    clean_repo="$temp_parent/repo"
+
+    # WSL2 can report a /tmp worktree as dubious ownership relative to /mnt/c.
+    # Register only this unique path and remove the registration after cleanup.
+    git config --global --add safe.directory "$clean_repo" 2>/dev/null || true
+    if ! git -C "$repo" worktree add --detach "$clean_repo" "$remote_tip" >/dev/null 2>&1; then
+        git config --global --unset-all safe.directory "^${clean_repo}\$" 2>/dev/null || true
+        rmdir "$temp_parent" 2>/dev/null || true
+        return 1
+    fi
+
+    rc=0
+    for source_sha in "$@"; do
+        if ! git -C "$clean_repo" cherry-pick --no-edit "$source_sha" >/dev/null 2>&1; then
+            git -C "$clean_repo" cherry-pick --abort >/dev/null 2>&1 || true
+            rc=1
+            break
+        fi
+        applied_shas+=("$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)")
+    done
+
+    if [ "$rc" -eq 0 ]; then
+        published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+        if [ -z "$published_sha" ]; then
+            rc=1
+        fi
+    fi
+
+    if [ "$rc" -eq 0 ]; then
+        for source_sha in "$@"; do
+            source_patch=$(git -C "$repo" show --format= --no-ext-diff "$source_sha" 2>/dev/null | git patch-id --stable 2>/dev/null | awk 'NR==1 {print $1}')
+            applied_patch=""
+            for applied_sha in "${applied_shas[@]}"; do
+                applied_patch=$(git -C "$clean_repo" show --format= --no-ext-diff "$applied_sha" 2>/dev/null | git patch-id --stable 2>/dev/null | awk 'NR==1 {print $1}')
+                [ -n "$source_patch" ] && [ "$source_patch" = "$applied_patch" ] && break
+                applied_patch=""
+            done
+            if [ -z "$source_patch" ] || [ "$source_patch" != "$applied_patch" ]; then
+                rc=1
+                break
+            fi
+        done
+    fi
+
+    if [ "$rc" -eq 0 ] && ! git -C "$clean_repo" push "$remote" "HEAD:$push_ref"; then
+        rc=1
+    fi
+
+    if [ "$rc" -eq 0 ]; then
+        remote_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+        if [ -z "$remote_sha" ] || ! git -C "$repo" merge-base --is-ancestor "$published_sha" "$remote_sha"; then
+            rc=1
+        fi
+    fi
+
+    # Hook-created artifacts are confined to the temporary execution root.
+    cleanup_rc=0
+    if [ -e "$clean_repo" ]; then
+        timeout "${CMD_COMPLETE_GATE_PUSH_CLEANUP_TIMEOUT:-30}" \
+            git -C "$repo" worktree remove --force "$clean_repo" >/dev/null 2>&1 || cleanup_rc=1
+        [ ! -e "$clean_repo" ] || cleanup_rc=1
+    fi
+    git config --global --unset-all safe.directory "^${clean_repo}\$" 2>/dev/null || true
+    [ ! -d "$temp_parent" ] || rmdir "$temp_parent" 2>/dev/null || cleanup_rc=1
+    [ "$cleanup_rc" -eq 0 ] || rc=1
+    return "$rc"
+}
+
 push_task_repositories() {
-    local task_file repo upstream_ref head_sha upstream_sha
+    local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
+    local overlap_blocking all_sources_ok push_rc
     local -a repos=()
     local -A seen_repos=()
 
@@ -676,22 +801,54 @@ push_task_repositories() {
         fi
 
         upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
-        head_sha=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
         upstream_sha=$(git -C "$repo" rev-parse '@{upstream}' 2>/dev/null || true)
-        local overlap_blocking=""
-        overlap_blocking=$(push_overlap_blocking_paths "$repo" "$upstream_ref" "$head_sha" "$upstream_sha")
+        [ -n "$upstream_ref" ] || { echo "  git push: BLOCK ($repo upstream missing)"; return 1; }
+        remote="${upstream_ref%%/*}"
+        push_ref="refs/heads/${upstream_ref#*/}"
+        remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+        [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || { echo "  git push: BLOCK ($repo remote tip unavailable)"; return 1; }
 
-        if [ -n "$upstream_ref" ] && [ -n "$head_sha" ] && [ "$head_sha" = "$upstream_sha" ]; then
-            echo "  git push: SKIP ($repo already up-to-date with ${upstream_ref})"
-        elif [ -n "$overlap_blocking" ]; then
-            echo "  git push: SKIP ($repo GA-PUSH1 overlap precheck: dirty path overlaps pushed commit range, push not attempted)"
-            printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
-        elif git -C "$repo" push 2>&1; then
-            echo "  git push: OK ($repo)"
+        local -a source_commits=()
+        all_sources_ok=true
+        for task_file in "$@"; do
+            [ -f "$task_file" ] || continue
+            [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
+            source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
+            if [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
+                source_commits+=("$source_sha")
+            else
+                all_sources_ok=false
+            fi
+        done
+        if [ "$all_sources_ok" != true ] || [ "${#source_commits[@]}" -eq 0 ]; then
+            echo "  git push: BLOCK ($repo report source commit unavailable)"
+            return 1
+        fi
+
+        local all_remote=true
+        for source_sha in "${source_commits[@]}"; do
+            if ! git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
+                all_remote=false
+                break
+            fi
+        done
+        if [ "$all_remote" = true ]; then
+            echo "  git push: SKIP ($repo report source commits already remote-contained)"
+            continue
+        fi
+
+        overlap_blocking="$(push_overlap_blocking_paths "$repo" "" "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" "$upstream_sha")"
+        echo "  git push: isolated clean snapshot ($repo remote-tip source-only push)"
+        [ -n "$overlap_blocking" ] && printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
+        if push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "${source_commits[@]}"; then
+            echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"
         else
-            echo "  [INFO] git push: WARN ($repo push failed, non-blocking)"
+            echo "  git push: BLOCK ($repo source-only push/verification failed)"
+            push_rc=1
+            return "$push_rc"
         fi
     done
+    return 0
 }
 
 if [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]; then
@@ -9810,6 +9967,20 @@ else
     echo "  SKIP (gunshi_review_log.yaml not found)"
 fi
 
+# ─── GATE CLEAR前のsource-only push ───
+# GATE CLEARを先に記録してからpushすると、push失敗がWARNへ縮退して
+# 「未公開のままCLEAR」という偽完了になる。remote先端へのsource-only pushと
+# remote包含検証を完了してから、下のterminal CLEAR分岐へ進める。
+if [ "$ALL_CLEAR" = true ] \
+   && [[ "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]]; then
+    echo ""
+    echo "Git push (pre-GATE CLEAR, report source only):"
+    if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then
+        record_block_reason "autopush_source_only_failed"
+        ALL_CLEAR=false
+    fi
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
@@ -10647,10 +10818,10 @@ PYEOF
         || true) &
     echo "Task idle transition: queued (async)"
 
-    # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
+    # source-only pushはGATE CLEAR記録前に完了済み。ここで再実行すると
+    # 同一sourceを二重適用し得るため、post-CLEAR laneでは実行しない。
     echo ""
-    echo "Git push (post-GATE CLEAR):"
-    push_task_repositories "${MATCHING_TASK_FILES[@]}"
+    echo "Git push (post-GATE CLEAR): SKIP (completed before terminal CLEAR)"
 
     # dashboard_auto_section is intentionally not launched here. The sole
     # dashboard_update writer owns auto-section generation via its normal
