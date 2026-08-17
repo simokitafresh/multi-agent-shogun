@@ -36,6 +36,21 @@
 
 **確定した機構**: 比較値=ratio score(1M/3M)、同値判定=浮動小数の完全一致のみ、tie-break=なし(同率は全採用)。∴ 1e-14級の差で「単独保有⇄2体等分保有⇄逆の単独保有」が揺れる。**標準PFが動かないのはETF同士のscoreがこの精度で並ばないから**。
 
+## AsIs **v1.1** — 2026-08-17 14:50+09:00（cmd_4331 read-only偵察・影丸・GATE CLEAR 13:55。全FoF棚卸し+6段キー乾式適用）
+
+| 項目 | 現物/実測 | 出典 |
+|---|---|---|
+| FoF母集団 | 74 PF(`portfolios.type='fof'`)。selection block有=57(MomentumAcceleration 18／Momentum 9／MultiView 9／SingleView 9／TrendReversal 9／WeightedMultiView 3)、**無=17**(Ave-X・裏Ave-X・New Fund of Funds×4・劇薬DM×2・分身×9)。terminalは全てEqualWeight | cmd_4331 AC1 |
+| 選択層の位置 | 共通dispatchは`backend/app/services/pipeline/engine.py:109-142` `PipelineEngine.execute_pipeline()`だが**ranking/cutoff/tie-breakは所有しない**。各block(`momentum_filter.py:141-147`／`momentum_acceleration_filter.py:135-142`／`multi_view_momentum_filter.py:203-210`／`single_view_momentum_filter.py:167-174`／`weighted_multi_view_momentum_filter.py:205-211`／`trend_reversal_filter.py:154-163`)が個別にsort・cutoff(`>=cutoff`全採用)・union/voteを実装。**共通top-N/tie-break helperは存在しない** | cmd_4331 AC1 |
+| GS共有 | run_077_kasoku_ratio.py:858-860,1447-1449／run_077_oikaze.py:8-16／run_l1plus_backtest.py:32-66 がproduction blockをparity referenceとして参照するが、**vectorized fast pathは独自にscore/cutoffを計算**(併存) | cmd_4331 AC1 |
+| score gap分布(scalar filter 45PF) | rank1/rank2の7,077観測: 相対<1e-9=982、exact同値=888、現行の同率全採用(expansion)=792月。MAF 18PFが754/697/697で大半 | cmd_4331 AC2 |
+| 標準PF対照 | 24 PF(全てMomentumFilter)4,178観測: 相対<1e-9=**0**、exact=**0** → **ε=相対1e-9の本番データ根拠** | cmd_4331 AC2 |
+| 6段キー乾式適用 | scalar 36PF: 変化837月(現行expansion 792月)。**全74 FoF: 適用月9,141・評価15,910・変化949月**(MAF722／Momentum55／MultiView30／SingleView60／Trend82／Weighted0／no-block 0)。段別解決: ②12M 4,511／③設定来CAGR 668／④MaxDD 0／⑤現保有 7／⑥設定来早い方 7、②skip(12M未満)264 | cmd_4331 AC3 |
+| データ充足 | 12M・設定来CAGR・MaxDDは子PF`monthly_returns.cumulative_return`からpoint-in-timeで計算可(未来行不要)。no-block 17 PFは選択スコアの対象外で、実装カバレッジ74/74を主張する前に別途整理が要る | cmd_4331 AC3 |
+| 既存テスト | test_momentum_acceleration_filter／test_pipeline_engine／test_grid_search_consistency／test_multi_view_momentum_filter／test_single_view_momentum_filter 等が拡張対象(本cmdではテスト未作成) | cmd_4331 AC3 |
+
+**確定した設計制約**: (1)tie-breakは**共通選択層**として置く必要があり、各filterがscored candidatesを露出→共通層で6段比較→multi-view union/vote・TrendReversal top/bottomの意味は明示的に保つ。(2)GS fast pathは同じ共通層を通すか、parity testで同一結果を強制する。(3)導入時の組み替え規模=949月/74PF(scalar 837月)。根拠正本: `docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`(DM-Signal repo `6b3537fd`)、`queue/reports/kagemaru_report_cmd_4331.yaml`。
+
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
 ### 方針: 出力を凍結するのではなく、関数を決定的にする
@@ -106,6 +121,8 @@
 - 13:01 殿「まず設計書とartifactに落とそう」→ ToBe v0.3
 - 13:08 殿「現行主スコアはたまたま加速で著名なだけで他のどのパターンでも出る。加速がデフォルトに見える表現は良くない」→ ①を『pipeline_configが定める選択スコア(config依存)』へ一般化、tie-breakは全フィルタ共通層に置くと明記
 - 12:43 cmd_4330 GATE CLEAR → AsIs v1.0(ratio score/同率全採用/二次keyなし、2015-04 exact tie両選択・2016-12 1位入替の実測)、ToBe v0.2(ε=相対1e-9級提案)
+- 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
 - AsIs v0.9はcmd_4330で機構が確定したらv1.0へ。ToBe v0.1はε・比較キー・CAGR定義が決まったらv0.2へ。
+- AsIs v1.1(14:50)=cmd_4331の全FoF棚卸し・乾式適用。ToBe v0.3は不変(共通選択層の要請がAsIsで裏付けられた)。実装は殿合図で1体1層。
