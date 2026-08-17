@@ -5,6 +5,72 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: 両承認後のreview_gate.doneが閾値以上終端なしなら将軍と家老へ1回だけ通知し、
+# CLEAR/BLOCK終端またはarchive.doneがある世代は通知しない不変量を守る。
+@test "GATE-STALL notifies both recipients for an un-terminated review gate" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_stall" "$SCRIPT_DIR/logs" "$STATE_DIR"
+        old_ts=$(date -d "11 minutes ago" -Iseconds)
+        printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_stall/review_gate.done"
+        : > "$SCRIPT_DIR/logs/gate_metrics.log"
+        TEST_MESSAGES="$STATE_DIR/messages"
+        : > "$TEST_MESSAGES"
+        log() { :; }
+        send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+        GATE_STALL_WARN_MIN=10; STALL_RENOTIFY_DEBOUNCE=300
+        check_gate_stall
+        check_gate_stall
+        test "$(wc -l < "$TEST_MESSAGES")" -eq 2
+        grep -q "^shogun|stall_alert|【GATE-STALL】cmd_gate_stall" "$TEST_MESSAGES"
+        grep -q "^karo|stall_alert|【GATE-STALL】cmd_gate_stall" "$TEST_MESSAGES"
+        printf "notifications=%s\n" "$(wc -l < "$TEST_MESSAGES")"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"notifications=2"* ]]
+}
+
+@test "GATE-STALL suppresses a review gate with a later CLEAR metric" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_clear" "$SCRIPT_DIR/logs"
+        old_ts=$(date -d "11 minutes ago" -Iseconds); clear_ts=$(date -Iseconds)
+        printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_clear/review_gate.done"
+        printf "%s\tcmd_gate_clear\tCLEAR\tall_gates_passed\n" "$clear_ts" > "$SCRIPT_DIR/logs/gate_metrics.log"
+        TEST_MESSAGES="$BATS_TEST_TMPDIR/messages"; : > "$TEST_MESSAGES"
+        log() { :; }; send_inbox_message() { printf "%s\n" "$*" >> "$TEST_MESSAGES"; }
+        GATE_STALL_WARN_MIN=10; STALL_RENOTIFY_DEBOUNCE=300
+        check_gate_stall
+        test ! -s "$TEST_MESSAGES"
+        printf "notifications=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"notifications=0"* ]]
+}
+
+@test "GATE-STALL suppresses an archived review gate" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_archive" "$SCRIPT_DIR/logs"
+        old_ts=$(date -d "11 minutes ago" -Iseconds)
+        printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_archive/review_gate.done"
+        : > "$SCRIPT_DIR/queue/gates/cmd_gate_archive/archive.done"
+        : > "$SCRIPT_DIR/logs/gate_metrics.log"
+        TEST_MESSAGES="$BATS_TEST_TMPDIR/messages"; : > "$TEST_MESSAGES"
+        log() { :; }; send_inbox_message() { printf "%s\n" "$*" >> "$TEST_MESSAGES"; }
+        GATE_STALL_WARN_MIN=10; STALL_RENOTIFY_DEBOUNCE=300
+        check_gate_stall
+        test ! -s "$TEST_MESSAGES"
+        printf "notifications=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"notifications=0"* ]]
+}
+
 # test_necessity(cmd_karo_hotfix_completion_event_dedupe_20260723): identical report bytes plus the same immutable task contract
 # must execute report gate once across monitor cycles/restarts, while a real
 # contract change must create a new generation and re-enable validation.

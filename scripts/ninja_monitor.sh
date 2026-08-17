@@ -1344,6 +1344,77 @@ declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ �
 declare -A CLEAR_BLOCKED_TS        # T1: agent別CLEAR-BLOCKED epoch秒リスト(窓内のみ保持) — key: agent_name, value: "epoch1 epoch2 ..."
 declare -A CLEAR_BLOCKED_NOTIFIED  # T2: 窓内しきい値到達→通知済みフラグ(再送抑止) — key: agent_name, value: "1"
 declare -A ACTIVE_IDLE_RECOVERY_SENT # active task+idle時の忍者再通知済みフラグ — key: "ninja:task_id:reason", value: "1"
+declare -A GATE_STALL_LAST_NOTIFIED # review_gate.done後の終端なし通知時刻 — key: "cmd:recipient", value: epoch秒
+
+# review_gate.doneが両承認の完了証跡になった後、cmd_complete_gateのCLEAR/BLOCK終端が
+# 出ないまま放置されるGATE-STALLを常時検知する。review_gate.doneは配備時placeholderも
+# あり得るため、archive.done・gate_metrics.logの終端証跡を必ず併せて確認する。
+GATE_STALL_WARN_MIN=${GATE_STALL_WARN_MIN:-10}
+
+_gate_stall_marker_epoch() {
+    local marker="$1" timestamp
+    timestamp=$(awk -F': ' '$1 == "timestamp" { print $2; exit }' "$marker" 2>/dev/null || true)
+    [ -n "$timestamp" ] || return 1
+    date -d "$timestamp" +%s 2>/dev/null
+}
+
+_gate_stall_has_terminal_metric() {
+    local cmd="$1" marker_epoch="$2" metrics_file="$SCRIPT_DIR/logs/gate_metrics.log"
+    local metric_ts metric_cmd metric_result metric_epoch
+    [ -f "$metrics_file" ] || return 1
+    while IFS=$'\t' read -r metric_ts metric_cmd metric_result _rest; do
+        [ "$metric_cmd" = "$cmd" ] || continue
+        case "$metric_result" in
+            CLEAR|BLOCK) ;;
+            *) continue ;;
+        esac
+        metric_epoch=$(date -d "$metric_ts" +%s 2>/dev/null || true)
+        [ -n "$metric_epoch" ] || continue
+        if [ "$metric_epoch" -ge "$marker_epoch" ]; then
+            return 0
+        fi
+    done < "$metrics_file"
+    return 1
+}
+
+check_gate_stall() {
+    local now=$EPOCHSECONDS warn_min warn_sec marker cmd marker_epoch elapsed_sec elapsed_min
+    local message recipient last_sent since_last
+    warn_min="$GATE_STALL_WARN_MIN"
+    [[ "$warn_min" =~ ^[0-9]+$ ]] || warn_min=10
+    warn_sec=$((warn_min * 60))
+
+    while IFS= read -r marker; do
+        [ -f "$marker" ] || continue
+        cmd=${marker%/review_gate.done}
+        cmd=${cmd##*/}
+        [[ "$cmd" == cmd_* ]] || continue
+        [ -f "${marker%/review_gate.done}/archive.done" ] && continue
+
+        marker_epoch=$(_gate_stall_marker_epoch "$marker" 2>/dev/null || true)
+        [[ "$marker_epoch" =~ ^[0-9]+$ ]] || continue
+        elapsed_sec=$((now - marker_epoch))
+        [ "$elapsed_sec" -ge "$warn_sec" ] || continue
+        _gate_stall_has_terminal_metric "$cmd" "$marker_epoch" && continue
+        elapsed_min=$((elapsed_sec / 60))
+        message="【GATE-STALL】${cmd} 両承認から${elapsed_min}分終端なし。一次確認: cat queue/gates/${cmd}/cmd_complete_gate.trigger.log; bash scripts/cmd_complete_gate.sh ${cmd}"
+
+        for recipient in shogun karo; do
+            last_sent=${GATE_STALL_LAST_NOTIFIED["${cmd}:${recipient}"]:-0}
+            since_last=$((now - last_sent))
+            if [ "$last_sent" -gt 0 ] && [ "$since_last" -lt "$STALL_RENOTIFY_DEBOUNCE" ]; then
+                log "GATE-STALL-DEBOUNCE: ${cmd} recipient=${recipient} notified=${since_last}s ago (<${STALL_RENOTIFY_DEBOUNCE}s)"
+                continue
+            fi
+            if send_inbox_message "$recipient" "$message" stall_alert; then
+                GATE_STALL_LAST_NOTIFIED["${cmd}:${recipient}"]=$now
+                log "GATE-STALL-NOTIFIED: ${cmd} recipient=${recipient} elapsed=${elapsed_min}min"
+            else
+                log "GATE-STALL-NOTIFY-BLOCK: ${cmd} recipient=${recipient} elapsed=${elapsed_min}min"
+            fi
+        done
+    done < <(find "$SCRIPT_DIR/queue/gates" -mindepth 2 -maxdepth 2 -type f -name review_gate.done -print 2>/dev/null)
+}
 
 # cmd_karo_hotfix_completion_event_dedupe_20260723: durable report-gate cache.
 # REPORT_GATE_SENT suppresses only the
@@ -10759,6 +10830,9 @@ while true; do
     for name in "${NINJA_NAMES[@]}"; do
         check_stall "$name"
     done
+
+    # ═══ 両承認後のGATE終端なし検知 ═══
+    check_gate_stall
 
     # ═══ report done + status未idle 検知 ═══
     check_report_done_idle_mismatch
