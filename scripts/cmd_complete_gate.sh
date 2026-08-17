@@ -700,7 +700,7 @@ PY
 push_from_clean_worktree() {
     local repo="$1" upstream_ref="$2" remote="$3" push_ref="$4" remote_tip="$5"
     shift 5
-    local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha
+    local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha push_output
     local source_patch applied_patch
     local -a applied_shas=()
 
@@ -749,9 +749,18 @@ push_from_clean_worktree() {
         done
     fi
 
-    if [ "$rc" -eq 0 ] && ! git -C "$clean_repo" push "$remote" "HEAD:$push_ref"; then
-        rc=1
+    push_output=$(mktemp "${TMPDIR:-/tmp}/shogun-gate-push-output.XXXXXX") || rc=1
+    if [ "$rc" -eq 0 ] && ! git -C "$clean_repo" push "$remote" "HEAD:$push_ref" >"$push_output" 2>&1; then
+        cat "$push_output" >&2
+        if grep -Eqi 'cannot lock ref|non-fast-forward|fetch first|tip of your current branch is behind' "$push_output"; then
+            # 2 means the remote moved while this source-only publication was
+            # being assembled.  The caller may rebuild from a fresh tip.
+            rc=2
+        else
+            rc=1
+        fi
     fi
+    [ -n "$push_output" ] && rm -f "$push_output"
 
     if [ "$rc" -eq 0 ]; then
         remote_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
@@ -775,7 +784,7 @@ push_from_clean_worktree() {
 
 push_task_repositories() {
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
-    local overlap_blocking all_sources_ok push_rc
+    local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
     local -a repos=()
     local -A seen_repos=()
 
@@ -825,28 +834,54 @@ push_task_repositories() {
             return 1
         fi
 
-        local all_remote=true
-        for source_sha in "${source_commits[@]}"; do
-            if ! git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
-                all_remote=false
+        max_retries="${CMD_COMPLETE_GATE_PUSH_MAX_RETRIES:-2}"
+        [[ "$max_retries" =~ ^[0-9]+$ ]] || max_retries=2
+        for ((attempt=0; attempt<=max_retries; attempt++)); do
+            local all_remote=true
+            for source_sha in "${source_commits[@]}"; do
+                if ! git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
+                    all_remote=false
+                    break
+                fi
+            done
+            if [ "$all_remote" = true ]; then
+                echo "  git push: SKIP ($repo report source commits already remote-contained)"
                 break
             fi
-        done
-        if [ "$all_remote" = true ]; then
-            echo "  git push: SKIP ($repo report source commits already remote-contained)"
-            continue
-        fi
 
-        overlap_blocking="$(push_overlap_blocking_paths "$repo" "" "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" "$upstream_sha")"
-        echo "  git push: isolated clean snapshot ($repo remote-tip source-only push)"
-        [ -n "$overlap_blocking" ] && printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
-        if push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "${source_commits[@]}"; then
-            echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"
-        else
-            echo "  git push: BLOCK ($repo source-only push/verification failed)"
-            push_rc=1
-            return "$push_rc"
-        fi
+            overlap_blocking="$(push_overlap_blocking_paths "$repo" "" "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" "$upstream_sha")"
+            echo "  git push: isolated clean snapshot ($repo remote-tip source-only push)"
+            [ -n "$overlap_blocking" ] && printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
+            if push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "${source_commits[@]}"; then
+                push_rc=0
+            else
+                push_rc=$?
+            fi
+            if [ "$push_rc" -eq 0 ]; then
+                echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"
+                break
+            fi
+            if [ "$push_rc" -ne 2 ] || [ "$attempt" -ge "$max_retries" ]; then
+                echo "  git push: BLOCK ($repo source-only push/verification failed)"
+                return 1
+            fi
+
+            refreshed_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+            if ! [[ "$refreshed_tip" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "  git push: BLOCK ($repo remote tip refresh failed)"
+                return 1
+            fi
+            if [ "$refreshed_tip" = "$remote_tip" ]; then
+                echo "  git push: retry $((attempt + 1))/$max_retries (remote tip unchanged; rebuilding source-only snapshot)"
+            else
+                echo "  git push: retry $((attempt + 1))/$max_retries (remote tip refreshed $remote_tip -> $refreshed_tip)"
+            fi
+            remote_tip="$refreshed_tip"
+            git -C "$repo" fetch -q "$remote" "$push_ref" >/dev/null 2>&1 || {
+                echo "  git push: BLOCK ($repo remote tip fetch failed)"
+                return 1
+            }
+        done
     done
     return 0
 }

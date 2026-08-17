@@ -4418,6 +4418,32 @@ EOF
     : > "$base/git_push_calls.log"
 }
 
+_push_overlap_install_git_race_counter() {
+    local base="$1"
+    local race_always="${2:-0}"
+    local real_git
+    real_git="$(command -v git)"
+    mkdir -p "$base/bin"
+    cat > "$base/bin/git" <<EOF
+#!/usr/bin/env bash
+race_always="$race_always"
+if [ "\$1" = "-C" ] && [ "\$3" = "push" ]; then
+    count=\$(wc -l < "$base/git_push_calls.log")
+    echo push >> "$base/git_push_calls.log"
+    if [ "\$race_always" = "1" ] || [ "\$count" -eq 0 ]; then
+        printf 'remote ahead\\n' > "$base/remote-clone/remote-only-\$count.txt"
+        "$real_git" -C "$base/remote-clone" add "remote-only-\$count.txt"
+        "$real_git" -C "$base/remote-clone" commit -q -m "remote ahead \$count"
+        "$real_git" -C "$base/remote-clone" push -q origin main
+        "$real_git" -C "$base/repo" fetch -q origin main
+    fi
+fi
+exec "$real_git" "\$@"
+EOF
+    chmod +x "$base/bin/git"
+    : > "$base/git_push_calls.log"
+}
+
 @test "AC1 baseline: direct git push on a source-overlap dirty tree hits real GA-PUSH1 BLOCK and writes exactly 1 hook-failure artifact" {
     local base="$BATS_TEST_TMPDIR/ac1-baseline"
     _push_overlap_repo_init "$base"
@@ -4457,6 +4483,68 @@ EOF
         [ "$status" -eq 0 ]
         [ -z "$output" ]
     fi
+}
+
+# cmd_karo_hotfix_gate_dirty_diff_latency_202608172138 AC2
+# test_necessity: concurrent source-only publishers must rebuild from the
+# refreshed remote tip after a ref-lock/non-fast-forward race, preserving only
+# the report source commit and the normal pre-push hook contract.
+@test "AC2: remote-tip race retries the same source-only publication and converges" {
+    local base="$BATS_TEST_TMPDIR/ac2-remote-tip-race"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    mkdir -p "$base/hooks"
+    cat > "$base/hooks/pre-push" <<EOF
+#!/usr/bin/env bash
+echo invoked >> "$base/hook.log"
+EOF
+    chmod +x "$base/hooks/pre-push"
+    git -C "$base/repo" config core.hooksPath "$base/hooks"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_race_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_remote_tip_race_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"retry 1/2"* ]]
+    [[ "$output" == *"remote tip refreshed"* ]]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
+    [[ "$output" != *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 2 ]
+    [ "$(grep -c . "$base/hook.log")" -eq 2 ]
+    [[ "$(git --git-dir "$base/origin.git" log --format=%s refs/heads/main)" == *"remote ahead"* ]]
+    [[ "$(git --git-dir "$base/origin.git" log --format=%s refs/heads/main)" == *"local change"* ]]
+    [[ "$(git -C "$base/repo" status --porcelain)" == *" M shared.txt"* ]]
+}
+
+# test_necessity: a repeated remote race must stop after the configured retry
+# bound and return BLOCK; otherwise concurrent gates could loop indefinitely or
+# publish a terminal CLEAR without a stable remote publication.
+@test "AC2: repeated remote-tip races exhaust the bound and BLOCK" {
+    local base="$BATS_TEST_TMPDIR/ac2-remote-tip-bound"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_race_counter "$base" 1
+
+    # Force a second remote advance before the retry's push, so max_retries=1
+    # reaches the fail-closed terminal path.
+    sed -i "s/if [ \"\\\\\$count\" -eq 0 ]; then/if [ \"\\\\\$count\" -le 1 ]; then/" "$base/bin/git"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_MAX_RETRIES=1 \
+        CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_remote_tip_bound_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"retry 1/1"* ]]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [[ "$output" != *"git push: OK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 2 ]
 }
 
 @test "AC2: clean tree still pushes via the already-up-to-date SKIP path (unaffected by the new precheck)" {
