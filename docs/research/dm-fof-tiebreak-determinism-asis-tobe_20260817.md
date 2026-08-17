@@ -104,6 +104,17 @@
 
 **設計への反映(ToBe v0.3→v0.4相当・本文は不変で注釈)**: (i)②③④の欠損skipは候補集合単位(全順序保証) (ii)6段全同値の最終決着はcomponent_order(pipeline_configの記載順)であってset順・ID順ではない (iii)期待差分oracleはnested伝播+本番同一の期間換算が必須。
 
+## AsIs **v1.6** — 2026-08-18 07:15+09:00（GitHub回復・手④着手・「完全解決」への残件表）
+
+| 残件 | 状態 | 担当/出典 |
+|---|---|---|
+| 手④ GS高速版(scripts/analysis/grid_search/run_077_*.py 7本 + l1 fast path)の子PF選択を`select_top_n_deterministic`へ統一・parity赤→緑 | **cmd_4353 委任 07:13**(1体直列・/gs-bench-gate必須) | 家老 |
+| 残9 oracle境界(depth3で1か月ずれ型) | 本番別要因0のため優先低。手④完了後にoracle側修正cmdを起票し0化する | 将軍 |
+| cron `dm-signal-sync-fof` run409以降初回=08-18 10:40 JST の変更0確認 | 家老checkpoint継続 | 家老 |
+| gist/CI | GitHub回復(07:03 `gh api commits/main`=ad167c50応答)。本版でgist再同期 | 将軍 |
+
+**完全解決の定義**: 上表4行が全て閉じ、設計書手順表①〜④が全て「完了」であること。本番pipelineは手③で確定済み(f519002b)であり、手④は本番不変(GS研究用のみ)。
+
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
 ### 方針: 出力を凍結するのではなく、関数を決定的にする
@@ -234,6 +245,7 @@
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
+- AsIs v1.6(08-18 07:15)=GitHub回復・手④cmd_4353委任・完全解決の残件表(手④/残9 oracle/cron10:40/gist)。本番不変。
 - AsIs v0.9はcmd_4330で機構が確定したらv1.0へ。ToBe v0.1はε・比較キー・CAGR定義が決まったらv0.2へ。
 - AsIs v1.1(14:50)=cmd_4331の全FoF棚卸し・乾式適用。ToBe v0.3は不変(共通選択層の要請がAsIsで裏付けられた)。実装は殿合図で1体1層。
 - AsIs v1.5(08-18 06:55)=手③完了。(b)(c)(d)PASS・(a)99.9%(残9=oracle境界)。補正1(cmd_4349 component_order)・補正2(cmd_4351 全順序化)・oracle補正(4350/4352)。本番f519002b。手④未着手。
