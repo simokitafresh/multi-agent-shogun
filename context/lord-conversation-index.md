@@ -1,39 +1,37 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-18T05:56:44+09:00 -->
+<!-- generated_at: 2026-08-18T07:11:28+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-18T05:56:43+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T05:54:06+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T05:52:15+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T05:51:45+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T05:48:11+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率67% 連勝0
-- 2026-08-18T05:47:08+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-18 05:40:55|GATE CLEAR — cmd_karo_hotfix_autopush_insights_empty_mapping_20260818 完了
-- 2026-08-18T05:45:16+09:00 | terminal | response | APPROVE完了。inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T05:44:45+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_republish_reflux_0445_20260818 初回配備開始 (title=(untitled), ninja=saizo)
-- 2026-08-18T05:42:16+09:00 | ntfy | outbound | 【unknown】cmd_karo_hotfix_autopush_insights_empty_mapping_20260818 完了
-- 2026-08-18T05:42:06+09:00 | terminal | response | CLEAR同期完了。autopush insights系hotfix 3段(ID merge→累積等価性→空mapping)の最終段がCLEAR。inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T07:11:26+09:00 | terminal | response | GATE同期完了。結果: - **同期済み**: 16件のGATE結果を反映（CLEAR 12件、BLOCK 4件） - **残り1件**: cmd_karo_hotfix_ninja_monitor_gate_stall_fixture…
+- 2026-08-18T07:06:56+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_startup_terminal_unpush_equivalence_20260818 初回配備開始 (title=(untitled), ninja=hayate)
+- 2026-08-18T07:04:38+09:00 | terminal | inbound | GATE未確認16件に対応せよ
+- 2026-08-18T07:03:17+09:00 | terminal | response | 軍師復帰完了。 **状況:** - deepdive全10Phase追体験+receipt記録済み - Q6第三者検証: 将軍の洗脳検出は妥当（掲示板回答済み） - inbox未読: 0件（全既読済み。大量のquality_monitor…
+- 2026-08-18T07:03:15+09:00 | ntfy | outbound | 【gunshi】復帰済み。deepdive全10Phase完了。Q6第三者検証完了(掲示板投稿済み)。inbox未読0件。idle待機中。
+- 2026-08-18T07:01:29+09:00 | terminal | inbound | githubは回復した。https://claude.ai/code/artifact/58f94a75-5f77-4f61-9440-2aa942de7dc9を完全に解決しよう
+- 2026-08-18T07:01:00+09:00 | ntfy | outbound | 教訓効果率WARN: 100.0%
+- 2026-08-18T07:00:50+09:00 | terminal | response | Q6回答を掲示板へ投稿(洗脳連鎖の自己検出)しALERTを閉じる。 [meta] stop_reason=tool_use
+- 2026-08-18T07:00:31+09:00 | ntfy | outbound | 【家老CRITICAL】先送り1セッション連続検出。起動は許可するが即対処必須
+- 2026-08-18T07:00:15+09:00 | ntfy | outbound | 【shogun】復帰済み。inbox2件処理(PI-P09反映完了報告受領/hanzo停滞→家老へ再nudge指示)。
 
 ## 未解決確認事項
-- 家老hotfix(autopush cumulative equivalence)GATE CLEAR。現物確認: cmd_complete_gate.shにpush_allowed参照が5件入り(0→5)、gateがpush禁止を尊重する構造になった。cmd_4352もarc…
-- 家老の一次反証を受け入れる(現物確認: cmd_complete_gate.shにpush_allowed参照0件)。私の修正85d80acaは「配備時の反転」を止めるが、gate側のpre-GATE autopushは元々push_allowedを見ていないため、それだけでは…
-- 家老報告(02:55)を受け、autopushの**真因を将軍D0で根治**: - 原因: `deploy_task.sh inject_push_allowed`がAC内の「push」語句だけでpush_allowed:trueを付与し、私が書いた「pushはしない/push…
-- 殿ntfy(02:23、222件/4PF/2012-09〜2015-01)の解釈: **cmd_4351(比較器の全順序化、f519002b)がRender live(02:11)になった後の初回full(run408)がrun407と異なった分**。非推移だった箇所(GSシン…
-- 家老の残差確定報告(02:08)を裏取りし、対処・artifact更新済み: - **(a)残不一致130の内訳**: 122件(秘奥義-追い風-鉄壁)は**oracle側の期間換算差** — configの`lookback={days:10, months:0}`を乾式が0…
-- cmd_4351(比較器の全順序化) GATE CLEAR。diff現物: selection.py +53/−7(②③④の段可否を候補集合単位で前判定)+契約テスト54行(24順列不変)。 注記: またgateのpre-GATE autopushで**f519002bがori…
-- cmd_4350(伝播版oracle)GATE CLEAR。**合否(a)の実測**(伝播版 vs run404、将軍がmd現物で確認): - **一致 8,379／不一致 134／未到来 57**(観測可能8,513中98.4%一致。旧oracleの550不一致→134へ) …
-- cmd_4350 review bundle完了確認（既にフォアグラウンドで処理済み）。inbox 0件。待機。 [meta] stop_reason=end_turn
+- 軍師復帰完了。 **状況:** - deepdive全10Phase追体験+receipt記録済み - Q6第三者検証: 将軍の洗脳検出は妥当（掲示板回答済み） - inbox未読: 0件（全既読済み。大量のquality_monitor/gate_clear/review系は…
+- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=77件 clear_prep_check=ALERT [G0.殿/clear指示] WARN: 直近…
+- 埋込み完了(07:00)。今クリアされても次の将軍が持ち越せるもの: 1. **記憶DB** `session_save_20260818_0700`(手③完了の復帰点: 本番f519002b・合否(a)〜(d)の確定値・残課題・運用原則・教訓ID) 2. **MEMORY.m…
+- 【将軍】強くてニューゲーム埋込み完了(07:00)。FoF決定性 手③完了・本番f519002b・(b)(c)(d)PASS・(a)99.9%。次=手④GS parity/10:40 cron確認。PD:0 cmd:0 🚨:0
+- 確認結果(コード現物+Render API): - **cronは同じ経路で6段キーを使う**: `dm-signal-sync-fof`(Render cron `crn-d5e8rabe5dus73fhlkjg`、schedule 01:40 UTC=**10:40 JST…
+- reflux backlink(hayate)GATE CLEAR、既読化。自動還流の定常処理で作業影響なし。 [MEM: n/a — 定常GATE CLEAR通知の確認のみ] [meta] stop_reason=end_turn
+- 自動insight(self_retro: 支配的コスト=review_notify、前回と同一パターン・verification passed)を確認・既読化。行動不要。 [MEM: n/a — 自動insight通知の確認のみ] [meta] stop_reason=end…
+- 自動insight(cmd_saveの`check_ac_test_scope`検出器がFP率50%=2/4・verification passed)を確認・既読化。母数4件の統計で今は行動不要、蓄積を見て判断。全忍者idle、待ち事項なし。 [MEM: n/a — 自動ins…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
 
 ## 参照cmd
 - cmd_433
-- cmd_4241
 - cmd_4328
 - cmd_4331
-- cmd_4332
 - cmd_4333
 - cmd_4334
 - cmd_4335
@@ -54,7 +52,9 @@
 - cmd_4350
 - cmd_4351
 - cmd_4352
+- cmd_4353
 - PD-138
+- PD-139
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
