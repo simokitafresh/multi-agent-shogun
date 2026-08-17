@@ -4361,6 +4361,61 @@ task:
 YAML
 }
 
+_push_overlap_task_yaml_with_permission() {
+    local base="$1" permission="$2"
+    _push_overlap_task_yaml "$base"
+    printf '  push_allowed: %s\n' "$permission" >> "$base/task.yaml"
+}
+
+_push_repositories_function_probe() {
+    local base="$1"
+    python3 - "$SRC_GATE_SCRIPT" "$base/helpers.sh" <<'PY'
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+start = source.index("resolve_task_repo_dir()")
+end = source.index('\nif [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]', start)
+Path(sys.argv[2]).write_text(source[start:end] + "\n", encoding="utf-8")
+PY
+    cat > "$base/run_push.sh" <<'BASH'
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR="$1"
+source "$2"
+shift 2
+push_task_repositories "$@"
+BASH
+    chmod +x "$base/run_push.sh"
+}
+
+_push_conflict_source_fixture() {
+    local base="$1"
+    _push_overlap_repo_init "$base"
+    printf 'header\nkeep\n' > "$base/repo/shared.txt"
+    git -C "$base/repo" add shared.txt
+    git -C "$base/repo" commit -q -m "source path preparation"
+    printf 'header\nsource-intermediate\nkeep\n' > "$base/repo/shared.txt"
+    git -C "$base/repo" add shared.txt
+    git -C "$base/repo" commit -q -m "source intermediate"
+    printf 'header\nsource-final\nkeep\n' > "$base/repo/shared.txt"
+    printf 'source-new\n' > "$base/repo/source-new.txt"
+    git -C "$base/repo" add shared.txt source-new.txt
+    git -C "$base/repo" commit -q -m "source final"
+    git -C "$base/repo" rev-parse HEAD > "$base/source.sha"
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'remote-only\n' > "$base/remote-clone/remote-only.txt"
+    git -C "$base/remote-clone" add remote-only.txt
+    git -C "$base/remote-clone" commit -q -m "remote-only change"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+}
+
 @test "AC2 divergence: remote-tip source-only push excludes unrelated local ahead commits" {
     local base="$BATS_TEST_TMPDIR/ac2-divergence"
     _push_overlap_repo_init "$base"
@@ -4575,6 +4630,107 @@ EOF
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
         bash "$SRC_GATE_SCRIPT" cmd_ac2_nonoverlap_probe
     [ "$status" -eq 0 ]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# cmd_karo_hotfix_autopush_path_snapshot_20260818 AC2
+# test_necessity: a cherry-pick conflict is recovered only when the remote
+# blob is a source-side ancestor, while remote-only paths remain untouched.
+@test "AC2: conflict fallback publishes the source path snapshot and preserves remote-only changes" {
+    local base="$BATS_TEST_TMPDIR/ac2-conflict-fallback"
+    _push_conflict_source_fixture "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_conflict_fallback_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"conflict fallback (source-only path snapshot)"* ]]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:shared.txt)" = $'header\nsource-final\nkeep' ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:source-new.txt)" = "source-new" ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:remote-only.txt)" = "remote-only" ]
+    [ "$(git --git-dir "$base/origin.git" diff-tree --no-commit-id --name-only -r refs/heads/main^ refs/heads/main)" = $'shared.txt\nsource-new.txt' ]
+}
+
+# test_necessity: an unproven remote blob must fail closed before push, so a
+# divergent same-path remote change can never be overwritten by fallback.
+@test "AC2: conflict fallback BLOCKs a remote path blob outside source history" {
+    local base="$BATS_TEST_TMPDIR/ac2-conflict-divergent"
+    _push_conflict_source_fixture "$base"
+    git -C "$base/remote-clone" rm -q shared.txt
+    git -C "$base/remote-clone" commit -q -m "remote divergent path"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+    : > "$base/git_push_calls.log"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_conflict_divergent_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK ($base/repo source-only push/verification failed)"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+    ! git --git-dir "$base/origin.git" cat-file -e refs/heads/main:shared.txt
+}
+
+# test_necessity: an explicit false permission must short-circuit before
+# report resolution or any remote interaction, preserving a no-push contract.
+@test "AC2: push_allowed=false skips source publication without resolving its report" {
+    local base="$BATS_TEST_TMPDIR/ac2-push-denied"
+    _push_overlap_repo_init "$base"
+    _push_overlap_task_yaml_with_permission "$base" false
+    sed -i 's#report.yaml#missing-report.yaml#' "$base/task.yaml"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_push_denied_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"push_allowed=false"* ]]
+    [[ "$output" == *"all task sources push_allowed=false"* ]]
+    [ ! -s "$base/git_push_calls.log" ]
+}
+
+# test_necessity: explicit push_allowed=true is an opt-in regression contract
+# that must preserve the existing source-only publication and remote check.
+@test "AC2: explicit push_allowed=true keeps the normal publication path" {
+    local base="$BATS_TEST_TMPDIR/ac2-push-allowed"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_overlap_task_yaml_with_permission "$base" true
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_push_allowed_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: a denied source with an invalid report must be excluded while
+# an allowed source in the same repository still publishes successfully.
+@test "AC2: mixed push permissions exclude denied sources and retain allowed sources" {
+    local base="$BATS_TEST_TMPDIR/ac2-push-mixed"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_overlap_task_yaml "$base"
+    cat > "$base/task-denied.yaml" <<YAML
+task:
+  project: external
+  target_path: $base/repo
+  report_path: $base/missing-report.yaml
+  push_allowed: false
+YAML
+    _push_repositories_function_probe "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" \
+        bash "$base/run_push.sh" "$PROJECT_ROOT" "$base/helpers.sh" \
+        "$base/task.yaml" "$base/task-denied.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"$base/task-denied.yaml push_allowed=false"* ]]
     [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
 }

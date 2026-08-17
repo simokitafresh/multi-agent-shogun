@@ -697,12 +697,153 @@ PY
     printf '%s\n' "$source_sha"
 }
 
+# Build a conflict publication from the source commits' final path snapshots.
+# This is deliberately narrower than a three-way merge: only paths changed by
+# the source commits may be staged, and a remote path is accepted only when
+# its blob (or absence) is a state found in that path's source-side history.
+source_only_path_snapshot() {
+    local repo="$1" clean_repo="$2" remote_tip="$3" source_sha path first_commit parent published_sha
+    local remote_blob source_blob actual_path actual_blob
+    local absent_ancestor common_base
+    shift 3
+    local -A allowed_paths=() source_for_path=() source_blobs=() actual_paths=()
+    local -a parents=()
+
+    for source_sha in "$@"; do
+        while IFS= read -r -d '' path; do
+            allowed_paths["$path"]=1
+            source_for_path["$path"]="$source_sha"
+            if git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null; then
+                source_blobs["$path"]="$(git -C "$repo" rev-parse "$source_sha:$path")"
+            else
+                source_blobs["$path"]="__ABSENT__"
+            fi
+        done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    [ "${#allowed_paths[@]}" -gt 0 ] || return 1
+
+    # A remote blob must occur in the source commit's path history.  For an
+    # absent remote path, prove that absence is also an ancestor state (the
+    # path was not yet created, or was deleted) rather than accepting a
+    # divergent remote deletion.
+    for path in "${!allowed_paths[@]}"; do
+        if git -C "$repo" cat-file -e "$remote_tip:$path" 2>/dev/null; then
+            remote_blob="$(git -C "$repo" rev-parse "$remote_tip:$path")"
+        else
+        remote_blob="__ABSENT__"
+        fi
+        if [ "$remote_blob" = "__ABSENT__" ]; then
+            if ! git -C "$repo" cat-file -e "${source_for_path[$path]}:$path" 2>/dev/null; then
+                continue
+            fi
+            common_base="$(git -C "$repo" merge-base "$remote_tip" "${source_for_path[$path]}" 2>/dev/null || true)"
+            [ -n "$common_base" ] || return 1
+            # An absent remote path is valid only when the source/remote
+            # common base also lacked it.  This distinguishes a new source
+            # path from a remote-side deletion of an existing path.
+            ! git -C "$repo" cat-file -e "$common_base:$path" 2>/dev/null || return 1
+            first_commit="$(git -C "$repo" rev-list --reverse "${source_for_path[$path]}" -- "$path" 2>/dev/null | head -n 1)"
+            [ -n "$first_commit" ] || return 1
+            parents=( $(git -C "$repo" rev-list --parents -n 1 "$first_commit" 2>/dev/null) )
+            if [ "${#parents[@]}" -le 1 ]; then
+                continue
+            fi
+            absent_ancestor=false
+            for parent in "${parents[@]:1}"; do
+                if ! git -C "$repo" cat-file -e "$parent:$path" 2>/dev/null; then
+                    absent_ancestor=true
+                    break
+                fi
+            done
+            [ "$absent_ancestor" = true ] || return 1
+        else
+            actual_blob=""
+            while IFS= read -r first_commit; do
+                [ -n "$first_commit" ] || continue
+                actual_blob="$(git -C "$repo" rev-parse "$first_commit:$path" 2>/dev/null || true)"
+                [ "$actual_blob" = "$remote_blob" ] && break
+                actual_blob=""
+            done < <(git -C "$repo" rev-list "${source_for_path[$path]}" -- "$path" 2>/dev/null)
+            [ "$actual_blob" = "$remote_blob" ] || return 1
+        fi
+    done
+
+    # Materialize only the final source blob for each changed path on top of
+    # the remote tip.  Remote-only paths are never touched.
+    for path in "${!allowed_paths[@]}"; do
+        source_sha="${source_for_path[$path]}"
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            if git -C "$clean_repo" cat-file -e "$remote_tip:$path" 2>/dev/null; then
+                git -C "$clean_repo" rm -f -- "$path" >/dev/null 2>&1 || return 1
+            fi
+        else
+            git -C "$clean_repo" checkout "$source_sha" -- "$path" >/dev/null 2>&1 || return 1
+        fi
+    done
+    git -C "$clean_repo" add -A -- "${!allowed_paths[@]}" || return 1
+
+    while IFS= read -r -d '' actual_path; do
+        actual_paths["$actual_path"]=1
+    done < <(git -C "$clean_repo" diff --cached --name-only -z "$remote_tip")
+    for actual_path in "${!actual_paths[@]}"; do
+        [ "${allowed_paths[$actual_path]+yes}" = yes ] || return 1
+    done
+
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            ! git -C "$clean_repo" cat-file -e ":$path" 2>/dev/null || return 1
+        else
+            actual_blob="$(git -C "$clean_repo" rev-parse ":$path" 2>/dev/null || true)"
+            [ "$actual_blob" = "$source_blob" ] || return 1
+        fi
+    done
+
+    git -C "$clean_repo" commit --allow-empty -m "autopush: source-only path snapshot" >/dev/null 2>&1 || return 1
+    published_sha="$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)"
+    [ -n "$published_sha" ] || return 1
+
+    actual_paths=()
+    while IFS= read -r -d '' actual_path; do
+        actual_paths["$actual_path"]=1
+    done < <(git -C "$clean_repo" diff-tree --no-commit-id --name-only -r -z "$published_sha^" "$published_sha")
+    for actual_path in "${!actual_paths[@]}"; do
+        [ "${allowed_paths[$actual_path]+yes}" = yes ] || return 1
+    done
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            ! git -C "$clean_repo" cat-file -e "$published_sha:$path" 2>/dev/null || return 1
+        else
+            actual_blob="$(git -C "$clean_repo" rev-parse "$published_sha:$path" 2>/dev/null || true)"
+            [ "$actual_blob" = "$source_blob" ] || return 1
+        fi
+    done
+    return 0
+}
+
+task_push_allowed() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = yaml.safe_load(handle) or {}
+task = data.get("task", data)
+value = task.get("push_allowed")
+print("false" if value is False or str(value).strip().lower() == "false" else "true")
+PY
+}
+
 push_from_clean_worktree() {
     local repo="$1" upstream_ref="$2" remote="$3" push_ref="$4" remote_tip="$5"
     shift 5
-    local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha push_output
+    local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha push_output fallback_used
     local source_patch applied_patch
     local -a applied_shas=()
+    fallback_used=0
 
     temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-gate-push.XXXXXX") || return 1
     clean_repo="$temp_parent/repo"
@@ -720,20 +861,26 @@ push_from_clean_worktree() {
     for source_sha in "$@"; do
         if ! git -C "$clean_repo" cherry-pick --no-edit "$source_sha" >/dev/null 2>&1; then
             git -C "$clean_repo" cherry-pick --abort >/dev/null 2>&1 || true
-            rc=1
+            if source_only_path_snapshot "$repo" "$clean_repo" "$remote_tip" "$@"; then
+                fallback_used=1
+                published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+                echo "  git push: conflict fallback (source-only path snapshot)"
+            else
+                rc=1
+            fi
             break
         fi
         applied_shas+=("$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)")
     done
 
-    if [ "$rc" -eq 0 ]; then
+    if [ "$rc" -eq 0 ] && [ "$fallback_used" -eq 0 ]; then
         published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
         if [ -z "$published_sha" ]; then
             rc=1
         fi
     fi
 
-    if [ "$rc" -eq 0 ]; then
+    if [ "$rc" -eq 0 ] && [ "$fallback_used" -eq 0 ]; then
         for source_sha in "$@"; do
             source_patch=$(git -C "$repo" show --format= --no-ext-diff "$source_sha" 2>/dev/null | git patch-id --stable 2>/dev/null | awk 'NR==1 {print $1}')
             applied_patch=""
@@ -785,11 +932,26 @@ push_from_clean_worktree() {
 push_task_repositories() {
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
-    local -a repos=()
+    local -a repos=() eligible_task_files=()
+    local saw_task_file=0
     local -A seen_repos=()
 
     for task_file in "$@"; do
         [ -f "$task_file" ] || continue
+        saw_task_file=1
+        if [ "$(task_push_allowed "$task_file" 2>/dev/null || printf true)" = false ]; then
+            echo "  git push: SKIP ($task_file push_allowed=false)"
+            continue
+        fi
+        eligible_task_files+=("$task_file")
+    done
+
+    if [ "$saw_task_file" -eq 1 ] && [ "${#eligible_task_files[@]}" -eq 0 ]; then
+        echo "  git push: SKIP (all task sources push_allowed=false)"
+        return 0
+    fi
+
+    for task_file in "${eligible_task_files[@]}"; do
         repo=$(resolve_task_repo_dir "$task_file") || continue
         [ -n "$repo" ] || continue
         if [[ ! "${seen_repos[$repo]+_}" ]]; then
@@ -819,7 +981,7 @@ push_task_repositories() {
 
         local -a source_commits=()
         all_sources_ok=true
-        for task_file in "$@"; do
+        for task_file in "${eligible_task_files[@]}"; do
             [ -f "$task_file" ] || continue
             [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
             source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
