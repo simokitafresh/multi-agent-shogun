@@ -1,31 +1,4 @@
 insights:
-- id: INS-20260817-114835725-308f
-  ts: "2026-08-17T11:48:35+09:00"
-  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[旧DB残置延長]] は既存aliasesに一致なし。類似概念TOP3: skill_routing(スキルルーティング; alias=DB確認; score=2.2) / known_unknowns_principle(無知の知; alias=DB確認; score=2.2) / dmsignal_operations(DM-Signal運用; alias=DB操作; score=2.2)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-17T11:48:58+09:00"
-- id: INS-20260817-114850439-e0a7
-  ts: "2026-08-17T11:48:50+09:00"
-  insight: "[[artifactと設計書をアップデートして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactと設計書をアップデートして"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-17T11:49:50+09:00"
-- id: INS-20260817-115555395-192b
-  ts: "2026-08-17T11:55:55+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_4327; matched=依存; current_pattern=ログイン境界 第0段-手③ — キャッシュキー全層に主体+backend ETag入力に主体(or tier依存endpointをno-store); candidate_level=2; candidate=cmd_1955で影丸が13回連続BLOCK(draft_lessons:1)。忍者にはdraft教訓の査読権限がなく全リトライが無駄。GP-200(DIVERGENT)は忍者修正可能なBLOCKが前提であり外部依存BLOCKには効かない。cmd_complete_gate.sh L3158のBLOCKメッセージに「忍者は解消不可。家老に報告して待機」ガイダ; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_4327"
-  fix_known: false
-  status: pending
 - id: INS-20260817-115555699-0c00
   ts: "2026-08-17T11:55:55+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[ETag本文MD5のみ_18endpoint]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=semantic_index_update_158秒; score=5.2) / semantic_causal_automation(セマンティック因果自動化; alias=node id design semantic map; score=5.0) / natural_japanese_lint(natural-japanese AI臭除去; alias=nominal_ending_ratio; score=5.0)。概念定義とaliases追加を検討せよ"
@@ -408,8 +381,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '87c2840ffbc671bba0a856e9ae0c620577a6aee60eeb2311f78093aa03bf9b63' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 18
-  last_seen: "2026-08-17T21:07:01+09:00"
+  occurrence_count: 19
+  last_seen: "2026-08-17T21:28:31+09:00"
   verification:
     status: passed
     exit_code: '0'
@@ -687,8 +660,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 4
-  last_seen: "2026-08-17T21:12:52+09:00"
+  occurrence_count: 6
+  last_seen: "2026-08-17T21:29:23+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -994,3 +967,27 @@ insights:
   source: "skill_script_refs:24ba56acb9c6f56e"
   fix_known: false
   status: pending
+- id: INS-20260817-211350791-7692
+  ts: "2026-08-17T21:13:50+09:00"
+  insight: "precheck ERRORS>0時にgrepでFAIL行を除外して偽陽性と誤判断した(SG-PRE27 LG040)。ERRORS>0時はprecheck全出力を確認する手順をgunshi.mdのreport reviewプロトコルに追記すべき"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260817-211350906-86cf
+  ts: "2026-08-17T21:13:50+09:00"
+  insight: "D0修正前のcaller chain確認義務: completion_tail.logのステップ名→スクリプト内呼出し元の一次紐付けをD0 S0-1に追加すべき"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260817-211513349-434a
+  ts: "2026-08-17T21:15:13+09:00"
+  insight: "semantic_index_update新概念候補: discussion:artifactを更新してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T21:23:44+09:00"
