@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 # test_necessity: 軍師precheckは報告のbinary contract欠落と不正な完了判定をレビュー前にBLOCKする。
 # test_necessity: SG-PRE3Xは共有cross-repo契約で所有repoを解決し、有効な外部repo成果の偽BLOCKを防ぎつつ不正repo/commit/path/primary矛盾をfail-closedに保つ。
+# test_necessity: precheckがCLEARと予測した報告はcmd_complete_gateのparent_cmd_contract/ac_version_stale/lesson_feedback_set_mismatchのいずれでもBLOCKされない（判定関数が同一）。
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -93,6 +94,73 @@ run_cross_repo_precheck() {
   run env GUNSHI_PRECHECK_ONLY=SG-PRE3X \
     GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
     bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+}
+
+run_contract_precheck() {
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE10 \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+}
+
+@test "shared contract blocks stale task ac_version before CLEAR prediction" {
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_fixture
+  ac_version: deadbeef
+  acceptance_criteria:
+    - id: AC1
+      description: stable fixture contract
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+lessons_useful: []
+YAML
+
+  run_contract_precheck
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"ac_version_stale:task=deadbeef"* ]]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
+@test "shared contract blocks lesson feedback extras before CLEAR prediction" {
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_fixture
+  related_lessons:
+    - id: L100
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+lessons_useful:
+  - id: L404
+    useful: false
+YAML
+
+  run_contract_precheck
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"lesson_feedback_set_mismatch:MISMATCH mode=subset"* ]]
+  [[ "$output" == *"extra=L404"* ]]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
+@test "shared contract blocks invalid numeric parent_cmd_contract before CLEAR prediction" {
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_999999
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_999999
+lessons_useful: []
+YAML
+
+  run_contract_precheck
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"parent_cmd_contract: BLOCK:"* ]]
+  [[ "$output" == *"parent_ssot_missing"* ]]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
 }
 
 # test_necessity: no-hashの同一repo/parent_cmd git走査はHEAD世代とparent_cmdを

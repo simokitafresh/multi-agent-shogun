@@ -346,6 +346,66 @@ print_sg_pre9() {
     fi
 }
 
+print_sg_pre10_contracts() {
+    echo "■ SG-PRE10: ac_version照合"
+    echo "${AC_VERSION_MSG:-  SKIP}"
+    if echo "${AC_VERSION_MSG:-}" | grep -q "FAIL"; then
+        ERRORS=$((ERRORS + 1))
+        GATE_PREDICTION="BLOCK"
+        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }ac_version_mismatch"
+    fi
+
+    if [ -n "${TASK_FILE:-}" ] && [ -f "${TASK_FILE:-}" ]; then
+        if _task_ac_result=$(python3 "$REPO_ROOT/scripts/lib/report_gate_contract.py" \
+            task-ac-version "$TASK_FILE" 2>&1); then
+            echo "  PASS: task ${_task_ac_result}"
+        else
+            echo "  ERROR: ${_task_ac_result}"
+            ERRORS=$((ERRORS + 1))
+            GATE_PREDICTION="BLOCK"
+            GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }${_task_ac_result}"
+        fi
+    else
+        echo "  SKIP: task file unavailable"
+    fi
+
+    echo ""
+    echo "■ SG-PRE10b: parent_cmd_contract予測"
+    if [[ "${PARENT_CMD:-}" =~ ^cmd_[0-9]+$ ]]; then
+        if _parent_contract_result=$(python3 "$REPO_ROOT/scripts/lib/parent_cmd_contract.py" \
+            "$PARENT_CMD" --root "$REPO_ROOT" 2>&1); then
+            echo "  PASS: ${_parent_contract_result}"
+        else
+            echo "  ERROR: parent_cmd_contract: ${_parent_contract_result}"
+            ERRORS=$((ERRORS + 1))
+            GATE_PREDICTION="BLOCK"
+            GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }parent_cmd_contract:${_parent_contract_result}"
+        fi
+    else
+        echo "  SKIP: parent_cmd is not a numbered cmd (${PARENT_CMD:-missing})"
+    fi
+
+    echo ""
+    echo "■ SG-PRE11: lesson_feedback_set照合"
+    if [ -n "${TASK_FILE:-}" ] && [ -f "${TASK_FILE:-}" ] && [ -f "$REPORT_PATH" ]; then
+        _set_status=$(python3 "$REPO_ROOT/scripts/lib/report_gate_contract.py" \
+            lesson-feedback-set "$TASK_FILE" "$REPORT_PATH" 2>&1 || true)
+        if [[ "$_set_status" == OK\ * ]]; then
+            echo "  PASS: ${_set_status}"
+        else
+            echo "  ERROR: ${_set_status}"
+            ERRORS=$((ERRORS + 1))
+            GATE_PREDICTION="BLOCK"
+            GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }lesson_feedback_set_mismatch:${_set_status}"
+        fi
+    else
+        echo "  SKIP: task/report unavailable"
+    fi
+
+    echo "GATE_PREDICTION=${GATE_PREDICTION:-CLEAR}"
+    echo "GATE_PREDICTION_REASON=${GATE_PREDICTION_REASON:-none}"
+}
+
 is_generated_large_artifact() {
     local path="$1"
     case "$path" in
@@ -406,6 +466,11 @@ print_sg_pre24() {
 if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE9" ]; then
     print_sg_pre9
     exit 0
+fi
+
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE10" ]; then
+    print_sg_pre10_contracts
+    exit "$([ "${ERRORS:-0}" -eq 0 ] && echo 0 || echo 1)"
 fi
 
 if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE24" ]; then
@@ -750,13 +815,9 @@ else
     echo "  PASS: binary_checks全yesとtask_clarity系の明示矛盾なし"
 fi
 
-# ─── SG-PRE10: ac_version照合 ───
+# ─── SG-PRE10/10b/11: shared completion-gate contracts ───
 echo ""
-echo "■ SG-PRE10: ac_version照合"
-echo "${AC_VERSION_MSG:-  SKIP}"
-if echo "${AC_VERSION_MSG:-}" | grep -q "FAIL"; then
-    ERRORS=$((ERRORS + 1))
-fi
+print_sg_pre10_contracts
 
 # ─── SG-PRE11: lessons_useful形式検証 ───
 echo ""
@@ -1092,28 +1153,11 @@ if [ -f "${TASK_FILE:-}" ]; then
         # 'PASS: related_lessons=1 lessons_useful=3' を出しながらGATEがextra=L070,L230,L312でBLOCK)。
         # 判定契約の正本は cmd_complete_gate.sh:2844 validate_lesson_feedback_set。同一規則(strict=
         # assigned_lesson_ids有ならmissingも見る / 無ければsubset)でID集合を突合する。
-        _set_status=$(python3 - "$TASK_FILE" "$REPORT_PATH" <<'PY' 2>/dev/null || true
-import sys, yaml
-td = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-rp = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
-tk = td.get("task", td) if isinstance(td, dict) else {}
-if not isinstance(tk, dict) or not isinstance(rp, dict):
-    print("MISMATCH parse_error"); raise SystemExit(0)
-av = tk.get("assigned_lesson_ids"); strict = isinstance(av, list) and bool(av)
-def ids(raw):
-    out = []
-    for it in raw if isinstance(raw, list) else []:
-        v = str((it.get("id") if isinstance(it, dict) else it) or "").strip()
-        if v and v not in out: out.append(v)
-    return out
-allowed = ids(av if strict else (tk.get("related_lessons") or []))
-raw = rp.get("lessons_useful");  raw = rp.get("lesson_referenced") if raw is None else raw
-reported = ids(raw)
-extra = sorted(set(reported) - set(allowed))
-missing = sorted(set(allowed) - set(reported)) if strict else []
-print(f"MISMATCH mode={'strict' if strict else 'subset'} missing={','.join(missing) or 'none'} extra={','.join(extra) or 'none'}" if (extra or missing) else "OK")
-PY
-)
+        # Shared SSOT: this is the same strict/subset contract used by
+        # cmd_complete_gate.sh's validate_lesson_feedback_set.  Keep the
+        # precheck as a pure caller; do not duplicate the Python rule here.
+        _set_status=$(python3 "$REPO_ROOT/scripts/lib/report_gate_contract.py" \
+            lesson-feedback-set "$TASK_FILE" "$REPORT_PATH" 2>/dev/null || true)
         if [ "${_set_status:-}" != "OK" ] && [ -n "${_set_status:-}" ]; then
             # subset+extra-only(忍者が自発的に教訓を発見・使用)はWARN止まり。
             # missing有り or strict modeはERROR(GATE BLOCK確実)。

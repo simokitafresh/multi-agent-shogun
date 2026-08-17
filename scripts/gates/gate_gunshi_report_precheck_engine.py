@@ -9,92 +9,17 @@
 import os
 import glob
 import argparse
-import hashlib
 import json
 import pathlib
 import re
 import shlex
+import sys
 import yaml
 
-
-def _ac_version_from_criteria(criteria):
-    """Match deploy_task.sh's parsed-AC md5 contract for legacy reports."""
-    if isinstance(criteria, dict):
-        items = list(criteria.values())
-    elif isinstance(criteria, list):
-        items = criteria
-    else:
-        items = []
-    values = []
-    for item in items:
-        if not isinstance(item, dict):
-            values.append(str(item))
-            continue
-        description = str(item.get('description', '') or '').strip()
-        if description:
-            values.append(description)
-            continue
-        checks = item.get('checks', [])
-        if isinstance(checks, list):
-            values.append('|'.join(
-                str(check.get('check', '') or '').strip()
-                if isinstance(check, dict) else str(check).strip()
-                for check in checks
-            ))
-        else:
-            values.append(str(item.get('check', '') or '').strip())
-    return hashlib.md5('|'.join(sorted(values)).encode()).hexdigest()[:8]
-
-
-def _command_from(data, cmd_id):
-    commands = data.get('commands', data) if isinstance(data, dict) else {}
-    if isinstance(commands, dict):
-        item = commands.get(cmd_id)
-        return item if isinstance(item, dict) else None
-    if isinstance(commands, list):
-        return next((item for item in commands
-                     if isinstance(item, dict) and str(item.get('id')) == cmd_id), None)
-    return None
-
-
-def _parent_contract_ac_version(report, tasks_dir):
-    """Resolve AC identity from report.parent_cmd, never the worker lease.
-
-    A worker task file is a mutable deployment slot.  Completed reports keep
-    their immutable task_contract_snapshot, which is the first-party contract
-    for the report generation.  Legacy reports without that snapshot fall
-    back to the saved parent command rather than comparing against a later
-    worker assignment.
-    """
-    parent_cmd = str(report.get('parent_cmd') or '').strip()
-    if not parent_cmd:
-        return '', 'parent_cmd missing'
-
-    snapshot = report.get('task_contract_snapshot')
-    if isinstance(snapshot, dict):
-        snapshot_parent = str(snapshot.get('parent_cmd') or '').strip()
-        snapshot_ac = str(snapshot.get('ac_fingerprint') or '').strip()
-        if snapshot_parent != parent_cmd:
-            return '', 'report.parent_cmd contract mismatch'
-        if snapshot_ac:
-            return snapshot_ac, 'report.parent_cmd contract'
-
-    root = pathlib.Path(tasks_dir).resolve().parent if tasks_dir else pathlib.Path.cwd()
-    candidates = [
-        root / 'queue' / 'shogun_to_karo.yaml',
-        root / 'queue' / 'reopened_cmds' / f'{parent_cmd}.yaml',
-    ]
-    candidates.extend(pathlib.Path(path) for path in sorted(
-        root.glob(f'queue/archive/cmds/{parent_cmd}_*.yaml'), reverse=True))
-    for path in candidates:
-        try:
-            command = _command_from(yaml.safe_load(path.read_text(encoding='utf-8')) or {}, parent_cmd)
-        except (OSError, yaml.YAMLError):
-            continue
-        if isinstance(command, dict) and command.get('acceptance_criteria'):
-            return _ac_version_from_criteria(command['acceptance_criteria']), 'report.parent_cmd saved contract'
-    return '', 'parent contract unavailable'
-
+LIB_DIR = pathlib.Path(__file__).resolve().parents[1] / 'lib'
+if str(LIB_DIR) not in sys.path:
+    sys.path.insert(0, str(LIB_DIR))
+from report_gate_contract import parent_contract_ac_version  # noqa: E402
 
 def main():
     parser = argparse.ArgumentParser(
@@ -639,7 +564,7 @@ def main():
     # immutable snapshot (or the saved parent command for legacy reports).
     ac_ver_msg = '  SKIP: parent contract unavailable'
     try:
-        expected_ac, contract_source = _parent_contract_ac_version(report, args.tasks_dir)
+        expected_ac, contract_source = parent_contract_ac_version(args.report, args.tasks_dir)
         acv_report = str(report.get('ac_version_read', '') or '').strip()
         if not expected_ac:
             ac_ver_msg = f'  SKIP: {contract_source}'

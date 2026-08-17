@@ -3443,62 +3443,8 @@ handle_empty_lessons_useful_check() {
 validate_lesson_feedback_set() {
     local task_file="$1"
     local report_file="$2"
-    python3 - "$task_file" "$report_file" <<'PY'
-import sys, yaml
-
-task_data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-report = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
-task = task_data.get("task", task_data) if isinstance(task_data, dict) else {}
-if not isinstance(task, dict) or not isinstance(report, dict):
-    print("MISMATCH parse_error")
-    raise SystemExit(1)
-
-assigned_values = task.get("assigned_lesson_ids")
-strict = isinstance(assigned_values, list) and bool(assigned_values)
-if strict:
-    raw_allowed = assigned_values
-else:
-    raw_allowed = task.get("related_lessons") or []
-
-allowed = []
-for item in raw_allowed if isinstance(raw_allowed, list) else []:
-    value = item.get("id") if isinstance(item, dict) else item
-    value = str(value or "").strip()
-    if value and value not in allowed:
-        allowed.append(value)
-
-reported = []
-duplicates = []
-raw_reported = report.get("lessons_useful")
-if raw_reported is None:
-    raw_reported = report.get("lesson_referenced")
-for item in raw_reported if isinstance(raw_reported, list) else []:
-    value = item.get("id") if isinstance(item, dict) else item
-    value = str(value or "").strip()
-    if not value:
-        continue
-    if value in reported:
-        duplicates.append(value)
-    else:
-        reported.append(value)
-
-extra = sorted(set(reported) - set(allowed))
-missing = sorted(set(allowed) - set(reported)) if strict else []
-duplicates = sorted(set(duplicates))
-if extra or missing or duplicates:
-    print(
-        "MISMATCH "
-        f"mode={'strict' if strict else 'subset'} "
-        f"missing={','.join(missing) or 'none'} "
-        f"extra={','.join(extra) or 'none'} "
-        f"duplicates={','.join(duplicates) or 'none'}"
-    )
-    raise SystemExit(1)
-print(
-    f"OK mode={'strict' if strict else 'subset'} "
-    f"allowed={len(allowed)} reported={len(reported)}"
-)
-PY
+    python3 "$SCRIPT_DIR/scripts/lib/report_gate_contract.py" \
+        lesson-feedback-set "$task_file" "$report_file"
 }
 
 # ─── gate_metrics model label helpers ───
@@ -8332,34 +8278,7 @@ level_heading "[L1]" "Lesson reviewed check: SKIP (push型移行済み — cmd_5
 # 追加・変更しても同じ保存値をreportへ返せるためstale ACを検出できない。
 compute_task_ac_version() {
     local task_file="$1"
-    python3 - "$task_file" <<'PY' | md5sum | cut -c1-8
-import sys
-import yaml
-
-yaml.SafeLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-task = data.get("task") if isinstance(data, dict) else None
-raw_items = (task or {}).get("acceptance_criteria", []) if isinstance(task, dict) else []
-items = raw_items if isinstance(raw_items, list) else list(raw_items.values()) if isinstance(raw_items, dict) else []
-values = []
-for item in items:
-    if not isinstance(item, dict):
-        values.append(str(item))
-        continue
-    description = str(item.get("description", "")).strip()
-    if description:
-        values.append(description)
-        continue
-    checks = item.get("checks", [])
-    if isinstance(checks, list):
-        values.append("|".join(
-            str(check.get("check", "")).strip() if isinstance(check, dict) else str(check).strip()
-            for check in checks
-        ))
-    else:
-        values.append(str(item.get("check", "")).strip())
-sys.stdout.write("|".join(sorted(values)))
-PY
+    python3 "$SCRIPT_DIR/scripts/lib/report_gate_contract.py" ac-version "$task_file"
 }
 
 check_task_ac_version_integrity() {
