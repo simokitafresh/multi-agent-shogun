@@ -125,7 +125,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4330"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "cmd_4330のread-only偵察結果はcmd_4331全74 FoF乾式artifactと決定性設計書へ反映済み。現行のfloat相対差・filter別選択分散・同値拡張を一次設計境界として確認し、実装・価格取込み変更は別cmdの範囲なので本insightの新規修正は不要。"
+  action_artifact: "semantic_search=memory_db:knowledge:7dcca4d99d13eea4;design=/mnt/c/Python_app/DM-Signal/docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md;dryrun=/mnt/c/Python_app/DM-Signal/docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md;expected_diff=/mnt/c/Python_app/DM-Signal/docs/research/cmd_4342_fof_tiebreak_expected_diff.md"
+  resolved_at: "2026-08-17T21:49:59+09:00"
 - id: INS-20260817-124329691-d7fc
   ts: "2026-08-17T12:43:29+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[価格差はfloatノイズ級]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=FoF tie-breakがノイズ依存; score=3.2) / semantic_dictionary_design(セマンティック辞書構想; alias=ノイズalias除去; score=2.9) / recalculate_pipeline(再計算パイプライン; alias=recalculate_fof; score=2.8)。概念定義とaliases追加を検討せよ"
