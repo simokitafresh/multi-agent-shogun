@@ -1,7 +1,11 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-16 L1分割6手live+L2分割走行中を§94へ反映 -->
+<!-- last_updated: 2026-08-17 GA-472 rollback boundary reflected in core context -->
+<!-- source_commit:131e5dbb reason:GA-472 rollback boundary reflected in core context evidence:git -C /mnt/c/Python_app/DM-signal diff --stat 3e28b617 131e5dbb; rollback commit 131e5dbb; §Current source boundary added -->
 <!-- source_commit:a9883865 reason:L1分割6手live+L2分割走行中を§94へ反映 evidence:origin/main a9883865 git log; docs/research/dm-l1-split-design_20260815.md AsIs v1.5 -->
 <!-- source_commit:3e28b617 reason:cmd_karo_hotfix_rb8_context_freshness_20260814_normal evidence:cmd_4301_context_freshness_AC2_core -->
+
+## Current source boundary (GA-472, 2026-08-17)
+- **Current source tip:** `131e5dbb` rolls the production runtime back to restore point `3e28b617`; the §94 L1/L2 live-state notes below are historical pre-rollback evidence and must not be treated as current runtime state until revalidated.
 
 <!-- source_commit:15e612f9 reason:cmd_karo_hotfix_timing_summary_restore_20260813 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=15e612f9 -->
 
