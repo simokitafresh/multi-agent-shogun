@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-18T04:47:03+09:00 -->
+<!-- generated_at: 2026-08-18T05:56:44+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-18T04:47:03+09:00 | terminal | response | APPROVE完了。inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T04:46:29+09:00 | ntfy | outbound | 【将軍】cmd_reflux_insight_202608180445_hayate 初回配備開始 (title=(untitled), ninja=hayate)
-- 2026-08-18T04:37:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-18 04:30:40|GATE CLEAR — cmd_karo_hotfix_autopush_cumulative_equivalence_20260818 完了
-- 2026-08-18T04:36:52+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: infrastructure.md(source更新)
-- 2026-08-18T04:32:36+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率67% 連勝1
-- 2026-08-18T04:31:50+09:00 | terminal | response | 累積等価性hotfix CLEAR同期完了。autopush_source_only_failed根治がCLEARされた。これ以降のcmdのautopush BLOCKが解消される見込み。inbox 0件。待機。 [meta] stop_…
-- 2026-08-18T04:31:34+09:00 | ntfy | outbound | 【unknown】cmd_karo_hotfix_autopush_cumulative_equivalence_20260818 完了
-- 2026-08-18T04:31:01+09:00 | terminal | response | 家老hotfix(autopush cumulative equivalence)GATE CLEAR。現物確認: cmd_complete_gate.shにpush_allowed参照が5件入り(0→5)、gateがpush禁止を尊重す…
-- 2026-08-18T04:21:49+09:00 | ntfy | outbound | 【monitor】将軍CTX:78%。/compactをご検討ください
-- 2026-08-18T04:20:47+09:00 | ntfy | outbound | CI赤: run 32050887806 Unit Tests (bats)
+- 2026-08-18T05:56:43+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T05:54:06+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T05:52:15+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T05:51:45+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T05:48:11+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率67% 連勝0
+- 2026-08-18T05:47:08+09:00 | ntfy | outbound | 【INFOバッチ】 2026-08-18 05:40:55|GATE CLEAR — cmd_karo_hotfix_autopush_insights_empty_mapping_20260818 完了
+- 2026-08-18T05:45:16+09:00 | terminal | response | APPROVE完了。inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T05:44:45+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_republish_reflux_0445_20260818 初回配備開始 (title=(untitled), ninja=saizo)
+- 2026-08-18T05:42:16+09:00 | ntfy | outbound | 【unknown】cmd_karo_hotfix_autopush_insights_empty_mapping_20260818 完了
+- 2026-08-18T05:42:06+09:00 | terminal | response | CLEAR同期完了。autopush insights系hotfix 3段(ID merge→累積等価性→空mapping)の最終段がCLEAR。inbox 0件。待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 家老hotfix(autopush cumulative equivalence)GATE CLEAR。現物確認: cmd_complete_gate.shにpush_allowed参照が5件入り(0→5)、gateがpush禁止を尊重する構造になった。cmd_4352もarc…
@@ -31,9 +31,6 @@
 ## 参照cmd
 - cmd_433
 - cmd_4241
-- cmd_4324
-- cmd_4325
-- cmd_4327
 - cmd_4328
 - cmd_4331
 - cmd_4332
