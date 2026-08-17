@@ -383,6 +383,7 @@ EOF
         mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$STATE_DIR"; : >"$LOG"
         log() { printf "%s\n" "$1" >>"$LOG"; }; write_karo_snapshot() { :; }
         _reflux_promotion_record_completion() { :; }; report_monitor_state() { printf "pass_terminal\n"; }
+        run_report_gate_deduped() { printf "PASS\n"; return 0; }
         yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
         task="$SCRIPT_DIR/queue/tasks/alpha.yaml"; report="$SCRIPT_DIR/queue/reports/alpha_report_cmd_new.yaml"
         printf "task:\n  parent_cmd: cmd_new\n  task_id: task_new\n  status: in_progress\n" >"$task"
@@ -403,6 +404,69 @@ EOF
         [ "$(grep -c AUTO-DONE-SKIP-ARCHIVE-SYMLINK "$LOG")" -eq 1 ]
     '
     [ "$status" -eq 0 ]
+}
+
+# test_necessity: report完了をtask doneへ反映する前にcommit/report gateとtask-owned
+# dirtyを検証し、done後のdirty再発も検知し続ける不変量を守る。
+@test "AUTO-DONE blocks uncommitted or ungated reports before and after done" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$BATS_TEST_TMPDIR/log"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$SCRIPT_DIR/scripts/lib" "$STATE_DIR"
+        cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+        git -C "$SCRIPT_DIR" init -q
+        git -C "$SCRIPT_DIR" config user.email test@example.invalid
+        git -C "$SCRIPT_DIR" config user.name fixture
+        printf "clean\n" > "$SCRIPT_DIR/scripts/a.sh"
+        git -C "$SCRIPT_DIR" add scripts/a.sh
+        git -C "$SCRIPT_DIR" commit -q -m fixture
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        send_inbox_message() { printf "%s|%s\n" "$1" "$3" >> "$BATS_TEST_TMPDIR/messages"; }
+        _reflux_promotion_record_completion_detached() { return 0; }
+        refresh_karo_snapshot_task_assignment() { return 0; }
+        report_monitor_state() { printf "pass_terminal\n"; }
+        yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
+        make_fixture() {
+            local name="$1" task_id="$2" report_name="$3"
+            printf "task:\n  parent_cmd: cmd_%s\n  task_id: %s\n  status: in_progress\n  target_path:\n    - scripts/a.sh\n  planned_paths:\n    - scripts/a.sh\n" "$name" "$task_id" > "$SCRIPT_DIR/queue/tasks/${name}.yaml"
+            printf "parent_cmd: cmd_%s\ntask_id: %s\nstatus: completed\ntimestamp: 2026-08-18T07:00:00+09:00\n" "$name" "$task_id" > "$SCRIPT_DIR/queue/reports/${report_name}.yaml"
+        }
+        find_matching_report_file() { printf "%s/queue/reports/%s_report.yaml\n" "$SCRIPT_DIR" "$1"; }
+        run_report_gate_deduped() { printf "PASS\n"; return 0; }
+
+        make_fixture dirty dirty_task dirty_report
+        printf "dirty\n" > "$SCRIPT_DIR/scripts/a.sh"
+        dirty_to_done=0
+        check_and_update_done_task dirty && dirty_to_done=1 || true
+        [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/dirty.yaml" status)" = in_progress ]
+
+        printf "clean\n" > "$SCRIPT_DIR/scripts/a.sh"
+        make_fixture clean clean_task clean_report
+        clean_to_done=0
+        check_and_update_done_task clean && clean_to_done=1 || true
+        [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/clean.yaml" status)" = done ]
+
+        printf "dirty-again\n" > "$SCRIPT_DIR/scripts/a.sh"
+        done_dirty_block=0
+        check_and_update_done_task clean && true || done_dirty_block=1
+        [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/clean.yaml" status)" = done ]
+
+        make_fixture ungated ungated_task ungated_report
+        run_report_gate_deduped() { printf "FAIL: fixture gate\n"; return 1; }
+        ungated_to_done=0
+        check_and_update_done_task ungated && ungated_to_done=1 || true
+        [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/ungated.yaml" status)" = in_progress ]
+
+        printf "dirty_to_done=%s clean_to_done=%s done_dirty_block=%s ungated_to_done=%s\n" \
+            "$dirty_to_done" "$clean_to_done" "$done_dirty_block" "$ungated_to_done"
+        grep -q AUTO-DONE-BLOCK-UNCOMMITTED "$LOG"
+        grep -q AUTO-DONE-BLOCK-REPORT-GATE "$LOG"
+        test "$(grep -c uncommitted_block "$BATS_TEST_TMPDIR/messages")" -ge 2
+        test "$(grep -c report_format_fix "$BATS_TEST_TMPDIR/messages")" -ge 1
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"dirty_to_done=0 clean_to_done=1 done_dirty_block=1 ungated_to_done=0"* ]]
 }
 
 # test_necessity: idle snapshot後のdeployと家老通知を同一agent lock境界で直列化し、active task存在時の偽idle通知を防ぐ不変量を守る。
