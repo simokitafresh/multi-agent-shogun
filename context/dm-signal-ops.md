@@ -148,6 +148,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L004: 価格ベンダー比較成果物はAPIエラーURLの秘密値混入を検査する（cmd_3687）
 - cmd_3669: `/api/metrics/summary` は `metrics_summary_bulk` precomputed rawを読む。raw生成は `backend/app/jobs/precompute_raw.py` の `METRICS_SUMMARY_BULK_PARAMS=[{years:0},{years:10}]`、無効化はmetrics cache更新・portfolio保存・portfolio_metrics生成時に走る。関連commit: DM-Signal `755a50d9`。
 ## §37 ETL
+- L1554: price completeness must filter expected-grid outliers — 価格完全性判定は期待グリッド外れ値を除外してから欠損判定する（cmd_4285、/lesson-sort 2026-08-18）
 - cmd_4140: deterioration履歴欠落はcron失敗/表示filterではなく、月次batchが現在月1点だけをUPSERTしAPI/FEも既定6点しか取得しないことが原因。本番102 PFは0点=0・1点=86・3点=1・5点=15だが、月次returnは106〜276か月ありas-of切断backfillが可能。→ `docs/research/cmd_4140_deterioration_history_recon_20260723.md`
 - L802: precompute paramsはFE PAGE_APISから機械抽出して実要求との差分を照合する（cmd_3667）
 - L803: FE要求params整合テストはpage.tsxではなく別module定数をSSOTにする（cmd_3668）
@@ -1151,6 +1152,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 ## §88 cmd_4243 SIGNAL CHANGE ALERT 08-01〜08-06偵察 (2026-08-09)
 - 08-05/08-07/08-09の3警報(count=3/15/48)305行は全件recalculation_status+git commit+signal_decision_ledgerの相関で正常確定更新と判定(異常書換え0)。08-03=cmd_4224(ledger境界失効)デプロイ検証recalc、08-08=cmd_4241(L5 regen)デプロイ検証portfolio recalc(ledger未確定域につきPI-P06非抵触)。
 ## §89 monthly_returns系統的退行(cmd_4244, 2026-08-09)
+- L1587: initial signal基準日とeffective loop startの不一致はholding NULLを発生させる — 初期signal基準日と有効ループ開始日を同一SSOTから取る（cmd_karo_recon_run303_effective_start_20260812、/lesson-sort 2026-08-18）
 - mode='full'(run226/230)で復元した全履歴monthly_returnsが、その後のmode='portfolio'実行(run227/228/229)のたびに2022-10以降だけへ切り詰められる退行を実測確認(DM2/DM3/basicデュアルモメンタム等で完全履歴→47行/2022-10始まりへ縮小→run230で再復元を直接観測)。真因=`monthly_returns.py:692`のPF単位DELETE→INSERTが「狭い計算結果での広い既存履歴の上書き」を防いでいない(0件生成時のみガード)。秘奥義-抜き身-激攻の完全ゼロ行も同一メカニズムの極端ケース。y5リターン欠落は調査時点で102/102PF・y3は50/102PFに達した。暫定対策=mode='full'のみ本番実行、恒久対策=692行のガード拡張。
 ## §90 トラブル時の第一容疑=fullrecalculate忘れ・mode違い (殿裁定2026-08-09 03:03)
 - 何かトラブル・エラー・データ不整合(N/A表示・計算されていないPF・履歴欠落)を見たら、第一容疑として直近コード変更後のfullrecalculate忘れとmode違い(portfolio≠full)を疑い、`recalculation_status`のmode・時刻をDBで確認する。§89の系統的退行が実証例。機構化・自動実行は禁止(殿裁定: 意思依存にならぬようsemantic-map aliasで本則が自動注入される)。
@@ -1177,6 +1179,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 凍結機構はmodel append-only listener＋signals flush/monthly/FoFのledger reconcileとして現存。構築機構は`insert_initial_ledger_events()`＋admin endpointとして現存するが、`render.yaml` month-start cronはrecalculate-syncのみでinitial-events endpointへ未接続。ledger 0行の間はguardがpending pass-throughとなるため、保護を有効化する前にinitial-events運用配線を別途確定する必要がある。
 - 0行化の最後の実行イベントは、現行DBスキーマ・backup・runtime codeから特定不能。runtime全消去経路は検出されず、台帳補充・保護有効化・本番変更は本cmdで実施していない。因果リンク: `[[cmd_3711_historical_backfill_20260706]] -> [[cmd_4319_current_ledger_zero_readonly]] -> [[initial-events_cron_wiring未接続]]`。
 ## §96 cmd_4320 保存済み展開値vslegacy再展開 (2026-08-15)
+- L1596: 保存済み展開値は本番legacy同値性確認後に計算入力へ昇格する — fixture一致だけで昇格せず本番全件同値性を先行確認（cmd_4320、/lesson-sort 2026-08-18）
 - 本番保存値15,768組の突合は一致14,955、不一致813（ticker集合731、weight64、legacy空18）。保存値の無条件入力昇格は不可。詳細→`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4320_saved_vs_legacy_weights_20260815.md`
 - 全不一致は`pipeline_config`有効PFで発生し、基準読込11:22:17 JST〜比較終了11:23:46 JSTに01:10/01:40 UTC日次cronの通過なし。因果リンク: `[[cmd_4318_saved_expanded_weights]] -> [[cmd_4320本番全件突合813不一致]] -> [[保存値無条件昇格不可]]`。
 
@@ -1193,5 +1196,6 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 本番FoF74 PFのうちselection block有57・無17。共通dispatchは`backend/app/services/pipeline/engine.py:109-142`だがtop-N/cutoffは各filterへ分散し、GS run_077/l1はproduction block parity経路と独自vectorized選択経路を併存する。全74 PFを同一as-of月で再集計し、適用月9,141・branch/view評価15,910・変更949月(MAF722/Momentum55/MultiView30/SingleView60/Trend82/Weighted0、no-block17は月0)、stage②4,511・③668・④0・⑤7・⑥7・②skip264。standard24 PFはgap4,178観測で相対1e-9未満0/exact0。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`。
 
 ## §100 FoF子PF選択の決定性 — 6段キーtie-break (2026-08-17 12:51〜08-18 00:13、PD-138)
+- L1598: FoF exact tie集合とfloat僅差順位を分離して検証する — cutoff全採用のexact tieはset順不変、ratio scoreのfloat僅差は順位反転する。6段キー導入で両者を決定的に解決（cmd_4330、/lesson-sort 2026-08-18）
 - 結論: FoF選択フィルタ6種の同点解決は共通層 `backend/app/services/pipeline/selection.py` `select_top_n_deterministic`(①config依存スコア合成ε1e-9→②12M(両者13観測以上時のみ)→③設定来CAGR→④MaxDD小→⑤現保有維持→⑥設定来早い方、同率全採用廃止)。手①②(cmd_4334-4340)で配線集約→手③(cmd_4344 54e3e663+2f3e3c82)で切替、本番live 08-18 00:13、full run404で合否(a)期待差分=`docs/research/cmd_4342_fof_tiebreak_expected_diff.csv`(DM-Signal repo、959月)PF×月一致(b)2回目md5一致(c)標準PF変化0(d)時間≤2倍。戻し方=revert 2commit→push→deploy→full 1回。
 - 正本 → `docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md`(AsIs v1.4/ToBe v0.3、gist 1e0cab30、artifact 58f94a75)。乾式=§99(cmd_4331 949月は集計値のみ・参考値)。手④(GS fast path parity)未着手。

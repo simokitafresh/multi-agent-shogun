@@ -338,11 +338,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L908/L909/L918/L921は振り分け済 2026-08-01 /lesson-sort → ops§38(L908:pytest plugin root namespace固定), ops§6-7(L909:バックフィルas-of入力切断), ops§32(L918:launcher結合実行/相対パスBLOCK), core§19.2(L921:open-to-open bootstrap/live MTD独立境界)。新規PIなし）
 - （L929/L932/L934/L935/L938/L943は振り分け済 2026-08-03 /lesson-sort → ops§12(L929:parity範囲=設計cohort), research教訓索引(L932:軸別総数一致/L938:decision month≠actual date), ops§6-7(L934:効力日列名≠SSOT), ops§32(L935:形式的分類和禁止), ops教訓索引(L943:prepare後成果不変順序)。新規PIなし(L934は設計書§0.6-1/trade-rule.md正本転記済みで重複回避)）
 - （L946/L947/L950/L953/L1551/L1553は振り分け済 2026-08-10 /lesson-sort → ops§32(L946:preflight母数同一計数生成/L950:as_of-load-through時計分離/L953:fixture ID分類軸一意化/L1551:外部repo偵察の正本二値確認/L1553:test_necessityのrepo境界contract), ops§12近傍L943隣(L947:scope fingerprint=private-index所有path集合)。新規PIなし(全て手順・テスト規律教訓)）
-- L1554: price completeness must filter expected-grid outliers（cmd_4285）
-- L1587: initial signal基準日とeffective loop startの不一致はholding NULLを発生させる（cmd_karo_recon_run303_effective_start_20260812）
-- L1596: 保存済み展開値は本番legacy同値性確認後に計算入力へ昇格する（cmd_4320）
-- L1598: FoF exact tie集合とfloat僅差順位を分離して検証する（cmd_4330）
-- L1599: verification taskにはno-code identityとrunner契約を同時注入する（cmd_4340）
+- （L1554/L1587/L1596/L1598/L1599は振り分け済 2026-08-18 /lesson-sort → ops§37(L1554:価格完全性の期待グリッド外れ値除外), ops§89(L1587:initial signal基準日=effective start SSOT), ops§96(L1596:保存展開値は本番同値性確認後昇格), ops§100(L1598:exact tie/float僅差の分離→6段キー), infra教訓索引A(L1599:verification taskのno-code identity+runner契約)）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 

@@ -51,6 +51,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 見出し: tmux設定 / Claude Code マルチアカウント管理（cmd_313偵察） / Google Workspace CLI (gws) — 全PJ共通ツール / Render運用（cmd_2824, 2026-05-17） / プラン別挙動 / 障害切り分け手順 / 全サービス一覧 / WSL2固有 / 競合調査 / Android App / 記憶DBバックアップ棚卸し（cmd_3869） / DM-Signal outputs陳腐化中間成果物削除（cmd_3871） / `/mnt/c`残量の事前検知（cmd_3875） / 防御機構スループット棚卸し（cmd_4059） / 外れ値型防御checkの発生条件（cmd_4185） / DM-signal outputs陳腐化成果物削除（cmd_3871, 2026-07-24）
 
 ## 教訓索引 A（配備・gate）
+- L1599: verification taskにはno-code identityとrunner契約を同時注入する — 検証のみのtaskはcommit契約required=false(task_type=verification/read-only字句)と選択実行runner契約を配備時に同時に持たせる（cmd_4340、/lesson-sort 2026-08-18）
 
 結論: 詳細は `docs/research/infrastructure-lessons-deploy-gates.md` に保存。原文を省略せず移設済み。
 見出し: テスト方針（全PJ共通・殿裁定2026-07-19） / Infra教訓索引 / カテゴリ別索引（L051-L466）
