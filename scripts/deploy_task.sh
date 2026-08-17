@@ -4398,11 +4398,6 @@ snapshot = {
     "acceptance_criteria": criteria,
     "final_checkpoint": task.get("final_checkpoint"),
     "investigation_contract": task.get("investigation_contract"),
-    "seam_contract": (
-        task.get("investigation_contract", {}).get("seam_contract")
-        if isinstance(task.get("investigation_contract"), dict)
-        else None
-    ),
     "reflux_commit_contract": task.get("reflux_commit_contract"),
 }
 checkpoint = task.get("final_checkpoint")
@@ -4749,54 +4744,7 @@ EOF
     fi
     local _investigation_outcome_block=""
     if [[ "${task_type,,}" =~ ^(recon|recon2|scout)$ ]]; then
-        local _seam_contract_required=false
-        _seam_contract_required=$(python3 - "$task_file" <<'PY_SEAM_REPORT_CONTRACT'
-import sys, yaml
-task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-investigation = task.get("investigation_contract")
-seam = investigation.get("seam_contract") if isinstance(investigation, dict) else None
-print("true" if isinstance(seam, dict) and seam.get("required") is True else "false")
-PY_SEAM_REPORT_CONTRACT
-)
-        if [ "$_seam_contract_required" = true ]; then
-            _investigation_outcome_block=$(cat <<'EOF'
-investigation_outcome:
-  # 発見件数は合否条件ではない。指定範囲を調べ切り、一次証拠で問いを解決したかが合否。
-  outcome: ""  # found / zero_found / not_present / external_boundary / unknown_after_exhaustion
-  method_completed: false  # 指定された探索方法・範囲を完遂した時だけtrue
-  primary_evidence:
-    - field: primary_payload
-      source: ""
-      observation: ""
-    - field: companion_caches
-      source: ""
-      observation: ""
-    - field: key_set
-      source: ""
-      observation: ""
-    - field: date_domain
-      source: ""
-      observation: ""
-    - field: empty_behavior
-      source: ""
-      observation: ""
-    - field: fallback
-      source: ""
-      observation: ""
-    - field: side_effects
-      source: ""
-      observation: ""
-    - field: legacy_only_policy
-      source: ""
-      observation: ""
-    - field: downstream_cardinality
-      source: ""
-      observation: ""
-  remaining_unknowns: []  # 無ければ[]。unknown_after_exhaustionなら残存不明点を列挙
-EOF
-            )
-        else
-            _investigation_outcome_block=$(cat <<'EOF'
+        _investigation_outcome_block=$(cat <<'EOF'
 investigation_outcome:
   # 発見件数は合否条件ではない。指定範囲を調べ切り、一次証拠で問いを解決したかが合否。
   outcome: ""  # found / zero_found / not_present / external_boundary / unknown_after_exhaustion
@@ -4804,8 +4752,7 @@ investigation_outcome:
   primary_evidence: []  # [{source: "file:line/query/output", observation: "観測事実"}] 最低1件
   remaining_unknowns: []  # 無ければ[]。unknown_after_exhaustionなら残存不明点を列挙
 EOF
-            )
-        fi
+)
     fi
     local _variation_checks_block=""
     if [ "$_variation_checks_required" = true ]; then
@@ -6815,7 +6762,17 @@ inject_push_allowed() {
 
     # \bpush\b はC.UTF-8ロケールで日本語(カナ/漢字)に直接隣接するとASCII境界を検出できない
     # (例:「pushして」「push完了」がNOMATCH)。ASCII文字以外を境界とみなす自前境界で代替する。
-    if printf '%s\n' "$ac_text" | grep -qiE '(^|[^A-Za-z])push($|[^A-Za-z])'; then
+    # 否定形(push禁止/pushはしない/pushせず/pushしない/push不可/pushは行わない/no push/do not push/
+    # must not push/push未)は「pushを要求していない」ので付与対象から除く。
+    # 2026-08-18 02:55 実測: cmd_4349/4351/4352のAC『(pushはしない)』『push禁止』が語句一致で
+    # push_allowed:true に反転し、cmd_complete_gateのpre-GATE autopushがGitHub不安定中(殿裁定
+    # 00:45 deploy凍結)にorigin/main→Render自動deployまで進んだ。DOC_LANE_ROUTING偽陽性(73449dd3)と同型。
+    local push_positive
+    push_positive="$(printf '%s\n' "$ac_text" \
+        | sed -E 's/(^|[^A-Za-z])(no|do not|must not|never|without)[[:space:]]+push($|[^A-Za-z])/\1__NEGPUSH__\3/Ig' \
+        | sed -E 's/(^|[^A-Za-z])push(は|を|も)?(禁止|不可|しない|せず|しません|未実施|未|は行わない|を行わない|するな)/\1__NEGPUSH__/g' \
+        | grep -ciE '(^|[^A-Za-z])push($|[^A-Za-z])' || true)"
+    if [ "${push_positive:-0}" -gt 0 ]; then
         yaml_field_set "$task_file" "task" "push_allowed" "true" \
             && log "inject_push_allowed: AC内に'push'検出。push_allowed=trueを自動付与(cmd_3820 G2ガード解消)"
     fi
@@ -12277,12 +12234,41 @@ patterns = [
     ("document-update", r"(?:documentation|docs?|ドキュメント|文書).{0,100}(?:更新|反映|改訂|変更|update|edit|revise)"),
 ]
 
+# 2026-08-17 偽陽性根治(殿裁定「偽陽性は即時根治」・cmd_4331): スコープ外/他lane
+# 担当の明記(例:「gist同期は将軍が行う」「外部共有同期は本cmd範囲外」)は忍者への
+# 依頼ではない。マッチ位置を含む同一節にスコープ外語があれば検知対象から外す。
+SCOPE_OUT = re.compile(
+    r"(?:範囲外|対象外|スコープ外|将軍(?:lane|レーン)|将軍が行う|将軍が実施|家老(?:lane|レーン)"
+    r"|(?:は|を)しない|(?:は|を)?行わない|(?:せず|禁止|禁じ)|不要|除外|out of scope|not in scope|shogun (?:doc )?lane"
+    r"|do(?:es)? not|must not|read[ -]?only|読み取りのみ)",
+    re.IGNORECASE,
+)
+
+# A repository path such as ``docs/research/<name>.md`` names an artifact
+# location (where a recon writes its findings), not a request to update
+# documentation.  cmd_4348 (2026-08-17 23:43) was BLOCKed because
+# "docs/research/…md に記録する。読み取りのみで…設定変更は行わない" matched
+# "docs …変更" across the sentence boundary.
+PATH_TOKEN = re.compile(r"^(?:docs?|documentation)/", re.IGNORECASE)
+
+def clause_around(text, start, end, span=60):
+    left = text[max(0, start - span):start]
+    right = text[end:end + span]
+    left = re.split(r"[。．.;；]|(?<=[)）])", left)[-1]
+    right = re.split(r"[。．.;；]|(?=[(（])", right)[0]
+    return left + text[start:end] + right
+
 hits = []
 for text in descriptions(ac):
     normalized = re.sub(r"\s+", " ", text).strip()
     for label, pattern in patterns:
-        if re.search(pattern, normalized, re.IGNORECASE):
+        for m in re.finditer(pattern, normalized, re.IGNORECASE):
+            if PATH_TOKEN.match(normalized[m.start():m.start() + 16]):
+                continue
+            if SCOPE_OUT.search(clause_around(normalized, m.start(), m.end())):
+                continue
             hits.append(label)
+            break
 if hits:
     print(",".join(dict.fromkeys(hits)))
 DOC_UPDATE_AC_PY
@@ -13227,7 +13213,6 @@ deploy_task_apply_task_mutations() {
     # Level5: investigation tasks receive an executable, bounded code-location
     # path before publication.  Raw recursive grep is intentionally forbidden.
     inject_outcome_neutral_investigation_contract "$task_file" || return 1
-    inject_seam_contract "$task_file" || return 1
     inject_code_location_contract "$task_file" || return 1
     inject_scope_contract_fields "$task_file" || return 1
 
@@ -13281,90 +13266,6 @@ inject_outcome_neutral_investigation_contract() {
     contract='{"version":1,"required":true,"outcome_neutral":true,"success_basis":"assigned_method_completed_with_primary_evidence","discovery_required":false,"allowed_outcomes":["found","zero_found","not_present","external_boundary","unknown_after_exhaustion"],"minimum_primary_evidence":1}'
     yaml_field_set "$task_file" "task" "investigation_contract" "$contract" || return 1
     log "investigation_contract: outcome-neutral contract injected (${task_type})"
-}
-
-# Consumer seam work must publish its nine input-contract questions before a
-# scout/recon worker starts.  Keep the contract nested in the existing typed
-# investigation_contract so yaml_field_set.sh can preserve a mapping without
-# introducing a second task-side writer.  Only cutover/cache/read-reduction
-# investigations require all nine evidence rows; ordinary investigations keep
-# the existing one-evidence outcome-neutral contract unchanged.
-inject_seam_contract() {
-    local task_file="$1" task_type contract_json
-    [ -f "$task_file" ] || return 0
-    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
-    task_type="${task_type,,}"
-
-    contract_json=$(python3 - "$task_file" <<'PY_SEAM_CONTRACT'
-import json, re, sys, yaml
-
-path = sys.argv[1]
-task = (yaml.safe_load(open(path, encoding="utf-8")) or {}).get("task", {})
-task_type = str(task.get("task_type") or "").strip().lower()
-if task_type not in {"recon", "recon2", "scout"}:
-    raise SystemExit(3)
-
-parts = []
-for key in ("title", "purpose", "command", "description", "constraints", "not_in_scope"):
-    value = task.get(key)
-    if isinstance(value, (list, dict)):
-        parts.append(json.dumps(value, ensure_ascii=False, sort_keys=True))
-    elif value:
-        parts.append(str(value))
-for item in task.get("acceptance_criteria") or []:
-    if isinstance(item, dict):
-        parts.append(str(item.get("description") or item.get("criteria") or ""))
-    else:
-        parts.append(str(item))
-text = " ".join(parts).lower()
-trigger = bool(re.search(
-    r"cutover|cache|caching|read[ _-]*(reduction|削減|count|回数)|"
-    r"consumer|seam|継ぎ目|読み取り削減|読取削減|キャッシュ",
-    text,
-    re.IGNORECASE,
-))
-
-base = task.get("investigation_contract")
-if not isinstance(base, dict):
-    base = {
-        "version": 1,
-        "required": True,
-        "outcome_neutral": True,
-        "success_basis": "assigned_method_completed_with_primary_evidence",
-        "discovery_required": False,
-        "allowed_outcomes": ["found", "zero_found", "not_present", "external_boundary", "unknown_after_exhaustion"],
-        "minimum_primary_evidence": 1,
-    }
-else:
-    base = dict(base)
-
-fields = [
-    "primary_payload", "companion_caches", "key_set", "date_domain",
-    "empty_behavior", "fallback", "side_effects", "legacy_only_policy",
-    "downstream_cardinality",
-]
-base["seam_contract"] = {
-    "required": trigger,
-    "fields": {field: "" for field in fields},
-    "primary_evidence_fields": fields,
-    "minimum_primary_evidence": 9 if trigger else 1,
-    "field_guidance": {
-        "date_domain": "一次証拠でtarget_date/run境界と、前run終端DB状態(C1 read-once旧行)への履歴依存を確認する",
-        "legacy_only_policy": "一次証拠で旧行を許容する条件と、汚染後復元の1回目(1989件逆転・465件残存)および2回目収束full確認のstate dependencyを扱う",
-    },
-}
-if trigger:
-    base["minimum_primary_evidence"] = 9
-print(json.dumps(base, ensure_ascii=False, separators=(",", ":")))
-PY_SEAM_CONTRACT
-    ) || {
-        [ "$?" -eq 3 ] && return 0
-        log "BLOCK: seam_contract generation failed (${task_file})"
-        return 1
-    }
-
-    yaml_field_set "$task_file" "task" "investigation_contract" "$contract_json" || return 1
-    log "seam_contract: injected task_type=${task_type} required=$(python3 -c 'import json,sys; print(str(json.loads(sys.argv[1])["seam_contract"]["required"]).lower())' "$contract_json") fields=9"
 }
 
 # cmd_4215: only an explicit boolean declaration may opt a task into fixed-HEAD
