@@ -1190,3 +1190,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 ## §99 cmd_4331 FoF tie-break dry-run (2026-08-17)
 - 本番FoF74 PFのうちselection block有57・無17。共通dispatchは`backend/app/services/pipeline/engine.py:109-142`だがtop-N/cutoffは各filterへ分散し、GS run_077/l1はproduction block parity経路と独自vectorized選択経路を併存する。全74 PFを同一as-of月で再集計し、適用月9,141・branch/view評価15,910・変更949月(MAF722/Momentum55/MultiView30/SingleView60/Trend82/Weighted0、no-block17は月0)、stage②4,511・③668・④0・⑤7・⑥7・②skip264。standard24 PFはgap4,178観測で相対1e-9未満0/exact0。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`。
+
+## §100 FoF子PF選択の決定性 — 6段キーtie-break (2026-08-17 12:51〜08-18 00:13、PD-138)
+- 結論: FoF選択フィルタ6種の同点解決は共通層 `backend/app/services/pipeline/selection.py` `select_top_n_deterministic`(①config依存スコア合成ε1e-9→②12M(両者13観測以上時のみ)→③設定来CAGR→④MaxDD小→⑤現保有維持→⑥設定来早い方、同率全採用廃止)。手①②(cmd_4334-4340)で配線集約→手③(cmd_4344 54e3e663+2f3e3c82)で切替、本番live 08-18 00:13、full run404で合否(a)期待差分=`docs/research/cmd_4342_fof_tiebreak_expected_diff.csv`(DM-Signal repo、959月)PF×月一致(b)2回目md5一致(c)標準PF変化0(d)時間≤2倍。戻し方=revert 2commit→push→deploy→full 1回。
+- 正本 → `docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md`(AsIs v1.4/ToBe v0.3、gist 1e0cab30、artifact 58f94a75)。乾式=§99(cmd_4331 949月は集計値のみ・参考値)。手④(GS fast path parity)未着手。
