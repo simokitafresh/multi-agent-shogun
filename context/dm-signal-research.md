@@ -1,6 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
 <!-- source_commit:6b3537fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=6b3537fd -->
+<!-- dm_signal_research_reflux: fingerprint=4056ee5a07b612664a6508071fe7f5f9d0f8628543ed46fbe2fd6e0d236cdba2; mode=non-target; evidence_b64=Y21kXzQzNTAgb3V0cHV0cyBhcmUgc3RhbmRhbG9uZSByZXNlYXJjaCBhcnRpZmFjdHM7IG5vIGNvbnRleHQgb3Igc2VtYW50aWMgaW5kZXggc3luY2hyb25pemF0aW9uIGlzIGluIHNjb3Bl -->
 <!-- dm_signal_research_reflux: fingerprint=60b3f3e2a0bd7895c12564084754698a650493a2d2e4e57fb34a7fcb7c60d005; mode=non-target; evidence_b64=Y21kXzQzNDIgb3ducyB0aGUgcmVwcm9kdWNpYmxlIGV4cGVjdGVkLWRpZmYgQ1NWL01hcmtkb3duIGFuZCBjb21wYXJhdG9yIHNjcmlwdDsgc2hhcmVkIHJlc2VhcmNoIGluZGV4IHN5bmNocm9uaXphdGlvbiBpcyBvdXRzaWRlIHRoaXMgdGFzayBzY29wZS4= -->
 <!-- dm_signal_research_reflux: fingerprint=7b26c254b1af0d1e09ba9effee59c0f2a292c3d53d9946a2498948ad1e61896c; mode=non-target; evidence_b64=Y21kXzQzMzEgcmV2aXNpb24gYXJ0aWZhY3QgZXhwYW5kcyBBQzMgYWNyb3NzIGFsbCA3NCBGb0ZzIHdpdGggYnJhbmNoL3ZpZXcgc2VtYW50aWNzOyBubyByZXNlYXJjaCBpbmRleCBzeW5jaHJvbml6YXRpb24gd2FzIHBlcmZvcm1lZCBpbiB0YXJnZXQgcmVwbw== -->
 <!-- dm_signal_research_reflux: fingerprint=57062b599ca7a88638062f79aa252acfb453d47087a796e1dd2bb61133258d38; mode=non-target; evidence_b64=Y21kXzQzMzEgYXJ0aWZhY3QgZG9jdW1lbnRzIHByb2R1Y3Rpb24gRm9GIHNjb3JlLWdhcCBhbmQgc2l4LWtleSBkcnktcnVuOyBubyByZXNlYXJjaCBpbmRleCBzeW5jaHJvbml6YXRpb24gd2FzIHBlcmZvcm1lZCBpbiB0YXJnZXQgcmVwbw== -->
@@ -16,7 +17,6 @@
 <!-- dm_signal_research_reflux: fingerprint=2c3ed29871afd45266d6672267a8db8f57aa45629eb1f4073866c4fde506bd3e; mode=non-target; evidence_b64=5ZCM5LiA5LiW5Luj44Gu5LiA5qyhc25hcHNob3TmnKrlj5blvpfjgafmpJznrpfjga9CTE9DS+OAgueglOeptue0ouW8leabtOaWsOOBr+WutuiAgeWIpOaWreOBq+WnlOOBreOCi+OAgg== -->
 <!-- dm_signal_research_reflux: fingerprint=1f131969895cc0c8974a36a87ffa747adce2b8a4334563209c1bbfed26157719; mode=non-target; evidence_b64=Y21kXzQzMDDml6LlrZhDU1bjga5DUkxG5q2j6KaP5YyW44Gu44G/44CC56CU56m257WQ6KuW44O7Y29udGV4dOWPgueFp+ODu+WboOaenOODquODs+OCr+OBr+S4jeWkiQ== -->
 <!-- dm_signal_research_reflux: fingerprint=131b991b5b12ea2fe356acdadea3ce587ce98386f1047aeb87e79321b74cdd01; mode=synced; evidence_b64=Y21kXzQzMDAgcmVzdWx0IGFuZCBjb250ZXh0L2Rlc2lnbiBjb25jbHVzaW9uIGFyZSBzeW5jaHJvbml6ZWQgaW4gbXVsdGktYWdlbnQtc2hvZ3Vu -->
-<!-- dm_signal_research_reflux: fingerprint=fa3f535a17346d7d69caaeb659fb61fef6c0423930ee5efdce784fae72fc87a5; mode=synced; evidence_b64=Y21kXzQzMDAgcmVzdWx0IGFuZCBjb250ZXh0L2Rlc2lnbiBjb25jbHVzaW9uIGFyZSBzeW5jaHJvbml6ZWQgaW4gbXVsdGktYWdlbnQtc2hvZ3Vu -->
 <!-- source_commit:99199a9c reason:cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) evidence:cmd_4301: context_freshness_check --cmd-commit-list cmd_4301の最新行=99199a9c。doc-only 8commitをmainへff-push済み(e3dccd87..99199a9c) -->
 
 <!-- source_commit:37bc59cc reason:cmd_4296 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=37bc59cc -->

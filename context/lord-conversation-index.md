@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-08-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-08-18T00:09:21+09:00 -->
+<!-- generated_at: 2026-08-18T01:31:29+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-08-18T00:09:20+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T00:08:32+09:00 | ntfy | outbound | 【hanzo】cmd_4348_full完了。gate PASS。
-- 2026-08-18T00:08:00+09:00 | terminal | response | cmd_4348 LGTM完了。inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T00:06:09+09:00 | terminal | response | cmd_4346 LGTM完了。inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T00:05:18+09:00 | ntfy | outbound | 【monitor】将軍CTX:54%。/compactをご検討ください
-- 2026-08-18T00:04:31+09:00 | ntfy | outbound | 【monitor】将軍CTX:54%。/compactをご検討ください
-- 2026-08-18T00:01:41+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-18T00:01:10+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
-- 2026-08-17T23:59:47+09:00 | terminal | response | Storm停止(23:56:32以降通知なし)。将軍inboxのspam 56件を既読化。commitとkaro側の状況、そしてcmd_4344を確認。 [meta] stop_reason=tool_use
-- 2026-08-17T23:53:21+09:00 | terminal | response | cmd_4348はデーモン全停止偵察(16:46-18:02の76分空白)。6観点: **Step 1 前提**: 17時台ninja_monitor.log 0行、daemon_watchdog.log 0行。REFLUX-AUTO-D…
+- 2026-08-18T01:31:28+09:00 | terminal | response | バックグラウンドタスク完了確認（CI fix re-bundle、既にフォアグラウンドで処理済み）。 inbox 0件。 [MEM: memory_db ts=2026-08-18 "殿裁定2026-08-18 00:45: GitHub…
+- 2026-08-18T01:31:04+09:00 | terminal | inbound | <task-notification> <task-id>bw46pzs1v</task-id> <tool-use-id>toolu_01XTfwfDenhZTFHvSqTbfewC</tool-use-id> <output-file…
+- 2026-08-18T01:31:02+09:00 | terminal | response | inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T01:30:39+09:00 | ntfy | outbound | 【unknown】cmd_karo_ci_fix_32035893446 完了
+- 2026-08-18T01:30:39+09:00 | terminal | response | 承知。事実として **cmd_4349(component_order整列)は本番live(a88f300f、01:29 Render確認済み)**。手③本体+補正が本番に乗った状態。 次の一手は家老レーンで進行中: - **(b)収束*…
+- 2026-08-18T01:30:35+09:00 | terminal | response | cmd_4349 CLEAR。SG-PRE20 hotfix v2 autopush BLOCK(インフラ経路問題)。inbox 0件。待機。 [meta] stop_reason=end_turn
+- 2026-08-18T01:30:28+09:00 | terminal | inbound | なんにせよ4349はデプロイ完了している。
+- 2026-08-18T01:30:19+09:00 | terminal | response | - CI修正cmd(cmd_karo_ci_fix_32035893446)GATE CLEAR — cmd_4343 push起因の2 bats赤の修正完了(既読化)。 - **Render: a88f300f(cmd_4349 com…
+- 2026-08-18T01:28:26+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率68% 連勝1
+- 2026-08-18T01:27:27+09:00 | terminal | response | 殿へ事実報告(01:27): - **cmd_4349(component_order安定順) GATE CLEAR**。diff現物確認: base.pyへ`ordered_current_tickers`ヘルパー追加、6ブロック(tr…
 
 ## 未解決確認事項
-- Storm停止(23:56:32以降通知なし)。将軍inboxのspam 56件を既読化。commitとkaro側の状況、そしてcmd_4344を確認。 [meta] stop_reason=tool_use
-- 4観点レビュー完了: **1. 前提検証**: review_gate.done format確認済み(review_approval.sh 650-654行)。gate_metrics.log TSV形式。OK **2. 数値検算**: 99/99 PASS SKIP0。3f…
-- cmd_4347委任。最後に4(ACK-STALL 76分遅延の真因偵察)。現物確認。 [meta] stop_reason=tool_use
-- デーモン再起動完了(`bash scripts/restart_all_daemons.sh`、23:23:31): - ninja_monitor: 新PID 4049135(SINGLETON-TAKEOVER)、9/9 pane検出、監視再開 - inbox_watche…
-- 家老・軍師のボトルネック分析(本日FoFレーンcmd_4334〜4343の一次ログ: gate_metrics.log / gunshi_review_log / 報告YAML / deploy_task.log / trigger.log から時刻を突合): ## 工程別リー…
-- cmd_4344 review bundle完了確認(既にフォアグラウンドで処理済み)。inbox 0件。待機。 [meta] stop_reason=end_turn
-- バックグラウンドタスク3件完了確認(kagemaru v2/kotaro fingerprint更新/saizo insight)。全て既にフォアグラウンドで処理済み。 inbox 0件。レビュー待ち。
-- 進捗(22:36、一次確認): - **cmd_4342(準備C・期待差分)は完了(GATE CLEAR 22:13)**。commit b0e7e7c9、CSV 8,570行・changed=959を将軍が再集計して一致。20:51〜22:13は完了gateの「review_…
+- バックグラウンドタスク完了確認（CI fix re-bundle、既にフォアグラウンドで処理済み）。 inbox 0件。 [MEM: memory_db ts=2026-08-18 "殿裁定2026-08-18 00:45: GitHubが不安定な間、安易なrevert/dep…
+- 承知。事実として **cmd_4349(component_order整列)は本番live(a88f300f、01:29 Render確認済み)**。手③本体+補正が本番に乗った状態。 次の一手は家老レーンで進行中: - **(b)収束**: a88f300fで full 2回…
+- - CI修正cmd(cmd_karo_ci_fix_32035893446)GATE CLEAR — cmd_4343 push起因の2 bats赤の修正完了(既読化)。 - **Render: a88f300f(cmd_4349 component_order整列)が bui…
+- 殿へ事実報告(01:27): - **cmd_4349(component_order安定順) GATE CLEAR**。diff現物確認: base.pyへ`ordered_current_tickers`ヘルパー追加、6ブロック(trend_reversal含む)が同ヘルパ…
+- 殿、run405(2回目full)の結果=**(b)収束FAIL、ただし範囲は極小で原因は特定済み**(家老診断を将軍がコード現物で裏取り、artifact更新済み): **事実** - md5: metrics/標準PFは同値、monthly/signals/weightsが…
+- 家老の主因を現物で確認(recalculate_fof.py 1843-1853: 下位FoFのMonthlyReturn生成後にcacheへreloadし上位FoFが消費)。artifactへ反映。 [meta] stop_reason=tool_use
+- 現状(00:32、pane/gate log/Render/GitHub一次確認): **FoF決定性(本命)** - 手③6段キー切替(cmd_4344)は**本番live**(Render 57127ffd)。家老レーンの**full run404は完走(DB SSOTでc…
+- 埋込み完了。今クリアされても次の将軍が持ち越せる状態にした: **環境に埋め込んだもの** 1. **記憶DB** `session_save_20260818_0030`(復帰点: 手③live・run404合否待ち・戻し方・進行cmd・GitHub障害・教訓) 2. **M…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -57,6 +57,8 @@
 - cmd_4346
 - cmd_4347
 - cmd_4348
+- cmd_4349
+- cmd_4350
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
