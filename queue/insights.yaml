@@ -1051,3 +1051,13 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-17T09:16:54+09:00"
+- id: INS-20260817-124329631-fe3e
+  ts: "2026-08-17T12:43:29+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4330; matched=code; current_pattern=FoF子PF選択がfloatノイズ級の価格差で反転する機構のread-only偵察 — 同値tie-breakと価格取込み精度の現物特定(実装禁止); candidate_level=3; candidate=hayate事故(2026-04-28): bypass flag欠落→確認プロンプトで停止。pstreeで起動時自動検出; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4330"
+  fix_known: false
+  status: resolved
+  resolved_reason: "cmd_4330のread-only偵察結果はcmd_4331全74 FoF乾式artifactと決定性設計書へ反映済み。現行のfloat相対差・filter別選択分散・同値拡張を一次設計境界として確認し、実装・価格取込み変更は別cmdの範囲なので本insightの新規修正は不要。"
+  action_artifact: "semantic_search=memory_db:knowledge:7dcca4d99d13eea4;design=/mnt/c/Python_app/DM-Signal/docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md;dryrun=/mnt/c/Python_app/DM-Signal/docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md;expected_diff=/mnt/c/Python_app/DM-Signal/docs/research/cmd_4342_fof_tiebreak_expected_diff.md"
+  resolved_at: "2026-08-17T21:49:59+09:00"
