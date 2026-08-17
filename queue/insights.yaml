@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260816-231446349-0683
-  ts: "2026-08-16T23:14:46+09:00"
-  insight: "semantic_index_update新概念候補: discussion:今消そう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-16T23:27:17+09:00"
-- id: INS-20260816-232739567-2abf
-  ts: "2026-08-16T23:27:39+09:00"
-  insight: "semantic_index_update新概念候補: discussion:次の推奨は？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-16T23:29:31+09:00"
 - id: INS-20260816-232901086-9c35
   ts: "2026-08-16T23:29:01+09:00"
   insight: "[[デプロイがうまくいかないな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=デプロイがうまくいかないな。もう一回やってみよう"
@@ -724,7 +704,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4324"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報確認: GP-216/useful_rate/LG033は既存のlesson_lifecycle・学習ループ知識に一致し、新規コード経路または未解決の意思決定を特定しなかった。既存のLG033 Level5化(cmd_2624)と教訓活用率強制(cmd_3561)があり、追加修正・decision_candidate不要。"
+  action_artifact: "memory_db_query=GP-216 useful_rate LG033 (同一候補8件); context/semantic-map.md:42,91; projects/infra/lessons.yaml:L317,L860; docs/semantic-index/index.md:8225,9300"
+  resolved_at: "2026-08-17T09:45:01+09:00"
 - id: INS-20260817-033319066-7785
   ts: "2026-08-17T03:33:19+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[全期間Pending_20260817]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=lord_ruling_20260810_2117; score=5.5) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=4.8) / cmd_quality_logging(cmd設計品質ログ; alias=zzz_gunshi_unreached_20260727; score=4.3)。概念定義とaliases追加を検討せよ"
@@ -1012,3 +995,19 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-17T09:37:48+09:00"
+- id: INS-20260817-094526508-4e87
+  ts: "2026-08-17T09:45:26+09:00"
+  insight: "THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify='test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh' source=S2_detector_fp_rate"
+  priority: "medium"
+  source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
+  fix_known: true
+  status: pending
+  target_file: "scripts/cmd_save.sh"
+  verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
+  insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
+  occurrence_count: 1
+  last_seen: "2026-08-17T09:45:26+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
