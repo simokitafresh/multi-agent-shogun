@@ -156,6 +156,14 @@ new_bb_design:  # 殿裁定2026-06-15
 forbidden_topics:  # 殿裁定2026-05-10
   - topic: "ALM"
     rule: "殿が明示的に言わない限り話題に出すな。ALMはディスコン"
+  - topic: "Signalページ"
+    rule: "存在しないページとして扱え。『Signalページ側は？』と殿に聞くな(殿2026-08-17 02:22『すでにsignalページはない。毎回説明したくない』)。cmd_494/L153/L156等のcontext記述は当時の事実。current signal表示はdashboard(useSignals context)へ吸収済み"
+    reason: "context/dm-signal-frontend.md §14(cmd_494)等の旧記述を現物確認せず引用して殿へ質問した。二次情報の鮮度未確認=洗脳#2"
+
+production_pages:  # 一次情報: /mnt/c/Python_app/DM-signal/frontend/app 直下のroute(2026-08-17 02:22 ls確認)
+  routes: [admin, annual-returns, compare, compare-returns, compare-summary, dashboard, deterioration, docs, drawdowns, faq, metrics, monthly-returns, monthly-trade, offline, rolling-returns, summary, trades]
+  not_exist: [signals]
+  rule: "ページの有無を語る前に frontend/app を ls せよ。contextのページ名は当時の事実"
 
 alm_integration:
   status: "discontinued"
