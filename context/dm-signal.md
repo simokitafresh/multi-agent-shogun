@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-08-03 D0 route preflight formal review accepted after C-x preflight commit -->
-<!-- last_synced_lesson: L1598 -->
+<!-- last_synced_lesson: L1599 -->
 <!-- source_commit:d7cab63f3aaacf8392a98bf455035317c5d5e2d7 reason:D0 route preflight formal review accepted after C-x preflight commit evidence:D0 report d3d2567c; latest DM-Signal source d7cab63f; runner17/17; writes0 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -342,6 +342,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L1587: initial signal基準日とeffective loop startの不一致はholding NULLを発生させる（cmd_karo_recon_run303_effective_start_20260812）
 - L1596: 保存済み展開値は本番legacy同値性確認後に計算入力へ昇格する（cmd_4320）
 - L1598: FoF exact tie集合とfloat僅差順位を分離して検証する（cmd_4330）
+- L1599: verification taskにはno-code identityとrunner契約を同時注入する（cmd_4340）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 

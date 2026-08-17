@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
 <!-- source_commit:6b3537fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=6b3537fd -->
-<!-- source_commit:99199a9c reason:cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) evidence:cmd_4301: context_freshness_check --cmd-commit-list cmd_4301の最新行=99199a9c。doc-only 8commitをmainへff-push済み(e3dccd87..99199a9c) -->
+<!-- dm_signal_research_reflux: fingerprint=60b3f3e2a0bd7895c12564084754698a650493a2d2e4e57fb34a7fcb7c60d005; mode=non-target; evidence_b64=Y21kXzQzNDIgb3ducyB0aGUgcmVwcm9kdWNpYmxlIGV4cGVjdGVkLWRpZmYgQ1NWL01hcmtkb3duIGFuZCBjb21wYXJhdG9yIHNjcmlwdDsgc2hhcmVkIHJlc2VhcmNoIGluZGV4IHN5bmNocm9uaXphdGlvbiBpcyBvdXRzaWRlIHRoaXMgdGFzayBzY29wZS4= -->
 <!-- dm_signal_research_reflux: fingerprint=7b26c254b1af0d1e09ba9effee59c0f2a292c3d53d9946a2498948ad1e61896c; mode=non-target; evidence_b64=Y21kXzQzMzEgcmV2aXNpb24gYXJ0aWZhY3QgZXhwYW5kcyBBQzMgYWNyb3NzIGFsbCA3NCBGb0ZzIHdpdGggYnJhbmNoL3ZpZXcgc2VtYW50aWNzOyBubyByZXNlYXJjaCBpbmRleCBzeW5jaHJvbml6YXRpb24gd2FzIHBlcmZvcm1lZCBpbiB0YXJnZXQgcmVwbw== -->
 <!-- dm_signal_research_reflux: fingerprint=57062b599ca7a88638062f79aa252acfb453d47087a796e1dd2bb61133258d38; mode=non-target; evidence_b64=Y21kXzQzMzEgYXJ0aWZhY3QgZG9jdW1lbnRzIHByb2R1Y3Rpb24gRm9GIHNjb3JlLWdhcCBhbmQgc2l4LWtleSBkcnktcnVuOyBubyByZXNlYXJjaCBpbmRleCBzeW5jaHJvbml6YXRpb24gd2FzIHBlcmZvcm1lZCBpbiB0YXJnZXQgcmVwbw== -->
 <!-- dm_signal_research_reflux: fingerprint=e8231b42c346a88d961d60482fd63597f4caf27c3b9c4ee488e3e0230dec92de; mode=synced; evidence_b64=Y21kXzQzMjEgcmVzZWFyY2ggcmVzdWx0IGluZGV4ZWQgaW4gbXVsdGktYWdlbnQtc2hvZ3VuIGNvbnRleHQvZG0tc2lnbmFsLW9wcy5tZCDCpzk3 -->
@@ -17,7 +17,7 @@
 <!-- dm_signal_research_reflux: fingerprint=1f131969895cc0c8974a36a87ffa747adce2b8a4334563209c1bbfed26157719; mode=non-target; evidence_b64=Y21kXzQzMDDml6LlrZhDU1bjga5DUkxG5q2j6KaP5YyW44Gu44G/44CC56CU56m257WQ6KuW44O7Y29udGV4dOWPgueFp+ODu+WboOaenOODquODs+OCr+OBr+S4jeWkiQ== -->
 <!-- dm_signal_research_reflux: fingerprint=131b991b5b12ea2fe356acdadea3ce587ce98386f1047aeb87e79321b74cdd01; mode=synced; evidence_b64=Y21kXzQzMDAgcmVzdWx0IGFuZCBjb250ZXh0L2Rlc2lnbiBjb25jbHVzaW9uIGFyZSBzeW5jaHJvbml6ZWQgaW4gbXVsdGktYWdlbnQtc2hvZ3Vu -->
 <!-- dm_signal_research_reflux: fingerprint=fa3f535a17346d7d69caaeb659fb61fef6c0423930ee5efdce784fae72fc87a5; mode=synced; evidence_b64=Y21kXzQzMDAgcmVzdWx0IGFuZCBjb250ZXh0L2Rlc2lnbiBjb25jbHVzaW9uIGFyZSBzeW5jaHJvbml6ZWQgaW4gbXVsdGktYWdlbnQtc2hvZ3Vu -->
-<!-- dm_signal_research_reflux: fingerprint=13249b8967e9138d6819e2183c09fe4338c5034f5dac0ae5ee1499a5fd344616; mode=non-target; evidence_b64=ZG9jc+iqv+afu+abuOOBuOOBruWbs+ihqOi/veiomOOBruOBvyjmrr/mjIfnpLoxNDoxNinjgILmnKznlarjgrPjg7zjg4npnZ7lr77osaE= -->
+<!-- source_commit:99199a9c reason:cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) evidence:cmd_4301: context_freshness_check --cmd-commit-list cmd_4301の最新行=99199a9c。doc-only 8commitをmainへff-push済み(e3dccd87..99199a9c) -->
 
 <!-- source_commit:37bc59cc reason:cmd_4296 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=37bc59cc -->
 <!-- source_commit:00cecab1 reason:cmd_karo_recon2_cmd4284_final_evidence_202608101034 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=00cecab1 -->
