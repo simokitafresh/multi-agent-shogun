@@ -697,12 +697,528 @@ PY
     printf '%s\n' "$source_sha"
 }
 
+# Build a conflict publication from the source commits' final path snapshots.
+# This is deliberately narrower than a three-way merge: only paths changed by
+# the source commits may be staged, and a remote path is accepted only when
+# its blob (or absence) is a state found in that path's source-side history.
+# Generic source-only fallback. The insights ID merge wrapper below is kept
+# separate so every other path retains the existing fail-closed proof.
+source_only_path_snapshot_generic() {
+    local repo="$1" clean_repo="$2" remote_tip="$3" source_sha path first_commit parent published_sha
+    local remote_blob source_blob actual_path actual_blob
+    local absent_ancestor common_base
+    shift 3
+    local -A allowed_paths=() source_for_path=() source_blobs=() actual_paths=()
+    local -a parents=()
+
+    for source_sha in "$@"; do
+        while IFS= read -r -d '' path; do
+            allowed_paths["$path"]=1
+            source_for_path["$path"]="$source_sha"
+            if git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null; then
+                source_blobs["$path"]="$(git -C "$repo" rev-parse "$source_sha:$path")"
+            else
+                source_blobs["$path"]="__ABSENT__"
+            fi
+        done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    [ "${#allowed_paths[@]}" -gt 0 ] || return 1
+
+    # A remote blob must occur in the source commit's path history.  For an
+    # absent remote path, prove that absence is also an ancestor state (the
+    # path was not yet created, or was deleted) rather than accepting a
+    # divergent remote deletion.
+    for path in "${!allowed_paths[@]}"; do
+        if git -C "$repo" cat-file -e "$remote_tip:$path" 2>/dev/null; then
+            remote_blob="$(git -C "$repo" rev-parse "$remote_tip:$path")"
+        else
+        remote_blob="__ABSENT__"
+        fi
+        if [ "$remote_blob" = "__ABSENT__" ]; then
+            if ! git -C "$repo" cat-file -e "${source_for_path[$path]}:$path" 2>/dev/null; then
+                continue
+            fi
+            common_base="$(git -C "$repo" merge-base "$remote_tip" "${source_for_path[$path]}" 2>/dev/null || true)"
+            [ -n "$common_base" ] || return 1
+            # An absent remote path is valid only when the source/remote
+            # common base also lacked it.  This distinguishes a new source
+            # path from a remote-side deletion of an existing path.
+            ! git -C "$repo" cat-file -e "$common_base:$path" 2>/dev/null || return 1
+            first_commit="$(git -C "$repo" rev-list --reverse "${source_for_path[$path]}" -- "$path" 2>/dev/null | head -n 1)"
+            [ -n "$first_commit" ] || return 1
+            parents=( $(git -C "$repo" rev-list --parents -n 1 "$first_commit" 2>/dev/null) )
+            if [ "${#parents[@]}" -le 1 ]; then
+                continue
+            fi
+            absent_ancestor=false
+            for parent in "${parents[@]:1}"; do
+                if ! git -C "$repo" cat-file -e "$parent:$path" 2>/dev/null; then
+                    absent_ancestor=true
+                    break
+                fi
+            done
+            [ "$absent_ancestor" = true ] || return 1
+        else
+            actual_blob=""
+            while IFS= read -r first_commit; do
+                [ -n "$first_commit" ] || continue
+                actual_blob="$(git -C "$repo" rev-parse "$first_commit:$path" 2>/dev/null || true)"
+                [ "$actual_blob" = "$remote_blob" ] && break
+                actual_blob=""
+            done < <(git -C "$repo" rev-list "${source_for_path[$path]}" -- "$path" 2>/dev/null)
+            [ "$actual_blob" = "$remote_blob" ] || return 1
+        fi
+    done
+
+    # Materialize only the final source blob for each changed path on top of
+    # the remote tip.  Remote-only paths are never touched.
+    for path in "${!allowed_paths[@]}"; do
+        source_sha="${source_for_path[$path]}"
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            if git -C "$clean_repo" cat-file -e "$remote_tip:$path" 2>/dev/null; then
+                git -C "$clean_repo" rm -f -- "$path" >/dev/null 2>&1 || return 1
+            fi
+        else
+            git -C "$clean_repo" checkout "$source_sha" -- "$path" >/dev/null 2>&1 || return 1
+        fi
+    done
+    git -C "$clean_repo" add -A -- "${!allowed_paths[@]}" || return 1
+
+    while IFS= read -r -d '' actual_path; do
+        actual_paths["$actual_path"]=1
+    done < <(git -C "$clean_repo" diff --cached --name-only -z "$remote_tip")
+    for actual_path in "${!actual_paths[@]}"; do
+        [ "${allowed_paths[$actual_path]+yes}" = yes ] || return 1
+    done
+
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            ! git -C "$clean_repo" cat-file -e ":$path" 2>/dev/null || return 1
+        else
+            actual_blob="$(git -C "$clean_repo" rev-parse ":$path" 2>/dev/null || true)"
+            [ "$actual_blob" = "$source_blob" ] || return 1
+        fi
+    done
+
+    git -C "$clean_repo" commit --allow-empty -m "autopush: source-only path snapshot" >/dev/null 2>&1 || return 1
+    published_sha="$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)"
+    [ -n "$published_sha" ] || return 1
+
+    actual_paths=()
+    while IFS= read -r -d '' actual_path; do
+        actual_paths["$actual_path"]=1
+    done < <(git -C "$clean_repo" diff-tree --no-commit-id --name-only -r -z "$published_sha^" "$published_sha")
+    for actual_path in "${!actual_paths[@]}"; do
+        [ "${allowed_paths[$actual_path]+yes}" = yes ] || return 1
+    done
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            ! git -C "$clean_repo" cat-file -e "$published_sha:$path" 2>/dev/null || return 1
+        else
+            actual_blob="$(git -C "$clean_repo" rev-parse "$published_sha:$path" 2>/dev/null || true)"
+            [ "$actual_blob" = "$source_blob" ] || return 1
+        fi
+    done
+    return 0
+}
+
+# Prove that every remote-side edit is already accumulated in the source
+# final blob. The base->remote delta must be present in source with the same
+# multiplicity and order; any missing hunk or path-state conflict fails closed.
+source_only_cumulative_equivalence() (
+    local repo="$1" clean_repo="$2" remote_tip="$3" source_sha common_base path actual_path
+    local base_file source_file remote_file merged_file tmp_dir source_blob actual_blob published_sha
+    local base_exists source_exists remote_exists
+    shift 3
+    local -a source_shas=("$@")
+    local -A allowed_paths=() source_blobs=() actual_paths=()
+
+    [ "${#source_shas[@]}" -gt 0 ] || return 1
+    for source_sha in "${source_shas[@]}"; do
+        while IFS= read -r -d '' path; do
+            allowed_paths["$path"]=1
+        done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    [ "${#allowed_paths[@]}" -gt 0 ] || return 1
+    common_base="$(git -C "$repo" merge-base "$remote_tip" "${source_shas[0]}" 2>/dev/null || true)"
+    [ -n "$common_base" ] || return 1
+    source_sha="${source_shas[${#source_shas[@]}-1]}"
+
+    tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/shogun-cumulative-equivalence.XXXXXX")" || return 1
+    trap 'rm -f "$tmp_dir"/*; rmdir "$tmp_dir" 2>/dev/null || true' EXIT
+
+    local path_index=0
+    for path in "${!allowed_paths[@]}"; do
+        base_file="$tmp_dir/base_${path_index}"
+        source_file="$tmp_dir/source_${path_index}"
+        remote_file="$tmp_dir/remote_${path_index}"
+        merged_file="$tmp_dir/merged_${path_index}"
+        path_index=$((path_index + 1))
+
+        base_exists=false
+        source_exists=false
+        remote_exists=false
+        git -C "$repo" cat-file -e "$common_base:$path" 2>/dev/null && base_exists=true
+        git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null && source_exists=true
+        git -C "$repo" cat-file -e "$remote_tip:$path" 2>/dev/null && remote_exists=true
+        if [ "$base_exists" = true ] && [ "$source_exists" = true ] && [ "$remote_exists" = false ]; then
+            return 1
+        fi
+        if [ "$base_exists" = true ] && [ "$source_exists" = false ] && [ "$remote_exists" = true ]; then
+            return 1
+        fi
+
+        if [ "$base_exists" = true ]; then
+            git -C "$repo" show "$common_base:$path" >"$base_file" || return 1
+        else
+            : >"$base_file"
+        fi
+        if [ "$source_exists" = true ]; then
+            git -C "$repo" show "$source_sha:$path" >"$source_file" || return 1
+            source_blobs["$path"]="$(git -C "$repo" rev-parse "$source_sha:$path")"
+        else
+            : >"$source_file"
+            source_blobs["$path"]="__ABSENT__"
+        fi
+        if [ "$remote_exists" = true ]; then
+            git -C "$repo" show "$remote_tip:$path" >"$remote_file" || return 1
+        else
+            : >"$remote_file"
+        fi
+
+        CUMULATIVE_BASE="$base_file" \
+        CUMULATIVE_SOURCE="$source_file" \
+        CUMULATIVE_REMOTE="$remote_file" \
+        python3 - <<'PY' || return 1
+import difflib
+import os
+from collections import Counter
+from pathlib import Path
+
+base = Path(os.environ["CUMULATIVE_BASE"]).read_bytes().decode("utf-8")
+source = Path(os.environ["CUMULATIVE_SOURCE"]).read_bytes().decode("utf-8")
+remote = Path(os.environ["CUMULATIVE_REMOTE"]).read_bytes().decode("utf-8")
+base_lines = base.splitlines(keepends=True)
+source_counts = Counter(source.splitlines(keepends=True))
+base_counts = Counter(base_lines)
+source_lines = source.splitlines(keepends=True)
+remote_lines = remote.splitlines(keepends=True)
+required_additions = Counter()
+required_deletions = Counter()
+for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+    None, base_lines, remote_lines, autojunk=False
+).get_opcodes():
+    if tag in ("insert", "replace"):
+        added = remote_lines[j1:j2]
+        required_additions.update(added)
+        cursor = 0
+        for line in added:
+            try:
+                cursor = source_lines.index(line, cursor) + 1
+            except ValueError:
+                raise SystemExit(1)
+    if tag in ("delete", "replace"):
+        required_deletions.update(base_lines[i1:i2])
+for line, count in required_additions.items():
+    if source_counts[line] < base_counts[line] + count:
+        raise SystemExit(1)
+for line, count in required_deletions.items():
+    if source_counts[line] > base_counts[line] - count:
+        raise SystemExit(1)
+PY
+    done
+
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            if git -C "$clean_repo" cat-file -e "$remote_tip:$path" 2>/dev/null; then
+                git -C "$clean_repo" rm -f -- "$path" >/dev/null 2>&1 || return 1
+            fi
+        else
+            git -C "$clean_repo" checkout "$source_sha" -- "$path" >/dev/null 2>&1 || return 1
+        fi
+    done
+    git -C "$clean_repo" add -A -- "${!allowed_paths[@]}" || return 1
+
+    while IFS= read -r -d '' actual_path; do
+        actual_paths["$actual_path"]=1
+    done < <(git -C "$clean_repo" diff --cached --name-only -z "$remote_tip")
+    for actual_path in "${!actual_paths[@]}"; do
+        [ "${allowed_paths[$actual_path]+yes}" = yes ] || return 1
+    done
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            ! git -C "$clean_repo" rev-parse ":$path" >/dev/null 2>&1 || return 1
+        else
+            actual_blob="$(git -C "$clean_repo" rev-parse ":$path" 2>/dev/null || true)"
+            [ "$actual_blob" = "$source_blob" ] || return 1
+        fi
+    done
+
+    git -C "$clean_repo" commit --allow-empty -m "autopush: source-only cumulative equivalence" >/dev/null 2>&1 || return 1
+    published_sha="$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)"
+    [ -n "$published_sha" ] || return 1
+    actual_paths=()
+    while IFS= read -r -d '' actual_path; do
+        actual_paths["$actual_path"]=1
+    done < <(git -C "$clean_repo" diff-tree --no-commit-id --name-only -r -z "$published_sha^" "$published_sha")
+    for actual_path in "${!actual_paths[@]}"; do
+        [ "${allowed_paths[$actual_path]+yes}" = yes ] || return 1
+    done
+    for path in "${!allowed_paths[@]}"; do
+        source_blob="${source_blobs[$path]}"
+        if [ "$source_blob" = "__ABSENT__" ]; then
+            ! git -C "$clean_repo" cat-file -e "$published_sha:$path" 2>/dev/null || return 1
+        else
+            actual_blob="$(git -C "$clean_repo" rev-parse "$published_sha:$path" 2>/dev/null || true)"
+            [ "$actual_blob" = "$source_blob" ] || return 1
+        fi
+    done
+    return 0
+)
+
+# Merge queue/insights.yaml without reserializing YAML. Python is used only to
+# parse and compare blocks; every selected top-level `- id:` block is emitted
+# from its original bytes so comments/formatting remain intact.
+source_only_insights_id_merge() (
+    local repo="$1" clean_repo="$2" remote_tip="$3" path="$4" source_sha common_base
+    local base_file source_file remote_file merged_file tmp_dir
+    shift 4
+    local -a source_shas=("$@")
+
+    [ "$path" = "queue/insights.yaml" ] || return 1
+    [ "${#source_shas[@]}" -gt 0 ] || return 1
+    common_base="$(git -C "$repo" merge-base "$remote_tip" "${source_shas[0]}" 2>/dev/null || true)"
+    [ -n "$common_base" ] || return 1
+
+    tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/shogun-insights-merge.XXXXXX")" || return 1
+    trap 'rm -f "$tmp_dir"/*.yaml; rmdir "$tmp_dir" 2>/dev/null || true' EXIT
+    base_file="$tmp_dir/base.yaml"
+    source_file="$tmp_dir/source.yaml"
+    remote_file="$tmp_dir/remote.yaml"
+    merged_file="$tmp_dir/merged.yaml"
+
+    if git -C "$repo" cat-file -e "$common_base:$path" 2>/dev/null; then
+        git -C "$repo" show "$common_base:$path" >"$base_file" || return 1
+    else
+        : >"$base_file"
+    fi
+    source_sha="${source_shas[${#source_shas[@]}-1]}"
+    if git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null; then
+        git -C "$repo" show "$source_sha:$path" >"$source_file" || return 1
+    else
+        : >"$source_file"
+    fi
+    if git -C "$repo" cat-file -e "$remote_tip:$path" 2>/dev/null; then
+        git -C "$repo" show "$remote_tip:$path" >"$remote_file" || return 1
+    else
+        : >"$remote_file"
+    fi
+
+    SOURCE_ONLY_INSIGHTS_BASE="$base_file" \
+    SOURCE_ONLY_INSIGHTS_SOURCE="$source_file" \
+    SOURCE_ONLY_INSIGHTS_REMOTE="$remote_file" \
+    SOURCE_ONLY_INSIGHTS_OUTPUT="$merged_file" \
+    python3 - <<'PY' || return 1
+import os
+from pathlib import Path
+
+import yaml
+
+base_path = Path(os.environ["SOURCE_ONLY_INSIGHTS_BASE"])
+source_path = Path(os.environ["SOURCE_ONLY_INSIGHTS_SOURCE"])
+remote_path = Path(os.environ["SOURCE_ONLY_INSIGHTS_REMOTE"])
+output_path = Path(os.environ["SOURCE_ONLY_INSIGHTS_OUTPUT"])
+
+
+def read(path):
+    return path.read_text(encoding="utf-8") if path.stat().st_size else ""
+
+
+def parse_blocks(text, label):
+    lines = text.splitlines(keepends=True)
+    starts = [i for i, line in enumerate(lines) if line.startswith("- id:")]
+    if text.strip():
+        try:
+            document = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{label} YAML parse failed: {exc}") from exc
+        if document is not None and not isinstance(document, list):
+            raise ValueError(f"{label} root is not a list")
+    if not starts:
+        if text.strip():
+            raise ValueError(f"{label} has no top-level - id: blocks")
+        return "", [], {}
+    prefix = "".join(lines[:starts[0]])
+    entries = []
+    by_id = {}
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(lines)
+        raw = "".join(lines[start:end])
+        try:
+            item = yaml.safe_load(raw)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{label} block parse failed: {exc}") from exc
+        if isinstance(item, list) and len(item) == 1:
+            item = item[0]
+        if not isinstance(item, dict) or str(item.get("id", "")).strip() == "":
+            raise ValueError(f"{label} block has no stable id")
+        item_id = str(item["id"])
+        if item_id in by_id:
+            raise ValueError(f"{label} duplicate id: {item_id}")
+        entry = {"id": item_id, "raw": raw, "value": item}
+        entries.append(entry)
+        by_id[item_id] = entry
+    return prefix, entries, by_id
+
+
+base_prefix, base_list, base = parse_blocks(read(base_path), "base")
+source_prefix, source_list, source = parse_blocks(read(source_path), "source")
+remote_prefix, remote_list, remote = parse_blocks(read(remote_path), "remote")
+
+
+def equal(left, right):
+    return left is not None and right is not None and left["value"] == right["value"]
+
+
+chosen = {}
+order = []
+for entry in remote_list + source_list + base_list:
+    if entry["id"] not in order:
+        order.append(entry["id"])
+
+for item_id in order:
+    b = base.get(item_id)
+    s = source.get(item_id)
+    r = remote.get(item_id)
+    if s is None:
+        if b is None:
+            chosen[item_id] = r
+        elif r is None or equal(r, b):
+            chosen[item_id] = None
+        else:
+            raise ValueError(f"source deletion conflicts with remote id: {item_id}")
+        continue
+    if b is None:
+        if r is None or equal(r, s):
+            chosen[item_id] = s
+        else:
+            raise ValueError(f"source/remote divergent new id: {item_id}")
+        continue
+    if equal(s, b):
+        chosen[item_id] = r
+    elif r is None or equal(r, b):
+        chosen[item_id] = s
+    elif equal(r, s):
+        chosen[item_id] = r
+    else:
+        raise ValueError(f"source/remote divergent id: {item_id}")
+
+prefix = remote_prefix or source_prefix or base_prefix
+raw_blocks = [chosen[item_id]["raw"] for item_id in order if chosen.get(item_id) is not None]
+merged = prefix + "".join(raw_blocks)
+if raw_blocks and not merged.endswith("\n"):
+    merged += "\n"
+try:
+    parsed = yaml.safe_load(merged) if merged.strip() else []
+except yaml.YAMLError as exc:
+    raise ValueError(f"merged YAML parse failed: {exc}") from exc
+if parsed is not None and not isinstance(parsed, list):
+    raise ValueError("merged root is not a list")
+
+for item_id, entry in source.items():
+    b = base.get(item_id)
+    if b is not None and equal(entry, b):
+        continue
+    if chosen.get(item_id) is None or not equal(chosen[item_id], entry):
+        raise ValueError(f"source block not published for id: {item_id}")
+
+output_path.write_text(merged, encoding="utf-8")
+PY
+
+    mkdir -p "$(dirname "$clean_repo/$path")" || return 1
+    cp "$merged_file" "$clean_repo/$path" || return 1
+    git -C "$clean_repo" add -- "$path" || return 1
+
+    local actual_path actual_blob expected_blob published_sha
+    while IFS= read -r -d '' actual_path; do
+        [ "$actual_path" = "$path" ] || return 1
+    done < <(git -C "$clean_repo" diff --cached --name-only -z "$remote_tip")
+    expected_blob="$(git -C "$clean_repo" hash-object "$merged_file")"
+    actual_blob="$(git -C "$clean_repo" rev-parse ":$path" 2>/dev/null || true)"
+    [ "$actual_blob" = "$expected_blob" ] || return 1
+
+    git -C "$clean_repo" commit --allow-empty -m "autopush: source-only insights ID merge" >/dev/null 2>&1 || return 1
+    published_sha="$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)"
+    [ -n "$published_sha" ] || return 1
+    while IFS= read -r -d '' actual_path; do
+        [ "$actual_path" = "$path" ] || return 1
+    done < <(git -C "$clean_repo" diff-tree --no-commit-id --name-only -r -z "$published_sha^" "$published_sha")
+    [ "$(git -C "$clean_repo" rev-parse "$published_sha:$path" 2>/dev/null || true)" = "$expected_blob" ] || return 1
+    return 0
+)
+
+# Return true only when every source commit changes queue/insights.yaml and no
+# other path. This gate is shared by the conflict and patch-id fallback lanes.
+source_only_insights_candidate() {
+    local repo="$1" path source_sha
+    shift
+    local -A paths=()
+    for source_sha in "$@"; do
+        while IFS= read -r -d '' path; do
+            paths["$path"]=1
+        done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    [ "${#paths[@]}" -eq 1 ] && [ "${paths[queue/insights.yaml]+yes}" = yes ]
+}
+
+# Use ID merge only after the generic source-history proof fails, and only
+# when the source commit set changes queue/insights.yaml and nothing else.
+source_only_path_snapshot() {
+    local repo="$1" clean_repo="$2" remote_tip="$3"
+    shift 3
+    if source_only_insights_candidate "$repo" "$@"; then
+        if source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"; then
+            return 0
+        fi
+        if source_only_cumulative_equivalence "$repo" "$clean_repo" "$remote_tip" "$@"; then
+            return 0
+        fi
+        source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" "queue/insights.yaml" "$@"
+        local merge_rc=$?
+        return "$merge_rc"
+    fi
+    if source_only_path_snapshot_generic "$repo" "$clean_repo" "$remote_tip" "$@"; then
+        return 0
+    fi
+    source_only_cumulative_equivalence "$repo" "$clean_repo" "$remote_tip" "$@"
+}
+
+task_push_allowed() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = yaml.safe_load(handle) or {}
+task = data.get("task", data)
+value = task.get("push_allowed")
+print("false" if value is False or str(value).strip().lower() == "false" else "true")
+PY
+}
+
 push_from_clean_worktree() {
     local repo="$1" upstream_ref="$2" remote="$3" push_ref="$4" remote_tip="$5"
     shift 5
-    local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha
+    local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha push_output fallback_used
     local source_patch applied_patch
     local -a applied_shas=()
+    fallback_used=0
 
     temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-gate-push.XXXXXX") || return 1
     clean_repo="$temp_parent/repo"
@@ -720,20 +1236,26 @@ push_from_clean_worktree() {
     for source_sha in "$@"; do
         if ! git -C "$clean_repo" cherry-pick --no-edit "$source_sha" >/dev/null 2>&1; then
             git -C "$clean_repo" cherry-pick --abort >/dev/null 2>&1 || true
-            rc=1
+            if source_only_path_snapshot "$repo" "$clean_repo" "$remote_tip" "$@"; then
+                fallback_used=1
+                published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+                echo "  git push: conflict fallback (source-only path snapshot)"
+            else
+                rc=1
+            fi
             break
         fi
         applied_shas+=("$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)")
     done
 
-    if [ "$rc" -eq 0 ]; then
+    if [ "$rc" -eq 0 ] && [ "$fallback_used" -eq 0 ]; then
         published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
         if [ -z "$published_sha" ]; then
             rc=1
         fi
     fi
 
-    if [ "$rc" -eq 0 ]; then
+    if [ "$rc" -eq 0 ] && [ "$fallback_used" -eq 0 ]; then
         for source_sha in "$@"; do
             source_patch=$(git -C "$repo" show --format= --no-ext-diff "$source_sha" 2>/dev/null | git patch-id --stable 2>/dev/null | awk 'NR==1 {print $1}')
             applied_patch=""
@@ -743,15 +1265,41 @@ push_from_clean_worktree() {
                 applied_patch=""
             done
             if [ -z "$source_patch" ] || [ "$source_patch" != "$applied_patch" ]; then
-                rc=1
+                if source_only_insights_candidate "$repo" "$@"; then
+                    timeout "${CMD_COMPLETE_GATE_PUSH_CLEANUP_TIMEOUT:-30}" \
+                        git -C "$repo" worktree remove --force "$clean_repo" >/dev/null 2>&1 || rc=1
+                    if [ "$rc" -eq 0 ] \
+                       && ! git -C "$repo" worktree add --detach "$clean_repo" "$remote_tip" >/dev/null 2>&1; then
+                        rc=1
+                    fi
+                    if [ "$rc" -eq 0 ] \
+                       && source_only_path_snapshot "$repo" "$clean_repo" "$remote_tip" "$@"; then
+                        fallback_used=1
+                        published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+                        echo "  git push: conflict fallback (source-only path snapshot)"
+                    else
+                        rc=1
+                    fi
+                else
+                    rc=1
+                fi
                 break
             fi
         done
     fi
 
-    if [ "$rc" -eq 0 ] && ! git -C "$clean_repo" push "$remote" "HEAD:$push_ref"; then
-        rc=1
+    push_output=$(mktemp "${TMPDIR:-/tmp}/shogun-gate-push-output.XXXXXX") || rc=1
+    if [ "$rc" -eq 0 ] && ! git -C "$clean_repo" push "$remote" "HEAD:$push_ref" >"$push_output" 2>&1; then
+        cat "$push_output" >&2
+        if grep -Eqi 'cannot lock ref|non-fast-forward|fetch first|tip of your current branch is behind' "$push_output"; then
+            # 2 means the remote moved while this source-only publication was
+            # being assembled.  The caller may rebuild from a fresh tip.
+            rc=2
+        else
+            rc=1
+        fi
     fi
+    [ -n "$push_output" ] && rm -f "$push_output"
 
     if [ "$rc" -eq 0 ]; then
         remote_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
@@ -775,12 +1323,27 @@ push_from_clean_worktree() {
 
 push_task_repositories() {
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
-    local overlap_blocking all_sources_ok push_rc
-    local -a repos=()
+    local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
+    local -a repos=() eligible_task_files=()
+    local saw_task_file=0
     local -A seen_repos=()
 
     for task_file in "$@"; do
         [ -f "$task_file" ] || continue
+        saw_task_file=1
+        if [ "$(task_push_allowed "$task_file" 2>/dev/null || printf true)" = false ]; then
+            echo "  git push: SKIP ($task_file push_allowed=false)"
+            continue
+        fi
+        eligible_task_files+=("$task_file")
+    done
+
+    if [ "$saw_task_file" -eq 1 ] && [ "${#eligible_task_files[@]}" -eq 0 ]; then
+        echo "  git push: SKIP (all task sources push_allowed=false)"
+        return 0
+    fi
+
+    for task_file in "${eligible_task_files[@]}"; do
         repo=$(resolve_task_repo_dir "$task_file") || continue
         [ -n "$repo" ] || continue
         if [[ ! "${seen_repos[$repo]+_}" ]]; then
@@ -810,7 +1373,7 @@ push_task_repositories() {
 
         local -a source_commits=()
         all_sources_ok=true
-        for task_file in "$@"; do
+        for task_file in "${eligible_task_files[@]}"; do
             [ -f "$task_file" ] || continue
             [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
             source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
@@ -825,28 +1388,54 @@ push_task_repositories() {
             return 1
         fi
 
-        local all_remote=true
-        for source_sha in "${source_commits[@]}"; do
-            if ! git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
-                all_remote=false
+        max_retries="${CMD_COMPLETE_GATE_PUSH_MAX_RETRIES:-2}"
+        [[ "$max_retries" =~ ^[0-9]+$ ]] || max_retries=2
+        for ((attempt=0; attempt<=max_retries; attempt++)); do
+            local all_remote=true
+            for source_sha in "${source_commits[@]}"; do
+                if ! git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
+                    all_remote=false
+                    break
+                fi
+            done
+            if [ "$all_remote" = true ]; then
+                echo "  git push: SKIP ($repo report source commits already remote-contained)"
                 break
             fi
-        done
-        if [ "$all_remote" = true ]; then
-            echo "  git push: SKIP ($repo report source commits already remote-contained)"
-            continue
-        fi
 
-        overlap_blocking="$(push_overlap_blocking_paths "$repo" "" "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" "$upstream_sha")"
-        echo "  git push: isolated clean snapshot ($repo remote-tip source-only push)"
-        [ -n "$overlap_blocking" ] && printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
-        if push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "${source_commits[@]}"; then
-            echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"
-        else
-            echo "  git push: BLOCK ($repo source-only push/verification failed)"
-            push_rc=1
-            return "$push_rc"
-        fi
+            overlap_blocking="$(push_overlap_blocking_paths "$repo" "" "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" "$upstream_sha")"
+            echo "  git push: isolated clean snapshot ($repo remote-tip source-only push)"
+            [ -n "$overlap_blocking" ] && printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
+            if push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "${source_commits[@]}"; then
+                push_rc=0
+            else
+                push_rc=$?
+            fi
+            if [ "$push_rc" -eq 0 ]; then
+                echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"
+                break
+            fi
+            if [ "$push_rc" -ne 2 ] || [ "$attempt" -ge "$max_retries" ]; then
+                echo "  git push: BLOCK ($repo source-only push/verification failed)"
+                return 1
+            fi
+
+            refreshed_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+            if ! [[ "$refreshed_tip" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "  git push: BLOCK ($repo remote tip refresh failed)"
+                return 1
+            fi
+            if [ "$refreshed_tip" = "$remote_tip" ]; then
+                echo "  git push: retry $((attempt + 1))/$max_retries (remote tip unchanged; rebuilding source-only snapshot)"
+            else
+                echo "  git push: retry $((attempt + 1))/$max_retries (remote tip refreshed $remote_tip -> $refreshed_tip)"
+            fi
+            remote_tip="$refreshed_tip"
+            git -C "$repo" fetch -q "$remote" "$push_ref" >/dev/null 2>&1 || {
+                echo "  git push: BLOCK ($repo remote tip fetch failed)"
+                return 1
+            }
+        done
     done
     return 0
 }
@@ -3408,62 +3997,8 @@ handle_empty_lessons_useful_check() {
 validate_lesson_feedback_set() {
     local task_file="$1"
     local report_file="$2"
-    python3 - "$task_file" "$report_file" <<'PY'
-import sys, yaml
-
-task_data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-report = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
-task = task_data.get("task", task_data) if isinstance(task_data, dict) else {}
-if not isinstance(task, dict) or not isinstance(report, dict):
-    print("MISMATCH parse_error")
-    raise SystemExit(1)
-
-assigned_values = task.get("assigned_lesson_ids")
-strict = isinstance(assigned_values, list) and bool(assigned_values)
-if strict:
-    raw_allowed = assigned_values
-else:
-    raw_allowed = task.get("related_lessons") or []
-
-allowed = []
-for item in raw_allowed if isinstance(raw_allowed, list) else []:
-    value = item.get("id") if isinstance(item, dict) else item
-    value = str(value or "").strip()
-    if value and value not in allowed:
-        allowed.append(value)
-
-reported = []
-duplicates = []
-raw_reported = report.get("lessons_useful")
-if raw_reported is None:
-    raw_reported = report.get("lesson_referenced")
-for item in raw_reported if isinstance(raw_reported, list) else []:
-    value = item.get("id") if isinstance(item, dict) else item
-    value = str(value or "").strip()
-    if not value:
-        continue
-    if value in reported:
-        duplicates.append(value)
-    else:
-        reported.append(value)
-
-extra = sorted(set(reported) - set(allowed))
-missing = sorted(set(allowed) - set(reported)) if strict else []
-duplicates = sorted(set(duplicates))
-if extra or missing or duplicates:
-    print(
-        "MISMATCH "
-        f"mode={'strict' if strict else 'subset'} "
-        f"missing={','.join(missing) or 'none'} "
-        f"extra={','.join(extra) or 'none'} "
-        f"duplicates={','.join(duplicates) or 'none'}"
-    )
-    raise SystemExit(1)
-print(
-    f"OK mode={'strict' if strict else 'subset'} "
-    f"allowed={len(allowed)} reported={len(reported)}"
-)
-PY
+    python3 "$SCRIPT_DIR/scripts/lib/report_gate_contract.py" \
+        lesson-feedback-set "$task_file" "$report_file"
 }
 
 # ─── gate_metrics model label helpers ───
@@ -3741,7 +4276,52 @@ collect_cmd_title() {
     echo "$cmd_title"
 }
 
-# ─── project code stub detection（WARN only, cmd diff added lines only） ───
+# Resolve the report-declared source commit before any project-diff inspection.
+# A completion gate runs in a shared worktree, so the live index/worktree is not
+# an authoritative view of the command being completed.  The report commit is
+# already the publication identity used by source-only autopush; reusing it here
+# keeps scope inspection on immutable Git objects and avoids scanning unrelated
+# local dirty files.
+resolve_cmd_report_source_commit() {
+    local cmd_id="$1"
+    local repo="$2"
+    local task_file ninja_name report_file candidate
+
+    if ! declare -F collect_report_commit_hash >/dev/null 2>&1; then
+        return 1
+    fi
+
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            ninja_name=$(basename "$task_file" .yaml)
+            report_file=$(resolve_report_file "$ninja_name" "$cmd_id" 2>/dev/null || true)
+            [ -f "$report_file" ] || continue
+            candidate=$(collect_report_commit_hash "$report_file")
+            if [[ "$candidate" =~ ^[0-9a-f]{40}$ ]] \
+                && git -C "$repo" cat-file -e "${candidate}^{commit}" 2>/dev/null; then
+                printf '%s\n' "$candidate"
+                return 0
+            fi
+        done
+    fi
+
+    if declare -F discover_reports_for_cmd >/dev/null 2>&1; then
+        while IFS= read -r report_file; do
+            [ -f "$report_file" ] || continue
+            candidate=$(collect_report_commit_hash "$report_file")
+            if [[ "$candidate" =~ ^[0-9a-f]{40}$ ]] \
+                && git -C "$repo" cat-file -e "${candidate}^{commit}" 2>/dev/null; then
+                printf '%s\n' "$candidate"
+                return 0
+            fi
+        done < <(discover_reports_for_cmd "$cmd_id")
+    fi
+
+    return 1
+}
+
+# ─── project code stub detection（WARN only, report source diff added lines only） ───
 # cmd_1387: Python→bash/awk化。yaml.safe_load→awk, subprocess→direct git, regex→awk
 check_project_code_stubs() {
     local cmd_id="$1"
@@ -3827,86 +4407,18 @@ check_project_code_stubs() {
         fi
     fi
 
-    # --- cmd_1244+cmd_1293: uncommitted変更検出 — commit漏れをBLOCKで構造的に防止 ---
-    # cmd_1293修正: 運用ファイル(queue/logs/dashboard等)を除外し誤爆BLOCK防止
-    local uncommitted uncommitted_filtered
-    uncommitted=$({ git -C "$project_path" diff --name-only 2>/dev/null; git -C "$project_path" diff --cached --name-only 2>/dev/null; } | sort -u | sed '/^$/d')
-    if [[ -n "$uncommitted" ]]; then
-        uncommitted_filtered=$(printf '%s\n' "$uncommitted" | grep -v -E "$AUTOGEN_PATH_EXCLUDE_REGEX" || true)
-        # BLOCK only dirty files claimed by the current cmd report. External
-        # repos may contain unrelated dirty files from older tasks.
-        if [[ -n "$uncommitted_filtered" ]] && declare -F collect_report_modified_files >/dev/null 2>&1; then
-            local report_paths_for_commit scoped_uncommitted matching_report_for_commit
-            report_paths_for_commit=$(collect_report_modified_files || true)
-            if [[ -n "$report_paths_for_commit" ]]; then
-                scoped_uncommitted=$(UNCOMMITTED_PATHS="$uncommitted_filtered" REPORT_PATHS="$report_paths_for_commit" python3 - <<'PY'
-import os
-
-uncommitted = [p.strip().strip("./") for p in os.environ.get("UNCOMMITTED_PATHS", "").splitlines() if p.strip()]
-reported = [p.strip().strip("./") for p in os.environ.get("REPORT_PATHS", "").splitlines() if p.strip()]
-
-def matches(path, ref):
-    path_base = os.path.basename(path)
-    ref_base = os.path.basename(ref)
-    return path == ref or path.endswith("/" + ref) or ref.endswith("/" + path) or path_base == ref_base
-
-for path in uncommitted:
-    if any(matches(path, ref) for ref in reported):
-        print(path)
-PY
-)
-                matching_report_for_commit=""
-                if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
-                    matching_report_for_commit="$(resolve_report_file "$(basename "${MATCHING_TASK_FILES[0]}" .yaml)" 2>/dev/null || true)"
-                fi
-                if [[ -n "$scoped_uncommitted" && -n "$matching_report_for_commit" && -f "$matching_report_for_commit" ]]; then
-                    scoped_uncommitted=$(filter_report_commit_nonoverlap_uncommitted "$SCRIPT_DIR" "$matching_report_for_commit" "$scoped_uncommitted" 2>>"$LOG_DIR/cmd_complete_gate_stderr.log" || printf '%s\n' "$scoped_uncommitted")
-                fi
-                uncommitted_filtered="$scoped_uncommitted"
-            fi
-        fi
-        if [[ -n "$uncommitted_filtered" ]]; then
-            local ucount
-            ucount=$(printf '%s\n' "$uncommitted_filtered" | wc -l)
-            printf 'BLOCK\tcommit_missing: %d uncommitted file(s) in %s\n' "$ucount" "$project_path"
-            printf '%s\n' "$uncommitted_filtered" | head -10
-            return 1
-        fi
-    fi
-
-    # --- detect_cmd_commit_count (git log + awk, no python subprocess) ---
-    local log_output
-    log_output=$(git -C "$project_path" log --format="%H%x1f%s%x1f%b%x1e" -n 100 2>/dev/null)
-    if [[ $? -ne 0 ]]; then
-        printf 'ERR\tgit log failed for %s\n' "$project_path"
+    # The live worktree may contain unrelated WIP or local-ahead commits.  Do
+    # not inspect it and do not infer scope from HEAD history; a valid report
+    # source commit is the only accepted inspection anchor.
+    local source_commit source_parent
+    source_commit=$(resolve_cmd_report_source_commit "$cmd_id" "$project_path" 2>/dev/null || true)
+    if [[ ! "$source_commit" =~ ^[0-9a-f]{40}$ ]]; then
+        printf 'SKIP\tsource commit unavailable for %s\n' "$cmd_id"
         return 0
     fi
-
-    local commit_count
-    commit_count=$(printf '%s' "$log_output" | awk -F'\x1f' -v cmd="$cmd_id" '
-        BEGIN { RS="\x1e"; count=0; started=0 }
-        {
-            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
-            if ($0 == "") next
-            haystack = $2 "\n" $3
-            if (index(haystack, cmd) > 0) {
-                count++
-                started=1
-            } else if (started) {
-                exit
-            }
-        }
-        END { print count }
-    ')
-
-    if [[ "$commit_count" -le 0 ]]; then
-        printf 'SKIP\tno contiguous HEAD commits mention %s in %s\n' "$cmd_id" "$project_path"
-        return 0
-    fi
-
-    local base_ref="HEAD~${commit_count}"
-    if ! git -C "$project_path" rev-parse --verify "$base_ref" >/dev/null 2>&1; then
-        printf 'SKIP\t%s not available in %s\n' "$base_ref" "$project_path"
+    source_parent=$(git -C "$project_path" rev-parse "${source_commit}^" 2>/dev/null || true)
+    if [[ ! "$source_parent" =~ ^[0-9a-f]{40}$ ]]; then
+        printf 'SKIP\tsource parent unavailable for %s\n' "$source_commit"
         return 0
     fi
 
@@ -3950,7 +4462,7 @@ PY
 
     # --- Diff parsing + stub detection (single awk pass, no python) ---
     local diff_output diff_rc
-    diff_output=$(git -C "$project_path" diff --unified=1 --no-color "$base_ref" HEAD -- . 2>&1)
+    diff_output=$(git -C "$project_path" diff --unified=1 --no-color "$source_parent" "$source_commit" -- . 2>&1)
     diff_rc=$?
     if [[ $diff_rc -ne 0 ]]; then
         printf 'ERR\tgit diff failed for %s: %s\n' "$project_path" "$(printf '%s\n' "$diff_output" | head -1)"
@@ -4067,14 +4579,14 @@ PY
     ')
 
     if [[ "$awk_result" == "0" ]]; then
-        printf 'OK\tno stub patterns in added lines (base=%s, commits=%d, ext=%s)\n' \
-            "$base_ref" "$commit_count" "$exts_str"
+        printf 'OK\tno stub patterns in report source diff (base=%s, source=%s, ext=%s)\n' \
+            "$source_parent" "$source_commit" "$exts_str"
     else
         local match_count file_count_out
         match_count=$(printf '%s\n' "$awk_result" | head -1 | cut -d' ' -f1)
         file_count_out=$(printf '%s\n' "$awk_result" | head -1 | cut -d' ' -f2)
-        printf 'WARN\t%d stub-like added line(s) across %d file(s) (base=%s, commits=%d)\n' \
-            "$match_count" "$file_count_out" "$base_ref" "$commit_count"
+        printf 'WARN\t%d stub-like added line(s) across %d file(s) (base=%s, source=%s)\n' \
+            "$match_count" "$file_count_out" "$source_parent" "$source_commit"
         printf '%s\n' "$awk_result" | tail -n +2
     fi
 }
@@ -7770,15 +8282,9 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     echo ""
     echo "Auto-notification (GATE CLEAR - emergency override):"
 
-    # Wrapper owns the sole dashboard publication. Standalone emergency use
-    # remains self-contained and publishes exactly once.
-    if [ "${CMD_COMPLETE_WRAPPER_ACTIVE:-0}" = "1" ]; then
-        echo "  dashboard_update: delegated to cmd_complete wrapper"
-    elif SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
-        echo "  dashboard_update: OK ($CMD_ID)"
-    else
-        echo "  [INFO] dashboard_update: WARN (failed, continuing)" >&2
-    fi
+    # dashboard_update removed (殿裁定2026-08-17: dashboardは誰も使っていない。
+    # flock競合で最大124s遅延のボトルネックだったため除外)
+    echo "  dashboard_update: SKIP (removed by lord ruling 2026-08-17)"
 
     # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
     if gist_output=$(bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once 2>&1); then
@@ -8326,34 +8832,7 @@ level_heading "[L1]" "Lesson reviewed check: SKIP (push型移行済み — cmd_5
 # 追加・変更しても同じ保存値をreportへ返せるためstale ACを検出できない。
 compute_task_ac_version() {
     local task_file="$1"
-    python3 - "$task_file" <<'PY' | md5sum | cut -c1-8
-import sys
-import yaml
-
-yaml.SafeLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-task = data.get("task") if isinstance(data, dict) else None
-raw_items = (task or {}).get("acceptance_criteria", []) if isinstance(task, dict) else []
-items = raw_items if isinstance(raw_items, list) else list(raw_items.values()) if isinstance(raw_items, dict) else []
-values = []
-for item in items:
-    if not isinstance(item, dict):
-        values.append(str(item))
-        continue
-    description = str(item.get("description", "")).strip()
-    if description:
-        values.append(description)
-        continue
-    checks = item.get("checks", [])
-    if isinstance(checks, list):
-        values.append("|".join(
-            str(check.get("check", "")).strip() if isinstance(check, dict) else str(check).strip()
-            for check in checks
-        ))
-    else:
-        values.append(str(item.get("check", "")).strip())
-sys.stdout.write("|".join(sorted(values)))
-PY
+    python3 "$SCRIPT_DIR/scripts/lib/report_gate_contract.py" ac-version "$task_file"
 }
 
 check_task_ac_version_integrity() {
@@ -10278,14 +10757,9 @@ PY
     echo ""
     echo "Auto-notification (GATE CLEAR):"
 
-    # Wrapper owns the sole SG7-bundle dashboard publication. A direct gate
-    # invocation has no wrapper continuation, so retain exactly one writer.
-    if [ "${CMD_COMPLETE_WRAPPER_ACTIVE:-0}" = "1" ]; then
-        echo "  dashboard_update: delegated to cmd_complete wrapper"
-    else
-        (SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID" >/dev/null 2>&1 || true) &
-        echo "  dashboard_update: queued (standalone async)"
-    fi
+    # dashboard_update removed (殿裁定2026-08-17: dashboardは誰も使っていない。
+    # flock競合で最大124s遅延のボトルネックだったため除外)
+    echo "  dashboard_update: SKIP (removed by lord ruling 2026-08-17)"
 
     # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
     (bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1 || true) &
@@ -10823,9 +11297,7 @@ PYEOF
     echo ""
     echo "Git push (post-GATE CLEAR): SKIP (completed before terminal CLEAR)"
 
-    # dashboard_auto_section is intentionally not launched here. The sole
-    # dashboard_update writer owns auto-section generation via its normal
-    # contract, preventing a second generation from racing the wrapper.
+    # dashboard_update removed (殿裁定2026-08-17). auto_section も不要。
 
     # ─── Gunshi gate_result reflux 2回目（GATE CLEAR後 最終ステップ, cmd_3370） ───
     # 1回目（GATE CLEAR通知前）で取りこぼしたreportエントリに対応するため再実行。
