@@ -29,6 +29,7 @@ insights:
   resolved_reason: "一次情報で現HEADのGP-196実装と対象テストを確認。numbered dictは内容保持でlistへ変換され、ID-keyed dictと空dictは変換されずgate側で扱う契約が成立しており、追加実修正・decision_candidateは不要。"
   action_artifact: "scripts/gates/gate_report_autofix_main.py:108-114;tests/unit/test_gate_report_autofix.bats:87-124,581-620;verification=bats target 3/3 PASS;source=logs/gunshi_gp_tracker.yaml:360-369"
   resolved_at: "2026-08-18T04:51:09+09:00"
+  republished_at: "2026-08-18T06:00:37+09:00"
 - id: INS-20260817-162825195-9021
   ts: "2026-08-17T16:28:25+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[設計書ToBe_v0.3_手①]] は既存aliasesに一致なし。類似概念TOP3: dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=dm signal 5metrics selection v0 20260808 mdを読んで; score=7.4) / creator_brainwashing_defense(創造主の洗脳防御; alias=設計書v1 gist e131b06c; score=4.5) / gate_quality_framework(ゲート品質統合フレームワーク; alias=覚醒設計書v3; score=3.1)。概念定義とaliases追加を検討せよ"
