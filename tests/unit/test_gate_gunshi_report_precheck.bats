@@ -2,6 +2,7 @@
 # test_necessity: 軍師precheckは報告のbinary contract欠落と不正な完了判定をレビュー前にBLOCKする。
 # test_necessity: SG-PRE3Xは共有cross-repo契約で所有repoを解決し、有効な外部repo成果の偽BLOCKを防ぎつつ不正repo/commit/path/primary矛盾をfail-closedに保つ。
 # test_necessity: precheckがCLEARと予測した報告はcmd_complete_gateのparent_cmd_contract/ac_version_stale/lesson_feedback_set_mismatchのいずれでもBLOCKされない（判定関数が同一）。
+# test_necessity: SG-PRE20はshared lesson-feedback-setのOK接頭辞付き成功結果をPASSとして扱い、MISMATCHのERROR/WARN契約を維持する。
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -100,6 +101,33 @@ run_contract_precheck() {
   run env GUNSHI_PRECHECK_ONLY=SG-PRE10 \
     GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
     bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+}
+
+run_sg_pre20() {
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE20 \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+}
+
+@test "SG-PRE20 accepts shared OK prefix with contract counts" {
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_fixture
+  related_lessons:
+    - id: L100
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+lessons_useful:
+  - id: L100
+    useful: true
+YAML
+
+  run_sg_pre20
+  [[ "$output" == *"■ SG-PRE20: related_lessons+lessons_useful整合"* ]]
+  [[ "$output" == *"PASS: related_lessons="*" lessons_useful=1 set=OK mode=subset allowed=1 reported=1"* ]]
+  [[ "$output" != *"ERROR: lessons_useful集合がtask契約と不一致 → GATE BLOCK確実: OK mode=subset"* ]]
 }
 
 @test "shared contract blocks stale task ac_version before CLEAR prediction" {

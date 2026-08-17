@@ -1158,7 +1158,7 @@ if [ -f "${TASK_FILE:-}" ]; then
         # precheck as a pure caller; do not duplicate the Python rule here.
         _set_status=$(python3 "$REPO_ROOT/scripts/lib/report_gate_contract.py" \
             lesson-feedback-set "$TASK_FILE" "$REPORT_PATH" 2>/dev/null || true)
-        if [ "${_set_status:-}" != "OK" ] && [ -n "${_set_status:-}" ]; then
+        if [ -n "${_set_status:-}" ] && [[ "$_set_status" != OK\ * ]]; then
             # subset+extra-only(忍者が自発的に教訓を発見・使用)はWARN止まり。
             # missing有り or strict modeはERROR(GATE BLOCK確実)。
             if echo "$_set_status" | grep -qP 'mode=subset.*missing=none.*extra=[^n]'; then
