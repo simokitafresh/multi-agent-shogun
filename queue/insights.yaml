@@ -828,9 +828,10 @@ insights:
     status: passed
     exit_code: '0'
     output: '""'
-  resolved_reason: "一次情報logs/self_retro.jsonl:3179でevent_id一致、verify_command rc=0。既存のSG7保持+report fingerprint単位exactly-once実装と実測済みreview_notify設計で吸収済みのため追加実装・decision_candidateは不要"
-  action_artifact: "logs/self_retro.jsonl:3179;scripts/review_bundle.py:420-485;docs/research/cmd_4123_self_retro_signal.md:17-40;context/infrastructure.md:L1573"
+  resolved_reason: "一次情報logs/self_retro.jsonl:3179でevent_id一致、verify rc=0、既存exactly-once markerでduplicate=0を確認。ただしreview phase短縮は未証明のため、短縮完了とはせず専用性能設計decision_candidateへ整理してresolve"
+  action_artifact: "logs/self_retro.jsonl:3179(wall_ms=20777);scripts/review_bundle.py:420-485;docs/research/cmd_4123_self_retro_signal.md:17-40;decision_candidate=review_notify_latency_reduction"
   resolved_at: "2026-08-17T15:47:00+09:00"
+  decision_candidate: "review_notify latency reduction design: existing SG7 marker proves duplicate event count 0 but not review phase shortening; dedicated performance cmd must measure before/after wall_ms while preserving SG7 validation and delivery success"
 - id: INS-20260817-140843034-5f33
   ts: "2026-08-17T14:08:43+09:00"
   insight: "[[現時点でさらに調査しておくことはないかな？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=現時点でさらに調査しておくことはないかな？"
