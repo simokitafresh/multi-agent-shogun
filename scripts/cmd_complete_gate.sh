@@ -7728,8 +7728,6 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     echo ""
     echo "Auto-notification (GATE CLEAR - emergency override):"
 
-    # cmd_karo_ci_fix_32045860437: standalone gate keeps zero dashboard writers;
-    # the wrapper remains the explicit publication owner.
     # dashboard_update removed (殿裁定2026-08-17: dashboardは誰も使っていない。
     # flock競合で最大124s遅延のボトルネックだったため除外)
     echo "  dashboard_update: SKIP (removed by lord ruling 2026-08-17)"
