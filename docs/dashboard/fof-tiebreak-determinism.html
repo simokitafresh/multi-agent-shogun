@@ -1,0 +1,210 @@
+<title>FoF子PF選択の決定性</title>
+<style>
+:root{--bg:#f6f7f4;--ink:#1c2430;--muted:#5b6673;--line:#d9ded8;--card:#ffffff;--accent:#1f6f78;--accent-bg:#e5f0f1;--bad:#b23a2b;--bad-bg:#fbeae7;--good:#2e7d4f;--good-bg:#e8f3ec;--code:#eef1ec;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#131a1f;--ink:#e6ebe9;--muted:#9aa7ae;--line:#2c3840;--card:#1b242b;--accent:#5fb3ba;--accent-bg:#1c2f33;--bad:#ff8a75;--bad-bg:#3a1f1b;--good:#7fd19a;--good-bg:#1c3326;--code:#22303a;}}
+:root[data-theme="dark"]{--bg:#131a1f;--ink:#e6ebe9;--muted:#9aa7ae;--line:#2c3840;--card:#1b242b;--accent:#5fb3ba;--accent-bg:#1c2f33;--bad:#ff8a75;--bad-bg:#3a1f1b;--good:#7fd19a;--good-bg:#1c3326;--code:#22303a;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 ui-sans-serif,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;padding:2.5rem 1.25rem 4rem}
+main{max-width:1000px;margin:0 auto;display:grid;gap:1.8rem}
+h1{font-size:1.75rem;line-height:1.25;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:1.2rem;margin:0 0 .7rem;border-bottom:1px solid var(--line);padding-bottom:.35rem;text-wrap:balance}
+h3{font-size:.95rem;margin:1rem 0 .4rem}
+.meta{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+section{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1.2rem 1.4rem}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tw{overflow-x:auto}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:3px}
+.num{font-variant-numeric:tabular-nums}
+.callout{border-left:3px solid var(--accent);padding:.6rem .9rem;background:var(--accent-bg);border-radius:0 5px 5px 0}
+.keys{display:grid;grid-template-columns:1fr;gap:10px;margin-top:.5rem}
+@media(min-width:820px){.keys{grid-template-columns:repeat(3,1fr)}}
+.key{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg)}
+.key .n{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.key .t{font-weight:600;margin:2px 0 6px}
+.key .d{font-size:13px;color:var(--muted)}
+td.l{color:var(--bad)} td.o{color:var(--good)}
+.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);font-weight:600;letter-spacing:.03em}
+.pill.done{background:var(--good-bg);color:var(--good);border-color:transparent}
+.pill.run{background:var(--accent-bg);color:var(--accent);border-color:transparent}
+.pill.wait{background:var(--code);color:var(--muted)}
+.pill.hold{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
+.tl li{list-style:none;position:relative;padding-left:4.4rem}
+.tl li b{position:absolute;left:0;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.tl{padding:0}
+</style>
+<main>
+<header style="display:grid;gap:.6rem">
+  <div class="meta">DM-Signal · 設計書 AsIs v1.2 / ToBe v0.3+手②c · 2026-08-17 19:35 JST · 手①②a②b実装済み・手②c起票 · 6段キー(手③)は殿合図待ち</div>
+  <h1>FoF子PF選択の決定性 — 浮動小数点ノイズで確定履歴が動く穴を「同値帯ε＋根拠あるtie-break」で閉じる</h1>
+  <div class="meta" style="text-transform:none;letter-spacing:0">正本 <code>docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md</code> · gist 1e0cab30 · 関連: rollback計画書§-1 / Monthly Trade簡素化(ledger廃止方向)</div>
+  <div class="callout"><b>発端(10:47)</b> SIGNAL CHANGE ALERT 6,477件/35 FoF PF。三段確認(cmd_4329)で確定: <b>価格は変わった</b>(11銘柄30,003行、ただし相対差 max 1.9e-06=浮動小数点ノイズ級)／<b>cronとfullは一致</b>／<b>35 FoF全体に広域連鎖</b>(子PF選択の入替)。</div>
+</header>
+
+<section>
+<h2>実装の進捗 — 19:35 時点</h2>
+<div class="callout">3段階: <b>手①②=配線を1本にまとめる</b>(結果は変えない、1体ずつ) → <b>手③=中身を6段キーへ切り替える</b>(1回だけ結果が変わる) → <b>手④=GS研究用高速版も同じ関数へ</b>。集約してあるので手③は1か所を変えるだけで全フィルタに効く。</div>
+<div class="tw"><table>
+<tr><th>手</th><th>フィルタ</th><th>状態</th><th>証跡</th></tr>
+<tr><td>①</td><td>加速(MomentumAcceleration)</td><td><span class="pill done">完了</span></td><td>cmd_4334 commit <code>e44a7bb7</code> · <code>selection.py</code> 新設 · full md5 baseline一致</td></tr>
+<tr><td>②a</td><td>Momentum／SingleView</td><td><span class="pill done">完了・本番検証PASS</span></td><td>cmd_4335 commit <code>783668bb</code> · GATE CLEAR 18:57 · run402 4表md5 baseline一致(monthly c3331388／signals e03c0a2c／weights dab5148e／metrics …)</td></tr>
+<tr><td>②b</td><td>四つ目(MultiView)／新四つ目(Weighted)</td><td><span class="pill run">実装済み・家老検証中</span></td><td>cmd_4336 commit <code>ff77e7eb</code> · 視点ループ内(合成前)で共通関数 · union/vote不変</td></tr>
+<tr><td>②c</td><td>変わり身(TrendReversal)</td><td><span class="pill run">起票(cmd_4337)</span></td><td>下記「変わり身だけ違う」参照。共通関数に引数2つ追加＋2枝配線</td></tr>
+<tr><td>③</td><td>共通関数の中身を6段キーへ</td><td><span class="pill wait">殿合図待ち</span></td><td>乾式949月組み替え(殿12:51受容)</td></tr>
+<tr><td>④</td><td>GS高速版</td><td><span class="pill wait">手③後</span></td><td>parityテスト赤→緑</td></tr>
+</table></div>
+<h3>変わり身だけ違う(AsIs v1.2・19:00 現物確認)</h3>
+<p>他の5フィルタは「Top N位と<b>同点の子も全部採用</b>」。共通関数 <code>select_top_n_with_ties</code> もそのルール。変わり身の現物 <code>trend_reversal_filter.py:154-160</code> は <code>momentum_results[:select_n]</code>(上位N個を<b>きっちり切る</b>)＋<code>[-select_n:]</code>(下位N個)→union。<b>同点でもN個で切る</b>ため、共通関数をそのまま当てると同点時に採用数が増え結果が変わる(設計書v0.3の手②表はこの違いを見落としていた)。</p>
+<div class="callout"><b>手②c(殿19:22承認)</b>: 共通関数に <code>include_ties</code>(同点包含・既定True=既存5フィルタ不変)と <code>ascending</code>(下位枝用・既定False)を追加し、変わり身のtop枝=<code>include_ties=False</code>、bottom枝=<code>include_ties=False, ascending=True</code>で配線。合否は同じ「full 1回で4表md5一致」。手③で同率全採用が廃止されると<code>include_ties</code>は役目を終え、変わり身も同じ層で6段キーにより同点が解決される。</div>
+</section>
+
+<section>
+<h2>AsIs v0.9 — 事実(cmd_4329)と仮説(cmd_4330で確定待ち)</h2>
+<div class="tw"><table>
+<tr><th>項目</th><th>事実</th><th>出典</th></tr>
+<tr><td>価格差</td><td class="num">旧DB vs 新DB 13銘柄74,977行×2、key欠損0。11銘柄30,003行/120,012 OHLCセル差(GLD/^VIX/volume差0)。相対差 min 5.96e-08 / p50 1.52e-07 / p95 5.66e-07 / max 1.88e-06(LQD 2010-07-19 close 60.84331130981445→60.843196868896484)＝<b>浮動小数点表現の揺れ</b></td><td>cmd_4329 AC1</td></tr>
+<tr><td>取込み</td><td><code>sync_prices</code>は毎日全期間再取得、<code>save_prices</code>が同一PKを上書き。price_history表なし。StockData=履歴版なし、EODHD/Tiingo=現行系列のみ</td><td>cmd_4328/4329</td></tr>
+<tr><td>cron vs full</td><td>run400後もsignalsはsync-fof値と6,477/6,477一致＝計算は同じ</td><td>cmd_4329 AC2</td></tr>
+<tr><td>変化の中身</td><td>35 FoF全体・2014-06〜2026-06。子PF選択の入替(シン玄武-激攻⇄常勝 等)。標準PFは0行</td><td>cmd_4329 AC3</td></tr>
+<tr><td><b>仮説</b></td><td>子PFは保有重複月にリターンが<b>完全同値</b>。同値時の順序が最下位ビット(=価格ノイズ)で決まっている。標準PF(ETF同士)は同値が起きにくい</td><td>cmd_4330で確定</td></tr>
+<tr><td>過去の対処</td><td class="l">ledger(確定月凍結)＝出力を凍結して症状を止めた。fullが再生成しない行・PITRで消失(現在0行)・再構築で正しい再計算を止めた前科</td><td>ops §81系</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>AsIs v1.0 — 機構が現物で確定(cmd_4330・12:43)</h2>
+<div class="tw"><table>
+<tr><th>項目</th><th>現物</th></tr>
+<tr><td>子PF選択</td><td><code>MomentumAccelerationFilter(top_n=1, method=ratio, 10D→1M, 63D→3M)</code>: <b>score = (1ヶ月リターン)/(3ヶ月リターン)</b>。子PFの<code>MonthlyReturn.cumulative_return</code>を価格として注入</td></tr>
+<tr><td>同値時の順序</td><td><code>momentum_acceleration_filter.py:135-142</code> scoreだけで降順sort・<b>cutoff以上を全採用</b>。二次key<b>なし</b>。exact tieなら同率を全部selected(top_n=1でも<b>2体保有</b>になる)</td></tr>
+<tr><td>実測(GSシン加速R-激攻)</td><td class="num">2013-09: 常勝5.079373775712119 vs 激攻5.079373775712077(差4.2e-14)／<b>2015-04: old 激攻−0.187830685322682 vs 常勝−0.187830685322683(差1.1e-15)→new 完全同値→両選択</b>／<b>2016-12: old 激攻0.971402849738493(1位) vs 常勝…493(差1.1e-16)→new 常勝…497(1位) vs 激攻…488(差8.9e-15)=1位入替</b>。青龍/朱雀は桁違いに離れる</td></tr>
+<tr><td>仮説の修正</td><td>候補のcumulative_return差は0.05〜0.12でノイズ級ではない。同値になるのは<b>ratio score</b>(同じ保有区間の2子PFが同じ比を出す)。差1e-14〜1e-16=float演算の丸めだけの差 → 価格の最下位ビットで順位が動く。標準PFはETF同士のscoreがこの精度で並ばない</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>AsIs v1.1 — 全74 FoF棚卸し+6段キー乾式適用(cmd_4331・13:55)</h2>
+<div class="tw"><table>
+<tr><th>項目</th><th>現物/実測</th></tr>
+<tr><td>母集団</td><td>FoF 74 PF。selection block有=57(MomentumAcceleration 18／Momentum 9／MultiView 9／SingleView 9／TrendReversal 9／WeightedMultiView 3)、<b>無=17</b>(Ave-X・裏Ave-X・New FoF×4・劇薬DM×2・分身×9)。terminalは全てEqualWeight</td></tr>
+<tr><td>選択層の位置</td><td>共通dispatch <code>pipeline/engine.py:109-142</code>は<b>ranking/cutoff/tie-breakを所有しない</b>。各block(momentum/acceleration/multi_view/single_view/weighted/trend_reversal)が個別にsort・cutoff(<code>&gt;=cutoff</code>全採用)・union/voteを実装。<b>共通top-N/tie-break helperは存在しない</b>(→手①で新設済み)</td></tr>
+<tr><td>GS共有</td><td>run_077_kasoku_ratio／oikaze／l1plus はproduction blockをparity referenceにするが、<b>vectorized fast pathは独自にscore/cutoffを計算</b>(併存)</td></tr>
+<tr><td>score gap分布</td><td class="num">scalar filter 45PF・7,077観測: 相対&lt;1e-9=982／exact=888／現行の同率全採用=792月(MAF 18PFが754/697/697)。<b>標準PF 24・4,178観測: &lt;1e-9=0／exact=0</b> → ε=相対1e-9の本番根拠</td></tr>
+<tr><td>6段キー乾式適用</td><td class="num">scalar 36PF: 変化837月(現行expansion 792月)。<b>全74 FoF: 適用月9,141・評価15,910・変化949月</b>(MAF722／Momentum55／MultiView30／SingleView60／Trend82／Weighted0)。段別解決: ②12M 4,511／③設定来CAGR 668／④MaxDD 0／⑤現保有 7／⑥設定来早い方 7、②skip 264</td></tr>
+<tr><td>データ充足</td><td>12M・設定来CAGR・MaxDDは子PF<code>monthly_returns.cumulative_return</code>からpoint-in-timeで計算可。no-block 17 PFは選択スコア対象外(74/74を言う前に別途整理)</td></tr>
+</table></div>
+<div class="callout"><b>確定した設計制約:</b> tie-breakは<b>共通選択層</b>として置く(各filterがscored candidatesを露出→共通層で6段比較→multi-view union/vote・TrendReversal top/bottomの意味は明示的に保つ)。GS fast pathは同じ共通層を通すかparity testで同一結果を強制。導入時の組み替え規模=949月/74PF。<b>(4・v1.2追加)</b> 変わり身は切り取り型なので、共通関数側に同点包含ON/OFFと昇順の入力が要る。根拠: <code>docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md</code>(DM-Signal 6b3537fd)</div>
+</section>
+
+<section>
+<h2>ToBe v0.3 — 出力を凍結せず、関数を決定的にする(6段キー・確定案)</h2>
+<div class="callout">①は<b>そのPFのpipeline_configが定める選択スコア</b>(config依存。加速1M/3MはGSシン加速R系の一例、殿13:08)。同値問題はどの選択フィルタでも起きるので、②〜⑥は<b>全フィルタ共通の選択層</b>に置く。②以降は<b>中期モメンタム(12M) → 長期実績(設定来CAGR) → 痛み(MaxDD) → 慣性(現保有維持)</b>と解像度を下げる。全キーpoint-in-time。同値=次のキーで1体に絞る(同率全採用は廃止)。価格は丸めず、取込みは触らない。</div>
+<div class="keys">
+<div class="key"><div class="n">① 選択スコア(config依存)</div><div class="t">そのPFのpipeline_configが定める指標</div><div class="d">例: 加速R系=1M/3M比、他は各選択フィルタ。同値帯 ε(相対1e-9級)。実測(加速R系): 同値側1e-16〜1e-14、非同値側≥1e-1</div></div>
+<div class="key"><div class="n">② 中期モメンタム(殿12:59)</div><div class="t">12ヶ月トータルリターン</div><div class="d">同一期間ならCAGRと同順位。<b>両者とも12ヶ月以上ある時だけ</b>使う(満たなければスキップ)。ε</div></div>
+<div class="key"><div class="n">③ 長期実績(殿12:51)</div><div class="t">設定来CAGR</div><div class="d">全期間なので必ず比較可能。同値=設定来ずっと同じ履歴のみ。ε</div></div>
+<div class="key"><div class="n">④ 痛み</div><div class="t">MaxDDが小さい方</div><div class="d">同じ強さなら痛みが少ない方(=Calmar)。履歴が完全同一でない限り決着。ε</div></div>
+<div class="key"><div class="n">⑤ 慣性</div><div class="t">現保有を維持</div><div class="d">区別不能なら動かない。取引コスト0・連続性</div></div>
+<div class="key"><div class="n">⑥ 初月のみ</div><div class="t">設定来が早い方</div><div class="d">⑤が効かない唯一の場面。ID順は一度も使わない</div></div>
+</div>
+<h3>効果と副作用</h3>
+<ul>
+<li>価格の浮動小数点ノイズで確定履歴が動かなくなる。「full 1回で収束」が入力ノイズにも成立。ledgerなしで整合</li>
+<li>導入時に一度、確定履歴が決定的に組み替わる(alert 1回)。以後は安定</li>
+<li>εを大きくしすぎるとCAGRが実質主キーになりFoFの設計思想(直近の強さ)を変える → 最小に留める</li>
+</ul>
+<h3>副作用と対策・ロールバック契約(殿14:55/14:59/15:00)</h3>
+<div class="callout">手①②は「配線を1本にまとめる」だけで<b>副作用ゼロが設計目標</b>。手③で<b>1回だけ意図して</b>計算方法を切り替える。副作用は「起きない」ではなく「起きる場所と回数を固定し、検知と戻し方を先に決める」。うまくいかなければ rollback計画書§-1(15:10版) のやり方で戻す。</div>
+<div class="tw"><table>
+<tr><th>手</th><th>内容</th><th>起こり得る副作用</th><th>対策(事前)</th><th>検知(二値)</th><th>戻し方</th></tr>
+<tr><td>①</td><td>共通選択関数を新設・加速フィルタ1本を差替(中身は現行のまま)</td><td>差替ミスで採用子PFが変わる</td><td>入出力=候補+score→採用集合に固定。現行のsort・cutoff・&gt;=全採用をそのまま移す</td><td class="o">full 1回→4表md5がbaseline(monthly c3331388/signals e03c0a2c/weights dab5148e/metrics cda1b38a)と完全一致 ✔</td><td>git revert→push→deploy→full 1回。PITR不要</td></tr>
+<tr><td>②a/②b</td><td>Momentum・SingleView／四つ目・新四つ目を差替</td><td class="l"><b>最大の落とし穴</b>: 四つ目(4視点→union/vote)は視点ごとに「並べて取る」。合成後に当てると意味が変わる</td><td>「視点ごとに共通関数→既存の合成」を明示。1体1層・都度full</td><td class="o">②a md5一致 ✔(run402)／②b 家老検証中</td><td>その手だけrevert</td></tr>
+<tr><td>②c</td><td><code>selection.py</code>へ<code>include_ties</code>／<code>ascending</code>引数追加(既定値=現行挙動)＋変わり身の2枝(top/bottom)を配線</td><td>変わり身は切り取り型。同点包含のまま当てると採用数が変わる</td><td>既定値で既存5フィルタの呼出しは不変。枝ごとに当てる</td><td class="o">既存test_trend_reversal_filter FAIL0/SKIP0＋full 1回md5一致</td><td>その手だけrevert</td></tr>
+<tr><td>③</td><td>共通関数の中身を6段キーへ切替(同率全採用廃止)</td><td><b>意図した副作用</b>: FoF74PFの確定履歴が乾式949月組み替わる→ALERT 1回、過去保有・monthly/signals/weights/metrics再生成。標準PF変化0、no-block17影響なし。full時間増の可能性</td><td>殿12:51受容済み。単一commitで部分適用を作らない。乾式結果(PF別変化月)を期待差分として保存</td><td class="o">(a)変化=乾式949月とPF別一致 (b)同一入力でfull 2回目md5一致 (c)標準PF変化0 (d)full時間≤復帰点の2倍</td><td>revert→full 1回でbaselineへ戻る(決定的)。ALERTもう1回は受容</td></tr>
+<tr><td>④</td><td>GS高速版を共通関数へ</td><td>③〜④の間GSと本番が不一致(研究用)</td><td>③後にparityテストを赤→④で緑</td><td class="o">parity PASS</td><td>revert</td></tr>
+<tr><td>共通</td><td>—</td><td>取込み・DBスキーマ・frontend・API契約は不変。sync-fof cronは手③後に新規則</td><td>スコープ外を明記</td><td class="o">git diff -- frontend backend/app/etl = 0</td><td>—</td></tr>
+</table></div>
+<p style="font-size:13px;color:var(--muted)">ロールバック地点=各手のpush直前origin/main(手①前=backend 46a1f213／frontend 55b81b43／DB run400世代)。復旧=コードrevert→push→deploy→full 1回→baseline SQLで一致。新規コード禁止・PITR不要・実行者は将軍単独。正本: rollback計画書§-1 15:10版(gist 0c98ab36)。</p>
+<h3>実装前の前提条件とpitfall(15:25・将軍がコード現物で確認、家老俯瞰5点を照合)</h3>
+<div class="tw"><table>
+<tr><th>#</th><th>前提条件(確定事実)</th><th>現物</th><th>帰結</th></tr>
+<tr><td>P1</td><td><b>FoFと標準PFは別実装</b>。FoF=block class群を月初のみ実行／標準PF=純関数executor(MAFのsort+全採用が複製)</td><td>recalculate_fof.py:1371／recalculate_fast.py:2001／executor.py:12-17,148-150</td><td>共通関数はblock側。<b>executorは触らない</b>=標準PF変化0を構造で保証</td></tr>
+<tr><td>P2</td><td>block経路の本番呼出は1か所、他はscripts 10か所</td><td>rg execute_pipeline(</td><td>任意引数1本の追加は無影響</td></tr>
+<tr><td>P3</td><td>⑤現保有の入力はcontextに無い。前月保有は日次ループの<code>prev_holding_signal</code>(カンマ区切りID)</td><td>base.py:106-115／recalculate_fof.py:1321／engine.py:184</td><td><code>execute_pipeline(previous_tickers=…)</code>→context。DB読込なし</td></tr>
+<tr><td>P4</td><td>②③④⑥の材料=注入済み<code>price_data</code>(close=cumulative_return, index=月末)</td><td>component_price.py:19-27</td><td>12M=13観測／設定来CAGR／MaxDD／first index。DBアクセス不要</td></tr>
+<tr><td>P5</td><td><b>cache窓は設定来を含む</b>: FoF再計算は常に2000-01-01起点(full・部分mode・cron既定)。730日fallbackはcache欠落時のみ(家老③は反証)</td><td>recalculate_fast.py:3823／etl_trigger.py:684／constants.py:10,30／recalculate_fof.py:874-881</td><td>設定来キーはcacheから計算可。start_dateを遅らせる呼出を作らない(契約)</td></tr>
+<tr><td>P6</td><td>既存tie-break痕跡は変わり身の<code>component_order</code>安定ソートのみ</td><td>trend_reversal_filter.py:78-80</td><td>入力順は保つ。⑥は配列順ではなく設定来</td></tr>
+<tr><td>P7</td><td>出力は<code>{selected, all_scores}</code>と<code>momentum_data</code>(→signals列)へ</td><td>momentum_acceleration_filter.py:139-150</td><td>形は変えない</td></tr>
+</table></div>
+<div class="tw"><table>
+<tr><th>#</th><th>pitfall</th><th>対策(シンプル側)</th></tr>
+<tr><td>A</td><td class="l">相対εは0近傍で効かない(0と1e-12は相対差1)。乾式も相対のみ</td><td><code>abs(a-b) &lt;= 1e-9*max(abs(a),abs(b),1.0)</code> 定数1つ</td></tr>
+<tr><td>B</td><td>ratio分母ガード(±1e6張り付き)</td><td>触らない。合成εで破綻しない</td></tr>
+<tr><td>C</td><td>②12Mは両者13観測以上の時のみ。片方不足を負けにすると新設PFが選ばれない</td><td>13観測に固定・不足はskip→③</td></tr>
+<tr><td>D</td><td class="l">四つ目(視点union/vote)・変わり身(top+bottom)は視点/枝ごとに当てる。<b>変わり身は切り取り型</b>(v1.2)</td><td>multi_view:203-210(②bで実施)／trend_reversal:154-160の各枝(②c・引数2つ)</td></tr>
+<tr><td>E</td><td>既存テストは同率全採用を期待(weighted:134-163等)</td><td>手①②は不変、手③で期待値更新</td></tr>
+<tr><td>F</td><td>手①②の合否</td><td>full 1回で4表md5一致(15:10 baseline)。追加観測なし</td></tr>
+<tr><td>G</td><td>nested FoF</td><td>依存順は既存。制約増えず</td></tr>
+</table></div>
+<div class="callout"><b>設計判断(推薦):</b> 新規 <code>services/pipeline/selection.py</code> 1本 + <code>execute_pipeline</code>引数1本 + 各blockの数行置換。executor・取込み・DB・frontend・GS(手④まで)不変。新gate/hook/観測拡張/fixtureなし。</div>
+<h3>ledgerとの比較(殿12:39「ledgerより筋が良い」→ 将軍同意)</h3>
+<div class="tw"><table>
+<tr><th>観点</th><th>ledger(出力凍結)</th><th>同値帯ε＋tie-break(関数の決定化)</th></tr>
+<tr><td>何を直すか</td><td class="l">症状(確定月が動く)を止める</td><td class="o">原因(比較がノイズ依存)を消す</td></tr>
+<tr><td>fullとの関係</td><td class="l">fullが再生成しない行を作る・バックフィル運用</td><td class="o">fullの内側で完結、再生成で同じ答え</td></tr>
+<tr><td>復旧・切替耐性</td><td class="l">PITRで消える(今回0行)・前科</td><td class="o">何もしなくても同じ</td></tr>
+<tr><td>説明可能性</td><td class="l">「その時そう決めた」を保存</td><td class="o">「なぜその子か」を規則で説明</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>未決 → 全件裁定済み(12:51/12:59)。残=手③の実装GO(殿合図)</h2>
+<ol>
+<li><s>比較キーの正体と同値時挙動</s> → 確定: ratio score・同率全採用(2体化)・二次keyなし</li>
+<li><s>εの値</s> → 裁定(12:51): 相対1e-9級の同値帯・比較値側のみ</li>
+<li><s>CAGRの定義</s> → 裁定(12:51): 設定来(inception以来)</li>
+<li><s>最終キー</s> → 裁定(12:59): 12M→設定来CAGR→MaxDD→現保有維持→初月は設定来早い方(6段)</li>
+<li><s>価格取込み側</s> → 裁定(12:51): 比較側のみ、取込みは触らない</li>
+<li><s>導入時の1回組み替え</s> → 裁定(12:51): 受容(メンバーも株価の遡及変動に納得)</li>
+<li><s>変わり身の配線</s> → 裁定(19:22): 共通関数に引数2つ・変わり身2枝を配線(手②c)</li>
+</ol>
+</section>
+
+<section>
+<h2>裁定の因果連鎖 — 事実→制約→判断→効果</h2>
+<div class="tw"><table>
+<tr><th>#</th><th>殿の意見</th><th>事実</th><th>制約</th><th>判断</th><th>効果</th></tr>
+<tr><td>1</td><td>浮動小数点程度の価格差は実際にあり保有が変わる(12:35)</td><td>相対差1e-7級で6,477件反転</td><td>外部APIに履歴版なし・同一PK上書き</td><td>事実として受容、対処は関数側</td><td>現実に合った前提</td></tr>
+<tr><td>2</td><td>丸め=何桁？丸めるとtieが発生(12:35)</td><td>丸め境界の両側に必ず値が落ちる</td><td>「変わらない桁」は存在しない</td><td>価格を丸めず比較値に同値帯ε</td><td>ノイズを吸い情報を削らない</td></tr>
+<tr><td>3</td><td>tie-breakには根拠。PF順は理屈でない。強いもの=過去CAGR(12:35)</td><td>子PFは保有重複月に完全同値</td><td>並び順/IDは整合が壊れる</td><td>2nd=point-in-time共通期間CAGR、3rd=現保有維持</td><td>説明可能・決定的</td></tr>
+<tr><td>5</td><td>2はεで可／3は設定来CAGR／5は比較側のみ／6は受容。メンバーも納得(12:51)</td><td>cmd_4330で比較キー・同値差が確定</td><td>二重対策は複雑さ</td><td>ε=相対1e-9級・設定来CAGR・取込み不変・組み替え受容</td><td>実装が比較関数1か所で閉じる</td></tr>
+<tr><td>6</td><td>モメンタムを取り入れたい。12Mトータルリターン→設定来CAGR→以下同じ(12:59)</td><td>主スコアが1M/3Mの加速</td><td>tie-breakも同じ思想で。12M未満は比較不能</td><td>②12M(両者12M以上時のみ)を挿入、6段</td><td>思想の解像度を下げる形。IDに頼らない</td></tr>
+<tr><td>7</td><td>加速はたまたま著名なだけ。デフォルトに見える表現は良くない(13:08)</td><td>同値問題は選択スコアの種類に依らない</td><td>特定フィルタに埋めると他で再発</td><td>①=config依存スコア、tie-breakは共通層</td><td>全FoF・全フィルタで同じ決定性</td></tr>
+<tr><td>4</td><td>以前のledgerより今回の方が筋が良い(12:39)</td><td>ledgerは出力凍結・再生成外・PITR消失・前科</td><td>08-16原則「fullが再生成しない行を作らない」</td><td>関数の決定化</td><td>復帰点契約と整合、ledger廃止方向と一致</td></tr>
+<tr><td>8</td><td>artifactと設計書も更新。そのうえで進めてよい(19:22)</td><td>変わり身の選択部は切り取り型で共通関数と別ルール</td><td>手①②は挙動不変が目標。共通関数本体は触らない約束</td><td>共通関数に既定値付き引数2つ(同点包含・昇順)を足し変わり身を配線。設計書v1.2に事実を残す</td><td>全6フィルタが1つの選択層を通り手③が1か所で閉じる</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>チャット記録(要旨)</h2>
+<ul class="tl">
+<li><b>10:47</b> 殿ntfy SIGNAL CHANGE ALERT → 将軍: cron停止+full(誤診) → 11:03 訂正: 真因=sync-pricesの全履歴upsert、cron再開</li>
+<li><b>11:33</b> 殿: 価格が本当に変わったか／cronとfullの差分／どのPFがどう連鎖したか → cmd_4329</li>
+<li><b>12:13</b> cmd_4329結果: ノイズ級の価格差で広域反転 → 将軍: tie-breakのノイズ依存を示唆 → cmd_4330起票</li>
+<li><b>12:35</b> 殿: 浮動小数点差は実際にある／丸め=何桁？丸めるとtie／tie-breakに根拠、PF順は理屈でない／強いもの=過去CAGR／決定ではなくチャット</li>
+<li><b>12:39</b> 殿: artifactにまとめよ、情報待ち、ledgerより筋が良い → 本ページ+同意</li>
+<li><b>12:51</b> 殿: 2はε案でよい／3は設定来CAGR／5は比較側で十分／6は受容 → 将軍: 最終キー6案比較</li>
+<li><b>12:59</b> 殿: モメンタムを取り入れたい。12Mトータルリターン→設定来CAGR→以下同じ → 6段キー</li>
+<li><b>13:01</b> 殿: まず設計書とartifactに落とそう → ToBe v0.3</li>
+<li><b>13:08</b> 殿: 加速はたまたま著名なだけ → ①をconfig依存の選択スコアへ一般化、tie-breakは共通層へ</li>
+<li><b>13:04-13:55</b> cmd_4331起票→偽陽性BLOCK→根治→再委任→GATE CLEAR → AsIs v1.1</li>
+<li><b>14:45</b> 殿: まずはartifact,設計書,gistをアップデート → AsIs v1.1版</li>
+<li><b>15:06</b> 殿: pitfallと前提条件を他のコーディングLLMの立場で俯瞰。家老にも同ポジションで。主導権は将軍 → P1-P7／A-G</li>
+<li><b>16:44</b> 殿: 今デプロイされた。もう起票を始めよう → 手①cmd_4334(e44a7bb7)・手②a cmd_4335(783668bb)</li>
+<li><b>18:56</b> 殿: 進めてくれ → 手②b cmd_4336(ff77e7eb)。18:57 cmd_4335 GATE CLEAR。19:26 手②a本番検証PASS(run402 4表md5一致)</li>
+<li><b>19:22</b> 殿: もう少しわかりやすく → 変わり身が切り取り型で別パターンと説明 → 殿: artifactと設計書も更新。そのうえで進めてよい → AsIs v1.2＋手②c追記(gist更新)→cmd_4337起票</li>
+</ul>
+</section>
+</main>
