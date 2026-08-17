@@ -88,6 +88,22 @@
 | 戻し方 | `git revert 54e3e663 2f3e3c82`→push→deploy→full 1回でbaseline md5(monthly c3331388/signals e03c0a2c/weights dab5148e/metrics cda1b38a)へ戻る | rollback計画書§-1 |
 | インフラ副産物 | cmd_4341 run_tests近接テスト(bce0cfaa)・cmd_4343 dashboard自動更新既定OFF(3ad81b23)・cmd_4345 gate exit75再試行/cmd_4346 precheck統合/cmd_4347 GATE-STALL検知(通知storm→将軍hotfix 53af18b5)/cmd_4348 全デーモン75分停止の偵察 =忍者実装済み・レビュー中 | 各cmd |
 
+## AsIs **v1.5** — 2026-08-18 06:55+09:00（手③完了: 合否確定・本番収束実証・補正2本・oracle最終値）
+
+| 項目 | 現物/実測 | 出典 |
+|---|---|---|
+| 本番 | **f519002b**(手③ 54e3e663+2f3e3c82 ／補正1 cmd_4349 a88f300f ／補正2 cmd_4351 f519002b)。Render live 02:11 JST。cron `dm-signal-sync-fof`(01:40 UTC)は同一経路(sync_fof→recalculate_history_fast L3_fof→_recalculate_fof_history→PipelineEngine→blocks→select_top_n_deterministic)、run409以降のcron初回=08-18 10:40 JST(変更0件を家老が確認予定) | Render API / sync_layers.py 300-320 / recalculate_fast.py 3824 |
+| 合否(b) 収束 | **PASS**: run408(初回)→run409(2回目)で4業務表count/md5完全一致・signal_change 0(monthly 15977/93315437・signals 333025/61192e83・weights 22937/2e0c2a9c・metrics 196/6ee0bd4d)、標準PF同値 | 掲示板blt_20260818_023420 |
+| 合否(c)(d) | (c)標準PF24のsignal変更0 PASS／(d)run409 527.8s=復帰点412sの1.28倍 PASS | 同上 |
+| 合否(a) 期待差分 | 補正oracle(cmd_4350伝播版+cmd_4352期間換算)vs run409: **MATCHED 8,504／MISMATCH 9／MISSING 57**(観測可能の99.9%)。残9=GSシン加速R-常勝2012-05(1)・奥義-GS-加速D/R-常勝2013-06(2)・秘奥義-加速R-常勝2014-05〜2015-01(5、expected/actualが1か月ずれて連なる型)・秘奥義-追い風-鉄壁2016-06(1)=**oracle側の境界定義(depth3の月対応/伝播タイミング)、本番別要因0** | `docs/research/cmd_4352_fof_tiebreak_expected_diff_final.md`(DM-Signal repo 43f3a16b) |
+| 補正1 cmd_4349 | 5選択ブロックが`list(context.current_tickers)`(set順)を渡していた=P6違反。6ブロックを`ordered_current_tickers`(component_order安定順)へ。全同値候補(2013-05/06 奥義2PF: 保有・リターン完全同一)の初回選択が決定的に | 掲示板blt_20260818_005951 |
+| 補正2 cmd_4351 | 12M欠損時のpairwise stage-skipが比較器を非推移(朱雀>白虎(12M)・白虎>玄武(skip→CAGR)・玄武>朱雀(skip→CAGR)の循環)にし24順列で勝者が分散(GSシン加速R-常勝2012-08/09)。②③④のデータ欠損skipを候補集合単位へ→各段全順序。設計pitfall Cを『集合の全員が13観測以上の時のみ②』へ更新 | 掲示板blt_20260818_014407 |
+| oracle補正 | cmd_4350=nested伝播(下位FoFの新6段結果を上位入力へ)、cmd_4352=lookback期間換算をdays-only config(days:10→max(days//21,1)=1月)で本番block同一に。cmd_4342の乾式は全階層固定+0月換算で不一致550→補正後9 | cmd_4350 2c5ce30d／cmd_4352 43f3a16b |
+| 導入時の履歴組み替え(受容済み) | run404(手③初回)28,293行/46PF、run406(補正1初回)82/3PF、run408(補正2初回)222/4PF。以後の再実行は0 | 殿ntfy 00:26/01:36/02:23 |
+| 手④ | GS fast path(run_077/l1)のparity未着手 | — |
+
+**設計への反映(ToBe v0.3→v0.4相当・本文は不変で注釈)**: (i)②③④の欠損skipは候補集合単位(全順序保証) (ii)6段全同値の最終決着はcomponent_order(pipeline_configの記載順)であってset順・ID順ではない (iii)期待差分oracleはnested伝播+本番同一の期間換算が必須。
+
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
 ### 方針: 出力を凍結するのではなく、関数を決定的にする
@@ -214,11 +230,13 @@
 - 16:44 殿「今デプロイされた。もう起票を始めよう」→ 手①cmd_4334(e44a7bb7)・手②a cmd_4335(783668bb・GATE CLEAR 18:57)。18:56 殿「進めてくれ」→ 手②b cmd_4336(ff77e7eb)。19:22 殿「もう少しわかりやすく」→変わり身の別パターンを説明→「artifactと設計書も更新。そのうえで進めてよい」→ AsIs v1.2＋手②c追記→cmd_4337起票
 - 19:36 殿「準備は先に始めていいのでは？」→ 手③準備A cmd_4338(5d12c79f)・準備B cmd_4339(16f05e8f・GATE CLEAR 20:05)。19:46 cmd_4337 failed(将軍AC1誤記→LS-A09(37))→回復cmd_4340→commit契約BLOCK→verification再配備。19:55 殿「dirtyなせいでgate clearやpushが遅れているならインフラバグだ。迂回は負の複利」→ 軍師提案run_tests近接探索=cmd_4341。20:05 準備C cmd_4342起票。20:11 手②b本番PASS。20:15 殿「リアルな進捗」→20:19「artifactと設計書を更新して」→ AsIs v1.3
 - 22:03 殿「進めてほしい」→手③cmd_4344起票→22:21配備→23:20家老「docstring旧契約残存」→将軍doc lane 2f3e3c82→push→23:54 Render build_failed(GitHub障害)→将軍が真因訂正(credential切断ではない)→00:13 再deploy live→full run404。23:54 cmd_4347のGATE-STALL検知が履歴gate全件通知storm→将軍hotfix 53af18b5。00:20 殿「いまクリアされても今より強くてニューゲームできるようにせよ」→本版
+- 08-18 00:35〜02:55: run404 (a)550不一致→原因=oracleのnested伝播欠落(cmd_4350) ／ run405 (b)FAIL 2PF×21日→全同値候補のset順依存(cmd_4349) ／ run406 82件→GSシン加速R-常勝は非推移(12M欠損pairwise skip)→cmd_4351 ／ run408 222件=全順序化の1回組み替え→run409で0件=(b)PASS ／ oracle期間換算差122件→cmd_4352→(a)8,504/9/57。殿裁定00:45「GitHub不安定の間は安易なrevert/deploy禁止」、殿01:02承認、殿06:46「cronも対応しているか」→同一経路を確認
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
 - AsIs v0.9はcmd_4330で機構が確定したらv1.0へ。ToBe v0.1はε・比較キー・CAGR定義が決まったらv0.2へ。
 - AsIs v1.1(14:50)=cmd_4331の全FoF棚卸し・乾式適用。ToBe v0.3は不変(共通選択層の要請がAsIsで裏付けられた)。実装は殿合図で1体1層。
+- AsIs v1.5(08-18 06:55)=手③完了。(b)(c)(d)PASS・(a)99.9%(残9=oracle境界)。補正1(cmd_4349 component_order)・補正2(cmd_4351 全順序化)・oracle補正(4350/4352)。本番f519002b。手④未着手。
 - AsIs v1.4(08-18 00:25)=手③実装済み(54e3e663/2f3e3c82)・本番live 00:13・full run404走行中・合否(a)-(d)待ち。手④(GS)は未着手。
 - AsIs v1.3(20:20)=手②c実装(2f0b4f7a)・準備A(5d12c79f)・準備B(16f05e8f GATE CLEAR)・準備C(cmd_4342走行)。ToBe不変。
 - AsIs v1.2(19:30)=手①②a②b実装済み＋変わり身が切り取り型である事実。ToBe v0.3に手②c(共通関数へ引数2つ・変わり身配線)を追記。6段キー本体は不変。
