@@ -49,8 +49,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 51
-  last_seen: "2026-08-17T09:07:21+09:00"
+  occurrence_count: 52
+  last_seen: "2026-08-17T09:20:24+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -773,7 +773,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4324"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認でcmd_4324のMonthly Trade簡素化はcontext/dm-signal-frontend.md §27へ反映済み。候補のPSTREE-OVERRIDE/WSL2遅延は既存のDrvFS・WSL2 I/O・pstree判定の登録知識(L1551/L306/L307/L205)と重複し、新規実装修正またはdecision_candidateを要しないため解決"
+  action_artifact: "context/dm-signal-frontend.md §27; context/infrastructure.md L1551/L1566-L1571; projects/infra/lessons.yaml L1551/L306/L307/L205; queue/gates/reflux_promotion.paused"
+  resolved_at: "2026-08-17T09:20:49+09:00"
 - id: INS-20260817-033250343-36ad
   ts: "2026-08-17T03:32:50+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4324; matched=未確; current_pattern=Monthly Trade 確定/未確定表示の簡素化 — frontend 1層実装(NEXT SIGNAL撤去・過去月バッジ廃止・MTD⏳・列独立の薄色); candidate_level=2; candidate=GP-216事故: 既存useful_rate filter未確認→不要提案→家老CTX消費。LG033(Level 2)が行動を変えなかった→フロー3箇所に1行埋込で毎回目に入る構造に; source=gunshi_gp_tracker.yaml"
@@ -1008,3 +1011,43 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-17T09:08:22+09:00"
+- id: INS-20260817-091313347-0497
+  ts: "2026-08-17T09:13:13+09:00"
+  insight: "semantic_index_update新概念候補: discussion:では設計書とアーティファクトを更新しよう。一回ログアウト状態は問題がない は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T09:17:02+09:00"
+- id: INS-20260817-091652464-8427
+  ts: "2026-08-17T09:16:52+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿質問_パスワード不変で第0段可能か_20260817]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0000; score=2.8) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_強くてニューゲーム_20260730_1355; score=2.4) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_memo_20260811_0337; score=2.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T09:16:54+09:00"
+- id: INS-20260817-091652767-dbe5
+  ts: "2026-08-17T09:16:52+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[パスワード不変+再ログイン許容]] は既存aliasesに一致なし。類似概念TOP3: cdp_browser_capability(CDP(ブラウザ操作能力); alias=ログイン不要; score=3.1) / tier_plan_mapping(Tier-プラン対応; alias=スタンダード; score=2.4) / dm_fusion_app(DM-Fusionアプリ; alias=LOGグラフマイルストーン; score=2.2)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T09:16:54+09:00"
+- id: INS-20260817-091653227-6bcc
+  ts: "2026-08-17T09:16:53+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[第0段3手案]] は既存aliasesに一致なし。類似概念TOP3: dm_signal_refactor_mission(DM-Signalリファクタ任務; alias=第3報; score=2.9) / command_files_modified_verification(Command×Files Modified照合; alias=LG036; score=2.2) / loop_engineering(Loop Engineering論文; alias=1300 PRs; score=2.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-17T09:16:54+09:00"
