@@ -122,6 +122,19 @@
 - 09:16 殿「dm-signal-password-rotation cronの改善も忘れないようにしないとね」→ ToBeに既知欠陥3点(ops §46)と改修方針・位置づけ(第0段と独立、第1段と突合後)を記載
 - 10:02 殿「ではログイン画面の第ゼロ弾をやろう。まずはそこまで」→ **第0段 実装GO**。将軍: tier別snapshot(5tier・expires 2026-08-31・Render env値)を私有0600ファイルへ保存(10:03)。cmd_4325(手①/login+admin分離+ガード) 10:06 delegated / cmd_4326(手②7層リセット, depends_on 4325) / cmd_4327(手③主体キー+ETag, depends_on 4326) 10:12 delegated。パイプライン契約(前手GATE後push/deploy待ちと重ねる)・push/deploy=家老レーン・CDP不要
 
+## 進捗台帳(第0段) — 2026-08-17 12:08+09:00
+
+| 手 | cmd | 状態 | 証跡 |
+|---|---|---|---|
+| ① /login新設+admin分離+未認証ガード | cmd_4325 | GATE CLEAR 10:52(影丸) → push `cdc9aeab` | /login・/admin/login生成、build成功、選択テストFAIL0/SKIP0 |
+| ② 7層ハードリセット+handoff主体 | cmd_4326 | GATE CLEAR 11:16(飛猿) → push `2d9b9a33` | 共通リセット処理・login/logout両経路・handoff主体検証、3 suites/19 PASS |
+| (型修正) | karo_hotfix typecheck | 11:50 CLEAR → push `c4aa7dd9` | cmd_4324由来のtest型エラー9件解消、tsc exit 0 |
+| ③ 主体キー全層+BE ETag/no-store | cmd_4327 | GATE CLEAR 11:55(疾風) → push `1ab6c278`/`c13fdba4` | BE 14ファイル(+60/-20)のETag/Cache-Control、FE主体キー、test_etag PASS・subject-cache PASS |
+| deploy | 家老レーン | **12:05 origin/main `46a1f213`、Render BE dep-da17hubncjis73979lhg / FE dep-da17hubncjis73979leg 双方live**、/healthz 200 status=ok、/admin/recalculate-status 200 | 掲示板 blt_20260817_120540 |
+| 本番CDP検分 | 実施しない(殿03:09/10:02運用) | 画面確認は殿の目: admin→logout→低tierで非公開PFがリロードなしに表示されないか | — |
+
+**第0段 完了(本番live)。第1段(identity/entitlement)以降は殿の合図まで未配備。** 復帰点はBE tree `412cb833`/FE tree `bb4fc5f9`(commit 46a1f213)へ更新(rollback計画書§-1)。
+
 ## 注釈 — 2026-08-17 01:30+09:00
 
 - AsIs注釈: v1.0 は cmd_4322 の一次証跡（rg/nl による現物読解、行番号付き）で置換済み。SW `dm-signal-v10` と handoff sessionStorage が「主体なし・logoutで消えない」二重の抜け穴。
