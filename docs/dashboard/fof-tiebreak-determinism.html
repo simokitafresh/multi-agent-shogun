@@ -37,23 +37,27 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 </style>
 <main>
 <header style="display:grid;gap:.6rem">
-  <div class="meta">DM-Signal · 設計書 AsIs v1.2 / ToBe v0.3+手②c · 2026-08-17 19:35 JST · 手①②a②b実装済み・手②c起票 · 6段キー(手③)は殿合図待ち</div>
+  <div class="meta">DM-Signal · 設計書 AsIs v1.3 / ToBe v0.3+手②c · 2026-08-17 20:20 JST · 手①②a②b本番PASS・手②c実装済み・手③準備A/B完了・準備C走行 · 6段キー切替(手③)は殿合図待ち</div>
   <h1>FoF子PF選択の決定性 — 浮動小数点ノイズで確定履歴が動く穴を「同値帯ε＋根拠あるtie-break」で閉じる</h1>
   <div class="meta" style="text-transform:none;letter-spacing:0">正本 <code>docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md</code> · gist 1e0cab30 · 関連: rollback計画書§-1 / Monthly Trade簡素化(ledger廃止方向)</div>
   <div class="callout"><b>発端(10:47)</b> SIGNAL CHANGE ALERT 6,477件/35 FoF PF。三段確認(cmd_4329)で確定: <b>価格は変わった</b>(11銘柄30,003行、ただし相対差 max 1.9e-06=浮動小数点ノイズ級)／<b>cronとfullは一致</b>／<b>35 FoF全体に広域連鎖</b>(子PF選択の入替)。</div>
 </header>
 
 <section>
-<h2>実装の進捗 — 19:35 時点</h2>
+<h2>実装の進捗 — 20:20 時点</h2>
 <div class="callout">3段階: <b>手①②=配線を1本にまとめる</b>(結果は変えない、1体ずつ) → <b>手③=中身を6段キーへ切り替える</b>(1回だけ結果が変わる) → <b>手④=GS研究用高速版も同じ関数へ</b>。集約してあるので手③は1か所を変えるだけで全フィルタに効く。</div>
 <div class="tw"><table>
-<tr><th>手</th><th>フィルタ</th><th>状態</th><th>証跡</th></tr>
-<tr><td>①</td><td>加速(MomentumAcceleration)</td><td><span class="pill done">完了</span></td><td>cmd_4334 commit <code>e44a7bb7</code> · <code>selection.py</code> 新設 · full md5 baseline一致</td></tr>
-<tr><td>②a</td><td>Momentum／SingleView</td><td><span class="pill done">完了・本番検証PASS</span></td><td>cmd_4335 commit <code>783668bb</code> · GATE CLEAR 18:57 · run402 4表md5 baseline一致(monthly c3331388／signals e03c0a2c／weights dab5148e／metrics …)</td></tr>
-<tr><td>②b</td><td>四つ目(MultiView)／新四つ目(Weighted)</td><td><span class="pill run">実装済み・家老検証中</span></td><td>cmd_4336 commit <code>ff77e7eb</code> · 視点ループ内(合成前)で共通関数 · union/vote不変</td></tr>
-<tr><td>②c</td><td>変わり身(TrendReversal)</td><td><span class="pill run">起票(cmd_4337)</span></td><td>下記「変わり身だけ違う」参照。共通関数に引数2つ追加＋2枝配線</td></tr>
-<tr><td>③</td><td>共通関数の中身を6段キーへ</td><td><span class="pill wait">殿合図待ち</span></td><td>乾式949月組み替え(殿12:51受容)</td></tr>
+<tr><th>手</th><th>フィルタ／内容</th><th>状態</th><th>証跡</th></tr>
+<tr><td>①</td><td>加速(MomentumAcceleration)</td><td><span class="pill done">完了・本番PASS</span></td><td>cmd_4334 commit <code>e44a7bb7</code> · <code>selection.py</code> 新設 · full md5 baseline一致</td></tr>
+<tr><td>②a</td><td>Momentum／SingleView</td><td><span class="pill done">完了・本番PASS</span></td><td>cmd_4335 commit <code>783668bb</code> · run402 4表md5一致</td></tr>
+<tr><td>②b</td><td>四つ目(MultiView)／新四つ目(Weighted)</td><td><span class="pill done">完了・本番PASS</span></td><td>cmd_4336 commit <code>ff77e7eb</code> · GATE CLEAR 19:48 · 4表md5一致 20:11(monthly 15977／signals 333025／weights 25094／metrics 196)</td></tr>
+<tr><td>②c</td><td>変わり身(TrendReversal)</td><td><span class="pill run">実装済み・GATE手続き中</span></td><td>commit <code>2f0b4f7a</code>(cmd_4337) · <code>include_ties</code>／<code>ascending</code>追加+2枝配線 · 21 passed・等価性7/7 · cmd_4337は将軍AC誤記でfailed→回復cmd_4340をverificationで再配備中</td></tr>
+<tr><td>③準備A</td><td><code>previous_tickers</code>をcontextへ注入(⑤現保有の材料・挙動不変)</td><td><span class="pill run">実装済み・家老検証中</span></td><td>cmd_4338 commit <code>5d12c79f</code></td></tr>
+<tr><td>③準備B</td><td>6段キーcomparator <code>compare_candidates</code>／<code>select_top_n_deterministic</code>(未配線)</td><td><span class="pill done">GATE CLEAR</span></td><td>cmd_4339 commit <code>16f05e8f</code> · 合成ε <code>SCORE_EPS=1e-9</code>・12M=13観測条件 · 契約テスト7系統(将軍再実行7 passed)</td></tr>
+<tr><td>③準備C</td><td>本番comparatorを全74 FoFへread-only乾式適用→PF×月の期待差分CSV+md · cmd_4331集計(949月)と突合</td><td><span class="pill run">走行中</span></td><td>cmd_4342(tobisaru)。cmd_4331の乾式スクリプトは未保存だったため再現可能な形で固定</td></tr>
+<tr><td>③切替</td><td>各blockの呼出しを<code>select_top_n_deterministic</code>へ差し替え(単一commit)</td><td><span class="pill wait">殿合図待ち</span></td><td>残条件: 準備A GATE CLEAR・準備C期待差分・手②c GATE CLEAR。乾式949月組み替え(殿12:51受容)</td></tr>
 <tr><td>④</td><td>GS高速版</td><td><span class="pill wait">手③後</span></td><td>parityテスト赤→緑</td></tr>
+<tr><td>infra</td><td>run_tests.sh外部backend近接テスト自動探索(軍師提案)</td><td><span class="pill run">走行中</span></td><td>cmd_4341(saizo)。cmd_4336/4337でrc=2 DIVERGENTの根治。殿19:55「インフラバグは迂回せず直せ」</td></tr>
 </table></div>
 <h3>変わり身だけ違う(AsIs v1.2・19:00 現物確認)</h3>
 <p>他の5フィルタは「Top N位と<b>同点の子も全部採用</b>」。共通関数 <code>select_top_n_with_ties</code> もそのルール。変わり身の現物 <code>trend_reversal_filter.py:154-160</code> は <code>momentum_results[:select_n]</code>(上位N個を<b>きっちり切る</b>)＋<code>[-select_n:]</code>(下位N個)→union。<b>同点でもN個で切る</b>ため、共通関数をそのまま当てると同点時に採用数が増え結果が変わる(設計書v0.3の手②表はこの違いを見落としていた)。</p>
@@ -205,6 +209,10 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 <li><b>16:44</b> 殿: 今デプロイされた。もう起票を始めよう → 手①cmd_4334(e44a7bb7)・手②a cmd_4335(783668bb)</li>
 <li><b>18:56</b> 殿: 進めてくれ → 手②b cmd_4336(ff77e7eb)。18:57 cmd_4335 GATE CLEAR。19:26 手②a本番検証PASS(run402 4表md5一致)</li>
 <li><b>19:22</b> 殿: もう少しわかりやすく → 変わり身が切り取り型で別パターンと説明 → 殿: artifactと設計書も更新。そのうえで進めてよい → AsIs v1.2＋手②c追記(gist更新)→cmd_4337起票</li>
+<li><b>19:36</b> 殿: 準備は先に始めていいのでは？ → 手③準備A cmd_4338(5d12c79f)・準備B cmd_4339(16f05e8f・GATE CLEAR 20:05)</li>
+<li><b>19:46-20:16</b> cmd_4337 failed(将軍AC1に不在テスト指定→LS-A09(37))→回復cmd_4340→検証cmdなのにcommit契約BLOCK→verificationで再配備。19:55 殿「dirtyなせいでgate clearやpushが遅れているならインフラバグだ。迂回は負の複利」→ 軍師提案run_tests近接探索=cmd_4341</li>
+<li><b>20:05-20:11</b> 準備C cmd_4342起票 · 手②b本番PASS(4表md5一致)</li>
+<li><b>20:15</b> 殿: リアルな進捗を確認 → 20:19 殿: artifactと設計書を更新して → AsIs v1.3・本版</li>
 </ul>
 </section>
 </main>
