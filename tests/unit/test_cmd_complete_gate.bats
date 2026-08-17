@@ -4491,6 +4491,83 @@ EOF
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
 }
 
+# cmd_karo_hotfix_gate_dirty_diff_latency_202608172138 AC2
+# test_necessity: project scope inspection must use the report-declared source
+# commit, so a shared worktree's unrelated dirty file cannot enter the inspected
+# diff or the completion decision.
+# regression_justification: the prior implementation enumerated the whole live
+# worktree with git diff --name-only before inspecting the command commit.
+@test "AC2: project scope inspection uses report source commit, not shared dirty files" {
+    local base="$BATS_TEST_TMPDIR/report-source-anchor"
+    local repo="$base/repo"
+    local gate_root="$base/gate"
+    mkdir -p "$repo" "$gate_root/projects" "$gate_root/queue/tasks" "$gate_root/queue/reports"
+
+    git init -q -b main "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'base\n' > "$repo/base.txt"
+    git -C "$repo" add base.txt
+    git -C "$repo" commit -q -m "base commit"
+    printf 'def source():\n    return None\n' > "$repo/source.py"
+    git -C "$repo" add source.py
+    git -C "$repo" commit -q -m "source commit"
+    local source_sha
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+
+    # This dirty file must not be inspected by the source-anchored diff.
+    printf 'def unrelated():\n    return None\n' > "$repo/dirty.py"
+
+    cat > "$gate_root/projects/infra.yaml" <<YAML
+project:
+  path: $repo
+YAML
+    cat > "$gate_root/queue/tasks/kotaro.yaml" <<YAML
+task:
+  parent_cmd: cmd_source_probe
+  target_path: $repo
+YAML
+    cat > "$gate_root/queue/reports/report.yaml" <<YAML
+commit_hash: $source_sha
+YAML
+
+    python3 - "$SRC_GATE_SCRIPT" "$base/helpers.sh" <<'PY'
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+start = source.index("resolve_cmd_report_source_commit()")
+end = source.index("\n# ─── project code stub detection", start)
+helper = source[start:end]
+start = source.index("check_project_code_stubs()")
+end = source.index("\n# ───", start)
+Path(sys.argv[2]).write_text(helper + "\n" + source[start:end] + "\n", encoding="utf-8")
+PY
+
+    cat > "$base/run_source_probe.sh" <<'BASH'
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR="$1"
+repo="$2"
+task="$3"
+report="$4"
+source "$5"
+MATCHING_TASK_FILES=("$task")
+resolve_report_file() { printf '%s\n' "$report"; }
+collect_report_commit_hash() { awk '/^commit_hash:/{print $2}' "$1"; }
+discover_reports_for_cmd() { :; }
+check_project_code_stubs cmd_source_probe infra
+BASH
+    chmod +x "$base/run_source_probe.sh"
+
+    run "$base/run_source_probe.sh" "$gate_root" "$repo" \
+        "$gate_root/queue/tasks/kotaro.yaml" "$gate_root/queue/reports/report.yaml" \
+        "$base/helpers.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'WARN\t'*source.py* ]]
+    [[ "$output" != *dirty.py* ]]
+}
+
 @test "AC2: an overlap limited to an auto-generated path does not block the push (git push is still called and succeeds)" {
     local base="$BATS_TEST_TMPDIR/ac2-autogen"
     _push_overlap_repo_init "$base"

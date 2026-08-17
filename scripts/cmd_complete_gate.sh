@@ -3741,7 +3741,52 @@ collect_cmd_title() {
     echo "$cmd_title"
 }
 
-# ─── project code stub detection（WARN only, cmd diff added lines only） ───
+# Resolve the report-declared source commit before any project-diff inspection.
+# A completion gate runs in a shared worktree, so the live index/worktree is not
+# an authoritative view of the command being completed.  The report commit is
+# already the publication identity used by source-only autopush; reusing it here
+# keeps scope inspection on immutable Git objects and avoids scanning unrelated
+# local dirty files.
+resolve_cmd_report_source_commit() {
+    local cmd_id="$1"
+    local repo="$2"
+    local task_file ninja_name report_file candidate
+
+    if ! declare -F collect_report_commit_hash >/dev/null 2>&1; then
+        return 1
+    fi
+
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            ninja_name=$(basename "$task_file" .yaml)
+            report_file=$(resolve_report_file "$ninja_name" "$cmd_id" 2>/dev/null || true)
+            [ -f "$report_file" ] || continue
+            candidate=$(collect_report_commit_hash "$report_file")
+            if [[ "$candidate" =~ ^[0-9a-f]{40}$ ]] \
+                && git -C "$repo" cat-file -e "${candidate}^{commit}" 2>/dev/null; then
+                printf '%s\n' "$candidate"
+                return 0
+            fi
+        done
+    fi
+
+    if declare -F discover_reports_for_cmd >/dev/null 2>&1; then
+        while IFS= read -r report_file; do
+            [ -f "$report_file" ] || continue
+            candidate=$(collect_report_commit_hash "$report_file")
+            if [[ "$candidate" =~ ^[0-9a-f]{40}$ ]] \
+                && git -C "$repo" cat-file -e "${candidate}^{commit}" 2>/dev/null; then
+                printf '%s\n' "$candidate"
+                return 0
+            fi
+        done < <(discover_reports_for_cmd "$cmd_id")
+    fi
+
+    return 1
+}
+
+# ─── project code stub detection（WARN only, report source diff added lines only） ───
 # cmd_1387: Python→bash/awk化。yaml.safe_load→awk, subprocess→direct git, regex→awk
 check_project_code_stubs() {
     local cmd_id="$1"
@@ -3827,86 +3872,18 @@ check_project_code_stubs() {
         fi
     fi
 
-    # --- cmd_1244+cmd_1293: uncommitted変更検出 — commit漏れをBLOCKで構造的に防止 ---
-    # cmd_1293修正: 運用ファイル(queue/logs/dashboard等)を除外し誤爆BLOCK防止
-    local uncommitted uncommitted_filtered
-    uncommitted=$({ git -C "$project_path" diff --name-only 2>/dev/null; git -C "$project_path" diff --cached --name-only 2>/dev/null; } | sort -u | sed '/^$/d')
-    if [[ -n "$uncommitted" ]]; then
-        uncommitted_filtered=$(printf '%s\n' "$uncommitted" | grep -v -E "$AUTOGEN_PATH_EXCLUDE_REGEX" || true)
-        # BLOCK only dirty files claimed by the current cmd report. External
-        # repos may contain unrelated dirty files from older tasks.
-        if [[ -n "$uncommitted_filtered" ]] && declare -F collect_report_modified_files >/dev/null 2>&1; then
-            local report_paths_for_commit scoped_uncommitted matching_report_for_commit
-            report_paths_for_commit=$(collect_report_modified_files || true)
-            if [[ -n "$report_paths_for_commit" ]]; then
-                scoped_uncommitted=$(UNCOMMITTED_PATHS="$uncommitted_filtered" REPORT_PATHS="$report_paths_for_commit" python3 - <<'PY'
-import os
-
-uncommitted = [p.strip().strip("./") for p in os.environ.get("UNCOMMITTED_PATHS", "").splitlines() if p.strip()]
-reported = [p.strip().strip("./") for p in os.environ.get("REPORT_PATHS", "").splitlines() if p.strip()]
-
-def matches(path, ref):
-    path_base = os.path.basename(path)
-    ref_base = os.path.basename(ref)
-    return path == ref or path.endswith("/" + ref) or ref.endswith("/" + path) or path_base == ref_base
-
-for path in uncommitted:
-    if any(matches(path, ref) for ref in reported):
-        print(path)
-PY
-)
-                matching_report_for_commit=""
-                if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
-                    matching_report_for_commit="$(resolve_report_file "$(basename "${MATCHING_TASK_FILES[0]}" .yaml)" 2>/dev/null || true)"
-                fi
-                if [[ -n "$scoped_uncommitted" && -n "$matching_report_for_commit" && -f "$matching_report_for_commit" ]]; then
-                    scoped_uncommitted=$(filter_report_commit_nonoverlap_uncommitted "$SCRIPT_DIR" "$matching_report_for_commit" "$scoped_uncommitted" 2>>"$LOG_DIR/cmd_complete_gate_stderr.log" || printf '%s\n' "$scoped_uncommitted")
-                fi
-                uncommitted_filtered="$scoped_uncommitted"
-            fi
-        fi
-        if [[ -n "$uncommitted_filtered" ]]; then
-            local ucount
-            ucount=$(printf '%s\n' "$uncommitted_filtered" | wc -l)
-            printf 'BLOCK\tcommit_missing: %d uncommitted file(s) in %s\n' "$ucount" "$project_path"
-            printf '%s\n' "$uncommitted_filtered" | head -10
-            return 1
-        fi
-    fi
-
-    # --- detect_cmd_commit_count (git log + awk, no python subprocess) ---
-    local log_output
-    log_output=$(git -C "$project_path" log --format="%H%x1f%s%x1f%b%x1e" -n 100 2>/dev/null)
-    if [[ $? -ne 0 ]]; then
-        printf 'ERR\tgit log failed for %s\n' "$project_path"
+    # The live worktree may contain unrelated WIP or local-ahead commits.  Do
+    # not inspect it and do not infer scope from HEAD history; a valid report
+    # source commit is the only accepted inspection anchor.
+    local source_commit source_parent
+    source_commit=$(resolve_cmd_report_source_commit "$cmd_id" "$project_path" 2>/dev/null || true)
+    if [[ ! "$source_commit" =~ ^[0-9a-f]{40}$ ]]; then
+        printf 'SKIP\tsource commit unavailable for %s\n' "$cmd_id"
         return 0
     fi
-
-    local commit_count
-    commit_count=$(printf '%s' "$log_output" | awk -F'\x1f' -v cmd="$cmd_id" '
-        BEGIN { RS="\x1e"; count=0; started=0 }
-        {
-            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
-            if ($0 == "") next
-            haystack = $2 "\n" $3
-            if (index(haystack, cmd) > 0) {
-                count++
-                started=1
-            } else if (started) {
-                exit
-            }
-        }
-        END { print count }
-    ')
-
-    if [[ "$commit_count" -le 0 ]]; then
-        printf 'SKIP\tno contiguous HEAD commits mention %s in %s\n' "$cmd_id" "$project_path"
-        return 0
-    fi
-
-    local base_ref="HEAD~${commit_count}"
-    if ! git -C "$project_path" rev-parse --verify "$base_ref" >/dev/null 2>&1; then
-        printf 'SKIP\t%s not available in %s\n' "$base_ref" "$project_path"
+    source_parent=$(git -C "$project_path" rev-parse "${source_commit}^" 2>/dev/null || true)
+    if [[ ! "$source_parent" =~ ^[0-9a-f]{40}$ ]]; then
+        printf 'SKIP\tsource parent unavailable for %s\n' "$source_commit"
         return 0
     fi
 
@@ -3950,7 +3927,7 @@ PY
 
     # --- Diff parsing + stub detection (single awk pass, no python) ---
     local diff_output diff_rc
-    diff_output=$(git -C "$project_path" diff --unified=1 --no-color "$base_ref" HEAD -- . 2>&1)
+    diff_output=$(git -C "$project_path" diff --unified=1 --no-color "$source_parent" "$source_commit" -- . 2>&1)
     diff_rc=$?
     if [[ $diff_rc -ne 0 ]]; then
         printf 'ERR\tgit diff failed for %s: %s\n' "$project_path" "$(printf '%s\n' "$diff_output" | head -1)"
@@ -4067,14 +4044,14 @@ PY
     ')
 
     if [[ "$awk_result" == "0" ]]; then
-        printf 'OK\tno stub patterns in added lines (base=%s, commits=%d, ext=%s)\n' \
-            "$base_ref" "$commit_count" "$exts_str"
+        printf 'OK\tno stub patterns in report source diff (base=%s, source=%s, ext=%s)\n' \
+            "$source_parent" "$source_commit" "$exts_str"
     else
         local match_count file_count_out
         match_count=$(printf '%s\n' "$awk_result" | head -1 | cut -d' ' -f1)
         file_count_out=$(printf '%s\n' "$awk_result" | head -1 | cut -d' ' -f2)
-        printf 'WARN\t%d stub-like added line(s) across %d file(s) (base=%s, commits=%d)\n' \
-            "$match_count" "$file_count_out" "$base_ref" "$commit_count"
+        printf 'WARN\t%d stub-like added line(s) across %d file(s) (base=%s, source=%s)\n' \
+            "$match_count" "$file_count_out" "$source_parent" "$source_commit"
         printf '%s\n' "$awk_result" | tail -n +2
     fi
 }
