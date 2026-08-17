@@ -14891,3 +14891,4 @@ codd:
 | causal | `cmd_karo_hotfix_review_quality_warn_20260814` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_shared_dirty_code_cleanup_20260814` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_render_live_transition_watcher_202608160054` files_modified: [[active_task_clear_fail_closed]] |
+| causal | [[cmd_reflux_backlink_202608180618_hayate]] -> [[oracle_v2_fixture_hand_calc_gunshi]] |
