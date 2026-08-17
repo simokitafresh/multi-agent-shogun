@@ -1186,3 +1186,6 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 - 本番検証の判定は `scripts/dm_signal_business_parity.py compare --before --after`(業務列限定・PK単位・calculated_at/provenance除外)。全列md5比較は非業務列で必ず不一致になる偽FAIL(2026-08-15 L0で実証)。
 - 1手の型(殿裁定): 忍者1体・1タスク・新規テストなし→commit→push→deploy live→full 1回→parity差分0→次手。fullの結果待ちの間に次手を実装(パイプライン)。FAIL→積んだ手を全部revert。push前に production base で import 到達closureを1回確認(欠落helperによる起動失敗が2度発生・a9883865で修復)。
+
+## §99 cmd_4331 FoF tie-break dry-run (2026-08-17)
+- 本番FoF74 PFのうちselection block有57・無17。共通dispatchは`backend/app/services/pipeline/engine.py:109-142`だがtop-N/cutoffは各filterへ分散し、GS run_077/l1はproduction block parity経路と独自vectorized選択経路を併存する。scalar gap 5,680観測で相対1e-9未満898、exact812、6段乾式変更837月。standard24 PFはgap4,178観測で相対1e-9未満0/exact0。MultiView/Weightedのview union/voteとTrendReversal top+bottom unionはscalarへ潰さず、共通層仕様確定後に再計測する。詳細→`/mnt/c/Python_app/DM-signal/docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`。
