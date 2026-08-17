@@ -891,7 +891,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -901,6 +901,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: fix_known=true; verify_command passed rc=0; target already represented in context/semantic-map.md cmd_save.sh設計思想カタログ
+  action_artifact: verify=logs/detector_fp_rate.yaml+scripts/cmd_save.sh;semantic_map=context/semantic-map.md
+  resolved_at: "2026-08-17T10:47:23+09:00"
 - id: INS-20260817-095325635-8015
   ts: "2026-08-17T09:53:25+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bk1igk2zc task id tool use id toolu 01Wkwn1XuB4A1M4sN1 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
