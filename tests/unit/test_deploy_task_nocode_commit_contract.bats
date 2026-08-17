@@ -216,6 +216,84 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: recon2/scout consumer seam investigations must receive all
+# nine typed seam questions and nine primary-evidence slots, while unrelated
+# investigations keep the existing one-evidence contract.
+@test "consumer seam contract injects nine fields and fail-closes blank evidence" {
+  cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  assigned_to: sasuke
+  task_id: cmd_seam_contract_fixture
+  parent_cmd: cmd_seam_contract_fixture
+  project: infra
+  task_type: recon2
+  title: inspect consumer cache cutover read reduction
+  target_path: scripts/deploy_task.sh
+  ac_version: fixture-v1
+  acceptance_criteria:
+    - id: AC1
+      description: verify the cache consumer seam
+EOF
+
+  inject_outcome_neutral_investigation_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  inject_seam_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  generate_report_template sasuke cmd_seam_contract_fixture cmd_seam_contract_fixture infra >/dev/null
+  local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_seam_contract_fixture.yaml"
+
+  run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" "$report" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))["task"]
+report = yaml.safe_load(open(sys.argv[2]))
+contract = task["investigation_contract"]["seam_contract"]
+fields = [
+    "primary_payload", "companion_caches", "key_set", "date_domain",
+    "empty_behavior", "fallback", "side_effects", "legacy_only_policy",
+    "downstream_cardinality",
+]
+assert contract["required"] is True
+assert list(contract["fields"]) == fields
+assert all(value == "" for value in contract["fields"].values())
+assert contract["field_guidance"]["date_domain"]
+assert contract["field_guidance"]["legacy_only_policy"]
+assert report["task_contract_snapshot"]["seam_contract"] == contract
+evidence = report["investigation_outcome"]["primary_evidence"]
+assert [item["field"] for item in evidence] == fields
+assert all(item["source"] == "" and item["observation"] == "" for item in evidence)
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+
+  run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"investigation_contract:"* ]]
+
+  cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  assigned_to: sasuke
+  task_id: cmd_seam_contract_unrelated
+  parent_cmd: cmd_seam_contract_unrelated
+  project: infra
+  task_type: scout
+  title: locate an optional caller
+  target_path: scripts/deploy_task.sh
+  ac_version: fixture-v1
+  acceptance_criteria:
+    - id: AC1
+      description: locate the caller
+EOF
+  inject_outcome_neutral_investigation_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  inject_seam_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))["task"]
+contract = task["investigation_contract"]["seam_contract"]
+assert contract["required"] is False
+assert len(contract["fields"]) == 9
+assert task["investigation_contract"]["minimum_primary_evidence"] == 1
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "same-command retry rehydrates task commit contract from preserved report" {
   # test_necessity: reset_stale_fields clears the task contract before a retry,
   # while L060 preserves the report; both SSOTs must be synchronized again.
