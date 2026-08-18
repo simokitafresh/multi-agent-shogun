@@ -11611,7 +11611,7 @@ deploy_task_prepare_remote_tip_worktree() {
     task_worktree_required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
     project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
     target=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null || true)
-    source_path_count=$(python3 -c 'import os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); v=[]; [v.extend([t.get(k)] if isinstance(t.get(k),str) else t.get(k) if isinstance(t.get(k),list) else []) for k in ("target_path","planned_paths")]; p=[os.path.normpath(str(x or "")).lstrip("./") for x in v]; r=("queue/","logs/","context/","projects/","archive/",".cache/"); print(len({x for x in p if x and x != "dashboard.md" and not x.startswith(r)}))' "$task_file")
+    source_path_count=$(python3 -c 'import os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); v=[]; [v.extend([t.get(k)] if isinstance(t.get(k),str) else t.get(k) if isinstance(t.get(k),list) else []) for k in ("target_path","planned_paths")]; p=[os.path.normpath(str(x or "")[2:] if str(x or "").startswith("./") else str(x or "")) for x in v]; r=("queue/","logs/","context/","projects/","archive/",".cache/"); print(len({x for x in p if x and x != "dashboard.md" and not x.startswith(r)}))' "$task_file")
     # Runtime/autogen-only tasks are excluded above. Any remaining source path
     # is a source task; publication permission is not the classification axis.
     if [ "$task_worktree_required" != "true" ] && [ "$source_path_count" -lt 1 ]; then
@@ -11656,7 +11656,7 @@ deploy_task_prepare_remote_tip_worktree() {
     python3 -c 'import json,os,sys,time; p,tid,pc,repo,wt,base,gen=sys.argv[1:]; fh=open(p,"w",encoding="utf-8"); json.dump({"version":1,"state":"active","task_id":tid,"parent_cmd":pc,"repo":repo,"worktree":wt,"remote_tip":base,"published_commit":"","generation":gen,"created_at_ns":time.time_ns()},fh,sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno()); fh.close()' \
         "$marker_tmp" "$task_id" "$parent_cmd" "$repo" "$worktree_path" "$remote_tip" "$generation"
     mv -f -- "$marker_tmp" "$marker"
-    task_worktree_targets=$(python3 -c 'import json,os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); a=t.get("target_path") or []; a=[a] if isinstance(a,str) else a; b=t.get("planned_paths") or []; b=[b] if isinstance(b,str) else b; v=a+b; projected=[os.path.join(sys.argv[2],str(x).lstrip("./")) for x in v if str(x).strip()]; print(json.dumps(list(dict.fromkeys(projected)),ensure_ascii=False))' "$task_file" "$worktree_path")
+    task_worktree_targets=$(python3 -c 'import json,os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); a=t.get("target_path") or []; a=[a] if isinstance(a,str) else a; b=t.get("planned_paths") or []; b=[b] if isinstance(b,str) else b; v=a+b; projected=[os.path.join(sys.argv[2],str(x)[2:] if str(x).startswith("./") else str(x)) for x in v if str(x).strip()]; print(json.dumps(list(dict.fromkeys(projected)),ensure_ascii=False))' "$task_file" "$worktree_path")
     task_worktree_projection=$(python3 - "$task_file" "$worktree_path" <<'PY'
 import json
 import os
@@ -11679,10 +11679,13 @@ def paths(value):
         return [str(item).strip() for item in value if str(item).strip()]
     return []
 
+def strip_explicit_relative_prefix(path):
+    return path[2:] if path.startswith("./") else path
+
 def projection(key):
     original = task.get(key)
     values = paths(original)
-    absolute = [os.path.join(root, item.lstrip("./")) for item in values]
+    absolute = [os.path.join(root, strip_explicit_relative_prefix(item)) for item in values]
     if isinstance(original, str) and not str(original).lstrip().startswith("["):
         visible = absolute[0] if absolute else None
     else:
