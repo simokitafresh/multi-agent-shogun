@@ -45,7 +45,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_task_worktree_path_list_type_20260818"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GP-183の研究cmd commit check免除はdeploy_task.shの研究target判定とcommit binary-check waiveとして既に実装済み。追加修正不要"
+  action_artifact: "scripts/deploy_task.sh:3880-3958;logs/gunshi_gp_tracker.yaml:256-263"
+  resolved_at: "2026-08-19T05:49:50+09:00"
 - id: INS-20260818-155106949-5c3d
   ts: "2026-08-18T15:51:06+09:00"
   insight: "semantic_index_update新概念候補: discussion:DM signalの話をしよう。現在ログインページを作成したがさみしすぎないか？DM signalにユーザーを誘導する方法を教えてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
