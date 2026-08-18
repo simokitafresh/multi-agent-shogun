@@ -2237,13 +2237,56 @@ classify_missing_report_status() {
     esac
 }
 
+resolve_declared_task_report_path() {
+    local task_path="$1" root="$2" cmd="$3"
+    python3 - "$task_path" "$root" "$cmd" <<'PY'
+import os, sys, yaml
+task_path, root, cmd = sys.argv[1:]
+try:
+    raw = yaml.safe_load(open(task_path, encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit
+task = raw.get("task", raw) if isinstance(raw, dict) else {}
+if not isinstance(task, dict):
+    raise SystemExit
+value = str(task.get("report_path") or task.get("report_filename") or "").strip()
+if not value:
+    raise SystemExit
+path = value if os.path.isabs(value) else os.path.join(root, value if "/" in value else "queue/reports/" + value)
+try:
+    report = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit
+task_id = str(task.get("task_id") or task.get("_ac_task_id") or "").strip()
+if (str(report.get("parent_cmd") or "").strip() == cmd and
+        (not task_id or str(report.get("task_id") or "").strip() == task_id)):
+    print(path)
+PY
+}
+
 # ─── 報告YAML解決関数（L085: 新命名規則対応、cmd_410: report_filename最優先） ───
 # 優先順位: 1. タスクYAMLのreport_filename  2. 新形式  3. 旧形式
 resolve_report_file() {
     local ninja="$1"
     local cmd="${2:-$CMD_ID}"
+    local task_hint="${3:-}"
+    local _rrf_candidate _rrf_name
     local explicit_path
     local report_parent
+
+    # Existing call sites pass the cached task basename.  Recover the exact
+    # selected task record so archive timestamp suffixes cannot invent a
+    # worker/report name; the task's declared report identity is authoritative.
+    if [ -z "$task_hint" ] && declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for _rrf_candidate in "${MATCHING_TASK_FILES[@]}"; do
+            _rrf_name="${_rrf_candidate##*/}"
+            _rrf_name="${_rrf_name%.yaml}"
+            if [ "$_rrf_name" = "$ninja" ]; then
+                task_hint="$_rrf_candidate"
+                break
+            fi
+        done
+    fi
 
     auto_unwrap_report_yaml() {
         local report_file="$1"
@@ -2352,11 +2395,21 @@ PY
         esac
     }
 
-    # 1. タスクYAMLのreport_filenameを参照(最優先)
-    local task_yaml="$TASKS_DIR/${ninja}.yaml"
+    # 1. The selected logical task owns report identity.  Archived task file
+    # names contain timestamps and must never be reinterpreted as worker IDs.
+    # Accept task.report_path/report_filename only when the report itself
+    # proves the same task_id and parent_cmd.
+    local task_yaml="${task_hint:-$TASKS_DIR/${ninja}.yaml}"
     if [ -f "$task_yaml" ]; then
-        local explicit
-        if [ "${REPORT_FILENAME_CACHE_READY:-false}" = "true" ]; then
+        local explicit="" explicit_task_path=""
+        if [ -n "$task_hint" ]; then
+            explicit_task_path=$(resolve_declared_task_report_path "$task_yaml" "$SCRIPT_DIR" "$cmd")
+            if [ -n "$explicit_task_path" ] && [ -f "$explicit_task_path" ]; then
+                auto_unwrap_report_yaml "$explicit_task_path"
+                echo "$explicit_task_path"
+                return
+            fi
+        elif [ "${REPORT_FILENAME_CACHE_READY:-false}" = "true" ]; then
             explicit="${REPORT_FILENAME_CACHE[$ninja]:-}"
         else
             # Unit-source/legacy fallback. Production preloads all task files
@@ -7465,6 +7518,40 @@ DEFERRED_GATES=("archive")
 declare -A _CMD_TASK_MAP
 MATCHING_TASK_FILES=()
 RAW_MATCHING_TASK_FILES=()
+dedupe_task_files_by_logical_identity() {
+    local live_tasks_dir="$1"
+    shift
+    python3 - "$live_tasks_dir" "$@" <<'PY'
+import datetime as dt, pathlib, sys, yaml
+live_dir = pathlib.Path(sys.argv[1]).resolve()
+rows = []
+def stamp(value):
+    if value in (None, ""): return float("-inf")
+    text = str(value).strip().replace("Z", "+00:00")
+    try:
+        parsed = dt.datetime.fromisoformat(text)
+        if parsed.tzinfo is None: parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        return parsed.timestamp()
+    except ValueError: return float("-inf")
+for raw_path in sys.argv[2:]:
+    path = pathlib.Path(raw_path)
+    try: raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception: continue
+    task = raw.get("task", raw) if isinstance(raw, dict) else {}
+    if not isinstance(task, dict): continue
+    task_id = str(task.get("task_id") or task.get("_ac_task_id") or "").strip()
+    key = task_id or "path:" + str(path)
+    is_live = path.parent.resolve() == live_dir
+    rows.append((key, is_live, stamp(task.get("deployed_at") or task.get("issued_at")), str(path)))
+chosen = {}
+for row in rows:
+    old = chosen.get(row[0])
+    if old is None or (row[1], row[2], row[3]) > (old[1], old[2], old[3]):
+        chosen[row[0]] = row
+for row in sorted(chosen.values(), key=lambda item: item[3]):
+    print(row[3])
+PY
+}
 mapfile -t RAW_MATCHING_TASK_FILES < <(list_task_files_for_cmd "$TASKS_DIR" "$CMD_ID" | sort -u || true)
 ARCHIVED_TASKS_DIR="${CMD_COMPLETE_GATE_ARCHIVED_TASKS_DIR:-$SCRIPT_DIR/queue/archive/tasks}"
 _ARCHIVED_MATCHING_TASK_FILES=()
@@ -7476,12 +7563,7 @@ while IFS= read -r _cache_tf; do
     [ -f "$_cache_tf" ] || continue
     _CMD_TASK_MAP["$_cache_tf"]=1
     MATCHING_TASK_FILES+=("$_cache_tf")
-done < <(list_current_task_files_for_cmd "$TASKS_DIR" "$CMD_ID" || true)
-for _cache_tf in "${_ARCHIVED_MATCHING_TASK_FILES[@]}"; do
-    [ -f "$_cache_tf" ] || continue
-    _CMD_TASK_MAP["$_cache_tf"]=1
-    MATCHING_TASK_FILES+=("$_cache_tf")
-done
+done < <(dedupe_task_files_by_logical_identity "$TASKS_DIR" "${RAW_MATCHING_TASK_FILES[@]}")
 if cmd_status_is_canceled "$CMD_ID"; then
     MATCHING_TASK_FILES=()
     _CMD_TASK_MAP=()
@@ -11118,14 +11200,14 @@ if [ "$ALL_CLEAR" = true ] \
     if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then
         record_block_reason "autopush_source_only_failed"
         ALL_CLEAR=false
-    elif ! converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh; then
-        record_block_reason "shared_execution_source_convergence_failed"
-        ALL_CLEAR=false
     else
         echo ""
         echo "Tracked runtime publish (pre-generation checkpoint):"
         if ! publish_postclear_runtime_deltas pregate; then
             record_block_reason "pregate_runtime_publish_failed"
+            ALL_CLEAR=false
+        elif ! converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh; then
+            record_block_reason "shared_execution_source_convergence_failed"
             ALL_CLEAR=false
         fi
     fi
