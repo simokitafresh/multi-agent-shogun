@@ -82,6 +82,7 @@ monitor_lib() {
   read -r new_mtime new_fingerprint < "$OWNER.identity"
   [ "$new_owner" != "$old_pid" ] && [ "$new_generation" != stale-script-generation ]
   [ -n "$new_mtime" ] && [ -n "$new_fingerprint" ]
+  [ "$(grep -c 'SINGLETON-TAKEOVER' "$LOG" 2>/dev/null || true)" -ge 1 ]
   printf 'current_file_owner=1 old_owner_alive=0 old_owner_self_exit=1 snapshot_generation=1\n'
 }
 
