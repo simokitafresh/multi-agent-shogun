@@ -323,7 +323,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608180237_tobisaru"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行archive_cmdsを確認し、QUEUE_FILEの読込・分類・更新はflock内に包含済み。cmd_1862で既にTOCTOU修正・GATE CLEAR済みのため追加実修正/decision_candidate不要。"
+  action_artifact: "scripts/archive_completed.sh:873-959;commit=29d15d42d32dc79aabaa775fae2a21b19ad9f1fe;context/senkyoku-log.md:1027;verification=flock取得後にgawkがQUEUE_FILEを読込み同lock内でmv更新"
+  resolved_at: "2026-08-18T18:57:09+09:00"
 - id: INS-20260818-084659690-2c46
   ts: "2026-08-18T08:46:59+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task type artifact watch lifecycle task type summary Stopped w は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
