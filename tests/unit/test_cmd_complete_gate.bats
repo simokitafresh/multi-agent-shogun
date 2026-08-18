@@ -2705,18 +2705,18 @@ CASES
     [ ! -f "$KARO_WORKAROUNDS_FILE" ]
 }
 
-@test "normal CLEAR captures synchronously before sending its CLEAR notification" {
+@test "normal CLEAR captures synchronously before sending its terminal CLEAR notification" {
     run env SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
 from pathlib import Path
 import os
 
 text = Path(os.environ['SRC_GATE_SCRIPT']).read_text(encoding='utf-8')
 start = text.index('if [ "$ALL_CLEAR" = true ]; then')
-end = text.index('    (append_changelog', start)
+end = text.index('echo "  status: completed"', start)
 branch = text[start:end]
 capture = branch.index('if ! capture_completed_rework_event "$CMD_ID"; then')
-notify = branch.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR immediate"')
-assert capture < notify, branch
+notify = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', end)
+assert start + capture < notify, branch
 assert 'capture_completed_rework_event "$CMD_ID" >>' not in branch, branch
 PY
     [ "$status" -eq 0 ]
@@ -6263,10 +6263,11 @@ wait = text.index('wait_for_postclear_durable_writers()')
 block = text[wait:text.index('\n}', wait) + 2]
 assert 'completion_generation' in text[launch:launch + 1800]
 assert 'rm -f -- "$_semantic_result"' in text[launch:launch + 1800]
-assert 'capture_durable_writer_paths start' in text[launch:launch + 2400]
-assert 'capture_durable_writer_paths finish' in text[launch:launch + 3200]
+decision = text.index('if [ "$ALL_CLEAR" = true ]; then', text.index('if [ "$ALL_CLEAR" = true ]; then') + 1)
+assert 'capture_durable_writer_paths start' in text[decision:launch]
+assert 'capture_durable_writer_paths finish' in block
 assert 'CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600' in block
-assert '! -s "$path_manifest"' in block
+assert 'wait || {' in block
 assert 'return 1' in block
 print('generation_bound=1 path_manifest=1 bounded=1 fail_closed=1')
 PY
@@ -6346,4 +6347,46 @@ PY
     ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$snapshot" "$manifest"
     [ "$status" -eq 0 ]
     [ "$output" = "semantic_exact=1 later_unknown_excluded=1" ]
+}
+
+# test_necessity: the durable worker must own the only semantic-map writer;
+# otherwise semantic_index_update's background child can dirty the checkout
+# after the generation path manifest is finalized.
+@test "durable semantic worker suppresses nested background map generation" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+start = text.index("nohup setsid env SHOGUN_HEAVY_JOB_LOCK_HELD=0")
+end = text.index('echo "  queued (durable async;', start)
+launcher = text[start:end]
+assert "SEMANTIC_MAP_GENERATE=/bin/true" in launcher
+assert 'semantic_causal_post_clear.sh' in launcher
+print("nested_background_map=disabled synchronous_map=owned")
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "nested_background_map=disabled synchronous_map=owned" ]
+}
+
+# test_necessity: one generation snapshot must cover all post-CLEAR writers,
+# and completion notifications must describe an already-published terminal fact.
+@test "post-CLEAR generation and notification bracket terminal work" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+decision = text.index('if [ "$ALL_CLEAR" = true ]; then', text.index('if [ "$ALL_CLEAR" = true ]; then') + 1)
+snapshot = text.index('capture_durable_writer_paths start', decision)
+wait = text.index('if ! wait_for_postclear_durable_writers; then', snapshot)
+publish = text.index('if ! publish_postclear_runtime_deltas; then', wait)
+completed = text.index('echo "  status: completed"', publish)
+notify = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', completed)
+assert snapshot < wait < publish < completed < notify
+window = text[decision:notify]
+assert '"GATE CLEAR immediate"' not in window
+wait_fn = text[text.index('wait_for_postclear_durable_writers()'):decision]
+assert 'wait || {' in wait_fn
+assert 'capture_durable_writer_paths finish' in wait_fn
+print("generation_all_writers=1 notification_after_terminal=1")
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "generation_all_writers=1 notification_after_terminal=1" ]
 }
