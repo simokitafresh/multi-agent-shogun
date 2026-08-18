@@ -10,10 +10,19 @@ setup() {
   mkdir -p "$STATE" "$ROOT/logs"
 }
 
-@test "matching predecessor promotes one owner with current identity" {
-  export SHOGUN_STATE_DIR="$STATE" NINJA_MONITOR_OWNER_FILE="$OWNER" NINJA_MONITOR_LIB_ONLY=1
+monitor_lib() {
+  FIXTURE_LOG="$LOG"
+  export SHOGUN_STATE_DIR="$STATE"
+  export NINJA_MONITOR_OWNER_FILE="$OWNER"
+  export NINJA_MONITOR_LIB_ONLY=1
   source "$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh"
-  LOG="$LOG"
+}
+
+@test "matching predecessor promotes one owner with current identity" {
+  prod_log="$BATS_TEST_DIRNAME/../../logs/ninja_monitor.log"
+  prod_sha_before=$(sha256sum "$prod_log" 2>/dev/null | awk '{print $1}' || printf missing)
+  monitor_lib
+  LOG="$FIXTURE_LOG"
   printf '999999 old-generation %s\n' "$EPOCHSECONDS" > "$OWNER"
   NINJA_MONITOR_REPLACE_GENERATION=old-generation
   acquire_singleton_lock
@@ -24,6 +33,8 @@ setup() {
   [ "$heartbeat" -ge "$((EPOCHSECONDS - 1))" ]
   [ -n "$script_mtime" ] && [ -n "$script_fingerprint" ]
   ! grep -q HOT-RELOAD-BLOCK "$LOG" 2>/dev/null
+  prod_sha_after=$(sha256sum "$prod_log" 2>/dev/null | awk '{print $1}' || printf missing)
+  [ "$prod_sha_before" = "$prod_sha_after" ]
   printf 'owner=1 identity=1 hot_reload_block=0\n'
 }
 
@@ -48,9 +59,8 @@ setup() {
   script="$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh"
   old_ready="$ROOT/old.ready"; old_exited="$ROOT/old.exited"
   (
-    export SHOGUN_STATE_DIR="$STATE" NINJA_MONITOR_OWNER_FILE="$OWNER"
-    export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_RELEASE_OWNER_ON_EXIT=0
-    source "$script"; LOG="$LOG"; acquire_singleton_lock
+    export NINJA_MONITOR_RELEASE_OWNER_ON_EXIT=0
+    monitor_lib; LOG="$FIXTURE_LOG"; acquire_singleton_lock
     printf ready > "$old_ready"
     while ninja_monitor_owner_heartbeat; do sleep 0.05; done
     printf exited > "$old_exited"
