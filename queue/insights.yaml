@@ -1,184 +1,4 @@
 insights:
-- id: INS-20260818-102829242-1096
-  ts: "2026-08-18T10:28:29+09:00"
-  insight: "[[設計書とgistも更新しといて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書とgistも更新しといて"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:35:51+09:00"
-- id: INS-20260818-102829800-e1f1
-  ts: "2026-08-18T10:28:29+09:00"
-  insight: "[[artifact watch lifecycle Stopped watching Artifact]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifact-watch-lifecycle Stopped watching Artifact"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:35:51+09:00"
-- id: INS-20260818-102830523-cb2c
-  ts: "2026-08-18T10:28:30+09:00"
-  insight: "[[artifactをもれなく更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactをもれなく更新せよ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:33:25+09:00"
-- id: INS-20260818-102838090-39a1
-  ts: "2026-08-18T10:28:38+09:00"
-  insight: "[[MISSING 57 未到来）はどういう意味だ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=MISSING 57(未到来）はどういう意味だ？"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:28:51+09:00"
-- id: INS-20260818-102838981-80f6
-  ts: "2026-08-18T10:28:38+09:00"
-  insight: "[[実装の進捗の③切り替えが９９％のままになっている]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=実装の進捗の③切り替えが９９％のままになっている"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:33:26+09:00"
-- id: INS-20260818-102839799-2195
-  ts: "2026-08-18T10:28:39+09:00"
-  insight: "[[物語風になりすぎでは？この問題は多くのバックテストなどでは登録順などという原理と乖離した決定論で暗黙的に対処していること]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=物語風になりすぎでは？この問題は多くのバックテストなどでは登録順などという原理と乖離した決定論で暗黙的に対処していることが多い。それに一石を投じるのが今回の内容だ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:33:26+09:00"
-- id: INS-20260818-102840980-6d8d
-  ts: "2026-08-18T10:28:40+09:00"
-  insight: "[[FoF子PF選択の決定性 — 浮動小数点ノイズで確定履歴が動く穴を「同値帯ε＋根拠あるtie break」で閉じるの題名]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=FoF子PF選択の決定性 — 浮動小数点ノイズで確定履歴が動く穴を「同値帯ε＋根拠あるtie-break」で閉じるの題名で今回やったことのnote記事を書いてほしい"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:33:26+09:00"
-- id: INS-20260818-103326686-21bd
-  ts: "2026-08-18T10:33:26+09:00"
-  insight: "semantic_index_update新概念候補: discussion:ノイズがいかに小さいものかは実際の数値を入れたほうがいいな。1e 9と具体的に書くとイメージが伝わりやすい は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:35:59+09:00"
-- id: INS-20260818-103544976-0c16
-  ts: "2026-08-18T10:35:44+09:00"
-  insight: "[[RC後に正当な新report generationがcompletedになった際]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: yaml_safe_write(YAML安全書込み; alias=gate_no_direct_yaml_dump; score=5.0) / provisional_script_speed_training_ledger(仮: Script Speed Training Ledger; alias=logs script speed training ledger.yaml; score=5.0) / tier_plan_mapping(Tier-プラン対応; alias=starterplanにcold startあったっけ？; score=4.8)。既存概念aliasesへの自動昇格候補"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T10:35:59+09:00"
-- id: INS-20260818-103839791-6b13
-  ts: "2026-08-18T10:38:39+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_done_requires_gate_clear_20260818; matched=archive_completed; current_pattern=; candidate_level=4; candidate=tobisaru cmd_karo_ci_fix_skipで実証。GATE CLEAR→archive移動→忍者BLOCK修正中にファイル消失→再作成が必要に。symlinkで元パス参照を保護; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_done_requires_gate_clear_20260818"
-  fix_known: false
-  status: resolved
-  resolved_reason: "既存実装で解決済み。scripts/archive_completed.sh:1615-1644 がreport-unit lock内でarchive先へ移動後、queue/reportsの論理パスを互換symlinkとして保持する。projects/infra/lessons_karo.yamlのarchive_report_symlink_false_positive教訓も存在し、新規修正不要。"
-  action_artifact: "scripts/archive_completed.sh:1615-1644; projects/infra/lessons_karo.yaml:399; git commit 69217e75fはdurable CLEAR receipt追加でありsymlink防御を壊していない"
-  resolved_at: "2026-08-18T20:20:30+09:00"
-- id: INS-20260818-110310662-676d
-  ts: "2026-08-18T11:03:10+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_4353; matched=高速,本番,テスト; current_pattern=FoF決定性 手④ — GS高速版(run_077/l1 fast path)のFoF子PF選択を本番共通関数select_top_n_deterministicへ統一し、parityテスト赤→緑で本番と同一結果を証明する; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_4353"
-  fix_known: false
-  status: resolved
-  resolved_reason: "既存の恒久対策で解決済み。deploy_task.shはFIELD_GET_NO_LOG=1で依存ログのflock+stat+writeを65回抑制し、report lifecycle lockはlock_path.sh経由で/mnt/cから/tmp ext4へ移設済み。候補の根因に対する新規実修正は不要。"
-  action_artifact: "scripts/deploy_task.sh:64-74,167-170; scripts/lib/lock_path.sh:1-26; cmd_1526 chronicle=logs/wave-final-checkpoints/4717f7d1274bcb69206548bb701c570f351367a5/tree/archive/cmd-chronicle/2026-03.md:423"
-  resolved_at: "2026-08-18T21:36:10+09:00"
-- id: INS-20260818-110310952-db22
-  ts: "2026-08-18T11:03:10+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_4353; matched=テスト,同一; current_pattern=FoF決定性 手④ — GS高速版(run_077/l1 fast path)のFoF子PF選択を本番共通関数select_top_n_deterministicへ統一し、parityテスト赤→緑で本番と同一結果を証明する; candidate_level=4; candidate=cmd_2112 GATE CLEAR通知30回重複(13:29-13:42)。bulletin_write.shにdedup未実装が根因。30×3(inbox通知)=90メッセージnoiseでCTX消費。10回繰り返し→900件=負の複利; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_4353"
-  fix_known: false
-  status: resolved
-  resolved_reason: "既存の恒久対策で解決済み。bulletin_write.shはGP-210で同一投稿者・同一本文をflock内で原子的dedupし、cmd_complete_gate.shはGATE CLEAR通知を受信者別claim/flagでexactly-once化済み。候補の『dedup未実装』は現行一次情報と不一致で、新規修正不要。"
-  action_artifact: "scripts/bulletin_write.sh:460-509; scripts/cmd_complete_gate.sh:2349-2495; HEAD上のdedup/claim識別子件数 bulletin=4, gate_clear=8"
-  resolved_at: "2026-08-18T23:17:30+09:00"
-- id: INS-20260818-110328466-d852
-  ts: "2026-08-18T11:03:28+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[殿指示_artifact58f94a75完全解決_20260818_0701]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=23.1) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0852; score=21.0) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.6)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T11:06:32+09:00"
-- id: INS-20260818-110329038-b8b5
-  ts: "2026-08-18T11:03:29+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[設計書手④GS_parity未着手]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=trading_days; score=4.4) / growth_loop(学習ループ; alias=設計書 docs research dm monthly trade pending simplify asis tob; score=4.2) / semantic_causal_automation(セマンティック因果自動化; alias=semantic_map_generate; score=4.0)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T11:07:02+09:00"
-- id: INS-20260818-110656499-a6ed
-  ts: "2026-08-18T11:06:56+09:00"
-  insight: "[[ノイズがいかに小さいものかは実際の数値を入れたほうがいいな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ノイズがいかに小さいものかは実際の数値を入れたほうがいいな。1e-9と具体的に書くとイメージが伝わりやすい"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T11:08:52+09:00"
-- id: INS-20260818-110852453-242c
-  ts: "2026-08-18T11:08:52+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bpnwwkqhh task id tool use id toolu 01R8hh8TXLZN3VZz9u は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T12:36:56+09:00"
-- id: INS-20260818-130536297-de9c
-  ts: "2026-08-18T13:05:36+09:00"
-  insight: "semantic_index_update新概念候補: discussion:じゃあartifactの該当部位と設計書も覚醒してアップデートして は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T13:27:37+09:00"
-- id: INS-20260818-133115264-c797
-  ts: "2026-08-18T13:31:15+09:00"
-  insight: "semantic_index_update新概念候補: discussion:いくつか修正しよう。現時点で新指標は存在しない。新指標の話はしない。B氏をB先生に、M氏をMさんに変更 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T13:35:55+09:00"
 - id: INS-20260818-133513980-6ab7
   ts: "2026-08-18T13:35:13+09:00"
   insight: "[[じゃあartifactの該当部位と設計書も覚醒してアップデートして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=じゃあartifactの該当部位と設計書も覚醒してアップデートして"
@@ -984,3 +804,169 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-18T22:41:56+09:00"
+- id: INS-20260818-232520723-8c4e
+  ts: "2026-08-18T23:25:20+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bbz5d28nr task id tool use id toolu 012YTnrmRygtcDarP8 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T23:25:30+09:00"
+- id: INS-20260818-232531430-6ff5
+  ts: "2026-08-18T23:25:31+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bhixf3j8o task id tool use id toolu 012NLKEcTybsD4uXQX は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T23:27:22+09:00"
+- id: INS-20260818-234149713-5e92
+  ts: "2026-08-18T23:41:49+09:00"
+  insight: "semantic_index_update新概念候補: discussion:やはり異常だな。これは極めて重大な問題だ。gate実行しなければ回転しない。高速回転の原理違反だ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T23:51:25+09:00"
+- id: INS-20260818-235144509-0204
+  ts: "2026-08-18T23:51:44+09:00"
+  insight: "semantic_index_update新概念候補: lesson:L1602 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T23:53:18+09:00"
+- id: INS-20260818-235337084-6dbb
+  ts: "2026-08-18T23:53:37+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bykmsoweh task id tool use id toolu 01BWbwWCpPKX9NrJoz は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T23:56:50+09:00"
+- id: INS-20260818-235427746-e816
+  ts: "2026-08-18T23:54:27+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4355; matched=docs,research,search; current_pattern=研究 — 秘奥義21体 EW基準+Sharpe後退除去(1体ずつ抜く)の全軌跡: 剪定スクリプトを新設しrepoへ残す; candidate_level=2; candidate=workaround=true+category=clean矛盾9件(112件中8%)。2026-04-17に7件集中。根因=家老が--cleanではなく通常モードでcleanカテゴリを渡した; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4355"
+  fix_known: false
+  status: pending
+- id: INS-20260818-235428053-8c2c
+  ts: "2026-08-18T23:54:28+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4355; matched=除去,repo; current_pattern=研究 — 秘奥義21体 EW基準+Sharpe後退除去(1体ずつ抜く)の全軌跡: 剪定スクリプトを新設しrepoへ残す; candidate_level=4; candidate=hayate cmd_2284でresult.details上書き時に旧continuation行が残留しYAML破損。手動4行削除が必要だった; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4355"
+  fix_known: false
+  status: pending
+- id: INS-20260818-235428383-9e52
+  ts: "2026-08-18T23:54:28+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4355; matched=スクリプト; current_pattern=研究 — 秘奥義21体 EW基準+Sharpe後退除去(1体ずつ抜く)の全軌跡: 剪定スクリプトを新設しrepoへ残す; candidate_level=2; candidate=cmd_1898パリティスクリプトがtarget_date=前月末日でproduction(当月第1営業日)と異なる。skip_months>0で差が増幅→抜き身/四つ目83-99%。パリティスクリプト作成cmdのACに'target_dateがproductionと一致'を標準化; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4355"
+  fix_known: false
+  status: pending
+- id: INS-20260818-235630453-153f
+  ts: "2026-08-18T23:56:30+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_4356 saizo lesson_candidate: AC列契約とランキング列契約を同時検証せよ 追加列を限定するACと、その限定外の指標を要求するACを配備前に列集合差分で二値検査する。"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
+- id: INS-20260818-235632856-6b5d
+  ts: "2026-08-18T23:56:32+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿指示_秘奥義21体組合せ探索_20260818_2129]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=24.8) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0000; score=20.7) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T23:56:50+09:00"
+- id: INS-20260818-235633442-0ebe
+  ts: "2026-08-18T23:56:33+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_1934全量探索_道具流用]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=15.4) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_3690_本番適用; score=15.0) / semantic_dictionary_design(セマンティック辞書構想; alias=cmd 3294は探索前skipが原因; score=14.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T23:56:50+09:00"
+- id: INS-20260818-235634083-afa0
+  ts: "2026-08-18T23:56:34+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[α/β新指標追加+7525通り完走]] は既存aliasesに一致なし。類似概念TOP3: alpha_6_metrics(α6指標; alias=5追加指標; score=3.1) / known_unknowns_principle(無知の知; alias=3527と3528; score=1.6) / karo_strong_new_game_20260818_0650(半蔵fixture報告閉鎖から才蔵reflux再公開・10:40 cron検証へ進む家老復帰点; alias=57b2845a7; score=1.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T23:56:51+09:00"
+- id: INS-20260819-000417821-ccf8
+  ts: "2026-08-19T00:04:17+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4357; matched=完了,軍師,レビュー; current_pattern=回転の自動化 — 報告完了で軍師レビュー依頼を自動送出し、両承認が揃ったらcmd_complete_gateを自動実行する(GATE-STALL警告を実行へ); candidate_level=2; candidate=2026-04-16実証: 軍師がレビュー完了→家老にinbox_write→将軍気づかず→リマインダー送信。掲示板が唯一の将軍↔軍師直通ライン。F-G01(全通信は家老のみ)の例外として返信先ルールをgunshi.mdに明記; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4357"
+  fix_known: false
+  status: pending
+- id: INS-20260819-000418017-274c
+  ts: "2026-08-19T00:04:18+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4357; matched=自動化,動化,実行; current_pattern=回転の自動化 — 報告完了で軍師レビュー依頼を自動送出し、両承認が揃ったらcmd_complete_gateを自動実行する(GATE-STALL警告を実行へ); candidate_level=4; candidate=CDP計測4回実行10.5時間(殿の時間10時間浪費)。根因=pre-flight check不在+artifact競合+忍者判断依存。4 Phase自動化で28分/回に短縮; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4357"
+  fix_known: false
+  status: pending
+- id: INS-20260819-000418253-6f45
+  ts: "2026-08-19T00:04:18+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4357; matched=レビュー,実行; current_pattern=回転の自動化 — 報告完了で軍師レビュー依頼を自動送出し、両承認が揃ったらcmd_complete_gateを自動実行する(GATE-STALL警告を実行へ); candidate_level=2; candidate=verdict_override WA 6件中5件がAC設計ミス。draftレビューStep 3で事前検出する観点が不在だった; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4357"
+  fix_known: false
+  status: pending
+- id: INS-20260819-000434854-aa74
+  ts: "2026-08-19T00:04:34+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿厳命_gate実行しなければ回転しない_20260818_2341]] は既存aliasesに一致なし。類似概念TOP3: gs_speed_e7_l0_full_confirm(GS道具磨きE7 L0 full実測; alias=殿厳命 timeout 300s強制。5分超え放置は最悪の行為; score=13.5) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=3.2) / growth_loop(学習ループ; alias=殿指示 20 08『nxe 2d robustness asis tobe 5w1h 20260801 mdを実行したい; score=3.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T00:04:51+09:00"
+- id: INS-20260819-000435584-0f39
+  ts: "2026-08-19T00:04:35+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[ninja_monitor自動review依頼+自動gate実行]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=ninja_monitor; score=38.5) / agent_formation_management(編成管理; alias=ninja_monitor; score=38.5) / operational_ontology(操作的オントロジー; alias=get_ninja_names; score=16.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T00:04:51+09:00"
+- id: INS-20260819-000551781-cedf
+  ts: "2026-08-19T00:05:51+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bqvywhhfc task id tool use id toolu 01WKhHSBoZ1EKfWP4w は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T00:06:24+09:00"
+- id: INS-20260819-001239345-b8da
+  ts: "2026-08-19T00:12:39+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b9raoi64l task id tool use id toolu 019c81jLqYRuDZPWGL は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
