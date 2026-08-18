@@ -293,8 +293,10 @@ new_summary_hash = summary_hash(msg)
 
 # A verified fix-known finding represents a conclusion, not a verification
 # command invocation.  Repeated detections of the same normalized conclusion
-# from the same source are folded into the existing ledger entry (pending or
-# resolved); differing commands remain evidence on the caller side, not identity.
+# from the same source are folded into the existing pending ledger entry.
+# Once resolved, the ledger is terminal: repeated detections return the stable
+# ID without rewriting occurrence_count/last_seen and dirtying the Git worktree.
+# Differing commands remain evidence on the caller side, not identity.
 if fix_known == 'true':
     with open(insights_file, 'r', encoding='utf-8') as f:
         ledger_lines = f.readlines()
@@ -319,6 +321,8 @@ if fix_known == 'true':
                 values['insight'] = parse_scalar(line.split(':', 1)[1])
             elif line.startswith('  source:'):
                 values['source'] = parse_scalar(line.split(':', 1)[1])
+            elif line.startswith('  status:'):
+                values['status'] = parse_scalar(line.split(':', 1)[1])
             elif line.startswith('  insight_summary_hash:'):
                 values['hash'] = parse_scalar(line.split(':', 1)[1])
             elif line.startswith('  occurrence_count:'):
@@ -332,6 +336,11 @@ if fix_known == 'true':
 
     if matched is not None:
         block_start, block_end, values = matched
+        if values.get('status') == 'resolved':
+            print('AGGREGATE:' + values['id'])
+            print(values.get('count', '1'))
+            print('resolved_noop')
+            sys.exit(0)
         try:
             occurrence_count = int(values.get('count', '1')) + 1
         except ValueError:

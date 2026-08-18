@@ -834,8 +834,8 @@ print('FIX_KNOWN_FAILED_RECORDED')
     [[ "$output" == *"FIX_KNOWN_FAILED_RECORDED"* ]]
 }
 
-# test_necessity: fix_known identity is the normalized conclusion plus source; verify-command churn must not create duplicate IDs or notifications.
-@test "fix_known: 同一summaryをverify差分だけでは新規化せずatomic集約する" {
+# test_necessity: fix_known identity is the normalized conclusion plus source; pending duplicates aggregate, while a resolved identity is byte-stable and cannot re-dirty Git state.
+@test "fix_known: 同一summaryはpending中だけ集約しresolved後はbyte no-opになる" {
     cat > "${TEST_TMP}/scripts/bulletin_write.sh" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$2" >> "$TEST_TMP/bulletin.log"
@@ -856,10 +856,13 @@ EOF
     run bash "${TEST_TMP}/scripts/lib/yaml_field_set.sh" \
         "$TEST_TMP/queue/insights.yaml" "$first_id" status resolved
     [ "$status" -eq 0 ]
+    local resolved_sha
+    resolved_sha=$(sha256sum "$TEST_TMP/queue/insights.yaml" | awk '{print $1}')
     run env TEST_TMP="$TEST_TMP" INSIGHT_FIX_KNOWN=true INSIGHT_VERIFY_COMMAND="printf changed" \
         bash "${TEST_TMP}/scripts/insight_write.sh" "same conclusion" high self_retro
     [ "$status" -eq 0 ]
     [ "$output" = "AGGREGATE:${first_id}" ]
+    [ "$(sha256sum "$TEST_TMP/queue/insights.yaml" | awk '{print $1}')" = "$resolved_sha" ]
 
     run python3 - "$TEST_TMP/queue/insights.yaml" "$first_id" <<'PY'
 import sys, yaml
@@ -867,7 +870,7 @@ data = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['insights']
 assert len(data) == 1, data
 entry = data[0]
 assert entry['id'] == sys.argv[2], entry
-assert entry['occurrence_count'] == 3, entry
+assert entry['occurrence_count'] == 2, entry
 assert entry['last_seen'], entry
 assert len(entry['insight_summary_hash']) == 64, entry
 PY
