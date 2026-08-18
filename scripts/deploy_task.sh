@@ -585,6 +585,24 @@ deploy_task_guard_done_report_unarchived() {
     return 1
 }
 
+deploy_task_archive_terminal_task() {
+    local task_file="$1" ninja_name="$2" parent_cmd="$3"
+    local archive_dir timestamp archive_file candidate
+    archive_dir="$SCRIPT_DIR/queue/archive/tasks"
+    timestamp=$(date '+%Y%m%dT%H%M%S%N')
+    archive_file="$archive_dir/${ninja_name}_${parent_cmd}_${timestamp}.yaml"
+    mkdir -p "$archive_dir" || return 1
+    candidate=$(mktemp "$archive_dir/.${ninja_name}_${parent_cmd}.XXXXXX") || return 1
+    if ! cp -- "$task_file" "$candidate" \
+        || ! python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' "$candidate" \
+        || ! mv -- "$candidate" "$archive_file"; then
+        rm -f -- "$candidate"
+        return 1
+    fi
+    log "TERMINAL_TASK_ARCHIVE: worker=${ninja_name} parent_cmd=${parent_cmd} path=${archive_file#$SCRIPT_DIR/}"
+    printf '%s\n' "$archive_file"
+}
+
 deploy_task_guard_worker_assignment() {
     local task_file="$1"
     local incoming_cmd="$2"
@@ -636,11 +654,12 @@ deploy_task_guard_worker_assignment() {
             fi
             if [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
                 && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent"; then
-                log "BLOCK(cmd_karo_hotfix_reflux_deploy_race_20260725): ${worker_name:-worker} ${current_status} task ${current_parent} has an unarchived report; refusing overwrite by ${incoming_cmd}"
-                echo "BLOCK: ${worker_name:-worker} は ${current_parent} 完了済み(status=${current_status})だが報告未archive。別cmd ${incoming_cmd} での上書きを拒否。cmd_complete/archive完了後に再試行せよ。" >&2
-                bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-                    "配備競合BLOCK: ${worker_name:-worker} は ${current_parent}(status=${current_status})完了済みだが報告未archiveのまま、別cmd ${incoming_cmd} からの上書き配備を試行→拒否した。archive完了を確認してから再配備せよ。" \
-                    reflux_conflict_block deploy_task review_reflux_conflict >/dev/null 2>&1 || true
+                if deploy_task_archive_terminal_task "$task_file" "$worker_name" "$current_parent" >/dev/null; then
+                    log "TERMINAL_TASK_RELEASE: worker=${worker_name:-worker} held_cmd=${current_parent} incoming_cmd=${incoming_cmd} status=${current_status} decision=ALLOW"
+                    return 0
+                fi
+                log "BLOCK: terminal task archive failed worker=${worker_name:-worker} held_cmd=${current_parent} incoming_cmd=${incoming_cmd}"
+                echo "BLOCK: ${worker_name:-worker} の完了task退避に失敗。別cmd ${incoming_cmd} の配備を停止。" >&2
                 return 1
             fi
             ;;
