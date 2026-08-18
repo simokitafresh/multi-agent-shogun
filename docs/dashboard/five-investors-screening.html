@@ -1,0 +1,203 @@
+<title>5人の投資家は、同じPFを選ばない</title>
+<style>
+:root{--bg:#eef1f4;--card:#ffffff;--ink:#1b2333;--muted:#5d6878;--line:#d5dbe3;--accent:#2f6f8f;--accent-bg:#e3eef4;--code:#e9edf1;
+--a:#2e7d63;--a-bg:#e4f2ec;--b:#4b57a8;--b-bg:#e8eaf7;--t:#a3651f;--t-bg:#f6ecdc;--m:#b0475b;--m-bg:#f8e6ea;--g:#c25a1c;--g-bg:#f9e8dd;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#141a21;--card:#1c242d;--ink:#e6eaef;--muted:#9aa6b4;--line:#2d3945;--accent:#6fb0cf;--accent-bg:#1c2f3a;--code:#242f3a;
+--a:#7fd1b3;--a-bg:#1c3229;--b:#a3abf0;--b-bg:#232842;--t:#e2b06a;--t-bg:#3a2d18;--m:#f09aa8;--m-bg:#3d2028;--g:#f0a070;--g-bg:#3d2417;}}
+:root[data-theme="dark"]{--bg:#141a21;--card:#1c242d;--ink:#e6eaef;--muted:#9aa6b4;--line:#2d3945;--accent:#6fb0cf;--accent-bg:#1c2f3a;--code:#242f3a;
+--a:#7fd1b3;--a-bg:#1c3229;--b:#a3abf0;--b-bg:#232842;--t:#e2b06a;--t-bg:#3a2d18;--m:#f09aa8;--m-bg:#3d2028;--g:#f0a070;--g-bg:#3d2417;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15.5px/1.75 ui-sans-serif,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;padding:2.5rem 1.25rem 5rem}
+main{max-width:920px;margin:0 auto;display:grid;gap:1.6rem}
+header{display:grid;gap:.5rem;padding:0 0 .6rem}
+.eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:2.05rem;line-height:1.2;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{font-size:1.05rem;color:var(--muted);margin:0;text-wrap:balance}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:1.4rem 1.6rem}
+h2{font-size:1.25rem;margin:0 0 .3rem;text-wrap:balance}
+h3{font-size:.95rem;margin:1.1rem 0 .5rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+p{margin:.55rem 0;max-width:66ch}
+blockquote{margin:.9rem 0;padding:.6rem 1rem;border-left:3px solid var(--accent);background:var(--accent-bg);border-radius:0 6px 6px 0;font-weight:600;max-width:66ch}
+ul{margin:.4rem 0;padding-left:1.3rem;max-width:66ch}
+.persona{border-top:4px solid var(--pc)}
+.persona .who{display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap}
+.persona .badge{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.06em;padding:2px 10px;border-radius:999px;background:var(--pbg);color:var(--pc)}
+.persona .theme{font-size:12.5px;color:var(--muted)}
+.flow{display:grid;gap:0;margin:.4rem 0 .2rem;max-width:520px}
+.step{position:relative;padding:.55rem .9rem .55rem 2.6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.step .n{position:absolute;left:.85rem;top:.6rem;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--pc);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+.step .k{font-weight:700}
+.step .q{display:block;font-size:13px;color:var(--muted)}
+.step.end{background:var(--pbg);border-color:transparent;color:var(--pc);font-weight:700;text-align:center;padding-left:.9rem}
+.arrow{height:18px;width:2px;background:var(--line);margin:0 0 0 1.45rem}
+.first{background:var(--pbg);border-color:transparent}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;min-width:760px}
+.gw{overflow-x:auto;padding-bottom:.3rem}
+.col{display:grid;gap:6px;align-content:start}
+.col .head{border-radius:6px;padding:.5rem .6rem;text-align:center;font-weight:700;background:var(--pbg);color:var(--pc)}
+.col .head small{display:block;font-weight:500;font-size:11.5px;color:var(--muted)}
+.col .cell{border:1px solid var(--line);border-radius:6px;padding:.4rem .6rem;font-size:13px;text-align:center;background:var(--bg)}
+.col .cell.first{background:var(--pbg);border-color:transparent;font-weight:700;color:var(--pc)}
+.tail{display:grid;gap:8px;max-width:66ch}
+.tail .row{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline}
+.tail code{font:13px ui-monospace,Menlo,Consolas,monospace;background:var(--code);padding:1px 6px;border-radius:4px}
+.a{--pc:var(--a);--pbg:var(--a-bg)}.b{--pc:var(--b);--pbg:var(--b-bg)}.t{--pc:var(--t);--pbg:var(--t-bg)}.m{--pc:var(--m);--pbg:var(--m-bg)}.g{--pc:var(--g);--pbg:var(--g-bg)}
+.split{display:grid;grid-template-columns:1fr;gap:1rem}
+@media(min-width:760px){.split{grid-template-columns:1.2fr 1fr;align-items:start}}
+.note{font-size:13px;color:var(--muted)}
+</style>
+<main>
+<header>
+<div class="eyebrow">DM-Signal · Metrics screening</div>
+<h1>5人の投資家は、同じPFを選ばない</h1>
+<p class="sub">既存Metricsだけで「自分に合うPF」をスクリーニングする5つの方法</p>
+</header>
+
+<section>
+<p>DM-Signalには、CAGR、Sharpe Ratio、Alpha、Maximum Drawdown、Underwater Period、Upside / Downside Capture、Skewness、VaR、Rolling Returnなど、多くのMetricsがあります。</p>
+<p>問題は、数字が足りないことではありません。</p>
+<p><b>数字が多いからこそ、どの順番で見ればいいのか分からない。</b></p>
+<p>そこで、Metricsを「採点表」としてではなく、<b>候補PFを絞り込むためのスクリーニング</b>として使います。</p>
+<blockquote>すべての人が同じPFを選ぶ必要はない</blockquote>
+<p>何を嫌うか。何を優先するか。それによって、見るべきMetricsの順番は変わります。以下では、5人の架空の投資家に登場してもらいます。</p>
+</section>
+
+<section class="persona a">
+<div class="who"><span class="badge">A氏</span><h2>「最後まで持てるPFがいい」</h2><span class="theme">継続性</span></div>
+<div class="split"><div>
+<p>A氏は、最高リターンを求めていません。以前、高CAGRのPFを選んだものの、長い停滞期間に耐えられず途中で手放しました。</p>
+<blockquote>「いくら儲かるかより、まず自分が持ち続けられるかだ」</blockquote>
+<p>A氏が最初に見るのは、CAGRではありません。<b>Maximum DrawdownとUnderwater Periodです。</b></p>
+<p>A氏にとって、CAGRは最後に見る数字です。<b>途中でやめてしまえばCAGRは受け取れない</b>からです。</p>
+<p>A氏が探しているのは、<b>一番速いPFではなく、最後まで乗っていられるPF</b>です。</p>
+</div><div>
+<h3>A氏のフロー</h3>
+<div class="flow">
+<div class="step first"><span class="n">0</span><span class="k">候補PF</span></div><div class="arrow"></div>
+<div class="step"><span class="n">1</span><span class="k">Maximum Drawdown</span><span class="q">最大でどこまで資産が減った？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">2</span><span class="k">Avg / Max Underwater Period</span><span class="q">最高値を更新できない期間は長くない？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">3</span><span class="k">Sharpe Ratio</span><span class="q">その苦痛に見合うリターンだった？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">4</span><span class="k">CAGR</span><span class="q">最後にどれだけ増えた？</span></div><div class="arrow"></div>
+<div class="step end">最終候補</div>
+</div></div></div>
+</section>
+
+<section class="persona b">
+<div class="who"><span class="badge">B氏</span><h2>「そのAlpha、本物ですか？」</h2><span class="theme">Alpha</span></div>
+<div class="split"><div>
+<p>B氏はAlphaが好きです。ただし、Alphaという数字をそのまま信用してはいません。</p>
+<p>Full-period Alphaが高くても、</p>
+<ul><li>一部の期間だけ異常に良かった</li><li>単にBetaが高かった</li><li>特定の開始時点だけ良かった</li></ul>
+<p>という可能性があります。そこでB氏は、Alphaを見た後に必ず「その中身」を確認します。</p>
+<p>B氏が探しているのは、<b>最大のAlphaではなく、疑っても最後まで残るAlpha</b>です。</p>
+</div><div>
+<h3>B氏のフロー</h3>
+<div class="flow">
+<div class="step first"><span class="n">0</span><span class="k">候補PF</span></div><div class="arrow"></div>
+<div class="step"><span class="n">1</span><span class="k">Alpha</span><span class="q">市場以上のEdgeはあった？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">2</span><span class="k">Information Ratio</span><span class="q">Active Returnは安定していた？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">3</span><span class="k">Beta</span><span class="q">高リターンは単なる高Betaではない？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">4</span><span class="k">Rolling Return</span><span class="q">開始時期を変えても強かった？</span></div><div class="arrow"></div>
+<div class="step end">最終候補</div>
+</div></div></div>
+</section>
+
+<section class="persona t">
+<div class="who"><span class="badge">T博士</span><h2>「未来を当てる必要のないPFをください」</h2><span class="theme">全天候性</span></div>
+<div class="split"><div>
+<p>T博士は、相場予測が嫌いです。Bull Marketなのか。Bear Marketなのか。景気後退が来るのか。聞かれるたびに、</p>
+<blockquote>「それが分かるなら、PF選びで悩む必要はないでしょう」</blockquote>
+<p>と答えます。T博士が重視するのは、<b>Regimeへの依存度</b>です。</p>
+<p>T博士が探しているのは、<b>次の相場を当てれば勝てるPFではなく、次の相場を当てなくても持てるPF</b>です。</p>
+</div><div>
+<h3>T博士のフロー</h3>
+<div class="flow">
+<div class="step first"><span class="n">0</span><span class="k">候補PF</span></div><div class="arrow"></div>
+<div class="step"><span class="n">1</span><span class="k">Upside Capture</span><span class="q">上昇相場をどれだけ取れた？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">2</span><span class="k">Downside Capture</span><span class="q">下落相場でどれだけ巻き込まれた？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">3</span><span class="k">Up / Down Ratio</span><span class="q">上を取り、下を抑える構造になっている？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">4</span><span class="k">Regime Analysis</span><span class="q">Up / Sideways / Downで極端な弱点はない？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">5</span><span class="k">Maximum Drawdown</span><span class="q">最悪局面で実際にどこまで沈んだ？</span></div><div class="arrow"></div>
+<div class="step end">最終候補</div>
+</div></div></div>
+</section>
+
+<section class="persona m">
+<div class="who"><span class="badge">M氏</span><h2>「モメンタムショックだけは勘弁してほしい」</h2><span class="theme">Shock</span></div>
+<div class="split"><div>
+<p>M氏はMomentum戦略そのものを嫌っているわけではありません。むしろ、そのEdgeは理解しています。嫌なのは、</p>
+<blockquote>昨日まで機能していたTrendが突然反転し、短期間で大きく崩れること</blockquote>
+<p>です。いわゆるMomentum Shockです。既存MetricsだけではMomentum Shockそのものを直接測れません。そこでM氏は、ショックが起きたときの「結果」を複数の指標から確認します。</p>
+<p>M氏が探しているのは、単なる低Volatility PFではありません。<b>Trendが急反転したときにも致命傷を負いにくいPF</b>です。</p>
+</div><div>
+<h3>M氏のフロー</h3>
+<div class="flow">
+<div class="step first"><span class="n">0</span><span class="k">候補PF</span></div><div class="arrow"></div>
+<div class="step"><span class="n">1</span><span class="k">Downside Capture</span><span class="q">市場下落時にどれだけ巻き込まれた？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">2</span><span class="k">Skewness</span><span class="q">大きな損失が左側に偏っていない？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">3</span><span class="k">VaR</span><span class="q">悪い月ではどの程度の損失が出た？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">4</span><span class="k">Maximum Drawdown</span><span class="q">実際の最大被害は？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">5</span><span class="k">Recovery Time</span><span class="q">その後すぐ戻った？ それとも傷が残った？</span></div><div class="arrow"></div>
+<div class="step end">最終候補</div>
+</div></div></div>
+</section>
+
+<section class="persona g">
+<div class="who"><span class="badge">G氏</span><h2>「リスクより、まず儲かることだ」</h2><span class="theme">成長</span></div>
+<div class="split"><div>
+<p>G氏は、他の4人と少し違います。Drawdownが大きいことも知っています。Volatilityが高いことも知っています。それでも、</p>
+<blockquote>「リスクを減らすために、リターンまで小さくしたくない」</blockquote>
+<p>と考えます。G氏にとって最重要なのはGrowthです。</p>
+<p>G氏はMaximum Drawdownが大きいからといって、すぐに除外しません。リスクを見ないのではなく、<b>リスクを理解した上で、Growthを優先する</b>という考え方です。</p>
+</div><div>
+<h3>G氏のフロー</h3>
+<div class="flow">
+<div class="step first"><span class="n">0</span><span class="k">候補PF</span></div><div class="arrow"></div>
+<div class="step"><span class="n">1</span><span class="k">CAGR</span><span class="q">結局どれだけ増えた？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">2</span><span class="k">Alpha</span><span class="q">市場以上のEdgeもあった？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">3</span><span class="k">Calmar Ratio</span><span class="q">その成長はDrawdownに見合っていた？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">4</span><span class="k">Rolling CAGR</span><span class="q">開始時期を変えても高成長だった？</span></div><div class="arrow"></div>
+<div class="step"><span class="n">5</span><span class="k">Maximum Drawdown</span><span class="q">このリスクを自分は受け入れられる？</span></div><div class="arrow"></div>
+<div class="step end">最終候補</div>
+</div></div></div>
+</section>
+
+<section>
+<h2>5人を一枚で見る</h2>
+<p class="note">「何を一番重視する？」で分岐し、上から順に絞る。最後は全員「候補を絞る → PFを選択」に合流する。</p>
+<div class="gw"><div class="grid">
+<div class="col a"><div class="head">A氏<small>継続性</small></div><div class="cell first">MDD</div><div class="cell">UWP</div><div class="cell">Sharpe</div><div class="cell">CAGR</div></div>
+<div class="col b"><div class="head">B氏<small>Alpha</small></div><div class="cell first">Alpha</div><div class="cell">IR</div><div class="cell">Beta</div><div class="cell">Rolling Return</div></div>
+<div class="col t"><div class="head">T博士<small>全天候性</small></div><div class="cell first">Upside Capture</div><div class="cell">Downside Capture</div><div class="cell">Up/Down Ratio</div><div class="cell">Regime Analysis</div><div class="cell">MDD</div></div>
+<div class="col m"><div class="head">M氏<small>Shock</small></div><div class="cell first">Downside Capture</div><div class="cell">Skewness</div><div class="cell">VaR</div><div class="cell">MDD</div><div class="cell">Recovery Time</div></div>
+<div class="col g"><div class="head">G氏<small>成長</small></div><div class="cell first">CAGR</div><div class="cell">Alpha</div><div class="cell">Calmar</div><div class="cell">Rolling CAGR</div><div class="cell">MDD</div></div>
+</div></div>
+<p class="note" style="text-align:center;margin-top:.8rem">▼ 候補を絞る ▼ PFを選択</p>
+</section>
+
+<section>
+<h2>大事なのは「最高のPF」を探さないこと</h2>
+<p>この5人が選ぶPFは、同じとは限りません。それで構いません。</p>
+<ul>
+<li>A氏は「耐えられるか」を最初に見る。</li>
+<li>B氏は「Alphaは本物か」を疑う。</li>
+<li>T博士は「相場予測なしでも成立するか」を見る。</li>
+<li>M氏は「突然の崩壊に耐えられるか」を見る。</li>
+<li>G氏は「結局どれだけ増えるか」を最優先する。</li>
+</ul>
+<p>つまり、PF選びで必要なのは、</p>
+<blockquote>全PFを一つのランキングに並べることではない。</blockquote>
+<p>まず自分が何を求めているのかを決める。そのうえで、</p>
+<blockquote>自分にとって持つ理由のないPFを、一つずつ候補から外していく。</blockquote>
+<p>既存Metricsだけでも、かなり強力なスクリーニングができます。そして新しい指標を追加する意味があるとすれば、それはこのスクリーニングをさらに簡潔にするためです。</p>
+<h3>新指標が担う一つのフィルター</h3>
+<div class="tail">
+<div class="row"><code>RRR</code><span>開始時点への頑健性</span></div>
+<div class="row"><code>DDA</code><span>Drawdownの深さと時間</span></div>
+<div class="row"><code>ACS</code><span>Alphaの時間的一貫性</span></div>
+<div class="row"><code>RRS</code><span>Regimeへの頑健性</span></div>
+<div class="row"><code>ECR</code><span>複利への変換効率</span></div>
+</div>
+<p style="margin-top:.9rem">新指標は、既存Metricsを置き換えるためのものではありません。<b>いま複数の画面を見ないと判断できないことを、一つのフィルターとして見えるようにするためのものです。</b></p>
+</section>
+</main>
