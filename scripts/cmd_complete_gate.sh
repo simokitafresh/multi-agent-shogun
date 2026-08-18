@@ -1790,10 +1790,75 @@ postclear_runtime_path_is_publishable() {
     return 1
 }
 
+capture_durable_writer_paths() {
+    local mode="$1" snapshot="$2" manifest="$3" cmd_id="$4" generation="$5"
+    python3 - "$mode" "$SCRIPT_DIR" "$snapshot" "$manifest" "$cmd_id" "$generation" <<'PY'
+import hashlib, json, os, subprocess, sys, tempfile
+mode, repo, snapshot, manifest, cmd_id, generation = sys.argv[1:]
+
+def tracked_state():
+    paths = subprocess.check_output(
+        ["git", "-C", repo, "ls-files", "-z"], stderr=subprocess.DEVNULL
+    ).decode("utf-8", "surrogateescape").split("\0")
+    state = {}
+    for rel in filter(None, paths):
+        path = os.path.join(repo, rel)
+        if os.path.isfile(path):
+            with open(path, "rb") as fh:
+                state[rel] = hashlib.sha256(fh.read()).hexdigest()
+        else:
+            state[rel] = None
+    return state
+
+def atomic_json(path, data):
+    fd, tmp = tempfile.mkstemp(prefix=".durable-writer.", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, sort_keys=True); fh.write("\n")
+            fh.flush(); os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp): os.unlink(tmp)
+
+if mode == "start":
+    atomic_json(snapshot, {"version": 1, "cmd_id": cmd_id,
+                           "completion_generation": generation,
+                           "tracked": tracked_state()})
+elif mode == "finish":
+    before = json.load(open(snapshot, encoding="utf-8"))
+    if before.get("cmd_id") != cmd_id or before.get("completion_generation") != generation:
+        raise SystemExit(1)
+    after = tracked_state()
+    changed = sorted(p for p in set(before["tracked"]) | set(after)
+                     if before["tracked"].get(p) != after.get(p))
+    atomic_json(manifest, {"version": 1, "cmd_id": cmd_id,
+                           "completion_generation": generation,
+                           "paths": changed})
+else:
+    raise SystemExit(2)
+PY
+}
+export -f capture_durable_writer_paths
+
 publish_postclear_runtime_deltas() {
     local repo="$SCRIPT_DIR" upstream_ref remote push_ref remote_tip
     local before_head after_head temp_parent source_repo source_sha path
-    local -a dirty_paths=() runtime_paths=()
+    local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
+    local -a dirty_paths=() runtime_paths=() durable_paths=()
+
+    mapfile -t durable_paths < <(python3 - "$durable_manifest" "$CMD_ID" \
+        "$SHOGUN_COMPLETION_GENERATION" <<'PY'
+import json, sys
+path, cmd_id, generation = sys.argv[1:]
+data = json.load(open(path, encoding="utf-8"))
+if data.get("version") != 1 or data.get("cmd_id") != cmd_id or data.get("completion_generation") != generation:
+    raise SystemExit(1)
+paths = data.get("paths")
+if not isinstance(paths, list) or any(not isinstance(p, str) or not p for p in paths):
+    raise SystemExit(1)
+print("\n".join(paths))
+PY
+    ) || { echo "  runtime publish: BLOCK (durable writer manifest invalid)" >&2; return 1; }
 
     before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
     while IFS= read -r -d '' path; do
@@ -1803,7 +1868,8 @@ publish_postclear_runtime_deltas() {
                 # Per-command/task receipts are intentionally not published.
                 ;;
             *)
-                if postclear_runtime_path_is_publishable "$path"; then
+                if postclear_runtime_path_is_publishable "$path" || \
+                    printf '%s\n' "${durable_paths[@]}" | grep -Fqx -- "$path"; then
                     runtime_paths+=("$path")
                 else
                     echo "  runtime publish: BLOCK (nonruntime dirty path=$path)" >&2
@@ -1865,6 +1931,7 @@ wait_for_postclear_durable_writers() {
     local pending="$GATES_DIR/semantic_causal_audit.pending"
     local result="$GATES_DIR/semantic_causal_audit.result"
     local generation_marker="$GATES_DIR/semantic_causal_audit.generation.json"
+    local path_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
     local timeout_seconds="${CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600}"
     local deadline now
 
@@ -1882,7 +1949,7 @@ if data != {"version": 1, "cmd_id": cmd_id,
     raise SystemExit(1)
 PY
     deadline=$(( $(date +%s) + timeout_seconds ))
-    while [[ -e "$pending" || ! -s "$result" ]]; do
+    while [[ -e "$pending" || ! -s "$result" || ! -s "$path_manifest" ]]; do
         now=$(date +%s)
         if (( now >= deadline )); then
             echo "  durable writers: BLOCK (semantic worker timeout=${timeout_seconds}s generation=${SHOGUN_COMPLETION_GENERATION})" >&2
@@ -1890,6 +1957,15 @@ PY
         fi
         sleep 0.05
     done
+    python3 - "$path_manifest" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" <<'PY'
+import json, sys
+path, cmd_id, generation = sys.argv[1:]
+data = json.load(open(path, encoding="utf-8"))
+if data.get("version") != 1 or data.get("cmd_id") != cmd_id or data.get("completion_generation") != generation:
+    raise SystemExit(1)
+if not isinstance(data.get("paths"), list):
+    raise SystemExit(1)
+PY
     echo "  durable writers: drained (semantic generation=${SHOGUN_COMPLETION_GENERATION})"
 }
 
@@ -11073,7 +11149,9 @@ PY
         _semantic_pending="$GATES_DIR/semantic_causal_audit.pending"
         _semantic_result="$GATES_DIR/semantic_causal_audit.result"
         _semantic_generation_marker="$GATES_DIR/semantic_causal_audit.generation.json"
-        rm -f -- "$_semantic_result"
+        _semantic_path_snapshot="$GATES_DIR/semantic_causal_audit.paths.before.json"
+        _semantic_path_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
+        rm -f -- "$_semantic_result" "$_semantic_path_manifest"
         python3 - "$_semantic_generation_marker" "$_semantic_pending" "$CMD_ID" \
             "$SHOGUN_COMPLETION_GENERATION" <<'PY'
 import json, os, sys, tempfile
@@ -11088,13 +11166,16 @@ try:
 finally:
     if os.path.exists(tmp): os.unlink(tmp)
 PY
+        capture_durable_writer_paths start "$_semantic_path_snapshot" \
+            "$_semantic_path_manifest" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION"
         printf 'queued_at=%s\nlauncher_pid=%s\ncmd_id=%s\ncompletion_generation=%s\n' \
             "$(date -Iseconds)" "$$" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" > "${_semantic_pending}.tmp.$$"
         mv "${_semantic_pending}.tmp.$$" "$_semantic_pending"
         # nohup alone only ignores SIGHUP; tmux respawn-pane -k terminates the
         # pane process group.  setsid detaches the durable worker from it.
-        nohup setsid env SHOGUN_HEAVY_JOB_LOCK_HELD=0 \
-            bash "$SCRIPT_DIR/scripts/semantic_causal_post_clear.sh" "$CMD_ID" \
+        nohup setsid env SHOGUN_HEAVY_JOB_LOCK_HELD=0 SCRIPT_DIR="$SCRIPT_DIR" \
+            bash -c 'bash "$1/scripts/semantic_causal_post_clear.sh" "$2"; rc=$?; capture_durable_writer_paths finish "$3" "$4" "$2" "$5"; manifest_rc=$?; (( rc == 0 && manifest_rc == 0 ))' \
+            _ "$SCRIPT_DIR" "$CMD_ID" "$_semantic_path_snapshot" "$_semantic_path_manifest" "$SHOGUN_COMPLETION_GENERATION" \
             >/dev/null 2>&1 </dev/null &
         echo "  queued (durable async; result=$GATES_DIR/semantic_causal_audit.result)"
     else
