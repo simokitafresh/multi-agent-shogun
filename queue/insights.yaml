@@ -253,7 +253,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "後続の一次診断と実装により提案要求は履行済み。レビュー観点追加ではなくautopushインフラ根治としてID merge・累積等価性・mapping-root・空mappingを実修正し、retry/GATE-STALL監視も追加済み"
+  action_artifact: "commits=4903341552bf2ba58ec3acd3ee71839ce4186023,36947643ddf76b9151a80536230bd6c1c0055bf9,ec94df6b26820a772fafb4d34e5ada62281b4efe,dd62b0d50a55868092d5e325968558fd7e1420c4; tests=tests/unit/test_cmd_complete_gate.bats; monitors=f3535044c3ff2866ca734b09f0fd1644c9bb87df,ab767759983c19a80568e33411917a73113adb4a"
+  resolved_at: "2026-08-18T18:17:05+09:00"
 - id: INS-20260818-072629276-0702
   ts: "2026-08-18T07:26:29+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bnbhg1unz task id tool use id toolu 016mWvhtmF5Dsr4oU8 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
