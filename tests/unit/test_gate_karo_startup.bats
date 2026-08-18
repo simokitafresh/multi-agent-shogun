@@ -190,7 +190,8 @@ YAML
 @test "startup gate reports completed_unarchived once and clears after terminal archive" {
   fixture="$TMPDIR_CASE/completed-unarchived"
   mkdir -p "$fixture/queue/tasks" "$fixture/queue/reports" "$fixture/queue/gates/cmd_done" \
-    "$fixture/scripts/lib"
+    "$fixture/scripts/lib" "$fixture/scripts"
+  cp "$ROOT/scripts/lib/yaml_field_set.sh" "$fixture/scripts/lib/"
   awk '/^# --- Check 9.2b:/{copy=1} /^# --- Check 9.3:/{copy=0} copy' \
     "$ROOT/scripts/gates/gate_karo_startup.sh" > "$fixture/check.sh"
   cat > "$fixture/queue/tasks/alpha.yaml" <<'YAML'
@@ -200,11 +201,23 @@ task:
   parent_cmd: cmd_done
 YAML
   printf 'status: completed\nverdict: PASS\n' > "$fixture/queue/reports/alpha_report_cmd_done.yaml"
+  cat > "$fixture/scripts/archive_completed.sh" <<EOF
+#!/usr/bin/env bash
+printf '%s\\n' "\$*" >> "$fixture/archive_calls"
+: > "$fixture/queue/gates/cmd_done/archive.done"
+EOF
+  chmod +x "$fixture/scripts/archive_completed.sh"
 
   run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/check.sh"' _ "$fixture"
   [ "$status" -eq 0 ]
-  [ "$(printf '%s\n' "$output" | grep -c 'ALERT: alpha completed_unarchived task=cmd_done')" -eq 1 ]
+  [[ "$output" == *'BLOCK: alpha completed_unarchived task=cmd_done CLEAR receipt missing'* ]]
+  [ "$(grep -c '^  status: in_progress$' "$fixture/queue/tasks/alpha.yaml")" -eq 1 ]
+  [ ! -e "$fixture/queue/gates/cmd_done/archive.done" ]
+  [ ! -e "$fixture/archive_calls" ]
 
+  sed -i 's/status: in_progress/status: done/' "$fixture/queue/tasks/alpha.yaml"
+  generation="$(sha256sum "$fixture/queue/reports/alpha_report_cmd_done.yaml" | awk '{print $1}')"
+  printf '{"version":1,"state":"clear","cmd_id":"cmd_done","completion_generation":"%s","persisted_at_ns":1}\n' "$generation" > "$fixture/queue/gates/cmd_done/gate_worker.clear.json"
   : > "$fixture/queue/gates/cmd_done/archive.done"
   printf '%s\n' '[cmd_complete] COMPLETE cmd_done' > "$fixture/queue/gates/cmd_done/completion_tail.log"
   run bash -c 'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/check.sh"' _ "$fixture"
@@ -230,9 +243,14 @@ YAML
   cat > "$fixture/scripts/archive_completed.sh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
+printf '%s\n' "$*" >> "ARCHIVE_CALLS"
+[ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-}" = "1" ]
 touch "$ARCHIVE_COMPLETED_PROJECT_DIR/queue/gates/cmd_auto/archive.done"
 EOF
   chmod +x "$fixture/scripts/archive_completed.sh"
+  sed -i "s|ARCHIVE_CALLS|$fixture/archive_calls|" "$fixture/scripts/archive_completed.sh"
+  generation="$(sha256sum "$fixture/queue/reports/alpha_report_cmd_auto.yaml" | awk '{print $1}')"
+  printf '{"version":1,"state":"clear","cmd_id":"cmd_auto","completion_generation":"%s","persisted_at_ns":1}\n' "$generation" > "$fixture/queue/gates/cmd_auto/gate_worker.clear.json"
 
   run env ARCHIVE_COMPLETED_PROJECT_DIR="$fixture" bash -c \
     'SCRIPT_DIR="$1"; _KARO_NINJA_NAMES=alpha; overall=OK; alerts=(); source "$1/check.sh"' \
@@ -241,6 +259,7 @@ EOF
   [[ "$output" == *'OK: alpha completed_unarchived task=cmd_auto auto_archived'* ]]
   [[ "$output" == *'OK: completed_unarchived 0件'* ]]
   [[ "$output" != *'ALERT: alpha completed_unarchived'* ]]
+  [ "$(wc -l < "$fixture/archive_calls")" -eq 1 ]
 }
 
 @test "startup gate excludes an older failed generation after same task_id reassignment" {
