@@ -37,15 +37,15 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 </style>
 <main>
 <header style="display:grid;gap:.6rem">
-  <div class="meta">DM-Signal · 設計書 AsIs v1.7 / ToBe v0.3+手②c · 2026-08-18 09:05 JST · gist同期済み(GitHub回復・sha一致) · <b>本番=f519002b(手③+cmd_4349+cmd_4351) live</b> · <b>(b)(c)(d)PASS</b> · <b>(a)最終: 修正版oracle vs run409 一致8,513／不一致0／未到来57 = 観測可能全件100%(cmd_4354)</b> → <b>手③CLOSE</b></div>
+  <div class="meta">DM-Signal · 設計書 AsIs v1.9 / ToBe v0.3+手②c · 2026-08-18 11:05 JST · gist同期済み(GitHub回復・sha一致) · <b>本番=f519002b(手③+cmd_4349+cmd_4351) live</b> · <b>(b)(c)(d)PASS</b> · <b>(a)最終: 修正版oracle vs run409 一致8,513／不一致0／未到来57 = 観測可能全件100%(cmd_4354)</b> → <b>手③CLOSE</b></div>
   <h1>FoF子PF選択の決定性 — 浮動小数点ノイズで確定履歴が動く穴を「同値帯ε＋根拠あるtie-break」で閉じる</h1>
   <div class="meta" style="text-transform:none;letter-spacing:0">正本 <code>docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md</code> · gist 1e0cab30 · 関連: rollback計画書§-1 / Monthly Trade簡素化(ledger廃止方向)</div>
   <div class="callout"><b>発端(10:47)</b> SIGNAL CHANGE ALERT 6,477件/35 FoF PF。三段確認(cmd_4329)で確定: <b>価格は変わった</b>(11銘柄30,003行、ただし相対差 max 1.9e-06=浮動小数点ノイズ級)／<b>cronとfullは一致</b>／<b>35 FoF全体に広域連鎖</b>(子PF選択の入替)。</div>
 </header>
 
 <section>
-<h2>実装の進捗 — 08-18 09:15 時点(手③CLOSE・残=手④のみ+cron10:40確認)</h2>
-<div class="callout"><b>殿07:01「GitHub回復。完全に解決しよう」／07:16「手③CLOSE候補、残9のoracle境界を完全に詰めよう」</b> → 07:13 <b>cmd_4353</b>=手④GS parity(赤→緑・GS研究用のみ・本番不変)、07:20 <b>cmd_4354</b>=残9をoracle入力 vs run409入力で段別突合→oracle修正→MISMATCH 0(本番側要因が出れば修正せず報告)。両cmd並行(対象ファイル別)。完全解決の定義=手①〜④全完了＋(a)MISMATCH 0＋cron10:40変更0。<br><b>09:15現在</b>: (a)MISMATCH 0 <b>達成(cmd_4354)</b>→手③CLOSE。手④=cmd_4353再配備中(影丸 09:03 acknowledged)。cron 10:40 JST=家老checkpoint待ち。<br><b>MISSING 57(未到来)の意味</b>(<code>cmd_4350_…_propagated.py:279-284</code>現物): oracleは各PF×year_monthから「翌月(decision_month)に選ぶ子PF」を計算し、本番run409の翌月signalsと突合する。最新月末(2026-07)の行は本番がまだ2026-08のリバランスを実行していないので突合相手が無く、選択blockを持つ57 FoF PF×1行=57がMISSING。次のリバランス日を過ぎれば自動的にMATCHED/MISMATCHへ移る。不一致でもバグでもない。</div>
+<h2>実装の進捗 — 08-18 11:05 時点(手①〜④全完了・残=cron10:40確認+push/deploy報告)</h2>
+<div class="callout"><b>殿07:01「GitHub回復。完全に解決しよう」／07:16「手③CLOSE候補、残9のoracle境界を完全に詰めよう」</b> → 07:13 <b>cmd_4353</b>=手④GS parity(赤→緑・GS研究用のみ・本番不変)、07:20 <b>cmd_4354</b>=残9をoracle入力 vs run409入力で段別突合→oracle修正→MISMATCH 0(本番側要因が出れば修正せず報告)。両cmd並行(対象ファイル別)。完全解決の定義=手①〜④全完了＋(a)MISMATCH 0＋cron10:40変更0。<br><b>11:05現在</b>: (a)MISMATCH 0達成(cmd_4354)→手③CLOSE。<b>手④ GATE CLEAR 11:02(cmd_4353)</b>: GS 7本+l1plusを本番同一adapterへ、parity赤72→緑(run409 oracle contract 4/4)、gs-bench-gate全PASS、本番pipeline diff 0。<b>設計書手順表①〜④全完了。</b>残=cron 10:40 JST初回通過の変更0確認とpush/deploy同期報告(家老)。<br><b>MISSING 57(未到来)の意味</b>(<code>cmd_4350_…_propagated.py:279-284</code>現物): oracleは各PF×year_monthから「翌月(decision_month)に選ぶ子PF」を計算し、本番run409の翌月signalsと突合する。最新月末(2026-07)の行は本番がまだ2026-08のリバランスを実行していないので突合相手が無く、選択blockを持つ57 FoF PF×1行=57がMISSING。次のリバランス日を過ぎれば自動的にMATCHED/MISMATCHへ移る。不一致でもバグでもない。</div>
 <div class="callout">3段階: <b>手①②=配線を1本にまとめる</b>(結果は変えない、1体ずつ) → <b>手③=中身を6段キーへ切り替える</b>(1回だけ結果が変わる) → <b>手④=GS研究用高速版も同じ関数へ</b>。集約してあるので手③は1か所を変えるだけで全フィルタに効く。</div>
 <div class="tw"><table>
 <tr><th>手</th><th>フィルタ／内容</th><th>状態</th><th>証跡</th></tr>
@@ -57,7 +57,7 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 <tr><td>③準備B</td><td>6段キーcomparator <code>compare_candidates</code>／<code>select_top_n_deterministic</code>(未配線)</td><td><span class="pill done">GATE CLEAR</span></td><td>cmd_4339 commit <code>16f05e8f</code> · 合成ε <code>SCORE_EPS=1e-9</code>・12M=13観測条件 · 契約テスト7系統(将軍再実行7 passed)</td></tr>
 <tr><td>③準備C</td><td>本番comparatorを全74 FoFへread-only乾式適用→PF×月の期待差分CSV+md · cmd_4331集計(949月)と突合</td><td><span class="pill done">GATE CLEAR 22:13</span></td><td>cmd_4342 commit <code>b0e7e7c9</code> · CSV 8,570行 · <b>本番comparator乾式=959月変化</b>(cmd_4331=949、差+10)。filter別: 加速718(−4)／Momentum37(−18)／MultiView36(+6)／SingleView85(+25)／Trend83(+1)／Weighted0。PF不一致17件(例: 加速R-常勝173→172)。要因はcmd_4331が集計値のみで月別旧新集合を残していないため未確定(ε合成／13観測／previous_tickersの取り方の定義差の可能性)。<b>将軍推奨: 本番comparator(cmd_4342 CSV)を期待差分の正、cmd_4331集計は参考値へ</b></td></tr>
 <tr><td>③切替</td><td>各blockの呼出しを<code>select_top_n_deterministic</code>へ差し替え(単一commit)・既存テスト期待値を6段規則へ</td><td><span class="pill done">CLOSE 08:21 — 本番live・(a)100%(8,513/0/57)・(b)(c)(d)PASS</span></td><td><b>cmd_4344</b> commit <code>54e3e663</code>+<code>2f3e3c82</code>・origin/main <code>57127ffd</code>・Render <b>live</b> 00:13(dep-da1iacid)。実装時: テスト68件FAIL0、期待差分CSVと<b>同一scored fixture</b>で8,570/8,570一致。<b>full run404完走</b>(425.2s、run400比1.032倍→<b>(d)PASS</b>)。<b>(c)PASS</b>: standard PF24のsignal変更0行(FoF側はsignal_change_log raw 28,293行/46PF/1,361PF月)。<b>(a)BLOCK</b>: 本番signals.momentum_data.block_results[0].output_tickers を CSV(year_month→翌月decision_month対応)と全行突合 → EXPECTED 8,570／観測可能 8,513／<b>MATCHED 7,963／MISMATCH 550</b>／MISSING 57(未到来月)。filter別不一致: Accel122／Multi129／Trend46／Single31／Weighted45／Momentum177。<b>主因確定(00:52・家老、将軍が現物確認)</b>: cmd_4342 CSVは<b>切替前snapshotの子PF月次リターンを全階層に固定</b>して乾式計算したが、本番fullは<b>下位FoFを新6段で再生成→<code>reload_component_portfolios</code>(recalculate_fof.py 1843-1853)でcacheへ入れ→上位nested FoFが変更後入力を消費</b>する。cmd_4342 snapshot vs run404後monthly_returnsのexact比較: 共通15,070行中<b>不一致7,201行／57PF=全てFoF</b>(非FoF 0=(c)と整合)。∴550不一致は<b>実装NGの証拠ではなく期待oracleのtopological propagation欠落</b>。旧CSVはnested上位FoFの合否oracleとして不可 → <b>期待差分の再生成(依存順に下位の新結果を上位入力へ伝播)が必要</b>。<b>(b)run405完走(413.5s)→収束FAIL</b>: monthly 73f6ca11→2ab8945f／signals 90909131→31f71bf0／weights f8d3ecb5→e5c38715／metrics同値、standard同値。差分=<b>2PF×21日(奥義-GS-加速D-常勝・奥義-GS-加速R-常勝、2013-05-31〜06-28)</b>、holding 7091c52b(GSシン変わり身-常勝)→6f17572f(GSシン抜き身-常勝)。両候補は2013-05/06のmonthly_return・保有(TQQQ/GLD各0.5)が<b>完全同一</b>→①score(月次丸めでdiff=0/ratio=1)②③④⑥全て同値・⑤初回で無し→<code>compare_candidates</code>=0→<b>呼出側の<code>list(context.current_tickers)</code>(set由来)の入力順で決まり</b>、以後previous_tickersで固定・全期間伝播。=<b>設計P6違反</b>(共通関数の入力順はcomponent_orderを保つ、と定めたがacceleration/momentum/single/multi/weightedの5ブロックがset順、trend_reversalのみcomponent_order順)。<b>殿ntfy 00:54の42件はこれ</b>。<b>殿裁定00:45: GitHub不安定の間は安易なrevert/deployをしない</b>(家老のrollback着手は将軍が停止・revert/push/deploy全0で本番不変)。<b>補正cmd_4349</b>(6ブロックの候補列を<code>ordered_current_tickers</code>=component_order安定順へ、契約テスト+48行)=GATE CLEAR 01:24・gateのpre-GATE autopushで<b>a88f300f本番live 01:29</b>(push禁止ACをgateが無視した契約バグは根治対象)。<b>cmd_4350</b>(伝播版oracle)=実装完了 2c5ce30d、all-six-stage-tie 2件／残不一致132。<b>run406</b>(a88f300f初回full)=殿ntfy 82件/3PF: ②奥義-GS-加速R-常勝・③加速D-常勝 21行ずつ(2013-05/06、全同値→component_order順へ1回組み替え=想定内)、<b>①GSシン加速R-常勝 40行(2012-09-04〜10-31 玄武→朱雀)=全同値ではない</b>。<b>①の真因(01:44 家老read-only・24順列全列挙で再現)</b>: 主score全候補exact 1.0→②12Mが片方null(玄武常勝/鉄壁は13観測未満)のとき<b>pairwiseで両者skip→③CAGRで決着</b>する現行規則が、<b>fd8(朱雀)&gt;fa26(白虎)は12Mで、fa26&gt;67da(玄武)は12M skip→CAGRで、67da&gt;fd8も12M skip→CAGRで</b>という<b>循環(非推移)</b>を生み、sortの入力順で勝者が変わる(2012-08 24順列の勝者: 白虎14/鉄壁5/朱雀3/玄武2)。εではなく<b>設計pitfall Cの「両者13観測以上の時のみ②」を対で判定していること</b>が原因。<b>是正=cmd_4351起票済み(01:50)</b>: ②③④のデータ欠損skipを「対ごと」から「<b>候補集合単位</b>」へ(集合の全員が計算可能な段だけ使う)→各段が全順序になり循環が消える。新設PFを負けにしない設計Cの趣旨は維持。全順列不変の契約テスト付き、commitまで(deployは殿裁定00:45でGitHub安定時)。<b>(b)最終判定=PASS(01:48)</b>: run407(413.5s)はrun406と4表md5完全一致(monthly 15977/194e68aa・signals 333025/cf4a91ee・weights 22937/4eaf59ed・metrics 196/7d856936)、signal_change 0件、標準PF control一致。∴component_order整列で入力順が固定され収束は成立。<b>cmd_4351(②③④の集合単位skip・全順序化)=GATE CLEAR 02:07</b>(selection.py +53/−7、24順列不変の契約テスト+54行)、gate autopushでf519002bがorigin/main→Render build中(02:07)。live後にもう1回だけ組み替え(GSシン加速R-常勝2012-08/09等)→full 2回で(b)再確認。<b>(a)伝播版oracle(cmd_4350・GATE CLEAR 01:52)vs run407</b>: 全体<b>MATCHED 8,383／MISMATCH 130／MISSING 57</b>(cmd_4351後比較器)。不一致の内訳(家老readonly SSOT 02:08): <b>122件=秘奥義-追い風-鉄壁(MomentumFilter・depth3)</b>、原因=oracleがconfig lookback{days:10,months:0}を<code>_period_months</code>で0月にして全score欠損(候補0・比較自体不実行)、本番は<code>max(days//21,1)</code>=1月 → <b>oracle側の期間換算差</b>。残8件=oracle入力/ブートストラップ境界差、(i)非推移4件はcmd_4351で解消、<b>(iii)本番別要因=0件</b>。→ <b>cmd_4352起票(02:14)</b>: oracleの期間換算・境界規則を本番blockと同一化し、cmd_4351後のfullと再突合して(a)最終判定(小太郎がrun409 SSOTで実行中)。<b>cmd_4351 live後</b>: run408(初回・523.7s)=殿ntfy 222件/4PF・5遷移(GSシン加速R-常勝102+61・加速R-激攻19=旧非推移の全順序決着、奥義-GS-抜き身-激攻20・秘奥義-加速R-常勝20=上位伝播/境界候補→cmd_4352で確定)、<b>run409(2回目・527.8s)=run408と4表md5完全一致・変更0 → (b)PASS再確定</b>(monthly 15977/93315437・signals 333025/61192e83・weights 22937/2e0c2a9c・metrics 196/6ee0bd4d、標準PF同値)。<b>cmd_4352(oracle期間換算を本番規則へ・commit 43f3a16b)後の突合 vs run409: MATCHED 8,504／MISMATCH 9／MISSING 57</b>(filter別: MAF 2729/8、MF 1353/1、他0)。残9件=GSシン加速R-常勝2012-05(1)・奥義-GS-加速D/R-常勝2013-06(2)・秘奥義-加速R-常勝2014-05〜2015-01(5、expected/actualが1か月ずれて連なる型=depth3のoracle側の月対応/伝播タイミング境界)・秘奥義-追い風-鉄壁2016-06(1)。本番別要因0。正本 <code>docs/research/cmd_4352_fof_tiebreak_expected_diff_final.md</code>。<b>将軍判定(02:49): 手③は本番で決定性(b)を達成、(a)は99.9%一致で残9はoracle側の境界定義→CLOSE候補。→ 殿07:16「残9のoracle境界を完全に詰めよう」→cmd_4354で残9全件がoracle側month_mapping差と確定・修正版oracle vs run409=8,513/0/57 → (a)100% → 手③CLOSE(08:21)。</b>戻し方=revert 2commit→push→deploy→full 1回でbaseline md5へ</td></tr>
-<tr><td>④</td><td>GS高速版(<code>scripts/analysis/grid_search/run_077_*.py</code> 7本 + l1 fast path)</td><td><span class="pill hold">初回FAIL(AC2/AC3・環境境界)→再配備 08:19</span></td><td>影丸初回: adapter実装+contract 3/3+本番pipeline無変更(<code>f70475c8</code>)・legacy108 vs production36=72差分(赤取得)。<b>GS研究用スクリプトの環境腐敗が露呈</b>(bunshin import欠落／kasoku module欠落／kawarimi・nukimi・oikaze DB rows 0／yotsume引数衝突)+run_tests scope未mapping。将軍08:00: (a)7本起動回復→(b)parity oracle=run409 readonly snapshot→(c)gs-bench-gate</td></tr>
+<tr><td>④</td><td>GS高速版(<code>scripts/analysis/grid_search/run_077_*.py</code> 7本 + l1 fast path)</td><td><span class="pill done">GATE CLEAR 11:02 — parity緑・7/7起動回復・bench PASS・本番diff 0</span></td><td>影丸初回: adapter実装+contract 3/3+本番pipeline無変更(<code>f70475c8</code>)・legacy108 vs production36=72差分(赤取得)。<b>GS研究用スクリプトの環境腐敗が露呈</b>(bunshin import欠落／kasoku module欠落／kawarimi・nukimi・oikaze DB rows 0／yotsume引数衝突)+run_tests scope未mapping。将軍08:00: (a)7本起動回復→(b)parity oracle=run409 readonly snapshot→(c)gs-bench-gate</td></tr>
 <tr><td>③残9</td><td>oracle境界(GSシン加速R-常勝2012-05／奥義-GS-加速D/R-常勝2013-06／秘奥義-加速R-常勝2014-05〜08,12／秘奥義-追い風-鉄壁2016-06)</td><td><span class="pill done">cmd_4354 done 08:21・MISMATCH 0</span></td><td>残9全件=oracle側month_mapping差(target_dateをdecision_month初回signal日へ整合)。全8,570行 <b>MATCHED 8,513／MISMATCH 0／MISSING 57</b>。本番側要因0・本番書込み0。DM <code>4a486bcb</code>／PI-P09 <code>157f00df</code>。成果物 <code>docs/research/cmd_4354_fof_oracle_residual9_20260818.md</code>。<b>手③=(a)(b)(c)(d)全PASS→CLOSE</b>(家老GATE待ち)</td></tr>
 <tr><td>cron</td><td>dm-signal-sync-fof(01:40 UTC=10:40 JST)</td><td><span class="pill run">同一経路・10:40 JST初回通過待ち(家老checkpoint)</span></td><td>sync_fof→recalculate_history_fast(L3_fof)→_recalculate_fof_history→同じPipelineEngine/blocks/select_top_n_deterministic(殿06:46確認)。08-18 10:40 JSTの通過後にsignal_change 0件・md5一致を家老が確認</td></tr>
 <tr><td>infra</td><td>run_tests.sh外部backend近接テスト自動探索(軍師提案)</td><td><span class="pill done">GATE CLEAR</span></td><td>cmd_4341 commit <code>bce0cfaa</code>(<code>backend_nearby</code>経路)。殿19:55「インフラバグは迂回せず直せ」</td></tr>
@@ -68,6 +68,92 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 <div class="callout"><b>手②c(殿19:22承認)</b>: 共通関数に <code>include_ties</code>(同点包含・既定True=既存5フィルタ不変)と <code>ascending</code>(下位枝用・既定False)を追加し、変わり身のtop枝=<code>include_ties=False</code>、bottom枝=<code>include_ties=False, ascending=True</code>で配線。合否は同じ「full 1回で4表md5一致」。手③で同率全採用が廃止されると<code>include_ties</code>は役目を終え、変わり身も同じ層で6段キーにより同点が解決される。</div>
 </section>
 
+<section>
+<h2>note記事用の比較図(3枚) — 2026-08-18 10:45</h2>
+<style>
+.figwrap .fig{max-width:100%;overflow-x:auto;background:var(--card);border-color:var(--line)}
+.figwrap .fig .sub,.figwrap .grid3 .h,.figwrap .grid3 .k,.figwrap .step .n,.figwrap .step .d,.figwrap .arrowrow div{color:var(--muted)}
+.figwrap .grid3 .h,.figwrap .step{background:var(--bg);border-color:var(--line)}
+.figwrap .grid3,.figwrap .grid3>div{border-color:var(--line)}
+.figwrap .bad{color:var(--bad)}.figwrap .good{color:var(--good)}.figwrap .mid{color:#a3651f}
+
+
+.figwrap .fig{width:960px;padding:28px 32px;background:#fff;border:1px solid #d9ded8;border-radius:6px;box-sizing:border-box}
+.fig h3{margin:0 0 6px;font-size:17px}
+.fig .sub{color:#5b6673;font-size:12.5px;margin-bottom:14px}
+.mono{font:12.5px ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.figwrap .grid3{display:grid;grid-template-columns:150px 1fr 1fr 1fr;gap:0;border-top:1px solid #d9ded8}
+.figwrap .grid3>div{padding:9px 12px;border-bottom:1px solid #d9ded8;font-size:13.5px}
+.figwrap .grid3 .h{font-size:12px;letter-spacing:.04em;color:#5b6673;font-weight:600;background:#f6f7f4}
+.figwrap .grid3 .k{color:#5b6673;font-weight:600}
+.figwrap .bad{color:#b23a2b}.figwrap .mid{color:#a3651f}.figwrap .good{color:#2e7d4f;font-weight:600}
+.figwrap .steps{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.figwrap .step{border:1px solid #d9ded8;border-radius:6px;padding:10px 11px;background:#f6f7f4;min-height:118px}
+.figwrap .step .n{font-size:11px;letter-spacing:.08em;color:#5b6673;text-transform:uppercase}
+.figwrap .step .t{font-weight:600;margin:2px 0 6px;font-size:14px;line-height:1.35}
+.figwrap .step .d{font-size:12px;color:#5b6673;line-height:1.45}
+.figwrap .arrowrow{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:6px}
+.figwrap .arrowrow div{text-align:center;color:#5b6673;font-size:12px}
+
+.figwrap{display:grid;gap:18px}
+</style>
+<div class="figwrap">
+<div class="fig" id="fig1">
+<h3>図1  ノイズと実力差は13桁以上離れている</h3>
+<div class="sub">選択スコアの差(相対値・対数目盛)。同値帯ε=1e-9は、ノイズ側と実力差側の中間に大きな余裕をもって置ける</div>
+<svg viewBox="0 0 900 200" width="896" height="200" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,-apple-system,Segoe UI,Hiragino Sans,Noto Sans JP,sans-serif">
+<line x1="40" y1="120" x2="860" y2="120" stroke="#1c2430" stroke-width="1.5"/>
+<g font-size="12" fill="#5b6673" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">
+<g><line x1="60" y1="115" x2="60" y2="125" stroke="#5b6673"/><text x="60" y="145">1e-16</text></g>
+<g><line x1="160" y1="115" x2="160" y2="125" stroke="#5b6673"/><text x="160" y="145">1e-14</text></g>
+<g><line x1="260" y1="115" x2="260" y2="125" stroke="#5b6673"/><text x="260" y="145">1e-12</text></g>
+<g><line x1="360" y1="115" x2="360" y2="125" stroke="#5b6673"/><text x="360" y="145">1e-10</text></g>
+<g><line x1="460" y1="115" x2="460" y2="125" stroke="#5b6673"/><text x="460" y="145">1e-8</text></g>
+<g><line x1="560" y1="115" x2="560" y2="125" stroke="#5b6673"/><text x="560" y="145">1e-6</text></g>
+<g><line x1="660" y1="115" x2="660" y2="125" stroke="#5b6673"/><text x="660" y="145">1e-4</text></g>
+<g><line x1="760" y1="115" x2="760" y2="125" stroke="#5b6673"/><text x="760" y="145">1e-2</text></g>
+<g><line x1="810" y1="115" x2="810" y2="125" stroke="#5b6673"/><text x="810" y="145">1e-1</text></g>
+</g>
+<rect x="30" y="86" width="230" height="26" rx="4" fill="#fbeae7"/>
+<text x="145" y="104" font-size="12.5" text-anchor="middle" fill="#b23a2b" font-weight="600">同点側のスコア差 1e-16〜1e-14</text>
+<rect x="470" y="86" width="190" height="26" rx="4" fill="#eef1ec"/>
+<text x="565" y="104" font-size="12.5" text-anchor="middle" fill="#5b6673">価格の揺れ 1.5e-7〜1.9e-6</text>
+<rect x="740" y="86" width="130" height="26" rx="4" fill="#e8f3ec"/>
+<text x="805" y="104" font-size="12.5" text-anchor="middle" fill="#2e7d4f" font-weight="600">実力差 ≥ 1e-1</text>
+<line x1="410" y1="60" x2="410" y2="132" stroke="#1f6f78" stroke-width="2.5" stroke-dasharray="5 4"/>
+<rect x="345" y="34" width="130" height="26" rx="4" fill="#e5f0f1"/>
+<text x="410" y="52" font-size="13" text-anchor="middle" fill="#1f6f78" font-weight="700">同値帯 ε = 1e-9</text>
+<text x="235" y="176" font-size="12" fill="#5b6673" text-anchor="middle">← ここは「同じ」とみなし、原理に沿ったtie-breakで決める</text>
+<text x="640" y="176" font-size="12" fill="#5b6673" text-anchor="middle">スコアで決める →</text>
+</svg></div>
+<div class="fig" id="fig2">
+<h3>図2  同点の決着、三つの方式</h3>
+<div class="sub">出力を凍結する台帳、入力を丸める加工は、いずれも比較関数の外側。直すべきは比較関数そのもの</div>
+<div class="grid3">
+<div class="h">観点</div><div class="h">並び順に委ねる(暗黙の既定)</div><div class="h">台帳で出力を凍結(ledger)</div><div class="h">同値帯ε + 根拠あるtie-break</div>
+<div class="k">何で決まるか</div><div class="bad">登録順・ID順・ハッシュ順</div><div class="mid">最初に確定した値(以後固定)</div><div class="good">戦略の原理(モメンタム→実績→リスク→慣性)</div>
+<div class="k">価格が遡って揺れると</div><div class="bad">選択が反転し履歴が連鎖的に組み替わる</div><div class="mid">凍結中は動かない。外れた瞬間に同じ穴</div><div class="good">1e-9以下は同点に吸収。動かない</div>
+<div class="k">全体再計算との関係</div><div class="mid">そのまま(毎回同じ並び順なら)</div><div class="bad">再生成しない行ができ二重管理・速度低下</div><div class="good">再計算の内側で完結。同じ答え</div>
+<div class="k">復旧・移行への耐性</div><div class="bad">並び順が変われば結果が変わる</div><div class="bad">復旧で台帳が消えると凍結が外れる</div><div class="good">何もしなくても同じ</div>
+<div class="k">なぜその子か説明できるか</div><div class="bad">できない(理屈がない)</div><div class="mid">「その時そう決めた」を保存</div><div class="good">規則で説明できる</div>
+<div class="k">直している場所</div><div class="bad">直していない</div><div class="mid">比較関数の外(出力側)</div><div class="good">比較関数そのもの</div>
+</div></div>
+<div class="fig" id="fig3">
+<h3>図3  同点をどう決着させるか — 6段のtie-break</h3>
+<div class="sub">上から順に、決着するまで見る。並び順・登録順・IDは一度も使わない。全キーはその月末時点(point-in-time)で計算</div>
+<div class="steps">
+<div class="step"><div class="n">1段目</div><div class="t">選択スコア<br>(同値帯ε付き)</div><div class="d">そのポートフォリオが本来使う指標。相対差1e-9以下は同点</div></div>
+<div class="step"><div class="n">2段目</div><div class="t">12ヶ月トータルリターンが高い方</div><div class="d">候補全員に12ヶ月分の履歴がある場合のみ。中期の実力</div></div>
+<div class="step"><div class="n">3段目</div><div class="t">設定来CAGRが高い方</div><div class="d">全期間なので必ず比較できる。長期の実績</div></div>
+<div class="step"><div class="n">4段目</div><div class="t">最大ドローダウンが小さい方</div><div class="d">同じ強さなら痛みが少ない方</div></div>
+<div class="step"><div class="n">5段目</div><div class="t">前月から保有していた方を維持</div><div class="d">区別不能なら動かない。取引コスト0</div></div>
+<div class="step"><div class="n">6段目</div><div class="t">設定来が早い方<br>(初月のみ)</div><div class="d">5段目が効かない唯一の場面</div></div>
+</div>
+<div class="arrowrow"><div>同点 →</div><div>同点 →</div><div>同点 →</div><div>同点 →</div><div>同点 →</div><div>決着</div></div>
+</div>
+</div>
+<p style="font-size:12.5px;color:var(--muted)">PNG: <code>marketing-director/content/images/note-fof-tiebreak/fig1..3.png</code>(同一HTMLをheadless Chromeで描画)</p>
+</section>
 <section>
 <h2>AsIs v0.9 — 事実(cmd_4329)と仮説(cmd_4330で確定待ち)</h2>
 <div class="tw"><table>
@@ -240,6 +326,7 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
 <li><b>07:16</b> 殿: (a)は99.9%一致で残9はoracle側の境界定義。手③をCLOSE候補とし残9のoracle境界を完全に詰めよう → 07:20 cmd_4354(残9を段別突合→oracle側/本番側二値→oracle修正→全8,570行MISMATCH 0→設計書/PI-P09還流。本番側要因が出れば修正せず報告)委任</li>
 <li><b>07:40-07:59</b> cmd_4352 GATE CLEAR／cmd_4353 影丸初回=adapter実装+contract 3/3 PASS+本番pipeline無変更(f70475c8)・legacy108 vs production36=72差分(赤)だがAC2/AC3は環境境界でFAIL(GS scripts腐敗: bunshin import欠落／kasoku module欠落／kawarimi・nukimi・oikaze DB rows 0／yotsume引数衝突、run_tests scope未mapping) → 08:00 将軍下知: FAILで閉じるな、(a)7本起動回復→(b)parity oracle=run409 readonly snapshot→(c)gs-bench-gate、腐敗範囲を数値報告 → 08:19 再配備</li>
 <li><b>08:21</b> cmd_4354 疾風done: 残9全件=oracle側month_mapping差(target_dateをdecision_month初回signal日へ整合)、修正版oracle vs run409 <b>MATCHED 8,513／MISMATCH 0／MISSING 57</b>、本番側要因0・本番書込み0(DM 4a486bcb／PI-P09 157f00df) → <b>手③CLOSE</b> → 09:05 AsIs v1.7・artifact更新</li>
+<li><b>09:16-11:02</b> 殿: push/deployも最新に(GitHub復旧) → 家老へ同期下知。cmd_4353再配備(影丸): 7本起動回復→run409 readonly oracle parity 4/4→gs-bench-gate PASS → 11:02 GATE CLEAR=<b>手④完了</b>。10:08-10:55 note記事(一般論構成・ledger経緯・実測値・比較図3枚)を作成しgist 95e8ccce・note下書き nbdb2d8e0287f へ</li>
 <li><b>09:09</b> 殿: MISSING 57(未到来)はどういう意味だ？ → 将軍: 本番に翌月signalがまだ無い最新月末行(57 PF×1)。上記callout参照 → 09:11 殿: artifactをもれなく更新せよ → 本版</li>
 </ul>
 </section>

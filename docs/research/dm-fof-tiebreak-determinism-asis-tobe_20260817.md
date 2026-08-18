@@ -125,6 +125,13 @@
 | push/deploy | 殿09:16『push/deployも最新に。GitHubは復旧』→将軍実測: infra main=origin/mainより142先行・31 behind。00:45凍結裁定解除、家老へ同期(push・CI GREEN・Render deploy live・数値報告)を下知。結果待ち | inbox msg_20260818_091445 |
 | cron | `dm-signal-sync-fof` 10:40 JST初回通過→変更0確認は家老checkpoint | — |
 
+## AsIs **v1.9** — 2026-08-18 11:05+09:00（手④完了・設計書手順表①〜④全完了）
+
+| 項目 | 現物/実測 | 出典 |
+|---|---|---|
+| 手④ | **GATE CLEAR 11:02(cmd_4353・影丸)**: GS研究用7本(`run_077_*.py`: bunshin/kasoku_diff/kasoku_ratio/kawarimi/nukimi/oikaze/weighted_yotsume)+l1plusのFoF子PF選択を本番`select_top_n_deterministic`と同一の共通adapterへ統一。parity: legacy cutoff 72セル差(赤)→run409 readonly oracle contract 4/4 PASS(緑)。起動回復7/7。gs-bench-gate before/after 全PASS(serial delta -15〜-61%)。本番`selection.py`/pipeline blocksのgit diff=0(3 commit f70475c8/e9cf51a1/c627f887で確認)。成果物 `docs/research/cmd_4353_gs_fof_selection_parity_20260818.md` | 報告YAML kagemaru_report_cmd_4353 |
+| 完全解決の判定 | 手①②③④=全完了。(a)MISMATCH 0／(b)(c)(d)PASS。残=cron `dm-signal-sync-fof` 10:40 JST初回通過の変更0確認(家老checkpoint)と、push/deploy同期報告(家老) | — |
+
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
 ### 方針: 出力を凍結するのではなく、関数を決定的にする
@@ -255,6 +262,7 @@
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
+- AsIs v1.9(08-18 11:05)=手④GATE CLEAR(cmd_4353)で手順表①〜④全完了。残=cron10:40確認とpush/deploy報告。
 - AsIs v1.8(08-18 09:55)=手③CLOSE確定表記・MISSING 57の定義(殿下問)・push/deploy同期下知・手④再配備継続。
 - AsIs v1.7(08-18 09:05)=残9→MISMATCH 0(cmd_4354)で(a)100%・手③CLOSE。手④はGS環境腐敗が露呈しcmd_4353再配備中。
 - AsIs v1.6(08-18 07:15)=GitHub回復・手④cmd_4353委任・完全解決の残件表(手④/残9 oracle/cron10:40/gist)。本番不変。
