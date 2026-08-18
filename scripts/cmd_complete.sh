@@ -401,6 +401,7 @@ archive_terminal() {
         printf '[cmd_complete] START archive_terminal attempt=%d/%d marker=%s active_reports=%s\n' \
             "$attempt" "$attempts" "$([[ -f "$marker" ]] && echo present || echo missing)" "$active_count" >&2
         env ARCHIVE_COMPLETED_PROJECT_DIR="$ROOT_DIR" \
+            ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 \
             SHOGUN_COMPLETION_GENERATION="$BUNDLE_IDENTITY" \
             bash "$archive_script" 3 "$CMD_ID" || true
         active_count="$(completion_active_report_count)"

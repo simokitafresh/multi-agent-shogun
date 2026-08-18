@@ -6118,9 +6118,9 @@ result:
   summary: reopened during archive selection
 EOF
     cp "$report" "$root/report.before"
-    cat > "$root/scripts/archive_completed.sh" <<'SH'
+cat > "$root/scripts/archive_completed.sh" <<'SH'
 #!/usr/bin/env bash
-printf '%s\n' "$*" >> "${ARCHIVE_TEST_CALLS:?}"
+printf '%s|%s\n' "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" "$*" >> "${ARCHIVE_TEST_CALLS:?}"
 exit 0
 SH
     chmod +x "$root/scripts/archive_completed.sh"
@@ -6135,6 +6135,7 @@ SH
     [ "$status" -ne 0 ]
     [[ "$output" == *"BLOCK archive_terminal reopened_report_preserved"* ]]
     [ "$(wc -l < "$calls")" -eq 1 ]
+    [[ "$(cat "$calls")" == 1\|* ]]
     cmp -s "$root/report.before" "$report"
     [ ! -e "$root/queue/archive/reports/saizo_report_${cmd}.yaml" ]
 }

@@ -2325,7 +2325,7 @@ cleanup_task_worktree_marker() {
     local marker="$PROJECT_DIR/queue/gates/${CMD_ID}/task_worktree.json"
     [ -f "$marker" ] || return 0
     local meta repo worktree state
-    meta=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); assert d.get("version")==1 and d.get("parent_cmd")==sys.argv[2] and d.get("state") in {"active","cleaning","cleaned"}; print("{}\\t{}\\t{}".format(d.get("repo", ""), d.get("worktree", ""), d.get("state", "")))' "$marker" "$CMD_ID" 2>/dev/null) \
+    meta=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); assert d.get("version")==1 and d.get("parent_cmd")==sys.argv[2] and d.get("state") in {"active","cleaning","cleaned"}; print("{}\t{}\t{}".format(d.get("repo", ""), d.get("worktree", ""), d.get("state", "")))' "$marker" "$CMD_ID" 2>/dev/null) \
         || { echo "[archive] BLOCK: invalid task worktree marker for ${CMD_ID}" >&2; return 1; }
     IFS=$'\t' read -r repo worktree state <<< "$meta"
     [ "$state" = "cleaned" ] && return 0
