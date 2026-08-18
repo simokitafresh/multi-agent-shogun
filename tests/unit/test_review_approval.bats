@@ -268,6 +268,105 @@ fail_close_review() {
     [[ "$output" == *"requires current Gunshi LGTM"* ]]
 }
 
+setup_rc_revoke_generation_fixture() {
+    export RC_REVOKE_ROOT="$BATS_TEST_TMPDIR/rc-revoke-generation-root"
+    mkdir -p "$RC_REVOKE_ROOT/queue/reports" "$RC_REVOKE_ROOT/queue/archive/reports" \
+      "$RC_REVOKE_ROOT/queue/tasks" "$RC_REVOKE_ROOT/queue/inbox" \
+      "$RC_REVOKE_ROOT/queue/gates" "$RC_REVOKE_ROOT/logs"
+    ln -s "$BATS_TEST_DIRNAME/../../scripts" "$RC_REVOKE_ROOT/scripts"
+    cat > "$RC_REVOKE_ROOT/queue/tasks/worker.yaml" <<'TASK'
+task:
+  task_id: cmd_karo_rc_revoke_generation_normal
+  parent_cmd: cmd_karo_rc_revoke_generation
+  issued_cmd_id: cmd_karo_rc_revoke_generation
+  report_filename: worker_report_cmd_karo_rc_revoke_generation.yaml
+  task_type: hotfix
+  status: done
+  reviewed: true
+  review_result: ACCEPT
+  deployed_at: "2026-08-18T00:00:00"
+  acknowledged_at: "2026-08-18T00:01:00"
+  completed_at: "2026-08-18T00:10:00"
+  done_at: "2026-08-18T00:10:00"
+TASK
+    cat > "$RC_REVOKE_ROOT/queue/reports/worker_report_cmd_karo_rc_revoke_generation.yaml" <<'REPORT'
+worker_id: worker
+task_id: cmd_karo_rc_revoke_generation_normal
+report_id: rpt-rc-revoke-generation-v1
+report_identity_version: 2
+parent_cmd: cmd_karo_rc_revoke_generation
+task_type: hotfix
+status: completed
+verdict: PASS
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+result:
+  summary: generation one
+binary_checks:
+  commit:
+    - check: implementation commit exists
+      result: yes
+files_modified:
+  - path: scripts/review_approval.sh
+REPORT
+    export RC_REVOKE_REPORT="$RC_REVOKE_ROOT/queue/reports/worker_report_cmd_karo_rc_revoke_generation.yaml"
+    export REVIEW_APPROVAL_ROOT="$RC_REVOKE_ROOT"
+    export REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1
+    export REVIEW_APPROVAL_NO_NOTIFY=1
+    export REVIEW_APPROVAL_NO_TRIGGER=1
+}
+
+# test_necessity: RC_REVOKE must not restore an older report/task snapshot over
+# a newer completed/PASS generation; the current generation remains eligible
+# for the normal Gunshi LGTM and Karo ACCEPT boundary.
+# regression_justification: cmd_karo_hotfix_rc_revoke_generation_20260818
+@test "RC_REVOKE retires only the RC when the current report generation changed" {
+    setup_rc_revoke_generation_fixture
+
+    run bash "$RC_REVOKE_ROOT/scripts/review_approval.sh" \
+      cmd_karo_rc_revoke_generation karo RC "$RC_REVOKE_REPORT" implementation
+    [ "$status" -eq 0 ]
+    grep -q '^status: revision_requested$' "$RC_REVOKE_REPORT"
+
+    bash "$RC_REVOKE_ROOT/scripts/report_field_set.sh" "$RC_REVOKE_REPORT" \
+      result.summary "generation two"
+    bash "$RC_REVOKE_ROOT/scripts/report_field_set.sh" "$RC_REVOKE_REPORT" status completed
+    bash "$RC_REVOKE_ROOT/scripts/lib/yaml_field_set.sh" \
+      "$RC_REVOKE_ROOT/queue/tasks/worker.yaml" task status done
+    report_before=$(sha256sum "$RC_REVOKE_REPORT" | awk '{print $1}')
+    task_before=$(sha256sum "$RC_REVOKE_ROOT/queue/tasks/worker.yaml" | awk '{print $1}')
+
+    run bash "$RC_REVOKE_ROOT/scripts/review_approval.sh" \
+      cmd_karo_rc_revoke_generation karo RC_REVOKE "$RC_REVOKE_REPORT" \
+      "revoke stale RC only"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"without restoring newer report generation"* ]]
+    [ "$(sha256sum "$RC_REVOKE_REPORT" | awk '{print $1}')" = "$report_before" ]
+    [ "$(sha256sum "$RC_REVOKE_ROOT/queue/tasks/worker.yaml" | awk '{print $1}')" = "$task_before" ]
+    grep -q '^status: completed$' "$RC_REVOKE_REPORT"
+    grep -q '^  summary: generation two$' "$RC_REVOKE_REPORT"
+    grep -q '^  status: done$' "$RC_REVOKE_ROOT/queue/tasks/worker.yaml"
+    [ "$(find "$RC_REVOKE_ROOT/queue/gates/cmd_karo_rc_revoke_generation" -name last_rc_snapshot_dir -type f | wc -l)" -eq 0 ]
+
+    run bash "$RC_REVOKE_ROOT/scripts/review_approval.sh" \
+      cmd_karo_rc_revoke_generation karo ACCEPT "$RC_REVOKE_REPORT"
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: same-generation RC_REVOKE retains the pre-RC restoration
+# contract while the newer-generation branch above protects current state.
+@test "RC_REVOKE restores the snapshot for the same report generation" {
+    setup_rc_revoke_generation_fixture
+
+    run bash "$RC_REVOKE_ROOT/scripts/review_approval.sh" \
+      cmd_karo_rc_revoke_generation karo RC "$RC_REVOKE_REPORT" implementation
+    [ "$status" -eq 0 ]
+    bash "$RC_REVOKE_ROOT/scripts/review_approval.sh" \
+      cmd_karo_rc_revoke_generation karo RC_REVOKE "$RC_REVOKE_REPORT" \
+      "revoke same generation"
+    grep -q '^status: completed$' "$RC_REVOKE_REPORT"
+    grep -q '^  summary: generation one$' "$RC_REVOKE_REPORT"
+}
+
 # test_necessity: an implementation-scope RC cannot be closed by resubmitting
 # the same implementation commit, even though the fail-close lane is exempt.
 # regression_justification: the exception is keyed to failed+FAIL+Karo ACCEPT,
