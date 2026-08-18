@@ -35,16 +35,19 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 1
-  last_seen: "2026-08-18T06:11:52+09:00"
+  occurrence_count: 2
+  last_seen: "2026-08-18T10:43:21+09:00"
   verification:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次情報でlogs/detector_fp_rate.yamlとscripts/cmd_save.shを確認し、fix_known=trueの対象・検証契約を再実行。verify_commandはexit 0で、既存実装が現物に存在するため追加の本task内修正は不要。"
+  action_artifact: "logs/detector_fp_rate.yaml; scripts/cmd_save.sh:7301-7356,7382-7385; verification=test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh -> PASS"
+  resolved_at: "2026-08-18T10:42:59+09:00"
 - id: INS-20260818-063936918-4621
   ts: "2026-08-18T06:39:36+09:00"
   insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
@@ -508,3 +511,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-18T10:35:59+09:00"
+- id: INS-20260818-103839791-6b13
+  ts: "2026-08-18T10:38:39+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_done_requires_gate_clear_20260818; matched=archive_completed; current_pattern=; candidate_level=4; candidate=tobisaru cmd_karo_ci_fix_skipで実証。GATE CLEAR→archive移動→忍者BLOCK修正中にファイル消失→再作成が必要に。symlinkで元パス参照を保護; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_done_requires_gate_clear_20260818"
+  fix_known: false
+  status: pending
