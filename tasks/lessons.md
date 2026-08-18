@@ -15132,3 +15132,94 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - When --cmd-warnings runs before chronicle/archive publication, queue/tasks/{ninja}.yaml is the live project SSOT. Parsing task_id/parent_cmd/issued_cmd_id and preserving a match prevents silent no-project output and restores Level5 freshness evidence injection.
+
+### L1603: 完了境界後のtracked writerは同一publication checkpointへ収束させる
+- **日付**: 2026-08-18
+- **出典**: cmd_karo_hotfix_postclear_runtime_publish_202608182010
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_postclear_runtime_publish_202608182010]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- pre-terminal publishだけでは、その後のpostprocessorがtracked runtimeを書けばdirtyが再発する。全同期writer後に既存field-aware publishを再適用し、成功後だけCOMPLETEを公開する二値契約が必要。
+
+### L1604: detached tracked writerはgeneration-bound receipt完了後にterminal snapshotせよ
+- **日付**: 2026-08-18
+- **出典**: cmd_karo_hotfix_postclear_runtime_publish_202608182010
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_postclear_runtime_publish_202608182010]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- shell job table外のdurable workerがtracked fileを書き得る場合、個別path allowlistでは競合を根治できない。旧resultを除去しcmd/generation identityをatomic保存してbounded完了待機後にpublishする。
+
+### L1605: 単一target配備CLIでは候補fallback入口を先に定義する
+- **日付**: 2026-08-18
+- **出典**: cmd_karo_hotfix_release_ninja_on_done_unarchived_20260818
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/cmd_complete_gate.sh,tests/unit/test_deploy_task_reflux_guard.bats]
+- **origin**: [[cmd_karo_hotfix_release_ninja_on_done_unarchived_20260818]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- worker guardだけでは次候補へ遷移できない。candidate selectorを所有する入口へfallbackを実装する契約が必要
+
+### L1606: AC列契約とランキング列契約を同時検証せよ
+- **日付**: 2026-08-18
+- **出典**: cmd_4356
+- **記録者**: saizo
+- **tags**: [dm-signal,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/analysis/combo_exhaustive_search.py]
+- **origin**: [[cmd_4356]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 追加列を限定するACと、その限定外の指標を要求するACを配備前に列集合差分で二値検査する。
+
+### L1607: source-only三者mergeのbaseはgraph共通祖先でなくsource世代親に結合する
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_source_only_remote_new_id_202608190023
+- **記録者**: saizo
+- **tags**: [infra,cmd-quality,process,git]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_source_only_remote_new_id_202608190023]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 共有運用ファイルではmerge-base以後source commit前までのcheckpoint差分は現在source世代の既成状態であり、merge-baseを削除基準にするとremote独立IDをsource削除と誤帰属する。最初のpublish対象source commit親をbaseにする。
+
+### L1608: 実行中に自己更新するshellは入口でsource世代を固定する
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_gate_self_update_race_202608190202
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_convergence.bats]
+- **origin**: [[cmd_karo_hotfix_gate_self_update_race_202608190202]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 各世代が単独でsyntax validでも、実行中のcanonical差替えでBashが新旧チャンクを混読すると構文停止する。共有収束前のretryでなく、入口immutable snapshotとcanonical path分離を不変量にする。
+
+### L1609: 収束前にruntime状態をcheckpointし、再試行履歴はlogical identityで畳む
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_gate_self_update_race_202608190202
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_convergence.bats,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_gate_self_update_race_202608190202]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 同一patchでもremote SHAが異なるpublicationではdirty runtimeを先にlocal checkpointしてから共有sourceを収束する。失敗ごとのarchive basenameはtask identityではなく、task_idとtask宣言report pathを正本にする。
