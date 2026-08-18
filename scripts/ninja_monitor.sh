@@ -115,13 +115,6 @@ restart_watchers_lock_is_active() {
     return 2
 }
 
-if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ] \
-    && [ "${NINJA_MONITOR_BOUNDED_DONE_CHECK:-0}" != "1" ] \
-    && [ "${NINJA_MONITOR_HOT_RELOAD_SUCCESSOR:-0}" != "1" ]; then
-    bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" --reconcile-owner-transactions >> "$LOG" 2>&1 || exit 1
-    [ "${NINJA_MONITOR_STARTUP_RECONCILE_ONLY:-0}" != "1" ] || exit 0
-fi
-
 # --- CTX profile cache（L4-R?: cli_profile_getサブシェル呼び出し削減） ---
 # update_context_pct ループ内での$(cli_profile_get ...)サブシェル(78ms/回)を排除するグローバルキャッシュ
 # 主シェル文脈(update_all_context_pct経由)でのみ有効。サブシェルからのget_context_pct呼び出しは従来通り
@@ -708,6 +701,14 @@ _ninja_monitor_refresh_owner_lease() {
 
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
     acquire_singleton_lock
+    # Reconcile only after the current generation owns the lease.  Running
+    # this before acquire allowed a stale owner transaction to abort startup
+    # before takeover, leaving the old dead generation in control forever.
+    if [ "${NINJA_MONITOR_BOUNDED_DONE_CHECK:-0}" != "1" ] \
+        && [ "${NINJA_MONITOR_HOT_RELOAD_SUCCESSOR:-0}" != "1" ]; then
+        bash "$SCRIPT_DIR/scripts/auto_deploy_next.sh" --reconcile-owner-transactions >> "$LOG" 2>&1 || exit 1
+        [ "${NINJA_MONITOR_STARTUP_RECONCILE_ONLY:-0}" != "1" ] || exit 0
+    fi
 fi
 
 send_inbox_message() {

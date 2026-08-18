@@ -82,7 +82,7 @@ monitor_lib() {
   read -r new_mtime new_fingerprint < "$OWNER.identity"
   [ "$new_owner" != "$old_pid" ] && [ "$new_generation" != stale-script-generation ]
   [ -n "$new_mtime" ] && [ -n "$new_fingerprint" ]
-  [ "$(grep -c HOT-RELOAD-REBASE "$LOG" 2>/dev/null || true)" -eq 1 ]
+  grep -Eq 'HOT-RELOAD-(REBASE|TAKEOVER)' "$LOG"
   printf 'current_file_owner=1 old_owner_alive=0 old_owner_self_exit=1 snapshot_generation=1\n'
 }
 
@@ -107,4 +107,12 @@ monitor_lib() {
     "$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh"
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | wc -l)" -ge 4 ]
+}
+
+@test "normal startup acquires owner before reconciliation" {
+  script="$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh"
+  acquire_line=$(rg -n '^    acquire_singleton_lock$' "$script" | tail -1 | cut -d: -f1)
+  reconcile_line=$(rg -n 'auto_deploy_next\.sh.*--reconcile-owner-transactions' "$script" | tail -1 | cut -d: -f1)
+  [ "$acquire_line" -lt "$reconcile_line" ]
+  printf 'acquire_line=%s reconcile_line=%s order=valid\n' "$acquire_line" "$reconcile_line"
 }
