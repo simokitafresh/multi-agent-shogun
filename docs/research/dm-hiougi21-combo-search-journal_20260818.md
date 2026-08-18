@@ -1,3 +1,4 @@
+<!-- gist-master: 865f05ab58784ca2092491108cd1fc0a dm-hiougi21-combo-search-journal_20260818.md -->
 # 秘奥義21体 組合せ探索 研究日誌 — EW後退除去(Sharpe)+2/3/4体全量探索(α6+β調整α+Sharpe+α/β)
 
 - 起草: 2026-08-18 21:35 JST（殿指示21:15〜21:32）
