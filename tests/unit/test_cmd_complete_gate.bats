@@ -6258,7 +6258,7 @@ start = text.index('publish_postclear_runtime_deltas()')
 end = text.index('\n}', start) + 2
 block = text[start:end]
 assert 'push_from_clean_worktree' in block
-assert 'queue/insights.yaml' in block
+assert 'postclear_runtime_path_is_publishable "$path"' in block
 assert 'nonruntime dirty path=' in block
 assert 'writer generation changed' in block
 assert 'merge --ff-only FETCH_HEAD' in block
@@ -6266,4 +6266,20 @@ print('field_aware=1 identity_guard=1 nonruntime_block=1 shared_convergence=1')
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "field_aware=1 identity_guard=1 nonruntime_block=1 shared_convergence=1" ]
+}
+
+# test_necessity: every tracked writer observed in the first operational gate
+# must be classified as publishable while an unknown tracked path still blocks.
+# regression_justification: the first operational run blocked on three known
+# lesson/context writers omitted from the initial runtime allowlist.
+@test "post-CLEAR runtime classifier covers operational writer set and blocks unknown" {
+    run bash -c '
+        source <(sed -n "/^postclear_runtime_path_is_publishable()/,/^}/p" "$1")
+        known=(context/infrastructure.md projects/infra/lessons.yaml tasks/lessons.md logs/karo_workarounds.yaml queue/insights.yaml scripts/cmd_complete_gate.sh)
+        for path in "${known[@]}"; do postclear_runtime_path_is_publishable "$path" || exit 10; done
+        if postclear_runtime_path_is_publishable docs/research/unowned.md; then exit 11; fi
+        printf "known=6/6 unknown_block=1\n"
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    [ "$status" -eq 0 ]
+    [ "$output" = "known=6/6 unknown_block=1" ]
 }
