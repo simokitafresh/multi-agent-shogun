@@ -648,6 +648,24 @@ pane_input_line_has_text() {
     [ -n "$stripped" ]
 }
 
+# Codex can leave a generated idle suggestion visible while background
+# terminals are still running.  That prompt is the delivery boundary: the
+# visible background marker must not keep a queued claim alive.  Inspect only
+# the prompt line's style; footer/status dimming is not evidence that the
+# prompt itself is idle.
+codex_explicit_idle_prompt() {
+    local pane_target="$1"
+    local plain_tail styled_tail prompt_line
+
+    plain_tail=$(tmux capture-pane -t "$pane_target" -p -J -S -3 2>/dev/null || true)
+    prompt_line=$(printf '%s\n' "$plain_tail" | grep -E '^[[:space:]]*›' | tail -1 || true)
+    [ -n "$prompt_line" ] || return 1
+
+    styled_tail=$(tmux capture-pane -t "$pane_target" -p -e -J -S -3 2>/dev/null || true)
+    prompt_line=$(printf '%s\n' "$styled_tail" | grep '›' | tail -1 || true)
+    [[ "$prompt_line" == *$'\033[2m'* ]]
+}
+
 # ─── Send CLI command directly via send-keys ───
 # For /clear and /model only. These are CLI commands, not conversation messages.
 # CLI種別はcli_profiles.yamlのフィールドで動的に判定（name-based分岐なし）
@@ -845,8 +863,14 @@ send_wakeup() {
         local agent_state
         agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "unknown")
         if [[ "$effective_cli" == "codex" ]]; then
-            local codex_busy_rc
-            if check_agent_busy "$PANE_TARGET" "$AGENT_ID"; then
+            local codex_busy_rc codex_idle_prompt=0
+            if codex_explicit_idle_prompt "$PANE_TARGET"; then
+                # Explicit Codex idle prompt wins over background-terminal
+                # markers.  This releases an old busy claim and permits the
+                # queued nudge to cross the delivery boundary exactly once.
+                codex_busy_rc=0
+                codex_idle_prompt=1
+            elif check_agent_busy "$PANE_TARGET" "$AGENT_ID"; then
                 codex_busy_rc=0
             else
                 codex_busy_rc=$?
@@ -861,7 +885,7 @@ send_wakeup() {
                 rm -f "$BUSY_QUEUE_CLAIM_FILE"
             fi
         fi
-        if [ "$agent_state" = "active" ] && [ "$allow_nonempty_input_line" != "1" ]; then
+        if [ "$agent_state" = "active" ] && [ "$allow_nonempty_input_line" != "1" ] && [ "${codex_idle_prompt:-0}" != "1" ]; then
             local fp_age
             fp_age=$(get_fp_age)
             local busy_max_defer
