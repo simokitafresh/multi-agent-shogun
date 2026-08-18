@@ -367,6 +367,139 @@ REPORT
     grep -q '^  summary: generation one$' "$RC_REVOKE_REPORT"
 }
 
+setup_legacy_rc_revoke_fixture() {
+    export LEGACY_RC_ROOT="$BATS_TEST_TMPDIR/legacy-rc-revoke-root"
+    mkdir -p "$LEGACY_RC_ROOT/queue/reports" "$LEGACY_RC_ROOT/queue/archive/reports" \
+      "$LEGACY_RC_ROOT/queue/tasks" "$LEGACY_RC_ROOT/queue/inbox" \
+      "$LEGACY_RC_ROOT/queue/gates" "$LEGACY_RC_ROOT/logs"
+    ln -s "$BATS_TEST_DIRNAME/../../scripts" "$LEGACY_RC_ROOT/scripts"
+    cat > "$LEGACY_RC_ROOT/queue/tasks/worker.yaml" <<'TASK'
+task:
+  task_id: cmd_4353_normal
+  parent_cmd: cmd_4353
+  report_filename: worker_report_cmd_4353.yaml
+  task_type: hotfix
+  status: done
+  reviewed: true
+  review_result: ACCEPT
+  deployed_at: "2026-08-18T00:00:00"
+  acknowledged_at: "2026-08-18T00:01:00"
+  completed_at: "2026-08-18T00:10:00"
+  done_at: "2026-08-18T00:10:00"
+TASK
+    cat > "$LEGACY_RC_ROOT/queue/reports/worker_report_cmd_4353.yaml" <<'REPORT'
+worker_id: worker
+task_id: cmd_4353_normal
+report_id: rpt-cmd-4353-legacy
+report_identity_version: 2
+parent_cmd: cmd_4353
+task_type: hotfix
+status: completed
+verdict: PASS
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+result:
+  summary: generation one
+binary_checks:
+  commit:
+    - check: implementation commit exists
+      result: yes
+files_modified:
+  - path: scripts/review_approval.sh
+REPORT
+    export LEGACY_RC_REPORT="$LEGACY_RC_ROOT/queue/reports/worker_report_cmd_4353.yaml"
+    export REVIEW_APPROVAL_ROOT="$LEGACY_RC_ROOT"
+    export REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1
+    export REVIEW_APPROVAL_NO_NOTIFY=1
+    export REVIEW_APPROVAL_NO_TRIGGER=1
+}
+
+legacy_rc_snapshot_paths() {
+    local pointer
+    pointer=$(find "$LEGACY_RC_ROOT/queue/gates" -name last_rc_snapshot_dir -type f | head -n 1)
+    printf '%s\n%s\n' "$pointer" "$(head -n 1 "$pointer")"
+}
+
+# test_necessity: legacy RC snapshots must reproduce the cmd_4353 generation
+# mismatch and preserve the current report/task instead of restoring old state.
+# regression_justification: cmd_karo_hotfix_rc_revoke_legacy_generation_20260818
+@test "legacy RC marker fingerprint preserves a newer cmd_4353 generation" {
+    setup_legacy_rc_revoke_fixture
+    run bash "$LEGACY_RC_ROOT/scripts/review_approval.sh" \
+      cmd_4353 karo RC "$LEGACY_RC_REPORT" implementation
+    [ "$status" -eq 0 ]
+
+    mapfile -t snapshot_paths < <(legacy_rc_snapshot_paths)
+    snapshot_pointer=${snapshot_paths[0]}
+    snapshot_dir=${snapshot_paths[1]}
+    [ -f "$snapshot_pointer" ]
+    old_fingerprint=$(awk -F': ' '$1 == "fingerprint" {print $2; exit}' \
+      "$(dirname "$snapshot_pointer")/karo.yaml")
+    [ -n "$old_fingerprint" ]
+    rm -f "$snapshot_dir/report_fingerprint" "$snapshot_dir/report_generation"
+
+    bash "$LEGACY_RC_ROOT/scripts/report_field_set.sh" "$LEGACY_RC_REPORT" \
+      result.summary "generation two"
+    bash "$LEGACY_RC_ROOT/scripts/report_field_set.sh" "$LEGACY_RC_REPORT" status completed
+    bash "$LEGACY_RC_ROOT/scripts/lib/yaml_field_set.sh" \
+      "$LEGACY_RC_ROOT/queue/tasks/worker.yaml" task status done
+    report_before=$(sha256sum "$LEGACY_RC_REPORT" | awk '{print $1}')
+    task_before=$(sha256sum "$LEGACY_RC_ROOT/queue/tasks/worker.yaml" | awk '{print $1}')
+
+    run bash "$LEGACY_RC_ROOT/scripts/review_approval.sh" \
+      cmd_4353 karo RC_REVOKE "$LEGACY_RC_REPORT" "revoke legacy stale RC"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"without restoring newer report generation"* ]]
+    [ "$(sha256sum "$LEGACY_RC_REPORT" | awk '{print $1}')" = "$report_before" ]
+    [ "$(sha256sum "$LEGACY_RC_ROOT/queue/tasks/worker.yaml" | awk '{print $1}')" = "$task_before" ]
+    grep -q '^status: completed$' "$LEGACY_RC_REPORT"
+    grep -q '^  summary: generation two$' "$LEGACY_RC_REPORT"
+    grep -q '^  status: done$' "$LEGACY_RC_ROOT/queue/tasks/worker.yaml"
+    [ ! -e "$snapshot_pointer" ]
+}
+
+# test_necessity: a legacy marker from another report identity must not be used
+# as a fallback fingerprint or mutate the current generation.
+@test "legacy RC marker identity mismatch fails closed" {
+    setup_legacy_rc_revoke_fixture
+    run bash "$LEGACY_RC_ROOT/scripts/review_approval.sh" \
+      cmd_4353 karo RC "$LEGACY_RC_REPORT" implementation
+    [ "$status" -eq 0 ]
+    mapfile -t snapshot_paths < <(legacy_rc_snapshot_paths)
+    snapshot_pointer=${snapshot_paths[0]}
+    snapshot_dir=${snapshot_paths[1]}
+    rm -f "$snapshot_dir/report_fingerprint"
+    marker_dir=$(dirname "$snapshot_pointer")
+    sed -i 's|^report: .*|report: queue/reports/other.yaml|' "$marker_dir/karo.yaml"
+    report_before=$(sha256sum "$LEGACY_RC_REPORT" | awk '{print $1}')
+
+    run bash "$LEGACY_RC_ROOT/scripts/review_approval.sh" \
+      cmd_4353 karo RC_REVOKE "$LEGACY_RC_REPORT" "reject mismatched legacy marker"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"legacy RC marker report identity mismatch"* ]]
+    [ "$(sha256sum "$LEGACY_RC_REPORT" | awk '{print $1}')" = "$report_before" ]
+    [ -f "$snapshot_pointer" ]
+}
+
+# test_necessity: a legacy marker without a valid fingerprint must fail closed
+# before any report/task or RC archive mutation.
+@test "legacy RC marker without fingerprint fails closed" {
+    setup_legacy_rc_revoke_fixture
+    run bash "$LEGACY_RC_ROOT/scripts/review_approval.sh" \
+      cmd_4353 karo RC "$LEGACY_RC_REPORT" implementation
+    [ "$status" -eq 0 ]
+    mapfile -t snapshot_paths < <(legacy_rc_snapshot_paths)
+    snapshot_pointer=${snapshot_paths[0]}
+    snapshot_dir=${snapshot_paths[1]}
+    rm -f "$snapshot_dir/report_fingerprint"
+    sed -i '/^fingerprint:/d' "$(dirname "$snapshot_pointer")/karo.yaml"
+
+    run bash "$LEGACY_RC_ROOT/scripts/review_approval.sh" \
+      cmd_4353 karo RC_REVOKE "$LEGACY_RC_REPORT" "reject missing legacy fingerprint"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"legacy RC marker fingerprint missing or invalid"* ]]
+    [ -f "$snapshot_pointer" ]
+}
+
 # test_necessity: an implementation-scope RC cannot be closed by resubmitting
 # the same implementation commit, even though the fail-close lane is exempt.
 # regression_justification: the exception is keyed to failed+FAIL+Karo ACCEPT,

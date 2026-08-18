@@ -260,6 +260,32 @@ PY
   # gate.  Older snapshots predate this sidecar, so retain their historical
   # restore behavior until a new RC records the generation boundary.
   snapshot_fingerprint=$(cat "$snapshot_dir/report_fingerprint" 2>/dev/null || true)
+  if [ -z "$snapshot_fingerprint" ]; then
+    # Legacy RC snapshots predate the report_fingerprint sidecar.  Recover the
+    # rejected generation from the live Karo RC marker, but authenticate the
+    # marker's report identity before using its fingerprint as a fallback.
+    marker_report=$(review_approval_value "$dir/karo.yaml" report 2>/dev/null || true)
+    marker_role=$(review_approval_value "$dir/karo.yaml" role 2>/dev/null || true)
+    marker_result=$(review_approval_value "$dir/karo.yaml" result 2>/dev/null || true)
+    marker_fingerprint=$(review_approval_value "$dir/karo.yaml" fingerprint 2>/dev/null || true)
+    [ "$marker_report" = "$report_rel" ] || {
+      echo "BLOCK: legacy RC marker report identity mismatch: expected=$report_rel actual=${marker_report:-missing}" >&2
+      exit 1
+    }
+    [ "$marker_role" = karo ] && [ "$marker_result" = RC ] || {
+      echo "BLOCK: legacy RC marker decision identity mismatch: role=${marker_role:-missing} result=${marker_result:-missing}" >&2
+      exit 1
+    }
+    [[ "$marker_fingerprint" =~ ^[0-9a-f]{64}$ ]] || {
+      echo "BLOCK: legacy RC marker fingerprint missing or invalid: $report_rel" >&2
+      exit 1
+    }
+    snapshot_fingerprint="$marker_fingerprint"
+  fi
+  [[ "$snapshot_fingerprint" =~ ^[0-9a-f]{64}$ ]] || {
+    echo "BLOCK: RC snapshot fingerprint missing or invalid: $snapshot_dir" >&2
+    exit 1
+  }
   if [ -n "$snapshot_fingerprint" ] && [ "$snapshot_fingerprint" != "$fingerprint" ]; then
     archive_dir="$ROOT/queue/archive/rc_erroneous/${cmd_id}_$(date +%Y%m%d%H%M%S)_${worker_id}"
     mkdir -p "$archive_dir"
