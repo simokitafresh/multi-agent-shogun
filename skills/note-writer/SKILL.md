@@ -1,6 +1,6 @@
 ---
 
-<!-- script_refs_checked_at: 2026-07-30T18:48:52+0900
+<!-- script_refs_checked_at: 2026-08-18T13:55:00+0900 (note_figure_render.sh / note_image_insert.py 追加・Step 7を artifact→画像 方式へ更新)
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答は隔離profile自動起動、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾skill-auto-improve追記はexit後でI/F不変。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`を維持。 -->
 name: note-writer
 argument-hint: "[topic|draft_path]"
@@ -279,84 +279,44 @@ Markdown→note.com変換ルール（2026-07-30更新 commit ee255047）:
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAIL/SKIPを記録する
 
-### Step 7: CDP画像挿入（論文紹介記事等で図表が必要な場合）
+### Step 7: 図表を「artifact→画像」で入れる（noteの表組・カード非対応を回避し記事品質を上げる）
 
-note.comはMarkdown画像記法(`![](url)`)非対応。CDPで直接エディタに画像をアップロードする。
+noteはMarkdown表・カード・フロー図を組めない。**比較表・フロー・スケール図はartifactでHTML/SVGとして設計し、PNGにして本文へ挿入する**（殿指示2026-08-18: 「artifactを画像として使うやり方でキャッチーになる」）。実証: FoF決定性記事(図3枚)・5人の投資家記事(図6枚)。
 
-**画像ファイル準備**: `marketing-director/content/images/note-{テーマ}/` に保存。
-- arxiv論文: `https://arxiv.org/html/{id}/` のHTMLからfigure URLをWebFetchで取得 → `curl -sL -o` でダウンロード
-- X/Xスレッド画像: `data/x-research/thread_{id}/images/` に既取得
-- PDF論文: PDFを開いてスクショ、または論文サイトの画像を取得
+**7-1. 図をartifactで設計する**
+- 記事の論点ごとに1枚: 「桁スケール図」「三方式比較表」「段階フロー」「ペルソナ別フロー」「一枚まとめグリッド」など。文章で表しにくい構造を優先
+- artifact正本(`docs/dashboard/*.html`)に「note記事用の図」節として置き、そこから**自己完結HTML断片**(ライト固定・外部CSS/フォント/画像なし・幅600〜1000px)を切り出す。CSS変数は実値へ展開するか、`:root`のライト定義だけ残す
+- 数値は一次データ(実測値)を入れる。図の見出しに「図N」を付けると本文の参照が安定する
 
-**挿入手順**（2026-07-30実証・4枚連続成功の確定版）:
-
-Markdownに`■画像:`マーカーは書かない（note_draft.shが変換時にマーカーごと壊す）。
-代わに記事本文に画像説明文（「上図は〜」）を書き、Step 6のテキスト挿入後にCDPで画像を挿入する。
-
-1画像ずつ以下を順次実行:
-
-```python
-# Step 7-1: カーソル配置（JSでテキスト検索→paragraph先頭にrange配置）
-# 「上図は〜」段落のtextContentをindexOf検索し、
-# その段落のparentNode(P要素)をscrollIntoView+range.setStartで配置
-js = """
-var walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
-while (node = walker.nextNode()) {
-    if (node.textContent.indexOf('上図はEMA') >= 0) {
-        // p要素まで遡り、先頭にcursor配置
-    }
-}
-"""
-
-# Step 7-2: 空行作成
-# Input.dispatchKeyEvent: Enter → ArrowUp
-# ★Backspaceでマーカー行を削除する方式は禁止
-#   （ProseMirrorが前後段落をマージし本文が消える）
-
-# Step 7-3: 「画像」ボタン検索＆クリック
-# ★正しいボタン: textContent === '画像' && rect.x > 100 && rect.y > 50
-# ★間違い: aria-label="メニューを開く" → これはトップバーの「...」設定メニュー
-# 空行フォーカス時にProseMirrorが左側に「+」メニューを自動表示する。
-# 自動表示されない場合: rect.x < 200 の SVG付きbuttonを探してclick
-js = """
-var all = document.querySelectorAll('button');
-for (var i = 0; i < all.length; i++) {
-    var rect = all[i].getBoundingClientRect();
-    if (all[i].textContent.trim() === '画像'
-        && rect.x > 100 && rect.y > 50 && rect.width > 0) {
-        all[i].click(); // → input[type=file]が出現
-    }
-}
-"""
-
-# Step 7-4: ファイル設定
-# DOM.enable → DOM.getDocument → DOM.querySelectorAll("input[type=file]")
-# → DOM.setFileInputFiles({nodeId: nids[-1], files: [win_path]})
-# ★パスはWindows形式: "C:\\Python_app\\DM-signal\\...\\image.png"
-# ★WSL2パス /mnt/c/... は不可
-# → 画像が自動挿入される（「保存」ボタン不要）
-# → 4秒待機してから次の画像へ
+**7-2. PNGへ描画する**
+```bash
+bash scripts/note_figure_render.sh <fragment.html> <out.png> [width_px=600] [max_height_px=1800]
 ```
+- Windows Chrome headless(隔離profile・D009)・device-scale 2・下余白を背景色基準で自動トリム(`scripts/lib/png_trim_bottom.py`、PIL不要)
+- 出力先: `marketing-director/content/images/note-{テーマ}/figN.png`。**Readツールで必ず目視**(ラベル背景の幅不足・切れ・uppercase化(`text-transform`でε→E)を確認)
 
-**リンク挿入の補足**:
-note_draft.shが`https://`行を`<a>`タグに変換するが、ProseMirrorが無視する場合がある。
-欠落したリンクはDOM操作で手動挿入:
-```javascript
-var newP = document.createElement('p');
-var link = document.createElement('a');
-link.href = 'https://example.com/paper';
-link.textContent = 'https://example.com/paper';
-newP.appendChild(link);
-targetP.parentNode.insertBefore(newP, targetP.nextSibling);
-editor.dispatchEvent(new Event('input', {bubbles: true}));
+**7-3. 本文にマーカー文を書く**
+- 各図の直後に来る段落の先頭を一意な文にする(例: 「上図はスコア差を対数目盛に並べたものです」「A氏の順番を図にしました」)。**同じ書き出しを繰り返さない**(natural-japanese `repeated_sentence_lead`)
+- `■画像:`等のマーカー記法は書かない(note_draft.shが壊す)
+
+**7-4. 下書き保存→画像挿入→キャプション**
+```bash
+CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"          # → editor URL
+python3 scripts/note_image_insert.py <editor_url> <spec.json> --port 9234
 ```
+`spec.json`: `[{"marker":"上図は…","file":"C:\\Python_app\\DM-signal\\…\\fig1.png","caption":"図の説明(=ALT相当)"}]`
+- マーカー文の先頭へcaretを置き「画像」ボタン→`Page.setInterceptFileChooserDialog`でOSダイアログを抑止→`fileChooserOpened.backendNodeId`へ`DOM.setFileInputFiles`(fallback: `input[type=file]`)→figcaptionへ`Input.insertText`でキャプション→下書き保存→**別タブで再読込しimgs数・各figの直後文・captionを検証**(PASS/FAILをJSONで出力)
+- **キャプションは必須**(殿2026-08-18: 「画像の下のキャプションはALTと同じ意味」)。図の順番・要点を1文で。**既に記入済みのfigcaptionには書かない**(スクリプトは非空ならskip。殿が手で入れた文を連結事故で汚した2026-08-18の実証)。下書きは自動保存されるため「下書き保存」ボタンが見つからなくても再読込で永続化を確認する
 
-**全画像挿入後**: `下書き保存`ボタンをCDPでクリック。
+**7-5. 実証済みの罠**
+- 「画像」ボタンclickはWindowsのファイル選択ダイアログを開く。抑止しないと**そのタブのrendererが固まりCDPが応答しなくなる**(2026-08-18実証。閉じるには`#32770`クラスのダイアログへWM_CLOSE)。7-4のスクリプトは抑止済み
+- Enter+ArrowUpで空行を作る旧方式は、折返し段落内でArrowUpが1行上へ動き**文の途中に画像が入る**。caret直挿しで段落を分割させる方式に変更(旧手順は廃止)
+- note_draft.shは節内の連続行を1つの`<p>`(`<br>`区切り)へまとめる。マーカーは段落先頭でなくても良い(text nodeのindexで位置決め)
+- `aria-label="メニューを開く"`はトップバーの「…」であり画像挿入の「+」ではない
+- ProseMirror外からのDOM操作(移動・結合)は保存されないことがある。位置修正は削除→再挿入で行う
+- 画像アップロード後4〜6秒待ってから次へ。連続挿入時は`figures`数の増分で成功判定
+- Chromeプロセス残留や旧タブのハングは`/json/close/<id>`で閉じ、必要なら`taskkill /F /IM chrome.exe`後に再起動
 
-**罠の一覧（2026-07-30で踏んだもの）**:
-- `aria-label="メニューを開く"` はトップバーの「...」メニュー（共有リンク/プレビュー/変更破棄）であり画像挿入の「+」とは別物
-- マーカーテキスト（`■画像:xxx■`）をBackspaceで削除するとProseMirrorが前後段落をマージして本文が消える。Enter+ArrowUpで空行を**追加する**方式が安全
-- Chromeプロセスが残っているとnote_draft.shがPowerShellタイムアウトで失敗する。`/mnt/c/Windows/System32/taskkill.exe /F /IM chrome.exe` で完全終了してから再実行
-- WebSocket接続がタイムアウトする場合はChromeを完全終了→再起動
+**リンク挿入の補足**: note_draft.shが`https://`行を`<a>`へ変換するがProseMirrorが無視する場合がある。欠落分はDOMで`<p><a href>`を挿入し`input`イベントを発火
 
 <!-- script_refs_checked_at: 2026-07-30T18:48:52+0900
