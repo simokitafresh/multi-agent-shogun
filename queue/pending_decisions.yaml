@@ -1,7 +1,7 @@
 summary:
-  total: 91
-  resolved: 78
-  pending: 12
+  total: 94
+  resolved: 87
+  pending: 6
   shelved: 1
   unknown: 0
 decisions:
@@ -571,7 +571,8 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_lsa16_runtime_parity_block_20260801
   next_action: LS-A16 runtime parityをLevel4 BLOCK化
-  resolved_content: "実質解消クローズ(将軍2026-08-04殿委任): LS-A16はinject_task_modifiers.py lsa16_production_parity_controls(Level5注入+bats)で実装済み。残るruntime BLOCK案はreflux decision_candidate管理で継続"
+  resolved_content: '実質解消クローズ(将軍2026-08-04殿委任): LS-A16はinject_task_modifiers.py lsa16_production_parity_controls(Level5注入+bats)で実装済み。残るruntime
+    BLOCK案はreflux decision_candidate管理で継続'
   resolved_by: shogun_stale_close_20260804
 - id: PD-104
   type: escalation
@@ -622,7 +623,7 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_shared_worktree_history_guard_20260801
   next_action: 共有worktreeの非hard resetとamend帰属防御
-  resolved_content: "解決済みクローズ(将軍2026-08-04殿委任): check_shared_worktree_resetがpre-bash-combined.shに実装済み(HEAD移動型reset検知)を現物確認"
+  resolved_content: '解決済みクローズ(将軍2026-08-04殿委任): check_shared_worktree_resetがpre-bash-combined.shに実装済み(HEAD移動型reset検知)を現物確認'
   resolved_by: shogun_stale_close_20260804
 - id: PD-107
   type: escalation
@@ -917,7 +918,7 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_recon_gate_logic_gap_canonical_20260801
   next_action: 統合済みgate_logic_gap群の根因再分類
-  resolved_content: "陳腐化クローズ(将軍2026-08-04殿委任): gate_logic_gap最終発生2026-07-14、以降21日間ゼロをkaro_workaroundsアーカイブ実測で確認"
+  resolved_content: '陳腐化クローズ(将軍2026-08-04殿委任): gate_logic_gap最終発生2026-07-14、以降21日間ゼロをkaro_workaroundsアーカイブ実測で確認'
   resolved_by: shogun_stale_close_20260804
 - id: PD-128
   type: escalation
@@ -930,7 +931,7 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_task_redeploy_contract_20260801
   next_action: task再配備契約のcanonical修正
-  resolved_content: "陳腐化クローズ(将軍2026-08-04殿委任): task_redeploy最終発生2026-07-14、以降21日間ゼロ"
+  resolved_content: '陳腐化クローズ(将軍2026-08-04殿委任): task_redeploy最終発生2026-07-14、以降21日間ゼロ'
   resolved_by: shogun_stale_close_20260804
 - id: PD-129
   type: escalation
@@ -954,7 +955,7 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_deploy_contract_canonical_20260801
   next_action: deploy_contract群のcanonical修正
-  resolved_content: "陳腐化クローズ(将軍2026-08-04殿委任): deploy_contract最終発生2026-07-14、以降21日間ゼロ"
+  resolved_content: '陳腐化クローズ(将軍2026-08-04殿委任): deploy_contract最終発生2026-07-14、以降21日間ゼロ'
   resolved_by: shogun_stale_close_20260804
 - id: PD-131
   type: escalation
@@ -991,7 +992,7 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_report_schema_shape_canonical_20260801
   next_action: report schema_shape群のcanonical修正
-  resolved_content: "収束クローズ(将軍2026-08-04殿委任): report_yaml_format最終07-30、直近08-01の1件はresolved_by_cmd付き。再発時はPD再起票"
+  resolved_content: '収束クローズ(将軍2026-08-04殿委任): report_yaml_format最終07-30、直近08-01の1件はresolved_by_cmd付き。再発時はPD再起票'
   resolved_by: shogun_stale_close_20260804
 - id: PD-134
   type: action_required
@@ -1042,5 +1043,42 @@ decisions:
   next_cmd_id: cmd_karo_hotfix_report_yaml_generic_canonical_20260801
   next_action: report YAML general群のcanonical根治
   last_source_cmd: cmd_karo_hotfix_lesson_injection_precision_20260801
-  resolved_content: "収束クローズ(将軍2026-08-04殿委任): PD-133と同根。同上"
+  resolved_content: '収束クローズ(将軍2026-08-04殿委任): PD-133と同根。同上'
   resolved_by: shogun_stale_close_20260804
+- id: PD-137
+  type: lord_decision
+  summary: RB6 CLEAR後、signals.momentum_dataへstandard・leaf FoF・nested FoFのmomentum
+    scalarを保存する観測性契約を実装するか殿裁定が必要。現況は独立再計算からDB最終選抜結果まで一致するがscalar自体は未保存。RB6収束を優先し今は実装しない
+  source_cmd: cmd_4296
+  status: pending
+  created_at: '2026-08-13T15:49:50+09:00'
+  created_by: karo
+  origin: '[[cmd_4296]] -> [[momentum_scalar未保存]] -> [[RB6_CLEAR後の観測性裁定]]'
+- id: PD-138
+  type: lord_decision
+  summary: 'FoF子PF選択のtie-break規則: 6段キー(①config依存選択スコア合成ε1e-9→②12Mトータルリターン(両者13観測以上時のみ)→③設定来CAGR→④MaxDD小→⑤現保有維持→⑥設定来早い方、同率全採用廃止)。全6選択フィルタ共通層select_top_n_deterministicで解決。導入時1回の履歴組み替え(期待差分=cmd_4342
+    CSV 959月)を受容'
+  source_cmd: cmd_4344
+  status: resolved
+  created_at: '2026-08-18T00:25:02+09:00'
+  created_by: shogun
+  origin: '[[殿裁定_6段キー_20260817_1251_1259]] -> [[cmd_4344_手③切替]] -> [[FoF選択決定性PI]]'
+  resolved_at: '2026-08-18T00:25:03+09:00'
+  resolved_content: 殿裁定2026-08-17 12:51/12:59確定・22:03実装合図。手③cmd_4344で本番live(00:13)、full
+    run404で合否検証中。projects/dm-signal.yamlのPI(FoF選択決定性)としてカレンダー無関係に恒久
+  resolved_by: cmd_4344
+  context_synced: true
+- id: PD-139
+  type: lord_decision
+  summary: GitHubが不安定な間は安易なrevert/deployをしない(次のdeployが通る保証がない。本番はdeployできているのが幸い)。gist/CI/pushは時々リトライ。判断は障害復旧確認後
+  source_cmd: cmd_4344
+  status: resolved
+  created_at: '2026-08-18T06:56:51+09:00'
+  created_by: shogun
+  origin: '[[殿裁定_GitHub不安定時revert_deploy禁止_20260818_0045]] -> [[cmd_4344手③live後のrollback停止]]
+    -> [[外部障害時の運用原則]]'
+  resolved_at: '2026-08-18T06:56:52+09:00'
+  resolved_content: '殿裁定2026-08-18 00:45(原文lord terminal)。適用: cmd_4344 (a)BLOCK時の家老rollback着手を将軍が停止(revert/push/deploy
+    0)。GitHub復旧(gist同期成功 06:55)後は通常運用へ'
+  resolved_by: cmd_4344
+  context_synced: true

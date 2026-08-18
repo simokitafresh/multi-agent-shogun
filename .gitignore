@@ -11,6 +11,14 @@
 !*/
 
 # Local runtime / sandbox artifacts
+# Mutable telemetry is intentionally runtime-only.  Keeping its hot JSONL in
+# the index makes every correctly recorded event appear as an infrastructure
+# "uncommitted change" and eventually exceeds GitHub's object-size limit.
+logs/defense_overhead.jsonl
+logs/archive/defense_overhead_*.jsonl
+.cycle*_bench/
+.worktree-*/
+logs/wave-final-checkpoints/*/tree/
 .codex-tmp/
 .codex_tmp/
 .codex/*

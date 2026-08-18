@@ -9707,6 +9707,8 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **origin**: [[cmd_3665]]
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-08-18
 - grep/awkで'^- cmd_id:'のみをマッチさせるとcmd_id集計が過小になる。実データで検証したところ、同ファイル内のcmd_karo_hotfix_*エントリ55件中32件がcmd_id以外のフィールド(ac_count等)が先に書かれ'  cmd_id: xxx'の形(ダッシュ無し・2スペース字下げ)で出現していた。同ファイルを走査する新規gate/scriptは'^(-[[:space:]]*cmd_id:|[[:space:]][[:space:]]cmd_id:)'のように両形式を対象にせよ。本タスク中に自分の初期実装で先頭一致のみ書いてしまい実データ比較で気づいた
 
 ### L943: 性能最適化で処理呼び出しを削る際は副作用(生成物の更新)も棚卸しせよ
@@ -15012,3 +15014,121 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - context_freshness_check.shはtasks/lessons.mdのlesson-only除外をis_root_fallback_source_path条件内でのみ適用するため、外部DM-Signal contextのpathspecに同ファイルを含むops/researchではlesson-only commit 472a2117を鮮度ALERTへ算入した。またcmd_4300_readonlyの全文tokenとcontext本文の基底cmd_4300が一致せず、反映済みb06764f0も残る。次回は外部repo経路でもlesson-only判定と基底cmd ID照合を共通契約にする。
+
+### L1591: 世代境界のtest lifecycle契約をSTALE_FIELDSへ登録する
+- **日付**: 2026-08-15
+- **出典**: cmd_karo_hotfix_deploy_stale_test_lifecycle_20260815
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_stale_test_lifecycle_20260815]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 前task固有のtest_necessity/deletion_justification/transient_tests_deletedがreset対象外で次taskへ残り、commit gateを偽BLOCKした。世代スコープの新フィールドは登録漏れを回帰fixtureで検知する
+
+### L1592: context source registryをfreshness detectorのpathspec SSOTにする
+- **日付**: 2026-08-15
+- **出典**: cmd_karo_hotfix_ga466_context_freshness_20260815
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh,scripts/config/context_source_commits.tsv,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_ga466_context_freshness_20260815]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 発端: task dependency registryへ追加された依存境界がruntime freshness checkerの静的mapへ反映されず発火漏れ。原因: 二重定義されたpathspec frontier。結果: opsのcited:docs/researchでtrue positiveを見逃した。次回チェック: registryへtriggerを追加するfixtureを実行し、legacy map編集なしでALERT発火することをbinary確認する。
+
+### L1593: context freshness起票cmdはregistry owner route update_triggerを保持せよ
+- **日付**: 2026-08-17
+- **出典**: cmd_karo_hotfix_ga470_infrastructure_freshness_202608170147
+- **記録者**: hayate
+- **source**: GA-470
+- **tags**: [context-freshness, routing, gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[GA-470]] -> [[registry_owner_trigger_lost_in_template]] -> [[doc_lane_route_ambiguous]]
+- **enforcement**: Level4: gate fixture verifies owner route update_trigger in generated task and command
+- **when**: context freshness ALERTをtaskへ起票するとき
+- **how**: registry owner/update_triggerを読み、既存doc lane routeとともに生成YAML・commandへ保持し、fixtureで両方を確認する
+- 検出ALERTにはowner/update_triggerが付いていたが、起票テンプレートがprojectだけを保持して担当とtriggerを失っていた。生成YAMLとcommandの両方でowner/route/update_trigger保持を二値確認する。
+
+### L1594: context freshness候補をTOP3で切らず全件をLevel5入力へ保持
+- **日付**: 2026-08-17
+- **出典**: cmd_karo_hotfix_ga471_context_freshness_202608170345
+- **記録者**: hayate
+- **tags**: [infra,context]
+- **subdomain**: infra
+- **target_files**: [context/dm-signal-frontend.md,scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_ga471_context_freshness_202608170345]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 4件以上の同時stale contextでhead -3が候補を欠落させ、更新cmdの入力から同カテゴリ対象が消える。STALE_TEMPLATE_ROWSを全件出力し、4件fixtureで全件purpose生成を固定する。
+
+### L1595: rollback後はsource commit境界とlive記述を同時検証する
+- **日付**: 2026-08-17
+- **出典**: cmd_karo_hotfix_ga472_context_freshness_202608170955
+- **記録者**: hayate
+- **tags**: [infra,context,testing,git]
+- **subdomain**: infra
+- **target_files**: [context/dm-signal-core.md,context/dm-signal-ops.md]
+- **origin**: [[cmd_karo_hotfix_ga472_context_freshness_202608170955]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- rollbackは履歴上の大量commitを伴うため、次回はcurrent source tipの実効treeとcontext本文のlive主張を照合し、旧live主張を歴史記録へ降格してからsource_commit境界を進める。追加checkはrollback/revert検出時の本文current-state確認とregistry全件再計数。
+
+### L1596: freshness detectorは全registered ownerの承認receiptを更新要求へ接続する
+- **日付**: 2026-08-18
+- **出典**: cmd_karo_hotfix_ga475_context_freshness_20260818
+- **記録者**: saizo
+- **tags**: [infra,gate,review,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_ga475_context_freshness_20260818]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次回追加すべきcheck: 全registered context pathについて、source commitのcmd IDとterminal PASS report parent_cmd、APPROVE reviewを突合し、archive済みreportを含めてowner正しいCONTEXT_UPDATE_REQUESTを生成する。未承認sourceはALERTを維持する。
+
+### L1600: singleflight failure terminalは承認状態世代へ結合する
+- **日付**: 2026-08-18
+- **出典**: cmd_karo_hotfix_review_singleflight_rootfix_20260818
+- **記録者**: tobisaru
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/review_bundle.py,scripts/review_approval.sh,tests/unit/test_review_bundle.py,tests/unit/test_review_approval.bats]
+- **origin**: [[cmd_karo_hotfix_review_singleflight_rootfix_20260818]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- report/contract hashだけでfailure terminalを固定するとRC_REVOKE後も旧FAILを永久再利用する。approval-state generationをkeyへ含め、同一状態はfail-closed、状態遷移後のみ再試行可能にする。
+
+### L1601: Bounded lock rollover preserves active guards and old inode rollback
+- **日付**: 2026-08-18
+- **出典**: cmd_karo_hotfix_ninja_monitor_hot_reload_generation_20260818
+- **記録者**: kagemaru
+- **tags**: [infra,ninja-monitor,api]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_hot_reload.bats,scripts/daemon_supervisor.sh,tests/unit/test_daemon_supervisor.bats,scripts/daemon_watchdog.sh]
+- **origin**: [[cmd_karo_hotfix_ninja_monitor_hot_reload_generation_20260818]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- Dead owners can coexist with live old inode holders and recursive waiters; rollover must be bounded, reclaim only dead guards, verify inode change, and restore quarantine on create failure.
+
+### L1602: Freshness cmd checks must resolve the active task before archive publication
+- **日付**: 2026-08-18
+- **出典**: cmd_karo_hotfix_ga477_context_freshness_trigger_20260818
+- **記録者**: hanzo
+- **tags**: [infra,context,api,yaml,security]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh,context/dm-signal-research.md,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_ga477_context_freshness_trigger_20260818]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- When --cmd-warnings runs before chronicle/archive publication, queue/tasks/{ninja}.yaml is the live project SSOT. Parsing task_id/parent_cmd/issued_cmd_id and preserving a match prevents silent no-project output and restores Level5 freshness evidence injection.

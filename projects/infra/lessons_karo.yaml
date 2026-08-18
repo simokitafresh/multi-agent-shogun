@@ -657,12 +657,14 @@ lessons:
     吸収(2026-07-16, cmd_3997, origin: [[GA-276]] -> [[進行中commitの共有済み誤認]] -> [[global_cmd鮮度境界分離]]): dashboard/startupのglobal鮮度監視がローカルHEADを見ると、忍者commit直後かつcmd_complete_gate前の未還流変更を誤ALERTにする。globalはorigin/mainまたはorigin/masterの共有完了境界、cmd-warnings/cmd-commit-listはHEADを使う。修正前4 ALERT→修正後2 ALERT、dm-signal-core/ops誤検知2件消失。回帰67/67 PASS・SKIP0。
     吸収(2026-07-19, cmd_karo_hotfix_ga301_context_freshness_timeout_202607190431, origin: [[GA-301]] -> [[async_snapshot_miss_first_run]] -> [[bounded_sync_snapshot_consumption]]): GA-301でgateがasync refresh要求直後のNoneを消費しcodd.mdを偽BLOCK。producer予算を渡すだけでは結果契約にならない。gateのcache有無2経路へCFC_HISTORY_REFRESH_SYNC=1を強制し、空cache 8/8 rebuilt、codd BLOCK 1→0、source_commit一次照合を維持。次回追加チェック: new source tip+empty cacheの初回実行で対象BLOCK0を二値検証する。
     吸収(2026-08-02, cmd_karo_hotfix_context_freshness_ga426_20260802, origin: [[GA-426]] -> [[完了後直投入commit]] -> [[canonical_context_reflux_action]]): GA-426で完了境界caa26b5b後に外部repoへ直投入された155ab5e0はtask/report/cmd_complete相関0件のためown-commit gateでは捕捉不能だった。source backlog検出時はcontext/hashを結合したcanonical context_source_commit_set actionを自動提示する。実測はALERT 1→0、contract 57/57 PASS、SKIP0。
+    吸収(2026-08-17, cmd_karo_hotfix_ga471_context_freshness_202608170345, origin: [[cmd_karo_hotfix_ga471_context_freshness_202608170345]] -> [[STALE_TEMPLATE_ROWSのhead-3候補欠落]] -> [[Level5候補全件出力]]): 4件以上の同時stale contextでSTALE_TEMPLATE_ROWSのhead -3が候補を欠落させ、更新cmd入力から同カテゴリ対象が消えた。候補上限制限を除去し、4件敵対fixtureで全件purpose生成を固定する。
+    吸収(2026-08-17, cmd_karo_hotfix_ga473_context_freshness_202608171419, origin: [[GA-473_context_freshness_ALERT]] -> [[detectorとreflux_guardの契約分離]] -> [[canonical_receipt消費]]): source marker後のdocs/research commitを件数だけでstale判定すると、guardが保存したpath/status/blob fingerprint一致の既反映commitまで再警告する。detectorは同一canonical fingerprintを再計算し、receipt一致だけを除外し、不一致は未反映として残す。修正前4件→修正後2件、真の未反映2件は残してBLOCK。
   source_cmd: 'cmd_karo_hotfix_ga120_context_freshness_recon_20260623'
   when: 'context_freshness ALERT調査・報告レビュー時'
   how: '報告YAMLの原因欄に timeout秒数/root_fallback有無/repo path/commit_count/source commits を数値で記録し、cache有無だけで判定しない'
   created_at: '2026-06-23'
-  enforcement: "Level4: gate呼出2経路でCFC_HISTORY_REFRESH_SYNC=1を強制し、empty-cache初回BLOCK0をテスト"
-  enforcement_level: 4
+  enforcement: "Level5: stale候補を上限なしで更新cmd入力へ全件供給し、4件以上の敵対fixtureでN/N purpose出力を契約化"
+  enforcement_level: 5
 - id: 'LK010'
   title: 'AUTO-VOIDはsubtask_idを優先して分割taskを守る'
   origin: '[[cmd_3515]] -> [[AUTO-VOID_subtask_id無視]] -> [[kagemaru_L0_task誤void]]'

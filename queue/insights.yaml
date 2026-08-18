@@ -39,8 +39,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 22
-  last_seen: "2026-08-18T16:03:09+09:00"
+  occurrence_count: 26
+  last_seen: "2026-08-18T16:59:06+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -58,8 +58,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '99eeaae25c4fd9510507b67446ccdd98ec223b9d1d36742aa336eab4e17ed9a5' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 21
-  last_seen: "2026-08-18T15:07:47+09:00"
+  occurrence_count: 22
+  last_seen: "2026-08-18T16:21:39+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -747,8 +747,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '9acd4849d70da985b2d6d558a7b1d7cbd6e3f31bc8a5054a6c3e76eda5da994b' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 1
-  last_seen: "2026-08-18T15:59:06+09:00"
+  occurrence_count: 3
+  last_seen: "2026-08-18T16:29:36+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -813,3 +813,47 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_startup_archive_requires_clear_20260818"
   fix_known: false
   status: pending
+- id: INS-20260818-162228897-dd44
+  ts: "2026-08-18T16:22:28+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b135qma1j task id tool use id toolu 01VeU4opvqZBTmAP7i は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T16:24:29+09:00"
+- id: INS-20260818-162510794-79e4
+  ts: "2026-08-18T16:25:10+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_ga477_context_freshness_trigger_20260818; matched=context; current_pattern=; candidate_level=4; candidate=cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_ga477_context_freshness_trigger_20260818"
+  fix_known: false
+  status: pending
+- id: INS-20260818-164103963-69f6
+  ts: "2026-08-18T16:41:03+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_remote_tip_task_worktree_20260818; matched=bash,guard; current_pattern=; candidate_level=4; candidate=LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_remote_tip_task_worktree_20260818"
+  fix_known: false
+  status: pending
+- id: INS-20260818-164506993-8a8f
+  ts: "2026-08-18T16:45:06+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bpo23v56x task id tool use id toolu 01TBNZr7eLi8rn7B24 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T16:45:19+09:00"
+- id: INS-20260818-164520403-b48d
+  ts: "2026-08-18T16:45:20+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T16:45:27+09:00"

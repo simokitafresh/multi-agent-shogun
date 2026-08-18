@@ -224,3 +224,16 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"BLOCK(GA-231"* ]]
 }
+
+# test_necessity: shared-main integration must not inherit a private index and
+# advance ref/index while leaving changed worktree paths at an older blob.
+@test "direct shared git merge is blocked and convergence helper is allowed" {
+    run_hook "git merge --ff-only origin/main"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"D012"* ]]
+    [[ "$output" == *"safe_shared_main_ff.sh"* ]]
+
+    run_hook "bash scripts/safe_shared_main_ff.sh origin/main"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"D012"* ]]
+}

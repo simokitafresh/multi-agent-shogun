@@ -102,6 +102,12 @@ def check_git(tokens):
         if "--force-with-lease" not in args and ("--force" in args or "-f" in args):
             return "D003: git push --force/-f is forbidden (use --force-with-lease)"
         return ""
+    if sub == "merge" and cwd == project_root:
+        return (
+            "D012: direct git merge in the shared project worktree is forbidden; "
+            "use bash scripts/safe_shared_main_ff.sh <target> so ref/index/worktree "
+            "convergence is verified"
+        )
     if sub == "reset" and "--hard" in args:
         return "D004: git reset --hard is forbidden"
     if sub == "checkout" and "--" in args:
@@ -227,7 +233,7 @@ pre_bash_combined_command_needs_destructive_python() {
     local cmd="$1"
 
     case "$cmd" in
-        *"rm "*|*"sudo"*|*"su "*|*"kill"*|*"git push"*|*"git reset"*|*"git checkout"*|*"git restore"*|*"git clean"*|*"tmux kill"*) return 0 ;;
+        *"rm "*|*"sudo"*|*"su "*|*"kill"*|*"git push"*|*"git merge"*|*"git reset"*|*"git checkout"*|*"git restore"*|*"git clean"*|*"tmux kill"*) return 0 ;;
         *"mkfs"*|*"fdisk"*|*"mount"*|*"umount"*) return 0 ;;
     esac
     if [[ "$cmd" == *'curl'* || "$cmd" == *'wget'* ]]; then
@@ -646,7 +652,7 @@ pre_bash_combined_eval_command() {
     fi
 
     if [[ "$command" != *'rm '* && "$command" != *'sudo'* && "$command" != *'su '* && \
-          "$command" != *'kill'* && "$command" != *'git push'* && "$command" != *'git reset'* && \
+          "$command" != *'kill'* && "$command" != *'git push'* && "$command" != *'git merge'* && "$command" != *'git reset'* && \
           "$command" != *'git checkout'* && "$command" != *'git restore'* && "$command" != *'git clean'* && \
           "$command" != *'mkfs'* && "$command" != *'fdisk'* && "$command" != *'mount'* && "$command" != *'umount'* && \
           "$command" != *'dd '* && "$command" != *'chrome'* && "$command" != *'chromium'* && \

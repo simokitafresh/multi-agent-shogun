@@ -324,7 +324,7 @@ PY
   run python3 - "$ROOT" "$repo_a" "$sha_a" "$repo_b" "$sha_b" <<'PY'
 import copy, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(sys.argv[1]) / "scripts" / "lib"))
-from cross_repo_commit_contract import validate_cross_repo_commits
+from cross_repo_commit_contract import validate_cross_repo_commit_ownership
 report = {
     "commit_hash": sys.argv[3],
     "files_modified": [{"path": "a.txt"}],
@@ -333,24 +333,33 @@ report = {
         {"repo": sys.argv[4], "commit_hash": sys.argv[5], "paths": ["b.txt"]},
     ],
 }
-assert validate_cross_repo_commits(report) == []
+errors, _ = validate_cross_repo_commit_ownership(report)
+assert errors == [], errors
 # test_necessity: cross_repo ownership is limited to paths actually changed by
 # the declared commit; mere existence in that commit's tree is not ownership.
 case = copy.deepcopy(report)
 case["cross_repo_commits"][1]["paths"] = ["stable.txt"]
-errors = validate_cross_repo_commits(case)
+errors, _ = validate_cross_repo_commit_ownership(case)
 assert errors == ["cross_repo_commits[1] commit does not change path: stable.txt"], errors
 case = copy.deepcopy(report)
 case["files_modified"].append({"path": "undeclared.txt"})
-assert validate_cross_repo_commits(case) == ["files_modified path lacks cross-repo ownership: undeclared.txt"]
+errors, _ = validate_cross_repo_commit_ownership(case)
+assert errors == ["files_modified path lacks cross-repo ownership: undeclared.txt"], errors
 case = copy.deepcopy(report)
 case["cross_repo_commits"][1]["paths"] = ["a.txt"]
-assert validate_cross_repo_commits(case) == ["cross_repo path appears in multiple entries: a.txt"]
+errors, _ = validate_cross_repo_commit_ownership(case)
+assert errors == ["cross_repo_commits[1] commit does not change path: a.txt"], errors
+# Same path in two entries is allowed when both commits actually change it
+case = copy.deepcopy(report)
+case["cross_repo_commits"][1]["paths"] = ["b.txt", "b.txt"]
+errors, _ = validate_cross_repo_commit_ownership(case)
+assert errors == ["cross_repo path appears multiple times in cross_repo_commits[1]: b.txt"], errors
 case = copy.deepcopy(report)
 case["cross_repo_commits"][1]["commit_hash"] = "f" * 40
-assert validate_cross_repo_commits(case) == [
+errors, _ = validate_cross_repo_commit_ownership(case)
+assert errors == [
     "cross_repo_commits[1].commit_hash is not a resolvable 40-hex commit",
-], validate_cross_repo_commits(case)
+], errors
 PY
   [ "$status" -eq 0 ]
 }

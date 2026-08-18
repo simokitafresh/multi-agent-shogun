@@ -1259,7 +1259,7 @@ fi
 
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
-   "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \
+   "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git merge'* && "$payload" != *'git reset'* && \
    "$payload" != *'git checkout'* && "$payload" != *'git restore'* && "$payload" != *'git clean'* && \
    "$payload" != *'mkfs'* && "$payload" != *'fdisk'* && "$payload" != *'mount'* && "$payload" != *'umount'* && \
    "$payload" != *'dd '* && "$payload" != *'chrome'* && "$payload" != *'chromium'* && \
@@ -1275,7 +1275,7 @@ needs_destructive_python() {
 
     # shellcheck disable=SC2221,SC2222  # FP: independent glob patterns in same case arm
     case "$cmd" in
-        *"rm "*|*"sudo"*|*"su "*|*"kill"*|*"git push"*|*"git reset"*|*"git checkout"*|*"git restore"*|*"git clean"*|*"tmux kill"*) return 0 ;;
+        *"rm "*|*"sudo"*|*"su "*|*"kill"*|*"git push"*|*"git merge"*|*"git reset"*|*"git checkout"*|*"git restore"*|*"git clean"*|*"tmux kill"*) return 0 ;;
         *"mkfs"*|*"fdisk"*|*"mount"*|*"umount"*) return 0 ;;
     esac
     if [[ "$cmd" == *'curl'* || "$cmd" == *'wget'* ]]; then
@@ -1535,6 +1535,12 @@ def check_git(tokens):
         if "--force-with-lease" not in args and ("--force" in args or "-f" in args):
             return "D003: git push --force/-f is forbidden (use --force-with-lease)"
         return ""
+    if sub == "merge" and cwd == project_root:
+        return (
+            "D012: direct git merge in the shared project worktree is forbidden; "
+            "use bash scripts/safe_shared_main_ff.sh <target> so ref/index/worktree "
+            "convergence is verified"
+        )
     if sub == "reset" and "--hard" in args:
         return "D004: git reset --hard is forbidden"
     if sub == "reset" and "--hard" not in args:

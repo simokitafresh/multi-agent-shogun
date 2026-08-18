@@ -64,11 +64,17 @@ PY
 }
 
 @test "non-reviewable statuses mutate and notify zero" {
-  for state in in_progress done idle; do
+  for state in done idle; do
     write_task "$state" fp-new ""; before="$(sha)"
     run approve
     [ "$status" -ne 0 ]; [ "$(sha)" = "$before" ]; [ ! -e "$CALLS" ]
   done
+}
+
+@test "in_progress task accepts approval for parallel review" {
+  write_task in_progress fp-new ""
+  run approve
+  [ "$status" -eq 0 ]; [[ "$output" == *"APPROVAL_RECORDED"* ]]
 }
 
 @test "different existing receipt mutates and notifies zero" {

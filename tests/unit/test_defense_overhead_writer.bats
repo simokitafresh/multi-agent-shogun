@@ -48,6 +48,24 @@ PY
   [ "$(grep -c '"event_id":"tail-only"' "$DEFENSE_OVERHEAD_LEDGER")" -eq 1 ]
 }
 
+# test_necessity: the tracked hot ledger must never grow through GitHub's
+# 100 MiB object limit; rotation must preserve every old row in ignored archive
+# history while keeping a bounded recent window and accepting the new event.
+@test "oversized ledger rotates under writer locks without losing history" {
+  export DEFENSE_OVERHEAD_MAX_BYTES=200
+  export DEFENSE_OVERHEAD_KEEP_LINES=2
+  for i in 1 2 3 4; do
+    printf '{"timestamp":"old-%s","event_id":"old-%s","padding":"%080d"}\n' "$i" "$i" "$i" >> "$DEFENSE_OVERHEAD_LEDGER"
+  done
+  run defense_overhead_write test rotate 1 PASS new-event
+  [ "$status" -eq 0 ]
+  archive_file="$(find "$TEST_TMP/archive" -maxdepth 1 -name 'defense_overhead_*.jsonl' -print -quit)"
+  [ -n "$archive_file" ]
+  [ "$(grep -c 'old-' "$archive_file")" -eq 4 ]
+  [ "$(grep -c 'old-' "$DEFENSE_OVERHEAD_LEDGER")" -eq 2 ]
+  [ "$(grep -c 'new-event' "$DEFENSE_OVERHEAD_LEDGER")" -eq 1 ]
+}
+
 # test_necessity: the full-ledger sidecar preparation must occur before the append flock, and the lock-held path must contain no ledger grep/full scan; otherwise a 69MB writer can starve every startup receipt.
 @test "full ledger scan is structurally outside the append lock" {
   writer="$BATS_TEST_DIRNAME/../../scripts/lib/defense_overhead_writer.sh"

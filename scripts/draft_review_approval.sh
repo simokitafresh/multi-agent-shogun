@@ -76,7 +76,7 @@ if actual_id != expected_id:
     raise SystemExit("task id mismatch")
 if actual_fp != expected_fp:
     raise SystemExit("task fingerprint mismatch")
-if status not in {"assigned", "acknowledged"}:
+if status not in {"assigned", "acknowledged", "in_progress"}:
     raise SystemExit(f"task status must be assigned or acknowledged, got {status or '<empty>'}")
 wanted = {"reviewer":"gunshi", "result":"LGTM", "task_id":expected_id,
           "task_fingerprint":expected_fp, "evidence_message_id":evidence}

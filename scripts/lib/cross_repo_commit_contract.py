@@ -43,7 +43,6 @@ def validate_cross_repo_commit_ownership(
         return ["cross_repo_commits must be a list"], set()
 
     errors: list[str] = []
-    declared: set[str] = set()
     owned: set[str] = set()
     primary = str(report.get("commit_hash") or "").strip()
     commits: set[str] = set()
@@ -85,15 +84,16 @@ def validate_cross_repo_commit_ownership(
         if not isinstance(paths, list) or not paths:
             errors.append(f"{label}.paths must be a non-empty list")
             continue
+        entry_declared: set[str] = set()
         for raw_path in paths:
             path = str(raw_path or "").replace("\\", "/").strip().lstrip("./")
             if not path or path.startswith("/") or ".." in pathlib.PurePosixPath(path).parts:
                 errors.append(f"{label}.paths contains unsafe path: {raw_path!r}")
                 continue
-            if path in declared:
-                errors.append(f"cross_repo path appears in multiple entries: {path}")
+            if path in entry_declared:
+                errors.append(f"cross_repo path appears multiple times in {label}: {path}")
                 continue
-            declared.add(path)
+            entry_declared.add(path)
             if path not in changed:
                 errors.append(f"{label} commit does not change path: {path}")
                 continue

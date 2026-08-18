@@ -10,6 +10,8 @@ defense_overhead_write() {
     local verdict="${4:-}" event_id="${5:-}" metadata_json="${6-}"
     local ledger="${DEFENSE_OVERHEAD_LEDGER:-${DEFENSE_OVERHEAD_REPO_ROOT}/logs/defense_overhead.jsonl}"
     local lock_file="${ledger}.lock" line index_file index_lock helper prepare_rc append_rc
+    local max_bytes="${DEFENSE_OVERHEAD_MAX_BYTES:-67108864}"
+    local keep_lines="${DEFENSE_OVERHEAD_KEEP_LINES:-50000}"
 
     [ "${DEFENSE_OVERHEAD_ENABLED:-1}" = "1" ] || return 0
     [[ "$source_name" =~ ^[A-Za-z0-9_.:-]+$ ]] || return 2
@@ -17,6 +19,7 @@ defense_overhead_write() {
     [[ "$wall_ms" =~ ^[0-9]+$ ]] || return 2
     [[ "$verdict" =~ ^(PASS|FAIL|BLOCK|WARN)$ ]] || return 2
     [[ "$event_id" =~ ^[A-Za-z0-9_.:-]+$ ]] || return 2
+    [[ "$max_bytes" =~ ^[0-9]+$ && "$keep_lines" =~ ^[0-9]+$ ]] || return 2
     [ -d "$(dirname "$ledger")" ] || return 3
     [ -n "$metadata_json" ] || metadata_json='{}'
 
@@ -70,6 +73,43 @@ PY
     flock -w "${DEFENSE_OVERHEAD_INDEX_BUILD_TIMEOUT:-120}" "$DEFENSE_OVERHEAD_INDEX_FD" || {
         eval "exec ${DEFENSE_OVERHEAD_INDEX_FD}>&-"; return 3;
     }
+    # Keep the tracked hot ledger below GitHub's 100 MiB hard limit.  Rotation
+    # owns the same index-build -> append lock order as every writer, so no row
+    # can land between the size check and the atomic generation change.  Full
+    # history remains in the ignored logs/archive directory; the tracked file
+    # retains a bounded recent window for existing consumers.
+    if [ -f "$ledger" ] && [ "$(stat -c %s "$ledger" 2>/dev/null || echo 0)" -gt "$max_bytes" ]; then
+        exec {DEFENSE_OVERHEAD_ROTATE_FD}>>"$lock_file" || {
+            flock -u "$DEFENSE_OVERHEAD_INDEX_FD"
+            eval "exec ${DEFENSE_OVERHEAD_INDEX_FD}>&-"
+            return 3
+        }
+        flock -w "${DEFENSE_OVERHEAD_LOCK_TIMEOUT:-2}" "$DEFENSE_OVERHEAD_ROTATE_FD" || {
+            eval "exec ${DEFENSE_OVERHEAD_ROTATE_FD}>&-"
+            flock -u "$DEFENSE_OVERHEAD_INDEX_FD"
+            eval "exec ${DEFENSE_OVERHEAD_INDEX_FD}>&-"
+            return 3
+        }
+        if [ "$(stat -c %s "$ledger" 2>/dev/null || echo 0)" -gt "$max_bytes" ]; then
+            archive_dir="$(dirname "$ledger")/archive"
+            mkdir -p "$archive_dir"
+            archive_file="$archive_dir/defense_overhead_$(date -u +%Y%m%dT%H%M%S)_$(stat -c %i "$ledger").jsonl"
+            rotated_tmp="${ledger}.rotate.$$"
+            mv -- "$ledger" "$archive_file" || append_rc=3
+            if [ "${append_rc:-0}" -eq 0 ]; then
+                tail -n "$keep_lines" "$archive_file" > "$rotated_tmp" || append_rc=3
+                mv -- "$rotated_tmp" "$ledger" || append_rc=3
+            fi
+            rm -f -- "$rotated_tmp"
+        fi
+        flock -u "$DEFENSE_OVERHEAD_ROTATE_FD"
+        eval "exec ${DEFENSE_OVERHEAD_ROTATE_FD}>&-"
+        [ "${append_rc:-0}" -eq 0 ] || {
+            flock -u "$DEFENSE_OVERHEAD_INDEX_FD"
+            eval "exec ${DEFENSE_OVERHEAD_INDEX_FD}>&-"
+            return 3
+        }
+    fi
     prepare_rc=0
     python3 "$helper" prepare "$ledger" "$index_file" || prepare_rc=$?
     flock -u "$DEFENSE_OVERHEAD_INDEX_FD"

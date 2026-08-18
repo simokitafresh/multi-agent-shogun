@@ -1,0 +1,163 @@
+<title>DM-Signal Sign-in Showcase</title>
+<style>
+:root{
+  --bg:#f8fafc;--fg:#0f172a;--card:#ffffff;--muted:#64748b;--border:#e2e8f0;
+  --sec:#f1f5f9;--primary:#0369a1;--primary-fg:#ffffff;--success:#059669;--error:#dc2626;
+  --mask:#cbd5e1;--ring:#0ea5e9;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1220;--fg:#e5eaf3;--card:#111a2b;--muted:#94a3b8;--border:#1f2a3d;
+  --sec:#16213a;--primary:#38bdf8;--primary-fg:#06121f;--success:#34d399;--error:#f87171;--mask:#334155;--ring:#7dd3fc;}}
+:root[data-theme="dark"]{
+  --bg:#0b1220;--fg:#e5eaf3;--card:#111a2b;--muted:#94a3b8;--border:#1f2a3d;
+  --sec:#16213a;--primary:#38bdf8;--primary-fg:#06121f;--success:#34d399;--error:#f87171;--mask:#334155;--ring:#7dd3fc;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,"Segoe UI",Roboto,"Hiragino Sans","Noto Sans JP",sans-serif}
+.note{max-width:1120px;margin:20px auto 0;padding:0 24px;color:var(--muted);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.wrap{margin:16px auto 48px;padding:0 24px}
+
+h1,h2,h3{margin:0;text-wrap:balance}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.logo{width:34px;height:34px;border-radius:8px;background:var(--primary);color:var(--primary-fg);display:grid;place-items:center;font-weight:800;font-size:13px;letter-spacing:.02em}
+.brand b{font-size:17px}
+.brand span{color:var(--muted);font-size:13px}
+h1{font-size:34px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
+.ja{color:var(--muted);font-size:14px;margin-top:6px}
+.lead{margin:14px 0 0;max-width:56ch;color:var(--fg)}
+.sig{margin-top:26px;border:1px solid var(--border);border-radius:14px;background:var(--card);overflow:hidden}
+.sig header{display:flex;justify-content:space-between;align-items:baseline;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--sec)}
+.sig header b{font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.sig header span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sig table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.sig td,.sig th{padding:11px 18px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
+.sig th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sig tr:last-child td{border-bottom:0}
+.hold{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;background:color-mix(in srgb,var(--success) 14%,transparent);color:var(--success)}
+.locked{color:var(--muted)}
+.locked td.open{color:var(--fg);font-weight:600}
+.tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);vertical-align:middle}
+.sig td small{color:var(--muted);font-weight:400}
+.hidden-note{color:var(--muted);font-style:italic}
+.group td{background:var(--sec)}
+.blur{display:inline-block;height:12px;width:96px;border-radius:6px;background:var(--mask);vertical-align:middle}
+.blur.s{width:56px}
+.sig footer{padding:10px 18px;font-size:12px;color:var(--muted);background:var(--sec);border-top:1px solid var(--border)}
+.tiers{margin-top:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:640px){.tiers{grid-template-columns:1fr}}
+.tier{border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:var(--card)}
+.tier b{display:block;font-size:14px}
+.tier small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.tier p{margin:8px 0 0;font-size:13px}
+.tier .ja{font-size:12px;margin-top:2px}
+.links{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px 18px;font-size:14px}
+.links a{color:var(--primary);text-decoration:none;font-weight:600}
+.links a:hover,.links a:focus-visible{text-decoration:underline;outline:none}
+/* desktop/tablet: two columns, rich sticky card in page */
+.wrap{max-width:1120px;display:grid;grid-template-columns:1.25fr .9fr;gap:40px;align-items:start}
+.login{position:sticky;top:20px;border:1px solid var(--border);border-radius:14px;background:var(--card);padding:28px}
+.login .close,.mobar,.overlay{display:none}
+.login .rich{display:block}
+/* mobile: single column, simple card inline at bottom + sticky bottom button -> simple popup */
+@media (max-width:860px){
+  .wrap{grid-template-columns:1fr;max-width:820px}
+  .mobar{display:block;position:sticky;bottom:0;z-index:20;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--border)}
+  .mobar button{margin:0}
+  .login{position:static;padding:22px}
+  .login .rich{display:none}
+  .overlay{position:fixed;inset:0;z-index:50;background:rgba(2,6,23,.45);display:none;align-items:flex-end;justify-content:center}
+  .overlay.open{display:flex}
+  .overlay .login{position:relative;width:100%;border-radius:14px 14px 0 0;padding:22px 22px calc(22px + env(safe-area-inset-bottom))}
+  .overlay .close{display:block;position:absolute;top:10px;right:10px;width:32px;height:32px;margin:0;padding:0;border-radius:8px;background:transparent;color:var(--muted);font-size:20px;line-height:1}
+}
+.login h2{font-size:24px;font-weight:800}
+.login .ja{margin-top:2px}
+.login p.help{margin:14px 0 0;font-size:14px;color:var(--muted)}
+label{display:block;margin-top:20px;font-size:13px;font-weight:600}
+label small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+input{width:100%;margin-top:8px;padding:12px 14px;font:inherit;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg)}
+input:focus-visible{outline:2px solid var(--ring);outline-offset:1px;border-color:var(--ring)}
+button{width:100%;margin-top:14px;padding:13px;font:inherit;font-weight:700;font-size:15px;border:0;border-radius:10px;background:var(--primary);color:var(--primary-fg);cursor:pointer}
+button:hover{filter:brightness(1.06)}button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.divider{margin:20px 0 0;border-top:1px solid var(--border);padding-top:16px;font-size:13px;color:var(--muted)}
+.divider a{color:var(--primary);font-weight:600;text-decoration:none}
+.ghost{width:100%;margin-top:10px;padding:12px;font:inherit;font-weight:700;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--fg);cursor:pointer}
+.ghost:hover{background:var(--sec)}
+.blackout{margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--sec);border:1px solid var(--border);font-size:12px;color:var(--muted)}
+.foot{max-width:1120px;margin:0 auto 40px;padding:0 24px;font-size:12px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
+</style>
+
+<div class="note">Mockup · /login · desktop/tablet: two columns, rich sticky card · mobile (≤860px): showcase → simple card at bottom + sticky "Sign in" → simple popup</div>
+
+<div class="wrap">
+  <section class="show">
+    <div class="brand"><div class="logo">DM</div><b>DM-Signal</b><span>Dual Momentum signals, every trading day</span></div>
+    <h1>What to hold today — computed, not guessed.</h1>
+    <div class="ja">今日、何を保有すべきか。毎営業日、ルールで自動計算。</div>
+    <p class="lead">DM-Signal computes Dual Momentum portfolios every trading day at 12:00 JST and shows the current holding for each. Ten-plus years of backtests are open for inspection. Every holding is rule-based and reproducible — no discretion, no guesswork.</p>
+    <div class="sig">
+      <header><b>Today's signals · 50 portfolios</b><span>Updated 2026-08-18 12:00 JST</span></header>
+      <table>
+        <tr><th>Portfolio</th><th>Holding</th><th>Momentum</th><th>Total return since inception</th></tr>
+        <tr><td>Basic Dual Momentum <span class="tag">Free · full access</span></td><td><span class="hold">QQQ</span></td><td>+18.4%</td><td>+312% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td>DM-safe</td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+486% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td>Shin Byakko · Aggressive <small>(Shijin)</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,150% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td>Shin Bunshin <small>(Ninpo)</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,480% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td>Shin Yotsume <small>(Ninpo)</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,720% <small>(2012–)</small></td></tr>
+        <tr class="locked group"><td>+ 18 portfolios <small>Shijin · Ninpo</small></td><td colspan="2" class="hidden-note">Standard members only ／ スタンダード会員限定</td><td class="open">up to +2,900%</td></tr>
+        <tr class="locked group"><td>+ 15 portfolios <small>Ougi · Hi-Ougi</small></td><td colspan="2" class="hidden-note">Premium members only ／ プレミアム会員限定</td><td class="open">up to +4,800%</td></tr>
+        <tr class="locked group"><td>+ 12 portfolios <small>FoF · Limited</small></td><td colspan="2" class="hidden-note">Limited members only · by invitation ／ 招待制</td><td class="open">—</td></tr>
+      </table>
+      <footer>Basic Dual Momentum is fully open. Four showcase portfolios reveal their total return; the rest are grouped by membership level. ／ Basic DMは完全公開。代表4本は総リターン公開、残りは会員ランク別に存在のみ表示。</footer>
+    </div>
+
+    <div class="tiers">
+      <div class="tier"><b>Basic</b><small>¥1,000 / month · first month free</small><p>Monthly password on note. Core portfolios.</p><div class="ja">ベーシック：noteで当月パスワード配布</div></div>
+      <div class="tier"><b>Standard</b><small>¥8,000 / month</small><p>Everything in Basic plus the full lineup.</p><div class="ja">スタンダード：全ラインナップ</div></div>
+      <div class="tier"><b>Coupon</b><small>Time-limited code</small><p>Access for the coupon period. No note account needed.</p><div class="ja">クーポン期間中アクセス・note不要</div></div>
+    </div>
+
+    <div class="links">
+      <a href="#">What is Dual Momentum? (note, 日本語) →</a>
+      <a href="#">Join the membership on note →</a>
+      <a href="#">Weekly report →</a>
+      <a href="#">@TokyoJibika on X →</a>
+    </div>
+  </section>
+
+  <aside class="login" role="dialog" aria-labelledby="signin">
+    <h2 id="signin">Sign in</h2>
+    <div class="ja">ログイン</div>
+    <p class="help rich">Enter this month's password from the note membership, or a coupon code.<br><span class="ja">noteメンバーシップ掲載の当月パスワード、またはクーポンコードを入力してください。</span></p>
+    <form onsubmit="return false">
+      <label for="pw">Password or coupon code<small>当月パスワード または クーポンコード</small></label>
+      <input id="pw" type="password" autocomplete="current-password" placeholder="••••••••" />
+      <button type="submit">Sign in →</button>
+    </form>
+    <div class="blackout rich">During the monthly changeover, the previous password stops working before the new one is posted on note. ／ 月次更新中は新パスワード公開までお待ちください。</div>
+    <div class="divider">This month's password is on note. <a href="#">Get it →</a><br>当月パスワードはnoteメンバーシップに掲載。</div>
+    <div class="divider rich" style="border:0;padding-top:8px;margin-top:8px">Basic membership starts free for the first month. ／ ベーシックは初月無料。</div>
+  </aside>
+</div>
+
+<div class="overlay" id="ov" onclick="if(event.target===this)closeLogin()">
+  <aside class="login" role="dialog" aria-labelledby="signin-m" aria-modal="true">
+    <button class="close" type="button" aria-label="Close" onclick="closeLogin()">×</button>
+    <h2 id="signin-m">Sign in</h2>
+    <div class="ja">ログイン</div>
+    <form onsubmit="return false">
+      <label for="pw-m">Password or coupon code<small>当月パスワード または クーポンコード</small></label>
+      <input id="pw-m" type="password" autocomplete="current-password" placeholder="••••••••" />
+      <button type="submit">Sign in →</button>
+    </form>
+    <div class="divider">This month's password is on note. <a href="#">Get it →</a><br>当月パスワードはnoteメンバーシップに掲載。</div>
+  </aside>
+</div>
+
+<div class="mobar"><button type="button" onclick="openLogin()">Sign in ／ ログイン</button></div>
+<script>
+function openLogin(){document.getElementById('ov').classList.add('open');setTimeout(()=>document.getElementById('pw-m').focus(),0)}
+function closeLogin(){document.getElementById('ov').classList.remove('open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLogin()})
+</script>
+
+<div class="foot"><span>© DM-Signal</span><span>Not investment advice · 投資助言ではありません</span><span>Data: daily close, US ETFs</span></div>
