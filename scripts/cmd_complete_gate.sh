@@ -627,6 +627,35 @@ PY
     printf '%s\n' "$SCRIPT_DIR"
 }
 
+# Editing and test attribution deliberately resolve to task_worktree_path, but
+# publication must use the canonical repository that owns the remote/upstream.
+# A linked worktree commonly has no branch upstream of its own; treating it as
+# the push repository makes an already-published task fail at completion.
+resolve_task_publish_repo_dir() {
+    local task_file="$1" publish_meta task_worktree_repo contract_repo candidate root
+    publish_meta=$(python3 - "$task_file" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = data.get("task", data)
+contract = task.get("commit_contract") or {}
+if not isinstance(contract, dict):
+    contract = {}
+print(str(task.get("task_worktree_repo") or ""))
+print(str(contract.get("repo_root") or ""))
+PY
+) || return 1
+    task_worktree_repo=$(printf '%s\n' "$publish_meta" | sed -n '1p')
+    contract_repo=$(printf '%s\n' "$publish_meta" | sed -n '2p')
+    for candidate in "$task_worktree_repo" "$contract_repo"; do
+        [ -n "$candidate" ] || continue
+        if root=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null); then
+            printf '%s\n' "$root"
+            return 0
+        fi
+    done
+    resolve_task_repo_dir "$task_file"
+}
+
 # cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730:
 # GA-PUSH1(.githooks/pre-push のdirty working tree guard)と同一の重複判定を
 # git push呼出前に行う。判定は正しい(公開commitと未確定worktreeの不整合を防ぐ)が、
@@ -1568,7 +1597,7 @@ push_task_repositories() {
     fi
 
     for task_file in "${eligible_task_files[@]}"; do
-        repo=$(resolve_task_repo_dir "$task_file") || continue
+        repo=$(resolve_task_publish_repo_dir "$task_file") || continue
         [ -n "$repo" ] || continue
         if [[ ! "${seen_repos[$repo]+_}" ]]; then
             seen_repos["$repo"]=1
@@ -1641,7 +1670,7 @@ push_task_repositories() {
         else
             for task_file in "${eligible_task_files[@]}"; do
                 [ -f "$task_file" ] || continue
-                [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
+            [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
                 source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
                 if [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
                     source_commits+=("$source_sha")
@@ -1673,7 +1702,7 @@ push_task_repositories() {
             done
             if [ "$all_remote" = true ]; then
                 for task_file in "${eligible_task_files[@]}"; do
-                    [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
+                    [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
                     mark_task_worktree_published "$task_file" "$remote_tip" || return 1
                 done
                 if [ "$source_equivalent_used" = true ]; then
@@ -1696,7 +1725,7 @@ push_task_repositories() {
                 published_remote_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
                 [[ "$published_remote_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "  git push: BLOCK ($repo published tip verification failed)"; return 1; }
                 for task_file in "${eligible_task_files[@]}"; do
-                    [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
+                    [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
                     mark_task_worktree_published "$task_file" "$published_remote_sha" || return 1
                 done
                 echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"

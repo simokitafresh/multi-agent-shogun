@@ -4711,6 +4711,46 @@ EOF
     [ ! -s "$base/git_push_calls.log" ]
 }
 
+# test_necessity: task_worktree_path owns editing and test attribution but has
+# no branch upstream; source publication must resolve task_worktree_repo (or
+# commit_contract.repo_root) and never try to push from the detached worktree.
+@test "AC2: task worktree publication uses its canonical repository upstream" {
+    local base="$BATS_TEST_TMPDIR/ac2-worktree-publish-repo"
+    local source_sha
+    _push_overlap_repo_init "$base"
+    printf 'worktree final\n' > "$base/repo/shared.txt"
+    git -C "$base/repo" add shared.txt
+    git -C "$base/repo" commit -q -m "worktree source identity"
+    source_sha="$(git -C "$base/repo" rev-parse HEAD)"
+    printf '%s\n' "$source_sha" > "$base/source.sha"
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'worktree final\n' > "$base/remote-clone/shared.txt"
+    git -C "$base/remote-clone" add shared.txt
+    git -C "$base/remote-clone" commit -q -m "equivalent remote publication"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+    git -C "$base/repo" worktree add -q --detach "$base/task-wt" "$source_sha"
+    _push_overlap_task_yaml "$base"
+    cat >> "$base/task.yaml" <<YAML
+  task_worktree_path: $base/task-wt
+  task_worktree_repo: $base/repo
+  commit_contract:
+    repo_root: $base/repo
+YAML
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_worktree_publish_repo_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"$base/repo report source commits source-equivalent to remote tip"* ]]
+    [[ "$output" != *"$base/task-wt upstream missing"* ]]
+    [ ! -s "$base/git_push_calls.log" ]
+}
+
 # test_necessity: snapshot equivalence is fail-closed.  Matching repository and
 # path names do not count when even one final blob differs.
 @test "AC2: divergent remote blob is not accepted as source-equivalent" {
