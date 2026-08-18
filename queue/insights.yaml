@@ -939,7 +939,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'aa6bfcc8a54b1da47d141ddd294cc4d458511b32c98ce98bbd1cc10dc9998f20' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -949,6 +949,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "source event verified exactly once; review bundle delivery succeeded and SG7-preserving optimization candidate is durably captured, so no additional implementation is required in this bounded reflux task"
+  action_artifact: "logs/self_retro.jsonl:3331 event_id=aa6bfcc8a54b1da47d141ddd294cc4d458511b32c98ce98bbd1cc10dc9998f20 count=1 wall_ms=21930 endpoint=gunshi_review_bundle"
+  resolved_at: "2026-08-18T20:36:37+09:00"
 - id: INS-20260818-202601228-f903
   ts: "2026-08-18T20:26:01+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bhsx5q27b task id tool use id toolu 01B6H1qr2BzcRHQ14k は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
