@@ -197,9 +197,9 @@ context/lord-conversation-index.md
 queue/screenshots/
 queue/ntfy_batch_queue.txt
 
-# Logs (quality tracking)
+# Logs are live runtime ledgers.  Durable source changes belong in scripts and
+# knowledge files; tracking append/rotation output dirties every clean cycle.
 !logs/
-!logs/cmd_design_quality.yaml
 
 # Tasks (SSOT lessons only)
 !tasks/
@@ -316,4 +316,5 @@ tests/unit/_tmp_*.bats
 # 三層記憶SSOT: rgはwhitelist .gitignoreの`*`をtrackedファイルにも適用するため、
 # !許可が無いとcausal_index等のrg走査からindex.md(SSOT)が沈黙脱落する(2026-07-27将軍実測)
 !docs/semantic-index/
-!docs/semantic-index/index.md
+# Generated from the tracked semantic sources; rebuilt locally on demand.
+docs/semantic-index/index.md
