@@ -2,10 +2,19 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGET="${1:-}"
+if [[ "${1:-}" == "--repo" ]]; then
+    [[ -n "${2:-}" && -n "${3:-}" && -z "${4:-}" ]] || {
+        echo "usage: bash scripts/safe_shared_main_ff.sh [--repo <repo>] <target-commit>" >&2
+        exit 2
+    }
+    ROOT="$(cd "$2" && pwd)"
+    TARGET="$3"
+else
+    TARGET="${1:-}"
+fi
 
 if [[ -z "$TARGET" ]]; then
-    echo "usage: bash scripts/safe_shared_main_ff.sh <target-commit>" >&2
+    echo "usage: bash scripts/safe_shared_main_ff.sh [--repo <repo>] <target-commit>" >&2
     exit 2
 fi
 

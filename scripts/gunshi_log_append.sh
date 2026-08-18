@@ -15,6 +15,21 @@ LOG_FILE="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
 MAX_LINES=2500
 
+# The review ledger is live runtime state.  A clean checkout intentionally
+# does not track it, so the first review must be able to create the ledger
+# without a bootstrap race.  Use the same lock as append/archive and publish
+# only when the path is still absent after acquiring it.
+mkdir -p "$(dirname "$LOG_FILE")"
+if [ ! -f "$LOG_FILE" ]; then
+    exec 198>"$LOG_FILE.lock"
+    flock -w 30 198 || { echo "ERROR: review ledger init lock timeout" >&2; exit 1; }
+    if [ ! -f "$LOG_FILE" ]; then
+        printf '# gunshi review runtime ledger\n' > "$LOG_FILE"
+    fi
+    flock -u 198 2>/dev/null || true
+    exec 198>&-
+fi
+
 # Batch入口は各entryを既存の厳格な単件validatorへ通す。共有logへの書込みは
 # 単件側のflockで直列化されるため、並行precheck/notifyと組み合わせてもlost updateしない。
 if [ "${1:-}" = "--batch" ]; then
@@ -37,11 +52,6 @@ for item in items:
 print(f"OK: batch appended {len(items)} review entries")
 ' "$0" "$SCRIPT_DIR"
     exit $?
-fi
-
-if [ ! -f "$LOG_FILE" ]; then
-    echo "ERROR: $LOG_FILE not found" >&2
-    exit 1
 fi
 
 # Read entry from stdin

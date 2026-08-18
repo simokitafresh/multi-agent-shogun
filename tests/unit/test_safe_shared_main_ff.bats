@@ -41,3 +41,12 @@ setup() {
   [[ "$output" == *"overlap"* ]]
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
 }
+
+@test "explicit repo converges an external shared main with the same checks" {
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"result=PASS"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+  git -C "$FIX" diff --quiet HEAD -- a.txt
+}

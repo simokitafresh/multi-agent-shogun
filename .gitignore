@@ -155,6 +155,10 @@ queue/memory_db_live_insert_queue/
 !context/*.md
 !context/archive/
 !context/archive/*.md
+# Auto-generated live conversation cache.  The durable source is
+# queue/lord_conversation.jsonl; tracking this projection makes every new
+# conversation dirty the source worktree.
+context/lord-conversation-index.md
 
 # Scripts (glob: スクリプト追加時にgitignore編集不要)
 !scripts/
