@@ -85,7 +85,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4354"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次コード・設計文書・履歴確認で既実装を確認。scripts/gates/gate_diagnose_check.shは同一忍者×同一主BLOCK理由を連続計数し、2回以上でDIVERGENT仮説転換を強制する。context/codd.md §4はGP-198/200 CLEARを記録。追加修正・decision_candidate不要。"
+  action_artifact: "queue/reports/hayate_report_cmd_reflux_insight_202608190151_hayate.yaml"
+  resolved_at: "2026-08-19T01:53:26+09:00"
 - id: INS-20260818-153446274-e315
   ts: "2026-08-18T15:34:46+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_残9oracle境界を完全に詰める_20260818_0716]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=23.3) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0000; score=20.4) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=19.0)。概念定義とaliases追加を検討せよ"
