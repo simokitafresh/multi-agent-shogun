@@ -204,6 +204,61 @@ ds_start_ninja_monitor() {
     ds_log "START: ninja_monitor.sh pid=${new_pid}"
 }
 
+ds_ninja_monitor_owner_healthy() {
+    local owner_file="${NINJA_MONITOR_OWNER_FILE:-$STATE_DIR/ninja_monitor.owner}"
+    local identity_file="${owner_file}.identity"
+    local owner_pid="" generation="" heartbeat="" script_mtime="" fingerprint=""
+    local current_fingerprint=""
+    [ -f "$owner_file" ] || return 1
+    read -r owner_pid generation heartbeat _legacy_mtime _legacy_fingerprint < "$owner_file" 2>/dev/null || return 1
+    [[ "$owner_pid" =~ ^[0-9]+$ && -n "$generation" && "$heartbeat" =~ ^[0-9]+$ ]] || return 1
+    ds_pid_live "$owner_pid" || return 1
+    [[ "$(ds_cmdline "$owner_pid")" == *"/scripts/ninja_monitor.sh"* ]] || return 1
+    read -r script_mtime fingerprint < "$identity_file" 2>/dev/null || return 1
+    current_fingerprint="$(sha256sum "$SCRIPT_DIR/scripts/ninja_monitor.sh" 2>/dev/null | awk '{print $1}')"
+    [ -n "$fingerprint" ] && [ "$fingerprint" = "$current_fingerprint" ]
+}
+
+ds_supervise_ninja_monitor() {
+    local owner_file="${NINJA_MONITOR_OWNER_FILE:-$STATE_DIR/ninja_monitor.owner}"
+    local start_lock="${STATE_DIR}/ninja_monitor.supervisor.start.lock"
+    local starting_file="${STATE_DIR}/ninja_monitor.supervisor.starting"
+    local starting_pid="" starting_epoch="" starting_age=0 lock_fd
+    local -a legacy_pids=()
+    if ds_ninja_monitor_owner_healthy; then
+        ds_log "HEALTH-OK: ninja_monitor owner=healthy identity=current"
+        return 0
+    fi
+
+    mapfile -t legacy_pids < <(ds_pattern_pids "[n]inja_monitor\\.sh" "/scripts/ninja_monitor.sh")
+    mkdir -p "$STATE_DIR"
+    exec {lock_fd}>"$start_lock"
+    flock "$lock_fd"
+    if ds_ninja_monitor_owner_healthy; then
+        flock -u "$lock_fd"; eval "exec ${lock_fd}>&-"
+        ds_log "HEALTH-OK: ninja_monitor owner=healthy after-lock identity=current"
+        return 0
+    fi
+    if [ -f "$starting_file" ]; then
+        read -r starting_pid starting_epoch < "$starting_file" 2>/dev/null || true
+        if [[ "$starting_epoch" =~ ^[0-9]+$ ]]; then
+            starting_age=$((EPOCHSECONDS - starting_epoch))
+        else
+            starting_age=999999
+        fi
+        if [[ "$starting_pid" =~ ^[0-9]+$ ]] && ds_pid_live "$starting_pid" && (( starting_age < 60 )); then
+            flock -u "$lock_fd"; eval "exec ${lock_fd}>&-"
+            ds_log "HEALTH-WAIT: ninja_monitor startup_claim pid=${starting_pid} age=${starting_age}s legacy_pids=${#legacy_pids[@]}"
+            return 0
+        fi
+    fi
+    printf '%s %s\n' "$$" "$EPOCHSECONDS" > "$starting_file"
+    ds_log "OWNER-INVALID: ninja_monitor owner/identity mismatch; legacy_pids=${#legacy_pids[@]} start=1"
+    ds_start_ninja_monitor
+    flock -u "$lock_fd"
+    eval "exec ${lock_fd}>&-"
+}
+
 ds_start_ntfy_listener() {
     nohup bash "$SCRIPT_DIR/scripts/ntfy_listener.sh" >> "$SCRIPT_DIR/logs/ntfy_listener.log" 2>&1 &
     disown
@@ -329,7 +384,7 @@ ds_main() {
         ds_supervise_inbox_watcher "$agent" || failed=$((failed + 1))
     done < <(ds_agent_list)
 
-    ds_supervise_singleton "ninja_monitor.sh" "[n]inja_monitor\.sh" "/scripts/ninja_monitor.sh" ds_start_ninja_monitor || failed=$((failed + 1))
+    ds_supervise_ninja_monitor || failed=$((failed + 1))
     ds_supervise_singleton "ntfy_listener.sh" "[n]tfy_listener\.sh" "/scripts/ntfy_listener.sh" ds_start_ntfy_listener || failed=$((failed + 1))
 
     if (( failed > 0 )); then
