@@ -403,7 +403,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:222ec5ac6f788011"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行gate再実測rc=2で追従要求を確認。最新contract fingerprintの後継insightへ全38対が再起票されたため旧09:40 snapshotをsuperseded解決"
+  action_artifact: "successor=INS-20260818-193113793-ea16; gate_skill_script_refs rc=2; scanned=41 skills; refs=82; review_required=38"
+  resolved_at: "2026-08-18T19:31:43+09:00"
 - id: INS-20260818-095417685-6196
   ts: "2026-08-18T09:54:17+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_cmd_complete_singleflight_terminal_20260818; matched=cmd_complete; current_pattern=; candidate_level=2; candidate=cmd_1955で影丸が13回連続BLOCK(draft_lessons:1)。忍者にはdraft教訓の査読権限がなく全リトライが無駄。GP-200(DIVERGENT)は忍者修正可能なBLOCKが前提であり外部依存BLOCKには効かない。cmd_complete_gate.sh L3158のBLOCKメッセージに「忍者は解消不可。家老に報告して待機」ガイダ; source=gunshi_gp_tracker.yaml"
@@ -958,3 +961,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-18T19:22:25+09:00"
+- id: INS-20260818-193113793-ea16
+  ts: "2026-08-18T19:31:13+09:00"
+  insight: "SKILL.md追従task[a680cd19c5e960e7]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/dashboard_update.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/dream/SKILL.md <- scripts/semantic_search.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gist-share/SKILL.md <- scripts/gist_share.sh; skills/gs-bench-gate/SKILL.md <- /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py; skills/hot-script-design/SKILL.md <- scripts/gist_share.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-clear-prep/SKILL.md <- scripts/clear_prep_check.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-cli-switch/SKILL.md <- /home/simokitafresh/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_search.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:a680cd19c5e960e7"
+  fix_known: false
+  status: pending
