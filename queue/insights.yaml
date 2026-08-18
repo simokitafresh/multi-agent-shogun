@@ -383,7 +383,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_uncommitted_ungated_root_20260818"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存GP-239が同一事故をLevel5相当で防止済み: Codex全paneをpstreeでbypass flag検査し、非idle時はfail-closed、startup直後と周期監視で自己回復するため重複候補"
+  action_artifact: "scripts/ninja_monitor.sh:10875-10944,10983-10984; GP-239 Codex bypass flag self-heal"
+  resolved_at: "2026-08-18T19:15:31+09:00"
 - id: INS-20260818-093953722-382e
   ts: "2026-08-18T09:39:53+09:00"
   insight: "[[同一report generationの重複通知がreview bundleとLGTM記録を多重起動し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=tobisaru_review_pending; score=4.1) / provisional_kagemaru(仮: Kagemaru; alias=karoをcodex CLIのGPT5 6 sol mediumにrespwanせよ; score=3.9) / known_unknowns_principle(無知の知; alias=teardownのrmは全testごとの重複I O; score=3.9)。既存概念aliasesへの自動昇格候補"
