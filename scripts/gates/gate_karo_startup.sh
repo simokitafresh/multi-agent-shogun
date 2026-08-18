@@ -2593,6 +2593,42 @@ echo ""
 # hide a report that would block the next deployment.
 echo "■ completed未archive検知"
 _completed_unarchived_count=0
+# A terminal report is not archiveable merely because its generation can be
+# hashed.  The cmd_complete worker owns the durable CLEAR receipt; require the
+# same report generation in that receipt before invoking archive_completed.
+_gate_worker_clear_receipt_matches_generation() {
+    local marker="$1" expected_cmd="$2" expected_generation="$3"
+    python3 - "$marker" "$expected_cmd" "$expected_generation" <<'PY'
+import json
+import re
+import sys
+
+marker, expected_cmd, expected_generation = sys.argv[1:]
+try:
+    with open(marker, encoding="utf-8") as fh:
+        data = json.load(fh)
+except (OSError, ValueError, TypeError):
+    raise SystemExit(1)
+
+if not isinstance(data, dict):
+    raise SystemExit(1)
+if data.get("version") != 1 or data.get("state") != "clear":
+    raise SystemExit(1)
+if data.get("cmd_id") != expected_cmd:
+    raise SystemExit(1)
+generation = str(data.get("completion_generation") or "")
+if not re.fullmatch(r"[0-9a-f]{64}", generation):
+    raise SystemExit(1)
+if generation != expected_generation:
+    raise SystemExit(1)
+try:
+    if int(data.get("persisted_at_ns")) <= 0:
+        raise SystemExit(1)
+except (TypeError, ValueError):
+    raise SystemExit(1)
+PY
+}
+
 for _cur_ninja in $_KARO_NINJA_NAMES; do
     _cur_task_file="$SCRIPT_DIR/queue/tasks/${_cur_ninja}.yaml"
     [ -f "$_cur_task_file" ] || continue
@@ -2615,9 +2651,29 @@ for _cur_ninja in $_KARO_NINJA_NAMES; do
     [ -n "$_cur_active_report" ] || continue
     _cur_archive_script="$SCRIPT_DIR/scripts/archive_completed.sh"
     _cur_generation="$(sha256sum "$_cur_active_report" | awk '{print $1}')"
+    _cur_clear_marker="$_cur_gate_dir/gate_worker.clear.json"
+    if ! _gate_worker_clear_receipt_matches_generation \
+        "$_cur_clear_marker" "$_cur_parent_cmd" "$_cur_generation"; then
+        # Do not let a missing/stale worker receipt become a terminal archive.
+        # yaml_field_set is the shared atomic task-state writer; failure to
+        # revert is itself a BLOCK, never a reason to continue archiving.
+        _cur_revert_rc=0
+        bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" \
+            "$_cur_task_file" task status in_progress >/dev/null 2>&1 || _cur_revert_rc=$?
+        if [ "$_cur_revert_rc" -eq 0 ]; then
+            echo "  BLOCK: ${_cur_ninja} completed_unarchived task=${_cur_parent_cmd} CLEAR receipt missing or generation mismatch; task→in_progress; archive_completed skipped"
+        else
+            echo "  BLOCK: ${_cur_ninja} completed_unarchived task=${_cur_parent_cmd} CLEAR receipt missing and task revert failed; archive_completed skipped"
+        fi
+        overall="BLOCK"
+        alerts+=("${_cur_ninja}: completed_unarchived task=${_cur_parent_cmd} clear_receipt_required task_reverted_in_progress=${_cur_revert_rc:-0}")
+        _completed_unarchived_count=$((_completed_unarchived_count + 1))
+        continue
+    fi
     _cur_archive_ok=0
     if [[ -x "$_cur_archive_script" && "$_cur_generation" =~ ^[0-9a-f]{64}$ ]]; then
         if env ARCHIVE_COMPLETED_PROJECT_DIR="$SCRIPT_DIR" \
+            ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 \
             SHOGUN_COMPLETION_GENERATION="$_cur_generation" \
             bash "$_cur_archive_script" "$_cur_parent_cmd" >/dev/null 2>&1; then
             _cur_archive_ok=1
