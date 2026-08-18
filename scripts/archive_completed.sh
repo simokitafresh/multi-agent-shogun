@@ -101,6 +101,48 @@ preserve_task_worktree_ignored_artifacts() {
     fi
 }
 
+# Gate/test telemetry may update a tracked operational ledger inside the
+# isolated task worktree after the source commit.  Preserve its full post-run
+# bytes, then restore only the allowlisted ledger to the published HEAD blob.
+# Ordinary source dirt remains visible to the existing fail-closed check.
+preserve_task_worktree_tracked_runtime_artifacts() {
+    local worktree="$1" artifact_root entry rel src dst tree_line mode blob tmp count=0
+    artifact_root="$PROJECT_DIR/queue/archive/task-worktree-artifacts/${CMD_ID}/tracked"
+    while IFS= read -r -d '' entry; do
+        rel="${entry:3}"
+        case "$rel" in
+            logs/defense_overhead.jsonl) ;;
+            *) continue ;;
+        esac
+        src="$worktree/$rel"
+        [ -f "$src" ] && [ ! -L "$src" ] || {
+            echo "[archive] BLOCK: tracked runtime artifact is not a regular file path=$src" >&2; return 1;
+        }
+        dst="$artifact_root/$rel"
+        if [ -e "$dst" ] || [ -L "$dst" ]; then
+            echo "[archive] BLOCK: tracked runtime artifact archive collision path=$dst" >&2; return 1
+        fi
+        mkdir -p "$(dirname "$dst")"
+        cp -p -- "$src" "$dst"
+        tree_line="$(git -C "$worktree" ls-tree HEAD -- "$rel")"
+        read -r mode _ blob _ <<< "$tree_line"
+        [[ "$mode" =~ ^100(644|755)$ && "$blob" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "[archive] BLOCK: tracked runtime artifact has no regular HEAD blob path=$rel" >&2; return 1;
+        }
+        tmp="$(mktemp "${src}.restore.XXXXXX")"
+        git -C "$worktree" cat-file blob "$blob" > "$tmp"
+        if [ "$mode" = "100755" ]; then chmod 755 "$tmp"; else chmod 644 "$tmp"; fi
+        [ "$(git hash-object "$tmp")" = "$blob" ] || {
+            echo "[archive] BLOCK: tracked runtime artifact restore hash mismatch path=$rel" >&2; return 1;
+        }
+        mv -- "$tmp" "$src"
+        count=$((count + 1))
+    done < <(git -C "$worktree" status --porcelain=v1 -z --untracked-files=no 2>/dev/null)
+    if [ "$count" -gt 0 ]; then
+        echo "[archive] task worktree tracked runtime artifacts preserved: ${count} path(s) root=$artifact_root"
+    fi
+}
+
 # Narrow lifecycle-only entrypoint used by the linked-worktree contract
 # fixture. It applies the same CLEAR/published/clean/ordinary-remove guards
 # before the broad archive scan can touch unrelated dashboard data.
@@ -112,6 +154,7 @@ if [ "${ARCHIVE_TASK_WORKTREE_CLEANUP_ONLY:-0}" = "1" ] && [ -n "$CMD_ID" ]; the
         [ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" = "1" ] || { echo "[archive] BLOCK: CLEAR receipt required" >&2; exit 1; }
         python3 -c 'import json,re,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="clear" and d.get("cmd_id")==sys.argv[2] and re.fullmatch(r"[0-9a-f]{64}",str(d.get("completion_generation") or "")) and (not sys.argv[3] or d.get("completion_generation")==sys.argv[3]) and int(d.get("persisted_at_ns"))>0' "$PROJECT_DIR/queue/gates/$CMD_ID/gate_worker.clear.json" "$CMD_ID" "${SHOGUN_COMPLETION_GENERATION:-}" || { echo "[archive] BLOCK: invalid CLEAR receipt" >&2; exit 1; }
         [[ "$_early_published" =~ ^[0-9a-f]{40}$ ]] && git -C "$_early_repo" cat-file -e "${_early_published}^{commit}" 2>/dev/null || { echo "[archive] BLOCK: published commit missing or unresolved" >&2; exit 1; }
+        preserve_task_worktree_tracked_runtime_artifacts "$_early_worktree" || exit 1
         [ -z "$(git -C "$_early_worktree" status --porcelain 2>/dev/null)" ] || { echo "[archive] BLOCK: task worktree dirty" >&2; exit 1; }
         preserve_task_worktree_ignored_artifacts "$_early_worktree" || exit 1
         git -C "$_early_repo" worktree remove "$_early_worktree" 2>"$TMP/worktree-remove.stderr" || { sed -n '1,5p' "$TMP/worktree-remove.stderr" >&2; echo "[archive] BLOCK: task worktree remove failed" >&2; exit 1; }
@@ -2338,6 +2381,7 @@ cleanup_task_worktree_marker() {
     [[ "$published_commit" =~ ^[0-9a-f]{40}$ ]] && git -C "$repo" cat-file -e "${published_commit}^{commit}" 2>/dev/null || {
         echo "[archive] BLOCK: published commit receipt missing or unresolved" >&2; return 1;
     }
+    preserve_task_worktree_tracked_runtime_artifacts "$worktree" || return 1
     if [ -n "$(git -C "$worktree" status --porcelain 2>/dev/null)" ]; then
         echo "[archive] BLOCK: task worktree dirty; retaining path=$worktree" >&2; return 1
     fi
