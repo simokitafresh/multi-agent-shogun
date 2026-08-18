@@ -1523,13 +1523,11 @@ declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ �
 declare -A CLEAR_BLOCKED_TS        # T1: agent別CLEAR-BLOCKED epoch秒リスト(窓内のみ保持) — key: agent_name, value: "epoch1 epoch2 ..."
 declare -A CLEAR_BLOCKED_NOTIFIED  # T2: 窓内しきい値到達→通知済みフラグ(再送抑止) — key: agent_name, value: "1"
 declare -A ACTIVE_IDLE_RECOVERY_SENT # active task+idle時の忍者再通知済みフラグ — key: "ninja:task_id:reason", value: "1"
-declare -A GATE_STALL_LAST_NOTIFIED # review_gate.done後の終端なし通知時刻 — key: "cmd:recipient", value: epoch秒
 declare -A GATE_STALL_ACTIVE_CMDS # 現役cmd集合（active task/queue command/live report）
 
 # review_gate.doneが両承認の完了証跡になった後、cmd_complete_gateのCLEAR/BLOCK終端が
 # 出ないまま放置されるGATE-STALLを常時検知する。review_gate.doneは配備時placeholderも
 # あり得るため、archive.done・gate_metrics.logの終端証跡を必ず併せて確認する。
-GATE_STALL_WARN_MIN=${GATE_STALL_WARN_MIN:-10}
 # 2026-08-17 23:54 実測: 過去数か月分の review_gate.done(gate_metrics以前の世代・archive済み)
 # を全件GATE-STALL通知し将軍/家老inboxへ数十件のstorm。監視対象は「直近の両承認」だけで
 # よいので上限窓(既定24h)を置き、queue/archive/cmds に完了記録がある cmd も除外する。
@@ -1617,11 +1615,8 @@ PY
 }
 
 check_gate_stall() {
-    local now=$EPOCHSECONDS warn_min warn_sec marker cmd marker_epoch elapsed_sec elapsed_min
-    local message recipient last_sent since_last
-    warn_min="$GATE_STALL_WARN_MIN"
-    [[ "$warn_min" =~ ^[0-9]+$ ]] || warn_min=10
-    warn_sec=$((warn_min * 60))
+    local now=$EPOCHSECONDS marker cmd marker_epoch elapsed_sec elapsed_min gate_dir
+    local gate_lock_fd gate_output block_message
     _gate_stall_refresh_active_cmds
 
     while IFS= read -r marker; do
@@ -1635,29 +1630,28 @@ check_gate_stall() {
         marker_epoch=$(_gate_stall_marker_epoch "$marker" 2>/dev/null || true)
         [[ "$marker_epoch" =~ ^[0-9]+$ ]] || continue
         elapsed_sec=$((now - marker_epoch))
-        [ "$elapsed_sec" -ge "$warn_sec" ] || continue
         [ "$elapsed_sec" -le $((GATE_STALL_MAX_MIN * 60)) ] || continue
         if compgen -G "$SCRIPT_DIR/queue/archive/cmds/${cmd}_*.yaml" >/dev/null 2>&1; then
             continue
         fi
         _gate_stall_has_terminal_metric "$cmd" "$marker_epoch" && continue
         elapsed_min=$((elapsed_sec / 60))
-        message="【GATE-STALL】${cmd} 両承認から${elapsed_min}分終端なし。一次確認: cat queue/gates/${cmd}/cmd_complete_gate.trigger.log; bash scripts/cmd_complete_gate.sh ${cmd}"
-
-        for recipient in shogun karo; do
-            last_sent=${GATE_STALL_LAST_NOTIFIED["${cmd}:${recipient}"]:-0}
-            since_last=$((now - last_sent))
-            if [ "$last_sent" -gt 0 ] && [ "$since_last" -lt "$STALL_RENOTIFY_DEBOUNCE" ]; then
-                log "GATE-STALL-DEBOUNCE: ${cmd} recipient=${recipient} notified=${since_last}s ago (<${STALL_RENOTIFY_DEBOUNCE}s)"
-                continue
-            fi
-            if send_inbox_message "$recipient" "$message" stall_alert; then
-                GATE_STALL_LAST_NOTIFIED["${cmd}:${recipient}"]=$now
-                log "GATE-STALL-NOTIFIED: ${cmd} recipient=${recipient} elapsed=${elapsed_min}min"
-            else
-                log "GATE-STALL-NOTIFY-BLOCK: ${cmd} recipient=${recipient} elapsed=${elapsed_min}min"
-            fi
-        done
+        gate_dir=${marker%/review_gate.done}
+        exec {gate_lock_fd}>"$gate_dir/cmd_complete_gate.auto.lock"
+        if ! flock -n "$gate_lock_fd"; then
+            log "GATE-AUTO-LOCKED: ${cmd} another completion process is active"
+            eval "exec ${gate_lock_fd}>&-"
+            continue
+        fi
+        if gate_output=$(bash "$SCRIPT_DIR/scripts/cmd_complete_gate.sh" "$cmd" 2>&1); then
+            log "GATE-AUTO-CLEAR: ${cmd} elapsed=${elapsed_min}min"
+        else
+            block_message="【GATE-AUTO-BLOCK】${cmd} 両承認後の自動cmd_complete_gateがBLOCK。理由: $(printf '%s\n' "$gate_output" | tail -n 3 | tr '\n' ' ')"
+            send_inbox_message karo "$block_message" gate_block || true
+            log "GATE-AUTO-BLOCK: ${cmd} elapsed=${elapsed_min}min"
+        fi
+        flock -u "$gate_lock_fd" || true
+        eval "exec ${gate_lock_fd}>&-"
     done < <(find "$SCRIPT_DIR/queue/gates" -mindepth 2 -maxdepth 2 -type f -name review_gate.done -print 2>/dev/null)
 }
 
@@ -7491,8 +7485,32 @@ check_stall() {
 # after the atomic report replace but before inbox persistence (pane death,
 # dispatcher exit, or monitor respawn). inbox_write's structured fingerprint
 # transaction makes this safe on every cycle and repairs a missing review child.
+auto_request_report_review() {
+    local report_full="$1" parent_cmd="$2" report_base gate_dir marker lock_fd
+    report_base=${report_full##*/}
+    [ -n "$parent_cmd" ] || return 1
+    gate_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
+    marker="$gate_dir/review_request.${report_base}.done"
+    mkdir -p "$gate_dir"
+    exec {lock_fd}>"$gate_dir/review_request.lock"
+    flock -n "$lock_fd" || { eval "exec ${lock_fd}>&-"; return 0; }
+    if [ ! -f "$marker" ]; then
+        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
+            "忍者報告の自動レビュー依頼。report=${report_base} parent_cmd=${parent_cmd}" \
+            review_draft ninja_monitor review_request >/dev/null 2>&1; then
+            printf 'timestamp: %s\nreport: %s\nparent_cmd: %s\n' \
+                "$(date -Iseconds)" "$report_base" "$parent_cmd" > "$marker"
+            log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd"
+        else
+            log "REPORT-REVIEW-AUTO-REQUEST-BLOCK: report=$report_base parent_cmd=$parent_cmd"
+        fi
+    fi
+    flock -u "$lock_fd" || true
+    eval "exec ${lock_fd}>&-"
+}
+
 repair_terminal_report_outboxes() {
-    local name task_file report_path report_full status task_status
+    local name task_file report_path report_full status task_status parent_cmd
     for name in "${NINJA_NAMES[@]}"; do
         task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
         [ -f "$task_file" ] || continue
@@ -7510,9 +7528,14 @@ repair_terminal_report_outboxes() {
         [ -f "$report_full" ] || continue
         status=$(yaml_field_get "$report_full" status "" 2>/dev/null || true)
         case "$status" in completed|done) ;; *) continue ;; esac
-        bash "${REPORT_OUTBOX_INBOX_WRITE_PATH:-$SCRIPT_DIR/scripts/inbox_write.sh}" karo \
+        if bash "${REPORT_OUTBOX_INBOX_WRITE_PATH:-$SCRIPT_DIR/scripts/inbox_write.sh}" karo \
             "${name}報告完了。report=${report_full##*/}" report_received "$name" notify_karo \
-            >/dev/null 2>&1 || log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/}"
+            >/dev/null 2>&1; then
+            parent_cmd=$(yaml_field_get "$report_full" parent_cmd "" 2>/dev/null || true)
+            auto_request_report_review "$report_full" "$parent_cmd" || true
+        else
+            log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/}"
+        fi
     done
 }
 

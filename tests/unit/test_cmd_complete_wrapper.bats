@@ -161,7 +161,7 @@ import pathlib, sys
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 normal = text.index('CMD_COMPLETE_GATE_CLEAR_MARKER', text.index('if [ "$ALL_CLEAR" = true ]'))
 clear_output = text.index('echo "GATE CLEAR: cmd完了許可"', normal)
-post_clear = text.index('Status completed (post-GATE CLEAR)', clear_output)
+post_clear = text.index('Status completed (post-runtime-publish):', clear_output)
 assert normal < clear_output < post_clear
 assert text.index('capture_completed_rework_event', text.index('if [ "$ALL_CLEAR" = true ]')) < normal
 PY
