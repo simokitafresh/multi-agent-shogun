@@ -315,7 +315,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4353"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存の恒久対策で解決済み。deploy_task.shはFIELD_GET_NO_LOG=1で依存ログのflock+stat+writeを65回抑制し、report lifecycle lockはlock_path.sh経由で/mnt/cから/tmp ext4へ移設済み。候補の根因に対する新規実修正は不要。"
+  action_artifact: "scripts/deploy_task.sh:64-74,167-170; scripts/lib/lock_path.sh:1-26; cmd_1526 chronicle=logs/wave-final-checkpoints/4717f7d1274bcb69206548bb701c570f351367a5/tree/archive/cmd-chronicle/2026-03.md:423"
+  resolved_at: "2026-08-18T21:36:10+09:00"
 - id: INS-20260818-110310952-db22
   ts: "2026-08-18T11:03:10+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4353; matched=テスト,同一; current_pattern=FoF決定性 手④ — GS高速版(run_077/l1 fast path)のFoF子PF選択を本番共通関数select_top_n_deterministicへ統一し、parityテスト赤→緑で本番と同一結果を証明する; candidate_level=4; candidate=cmd_2112 GATE CLEAR通知30回重複(13:29-13:42)。bulletin_write.shにdedup未実装が根因。30×3(inbox通知)=90メッセージnoiseでCTX消費。10回繰り返し→900件=負の複利; source=gunshi_gp_tracker.yaml"
