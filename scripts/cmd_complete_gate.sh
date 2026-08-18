@@ -12038,39 +12038,6 @@ PYEOF
     echo "Gunshi verdict record (GATE CLEAR):"
     echo "  SKIP (handled by Gunshi verdict update to cmd_design_quality)"
 
-    # ─── archive実行（GATE CLEAR後、全チェック+ポストプロセス完了後） ───
-    # cmd_1302: 報告YAMLをGATEが読み終わってからアーカイブ
-    echo ""
-    echo "Archive (post-GATE CLEAR):"
-    if [ ! -f "$GATES_DIR/archive.done" ]; then
-        _archive_worker_log="$GATES_DIR/archive_worker.log"
-        _archive_tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
-        if command -v "$_archive_tmux_bin" >/dev/null 2>&1 \
-            && "$_archive_tmux_bin" display-message -p '#S' >/dev/null 2>&1; then
-            printf -v _archive_cmd '%q ' env ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
-                bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID"
-            printf -v _archive_log_q '%q' "$_archive_worker_log"
-            # 末尾の || echo で常にexit 0にする: run-shellは非0終了時にコマンド行を
-            # アクティブpaneへview-modeオーバーレイ表示する(殿観測2026-08-04 18:08の正体)。
-            # 失敗はログへ記録され検知力は落ちない。
-            "$_archive_tmux_bin" run-shell -b "$_archive_cmd </dev/null >>$_archive_log_q 2>&1 || echo \"[WARN] archive worker rc=\$? (run-shell)\" >>$_archive_log_q"
-            echo "  archive: queued (tmux server; log=$_archive_worker_log)"
-        else
-            echo "  archive: tmux unavailable; synchronous fallback (log=$_archive_worker_log)"
-            env ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
-                bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" \
-                </dev/null >>"$_archive_worker_log" 2>&1 \
-                || echo "  [INFO] archive: WARN (sync fallback failed)" >>"$_archive_worker_log"
-        fi
-    else
-        echo "  archive: already exists (skip)"
-    fi
-
-    (set_matching_tasks_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
-        && record_finalize_phase_event task_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
-        || true) &
-    echo "Task idle transition: queued (async)"
-
     # source-only pushはGATE CLEAR記録前に完了済み。ここで再実行すると
     # 同一sourceを二重適用し得るため、post-CLEAR laneでは実行しない。
     echo ""
@@ -12112,23 +12079,63 @@ PYEOF
     # tracked runtime output reached origin/shared HEAD.
     echo ""
     echo "Status completed (post-runtime-publish):"
+    terminal_status_target="missing"
     if cmd_entry_exists "$CMD_ID"; then
+        terminal_status_target="registered"
+    elif has_parent_cmd_report "$CMD_ID"; then
+        terminal_status_target="direct"
+    fi
+    case "$terminal_status_target" in
+      registered)
         if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed >/dev/null 2>&1; then
             echo "GATE BLOCK: ${CMD_ID}:status_completed_publish_failed" >&2
             exit 1
         fi
         echo "  status: completed"
-    elif has_parent_cmd_report "$CMD_ID"; then
+        ;;
+      direct)
         # Direct/non-numbered commands are admitted earlier by the same
         # parent-report contract and intentionally have no command-queue row
         # to mutate.  Their durable CLEAR marker/report is the terminal status
         # publication; treating the absent row as a setter failure contradicts
         # that admission contract after all substantive gates already passed.
         echo "  status: completed (direct parent-report contract; command entry absent)"
-    else
+        ;;
+      *)
         echo "GATE BLOCK: ${CMD_ID}:status_completed_publish_target_missing" >&2
         exit 1
+        ;;
+    esac
+
+    # Archive and task-idle are terminal side effects: a status BLOCK above
+    # must leave both untouched.
+    echo ""
+    echo "Archive (post-GATE CLEAR):"
+    if [ ! -f "$GATES_DIR/archive.done" ]; then
+        _archive_worker_log="$GATES_DIR/archive_worker.log"
+        _archive_tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
+        if command -v "$_archive_tmux_bin" >/dev/null 2>&1 \
+            && "$_archive_tmux_bin" display-message -p '#S' >/dev/null 2>&1; then
+            printf -v _archive_cmd '%q ' env ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
+                bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID"
+            printf -v _archive_log_q '%q' "$_archive_worker_log"
+            "$_archive_tmux_bin" run-shell -b "$_archive_cmd </dev/null >>$_archive_log_q 2>&1 || echo \"[WARN] archive worker rc=\$? (run-shell)\" >>$_archive_log_q"
+            echo "  archive: queued (tmux server; log=$_archive_worker_log)"
+        else
+            echo "  archive: tmux unavailable; synchronous fallback (log=$_archive_worker_log)"
+            env ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
+                bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" \
+                </dev/null >>"$_archive_worker_log" 2>&1 \
+                || echo "  [INFO] archive: WARN (sync fallback failed)" >>"$_archive_worker_log"
+        fi
+    else
+        echo "  archive: already exists (skip)"
     fi
+    (set_matching_tasks_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
+        && record_finalize_phase_event task_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
+        || true) &
+    echo "Task idle transition: queued (async)"
+    echo "Git push (post-GATE CLEAR): SKIP (completed before terminal CLEAR)"
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"
 
     echo ""
