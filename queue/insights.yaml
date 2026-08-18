@@ -58,8 +58,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '99eeaae25c4fd9510507b67446ccdd98ec223b9d1d36742aa336eab4e17ed9a5' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 24
-  last_seen: "2026-08-18T17:43:43+09:00"
+  occurrence_count: 25
+  last_seen: "2026-08-18T17:58:42+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -223,7 +223,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "後続一次診断で前提が覆った。主因はレビュー観点欠落ではなくGitHub障害時のautopushインフラ失敗であり、precheck追加案は不適切。後続rootfixでID merge・累積等価性・mapping-root・空mapping契約を実修正済み"
+  action_artifact: "memory_db=INS-20260818-072951363-d09c,INS-20260818-072428144-4118; commits=4903341552bf2ba58ec3acd3ee71839ce4186023,36947643ddf76b9151a80536230bd6c1c0055bf9,ec94df6b26820a772fafb4d34e5ada62281b4efe,dd62b0d50a55868092d5e325968558fd7e1420c4"
+  resolved_at: "2026-08-18T17:59:13+09:00"
 - id: INS-20260818-072258189-51ac
   ts: "2026-08-18T07:22:58+09:00"
   insight: "[[いまはartifactが頼りだな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いまはartifactが頼りだな。githubは時々リトライだな"
