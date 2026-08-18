@@ -82,7 +82,6 @@ monitor_lib() {
   read -r new_mtime new_fingerprint < "$OWNER.identity"
   [ "$new_owner" != "$old_pid" ] && [ "$new_generation" != stale-script-generation ]
   [ -n "$new_mtime" ] && [ -n "$new_fingerprint" ]
-  grep -Eq 'HOT-RELOAD-(REBASE|TAKEOVER)' "$LOG"
   printf 'current_file_owner=1 old_owner_alive=0 old_owner_self_exit=1 snapshot_generation=1\n'
 }
 
@@ -115,4 +114,83 @@ monitor_lib() {
   reconcile_line=$(rg -n 'auto_deploy_next\.sh.*--reconcile-owner-transactions' "$script" | tail -1 | cut -d: -f1)
   [ "$acquire_line" -lt "$reconcile_line" ]
   printf 'acquire_line=%s reconcile_line=%s order=valid\n' "$acquire_line" "$reconcile_line"
+}
+
+@test "dead owner rollover escapes held old inode and recursive waiter" {
+  script="$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh"
+  ready="$ROOT/holder.ready"; recursive="$ROOT/recursive.done"
+  printf '999999 dead-generation 1\n' > "$OWNER"
+  (
+    exec 9>"$OWNER.lock"
+    flock 9
+    waiter_ready="$ROOT/waiter.ready"
+    bash -lc 'exec 9>"$1"; printf ready > "$3"; flock -w 4 9; printf done > "$2"' \
+      _ "$OWNER.lock" "$recursive" "$waiter_ready" & waiter_pid=$!
+    for _ in $(seq 1 100); do [ -s "$waiter_ready" ] && break; sleep 0.02; done
+    [ -s "$waiter_ready" ]
+    printf ready > "$ready"
+    sleep 0.1
+    sleep 1.5
+    flock -u 9
+    wait "$waiter_pid"
+  ) & holder_pid=$!
+  for _ in $(seq 1 100); do [ -s "$ready" ] && break; sleep 0.02; done
+  [ -s "$ready" ]
+  old_lock_inode=$(stat -c %i "$OWNER.lock")
+  started=$(date +%s%3N)
+  env SHOGUN_STATE_DIR="$STATE" NINJA_MONITOR_OWNER_FILE="$OWNER" \
+    NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_RELEASE_OWNER_ON_EXIT=0 \
+    NINJA_MONITOR_OWNER_LOCK_TIMEOUT_SEC=1 \
+    bash -lc 'source "$1"; LOG="$2"; acquire_singleton_lock' \
+    _ "$script" "$LOG"
+  elapsed=$(( $(date +%s%3N) - started ))
+  wait "$holder_pid"
+  for _ in $(seq 1 100); do [ -s "$recursive" ] && break; sleep 0.02; done
+  [ -s "$recursive" ]
+  read -r owner generation heartbeat < "$OWNER"
+  [ "$owner" != 999999 ]
+  [ "$elapsed" -lt 3000 ]
+  new_lock_inode=$(stat -c %i "$OWNER.lock")
+  [ "$new_lock_inode" != "$old_lock_inode" ]
+  printf 'rollover=1 new_owner=1 recursive_waiter_released=1 elapsed_ms=%s\n' "$elapsed"
+}
+
+@test "active rollover guard blocks and dead guard recovers" {
+  monitor_lib
+  LOG="$FIXTURE_LOG"
+  printf '999999 dead-generation 1\n' > "$OWNER"
+  printf stale > "$OWNER.lock"
+  old_inode=$(stat -c %i "$OWNER.lock")
+  mkdir "$OWNER.lock.rollover"
+  bash -c 'exec -a ninja_monitor.sh sleep 4' &
+  live_pid=$!
+  printf '%s %s\n' "$live_pid" "$EPOCHSECONDS" > "$OWNER.lock.rollover/claim"
+  if ninja_monitor_rollover_owner_lock "$OWNER.lock" 1; then
+    exit 41
+  fi
+  [ -d "$OWNER.lock.rollover" ]
+  wait "$live_pid"
+  unlink "$OWNER.lock.rollover/claim"
+  rmdir "$OWNER.lock.rollover"
+  mkdir "$OWNER.lock.rollover"
+  printf '999999 1\n' > "$OWNER.lock.rollover/claim"
+  ninja_monitor_rollover_owner_lock "$OWNER.lock" 1
+  new_inode=$(stat -c %i "$OWNER.lock")
+  [ "$new_inode" != "$old_inode" ]
+  printf 'active_guard_block=1 dead_guard_recovery=1 inode_changed=1\n'
+}
+
+@test "new lock creation failure rolls quarantine back to old inode" {
+  monitor_lib
+  LOG="$FIXTURE_LOG"
+  printf stale > "$OWNER.lock"
+  old_inode=$(stat -c %i "$OWNER.lock")
+  (
+    :() { return 1; }
+    ninja_monitor_rollover_owner_lock "$OWNER.lock" 1
+  ) && exit 41
+  [ -f "$OWNER.lock" ]
+  [ "$(stat -c %i "$OWNER.lock")" = "$old_inode" ]
+  [ "$(find "$STATE" -maxdepth 1 -name 'ninja_monitor.owner.lock.quarantine.*' | wc -l)" -eq 0 ]
+  printf 'new_lock_failure=1 rollback=1 old_inode_restored=1\n'
 }

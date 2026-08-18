@@ -463,6 +463,75 @@ ninja_monitor_write_owner_identity() {
         && mv "$tmp" "$identity_file"
 }
 
+ninja_monitor_rollover_owner_lock() {
+    local lock_file="$1" timeout_sec="${2:-5}" guard="${1}.rollover"
+    local quarantine="${lock_file}.quarantine.${EPOCHSECONDS}.$$"
+    local claim_file="$guard/claim" claim_tmp
+    local attempts=0 max_attempts old_inode new_inode claim_pid claim_epoch claim_age
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=5
+    max_attempts=$((timeout_sec * 20))
+    (( max_attempts > 0 )) || max_attempts=1
+    old_inode="$(stat -c %i "$lock_file" 2>/dev/null || true)"
+    [ -n "$old_inode" ] || return 1
+
+    if ! mkdir "$guard" 2>/dev/null; then
+        while (( attempts < max_attempts )); do
+            new_inode="$(stat -c %i "$lock_file" 2>/dev/null || true)"
+            [ -n "$new_inode" ] && [ "$new_inode" != "$old_inode" ] && return 0
+            sleep 0.05
+            attempts=$((attempts + 1))
+        done
+        claim_pid=""; claim_epoch=""
+        read -r claim_pid claim_epoch < "$claim_file" 2>/dev/null || true
+        if [[ "$claim_epoch" =~ ^[0-9]+$ ]]; then
+            claim_age=$(( EPOCHSECONDS - claim_epoch ))
+        else
+            claim_age=$(( timeout_sec + 1 ))
+        fi
+        if [ -n "$claim_pid" ] && _ninja_monitor_pid_is_live "$claim_pid"; then
+            log "SINGLETON-LOCK-BLOCK: active_rollover_guard pid=${claim_pid} age=${claim_age}s"
+            return 1
+        fi
+        # Only a dead or stale claim may be reclaimed.  The claim is removed
+        # before rmdir so an active winner is never silently displaced.
+        [ -e "$claim_file" ] && unlink "$claim_file" 2>/dev/null || true
+        rmdir "$guard" 2>/dev/null || return 1
+        mkdir "$guard" 2>/dev/null || return 1
+    fi
+
+    claim_tmp="$guard/claim.tmp.$$"
+    if ! printf '%s %s\n' "$$" "$EPOCHSECONDS" > "$claim_tmp" \
+        || ! mv "$claim_tmp" "$claim_file" 2>/dev/null; then
+        [ -e "$claim_tmp" ] && unlink "$claim_tmp" 2>/dev/null || true
+        rmdir "$guard" 2>/dev/null || true
+        return 1
+    fi
+
+    if ! mv "$lock_file" "$quarantine" 2>/dev/null; then
+        unlink "$claim_file" 2>/dev/null || true
+        rmdir "$guard" 2>/dev/null || true
+        return 1
+    fi
+    if ! : > "$lock_file"; then
+        if mv "$quarantine" "$lock_file" 2>/dev/null; then
+            log "SINGLETON-LOCK-ROLLBACK: new_inode_create_failed old_inode=${old_inode} restored=1"
+        else
+            log "SINGLETON-LOCK-BLOCK: new_inode_create_failed old_inode=${old_inode} restored=0"
+        fi
+        unlink "$claim_file" 2>/dev/null || true
+        rmdir "$guard" 2>/dev/null || true
+        return 1
+    fi
+    new_inode="$(stat -c %i "$lock_file" 2>/dev/null || true)"
+    unlink "$claim_file" 2>/dev/null || true
+    rmdir "$guard" 2>/dev/null || true
+    if [ -n "$new_inode" ] && [ "$new_inode" != "$old_inode" ]; then
+        log "SINGLETON-LOCK-ROLLOVER: old_inode=${old_inode} new_inode=${new_inode}"
+        return 0
+    fi
+    return 1
+}
+
 acquire_singleton_lock() {
     local pid_file="${STATE_DIR}/ninja_monitor.pid"
     local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}"
@@ -471,13 +540,38 @@ acquire_singleton_lock() {
     local existing_script_mtime="" existing_script_fingerprint=""
     local legacy_script_mtime="" legacy_script_fingerprint=""
     local current_script_mtime="" current_script_fingerprint=""
-    local now age tmp lock_fd
+    local now age tmp lock_fd lock_timeout lock_acquired=0
     local replace_generation="${NINJA_MONITOR_REPLACE_GENERATION:-}"
     local replacement_requested=0
 
+    lock_timeout="${NINJA_MONITOR_OWNER_LOCK_TIMEOUT_SEC:-5}"
     mkdir -p "$(dirname "$owner_file")"
     exec {lock_fd}>"$lock_file"
-    flock "$lock_fd"
+    if flock -w "$lock_timeout" "$lock_fd"; then
+        lock_acquired=1
+    else
+        local observed_pid="" observed_generation="" observed_heartbeat=""
+        IFS=$'\t' read -r observed_pid observed_generation observed_heartbeat _obs_mtime _obs_fingerprint \
+            < <(ninja_monitor_read_owner_record "$owner_file") || true
+        if [ -n "$observed_pid" ] && _ninja_monitor_pid_is_live "$observed_pid"; then
+            log "SINGLETON-LOCK-BLOCK: lock_timeout=${lock_timeout}s owner_pid=${observed_pid} owner_generation=${observed_generation}"
+            eval "exec ${lock_fd}>&-"
+            exit 1
+        fi
+        eval "exec ${lock_fd}>&-"
+        if ! ninja_monitor_rollover_owner_lock "$lock_file" "$lock_timeout"; then
+            log "SINGLETON-LOCK-BLOCK: rollover_timeout=${lock_timeout}s owner_pid=${observed_pid:-missing}"
+            exit 1
+        fi
+        exec {lock_fd}>"$lock_file"
+        if ! flock -w "$lock_timeout" "$lock_fd"; then
+            log "SINGLETON-LOCK-BLOCK: reacquire_timeout=${lock_timeout}s"
+            eval "exec ${lock_fd}>&-"
+            exit 1
+        fi
+        lock_acquired=1
+    fi
+    [ "$lock_acquired" -eq 1 ] || exit 1
     now=$EPOCHSECONDS
 
     if [ -f "$owner_file" ]; then
