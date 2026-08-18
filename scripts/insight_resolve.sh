@@ -75,6 +75,30 @@ fields = {
     "resolved_at": os.environ["RESOLVED_AT_ENV"],
 }
 block = lines[start:end]
+
+def current_value(key):
+    line = next((item for item in block if item.startswith(f"  {key}:")), None)
+    if line is None:
+        return None
+    raw = line.split(":", 1)[1].strip()
+    if raw.startswith(('"', "'")):
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return raw.strip("'\"")
+    return raw
+
+# Revalidation is allowed to call resolve more than once.  The same semantic
+# resolution is already complete, so rewriting resolved_at would manufacture
+# a post-commit worker diff and permanently block the reflux completion gate.
+if (
+    current_value("status") == "resolved"
+    and current_value("resolved_reason") == os.environ["REASON_ENV"]
+    and current_value("action_artifact") == os.environ["ACTION_ARTIFACT_ENV"]
+):
+    print(f"IDEMPOTENT: {target_id} already resolved with identical evidence")
+    raise SystemExit(0)
+
 for key, value in fields.items():
     encoded = value if key == "status" else json.dumps(value, ensure_ascii=False)
     replacement = f"  {key}: {encoded}\n"

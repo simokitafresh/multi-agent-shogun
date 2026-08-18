@@ -527,6 +527,25 @@ print('RESOLVE OK')
     [[ "$output" == *"RESOLVE OK"* ]]
 }
 
+# test_necessity: identical resolution retries must preserve resolved_at and
+# file bytes so report revalidation cannot create a post-commit dirty diff.
+@test "resolve: 同一証跡の再実行は完全no-opになる" {
+    local ins_id before_hash before_at after_hash after_at
+    ins_id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "冪等解決テスト")"
+    bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id" "same reason" "test=idempotent"
+    before_hash="$(sha256sum "${TEST_TMP}/queue/insights.yaml" | awk '{print $1}')"
+    before_at="$(python3 -c "import yaml; print(yaml.safe_load(open('${TEST_TMP}/queue/insights.yaml'))['insights'][0]['resolved_at'])")"
+
+    sleep 1
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id" "same reason" "test=idempotent"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"IDEMPOTENT:"* ]]
+    after_hash="$(sha256sum "${TEST_TMP}/queue/insights.yaml" | awk '{print $1}')"
+    after_at="$(python3 -c "import yaml; print(yaml.safe_load(open('${TEST_TMP}/queue/insights.yaml'))['insights'][0]['resolved_at'])")"
+    [ "$after_hash" = "$before_hash" ]
+    [ "$after_at" = "$before_at" ]
+}
+
 @test "resolve: queue直下にcorrupt残骸がある場合は現物不一致として拒否する" {
     ins_id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "resolve blocked by corrupt")"
     printf 'partial\n' > "${TEST_TMP}/queue/insights.yaml.corrupt.leftover"
