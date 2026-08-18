@@ -31,7 +31,7 @@ elif [ "$1" = capture-pane ]; then
     if [ "${CAPTURE_MODE:-static}" = changed ] && [ "$count" -lt 2 ]; then
         printf '›\n'
     elif [ "${CAPTURE_MODE:-static}" = changed ]; then
-        printf 'inbox2 — タスクYAML: /tmp/fixture/queue/tasks/testninja.yaml delivery_msg=%s\n' "$EXPECTED_MSG_ID"
+        printf 'inbox2 — タスクYAML: /tmp/fixture/queue/tasks/testninja.yaml delivery_msg=%s\n' "$PANE_DELIVERY_MSG"
     else
         printf '• Working\n'
     fi
@@ -48,6 +48,7 @@ SCRIPT
     export INBOX_CODEX_VERIFY_WAIT_SEC=0
     export EXPECTED_MSG_ID="msg_delivery_fixture"
     export INBOX_MESSAGE_ID="$EXPECTED_MSG_ID"
+    export PANE_DELIVERY_MSG="msg_wrong_fixture"
     export CAPTURE_COUNT_FILE="$ROOT/capture.count"
 }
 
@@ -73,10 +74,22 @@ wait_for_log() {
     printf 'old_fp=1 post_send_success=0 unread=1\n'
 }
 
-@test "post-send pane transition for the unique message succeeds" {
+@test "same-target post-send transition with wrong message identity fails" {
     export CAPTURE_MODE=changed
     run bash "$BATS_TEST_DIRNAME/../../scripts/inbox_write.sh" \
         testninja 'delivery transition fixture' task_assigned karo notify
+    [ "$status" -eq 0 ]
+    log=$(find "$ROOT/logs/inbox_codex_delivery_verify" -type f -name '*.log' -print -quit)
+    [ -n "$log" ]
+    wait_for_log 'ASYNC_VERIFY FAILURE' "$log"
+    ! grep -q 'ASYNC_VERIFY SUCCESS' "$log"
+    printf 'target_transition=1 wrong_id=1 success=0\n'
+}
+
+@test "post-send pane transition with exact message identity succeeds" {
+    export CAPTURE_MODE=changed PANE_DELIVERY_MSG="$EXPECTED_MSG_ID"
+    run bash "$BATS_TEST_DIRNAME/../../scripts/inbox_write.sh" \
+        testninja 'delivery exact identity fixture' task_assigned karo notify
     [ "$status" -eq 0 ]
     log=$(find "$ROOT/logs/inbox_codex_delivery_verify" -type f -name '*.log' -print -quit)
     [ -n "$log" ]

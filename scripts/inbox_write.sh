@@ -1095,9 +1095,18 @@ codex_pane_has_delivery_evidence() {
     # same already-arrived prompt to be submitted again.
     # Join visual wraps before matching the submitted prompt.  Codex may also
     # render hook activity with either the filled or hollow bullet.
-    printf '%s\n' "$pane_snapshot" \
-        | tr '\n' ' ' \
-        | grep -qE "inbox[0-9]+ — .*queue/tasks/${target}\.yaml|delivery_msg=${msg_id}|msg_id=${msg_id}"
+    local flattened
+    flattened=$(printf '%s\n' "$pane_snapshot" | tr '\n' ' ')
+    case "$flattened" in
+        *"queue/tasks/${target}.yaml"*) ;;
+        *) return 1 ;;
+    esac
+    # Fixed-string identity check avoids regex escaping ambiguity and prevents
+    # a same-target prompt carrying another message ID from passing.
+    case "$flattened" in
+        *"delivery_msg=${msg_id}"*) return 0 ;;
+        *) return 1 ;;
+    esac
 }
 
 codex_delivery_evidence_observed() {
