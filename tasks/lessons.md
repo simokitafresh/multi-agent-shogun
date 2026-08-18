@@ -15249,3 +15249,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - direct cmdを入口で許容したら、終端で通常cmd専用SSOT更新を無条件適用せず同一分類軸を再利用する。
+
+### L1612: 依存閉包refactorでは削除対象のcontract testを同一差分で実走する
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_inject_seam_contract_missing_202608190548
+- **記録者**: saizo
+- **tags**: [infra,deploy-task,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh]
+- **origin**: [[cmd_karo_hotfix_inject_seam_contract_missing_202608190548]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 関数・呼出・snapshot/report連携の4点が同一commitで削除された一方testが残り、consumer seam契約だけ恒常FAILした。refactor時に残存contract testを実走するチェックを追加すべき。
