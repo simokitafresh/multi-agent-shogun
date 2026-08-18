@@ -75,7 +75,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4354"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次コード確認で既実装を確認。scripts/deploy_task.shの3経路(L5400-5401,L5586-5587,L5725-5726)がmonthly/月次ACへ進行中月除外を自動注入し、docs/research/gunshi_idle_wa_timeseries_20260411.mdもGP-184 implementedを記録。追加修正・decision_candidate不要。"
+  action_artifact: "queue/reports/saizo_report_cmd_reflux_insight_202608190102_saizo.yaml"
+  resolved_at: "2026-08-19T01:03:56+09:00"
 - id: INS-20260818-153430697-ab2e
   ts: "2026-08-18T15:34:30+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4354; matched=block,同一; current_pattern=FoF決定性 手③CLOSE — 残9 MISMATCHのoracle境界(depth3の月対応/伝播タイミング)を本番block同一定義へ揃え、補正oracle vs run409をMISMATCH 0で確定する(read-only・本番無変更); candidate_level=4; candidate=おしお殿#4「2回同じ失敗→仮説ごと疑え」。gate_fire_logから同一忍者×同一BLOCK理由の連続回数を計数。2回連続→仮説転換メッセージ表示+exit 1(強制BLOCK)。GP-198のgate_diagnose_check.shに統合実装; source=gunshi_gp_tracker.yaml"
