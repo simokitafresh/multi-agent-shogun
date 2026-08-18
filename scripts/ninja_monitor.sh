@@ -431,11 +431,38 @@ check_disk_space_watch() {
     fi
 }
 
+# The owner generation alone identifies a process lease, not the file that
+# process is executing.  Persist both mtime and content fingerprint so a
+# current-file successor can distinguish an already-updated owner from an old
+# owner whose watcher lost the race.
+ninja_monitor_script_identity() {
+    local script_path="${_NM_SCRIPT_PATH:-${SCRIPT_PATH:-${BASH_SOURCE[0]}}}"
+    local script_mtime script_fingerprint
+    script_mtime="$(stat -c %Y "$script_path" 2>/dev/null || true)"
+    script_fingerprint="$(sha256sum "$script_path" 2>/dev/null | awk '{print $1}' || true)"
+    printf '%s %s\n' "$script_mtime" "$script_fingerprint"
+}
+
+ninja_monitor_owner_identity_file() {
+    printf '%s.identity\n' "$1"
+}
+
+ninja_monitor_write_owner_identity() {
+    local owner_file="$1" script_mtime="$2" script_fingerprint="$3"
+    local identity_file tmp
+    identity_file="$(ninja_monitor_owner_identity_file "$owner_file")"
+    tmp="${identity_file}.tmp.$$"
+    printf '%s %s\n' "$script_mtime" "$script_fingerprint" > "$tmp" \
+        && mv "$tmp" "$identity_file"
+}
+
 acquire_singleton_lock() {
     local pid_file="${STATE_DIR}/ninja_monitor.pid"
     local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}"
     local lock_file="${owner_file}.lock"
     local existing_pid="" existing_generation="" existing_heartbeat=""
+    local existing_script_mtime="" existing_script_fingerprint=""
+    local current_script_mtime="" current_script_fingerprint=""
     local now age tmp lock_fd
     local replace_generation="${NINJA_MONITOR_REPLACE_GENERATION:-}"
     local replacement_requested=0
@@ -447,18 +474,42 @@ acquire_singleton_lock() {
 
     if [ -f "$owner_file" ]; then
         read -r existing_pid existing_generation existing_heartbeat < "$owner_file" || true
+        read -r existing_script_mtime existing_script_fingerprint \
+            < "$(ninja_monitor_owner_identity_file "$owner_file")" 2>/dev/null || true
     elif [ -f "$pid_file" ]; then
         existing_pid=$(cat "$pid_file" 2>/dev/null || true)
     fi
 
     age=$(( now - ${existing_heartbeat:-0} ))
+    read -r current_script_mtime current_script_fingerprint \
+        < <(ninja_monitor_script_identity) || true
     if [ -n "$replace_generation" ] && [ "$replace_generation" = "$existing_generation" ]; then
+        # The watcher passes the predecessor generation.  Equality is the
+        # compare-and-swap boundary that authorizes exactly one successor.
         replacement_requested=1
+    elif [ -n "$replace_generation" ] && [ -n "$existing_generation" ]; then
+        # A predecessor mismatch has two meanings.  If the recorded owner is
+        # already running the current file, this is a duplicate candidate and
+        # must self-fence.  If it is running an older file generation, rebase
+        # the CAS predecessor to the current owner generation so the current
+        # file gets exactly one successor even after an old watcher raced it.
+        if [ -n "$current_script_fingerprint" ] \
+            && [ "$existing_script_mtime" = "$current_script_mtime" ] \
+            && [ "$existing_script_fingerprint" = "$current_script_fingerprint" ]; then
+            log "HOT-RELOAD-SKIP: requested_generation=${replace_generation} current_generation=${existing_generation} successor_already_active=1"
+            flock -u "$lock_fd"
+            eval "exec ${lock_fd}>&-"
+            exit 0
+        fi
+        replacement_requested=1
+        log "HOT-RELOAD-REBASE: requested_generation=${replace_generation} current_generation=${existing_generation} owner_script=${existing_script_mtime:-missing}/${existing_script_fingerprint:-missing} current_script=${current_script_mtime:-missing}/${current_script_fingerprint:-missing}"
     elif [ -n "$replace_generation" ]; then
-        log "HOT-RELOAD-BLOCK: requested_generation=${replace_generation} current_generation=${existing_generation:-missing}"
-        flock -u "$lock_fd"
-        eval "exec ${lock_fd}>&-"
-        exit 0
+        # Owner records written by pre-generation monitors have no generation
+        # field.  Let the first generation-aware successor claim that legacy
+        # lease; later candidates observe its generation and take the skip
+        # path above.
+        replacement_requested=1
+        log "HOT-RELOAD-LEGACY-TAKEOVER: requested_generation=${replace_generation} current_generation=missing"
     fi
 
     if [ "$replacement_requested" -ne 1 ] \
@@ -476,6 +527,13 @@ acquire_singleton_lock() {
     tmp="${owner_file}.tmp.$$"
     printf '%s %s %s\n' "$$" "$NINJA_MONITOR_GENERATION" "$now" > "$tmp"
     mv "$tmp" "$owner_file"
+    if ! ninja_monitor_write_owner_identity \
+        "$owner_file" "$current_script_mtime" "$current_script_fingerprint"; then
+        log "SINGLETON-IDENTITY-BLOCK: generation=$NINJA_MONITOR_GENERATION"
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+        exit 1
+    fi
     # Publish the pid only through the generation-fenced writer. Keeping the
     # owner record as the authority prevents a stale generation from repairing
     # the pid file after a successor has taken the lease.
@@ -516,7 +574,7 @@ ninja_monitor_release_owner() {
     [ -f "$owner_file" ] || return 0
     read -r pid generation heartbeat < "$owner_file" || true
     if [ "$generation" = "${NINJA_MONITOR_GENERATION:-}" ]; then
-        rm -f "$owner_file" "$pid_file"
+        rm -f "$owner_file" "$pid_file" "$(ninja_monitor_owner_identity_file "$owner_file")"
     fi
 }
 
@@ -524,7 +582,8 @@ ninja_monitor_owner_heartbeat() {
     local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}"
     local lock_file="${owner_file}.lock"
     local pid_file="${STATE_DIR}/ninja_monitor.pid"
-    local pid="" generation="" heartbeat="" now tmp lock_fd
+    local pid="" generation="" heartbeat=""
+    local now tmp lock_fd
     exec {lock_fd}>"$lock_file"
     flock "$lock_fd"
     read -r pid generation heartbeat < "$owner_file" 2>/dev/null || true
