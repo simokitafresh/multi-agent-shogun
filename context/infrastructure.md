@@ -27,7 +27,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1602 -->
+<!-- last_synced_lesson: L1603 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -66,7 +66,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1602 -->
+<!-- last_synced_lesson: L1603 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -164,6 +164,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1600: singleflight failure terminalは承認状態世代へ結合する（cmd_karo_hotfix_review_singleflight_rootfix_20260818）
 - L1601: Bounded lock rollover preserves active guards and old inode rollback（cmd_karo_hotfix_ninja_monitor_hot_reload_generation_20260818）
 - L1602: Freshness cmd checks must resolve the active task before archive publication（cmd_karo_hotfix_ga477_context_freshness_trigger_20260818）
+- L1603: 完了境界後のtracked writerは同一publication checkpointへ収束させる（cmd_karo_hotfix_postclear_runtime_publish_202608182010）
 
 ## 設計標準・テスト・因果
 
