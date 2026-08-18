@@ -6375,7 +6375,10 @@ text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 start = text.rindex('Status completed (post-runtime-publish):')
 end = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', start)
 block = text[start:end]
-assert 'if cmd_entry_exists "$CMD_ID"; then' in block
+assert 'terminal_status_target="missing"' in block
+assert block.count('cmd_entry_exists "$CMD_ID"') == 1
+assert block.count('has_parent_cmd_report "$CMD_ID"') == 1
+assert 'case "$terminal_status_target" in' in block
 assert 'yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed' in block
 assert 'status_completed_publish_failed' in block
 assert 'elif has_parent_cmd_report "$CMD_ID"; then' in block
@@ -6385,6 +6388,28 @@ print('registered_fail_closed=1 direct_parent_report=1 missing_target_block=1')
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "registered_fail_closed=1 direct_parent_report=1 missing_target_block=1" ]
+}
+
+# test_necessity: a terminal status BLOCK must have zero archive/task-idle
+# side effects; successful direct and registered paths retain their contracts.
+# regression_justification: the prior operational gate queued both side effects
+# before status_completed_publish_failed terminated the command.
+@test "terminal status precedes archive and idle with BLOCK side effects zero" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+status = text.rindex('Status completed (post-runtime-publish):')
+failure = text.index('status_completed_publish_failed', status)
+archive = text.rindex('Archive (post-GATE CLEAR):')
+idle = text.rindex('Task idle transition: queued (async)')
+notify = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', status)
+assert status < failure < archive < idle < notify
+assert 'archive_completed.sh' not in text[status:failure]
+assert 'set_matching_tasks_idle' not in text[status:failure]
+print('block_archive=0 block_idle=0 direct_clear=1 registered_fail_closed=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "block_archive=0 block_idle=0 direct_clear=1 registered_fail_closed=1" ]
 }
 
 # test_necessity: detached semantic index/map work must be generation-bound,
