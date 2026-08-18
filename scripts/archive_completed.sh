@@ -111,7 +111,7 @@ preserve_task_worktree_tracked_runtime_artifacts() {
     while IFS= read -r -d '' entry; do
         rel="${entry:3}"
         case "$rel" in
-            logs/defense_overhead.jsonl) ;;
+            logs/defense_overhead.jsonl|context/semantic-map.md|docs/semantic-index/index.md) ;;
             *) continue ;;
         esac
         src="$worktree/$rel"
