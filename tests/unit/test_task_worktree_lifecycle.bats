@@ -117,3 +117,79 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"publish_failure=1 rollback_orphan=0 marker_removed=1"* ]]
 }
+
+@test "multi-path remote-tip deploy preserves typed scope and resolves task selectors" {
+    setup_fixture_repo
+    mkdir -p "$FIXTURE/shared/tests/unit"
+    printf 'BASE=2\n' > "$FIXTURE/shared/src/other.py"
+    printf '#!/usr/bin/env bats\n@test "fixture contract" { true; }\n' > "$FIXTURE/shared/tests/unit/contract.bats"
+    git -C "$FIXTURE/shared" add src/other.py tests/unit/contract.bats
+    git -C "$FIXTURE/shared" commit -q -m fixture-contract
+    git -C "$FIXTURE/shared" push -q origin main
+
+    task="$BATS_TEST_TMPDIR/task-multi.yaml"
+    cat > "$task" <<'YAML'
+task:
+  task_id: task_multi
+  parent_cmd: cmd_multi
+  project: infra
+  task_worktree_required: true
+  target_path:
+    - src/app.py
+    - src/other.py
+  planned_paths:
+    - src/app.py
+    - src/other.py
+    - tests/unit/contract.bats
+  inspection_path: src/app.py
+  commit_contract:
+    required: true
+    planned_paths:
+      - src/app.py
+      - src/other.py
+      - tests/unit/contract.bats
+  status: assigned
+YAML
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null
+        deploy_task_prepare_remote_tip_worktree "$TASK" tobisaru
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        python3 - "$TASK" "$wt" <<'PY'
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {})["task"]
+wt = sys.argv[2]
+assert task["target_path"] == [f"{wt}/src/app.py", f"{wt}/src/other.py"], task["target_path"]
+assert task["planned_paths"] == [f"{wt}/src/app.py", f"{wt}/src/other.py", f"{wt}/tests/unit/contract.bats"], task["planned_paths"]
+assert task["inspection_path"] == f"{wt}/src/app.py", task["inspection_path"]
+target_paths = task["task_worktree_target_paths"]
+assert target_paths == "[\\"%s\\", \\"%s\\", \\"%s\\"]" % (
+    f"{wt}/src/app.py", f"{wt}/src/other.py", f"{wt}/tests/unit/contract.bats"
+), target_paths
+PY
+        export REPO_ROOT="$PROJECT_ROOT"
+        source <(sed -n "1,2143p" "$PROJECT_ROOT/scripts/run_tests.sh")
+        scope_rc=0
+        scope=$(task_scope_paths "$TASK" | tr "\\0" "\\n") || scope_rc=$?
+        [ "$scope_rc" -eq 0 ]
+        [[ "$scope" == *"src/app.py"* ]]
+        [[ "$scope" == *"src/other.py"* ]]
+        [[ "$scope" == *"tests/unit/contract.bats"* ]]
+        explicit_rc=0
+        explicit=$(task_explicit_test_paths "$TASK" | tr "\\0" "\\n") || explicit_rc=$?
+        [ "$explicit_rc" -eq 0 ]
+        [[ "$explicit" == "tests/unit/contract.bats" ]]
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+        echo "target_type=list planned_type=list inspection_type=scalar projected_once=3 selector=resolved"
+    '
+    if [ "$status" -ne 0 ]; then
+        printf '%s\n' "$output" >&3
+    fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"target_type=list planned_type=list inspection_type=scalar projected_once=3 selector=resolved"* ]]
+}
