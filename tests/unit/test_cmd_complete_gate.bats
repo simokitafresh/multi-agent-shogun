@@ -5253,6 +5253,72 @@ EOF
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"value: remote"* ]]
 }
 
+# test_necessity: an insight created independently on both branches may advance
+# monotonically from pending to resolved without being mistaken for divergence.
+@test "AC2 insights list root: new same ID pending and resolved chooses resolved" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-lifecycle-list"
+    printf '%s\n' '- id: base-only' '  value: base' > "$base-base.yaml"
+    cat > "$base-source.yaml" <<'EOF'
+- id: lifecycle
+  ts: 2026-08-18T18:33:30+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: resolved
+  resolved_reason: verified
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: lifecycle
+  ts: 2026-08-18T18:33:30+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: pending
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_lifecycle_list_probe
+    [ "$status" -eq 0 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c 'status: resolved')" -eq 1 ]
+}
+
+# test_necessity: production mapping-root insights have the same monotonic
+# lifecycle contract, while immutable identity differences remain fail-closed.
+@test "AC2 insights mapping root: lifecycle resolves but identity mismatch blocks" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-lifecycle-mapping"
+    printf '%s\n' 'insights: []' > "$base-base.yaml"
+    cat > "$base-source.yaml" <<'EOF'
+insights:
+- id: lifecycle
+  ts: 2026-08-18T18:33:30+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: resolved
+  resolved_reason: verified
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+insights:
+- id: lifecycle
+  ts: 2026-08-18T18:33:30+09:00
+  insight: changed
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: pending
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_lifecycle_mapping_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+}
+
 # test_necessity: a mapping root without the insights list is an invalid
 # source-only input and must fail closed before publication.
 @test "AC2 insights mapping root: invalid root blocks without push" {

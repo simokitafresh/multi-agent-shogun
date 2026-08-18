@@ -1324,6 +1324,22 @@ def equal(left, right):
     return left is not None and right is not None and left["value"] == right["value"]
 
 
+def monotonic_new_id_lifecycle(left, right):
+    """Return the resolved entry for a safe pending -> resolved transition."""
+    identity_fields = ("id", "ts", "insight", "priority", "source", "fix_known")
+    left_value = left["value"]
+    right_value = right["value"]
+    if any(left_value.get(field) != right_value.get(field) for field in identity_fields):
+        return None
+    left_status = left_value.get("status")
+    right_status = right_value.get("status")
+    if left_status not in {"pending", "resolved"} or right_status not in {"pending", "resolved"}:
+        return None
+    if {left_status, right_status} != {"pending", "resolved"}:
+        return None
+    return left if left_status == "resolved" else right
+
+
 chosen = {}
 order = []
 for entry in remote_list + source_list + base_list:
@@ -1345,6 +1361,8 @@ for item_id in order:
     if b is None:
         if r is None or equal(r, s):
             chosen[item_id] = s
+        elif monotonic_new_id_lifecycle(s, r) is not None:
+            chosen[item_id] = monotonic_new_id_lifecycle(s, r)
         else:
             raise ValueError(f"source/remote divergent new id: {item_id}")
         continue
