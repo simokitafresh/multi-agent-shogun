@@ -975,7 +975,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -985,3 +985,6 @@ insights:
     status: "failed"
     exit_code: 1
     output: ""
+  resolved_reason: "Current primary verification succeeds (rc=0): detector ledger and cmd_save target both exist; no source change is required within this ledger-only reflux task."
+  action_artifact: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh => rc=0 at 2026-08-18T20:45+09:00"
+  resolved_at: "2026-08-18T20:43:17+09:00"
