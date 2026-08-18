@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-153430366-4029
-  ts: "2026-08-18T15:34:30+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_4354; matched=本番,変更; current_pattern=FoF決定性 手③CLOSE — 残9 MISMATCHのoracle境界(depth3の月対応/伝播タイミング)を本番block同一定義へ揃え、補正oracle vs run409をMISMATCH 0で確定する(read-only・本番無変更); candidate_level=2; candidate=cmd_1855のverdict_override根因。AC『全期間月次リターン差』が進行中月を含み、GS作成日vs本番更新日の差異で常にFAIL。AC標準文言を『完了月(最終月除外)』に変更。cmd起票テンプレート修正が必要→家老担当; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_4354"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次コード確認で既実装を確認。scripts/deploy_task.shの3経路(L5400-5401,L5586-5587,L5725-5726)がmonthly/月次ACへ進行中月除外を自動注入し、docs/research/gunshi_idle_wa_timeseries_20260411.mdもGP-184 implementedを記録。追加修正・decision_candidate不要。"
-  action_artifact: "queue/reports/saizo_report_cmd_reflux_insight_202608190102_saizo.yaml"
-  resolved_at: "2026-08-19T01:03:56+09:00"
 - id: INS-20260818-153430697-ab2e
   ts: "2026-08-18T15:34:30+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4354; matched=block,同一; current_pattern=FoF決定性 手③CLOSE — 残9 MISMATCHのoracle境界(depth3の月対応/伝播タイミング)を本番block同一定義へ揃え、補正oracle vs run409をMISMATCH 0で確定する(read-only・本番無変更); candidate_level=4; candidate=おしお殿#4「2回同じ失敗→仮説ごと疑え」。gate_fire_logから同一忍者×同一BLOCK理由の連続回数を計数。2回連続→仮説転換メッセージ表示+exit 1(強制BLOCK)。GP-198のgate_diagnose_check.shに統合実装; source=gunshi_gp_tracker.yaml"
@@ -967,5 +957,12 @@ insights:
   insight: "SKILL.md追従task[007e7e3d58117f4a]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
   priority: "medium"
   source: "skill_script_refs:007e7e3d58117f4a"
+  fix_known: false
+  status: pending
+- id: INS-20260819-052520111-2011
+  ts: "2026-08-19T05:25:20+09:00"
+  insight: "SKILL.md追従task[62304dd7c0ca172f]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:62304dd7c0ca172f"
   fix_known: false
   status: pending
