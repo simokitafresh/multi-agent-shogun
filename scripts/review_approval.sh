@@ -78,6 +78,113 @@ report_logical=$(PROJECT_ROOT="$ROOT" review_report_logical_path "$report") || {
   echo "BLOCK: report logical path resolution failed: $report" >&2
   exit 2
 }
+rc_restore_snapshot_common() {
+  local snap="$1" task_path="$2" report_path="$3" approval_dir="$4" approval_base="$5" restore_worker="$6"
+  local scope_path="$7" commit_path="$8" payload_path="$9" expected_task_sha="${10}" expected_report_sha="${11}"
+  local actual_task_sha actual_report_sha tmp i src dest restore_ok=1 manifest
+  [ -f "$snap/task.yaml" ] && [ -f "$snap/report.yaml" ] || return 1
+  python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1],encoding="utf-8")); yaml.safe_load(open(sys.argv[2],encoding="utf-8"))' \
+    "$snap/task.yaml" "$snap/report.yaml" >/dev/null 2>&1 || return 1
+  actual_task_sha=$(sha256sum "$snap/task.yaml" | awk '{print $1}')
+  actual_report_sha=$(sha256sum "$snap/report.yaml" | awk '{print $1}')
+  [ "$actual_task_sha" = "$expected_task_sha" ] && [ "$actual_report_sha" = "$expected_report_sha" ] || return 1
+  [[ "$expected_task_sha" =~ ^[0-9a-f]{64}$ ]] && [[ "$expected_report_sha" =~ ^[0-9a-f]{64}$ ]] || return 1
+  local -a srcs=(task.yaml report.yaml karo.yaml gunshi.yaml gunshi_notice.sent review_gate.done gunshi_notify.done last_rc_scope last_rc_commit last_rc_report_payload karo_rework.seen last_rc_snapshot_pointer)
+  local -a dests=("$task_path" "$report_path" "$approval_dir/karo.yaml" "$approval_dir/gunshi.yaml" "$approval_dir/gunshi_notice.sent" "$ROOT/queue/gates/$cmd_id/review_gate.done" "$ROOT/queue/gates/$cmd_id/gunshi_report_review_notify_${restore_worker}.done" "$scope_path" "$commit_path" "$payload_path" "$approval_base/karo_rework.seen" "$approval_dir/last_rc_snapshot_dir")
+  # Validate every source before the first operational file is replaced.
+  for ((i=0; i<${#srcs[@]}; i++)); do
+    src="$snap/${srcs[$i]}"
+    [ ! -e "$src" ] || { [ -f "$src" ] && [ ! -L "$src" ]; } || return 1
+  done
+  if [ -e "$snap/gate_triggered.manifest" ] || [ -e "$snap/gate_triggered.marker" ]; then
+    [ -f "$snap/gate_triggered.manifest" ] && [ ! -L "$snap/gate_triggered.manifest" ] \
+      && [ -f "$snap/gate_triggered.marker" ] && [ ! -L "$snap/gate_triggered.marker" ] || return 1
+    manifest=$(head -n 1 "$snap/gate_triggered.manifest")
+    [[ "$manifest" =~ ^[0-9a-f]{64}$ ]] || return 1
+    [ "$(wc -l < "$snap/gate_triggered.manifest")" -eq 1 ] || return 1
+  fi
+  for ((i=0; i<${#srcs[@]}; i++)); do
+    src="$snap/${srcs[$i]}"; dest="${dests[$i]}"
+    if [ -f "$src" ]; then
+      mkdir -p "${dest%/*}"; tmp=$(mktemp "${dest}.rc-restore.XXXXXX") || return 1
+      cp -f "$src" "$tmp" && mv -f "$tmp" "$dest" || { rm -f "$tmp"; restore_ok=0; break; }
+      cmp -s "$src" "$dest" || { restore_ok=0; break; }
+    else
+      rm -f "$dest"; [ ! -e "$dest" ] || { restore_ok=0; break; }
+    fi
+  done
+  [ "$restore_ok" -eq 1 ] || return 1
+  if [ -f "$snap/gate_triggered.manifest" ]; then
+    dest="$approval_base/.gate_triggered.$manifest"; tmp=$(mktemp "${dest}.rc-restore.XXXXXX") || return 1
+    cp -f "$snap/gate_triggered.marker" "$tmp" && mv -f "$tmp" "$dest" || return 1
+    cmp -s "$snap/gate_triggered.marker" "$dest" || return 1
+  fi
+  cmp -s "$snap/task.yaml" "$task_path" && cmp -s "$snap/report.yaml" "$report_path"
+}
+# Recover an interrupted formal-RC transaction before lifecycle validation:
+# the orphaned report may intentionally be revision_requested+PASS, which is
+# invalid as a submitted report but is valid evidence of the interrupted write.
+early_base="$ROOT/queue/gates/$cmd_id/review_approvals"
+early_fence="$early_base/.rc_identity_transaction"
+if [ "$role:$result" = karo:RC ] && [ -f "$early_fence" ]; then
+  mkdir -p "$early_base"
+  exec 200>"$early_base/.lock"; flock -w 10 200
+  early_journal=$(python3 - "$early_fence" <<'PY'
+import re, sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+required = ("cmd_id", "worker_id", "report", "snapshot_dir", "task_sha256", "report_sha256")
+if any(not isinstance(d.get(k), str) or not d[k] for k in required): raise SystemExit(1)
+if not re.fullmatch(r"[a-z][a-z0-9_-]*", d["worker_id"]): raise SystemExit(1)
+if not re.fullmatch(r"[0-9a-f]{64}", d["task_sha256"]): raise SystemExit(1)
+if not re.fullmatch(r"[0-9a-f]{64}", d["report_sha256"]): raise SystemExit(1)
+for k in required: print(d[k])
+PY
+) || { echo "BLOCK: orphan RC journal invalid" >&2; exit 1; }
+  early_journal_cmd=$(printf '%s\n' "$early_journal" | sed -n 1p)
+  early_worker=$(printf '%s\n' "$early_journal" | sed -n 2p)
+  early_journal_report=$(printf '%s\n' "$early_journal" | sed -n 3p)
+  early_snapshot=$(printf '%s\n' "$early_journal" | sed -n 4p)
+  early_task_sha=$(printf '%s\n' "$early_journal" | sed -n 5p)
+  early_report_sha=$(printf '%s\n' "$early_journal" | sed -n 6p)
+  [ "$early_journal_cmd" = "$cmd_id" ] && [ "$early_journal_report" = "$report_logical" ] || {
+    echo "BLOCK: orphan RC journal identity mismatch" >&2; exit 1;
+  }
+  early_report_worker=$(python3 - "$report" <<'PY'
+import sys,yaml
+print(str((yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("worker_id") or ""))
+PY
+) || exit 1
+  [ "$early_report_worker" = "$early_worker" ] || { echo "BLOCK: orphan RC worker mismatch" >&2; exit 1; }
+  early_task="$ROOT/queue/tasks/$early_worker.yaml"
+  early_key=$(review_report_key "$report_logical")
+  early_dir="$early_base/reports/$early_key"
+  mkdir -p "$ROOT/queue/locks"
+  exec 201>"$ROOT/queue/locks/deploy_ninja_${early_worker}.lock"; flock -w 10 201
+  early_live="$ROOT/$report_logical"
+  exec 202>"$(lock_path "${early_live}.report-unit")"; flock -w 10 202
+  early_snapshot=$(realpath -m "$early_snapshot" 2>/dev/null || true)
+  [[ "$early_snapshot" == "$early_dir"/.pre_rc_snapshot.* ]] \
+    && [ -f "$early_snapshot/task.yaml" ] && [ -f "$early_snapshot/report.yaml" ] || {
+      echo "BLOCK: orphan RC identity fence has invalid snapshot: $early_fence" >&2; exit 1;
+    }
+  early_rejected_commit="$early_dir/last_rc_commit"
+  early_rejected_payload="$early_dir/last_rc_report_payload"
+  early_scope="$early_dir/last_rc_scope"
+  rc_restore_snapshot_common "$early_snapshot" "$early_task" "$early_live" "$early_dir" "$early_base" "$early_worker" \
+    "$early_scope" "$early_rejected_commit" "$early_rejected_payload" "$early_task_sha" "$early_report_sha" || {
+    echo "BLOCK: orphan RC exact restore verification failed" >&2; exit 1;
+  }
+  rm -f "$early_fence"; [ ! -e "$early_fence" ] || { echo "BLOCK: orphan fence removal failed" >&2; exit 1; }
+  early_test_fault="${REVIEW_APPROVAL_TEST_RC_FAULT:-}"
+  if [ "$early_test_fault" = orphan_restored_stop ] \
+    && [ -n "${BATS_TEST_TMPDIR:-}" ] && [[ "$ROOT" == "$BATS_TEST_TMPDIR"/* ]]; then
+    flock -u 202; flock -u 201; flock -u 200
+    exit 98
+  fi
+  flock -u 202; flock -u 201; flock -u 200
+  bash "$0" "$cmd_id" "$role" "$result" "$early_live" "$requested_scope"
+  exit $?
+fi
 # A formal decision is valid only for a submitted report.  Karo RC moves the
 # report to revision_requested before waking the worker; without this guard a
 # delayed Gunshi review can bind LGTM to that post-RC document and recreate a
@@ -304,19 +411,46 @@ PY
 
   pre_report_status=$(cat "$snapshot_dir/report_status" 2>/dev/null || true)
   [ -n "$pre_report_status" ] || { echo "BLOCK: RC snapshot missing report_status: $snapshot_dir" >&2; exit 1; }
-  bash "$ROOT/scripts/report_field_set.sh" "$report" status "$pre_report_status"
+  pre_report_id=$(cat "$snapshot_dir/report_id" 2>/dev/null || true)
+  if [ -f "$snapshot_dir/report.yaml" ]; then
+    report_restore_lock=$(lock_path "$report")
+    report_restore_tmp=$(mktemp "${report}.rc-revoke.XXXXXX") || exit 1
+    cp -f "$snapshot_dir/report.yaml" "$report_restore_tmp"
+    python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' \
+      "$report_restore_tmp" >/dev/null
+    exec 204>"$report_restore_lock"
+    flock -w 10 204 || { rm -f "$report_restore_tmp"; exit 1; }
+    mv -f "$report_restore_tmp" "$report"
+  elif [ -f "$snapshot_dir/report_id" ]; then
+    bash "$ROOT/scripts/report_field_set.sh" "$report" report_id "$pre_report_id"
+    bash "$ROOT/scripts/report_field_set.sh" "$report" status "$pre_report_status"
+  else
+    # Legacy snapshots predate formal-RC identity rotation.
+    bash "$ROOT/scripts/report_field_set.sh" "$report" status "$pre_report_status"
+  fi
 
   # cmd_karo_hotfix_rc_task_status_reset_20260727: one atomic batch write
   # instead of N separate yaml_field_set.sh invocations (N separate
   # flock-acquire/release cycles). Between two individual calls the lock is
   # released, leaving a window where an independent writer (e.g. ninja_monitor
   # AUTO-DONE) can interleave and observe/leave a half-restored task state.
-  restore_pairs=()
-  while IFS='=' read -r field value; do
-    [ -n "$field" ] || continue
-    restore_pairs+=("${field}=${value}")
-  done < "$snapshot_dir/task_fields"
-  [ "${#restore_pairs[@]}" -eq 0 ] || yaml_field_set_batch "$task_file" task "${restore_pairs[@]}"
+  if [ -f "$snapshot_dir/task.yaml" ]; then
+    task_restore_lock=$(lock_path "$task_file")
+    task_restore_tmp=$(mktemp "${task_file}.rc-revoke.XXXXXX") || exit 1
+    cp -f "$snapshot_dir/task.yaml" "$task_restore_tmp"
+    python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' \
+      "$task_restore_tmp" >/dev/null
+    exec 203>"$task_restore_lock"
+    flock -w 10 203 || { rm -f "$task_restore_tmp"; exit 1; }
+    mv -f "$task_restore_tmp" "$task_file"
+  else
+    restore_pairs=()
+    while IFS='=' read -r field value; do
+      [ -n "$field" ] || continue
+      restore_pairs+=("${field}=${value}")
+    done < "$snapshot_dir/task_fields"
+    [ "${#restore_pairs[@]}" -eq 0 ] || yaml_field_set_batch "$task_file" task "${restore_pairs[@]}"
+  fi
 
   for marker in gunshi.yaml gunshi_notice.sent; do
     if [ -f "$snapshot_dir/$marker" ]; then
@@ -427,9 +561,17 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_SKIP_LED
   fi
 fi
 tmp=$(mktemp "$dir/.${role}.XXXXXX")
+pre_rc_karo_marker=""
+if [ "$role:$result" = karo:RC ] && [ -f "$dir/karo.yaml" ]; then
+  pre_rc_karo_marker=$(mktemp "$dir/.pre_rc_karo.XXXXXX")
+  cp -f "$dir/karo.yaml" "$pre_rc_karo_marker"
+fi
 review_approval_cleanup_on_exit() {
   local rc=$?
-  rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*
+  if [ "${RC_IDENTITY_TRANSACTION_ACTIVE:-0}" -eq 1 ] && declare -F rc_identity_rollback >/dev/null; then
+    rc_identity_rollback || rc=1
+  fi
+  rm -f "$tmp" "${pre_rc_karo_marker:-}" "${REVIEW_FP_CACHE_DIR:?}"/*
   rmdir "${REVIEW_FP_CACHE_DIR:?}" 2>/dev/null || true
   review_approval_record_total "$rc"
   return "$rc"
@@ -488,6 +630,7 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   # All subsequent RC mutations must address the logical live slot, never the
   # archived target resolved by realpath().  This preserves the archive hash.
   report="$rc_report_path"
+  rc_identity_fence="$base/.rc_identity_transaction"
   # cmd_karo_impl_rc_revoke_command_20260727: snapshot pre-RC state under the
   # same deploy lock so a mistaken RC can be revoked later (incident
   # 2026-07-27 12:47: a correct report was RC'd by mistake with no formal
@@ -498,8 +641,14 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   printf '%s\n' "$report_status" > "$snapshot_dir/report_status"
   printf '%s\n' "$fingerprint" > "$snapshot_dir/report_fingerprint"
   printf '%s\n' "$canonical_generation" > "$snapshot_dir/report_generation"
+  cp -f "$task_file" "$snapshot_dir/task.yaml"
+  cp -f "$report" "$snapshot_dir/report.yaml"
+  snapshot_task_sha=$(sha256sum "$snapshot_dir/task.yaml" | awk '{print $1}')
+  snapshot_report_sha=$(sha256sum "$snapshot_dir/report.yaml" | awk '{print $1}')
+  printf '%s\n' "$snapshot_task_sha" > "$snapshot_dir/task.sha256"
+  printf '%s\n' "$snapshot_report_sha" > "$snapshot_dir/report.sha256"
   : > "$snapshot_dir/task_fields"
-  for field in deployed_at retry_deployed_at status reviewed review_result acknowledged_at completed_at done_at; do
+  for field in report_id deployed_at retry_deployed_at status reviewed review_result acknowledged_at completed_at done_at; do
     field_value=$(python3 - "$task_file" "$field" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
@@ -515,14 +664,27 @@ PY
 )
     printf '%s=%s\n' "$field" "$field_value" >> "$snapshot_dir/task_fields"
   done
+  pre_rc_report_id=$(python3 - "$report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("report_id") or ""))
+PY
+)
+  printf '%s\n' "$pre_rc_report_id" > "$snapshot_dir/report_id"
   [ -f "$dir/gunshi.yaml" ] && cp -f "$dir/gunshi.yaml" "$snapshot_dir/gunshi.yaml"
   [ -f "$dir/gunshi_notice.sent" ] && cp -f "$dir/gunshi_notice.sent" "$snapshot_dir/gunshi_notice.sent"
+  if [ -n "$pre_rc_karo_marker" ] && [ -f "$pre_rc_karo_marker" ]; then
+    cp -f "$pre_rc_karo_marker" "$snapshot_dir/karo.yaml"
+  else
+    : > "$snapshot_dir/karo.absent"
+  fi
   [ -f "$ROOT/queue/gates/$cmd_id/review_gate.done" ] && cp -f "$ROOT/queue/gates/$cmd_id/review_gate.done" "$snapshot_dir/review_gate.done"
   [ -f "$ROOT/queue/gates/$cmd_id/gunshi_report_review_notify_${worker_id}.done" ] && cp -f "$ROOT/queue/gates/$cmd_id/gunshi_report_review_notify_${worker_id}.done" "$snapshot_dir/gunshi_notify.done"
   [ -f "$rc_scope_file" ] && cp -f "$rc_scope_file" "$snapshot_dir/last_rc_scope"
   [ -f "$rejected_commit_file" ] && cp -f "$rejected_commit_file" "$snapshot_dir/last_rc_commit"
   [ -f "$rejected_payload_file" ] && cp -f "$rejected_payload_file" "$snapshot_dir/last_rc_report_payload"
   [ -f "$base/karo_rework.seen" ] && cp -f "$base/karo_rework.seen" "$snapshot_dir/karo_rework.seen"
+  [ -f "$dir/last_rc_snapshot_dir" ] && cp -f "$dir/last_rc_snapshot_dir" "$snapshot_dir/last_rc_snapshot_pointer"
   printf '%s\n' "$snapshot_dir" > "$dir/last_rc_snapshot_dir"
   # Preserve RC as monotonic command history.  The per-report karo.yaml is
   # intentionally overwritten by the later ACCEPT, so it cannot tell the
@@ -550,6 +712,39 @@ PY
   fi
   mapfile -t current_reports < <(PROJECT_ROOT="$ROOT" review_resolve_reports "$cmd_id")
   current_manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${current_reports[@]}" 2>/dev/null || true)
+  if [ -n "$current_manifest" ] && [ -f "$base/.gate_triggered.$current_manifest" ]; then
+    cp -f "$base/.gate_triggered.$current_manifest" "$snapshot_dir/gate_triggered.marker"
+    printf '%s\n' "$current_manifest" > "$snapshot_dir/gate_triggered.manifest"
+  fi
+  rc_identity_fence="$base/.rc_identity_transaction"
+  rc_identity_fence_tmp=$(mktemp "$base/.rc_identity_transaction.XXXXXX") || {
+    echo "BLOCK: formal RC identity fence allocation failed: $cmd_id" >&2
+    exit 1
+  }
+  printf 'cmd_id: %s\nworker_id: %s\nreport: %s\nold_report_id: %s\nsnapshot_dir: %s\ntask_sha256: %s\nreport_sha256: %s\nstarted_at: %s\n' \
+    "$cmd_id" "$worker_id" "$report_logical" "$pre_rc_report_id" "$snapshot_dir" \
+    "$snapshot_task_sha" "$snapshot_report_sha" "$(date -Iseconds)" \
+    > "$rc_identity_fence_tmp"
+  mv -f "$rc_identity_fence_tmp" "$rc_identity_fence"
+
+  rc_identity_rollback() {
+    if rc_restore_snapshot_common "$snapshot_dir" "$task_file" "$report" "$dir" "$base" "$worker_id" \
+      "$rc_scope_file" "$rejected_commit_file" "$rejected_payload_file" \
+      "$snapshot_task_sha" "$snapshot_report_sha"; then
+      rm -f "$rc_identity_fence"
+      [ ! -e "$rc_identity_fence" ] || return 1
+      RC_IDENTITY_TRANSACTION_ACTIVE=0
+      return 0
+    fi
+    echo "BLOCK: formal RC rollback incomplete; identity fence retained: $rc_identity_fence" >&2
+    return 1
+  }
+  RC_IDENTITY_TRANSACTION_ACTIVE=1
+  rc_test_fault="${REVIEW_APPROVAL_TEST_RC_FAULT:-}"
+  if [ -n "$rc_test_fault" ] \
+    && { [ -z "${BATS_TEST_TMPDIR:-}" ] || [[ "$ROOT" != "$BATS_TEST_TMPDIR"/* ]]; }; then
+    rc_test_fault=""
+  fi
   # RC starts a fresh report-review lifecycle.  Clear both the formal approval
   # markers and inbox_write's completion-notify marker; otherwise a revised
   # report can be resubmitted successfully while Gunshi receives no new review
@@ -559,10 +754,36 @@ PY
     "$ROOT/queue/gates/$cmd_id/review_gate.done" \
     "$ROOT/queue/gates/$cmd_id/gunshi_report_review_notify_${worker_id}.done"
   [ -z "$current_manifest" ] || rm -f "$base/.gate_triggered.$current_manifest"
-  # A completed report makes ninja_monitor auto-promote the task back to done.
-  # Move the report out of the terminal set before reopening the task so RC
-  # cannot race with AUTO-DONE and silently stop the worker again.
-  bash "$ROOT/scripts/report_field_set.sh" "$report" status revision_requested
+  # A formal RC starts a new logical report generation. Generate the identity
+  # exactly once, then publish report+task while the shared resolver fence is
+  # present. Lock-free readers fail closed until success or verified rollback.
+  if [ "$rc_test_fault" = id_generation ]; then
+    rc_report_id=""
+  else
+    rc_report_id=$(python3 "$ROOT/scripts/lib/report_unique_identity.py" new \
+      --path "$report" --root "$ROOT") || rc_report_id=""
+  fi
+  if [ -z "$rc_report_id" ]; then
+    echo "BLOCK: formal RC report_id generation failed: $report_rel" >&2
+    exit 1
+  fi
+  [[ "$rc_report_id" =~ ^rpt-[0-9a-fA-F-]{36}$ ]] || {
+    echo "BLOCK: formal RC generated invalid report_id: $rc_report_id" >&2
+    exit 1
+  }
+  if [ "$rc_test_fault" = report_status ] || ! bash "$ROOT/scripts/report_field_set.sh" "$report" status revision_requested; then
+      echo "BLOCK: formal RC report identity publication failed: $report_rel" >&2
+      exit 1
+  fi
+  if [ "$rc_test_fault" = report_id ] || ! bash "$ROOT/scripts/report_field_set.sh" "$report" report_id "$rc_report_id"; then
+    echo "BLOCK: formal RC report identity publication rolled back: $report_rel" >&2
+    exit 1
+  fi
+  if [ "$rc_test_fault" = orphan_exit ]; then
+    # Test-only abrupt termination simulation: deliberately skip EXIT cleanup.
+    trap - EXIT
+    exit 97
+  fi
   # RC is a real redeployment. Refresh the deployment clock before reopening;
   # otherwise ninja_monitor's Stage-1 timeout measures from the original
   # deployment and can immediately reset the revived task to idle.
@@ -576,7 +797,8 @@ PY
   # could observe or leave a state where "status" and the other reset fields
   # disagree — reproducing the 2026-07-27 13:39 incident where kotaro's task
   # kept status=done after a formal RC (bulletin 13:48 manual fix).
-  yaml_field_set_batch "$task_file" task \
+  if [ "$rc_test_fault" = task_batch ] || ! yaml_field_set_batch "$task_file" task \
+    "report_id=$rc_report_id" \
     "deployed_at=$rc_deployed_at" \
     "retry_deployed_at=$rc_deployed_at" \
     "status=assigned" \
@@ -585,7 +807,29 @@ PY
     "review_result=" \
     "acknowledged_at=" \
     "completed_at=" \
-    "done_at="
+    "done_at="; then
+    echo "BLOCK: formal RC task/report identity transaction rolled back: worker=$worker_id" >&2
+    exit 1
+  fi
+  # RC_REVOKE compares against the generation produced by this RC, not the
+  # pre-RC bytes. Status is normalized by review_report_fingerprint; report_id
+  # is not, so pin the post-rotation fingerprint after both writes succeed.
+  if [ "$rc_test_fault" = rotated_fingerprint ]; then
+    rc_rotated_fingerprint=""
+  else
+    rc_rotated_fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$identity_exempt" \
+      review_report_fingerprint "$report") || rc_rotated_fingerprint=""
+  fi
+  if [ -z "$rc_rotated_fingerprint" ]; then
+      echo "BLOCK: formal RC rotated report fingerprint unavailable: $report_rel" >&2
+      exit 1
+  fi
+  printf '%s\n' "$rc_rotated_fingerprint" > "$snapshot_dir/report_fingerprint"
+  if [ "$rc_test_fault" = fence_remove ] || ! rm -f "$rc_identity_fence" || [ -e "$rc_identity_fence" ]; then
+    echo "BLOCK: formal RC identity fence removal failed: $rc_identity_fence" >&2
+    exit 1
+  fi
+  RC_IDENTITY_TRANSACTION_ACTIVE=0
   if [ "$correction_scope" = report ]; then
     rc_task_message="現task YAMLとRC指摘を正本として再読し、RCで指摘された報告項目だけを是正せよ。再計算・再実装の要否はレビュー指示に従え。"
   else
