@@ -1072,24 +1072,14 @@ verify_codex_task_delivery() {
     local target="$1"
     local msg_id="$2"
     local inbox_file="$SCRIPT_DIR/queue/inbox/${target}.yaml"
-    local task_file="$SCRIPT_DIR/queue/tasks/${target}.yaml"
 
     if inbox_message_marked_read "$inbox_file" "$msg_id"; then
         return 0
     fi
 
+    # Task status is not delivery evidence: it may predate this message.
+    # Only the unique message row becoming read proves post-send processing.
     target_is_ninja "$target" || return 1
-
-    if [ -f "$task_file" ]; then
-        local task_status
-        task_status=$(inbox_yaml_field_get "$task_file" "status" "")
-        case "$task_status" in
-            acknowledged|in_progress|done|failed|blocked)
-                return 0
-                ;;
-        esac
-    fi
-
     return 1
 }
 
@@ -1111,6 +1101,7 @@ codex_delivery_evidence_observed() {
     local target="$1"
     local msg_id="$2"
     local pane_target="$3"
+    local baseline_snapshot="${4:-}"
 
     if verify_codex_task_delivery "$target" "$msg_id"; then
         return 0
@@ -1119,6 +1110,11 @@ codex_delivery_evidence_observed() {
     [ -n "$pane_target" ] || return 1
     local pane_snapshot
     pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
+    # Generic Working/Hook text is only evidence when it is a new pane state
+    # observed after this message was persisted.  Reusing an unchanged pane
+    # snapshot caused pre-send work from another message to be a false PASS.
+    [ -n "$baseline_snapshot" ] || return 1
+    [ "$pane_snapshot" != "$baseline_snapshot" ] || return 1
     codex_pane_has_delivery_evidence "$target" "$pane_snapshot"
 }
 
@@ -1140,12 +1136,14 @@ maybe_verify_codex_delivery() {
     local wait_sec="${INBOX_CODEX_VERIFY_WAIT_SEC:-1}"
     local attempt=0
 
-    local pane_target
+    local pane_target pane_baseline=""
     pane_target=$(resolve_agent_pane_target "$target" || true)
+    if [ -n "$pane_target" ]; then
+        pane_baseline=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
+    fi
 
     while [ "$attempt" -le "$retries" ]; do
-        # Working状態のCodex paneは、task YAML更新前でも配達済みとして扱う。
-        if codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target"; then
+        if codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target" "$pane_baseline"; then
             echo "[inbox_write] codex delivery verified (prompt/working evidence) for ${target} (read/task/pane composite)" >&2
             capture_codex_delivery_snapshot "$target" "$pane_target"
             return 0
@@ -1160,6 +1158,7 @@ maybe_verify_codex_delivery() {
                 # twice even though only one durable message exists.
                 echo "[inbox_write] codex nudge retry ${attempt}/${retries} delegated to active watcher for ${target}" >&2
             elif [ -n "$pane_target" ] && [ "$unread_count" -gt 0 ] 2>/dev/null; then
+                pane_baseline=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
                 if send_codex_task_nudge "$target" "$pane_target" "$unread_count"; then
                     echo "[inbox_write] codex nudge retry ${attempt}/${retries} sent to ${target}" >&2
                     capture_codex_delivery_snapshot "$target" "$pane_target"
@@ -1178,11 +1177,11 @@ maybe_verify_codex_delivery() {
         # persistence, and message identity unchanged.
         local delivered=0 wait_tick
         if [ "$wait_sec" = "0" ]; then
-            codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target" && delivered=1
+            codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target" "$pane_baseline" && delivered=1
         else
             for wait_tick in 1 2 3 4 5; do
                 sleep 0.2
-                if codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target"; then
+                if codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target" "$pane_baseline"; then
                     delivered=1
                     break
                 fi
