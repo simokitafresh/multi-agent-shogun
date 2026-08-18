@@ -1150,15 +1150,20 @@ PY
 # parse and compare blocks; every selected top-level `- id:` block is emitted
 # from its original bytes so comments/formatting remain intact.
 source_only_insights_id_merge() (
-    local repo="$1" clean_repo="$2" remote_tip="$3" path="$4" source_sha common_base
+    local repo="$1" clean_repo="$2" remote_tip="$3" path="$4" source_sha source_base
     local base_file source_file remote_file merged_file tmp_dir
     shift 4
     local -a source_shas=("$@")
 
     [ "$path" = "queue/insights.yaml" ] || return 1
     [ "${#source_shas[@]}" -gt 0 ] || return 1
-    common_base="$(git -C "$repo" merge-base "$remote_tip" "${source_shas[0]}" 2>/dev/null || true)"
-    [ -n "$common_base" ] || return 1
+    # The merge base may predate unrelated operational checkpoints on the
+    # source branch.  Those checkpoints are already part of the source
+    # generation and must not be reinterpreted as deletions by this publisher.
+    # Only the delta introduced by the supplied source commits is intentional,
+    # so compare it with the first source commit's parent.
+    source_base="$(git -C "$repo" rev-parse "${source_shas[0]}^" 2>/dev/null || true)"
+    [ -n "$source_base" ] || return 1
 
     tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/shogun-insights-merge.XXXXXX")" || return 1
     trap 'rm -f "$tmp_dir"/*.yaml; rmdir "$tmp_dir" 2>/dev/null || true' EXIT
@@ -1167,8 +1172,8 @@ source_only_insights_id_merge() (
     remote_file="$tmp_dir/remote.yaml"
     merged_file="$tmp_dir/merged.yaml"
 
-    if git -C "$repo" cat-file -e "$common_base:$path" 2>/dev/null; then
-        git -C "$repo" show "$common_base:$path" >"$base_file" || return 1
+    if git -C "$repo" cat-file -e "$source_base:$path" 2>/dev/null; then
+        git -C "$repo" show "$source_base:$path" >"$base_file" || return 1
     else
         : >"$base_file"
     fi

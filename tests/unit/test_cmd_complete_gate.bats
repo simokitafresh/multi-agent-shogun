@@ -4955,6 +4955,65 @@ EOF
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
 }
 
+# test_necessity: deletion intent belongs to the supplied source generation,
+# not to an older graph merge-base.  A remote ID absent from both the source
+# commit and its parent must survive even when an older common ancestor had it.
+@test "AC2 insights merge: source parent generation preserves remote-new ID absent from source" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-source-generation"
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/queue"
+    cat > "$base/repo/queue/insights.yaml" <<'EOF'
+- id: remote-new
+  value: historical
+- id: shared
+  value: base
+EOF
+    git -C "$base/repo" add queue/insights.yaml
+    git -C "$base/repo" commit -q -m "historical common ancestor"
+    git -C "$base/repo" push -q origin main
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+
+    cat > "$base/repo/queue/insights.yaml" <<'EOF'
+- id: shared
+  value: checkpoint
+EOF
+    git -C "$base/repo" add queue/insights.yaml
+    git -C "$base/repo" commit -q -m "source generation base"
+    cat > "$base/repo/queue/insights.yaml" <<'EOF'
+- id: shared
+  value: checkpoint
+- id: source-add
+  value: source
+EOF
+    git -C "$base/repo" add queue/insights.yaml
+    git -C "$base/repo" commit -q -m "source change"
+    git -C "$base/repo" rev-parse HEAD > "$base/source.sha"
+
+    cat > "$base/remote-clone/queue/insights.yaml" <<'EOF'
+- id: remote-new
+  value: remote
+- id: shared
+  value: base
+EOF
+    git -C "$base/remote-clone" add queue/insights.yaml
+    git -C "$base/remote-clone" commit -q -m "remote independent update"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_source_generation_probe
+    [ "$status" -eq 0 ]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *$'id: remote-new\n  value: remote'* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *$'id: source-add\n  value: source'* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
 # test_necessity: a remote block equal to base is replaced by the source block
 # without discarding a separate remote-only ID.
 @test "AC2 insights merge: remote base block is replaced by source block" {
