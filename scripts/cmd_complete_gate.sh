@@ -721,6 +721,118 @@ mark_task_worktree_published() {
     python3 -c 'import json,os,sys,tempfile,time; p,pub=sys.argv[1:]; d=json.load(open(p,encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="active"; d["published_commit"]=pub; d["published_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_published.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$marker" "$published_commit"
 }
 
+# A source commit can be published by an equivalent cherry-pick whose hash is
+# necessarily different.  Ancestry alone therefore cannot be the publication
+# identity.  Prove the immutable final state of every path changed by the
+# source commit, including deletions; an empty commit is not accepted as an
+# equivalence witness.
+source_snapshot_matches_tip() {
+    local repo="$1" source_sha="$2" tip_sha="$3" path source_blob tip_blob
+    local changed_count=0
+
+    git -C "$repo" cat-file -e "${source_sha}^{commit}" 2>/dev/null || return 1
+    git -C "$repo" cat-file -e "${tip_sha}^{commit}" 2>/dev/null || return 1
+    while IFS= read -r -d '' path; do
+        changed_count=$((changed_count + 1))
+        if git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null; then
+            git -C "$repo" cat-file -e "$tip_sha:$path" 2>/dev/null || return 1
+            source_blob="$(git -C "$repo" rev-parse "$source_sha:$path")" || return 1
+            tip_blob="$(git -C "$repo" rev-parse "$tip_sha:$path")" || return 1
+            [ "$source_blob" = "$tip_blob" ] || return 1
+        else
+            ! git -C "$repo" cat-file -e "$tip_sha:$path" 2>/dev/null || return 1
+        fi
+    done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    [ "$changed_count" -gt 0 ]
+}
+
+# Completed tasks can be absent after a historical premature archive, while
+# their submitted report remains the immutable completion record.  Recover
+# cross-repository publication contracts from that report instead of silently
+# defaulting the source to the platform repository.  NUL framing preserves
+# path bytes; malformed records are omitted and the caller consequently
+# blocks because it has no proven source.
+discover_cmd_report_cross_repo_sources() {
+    local cmd_id="$1"
+    local report_root="${CMD_COMPLETE_GATE_REPORT_ROOT:-$SCRIPT_DIR}"
+    python3 - "$report_root" "$cmd_id" <<'PY'
+import glob
+import os
+import re
+import sys
+import yaml
+
+root, cmd_id = sys.argv[1:]
+seen = set()
+for pattern in (
+    os.path.join(root, "queue", "reports", "*.yaml"),
+    os.path.join(root, "queue", "archive", "reports", "*.yaml"),
+):
+    matched_report = False
+    for report_path in sorted(glob.glob(pattern)):
+        try:
+            report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+        except Exception:
+            continue
+        if not isinstance(report, dict):
+            continue
+        snapshot = report.get("task_contract_snapshot") or {}
+        if not isinstance(snapshot, dict):
+            snapshot = {}
+        parent = str(report.get("parent_cmd") or snapshot.get("parent_cmd") or "").strip()
+        if parent != cmd_id or str(report.get("status") or "").strip() != "completed":
+            continue
+        matched_report = True
+        entries = report.get("cross_repo_commits") or []
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            repo = str(entry.get("repo") or "").strip()
+            sha = str(entry.get("commit_hash") or "").strip().lower()
+            paths = entry.get("paths") or []
+            if not repo or not os.path.isabs(repo) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+                continue
+            if not isinstance(paths, list) or not paths or any(not isinstance(p, str) or not p or "\x00" in p for p in paths):
+                continue
+            key = (os.path.realpath(repo), sha, tuple(paths))
+            if key in seen:
+                continue
+            seen.add(key)
+            for value in (key[0], sha, str(len(paths)), *paths):
+                sys.stdout.buffer.write(value.encode("utf-8") + b"\0")
+    # Live reports are the canonical lifecycle slot.  Only consult the large
+    # archive when no completed live report exists for this command; otherwise
+    # a 10k-report archive scan turns every taskless completion into a minute-
+    # scale gate and can mix an obsolete generation into the source contract.
+    if matched_report:
+        break
+PY
+}
+
+report_source_paths_match_commit() {
+    local repo="$1" source_sha="$2" declared_count="$3"
+    shift 3
+    local path
+    local -A declared=() actual=()
+
+    [ "$declared_count" -eq "$#" ] 2>/dev/null || return 1
+    git -C "$repo" cat-file -e "${source_sha}^{commit}" 2>/dev/null || return 1
+    for path in "$@"; do
+        [ -n "$path" ] || return 1
+        [ "${declared[$path]+yes}" != yes ] || return 1
+        declared["$path"]=1
+    done
+    while IFS= read -r -d '' path; do
+        actual["$path"]=1
+    done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    [ "${#actual[@]}" -eq "${#declared[@]}" ] || return 1
+    for path in "${!actual[@]}"; do
+        [ "${declared[$path]+yes}" = yes ] || return 1
+    done
+}
+
 # Build a conflict publication from the source commits' final path snapshots.
 # This is deliberately narrower than a three-way merge: only paths changed by
 # the source commits may be staged, and a remote path is accepted only when
@@ -1433,9 +1545,12 @@ push_from_clean_worktree() {
 push_task_repositories() {
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
+    local source_equivalent_used
     local -a repos=() eligible_task_files=()
     local saw_task_file=0
-    local -A seen_repos=()
+    local report_repo report_source report_path_count path_index path report_sources_tmp report_sources_fd
+    local -a report_paths=()
+    local -A seen_repos=() report_sources_by_repo=()
 
     for task_file in "$@"; do
         [ -f "$task_file" ] || continue
@@ -1461,9 +1576,46 @@ push_task_repositories() {
         fi
     done
 
-    # Commands without task files are platform-owned lifecycle operations.
+    # A historical premature archive can remove the task before GATE CLEAR.
+    # In that case the completed report's exact cross-repo commit/path
+    # contract is the only accepted repository source.  Never guess platform
+    # ownership for a report that explicitly records another repository.
     if [ "${#repos[@]}" -eq 0 ]; then
-        repos=("$SCRIPT_DIR")
+        report_sources_tmp="$(mktemp "${TMPDIR:-/tmp}/cmd-gate-report-sources.XXXXXX")" || return 1
+        case "$report_sources_tmp" in
+            "${TMPDIR:-/tmp}"/cmd-gate-report-sources.*) ;;
+            *) return 1 ;;
+        esac
+        if ! discover_cmd_report_cross_repo_sources "$CMD_ID" > "$report_sources_tmp"; then
+            unlink "$report_sources_tmp" 2>/dev/null || true
+            return 1
+        fi
+        exec {report_sources_fd}< "$report_sources_tmp" || {
+            unlink "$report_sources_tmp" 2>/dev/null || true
+            return 1
+        }
+        unlink "$report_sources_tmp" || return 1
+        while IFS= read -r -d '' report_repo \
+            && IFS= read -r -d '' report_source \
+            && IFS= read -r -d '' path_count; do
+            [[ "$path_count" =~ ^[0-9]+$ ]] && [ "$path_count" -gt 0 ] || return 1
+            report_paths=()
+            for ((path_index=0; path_index<path_count; path_index++)); do
+                IFS= read -r -d '' path || return 1
+                report_paths+=("$path")
+            done
+            [ -d "$report_repo" ] || return 1
+            report_repo="$(realpath "$report_repo")" || return 1
+            git -C "$report_repo" rev-parse --git-dir >/dev/null 2>&1 || return 1
+            report_source_paths_match_commit "$report_repo" "$report_source" "$path_count" "${report_paths[@]}" || return 1
+            if [[ ! "${seen_repos[$report_repo]+_}" ]]; then
+                seen_repos["$report_repo"]=1
+                repos+=("$report_repo")
+            fi
+            report_sources_by_repo["$report_repo"]+="${report_source}"$'\n'
+        done <&"$report_sources_fd"
+        exec {report_sources_fd}<&-
+        [ "${#repos[@]}" -gt 0 ] || repos=("$SCRIPT_DIR")
     fi
 
     for repo in "${repos[@]}"; do
@@ -1482,16 +1634,22 @@ push_task_repositories() {
 
         local -a source_commits=()
         all_sources_ok=true
-        for task_file in "${eligible_task_files[@]}"; do
-            [ -f "$task_file" ] || continue
-            [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
-            source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
-            if [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
-                source_commits+=("$source_sha")
-            else
-                all_sources_ok=false
-            fi
-        done
+        if [ "${#eligible_task_files[@]}" -eq 0 ] && [ -n "${report_sources_by_repo[$repo]:-}" ]; then
+            while IFS= read -r source_sha; do
+                [ -n "$source_sha" ] && source_commits+=("$source_sha")
+            done <<< "${report_sources_by_repo[$repo]}"
+        else
+            for task_file in "${eligible_task_files[@]}"; do
+                [ -f "$task_file" ] || continue
+                [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
+                source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
+                if [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
+                    source_commits+=("$source_sha")
+                else
+                    all_sources_ok=false
+                fi
+            done
+        fi
         if [ "$all_sources_ok" != true ] || [ "${#source_commits[@]}" -eq 0 ]; then
             echo "  git push: BLOCK ($repo report source commit unavailable)"
             return 1
@@ -1501,14 +1659,28 @@ push_task_repositories() {
         [[ "$max_retries" =~ ^[0-9]+$ ]] || max_retries=2
         for ((attempt=0; attempt<=max_retries; attempt++)); do
             local all_remote=true
+            source_equivalent_used=false
             for source_sha in "${source_commits[@]}"; do
-                if ! git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
+                if git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
+                    continue
+                fi
+                if source_snapshot_matches_tip "$repo" "$source_sha" "$remote_tip"; then
+                    source_equivalent_used=true
+                else
                     all_remote=false
                     break
                 fi
             done
             if [ "$all_remote" = true ]; then
-                echo "  git push: SKIP ($repo report source commits already remote-contained)"
+                for task_file in "${eligible_task_files[@]}"; do
+                    [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
+                    mark_task_worktree_published "$task_file" "$remote_tip" || return 1
+                done
+                if [ "$source_equivalent_used" = true ]; then
+                    echo "  git push: SKIP ($repo report source commits source-equivalent to remote tip)"
+                else
+                    echo "  git push: SKIP ($repo report source commits already remote-contained)"
+                fi
                 break
             fi
 
@@ -1572,7 +1744,11 @@ if [ "${CMD_COMPLETE_GATE_PUSH_OVERLAP_ONLY:-0}" = "1" ]; then
     exit 0
 fi
 if [ "${CMD_COMPLETE_GATE_PUSH_REPOS_REAL:-0}" = "1" ]; then
-    push_task_repositories "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
+    if [ -n "${CMD_COMPLETE_GATE_TASK_FILE:-}" ]; then
+        push_task_repositories "$CMD_COMPLETE_GATE_TASK_FILE"
+    else
+        push_task_repositories
+    fi
     exit 0
 fi
 if [ -f "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh" ]; then
