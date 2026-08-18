@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_test_speed_gate_20260809
-  timestamp: '2026-08-09T11:08:15Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_test_speed_gate_20260809'
-- cmd_id: cmd_karo_hotfix_test_speed_gate_cycle2_20260809
-  timestamp: '2026-08-09T12:19:13Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_test_speed_gate_cycle2_20260809'
 - cmd_id: cmd_karo_hotfix_test_speed_deploy_cycle2_20260809
   timestamp: '2026-08-09T12:35:34Z'
   ninja: system
@@ -1317,3 +1291,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_remote_tip_task_worktree_20260818'
+- cmd_id: cmd_karo_hotfix_shared_dirty_snapshot_worktree_202608181849
+  timestamp: '2026-08-18T10:10:59Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_shared_dirty_snapshot_worktree_202608181849'
+- cmd_id: cmd_karo_hotfix_insight_new_id_lifecycle_merge_202608181908
+  timestamp: '2026-08-18T10:25:13Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_insight_new_id_lifecycle_merge_202608181908'
