@@ -1,43 +1,4 @@
 insights:
-- id: INS-20260817-162824808-4669
-  ts: "2026-08-17T16:28:24+09:00"
-  insight: "semantic_index_update未登録cmd originノード: [[殿合図_FoF_tiebreak開始_20260817_1606]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=FoF; score=17.8) / recalculate_pipeline(再計算パイプライン; alias=recalculate_fof; score=14.6) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_fix_2items_20260811_1337; score=4.8)。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-17T16:28:39+09:00"
-- id: INS-20260817-162824938-39c8
-  ts: "2026-08-17T16:28:24+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_4334; matched=不変; current_pattern=FoF tie-break 手① — 共通選択関数selection.pyを新設し加速フィルタ1本を挙動不変で差替(同率全採用のまま); candidate_level=4; candidate=cmd_1921 report_yaml_format WA(影丸lessons_useful dict/list混在)。GP-107撤去再評価: numbered dict({0:{id:X},1:{id:Y}})→list変換は内容不変。単一dict/ID-keyed dictは条件外(全キーint+全値dict)。家老workaround削減=利他; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_4334"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次情報で現HEADのGP-196実装と対象テストを確認。numbered dictは内容保持でlistへ変換され、ID-keyed dictと空dictは変換されずgate側で扱う契約が成立しており、追加実修正・decision_candidateは不要。"
-  action_artifact: "scripts/gates/gate_report_autofix_main.py:108-114;tests/unit/test_gate_report_autofix.bats:87-124,581-620;verification=bats target 3/3 PASS;source=logs/gunshi_gp_tracker.yaml:360-369"
-  resolved_at: "2026-08-18T04:51:09+09:00"
-- id: INS-20260818-061152991-4a7e
-  ts: "2026-08-18T06:11:52+09:00"
-  insight: "THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify='test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh' source=S2_detector_fp_rate"
-  priority: "medium"
-  source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
-  fix_known: true
-  status: resolved
-  target_file: "scripts/cmd_save.sh"
-  verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
-  insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 28
-  last_seen: "2026-08-18T17:47:47+09:00"
-  verification:
-    status: "passed"
-    exit_code: 0
-    output: ""
-  resolved_reason: "一次情報でlogs/detector_fp_rate.yamlとscripts/cmd_save.shを確認し、fix_known=trueの対象・検証契約を再実行。verify_commandはexit 0で、既存実装が現物に存在するため追加の本task内修正は不要。"
-  action_artifact: "logs/detector_fp_rate.yaml; scripts/cmd_save.sh:7301-7356,7382-7385; verification=test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh -> PASS"
-  resolved_at: "2026-08-18T10:42:59+09:00"
 - id: INS-20260818-063936918-4621
   ts: "2026-08-18T06:39:36+09:00"
   insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
@@ -443,7 +404,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報queue/lord_conversation.jsonl:121で殿原文を確認し、context/semantic-map.md:63とdocs/semantic-index/index.md:6599に同概念が既に反映済み。記事作成時の秘匿・一般化方針として既存DM-Signal運用概念へ吸収済みで、追加実修正・decision_candidateは不要。"
+  action_artifact: "lord_conversation=queue/lord_conversation.jsonl:121;semantic_map=context/semantic-map.md:63;semantic_index=docs/semantic-index/index.md:6599"
+  resolved_at: "2026-08-18T20:14:29+09:00"
 - id: INS-20260818-102829242-1096
   ts: "2026-08-18T10:28:29+09:00"
   insight: "[[設計書とgistも更新しといて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書とgistも更新しといて"
@@ -976,5 +940,32 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608181854_kotaro; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608181854_kotaro"
+  fix_known: false
+  status: pending
+- id: INS-20260818-200326755-918f
+  ts: "2026-08-18T20:03:26+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b5lqwtgg5 task id tool use id toolu 013mX87qhCVmgtNxNm は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T20:06:05+09:00"
+- id: INS-20260818-200552899-9721
+  ts: "2026-08-18T20:05:52+09:00"
+  insight: "[[完了記録・還流・自動改善が生成した追跡済みdirty 3ファイルをfingerprint固定snapshotで隔離com]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gate自動pushがGA PUSH1成立済みのdirty overlapを毎回hook失敗と; score=3.6) / yaml_safe_write(YAML安全書込み; alias=karo direct完了報告の正式LGTMがshogun to karo spec不在でSG7生成BLOCKする経路を; score=3.3) / gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTのdm signal ops mdを一次情報で照合し; score=3.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T20:06:05+09:00"
+- id: INS-20260818-200553230-98be
+  ts: "2026-08-18T20:05:53+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_commit_runtime_dirty_202608181936; matched=karo_workarounds,yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_commit_runtime_dirty_202608181936"
   fix_known: false
   status: pending
