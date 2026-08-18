@@ -40,7 +40,8 @@ ol,ul{padding-left:1.3rem;margin:.3rem 0} li{margin:.25rem 0}
   <div class="meta">DM-Signal · 設計書 AsIs v1.9 / ToBe v0.3+手②c · 2026-08-18 11:05 JST · gist同期済み(GitHub回復・sha一致) · <b>本番=f519002b(手③+cmd_4349+cmd_4351) live</b> · <b>(b)(c)(d)PASS</b> · <b>(a)最終: 修正版oracle vs run409 一致8,513／不一致0／未到来57 = 観測可能全件100%(cmd_4354)</b> → <b>手③CLOSE</b></div>
   <h1>FoF子PF選択の決定性 — 浮動小数点ノイズで確定履歴が動く穴を「同値帯ε＋根拠あるtie-break」で閉じる</h1>
   <div class="meta" style="text-transform:none;letter-spacing:0">正本 <code>docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md</code> · gist 1e0cab30 · 関連: rollback計画書§-1 / Monthly Trade簡素化(ledger廃止方向)</div>
-  <div class="callout"><b>発端(10:47)</b> SIGNAL CHANGE ALERT 6,477件/35 FoF PF。三段確認(cmd_4329)で確定: <b>価格は変わった</b>(11銘柄30,003行、ただし相対差 max 1.9e-06=浮動小数点ノイズ級)／<b>cronとfullは一致</b>／<b>35 FoF全体に広域連鎖</b>(子PF選択の入替)。</div>
+  <div class="callout" style="border-left-color:var(--good);background:var(--good-bg)"><b>本質(殿13:02)</b>: このartifactでやった重要なことは<b>保有シグナルがぶれなくなる</b>こと。価格は遡及して変わる(sync-pricesの全履歴upsert・相対1e-7〜1e-6)以上、monthly_returns/metricsの数値は日々ノイズ級に揺れる(cron10:40後の実測: 既存行 max 5.1e-6／p50 5.3e-7、標準PFも同オーダー)。しかし選択層が同値帯ε＋6段tie-breakで決着するので、<b>signals md5一致・weights md5一致・signal_change_log=0</b>=保有は動かない。cron後の「完全同値」判定基準はこの3点(monthly/metricsは価格ノイズ前提)。</div>
+<div class="callout"><b>発端(10:47)</b> SIGNAL CHANGE ALERT 6,477件/35 FoF PF。三段確認(cmd_4329)で確定: <b>価格は変わった</b>(11銘柄30,003行、ただし相対差 max 1.9e-06=浮動小数点ノイズ級)／<b>cronとfullは一致</b>／<b>35 FoF全体に広域連鎖</b>(子PF選択の入替)。</div>
 </header>
 
 <section>
