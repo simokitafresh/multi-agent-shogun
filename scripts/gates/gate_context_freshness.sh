@@ -29,6 +29,7 @@ ROOT_DIR="${CONTEXT_FRESHNESS_ROOT:-$SCRIPT_DIR}"
 source "$CONTROL_ROOT/scripts/lib/yaml_field_set.sh"
 CHECK_SCRIPT="${CONTEXT_FRESHNESS_CHECK_SCRIPT:-$ROOT_DIR/scripts/context_freshness_check.sh}"
 NTFY_SCRIPT="${CONTEXT_FRESHNESS_NTFY_SCRIPT:-$ROOT_DIR/scripts/ntfy.sh}"
+BULLETIN_SCRIPT="${CONTEXT_FRESHNESS_BULLETIN_SCRIPT:-$CONTROL_ROOT/scripts/bulletin_write.sh}"
 TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
 CACHE_TTL="${CONTEXT_FRESHNESS_GATE_CACHE_TTL:-300}"
 ALERT_DEBOUNCE_SECONDS="${CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS:-86400}"
@@ -605,7 +606,24 @@ for rel_path in "${target_rel_paths[@]}"; do
             [[ "$rel_path" == context/dm-signal*.md ]] && request_project="dm-signal"
             printf 'CONTEXT_UPDATE_REQUEST project=%s context=%s source_commit=%s parent_cmd=%s reason=approved_source_commit\n' \
                 "$request_project" "$rel_path" "$latest_hash" "$request_cmd"
-            echo "OK: ${basename_file} (承認済みsource commitのcontext更新要求を自動発火)"
+            # GA-479: stdout alone is not a route.  The old code printed the
+            # Level-5 payload and then returned OK, but no caller consumed the
+            # CONTEXT_UPDATE_REQUEST token.  Reuse the established durable
+            # shogun doc-lane channel used by cmd_complete_gate; tests and
+            # isolated fixtures without that channel retain pure output.
+            if [[ -x "$BULLETIN_SCRIPT" ]]; then
+                if ! BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" \
+                        gate_context_freshness \
+                        "DOC_LANE_WARNING: approved context update request. project=${request_project} context=${rel_path} source_commit=${latest_hash} parent_cmd=${request_cmd}" \
+                        false action_required >/dev/null 2>&1; then
+                    emit_actionable \
+                        "BLOCK: ${basename_file} (承認済みcontext更新要求の永続通知に失敗)" \
+                        "bulletin_write.sh の失敗を解消し、将軍doc laneへの永続通知を再実行せよ。"
+                    HAS_BLOCK=1
+                    continue
+                fi
+            fi
+            echo "OK: ${basename_file} (承認済みsource commitのcontext更新要求を将軍doc laneへ永続通知)"
             continue
         fi
         missing_links="$(missing_context_links "$file" "$rel_path")"
