@@ -39,6 +39,8 @@ h1{font-size:34px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
 .sig td small{color:var(--muted);font-weight:400}
 .hidden-note{color:var(--muted);font-style:italic}
 .group td{background:var(--sec)}
+.zone td{padding:7px 18px;background:var(--sec);color:var(--fg);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-top:1px solid var(--border)}
+.zone td small{text-transform:none;letter-spacing:0;font-weight:500;margin-left:8px}
 .blur{display:inline-block;height:12px;width:96px;border-radius:6px;background:var(--mask);vertical-align:middle}
 .blur.s{width:56px}
 .sig footer{padding:10px 18px;font-size:12px;color:var(--muted);background:var(--sec);border-top:1px solid var(--border)}
@@ -90,29 +92,35 @@ button:hover{filter:brightness(1.06)}button:focus-visible{outline:2px solid var(
 
 <div class="wrap">
   <section class="show">
-    <div class="brand"><div class="logo">DM</div><b>DM-Signal</b><span>Dual Momentum signals, every trading day</span></div>
-    <h1>What to hold today — computed, not guessed.</h1>
-    <div class="ja">今日、何を保有すべきか。毎営業日、ルールで自動計算。</div>
-    <p class="lead">DM-Signal computes Dual Momentum portfolios every trading day at 12:00 JST and shows the current holding for each. Ten-plus years of backtests are open for inspection. Every holding is rule-based and reproducible — no discretion, no guesswork.</p>
+    <div class="brand"><div class="logo">DM</div><b>DM-Signal</b><span>Dual Momentum signals · rebalanced once a month</span></div>
+    <h1>What to hold this month — computed, not guessed.</h1>
+    <div class="ja">今月、何を保有すべきか。月に一回、ルールで自動計算。</div>
+    <p class="lead">DM-Signal rebalances Dual Momentum portfolios once a month, at the month-end close, and shows the current holding for each — no daily watching required. Ten-plus years of backtests are open for inspection. Every holding is rule-based and reproducible — no discretion, no guesswork.</p>
     <div class="sig">
-      <header><b>Today's signals · 50 portfolios</b><span>Updated 2026-08-18 12:00 JST</span></header>
+      <header><b>Current signals · 98 portfolios</b><span>Rebalanced 2026-07-31 close · next 2026-08-31</span></header>
       <table>
         <tr><th>Portfolio</th><th>Holding</th><th>Momentum</th><th>Total return since inception</th></tr>
-        <tr><td>Basic Dual Momentum <span class="tag">Free · full access</span></td><td><span class="hold">QQQ</span></td><td>+18.4%</td><td>+312% <small>(2012–)</small></td></tr>
+        <tr class="zone"><td colspan="4">Free trial ／ 無料お試し</td></tr>
+        <tr><td>Basic-DualMomentum <span class="tag">Full access</span></td><td><span class="hold">QQQ</span></td><td>+18.4%</td><td>+312% <small>(2012–)</small></td></tr>
+        <tr class="zone"><td colspan="4">Basic plan ／ ベーシック <small>¥1,000 / month · first month free</small></td></tr>
         <tr class="locked"><td>DM-safe</td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+486% <small>(2012–)</small></td></tr>
-        <tr class="locked"><td>Shin Byakko · Aggressive <small>(Shijin)</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,150% <small>(2012–)</small></td></tr>
-        <tr class="locked"><td>Shin Bunshin <small>(Ninpo)</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,480% <small>(2012–)</small></td></tr>
-        <tr class="locked"><td>Shin Yotsume <small>(Ninpo)</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,720% <small>(2012–)</small></td></tr>
-        <tr class="locked group"><td>+ 18 portfolios <small>Shijin · Ninpo</small></td><td colspan="2" class="hidden-note">Standard members only ／ スタンダード会員限定</td><td class="open">up to +2,900%</td></tr>
-        <tr class="locked group"><td>+ 15 portfolios <small>Ougi · Hi-Ougi</small></td><td colspan="2" class="hidden-note">Premium members only ／ プレミアム会員限定</td><td class="open">up to +4,800%</td></tr>
-        <tr class="locked group"><td>+ 12 portfolios <small>FoF · Limited</small></td><td colspan="2" class="hidden-note">Limited members only · by invitation ／ 招待制</td><td class="open">—</td></tr>
+        <tr class="locked"><td>シン白虎-激攻 <small>Shin Byakko · Aggressive</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,150% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td>GSシン分身-常勝 <small>Shin Bunshin</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,480% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td>Ave-X</td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+390% <small>(2015–)</small></td></tr>
+        <tr class="zone"><td colspan="4">Standard plan ／ スタンダード <small>¥8,000 / month</small></td></tr>
+        <tr class="locked group"><td>+ 13 portfolios <small>Shijin ×11 · Bunshin ×2</small></td><td colspan="2" class="hidden-note">Standard members only</td><td class="open">up to +2,900%</td></tr>
+        <tr class="zone"><td colspan="4">Premium plan ／ プレミアム <small>by invitation · 招待制</small></td></tr>
+        <tr class="locked"><td>GSシン四つ目-常勝 <small>Shin Yotsume</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,720% <small>(2012–)</small></td></tr>
+        <tr class="locked group"><td>+ 9 portfolios <small>Yotsume ×2 · Ougi ×3 · Ura Ave-X · DM-safe-2 · Gekiyaku ×2</small></td><td colspan="2" class="hidden-note">Premium members only</td><td class="open">up to +4,800%</td></tr>
+        <tr class="zone"><td colspan="4">Secret ／ 非公開</td></tr>
+        <tr class="locked group"><td>+ 70 portfolios</td><td colspan="2" class="hidden-note">Not disclosed</td><td class="open">—</td></tr>
       </table>
-      <footer>Basic Dual Momentum is fully open. Four showcase portfolios reveal their total return; the rest are grouped by membership level. ／ Basic DMは完全公開。代表4本は総リターン公開、残りは会員ランク別に存在のみ表示。</footer>
+      <footer>Basic-DualMomentum is fully open. Showcase portfolios reveal their total return; holdings unlock with each plan. ／ Basic-DMは完全公開。代表PFは総リターン公開、保有は各プランで解放。</footer>
     </div>
 
     <div class="tiers">
-      <div class="tier"><b>Basic</b><small>¥1,000 / month · first month free</small><p>Monthly password on note. Core portfolios.</p><div class="ja">ベーシック：noteで当月パスワード配布</div></div>
-      <div class="tier"><b>Standard</b><small>¥8,000 / month</small><p>Everything in Basic plus the full lineup.</p><div class="ja">スタンダード：全ラインナップ</div></div>
+      <div class="tier"><b>Basic</b><small>¥1,000 / month · first month free</small><p>5 portfolios: DM-safe, Shin Byakko-Aggressive, Shin Bunshin, Ave-X, Basic-DM.</p><div class="ja">ベーシック：DM-safe・白虎激攻・分身常勝・Ave-X・Basic-DM</div></div>
+      <div class="tier"><b>Standard</b><small>¥8,000 / month</small><p>17 portfolios: Shijin ×12, Bunshin ×3, DM-safe, Basic-DM.</p><div class="ja">スタンダード：四神12・分身3・DM-safe・Basic-DM</div></div>
       <div class="tier"><b>Coupon</b><small>Time-limited code</small><p>Access for the coupon period. No note account needed.</p><div class="ja">クーポン期間中アクセス・note不要</div></div>
     </div>
 

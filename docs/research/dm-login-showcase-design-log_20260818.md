@@ -60,3 +60,30 @@
 | 16:56 | 「standard member only, premium member only, 更にlimited member onlyがあると餌としておくのは？」 | 秘匿PFを一括「会員限定」ではなく会員ランク別に存在を見せ、上位ほど希少(招待制)に。餌の階段化 |
 
 | v9 | 16:58 | 「+45 more」1行を3行へ分割: Standard members only(四神・忍法 +18・上限リターン表示)/Premium members only(奥義・秘奥義 +15・上限リターン表示)/Limited members only・招待制(FoF +12・数値非表示)。件数・数値はダミー | 16:56 |
+
+## 追記 17:24 — 本番tier実データ突合(殿「tier別のデータあるだろ？ちゃんと確認してくれ」)
+- 集計コマンド: `db_capability_launcher.py readonly_query`で `viewer_tiers × tier_visibility_settings × portfolios(is_active)`をhide_portfolio=falseで集計(2026-08-18 17:26 JST)
+- 出力行(生): Standard(古参¥4,000) 22 / premium 27 / AddOn 22 / Basic 5 / NewStandard(スタンダード¥8,000) 17 / active合計 98
+- 1件の定義: is_active PFでそのtierのhide_portfolio=false 1本
+- Basic 5本 = DM-safe・GSシン分身-常勝・シン白虎-激攻・Basic-DualMomentum・Ave-X
+- NewStandard 17本 = Basic-DM・DM-safe・GSシン分身×3(常勝/激攻/鉄壁)・シン四神×12(白虎/朱雀/玄武/青龍×常勝/激攻/鉄壁)。**Ave-XはBasicで可視だがNewStandardでは非表示**(要確認: 意図か設定漏れか)
+- premium 27本 = 上記16(Basic-DM除く)+Ave-X・裏Ave-X・DM-safe-2・GSシン四つ目×3・劇薬DM×2・奥義-GS-分身×3
+- どのtierにも出ない = 70本
+- 殿裁定17:23: premiumも招待制、limitedは「Secret」表記
+| v10 | 17:28 | 表を実データへ: 代表5行(Basic-DM/DM-safe/白虎激攻/分身常勝/四つ目常勝)+「+13 Standard members only(四神11・分身2)」「+10 Premium members only · by invitation(四つ目2・奥義分身3・Ave-X・裏Ave-X・DM-safe-2・劇薬2)」「+70 Secret」。件数は実測、リターン値はダミー。プランカードにも実PF構成を記載 | 17:23 |
+
+## 追記 17:28
+| 時刻 | 殿の言葉 | 読み取った原理 |
+|---|---|---|
+| 17:28 | 「今日、何を保有すべきか。毎営業日、ルールで自動計算、の文言は毎月リバランスにはふさわしくないね。毎営業日→月に一回がいいな」 | 製品の本質は月次リバランス。「毎日見る」印象を与えない。日次再計算(内部)と月次リバランス(ユーザー体験)を混同しない |
+
+| v11 | 17:29 | 文言を月次へ: H1「What to hold this month」/JA「今月、何を保有すべきか。月に一回、ルールで自動計算」/ブランド副題「rebalanced once a month」/リード「rebalances once a month at month-end close…no daily watching」/表ヘッダ「Current signals · Rebalanced 2026-07-31 close · next 2026-08-31」 | 17:28 |
+
+## 追記 17:30-17:38
+| 時刻 | 殿の言葉 | 読み取った原理 |
+|---|---|---|
+| 17:30 | 「実際のページを作るときに必要になる情報は設計書のほうに会話とともに随時記載しているか？」 | ログ(要望履歴)だけでは実装できない。AsIs/ToBe設計書を新設し会話→拘束を§0に随時反映する |
+| 17:36 | 「current signalsのところは無料お試し、basic plan, standard plan, premium plan, secretでゾーン分けしたほうがいいね」 | 表をプラン階段そのものにする=見ながら「どこまで払えば何が見えるか」が分かる |
+
+- 設計書新設: `docs/research/dm-login-showcase-asis-tobe_20260818.md`(AsIs v1.0/ToBe v0.1: 境界・API・公開データ契約`GET /api/public/showcase`・tier実測・レスポンシブ仕様・文言規則・実装単位P1-P4・未決)
+| v12 | 17:38 | 表を5ゾーンへ: Free trial(Basic-DM完全公開)/Basic plan(DM-safe・白虎激攻・分身常勝・Ave-X=総リターン公開)/Standard plan(+13群行)/Premium plan 招待制(四つ目常勝+9群行)/Secret(+70)。ゾーン見出し行にプラン名+価格 | 17:36 |
