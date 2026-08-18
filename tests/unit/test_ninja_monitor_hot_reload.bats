@@ -86,6 +86,22 @@ monitor_lib() {
   printf 'current_file_owner=1 old_owner_alive=0 old_owner_self_exit=1 snapshot_generation=1\n'
 }
 
+@test "owner parser normalizes three-field, legacy five-field, and malformed records" {
+  monitor_lib
+  LOG="$FIXTURE_LOG"
+  printf '123 old-generation 42\n' > "$OWNER"
+  IFS=$'\t' read -r pid generation heartbeat legacy_mtime legacy_fp \
+    < <(ninja_monitor_read_owner_record "$OWNER")
+  [ "$pid" = 123 ] && [ "$generation" = old-generation ] && [ "$heartbeat" = 42 ]
+  printf '123 old-generation 42 99 legacy-fingerprint\n' > "$OWNER"
+  IFS=$'\t' read -r pid generation heartbeat legacy_mtime legacy_fp \
+    < <(ninja_monitor_read_owner_record "$OWNER")
+  [ "$heartbeat" = 42 ] && [ "$legacy_mtime" = 99 ] && [ "$legacy_fp" = legacy-fingerprint ]
+  printf 'malformed owner\n' > "$OWNER"
+  ! ninja_monitor_read_owner_record "$OWNER"
+  printf 'three_field=1 five_field=1 malformed_fail_closed=1\n'
+}
+
 @test "comparison and ownership boundaries are line-addressable" {
   run rg -n 'replace_generation.*existing_generation|HOT-RELOAD-(REBASE|SKIP)|SINGLETON-TAKEOVER' \
     "$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh"

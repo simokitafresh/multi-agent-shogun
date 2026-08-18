@@ -447,6 +447,20 @@ ninja_monitor_owner_identity_file() {
     printf '%s.identity\n' "$1"
 }
 
+# Owner records are consumed by old and new monitor generations.  Normalize
+# the first three tokens in one place so legacy five-field records cannot
+# concatenate identity data into heartbeat arithmetic.  Extra fields are
+# returned only as legacy identity fallback values.
+ninja_monitor_read_owner_record() {
+    local owner_file="$1"
+    local pid="" generation="" heartbeat="" legacy_mtime="" legacy_fingerprint=""
+    [ -f "$owner_file" ] || return 1
+    read -r pid generation heartbeat legacy_mtime legacy_fingerprint < "$owner_file" 2>/dev/null || return 1
+    [[ "$pid" =~ ^[0-9]+$ && -n "$generation" && "$heartbeat" =~ ^[0-9]+$ ]] || return 1
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+        "$pid" "$generation" "$heartbeat" "$legacy_mtime" "$legacy_fingerprint"
+}
+
 ninja_monitor_write_owner_identity() {
     local owner_file="$1" script_mtime="$2" script_fingerprint="$3"
     local identity_file tmp
@@ -462,6 +476,7 @@ acquire_singleton_lock() {
     local lock_file="${owner_file}.lock"
     local existing_pid="" existing_generation="" existing_heartbeat=""
     local existing_script_mtime="" existing_script_fingerprint=""
+    local legacy_script_mtime="" legacy_script_fingerprint=""
     local current_script_mtime="" current_script_fingerprint=""
     local now age tmp lock_fd
     local replace_generation="${NINJA_MONITOR_REPLACE_GENERATION:-}"
@@ -473,9 +488,13 @@ acquire_singleton_lock() {
     now=$EPOCHSECONDS
 
     if [ -f "$owner_file" ]; then
-        read -r existing_pid existing_generation existing_heartbeat < "$owner_file" || true
+        IFS=$'\t' read -r existing_pid existing_generation existing_heartbeat \
+            legacy_script_mtime legacy_script_fingerprint \
+            < <(ninja_monitor_read_owner_record "$owner_file") || true
         read -r existing_script_mtime existing_script_fingerprint \
             < "$(ninja_monitor_owner_identity_file "$owner_file")" 2>/dev/null || true
+        [ -n "$existing_script_mtime" ] || existing_script_mtime="$legacy_script_mtime"
+        [ -n "$existing_script_fingerprint" ] || existing_script_fingerprint="$legacy_script_fingerprint"
     elif [ -f "$pid_file" ]; then
         existing_pid=$(cat "$pid_file" 2>/dev/null || true)
     fi
@@ -559,7 +578,8 @@ ninja_monitor_publish_owner_pid() {
     local pid_file="$STATE_DIR/ninja_monitor.pid"
     local owner_pid="" owner_generation="" owner_heartbeat="" tmp
     [ -n "$owner_file" ] || owner_file="$STATE_DIR/ninja_monitor.owner"
-    read -r owner_pid owner_generation owner_heartbeat < "$owner_file" 2>/dev/null || return 1
+    IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
+        < <(ninja_monitor_read_owner_record "$owner_file") || return 1
     [ "$owner_pid" = "$$" ] || return 1
     [ "$owner_generation" = "$NINJA_MONITOR_GENERATION" ] || return 1
     tmp="$pid_file.tmp.$$"
@@ -572,7 +592,8 @@ ninja_monitor_release_owner() {
     local pid_file="${STATE_DIR}/ninja_monitor.pid"
     local pid="" generation="" heartbeat=""
     [ -f "$owner_file" ] || return 0
-    read -r pid generation heartbeat < "$owner_file" || true
+    IFS=$'\t' read -r pid generation heartbeat _legacy_script_mtime _legacy_script_fingerprint \
+        < <(ninja_monitor_read_owner_record "$owner_file") || true
     if [ "$generation" = "${NINJA_MONITOR_GENERATION:-}" ]; then
         rm -f "$owner_file" "$pid_file" "$(ninja_monitor_owner_identity_file "$owner_file")"
     fi
@@ -586,7 +607,8 @@ ninja_monitor_owner_heartbeat() {
     local now tmp lock_fd
     exec {lock_fd}>"$lock_file"
     flock "$lock_fd"
-    read -r pid generation heartbeat < "$owner_file" 2>/dev/null || true
+    IFS=$'\t' read -r pid generation heartbeat _legacy_script_mtime _legacy_script_fingerprint \
+        < <(ninja_monitor_read_owner_record "$owner_file") || true
     if [ "$generation" != "${NINJA_MONITOR_GENERATION:-}" ]; then
         log "SINGLETON-FENCE: generation ${NINJA_MONITOR_GENERATION:-missing} lost ownership to ${generation:-missing}"
         flock -u "$lock_fd"
@@ -632,7 +654,8 @@ _ninja_monitor_owner_record_matches() {
     local expected_generation="$2"
     local expected_pid="$3"
     local owner_pid="" owner_generation="" owner_heartbeat=""
-    read -r owner_pid owner_generation owner_heartbeat < "$owner_file" 2>/dev/null || return 1
+    IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
+        < <(ninja_monitor_read_owner_record "$owner_file") || return 1
     [ "$owner_pid" = "$expected_pid" ] || return 1
     [ "$owner_generation" = "$expected_generation" ] || return 1
     _ninja_monitor_pid_is_live "$owner_pid"
@@ -659,7 +682,9 @@ _ninja_monitor_refresh_owner_lease() {
     local current_pid="" current_generation="" current_heartbeat="" now tmp lock_fd
     exec {lock_fd}>"$lock_file"
     flock "$lock_fd"
-    read -r current_pid current_generation current_heartbeat < "$owner_file" 2>/dev/null || true
+    IFS=$'\t' read -r current_pid current_generation current_heartbeat \
+        _legacy_script_mtime _legacy_script_fingerprint \
+        < <(ninja_monitor_read_owner_record "$owner_file") || true
     if [ "$current_pid" != "$owner_pid" ] || [ "$current_generation" != "$generation" ]; then
         flock -u "$lock_fd"
         eval "exec ${lock_fd}>&-"
@@ -10538,14 +10563,16 @@ _ninja_monitor_hot_reload_watch() {
     close_inherited_non_stdio_fds
 
     while [ -d "/proc/${parent_pid}" ]; do
-        read -r owner_pid owner_generation owner_heartbeat < "$owner_file" 2>/dev/null || return 0
+        IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
+            < <(ninja_monitor_read_owner_record "$owner_file") || return 0
         _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
 
         current_mtime="$(stat -c %Y "$script_path" 2>/dev/null || true)"
         if [ -n "$current_mtime" ] && [ "$current_mtime" != "$start_mtime" ]; then
             # stat on /mnt/c can itself stall.  Ownership may have changed
             # while it was blocked, so revalidate immediately before launch.
-            read -r owner_pid owner_generation owner_heartbeat < "$owner_file" 2>/dev/null || return 0
+            IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
+                < <(ninja_monitor_read_owner_record "$owner_file") || return 0
             _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
             log "HOT-RELOAD-DETECTED: generation=${generation} mtime ${start_mtime} -> ${current_mtime}"
             _ninja_monitor_launch_hot_reload_successor "$script_path" "$generation" "$current_mtime"
@@ -10561,7 +10588,7 @@ start_ninja_monitor_hot_reload_watch() {
     # daemon_supervisor.  Export the small watcher functions into a distinctly
     # named bash -c process; the script path is environment-only so neither
     # supervisor pgrep predicate can match it.
-    export -f log close_inherited_non_stdio_fds \
+    export -f log close_inherited_non_stdio_fds ninja_monitor_read_owner_record \
         _ninja_monitor_pid_is_live _ninja_monitor_owner_record_matches \
         _ninja_monitor_launch_hot_reload_successor _ninja_monitor_hot_reload_watch
     NINJA_MONITOR_WATCH_SCRIPT_PATH="$_NM_SCRIPT_PATH"
@@ -10602,7 +10629,8 @@ start_ninja_monitor_owner_heartbeat_watch() {
     [ -n "$owner_file" ] || owner_file="$STATE_DIR/ninja_monitor.owner"
     NINJA_MONITOR_OWNER_FILE="$owner_file"
     export NINJA_MONITOR_OWNER_FILE
-    export -f log close_inherited_non_stdio_fds _ninja_monitor_pid_is_live \
+    export -f log close_inherited_non_stdio_fds ninja_monitor_read_owner_record \
+        _ninja_monitor_pid_is_live \
         _ninja_monitor_refresh_owner_lease _ninja_monitor_owner_heartbeat_watch
     export LOG STATE_DIR NINJA_MONITOR_OWNER_FILE NINJA_MONITOR_GENERATION
     export NINJA_MONITOR_OWNER_HEARTBEAT_POLL_SEC \
