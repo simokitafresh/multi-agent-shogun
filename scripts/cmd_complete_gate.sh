@@ -1780,6 +1780,16 @@ push_task_repositories() {
 # the single publication implementation.  A writer-generation change or any
 # non-runtime dirty path is fail-closed: terminal completion must not describe
 # a checkout that changed underneath the snapshot.
+postclear_runtime_path_is_publishable() {
+    case "${1:-}" in
+        context/infrastructure.md|projects/infra/lessons.yaml|tasks/lessons.md|scripts/cmd_complete_gate.sh|\
+        logs/karo_workarounds.yaml|queue/insights.yaml|queue/gunshi_review_log.yaml|\
+        queue/completed_changelog.yaml|logs/lesson_impact.tsv|logs/lesson_tracking.tsv)
+            return 0 ;;
+    esac
+    return 1
+}
+
 publish_postclear_runtime_deltas() {
     local repo="$SCRIPT_DIR" upstream_ref remote push_ref remote_tip
     local before_head after_head temp_parent source_repo source_sha path
@@ -1789,14 +1799,16 @@ publish_postclear_runtime_deltas() {
     while IFS= read -r -d '' path; do
         dirty_paths+=("$path")
         case "$path" in
-            logs/karo_workarounds.yaml|queue/insights.yaml|queue/gunshi_review_log.yaml|queue/completed_changelog.yaml|logs/lesson_impact.tsv|logs/lesson_tracking.tsv)
-                runtime_paths+=("$path") ;;
             queue/tasks/*.yaml|queue/inbox/*.yaml|queue/gates/*)
                 # Per-command/task receipts are intentionally not published.
                 ;;
             *)
-                echo "  runtime publish: BLOCK (nonruntime dirty path=$path)" >&2
-                return 1 ;;
+                if postclear_runtime_path_is_publishable "$path"; then
+                    runtime_paths+=("$path")
+                else
+                    echo "  runtime publish: BLOCK (nonruntime dirty path=$path)" >&2
+                    return 1
+                fi ;;
         esac
     done < <(git -C "$repo" status --porcelain=v1 -z --untracked-files=no | python3 -c 'import sys; d=sys.stdin.buffer.read().split(b"\0"); [sys.stdout.buffer.write(x[3:]+b"\0") for x in d if len(x)>=4]')
 
