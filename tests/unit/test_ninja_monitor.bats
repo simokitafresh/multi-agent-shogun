@@ -5,34 +5,59 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
-# test_necessity: 両承認後のreview_gate.doneが閾値以上終端なしなら将軍と家老へ1回だけ通知し、
-# CLEAR/BLOCK終端またはarchive.doneがある世代は通知しない不変量を守る。
-@test "GATE-STALL notifies both recipients for an un-terminated review gate" {
+# test_necessity: 両承認後のreview_gate.doneは遅延なしでcmd_complete_gateを一度だけ実行し、
+# 併走monitorはflockで二重実行しない不変量を守る。
+@test "GATE-STALL executes completion gate immediately" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1
         source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
         SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
-        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_old" "$SCRIPT_DIR/queue/gates/cmd_gate_stall" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$STATE_DIR"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_gate_old" "$SCRIPT_DIR/queue/gates/cmd_gate_stall" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
         old_ts=$(date -d "11 minutes ago" -Iseconds)
         printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_old/review_gate.done"
         printf "timestamp: %s\nsource: two_phase_review\nresult: LGTM\n" "$old_ts" > "$SCRIPT_DIR/queue/gates/cmd_gate_stall/review_gate.done"
         printf "task:\n  parent_cmd: cmd_gate_stall\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/active.yaml"
         : > "$SCRIPT_DIR/logs/gate_metrics.log"
-        TEST_MESSAGES="$STATE_DIR/messages"
-        : > "$TEST_MESSAGES"
-        log() { :; }
-        send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
-        GATE_STALL_WARN_MIN=10; STALL_RENOTIFY_DEBOUNCE=300
+        printf "%s\n" \
+            "#!/usr/bin/env bash" \
+            "printf \"%s\\n\" \"\$1\" >> \"$STATE_DIR/gates\"" \
+            "printf \"%s\\t%s\\tCLEAR\\tok\\n\" \"$(date -Iseconds)\" \"\$1\" >> \"$SCRIPT_DIR/logs/gate_metrics.log\"" \
+            > "$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+        chmod +x "$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+        log() { printf "LOG:%s\n" "$1"; }
+        GATE_STALL_MAX_MIN=1440
         check_gate_stall
         check_gate_stall
-        test "$(wc -l < "$TEST_MESSAGES")" -eq 2
-        ! grep -q "cmd_gate_old" "$TEST_MESSAGES"
-        grep -q "^shogun|stall_alert|【GATE-STALL】cmd_gate_stall" "$TEST_MESSAGES"
-        grep -q "^karo|stall_alert|【GATE-STALL】cmd_gate_stall" "$TEST_MESSAGES"
-        printf "notifications=%s\n" "$(wc -l < "$TEST_MESSAGES")"
+        test "$(wc -l < "$STATE_DIR/gates")" -eq 1
+        grep -qx "cmd_gate_stall" "$STATE_DIR/gates"
+        printf "gate_runs=%s\n" "$(wc -l < "$STATE_DIR/gates")"
     '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"notifications=2"* ]]
+    [[ "$output" == *"gate_runs=1"* ]]
+}
+
+@test "terminal report requests Gunshi review once after durable Karo publish" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$STATE_DIR/log"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+        NINJA_NAMES=(saizo)
+        printf "task:\n  status: in_progress\n  report_path: queue/reports/saizo_report_cmd_review.yaml\n" > "$SCRIPT_DIR/queue/tasks/saizo.yaml"
+        printf "status: completed\nparent_cmd: cmd_review\n" > "$SCRIPT_DIR/queue/reports/saizo_report_cmd_review.yaml"
+        cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s|%s|%s|%s|%s\n" "\$1" "\$2" "\$3" "\$4" "\$5" >> "$STATE_DIR/messages"
+EOF
+        chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+        repair_terminal_report_outboxes
+        repair_terminal_report_outboxes
+        test "$(grep -c "^gunshi|" "$STATE_DIR/messages")" -eq 1
+        grep -q "^gunshi|.*report=saizo_report_cmd_review.yaml parent_cmd=cmd_review|review_draft|ninja_monitor|review_request" "$STATE_DIR/messages"
+        printf "review_requests=%s\n" "$(grep -c "^gunshi|" "$STATE_DIR/messages")"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"review_requests=1"* ]]
 }
 
 @test "GATE-STALL suppresses a review gate with a later CLEAR metric" {
