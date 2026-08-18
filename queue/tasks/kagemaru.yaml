@@ -1,11 +1,26 @@
 task:
   acceptance_criteria:
-  - checks:
-    - check: '昇格候補 [lessons_gunshi.yaml] LG017 (L1:事後検出): lock_path.shのlockファイルは永続蓄積する — 定期cleanupが必要 を一次情報で確認し、恒久防御(Level4以上)へ引き上げるか、decision_candidateへ整理する'
+  - description: CI run 32102040949の失敗5件を一次再現し、productionのtarget task path AND fixed-string
+      exact delivery_msg契約が正しく、旧fixtureのgeneric Working期待が不整合であることを失敗件数と該当test番号で証明する。production契約を弱める変更は禁止する
     id: AC1
-  - checks:
-    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
+  - description: 成功fixtureを対象task pathとexact delivery_msgの両方を出す形へ更新し、必要箇所でwrong-id
+      FAILとexact-id PASSを検証する。tests/unit/test_inbox_write.batsを117/117 PASS FAIL0
+      SKIP0、tests/unit/test_inbox_write_codex_delivery.batsを3/3 PASS FAIL0 SKIP0にし、変更をcommitして報告する。永続testには具体的不変量のtest_necessityを宣言する
     id: AC2
+  ci_run_id: 32102040949
+  commit_contract:
+    required: true
+    reason: task_commit_contract_explicit
+    task_type: ci_fix
+    planned_paths:
+    - tests/unit/test_inbox_write.bats
+    repo_root: /mnt/c/tools/multi-agent-shogun
+  context_update_candidates:
+  - owner: infra-platform
+    path: context/infrastructure.md
+    source_paths:
+    - tests/unit/test_inbox_write.bats
+    update_trigger: root-fallback
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -14,9 +29,9 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  estimated_minutes: 5
-  issued_at: '2026-07-17T07:01:00'
-  issued_cmd_id: cmd_reflux_promotion_202607170700_kagemaru
+  estimated_minutes: 10
+  issued_at: '2026-08-18T14:26:14'
+  issued_cmd_id: cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -25,122 +40,159 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_promotion_202607170700_kagemaru
+  parent_cmd: cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818
+  planned_paths: '["/tmp/shogun-task-worktrees/kagemaru_6d4d3498f0ced276/tests/unit/test_inbox_write.bats"]'
+  priority: high
   project: infra
-  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_gunshi.yaml] LG017 (L1:事後検出): lock_path.shのlockファイルは永続蓄積する — 定期cleanupが必要 を確認し、Level4以上の防御層・配備注入などへ昇格する'
-  reflux_inventory_before:
-    insights_pending: 68
-    promotions: 208
-    total: 283
-    zero_backlinks: 7
-  scout_exempt: true
-  status: done
+  purpose: CI run 32102040949で失敗した旧inbox delivery fixtureをexact message identity契約へ同期し、productionのfail-closed照合を維持したままCI
+    GREENを回復する
+  quality_gate:
+    action_conversion: productionのexact identity照合弱体化、FAIL残存、SKIP1以上、未commitのいずれかでBLOCK
+    fp_measurement: 修正前FAIL5件から修正後FAIL0件への差分を記録する
+  status: idle
   stop_for: []
-  target_path: projects/infra/lessons_gunshi.yaml
-  task_id: cmd_reflux_promotion_202607170700_kagemaru_exact
-  task_type: exact
+  target_path: '["/tmp/shogun-task-worktrees/kagemaru_6d4d3498f0ced276/tests/unit/test_inbox_write.bats"]'
+  task_id: cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818_normal
+  task_type: ci_fix
   related_lessons:
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L445'
-    summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
-    detail: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
-  - id: 'L207'
-    summary: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par'
-    detail: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par'
-  - id: 'L311'
-    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
-    wa_category: 'report_yaml_format'
-    wa_count: 2
-    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
+  - id: L1468
+    summary: tracked testだけをtarget_pathに持つtaskでrun_tests.sh taskがfiles=0となり正規commitが停止した。共通修正
+    detail: tracked testだけをtarget_pathに持つtaskでrun_tests.sh taskがfiles=0となり正規commitが停止した。共通修正
+  - id: L1436
+    summary: watcherがpane wake-upを所有する状態でwriterが同じretry deadlineを同期待機すると、送達保証を増やさずtotalだけを課税す
+    detail: watcherがpane wake-upを所有する状態でwriterが同じretry deadlineを同期待機すると、送達保証を増やさずtotalだけを課税す
+  - id: L779
+    summary: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit
+      7件でALER
+    detail: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit
+      7件でALER
   standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
+  - report-write
+  - verdict-check
+  - ninja-commit
   model_injection_profile:
-    model_label: "GPT 5.6 Sol low"
-    family: "gpt"
-    injection_intensity: "max"
-    protocol: "T5弱LLM構造化プロトコル"
+    model_label: GPT 5.6 Luna high
+    family: gpt
+    injection_intensity: max
+    protocol: T5弱LLM構造化プロトコル
     report_contract:
-    - "binary_checks全resultをyes/noで記入"
-    - "lessons_useful全reasonを具体記入"
-    - "files_modifiedはrepo相対path形式"
-    - "D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除"
+    - binary_checks全resultをyes/noで記入
+    - lessons_useful全reasonを具体記入
+    - files_modifiedはrepo相対path形式
+    - 'D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除'
+    - '任務帰属検証契約: 反復・報告直前とも bash scripts/run_tests.sh task queue/tasks/kagemaru.yaml
+      を実行し、task/reportの所有pathから選ばれたテストだけをbinary_checksへ帰属させる。選択対象はFAIL0・SKIP0を必須とし、scope外FAILを当該任務のFAILへ混入させない。run_tests.sh
+      unit全量は個別taskで要求せず、fixed-SHAまたはwave最終checkpointで共有1回だけ実行する'
     extra_scaffold:
-    - "ACごとに実テスト証跡をresult.detailsへ記録"
-    - "報告前にplaceholder残存確認とgate_report_formatを実行"
+    - ACごとに実テスト証跡をresult.detailsへ記録
+    - 報告前にplaceholder残存確認とgate_report_formatを実行
+    - 'hook_failures.detailsはcount>0なら文字列でなくmapping形式で記入: cause/independent_verification/bypass_record/post_verification/post_verification_result/post_verification_headの6キー必須。post_verification_headは事後検証を実測した7-40文字hexのcommit
+      hash(LG083)'
   semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_wa_stall_pattern_20260708.md — report_yaml_format + agent_stall_recovery WA分析 docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  - 'semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md
+    context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh
+    scripts/semantic_index_update.sh'
   causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+    cause_checked: ''
+    design_intent_checked: ''
+    evidence: ''
+    origin: ''
   context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L445: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
-      - L207: summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par
-      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
-    ────────────────────────────────────────
-  ac_version: 8bd1ffe3
-  _ac_task_id: cmd_reflux_promotion_202607170700_kagemaru_exact
-  _ac_worker_id: 
+  - context/training-cycle.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L1468: tracked testだけをtarget_pathに持つtaskでrun_tests.sh\
+    \ taskがfiles=0となり正規commitが停止した。共通修正\n  - L1436: watcherがpane wake-upを所有する状態でwriterが同じretry\
+    \ deadlineを同期待機すると、送達保証を増やさずtotalだけを課税す\n  - L779: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit\
+    \ 7件でALER\n────────────────────────────────────────"
+  experiment_first_principle:
+  - '殿の原文: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』'
+  - '適用形: 仮説を頭で絞らず、小さな独立実験へ分けて並列に全て試せ。想像で結論せず、各実験の一次結果を確認してから採否を決めよ。'
+  ac_version: 7b070879
+  _ac_task_id: cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818_normal
+  _ac_worker_id: null
+  target_path_git_preflight: tests/unit/test_inbox_write.bats:worktree=yes,head=yes,last_commit=pending@ea29289359781524685f4ac94f52ab68bc7362dc
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_reflux_promotion_202607170700_kagemaru.yaml
-  report_path: queue/reports/kagemaru_report_cmd_reflux_promotion_202607170700_kagemaru.yaml
-  bloom_level: 
+  report_filename: kagemaru_report_cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818.yaml
+  report_path: queue/reports/kagemaru_report_cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818.yaml
+  bloom_level: null
   ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 3
-    top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件), review_bundle_missing(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    source: karo_workarounds.yaml
+    total_workarounds: 4
+    top_pattern: report_contract(3件)
+    breakdown: report_contract(3件), task_yaml_contamination(1件)
+    warning: ⚠ 過去4件のworkaround発生。品質に注意
     gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 1419
-    - pattern: 'verdict_invalid'
-      count: 269
-    - pattern: 'status_pending'
-      count: 244
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 完了後にstatusを"completed"に更新。"pending"のまま報告禁止'
+    - pattern: bc_result_empty
+      count: 3294
+    - pattern: verdict_invalid
+      count: 659
+    - pattern: status_pending
+      count: 560
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止;
+      verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 完了後にstatusを"completed"に更新。"pending"のまま報告禁止'
+    gate_blocks:
+    - reason: lesson_feedback_set_mismatch
+      count: 2
+      hint: 'gate BLOCK: lesson_feedback_set_mismatch'
+    - reason: ac_version_stale
+      count: 1
+      hint: 'gate BLOCK: ac_version_stale'
+  final_checkpoint:
+    type: ci_fix_clean_repro
+    required: true
+    evidence_field: ci_fix_clean_repro_evidence
+    validator: deploy_task_ci_fix_clean_repro_evidence_validate
+    phase: terminal_report_gate
+  report_id: rpt-c6b4ad4a-ac75-4401-b5c4-99ef5d76445d
+  report_identity_version: 2
   variation_checks_required: false
-  parent_ac_coverage: 
-  parent_contract_fingerprint: ''
-  deployed_at: "2026-07-17T07:01:25"
-  acknowledged_at: "2026-07-17T07:02:05"
-
+  report_contract_templates: '{"ac_evidence_mapping":{"AC1":"","AC2":""},"semantic_validation":{"classification_axis":"","recount":"","actual":"","result":""}}'
+  task_worktree_required: true
+  task_worktree_path: /tmp/shogun-task-worktrees/kagemaru_6d4d3498f0ced276
+  task_worktree_repo: /mnt/c/tools/multi-agent-shogun
+  task_worktree_base: 4dacdda69bd5057f640ffff8df93a86aea1b6dd8
+  task_worktree_generation: 6d4d3498f0ced276b5fcab1376c881ba3b64bf5b6ded1cd8e0a2398ba22f62d7
+  task_worktree_status: active
+  task_worktree_marker: /mnt/c/tools/multi-agent-shogun/queue/gates/cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818/task_worktree.json
+  task_worktree_workdir: /tmp/shogun-task-worktrees/kagemaru_6d4d3498f0ced276
+  task_worktree_target_paths: '["/tmp/shogun-task-worktrees/kagemaru_6d4d3498f0ced276/tests/unit/test_inbox_write.bats",
+    "/tmp/shogun-task-worktrees/kagemaru_6d4d3498f0ced276/tests/unit/test_inbox_write.bats"]'
+  task_worktree_edit_wrapper: /mnt/c/tools/multi-agent-shogun/scripts/ninja_scope_commit.sh
+    --task-worktree-exec /mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml
+    --
+  task_worktree_source_paths: '["tests/unit/test_inbox_write.bats"]'
+  deployed_at: "2026-08-18T16:35:31+09:00"
+  progress_updated_at: "2026-08-18T07:34:37Z"
+  target_path_worktree_blob_at_deploy: c638a7c7f109bc9135a6563b6572def31f906071
+  acknowledged_at: "2026-08-18T16:36:03"
+  pre_implementation_review:
+    reviewer: gunshi
+    result: LGTM
+    task_id: cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818_normal
+    task_fingerprint: 7b070879
+    evidence_message_id: msg_20260818_142659_1538768_3e641a61
   session_state:
-    attempt: 3
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    attempt: 5
+    last_block_reason: 'final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid'
     tried_approaches:
-    - 'commit_hash: 欠落または40文字フルhashでない(binary_checks.commitがyes) — review_approvalの後段BLOCK(review_report_fingerprint契約)をここで前段検出。git rev-parse HEADの40文字フルhashを記入せよ'
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    diagnose_reason: '既存Level4成果を採用したタスクなのに、commit二値yesとno-code-changeを組み合わせ、成果物の先行40桁commit hashを記録しなかった。また担当taskをin_progressのままgateへ渡した'
-    approach_summary: 'LG017は先行commit dbb284a74でLevel4へ吸収済みと確認し、cleanup回帰1/1 PASS。在庫は68/7/208/283→68/7/208/283で不変（重複配備のため追加変更なし）'
+    - 'final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid; final_checkpoint: ci_fix clean repro evidence push_started_at timestamp invalid'
+    - 'final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid'
+    diagnose_reason: The CI clean-repro checkpoint retained the pre-commit source SHA and an empty push checkpoint timestamp, so the final validator could not bind post-fix evidence to the committed test change.
+    approach_summary: CI run 32102040949 fixture contract synchronized to target task path plus exact delivery_msg; 117/117 and 3/3 PASS with SKIP0.
     prior_attempts:
-    - attempt: 1
-      block_reason: 'commit_hash: 欠落または40文字フルhashでない(binary_checks.commitがyes) — review_approvalの後段BLOCK(review_report_fingerprint契約)をここで前段検出。git rev-parse HEADの40文字フルhashを記入せよ'
-      approach_summary: 'LG017は先行commit dbb284a74でLevel4へ吸収済みと確認し、cleanup回帰1/1 PASS。在庫は68/7/208/283→68/7/208/283で不変（重複配備のため追加変更なし）'
-    - attempt: 2
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      diagnose_reason: '既存Level4成果を採用したタスクなのに、commit二値yesとno-code-changeを組み合わせ、成果物の先行40桁commit hashを記録しなかった。また担当taskをin_progressのままgateへ渡した'
-      approach_summary: 'LG017は先行commit dbb284a74でLevel4へ吸収済みと確認し、cleanup回帰1/1 PASS。在庫は68/7/208/283→68/7/208/283で不変（重複配備のため追加変更なし）'
     - attempt: 3
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      diagnose_reason: '既存Level4成果を採用したタスクなのに、commit二値yesとno-code-changeを組み合わせ、成果物の先行40桁commit hashを記録しなかった。また担当taskをin_progressのままgateへ渡した'
-      approach_summary: 'LG017は先行commit dbb284a74でLevel4へ吸収済みと確認し、cleanup回帰1/1 PASS。在庫は68/7/208/283→68/7/208/283で不変（重複配備のため追加変更なし）'
+      block_reason: 'final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid; final_checkpoint: ci_fix clean repro evidence push_started_at timestamp invalid'
+      approach_summary: CI run 32102040949 fixture contract synchronized to target task path plus exact delivery_msg; 117/117 and 3/3 PASS with SKIP0.
+    - attempt: 4
+      block_reason: 'final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid'
+      diagnose_reason: The CI clean-repro checkpoint retained the pre-commit source SHA and an empty push checkpoint timestamp, so the final validator could not bind post-fix evidence to the committed test change.
+      approach_summary: CI run 32102040949 fixture contract synchronized to target task path plus exact delivery_msg; 117/117 and 3/3 PASS with SKIP0.
+    - attempt: 5
+      block_reason: 'final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid'
+      diagnose_reason: The CI clean-repro checkpoint retained the pre-commit source SHA and an empty push checkpoint timestamp, so the final validator could not bind post-fix evidence to the committed test change.
+      approach_summary: CI run 32102040949 fixture contract synchronized to target task path plus exact delivery_msg; 117/117 and 3/3 PASS with SKIP0.
+  done_at: "2026-08-18T16:39:02"
+  completed_at: "2026-08-18T16:39:02"
+  retry_deployed_at: "2026-08-18T16:35:31+09:00"
+  review_correction_scope: report
+  reviewed: false
+  review_result: 

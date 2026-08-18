@@ -1,15 +1,52 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
   acceptance_criteria:
-  - description: artifact 20260716T013227とtest_memory_db_cache_warmup.bats AC2現物を突合し、create.calls実数が0・1・2以上のどれかを再現ログで確定する
+  - description: fixture repoで現行経路を再現し、共有main上のtask commitをsource-only isolated pushした後にorigin/main...HEADのlocal-onlyが1増え、共有worktreeにtask-owned
+      dirtyが残り得ることを数値化する。commit生成場所・report commit_hash・gate publication・CLEAR cleanupの各境界と、既存運用YAML/runtime変更をremoteへ混入させない不変量を固定する
     id: AC1
-  - description: setsid二重fork・refresh.lock inode・flock fd8継承を一次確認し、実装single-flightかfixture同期のどちらが破れているか二値判定する
+  - description: source変更taskはorigin/main tip起点の専用linked worktreeと専用indexでdeployから編集・scope
+      commit・GATE push・CLEAR後cleanupまで完結し、共有mainのHEADを進めずtask-owned dirtyも残さない。direct
+      YAML配備時もstatus遷移が必要とするprogress_updated_at等の基幹fieldを必ず初期化し、assigned→acknowledgedがfield_not_foundになる件数0にする。DrvFS
+      repoでは自動maintenance/gcを無効化して明示checkpointへ分離し、一時worktreeを含めgit reset --hard依存を0件にする。fixtureで2
+      task連続実行後にremote-only=0/local-only=0、各worktree dirty=0、remote treeに許可sourceのみ、運用YAML混入0、cleanup後orphan
+      worktree0、共有index参照0、自動gc起動0、hard-reset呼出0、競合時fail-closed、FAIL0・SKIP0を示す。既存active
+      taskは移行対象外として壊さず、新規taskから強制し、永続contract testにはtest_necessityを明記する
     id: AC2
-  - description: AC2を最低16反復または同時16 rootで実測し、PASS・FAIL・SKIPとcreate.calls分布を数値報告する
-    id: AC3
-  - description: gateまたはhookの未解消条件が1件でもあればPASSにせずBLOCKし、修正対象・副作用・因果origin付きlesson_candidateを残す
-    id: AC4
+  context_update_candidates:
+  - owner: dm-signal-overview
+    path: context/dm-signal.md
+    source_paths:
+    - scripts/cmd_complete_gate.sh
+    update_trigger: context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md|docs/rule/db-operations-runbook.md
+  - owner: dm-signal-core
+    path: context/dm-signal-core.md
+    source_paths:
+    - scripts/cmd_complete_gate.sh
+    update_trigger: backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md
+  - owner: dm-signal-frontend
+    path: context/dm-signal-frontend.md
+    source_paths:
+    - scripts/cmd_complete_gate.sh
+    update_trigger: frontend|docs/research/frontend-components.md|docs/research/frontend-api-spec.md|docs/research/frontend-deploy.md|docs/research/fe-speed-improvement-design.md
+  - owner: dm-signal-ops
+    path: context/dm-signal-ops.md
+    source_paths:
+    - scripts/cmd_complete_gate.sh
+    update_trigger: backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md
+  - owner: dm-signal-research
+    path: context/dm-signal-research.md
+    source_paths:
+    - scripts/cmd_complete_gate.sh
+    update_trigger: docs/research|analysis|outputs|tasks/lessons.md|marketing-director
+  - owner: infra-platform
+    path: context/infrastructure.md
+    source_paths:
+    - githooks/pre-push
+    - scripts/archive_completed.sh
+    - scripts/cmd_complete_gate.sh
+    - scripts/deploy_task.sh
+    - scripts/ninja_scope_commit.sh
+    - tests/unit/test_task_worktree_lifecycle.bats
+    update_trigger: root-fallback
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -18,7 +55,9 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  estimated_minutes: 10
+  estimated_minutes: 15
+  issued_at: '2026-08-18T10:44:21'
+  issued_cmd_id: cmd_karo_hotfix_remote_tip_task_worktree_20260818
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -27,118 +66,165 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  - AC3
-  - AC4
-  parent_cmd: 
+  parent_cmd: cmd_karo_hotfix_remote_tip_task_worktree_20260818
   project: infra
-  purpose: GA-268全unitのmemory warmup single-flight不成立を独立再現し、実装競合かfixture競合か根因判定する
+  purpose: source-only GATEが共有mainのcommitをremoteへ別系統で公開してorigin/main...HEADのlocal-onlyを累積させる欠陥を、remote
+    tip起点のタスク専用worktree lifecycleへ置換して根治する
   quality_gate:
-    action_conversion: 未解消条件はBLOCKへ変換する
-    fp_measurement: hook_failuresと反復分布でfalse_positive件数を計測する
+    action_conversion: source taskを共有mainへ配備する経路を拒否しremote-tip worktreeを必須化する
+    fp_measurement: 正常taskの誤BLOCK0件とshared-main fallback許容0件を計測する
+  split_decision:
+    boundary_ac_ids:
+    - AC1
+    - AC2
+    integration_tasks: 1
+    review_round_trips: 1
   status: idle
   stop_for: []
-  task_id: cmd_karo_recon2_ga268_warmup_singleflight_audit_202607160147_normal
-  task_type: recon2
+  target_path:
+  - scripts/deploy_task.sh
+  - scripts/ninja_scope_commit.sh
+  - scripts/cmd_complete_gate.sh
+  - scripts/archive_completed.sh
+  - .githooks/pre-push
+  - tests/unit/test_task_worktree_lifecycle.bats
+  - scripts/run_tests.sh
+  - tests/unit/test_deploy_task_lifecycle.bats
+  - scripts/hooks/pre-bash-test-fullrun-guard.sh
+  - tests/unit/test_pre_bash_test_fullrun_guard.bats
+  - tests/unit/test_heavy_job_admission.bats
+  task_id: cmd_karo_hotfix_remote_tip_task_worktree_20260818_normal
+  task_type: hotfix
   related_lessons:
-  - id: 'L549'
-    summary: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-    detail: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L643'
-    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+  - id: L458
+    summary: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト
+    detail: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト
+  - id: L507
+    summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
+    detail: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
+  - id: L1314
+    summary: 'task-scoped test runで2件のFAIL(test_skill_feedback_loop.bats#14: model_injection_p'
+    detail: 'task-scoped test runで2件のFAIL(test_skill_feedback_loop.bats#14: model_injection_p'
   standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
+  - report-write
+  - verdict-check
+  - ninja-commit
   model_injection_profile:
-    model_label: "GPT 5.6 Sol low"
-    family: "gpt"
-    injection_intensity: "max"
-    protocol: "T5弱LLM構造化プロトコル"
+    model_label: GPT 5.6 Luna high
+    family: gpt
+    injection_intensity: max
+    protocol: T5弱LLM構造化プロトコル
     report_contract:
-    - "binary_checks全resultをyes/noで記入"
-    - "lessons_useful全reasonを具体記入"
-    - "files_modifiedはrepo相対path形式"
-    - "D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除"
+    - binary_checks全resultをyes/noで記入
+    - lessons_useful全reasonを具体記入
+    - files_modifiedはrepo相対path形式
+    - 'D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除'
+    - '任務帰属検証契約: 反復・報告直前とも bash scripts/run_tests.sh task queue/tasks/saizo.yaml を実行し、task/reportの所有pathから選ばれたテストだけをbinary_checksへ帰属させる。選択対象はFAIL0・SKIP0を必須とし、scope外FAILを当該任務のFAILへ混入させない。run_tests.sh
+      unit全量は個別taskで要求せず、fixed-SHAまたはwave最終checkpointで共有1回だけ実行する'
     extra_scaffold:
-    - "ACごとに実テスト証跡をresult.detailsへ記録"
-    - "報告前にplaceholder残存確認とgate_report_formatを実行"
+    - ACごとに実テスト証跡をresult.detailsへ記録
+    - 報告前にplaceholder残存確認とgate_report_formatを実行
+    - 'hook_failures.detailsはcount>0なら文字列でなくmapping形式で記入: cause/independent_verification/bypass_record/post_verification/post_verification_result/post_verification_headの6キー必須。post_verification_headは事後検証を実測した7-40文字hexのcommit
+      hash(LG083)'
   semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_wa_stall_pattern_20260708.md — report_yaml_format + agent_stall_recovery WA分析 docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  - 'semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md
+    context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh
+    scripts/semantic_index_update.sh'
   causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+    cause_checked: ''
+    design_intent_checked: ''
+    evidence: ''
+    origin: ''
   context_hints:
-  - "context/training-cycle.md"
+  - context/training-cycle.md
   growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L549: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
-    ────────────────────────────────────────
-    
-    
-  ac_version: 2edf2958
-  _ac_task_id: cmd_karo_recon2_ga268_warmup_singleflight_audit_202607160147_normal
-  _ac_worker_id: 
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L458: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリスト\n\
+    \  - L507: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo\n\
+    \  - L1314: task-scoped test runで2件のFAIL(test_skill_feedback_loop.bats#14: model_injection_p\n\
+    ────────────────────────────────────────"
+  experiment_first_principle:
+  - '殿の原文: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』'
+  - '適用形: 仮説を頭で絞らず、小さな独立実験へ分けて並列に全て試せ。想像で結論せず、各実験の一次結果を確認してから採否を決めよ。'
+  ac_version: e5c40059
+  _ac_task_id: cmd_karo_hotfix_remote_tip_task_worktree_20260818_normal
+  _ac_worker_id: null
+  target_path_git_preflight: scripts/deploy_task.sh:worktree=yes,head=yes,last_commit=pending@9f6a7928e3c8f101d701b4fbed3e4794c6eab613;scripts/ninja_scope_commit.sh:worktree=yes,head=yes,last_commit=pending@9f6a7928e3c8f101d701b4fbed3e4794c6eab613;scripts/cmd_complete_gate.sh:worktree=yes,head=yes,last_commit=pending@9f6a7928e3c8f101d701b4fbed3e4794c6eab613;scripts/archive_completed.sh:worktree=yes,head=yes,last_commit=pending@9f6a7928e3c8f101d701b4fbed3e4794c6eab613;.githooks/pre-push:worktree=yes,head=yes,last_commit=pending@9f6a7928e3c8f101d701b4fbed3e4794c6eab613;tests/unit/test_task_worktree_lifecycle.bats:worktree=no,head=no,last_commit=none
+  target_path_warning: '⚠ target_pathが存在しない: tests/unit/test_task_worktree_lifecycle.bats'
+  push_allowed: true
   role_reminder: 忍者saizo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: saizo_report_cmd_karo_recon2_ga268_warmup_singleflight_audit_202607160147.yaml
-  report_path: queue/reports/saizo_report_cmd_karo_recon2_ga268_warmup_singleflight_audit_202607160147.yaml
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 1
-    top_pattern: 'review_notification_missing(1件)'
-    breakdown: 'review_notification_missing(1件)'
-    warning: '⚠ 過去1件のworkaround発生。品質に注意'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 654
-    - pattern: 'verdict_invalid'
-      count: 124
-    - pattern: 'status_pending'
-      count: 108
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 完了後にstatusを"completed"に更新。"pending"のまま報告禁止'
-    gate_blocks:
-    - reason: 'binary_checks_fail'
-      count: 2
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'post_deploy_evidence_missing'
-      count: 1
-      hint: 'gate BLOCK: post_deploy_evidence_missing'
-    - reason: 'purpose_validation_fit_false'
-      count: 1
-      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
+  report_filename: saizo_report_cmd_karo_hotfix_remote_tip_task_worktree_20260818.yaml
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_remote_tip_task_worktree_20260818.yaml
+  bloom_level: null
+  inspection_path: '["scripts/deploy_task.sh", "scripts/ninja_scope_commit.sh", "scripts/cmd_complete_gate.sh",
+    "scripts/archive_completed.sh", ".githooks/pre-push", "tests/unit/test_task_worktree_lifecycle.bats"]'
+  report_id: rpt-7c46da30-c09b-4dc8-88fe-fd58f1aa6a1e
+  report_identity_version: 2
   variation_checks_required: false
-  parent_ac_coverage: 
-  parent_contract_fingerprint: ''
-  deployed_at: "2026-07-16T01:47:54"
-  acknowledged_at: "2026-07-16T01:48:12"
-
+  commit_contract:
+    required: true
+    reason: implementation_path_present
+    task_type: hotfix
+    planned_paths:
+    - scripts/deploy_task.sh
+    - scripts/ninja_scope_commit.sh
+    - scripts/cmd_complete_gate.sh
+    - scripts/archive_completed.sh
+    - .githooks/pre-push
+    - tests/unit/test_task_worktree_lifecycle.bats
+    - scripts/run_tests.sh
+    - tests/unit/test_deploy_task_lifecycle.bats
+    - scripts/hooks/pre-bash-test-fullrun-guard.sh
+    - tests/unit/test_pre_bash_test_fullrun_guard.bats
+    - tests/unit/test_heavy_job_admission.bats
+    repo_root: /mnt/c/tools/multi-agent-shogun
+  report_contract_templates: '{"ac_evidence_mapping":{"AC1":"","AC2":""},"semantic_validation":{"classification_axis":"","recount":"","actual":"","result":""}}'
+  deployed_at: '2026-08-18T10:45:05'
+  acknowledged_at: '2026-08-18T10:45:39'
+  progress_updated_at: "2026-08-18T07:34:37Z"
+  karo_review_feedback: 'RC5 BLOCK: archive f-string修正と5/5は確認方向。追加の実運用FAILを半蔵taskで一次確認:
+    task_worktree_path=/tmp/... activeなのにcommit_contract.repo_rootが共有rootのままのため、worktree内から
+    bash scripts/run_tests.sh task /mnt/c/tools/.../queue/tasks/hanzo.yaml が external-project:/mnt/c/tools/multi-agent-shogun
+    と判定されrc=2・observed_test_count=0。任務帰属selectorもtask worktreeを正本repoとして解決せねば隔離契約が閉じない。run_tests.sh
+    task_scope_rootが task_worktree_required=true,status=active,path valid git root
+    の場合はtask_worktree_pathを優先する等、task-worktreeライフサイクル全consumerを統一。fixtureでworktree内のtask
+    selectorが対象testを1件以上実行しFAIL0/SKIP0、shared root sourceを実行しないことを証明。既存archive SyntaxError修正・2task
+    2/2・rollback orphan0も維持。'
   session_state:
-    attempt: 1
-    last_block_reason: 'status: \"failed\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+    attempt: 5
+    last_block_reason: 'LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須'
     tried_approaches:
-    - 'status: \"failed\" cannot carry terminal verdict PASS (set status to completed after revisions)'
-    diagnose_reason: 'commit_contractのplanned_pathsにscripts/lib/review_approval.shしか含めなかったが、batsファイルも新規作成してfiles_modifiedに含めた。commit_contractを更新せずに報告したためscope外判定。operational_simulationはLG055(integration cmd)対象かを確認せず省略した。'
-    approach_summary: 'review_report_fingerprintの同一性境界を正規化ハッシュ方式で再設計。content_hash算出をsha256(全文)→非内容フィールド除外済みのPython正規化ハッシュに変更(除外: commit_hash/cross_repo_commits/commit/git_commit/status/timestamp/submitted_at/completed_at/done_at/updated_at/acknowledged_at/result.commit_hash)。verdict・binary_checks・ac_evidence_mapping等の内容フィールドは除外リストに含めない。commit_identityはfail-closed検証のみに使用し指紋値から除外。境界テスト6件をbatsで追加(3件: 非内容変更でfp安定、2件: 内容変更でfp変化、1件: commit_hash修正後LGTM+ACCEPT維持)。全6件PASS。全量unit: 2353テスト中1FAIL(pre-existing: test_cmd_publish_preflight.batsがL37でfail、私の変更前から同一)、私の変更による新規FAILはゼロ。commit: 3718e72455fb1878a71cd04a276c9a9a62afb0fa'
+    - 'commit_contract: required commit_hash is missing or invalid; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[3].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[4].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); operational_simulation: MISSING (command,expected,actual,result; integration cmd requires command/expected/actual/result — LG055)'
+    - 'LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須'
+    approach_summary: remote-tip linked worktreeでsource taskの編集・専用index commit・実push・CLEAR cleanupを分離し、2taskでremote/local 0/0とshared main不変を実測
     prior_attempts:
-    - attempt: 1
-      block_reason: 'status: \"failed\" cannot carry terminal verdict PASS (set status to completed after revisions)'
-      diagnose_reason: 'commit_contractのplanned_pathsにscripts/lib/review_approval.shしか含めなかったが、batsファイルも新規作成してfiles_modifiedに含めた。commit_contractを更新せずに報告したためscope外判定。operational_simulationはLG055(integration cmd)対象かを確認せず省略した。'
-      approach_summary: 'review_report_fingerprintの同一性境界を正規化ハッシュ方式で再設計。content_hash算出をsha256(全文)→非内容フィールド除外済みのPython正規化ハッシュに変更(除外: commit_hash/cross_repo_commits/commit/git_commit/status/timestamp/submitted_at/completed_at/done_at/updated_at/acknowledged_at/result.commit_hash)。verdict・binary_checks・ac_evidence_mapping等の内容フィールドは除外リストに含めない。commit_identityはfail-closed検証のみに使用し指紋値から除外。境界テスト6件をbatsで追加(3件: 非内容変更でfp安定、2件: 内容変更でfp変化、1件: commit_hash修正後LGTM+ACCEPT維持)。全6件PASS。全量unit: 2353テスト中1FAIL(pre-existing: test_cmd_publish_preflight.batsがL37でfail、私の変更前から同一)、私の変更による新規FAILはゼロ。commit: 3718e72455fb1878a71cd04a276c9a9a62afb0fa'
+    - attempt: 3
+      block_reason: 'LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須'
+      approach_summary: remote-tip linked worktreeでsource taskの編集・専用index commit・実push・CLEAR cleanupを分離し、2taskでremote/local 0/0とshared main不変を実測
+    - attempt: 4
+      block_reason: 'LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須'
+      approach_summary: remote-tip linked worktreeでsource taskの編集・専用index commit・実push・CLEAR cleanupを分離し、2taskでremote/local 0/0とshared main不変を実測
+    - attempt: 5
+      block_reason: 'LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須'
+      approach_summary: remote-tip linked worktreeでsource taskの編集・専用index commit・実push・CLEAR cleanupを分離し、2taskでremote/local 0/0とshared main不変を実測
+  test_necessity:
+  - path: tests/unit/test_task_worktree_lifecycle.bats
+    invariant: remote-tip linked worktree keeps shared main and runtime state isolated
+      through two-task publish and cleanup
+    defense_target: shared main HEAD/source paths and runtime YAML remain unchanged
+      while task worktree publishes source
+    overlap_evidence: no existing contract test covered deploy edit scope commit push
+      CLEAR archive cleanup as a two-task sequence
+    fixture_self_reference: false
+    deprecated_mechanism: false
+    overlaps_existing: false
+    regression_justification: new lifecycle contract for remote-tip task worktrees
+  progress: AC1/AC2 PASS; final task receipt PASS 52 files 1205 tests FAIL0 SKIP0; commit e22291548922f01b8feca9b4e795204e159fc220; report gate PASS
