@@ -655,6 +655,24 @@ EOF
     [[ "$output" != *"infrastructure.md"* ]]
 }
 
+@test "--cmd-warnings resolves project from active task before archive" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'TASK'
+task:
+  task_id: cmd_922_active_normal
+  parent_cmd: cmd_922_active
+  project: dm-signal
+TASK
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_922_active_normal
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/dm-signal.md"* ]]
+    [[ "$output" != *"infrastructure.md"* ]]
+}
+
 @test "dm-signal context uses external project git log" {
     local source_repo="$TEST_TMPDIR/source/dm-signal"
     mkdir -p "$source_repo/docs/rule" "$TEST_TMPDIR/projects"

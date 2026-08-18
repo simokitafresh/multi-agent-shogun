@@ -1954,7 +1954,7 @@ YAML
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
     export TMUX_SEND_COUNT_FILE="$TEST_TMPDIR/tmux_send_count"
-    export TEST_TASK_FILE="$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    export TEST_INBOX_FILE="$TEST_TMPDIR/queue/inbox/testninja.yaml"
 
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
 #!/bin/bash
@@ -1970,8 +1970,7 @@ case "$1" in
       count=$((count + 1))
       echo "$count" > "$TMUX_SEND_COUNT_FILE"
       if [ "$count" -ge 2 ]; then
-        # sedでstatus更新 (python3不要): task YAMLは"  status: assigned"の1フィールドのみ
-        sed -i 's/  status: assigned/  status: acknowledged/' "$TEST_TASK_FILE"
+        sed -i 's/read: false/read: true/' "$TEST_INBOX_FILE"
       fi
     fi
     ;;
@@ -1988,7 +1987,7 @@ EOF
     [ "$(cat "$TMUX_SEND_COUNT_FILE")" -eq 2 ]
 
     # grep検証 (python3不要)
-    grep -q "  status: acknowledged" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    grep -q "read: true" "$TEST_INBOX_FILE"
 }
 
 # test_necessity: an active event-driven watcher is the sole pane sender; the
@@ -2008,6 +2007,7 @@ YAML
     printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export INBOX_MESSAGE_ID="msg_ci_initial_working"
 
     cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
 #!/bin/bash
@@ -2059,6 +2059,7 @@ YAML
     printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export CAPTURE_COUNT_FILE="$TEST_TMPDIR/capture_count"
+    export INBOX_MESSAGE_ID="msg_ci_async_working"
     cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
 #!/bin/bash
 echo "123 bash /repo/scripts/inbox_watcher.sh testninja shogun:agents.3 codex"
@@ -2072,7 +2073,7 @@ case "$1" in
     [ -f "$CAPTURE_COUNT_FILE" ] && count=$(cat "$CAPTURE_COUNT_FILE")
     count=$((count + 1))
     echo "$count" > "$CAPTURE_COUNT_FILE"
-    if [ "$count" -ge 2 ]; then echo "• Working"; else echo "›"; fi
+    if [ "$count" -ge 2 ]; then echo "inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/testninja.yaml delivery_msg=${INBOX_MESSAGE_ID}"; else echo "›"; fi
     ;;
 esac
 exit 0
@@ -2312,6 +2313,7 @@ YAML
 
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export INBOX_MESSAGE_ID="msg_ci_initial_working"
     export TEST_INBOX_FILE="$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 
     # This case exercises the bounded direct-fallback path.  The real host may
@@ -2366,6 +2368,7 @@ YAML
 
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export INBOX_MESSAGE_ID="msg_ci_initial_working"
 
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
 #!/bin/bash
@@ -2375,7 +2378,8 @@ case "$1" in
     echo "shogun:agents.3 testninja"
     ;;
   capture-pane)
-    echo "• Working"
+    count=0; [ -f "$TEST_TMPDIR/capture_count" ] && count=$(cat "$TEST_TMPDIR/capture_count"); count=$((count+1)); echo "$count" > "$TEST_TMPDIR/capture_count"
+    if [ "$count" -ge 2 ]; then echo "inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/testninja.yaml delivery_msg=${INBOX_MESSAGE_ID}"; else echo "›"; fi
     ;;
 esac
 exit 0
@@ -2402,12 +2406,16 @@ YAML
     printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export INBOX_MESSAGE_ID="msg_ci_hook_prompt"
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
 #!/bin/bash
 echo "$*" >> "$TMUX_LOG"
 case "$1" in
   list-panes) echo "shogun:agents.3 testninja" ;;
-  capture-pane) echo "inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/testninja.yaml を読んで作業開始せよ"; echo "• Running UserPromptSubmit hook" ;;
+  capture-pane)
+    count=0; [ -f "$TEST_TMPDIR/capture_count" ] && count=$(cat "$TEST_TMPDIR/capture_count"); count=$((count+1)); echo "$count" > "$TEST_TMPDIR/capture_count"
+    if [ "$count" -ge 2 ]; then echo "inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/testninja.yaml delivery_msg=${INBOX_MESSAGE_ID}"; else echo "›"; fi
+    ;;
 esac
 exit 0
 EOF
@@ -2433,15 +2441,15 @@ YAML
     printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export INBOX_MESSAGE_ID="msg_ci_wrapped_prompt"
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
 #!/bin/bash
 echo "$*" >> "$TMUX_LOG"
 case "$1" in
   list-panes) echo "shogun:agents.3 testninja" ;;
   capture-pane)
-    echo "› inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/"
-    echo "testninja.yaml を読んで作業開始せよ"
-    echo "◦ Running UserPromptSubmit hook"
+    count=0; [ -f "$TEST_TMPDIR/capture_count" ] && count=$(cat "$TEST_TMPDIR/capture_count"); count=$((count+1)); echo "$count" > "$TEST_TMPDIR/capture_count"
+    if [ "$count" -ge 2 ]; then echo "› inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/testninja.yaml delivery_msg=${INBOX_MESSAGE_ID}"; echo "◦ Running UserPromptSubmit hook"; else echo "›"; fi
     ;;
 esac
 exit 0

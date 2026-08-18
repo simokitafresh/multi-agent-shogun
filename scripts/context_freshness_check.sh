@@ -1669,6 +1669,21 @@ def find_cmd_project(target_cmd_id: str) -> str | None:
                         top_level_match = normalize_scalar(stripped.split(":", 1)[1]) == target_cmd_id
                         continue
 
+                    # Active ninja tasks are the freshest project SSOT while a
+                    # command is still running.  Before archival/chronicle
+                    # publication, resolve task_id/parent_cmd/issued_cmd_id
+                    # from the current task file so --cmd-warnings cannot
+                    # silently return no project and skip freshness evidence.
+                    if indent == 2 and any(
+                        stripped.startswith(f"{key}:")
+                        for key in ("task_id", "parent_cmd", "issued_cmd_id")
+                    ):
+                        top_level_match = top_level_match or normalize_scalar(stripped.split(":", 1)[1]) == target_cmd_id
+                        continue
+
+                    if top_level_match and indent == 2 and stripped.startswith("project:"):
+                        return normalize_scalar(stripped.split(":", 1)[1]) or None
+
                     if top_level_match and indent == 0 and stripped.startswith("project:"):
                         return normalize_scalar(stripped.split(":", 1)[1]) or None
 
@@ -1711,6 +1726,14 @@ def find_cmd_project(target_cmd_id: str) -> str | None:
             project_id, _, _ = scan_archive_metadata(path)
             if project_id:
                 return project_id
+
+    # The active task file is authoritative before the command is archived or
+    # added to cmd-chronicle.  Keep this fallback after immutable history so a
+    # stale task slot cannot override a published command record.
+    for path in sorted(glob.glob(os.path.join(root, "queue", "tasks", "*.yaml"))):
+        project_id = find_project_in_command_file(path)
+        if project_id:
+            return project_id
     return None
 
 
