@@ -12112,11 +12112,23 @@ PYEOF
     # tracked runtime output reached origin/shared HEAD.
     echo ""
     echo "Status completed (post-runtime-publish):"
-    if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed >/dev/null 2>&1; then
-        echo "GATE BLOCK: ${CMD_ID}:status_completed_publish_failed" >&2
+    if cmd_entry_exists "$CMD_ID"; then
+        if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed >/dev/null 2>&1; then
+            echo "GATE BLOCK: ${CMD_ID}:status_completed_publish_failed" >&2
+            exit 1
+        fi
+        echo "  status: completed"
+    elif has_parent_cmd_report "$CMD_ID"; then
+        # Direct/non-numbered commands are admitted earlier by the same
+        # parent-report contract and intentionally have no command-queue row
+        # to mutate.  Their durable CLEAR marker/report is the terminal status
+        # publication; treating the absent row as a setter failure contradicts
+        # that admission contract after all substantive gates already passed.
+        echo "  status: completed (direct parent-report contract; command entry absent)"
+    else
+        echo "GATE BLOCK: ${CMD_ID}:status_completed_publish_target_missing" >&2
         exit 1
     fi
-    echo "  status: completed"
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"
 
     echo ""

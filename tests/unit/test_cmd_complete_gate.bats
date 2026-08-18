@@ -6362,6 +6362,31 @@ PY
     [ "$output" = "reflux_before_publish=1 publish_before_complete=1 fail_closed=1" ]
 }
 
+# test_necessity: terminal status publication must preserve the earlier
+# direct/non-numbered parent-report admission contract while registered
+# commands remain fail-closed on command-queue status mutation.
+# regression_justification: GA-479 and a Saizo reflux command reached CLEAR,
+# then failed only because their intentionally absent command rows were
+# passed to yaml_field_set.sh unconditionally.
+@test "terminal status publish accepts direct parent reports but keeps registered commands fail-closed" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.rindex('Status completed (post-runtime-publish):')
+end = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', start)
+block = text[start:end]
+assert 'if cmd_entry_exists "$CMD_ID"; then' in block
+assert 'yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed' in block
+assert 'status_completed_publish_failed' in block
+assert 'elif has_parent_cmd_report "$CMD_ID"; then' in block
+assert 'direct parent-report contract; command entry absent' in block
+assert 'status_completed_publish_target_missing' in block
+print('registered_fail_closed=1 direct_parent_report=1 missing_target_block=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "registered_fail_closed=1 direct_parent_report=1 missing_target_block=1" ]
+}
+
 # test_necessity: detached semantic index/map work must be generation-bound,
 # bounded, and complete before the terminal runtime snapshot is taken.
 # regression_justification: an operational completion observed semantic-map
