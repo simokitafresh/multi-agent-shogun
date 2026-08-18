@@ -2,6 +2,7 @@
 # 秘奥義21体 組合せ探索 研究日誌 — EW後退除去(Sharpe)+2/3/4体全量探索(α6+β調整α+Sharpe+α/β)
 
 - 起草: 2026-08-18 21:35 JST（殿指示21:15〜21:32）
+- 結果artifact: https://claude.ai/code/artifact/bdfc0b86-74b6-4767-a339-9c42e9ef0b4e（正本 `docs/dashboard/hiougi21-combo-search-report.html`）
 - 状態: Phase 2（cmd_4355/4356 GATE CLEAR 08-18 23:53/23:56、DM-Signal origin/main統合 44755177・成果物commit 07848c94 08-19 04:25。次=Sharpe定義同一化再突合・ローリング再現性・gist記事化）
 - 母集団: 本番`portfolios`の秘奥義21体（`name LIKE '秘奥義%'`、type=fof、is_active、7忍法×3モード。2026-08-18 21:16 readonly_query実測）
 - 本番影響: なし（monthly_returns read-only。GS実行・本番書込みなし）
