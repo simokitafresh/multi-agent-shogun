@@ -5253,6 +5253,72 @@ EOF
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"value: remote"* ]]
 }
 
+# test_necessity: an insight created independently on both branches may advance
+# monotonically from pending to resolved without being mistaken for divergence.
+@test "AC2 insights list root: new same ID pending and resolved chooses resolved" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-lifecycle-list"
+    printf '%s\n' '- id: base-only' '  value: base' > "$base-base.yaml"
+    cat > "$base-source.yaml" <<'EOF'
+- id: lifecycle
+  ts: 2026-08-18T18:33:30+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: resolved
+  resolved_reason: verified
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: lifecycle
+  ts: 2026-08-18T18:33:30+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: pending
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_lifecycle_list_probe
+    [ "$status" -eq 0 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c 'status: resolved')" -eq 1 ]
+}
+
+# test_necessity: production mapping-root insights have the same monotonic
+# lifecycle contract, while immutable identity differences remain fail-closed.
+@test "AC2 insights mapping root: lifecycle resolves but identity mismatch blocks" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-lifecycle-mapping"
+    printf '%s\n' 'insights: []' > "$base-base.yaml"
+    cat > "$base-source.yaml" <<'EOF'
+insights:
+- id: lifecycle
+  ts: 2026-08-18T18:33:30+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: resolved
+  resolved_reason: verified
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+insights:
+- id: lifecycle
+  ts: 2026-08-18T18:33:30+09:00
+  insight: changed
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: pending
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_lifecycle_mapping_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+}
+
 # test_necessity: a mapping root without the insights list is an invalid
 # source-only input and must fail closed before publication.
 @test "AC2 insights mapping root: invalid root blocks without push" {
@@ -6160,4 +6226,60 @@ print('clear_receipt_default=1 archive_receipt_guard=1 ordering=1')
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "clear_receipt_default=1 archive_receipt_guard=1 ordering=1" ]
+}
+
+# test_necessity: terminal completion must never precede publication of tracked
+# runtime writers that run after the ordinary pre-CLEAR source push.
+# regression_justification: cmd_karo_hotfix_postclear_runtime_publish observed
+# tracked runtime dirty remaining while the former post-CLEAR push was SKIP.
+@test "post-CLEAR runtime publish precedes COMPLETE and terminal exit" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+second_reflux = text.rindex('Gunshi gate_result reflux (post-GATE CLEAR 2nd run):')
+publish = text.rindex('Tracked runtime publish (terminal checkpoint):')
+complete = text.rindex('Status completed (post-runtime-publish):')
+terminal = text.rindex('Async completion wait (pre-exit):')
+assert second_reflux < publish < complete < terminal
+assert 'if ! publish_postclear_runtime_deltas; then' in text[publish:complete]
+print('reflux_before_publish=1 publish_before_complete=1 fail_closed=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "reflux_before_publish=1 publish_before_complete=1 fail_closed=1" ]
+}
+
+# test_necessity: runtime publication must reuse the existing field-aware
+# source-only merge and reject writer-generation/nonruntime contamination.
+@test "post-CLEAR runtime publisher is field-aware and generation guarded" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index('publish_postclear_runtime_deltas()')
+end = text.index('\n}', start) + 2
+block = text[start:end]
+assert 'push_from_clean_worktree' in block
+assert 'postclear_runtime_path_is_publishable "$path"' in block
+assert 'nonruntime dirty path=' in block
+assert 'writer generation changed' in block
+assert 'merge --ff-only FETCH_HEAD' in block
+print('field_aware=1 identity_guard=1 nonruntime_block=1 shared_convergence=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "field_aware=1 identity_guard=1 nonruntime_block=1 shared_convergence=1" ]
+}
+
+# test_necessity: every tracked writer observed in the first operational gate
+# must be classified as publishable while an unknown tracked path still blocks.
+# regression_justification: the first operational run blocked on three known
+# lesson/context writers omitted from the initial runtime allowlist.
+@test "post-CLEAR runtime classifier covers operational writer set and blocks unknown" {
+    run bash -c '
+        source <(sed -n "/^postclear_runtime_path_is_publishable()/,/^}/p" "$1")
+        known=(context/infrastructure.md projects/infra/lessons.yaml tasks/lessons.md logs/karo_workarounds.yaml queue/insights.yaml scripts/cmd_complete_gate.sh)
+        for path in "${known[@]}"; do postclear_runtime_path_is_publishable "$path" || exit 10; done
+        if postclear_runtime_path_is_publishable docs/research/unowned.md; then exit 11; fi
+        printf "known=6/6 unknown_block=1\n"
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    [ "$status" -eq 0 ]
+    [ "$output" = "known=6/6 unknown_block=1" ]
 }
