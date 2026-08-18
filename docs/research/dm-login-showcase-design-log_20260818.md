@@ -87,3 +87,5 @@
 
 - 設計書新設: `docs/research/dm-login-showcase-asis-tobe_20260818.md`(AsIs v1.0/ToBe v0.1: 境界・API・公開データ契約`GET /api/public/showcase`・tier実測・レスポンシブ仕様・文言規則・実装単位P1-P4・未決)
 | v12 | 17:38 | 表を5ゾーンへ: Free trial(Basic-DM完全公開)/Basic plan(DM-safe・白虎激攻・分身常勝・Ave-X=総リターン公開)/Standard plan(+13群行)/Premium plan 招待制(四つ目常勝+9群行)/Secret(+70)。ゾーン見出し行にプラン名+価格 | 17:36 |
+| 17:41 | 「それかBasic-Dualmomentumの下のラベルみたいにするといいな。ラベルを下に、その下に追加で見られるPF数を＋２１PFみたいに表示」 | ゾーン見出し行ではなく、各PF名の下にプランラベル+「+N PF」。行単位で「このプランで保有が見える・さらにN本増える」が読める |
+| v13 | 17:43 | ゾーン行を撤去。各行=PF名／プランラベル(Free trial=緑・Basic・Standard・Premium 招待制=紫・Secret=灰)／各プラン先頭行に「+N PF with {plan}」(Basic +4・Standard +13・Premium +10・Secret=Not viewable) | 17:41 |

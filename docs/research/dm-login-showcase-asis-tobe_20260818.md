@@ -1,7 +1,8 @@
+<!-- gist-master: 0e15f28f66da87251a77f4d6dc4dd072 dm-login-showcase-asis-tobe_20260818.md -->
 # DM-Signal /login ショーウィンドウ — AsIs / ToBe 設計書
 
-- 版: ToBe v0.2 / AsIs v1.0（2026-08-18 17:35 起草、17:38 v0.2=5ゾーン化）
-- モック(artifact): https://claude.ai/code/artifact/fa111b2b-9ac4-44b9-9d4c-0c0d4581774c（正本HTML `docs/dashboard/dm-signal-login-showcase.html` v12）
+- 版: ToBe v0.3 / AsIs v1.0（2026-08-18 17:35 起草、17:38 v0.2=5ゾーン化、17:43 v0.3=ラベル方式）
+- モック(artifact): https://claude.ai/code/artifact/fa111b2b-9ac4-44b9-9d4c-0c0d4581774c（正本HTML `docs/dashboard/dm-signal-login-showcase.html` v13）
 - 要望・変更履歴ログ: `docs/research/dm-login-showcase-design-log_20260818.md`（殿の言葉→原理→版、随時追記）
 - 前提設計書: ログイン境界 `docs/research/dm-login-boundary-asis-tobe_20260817.md`（gist 0d23e0c3、第0段 手①〜③=cmd_4325/4326/4327/4333 完了）
 - 原則: ToBeは理想（現実のコード名で縛らない）。AsIsは現物。殿裁定は「事実→制約→判断→効果」で記す。
@@ -23,6 +24,7 @@
 | 17:23 | tier別データを確認せよ。premiumも招待制、limited→「Secret」 | 件数は本番tier_visibility_settings実測(§2.3)、表記Secret |
 | 17:28 | 「毎営業日」は月次リバランスにふさわしくない→「月に一回」 | 文言規則(§4) |
 | 17:36 | Current signalsを 無料お試し/Basic/Standard/Premium/Secret でゾーン分け | 表=プラン階段(§3.1 v12) |
+| 17:41 | ゾーン行ではなくPF名の下にプランラベル、その下に「+N PF」 | §3.1 v13(ラベル方式) |
 
 ---
 
@@ -95,15 +97,18 @@
 
 ## §3 画面仕様
 
-### 3.1 Current signals 表（列: Portfolio / Holding / Momentum / Total return since inception）— 5ゾーン(v12)
-| ゾーン見出し行 | 行 | Holding/Momentum | Total return |
-|---|---|---|---|
-| **Free trial ／ 無料お試し** | Basic-DualMomentum (tag "Full access") | 表示 | 表示 |
-| **Basic plan ／ ベーシック** ¥1,000・初月無料 | DM-safe / シン白虎-激攻 / GSシン分身-常勝 / Ave-X | ぼかし(データ非送信) | 表示 |
-| **Standard plan ／ スタンダード** ¥8,000 | + N portfolios (Shijin ×11 · Bunshin ×2) — Standard members only | — | up to X% |
-| **Premium plan ／ プレミアム** 招待制 | GSシン四つ目-常勝(代表・総リターン表示) / + N portfolios (Yotsume ×2 · Ougi ×3 · Ura Ave-X · DM-safe-2 · Gekiyaku ×2) — Premium members only | ぼかし／— | 表示／up to X% |
-| **Secret ／ 非公開** | + N portfolios — Not disclosed | — | — |
-- ゾーンの所属と件数は `tier_visibility_settings` から導出(§2.3 groups)。ゾーン=noteプラン(Basic/NewStandard/premium)+Free+Secret。
+### 3.1 Current signals 表（列: Portfolio / Holding / Momentum / Total return since inception）— ラベル方式(v13)
+各行のPortfolioセル= ①PF名(+EN補助) ②プランラベル(pill) ③そのプランの先頭行のみ「+N PF with {plan}」。ゾーン見出し行は置かない(殿17:41)。
+| PF行 | ラベル | +N表示 | Holding/Momentum | Total return |
+|---|---|---|---|---|
+| Basic-DualMomentum | Free trial · full access(緑) | — | 表示 | 表示 |
+| DM-safe | Basic plan | +4 PF with Basic | ぼかし(非送信) | 表示 |
+| シン白虎-激攻 / GSシン分身-常勝 / Ave-X | Basic plan | — | ぼかし | 表示 |
+| シン四神×12 · GSシン分身×3(群) | Standard plan | +13 PF with Standard | ぼかし | up to X% |
+| GSシン四つ目-常勝 | Premium plan · by invitation(紫) | +10 PF with Premium | ぼかし | 表示 |
+| Ougi · Ura Ave-X · DM-safe-2 · Gekiyaku(群) | Premium plan · by invitation | — | ぼかし | up to X% |
+| 70 portfolios | Secret(灰) | Not viewable | Not disclosed | — |
+- +Nの定義: そのプランで**新たに**保有が見えるPF数(Basic=Basic可視−Free、Standard=NewStandard可視−Basic可視(Ave-X除く差分)、Premium=premium可視−NewStandard可視)。件数は`tier_visibility_settings`から導出(§2.3)。
 - ヘッダ右: "Rebalanced {last_close} close · next {next_close}"
 
 ### 3.2 レスポンシブ2パターン

@@ -35,12 +35,17 @@ h1{font-size:34px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
 .hold{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;background:color-mix(in srgb,var(--success) 14%,transparent);color:var(--success)}
 .locked{color:var(--muted)}
 .locked td.open{color:var(--fg);font-weight:600}
-.tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);vertical-align:middle}
+.pf{color:var(--fg);font-weight:600}
+.locked .pf{color:var(--fg)}
+.tag{display:inline-block;margin-top:5px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);vertical-align:middle}
+.tag.free{background:color-mix(in srgb,var(--success) 14%,transparent);color:var(--success)}
+.tag.std{background:color-mix(in srgb,var(--primary) 20%,transparent)}
+.tag.prem{background:color-mix(in srgb,#7c3aed 14%,transparent);color:#7c3aed}
+.tag.secret{background:var(--sec);color:var(--muted)}
+.more{margin-top:3px;font-size:12px;color:var(--muted)}
 .sig td small{color:var(--muted);font-weight:400}
 .hidden-note{color:var(--muted);font-style:italic}
 .group td{background:var(--sec)}
-.zone td{padding:7px 18px;background:var(--sec);color:var(--fg);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-top:1px solid var(--border)}
-.zone td small{text-transform:none;letter-spacing:0;font-weight:500;margin-left:8px}
 .blur{display:inline-block;height:12px;width:96px;border-radius:6px;background:var(--mask);vertical-align:middle}
 .blur.s{width:56px}
 .sig footer{padding:10px 18px;font-size:12px;color:var(--muted);background:var(--sec);border-top:1px solid var(--border)}
@@ -100,22 +105,17 @@ button:hover{filter:brightness(1.06)}button:focus-visible{outline:2px solid var(
       <header><b>Current signals · 98 portfolios</b><span>Rebalanced 2026-07-31 close · next 2026-08-31</span></header>
       <table>
         <tr><th>Portfolio</th><th>Holding</th><th>Momentum</th><th>Total return since inception</th></tr>
-        <tr class="zone"><td colspan="4">Free trial ／ 無料お試し</td></tr>
-        <tr><td>Basic-DualMomentum <span class="tag">Full access</span></td><td><span class="hold">QQQ</span></td><td>+18.4%</td><td>+312% <small>(2012–)</small></td></tr>
-        <tr class="zone"><td colspan="4">Basic plan ／ ベーシック <small>¥1,000 / month · first month free</small></td></tr>
-        <tr class="locked"><td>DM-safe</td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+486% <small>(2012–)</small></td></tr>
-        <tr class="locked"><td>シン白虎-激攻 <small>Shin Byakko · Aggressive</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,150% <small>(2012–)</small></td></tr>
-        <tr class="locked"><td>GSシン分身-常勝 <small>Shin Bunshin</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,480% <small>(2012–)</small></td></tr>
-        <tr class="locked"><td>Ave-X</td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+390% <small>(2015–)</small></td></tr>
-        <tr class="zone"><td colspan="4">Standard plan ／ スタンダード <small>¥8,000 / month</small></td></tr>
-        <tr class="locked group"><td>+ 13 portfolios <small>Shijin ×11 · Bunshin ×2</small></td><td colspan="2" class="hidden-note">Standard members only</td><td class="open">up to +2,900%</td></tr>
-        <tr class="zone"><td colspan="4">Premium plan ／ プレミアム <small>by invitation · 招待制</small></td></tr>
-        <tr class="locked"><td>GSシン四つ目-常勝 <small>Shin Yotsume</small></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,720% <small>(2012–)</small></td></tr>
-        <tr class="locked group"><td>+ 9 portfolios <small>Yotsume ×2 · Ougi ×3 · Ura Ave-X · DM-safe-2 · Gekiyaku ×2</small></td><td colspan="2" class="hidden-note">Premium members only</td><td class="open">up to +4,800%</td></tr>
-        <tr class="zone"><td colspan="4">Secret ／ 非公開</td></tr>
-        <tr class="locked group"><td>+ 70 portfolios</td><td colspan="2" class="hidden-note">Not disclosed</td><td class="open">—</td></tr>
+        <tr><td><div class="pf">Basic-DualMomentum</div><span class="tag free">Free trial · full access</span></td><td><span class="hold">QQQ</span></td><td>+18.4%</td><td>+312% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td><div class="pf">DM-safe</div><span class="tag basic">Basic plan</span><div class="more">+4 PF with Basic ／ ベーシックで+4本</div></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+486% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td><div class="pf">シン白虎-激攻 <small>Shin Byakko · Aggressive</small></div><span class="tag basic">Basic plan</span></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,150% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td><div class="pf">GSシン分身-常勝 <small>Shin Bunshin</small></div><span class="tag basic">Basic plan</span></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,480% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td><div class="pf">Ave-X</div><span class="tag basic">Basic plan</span></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+390% <small>(2015–)</small></td></tr>
+        <tr class="locked"><td><div class="pf">シン四神 ×12 · GSシン分身 ×3 <small>Shin Shijin · Shin Bunshin</small></div><span class="tag std">Standard plan</span><div class="more">+13 PF with Standard ／ スタンダードで+13本</div></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">up to +2,900%</td></tr>
+        <tr class="locked"><td><div class="pf">GSシン四つ目-常勝 <small>Shin Yotsume</small></div><span class="tag prem">Premium plan · by invitation</span><div class="more">+10 PF with Premium ／ プレミアムで+10本</div></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">+1,720% <small>(2012–)</small></td></tr>
+        <tr class="locked"><td><div class="pf">Ougi · Ura Ave-X · DM-safe-2 · Gekiyaku …</div><span class="tag prem">Premium plan · by invitation</span></td><td><span class="blur s"></span></td><td><span class="blur s"></span></td><td class="open">up to +4,800%</td></tr>
+        <tr class="locked"><td><div class="pf">70 portfolios</div><span class="tag secret">Secret</span><div class="more">Not viewable ／ 非公開</div></td><td colspan="2" class="hidden-note">Not disclosed</td><td class="open">—</td></tr>
       </table>
-      <footer>Basic-DualMomentum is fully open. Showcase portfolios reveal their total return; holdings unlock with each plan. ／ Basic-DMは完全公開。代表PFは総リターン公開、保有は各プランで解放。</footer>
+      <footer>Basic-DualMomentum is fully open. Each label shows the plan that unlocks the holding, and how many more portfolios that plan adds. ／ Basic-DMは完全公開。ラベル=保有が見えるプラン、+N=そのプランで追加で見られるPF数。</footer>
     </div>
 
     <div class="tiers">
