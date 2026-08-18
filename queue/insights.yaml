@@ -504,7 +504,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_done_requires_gate_clear_20260818"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存実装で解決済み。scripts/archive_completed.sh:1615-1644 がreport-unit lock内でarchive先へ移動後、queue/reportsの論理パスを互換symlinkとして保持する。projects/infra/lessons_karo.yamlのarchive_report_symlink_false_positive教訓も存在し、新規修正不要。"
+  action_artifact: "scripts/archive_completed.sh:1615-1644; projects/infra/lessons_karo.yaml:399; git commit 69217e75fはdurable CLEAR receipt追加でありsymlink防御を壊していない"
+  resolved_at: "2026-08-18T20:20:30+09:00"
 - id: INS-20260818-110310662-676d
   ts: "2026-08-18T11:03:10+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4353; matched=高速,本番,テスト; current_pattern=FoF決定性 手④ — GS高速版(run_077/l1 fast path)のFoF子PF選択を本番共通関数select_top_n_deterministicへ統一し、parityテスト赤→緑で本番と同一結果を証明する; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
@@ -967,5 +970,12 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_commit_runtime_dirty_202608181936; matched=karo_workarounds,yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_commit_runtime_dirty_202608181936"
+  fix_known: false
+  status: pending
+- id: INS-20260818-202046752-3669
+  ts: "2026-08-18T20:20:46+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bv8gxchgj task id tool use id toolu 016NAETg1Ctqsd5LQe は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
