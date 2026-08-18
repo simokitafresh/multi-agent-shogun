@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-133513980-6ab7
-  ts: "2026-08-18T13:35:13+09:00"
-  insight: "[[じゃあartifactの該当部位と設計書も覚醒してアップデートして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=じゃあartifactの該当部位と設計書も覚醒してアップデートして"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T13:44:42+09:00"
 - id: INS-20260818-133514440-6804
   ts: "2026-08-18T13:35:14+09:00"
   insight: "[[いくつか修正しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いくつか修正しよう。現時点で新指標は存在しない。新指標の話はしない。B氏をB先生に、M氏をMさんに変更"
@@ -75,7 +65,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次コード確認で未実装を確認。deploy_task.sh inject_model_injection_profileのGPT extra_scaffoldはAC証跡/placeholder/gate/hook_failuresのみで、causal_verification.evidenceのrg/grep command+output+countテンプレートがない。現task scopeはqueue/insights.yamlのみのため実装修正は行わず、報告YAML decision_candidateへ次cmd候補として整理した。"
+  action_artifact: "queue/reports/tobisaru_report_cmd_reflux_insight_202608190039_tobisaru.yaml"
+  resolved_at: "2026-08-19T00:43:11+09:00"
 - id: INS-20260818-153430366-4029
   ts: "2026-08-18T15:34:30+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4354; matched=本番,変更; current_pattern=FoF決定性 手③CLOSE — 残9 MISMATCHのoracle境界(depth3の月対応/伝播タイミング)を本番block同一定義へ揃え、補正oracle vs run409をMISMATCH 0で確定する(read-only・本番無変更); candidate_level=2; candidate=cmd_1855のverdict_override根因。AC『全期間月次リターン差』が進行中月を含み、GS作成日vs本番更新日の差異で常にFAIL。AC標準文言を『完了月(最終月除外)』に変更。cmd起票テンプレート修正が必要→家老担当; source=gunshi_gp_tracker.yaml"
