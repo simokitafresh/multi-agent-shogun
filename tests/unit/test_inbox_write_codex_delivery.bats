@@ -30,6 +30,8 @@ elif [ "$1" = capture-pane ]; then
     printf '%s\n' "$count" > "$CAPTURE_COUNT_FILE"
     if [ "${CAPTURE_MODE:-static}" = changed ] && [ "$count" -lt 2 ]; then
         printf '›\n'
+    elif [ "${CAPTURE_MODE:-static}" = changed ]; then
+        printf 'inbox2 — タスクYAML: /tmp/fixture/queue/tasks/testninja.yaml delivery_msg=%s\n' "$EXPECTED_MSG_ID"
     else
         printf '• Working\n'
     fi
@@ -44,6 +46,8 @@ SCRIPT
     export INBOX_CODEX_DELIVERY_VERIFY_ASYNC=1
     export INBOX_CODEX_NUDGE_RETRIES=0
     export INBOX_CODEX_VERIFY_WAIT_SEC=0
+    export EXPECTED_MSG_ID="msg_delivery_fixture"
+    export INBOX_MESSAGE_ID="$EXPECTED_MSG_ID"
     export CAPTURE_COUNT_FILE="$ROOT/capture.count"
 }
 

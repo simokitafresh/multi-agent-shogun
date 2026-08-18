@@ -1030,7 +1030,9 @@ send_codex_task_nudge() {
     local target="$1"
     local pane_target="$2"
     local unread_count="$3"
+    local msg_id="${4:-}"
     local nudge="inbox${unread_count} — タスクYAML: ${SCRIPT_DIR}/queue/tasks/${target}.yaml を読んで作業開始せよ"
+    [ -n "$msg_id" ] && nudge+=" delivery_msg=${msg_id}"
     local started_us="${EPOCHREALTIME/./}" rc=0
 
     tmux set-buffer -b "nudge_${target}" "$nudge" 2>/dev/null || rc=1
@@ -1085,7 +1087,8 @@ verify_codex_task_delivery() {
 
 codex_pane_has_delivery_evidence() {
     local target="$1"
-    local pane_snapshot="$2"
+    local msg_id="$2"
+    local pane_snapshot="$3"
 
     # Codex keeps the submitted prompt visible while UserPromptSubmit/PostToolUse
     # hooks run.  Waiting only for the later generic "Working" badge causes the
@@ -1094,7 +1097,7 @@ codex_pane_has_delivery_evidence() {
     # render hook activity with either the filled or hollow bullet.
     printf '%s\n' "$pane_snapshot" \
         | tr '\n' ' ' \
-        | grep -qE "inbox[0-9]+ — .*queue/tasks/${target}\.yaml|[•◦] (Working|Ran |Waiting|Running .*([Hh]ook|UserPromptSubmit|PostToolUse))"
+        | grep -qE "inbox[0-9]+ — .*queue/tasks/${target}\.yaml|delivery_msg=${msg_id}|msg_id=${msg_id}"
 }
 
 codex_delivery_evidence_observed() {
@@ -1115,7 +1118,7 @@ codex_delivery_evidence_observed() {
     # snapshot caused pre-send work from another message to be a false PASS.
     [ -n "$baseline_snapshot" ] || return 1
     [ "$pane_snapshot" != "$baseline_snapshot" ] || return 1
-    codex_pane_has_delivery_evidence "$target" "$pane_snapshot"
+    codex_pane_has_delivery_evidence "$target" "$msg_id" "$pane_snapshot"
 }
 
 maybe_verify_codex_delivery() {
@@ -1159,7 +1162,7 @@ maybe_verify_codex_delivery() {
                 echo "[inbox_write] codex nudge retry ${attempt}/${retries} delegated to active watcher for ${target}" >&2
             elif [ -n "$pane_target" ] && [ "$unread_count" -gt 0 ] 2>/dev/null; then
                 pane_baseline=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
-                if send_codex_task_nudge "$target" "$pane_target" "$unread_count"; then
+                if send_codex_task_nudge "$target" "$pane_target" "$unread_count" "$msg_id"; then
                     echo "[inbox_write] codex nudge retry ${attempt}/${retries} sent to ${target}" >&2
                     capture_codex_delivery_snapshot "$target" "$pane_target"
                 else
