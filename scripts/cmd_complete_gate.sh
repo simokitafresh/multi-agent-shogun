@@ -1,5 +1,45 @@
 #!/bin/bash
 
+# Freeze the complete execution source before parsing the gate body.  Pregate
+# convergence may atomically replace the canonical script after a source-only
+# publication; without this boundary Bash can continue reading later chunks
+# from a different generation and stop on an otherwise-valid mixed program.
+if [ -z "${CMD_COMPLETE_GATE_EXECUTION_SNAPSHOT:-}" ]; then
+    _cges_source="${BASH_SOURCE[0]}"
+    [[ "$_cges_source" != /* ]] && _cges_source="$PWD/$_cges_source"
+    _cges_tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/cmd-complete-gate.XXXXXXXX") || exit 1
+    _cges_snapshot="$_cges_tmpdir/cmd_complete_gate.sh"
+    if ! cp -- "$_cges_source" "$_cges_snapshot"; then
+        rmdir -- "$_cges_tmpdir" 2>/dev/null || true
+        exit 1
+    fi
+    CMD_COMPLETE_GATE_EXECUTION_SNAPSHOT="$_cges_snapshot" \
+    CMD_COMPLETE_GATE_CANONICAL_SOURCE="$_cges_source" \
+        bash "$_cges_snapshot" "$@"
+    _cges_rc=$?
+    rm -f -- "$_cges_snapshot"
+    rmdir -- "$_cges_tmpdir" 2>/dev/null || true
+    exit "$_cges_rc"
+fi
+
+# Bounded contract probe: prove that replacing the canonical source cannot
+# change bytes observed by the running snapshot.  Normal gate runs never set
+# these paths.
+if [ -n "${CMD_COMPLETE_GATE_SNAPSHOT_PROBE_READY:-}" ]; then
+    _cges_before=$(sha256sum "${BASH_SOURCE[0]}" | awk '{print $1}')
+    : > "$CMD_COMPLETE_GATE_SNAPSHOT_PROBE_READY"
+    _cges_wait=0
+    while [ ! -e "${CMD_COMPLETE_GATE_SNAPSHOT_PROBE_RELEASE:?}" ] && [ "$_cges_wait" -lt 100 ]; do
+        sleep 0.05
+        _cges_wait=$((_cges_wait + 1))
+    done
+    [ -e "$CMD_COMPLETE_GATE_SNAPSHOT_PROBE_RELEASE" ] || exit 75
+    _cges_after=$(sha256sum "${BASH_SOURCE[0]}" | awk '{print $1}')
+    [ "$_cges_before" = "$_cges_after" ] || exit 76
+    printf 'snapshot_immutable=1 canonical=%s\n' "$CMD_COMPLETE_GATE_CANONICAL_SOURCE"
+    exit 0
+fi
+
 # C6-02: Keep the result of the command's target checks distinct from the
 # repository-wide workflow result.  This small pure evaluator is also exposed
 # to fixtures so the fail-closed truth table cannot drift with gh output.
@@ -529,7 +569,7 @@ if [[ "$CMD_ID" != cmd_* ]]; then
     exit 1
 fi
 
-_cmd_complete_script="${BASH_SOURCE[0]}"
+_cmd_complete_script="${CMD_COMPLETE_GATE_CANONICAL_SOURCE:-${BASH_SOURCE[0]}}"
 [[ "$_cmd_complete_script" != /* ]] && _cmd_complete_script="$PWD/$_cmd_complete_script"
 _cmd_complete_dir="${_cmd_complete_script%/*}"
 SCRIPT_DIR="${_cmd_complete_dir%/scripts}"
