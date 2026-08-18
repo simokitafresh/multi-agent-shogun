@@ -115,6 +115,16 @@
 
 **完全解決の定義**: 上表4行が全て閉じ、設計書手順表①〜④が全て「完了」であること。本番pipelineは手③で確定済み(f519002b)であり、手④は本番不変(GS研究用のみ)。
 
+## AsIs **v1.8** — 2026-08-18 09:55+09:00（手③CLOSE確定・MISSINGの定義・push/deploy同期）
+
+| 項目 | 現物/実測 | 出典 |
+|---|---|---|
+| 手③ | **CLOSE(08:21)**: (a)修正版oracle vs run409 全8,570行=MATCHED 8,513／MISMATCH 0／MISSING 57(観測可能全件100%)、(b)run408↔409 md5一致、(c)標準PF変更0、(d)1.28倍。本番f519002b不変 | cmd_4354成果物 `docs/research/cmd_4354_fof_oracle_residual9_20260818.md`、DM 4a486bcb、PI-P09 157f00df |
+| MISSING 57の定義(殿下問09:09) | oracleは各PF×year_monthから翌月(decision_month)の期待選択を作り、本番run409の翌月signalsと突合する(`cmd_4350_fof_tiebreak_expected_diff_propagated.py:279-284` — production側にkeyが無ければ`parity="MISSING"`)。最新月末2026-07の行は本番が2026-08のリバランスを未実行のため突合相手が無く、選択blockを持つ57 FoF PF×1行=57。次のリバランス日を過ぎれば自動的にMATCHED/MISMATCHへ移る。不一致でもバグでもない | コード現物 |
+| 手④ | cmd_4353初回(影丸)=adapter+contract 3/3+本番pipeline無変更(f70475c8)・legacy108 vs production36=72差分。AC2/AC3は環境境界でFAIL(GS scripts腐敗)。将軍08:00下知(7本起動回復→parity oracle=run409 readonly snapshot→gs-bench-gate)で再配備、09:44再assign継続中 | 報告YAML kagemaru_report_cmd_4353 |
+| push/deploy | 殿09:16『push/deployも最新に。GitHubは復旧』→将軍実測: infra main=origin/mainより142先行・31 behind。00:45凍結裁定解除、家老へ同期(push・CI GREEN・Render deploy live・数値報告)を下知。結果待ち | inbox msg_20260818_091445 |
+| cron | `dm-signal-sync-fof` 10:40 JST初回通過→変更0確認は家老checkpoint | — |
+
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
 ### 方針: 出力を凍結するのではなく、関数を決定的にする
@@ -245,6 +255,7 @@
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
+- AsIs v1.8(08-18 09:55)=手③CLOSE確定表記・MISSING 57の定義(殿下問)・push/deploy同期下知・手④再配備継続。
 - AsIs v1.7(08-18 09:05)=残9→MISMATCH 0(cmd_4354)で(a)100%・手③CLOSE。手④はGS環境腐敗が露呈しcmd_4353再配備中。
 - AsIs v1.6(08-18 07:15)=GitHub回復・手④cmd_4353委任・完全解決の残件表(手④/残9 oracle/cron10:40/gist)。本番不変。
 - AsIs v0.9はcmd_4330で機構が確定したらv1.0へ。ToBe v0.1はε・比較キー・CAGR定義が決まったらv0.2へ。
