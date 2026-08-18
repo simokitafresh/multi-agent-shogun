@@ -83,7 +83,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:24ba56acb9c6f56e"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次再検証で参照先欠落0、例示パス欠落0、副作用マーカー欠落0、SKILL本文更新日もscript以上を確認。初回rc2は新規staleではなく契約hashのdeduped stale39件だった。SKILL_REF_RECORD_VERIFIED=1で39件を検証記録へ反映し再実行rc0 PASS、追加修正とdecision_candidateは不要。"
+  action_artifact: "queue/insights.yaml:INS-20260818-064236547-80d3;logs/skill_script_refs_verified.json;gate_record_and_postcheck_rc0_scan41skills82refs"
+  resolved_at: "2026-08-18T17:16:14+09:00"
 - id: INS-20260818-064704290-8adf
   ts: "2026-08-18T06:47:04+09:00"
   insight: "[[4350は何をやるんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=4350は何をやるんだ？"
