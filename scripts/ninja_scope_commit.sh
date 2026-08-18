@@ -279,8 +279,94 @@ PY
     fi
 fi
 
+assert_task_shared_dirty_snapshot_unchanged() {
+    local task_file="$1" task_worktree="$2" shared_git_dir shared_repo expected_fp source_head current_fp current_head
+    local -a snapshot_paths=() dirty_paths=()
+    local enabled
+    enabled="$(python3 - "$task_file" <<'PY'
+import sys, yaml
+task=(yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print("true" if task.get("task_worktree_shared_dirty_snapshot_enabled") is True else "false")
+PY
+)"
+    [ "$enabled" = true ] || return 0
+    shared_git_dir="$(git -C "$task_worktree" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+    [ -n "$shared_git_dir" ] || { echo "BLOCK: cannot resolve task worktree common Git dir for dirty snapshot" >&2; return 2; }
+    shared_repo="$(dirname "$shared_git_dir")"
+    IFS=$'\t' read -r source_head expected_fp < <(python3 - "$task_file" <<'PY'
+import sys, yaml
+task=(yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print(f"{task.get('task_worktree_shared_dirty_snapshot_source_head') or ''}\t{task.get('task_worktree_shared_dirty_snapshot_fingerprint') or ''}")
+PY
+)
+    [[ "$source_head" =~ ^[0-9a-f]{40}$ ]] || { echo "BLOCK: dirty snapshot source head missing or invalid" >&2; return 2; }
+    [[ "$expected_fp" =~ ^[0-9a-f]{64}$ ]] || { echo "BLOCK: dirty snapshot fingerprint missing or invalid" >&2; return 2; }
+    current_head="$(git -C "$shared_repo" rev-parse HEAD 2>/dev/null || true)"
+    [ "$current_head" = "$source_head" ] || { echo "BLOCK: shared dirty snapshot source HEAD changed" >&2; return 2; }
+    mapfile -t snapshot_paths < <(python3 - "$task_file" <<'PY'
+import sys, yaml
+task=(yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+value=task.get("task_worktree_shared_dirty_snapshot_paths") or []
+if isinstance(value, str):
+    try: value=yaml.safe_load(value)
+    except yaml.YAMLError: value=[value]
+if not isinstance(value, list): value=[value]
+for item in value:
+    item=str(item).strip().lstrip("./")
+    if item: print(item)
+PY
+)
+    for path in "${snapshot_paths[@]}"; do
+        git -C "$shared_repo" ls-files --error-unmatch -- "$path" >/dev/null 2>&1 \
+            || { echo "BLOCK: dirty snapshot path is no longer tracked: $path" >&2; return 2; }
+        if git -C "$shared_repo" ls-files --others --exclude-standard -- "$path" | grep -q .; then
+            echo "BLOCK: dirty snapshot path became untracked: $path" >&2
+            return 2
+        fi
+    done
+    mapfile -t dirty_paths < <(git -C "$shared_repo" diff --name-only HEAD --)
+    if ! python3 - "${snapshot_paths[*]}" "${dirty_paths[*]}" <<'PY'
+import sys
+expected=sorted(set(filter(None, sys.argv[1].split()))); actual=sorted(set(filter(None, sys.argv[2].split())))
+raise SystemExit(0 if expected == actual else 1)
+PY
+    then
+        echo "BLOCK: shared dirty snapshot path set changed" >&2
+        return 2
+    fi
+    if ((${#snapshot_paths[@]} > 0)); then
+        current_fp="$(git -C "$shared_repo" diff --binary HEAD -- "${snapshot_paths[@]}" | sha256sum | awk '{print $1}')"
+    else
+        current_fp="$(printf '' | sha256sum | awk '{print $1}')"
+    fi
+    [ "$current_fp" = "$expected_fp" ] || { echo "BLOCK: shared dirty snapshot fingerprint changed" >&2; return 2; }
+}
+
 assert_task_shared_source_clean() {
-    local task_file="$1" task_worktree="$2" shared_git_dir shared_repo dirty path
+    local task_file="$1" task_worktree="$2" shared_git_dir shared_repo dirty path snapshot_enabled
+    local -a snapshot_paths=()
+    assert_task_shared_dirty_snapshot_unchanged "$task_file" "$task_worktree" || return $?
+    snapshot_enabled="$(python3 - "$task_file" <<'PY'
+import sys, yaml
+task=(yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print("true" if task.get("task_worktree_shared_dirty_snapshot_enabled") is True else "false")
+PY
+)"
+    if [ "$snapshot_enabled" = true ]; then
+        mapfile -t snapshot_paths < <(python3 - "$task_file" <<'PY'
+import sys, yaml
+task=(yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+value=task.get("task_worktree_shared_dirty_snapshot_paths") or []
+if isinstance(value, str):
+    try: value=yaml.safe_load(value)
+    except yaml.YAMLError: value=[value]
+if not isinstance(value, list): value=[value]
+for item in value:
+    item=str(item).strip().lstrip("./")
+    if item: print(item)
+PY
+)
+    fi
     [ -n "$task_worktree" ] || return 0
     shared_git_dir="$(git -C "$task_worktree" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
     [ -n "$shared_git_dir" ] || { echo "BLOCK: cannot resolve task worktree common Git dir" >&2; return 2; }
@@ -288,6 +374,9 @@ assert_task_shared_source_clean() {
     [ "$shared_repo" != "$task_worktree" ] || return 0
     while IFS= read -r path; do
         [ -n "$path" ] || continue
+        if [ "$snapshot_enabled" = true ] && printf '%s\n' "${snapshot_paths[@]}" | grep -Fqx -- "$path"; then
+            continue
+        fi
         dirty="$(git -C "$shared_repo" status --porcelain --untracked-files=all -- "$path" 2>/dev/null || true)"
         if [ -n "$dirty" ]; then
             echo "BLOCK: shared source path was edited outside task worktree: $path" >&2

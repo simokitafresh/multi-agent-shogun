@@ -24,6 +24,181 @@ setup_fixture_repo() {
     git -C "$FIXTURE/shared" push -q -u origin main
 }
 
+@test "shared tracked dirty is not projected without explicit snapshot opt-in" {
+    setup_fixture_repo
+    printf 'BASE=1\nDIRTY_A=1\nDIRTY_B=1\nDIRTY_C=1\n' > "$FIXTURE/shared/src/app.py"
+    printf 'semantic baseline\nDIRTY_A=1\nDIRTY_B=1\nDIRTY_C=1\n' > "$FIXTURE/shared/context/semantic-map.md"
+    task="$BATS_TEST_TMPDIR/task-no-snapshot.yaml"
+    printf 'task:\n  task_id: task_no_snapshot\n  parent_cmd: cmd_no_snapshot\n  project: infra\n  target_path: src/app.py\n  status: assigned\n' > "$task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        files=$(git -C "$FIXTURE" diff --name-only HEAD | awk "NF{n++} END{print n+0}")
+        lines=$(git -C "$FIXTURE" diff --numstat | awk "{a+=\$1; d+=\$2} END{print a+d+0}")
+        [ "$files" -eq 2 ] && [ "$lines" -eq 6 ]
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        projected=$(git -C "$wt" diff --numstat | awk "NF{n++} END{print n+0}")
+        [ "$projected" -eq 0 ]
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+        echo "expected_dirty=2/6 projected=0/0 opt_in=0"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"expected_dirty=2/6 projected=0/0 opt_in=0"* ]]
+}
+
+@test "explicit shared dirty snapshot transfers and records identity" {
+    setup_fixture_repo
+    printf 'BASE=1\nDIRTY_A=1\nDIRTY_B=1\nDIRTY_C=1\n' > "$FIXTURE/shared/src/app.py"
+    printf 'semantic baseline\nDIRTY_A=1\nDIRTY_B=1\nDIRTY_C=1\n' > "$FIXTURE/shared/context/semantic-map.md"
+    task="$BATS_TEST_TMPDIR/task-snapshot.yaml"
+    cat > "$task" <<'YAML'
+task:
+  task_id: task_snapshot
+  parent_cmd: cmd_snapshot
+  project: infra
+  target_path:
+    - src/app.py
+    - context/semantic-map.md
+  shared_dirty_snapshot:
+    enabled: true
+    paths:
+      - src/app.py
+      - context/semantic-map.md
+  status: assigned
+YAML
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        [ "$(cat "$wt/src/app.py")" = "$(cat "$FIXTURE/src/app.py")" ]
+        [ "$(cat "$wt/context/semantic-map.md")" = "$(cat "$FIXTURE/context/semantic-map.md")" ]
+        enabled=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_shared_dirty_snapshot_enabled)
+        fp=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_shared_dirty_snapshot_fingerprint)
+        paths=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_shared_dirty_snapshot_paths)
+        [ "$enabled" = true ] && [[ "$fp" =~ ^[0-9a-f]{64}$ ]]
+        [[ "$paths" == *"src/app.py"* ]] && [[ "$paths" == *"context/semantic-map.md"* ]]
+        env NINJA_SCOPE_TASK_FILE="$TASK" bash "$PROJECT_ROOT/scripts/ninja_scope_commit.sh" -m publish -- "$wt/src/app.py" "$wt/context/semantic-map.md" >/dev/null
+        [ -z "$(git -C "$wt" status --porcelain)" ]
+        [ -n "$(git -C "$FIXTURE" status --porcelain -- src/app.py context/semantic-map.md)" ]
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+        echo "opt_in=1 transfer=2/6 fingerprint=1 commit=1 shared_preserved=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"opt_in=1 transfer=2/6 fingerprint=1 commit=1 shared_preserved=1"* ]]
+}
+
+@test "shared dirty snapshot blocks untracked and out-of-scope paths" {
+    setup_fixture_repo
+    printf 'UNTRACKED=1\n' > "$FIXTURE/shared/src/untracked.py"
+    task="$BATS_TEST_TMPDIR/task-untracked.yaml"
+    cat > "$task" <<'YAML'
+task:
+  task_id: task_untracked
+  parent_cmd: cmd_untracked
+  project: infra
+  target_path: src/untracked.py
+  shared_dirty_snapshot:
+    enabled: true
+    paths: [src/untracked.py]
+  status: assigned
+YAML
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"; SCRIPT_DIR="$FIXTURE"; LOG=/dev/null
+        if deploy_task_prepare_remote_tip_worktree "$TASK" saizo; then exit 9; fi
+        echo "untracked_block=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"untracked_block=1"* ]]
+
+    printf 'BASE=1\nDIRTY_A=1\n' > "$FIXTURE/shared/src/app.py"
+    printf 'semantic baseline\nDIRTY_A=1\n' > "$FIXTURE/shared/context/semantic-map.md"
+    task="$BATS_TEST_TMPDIR/task-scope.yaml"
+    cat > "$task" <<'YAML'
+task:
+  task_id: task_scope
+  parent_cmd: cmd_scope
+  project: infra
+  target_path: src/app.py
+  shared_dirty_snapshot:
+    enabled: true
+    paths: [src/app.py]
+  status: assigned
+YAML
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"; SCRIPT_DIR="$FIXTURE"; LOG=/dev/null
+        if deploy_task_prepare_remote_tip_worktree "$TASK" saizo; then exit 9; fi
+        echo "scope_block=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"scope_block=1"* ]]
+}
+
+@test "shared dirty snapshot blocks fingerprint drift and patch conflicts" {
+    setup_fixture_repo
+    printf 'BASE=1\nDIRTY=1\n' > "$FIXTURE/shared/src/app.py"
+    task="$BATS_TEST_TMPDIR/task-drift.yaml"
+    cat > "$task" <<'YAML'
+task:
+  task_id: task_drift
+  parent_cmd: cmd_drift
+  project: infra
+  target_path: src/app.py
+  shared_dirty_snapshot:
+    enabled: true
+    paths: [src/app.py]
+  status: assigned
+YAML
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"; SCRIPT_DIR="$FIXTURE"; LOG=/dev/null
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        printf 'BASE=1\nDIRTY=1\nDRIFT=1\n' > "$FIXTURE/src/app.py"
+        rc=0; env NINJA_SCOPE_TASK_FILE="$TASK" bash "$PROJECT_ROOT/scripts/ninja_scope_commit.sh" -m drift -- "$wt/src/app.py" >/dev/null 2>&1 || rc=$?
+        [ "$rc" -ne 0 ]
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+        echo "fingerprint_block=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fingerprint_block=1"* ]]
+
+    git -C "$FIXTURE/shared" add src/app.py
+    git -C "$FIXTURE/shared" commit -q -m local-only
+    printf 'LOCAL=1\nDIRTY=1\n' > "$FIXTURE/shared/src/app.py"
+    task="$BATS_TEST_TMPDIR/task-conflict.yaml"
+    cat > "$task" <<'YAML'
+task:
+  task_id: task_conflict
+  parent_cmd: cmd_conflict
+  project: infra
+  target_path: src/app.py
+  shared_dirty_snapshot:
+    enabled: true
+    paths: [src/app.py]
+  status: assigned
+YAML
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"; SCRIPT_DIR="$FIXTURE"; LOG=/dev/null
+        if deploy_task_prepare_remote_tip_worktree "$TASK" saizo; then exit 9; fi
+        echo "apply_conflict_block=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"apply_conflict_block=1"* ]]
+}
+
 @test "remote-tip deploy exposes absolute edit target and rejects shared source" {
     setup_fixture_repo
     task="$BATS_TEST_TMPDIR/task.yaml"

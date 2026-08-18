@@ -11523,6 +11523,108 @@ record_deployed_at() {
 # Source-changing tasks are edited and committed from a linked worktree rooted
 # at the live remote tip. The shared checkout remains available for queue and
 # runtime state, while this marker gives GATE/archive one cleanup identity.
+deploy_task_prepare_shared_dirty_snapshot() {
+    local task_file="$1" repo="$2"
+    local spec_line path_line enabled dirty_path patch_file
+    local -a declared_paths=() dirty_paths=() snapshot_paths=()
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_ENABLED=0
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATHS_JSON='[]'
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_FINGERPRINT=''
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_SOURCE_HEAD=''
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATCH=''
+
+    mapfile -t _snapshot_spec_lines < <(python3 - "$task_file" <<'PY'
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+spec = task.get("shared_dirty_snapshot")
+if spec is None:
+    spec = task.get("task_worktree_shared_dirty_snapshot")
+if isinstance(spec, str):
+    try:
+        spec = yaml.safe_load(spec)
+    except yaml.YAMLError:
+        spec = None
+if not isinstance(spec, dict):
+    spec = {}
+enabled = spec.get("enabled") is True
+if not enabled:
+    enabled = task.get("task_worktree_shared_dirty_snapshot_enabled") is True
+paths = spec.get("paths") or task.get("task_worktree_shared_dirty_snapshot_paths") or []
+if isinstance(paths, str):
+    try:
+        paths = yaml.safe_load(paths)
+    except yaml.YAMLError:
+        paths = [paths]
+if not isinstance(paths, list):
+    paths = [paths]
+print("enabled=" + ("true" if enabled else "false"))
+for path in paths:
+    value = str(path).strip().lstrip("./")
+    if value:
+        print("path=" + value)
+PY
+)
+    for spec_line in "${_snapshot_spec_lines[@]}"; do
+        case "$spec_line" in
+            enabled=true) enabled=true ;;
+            path=*) declared_paths+=("${spec_line#path=}") ;;
+        esac
+    done
+    unset _snapshot_spec_lines
+    [ "${enabled:-false}" = true ] || return 0
+    ((${#declared_paths[@]} > 0)) || {
+        log "BLOCK: shared dirty snapshot opt-in requires non-empty paths"
+        return 1
+    }
+    for path in "${declared_paths[@]}"; do
+        [[ "$path" != /* && "$path" != ../* && "$path" != */../* && "$path" != .. ]] || {
+            log "BLOCK: shared dirty snapshot path escapes repository: $path"
+            return 1
+        }
+        git -C "$repo" ls-files --error-unmatch -- "$path" >/dev/null 2>&1 || {
+            log "BLOCK: shared dirty snapshot path is not tracked: $path"
+            return 1
+        }
+        if git -C "$repo" ls-files --others --exclude-standard -- "$path" | grep -q .; then
+            log "BLOCK: shared dirty snapshot includes untracked path: $path"
+            return 1
+        fi
+    done
+    mapfile -t dirty_paths < <(git -C "$repo" diff --name-only HEAD --)
+    declare -A allowed=()
+    for path in "${declared_paths[@]}"; do allowed["$path"]=1; done
+    for dirty_path in "${dirty_paths[@]}"; do
+        [ -n "$dirty_path" ] || continue
+        if [ -z "${allowed[$dirty_path]+x}" ]; then
+            log "BLOCK: shared dirty snapshot scope excludes dirty path: $dirty_path"
+            return 1
+        fi
+    done
+    for path in "${declared_paths[@]}"; do
+        for dirty_path in "${dirty_paths[@]}"; do
+            [ "$path" = "$dirty_path" ] && snapshot_paths+=("$path")
+        done
+    done
+    patch_file="$(mktemp "${TMPDIR:-/tmp}/deploy-task-shared-dirty.XXXXXX.patch")" || {
+        log "BLOCK: shared dirty snapshot patch allocation failed"
+        return 1
+    }
+    if ((${#snapshot_paths[@]} > 0)); then
+        git -C "$repo" diff --binary HEAD -- "${snapshot_paths[@]}" >"$patch_file" || {
+            rm -f -- "$patch_file"
+            log "BLOCK: shared dirty snapshot diff capture failed"
+            return 1
+        }
+    else
+        : >"$patch_file"
+    fi
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_ENABLED=1
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATHS_JSON="$(printf '%s\n' "${snapshot_paths[@]}" | python3 -c 'import json,sys; print(json.dumps([x.rstrip("\n") for x in sys.stdin if x.rstrip("\n")], ensure_ascii=False))')"
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_FINGERPRINT="$(sha256sum "$patch_file" | awk '{print $1}')"
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_SOURCE_HEAD="$(git -C "$repo" rev-parse HEAD)"
+    DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATCH="$patch_file"
+}
+
 deploy_task_rollback_remote_tip_worktree() {
     local repo="$1" worktree="$2" marker="$3"
     if [ -n "$repo" ] && [ -n "$worktree" ] && [ -d "$worktree" ]; then
@@ -11566,6 +11668,7 @@ deploy_task_prepare_remote_tip_worktree() {
     [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || { log "BLOCK: remote-tip worktree remote tip unavailable"; return 1; }
     git -C "$repo" fetch -q --no-write-fetch-head "$remote" "$push_ref" || { log "BLOCK: remote-tip fetch failed"; return 1; }
     git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || { log "BLOCK: remote-tip object unavailable"; return 1; }
+    deploy_task_prepare_shared_dirty_snapshot "$task_file" "$repo" || return $?
 
     worktree_root="${DEPLOY_TASK_WORKTREE_ROOT:-/tmp/shogun-task-worktrees}"
     mkdir -p "$worktree_root"
@@ -11579,6 +11682,16 @@ deploy_task_prepare_remote_tip_worktree() {
         log "BLOCK: task worktree checkout/config failed"
         return 1
     fi
+    if [ "${DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_ENABLED:-0}" = 1 ] \
+        && [ -s "${DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATCH:-}" ]; then
+        if ! git -C "$worktree_path" apply --binary --whitespace=nowarn "$DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATCH"; then
+            deploy_task_rollback_remote_tip_worktree "$repo" "$worktree_path" ""
+            rm -f -- "$DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATCH"
+            log "BLOCK: shared dirty snapshot apply failed"
+            return 1
+        fi
+    fi
+    [ -n "${DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATCH:-}" ] && rm -f -- "$DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATCH"
 
     marker="$SCRIPT_DIR/queue/gates/$parent_cmd/task_worktree.json"; mkdir -p "${marker%/*}"
     marker_tmp="${marker}.tmp.${BASHPID}"
@@ -11643,6 +11756,15 @@ PY
         "task_worktree_edit_wrapper=$task_worktree_edit_wrapper"
         "task_worktree_source_paths=$task_worktree_source_paths"
     )
+    if [ "${DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_ENABLED:-0}" = 1 ]; then
+        task_worktree_args+=(
+            "task_worktree_shared_dirty_snapshot_enabled=true"
+            "task_worktree_shared_dirty_snapshot_paths=$DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_PATHS_JSON"
+            "task_worktree_shared_dirty_snapshot_fingerprint=$DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_FINGERPRINT"
+            "task_worktree_shared_dirty_snapshot_source_head=$DEPLOY_TASK_SHARED_DIRTY_SNAPSHOT_SOURCE_HEAD"
+            "task_worktree_shared_dirty_snapshot_repo=$repo"
+        )
+    fi
     if [ -n "$task_worktree_target_path_visible" ] && [[ "$task_worktree_target_path_visible" != "["* ]]; then
         task_worktree_args+=("target_path=$task_worktree_target_path_visible")
     fi
