@@ -253,6 +253,29 @@ PY
   snapshot_dir=$(head -n 1 "$snapshot_pointer")
   [ -d "$snapshot_dir" ] || { echo "BLOCK: RC snapshot directory missing: $snapshot_dir" >&2; exit 1; }
 
+  # A worker may publish a newer completed report generation before Karo
+  # revokes the earlier RC.  The pre-RC snapshot is authoritative only for
+  # the report generation that created it; restoring it over a newer report
+  # would silently roll back valid work and can trip the immutable terminal
+  # gate.  Older snapshots predate this sidecar, so retain their historical
+  # restore behavior until a new RC records the generation boundary.
+  snapshot_fingerprint=$(cat "$snapshot_dir/report_fingerprint" 2>/dev/null || true)
+  if [ -n "$snapshot_fingerprint" ] && [ "$snapshot_fingerprint" != "$fingerprint" ]; then
+    archive_dir="$ROOT/queue/archive/rc_erroneous/${cmd_id}_$(date +%Y%m%d%H%M%S)_${worker_id}"
+    mkdir -p "$archive_dir"
+    [ -f "$dir/karo.yaml" ] && mv -f "$dir/karo.yaml" "$archive_dir/karo.yaml"
+    for rc_marker in last_rc_scope last_rc_commit last_rc_report_payload karo_rework.seen; do
+      marker_path="$dir/$rc_marker"
+      [ -f "$marker_path" ] && mv -f "$marker_path" "$archive_dir/$rc_marker"
+    done
+    printf 'reason: %s\ncmd_id: %s\nreport: %s\nworker_id: %s\nrevoked_at: %s\n' \
+      "$revoke_reason" "$cmd_id" "$report_rel" "$worker_id" "$(date -Iseconds)" > "$archive_dir/reason.yaml"
+    mv -f "$snapshot_dir" "$archive_dir/pre_rc_snapshot"
+    rm -f "$snapshot_pointer"
+    echo "review approval revoked without restoring newer report generation: $cmd_id $role $result report=$report_rel archive=${archive_dir#"$ROOT"/}"
+    exit 0
+  fi
+
   pre_report_status=$(cat "$snapshot_dir/report_status" 2>/dev/null || true)
   [ -n "$pre_report_status" ] || { echo "BLOCK: RC snapshot missing report_status: $snapshot_dir" >&2; exit 1; }
   bash "$ROOT/scripts/report_field_set.sh" "$report" status "$pre_report_status"
@@ -447,6 +470,8 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   snapshot_dir="$dir/.pre_rc_snapshot.$(date +%Y%m%d%H%M%S)_$$"
   mkdir -p "$snapshot_dir"
   printf '%s\n' "$report_status" > "$snapshot_dir/report_status"
+  printf '%s\n' "$fingerprint" > "$snapshot_dir/report_fingerprint"
+  printf '%s\n' "$canonical_generation" > "$snapshot_dir/report_generation"
   : > "$snapshot_dir/task_fields"
   for field in deployed_at retry_deployed_at status reviewed review_result acknowledged_at completed_at done_at; do
     field_value=$(python3 - "$task_file" "$field" <<'PY'
