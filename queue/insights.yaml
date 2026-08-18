@@ -39,8 +39,8 @@ insights:
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 2
-  last_seen: "2026-08-18T10:43:21+09:00"
+  occurrence_count: 3
+  last_seen: "2026-08-18T10:57:45+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -73,7 +73,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608180618_hayate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報の保存分析(logs/wave-final-checkpoints/4717f7d1274bcb69206548bb701c570f351367a5/tree/docs/research/gunshi_idle_wa_data_quality_20260425.md)でclean+workaround=true 9件(112件中約8%、2026-04-17に7件集中)と根因を確認。現行scripts/karo_workaround_log.sh:681とtests/unit/test_karo_workaround_validation.bats:328-350がcategory=cleanを--clean専用として通常/--wa書込み前BLOCKし、現行logs/karo_workarounds.yamlの同矛盾は0件。追加実修正・decision_candidateは不要。"
+  action_artifact: "historical_primary=logs/wave-final-checkpoints/4717f7d1274bcb69206548bb701c570f351367a5/tree/docs/research/gunshi_idle_wa_data_quality_20260425.md;defense=scripts/karo_workaround_log.sh:681;contract_test=tests/unit/test_karo_workaround_validation.bats:328-350;current_count=logs/karo_workarounds.yaml clean+workaround=true 0/100;test=bats tests/unit/test_karo_workaround_validation.bats PASS 51/51 SKIP0"
+  resolved_at: "2026-08-18T10:57:29+09:00"
 - id: INS-20260818-064236547-80d3
   ts: "2026-08-18T06:42:36+09:00"
   insight: "SKILL.md追従task[24ba56acb9c6f56e]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/dashboard_update.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/dream/SKILL.md <- scripts/semantic_search.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/gist-share/SKILL.md <- scripts/gist_share.sh; skills/hot-script-design/SKILL.md <- scripts/gist_share.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/idle-persist/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-clear-prep/SKILL.md <- scripts/clear_prep_check.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_search.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
