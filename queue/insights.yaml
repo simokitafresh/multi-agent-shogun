@@ -153,7 +153,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "実修正と契約テストを一次確認。SG-PRE20はOK接頭辞成功出力を受理し偽陽性を解消済み"
+  action_artifact: "commit=d292aa58fe1db79170c6ff001fd53621e023d64f; test=tests/unit/test_gate_gunshi_report_precheck.bats"
+  resolved_at: "2026-08-18T17:32:04+09:00"
 - id: INS-20260818-064910289-0d23
   ts: "2026-08-18T06:49:10+09:00"
   insight: "autopush_source_only_failed根治3段(本セッション): (1)ID merge=insights.yamlのtop-level ID単位三者統合(CLEAR) (2)累積等価性=remote blobがsource履歴に完全一致しなくても累積保持を機械証明(CLEAR) (3)空mapping=空list/mappingからの初回追加でParserError(CLEAR)。3段とも家老が一次偵察→cmd配備→忍者実装→軍師LGTM→CLEARのサイクルを深夜3h内で完走。autopush系の今後の監視: cmd_4345(gate retry)とcmd_4347(GATE-STALL検知)が補完"
@@ -870,3 +873,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-18T17:22:35+09:00"
+- id: INS-20260818-173039695-caeb
+  ts: "2026-08-18T17:30:39+09:00"
+  insight: "semantic_index_update新概念候補: discussion:実際のページを作るときに必要になる情報は設計書のほうに会話とともに随時記載しているか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
