@@ -130,7 +130,17 @@
 | 項目 | 現物/実測 | 出典 |
 |---|---|---|
 | 手④ | **GATE CLEAR 11:02(cmd_4353・影丸)**: GS研究用7本(`run_077_*.py`: bunshin/kasoku_diff/kasoku_ratio/kawarimi/nukimi/oikaze/weighted_yotsume)+l1plusのFoF子PF選択を本番`select_top_n_deterministic`と同一の共通adapterへ統一。parity: legacy cutoff 72セル差(赤)→run409 readonly oracle contract 4/4 PASS(緑)。起動回復7/7。gs-bench-gate before/after 全PASS(serial delta -15〜-61%)。本番`selection.py`/pipeline blocksのgit diff=0(3 commit f70475c8/e9cf51a1/c627f887で確認)。成果物 `docs/research/cmd_4353_gs_fof_selection_parity_20260818.md` | 報告YAML kagemaru_report_cmd_4353 |
-| 完全解決の判定 | 手①②③④=全完了。(a)MISMATCH 0／(b)(c)(d)PASS。残=cron `dm-signal-sync-fof` 10:40 JST初回通過の変更0確認(家老checkpoint)と、push/deploy同期報告(家老) | — |
+| 完全解決の判定 | 手①②③④=全完了。(a)MISMATCH 0／(b)(c)(d)PASS。**cron 10:40 JST=合格(v1.10: signal_change 0・signals/weights md5一致)**。殿裁定13:02「本質は保有シグナルがぶれなくなること。価格が遡及して変わる以上、細かな日々のリターンは変動する(受容)」。残=cmd_4354 GATE CLEAR(autopush契約BLOCK)とdiverged main reconcile→push→deploy(家老) | 掲示板blt_20260818_130345 |
+
+## AsIs **v1.10** — 2026-08-18 13:04+09:00（10:40 cron決定性判定・価格取込ノイズ境界）
+
+| 項目 | 現物/実測 | 出典 |
+|---|---|---|
+| cron完走 | `dm-signal-sync-fof` は01:40:10Z開始→01:40:50Z成功、`signal_change_log=0` | Render cronログ／本番DB readonly query |
+| 選択決定性 | run409最終日以前の`signals` 333,025行 md5=`61192e834863967a4596364567925568`、`fof_component_weights` 22,937行 md5=`2e0c2a9cc4459d0f1a122ff9b1148a31`でrun409と完全一致。08-17のsignal 98行追加は日次取込。∴ 選択非決定性の再発0 | 掲示板 `blt_20260818_125806_f9bbc6` |
+| 価格ノイズ境界 | `monthly_returns.cumulative_return`のrun409最終月以前15,873行は相対差max=`5.1426227865e-6`、p50=`5.2873552018e-7`、p95=`2.4736077119e-6`。標準PF max=`2.9009028080e-6`、FoF max=`5.1426227865e-6`で同オーダー。sync-prices全履歴upsertの価格ノイズ累積と整合し、殿裁定12:51どおり価格取込側は変更しない。2026-08のmax=`0.025138333014`は08-17追加による当月MTDの正常変化 | 掲示板 `blt_20260818_125953_b70214`／cmd_4329 |
+| cron後の完全同値基準 | **`signals` md5一致 + `fof_component_weights` md5一致 + `signal_change_log=0`**。`monthly_returns`／`portfolio_metrics`はsync-prices由来で相対`1e-5`未満の揺れが日々あり得るため、全表raw md5一致を選択決定性の合否には使わない | 将軍判定 2026-08-18 13:00 |
+| checkpoint証跡 | metricsはhashだけを保存してはならない。次回full以降は行snapshotを保存し、key単位の相対差max/p50/p95を同時記録する | 将軍指示 2026-08-18 13:00 |
 
 ## ToBe **v0.3** — 2026-08-17 13:05+09:00（殿チャット12:51-12:59で確定した6段キー。実装は殿合図まで）
 
@@ -262,6 +272,7 @@
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
+- AsIs v1.9注記(08-18 13:10)=cron合格を反映し完全解決判定を更新。v1.10(家老)にcron判定・価格ノイズ境界・完全同値基準・checkpoint証跡。
 - AsIs v1.9(08-18 11:05)=手④GATE CLEAR(cmd_4353)で手順表①〜④全完了。残=cron10:40確認とpush/deploy報告。
 - AsIs v1.8(08-18 09:55)=手③CLOSE確定表記・MISSING 57の定義(殿下問)・push/deploy同期下知・手④再配備継続。
 - AsIs v1.7(08-18 09:05)=残9→MISMATCH 0(cmd_4354)で(a)100%・手③CLOSE。手④はGS環境腐敗が露呈しcmd_4353再配備中。
