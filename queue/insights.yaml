@@ -115,7 +115,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4353"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存の恒久対策で解決済み。bulletin_write.shはGP-210で同一投稿者・同一本文をflock内で原子的dedupし、cmd_complete_gate.shはGATE CLEAR通知を受信者別claim/flagでexactly-once化済み。候補の『dedup未実装』は現行一次情報と不一致で、新規修正不要。"
+  action_artifact: "scripts/bulletin_write.sh:460-509; scripts/cmd_complete_gate.sh:2349-2495; HEAD上のdedup/claim識別子件数 bulletin=4, gate_clear=8"
+  resolved_at: "2026-08-18T23:17:30+09:00"
 - id: INS-20260818-110328466-d852
   ts: "2026-08-18T11:03:28+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_artifact58f94a75完全解決_20260818_0701]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=23.1) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0852; score=21.0) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.6)。概念定義とaliases追加を検討せよ"
