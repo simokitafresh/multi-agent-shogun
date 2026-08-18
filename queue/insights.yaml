@@ -163,7 +163,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "3段すべて実修正・永続契約テストを一次確認。ID merge=490334155、累積等価性=36947643d、mapping-root=ec94df6b2、空mapping=dd62b0d50。補完監視cmd_4345=f3535044c、cmd_4347=ab7677599を確認"
+  action_artifact: "commits=4903341552bf2ba58ec3acd3ee71839ce4186023,36947643ddf76b9151a80536230bd6c1c0055bf9,ec94df6b26820a772fafb4d34e5ada62281b4efe,dd62b0d50a55868092d5e325968558fd7e1420c4; tests=tests/unit/test_cmd_complete_gate.bats; monitors=f3535044c3ff2866ca734b09f0fd1644c9bb87df,ab767759983c19a80568e33411917a73113adb4a"
+  resolved_at: "2026-08-18T17:54:40+09:00"
 - id: INS-20260818-065338791-cbe0
   ts: "2026-08-18T06:53:38+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_今クリアされても強くてニューゲーム_20260818_0647]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=今クリアされても強くてニューゲーム; score=50.0) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_強くてニューゲーム_20260730_1355; score=23.6) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.3)。概念定義とaliases追加を検討せよ"
