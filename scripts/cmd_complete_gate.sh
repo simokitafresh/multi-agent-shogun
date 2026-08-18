@@ -7426,11 +7426,22 @@ declare -A _CMD_TASK_MAP
 MATCHING_TASK_FILES=()
 RAW_MATCHING_TASK_FILES=()
 mapfile -t RAW_MATCHING_TASK_FILES < <(list_task_files_for_cmd "$TASKS_DIR" "$CMD_ID" | sort -u || true)
+ARCHIVED_TASKS_DIR="${CMD_COMPLETE_GATE_ARCHIVED_TASKS_DIR:-$SCRIPT_DIR/queue/archive/tasks}"
+_ARCHIVED_MATCHING_TASK_FILES=()
+if [ -d "$ARCHIVED_TASKS_DIR" ]; then
+    mapfile -t _ARCHIVED_MATCHING_TASK_FILES < <(list_task_files_for_cmd "$ARCHIVED_TASKS_DIR" "$CMD_ID" | sort -r || true)
+    RAW_MATCHING_TASK_FILES+=("${_ARCHIVED_MATCHING_TASK_FILES[@]}")
+fi
 while IFS= read -r _cache_tf; do
     [ -f "$_cache_tf" ] || continue
     _CMD_TASK_MAP["$_cache_tf"]=1
     MATCHING_TASK_FILES+=("$_cache_tf")
 done < <(list_current_task_files_for_cmd "$TASKS_DIR" "$CMD_ID" || true)
+for _cache_tf in "${_ARCHIVED_MATCHING_TASK_FILES[@]}"; do
+    [ -f "$_cache_tf" ] || continue
+    _CMD_TASK_MAP["$_cache_tf"]=1
+    MATCHING_TASK_FILES+=("$_cache_tf")
+done
 if cmd_status_is_canceled "$CMD_ID"; then
     MATCHING_TASK_FILES=()
     _CMD_TASK_MAP=()
