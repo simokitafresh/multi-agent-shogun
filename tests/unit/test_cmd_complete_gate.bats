@@ -56,6 +56,58 @@ EOF
     export CMD_GATE_MASTER_TMPDIR="$TEST_TMPDIR"
 }
 
+# test_necessity: source-only publication must immediately converge the live
+# execution source while preserving local-only history and dirty source bytes.
+# regression_justification: AC1 measured remote-only=14, shared-only=46 and a
+# one-generation stale shared gate script.
+@test "pregate shared convergence is ordered and fail-closed" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+push=text.index('if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then')
+converge=text.index('converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh', push)
+pregate=text.index('publish_postclear_runtime_deltas pregate', converge)
+snapshot=text.index('capture_durable_writer_paths start', pregate)
+assert push < converge < pregate < snapshot
+start=text.index('converge_shared_execution_sources()')
+fn=text[start:text.index('\n}', start)+2]
+for token in ('diff --quiet', 'diff --cached --quiet', 'dirty source path=', 'merge --no-edit', 'merge --abort', 'merge-base --is-ancestor'):
+    assert token in fn
+print('ordering=1 dirty_preserved=1 local_history_preserved=1 fail_closed=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "ordering=1 dirty_preserved=1 local_history_preserved=1 fail_closed=1" ]
+}
+
+# test_necessity: pregate publication reuses the field-aware source-only lane
+# and rejects concurrent, unknown, conflicting, and failed publications.
+@test "pregate runtime convergence reuses field-aware contract" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start=text.index('publish_postclear_runtime_deltas()')
+fn=text[start:text.index('\n}', start)+2]
+tokens=('phase="${1:-postclear}"', '"$phase" != "pregate"', 'postclear_runtime_path_is_publishable "$path"', 'nonruntime dirty path=', 'concurrent writer path=', 'push_from_clean_worktree', 'source-only publish failed', 'local ${phase} checkpoint', 'merge --no-edit FETCH_HEAD')
+for token in tokens: assert token in fn, token
+print('variants=8 fp=0 fn=0 field_aware=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "variants=8 fp=0 fn=0 field_aware=1" ]
+}
+
+# test_necessity: AC1's monthly chronicle is a bounded runtime class; arbitrary
+# archive content remains outside the class and must block.
+@test "pregate runtime classifier admits monthly cmd chronicle only" {
+    run bash -c '
+        source <(sed -n "/^postclear_runtime_path_is_publishable()/,/^}/p" "$1")
+        postclear_runtime_path_is_publishable archive/cmd-chronicle/2026-07.md || exit 10
+        ! postclear_runtime_path_is_publishable archive/unknown/foreign.md || exit 11
+        printf "chronicle=1 unknown_archive_block=1\n"
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    [ "$status" -eq 0 ]
+    [ "$output" = "chronicle=1 unknown_archive_block=1" ]
+}
+
 # test_necessity: completion must accept every YAML spelling that
 # gate_report_format normalizes to boolean and reject non-booleans.
 # regression_justification: the old awk parser stripped double quotes but not
@@ -6349,7 +6401,7 @@ assert 'durable writer manifest invalid' in block
 assert 'grep -Fqx -- "$path"' in block
 assert 'nonruntime dirty path=' in block
 assert 'writer generation changed' in block
-assert 'merge --ff-only FETCH_HEAD' in block
+assert 'merge --no-edit FETCH_HEAD' in block
 print('field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1')
 PY
     [ "$status" -eq 0 ]

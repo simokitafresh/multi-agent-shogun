@@ -1779,6 +1779,52 @@ push_task_repositories() {
     return 0
 }
 
+# Reconcile the live shared checkout with the just-published remote without
+# discarding its local-only history.  A clean path may be advanced by a small
+# local convergence commit; dirty/staged bytes are never overwritten.  The
+# subsequent ordinary merge preserves both histories and leaves the shared
+# index/worktree clean at the remote execution-source content.
+converge_shared_execution_sources() {
+    local repo="$1" upstream_ref remote push_ref remote_tip path tmp before_head
+    shift
+    [ "$#" -gt 0 ] || return 0
+    upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
+    remote=${upstream_ref%%/*}
+    push_ref="refs/heads/${upstream_ref#*/}"
+    git -C "$repo" fetch -q "$remote" "$push_ref" || return 1
+    remote_tip=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null) || return 1
+    before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
+
+    for path in "$@"; do
+        git -C "$repo" cat-file -e "${remote_tip}:${path}" 2>/dev/null || return 1
+        if ! git -C "$repo" diff --quiet -- "$path" || ! git -C "$repo" diff --cached --quiet -- "$path"; then
+            echo "  shared convergence: BLOCK (dirty source path=$path)" >&2
+            return 1
+        fi
+        tmp=$(mktemp "${TMPDIR:-/tmp}/shared-source.XXXXXX") || return 1
+        git -C "$repo" show "${remote_tip}:${path}" > "$tmp" || { unlink "$tmp"; return 1; }
+        if ! cmp -s "$tmp" "$repo/$path"; then
+            cp -- "$tmp" "$repo/$path" || { unlink "$tmp"; return 1; }
+            git -C "$repo" add -- "$path" || { unlink "$tmp"; return 1; }
+        fi
+        unlink "$tmp" || return 1
+    done
+    if ! git -C "$repo" diff --cached --quiet -- "$@"; then
+        git -C "$repo" commit -m "runtime: converge published execution source ${CMD_ID}" -- "$@" >/dev/null 2>&1 || return 1
+    fi
+    git -C "$repo" merge --no-edit "$remote_tip" >/dev/null 2>&1 || {
+        git -C "$repo" merge --abort >/dev/null 2>&1 || true
+        echo "  shared convergence: BLOCK (source history conflict)" >&2
+        return 1
+    }
+    for path in "$@"; do
+        [ "$(git -C "$repo" hash-object "$path")" = "$(git -C "$repo" rev-parse "${remote_tip}:${path}")" ] || return 1
+    done
+    [ -z "$(git -C "$repo" status --porcelain=v1 --untracked-files=no -- "$@")" ] || return 1
+    git -C "$repo" merge-base --is-ancestor "$before_head" HEAD || return 1
+    echo "  shared convergence: OK (execution sources=$#; local history preserved)"
+}
+
 # Publish tracked runtime files written after the ordinary pre-CLEAR source
 # push.  The shared checkout is snapshotted into a commit so the existing
 # field-aware source-only merge path (including the insights ID merge) remains
@@ -1787,7 +1833,7 @@ push_task_repositories() {
 # a checkout that changed underneath the snapshot.
 postclear_runtime_path_is_publishable() {
     case "${1:-}" in
-        context/*.md|projects/*/lessons.yaml|tasks/lessons.md|scripts/cmd_complete_gate.sh|\
+        context/*.md|projects/*/lessons.yaml|tasks/lessons.md|scripts/cmd_complete_gate.sh|archive/cmd-chronicle/*.md|\
         logs/karo_workarounds.yaml|queue/insights.yaml|queue/gunshi_review_log.yaml|\
         queue/completed_changelog.yaml|logs/lesson_impact.tsv|logs/lesson_tracking.tsv)
             return 0 ;;
@@ -1846,11 +1892,13 @@ PY
 export -f capture_durable_writer_paths
 
 publish_postclear_runtime_deltas() {
+    local phase="${1:-postclear}"
     local repo="$SCRIPT_DIR" upstream_ref remote push_ref remote_tip
     local before_head after_head temp_parent source_repo source_sha path
     local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
     local -a dirty_paths=() runtime_paths=() durable_paths=()
 
+    if [ "$phase" = "postclear" ]; then
     mapfile -t durable_paths < <(python3 - "$durable_manifest" "$CMD_ID" \
         "$SHOGUN_COMPLETION_GENERATION" <<'PY'
 import json, sys
@@ -1864,6 +1912,9 @@ if not isinstance(paths, list) or any(not isinstance(p, str) or not p for p in p
 print("\n".join(paths))
 PY
     ) || { echo "  runtime publish: BLOCK (durable writer manifest invalid)" >&2; return 1; }
+    elif [ "$phase" != "pregate" ]; then
+        return 1
+    fi
 
     before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
     while IFS= read -r -d '' path; do
@@ -1905,7 +1956,7 @@ PY
         cp -- "$repo/$path" "$source_repo/$path" || { git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true; rmdir -- "$temp_parent" 2>/dev/null || true; return 1; }
         git -C "$source_repo" add -- "$path" || return 1
     done
-    git -C "$source_repo" commit -m "runtime: post-CLEAR field-aware publish ${CMD_ID}" >/dev/null 2>&1 || return 1
+    git -C "$source_repo" commit -m "runtime: ${phase} field-aware publish ${CMD_ID}" >/dev/null 2>&1 || return 1
     source_sha=$(git -C "$source_repo" rev-parse HEAD) || return 1
 
     after_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
@@ -1913,12 +1964,23 @@ PY
         echo "  runtime publish: BLOCK (writer generation changed $before_head -> $after_head)" >&2
         return 1
     fi
+    # Checkpoint the exact snapshot locally before merging its equivalent
+    # remote publication. Local-only history and live runtime bytes survive.
+    for path in "${runtime_paths[@]}"; do
+        [ "$(git -C "$repo" hash-object "$path")" = "$(git -C "$source_repo" rev-parse "${source_sha}:${path}")" ] || {
+            echo "  runtime publish: BLOCK (concurrent writer path=$path)" >&2
+            return 1
+        }
+    done
+    git -C "$repo" add -- "${runtime_paths[@]}" || return 1
+    git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
     if ! push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "$source_sha"; then
         echo "  runtime publish: BLOCK (source-only publish failed)" >&2
         return 1
     fi
     git -C "$repo" fetch -q "$remote" "$push_ref" || return 1
-    if ! git -C "$repo" merge --ff-only FETCH_HEAD >/dev/null 2>&1; then
+    if ! git -C "$repo" merge --no-edit FETCH_HEAD >/dev/null 2>&1; then
+        git -C "$repo" merge --abort >/dev/null 2>&1 || true
         echo "  runtime publish: BLOCK (shared HEAD/index convergence failed)" >&2
         return 1
     fi
@@ -11016,6 +11078,16 @@ if [ "$ALL_CLEAR" = true ] \
     if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then
         record_block_reason "autopush_source_only_failed"
         ALL_CLEAR=false
+    elif ! converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh; then
+        record_block_reason "shared_execution_source_convergence_failed"
+        ALL_CLEAR=false
+    else
+        echo ""
+        echo "Tracked runtime publish (pre-generation checkpoint):"
+        if ! publish_postclear_runtime_deltas pregate; then
+            record_block_reason "pregate_runtime_publish_failed"
+            ALL_CLEAR=false
+        fi
     fi
 fi
 
