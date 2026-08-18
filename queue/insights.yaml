@@ -65,7 +65,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認により設計意図どおりと判定。SG-PRE35はproject HEADに不在のtestを新規testとしてtest_necessityまたはtransient削除証跡へ送る契約であり、task_worktree_path側HEADを既存扱いすると新規test契約を迂回する。実修正不要。"
+  action_artifact: "scripts/deploy_task.sh:10033-10155 deploy_task_test_necessity_precheck"
+  resolved_at: "2026-08-19T00:28:31+09:00"
 - id: INS-20260818-143652672-764c
   ts: "2026-08-18T14:36:52+09:00"
   insight: "GPT忍者のcausal_verification.evidence記入率問題(統合): LG051(非test caller証跡)8回+LK-A14(横展開rg残存0件証跡)5回以上。INS-aebd(LG051)と統合。model_injection_profileのextra_scaffoldにcausal_verification.evidenceテンプレート(rg/grepコマンド+出力行+count)を追加すれば構造的に防止可能。"
