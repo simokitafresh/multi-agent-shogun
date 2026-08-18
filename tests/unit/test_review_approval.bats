@@ -25,9 +25,153 @@ setup_file() {
 # test_necessity: the asynchronous completion gate must never inherit the
 # report-approval flock descriptor after the durable review transaction ends.
 @test "completion trigger closes approval lock fd before asynchronous execution" {
-    run grep -E -c 'setsid nohup bash .*cmd_complete_gate\.sh.*200>&- &$' "$REVIEW_APPROVAL_SCRIPT"
+    run grep -E -c 'setsid nohup bash -c' "$REVIEW_APPROVAL_SCRIPT"
     [ "$status" -eq 0 ]
     [ "$output" -eq 1 ]
+
+    run grep -E -c '200>&- &' "$REVIEW_APPROVAL_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+}
+
+setup_trigger_fixture() {
+    export TRIGGER_ROOT="$BATS_TEST_TMPDIR/trigger-root"
+    mkdir -p "$TRIGGER_ROOT/queue/reports" "$TRIGGER_ROOT/queue/archive/reports" \
+        "$TRIGGER_ROOT/queue/tasks" "$TRIGGER_ROOT/queue/gates" "$TRIGGER_ROOT/scripts" \
+        "$TRIGGER_ROOT/logs"
+    ln -s "$BATS_TEST_DIRNAME/../../scripts/review_approval.sh" \
+        "$TRIGGER_ROOT/scripts/review_approval.sh"
+    ln -s "$BATS_TEST_DIRNAME/../../scripts/lib" "$TRIGGER_ROOT/scripts/lib"
+    cat > "$TRIGGER_ROOT/scripts/cmd_complete_gate.sh" <<'GATE'
+#!/usr/bin/env bash
+set -u
+log_target=$(readlink "/proc/$$/fd/1" 2>/dev/null || true)
+case "$log_target" in
+    *cmd_complete_gate.trigger.log) ;;
+    *) exit 0 ;;
+esac
+n=0
+if [ -f "$STUB_GATE_STATE" ]; then
+    n=$(cat "$STUB_GATE_STATE")
+fi
+n=$((n + 1))
+printf '%s\n' "$n" > "$STUB_GATE_STATE"
+if [ "$STUB_GATE_MODE" = retry ] && [ "$n" -eq 1 ]; then
+    exit 75
+fi
+if [ "$STUB_GATE_MODE" = block ]; then
+    exit 1
+fi
+exit 0
+GATE
+    chmod +x "$TRIGGER_ROOT/scripts/cmd_complete_gate.sh"
+    cat > "$TRIGGER_ROOT/queue/tasks/worker.yaml" <<'TASK'
+task:
+  task_id: cmd_trigger_full
+  parent_cmd: cmd_trigger
+  report_filename: worker_report_cmd_trigger.yaml
+  task_type: full
+TASK
+    cat > "$TRIGGER_ROOT/queue/reports/worker_report_cmd_trigger.yaml" <<'REPORT'
+worker_id: worker
+task_id: cmd_trigger_full
+report_id: rpt-trigger
+report_identity_version: 2
+parent_cmd: cmd_trigger
+status: completed
+verdict: PASS
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+result:
+  summary: trigger fixture
+REPORT
+    export STUB_GATE_STATE="$TRIGGER_ROOT/gate-count"
+    export REVIEW_APPROVAL_ROOT="$TRIGGER_ROOT"
+    export REVIEW_APPROVAL_NO_NOTIFY=1
+    : > "$STUB_GATE_STATE"
+}
+
+record_trigger_approvals() {
+    local report="$TRIGGER_ROOT/queue/reports/worker_report_cmd_trigger.yaml"
+    REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+      bash "$TRIGGER_ROOT/scripts/review_approval.sh" cmd_trigger gunshi LGTM "$report"
+    bash "$TRIGGER_ROOT/scripts/review_approval.sh" cmd_trigger karo ACCEPT "$report"
+}
+
+# test_necessity: after both approvals, a transient gate lock (exit 75) must
+# be retried in the detached trigger process until a terminal result is
+# published, without allowing the terminal marker to be created early.
+@test "completion trigger retries lock busy and publishes CLEAR after terminal retry" {
+    setup_trigger_fixture
+    export STUB_GATE_MODE=retry
+    record_trigger_approvals
+
+    local gate_dir="$TRIGGER_ROOT/queue/gates/cmd_trigger"
+    local approvals="$gate_dir/review_approvals"
+    local manifest
+    manifest=$(awk '$1 == "manifest:" {print $2; exit}' "$gate_dir/review_gate.done")
+    [ -n "$manifest" ]
+    [ ! -e "$approvals/.gate_triggered.$manifest" ]
+    sleep 0.2
+    [ ! -e "$approvals/.gate_triggered.$manifest" ]
+    for i in $(seq 1 140); do
+        [ -f "$approvals/.gate_triggered.$manifest" ] && break
+        sleep 0.05
+    done
+    [ -n "$manifest" ]
+    local log="$gate_dir/cmd_complete_gate.trigger.log"
+    [ "$(cat "$STUB_GATE_STATE")" -eq 2 ]
+    [ "$(grep -c '^attempt=' "$log")" -eq 2 ]
+    grep -q '^attempt=1 rc=75 ' "$log"
+    grep -q '^attempt=2 rc=0 ' "$log"
+    grep -q '^result: 0$' "$approvals/.gate_triggered.$manifest"
+    [ ! -e "$approvals/.gate_triggering.$manifest" ]
+}
+
+# test_necessity: normal dual approval must dispatch exactly one detached gate
+# flight after both durable approval records exist.
+@test "completion trigger launches once after normal dual approval" {
+    setup_trigger_fixture
+    export STUB_GATE_MODE=normal
+    record_trigger_approvals
+
+    local gate_dir="$TRIGGER_ROOT/queue/gates/cmd_trigger"
+    local approvals="$gate_dir/review_approvals"
+    local manifest
+    manifest=$(awk '$1 == "manifest:" {print $2; exit}' "$gate_dir/review_gate.done")
+    [ -n "$manifest" ]
+    for i in $(seq 1 140); do
+        [ -f "$approvals/.gate_triggered.$manifest" ] && break
+        sleep 0.05
+    done
+    [ "$(cat "$STUB_GATE_STATE")" -eq 1 ]
+    [ "$(grep -c '^attempt=' "$gate_dir/cmd_complete_gate.trigger.log")" -eq 1 ]
+    grep -q '^result: 0$' "$approvals/.gate_triggered.$manifest"
+    [ ! -e "$approvals/.gate_triggering.$manifest" ]
+}
+
+# test_necessity: a terminal BLOCK result must stop the detached trigger after
+# one invocation and must never enter the transient-lock retry lane.
+@test "completion trigger stops on terminal BLOCK without retry" {
+    setup_trigger_fixture
+    export STUB_GATE_MODE=block
+    record_trigger_approvals
+
+    local gate_dir="$TRIGGER_ROOT/queue/gates/cmd_trigger"
+    local approvals="$gate_dir/review_approvals"
+    local manifest
+    manifest=$(awk '$1 == "manifest:" {print $2; exit}' "$gate_dir/review_gate.done")
+    [ -n "$manifest" ]
+    for i in $(seq 1 140); do
+        [ -f "$approvals/.gate_triggered.$manifest" ] && break
+        sleep 0.05
+    done
+    [ -n "$manifest" ]
+    local log="$gate_dir/cmd_complete_gate.trigger.log"
+    [ "$(cat "$STUB_GATE_STATE")" -eq 1 ]
+    [ "$(grep -c '^attempt=' "$log")" -eq 1 ]
+    grep -q '^attempt=1 rc=1 ' "$log"
+    grep -q '^result: 1$' "$approvals/.gate_triggered.$manifest"
+    [ ! -e "$approvals/.gate_triggering.$manifest" ]
 }
 
 setup_fail_close_fixture() {

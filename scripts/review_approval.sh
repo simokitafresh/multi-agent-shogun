@@ -341,7 +341,9 @@ fi
 # SG7 used to exist only as a skill instruction: review_bundle.py generate had
 # no production caller, so GATE could archive the report before Karo consumed
 # the bundle.  Bind generation to the existing formal Gunshi-LGTM boundary.
-if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ -f "$ROOT/scripts/review_bundle.py" ]; then
+if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
+  && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" != review_bundle ] \
+  && [ -f "$ROOT/scripts/review_bundle.py" ]; then
   sg7_archive_args=()
   [[ "$report_rel" = queue/archive/reports/* ]] && sg7_archive_args+=(--allow-archived)
   python3 "$ROOT/scripts/review_bundle.py" generate \
@@ -386,6 +388,13 @@ review_approval_cleanup_on_exit() {
 trap review_approval_cleanup_on_exit EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
+# The durable approval record is complete.  Do not keep the report approval
+# lock across SG7 publication or any completion work: canonical LGTM used to
+# invoke review_bundle.notify while fd 200 was still held, and notify then ran
+# cmd_complete_gate synchronously.  Karo ACCEPT consequently waited on the
+# same lock until rc=1 while the predecessor remained in pipe_read.
+flock -u 200 2>/dev/null || true
+exec 200>&- || true
 # T1a throughput instrumentation: the approval file above is the existing
 # durable decision boundary.  Reuse the shared append-only timing ledger and
 # bind the id to the report attempt (fingerprint) plus report identity (key).
@@ -395,22 +404,11 @@ case "$role:$result" in
     defense_overhead_write review_approval gunshi_lgtm 0 PASS \
       "review-approval-gunshi-lgtm-${cmd_id}-${report_key}-${fingerprint}" \
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
-    # Throughput fix: auto-trigger after gunshi LGTM too — if karo ACCEPT
-    # arrived first, this second trigger completes the gate. Idempotent.
-    if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ] && [ -f "$ROOT/scripts/cmd_complete_gate.sh" ]; then
-      (bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$ROOT/logs/gate_auto_trigger.log" 2>&1 || true) &
-    fi
     ;;
   karo:ACCEPT)
     defense_overhead_write review_approval karo_accept 0 PASS \
       "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" \
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
-    # Throughput fix: auto-trigger cmd_complete_gate in background after karo
-    # ACCEPT so GATE CLEAR does not wait for karo's manual /cmd-complete.
-    # The gate script is idempotent; if it BLOCKs, karo still runs it manually.
-    if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ] && [ -f "$ROOT/scripts/cmd_complete_gate.sh" ]; then
-      (bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$ROOT/logs/gate_auto_trigger.log" 2>&1 || true) &
-    fi
     ;;
 esac
 if [ "$role" = karo ] && [ "$result" = RC ]; then
@@ -652,7 +650,12 @@ elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then
   printf 'timestamp: %s\nsource: two_phase_review\nresult: LGTM\nreports: %s\nmanifest: %s\nterminal_manifest: queue/gates/%s/terminal_review_manifest.json\nterminal_manifest_sha: %s\n' \
     "$(date -Iseconds)" "${#reports[@]}" "$manifest" "$cmd_id" "$terminal_manifest_sha" > "$marker_tmp"
   mv -f "$marker_tmp" "$marker"
-  if (set -o noclobber; : > "$base/.gate_triggered.$manifest") 2>/dev/null; then
+  # Claim the manifest while the detached worker is running, but publish the
+  # gate_triggered marker only after cmd_complete_gate has returned a terminal
+  # result.  exit 75 means that the decision is still unknown (normally a
+  # transient CMD_ID lock collision) and must not suppress the next attempt.
+  if [ ! -e "$base/.gate_triggered.$manifest" ] \
+    && (set -o noclobber; : > "$base/.gate_triggering.$manifest") 2>/dev/null; then
     if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ]; then
       trigger_log="$ROOT/queue/gates/$cmd_id/cmd_complete_gate.trigger.log"
       : > "$trigger_log" 2>/dev/null || true
@@ -663,7 +666,47 @@ elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then
       # completion gate inheriting it keeps the report lock after this process
       # exits (including throughout slow Git history scans), making the other
       # approver time out despite all approval writes already being durable.
-      setsid nohup bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$trigger_log" 2>&1 </dev/null 200>&- &
+      setsid nohup bash -c '
+        set -u
+        root=$1
+        cmd_id=$2
+        base=$3
+        manifest=$4
+        trigger_log=$5
+        triggering="$base/.gate_triggering.$manifest"
+        triggered="$base/.gate_triggered.$manifest"
+        attempt=1
+        delay=2
+        terminal_rc=75
+        while [ "$attempt" -le 10 ]; do
+          attempt_started=$(date -Iseconds)
+          rc=0
+          bash "$root/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$trigger_log" 2>&1 || rc=$?
+          printf "attempt=%s rc=%s timestamp=%s\\n" "$attempt" "$rc" "$attempt_started" >>"$trigger_log"
+          if [ "$rc" -eq 0 ] || [ "$rc" -eq 1 ]; then
+            marker_tmp="$base/.gate_triggered.$manifest.tmp.$$"
+            printf "timestamp: %s\\n" "$(date -Iseconds)" >"$marker_tmp"
+            printf "result: %s\\n" "$rc" >>"$marker_tmp"
+            printf "attempts: %s\\n" "$attempt" >>"$marker_tmp"
+            printf "manifest: %s\\n" "$manifest" >>"$marker_tmp"
+            mv -f "$marker_tmp" "$triggered"
+            terminal_rc=$rc
+            break
+          fi
+          if [ "$rc" -ne 75 ] || [ "$attempt" -eq 10 ]; then
+            terminal_rc=$rc
+            break
+          fi
+          sleep "$delay"
+          if [ "$delay" -lt 60 ]; then
+            delay=$((delay * 2))
+            [ "$delay" -le 60 ] || delay=60
+          fi
+          attempt=$((attempt + 1))
+        done
+        rm -f "$triggering"
+        exit "$terminal_rc"
+      ' _ "$ROOT" "$cmd_id" "$base" "$manifest" "$trigger_log" >>"$trigger_log" 2>&1 </dev/null 200>&- &
       trigger_pid=$!
       # 起動直後の即死(exec失敗/構文エラー・未捕捉例外等)だけを検知する短時間ポーリング。
       # フルGATE実行の完了は待たない(非同期起動の意図を維持)。
@@ -701,6 +744,7 @@ elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then
         fi
       fi
     else
+      rm -f "$base/.gate_triggering.$manifest"
       echo "review gate formalized and cmd_complete_gate triggered: $cmd_id"
     fi
   fi
