@@ -6227,3 +6227,43 @@ PY
     [ "$status" -eq 0 ]
     [ "$output" = "clear_receipt_default=1 archive_receipt_guard=1 ordering=1" ]
 }
+
+# test_necessity: terminal completion must never precede publication of tracked
+# runtime writers that run after the ordinary pre-CLEAR source push.
+# regression_justification: cmd_karo_hotfix_postclear_runtime_publish observed
+# tracked runtime dirty remaining while the former post-CLEAR push was SKIP.
+@test "post-CLEAR runtime publish precedes COMPLETE and terminal exit" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+second_reflux = text.rindex('Gunshi gate_result reflux (post-GATE CLEAR 2nd run):')
+publish = text.rindex('Tracked runtime publish (terminal checkpoint):')
+complete = text.rindex('Status completed (post-runtime-publish):')
+terminal = text.rindex('Async completion wait (pre-exit):')
+assert second_reflux < publish < complete < terminal
+assert 'if ! publish_postclear_runtime_deltas; then' in text[publish:complete]
+print('reflux_before_publish=1 publish_before_complete=1 fail_closed=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "reflux_before_publish=1 publish_before_complete=1 fail_closed=1" ]
+}
+
+# test_necessity: runtime publication must reuse the existing field-aware
+# source-only merge and reject writer-generation/nonruntime contamination.
+@test "post-CLEAR runtime publisher is field-aware and generation guarded" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index('publish_postclear_runtime_deltas()')
+end = text.index('\n}', start) + 2
+block = text[start:end]
+assert 'push_from_clean_worktree' in block
+assert 'queue/insights.yaml' in block
+assert 'nonruntime dirty path=' in block
+assert 'writer generation changed' in block
+assert 'merge --ff-only FETCH_HEAD' in block
+print('field_aware=1 identity_guard=1 nonruntime_block=1 shared_convergence=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "field_aware=1 identity_guard=1 nonruntime_block=1 shared_convergence=1" ]
+}

@@ -1774,6 +1774,76 @@ push_task_repositories() {
     return 0
 }
 
+# Publish tracked runtime files written after the ordinary pre-CLEAR source
+# push.  The shared checkout is snapshotted into a commit so the existing
+# field-aware source-only merge path (including the insights ID merge) remains
+# the single publication implementation.  A writer-generation change or any
+# non-runtime dirty path is fail-closed: terminal completion must not describe
+# a checkout that changed underneath the snapshot.
+publish_postclear_runtime_deltas() {
+    local repo="$SCRIPT_DIR" upstream_ref remote push_ref remote_tip
+    local before_head after_head temp_parent source_repo source_sha path
+    local -a dirty_paths=() runtime_paths=()
+
+    before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
+    while IFS= read -r -d '' path; do
+        dirty_paths+=("$path")
+        case "$path" in
+            logs/karo_workarounds.yaml|queue/insights.yaml|queue/gunshi_review_log.yaml|queue/completed_changelog.yaml|logs/lesson_impact.tsv|logs/lesson_tracking.tsv)
+                runtime_paths+=("$path") ;;
+            queue/tasks/*.yaml|queue/inbox/*.yaml|queue/gates/*)
+                # Per-command/task receipts are intentionally not published.
+                ;;
+            *)
+                echo "  runtime publish: BLOCK (nonruntime dirty path=$path)" >&2
+                return 1 ;;
+        esac
+    done < <(git -C "$repo" status --porcelain=v1 -z --untracked-files=no | python3 -c 'import sys; d=sys.stdin.buffer.read().split(b"\0"); [sys.stdout.buffer.write(x[3:]+b"\0") for x in d if len(x)>=4]')
+
+    if [ "${#runtime_paths[@]}" -eq 0 ]; then
+        echo "  runtime publish: clean (tracked runtime dirty=0)"
+        return 0
+    fi
+
+    upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
+    remote=${upstream_ref%%/*}
+    push_ref="refs/heads/${upstream_ref#*/}"
+    remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
+
+    temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-postclear-runtime.XXXXXX") || return 1
+    source_repo="$temp_parent/source"
+    if ! git -C "$repo" worktree add --detach "$source_repo" "$before_head" >/dev/null 2>&1; then
+        rmdir -- "$temp_parent" 2>/dev/null || true
+        return 1
+    fi
+    for path in "${runtime_paths[@]}"; do
+        mkdir -p "$source_repo/$(dirname "$path")"
+        cp -- "$repo/$path" "$source_repo/$path" || { git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true; rmdir -- "$temp_parent" 2>/dev/null || true; return 1; }
+        git -C "$source_repo" add -- "$path" || return 1
+    done
+    git -C "$source_repo" commit -m "runtime: post-CLEAR field-aware publish ${CMD_ID}" >/dev/null 2>&1 || return 1
+    source_sha=$(git -C "$source_repo" rev-parse HEAD) || return 1
+
+    after_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
+    if [ "$after_head" != "$before_head" ]; then
+        echo "  runtime publish: BLOCK (writer generation changed $before_head -> $after_head)" >&2
+        return 1
+    fi
+    if ! push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "$source_sha"; then
+        echo "  runtime publish: BLOCK (source-only publish failed)" >&2
+        return 1
+    fi
+    git -C "$repo" fetch -q "$remote" "$push_ref" || return 1
+    if ! git -C "$repo" merge --ff-only FETCH_HEAD >/dev/null 2>&1; then
+        echo "  runtime publish: BLOCK (shared HEAD/index convergence failed)" >&2
+        return 1
+    fi
+    git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true
+    rmdir -- "$temp_parent" 2>/dev/null || true
+    echo "  runtime publish: OK (tracked runtime dirty ${#runtime_paths[@]} -> 0)"
+}
+
 if [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]; then
     resolve_task_repo_dir "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
     exit 0
@@ -11583,12 +11653,6 @@ PYEOF
     (record_lesson_feedback_for_cmd >/dev/null 2>&1 || true) &
     echo "  lesson feedback: queued (async)"
 
-    # ─── status: completed 自動設定（GATE CLEAR後。cmdライフサイクル完了） ───
-    echo ""
-    echo "Status completed (post-GATE CLEAR):"
-    (bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed >/dev/null 2>&1 || true) &
-    echo "  status: completed — queued (async)"
-
     # ─── gunshi_verdict 自動記録（GATE CLEAR時、archive前） ───
     # L895: 同一cmd_design_quality.yamlのgunshi_verdict更新は上の
     # "Gunshi verdict update to cmd_design_quality" に一本化する。
@@ -11652,6 +11716,23 @@ PYEOF
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
+
+    echo ""
+    echo "Tracked runtime publish (terminal checkpoint):"
+    if ! publish_postclear_runtime_deltas; then
+        echo "GATE BLOCK: ${CMD_ID}:postclear_runtime_publish_failed" >&2
+        exit 1
+    fi
+
+    # COMPLETE is published only after every synchronous postprocessor and its
+    # tracked runtime output reached origin/shared HEAD.
+    echo ""
+    echo "Status completed (post-runtime-publish):"
+    if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed >/dev/null 2>&1; then
+        echo "GATE BLOCK: ${CMD_ID}:status_completed_publish_failed" >&2
+        exit 1
+    fi
+    echo "  status: completed"
 
     echo ""
     echo "Async completion wait (pre-exit):"
