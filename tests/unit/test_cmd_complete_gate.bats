@@ -6237,15 +6237,39 @@ PY
 import pathlib, sys
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 second_reflux = text.rindex('Gunshi gate_result reflux (post-GATE CLEAR 2nd run):')
+writer_wait = text.rindex('Durable post-CLEAR writer wait (terminal checkpoint):')
 publish = text.rindex('Tracked runtime publish (terminal checkpoint):')
 complete = text.rindex('Status completed (post-runtime-publish):')
 terminal = text.rindex('Async completion wait (pre-exit):')
-assert second_reflux < publish < complete < terminal
+assert second_reflux < writer_wait < publish < complete < terminal
+assert 'if ! wait_for_postclear_durable_writers; then' in text[writer_wait:publish]
 assert 'if ! publish_postclear_runtime_deltas; then' in text[publish:complete]
 print('reflux_before_publish=1 publish_before_complete=1 fail_closed=1')
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "reflux_before_publish=1 publish_before_complete=1 fail_closed=1" ]
+}
+
+# test_necessity: detached semantic index/map work must be generation-bound,
+# bounded, and complete before the terminal runtime snapshot is taken.
+# regression_justification: an operational completion observed semantic-map
+# mutate after the runtime classifier snapshot and therefore BLOCK as unknown.
+@test "post-CLEAR durable semantic writer wait is generation-bound and fail-closed" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+launch = text.index('_semantic_generation_marker="$GATES_DIR/semantic_causal_audit.generation.json"')
+wait = text.index('wait_for_postclear_durable_writers()')
+block = text[wait:text.index('\n}', wait) + 2]
+assert 'completion_generation' in text[launch:launch + 1800]
+assert 'rm -f -- "$_semantic_result"' in text[launch:launch + 1800]
+assert 'CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600' in block
+assert '[[ -e "$pending" || ! -s "$result" ]]' in block
+assert 'return 1' in block
+print('generation_bound=1 stale_result_rejected=1 bounded=1 fail_closed=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "generation_bound=1 stale_result_rejected=1 bounded=1 fail_closed=1" ]
 }
 
 # test_necessity: runtime publication must reuse the existing field-aware

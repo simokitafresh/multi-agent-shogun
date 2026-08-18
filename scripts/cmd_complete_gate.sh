@@ -1856,6 +1856,43 @@ publish_postclear_runtime_deltas() {
     echo "  runtime publish: OK (tracked runtime dirty ${#runtime_paths[@]} -> 0)"
 }
 
+# The semantic index/map writer is detached with setsid, so the shell job table
+# cannot prove that its tracked writes are finished.  Bind its pending marker to
+# this completion generation and wait for the corresponding fresh result before
+# taking the terminal runtime snapshot.  Removing an older result before launch
+# prevents a stale receipt from satisfying a redeployed generation.
+wait_for_postclear_durable_writers() {
+    local pending="$GATES_DIR/semantic_causal_audit.pending"
+    local result="$GATES_DIR/semantic_causal_audit.result"
+    local generation_marker="$GATES_DIR/semantic_causal_audit.generation.json"
+    local timeout_seconds="${CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600}"
+    local deadline now
+
+    [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]] || {
+        echo "  durable writers: BLOCK (invalid timeout=$timeout_seconds)" >&2
+        return 1
+    }
+    python3 - "$generation_marker" "$pending" "$CMD_ID" \
+        "$SHOGUN_COMPLETION_GENERATION" <<'PY'
+import json, sys
+marker, pending, cmd_id, generation = sys.argv[1:]
+data = json.load(open(marker, encoding="utf-8"))
+if data != {"version": 1, "cmd_id": cmd_id,
+            "completion_generation": generation, "pending": pending}:
+    raise SystemExit(1)
+PY
+    deadline=$(( $(date +%s) + timeout_seconds ))
+    while [[ -e "$pending" || ! -s "$result" ]]; do
+        now=$(date +%s)
+        if (( now >= deadline )); then
+            echo "  durable writers: BLOCK (semantic worker timeout=${timeout_seconds}s generation=${SHOGUN_COMPLETION_GENERATION})" >&2
+            return 1
+        fi
+        sleep 0.05
+    done
+    echo "  durable writers: drained (semantic generation=${SHOGUN_COMPLETION_GENERATION})"
+}
+
 if [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]; then
     resolve_task_repo_dir "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
     exit 0
@@ -11034,7 +11071,25 @@ PY
     echo "Semantic causal traverse (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/semantic_causal_post_clear.sh" ]; then
         _semantic_pending="$GATES_DIR/semantic_causal_audit.pending"
-        printf 'queued_at=%s\nlauncher_pid=%s\n' "$(date -Iseconds)" "$$" > "${_semantic_pending}.tmp.$$"
+        _semantic_result="$GATES_DIR/semantic_causal_audit.result"
+        _semantic_generation_marker="$GATES_DIR/semantic_causal_audit.generation.json"
+        rm -f -- "$_semantic_result"
+        python3 - "$_semantic_generation_marker" "$_semantic_pending" "$CMD_ID" \
+            "$SHOGUN_COMPLETION_GENERATION" <<'PY'
+import json, os, sys, tempfile
+path, pending, cmd_id, generation = sys.argv[1:]
+data = {"version": 1, "cmd_id": cmd_id,
+        "completion_generation": generation, "pending": pending}
+fd, tmp = tempfile.mkstemp(prefix=".semantic_generation.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+PY
+        printf 'queued_at=%s\nlauncher_pid=%s\ncmd_id=%s\ncompletion_generation=%s\n' \
+            "$(date -Iseconds)" "$$" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" > "${_semantic_pending}.tmp.$$"
         mv "${_semantic_pending}.tmp.$$" "$_semantic_pending"
         # nohup alone only ignores SIGHUP; tmux respawn-pane -k terminates the
         # pane process group.  setsid detaches the durable worker from it.
@@ -11727,6 +11782,13 @@ PYEOF
         fi
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
+    fi
+
+    echo ""
+    echo "Durable post-CLEAR writer wait (terminal checkpoint):"
+    if ! wait_for_postclear_durable_writers; then
+        echo "GATE BLOCK: ${CMD_ID}:postclear_durable_writer_wait_failed" >&2
+        exit 1
     fi
 
     echo ""
