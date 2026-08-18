@@ -537,7 +537,13 @@ task = doc.get("task", doc)
 contract = task.get("commit_contract") if isinstance(task.get("commit_contract"), dict) else {}
 project = str(task.get("project") or "infra").strip()
 contract_root = str(contract.get("repo_root") or "").strip()
-if contract_root:
+task_worktree_root = str(task.get("task_worktree_repo") or "").strip()
+task_worktree_path = str(task.get("task_worktree_path") or "").strip()
+if task_worktree_path:
+    candidate = task_worktree_path
+elif task_worktree_root:
+    candidate = task_worktree_root
+elif contract_root:
     candidate = contract_root
 elif project == "infra":
     candidate = control_root
@@ -2414,18 +2420,7 @@ PY
             cp "$_tap_source" "$_requested_tap"
             [ -s "$_requested_tap" ] || { printf 'TEST_TAP_FAIL requested TAP missing: %s\n' "$_requested_tap" >&2; exit 1; }
         fi
-        python3 - "$_receipt" <<'PY'
-import json, sys
-with open(sys.argv[1]) as fh: d=json.load(fh)
-scope=(d.get("run_manifest") or {}).get("scope_identity") or {}
-print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} "
-      "files_selected={} files_discovered={} files_executed={} complete={} full_scope={}".format(
-    sys.argv[1], d["rc"], d["observed_test_count"], d["declared_test_count"],
-    d["skip_count"], d["output_sha256"], d["duration_ms"],
-    scope.get("selected_file_count"), scope.get("discovered_file_count"),
-    scope.get("executed_file_count"), "1" if scope.get("complete") else "0",
-    "1" if scope.get("full_scope") else "0"))
-PY
+        python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); scope=(d.get("run_manifest") or {}).get("scope_identity") or {}; print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} files_selected={} files_discovered={} files_executed={} complete={} full_scope={}".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"],scope.get("selected_file_count"),scope.get("discovered_file_count"),scope.get("executed_file_count"),"1" if scope.get("complete") else "0","1" if scope.get("full_scope") else "0"))' "$_receipt"
         [ "$_singleflight" != 1 ] || [ -z "$_snapshot" ] || rm -f "$_snapshot"
         exit "$_rc"
     fi

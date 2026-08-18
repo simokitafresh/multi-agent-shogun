@@ -15,6 +15,15 @@ if [ -z "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT" ]; then
     echo "[pre-push] BLOCK: cannot resolve the pushing worktree." >&2
     exit 1
 fi
+REPO_GIT_DIR="$(git rev-parse --git-dir 2>/dev/null || true)"
+REPO_COMMON_DIR="$(git rev-parse --git-common-dir 2>/dev/null || true)"
+if [[ "$REPO_GIT_DIR" = /* && "$REPO_COMMON_DIR" = /* && "$REPO_GIT_DIR" != "$REPO_COMMON_DIR" ]]; then
+    PRE_PUSH_WORKTREE_MODE=linked
+else
+    PRE_PUSH_WORKTREE_MODE=shared
+fi
+export PRE_PUSH_WORKTREE_MODE
+echo "[pre-push] worktree_mode=$PRE_PUSH_WORKTREE_MODE repo=$REPO_ROOT" >&2
 
 PRE_PUSH_TOTAL_T0_US="${EPOCHREALTIME/./}"
 PRE_PUSH_TOTAL_T0_US="${PRE_PUSH_TOTAL_T0_US:0:16}"

@@ -72,6 +72,26 @@ if [ -n "$CMD_ID" ] && [[ ! "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}
     exit 1
 fi
 
+# Narrow lifecycle-only entrypoint used by the linked-worktree contract
+# fixture. It applies the same CLEAR/published/clean/ordinary-remove guards
+# before the broad archive scan can touch unrelated dashboard data.
+if [ "${ARCHIVE_TASK_WORKTREE_CLEANUP_ONLY:-0}" = "1" ] && [ -n "$CMD_ID" ]; then
+    _early_marker="$PROJECT_DIR/queue/gates/${CMD_ID}/task_worktree.json"
+    _early_meta=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); assert d.get("version")==1 and d.get("parent_cmd")==sys.argv[2] and d.get("state") in {"active","cleaning","cleaned"}; print("\t".join(str(d.get(k) or "") for k in ("repo","worktree","state","published_commit")))' "$_early_marker" "$CMD_ID" 2>/dev/null) || { echo "[archive] BLOCK: invalid task worktree marker for ${CMD_ID}" >&2; exit 1; }
+    IFS=$'\t' read -r _early_repo _early_worktree _early_state _early_published <<< "$_early_meta"
+    if [ "$_early_state" != "cleaned" ]; then
+        [ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" = "1" ] || { echo "[archive] BLOCK: CLEAR receipt required" >&2; exit 1; }
+        python3 -c 'import json,re,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="clear" and d.get("cmd_id")==sys.argv[2] and re.fullmatch(r"[0-9a-f]{64}",str(d.get("completion_generation") or "")) and (not sys.argv[3] or d.get("completion_generation")==sys.argv[3]) and int(d.get("persisted_at_ns"))>0' "$PROJECT_DIR/queue/gates/$CMD_ID/gate_worker.clear.json" "$CMD_ID" "${SHOGUN_COMPLETION_GENERATION:-}" || { echo "[archive] BLOCK: invalid CLEAR receipt" >&2; exit 1; }
+        [[ "$_early_published" =~ ^[0-9a-f]{40}$ ]] && git -C "$_early_repo" cat-file -e "${_early_published}^{commit}" 2>/dev/null || { echo "[archive] BLOCK: published commit missing or unresolved" >&2; exit 1; }
+        [ -z "$(git -C "$_early_worktree" status --porcelain 2>/dev/null)" ] || { echo "[archive] BLOCK: task worktree dirty" >&2; exit 1; }
+        git -C "$_early_repo" worktree remove "$_early_worktree" >/dev/null 2>&1 || { echo "[archive] BLOCK: task worktree remove failed" >&2; exit 1; }
+        if git -C "$_early_repo" worktree list --porcelain | grep -Fqx "worktree $_early_worktree"; then echo "[archive] BLOCK: task worktree orphan remains" >&2; exit 1; fi
+        python3 -c 'import json,os,sys,tempfile,time; p=sys.argv[1]; d=json.load(open(p,encoding="utf-8")); d["state"]="cleaned"; d["cleaned_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_cleaned.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$_early_marker"
+    fi
+    echo "[archive] task worktree cleanup: OK path=$_early_worktree"
+    exit 0
+fi
+
 # A completed report remains at queue/reports as a compatibility symlink.
 # Accept it as terminal only when it resolves inside the archive report root,
 # points at a regular file, and both hashes match the exact completion
@@ -2268,6 +2288,39 @@ archive_dashboard
 # cmd_579: 会話保持はJSONL専用 `scripts/conversation_retention.sh` に移管。
 # archive_completed.sh から旧YAMLローテーションは撤去する。
 
+# Remove the deploy-owned remote-tip worktree only after the terminal archive
+# path has completed. The marker is the durable owner identity; no marker means
+# this is a legacy task and there is nothing to clean up.
+cleanup_task_worktree_marker() {
+    local marker="$PROJECT_DIR/queue/gates/${CMD_ID}/task_worktree.json"
+    [ -f "$marker" ] || return 0
+    local meta repo worktree state
+    meta=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); assert d.get("version")==1 and d.get("parent_cmd")==sys.argv[2] and d.get("state") in {"active","cleaning","cleaned"}; print("{}\\t{}\\t{}".format(d.get("repo", ""), d.get("worktree", ""), d.get("state", "")))' "$marker" "$CMD_ID" 2>/dev/null) \
+        || { echo "[archive] BLOCK: invalid task worktree marker for ${CMD_ID}" >&2; return 1; }
+    IFS=$'\t' read -r repo worktree state <<< "$meta"
+    [ "$state" = "cleaned" ] && return 0
+    [ -n "$repo" ] && [ -n "$worktree" ] || return 1
+    [ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" = "1" ] || {
+        echo "[archive] BLOCK: task worktree cleanup requires CLEAR receipt" >&2; return 1;
+    }
+    local published_commit
+    published_commit=$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1],encoding="utf-8")).get("published_commit") or ""))' "$marker")
+    [[ "$published_commit" =~ ^[0-9a-f]{40}$ ]] && git -C "$repo" cat-file -e "${published_commit}^{commit}" 2>/dev/null || {
+        echo "[archive] BLOCK: published commit receipt missing or unresolved" >&2; return 1;
+    }
+    if [ -n "$(git -C "$worktree" status --porcelain 2>/dev/null)" ]; then
+        echo "[archive] BLOCK: task worktree dirty; retaining path=$worktree" >&2; return 1
+    fi
+    git -C "$repo" worktree remove "$worktree" >/dev/null 2>&1 || {
+        echo "[archive] BLOCK: task worktree cleanup failed path=$worktree" >&2; return 1;
+    }
+    if git -C "$repo" worktree list --porcelain | grep -Fqx "worktree $worktree"; then
+        echo "[archive] BLOCK: orphan task worktree remains path=$worktree" >&2; return 1
+    fi
+    python3 -c 'import json,os,sys,tempfile,time; p=sys.argv[1]; d=json.load(open(p,encoding="utf-8")); d["state"]="cleaned"; d["cleaned_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_cleaned.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$marker"
+    echo "[archive] task worktree cleanup: OK path=$worktree"
+}
+
 # archive.doneフラグ出力（CMD_ID指定時のみ）
 if [ -n "$CMD_ID" ]; then
     mkdir -p "$PROJECT_DIR/queue/gates/${CMD_ID}"
@@ -2302,6 +2355,7 @@ PY
         echo "[archive] BLOCK: durable gate CLEAR receipt missing or invalid for ${CMD_ID}" >&2
         exit 1
     fi
+    cleanup_task_worktree_marker || exit 1
     _archive_event_id="completion-finalize-archive-${CMD_ID}-${SHOGUN_COMPLETION_GENERATION}"
     defense_overhead_write completion_finalize archive 0 PASS "$_archive_event_id" \
         "{\"cmd_id\":\"${CMD_ID}\",\"generation\":\"${SHOGUN_COMPLETION_GENERATION}\"}" \

@@ -1069,9 +1069,9 @@ EOF
     [[ "$output" == *"完了済み(status=done)だが報告未archive"* ]]
 }
 
-# test_necessity: 完了報告はcommand固有ファイル+task_contract_snapshotで保全される。
-# runtime-idleの忍者をarchive待ちだけで塞がず、busy時の既存BLOCKは上の陰性対照で守る。
-@test "terminal idle worker is immediately reusable while completed report remains preserved" {
+# test_necessity: 完了済みtaskはCLEAR/archive前にruntime idleでも再利用できず、
+# report保全とdone/PASS非終端不変量を守る。
+@test "terminal idle worker stays blocked while completed report remains unarchived" {
     cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
 task:
   parent_cmd: cmd_old
@@ -1091,12 +1091,15 @@ EOF
         NINJA_NAME=hayate
         is_idle=true
         before=$(sha256sum "$1/queue/reports/hayate_report_cmd_old.yaml")
-        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new
+        if deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new; then
+            exit 9
+        fi
         after=$(sha256sum "$1/queue/reports/hayate_report_cmd_old.yaml")
         [ "$before" = "$after" ]
     ' -- "$TEST_PROJECT"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"TERMINAL_IDLE_REUSE"* ]]
+    [[ "$output" == *"BLOCK"* ]]
+    [[ "$output" == *"完了済み(status=done)だが報告未archive"* ]]
 }
 
 # test_necessity: archive_completed keeps a bounded number of completed reports

@@ -580,20 +580,30 @@ source "$SCRIPT_DIR/scripts/lib/autogen_paths.sh"
 # projects/<id>.yaml project.path, and fail back to the platform repo.
 resolve_task_repo_dir() {
     local task_file="$1"
-    local task_meta project_id target_path project_file project_path candidate root
+    local task_meta project_id target_path task_worktree_path project_file project_path candidate root
     task_meta=$(python3 - "$task_file" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 task = data.get("task", data)
 target = task.get("target_path", "")
+source_paths = task.get("task_worktree_source_paths", "")
+if isinstance(source_paths, str):
+    try:
+        source_paths = yaml.safe_load(source_paths) or []
+    except yaml.YAMLError:
+        source_paths = []
+if isinstance(source_paths, list) and source_paths:
+    target = source_paths[0]
 if isinstance(target, list):
     target = next((str(x) for x in target if str(x).strip()), "")
 print(str(task.get("project") or ""))
 print(str(target or ""))
+print(str(task.get("task_worktree_path") or ""))
 PY
 )
     project_id=$(printf '%s\n' "$task_meta" | sed -n '1p')
     target_path=$(printf '%s\n' "$task_meta" | sed -n '2p')
+    task_worktree_path=$(printf '%s\n' "$task_meta" | sed -n '3p')
 
     project_path=""
     project_file="$SCRIPT_DIR/projects/${project_id}.yaml"
@@ -607,7 +617,7 @@ PY
 )
     fi
 
-    for candidate in "$target_path" "$project_path" "$SCRIPT_DIR"; do
+    for candidate in "$task_worktree_path" "$target_path" "$project_path" "$SCRIPT_DIR"; do
         [ -n "$candidate" ] || continue
         if root=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null); then
             printf '%s\n' "$root"
@@ -702,6 +712,13 @@ PY
     ) || return 1
     git -C "$repo" cat-file -e "${source_sha}^{commit}" 2>/dev/null || return 1
     printf '%s\n' "$source_sha"
+}
+
+mark_task_worktree_published() {
+    local task_file="$1" published_commit="$2" marker
+    marker=$(python3 -c 'import sys,yaml; print(str(((yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task") or {}).get("task_worktree_marker") or "").strip())' "$task_file")
+    [ -f "$marker" ] || return 0
+    python3 -c 'import json,os,sys,tempfile,time; p,pub=sys.argv[1:]; d=json.load(open(p,encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="active"; d["published_commit"]=pub; d["published_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_published.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$marker" "$published_commit"
 }
 
 # Build a conflict publication from the source commits' final path snapshots.
@@ -1504,6 +1521,12 @@ push_task_repositories() {
                 push_rc=$?
             fi
             if [ "$push_rc" -eq 0 ]; then
+                published_remote_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+                [[ "$published_remote_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "  git push: BLOCK ($repo published tip verification failed)"; return 1; }
+                for task_file in "${eligible_task_files[@]}"; do
+                    [ "$(resolve_task_repo_dir "$task_file")" = "$repo" ] || continue
+                    mark_task_worktree_published "$task_file" "$published_remote_sha" || return 1
+                done
                 echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"
                 break
             fi

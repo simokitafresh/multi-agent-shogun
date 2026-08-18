@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-# test_necessity: 単一具体batsは許可し、複数/全体bats実行をwrapper込みでBLOCKする
-# 永続契約。これが消えると複数ファイルの無制御実行とrunner偽許可が
+# test_necessity: 実行batsは単一でも複数でもBLOCKし、run_tests file modeへ一本化する
+# 永続契約。これが消えると無制御実行とrunner偽許可が
 # 実行前に検出されなくなる。
 
 HOOK="$BATS_TEST_DIRNAME/../../scripts/hooks/pre-bash-test-fullrun-guard.sh"
@@ -32,13 +32,13 @@ assert_allowed() {
   [[ "$output" != *"BLOCK:"* ]]
 }
 
-@test "単一batsは許可し複数batsはenv timeout bash-c wrapper込みでBLOCK" {
-  assert_allowed "bats tests/unit/test_pre_bash_test_fullrun_guard.bats"
-  assert_allowed "env BATS_TEST_TIMEOUT=5 bats tests/unit/test_pre_bash_test_fullrun_guard.bats"
-  assert_allowed "timeout 30 bats tests/unit/test_pre_bash_test_fullrun_guard.bats"
-  assert_allowed "timeout --kill-after 2 30 env FOO=bar bats tests/unit/test_pre_bash_test_fullrun_guard.bats"
-  assert_allowed "bash -c 'bats tests/unit/test_pre_bash_test_fullrun_guard.bats'"
-  assert_allowed "env FOO=bar bash -c 'timeout 30 bats tests/unit/test_pre_bash_test_fullrun_guard.bats'"
+@test "単一batsも複数batsもenv timeout bash-c wrapper込みでBLOCK" {
+  assert_blocked "bats tests/unit/test_pre_bash_test_fullrun_guard.bats"
+  assert_blocked "env BATS_TEST_TIMEOUT=5 bats tests/unit/test_pre_bash_test_fullrun_guard.bats"
+  assert_blocked "timeout 30 bats tests/unit/test_pre_bash_test_fullrun_guard.bats"
+  assert_blocked "timeout --kill-after 2 30 env FOO=bar bats tests/unit/test_pre_bash_test_fullrun_guard.bats"
+  assert_blocked "bash -c 'bats tests/unit/test_pre_bash_test_fullrun_guard.bats'"
+  assert_blocked "env FOO=bar bash -c 'timeout 30 bats tests/unit/test_pre_bash_test_fullrun_guard.bats'"
   assert_blocked "bats tests/unit/test_pre_bash_test_fullrun_guard.bats tests/unit/test_heavy_job_admission.bats"
   assert_blocked "env BATS_TEST_TIMEOUT=5 bats tests/unit/test_pre_bash_test_fullrun_guard.bats tests/unit/test_heavy_job_admission.bats"
   assert_blocked "timeout 30 bats tests/unit/test_pre_bash_test_fullrun_guard.bats tests/unit/test_heavy_job_admission.bats"
@@ -55,7 +55,7 @@ assert_allowed() {
 }
 
 @test "JSON escaped commandも実コマンド位置を判定する" {
-  assert_allowed "bash -c \"env FOO='a b' bats tests/unit/test_pre_bash_test_fullrun_guard.bats\""
+  assert_blocked "bash -c \"env FOO='a b' bats tests/unit/test_pre_bash_test_fullrun_guard.bats\""
   assert_blocked "bash -c \"env FOO='a b' bats tests/unit/test_pre_bash_test_fullrun_guard.bats tests/unit/test_heavy_job_admission.bats\""
   assert_allowed "echo \"正規代替: bash scripts/run_tests.sh file tests/unit/test_pre_bash_test_fullrun_guard.bats\""
 }

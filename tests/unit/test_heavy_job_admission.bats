@@ -831,10 +831,10 @@ print('ok')
     [ "$status" -ne 0 ]
 }
 
-@test "hook: 単一.batsファイル/単一pytest::関数は軽量でBLOCKされない" {
+@test "hook: 実行batsは単一でもBLOCKし単一pytest::関数はALLOW" {
     local fixture="$(_quick_fixture hook-quick.bats)"
     run _run_hook "bats $fixture"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 2 ]
     run _run_hook "python3 -m pytest backend/tests/test_foo.py::test_bar"
     [ "$status" -eq 0 ]
 }

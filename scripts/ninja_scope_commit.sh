@@ -104,8 +104,40 @@ ninja_scope_commit_total_on_exit() { local rc=$?; ninja_scope_commit_record_tota
 trap ninja_scope_commit_total_on_exit EXIT
 
 usage() {
-    echo "Usage: bash scripts/ninja_scope_commit.sh [-m <message>] [--reflux-mode synced|non-target --reflux-evidence <text>] [--repair-index | --patch <file> --base-blob <hash>] -- <path> [path ...]" >&2
+    echo "Usage: bash scripts/ninja_scope_commit.sh [--task-worktree-exec <task.yaml> -- <command> ...] [-m <message>] [--reflux-mode synced|non-target --reflux-evidence <text>] [--repair-index | --patch <file> --base-blob <hash>] -- <path> [path ...]" >&2
 }
+
+# Level5 edit wrapper: source-task commands start in the deploy-created linked
+# worktree. The task's target_path/planned_paths remain repo-relative; only
+# this execution root is absolute and task-owned.
+run_task_worktree_command() {
+    local task_file="$1"
+    shift
+    local worktree
+    worktree="$(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print(str(task.get("task_worktree_workdir") or task.get("task_worktree_path") or "").strip())
+PY
+)"
+    [ -n "$worktree" ] || { echo "BLOCK: task worktree edit wrapper requires task_worktree_workdir" >&2; return 2; }
+    [ -d "$worktree" ] || { echo "BLOCK: task worktree edit wrapper path missing: $worktree" >&2; return 2; }
+    git -C "$worktree" rev-parse --show-toplevel >/dev/null 2>&1 \
+        || { echo "BLOCK: task worktree edit wrapper path is not a Git worktree: $worktree" >&2; return 2; }
+    [ "$#" -gt 0 ] || { echo "BLOCK: task worktree edit wrapper command is empty" >&2; return 2; }
+    (cd "$worktree" && export TASK_WORKTREE_ACTIVE=1 TASK_WORKTREE_ROOT="$worktree" && "$@")
+}
+
+if [[ "${1:-}" == "--task-worktree-exec" ]]; then
+    (($# >= 4)) || { usage; exit 2; }
+    task_worktree_exec_task="$2"
+    shift 2
+    [[ "$1" == "--" ]] || { echo "BLOCK: --task-worktree-exec requires -- before command" >&2; exit 2; }
+    shift
+    run_task_worktree_command "$task_worktree_exec_task" "$@"
+    exit $?
+fi
 
 message=""
 patch_file=""
@@ -227,9 +259,66 @@ fi
 [[ "${GIT_CONFIG_COUNT:-0}" =~ ^[0-9]+$ ]] \
     || { echo "BLOCK: GIT_CONFIG_COUNT must be a non-negative integer" >&2; exit 2; }
 
+# A source task may be published from the deploy-created remote-tip linked
+# worktree. Resolve it from the task contract before discovering repo_root so
+# the private index and commit transaction belong to that worktree, never the
+# shared main checkout.
+if [[ -n "${NINJA_SCOPE_TASK_FILE:-}" && -f "$NINJA_SCOPE_TASK_FILE" ]]; then
+    _task_worktree_path="$(python3 - "$NINJA_SCOPE_TASK_FILE" <<'PY'
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print(str(task.get("task_worktree_path") or "").strip())
+PY
+)"
+    if [[ -n "$_task_worktree_path" ]]; then
+        [[ -d "$_task_worktree_path" ]] || { echo "BLOCK: task worktree missing: $_task_worktree_path" >&2; exit 2; }
+        git -C "$_task_worktree_path" rev-parse --show-toplevel >/dev/null 2>&1 \
+            || { echo "BLOCK: task worktree is not a Git worktree: $_task_worktree_path" >&2; exit 2; }
+        cd "$_task_worktree_path"
+        export NINJA_SCOPE_TASK_WORKTREE_ACTIVE=1
+    fi
+fi
+
+assert_task_shared_source_clean() {
+    local task_file="$1" task_worktree="$2" shared_git_dir shared_repo dirty path
+    [ -n "$task_worktree" ] || return 0
+    shared_git_dir="$(git -C "$task_worktree" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+    [ -n "$shared_git_dir" ] || { echo "BLOCK: cannot resolve task worktree common Git dir" >&2; return 2; }
+    shared_repo="$(dirname "$shared_git_dir")"
+    [ "$shared_repo" != "$task_worktree" ] || return 0
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        dirty="$(git -C "$shared_repo" status --porcelain --untracked-files=all -- "$path" 2>/dev/null || true)"
+        if [ -n "$dirty" ]; then
+            echo "BLOCK: shared source path was edited outside task worktree: $path" >&2
+            return 2
+        fi
+    done < <(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+values = task.get("task_worktree_source_paths") or []
+if isinstance(values, str):
+    try:
+        values = yaml.safe_load(values) or []
+    except yaml.YAMLError:
+        values = [values]
+if not isinstance(values, list):
+    values = [values]
+runtime = ("queue/", "logs/", "context/", "projects/", "archive/", ".cache/")
+for value in dict.fromkeys(str(item).strip().lstrip("./") for item in values):
+    if value and value != "dashboard.md" and not value.startswith(runtime):
+        print(value)
+PY
+)
+}
+
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
     || { echo "BLOCK: not inside a git repository" >&2; exit 2; }
 cd "$repo_root"
+if [[ -n "${_task_worktree_path:-}" ]]; then
+    assert_task_shared_source_clean "$NINJA_SCOPE_TASK_FILE" "$repo_root" || exit $?
+fi
 
 # A private GIT_INDEX_FILE isolates each commit tree, but `git commit` still
 # shares COMMIT_EDITMSG, hooks, and the branch ref.  Concurrent callers used to
@@ -876,6 +965,12 @@ paths=()
 for path in "$@"; do
     [[ -n "$path" && "$path" != -* ]] \
         || { echo "BLOCK: invalid scope path: ${path:-<empty>}" >&2; exit 2; }
+    if [[ "$path" = /* && -n "${_task_worktree_path:-}" ]]; then
+        case "$path" in
+            "$repo_root"/*) path="${path#"$repo_root/"}" ;;
+            *) echo "BLOCK: absolute scope path is outside task worktree: $path" >&2; exit 2 ;;
+        esac
+    fi
     # scope_path_normalizeは絶対path・".."を含むpath(出現位置を問わず)・
     # root相当に解決されるpath(空/"."/".."単体等)を全てfail-closedし、
     # 理由をstderrへ書く(このtry/exitはその理由をそのまま伝播させる)。

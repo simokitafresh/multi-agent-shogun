@@ -620,18 +620,6 @@ deploy_task_guard_worker_assignment() {
             fi
             ;;
         done|PASS)
-            # A terminal task and an idle runtime are reusable even while the
-            # immutable report awaits archive/review.  Report generation froze
-            # its task_contract_snapshot, and completed reports are preserved
-            # under command-specific filenames; keeping the worker blocked no
-            # longer protects evidence, it only removes throughput.  Runtime
-            # busy remains fail-closed below.
-            if [ "${is_idle:-false}" = true ] \
-                && [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
-                && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent"; then
-                log "TERMINAL_IDLE_REUSE: ${worker_name:-worker} ${current_status} task ${current_parent} report preserved; allowing ${incoming_cmd}"
-                return 0
-            fi
             # B26 escape hatch (将軍裁可 blt_20260725_234849): CI REDのときGATEが通らず
             # 報告がarchiveできない。その状態でこのガードが全配備を拒むと「CI修正を
             # 配備できないからCI REDが直らない」という自己矛盾で全忍者が詰む(2026-07-25実証)。
@@ -1974,6 +1962,10 @@ STALE_FIELDS = [
     # report identityは配備世代ごとの一意契約。旧世代taskからfast publicationへ
     # 渡すと別report pathでも同じUUIDを再利用するため、世代境界で必ず除去する。
     'report_id', 'report_identity_version',
+    'task_worktree_required', 'task_worktree_path', 'task_worktree_repo',
+    'task_worktree_base', 'task_worktree_generation', 'task_worktree_status',
+    'task_worktree_marker', 'task_worktree_workdir', 'task_worktree_target_paths',
+    'task_worktree_edit_wrapper', 'task_worktree_source_paths',
     # Terminal evidence is generation-scoped. A reused worker must not carry
     # the predecessor's CI run/checkpoint into a task that omits them.
     'ci_run_id', 'final_checkpoint',
@@ -10051,6 +10043,13 @@ from scripts.lib.test_necessity_contract import validate_entries
 data = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
 task = data.get("task", data)
 project = str(task.get("project") or os.environ.get("DEPLOY_TASK_TEST_DEFAULT_PROJECT") or "").strip()
+target_declared = task.get("target_path")
+
+# Legacy/direct lifecycle fixtures intentionally omit project and target_path;
+# optional injectors may still add derived context paths before this precheck.
+# Do not invent a project repository for those runtime-only tasks.
+if not project and (not target_declared or os.environ.get("DEPLOY_TASK_DIRECT_MODE") == "true"):
+    raise SystemExit(0)
 
 def resolve_project_repo(project_id):
     if project_id == "infra":
@@ -11512,7 +11511,8 @@ record_deployed_at() {
 
     local existing
     existing=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "deployed_at" "")
-    yaml_field_set "$task_file" "task" "deployed_at" "$timestamp"
+    yaml_field_set_batch "$task_file" "task" \
+        "deployed_at=$timestamp" "progress_updated_at=$timestamp"
     if [ -n "$existing" ]; then
         log "[DEPLOYED_AT] Updated: old=${existing}, new=${timestamp}"
     else
@@ -11520,12 +11520,170 @@ record_deployed_at() {
     fi
 }
 
-record_target_worktree_blob_at_deploy() {
-    local task_file="$1" target blob now
+# Source-changing tasks are edited and committed from a linked worktree rooted
+# at the live remote tip. The shared checkout remains available for queue and
+# runtime state, while this marker gives GATE/archive one cleanup identity.
+deploy_task_rollback_remote_tip_worktree() {
+    local repo="$1" worktree="$2" marker="$3"
+    if [ -n "$repo" ] && [ -n "$worktree" ] && [ -d "$worktree" ]; then
+        git -C "$repo" worktree remove "$worktree" >/dev/null 2>&1 || true
+    fi
+    [ -n "$marker" ] && rm -f -- "$marker" "${marker}.tmp.${BASHPID}" 2>/dev/null || true
+}
+
+deploy_task_prepare_remote_tip_worktree() {
+    local task_file="$1" ninja_name="$2"
+    local task_worktree_required source_path_count task_id parent_cmd project target repo upstream_ref remote push_ref remote_tip
+    local worktree_root worktree_path generation marker marker_tmp task_worktree_targets task_worktree_edit_wrapper
+    local task_worktree_projection task_worktree_source_paths task_worktree_target_path_visible
+    local task_worktree_planned_paths_visible task_worktree_inspection_path_visible
+    task_worktree_required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
     target=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null || true)
-    target="${target#[}"; target="${target%]}"; target="${target#\"}"; target="${target%\"}"
-    [ -n "$target" ] && [ -f "$SCRIPT_DIR/$target" ] || return 0
-    blob=$(git -C "$SCRIPT_DIR" hash-object -- "$target" 2>/dev/null || true)
+    source_path_count=$(python3 -c 'import os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); v=[]; [v.extend([t.get(k)] if isinstance(t.get(k),str) else t.get(k) if isinstance(t.get(k),list) else []) for k in ("target_path","planned_paths")]; p=[os.path.normpath(str(x or "")).lstrip("./") for x in v]; r=("queue/","logs/","context/","projects/","archive/",".cache/"); print(len({x for x in p if x and x != "dashboard.md" and not x.startswith(r)}))' "$task_file")
+    # Runtime/autogen-only tasks are excluded above. Any remaining source path
+    # is a source task; publication permission is not the classification axis.
+    if [ "$task_worktree_required" != "true" ] && [ "$source_path_count" -lt 1 ]; then
+        return 0
+    fi
+    task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "" 2>/dev/null || true)
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$task_id" ] && [ -n "$parent_cmd" ] || { log "BLOCK: remote-tip worktree requires task_id and parent_cmd"; return 1; }
+
+    repo="$SCRIPT_DIR"
+    if [ -n "$target" ] && git -C "$target" rev-parse --show-toplevel >/dev/null 2>&1; then
+        repo=$(git -C "$target" rev-parse --show-toplevel)
+    elif [ "$project" != "infra" ] && [ -n "$project" ]; then
+        repo=$(get_project_path "$project" 2>/dev/null || true)
+    fi
+    repo=$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null || true)
+    [ -n "$repo" ] || { log "BLOCK: remote-tip worktree repo unavailable"; return 1; }
+
+    upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
+    [ -n "$upstream_ref" ] || upstream_ref="origin/main"
+    remote="${upstream_ref%%/*}"; push_ref="refs/heads/${upstream_ref#*/}"
+    remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || { log "BLOCK: remote-tip worktree remote tip unavailable"; return 1; }
+    git -C "$repo" fetch -q --no-write-fetch-head "$remote" "$push_ref" || { log "BLOCK: remote-tip fetch failed"; return 1; }
+    git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || { log "BLOCK: remote-tip object unavailable"; return 1; }
+
+    worktree_root="${DEPLOY_TASK_WORKTREE_ROOT:-/tmp/shogun-task-worktrees}"
+    mkdir -p "$worktree_root"
+    generation=$(printf '%s\0%s\0%s' "$task_id" "$remote_tip" "$(date +%s%N)" | sha256sum | awk '{print $1}')
+    worktree_path="$worktree_root/${ninja_name}_${generation:0:16}"
+    [ ! -e "$worktree_path" ] || { log "BLOCK: task worktree path already exists"; return 1; }
+    git -C "$repo" -c maintenance.auto=false worktree add --detach --no-checkout "$worktree_path" "$remote_tip" >/dev/null 2>&1 || { log "BLOCK: task worktree add failed"; return 1; }
+    if ! git -C "$worktree_path" -c maintenance.auto=false checkout --detach "$remote_tip" >/dev/null 2>&1 \
+        || ! git -C "$worktree_path" config maintenance.auto false; then
+        git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+        log "BLOCK: task worktree checkout/config failed"
+        return 1
+    fi
+
+    marker="$SCRIPT_DIR/queue/gates/$parent_cmd/task_worktree.json"; mkdir -p "${marker%/*}"
+    marker_tmp="${marker}.tmp.${BASHPID}"
+    python3 -c 'import json,os,sys,time; p,tid,pc,repo,wt,base,gen=sys.argv[1:]; fh=open(p,"w",encoding="utf-8"); json.dump({"version":1,"state":"active","task_id":tid,"parent_cmd":pc,"repo":repo,"worktree":wt,"remote_tip":base,"published_commit":"","generation":gen,"created_at_ns":time.time_ns()},fh,sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno()); fh.close()' \
+        "$marker_tmp" "$task_id" "$parent_cmd" "$repo" "$worktree_path" "$remote_tip" "$generation"
+    mv -f -- "$marker_tmp" "$marker"
+    task_worktree_targets=$(python3 -c 'import json,os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); a=t.get("target_path") or []; a=[a] if isinstance(a,str) else a; b=t.get("planned_paths") or []; b=[b] if isinstance(b,str) else b; v=a+b; print(json.dumps([os.path.join(sys.argv[2],str(x).lstrip("./")) for x in v if str(x).strip()],ensure_ascii=False))' "$task_file" "$worktree_path")
+    task_worktree_projection=$(python3 - "$task_file" "$worktree_path" <<'PY'
+import json
+import os
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+root = sys.argv[2]
+
+def paths(value):
+    if isinstance(value, str):
+        try:
+            decoded = yaml.safe_load(value)
+        except yaml.YAMLError:
+            decoded = None
+        if isinstance(decoded, list):
+            return [str(item).strip() for item in decoded if str(item).strip()]
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return []
+
+def projection(key):
+    original = task.get(key)
+    values = paths(original)
+    absolute = [os.path.join(root, item.lstrip("./")) for item in values]
+    if isinstance(original, str) and not str(original).lstrip().startswith("["):
+        visible = absolute[0] if absolute else None
+    else:
+        visible = absolute if values else None
+    return values, visible
+
+target, target_visible = projection("target_path")
+planned, planned_visible = projection("planned_paths")
+inspection, inspection_visible = projection("inspection_path")
+print(json.dumps({
+    "source_paths": list(dict.fromkeys(target + planned)),
+    "target_path": target_visible,
+    "planned_paths": planned_visible,
+    "inspection_path": inspection_visible,
+}, ensure_ascii=False))
+PY
+)
+    task_worktree_source_paths=$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["source_paths"],ensure_ascii=False))' "$task_worktree_projection")
+    task_worktree_target_path_visible=$(python3 -c 'import json,sys; v=json.loads(sys.argv[1]).get("target_path"); print(v if isinstance(v,str) else json.dumps(v,ensure_ascii=False) if v is not None else "")' "$task_worktree_projection")
+    task_worktree_planned_paths_visible=$(python3 -c 'import json,sys; v=json.loads(sys.argv[1]).get("planned_paths"); print(v if isinstance(v,str) else json.dumps(v,ensure_ascii=False) if v is not None else "")' "$task_worktree_projection")
+    task_worktree_inspection_path_visible=$(python3 -c 'import json,sys; v=json.loads(sys.argv[1]).get("inspection_path"); print(v if isinstance(v,str) else json.dumps(v,ensure_ascii=False) if v is not None else "")' "$task_worktree_projection")
+    task_worktree_edit_wrapper="$SCRIPT_DIR/scripts/ninja_scope_commit.sh --task-worktree-exec $task_file --"
+    local -a task_worktree_args=(
+        "task_worktree_required=true" "task_worktree_path=$worktree_path"
+        "task_worktree_repo=$repo" "task_worktree_base=$remote_tip"
+        "task_worktree_generation=$generation" "task_worktree_status=active"
+        "task_worktree_marker=$marker" "task_worktree_workdir=$worktree_path"
+        "task_worktree_target_paths=$task_worktree_targets"
+        "task_worktree_edit_wrapper=$task_worktree_edit_wrapper"
+        "task_worktree_source_paths=$task_worktree_source_paths"
+    )
+    [ -n "$task_worktree_target_path_visible" ] && task_worktree_args+=("target_path=$task_worktree_target_path_visible")
+    [ -n "$task_worktree_planned_paths_visible" ] && task_worktree_args+=("planned_paths=$task_worktree_planned_paths_visible")
+    [ -n "$task_worktree_inspection_path_visible" ] && task_worktree_args+=("inspection_path=$task_worktree_inspection_path_visible")
+    if [ "${DEPLOY_TASK_TEST_FAIL_WORKTREE_YAML_PUBLISH:-0}" = "1" ]; then
+        deploy_task_rollback_remote_tip_worktree "$repo" "$worktree_path" "$marker"
+        log "BLOCK: injected task worktree YAML publish failure; rolled back path=$worktree_path"
+        return 1
+    fi
+    if ! yaml_field_set_batch "$task_file" task "${task_worktree_args[@]}"; then
+        deploy_task_rollback_remote_tip_worktree "$repo" "$worktree_path" "$marker"
+        log "BLOCK: task worktree YAML publish failed; rolled back path=$worktree_path"
+        return 1
+    fi
+    log "TASK_WORKTREE_READY: ninja=$ninja_name task=$task_id base=$remote_tip path=$worktree_path maintenance.auto=false"
+}
+
+record_target_worktree_blob_at_deploy() {
+    local task_file="$1" target blob now repo required
+    required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
+    repo="$SCRIPT_DIR"
+    if [ "$required" = "true" ]; then
+        repo=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_repo" "$SCRIPT_DIR" 2>/dev/null || true)
+        target=$(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+value = task.get("task_worktree_source_paths") or []
+if isinstance(value, str):
+    try:
+        value = yaml.safe_load(value) or []
+    except yaml.YAMLError:
+        value = [value]
+print(str(value[0]).strip() if isinstance(value, list) and value else "")
+PY
+)
+    else
+        target=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null || true)
+        target="${target#[}"; target="${target%]}"; target="${target#\"}"; target="${target%\"}"
+    fi
+    [ -n "$target" ] && [ -f "$repo/$target" ] || return 0
+    blob=$(git -C "$repo" hash-object -- "$target" 2>/dev/null || true)
     [[ "$blob" =~ ^[0-9a-f]{40}$ ]] || return 1
     now=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
     yaml_field_set_batch "$task_file" task \
@@ -13641,6 +13799,7 @@ deploy_task_main() {
     DEPLOY_TASK_WALL_PHASE_LAST_US="$DEPLOY_TASK_STARTED_US"
     deploy_task_start_deadline
     parse_deploy_task_args "$@"
+    export DEPLOY_TASK_DIRECT_MODE="$DIRECT_MODE"
     deploy_task_wall_phase_checkpoint parse_args
     DEPLOY_TASK_PHASE=preflight
     deploy_task_check_deadline "after_parse_args" || return $?
@@ -14155,6 +14314,12 @@ except Exception:
     DEPLOY_TASK_PHASE=task_mutations
     deploy_task_wall_phase_checkpoint preflight
     deploy_task_apply_task_mutations "$NINJA_NAME" || {
+        DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+        DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
+    }
+    deploy_task_prepare_remote_tip_worktree "$task_yaml" "$NINJA_NAME" || {
         DEPLOY_TASK_EXIT_NUDGE_ARMED=0
         DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
