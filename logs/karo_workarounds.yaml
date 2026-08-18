@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_test_speed_deploy_cycle6_20260809
-  timestamp: '2026-08-09T14:02:46Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_test_speed_deploy_cycle6_20260809'
 - cmd_id: cmd_karo_hotfix_test_speed_deploy_cycle7_20260809
   timestamp: '2026-08-09T14:29:45Z'
   ninja: system
@@ -1317,3 +1304,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_ga479_infrastructure_freshness_202608190450'
+- cmd_id: cmd_karo_hotfix_direct_cmd_status_publish_202608190530
+  timestamp: '2026-08-18T21:05:22Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_direct_cmd_status_publish_202608190530'
