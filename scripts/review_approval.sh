@@ -341,7 +341,9 @@ fi
 # SG7 used to exist only as a skill instruction: review_bundle.py generate had
 # no production caller, so GATE could archive the report before Karo consumed
 # the bundle.  Bind generation to the existing formal Gunshi-LGTM boundary.
-if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ -f "$ROOT/scripts/review_bundle.py" ]; then
+if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
+  && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" != review_bundle ] \
+  && [ -f "$ROOT/scripts/review_bundle.py" ]; then
   sg7_archive_args=()
   [[ "$report_rel" = queue/archive/reports/* ]] && sg7_archive_args+=(--allow-archived)
   python3 "$ROOT/scripts/review_bundle.py" generate \
@@ -386,6 +388,13 @@ review_approval_cleanup_on_exit() {
 trap review_approval_cleanup_on_exit EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
+# The durable approval record is complete.  Do not keep the report approval
+# lock across SG7 publication or any completion work: canonical LGTM used to
+# invoke review_bundle.notify while fd 200 was still held, and notify then ran
+# cmd_complete_gate synchronously.  Karo ACCEPT consequently waited on the
+# same lock until rc=1 while the predecessor remained in pipe_read.
+flock -u 200 2>/dev/null || true
+exec 200>&- || true
 # T1a throughput instrumentation: the approval file above is the existing
 # durable decision boundary.  Reuse the shared append-only timing ledger and
 # bind the id to the report attempt (fingerprint) plus report identity (key).
@@ -395,22 +404,11 @@ case "$role:$result" in
     defense_overhead_write review_approval gunshi_lgtm 0 PASS \
       "review-approval-gunshi-lgtm-${cmd_id}-${report_key}-${fingerprint}" \
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
-    # Throughput fix: auto-trigger after gunshi LGTM too — if karo ACCEPT
-    # arrived first, this second trigger completes the gate. Idempotent.
-    if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ] && [ -f "$ROOT/scripts/cmd_complete_gate.sh" ]; then
-      (bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$ROOT/logs/gate_auto_trigger.log" 2>&1 || true) &
-    fi
     ;;
   karo:ACCEPT)
     defense_overhead_write review_approval karo_accept 0 PASS \
       "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" \
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
-    # Throughput fix: auto-trigger cmd_complete_gate in background after karo
-    # ACCEPT so GATE CLEAR does not wait for karo's manual /cmd-complete.
-    # The gate script is idempotent; if it BLOCKs, karo still runs it manually.
-    if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ] && [ -f "$ROOT/scripts/cmd_complete_gate.sh" ]; then
-      (bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$ROOT/logs/gate_auto_trigger.log" 2>&1 || true) &
-    fi
     ;;
 esac
 if [ "$role" = karo ] && [ "$result" = RC ]; then

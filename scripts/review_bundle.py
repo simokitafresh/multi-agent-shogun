@@ -438,19 +438,6 @@ PROJECT_ROOT="{root}" review_two_phase_ready_gunshi "{args.cmd}" "{report}"
         spec = review["cmd_spec_summary"]; relative = str(path.relative_to(root))
         message = f"{args.cmd} SG7 bundle. verdict: LGTM. report: {review['report']} bundle: {relative} cmd_spec_summary: acceptance_criteria_count={spec['acceptance_criteria_count']}, scope={json.dumps(spec['scope'], ensure_ascii=False, separators=(',', ':'))}, project={spec['project']}"
         subprocess.run(["bash", str(root / "scripts/inbox_write.sh"), "karo", message, "report_review_result", "gunshi"], cwd=root, check=True)
-        # --- Finalize auto-execute: LGTM → cmd_complete_gate (includes archive+ntfy) ---
-        # Mechanical processing after judgment (LGTM) is complete.
-        # cmd_complete_gate.sh already calls archive_completed.sh and ntfy on CLEAR.
-        # GATE BLOCK is reported to karo for manual handling.
-        gate_script = root / "scripts/cmd_complete_gate.sh"
-        if gate_script.is_file():
-            gate_result = subprocess.run(
-                ["bash", str(gate_script), args.cmd],
-                cwd=root, capture_output=True, text=True,
-            )
-            gate_outcome = "CLEAR" if gate_result.returncode == 0 else "BLOCK"
-            print(f"{args.cmd} finalize auto-execute: {gate_outcome}")
-        # --- end finalize auto-execute ---
         marker_tmp = marker.with_name(f".{marker.name}.tmp.{os.getpid()}")
         try:
             marker_tmp.write_text(fingerprint + "\n", encoding="utf-8")
@@ -563,8 +550,57 @@ def batch(args):
     result = {"total": len(items), "fail": 0, "skip": 0, "wall_ms": round((time.monotonic() - wall_started) * 1000), "p95_report_ms": max(durations)}
     print(json.dumps(result, ensure_ascii=False, sort_keys=True)); return 0
 
+def _singleflight_token(root, args, entry):
+    """Bind one review notification to one report/contract generation."""
+    report_path = Path(args.report)
+    if not report_path.is_absolute():
+        report_path = root / report_path
+    report_path = report_path.resolve()
+    report = load(report_path) if report_path.is_file() else {}
+    worker = str(report.get("worker_id") or "").strip()
+    task = {}
+    if worker:
+        task_path = root / "queue" / "tasks" / f"{worker}.yaml"
+        if task_path.is_file():
+            task_doc = load(task_path)
+            task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else {}
+    contract = {
+        "parent_cmd": str(report.get("parent_cmd") or args.cmd),
+        "task_id": str(report.get("task_id") or task.get("task_id") or ""),
+        "ac_version": str(report.get("ac_version_read") or task.get("ac_version") or ""),
+        "report_id": str(report.get("report_id") or ""),
+        "report_identity_version": str(
+            report.get("report_identity_version") or task.get("report_identity_version") or ""
+        ),
+    }
+    logical_report = f"queue/reports/{report_path.name}"
+    approval_key = hashlib.sha256(logical_report.encode("utf-8")).hexdigest()
+    approval_dir = root / "queue" / "gates" / str(args.cmd) / "review_approvals" / "reports" / approval_key
+    approval_state = {}
+    for relative in (
+        "gunshi.yaml", "karo.yaml", "last_rc_commit", "last_rc_scope",
+        "last_rc_report_payload", "last_rc_snapshot_dir", "karo_rework.seen",
+    ):
+        state_path = approval_dir / relative
+        approval_state[relative] = state_path.read_text(encoding="utf-8") if state_path.is_file() else None
+    gate_marker = root / "queue" / "gates" / str(args.cmd) / "review_gate.done"
+    approval_state["review_gate.done"] = (
+        gate_marker.read_text(encoding="utf-8") if gate_marker.is_file() else None
+    )
+    payload = {
+        "cmd": str(args.cmd),
+        "report": str(report_path),
+        "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest() if report_path.is_file() else "missing",
+        "contract": contract,
+        "approval_state": approval_state,
+        "review_entry": entry,
+    }
+    encoded = json.dumps(payload, default=_json_default, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
 def single(args):
-    """Run the existing batch transaction for exactly one review."""
+    """Run one review notification as a durable single-flight transaction."""
     entry = load(args.review_entry)
     if isinstance(entry, list):
         matches = [item for item in entry if isinstance(item, dict) and str(item.get("cmd_id") or "") == args.cmd]
@@ -577,9 +613,36 @@ def single(args):
             "review_entry": entry}
     if args.fail_reason:
         item["fail_reason"] = args.fail_reason
-    manifest = Path(args.root).resolve() / f"queue/gates/{args.cmd}/single_review_manifest.json"
-    atomic_json(manifest, {"reviews": [item]})
-    return batch(argparse.Namespace(root=args.root, manifest=str(manifest), max_workers=1))
+    root = Path(args.root).resolve()
+    gate_dir = root / "queue" / "gates" / args.cmd
+    gate_dir.mkdir(parents=True, exist_ok=True)
+    token = _singleflight_token(root, args, entry)
+    terminal = gate_dir / "single_review_terminal.json"
+    lock_path = gate_dir / "single_review_singleflight.lock"
+    with lock_path.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        if terminal.is_file():
+            previous = load(terminal)
+            if str(previous.get("token") or "") == token:
+                if previous.get("status") == "success":
+                    print(f"{args.cmd} review singleflight: SKIP (durable terminal)")
+                    return 0
+                raise ValueError(
+                    "singleflight terminal failure: "
+                    + str(previous.get("error") or "unknown review failure")
+                )
+        manifest = gate_dir / "single_review_manifest.json"
+        atomic_json(manifest, {"reviews": [item]})
+        try:
+            result = batch(argparse.Namespace(root=str(root), manifest=str(manifest), max_workers=1))
+        except Exception as exc:
+            atomic_json(terminal, {
+                "version": 1, "token": token, "status": "failure",
+                "error": str(exc),
+            })
+            raise
+        atomic_json(terminal, {"version": 1, "token": token, "status": "success"})
+        return result
 
 def build_parser():
     p = argparse.ArgumentParser(); p.add_argument("--root", default=str(Path(__file__).resolve().parents[1])); subs = p.add_subparsers(dest="action", required=True)

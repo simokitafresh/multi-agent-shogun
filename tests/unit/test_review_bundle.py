@@ -8,6 +8,9 @@ from types import SimpleNamespace
 import hashlib
 import json
 import subprocess
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -233,6 +236,108 @@ def test_cli_failed_archive_report_generates_fail_bundle(tmp_path):
     args = SimpleNamespace(root=str(root), report=str(report), cmd="cmd_ok", verdict="FAIL",
                            allow_archived=True, fail_reason="measured failure")
     assert review_bundle.generate(args) == 0
+
+
+def test_single_review_notification_is_singleflight_per_generation(tmp_path, monkeypatch):
+    """test_necessity: duplicate report notifications must execute one review flight."""
+    root = _root(tmp_path)
+    cmd = "cmd_singleflight"
+    (root / "queue/gates" / cmd).mkdir(parents=True, exist_ok=True)
+    report = root / "queue/reports/worker_report_cmd_singleflight.yaml"
+    report.write_text(
+        "worker_id: worker\n"
+        "task_id: cmd_singleflight_normal\n"
+        "report_id: rpt-singleflight\n"
+        "report_identity_version: 2\n"
+        "parent_cmd: cmd_singleflight\n"
+        "ac_version_read: ac-v1\n"
+        "status: completed\n"
+        "verdict: PASS\n"
+        "commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+        "result: {summary: singleflight fixture}\n",
+        encoding="utf-8",
+    )
+    (root / "queue/tasks/worker.yaml").write_text(
+        "task:\n"
+        "  task_id: cmd_singleflight_normal\n"
+        "  parent_cmd: cmd_singleflight\n"
+        "  report_filename: worker_report_cmd_singleflight.yaml\n"
+        "  ac_version: ac-v1\n",
+        encoding="utf-8",
+    )
+    entry = root / "review-entry.yaml"
+    entry.write_text("cmd_id: cmd_singleflight\nreview_type: draft\n", encoding="utf-8")
+    args = SimpleNamespace(
+        root=str(root), cmd=cmd, report=str(report), verdict="APPROVE",
+        review_entry=str(entry), fail_reason=None,
+    )
+    calls = []
+    calls_lock = threading.Lock()
+
+    def fake_batch(namespace):
+        with calls_lock:
+            calls.append(namespace.manifest)
+        time.sleep(0.1)
+        return 0
+
+    monkeypatch.setattr(review_bundle, "batch", fake_batch)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda _: review_bundle.single(args), range(2)))
+
+    assert results == [0, 0]
+    assert len(calls) == 1
+    terminal = review_bundle.load(root / "queue/gates" / cmd / "single_review_terminal.json")
+    assert terminal["status"] == "success"
+
+
+def test_single_review_failure_reopens_only_after_approval_state_change(tmp_path, monkeypatch):
+    """test_necessity: true same-state failures stay fail-closed across retries."""
+    root = _root(tmp_path)
+    cmd = "cmd_singleflight_failure"
+    (root / "queue/gates" / cmd).mkdir(parents=True, exist_ok=True)
+    report = root / "queue/reports/worker_report_cmd_singleflight_failure.yaml"
+    report.write_text(
+        "worker_id: worker\n"
+        "task_id: cmd_singleflight_failure_normal\n"
+        "report_id: rpt-singleflight-failure\n"
+        "report_identity_version: 2\n"
+        "parent_cmd: cmd_singleflight_failure\n",
+        encoding="utf-8",
+    )
+    (root / "queue/tasks/worker.yaml").write_text(
+        "task:\n"
+        "  task_id: cmd_singleflight_failure_normal\n"
+        "  parent_cmd: cmd_singleflight_failure\n",
+        encoding="utf-8",
+    )
+    entry = root / "review-entry.yaml"
+    entry.write_text("cmd_id: cmd_singleflight_failure\nreview_type: report\n", encoding="utf-8")
+    args = SimpleNamespace(
+        root=str(root), cmd=cmd, report=str(report), verdict="APPROVE",
+        review_entry=str(entry), fail_reason=None,
+    )
+    calls = []
+
+    def failing_then_success(namespace):
+        calls.append(namespace.manifest)
+        if len(calls) == 1:
+            raise ValueError("measured review failure")
+        return 0
+
+    monkeypatch.setattr(review_bundle, "batch", failing_then_success)
+    with pytest.raises(ValueError, match="measured review failure"):
+        review_bundle.single(args)
+    with pytest.raises(ValueError, match="singleflight terminal failure"):
+        review_bundle.single(args)
+    assert len(calls) == 1
+
+    logical = f"queue/reports/{report.name}"
+    approval_key = hashlib.sha256(logical.encode("utf-8")).hexdigest()
+    approval_dir = root / "queue/gates" / cmd / "review_approvals" / "reports" / approval_key
+    approval_dir.mkdir(parents=True)
+    (approval_dir / "karo.yaml").write_text("result: ACCEPT\n", encoding="utf-8")
+    assert review_bundle.single(args) == 0
+    assert len(calls) == 2
 
 
 def test_specless_failed_report_generates_fail_bundle_from_snapshot(tmp_path):

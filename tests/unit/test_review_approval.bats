@@ -127,6 +127,28 @@ record_trigger_approvals() {
     [ ! -e "$approvals/.gate_triggering.$manifest" ]
 }
 
+# test_necessity: normal dual approval must dispatch exactly one detached gate
+# flight after both durable approval records exist.
+@test "completion trigger launches once after normal dual approval" {
+    setup_trigger_fixture
+    export STUB_GATE_MODE=normal
+    record_trigger_approvals
+
+    local gate_dir="$TRIGGER_ROOT/queue/gates/cmd_trigger"
+    local approvals="$gate_dir/review_approvals"
+    local manifest
+    manifest=$(awk '$1 == "manifest:" {print $2; exit}' "$gate_dir/review_gate.done")
+    [ -n "$manifest" ]
+    for i in $(seq 1 140); do
+        [ -f "$approvals/.gate_triggered.$manifest" ] && break
+        sleep 0.05
+    done
+    [ "$(cat "$STUB_GATE_STATE")" -eq 1 ]
+    [ "$(grep -c '^attempt=' "$gate_dir/cmd_complete_gate.trigger.log")" -eq 1 ]
+    grep -q '^result: 0$' "$approvals/.gate_triggered.$manifest"
+    [ ! -e "$approvals/.gate_triggering.$manifest" ]
+}
+
 # test_necessity: a terminal BLOCK result must stop the detached trigger after
 # one invocation and must never enter the transient-lock retry lane.
 @test "completion trigger stops on terminal BLOCK without retry" {
