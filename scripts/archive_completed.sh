@@ -72,6 +72,35 @@ if [ -n "$CMD_ID" ] && [[ ! "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}
     exit 1
 fi
 
+# Tests and gate probes intentionally write ignored receipts/caches inside a
+# task worktree.  `git status --porcelain` calls that tree clean, but ordinary
+# `git worktree remove` refuses to discard those files.  Preserve every
+# ignored path under the infra archive before removal so cleanup remains both
+# lossless and non-forcing.
+preserve_task_worktree_ignored_artifacts() {
+    local worktree="$1" artifact_root entry rel src dst count=0
+    artifact_root="$PROJECT_DIR/queue/archive/task-worktree-artifacts/${CMD_ID}"
+    while IFS= read -r -d '' entry; do
+        [[ "$entry" == "!! "* ]] || continue
+        rel="${entry#!! }"
+        case "$rel" in
+            ""|/*|../*|*/../*|*/..) echo "[archive] BLOCK: unsafe ignored artifact path=$rel" >&2; return 1 ;;
+        esac
+        src="$worktree/$rel"
+        [ -e "$src" ] || [ -L "$src" ] || continue
+        dst="$artifact_root/$rel"
+        if [ -e "$dst" ] || [ -L "$dst" ]; then
+            echo "[archive] BLOCK: ignored artifact archive collision path=$dst" >&2; return 1;
+        fi
+        mkdir -p "$(dirname "$dst")"
+        mv -- "$src" "$dst"
+        count=$((count + 1))
+    done < <(git -C "$worktree" status --porcelain=v1 --ignored=matching -z 2>/dev/null)
+    if [ "$count" -gt 0 ]; then
+        echo "[archive] task worktree ignored artifacts preserved: ${count} path(s) root=$artifact_root"
+    fi
+}
+
 # Narrow lifecycle-only entrypoint used by the linked-worktree contract
 # fixture. It applies the same CLEAR/published/clean/ordinary-remove guards
 # before the broad archive scan can touch unrelated dashboard data.
@@ -84,7 +113,8 @@ if [ "${ARCHIVE_TASK_WORKTREE_CLEANUP_ONLY:-0}" = "1" ] && [ -n "$CMD_ID" ]; the
         python3 -c 'import json,re,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="clear" and d.get("cmd_id")==sys.argv[2] and re.fullmatch(r"[0-9a-f]{64}",str(d.get("completion_generation") or "")) and (not sys.argv[3] or d.get("completion_generation")==sys.argv[3]) and int(d.get("persisted_at_ns"))>0' "$PROJECT_DIR/queue/gates/$CMD_ID/gate_worker.clear.json" "$CMD_ID" "${SHOGUN_COMPLETION_GENERATION:-}" || { echo "[archive] BLOCK: invalid CLEAR receipt" >&2; exit 1; }
         [[ "$_early_published" =~ ^[0-9a-f]{40}$ ]] && git -C "$_early_repo" cat-file -e "${_early_published}^{commit}" 2>/dev/null || { echo "[archive] BLOCK: published commit missing or unresolved" >&2; exit 1; }
         [ -z "$(git -C "$_early_worktree" status --porcelain 2>/dev/null)" ] || { echo "[archive] BLOCK: task worktree dirty" >&2; exit 1; }
-        git -C "$_early_repo" worktree remove "$_early_worktree" >/dev/null 2>&1 || { echo "[archive] BLOCK: task worktree remove failed" >&2; exit 1; }
+        preserve_task_worktree_ignored_artifacts "$_early_worktree" || exit 1
+        git -C "$_early_repo" worktree remove "$_early_worktree" 2>"$TMP/worktree-remove.stderr" || { sed -n '1,5p' "$TMP/worktree-remove.stderr" >&2; echo "[archive] BLOCK: task worktree remove failed" >&2; exit 1; }
         if git -C "$_early_repo" worktree list --porcelain | grep -Fqx "worktree $_early_worktree"; then echo "[archive] BLOCK: task worktree orphan remains" >&2; exit 1; fi
         python3 -c 'import json,os,sys,tempfile,time; p=sys.argv[1]; d=json.load(open(p,encoding="utf-8")); d["state"]="cleaned"; d["cleaned_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_cleaned.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$_early_marker"
     fi
@@ -2311,7 +2341,9 @@ cleanup_task_worktree_marker() {
     if [ -n "$(git -C "$worktree" status --porcelain 2>/dev/null)" ]; then
         echo "[archive] BLOCK: task worktree dirty; retaining path=$worktree" >&2; return 1
     fi
-    git -C "$repo" worktree remove "$worktree" >/dev/null 2>&1 || {
+    preserve_task_worktree_ignored_artifacts "$worktree" || return 1
+    git -C "$repo" worktree remove "$worktree" 2>"$TMP/worktree-remove.stderr" || {
+        sed -n '1,5p' "$TMP/worktree-remove.stderr" >&2
         echo "[archive] BLOCK: task worktree cleanup failed path=$worktree" >&2; return 1;
     }
     if git -C "$repo" worktree list --porcelain | grep -Fqx "worktree $worktree"; then

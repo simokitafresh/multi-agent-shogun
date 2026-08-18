@@ -13,7 +13,7 @@ setup_fixture_repo() {
     mkdir -p "$FIXTURE/shared/src" "$FIXTURE/shared/queue"
     printf 'BASE=1\n' > "$FIXTURE/shared/src/app.py"
     printf 'runtime: base\n' > "$FIXTURE/shared/queue/runtime.yaml"
-    printf 'queue/gates/\n' > "$FIXTURE/shared/.gitignore"
+    printf 'queue/gates/\n.cache/\nlogs/test_receipts/\n' > "$FIXTURE/shared/.gitignore"
     git -C "$FIXTURE/shared" add src/app.py queue/runtime.yaml .gitignore
     git -C "$FIXTURE/shared" commit -q -m base
     git -C "$FIXTURE/shared" push -q -u origin main
@@ -41,6 +41,9 @@ setup_fixture_repo() {
         [ -z "$(git -C "$FIXTURE" status --porcelain -- src/app.py)" ]
         env NINJA_SCOPE_TASK_FILE="$TASK" bash "$PROJECT_ROOT/scripts/ninja_scope_commit.sh" -m publish -- "$target" >/dev/null
         [ -z "$(git -C "$wt" status --porcelain)" ]
+        mkdir -p "$wt/.cache" "$wt/logs/test_receipts"
+        printf cache > "$wt/.cache/probe.bin"
+        printf receipt > "$wt/logs/test_receipts/probe.tap"
         marker=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker); published=$(git -C "$wt" rev-parse HEAD)
         python3 - "$marker" "$published" <<PY
 import json,sys
@@ -53,10 +56,12 @@ with open(sys.argv[1],"w") as f: json.dump({"version":1,"state":"clear","cmd_id"
 PY
         ARCHIVE_COMPLETED_PROJECT_DIR="$FIXTURE" ARCHIVE_TASK_WORKTREE_CLEANUP_ONLY=1 ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 SHOGUN_COMPLETION_GENERATION="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" bash "$PROJECT_ROOT/scripts/archive_completed.sh" 3 "$parent" >/dev/null
         [ "$(git -C "$FIXTURE" worktree list --porcelain | grep -F "$wt" | wc -l)" -eq 0 ]
-        echo "absolute_target=1 shared_edit_block=1 scope_commit=1 cleanup_orphan=0"
+        [ "$(cat "$FIXTURE/queue/archive/task-worktree-artifacts/$parent/.cache/probe.bin")" = cache ]
+        [ "$(cat "$FIXTURE/queue/archive/task-worktree-artifacts/$parent/logs/test_receipts/probe.tap")" = receipt ]
+        echo "absolute_target=1 shared_edit_block=1 scope_commit=1 ignored_preserved=2 cleanup_orphan=0"
     '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"absolute_target=1 shared_edit_block=1 scope_commit=1 cleanup_orphan=0"* ]]
+    [[ "$output" == *"absolute_target=1 shared_edit_block=1 scope_commit=1 ignored_preserved=2 cleanup_orphan=0"* ]]
 }
 
 @test "two sequential source tasks push remote tip with zero drift" {
