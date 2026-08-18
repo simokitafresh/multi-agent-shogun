@@ -1787,7 +1787,7 @@ push_task_repositories() {
 # a checkout that changed underneath the snapshot.
 postclear_runtime_path_is_publishable() {
     case "${1:-}" in
-        context/infrastructure.md|projects/infra/lessons.yaml|tasks/lessons.md|scripts/cmd_complete_gate.sh|\
+        context/*.md|projects/*/lessons.yaml|tasks/lessons.md|scripts/cmd_complete_gate.sh|\
         logs/karo_workarounds.yaml|queue/insights.yaml|queue/gunshi_review_log.yaml|\
         queue/completed_changelog.yaml|logs/lesson_impact.tsv|logs/lesson_tracking.tsv)
             return 0 ;;
