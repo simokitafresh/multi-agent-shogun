@@ -283,7 +283,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行一次実装ではGATE CLEAR前のremote包含検証が不変量であり、push失敗WARN縮退は未公開CLEARを生むため不採用。後続hotfix群でremote-tip隔離push、retry、ID merge、累積等価性、mapping-root/空mapping、canonical repo publishを実修正済み"
+  action_artifact: "scripts/cmd_complete_gate.sh:1574-1790,10770-10780; commits 4bb57fdf,49033415,36947643,ec94df6b,dd62b0d5,e2229154,010e2bfa,07943589"
+  resolved_at: "2026-08-18T18:33:16+09:00"
 - id: INS-20260818-072951587-2492
   ts: "2026-08-18T07:29:51+09:00"
   insight: "[[殿07 16『 a は99 9%一致で残9はoracle側の境界定義]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿07:16『(a)は99.9%一致で残9はoracle側の境界定義。手③をCLOSE候補とし残9のoracle境界を完全に詰めよう』。cmd_4352最終値=MATCHED 8,504／MISMATCH 9／MISSING 57(DM-Signal docs/research/cmd_4352_fof_tiebreak_expected_diff_fina"
@@ -892,3 +895,27 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-18T17:44:30+09:00"
+- id: INS-20260818-182135296-fd89
+  ts: "2026-08-18T18:21:35+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b20nvfyle task id tool use id toolu 01GUbVMJ8uv1AT7UG9 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T18:23:08+09:00"
+- id: INS-20260818-182306734-e75f
+  ts: "2026-08-18T18:23:06+09:00"
+  insight: "SKILL.md追従task[05e70fb219ece6ab]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:05e70fb219ece6ab"
+  fix_known: false
+  status: pending
+- id: INS-20260818-183330427-7e9c
+  ts: "2026-08-18T18:33:30+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b2z2fvb2j task id tool use id toolu 01VCgGZapXqZJgYhpQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
