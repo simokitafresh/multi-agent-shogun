@@ -6263,13 +6263,15 @@ wait = text.index('wait_for_postclear_durable_writers()')
 block = text[wait:text.index('\n}', wait) + 2]
 assert 'completion_generation' in text[launch:launch + 1800]
 assert 'rm -f -- "$_semantic_result"' in text[launch:launch + 1800]
+assert 'capture_durable_writer_paths start' in text[launch:launch + 2400]
+assert 'capture_durable_writer_paths finish' in text[launch:launch + 3200]
 assert 'CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600' in block
-assert '[[ -e "$pending" || ! -s "$result" ]]' in block
+assert '! -s "$path_manifest"' in block
 assert 'return 1' in block
-print('generation_bound=1 stale_result_rejected=1 bounded=1 fail_closed=1')
+print('generation_bound=1 path_manifest=1 bounded=1 fail_closed=1')
 PY
     [ "$status" -eq 0 ]
-    [ "$output" = "generation_bound=1 stale_result_rejected=1 bounded=1 fail_closed=1" ]
+    [ "$output" = "generation_bound=1 path_manifest=1 bounded=1 fail_closed=1" ]
 }
 
 # test_necessity: runtime publication must reuse the existing field-aware
@@ -6283,13 +6285,15 @@ end = text.index('\n}', start) + 2
 block = text[start:end]
 assert 'push_from_clean_worktree' in block
 assert 'postclear_runtime_path_is_publishable "$path"' in block
+assert 'durable writer manifest invalid' in block
+assert 'grep -Fqx -- "$path"' in block
 assert 'nonruntime dirty path=' in block
 assert 'writer generation changed' in block
 assert 'merge --ff-only FETCH_HEAD' in block
-print('field_aware=1 identity_guard=1 nonruntime_block=1 shared_convergence=1')
+print('field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1')
 PY
     [ "$status" -eq 0 ]
-    [ "$output" = "field_aware=1 identity_guard=1 nonruntime_block=1 shared_convergence=1" ]
+    [ "$output" = "field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1" ]
 }
 
 # test_necessity: every tracked writer observed in the first operational gate
@@ -6306,4 +6310,40 @@ PY
     ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     [ "$status" -eq 0 ]
     [ "$output" = "known=6/6 unknown_block=1" ]
+}
+
+# test_necessity: the durable receipt must contain the semantic worker's actual
+# tracked output paths, while a path changed after receipt publication remains
+# outside that generation and therefore cannot bypass the unknown-path BLOCK.
+@test "durable writer manifest admits semantic-map exact path and excludes later unknown" {
+    root="$BATS_TEST_TMPDIR/manifest-repo"
+    mkdir -p "$root/context" "$root/docs/research" "$root/queue/gates/cmd_fixture"
+    git -C "$root" init -q
+    git -C "$root" config user.email fixture@example.invalid
+    git -C "$root" config user.name Fixture
+    printf 'before\n' > "$root/context/semantic-map.md"
+    printf 'stable\n' > "$root/docs/research/unknown.md"
+    git -C "$root" add context/semantic-map.md docs/research/unknown.md
+    git -C "$root" commit -qm baseline
+    snapshot="$root/queue/gates/cmd_fixture/paths.before.json"
+    manifest="$root/queue/gates/cmd_fixture/paths.json"
+
+    run bash -c '
+        SCRIPT_DIR="$1"
+        source <(sed -n "/^capture_durable_writer_paths()/,/^}/p" "$2")
+        capture_durable_writer_paths start "$3" "$4" cmd_fixture gen-1
+        printf "after\\n" > "$1/context/semantic-map.md"
+        capture_durable_writer_paths finish "$3" "$4" cmd_fixture gen-1
+        printf "adversarial\\n" > "$1/docs/research/unknown.md"
+        python3 - "$4" <<"PY"
+import json, sys
+data=json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["cmd_id"] == "cmd_fixture"
+assert data["completion_generation"] == "gen-1"
+assert data["paths"] == ["context/semantic-map.md"]
+print("semantic_exact=1 later_unknown_excluded=1")
+PY
+    ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$snapshot" "$manifest"
+    [ "$status" -eq 0 ]
+    [ "$output" = "semantic_exact=1 later_unknown_excluded=1" ]
 }
