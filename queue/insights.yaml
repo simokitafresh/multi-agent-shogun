@@ -404,7 +404,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報queue/lord_conversation.jsonl:121で殿原文を確認し、context/semantic-map.md:63とdocs/semantic-index/index.md:6599に同概念が既に反映済み。記事作成時の秘匿・一般化方針として既存DM-Signal運用概念へ吸収済みで、追加実修正・decision_candidateは不要。"
+  action_artifact: "lord_conversation=queue/lord_conversation.jsonl:121;semantic_map=context/semantic-map.md:63;semantic_index=docs/semantic-index/index.md:6599"
+  resolved_at: "2026-08-18T20:14:29+09:00"
 - id: INS-20260818-102829242-1096
   ts: "2026-08-18T10:28:29+09:00"
   insight: "[[設計書とgistも更新しといて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書とgistも更新しといて"
