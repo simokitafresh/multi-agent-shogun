@@ -188,55 +188,93 @@ record_restart() {
 # =============================================================================
 # ninja_monitor.sh — 忍者idle検知デーモン
 # =============================================================================
+watchdog_ninja_monitor_owner_healthy() {
+    local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}"
+    local identity_file="${owner_file}.identity"
+    local owner_pid="" generation="" heartbeat="" _legacy_mtime="" _legacy_fingerprint=""
+    local script_mtime="" fingerprint="" current_fingerprint=""
+    [ -f "$owner_file" ] || return 1
+    read -r owner_pid generation heartbeat _legacy_mtime _legacy_fingerprint < "$owner_file" 2>/dev/null || return 1
+    [[ "$owner_pid" =~ ^[0-9]+$ && -n "$generation" && "$heartbeat" =~ ^[0-9]+$ ]] || return 1
+    pid_cmdline_matches "$owner_pid" "ninja_monitor.sh" || return 1
+    read -r script_mtime fingerprint < "$identity_file" 2>/dev/null || return 1
+    current_fingerprint="$(sha256sum "$SCRIPT_DIR/scripts/ninja_monitor.sh" 2>/dev/null | awk '{print $1}')"
+    [ -n "$fingerprint" ] && [ "$fingerprint" = "$current_fingerprint" ]
+}
+
+watchdog_ninja_monitor_owner_generation() {
+    local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}"
+    awk 'NR==1 {print $2; exit}' "$owner_file" 2>/dev/null || true
+}
+
 check_ninja_monitor() {
     local pid_file="${STATE_DIR:-/tmp}/ninja_monitor.pid"
-    local live_pid=""
+    local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}"
+    local start_lock="${STATE_DIR:-/tmp}/ninja_monitor.watchdog.start.lock"
+    local starting_file="${STATE_DIR:-/tmp}/ninja_monitor.watchdog.starting"
+    local observed_generation="" new_pid="" lock_fd="" starting_pid="" starting_epoch="" starting_age=0
 
-    if pid_file_has_live_daemon "$pid_file" "ninja_monitor.sh"; then
+    if watchdog_ninja_monitor_owner_healthy; then
         return 0
     fi
 
-    if [[ -f "$pid_file" ]]; then
-        log "STALE-PID-REMOVED: ${pid_file} contained $(cat "$pid_file" 2>/dev/null || true)"
-        rm -f "$pid_file"
+    if is_maintenance_active; then
+        log "SKIP: daemon maintenance active; ninja_monitor restart deferred"
+        return 0
+    elif [[ $? -eq 2 ]]; then
+        log "BLOCK: corrupt daemon maintenance marker; ninja_monitor restart refused"
+        return 1
+    fi
+    if ! check_restart_throttle "ninja_monitor"; then
+        log "THROTTLED: ninja_monitor.sh — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
+        notify "【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要"
+        return
     fi
 
-    live_pid=$(find_live_daemon_pid "[n]inja_monitor\.sh" "ninja_monitor.sh" || true)
-    if [[ -n "$live_pid" ]]; then
-        printf '%s\n' "$live_pid" > "$pid_file"
+    mkdir -p "${STATE_DIR:-/tmp}"
+    exec {lock_fd}>"$start_lock"
+    flock "$lock_fd"
+    if watchdog_ninja_monitor_owner_healthy; then
+        flock -u "$lock_fd"; eval "exec ${lock_fd}>&-"
         return 0
     fi
-
-    if [[ -z "$live_pid" ]]; then
-        if is_maintenance_active; then
-            log "SKIP: daemon maintenance active; ninja_monitor restart deferred"
-            return 0
-        elif [[ $? -eq 2 ]]; then
-            log "BLOCK: corrupt daemon maintenance marker; ninja_monitor restart refused"
-            return 1
-        fi
-        if ! check_restart_throttle "ninja_monitor"; then
-            log "THROTTLED: ninja_monitor.sh — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
-            notify "【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要"
-            return
-        fi
-        log "RESTART: ninja_monitor.sh not found, restarting..."
-        nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
-        local new_pid=$!
-        disown
-        printf '%s\n' "$new_pid" > "$pid_file"
-        # Verify the new process survived startup.
-        sleep 2
-        if ! pid_cmdline_matches "$new_pid" "ninja_monitor.sh"; then
-            rm -f "$pid_file"
-            log "RESTART-FAILED: ninja_monitor.sh PID $new_pid died immediately"
-            notify "【watchdog/WARN】ninja_monitor.sh再起動失敗(即死)。次サイクルで再試行"
+    if [ -f "$starting_file" ]; then
+        read -r starting_pid starting_epoch < "$starting_file" 2>/dev/null || true
+        if [[ "$starting_epoch" =~ ^[0-9]+$ ]]; then
+            starting_age=$((EPOCHSECONDS - starting_epoch))
         else
-            record_restart "ninja_monitor"
-            notify "【watchdog】ninja_monitor.shを自動再起動しました"
-            RESTARTED=$((RESTARTED + 1))
+            starting_age=999999
+        fi
+        if [[ "$starting_pid" =~ ^[0-9]+$ ]] && pid_is_live "$starting_pid" && (( starting_age < 60 )); then
+            flock -u "$lock_fd"; eval "exec ${lock_fd}>&-"
+            return 0
         fi
     fi
+    observed_generation="$(watchdog_ninja_monitor_owner_generation)"
+    log "RESTART: ninja_monitor owner/identity invalid; legacy process presence is not serving evidence"
+    if [ -n "$observed_generation" ]; then
+        nohup env NINJA_MONITOR_REPLACE_GENERATION="$observed_generation" \
+            bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+    else
+        nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+    fi
+    new_pid=$!
+    disown
+    printf '%s\n' "$new_pid" > "$pid_file"
+    printf '%s %s\n' "$new_pid" "$EPOCHSECONDS" > "$starting_file"
+    # Verify the new process survived startup without treating legacy PIDs as success.
+    sleep 2
+    if ! pid_cmdline_matches "$new_pid" "ninja_monitor.sh"; then
+        unlink "$pid_file" 2>/dev/null || true
+        log "RESTART-FAILED: ninja_monitor.sh PID $new_pid died immediately"
+        notify "【watchdog/WARN】ninja_monitor.sh再起動失敗(即死)。次サイクルで再試行"
+    else
+        record_restart "ninja_monitor"
+        notify "【watchdog】ninja_monitor.shを自動再起動しました"
+        RESTARTED=$((RESTARTED + 1))
+    fi
+    flock -u "$lock_fd"
+    eval "exec ${lock_fd}>&-"
     return 0
 }
 
