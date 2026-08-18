@@ -104,12 +104,12 @@
 
 **設計への反映(ToBe v0.3→v0.4相当・本文は不変で注釈)**: (i)②③④の欠損skipは候補集合単位(全順序保証) (ii)6段全同値の最終決着はcomponent_order(pipeline_configの記載順)であってset順・ID順ではない (iii)期待差分oracleはnested伝播+本番同一の期間換算が必須。
 
-## AsIs **v1.6** — 2026-08-18 07:15+09:00（GitHub回復・手④着手・「完全解決」への残件表）
+## AsIs **v1.7** — 2026-08-18 09:05+09:00（「完全解決」への残件表）
 
 | 残件 | 状態 | 担当/出典 |
 |---|---|---|
-| 手④ GS高速版(scripts/analysis/grid_search/run_077_*.py 7本 + l1 fast path)の子PF選択を`select_top_n_deterministic`へ統一・parity赤→緑 | **cmd_4353 委任 07:13**(1体直列・/gs-bench-gate必須) | 家老 |
-| 残9 oracle境界(depth3で1か月ずれ型) | 本番別要因0のため優先低。手④完了後にoracle側修正cmdを起票し0化する | 将軍 |
+| 手④ GS高速版(scripts/analysis/grid_search/run_077_*.py 7本 + l1 fast path)の子PF選択を`select_top_n_deterministic`へ統一・parity赤→緑 | cmd_4353初回(影丸)=adapter実装+contract 3/3 PASS+本番pipeline無変更(f70475c8)・legacy108セル vs production36セル=72差分(赤取得)、**AC2/AC3は環境境界でFAIL**(GS scripts腐敗: bunshin import欠落／kasoku module欠落／kawarimi・nukimi・oikaze DB rows 0／yotsume引数衝突、run_tests scope未mapping)。将軍08:00下知: (a)GS 7本起動回復→(b)parity oracleをrun409 readonly snapshotへ→(c)gs-bench-gate。**再配備中(08:19 assigned)** | 家老 |
+| 残9 oracle境界(depth3で1か月ずれ型) | **完了(cmd_4354・疾風 08:21)**: 残9全件=oracle側のmonth_mapping差(oracle target_dateをdecision_monthの最初のproduction signal日へ整合)。修正版oracle vs run409 全8,570行=**MATCHED 8,513／MISMATCH 0／MISSING 57(未到来)**。本番側要因0・本番書込み0。DM commit 4a486bcb／infra 157f00df(PI-P09更新)。成果物 `docs/research/cmd_4354_fof_oracle_residual9_20260818.md` → **合否(a)=100%(観測可能全件)・手③CLOSE** | 家老レビュー→GATE |
 | cron `dm-signal-sync-fof` run409以降初回=08-18 10:40 JST の変更0確認 | 家老checkpoint継続 | 家老 |
 | gist/CI | GitHub回復(07:03 `gh api commits/main`=ad167c50応答)。本版でgist再同期 | 将軍 |
 
@@ -245,6 +245,7 @@
 - 13:04-13:23 cmd_4331起票→DOC_LANE_ROUTING偽陽性BLOCK→殿13:19「偽陽性は即時根治」→根治(caac794c)→再委任。13:55 GATE CLEAR → AsIs v1.1(全74 FoF棚卸し・共通helper不在・標準PF near-tie 0・6段乾式949月変化)。14:45 殿「まずはartifact,設計書、gistをアップデート」→ 本版
 
 ## 注釈 — 2026-08-17 12:45+09:00
+- AsIs v1.7(08-18 09:05)=残9→MISMATCH 0(cmd_4354)で(a)100%・手③CLOSE。手④はGS環境腐敗が露呈しcmd_4353再配備中。
 - AsIs v1.6(08-18 07:15)=GitHub回復・手④cmd_4353委任・完全解決の残件表(手④/残9 oracle/cron10:40/gist)。本番不変。
 - AsIs v0.9はcmd_4330で機構が確定したらv1.0へ。ToBe v0.1はε・比較キー・CAGR定義が決まったらv0.2へ。
 - AsIs v1.1(14:50)=cmd_4331の全FoF棚卸し・乾式適用。ToBe v0.3は不変(共通選択層の要請がAsIsで裏付けられた)。実装は殿合図で1体1層。
