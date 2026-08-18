@@ -15223,3 +15223,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 同一patchでもremote SHAが異なるpublicationではdirty runtimeを先にlocal checkpointしてから共有sourceを収束する。失敗ごとのarchive basenameはtask identityではなく、task_idとtask宣言report pathを正本にする。
+
+### L1610: 機械可読出力はconsumer接続まで二値検証する
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_ga479_infrastructure_freshness_202608190450
+- **記録者**: hanzo
+- **tags**: [infra,gate,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh]
+- **origin**: [[cmd_karo_hotfix_ga479_infrastructure_freshness_202608190450]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次回check: producerがCONTEXT_UPDATE_REQUEST等を出した時はrgでconsumer数を数え、0ならPASSにしない。DOC_LANE_ROUTINGも語内gist誤一致を防ぐためgistを独立語境界で敵対検証する。
