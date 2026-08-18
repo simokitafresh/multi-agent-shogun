@@ -15236,3 +15236,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 次回check: producerがCONTEXT_UPDATE_REQUEST等を出した時はrgでconsumer数を数え、0ならPASSにしない。DOC_LANE_ROUTINGも語内gist誤一致を防ぐためgistを独立語境界で敵対検証する。
+
+### L1611: 入口許容契約を終端publishまで貫通させる
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_direct_cmd_status_publish_202608190530
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_direct_cmd_status_publish_202608190530]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- direct cmdを入口で許容したら、終端で通常cmd専用SSOT更新を無条件適用せず同一分類軸を再利用する。
