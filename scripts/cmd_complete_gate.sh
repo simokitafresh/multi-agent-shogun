@@ -536,6 +536,13 @@ SCRIPT_DIR="${_cmd_complete_dir%/scripts}"
 unset _cmd_complete_dir
 unset _cmd_complete_script
 
+# Direct gate callers do not have the wrapper's marker environment, but the
+# completion boundary must remain durable for every CLEAR path.  The wrapper
+# still supplies the same generation-bound path explicitly.
+if [ -z "${CMD_COMPLETE_GATE_CLEAR_MARKER:-}" ]; then
+    CMD_COMPLETE_GATE_CLEAR_MARKER="$SCRIPT_DIR/queue/gates/${CMD_ID}/gate_worker.clear.json"
+fi
+
 # shellcheck source=scripts/lib/task_cmd_match.sh
 source "$SCRIPT_DIR/scripts/lib/task_cmd_match.sh"
 
@@ -11353,7 +11360,7 @@ PYEOF
         _archive_tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
         if command -v "$_archive_tmux_bin" >/dev/null 2>&1 \
             && "$_archive_tmux_bin" display-message -p '#S' >/dev/null 2>&1; then
-            printf -v _archive_cmd '%q ' env SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
+            printf -v _archive_cmd '%q ' env ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
                 bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID"
             printf -v _archive_log_q '%q' "$_archive_worker_log"
             # 末尾の || echo で常にexit 0にする: run-shellは非0終了時にコマンド行を
@@ -11363,7 +11370,7 @@ PYEOF
             echo "  archive: queued (tmux server; log=$_archive_worker_log)"
         else
             echo "  archive: tmux unavailable; synchronous fallback (log=$_archive_worker_log)"
-            env SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
+            env ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
                 bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" \
                 </dev/null >>"$_archive_worker_log" 2>&1 \
                 || echo "  [INFO] archive: WARN (sync fallback failed)" >>"$_archive_worker_log"

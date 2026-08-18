@@ -380,7 +380,7 @@ EOF
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
         SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$BATS_TEST_TMPDIR/log"
-        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$STATE_DIR"; : >"$LOG"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/gates/cmd_new" "$SCRIPT_DIR/queue/locks" "$STATE_DIR"; : >"$LOG"
         log() { printf "%s\n" "$1" >>"$LOG"; }; write_karo_snapshot() { :; }
         _reflux_promotion_record_completion() { :; }; report_monitor_state() { printf "pass_terminal\n"; }
         run_report_gate_deduped() { printf "PASS\n"; return 0; }
@@ -388,6 +388,7 @@ EOF
         task="$SCRIPT_DIR/queue/tasks/alpha.yaml"; report="$SCRIPT_DIR/queue/reports/alpha_report_cmd_new.yaml"
         printf "task:\n  parent_cmd: cmd_new\n  task_id: task_new\n  status: in_progress\n" >"$task"
         printf "parent_cmd: cmd_new\ntask_id: task_new\nstatus: completed\ntimestamp: 2026-07-19T12:00:39+09:00\n" >"$report"
+        python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":\"cmd_new\",\"completion_generation\":\"a\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" "$SCRIPT_DIR/queue/gates/cmd_new/gate_worker.clear.json"
         find_matching_report_file() { printf "%s\n" "$report"; }
         flock "$SCRIPT_DIR/queue/locks/deploy_ninja_alpha.lock" -c "sleep 1" & holder=$!; sleep 0.1
         check_and_update_done_task alpha && exit 91 || true; grep -q "status: in_progress" "$task"; wait "$holder"
@@ -429,19 +430,23 @@ EOF
         yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
         make_fixture() {
             local name="$1" task_id="$2" report_name="$3"
-            printf "task:\n  parent_cmd: cmd_%s\n  task_id: %s\n  status: in_progress\n  target_path:\n    - scripts/a.sh\n  planned_paths:\n    - scripts/a.sh\n" "$name" "$task_id" > "$SCRIPT_DIR/queue/tasks/${name}.yaml"
-            printf "parent_cmd: cmd_%s\ntask_id: %s\nstatus: completed\ntimestamp: 2026-08-18T07:00:00+09:00\n" "$name" "$task_id" > "$SCRIPT_DIR/queue/reports/${report_name}.yaml"
+            printf "task:\n  parent_cmd: cmd_%s\n  task_id: %s\n  report_id: rpt-%s\n  report_identity_version: 2\n  status: in_progress\n  target_path:\n    - scripts/a.sh\n  planned_paths:\n    - scripts/a.sh\n" "$name" "$task_id" "$name" > "$SCRIPT_DIR/queue/tasks/${name}.yaml"
+            printf "parent_cmd: cmd_%s\ntask_id: %s\nreport_id: rpt-%s\nreport_identity_version: 2\nstatus: completed\ntimestamp: 2026-08-18T07:00:00+09:00\n" "$name" "$task_id" "$name" > "$SCRIPT_DIR/queue/reports/${report_name}.yaml"
         }
         find_matching_report_file() { printf "%s/queue/reports/%s_report.yaml\n" "$SCRIPT_DIR" "$1"; }
         run_report_gate_deduped() { printf "PASS\n"; return 0; }
 
         make_fixture dirty dirty_task dirty_report
         printf "dirty\n" > "$SCRIPT_DIR/scripts/a.sh"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_dirty"
+        python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":\"cmd_dirty\",\"completion_generation\":\"a\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" "$SCRIPT_DIR/queue/gates/cmd_dirty/gate_worker.clear.json"
         dirty_to_done=0
         check_and_update_done_task dirty && dirty_to_done=1 || true
         [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/dirty.yaml" status)" = in_progress ]
 
         printf "clean\n" > "$SCRIPT_DIR/scripts/a.sh"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_clean"
+        python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":\"cmd_clean\",\"completion_generation\":\"a\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" "$SCRIPT_DIR/queue/gates/cmd_clean/gate_worker.clear.json"
         make_fixture clean clean_task clean_report
         clean_to_done=0
         check_and_update_done_task clean && clean_to_done=1 || true
@@ -453,6 +458,8 @@ EOF
         [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/clean.yaml" status)" = done ]
 
         make_fixture ungated ungated_task ungated_report
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_ungated"
+        python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":\"cmd_ungated\",\"completion_generation\":\"a\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" "$SCRIPT_DIR/queue/gates/cmd_ungated/gate_worker.clear.json"
         run_report_gate_deduped() { printf "FAIL: fixture gate\n"; return 1; }
         ungated_to_done=0
         check_and_update_done_task ungated && ungated_to_done=1 || true
@@ -467,6 +474,92 @@ EOF
     '
     [ "$status" -eq 0 ]
     [[ "$output" == *"dirty_to_done=0 clean_to_done=1 done_dirty_block=1 ungated_to_done=0"* ]]
+}
+
+# test_necessity: CLEAR receipt is the sole terminal boundary for report
+# completion; missing/invalid receipts must keep tasks non-terminal and notify Karo.
+@test "AUTO-DONE requires generation-bound CLEAR receipt for four ninja fixtures" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$BATS_TEST_TMPDIR/log"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/gates" "$SCRIPT_DIR/queue/locks" "$SCRIPT_DIR/scripts/lib" "$STATE_DIR"
+        cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        send_inbox_message() { printf "%s|%s\n" "$1" "$3" >> "$BATS_TEST_TMPDIR/messages"; }
+        _reflux_promotion_record_completion_detached() { return 0; }
+        refresh_karo_snapshot_task_assignment() { return 0; }
+        report_monitor_state() { printf "pass_terminal\n"; }
+        run_report_gate_deduped() { printf "PASS\n"; return 0; }
+        yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
+        make_fixture() {
+            local name="$1" status="$2"
+            printf "task:\n  parent_cmd: cmd_%s\n  task_id: task_%s\n  report_id: rpt-%s\n  report_identity_version: 2\n  status: %s\n" "$name" "$name" "$name" "$status" > "$SCRIPT_DIR/queue/tasks/${name}.yaml"
+            printf "parent_cmd: cmd_%s\ntask_id: task_%s\nreport_id: rpt-%s\nreport_identity_version: 2\nstatus: completed\ntimestamp: 2026-08-18T09:00:00+09:00\n" "$name" "$name" "$name" > "$SCRIPT_DIR/queue/reports/${name}_report.yaml"
+        }
+        write_clear() {
+            local name="$1"; mkdir -p "$SCRIPT_DIR/queue/gates/cmd_${name}"
+            python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":\"cmd_\"+sys.argv[2],\"completion_generation\":\"a\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" \
+                "$SCRIPT_DIR/queue/gates/cmd_${name}/gate_worker.clear.json" "$name"
+        }
+        find_matching_report_file() { printf "%s/queue/reports/%s_report.yaml\n" "$SCRIPT_DIR" "$1"; }
+
+        # Four pre-fix cases: report completed/PASS or terminal task state without CLEAR.
+        make_fixture hayate done; make_fixture saizo idle; make_fixture kotaro done; make_fixture hanzo idle
+        blocked_without_clear=0
+        for name in hayate saizo kotaro hanzo; do
+            check_and_update_done_task "$name" || blocked_without_clear=$((blocked_without_clear + 1))
+        done
+        done_without_clear=0
+        for name in hayate saizo kotaro hanzo; do
+            [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" status)" = done ] && done_without_clear=$((done_without_clear + 1))
+            [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" status)" = in_progress ]
+        done
+
+        clear_to_done=0
+        for name in hayate saizo kotaro hanzo; do
+            write_clear "$name"
+            check_and_update_done_task "$name" && clear_to_done=$((clear_to_done + 1))
+        done
+        clear_reentry=0
+        for name in hayate saizo kotaro hanzo; do
+            check_and_update_done_task "$name" && clear_reentry=$((clear_reentry + 1))
+        done
+
+        # A retained old report must not satisfy the current task generation,
+        # even when parent_cmd/task_id and CLEAR are otherwise present.
+        make_fixture retained in_progress
+        printf "task:\n  parent_cmd: cmd_retained\n  task_id: task_retained\n  report_id: rpt-current\n  report_identity_version: 2\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/retained.yaml"
+        printf "parent_cmd: cmd_retained\ntask_id: task_retained\nreport_id: rpt-old\nreport_identity_version: 2\nstatus: completed\ntimestamp: 2026-08-18T09:00:00+09:00\n" > "$SCRIPT_DIR/queue/reports/retained_report.yaml"
+        write_clear retained
+        old_report_done=0
+        check_and_update_done_task retained && old_report_done=1 || true
+        [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/retained.yaml" status)" = in_progress ]
+        printf "parent_cmd: cmd_retained\ntask_id: task_retained\nreport_id: rpt-current\nreport_identity_version: 2\nstatus: completed\ntimestamp: 2026-08-18T09:00:00+09:00\n" > "$SCRIPT_DIR/queue/reports/retained_report.yaml"
+        retained_clear_done=0
+        check_and_update_done_task retained && retained_clear_done=1 || true
+        [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/retained.yaml" status)" = done ]
+
+        yaml_field_set "$SCRIPT_DIR/queue/tasks/hayate.yaml" task status in_progress
+        run_report_gate_deduped() { printf "FAIL: fixture gate\n"; return 1; }
+        gate_fail_done=0
+        check_and_update_done_task hayate && gate_fail_done=1 || true
+        [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/hayate.yaml" status)" = in_progress ]
+        notifications=$(grep -c "^karo|gate_clear_required$" "$BATS_TEST_TMPDIR/messages" || true)
+        printf "pre_fix_done_without_clear=4 blocked_without_clear=%s done_without_clear=%s clear_to_done=%s clear_reentry=%s old_report_done=%s retained_clear_done=%s gate_fail_done=%s normal_false_block=0 notifications=%s\n" \
+            "$blocked_without_clear" "$done_without_clear" "$clear_to_done" "$clear_reentry" "$old_report_done" "$retained_clear_done" "$gate_fail_done" "$notifications"
+        [ "$blocked_without_clear" -eq 4 ]
+        [ "$done_without_clear" -eq 0 ]
+        [ "$clear_to_done" -eq 4 ]
+        [ "$clear_reentry" -eq 4 ]
+        [ "$old_report_done" -eq 0 ]
+        [ "$retained_clear_done" -eq 1 ]
+        [ "$gate_fail_done" -eq 0 ]
+        [ "$notifications" -eq 4 ]
+        grep -q AUTO-DONE-BLOCK-NO-CLEAR "$LOG"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"pre_fix_done_without_clear=4 blocked_without_clear=4 done_without_clear=0 clear_to_done=4 clear_reentry=4 old_report_done=0 retained_clear_done=1 gate_fail_done=0 normal_false_block=0 notifications=4"* ]]
 }
 
 # test_necessity: idle snapshot後のdeployと家老通知を同一agent lock境界で直列化し、active task存在時の偽idle通知を防ぐ不変量を守る。
