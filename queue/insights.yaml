@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260818-140309916-2111
-  ts: "2026-08-18T14:03:09+09:00"
-  insight: "worktreeベース新規テストファイルがcommit_contract/SG-PRE35で2件連続BLOCK(kagemaru+kotaro)。worktreeで新規作成したbatsファイルはmain repoのcommit historyに存在せず、gate/precheckが不在と判定。task_worktree_pathを考慮したcommit_contract検証が必要な可能性。LG014基準2/3件。"
-  priority: "medium"
-  source: "manual"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認により設計意図どおりと判定。SG-PRE35はproject HEADに不在のtestを新規testとしてtest_necessityまたはtransient削除証跡へ送る契約であり、task_worktree_path側HEADを既存扱いすると新規test契約を迂回する。実修正不要。"
-  action_artifact: "scripts/deploy_task.sh:10033-10155 deploy_task_test_necessity_precheck"
-  resolved_at: "2026-08-19T00:28:31+09:00"
-- id: INS-20260818-143652672-764c
-  ts: "2026-08-18T14:36:52+09:00"
-  insight: "GPT忍者のcausal_verification.evidence記入率問題(統合): LG051(非test caller証跡)8回+LK-A14(横展開rg残存0件証跡)5回以上。INS-aebd(LG051)と統合。model_injection_profileのextra_scaffoldにcausal_verification.evidenceテンプレート(rg/grepコマンド+出力行+count)を追加すれば構造的に防止可能。"
-  priority: "medium"
-  source: "manual"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次コード確認で未実装を確認。deploy_task.sh inject_model_injection_profileのGPT extra_scaffoldはAC証跡/placeholder/gate/hook_failuresのみで、causal_verification.evidenceのrg/grep command+output+countテンプレートがない。現task scopeはqueue/insights.yamlのみのため実装修正は行わず、報告YAML decision_candidateへ次cmd候補として整理した。"
-  action_artifact: "queue/reports/tobisaru_report_cmd_reflux_insight_202608190039_tobisaru.yaml"
-  resolved_at: "2026-08-19T00:43:11+09:00"
 - id: INS-20260818-153430366-4029
   ts: "2026-08-18T15:34:30+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4354; matched=本番,変更; current_pattern=FoF決定性 手③CLOSE — 残9 MISMATCHのoracle境界(depth3の月対応/伝播タイミング)を本番block同一定義へ揃え、補正oracle vs run409をMISMATCH 0で確定する(read-only・本番無変更); candidate_level=2; candidate=cmd_1855のverdict_override根因。AC『全期間月次リターン差』が進行中月を含み、GS作成日vs本番更新日の差異で常にFAIL。AC標準文言を『完了月(最終月除外)』に変更。cmd起票テンプレート修正が必要→家老担当; source=gunshi_gp_tracker.yaml"
@@ -977,5 +957,15 @@ insights:
   insight: "semantic_index_update新概念候補: discussion:task notification task id b2sdqo964 task id tool use id toolu 017ZmkDAtTQJKHtHzw は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T04:36:47+09:00"
+- id: INS-20260819-043645158-61c9
+  ts: "2026-08-19T04:36:45+09:00"
+  insight: "SKILL.md追従task[007e7e3d58117f4a]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:007e7e3d58117f4a"
   fix_known: false
   status: pending
