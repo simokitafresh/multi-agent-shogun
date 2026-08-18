@@ -1949,7 +1949,7 @@ if data != {"version": 1, "cmd_id": cmd_id,
     raise SystemExit(1)
 PY
     deadline=$(( $(date +%s) + timeout_seconds ))
-    while [[ -e "$pending" || ! -s "$result" || ! -s "$path_manifest" ]]; do
+    while [[ -e "$pending" || ! -s "$result" ]]; do
         now=$(date +%s)
         if (( now >= deadline )); then
             echo "  durable writers: BLOCK (semantic worker timeout=${timeout_seconds}s generation=${SHOGUN_COMPLETION_GENERATION})" >&2
@@ -1957,6 +1957,16 @@ PY
         fi
         sleep 0.05
     done
+    wait || {
+        echo "  durable writers: BLOCK (post-CLEAR shell writer failed)" >&2
+        return 1
+    }
+    capture_durable_writer_paths finish \
+        "$GATES_DIR/semantic_causal_audit.paths.before.json" "$path_manifest" \
+        "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" || {
+        echo "  durable writers: BLOCK (generation manifest finalize failed)" >&2
+        return 1
+    }
     python3 - "$path_manifest" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" <<'PY'
 import json, sys
 path, cmd_id, generation = sys.argv[1:]
@@ -11012,6 +11022,14 @@ if [ "$ALL_CLEAR" = true ]; then
         append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcompletion_generation_missing_or_invalid' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID")"
         exit 1
     fi
+    rm -f -- "$GATES_DIR/semantic_causal_audit.paths.json"
+    capture_durable_writer_paths start \
+        "$GATES_DIR/semantic_causal_audit.paths.before.json" \
+        "$GATES_DIR/semantic_causal_audit.paths.json" \
+        "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" || {
+        echo "GATE BLOCK: ${CMD_ID}:postclear_generation_snapshot_failed" >&2
+        exit 1
+    }
     GATE_CLEAR_TS="$(date +%Y-%m-%dT%H:%M:%S)"
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
@@ -11079,7 +11097,6 @@ PY
         echo "$status_output"
         echo "  [INFO] update_status failed (non-blocking)"
     fi
-    send_clear_notifications_once "$CMD_ID" "GATE CLEAR immediate"
     if closed_alert_count=$(close_resolved_gate_alerts "$CMD_ID" 2>>"$LOG_DIR/cmd_complete_gate_stderr.log"); then
         echo "Gate alert closure: ${closed_alert_count:-0} alert(s) closed"
     else
@@ -11162,7 +11179,7 @@ PY
         _semantic_generation_marker="$GATES_DIR/semantic_causal_audit.generation.json"
         _semantic_path_snapshot="$GATES_DIR/semantic_causal_audit.paths.before.json"
         _semantic_path_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
-        rm -f -- "$_semantic_result" "$_semantic_path_manifest"
+        rm -f -- "$_semantic_result"
         python3 - "$_semantic_generation_marker" "$_semantic_pending" "$CMD_ID" \
             "$SHOGUN_COMPLETION_GENERATION" <<'PY'
 import json, os, sys, tempfile
@@ -11177,15 +11194,18 @@ try:
 finally:
     if os.path.exists(tmp): os.unlink(tmp)
 PY
-        capture_durable_writer_paths start "$_semantic_path_snapshot" \
-            "$_semantic_path_manifest" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION"
         printf 'queued_at=%s\nlauncher_pid=%s\ncmd_id=%s\ncompletion_generation=%s\n' \
             "$(date -Iseconds)" "$$" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" > "${_semantic_pending}.tmp.$$"
         mv "${_semantic_pending}.tmp.$$" "$_semantic_pending"
         # nohup alone only ignores SIGHUP; tmux respawn-pane -k terminates the
         # pane process group.  setsid detaches the durable worker from it.
+        # semantic_causal_post_clear runs semantic_map_generate.sh synchronously
+        # after semantic_index_update.  Suppress the update script's additional
+        # background generator so no child can write semantic-map after the
+        # durable path manifest has been published.
         nohup setsid env SHOGUN_HEAVY_JOB_LOCK_HELD=0 SCRIPT_DIR="$SCRIPT_DIR" \
-            bash -c 'bash "$1/scripts/semantic_causal_post_clear.sh" "$2"; rc=$?; capture_durable_writer_paths finish "$3" "$4" "$2" "$5"; manifest_rc=$?; (( rc == 0 && manifest_rc == 0 ))' \
+            SEMANTIC_MAP_GENERATE=/bin/true \
+            bash -c 'bash "$1/scripts/semantic_causal_post_clear.sh" "$2"' \
             _ "$SCRIPT_DIR" "$CMD_ID" "$_semantic_path_snapshot" "$_semantic_path_manifest" "$SHOGUN_COMPLETION_GENERATION" \
             >/dev/null 2>&1 </dev/null &
         echo "  queued (durable async; result=$GATES_DIR/semantic_causal_audit.result)"
@@ -11346,7 +11366,6 @@ PY
     fi
 
     # ntfy_cmd / shogun / karo は未送信時だけ補完。
-    send_clear_notifications_once "$CMD_ID" "GATE CLEAR"
 
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
     echo ""
@@ -11899,6 +11918,7 @@ PYEOF
         exit 1
     fi
     echo "  status: completed"
+    send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"
 
     echo ""
     echo "Async completion wait (pre-exit):"
