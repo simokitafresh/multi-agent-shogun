@@ -40,3 +40,50 @@ teardown() {
 @test "gunshi remains in the monitor watcher roster" {
     grep -Fq 'local all_agents=("shogun" "karo" "gunshi"' "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 }
+
+@test "watchdog uses owner identity and generation instead of generic legacy process" {
+    run bash -c '
+        set -u
+        root="$1"; state="$root/state"; count="$root/starts"; args="$root/args"
+        mkdir -p "$state"; : >"$count"; : >"$args"
+        export DAEMON_WATCHDOG_LIB_ONLY=1 SHOGUN_STATE_DIR="$state"
+        export NINJA_MONITOR_OWNER_FILE="$state/ninja_monitor.owner"
+        export DAEMON_WATCHDOG_LOG="$root/watchdog.log" RESTART_STATE_DIR="$root/restarts"
+        source "$root/scripts/daemon_watchdog.sh"
+        pid_is_live() { return 0; }
+        pid_cmdline_matches() { return 0; }
+        is_maintenance_active() { return 1; }
+        check_restart_throttle() { return 0; }
+        record_restart() { :; }
+        notify() { :; }
+        log() { :; }
+        nohup() { printf "%s\n" "$*" >>"$count"; printf "%s\n" "$*" >>"$args"; :; }
+
+        check_ninja_monitor
+        test "$(wc -l <"$count")" -eq 1
+
+        fp=$(sha256sum "$root/scripts/ninja_monitor.sh" | awk "{print \$1}")
+        printf "%s current-generation 1\n" "$$" >"$NINJA_MONITOR_OWNER_FILE"
+        printf "1 %s\n" "$fp" >"$NINJA_MONITOR_OWNER_FILE.identity"
+        check_ninja_monitor
+        test "$(wc -l <"$count")" -eq 1
+        test ! -e "$state/ninja_monitor.watchdog.starting"
+
+        printf "1 stale-fingerprint\n" >"$NINJA_MONITOR_OWNER_FILE.identity"
+        check_ninja_monitor
+        test "$(wc -l <"$count")" -eq 2
+        grep -Fq "NINJA_MONITOR_REPLACE_GENERATION=current-generation" "$args"
+
+        state="$root/parallel"; export STATE_DIR="$state" SHOGUN_STATE_DIR="$state"
+        NINJA_MONITOR_OWNER_FILE="$state/ninja_monitor.owner"; export NINJA_MONITOR_OWNER_FILE
+        mkdir -p "$state"; : >"$count"
+        (check_ninja_monitor) & first=$!
+        (check_ninja_monitor) & second=$!
+        wait "$first"; wait "$second"
+        test "$(wc -l <"$count")" -eq 1
+        test "$(awk "{print \\$1}" "$state/ninja_monitor.watchdog.starting")" != "$$"
+        printf "legacy_start=1 healthy_start=0 stale_start=1 replace_generation=1 parallel_winner=1\n"
+    ' _ "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"legacy_start=1 healthy_start=0 stale_start=1 replace_generation=1 parallel_winner=1"* ]]
+}
