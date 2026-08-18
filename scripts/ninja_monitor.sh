@@ -2334,20 +2334,22 @@ get_latest_report_file() {
 find_matching_report_file() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-    local task_parent_cmd task_id
-    local report_parent_cmd report_task_id
+    local task_parent_cmd task_id task_report_id task_report_identity_version
+    local report_parent_cmd report_task_id report_report_id report_identity_version
     local preferred_report legacy_report
     local -a candidates=()
 
     local task_metadata
     task_metadata=$(awk '
-        BEGIN { pc=""; ti=""; ai="" }
+        BEGIN { pc=""; ti=""; ai=""; ri=""; rv="" }
         /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
         /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
         /^[ \t]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ai=v }
-        END { print pc "|" (ti!=""?ti:ai) }
+        /^[ \t]*report_id:/ && ri=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ri=v }
+        /^[ \t]*report_identity_version:/ && rv=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); rv=v }
+        END { print pc "|" (ti!=""?ti:ai) "|" ri "|" rv }
     ' "$task_file")
-    IFS='|' read -r task_parent_cmd task_id <<< "$task_metadata"
+    IFS='|' read -r task_parent_cmd task_id task_report_id task_report_identity_version <<< "$task_metadata"
     [ -z "$task_parent_cmd" ] && return 1
 
     preferred_report="$SCRIPT_DIR/queue/reports/${name}_report_${task_parent_cmd}.yaml"
@@ -2369,16 +2371,24 @@ find_matching_report_file() {
 
         local report_metadata
         report_metadata=$(awk '
-            BEGIN { pc=""; ti="" }
+            BEGIN { pc=""; ti=""; ri=""; rv="" }
             /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
             /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
-            END { print pc "|" ti }
+            /^[ \t]*report_id:/ && ri=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ri=v }
+            /^[ \t]*report_identity_version:/ && rv=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); rv=v }
+            END { print pc "|" ti "|" ri "|" rv }
         ' "$report_file")
-        IFS='|' read -r report_parent_cmd report_task_id <<< "$report_metadata"
+        IFS='|' read -r report_parent_cmd report_task_id report_report_id report_identity_version <<< "$report_metadata"
         [ -z "$report_parent_cmd" ] && continue
         [ "$report_parent_cmd" != "$task_parent_cmd" ] && continue
 
         if [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ]; then
+            continue
+        fi
+        if [ -n "$task_report_id" ] && [ "$task_report_id" != "$report_report_id" ]; then
+            continue
+        fi
+        if [ -n "$task_report_identity_version" ] && [ "$task_report_identity_version" != "$report_identity_version" ]; then
             continue
         fi
 
@@ -2518,7 +2528,7 @@ _failed_task_is_formally_closed() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     local parent_cmd task_id report_file report_status report_verdict
-    local report_parent_cmd report_task_id
+    local report_parent_cmd report_task_id task_report_id report_report_id
 
     [ -f "$task_file" ] || return 1
     parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
@@ -4040,6 +4050,72 @@ _check_done_report_gate() {
     return 1
 }
 
+_gate_worker_clear_marker_path() {
+    local parent_cmd="$1"
+    printf '%s/queue/gates/%s/gate_worker.clear.json\n' "$SCRIPT_DIR" "$parent_cmd"
+}
+
+_gate_worker_clear_receipt_valid() {
+    local parent_cmd="$1"
+    local marker
+    marker=$(_gate_worker_clear_marker_path "$parent_cmd")
+    python3 - "$marker" "$parent_cmd" <<'PY'
+import json
+import re
+import sys
+
+marker, expected_cmd = sys.argv[1:]
+try:
+    with open(marker, encoding="utf-8") as fh:
+        data = json.load(fh)
+except (OSError, ValueError, TypeError):
+    raise SystemExit(1)
+
+if not isinstance(data, dict):
+    raise SystemExit(1)
+if data.get("version") != 1 or data.get("state") != "clear":
+    raise SystemExit(1)
+if data.get("cmd_id") != expected_cmd:
+    raise SystemExit(1)
+if not re.fullmatch(r"[0-9a-f]{64}", str(data.get("completion_generation") or "")):
+    raise SystemExit(1)
+try:
+    if int(data.get("persisted_at_ns")) <= 0:
+        raise SystemExit(1)
+except (TypeError, ValueError):
+    raise SystemExit(1)
+PY
+}
+
+_notify_clear_receipt_required_once() {
+    local name="$1" parent_cmd="$2"
+    local flag_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
+    local flag="$flag_dir/clear_required_${name}.notified"
+    mkdir -p "$flag_dir"
+    if ( set -C; : > "$flag" ) 2>/dev/null; then
+        send_inbox_message karo \
+            "${name}のreport完了を検知したがCLEAR receiptが未成立。${parent_cmd}のcmd_complete_gate CLEAR完了までtaskを非終端で保持する。" \
+            gate_clear_required ninja_monitor || true
+    fi
+}
+
+_check_done_clear_receipt() {
+    local name="$1" parent_cmd="$2" task_status="$3"
+    if _gate_worker_clear_receipt_valid "$parent_cmd"; then
+        return 0
+    fi
+
+    if [[ "$task_status" =~ ^(done|idle)$ ]]; then
+        local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+        yaml_field_set "$task_file" task status in_progress >/dev/null 2>&1 || true
+        log "AUTO-DONE-BLOCK-NO-CLEAR: $name parent_cmd=$parent_cmd prior_status=$task_status reverted=in_progress"
+    else
+        log "AUTO-DONE-AWAITING-CLEAR: $name parent_cmd=$parent_cmd status=$task_status"
+    fi
+    _notify_clear_receipt_required_once "$name" "$parent_cmd"
+    return 1
+}
+
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
@@ -4087,6 +4163,28 @@ check_and_update_done_task() (
     # task_id一致チェック（同一cmd内のWave間誤マッチ防止）
     report_task_id=$(yaml_field_get "$report_file" "task_id")
     [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ] && return 1
+    task_report_id=$(yaml_field_get "$task_file" "report_id" "" 2>/dev/null || true)
+    report_report_id=$(yaml_field_get "$report_file" "report_id" "" 2>/dev/null || true)
+    if [ -n "$task_report_id" ] && [ "$task_report_id" != "$report_report_id" ]; then
+        log "AUTO-DONE-SKIP-REPORT-GENERATION-MISMATCH: $name task_report_id=$task_report_id report_report_id=${report_report_id:-missing}"
+        return 1
+    fi
+    local task_report_identity_version report_identity_version
+    task_report_identity_version=$(yaml_field_get "$task_file" "report_identity_version" "" 2>/dev/null || true)
+    report_identity_version=$(yaml_field_get "$report_file" "report_identity_version" "" 2>/dev/null || true)
+    if [ -n "$task_report_identity_version" ] && [ "$task_report_identity_version" != "$report_identity_version" ]; then
+        log "AUTO-DONE-SKIP-REPORT-VERSION-MISMATCH: $name task_version=$task_report_identity_version report_version=${report_identity_version:-missing}"
+        return 1
+    fi
+
+    # Generation-bound report identities opt into the durable CLEAR boundary.
+    # Legacy reports without report_id retain their pre-generation behavior;
+    # current deployed tasks always carry report_id/report_identity_version.
+    local clear_receipt_required
+    clear_receipt_required=$(yaml_field_get "$task_file" "report_id" "" 2>/dev/null || true)
+    if [ -n "$clear_receipt_required" ] && ! _check_done_clear_receipt "$name" "$task_parent_cmd" "$task_status"; then
+        return 1
+    fi
 
     # done後にdirtyが再発しても、done状態を理由に検査を省略しない。
     if [ "$task_status" = "done" ] && ! _check_done_task_uncommitted "$name"; then
@@ -4143,7 +4241,8 @@ check_and_update_done_task() (
             # report completed -> task done の間に、commit identity/formatと
             # task-owned dirty pathを確定させる。後段のis_task_deployed gate
             # だけでは、ここでdone化されたtaskが未commit検査から外れる。
-            if ! _check_done_report_gate "$name" "$report_file" "$task_file"; then
+            if [ -n "$clear_receipt_required" ] \
+                && ! _check_done_report_gate "$name" "$report_file" "$task_file"; then
                 return 1
             fi
             if ! _check_done_task_uncommitted "$name"; then

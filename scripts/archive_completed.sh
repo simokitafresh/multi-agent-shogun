@@ -2271,6 +2271,37 @@ archive_dashboard
 # archive.doneフラグ出力（CMD_ID指定時のみ）
 if [ -n "$CMD_ID" ]; then
     mkdir -p "$PROJECT_DIR/queue/gates/${CMD_ID}"
+    _clear_marker="$PROJECT_DIR/queue/gates/${CMD_ID}/gate_worker.clear.json"
+    if [ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" = "1" ] && ! python3 - "$_clear_marker" "$CMD_ID" "${SHOGUN_COMPLETION_GENERATION:-}" <<'PY'
+import json
+import re
+import sys
+
+path, expected_cmd, expected_generation = sys.argv[1:]
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+except (OSError, ValueError, TypeError):
+    raise SystemExit(1)
+if not isinstance(data, dict) or data.get("version") != 1 or data.get("state") != "clear":
+    raise SystemExit(1)
+if data.get("cmd_id") != expected_cmd:
+    raise SystemExit(1)
+generation = str(data.get("completion_generation") or "")
+if not re.fullmatch(r"[0-9a-f]{64}", generation):
+    raise SystemExit(1)
+if expected_generation and generation != expected_generation:
+    raise SystemExit(1)
+try:
+    if int(data.get("persisted_at_ns")) <= 0:
+        raise SystemExit(1)
+except (TypeError, ValueError):
+    raise SystemExit(1)
+PY
+    then
+        echo "[archive] BLOCK: durable gate CLEAR receipt missing or invalid for ${CMD_ID}" >&2
+        exit 1
+    fi
     _archive_event_id="completion-finalize-archive-${CMD_ID}-${SHOGUN_COMPLETION_GENERATION}"
     defense_overhead_write completion_finalize archive 0 PASS "$_archive_event_id" \
         "{\"cmd_id\":\"${CMD_ID}\",\"generation\":\"${SHOGUN_COMPLETION_GENERATION}\"}" \

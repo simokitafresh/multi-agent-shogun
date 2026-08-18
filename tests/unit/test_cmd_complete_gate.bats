@@ -5955,3 +5955,25 @@ SH
     cmp -s "$root/report.before" "$report"
     [ ! -e "$root/queue/archive/reports/saizo_report_${cmd}.yaml" ]
 }
+
+# test_necessity: every direct GATE CLEAR and archive terminal path must retain
+# the same generation-bound gate_worker.clear.json receipt used by the wrapper.
+@test "CLEAR and archive terminal paths require the durable worker receipt" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$PROJECT_ROOT/scripts/archive_completed.sh" <<'PY'
+import pathlib, sys
+gate = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+archive = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+default_marker = 'CMD_COMPLETE_GATE_CLEAR_MARKER="$SCRIPT_DIR/queue/gates/${CMD_ID}/gate_worker.clear.json"'
+assert default_marker in gate
+clear_start = gate.index('if [ "$ALL_CLEAR" = true ]')
+clear_block = gate.index('if [ -n "${CMD_COMPLETE_GATE_CLEAR_MARKER:-}" ]', clear_start)
+clear_output = gate.index('echo "GATE CLEAR: cmd完了許可"', clear_start)
+assert clear_block < clear_output
+archive_guard = archive.index('durable gate CLEAR receipt missing or invalid')
+archive_done = archive.index('echo "[archive_completed] gate flag: queue/gates/${CMD_ID}/archive.done"')
+assert archive_guard < archive_done
+print('clear_receipt_default=1 archive_receipt_guard=1 ordering=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "clear_receipt_default=1 archive_receipt_guard=1 ordering=1" ]
+}
