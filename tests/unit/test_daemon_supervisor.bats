@@ -41,7 +41,12 @@ setup() {
         ds_pattern_pids() { printf "999\n"; }
         ds_pid_live() { return 0; }
         ds_cmdline() { printf "/scripts/ninja_monitor.sh\n"; }
-        ds_start_ninja_monitor() { printf "start\n" >>"$count"; }
+        ds_start_ninja_monitor() {
+            printf "start\n" >>"$count"
+            DS_LAST_NINJA_MONITOR_PID=999
+            export DS_LAST_NINJA_MONITOR_PID
+            printf "%s\n" "${1:-none}" >"$root/replace_generation"
+        }
 
         ds_supervise_ninja_monitor
         test "$(wc -l <"$count")" -eq 1
@@ -55,6 +60,7 @@ setup() {
         printf "1 stale-fingerprint\n" >"$NINJA_MONITOR_OWNER_FILE.identity"
         ds_supervise_ninja_monitor
         test "$(wc -l <"$count")" -eq 2
+        test "$(cat "$root/replace_generation")" = current-generation
 
         state="$root/state-parallel"; export STATE_DIR="$state" SHOGUN_STATE_DIR="$state"
         NINJA_MONITOR_OWNER_FILE="$state/ninja_monitor.owner"; export NINJA_MONITOR_OWNER_FILE
@@ -64,6 +70,7 @@ setup() {
         (ds_supervise_ninja_monitor) & second=$!
         wait "$first"; wait "$second"
         test "$(wc -l <"$count")" -eq 1
+        test "$(awk "{print \\$1}" "$state/ninja_monitor.supervisor.starting")" = 999
         printf "legacy_start=1 healthy_start=0 stale_start=1 parallel_winner=1\n"
     ' _ "$PROJECT_ROOT"
     [ "$status" -eq 0 ]

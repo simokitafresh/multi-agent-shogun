@@ -197,8 +197,16 @@ ds_start_inbox_watcher() {
 }
 
 ds_start_ninja_monitor() {
-    nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+    local replace_generation="${1:-}"
+    if [ -n "$replace_generation" ]; then
+        nohup env NINJA_MONITOR_REPLACE_GENERATION="$replace_generation" \
+            bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+    else
+        nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+    fi
     local new_pid=$!
+    DS_LAST_NINJA_MONITOR_PID="$new_pid"
+    export DS_LAST_NINJA_MONITOR_PID
     disown
     printf '%s\n' "$new_pid" > "${STATE_DIR}/ninja_monitor.pid" 2>/dev/null || true
     ds_log "START: ninja_monitor.sh pid=${new_pid}"
@@ -224,8 +232,11 @@ ds_supervise_ninja_monitor() {
     local start_lock="${STATE_DIR}/ninja_monitor.supervisor.start.lock"
     local starting_file="${STATE_DIR}/ninja_monitor.supervisor.starting"
     local starting_pid="" starting_epoch="" starting_age=0 lock_fd
+    local observed_generation="" observed_pid="" observed_heartbeat="" replace_generation=""
+    local launch_pid=""
     local -a legacy_pids=()
     if ds_ninja_monitor_owner_healthy; then
+        [ -f "$starting_file" ] && unlink "$starting_file" 2>/dev/null || true
         ds_log "HEALTH-OK: ninja_monitor owner=healthy identity=current"
         return 0
     fi
@@ -235,9 +246,15 @@ ds_supervise_ninja_monitor() {
     exec {lock_fd}>"$start_lock"
     flock "$lock_fd"
     if ds_ninja_monitor_owner_healthy; then
+        [ -f "$starting_file" ] && unlink "$starting_file" 2>/dev/null || true
         flock -u "$lock_fd"; eval "exec ${lock_fd}>&-"
         ds_log "HEALTH-OK: ninja_monitor owner=healthy after-lock identity=current"
         return 0
+    fi
+    IFS=' ' read -r observed_pid observed_generation observed_heartbeat _legacy_mtime _legacy_fingerprint \
+        < "$owner_file" 2>/dev/null || true
+    if [ -n "$observed_generation" ]; then
+        replace_generation="$observed_generation"
     fi
     if [ -f "$starting_file" ]; then
         read -r starting_pid starting_epoch < "$starting_file" 2>/dev/null || true
@@ -252,9 +269,10 @@ ds_supervise_ninja_monitor() {
             return 0
         fi
     fi
-    printf '%s %s\n' "$$" "$EPOCHSECONDS" > "$starting_file"
     ds_log "OWNER-INVALID: ninja_monitor owner/identity mismatch; legacy_pids=${#legacy_pids[@]} start=1"
-    ds_start_ninja_monitor
+    ds_start_ninja_monitor "$replace_generation"
+    launch_pid="${DS_LAST_NINJA_MONITOR_PID:-}"
+    printf '%s %s\n' "$launch_pid" "$EPOCHSECONDS" > "$starting_file"
     flock -u "$lock_fd"
     eval "exec ${lock_fd}>&-"
 }
