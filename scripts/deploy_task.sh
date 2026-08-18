@@ -654,12 +654,11 @@ deploy_task_guard_worker_assignment() {
             fi
             if [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
                 && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent"; then
-                if deploy_task_archive_terminal_task "$task_file" "$worker_name" "$current_parent" >/dev/null; then
-                    log "TERMINAL_TASK_RELEASE: worker=${worker_name:-worker} held_cmd=${current_parent} incoming_cmd=${incoming_cmd} status=${current_status} decision=ALLOW"
-                    return 0
-                fi
-                log "BLOCK: terminal task archive failed worker=${worker_name:-worker} held_cmd=${current_parent} incoming_cmd=${incoming_cmd}"
-                echo "BLOCK: ${worker_name:-worker} の完了task退避に失敗。別cmd ${incoming_cmd} の配備を停止。" >&2
+                log "BLOCK(cmd_karo_hotfix_reflux_deploy_race_20260725): ${worker_name:-worker} ${current_status} task ${current_parent} has an unarchived report; refusing overwrite by ${incoming_cmd}"
+                echo "BLOCK: ${worker_name:-worker} は ${current_parent} 完了済み(status=${current_status})だが報告未archive。別cmd ${incoming_cmd} での上書きを拒否。cmd_complete/archive完了後に再試行せよ。" >&2
+                bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+                    "配備競合BLOCK: ${worker_name:-worker} は ${current_parent}(status=${current_status})完了済みだが報告未archiveのまま、別cmd ${incoming_cmd} からの上書き配備を試行→拒否した。archive完了を確認してから再配備せよ。" \
+                    reflux_conflict_block deploy_task review_reflux_conflict >/dev/null 2>&1 || true
                 return 1
             fi
             ;;
