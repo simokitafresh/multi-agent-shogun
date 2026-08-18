@@ -45,7 +45,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "LG051 gate is correct; deploy_task model_injection_profile lacks the preemptive non-test caller evidence contract, so the scoped reflux task records an implementation decision candidate instead of changing out-of-scope dispatcher code"
+  action_artifact: "queue/reports/hanzo_report_cmd_reflux_insight_202608190013_hanzo.yaml decision_candidate: add LG051 non-test caller count evidence template to scripts/deploy_task.sh model_injection_profile.report_contract"
+  resolved_at: "2026-08-19T00:17:03+09:00"
 - id: INS-20260818-140040812-fcff
   ts: "2026-08-18T14:00:40+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b1b5mbpjv task id tool use id toolu 01KtXQX58zEkCR6eLT は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
