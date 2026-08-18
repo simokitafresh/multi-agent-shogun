@@ -56,19 +56,20 @@ EOF
     export CMD_GATE_MASTER_TMPDIR="$TEST_TMPDIR"
 }
 
-# test_necessity: source-only publication must immediately converge the live
-# execution source while preserving local-only history and dirty source bytes.
-# regression_justification: AC1 measured remote-only=14, shared-only=46 and a
-# one-generation stale shared gate script.
+# test_necessity: source-only publication must first drain tracked runtime
+# deltas, then converge the live execution source while preserving local-only
+# history and dirty source bytes.
+# regression_justification: converging first was blocked by legitimate runtime
+# dirty paths left after source-only publication.
 @test "pregate shared convergence is ordered and fail-closed" {
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import pathlib, sys
 text=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 push=text.index('if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then')
-converge=text.index('converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh', push)
-pregate=text.index('publish_postclear_runtime_deltas pregate', converge)
-snapshot=text.index('capture_durable_writer_paths start', pregate)
-assert push < converge < pregate < snapshot
+pregate=text.index('publish_postclear_runtime_deltas pregate', push)
+converge=text.index('converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh', pregate)
+snapshot=text.index('capture_durable_writer_paths start', converge)
+assert push < pregate < converge < snapshot
 start=text.index('converge_shared_execution_sources()')
 fn=text[start:text.index('\n}', start)+2]
 for token in ('diff --quiet', 'diff --cached --quiet', 'dirty source path=', 'merge --no-edit', 'merge --abort', 'merge-base --is-ancestor'):
