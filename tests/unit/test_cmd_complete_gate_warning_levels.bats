@@ -709,10 +709,24 @@ EOF
     grep -q "^karo|$TEST_CMD_ID gate_result: FAIL ninja=sasuke report=$(basename "$REPORT_FILE") reason=binary_checks_fail:AC1。再配備提案: FAIL報告を確認し、修正タスクを再配備せよ。|gate_fail|cmd_complete_gate$" "$INBOX_WRITE_LOG"
 }
 
-@test "cmd_complete_gate invokes immediate clear notification helper in emergency and normal GATE CLEAR sections" {
-    run bash -lc "grep -c 'send_clear_notifications_once \"\\\$CMD_ID\" \"GATE CLEAR .*immediate\"' '$SRC_GATE_SCRIPT'"
+@test "cmd_complete_gate sends terminal clear notifications only after runtime publish succeeds" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+publish = text.index('if ! publish_postclear_runtime_deltas; then')
+publish_block_exit = text.index('exit 1', publish)
+terminal_notify = text.index(
+    'send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"',
+    publish,
+)
+
+# A publish failure exits before notification; the success path reaches the
+# notification only after the publish checkpoint has returned successfully.
+assert publish < publish_block_exit < terminal_notify
+assert 'send_clear_notifications_once "$CMD_ID"' not in text[publish:publish_block_exit]
+PY
     [ "$status" -eq 0 ]
-    [ "$output" -eq 2 ]
 }
 
 @test "cmd_complete_gate invokes karo gate block notify in GATE BLOCK section" {
