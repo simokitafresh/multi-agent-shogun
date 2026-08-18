@@ -52,7 +52,7 @@
 | premium | ドクタープレミアム 招待制 | 27 | 上記+GSシン四つ目×3・劇薬DM×2 |
 | (どのtierにも出ない) | — | 70 | Secret |
 
-- 注意: **Ave-XはBasic可視・NewStandard非可視**（cmd_3837のnote対応表突合が要る。設定漏れなら是正cmd）。
+- Ave-X(Basic可視・NewStandard非可視)は**設定漏れではない**: 2026-07-10 20:31 将軍報告→殿裁可のnote対応表(記事ne4a042a92874)準拠でBasic 5体=記事完全一致、NewStandard 17体=シン四神12追加のみ(cmd_3837)。記憶DB ts=2026-07-10T20:31:44。
 - 総リターン(since inception)の出所: `portfolio_metrics.metrics_json`(years=0)の`total_return`(db-checkスキル§11)。全EPは`require_viewer`依存で未認証不可。
 
 ### 1.4 i18n
@@ -143,7 +143,7 @@
 ---
 
 ## §6 未決・要確認
-- Ave-X: Basic可視/NewStandard非可視の意図確認(cmd_3837 note対応表と突合→不一致なら是正cmd)。
+- (解決18:12) Ave-X: note対応表準拠と確認。是正不要。
 - 群行の"up to X%"を出すか(Premium/Standardは出す・Secretは出さない、が現案)。
 - Coupon説明「note不要」の正確性(クーポン発行経路の現物確認)。
 
