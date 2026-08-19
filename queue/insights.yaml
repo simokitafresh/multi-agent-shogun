@@ -135,7 +135,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_commit_runtime_dirty_202608181936"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次現物で既存根治を確認。deploy_task.shがac_assigned/assigned_acsで担当ACのみbinary_checksを生成し、fast publicationとgateも同一スコープを維持する。GP-194回帰54/54 PASS・SKIP 0のため追加実装不要。"
+  action_artifact: "scripts/deploy_task.sh:5394-5874;tests/unit/test_deploy_task_ac_handling.bats:2120-2518;docs/research/gunshi_gp194_split_deploy_bc_scope_20260415.md;logs/test_receipts/run_tests_20260819T224547_2795759.json (54/54 PASS, SKIP 0)"
+  resolved_at: "2026-08-20T07:47:53+09:00"
 - id: INS-20260818-202046752-3669
   ts: "2026-08-18T20:20:46+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bv8gxchgj task id tool use id toolu 016NAETg1Ctqsd5LQe は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
