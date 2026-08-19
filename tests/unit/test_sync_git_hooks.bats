@@ -313,6 +313,62 @@ OLDSCRIPT
     [[ "$output" == *"PRE_PUSH_WIP"* ]]
 }
 
+# test_necessity: runtime-only publication commits must not re-run the
+# affected-test lane, while a commit mixing runtime records with source code
+# must remain fail-closed and execute it.
+@test "runtime-only pre-push commit skips affected tests but mixed source does not" {
+    trace="$TEST_ROOT/logs/pre_push_runtime_trace"
+    mkdir -p "$TEST_ROOT/.githooks" "$TEST_ROOT/scripts" \
+        "$TEST_ROOT/context" "$TEST_ROOT/projects/infra" "$TEST_ROOT/tasks"
+    cp "$BATS_TEST_DIRNAME/../../.githooks/pre-push" "$TEST_ROOT/.githooks/pre-push"
+    cat > "$TEST_ROOT/scripts/test_select.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'tests/unit/runtime-marker.bats\n'
+EOF
+    cat > "$TEST_ROOT/scripts/run_tests.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$PRE_PUSH_RUNTIME_TRACE"
+EOF
+    chmod +x "$TEST_ROOT/.githooks/pre-push" "$TEST_ROOT/scripts/test_select.sh" "$TEST_ROOT/scripts/run_tests.sh"
+    (
+        cd "$TEST_ROOT"
+        git add .githooks/pre-push scripts/test_select.sh scripts/run_tests.sh
+        git commit -qm pre-push-runtime-baseline
+    )
+
+    printf '# runtime context\n' > "$TEST_ROOT/context/infrastructure.md"
+    printf 'lessons: []\n' > "$TEST_ROOT/projects/infra/lessons.yaml"
+    printf '# runtime lessons\n' > "$TEST_ROOT/tasks/lessons.md"
+    (
+        cd "$TEST_ROOT"
+        git add context/infrastructure.md projects/infra/lessons.yaml tasks/lessons.md
+        git commit -qm runtime-only-publish
+    )
+    runtime_sha="$(git -C "$TEST_ROOT" rev-parse HEAD)"
+    runtime_base="$(git -C "$TEST_ROOT" rev-parse 'HEAD^')"
+
+    run env PRE_PUSH_RUNTIME_TRACE="$trace" bash -c \
+        "cd '$TEST_ROOT' && printf 'refs/heads/main $runtime_sha refs/heads/main $runtime_base\\n' | bash .githooks/pre-push origin example.invalid"
+    [ "$status" -eq 0 ]
+    [ ! -f "$trace" ]
+
+    printf '#!/usr/bin/env bash\necho source\n' > "$TEST_ROOT/scripts/source.sh"
+    printf '# mixed runtime and source\n' >> "$TEST_ROOT/context/infrastructure.md"
+    (
+        cd "$TEST_ROOT"
+        git add scripts/source.sh context/infrastructure.md
+        git commit -qm runtime-with-source
+    )
+    mixed_sha="$(git -C "$TEST_ROOT" rev-parse HEAD)"
+    mixed_base="$(git -C "$TEST_ROOT" rev-parse 'HEAD^')"
+
+    run env PRE_PUSH_RUNTIME_TRACE="$trace" bash -c \
+        "cd '$TEST_ROOT' && printf 'refs/heads/main $mixed_sha refs/heads/main $mixed_base\\n' | bash .githooks/pre-push origin example.invalid"
+    [ "$status" -eq 0 ]
+    [ -s "$trace" ]
+    grep -q '^affected ' "$trace"
+}
+
 @test "GA-222 REQUEST_CHANGES: another agent's uncommitted working-tree edit never leaks into the live hook" {
     commit_hook_source "echo COMMITTED_V1"
     # Simulate another, unrelated agent mid-edit: unstaged, uncommitted change
