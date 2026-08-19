@@ -1,23 +1,4 @@
 insights:
-- id: INS-20260818-155906471-19fe
-  ts: "2026-08-18T15:59:06+09:00"
-  insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
-  priority: "high"
-  source: "self_retro"
-  fix_known: true
-  status: resolved
-  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
-  verify_command: "grep -Fq '9acd4849d70da985b2d6d558a7b1d7cbd6e3f31bc8a5054a6c3e76eda5da994b' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
-  insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
-  occurrence_count: 3
-  last_seen: "2026-08-18T16:29:36+09:00"
-  verification:
-    status: "passed"
-    exit_code: 0
-    output: ""
-  resolved_reason: "一次検証でverify_commandがrc=0。内容はMemory DBの同型self_retro履歴とsemantic_dictionary_designへ既存収束し、ordered checkpointsを弱めない新規実装・decision_candidateは不要。"
-  action_artifact: "logs/self_retro.jsonl;context/semantic-map.md;context/infrastructure.md;semantic_search=semantic_dictionary_design"
-  resolved_at: "2026-08-18T16:13:09+09:00"
 - id: INS-20260818-155924527-5450
   ts: "2026-08-18T15:59:24+09:00"
   insight: "semantic_index_update新概念候補: discussion:もう少し現状に合わせよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -975,4 +956,7 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T12:06:11+09:00"
