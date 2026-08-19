@@ -208,7 +208,9 @@ jobs:
     name: E2E Tests
     needs: [unit-tests, shellcheck]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Dependency installation is network-bound and consumed the former 10-minute
+    # job budget before the E2E suite could start (run 32300748166).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code

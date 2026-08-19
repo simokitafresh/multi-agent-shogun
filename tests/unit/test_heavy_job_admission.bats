@@ -24,6 +24,25 @@ setup() {
     printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\tcache_hit\tsource_fingerprint\tmeasured_at\tresource_tags\n' >"$TEST_TIMING_LEDGER"
 }
 
+# test_necessity: The E2E CI job must reserve time for network-bound dependency
+# installation without dropping or bypassing the E2E test target.
+@test "E2E CI job reserves setup time and keeps the full test target" {
+    run python3 - "$ROOT/.github/workflows/test.yml" <<'PY'
+import sys
+import yaml
+
+workflow = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+e2e = workflow["jobs"]["e2e-tests"]
+assert e2e["timeout-minutes"] >= 20
+assert any(
+    step.get("name") == "Run E2E tests"
+    and step.get("run") == "bats tests/e2e/ --timing --jobs 1"
+    for step in e2e["steps"]
+)
+PY
+    [ "$status" -eq 0 ]
+}
+
 _install_empty_ps() {
     mkdir -p "$TMP/no-p9"
     printf '#!/usr/bin/env bash\nexit 0\n' >"$TMP/no-p9/ps"
