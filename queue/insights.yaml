@@ -896,7 +896,10 @@ insights:
   priority: "high"
   source: "--source"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認でinsight本文がCLI引数断片(--priority)、sourceがCLI引数断片(--source)であり、意味ある実装・decision対象ではない。memory DB/semantic検索/Obsidian因果索引/contextに追加根拠なし。"
+  action_artifact: "queue/insights.yaml:893-899; scripts/insight_resolve.sh; semantic_search(--priority); memory_db_query(--priority); causal_index rg(0 matches)"
+  resolved_at: "2026-08-20T05:03:55+09:00"
 - id: INS-20260819-145443057-2d26
   ts: "2026-08-19T14:54:43+09:00"
   insight: "semantic_index_update新概念候補: discussion:複雑な仕組みは害悪だ。シンプルにせよ。新しい関数や仕組みは可能な限り減らそう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
