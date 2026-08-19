@@ -219,6 +219,41 @@ _PREPUSH_CACHE_HIT=0
 
 # --- test_select: 変更ファイルに対応するbatsテストを選択実行 (cmd_2105) ---
 # タイムアウト60秒。未知ファイルのみの変更時はWARN+スキップ。
+pre_push_runtime_only_path() {
+    local path="$1"
+    case "$path" in
+        context/*.md|projects/*/lessons.yaml|projects/*/lessons.yml|tasks/lessons.md|dashboard.md)
+            return 0
+            ;;
+        queue/*.yaml|queue/*.yml|queue/*.json|queue/*.jsonl|queue/*.md|queue/*.txt)
+            return 0
+            ;;
+        queue/*/*.yaml|queue/*/*.yml|queue/*/*.json|queue/*/*.jsonl|queue/*/*.md|queue/*/*.txt)
+            return 0
+            ;;
+        logs/*.yaml|logs/*.yml|logs/*.json|logs/*.jsonl|logs/*.md|logs/*.txt)
+            return 0
+            ;;
+        logs/*/*.yaml|logs/*/*.yml|logs/*/*.json|logs/*/*.jsonl|logs/*/*.md|logs/*/*.txt)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+pre_push_runtime_only_commit() {
+    local path
+    [ "$#" -gt 0 ] || return 1
+    for path in "$@"; do
+        # This is deliberately fail-closed: one code, hook, test, or unknown
+        # path keeps the affected-test lane active for the whole commit.
+        pre_push_runtime_only_path "$path" || return 1
+    done
+    return 0
+}
+
 _PUSH_REFS=()
 while IFS= read -r _ref_line; do
     _PUSH_REFS+=("$_ref_line")
@@ -243,7 +278,9 @@ for _ref_line in "${_PUSH_REFS[@]}"; do
         _base_sha="$_remote_sha"
     fi
     [ -z "$_base_sha" ] && continue
-    mapfile -t _changed_files < <(git diff --name-only "$_base_sha" "$_local_sha" 2>/dev/null | sort -u)
+    # Disable rename detection so a source-to-runtime rename exposes both
+    # endpoints and cannot be misclassified as runtime-only.
+    mapfile -t _changed_files < <(git diff --no-renames --name-only "$_base_sha" "$_local_sha" 2>/dev/null | sort -u)
     if [ "$_PREPUSH_CACHE_HIT" -eq 1 ] || [ ${#_changed_files[@]} -eq 0 ]; then
         continue
     fi
@@ -309,7 +346,18 @@ entry = {
 with open(path, "a", encoding="utf-8") as fh:
     fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
 PY
-        echo "[pre-push] WARN(GA-PUSH1): dirty working tree bypass used (SHOGUN_PUSH_DIRTY_TREE_BYPASS set). Logged to logs/push_dirty_tree_bypass.jsonl" >&2
+                echo "[pre-push] WARN(GA-PUSH1): dirty working tree bypass used (SHOGUN_PUSH_DIRTY_TREE_BYPASS set). Logged to logs/push_dirty_tree_bypass.jsonl" >&2
+    fi
+
+    # Runtime publication commits update only operational records/documents.
+    # Their context/lessons mappings otherwise select the same affected-test
+    # lane repeatedly, even though no executable source changed.  The
+    # classifier consumes paths from the pushed commit snapshot above, not the
+    # working tree.  It is an allowlist and therefore preserves fail-closed
+    # behavior for any source, hook, test, or unknown path mixed into a commit.
+    if pre_push_runtime_only_commit "${_changed_files[@]}"; then
+        echo "[pre-push] runtime-only source commit: skip affected tests (changed_files=${#_changed_files[@]})" >&2
+        continue
     fi
 
     _PREPUSH_EXEC_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/shogun-prepush.XXXXXX")"
