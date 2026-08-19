@@ -160,7 +160,7 @@ make_timeout_root() {
     mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/docs/fixture" "$tmp_root/bin"
     cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
     cp "$ROOT/context/semantic-map.md" "$tmp_root/context/semantic-map.md"
-    cp "$ROOT/docs/semantic-index/index.md" "$tmp_root/docs/semantic-index/index.md"
+    printf 'three layer preflight fixture\n' > "$tmp_root/docs/semantic-index/index.md"
     printf 'three layer preflight fixture\n' > "$tmp_root/docs/fixture/causal.md"
     printf '#!/usr/bin/env bash\nsleep 1\n' > "$tmp_root/scripts/memory_db_query.sh"
     cp "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
