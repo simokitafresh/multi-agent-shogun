@@ -702,6 +702,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **tags**: [bash]
 - **when**: bash ((var++))はvar=0時に
 - **how**: 2026-02-26
+- **retired**: true
+- **retired_at**: 2026-08-20
 - ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
 
 ### L075: L075
@@ -807,6 +809,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **tags**: [communication, gate, yaml, reporting]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-02-27
+- **retired**: true
+- **retired_at**: 2026-08-20
 - cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instructions/common/(生成ファイルのビルド元)、cmd_complete_gate.sh(8箇所以上)が未更新のまま。命名規則変更はファイル名パターンの全文検索(grep '_report\.yaml')で影響範囲を完全列挙してからスコープを決定すべき。
 
 ### L086: auto_draft_lesson.shがlesson_write.shをCMD_ID空で呼ぶためlesson.done未生成
@@ -936,6 +940,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **because**: shogun_to_karo_done.yamlのような不正YAMLはyaml.safe_load()が失敗するため
 - **when**: 混在フォーマットのYAMLファイル(commands:ブロック+ベアリスト)をパースする時
 - **how**: splitしてcommands:ブロックとベアリスト部分を別々にパースするフォールバックを用意せよ
+- **retired**: true
+- **retired_at**: 2026-08-20
 - IF 混在フォーマットのYAMLファイル(commands:ブロック+ベアリスト)をパースする時 THEN splitしてcommands:ブロックとベアリスト部分を別々にパースするフォールバックを用意せよ
 
 ### L099: backfill対象ログファイルのフォーマット事前確認の重要性
@@ -1051,6 +1057,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **because**: 現運用では問題ないが、将来タスク増加時に制限なしだとsend-keysバッファを超過するリスクがあるため
 - **when**: compact_stateにタスク状態を記録する時
 - **how**: 長さ制限(例: 500文字)の追加を検討せよ
+- **retired**: true
+- **retired_at**: 2026-08-20
 - IF compact_stateにタスク状態を記録する時 THEN 長さ制限(例: 500文字)の追加を検討せよ
 
 ### L109: git commit時のstaging巻き込み防止
@@ -1072,6 +1080,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **because**: また並行hook配備で複数レビュアーが同一ファイルを先行commit+pushする重複が発生する
 - **when**: settings.local.json時
 - **how**: .claude/settings.local.jsonはgitignore whitelist未登録でpush対象に指定されてもgit addできない
+- **retired**: true
+- **retired_at**: 2026-08-20
 - IF settings.local.json時 THEN .claude/settings.local.jsonはgitignore whitelist未登録でpush対象に指定されてもgit addできない
 
 ### L111: ACにテストファイル実行が含まれる場合は実行前にファイル実在を確認せよ
@@ -1084,6 +1094,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **because**: 存在しないテストファイルを実行しようとするとエラーになり手戻りが発生するため
 - **when**: ACにテストファイル実行が含まれる時
 - **how**: 実行前にファイルの実在を確認し、不在なら停止して報告せよ
+- **retired**: true
+- **retired_at**: 2026-08-20
 - IF ACにテストファイル実行が含まれる時 THEN 実行前にファイルの実在を確認し、不在なら停止して報告せよ
 
 ### L112: ninja_monitorのcheck_stall()がtask_idフィールドを参照するが現行タスクYAMLはsubtask_idのみ
@@ -1105,6 +1117,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **because**: whitelist外のファイルはcommitできずAC要件を満たせないため
 - **when**: タスク指定ファイルが.gitignore whitelist外の可能性がある時
 - **how**: 配備時に対象ファイルのgit追跡可否を事前検証せよ
+- **retired**: true
+- **retired_at**: 2026-08-20
 - IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ
 
 ### L114: safe_send_clear独自idle判定(tail -3)がCLIステータスバーで❯を見落とし永久CLEAR-BLOCKED。idle判定は必ずcheck_idle()に一本化せよ。同一判定の重複実装は片方が必ず腐る
@@ -1114,6 +1128,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **tags**: [gate, monitor]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-03-01
+- **retired**: true
+- **retired_at**: 2026-08-20
 - cmd_464_hotfix
 
 ### L115: awkでYAMLのインデント階層別フィールド抽出時はインデント深さの正規表現条件を明示せよ
@@ -1126,6 +1142,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **because**: check_auto_archive()でcmdレベル(2スペース)とACレベル(6スペース)を区別しなかったため毎サイクルエラーが発生した
 - **when**: awkでYAMLのインデント階層ごとにフィールドを抽出する時
 - **how**: インデント深さの正規表現条件を明示的に指定せよ。浅いパターン(`/^[[:space:]]*-/`等)は複数階層にマッチして誤抽出する
+- **retired**: true
+- **retired_at**: 2026-08-20
 - IF awkでYAMLのインデント階層ごとにフィールドを抽出する時 THEN インデント深さの正規表現条件を明示的に指定せよ。浅いパターンは複数階層にマッチして誤抽出する
 
 ### L116: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要
@@ -1135,6 +1153,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **tags**: [bash, git, lesson]
 - **when**: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に
 - **how**: 2026-03-01
+- **retired**: true
+- **retired_at**: 2026-08-20
 - scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的に除外される。lesson L113と同根だが、テストファイル限定ではなく全ファイル共通の問題。
 
 ### L117: lesson_referenced→lessons_usefulリネーム時に全派生ファイル(generated/4本+roles/+templates/)を漏れなく更新する必要がある
@@ -1144,6 +1164,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **tags**: [deploy, communication, gate, yaml, lesson, reporting]
 - **when**: lesson_referenced→lessons_usefulリネーム時に
 - **how**: 後方互換フォールバックも各箇所に必要
+- **retired**: true
+- **retired_at**: 2026-08-20
 - フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/report_implement.yaml、cmd_complete_gate.sh内の全Python判定コード、deploy_task.sh報告テンプレート等の横断更新が必須。後方互換フォールバックも各箇所に必要。impl_bが全箇所カバーしていたため問題なし。
 
 ### L118: tmux set-optionのtargetがsession指定だとwindow optionが意図せずcurrent windowのみ更新されることがある
@@ -1156,6 +1178,8 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **because**: session指定だと意図せずcurrent windowのみ更新され他windowに反映されないため
 - **when**: tmux set-optionでwindow option(pane-border-format等)を設定する時
 - **how**: window明示(-w -t shogun:main|agents)か専用適用スクリプト呼出しを使え
+- **retired**: true
+- **retired_at**: 2026-08-20
 - IF tmux set-optionでwindow option(pane-border-format等)を設定する時 THEN window明示(-w -t shogun:main|agents)か専用適用スクリプト呼出しを使え
 
 ### L119: deploy_task.shのpostcondファイル経由でbash→Pythonのデータ受け渡しパターンが確立
@@ -4511,6 +4535,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **tags**: [bash, tmux]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-11
+- **retired**: true
+- **retired_at**: 2026-08-20
 - CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。
 
 ### L467: REPORT-DONE-MISMATCH誤検知はtask_id照合不在が根因。snapshot report cmd_idとtask YAMLのtask_idを比較して旧report残存をスキップせよ
@@ -8200,6 +8226,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **origin**: [[cmd_karo_hotfix_review_quality_warn_gate_result_20260615]]
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-08-20
 - gunshi FAIL + 家老waive → GATE CLEARのパターン(cmd_3376等)でverdictがFAILのまま残るため、gate_result=CLEAR/PASSのエントリはWARN対象から除外する必要がある。flush_entry()でgr[]に保存し、END blockで上書きする3点セット実装
 
 ### L810: タグ変更の効果はgate_lesson_health.shに即座に反映されない
