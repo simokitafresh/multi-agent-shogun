@@ -1615,6 +1615,10 @@ PY
 }
 
 check_gate_stall() {
+    ninja_monitor_business_owner_is_current || {
+        log "SINGLETON-FENCE-SKIP: check_gate_stall stale generation"
+        return 0
+    }
     local now=$EPOCHSECONDS marker cmd marker_epoch elapsed_sec elapsed_min gate_dir
     local gate_lock_fd gate_output block_message
     _gate_stall_refresh_active_cmds
