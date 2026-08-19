@@ -1938,7 +1938,8 @@ publish_postclear_runtime_deltas() {
     local before_head after_head temp_parent source_repo source_sha path
     local git_common_dir publish_lock publish_lock_fd
     local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
-    local -a dirty_paths=() runtime_paths=() durable_paths=()
+    local -a dirty_paths=() runtime_paths=() durable_paths=() source_shas=()
+    local -A source_blob_by_path=()
 
     # A tracked-runtime publication is a repository transaction.  Serialize
     # every generation on the shared git common-dir, then deliberately read
@@ -2008,9 +2009,11 @@ PY
         mkdir -p "$source_repo/$(dirname "$path")"
         cp -- "$repo/$path" "$source_repo/$path" || { git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true; rmdir -- "$temp_parent" 2>/dev/null || true; return 1; }
         git -C "$source_repo" add -- "$path" || return 1
+        git -C "$source_repo" commit -m "runtime: ${phase} field-aware publish ${CMD_ID} ${path}" -- "$path" >/dev/null 2>&1 || return 1
+        source_sha=$(git -C "$source_repo" rev-parse HEAD) || return 1
+        source_shas+=("$source_sha")
+        source_blob_by_path["$path"]=$(git -C "$source_repo" rev-parse "${source_sha}:${path}") || return 1
     done
-    git -C "$source_repo" commit -m "runtime: ${phase} field-aware publish ${CMD_ID}" >/dev/null 2>&1 || return 1
-    source_sha=$(git -C "$source_repo" rev-parse HEAD) || return 1
 
     after_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
     if [ "$after_head" != "$before_head" ]; then
@@ -2020,18 +2023,29 @@ PY
     # Checkpoint the exact snapshot locally before merging its equivalent
     # remote publication. Local-only history and live runtime bytes survive.
     for path in "${runtime_paths[@]}"; do
-        [ "$(git -C "$repo" hash-object "$path")" = "$(git -C "$source_repo" rev-parse "${source_sha}:${path}")" ] || {
+        [ "$(git -C "$repo" hash-object "$path")" = "${source_blob_by_path[$path]}" ] || {
             echo "  runtime publish: BLOCK (concurrent writer path=$path)" >&2
             return 1
         }
     done
-    git -C "$repo" add -- "${runtime_paths[@]}" || return 1
-    git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
-    if ! push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "$source_sha"; then
-        echo "  runtime publish: BLOCK (source-only publish failed)" >&2
-        return 1
-    fi
+    # Publish one field at a time.  In particular, an insights-only source
+    # commit reaches the existing stable-ID merge lane even when other runtime
+    # fields are dirty in the same generation.  Refresh the tip between fields
+    # so remote-only history is composed rather than replayed or discarded.
+    for source_sha in "${source_shas[@]}"; do
+        if ! push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "$source_sha"; then
+            echo "  runtime publish: BLOCK (source-only publish failed)" >&2
+            return 1
+        fi
+        remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+        [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
+    done
     git -C "$repo" fetch -q "$remote" "$push_ref" || return 1
+    # The published blob is the authoritative composition (including remote
+    # insight IDs).  Bring only owned runtime paths back before checkpointing;
+    # unrelated local commits and dirty paths remain untouched.
+    git -C "$repo" checkout FETCH_HEAD -- "${runtime_paths[@]}" || return 1
+    git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
     if ! git -C "$repo" merge --no-edit FETCH_HEAD >/dev/null 2>&1; then
         git -C "$repo" merge --abort >/dev/null 2>&1 || true
         echo "  runtime publish: BLOCK (shared HEAD/index convergence failed)" >&2

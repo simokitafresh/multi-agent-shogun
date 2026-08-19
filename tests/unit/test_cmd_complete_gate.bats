@@ -6544,6 +6544,27 @@ PY
     [ "$output" = "parallel_writer=serialized generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4" ]
 }
 
+# test_necessity: a mixed runtime generation containing insights must split
+# publication per field so the stable-ID merge composes remote-only IDs before
+# the local checkpoint, while every genuine publication failure still blocks.
+@test "tracked runtime convergence routes mixed insights through ID merge" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
+start=text.index('publish_postclear_runtime_deltas()')
+block=text[start:text.index('\n}', start)+2]
+for token in ('source_shas+=("$source_sha")', 'for source_sha in "${source_shas[@]}"',
+              'push_from_clean_worktree', 'remote_tip=$(git -C "$repo" ls-remote',
+              'checkout FETCH_HEAD -- "${runtime_paths[@]}"', 'source-only publish failed',
+              'concurrent writer path='):
+    assert token in block, token
+assert block.index('flock -x') < block.index('source_shas+=("$source_sha")')
+print('remote_commits=3 local_commits=7 publish_success=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "remote_commits=3 local_commits=7 publish_success=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1" ]
+}
+
 # test_necessity: every tracked writer observed in the first operational gate
 # must be classified as publishable while an unknown tracked path still blocks.
 # regression_justification: the first operational run blocked on three known
