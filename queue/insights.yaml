@@ -1,34 +1,4 @@
 insights:
-- id: INS-20260818-160310120-b34d
-  ts: "2026-08-18T16:03:10+09:00"
-  insight: "semantic_index_update新概念候補: discussion:レスポンシブの時はシンプルなカード、PCやタブレットでは元のリッチな情報の2パターンがいい は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T16:05:25+09:00"
-- id: INS-20260818-160407373-da46
-  ts: "2026-08-18T16:04:07+09:00"
-  insight: "semantic_index_update新概念候補: discussion:レスポンシブの時は下にシンプルなカード＋stickyなポップアップだ。おれの希望などを随時記録してどう変えていったかを記録してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T16:05:25+09:00"
-- id: INS-20260818-160708058-060c
-  ts: "2026-08-18T16:07:08+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_startup_archive_requires_clear_20260818; matched=gates; current_pattern=; candidate_level=3; candidate=cmd_2286でAC5(cmd原本に不在)がtask YAMLに混入→影丸verdict:FAIL→家老waive。根因=忍者がtask YAMLにACを手動追加。comm -23でcmd原本にないAC IDを検出→WARN; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_startup_archive_requires_clear_20260818"
-  fix_known: false
-  status: resolved
-  resolved_reason: "既存のdeploy_task.sh verify_ac_consistencyがtask/cmdのAC件数・ID不一致を配備直後に自動検出し、専用contract testsがextra ACとID mismatchを検証済みのため重複候補として解決"
-  action_artifact: "scripts/deploy_task.sh:3681-3818;tests/unit/test_deploy_task_ac_handling.bats:332-479;memory_db_concept=defense_hierarchy;semantic_search=task YAML AC cmd原本"
-  resolved_at: "2026-08-19T12:20:39+09:00"
 - id: INS-20260818-162228897-dd44
   ts: "2026-08-18T16:22:28+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b135qma1j task id tool use id toolu 01VeU4opvqZBTmAP7i は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -961,3 +931,33 @@ insights:
   source: "--source"
   fix_known: false
   status: pending
+- id: INS-20260819-145443057-2d26
+  ts: "2026-08-19T14:54:43+09:00"
+  insight: "semantic_index_update新概念候補: discussion:複雑な仕組みは害悪だ。シンプルにせよ。新しい関数や仕組みは可能な限り減らそう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T15:09:05+09:00"
+- id: INS-20260819-150040527-65d1
+  ts: "2026-08-19T15:00:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bveliwwhi task id tool use id toolu 015g1AaGFK1PrSbvik は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T15:09:05+09:00"
+- id: INS-20260819-150722897-9ea3
+  ts: "2026-08-19T15:07:22+09:00"
+  insight: "semantic_index_update新概念候補: discussion:&lt;&lt;autonomous loop dynamic&gt;&gt; は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T15:09:05+09:00"
