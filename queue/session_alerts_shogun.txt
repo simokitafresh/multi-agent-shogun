@@ -1,3 +1,5 @@
-# session_alerts — generated: 2026-08-18T14:58:44+0900
-[DONE] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
-[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
+# session_alerts — generated: 2026-08-19T15:04:08+0900
+[DONE] 追体験自動化ターゲット: WARN (Q6回答未検出)
+[DONE] 洗脳連鎖2x2: 危険象限
+[DONE] 走行中cmd実測突合: busy 4名。capture-pane未確認で状況報告するな
+[DONE] 三層記憶引用率0%: 殿の質問に三層記憶を使っていない
