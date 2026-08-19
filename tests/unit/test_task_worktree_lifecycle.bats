@@ -215,3 +215,62 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"target_type=list planned_type=list inspection_type=scalar projected_once=3 selector=resolved"* ]]
 }
+
+@test "remote-tip projection removes only explicit relative prefix and preserves dot paths" {
+    setup_fixture_repo
+    mkdir -p "$FIXTURE/shared/.githooks" "$FIXTURE/shared/.codex" "$FIXTURE/shared/...dots"
+    printf 'hook\n' > "$FIXTURE/shared/.githooks/pre-push"
+    printf '{}\n' > "$FIXTURE/shared/.codex/hooks.json"
+    printf 'ordinary\n' > "$FIXTURE/shared/src/ordinary.py"
+    printf 'dots\n' > "$FIXTURE/shared/...dots/probe"
+    git -C "$FIXTURE/shared" add .githooks/pre-push .codex/hooks.json src/ordinary.py ...dots/probe
+    git -C "$FIXTURE/shared" commit -q -m fixture-dot-paths
+    git -C "$FIXTURE/shared" push -q origin main
+
+    task="$BATS_TEST_TMPDIR/task-dot-paths.yaml"
+    cat > "$task" <<'YAML'
+task:
+  task_id: task_dot_paths
+  parent_cmd: cmd_dot_paths
+  project: infra
+  task_worktree_required: true
+  target_path:
+    - .githooks/pre-push
+    - ./.codex/hooks.json
+    - src/ordinary.py
+    - ...dots/probe
+  status: assigned
+YAML
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        python3 - "$TASK" "$wt" <<'PY'
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {})["task"]
+wt = sys.argv[2]
+expected = [
+    f"{wt}/.githooks/pre-push",
+    f"{wt}/.codex/hooks.json",
+    f"{wt}/src/ordinary.py",
+    f"{wt}/...dots/probe",
+]
+assert task["target_path"] == expected, task["target_path"]
+assert all(path.startswith(wt + "/") for path in expected)
+assert all(__import__("os").path.isfile(path) for path in expected)
+PY
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+        echo "dotpath=preserved explicit_relative_prefix=removed normal=preserved adversarial_dots=preserved"
+    '
+    if [ "$status" -ne 0 ]; then
+        printf '%s\n' "$output" >&3
+    fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"dotpath=preserved explicit_relative_prefix=removed normal=preserved adversarial_dots=preserved"* ]]
+}
