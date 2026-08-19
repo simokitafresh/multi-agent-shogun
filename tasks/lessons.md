@@ -15275,3 +15275,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - str.lstrip('./')は文字列prefixではなく文字集合を反復除去する。明示的./だけを除去する条件分岐とdotpath fixtureを次回チェックへ組み込む
+
+### L1614: task worktree生成時にscripts/run_tests.shの実行ビットが失われ、run_tests.sh task modeが構造的にBLOCKする
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_prepush_runtime_speed_202608190621
+- **記録者**: kagemaru
+- **tags**: [infra,testing,frontend,testing,gate]
+- **subdomain**: infra
+- **target_files**: [.githooks/pre-push,tests/unit/test_sync_git_hooks.bats]
+- **origin**: [[cmd_karo_hotfix_prepush_runtime_speed_202608190621]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task_worktree_workdir配下のscripts/run_tests.shは主repoで-rwxrwxrwxだが、本cmdの実測でtask worktree生成直後は-rw-r--r--だった。task modeは_task_root!=REPO_ROOT時にworktree側run_tests.shが-xでなければbackend/frontendパターンのみ対応のexternal test engineフォールバックへ落ち、bats testはno external task test engineでBLOCKする。chmod +xで解消しても、委譲先run_tests.sh affectedがnested aggregate run_tests invocationガードでBLOCKするため、task-mode検証は本状況下で構造的に完走できない。検出はtask worktree作成直後にls -la <worktree>/scripts/run_tests.shで実行ビットを確認する。回避はguardメッセージの通りfile modeで対象ファイルを直接実行する
