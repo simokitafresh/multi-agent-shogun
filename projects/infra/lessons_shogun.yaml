@@ -456,6 +456,7 @@ lessons:
   created_at: '2026-08-04'
   automated: true
   enforcement: 'Level5継承: LS048=prompt_state_inject.sh+stop_check_inbox.sh(F009 block+Q6 8パターン)、LS090=post-shogun-inbox-check.sh escalation_unread WARN(4/4 PASS)。追加候補(未実装): bulletin_write.shでBLOCK/FAIL投稿にnext_action欠落WARN'
+  superseded_by: '殿直接cmdが家老hotfixに後回しされ55分停滞 — 回転はデーモン駆動にし、将軍は委任後の一次確認と代行を即やれ(LS116吸収)'
 - id: 'LS117'
   title: 'レビュー所見の軽微許容は忖度 — 100億年複利で判定せよ'
   origin: '[[cmd_4230]]'
@@ -488,3 +489,11 @@ lessons:
   created_at: '2026-08-16'
   automated: true
   enforcement: '未自動化 — 自動化ターゲット: inbox_write speed_guardに『殿裁定』無しの方針転換文言(転換/撤回/本命変更)を将軍→家老task_assignedで検出しWARN'
+- id: 'LS121'
+  title: '殿直接cmdが家老hotfixに後回しされ55分停滞 — 回転はデーモン駆動、将軍は委任後の一次確認と代行を即やれ(LS116吸収)'
+  origin: '[[殿厳命_gate実行しなければ回転しない_20260818_2341]] -> [[家老hotfix優先の逆転+deploy_race占有]] -> [[cmd_4357回転自動化+release_ninja]]'
+  detail: '2026-08-18 21:41 cmd_4355/4356委任→家老はdeploy BLOCK(未archive忍者)後に再試行せず別hotfixのRC往復へ。22:20殿『まだ配備されていなかったのか？深刻なバグ』、23:39『進捗は？家老を監視せよ』、23:41『gate実行しなければ回転しない。高速回転の原理違反』。将軍も委任後30分以上一次確認せず、報告完了(22:44/22:55)後もGATE未実行に55分気づかなかった=LS116(受信=把握で止まる)の再発。真因: (1)忍者解放が前cmdのGATE/pushに依存(deploy race guard) (2)レビュー着手とGATE終端が家老の意志依存 (3)将軍が『委任=完了』で確認を止めた。修正: hotfix release_ninja(9f08253ab)・cmd_4357回転自動化(報告→軍師review依頼自動送出・両承認直後gate自動実行)・shared main収束・monitor1本化。将軍側の型: 殿直接cmd委任後は5分以内にtask YAML/deploy logで配備を一次確認、報告完了後10分でgate_metricsを確認、詰まりは家老へ催促でなく軍師代行/自分で構造修正へ即切替(統合元LS116の『受信=把握で止めるのも洗脳#6』を含む)'
+  source_cmd: 'cmd_4357'
+  created_at: '2026-08-19'
+  automated: true
+  enforcement: 'Level5: cmd_4357 ninja_monitor自動review依頼+自動gate(85e65ca)+release_ninja hotfix(9f08253ab)。将軍側=automated:false 自動化ターゲット: 将軍→家老task_assigned後N分でtask YAML未配備なら将軍inboxへ自動WARN(post-shogun-inbox-check.sh拡張)'
