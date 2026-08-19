@@ -5208,6 +5208,82 @@ EOF
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
 }
 
+# test_necessity: a resolved SSOT entry may be compacted while a remote tip
+# still retains the identity-equal pending observation; the merge must delete
+# that stale pending block instead of false-blocking terminal publication.
+# regression_justification: durable insight resolution compacted the source
+# entry while the remote execution tip retained the earlier pending block.
+@test "AC2 insights merge: resolved compaction deletes identity-equal stale pending" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-resolved-compaction"
+    cat > "$base-base.yaml" <<'EOF'
+- id: lifecycle
+  ts: 2026-08-18T18:23:06+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: resolved
+  resolved_reason: verified
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+[]
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: lifecycle
+  ts: 2026-08-18T18:23:06+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: pending
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_resolved_compaction_probe
+    [ "$status" -eq 0 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^- id:' || true)" -eq 0 ]
+}
+
+# test_necessity: resolved-compaction deletion is valid only for an
+# identity-equal stale pending; an altered identity remains fail-closed.
+# regression_justification: prevents the monotonic lifecycle exception from
+# overwriting or deleting an independently changed remote insight.
+@test "AC2 insights merge: resolved compaction identity mismatch blocks" {
+    local base="$BATS_TEST_TMPDIR/ac2-insights-resolved-compaction-identity"
+    cat > "$base-base.yaml" <<'EOF'
+- id: lifecycle
+  ts: 2026-08-18T18:23:06+09:00
+  insight: same
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: resolved
+  resolved_reason: verified
+EOF
+    cat > "$base-source.yaml" <<'EOF'
+[]
+EOF
+    cat > "$base-remote.yaml" <<'EOF'
+- id: lifecycle
+  ts: 2026-08-18T18:23:06+09:00
+  insight: changed
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: pending
+EOF
+    _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_resolved_compaction_identity_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+}
+
 # test_necessity: duplicate stable IDs are rejected before publication because
 # ID-based merge would otherwise silently collapse user data.
 @test "AC2 insights merge: duplicate ID blocks" {

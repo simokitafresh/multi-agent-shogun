@@ -1392,6 +1392,25 @@ def monotonic_new_id_lifecycle(left, right):
     return left if left_status == "resolved" else right
 
 
+def monotonic_resolved_deletion(base_entry, remote_entry):
+    """Allow a resolved SSOT deletion to compact an identity-equal stale pending.
+
+    The durable writer may resolve an insight and then compact that resolved
+    block while a remote tip still contains the earlier pending observation.
+    This is a monotonic lifecycle transition, not an independent destructive
+    remote edit.  Identity and status are intentionally strict so changed
+    evidence or non-pending remote states remain fail-closed.
+    """
+    identity_fields = ("id", "ts", "insight", "priority", "source", "fix_known")
+    base_value = base_entry["value"]
+    remote_value = remote_entry["value"]
+    if any(base_value.get(field) != remote_value.get(field) for field in identity_fields):
+        return False
+    if base_value.get("status") != "resolved" or remote_value.get("status") != "pending":
+        return False
+    return True
+
+
 chosen = {}
 order = []
 for entry in remote_list + source_list + base_list:
@@ -1406,6 +1425,8 @@ for item_id in order:
         if b is None:
             chosen[item_id] = r
         elif r is None or equal(r, b):
+            chosen[item_id] = None
+        elif monotonic_resolved_deletion(b, r):
             chosen[item_id] = None
         else:
             raise ValueError(f"source deletion conflicts with remote id: {item_id}")
