@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_commit_subject_contract_202608101133
-  timestamp: '2026-08-10T03:24:41Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_commit_subject_contract_202608101133'
 - cmd_id: cmd_karo_hotfix_prod500_signals_ledger_tuple_202608101154
   timestamp: '2026-08-10T03:29:32Z'
   ninja: system
@@ -1317,3 +1304,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_gate_monotonic_timeout_202608191022'
+- cmd_id: cmd_karo_hotfix_prepush_runtime_speed_202608190621
+  timestamp: '2026-08-19T02:29:39Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_prepush_runtime_speed_202608190621'
