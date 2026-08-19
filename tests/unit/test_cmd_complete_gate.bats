@@ -6443,7 +6443,8 @@ PY
 # wall-clock corrections cannot falsely expire a fresh semantic worker.
 # regression_justification: an operational gate observed a multi-hour wall-clock
 # jump while its worker process had run for under three minutes and falsely hit
-# the 600-second deadline.
+# the 600-second deadline. Integer-second uptime truncation also falsely timed
+# out a 0.1-second completion that crossed a whole-second boundary.
 @test "durable writer wait ignores wall-clock jumps and preserves completion and timeout" {
     run bash -c '
         set -euo pipefail
@@ -6473,6 +6474,9 @@ PY
             printf "%s\n" done > "$GATES_DIR/semantic_causal_audit.result"
             rm -f "$GATES_DIR/semantic_causal_audit.pending"
         }
+        block=$(sed -n "/^wait_for_postclear_durable_writers()/,/^}/p" "$1")
+        [[ "$block" == *"start_uptime_ticks"* ]]
+        [[ "$block" == *"elapsed_ticks"* ]]
         for jump in 12960 -12960; do
             prepare
             date() { printf "%s\n" "$((1700000000 + jump))"; }
@@ -6512,6 +6516,137 @@ print('field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1')
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1" ]
+}
+
+# test_necessity: publishers for one shared repository must be admitted one at
+# a time and must derive generation/dirty state after admission; genuine byte,
+# path, push and merge conflicts remain fail-closed.
+# regression_justification: a legitimate parallel publisher advanced HEAD
+# while terminal publication was preparing its snapshot, producing a false
+# postclear_runtime_publish_failed after GATE CLEAR.
+@test "tracked runtime publisher singleflights generations and preserves conflict guards" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index("publish_postclear_runtime_deltas()")
+block = text[start:text.index("\n}", start) + 2]
+lock = block.index('flock -x "$publish_lock_fd"')
+manifest = block.index('mapfile -t durable_paths')
+head = block.index('before_head=$(git -C "$repo" rev-parse HEAD')
+dirty = block.index('git -C "$repo" status --porcelain=v1')
+assert lock < manifest < head < dirty
+for guard in (
+    'nonruntime dirty path=', 'concurrent writer path=',
+    'source-only publish failed', 'shared HEAD/index convergence failed',
+):
+    assert guard in block, guard
+assert 'writer generation changed' in block
+assert 'git-common-dir' in block and 'shogun-tracked-runtime-publish.lock' in block
+print('parallel_writer=serialized generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "parallel_writer=serialized generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4" ]
+}
+
+# test_necessity: a mixed runtime generation containing insights must split
+# publication per field so the stable-ID merge composes remote-only IDs before
+# the local checkpoint, while every genuine publication failure still blocks.
+@test "tracked runtime convergence routes mixed insights through ID merge" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
+start=text.index('publish_postclear_runtime_deltas()')
+block=text[start:text.index('\n}', start)+2]
+for token in ('source_shas+=("$source_sha")', 'for source_sha in "${source_shas[@]}"',
+              'push_from_clean_worktree', 'remote_tip=$(git -C "$repo" ls-remote',
+              'checkout FETCH_HEAD -- "${runtime_paths[@]}"', 'source-only publish failed',
+              'concurrent writer path='):
+    assert token in block, token
+assert block.index('flock -x') < block.index('source_shas+=("$source_sha")')
+print('remote_commits=3 local_commits=7 publish_success=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "remote_commits=3 local_commits=7 publish_success=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1" ]
+}
+
+# test_necessity: shared execution-source convergence must reuse the stable-ID
+# insights merge when the published remote and live checkout diverge, while
+# leaving every non-insights or semantic same-ID conflict fail-closed.
+# regression_justification: after runtime dirty reached zero, a 5/9 history
+# split conflicted in queue/insights.yaml and falsely blocked terminal publish.
+@test "shared execution convergence routes sole insights conflict through stable ID merge" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
+start=text.index('converge_shared_execution_sources()')
+block=text[start:text.index('\n}', start)+2]
+for token in ('merge-base "$before_head" "$remote_tip"',
+              'diff --name-only --diff-filter=U',
+              'rev-list --reverse "${merge_base}..${before_head}" -- queue/insights.yaml',
+              'source_only_insights_id_merge', 'git -C "$repo" commit --no-edit',
+              'git -C "$repo" merge --abort'):
+    assert token in block, token
+assert block.index('git -C "$repo" merge --no-edit') < block.index('source_only_insights_id_merge')
+print('remote_commits=5 local_commits=9 history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "remote_commits=5 local_commits=9 history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0" ]
+}
+
+# test_necessity: the operational 6-remote/10-local split must execute the
+# stable-ID fallback, not merely contain its source tokens; the resulting HEAD
+# contains both histories and leaves no MERGE_HEAD or tracked dirty bytes.
+@test "shared execution convergence resolves real 6 by 10 insights history" {
+    base="$BATS_TEST_TMPDIR/shared-6x10"
+    mkdir -p "$base/origin.git"
+    git -C "$base/origin.git" init -q --bare
+    git clone -q "$base/origin.git" "$base/repo"
+    git -C "$base/repo" config user.email fixture@example.invalid
+    git -C "$base/repo" config user.name Fixture
+    mkdir -p "$base/repo/queue" "$base/repo/scripts"
+    printf '%s\n' 'insights:' '- id: base' '  value: base' > "$base/repo/queue/insights.yaml"
+    printf '%s\n' '#!/usr/bin/env bash' 'printf base' > "$base/repo/scripts/cmd_complete_gate.sh"
+    git -C "$base/repo" add queue/insights.yaml scripts/cmd_complete_gate.sh
+    git -C "$base/repo" commit -qm base
+    git -C "$base/repo" branch -M main
+    git -C "$base/repo" push -q -u origin main
+    git clone -q -b main "$base/origin.git" "$base/remote"
+    git -C "$base/remote" config user.email fixture@example.invalid
+    git -C "$base/remote" config user.name Fixture
+    for n in 1 2 3 4 5; do
+        printf 'remote-%s\n' "$n" > "$base/remote/remote-$n.txt"
+        git -C "$base/remote" add "remote-$n.txt"
+        git -C "$base/remote" commit -qm "remote $n"
+    done
+    printf '%s\n' 'insights:' '- id: base' '  value: base' '- id: remote' '  value: remote' > "$base/remote/queue/insights.yaml"
+    git -C "$base/remote" add queue/insights.yaml
+    git -C "$base/remote" commit -qm 'remote insight'
+    git -C "$base/remote" push -q origin main
+    for n in 1 2 3 4 5 6 7 8 9; do
+        printf 'local-%s\n' "$n" > "$base/repo/local-$n.txt"
+        git -C "$base/repo" add "local-$n.txt"
+        git -C "$base/repo" commit -qm "local $n"
+    done
+    printf '%s\n' 'insights:' '- id: base' '  value: base' '- id: local' '  value: local' > "$base/repo/queue/insights.yaml"
+    git -C "$base/repo" add queue/insights.yaml
+    git -C "$base/repo" commit -qm 'local insight'
+
+    run bash -c '
+        set -euo pipefail
+        source <(sed -n "/^source_only_insights_id_merge()/,/^}/p" "$1")
+        source <(sed -n "/^converge_shared_execution_sources()/,/^}/p" "$1")
+        CMD_ID=cmd_6x10_fixture
+        converge_shared_execution_sources "$2" scripts/cmd_complete_gate.sh
+        git -C "$2" merge-base --is-ancestor origin/main HEAD
+        test ! -e "$2/.git/MERGE_HEAD"
+        test -z "$(git -C "$2" status --porcelain=v1 --untracked-files=no)"
+        merged=$(git -C "$2" show HEAD:queue/insights.yaml)
+        [[ "$merged" == *"id: remote"* && "$merged" == *"id: local"* ]]
+        printf "history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0\n"
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$base/repo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"conflicts=1 paths=queue/insights.yaml insight_sources=1"* ]]
+    [[ "$output" == *"history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0"* ]]
 }
 
 # test_necessity: every tracked writer observed in the first operational gate
