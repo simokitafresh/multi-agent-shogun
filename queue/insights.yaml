@@ -95,7 +95,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:a680cd19c5e960e7"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検分で全11契約hash変更を再確認。参照先0件欠落、SKILL更新日不足0件、例示パス欠落0件、副作用検証マーカー欠落0件。公開I/Fは既存記載（引数・終了契約）と一致し、SKILL本文の追従修正不要と判定。"
+  action_artifact: "SKILL_REF_RECORD_VERIFIED=1 bash scripts/gates/gate_skill_script_refs.sh -> PASS; 再実行 -> PASS; refs=82 skills=41/30; queue/insights.yamlの対象IDのみresolve"
+  resolved_at: "2026-08-20T05:40:19+09:00"
 - id: INS-20260818-193702528-48db
   ts: "2026-08-18T19:37:02+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bkzjhpkxs task id tool use id toolu 01TWgbmRHgSEuZLdgz は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
