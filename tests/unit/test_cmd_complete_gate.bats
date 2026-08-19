@@ -6649,6 +6649,55 @@ PY
     [[ "$output" == *"history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0"* ]]
 }
 
+# test_necessity: runtime source convergence must complete when an unrelated
+# tracked path conflicts in history but the requested execution source blob is
+# already equal to the remote blob.
+# regression_justification: publish_postclear_runtime_deltas and shared
+# convergence both falsely BLOCKed on senkyoku-log/insights history conflicts
+# after their owned source path had already been published successfully.
+@test "shared execution convergence ignores unrelated history conflict after target blob check" {
+    base="$BATS_TEST_TMPDIR/shared-unrelated-conflict"
+    mkdir -p "$base/origin.git"
+    git -C "$base/origin.git" init -q --bare
+    git clone -q "$base/origin.git" "$base/repo"
+    git -C "$base/repo" config user.email fixture@example.invalid
+    git -C "$base/repo" config user.name Fixture
+    mkdir -p "$base/repo/queue" "$base/repo/scripts"
+    printf 'base-source\n' > "$base/repo/scripts/cmd_complete_gate.sh"
+    printf 'base-unrelated\n' > "$base/repo/queue/senkyoku-log.txt"
+    git -C "$base/repo" add scripts/cmd_complete_gate.sh queue/senkyoku-log.txt
+    git -C "$base/repo" commit -qm base
+    git -C "$base/repo" branch -M main
+    git -C "$base/repo" push -q -u origin main
+    git clone -q -b main "$base/origin.git" "$base/remote"
+    git -C "$base/remote" config user.email fixture@example.invalid
+    git -C "$base/remote" config user.name Fixture
+    printf 'remote-unrelated\n' > "$base/remote/queue/senkyoku-log.txt"
+    git -C "$base/remote" add queue/senkyoku-log.txt
+    git -C "$base/remote" commit -qm 'remote unrelated history'
+    git -C "$base/remote" push -q origin main
+    printf 'local-unrelated\n' > "$base/repo/queue/senkyoku-log.txt"
+    git -C "$base/repo" add queue/senkyoku-log.txt
+    git -C "$base/repo" commit -qm 'local unrelated history'
+
+    run bash -c '
+        set -euo pipefail
+        source <(sed -n "/^shared_path_merge_commit()/,/^}/p" "$1")
+        source <(sed -n "/^converge_shared_execution_sources()/,/^}/p" "$1")
+        CMD_ID=cmd_shared_unrelated_conflict_fixture
+        converge_shared_execution_sources "$2" scripts/cmd_complete_gate.sh
+        git -C "$2" merge-base --is-ancestor origin/main HEAD
+        test ! -e "$2/.git/MERGE_HEAD"
+        test -z "$(git -C "$2" status --porcelain=v1 --untracked-files=no)"
+        test "$(git -C "$2" show HEAD:scripts/cmd_complete_gate.sh)" = "base-source"
+        test "$(git -C "$2" show HEAD:queue/senkyoku-log.txt)" = "local-unrelated"
+        printf "target_remote_equal=1 unrelated_conflict_ignored=1 history_contains=1 dirty=0 merge_head=0\n"
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$base/repo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"target paths only; unrelated history preserved"* ]]
+    [[ "$output" == *"target_remote_equal=1 unrelated_conflict_ignored=1 history_contains=1 dirty=0 merge_head=0"* ]]
+}
+
 # test_necessity: every tracked writer observed in the first operational gate
 # must be classified as publishable while an unknown tracked path still blocks.
 # regression_justification: the first operational run blocked on three known

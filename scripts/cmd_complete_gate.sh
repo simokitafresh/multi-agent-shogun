@@ -1705,6 +1705,45 @@ PY
     return 0
 )
 
+# Build a merge commit from the current execution-source tree and the remote
+# tip without resolving unrelated history conflicts.  The requested paths are
+# the only bytes this lane is allowed to change; each must already match the
+# remote blob before the merge commit is created.  This keeps source
+# publication fail-closed for a stale target while allowing an unrelated
+# runtime-history conflict (for example senkyoku-log) to remain outside the
+# convergence contract.
+shared_path_merge_commit() (
+    local repo="$1" remote_tip="$2" current_head tree temp_index ref path mode blob merge_commit
+    shift 2
+    [ "$#" -gt 0 ] || return 1
+    current_head="$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)"
+    [ -n "$current_head" ] || return 1
+    for path in "$@"; do
+        mode="$(git -C "$repo" ls-tree "$remote_tip" -- "$path" 2>/dev/null | awk 'NR==1 {print $1}')"
+        blob="$(git -C "$repo" rev-parse "$remote_tip:$path" 2>/dev/null || true)"
+        [ -n "$mode" ] && [[ "$blob" =~ ^[0-9a-f]{40}$ ]] || return 1
+        [ "$(git -C "$repo" hash-object "$path" 2>/dev/null || true)" = "$blob" ] || return 1
+        [ "$(git -C "$repo" rev-parse "$current_head:$path" 2>/dev/null || true)" = "$blob" ] || return 1
+    done
+    temp_index="$(mktemp "${TMPDIR:-/tmp}/shogun-converge-index.XXXXXX")" || return 1
+    rm -f -- "$temp_index"
+    trap 'rm -f -- "$temp_index"' EXIT
+    GIT_INDEX_FILE="$temp_index" git -C "$repo" read-tree "$current_head" || return 1
+    for path in "$@"; do
+        mode="$(git -C "$repo" ls-tree "$remote_tip" -- "$path" | awk 'NR==1 {print $1}')"
+        blob="$(git -C "$repo" rev-parse "$remote_tip:$path")"
+        GIT_INDEX_FILE="$temp_index" git -C "$repo" update-index --add --cacheinfo "$mode,$blob,$path" || return 1
+    done
+    tree="$(GIT_INDEX_FILE="$temp_index" git -C "$repo" write-tree 2>/dev/null || true)"
+    [[ "$tree" =~ ^[0-9a-f]{40}$ ]] || return 1
+    merge_commit="$(printf 'runtime: converge published execution source %s\n' "${CMD_ID:-unknown}" | git -C "$repo" commit-tree "$tree" -p "$current_head" -p "$remote_tip" 2>/dev/null || true)"
+    [[ "$merge_commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+    ref="$(git -C "$repo" symbolic-ref -q HEAD 2>/dev/null || printf 'HEAD')"
+    git -C "$repo" update-ref "$ref" "$merge_commit" "$current_head" || return 1
+    git -C "$repo" read-tree "$merge_commit" || return 1
+    return 0
+)
+
 # Return true only when every source commit changes queue/insights.yaml and no
 # other path. This gate is shared by the conflict and patch-id fallback lanes.
 source_only_insights_candidate() {
@@ -2146,8 +2185,12 @@ converge_shared_execution_sources() {
             echo "  shared convergence: conflict fallback (insights stable-ID merge)"
         else
             git -C "$repo" merge --abort >/dev/null 2>&1 || true
-            echo "  shared convergence: BLOCK (source history conflict)" >&2
-            return 1
+            if shared_path_merge_commit "$repo" "$remote_tip" "$@"; then
+                echo "  shared convergence: conflict fallback (target paths only; unrelated history preserved)"
+            else
+                echo "  shared convergence: BLOCK (source history conflict)" >&2
+                return 1
+            fi
         fi
     fi
     for path in "$@"; do
@@ -2379,8 +2422,12 @@ PY
     git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
     if ! git -C "$repo" merge --no-edit FETCH_HEAD >/dev/null 2>&1; then
         git -C "$repo" merge --abort >/dev/null 2>&1 || true
-        echo "  runtime publish: BLOCK (shared HEAD/index convergence failed)" >&2
-        return 1
+        if shared_path_merge_commit "$repo" "$remote_tip" "${runtime_paths[@]}"; then
+            echo "  runtime publish: conflict fallback (target paths only; unrelated history preserved)"
+        else
+            echo "  runtime publish: BLOCK (shared HEAD/index convergence failed)" >&2
+            return 1
+        fi
     fi
     git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true
     rmdir -- "$temp_parent" 2>/dev/null || true
