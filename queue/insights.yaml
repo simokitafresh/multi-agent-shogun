@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-155924527-5450
-  ts: "2026-08-18T15:59:24+09:00"
-  insight: "semantic_index_update新概念候補: discussion:もう少し現状に合わせよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T16:05:24+09:00"
 - id: INS-20260818-160028315-037d
   ts: "2026-08-18T16:00:28+09:00"
   insight: "semantic_index_update新概念候補: discussion:レスポンシブの時のサインインのカードは下のほうに表示＋カード自体の表示もシンプルなほうがいいな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -55,7 +45,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_startup_archive_requires_clear_20260818"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存のdeploy_task.sh verify_ac_consistencyがtask/cmdのAC件数・ID不一致を配備直後に自動検出し、専用contract testsがextra ACとID mismatchを検証済みのため重複候補として解決"
+  action_artifact: "scripts/deploy_task.sh:3681-3818;tests/unit/test_deploy_task_ac_handling.bats:332-479;memory_db_concept=defense_hierarchy;semantic_search=task YAML AC cmd原本"
+  resolved_at: "2026-08-19T12:20:39+09:00"
 - id: INS-20260818-162228897-dd44
   ts: "2026-08-18T16:22:28+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b135qma1j task id tool use id toolu 01VeU4opvqZBTmAP7i は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -965,5 +958,12 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_gate_busy_not_block_202608190642; matched=infra,lessons,tasks; current_pattern=; candidate_level=4; candidate=gate_prediction CLEAR→BLOCK(draft_lessons) 2件連続miss。SG-PRE12はlesson_candidate検出のみでproject-level draft教訓を検出しなかった; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_gate_busy_not_block_202608190642"
+  fix_known: false
+  status: pending
+- id: INS-20260819-122113002-5b71
+  ts: "2026-08-19T12:21:13+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_hotfix_gate_busy_not_block_202608190642 hayate lesson_candidate: AC前提件数は対応IDで照合してから実装開始する 集計カテゴリの件数だけで事例対応を推定せず、message IDとgate出力を1:1照合する。今回3件前提を先に確定できず、実装後に2件しか確認できないと判明した。"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
   fix_known: false
   status: pending
