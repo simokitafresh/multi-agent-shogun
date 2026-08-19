@@ -7998,6 +7998,7 @@ import fnmatch
 import os
 import random
 import re
+import subprocess
 import sys
 import tempfile
 
@@ -8235,8 +8236,16 @@ def _deprecate_lessons_in_file(yaml_path, lesson_ids):
         return 0
     return changed
 
-def apply_zero_useful_deprecation(lessons, lessons_path, feedback_totals, useful_counts):
-    """Auto-deprecate lessons whose confirmed feedback is 0% useful."""
+def apply_zero_useful_deprecation(
+    lessons, lessons_path, feedback_totals, useful_counts,
+    project_id=None, script_dir=None,
+):
+    """Retire zero-useful lessons through the canonical SSOT writer.
+
+    ``lessons_path`` remains part of the call contract for cache identity and
+    fixtures, but this function never writes the generated YAML cache. The
+    canonical writer updates tasks/lessons.md and regenerates the cache.
+    """
     if not ENABLE_ZERO_USEFUL_AUTO_DEPRECATE:
         return 0
     if not lessons:
@@ -8254,12 +8263,31 @@ def apply_zero_useful_deprecation(lessons, lessons_path, feedback_totals, useful
             continue
         if lesson.get('deprecated', False) or str(lesson.get('status', '')).lower() == 'deprecated':
             continue
-        lesson['deprecated'] = True
-        lesson['deprecation_reason'] = 'auto_useful_rate_zero'
         changed_ids.append(lid)
-    changed = _deprecate_lessons_in_file(lessons_path, changed_ids)
+    if project_id and script_dir:
+        writer = os.path.join(script_dir, 'scripts', 'lesson_write.sh')
+        if not os.path.isfile(writer):
+            raise RuntimeError(f'canonical lesson writer not found: {writer}')
+        for lesson_id in sorted(changed_ids):
+            subprocess.run(
+                ['bash', writer, project_id, '--retire', lesson_id],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+    # The cache snapshot was loaded before the writer ran. Keep the in-memory
+    # view consistent so retired lessons are not re-injected in this deploy.
+    changed = 0
+    for lesson in lessons:
+        if str(lesson.get('id', '') or '') in changed_ids:
+            lesson['deprecated'] = True
+            lesson['deprecation_reason'] = 'auto_useful_rate_zero'
+            lesson['retired'] = True
+            changed += 1
     if changed:
-        print(f'[INJECT] auto-deprecated zero-useful lessons in {os.path.basename(os.path.dirname(lessons_path))}: {changed_ids}', file=sys.stderr)
+        print(f'[INJECT] auto-retired zero-useful lessons via canonical SSOT writer: {changed_ids}', file=sys.stderr)
     return changed
 
 def build_lesson_detail(lesson):
@@ -8433,7 +8461,10 @@ try:
     lessons = load_lessons_cached(lessons_path)
     if not lessons and not os.path.exists(lessons_path):
         print(f'[INJECT] WARN: lessons not found for project={project}', file=sys.stderr)
-    apply_zero_useful_deprecation(lessons, lessons_path, feedback_totals, useful_counts)
+    apply_zero_useful_deprecation(
+        lessons, lessons_path, feedback_totals, useful_counts,
+        project_id=project, script_dir=script_dir,
+    )
     # cmd_2270: プロジェクトソーストラッキング (project-source boostに使用)
     for _l in lessons:
         _l['_source_project'] = project
@@ -8457,7 +8488,10 @@ try:
                     plat_archive = os.path.join(script_dir, 'projects', pj['id'], 'lessons_archive.yaml')
                     plat_path = plat_index if os.path.exists(plat_index) else plat_archive
                     plat_lessons = load_lessons_cached(plat_path)
-                    apply_zero_useful_deprecation(plat_lessons, plat_path, feedback_totals, useful_counts)
+                    apply_zero_useful_deprecation(
+                        plat_lessons, plat_path, feedback_totals, useful_counts,
+                        project_id=pj['id'], script_dir=script_dir,
+                    )
                     # cmd_2270: platformソースをトラッキング
                     for _l in plat_lessons:
                         _l['_source_project'] = pj['id']

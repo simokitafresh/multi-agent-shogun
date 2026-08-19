@@ -1478,6 +1478,233 @@ PY
     return 0
 )
 
+# Return true only for a source generation containing the lessons SSOT and
+# optional generated lesson indexes.  A lessons publication must never widen
+# into an arbitrary path snapshot: the SSOT is merged by stable lesson ID and
+# the cache is regenerated from that merged SSOT.
+source_only_lessons_candidate() {
+    local repo="$1" path source_sha
+    shift
+    local -A paths=()
+    for source_sha in "$@"; do
+        while IFS= read -r -d '' path; do
+            paths["$path"]=1
+        done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    [ "${paths[tasks/lessons.md]+yes}" = yes ] || return 1
+    for path in "${!paths[@]}"; do
+        case "$path" in
+            tasks/lessons.md|projects/*/lessons.yaml) ;;
+            *) return 1 ;;
+        esac
+    done
+}
+
+# Distinguish an invalid lessons generation from an ordinary generic path
+# generation.  Once tasks/lessons.md is present, any unrelated path is a
+# fail-closed contamination; generic snapshot publication must not bypass it.
+source_only_lessons_scope_violation() {
+    local repo="$1" path source_sha saw_ssot=0
+    shift
+    local -A paths=()
+    for source_sha in "$@"; do
+        while IFS= read -r -d '' path; do paths["$path"]=1; done \
+            < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    [ "${paths[tasks/lessons.md]+yes}" = yes ] || return 1
+    for path in "${!paths[@]}"; do
+        case "$path" in
+            tasks/lessons.md|projects/*/lessons.yaml) ;;
+            *) return 0 ;;
+        esac
+    done
+    return 1
+}
+
+# Merge Markdown lesson blocks by stable ID, preserving the remote/source
+# bytes for every selected block.  The merge is deliberately fail-closed for
+# divergent same-ID edits and then regenerates every selected YAML index from
+# the merged tasks/lessons.md through sync_lessons.sh.
+source_only_lessons_id_merge() (
+    local repo="$1" clean_repo="$2" remote_tip="$3" source_sha source_base path
+    local base_file source_file remote_file merged_file tmp_dir project_id config_backup
+    shift 3
+    local -a source_shas=("$@") cache_paths=()
+    local -A source_paths=()
+
+    [ "${#source_shas[@]}" -gt 0 ] || return 1
+    source_only_lessons_candidate "$repo" "${source_shas[@]}" || return 1
+    source_base="$(git -C "$repo" rev-parse "${source_shas[0]}^" 2>/dev/null || true)"
+    [ -n "$source_base" ] || return 1
+    source_sha="${source_shas[${#source_shas[@]}-1]}"
+    for source_sha in "${source_shas[@]}"; do
+        while IFS= read -r -d '' path; do source_paths["$path"]=1; done \
+            < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    done
+    for path in "${!source_paths[@]}"; do
+        case "$path" in
+            projects/*/lessons.yaml) cache_paths+=("$path") ;;
+        esac
+    done
+    # A source-only SSOT commit from an older writer may omit the generated
+    # index from its diff.  Infra is the repository's own SSOT/cache pair.
+    if [ "${#cache_paths[@]}" -eq 0 ] && [ -f "$clean_repo/projects/infra/lessons.yaml" ]; then
+        cache_paths+=(projects/infra/lessons.yaml)
+    fi
+
+    tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/shogun-lessons-merge.XXXXXX")" || return 1
+    trap 'rm -f "$tmp_dir"/*.md "$tmp_dir"/*.yaml "$tmp_dir"/projects.yaml; rmdir "$tmp_dir" 2>/dev/null || true' EXIT
+    base_file="$tmp_dir/base.md"
+    source_file="$tmp_dir/source.md"
+    remote_file="$tmp_dir/remote.md"
+    merged_file="$tmp_dir/merged.md"
+    git -C "$repo" cat-file -e "$source_base:tasks/lessons.md" 2>/dev/null \
+        && git -C "$repo" show "$source_base:tasks/lessons.md" >"$base_file" \
+        || : >"$base_file"
+    git -C "$repo" cat-file -e "$source_sha:tasks/lessons.md" 2>/dev/null \
+        && git -C "$repo" show "$source_sha:tasks/lessons.md" >"$source_file" \
+        || : >"$source_file"
+    git -C "$repo" cat-file -e "$remote_tip:tasks/lessons.md" 2>/dev/null \
+        && git -C "$repo" show "$remote_tip:tasks/lessons.md" >"$remote_file" \
+        || : >"$remote_file"
+
+    SOURCE_ONLY_LESSONS_BASE="$base_file" \
+    SOURCE_ONLY_LESSONS_SOURCE="$source_file" \
+    SOURCE_ONLY_LESSONS_REMOTE="$remote_file" \
+    SOURCE_ONLY_LESSONS_OUTPUT="$merged_file" \
+    python3 - <<'PY' || return 1
+import os
+import re
+from pathlib import Path
+
+base_path = Path(os.environ["SOURCE_ONLY_LESSONS_BASE"])
+source_path = Path(os.environ["SOURCE_ONLY_LESSONS_SOURCE"])
+remote_path = Path(os.environ["SOURCE_ONLY_LESSONS_REMOTE"])
+output_path = Path(os.environ["SOURCE_ONLY_LESSONS_OUTPUT"])
+heading = re.compile(r"^###\s+(L[0-9A-Za-z_-]+)\s*[:：]", re.MULTILINE)
+
+def parse(path, label):
+    text = path.read_text(encoding="utf-8")
+    matches = list(heading.finditer(text))
+    entries = []
+    by_id = {}
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        item_id = match.group(1)
+        if item_id in by_id:
+            raise ValueError(f"{label} duplicate lesson ID: {item_id}")
+        entry = {"id": item_id, "raw": text[match.start():end]}
+        entries.append(entry)
+        by_id[item_id] = entry
+    prefix = text[:matches[0].start()] if matches else text
+    suffix = text[matches[-1].start() + len(entries[-1]["raw"]):] if matches else ""
+    return prefix, entries, by_id, suffix
+
+base_prefix, base_list, base, base_suffix = parse(base_path, "base")
+source_prefix, source_list, source, source_suffix = parse(source_path, "source")
+remote_prefix, remote_list, remote, remote_suffix = parse(remote_path, "remote")
+
+chosen = {}
+order = []
+for entry in remote_list + source_list + base_list:
+    if entry["id"] not in order:
+        order.append(entry["id"])
+
+for item_id in order:
+    b, s, r = base.get(item_id), source.get(item_id), remote.get(item_id)
+    if s is None:
+        if b is None:
+            chosen[item_id] = r
+        elif r is None or r["raw"] == b["raw"]:
+            chosen[item_id] = None
+        else:
+            raise ValueError(f"source deletion conflicts with remote lesson ID: {item_id}")
+    elif b is None:
+        if r is None or r["raw"] == s["raw"]:
+            chosen[item_id] = s
+        else:
+            raise ValueError(f"source/remote divergent new lesson ID: {item_id}")
+    elif s["raw"] == b["raw"]:
+        chosen[item_id] = r
+    elif r is None or r["raw"] == b["raw"]:
+        chosen[item_id] = s
+    elif r["raw"] == s["raw"]:
+        chosen[item_id] = r
+    else:
+        raise ValueError(f"source/remote divergent lesson ID: {item_id}")
+
+prefix = remote_prefix or source_prefix or base_prefix
+suffix = remote_suffix or source_suffix or base_suffix
+merged = prefix + "".join(chosen[item_id]["raw"] for item_id in order if chosen.get(item_id) is not None) + suffix
+output_path.write_text(merged, encoding="utf-8")
+for item_id, entry in source.items():
+    b = base.get(item_id)
+    if b is not None and entry["raw"] == b["raw"]:
+        continue
+    if chosen.get(item_id) is None or chosen[item_id]["raw"] != entry["raw"]:
+        raise ValueError(f"source lesson ID not published: {item_id}")
+PY
+
+    mkdir -p "$(dirname "$clean_repo/tasks/lessons.md")" || return 1
+    cp "$merged_file" "$clean_repo/tasks/lessons.md" || return 1
+    for path in "${cache_paths[@]}"; do
+        project_id="${path#projects/}"
+        project_id="${project_id%%/*}"
+        config_backup="$tmp_dir/projects.yaml"
+        cp "$clean_repo/config/projects.yaml" "$config_backup" || return 1
+        SOURCE_ONLY_CONFIG="$clean_repo/config/projects.yaml" \
+        SOURCE_ONLY_PROJECT="$project_id" \
+        SOURCE_ONLY_ROOT="$clean_repo" \
+        python3 - <<'PY' || return 1
+import os
+import re
+from pathlib import Path
+
+path = Path(os.environ["SOURCE_ONLY_CONFIG"])
+project = os.environ["SOURCE_ONLY_PROJECT"]
+root = os.environ["SOURCE_ONLY_ROOT"]
+lines = path.read_text(encoding="utf-8").splitlines(True)
+inside = False
+found = False
+for index, line in enumerate(lines):
+    item = re.match(r"^\s*- id:\s*([\"']?)([^\"'\s]+)\1\s*$", line.rstrip("\n"))
+    if item:
+        inside = item.group(2) == project
+    if inside and re.match(r"^\s+path:\s*", line):
+        newline = "\n" if line.endswith("\n") else ""
+        indent = line[:len(line) - len(line.lstrip())]
+        lines[index] = f'{indent}path: "{root}"{newline}'
+        found = True
+        inside = False
+        break
+if not found:
+    raise SystemExit(f"project path not found: {project}")
+path.write_text("".join(lines), encoding="utf-8")
+PY
+        if ! FORCE_SYNC=1 bash "$clean_repo/scripts/sync_lessons.sh" "$project_id" >/dev/null 2>&1; then
+            cp "$config_backup" "$clean_repo/config/projects.yaml" || true
+            return 1
+        fi
+        cp "$config_backup" "$clean_repo/config/projects.yaml" || return 1
+    done
+
+    git -C "$clean_repo" add -- tasks/lessons.md "${cache_paths[@]}" || return 1
+    local actual_path
+    while IFS= read -r -d '' actual_path; do
+        case "$actual_path" in
+            tasks/lessons.md|projects/*/lessons.yaml) ;;
+            *) return 1 ;;
+        esac
+    done < <(git -C "$clean_repo" diff --cached --name-only -z "$remote_tip")
+    git -C "$clean_repo" commit --allow-empty -m "autopush: source-only lessons ID merge" >/dev/null 2>&1 || return 1
+    local published_sha
+    published_sha="$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)"
+    [ -n "$published_sha" ] || return 1
+    [ "$(git -C "$clean_repo" rev-parse "$published_sha:tasks/lessons.md" 2>/dev/null || true)" = \
+      "$(git -C "$clean_repo" hash-object "$clean_repo/tasks/lessons.md")" ] || return 1
+    return 0
+)
+
 # Return true only when every source commit changes queue/insights.yaml and no
 # other path. This gate is shared by the conflict and patch-id fallback lanes.
 source_only_insights_candidate() {
@@ -1498,6 +1725,13 @@ source_only_insights_candidate() {
 source_only_path_snapshot() {
     local repo="$1" clean_repo="$2" remote_tip="$3"
     shift 3
+    if source_only_lessons_scope_violation "$repo" "$@"; then
+        return 1
+    fi
+    if source_only_lessons_candidate "$repo" "$@"; then
+        source_only_lessons_id_merge "$repo" "$clean_repo" "$remote_tip" "$@"
+        return $?
+    fi
     if source_only_insights_candidate "$repo" "$@"; then
         source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" "queue/insights.yaml" "$@"
         return $?
@@ -1543,7 +1777,17 @@ push_from_clean_worktree() {
     fi
 
     rc=0
-    if source_only_insights_candidate "$repo" "$@"; then
+    if source_only_lessons_scope_violation "$repo" "$@"; then
+        rc=1
+    elif source_only_lessons_candidate "$repo" "$@"; then
+        if source_only_lessons_id_merge "$repo" "$clean_repo" "$remote_tip" "$@"; then
+            fallback_used=1
+            published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+            echo "  git push: conflict fallback (source-only lessons ID merge)"
+        else
+            rc=1
+        fi
+    elif source_only_insights_candidate "$repo" "$@"; then
         if source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" "queue/insights.yaml" "$@"; then
             fallback_used=1
             published_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
@@ -1585,7 +1829,7 @@ push_from_clean_worktree() {
                 applied_patch=""
             done
             if [ -z "$source_patch" ] || [ "$source_patch" != "$applied_patch" ]; then
-                if source_only_insights_candidate "$repo" "$@"; then
+                if source_only_lessons_candidate "$repo" "$@" || source_only_insights_candidate "$repo" "$@"; then
                     timeout "${CMD_COMPLETE_GATE_PUSH_CLEANUP_TIMEOUT:-30}" \
                         git -C "$repo" worktree remove --force "$clean_repo" >/dev/null 2>&1 || rc=1
                     if [ "$rc" -eq 0 ] \
@@ -1988,7 +2232,7 @@ publish_postclear_runtime_deltas() {
     local before_head after_head temp_parent source_repo source_sha path
     local git_common_dir publish_lock publish_lock_fd
     local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
-    local -a dirty_paths=() runtime_paths=() durable_paths=() source_shas=()
+    local -a dirty_paths=() runtime_paths=() durable_paths=() source_shas=() lesson_paths=()
     local -A source_blob_by_path=()
 
     # A tracked-runtime publication is a repository transaction.  Serialize
@@ -2056,6 +2300,31 @@ PY
         return 1
     fi
     for path in "${runtime_paths[@]}"; do
+        case "$path" in
+            tasks/lessons.md|projects/*/lessons.yaml) lesson_paths+=("$path") ;;
+        esac
+    done
+    # The SSOT and its generated indexes form one publication unit.  A single
+    # source generation lets the lessons ID merge compose remote/local edits
+    # before regenerating caches, instead of publishing a stale cache commit
+    # immediately after the merged SSOT.
+    if [ "${#lesson_paths[@]}" -gt 0 ]; then
+        for path in "${lesson_paths[@]}"; do
+            mkdir -p "$source_repo/$(dirname "$path")"
+            cp -- "$repo/$path" "$source_repo/$path" || { git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true; rmdir -- "$temp_parent" 2>/dev/null || true; return 1; }
+            git -C "$source_repo" add -- "$path" || return 1
+        done
+        git -C "$source_repo" commit -m "runtime: ${phase} field-aware lessons publish ${CMD_ID}" -- "${lesson_paths[@]}" >/dev/null 2>&1 || return 1
+        source_sha=$(git -C "$source_repo" rev-parse HEAD) || return 1
+        source_shas+=("$source_sha")
+        for path in "${lesson_paths[@]}"; do
+            source_blob_by_path["$path"]=$(git -C "$source_repo" rev-parse "${source_sha}:${path}") || return 1
+        done
+    fi
+    for path in "${runtime_paths[@]}"; do
+        case "$path" in
+            tasks/lessons.md|projects/*/lessons.yaml) continue ;;
+        esac
         mkdir -p "$source_repo/$(dirname "$path")"
         cp -- "$repo/$path" "$source_repo/$path" || { git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true; rmdir -- "$temp_parent" 2>/dev/null || true; return 1; }
         git -C "$source_repo" add -- "$path" || return 1
