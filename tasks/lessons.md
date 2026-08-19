@@ -15262,3 +15262,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 関数・呼出・snapshot/report連携の4点が同一commitで削除された一方testが残り、consumer seam契約だけ恒常FAILした。refactor時に残存contract testを実走するチェックを追加すべき。
+
+### L1613: path prefix除去にlstripを使わない
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_dotpath_worktree_projection_202608190635
+- **記録者**: saizo
+- **tags**: [infra,deploy-task]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_task_worktree_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_dotpath_worktree_projection_202608190635]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- str.lstrip('./')は文字列prefixではなく文字集合を反復除去する。明示的./だけを除去する条件分岐とdotpath fixtureを次回チェックへ組み込む
