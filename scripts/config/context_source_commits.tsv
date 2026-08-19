@@ -11,4 +11,6 @@ context/codd.md	infra	infra-codd	scripts/codd|scripts/codd_|skills/codd|skills/c
 context/memory-db-queries.md	infra	infra-memory-db-queries	scripts/memory_db_|scripts/lord_conversation_|data
 context/memory-db-schema.md	infra	infra-memory-db-schema	scripts/memory_db_|scripts/lord_conversation_|data
 context/obsidian-link-principles.md	infra	infra-obsidian-links	scripts/obsidian_|scripts/causal_|scripts/semantic_
-context/infrastructure.md	infra	infra-platform	root-fallback
+# infra-platform is intentionally explicit: root-fallback counted unrelated
+# operational/project changes as infrastructure source commits (GA-483).
+context/infrastructure.md	infra	infra-platform	.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh

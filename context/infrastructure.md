@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-08-16 inbox_write guard/pre-commit guard/契約を追記 -->
+<!-- GA-483: infra-platform freshness uses explicit source pathspecs; operational records and project research remain outside this owner boundary. -->
 <!-- source_commit:253afbb2c reason:inbox_write guard/pre-commit guard/契約を追記 evidence:commit 75ffff697 ae52b3129 cc13a69cb -->
 <!-- source_commit:9f39c1a071cf4c0f6cc1afbdad39a295ff29cc2a reason:cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=9f39c1a071cf4c0f6cc1afbdad39a295ff29cc2a -->
 <!-- source_commit:e8cbaf7eb5fbd1a907f06d75240d609ef316700c reason:cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=e8cbaf7eb5fbd1a907f06d75240d609ef316700c -->
