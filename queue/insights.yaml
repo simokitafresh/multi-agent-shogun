@@ -65,7 +65,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_ga477_context_freshness_trigger_20260818"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "cmd_2271事故は既にCDP計測入口の認証preflightと自動工程へLevel5化済み。current_pattern空欄由来の再発候補で追加修正不要"
+  action_artifact: "scripts/cdp/cdp_measure.sh:8-16;docs/research/cdp-skill-flow-inventory-20260802.md:79-88;context/dm-signal-frontend.md:249"
+  resolved_at: "2026-08-19T12:27:05+09:00"
 - id: INS-20260818-164103963-69f6
   ts: "2026-08-18T16:41:03+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_remote_tip_task_worktree_20260818; matched=bash,guard; current_pattern=; candidate_level=4; candidate=LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし); source=gunshi_gp_tracker.yaml"
