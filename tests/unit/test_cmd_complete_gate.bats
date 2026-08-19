@@ -6787,7 +6787,7 @@ PY
     git -C "$root" commit -qm updated
     updated_sha="$(git -C "$root" rev-parse HEAD)"
     git -C "$root" reset -q --hard HEAD~1
-    git -C "$root" update-ref FETCH_HEAD "$updated_sha"
+    printf '%s\t\tfixture\n' "$updated_sha" > "$root/.git/FETCH_HEAD"
     printf 'untouched\n' > "$root/unrelated_dirty.txt"
 
     # Simulate another process holding the required index.lock for 3s (well
@@ -6844,7 +6844,7 @@ PY
     git -C "$root" commit -qm updated
     updated_sha="$(git -C "$root" rev-parse HEAD)"
     git -C "$root" reset -q --hard HEAD~1
-    git -C "$root" update-ref FETCH_HEAD "$updated_sha"
+    printf '%s\t\tfixture\n' "$updated_sha" > "$root/.git/FETCH_HEAD"
 
     : > "$root/.git/index.lock"
 
