@@ -15301,3 +15301,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 全untracked走査は9p共有repoで20秒超停滞し多重起動を増幅する。git-common-dir flockで直列化し、上書き可能な変更予定pathだけをuntracked検査すれば安全性を保ったまま4.37秒で完了した
+
+### L1616: AC前提件数は対応IDで照合してから実装開始する
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_gate_busy_not_block_202608190642
+- **記録者**: hayate
+- **tags**: [infra,ninja-monitor,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor.bats]
+- **origin**: [[cmd_karo_hotfix_gate_busy_not_block_202608190642]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 集計カテゴリの件数だけで事例対応を推定せず、message IDとgate出力を1:1照合する。今回3件前提を先に確定できず、実装後に2件しか確認できないと判明した。
