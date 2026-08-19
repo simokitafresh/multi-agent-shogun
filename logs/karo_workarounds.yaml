@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_deploy_inrepo_absolute_path_202608100924
-  timestamp: '2026-08-10T00:40:45Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_deploy_inrepo_absolute_path_202608100924'
 - cmd_id: cmd_karo_hotfix_vercel_debt_reason_202608100949
   timestamp: '2026-08-10T01:10:29Z'
   ninja: system
@@ -1317,3 +1304,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_monitor_cleanup_coverage_202608190615'
+- cmd_id: cmd_karo_hotfix_deploy_lifecycle_7fails_202608190615
+  timestamp: '2026-08-19T01:30:59Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_deploy_lifecycle_7fails_202608190615'
