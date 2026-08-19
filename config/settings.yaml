@@ -26,42 +26,42 @@ cli:
       japanese_name: 軍師
     hayate:
       type: codex
-      model_name: gpt-5.6-sol-low
+      model_name: gpt-5.6-luna-high
       role: ninja
       japanese_name: 疾風
       service_tier: default
       launch_cmd: 
     kagemaru:
-      type: claude
-      model_name: sonnet-5-high
+      type: codex
+      model_name: gpt-5.6-luna-high
       role: ninja
       japanese_name: 影丸
       service_tier: default
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort high
+      launch_cmd: 
     hanzo:
       type: codex
-      model_name: gpt-5.6-sol-low
+      model_name: gpt-5.6-luna-high
       role: ninja
       japanese_name: 半蔵
       service_tier: default
       launch_cmd: 
     saizo:
       type: codex
-      model_name: gpt-5.6-sol-low
+      model_name: gpt-5.6-luna-high
       role: ninja
       japanese_name: 才蔵
       service_tier: default
       launch_cmd: 
     kotaro:
       type: codex
-      model_name: gpt-5.6-sol-low
+      model_name: gpt-5.6-luna-high
       role: ninja
       japanese_name: 小太郎
       service_tier: default
       launch_cmd: 
     tobisaru:
       type: codex
-      model_name: gpt-5.6-sol-low
+      model_name: gpt-5.6-luna-high
       role: ninja
       japanese_name: 飛猿
       service_tier: default
