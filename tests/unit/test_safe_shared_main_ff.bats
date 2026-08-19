@@ -50,3 +50,72 @@ setup() {
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
   git -C "$FIX" diff --quiet HEAD -- a.txt
 }
+
+@test "diverged histories with identical path content converge" {
+  printf 'same-a\n' > "$FIX/a.txt"
+  git -C "$FIX" add a.txt
+  git -C "$FIX" commit -qm local-same-a
+  printf 'same-a\n' > "$BATS_TEST_TMPDIR/next/a.txt"
+  git -C "$BATS_TEST_TMPDIR/next" add a.txt
+  git -C "$BATS_TEST_TMPDIR/next" commit -qm remote-same-a
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"mode=diverged"* ]]
+  [ "$(cat "$FIX/a.txt")" = "same-a" ]
+  git -C "$FIX" merge-base --is-ancestor "$target" HEAD
+}
+
+@test "diverged non-conflicting histories preserve unrelated dirty work" {
+  printf 'local-b-commit\n' > "$FIX/b.txt"
+  git -C "$FIX" add b.txt
+  git -C "$FIX" commit -qm local-b
+  printf 'dirty-local\n' > "$FIX/dirty.txt"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"mode=diverged"* ]]
+  [ "$(cat "$FIX/dirty.txt")" = "dirty-local" ]
+  [ "$(cat "$FIX/a.txt")" = "new-a" ]
+  [ "$(cat "$FIX/b.txt")" = "local-b-commit" ]
+}
+
+@test "diverged conflicting histories block before HEAD moves" {
+  printf 'local-conflict\n' > "$FIX/a.txt"
+  git -C "$FIX" add a.txt
+  git -C "$FIX" commit -qm local-conflict
+  before="$(git -C "$FIX" rev-parse HEAD)"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"merge conflicts"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
+}
+
+@test "concurrent convergence is serialized and both callers succeed" {
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+  bash "$FIX/scripts/safe_shared_main_ff.sh" "$target" > "$BATS_TEST_TMPDIR/first.out" 2>&1 &
+  first_pid=$!
+  bash "$FIX/scripts/safe_shared_main_ff.sh" "$target" > "$BATS_TEST_TMPDIR/second.out" 2>&1 &
+  second_pid=$!
+
+  wait "$first_pid"
+  wait "$second_pid"
+  grep -q 'result=PASS' "$BATS_TEST_TMPDIR/first.out"
+  grep -q 'result=PASS' "$BATS_TEST_TMPDIR/second.out"
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+}
+
+@test "unrelated untracked files are preserved without full-repository enumeration" {
+  mkdir -p "$FIX/unrelated"
+  for n in $(seq 1 200); do printf 'keep\n' > "$FIX/unrelated/$n.txt"; done
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [ "$(find "$FIX/unrelated" -type f | wc -l)" -eq 200 ]
+  [[ "$output" == *"dirty_paths=0"* ]]
+}
