@@ -6742,3 +6742,122 @@ PY
     [ "$status" -eq 0 ]
     [ "$output" = "generation_all_writers=1 notification_after_terminal=1" ]
 }
+
+# test_necessity: read-only git invocations must never take the optional
+# index lock the runtime-publish writer needs, so the required-lock retry
+# below is a bounded defense against genuine but transient holders only.
+# regression_justification: cmd_karo_ci_fix_three_layer_timeout_fixture_202608191427
+# hit "fatal: Unable to create '.../.git/index.lock': File exists" during the
+# post-fetch checkout, blocking a healthy publication (pregate_runtime_publish_failed).
+@test "GIT_OPTIONAL_LOCKS is disabled before any git call and checkout retry is bounded to a 5s-class holder" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+optional_locks = text.index("export GIT_OPTIONAL_LOCKS=0")
+set_e = text.index("\nset -e\n")
+first_git_call = text.index('git -C "$repo"')
+assert set_e < optional_locks < first_git_call
+retry = text.index("local _idx_lock_try")
+block = text[retry:text.index("\n    done", retry) + len("\n    done")]
+assert 'for _idx_lock_try in 1 2 3 4 5 6 7; do' in block
+assert 'sleep 1' in block
+assert '[ "$_idx_lock_try" -lt 7 ] || return 1' in block
+print("optional_locks_disabled_first=1 retry_attempts=7 retry_sleep=1 max_wait_s=6")
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "optional_locks_disabled_first=1 retry_attempts=7 retry_sleep=1 max_wait_s=6" ]
+}
+
+# test_necessity: a 5s-class transient index.lock (e.g. another process's
+# concurrent read-only git status racing the same shared repo) must not
+# false-BLOCK the runtime publish; the retry must absorb it and must not
+# disturb dirty paths outside the ones being checked out.
+# regression_justification: see cmd_karo_ci_fix_three_layer_timeout_fixture_202608191427 above.
+@test "checkout retry absorbs a short-lived index.lock under a concurrent reader and preserves unrelated dirty paths" {
+    root="$BATS_TEST_TMPDIR/idxlock-shortlived"
+    mkdir -p "$root"
+    git -C "$root" init -q
+    git -C "$root" config user.email fixture@example.invalid
+    git -C "$root" config user.name Fixture
+    printf 'base\n' > "$root/tracked.txt"
+    git -C "$root" add tracked.txt
+    git -C "$root" commit -qm base
+    printf 'updated\n' > "$root/tracked.txt"
+    git -C "$root" add tracked.txt
+    git -C "$root" commit -qm updated
+    updated_sha="$(git -C "$root" rev-parse HEAD)"
+    git -C "$root" reset -q --hard HEAD~1
+    git -C "$root" update-ref FETCH_HEAD "$updated_sha"
+    printf 'untouched\n' > "$root/unrelated_dirty.txt"
+
+    # Simulate another process holding the required index.lock for 3s (well
+    # inside the observed 5s-class release) plus a concurrent read-only
+    # reader loop for the whole run.
+    : > "$root/.git/index.lock"
+    (sleep 2.5; rm -f "$root/.git/index.lock") &
+    lock_pid=$!
+    reader_stop="$root/.reader-stop"
+    (
+        export GIT_OPTIONAL_LOCKS=0
+        while [ ! -e "$reader_stop" ]; do
+            git -C "$root" status --porcelain=v1 >/dev/null 2>&1
+        done
+    ) &
+    reader_pid=$!
+
+    run bash -c '
+        set -uo pipefail
+        repo="$1"
+        runtime_paths=(tracked.txt)
+        start=$(date +%s)
+        source <(sed -n "/^    local _idx_lock_try\$/,/^    done\$/p" "$2") 2>/dev/null
+        rc=$?
+        elapsed=$(( $(date +%s) - start ))
+        tracked_content=$(cat "$repo/tracked.txt" 2>/dev/null || echo MISSING)
+        dirty_content=$(cat "$repo/unrelated_dirty.txt" 2>/dev/null || echo MISSING)
+        printf "rc=%s elapsed=%s tracked=%s dirty=%s\n" "$rc" "$elapsed" "$tracked_content" "$dirty_content"
+    ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    status_code="$status"
+    out="$output"
+    : > "$reader_stop"
+    wait "$lock_pid" 2>/dev/null || true
+    wait "$reader_pid" 2>/dev/null || true
+    rm -f "$reader_stop"
+    [ "$status_code" -eq 0 ]
+    [[ "$out" == "rc=0 elapsed="* ]]
+    [[ "$out" == *" tracked=updated dirty=untouched" ]]
+}
+
+# test_necessity: a genuine, non-releasing index.lock must exhaust the bounded
+# retry and fail closed (BLOCK), never silently proceed with a stale checkout.
+@test "checkout retry fails closed when index.lock is genuinely held past the bound" {
+    root="$BATS_TEST_TMPDIR/idxlock-genuine"
+    mkdir -p "$root"
+    git -C "$root" init -q
+    git -C "$root" config user.email fixture@example.invalid
+    git -C "$root" config user.name Fixture
+    printf 'base\n' > "$root/tracked.txt"
+    git -C "$root" add tracked.txt
+    git -C "$root" commit -qm base
+    printf 'updated\n' > "$root/tracked.txt"
+    git -C "$root" add tracked.txt
+    git -C "$root" commit -qm updated
+    updated_sha="$(git -C "$root" rev-parse HEAD)"
+    git -C "$root" reset -q --hard HEAD~1
+    git -C "$root" update-ref FETCH_HEAD "$updated_sha"
+
+    : > "$root/.git/index.lock"
+
+    run bash -c '
+        set -uo pipefail
+        repo="$1"
+        runtime_paths=(tracked.txt)
+        source <(sed -n "/^    local _idx_lock_try\$/,/^    done\$/p" "$2") 2>/dev/null
+        rc=$?
+        printf "rc=%s\n" "$rc"
+    ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    rm -f "$root/.git/index.lock"
+    [ "$status" -eq 0 ]
+    [ "$output" = "rc=1" ]
+    [ "$(cat "$root/tracked.txt")" = base ]
+}

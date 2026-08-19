@@ -557,6 +557,13 @@ fi
 
 set -e
 
+# Read-only git invocations (status/diff/etc.) opportunistically refresh and
+# rewrite the index via a transient .git/index.lock unless disabled. That
+# optional write can race the runtime-publish writer's required index.lock
+# below (cmd_karo_hotfix_git_index_singleflight_202608191445 AC2). Every git
+# call in this script inherits this.
+export GIT_OPTIONAL_LOCKS=0
+
 CMD_ID="${1:-}"
 
 if [ -z "$CMD_ID" ]; then
@@ -2086,7 +2093,19 @@ PY
     # The published blob is the authoritative composition (including remote
     # insight IDs).  Bring only owned runtime paths back before checkpointing;
     # unrelated local commits and dirty paths remain untouched.
-    git -C "$repo" checkout FETCH_HEAD -- "${runtime_paths[@]}" || return 1
+    # A transient (non-optional) index.lock can still be held briefly by an
+    # unrelated writer even with GIT_OPTIONAL_LOCKS=0 above; observed genuine
+    # holders self-release within 5s (cmd_karo_hotfix_git_index_singleflight_
+    # 202608191445 AC1). Retry this required write across that window instead
+    # of failing the whole publish on a momentary collision.
+    local _idx_lock_try
+    for _idx_lock_try in 1 2 3 4 5 6 7; do
+        if git -C "$repo" checkout FETCH_HEAD -- "${runtime_paths[@]}"; then
+            break
+        fi
+        [ "$_idx_lock_try" -lt 7 ] || return 1
+        sleep 1
+    done
     git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
     if ! git -C "$repo" merge --no-edit FETCH_HEAD >/dev/null 2>&1; then
         git -C "$repo" merge --abort >/dev/null 2>&1 || true
