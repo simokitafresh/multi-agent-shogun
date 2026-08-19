@@ -1860,6 +1860,9 @@ converge_shared_execution_sources() {
         mapfile -t insight_source_shas < <(
             git -C "$repo" rev-list --reverse "${merge_base}..${before_head}" -- queue/insights.yaml
         )
+        printf '  shared convergence: conflicts=%s paths=%s insight_sources=%s\n' \
+            "${#conflict_paths[@]}" "${conflict_paths[*]:-none}" \
+            "${#insight_source_shas[@]}" >&2
         if [ "${#conflict_paths[@]}" -eq 1 ] \
            && [ "${conflict_paths[0]}" = "queue/insights.yaml" ] \
            && [ "${#insight_source_shas[@]}" -gt 0 ]; then
