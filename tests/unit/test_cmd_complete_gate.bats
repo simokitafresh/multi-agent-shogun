@@ -6656,13 +6656,13 @@ PY
 @test "post-CLEAR runtime classifier covers operational writer set and blocks unknown" {
     run bash -c '
         source <(sed -n "/^postclear_runtime_path_is_publishable()/,/^}/p" "$1")
-        known=(context/infrastructure.md context/dm-signal.md projects/infra/lessons.yaml projects/dm-signal/lessons.yaml tasks/lessons.md logs/karo_workarounds.yaml queue/insights.yaml scripts/cmd_complete_gate.sh)
+        known=(context/infrastructure.md context/dm-signal.md projects/infra/lessons.yaml projects/dm-signal/lessons.yaml tasks/lessons.md logs/karo_workarounds.yaml queue/insights.yaml scripts/cmd_complete_gate.sh queue/session_alerts_shogun.txt)
         for path in "${known[@]}"; do postclear_runtime_path_is_publishable "$path" || exit 10; done
         if postclear_runtime_path_is_publishable docs/research/unowned.md; then exit 11; fi
-        printf "known=8/8 unknown_block=1\n"
+        printf "known=9/9 unknown_block=1\n"
     ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     [ "$status" -eq 0 ]
-    [ "$output" = "known=8/8 unknown_block=1" ]
+    [ "$output" = "known=9/9 unknown_block=1" ]
 }
 
 # test_necessity: the durable receipt must contain the semantic worker's actual

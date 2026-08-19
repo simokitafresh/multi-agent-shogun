@@ -1924,7 +1924,8 @@ postclear_runtime_path_is_publishable() {
     case "${1:-}" in
         context/*.md|projects/*/lessons.yaml|tasks/lessons.md|scripts/cmd_complete_gate.sh|archive/cmd-chronicle/*.md|\
         logs/karo_workarounds.yaml|queue/insights.yaml|queue/gunshi_review_log.yaml|\
-        queue/completed_changelog.yaml|logs/lesson_impact.tsv|logs/lesson_tracking.tsv)
+        queue/completed_changelog.yaml|logs/lesson_impact.tsv|logs/lesson_tracking.tsv|\
+        queue/session_alerts_shogun.txt)
             return 0 ;;
     esac
     return 1
