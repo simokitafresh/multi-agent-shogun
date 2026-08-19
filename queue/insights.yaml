@@ -45,7 +45,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:05e70fb219ece6ab"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: gate_skill_script_refs.shの対象5組は参照先が全て実在し、SKILL記載の公開呼出し契約と一致。note_draft.shの直近変更f20c91ec2は自動防止コメント追加のみ、insight_write.shの44e2636c2はfix-known集約の内部変更でSKILLの公開I/F不変。実修正・decision_candidate不要。"
+  action_artifact: "gate=gate_skill_script_refs.sh rc=2 REVIEW_REQUIRED;target_pairs=5;skills=skills/cdp-browse/SKILL.md,skills/dream/SKILL.md,skills/note-writer/SKILL.md,skills/sengoku-writer/SKILL.md,skills/weekly-report-writer/SKILL.md;commits=f20c91ec2,44e2636c2;semantic=semantic_dictionary_design;memory=INS-20260818-182306734-e75f"
+  resolved_at: "2026-08-20T05:18:46+09:00"
 - id: INS-20260818-183330427-7e9c
   ts: "2026-08-18T18:33:30+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b2z2fvb2j task id tool use id toolu 01VCgGZapXqZJgYhpQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
