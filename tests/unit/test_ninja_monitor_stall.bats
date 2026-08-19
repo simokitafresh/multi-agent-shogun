@@ -520,6 +520,135 @@ printf "owner_pid=%s heartbeat_cycles=3 pid_match=1\n" "$owner"
     [[ "$output" == "owner_pid="*" heartbeat_cycles=3 pid_match=1" ]]
 }
 
+# test_necessity(cmd_karo_hotfix_ninja_monitor_live_generation_202608191233):
+# check_gate_stall was the only business-judgment routine in the main loop
+# without the ninja_monitor_business_owner_is_current() fence that
+# check_idle_backlog_alert/check_undeployed_cmds/check_karo_pending_cmd already
+# carry. A superseded (stale-owner) process therefore kept firing real
+# GATE-AUTO-BLOCK/CLEAR notifications after a hot-reload successor took
+# ownership (2026-08-19 12:31:28 cmd_reflux_insight_202608191219_saizo).
+# regression_justification: reproduces the stale-owner incident directly
+# against check_gate_stall; a stale generation must produce zero gate calls
+# and zero notifications, while the current owner clears normally.
+@test "check_gate_stall: stale generation performs zero business side effects and current generation clears" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_stale_owner" "$SCRIPT_DIR/queue/tasks" \
+            "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+        now_ts=$(date -Iseconds)
+        printf "timestamp: %s\nresult: LGTM\n" "$now_ts" > "$SCRIPT_DIR/queue/gates/cmd_stale_owner/review_gate.done"
+        printf "task:\n  parent_cmd: cmd_stale_owner\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/active.yaml"
+        : > "$SCRIPT_DIR/logs/gate_metrics.log"
+        printf "%s\n" \
+            "#!/usr/bin/env bash" \
+            "printf \"%s\\n\" \"\$1\" >> \"$STATE_DIR/calls\"" \
+            > "$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+        chmod +x "$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+        LOG="$STATE_DIR/monitor.log"
+        NINJA_MONITOR_OWNER_FILE="$STATE_DIR/ninja_monitor.owner"
+        send_inbox_message() { printf "%s|%s\n" "$1" "$3" >> "$STATE_DIR/messages"; }
+        GATE_STALL_MAX_MIN=1440
+
+        # Old (superseded) generation: owner record names a different live pid
+        # and generation -> the fence must skip before any flock/gate call.
+        printf "%s old-generation %s\n" "$$" "$EPOCHSECONDS" > "$NINJA_MONITOR_OWNER_FILE"
+        NINJA_MONITOR_GENERATION=stale-generation-not-in-owner-file
+        check_gate_stall
+        old_calls=$(test -f "$STATE_DIR/calls" && wc -l < "$STATE_DIR/calls" || printf 0)
+        old_fence=$(grep -c "SINGLETON-FENCE-SKIP: check_gate_stall" "$LOG")
+        old_messages=$(test -f "$STATE_DIR/messages" && wc -l < "$STATE_DIR/messages" || printf 0)
+
+        # Current generation: owner record now names this pid/generation ->
+        # the fence must pass and the real gate call must execute exactly once.
+        NINJA_MONITOR_GENERATION=current-generation
+        printf "%s current-generation %s\n" "$$" "$EPOCHSECONDS" > "$NINJA_MONITOR_OWNER_FILE"
+        check_gate_stall
+        new_calls=$(wc -l < "$STATE_DIR/calls")
+
+        test "$old_calls" -eq 0
+        test "$old_fence" -eq 1
+        test "$old_messages" -eq 0
+        test "$new_calls" -eq 1
+        grep -qx "cmd_stale_owner" "$STATE_DIR/calls"
+        printf "old_calls=%s old_fence=%s old_messages=%s new_calls=%s\n" \
+            "$old_calls" "$old_fence" "$old_messages" "$new_calls"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"old_calls=0 old_fence=1 old_messages=0 new_calls=1"* ]]
+}
+
+# test_necessity: the incident involved two live ninja_monitor.sh main loops
+# (a pre-hot-reload process and its successor) both able to reach
+# check_gate_stall for the same review_gate.done marker at the same time.
+# Concurrent execution must still converge to exactly one gate judgment with
+# zero false GATE-AUTO-BLOCK entries and zero stale-generation side effects.
+@test "check_gate_stall: concurrent old and new generation converge to exactly one gate judgment" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_concurrent_gen" "$SCRIPT_DIR/queue/tasks" \
+            "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+        now_ts=$(date -Iseconds)
+        printf "timestamp: %s\nresult: LGTM\n" "$now_ts" > "$SCRIPT_DIR/queue/gates/cmd_concurrent_gen/review_gate.done"
+        printf "task:\n  parent_cmd: cmd_concurrent_gen\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/active.yaml"
+        : > "$SCRIPT_DIR/logs/gate_metrics.log"
+        printf "%s\n" \
+            "#!/usr/bin/env bash" \
+            "flock \"$STATE_DIR/calls.lock\" printf \"%s\\n\" \"\$1\" >> \"$STATE_DIR/calls\"" \
+            > "$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+        chmod +x "$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+        NINJA_MONITOR_OWNER_FILE="$STATE_DIR/ninja_monitor.owner"
+        printf "%s current-generation %s\n" "$$" "$EPOCHSECONDS" > "$NINJA_MONITOR_OWNER_FILE"
+        GATE_STALL_MAX_MIN=1440
+        send_inbox_message() { printf "%s|%s\n" "$1" "$3" >> "$STATE_DIR/messages"; }
+
+        (
+          LOG="$STATE_DIR/old.log"
+          NINJA_MONITOR_GENERATION=old-generation-not-in-owner-file
+          check_gate_stall
+        ) &
+        old_pid=$!
+        (
+          LOG="$STATE_DIR/new.log"
+          NINJA_MONITOR_GENERATION=current-generation
+          check_gate_stall
+        ) &
+        new_pid=$!
+        wait "$old_pid"
+        wait "$new_pid"
+
+        total_calls=$(test -f "$STATE_DIR/calls" && wc -l < "$STATE_DIR/calls" || printf 0)
+        old_fence=$(grep -c "SINGLETON-FENCE-SKIP: check_gate_stall" "$STATE_DIR/old.log" 2>/dev/null || printf 0)
+        false_blocks=0
+        for f in "$STATE_DIR/old.log" "$STATE_DIR/new.log"; do
+            [ -f "$f" ] || continue
+            n=$(grep -c "GATE-AUTO-BLOCK" "$f" || printf 0)
+            false_blocks=$((false_blocks + n))
+        done
+        old_messages=$(test -f "$STATE_DIR/messages" && wc -l < "$STATE_DIR/messages" || printf 0)
+
+        test "$total_calls" -eq 1
+        test "$old_fence" -eq 1
+        test "$false_blocks" -eq 0
+        test "$old_messages" -eq 0
+        printf "total_calls=%s old_fence=%s false_blocks=%s old_messages=%s\n" \
+            "$total_calls" "$old_fence" "$false_blocks" "$old_messages"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"total_calls=1 old_fence=1 false_blocks=0 old_messages=0"* ]]
+}
+
 @test "snapshot keeps task done while publishing runtime busy separately" {
     run bash -lc '
 set -euo pipefail
