@@ -1825,7 +1825,9 @@ push_task_repositories() {
 # subsequent ordinary merge preserves both histories and leaves the shared
 # index/worktree clean at the remote execution-source content.
 converge_shared_execution_sources() {
-    local repo="$1" upstream_ref remote push_ref remote_tip path tmp before_head
+    local repo="$1" upstream_ref remote push_ref remote_tip path tmp before_head merge_base
+    local conflict_path temp_parent clean_repo merged_sha cleanup_rc
+    local -a insight_source_shas=() conflict_paths=()
     shift
     [ "$#" -gt 0 ] || return 0
     upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
@@ -1834,6 +1836,7 @@ converge_shared_execution_sources() {
     git -C "$repo" fetch -q "$remote" "$push_ref" || return 1
     remote_tip=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null) || return 1
     before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
+    merge_base=$(git -C "$repo" merge-base "$before_head" "$remote_tip" 2>/dev/null) || return 1
 
     for path in "$@"; do
         git -C "$repo" cat-file -e "${remote_tip}:${path}" 2>/dev/null || return 1
@@ -1852,11 +1855,47 @@ converge_shared_execution_sources() {
     if ! git -C "$repo" diff --cached --quiet -- "$@"; then
         git -C "$repo" commit -m "runtime: converge published execution source ${CMD_ID}" -- "$@" >/dev/null 2>&1 || return 1
     fi
-    git -C "$repo" merge --no-edit "$remote_tip" >/dev/null 2>&1 || {
-        git -C "$repo" merge --abort >/dev/null 2>&1 || true
-        echo "  shared convergence: BLOCK (source history conflict)" >&2
-        return 1
-    }
+    if ! git -C "$repo" merge --no-edit "$remote_tip" >/dev/null 2>&1; then
+        mapfile -t conflict_paths < <(git -C "$repo" diff --name-only --diff-filter=U)
+        mapfile -t insight_source_shas < <(
+            git -C "$repo" rev-list --reverse "${merge_base}..${before_head}" -- queue/insights.yaml
+        )
+        if [ "${#conflict_paths[@]}" -eq 1 ] \
+           && [ "${conflict_paths[0]}" = "queue/insights.yaml" ] \
+           && [ "${#insight_source_shas[@]}" -gt 0 ]; then
+            temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-shared-insights.XXXXXX") || {
+                git -C "$repo" merge --abort >/dev/null 2>&1 || true
+                return 1
+            }
+            clean_repo="$temp_parent/repo"
+            cleanup_rc=0
+            if git -C "$repo" worktree add --detach "$clean_repo" "$remote_tip" >/dev/null 2>&1 \
+               && source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" \
+                    queue/insights.yaml "${insight_source_shas[@]}"; then
+                merged_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
+                git -C "$clean_repo" show "${merged_sha}:queue/insights.yaml" \
+                    > "$repo/queue/insights.yaml" || cleanup_rc=1
+                [ "$cleanup_rc" -ne 0 ] || git -C "$repo" add -- queue/insights.yaml || cleanup_rc=1
+                [ "$cleanup_rc" -ne 0 ] || git -C "$repo" commit --no-edit >/dev/null 2>&1 || cleanup_rc=1
+            else
+                cleanup_rc=1
+            fi
+            if [ -e "$clean_repo" ]; then
+                git -C "$repo" worktree remove --force "$clean_repo" >/dev/null 2>&1 || cleanup_rc=1
+            fi
+            [ ! -d "$temp_parent" ] || rmdir "$temp_parent" 2>/dev/null || cleanup_rc=1
+            if [ "$cleanup_rc" -ne 0 ]; then
+                git -C "$repo" merge --abort >/dev/null 2>&1 || true
+                echo "  shared convergence: BLOCK (insights stable-ID conflict)" >&2
+                return 1
+            fi
+            echo "  shared convergence: conflict fallback (insights stable-ID merge)"
+        else
+            git -C "$repo" merge --abort >/dev/null 2>&1 || true
+            echo "  shared convergence: BLOCK (source history conflict)" >&2
+            return 1
+        fi
+    fi
     for path in "$@"; do
         [ "$(git -C "$repo" hash-object "$path")" = "$(git -C "$repo" rev-parse "${remote_tip}:${path}")" ] || return 1
     done
@@ -2068,7 +2107,8 @@ wait_for_postclear_durable_writers() {
     local generation_marker="$GATES_DIR/semantic_causal_audit.generation.json"
     local path_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
     local timeout_seconds="${CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600}"
-    local start_uptime now_uptime elapsed_seconds
+    local start_uptime_seconds start_uptime_fraction start_uptime_ticks
+    local now_uptime_seconds now_uptime_fraction now_uptime_ticks elapsed_ticks timeout_ticks
 
     [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]] || {
         echo "  durable writers: BLOCK (invalid timeout=$timeout_seconds)" >&2
@@ -2086,17 +2126,22 @@ PY
     # /proc/uptime is monotonic across wall-clock corrections.  Reading it with
     # shell builtins keeps this 50ms loop cheap and prevents an NTP/manual clock
     # jump from turning a fresh worker into an immediate timeout.
-    IFS='. ' read -r start_uptime _ < /proc/uptime || {
+    IFS='. ' read -r start_uptime_seconds start_uptime_fraction _ < /proc/uptime || {
         echo "  durable writers: BLOCK (monotonic clock unavailable)" >&2
         return 1
     }
+    start_uptime_fraction="${start_uptime_fraction}00"
+    start_uptime_ticks=$((10#$start_uptime_seconds * 100 + 10#${start_uptime_fraction:0:2}))
+    timeout_ticks=$((timeout_seconds * 100))
     while [[ -e "$pending" || ! -s "$result" ]]; do
-        IFS='. ' read -r now_uptime _ < /proc/uptime || {
+        IFS='. ' read -r now_uptime_seconds now_uptime_fraction _ < /proc/uptime || {
             echo "  durable writers: BLOCK (monotonic clock unavailable)" >&2
             return 1
         }
-        elapsed_seconds=$((now_uptime - start_uptime))
-        if (( elapsed_seconds >= timeout_seconds )); then
+        now_uptime_fraction="${now_uptime_fraction}00"
+        now_uptime_ticks=$((10#$now_uptime_seconds * 100 + 10#${now_uptime_fraction:0:2}))
+        elapsed_ticks=$((now_uptime_ticks - start_uptime_ticks))
+        if (( elapsed_ticks >= timeout_ticks )); then
             echo "  durable writers: BLOCK (semantic worker timeout=${timeout_seconds}s generation=${SHOGUN_COMPLETION_GENERATION})" >&2
             return 1
         fi
