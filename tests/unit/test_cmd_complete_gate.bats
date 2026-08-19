@@ -6514,6 +6514,36 @@ PY
     [ "$output" = "field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1" ]
 }
 
+# test_necessity: publishers for one shared repository must be admitted one at
+# a time and must derive generation/dirty state after admission; genuine byte,
+# path, push and merge conflicts remain fail-closed.
+# regression_justification: a legitimate parallel publisher advanced HEAD
+# while terminal publication was preparing its snapshot, producing a false
+# postclear_runtime_publish_failed after GATE CLEAR.
+@test "tracked runtime publisher singleflights generations and preserves conflict guards" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index("publish_postclear_runtime_deltas()")
+block = text[start:text.index("\n}", start) + 2]
+lock = block.index('flock -x "$publish_lock_fd"')
+manifest = block.index('mapfile -t durable_paths')
+head = block.index('before_head=$(git -C "$repo" rev-parse HEAD')
+dirty = block.index('git -C "$repo" status --porcelain=v1')
+assert lock < manifest < head < dirty
+for guard in (
+    'nonruntime dirty path=', 'concurrent writer path=',
+    'source-only publish failed', 'shared HEAD/index convergence failed',
+):
+    assert guard in block, guard
+assert 'writer generation changed' in block
+assert 'git-common-dir' in block and 'shogun-tracked-runtime-publish.lock' in block
+print('parallel_writer=serialized generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "parallel_writer=serialized generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4" ]
+}
+
 # test_necessity: every tracked writer observed in the first operational gate
 # must be classified as publishable while an unknown tracked path still blocks.
 # regression_justification: the first operational run blocked on three known

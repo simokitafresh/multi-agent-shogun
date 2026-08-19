@@ -1932,11 +1932,24 @@ PY
 export -f capture_durable_writer_paths
 
 publish_postclear_runtime_deltas() {
+    (
     local phase="${1:-postclear}"
     local repo="$SCRIPT_DIR" upstream_ref remote push_ref remote_tip
     local before_head after_head temp_parent source_repo source_sha path
+    local git_common_dir publish_lock publish_lock_fd
     local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
     local -a dirty_paths=() runtime_paths=() durable_paths=()
+
+    # A tracked-runtime publication is a repository transaction.  Serialize
+    # every generation on the shared git common-dir, then deliberately read
+    # the manifest, HEAD and dirty set only after admission.  A waiting writer
+    # therefore composes on the predecessor's latest checkpoint instead of
+    # treating that legitimate HEAD movement as a terminal conflict.  The
+    # subshell owns the fd so every fail-closed return releases the lock.
+    git_common_dir=$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+    publish_lock="$git_common_dir/shogun-tracked-runtime-publish.lock"
+    exec {publish_lock_fd}>"$publish_lock" || return 1
+    flock -x "$publish_lock_fd" || return 1
 
     if [ "$phase" = "postclear" ]; then
     mapfile -t durable_paths < <(python3 - "$durable_manifest" "$CMD_ID" \
@@ -2027,6 +2040,7 @@ PY
     git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true
     rmdir -- "$temp_parent" 2>/dev/null || true
     echo "  runtime publish: OK (tracked runtime dirty ${#runtime_paths[@]} -> 0)"
+    )
 }
 
 # The semantic index/map writer is detached with setsid, so the shell job table
