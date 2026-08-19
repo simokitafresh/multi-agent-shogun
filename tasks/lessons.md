@@ -15314,3 +15314,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 集計カテゴリの件数だけで事例対応を推定せず、message IDとgate出力を1:1照合する。今回3件前提を先に確定できず、実装後に2件しか確認できないと判明した。
+
+### L1617: 共有repo publicationは検査前にsingleflight admissionする
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_runtime_writer_singleflight_202608191225
+- **記録者**: kotaro
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_runtime_writer_singleflight_202608191225]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- dirty/HEADをlock前に読むと、正当な先行writer更新を競合と誤認する。repo共通lock取得後にgenerationとdirtyを再読し、真正競合guardだけを残す。
