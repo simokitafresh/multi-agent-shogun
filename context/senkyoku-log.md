@@ -1,6 +1,12 @@
 # 戦局日誌 (Campaign Log)
 <!-- last_updated: 2026-08-03 karo_strong_new_game_dm_monthly_boundary -->
 
+## 2026-08-20
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_reflux_insight_202608200531_kotaro_exact | SKILL script参照hash変化の一次検分とinsight還流 | 11組を再検分し公開I/F不変を確認、gate PASS。対象insightをresolved化、inventory pending 20→19、zero_backlinks 6→6、promotions 0→0、commit `53aa2915b914b51bb882dc7bfff7b44456aa33d6`、report gate PASS | [[INS-20260818-193113793-ea16]] -> [[契約hash再検証]] -> [[SKILL参照追従の重複解消]] |
+
 ## 2026-08-14
 
 | cmd/action | 意図 | 結果 | 因果 |
@@ -1559,3 +1565,4 @@
 - 2026-08-18 01:36 `cmd_4350_full`完了: FoF依存順の伝播版期待差分を生成し、8,570行中MATCHED=8,379/MISMATCH=134/MISSING=57、6段全同値2件・残り132件を記録。DM commit `2c5ce30ddf7a77218208a2b3a166a44617da67ce`、指定pytest 9 passed/SKIP0、report gate PASS。origin: [[cmd_4342_oracle_nested伝播欠落]] -> [[cmd_4350_伝播版期待差分]] -> [[nested FoF parity]]
 - 2026-08-18 15:06 `cmd_karo_hotfix_task_worktree_path_list_type_20260818_normal`完了: remote-tip worktreeのtarget_path/planned_pathsをtyped listで公開し、重複投影を0化。task selector scope 3件・fixture 4/4 PASS/SKIP0、commit `46f40460470269d561482480a23f8aa9aedc5e8e`、report gate PASS。origin: [[yaml_field_set_batch_scalarization]] -> [[typed_scope_publish]] -> [[run_tests_task_selector_resolved]]
 - 2026-08-19 15:29 `cmd_karo_hotfix_git_index_singleflight_202608191445_normal`完了: read-only git呼出しのoptional index lock抑止(GIT_OPTIONAL_LOCKS=0)+publish checkoutのbounded retry(最大7回x1秒)でindex.lock競合を根治。実Gate再検証RCでpostclear_runtime_path_is_publishable未登録のqueue/session_alerts_shogun.txtが別要因でBLOCKすると判明し、classifierへ1パスのみ追加(新規関数0)。contract testのknown配列8/8→9/9更新、対象bats245/245 PASS・SKIP0、commit `5ac22b08dc2c74fb9de02c87679713e9243c3ad2`、report gate PASS。origin: [[cmd_karo_ci_fix_three_layer_timeout_fixture_202608191427]] -> [[read-only git status optional index lock]] -> [[postclear_runtime_path_is_publishable classifier gap]]
+- 2026-08-20 05:44 `cmd_karo_ci_fix_unit_timeout_202608200524_normal`完了: 同一SHA CI run 32296678516のUnit Testsは9m36s/timeout12m(余裕2m24s・20.0%)、2110/2110・FAIL0・SKIP0で完走し、全workflow SUCCESS。timeout非再現のためworkflow変更・commitなし、report gate PASS。origin: [[cmd_karo_ci_fix_unit_timeout_202608200524]] -> [[timeout境界非再現]] -> [[既存12分設定維持]] -> [[CI GREEN]]
