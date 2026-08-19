@@ -6593,6 +6593,62 @@ PY
     [ "$output" = "remote_commits=5 local_commits=9 history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0" ]
 }
 
+# test_necessity: the operational 6-remote/10-local split must execute the
+# stable-ID fallback, not merely contain its source tokens; the resulting HEAD
+# contains both histories and leaves no MERGE_HEAD or tracked dirty bytes.
+@test "shared execution convergence resolves real 6 by 10 insights history" {
+    base="$BATS_TEST_TMPDIR/shared-6x10"
+    mkdir -p "$base/origin.git"
+    git -C "$base/origin.git" init -q --bare
+    git clone -q "$base/origin.git" "$base/repo"
+    git -C "$base/repo" config user.email fixture@example.invalid
+    git -C "$base/repo" config user.name Fixture
+    mkdir -p "$base/repo/queue" "$base/repo/scripts"
+    printf '%s\n' 'insights:' '- id: base' '  value: base' > "$base/repo/queue/insights.yaml"
+    printf '%s\n' '#!/usr/bin/env bash' 'printf base' > "$base/repo/scripts/cmd_complete_gate.sh"
+    git -C "$base/repo" add queue/insights.yaml scripts/cmd_complete_gate.sh
+    git -C "$base/repo" commit -qm base
+    git -C "$base/repo" branch -M main
+    git -C "$base/repo" push -q -u origin main
+    git clone -q -b main "$base/origin.git" "$base/remote"
+    git -C "$base/remote" config user.email fixture@example.invalid
+    git -C "$base/remote" config user.name Fixture
+    for n in 1 2 3 4 5; do
+        printf 'remote-%s\n' "$n" > "$base/remote/remote-$n.txt"
+        git -C "$base/remote" add "remote-$n.txt"
+        git -C "$base/remote" commit -qm "remote $n"
+    done
+    printf '%s\n' 'insights:' '- id: base' '  value: base' '- id: remote' '  value: remote' > "$base/remote/queue/insights.yaml"
+    git -C "$base/remote" add queue/insights.yaml
+    git -C "$base/remote" commit -qm 'remote insight'
+    git -C "$base/remote" push -q origin main
+    for n in 1 2 3 4 5 6 7 8 9; do
+        printf 'local-%s\n' "$n" > "$base/repo/local-$n.txt"
+        git -C "$base/repo" add "local-$n.txt"
+        git -C "$base/repo" commit -qm "local $n"
+    done
+    printf '%s\n' 'insights:' '- id: base' '  value: base' '- id: local' '  value: local' > "$base/repo/queue/insights.yaml"
+    git -C "$base/repo" add queue/insights.yaml
+    git -C "$base/repo" commit -qm 'local insight'
+
+    run bash -c '
+        set -euo pipefail
+        source <(sed -n "/^source_only_insights_id_merge()/,/^}/p" "$1")
+        source <(sed -n "/^converge_shared_execution_sources()/,/^}/p" "$1")
+        CMD_ID=cmd_6x10_fixture
+        converge_shared_execution_sources "$2" scripts/cmd_complete_gate.sh
+        git -C "$2" merge-base --is-ancestor origin/main HEAD
+        test ! -e "$2/.git/MERGE_HEAD"
+        test -z "$(git -C "$2" status --porcelain=v1 --untracked-files=no)"
+        merged=$(git -C "$2" show HEAD:queue/insights.yaml)
+        [[ "$merged" == *"id: remote"* && "$merged" == *"id: local"* ]]
+        printf "history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0\n"
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$base/repo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"conflicts=1 paths=queue/insights.yaml insight_sources=1"* ]]
+    [[ "$output" == *"history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0"* ]]
+}
+
 # test_necessity: every tracked writer observed in the first operational gate
 # must be classified as publishable while an unknown tracked path still blocks.
 # regression_justification: the first operational run blocked on three known
