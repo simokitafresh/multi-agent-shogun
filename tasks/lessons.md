@@ -15327,3 +15327,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - dirty/HEADをlock前に読むと、正当な先行writer更新を競合と誤認する。repo共通lock取得後にgenerationとdirtyを再読し、真正競合guardだけを残す。
+
+### L1618: run_tests.sh taskモードはtask_worktree_pathがscripts/run_tests.shの実行ビットを保持していないとexternal_scope_no_mapped_testsで誤BLOCKする
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_git_index_singleflight_202608191445
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality,frontend,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_git_index_singleflight_202608191445]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task_scope_root()はtask_worktree_pathを_task_rootとして採用するが、run_tests.sh task内部の[ -x "$_task_root/scripts/run_tests.sh" ]判定はDrvFs(/mnt/c)上のmain repoではmode 777表示のため常にtrueだが、/tmp配下のtask worktree(ext4)はgit tracked mode(100644)通りnon-executableで展開されるためfalseとなり、正規のaffected経路へ入らずexternal(backend/frontend)判定へ落ち、infra taskでもexternal_scope_no_mapped_testsでBLOCKする。回避策: bash scripts/run_tests.sh file <path>をworktree内から直接実行する(file modeはこの分岐を通らない)。恒久対処はtask_scope_root/run_tests.sh task分岐でexecutable bitに依存せずbash経由で呼び出す、または対象を判定すること(本taskでは家老裁定によりD0修正せずlesson_candidateへ記録のみとした)
