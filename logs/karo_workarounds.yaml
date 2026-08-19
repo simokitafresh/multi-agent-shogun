@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_idle_backlog_alert_202608102237
-  timestamp: '2026-08-10T18:44:58Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_idle_backlog_alert_202608102237'
 - cmd_id: cmd_karo_hotfix_l5_cache_state_logging_202608102200
   timestamp: '2026-08-10T18:46:20Z'
   ninja: system
@@ -1317,3 +1304,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_ninja_monitor_live_generation_202608191233'
+- cmd_id: cmd_karo_hotfix_lessons_runtime_publish_202608200711
+  timestamp: '2026-08-19T23:24:06Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_lessons_runtime_publish_202608200711'
