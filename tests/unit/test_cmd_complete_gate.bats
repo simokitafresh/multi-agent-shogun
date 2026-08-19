@@ -6443,7 +6443,8 @@ PY
 # wall-clock corrections cannot falsely expire a fresh semantic worker.
 # regression_justification: an operational gate observed a multi-hour wall-clock
 # jump while its worker process had run for under three minutes and falsely hit
-# the 600-second deadline.
+# the 600-second deadline. Integer-second uptime truncation also falsely timed
+# out a 0.1-second completion that crossed a whole-second boundary.
 @test "durable writer wait ignores wall-clock jumps and preserves completion and timeout" {
     run bash -c '
         set -euo pipefail
@@ -6473,6 +6474,9 @@ PY
             printf "%s\n" done > "$GATES_DIR/semantic_causal_audit.result"
             rm -f "$GATES_DIR/semantic_causal_audit.pending"
         }
+        block=$(sed -n "/^wait_for_postclear_durable_writers()/,/^}/p" "$1")
+        [[ "$block" == *"start_uptime_ticks"* ]]
+        [[ "$block" == *"elapsed_ticks"* ]]
         for jump in 12960 -12960; do
             prepare
             date() { printf "%s\n" "$((1700000000 + jump))"; }
@@ -6563,6 +6567,30 @@ print('remote_commits=3 local_commits=7 publish_success=1 dirty_preserved=1 fals
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "remote_commits=3 local_commits=7 publish_success=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1" ]
+}
+
+# test_necessity: shared execution-source convergence must reuse the stable-ID
+# insights merge when the published remote and live checkout diverge, while
+# leaving every non-insights or semantic same-ID conflict fail-closed.
+# regression_justification: after runtime dirty reached zero, a 5/9 history
+# split conflicted in queue/insights.yaml and falsely blocked terminal publish.
+@test "shared execution convergence routes sole insights conflict through stable ID merge" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
+start=text.index('converge_shared_execution_sources()')
+block=text[start:text.index('\n}', start)+2]
+for token in ('merge-base "$before_head" "$remote_tip"',
+              'diff --name-only --diff-filter=U',
+              'rev-list --reverse "${merge_base}..${before_head}" -- queue/insights.yaml',
+              'source_only_insights_id_merge', 'git -C "$repo" commit --no-edit',
+              'git -C "$repo" merge --abort'):
+    assert token in block, token
+assert block.index('git -C "$repo" merge --no-edit') < block.index('source_only_insights_id_merge')
+print('remote_commits=5 local_commits=9 history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "remote_commits=5 local_commits=9 history_contains=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1 orphan_merge_head=0" ]
 }
 
 # test_necessity: every tracked writer observed in the first operational gate
