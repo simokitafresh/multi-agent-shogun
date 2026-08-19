@@ -15288,3 +15288,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - task_worktree_workdir配下のscripts/run_tests.shは主repoで-rwxrwxrwxだが、本cmdの実測でtask worktree生成直後は-rw-r--r--だった。task modeは_task_root!=REPO_ROOT時にworktree側run_tests.shが-xでなければbackend/frontendパターンのみ対応のexternal test engineフォールバックへ落ち、bats testはno external task test engineでBLOCKする。chmod +xで解消しても、委譲先run_tests.sh affectedがnested aggregate run_tests invocationガードでBLOCKするため、task-mode検証は本状況下で構造的に完走できない。検出はtask worktree作成直後にls -la <worktree>/scripts/run_tests.shで実行ビットを確認する。回避はguardメッセージの通りfile modeで対象ファイルを直接実行する
+
+### L1615: 共有Git収束はrepo flockと変更予定path限定untracked検査を一体化する
+- **日付**: 2026-08-19
+- **出典**: cmd_karo_hotfix_safe_shared_convergence_202608191137
+- **記録者**: kotaro
+- **tags**: [infra,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/safe_shared_main_ff.sh,tests/unit/test_safe_shared_main_ff.bats]
+- **origin**: [[cmd_karo_hotfix_safe_shared_convergence_202608191137]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 全untracked走査は9p共有repoで20秒超停滞し多重起動を増幅する。git-common-dir flockで直列化し、上書き可能な変更予定pathだけをuntracked検査すれば安全性を保ったまま4.37秒で完了した
