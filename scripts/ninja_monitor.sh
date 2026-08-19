@@ -1645,6 +1645,13 @@ check_gate_stall() {
         fi
         if gate_output=$(bash "$SCRIPT_DIR/scripts/cmd_complete_gate.sh" "$cmd" 2>&1); then
             log "GATE-AUTO-CLEAR: ${cmd} elapsed=${elapsed_min}min"
+        elif printf '%s\n' "$gate_output" | grep -Fq \
+            'cmd_complete_gate busy; terminal CLEAR/BLOCK is not established (CMD_ID lock)'; then
+            # cmd_complete_gate owns a second, CMD_ID-scoped lock.  Contention
+            # there is retryable just like contention on the monitor auto lock:
+            # publish no terminal gate_block and leave the marker eligible for
+            # the next monitor cycle.
+            log "GATE-AUTO-LOCKED: ${cmd} cmd_complete_gate CMD_ID lock is active; retry next cycle"
         else
             block_message="【GATE-AUTO-BLOCK】${cmd} 両承認後の自動cmd_complete_gateがBLOCK。理由: $(printf '%s\n' "$gate_output" | tail -n 3 | tr '\n' ' ')"
             send_inbox_message karo "$block_message" gate_block || true

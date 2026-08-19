@@ -36,6 +36,51 @@ setup() {
     [[ "$output" == *"gate_runs=1"* ]]
 }
 
+# test_necessity: cmd_complete_gate's inner CMD_ID lock contention is retryable
+# and must never be published as a terminal gate_block; a different nonzero
+# result remains terminal and preserves the existing notification contract.
+# regression_justification: three same-session inner-lock collisions were
+# emitted as GATE-AUTO-BLOCK instead of remaining eligible for the next cycle.
+@test "GATE-STALL retries inner lock contention but blocks true failure" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_retry" "$SCRIPT_DIR/queue/gates/cmd_fail" \
+            "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+        now=$(date -Iseconds)
+        printf "timestamp: %s\nresult: LGTM\n" "$now" > "$SCRIPT_DIR/queue/gates/cmd_retry/review_gate.done"
+        printf "timestamp: %s\nresult: LGTM\n" "$now" > "$SCRIPT_DIR/queue/gates/cmd_fail/review_gate.done"
+        printf "task:\n  parent_cmd: cmd_retry\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/retry.yaml"
+        printf "task:\n  parent_cmd: cmd_fail\n  status: in_progress\n" > "$SCRIPT_DIR/queue/tasks/fail.yaml"
+        : > "$SCRIPT_DIR/logs/gate_metrics.log"
+        cat > "$SCRIPT_DIR/scripts/cmd_complete_gate.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\n" "\$1" >> "$STATE_DIR/calls"
+if [ "\$1" = cmd_retry ]; then
+  echo "[gate] \$1: cmd_complete_gate busy; terminal CLEAR/BLOCK is not established (CMD_ID lock)" >&2
+  exit 2
+fi
+echo "GATE BLOCK: real_failure" >&2
+exit 1
+EOF
+        chmod +x "$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+        log() { printf "%s\n" "$1" >> "$STATE_DIR/logs"; }
+        send_inbox_message() { printf "%s|%s\n" "$1" "$3" >> "$STATE_DIR/messages"; }
+        GATE_STALL_MAX_MIN=1440
+        check_gate_stall
+        check_gate_stall
+        test "$(grep -c "^cmd_retry$" "$STATE_DIR/calls")" -eq 2
+        test "$(grep -c "^cmd_fail$" "$STATE_DIR/calls")" -eq 2
+        test "$(grep -c "GATE-AUTO-LOCKED: cmd_retry" "$STATE_DIR/logs")" -eq 2
+        test "$(grep -c "^karo|gate_block$" "$STATE_DIR/messages")" -eq 2
+        ! grep -q "cmd_retry" "$STATE_DIR/messages"
+        printf "retry_calls=2 retry_blocks=0 true_failure_blocks=2\n"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"retry_calls=2 retry_blocks=0 true_failure_blocks=2"* ]]
+}
+
 @test "terminal report requests Gunshi review once after durable Karo publish" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1
