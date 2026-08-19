@@ -2040,7 +2040,7 @@ wait_for_postclear_durable_writers() {
     local generation_marker="$GATES_DIR/semantic_causal_audit.generation.json"
     local path_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
     local timeout_seconds="${CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600}"
-    local deadline now
+    local start_uptime now_uptime elapsed_seconds
 
     [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]] || {
         echo "  durable writers: BLOCK (invalid timeout=$timeout_seconds)" >&2
@@ -2055,10 +2055,20 @@ if data != {"version": 1, "cmd_id": cmd_id,
             "completion_generation": generation, "pending": pending}:
     raise SystemExit(1)
 PY
-    deadline=$(( $(date +%s) + timeout_seconds ))
+    # /proc/uptime is monotonic across wall-clock corrections.  Reading it with
+    # shell builtins keeps this 50ms loop cheap and prevents an NTP/manual clock
+    # jump from turning a fresh worker into an immediate timeout.
+    IFS='. ' read -r start_uptime _ < /proc/uptime || {
+        echo "  durable writers: BLOCK (monotonic clock unavailable)" >&2
+        return 1
+    }
     while [[ -e "$pending" || ! -s "$result" ]]; do
-        now=$(date +%s)
-        if (( now >= deadline )); then
+        IFS='. ' read -r now_uptime _ < /proc/uptime || {
+            echo "  durable writers: BLOCK (monotonic clock unavailable)" >&2
+            return 1
+        }
+        elapsed_seconds=$((now_uptime - start_uptime))
+        if (( elapsed_seconds >= timeout_seconds )); then
             echo "  durable writers: BLOCK (semantic worker timeout=${timeout_seconds}s generation=${SHOGUN_COMPLETION_GENERATION})" >&2
             return 1
         fi

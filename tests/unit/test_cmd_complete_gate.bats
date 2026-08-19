@@ -6429,12 +6429,67 @@ decision = text.index('if [ "$ALL_CLEAR" = true ]; then', text.index('if [ "$ALL
 assert 'capture_durable_writer_paths start' in text[decision:launch]
 assert 'capture_durable_writer_paths finish' in block
 assert 'CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600' in block
+assert '/proc/uptime' in block
+assert 'date +%s' not in block
 assert 'wait || {' in block
 assert 'return 1' in block
 print('generation_bound=1 path_manifest=1 bounded=1 fail_closed=1')
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "generation_bound=1 path_manifest=1 bounded=1 fail_closed=1" ]
+}
+
+# test_necessity: the durable-writer timeout must use monotonic elapsed time so
+# wall-clock corrections cannot falsely expire a fresh semantic worker.
+# regression_justification: an operational gate observed a multi-hour wall-clock
+# jump while its worker process had run for under three minutes and falsely hit
+# the 600-second deadline.
+@test "durable writer wait ignores wall-clock jumps and preserves completion and timeout" {
+    run bash -c '
+        set -euo pipefail
+        source <(sed -n "/^wait_for_postclear_durable_writers()/,/^}/p" "$1")
+        root="$2"
+        GATES_DIR="$root/gates"
+        CMD_ID=cmd_fixture
+        SHOGUN_COMPLETION_GENERATION=gen_fixture
+        mkdir -p "$GATES_DIR"
+        capture_durable_writer_paths() {
+            [ "$1" = finish ] || return 0
+            python3 - "$3" <<"PY"
+import json, sys
+json.dump({"version": 1, "cmd_id": "cmd_fixture", "completion_generation": "gen_fixture", "paths": []}, open(sys.argv[1], "w"))
+PY
+        }
+        prepare() {
+            rm -f "$GATES_DIR/semantic_causal_audit.pending" "$GATES_DIR/semantic_causal_audit.result"
+            printf "%s\n" pending > "$GATES_DIR/semantic_causal_audit.pending"
+            python3 - "$GATES_DIR/semantic_causal_audit.generation.json" "$GATES_DIR/semantic_causal_audit.pending" <<"PY"
+import json, sys
+json.dump({"version": 1, "cmd_id": "cmd_fixture", "completion_generation": "gen_fixture", "pending": sys.argv[2]}, open(sys.argv[1], "w"))
+PY
+        }
+        complete_after() {
+            sleep 0.1
+            printf "%s\n" done > "$GATES_DIR/semantic_causal_audit.result"
+            rm -f "$GATES_DIR/semantic_causal_audit.pending"
+        }
+        for jump in 12960 -12960; do
+            prepare
+            date() { printf "%s\n" "$((1700000000 + jump))"; }
+            complete_after &
+            CMD_COMPLETE_DURABLE_WRITER_TIMEOUT=1 wait_for_postclear_durable_writers
+        done
+        prepare
+        complete_after &
+        CMD_COMPLETE_DURABLE_WRITER_TIMEOUT=1 wait_for_postclear_durable_writers
+        prepare
+        if CMD_COMPLETE_DURABLE_WRITER_TIMEOUT=1 wait_for_postclear_durable_writers 2>/dev/null; then
+            exit 91
+        fi
+        printf "forward=pass backward=pass completion=pass timeout=pass\n"
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$BATS_TEST_TMPDIR/monotonic-writer"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"forward=pass backward=pass completion=pass timeout=pass" ]]
 }
 
 # test_necessity: runtime publication must reuse the existing field-aware
