@@ -760,7 +760,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:e77227d87b1356c5"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: gate_skill_script_refs.sh RC=2はFOLLOWUP_ACTIVE 7組によるREVIEW_REQUIREDであり、対象9組のSKILL.mdとscriptは全て実在・SKILL更新日がscript以上・例示パス実在・副作用実走マーカーあり。対象insightの実修正・decision_candidateは不要。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh rc=2;verified_at=2026-08-20T12:35:31+09:00;target=INS-20260819-025527157-c9dc;missing=0;stale=0;example_path_missing=0;side_effect_marker_missing=0;followup_active=7;followup_covers_review_required=yes"
+  resolved_at: "2026-08-20T12:36:31+09:00"
 - id: INS-20260819-043300238-e118
   ts: "2026-08-19T04:33:00+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b2sdqo964 task id tool use id toolu 017ZmkDAtTQJKHtHzw は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
