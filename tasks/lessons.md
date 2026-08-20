@@ -15407,3 +15407,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 小太郎が隔離worktreeで対象INSを解決してもshared runtimeへpublishされるまでpendingに見え、reflux schedulerが同一stable_idを飛猿へ再配備した。その結果、飛猿は再検証だけのcommitと5回のownership BLOCKを経験した。次回追加check: 配備時にactive taskのtarget insight stable_idをclaim/lease照合し、重複選択をBLOCKする。
+
+### L1622: ignored runtime projectionのtracked復活を事前BLOCKするcheck
+- **日付**: 2026-08-20
+- **出典**: cmd_reflux_backlink_202608201539_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,context,gate,git]
+- **subdomain**: infra
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_reflux_backlink_202608201539_kagemaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 0ee4b847dで削除済みのignored runtime projectionをtask worktreeへ復元した後、通常scope helperがworktree bytesを正本として15,239行をtracked commitできた。task target_path_git_preflightのhead=no警告だけでは停止しなかったため、ignored runtime projectionをtrackedへ追加しようとするtaskをcommit前に検出し、working copy保持・tracked 0件・正規mapのみcommitを強制するcheckが必要。
