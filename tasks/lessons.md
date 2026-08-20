@@ -15394,3 +15394,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - GA-485からGA-486への因果として、bulletin_write.shをbash経由で呼ぶcallerが実行bit(-x)を必要能力と誤認し、mode=0644のreadable scriptを誤BLOCK/fail-openしていた。invocation方式とpredicateを一致させ、readable regular file判定と通知失敗BLOCKを環境へ固定した。
+
+### L1621: 隔離worktree解決前のstable_id claim/lease照合
+- **日付**: 2026-08-20
+- **出典**: cmd_reflux_insight_202608201515_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,pipeline,testing,gate]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202608201515_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 小太郎が隔離worktreeで対象INSを解決してもshared runtimeへpublishされるまでpendingに見え、reflux schedulerが同一stable_idを飛猿へ再配備した。その結果、飛猿は再検証だけのcommitと5回のownership BLOCKを経験した。次回追加check: 配備時にactive taskのtarget insight stable_idをclaim/lease照合し、重複選択をBLOCKする。
