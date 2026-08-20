@@ -750,7 +750,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:84fcbd7de31fb57e"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検分で対象10組のSKILL.mdとscript参照先を確認。全参照先実在、gate_skill_script_refs現行実測はmissing=0 stale_target_pairs=0で、RC2は対象外のFOLLOWUP_ACTIVE 6組によるREVIEW_REQUIRED。現行SKILL本文の追従修正とdecision_candidateは不要。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh rc=2;scanned=41 skills;refs=82;missing=0;stale_target_pairs=0;followup_active=6;target=INS-20260819-023737514-d968;task_tests=run_tests.sh task rc=0 selected=0 skip=0"
+  resolved_at: "2026-08-20T12:09:22+09:00"
 - id: INS-20260819-025527157-c9dc
   ts: "2026-08-19T02:55:27+09:00"
   insight: "SKILL.md追従task[e77227d87b1356c5]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
