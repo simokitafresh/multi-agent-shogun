@@ -947,7 +947,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_lessons_runtime_publish_202608200711"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で scripts/cmd_complete_gate.sh:10870-10874 を確認。cmd固有draft_lessons BLOCK時に『忍者では解消できない。家老に報告して待機せよ。リトライは無駄(GP-203)』を出力し、ALL_CLEAR=falseとrecord_block_reasonを実行する既存恒久ガイダンスが対象候補を満たす。追加コード修正・decision_candidateは不要。"
+  action_artifact: "scripts/cmd_complete_gate.sh:10870-10874; bash -n scripts/cmd_complete_gate.sh => rc=0; queue/insights.yaml:INS-20260820-082413730-6c6f"
+  resolved_at: "2026-08-20T14:42:49+09:00"
 - id: INS-20260820-082418400-1714
   ts: "2026-08-20T08:24:18+09:00"
   insight: "SKILL.md追従task[0fa91f7eaa70779c]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh"
