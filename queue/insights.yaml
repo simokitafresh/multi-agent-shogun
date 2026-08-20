@@ -987,3 +987,10 @@ insights:
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
   status: pending
+- id: INS-20260821-085035822-dc0a
+  ts: "2026-08-21T08:50:35+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bthhf8rnn task id tool use id toolu 01NEY4n1MPAPbmvqkE は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
