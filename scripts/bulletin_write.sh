@@ -84,6 +84,21 @@ is_known_agent() {
     return 1
 }
 
+# System actors are durable producers, not human agents.  Keep this allowlist
+# separate from get_allowed_targets so a producer can be persisted as the
+# posted_by identity without becoming a valid inbox destination or being
+# mistaken for a human commander.
+is_system_actor() {
+    case "$1" in
+        gate_context_freshness|ninja_monitor) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+is_known_poster() {
+    is_known_agent "$1" || is_system_actor "$1"
+}
+
 normalize_csv_agents() {
     local raw="$1"
     local field_name="$2"
@@ -339,7 +354,7 @@ compute_notify_targets() {
 }
 
 POSTED_BY=""
-if [[ $# -ge 2 ]] && is_known_agent "$1"; then
+if [[ $# -ge 2 ]] && is_known_poster "$1"; then
     POSTED_BY="$1"
 else
     if [[ -n "${TMUX_PANE:-}" ]]; then
@@ -363,7 +378,7 @@ if [[ $# -ge 2 ]]; then
     REQUIRES_CONFIRMATION="${3:-false}"
     ACTION_TYPE="${4:-info}"
     # posted_byが既知エージェント名なら引数を信頼
-    if is_known_agent "$POSTED_BY_ARG"; then
+    if is_known_poster "$POSTED_BY_ARG"; then
         POSTED_BY="$POSTED_BY_ARG"
     else
         if [[ -z "$POSTED_BY" ]]; then
@@ -386,13 +401,13 @@ else
 fi
 
 # 引数順序ミス検出: contentがエージェント名そのもの=引数の置き間違い(blt_20260416_230053事故: content='karo')
-if is_known_agent "$CONTENT"; then
+if is_known_poster "$CONTENT"; then
     echo "ERROR: content is an agent name ('$CONTENT') — argument order mistake. Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]" >&2
     exit 1
 fi
 
 # GP-207: contentがエージェント名のみの場合はBLOCK(引数順序ミス検出)
-if is_known_agent "$CONTENT"; then
+if is_known_poster "$CONTENT"; then
     echo "BLOCK: contentがエージェント名のみ。引数順序ミスの可能性。Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]" >&2
     exit 1
 fi
