@@ -15420,3 +15420,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 0ee4b847dで削除済みのignored runtime projectionをtask worktreeへ復元した後、通常scope helperがworktree bytesを正本として15,239行をtracked commitできた。task target_path_git_preflightのhead=no警告だけでは停止しなかったため、ignored runtime projectionをtrackedへ追加しようとするtaskをcommit前に検出し、working copy保持・tracked 0件・正規mapのみcommitを強制するcheckが必要。
+
+### L1623: task worktree配備時のshared dirty bytes注入
+- **日付**: 2026-08-20
+- **出典**: cmd_karo_hotfix_skill_auto_improve_dirty_202608201637
+- **記録者**: kagemaru
+- **tags**: [infra,skill,git]
+- **subdomain**: infra
+- **target_files**: [skills/ninja-commit/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_skill_auto_improve_dirty_202608201637]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task worktreeはshared rootの未commitbytesを自動継承しないため、dirty収束taskがclean HEADだけを観測してAC1停止する。再配備時はshared rootの一次diffをLevel5コンテキストとしてtask worktreeへ再現してからcommitする仕組みが必要。
