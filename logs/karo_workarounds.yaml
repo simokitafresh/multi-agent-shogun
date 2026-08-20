@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_dashboard_completion_coalesce_202608110345
-  timestamp: '2026-08-10T20:25:27Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_dashboard_completion_coalesce_202608110345'
 - cmd_id: cmd_karo_hotfix_fail_close_after_report_rc_202608110653
   timestamp: '2026-08-10T22:11:26Z'
   ninja: system
@@ -1317,3 +1304,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_ga485_doc_lane_actor_202608201114'
+- cmd_id: cmd_karo_hotfix_ga485_doc_lane_sender_202608201148
+  timestamp: '2026-08-20T03:14:45Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_ga485_doc_lane_sender_202608201148'
