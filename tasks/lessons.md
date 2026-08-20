@@ -15472,3 +15472,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - docs/semantic-index/index.mdは共有rootに存在してもgitignoredのためtask worktreeへ自動配備されず、generatorが入力欠落で停止する。配備時にignored SSOTのbytesをplanned targetへ注入し、再現証跡を残す必要がある
+
+### L1627: gitignored semantic SSOTをtask worktreeへ再現する
+- **日付**: 2026-08-21
+- **出典**: cmd_reflux_backlink_202608201856_saizo
+- **記録者**: saizo
+- **tags**: [infra,context]
+- **subdomain**: infra
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_reflux_backlink_202608201856_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- docs/semantic-index/index.mdは共有rootに存在してもgitignoredのためtask worktreeへ自動配備されずgenerator入力が欠落する。配備時のignored SSOT bytes注入と証跡を維持すべきである。
