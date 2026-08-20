@@ -760,7 +760,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:84fcbd7de31fb57e"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: gate_rc2_review_required_but_all_referenced_pairs_verified_and_no_skill_update_needed
+  action_artifact: gate_skill_script_refs_rc2_checks_missing0_static_paths_missing0_side_effect_markers_missing0
+  resolved_at: "2026-08-20T12:23:57+09:00"
 - id: INS-20260819-025527157-c9dc
   ts: "2026-08-19T02:55:27+09:00"
   insight: "SKILL.md追従task[e77227d87b1356c5]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
