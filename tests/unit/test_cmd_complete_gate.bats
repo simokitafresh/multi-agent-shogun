@@ -4734,6 +4734,99 @@ EOF
     [ ! -s "$base/git_push_calls.log" ]
 }
 
+# test_necessity: PASS_NO_IMPROVEMENT source publication whose complete tree is
+# the task deployment base must not overwrite a newer source-path publication.
+@test "AC2: PASS_NO_IMPROVEMENT base-tree revert is an already-converged no-op" {
+    local base="$BATS_TEST_TMPDIR/ac2-pni-base-tree-noop"
+    _push_overlap_repo_init "$base"
+    local task_base source_sha
+    task_base="$(git -C "$base/repo" rev-parse HEAD)"
+
+    printf 'source intermediate\n' > "$base/repo/shared.txt"
+    git -C "$base/repo" add shared.txt
+    git -C "$base/repo" commit -q -m "source intermediate"
+    printf 'base\n' > "$base/repo/shared.txt"
+    git -C "$base/repo" add shared.txt
+    git -C "$base/repo" commit -q -m "PASS_NO_IMPROVEMENT corrective revert"
+    source_sha="$(git -C "$base/repo" rev-parse HEAD)"
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'remote newer valid state\n' > "$base/remote-clone/shared.txt"
+    git -C "$base/remote-clone" add shared.txt
+    git -C "$base/remote-clone" commit -q -m "remote newer valid source state"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+
+    cat > "$base/report.yaml" <<YAML
+commit_hash: $source_sha
+verdict: PASS_NO_IMPROVEMENT
+YAML
+    cat > "$base/task.yaml" <<YAML
+task:
+  project: external
+  target_path: $base/repo
+  report_path: $base/report.yaml
+  task_worktree_base: $task_base
+YAML
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_pni_base_tree_noop_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS_NO_IMPROVEMENT source tree equals task base"* ]]
+    [ ! -s "$base/git_push_calls.log" ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:shared.txt)" = "remote newer valid state" ]
+}
+
+# test_necessity: the no-op proof is verdict-bound; an ordinary PASS must keep
+# the existing fail-closed source-only publication behavior.
+@test "AC2: ordinary PASS cannot use PASS_NO_IMPROVEMENT base-tree no-op" {
+    local base="$BATS_TEST_TMPDIR/ac2-pni-base-tree-verdict-bound"
+    _push_overlap_repo_init "$base"
+    local task_base source_sha
+    task_base="$(git -C "$base/repo" rev-parse HEAD)"
+    printf 'source intermediate\n' > "$base/repo/shared.txt"
+    git -C "$base/repo" add shared.txt
+    git -C "$base/repo" commit -q -m "source intermediate"
+    printf 'base\n' > "$base/repo/shared.txt"
+    git -C "$base/repo" add shared.txt
+    git -C "$base/repo" commit -q -m "ordinary corrective revert"
+    source_sha="$(git -C "$base/repo" rev-parse HEAD)"
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'remote newer valid state\n' > "$base/remote-clone/shared.txt"
+    git -C "$base/remote-clone" add shared.txt
+    git -C "$base/remote-clone" commit -q -m "remote newer valid source state"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+
+    cat > "$base/report.yaml" <<YAML
+commit_hash: $source_sha
+verdict: PASS
+YAML
+    cat > "$base/task.yaml" <<YAML
+task:
+  project: external
+  target_path: $base/repo
+  report_path: $base/report.yaml
+  task_worktree_base: $task_base
+YAML
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_pni_base_tree_verdict_probe
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:shared.txt)" = "remote newer valid state" ]
+}
+
 # test_necessity: an equivalent cherry-pick has a different commit identity but
 # is already published when every changed path has the same final blob.  The
 # gate must not create a second source-only commit merely to satisfy ancestry.

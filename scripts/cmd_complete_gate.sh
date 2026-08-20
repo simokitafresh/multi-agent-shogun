@@ -822,6 +822,85 @@ source_snapshot_matches_tip() {
     [ "$changed_count" -gt 0 ]
 }
 
+# A PASS_NO_IMPROVEMENT corrective revert can legitimately finish at the exact
+# tree recorded when its task worktree was deployed.  If another publication
+# has since advanced one of the source paths, replaying that revert would
+# overwrite the newer valid state.  Prove all four facts from immutable git
+# state and treat the source publication as an already-converged no-op.
+pass_no_improvement_base_tree_noop() {
+    local task_file="$1" repo="$2" source_sha="$3" remote_tip="$4"
+    local report_file verdict base_sha source_tree base_tree path changed=0 later=0
+    local base_blob remote_blob base_exists remote_exists
+
+    report_file=$(python3 - "$task_file" "$SCRIPT_DIR" <<'PY'
+import os
+import sys
+import yaml
+
+task_file, script_dir = sys.argv[1:]
+try:
+    task = (yaml.safe_load(open(task_file, encoding="utf-8")) or {}).get("task", {})
+except Exception:
+    raise SystemExit(1)
+report = str(task.get("report_path") or task.get("report_filename") or "").strip()
+if report and not os.path.isabs(report):
+    report = os.path.join(script_dir, report)
+print(report)
+PY
+    ) || return 1
+    [ -f "$report_file" ] || return 1
+    verdict=$(python3 - "$report_file" <<'PY'
+import sys
+import yaml
+try:
+    report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit(1)
+print(str(report.get("verdict") or "").strip())
+PY
+    ) || return 1
+    [ "$verdict" = "PASS_NO_IMPROVEMENT" ] || return 1
+    base_sha=$(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+try:
+    task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+except Exception:
+    raise SystemExit(1)
+print(str(task.get("task_worktree_base") or "").strip().lower())
+PY
+    ) || return 1
+    [[ "$base_sha" =~ ^[0-9a-f]{40}$ ]] || return 1
+    git -C "$repo" cat-file -e "${source_sha}^{commit}" 2>/dev/null || return 1
+    git -C "$repo" cat-file -e "${base_sha}^{commit}" 2>/dev/null || return 1
+    git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || return 1
+    source_tree=$(git -C "$repo" rev-parse "${source_sha}^{tree}" 2>/dev/null) || return 1
+    base_tree=$(git -C "$repo" rev-parse "${base_sha}^{tree}" 2>/dev/null) || return 1
+    [ "$source_tree" = "$base_tree" ] || return 1
+    [ "$base_sha" != "$remote_tip" ] || return 1
+    git -C "$repo" merge-base --is-ancestor "$base_sha" "$remote_tip" || return 1
+
+    # Require a strict, source-path-scoped later state.  A change to an
+    # unrelated path is not enough to suppress the corrective publication.
+    while IFS= read -r -d '' path; do
+        changed=$((changed + 1))
+        base_exists=0
+        remote_exists=0
+        git -C "$repo" cat-file -e "$base_sha:$path" 2>/dev/null && base_exists=1
+        git -C "$repo" cat-file -e "$remote_tip:$path" 2>/dev/null && remote_exists=1
+        if [ "$base_exists" -ne "$remote_exists" ]; then
+            later=$((later + 1))
+            continue
+        fi
+        if [ "$base_exists" -eq 1 ]; then
+            base_blob=$(git -C "$repo" rev-parse "$base_sha:$path" 2>/dev/null) || return 1
+            remote_blob=$(git -C "$repo" rev-parse "$remote_tip:$path" 2>/dev/null) || return 1
+            [ "$base_blob" != "$remote_blob" ] && later=$((later + 1))
+        fi
+    done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    [ "$changed" -gt 0 ] && [ "$later" -gt 0 ]
+}
+
 # Completed tasks can be absent after a historical premature archive, while
 # their submitted report remains the immutable completion record.  Recover
 # cross-repository publication contracts from that report instead of silently
@@ -1948,7 +2027,7 @@ push_from_clean_worktree() {
 push_task_repositories() {
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
-    local source_equivalent_used
+    local source_equivalent_used source_base_tree_noop source_noop_all
     local -a repos=() eligible_task_files=()
     local saw_task_file=0
     local report_repo report_source report_path_count path_index path report_sources_tmp report_sources_fd
@@ -2061,6 +2140,31 @@ push_task_repositories() {
         max_retries="${CMD_COMPLETE_GATE_PUSH_MAX_RETRIES:-2}"
         [[ "$max_retries" =~ ^[0-9]+$ ]] || max_retries=2
         for ((attempt=0; attempt<=max_retries; attempt++)); do
+            source_base_tree_noop=false
+            source_noop_all=true
+            # This proof is intentionally task-backed.  Archived/report-only
+            # source contracts do not carry the deployment base and therefore
+            # retain the existing ancestry/equivalence behavior.
+            if [ "${#eligible_task_files[@]}" -gt 0 ]; then
+                for task_file in "${eligible_task_files[@]}"; do
+                    [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
+                    source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
+                    if ! [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] \
+                        || ! pass_no_improvement_base_tree_noop "$task_file" "$repo" "$source_sha" "$remote_tip"; then
+                        source_noop_all=false
+                        break
+                    fi
+                done
+                if [ "$source_noop_all" = true ]; then
+                    source_base_tree_noop=true
+                    for task_file in "${eligible_task_files[@]}"; do
+                        [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
+                        mark_task_worktree_published "$task_file" "$remote_tip" || return 1
+                    done
+                    echo "  git push: SKIP ($repo PASS_NO_IMPROVEMENT source tree equals task base; newer source-path state preserved)"
+                    break
+                fi
+            fi
             local all_remote=true
             source_equivalent_used=false
             for source_sha in "${source_commits[@]}"; do
