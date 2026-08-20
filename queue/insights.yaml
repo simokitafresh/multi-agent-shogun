@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-183330427-7e9c
-  ts: "2026-08-18T18:33:30+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id b2z2fvb2j task id tool use id toolu 01VCgGZapXqZJgYhpQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T18:36:13+09:00"
 - id: INS-20260818-190429636-c02c
   ts: "2026-08-18T19:04:29+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bnoe25nqo task id tool use id toolu 01KGn5zDLiVp4Y7txL は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -1011,3 +1001,10 @@ insights:
   resolved_reason: "誤った--inventory引数を手動insightとして登録したが、実在する気づきではなく追加対応不要のため即時解消"
   action_artifact: "action=unsupported inventory probe entry cleanup; target=queue/insights.yaml:INS-20260820-150103679-64bf"
   resolved_at: "2026-08-20T15:03:46+09:00"
+- id: INS-20260820-172055620-6338
+  ts: "2026-08-20T17:20:55+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_skill_auto_improve_dirty_202608201637; matched=ninja,commit; current_pattern=; candidate_level=3; candidate=hayate事故(2026-04-28): bypass flag欠落→確認プロンプトで停止。pstreeで起動時自動検出; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_skill_auto_improve_dirty_202608201637"
+  fix_known: false
+  status: pending
