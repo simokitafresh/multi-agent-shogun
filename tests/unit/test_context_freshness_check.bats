@@ -1158,6 +1158,32 @@ PROJ
     [[ "$output" != *"context/infrastructure.md source commits"* ]]
 }
 
+# test_necessity: infra-platform must reject a broad root-fallback boundary so
+# operational/project commits cannot become infrastructure freshness alerts.
+@test "GA-483 infra registry rejects root-fallback and keeps source paths explicit" {
+    local registry="$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$registry"
+
+    run python3 - "$registry" <<'PY'
+import sys
+path = sys.argv[1]
+rows = open(path, encoding="utf-8").read()
+assert "context/infrastructure.md\tinfra\tinfra-platform\troot-fallback" not in rows
+assert "context/infrastructure.md\tinfra\tinfra-platform\t.github" in rows
+print("infra_platform_explicit=1")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"infra_platform_explicit=1"* ]]
+
+    sed -i 's#context/infrastructure.md\tinfra\tinfra-platform\t.*#context/infrastructure.md\tinfra\tinfra-platform\troot-fallback#' "$registry"
+    _create_context "context/infrastructure.md" "$TODAY"
+    _create_shogun_to_karo "cmd_ga483" "infra"
+
+    CFC_REQUIRE_SOURCE_COMMIT=1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_ga483
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: infra context registry requires explicit source pathspecs"* ]]
+}
+
 @test "infra root fallback source_commit marker prevents same-day re-alert" {
     _create_context "context/infrastructure.md" "$TODAY"
     _create_source_commit "scripts/first_change.sh" "fix: first infra source change"

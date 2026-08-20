@@ -602,8 +602,12 @@ def load_registry_pathspecs() -> tuple[dict[str, list[str]], dict[str, list[str]
             dm_signal[path] = pathspecs
         elif project == "infra":
             recognized_paths.add(path)
-            if pathspecs != ["root-fallback"]:
-                infra[path] = pathspecs
+            if pathspecs == ["root-fallback"]:
+                raise SystemExit(
+                    "BLOCK: infra context registry requires explicit source pathspecs "
+                    f"({path})"
+                )
+            infra[path] = pathspecs
     if recognized_paths != {row[0] for row in rows}:
         raise SystemExit("BLOCK: duplicate or unknown source context registry path")
     return dm_signal, infra
