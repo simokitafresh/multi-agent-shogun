@@ -790,7 +790,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:62304dd7c0ca172f"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: gate_skill_script_refs.sh rc=2(REVIEW_REQUIRED)だが、現行実行で参照先欠落・鮮度不足・静的パス欠落・実走マーカー欠落はいずれも0。既存follow-up 7件がレビュー要求をカバーし、新規実修正・decision_candidateは不要。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;verified_at=2026-08-20T13:25:35+09:00;missing=0;stale=0;example_path_missing=0;side_effect_marker_missing=0;followup_active=7;followup_covers_review_required=yes"
+  resolved_at: "2026-08-20T13:25:35+09:00"
 - id: INS-20260819-055305135-978a
   ts: "2026-08-19T05:53:05+09:00"
   insight: "semantic_index_update新概念候補: discussion:結果をartifactにまとめてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
