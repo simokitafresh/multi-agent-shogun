@@ -964,7 +964,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証: gate_skill_script_refs.shをSKILL_REF_DIRS=skillsで実走しrc=2 REVIEW_REQUIRED/FOLLOWUP_ACTIVE=7/FOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認。対象7組すべて参照先実在・SKILL更新日鮮度・静的パス・副作用実走マーカーOKで、追加修正とdecision_candidateは不要。"
+  action_artifact: "gate=/tmp/hayate_skill_gate_20260821.out;command=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;target=INS-20260821-025624452-5e64"
+  resolved_at: "2026-08-21T05:38:47+09:00"
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
