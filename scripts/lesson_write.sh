@@ -697,7 +697,11 @@ write_project_yaml_lesson() {
             local init_tmp
             init_tmp="$(mktemp "${lessons_yaml}.init.XXXXXX")" || exit 1
             {
-                printf 'ssot_path: %s\n' "$lessons_yaml"
+                # Cache-only projects have no lessons.md.  Store a portable
+                # repo-relative cache path instead of the absolute writer
+                # checkout, so a later health gate can resolve it after a
+                # publish-clone move.
+                printf 'ssot_path: projects/%s/lessons.yaml\n' "$PROJECT_ID"
                 printf "last_synced: '%s'\n" "$(date -Is)"
                 printf 'lesson_count: 0\n'
                 printf 'lessons:\n'

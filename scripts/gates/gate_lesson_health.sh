@@ -59,13 +59,83 @@ emit_actionable() {
     echo "action: $action"
 }
 
+# Resolve the SSOT path recorded in a generated lesson cache without trusting
+# an environment-specific absolute prefix.  sync_lessons.sh historically
+# persisted PROJECT_PATH verbatim, so a cache produced in a publish clone can
+# point at a deleted /tmp clone after it is consumed in another clone.  The
+# path contract is: prefer an existing recorded path; otherwise resolve a
+# relative path from the project root (infra uses this repository root), and
+# finally resolve the legacy absolute suffix against that same root.
+resolve_lesson_ssot_path() {
+    local pid="$1"
+    local recorded="$2"
+    local project_root=""
+    local relative=""
+    local candidate=""
+
+    project_root=$(awk -v pid="$pid" '
+        /^[[:space:]]*- id:/ {
+            current=$3
+            gsub(/["'"'"']/,"",current)
+            found=(current == pid)
+        }
+        found && /^[[:space:]]+path:/ {
+            value=$0
+            sub(/^[^:]+:[[:space:]]*/, "", value)
+            gsub(/["'"'"']/,"",value)
+            print value
+            exit
+        }
+    ' "$CONFIG_FILE" 2>/dev/null || true)
+
+    if [ -f "$recorded" ]; then
+        printf '%s\n' "$recorded"
+        return 0
+    fi
+
+    if [[ "$recorded" != /* ]]; then
+        if [[ "$recorded" == projects/${pid}/* ]]; then
+            candidate="$SCRIPT_DIR/$recorded"
+        elif [ "$pid" = "infra" ]; then
+            candidate="$SCRIPT_DIR/$recorded"
+        else
+            candidate="$project_root/$recorded"
+        fi
+        if [ -f "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    fi
+
+    case "$recorded" in
+        */tasks/lessons.md) relative="tasks/lessons.md" ;;
+        */projects/${pid}/lessons.yaml) relative="projects/${pid}/lessons.yaml" ;;
+    esac
+    if [ -n "$relative" ]; then
+        if [ "$pid" = "infra" ]; then
+            candidate="$SCRIPT_DIR/$relative"
+        elif [[ "$relative" == projects/${pid}/* ]]; then
+            candidate="$SCRIPT_DIR/$relative"
+        else
+            candidate="$project_root/$relative"
+        fi
+        if [ -f "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    fi
+
+    printf '%s\n' "$recorded"
+}
+
 check_ssot_conflict_markers() {
     local pid="$1"
     local lessons_file="$2"
     local ssot_path=""
+    local recorded_ssot_path=""
     local conflict_hits=""
 
-    ssot_path=$(awk '
+    recorded_ssot_path=$(awk '
         /^ssot_path:[[:space:]]*/ {
             sub(/^ssot_path:[[:space:]]*/, "", $0)
             gsub(/^["'"'"']|["'"'"']$/, "", $0)
@@ -73,6 +143,12 @@ check_ssot_conflict_markers() {
             exit
         }
     ' "$lessons_file" 2>/dev/null || true)
+
+    ssot_path=$(resolve_lesson_ssot_path "$pid" "$recorded_ssot_path")
+
+    if [ "$ssot_path" != "$recorded_ssot_path" ] && [ -n "$recorded_ssot_path" ]; then
+        echo "INFO: ${pid} SSOT path relocated: ${recorded_ssot_path} -> ${ssot_path}"
+    fi
 
     if [ -z "$ssot_path" ]; then
         emit_actionable \
