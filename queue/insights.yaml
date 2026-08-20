@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-164103963-69f6
-  ts: "2026-08-18T16:41:03+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_remote_tip_task_worktree_20260818; matched=bash,guard; current_pattern=; candidate_level=4; candidate=LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし); source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_remote_tip_task_worktree_20260818"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認でLG025(WF並列禁止)の既存Level4防御を確認済み。context/dm-signal-ops.md:512の直列実行原則と.claude/hooks/pre-bash-combined.sh:939-962のwf_runner.py BLOCKが候補内容を既に強制しており、本insightの新規実装・decision_candidateは不要。"
-  action_artifact: "primary=context/dm-signal-ops.md:512;guard=.claude/hooks/pre-bash-combined.sh:939-962;source_commit=e22291548;target=queue/insights.yaml:INS-20260818-164103963-69f6"
-  resolved_at: "2026-08-20T09:34:36+09:00"
 - id: INS-20260818-164506993-8a8f
   ts: "2026-08-18T16:45:06+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bpo23v56x task id tool use id toolu 01TBNZr7eLi8rn7B24 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -979,5 +969,12 @@ insights:
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
+  fix_known: false
+  status: pending
+- id: INS-20260820-123337540-3982
+  ts: "2026-08-20T12:33:37+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608201219_saizo; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608201219_saizo"
   fix_known: false
   status: pending
