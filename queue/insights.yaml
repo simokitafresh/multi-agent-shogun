@@ -970,7 +970,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:30-39でcmd_2271の認証試行錯誤・scope外174行・CDP教訓0件(target_path=outputs/非マッチ)を確認。scripts/cdp/cdp_measure.sh:5-16に認証pre-flight・cmd_id別artifact分離・一括化が現存し、GP-223/225/226で教訓注入精度も修正済み。今回のplanned_paths内に追加実修正・decision_candidateは不要。"
+  action_artifact: "primary=docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:30-39;context=context/dm-signal-frontend.md:249;guard=scripts/cdp/cdp_measure.sh:5-16;semantic=context/semantic-map.md:70;status=existing_defense_confirmed"
+  resolved_at: "2026-08-21T03:53:00+09:00"
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
