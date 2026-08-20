@@ -659,11 +659,12 @@ lessons:
     吸収(2026-08-02, cmd_karo_hotfix_context_freshness_ga426_20260802, origin: [[GA-426]] -> [[完了後直投入commit]] -> [[canonical_context_reflux_action]]): GA-426で完了境界caa26b5b後に外部repoへ直投入された155ab5e0はtask/report/cmd_complete相関0件のためown-commit gateでは捕捉不能だった。source backlog検出時はcontext/hashを結合したcanonical context_source_commit_set actionを自動提示する。実測はALERT 1→0、contract 57/57 PASS、SKIP0。
     吸収(2026-08-17, cmd_karo_hotfix_ga471_context_freshness_202608170345, origin: [[cmd_karo_hotfix_ga471_context_freshness_202608170345]] -> [[STALE_TEMPLATE_ROWSのhead-3候補欠落]] -> [[Level5候補全件出力]]): 4件以上の同時stale contextでSTALE_TEMPLATE_ROWSのhead -3が候補を欠落させ、更新cmd入力から同カテゴリ対象が消えた。候補上限制限を除去し、4件敵対fixtureで全件purpose生成を固定する。
     吸収(2026-08-17, cmd_karo_hotfix_ga473_context_freshness_202608171419, origin: [[GA-473_context_freshness_ALERT]] -> [[detectorとreflux_guardの契約分離]] -> [[canonical_receipt消費]]): source marker後のdocs/research commitを件数だけでstale判定すると、guardが保存したpath/status/blob fingerprint一致の既反映commitまで再警告する。detectorは同一canonical fingerprintを再計算し、receipt一致だけを除外し、不一致は未反映として残す。修正前4件→修正後2件、真の未反映2件は残してBLOCK。
+    吸収(2026-08-20, cmd_karo_hotfix_ga485_context_freshness_202608201036, origin: [[GA-485]] -> [[raw context freshness ALERTがstdoutのみ]] -> [[shogun doc-lane durable route]]): GA-485でcore/opsのraw freshness ALERTが更新cmdテンプレートstdoutだけに留まり、stdout非消費callerでは将軍laneへ届かなかった。source ALERTを隠さず、登録対象をdeterministic payloadへ正規化してbulletinへrouteし、配送失敗をBLOCK、同一署名はdedupeする。実測はsource ALERT 3件を保持しつつdoc-lane route 1件・候補4件・route失敗時BLOCK、scoped test 12/12 PASS・SKIP0。
   source_cmd: 'cmd_karo_hotfix_ga120_context_freshness_recon_20260623'
   when: 'context_freshness ALERT調査・報告レビュー時'
   how: '報告YAMLの原因欄に timeout秒数/root_fallback有無/repo path/commit_count/source commits を数値で記録し、cache有無だけで判定しない'
   created_at: '2026-06-23'
-  enforcement: "Level5: stale候補を上限なしで更新cmd入力へ全件供給し、4件以上の敵対fixtureでN/N purpose出力を契約化"
+  enforcement: "Level5: stale候補を上限なしで更新cmd入力へ全件供給し、source ALERT全件をdeterministic payloadで将軍doc laneへ永続配送する。配送失敗はBLOCK、同一署名はdedupeする。"
   enforcement_level: 5
 - id: 'LK010'
   title: 'AUTO-VOIDはsubtask_idを優先して分割taskを守る'
