@@ -15433,3 +15433,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - task worktreeはshared rootの未commitbytesを自動継承しないため、dirty収束taskがclean HEADだけを観測してAC1停止する。再配備時はshared rootの一次diffをLevel5コンテキストとしてtask worktreeへ再現してからcommitする仕組みが必要。
+
+### L1624: affected非空選択はengine dispatcherへ接続する
+- **日付**: 2026-08-20
+- **出典**: cmd_karo_hotfix_affected_mixed_engine_202608201740
+- **記録者**: kagemaru
+- **tags**: [infra,testing,frontend,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_affected_mixed_engine_202608201740]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- affected分岐がrun_bats_files_parallelへ直接渡すと.py選択がBATSへ流れて内側rc=127になる。次回はaffectedの選択結果を必ずrun_task_test_pathsへ渡し、.py/.bats/mixedの各engine回数をcontract testで固定する
