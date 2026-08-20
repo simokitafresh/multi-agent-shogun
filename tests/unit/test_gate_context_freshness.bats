@@ -10,6 +10,11 @@ setup() {
 #!/usr/bin/env bash
 echo 'ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19; latest: abc1234 fixture'
 SH
+  BULLETIN_SCRIPT="$BATS_TEST_TMPDIR/default-bulletin-write.sh"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$BULLETIN_SCRIPT"
+  chmod +x "$BULLETIN_SCRIPT"
+  export CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$BULLETIN_SCRIPT"
+  export CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/default-bulletin-state"
 }
 
 @test "ALERT template requires source commit boundary and zero unresolved commits" {
@@ -100,6 +105,88 @@ SH
   [ "$status" -eq 0 ]
   [[ "$output" == *"総合判定: OK"* ]]
   [[ "$output" != *"ALERT:"* ]]
+}
+
+# test_necessity: each unresolved raw ALERT must be durably routed once to the
+# Shogun doc lane, while retries with identical content remain deduplicated.
+@test "raw ALERT doc-lane notification deduplicates successful content and retries changes" {
+  bulletin_capture="$BATS_TEST_TMPDIR/bulletin-capture"
+  bulletin_script="$BATS_TEST_TMPDIR/bulletin_write.sh"
+  cat > "$bulletin_script" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "${BULLETIN_NOTIFY:-}|$1|$2|$3|$4" >> "$BULLETIN_CAPTURE"
+SH
+  chmod +x "$bulletin_script"
+
+  run env \
+    BULLETIN_CAPTURE="$bulletin_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/bulletin-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-raw-alert" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [ "$(wc -l < "$bulletin_capture")" -eq 1 ]
+  [[ "$(cat "$bulletin_capture")" == shogun\|gate_context_freshness\|DOC_LANE_ALERT:*\|false\|action_required ]]
+  [ "$(find "$BATS_TEST_TMPDIR/bulletin-state" -type f -name '*.sent' | wc -l)" -eq 1 ]
+
+  run env \
+    BULLETIN_CAPTURE="$bulletin_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/bulletin-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-raw-alert" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [ "$(wc -l < "$bulletin_capture")" -eq 1 ]
+  [ "$(find "$BATS_TEST_TMPDIR/bulletin-state" -type f -name '*.sent' | wc -l)" -eq 1 ]
+
+  sed -i 's/abc1234/def5678/' "$FIXTURE_ROOT/scripts/check.sh"
+  run env \
+    BULLETIN_CAPTURE="$bulletin_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/bulletin-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-raw-alert" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [ "$(wc -l < "$bulletin_capture")" -eq 2 ]
+  [ "$(find "$BATS_TEST_TMPDIR/bulletin-state" -type f -name '*.sent' | wc -l)" -eq 2 ]
+}
+
+# test_necessity: a failed doc-lane write must remain a blocking gate result
+# and must not leave a dedupe marker that would suppress a later retry.
+@test "raw ALERT bulletin failure blocks without persisting success state" {
+  bulletin_script="$BATS_TEST_TMPDIR/failing-bulletin-write.sh"
+  printf '#!/usr/bin/env bash\nexit 1\n' > "$bulletin_script"
+  chmod +x "$bulletin_script"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/failed-bulletin-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-failed-alert" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"raw ALERTのdoc-lane永続通知に失敗"* ]]
+  [[ "$output" == *"総合判定: BLOCK"* ]]
+  [ "$(find "$BATS_TEST_TMPDIR/failed-bulletin-state" -type f -name '*.sent' | wc -l)" -eq 0 ]
 }
 
 @test "approved archived infra report routes root-fallback source to its owner" {

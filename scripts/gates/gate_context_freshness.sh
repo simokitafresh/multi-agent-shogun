@@ -34,6 +34,7 @@ TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
 CACHE_TTL="${CONTEXT_FRESHNESS_GATE_CACHE_TTL:-300}"
 ALERT_DEBOUNCE_SECONDS="${CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS:-86400}"
 ALERT_STATE_DIR="${CONTEXT_FRESHNESS_ALERT_STATE_DIR:-/tmp/gate_context_freshness_alerts}"
+BULLETIN_STATE_DIR="${CONTEXT_FRESHNESS_BULLETIN_STATE_DIR:-$ALERT_STATE_DIR/bulletin}"
 # GA-245: 旧既定1秒は、このリポジトリの実行環境(9pマウント/mnt/c)でのgit log
 # 実測所要時間(集約後でも1回あたり3〜8秒、不安定域は6秒以下で実証)を大幅に
 # 下回っており、対象のほぼ全件がtimeoutする根本原因だった。context_freshness_check.sh
@@ -430,6 +431,55 @@ notify_context_alert() {
     fi
 }
 
+notify_raw_context_alert() {
+    local rel_path="$1"
+    local alert_line="$2"
+    local content alert_hash state_file state_tmp
+
+    content="DOC_LANE_ALERT: context=${rel_path} raw_alert=${alert_line}"
+    alert_hash="$(printf '%s' "$content" | sha256sum | awk '{print $1}')"
+    state_file="$BULLETIN_STATE_DIR/${alert_hash}.sent"
+
+    if [[ -f "$state_file" ]]; then
+        echo "[gate_context_freshness] bulletin skip: same raw ALERT already persisted: ${rel_path}" >&2
+        return 0
+    fi
+
+    if [[ ! -x "$BULLETIN_SCRIPT" ]]; then
+        emit_actionable \
+            "BLOCK: ${rel_path} (raw ALERTのdoc-lane永続通知scriptなし)" \
+            "bulletin_write.shを復旧し、raw ALERTを将軍doc laneへ永続化してから再実行せよ。"
+        return 1
+    fi
+
+    if ! mkdir -p "$BULLETIN_STATE_DIR" 2>/dev/null; then
+        emit_actionable \
+            "BLOCK: ${rel_path} (raw ALERTのdoc-lane state領域を作成できない)" \
+            "BULLETIN_STATE_DIR=${BULLETIN_STATE_DIR} の書込み権限を復旧して再実行せよ。"
+        return 1
+    fi
+
+    if ! BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" \
+            gate_context_freshness "$content" false action_required >/dev/null 2>&1; then
+        emit_actionable \
+            "BLOCK: ${rel_path} (raw ALERTのdoc-lane永続通知に失敗)" \
+            "bulletin_write.shの失敗を解消し、将軍doc laneへのraw ALERT永続通知を再実行せよ。"
+        return 1
+    fi
+
+    # Persist the dedupe marker only after bulletin_write has returned success.
+    # A failed notification must remain retryable on the next gate invocation.
+    state_tmp="${state_file}.$$"
+    if ! printf '%s\n' "$content" > "$state_tmp" || ! mv "$state_tmp" "$state_file"; then
+        emit_actionable \
+            "BLOCK: ${rel_path} (raw ALERT通知成功後のdedupe state保存に失敗)" \
+            "BULLETIN_STATE_DIR=${BULLETIN_STATE_DIR} のatomic書込みを復旧して再実行せよ。"
+        return 1
+    fi
+    echo "[gate_context_freshness] bulletin persisted: ${rel_path}" >&2
+    return 0
+}
+
 TODAY_EPOCH=""
 
 today_epoch() {
@@ -553,6 +603,13 @@ if [[ "${#target_rel_paths[@]}" -eq 0 ]]; then
     exit 0
 fi
 
+# The checker is allowed to emit paths in repository-dependent order.  Sort
+# the deduped target set before any doc-lane side effect so repeated runs have
+# a stable notification order.
+if [[ "${#target_rel_paths[@]}" -gt 1 ]]; then
+    mapfile -t target_rel_paths < <(printf '%s\n' "${target_rel_paths[@]}" | sort -u)
+fi
+
 for rel_path in "${target_rel_paths[@]}"; do
     file="$ROOT_DIR/$rel_path"
     [[ -f "$file" ]] || continue
@@ -637,6 +694,9 @@ for rel_path in "${target_rel_paths[@]}"; do
         emit_actionable \
             "ALERT: ${basename_file} (source commits since last_updated=${last_updated})" \
             "$(source_commit_action "$rel_path" "${source_alerts[$rel_path]}")"
+        if ! notify_raw_context_alert "$rel_path" "${source_alerts[$rel_path]}"; then
+            HAS_BLOCK=1
+        fi
         HAS_ALERT=1
         ALERT_LIST+=("${basename_file}(source更新)")
     elif [[ -n "${check_failed_paths[$rel_path]:-}" ]]; then
@@ -667,11 +727,14 @@ if [[ "$HAS_ALERT" -gt 0 && "${#ALERT_LIST[@]}" -gt 0 && -f "$NTFY_SCRIPT" ]]; t
     notify_context_alert "$alert_summary"
 fi
 
+if [[ "$HAS_ALERT" -gt 0 ]]; then
+    emit_update_cmd_templates
+fi
+
 if [[ "$HAS_BLOCK" -gt 0 ]]; then
     echo "--- 総合判定: BLOCK ---"
     exit 1
 elif [[ "$HAS_ALERT" -gt 0 ]]; then
-    emit_update_cmd_templates
     echo "--- 総合判定: ALERT ---"
     exit 1
 elif [[ "$HAS_WARN" -gt 0 ]]; then
