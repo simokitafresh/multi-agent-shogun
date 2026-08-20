@@ -603,7 +603,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "cmd_karo_hotfix_ac_column_contract_preflight_202608201424でAC列契約とランキング要求の集合差をcmd_save.sh保存前BLOCKへ実装・GATE CLEAR済み"
+  action_artifact: "scripts/cmd_save.sh:1116,1260,1264,4311; commit=15e8a992b"
+  resolved_at: "2026-08-20T16:17:28+09:00"
 - id: INS-20260818-235632856-6b5d
   ts: "2026-08-18T23:56:32+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_秘奥義21体組合せ探索_20260818_2129]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=24.8) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0000; score=20.7) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.7)。概念定義とaliases追加を検討せよ"
@@ -994,7 +997,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608201219_saizo"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行scripts/archive_completed.shのarchive_cmdsはQUEUE_FILE分類読込とmv更新を同一flock内に包含済み。指摘は旧行番号/旧実装に基づく偽陽性"
+  action_artifact: "scripts/archive_completed.sh:877-883,889-976; git_blame=29d15d42d3/6592194178"
+  resolved_at: "2026-08-20T16:18:20+09:00"
 - id: INS-20260820-150103679-64bf
   ts: "2026-08-20T15:01:03+09:00"
   insight: "--inventory"
