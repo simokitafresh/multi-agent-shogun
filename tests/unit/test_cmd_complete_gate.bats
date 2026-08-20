@@ -6594,6 +6594,79 @@ PY
     [ "$output" = "field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1" ]
 }
 
+# test_necessity: a non-runtime dirty path already equal to fresh upstream is
+# a converged writer result and must not block the pregate runtime classifier.
+# regression_justification: shared skills/ninja-commit/SKILL.md remained dirty
+# after publication even though its working blob already matched origin/main.
+@test "pregate nonruntime dirty path with fresh upstream-identical blob converges" {
+    run bash -c '
+        set -euo pipefail
+        source <(sed -n "/^postclear_runtime_path_is_publishable()/,/^}/p; /^publish_postclear_runtime_deltas()/,/^}/p" "$1")
+        root="$2"
+        mkdir -p "$root"
+        git init -q --bare "$root/origin.git"
+        git init -q -b main "$root/repo"
+        git -C "$root/repo" config user.email fixture@example.invalid
+        git -C "$root/repo" config user.name Fixture
+        git -C "$root/repo" remote add origin "$root/origin.git"
+        mkdir -p "$root/repo/skills/ninja-commit"
+        printf "old\\n" > "$root/repo/skills/ninja-commit/SKILL.md"
+        git -C "$root/repo" add .
+        git -C "$root/repo" commit -q -m base
+        git -C "$root/repo" push -q -u origin main
+        git clone -q -b main "$root/origin.git" "$root/publisher"
+        git -C "$root/publisher" config user.email fixture@example.invalid
+        git -C "$root/publisher" config user.name Fixture
+        printf "new\\n" > "$root/publisher/skills/ninja-commit/SKILL.md"
+        git -C "$root/publisher" add .
+        git -C "$root/publisher" commit -q -m upstream
+        git -C "$root/publisher" push -q origin main
+        printf "new\\n" > "$root/repo/skills/ninja-commit/SKILL.md"
+        SCRIPT_DIR="$root/repo" GATES_DIR="$root/gates" CMD_ID=fixture SHOGUN_COMPLETION_GENERATION=gen \
+            publish_postclear_runtime_deltas pregate
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$BATS_TEST_TMPDIR/pregate-converged"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"converged nonruntime path=skills/ninja-commit/SKILL.md"* ]]
+    [[ "$output" == *"runtime publish: clean (tracked runtime dirty=0)"* ]]
+}
+
+# test_necessity: a non-runtime dirty path with even a one-byte difference from
+# fresh upstream remains a genuine conflict and must block the pregate lane.
+# regression_justification: the convergence exception must not hide real code
+# changes behind the shared-writer false-positive fix.
+@test "pregate nonruntime dirty path with one-byte blob difference blocks" {
+    run bash -c '
+        set -euo pipefail
+        source <(sed -n "/^postclear_runtime_path_is_publishable()/,/^}/p; /^publish_postclear_runtime_deltas()/,/^}/p" "$1")
+        root="$2"
+        mkdir -p "$root"
+        git init -q --bare "$root/origin.git"
+        git init -q -b main "$root/repo"
+        git -C "$root/repo" config user.email fixture@example.invalid
+        git -C "$root/repo" config user.name Fixture
+        git -C "$root/repo" remote add origin "$root/origin.git"
+        mkdir -p "$root/repo/skills/ninja-commit"
+        printf "old\\n" > "$root/repo/skills/ninja-commit/SKILL.md"
+        git -C "$root/repo" add .
+        git -C "$root/repo" commit -q -m base
+        git -C "$root/repo" push -q -u origin main
+        git clone -q -b main "$root/origin.git" "$root/publisher"
+        git -C "$root/publisher" config user.email fixture@example.invalid
+        git -C "$root/publisher" config user.name Fixture
+        printf "new\\n" > "$root/publisher/skills/ninja-commit/SKILL.md"
+        git -C "$root/publisher" add .
+        git -C "$root/publisher" commit -q -m upstream
+        git -C "$root/publisher" push -q origin main
+        printf "not-new\\n" > "$root/repo/skills/ninja-commit/SKILL.md"
+        if SCRIPT_DIR="$root/repo" GATES_DIR="$root/gates" CMD_ID=fixture SHOGUN_COMPLETION_GENERATION=gen \
+            publish_postclear_runtime_deltas pregate; then
+            exit 91
+        fi
+    ' _ "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$BATS_TEST_TMPDIR/pregate-mismatch"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK (nonruntime dirty path=skills/ninja-commit/SKILL.md blob mismatch)"* ]]
+}
+
 # test_necessity: publishers for one shared repository must be admitted one at
 # a time and must derive generation/dirty state after admission; genuine byte,
 # path, push and merge conflicts remain fail-closed.
