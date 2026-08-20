@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260818-164103963-69f6
-  ts: "2026-08-18T16:41:03+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_remote_tip_task_worktree_20260818; matched=bash,guard; current_pattern=; candidate_level=4; candidate=LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし); source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_remote_tip_task_worktree_20260818"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認でLG025(WF並列禁止)の既存Level4防御を確認済み。context/dm-signal-ops.md:512の直列実行原則と.claude/hooks/pre-bash-combined.sh:939-962のwf_runner.py BLOCKが候補内容を既に強制しており、本insightの新規実装・decision_candidateは不要。"
-  action_artifact: "primary=context/dm-signal-ops.md:512;guard=.claude/hooks/pre-bash-combined.sh:939-962;source_commit=e22291548;target=queue/insights.yaml:INS-20260818-164103963-69f6"
-  resolved_at: "2026-08-20T09:34:36+09:00"
-- id: INS-20260818-164506993-8a8f
-  ts: "2026-08-18T16:45:06+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bpo23v56x task id tool use id toolu 01TBNZr7eLi8rn7B24 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T16:45:19+09:00"
 - id: INS-20260818-164520403-b48d
   ts: "2026-08-18T16:45:20+09:00"
   insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -680,7 +660,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4357"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存のCDP計測4 Phase実装とfixture consumer 10/10 PASSを確認。新規実装・decision_candidate不要"
+  action_artifact: "scripts/cdp/cdp_measure.sh:8-16,88-230; scripts/cdp/run_consumer_focused.sh:1-230; docs/semantic-index/index.md:7753-7754"
+  resolved_at: "2026-08-20T11:52:45+09:00"
 - id: INS-20260819-000418253-6f45
   ts: "2026-08-19T00:04:18+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4357; matched=レビュー,実行; current_pattern=回転の自動化 — 報告完了で軍師レビュー依頼を自動送出し、両承認が揃ったらcmd_complete_gateを自動実行する(GATE-STALL警告を実行へ); candidate_level=2; candidate=verdict_override WA 6件中5件がAC設計ミス。draftレビューStep 3で事前検出する観点が不在だった; source=gunshi_gp_tracker.yaml"
@@ -978,3 +961,20 @@ insights:
   source: "skill_script_refs:8adb59e2082ff964"
   fix_known: false
   status: pending
+- id: INS-20260820-115322343-b4f0
+  ts: "2026-08-20T11:53:22+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608201113_saizo; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608201113_saizo"
+  fix_known: false
+  status: pending
+- id: INS-20260820-115337185-4fa2
+  ts: "2026-08-20T11:53:37+09:00"
+  insight: "[[GA 485送信側根治 — 現行gateにraw ALERTのdoc lane永続通知処理が0件であるため]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: google_classroom(Google Classroom Dashboard; alias=GA p average freshness ALERT調査 — 現在gateはOKだが2026 36にALERTが発火; score=11.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTの4対象 codd md; score=8.5) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=GA 436のcontext dm signal ops鮮度警報を一次情報で検証し; score=8.0)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-20T11:53:45+09:00"
