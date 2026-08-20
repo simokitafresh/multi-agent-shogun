@@ -19,16 +19,6 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-18T16:45:19+09:00"
-- id: INS-20260818-164520403-b48d
-  ts: "2026-08-18T16:45:20+09:00"
-  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_ci_fix_32102040949_delivery_identity_tests_20260818 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T16:45:27+09:00"
 - id: INS-20260818-183330427-7e9c
   ts: "2026-08-18T18:33:30+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b2z2fvb2j task id tool use id toolu 01VCgGZapXqZJgYhpQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -979,5 +969,12 @@ insights:
   insight: "SKILL.md追従task[8adb59e2082ff964]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:8adb59e2082ff964"
+  fix_known: false
+  status: pending
+- id: INS-20260820-121458364-9c81
+  ts: "2026-08-20T12:14:58+09:00"
+  insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
   status: pending
