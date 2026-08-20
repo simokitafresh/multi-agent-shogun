@@ -969,7 +969,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210433_hayate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: GP-032はGP-197へ置換済み。現行.claude/hooks/post-write-edit-combined.sh Guard1(lines 64-78)がreport YAMLへyaml.safe_load構文検証を実装し、logs/gunshi_gp_tracker.yamlのGP-197(lines 370-379)にimplementedと正常/破損YAMLの実行証跡があるため、追加実修正・decision_candidateは不要。"
+  action_artifact: "primary=.claude/hooks/post-write-edit-combined.sh:64-78;tracker=logs/gunshi_gp_tracker.yaml:370-379;test_evidence=tracker evidence:正常YAML exit 0・壊れたYAML exit 1+parse error・shellcheck clean;semantic=context/semantic-map.md:105;inventory_before_task=insights_pending:2,zero_backlinks:2,promotions:0,total:4"
+  resolved_at: "2026-08-21T08:28:33+09:00"
 - id: INS-20260821-055638139-5f7c
   ts: "2026-08-21T05:56:38+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id byymqv7bw task id tool use id toolu 01GjZZG81rrNjY161q は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -986,7 +989,4 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: GP-032はGP-197へ置換済み。現行.claude/hooks/post-write-edit-combined.sh Guard1(lines 64-78)がreport YAMLへyaml.safe_load構文検証を実装し、logs/gunshi_gp_tracker.yamlのGP-197(lines 370-379)にimplementedと正常/破損YAMLの実行証跡があるため、追加実修正・decision_candidateは不要。"
-  action_artifact: "primary=.claude/hooks/post-write-edit-combined.sh:64-78;tracker=logs/gunshi_gp_tracker.yaml:370-379;test_evidence=tracker evidence:正常YAML exit 0・壊れたYAML exit 1+parse error・shellcheck clean;semantic=context/semantic-map.md:105;inventory_before_task=insights_pending:2,zero_backlinks:2,promotions:0,total:4"
-  resolved_at: "2026-08-21T08:28:33+09:00"
+  status: pending
