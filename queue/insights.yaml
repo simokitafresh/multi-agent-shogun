@@ -970,7 +970,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210159_hayate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で根因と現行防御を再確認。根因はlogs/gunshi_gp_tracker.yaml:580-588のWSL2 NTFS上のflock+stat+write蓄積によるdeploy_task 30秒timeoutだが、現行scripts/deploy_task.sh:66-76の/tmp lock domain、L167-168のFIELD_GET_NO_LOG、L204-280のwave cache、L760-781の内部deadlineで既存防御済み。追加実修正・decision_candidateは不要。"
+  action_artifact: "primary=logs/gunshi_gp_tracker.yaml:580-588; defense=scripts/deploy_task.sh:66-76,167-168,204-280,760-781; semantic=context/infrastructure.md:150-154; semantic_index=docs/semantic-index/index.md:14092-14097; result=existing_defense_confirmed"
+  resolved_at: "2026-08-21T05:24:05+09:00"
 - id: INS-20260821-025624452-5e64
   ts: "2026-08-21T02:56:24+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
