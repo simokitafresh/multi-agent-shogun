@@ -15368,3 +15368,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - task_scope_root()はtask_worktree_pathを_task_rootとして採用するが、run_tests.sh task内部の[ -x "$_task_root/scripts/run_tests.sh" ]判定はDrvFs(/mnt/c)上のmain repoではmode 777表示のため常にtrueだが、/tmp配下のtask worktree(ext4)はgit tracked mode(100644)通りnon-executableで展開されるためfalseとなり、正規のaffected経路へ入らずexternal(backend/frontend)判定へ落ち、infra taskでもexternal_scope_no_mapped_testsでBLOCKする。回避策: bash scripts/run_tests.sh file <path>をworktree内から直接実行する(file modeはこの分岐を通らない)。恒久対処はtask_scope_root/run_tests.sh task分岐でexecutable bitに依存せずbash経由で呼び出す、または対象を判定すること(本taskでは家老裁定によりD0修正せずlesson_candidateへ記録のみとした)
+
+### L1619: 生成cacheのSSOT pathは移設可能な相対契約にする
+- **日付**: 2026-08-20
+- **出典**: cmd_karo_hotfix_ga484_lesson_health_202608200754
+- **記録者**: saizo
+- **tags**: [infra,gate,gate,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_lesson_health.sh,scripts/lesson_write.sh,projects/infra/lessons.yaml,projects/dm-signal/lessons.yaml,projects/infra/lessons_shogun.yaml]
+- **origin**: [[cmd_karo_hotfix_ga484_lesson_health_202608200754]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- publish clone固有の絶対ssot_pathをcacheへ保存すると、別cloneでSSOT欠落の誤警告になる。writerは相対pathを生成し、gateはlegacy absolute suffixを現在のproject rootへ解決して真の欠落だけを検出する。

@@ -938,3 +938,10 @@ insights:
   source: "skill_script_refs:0fa91f7eaa70779c"
   fix_known: false
   status: pending
+- id: INS-20260820-090908792-a92d
+  ts: "2026-08-20T09:09:08+09:00"
+  insight: "semantic_index_update新概念候補: lesson:L1619 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
