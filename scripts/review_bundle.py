@@ -139,6 +139,7 @@ def _snapshot_command(root, report, cmd_id, report_path=None):
 #   cmd_karo_*            karo-direct deployment
 #   cmd_reflux_promotion_ ninja_monitor's promotion reflux auto-deployment
 SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_", "cmd_shogun_")
+_APPROVE_REPORT_STATES = {("completed", "PASS"), ("completed", "PASS_NO_IMPROVEMENT")}
 
 
 def _saved_command(root, cmd_id):
@@ -206,10 +207,10 @@ def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=
         # The review verdict and the reporter's verdict are separate axes.  A
         # reviewer may legitimately reject a completed/PASS report; requiring
         # the reporter to rewrite it as failed/FAIL destroys the evidence that
-        # was reviewed.  APPROVE remains strict, while FAIL accepts either a
-        # rejected success claim or an already self-reported failure.
+        # was reviewed.  APPROVE accepts either completed success state, while
+        # FAIL accepts either a rejected success claim or an already self-reported failure.
         allowed = ({("completed", "PASS"), ("failed", "FAIL")} if requested_verdict == "FAIL"
-                   else {("completed", "PASS")})
+                   else _APPROVE_REPORT_STATES)
         if state not in allowed:
             expected = " or ".join(f"{status}/{verdict}" for status, verdict in sorted(allowed))
             raise ValueError(f"autogen spec fallback requires {expected} report")
@@ -386,8 +387,9 @@ def generate(args):
     verdict = args.verdict.upper()
     command, source = find_command(root, args.cmd, report_data, report_ref, verdict)
     if verdict == "APPROVE":
-        if str(report_data.get("status") or "") != "completed" or str(report_data.get("verdict") or "").upper() != "PASS":
-            raise ValueError("APPROVE requires completed/PASS report")
+        report_state = (str(report_data.get("status") or ""), str(report_data.get("verdict") or "").upper())
+        if report_state not in _APPROVE_REPORT_STATES:
+            raise ValueError("APPROVE requires completed/PASS or completed/PASS_NO_IMPROVEMENT report")
         hook_failures = report_data.get("hook_failures")
         if isinstance(hook_failures, dict) and int(hook_failures.get("count") or 0) != 0:
             _require_hook_failures_resolved(hook_failures)

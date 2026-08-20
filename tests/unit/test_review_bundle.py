@@ -450,3 +450,38 @@ def test_review_and_report_verdict_axes_contract(
     else:
         with pytest.raises(ValueError):
             review_bundle.generate(args)
+
+
+def test_approve_accepts_completed_pass_no_improvement_from_autogen_snapshot(tmp_path):
+    """test_necessity: APPROVE must preserve a measured no-improvement report as a valid success state.
+
+    regression_justification: the autogen fallback and APPROVE validation each
+    previously admitted only completed/PASS, blocking truthful PASS_NO_IMPROVEMENT
+    reports before review_bundle could generate the approval bundle.
+    """
+    root = _root(tmp_path)
+    cmd = "cmd_karo_pass_no_improvement"
+    report = root / f"queue/reports/worker_report_{cmd}.yaml"
+    task = root / "queue/tasks/worker.yaml"
+    task.write_text(
+        f"task:\n  parent_cmd: {cmd}\n  task_id: {cmd}_normal\n  ac_version: ac1\n"
+        f"  report_id: rpt-no-improvement\n  report_filename: {report.name}\n",
+        encoding="utf-8",
+    )
+    report.write_text(
+        f"parent_cmd: {cmd}\ntask_id: {cmd}_normal\nworker_id: worker\n"
+        "report_id: rpt-no-improvement\nac_version_read: ac1\n"
+        "status: completed\nverdict: PASS_NO_IMPROVEMENT\n"
+        "binary_checks: {AC1: [{result: yes}]}\nresult: {summary: measured no improvement}\n"
+        f"task_contract_snapshot: {{parent_cmd: {cmd}, issued_cmd_id: {cmd}, task_id: {cmd}_normal, "
+        "ac_fingerprint: ac1, purpose: probe, acceptance_criteria: [one], project: infra}\n",
+        encoding="utf-8",
+    )
+    args = SimpleNamespace(
+        root=str(root), report=str(report), cmd=cmd, verdict="APPROVE",
+        allow_archived=False, fail_reason=None,
+    )
+
+    assert review_bundle.generate(args) == 0
+    bundle = review_bundle.load(root / f"queue/gates/{cmd}/sg7_bundle.json")
+    assert bundle["review"]["verdict"] == "APPROVE"
