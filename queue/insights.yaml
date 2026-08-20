@@ -950,37 +950,31 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認で、cmd_2271のCDP教訓未注入と認証試行錯誤は既存のCDP preflight・認証・artifact分離経路およびcontext/semantic-mapへ反映済み。新規修正・decision_candidate不要。"
-  action_artifact: "primary=docs/research/gunshi_nazenaze_cdp_measurement_20260426.md;current=scripts/cdp/cdp_measure.sh,/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh;context=docs/research/cdp-skill-flow-inventory-20260802.md;verified_at=2026-08-21T06:01:00+09:00"
-  resolved_at: "2026-08-21T06:01:26+09:00"
+  status: pending
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210159_hayate"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: logs/gunshi_gp_tracker.yaml:579-588 のGP-224が同一主張を記録しstatus=obsolete。2026-04-26直近10件のdeploy_task実測は5-14秒(max14秒)、30秒timeout到達0件で自然解消。現行scripts/deploy_task.sh:167-168,259-276でFIELD_GET_NO_LOG最適化とqueue/locksのflock期限を確認し、新規修正・decision_candidateは不要。"
-  action_artifact: "primary=logs/gunshi_gp_tracker.yaml:579-588;impl=scripts/deploy_task.sh:167-168,259-276;lesson=tasks/lessons.md:14952-14966;classification=stale_duplicate_of_obsolete_GP-224"
-  resolved_at: "2026-08-21T06:18:00+09:00"
+  status: pending
 - id: INS-20260821-025624452-5e64
   ts: "2026-08-21T02:56:24+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次検証: gate_skill_script_refs.sh RC=2は既存FOLLOWUP_ACTIVE=7によるREVIEW_REQUIREDで、対象7組を含む参照先欠落0・鮮度不足0・静的パス欠落0・副作用実走マーカー欠落0。追加の実修正・decision_candidateは不要。"
-  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;followup_active=7;followup_covers_review_required=yes;all_checks=OK;verified_at=2026-08-21T06:31:51+09:00;target=INS-20260821-025624452-5e64"
-  resolved_at: "2026-08-21T06:31:51+09:00"
+  status: pending
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210318_hayate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証で既存実装により解消済み。deploy_task.shのdirect_modeは正本キュー未掲載cmdを--direct --yamlでcmd解決なしに受け付け、cmd_forcedは正本キュー外cmdをparent_cmd/task_idへ直接設定する。実装済み回帰テスト99/99 PASS・SKIP 0で追加修正とdecision_candidateは不要。"
+  action_artifact: "primary=scripts/deploy_task.sh:14265-14308;regression=tests/unit/test_deploy_task_lifecycle.bats:1224-1269;receipt=logs/test_receipts/run_tests_20260820T214058_1743255.json;inventory_before=insights_pending:4,zero_backlinks:2,promotions:890,total:896"
+  resolved_at: "2026-08-21T06:45:06+09:00"
 - id: INS-20260821-034535995-99b2
   ts: "2026-08-21T03:45:35+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
