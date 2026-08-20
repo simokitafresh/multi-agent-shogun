@@ -15459,3 +15459,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 同一target docs/research/karo_rootfix_release_ninja_on_done_unarchived_20260818.mdへkagemaru/tobisaru/saizoが並列配備された。origin/mainの既存incomingとactive/remote reservationをdeploy前に照合し、既存成果または同一targetのactive taskがあれば新規配備をBLOCKする防御を追加すべきである。
+
+### L1626: gitignored semantic SSOTをtask worktreeへ注入する
+- **日付**: 2026-08-21
+- **出典**: cmd_reflux_backlink_202608201818_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,context]
+- **subdomain**: infra
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_reflux_backlink_202608201818_kagemaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- docs/semantic-index/index.mdは共有rootに存在してもgitignoredのためtask worktreeへ自動配備されず、generatorが入力欠落で停止する。配備時にignored SSOTのbytesをplanned targetへ注入し、再現証跡を残す必要がある
