@@ -75,7 +75,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:a680cd19c5e960e7"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検分で対象38契約hash変更を再確認。参照先欠落0件、SKILL鮮度不足0件、例示パス欠落0件、副作用実走マーカー欠落0件。現行gateのRC2は対象外のFOLLOWUP_ACTIVE 3組であり、対象SKILL本文の追従修正・decision_candidateは不要。"
+  action_artifact: "SKILL_REF gate rc2再実行: scanned=41 skills, refs=82, missing=0, stale_target_pairs=0; target inventory resolve via scripts/insight_write.sh --resolve; gate overall review_required is unrelated active followups"
+  resolved_at: "2026-08-20T09:56:32+09:00"
 - id: INS-20260818-193702528-48db
   ts: "2026-08-18T19:37:02+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bkzjhpkxs task id tool use id toolu 01TWgbmRHgSEuZLdgz は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
