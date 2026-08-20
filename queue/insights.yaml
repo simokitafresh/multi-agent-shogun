@@ -1000,7 +1000,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210318_hayate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存防御を確認済み。deploy_task.shにcmd台帳外の事前task YAML配備(--yaml)と強制cmd配備(--cmd)の正規経路が現存し、task YAMLの直接Write/Editはpre-write-read-tracker.shがdenyしてdeploy_task.sh/yaml_field_set経路を要求する。追加実修正・decision_candidateは不要。"
+  action_artifact: "primary=scripts/deploy_task.sh:1778-1800;guard=.claude/hooks/pre-write-read-tracker.sh:41-53;context=context/training-cycle.md:833-841;checks=bash -n PASS;inventory_before=insights_pending:3,zero_backlinks:2,promotions:0,total:5;inventory_after=insights_pending:2,zero_backlinks:2,promotions:0,total:4;result=existing_defense_confirmed"
+  resolved_at: "2026-08-21T04:38:46+09:00"
 - id: INS-20260821-034535995-99b2
   ts: "2026-08-21T03:45:35+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
