@@ -15381,3 +15381,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - publish clone固有の絶対ssot_pathをcacheへ保存すると、別cloneでSSOT欠落の誤警告になる。writerは相対pathを生成し、gateはlegacy absolute suffixを現在のproject rootへ解決して真の欠落だけを検出する。
+
+### L1620: bash経由scriptの能力判定はinvocationに合わせreadable regular fileへ揃える
+- **日付**: 2026-08-20
+- **出典**: cmd_karo_hotfix_ga486_bulletin_readability_202608201431
+- **記録者**: hanzo
+- **tags**: [infra,gate,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,scripts/auto_failure_lesson.sh]
+- **origin**: [[cmd_karo_hotfix_ga486_bulletin_readability_202608201431]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-485からGA-486への因果として、bulletin_write.shをbash経由で呼ぶcallerが実行bit(-x)を必要能力と誤認し、mode=0644のreadable scriptを誤BLOCK/fail-openしていた。invocation方式とpredicateを一致させ、readable regular file判定と通知失敗BLOCKを環境へ固定した。
