@@ -986,4 +986,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: GP-032はGP-197へ置換済み。現行.claude/hooks/post-write-edit-combined.sh Guard1(lines 64-78)がreport YAMLへyaml.safe_load構文検証を実装し、logs/gunshi_gp_tracker.yamlのGP-197(lines 370-379)にimplementedと正常/破損YAMLの実行証跡があるため、追加実修正・decision_candidateは不要。"
+  action_artifact: "primary=.claude/hooks/post-write-edit-combined.sh:64-78;tracker=logs/gunshi_gp_tracker.yaml:370-379;test_evidence=tracker evidence:正常YAML exit 0・壊れたYAML exit 1+parse error・shellcheck clean;semantic=context/semantic-map.md:105;inventory_before_task=insights_pending:2,zero_backlinks:2,promotions:0,total:4"
+  resolved_at: "2026-08-21T08:28:33+09:00"
