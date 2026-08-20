@@ -1,23 +1,4 @@
 insights:
-- id: INS-20260818-202453422-1a32
-  ts: "2026-08-18T20:24:53+09:00"
-  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
-  priority: "high"
-  source: "self_retro"
-  fix_known: true
-  status: resolved
-  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
-  verify_command: "grep -Fq 'aa6bfcc8a54b1da47d141ddd294cc4d458511b32c98ce98bbd1cc10dc9998f20' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
-  insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 1
-  last_seen: "2026-08-18T20:24:53+09:00"
-  verification:
-    status: "passed"
-    exit_code: 0
-    output: ""
-  resolved_reason: "source event verified exactly once; review bundle delivery succeeded and SG7-preserving optimization candidate is durably captured, so no additional implementation is required in this bounded reflux task"
-  action_artifact: "logs/self_retro.jsonl:3331 event_id=aa6bfcc8a54b1da47d141ddd294cc4d458511b32c98ce98bbd1cc10dc9998f20 count=1 wall_ms=21930 endpoint=gunshi_review_bundle"
-  resolved_at: "2026-08-18T20:36:37+09:00"
 - id: INS-20260818-202601228-f903
   ts: "2026-08-18T20:26:01+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bhsx5q27b task id tool use id toolu 01B6H1qr2BzcRHQ14k は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -950,30 +931,21 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認で既存GP-223/GP-225防御によりcmd_2271のCDP教訓0件注入パターンは解消済み。現行deploy_task.shはpurpose・target_path・context_files・ACを教訓スコアリングへ統合し、ASCII/CJK境界分割も実装済み。新規実修正・decision_candidateは不要。"
-  action_artifact: "primary=logs/gunshi_gp_tracker.yaml:568-578;impl=scripts/deploy_task.sh:8529-8556;root_cause=docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:36-39;target=queue/insights.yaml:INS-20260821-013144869-5e6a"
-  resolved_at: "2026-08-21T07:01:56+09:00"
+  status: pending
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210159_hayate"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: logs/gunshi_gp_tracker.yaml:580-588 のGP-224はobsolete。2026-04-26計測で直近10件5-14秒(max14秒)、30秒timeout到達0件。現行 scripts/deploy_task.sh:67-70 はWSL2向け/tmp lock_path、L167はfield_get依存ログ抑制、L209-262はstat/find一括メタデータ取得とwave cache lockを実装済みで、追加実修正・decision_candidateは不要。"
-  action_artifact: "primary=logs/gunshi_gp_tracker.yaml:580-588;impl=scripts/deploy_task.sh:67-70,167,209-262;current=logs/deploy_reflux_auto.log:157133-157290 (cmd_reflux_insight_202608210710_saizo receipt rc=0 wall_ms=24435);target=queue/insights.yaml:INS-20260821-021525116-8698"
-  resolved_at: "2026-08-21T07:15:07+09:00"
+  status: pending
 - id: INS-20260821-025624452-5e64
   ts: "2026-08-21T02:56:24+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: gate_skill_script_refs.sh は rc=2 REVIEW_REQUIRED/FOLLOWUP_ACTIVE=7/FOLLOWUP_COVERS_REVIEW_REQUIRED=yes だが、7組すべて参照先実在・SKILL更新日鮮度・静的パス・副作用実走マーカーがOK。既存同一source解決記録とも一致し、追加実修正・decision_candidateは不要。"
-  action_artifact: "primary=queue/insights.yaml:967-973;gate=bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;semantic=semantic_search.sh+context/semantic-map.md;verified_at=2026-08-21T07:54:00+09:00"
-  resolved_at: "2026-08-21T07:53:33+09:00"
+  status: pending
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
@@ -984,17 +956,13 @@ insights:
   resolved_reason: "一次検証で既存実装により解消済み。deploy_task.shのdirect_modeは正本キュー未掲載cmdを--direct --yamlでcmd解決なしに受け付け、cmd_forcedは正本キュー外cmdをparent_cmd/task_idへ直接設定する。実装済み回帰テスト99/99 PASS・SKIP 0で追加修正とdecision_candidateは不要。"
   action_artifact: "primary=scripts/deploy_task.sh:14265-14308;regression=tests/unit/test_deploy_task_lifecycle.bats:1224-1269;receipt=logs/test_receipts/run_tests_20260820T214058_1743255.json;inventory_before=insights_pending:4,zero_backlinks:2,promotions:890,total:896"
   resolved_at: "2026-08-21T06:45:06+09:00"
-  last_seen: "2026-08-21T06:52:46+09:00"
 - id: INS-20260821-034535995-99b2
   ts: "2026-08-21T03:45:35+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次検証でgate_skill_script_refsを実走しrc=2(REVIEW_REQUIRED)を確認したが、対象7組は参照先実在・SKILL鮮度・例示パス・副作用検証マーカーの全項目OKで、必要なSKILL/実装修正は現時点で存在しない。rc=2は既存のinsight→reflux追従レビュー経路の判定であり、対象主張を解消した。"
-  action_artifact: "primary=gate: scripts/gates/gate_skill_script_refs.sh rc=2;all_pairs=7;checks=refs_exist,skill_freshness,example_paths,side_effect_markers:OK;semantic=semantic_search skill_design_rules;primary_pair_files=skills/cmd-complete/SKILL.md,skills/codd-fix/SKILL.md,skills/dream/SKILL.md,skills/gate-sync/SKILL.md,skills/idle-persist/SKILL.md,skills/review-bundle/SKILL.md,skills/shogun-teire/SKILL.md;inventory_pre=insights_pending:3,zero_backlinks:2,promotions:unknown(timeout),total:unknown"
-  resolved_at: "2026-08-21T08:10:21+09:00"
+  status: pending
 - id: INS-20260821-044602409-0272
   ts: "2026-08-21T04:46:02+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210433_hayate; matched=yaml; current_pattern=; candidate_level=4; candidate=GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格; source=gunshi_gp_tracker.yaml"
@@ -1012,3 +980,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-21T05:56:47+09:00"
+- id: INS-20260821-082247951-a90a
+  ts: "2026-08-21T08:22:47+09:00"
+  insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:28cb407b97fcfc07"
+  fix_known: false
+  status: pending
