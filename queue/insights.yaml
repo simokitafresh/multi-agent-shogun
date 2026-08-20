@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-193113793-ea16
-  ts: "2026-08-18T19:31:13+09:00"
-  insight: "SKILL.md追従task[a680cd19c5e960e7]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/dashboard_update.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/dream/SKILL.md <- scripts/semantic_search.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gist-share/SKILL.md <- scripts/gist_share.sh; skills/gs-bench-gate/SKILL.md <- /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py; skills/hot-script-design/SKILL.md <- scripts/gist_share.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-clear-prep/SKILL.md <- scripts/clear_prep_check.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-cli-switch/SKILL.md <- /home/simokitafresh/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_search.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
-  priority: "medium"
-  source: "skill_script_refs:a680cd19c5e960e7"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次検分で対象38契約hash変更を再確認。参照先欠落0件、SKILL鮮度不足0件、例示パス欠落0件、副作用実走マーカー欠落0件。現行gateのRC2は対象外のFOLLOWUP_ACTIVE 3組であり、対象SKILL本文の追従修正・decision_candidateは不要。"
-  action_artifact: "SKILL_REF gate rc2再実行: scanned=41 skills, refs=82, missing=0, stale_target_pairs=0; target inventory resolve via scripts/insight_write.sh --resolve; gate overall review_required is unrelated active followups"
-  resolved_at: "2026-08-20T09:56:32+09:00"
 - id: INS-20260818-193702528-48db
   ts: "2026-08-18T19:37:02+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bkzjhpkxs task id tool use id toolu 01TWgbmRHgSEuZLdgz は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -1005,3 +995,13 @@ insights:
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
   status: pending
+- id: INS-20260821-003300858-6f4f
+  ts: "2026-08-21T00:33:00+09:00"
+  insight: "semantic_index_update新概念候補: discussion:もう動き始めたよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-21T00:39:23+09:00"
