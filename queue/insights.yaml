@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-202046752-3669
-  ts: "2026-08-18T20:20:46+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bv8gxchgj task id tool use id toolu 016NAETg1Ctqsd5LQe は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T20:22:26+09:00"
 - id: INS-20260818-202433644-a14d
   ts: "2026-08-18T20:24:33+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1603 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -970,44 +960,39 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:30-39でcmd_2271の認証試行錯誤・scope外174行・CDP教訓0件(target_path=outputs/非マッチ)を確認。scripts/cdp/cdp_measure.sh:5-16に認証pre-flight・cmd_id別artifact分離・一括化が現存し、GP-223/225/226で教訓注入精度も修正済み。今回のplanned_paths内に追加実修正・decision_candidateは不要。"
-  action_artifact: "primary=docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:30-39;context=context/dm-signal-frontend.md:249;guard=scripts/cdp/cdp_measure.sh:5-16;semantic=context/semantic-map.md:70;status=existing_defense_confirmed"
-  resolved_at: "2026-08-21T03:53:00+09:00"
+  status: pending
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210159_hayate"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: scripts/deploy_task.sh:66-68 はWSL2 /mnt/c のflock不可靠を避ける/tmp-backed lock domainを使用し、:167-168 はFIELD_GET_NO_LOG=1で依存ログ(flock+stat+write)を抑制、:199-210/259-277 はwave単位のimmutable snapshot/cacheでstat/findを集約している。対象候補の根因に対する既存防御が現行実装に存在するため、追加実修正・decision_candidateは不要。"
-  action_artifact: "primary=queue/insights.yaml:977-983;guard=scripts/deploy_task.sh:66-68,167-168,199-210,259-277;inventory=insights_pending 5->4 (target 1->0), zero_backlinks 0->0, promotions 0->0, total 7->6;result=existing_defense_confirmed"
-  resolved_at: "2026-08-21T04:08:00+09:00"
+  status: pending
 - id: INS-20260821-025624452-5e64
   ts: "2026-08-21T02:56:24+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: gate_skill_script_refs.shの現行走査は41 SKILL.md/82 script参照、対象参照先と例示静的パスは実在。対象7組の公開契約を現物確認し、gate_context_freshness.shは無引数+exit 0/1/2、cmd_complete_gate.shは単一cmd_id+GATE CLEAR/BLOCK、gate_lesson_health.shは無引数全project走査+exit 0/1、bulletin_write.shは明示posted_by/content+info/action_requiredの既存使用が現行と一致。基準後の変更は監視・キャッシュ・SSOT・偽陽性防御の内部強化、または対象手順が使用しない加算的機能で、SKILL追従修正・decision_candidateは不要。"
-  action_artifact: "primary=scripts/gates/gate_skill_script_refs.sh:実行結果(参照先実在/例示パス実在/副作用マーカーPASS); primary=scripts/gates/gate_context_freshness.sh:7-20, scripts/cmd_complete_gate.sh:554-576, scripts/gates/gate_lesson_health.sh:7-20, scripts/bulletin_write.sh:4-5,371-425; docs=skills/cmd-complete/SKILL.md:74-89, skills/codd-fix/SKILL.md:30-33, skills/dream/SKILL.md:165-180, skills/gate-sync/SKILL.md:60-82, skills/idle-persist/SKILL.md:70-85, skills/review-bundle/SKILL.md:240-286, skills/shogun-teire/SKILL.md:173-180; inventory_before=insights_pending:4,zero_backlinks:2,promotions:0,total:6(task snapshot; promotion counter fallback status_124),recheck=insights_pending:4,zero_backlinks:2"
-  resolved_at: "2026-08-21T04:25:17+09:00"
+  status: pending
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210318_hayate"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認で既存防御を確認済み。deploy_task.shにcmd台帳外の事前task YAML配備(--yaml)と強制cmd配備(--cmd)の正規経路が現存し、task YAMLの直接Write/Editはpre-write-read-tracker.shがdenyしてdeploy_task.sh/yaml_field_set経路を要求する。追加実修正・decision_candidateは不要。"
-  action_artifact: "primary=scripts/deploy_task.sh:1778-1800;guard=.claude/hooks/pre-write-read-tracker.sh:41-53;context=context/training-cycle.md:833-841;checks=bash -n PASS;inventory_before=insights_pending:3,zero_backlinks:2,promotions:0,total:5;inventory_after=insights_pending:2,zero_backlinks:2,promotions:0,total:4;result=existing_defense_confirmed"
-  resolved_at: "2026-08-21T04:38:46+09:00"
+  status: pending
 - id: INS-20260821-034535995-99b2
   ts: "2026-08-21T03:45:35+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
+  fix_known: false
+  status: pending
+- id: INS-20260821-044602409-0272
+  ts: "2026-08-21T04:46:02+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210433_hayate; matched=yaml; current_pattern=; candidate_level=4; candidate=GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210433_hayate"
   fix_known: false
   status: pending
