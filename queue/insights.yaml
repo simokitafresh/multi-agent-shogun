@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-200553230-98be
-  ts: "2026-08-18T20:05:53+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_commit_runtime_dirty_202608181936; matched=karo_workarounds,yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_commit_runtime_dirty_202608181936"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次情報で既存Level4防御を確認。scripts/deploy_task.shのassigned_acs/ac_assigned範囲フィルタとSTK転記が実装済みで、関連BATS 54/54 PASS・SKIP 0。追加実装・decision_candidateは不要。"
-  action_artifact: "primary=scripts/deploy_task.sh:3612-3643,5393-5424,13321;tests=tests/unit/test_deploy_task_ac_handling.bats:41-54;runner_receipt=logs/test_receipts/run_tests_20260820T010710_4120712.json;source_cmd=cmd_2790/cmd_1909;target=queue/insights.yaml:INS-20260818-200553230-98be"
-  resolved_at: "2026-08-20T10:08:13+09:00"
 - id: INS-20260818-202046752-3669
   ts: "2026-08-18T20:20:46+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bv8gxchgj task id tool use id toolu 016NAETg1Ctqsd5LQe は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -1000,5 +990,12 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210318_hayate"
+  fix_known: false
+  status: pending
+- id: INS-20260821-034535995-99b2
+  ts: "2026-08-21T03:45:35+09:00"
+  insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
   status: pending
