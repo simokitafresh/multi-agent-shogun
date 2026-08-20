@@ -990,7 +990,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: gate_skill_script_refs.shの現行走査は41 SKILL.md/82 script参照、対象参照先と例示静的パスは実在。対象7組の公開契約を現物確認し、gate_context_freshness.shは無引数+exit 0/1/2、cmd_complete_gate.shは単一cmd_id+GATE CLEAR/BLOCK、gate_lesson_health.shは無引数全project走査+exit 0/1、bulletin_write.shは明示posted_by/content+info/action_requiredの既存使用が現行と一致。基準後の変更は監視・キャッシュ・SSOT・偽陽性防御の内部強化、または対象手順が使用しない加算的機能で、SKILL追従修正・decision_candidateは不要。"
+  action_artifact: "primary=scripts/gates/gate_skill_script_refs.sh:実行結果(参照先実在/例示パス実在/副作用マーカーPASS); primary=scripts/gates/gate_context_freshness.sh:7-20, scripts/cmd_complete_gate.sh:554-576, scripts/gates/gate_lesson_health.sh:7-20, scripts/bulletin_write.sh:4-5,371-425; docs=skills/cmd-complete/SKILL.md:74-89, skills/codd-fix/SKILL.md:30-33, skills/dream/SKILL.md:165-180, skills/gate-sync/SKILL.md:60-82, skills/idle-persist/SKILL.md:70-85, skills/review-bundle/SKILL.md:240-286, skills/shogun-teire/SKILL.md:173-180; inventory_before=insights_pending:4,zero_backlinks:2,promotions:0,total:6(task snapshot; promotion counter fallback status_124),recheck=insights_pending:4,zero_backlinks:2"
+  resolved_at: "2026-08-21T04:25:17+09:00"
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
