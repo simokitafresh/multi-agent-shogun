@@ -188,7 +188,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:ece61e0507c3aa94"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: gate_skill_script_refs.sh RC=0 PASS。対象6組のSKILL.mdとscriptは全て実在し、SKILL更新日・例示パス・実走検証マーカーもPASS。実修正・decision_candidateは不要。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh rc=0;target=INS-20260818-202736897-7a5f;verified_at=2026-08-20T08:09:03+09:00;scope=skills/codd-fix,skills/cdp-browse,skills/dream,skills/note-writer,skills/sengoku-writer,skills/weekly-report-writer"
+  resolved_at: "2026-08-20T08:11:24+09:00"
 - id: INS-20260818-202800606-333e
   ts: "2026-08-18T20:28:00+09:00"
   insight: "THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify='test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh' source=S2_detector_fp_rate"
