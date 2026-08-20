@@ -1002,3 +1002,13 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210433_hayate"
   fix_known: false
   status: pending
+- id: INS-20260821-052145792-dede
+  ts: "2026-08-21T05:21:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b207f7is9 task id tool use id toolu 01LrodfEKyNfnhN5q9 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-21T05:31:05+09:00"
