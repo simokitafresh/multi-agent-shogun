@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-200552899-9721
-  ts: "2026-08-18T20:05:52+09:00"
-  insight: "[[完了記録・還流・自動改善が生成した追跡済みdirty 3ファイルをfingerprint固定snapshotで隔離com]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gate自動pushがGA PUSH1成立済みのdirty overlapを毎回hook失敗と; score=3.6) / yaml_safe_write(YAML安全書込み; alias=karo direct完了報告の正式LGTMがshogun to karo spec不在でSG7生成BLOCKする経路を; score=3.3) / gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTのdm signal ops mdを一次情報で照合し; score=3.2)。既存概念aliasesへの自動昇格候補"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T20:06:05+09:00"
 - id: INS-20260818-200553230-98be
   ts: "2026-08-18T20:05:53+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_commit_runtime_dirty_202608181936; matched=karo_workarounds,yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
@@ -990,24 +980,25 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次情報でcmd_2271のCDP教訓注入0件と認証迂回反復の根因を確認。既存のGP-223/225/226是正および自動preflight設計で表現済みのため追加実装・decision_candidate不要"
-  action_artifact: "primary=docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:30-39;design=docs/research/cdp-skill-flow-inventory-20260802.md:86-88;semantic=context/semantic-map.md:100;index=docs/semantic-index/index.md:11931;memory=memory_db_query:INS-20260821-013144869-5e6a"
-  resolved_at: "2026-08-21T03:09:31+09:00"
+  status: pending
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210159_hayate"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次情報で発生元cmdの実行を再確認。01:59:53の対象deployはDEPLOY_RECEIPT success wall_ms=16797で30秒timeout/配備不完了を再現しなかった。一方、同期間のdeploy制御面は30秒超が反復しtask_mutations支配(最大62850ms)で、既存のbatch/cache/deferred対策だけでは根治未確認。対象insightは「解消済み」と偽装せず、別実装cmdで性能根因を決裁するdecision_candidateへ整理した。"
-  action_artifact: "primary=logs/deploy_task.log:7157-7302,6206-6214,8031-8039;primary=logs/ninja_monitor.log:11715-11717,12109-12112;code=scripts/deploy_task.sh:167-275,397-465,836-925;design=docs/research/karo_dm_drain_delay_infra_bug_20260723.md:50-52;inventory=before(2026-08-21T03:18:47+09:00) insights_pending=3 zero_backlinks=2 promotions=0 total=5;after(2026-08-21T03:21:27+09:00) insights_pending=3 zero_backlinks=0 promotions=890 total=893"
-  resolved_at: "2026-08-21T03:24:30+09:00"
+  status: pending
 - id: INS-20260821-025624452-5e64
   ts: "2026-08-21T02:56:24+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
+  fix_known: false
+  status: pending
+- id: INS-20260821-033532218-4254
+  ts: "2026-08-21T03:35:32+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210318_hayate"
   fix_known: false
   status: pending
