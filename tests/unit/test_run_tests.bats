@@ -724,6 +724,58 @@ SH
   [[ "$output" == *"TEST_SELECTION result=fallback reason=selector_exit_7 target=unit"* ]]
 }
 
+# test_necessity: affected selections must use suffix-owned engines so a Python
+# contract cannot be sent to Bats and mixed selections cannot lose either lane.
+# regression_justification: overlaps_existing=true; existing coverage exercised
+# affected scheduling only with Bats paths and did not cover mixed engines.
+@test "affected mode dispatches Python, Bats, and mixed selections once per engine" {
+  printf 'def test_owned():\n    assert True\n' >"$TMPROOT/tests/unit/owned.py"
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  export ENGINE_LOG="$TMPROOT/affected-engine.log"
+  export REAL_PYTHON3="$(command -v python3)"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+case "$SELECTION" in
+  python) printf '%s\n' "$REPO_ROOT/tests/unit/owned.py" ;;
+  bats) printf '%s\n' "$REPO_ROOT/tests/unit/owned.bats" ;;
+  mixed)
+    printf '%s\n' "$REPO_ROOT/tests/unit/owned.py"
+    printf '%s\n' "$REPO_ROOT/tests/unit/owned.bats"
+    ;;
+esac
+SH
+  cat >"$TMPROOT/bin/python3" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
+  printf 'pytest:%s\n' "$*" >>"$ENGINE_LOG"
+  printf '1 passed in 0.01s\n'
+  exit 0
+fi
+exec "$REAL_PYTHON3" "$@"
+SH
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf 'bats:%s\n' "$*" >>"$ENGINE_LOG"
+printf '1..1\nok 1 owned\n'
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh" "$TMPROOT/bin/python3" "$TMPROOT/bin/bats"
+
+  for selection in python bats mixed; do
+    : >"$ENGINE_LOG"
+    run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SELECTION="$selection" \
+      ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+      SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 BATS_MAX_TEST_JOBS=1 \
+      bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner affected changed.file
+    [ "$status" -eq 0 ]
+    pytest_count=0
+    bats_count=0
+    [[ "$selection" != bats ]] && pytest_count=1
+    [[ "$selection" != python ]] && bats_count=1
+    [ "$(grep -c '^pytest:' "$ENGINE_LOG" || true)" -eq "$pytest_count" ]
+    [ "$(grep -c '^bats:' "$ENGINE_LOG" || true)" -eq "$bats_count" ]
+  done
+}
+
 # test_necessity: affected=0 must finish inside the public receipt wrapper without acquiring the host-wide heavy admission lock.
 @test "affected zero skips admission while preserving terminal receipt" {
   cat >"$TMPROOT/scripts/test_select.sh" <<'SH'

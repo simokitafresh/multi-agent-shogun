@@ -1863,7 +1863,7 @@ _run_tests_main() {
             printf 'TEST_SELECTION_REASON direct=0 transitive=%s source=git_diff_changed_files\n' "${#selected[@]}"
             printf 'TEST_SELECTION result=selected reason=changed_files files=%s\n' "${#selected[@]}"
             RUN_TESTS_MODE=affected
-            run_bats_files_parallel "${selected[@]}"
+            run_task_test_paths "${selected[@]}"
             ;;
         task)
             shift || true
