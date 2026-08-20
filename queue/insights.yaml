@@ -994,7 +994,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証: gate_skill_script_refs.shを実走しrc=2 REVIEW_REQUIRED、FOLLOWUP_ACTIVE=7、FOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認。対象7組すべてで参照先実在・SKILL更新日鮮度・静的パス・日時付き実走マーカーがOKで、rc=2は対象ペアのFAILではなく既存FOLLOWUP_ACTIVE集約判定。追加のSKILL修正・実装・decision_candidateは不要。"
+  action_artifact: "gate=/tmp/hanzo_skill_refs.out;command=SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;semantic=context/semantic-map.md:56;index=docs/semantic-index/index.md:6015-6046;syntax=bash -n 4 scripts rc=0;inventory_before(2026-08-21T03:37:39+09:00)=insights_pending=3 zero_backlinks=2 promotions=893 total=898"
+  resolved_at: "2026-08-21T03:38:21+09:00"
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
