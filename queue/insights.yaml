@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-193702528-48db
-  ts: "2026-08-18T19:37:02+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bkzjhpkxs task id tool use id toolu 01TWgbmRHgSEuZLdgz は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T19:42:58+09:00"
 - id: INS-20260818-194250208-2c0a
   ts: "2026-08-18T19:42:50+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608181854_kotaro; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
@@ -1005,3 +995,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-21T00:39:23+09:00"
+- id: INS-20260821-013144869-5e6a
+  ts: "2026-08-21T01:31:44+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_backlink_202608201618_tobisaru; matched=context; current_pattern=; candidate_level=4; candidate=cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
+  fix_known: false
+  status: pending
