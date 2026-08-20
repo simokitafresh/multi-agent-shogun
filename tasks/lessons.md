@@ -15446,3 +15446,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - affected分岐がrun_bats_files_parallelへ直接渡すと.py選択がBATSへ流れて内側rc=127になる。次回はaffectedの選択結果を必ずrun_task_test_pathsへ渡し、.py/.bats/mixedの各engine回数をcontract testで固定する
+
+### L1625: zero-backlink同一targetの重複配備をpre-deployで拒否する
+- **日付**: 2026-08-20
+- **出典**: cmd_reflux_backlink_202608201630_saizo
+- **記録者**: saizo
+- **tags**: [infra,deploy,gate]
+- **subdomain**: infra
+- **target_files**: [docs/semantic-index/index.md]
+- **origin**: [[cmd_reflux_backlink_202608201630_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 同一target docs/research/karo_rootfix_release_ninja_on_done_unarchived_20260818.mdへkagemaru/tobisaru/saizoが並列配備された。origin/mainの既存incomingとactive/remote reservationをdeploy前に照合し、既存成果または同一targetのactive taskがあれば新規配備をBLOCKする防御を追加すべきである。
