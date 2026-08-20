@@ -1113,6 +1113,161 @@ extract_acceptance_criteria_block() {
     ' <<< "$CMD_BLOCK_NC"
 }
 
+# AC列契約とランキング要求の集合差を保存前に検出する(L1606/cmd_4356)。
+#
+# 追加列を限定するACと、別ACで成果物として要求する指標は同じ集合とは限らない。
+# 列差がある場合、内部計算後のdropや別成果物への分離が明記されていなければ、
+# 実装者の裁量でCSV契約が壊れるため保存を止める。明示的なallowlist/rankingの
+# 記述がない通常cmdは対象外とし、既存cmdへの偽陽性を避ける。
+check_ac_output_metric_contract() {
+    local ac_block="${1:-${CMD_SAVE_AC_BLOCK_CACHE:-}}"
+    local analysis
+    [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
+
+    # Fast path: ordinary ACs without both explicit contract sides do not need
+    # a Python parser process.
+    grep -qiE '(出力[[:space:]]*列|output[[:space:]]+columns?|column[[:space:]]+allowlist|列[[:space:]]*allowlist|CSV[[:space:]]*columns?)' <<< "$ac_block" || return 0
+    grep -qiE '(ランキング|指標[[:space:]]*別|ranking|metrics?[[:space:]]*(requested|required|list)?|要求指標)' <<< "$ac_block" || return 0
+
+    analysis="$(_CMD_SAVE_AC_CONTRACT_TEXT="$ac_block" python3 - <<'PY'
+import os
+import re
+
+text = os.environ.get("_CMD_SAVE_AC_CONTRACT_TEXT", "")
+
+def canon(value):
+    value = value.strip().strip("`'\".,:;()[]{}")
+    value = re.sub(r"\s+", " ", value)
+    return value.lower().replace(" ", "_")
+
+# These are the metric spellings used by the existing ranking contract.  The
+# identifier forms also cover future ACs that use the CSV/implementation names.
+metric_aliases = {
+    "cagr": "cagr",
+    "nhf": "nhf",
+    "raw_nhf": "nhf",
+    "maxdd": "maxdd",
+    "max_dd": "maxdd",
+    "mru": "mru",
+    "raw_mru": "mru",
+    "calmar": "calmar",
+    "raw_calmar": "calmar",
+    "avg_uwp": "avg_uwp",
+    "average_uwp": "avg_uwp",
+    "sharpe": "sharpe",
+    "raw_sharpe": "sharpe",
+    "alpha_over_beta": "alpha_over_beta",
+    "beta_small": "beta_small",
+}
+
+def metrics_in(fragment):
+    found = set()
+    lower = fragment.lower()
+    for spelling, name in metric_aliases.items():
+        if re.search(r"(?<![a-z0-9_])" + re.escape(spelling) + r"(?![a-z0-9_])", lower):
+            found.add(name)
+    # Human-readable variants that are unambiguous in a ranking list.
+    for spelling, name in (("Avg UWP", "avg_uwp"), ("Average UWP", "avg_uwp"),
+                           ("Max DD", "maxdd"), ("Alpha/Beta", "alpha_over_beta")):
+        if spelling.lower() in lower:
+            found.add(name)
+    return found
+
+def identifiers_in(fragment):
+    """Collect known metrics and arbitrary delimited AC identifiers."""
+    reserved = {
+        "existing", "current", "output", "csv", "columns", "column", "description",
+        "allowlist", "only", "new", "ranking", "rankings", "metric",
+        "metrics", "requested", "required", "list", "generate", "generated", "avg", "uwp",
+        "table", "tables", "rows", "data", "value", "values", "and", "or",
+        "the", "is", "are", "of", "for", "with", "from", "into", "to",
+    }
+    found = set(metrics_in(fragment))
+    for match in re.finditer(r"[A-Za-z][A-Za-z0-9_]*", fragment):
+        raw = match.group(0)
+        name = canon(raw)
+        if not name or name in reserved:
+            continue
+        if name in metric_aliases:
+            found.add(metric_aliases[name])
+            continue
+        left = fragment[match.start() - 1] if match.start() else ""
+        right = fragment[match.end()] if match.end() < len(fragment) else ""
+        delimited = left in "+,，/|・、([{" or right in "+,，/|・、)]}"
+        if "_" in name or delimited:
+            found.add(name)
+    return found
+
+def split_ac_lines(raw):
+    # Preserve AC boundaries for diagnostics while tolerating both the current
+    # mapping form (AC1:) and the legacy list form (- description: ...).
+    entries = []
+    current = []
+    for line in raw.splitlines():
+        if re.match(r"^\s*AC\d+\s*:", line) or re.match(r"^\s*-\s+description\s*:", line):
+            if current:
+                entries.append("\n".join(current))
+            current = [line]
+        elif current:
+            current.append(line)
+    if current:
+        entries.append("\n".join(current))
+    return entries or [raw]
+
+allow = set()
+ranking = set()
+resolution = False
+
+for entry in split_ac_lines(text):
+    lines = [line.strip() for line in entry.splitlines() if line.strip()]
+    for line in lines:
+        # An allowlist must be explicit: output columns/CSV columns plus a
+        # constrained list or existing+new-column expression.
+        is_allow = bool(re.search(
+            r"(出力\s*列|output\s+columns?|column\s+allowlist|列\s*allowlist|CSV\s*columns?)",
+            line, re.I)) and bool(re.search(
+                r"(既存|existing|allowlist|限定|のみ|only|\+|alpha_over_beta|beta_small)",
+                line, re.I))
+        if is_allow:
+            allow.update(identifiers_in(line))
+
+        if re.search(r"(ランキング|指標\s*別|ranking|metrics?\s*(requested|required|list)?|要求指標)", line, re.I):
+            ranking.update(identifiers_in(line))
+
+        # Resolution must connect the extra metrics to a different boundary;
+        # a bare rankings.md path is not enough to prove CSV/column separation.
+        if re.search(r"(内部\s*計算|internal\s*calculat|ranking\s*専用|ランキング\s*専用)", line, re.I) and \
+           re.search(r"(drop|除外|落と|混入しない|書き出し前|書出し前|CSV.*(出力|書出)|別成果物|別ファイル)", line, re.I):
+            resolution = True
+        if re.search(r"(列|column|CSV).{0,80}(別成果物|別ファイル).{0,80}(指標|metric|ranking|ランキング)", line, re.I):
+            resolution = True
+
+diff = sorted(ranking - allow)
+if not allow or not ranking:
+    print("NO_CONTRACT")
+elif not diff:
+    print("MATCH\tallow=" + ",".join(sorted(allow)) + "\tranking=" + ",".join(sorted(ranking)) + "\tdiff=")
+elif resolution:
+    print("RESOLVED\tallow=" + ",".join(sorted(allow)) + "\tranking=" + ",".join(sorted(ranking)) + "\tdiff=" + ",".join(diff))
+else:
+    print("MISMATCH\tallow=" + ",".join(sorted(allow)) + "\tranking=" + ",".join(sorted(ranking)) + "\tdiff=" + ",".join(diff))
+PY
+    )"
+
+    case "$analysis" in
+        NO_CONTRACT|MATCH*) return 0 ;;
+        RESOLVED*)
+            echo "INFO: AC列契約とランキング要求の差を境界解消済みとして確認: ${analysis#*$'\t'}" >&2
+            return 0
+            ;;
+        MISMATCH*)
+            record_block_reason "AC列契約とランキング要求の集合差を検出。内部計算後drop/別成果物などの境界解消をACへ明記せよ: ${analysis#*$'\t'}"
+            echo "  check=check_ac_output_metric_contract" >&2
+            return 1
+            ;;
+    esac
+}
+
 # Keep command extraction with the other block parsers.  Several checks run
 # before the lower helper section is reached, so defining this lazily below a
 # caller makes a clean shell exit 127 in CI.
@@ -4152,6 +4307,11 @@ CMD_SAVE_AC_BLOCK_CACHE="$(extract_acceptance_criteria_block)"
 CMD_SAVE_AC_BLOCK_CACHE_READY=1
 CMD_SAVE_COMMAND_BLOCK_CACHE="$(extract_command_text_block)"
 CMD_SAVE_COMMAND_BLOCK_CACHE_READY=1
+
+# --- Check 1.06: AC列契約とランキング要求の集合差(BLOCK, L1606) ---
+if ! check_ac_output_metric_contract "$CMD_SAVE_AC_BLOCK_CACHE"; then
+    [[ "$CMD_SAVE_ACCUMULATE_BLOCKS" == "1" ]] || exit 1
+fi
 
 # --- Check 1.05: 雛形FILL_THIS残存BLOCK ---
 # 起源: cmd_skeleton.sh導入(2026-06-10殿指示「劣化LLMでもスムーズ起票」)。
