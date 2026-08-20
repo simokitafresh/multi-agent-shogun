@@ -694,7 +694,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4357"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でcmd_4357由来のverdict_override WA 6件中5件がAC設計ミスという内容を確認。instructions/gunshi.mdのAC実行可能性チェック(Step 3)とcontext/karo-operations.mdのdraft配備前二値シミュレーションが既存防御として実装済みで、新規修正・decision_candidateは不要。"
+  action_artifact: "primary=memory_db_query --search INS-20260819-000418253-6f45;primary=instructions/gunshi.md:434;primary=context/karo-operations.md:51;semantic=docs/semantic-index/index.md;causal=.cache/causal_index.tsv:1675-1677;source=cmd_4357"
+  resolved_at: "2026-08-20T11:35:14+09:00"
 - id: INS-20260819-000434854-aa74
   ts: "2026-08-19T00:04:34+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿厳命_gate実行しなければ回転しない_20260818_2341]] は既存aliasesに一致なし。類似概念TOP3: gs_speed_e7_l0_full_confirm(GS道具磨きE7 L0 full実測; alias=殿厳命 timeout 300s強制。5分超え放置は最悪の行為; score=13.5) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=3.2) / growth_loop(学習ループ; alias=殿指示 20 08『nxe 2d robustness asis tobe 5w1h 20260801 mdを実行したい; score=3.0)。概念定義とaliases追加を検討せよ"
