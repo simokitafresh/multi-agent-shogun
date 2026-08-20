@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_p6_post_impl_mermaid_diff_202608122038
-  timestamp: '2026-08-12T12:03:26Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_p6_post_impl_mermaid_diff_202608122038'
 - cmd_id: cmd_karo_hotfix_p6_l5_all_failure_terminal_202608122048
   timestamp: '2026-08-12T12:19:43Z'
   ninja: system
@@ -1317,3 +1304,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_skill_auto_improve_dirty_202608201637'
+- cmd_id: cmd_karo_hotfix_pregate_converged_nonruntime_202608201659
+  timestamp: '2026-08-20T08:31:02Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_pregate_converged_nonruntime_202608201659'
