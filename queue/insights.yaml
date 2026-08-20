@@ -12,7 +12,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_remote_tip_task_worktree_20260818"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認でLG025(WF並列禁止)の既存Level4防御を確認済み。context/dm-signal-ops.md:512の直列実行原則と.claude/hooks/pre-bash-combined.sh:939-962のwf_runner.py BLOCKが候補内容を既に強制しており、本insightの新規実装・decision_candidateは不要。"
+  action_artifact: "primary=context/dm-signal-ops.md:512;guard=.claude/hooks/pre-bash-combined.sh:939-962;source_commit=e22291548;target=queue/insights.yaml:INS-20260818-164103963-69f6"
+  resolved_at: "2026-08-20T09:34:36+09:00"
 - id: INS-20260818-164506993-8a8f
   ts: "2026-08-18T16:45:06+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bpo23v56x task id tool use id toolu 01TBNZr7eLi8rn7B24 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
