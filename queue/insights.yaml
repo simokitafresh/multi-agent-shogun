@@ -680,7 +680,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4357"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存の4 Phase自動化が根因を包含し、新規実装・decision_candidate不要と判定。"
+  action_artifact: "primary=scripts/cdp/cdp_measure.sh:1-16,91-177,213-237;design=docs/research/cdp-skill-flow-inventory-20260802.md:79-88;origin=queue/archive/bulletin_20260706.yaml:653-662;checks=bash -n PASS+static phase/preflight/artifact/lock assertions PASS"
+  resolved_at: "2026-08-20T11:19:49+09:00"
 - id: INS-20260819-000418253-6f45
   ts: "2026-08-19T00:04:18+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4357; matched=レビュー,実行; current_pattern=回転の自動化 — 報告完了で軍師レビュー依頼を自動送出し、両承認が揃ったらcmd_complete_gateを自動実行する(GATE-STALL警告を実行へ); candidate_level=2; candidate=verdict_override WA 6件中5件がAC設計ミス。draftレビューStep 3で事前検出する観点が不在だった; source=gunshi_gp_tracker.yaml"
