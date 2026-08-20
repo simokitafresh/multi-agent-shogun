@@ -977,7 +977,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:8adb59e2082ff964"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証で gate_skill_script_refs.sh を SKILL_REF_DIRS=skills で実走。rc=2 は FOLLOWUP_ACTIVE=7 の集約判定で、FOLLOWUP_COVERS_REVIEW_REQUIRED=yes。対象を含む全40 SKILL・82参照で参照先実在・SKILL更新日鮮度・静的パス・日時付き実走マーカーが全てOK。追加のSKILL修正またはdecision_candidateは不要。"
+  action_artifact: "gate=/tmp/kotaro_skill_gate_20260820.out;command=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;verified_at=2026-08-20T16:03:30+09:00"
+  resolved_at: "2026-08-20T16:04:35+09:00"
 - id: INS-20260820-121458364-9c81
   ts: "2026-08-20T12:14:58+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
