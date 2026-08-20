@@ -954,6 +954,8 @@ insights:
   resolved_reason: "一次確認でGP-239既存実装による解消済み候補と判定。現行scripts/ninja_monitor.shにCodex bypass確認経路があり、tests/unit/test_ninja_monitor.batsにGP-239の欠落・健全・再発チェックが存在するため追加修正不要。"
   action_artifact: "scripts/ninja_monitor.sh:GP-239; tests/unit/test_ninja_monitor.bats:303-329; queue/insights.yaml:INS-20260820-172055620-6338"
   resolved_at: "2026-08-21T02:27:48+09:00"
+  occurrence_count: 1
+  last_seen: "2026-08-20T17:20:55+09:00"
 - id: INS-20260820-180235277-727b
   ts: "2026-08-20T18:02:35+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1624 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
