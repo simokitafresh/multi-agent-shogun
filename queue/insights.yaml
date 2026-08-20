@@ -950,7 +950,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で、cmd_2271のCDP教訓未注入と認証試行錯誤は既存のCDP preflight・認証・artifact分離経路およびcontext/semantic-mapへ反映済み。新規修正・decision_candidate不要。"
+  action_artifact: "primary=docs/research/gunshi_nazenaze_cdp_measurement_20260426.md;current=scripts/cdp/cdp_measure.sh,/mnt/c/Python_app/auto-ops/scripts/cdp/cdp_cli.sh;context=docs/research/cdp-skill-flow-inventory-20260802.md;verified_at=2026-08-21T06:01:00+09:00"
+  resolved_at: "2026-08-21T06:01:26+09:00"
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
