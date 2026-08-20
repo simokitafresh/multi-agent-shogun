@@ -670,7 +670,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4357"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報でF-G01と返信先ルールの既存実装を確認済み。新規修正不要
+  action_artifact: "instructions/gunshi.md:11-15,586-598; instructions/generated/gunshi.md:11-15,560-572; docs/semantic-index/index.md:11142"
+  resolved_at: "2026-08-20T11:05:28+09:00"
 - id: INS-20260819-000418017-274c
   ts: "2026-08-19T00:04:18+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4357; matched=自動化,動化,実行; current_pattern=回転の自動化 — 報告完了で軍師レビュー依頼を自動送出し、両承認が揃ったらcmd_complete_gateを自動実行する(GATE-STALL警告を実行へ); candidate_level=4; candidate=CDP計測4回実行10.5時間(殿の時間10時間浪費)。根因=pre-flight check不在+artifact競合+忍者判断依存。4 Phase自動化で28分/回に短縮; source=gunshi_gp_tracker.yaml"
