@@ -897,7 +897,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_runtime_writer_singleflight_202608191225"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: docs/research/gunshi_idle_lu_dict_pattern_20260415.md の既存防御とGP-107再評価、scripts/gates/gate_report_autofix_main.py L108-L114 のGP-196 numbered dict→list内容不変変換、tests/unit/test_gate_report_autofix.bats L86-L122の内容保持、L580-L614のID-keyed dict非変換を確認。新規修正・decision_candidate不要。"
+  action_artifact: "scripts/gates/gate_report_autofix_main.py:L108-L114;tests/unit/test_gate_report_autofix.bats:L86-L122,L580-L614;docs/research/gunshi_idle_lu_dict_pattern_20260415.md"
+  resolved_at: "2026-08-20T13:52:16+09:00"
 - id: INS-20260819-143938724-0b38
   ts: "2026-08-19T14:39:38+09:00"
   insight: "--priority"
