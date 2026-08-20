@@ -970,7 +970,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GATE CLEAR: cmd_reflux_insight_202608210247_kagemaru completed declared remediation"
+  action_artifact: "cmd=cmd_reflux_insight_202608210247_kagemaru;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-08-21T03:05:37+09:00"
 - id: INS-20260821-003300858-6f4f
   ts: "2026-08-21T00:33:00+09:00"
   insight: "semantic_index_update新概念候補: discussion:もう動き始めたよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
