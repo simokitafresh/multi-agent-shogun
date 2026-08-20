@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-164506993-8a8f
-  ts: "2026-08-18T16:45:06+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bpo23v56x task id tool use id toolu 01TBNZr7eLi8rn7B24 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T16:45:19+09:00"
 - id: INS-20260818-183330427-7e9c
   ts: "2026-08-18T18:33:30+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b2z2fvb2j task id tool use id toolu 01VCgGZapXqZJgYhpQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -957,10 +947,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:0fa91f7eaa70779c"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次検証で対象SKILL/script追従を再確認。gate_skill_script_refs.shは参照先実在・SKILL鮮度・例示パス・副作用実走マーカーを全てOKとし、rc=2は対象外の既存FOLLOWUP_ACTIVE 7件による総合REVIEW_REQUIREDで対象ペアのFAILではないため、追加修正・decision_candidate不要"
-  action_artifact: "gate=bash scripts/gates/gate_skill_script_refs.sh /mnt/c/tools/multi-agent-shogun; result=OK対象項目/REVIEW_REQUIRED既存7件; target=skills/codd-fix/SKILL.md<-scripts/cmd_complete_gate.sh; queue/insights.yaml:INS-20260820-082418400-1714"
-  resolved_at: "2026-08-20T15:03:46+09:00"
+  status: pending
 - id: INS-20260820-090908792-a92d
   ts: "2026-08-20T09:09:08+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1619 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -999,13 +986,3 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608201219_saizo"
   fix_known: false
   status: pending
-- id: INS-20260820-150103679-64bf
-  ts: "2026-08-20T15:01:03+09:00"
-  insight: "--inventory"
-  priority: "medium"
-  source: "manual"
-  fix_known: false
-  status: resolved
-  resolved_reason: "誤った--inventory引数を手動insightとして登録したが、実在する気づきではなく追加対応不要のため即時解消"
-  action_artifact: "action=unsupported inventory probe entry cleanup; target=queue/insights.yaml:INS-20260820-150103679-64bf"
-  resolved_at: "2026-08-20T15:03:46+09:00"
