@@ -797,6 +797,376 @@ mark_task_worktree_published() {
     python3 -c 'import json,os,sys,tempfile,time; p,pub=sys.argv[1:]; d=json.load(open(p,encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="active"; d["published_commit"]=pub; d["published_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_published.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$marker" "$published_commit"
 }
 
+# A successful source-only push must survive a later retry of the same gate.
+# The task-worktree marker above is intentionally not sufficient: it has no
+# cmd/report-generation or repository identity and cannot distinguish a stale
+# or ambiguous pre-receipt from the current publication. This receipt is local
+# operational state (queue/gates is excluded from runtime publication) and is
+# written only after remote inclusion has been verified.
+source_publish_receipt_path() {
+    printf '%s\n' "${CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT:-$SCRIPT_DIR/queue/gates/${CMD_ID}/source_only_publish.receipt.json}"
+}
+
+resolve_publish_report_generation() {
+    local task_file="$1" script_dir="$2" report_file
+    report_file=$(python3 - "$task_file" "$script_dir" <<'PY'
+import os
+import sys
+import yaml
+
+task_file, script_dir = sys.argv[1:]
+task = (yaml.safe_load(open(task_file, encoding="utf-8")) or {}).get("task", {})
+report = str(task.get("report_path") or task.get("report_filename") or "").strip()
+if report and not os.path.isabs(report):
+    report = os.path.join(script_dir, report)
+print(report)
+PY
+    ) || return 1
+    [ -n "$report_file" ] && [ -f "$report_file" ] || return 1
+    python3 - "$report_file" "$task_file" <<'PY'
+import sys
+import yaml
+
+report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = (yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}).get("task", {})
+if not isinstance(report, dict) or not isinstance(task, dict):
+    raise SystemExit(1)
+for value in (
+    report.get("report_generation"),
+    report.get("report_generation_fingerprint"),
+    report.get("report_fingerprint"),
+    report.get("report_id"),
+    task.get("report_generation"),
+    task.get("report_generation_fingerprint"),
+    task.get("report_id"),
+):
+    value = str(value or "").strip()
+    if value:
+        print(value)
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+source_publish_receipt_matches() {
+    local receipt="$1" cmd_id="$2" completion_generation="$3" repo="$4"
+    shift 4
+    [ -f "$receipt" ] || return 1
+    [ "$#" -gt 0 ] && [ $(( $# % 2 )) -eq 0 ] || return 1
+    python3 - "$receipt" "$cmd_id" "$completion_generation" "$repo" "$@" <<'PY'
+import json
+import re
+import sys
+
+receipt, cmd_id, completion_generation, repo = sys.argv[1:5]
+raw = sys.argv[5:]
+expected = {(raw[i], raw[i + 1]) for i in range(0, len(raw), 2)}
+if not expected or not re.fullmatch(r"[0-9a-f]{64}", completion_generation):
+    raise SystemExit(1)
+try:
+    data = json.load(open(receipt, encoding="utf-8"))
+except (OSError, ValueError, TypeError):
+    raise SystemExit(1)
+if not isinstance(data, dict) or data.get("version") != 1 or data.get("state") != "published":
+    raise SystemExit(1)
+if data.get("cmd_id") != cmd_id or data.get("completion_generation") != completion_generation:
+    raise SystemExit(1)
+entries = data.get("entries")
+if not isinstance(entries, list):
+    raise SystemExit(1)
+actual = set()
+for entry in entries:
+    if not isinstance(entry, dict):
+        raise SystemExit(1)
+    if entry.get("repo") != repo:
+        continue
+    if entry.get("cmd_id") != cmd_id or entry.get("completion_generation") != completion_generation:
+        raise SystemExit(1)
+    if entry.get("remote_contains_source_rc") != 0:
+        raise SystemExit(1)
+    source_sha = str(entry.get("source_sha") or "")
+    report_generation = str(entry.get("report_generation") or "")
+    if not re.fullmatch(r"[0-9a-f]{40}", source_sha) or not report_generation:
+        raise SystemExit(1)
+    actual.add((source_sha, report_generation))
+if actual != expected:
+    raise SystemExit(1)
+PY
+}
+
+# A pre-receipt source-only publication may have been recorded by the old
+# trigger logger before the durable receipt was introduced. Evidence is usable
+# only when the logger captured the complete publication identity. A marker, a
+# successful writer rc, or a report path alone cannot prove that this exact
+# source/report generation was the one whose remote inclusion was verified.
+source_publish_legacy_evidence_path() {
+    local receipt="$1"
+    local configured="${CMD_COMPLETE_GATE_SOURCE_PUBLISH_LEGACY_EVIDENCE:-${CMD_COMPLETE_GATE_SOURCE_PUBLISH_LEGACY_LOG:-}}"
+    if [ -f "$SCRIPT_DIR/queue/gates/${CMD_ID}/cmd_complete_gate.trigger.log" ]; then
+        # The pre-receipt writer recorded the verified source-only push in the
+        # standard trigger log. Production re-GATE must prefer this authoritative
+        # path whenever it exists; an override cannot bypass its identity checks.
+        printf '%s\n' "$SCRIPT_DIR/queue/gates/${CMD_ID}/cmd_complete_gate.trigger.log"
+    elif [ -n "$configured" ]; then
+        # Isolated callers without a standard trigger log may retain the
+        # explicit legacy JSONL fixture path.
+        printf '%s\n' "$configured"
+    else
+        printf '%s\n' "${receipt}.legacy.jsonl"
+    fi
+}
+
+migrate_legacy_source_publish_receipt() {
+    local evidence="$1" receipt="$2" cmd_id="$3" completion_generation="$4" repo="$5" remote_tip="$6" task_file="$7" script_dir="$8"
+    shift 8
+    [ -f "$evidence" ] || return 1
+    [ -f "$task_file" ] || return 1
+    [ "$#" -gt 0 ] && [ $(( $# % 2 )) -eq 0 ] || return 1
+    if [ "$(basename "$evidence")" = "cmd_complete_gate.trigger.log" ]; then
+        python3 - "$script_dir/queue/gates/$cmd_id/terminal_review_manifest.json" "$@" <<'PY'
+import json
+import re
+import sys
+manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+expected = {(sys.argv[i], sys.argv[i + 1]) for i in range(2, len(sys.argv), 2)}
+reports = manifest.get("reports")
+if manifest.get("cmd_id") != sys.argv[1].split("/queue/gates/")[-1].split("/")[0] or not isinstance(reports, list):
+    raise SystemExit(1)
+actual = {(str(item.get("commit_identity") or ""), str(item.get("report_id") or ""))
+          for item in reports if isinstance(item, dict)}
+if not expected or not expected.issubset(actual):
+    raise SystemExit(1)
+if any(not re.fullmatch(r"[0-9a-f]{40}", source) or not report for source, report in expected):
+    raise SystemExit(1)
+PY
+    fi
+    python3 - "$evidence" "$cmd_id" "$completion_generation" "$repo" "$task_file" "$script_dir" "$@" <<'PY'
+import json
+import hashlib
+import pathlib
+import re
+import sys
+import yaml
+
+evidence, cmd_id, completion_generation, repo, task_file, script_dir = sys.argv[1:7]
+raw = sys.argv[7:]
+expected = {(raw[i], raw[i + 1]) for i in range(0, len(raw), 2)}
+if not expected or not re.fullmatch(r"[0-9a-f]{64}", completion_generation):
+    raise SystemExit(1)
+
+try:
+    handle = open(evidence, encoding="utf-8")
+except OSError:
+    raise SystemExit(1)
+found = set()
+trigger_source_push_verified = False
+json_record_seen = False
+trigger_attempts = {}
+trigger_success_attempts = set()
+with handle:
+    for line in handle:
+        line = line.strip()
+        if not line:
+            continue
+        if (
+            line.startswith("git push: OK (")
+            and f"{repo};" in line
+            and "source-only" in line
+            and "remote_contains_source_rc=0" in line
+        ):
+            trigger_source_push_verified = True
+            trigger_success_attempts.add(trigger_attempts.get("current", 1))
+        attempt_match = re.fullmatch(r"attempt=(\d+) rc=(-?\d+) timestamp=.*", line)
+        if attempt_match:
+            attempt = int(attempt_match.group(1))
+            trigger_attempts[attempt] = int(attempt_match.group(2))
+            trigger_attempts["current"] = attempt + 1
+        try:
+            value = json.loads(line)
+        except (TypeError, ValueError):
+            continue
+        json_record_seen = True
+        records = value if isinstance(value, list) else [value]
+        for entry in records:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("event") not in (None, "source_only_publication", "source_only_push"):
+                continue
+            if entry.get("cmd_id") != cmd_id:
+                continue
+            if (entry.get("completion_generation") or entry.get("generation")) != completion_generation:
+                continue
+            if entry.get("repo") != repo or entry.get("remote_contains_source_rc") != 0:
+                continue
+            source_sha = str(entry.get("source_sha") or entry.get("source_commit") or "")
+            report_generation = str(entry.get("report_generation") or entry.get("report_id") or "")
+            if not re.fullmatch(r"[0-9a-f]{40}", source_sha) or not report_generation:
+                continue
+            pair = (source_sha, report_generation)
+            if pair in expected:
+                found.add(pair)
+
+if not json_record_seen and trigger_source_push_verified:
+    try:
+        task = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
+        task = task.get("task", task) if isinstance(task, dict) else {}
+        report_ref = str(task.get("report_path") or task.get("report_filename") or "").strip()
+        report_path = pathlib.Path(report_ref)
+        if not report_path.is_absolute():
+            report_path = pathlib.Path(script_dir) / report_path
+        report_path = report_path.resolve()
+        report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+        report_id = str(report.get("report_id") or "").strip()
+        if len(expected) != 1 or not report_id:
+            raise ValueError("report identity missing")
+        source_sha, expected_report_id = next(iter(expected))
+        if expected_report_id != report_id:
+            raise ValueError("report id mismatch")
+
+        review_payload = dict(report)
+        for key in ("commit_hash", "cross_repo_commits", "commit", "git_commit",
+                    "status", "timestamp", "submitted_at", "completed_at",
+                    "done_at", "updated_at", "acknowledged_at"):
+            review_payload.pop(key, None)
+        result_payload = review_payload.get("result")
+        if isinstance(result_payload, dict):
+            result_payload = dict(result_payload)
+            result_payload.pop("commit_hash", None)
+            review_payload["result"] = result_payload
+        def json_default(value):
+            if hasattr(value, "isoformat"):
+                return value.isoformat()
+            raise TypeError(type(value))
+        review_fingerprint = hashlib.sha256(json.dumps(
+            review_payload, default=json_default, ensure_ascii=False,
+            sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")).hexdigest()
+        logical = "queue/reports/" + report_path.name
+        gate_dir = pathlib.Path(script_dir) / "queue" / "gates" / cmd_id
+        terminal = json.load(open(gate_dir / "terminal_review_manifest.json", encoding="utf-8"))
+        if terminal.get("cmd_id") != cmd_id or not isinstance(terminal.get("reports"), list):
+            raise ValueError("terminal manifest identity missing")
+        matching = [item for item in terminal["reports"]
+                    if isinstance(item, dict) and item.get("logical_path") == logical]
+        if len(matching) != 1:
+            matching = [item for item in terminal["reports"]
+                        if isinstance(item, dict) and item.get("report_id") == report_id]
+        if len(matching) != 1:
+            raise ValueError("terminal report mismatch")
+        item = matching[0]
+        if (item.get("report_id") != report_id
+                or item.get("commit_identity") != source_sha
+                or item.get("content_sha") != review_fingerprint):
+            raise ValueError("terminal source/report fingerprint mismatch")
+
+        approval_key = hashlib.sha256(logical.encode("utf-8")).hexdigest()
+        approval_dir = gate_dir / "review_approvals" / "reports" / approval_key
+        for role, result in (("gunshi", "LGTM"), ("karo", "ACCEPT")):
+            approval = yaml.safe_load(open(approval_dir / (role + ".yaml"), encoding="utf-8")) or {}
+            if (approval.get("role") != role or approval.get("result") != result
+                    or approval.get("report") != logical
+                    or approval.get("fingerprint") != review_fingerprint
+                    or approval.get("generation") != completion_generation):
+                raise ValueError("review approval identity mismatch")
+
+        markers = sorted((gate_dir / "review_approvals").glob(".gate_triggered.*"))
+        if len(markers) != 1:
+            raise ValueError("terminal marker count mismatch")
+        marker_name = markers[0].name.rsplit(".", 1)[-1]
+        expected_marker = hashlib.sha256(
+            (logical + ":" + review_fingerprint + "\n").encode("utf-8")
+        ).hexdigest()
+        if marker_name != expected_marker:
+            raise ValueError("terminal marker identity mismatch")
+        marker = yaml.safe_load(open(markers[0], encoding="utf-8")) or {}
+        marker_attempt = int(marker.get("attempts", 0))
+        marker_result = int(marker.get("result", -99))
+        if (marker.get("manifest") != expected_marker
+                or marker_attempt <= 0
+                or trigger_attempts.get(marker_attempt) != marker_result
+                or marker_attempt not in trigger_success_attempts):
+            raise ValueError("terminal attempt mismatch")
+        found = set(expected)
+    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError, yaml.YAMLError):
+        raise SystemExit(1)
+
+if found != expected:
+    raise SystemExit(1)
+PY
+    write_source_publish_receipt "$receipt" "$cmd_id" "$completion_generation" \
+        "$repo" "$remote_tip" "$@"
+}
+
+write_source_publish_receipt() {
+    local receipt="$1" cmd_id="$2" completion_generation="$3" repo="$4" remote_tip="$5"
+    shift 5
+    [ "$#" -gt 0 ] && [ $(( $# % 2 )) -eq 0 ] || return 1
+    [[ "$completion_generation" =~ ^[0-9a-f]{64}$ ]] || return 1
+    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
+    mkdir -p "$(dirname "$receipt")" || return 1
+    python3 - "$receipt" "$cmd_id" "$completion_generation" "$repo" "$remote_tip" "$@" <<'PY'
+import json
+import os
+import re
+import tempfile
+import time
+import sys
+
+receipt, cmd_id, completion_generation, repo, remote_tip = sys.argv[1:6]
+raw = sys.argv[6:]
+if len(raw) == 0 or len(raw) % 2:
+    raise SystemExit(1)
+entries = []
+try:
+    current = json.load(open(receipt, encoding="utf-8"))
+except (OSError, ValueError, TypeError):
+    current = None
+if isinstance(current, dict) \
+        and current.get("version") == 1 \
+        and current.get("state") == "published" \
+        and current.get("cmd_id") == cmd_id \
+        and current.get("completion_generation") == completion_generation \
+        and isinstance(current.get("entries"), list):
+    entries = [entry for entry in current["entries"]
+               if isinstance(entry, dict) and entry.get("repo") != repo]
+
+for index in range(0, len(raw), 2):
+    source_sha, report_generation = raw[index:index + 2]
+    if not re.fullmatch(r"[0-9a-f]{40}", source_sha) or not report_generation:
+        raise SystemExit(1)
+    entries.append({
+        "cmd_id": cmd_id,
+        "completion_generation": completion_generation,
+        "report_generation": report_generation,
+        "repo": repo,
+        "source_sha": source_sha,
+        "remote_tip": remote_tip,
+        "remote_contains_source_rc": 0,
+        "published_at_ns": time.time_ns(),
+    })
+
+payload = {
+    "version": 1,
+    "state": "published",
+    "cmd_id": cmd_id,
+    "completion_generation": completion_generation,
+    "entries": entries,
+}
+os.makedirs(os.path.dirname(receipt), exist_ok=True)
+fd, temporary = tempfile.mkstemp(prefix=".source_only_publish.", dir=os.path.dirname(receipt))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=False, sort_keys=True)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, receipt)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
+PY
+}
+
 # A source commit can be published by an equivalent cherry-pick whose hash is
 # necessarily different.  Ancestry alone therefore cannot be the publication
 # identity.  Prove the immutable final state of every path changed by the
@@ -2028,11 +2398,13 @@ push_task_repositories() {
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
     local source_equivalent_used source_base_tree_noop source_noop_all
+    local source_report_generation receipt receipt_expected legacy_evidence legacy_receipt_migrated legacy_task_file
     local -a repos=() eligible_task_files=()
+    local -a receipt_pairs=()
     local saw_task_file=0
     local report_repo report_source report_path_count path_index path report_sources_tmp report_sources_fd
     local -a report_paths=()
-    local -A seen_repos=() report_sources_by_repo=()
+    local -A seen_repos=() report_sources_by_repo=() receipt_pair_seen=()
 
     for task_file in "$@"; do
         [ -f "$task_file" ] || continue
@@ -2137,11 +2509,65 @@ push_task_repositories() {
             return 1
         fi
 
+        # A receipt is eligible only when every source commit has an explicit
+        # report generation and the current gate has a valid completion
+        # generation. Legacy evidence can be promoted only through the strict
+        # identity check below; ambiguous evidence remains on the old path.
+        receipt=$(source_publish_receipt_path)
+        legacy_evidence=$(source_publish_legacy_evidence_path "$receipt")
+        legacy_receipt_migrated=false
+        legacy_task_file=""
+        receipt_expected=true
+        receipt_pairs=()
+        receipt_pair_seen=()
+        if ! [[ "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]] \
+            || [ "${#eligible_task_files[@]}" -eq 0 ]; then
+            receipt_expected=false
+        else
+            for task_file in "${eligible_task_files[@]}"; do
+                [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
+                source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
+                source_report_generation=$(resolve_publish_report_generation "$task_file" "$SCRIPT_DIR" 2>/dev/null || true)
+                if ! [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || [ -z "$source_report_generation" ]; then
+                    receipt_expected=false
+                    continue
+                fi
+                [ -n "$legacy_task_file" ] || legacy_task_file="$task_file"
+                local receipt_pair_key="${source_sha}|${source_report_generation}"
+                if [ -z "${receipt_pair_seen[$receipt_pair_key]+yes}" ]; then
+                    receipt_pairs+=("$source_sha" "$source_report_generation")
+                    receipt_pair_seen["$receipt_pair_key"]=1
+                fi
+            done
+            [ "${#receipt_pairs[@]}" -gt 0 ] || receipt_expected=false
+        fi
+
         max_retries="${CMD_COMPLETE_GATE_PUSH_MAX_RETRIES:-2}"
         [[ "$max_retries" =~ ^[0-9]+$ ]] || max_retries=2
         for ((attempt=0; attempt<=max_retries; attempt++)); do
             source_base_tree_noop=false
             source_noop_all=true
+            if [ "$receipt_expected" = true ] && [ ! -f "$receipt" ] \
+                && migrate_legacy_source_publish_receipt "$legacy_evidence" "$receipt" \
+                    "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" "$repo" "$remote_tip" \
+                    "$legacy_task_file" "$SCRIPT_DIR" \
+                    "${receipt_pairs[@]}"; then
+                legacy_receipt_migrated=true
+            fi
+            if [ "$receipt_expected" = true ] \
+                && source_publish_receipt_matches "$receipt" "$CMD_ID" \
+                    "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}"; then
+                for task_file in "${eligible_task_files[@]}"; do
+                    [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
+                    mark_task_worktree_published "$task_file" "$remote_tip" || return 1
+                done
+                if [ "$legacy_receipt_migrated" = true ]; then
+                    echo "  git push: SKIP ($repo migrated legacy source-only publication evidence exact-match)"
+                else
+                    echo "  git push: SKIP ($repo durable source-only publication receipt exact-match)"
+                fi
+                break
+            fi
             # This proof is intentionally task-backed.  Archived/report-only
             # source contracts do not carry the deployment base and therefore
             # retain the existing ancestry/equivalence behavior.
@@ -2179,6 +2605,14 @@ push_task_repositories() {
                 fi
             done
             if [ "$all_remote" = true ]; then
+                if [ "$receipt_expected" = true ]; then
+                    write_source_publish_receipt "$receipt" "$CMD_ID" \
+                        "$SHOGUN_COMPLETION_GENERATION" "$repo" "$remote_tip" \
+                        "${receipt_pairs[@]}" || {
+                        echo "  git push: BLOCK ($repo durable source-only receipt write failed)"
+                        return 1
+                    }
+                fi
                 for task_file in "${eligible_task_files[@]}"; do
                     [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
                     mark_task_worktree_published "$task_file" "$remote_tip" || return 1
@@ -2202,6 +2636,14 @@ push_task_repositories() {
             if [ "$push_rc" -eq 0 ]; then
                 published_remote_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
                 [[ "$published_remote_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "  git push: BLOCK ($repo published tip verification failed)"; return 1; }
+                if [ "$receipt_expected" = true ]; then
+                    write_source_publish_receipt "$receipt" "$CMD_ID" \
+                        "$SHOGUN_COMPLETION_GENERATION" "$repo" "$published_remote_sha" \
+                        "${receipt_pairs[@]}" || {
+                        echo "  git push: BLOCK ($repo durable source-only receipt write failed)"
+                        return 1
+                    }
+                fi
                 for task_file in "${eligible_task_files[@]}"; do
                     [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
                     mark_task_worktree_published "$task_file" "$published_remote_sha" || return 1
