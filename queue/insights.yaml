@@ -970,7 +970,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証: gate_skill_script_refs.shをSKILL_REF_DIRS=skillsで実走しrc=2 REVIEW_REQUIRED/FOLLOWUP_ACTIVE=7/FOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認。7組すべて参照先実在・SKILL更新日鮮度・静的パス・副作用実走マーカーOKで、追加修正とdecision_candidateは不要。"
+  action_artifact: "gate=/tmp/hanzo_skill_gate_20260820.out;command=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;verified_at=2026-08-20T23:35:00+09:00"
+  resolved_at: "2026-08-20T23:35:09+09:00"
 - id: INS-20260820-123337540-3982
   ts: "2026-08-20T12:33:37+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608201219_saizo; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
