@@ -613,7 +613,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4355"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存Level4防御により解決済み。report_field_set.shのGP-234経路は旧block scalar continuation行を置換時に除去し、yaml_field_set.shにも同型の継続行除去があり、実YAML回帰テストでparseable維持と旧行消失を検証する。新規実修正・decision_candidateは不要。"
+  action_artifact: "primary=scripts/report_field_set.sh:2022-2141;helper=scripts/lib/yaml_field_set.sh:428-475;tests=tests/unit/test_yaml_field_set.bats:639-715;target=queue/insights.yaml:INS-20260818-235428053-8c2c;verification=existing_GP-234_yaml_cleanup_contract"
+  resolved_at: "2026-08-20T10:35:58+09:00"
 - id: INS-20260818-235428383-9e52
   ts: "2026-08-18T23:54:28+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4355; matched=スクリプト; current_pattern=研究 — 秘奥義21体 EW基準+Sharpe後退除去(1体ずつ抜く)の全軌跡: 剪定スクリプトを新設しrepoへ残す; candidate_level=2; candidate=cmd_1898パリティスクリプトがtarget_date=前月末日でproduction(当月第1営業日)と異なる。skip_months>0で差が増幅→抜き身/四つ目83-99%。パリティスクリプト作成cmdのACに'target_dateがproductionと一致'を標準化; source=gunshi_gp_tracker.yaml"
