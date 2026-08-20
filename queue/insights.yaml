@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-202433644-a14d
-  ts: "2026-08-18T20:24:33+09:00"
-  insight: "semantic_index_update新概念候補: lesson:L1603 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T20:26:01+09:00"
 - id: INS-20260818-202453422-1a32
   ts: "2026-08-18T20:24:53+09:00"
   insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
