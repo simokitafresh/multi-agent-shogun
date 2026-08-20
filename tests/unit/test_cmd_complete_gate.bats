@@ -4414,6 +4414,31 @@ task:
 YAML
 }
 
+_push_receipt_task_yaml() {
+    local base="$1" report_generation="${2:-rpt-test-source-generation}" report_name="${3:-report.yaml}"
+    local source_sha
+    source_sha="$(cat "$base/source.sha")"
+    cat > "$base/$report_name" <<YAML
+commit_hash: $source_sha
+report_id: $report_generation
+YAML
+    cat > "$base/task.yaml" <<YAML
+task:
+  project: external
+  target_path: $base/repo
+  report_path: $base/$report_name
+YAML
+}
+
+_push_legacy_source_publish_evidence() {
+    local base="$1" cmd_id="$2" generation="$3" report_generation="${4:-rpt-test-source-generation}"
+    local source_sha
+    source_sha="$(cat "$base/source.sha")"
+    cat > "$base/legacy-source-publish.jsonl" <<JSON
+{"event":"source_only_publication","cmd_id":"$cmd_id","completion_generation":"$generation","report_generation":"$report_generation","repo":"$base/repo","source_sha":"$source_sha","remote_contains_source_rc":0}
+JSON
+}
+
 _push_overlap_task_yaml_with_permission() {
     local base="$1" permission="$2"
     _push_overlap_task_yaml "$base"
@@ -4422,7 +4447,7 @@ _push_overlap_task_yaml_with_permission() {
 
 _push_repositories_function_probe() {
     local base="$1"
-    python3 - "$SRC_GATE_SCRIPT" "$base/helpers.sh" <<'PY'
+    python3 - "$PWD/scripts/cmd_complete_gate.sh" "$base/helpers.sh" <<'PY'
 import sys
 from pathlib import Path
 
@@ -4692,6 +4717,300 @@ EOF
     [[ "$(git --git-dir "$base/origin.git" log --format=%s refs/heads/main)" == *"remote ahead"* ]]
     [[ "$(git --git-dir "$base/origin.git" log --format=%s refs/heads/main)" == *"local change"* ]]
     [[ "$(git -C "$base/repo" status --porcelain)" == *" M shared.txt"* ]]
+}
+
+# test_necessity: a source-only publication receipt must prevent a second
+# publication when the remote advances after the first verified push; this is
+# the permanent regression contract for the cmd_reflux_backlink incident.
+@test "AC2 receipt: exact generation survives remote evolution without a second push" {
+    local base="$BATS_TEST_TMPDIR/ac2-receipt-positive"
+    local generation="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_receipt_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_positive_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"remote_contains_source_rc=0"* ]]
+    [ -s "$base/source-receipt.json" ]
+    python3 - "$base/source-receipt.json" "$base/repo" "$generation" "$base/source.sha" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding='utf-8'))
+assert data['cmd_id'] == 'cmd_receipt_positive_probe'
+assert data['completion_generation'] == sys.argv[3]
+entry = next(item for item in data['entries'] if item['repo'] == sys.argv[2])
+assert entry['source_sha'] == open(sys.argv[4]).read().strip()
+assert entry['remote_contains_source_rc'] == 0
+assert entry['report_generation'] == 'rpt-test-source-generation'
+PY
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'remote evolution\n' > "$base/remote-clone/remote-only.txt"
+    git -C "$base/remote-clone" add remote-only.txt
+    git -C "$base/remote-clone" commit -q -m "remote evolution"
+    git -C "$base/remote-clone" push -q origin main
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_positive_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"durable source-only publication receipt exact-match"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: receipt identity mismatches must not suppress normal remote
+# verification; a changed completion generation is accepted only by the
+# existing ancestor/equivalence proof and then receives a fresh receipt.
+@test "AC2 receipt: generation mismatch falls back to remote verification" {
+    local base="$BATS_TEST_TMPDIR/ac2-receipt-generation-mismatch"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_receipt_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_generation_probe
+    [ "$status" -eq 0 ]
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_generation_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commits already remote-contained"* || "$output" == *"source commits source-equivalent to remote tip"* ]]
+    [[ "$output" != *"durable source-only publication receipt exact-match"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: a source SHA mismatch must not reuse an older receipt, and a
+# new source publication must replace the receipt entry for that repository.
+@test "AC2 receipt: source mismatch publishes the new source identity" {
+    local base="$BATS_TEST_TMPDIR/ac2-receipt-source-mismatch"
+    local generation="ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_receipt_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_source_mismatch_probe
+    [ "$status" -eq 0 ]
+
+    printf 'new source\n' >> "$base/repo/shared.txt"
+    git -C "$base/repo" add shared.txt
+    git -C "$base/repo" commit -q -m "new source generation"
+    git -C "$base/repo" rev-parse HEAD > "$base/source-new.sha"
+    local new_source_sha
+    new_source_sha="$(cat "$base/source-new.sha")"
+    printf 'commit-retry dirty\n' >> "$base/repo/shared.txt"
+    printf 'commit_hash: %s\nreport_id: rpt-test-source-generation\n' "$new_source_sha" > "$base/report.yaml"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_source_mismatch_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"durable source-only publication receipt exact-match"* ]]
+    [[ "$output" == *"remote_contains_source_rc=0"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 2 ]
+    python3 - "$base/source-receipt.json" "$base/repo" "$new_source_sha" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding='utf-8'))
+entry = next(item for item in data['entries'] if item['repo'] == sys.argv[2])
+assert entry['source_sha'] == sys.argv[3]
+PY
+}
+
+# test_necessity: a corrupt receipt cannot be used as publication proof; the
+# normal remote containment check must run and rewrite a valid atomic receipt.
+@test "AC2 receipt: corrupt receipt is rejected and repaired by verification" {
+    local base="$BATS_TEST_TMPDIR/ac2-receipt-corrupt"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_receipt_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_corrupt_probe
+    [ "$status" -eq 0 ]
+    printf '{not-json\n' > "$base/source-receipt.json"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_corrupt_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commits already remote-contained"* || "$output" == *"source commits source-equivalent to remote tip"* ]]
+    [[ "$output" != *"durable source-only publication receipt exact-match"* ]]
+    python3 -m json.tool "$base/source-receipt.json" >/dev/null
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: an old task/report with no report generation must never be
+# promoted from the task-worktree marker into a durable publication receipt.
+@test "AC2 receipt: legacy ambiguous evidence is not migrated" {
+    local base="$BATS_TEST_TMPDIR/ac2-receipt-legacy"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_receipt_legacy_probe
+    [ "$status" -eq 0 ]
+    [ ! -e "$base/source-receipt.json" ]
+    [[ "$output" != *"durable source-only publication receipt exact-match"* ]]
+}
+
+# test_necessity: a pre-receipt trigger record is safe to migrate only when it
+# carries the same command/completion/report/repository/source identity and a
+# verified remote inclusion rc=0. This is the permanent regression contract
+# for the cmd_reflux_backlink pre-receipt incident.
+@test "AC2 receipt: exact legacy pre-receipt evidence migrates atomically" {
+    local base="$BATS_TEST_TMPDIR/ac2-receipt-legacy-positive"
+    local generation="1212121212121212121212121212121212121212121212121212121212121212"
+    local cmd_id="cmd_receipt_legacy_migrate_probe"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    # Reproduce the old successful source-only publication before the durable
+    # receipt exists, then advance the remote with an unrelated commit.
+    git -C "$base/repo" push -q origin main
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'remote evolution\n' > "$base/remote-clone/remote-only.txt"
+    git -C "$base/remote-clone" add remote-only.txt
+    git -C "$base/remote-clone" commit -q -m "remote evolution"
+    git -C "$base/remote-clone" push -q origin main
+    _push_receipt_task_yaml "$base"
+    _push_legacy_source_publish_evidence "$base" "$cmd_id" "$generation"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_LEGACY_EVIDENCE="$base/legacy-source-publish.jsonl" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" "$cmd_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"migrated legacy source-only publication evidence exact-match"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" 2>/dev/null || true)" -eq 0 ]
+    python3 - "$base/source-receipt.json" "$base/repo" "$generation" "$base/source.sha" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding='utf-8'))
+assert data['cmd_id'] == 'cmd_receipt_legacy_migrate_probe'
+assert data['completion_generation'] == sys.argv[3]
+entry = next(item for item in data['entries'] if item['repo'] == sys.argv[2])
+assert entry['source_sha'] == open(sys.argv[4]).read().strip()
+assert entry['remote_contains_source_rc'] == 0
+assert entry['report_generation'] == 'rpt-test-source-generation'
+PY
+}
+
+# Build the production review identity artifacts used by the trigger-log
+# backfill. The trigger log itself remains plain text, but all identity fields
+# come from the terminal manifest, approval generation, and terminal marker.
+_push_production_trigger_identity_fixture() {
+    local base="$1" cmd_id="$2" generation="$3" source_sha marker
+    local logical='queue/reports/tobisaru_report_cmd_reflux_backlink_202608201618_tobisaru.yaml'
+    local fingerprint='e01025e81e3174a0eabb8c1881e6115dda3e9c427de1beb952187024aa81eab0'
+    local trigger_dir="$base/queue/gates/$cmd_id"
+    local approval_dir="$trigger_dir/review_approvals/reports/e039af79ef25fccfab30153d3e750a77dbab037b29e9291472ccdfd1c7be9e57"
+    source_sha="$(cat "$base/source.sha")"
+    marker="$(printf '%s:%s\n' "$logical" "$fingerprint" | sha256sum | awk '{print $1}')"
+    _push_receipt_task_yaml "$base" rpt-278b75d2-2d26-46b4-b7f5-bb5406c005d7 \
+        tobisaru_report_cmd_reflux_backlink_202608201618_tobisaru.yaml
+    mkdir -p "$approval_dir"
+    printf '%s\n' \
+        'timestamp: 2026-08-20T16:34:00+09:00' \
+        'role: gunshi' \
+        'result: LGTM' \
+        'fingerprint: e01025e81e3174a0eabb8c1881e6115dda3e9c427de1beb952187024aa81eab0' \
+        "generation: $generation" \
+        'report: queue/reports/tobisaru_report_cmd_reflux_backlink_202608201618_tobisaru.yaml' > "$approval_dir/gunshi.yaml"
+    printf '%s\n' \
+        'timestamp: 2026-08-20T16:34:56+09:00' \
+        'role: karo' \
+        'result: ACCEPT' \
+        'fingerprint: e01025e81e3174a0eabb8c1881e6115dda3e9c427de1beb952187024aa81eab0' \
+        "generation: $generation" \
+        'report: queue/reports/tobisaru_report_cmd_reflux_backlink_202608201618_tobisaru.yaml' > "$approval_dir/karo.yaml"
+    printf '{"cmd_id":"%s","reports":[{"commit_identity":"%s","content_sha":"e01025e81e3174a0eabb8c1881e6115dda3e9c427de1beb952187024aa81eab0","logical_path":"queue/reports/tobisaru_report_cmd_reflux_backlink_202608201618_tobisaru.yaml","report_id":"rpt-278b75d2-2d26-46b4-b7f5-bb5406c005d7"}],"version":1}\n' \
+        "$cmd_id" "$source_sha" > "$trigger_dir/terminal_review_manifest.json"
+    printf '%s\n' \
+        'timestamp: 2026-08-20T16:36:57+09:00' \
+        'result: 1' \
+        'attempts: 1' \
+        "manifest: $marker" \
+        > "$trigger_dir/review_approvals/.gate_triggered.$marker"
+    printf '  git push: OK (%s; source-only fast-forward; remote_contains_source_rc=0)\n' "$base/repo" \
+        > "$trigger_dir/cmd_complete_gate.trigger.log"
+    printf 'attempt=1 rc=1 timestamp=2026-08-20T16:35:12+09:00\n' \
+        >> "$trigger_dir/cmd_complete_gate.trigger.log"
+}
+
+# test_necessity: the production retry path must consume the standard
+# cmd_complete_gate.trigger.log written by the pre-receipt gate, without a
+# hand-supplied evidence path or a synthetic JSONL writer.
+@test "AC2 receipt: production trigger log migrates exact legacy publication" {
+    local base="$BATS_TEST_TMPDIR/ac2-receipt-production-trigger"
+    local generation="2fd1c417bfb5cb45e75eb3f1f021616daaa7e49d77aaeaf842a9b75fabddfdef"
+    local cmd_id="cmd_reflux_backlink_202608201618_tobisaru"
+    local trigger_dir="$base/queue/gates/$cmd_id"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    # Reproduce the old successful source-only publication, then let the
+    # remote evolve exactly as it did before the durable receipt existed.
+    git -C "$base/repo" push -q origin main
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'remote evolution\n' > "$base/remote-clone/remote-only.txt"
+    git -C "$base/remote-clone" add remote-only.txt
+    git -C "$base/remote-clone" commit -q -m "remote evolution"
+    git -C "$base/remote-clone" push -q origin main
+    _push_production_trigger_identity_fixture "$base" "$cmd_id" "$generation"
+    _push_overlap_install_git_call_counter "$base"
+    _push_repositories_function_probe "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_ID="$cmd_id" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        bash "$base/run_push.sh" "$base" "$base/helpers.sh" "$base/task.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"migrated legacy source-only publication evidence exact-match"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" 2>/dev/null || true)" -eq 0 ]
+    python3 - "$trigger_dir/source_only_publish.receipt.json" "$base/repo" "$generation" "$base/source.sha" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding='utf-8'))
+assert data['cmd_id'] == 'cmd_reflux_backlink_202608201618_tobisaru'
+assert data['completion_generation'] == sys.argv[3]
+entry = next(item for item in data['entries'] if item['repo'] == sys.argv[2])
+assert entry['source_sha'] == open(sys.argv[4]).read().strip()
+assert entry['remote_contains_source_rc'] == 0
+assert entry['report_generation'] == 'rpt-278b75d2-2d26-46b4-b7f5-bb5406c005d7'
+PY
 }
 
 # test_necessity: a repeated remote race must stop after the configured retry
