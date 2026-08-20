@@ -880,7 +880,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_gate_busy_not_block_202608190642"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: logs/gunshi_gp_tracker.yaml の GP-237 が既に implemented。SG-PRE12b の project lessons.md draft 件数検出と gate_prediction WARN 補正が scripts/gates/gate_gunshi_report_precheck.sh L858-L873,L1394-L1400 に存在し、既存防御へ吸収済みのため新規修正・decision_candidate不要。"
+  action_artifact: "logs/gunshi_gp_tracker.yaml:GP-237; scripts/gates/gate_gunshi_report_precheck.sh:L858-L873,L1394-L1400; docs/research/gunshi_idle_wa_lesson_candidate_20260415.md"
+  resolved_at: "2026-08-20T13:38:33+09:00"
 - id: INS-20260819-122113002-5b71
   ts: "2026-08-19T12:21:13+09:00"
   insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_hotfix_gate_busy_not_block_202608190642 hayate lesson_candidate: AC前提件数は対応IDで照合してから実装開始する 集計カテゴリの件数だけで事例対応を推定せず、message IDとgate出力を1:1照合する。今回3件前提を先に確定できず、実装後に2件しか確認できないと判明した。"
