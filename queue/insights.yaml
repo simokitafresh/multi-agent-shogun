@@ -603,7 +603,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4355"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存Level4防御により解決済み。通常/--wa経路は category=clean をlock・write前にBLOCKし、--clean専用経路だけが workaround=false/category=clean を記録する。品質ゲートは workaround=true && category=clean をdetail非依存で検出・修復するため、新規実修正・decision_candidateは不要。"
+  action_artifact: "primary=scripts/karo_workaround_log.sh:677-683;gate=scripts/gates/gate_wa_data_quality.sh:6-9;tests=tests/unit/test_karo_workaround_validation.bats:335-344,tests/unit/test_gate_wa_data_quality.bats;context=context/infrastructure.md:459;source_commit=5d9802ea47319a8ef1d2623f440192cf750803b0;verification=fixture_9_to_0_FP0_FN0_48_of_48_PASS;target=queue/insights.yaml:INS-20260818-235427746-e816"
+  resolved_at: "2026-08-20T10:23:07+09:00"
 - id: INS-20260818-235428053-8c2c
   ts: "2026-08-18T23:54:28+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4355; matched=除去,repo; current_pattern=研究 — 秘奥義21体 EW基準+Sharpe後退除去(1体ずつ抜く)の全軌跡: 剪定スクリプトを新設しrepoへ残す; candidate_level=4; candidate=hayate cmd_2284でresult.details上書き時に旧continuation行が残留しYAML破損。手動4行削除が必要だった; source=gunshi_gp_tracker.yaml"
