@@ -904,7 +904,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -914,6 +914,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次確認: logs/self_retro.jsonl:3551のevent_id 7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8は実在し、同hash件数1・verify_command rc=0。現行review_bundle.py:420-462のreport fingerprint markerによるSG7通知exactly-onceと、通知後self-retroのdetachを確認。追加実装・decision_candidateは不要。"
+  action_artifact: "primary=logs/self_retro.jsonl:3551;implementation=scripts/review_bundle.py:420-462,scripts/review_approval.sh:885-900;event_count=1;verify_rc=0;inventory_before=12/3/0/15;task=cmd_reflux_insight_202608220201_kagemaru_exact"
+  resolved_at: "2026-08-22T02:06:23+09:00"
 - id: INS-20260821-095036102-8f0b
   ts: "2026-08-21T09:50:36+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210935_kagemaru; matched=yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
