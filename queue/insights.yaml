@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-214717758-5f8d
-  ts: "2026-08-18T21:47:17+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id b35wtdrnz task id tool use id toolu 01XPYXGYtg7SUu9WKd は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:47:49+09:00"
 - id: INS-20260818-214749762-cb24
   ts: "2026-08-18T21:47:49+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1604 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -981,3 +971,90 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-22T07:03:42+09:00"
+- id: INS-20260822-071006407-54ca
+  ts: "2026-08-22T07:10:06+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b983g8011 task id tool use id toolu 01VqgxjHxz3jXxjoeA は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260818-213441316-4280
+  ts: '2026-08-18T21:34:41+09:00'
+  insight: '[[それはgistに記事として結果を載せているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=それはgistに記事として結果を載せているか？'
+  priority: low
+  source: semantic_stress_test
+  fix_known: false
+  status: resolved
+  resolved_reason: semantic index candidate was absorbed into a registered concept
+  action_artifact: semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
+  resolved_at: '2026-08-18T21:41:42+09:00'
+- id: INS-20260818-213441811-24fc
+  ts: '2026-08-18T21:34:41+09:00'
+  insight: '[[昔同じようなやり方をやったことがある]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=昔同じようなやり方をやったことがある'
+  priority: low
+  source: semantic_stress_test
+  fix_known: false
+  status: resolved
+  resolved_reason: semantic index candidate was absorbed into a registered concept
+  action_artifact: semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
+  resolved_at: '2026-08-18T21:41:43+09:00'
+- id: INS-20260818-213442319-eac6
+  ts: '2026-08-18T21:34:42+09:00'
+  insight: '[[たしかgreedy法だったきがする]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=たしかgreedy法だったきがする'
+  priority: low
+  source: semantic_stress_test
+  fix_known: false
+  status: resolved
+  resolved_reason: semantic index candidate was absorbed into a registered concept
+  action_artifact: semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
+  resolved_at: '2026-08-18T21:41:43+09:00'
+- id: INS-20260818-213442845-ad7d
+  ts: '2026-08-18T21:34:42+09:00'
+  insight: '[[そこから1体ずつ減らしていく]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=そこから1体ずつ減らしていく、sharpe ratioが減るまで一体ずつ減らしたときの組み合わせを見つけたい。意味は分かるか？'
+  priority: low
+  source: semantic_stress_test
+  fix_known: false
+  status: resolved
+  resolved_reason: semantic index candidate was absorbed into a registered concept
+  action_artifact: semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
+  resolved_at: '2026-08-18T21:41:43+09:00'
+- id: INS-20260818-214144014-606b
+  ts: '2026-08-18T21:41:44+09:00'
+  insight: 'semantic_index_update新概念候補: discussion:task notification task id bdg9n8nn4 task id tool use id toolu 01SABZxvzzzLN5FJoH は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ'
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: resolved
+  resolved_reason: semantic map generation verified the candidate is represented or intentionally ignored
+  action_artifact: semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
+  resolved_at: '2026-08-18T21:46:40+09:00'
+- id: INS-20260818-214558705-1f4a
+  ts: '2026-08-18T21:45:58+09:00'
+  insight: '[[研究 — 秘奥義21体 2 3 4体EW全量探索 合計7 525通り×4手法 combo exhaustive sear]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=研究 — 秘奥義21体 2/3/4体EW全量探索(合計7,525通り×4手法): combo_exhaustive_search.pyへα/β列を追加し指標別ランキングを出す'
+  priority: low
+  source: semantic_stress_test
+  fix_known: false
+  status: resolved
+  resolved_reason: semantic index candidate was absorbed into a registered concept
+  action_artifact: semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
+  resolved_at: '2026-08-18T21:47:17+09:00'
+- id: INS-20260818-214559327-0958
+  ts: '2026-08-18T21:45:59+09:00'
+  insight: '[[研究 — 秘奥義21体 EW基準 Sharpe後退除去 1体ずつ抜く の全軌跡 剪定スクリプトを新設しrepoへ残す]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=研究 — 秘奥義21体 EW基準+Sharpe後退除去(1体ずつ抜く)の全軌跡: 剪定スクリプトを新設しrepoへ残す'
+  priority: low
+  source: semantic_stress_test
+  fix_known: false
+  status: resolved
+  resolved_reason: semantic index candidate was absorbed into a registered concept
+  action_artifact: semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
+  resolved_at: '2026-08-18T21:47:17+09:00'
+- id: INS-20260818-214600222-50a0
+  ts: '2026-08-18T21:46:00+09:00'
+  insight: '[[殿指示2026 08 18 21 29 21 33『秘奥義21体から2C21の組み合わせを作ってCAGR最強やα β最強]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示2026-08-18 21:29-21:33『秘奥義21体から2C21の組み合わせを作ってCAGR最強やα/β最強などを調べることはできるか』『α/βは文字通りαをβで割った新指標』『以前の指標＋α/β』『進めよ』。既存道具 scripts/analysis/combo_exhaustive_search.py(cmd_1934/2449で稼働: 4手'
+  priority: low
+  source: semantic_stress_test
+  fix_known: false
+  status: resolved
+  resolved_reason: semantic index candidate was absorbed into a registered concept
+  action_artifact: semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
+  resolved_at: '2026-08-18T21:47:17+09:00'
