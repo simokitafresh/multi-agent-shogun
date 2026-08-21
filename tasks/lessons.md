@@ -15485,3 +15485,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - docs/semantic-index/index.mdは共有rootに存在してもgitignoredのためtask worktreeへ自動配備されずgenerator入力が欠落する。配備時のignored SSOT bytes注入と証跡を維持すべきである。
+
+### L1628: context freshness warning must publish the complete candidate set
+- **日付**: 2026-08-21
+- **出典**: cmd_karo_hotfix_ga487_context_freshness_20260821
+- **記録者**: kagemaru
+- **tags**: [infra,testing,recon,git]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_ga487_context_freshness_20260821]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 発端: GA-487 alertは件数と先頭3件だけを出力。原因: doc laneへ全件集合が渡らず毎回git log再調査。結果: warningにbounded complete source_commit_setと件数を追加し、4/4可視化をcontract化した。
