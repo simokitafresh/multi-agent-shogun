@@ -15,8 +15,8 @@ cli:
       type: codex
       model_name: gpt-5.6-sol-medium
       role: karo
-      launch_cmd: 
-      service_tier: fast
+      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen -m gpt-5.6-sol
+      service_tier: default
       japanese_name: 家老
     gunshi:
       type: claude
