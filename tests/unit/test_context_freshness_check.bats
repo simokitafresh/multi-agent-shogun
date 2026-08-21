@@ -369,6 +369,24 @@ STKYAML
     [[ "$output" == *"source commits"* ]]
 }
 
+# test_necessity: GA-487のdoc laneがsource commit集合を再調査せず全件受け取れる不変量
+@test "GA-487 dashboard warning publishes the complete source commit set" {
+    local source_repo="$TEST_TMPDIR"
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_shogun_to_karo "cmd_500" "dm-signal"
+
+    for n in 1 2 3 4; do
+        _create_source_commit "src/ga487-$n.py" "feature: GA-487 source update $n" "$source_repo"
+    done
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_500
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commits 4件"* ]]
+    [[ "$output" == *"source_commit_set_count=4"* ]]
+    [[ "$output" == *"feature: GA-487 source update 1"* ]]
+    [[ "$output" == *"feature: GA-487 source update 4"* ]]
+}
+
 @test "GA-276 dashboard ignores unpushed local commit while cmd mode detects it" {
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"

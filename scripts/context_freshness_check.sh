@@ -101,6 +101,11 @@ exclude_entries = {
 }
 cutoff_date = date.today() - timedelta(days=threshold_days)
 FINAL_STATUSES = {"completed", "done", "complete", "success"}
+# GA-487: retain the complete source commit candidate set for doc-lane
+# consumers; the human-facing warning still shows a short preview.
+MAX_SOURCE_COMMIT_DETAILS = int(
+    os.environ.get("CFC_MAX_SOURCE_COMMIT_DETAILS", "1000")
+)
 
 
 def normalize_rel(path: str) -> str:
@@ -987,7 +992,7 @@ def _root_fallback_commit_count_since(
             "context/infrastructure.md", current_hash, subject, changed_paths, root
         ):
             count += 1
-            if len(details) < 3:
+            if len(details) < MAX_SOURCE_COMMIT_DETAILS:
                 details.append(f"{current_hash} {subject}".strip())
     return count, details
 
@@ -1043,7 +1048,7 @@ def source_commit_summary_since(
     abs_path: str,
     updated_at: date,
     source_commits: tuple[str, ...] | None = None,
-    max_details: int = 3,
+    max_details: int = MAX_SOURCE_COMMIT_DETAILS,
 ) -> tuple[int, list[str]]:
     repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     if not repo_path or not os.path.isdir(repo_path):
@@ -1399,7 +1404,7 @@ def _compute_direct_group(
             ):
                 continue
             count += 1
-            if len(details) < 3:
+            if len(details) < MAX_SOURCE_COMMIT_DETAILS:
                 details.append(f"{commit_hash} {subject}".strip())
         results[(project_id, rel_path)] = (count, details)
     return results
@@ -1764,7 +1769,14 @@ def build_source_warning(
         f"owner={owner} update_trigger={trigger}。更新要否を確認せよ"
     )
     if details:
-        message += f" latest: {' | '.join(details)}"
+        preview = details[:3]
+        message += f" latest: {' | '.join(preview)}"
+        # The preview keeps dashboard lines readable; the complete set is the
+        # durable Level5 input consumed by doc-lane tooling and reports.
+        message += (
+            f" source_commit_set_count={len(details)}"
+            f" source_commit_set: {' | '.join(details)}"
+        )
         latest_hash, _, _latest_subject = details[0].partition(" ")
         reason = "context_freshness reviewed source boundary"
         evidence = f"context_freshness_check context={rel_path} commit={latest_hash}"
