@@ -973,7 +973,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で gate_report_format_main.py:1697-1706 が revision_requested を編集解除状態として PASS/PASS_NO_IMPROVEMENT との併用を拒否し、report_field_set.sh の verdict 自動遷移と既存 unit test 7/7 PASS を確認。GP-107類似の既知契約として新規実装・decision_candidateは不要。"
+  action_artifact: "scripts/gates/gate_report_format_main.py:1697-1706;scripts/report_field_set.sh:3086-3092;tests/unit/test_report_field_set_verdict_status.bats:7/7 PASS;cmd_reflux_insight_202608212332_kotaro"
+  resolved_at: "2026-08-21T23:38:41+09:00"
 - id: INS-20260821-223254752-46e1
   ts: "2026-08-21T22:32:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:codexを違うアカウントでログインしたいんだがどうすればいい？いま家老はsimokitafresh@gmail comだがKarasuyama3387@gma は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
