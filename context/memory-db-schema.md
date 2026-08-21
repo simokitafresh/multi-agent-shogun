@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-08-16 -->
+<!-- last_updated: 2026-08-21 -->
 <!-- source_commit:6ca18b295ac6656014f09d91905b5113a9bd8501 reason:ga299-reviewed-exact-boundary evidence:memory-db-schema-generator-preserves-marker -->
 
 # Memory DB Schema
@@ -10,13 +10,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 473874 | event_id, concept_name, relevance_score |
-| table | event_links | 32218 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 5576 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 309696 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 309696 | summary, detail |
-| table | search_logs | 47210 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 80322 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 499084 | event_id, concept_name, relevance_score |
+| table | event_links | 33088 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 5726 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 321444 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 321444 | summary, detail |
+| table | search_logs | 48703 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 83494 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -35,20 +35,20 @@
 
 | event_type | count |
 | --- | --- |
-| report | 95258 |
-| conversation | 80322 |
-| inbox | 61473 |
-| insight | 18389 |
-| gate | 15525 |
-| bulletin | 12772 |
+| report | 96621 |
+| conversation | 83494 |
+| inbox | 65854 |
+| insight | 18997 |
+| gate | 16794 |
+| bulletin | 13110 |
 | cmd_archive | 9513 |
-| cmd_quality | 7582 |
+| cmd_quality | 7974 |
 | skill_execution | 2961 |
-| cmd_save | 2823 |
-| knowledge | 1077 |
-| lesson | 989 |
-| cmd_delegate | 905 |
-| workaround | 55 |
+| cmd_save | 2898 |
+| knowledge | 1150 |
+| lesson | 1025 |
+| cmd_delegate | 941 |
+| workaround | 60 |
 | pending_decision | 49 |
 | project | 2 |
 | infrastructure_state | 1 |
