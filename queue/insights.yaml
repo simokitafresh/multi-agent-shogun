@@ -1,44 +1,4 @@
 insights:
-- id: INS-20260818-213441316-4280
-  ts: "2026-08-18T21:34:41+09:00"
-  insight: "[[それはgistに記事として結果を載せているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=それはgistに記事として結果を載せているか？"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:41:42+09:00"
-- id: INS-20260818-213441811-24fc
-  ts: "2026-08-18T21:34:41+09:00"
-  insight: "[[昔同じようなやり方をやったことがある]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=昔同じようなやり方をやったことがある"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:41:43+09:00"
-- id: INS-20260818-213442319-eac6
-  ts: "2026-08-18T21:34:42+09:00"
-  insight: "[[たしかgreedy法だったきがする]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=たしかgreedy法だったきがする"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:41:43+09:00"
-- id: INS-20260818-213442845-ad7d
-  ts: "2026-08-18T21:34:42+09:00"
-  insight: "[[そこから1体ずつ減らしていく]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=そこから1体ずつ減らしていく、sharpe ratioが減るまで一体ずつ減らしたときの組み合わせを見つけたい。意味は分かるか？"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:41:43+09:00"
 - id: INS-20260818-214144014-606b
   ts: "2026-08-18T21:41:44+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bdg9n8nn4 task id tool use id toolu 01SABZxvzzzLN5FJoH は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -784,8 +744,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 3
-  last_seen: "2026-08-22T06:32:32+09:00"
+  occurrence_count: 2
+  last_seen: "2026-08-22T04:41:40+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -958,7 +918,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T06:36:40+09:00"
 - id: INS-20260821-113213235-d48a
   ts: '2026-08-21T11:32:13+09:00'
   insight: 'THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify=''test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh'' source=S2_detector_fp_rate'
@@ -1008,3 +971,10 @@ insights:
   resolved_reason: semantic index candidate was absorbed into a registered concept
   action_artifact: semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md
   resolved_at: '2026-08-18T21:41:42+09:00'
+- id: INS-20260822-063624178-9fac
+  ts: "2026-08-22T06:36:24+09:00"
+  insight: "SKILL.md追従task[6b85770af68a9b7b]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:6b85770af68a9b7b"
+  fix_known: false
+  status: pending
