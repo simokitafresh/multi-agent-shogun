@@ -1,32 +1,4 @@
 insights:
-- id: INS-20260818-213227144-b176
-  ts: '2026-08-18T21:32:27+09:00'
-  insight: 'semantic_index_update新概念候補: discussion:いや以前の指標＋α β は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ'
-  priority: low
-  source: semantic_index_update
-  fix_known: false
-  status: resolved
-  resolved_reason: semantic map generation verified the candidate is represented or
-- id: INS-20260818-213307580-c426
-  ts: "2026-08-18T21:33:07+09:00"
-  insight: "semantic_index_update新概念候補: discussion:進めよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:34:25+09:00"
-- id: INS-20260818-213440819-23e4
-  ts: "2026-08-18T21:34:40+09:00"
-  insight: "[[α βは文字通りαをベータで割った新指標だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=α/βは文字通りαをベータで割った新指標だ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:41:42+09:00"
 - id: INS-20260818-213441316-4280
   ts: "2026-08-18T21:34:41+09:00"
   insight: "[[それはgistに記事として結果を載せているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=それはgistに記事として結果を載せているか？"
@@ -788,7 +760,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認済み: gate_skill_script_refs.sh は exit 2相当のREVIEW_REQUIREDだが、参照先実在・SKILL更新鮮度・例示パス・副作用実走マーカーは全てOK。7対はFOLLOWUP_ACTIVEとしてreflux対象に登録済みで、現時点のSKILL追従修正・decision_candidateは不要。"
+  action_artifact: "primary=gate_skill_script_refs.sh: 全82参照/30対象・FOLLOWUP_ACTIVE=7・OK 4項目・REVIEW_REQUIRED; targets=skills/cmd-complete/SKILL.md,skills/codd-fix/SKILL.md,skills/dream/SKILL.md,skills/gate-sync/SKILL.md,skills/idle-persist/SKILL.md,skills/review-bundle/SKILL.md,skills/shogun-teire/SKILL.md; test=bash scripts/run_tests.sh task queue/tasks/tobisaru.yaml rc=0 tests=0/0 skip=0; semantic=context/semantic-map.md:skill_script_refs概念"
+  resolved_at: "2026-08-22T06:22:20+09:00"
 - id: INS-20260821-085035822-dc0a
   ts: "2026-08-21T08:50:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bthhf8rnn task id tool use id toolu 01NEY4n1MPAPbmvqkE は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -838,7 +813,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -848,6 +823,9 @@ insights:
     status: "failed"
     exit_code: 1
     output: ""
+  resolved_reason: "fix_known=true; verify_command exit=0; target_file and detector log both exist; no code change required"
+  action_artifact: "logs/detector_fp_rate.yaml;scripts/cmd_save.sh;cmd_reflux_insight_202608220548_hayate_exact"
+  resolved_at: "2026-08-22T06:22:20+09:00"
 - id: INS-20260822-004505015-1eae
   ts: "2026-08-22T00:45:05+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4358; matched=lesson; current_pattern=lesson淘汰候補の審査 — deprecation candidatesの家老審査と--retire反映; candidate_level=2; candidate=620教訓中9重複ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複。lesson_write.sh AC2=ID dedupのみ→内容dedup不在→同一テーマ重複。cmd_save.sh Check12(Jaccard≥50%)と同構造で実装可能; source=gunshi_gp_tracker.yaml"
@@ -981,3 +959,22 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260821-113213235-d48a
+  ts: '2026-08-21T11:32:13+09:00'
+  insight: 'THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify=''test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh'' source=S2_detector_fp_rate'
+  priority: medium
+  source: throughput_scan:fp_rate:scripts_cmd_save.sh
+  fix_known: true
+  status: resolved
+  target_file: scripts/cmd_save.sh
+  verify_command: test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh
+  insight_summary_hash: f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2
+  occurrence_count: 1
+  last_seen: '2026-08-21T11:32:13+09:00'
+  verification:
+    status: failed
+    exit_code: 1
+    output: ''
+  resolved_reason: 'known fix verified: verify_command passed (rc=0), detector evidence and target script are present'
+  action_artifact: logs/detector_fp_rate.yaml;scripts/cmd_save.sh;verify_rc=0
+  resolved_at: '2026-08-21T23:17:52+09:00'
