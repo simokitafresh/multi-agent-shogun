@@ -995,7 +995,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -1005,3 +1005,6 @@ insights:
     status: "failed"
     exit_code: 1
     output: ""
+  resolved_reason: "既知修正を一次確認: target_file=scripts/cmd_save.sh が存在し、指定verify_commandの実行結果はrc=0"
+  action_artifact: "scripts/cmd_save.sh; logs/detector_fp_rate.yaml; verify_rc=0; source=throughput_scan:fp_rate:scripts_cmd_save.sh"
+  resolved_at: "2026-08-21T10:37:08+09:00"
