@@ -989,3 +989,19 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210935_kagemaru"
   fix_known: false
   status: pending
+- id: INS-20260821-101647583-298a
+  ts: "2026-08-21T10:16:47+09:00"
+  insight: "THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify='test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh' source=S2_detector_fp_rate"
+  priority: "medium"
+  source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
+  fix_known: true
+  status: pending
+  target_file: "scripts/cmd_save.sh"
+  verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
+  insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
+  occurrence_count: 1
+  last_seen: "2026-08-21T10:16:47+09:00"
+  verification:
+    status: "failed"
+    exit_code: 1
+    output: ""
