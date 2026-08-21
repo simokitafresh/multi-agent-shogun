@@ -832,7 +832,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存防御を一次確認済み。scripts/deploy_task.shの教訓選定はtitle/description/purpose/command/target_pathをtask_textへ含め、outputs targetでも目的・commandのCDP/auth wall語から関連教訓を注入する。専用回帰テストを正規runnerで54/54 PASS・SKIP 0・rc=0確認し、追加実修正は不要。"
+  action_artifact: "primary=scripts/deploy_task.sh:task_text keyword extraction;regression=tests/unit/test_deploy_task_ac_handling.bats:2019-2068 test39;receipt=logs/test_receipts/run_tests_20260821T180619_3747270.json rc=0 tests=54/54 skip=0;inventory_before=insights_pending:10,zero_backlinks:3,promotions:0,total:13;inventory_after=insights_pending:10,zero_backlinks:0,promotions:822,total:832;task=cmd_reflux_insight_202608220303_kagemaru"
+  resolved_at: "2026-08-22T03:09:45+09:00"
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
