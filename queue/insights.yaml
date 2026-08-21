@@ -992,7 +992,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -1002,3 +1002,6 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: 一次確認で対象self_retro eventをhash一致1件で確認し重複0。既存のreport publish review-ready通知とSG7 fingerprint-bound exactly-once triggerがdelivery succeeds and duplicate event count is 0を満たす実測済み。新規実装修正とdecision_candidateは不要。
+  action_artifact: "primary=logs/self_retro.jsonl:3551;semantic=context/semantic-map.md:107;design=docs/research/infrastructure-agents-delivery.md:224-226;inventory_before_task=insights_pending:8,zero_backlinks:2,promotions:0,total:10;event_hash_matches=1;duplicate=0"
+  resolved_at: "2026-08-21T09:18:48+09:00"
