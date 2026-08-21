@@ -1,14 +1,12 @@
 insights:
 - id: INS-20260818-213227144-b176
-  ts: "2026-08-18T21:32:27+09:00"
-  insight: "semantic_index_update新概念候補: discussion:いや以前の指標＋α β は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
+  ts: '2026-08-18T21:32:27+09:00'
+  insight: 'semantic_index_update新概念候補: discussion:いや以前の指標＋α β は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ'
+  priority: low
+  source: semantic_index_update
   fix_known: false
   status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:46:39+09:00"
+  resolved_reason: semantic map generation verified the candidate is represented or
 - id: INS-20260818-213307580-c426
   ts: "2026-08-18T21:33:07+09:00"
   insight: "semantic_index_update新概念候補: discussion:進めよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -964,5 +962,22 @@ insights:
   insight: "SKILL.md追従task[a382f82fc53df689]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:a382f82fc53df689"
+  fix_known: false
+  status: pending
+- id: INS-20260822-055645818-8da5
+  ts: "2026-08-22T05:56:45+09:00"
+  insight: "[[codexを違うアカウントでログインしたいんだがどうすればいい？いま家老はsimokitafresh@gmail com]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=codexを違うアカウントでログインしたいんだがどうすればいい？いま家老はsimokitafresh@gmail.comだがKarasuyama3387@gmail.comでログインをし直したい"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T06:00:57+09:00"
+- id: INS-20260822-060154978-fad6
+  ts: "2026-08-22T06:01:54+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bvsdkuyl3 task id tool use id toolu 01MiDNCTbtnw6Cj8W5 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
