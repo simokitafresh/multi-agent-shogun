@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260818-211543679-ed9a
-  ts: "2026-08-18T21:15:43+09:00"
-  insight: "[[レスポンシブの時はシンプルなカード]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=レスポンシブの時はシンプルなカード、PCやタブレットでは元のリッチな情報の2パターンがいい"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:16:52+09:00"
-- id: INS-20260818-211710933-49d1
-  ts: "2026-08-18T21:17:10+09:00"
-  insight: "semantic_index_update新概念候補: discussion:昔同じようなやり方をやったことがある は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:21:58+09:00"
 - id: INS-20260818-211856126-2808
   ts: "2026-08-18T21:18:56+09:00"
   insight: "semantic_index_update新概念候補: discussion:それはgistに記事として結果を載せているか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -823,7 +803,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次検証でgate_skill_script_refs.shを実行し、rc=2はFOLLOWUP_ACTIVE=7組のREVIEW_REQUIREDのみと確認。missing=0、stale=0、example_path_missing=0、side_effect_marker_missing=0で、7組の参照先は実在かつ鮮度OK。追加修正とdecision_candidateは不要。
+  action_artifact: "primary=SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh .;actual=rc:2,missing:0,stale:0,example_path_missing:0,side_effect_marker_missing:0,pending:7,FOLLOWUP_ACTIVE:7;inventory_before_task:insights_pending:7,zero_backlinks:3,promotions:0,total:10;shared_dirty_preserved=true"
+  resolved_at: "2026-08-22T04:31:18+09:00"
 - id: INS-20260821-044602409-0272
   ts: "2026-08-21T04:46:02+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210433_hayate; matched=yaml; current_pattern=; candidate_level=4; candidate=GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格; source=gunshi_gp_tracker.yaml"
@@ -989,3 +972,23 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-22T04:27:53+09:00"
+- id: INS-20260818-211543679-ed9a
+  ts: "2026-08-18T21:15:43+09:00"
+  insight: "[[レスポンシブの時はシンプルなカード]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=レスポンシブの時はシンプルなカード、PCやタブレットでは元のリッチな情報の2パターンがいい"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T21:16:52+09:00"
+- id: INS-20260818-211710933-49d1
+  ts: "2026-08-18T21:17:10+09:00"
+  insight: "semantic_index_update新概念候補: discussion:昔同じようなやり方をやったことがある は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-18T21:21:58+09:00"
