@@ -912,7 +912,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証: gate_skill_script_refs.sh RC=2はFOLLOWUP_ACTIVE=7によるREVIEW_REQUIRED集約で、対象7組を含む全41 SKILL/82参照の参照先実在・SKILL鮮度・静的パス・副作用実走マーカーは全てOK。追加SKILL修正とdecision_candidateは不要。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;result=REVIEW_REQUIRED;followup_active=7;followup_covers_review_required=yes;all_checks=OK;verified_at=2026-08-21T09:55:00+09:00;inventory_log=logs/ninja_monitor.log:1987,1990;before=3/2/0/5;after=9/2/890/901"
+  resolved_at: "2026-08-21T09:58:21+09:00"
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
@@ -996,3 +999,19 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210935_kagemaru"
   fix_known: false
   status: pending
+- id: INS-20260821-100041012-5db9
+  ts: "2026-08-21T10:00:41+09:00"
+  insight: "THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify='test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh' source=S2_detector_fp_rate"
+  priority: "medium"
+  source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
+  fix_known: true
+  status: pending
+  target_file: "scripts/cmd_save.sh"
+  verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
+  insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
+  occurrence_count: 1
+  last_seen: "2026-08-21T10:00:41+09:00"
+  verification:
+    status: "failed"
+    exit_code: 1
+    output: ""
