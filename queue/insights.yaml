@@ -944,7 +944,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -954,6 +954,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: 一次確認で対象self_retro eventをhash一致1件で確認し重複0。既存のreport publish review-ready通知とSG7 fingerprint-bound exactly-once triggerがdelivery succeeds and duplicate event count is 0を満たす実測済み。新規実装修正とdecision_candidateは不要。
+  action_artifact: "primary=logs/self_retro.jsonl:3551;semantic=context/semantic-map.md:107;design=docs/research/infrastructure-agents-delivery.md:224-226;inventory_before_task=insights_pending:8,zero_backlinks:2,promotions:0,total:10;event_hash_matches=1;duplicate=0"
+  resolved_at: "2026-08-21T09:18:48+09:00"
 - id: INS-20260821-095036102-8f0b
   ts: "2026-08-21T09:50:36+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210935_kagemaru; matched=yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
