@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260818-211536528-de15
-  ts: "2026-08-18T21:15:36+09:00"
-  insight: "[[standard menber only premium menber only 更にlimited menber on]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=standard menber only,premium menber only ,更にlimited menber onlyがあると餌としておくのは？"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:15:54+09:00"
-- id: INS-20260818-211536805-5de3
-  ts: "2026-08-18T21:15:36+09:00"
-  insight: "[[実際のページを作るときに必要になる情報は設計書のほうに会話とともに随時記載しているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=実際のページを作るときに必要になる情報は設計書のほうに会話とともに随時記載しているか？"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:16:52+09:00"
 - id: INS-20260818-211537203-90bd
   ts: "2026-08-18T21:15:37+09:00"
   insight: "[[レスポンシブの時は下にシンプルなカード＋stickyなポップアップだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=レスポンシブの時は下にシンプルなカード＋stickyなポップアップだ。おれの希望などを随時記録してどう変えていったかを記録してくれ"
@@ -967,3 +947,37 @@ insights:
     status: "failed"
     exit_code: 1
     output: ""
+- id: INS-20260822-004505015-1eae
+  ts: "2026-08-22T00:45:05+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4358; matched=lesson; current_pattern=lesson淘汰候補の審査 — deprecation candidatesの家老審査と--retire反映; candidate_level=2; candidate=620教訓中9重複ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複。lesson_write.sh AC2=ID dedupのみ→内容dedup不在→同一テーマ重複。cmd_save.sh Check12(Jaccard≥50%)と同構造で実装可能; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4358"
+  fix_known: false
+  status: pending
+- id: INS-20260822-004505145-11f8
+  ts: "2026-08-22T00:45:05+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4358; matched=家老; current_pattern=lesson淘汰候補の審査 — deprecation candidatesの家老審査と--retire反映; candidate_level=2; candidate=GP-216事故: 既存useful_rate filter未確認→不要提案→家老CTX消費。LG033(Level 2)が行動を変えなかった→フロー3箇所に1行埋込で毎回目に入る構造に; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4358"
+  fix_known: false
+  status: pending
+- id: INS-20260822-004505304-08de
+  ts: "2026-08-22T00:45:05+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[教訓母数肥大]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=教訓; score=21.7) / skill_routing(スキルルーティング; alias=教訓整理; score=2.5) / lesson_lifecycle(教訓ライフサイクル管理; alias=教訓登録; score=2.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T00:45:13+09:00"
+- id: INS-20260822-004505762-4a19
+  ts: "2026-08-22T00:45:05+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[淘汰審査と--retire反映]] は既存aliasesに一致なし。類似概念TOP3: visibility_tier_masking(Visibility Tier制マスク; alias=Tier; score=3.3) / tier_plan_mapping(Tier-プラン対応; alias=tier; score=3.3) / destructive_operations(破壊的操作安全機構; alias=Tier1; score=3.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T00:45:13+09:00"
