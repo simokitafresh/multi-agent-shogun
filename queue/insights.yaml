@@ -931,7 +931,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: memory DBでsource cmd_reflux_backlink_202608201618_tobisaruのGATE CLEARと軍師APPROVEを確認。現行deploy_task.shはtarget_path/target_files適用性、keyword relevance、target_pathなし全量fallback抑制、target_path boostのrelevance bypass禁止を実装済み(cmd_3271/cmd_3466)。context/cdp-philosophy.mdはCDP認証自動化を、context/growth-loop.mdとcontext/semantic-map.mdはLevel5防御階層を既存記載しており、追加実装修正・decision_candidateは不要。"
+  action_artifact: "resolve=INS-20260821-013144869-5e6a; evidence=memory_db source cmd_reflux_backlink_202608201618_tobisaru GATE_CLEAR+APPROVE; implementation=scripts/deploy_task.sh target_path applicability and fallback guards; context=context/cdp-philosophy.md,context/growth-loop.md,context/semantic-map.md; verification=rg/git source inspection; new_code=none"
+  resolved_at: "2026-08-21T09:00:38+09:00"
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
