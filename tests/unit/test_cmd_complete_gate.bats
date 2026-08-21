@@ -6403,6 +6403,14 @@ run_ci_push_state() {
         CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT"
 }
 
+run_report_main_ancestry_state() {
+    local repo="$1" report="$2" task="${3:-}"
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" \
+        CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT"
+}
+
 # test_necessity: readonly recon/scout reports with a symmetric optional
 # commit contract must not be mistaken for unpublished implementation.
 @test "CI push detection skips symmetric empty no-code recon contract" {
@@ -6714,6 +6722,80 @@ run_commit_repo_resolution() {
     run_ci_push_state "$dm_repo" "$report"
     [ "$status" -eq 0 ]
     [[ "$output" == "BLOCK: report commit"* ]]
+}
+
+# test_necessity: terminal CLEAR must require a PASS report commit to be an
+# ancestor of the canonical shared main/master boundary.
+# regression_justification: cmd_4358 and cmd_4360 both recorded CLEAR while
+# their report commits were absent from origin/main.
+@test "terminal report ancestry accepts a remote-contained PASS commit" {
+    local repo="$BATS_TEST_TMPDIR/report-ancestry-positive"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-positive.yaml"
+    make_ci_push_repo "$repo"
+    printf 'verdict: PASS\ncommit_hash: %s\n' "$(git -C "$repo" rev-parse HEAD)" > "$report"
+
+    run_report_main_ancestry_state "$repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS: PUSHED:"* ]]
+}
+
+# test_necessity: terminal ancestry is fail-closed for a normal PASS report,
+# even when the commit is locally resolvable and files_modified is present.
+# regression_justification: the former CI-only check emitted UNPUSHED but did
+# not change ALL_CLEAR, allowing an unreachable report artifact to CLEAR.
+@test "terminal report ancestry blocks a local-only PASS commit" {
+    local repo="$BATS_TEST_TMPDIR/report-ancestry-negative"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-negative.yaml"
+    make_ci_push_repo "$repo"
+    echo local-only >> "$repo/state"
+    git -C "$repo" commit -qam "local-only report source"
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: scripts/example.sh\n' \
+        "$(git -C "$repo" rev-parse HEAD)" > "$report"
+
+    run_report_main_ancestry_state "$repo" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: UNPUSHED:"* ]]
+}
+
+# test_necessity: a report whose commit belongs to an explicitly declared
+# cross-repository source remains valid when that canonical repo's main is the
+# shared boundary.
+# regression_justification: source-only publication and external task repos
+# must not be redirected to the platform repository during terminal checking.
+@test "terminal report ancestry accepts a pushed cross-repo PASS commit" {
+    local project_repo="$BATS_TEST_TMPDIR/report-ancestry-cross-project"
+    local commit_repo="$BATS_TEST_TMPDIR/report-ancestry-cross-source"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-cross.yaml"
+    make_ci_push_repo "$project_repo"
+    make_ci_push_repo "$commit_repo"
+    echo cross-repo >> "$commit_repo/state"
+    git -C "$commit_repo" commit -qam "cross-repo report source"
+    local source_sha
+    source_sha="$(git -C "$commit_repo" rev-parse HEAD)"
+    git -C "$commit_repo" update-ref refs/remotes/origin/main "$source_sha"
+    printf 'verdict: PASS\ncommit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - state\n' \
+        "$source_sha" "$commit_repo" "$source_sha" > "$report"
+
+    run_report_main_ancestry_state "$project_repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS: PUSHED:"* ]]
+}
+
+# test_necessity: readonly/no-code reports retain their sentinel contract and
+# are not forced to invent a project commit identity.
+# regression_justification: no-code recon/scout reports already use the
+# existing non-publication contract and must remain compatible with CLEAR.
+@test "terminal report ancestry preserves a symmetric no-code sentinel" {
+    local repo="$BATS_TEST_TMPDIR/report-ancestry-no-code"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-no-code.yaml"
+    local task="$BATS_TEST_TMPDIR/report-ancestry-no-code-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'verdict: PASS\ntask_type: recon2\ncommit_hash: no-code-change\nfiles_modified: []\ncommit_contract: {required: false, task_type: recon2}\n' > "$report"
+    printf 'task:\n  task_type: recon2\n  commit_contract: {required: false, task_type: recon2}\n' > "$task"
+
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "SKIP: UNPUSHED: commit_contract no-code task" ]
 }
 
 # test_necessity: archive publication must use a session-independent worker and a command-correlated failure log.

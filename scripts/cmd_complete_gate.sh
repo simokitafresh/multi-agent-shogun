@@ -514,6 +514,116 @@ PY
     fi
 }
 
+# A report's commit identity is the completion artifact.  CI status is only a
+# diagnostic follow-up, so an UNPUSHED result there historically did not stop
+# CLEAR.  The terminal gate must use the same canonical-repository resolution,
+# but fail closed for ordinary PASS reports.  The two no-code contracts remain
+# informational because they intentionally have no project commit to publish.
+report_commit_main_ancestry_state() {
+    local report_file="$1"
+    local repo_dir="${2:-$SCRIPT_DIR}"
+    local task_file="${3:-}"
+    local state
+
+    state=$(report_ci_push_state "$report_file" "$repo_dir" "$task_file")
+    case "$state" in
+        PUSHED:*)
+            printf 'PASS: %s\n' "$state"
+            return 0
+            ;;
+        UNPUSHED:\ commit_contract\ no-code\ task|UNPUSHED:\ no-code-change\ sentinel|UNPUSHED:\ no-code-change\ tree\ sentinel\ *)
+            printf 'SKIP: %s\n' "$state"
+            return 0
+            ;;
+        *)
+            printf 'BLOCK: report commit main ancestry: %s\n' "$state"
+            return 1
+            ;;
+    esac
+}
+
+discover_terminal_reports_for_cmd() {
+    local cmd_id="${1:-$CMD_ID}"
+    REPORTS_ROOT="$SCRIPT_DIR" CMD_ID="$cmd_id" python3 - <<'PY'
+import glob
+import os
+import pathlib
+import yaml
+
+root = pathlib.Path(os.environ["REPORTS_ROOT"])
+cmd_id = os.environ["CMD_ID"]
+paths = []
+for directory in (root / "queue" / "reports", root / "queue" / "archive" / "reports"):
+    paths.extend(glob.glob(str(directory / "**" / "*.yaml"), recursive=True))
+seen = set()
+for raw_path in sorted(paths):
+    path = pathlib.Path(raw_path)
+    try:
+        resolved = path.resolve()
+        if resolved in seen or not resolved.is_file():
+            continue
+        report = yaml.safe_load(resolved.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    if not isinstance(report, dict):
+        continue
+    if (str(report.get("parent_cmd") or "").strip() == cmd_id
+            or str(report.get("task_id") or "").strip() == cmd_id):
+        seen.add(resolved)
+        print(resolved)
+PY
+}
+
+check_report_commit_main_ancestry() {
+    local report_file task_file task_repo report_verdict state
+    local checked=false failed=false
+    local -A seen_reports=()
+
+    check_one_report() {
+        report_file="$1"
+        task_file="${2:-}"
+        task_repo="${3:-$SCRIPT_DIR}"
+        [ -f "$report_file" ] || return 0
+        report_file="$(realpath "$report_file")" || return 1
+        [ -z "${seen_reports[$report_file]+yes}" ] || return 0
+        seen_reports["$report_file"]=1
+        report_verdict="$(FIELD_GET_NO_LOG=1 field_get "$report_file" verdict "")"
+        case "$report_verdict" in
+            PASS|PASS_NO_IMPROVEMENT) ;;
+            *) return 0 ;;
+        esac
+        checked=true
+        if state=$(report_commit_main_ancestry_state "$report_file" "$task_repo" "$task_file"); then
+            printf '  %s: %s\n' "$report_file" "$state"
+        else
+            printf '  %s: %s\n' "$report_file" "$state"
+            failed=true
+        fi
+    }
+
+    if [ -n "${CMD_COMPLETE_GATE_CI_REPORT:-}" ]; then
+        check_one_report "$CMD_COMPLETE_GATE_CI_REPORT" \
+            "${CMD_COMPLETE_GATE_TASK_FILE:-}" "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$SCRIPT_DIR}"
+    else
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            task_repo=$(resolve_task_repo_dir "$task_file" 2>/dev/null || printf '%s' "$SCRIPT_DIR")
+            report_file=$(resolve_report_file "$(basename "$task_file" .yaml)" "$CMD_ID" "$task_file" 2>/dev/null || true)
+            [ -n "$report_file" ] || continue
+            check_one_report "$report_file" "$task_file" "$task_repo" || failed=true
+        done
+        while IFS= read -r report_file; do
+            [ -n "$report_file" ] || continue
+            check_one_report "$report_file" "" "$SCRIPT_DIR" || failed=true
+        done < <(discover_terminal_reports_for_cmd "$CMD_ID")
+    fi
+
+    if [ "$checked" = false ]; then
+        echo "  SKIP (no PASS reports requiring a commit ancestry check)"
+    fi
+    [ "$failed" = false ]
+}
+
 if [ "${CMD_COMPLETE_GATE_CI_EVAL_ONLY:-0}" = "1" ]; then
     evaluate_ci_readiness_json
     exit $?
@@ -548,6 +658,11 @@ if [ "${CMD_COMPLETE_GATE_CI_PUSH_STATE_ONLY:-0}" = "1" ]; then
     report_ci_push_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
         "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}" \
         "${CMD_COMPLETE_GATE_TASK_FILE:-}"
+    exit $?
+fi
+if [ "${CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY:-0}" = "1" ]; then
+    report_commit_main_ancestry_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
+        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$SCRIPT_DIR}" "${CMD_COMPLETE_GATE_TASK_FILE:-}"
     exit $?
 fi
 # cmd_complete_gate.sh — cmd完了時の全ゲートフラグ確認スクリプト（ディレクトリ方式）
@@ -12230,6 +12345,19 @@ if [ "$ALL_CLEAR" = true ] \
             record_block_reason "shared_execution_source_convergence_failed"
             ALL_CLEAR=false
         fi
+    fi
+fi
+
+# ─── CLEAR終端: PASS report commit must be in canonical shared main/master ───
+# Source-only publication above may advance the remote after CI's diagnostic
+# pass.  Re-evaluate the live remote boundary here so a stale/local report
+# commit cannot be recorded as terminal CLEAR.
+if [ "$ALL_CLEAR" = true ]; then
+    echo ""
+    level_heading "[L4]" "Report commit main ancestry check:"
+    if ! check_report_commit_main_ancestry; then
+        record_block_reason "report_commit_main_ancestry"
+        ALL_CLEAR=false
     fi
 fi
 
