@@ -944,7 +944,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -954,6 +954,9 @@ insights:
     status: "failed"
     exit_code: 1
     output: ""
+  resolved_reason: "known fix verified: verify_command passed (rc=0), detector evidence and target script are present"
+  action_artifact: "logs/detector_fp_rate.yaml;scripts/cmd_save.sh;verify_rc=0"
+  resolved_at: "2026-08-21T23:17:52+09:00"
 - id: INS-20260821-115156241-b7ae
   ts: "2026-08-21T11:51:56+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bplh763ts task id tool use id toolu 01UtKykFL4aGnEEYQw は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
