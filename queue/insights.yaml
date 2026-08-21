@@ -1,14 +1,4 @@
 insights:
-- id: INS-20260818-214144014-606b
-  ts: "2026-08-18T21:41:44+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bdg9n8nn4 task id tool use id toolu 01SABZxvzzzLN5FJoH は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:46:40+09:00"
 - id: INS-20260818-214558705-1f4a
   ts: "2026-08-18T21:45:58+09:00"
   insight: "[[研究 — 秘奥義21体 2 3 4体EW全量探索 合計7 525通り×4手法 combo exhaustive sear]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=研究 — 秘奥義21体 2/3/4体EW全量探索(合計7,525通り×4手法): combo_exhaustive_search.pyへα/β列を追加し指標別ランキングを出す"
@@ -978,3 +968,19 @@ insights:
   source: "skill_script_refs:6b85770af68a9b7b"
   fix_known: false
   status: pending
+- id: INS-20260822-064517955-347a
+  ts: "2026-08-22T06:45:17+09:00"
+  insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: pending
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq 'bd93380eb25314e91f02ec15a6406e3ca273e4477f7d1ab7b55aab1cbf23dbb1' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
+  occurrence_count: 1
+  last_seen: "2026-08-22T06:45:17+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
