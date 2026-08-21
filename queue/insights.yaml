@@ -1,4 +1,14 @@
 insights:
+- id: INS-20260819-023507230-41db
+  ts: "2026-08-19T02:35:07+09:00"
+  insight: "[[やはり異常だな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=やはり異常だな。これは極めて重大な問題だ。gate実行しなければ回転しない。高速回転の原理違反だ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T02:55:45+09:00"
 - id: INS-20260819-023507603-1be1
   ts: "2026-08-19T02:35:07+09:00"
   insight: "[[家老のバグを家老に任せていいのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=家老のバグを家老に任せていいのか？"
@@ -965,10 +975,3 @@ insights:
   resolved_reason: "一次確認で既存Level4防御により解決済み。通常/--wa経路は category=clean をlock・write前にBLOCKし、--clean専用経路だけが workaround=false/category=clean を記録する。品質ゲートは workaround=true && category=clean をdetail非依存で検出・修復するため、新規実修正・decision_candidateは不要。"
   action_artifact: "primary=scripts/karo_workaround_log.sh:677-683;gate=scripts/gates/gate_wa_data_quality.sh:6-9;tests=tests/unit/test_karo_workaround_validation.bats:335-344,tests/unit/test_gate_wa_data_quality.bats;context=context/infrastructure.md:459;source_commit=5d9802ea47319a8ef1d2623f440192cf750803b0;verification=fixture_9_to_0_FP0_FN0_48_of_48_PASS;target=queue/insights.yaml:INS-20260818-235427746-e816"
   resolved_at: "2026-08-20T10:23:07+09:00"
-- id: INS-20260822-083111924-6943
-  ts: "2026-08-22T08:31:11+09:00"
-  insight: "cmd_save『前cmdでN回BLOCK・教訓未記録』gateがcmd_4360-4363で4連続同一発火(全てLS-A04既知パターンをack)。分散0の検知=LS096粒度バグ。候補: 直近ackと同一block patternクラスは自動ack(既知パターン照合)にし、新規パターンのみ人手ackを要求する"
-  priority: "medium"
-  source: "manual"
-  fix_known: false
-  status: pending
