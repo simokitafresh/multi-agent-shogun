@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_review_quality_warn_20260814
-  timestamp: '2026-08-13T21:46:42Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_review_quality_warn_20260814'
 - cmd_id: cmd_karo_hotfix_cli_switch_dirty_contract_20260814
   timestamp: '2026-08-14T00:27:37Z'
   ninja: system
@@ -1314,3 +1301,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_ga487_context_freshness_20260821'
+- cmd_id: cmd_karo_hotfix_cli_switch_settings_publish_202608212352
+  timestamp: '2026-08-21T15:37:50Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_cli_switch_settings_publish_202608212352'
