@@ -872,7 +872,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認済み: gate_skill_script_refs.sh は exit 2相当のREVIEW_REQUIREDだが、参照先実在・SKILL更新鮮度・例示パス・副作用実走マーカーは全てOK。7対はFOLLOWUP_ACTIVEとしてreflux対象に登録済みで、現時点のSKILL追従修正・decision_candidateは不要。"
+  action_artifact: "primary=gate_skill_script_refs.sh: 全82参照/30対象・FOLLOWUP_ACTIVE=7・OK 4項目・REVIEW_REQUIRED; targets=skills/cmd-complete/SKILL.md,skills/codd-fix/SKILL.md,skills/dream/SKILL.md,skills/gate-sync/SKILL.md,skills/idle-persist/SKILL.md,skills/review-bundle/SKILL.md,skills/shogun-teire/SKILL.md; test=bash scripts/run_tests.sh task queue/tasks/tobisaru.yaml rc=0 tests=0/0 skip=0; semantic=context/semantic-map.md:skill_script_refs概念"
+  resolved_at: "2026-08-22T00:00:27+09:00"
 - id: INS-20260821-085035822-dc0a
   ts: "2026-08-21T08:50:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bthhf8rnn task id tool use id toolu 01NEY4n1MPAPbmvqkE は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -1017,3 +1020,17 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-21T22:50:00+09:00"
+- id: INS-20260822-000110828-89ef
+  ts: "2026-08-22T00:01:10+09:00"
+  insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:28cb407b97fcfc07"
+  fix_known: false
+  status: pending
+- id: INS-20260822-000209438-0aa0
+  ts: "2026-08-22T00:02:09+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id ba2mu4pkd task id tool use id toolu 01Ci66Qcp63Z4mWwNQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
