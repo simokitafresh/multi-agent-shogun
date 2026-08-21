@@ -940,16 +940,19 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
   occurrence_count: 1
   last_seen: "2026-08-22T00:41:24+09:00"
   verification:
-    status: "failed"
-    exit_code: 1
-    output: ""
+    status: passed
+    exit_code: '0'
+    output:
+  resolved_reason: "一次確認: verify_command rc=0。scripts/cmd_save.shのcheck_ac_test_scope/new_behavior D7適用表とdetector台帳 fires=4 false_positive=2 fp_rate=50.0を確認し、既知修正済みと判定。"
+  action_artifact: "scripts/cmd_save.sh:7461-7516;logs/detector_fp_rate.yaml:55-60;verify_rc=0;task=cmd_reflux_insight_202608220212_hayate_exact"
+  resolved_at: "2026-08-22T02:23:59+09:00"
 - id: INS-20260822-004505015-1eae
   ts: "2026-08-22T00:45:05+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4358; matched=lesson; current_pattern=lesson淘汰候補の審査 — deprecation candidatesの家老審査と--retire反映; candidate_level=2; candidate=620教訓中9重複ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複。lesson_write.sh AC2=ID dedupのみ→内容dedup不在→同一テーマ重複。cmd_save.sh Check12(Jaccard≥50%)と同構造で実装可能; source=gunshi_gp_tracker.yaml"
