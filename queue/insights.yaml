@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260818-202601228-f903
-  ts: "2026-08-18T20:26:01+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bhsx5q27b task id tool use id toolu 01B6H1qr2BzcRHQ14k は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T20:27:37+09:00"
-- id: INS-20260818-202736897-7a5f
-  ts: "2026-08-18T20:27:36+09:00"
-  insight: "SKILL.md追従task[ece61e0507c3aa94]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
-  priority: "medium"
-  source: "skill_script_refs:ece61e0507c3aa94"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: gate_skill_script_refs.sh RC=0 PASS。対象6組のSKILL.mdとscriptは全て実在し、SKILL更新日・例示パス・実走検証マーカーもPASS。実修正・decision_candidateは不要。"
-  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh rc=0;target=INS-20260818-202736897-7a5f;verified_at=2026-08-20T08:09:03+09:00;scope=skills/codd-fix,skills/cdp-browse,skills/dream,skills/note-writer,skills/sengoku-writer,skills/weekly-report-writer"
-  resolved_at: "2026-08-20T08:11:24+09:00"
 - id: INS-20260818-202800606-333e
   ts: "2026-08-18T20:28:00+09:00"
   insight: "THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify='test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh' source=S2_detector_fp_rate"
@@ -931,10 +911,7 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: memory DBでsource cmd_reflux_backlink_202608201618_tobisaruのGATE CLEARと軍師APPROVEを確認。現行deploy_task.shはtarget_path/target_files適用性、keyword relevance、target_pathなし全量fallback抑制、target_path boostのrelevance bypass禁止を実装済み(cmd_3271/cmd_3466)。context/cdp-philosophy.mdはCDP認証自動化を、context/growth-loop.mdとcontext/semantic-map.mdはLevel5防御階層を既存記載しており、追加実装修正・decision_candidateは不要。"
-  action_artifact: "resolve=INS-20260821-013144869-5e6a; evidence=memory_db source cmd_reflux_backlink_202608201618_tobisaru GATE_CLEAR+APPROVE; implementation=scripts/deploy_task.sh target_path applicability and fallback guards; context=context/cdp-philosophy.md,context/growth-loop.md,context/semantic-map.md; verification=rg/git source inspection; new_code=none"
-  resolved_at: "2026-08-21T09:00:38+09:00"
+  status: pending
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
@@ -965,20 +942,14 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: resolved
-  resolved_reason: 一次検証でgate_skill_script_refsを実走しrc=2(REVIEW_REQUIRED)を確認したが、対象7組は参照先実在・SKILL鮮度・例示パス・副作用検証マーカーの全項目OKで、必要なSKILL/実装修正は現時点で存在しない。rc=2は既存のinsight→reflux追従レビュー経路の判定であり、対象主張を解消した。
-  action_artifact: "primary=gate: scripts/gates/gate_skill_script_refs.sh rc=2;all_pairs=7;checks=refs_exist,skill_freshness,example_paths,side_effect_markers:OK;semantic=semantic_search skill_design_rules;primary_pair_files=skills/cmd-complete/SKILL.md,skills/codd-fix/SKILL.md,skills/dream/SKILL.md,skills/gate-sync/SKILL.md,skills/idle-persist/SKILL.md,skills/review-bundle/SKILL.md,skills/shogun-teire/SKILL.md;inventory_pre=insights_pending:3,zero_backlinks:2,promotions:unknown(timeout),total:unknown"
-  resolved_at: "2026-08-21T08:10:21+09:00"
+  status: pending
 - id: INS-20260821-044602409-0272
   ts: "2026-08-21T04:46:02+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210433_hayate; matched=yaml; current_pattern=; candidate_level=4; candidate=GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210433_hayate"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: GP-032はGP-197へ置換済み。現行.claude/hooks/post-write-edit-combined.sh Guard1(lines 64-78)がreport YAMLへyaml.safe_load構文検証を実装し、logs/gunshi_gp_tracker.yamlのGP-197(lines 370-379)にimplementedと正常/破損YAMLの実行証跡があるため、追加実修正・decision_candidateは不要。"
-  action_artifact: "primary=.claude/hooks/post-write-edit-combined.sh:64-78;tracker=logs/gunshi_gp_tracker.yaml:370-379;test_evidence=tracker evidence:正常YAML exit 0・壊れたYAML exit 1+parse error・shellcheck clean;semantic=context/semantic-map.md:105;inventory_before_task=insights_pending:2,zero_backlinks:2,promotions:0,total:4"
-  resolved_at: "2026-08-21T08:28:33+09:00"
+  status: pending
 - id: INS-20260821-055638139-5f7c
   ts: "2026-08-21T05:56:38+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id byymqv7bw task id tool use id toolu 01GjZZG81rrNjY161q は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -1003,3 +974,19 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260821-090811134-61a3
+  ts: "2026-08-21T09:08:11+09:00"
+  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: pending
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
+  occurrence_count: 1
+  last_seen: "2026-08-21T09:08:11+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
