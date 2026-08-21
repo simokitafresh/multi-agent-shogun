@@ -5507,6 +5507,163 @@ _reflux_first_pending_insight_id() {
     ' "$insights_file"
 }
 
+# Return every pending reflux insight ID from one inventory snapshot.  The
+# inventory reader is intentionally read-only; ownership is decided by
+# _reflux_insight_try_reserve immediately before task publication.
+_reflux_insight_candidates() {
+    local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
+    [ -r "$insights_file" ] || return 0
+    python3 - "$insights_file" <<'PY'
+import sys
+import yaml
+
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as fh:
+        doc = yaml.safe_load(fh) or {}
+except Exception:
+    raise SystemExit(0)
+
+rows = doc.get("insights") if isinstance(doc, dict) else []
+if not isinstance(rows, list):
+    raise SystemExit(0)
+priority = {"high": 3, "medium": 2, "low": 1}
+eligible = []
+for index, row in enumerate(rows):
+    if not isinstance(row, dict) or str(row.get("status") or "") != "pending":
+        continue
+    insight_id = str(row.get("id") or "").strip()
+    if insight_id:
+        score = priority.get(str(row.get("priority") or ""), 2)
+        if row.get("fix_known") is True:
+            score += 10
+        eligible.append((-score, index, insight_id))
+for _, _, insight_id in sorted(eligible):
+    print(insight_id)
+PY
+}
+
+# Re-read the ordered inventory while excluding IDs that already own a
+# durable lease.  This lets another pending ID progress when the highest
+# priority one is still owned by a live worker.
+_reflux_first_pending_insight_id() {
+    local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
+    local candidate ledger="${REFLUX_INSIGHT_RESERVATION_LEDGER:-$SCRIPT_DIR/logs/reflux_insight_reservations.tsv}"
+    local claimed_candidate=""
+    [ -r "$insights_file" ] || return 1
+    while IFS= read -r candidate; do
+        [ -n "$candidate" ] || continue
+        if [ -r "$ledger" ] && awk -F '\t' -v id="$candidate" '$2 == id { found=1 } END { exit !found }' "$ledger"; then
+            [ -n "$claimed_candidate" ] || claimed_candidate="$candidate"
+            continue
+        fi
+        printf '%s\n' "$candidate"
+        return 0
+    done < <(_reflux_insight_candidates "$insights_file")
+    [ -n "$claimed_candidate" ] && printf '%s\n' "$claimed_candidate"
+    [ -n "$claimed_candidate" ]
+}
+
+# Atomically claim a stable insight ID at the reflux dispatch boundary.  A
+# successful publication keeps this lease until the worker's resolved/terminal
+# receipt; only the caller's pre-publication failure path may release it.
+_reflux_insight_try_reserve() {
+    local insight_id="$1" owner="$2"
+    local insights_file="${REFLUX_INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
+    local ledger="${REFLUX_INSIGHT_RESERVATION_LEDGER:-$SCRIPT_DIR/logs/reflux_insight_reservations.tsv}"
+    [ -n "$insight_id" ] || return 1
+    [ -r "$insights_file" ] || return 1
+    mkdir -p "$(dirname "$ledger")" || return 1
+    python3 - "$SCRIPT_DIR" "$insights_file" "$ledger" "$insight_id" "$owner" <<'PY'
+import fcntl
+import glob
+import os
+import sys
+import yaml
+
+root, insights_file, ledger, insight_id, owner = sys.argv[1:]
+lock_path = ledger + ".lock"
+active_statuses = {"active", "assigned", "acknowledged", "in_progress"}
+terminal_statuses = {"completed", "done", "success", "failed"}
+
+def load(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = yaml.safe_load(fh) or {}
+    except Exception:
+        return {}
+    if isinstance(doc, dict) and isinstance(doc.get("task"), dict):
+        return doc["task"]
+    return doc if isinstance(doc, dict) else {}
+
+def contains_id(doc):
+    return insight_id in str(doc)
+
+def rows_for_id(rows):
+    return [row for row in rows if len(row.split("\t")) > 1 and row.split("\t")[1] == insight_id]
+
+os.makedirs(os.path.dirname(ledger), exist_ok=True)
+with open(lock_path, "a+", encoding="utf-8") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    try:
+        with open(insights_file, encoding="utf-8") as fh:
+            inventory = yaml.safe_load(fh) or {}
+    except Exception:
+        raise SystemExit(1)
+    entries = inventory.get("insights") if isinstance(inventory, dict) else []
+    matching = [row for row in entries if isinstance(row, dict) and str(row.get("id") or "") == insight_id]
+    if not matching or str(matching[0].get("status") or "") != "pending":
+        raise SystemExit(1)
+
+    rows = []
+    try:
+        with open(ledger, encoding="utf-8") as fh:
+            rows = [line.rstrip("\n") for line in fh if line.strip()]
+    except OSError:
+        pass
+    if rows_for_id(rows):
+        raise SystemExit(1)
+
+    for path in sorted(glob.glob(os.path.join(root, "queue", "tasks", "*.yaml"))):
+        task = load(path)
+        if str(task.get("status") or "") in active_statuses and contains_id(task):
+            raise SystemExit(1)
+    report_paths = glob.glob(os.path.join(root, "queue", "reports", "*.yaml"))
+    report_paths += glob.glob(os.path.join(root, "archive", "reports", "**", "*.yaml"), recursive=True)
+    for path in sorted(report_paths):
+        report = load(path)
+        parent = str(report.get("parent_cmd") or "")
+        status = str(report.get("status") or "").lower()
+        if parent.startswith("cmd_reflux_insight_") and contains_id(report):
+            if status in active_statuses or status in terminal_statuses:
+                raise SystemExit(1)
+
+    from datetime import datetime
+    rows.append(f"{datetime.now().isoformat(timespec='seconds')}\t{insight_id}\t{owner}")
+    with open(ledger, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(rows) + "\n")
+PY
+}
+
+_reflux_insight_release_reservation() {
+    local insight_id="$1" owner="$2"
+    local ledger="${REFLUX_INSIGHT_RESERVATION_LEDGER:-$SCRIPT_DIR/logs/reflux_insight_reservations.tsv}"
+    local tmp
+    [ -n "$insight_id" ] && [ -e "$ledger" ] || return 0
+    tmp="${ledger}.tmp.$$"
+    {
+        flock -x -w 5 200 || return 1
+        awk -F '\t' -v id="$insight_id" -v who="$owner" \
+            '!(NF >= 3 && $2 == id && $3 == who)' "$ledger" > "$tmp" && mv "$tmp" "$ledger"
+    } 200>"${ledger}.lock"
+}
+
+_reflux_insight_release_if_claimed() {
+    local claimed="$1" insight_id="$2" owner="$3"
+    [ "$claimed" = true ] || return 0
+    _reflux_insight_release_reservation "$insight_id" "$owner"
+}
+
 _reflux_zero_backlink_inventory() {
     local helper="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
     local limit="${REFLUX_BACKLINK_SCAN_LIMIT:-50}"
@@ -6206,7 +6363,7 @@ _handle_reflux_auto_deploy() {
     local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
     local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2 ac1_yaml ac2_yaml
     local external_source inspection_path_line="" planned_paths_line="" purpose_yaml=""
-    local promotion_reserved=false active_owner dirty_fingerprint dirty_status
+    local promotion_reserved=false insight_reserved=false active_owner dirty_fingerprint dirty_status
 
     [ -n "$name" ] || return 1
 
@@ -6416,6 +6573,19 @@ EOF
         fi
     fi
 
+    # Inventory selection is only a snapshot.  Claim the stable insight ID
+    # after all pre-publication checks and immediately before deploy_task so
+    # two monitors cannot publish the same pending insight concurrently.
+    if [ "$kind" = "insight" ]; then
+        if ! _reflux_insight_try_reserve "$first_insight" "$name"; then
+            rm -f "$tmp_task"
+            _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
+            log "REFLUX-AUTO-SKIP: $name insight reserved/active/terminal: ${first_insight}"
+            return 1
+        fi
+        insight_reserved=true
+    fi
+
     log "REFLUX-AUTO-DEPLOY: $name cmd=${cmd_id} kind=${kind} target=${target_path}"
     if bash "$deploy_script" --direct --yaml "$tmp_task" "$name" "$cmd_id" >> "$SCRIPT_DIR/logs/deploy_reflux_auto.log" 2>&1; then
         rm -f "$tmp_task"
@@ -6440,6 +6610,7 @@ EOF
             log "REFLUX-AUTO-ROLLBACK: $name partial task reset after deploy failure cmd=${cmd_id}"
         fi
     fi
+    _reflux_insight_release_if_claimed "$insight_reserved" "$first_insight" "$name"
     _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
     log "REFLUX-AUTO-DEPLOY-FAIL: $name cmd=${cmd_id} kind=${kind} (non-blocking)"
     return 1

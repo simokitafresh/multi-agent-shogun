@@ -516,6 +516,56 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: stable insight IDs must have one dispatch owner across
+# concurrent monitors/restarts, while a failed publication can release only
+# its own lease and a resolved ID remains ineligible.
+@test "reflux insight claim is atomic, restart-safe, releasable on failure, and skips resolved IDs" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$STATE_DIR"
+        cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+insights:
+- id: INS-CLAIM
+  priority: high
+  status: pending
+YAML
+        REFLUX_INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
+        REFLUX_INSIGHT_RESERVATION_LEDGER="$STATE_DIR/insight_reservations.tsv"
+        export REFLUX_INSIGHTS_FILE REFLUX_INSIGHT_RESERVATION_LEDGER
+
+        (_reflux_insight_try_reserve INS-CLAIM alpha; echo $? > "$STATE_DIR/alpha.rc") &
+        (_reflux_insight_try_reserve INS-CLAIM beta; echo $? > "$STATE_DIR/beta.rc") &
+        wait
+        test "$(grep -c $'\tINS-CLAIM\t' "$STATE_DIR/insight_reservations.tsv")" -eq 1
+        test "$(cat "$STATE_DIR/alpha.rc")" -ne "$(cat "$STATE_DIR/beta.rc")"
+        owner=alpha
+        [ "$(cat "$STATE_DIR/alpha.rc")" -eq 0 ] || owner=beta
+        cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+insights:
+- id: INS-CLAIM
+  priority: high
+  status: pending
+- id: INS-CLAIM-NEXT
+  priority: medium
+  status: pending
+YAML
+        test "$(_reflux_first_pending_insight_id)" = INS-CLAIM-NEXT
+        test "$(_reflux_insight_try_reserve INS-CLAIM restart >/dev/null; echo $?)" -ne 0
+
+        _reflux_insight_release_reservation INS-CLAIM "$owner"
+        test "$(_reflux_insight_try_reserve INS-CLAIM retry >/dev/null; echo $?)" -eq 0
+        _reflux_insight_release_reservation INS-CLAIM retry
+
+        sed -i "s/status: pending/status: resolved/" "$SCRIPT_DIR/queue/insights.yaml"
+        test "$(_reflux_insight_try_reserve INS-CLAIM resolved >/dev/null; echo $?)" -ne 0
+        echo "INSIGHT_CLAIM_OK concurrent_winners=1 restart_block=1 failure_release=1 resolved_block=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INSIGHT_CLAIM_OK concurrent_winners=1 restart_block=1 failure_release=1 resolved_block=1"* ]]
+}
+
 # test_necessity: AUTO-DONEとdeployが同一agent lockで直列化され、旧parent/archive reportでtaskを書換えない不変量を守る。
 @test "AUTO-DONE deploy lock boundary is retryable and archive symlinks are inactive" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
@@ -839,7 +889,7 @@ SH
         mkdir -p "$root/queue/tasks" "$root/queue" "$root/scripts" "$root/logs" "$STATE_DIR"
         cat > "$root/queue/insights.yaml" <<YAML
 insights:
-- id: INS-DIRTY
+- id: INS-DIRTY-1
   status: pending
 YAML
         cp "$root/queue/insights.yaml" "$root/clean-insights.yaml"
@@ -892,6 +942,11 @@ SH
         run_reflux 100
         [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 1 ]
 
+        cat > "$root/queue/insights.yaml" <<YAML
+insights:
+- id: INS-DIRTY-2
+  status: pending
+YAML
         printf "# foreign generation one\\n" >> "$root/queue/insights.yaml"
         run_reflux 200
         [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
@@ -911,11 +966,21 @@ SH
         [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
 
         rm -f "$root/checkpoint.fail"
+        cat > "$root/clean-insights.yaml" <<YAML
+insights:
+- id: INS-DIRTY-3
+  status: pending
+YAML
         cp "$root/clean-insights.yaml" "$root/queue/insights.yaml"
         run_reflux 500
         [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 3 ]
 
         printf unrelated > "$root/unrelated.txt"
+        cat > "$root/queue/insights.yaml" <<YAML
+insights:
+- id: INS-DIRTY-4
+  status: pending
+YAML
         run_reflux 600
         [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 4 ]
         [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
