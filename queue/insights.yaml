@@ -803,7 +803,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GATE CLEAR: cmd_reflux_insight_202608220424_hayate completed declared remediation"
+  action_artifact: "cmd=cmd_reflux_insight_202608220424_hayate;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-08-22T04:45:15+09:00"
 - id: INS-20260821-044602409-0272
   ts: "2026-08-21T04:46:02+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210433_hayate; matched=yaml; current_pattern=; candidate_level=4; candidate=GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格; source=gunshi_gp_tracker.yaml"
