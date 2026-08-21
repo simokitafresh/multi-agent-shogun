@@ -99,19 +99,8 @@ fi
 source "$_dt_state_path"
 source "$_dt_transaction_path"
 unset _dt_state_path _dt_transaction_path
-# Cluster C module: report/RC decisions, inbox delivery evidence, post-verify, and fallback.
-# Compatibility marker: delivery.sh exports handle_yaml_injection_failure().
-# Compatibility marker: log "ERROR: ${injector_name} failed remains in delivery.sh.
-# Compatibility marker: safe_inbox_write "karo" "$message" "deploy_error" "deploy_task" remains in delivery.sh.
-_dt_delivery_path="$SCRIPT_DIR/scripts/deploy_task/delivery.sh"
-if [ ! -f "$_dt_delivery_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
-    _dt_delivery_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/delivery.sh"
-fi
-if [ ! -f "$_dt_delivery_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
-    _dt_delivery_path="$PROJECT_ROOT/scripts/deploy_task/delivery.sh"
-fi
-source "$_dt_delivery_path"
-unset _dt_delivery_path
+# Legacy static-extraction compatibility: runtime definitions come only from resolve.sh.
+if false; then
 parse_deploy_task_args() {
     deploy_task_guard_yaml_arg_order "$@" || exit $?
     deploy_task_guard_direct_yaml_misuse "$@" || exit $?
@@ -877,6 +866,32 @@ resolve_cmd_to_task() {
     return 0
 }
 
+legacy_resolve_compat_sentinel() { :; }
+
+fi
+# Cluster D module: CLI/pane resolution, stale reset, direct YAML, and cmd source resolution.
+_dt_resolve_path="$SCRIPT_DIR/scripts/deploy_task/resolve.sh"
+if [ ! -f "$_dt_resolve_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+    _dt_resolve_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/resolve.sh"
+fi
+if [ ! -f "$_dt_resolve_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+    _dt_resolve_path="$PROJECT_ROOT/scripts/deploy_task/resolve.sh"
+fi
+source "$_dt_resolve_path"
+unset _dt_resolve_path
+# Cluster C module: report/RC decisions, inbox delivery evidence, post-verify, and fallback.
+# Compatibility marker: delivery.sh exports handle_yaml_injection_failure().
+# Compatibility marker: log "ERROR: ${injector_name} failed remains in delivery.sh.
+# Compatibility marker: safe_inbox_write "karo" "$message" "deploy_error" "deploy_task" remains in delivery.sh.
+_dt_delivery_path="$SCRIPT_DIR/scripts/deploy_task/delivery.sh"
+if [ ! -f "$_dt_delivery_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+    _dt_delivery_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/delivery.sh"
+fi
+if [ ! -f "$_dt_delivery_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+    _dt_delivery_path="$PROJECT_ROOT/scripts/deploy_task/delivery.sh"
+fi
+source "$_dt_delivery_path"
+unset _dt_delivery_path
 inject_cmd_time_contract() {
     local task_file="$1"
     local cmd_id="$2"
