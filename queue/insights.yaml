@@ -1,23 +1,4 @@
 insights:
-- id: INS-20260818-202800606-333e
-  ts: "2026-08-18T20:28:00+09:00"
-  insight: "THROUGHPUT_FIX_KNOWN detector=cmd_save:check_ac_test_scope category=new_behavior: FP rate over threshold fp_rate=50.0% false_positive=2/4. INSIGHT_FIX_KNOWN=1 target=scripts/cmd_save.sh verify='test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh' source=S2_detector_fp_rate"
-  priority: "medium"
-  source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
-  fix_known: true
-  status: resolved
-  target_file: "scripts/cmd_save.sh"
-  verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
-  insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
-  occurrence_count: 1
-  last_seen: "2026-08-18T20:28:00+09:00"
-  verification:
-    status: "failed"
-    exit_code: 1
-    output: ""
-  resolved_reason: "Current primary verification succeeds (rc=0): detector ledger and cmd_save target both exist; no source change is required within this ledger-only reflux task."
-  action_artifact: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh => rc=0 at 2026-08-18T20:45+09:00"
-  resolved_at: "2026-08-18T20:43:17+09:00"
 - id: INS-20260818-204204916-0d40
   ts: "2026-08-18T20:42:04+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b0mbqfg2o task id tool use id toolu 01VxiLpcuVhxUVmZky は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -993,3 +974,10 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+- id: INS-20260821-095036102-8f0b
+  ts: "2026-08-21T09:50:36+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210935_kagemaru; matched=yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210935_kagemaru"
+  fix_known: false
+  status: pending
