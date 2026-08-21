@@ -146,6 +146,7 @@ STATE_DIR="$TMP_ROOT/state"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+insights:
 - id: INS-test
   status: pending
 YAML
@@ -449,6 +450,10 @@ REFLUX_BACKLINK_TIMEOUT=5
 for run in 1 2 3; do
     REFLUX_IDLE_FIRST_SEEN[hayate]=0
     _handle_reflux_auto_deploy hayate "$((100 * run))"
+    # Simulate a worker terminal receipt: the dispatch lease is released
+    # only after terminal completion, so the next cycle may select the ID.
+    _reflux_insight_release_reservation INS-001 hayate
+    log "REFLUX-AUTO-TERMINAL: hayate insight=INS-001 lease_released=1"
 done
 
 deploy_count=0
@@ -493,12 +498,14 @@ while IFS= read -r line; do
     esac
 done < "$TMP_ROOT/test.log"
 test "$done_count" -eq 3
-echo "REFLUX_INSIGHT_DEPLOY_OK runs=3"
+test "$(grep -c "REFLUX-AUTO-TERMINAL: hayate insight=INS-001 lease_released=1" "$TMP_ROOT/test.log")" -eq 3
+test ! -s "$TMP_ROOT/logs/reflux_insight_reservations.tsv"
+echo "REFLUX_INSIGHT_DEPLOY_OK runs=3 published=3 terminal_releases=3"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"REFLUX_INSIGHT_GENERATOR_OK runs=3"* ]]
     [[ "$output" == *"REFLUX_INSIGHT_CONTRACT_OK"* ]]
-    [[ "$output" == *"REFLUX_INSIGHT_DEPLOY_OK runs=3"* ]]
+    [[ "$output" == *"REFLUX_INSIGHT_DEPLOY_OK runs=3 published=3 terminal_releases=3"* ]]
 }
 
 @test "reflux auto deploy rolls back partial task when deploy_task fails" {
@@ -891,7 +898,9 @@ task:
 YAML
 
 cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
-insights: []
+insights:
+- id: INS-1
+  status: resolved
 YAML
 
 cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
@@ -959,6 +968,7 @@ _reflux_promotion_claim_next() { echo CLAIM_CALLED >> "$TMP_ROOT/claim.log"; ret
 grep -q "REFLUX-PROMOTION-PAUSED: hayate .* suppressed=1; insight/backlink remain eligible" "$TMP_ROOT/test.log"
 
 # The same marker does not stop insight reflux.
+sed -i "s/status: resolved/status: pending/" "$SCRIPT_DIR/queue/insights.yaml"
 _reflux_inventory_snapshot() { printf "1\t0\t9\t10\tINS-1\t-\t[infra] L999 (L2)\tok\tok\n"; }
 _reflux_select_kind() {
     [ "$1" -eq 1 ] && [ "$3" -eq 0 ] && [ "$5" -eq 0 ]
@@ -966,6 +976,8 @@ _reflux_select_kind() {
 }
 REFLUX_IDLE_FIRST_SEEN[hayate]=0
 _handle_reflux_auto_deploy hayate 300
+_reflux_insight_release_reservation INS-1 hayate
+log "REFLUX-AUTO-TERMINAL: hayate insight=INS-1 lease_released=1"
 grep -q "target_path: queue/insights.yaml" "$TMP_ROOT/deployed.yaml"
 
 # Backlink reflux also remains eligible. target_path is the semantic SSOT and
