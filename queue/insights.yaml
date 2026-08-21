@@ -790,7 +790,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "同一digestの既存resolved記録 INS-20260821-034535995-99b2 は cmd_reflux_insight_202608220424_hayate のGATE CLEARで追従対応済み。対象は重複生成されたpendingであり、新規実修正・decision_candidateは不要。canonical pending INS-20260821-025624452-5e64 は残して根本候補を保持する。"
+  action_artifact: "queue/insights.yaml:INS-20260821-034535995-99b2;queue/insights.yaml:INS-20260821-025624452-5e64;scripts/gates/gate_skill_script_refs.sh"
+  resolved_at: "2026-08-22T06:12:42+09:00"
 - id: INS-20260821-085035822-dc0a
   ts: "2026-08-21T08:50:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bthhf8rnn task id tool use id toolu 01NEY4n1MPAPbmvqkE は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
