@@ -1,14 +1,12 @@
 insights:
 - id: INS-20260818-213227144-b176
-  ts: "2026-08-18T21:32:27+09:00"
-  insight: "semantic_index_update新概念候補: discussion:いや以前の指標＋α β は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
+  ts: '2026-08-18T21:32:27+09:00'
+  insight: 'semantic_index_update新概念候補: discussion:いや以前の指標＋α β は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ'
+  priority: low
+  source: semantic_index_update
   fix_known: false
   status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-18T21:46:39+09:00"
+  resolved_reason: semantic map generation verified the candidate is represented or
 - id: INS-20260818-213307580-c426
   ts: "2026-08-18T21:33:07+09:00"
   insight: "semantic_index_update新概念候補: discussion:進めよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -790,10 +788,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: resolved
-  resolved_reason: "同一digestの既存resolved記録 INS-20260821-034535995-99b2 は cmd_reflux_insight_202608220424_hayate のGATE CLEARで追従対応済み。対象は重複生成されたpendingであり、新規実修正・decision_candidateは不要。canonical pending INS-20260821-025624452-5e64 は残して根本候補を保持する。"
-  action_artifact: "queue/insights.yaml:INS-20260821-034535995-99b2;queue/insights.yaml:INS-20260821-025624452-5e64;scripts/gates/gate_skill_script_refs.sh"
-  resolved_at: "2026-08-22T06:12:42+09:00"
+  status: pending
 - id: INS-20260821-085035822-dc0a
   ts: "2026-08-21T08:50:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bthhf8rnn task id tool use id toolu 01NEY4n1MPAPbmvqkE は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -810,7 +805,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: resolved
+  status: pending
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -820,9 +815,6 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
-  resolved_reason: "一次情報でself_retro.jsonlのverify hashを確認し、同候補は既存のreview_notify支配コスト計測とSG7維持方針へ反映済みと確認した"
-  action_artifact: "docs/research/hot-script-speedup-round8-asis-tobe-5w1h_20260804.md#section-2-5;context/semantic-map.md:107;logs/self_retro.jsonl:event_id=7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8"
-  resolved_at: "2026-08-22T05:27:30+09:00"
 - id: INS-20260821-095036102-8f0b
   ts: "2026-08-21T09:50:36+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210935_kagemaru; matched=yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
@@ -846,7 +838,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: resolved
+  status: pending
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -856,9 +848,6 @@ insights:
     status: "failed"
     exit_code: 1
     output: ""
-  resolved_reason: "fix_known=true; verify_command exit=0; target_file and detector log both exist; no code change required"
-  action_artifact: "logs/detector_fp_rate.yaml;scripts/cmd_save.sh;cmd_reflux_insight_202608220548_hayate_exact"
-  resolved_at: "2026-08-22T05:53:35+09:00"
 - id: INS-20260822-004505015-1eae
   ts: "2026-08-22T00:45:05+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4358; matched=lesson; current_pattern=lesson淘汰候補の審査 — deprecation candidatesの家老審査と--retire反映; candidate_level=2; candidate=620教訓中9重複ペア(1.5%)。L551/L549完全重複+L584/582/579自動生成3件重複。lesson_write.sh AC2=ID dedupのみ→内容dedup不在→同一テーマ重複。cmd_save.sh Check12(Jaccard≥50%)と同構造で実装可能; source=gunshi_gp_tracker.yaml"
@@ -973,5 +962,22 @@ insights:
   insight: "SKILL.md追従task[a382f82fc53df689]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:a382f82fc53df689"
+  fix_known: false
+  status: pending
+- id: INS-20260822-055645818-8da5
+  ts: "2026-08-22T05:56:45+09:00"
+  insight: "[[codexを違うアカウントでログインしたいんだがどうすればいい？いま家老はsimokitafresh@gmail com]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=codexを違うアカウントでログインしたいんだがどうすればいい？いま家老はsimokitafresh@gmail.comだがKarasuyama3387@gmail.comでログインをし直したい"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T06:00:57+09:00"
+- id: INS-20260822-060154978-fad6
+  ts: "2026-08-22T06:01:54+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bvsdkuyl3 task id tool use id toolu 01MiDNCTbtnw6Cj8W5 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
