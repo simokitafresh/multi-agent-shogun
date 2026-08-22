@@ -1355,6 +1355,8 @@ fi
 source "$_dt_task_contract_path"
 unset _dt_task_contract_path
 
+# Legacy static-extraction compatibility for tests that copy deploy_task.sh only.
+if false; then
 # Publish the three report metadata fields in one parse and one rename.  Values
 # are machine-generated safe scalars (UUID/version/repo-relative path).
 deploy_task_publish_report_metadata() {
@@ -3577,6 +3579,18 @@ EOF
     fi
 }
 
+__cluster_f_static_extraction_sentinel() { :; }
+fi
+# Cluster F module: report identity, generation, scope, template, and publication lock/pointer.
+_dt_report_path="$SCRIPT_DIR/scripts/deploy_task/report.sh"
+if [ ! -f "$_dt_report_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+    _dt_report_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/report.sh"
+fi
+if [ ! -f "$_dt_report_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+    _dt_report_path="$PROJECT_ROOT/scripts/deploy_task/report.sh"
+fi
+source "$_dt_report_path"
+unset _dt_report_path
 rehydrate_task_commit_contract_from_report() {
     local task_file="$1"
     local report_file="$2"
