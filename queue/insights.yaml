@@ -1216,3 +1216,10 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+- id: INS-20260822-111041658-1ab2
+  ts: "2026-08-22T11:10:41+09:00"
+  insight: "semantic_index_update新概念候補: discussion:【殿ntfy】tailscaleが切れてるようだ。反応できるか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
