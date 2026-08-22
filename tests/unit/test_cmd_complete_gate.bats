@@ -56,6 +56,61 @@ EOF
     export CMD_GATE_MASTER_TMPDIR="$TEST_TMPDIR"
 }
 
+# test_necessity: Vercel link validation must use the current command's
+# report-owned context scope, so unrelated broken references cannot block it
+# while broken references in an owned context remain fail-closed.
+# regression_justification: deriving the scope from command-head commits
+# admitted unrelated auto-commit context files and caused false-positive
+# vercel_phase:broken_references blocks.
+@test "Vercel phase completion scope is report-owned, blocking, and skippable at the three boundaries" {
+    source "$GATE_HELPERS_FILE"
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export CMD_ID="$TEST_CMD_ID"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+
+    local external_repo="$TEST_TMPDIR/external-repo"
+    mkdir -p "$external_repo/docs/research" "$TEST_PROJECT/context"
+    printf '# existing detail\n' > "$external_repo/docs/research/existing.md"
+    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
+projects:
+  - id: external
+    path: $external_repo
+EOF
+    ln -s "$PROJECT_ROOT/scripts/gates/gate_vercel_phase.sh" \
+        "$TEST_PROJECT/scripts/gates/gate_vercel_phase.sh"
+
+    local owned="$TEST_PROJECT/context/owned.md"
+    local unrelated="$TEST_PROJECT/context/unrelated.md"
+    printf '# owned\nSee docs/research/existing.md\n' > "$owned"
+    printf '# unrelated\nSee docs/research/missing-unrelated.md\n' > "$unrelated"
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: context/owned.md
+EOF
+    run bash -c 'source "$1"; collect_report_modified_files | awk '\''/^context\/.*\.md$/ {print}'\'' | sort -u' _ "$GATE_HELPERS_FILE"
+    [ "$status" -eq 0 ]
+    [ "$output" = "context/owned.md" ]
+    run bash "$TEST_PROJECT/scripts/gates/gate_vercel_phase.sh" context/owned.md
+    [ "$status" -eq 0 ]
+
+    printf '# owned\nSee docs/research/missing-owned.md\n' > "$owned"
+    run bash "$TEST_PROJECT/scripts/gates/gate_vercel_phase.sh" context/owned.md
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"GATE_REASON=vercel_phase:broken_references"* ]]
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: scripts/cmd_complete_gate.sh
+EOF
+    run bash -c 'source "$1"; collect_report_modified_files | awk '\''/^context\/.*\.md$/ {print}'\'' | sort -u' _ "$GATE_HELPERS_FILE"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 # test_necessity: source-only publication must first drain tracked runtime
 # deltas, then converge the live execution source while preserving local-only
 # history and dirty source bytes.
