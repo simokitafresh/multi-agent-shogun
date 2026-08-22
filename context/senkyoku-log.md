@@ -1,6 +1,12 @@
 # 戦局日誌 (Campaign Log)
 <!-- last_updated: 2026-08-03 karo_strong_new_game_dm_monthly_boundary -->
 
+## 2026-08-22
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_4368_research (hayate) | PF間低相関をFoF selectionへ利用する価値を、Track B独立で現物確認・設計レビュー | 相関production経路4箇所、selection/filter相関参照0件、DB readonlyでmonthly_returns 16532行/102PF、selection候補78/78、履歴106-185ヶ月、36M/60M充足78/78、metrics 204行/47名を確認。設計書commit `98edac7d78036483ee849f8b2970bdefa5898f18`、report gate PASS。runnerはtask worktreeと絶対target_pathのscope不整合でfail-closed BLOCK | [[cmd_4368_TrackB]] -> [[PF間return相関の用途分離]] -> [[PIT低相関selection最小実験]] |
+
 ## 2026-08-20
 
 | cmd/action | 意図 | 結果 | 因果 |
