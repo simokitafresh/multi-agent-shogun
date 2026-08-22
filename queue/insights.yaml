@@ -1784,3 +1784,30 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_vercel_owned_context_scope"
   fix_known: false
   status: pending
+- id: INS-20260823-052253475-8002
+  ts: "2026-08-23T05:22:53+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4370; matched=deploy_task; current_pattern=deploy_task.sh分割第七弾 — context injection module抽出(挙動不変); candidate_level=4; candidate=既存実装で既にカバー済み(L2261-2278: rate==0.0→完全除外、rate<0.30→decay 0.3倍)。LG033違反: 既存の仕組みを確認せず提案した; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4370"
+  fix_known: false
+  status: pending
+- id: INS-20260823-052307383-48f3
+  ts: "2026-08-23T05:23:07+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[deploy_task分割設計書cluster G]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=deploy_task; score=41.4) / training_cycle_quality(忍者修行サイクル品質; alias=training_auto_deploy; score=17.1) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=deploy_fixture_case51; score=16.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T05:23:13+09:00"
+- id: INS-20260823-052307684-3dc5
+  ts: "2026-08-23T05:23:07+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4370第七弾]] は既存aliasesに一致なし。類似概念TOP3: unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=21.9) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=21.5) / gate_bypass_prevention(ゲート迂回防止; alias=cmd 3004完了処理完了; score=21.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T05:23:14+09:00"
