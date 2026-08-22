@@ -64,7 +64,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:6b85770af68a9b7b"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認済み: gate_skill_script_refs.sh rc=2はFOLLOWUP_ACTIVE=12のレビュー要求のみ。参照先実在・SKILL鮮度・例示パス・副作用実走マーカーの4項目は全てOKで、SKILL追従修正とdecision_candidateは不要"
+  action_artifact: "scripts/gates/gate_skill_script_refs.sh rc=2;FOLLOWUP_ACTIVE=12;OK=4;logs/test_receipts/run_tests_20260822T044102_652231.json"
+  resolved_at: "2026-08-22T13:42:39+09:00"
 - id: INS-20260822-064517955-347a
   ts: "2026-08-22T06:45:17+09:00"
   insight: "self-retro dominant cause=completion_pipeline; candidate=reduce dominant completion phase without weakening checkpoints; criterion=all ordered checkpoints complete and duplicate event count is 0"
