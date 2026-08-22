@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_ga466_context_freshness_20260815
-  timestamp: '2026-08-15T01:24:48Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_ga466_context_freshness_20260815'
 - cmd_id: cmd_karo_hotfix_cmd4320_broken_ref_20260815
   timestamp: '2026-08-15T03:12:45Z'
   ninja: system
@@ -1322,3 +1309,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_source_publish_single_truth'
+- cmd_id: cmd_karo_hotfix_reserved_path_source_identity
+  timestamp: '2026-08-22T16:35:10Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_reserved_path_source_identity'
