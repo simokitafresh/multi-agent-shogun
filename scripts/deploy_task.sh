@@ -4154,11 +4154,16 @@ try:
 except Exception:
     raise SystemExit(1)
 task = data.get("task") or data
-raw = task.get("target_path")
-paths = [raw] if isinstance(raw, str) else raw if isinstance(raw, list) else []
+raw = [task.get("target_path"), task.get("planned_paths")]
+paths = []
+for value in raw:
+    if isinstance(value, str):
+        paths.append(value)
+    elif isinstance(value, list):
+        paths.extend(value)
 paths = [str(path or "").strip() for path in paths if str(path or "").strip()]
 suffixes = (".md", ".mdx", ".rst", ".adoc")
-raise SystemExit(0 if paths and all(path.lower().endswith(suffixes) for path in paths) else 1)
+raise SystemExit(0 if any(path.lower().endswith(suffixes) for path in paths) else 1)
 PY
 }
 
@@ -9666,91 +9671,15 @@ PY
 }
 
 # 殿裁定(2026-08-14): 忍者ACにdoc laneの仕事を混ぜない。
-# context境界更新・gist同期・計画書/文書更新は将軍laneへ戻し、通常の実装ACや
-# doc参照ACは通す。検査対象はtaskのacceptance_criteriaだけに限定し、purposeや
-# commandの説明語で過検知しない。
+# context境界更新・gist同期・計画書/文書更新は将軍laneへ戻す。DOC laneの
+# 所有権はtaskのtarget_path/planned_pathsで判定し、AC本文の自然言語は検査しない。
 deploy_task_guard_doc_update_ac() {
     local task_file="$1"
-    local result
     [ -f "$task_file" ] || return 0
 
-    result="$(python3 - "$task_file" <<'DOC_UPDATE_AC_PY'
-import re
-import sys
-import yaml
-
-try:
-    data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-except Exception:
-    raise SystemExit(0)
-
-task = data.get("task", data) if isinstance(data, dict) else {}
-ac = task.get("acceptance_criteria") if isinstance(task, dict) else None
-
-def descriptions(value):
-    if isinstance(value, dict):
-        for key, item in value.items():
-            if key in {"description", "check", "title", "criteria"}:
-                yield from descriptions(item)
-            elif str(key).startswith("AC"):
-                yield from descriptions(item)
-    elif isinstance(value, list):
-        for item in value:
-            yield from descriptions(item)
-    elif value not in (None, ""):
-        yield str(value)
-
-# Keep the target vocabulary narrow: "context freshness" by itself is an
-# implementation concern, while an explicit update/sync/edit request is doc-lane work.
-patterns = [
-    ("context-boundary", r"(?:context|コンテキスト).{0,100}(?:境界|更新|反映|改訂|update|refresh|source[_ -]?commit)"),
-    ("gist-sync", r"gist.{0,100}(?:同期|更新|反映|sync|upload|share)"),
-    ("plan-update", r"(?:計画書|計画|plan|roadmap).{0,100}(?:更新|反映|改訂|変更|update|edit|revise)"),
-    ("document-update", r"(?:documentation|docs?|ドキュメント|文書).{0,100}(?:更新|反映|改訂|変更|update|edit|revise)"),
-]
-
-# 2026-08-17 偽陽性根治(殿裁定「偽陽性は即時根治」・cmd_4331): スコープ外/他lane
-# 担当の明記(例:「gist同期は将軍が行う」「外部共有同期は本cmd範囲外」)は忍者への
-# 依頼ではない。マッチ位置を含む同一節にスコープ外語があれば検知対象から外す。
-SCOPE_OUT = re.compile(
-    r"(?:範囲外|対象外|スコープ外|将軍(?:lane|レーン)|将軍が行う|将軍が実施|家老(?:lane|レーン)"
-    r"|(?:は|を)しない|(?:は|を)?行わない|(?:せず|禁止|禁じ)|不要|除外|out of scope|not in scope|shogun (?:doc )?lane"
-    r"|do(?:es)? not|must not|read[ -]?only|読み取りのみ)",
-    re.IGNORECASE,
-)
-
-# A repository path such as ``docs/research/<name>.md`` names an artifact
-# location (where a recon writes its findings), not a request to update
-# documentation.  cmd_4348 (2026-08-17 23:43) was BLOCKed because
-# "docs/research/…md に記録する。読み取りのみで…設定変更は行わない" matched
-# "docs …変更" across the sentence boundary.
-PATH_TOKEN = re.compile(r"^(?:docs?|documentation)/", re.IGNORECASE)
-
-def clause_around(text, start, end, span=60):
-    left = text[max(0, start - span):start]
-    right = text[end:end + span]
-    left = re.split(r"[。．.;；]|(?<=[)）])", left)[-1]
-    right = re.split(r"[。．.;；]|(?=[(（])", right)[0]
-    return left + text[start:end] + right
-
-hits = []
-for text in descriptions(ac):
-    normalized = re.sub(r"\s+", " ", text).strip()
-    for label, pattern in patterns:
-        for m in re.finditer(pattern, normalized, re.IGNORECASE):
-            if PATH_TOKEN.match(normalized[m.start():m.start() + 16]):
-                continue
-            if SCOPE_OUT.search(clause_around(normalized, m.start(), m.end())):
-                continue
-            hits.append(label)
-            break
-if hits:
-    print(",".join(dict.fromkeys(hits)))
-DOC_UPDATE_AC_PY
-)"
-    if [ -n "$result" ]; then
-        log "BLOCK(DOC_LANE_ROUTING): acceptance_criteria requests ${result}"
-        echo "BLOCK: task AC requests ${result}; doc update is not a ninja lane. Route the documentation update to the shogun doc lane." >&2
+    if task_targets_are_documentation_only "$task_file"; then
+        log "BLOCK(DOC_LANE_ROUTING): target_path is documentation-owned"
+        echo "BLOCK: task target_path is documentation-owned; doc update is not a ninja lane. Route the documentation update to the shogun doc lane." >&2
         return 2
     fi
     return 0
