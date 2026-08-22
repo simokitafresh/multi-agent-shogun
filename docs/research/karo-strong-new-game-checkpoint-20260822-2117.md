@@ -27,13 +27,13 @@
 - hanzo: `cmd_reflux_insight_202608221206_hanzo_exact` done、GATE CLEAR/archive済み。
 - saizo: `cmd_karo_hotfix_ga491_terminal_blob_parity_normal` idle、GATE CLEAR/archive済み。
 - tobisaru: `cmd_reflux_insight_202608221335_tobisaru_exact` idle、GATE CLEAR/archive済み。pane busy表示はtask不一致のstale補足を適用せず確認していただけで、実作業なし。
-- kotaro: `cmd_reflux_insight_202608212332_kotaro_exact` failedの履歴状態。新しい未読・再開指示なし。勝手に上書きしない。
+- kotaro: `cmd_reflux_insight_202608212332_kotaro_exact` は実作業完遂・GATE CLEAR・archive済みを再確認し、stale failedをidleへ終端整理済み。再配備なし。
 
 ## 3. Git / remote / CI
 
-- baseline local HEAD before checkpoint commit: `cdc349017773032a117e2f1d7591009572223979`
+- baseline local HEAD before final checkpoint update: `5a45aec9ad78dc3f2b2fbcfe4b96ef7387768086`
 - origin/main: `37d27d146a8043e64486bc84b9ddaca9d3768ee2`
-- relation at save before checkpoint commit: remote-only 0 / local-only 9。localはremoteを包含。
+- relation at save before final checkpoint update: remote-only 0 / local-only 13。localはremoteを包含。
 - tracked worktree: clean。
 - user-owned untracked: `tests/unit/test_cmd_complete_gate_source_publish.bats`。触れない・混入させない。
 - latest remote CI: run `32557279449`, head `37d27d146a8043e64486bc84b9ddaca9d3768ee2`, conclusion `success`。
@@ -61,7 +61,7 @@
 
 ### 4.3 insightはIDだけでなくresolved fieldも単調に保つ
 
-- 保存時点: live 136 IDs、unique 136、重複0。remoteは保存直前の再計測対象であり、本値を未来へ流用しない。
+- 保存時点: live 138 IDs、unique 138、重複0。remoteは保存直前の再計測対象であり、本値を未来へ流用しない。
 - 重要対象3件はlive/remoteともresolved:
   - `INS-20260822-063624178-9fac`
   - `INS-20260822-064517955-347a`
