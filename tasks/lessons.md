@@ -15708,3 +15708,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - deploy_task.shをmodule sourceへ移すと、既存suiteがmain本文から関数を静的抽出する旧互換契約を失う。runtime moduleとif false互換関数/markerを同時保持し、静的契約移行まで壊さない。
+
+### L1631: task-modeは隔離worktreeへabsolute target_pathを射影すること
+- **日付**: 2026-08-23
+- **出典**: cmd_karo_hotfix_source_publish_single_truth
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality,testing,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh]
+- **origin**: [[cmd_karo_hotfix_source_publish_single_truth]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task YAMLのtarget_pathがcanonical repo absolute pathのままだと、隔離worktreeでrun_tests.sh taskがscope path outside repositoryとなり、実装・検証経路をRC2で停止する。配備時にtask_worktree_source_pathsをworktree相対へ射影し、task runnerのprimary scopeを一致させるべきである。
