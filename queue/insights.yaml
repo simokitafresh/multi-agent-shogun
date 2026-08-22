@@ -1206,7 +1206,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '700ce94c5ace55eaaf8f93b896d7b922934d799b2e7e64e4a72816d2af852818' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -1216,6 +1216,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "GATE CLEAR: cmd_reflux_insight_202608221223_tobisaru completed declared remediation"
+  action_artifact: "cmd=cmd_reflux_insight_202608221223_tobisaru;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-08-22T12:56:26+09:00"
 - id: INS-20260822-111041658-1ab2
   ts: "2026-08-22T11:10:41+09:00"
   insight: "semantic_index_update新概念候補: discussion:【殿ntfy】tailscaleが切れてるようだ。反応できるか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
