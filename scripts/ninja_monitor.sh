@@ -66,6 +66,7 @@ source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+source "$SCRIPT_DIR/scripts/lib/task_lifecycle.sh"
 source "$SCRIPT_DIR/scripts/lib/review_approval.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
@@ -1019,7 +1020,7 @@ record_clear_attempt_or_force_idle() {
     fi
 
     if [ -f "$task_file" ]; then
-        yaml_field_set "$task_file" "task" "status" "idle" 2>/dev/null || true
+        task_lifecycle_set_idle "$task_file" "clear_loop_block" 2>/dev/null || true
     fi
     send_inbox_message karo "【CLEAR-LOOP-BLOCK】${agent_name} が同一cmd=${cmd_id}で /clear ${count}回。上限=${max_clear}超過のためtaskをidle化して空回りを停止。reason=${reason}" clear_loop_block
     log "CLEAR-LOOP-BLOCK: $agent_name cmd=$cmd_id count=${count}/${max_clear} forced_idle reason=$reason"
@@ -4065,12 +4066,10 @@ auto_void_if_parent_cmd_completed() {
         [ "$current_parent_cmd" = "$parent_cmd" ] || { log "AUTO-VOID-SKIP: $name parent_cmd changed to ${current_parent_cmd:-empty}"; exit 1; }
         still_completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd" "$task_id") || { log "AUTO-VOID-SKIP: completed report disappeared for $name parent_cmd=$parent_cmd task_id=$task_id"; exit 1; }
 
-        if ! yaml_field_set "$task_file" "task" "status" "idle"; then
-            log "ERROR: yaml_field_set failed for ${name} auto-void status update"
+        if ! task_lifecycle_set_idle "$task_file" "auto_void_parent_cmd_completed"; then
+            log "ERROR: task_lifecycle_set_idle failed for ${name} auto-void transition"
             exit 1
         fi
-        yaml_field_set "$task_file" "task" "report_path" "" 2>/dev/null || true
-        yaml_field_set "$task_file" "task" "report_filename" "" 2>/dev/null || true
         # Completed parent_cmd/tasks must not remain report-wait targets for the next cmd.
         awk '
             /^[[:space:]]+parent_cmd:[[:space:]]*/ { next }
@@ -6602,11 +6601,8 @@ EOF
         local _reflux_partial_parent
         _reflux_partial_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
         if [ "$_reflux_partial_parent" = "$cmd_id" ]; then
-            yaml_field_set "$task_file" "task" "status" "idle" >/dev/null 2>&1 || true
-            yaml_field_set "$task_file" "task" "report_path" "" >/dev/null 2>&1 || true
-            yaml_field_set "$task_file" "task" "report_filename" "" >/dev/null 2>&1 || true
+            task_lifecycle_set_idle "$task_file" "reflux_auto_deploy_rollback" >/dev/null 2>&1 || true
             yaml_field_set "$task_file" "task" "ac_version" "" >/dev/null 2>&1 || true
-            yaml_field_set "$task_file" "task" "task_id" "" >/dev/null 2>&1 || true
             log "REFLUX-AUTO-ROLLBACK: $name partial task reset after deploy failure cmd=${cmd_id}"
         fi
     fi
@@ -11324,8 +11320,8 @@ while true; do
                         # Stale task: reset status to idle and allow /clear
                         # L545対応: flat/nested混在に対応。yaml_field_setはblock_id未発見時にroot-levelへ自動フォールバック
                         # YAML書込み安全規則: sed -i(flock未使用)を排除し、yaml_field_setに一本化
-                        yaml_field_set "$_s1_task_file" "task" "status" "idle" 2>/dev/null || \
-                            log "WARN: STAGE1-TIMEOUT yaml_field_set failed for $name, proceeding with maybe_idle"
+                        task_lifecycle_set_idle "$_s1_task_file" "stage1_timeout" 2>/dev/null || \
+                            log "WARN: STAGE1-TIMEOUT task_lifecycle_set_idle failed for $name, proceeding with maybe_idle"
                         log "STAGE1-TIMEOUT: $name task_status=$_s1_task_status stale for ${_s1_age}s, resetting to idle"
                         # cmd_1185 AC2: TIMEOUT後はGuard 2をバイパスしてmaybe_idleへ直接追加
                         # 理由: yaml_field_setでmtime更新→Guard 2が120s未満と誤判定→/clear永久スキップ

@@ -6,6 +6,41 @@
 
 load '../helpers/deploy_task_scaffold'
 
+# test_necessity: task idle transition atomically clears active identity and
+# preserves the previous generation across active/completed/idle boundaries.
+@test "task lifecycle idle transition preserves history and clears identity" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+source "$PROJECT_ROOT/scripts/lib/task_lifecycle.sh"
+root="$(mktemp -d)"; mkdir -p "$root/queue/tasks"
+for state in in_progress done idle; do
+    cat > "$root/queue/tasks/worker.yaml" <<EOF
+task:
+  status: $state
+  task_id: task_${state}
+  parent_cmd: cmd_${state}
+  _ac_task_id: ac_${state}
+  report_path: queue/reports/report_${state}.yaml
+  report_filename: report_${state}.yaml
+EOF
+    if [ "$state" != in_progress ]; then task_lifecycle_set_idle "$root/queue/tasks/worker.yaml" "contract_$state"; fi
+    STATE="$state" python3 - "$root/queue/tasks/worker.yaml" <<'PY'
+import os, sys, yaml
+t=yaml.safe_load(open(sys.argv[1]))["task"]; state=os.environ["STATE"]
+if state == "in_progress": assert t["task_id"] == "task_in_progress"
+else:
+    assert t["status"] == "idle"
+    assert all(not t.get(k) for k in ("task_id","parent_cmd","_ac_task_id","report_path","report_filename"))
+    assert t["last_task_id"] == f"task_{state}" and t["lifecycle_transition_reason"] == f"contract_{state}"
+PY
+done
+printf "boundaries=active,completed,idle identity_clear=yes history_preserved=yes\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"boundaries=active,completed,idle identity_clear=yes history_preserved=yes"* ]]
+}
+
 # ─── stale_field_reset ヘルパー関数 ───
 
 extract_function() {
@@ -2175,6 +2210,7 @@ EOF
     log() { :; }
     source "$REAL_PROJECT_ROOT/scripts/lib/field_get.sh"
     source "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    source "$REAL_PROJECT_ROOT/scripts/lib/task_lifecycle.sh"
     eval "$(extract_function reset_stale_fields)"
     eval "$(extract_function deploy_task_cmd_status_is_canceled)"
     eval "$(extract_function deploy_task_cleanup_canceled_cmd)"
