@@ -1,3 +1,4 @@
+<!-- gist-master: 4df581b5103f7f339ba51a5212d8f6f3 dm-signal-hmm-regime-experiment-v0-original_20260823.md -->
 <!-- 殿原文(2026-08-23 08:47下問)・改変禁止。5指標v0-original(dae809c3)と同じ正本方式 -->
 # DM-Signal HMM Regime実験 — 概念設計
 
