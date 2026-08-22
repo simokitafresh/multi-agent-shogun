@@ -1,5 +1,7 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-08-23 context_freshness reviewed source boundary -->
+<!-- source_commit:6cfbf1361 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=6cfbf1361 -->
+<!-- source_commit:324bdb414 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=324bdb414 -->
 <!-- source_commit:5f7cbb7be reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=5f7cbb7be -->
 <!-- source_commit:2fee986d0 reason:GA-492 context update request consumer接続の反映 evidence:gate_context_freshness.shが承認済みcontext update requestを消費するconsumer接続(+51-18、cmd_karo_hotfix_ga492) -->
 <!-- source_commit:2da7e1e05 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=2da7e1e05 -->
