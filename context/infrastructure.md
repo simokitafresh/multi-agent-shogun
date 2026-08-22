@@ -1,6 +1,7 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-08-22 deploy_task.sh module分割(A-E)+ancestry/ID-monotonic根治を反映 (shogun doc lane, GA-490) -->
 <!-- source_commit:962b0f2bc reason:GA-490 UPDATE_REQUEST反映 evidence:cmd_4360-4364でdeploy_task.shをscripts/deploy_task/{bootstrap,state,transaction,delivery,resolve,task_contract}.shへ抽出(挙動不変・14613→11831行)。優先度台帳=docs/research/script_refactor_priority_20260821.md、分割設計書=docs/research/deploy_task_split_design_20260821.md。残cluster F-J継続中。併せてcmd_complete_gateへreport commit main祖先化終端検査(merge 3a16cfde)とinsight ID-monotonic merge(gold_missing=0不変量)を2026-08-22に恒久化 -->
+<!-- source_commit:3ddbbdce8 reason:GA-490 raw ALERT doc-lane永続通知契約の反映 evidence:cmd_karo_hotfix_ga490_raw_alert_notify_contract: gate_context_freshness.shがraw ALERTを掲示板可読契約(bash bulletin readability)で永続通知するよう整備。test_gate_context_freshness.bats +88行で契約固定。doc lane側の受信経路=掲示板DOC_LANE_WARNING投稿 -->
 <!-- GA-483: infra-platform freshness uses explicit source pathspecs; operational records and project research remain outside this owner boundary. -->
 <!-- source_commit:253afbb2c reason:inbox_write guard/pre-commit guard/契約を追記 evidence:commit 75ffff697 ae52b3129 cc13a69cb -->
 <!-- source_commit:9f39c1a071cf4c0f6cc1afbdad39a295ff29cc2a reason:cmd_karo_hotfix_review_quality_warn_20260814_normal reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=9f39c1a071cf4c0f6cc1afbdad39a295ff29cc2a -->
