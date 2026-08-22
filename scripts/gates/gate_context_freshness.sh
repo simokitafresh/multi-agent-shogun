@@ -431,10 +431,49 @@ notify_context_alert() {
     fi
 }
 
+raw_context_alert_is_stale_after_recheck() {
+    local rel_path="$1"
+    local alert_line="$2"
+    local file="$ROOT_DIR/$rel_path"
+    local alert_cutoff="" metadata_date="" line="" line_count=0
+    local cutoff_epoch metadata_epoch
+
+    # The checker output is a snapshot. Re-read the target immediately before
+    # the durable side effect so a context update racing with the checker
+    # cannot produce a stale doc-lane notification.
+    [[ "$alert_line" =~ last_updated=([0-9]{4}-[0-9]{2}-[0-9]{2}) ]] || return 1
+    alert_cutoff="${BASH_REMATCH[1]}"
+    [[ -f "$file" && -r "$file" ]] || return 1
+
+    while IFS= read -r line && (( line_count < 10 )); do
+        line_count=$((line_count + 1))
+        if [[ "$line" =~ last_updated:[[:space:]]*([0-9]{4}-[0-9]{2}-[0-9]{2}) ]]; then
+            metadata_date="${BASH_REMATCH[1]}"
+            break
+        fi
+    done < "$file"
+
+    # Missing or malformed dates retain the existing fail-closed notification
+    # contract: inability to prove staleness must not suppress an ALERT.
+    [[ -n "$metadata_date" ]] || return 1
+    cutoff_epoch="$(date -d "$alert_cutoff" +%s 2>/dev/null)" || return 1
+    metadata_epoch="$(date -d "$metadata_date" +%s 2>/dev/null)" || return 1
+
+    if (( metadata_epoch > cutoff_epoch )); then
+        echo "[gate_context_freshness] raw ALERT stale after metadata recheck; notification dropped: ${rel_path} (metadata=${metadata_date}, cutoff=${alert_cutoff})" >&2
+        return 0
+    fi
+    return 1
+}
+
 notify_raw_context_alert() {
     local rel_path="$1"
     local alert_line="$2"
     local content alert_hash state_file state_tmp
+
+    if raw_context_alert_is_stale_after_recheck "$rel_path" "$alert_line"; then
+        return 0
+    fi
 
     content="DOC_LANE_ALERT: context=${rel_path} raw_alert=${alert_line}"
     alert_hash="$(printf '%s' "$content" | sha256sum | awk '{print $1}')"

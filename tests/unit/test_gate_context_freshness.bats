@@ -168,6 +168,36 @@ SH
   [ "$(find "$BATS_TEST_TMPDIR/bulletin-state" -type f -name '*.sent' | wc -l)" -eq 2 ]
 }
 
+# test_necessity: a target updated after checker output must not create a
+# durable stale notification or a success dedupe marker.
+@test "raw ALERT rechecks metadata and drops stale notification" {
+  bulletin_capture="$BATS_TEST_TMPDIR/stale-bulletin-capture"
+  bulletin_script="$BATS_TEST_TMPDIR/stale-bulletin-write.sh"
+  cat > "$bulletin_script" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$BULLETIN_CAPTURE"
+SH
+  chmod 644 "$bulletin_script"
+  sed -i 's/last_updated: 2026-07-19/last_updated: 2026-07-20/' "$FIXTURE_ROOT/context/infrastructure.md"
+
+  run env \
+    BULLETIN_CAPTURE="$bulletin_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/stale-bulletin-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/stale-alert-state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"raw ALERT stale after metadata recheck; notification dropped"* ]]
+  [ ! -e "$bulletin_capture" ]
+  [ "$(find "$BATS_TEST_TMPDIR/stale-bulletin-state" -type f -name '*.sent' 2>/dev/null | wc -l)" -eq 0 ]
+}
+
 # test_necessity: a missing or non-readable bulletin path must remain a
 # blocking raw ALERT result instead of being passed to bash as a capability.
 @test "raw ALERT bulletin requires a readable regular file" {
