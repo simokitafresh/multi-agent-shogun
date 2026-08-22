@@ -46,7 +46,10 @@ deploy_task_has_completed_peer_report() {
     [ -n "$parent_cmd" ] || return 1
 
     for report_file in "$SCRIPT_DIR/queue/reports/"*"_report_${parent_cmd}.yaml"; do
-        [ -f "$report_file" ] || continue
+        # archive_completed keeps a compatibility symlink at the former live
+        # path. The report is already terminally archived and must not occupy
+        # another worker's deployment slot.
+        [ -f "$report_file" ] && [ ! -L "$report_file" ] || continue
         report_base=$(basename "$report_file")
         report_ninja="${report_base%%_report_*}"
         [ "$report_ninja" = "$ninja_name" ] && continue
@@ -586,4 +589,3 @@ cleanup_none_task_files() {
         fi
     done
 }
-

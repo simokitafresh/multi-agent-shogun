@@ -1398,6 +1398,33 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: archive compatibility symlinks are not active peer reports;
+# counting them would keep a command permanently undeployable after FAIL-close.
+@test "archived peer report compatibility symlink does not block redeploy" {
+    mkdir -p "$TEST_PROJECT/queue/archive/reports"
+    cat > "$TEST_PROJECT/queue/archive/reports/hayate_report_cmd_old_archived.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_old
+status: failed
+verdict: FAIL
+EOF
+    ln -s "$TEST_PROJECT/queue/archive/reports/hayate_report_cmd_old_archived.yaml" \
+        "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml"
+    cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: assigned
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        ! deploy_task_has_completed_peer_report cmd_old kagemaru "$1/queue/tasks/kagemaru.yaml"
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+}
+
 @test "cmd_karo_hotfix_reflux_deploy_race: reflux/direct auto-deploy path is BLOCKed by the same PASS/unarchived guard" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
