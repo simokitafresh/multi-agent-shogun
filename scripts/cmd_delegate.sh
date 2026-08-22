@@ -270,6 +270,7 @@ function flush_block() {
 function reset_block() {
     block_has_cmd = 0
     block_is_cmd_new = 0
+    block_subject_seen = 0
 }
 BEGIN {
     reset_block()
@@ -279,20 +280,17 @@ BEGIN {
     reset_block()
 }
 {
-    remaining = $0
-    offset = 0
-    # Scan every occurrence so "cmd_1000 ... cmd_100" still detects cmd_100.
-    while ((pos = index(remaining, cmd_id)) > 0) {
-        abs_pos = offset + pos
-        before_char = (abs_pos > 1) ? substr($0, abs_pos - 1, 1) : ""
-        after_char = substr($0, abs_pos + length(cmd_id), 1)
-        if ((before_char == "" || before_char !~ /[A-Za-z0-9_]/) &&
-            (after_char == "" || after_char !~ /[A-Za-z0-9_]/)) {
-            block_has_cmd = 1
-            break
+    # 言及≠委任 (2026-08-22殿下知「品質バグによるblockは即時根治せよ」)。
+    # 委任主語 = block本文で最初に現れるcmd_トークンのみ。任意位置の言及一致は
+    # 別cmd委任文中の説明的言及(例: cmd_4367委任文中のcmd_4368)を誤検知する。
+    if (!block_subject_seen) {
+        line = $0
+        if (match(line, /cmd_[A-Za-z0-9_]+/)) {
+            block_subject_seen = 1
+            if (substr(line, RSTART, RLENGTH) == cmd_id) {
+                block_has_cmd = 1
+            }
         }
-        offset += pos
-        remaining = substr(remaining, pos + 1)
     }
     if ($0 ~ /^[[:space:]]*type:[[:space:]]*['\''"]?cmd_new['\''"]?([[:space:]]|$)/) {
         block_is_cmd_new = 1
