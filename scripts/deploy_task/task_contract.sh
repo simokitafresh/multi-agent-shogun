@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # deploy_task/task_contract.sh — cluster E: task YAML normalization and contract injection.
 # Function bodies are extracted verbatim from deploy_task.sh.
 inject_cmd_time_contract() {
