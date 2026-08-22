@@ -1,5 +1,9 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-22 context_freshness reviewed source boundary (shogun doc lane, GA-491 re-apply of GA-490) -->
+<!-- source_commit:45760ecf reason:GA-490/491 運用反映点の境界更新(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log 46a1f213..45760ecf reviewed。初回=33f3dc7a2、tree退行検出により再適用。coreと共有するsource変更は重複調査せず運用反映点のみ記録 -->
+
+## Current source boundary (GA-490/491, 2026-08-22)
+- **Current source tip:** `45760ecf`(reconcile merge revert)。運用上の反映点: 保有不変(signals md5+weights md5+signal_change 0)がFoF決定性シリーズ後のfull run合否基準として継続。full 1回で業務4表md5をrollback計画書§-1 15:10 baselineと突合する型(cmd_4337 AC)も継続。rb6 cleanup再合流までは45760ecf系列を運用正とする。
 <!-- source_commit:46a1f213 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=46a1f213 -->
 <!-- source_commit:131e5dbb reason:GA-472 rollback boundary reflected in ops context evidence:git -C /mnt/c/Python_app/DM-signal diff --stat 3e28b617 131e5dbb; rollback commit 131e5dbb; §Current source boundary added -->
 <!-- source_commit:a9883865 reason:業務列parity標準+1手の型を§98へ反映 evidence:scripts/dm_signal_business_parity.py; blt_20260815_183204 -->
