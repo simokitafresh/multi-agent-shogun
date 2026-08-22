@@ -405,6 +405,23 @@ deploy_task_archive_terminal_task() {
     printf '%s\n' "$archive_file"
 }
 
+deploy_task_done_report_formally_accepted() {
+    local ninja_name="$1" parent_cmd="$2"
+    local report_file review_lib
+    review_lib="${BASH_SOURCE[0]%/deploy_task/state.sh}/lib/review_approval.sh"
+    [ -f "$review_lib" ] || return 1
+    for report_file in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}"*.yaml; do
+        [ -f "$report_file" ] && [ ! -L "$report_file" ] || continue
+        if PROJECT_ROOT="$SCRIPT_DIR" bash -c '
+            source "$1"
+            review_two_phase_ready "$2" "$3"
+        ' _ "$review_lib" "$parent_cmd" "$report_file"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 deploy_task_guard_worker_assignment() {
     local task_file="$1"
     local incoming_cmd="$2"
@@ -440,6 +457,20 @@ deploy_task_guard_worker_assignment() {
             fi
             ;;
         done|PASS)
+            # A fingerprint-bound two-phase ACCEPT makes the report durable
+            # independently of the worker task slot. Preserve the old task
+            # snapshot, keep the report discoverable by parent_cmd, and allow
+            # another command without waiting for unrelated completion gates.
+            if [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
+                && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent" \
+                && deploy_task_done_report_formally_accepted "$worker_name" "$current_parent"; then
+                deploy_task_archive_terminal_task "$task_file" "$worker_name" "$current_parent" >/dev/null || {
+                    echo "BLOCK: ${worker_name:-worker} の正式承認済みtask退避に失敗。新cmd ${incoming_cmd} を配備しない。" >&2
+                    return 1
+                }
+                log "TERMINAL_SLOT_RELEASE: ${worker_name:-worker} ${current_parent} report is fingerprint-bound LGTM+ACCEPT; allowing ${incoming_cmd} before report archive"
+                return 0
+            fi
             # B26 escape hatch (将軍裁可 blt_20260725_234849): CI REDのときGATEが通らず
             # 報告がarchiveできない。その状態でこのガードが全配備を拒むと「CI修正を
             # 配備できないからCI REDが直らない」という自己矛盾で全忍者が詰む(2026-07-25実証)。
@@ -882,4 +913,3 @@ deploy_task_start_deferred_drain() {
     ( deploy_task_drain_deferred ) >/dev/null 2>&1 &
     log "deferred_drain: started single-flight pid=$!"
 }
-

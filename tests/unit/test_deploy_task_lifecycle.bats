@@ -1137,6 +1137,35 @@ EOF
     [[ "$output" == *"完了済み(status=done)だが報告未archive"* ]]
 }
 
+# test_necessity: fingerprint-bound LGTM+ACCEPT済みPASS reportはparent_cmdで
+# 追跡可能なため、旧task snapshotを退避してworker slotを次cmdへ解放する。
+@test "formally accepted PASS report releases worker before report archive" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_old
+status: completed
+verdict: PASS
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        deploy_task_done_report_formally_accepted() { return 0; }
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new
+        find "$1/queue/archive/tasks" -type f -name "hayate_cmd_old_*.yaml" | grep -q .
+        grep -q "parent_cmd: cmd_old" "$1/queue/tasks/hayate.yaml"
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TERMINAL_SLOT_RELEASE"* ]]
+}
+
 # test_necessity: archive_completed keeps a bounded number of completed reports
 # active; archive.done plus the exact terminal checkpoint must release the worker.
 @test "done task with retained report allows next cmd after exact cmd-complete terminal checkpoint" {
