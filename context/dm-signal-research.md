@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-18 GA-477 reviewed source boundary -->
+<!-- last_updated: 2026-08-22 GA-490 reviewed source boundary (shogun doc lane) -->
+<!-- source_commit:45760ecf reason:GA-490 research境界更新 evidence:git -C /mnt/c/Python_app/DM-signal log b24d6b5f..45760ecf -- docs/research analysis outputs marketing-director = 14件。内容=cmd_4355/4356成果保存(07848c94)+note記事群(決定的tie-break一般論・投資家スクリーニング)+週報2026-08-18+reconcile merge revert。研究結論の変更なし、境界のみ更新 -->
 <!-- source_commit:b24d6b5f reason:GA-477 reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=b24d6b5f -->
 <!-- dm_signal_research_reflux: fingerprint=795aca504e998b90bfb9fcfea4e16563c679152843eeda528f089d3c3fb838b0; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgR0EtNDc3IHNvdXJjZSBib3VuZGFyeSBwbHVzIGNtZF80MzU0IEFzSXMgdjEuMTAgc3luY2hyb25pemVk -->
 <!-- dm_signal_research_reflux: fingerprint=737509502d5d41dcf9d016abf1f8a9b5958eb06228553daf93934543f8354cc2; mode=non-target; evidence_b64=Y21kXzQzNTIgQUMy44GucnVuNDA5IHJlYWRvbmx556qB5ZCI5oiQ5p6c54mp44CCdGFza+OBrmNvbnRleHRfdXBkYXRlX2NhbmRpZGF0ZXPjgYznqbrjgafjgIFjb250ZXh0L2RtLXNpZ25hbC1yZXNlYXJjaC5tZOOBuOOBruWQjOacn+OBr+acrGNtZOOCueOCs+ODvOODl+WkluOAgg== -->
