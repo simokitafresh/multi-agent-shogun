@@ -12189,16 +12189,14 @@ if [ "$TEST_SKIP_CHECKED" = false ]; then
 fi
 
 # ─── Vercel Phaseリンク整合チェック（cmd固有context変更時のみ、BLOCK対象） ───
-# Bug fix: HEAD~1がauto-commitの場合、無関係なcontext変更で偽陽性BLOCK(ci_gate_mismatch 13件WA)
-# → cmd固有commitのcontext変更のみ検出。auto-commit由来のcontext変更を除外
+# The submitted report files_modified is the narrowest ownership boundary.
+# Do not derive this scope from HEAD: unrelated context changes in an
+# auto-commit or another command must not block the current command.
 level_heading "[L3]" "Vercel phase link check:"
-# HEAD contiguous commit window only: full-history grep は /mnt/c 上で極端に遅い
-_vercel_hashes=$(get_cmd_head_hashes "$CMD_ID" || true)
-changed_contexts=""
-for _vh in $_vercel_hashes; do
-    changed_contexts="$changed_contexts $(git -C "$SCRIPT_DIR" diff-tree --no-commit-id --name-only -r "$_vh" 2>/dev/null | grep '^context/' || true)"
-done
-changed_contexts=$(echo "$changed_contexts" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
+changed_contexts=$(collect_report_modified_files \
+    | awk '/^context\/.*\.md$/ { print }' \
+    | sort -u \
+    | tr '\n' ' ')
 changed_contexts="${changed_contexts% }"
 if [ -n "$changed_contexts" ]; then
     if [ -f "$SCRIPT_DIR/scripts/gates/gate_vercel_phase.sh" ]; then
