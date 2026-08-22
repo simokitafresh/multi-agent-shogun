@@ -445,7 +445,9 @@ notify_raw_context_alert() {
         return 0
     fi
 
-    if [[ ! -x "$BULLETIN_SCRIPT" ]]; then
+    # This caller invokes bulletin_write.sh through bash, so the required
+    # capability is a readable regular file rather than the executable bit.
+    if [[ ! -f "$BULLETIN_SCRIPT" || ! -r "$BULLETIN_SCRIPT" ]]; then
         emit_actionable \
             "BLOCK: ${rel_path} (raw ALERTのdoc-lane永続通知scriptなし)" \
             "bulletin_write.shを復旧し、raw ALERTを将軍doc laneへ永続化してから再実行せよ。"
@@ -668,7 +670,7 @@ for rel_path in "${target_rel_paths[@]}"; do
             # CONTEXT_UPDATE_REQUEST token.  Reuse the established durable
             # shogun doc-lane channel used by cmd_complete_gate; tests and
             # isolated fixtures without that channel retain pure output.
-            if [[ -x "$BULLETIN_SCRIPT" ]]; then
+            if [[ -f "$BULLETIN_SCRIPT" && -r "$BULLETIN_SCRIPT" ]]; then
                 if ! BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" \
                         gate_context_freshness \
                         "DOC_LANE_WARNING: approved context update request. project=${request_project} context=${rel_path} source_commit=${latest_hash} parent_cmd=${request_cmd}" \

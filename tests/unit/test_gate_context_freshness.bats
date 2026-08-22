@@ -116,7 +116,9 @@ SH
 #!/usr/bin/env bash
 printf '%s\n' "${BULLETIN_NOTIFY:-}|$1|$2|$3|$4" >> "$BULLETIN_CAPTURE"
 SH
-  chmod +x "$bulletin_script"
+  # The gate invokes this script through bash; executable permission is not
+  # part of the caller contract.
+  chmod 644 "$bulletin_script"
 
   run env \
     BULLETIN_CAPTURE="$bulletin_capture" \
@@ -164,6 +166,90 @@ SH
   [ "$status" -eq 1 ]
   [ "$(wc -l < "$bulletin_capture")" -eq 2 ]
   [ "$(find "$BATS_TEST_TMPDIR/bulletin-state" -type f -name '*.sent' | wc -l)" -eq 2 ]
+}
+
+# test_necessity: a missing or non-readable bulletin path must remain a
+# blocking raw ALERT result instead of being passed to bash as a capability.
+@test "raw ALERT bulletin requires a readable regular file" {
+  bulletin_script="$BATS_TEST_TMPDIR/missing-bulletin-write.sh"
+  state_dir="$BATS_TEST_TMPDIR/missing-bulletin-state"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$state_dir" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-missing-bulletin" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"raw ALERTのdoc-lane永続通知scriptなし"* ]]
+  [[ "$output" == *"総合判定: BLOCK"* ]]
+  [ ! -e "$state_dir" ]
+}
+
+# test_necessity: dedupe state publication is part of raw ALERT durability;
+# a state-directory failure must remain a blocking result.
+@test "raw ALERT state directory failure remains blocking" {
+  bulletin_script="$BATS_TEST_TMPDIR/state-failure-bulletin-write.sh"
+  state_path="$BATS_TEST_TMPDIR/state-path"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$bulletin_script"
+  chmod 644 "$bulletin_script"
+  printf 'not a directory\n' > "$state_path"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$state_path" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-state-failure" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"raw ALERTのdoc-lane state領域を作成できない"* ]]
+  [[ "$output" == *"総合判定: BLOCK"* ]]
+}
+
+# test_necessity: a successful bulletin write without a persisted dedupe marker
+# is not a durable raw ALERT result and must remain blocking.
+@test "raw ALERT dedupe state save failure remains blocking" {
+  bulletin_script="$BATS_TEST_TMPDIR/state-save-bulletin-write.sh"
+  mv_wrapper="$BATS_TEST_TMPDIR/mv"
+  state_dir="$BATS_TEST_TMPDIR/state-save"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$bulletin_script"
+  chmod 644 "$bulletin_script"
+  mkdir -p "$state_dir"
+  cat > "$mv_wrapper" <<'SH'
+#!/usr/bin/env bash
+if [[ "${2:-}" == *.sent ]]; then
+  exit 1
+fi
+exec /bin/mv "$@"
+SH
+  chmod 755 "$mv_wrapper"
+
+  run env \
+    PATH="$BATS_TEST_TMPDIR:$PATH" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$state_dir" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-save-failure" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"raw ALERT通知成功後のdedupe state保存に失敗"* ]]
+  [[ "$output" == *"総合判定: BLOCK"* ]]
+  [ "$(find "$state_dir" -type f -name '*.sent' | wc -l)" -eq 0 ]
 }
 
 # test_necessity: a failed doc-lane write must remain a blocking gate result
