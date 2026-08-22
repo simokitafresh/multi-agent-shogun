@@ -5231,6 +5231,7 @@ fi
 source "$_dt_context_injection_path"
 unset _dt_context_injection_path
 
+if false; then
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
 # cmd_349: タグマッチによる選択的教訓注入
 inject_related_lessons() {
@@ -8773,6 +8774,18 @@ except Exception:
 print(f'[CODD_HIST] codd_failure_history injected: {len(failures)} revert/regression entries', file=sys.stderr)
 CODD_HIST_PY
 }
+fi
+# Cluster H module: lesson/workaround, target, role/model, and execution modifiers.
+_dt_modifiers_path="$SCRIPT_DIR/scripts/deploy_task/modifiers.sh"
+if [ ! -f "$_dt_modifiers_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+    _dt_modifiers_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/modifiers.sh"
+fi
+if [ ! -f "$_dt_modifiers_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+    _dt_modifiers_path="$PROJECT_ROOT/scripts/deploy_task/modifiers.sh"
+fi
+source "$_dt_modifiers_path"
+unset _dt_modifiers_path
+
 
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
 # deploy_task.sh実行時にcmd_complete_gate.shが要求するgateフラグを事前生成。
