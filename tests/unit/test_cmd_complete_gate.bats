@@ -890,6 +890,7 @@ _write_command_coverage_fixture() {
     local command_text="$1"
     local files_modified_block="$2"
     local target_path="${3:-}"
+    local scope_mode="${4:-}"
 
     export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
@@ -903,6 +904,7 @@ commands:
   $TEST_CMD_ID:
     command: "$command_text"
     target_path: "$target_path"
+    scope_mode: "$scope_mode"
 EOF
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
@@ -1466,6 +1468,42 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"SKIP (files_modified=no-code-change sentinel"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+# test_necessity: RESEARCH commands may cite external product files as
+# investigation inputs while publishing only research artifacts; the gate
+# must skip that read-only coverage check, while a normal command with the
+# same missing write target must still BLOCK.
+# regression_justification: cmd_4367/cmd_4368 used scope_mode=RESEARCH with
+# external backend/app/services references and design-only files_modified,
+# producing command_files_modified_mismatch false positives.
+@test "command/files_modified coverage skips RESEARCH refs but preserves normal BLOCK" {
+    local research_pass=0 normal_block=0
+    local command="backend/app/services/fof/correlation.py を修正"
+    local research_files="  - path: docs/research/cmd_999_report.md
+    change: added"
+
+    _write_command_coverage_fixture "$command" "$research_files" "backend/app/services" "RESEARCH"
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (scope_mode=RESEARCH: command file refs are investigation inputs)"* ]]
+    [[ "$output" != *"command_files_modified_mismatch"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    research_pass=$((research_pass + 1))
+
+    _write_command_coverage_fixture "$command" "$research_files" "backend/app/services" "NORMAL"
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: backend/app/services/fof/correlation.py"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+    normal_block=$((normal_block + 1))
+
+    [ "$research_pass" -eq 1 ]
+    [ "$normal_block" -eq 1 ]
+    printf 'research_skip=%s/1 normal_block=%s/1 false_positive=0 false_negative=0\n' \
+        "$research_pass" "$normal_block" >&3
 }
 
 @test "command/files_modified coverage skips product refs for recon-only cmd with research artifacts" {
