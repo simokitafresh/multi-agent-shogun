@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # test_necessity: LG048/LG051検査の境界不変量
-# 不変量: (A) LG048散文result+axis/recount/actual非空→PASS自動正規化、空欄→BLOCK維持
+# 不変量: (A) LG048はliteral PASS/FAILのみ受理し、散文/空欄→BLOCK維持
 #         (C) LG051 non-test caller countがresult.detailsに記載されている場合もPASS
 
 REPO_ROOT="${BATS_TEST_DIRNAME}/../.."
@@ -36,8 +36,8 @@ YAML
   rm -f "$fixture"
 }
 
-@test "LG048: semantic_validation.result=散文+axis/recount/actual非空 → PASS自動正規化" {
-  # test_necessity: 散文resultがaxis/recount/actual非空で自動正規化される不変量
+@test "LG048: semantic_validation.result=散文+axis/recount/actual非空 → BLOCK維持" {
+  # test_necessity: 証跡が揃っていてもliteral PASS/FAIL以外をBLOCKする不変量
   local fixture
   fixture=$(mktemp --suffix=.yaml)
   cat > "$fixture" <<'YAML'
@@ -61,8 +61,8 @@ files_modified:
   change: test
 YAML
   run bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$fixture"
-  [[ "$output" == *"INFO(LG048): semantic_validation.resultが散文→PASS自動正規化"* ]]
-  [[ "$output" != *"BLOCK(LG048)"* ]]
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"BLOCK(LG048): semantic_validation.resultがPASS/FAILのいずれでもない"* ]]
   rm -f "$fixture"
 }
 
