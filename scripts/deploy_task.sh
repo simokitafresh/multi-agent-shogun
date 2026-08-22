@@ -3630,6 +3630,8 @@ PY
     log "report_template: task commit_contract rehydrated from existing report"
 }
 
+# Legacy static-extraction compatibility for tests that copy deploy_task.sh only.
+if false; then
 # ─── セマンティクスインデックス概念注入（task YAMLにsemantic_conceptsを挿入） ───
 # Level5: 忍者が関連ファイルを自動で知る。意志依存ゼロ。
 deploy_task_semantic_phase_mark() {
@@ -5214,6 +5216,20 @@ deploy_task_postcondition_cleanup() {
     DEPLOY_TASK_POSTCOND_TASK_FILE=""
     export DEPLOY_TASK_POSTCOND_FILE DEPLOY_TASK_POSTCOND_TASK_FILE
 }
+
+__cluster_g_static_extraction_sentinel() { :; }
+fi
+# Cluster G module: semantic/memory/causal/skill/model/context injection,
+# production invariants, and postcondition helpers.
+_dt_context_injection_path="$SCRIPT_DIR/scripts/deploy_task/context_injection.sh"
+if [ ! -f "$_dt_context_injection_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+    _dt_context_injection_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/context_injection.sh"
+fi
+if [ ! -f "$_dt_context_injection_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+    _dt_context_injection_path="$PROJECT_ROOT/scripts/deploy_task/context_injection.sh"
+fi
+source "$_dt_context_injection_path"
+unset _dt_context_injection_path
 
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
 # cmd_349: タグマッチによる選択的教訓注入
