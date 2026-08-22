@@ -1343,3 +1343,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-22T21:33:51+09:00"
+- id: INS-20260822-214938113-fe95
+  ts: "2026-08-22T21:49:38+09:00"
+  insight: "reflux insight量産の粒度バグ疑い(LS096型): deploy_task.sh分割の弾ごと(cmd_4361/4362/4363...)に『同パターンLevel5未満候補』insightが自動生成され、pending 27件中過半が同一設計書(deploy_task_split_design_20260821.md)進行の既知作業を指す。同一結論をN回繰り返す検知器は情報価値ゼロ=粒度バグ(LS096)。加えてSKILL.md追従task[0b0ccc7720776a61]が同一task hashで2件重複(INS-20260822-152810760-1a8c / INS-20260822-091834995-b333)=dedupe漏れ。候補対策: (a)同一source設計書/同一task hashのinsightはdedupeし既存へ回数addする (b)進行中設計書由来のLevel5候補は設計書クローズ時に1件へ集約。集計: python3でstate=pending数27、うちdeploy_task系6+SKILL追従重複2を実測(2026-08-22 21:50)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
