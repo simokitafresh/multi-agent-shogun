@@ -146,6 +146,7 @@ lessons:
     (45)GATE CLEARは成果commitのmain祖先化もblob到達も証明しない(2026-08-22 cmd_4358/4360/GA-491実証): CLEAR受領後検分で成果commitのNOT_IN_MAINを2回検出(source-only receiptがpath内容同値のみ検証)、さらに祖先化根治後もtree退行(履歴祖先だがblobが旧snapshotへ逆行)4/4を検出。構造根治済み=cmd_complete_gateへmain祖先化終端検査(merge 3a16cfde)+terminal blob parity(8fed7e2df)。将軍の型(安全網): CLEAR検分にgit merge-base --is-ancestor <report commit_hash> origin/main+成果物パスls現物を含める
     (46)是正指示の前に対象の設計様式を現物確認せよ(2026-08-22 cmd_4365実証=(43)の再現): grep定義数だけで「関数二重定義=複製バグ」と断じ是正配備を指示→家老反証(行番号つき)→現物sed確認で本体側はif-false区間のstatic互換stub(L1630契約)でruntime重複0、A-E弾も同様式だった。誤り=(a)if-false区間か未確認 (b)「A-E本体残存0」の前提も未検証。即撤回・訂正した。正=検分で異常に見えたら、是正指示の前にその実装が既存契約(設計様式・教訓・AC)に従っていないかを現物で確認する。誤りは即撤回が最速
     (47)D0教訓追記も即commitせよ(2026-08-22実証=LS-A14(2)の再現): 今朝Editした(45)追記が未commitのまま、家老のlesson SSOT relocate(c562cbcbc)で共有ツリーから消失し、夜に再適用する羽目になった。教訓ファイルへのD0追記→即ninja_scope_commitを1セットで完結
+    (48)殿発言の不在をlord_conversation grep 0件で断定するな(2026-08-22 23:00実証=(8)の再犯): 軍師の『殿指示・引き算で改善』をgrep 0件のみで『軍師の変換(LS120型)』と断定し撤回指示を送ったが、殿23:02『引き算でという表現を俺は確かにした』で誤り確定。殿→軍師/家老の直接対話は将軍宛lord_conversationに載らない=ログの記録範囲((41)と同根)を未確認だった。正=他ロール経由の殿指示を疑う場合は断定せず『将軍側ログに該当なし』の事実だけ添えて保留し、裁定の中身を先に進める。誤断定は即時・明示的に撤回する
     (旧detail残りは移設先参照)
   source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha, LS067, LS069, LS061, LS076, LS103, LS106]
   created_at: '2026-04-25'
