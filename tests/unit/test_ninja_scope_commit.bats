@@ -17,6 +17,32 @@ setup() {
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$REPO/scripts/lib/scope_path.sh"
 }
 
+# test_necessity: a stale queue/insights.yaml candidate is an omission, not a
+# deletion; the shared ID-union helper must retain HEAD IDs and new candidate
+# IDs without duplicating either side.
+@test "insights ID union preserves HEAD IDs while rebasing a stale candidate" {
+    head="$REPO/head-insights.yaml"
+    candidate="$REPO/candidate-insights.yaml"
+    merged="$REPO/merged-insights.yaml"
+    printf '%s\n' 'insights:' '- id: existing' '  value: head' '- id: remote-only' '  value: remote' >"$head"
+    printf '%s\n' 'insights:' '- id: candidate-only' '  value: candidate' '- id: existing' '  value: candidate' >"$candidate"
+
+    run bash "$BATS_TEST_DIRNAME/../../scripts/restore_insights_from_corrupt.sh" \
+        --id-union "$head" "$candidate" "$merged"
+    [ "$status" -eq 0 ]
+    run python3 - "$merged" <<'PY'
+import sys
+import yaml
+rows = (yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}).get('insights') or []
+ids = [row['id'] for row in rows]
+assert ids == ['candidate-only', 'existing', 'remote-only'], ids
+assert len(ids) == len(set(ids))
+print('gold_missing=0 duplicates=0 new_ids=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = 'gold_missing=0 duplicates=0 new_ids=1' ]
+}
+
 @test "explicit ignored new scope is committed without force-staging ignored files outside scope" {
     printf '*\n' > "$REPO/.gitignore"
     git -C "$REPO" add -f .gitignore
