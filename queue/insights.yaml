@@ -1877,3 +1877,37 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-23T07:50:26+09:00"
+- id: INS-20260823-075837701-7083
+  ts: "2026-08-23T07:58:37+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4371; matched=不変; current_pattern=deploy_task.sh分割第八弾 — modifiers module抽出(挙動不変); candidate_level=4; candidate=cmd_1921 report_yaml_format WA(影丸lessons_useful dict/list混在)。GP-107撤去再評価: numbered dict({0:{id:X},1:{id:Y}})→list変換は内容不変。単一dict/ID-keyed dictは条件外(全キーint+全値dict)。家老workaround削減=利他; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4371"
+  fix_known: false
+  status: pending
+- id: INS-20260823-075837850-eeb0
+  ts: "2026-08-23T07:58:37+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4371; matched=deploy_task; current_pattern=deploy_task.sh分割第八弾 — modifiers module抽出(挙動不変); candidate_level=4; candidate=lessons_useful有効率27%。task-specific枠1→2倍増+有効率閾値引上げでunseful教訓のフロー削減→忍者の注入精度向上。殿承認済み; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4371"
+  fix_known: false
+  status: pending
+- id: INS-20260823-075850966-4127
+  ts: "2026-08-23T07:58:50+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cluster G実戦検証PASS_cmd_4337配備]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=per-agent launch_cmd; score=13.6) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=13.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_cmd_state; score=12.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T07:58:59+09:00"
+- id: INS-20260823-075851232-a49f
+  ts: "2026-08-23T07:58:51+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4371第八弾]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=22.5) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=21.9) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=cmd_3786復旧手順; score=21.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T07:59:00+09:00"
