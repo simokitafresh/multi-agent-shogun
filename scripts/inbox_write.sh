@@ -1507,6 +1507,13 @@ wanted = (
 for message in data.get("messages") or []:
     if not isinstance(message, dict):
         continue
+    # Review requests are actionable work, not immutable completion facts.
+    # Once a matching request was consumed, an explicit retry must wake the
+    # reviewer again; suppress only while the matching request is still unread.
+    # Terminal report events keep their existing read-state-spanning exactly-once
+    # contract below.
+    if wanted[0] in {"report_review", "report_revision"} and message.get("read") is True:
+        continue
     actual = (
         str(message.get("type", "")), str(message.get("from", "")),
         str(message.get("report_id", "")), str(message.get("report_identity_version", "")),

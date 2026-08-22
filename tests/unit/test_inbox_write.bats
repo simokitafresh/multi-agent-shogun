@@ -1778,6 +1778,39 @@ YAML
     [ -n "$first_id" ]
 }
 
+# test_necessity: report review is actionable work. An exact retry is suppressed
+# while unread, but after consumption it must create a new wake-up event.
+@test "report review exact retry wakes again after prior request is read" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    cat >> "$TEST_TMPDIR/$report" <<'YAML'
+report_id: rpt-review-rewake
+report_identity_version: 2
+task_id: cmd_review_rewake_normal
+parent_cmd: cmd_review_rewake
+status: completed
+YAML
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "review report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    local first_id
+    first_id="$(sed -n 's/^  id: *//p' "$TEST_TMPDIR/queue/inbox/gunshi.yaml" | head -1 | tr -d "'\"")"
+    [ -n "$first_id" ]
+    sed -i "/id: '$first_id'/,/type:/ s/read: false/read: true/" \
+        "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -A2 -F "id: '$first_id'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" | grep -q 'read: true'
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "review report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    [[ "$output" != *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-review-rewake'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "review report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-review-rewake'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+}
+
 @test "report_revision resolves target task identity and suppresses only exact retries" {
     setup_git_test_env
     cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
