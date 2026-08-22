@@ -1166,3 +1166,37 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_ci_fix_32540732192_resolve_shebang"
   fix_known: false
   status: pending
+- id: INS-20260822-103948320-b582
+  ts: "2026-08-22T10:39:48+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4364; matched=deploy_task,yaml; current_pattern=deploy_task.sh分割第五弾 — task_contract module抽出(挙動不変); candidate_level=4; candidate=verdict_override 8件中5件がcommit check起因。根因=cmdのcommit禁止制約が構造化されていない。cmd_save.shにno_commitキーワード検出→deploy_task.shでcommit check waive。10回繰返し=10回×0分(現状10回×10分)=正の複利; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4364"
+  fix_known: false
+  status: pending
+- id: INS-20260822-103948455-75b4
+  ts: "2026-08-22T10:39:48+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4364; matched=infra; current_pattern=deploy_task.sh分割第五弾 — task_contract module抽出(挙動不変); candidate_level=4; candidate=cmd_1859 WA根因=将軍scout_exempt設定忘れ。infra cmd(q4_depth=shallow+project=infra)は偵察不要→自動scout_exempt=true; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4364"
+  fix_known: false
+  status: pending
+- id: INS-20260822-104002468-7de9
+  ts: "2026-08-22T10:40:02+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cluster D合流実証]] は既存aliasesに一致なし。類似概念TOP3: campaign_lane(台帳駆動攻略レーン; alias=source round8 lane start; score=5.0) / skill_design_rules(Skill設計ルール; alias=skill outcome ledger; score=4.7) / semantic_dictionary_design(セマンティック辞書構想; alias=source lord conversation; score=4.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T10:40:14+09:00"
+- id: INS-20260822-104002900-cb81
+  ts: "2026-08-22T10:40:02+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cluster E task_contract抽出]] は既存aliasesに一致なし。類似概念TOP3: provisional_review_approval(仮: Review Approval; alias=blanket_previous_task_invalid; score=14.5) / inbox_processing_discipline(inbox処理規律; alias=duplicate_task_assigned; score=14.3) / provisional_test_speed_task_generator(仮: Test Speed Task Generator; alias=test_speed_task_generator; score=14.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T10:40:14+09:00"
