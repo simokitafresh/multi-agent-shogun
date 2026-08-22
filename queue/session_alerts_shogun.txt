@@ -1,6 +1,4 @@
-# session_alerts — generated: 2026-08-21T22:52:14+0900
-[DONE] 掲示板action_required未対応: 2件 — cmd_4358/cmd_4359起票・委任、actioned_by=shogun記入済み(bulletin_action.sh実行、22:59/23:07)
-[DONE] 追体験自動化ターゲット: WARN (Q6回答未検出)
-[DONE] 洗脳連鎖2x2: 危険象限
-[DONE] 走行中cmd実測突合: busy 1名(kagemaru) — capture-pane実測済み(22:53/23:04): pane idle CTX0%、task YAML=in_progressの乖離を検出し家老へ是正指示(msg_20260821_230448)
+# session_alerts — generated: 2026-08-22T21:21:41+0900
+[TODO] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[TODO] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
 [DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
