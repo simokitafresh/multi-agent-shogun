@@ -1983,6 +1983,23 @@ else
     echo "  karo_snapshot.txt不在 — 判定不可"
 fi
 
+# --- Gate 10.06: failed task残置チェック ---
+# 2026-08-22: kotaro TASK:failedが約22時間snapshot上に残置されても無警告だった盲点の環境埋込み(Q6自動化ターゲット)。
+# failedはterminal扱いで走行中突合(10.05)にもidle自走にも掛からず、誰も拾わない死角になる。
+echo "■ failed task残置チェック"
+if [ -f "$snapshot" ]; then
+    _failed_ninjas=$(awk -F'|' '/^ninja\|/ && $4=="failed" {printf "%s ", $2} END {print ""}' "$snapshot" 2>/dev/null | sed 's/ *$//')
+    if [ -n "$_failed_ninjas" ]; then
+        echo "  WARN: TASK:failed残置 — ${_failed_ninjas}"
+        echo "  → queue/tasks/{名}.yamlで真因を確認し、再配備/クローズを家老レーンへ確定させよ。放置=洗脳#5"
+        alerts+=("failed task残置: ${_failed_ninjas} — 真因確認と再配備/クローズを確定せよ")
+    else
+        echo "  OK: TASK:failed残置なし"
+    fi
+else
+    echo "  karo_snapshot.txt不在 — 判定不可"
+fi
+
 # --- Gate 10.1: 便回転チェック(GATE CLEAR済み未回収在庫) ---
 # 2026-08-11: 便1時間ゼロを殿指摘まで検出できなかった事故の環境埋込み(Q6自動化ターゲット)。
 # 掲示板の「完了レビュー LGTM」status:open = 軍師LGTM済みだが家老ACCEPT/GATE未了の在庫。
