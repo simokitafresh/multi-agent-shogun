@@ -9587,44 +9587,6 @@ collect_task_readonly_refs() {
 check_command_files_modified_coverage() {
     level_heading "[L3]" "Command/files_modified coverage check:"
 
-    local scope_mode
-    scope_mode="$(CMD_ID_ENV="$CMD_ID" YAML_FILE_ENV="$YAML_FILE" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'
-import glob
-import os
-import yaml
-
-cmd_id = os.environ.get("CMD_ID_ENV", "")
-yaml_file = os.environ.get("YAML_FILE_ENV", "")
-script_dir = os.environ.get("SCRIPT_DIR_ENV", "")
-
-def find_entry(payload):
-    rows = payload.get("commands", payload.get("cmds", payload)) if isinstance(payload, dict) else payload
-    if isinstance(rows, dict):
-        return rows.get(cmd_id)
-    if isinstance(rows, list):
-        for row in rows:
-            if isinstance(row, dict) and str(row.get("id", "")) == cmd_id:
-                return row
-    return None
-
-entry = None
-for path in (yaml_file, *sorted(glob.glob(os.path.join(script_dir, "queue", "archive", "cmds", f"*{cmd_id}*.yaml")), reverse=True)):
-    try:
-        with open(path, encoding="utf-8") as handle:
-            entry = find_entry(yaml.safe_load(handle) or {})
-    except Exception:
-        entry = None
-    if isinstance(entry, dict):
-        break
-
-print(str((entry or {}).get("scope_mode", "")).strip().upper())
-PY
-    )"
-    if [ "$scope_mode" = "RESEARCH" ]; then
-        echo "  SKIP (scope_mode=RESEARCH: command file refs are investigation inputs)"
-        return 0
-    fi
-
     # Recon/scout commands cite product files as investigation inputs, not write
     # targets.  Inferring writes from those references makes an honest report
     # (research/context artifacts only) impossible to distinguish from an
