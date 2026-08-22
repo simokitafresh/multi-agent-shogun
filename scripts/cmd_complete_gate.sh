@@ -1988,12 +1988,19 @@ for item_id in order:
     if s is None:
         if b is None:
             chosen[item_id] = r
-        elif r is None or equal(r, b):
-            chosen[item_id] = None
+        elif r is None:
+            chosen[item_id] = b
         elif monotonic_resolved_deletion(b, r):
             chosen[item_id] = None
+        elif equal(r, b):
+            # A source snapshot may be stale even when it is the only local
+            # change in the publication generation. Treat a missing source ID
+            # as an omitted candidate, never as a deletion.
+            chosen[item_id] = r or b
         else:
-            raise ValueError(f"source deletion conflicts with remote id: {item_id}")
+            # Preserve an independently changed remote block as well. A stale
+            # candidate must not erase an ID or its newer evidence.
+            chosen[item_id] = r
         continue
     if b is None:
         if r is None or equal(r, s):
