@@ -357,7 +357,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq 'bd93380eb25314e91f02ec15a6406e3ca273e4477f7d1ab7b55aab1cbf23dbb1' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -367,6 +367,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "known fix verified: self_retro event_id exists uniquely; verify_command rc=0; completion_pipeline candidate and ordered-checkpoint criterion are recorded"
+  action_artifact: "logs/self_retro.jsonl;docs/semantic-index/index.md;verify_rc=0;cmd_reflux_insight_202608221206_hanzo_exact"
+  resolved_at: "2026-08-22T12:12:17+09:00"
 - id: INS-20260822-070317619-38ed
   ts: "2026-08-22T07:03:17+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4361; matched=deploy_task; current_pattern=deploy_task.sh分割第二弾 — state/transaction module抽出(挙動不変); candidate_level=4; candidate=lessons_useful有効率27%。task-specific枠1→2倍増+有効率閾値引上げでunseful教訓のフロー削減→忍者の注入精度向上。殿承認済み; source=gunshi_gp_tracker.yaml"
