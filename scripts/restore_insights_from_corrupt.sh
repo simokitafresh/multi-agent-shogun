@@ -10,6 +10,109 @@ archive="${INSIGHT_CORRUPT_ARCHIVE_DIR:-$root/queue/archive/insights_corrupt}"
 artifact="${INSIGHT_RESTORE_ARTIFACT:-$archive/restore-$(date +%Y%m%d-%H%M%S).json}"
 source "$root/scripts/lib/yaml_field_set.sh"
 
+if [[ "${1:-}" == "--id-union" ]]; then
+    if [[ "$#" -ne 4 ]]; then
+        echo "Usage: restore_insights_from_corrupt.sh --id-union <head> <candidate> <output>" >&2
+        exit 2
+    fi
+    python3 - "$2" "$3" "$4" <<'PY'
+import re
+import sys
+import textwrap
+from pathlib import Path
+
+import yaml
+
+head_path, candidate_path, output_path = map(Path, sys.argv[1:])
+
+
+def parse(path, label):
+    text = path.read_text(encoding="utf-8")
+    if not text.strip():
+        raise ValueError(f"{label} is empty")
+    document = yaml.safe_load(text)
+    lines = text.splitlines(True)
+    if isinstance(document, list):
+        root = "list"
+        expected = document
+        region_end = len(lines)
+        prefix = ""
+        suffix = ""
+        starts = [i for i, line in enumerate(lines)
+                  if re.match(r"^-\s+id\s*:", line)]
+    elif isinstance(document, dict) and (
+        isinstance(document.get("insights"), list) or document.get("insights") is None
+    ):
+        root = "mapping"
+        expected = document.get("insights") or []
+        keys = [(i, len(line) - len(line.lstrip(" \t")))
+                for i, line in enumerate(lines)
+                if re.match(r"^insights\s*:", line)]
+        if len(keys) != 1 or keys[0][1] != 0:
+            raise ValueError(f"{label} must have one top-level insights key")
+        region_start, key_indent = keys[0]
+        region_end = len(lines)
+        for i in range(region_start + 1, len(lines)):
+            stripped = lines[i].strip()
+            indent = len(lines[i]) - len(lines[i].lstrip(" \t"))
+            if (stripped and not stripped.startswith("#") and indent <= key_indent
+                    and not re.match(r"^[ \t]*-\s+id\s*:", lines[i])):
+                region_end = i
+                break
+        starts = [i for i in range(region_start + 1, region_end)
+                  if re.match(r"^\s*-\s+id\s*:", lines[i])]
+        prefix = "".join(lines[:starts[0]]) if starts else "insights:\n"
+        suffix = "".join(lines[region_end:])
+    else:
+        raise ValueError(f"{label} must be a list or mapping with insights list")
+
+    entries = {}
+    order = []
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else region_end
+        raw = "".join(lines[start:end])
+        item = yaml.safe_load(textwrap.dedent(raw))
+        if isinstance(item, list) and len(item) == 1:
+            item = item[0]
+        if not isinstance(item, dict) or not str(item.get("id", "")).strip():
+            raise ValueError(f"{label} has an invalid insight block")
+        item_id = str(item["id"])
+        if item_id in entries:
+            raise ValueError(f"{label} duplicate id: {item_id}")
+        entries[item_id] = raw
+        order.append(item_id)
+    if len(order) != len(expected):
+        raise ValueError(f"{label} block count does not match YAML entries")
+    return root, prefix, suffix, entries, order
+
+
+head_root, _, _, head, head_order = parse(head_path, "HEAD")
+candidate_root, candidate_prefix, candidate_suffix, candidate, candidate_order = parse(candidate_path, "candidate")
+if head_root != candidate_root:
+    raise ValueError("HEAD/candidate root structures differ")
+
+for item_id in head_order:
+    if item_id not in candidate:
+        candidate[item_id] = head[item_id]
+        candidate_order.append(item_id)
+
+if candidate_root == "mapping":
+    merged = candidate_prefix + "".join(candidate[item_id] for item_id in candidate_order) + candidate_suffix
+else:
+    merged = "".join(candidate[item_id] for item_id in candidate_order)
+if not merged.endswith("\n"):
+    merged += "\n"
+
+parsed = yaml.safe_load(merged)
+rows = parsed.get("insights") if isinstance(parsed, dict) else parsed
+ids = [str(row.get("id")) for row in (rows or [])]
+if len(ids) != len(set(ids)) or set(ids) != set(head) | set(candidate):
+    raise ValueError("ID-union invariant failed")
+output_path.write_text(merged, encoding="utf-8")
+PY
+    exit $?
+fi
+
 latest="$(find "$archive" -maxdepth 1 -type f -name 'insights.yaml.corrupt.*' -printf '%T@ %p\n' | sort -nr | head -1 | cut -d' ' -f2-)"
 [[ -n "$latest" && -f "$latest" ]] || { echo "ERROR: corrupt fragment not found" >&2; exit 1; }
 

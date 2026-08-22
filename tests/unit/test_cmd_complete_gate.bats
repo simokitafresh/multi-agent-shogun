@@ -5563,9 +5563,9 @@ EOF
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"value: remote"* ]]
 }
 
-# test_necessity: a source deletion is safe only when the remote retains the
-# base block or is absent; independent remote-only additions remain preserved.
-@test "AC2 insights merge: safe source deletion applies and preserves remote-only" {
+# test_necessity: a stale source candidate cannot delete an existing ID from
+# the remote/base generation; independent remote-only additions remain too.
+@test "AC2 insights merge: stale source omission preserves existing IDs" {
     local base="$BATS_TEST_TMPDIR/ac2-insights-delete-safe"
     cat > "$base-base.yaml" <<'EOF'
 - id: delete-me
@@ -5591,7 +5591,7 @@ EOF
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
         bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_delete_safe_probe
     [ "$status" -eq 0 ]
-    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" != *"id: delete-me"* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: delete-me"* ]]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: remote-only"* ]]
 }
 
@@ -5991,9 +5991,9 @@ EOF
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
 }
 
-# test_necessity: removing the last mapping entry is safe when remote retains
-# the base block, and the published root remains a valid empty mapping.
-@test "AC2 insights empty mapping: last ID deletion is safe" {
+# test_necessity: a stale empty mapping cannot remove the last existing ID;
+# the published root remains a valid mapping and preserves the base block.
+@test "AC2 insights empty mapping: stale last ID omission is preserved" {
     local base="$BATS_TEST_TMPDIR/ac2-insights-empty-delete"
     cat > "$base-base.yaml" <<'EOF'
 insights:
@@ -6010,7 +6010,7 @@ EOF
         bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_empty_delete_probe
     [ "$status" -eq 0 ]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == "insights:"* ]]
-    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" != *"id: delete-me"* ]]
+    [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: delete-me"* ]]
 }
 
 # test_necessity: a source aggregate that already contains every remote hunk

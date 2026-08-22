@@ -396,6 +396,34 @@ acquire_transaction_lock_and_rebase_index() {
     for i in "${!staged_paths[@]}"; do
         path="${staged_paths[$i]}"
         entry="${staged_entries[$i]}"
+        if [[ "$path" == "queue/insights.yaml" ]]; then
+            local head_insights candidate_insights merged_insights merged_blob
+            head_insights="$(mktemp "${TMPDIR:-/tmp}/scope-insights-head.XXXXXX")"
+            candidate_insights="$(mktemp "${TMPDIR:-/tmp}/scope-insights-candidate.XXXXXX")"
+            merged_insights="$(mktemp "${TMPDIR:-/tmp}/scope-insights-merged.XXXXXX")"
+            trap 'rm -f -- "$head_insights" "$candidate_insights" "$merged_insights"' RETURN
+            git show "$transaction_head:$path" >"$head_insights" \
+                || { echo "BLOCK: HEAD insights blob unavailable during rebase" >&2; return 2; }
+            if [[ -n "$entry" ]]; then
+                read -r mode blob <<<"$entry"
+                git cat-file blob "$blob" >"$candidate_insights" \
+                    || { echo "BLOCK: staged insights blob unavailable during rebase" >&2; return 2; }
+            else
+                printf 'insights:\n' >"$candidate_insights"
+            fi
+            bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/restore_insights_from_corrupt.sh" \
+                --id-union "$head_insights" "$candidate_insights" "$merged_insights" \
+                || { echo "BLOCK: insights ID union failed during rebase" >&2; return 2; }
+            merged_blob="$(git hash-object -w "$merged_insights")" \
+                || { echo "BLOCK: failed to store rebased insights union" >&2; return 2; }
+            git update-index --add --cacheinfo "100644,$merged_blob,$path" \
+                || { echo "BLOCK: failed to restore rebased insights union" >&2; return 2; }
+            cp -- "$merged_insights" "$repo_root/$path" \
+                || { echo "BLOCK: failed to project rebased insights union" >&2; return 2; }
+            rm -f -- "$head_insights" "$candidate_insights" "$merged_insights"
+            trap - RETURN
+            continue
+        fi
         if [[ -n "$entry" ]]; then
             read -r mode blob <<<"$entry"
             git update-index --add --cacheinfo "$mode,$blob,$path" \
