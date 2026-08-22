@@ -1770,3 +1770,17 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-23T02:41:47+09:00"
+- id: INS-20260823-031433554-1e25
+  ts: "2026-08-23T03:14:33+09:00"
+  insight: "DOC_LANE_ALERT頻度の粒度所見(LS096型の気配): 2026-08-22夜〜23未明でinfrastructure.md境界レビューが6回発生(95184ce75/2da7e1e05/2fee986d0/GA-492後4commit/f6798b1e3/b9c6b2bd4)、全てhotfix合流由来で全て『本文更新不要・境界更新のみ』の同一結論。集計: grep -c 'context_freshness reviewed source boundary' context/infrastructure.md。候補対策: hotfix連鎖中はalertをNサイクル分バッチ集約するか、gate検査対象語(update_trigger)に該当しない純hotfix commitの境界を自動前進させる。検知器が同一結論をN回繰り返すなら粒度バグ(LS096)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260823-031732094-3776
+  ts: "2026-08-23T03:17:32+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_vercel_owned_context_scope; matched=infra,lessons,tasks; current_pattern=; candidate_level=4; candidate=gate_prediction CLEAR→BLOCK(draft_lessons) 2件連続miss。SG-PRE12はlesson_candidate検出のみでproject-level draft教訓を検出しなかった; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_vercel_owned_context_scope"
+  fix_known: false
+  status: pending
