@@ -521,6 +521,50 @@ notify_raw_context_alert() {
     return 0
 }
 
+# GA-492/L1610: CONTEXT_UPDATE_REQUEST is a machine-readable producer output.
+# Keep the durable doc-lane handoff in the same normal gate flow so a request
+# cannot be printed successfully while having zero consumers.  The caller
+# supplies the exact line that was emitted; parsing and validating that line
+# also prevents a partial request from being routed as if it were complete.
+consume_context_update_request() {
+    local request_line="$1"
+    local project="" context="" source_commit="" parent_cmd="" reason=""
+
+    [[ "$request_line" =~ ^CONTEXT_UPDATE_REQUEST[[:space:]]+project=([^[:space:]]+)[[:space:]]+context=([^[:space:]]+)[[:space:]]+source_commit=([0-9a-f]{7,40})[[:space:]]+parent_cmd=([^[:space:]]+)[[:space:]]+reason=([^[:space:]]+)$ ]] || {
+        emit_actionable \
+            "BLOCK: context update request (machine-readable request malformed)" \
+            "CONTEXT_UPDATE_REQUESTのproject/context/source_commit/parent_cmd/reasonを完全な値で再生成せよ。"
+        return 1
+    }
+    project="${BASH_REMATCH[1]}"
+    context="${BASH_REMATCH[2]}"
+    source_commit="${BASH_REMATCH[3]}"
+    parent_cmd="${BASH_REMATCH[4]}"
+    reason="${BASH_REMATCH[5]}"
+
+    [[ -f "$BULLETIN_SCRIPT" && -r "$BULLETIN_SCRIPT" ]] || {
+        emit_actionable \
+            "BLOCK: ${context} (CONTEXT_UPDATE_REQUEST consumer unavailable)" \
+            "bulletin_write.shを復旧し、将軍doc laneへの構造化context更新要求を再実行せよ。"
+        return 1
+    }
+
+    local payload
+    payload="DOC_LANE_REQUEST: ${request_line} owner_route=shogun-doc-lane"
+    if ! BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" \
+            gate_context_freshness "$payload" false action_required >/dev/null 2>&1; then
+        emit_actionable \
+            "BLOCK: ${context} (CONTEXT_UPDATE_REQUEST consumer failed)" \
+            "bulletin_write.shの失敗を解消し、source_commit=${source_commit} parent_cmd=${parent_cmd} の要求を再実行せよ。"
+        return 1
+    fi
+
+    # Keep these assignments explicit: shellcheck/static audits can verify
+    # that every validated request field reaches the consumer payload.
+    : "$project" "$context" "$source_commit" "$parent_cmd" "$reason"
+    return 0
+}
+
 TODAY_EPOCH=""
 
 today_epoch() {
@@ -702,24 +746,13 @@ for rel_path in "${target_rel_paths[@]}"; do
                 && latest_hash="${BASH_REMATCH[1]}"
             request_project="infra"
             [[ "$rel_path" == context/dm-signal*.md ]] && request_project="dm-signal"
-            printf 'CONTEXT_UPDATE_REQUEST project=%s context=%s source_commit=%s parent_cmd=%s reason=approved_source_commit\n' \
-                "$request_project" "$rel_path" "$latest_hash" "$request_cmd"
-            # GA-479: stdout alone is not a route.  The old code printed the
-            # Level-5 payload and then returned OK, but no caller consumed the
-            # CONTEXT_UPDATE_REQUEST token.  Reuse the established durable
-            # shogun doc-lane channel used by cmd_complete_gate; tests and
-            # isolated fixtures without that channel retain pure output.
-            if [[ -f "$BULLETIN_SCRIPT" && -r "$BULLETIN_SCRIPT" ]]; then
-                if ! BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" \
-                        gate_context_freshness \
-                        "DOC_LANE_WARNING: approved context update request. project=${request_project} context=${rel_path} source_commit=${latest_hash} parent_cmd=${request_cmd}" \
-                        false action_required >/dev/null 2>&1; then
-                    emit_actionable \
-                        "BLOCK: ${basename_file} (承認済みcontext更新要求の永続通知に失敗)" \
-                        "bulletin_write.sh の失敗を解消し、将軍doc laneへの永続通知を再実行せよ。"
-                    HAS_BLOCK=1
-                    continue
-                fi
+            request_line="CONTEXT_UPDATE_REQUEST project=${request_project} context=${rel_path} source_commit=${latest_hash} parent_cmd=${request_cmd} reason=approved_source_commit"
+            printf '%s\n' "$request_line"
+            # GA-492: stdout is now paired with an explicit durable consumer.
+            # A failed handoff is BLOCK, never a silent OK.
+            if ! consume_context_update_request "$request_line"; then
+                HAS_BLOCK=1
+                continue
             fi
             echo "OK: ${basename_file} (承認済みsource commitのcontext更新要求を将軍doc laneへ永続通知)"
             continue
