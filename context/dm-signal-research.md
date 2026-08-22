@@ -66,3 +66,5 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 
 ## cmd_4331 FoF tie-break dry-run (2026-08-17)
 - 74 FoF(選択block有57/無17)を同一as-of月で6段キー乾式適用: scalar filter 36PFで837月変化(現行同率全採用792月)、全FoF 949月変化。段別解決: ②12M 4,511/③CAGR 668/④MaxDD 0/⑤現保有 7/⑥早い方 7、②skip 264。標準PF24=near-tie 0(ε相対1e-9の根拠)。top-N/tie-breakは各filter+GS fast pathへ分散(共通helperなし)。→ `docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`(DM-Signal repo 6b3537fd) / ops §99 / 設計書 `docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md`
+## cmd_4369 PIT低相関FoF selection最小実験 (2026-08-23)
+- 全FoF78体・monthly_returns 11,795行を同一PIT母集団で比較。36M/60Mともdecision 108月、future参照0、候補集合不整合0。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4369_low_correlation_experiment_report.md` / `outputs/analysis/cmd_4369_low_correlation_experiment.json`
