@@ -246,17 +246,8 @@ _sg_pre31_check() {
             echo "  BLOCK(LG048): semantic_validation.resultが空欄"
             return 2
         fi
-        local _has_axis _has_recount _has_actual
-        _has_axis=$(printf '%s\n' "$_semantic_block" | grep -Ec '^  classification_axis:[[:space:]]*[^[:space:]#]')
-        _has_recount=$(printf '%s\n' "$_semantic_block" | grep -Ec '^  recount:[[:space:]]*[^[:space:]#]')
-        _has_actual=$(printf '%s\n' "$_semantic_block" | grep -Ec '^  actual:[[:space:]]*[^[:space:]#]')
-        if [ "$_has_axis" -gt 0 ] && [ "$_has_recount" -gt 0 ] && [ "$_has_actual" -gt 0 ]; then
-            echo "  INFO(LG048): semantic_validation.resultが散文→PASS自動正規化(axis/recount/actual非空確認済み)"
-            _semantic_result="PASS"
-        else
-            echo "  BLOCK(LG048): semantic_validation.resultがPASS/FAILのいずれでもなく、axis/recount/actualも不完全"
-            return 2
-        fi
+        echo "  BLOCK(LG048): semantic_validation.resultがPASS/FAILのいずれでもない"
+        return 2
     fi
     if [ "$_semantic_result" = "FAIL" ]; then
         echo "  FAIL_DECLARED(LG048): N×M一致+分類軸別内訳の再計算証跡あり。result=FAILとして受理(ERRORSには加算しない)"

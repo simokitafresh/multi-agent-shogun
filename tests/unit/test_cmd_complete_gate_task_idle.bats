@@ -14,6 +14,7 @@ setup() {
 
     source "$TEST_PROJECT/scripts/lib/field_get.sh"
     source "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
+    source "$TEST_PROJECT/scripts/lib/task_lifecycle.sh"
     eval "$(sed -n '/^set_matching_tasks_idle()/,/^}/p' "$TEST_PROJECT/scripts/cmd_complete_gate.sh")"
 }
 
