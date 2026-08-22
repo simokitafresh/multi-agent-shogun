@@ -15695,3 +15695,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_4359ではACがdocs/research成果物を要求する一方、初期commit_contract.planned_pathsがscriptsで生成され、正しいdocs commitがgate scope外になる構造不一致を実測した。planned_pathsはAC成果物から生成し、gate前にfiles_modifiedとの包含を検査すべき。
+
+### L1630: module抽出時の静的抽出互換を維持する
+- **日付**: 2026-08-22
+- **出典**: cmd_4364
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,deploy,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/deploy_task/task_contract.sh]
+- **origin**: [[cmd_4364]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task.shをmodule sourceへ移すと、既存suiteがmain本文から関数を静的抽出する旧互換契約を失う。runtime moduleとif false互換関数/markerを同時保持し、静的契約移行まで壊さない。
