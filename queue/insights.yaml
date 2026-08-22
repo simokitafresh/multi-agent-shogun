@@ -1350,3 +1350,38 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260822-215554901-97ae
+  ts: "2026-08-22T21:55:54+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=DM-Signalにおいて、候補PF同士の「低相関」をPortfolio Selection / FoF構築に利用する価値があるか検討してほしい。\n\n背景として、低相関資産を組み合わせると、単純な期待リターンの上昇がなくてもPF全体のボラティリティを下げ、Volatility Dragを減らし、幾何平均リターンやSharpe Ratio、ECRを改善できる可能性がある。\n\nこの考え方をDM-Signalに当てはめた場合に、既存PF群から「単独で最も成績が良いPF」を選ぶのではなく、「互いに低相関なPFを組み合わせる」ことに実務上の価値があるかを調べたい。\n\n以下を現物コード・既存DB・既存metricsを確認したうえで回答してほしい。\n\n1. 現在のDM-Signalには、PF間のreturn correlationを計算・保存・利用する仕組みが存在するか。\n2. FoFやNested FoFの選択ロジックに、構成PF間の相関や共分散は現在使われているか。\n3. 現状の構造のまま、候補PF間の低相関をSelection条件として追加することは可能か。\n4. 低相関を利用する場合、以下のどの設計が最も単純かつ頑健か。\n   - 平均pairwise correlation最小化\n   - 最大相関を抑える\n   - inverse volatility weighting\n   - equal risk contribution\n   - covariance matrixを使ったminimum variance\n   - 「高ECRかつ低相関」など既存metricsとの二段階selection\n5. 特にDM-Signalでは、低相関化によって\n   - Portfolio volatility\n   - MaxDD\n   - Avg UWP\n   - CAGR\n   - Sharpe\n   - Calmar\n   - VDrag\n   - ECR\n     がどう変化するかを評価したい。\n\n重要なのは、in-sampleで最適な組み合わせを探すことではない。\n\nPoint-in-Timeで、その時点までの情報だけを使ってPF間相関を計算し、t時点で選択した組み合わせをt+1以降で評価する形にすること。\n\nまずは最適化を避けた最小実験として、例えば以下のような設計が妥当か検討してほしい。\n\n- 月次rebalance\n- 相関計算は過去36Mまたは60Mのmonthly returns\n- 各時点で候補PF群から、既存selection ruleで上位N個まで絞る\n- その中から平均pairwise correlationが低くなる組み合わせを選ぶ\n- weightはまずequal weight\n- Controlは従来FoF\n- Experimentalは「従来selection + 低相関制約」\n- forward t+1 / 3 / 6 / 12Mで比較\n- パラメータ最適化は禁止\n- MTDや未来情報混入は禁止\n\nまた、単純に「低相関ほど良い」と仮定せず、\n\n- 低相関だが期待リターンの低いPFを混ぜることでCAGRが落ちるケース\n- correlation regime shift\n- crisis時に相関が上昇するケース\n- FoF階層化によって既に相関低下効果が内包されている可能性\n- return seriesの重複や派生PF同士による見かけ上の相関構造\n- 短いlookbackでcorrelation estimateが不安定になる問題\n\nも批判的に検討してほしい。\n\n最終的には、\n\n「DM-Signalにおいて低相関は独立したselection signalとして価値があるのか、それとも既存metricsやFoF構造ですでに十分吸収されているのか」\n\nを判断したい。\n\nまず実装はせず、現物調査と設計レビューだけを行い、\n\n1. 現状\n2. 仮説\n3. 最小実験\n4. 必要な新規指標\n5. 既存指標で代用できる部分\n6. 実装する価値があるか\n   の順で報告してほしい。"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
+- id: INS-20260822-220315552-96ee
+  ts: "2026-08-22T22:03:15+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bbuvlaojw task id tool use id toolu 01Khs7x3M1Doy8ZJNb は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260822-220414584-b2ef
+  ts: "2026-08-22T22:04:14+09:00"
+  insight: "SKILL.md追従task[0b0ccc7720776a61]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:0b0ccc7720776a61"
+  fix_known: false
+  status: pending
+- id: INS-20260822-221345291-7ea0
+  ts: "2026-08-22T22:13:45+09:00"
+  insight: "recon-dual契約の記載位置制約: skillはtitle/purpose/command内の『独立2系統・相互参照禁止・independent recon』のみ検出し、独立field(recon_dual_contract等)は検出対象外(cmd_4366で2連BLOCK実証2026-08-22)。固定baseはhash実値をpurposeへ書く。候補対策: cmd_skeleton.shのrecon系雛形にpurpose契約文言テンプレを追加するか、deploy側で独立fieldも検出する"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260822-222204165-47ed
+  ts: "2026-08-22T22:22:04+09:00"
+  insight: "recon契約注入の記載位置(根因確定版・INS-20260822-221345291-7ea0を上書き): inject_independent_recon_contractの検出はfield_get第1行のみ、かつresolve_cmdはtitleをtaskへ投影しない。∴確実な唯一の位置=purpose文字列の先頭に『independent recon 2系統・相互参照禁止 — 』を置く(cmd_4366で3往復実証2026-08-22)。加えてdm-signal projectのcmdのAC参照pathは忍者worktree(DM-signal固定base)から見えるDM-signal repo内pathのみ有効、multi-agent-shogun側docs/researchは不可視。候補対策: cmd_skeleton.shにrecon雛形(purpose先頭marker入り)を追加+cmd_saveでproject≠infraのAC内multi-agent-shogunローカルpath参照をWARN"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
