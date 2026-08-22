@@ -48,6 +48,24 @@ block_message() {
     [[ "$output" != *"is not GREEN"* ]]
 }
 
+@test "billing annotation with no started jobs falls back only when local evidence is green" {
+    evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$REVIEWED\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"failure\",\"head_sha\":\"abc\",\"created_at\":\"$CREATED\",\"external_unavailable\":true,\"jobs_not_started\":true}}"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"local_test=PASS external_unavailable=github_billing"* ]]
+}
+
+@test "billing annotation with no started jobs remains BLOCK for local test RED" {
+    evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$REVIEWED\",\"target_result\":{\"conclusion\":\"failure\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"failure\",\"head_sha\":\"abc\",\"created_at\":\"$CREATED\",\"external_unavailable\":true,\"jobs_not_started\":true}}"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"local test evidence is not GREEN"* ]]
+}
+
+@test "billing annotation without a job-start absence remains BLOCK" {
+    evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$REVIEWED\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"failure\",\"head_sha\":\"abc\",\"created_at\":\"$CREATED\",\"external_unavailable\":true,\"jobs_not_started\":false}}"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"not a job-start absence"* ]]
+}
+
 # cmd_karo_* has no SG7 bundle.  Exercise the production resolver with a
 # mocked report/approval boundary so this test covers the fingerprint binding
 # and timestamp selection without mutating the repository queue.
