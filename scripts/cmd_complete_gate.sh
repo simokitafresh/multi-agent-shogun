@@ -920,6 +920,7 @@ fi
 export FIELD_GET_NO_LOG=1
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+source "$SCRIPT_DIR/scripts/lib/task_lifecycle.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 source "$SCRIPT_DIR/scripts/lib/autogen_paths.sh"
 
@@ -4694,7 +4695,7 @@ set_matching_tasks_idle() {
                 ;;
         esac
 
-        if yaml_field_set "$task_file" "task" "status" "idle" >/dev/null 2>&1; then
+        if task_lifecycle_set_idle "$task_file" "gate_clear" >/dev/null 2>&1; then
             verify_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")
             if [ "$verify_status" = "idle" ]; then
                 echo "  ${ninja_name}: ${current_status:-unknown} → idle"
@@ -4706,24 +4707,8 @@ set_matching_tasks_idle() {
             continue
         fi
 
-        # 後方互換: 旧flat YAML taskでも idle 化を試みる。
-        if grep -q '^status:' "$task_file" 2>/dev/null; then
-            (
-                flock -w 5 200 || exit 1
-                sed -i "s/^status: .*/status: idle/" "$task_file"
-            ) 200>"$(lock_path "$task_file")"
-            verify_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")
-            if [ "$verify_status" = "idle" ]; then
-                echo "  ${ninja_name}: ${current_status:-unknown} → idle (flat fallback)"
-                updated_count=$((updated_count + 1))
-            else
-                echo "  [INFO] ${ninja_name}: WARN flat fallback verification failed (${current_status:-unknown} → ${verify_status:-empty})"
-                warn_count=$((warn_count + 1))
-            fi
-        else
-            echo "  [INFO] ${ninja_name}: WARN task status update skipped (${current_status:-unknown})"
-            warn_count=$((warn_count + 1))
-        fi
+        echo "  [INFO] ${ninja_name}: WARN task lifecycle update skipped (${current_status:-unknown})"
+        warn_count=$((warn_count + 1))
     done
 
     echo "  summary: updated=${updated_count} skipped=${skipped_count} warn=${warn_count}"

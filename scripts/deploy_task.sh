@@ -77,6 +77,11 @@ fi
 source "$_dt_bootstrap_path"
 unset _dt_bootstrap_path
 unset _dt_bootstrap_root _dt_entrypoint_source
+_dt_lifecycle_path="$SCRIPT_DIR/scripts/lib/task_lifecycle.sh"
+[ -f "$_dt_lifecycle_path" ] || [ -z "${SRC_DEPLOY_SCRIPT:-}" ] || _dt_lifecycle_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/lib/task_lifecycle.sh"
+[ -f "$_dt_lifecycle_path" ] || [ -z "${PROJECT_ROOT:-}" ] || _dt_lifecycle_path="$PROJECT_ROOT/scripts/lib/task_lifecycle.sh"
+source "$_dt_lifecycle_path"
+unset _dt_lifecycle_path
 
 # One immutable read snapshot is shared by every deploy in the same wave.  The
 # source identity invalidates stale entries; target_key keeps filtered/query
@@ -487,12 +492,7 @@ deploy_task_cleanup_canceled_cmd() {
     fi
 
     reset_stale_fields "$ninja_name"
-    yaml_field_set "$task_file" "task" "status" "idle" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "parent_cmd" "" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "task_id" "" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "_ac_task_id" "" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "report_path" "" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "report_filename" "" >/dev/null 2>&1 || true
+    task_lifecycle_set_idle "$task_file" "cancel_cleanup" >/dev/null 2>&1 || true
 
     log "cancel_cleanup: ${cmd_id} cleared stale task for ${ninja_name} report=${report_path:-none}"
     echo "CANCEL_CLEANUP: ${cmd_id} is canceled; cleared stale task for ${ninja_name}"
@@ -11623,11 +11623,7 @@ except Exception:
 
     if ! deploy_task_enforce_gpt_priority "$NINJA_NAME" "$deploy_scope_mode"; then
         if [ "$deploy_task_resolved_mutated" = "1" ]; then
-            yaml_field_set "$task_yaml" "task" "status" "idle" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "parent_cmd" "" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "_ac_task_id" "" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "report_path" "" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "report_filename" "" 2>/dev/null || true
+            task_lifecycle_set_idle "$task_yaml" "gpt_priority_block" >/dev/null 2>&1 || true
             log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after GPT priority BLOCK"
         else
             log "ROLLBACK: skipped after GPT priority BLOCK because task YAML was not rewritten in this deploy attempt"
@@ -11654,11 +11650,7 @@ except Exception:
 
     if [ -n "$deploy_parent_cmd" ]; then
         if deploy_task_has_completed_peer_report "$deploy_parent_cmd" "$NINJA_NAME" "$task_yaml"; then
-            yaml_field_set "$task_yaml" "task" "status" "idle" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "parent_cmd" "" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "_ac_task_id" "" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "report_path" "" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "report_filename" "" 2>/dev/null || true
+            task_lifecycle_set_idle "$task_yaml" "completed_peer_report" >/dev/null 2>&1 || true
             log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after completed peer report BLOCK"
             deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
             return 1
@@ -11700,14 +11692,10 @@ except Exception:
             case "$dd_status" in
                 assigned|acknowledged|in_progress)
                     log "BLOCK: ${deploy_parent_cmd} is already assigned to ${dd_ninja} (status: ${dd_status}, task_id: ${dd_tid})"
-                    yaml_field_set "$task_yaml" "task" "status" "idle" 2>/dev/null || true
-                    yaml_field_set "$task_yaml" "task" "parent_cmd" "" 2>/dev/null || true
-                    yaml_field_set "$task_yaml" "task" "_ac_task_id" "" 2>/dev/null || true
-                    yaml_field_set "$task_yaml" "task" "report_path" "" 2>/dev/null || true
-                    yaml_field_set "$task_yaml" "task" "report_filename" "" 2>/dev/null || true
+                    task_lifecycle_set_idle "$task_yaml" "duplicate_deploy_block" >/dev/null 2>&1 || true
                     log "ROLLBACK: ${NINJA_NAME} task YAML reset to idle after duplicate deploy BLOCK"
                     echo "BLOCK: ${deploy_parent_cmd} is already assigned to ${dd_ninja} (status: ${dd_status})" >&2
-                    echo "Clear the existing task first: bash scripts/lib/yaml_field_set.sh queue/tasks/${dd_ninja}.yaml task status idle" >&2
+                    echo "Clear the existing task first through scripts/lib/task_lifecycle.sh: queue/tasks/${dd_ninja}.yaml" >&2
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                     ;;

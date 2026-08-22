@@ -387,12 +387,7 @@ deploy_task_cleanup_canceled_cmd() {
     fi
 
     reset_stale_fields "$ninja_name"
-    yaml_field_set "$task_file" "task" "status" "idle" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "parent_cmd" "" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "task_id" "" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "_ac_task_id" "" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "report_path" "" >/dev/null 2>&1 || true
-    yaml_field_set "$task_file" "task" "report_filename" "" >/dev/null 2>&1 || true
+    task_lifecycle_set_idle "$task_file" "cancel_cleanup" >/dev/null 2>&1 || true
 
     log "cancel_cleanup: ${cmd_id} cleared stale task for ${ninja_name} report=${report_path:-none}"
     echo "CANCEL_CLEANUP: ${cmd_id} is canceled; cleared stale task for ${ninja_name}"

@@ -8,6 +8,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$REPO_ROOT/scripts/lib/cli_lookup.sh"
 source "$REPO_ROOT/scripts/lib/pane_lookup.sh"
+source "$REPO_ROOT/scripts/lib/task_lifecycle.sh"
 
 agent_name="${1:?Usage: agent_respawn.sh <agent_name> [reason]}"
 reason="${2:-manual_respawn}"
@@ -48,7 +49,7 @@ if [[ -f "$task_file" ]]; then
         | sed 's/.*status:[[:space:]]*//' | tr -d "\"'[:space:]" || true)
 fi
 if [[ "$task_status" != "failed" ]]; then
-    bash "$REPO_ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task status idle 2>/dev/null || true
+    task_lifecycle_set_idle "$task_file" "agent_respawn" 2>/dev/null || true
 fi
 
 echo "[agent_respawn] ${agent_name} respawned (reason=${reason}, cli=${cli})"
