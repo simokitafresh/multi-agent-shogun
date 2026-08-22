@@ -1,3 +1,4 @@
+<!-- gist-master: 437bc661c16ab03d81cf28a0ac791d14 low_corr_selection_final_report_20260823.md -->
 # 低相関Selection研究 最終レポート（2026-08-22 21:55 殿下問 → 2026-08-23 02:41 実験完了）
 
 ## 下問
