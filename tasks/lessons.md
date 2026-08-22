@@ -10041,6 +10041,8 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **origin**: [[cmd_reflux_insight_202607071621_saizo]]
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-08-23
 - cmd_reflux_insight_202607071621_saizo実行中、docs/semantic-index/index.mdへ2行(1 alias+1 discussion行)を追加しcommit準備したところ、git diffで49 hunks(自分は2 hunkのみ)を検出。他忍者(推定tobisaru/hanzo等が並行して同種のreflux insight task中)がindex.mdへ未commit編集を蓄積しており、さらにcontext/semantic-map.mdは他忍者が既にgit add済み(git indexにstage済み)の状態だった。対処: (1)git diff -- <file> > full.txtで全hunkを確認、(2)自分の変更箇所のhunkのみを抽出したunified diffを作成、(3)git apply --check --cachedで適用可否を検証、(4)git apply --cachedでindexにのみ適用(working treeは無傷)、(5)他忍者がstage済みだった無関係ファイルはgit restore --staged <file>でindexからのみ除去(working treeの内容は保持、他忍者のcommit機会を破壊しない)、(6)git diff --cachedで最終確認してからgit commit。この手順により他忍者の47 hunksとsemantic-map.mdのstageを一切壊さずに自分の分だけをcommitできた
 
 ### L961: semantic_stress_test NO_MATCH insightはdirect_concept構文で手動誘導せよ。alias:直後は検索語のみに限定
