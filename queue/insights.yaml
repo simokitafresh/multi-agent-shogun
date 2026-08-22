@@ -424,8 +424,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 6
-  last_seen: "2026-08-22T09:59:10+09:00"
+  occurrence_count: 7
+  last_seen: "2026-08-22T10:16:54+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -1155,7 +1155,4 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-22T10:04:06+09:00"
+  status: pending
