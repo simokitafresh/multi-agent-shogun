@@ -1363,7 +1363,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T22:31:39+09:00"
 - id: INS-20260822-220414584-b2ef
   ts: "2026-08-22T22:04:14+09:00"
   insight: "SKILL.md追従task[0b0ccc7720776a61]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
@@ -1383,5 +1386,42 @@ insights:
   insight: "recon契約注入の記載位置(根因確定版・INS-20260822-221345291-7ea0を上書き): inject_independent_recon_contractの検出はfield_get第1行のみ、かつresolve_cmdはtitleをtaskへ投影しない。∴確実な唯一の位置=purpose文字列の先頭に『independent recon 2系統・相互参照禁止 — 』を置く(cmd_4366で3往復実証2026-08-22)。加えてdm-signal projectのcmdのAC参照pathは忍者worktree(DM-signal固定base)から見えるDM-signal repo内pathのみ有効、multi-agent-shogun側docs/researchは不可視。候補対策: cmd_skeleton.shにrecon雛形(purpose先頭marker入り)を追加+cmd_saveでproject≠infraのAC内multi-agent-shogunローカルpath参照をWARN"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260822-223323648-3669
+  ts: "2026-08-22T22:33:23+09:00"
+  insight: "[[DM Signalにおいて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-Signalにおいて、候補PF同士の「低相関」をPortfolio Selection / FoF構築に利用する価値があるか検討してほしい。 背景として、低相関資産を組み合わせると、単純な期待リターンの上昇がなくてもPF全体のボラティリティを下げ、Volatility D…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T22:33:31+09:00"
+- id: INS-20260822-223325711-8830
+  ts: "2026-08-22T22:33:25+09:00"
+  insight: "[[independent recon 2系統・相互参照禁止 — 殿下問2026 08 22 21 55『候補PF同士の低相]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=independent recon 2系統・相互参照禁止 — 殿下問2026-08-22 21:55『候補PF同士の低相関をPortfolio Selection・FoF構築に利用する価値があるか。実装はせず現物偵察と設計レビューだけを行い、現状→仮説→最小実験→必要な新規指標→既存指標で代用できる部分→実装する価値があるか、の順で報告せよ』。将軍一次確認済"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T22:41:29+09:00"
+- id: INS-20260822-223326471-cb39
+  ts: "2026-08-22T22:33:26+09:00"
+  insight: "[[independent recon 2系統・相互参照禁止 — PF間低相関のSelection・FoF構築利用価値の現物]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=independent recon 2系統・相互参照禁止 — PF間低相関のSelection・FoF構築利用価値の現物偵察+設計レビュー(実装禁止・報告書のみ)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-22T22:41:29+09:00"
+- id: INS-20260822-224129373-bf26
+  ts: "2026-08-22T22:41:29+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bflqxuvmb task id tool use id toolu 019fjx8hg5wJTokiTE は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
