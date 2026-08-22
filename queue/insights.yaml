@@ -1,301 +1,4 @@
 insights:
-- id: INS-20260819-023507982-d776
-  ts: "2026-08-19T02:35:07+09:00"
-  insight: "[[至急再発しないように根治せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=至急再発しないように根治せよ。これは重要なバグだ。単にちゃんとgateclearして忍者を解放すればいいだけだけどな"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T02:55:45+09:00"
-- id: INS-20260819-023737514-d968
-  ts: "2026-08-19T02:37:37+09:00"
-  insight: "SKILL.md追従task[84fcbd7de31fb57e]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
-  priority: "medium"
-  source: "skill_script_refs:84fcbd7de31fb57e"
-  fix_known: false
-  status: resolved
-  resolved_reason: gate_rc2_review_required_but_all_referenced_pairs_verified_and_no_skill_update_needed
-  action_artifact: gate_skill_script_refs_rc2_checks_missing0_static_paths_missing0_side_effect_markers_missing0
-  resolved_at: "2026-08-20T12:23:57+09:00"
-- id: INS-20260819-025527157-c9dc
-  ts: "2026-08-19T02:55:27+09:00"
-  insight: "SKILL.md追従task[e77227d87b1356c5]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
-  priority: "medium"
-  source: "skill_script_refs:e77227d87b1356c5"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: gate_skill_script_refs.sh RC=2はFOLLOWUP_ACTIVE 7組によるREVIEW_REQUIREDであり、対象9組のSKILL.mdとscriptは全て実在・SKILL更新日がscript以上・例示パス実在・副作用実走マーカーあり。対象insightの実修正・decision_candidateは不要。"
-  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh rc=2;verified_at=2026-08-20T12:35:31+09:00;target=INS-20260819-025527157-c9dc;missing=0;stale=0;example_path_missing=0;side_effect_marker_missing=0;followup_active=7;followup_covers_review_required=yes"
-  resolved_at: "2026-08-20T12:36:31+09:00"
-- id: INS-20260819-043300238-e118
-  ts: "2026-08-19T04:33:00+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id b2sdqo964 task id tool use id toolu 017ZmkDAtTQJKHtHzw は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T04:36:47+09:00"
-- id: INS-20260819-043645158-61c9
-  ts: "2026-08-19T04:36:45+09:00"
-  insight: "SKILL.md追従task[007e7e3d58117f4a]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
-  priority: "medium"
-  source: "skill_script_refs:007e7e3d58117f4a"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: gate_skill_script_refs.sh の現行実行はRC=2(REVIEW_REQUIRED)だが、対象10組のSKILL/scriptは全て実在し、参照先欠落・鮮度不足・静的パス欠落・副作用実走マーカー欠落はいずれも0。既存follow-up在庫7組がレビュー要求を構成し、新規実装またはdecision_candidateは不要。"
-  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;verified_at=2026-08-20T12:46:00+09:00;missing=0;stale=0;example_path_missing=0;side_effect_marker_missing=0;followup_active=7;followup_covers_review_required=yes"
-  resolved_at: "2026-08-20T12:51:32+09:00"
-- id: INS-20260819-052520111-2011
-  ts: "2026-08-19T05:25:20+09:00"
-  insight: "SKILL.md追従task[62304dd7c0ca172f]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
-  priority: "medium"
-  source: "skill_script_refs:62304dd7c0ca172f"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: gate_skill_script_refs.sh rc=2(REVIEW_REQUIRED)だが、現行実行で参照先欠落・鮮度不足・静的パス欠落・実走マーカー欠落はいずれも0。既存follow-up 7件がレビュー要求をカバーし、新規実修正・decision_candidateは不要。"
-  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;verified_at=2026-08-20T13:25:35+09:00;missing=0;stale=0;example_path_missing=0;side_effect_marker_missing=0;followup_active=7;followup_covers_review_required=yes"
-  resolved_at: "2026-08-20T13:25:35+09:00"
-- id: INS-20260819-055305135-978a
-  ts: "2026-08-19T05:53:05+09:00"
-  insight: "semantic_index_update新概念候補: discussion:結果をartifactにまとめてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T05:56:28+09:00"
-- id: INS-20260819-055545168-f1e7
-  ts: "2026-08-19T05:55:45+09:00"
-  insight: "[[結果をartifactにまとめてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=結果をartifactにまとめてくれ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T05:58:05+09:00"
-- id: INS-20260819-055851889-26b6
-  ts: "2026-08-19T05:58:51+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id b4eq48in9 task id tool use id toolu 0172sbPEPGaonaBi9R は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T05:59:05+09:00"
-- id: INS-20260819-104338229-1c0e
-  ts: "2026-08-19T10:43:38+09:00"
-  insight: "semantic_index_update新概念候補: lesson:L1613 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T10:46:45+09:00"
-- id: INS-20260819-110637593-c1fc
-  ts: "2026-08-19T11:06:37+09:00"
-  insight: "semantic_index_update新概念候補: discussion:一回本番をfull recaluculateして は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T11:06:47+09:00"
-- id: INS-20260819-111102821-da83
-  ts: "2026-08-19T11:11:02+09:00"
-  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_hotfix_gate_monotonic_timeout_202608191022 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T11:11:07+09:00"
-- id: INS-20260819-113024410-4ac4
-  ts: "2026-08-19T11:30:24+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bt85goiin task id tool use id toolu 01KtZ5QfJ2RNDmSNWN は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T11:32:07+09:00"
-- id: INS-20260819-120405480-1c8a
-  ts: "2026-08-19T12:04:05+09:00"
-  insight: "[[一回本番をfull recaluculateして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=一回本番をfull recaluculateして"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T12:06:11+09:00"
-- id: INS-20260819-122925761-bf58
-  ts: "2026-08-19T12:29:25+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_gate_busy_not_block_202608190642; matched=infra,lessons,tasks; current_pattern=; candidate_level=4; candidate=gate_prediction CLEAR→BLOCK(draft_lessons) 2件連続miss。SG-PRE12はlesson_candidate検出のみでproject-level draft教訓を検出しなかった; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_gate_busy_not_block_202608190642"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: logs/gunshi_gp_tracker.yaml の GP-237 が既に implemented。SG-PRE12b の project lessons.md draft 件数検出と gate_prediction WARN 補正が scripts/gates/gate_gunshi_report_precheck.sh L858-L873,L1394-L1400 に存在し、既存防御へ吸収済みのため新規修正・decision_candidate不要。"
-  action_artifact: "logs/gunshi_gp_tracker.yaml:GP-237; scripts/gates/gate_gunshi_report_precheck.sh:L858-L873,L1394-L1400; docs/research/gunshi_idle_wa_lesson_candidate_20260415.md"
-  resolved_at: "2026-08-20T13:38:33+09:00"
-- id: INS-20260819-122113002-5b71
-  ts: "2026-08-19T12:21:13+09:00"
-  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_hotfix_gate_busy_not_block_202608190642 hayate lesson_candidate: AC前提件数は対応IDで照合してから実装開始する 集計カテゴリの件数だけで事例対応を推定せず、message IDとgate出力を1:1照合する。今回3件前提を先に確定できず、実装後に2件しか確認できないと判明した。"
-  priority: "low"
-  source: "cmd_complete_gate:memory_phase"
-  fix_known: false
-  status: pending
-- id: INS-20260819-142139209-704e
-  ts: "2026-08-19T14:21:39+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_runtime_writer_singleflight_202608191225; matched=lessons,yaml; current_pattern=; candidate_level=4; candidate=cmd_1921 report_yaml_format WA(影丸lessons_useful dict/list混在)。GP-107撤去再評価: numbered dict({0:{id:X},1:{id:Y}})→list変換は内容不変。単一dict/ID-keyed dictは条件外(全キーint+全値dict)。家老workaround削減=利他; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_runtime_writer_singleflight_202608191225"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: docs/research/gunshi_idle_lu_dict_pattern_20260415.md の既存防御とGP-107再評価、scripts/gates/gate_report_autofix_main.py L108-L114 のGP-196 numbered dict→list内容不変変換、tests/unit/test_gate_report_autofix.bats L86-L122の内容保持、L580-L614のID-keyed dict非変換を確認。新規修正・decision_candidate不要。"
-  action_artifact: "scripts/gates/gate_report_autofix_main.py:L108-L114;tests/unit/test_gate_report_autofix.bats:L86-L122,L580-L614;docs/research/gunshi_idle_lu_dict_pattern_20260415.md"
-  resolved_at: "2026-08-20T13:52:16+09:00"
-- id: INS-20260819-143938724-0b38
-  ts: "2026-08-19T14:39:38+09:00"
-  insight: "--priority"
-  priority: "high"
-  source: "--source"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認: insight本文はCLI引数断片(\"--priority\")、sourceも\"--source\"であり、実行可能な知見・対象ファイル・修正要求を含まない。既存のprovisional_insights概念で扱い、新規実装やdecision_candidateは不要。"
-  action_artifact: "context/semantic-map.md;docs/semantic-index/index.md"
-  resolved_at: "2026-08-20T09:20:07+09:00"
-- id: INS-20260819-145443057-2d26
-  ts: "2026-08-19T14:54:43+09:00"
-  insight: "semantic_index_update新概念候補: discussion:複雑な仕組みは害悪だ。シンプルにせよ。新しい関数や仕組みは可能な限り減らそう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T15:09:05+09:00"
-- id: INS-20260819-150040527-65d1
-  ts: "2026-08-19T15:00:40+09:00"
-  insight: "semantic_index_update新概念候補: discussion:task notification task id bveliwwhi task id tool use id toolu 015g1AaGFK1PrSbvik は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T15:09:05+09:00"
-- id: INS-20260819-150722897-9ea3
-  ts: "2026-08-19T15:07:22+09:00"
-  insight: "semantic_index_update新概念候補: discussion:&lt;&lt;autonomous loop dynamic&gt;&gt; は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T15:09:05+09:00"
-- id: INS-20260820-082413730-6c6f
-  ts: "2026-08-20T08:24:13+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_lessons_runtime_publish_202608200711; matched=lessons; current_pattern=; candidate_level=2; candidate=cmd_1955で影丸が13回連続BLOCK(draft_lessons:1)。忍者にはdraft教訓の査読権限がなく全リトライが無駄。GP-200(DIVERGENT)は忍者修正可能なBLOCKが前提であり外部依存BLOCKには効かない。cmd_complete_gate.sh L3158のBLOCKメッセージに「忍者は解消不可。家老に報告して待機」ガイダ; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_lessons_runtime_publish_202608200711"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次情報で scripts/cmd_complete_gate.sh:10870-10874 を確認。cmd固有draft_lessons BLOCK時に『忍者では解消できない。家老に報告して待機せよ。リトライは無駄(GP-203)』を出力し、ALL_CLEAR=falseとrecord_block_reasonを実行する既存恒久ガイダンスが対象候補を満たす。追加コード修正・decision_candidateは不要。"
-  action_artifact: "scripts/cmd_complete_gate.sh:10870-10874; bash -n scripts/cmd_complete_gate.sh => rc=0; queue/insights.yaml:INS-20260820-082413730-6c6f"
-  resolved_at: "2026-08-20T14:42:49+09:00"
-- id: INS-20260820-082418400-1714
-  ts: "2026-08-20T08:24:18+09:00"
-  insight: "SKILL.md追従task[0fa91f7eaa70779c]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh"
-  priority: "medium"
-  source: "skill_script_refs:0fa91f7eaa70779c"
-  fix_known: false
-  status: resolved
-  resolved_reason: 一次検証で対象SKILL/script追従を再確認。対象ペアの参照先実在・SKILL鮮度・例示パス・副作用実走マーカーは全てOK。rc=2は対象外の既存FOLLOWUP_ACTIVE 7件による総合REVIEW_REQUIREDで対象ペアのFAILではないため追加修正・decision_candidate不要。本task cmd_reflux_insight_202608201515_tobisaruの再検証証跡として確定。
-  action_artifact: "gate=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;result=OK対象項目/FOLLOWUP_ACTIVE=7/REVIEW_REQUIRED rc=2;target=skills/codd-fix/SKILL.md<-scripts/cmd_complete_gate.sh;revalidated_by=cmd_reflux_insight_202608201515_tobisaru;queue/insights.yaml:INS-20260820-082418400-1714"
-  resolved_at: "2026-08-20T15:03:46+09:00"
-- id: INS-20260820-090908792-a92d
-  ts: "2026-08-20T09:09:08+09:00"
-  insight: "semantic_index_update新概念候補: lesson:L1619 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-20T09:12:12+09:00"
-- id: INS-20260820-091241774-86a7
-  ts: "2026-08-20T09:12:41+09:00"
-  insight: "SKILL.md追従task[7bd490b84088448d]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh"
-  priority: "medium"
-  source: "skill_script_refs:7bd490b84088448d"
-  fix_known: false
-  status: resolved
-  resolved_reason: 一次検証で gate_skill_script_refs.sh を SKILL_REF_DIRS=skills で実走。rc=2 は FOLLOWUP_ACTIVE 7件が REVIEW_REQUIRED を包含する集約判定だが、対象3組を含む全40 SKILL・82参照で参照先実在・SKILL更新日鮮度・静的パス・日時付き実走マーカーが全てOK。追加のSKILL修正またはdecision_candidateは不要。
-  action_artifact: "gate=/tmp/saizo_skill_gate.out;result=rc2 REVIEW_REQUIRED FOLLOWUP_ACTIVE=7 FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;target=INS-20260820-091241774-86a7;source_revisions=c562cbcbc3338e49d3fddbfa5a105aab1f7850f6/e1dc9a0a2d5548992b1dbcb245b28a2bf24b83df;verified_at=2026-08-20T15:32:55+09:00"
-  resolved_at: "2026-08-20T15:32:55+09:00"
-- id: INS-20260820-113745425-a1a9
-  ts: "2026-08-20T11:37:45+09:00"
-  insight: "SKILL.md追従task[8adb59e2082ff964]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
-  priority: "medium"
-  source: "skill_script_refs:8adb59e2082ff964"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次検証で gate_skill_script_refs.sh を SKILL_REF_DIRS=skills で実走。rc=2 は FOLLOWUP_ACTIVE=7 の集約判定で、FOLLOWUP_COVERS_REVIEW_REQUIRED=yes。対象を含む全40 SKILL・82参照で参照先実在・SKILL更新日鮮度・静的パス・日時付き実走マーカーが全てOK。追加のSKILL修正またはdecision_candidateは不要。"
-  action_artifact: "gate=/tmp/kotaro_skill_gate_20260820.out;command=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;verified_at=2026-08-20T16:03:30+09:00"
-  resolved_at: "2026-08-20T16:04:35+09:00"
-- id: INS-20260820-121458364-9c81
-  ts: "2026-08-20T12:14:58+09:00"
-  insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
-  priority: "medium"
-  source: "skill_script_refs:28cb407b97fcfc07"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次検証: gate_skill_script_refs.shをSKILL_REF_DIRS=skillsで実走しrc=2 REVIEW_REQUIRED/FOLLOWUP_ACTIVE=7/FOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認。7組すべて参照先実在・SKILL更新日鮮度・静的パス・副作用実走マーカーOKで、追加修正とdecision_candidateは不要。"
-  action_artifact: "gate=/tmp/hanzo_skill_gate_20260820.out;command=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;verified_at=2026-08-20T23:35:00+09:00"
-  resolved_at: "2026-08-20T23:35:09+09:00"
-- id: INS-20260820-123337540-3982
-  ts: "2026-08-20T12:33:37+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608201219_saizo; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608201219_saizo"
-  fix_known: false
-  status: resolved
-  resolved_reason: "現行scripts/archive_completed.shのarchive_cmdsはQUEUE_FILE分類読込とmv更新を同一flock内に包含済み。指摘は旧行番号/旧実装に基づく偽陽性"
-  action_artifact: "scripts/archive_completed.sh:877-883,889-976; git_blame=29d15d42d3/6592194178"
-  resolved_at: "2026-08-20T16:18:20+09:00"
-- id: INS-20260820-150103679-64bf
-  ts: "2026-08-20T15:01:03+09:00"
-  insight: "--inventory"
-  priority: "medium"
-  source: "manual"
-  fix_known: false
-  status: resolved
-  resolved_reason: "誤った--inventory引数を手動insightとして登録したが、実在する気づきではなく追加対応不要のため即時解消"
-  action_artifact: "action=unsupported inventory probe entry cleanup; target=queue/insights.yaml:INS-20260820-150103679-64bf"
-  resolved_at: "2026-08-20T15:03:46+09:00"
-- id: INS-20260820-172055620-6338
-  ts: "2026-08-20T17:20:55+09:00"
-  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_skill_auto_improve_dirty_202608201637; matched=ninja,commit; current_pattern=; candidate_level=3; candidate=hayate事故(2026-04-28): bypass flag欠落→確認プロンプトで停止。pstreeで起動時自動検出; source=gunshi_gp_tracker.yaml"
-  priority: "medium"
-  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_skill_auto_improve_dirty_202608201637"
-  fix_known: false
-  status: resolved
-  resolved_reason: "一次確認でGP-239既存実装による解消済み候補と判定。現行scripts/ninja_monitor.shにCodex bypass確認経路があり、tests/unit/test_ninja_monitor.batsにGP-239の欠落・健全・再発チェックが存在するため追加修正不要。"
-  action_artifact: "scripts/ninja_monitor.sh:GP-239; tests/unit/test_ninja_monitor.bats:303-329; queue/insights.yaml:INS-20260820-172055620-6338"
-  resolved_at: "2026-08-21T02:27:48+09:00"
 - id: INS-20260820-180235277-727b
   ts: "2026-08-20T18:02:35+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1624 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -1263,3 +966,300 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-22T11:43:26+09:00"
+- id: INS-20260819-023507982-d776
+  ts: "2026-08-19T02:35:07+09:00"
+  insight: "[[至急再発しないように根治せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=至急再発しないように根治せよ。これは重要なバグだ。単にちゃんとgateclearして忍者を解放すればいいだけだけどな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T02:55:45+09:00"
+- id: INS-20260819-023737514-d968
+  ts: "2026-08-19T02:37:37+09:00"
+  insight: "SKILL.md追従task[84fcbd7de31fb57e]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:84fcbd7de31fb57e"
+  fix_known: false
+  status: resolved
+  resolved_reason: gate_rc2_review_required_but_all_referenced_pairs_verified_and_no_skill_update_needed
+  action_artifact: gate_skill_script_refs_rc2_checks_missing0_static_paths_missing0_side_effect_markers_missing0
+  resolved_at: "2026-08-20T12:23:57+09:00"
+- id: INS-20260819-025527157-c9dc
+  ts: "2026-08-19T02:55:27+09:00"
+  insight: "SKILL.md追従task[e77227d87b1356c5]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:e77227d87b1356c5"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次確認: gate_skill_script_refs.sh RC=2はFOLLOWUP_ACTIVE 7組によるREVIEW_REQUIREDであり、対象9組のSKILL.mdとscriptは全て実在・SKILL更新日がscript以上・例示パス実在・副作用実走マーカーあり。対象insightの実修正・decision_candidateは不要。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh rc=2;verified_at=2026-08-20T12:35:31+09:00;target=INS-20260819-025527157-c9dc;missing=0;stale=0;example_path_missing=0;side_effect_marker_missing=0;followup_active=7;followup_covers_review_required=yes"
+  resolved_at: "2026-08-20T12:36:31+09:00"
+- id: INS-20260819-043300238-e118
+  ts: "2026-08-19T04:33:00+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b2sdqo964 task id tool use id toolu 017ZmkDAtTQJKHtHzw は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T04:36:47+09:00"
+- id: INS-20260819-043645158-61c9
+  ts: "2026-08-19T04:36:45+09:00"
+  insight: "SKILL.md追従task[007e7e3d58117f4a]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:007e7e3d58117f4a"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次確認: gate_skill_script_refs.sh の現行実行はRC=2(REVIEW_REQUIRED)だが、対象10組のSKILL/scriptは全て実在し、参照先欠落・鮮度不足・静的パス欠落・副作用実走マーカー欠落はいずれも0。既存follow-up在庫7組がレビュー要求を構成し、新規実装またはdecision_candidateは不要。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;verified_at=2026-08-20T12:46:00+09:00;missing=0;stale=0;example_path_missing=0;side_effect_marker_missing=0;followup_active=7;followup_covers_review_required=yes"
+  resolved_at: "2026-08-20T12:51:32+09:00"
+- id: INS-20260819-052520111-2011
+  ts: "2026-08-19T05:25:20+09:00"
+  insight: "SKILL.md追従task[62304dd7c0ca172f]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:62304dd7c0ca172f"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次確認: gate_skill_script_refs.sh rc=2(REVIEW_REQUIRED)だが、現行実行で参照先欠落・鮮度不足・静的パス欠落・実走マーカー欠落はいずれも0。既存follow-up 7件がレビュー要求をカバーし、新規実修正・decision_candidateは不要。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;verified_at=2026-08-20T13:25:35+09:00;missing=0;stale=0;example_path_missing=0;side_effect_marker_missing=0;followup_active=7;followup_covers_review_required=yes"
+  resolved_at: "2026-08-20T13:25:35+09:00"
+- id: INS-20260819-055305135-978a
+  ts: "2026-08-19T05:53:05+09:00"
+  insight: "semantic_index_update新概念候補: discussion:結果をartifactにまとめてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T05:56:28+09:00"
+- id: INS-20260819-055545168-f1e7
+  ts: "2026-08-19T05:55:45+09:00"
+  insight: "[[結果をartifactにまとめてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=結果をartifactにまとめてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T05:58:05+09:00"
+- id: INS-20260819-055851889-26b6
+  ts: "2026-08-19T05:58:51+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b4eq48in9 task id tool use id toolu 0172sbPEPGaonaBi9R は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T05:59:05+09:00"
+- id: INS-20260819-104338229-1c0e
+  ts: "2026-08-19T10:43:38+09:00"
+  insight: "semantic_index_update新概念候補: lesson:L1613 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T10:46:45+09:00"
+- id: INS-20260819-110637593-c1fc
+  ts: "2026-08-19T11:06:37+09:00"
+  insight: "semantic_index_update新概念候補: discussion:一回本番をfull recaluculateして は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T11:06:47+09:00"
+- id: INS-20260819-111102821-da83
+  ts: "2026-08-19T11:11:02+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_hotfix_gate_monotonic_timeout_202608191022 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T11:11:07+09:00"
+- id: INS-20260819-113024410-4ac4
+  ts: "2026-08-19T11:30:24+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bt85goiin task id tool use id toolu 01KtZ5QfJ2RNDmSNWN は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T11:32:07+09:00"
+- id: INS-20260819-120405480-1c8a
+  ts: "2026-08-19T12:04:05+09:00"
+  insight: "[[一回本番をfull recaluculateして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=一回本番をfull recaluculateして"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T12:06:11+09:00"
+- id: INS-20260819-122925761-bf58
+  ts: "2026-08-19T12:29:25+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_gate_busy_not_block_202608190642; matched=infra,lessons,tasks; current_pattern=; candidate_level=4; candidate=gate_prediction CLEAR→BLOCK(draft_lessons) 2件連続miss。SG-PRE12はlesson_candidate検出のみでproject-level draft教訓を検出しなかった; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_gate_busy_not_block_202608190642"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次確認: logs/gunshi_gp_tracker.yaml の GP-237 が既に implemented。SG-PRE12b の project lessons.md draft 件数検出と gate_prediction WARN 補正が scripts/gates/gate_gunshi_report_precheck.sh L858-L873,L1394-L1400 に存在し、既存防御へ吸収済みのため新規修正・decision_candidate不要。"
+  action_artifact: "logs/gunshi_gp_tracker.yaml:GP-237; scripts/gates/gate_gunshi_report_precheck.sh:L858-L873,L1394-L1400; docs/research/gunshi_idle_wa_lesson_candidate_20260415.md"
+  resolved_at: "2026-08-20T13:38:33+09:00"
+- id: INS-20260819-122113002-5b71
+  ts: "2026-08-19T12:21:13+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_hotfix_gate_busy_not_block_202608190642 hayate lesson_candidate: AC前提件数は対応IDで照合してから実装開始する 集計カテゴリの件数だけで事例対応を推定せず、message IDとgate出力を1:1照合する。今回3件前提を先に確定できず、実装後に2件しか確認できないと判明した。"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
+- id: INS-20260819-142139209-704e
+  ts: "2026-08-19T14:21:39+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_runtime_writer_singleflight_202608191225; matched=lessons,yaml; current_pattern=; candidate_level=4; candidate=cmd_1921 report_yaml_format WA(影丸lessons_useful dict/list混在)。GP-107撤去再評価: numbered dict({0:{id:X},1:{id:Y}})→list変換は内容不変。単一dict/ID-keyed dictは条件外(全キーint+全値dict)。家老workaround削減=利他; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_runtime_writer_singleflight_202608191225"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次確認: docs/research/gunshi_idle_lu_dict_pattern_20260415.md の既存防御とGP-107再評価、scripts/gates/gate_report_autofix_main.py L108-L114 のGP-196 numbered dict→list内容不変変換、tests/unit/test_gate_report_autofix.bats L86-L122の内容保持、L580-L614のID-keyed dict非変換を確認。新規修正・decision_candidate不要。"
+  action_artifact: "scripts/gates/gate_report_autofix_main.py:L108-L114;tests/unit/test_gate_report_autofix.bats:L86-L122,L580-L614;docs/research/gunshi_idle_lu_dict_pattern_20260415.md"
+  resolved_at: "2026-08-20T13:52:16+09:00"
+- id: INS-20260819-143938724-0b38
+  ts: "2026-08-19T14:39:38+09:00"
+  insight: "--priority"
+  priority: "high"
+  source: "--source"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次確認: insight本文はCLI引数断片(\"--priority\")、sourceも\"--source\"であり、実行可能な知見・対象ファイル・修正要求を含まない。既存のprovisional_insights概念で扱い、新規実装やdecision_candidateは不要。"
+  action_artifact: "context/semantic-map.md;docs/semantic-index/index.md"
+  resolved_at: "2026-08-20T09:20:07+09:00"
+- id: INS-20260819-145443057-2d26
+  ts: "2026-08-19T14:54:43+09:00"
+  insight: "semantic_index_update新概念候補: discussion:複雑な仕組みは害悪だ。シンプルにせよ。新しい関数や仕組みは可能な限り減らそう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T15:09:05+09:00"
+- id: INS-20260819-150040527-65d1
+  ts: "2026-08-19T15:00:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bveliwwhi task id tool use id toolu 015g1AaGFK1PrSbvik は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T15:09:05+09:00"
+- id: INS-20260819-150722897-9ea3
+  ts: "2026-08-19T15:07:22+09:00"
+  insight: "semantic_index_update新概念候補: discussion:&lt;&lt;autonomous loop dynamic&gt;&gt; は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-19T15:09:05+09:00"
+- id: INS-20260820-082413730-6c6f
+  ts: "2026-08-20T08:24:13+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_lessons_runtime_publish_202608200711; matched=lessons; current_pattern=; candidate_level=2; candidate=cmd_1955で影丸が13回連続BLOCK(draft_lessons:1)。忍者にはdraft教訓の査読権限がなく全リトライが無駄。GP-200(DIVERGENT)は忍者修正可能なBLOCKが前提であり外部依存BLOCKには効かない。cmd_complete_gate.sh L3158のBLOCKメッセージに「忍者は解消不可。家老に報告して待機」ガイダ; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_lessons_runtime_publish_202608200711"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次情報で scripts/cmd_complete_gate.sh:10870-10874 を確認。cmd固有draft_lessons BLOCK時に『忍者では解消できない。家老に報告して待機せよ。リトライは無駄(GP-203)』を出力し、ALL_CLEAR=falseとrecord_block_reasonを実行する既存恒久ガイダンスが対象候補を満たす。追加コード修正・decision_candidateは不要。"
+  action_artifact: "scripts/cmd_complete_gate.sh:10870-10874; bash -n scripts/cmd_complete_gate.sh => rc=0; queue/insights.yaml:INS-20260820-082413730-6c6f"
+  resolved_at: "2026-08-20T14:42:49+09:00"
+- id: INS-20260820-082418400-1714
+  ts: "2026-08-20T08:24:18+09:00"
+  insight: "SKILL.md追従task[0fa91f7eaa70779c]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh"
+  priority: "medium"
+  source: "skill_script_refs:0fa91f7eaa70779c"
+  fix_known: false
+  status: resolved
+  resolved_reason: 一次検証で対象SKILL/script追従を再確認。対象ペアの参照先実在・SKILL鮮度・例示パス・副作用実走マーカーは全てOK。rc=2は対象外の既存FOLLOWUP_ACTIVE 7件による総合REVIEW_REQUIREDで対象ペアのFAILではないため追加修正・decision_candidate不要。本task cmd_reflux_insight_202608201515_tobisaruの再検証証跡として確定。
+  action_artifact: "gate=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;result=OK対象項目/FOLLOWUP_ACTIVE=7/REVIEW_REQUIRED rc=2;target=skills/codd-fix/SKILL.md<-scripts/cmd_complete_gate.sh;revalidated_by=cmd_reflux_insight_202608201515_tobisaru;queue/insights.yaml:INS-20260820-082418400-1714"
+  resolved_at: "2026-08-20T15:03:46+09:00"
+- id: INS-20260820-090908792-a92d
+  ts: "2026-08-20T09:09:08+09:00"
+  insight: "semantic_index_update新概念候補: lesson:L1619 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-20T09:12:12+09:00"
+- id: INS-20260820-091241774-86a7
+  ts: "2026-08-20T09:12:41+09:00"
+  insight: "SKILL.md追従task[7bd490b84088448d]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh"
+  priority: "medium"
+  source: "skill_script_refs:7bd490b84088448d"
+  fix_known: false
+  status: resolved
+  resolved_reason: 一次検証で gate_skill_script_refs.sh を SKILL_REF_DIRS=skills で実走。rc=2 は FOLLOWUP_ACTIVE 7件が REVIEW_REQUIRED を包含する集約判定だが、対象3組を含む全40 SKILL・82参照で参照先実在・SKILL更新日鮮度・静的パス・日時付き実走マーカーが全てOK。追加のSKILL修正またはdecision_candidateは不要。
+  action_artifact: "gate=/tmp/saizo_skill_gate.out;result=rc2 REVIEW_REQUIRED FOLLOWUP_ACTIVE=7 FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;target=INS-20260820-091241774-86a7;source_revisions=c562cbcbc3338e49d3fddbfa5a105aab1f7850f6/e1dc9a0a2d5548992b1dbcb245b28a2bf24b83df;verified_at=2026-08-20T15:32:55+09:00"
+  resolved_at: "2026-08-20T15:32:55+09:00"
+- id: INS-20260820-113745425-a1a9
+  ts: "2026-08-20T11:37:45+09:00"
+  insight: "SKILL.md追従task[8adb59e2082ff964]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:8adb59e2082ff964"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次検証で gate_skill_script_refs.sh を SKILL_REF_DIRS=skills で実走。rc=2 は FOLLOWUP_ACTIVE=7 の集約判定で、FOLLOWUP_COVERS_REVIEW_REQUIRED=yes。対象を含む全40 SKILL・82参照で参照先実在・SKILL更新日鮮度・静的パス・日時付き実走マーカーが全てOK。追加のSKILL修正またはdecision_candidateは不要。"
+  action_artifact: "gate=/tmp/kotaro_skill_gate_20260820.out;command=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;verified_at=2026-08-20T16:03:30+09:00"
+  resolved_at: "2026-08-20T16:04:35+09:00"
+- id: INS-20260820-121458364-9c81
+  ts: "2026-08-20T12:14:58+09:00"
+  insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:28cb407b97fcfc07"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次検証: gate_skill_script_refs.shをSKILL_REF_DIRS=skillsで実走しrc=2 REVIEW_REQUIRED/FOLLOWUP_ACTIVE=7/FOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認。7組すべて参照先実在・SKILL更新日鮮度・静的パス・副作用実走マーカーOKで、追加修正とdecision_candidateは不要。"
+  action_artifact: "gate=/tmp/hanzo_skill_gate_20260820.out;command=SKILL_REF_DIRS=skills bash scripts/gates/gate_skill_script_refs.sh .;rc=2;result=REVIEW_REQUIRED;FOLLOWUP_ACTIVE=7;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;all_checks=OK;verified_at=2026-08-20T23:35:00+09:00"
+  resolved_at: "2026-08-20T23:35:09+09:00"
+- id: INS-20260820-123337540-3982
+  ts: "2026-08-20T12:33:37+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608201219_saizo; matched=queue; current_pattern=; candidate_level=3; candidate=archive_cmds()がflock外で全エントリ読込み(L647-715)→flock内でmv上書き(L731)。将軍Edit中にarchiveが走ると新cmdが上書きで消える(TOCTOU)。実害未確認だが構造的脆弱性。修正: 読込みもflock内に移動(L647をflock取得後に配置); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608201219_saizo"
+  fix_known: false
+  status: resolved
+  resolved_reason: "現行scripts/archive_completed.shのarchive_cmdsはQUEUE_FILE分類読込とmv更新を同一flock内に包含済み。指摘は旧行番号/旧実装に基づく偽陽性"
+  action_artifact: "scripts/archive_completed.sh:877-883,889-976; git_blame=29d15d42d3/6592194178"
+  resolved_at: "2026-08-20T16:18:20+09:00"
+- id: INS-20260820-150103679-64bf
+  ts: "2026-08-20T15:01:03+09:00"
+  insight: "--inventory"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: resolved
+  resolved_reason: "誤った--inventory引数を手動insightとして登録したが、実在する気づきではなく追加対応不要のため即時解消"
+  action_artifact: "action=unsupported inventory probe entry cleanup; target=queue/insights.yaml:INS-20260820-150103679-64bf"
+  resolved_at: "2026-08-20T15:03:46+09:00"
+- id: INS-20260820-172055620-6338
+  ts: "2026-08-20T17:20:55+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_skill_auto_improve_dirty_202608201637; matched=ninja,commit; current_pattern=; candidate_level=3; candidate=hayate事故(2026-04-28): bypass flag欠落→確認プロンプトで停止。pstreeで起動時自動検出; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_skill_auto_improve_dirty_202608201637"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次確認でGP-239既存実装による解消済み候補と判定。現行scripts/ninja_monitor.shにCodex bypass確認経路があり、tests/unit/test_ninja_monitor.batsにGP-239の欠落・健全・再発チェックが存在するため追加修正不要。"
+  action_artifact: "scripts/ninja_monitor.sh:GP-239; tests/unit/test_ninja_monitor.bats:303-329; queue/insights.yaml:INS-20260820-172055620-6338"
+  resolved_at: "2026-08-21T02:27:48+09:00"
