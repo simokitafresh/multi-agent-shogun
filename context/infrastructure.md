@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-22 deploy_task module分割(A-F)+根治3件を反映 (shogun doc lane, GA-491 re-apply of GA-490) -->
+<!-- last_updated: 2026-08-22 context_freshness reviewed source boundary -->
+<!-- source_commit:95184ce75 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=95184ce75 -->
 <!-- source_commit:8fed7e2df reason:GA-491 terminal blob parity反映 evidence:cmd_karo_hotfix_ga491_terminal_blob_parity: cmd_complete_gateが終端で成果commitの祖先化に加えpath blob一致(report対象pathのHEAD blob=成果commit blob)を強制(+205行、test +57行)。tree退行4/4事象(GA-491)の構造根治=本日4クラス目クローズ -->
 <!-- source_commit:962b0f2bc reason:GA-490/491 UPDATE_REQUEST反映(退行復旧再適用) evidence:cmd_4360-4365でdeploy_task.shをscripts/deploy_task/{bootstrap,state,transaction,delivery,resolve,task_contract,report}.shへ抽出(挙動不変、A-Eは移動+static互換stub、Fはif-false static互換様式=L1630契約)。優先度台帳=docs/research/script_refactor_priority_20260821.md、分割設計書=docs/research/deploy_task_split_design_20260821.md。残cluster G-J継続中 -->
 <!-- source_commit:5a073b2ec reason:stale ALERT再送防止の反映(退行復旧再適用) evidence:gate_context_freshness.shが通知直前にraw ALERT metadataを現物last_updatedと再突合し、alert基準日より新しければ通知破棄(+39行、test +30行)。stale再送3件(core/ops/research 2026-08-22実証)の構造根治 -->
