@@ -931,6 +931,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **tags**: [gate, bash]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-02-27
+- **retired**: true
+- **retired_at**: 2026-08-23
 - bash,variable-scope,preflight
 
 ### L097: cmd_complete_gate.shのresolve_report_file()がgrep直書きでreport_filename取得 — L070除外対象外
