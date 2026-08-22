@@ -58,25 +58,55 @@ teardown() {
 
 # ─── Helper functions for ac_version tests ───
 
-# test_necessity: 忍者ACへdoc-lane作業が混入した配備をBLOCKし、通常の実装ACを
-# PASSさせる不変量を守る。これを失うとdoc更新が忍者laneへ流入し、freshness待ちが再発する。
-@test "cmd_4302: doc-lane update AC is BLOCKed while normal AC passes" {
-    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard.yaml"
+# test_necessity: DOC lane判定はAC本文ではなく所有pathだけを根拠にする不変量を守る。
+# これを失うとコードtaskの説明文に含まれるcontext語が忍者配備を誤BLOCKする。
+@test "cmd_karo_hotfix_doc_lane_guard_delete: code-owned task passes despite context wording" {
+    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard_code_owned.yaml"
     cat > "$task_path" <<'EOF'
 task:
+  target_path: scripts/deploy_task.sh
+  planned_paths:
+    - scripts/deploy_task.sh
+    - tests/unit/test_deploy_task_ac_handling.bats
   acceptance_criteria:
     - id: AC1
       description: "context boundary updateを完了する"
 EOF
 
     run deploy_task_guard_doc_update_ac "$task_path"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "cmd_karo_hotfix_doc_lane_guard_delete: documentation-owned path is BLOCKed" {
+    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard_owned.yaml"
+    cat > "$task_path" <<'EOF'
+task:
+  target_path: scripts/deploy_task.sh
+  planned_paths:
+    - scripts/deploy_task.sh
+    - context/infrastructure.md
+  acceptance_criteria:
+    - id: AC1
+      description: "通常の実装を完了する"
+EOF
+
+    run deploy_task_guard_doc_update_ac "$task_path"
     [ "$status" -eq 2 ]
     [[ "$output" == *"DOC_LANE_ROUTING"* ]]
     [[ "$output" == *"shogun doc lane"* ]]
+}
 
+# test_necessity: 通常の実装pathはAC本文の語彙に関係なく通す不変量を守る。
+# これを失うと実装taskの自然言語説明がDOC laneへ誤分類される。
+@test "cmd_karo_hotfix_doc_lane_guard_delete: normal implementation path passes" {
+    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard_normal.yaml"
     cat > "$task_path" <<'EOF'
 task:
-  purpose: "context freshness gateの実装"
+  target_path: scripts/deploy_task.sh
+  planned_paths:
+    - scripts/deploy_task.sh
+    - tests/unit/test_deploy_task_ac_handling.bats
   acceptance_criteria:
     - id: AC1
       description: "completion regression testsを全量実行する"
@@ -85,64 +115,6 @@ EOF
     run deploy_task_guard_doc_update_ac "$task_path"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
-}
-
-# test_necessity: AC本文の「gist同期は将軍が行う」「〜は本cmd範囲外」のようなスコープ外/他lane
-# 明記は忍者への依頼ではないため DOC_LANE_ROUTING で BLOCK しない不変量。これを失うと
-# 範囲外を正直に書いた偵察cmdが配備できず(cmd_4331 2026-08-17 実測)、書き手が範囲を隠す誘因になる。
-@test "cmd_4331: doc-lane guard ignores explicit out-of-scope / other-lane mentions" {
-    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard_scope_out.yaml"
-    cat > "$task_path" <<'EOF'
-task:
-  acceptance_criteria:
-    - id: AC3
-      description: "集計結果を報告YAMLへ記録し、設計書AsIsへ結論を還流する(gist同期は将軍が行う)"
-    - id: AC4
-      description: "要点を記録する。外部共有同期(gist sync)は本cmd範囲外"
-EOF
-
-    run deploy_task_guard_doc_update_ac "$task_path"
-    [ "$status" -eq 0 ]
-    [ -z "$output" ]
-
-    cat > "$task_path" <<'EOF'
-task:
-  acceptance_criteria:
-    - id: AC1
-      description: "設計書のgistを同期し、context/dm-signal-ops.mdを更新する"
-EOF
-
-    run deploy_task_guard_doc_update_ac "$task_path"
-    [ "$status" -eq 2 ]
-    [[ "$output" == *"DOC_LANE_ROUTING"* ]]
-}
-
-# test_necessity: 偵察cmdが成果物の出力先として docs/research/<name>.md を名指しし、同じ文で
-# 「設定変更は行わない/読み取りのみ」と否定を書いても DOC_LANE_ROUTING で BLOCK しない不変量。
-# パスの docs/ は文書更新の依頼ではなく、否定節は依頼ではない(cmd_4348 2026-08-17 23:43 実測)。
-@test "cmd_4348: doc-lane guard ignores docs/ artifact paths and negated change clauses" {
-    local task_path="$TEST_PROJECT/queue/tasks/doc_lane_guard_artifact_path.yaml"
-    cat > "$task_path" <<'EOF'
-task:
-  acceptance_criteria:
-    - id: AC1
-      description: "各判定に一次証跡を添えて docs/research/cmd_4348_daemon_outage_20260817_1646.md に記録する。読み取りのみで再起動・kill・設定変更は行わない"
-EOF
-
-    run deploy_task_guard_doc_update_ac "$task_path"
-    [ "$status" -eq 0 ]
-    [ -z "$output" ]
-
-    cat > "$task_path" <<'EOF'
-task:
-  acceptance_criteria:
-    - id: AC1
-      description: "docs配下のドキュメントを最新仕様へ更新する"
-EOF
-
-    run deploy_task_guard_doc_update_ac "$task_path"
-    [ "$status" -eq 2 ]
-    [[ "$output" == *"DOC_LANE_ROUTING"* ]]
 }
 
 # test_necessity: ACに「push禁止」「pushはしない」「do not push」のような否定形しかない task には
