@@ -542,6 +542,194 @@ report_commit_main_ancestry_state() {
     esac
 }
 
+# Terminal publication must prove the bytes described by a PASS report reached
+# the canonical remote tip.  Commit ancestry alone is insufficient: an older
+# source commit can be an ancestor while a later publication has reverted or
+# otherwise replaced one of the report's ordinary source paths.  Operational
+# records are intentionally excluded because their existing field-aware,
+# monotonic publication contracts are the source of truth for those paths.
+report_blob_parity_mutable_path() {
+    case "${1:-}" in
+        queue/*|logs/*|tasks/lessons.md|projects/*/lessons.yaml|\
+        archive/cmd-chronicle/*|dashboard.md|*.log)
+            return 0 ;;
+    esac
+    return 1
+}
+
+report_commit_blob_parity_state() {
+    local report_file="$1"
+    local repo_dir="${2:-$SCRIPT_DIR}"
+    local task_file="${3:-}"
+    local source_sha expected_head path source_blob remote_blob
+    local normal_count=0 matched_count=0 mutable_count=0 mismatch_count=0
+    local raw_path
+
+    source_sha="$(FIELD_GET_NO_LOG=1 field_get "$report_file" commit_hash "")"
+    case "$source_sha" in
+        no-code-change|"")
+            printf 'SKIP: report commit blob parity: no-code report\n'
+            return 0 ;;
+    esac
+    [[ "$source_sha" =~ ^[0-9a-fA-F]{40}$ ]] || {
+        printf 'BLOCK: report commit blob parity: invalid source commit %s\n' "$source_sha"
+        return 1
+    }
+
+    # Resolve the same canonical repository used by the ancestry check.  This
+    # keeps cross-repository reports from silently comparing against the
+    # platform repository.
+    if [ -n "$task_file" ] && [ -f "$task_file" ]; then
+        repo_dir="$(resolve_report_commit_repo "$report_file" "$task_file" "$repo_dir")" || {
+            printf 'BLOCK: report commit blob parity: repository resolution failed\n'
+            return 1
+        }
+        [[ "$repo_dir" != BLOCK:* ]] || {
+            printf 'BLOCK: report commit blob parity: %s\n' "$repo_dir"
+            return 1
+        }
+    fi
+    expected_head="$(resolve_ci_expected_head "$repo_dir")"
+    [ -n "$expected_head" ] || {
+        printf 'BLOCK: report commit blob parity: remote main/master boundary missing\n'
+        return 1
+    }
+    if ! git -C "$repo_dir" cat-file -e "${source_sha}^{commit}" 2>/dev/null; then
+        # Taskless archived reports can carry an explicit cross-repository
+        # source contract.  Mirror report_ci_push_state's fallback instead of
+        # silently treating the platform repository as the source of truth.
+        local cross_repo_dir
+        cross_repo_dir="$(REPORT_FILE="$report_file" COMMIT="$source_sha" python3 - <<'PY'
+import os
+import yaml
+try:
+    report = yaml.safe_load(open(os.environ["REPORT_FILE"], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit
+target = os.environ.get("COMMIT", "").strip().lower()
+for entry in report.get("cross_repo_commits") or []:
+    if isinstance(entry, dict) and str(entry.get("commit_hash") or "").strip().lower() == target:
+        print(str(entry.get("repo") or ""))
+        break
+PY
+        )"
+        if [ -n "$cross_repo_dir" ] && git -C "$cross_repo_dir" cat-file -e "${source_sha}^{commit}" 2>/dev/null; then
+            repo_dir="$cross_repo_dir"
+            expected_head="$(resolve_ci_expected_head "$repo_dir")"
+        else
+            printf 'BLOCK: report commit blob parity: source commit unavailable %s\n' "$source_sha"
+            return 1
+        fi
+    fi
+    git -C "$repo_dir" cat-file -e "${expected_head}^{commit}" 2>/dev/null || {
+        printf 'BLOCK: report commit blob parity: expected head unavailable %s\n' "$expected_head"
+        return 1
+    }
+
+    while IFS= read -r raw_path; do
+        [ -n "$raw_path" ] || continue
+        path="$raw_path"
+        case "$path" in
+            "$repo_dir"/*) path="${path#"$repo_dir"/}" ;;
+            /*)
+                printf 'BLOCK: report commit blob parity: path outside repository %s\n' "$path"
+                return 1 ;;
+        esac
+        if report_blob_parity_mutable_path "$path"; then
+            mutable_count=$((mutable_count + 1))
+            continue
+        fi
+        normal_count=$((normal_count + 1))
+        source_blob="$(git -C "$repo_dir" rev-parse "${source_sha}:${path}" 2>/dev/null || printf '__ABSENT__')"
+        remote_blob="$(git -C "$repo_dir" rev-parse "${expected_head}:${path}" 2>/dev/null || printf '__ABSENT__')"
+        if [ "$source_blob" = "$remote_blob" ]; then
+            matched_count=$((matched_count + 1))
+        else
+            mismatch_count=$((mismatch_count + 1))
+            printf '  MISMATCH path=%s source_blob=%s remote_blob=%s\n' "$path" "$source_blob" "$remote_blob"
+        fi
+    done < <(REPORT_FILE="$report_file" python3 - <<'PY'
+import os
+import yaml
+try:
+    report = yaml.safe_load(open(os.environ["REPORT_FILE"], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit
+files = report.get("files_modified") or []
+if isinstance(files, str):
+    files = [files]
+if isinstance(files, list):
+    for item in files:
+        value = item.get("path") if isinstance(item, dict) else item
+        value = str(value or "").strip()
+        if value and value not in ("no-code-change", "no_code_change"):
+            print(value)
+PY
+    )
+
+    if [ "$mismatch_count" -gt 0 ]; then
+        printf 'BLOCK: report commit blob parity: normal_paths=%d matched=%d mismatched=%d mutable_skipped=%d source=%s remote=%s\n' \
+            "$normal_count" "$matched_count" "$mismatch_count" "$mutable_count" "$source_sha" "$expected_head"
+        return 1
+    fi
+    if [ "$normal_count" -eq 0 ]; then
+        printf 'SKIP: report commit blob parity: normal_paths=0 mutable_skipped=%d\n' "$mutable_count"
+    else
+        printf 'PASS: report commit blob parity: normal_paths=%d matched=%d mismatched=0 mutable_skipped=%d source=%s remote=%s\n' \
+            "$normal_count" "$matched_count" "$mutable_count" "$source_sha" "$expected_head"
+    fi
+}
+
+check_report_commit_blob_parity() {
+    local report_file task_file task_repo report_verdict state
+    local checked=false failed=false
+    local -A seen_reports=()
+
+    check_one_report() {
+        report_file="$1"
+        task_file="${2:-}"
+        task_repo="${3:-$SCRIPT_DIR}"
+        [ -f "$report_file" ] || return 0
+        report_file="$(realpath "$report_file")" || return 1
+        [ -z "${seen_reports[$report_file]+yes}" ] || return 0
+        seen_reports["$report_file"]=1
+        report_verdict="$(FIELD_GET_NO_LOG=1 field_get "$report_file" verdict "")"
+        case "$report_verdict" in
+            PASS|PASS_NO_IMPROVEMENT) ;;
+            *) return 0 ;;
+        esac
+        checked=true
+        if state=$(report_commit_blob_parity_state "$report_file" "$task_repo" "$task_file"); then
+            printf '  %s: %s\n' "$report_file" "$state"
+        else
+            printf '  %s: %s\n' "$report_file" "$state"
+            failed=true
+        fi
+    }
+
+    if [ -n "${CMD_COMPLETE_GATE_CI_REPORT:-}" ]; then
+        check_one_report "$CMD_COMPLETE_GATE_CI_REPORT" \
+            "${CMD_COMPLETE_GATE_TASK_FILE:-}" "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$SCRIPT_DIR}"
+    else
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            task_repo="$(resolve_task_repo_dir "$task_file" 2>/dev/null || printf '%s' "$SCRIPT_DIR")"
+            report_file="$(resolve_report_file "$(basename "$task_file" .yaml)" "$CMD_ID" "$task_file" 2>/dev/null || true)"
+            [ -n "$report_file" ] || continue
+            check_one_report "$report_file" "$task_file" "$task_repo" || failed=true
+        done
+        while IFS= read -r report_file; do
+            [ -n "$report_file" ] || continue
+            check_one_report "$report_file" "" "$SCRIPT_DIR" || failed=true
+        done < <(discover_terminal_reports_for_cmd "$CMD_ID")
+    fi
+
+    if [ "$checked" = false ]; then
+        echo "  SKIP (no PASS reports requiring a commit blob parity check)"
+    fi
+    [ "$failed" = false ]
+}
+
 discover_terminal_reports_for_cmd() {
     local cmd_id="${1:-$CMD_ID}"
     REPORTS_ROOT="$SCRIPT_DIR" CMD_ID="$cmd_id" python3 - <<'PY'
@@ -734,6 +922,12 @@ source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 source "$SCRIPT_DIR/scripts/lib/autogen_paths.sh"
+
+if [ "${CMD_COMPLETE_GATE_REPORT_BLOB_PARITY_ONLY:-0}" = "1" ]; then
+    report_commit_blob_parity_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
+        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$SCRIPT_DIR}" "${CMD_COMPLETE_GATE_TASK_FILE:-}"
+    exit $?
+fi
 
 # Resolve the git repository that owns a task.  Reports may describe work in
 # an external project; treating every commit as a multi-agent-shogun commit
@@ -12364,6 +12558,17 @@ if [ "$ALL_CLEAR" = true ]; then
     level_heading "[L4]" "Report commit main ancestry check:"
     if ! check_report_commit_main_ancestry; then
         record_block_reason "report_commit_main_ancestry"
+        ALL_CLEAR=false
+    fi
+fi
+
+# CLEAR requires both history containment and exact bytes for ordinary report
+# paths.  Mutable operational records are checked by their field-aware lanes.
+if [ "$ALL_CLEAR" = true ]; then
+    echo ""
+    level_heading "[L4]" "Report commit blob parity check:"
+    if ! check_report_commit_blob_parity; then
+        record_block_reason "report_commit_blob_parity"
         ALL_CLEAR=false
     fi
 fi
