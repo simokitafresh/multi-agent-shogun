@@ -1,6 +1,12 @@
 # 戦局日誌 (Campaign Log)
 <!-- last_updated: 2026-08-03 karo_strong_new_game_dm_monthly_boundary -->
 
+## 2026-08-23
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_4370_full (hayate) | deploy_task.sh cluster Gのcontext injection責務を既設moduleへ抽出 | `scripts/deploy_task/context_injection.sh` 1588行を関数本体不変で抽出、static parity 0差分、対象契約テスト135/135 PASS・SKIP0、commit `c6393b30d01f749c826de2238d311475f4ca9f47`、report gate PASS。task-modeの既存runner切出し不整合1件は外部境界として記録 | [[cmd_4370]] -> [[deploy_task分割設計書cluster G]] -> [[context_injection module]] |
+
 ## 2026-08-22
 
 | cmd/action | 意図 | 結果 | 因果 |
