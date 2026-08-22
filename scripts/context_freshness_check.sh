@@ -1767,6 +1767,7 @@ def build_source_warning(
         f"repo={repo_path} root_fallback={'yes' if root_fallback else 'no'} "
         f"timeout={_GIT_TIMEOUT:g}s/{_GIT_RETRY_TIMEOUT:g}s "
         f"owner={owner} update_trigger={trigger}。更新要否を確認せよ"
+        f"(lane=doc: context更新は将軍doc laneまたは家老直接編集。忍者taskはDOC_LANE_ROUTINGでBLOCKされる)"
     )
     if details:
         preview = details[:3]
