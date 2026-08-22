@@ -91,6 +91,11 @@ started=parse_aware(workflow_freshness_at, "workflow_result.started_at")
 # 未検証CLEAR、stale RED で誤帰属BLOCKになるため、削除ではなく状態化する。
 NO_VERDICT={"cancelled", "canceled", "skipped", "stale", "neutral", "action_required", ""}
 jobs=w.get("jobs_conclusions")
+external_unavailable=w.get("external_unavailable", False)
+jobs_not_started=w.get("jobs_not_started", False)
+if not isinstance(external_unavailable, bool) or not isinstance(jobs_not_started, bool):
+    print("BLOCK: workflow_result external-unavailable evidence type invalid")
+    raise SystemExit(1)
 absent=[]
 if not expected or t["head_sha"] != expected or w["head_sha"] != expected:
     absent.append("head_sha_mismatch")
@@ -110,6 +115,18 @@ elif isinstance(jobs, list) and jobs and all(
     absent.append("workflow_all_jobs_cancelled")
 if absent:
     print("WAIT: ci_evaluation_absent=[" + ",".join(absent) + "] — 後追いで確認せよ(GATEは止めない) head_sha=" + (expected or "unresolved"))
+    raise SystemExit(0)
+if external_unavailable:
+    # A completed failure with no started jobs is not a code result only when
+    # GitHub supplied its billing annotation and the local target evidence is
+    # green.  Any missing/failed local evidence remains a repairable BLOCK.
+    if not jobs_not_started:
+        print("BLOCK: workflow_result is not GREEN (external-unavailable evidence is not a job-start absence)")
+        raise SystemExit(1)
+    if t["conclusion"] != "success":
+        print("BLOCK: workflow_result is not GREEN (local test evidence is not GREEN)")
+        raise SystemExit(1)
+    print("READY: target_result=GREEN local_test=PASS external_unavailable=github_billing head_sha=" + expected)
     raise SystemExit(0)
 if t["conclusion"] != "success":
     print("BLOCK: target_result is not GREEN")
@@ -12288,6 +12305,33 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
     fi
     ci_jobs_conclusions=$(printf '%s' "$ci_jobs_json" | jq -c '[.jobs[]?.conclusion // ""]' 2>/dev/null || printf 'null')
     [ -n "$ci_jobs_conclusions" ] || ci_jobs_conclusions=null
+    ci_external_unavailable=false
+    ci_jobs_not_started=false
+    # GitHub reports billing failures as a completed run with failure
+    # conclusion, an annotation on the check-run, and zero job steps.  Keep
+    # this evidence in the existing CI-readiness decision rather than adding
+    # a second error taxonomy; only the local PASS target may fall back.
+    if [ -n "$ci_jobs_json" ] && [ -n "$ci_run_id" ] && [ -n "$ci_origin_slug" ] \
+        && [ "$ci_run_conclusion" != "success" ] && command -v gh >/dev/null 2>&1; then
+        ci_jobs_not_started=$(printf '%s' "$ci_jobs_json" | jq -r \
+            'if (.jobs | length) > 0 and all(.jobs[]; ((.steps // []) | length) == 0) then "true" else "false" end' \
+            2>/dev/null || printf 'false')
+        ci_billing_annotation_found=false
+        while IFS= read -r ci_check_run_id; do
+            [ -n "$ci_check_run_id" ] || continue
+            ci_annotations_json=$(timeout 15 gh api \
+                "repos/$ci_origin_slug/check-runs/$ci_check_run_id/annotations" 2>/dev/null || printf '[]')
+            if printf '%s' "$ci_annotations_json" | jq -e \
+                'any(.[]?; ((.message // "") | test("account payments have failed|spending limit"; "i")))' \
+                >/dev/null 2>&1; then
+                ci_billing_annotation_found=true
+                break
+            fi
+        done < <(printf '%s' "$ci_jobs_json" | jq -r '.jobs[]?.databaseId // empty' 2>/dev/null)
+        if [ "$ci_jobs_not_started" = true ] && [ "$ci_billing_annotation_found" = true ]; then
+            ci_external_unavailable=true
+        fi
+    fi
     target_conclusion=success
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
         ninja_name=$(basename "$task_file" .yaml)
@@ -12297,12 +12341,15 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
     ci_decision_json=$(printf '%s' "$ci_result" | jq -c \
         --arg expected "$expected_head" --arg target "$target_conclusion" --arg reviewed "$SG7_REVIEWED_AT" \
         --argjson jobs "$ci_jobs_conclusions" \
+        --argjson external_unavailable "$ci_external_unavailable" \
+        --argjson jobs_not_started "$ci_jobs_not_started" \
         'if type == "array" and length > 0 and (.[0] | type) == "object" then
            {expected_head_sha:$expected, reviewed_at:$reviewed,
             target_result:{conclusion:$target,head_sha:$expected},
-            workflow_result:{status:.[0].status,conclusion:.[0].conclusion,head_sha:.[0].headSha,
+                             workflow_result:{status:.[0].status,conclusion:.[0].conclusion,head_sha:.[0].headSha,
                              started_at:(.[0].startedAt // .[0].createdAt),created_at:.[0].createdAt,
-                             jobs_conclusions:$jobs}}
+                             jobs_conclusions:$jobs,external_unavailable:$external_unavailable,
+                             jobs_not_started:$jobs_not_started}}
          else {expected_head_sha:$expected,reviewed_at:$reviewed,target_result:{conclusion:$target,head_sha:$expected},workflow_result:null} end' \
         2>/dev/null || printf '{}')
     if ci_decision=$(printf '%s' "$ci_decision_json" | evaluate_ci_readiness_json 2>&1); then
