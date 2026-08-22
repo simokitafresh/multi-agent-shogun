@@ -8872,8 +8872,7 @@ deploy_task_prepare_remote_tip_worktree() {
     local task_file="$1" ninja_name="$2"
     local task_worktree_required source_path_count task_id parent_cmd project target repo upstream_ref remote push_ref remote_tip
     local worktree_root worktree_path generation marker marker_tmp task_worktree_targets task_worktree_edit_wrapper
-    local task_worktree_projection task_worktree_source_paths task_worktree_target_path_visible
-    local task_worktree_planned_paths_visible task_worktree_inspection_path_visible
+    local task_worktree_projection task_worktree_source_paths
     task_worktree_required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
     project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
     target=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "" 2>/dev/null || true)
@@ -8925,12 +8924,10 @@ deploy_task_prepare_remote_tip_worktree() {
     task_worktree_targets=$(python3 -c 'import json,os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); a=t.get("target_path") or []; a=[a] if isinstance(a,str) else a; b=t.get("planned_paths") or []; b=[b] if isinstance(b,str) else b; v=a+b; projected=[os.path.join(sys.argv[2],str(x)[2:] if str(x).startswith("./") else str(x)) for x in v if str(x).strip()]; print(json.dumps(list(dict.fromkeys(projected)),ensure_ascii=False))' "$task_file" "$worktree_path")
     task_worktree_projection=$(python3 - "$task_file" "$worktree_path" <<'PY'
 import json
-import os
 import sys
 import yaml
 
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
-root = sys.argv[2]
 
 def paths(value):
     if isinstance(value, str):
@@ -8945,34 +8942,14 @@ def paths(value):
         return [str(item).strip() for item in value if str(item).strip()]
     return []
 
-def strip_explicit_relative_prefix(path):
-    return path[2:] if path.startswith("./") else path
-
-def projection(key):
-    original = task.get(key)
-    values = paths(original)
-    absolute = [os.path.join(root, strip_explicit_relative_prefix(item)) for item in values]
-    if isinstance(original, str) and not str(original).lstrip().startswith("["):
-        visible = absolute[0] if absolute else None
-    else:
-        visible = absolute if values else None
-    return values, visible
-
-target, target_visible = projection("target_path")
-planned, planned_visible = projection("planned_paths")
-inspection, inspection_visible = projection("inspection_path")
+target = paths(task.get("target_path"))
+planned = paths(task.get("planned_paths"))
 print(json.dumps({
     "source_paths": list(dict.fromkeys(target + planned)),
-    "target_path": target_visible,
-    "planned_paths": planned_visible,
-    "inspection_path": inspection_visible,
 }, ensure_ascii=False))
 PY
 )
     task_worktree_source_paths=$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["source_paths"],ensure_ascii=False))' "$task_worktree_projection")
-    task_worktree_target_path_visible=$(python3 -c 'import json,sys; v=json.loads(sys.argv[1]).get("target_path"); print(v if isinstance(v,str) else json.dumps(v,ensure_ascii=False) if v is not None else "")' "$task_worktree_projection")
-    task_worktree_planned_paths_visible=$(python3 -c 'import json,sys; v=json.loads(sys.argv[1]).get("planned_paths"); print(v if isinstance(v,str) else json.dumps(v,ensure_ascii=False) if v is not None else "")' "$task_worktree_projection")
-    task_worktree_inspection_path_visible=$(python3 -c 'import json,sys; v=json.loads(sys.argv[1]).get("inspection_path"); print(v if isinstance(v,str) else json.dumps(v,ensure_ascii=False) if v is not None else "")' "$task_worktree_projection")
     task_worktree_edit_wrapper="$SCRIPT_DIR/scripts/ninja_scope_commit.sh --task-worktree-exec $task_file --"
     local -a task_worktree_args=(
         "task_worktree_required=true" "task_worktree_path=$worktree_path"
@@ -8983,13 +8960,6 @@ PY
         "task_worktree_edit_wrapper=$task_worktree_edit_wrapper"
         "task_worktree_source_paths=$task_worktree_source_paths"
     )
-    if [ -n "$task_worktree_target_path_visible" ] && [[ "$task_worktree_target_path_visible" != "["* ]]; then
-        task_worktree_args+=("target_path=$task_worktree_target_path_visible")
-    fi
-    if [ -n "$task_worktree_planned_paths_visible" ] && [[ "$task_worktree_planned_paths_visible" != "["* ]]; then
-        task_worktree_args+=("planned_paths=$task_worktree_planned_paths_visible")
-    fi
-    [ -n "$task_worktree_inspection_path_visible" ] && task_worktree_args+=("inspection_path=$task_worktree_inspection_path_visible")
     if [ "${DEPLOY_TASK_TEST_FAIL_WORKTREE_YAML_PUBLISH:-0}" = "1" ]; then
         deploy_task_rollback_remote_tip_worktree "$repo" "$worktree_path" "$marker"
         log "BLOCK: injected task worktree YAML publish failure; rolled back path=$worktree_path"
@@ -8998,25 +8968,6 @@ PY
     if ! yaml_field_set_batch "$task_file" task "${task_worktree_args[@]}"; then
         deploy_task_rollback_remote_tip_worktree "$repo" "$worktree_path" "$marker"
         log "BLOCK: task worktree YAML publish failed; rolled back path=$worktree_path"
-        return 1
-    fi
-    # yaml_field_set_batch deliberately quotes values containing YAML punctuation
-    # so JSON arrays become scalar strings.  target_path and planned_paths are
-    # typed task scope and must use the structured writer after the metadata
-    # batch; otherwise run_tests.sh treats the whole JSON text as one path and
-    # blocks the task selector as undeclared.
-    if [ -n "$task_worktree_target_path_visible" ] \
-        && [[ "$task_worktree_target_path_visible" == "["* ]] \
-        && ! yaml_field_set "$task_file" task target_path "$task_worktree_target_path_visible"; then
-        deploy_task_rollback_remote_tip_worktree "$repo" "$worktree_path" "$marker"
-        log "BLOCK: typed target_path publish failed; rolled back path=$worktree_path"
-        return 1
-    fi
-    if [ -n "$task_worktree_planned_paths_visible" ] \
-        && [[ "$task_worktree_planned_paths_visible" == "["* ]] \
-        && ! yaml_field_set "$task_file" task planned_paths "$task_worktree_planned_paths_visible"; then
-        deploy_task_rollback_remote_tip_worktree "$repo" "$worktree_path" "$marker"
-        log "BLOCK: typed planned_paths publish failed; rolled back path=$worktree_path"
         return 1
     fi
     log "TASK_WORKTREE_READY: ninja=$ninja_name task=$task_id base=$remote_tip path=$worktree_path maintenance.auto=false"

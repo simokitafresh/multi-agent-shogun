@@ -35,7 +35,12 @@ setup_fixture_repo() {
         SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
         deploy_task_prepare_remote_tip_worktree "$TASK" saizo
         wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
-        target=$(FIELD_GET_NO_LOG=1 field_get "$TASK" target_path)
+        target=$(python3 - "$TASK" <<'PY'
+import json,sys,yaml
+task=yaml.safe_load(open(sys.argv[1],encoding="utf-8"))["task"]
+print(json.loads(task["task_worktree_target_paths"])[0])
+PY
+        )
         test "$target" = "$wt/src/app.py"
         printf SHARED_EDIT=1 > "$FIXTURE/src/app.py"
         shared_rc=0
@@ -94,7 +99,13 @@ PY
         shared_head=$(git -C "$FIXTURE" rev-parse HEAD)
         for task in "$TASK1" "$TASK2"; do
             deploy_task_prepare_remote_tip_worktree "$task" saizo
-            wt=$(FIELD_GET_NO_LOG=1 field_get "$task" task_worktree_path); target=$(FIELD_GET_NO_LOG=1 field_get "$task" target_path)
+            wt=$(FIELD_GET_NO_LOG=1 field_get "$task" task_worktree_path)
+            target=$(python3 - "$task" <<'PY'
+import json,sys,yaml
+task=yaml.safe_load(open(sys.argv[1],encoding="utf-8"))["task"]
+print(json.loads(task["task_worktree_target_paths"])[0])
+PY
+            )
             printf SOURCE=1 > "$target"
             env NINJA_SCOPE_TASK_FILE="$task" bash "$PROJECT_ROOT/scripts/ninja_scope_commit.sh" -m publish -- "$target" >/dev/null
             git -C "$wt" push -q origin HEAD:refs/heads/main; git -C "$wt" fetch -q origin main
@@ -181,18 +192,19 @@ YAML
         deploy_task_prepare_remote_tip_worktree "$TASK" tobisaru
         wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
         python3 - "$TASK" "$wt" <<'PY'
+import json
 import sys
 import yaml
 
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {})["task"]
 wt = sys.argv[2]
-assert task["target_path"] == [f"{wt}/src/app.py", f"{wt}/src/other.py"], task["target_path"]
-assert task["planned_paths"] == [f"{wt}/src/app.py", f"{wt}/src/other.py", f"{wt}/tests/unit/contract.bats"], task["planned_paths"]
-assert task["inspection_path"] == f"{wt}/src/app.py", task["inspection_path"]
-target_paths = task["task_worktree_target_paths"]
-assert target_paths == "[\\"%s\\", \\"%s\\", \\"%s\\"]" % (
+assert task["target_path"] == ["src/app.py", "src/other.py"], task["target_path"]
+assert task["planned_paths"] == ["src/app.py", "src/other.py", "tests/unit/contract.bats"], task["planned_paths"]
+assert task["inspection_path"] == "src/app.py", task["inspection_path"]
+target_paths = json.loads(task["task_worktree_target_paths"])
+assert target_paths == [
     f"{wt}/src/app.py", f"{wt}/src/other.py", f"{wt}/tests/unit/contract.bats"
-), target_paths
+], target_paths
 PY
         export REPO_ROOT="$PROJECT_ROOT"
         source <(sed -n "1,2143p" "$PROJECT_ROOT/scripts/run_tests.sh")
@@ -250,18 +262,26 @@ YAML
         deploy_task_prepare_remote_tip_worktree "$TASK" saizo
         wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
         python3 - "$TASK" "$wt" <<'PY'
+import json
 import sys
 import yaml
 
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {})["task"]
 wt = sys.argv[2]
+expected_source = [
+    ".githooks/pre-push",
+    "./.codex/hooks.json",
+    "src/ordinary.py",
+    "...dots/probe",
+]
 expected = [
     f"{wt}/.githooks/pre-push",
     f"{wt}/.codex/hooks.json",
     f"{wt}/src/ordinary.py",
     f"{wt}/...dots/probe",
 ]
-assert task["target_path"] == expected, task["target_path"]
+assert task["target_path"] == expected_source, task["target_path"]
+assert json.loads(task["task_worktree_target_paths"]) == expected
 assert all(path.startswith(wt + "/") for path in expected)
 assert all(__import__("os").path.isfile(path) for path in expected)
 PY
