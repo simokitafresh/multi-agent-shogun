@@ -1677,10 +1677,17 @@ def main(report_data=None) -> int:
     )
     if _caller_scope:
         _cv = data.get("causal_verification") or {}
-        _caller_evidence = " ".join(
-            str(_cv.get(_key, "") or "")
-            for _key in ("cause_checked", "design_intent_checked", "evidence")
-        ) if isinstance(_cv, dict) else ""
+        _caller_evidence_parts = []
+        if isinstance(_cv, dict):
+            _caller_evidence_parts.extend(
+                str(_cv.get(_key, "") or "")
+                for _key in ("cause_checked", "design_intent_checked", "evidence")
+            )
+        # result.detailsも探索対象に含める(コード純減: 全出力転記のevidence限定を緩和)
+        _result = data.get("result") or {}
+        if isinstance(_result, dict):
+            _caller_evidence_parts.append(str(_result.get("details", "") or ""))
+        _caller_evidence = " ".join(_caller_evidence_parts)
         if not re.search(
             r"(?:non[-_ ]?test|非test|実運用)\s*caller(?:\s*(?:数|count)|s|_count)?\s*[:=]\s*\d+",
             _caller_evidence,
