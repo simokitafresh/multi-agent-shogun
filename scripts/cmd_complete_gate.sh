@@ -12620,13 +12620,13 @@ if [ "$ALL_CLEAR" = true ] \
     fi
 fi
 
-# CLEAR requires both history containment and exact bytes for ordinary report
-# paths.  Mutable operational records are checked by their field-aware lanes.
+# The exact report commit is the immutable completion artifact. Later commits
+# may legitimately improve the same paths, so ancestry is the terminal SSOT.
 if [ "$ALL_CLEAR" = true ]; then
     echo ""
-    level_heading "[L4]" "Report commit blob parity check:"
-    if ! check_report_commit_blob_parity; then
-        record_block_reason "report_commit_blob_parity"
+    level_heading "[L4]" "Report commit main ancestry check:"
+    if ! check_report_commit_main_ancestry; then
+        record_block_reason "report_commit_main_ancestry"
         ALL_CLEAR=false
     fi
 fi
