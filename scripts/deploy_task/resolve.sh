@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # deploy_task/resolve.sh — cluster D: CLI, pane/idle, stale reset, direct YAML, cmd resolution.
 # Function bodies are extracted verbatim from deploy_task.sh.
 parse_deploy_task_args() {
@@ -764,4 +765,3 @@ resolve_cmd_to_task() {
     log "resolve_cmd: ${cmd_id} → ninja=${ninja_name}, task_id=${task_id}, project=${project:-none}, type=${task_type}, title=${title}"
     return 0
 }
-
