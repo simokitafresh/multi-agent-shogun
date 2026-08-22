@@ -6411,6 +6411,14 @@ run_report_main_ancestry_state() {
         CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT"
 }
 
+run_report_blob_parity_state() {
+    local repo="$1" report="$2" task="${3:-}"
+    run env CMD_COMPLETE_GATE_REPORT_BLOB_PARITY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" \
+        CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT" cmd_report_blob_parity_probe
+}
+
 # test_necessity: readonly recon/scout reports with a symmetric optional
 # commit contract must not be mistaken for unpublished implementation.
 @test "CI push detection skips symmetric empty no-code recon contract" {
@@ -6737,6 +6745,55 @@ run_commit_repo_resolution() {
     run_report_main_ancestry_state "$repo" "$report"
     [ "$status" -eq 0 ]
     [[ "$output" == "PASS: PUSHED:"* ]]
+}
+
+# test_necessity: a remote-contained source commit is not sufficient when a
+# later publication has a different ordinary path blob.
+# regression_justification: ancestry-only terminal checking allowed a reverted
+# doc path to reach CLEAR even though the report's source bytes were absent.
+@test "terminal report blob parity blocks an ancestor with divergent ordinary path" {
+    local repo="$BATS_TEST_TMPDIR/report-blob-divergent"
+    local report="$BATS_TEST_TMPDIR/report-blob-divergent.yaml"
+    make_ci_push_repo "$repo"
+    mkdir -p "$repo/context"
+    printf 'source\n' > "$repo/context/doc.md"
+    git -C "$repo" add context/doc.md
+    git -C "$repo" commit -qm 'source ordinary path'
+    local source_sha
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+    git -C "$repo" update-ref refs/remotes/origin/main "$source_sha"
+    printf 'reverted\n' > "$repo/context/doc.md"
+    git -C "$repo" commit -qam 'remote reverted ordinary path'
+    git -C "$repo" update-ref refs/remotes/origin/main "$(git -C "$repo" rev-parse HEAD)"
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: context/doc.md\n' "$source_sha" > "$report"
+
+    run_report_blob_parity_state "$repo" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit blob parity"* ]]
+    [[ "$output" == *"normal_paths=1"* && "$output" == *"mismatched=1"* ]]
+}
+
+# test_necessity: mutable operational records retain their field-aware or
+# monotonic publication contract and are not forced through exact blob parity.
+@test "terminal report blob parity skips mutable operational paths" {
+    local repo="$BATS_TEST_TMPDIR/report-blob-mutable"
+    local report="$BATS_TEST_TMPDIR/report-blob-mutable.yaml"
+    make_ci_push_repo "$repo"
+    mkdir -p "$repo/queue"
+    printf 'source\n' > "$repo/queue/lessons.yaml"
+    git -C "$repo" add queue/lessons.yaml
+    git -C "$repo" commit -qm 'source mutable path'
+    local source_sha
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+    git -C "$repo" update-ref refs/remotes/origin/main "$source_sha"
+    printf 'field-aware publication\n' > "$repo/queue/lessons.yaml"
+    git -C "$repo" commit -qam 'remote mutable publication'
+    git -C "$repo" update-ref refs/remotes/origin/main "$(git -C "$repo" rev-parse HEAD)"
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: queue/lessons.yaml\n' "$source_sha" > "$report"
+
+    run_report_blob_parity_state "$repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP: report commit blob parity: normal_paths=0 mutable_skipped=1"* ]]
 }
 
 # test_necessity: terminal ancestry is fail-closed for a normal PASS report,
