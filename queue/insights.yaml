@@ -1811,3 +1811,24 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-23T05:23:14+09:00"
+- id: INS-20260823-065322124-ae06
+  ts: "2026-08-23T06:53:22+09:00"
+  insight: "[[かなり良い回答です]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=かなり良い回答です。結論から言うと、「低相関selectionは未開拓で、最小実験をやる価値がある」まで現物確認でかなりきれいに詰められています。 特に重要なのは、単に「相関を使っていない」ではなく、 観測には使う、配分には使う、選抜には使わない という3層分離が確認できたこと…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260823-065322383-fde5
+  ts: "2026-08-23T06:53:22+09:00"
+  insight: "[[本筋にはいつ戻るんだい？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=本筋にはいつ戻るんだい？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260823-065322674-45a6
+  ts: "2026-08-23T06:53:22+09:00"
+  insight: "[[忍者は5人idleだぞ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者は5人idleだぞ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
