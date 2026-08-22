@@ -1651,6 +1651,58 @@ print(len(data["task"]["commit_contract"]["planned_paths"]))
   [[ "$output" == *"BLOCK: task scope is empty"* ]]
 }
 
+# test_necessity: Absolute paths owned by the declared source repository may
+# be present while execution is rooted in its isolated task worktree.  They
+# must be excluded as a WARN-only boundary, while an unapproved relative path
+# traversal remains a hard BLOCK.
+@test "external source paths warn-and-exclude while unapproved traversal blocks" {
+  external="$TMPROOT/external-project"
+  worktree="$TMPROOT/worktree"
+  mkdir -p "$external/src" "$worktree"
+  printf 'source\n' >"$external/src/source.py"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add src/source.py
+  git -C "$external" commit -qm init
+  git -C "$worktree" init -q
+  git -C "$worktree" config user.email test@example.invalid
+  git -C "$worktree" config user.name test
+  printf 'worktree\n' >"$worktree/README"
+  git -C "$worktree" add README
+  git -C "$worktree" commit -qm init
+  mkdir -p "$TMPROOT/queue/tasks"
+
+  cat >"$TMPROOT/queue/tasks/external-source.yaml" <<YAML
+task:
+  project: external-fixture
+  task_worktree_path: $worktree
+  task_worktree_repo: $external
+  target_path: $external/src/source.py
+YAML
+  run env REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task \
+      "$TMPROOT/queue/tasks/external-source.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARN: external task scope path excluded: $external/src/source.py"* ]]
+  [[ "$output" == *"TEST_SELECTION result=selected reason=external_scope_paths_excluded files=0"* ]]
+  [[ "$output" != *"BLOCK: task scope could not be resolved"* ]]
+
+  cat >"$TMPROOT/queue/tasks/traversal.yaml" <<YAML
+task:
+  task_worktree_path: $worktree
+  task_worktree_repo: $external
+  target_path: ../outside/source.py
+YAML
+  run env REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task \
+      "$TMPROOT/queue/tasks/traversal.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: task scope could not be resolved"* ]]
+  [[ "$output" == *"scope path outside repository: ../outside/source.py"* ]]
+  echo "BOUNDARY_METRICS external_warn_exclude=1 traversal_block=1 pass=2 skip=0"
+}
+
 # test_necessity: directory ownership must select only concrete changed files;
 # a literal directory would fan out through the dependency map to the whole repo.
 @test "directory task scope expands concrete diffs and blocks empty directories" {

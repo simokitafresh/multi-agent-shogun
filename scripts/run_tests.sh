@@ -113,6 +113,18 @@ task = task_doc.get("task", task_doc)
 if not isinstance(task, dict):
     raise ValueError("task mapping missing")
 
+commit_contract = task.get("commit_contract")
+external_roots = []
+external_candidates = [
+    task.get("task_worktree_repo"),
+    commit_contract.get("repo_root") if isinstance(commit_contract, dict) else None,
+]
+for candidate in external_candidates:
+    if isinstance(candidate, str) and candidate.strip():
+        candidate_root = os.path.realpath(candidate)
+        if candidate_root != root and candidate_root not in external_roots:
+            external_roots.append(candidate_root)
+
 values = []
 
 def collect(value):
@@ -135,7 +147,6 @@ else:
     collect(owned_json)
 
 top_planned = task.get("planned_paths")
-commit_contract = task.get("commit_contract")
 nested_planned = commit_contract.get("planned_paths") if isinstance(commit_contract, dict) else None
 
 def normalized_paths(value):
@@ -157,6 +168,12 @@ def normalized_paths(value):
         path = raw if os.path.isabs(raw) else os.path.join(root, raw)
         resolved = os.path.realpath(path)
         if resolved != root and not resolved.startswith(root + os.sep):
+            if any(
+                resolved == candidate or resolved.startswith(candidate + os.sep)
+                for candidate in external_roots
+            ):
+                print(f"WARN: external task scope path excluded: {raw}", file=sys.stderr)
+                continue
             raise ValueError(f"scope path outside repository: {raw}")
         normalized.add(os.path.relpath(resolved, root))
     return normalized
@@ -195,6 +212,12 @@ for raw in values:
     path = raw if os.path.isabs(raw) else os.path.join(root, raw)
     resolved = os.path.realpath(path)
     if resolved != root and not resolved.startswith(root + os.sep):
+        if any(
+            resolved == candidate or resolved.startswith(candidate + os.sep)
+            for candidate in external_roots
+        ):
+            print(f"WARN: external task scope path excluded: {raw}", file=sys.stderr)
+            continue
         raise ValueError(f"scope path outside repository: {raw}")
     relative = os.path.relpath(resolved, root)
     if relative not in seen:
@@ -252,6 +275,18 @@ task = document.get("task", document)
 if not isinstance(task, dict):
     raise ValueError("task mapping missing")
 
+contract = task.get("commit_contract") if isinstance(task.get("commit_contract"), dict) else {}
+external_roots = []
+external_candidates = [
+    task.get("task_worktree_repo"),
+    contract.get("repo_root"),
+]
+for candidate in external_candidates:
+    if isinstance(candidate, str) and candidate.strip():
+        candidate_root = os.path.realpath(candidate)
+        if candidate_root != root and candidate_root not in external_roots:
+            external_roots.append(candidate_root)
+
 values = []
 declared_values = []
 collect(task.get("test_path"), declared_values)
@@ -263,6 +298,12 @@ for raw in declared_values:
     path = raw if os.path.isabs(raw) else os.path.join(root, raw)
     resolved = os.path.realpath(path)
     if resolved != root and not resolved.startswith(root + os.sep):
+        if any(
+            resolved == candidate or resolved.startswith(candidate + os.sep)
+            for candidate in external_roots
+        ):
+            print(f"WARN: external task test path excluded: {raw}", file=sys.stderr)
+            continue
         raise ValueError(f"explicit test path outside repository: {raw}")
     relative = os.path.relpath(resolved, root)
     if not is_test(relative):
@@ -282,6 +323,12 @@ for raw in values:
     path = raw if os.path.isabs(raw) else os.path.join(root, raw)
     resolved = os.path.realpath(path)
     if resolved != root and not resolved.startswith(root + os.sep):
+        if any(
+            resolved == candidate or resolved.startswith(candidate + os.sep)
+            for candidate in external_roots
+        ):
+            print(f"WARN: external task test path excluded: {raw}", file=sys.stderr)
+            continue
         raise ValueError(f"explicit test path outside repository: {raw}")
     relative = os.path.relpath(resolved, root)
     if is_test(relative) and relative not in seen:
@@ -1892,6 +1939,10 @@ _run_tests_main() {
             set -e
             cat "$_scope_err" >&2
             log_scope_expansion_fire "$1" "$_scope_err" "$_scope_rc"
+            local _scope_external_filtered=0
+            if grep -q '^WARN: external task scope path excluded:' "$_scope_err"; then
+                _scope_external_filtered=1
+            fi
             rm -f "$_scope_err"
             if [ "$_scope_rc" -ne 0 ]; then
                 rm -f "$_scope_tmp"
@@ -1900,7 +1951,12 @@ _run_tests_main() {
             fi
             mapfile -d '' -t scoped_paths <"$_scope_tmp"
             rm -f "$_scope_tmp"
-            [ "${#scoped_paths[@]}" -gt 0 ] || { echo "BLOCK: task scope is empty" >&2; exit 2; }
+            [ "${#scoped_paths[@]}" -gt 0 ] || {
+                [ "$_scope_external_filtered" -eq 1 ] || {
+                    echo "BLOCK: task scope is empty" >&2
+                    exit 2
+                }
+            }
             local _task_root
             _task_root="$(task_scope_root "$1")" || { echo "BLOCK: task project root could not be resolved" >&2; exit 2; }
             local _explicit_tests_tmp
@@ -1911,6 +1967,10 @@ _run_tests_main() {
             mapfile -d '' -t _declared_contract_tests <"$_explicit_tests_tmp"
             rm -f "$_explicit_tests_tmp"
             printf 'TEST_SCOPE result=task files=%s task=%s\n' "${#scoped_paths[@]}" "$1"
+            if [ "${#scoped_paths[@]}" -eq 0 ] && [ "${#_declared_contract_tests[@]}" -eq 0 ]; then
+                echo "TEST_SELECTION result=selected reason=external_scope_paths_excluded files=0"
+                exit 0
+            fi
             if [ "$_task_root" != "$REPO_ROOT" ]; then
                 if [ -x "$_task_root/scripts/run_tests.sh" ]; then
                     (cd "$_task_root" && bash scripts/run_tests.sh affected "${scoped_paths[@]}")
@@ -2057,6 +2117,10 @@ PY
                         [[ "$_frontend_rc" -eq 0 ]] || exit "$_frontend_rc"
                     fi
                     if [ "$_external_backend" -eq 0 ] && [ "$_external_frontend" -eq 0 ]; then
+                        if [ "$_scope_external_filtered" -eq 1 ]; then
+                            echo "TEST_SELECTION result=selected reason=external_scope_paths_excluded files=0"
+                            exit 0
+                        fi
                         echo "TEST_SELECTION result=selected reason=external_scope_no_mapped_tests files=0"
                         echo "BLOCK: external task scope has no mapped tests and no explicit contract" >&2
                         exit 2
