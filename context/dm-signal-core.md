@@ -1,5 +1,10 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-22 context_freshness reviewed source boundary (shogun doc lane, GA-491 re-apply of GA-490) -->
+<!-- source_commit:45760ecf reason:GA-490/491 FoF決定性tie-breakシリーズ境界反映(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log 46a1f213..45760ecf = 110 commits(source 67件)reviewed。初回=33f3dc7a2、tree退行検出(blt_20260822_144525)により再適用 -->
+
+## Current source boundary (GA-490/491, 2026-08-22)
+- **Current source tip:** `45760ecf` = Revert "merge: reconcile rb6 cleanup and cmd_4353/cmd_4354 into main"(reconcile mergeは一旦戻された。rb6 cleanup/cmd_4353-4354の再合流は未了として扱う)。
+- durable knowledge(cmd_4334-4356系列): FoF全フィルタの選択部は共通関数 `backend/app/services/pipeline/selection.py::select_top_n_with_ties` へ集約済み(手①/②a/②b/②c)。`include_ties`(既定True=cutoff以上全採用)/`ascending`(既定False)のkeyword-only引数で変わり身(TrendReversalFilter)のtop/bottom両枝も同関数配線(cmd_4337)。6段決定性候補選択(cmd_4339)+tie-break stage availability collection-wide(cmd_4351)+component order安定ソート(cmd_4349)+GS FoF selection parity contract(cmd_4353)。完全同値基準=signals md5+weights md5+signal_change 0(設計書AsIs v1.10、殿裁定2026-08-18 13:02: 保有不変が本質、日々リターンの微小変動は受容)。
 <!-- source_commit:46a1f213 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=46a1f213 -->
 <!-- source_commit:131e5dbb reason:GA-472 rollback boundary reflected in core context evidence:git -C /mnt/c/Python_app/DM-signal diff --stat 3e28b617 131e5dbb; rollback commit 131e5dbb; §Current source boundary added -->
 <!-- source_commit:a9883865 reason:L1分割6手live+L2分割走行中を§94へ反映 evidence:origin/main a9883865 git log; docs/research/dm-l1-split-design_20260815.md AsIs v1.5 -->
