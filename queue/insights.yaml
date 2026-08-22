@@ -1,24 +1,4 @@
 insights:
-- id: INS-20260819-023507230-41db
-  ts: "2026-08-19T02:35:07+09:00"
-  insight: "[[やはり異常だな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=やはり異常だな。これは極めて重大な問題だ。gate実行しなければ回転しない。高速回転の原理違反だ"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T02:55:45+09:00"
-- id: INS-20260819-023507603-1be1
-  ts: "2026-08-19T02:35:07+09:00"
-  insight: "[[家老のバグを家老に任せていいのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=家老のバグを家老に任せていいのか？"
-  priority: "low"
-  source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-19T02:55:45+09:00"
 - id: INS-20260819-023507982-d776
   ts: "2026-08-19T02:35:07+09:00"
   insight: "[[至急再発しないように根治せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=至急再発しないように根治せよ。これは重要なバグだ。単にちゃんとgateclearして忍者を解放すればいいだけだけどな"
@@ -854,10 +834,7 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-22T09:09:28+09:00"
+  status: pending
 - id: INS-20260818-214749762-cb24
   ts: "2026-08-18T21:47:49+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1604 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -978,3 +955,17 @@ insights:
   resolved_reason: "一次確認で既存Level4防御により解決済み。通常/--wa経路は category=clean をlock・write前にBLOCKし、--clean専用経路だけが workaround=false/category=clean を記録する。品質ゲートは workaround=true && category=clean をdetail非依存で検出・修復するため、新規実修正・decision_candidateは不要。"
   action_artifact: "primary=scripts/karo_workaround_log.sh:677-683;gate=scripts/gates/gate_wa_data_quality.sh:6-9;tests=tests/unit/test_karo_workaround_validation.bats:335-344,tests/unit/test_gate_wa_data_quality.bats;context=context/infrastructure.md:459;source_commit=5d9802ea47319a8ef1d2623f440192cf750803b0;verification=fixture_9_to_0_FP0_FN0_48_of_48_PASS;target=queue/insights.yaml:INS-20260818-235427746-e816"
   resolved_at: "2026-08-20T10:23:07+09:00"
+- id: INS-20260822-091829988-cf47
+  ts: "2026-08-22T09:18:29+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_insight_id_monotonic_202608220836; matched=signal; current_pattern=; candidate_level=4; candidate=TRF dict.get()がPI L573違反で12体Cash100%。MF/SVMF/MVMFは修正済みだがTRF/MAFが漏れた。DM-signalリポジトリのpre-commit hookでblocks/+jobs/内のdict.get(target_date)パターンをBLOCK。横展開漏れの構造的防止。DM-signalリポジトリ変更のためcmd; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_insight_id_monotonic_202608220836"
+  fix_known: false
+  status: pending
+- id: INS-20260822-091834995-b333
+  ts: "2026-08-22T09:18:34+09:00"
+  insight: "SKILL.md追従task[0b0ccc7720776a61]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
+  priority: "medium"
+  source: "skill_script_refs:0b0ccc7720776a61"
+  fix_known: false
+  status: pending
