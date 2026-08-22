@@ -1,5 +1,7 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-22 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-23 GA-492 context update request consumer接続の反映 -->
+<!-- source_commit:2fee986d0 reason:GA-492 context update request consumer接続の反映 evidence:gate_context_freshness.shが承認済みcontext update requestを消費するconsumer接続(+51-18、cmd_karo_hotfix_ga492) -->
+<!-- source_commit:2da7e1e05 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=2da7e1e05 -->
 <!-- source_commit:95184ce75 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=95184ce75 -->
 <!-- source_commit:8fed7e2df reason:GA-491 terminal blob parity反映 evidence:cmd_karo_hotfix_ga491_terminal_blob_parity: cmd_complete_gateが終端で成果commitの祖先化に加えpath blob一致(report対象pathのHEAD blob=成果commit blob)を強制(+205行、test +57行)。tree退行4/4事象(GA-491)の構造根治=本日4クラス目クローズ -->
 <!-- source_commit:962b0f2bc reason:GA-490/491 UPDATE_REQUEST反映(退行復旧再適用) evidence:cmd_4360-4365でdeploy_task.shをscripts/deploy_task/{bootstrap,state,transaction,delivery,resolve,task_contract,report}.shへ抽出(挙動不変、A-Eは移動+static互換stub、Fはif-false static互換様式=L1630契約)。優先度台帳=docs/research/script_refactor_priority_20260821.md、分割設計書=docs/research/deploy_task_split_design_20260821.md。残cluster G-J継続中 -->
