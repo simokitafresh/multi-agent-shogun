@@ -283,6 +283,24 @@ JSON
     [ "$status" -eq 0 ]
 }
 
+@test "非root cwdでも正規復旧相対pathは許可し類似名と複合commandはBLOCK" {
+    local subdir="$TMP_EVIDENCE/non-root-cwd"
+    mkdir -p "$subdir"
+    local preflight="$ROOT/scripts/hooks/three_layer_preflight.sh"
+    for recovery_command in \
+        "bash scripts/hooks/three_layer_preflight.sh issue probe" \
+        "bash scripts/memory_db_query.sh --search probe" \
+        "bash scripts/semantic_search.sh probe"; do
+        run bash -c "cd '$subdir' && THREE_LAYER_PREACTION_EVIDENCE_DIR='$TMP_EVIDENCE' THREE_LAYER_AGENT_ID='$AGENT' TMUX_PANE='$PANE' bash '$preflight' verify Bash '' '$recovery_command'"
+        [ "$status" -eq 0 ]
+    done
+
+    run bash -c "cd '$subdir' && THREE_LAYER_PREACTION_EVIDENCE_DIR='$TMP_EVIDENCE' THREE_LAYER_AGENT_ID='$AGENT' TMUX_PANE='$PANE' bash '$preflight' verify Bash '' 'bash scripts/hooks/three_layer_preflight.sh.bak issue probe'"
+    [ "$status" -eq 1 ]
+    run bash -c "cd '$subdir' && THREE_LAYER_PREACTION_EVIDENCE_DIR='$TMP_EVIDENCE' THREE_LAYER_AGENT_ID='$AGENT' TMUX_PANE='$PANE' bash '$preflight' verify Bash '' 'bash scripts/hooks/three_layer_preflight.sh issue probe; touch repo-file'"
+    [ "$status" -eq 1 ]
+}
+
 @test "wrapper付きread-only Bashも証跡なしではBLOCK" {
     run verify Bash "" "/usr/bin/time -f elapsed=%e env LC_ALL=C rg -n three_layer scripts/hooks/three_layer_preflight.sh"
     [ "$status" -eq 1 ]

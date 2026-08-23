@@ -876,7 +876,10 @@ if len(tokens) < 2 or os.path.basename(tokens[0]) != "bash":
     raise SystemExit(1)
 script = os.path.basename(tokens[1])
 root = os.path.realpath(os.environ["RECOVERY_ROOT"])
-script_path = os.path.realpath(os.path.join(os.getcwd(), tokens[1])) if not os.path.isabs(tokens[1]) else os.path.realpath(tokens[1])
+# Commands are issued from arbitrary cwd values (subdirectories and linked
+# worktrees). Resolve relative recovery paths against the canonical preflight
+# root, never the caller's cwd, while retaining an exact-path allowlist.
+script_path = os.path.realpath(os.path.join(root, tokens[1])) if not os.path.isabs(tokens[1]) else os.path.realpath(tokens[1])
 if script == "three_layer_preflight.sh" and script_path == os.path.join(root, "scripts/hooks/three_layer_preflight.sh"):
     raise SystemExit(0 if len(tokens) >= 3 and tokens[2] == "issue" else 1)
 if script in {"memory_db_query.sh", "semantic_search.sh"} and script_path == os.path.join(root, "scripts", script):
