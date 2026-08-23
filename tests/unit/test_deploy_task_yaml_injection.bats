@@ -2521,8 +2521,9 @@ assert 'L_SAME' in injected, \
 PY
 }
 
-# test_necessity: ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=1(デフォルト)かつMIN_SAMPLES=3で全期間usefulゼロ教訓が自動deprecateされる不変量を守る。
-@test "是正3: ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=1(デフォルト)・MIN_SAMPLES=3でzero-useful教訓を自動deprecate" {
+# test_necessity: 配備の任意context注入はlesson SSOTを暗黙変更しない。
+# 明示ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=1時だけMIN_SAMPLES=3境界で淘汰する。
+@test "是正3: zero-useful auto-deprecateはdefault OFF・明示ON時のみ実行" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys
 
@@ -2531,8 +2532,8 @@ script = open(sys.argv[1], encoding='utf-8').read()
 # デフォルト値の確認
 assert "os.environ.get('ZERO_USEFUL_DEPRECATE_MIN_SAMPLES', '3')" in script, \
     "ZERO_USEFUL_DEPRECATE_MIN_SAMPLES default must be '3'"
-assert "os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '1') == '1'" in script, \
-    "ENABLE_ZERO_USEFUL_AUTO_DEPRECATE default must be '1'"
+assert "os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '0') == '1'" in script, \
+    "ENABLE_ZERO_USEFUL_AUTO_DEPRECATE default must be '0'"
 
 # apply_zero_useful_deprecation関数の構造確認 (build_lesson_detailが後に来る)
 start = script.index("def apply_zero_useful_deprecation(")
@@ -2580,7 +2581,7 @@ for fn in ["def _deprecate_lessons_in_file(", "def apply_zero_useful_deprecation
 ns = {}
 exec("import os, sys, tempfile, yaml, re\n", ns)
 exec("ZERO_USEFUL_DEPRECATE_MIN_SAMPLES = int(os.environ.get('ZERO_USEFUL_DEPRECATE_MIN_SAMPLES', '3'))\n", ns)
-exec("ENABLE_ZERO_USEFUL_AUTO_DEPRECATE = os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '1') == '1'\n", ns)
+exec("ENABLE_ZERO_USEFUL_AUTO_DEPRECATE = True\n", ns)
 for fn_body in relevant_fns:
     exec(fn_body, ns)
 
