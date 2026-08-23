@@ -235,6 +235,39 @@ EOF
     [[ "$output" == *"missing=none"* ]]
 }
 
+@test "build_clear_throughput_metric uses lifecycle completion when report timestamp is blank" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports"
+
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    delegated_at: '2026-07-08T09:00:00'
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_999
+  deployed_at: '2026-07-08T09:01:00'
+  acknowledged_at: '2026-07-08T09:02:00'
+  done_at: ''
+  completed_at: ''
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml" <<'EOF'
+parent_cmd: cmd_999
+status: completed
+timestamp: ''
+completed_at: '2026-07-08T09:07:00'
+EOF
+
+    run build_clear_throughput_metric "2026-07-08T09:10:00"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"work_sec=300"* ]]
+    [[ "$output" != *"invalid_work_sec"* ]]
+}
+
 @test "build_clear_throughput_metric emits missing reason codes instead of unknown" {
     source "$GATE_HELPERS_FILE"
     export CMD_ID="$TEST_CMD_ID"
@@ -2616,14 +2649,20 @@ PY
 
 @test "cmd_complete_gate honors GATE_METRICS_LOG override for no-task benchmark fast path" {
     local isolated_metrics="$TEST_TMPDIR/isolated/gate_metrics.log"
+    local phase_log="$TEST_TMPDIR/isolated/cmd_complete_gate_phases.log"
     mkdir -p "$(dirname "$isolated_metrics")"
     : > "$TEST_PROJECT/logs/gate_metrics.log"
 
-    run env GATE_METRICS_LOG="$isolated_metrics" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_nonexistent_benchmark
+    run env GATE_METRICS_LOG="$isolated_metrics" CMD_COMPLETE_GATE_PHASE_LOG="$phase_log" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_nonexistent_benchmark
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"No-task benchmark fast path"* ]]
+    [[ "$output" != *"Normalize report candidates"* ]]
+    [[ "$output" != *"Preflight gate flag generation"* ]]
     grep -Fq $'\tcmd_nonexistent_benchmark\tCLEAR\tno_task_benchmark_fast_path\t' "$isolated_metrics"
+    grep -Fq $'\tcmd_nonexistent_benchmark\tstartup\t' "$phase_log"
+    grep -Fq $'\tcmd_nonexistent_benchmark\tno_task_detection\t' "$phase_log"
+    cat "$phase_log"
     ! grep -Fq "cmd_nonexistent_benchmark" "$TEST_PROJECT/logs/gate_metrics.log"
 }
 

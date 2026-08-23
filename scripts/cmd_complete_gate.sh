@@ -925,6 +925,41 @@ done
 # WSL2最適化: source/mkdir/flock前にCLEARチェック。CLEARED cmdsのlib読込コスト削減
 LOG_DIR="$SCRIPT_DIR/logs"
 GATE_METRICS_LOG="${GATE_METRICS_LOG:-$LOG_DIR/gate_metrics.log}"
+
+# cmd_4379: low-overhead wall-clock trace for major gate phases. EPOCHREALTIME
+# is used without spawning date/python on the measured path.
+# Opt-in keeps normal gate throughput unchanged; AC1 enables this path with
+# CMD_COMPLETE_GATE_PHASE_LOG=<file> for a measured run.
+GATE_PHASE_LOG="${CMD_COMPLETE_GATE_PHASE_LOG:-}"
+GATE_PHASE_CURRENT=""
+GATE_PHASE_START_US=""
+gate_phase_now_us() {
+    local raw="${EPOCHREALTIME:-}"
+    if [ -n "$raw" ]; then
+        printf '%s' "${raw/./}"
+    else
+        printf '%s' "$(( $(date +%s) * 1000000 ))"
+    fi
+}
+gate_phase_tick() {
+    local next_phase="$1" now_us elapsed_us sec ms
+    [ -n "$GATE_PHASE_LOG" ] || return 0
+    now_us=$(gate_phase_now_us)
+    if [ -n "$GATE_PHASE_CURRENT" ] && [ -n "$GATE_PHASE_START_US" ]; then
+        elapsed_us=$((now_us - GATE_PHASE_START_US))
+        [ "$elapsed_us" -ge 0 ] || elapsed_us=0
+        sec=$((elapsed_us / 1000000))
+        ms=$(((elapsed_us % 1000000) / 1000))
+        mkdir -p "$(dirname "$GATE_PHASE_LOG")" 2>/dev/null || true
+        printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d\n' \
+            -1 "$CMD_ID" "$GATE_PHASE_CURRENT" "$sec" "$ms" \
+            >> "$GATE_PHASE_LOG"
+    fi
+    GATE_PHASE_CURRENT="$next_phase"
+    GATE_PHASE_START_US="$now_us"
+}
+gate_phase_finish() { gate_phase_tick "terminal"; }
+gate_phase_tick "startup"
 if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ] \
    && [ ! -f "$SCRIPT_DIR/queue/reopened_cmds/${CMD_ID}.yaml" ]; then
     if grep -Fq $'\t'"${CMD_ID}"$'\tCLEAR\t' "$GATE_METRICS_LOG"; then
@@ -4311,7 +4346,25 @@ build_clear_duration_metric() {
         fi
         report_file=$(resolve_report_file "$ninja_name" "$CMD_ID" 2>/dev/null || true)
         if [ -n "$report_file" ] && [ -f "$report_file" ]; then
-            fallback_end=$(awk '/^timestamp:/ { sub(/^timestamp:[ \t]*/, ""); gsub(/["'"'"']/, ""); print; exit }' "$report_file" 2>/dev/null || true)
+            fallback_end=$(awk '
+                /^(timestamp|done_at|completed_at):/ {
+                    value=$0
+                    sub(/^[^:]+:[[:space:]]*/, "", value)
+                    gsub(/["'"'"']/, "", value)
+                    if (value != "") {
+                        key=$1
+                        sub(/:.*/, "", key)
+                        if (key == "timestamp" && timestamp == "") timestamp=value
+                        else if (key == "done_at" && done == "") done=value
+                        else if (key == "completed_at" && completed == "") completed=value
+                    }
+                }
+                END {
+                    if (timestamp != "") print timestamp
+                    else if (done != "") print done
+                    else print completed
+                }
+            ' "$report_file" 2>/dev/null || true)
         fi
 
         duration_sec=$(TASK_FILE_ENV="$task_file" FALLBACK_START_ENV="$fallback_start" FALLBACK_END_ENV="$fallback_end" CMD_ID_ENV="$CMD_ID" python3 - <<'PY'
@@ -4581,7 +4634,14 @@ for path in report_paths:
             continue
         if str(report.get("status") or "").strip() not in {"completed", "done", "revision_requested"}:
             continue
-        ts = parse_iso(report.get("timestamp"))
+        # Reports may publish timestamp separately from lifecycle completion.
+        # Prefer the durable report timestamp, then preserve valid done markers.
+        ts = parse_iso(
+            report.get("timestamp")
+            or report.get("done_at")
+            or report.get("completed_at")
+            or report.get("updated_at")
+        )
         if ts is not None:
             report_done_values.append(ts)
 
@@ -9125,6 +9185,7 @@ MATCHING_TASK_FILES_SUPERSEDED_COUNT=$((${#RAW_MATCHING_TASK_FILES[@]} - MATCHIN
 MATCHING_TASK_FILES_PROCESSED_COUNT=0
 MATCHING_TASK_FILES_SKIPPED_COUNT=0
 echo "Matching task files snapshot: ${MATCHING_TASK_FILES_INITIAL_COUNT} (superseded_same_task_id=${MATCHING_TASK_FILES_SUPERSEDED_COUNT})"
+gate_phase_tick "task_snapshot"
 
 print_matching_task_files_summary() {
     echo "Matching task files summary: snapshot=${MATCHING_TASK_FILES_INITIAL_COUNT} processed_refs=${MATCHING_TASK_FILES_PROCESSED_COUNT} skipped_missing=${MATCHING_TASK_FILES_SKIPPED_COUNT}"
@@ -9136,6 +9197,27 @@ cmd_entry_exists() {
     local cmd_id="$1"
     grep -qE "^[[:space:]]*-[[:space:]]*id:[[:space:]]*[\"']?${cmd_id}([\"']?([[:space:]]|$))" "$YAML_FILE" 2>/dev/null
 }
+
+# No-task benchmark IDs have no report-dependent state to inspect. Detect them
+# immediately after the task snapshot, before parent/review/report scans. Real
+# task and parent-report paths continue through the complete gate contract.
+if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$CMD_ID" && ! has_parent_cmd_report "$CMD_ID"; then
+    GATE_TASK_TYPE="unknown"
+    GATE_MODEL="unknown"
+    GATE_BLOOM_LEVEL="unknown"
+    GATE_INJECTED_LESSONS="none"
+    CMD_TITLE=""
+    GATE_FIRST_MODEL_METRIC=$'first_gate=true\tmodel_profile=standard'
+    gate_phase_tick "no_task_detection"
+    echo "[L1] No-task benchmark fast path:"
+    echo "  no task files and no cmd entry; report-dependent gates skipped"
+    echo ""
+    echo "GATE CLEAR: cmd完了許可"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tno_task_benchmark_fast_path\t%s\t%s\t%s\t%s\t%s\tunknown\tunknown\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
+    gate_phase_finish
+    print_matching_task_files_summary
+    exit 0
+fi
 
 get_cmd_head_hashes() {
     local cmd_id="$1"
@@ -10307,6 +10389,7 @@ if [ -z "$CMD_CHANGED_FILES" ] && [ "${SG7_DIRECT_REPORT_SPEC:-false}" = "true" 
     CMD_CHANGED_FILES="$(collect_report_modified_files || true)"
 fi
 GATE_FIRST_MODEL_METRIC="$(build_first_gate_model_metric)"
+gate_phase_tick "report_preflight"
 
 # ─── cmd_776 B層: 報告YAML自動正規化（auto-draft前に実行） ───
 NORMALIZE_LOG="$SCRIPT_DIR/logs/normalize_report.log"
@@ -10545,19 +10628,10 @@ fi  # draft_lessons循環防止の閉じ
 echo ""
 
 # ─── preflight: ゲートフラグ自動生成（冪等） ───
+# No-task benchmark commands return above before this report-dependent work.
+gate_phase_tick "gate_preflight"
 preflight_gate_flags "$CMD_ID"
-
-# cmd_test_speed などの測定用IDはtask YAMLにもcmdキューにも存在しない。
-# その場合、報告YAML/通知/アーカイブ系の全走査は意味を持たず、測定値だけを汚す。
-if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$CMD_ID" && ! has_parent_cmd_report "$CMD_ID"; then
-    echo "[L1] No-task benchmark fast path:"
-    echo "  no task files and no cmd entry; report-dependent gates skipped"
-    echo ""
-    echo "GATE CLEAR: cmd完了許可"
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tno_task_benchmark_fast_path\t%s\t%s\t%s\t%s\t%s\tunknown\tunknown\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
-    print_matching_task_files_summary
-    exit 0
-fi
+gate_phase_tick "gate_evaluation"
 
 # ─── 緊急override確認 ───
 if [ -f "$GATES_DIR/emergency.override" ]; then
@@ -13775,6 +13849,7 @@ PYEOF
     echo "  async jobs: queued"
     print_matching_task_files_summary
 
+    gate_phase_finish
     exit 0
 else
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
@@ -14091,5 +14166,6 @@ else
     fi
 
     print_matching_task_files_summary
+    gate_phase_finish
     exit 1
 fi
