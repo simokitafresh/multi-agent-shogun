@@ -263,8 +263,12 @@ def collect(value, output):
 
 def is_test(path):
     name = os.path.basename(path)
+    if path.startswith("tests/helpers/") or "/tests/helpers/" in path:
+        return False
     return (
-        path.endswith((".bats", ".spec.js", ".test.js"))
+        path.startswith("tests/")
+        or "/tests/" in path
+        or path.endswith((".bats", ".spec.js", ".test.js"))
         or (name.startswith("test_") and name.endswith(".py"))
     )
 
@@ -365,8 +369,12 @@ expand_task_directory_scope() {
 
 is_test_contract_path() {
     local path="$1" name="${1##*/}"
+    case "$path" in
+        tests/helpers/*|*/tests/helpers/*) return 1 ;;
+    esac
     [[ "$path" == *.bats || "$path" == *.spec.js \
-        || "$path" == *.test.js || ( "$name" == test_*.py ) ]]
+        || "$path" == *.test.js || "$path" == tests/* \
+        || "$path" == */tests/* || ( "$name" == test_*.py ) ]]
 }
 
 # Record a task_scope_paths() SCOPE_EXPANSION stderr line into gate_fire_log
