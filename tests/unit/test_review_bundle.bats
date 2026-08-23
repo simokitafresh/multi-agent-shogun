@@ -2,6 +2,20 @@
 # test_necessity: the public single-review command must preserve the existing
 # batch transaction order: precheck, bundle, rich ledger, approval, one notify.
 
+# test_necessity: canonical LGTM notification is the durable post-approval
+# boundary.  Keeping it before report-resolution/manifest work prevents a
+# caller timeout from dropping the Karo wake-up after the approval was saved.
+# regression_justification: cmd_4378 (2026-08-23) observed 4/4 review_bundle
+# invocations hitting rc=124 at 30s and 3/4 LGTM notifications missing.
+@test "canonical LGTM publishes before post-approval report resolution" {
+  script="$BATS_TEST_DIRNAME/../../scripts/review_approval.sh"
+  notify_line=$(grep -n 'python3 .*review_bundle.py.* notify' "$script" | head -1 | cut -d: -f1)
+  reports_line=$(grep -n '^mapfile -t reports' "$script" | head -1 | cut -d: -f1)
+  [ -n "$notify_line" ]
+  [ -n "$reports_line" ]
+  [ "$notify_line" -lt "$reports_line" ]
+}
+
 @test "single APPROVE completes the review transaction once in canonical order" {
   root="$BATS_TEST_TMPDIR/root"
   mkdir -p "$root/scripts/gates" "$root/scripts/lib" "$root/queue/reports" \
