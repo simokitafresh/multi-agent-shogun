@@ -7070,6 +7070,12 @@ check_gs_bench_gate_warn() {
 
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
         task_files=("${MATCHING_TASK_FILES[@]}")
+    elif has_parent_cmd_report "$CMD_ID"; then
+        # Parent-report-only completion has already snapshotted zero live task
+        # files. Scanning every worker task here only re-parses unrelated YAML
+        # (15.5s on the RC4 real run) and cannot create an implementer/reviewer
+        # pair for this command. Keep the report-level checks above intact.
+        task_files=()
     else
         task_files=("$TASKS_DIR"/*.yaml)
     fi
