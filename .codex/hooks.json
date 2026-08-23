@@ -2,38 +2,23 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Skill|Bash|exec_command|unified_exec|Write|Edit|MultiEdit|apply_patch",
+        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_skill_execution_guard.sh",
             "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-read-tracker.sh",
             "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|exec_command|unified_exec",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-combined.sh",
             "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-edit-combined.sh",
