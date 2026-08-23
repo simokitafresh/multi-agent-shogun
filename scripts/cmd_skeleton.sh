@@ -204,9 +204,12 @@ if [[ -f "$RESERVATION_FILE" ]]; then
         (( n > max_id )) && max_id=$n
     done < "$RESERVATION_FILE"
 fi
-# フォールバック: queue/last_cmd/予約が全て空の環境のみarchiveを参照
-if (( max_id == 0 )) && [[ -d "$ARCHIVE_CMD_DIR" ]]; then
+# archiveは常時参照する(2026-08-23根治: cmd_saveを通らずlast_cmd未更新のままarchiveされた
+# cmd_4376をskeletonが再発行し採番衝突した)。帯域外ID(9000以上)は従来どおり除外して
+# 「採番が飛ぶ」問題(2026-06-10実測)を再発させない。
+if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     while read -r n; do
+        (( n >= 9000 )) && continue
         (( n > max_id )) && max_id=$n
     done < <(ls "$ARCHIVE_CMD_DIR" 2>/dev/null | grep -oE '^cmd_[0-9]+' | grep -oE '[0-9]+' || true)
 fi

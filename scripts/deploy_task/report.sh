@@ -2221,4 +2221,41 @@ EOF
         log "report_template: required fields repaired ($(basename "$report_file"))"
     fi
 }
+rehydrate_task_commit_contract_from_report() {
+    local task_file="$1"
+    local report_file="$2"
+    local contract_json=""
 
+    contract_json=$(python3 - "$report_file" <<'PY'
+import json
+import sys
+import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
+
+report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+contract = report.get("commit_contract")
+if not isinstance(contract, dict):
+    raise SystemExit(0)  # legacy report: preserve compatibility
+required = contract.get("required")
+reason = contract.get("reason")
+task_type = contract.get("task_type")
+paths = contract.get("planned_paths")
+if not isinstance(required, bool) or not str(reason or "").strip() \
+        or not str(task_type or "").strip() or not isinstance(paths, list) \
+        or any(not isinstance(path, str) or not path.strip() for path in paths):
+    raise SystemExit("invalid report commit_contract")
+print(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
+PY
+    ) || {
+        log "FATAL: existing report commit_contract is invalid: ${report_file}"
+        return 1
+    }
+
+    if [ -z "$contract_json" ]; then
+        log "report_template: legacy report has no commit_contract; task contract unchanged"
+        return 0
+    fi
+    yaml_field_set "$task_file" "task" "commit_contract" "$contract_json" \
+        || { log "FATAL: failed to rehydrate task commit_contract"; return 1; }
+    log "report_template: task commit_contract rehydrated from existing report"
+}

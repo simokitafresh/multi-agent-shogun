@@ -1631,3 +1631,478 @@ deploy_task_apply_task_mutations() {
     inject_done_redeploy_hints "$task_file" || true
     log "TASK_MUTATION_SUMMARY report_scans=${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
 }
+deploy_task_ci_red_followup_push_guard() {
+    local source_file="${1:-}"
+    local task_type="" runs run_status conclusion red_sha followups limit
+    [ "${DEPLOY_TASK_SKIP_CI_RED_GUARD:-0}" = "1" ] && return 0
+    limit="${DEPLOY_TASK_CI_RED_FOLLOWUP_LIMIT:-2}"
+
+    if [ -n "$source_file" ] && [ -f "$source_file" ]; then
+        task_type=$(FIELD_GET_NO_LOG=1 field_get "$source_file" "task_type" "" 2>/dev/null || true)
+    fi
+    # ci_fix自身はREDを消すための弾なので常に通す。
+    [ "${task_type,,}" = "ci_fix" ] && return 0
+
+    runs="${DEPLOY_TASK_CI_RED_JSON:-}"
+    if [ -z "$runs" ]; then
+        command -v gh >/dev/null 2>&1 || return 0
+        runs=$(timeout "${DEPLOY_TASK_GH_TIMEOUT:-8}" gh run list             --repo "${DEPLOY_TASK_CI_REPO:-simokitafresh/multi-agent-shogun}"             --branch main --limit 1             --json status,conclusion,databaseId,headSha 2>/dev/null || true)
+        [ -n "$runs" ] || return 0
+    fi
+    run_status=$(printf '%s' "$runs" | jq -r 'if type=="array" and length>0 then (.[0].status // "completed") else "" end' 2>/dev/null || true)
+    # A newer run for the current branch head supersedes the older completed
+    # RED as the active CI state.  Let normal work continue while that run is
+    # queued/in_progress; its completed verdict will govern the next deploy.
+    [ "$run_status" = "completed" ] || return 0
+    conclusion=$(printf '%s' "$runs" | jq -r 'if type=="array" and length>0 then (.[0].conclusion // "") else "" end' 2>/dev/null || true)
+    [ "$conclusion" = "failure" ] || return 0
+    red_sha=$(printf '%s' "$runs" | jq -r 'if type=="array" and length>0 then (.[0].headSha // "") else "" end' 2>/dev/null || true)
+
+    followups="${DEPLOY_TASK_CI_FOLLOWUP_PUSHES:-}"
+    if [ -z "$followups" ]; then
+        [ -n "$red_sha" ] || return 0
+        git -C "$SCRIPT_DIR" rev-parse --verify "${red_sha}^{commit}" >/dev/null 2>&1 || return 0
+        followups=$(git -C "$SCRIPT_DIR" rev-list --count "${red_sha}..refs/remotes/origin/main" 2>/dev/null || echo "")
+    fi
+    [[ "$followups" =~ ^[0-9]+$ ]] || return 0
+
+    if [ "$followups" -gt "$limit" ]; then
+        log "BLOCK(ci_red_followup): red_sha=${red_sha:0:9} followup_pushes=${followups} limit=${limit}"
+        echo "BLOCK: CI RED(sha=${red_sha:0:9})に対する追いpushが${followups}回(上限${limit}回)。新規配備を停止し、task_type=ci_fixでRED修正へ全リソースを寄せよ。" >&2
+        return 1
+    fi
+    return 0
+}
+
+# E3 Level5: ci_fixはclean-CI相当の同一harnessで修正前FAIL→修正後PASSを
+# push前に証明する。途中AC/binary_checksへ混入させず、型付きfinal_checkpoint
+# として配備する。完成証跡は報告終端gateが一度だけfail-closed検証する。
+inject_code_location_contract() {
+    local task_file="$1" task_type bloom_level contract
+    [ -f "$task_file" ] || return 0
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_type bloom_level 2>/dev/null)" || true
+    task_type="${task_type,,}"
+    bloom_level="${bloom_level,,}"
+    if [[ ! "$task_type" =~ ^(recon|scout|focused)$ ]] && [ "$bloom_level" != "focused" ]; then
+        return 0
+    fi
+    contract='Code-locationは `bash scripts/code_locate.sh "QUERY" [PATHSPEC ...]`（追跡対象限定、git grep）を使う。`grep -r`/`grep -R`は禁止。追跡外生成物が必要な場合のみ `bash scripts/code_locate.sh --include-untracked --reason "必要理由" "QUERY" [PATH ...]` を使う（node_modules/.git/.*_worktreesは既定除外）。exit 0=match、1=no match、2以上=実行異常として区別する。'
+    yaml_field_set "$task_file" "task" "code_location_contract" "$contract"
+}
+
+# Read-only investigation succeeds by resolving the assigned question, not by
+# producing the answer the issuer hoped to find.  Keep the authored scope/ACs
+# intact for ancestry and review traceability, while making their success
+# semantics outcome-neutral at deployment time.  The report gate consumes the
+# same typed contract from task_contract_snapshot, so this cannot degrade into
+# a worker/reviewer convention.
+inject_outcome_neutral_investigation_contract() {
+    local task_file="$1" task_type contract
+    [ -f "$task_file" ] || return 0
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    task_type="${task_type,,}"
+    case "$task_type" in
+        recon|recon2|scout) ;;
+        *) return 0 ;;
+    esac
+
+    contract='{"version":1,"required":true,"outcome_neutral":true,"success_basis":"assigned_method_completed_with_primary_evidence","discovery_required":false,"allowed_outcomes":["found","zero_found","not_present","external_boundary","unknown_after_exhaustion"],"minimum_primary_evidence":1}'
+    yaml_field_set "$task_file" "task" "investigation_contract" "$contract" || return 1
+    log "investigation_contract: outcome-neutral contract injected (${task_type})"
+}
+
+# Consumer seam work must publish its nine input-contract questions before a
+# scout/recon worker starts. Keep the contract nested in investigation_contract
+# so the task and immutable report snapshot share one typed source of truth.
+inject_seam_contract() {
+    local task_file="$1" task_type contract_json
+    [ -f "$task_file" ] || return 0
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    task_type="${task_type,,}"
+
+    contract_json=$(python3 - "$task_file" <<'PY_SEAM_CONTRACT'
+import json, re, sys, yaml
+
+path = sys.argv[1]
+task = (yaml.safe_load(open(path, encoding="utf-8")) or {}).get("task", {})
+task_type = str(task.get("task_type") or "").strip().lower()
+if task_type not in {"recon", "recon2", "scout"}:
+    raise SystemExit(3)
+
+parts = []
+for key in ("title", "purpose", "command", "description", "constraints", "not_in_scope"):
+    value = task.get(key)
+    if isinstance(value, (list, dict)):
+        parts.append(json.dumps(value, ensure_ascii=False, sort_keys=True))
+    elif value:
+        parts.append(str(value))
+for item in task.get("acceptance_criteria") or []:
+    if isinstance(item, dict):
+        parts.append(str(item.get("description") or item.get("criteria") or ""))
+    else:
+        parts.append(str(item))
+text = " ".join(parts).lower()
+trigger = bool(re.search(
+    r"cutover|cache|caching|read[ _-]*(reduction|削減|count|回数)|"
+    r"consumer|seam|継ぎ目|読み取り削減|読取削減|キャッシュ",
+    text,
+    re.IGNORECASE,
+))
+
+base = task.get("investigation_contract")
+if not isinstance(base, dict):
+    base = {
+        "version": 1,
+        "required": True,
+        "outcome_neutral": True,
+        "success_basis": "assigned_method_completed_with_primary_evidence",
+        "discovery_required": False,
+        "allowed_outcomes": ["found", "zero_found", "not_present", "external_boundary", "unknown_after_exhaustion"],
+        "minimum_primary_evidence": 1,
+    }
+else:
+    base = dict(base)
+
+fields = [
+    "primary_payload", "companion_caches", "key_set", "date_domain",
+    "empty_behavior", "fallback", "side_effects", "legacy_only_policy",
+    "downstream_cardinality",
+]
+base["seam_contract"] = {
+    "required": trigger,
+    "fields": {field: "" for field in fields},
+    "primary_evidence_fields": fields,
+    "minimum_primary_evidence": 9 if trigger else 1,
+    "field_guidance": {
+        "date_domain": "一次証拠でtarget_date/run境界と、前run終端DB状態(C1 read-once旧行)への履歴依存を確認する",
+        "legacy_only_policy": "一次証拠で旧行を許容する条件と、汚染後復元の1回目(1989件逆転・465件残存)および2回目収束full確認のstate dependencyを扱う",
+    },
+}
+if trigger:
+    base["minimum_primary_evidence"] = 9
+print(json.dumps(base, ensure_ascii=False, separators=(",", ":")))
+PY_SEAM_CONTRACT
+    ) || {
+        [ "$?" -eq 3 ] && return 0
+        log "BLOCK: seam_contract generation failed (${task_file})"
+        return 1
+    }
+
+    yaml_field_set "$task_file" "task" "investigation_contract" "$contract_json" || return 1
+    log "seam_contract: injected task_type=${task_type} required=$(python3 -c 'import json,sys; print(str(json.loads(sys.argv[1])["seam_contract"]["required"]).lower())' "$contract_json") fields=9"
+}
+
+# cmd_4215: only an explicit boolean declaration may opt a task into fixed-HEAD
+# validation.  Normal editing tasks must continue to use the shared worktree.
+inject_head_fixed_validation_contract() {
+    local task_file="$1" declared contract
+    [ -f "$task_file" ] || return 0
+    declared=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "head_fixed_validation" "false" 2>/dev/null || true)
+    [ "$declared" = "true" ] || return 0
+
+    contract='Capture the current HEAD once, then run `bash scripts/head_fixed_validation.sh <task_yaml>`. The runner creates an isolated detached worktree at that SHA, executes the task-selected runner from that worktree, removes the worktree on every exit path, and fails if a registered or on-disk residue remains. Shared-tree HEAD changes after capture must not alter the validated SHA.'
+    yaml_field_set "$task_file" "task" "head_fixed_validation_contract" "$contract"
+}
+
+# Direct hotfixes may repair a failed task owned by another ninja.  Validate
+# the complete join before publishing the hotfix, then register the dependency
+# with wait_reason last as the visibility barrier for ninja_monitor.
+register_blocked_parent_continuation() {
+    local hotfix_task="$1" current_ninja="$2"
+    local task_type parent_cmd fixes blocked_ninja blocked_task configured_ninjas
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$hotfix_task" task_type parent_cmd fixes blocked_parent_ninja blocked_parent_task_id 2>/dev/null)" || true
+    task_type="${task_type:-}"; parent_cmd="${parent_cmd:-}"; fixes="${fixes:-}"
+    blocked_ninja="${blocked_parent_ninja:-}"; blocked_task="${blocked_parent_task_id:-}"
+    [ -n "$fixes$blocked_ninja$blocked_task" ] || return 0
+    [ "$task_type" = "hotfix" ] || { echo "BLOCK: blocked-parent continuation requires task_type=hotfix" >&2; return 2; }
+    [ -n "$fixes" ] && [ -n "$blocked_ninja" ] && [ -n "$blocked_task" ] || { echo "BLOCK: incomplete blocked-parent reference" >&2; return 2; }
+    [ "$blocked_ninja" != "$current_ninja" ] || { echo "BLOCK: blocked-parent self-reference" >&2; return 2; }
+    configured_ninjas="$(get_ninja_names)" || { echo "BLOCK: failed to load configured ninja roster" >&2; return 2; }
+    case " $configured_ninjas " in
+        *" $blocked_ninja "*) ;;
+        *) echo "BLOCK: invalid blocked_parent_ninja" >&2; return 2 ;;
+    esac
+    local parent_file="$SCRIPT_DIR/queue/tasks/${blocked_ninja}.yaml" actual_id actual_status
+    [ -f "$parent_file" ] || { echo "BLOCK: blocked parent task file missing" >&2; return 2; }
+    actual_id=$(FIELD_GET_NO_LOG=1 field_get "$parent_file" task_id "" 2>/dev/null || true)
+    actual_status=$(FIELD_GET_NO_LOG=1 field_get "$parent_file" status "" 2>/dev/null || true)
+    [ "$actual_id" = "$blocked_task" ] || { echo "BLOCK: blocked parent task mismatch" >&2; return 2; }
+    [ "$actual_status" = "failed" ] || { echo "BLOCK: blocked parent must be failed" >&2; return 2; }
+    yaml_field_set "$parent_file" task continuation_task_id "$blocked_task" || return 2
+    yaml_field_set "$parent_file" task wait_connected_cmd "$parent_cmd" || return 2
+    yaml_field_set "$parent_file" task wait_reason dependency || return 2
+    log "DEPENDENCY-CONTINUATION-REGISTER: parent=${blocked_ninja}/${blocked_task} connected=${parent_cmd} fields=3/3"
+}
+
+# CI RED startup verification joins the active task to the failed Actions run
+# by task_type=ci_fix + ci_run_id.  Reject an incomplete join key while the
+# caller-owned source YAML is still the only artifact: no task/report/inbox
+# publication has happened at this point.
+deploy_task_ci_fix_run_id_precheck() {
+    local source_file="$1"
+    local result
+
+    local rc
+    if result=$(python3 - "$source_file" <<'PY'
+import re
+import sys
+import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
+
+path = sys.argv[1]
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception as exc:
+    print(f"yaml_error:{exc}")
+    raise SystemExit(2)
+
+task = data.get("task", data)
+if not isinstance(task, dict):
+    print("task_mapping_missing")
+    raise SystemExit(2)
+
+task_type = str(task.get("task_type") or "").strip().lower()
+if task_type != "ci_fix":
+    print("not_ci_fix")
+    raise SystemExit(0)
+
+run_id = task.get("ci_run_id")
+value = "" if run_id is None else str(run_id).strip()
+if not re.fullmatch(r"[1-9][0-9]*", value):
+    print("invalid_ci_run_id")
+    raise SystemExit(1)
+
+print(f"ci_fix_run_id={value}")
+PY
+    ); then
+        rc=0
+    else
+        rc=$?
+    fi
+    case "$rc" in
+        0)
+            [ "$result" = "not_ci_fix" ] || log "ci_fix_contract: PASS ${result}"
+            return 0
+            ;;
+        1)
+            log "BLOCK: task_type=ci_fix requires ci_run_id as a positive integer before publication"
+            echo "BLOCK: task_type=ci_fix requires ci_run_id as a positive integer (>0); missing, empty, zero, or non-numeric values are forbidden." >&2
+            return 1
+            ;;
+        *)
+            log "BLOCK: ci_fix contract source parse failed (${result:-unknown})"
+            echo "BLOCK: unable to validate ci_fix ci_run_id in ${source_file}: ${result:-unknown}" >&2
+            return 1
+            ;;
+    esac
+}
+
+# 歯止め(b) 殿裁可2026-07-25: 同一のCI REDに対する追いpushは2回まで。3回目からは
+# 新規配備を止め、RED修正へリソースを寄せる。一次情報は2つだけを使う:
+#   (1) CI REDの実態   = gh run list の最新完了run (conclusion/headSha)
+#   (2) 追いpush回数   = git rev-list --count <red_head_sha>..origin/main
+# gate_metrics.logはrun_idを持たずcmd単位の記録しか残らないため、RED起点からの
+# push本数を数えられる唯一の一次情報がgit履歴である(新規台帳を作らない)。
+
+inject_ci_fix_clean_repro_contract() {
+    local task_file="$1" task_type
+    [ -f "$task_file" ] || return 0
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    [ "${task_type,,}" = "ci_fix" ] || return 0
+
+    python3 - "$task_file" <<'PY' || return 1
+import json, os, re, sys, tempfile, yaml
+path = sys.argv[1]
+raw = open(path, encoding='utf-8').read()
+d = yaml.safe_load(raw) or {}
+t = d.get('task', d)
+checkpoint = {
+    'type': 'ci_fix_clean_repro',
+    'required': True,
+    'evidence_field': 'ci_fix_clean_repro_evidence',
+    'validator': 'deploy_task_ci_fix_clean_repro_evidence_validate',
+    'phase': 'terminal_report_gate',
+}
+
+def replace_task_field(text, key, value):
+    encoded = json.dumps(value, ensure_ascii=False, separators=(',', ':'))
+    lines = text.splitlines()
+    out, i, replaced = [], 0, False
+    while i < len(lines):
+        line = lines[i]
+        if re.match(r'^  ' + re.escape(key) + r':(?:\s|$)', line):
+            out.append('  ' + key + ': ' + encoded); replaced = True; i += 1
+            while i < len(lines):
+                stripped = lines[i].lstrip(' '); indent = len(lines[i]) - len(stripped)
+                if stripped and (indent < 2 or (indent == 2 and not stripped.startswith('- '))): break
+                i += 1
+            continue
+        out.append(line); i += 1
+    if not replaced:
+        out.append('  ' + key + ': ' + encoded)
+    return '\n'.join(out) + '\n'
+
+def remove_task_field(text, key):
+    lines = text.splitlines()
+    out, i = [], 0
+    while i < len(lines):
+        line = lines[i]
+        if re.match(r'^  ' + re.escape(key) + r':(?:\s|$)', line):
+            i += 1
+            while i < len(lines):
+                stripped = lines[i].lstrip(' ')
+                indent = len(lines[i]) - len(stripped)
+                if stripped and (indent < 2 or (indent == 2 and not stripped.startswith('- '))):
+                    break
+                i += 1
+            continue
+        out.append(line)
+        i += 1
+    return '\n'.join(out) + '\n'
+
+# A retry may start from a task produced by the old AC-based implementation.
+# Remove that obsolete contract and its task-local evidence so the report is
+# the sole terminal evidence owner for the new typed checkpoint.
+raw = remove_task_field(raw, 'ci_fix_clean_repro_evidence')
+raw = replace_task_field(raw, 'final_checkpoint', checkpoint)
+yaml.safe_load(raw)
+fd, tmp = tempfile.mkstemp(prefix=os.path.basename(path)+'.', dir=os.path.dirname(path) or '.')
+try:
+    with os.fdopen(fd, 'w', encoding='utf-8') as fh: fh.write(raw)
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+PY
+    log "inject_ci_fix_clean_repro_contract: typed final_checkpoint injected"
+}
+
+deploy_task_ci_fix_clean_repro_evidence_validate() {
+    local task_file="$1"
+    # Keep the worker-facing helper compatible while sharing the one canonical
+    # validator with the terminal report gate.
+    PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}" python3 - "$task_file" <<'PY'
+import sys, yaml
+from scripts.gates.gate_report_format_main import ci_fix_clean_repro_evidence_errors
+
+doc = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+task = doc.get('task', doc)
+if str(task.get('task_type') or '').strip().lower() != 'ci_fix':
+    raise SystemExit(0)
+evidence = task.get('ci_fix_clean_repro_evidence')
+errors = ci_fix_clean_repro_evidence_errors(evidence)
+if errors:
+    for error in errors:
+        print('BLOCK: ' + error, file=sys.stderr)
+    raise SystemExit(1)
+if isinstance(evidence, dict) and str(evidence.get('outcome') or '').strip().lower() == 'not_reproducible':
+    print('PASS: ci_fix clean repro not_reproducible evidence valid')
+else:
+    print('PASS: ci_fix clean repro evidence valid')
+PY
+    return $?
+}
+
+# D006 is an unconditional safety boundary.  Reject task sources that require
+# signalling an external process before reset_stale_fields can publish the
+# source into queue/tasks or create a report/inbox event.  Explanations of the
+# prohibition remain valid input; the guard targets executable/imperative
+# requirements, not the words themselves.
+deploy_task_destructive_signal_precheck() {
+    local source_file="$1" cmd_id="${2:-}"
+    python3 - "$source_file" "$cmd_id" <<'PY'
+import re
+import shlex
+import sys
+
+import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
+
+path, cmd_id = sys.argv[1:3]
+try:
+    raw = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception as exc:
+    print(f"BLOCK: destructive signal preflight could not parse source: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+
+source = raw.get("commands", raw)
+if cmd_id:
+    if isinstance(source, dict) and cmd_id in source:
+        task = source[cmd_id]
+    elif isinstance(source, list):
+        task = next((item for item in source if isinstance(item, dict) and item.get("id") == cmd_id), {})
+    else:
+        task = raw.get("task", raw)
+else:
+    task = raw.get("task", raw)
+if not isinstance(task, dict):
+    raise SystemExit(0)
+
+def flatten_acs(value):
+    if isinstance(value, dict):
+        values = value.values()
+    elif isinstance(value, list):
+        values = value
+    else:
+        values = [value]
+    out = []
+    for value in values:
+        if isinstance(value, dict):
+            for key in ("description", "command", "check", "criteria", "title"):
+                if value.get(key):
+                    out.append(str(value[key]))
+            for check in value.get("checks", []) if isinstance(value.get("checks"), list) else []:
+                out.append(str(check.get("check", "") if isinstance(check, dict) else check))
+        elif value:
+            out.append(str(value))
+    return out
+
+texts = [str(task.get(key) or "") for key in ("purpose", "command")]
+texts.extend(flatten_acs(task.get("acceptance_criteria") or task.get("ac") or []))
+
+safe_explanation = re.compile(
+    r"D006|禁止|禁則|違反|遮断|BLOCK|ブロック|検出|発火|参照|説明|例示|"
+    r"要求.{0,12}(?:場合|なら)|(?:使うな|実行するな|してはならない)", re.I
+)
+imperative_signal = re.compile(
+    r"(?:外部|別|他の|対象)?(?:プロセス|daemon|デーモン|PID|pane|ペイン).{0,30}"
+    r"(?:kill|pkill|killall|signal|シグナル|終了させ|停止させ).{0,20}"
+    r"(?:実行|送信|行う|せよ|すること|故障注入)", re.I
+)
+process_kill_fault = re.compile(
+    r"(?:process[ _-]?kill|プロセスkill).{0,20}(?:故障注入|実行|行う|せよ)", re.I
+)
+
+def has_signal_command(line):
+    """Recognize kill-family commands after shell wrappers and their args."""
+    try:
+        tokens = shlex.split(line, posix=True)
+    except ValueError:
+        tokens = re.split(r"\s+", line)
+    signal_commands = {"kill", "pkill", "killall"}
+    wrappers = {"env", "timeout", "command", "nohup", "nice", "setsid"}
+    for token in tokens:
+        normalized = token.strip(";|&(){}").rsplit("/", 1)[-1].lower()
+        if normalized in signal_commands:
+            return True
+        # Wrapper names are intentionally recognized while scanning through
+        # options, durations and VAR=value arguments to the eventual command.
+        if normalized in wrappers or token.startswith("-") or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", token):
+            continue
+    return False
+
+violations = []
+for text in texts:
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or safe_explanation.search(line):
+            continue
+        if has_signal_command(line) or imperative_signal.search(line) or process_kill_fault.search(line):
+            violations.append(line)
+
+if violations:
+    print("BLOCK: D006違反の外部プロセスsignal要求を配備前に検出。", file=sys.stderr)
+    print("positive_rule: phase永続保存後に対象プロセス自身が非0終了するテスト専用failpointを使え。", file=sys.stderr)
+    print(f"evidence: {violations[0]}", file=sys.stderr)
+    raise SystemExit(2)
+PY
+}

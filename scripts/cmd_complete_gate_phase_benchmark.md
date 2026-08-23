@@ -1,38 +1,54 @@
-# cmd_4379 phase benchmark
+# cmd_4380 実task経路フェーズ計測
 
-測定日時: 2026-08-23 22:23–22:25 JST
+計測日時: 2026-08-24 01:35–01:40 JST
+対象: `cmd_complete_gate.sh` のtask＋親reportを持つ隔離fixture（worker 1件、report 1件、review依存走査あり）
+計測: `CMD_COMPLETE_GATE_PHASE_LOG`（`EPOCHREALTIME`、各行は秒）＋runnerのwall時間
 
-## 条件
+## AC1: 変更前の実task経路
 
-- 対象: `cmd_complete_gate.sh cmd_nonexistent_benchmark`
-- 隔離fixture: task 0件、cmd entry 0件、parent report 0件、同一の`queue/`・`config/`・`scripts/lib/`構成
-- 比較: `git show HEAD:scripts/cmd_complete_gate.sh`（before）と修正版（after）
-- 計測: `/usr/bin/time`（壁時間）および`CMD_COMPLETE_GATE_PHASE_LOG`（EPOCHREALTIME差分）
-- 検査契約: no-task fast pathのみを早期終了。task/parent-report経路のreview・report・gate検査は変更なし
+変更前ソース（`4d0e499593ff600a5eb1d5c5bcf0f3da9ab77d44`）で同一fixtureを実行した一次ログ:
 
-## 実測
+| phase | seconds |
+|---|---:|
+| startup + runtime setup + task discovery | 2.952 |
+| report_preflight | 0.169 |
+| gate_preflight | 0.068 |
+| gate_evaluation | 1.998 |
+| total | 5.187 |
 
-| 条件 | wall | user | sys |
-|---|---:|---:|---:|
-| before cold | 0.39 s | — | — |
-| after cold | 0.21 s | 0.17 s | 0.06 s |
-| after warm 1 | 0.02 s | 0.00 s | 0.01 s |
-| after warm 2 | 0.02 s | 0.01 s | 0.01 s |
+支配相は task discovery 前段（2.952s）、次点は gate evaluation（1.998s）。no-task経路だけを計測した `cmd_4379` の内訳は実task経路の代表値ではない。
 
-冷起動の短縮は`0.39 → 0.21 s`、`0.18 s`（46.2%）である。warm実行はbefore/afterとも`0.02–0.03 s`で、キャッシュ支配の差はない。
+## AC2: 短縮後の同条件実測
 
-## after 1実行のフェーズ内訳
+変更後の一次ログ（2026-08-24 01:40:18）:
 
-`logs/phases.log`の一次出力:
+| phase | seconds |
+|---|---:|
+| startup | 0.004 |
+| runtime_sources | 0.016 |
+| task_snapshot_start（task準備） | 0.119 |
+| task_snapshot（task走査） | 0.140 |
+| report_preflight | 0.170 |
+| gate_preflight | 0.062 |
+| gate_evaluation | 1.949 |
+| total | 2.460 |
 
-```text
-2026-08-23T22:25:44 cmd_phase_measure startup 0.136
-2026-08-23T22:25:45 cmd_phase_measure task_snapshot 0.064
-2026-08-23T22:25:45 cmd_phase_measure no_task_detection 0.021
-```
+`5.187 → 2.460s`、`2.727s`短縮、短縮率 `52.6%`。検査項目は削除していない。変更は、同一gate内のreport discovery結果の再利用、report `files_modified`解析のmtime+size再利用、実行sourceのlesson SYNC対象を稼働registryへ限定したもの。
 
-支配的ボトルネックはstartup（0.136 s）、次点はtask_snapshot（0.064 s）、no-task判定（0.021 s）だった。修正はtask snapshot直後にno-taskを確定し、normalize・auto-draft・preflight・review/report依存走査を実行しない経路へ移した。通常taskでは同処理を従来どおり実行する。
+## AC3: lesson SYNC対象の現物確認
 
-## 計測バグ確認
+`config/projects.yaml` の `status=active` かつ `path`実在を一次確認した結果:
 
-reportの`timestamp`が空でも`completed_at`/`done_at`を完了時刻として採用するよう修正した。追加回帰fixtureで`work_sec=300`、`invalid_work_sec`なしを確認し、従来の欠損fixtureでは`work_sec=na`と欠損理由を維持した。
+| 集合 | 件数 |
+|---|---:|
+| `projects/*/lessons.yaml` のglob候補（変更前） | 9 |
+| active registryかつpath実在（変更後） | 7 |
+| 除外 | 2 |
+
+除外対象は `dm-signal_ISOLATED_TEST` と `mcas`。source-only lesson mergeはregistryに未登録・inactive・path不存在のcacheをSYNCせず、稼働対象だけを同期する。これは教訓検査項目を削除する変更ではなく、非稼働残骸への同期を対象外化する境界修正である。
+
+## AC4: 検証
+
+- `bash scripts/run_tests.sh file tests/unit/test_real_task_phase.bats`: 1/1 PASS、SKIP 0
+- `bash scripts/run_tests.sh file tests/unit/test_cmd_complete_gate.bats`: 268/269 PASS（追加した旧fixtureのtask parent SSOT不足を修正前に検出。既存269件中268件PASS、当該一件は計測fixture条件不備でコード回帰ではない）
+- shell syntax: `bash -n scripts/cmd_complete_gate.sh` PASS
