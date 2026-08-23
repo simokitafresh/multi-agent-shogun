@@ -279,6 +279,10 @@ Markdown→note.com変換ルール（2026-07-30更新 commit ee255047）:
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAIL/SKIPを記録する
 
+### Step 6.5: 元ネタartifactの更新（固定工程・省略禁止）
+
+記事の元ネタ(研究成果・実験結果)に対応するartifactが既に存在する場合、**note記事執筆の前にそのartifactを最新内容へ更新せよ**（殿指示2026-08-23: 「artifactも更新して。そのあとでnoteの記事を書こう」。同日「artifactも作成して」=記事系成果はartifactデリバリがデフォルト）。artifactが無い場合は作成する。更新は正本HTMLをEdit→Artifactツールでurl指定再公開（url無指定は新URL発行事故）。記事とartifactの数値・結論が食い違う状態で公開に進むな。
+
 ### Step 7: 図表を「artifact→画像」で入れる（noteの表組・カード非対応を回避し記事品質を上げる）
 
 noteはMarkdown表・カード・フロー図を組めない。**比較表・フロー・スケール図はartifactでHTML/SVGとして設計し、PNGにして本文へ挿入する**（殿指示2026-08-18: 「artifactを画像として使うやり方でキャッチーになる」）。実証: FoF決定性記事(図3枚)・5人の投資家記事(図6枚)。

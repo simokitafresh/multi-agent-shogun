@@ -1,3 +1,2 @@
-# session_alerts — generated: 2026-08-22T21:27:26+0900
-[DONE] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
-[DONE] failed task残置: kotaro — 真因確認と再配備/クローズを確定せよ
+# session_alerts — generated: 2026-08-23T19:40:07+0900
+[DONE] 追体験自動化ターゲット: skills/note-writer/SKILL.mdの完了手順へartifact更新+natural-japanese lintを固定工程として追記(掲示板blt_20260823_193926_4f4cbf記載済み)
