@@ -2509,3 +2509,40 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260823-215107291-f099
+  ts: "2026-08-23T21:51:07+09:00"
+  insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
+  priority: "high"
+  source: "self_retro"
+  fix_known: true
+  status: pending
+  target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
+  verify_command: "grep -Fq '3d4a3acdf3e08b00a60c2d76fca1524fa21d95e7a6f80379221dea6a91761d4d' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
+  insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
+  occurrence_count: 2
+  last_seen: "2026-08-23T21:54:09+09:00"
+  verification:
+    status: "passed"
+    exit_code: 0
+    output: ""
+- id: INS-20260823-215454663-7fc2
+  ts: "2026-08-23T21:54:54+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id broijwg6l task id tool use id toolu 01Wh6SeHJZEEkSFtYL は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260823-215804386-76f5
+  ts: "2026-08-23T21:58:04+09:00"
+  insight: "semantic_index_update新概念候補: discussion:shが異常に遅いように感じるが、インフラバグや無駄に冗長部分や、不要な内容を構造的に含んでいないか、覚醒して調査しスループット向上を実行せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260823-220145249-b9d5
+  ts: "2026-08-23T22:01:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:利他の精神で覚醒して協調せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
