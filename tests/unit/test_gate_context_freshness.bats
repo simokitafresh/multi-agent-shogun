@@ -353,6 +353,67 @@ SH
   [[ "$output" != *"ALERT: context/infrastructure.md"* ]]
 }
 
+# test_necessity: a reverted/divergent source commit with identical registered
+# trigger content must advance the source boundary through the existing
+# machine-readable doc-lane consumer instead of producing a false raw ALERT.
+# regression_justification: GA-493 counted a revert as an unreflected core/ops
+# change even though the effective backend/services tree was unchanged.
+@test "source-equivalent external commit becomes a durable boundary update request" {
+  local repo="$BATS_TEST_TMPDIR/source-equivalent"
+  local bulletin_capture="$BATS_TEST_TMPDIR/source-equivalent-bulletin"
+  local bulletin_script="$BATS_TEST_TMPDIR/source-equivalent-bulletin.sh"
+  mkdir -p "$repo/backend/app/services" "$FIXTURE_ROOT/context"
+  printf 'baseline\n' > "$repo/backend/app/services/runtime.py"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email fixture@example.invalid
+  git -C "$repo" config user.name fixture
+  git -C "$repo" add .
+  git -C "$repo" commit -qm 'source baseline'
+  local boundary_hash
+  boundary_hash="$(git -C "$repo" rev-parse HEAD)"
+  printf 'changed\n' > "$repo/backend/app/services/runtime.py"
+  git -C "$repo" add .
+  git -C "$repo" commit -qm 'source change'
+  printf 'baseline\n' > "$repo/backend/app/services/runtime.py"
+  git -C "$repo" add .
+  git -C "$repo" commit -qm 'Revert "source change"'
+  local latest_hash
+  latest_hash="$(git -C "$repo" rev-parse HEAD)"
+
+  printf '%s\n' \
+    '<!-- last_updated: 2026-08-22 -->' \
+    "<!-- source_commit:${boundary_hash} reason:fixture evidence:fixture -->" \
+    > "$FIXTURE_ROOT/context/dm-signal-core.md"
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
+#!/usr/bin/env bash
+printf '%s\\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=$repo root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: $latest_hash Revert source change'
+SH
+  chmod +x "$FIXTURE_ROOT/scripts/check.sh"
+  cat > "$bulletin_script" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$BULLETIN_CAPTURE"
+SH
+  chmod 644 "$bulletin_script"
+
+  run env \
+    BULLETIN_CAPTURE="$bulletin_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/source-equivalent-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/source-equivalent-alert-state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-08-23 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CONTEXT_UPDATE_REQUEST project=dm-signal context=context/dm-signal-core.md source_commit=${latest_hash} parent_cmd=source_${latest_hash} reason=source_equivalent"* ]]
+  [[ "$output" == *"source commitは登録boundaryと内容同値"* ]]
+  [[ "$output" != *"ALERT: dm-signal-core.md (source commits"* ]]
+  [[ "$(cat "$bulletin_capture")" == *"DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=dm-signal context=context/dm-signal-core.md"* ]]
+}
+
 @test "source boundary setter accepts the dashboard freshness tip on divergent HEAD" {
   # test_necessity: the source_commit setter must accept a reviewed origin/main
   # boundary when the shared worktree HEAD is on a divergent local branch.
