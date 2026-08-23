@@ -2666,6 +2666,58 @@ PY
     ! grep -Fq "cmd_nonexistent_benchmark" "$TEST_PROJECT/logs/gate_metrics.log"
 }
 
+@test "cmd_complete_gate defaults phase timing to a durable log with a stable record shape" {
+    local isolated_metrics="$TEST_TMPDIR/default-phase-metrics.log"
+    local phase_log="$TEST_PROJECT/logs/cmd_complete_gate_phases.log"
+    rm -f "$phase_log" "$phase_log.lock"
+
+    run env GATE_METRICS_LOG="$isolated_metrics" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_default_phase_log
+
+    [ "$status" -eq 0 ]
+    [ -s "$phase_log" ]
+    awk -F '\t' '
+        NF != 4 {exit 1}
+        $1 !~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$/ {exit 1}
+        $2 != "cmd_default_phase_log" {exit 1}
+        $3 == "" {exit 1}
+        $4 !~ /^[0-9]+\.[0-9]{3}$/ {exit 1}
+    ' "$phase_log"
+}
+
+@test "cmd_complete_gate phase recording does not alter disabled behavior" {
+    local enabled_metrics="$TEST_TMPDIR/enabled-metrics.log"
+    local disabled_metrics="$TEST_TMPDIR/disabled-metrics.log"
+    local enabled_log="$TEST_TMPDIR/enabled-phases.log"
+    local enabled_output disabled_output enabled_status disabled_status
+
+    run env GATE_METRICS_LOG="$enabled_metrics" CMD_COMPLETE_GATE_PHASE_LOG="$enabled_log" \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_phase_behavior_compare
+    enabled_status="$status"
+    enabled_output="$output"
+    run env GATE_METRICS_LOG="$disabled_metrics" CMD_COMPLETE_GATE_PHASE_LOG=disabled \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_phase_behavior_compare
+    disabled_status="$status"
+    disabled_output="$output"
+
+    [ "$enabled_status" -eq "$disabled_status" ]
+    [ "$enabled_output" = "$disabled_output" ]
+    [ -s "$enabled_log" ]
+    [ ! -e "$TEST_PROJECT/logs/cmd_complete_gate_phases.log" ]
+}
+
+@test "cmd_complete_gate rotates an oversized durable phase log" {
+    local phase_log="$TEST_TMPDIR/rotating-phases.log"
+    printf 'old-record\n' > "$phase_log"
+
+    run env GATE_METRICS_LOG="$TEST_TMPDIR/rotation-metrics.log" \
+        CMD_COMPLETE_GATE_PHASE_LOG="$phase_log" CMD_COMPLETE_GATE_PHASE_LOG_MAX_BYTES=1 \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_phase_rotation
+
+    [ "$status" -eq 0 ]
+    grep -Fq 'old-record' "${phase_log}.1"
+    grep -Fq $'\tcmd_phase_rotation\t' "$phase_log"
+}
+
 # test_necessity: the phase trace must cover a task/report path; a no-task-only
 # trace cannot identify the dominant completion-gate cost. This is a permanent
 # contract because the phase names are the AC1 measurement boundary.

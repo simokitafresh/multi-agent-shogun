@@ -926,11 +926,18 @@ done
 LOG_DIR="$SCRIPT_DIR/logs"
 GATE_METRICS_LOG="${GATE_METRICS_LOG:-$LOG_DIR/gate_metrics.log}"
 
-# cmd_4379: low-overhead wall-clock trace for major gate phases. EPOCHREALTIME
-# is used without spawning date/python on the measured path.
-# Opt-in keeps normal gate throughput unchanged; AC1 enables this path with
-# CMD_COMPLETE_GATE_PHASE_LOG=<file> for a measured run.
-GATE_PHASE_LOG="${CMD_COMPLETE_GATE_PHASE_LOG:-}"
+# cmd_4379/cmd_4381: low-overhead wall-clock trace for major gate phases.
+# EPOCHREALTIME is used without spawning date/python on the measured path.
+# The durable default makes every real gate run observable. Set
+# CMD_COMPLETE_GATE_PHASE_LOG to a path to redirect it, or to "disabled"/"0"
+# to suppress phase recording for an explicit behavior comparison.
+if [ "${CMD_COMPLETE_GATE_PHASE_LOG:-}" = "disabled" ] || [ "${CMD_COMPLETE_GATE_PHASE_LOG:-}" = "0" ]; then
+    GATE_PHASE_LOG=""
+else
+    GATE_PHASE_LOG="${CMD_COMPLETE_GATE_PHASE_LOG:-$LOG_DIR/cmd_complete_gate_phases.log}"
+fi
+GATE_PHASE_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_PHASE_LOG_MAX_BYTES:-5242880}"
+GATE_PHASE_LOG_ROTATION_CHECKED=false
 GATE_PHASE_CURRENT=""
 GATE_PHASE_START_US=""
 GATE_SUBPHASE_LOG="${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}"
@@ -953,10 +960,31 @@ gate_phase_tick() {
         [ "$elapsed_us" -ge 0 ] || elapsed_us=0
         sec=$((elapsed_us / 1000000))
         ms=$(((elapsed_us % 1000000) / 1000))
+        local phase_record
+        phase_record=$(printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d' \
+            -1 "$CMD_ID" "$GATE_PHASE_CURRENT" "$sec" "$ms")
         mkdir -p "$(dirname "$GATE_PHASE_LOG")" 2>/dev/null || true
-        printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d\n' \
-            -1 "$CMD_ID" "$GATE_PHASE_CURRENT" "$sec" "$ms" \
-            >> "$GATE_PHASE_LOG"
+        local rotate_log=false
+        if [ "$GATE_PHASE_LOG_ROTATION_CHECKED" = false ]; then
+            rotate_log=true
+            GATE_PHASE_LOG_ROTATION_CHECKED=true
+        fi
+        (
+            flock -x 9
+            if [ "$rotate_log" = true ]; then
+                case "$GATE_PHASE_LOG_MAX_BYTES" in
+                    ''|*[!0-9]*) GATE_PHASE_LOG_MAX_BYTES=5242880 ;;
+                esac
+                if [ "$GATE_PHASE_LOG_MAX_BYTES" -gt 0 ] && [ -f "$GATE_PHASE_LOG" ]; then
+                    local log_bytes
+                    log_bytes=$(wc -c < "$GATE_PHASE_LOG" 2>/dev/null || printf '0')
+                    if [ "$log_bytes" -ge "$GATE_PHASE_LOG_MAX_BYTES" ]; then
+                        mv -f "$GATE_PHASE_LOG" "${GATE_PHASE_LOG}.1" 2>/dev/null || true
+                    fi
+                fi
+            fi
+            printf '%s\n' "$phase_record" >> "$GATE_PHASE_LOG"
+        ) 9>"${GATE_PHASE_LOG}.lock"
     fi
     GATE_PHASE_CURRENT="$next_phase"
     GATE_PHASE_START_US="$now_us"
