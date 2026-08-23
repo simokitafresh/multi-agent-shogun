@@ -7,6 +7,7 @@ setup() {
     export DAEMON_MAINTENANCE_MARKER="$TEST_ROOT/marker"
     export DAEMON_MAINTENANCE_NOW=10000
     export AGENT_ID=kagemaru
+    export SHOGUN_STATE_DIR="$TEST_ROOT/state"
     # restart_watchers warm-up is not the subject of this suite.  Point it at
     # an absent fixture DB so the test cannot start a detached copy of the
     # production memory DB and leak work beyond the bats root in clean CI.
