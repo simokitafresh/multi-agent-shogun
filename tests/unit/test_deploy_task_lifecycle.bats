@@ -46,15 +46,18 @@ printf "boundaries=active,completed,idle identity_clear=yes history_preserved=ye
 extract_function() {
     local name="$1"
     local start end
+    local source_script
+    source_script=$(rg -l "^${name}\\(\\) \\{" "$PROJECT_ROOT/scripts/deploy_task"/*.sh | sort | head -1)
+    [ -n "$source_script" ] || source_script="${SRC_DEPLOY_MAIN:-$SRC_DEPLOY_SCRIPT}"
 
-    start=$(awk -v name="$name" '$0 ~ "^" name "\\(\\) \\{" { print NR; exit }' "$SRC_DEPLOY_SCRIPT")
+    start=$(awk -v name="$name" '$0 ~ "^" name "\\(\\) \\{" { print NR; exit }' "$source_script")
     [ -n "$start" ] || return 1
 
     end=$(awk -v start="$start" '
         NR > start && /^[A-Za-z0-9_]+\(\) \{/ { print NR - 1; found = 1; exit }
         END { if (!found) print NR }
-    ' "$SRC_DEPLOY_SCRIPT")
-    sed -n "${start},${end}p" "$SRC_DEPLOY_SCRIPT"
+    ' "$source_script")
+    sed -n "${start},${end}p" "$source_script"
 }
 
 write_shogun_to_karo_fixture() {
@@ -570,6 +573,7 @@ EOF
 
 setup_file() {
     deploy_task_setup_file
+    export SRC_DEPLOY_MAIN="$PROJECT_ROOT/scripts/deploy_task/main.sh"
     export REAL_PROJECT_ROOT="$PROJECT_ROOT"
     [ -f "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
@@ -925,7 +929,7 @@ EOF
 }
 
 @test "cmd_2804: exact scope guards _ac_task_id empty warning in deploy_task.sh" {
-    run grep -F '[ -z "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    run grep -F '[ -z "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]' "$PROJECT_ROOT/scripts/deploy_task/main.sh"
     [ "$status" -eq 0 ]
 }
 
@@ -1012,15 +1016,15 @@ EOF
 }
 
 @test "cmd_3280: split deploy fix exists in deploy_task.sh source" {
-    run grep -F "split_deploy fix (cmd_3280)" "$PROJECT_ROOT/scripts/deploy_task.sh"
+    run grep -F "split_deploy fix (cmd_3280)" "$PROJECT_ROOT/scripts/deploy_task/main.sh"
     [ "$status" -eq 0 ]
 }
 
 @test "cmd_2681: deploy_task_main takes a per-cmd flock before duplicate checks" {
-    run grep -Eq 'flock -w 10 "\$deploy_lock_fd"' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    run grep -Eq 'flock -w 10 "\$deploy_lock_fd"' "$PROJECT_ROOT/scripts/deploy_task/main.sh"
     [ "$status" -eq 0 ]
 
-    run grep -Eq 'deploy_task_lock_path "\$CMD_ID"' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    run grep -Eq 'deploy_task_lock_path "\$CMD_ID"' "$PROJECT_ROOT/scripts/deploy_task/main.sh"
     [ "$status" -eq 0 ]
 }
 
@@ -1566,7 +1570,7 @@ EOF
 @test "same-command retry satisfies the stale-reset preflight contract" {
     # test_necessity: a retry that intentionally reuses the already-reset task
     # must not be rejected later by the unconditional _STALE_RESET_DONE gate.
-    run python3 - "$TEST_PROJECT/scripts/deploy_task.sh" <<'PY'
+    run python3 - "$PROJECT_ROOT/scripts/deploy_task/main.sh" <<'PY'
 import pathlib, re, sys
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 pattern = re.compile(
@@ -1583,7 +1587,7 @@ PY
 @test "same-command retry does not append a duplicate task_assigned message" {
     # test_necessity: one task generation owns exactly one durable
     # task_assigned message; retries may re-nudge but must not append another.
-    run python3 - "$TEST_PROJECT/scripts/deploy_task.sh" <<'PY'
+    run python3 - "$PROJECT_ROOT/scripts/deploy_task/main.sh" <<'PY'
 import pathlib, re, sys
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 sets_generation_flag = re.search(
@@ -2790,7 +2794,7 @@ EOF
 }
 
 @test "cmd_2650: inject_context_hints exists in deploy_task.sh" {
-    run grep -q '^inject_context_hints()' "$PROJECT_ROOT/scripts/deploy_task.sh"
+    run grep -q '^inject_context_hints()' "$PROJECT_ROOT/scripts/deploy_task/context_injection.sh"
     [ "$status" -eq 0 ]
 }
 
