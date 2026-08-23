@@ -1,6 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-22 GA-491 reviewed source boundary (shogun doc lane, re-apply of GA-490) -->
 <!-- source_commit:45760ecf reason:GA-490/491 research境界更新(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log b24d6b5f..45760ecf -- docs/research analysis outputs marketing-director = 14件。内容=cmd_4355/4356成果保存(07848c94)+note記事群(決定的tie-break一般論・投資家スクリーニング)+週報2026-08-18+reconcile merge revert。研究結論の変更なし、境界のみ更新。初回=877a73ef1、tree退行検出により再適用 -->
+<!-- dm_signal_research_reflux: fingerprint=f9d36a7b49385ecd846cf12bb361d6654748d049bba0ee507a649f9dc1024ee3; mode=non-target; evidence_b64=U2hhcmVkIGNvbnRleHQgaW5kZXggaXMgbWFpbnRhaW5lZCBpbiBtdWx0aS1hZ2VudC1zaG9ndW47IHRoaXMgRE0tU2lnbmFsIGNvbW1pdCBvd25zIG9ubHkgdGhlIHJlc2VhcmNoIGhhcm5lc3MgYW5kIHJlcG9ydC4= -->
 <!-- dm_signal_research_reflux: fingerprint=bb72f517f4cbbf1466de24c73098b7a7dd051c2ae55e753986fa431130383c2f; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgbm93IHJlY29yZHMgY21kXzQzNzIgUEFTU19QSEFTRV8xIHdpdGggYXJ0aWZhY3QgcmVmZXJlbmNlcw== -->
 <!-- dm_signal_research_reflux: fingerprint=d947f787be6c07907b51d45e4c1e3c16f645aee8c3b16355dc5a875a36a3f02d; mode=synced; evidence_b64=Y21kXzQzNjkgY29uY2x1c2lvbiBhZGRlZCB0byBzaGFyZWQgY29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgd2l0aCBtZWFzdXJlZCA3OCBGb0YsIDEwOCBjb21tb24gUElUIG1vbnRocywgZnV0dXJlIHJlZmVyZW5jZXMgMA== -->
 <!-- dm_signal_research_reflux: fingerprint=e08ee1a5e38e43ef2d162827eac8319373353dc46ebfc8b5bd8e8d194c335a35; mode=non-target; evidence_b64=VHJhY2sgQiBzdGFuZGFsb25lIHJlc2VhcmNoIGFydGlmYWN0OyBzaGFyZWQgY29udGV4dC9pbmRleCB1cGRhdGUgaXMgb3V0c2lkZSB0YXNrIHNjb3BlIGFuZCBUcmFjayBBIHJlbWFpbnMgaXNvbGF0ZWQu -->
@@ -16,7 +17,6 @@
 <!-- dm_signal_research_reflux: fingerprint=a197f43097c6cabc7b957beb4b8675d0ee24cf1685ab6641d845858a379ae239; mode=non-target; evidence_b64=VGhpcyBzdXBwbGVtZW50YWwgYXJ0aWZhY3QgcmVjb3JkcyB0aGUgbWFuaWZlc3QtdG8tY3VycmVudC16ZXJvIG9ic2VydmF0aW9uIHdpbmRvdyByZXF1ZXN0ZWQgYnkgdGhlIHNhbWUtdGFzayBpbmJveDsgY29udGV4dCBpbmRleCB1cGRhdGUgaXMgb3V0c2lkZSB0aGlzIG5pbmphIHNjb3BlLg== -->
 <!-- dm_signal_research_reflux: fingerprint=5aad2fb1176d62c01522bb3a7ad88f9eb0ea1a04e8a1a4b6e2f829bf23b22f72; mode=synced; evidence_b64=QUMzIGNvbmNsdXNpb24gaXMgcmVmbGVjdGVkIGluIGNvbnRleHQvZG0tc2lnbmFsLW9wcy5tZCDCpzk1 -->
 <!-- dm_signal_research_reflux: fingerprint=f66ff21938c52c96f917d42dfa76540c0aa83ed53728442cf9b24a8d9ab2d934; mode=non-target; evidence_b64=VHJhY2sgQSBldmlkZW5jZSBpcyBpbnRlbnRpb25hbGx5IGlzb2xhdGVkOyBzaGFyZWQgY29udGV4dCByZXR1cm4gaXMgZW1iYXJnb2VkIHVudGlsIEthcm8gcmVsZWFzZS4= -->
-<!-- dm_signal_research_reflux: fingerprint=6d02fe5f0cfdf9dc72bded0f194f87d702090a2c7d6b9ebc97d52e55c008ab31; mode=non-target; evidence_b64=U2hhcmVkIGNvbnRleHQgZW1iYXJnbzogdGFzayByZXF1aXJlcyBrYXJvIHJlbGVhc2UgYmVmb3JlIGNvbnRleHQvZG0tc2lnbmFsLW9wcy5tZCB1cGRhdGU7IGRldGFpbGVkIGV2aWRlbmNlIGlzIGluIHRoaXMgb3duZWQgcmVzZWFyY2ggcmVjb3JkLg== -->
 <!-- source_commit:b24d6b5f reason:GA-477 reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=b24d6b5f -->
 <!-- source_commit:6b3537fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=6b3537fd -->
 <!-- source_commit:99199a9c reason:cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) evidence:cmd_4301: context_freshness_check --cmd-commit-list cmd_4301の最新行=99199a9c。doc-only 8commitをmainへff-push済み(e3dccd87..99199a9c) -->
@@ -71,3 +71,6 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 
 ## cmd_4372 HMM Regime Phase 1 (2026-08-23)
 - SPY日次log returnを観測、3状態Gaussian HMMのexpanding-fit + filtered state（smoothing不使用）でFoF全78体を分類。decision 173月、Quiet/Transition/Stress=126/23/24、future参照0。Regime間rank correlation最小0.680709でPASS_PHASE_1、Phase 2進行可。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4372_hmm_regime_phase1_report.md` / `outputs/analysis/cmd_4372_hmm_regime_phase1.json`
+
+## cmd_4373 HMM Regime Phase 2 (2026-08-23)
+- Phase 1 filtered regime系列を再利用し、PIT prior 36M/60M eligibility + prior 12M Momentum top-4内で、全horizonのRegime×forward・sample対称化・Stress leave-one-month-outを実装・計測した。ただし利用可能snapshotは53 FoF（cmd_4372は78 FoF、現行API open系列は10/78のみ）で候補母集団不一致のため、結論は `STOP_PHASE_2_INPUT_MISMATCH` とし、同一母集団のPhase 2判定を保留する。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4373_hmm_regime_phase2_report.md` / `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_4373_hmm_regime_phase2.json`
