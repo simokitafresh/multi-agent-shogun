@@ -2525,9 +2525,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
-  resolved_reason: "cmd_reflux_insight_202608232239_kagemaru_exact: 一次情報でfix_knownを再確認。logs/self_retro.jsonlのevent_id一致(1件・重複event_id 0)、review_notifyのSG7維持基準、対象cmdのgunshi_review_log.yamlでverdict PASS/operational_simulation PASS、verify_command exit 0を確認。"
-  action_artifact: "logs/self_retro.jsonl#3d4a3acdf3e08b00a60c2d76fca1524fa21d95e7a6f80379221dea6a91761d4d; logs/gunshi_review_log.yaml#cmd_karo_hotfix_commit_ledger_single_lock; scripts/cmd_complete_gate.sh#sg7_consume; task=cmd_reflux_insight_202608232239_kagemaru_exact"
-  resolved_at: "2026-08-23T23:06:03+09:00"
+  resolved_reason: "一次情報でfix_knownを再確認: logs/self_retro.jsonlのevent_id一致(1件・重複event_id 0)、review_notifyのSG7維持基準、対象cmdのgunshi_review_log.yamlでverdict PASS/operational_simulation PASSを確認。verify_commandもexit 0。"
+  action_artifact: "logs/self_retro.jsonl#3d4a3acdf3e08b00a60c2d76fca1524fa21d95e7a6f80379221dea6a91761d4d; logs/gunshi_review_log.yaml#cmd_karo_hotfix_commit_ledger_single_lock; scripts/cmd_complete_gate.sh#sg7_consume"
+  resolved_at: "2026-08-23T22:47:30+09:00"
 - id: INS-20260823-215454663-7fc2
   ts: "2026-08-23T21:54:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id broijwg6l task id tool use id toolu 01Wh6SeHJZEEkSFtYL は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -2574,4 +2574,58 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T23:13:40+09:00"
+- id: INS-20260823-231322800-3f0b
+  ts: "2026-08-23T23:13:22+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4379; matched=速度改善,速度,度改,改善; current_pattern=cmd_complete_gate.sh速度改善 — フェーズ別実測で支配的ボトルネックを特定し検査を削らず短縮; candidate_level=4; candidate=lessons_useful有効率27%。task-specific枠1→2倍増+有効率閾値引上げでunseful教訓のフロー削減→忍者の注入精度向上。殿承認済み; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4379"
+  fix_known: false
   status: pending
+- id: INS-20260823-231323010-7d00
+  ts: "2026-08-23T23:13:23+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4379; matched=フェーズ; current_pattern=cmd_complete_gate.sh速度改善 — フェーズ別実測で支配的ボトルネックを特定し検査を削らず短縮; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4379"
+  fix_known: false
+  status: pending
+- id: INS-20260823-231323213-fb08
+  ts: "2026-08-23T23:13:23+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4379; matched=短縮; current_pattern=cmd_complete_gate.sh速度改善 — フェーズ別実測で支配的ボトルネックを特定し検査を削らず短縮; candidate_level=4; candidate=CDP計測4回実行10.5時間(殿の時間10時間浪費)。根因=pre-flight check不在+artifact競合+忍者判断依存。4 Phase自動化で28分/回に短縮; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4379"
+  fix_known: false
+  status: pending
+- id: INS-20260823-231323387-0366
+  ts: "2026-08-23T23:13:23+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿指示_complete_gate遅い_20260823_2158]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=18.0) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=14.9) / cmd_quality_logging(cmd設計品質ログ; alias=cmd-complete path; score=14.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T23:13:40+09:00"
+- id: INS-20260823-231326644-4532
+  ts: "2026-08-23T23:13:26+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[duration_sec_unknown計測バグ+全PJ_SYNC疑い]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=active_dead_pane_auto_respawn; score=5.4) / production_parity(本番パリティ; alias=MTD preliminary row market calendar not SSOT; score=5.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=dependency_completion_auto_release; score=5.2)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T23:13:41+09:00"
+- id: INS-20260823-231327065-f0d1
+  ts: "2026-08-23T23:13:27+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4379_計測して削らず短縮]] は既存aliasesに一致なし。類似概念TOP3: unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=20.7) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=20.4) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=cmd_3786復旧手順; score=20.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T23:13:41+09:00"
