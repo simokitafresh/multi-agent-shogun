@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-22 context_freshness reviewed source boundary (shogun doc lane, GA-491 re-apply of GA-490) -->
+<!-- last_updated: 2026-08-23 context_freshness reviewed source boundary -->
+<!-- source_commit:e7a6c59d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=e7a6c59d -->
 <!-- source_commit:45760ecf reason:GA-490/491 FoF決定性tie-breakシリーズ境界反映(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log 46a1f213..45760ecf = 110 commits(source 67件)reviewed。初回=33f3dc7a2、tree退行検出(blt_20260822_144525)により再適用 -->
 
 ## Current source boundary (GA-490/491, 2026-08-22)

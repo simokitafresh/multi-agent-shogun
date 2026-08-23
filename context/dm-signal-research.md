@@ -1,6 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-08-22 GA-491 reviewed source boundary (shogun doc lane, re-apply of GA-490) -->
 <!-- source_commit:45760ecf reason:GA-490/491 research境界更新(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log b24d6b5f..45760ecf -- docs/research analysis outputs marketing-director = 14件。内容=cmd_4355/4356成果保存(07848c94)+note記事群(決定的tie-break一般論・投資家スクリーニング)+週報2026-08-18+reconcile merge revert。研究結論の変更なし、境界のみ更新。初回=877a73ef1、tree退行検出により再適用 -->
+<!-- dm_signal_research_reflux: fingerprint=bb72f517f4cbbf1466de24c73098b7a7dd051c2ae55e753986fa431130383c2f; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgbm93IHJlY29yZHMgY21kXzQzNzIgUEFTU19QSEFTRV8xIHdpdGggYXJ0aWZhY3QgcmVmZXJlbmNlcw== -->
 <!-- dm_signal_research_reflux: fingerprint=d947f787be6c07907b51d45e4c1e3c16f645aee8c3b16355dc5a875a36a3f02d; mode=synced; evidence_b64=Y21kXzQzNjkgY29uY2x1c2lvbiBhZGRlZCB0byBzaGFyZWQgY29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgd2l0aCBtZWFzdXJlZCA3OCBGb0YsIDEwOCBjb21tb24gUElUIG1vbnRocywgZnV0dXJlIHJlZmVyZW5jZXMgMA== -->
 <!-- dm_signal_research_reflux: fingerprint=e08ee1a5e38e43ef2d162827eac8319373353dc46ebfc8b5bd8e8d194c335a35; mode=non-target; evidence_b64=VHJhY2sgQiBzdGFuZGFsb25lIHJlc2VhcmNoIGFydGlmYWN0OyBzaGFyZWQgY29udGV4dC9pbmRleCB1cGRhdGUgaXMgb3V0c2lkZSB0YXNrIHNjb3BlIGFuZCBUcmFjayBBIHJlbWFpbnMgaXNvbGF0ZWQu -->
 <!-- dm_signal_research_reflux: fingerprint=4faf29b1cba9e93979eaf7230e8690d4e5ec599d0e6055f63afc85527214d2cc; mode=non-target; evidence_b64=VHJhY2sgQeaIkOaenOeJqeOCkmRvY3MvcmVzZWFyY2jjgbjkv53lrZjjgILlhbHmnIljb250ZXh044G444Gu6YKE5rWB44Gv5a626ICBcmVsZWFzZeOBvuOBp+ihjOOCj+OBquOBhOOAgg== -->
@@ -16,7 +17,6 @@
 <!-- dm_signal_research_reflux: fingerprint=5aad2fb1176d62c01522bb3a7ad88f9eb0ea1a04e8a1a4b6e2f829bf23b22f72; mode=synced; evidence_b64=QUMzIGNvbmNsdXNpb24gaXMgcmVmbGVjdGVkIGluIGNvbnRleHQvZG0tc2lnbmFsLW9wcy5tZCDCpzk1 -->
 <!-- dm_signal_research_reflux: fingerprint=f66ff21938c52c96f917d42dfa76540c0aa83ed53728442cf9b24a8d9ab2d934; mode=non-target; evidence_b64=VHJhY2sgQSBldmlkZW5jZSBpcyBpbnRlbnRpb25hbGx5IGlzb2xhdGVkOyBzaGFyZWQgY29udGV4dCByZXR1cm4gaXMgZW1iYXJnb2VkIHVudGlsIEthcm8gcmVsZWFzZS4= -->
 <!-- dm_signal_research_reflux: fingerprint=6d02fe5f0cfdf9dc72bded0f194f87d702090a2c7d6b9ebc97d52e55c008ab31; mode=non-target; evidence_b64=U2hhcmVkIGNvbnRleHQgZW1iYXJnbzogdGFzayByZXF1aXJlcyBrYXJvIHJlbGVhc2UgYmVmb3JlIGNvbnRleHQvZG0tc2lnbmFsLW9wcy5tZCB1cGRhdGU7IGRldGFpbGVkIGV2aWRlbmNlIGlzIGluIHRoaXMgb3duZWQgcmVzZWFyY2ggcmVjb3JkLg== -->
-<!-- dm_signal_research_reflux: fingerprint=38ed629906b6f6a27881df6bb2f22fd053fc88be42a1d9d285f52f8b15733672; mode=non-target; evidence_b64=5YG15a+f5oiQ5p6c54mp44GvZG9jcy9yZXNlYXJjaOWNmOeLrOOAgueglOeptue0ouW8leOBuOOBruWQjOacn+OBr+WutuiAgeODrOODk+ODpeODvOW+jOOBruWIpeW3peeoi+OBqOOBmeOCiw== -->
 <!-- source_commit:b24d6b5f reason:GA-477 reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=b24d6b5f -->
 <!-- source_commit:6b3537fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=6b3537fd -->
 <!-- source_commit:99199a9c reason:cmd_4301 RB8完了に伴う最新境界更新(RB8 checkpoint finalizeが最新) evidence:cmd_4301: context_freshness_check --cmd-commit-list cmd_4301の最新行=99199a9c。doc-only 8commitをmainへff-push済み(e3dccd87..99199a9c) -->
@@ -68,3 +68,6 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 - 74 FoF(選択block有57/無17)を同一as-of月で6段キー乾式適用: scalar filter 36PFで837月変化(現行同率全採用792月)、全FoF 949月変化。段別解決: ②12M 4,511/③CAGR 668/④MaxDD 0/⑤現保有 7/⑥早い方 7、②skip 264。標準PF24=near-tie 0(ε相対1e-9の根拠)。top-N/tie-breakは各filter+GS fast pathへ分散(共通helperなし)。→ `docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`(DM-Signal repo 6b3537fd) / ops §99 / 設計書 `docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md`
 ## cmd_4369 PIT低相関FoF selection最小実験 (2026-08-23)
 - 全FoF78体・monthly_returns 11,795行を同一PIT母集団で比較。36M/60Mともdecision 108月、future参照0、候補集合不整合0。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4369_low_correlation_experiment_report.md` / `outputs/analysis/cmd_4369_low_correlation_experiment.json`
+
+## cmd_4372 HMM Regime Phase 1 (2026-08-23)
+- SPY日次log returnを観測、3状態Gaussian HMMのexpanding-fit + filtered state（smoothing不使用）でFoF全78体を分類。decision 173月、Quiet/Transition/Stress=126/23/24、future参照0。Regime間rank correlation最小0.680709でPASS_PHASE_1、Phase 2進行可。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4372_hmm_regime_phase1_report.md` / `outputs/analysis/cmd_4372_hmm_regime_phase1.json`
