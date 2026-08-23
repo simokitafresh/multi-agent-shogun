@@ -7847,6 +7847,117 @@ record_block_reason() {
     fi
 }
 
+# LS-A04: A dm-signal implementation whose command explicitly promises
+# behavior preservation must carry the existing operational_simulation
+# evidence before completion.  Keep this as one completion condition and
+# reuse the report field already populated by report_field_set.sh; do not add
+# a parallel parity artifact or a second publication route.
+check_behavior_invariant_full_parity() {
+    local effective_project="${CMD_PROJECT:-}"
+    local command_text="${CMD_TITLE:-} ${CMD_PURPOSE:-}"
+    local command_source_present=false
+    local task_file report_file ninja_name evidence_status
+    local eligible=0 report_count=0 missing_count=0
+    local -A seen_reports=()
+
+    # Direct karo cmd entries may not have a shogun_to_karo command block. In
+    # that lane the task's project/purpose is the reviewed command contract.
+    if [ -z "$effective_project" ] && declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            effective_project="$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)"
+            [ -n "$effective_project" ] && break
+        done
+    fi
+    if [ -z "$command_text" ] && [ -f "$YAML_FILE" ]; then
+        command_text="$(awk -v cmd="$CMD_ID" '
+            /^[[:space:]]*-[[:space:]]*id:[[:space:]]*cmd_[0-9]+/ {
+                line=$0; sub(/^[^:]*:[[:space:]]*/, "", line); gsub(/["'"'"'[:space:]]/, "", line)
+                found=(line==cmd); next
+            }
+            found && /^[[:space:]]+(title|purpose):/ { print; next }
+            found && /^[[:space:]]+[A-Za-z_][A-Za-z0-9_]*:/ { exit }
+        ' "$YAML_FILE" 2>/dev/null || true)"
+    fi
+    if [ -n "${CMD_TITLE:-}" ] || [ -n "${CMD_PURPOSE:-}" ]; then
+        command_source_present=true
+    elif declare -F cmd_entry_exists >/dev/null 2>&1 && cmd_entry_exists "$CMD_ID"; then
+        command_source_present=true
+    fi
+    # The task purpose is the fallback source only for direct cmd_karo_* entries
+    # that have no command body in the shogun command source.
+    if [ "$command_source_present" = false ] && declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            command_text+=" $(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)"
+        done
+    fi
+
+    if [ "$effective_project" != "dm-signal" ] || [ "${HAS_IMPLEMENT:-false}" != "true" ]; then
+        return 0
+    fi
+    if ! printf '%s' "$command_text" | grep -Eiq \
+        '挙動[[:space:]]*不変|behavior[[:space:]_-]*(不変|invariant|preserv|unchanged)|behavior[-[:space:]]*preserving'; then
+        return 0
+    fi
+
+    eligible=1
+    level_heading "[L3]" "Behavior-invariant full business parity check (LS-A04):"
+    echo "  eligible_cmds=${eligible} evidence_field=operational_simulation existing_gate_enforcement=0→1"
+
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            ninja_name=$(basename "$task_file" .yaml)
+            report_file=$(resolve_report_file "$ninja_name" "$CMD_ID" 2>/dev/null || true)
+            if [ -z "$report_file" ] || [ ! -f "$report_file" ]; then
+                missing_count=$((missing_count + 1))
+                echo "  [CRITICAL] ${ninja_name}: operational_simulation missing (full business parity evidence required)"
+                continue
+            fi
+            seen_reports["$report_file"]=1
+        done
+    fi
+    for report_file in "$SCRIPT_DIR/queue/reports/"*_report_${CMD_ID}.yaml; do
+        [ -f "$report_file" ] || continue
+        seen_reports["$report_file"]=1
+    done
+
+    for report_file in "${!seen_reports[@]}"; do
+        report_count=$((report_count + 1))
+        evidence_status="$(python3 - "$report_file" <<'PY'
+import sys
+import yaml
+
+try:
+    report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    print("invalid")
+    raise SystemExit
+
+opsim = report.get("operational_simulation")
+required = ("command", "expected", "actual", "result")
+missing = [key for key in required if not isinstance(opsim, dict) or not str(opsim.get(key) or "").strip()]
+print("ok" if not missing else "missing:" + ",".join(missing))
+PY
+)"
+        if [ "$evidence_status" = "ok" ]; then
+            echo "  $(basename "$report_file"): operational_simulation=nonempty (command/expected/actual/result)"
+        else
+            missing_count=$((missing_count + 1))
+            echo "  [CRITICAL] $(basename "$report_file"): full business parity evidence ${evidence_status}"
+        fi
+    done
+
+    if [ "$report_count" -eq 0 ] || [ "$missing_count" -gt 0 ]; then
+        echo "  [CRITICAL] BLOCK: eligible=${eligible} reports=${report_count} missing_or_empty=${missing_count}"
+        record_block_reason "behavior_invariant_full_parity_missing"
+        ALL_CLEAR=false
+    else
+        echo "  PASS: eligible=${eligible} reports=${report_count} missing_or_empty=0"
+    fi
+}
+
 # ─── rg解決ヘルパー(cmd_karo_hotfix_review_trigger_gate_datetime_202607111233 AC3) ───
 # nohup経由の非対話bashサブプロセスではPATHにrgが載らないCLI環境がある(rg実体は
 # $HOME/.local/bin/rgに存在するがPATH外)。command not foundを2>/dev/null+||trueで
@@ -11935,6 +12046,10 @@ if [ -f "$YAML_FILE" ]; then
 else
     echo "  SKIP (cmd source YAML missing: ${YAML_FILE#"$SCRIPT_DIR"/})"
 fi
+
+# LS-A04: apply the single behavior-invariant/full-parity completion condition
+# after command project/purpose resolution and before later CLEAR decisions.
+check_behavior_invariant_full_parity
 
 IS_RECON=false
 if echo "$CMD_PURPOSE" | grep -qE '偵察|調査|棚卸し|recon|investigation'; then
