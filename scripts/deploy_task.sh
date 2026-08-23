@@ -8787,6 +8787,7 @@ source "$_dt_modifiers_path"
 unset _dt_modifiers_path
 
 
+if false; then
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
 # deploy_task.sh実行時にcmd_complete_gate.shが要求するgateフラグを事前生成。
 # L078: 65%のBLOCKがmissing_gate(archive/lesson/review_gate)。配備時に生成で削減。
@@ -10667,6 +10668,28 @@ deploy_task_apply_task_mutations() {
     inject_done_redeploy_hints "$task_file" || true
     log "TASK_MUTATION_SUMMARY report_scans=${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
 }
+
+__cluster_i_static_extraction_sentinel() { :; }
+fi
+# Cluster I modules: preflight artifacts/worktree and freshness/scout/quality/RC gates/task mutations.
+_dt_preflight_path="$SCRIPT_DIR/scripts/deploy_task/preflight.sh"
+if [ ! -f "$_dt_preflight_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+    _dt_preflight_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/preflight.sh"
+fi
+if [ ! -f "$_dt_preflight_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+    _dt_preflight_path="$PROJECT_ROOT/scripts/deploy_task/preflight.sh"
+fi
+source "$_dt_preflight_path"
+unset _dt_preflight_path
+_dt_gates_path="$SCRIPT_DIR/scripts/deploy_task/gates.sh"
+if [ ! -f "$_dt_gates_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+    _dt_gates_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/gates.sh"
+fi
+if [ ! -f "$_dt_gates_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+    _dt_gates_path="$PROJECT_ROOT/scripts/deploy_task/gates.sh"
+fi
+source "$_dt_gates_path"
+unset _dt_gates_path
 
 inject_code_location_contract() {
     local task_file="$1" task_type bloom_level contract
