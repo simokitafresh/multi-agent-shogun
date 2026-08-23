@@ -281,12 +281,31 @@ except (OSError, yaml.YAMLError):
     reviews = []
 if isinstance(reviews, dict):
     reviews = reviews.get("reviews", reviews.get("entries", []))
-for row in reviews if isinstance(reviews, list) else []:
+
+def iter_review_records(value):
+    """Yield review mappings at every YAML nesting level.
+
+    The live review log stores draft approvals under a ``review`` mapping,
+    while older entries put ``cmd_id``/``verdict`` at the list-item root.
+    Both are approval receipts for the same source commit and must feed the
+    existing context-update request consumer (GA-494).
+    """
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from iter_review_records(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from iter_review_records(child)
+
+for row in iter_review_records(reviews):
     if not isinstance(row, dict):
         continue
     verdict = str(row.get("verdict", row.get("result", ""))).upper()
     if verdict in {"APPROVE", "APPROVED", "PASS"}:
-        approved.add(str(row.get("cmd_id", row.get("parent_cmd", ""))))
+        command_id = str(row.get("cmd_id", row.get("parent_cmd", ""))).strip()
+        if command_id:
+            approved.add(command_id)
 
 try:
     subject = subprocess.run(
