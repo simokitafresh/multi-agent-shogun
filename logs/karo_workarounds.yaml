@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_dm_l1_split_step4_fast_202608152040
-  timestamp: '2026-08-15T12:20:06Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_dm_l1_split_step4_fast_202608152040'
 - cmd_id: cmd_karo_hotfix_dm_l1_split_step5_fast_202608152059
   timestamp: '2026-08-15T12:21:55Z'
   ninja: system
@@ -1322,3 +1309,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_report_write_lesson_set_contract'
+- cmd_id: cmd_karo_hotfix_gate_publication_single_truth
+  timestamp: '2026-08-23T12:25:22Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_gate_publication_single_truth'
