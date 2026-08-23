@@ -2666,6 +2666,144 @@ PY
     ! grep -Fq "cmd_nonexistent_benchmark" "$TEST_PROJECT/logs/gate_metrics.log"
 }
 
+@test "cmd_complete_gate defaults phase timing to a durable log with a stable record shape" {
+    local isolated_metrics="$TEST_TMPDIR/default-phase-metrics.log"
+    local phase_log="$TEST_PROJECT/logs/cmd_complete_gate_phases.log"
+    rm -f "$phase_log" "$phase_log.lock"
+
+    run env GATE_METRICS_LOG="$isolated_metrics" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_default_phase_log
+
+    [ "$status" -eq 0 ]
+    [ -s "$phase_log" ]
+    awk -F '\t' '
+        NF != 4 {exit 1}
+        $1 !~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$/ {exit 1}
+        $2 != "cmd_default_phase_log" {exit 1}
+        $3 == "" {exit 1}
+        $4 !~ /^[0-9]+\.[0-9]{3}$/ {exit 1}
+    ' "$phase_log"
+}
+
+@test "cmd_complete_gate phase recording does not alter disabled behavior" {
+    local enabled_metrics="$TEST_TMPDIR/enabled-metrics.log"
+    local disabled_metrics="$TEST_TMPDIR/disabled-metrics.log"
+    local enabled_log="$TEST_TMPDIR/enabled-phases.log"
+    local enabled_output disabled_output enabled_status disabled_status
+
+    run env GATE_METRICS_LOG="$enabled_metrics" CMD_COMPLETE_GATE_PHASE_LOG="$enabled_log" \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_phase_behavior_compare
+    enabled_status="$status"
+    enabled_output="$output"
+    run env GATE_METRICS_LOG="$disabled_metrics" CMD_COMPLETE_GATE_PHASE_LOG=disabled \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_phase_behavior_compare
+    disabled_status="$status"
+    disabled_output="$output"
+
+    [ "$enabled_status" -eq "$disabled_status" ]
+    [ "$enabled_output" = "$disabled_output" ]
+    [ -s "$enabled_log" ]
+    [ ! -e "$TEST_PROJECT/logs/cmd_complete_gate_phases.log" ]
+}
+
+@test "cmd_complete_gate rotates an oversized durable phase log" {
+    local phase_log="$TEST_TMPDIR/rotating-phases.log"
+    printf 'old-record\n' > "$phase_log"
+
+    run env GATE_METRICS_LOG="$TEST_TMPDIR/rotation-metrics.log" \
+        CMD_COMPLETE_GATE_PHASE_LOG="$phase_log" CMD_COMPLETE_GATE_PHASE_LOG_MAX_BYTES=1 \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_phase_rotation
+
+    [ "$status" -eq 0 ]
+    grep -Fq 'old-record' "${phase_log}.1"
+    grep -Fq $'\tcmd_phase_rotation\t' "$phase_log"
+}
+
+# test_necessity: the phase trace must cover a task/report path; a no-task-only
+# trace cannot identify the dominant completion-gate cost. This is a permanent
+# contract because the phase names are the AC1 measurement boundary.
+@test "cmd_complete_gate records phase timing for a real task and parent report" {
+    local cmd_id=cmd_real_task_fixture
+    local phase_log="$TEST_TMPDIR/real-task-phases.log"
+    local metrics="$TEST_TMPDIR/real-task-metrics.log"
+    local report="$TEST_PROJECT/queue/reports/sasuke_report_${cmd_id}.yaml"
+
+    for gate_script in "$PROJECT_ROOT/scripts/gates/"*; do
+        [ -e "$gate_script" ] || continue
+        local gate_name="${gate_script##*/}"
+        [ -e "$TEST_PROJECT/scripts/gates/$gate_name" ] || ln -s "$gate_script" "$TEST_PROJECT/scripts/gates/$gate_name"
+    done
+    for helper_script in lesson_check.sh review_gate.sh; do
+        [ -e "$TEST_PROJECT/scripts/$helper_script" ] || ln -s "$PROJECT_ROOT/scripts/$helper_script" "$TEST_PROJECT/scripts/$helper_script"
+    done
+    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
+projects:
+  - id: infra
+    path: $TEST_PROJECT
+EOF
+    cat > "$TEST_PROJECT/tasks/lessons.md" <<'EOF'
+# Lessons
+- **status**: confirmed
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $cmd_id
+  task_id: task_real_fixture
+  task_type: review
+  report_filename: sasuke_report_${cmd_id}.yaml
+  ac_version: 2
+  related_lessons: []
+EOF
+    cat > "$report" <<EOF
+worker_id: sasuke
+task_id: task_real_fixture
+parent_cmd: $cmd_id
+timestamp: "2026-03-04T00:00:00"
+status: done
+ac_version_read: 2
+commit_hash: deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+result:
+  summary: "real task phase fixture"
+purpose_validation: {fit: true}
+files_modified: [{path: scripts/fixture.sh, change: fixture}]
+lesson_candidate: {found: false, no_lesson_reason: fixture}
+lessons_useful: [{id: L625, useful: true, reason: fixture}]
+binary_checks:
+  AC1: [{check: fixture, result: yes}]
+EOF
+
+    run env GATE_METRICS_LOG="$metrics" CMD_COMPLETE_GATE_PHASE_LOG="$phase_log" \
+        REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$cmd_id"
+    [ "$status" -ne 75 ]
+    grep -Fq $'\t'"$cmd_id"$'\truntime_sources\t' "$phase_log"
+    grep -Fq $'\t'"$cmd_id"$'\ttask_snapshot_start\t' "$phase_log"
+    grep -Fq $'\t'"$cmd_id"$'\ttask_snapshot\t' "$phase_log"
+    grep -Fq $'\t'"$cmd_id"$'\treport_preflight\t' "$phase_log"
+    grep -Fq $'\t'"$cmd_id"$'\tgate_preflight\t' "$phase_log"
+    grep -Fq $'\t'"$cmd_id"$'\tgate_evaluation\t' "$phase_log"
+}
+
+# test_necessity: RC4 requires the dominant gate_evaluation interval to be
+# decomposable into source/runtime subphases without weakening any gate.
+@test "cmd_complete_gate brackets gate evaluation with subphase telemetry" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+required = [
+    'GATE_SUBPHASE_LOG',
+    'gate_subphase_tick "gate_checks"',
+    'gate_subphase_tick "source_publication"',
+    'gate_subphase_tick "runtime_publish"',
+    'gate_subphase_finish',
+]
+for marker in required:
+    assert marker in text, marker
+print('subphase_telemetry=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "subphase_telemetry=1" ]
+}
+
 @test "cmd_complete real process blocks after normalize mutates approved report" {
     TEST_CMD_ID="cmd_fixture"
     local report="$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml"

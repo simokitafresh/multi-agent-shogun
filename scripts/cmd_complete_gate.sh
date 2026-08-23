@@ -926,13 +926,23 @@ done
 LOG_DIR="$SCRIPT_DIR/logs"
 GATE_METRICS_LOG="${GATE_METRICS_LOG:-$LOG_DIR/gate_metrics.log}"
 
-# cmd_4379: low-overhead wall-clock trace for major gate phases. EPOCHREALTIME
-# is used without spawning date/python on the measured path.
-# Opt-in keeps normal gate throughput unchanged; AC1 enables this path with
-# CMD_COMPLETE_GATE_PHASE_LOG=<file> for a measured run.
-GATE_PHASE_LOG="${CMD_COMPLETE_GATE_PHASE_LOG:-}"
+# cmd_4379/cmd_4381: low-overhead wall-clock trace for major gate phases.
+# EPOCHREALTIME is used without spawning date/python on the measured path.
+# The durable default makes every real gate run observable. Set
+# CMD_COMPLETE_GATE_PHASE_LOG to a path to redirect it, or to "disabled"/"0"
+# to suppress phase recording for an explicit behavior comparison.
+if [ "${CMD_COMPLETE_GATE_PHASE_LOG:-}" = "disabled" ] || [ "${CMD_COMPLETE_GATE_PHASE_LOG:-}" = "0" ]; then
+    GATE_PHASE_LOG=""
+else
+    GATE_PHASE_LOG="${CMD_COMPLETE_GATE_PHASE_LOG:-$LOG_DIR/cmd_complete_gate_phases.log}"
+fi
+GATE_PHASE_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_PHASE_LOG_MAX_BYTES:-5242880}"
+GATE_PHASE_LOG_ROTATION_CHECKED=false
 GATE_PHASE_CURRENT=""
 GATE_PHASE_START_US=""
+GATE_SUBPHASE_LOG="${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}"
+GATE_SUBPHASE_CURRENT=""
+GATE_SUBPHASE_START_US=""
 gate_phase_now_us() {
     local raw="${EPOCHREALTIME:-}"
     if [ -n "$raw" ]; then
@@ -950,15 +960,54 @@ gate_phase_tick() {
         [ "$elapsed_us" -ge 0 ] || elapsed_us=0
         sec=$((elapsed_us / 1000000))
         ms=$(((elapsed_us % 1000000) / 1000))
+        local phase_record
+        phase_record=$(printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d' \
+            -1 "$CMD_ID" "$GATE_PHASE_CURRENT" "$sec" "$ms")
         mkdir -p "$(dirname "$GATE_PHASE_LOG")" 2>/dev/null || true
-        printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d\n' \
-            -1 "$CMD_ID" "$GATE_PHASE_CURRENT" "$sec" "$ms" \
-            >> "$GATE_PHASE_LOG"
+        local rotate_log=false
+        if [ "$GATE_PHASE_LOG_ROTATION_CHECKED" = false ]; then
+            rotate_log=true
+            GATE_PHASE_LOG_ROTATION_CHECKED=true
+        fi
+        (
+            flock -x 9
+            if [ "$rotate_log" = true ]; then
+                case "$GATE_PHASE_LOG_MAX_BYTES" in
+                    ''|*[!0-9]*) GATE_PHASE_LOG_MAX_BYTES=5242880 ;;
+                esac
+                if [ "$GATE_PHASE_LOG_MAX_BYTES" -gt 0 ] && [ -f "$GATE_PHASE_LOG" ]; then
+                    local log_bytes
+                    log_bytes=$(wc -c < "$GATE_PHASE_LOG" 2>/dev/null || printf '0')
+                    if [ "$log_bytes" -ge "$GATE_PHASE_LOG_MAX_BYTES" ]; then
+                        mv -f "$GATE_PHASE_LOG" "${GATE_PHASE_LOG}.1" 2>/dev/null || true
+                    fi
+                fi
+            fi
+            printf '%s\n' "$phase_record" >> "$GATE_PHASE_LOG"
+        ) 9>"${GATE_PHASE_LOG}.lock"
     fi
     GATE_PHASE_CURRENT="$next_phase"
     GATE_PHASE_START_US="$now_us"
 }
-gate_phase_finish() { gate_phase_tick "terminal"; }
+gate_subphase_tick() {
+    local next_phase="$1" now_us elapsed_us sec ms
+    [ -n "$GATE_SUBPHASE_LOG" ] || return 0
+    now_us=$(gate_phase_now_us)
+    if [ -n "$GATE_SUBPHASE_CURRENT" ] && [ -n "$GATE_SUBPHASE_START_US" ]; then
+        elapsed_us=$((now_us - GATE_SUBPHASE_START_US))
+        [ "$elapsed_us" -ge 0 ] || elapsed_us=0
+        sec=$((elapsed_us / 1000000))
+        ms=$(((elapsed_us % 1000000) / 1000))
+        mkdir -p "$(dirname "$GATE_SUBPHASE_LOG")" 2>/dev/null || true
+        printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d\n' \
+            -1 "$CMD_ID" "$GATE_SUBPHASE_CURRENT" "$sec" "$ms" \
+            >> "$GATE_SUBPHASE_LOG"
+    fi
+    GATE_SUBPHASE_CURRENT="$next_phase"
+    GATE_SUBPHASE_START_US="$now_us"
+}
+gate_subphase_finish() { gate_subphase_tick "terminal"; }
+gate_phase_finish() { gate_phase_tick "terminal"; gate_subphase_finish; }
 gate_phase_tick "startup"
 if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ] \
    && [ ! -f "$SCRIPT_DIR/queue/reopened_cmds/${CMD_ID}.yaml" ]; then
@@ -975,6 +1024,7 @@ source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/task_lifecycle.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 source "$SCRIPT_DIR/scripts/lib/autogen_paths.sh"
+gate_phase_tick "runtime_sources"
 
 if [ "${CMD_COMPLETE_GATE_REPORT_BLOB_PARITY_ONLY:-0}" = "1" ]; then
     report_commit_blob_parity_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
@@ -1689,7 +1739,7 @@ for pattern in (
         matched_report = True
         entries = report.get("cross_repo_commits") or []
         if not isinstance(entries, list):
-            continue
+            entries = []
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
@@ -1706,6 +1756,39 @@ for pattern in (
             seen.add(key)
             for value in (key[0], sha, str(len(paths)), *paths):
                 sys.stdout.buffer.write(value.encode("utf-8") + b"\0")
+        # A taskless parent report may be a platform-repository completion and
+        # therefore has no cross_repo_commits block. Its primary commit/path
+        # contract is still sufficient and must not be discarded as
+        # source-unavailable. The caller revalidates the commit/path union
+        # before publication, so this does not guess or widen scope.
+        primary_sha = str(report.get("commit_hash") or "").strip().lower()
+        raw_paths = report.get("files_modified") or []
+        primary_paths = []
+        if isinstance(raw_paths, list):
+            for item in raw_paths:
+                if isinstance(item, dict):
+                    value = item.get("path") or item.get("file") or ""
+                else:
+                    value = item
+                value = str(value or "").strip()
+                if value and value not in ("no-code-change", "no_code_change") and value not in primary_paths:
+                    primary_paths.append(value)
+        primary_repo = str(
+            report.get("repo_root")
+            or snapshot.get("repo_root")
+            or root
+        ).strip()
+        if primary_repo and not os.path.isabs(primary_repo):
+            primary_repo = os.path.join(root, primary_repo)
+        primary_repo = os.path.realpath(primary_repo) if primary_repo else ""
+        if (primary_repo and os.path.isdir(primary_repo)
+                and re.fullmatch(r"[0-9a-f]{40}", primary_sha)
+                and primary_paths):
+            key = (primary_repo, primary_sha, tuple(primary_paths))
+            if key not in seen:
+                seen.add(key)
+                for value in (key[0], primary_sha, str(len(primary_paths)), *primary_paths):
+                    sys.stdout.buffer.write(value.encode("utf-8") + b"\0")
     # Live reports are the canonical lifecycle slot.  Only consult the large
     # archive when no completed live report exists for this command; otherwise
     # a 10k-report archive scan turns every taskless completion into a minute-
@@ -2385,7 +2468,7 @@ source_only_lessons_id_merge() (
     local repo="$1" clean_repo="$2" remote_tip="$3" source_sha source_base path
     local base_file source_file remote_file merged_file tmp_dir project_id config_backup
     shift 3
-    local -a source_shas=("$@") cache_paths=()
+    local -a source_shas=("$@") cache_paths=() sync_project_ids=()
     local -A source_paths=()
 
     [ "${#source_shas[@]}" -gt 0 ] || return 1
@@ -2397,14 +2480,55 @@ source_only_lessons_id_merge() (
         while IFS= read -r -d '' path; do source_paths["$path"]=1; done \
             < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
     done
+    # sync_lessons is a project operation, not a glob over every generated
+    # cache that happens to be present in the source commit.  Build the active
+    # project allowlist once from the project registry and require the mapped
+    # path to exist.  This excludes stale test residues such as
+    # dm-signal_ISOLATED_TEST while retaining real active projects.
+    if [ -f "$clean_repo/config/projects.yaml" ]; then
+        mapfile -t sync_project_ids < <(python3 - "$clean_repo/config/projects.yaml" "$clean_repo" <<'PY'
+import os, sys, yaml
+
+config_path, root = sys.argv[1:]
+try:
+    config = yaml.safe_load(open(config_path, encoding="utf-8")) or {}
+except Exception:
+    config = {}
+projects = config.get("projects", []) if isinstance(config, dict) else []
+for item in projects:
+    if not isinstance(item, dict):
+        continue
+    if str(item.get("status", "active")).strip().lower() != "active":
+        continue
+    project_id = str(item.get("id", "")).strip()
+    project_path = str(item.get("path", "")).strip()
+    if not project_id or not project_path:
+        continue
+    if not os.path.isabs(project_path):
+        project_path = os.path.join(root, project_path)
+    if os.path.isdir(project_path):
+        print(project_id)
+PY
+        )
+    fi
     for path in "${!source_paths[@]}"; do
         case "$path" in
-            projects/*/lessons.yaml) cache_paths+=("$path") ;;
+            projects/*/lessons.yaml)
+                project_id="${path#projects/}"
+                project_id="${project_id%%/*}"
+                if printf '%s\n' "${sync_project_ids[@]}" | grep -Fqx -- "$project_id"; then
+                    cache_paths+=("$path")
+                else
+                    echo "  lessons sync: skip inactive/unregistered/missing project=${project_id}"
+                fi
+                ;;
         esac
     done
     # A source-only SSOT commit from an older writer may omit the generated
     # index from its diff.  Infra is the repository's own SSOT/cache pair.
-    if [ "${#cache_paths[@]}" -eq 0 ] && [ -f "$clean_repo/projects/infra/lessons.yaml" ]; then
+    if [ "${#cache_paths[@]}" -eq 0 ] \
+        && printf '%s\n' "${sync_project_ids[@]}" | grep -Fqx -- infra \
+        && [ -f "$clean_repo/projects/infra/lessons.yaml" ]; then
         cache_paths+=(projects/infra/lessons.yaml)
     fi
 
@@ -3963,6 +4087,7 @@ if [ -e "${_report_cache_task_files[0]:-}" ]; then
     ' "${_report_cache_task_files[@]}" 2>/dev/null)
 fi
 unset _report_cache_task_files _report_cache_file _report_cache_name _report_cache_ninja
+gate_phase_tick "task_snapshot_start"
 
 LAST_GATE_NOTIFY_ROUTE=""
 CLEAR_NOTIFICATION_SENT=false
@@ -8201,8 +8326,26 @@ PY
 
 collect_report_files_modified() {
     local report_file="$1"
+    local cache_key="" cache_value=""
 
-    REPORT_FILE="$report_file" python3 - <<'PY'
+    # The same immutable report is inspected by command-scope, Vercel/CDP,
+    # CI, and self-grade checks. Reuse the parsed path list within a gate run;
+    # nanosecond mtime+size invalidates the entry if normalization rewrites the
+    # report between phases.
+    if [ -f "$report_file" ]; then
+        cache_key="$report_file|$(stat -c '%y:%s' -- "$report_file" 2>/dev/null || true)"
+        if [ -n "$cache_key" ]; then
+            if ! declare -p _REPORT_FILES_MODIFIED_CACHE >/dev/null 2>&1; then
+                declare -gA _REPORT_FILES_MODIFIED_CACHE=()
+            fi
+            if [[ "${_REPORT_FILES_MODIFIED_CACHE[$cache_key]+yes}" = yes ]]; then
+                printf '%s\n' "${_REPORT_FILES_MODIFIED_CACHE[$cache_key]}"
+                return 0
+            fi
+        fi
+    fi
+
+    cache_value=$(REPORT_FILE="$report_file" python3 - <<'PY'
 import os
 import yaml
 yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
@@ -8229,16 +8372,36 @@ for item in files:
     if value and value not in ("no-code-change", "no_code_change"):
         print(value)
 PY
+    )
+    if [ -n "$cache_key" ]; then
+        _REPORT_FILES_MODIFIED_CACHE["$cache_key"]="$cache_value"
+    fi
+    printf '%s\n' "$cache_value"
 }
 
 # cmd_karo_hotfix_gate_report_discovery_after_redeploy: 同一忍者への次task配備でtask YAMLが
 # 上書きされ(parent_cmdが変わり)MATCHING_TASK_FILESの対象外になっても、report自身のparent_cmd/
 # task_idの厳密一致でcmd Aのreportを発見できるようにする共通ヘルパー(cmd_3844型の偽BLOCK根治)。
+_DISCOVER_REPORTS_CACHE_KEY=""
+_DISCOVER_REPORTS_CACHE_VALUE=""
+_DISCOVER_REPORTS_CACHE_READY=0
 discover_reports_for_cmd() {
     local cmd_id="${1:-$CMD_ID}"
     local reports_dir="$SCRIPT_DIR/queue/reports"
+    local cache_key="${reports_dir}"$'\034'"${cmd_id}"
 
-    REPORTS_DIR="$reports_dir" CMD_ID="$cmd_id" python3 - <<'PY'
+    # A completion run snapshots task/report identity before the gate checks.
+    # Repeating the same YAML directory scan from every report-dependent check
+    # only respawns Python; the report files themselves are immutable for this
+    # boundary (normalize changes bytes, not identity/path). Cache empty scans
+    # too, so a missing report does not keep paying the same process cost.
+    if [ "${_DISCOVER_REPORTS_CACHE_READY:-0}" -eq 1 ] \
+        && [ "${_DISCOVER_REPORTS_CACHE_KEY:-}" = "$cache_key" ]; then
+        printf '%s\n' "${_DISCOVER_REPORTS_CACHE_VALUE:-}"
+        return 0
+    fi
+
+    _DISCOVER_REPORTS_CACHE_VALUE=$(REPORTS_DIR="$reports_dir" CMD_ID="$cmd_id" python3 - <<'PY'
 import glob
 import os
 import yaml
@@ -8260,6 +8423,10 @@ for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
     if parent_cmd == cmd_id or task_id == cmd_id:
         print(path)
 PY
+    )
+    _DISCOVER_REPORTS_CACHE_KEY="$cache_key"
+    _DISCOVER_REPORTS_CACHE_READY=1
+    printf '%s\n' "${_DISCOVER_REPORTS_CACHE_VALUE:-}"
 }
 
 collect_parent_cmd_report_files_modified() {
@@ -8563,6 +8730,12 @@ run_review_quality_check() {
 
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
         task_files=("${MATCHING_TASK_FILES[@]}")
+    elif [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ]; then
+        # Parent-report-only completion has already snapshotted zero live task
+        # files. The no-task fast path returned before this check, so an empty
+        # snapshot here cannot hide a live implementer/reviewer pair. Avoid a
+        # second parent-report scan and the unrelated worker-task glob.
+        task_files=()
     else
         task_files=("$TASKS_DIR"/*.yaml)
     fi
@@ -10632,6 +10805,7 @@ echo ""
 gate_phase_tick "gate_preflight"
 preflight_gate_flags "$CMD_ID"
 gate_phase_tick "gate_evaluation"
+gate_subphase_tick "gate_checks"
 
 # ─── 緊急override確認 ───
 if [ -f "$GATES_DIR/emergency.override" ]; then
@@ -10867,6 +11041,7 @@ PY
 fi
 
 level_heading "[L1]" "Gate check: ${CMD_ID}"
+gate_subphase_tick "existence_checks"
 echo "  Framework: [L1] Existence | [L2] Substantive | [L3] Integration"
 echo "  Required: ${ALL_GATES[*]}"
 if [ ${#CONDITIONAL[@]} -gt 0 ]; then
@@ -11001,6 +11176,7 @@ fi
 #   2. 慣例名 *_report_${CMD_ID}.yaml の直接スキャン
 # の両方を検証対象に含める。片側だけでは custom report_filename が素通りする。
 level_heading "[L1]" "Report format validation (direct scan):"
+gate_subphase_tick "report_checks"
 REPORT_FORMAT_CHECKED=0
 REPORT_FORMAT_FAILED=0
 declare -A REPORT_FORMAT_SEEN=()
@@ -11453,6 +11629,7 @@ fi
 # ─── binary_checks検証（AC二値チェック全PASS確認） ───
 # GP-221: 二重配備対応 — verdict=PASSの忍者が1名以上いれば、他忍者のbc_failはWARN止まり
 level_heading "[L1]" "Binary checks validation:"
+gate_subphase_tick "ac_checks"
 BC_CHECKED=false
 # Pre-scan: verdict=PASSの忍者を収集(二重配備時の降格判定用)
 _bc_pass_ninjas=""
@@ -12045,7 +12222,10 @@ if [ "$HOW_IT_WORKS_CHECKED" = false ]; then
     echo "  (no implement tasks found for this cmd)"
 fi
 
+gate_subphase_tick "pre_review_checks"
+gate_subphase_tick "review_quality_start"
 run_review_quality_check
+gate_subphase_tick "review_quality_end"
 
 # ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
 level_heading "[L3]" "Draft lesson check:"
@@ -12741,10 +12921,13 @@ check_safety_pattern_removal() {
         echo "  OK: no safety patterns removed"
     fi
 }
+gate_subphase_tick "safety_removal_start"
 check_safety_pattern_removal
 
 # ─── cmd_2273: 4新検証（scope drift / review staleness / partial completion / WTF） ───
+gate_subphase_tick "command_scope_start"
 check_command_files_modified_coverage
+gate_subphase_tick "handoff_start"
 
 # LS086: a design handoff table is a flow contract, not documentation.  Scan
 # only the approved changed-file scope; unrelated historical designs cannot
@@ -12756,16 +12939,22 @@ if ! bash "$SCRIPT_DIR/scripts/gates/gate_design_cmd_handoff.sh" "${_ls086_chang
     ALL_CLEAR=false
     record_block_reason "design_cmd_handoff_missing"
 fi
+gate_subphase_tick "scope_drift_start"
 check_scope_drift
+gate_subphase_tick "review_staleness_start"
 check_review_staleness
+gate_subphase_tick "partial_completion_start"
 check_partial_completion
+gate_subphase_tick "wtf_start"
 check_wtf_likelihood
+gate_subphase_tick "self_grade_start"
 
 # ─── Loop Engineering Phase 2-2: self-grade commit/file verification（WARN only） ───
 # Agent self-grade can nod along even when the actual commit does not match the report.
 # Compare reported files against `git show -w --name-only` so formatting-only/no-op claims become visible.
 level_heading "[L2]" "Self-grade commit/files verification:"
 check_self_grade_commit_file_coverage
+gate_subphase_tick "final_checks"
 
 # dm-signalの本番deploy cmdだけ、CLEAR公開直前にAPI実測とorigin/live一致を
 # 必ず通す。非deploy cmdは関数内でSKIPされ、既存の完了判定を変えない。
@@ -12890,20 +13079,27 @@ fi
 # remote包含検証を完了してから、下のterminal CLEAR分岐へ進める。
 if [ "$ALL_CLEAR" = true ] \
    && [[ "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]]; then
+    gate_subphase_tick "source_publication"
     echo ""
     echo "Git push (pre-GATE CLEAR, report source only):"
     if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then
+        gate_subphase_tick "source_publication_blocked"
         record_block_reason "autopush_source_only_failed"
         ALL_CLEAR=false
     else
+        gate_subphase_tick "runtime_publish"
         echo ""
         echo "Tracked runtime publish (pre-generation checkpoint):"
         if ! publish_postclear_runtime_deltas pregate; then
+            gate_subphase_tick "runtime_publish_blocked"
             record_block_reason "pregate_runtime_publish_failed"
             ALL_CLEAR=false
         elif ! converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh; then
+            gate_subphase_tick "source_convergence_blocked"
             record_block_reason "shared_execution_source_convergence_failed"
             ALL_CLEAR=false
+        else
+            gate_subphase_tick "post_source_checks"
         fi
     fi
 fi
