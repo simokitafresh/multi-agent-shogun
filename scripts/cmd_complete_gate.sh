@@ -10974,6 +10974,7 @@ PY
 fi
 
 level_heading "[L1]" "Gate check: ${CMD_ID}"
+gate_subphase_tick "existence_checks"
 echo "  Framework: [L1] Existence | [L2] Substantive | [L3] Integration"
 echo "  Required: ${ALL_GATES[*]}"
 if [ ${#CONDITIONAL[@]} -gt 0 ]; then
@@ -11108,6 +11109,7 @@ fi
 #   2. 慣例名 *_report_${CMD_ID}.yaml の直接スキャン
 # の両方を検証対象に含める。片側だけでは custom report_filename が素通りする。
 level_heading "[L1]" "Report format validation (direct scan):"
+gate_subphase_tick "report_checks"
 REPORT_FORMAT_CHECKED=0
 REPORT_FORMAT_FAILED=0
 declare -A REPORT_FORMAT_SEEN=()
@@ -11560,6 +11562,7 @@ fi
 # ─── binary_checks検証（AC二値チェック全PASS確認） ───
 # GP-221: 二重配備対応 — verdict=PASSの忍者が1名以上いれば、他忍者のbc_failはWARN止まり
 level_heading "[L1]" "Binary checks validation:"
+gate_subphase_tick "ac_checks"
 BC_CHECKED=false
 # Pre-scan: verdict=PASSの忍者を収集(二重配備時の降格判定用)
 _bc_pass_ninjas=""
@@ -12153,6 +12156,7 @@ if [ "$HOW_IT_WORKS_CHECKED" = false ]; then
 fi
 
 run_review_quality_check
+gate_subphase_tick "review_checks"
 
 # ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
 level_heading "[L3]" "Draft lesson check:"
@@ -12852,6 +12856,7 @@ check_safety_pattern_removal
 
 # ─── cmd_2273: 4新検証（scope drift / review staleness / partial completion / WTF） ───
 check_command_files_modified_coverage
+gate_subphase_tick "integration_checks"
 
 # LS086: a design handoff table is a flow contract, not documentation.  Scan
 # only the approved changed-file scope; unrelated historical designs cannot
@@ -12873,6 +12878,7 @@ check_wtf_likelihood
 # Compare reported files against `git show -w --name-only` so formatting-only/no-op claims become visible.
 level_heading "[L2]" "Self-grade commit/files verification:"
 check_self_grade_commit_file_coverage
+gate_subphase_tick "final_checks"
 
 # dm-signalの本番deploy cmdだけ、CLEAR公開直前にAPI実測とorigin/live一致を
 # 必ず通す。非deploy cmdは関数内でSKIPされ、既存の完了判定を変えない。
