@@ -2472,3 +2472,24 @@ insights:
   source: "skill_script_refs:a71cb95fa3fb90d7"
   fix_known: false
   status: pending
+- id: INS-20260823-204433621-7946
+  ts: "2026-08-23T20:44:33+09:00"
+  insight: "[[利他の精神で調査して将軍に報告せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で調査して将軍に報告せよ。利他の精神とはD0で可能な限り自分自身で改善するところから始めよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260823-204434957-4777
+  ts: "2026-08-23T20:44:34+09:00"
+  insight: "[[deploy task sh分割最終弾J — orchestrationをmain moduleへ抽出し本体を薄wrap]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=deploy_task.sh分割最終弾J — orchestrationをmain moduleへ抽出し本体を薄wrapper化"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260823-204435417-2cd3
+  ts: "2026-08-23T20:44:35+09:00"
+  insight: "[[設計書deploy task split design 20260821 mdの最終cluster J]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=設計書deploy_task_split_design_20260821.mdの最終cluster J。cluster A-I完了+I弾実戦検証済み(2026-08-23の実配備1件が正常完走)を受け、orchestration区間をscripts/deploy_task/main.shへ移設し、deploy_task.sh本体を各moduleのsource"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
