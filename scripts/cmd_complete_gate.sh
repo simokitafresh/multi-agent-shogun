@@ -933,6 +933,9 @@ GATE_METRICS_LOG="${GATE_METRICS_LOG:-$LOG_DIR/gate_metrics.log}"
 GATE_PHASE_LOG="${CMD_COMPLETE_GATE_PHASE_LOG:-}"
 GATE_PHASE_CURRENT=""
 GATE_PHASE_START_US=""
+GATE_SUBPHASE_LOG="${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}"
+GATE_SUBPHASE_CURRENT=""
+GATE_SUBPHASE_START_US=""
 gate_phase_now_us() {
     local raw="${EPOCHREALTIME:-}"
     if [ -n "$raw" ]; then
@@ -958,7 +961,25 @@ gate_phase_tick() {
     GATE_PHASE_CURRENT="$next_phase"
     GATE_PHASE_START_US="$now_us"
 }
-gate_phase_finish() { gate_phase_tick "terminal"; }
+gate_subphase_tick() {
+    local next_phase="$1" now_us elapsed_us sec ms
+    [ -n "$GATE_SUBPHASE_LOG" ] || return 0
+    now_us=$(gate_phase_now_us)
+    if [ -n "$GATE_SUBPHASE_CURRENT" ] && [ -n "$GATE_SUBPHASE_START_US" ]; then
+        elapsed_us=$((now_us - GATE_SUBPHASE_START_US))
+        [ "$elapsed_us" -ge 0 ] || elapsed_us=0
+        sec=$((elapsed_us / 1000000))
+        ms=$(((elapsed_us % 1000000) / 1000))
+        mkdir -p "$(dirname "$GATE_SUBPHASE_LOG")" 2>/dev/null || true
+        printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d\n' \
+            -1 "$CMD_ID" "$GATE_SUBPHASE_CURRENT" "$sec" "$ms" \
+            >> "$GATE_SUBPHASE_LOG"
+    fi
+    GATE_SUBPHASE_CURRENT="$next_phase"
+    GATE_SUBPHASE_START_US="$now_us"
+}
+gate_subphase_finish() { gate_subphase_tick "terminal"; }
+gate_phase_finish() { gate_phase_tick "terminal"; gate_subphase_finish; }
 gate_phase_tick "startup"
 if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ] \
    && [ ! -f "$SCRIPT_DIR/queue/reopened_cmds/${CMD_ID}.yaml" ]; then
@@ -10717,6 +10738,7 @@ echo ""
 gate_phase_tick "gate_preflight"
 preflight_gate_flags "$CMD_ID"
 gate_phase_tick "gate_evaluation"
+gate_subphase_tick "gate_checks"
 
 # ─── 緊急override確認 ───
 if [ -f "$GATES_DIR/emergency.override" ]; then
@@ -12975,20 +12997,27 @@ fi
 # remote包含検証を完了してから、下のterminal CLEAR分岐へ進める。
 if [ "$ALL_CLEAR" = true ] \
    && [[ "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]]; then
+    gate_subphase_tick "source_publication"
     echo ""
     echo "Git push (pre-GATE CLEAR, report source only):"
     if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then
+        gate_subphase_tick "source_publication_blocked"
         record_block_reason "autopush_source_only_failed"
         ALL_CLEAR=false
     else
+        gate_subphase_tick "runtime_publish"
         echo ""
         echo "Tracked runtime publish (pre-generation checkpoint):"
         if ! publish_postclear_runtime_deltas pregate; then
+            gate_subphase_tick "runtime_publish_blocked"
             record_block_reason "pregate_runtime_publish_failed"
             ALL_CLEAR=false
         elif ! converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh; then
+            gate_subphase_tick "source_convergence_blocked"
             record_block_reason "shared_execution_source_convergence_failed"
             ALL_CLEAR=false
+        else
+            gate_subphase_tick "post_source_checks"
         fi
     fi
 fi
