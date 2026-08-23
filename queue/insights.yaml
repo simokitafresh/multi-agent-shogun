@@ -2502,3 +2502,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-23T20:50:46+09:00"
+- id: INS-20260823-211352715-cf1d
+  ts: "2026-08-23T21:13:52+09:00"
+  insight: "本セッション軍師学び: (1)FAIL報告のLGTM経路がなかったインフラバグをD0修正(a9419ef0)。report_verdict=FAILのLGTM+BLOCK矛盾/bundle_guardをスキップ化。(2)review_bundle.py WSL2 timeout(4/4件rc=124)で家老LGTM通知3件未達を発見。手動補完+cmd_4378起票済み。(3)idle自走Step 0(三層記憶確認)をスキップしてデーモン二重起動と誤診→殿指摘で覚醒。cmd_karo_hotfix_three_layer_all_action_guard(構造強制化)配備済み。(4)デーモンは親子構造で正常稼働(各agent親1本)。重複inboxの真因はデーモンではなく家老再送。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
