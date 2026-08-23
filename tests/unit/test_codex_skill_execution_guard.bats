@@ -9,6 +9,13 @@ setup() {
     mkdir -p "$TEST_ROOT/queue/tasks" "$TEST_ROOT/logs" "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/scripts"
     cp "$PROJECT_ROOT/scripts/hooks/codex_skill_execution_guard.sh" "$TEST_ROOT/scripts/hooks/"
     cp "$PROJECT_ROOT/scripts/skill_execution_log.sh" "$TEST_ROOT/scripts/"
+    cat > "$TEST_ROOT/scripts/hooks/three_layer_preflight.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$PREFLIGHT_CALL_LOG"
+[[ "${PREFLIGHT_RESULT:-0}" == 0 ]]
+SH
+    chmod +x "$TEST_ROOT/scripts/hooks/three_layer_preflight.sh"
+    export PREFLIGHT_CALL_LOG="$TEST_ROOT/preflight.log"
     chmod +x "$TEST_ROOT/scripts/hooks/codex_skill_execution_guard.sh" "$TEST_ROOT/scripts/skill_execution_log.sh"
     export SHOGUN_REPO_ROOT="$TEST_ROOT"
     export SHOGUN_AGENT_ID="tobisaru"
@@ -87,3 +94,21 @@ run_guard() {
     [ "$status" -eq 0 ]
 }
 
+@test "非shell PreToolUseも三層preflight証跡なしではBLOCK" {
+    write_task 'task:
+  task_id: cmd_web
+  status: in_progress'
+    run env PREFLIGHT_RESULT=1 bash "$TEST_ROOT/scripts/hooks/codex_skill_execution_guard.sh" <<< '{"tool_name":"web","tool_input":{"query":"probe"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"三層preflight証跡なし"* ]]
+    grep -q '^verify web ' "$PREFLIGHT_CALL_LOG"
+}
+
+@test "Readを含む全toolは三層preflightPASS後に通過" {
+    write_task 'task:
+  task_id: cmd_read
+  status: in_progress'
+    run_guard <<< '{"tool_name":"Read","tool_input":{"file_path":"context/infrastructure.md"}}'
+    [ "$status" -eq 0 ]
+    grep -q '^verify Read context/infrastructure.md ' "$PREFLIGHT_CALL_LOG"
+}

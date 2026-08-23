@@ -24,6 +24,18 @@ file_path="${_parsed#*	}"
 
 [[ -z "$file_path" ]] && exit 0
 
+# Claude's Read path must consume the same three-layer evidence as every
+# other action.  Tracking a Read before this check would turn an unevidenced
+# read into a false proof for the later Write/Edit guard.
+_tracker_self="${BASH_SOURCE[0]}"
+[[ "$_tracker_self" == /* ]] || _tracker_self="$PWD/$_tracker_self"
+_tracker_root="${SHOGUN_REPO_ROOT:-${_tracker_self%/.claude/hooks/pre-write-read-tracker.sh}}"
+_tracker_preflight="$_tracker_root/scripts/hooks/three_layer_preflight.sh"
+if [[ ! -x "$_tracker_preflight" ]] || ! bash "$_tracker_preflight" verify "Read" "$file_path" "" >/dev/null 2>&1; then
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Claude Readは三層preflight証跡が必要です。先にthree_layer_preflight.sh issueを実行してください。"}}\n'
+    exit 1
+fi
+
 # Get agent_id with env fast-path, fallback to tmux, then unknown
 agent_id="${MOCK_AGENT_ID:-${AGENT_ID:-}}"
 if [[ -z "$agent_id" ]]; then

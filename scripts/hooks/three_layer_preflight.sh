@@ -856,53 +856,30 @@ issue() {
     printf '%s\n' "$evidence_file"
 }
 
-is_allowed_read_only_bash() {
-    COMMAND_TEXT="$1" python3 - <<'PY'
+# These are the only Bash actions that may run while the evidence record is
+# absent: the recovery issuer itself and the two layer-search helpers it uses.
+# Keep this parser intentionally narrower than the historical read-only
+# allowlist.  Read-only inspection is still an action and must consume the
+# same evidence as a mutation.
+is_recovery_bash() {
+    COMMAND_TEXT="$1" RECOVERY_ROOT="$ROOT" python3 - <<'PY'
 import os, shlex, sys
 
 command = os.environ.get("COMMAND_TEXT", "")
-# Any shell grammar means the whole command needs proof. This closes redirect,
-# substitution, backtick, pipeline, list, and compound-command bypasses.
 if any(token in command for token in (";", "&&", "||", "|", ">", "<", "`", "$(", "${")):
     raise SystemExit(1)
 try:
     tokens = shlex.split(command, posix=True)
 except ValueError:
     raise SystemExit(1)
-if not tokens:
+if len(tokens) < 2 or os.path.basename(tokens[0]) != "bash":
     raise SystemExit(1)
-
-# Normalize measurement/environment wrappers before applying the same command
-# allowlist.  Only option/value forms without shell grammar are accepted.
-while tokens:
-    base = os.path.basename(tokens[0])
-    if base in {"time", "gtime"}:
-        tokens = tokens[1:]
-        while tokens and tokens[0].startswith("-"):
-            option = tokens.pop(0)
-            if option in {"-o", "--output", "-f", "--format"}:
-                if not tokens:
-                    raise SystemExit(1)
-                tokens.pop(0)
-        continue
-    if base == "env":
-        tokens = tokens[1:]
-        while tokens and (tokens[0] == "-i" or tokens[0].startswith("--unset=") or "=" in tokens[0] and not tokens[0].startswith("/")):
-            tokens.pop(0)
-        continue
-    break
-if not tokens:
-    raise SystemExit(1)
-base = os.path.basename(tokens[0])
-if base in {"cat", "head", "tail", "ls", "pwd", "printf", "rg", "grep"}:
-    raise SystemExit(0)
-if base == "git" and len(tokens) >= 2 and tokens[1] in {"status", "diff", "log", "show"}:
-    raise SystemExit(0)
-if base == "bash" and len(tokens) >= 2 and tokens[1].endswith(("memory_db_query.sh", "semantic_search.sh", "three_layer_preflight.sh")):
-    raise SystemExit(0)
-if base == "bash" and len(tokens) >= 2 and tokens[1].endswith(("inbox_mark_read.sh", "inbox_write.sh", "bulletin_write.sh")):
-    raise SystemExit(0)
-if base == "bash" and len(tokens) >= 3 and tokens[1].endswith("causal_index.sh") and tokens[2] == "build":
+script = os.path.basename(tokens[1])
+root = os.path.realpath(os.environ["RECOVERY_ROOT"])
+script_path = os.path.realpath(os.path.join(os.getcwd(), tokens[1])) if not os.path.isabs(tokens[1]) else os.path.realpath(tokens[1])
+if script == "three_layer_preflight.sh" and script_path == os.path.join(root, "scripts/hooks/three_layer_preflight.sh"):
+    raise SystemExit(0 if len(tokens) >= 3 and tokens[2] == "issue" else 1)
+if script in {"memory_db_query.sh", "semantic_search.sh"} and script_path == os.path.join(root, "scripts", script):
     raise SystemExit(0)
 raise SystemExit(1)
 PY
@@ -925,15 +902,8 @@ resolve_rg() {
 verify() {
     local tool_name="$1" target="${2:-}" command="${3:-}" parsed_status verify_rc=0
     mkdir -p "$EVIDENCE_DIR"
-    if [[ "$tool_name" == "Bash" ]] && is_allowed_read_only_bash "$command"; then
+    if [[ "$tool_name" == "Bash" ]] && is_recovery_bash "$command"; then
         return 0
-    fi
-    [[ "$tool_name" == "Read" ]] && return 0
-    local root_real target_real
-    root_real="$(realpath -m -- "$ROOT")"
-    if [[ "$tool_name" != "Bash" ]]; then
-        target_real="$(realpath -m -- "$target")"
-        [[ "$target_real" == "$root_real"/* ]] || return 0
     fi
     # Read the two-file generation under the same lock used by invalidation and
     # publish.  This prevents verify from observing the rename boundary between

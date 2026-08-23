@@ -262,14 +262,31 @@ JSON
     [[ "$output" == *"BLOCK:"* ]]
 }
 
-@test "read-only Bashは証跡なしでもPASS" {
+@test "read-only Bashも証跡なしではBLOCK" {
     run verify Bash "" "rg -n three_layer scripts/hooks/three_layer_preflight.sh"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK:"* ]]
+}
+
+@test "Readも証跡なしではBLOCK" {
+    run verify Read "$ROOT/context/infrastructure.md" ""
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK:"* ]]
+}
+
+@test "復旧用issueと三層検索helperだけは証跡なしで許可" {
+    run verify Bash "" "bash scripts/hooks/three_layer_preflight.sh issue probe"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "bash scripts/memory_db_query.sh --search probe"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "bash scripts/semantic_search.sh probe"
     [ "$status" -eq 0 ]
 }
 
-@test "safe time and env wrappers normalize to the read-only allowlist" {
+@test "wrapper付きread-only Bashも証跡なしではBLOCK" {
     run verify Bash "" "/usr/bin/time -f elapsed=%e env LC_ALL=C rg -n three_layer scripts/hooks/three_layer_preflight.sh"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK:"* ]]
 }
 
 @test "wrapper command substitution remains fail-closed" {
@@ -290,6 +307,16 @@ for key in ("memory_wall_ms", "semantic_wall_ms", "obsidian_wall_ms", "total_wal
 assert int(data["total_wall_ms"]) < 10000
 PY
     [ "$status" -eq 0 ]
+}
+
+@test "Claude Read trackerは三層preflight証跡なしでBLOCK" {
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" MOCK_AGENT_ID="$AGENT" \
+        bash "$ROOT/.claude/hooks/pre-write-read-tracker.sh" <<JSON
+{"tool_name":"Read","tool_input":{"file_path":"$ROOT/context/infrastructure.md"}}
+JSON
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"permissionDecision":"deny"'* ]]
 }
 
 @test "T1: 三層検索結果が破棄されずevidenceへ注入される(A1是正)" {
@@ -814,17 +841,17 @@ PY
     [ "$status" -eq 0 ]
 }
 
-@test "evidence失敗中はrepairのみ許可し一般変更をBLOCK" {
+@test "evidence失敗中は指定された復旧3経路以外をBLOCK" {
     printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"124","status":"failed"}\n' "$AGENT" "$PANE" > "$EVIDENCE"
     printf 'n\n' > "$EVIDENCE.current"
     run verify Bash "" "bash scripts/inbox_mark_read.sh hanzo msg_1"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
     run verify Bash "" "bash scripts/inbox_write.sh karo notice feedback hanzo inspect"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
     run verify Bash "" "bash scripts/bulletin_write.sh hanzo notice"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
     run verify Bash "" "bash scripts/lib/causal_index.sh build /tmp/causal.tsv"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
     run verify Bash "" "touch repo-file"
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK:"* ]]
