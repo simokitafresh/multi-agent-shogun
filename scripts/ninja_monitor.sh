@@ -5390,6 +5390,149 @@ _reflux_target_dirty_fingerprint() {
     printf '%s\t%s\n' "$fingerprint" "$status"
 }
 
+# Classify a dirty insight queue from the committed bytes, not from the
+# current diff's line positions.  The queue is bounded and producers may
+# rotate IDs while reflux is waiting, so only these lifecycle transitions are
+# safe to checkpoint automatically:
+#   add     trusted producer adds a new pending INS-* entry
+#   resolve an existing entry changes pending -> resolved using only the
+#           resolution evidence fields
+#   archive a resolved/done entry leaves the live queue and is present exactly
+#           once in the archive
+# Any malformed YAML, duplicate ID, body edit, pending eviction, or unknown
+# producer remains fail-closed and visible to Karo.
+_reflux_classify_insight_dirty() {
+    local target="$1" head_file current_file archive_file
+    [ "$target" = "queue/insights.yaml" ] || return 1
+    current_file="$SCRIPT_DIR/$target"
+    [ -r "$current_file" ] || return 1
+    head_file=$(mktemp "${TMPDIR:-/tmp}/reflux-insights-head.XXXXXX") || return 1
+    archive_file="$SCRIPT_DIR/queue/archive/insights_archive.yaml"
+    if ! git -C "$SCRIPT_DIR" show "HEAD:$target" >"$head_file" 2>/dev/null; then
+        rm -f "$head_file"
+        return 1
+    fi
+    if ! REFLUX_INSIGHTS_HEAD="$head_file" \
+        REFLUX_INSIGHTS_CURRENT="$current_file" \
+        REFLUX_INSIGHTS_ARCHIVE="$archive_file" \
+        python3 - <<'PY'
+import json
+import os
+import sys
+
+import yaml
+
+head_path = os.environ["REFLUX_INSIGHTS_HEAD"]
+current_path = os.environ["REFLUX_INSIGHTS_CURRENT"]
+archive_path = os.environ["REFLUX_INSIGHTS_ARCHIVE"]
+
+trusted_sources = {
+    "self_retro",
+    "semantic_index_update",
+    "gate_loop_health",
+}
+allowed_resolution_fields = {"status", "resolved_reason", "action_artifact", "resolved_at"}
+
+def load_index(path, required=True):
+    if not os.path.isfile(path):
+        if required:
+            raise ValueError("missing file")
+        return {}
+    with open(path, encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+    if not isinstance(document, dict) or set(document) != {"insights"}:
+        raise ValueError("unexpected root")
+    entries = document["insights"]
+    if not isinstance(entries, list):
+        raise ValueError("insights is not a list")
+    indexed = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("entry is not a mapping")
+        identity = entry.get("id")
+        if not isinstance(identity, str) or not identity.startswith("INS-"):
+            raise ValueError("invalid insight id")
+        if identity in indexed:
+            raise ValueError("duplicate insight id")
+        indexed[identity] = entry
+    return indexed
+
+def canonical(entry):
+    return json.dumps(entry, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+def is_trusted_source(entry):
+    source = str(entry.get("source") or "")
+    return source in trusted_sources or source.startswith("cmd_complete_gate:")
+
+try:
+    before = load_index(head_path)
+    current = load_index(current_path)
+    added = set(current) - set(before)
+    removed = set(before) - set(current)
+    common = set(before) & set(current)
+    changed = {identity for identity in common if canonical(before[identity]) != canonical(current[identity])}
+    kinds = []
+
+    for identity in added:
+        entry = current[identity]
+        if entry.get("status") != "pending" or not is_trusted_source(entry):
+            raise ValueError("untrusted addition")
+        kinds.append("add")
+
+    for identity in changed:
+        old = before[identity]
+        new = current[identity]
+        changed_fields = {
+            key for key in set(old) | set(new)
+            if old.get(key) != new.get(key)
+        }
+        if not is_trusted_source(old) or not is_trusted_source(new):
+            raise ValueError("untrusted mutation")
+        if old.get("source") != new.get("source"):
+            raise ValueError("producer changed")
+        if (
+            old.get("status") == "pending"
+            and new.get("status") == "resolved"
+            and changed_fields
+            and changed_fields <= allowed_resolution_fields
+            and all(str(new.get(field) or "").strip() for field in ("resolved_reason", "action_artifact", "resolved_at"))
+        ):
+            kinds.append("resolve")
+            continue
+        if (
+            old.get("source") == "self_retro"
+            and new.get("source") == "self_retro"
+            and changed_fields
+            and changed_fields <= {"occurrence_count", "last_seen"}
+        ):
+            kinds.append("resolve")
+            continue
+        raise ValueError("non-lifecycle mutation")
+
+    if removed:
+        archive = load_index(archive_path)
+        for identity in removed:
+            archived = archive.get(identity)
+            if archived is None or archived != before[identity]:
+                raise ValueError("evicted entry is not archived byte-for-byte")
+            if archived.get("status") not in {"resolved", "done"} and not archived.get("resolved"):
+                raise ValueError("pending entry archived")
+        kinds.extend(["archive"] * len(removed))
+
+    if not kinds:
+        raise ValueError("dirty bytes contain no lifecycle change")
+    print(",".join(sorted(set(kinds))))
+except Exception as exc:
+    print(f"{type(exc).__name__}: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+    then
+        rm -f "$head_file"
+        return 1
+    fi
+    rm -f "$head_file"
+}
+
 # queue/insights.yaml is a live operational ledger: trusted producers may
 # append or resolve entries while no reflux worker owns it.  Preserve that
 # generation in a scope-only checkpoint before publishing the next worker
@@ -5404,14 +5547,6 @@ _reflux_checkpoint_dirty_target() {
 
     if ! (cd "$SCRIPT_DIR" && bash "$helper" -m "chore(insights): checkpoint operational reflux state" -- "$target") \
         >> "$SCRIPT_DIR/logs/deploy_reflux_auto.log" 2>&1; then
-        # Another field-aware writer may have committed the same generation
-        # while this helper waited for the scope lock. A helper nonzero is not
-        # a dispatch failure when the target is already clean at the durable
-        # recheck boundary.
-        if ! _reflux_target_dirty_fingerprint "$target" >/dev/null; then
-            log "REFLUX-AUTO-CHECKPOINT: target=$target fingerprint=$fingerprint result=clean_after_helper_failure"
-            return 0
-        fi
         log "REFLUX-AUTO-CHECKPOINT-FAIL: target=$target fingerprint=$fingerprint"
         return 1
     fi
@@ -6393,7 +6528,7 @@ _handle_reflux_auto_deploy() {
     local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
     local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2 ac1_yaml ac2_yaml
     local external_source inspection_path_line="" planned_paths_line="" purpose_yaml=""
-    local promotion_reserved=false insight_reserved=false active_owner dirty_fingerprint dirty_status
+    local promotion_reserved=false insight_reserved=false active_owner dirty_fingerprint dirty_status dirty_kind
 
     [ -n "$name" ] || return 1
 
@@ -6594,6 +6729,15 @@ EOF
     # immediately before publication so a foreign edit cannot create another
     # in-progress worker that is guaranteed to fail its commit contract.
     if [ "$kind" = "insight" ] && IFS=$'\t' read -r dirty_fingerprint dirty_status < <(_reflux_target_dirty_fingerprint "$target_path"); then
+        dirty_kind=$(_reflux_classify_insight_dirty "$target_path" 2>/dev/null || true)
+        if [ -z "$dirty_kind" ]; then
+            _reflux_notify_dirty_target_once "$name" "$target_path" "$dirty_fingerprint" "$dirty_status" "$cmd_id" || true
+            rm -f "$tmp_task"
+            _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
+            log "REFLUX-AUTO-BLOCK: $name target=$target_path dirty_fingerprint=$dirty_fingerprint reason=untrusted_insight_lifecycle task_publication=0"
+            return 1
+        fi
+        log "REFLUX-AUTO-TRUSTED-DIRTY: $name target=$target_path lifecycle=$dirty_kind fingerprint=$dirty_fingerprint"
         if ! _reflux_checkpoint_dirty_target "$target_path" "$dirty_fingerprint"; then
             _reflux_notify_dirty_target_once "$name" "$target_path" "$dirty_fingerprint" "$dirty_status" "$cmd_id" || true
             rm -f "$tmp_task"
