@@ -196,7 +196,7 @@ def login_if_needed():
         el.dispatchEvent(new Event('input', {bubbles: true}));
         el.dispatchEvent(new Event('change', {bubbles: true}));
       };
-      const email = document.querySelector('input[type="email"], input[name="email"], #email');
+      const email = document.querySelector('input[type="email"], input[name="email"], input[name="login"], #email');
       const password = document.querySelector('input[type="password"], input[name="password"], #password');
       if (!email || !password) return {ok: false, reason: 'missing_form'};
       setValue(email, data.email);
