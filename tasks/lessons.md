@@ -15737,3 +15737,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - task YAMLのtarget_pathがcanonical repo absolute pathのままだと、隔離worktreeでrun_tests.sh taskがscope path outside repositoryとなり、実装・検証経路をRC2で停止する。配備時にtask_worktree_source_pathsをworktree相対へ射影し、task runnerのprimary scopeを一致させるべきである。
+
+### L1632: External task scope exclusion must be surfaced as a test-run boundary
+- **日付**: 2026-08-23
+- **出典**: cmd_4373
+- **記録者**: kagemaru
+- **tags**: [dm-signal,testing,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/analysis/cmd_4373_hmm_regime_phase2.py,docs/research/cmd_4373_hmm_regime_phase2_report.md]
+- **origin**: [[cmd_4373]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- bash scripts/run_tests.sh task queue/tasks/kagemaru.yaml selected zero files because the task target is an external DM-Signal worktree; direct task-worktree pytest passed 1/1 with SKIP0. Future external-repo task runner contracts should map the external scope or emit a typed external_boundary result.
