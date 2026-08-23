@@ -41,6 +41,20 @@ if [[ -z "$agent" && -n "${TMUX_PANE:-}" ]]; then
 fi
 [[ -n "$agent" ]] || agent="unknown"
 
+# Every PreToolUse action reaches the same evidence verifier.  In particular,
+# Read, Skill, taskless roles, and non-shell tools must not bypass the
+# Bash/Write path.
+tool_target="$(jq -r '.tool_input.file_path // .tool_input.filePath // .tool_input.path // .input.file_path // .input.path // empty' <<<"$payload" 2>/dev/null || true)"
+command="$(jq -r '.tool_input.command // .tool_input.cmd // .input.command // .input.cmd // empty' <<<"$payload" 2>/dev/null || true)"
+if [[ ! -x "$ROOT/scripts/hooks/three_layer_preflight.sh" ]]; then
+    printf 'BLOCK: 三層preflight scriptが欠落。全PreToolUse actionをfail-closedで停止\n' >&2
+    exit 2
+fi
+if ! bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify "$tool_name" "$tool_target" "$command" >/dev/null 2>&1; then
+    printf 'BLOCK: 三層preflight証跡なし/無効。全PreToolUse actionは記憶DB・semantic・Obsidian検索後に実行せよ\n' >&2
+    exit 2
+fi
+
 task_file="${SHOGUN_TASK_FILE:-$ROOT/queue/tasks/${agent}.yaml}"
 [[ -f "$task_file" ]] || exit 0
 
@@ -64,11 +78,6 @@ if [[ "$tool_name" == "Skill" ]]; then
     fi
     exit 0
 fi
-
-case "$tool_name" in
-    Bash|exec_command|unified_exec|Write|Edit|MultiEdit|apply_patch) ;;
-    *) exit 0 ;;
-esac
 
 missing="$(
 python3 - "$task_file" "${SKILL_EXECUTION_LOG_FILE:-$ROOT/logs/skill_execution_log.yaml}" "$task_id" "$agent" <<'PY'
