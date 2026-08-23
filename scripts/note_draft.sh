@@ -430,6 +430,7 @@ echo "[note_draft] Logged to skill_execution_log: ${RESULT}"
 exit "$EXIT_CODE"
 # --- 自動防止ステップ (shellcheck対策: bashコメント化) ---
 # ### 自動防止ステップ
+# - <!-- skill-auto-improve:2682f71ef0f8 --> 自動防止: gate=none のTop FAIL理由「Python exit 1: File "<stdin>", line 180, in <module> File "<stdin>", line 147, in login_if_needed RuntimeError: Login form automation failed: {'ok': False, 'reas」(count=5, last=2026-08-23T16:49:29+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
 # - <!-- skill-auto-improve:577c9ae42f3b --> 自動防止: gate=none のTop FAIL理由「Python exit 1: + CategoryInfo : OperationStopped: (WebSocket conne...th CDP on port?:String) [], RuntimeException + FullyQualifiedErrorId : WebSock」(count=2, last=2026-08-06T16:48:25+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
 # - <!-- skill-auto-improve:f20f8777e67b --> 自動防止: gate=none のTop FAIL理由「Python exit 3: [note_draft] ERROR: ProseMirror editor did not render after reloads」(count=1, last=2026-06-18T22:12:34+0900)を避ける。確認: bash scripts/gates/gate_report_format.sh <report> を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い report_field_set.sh で修正後、gateを再実行する。
 # <!-- skill-auto-improve:f39a5e08cea6 --> 自動防止: gate=none のTop FAIL理由「Python script exited with code 1」(count=3, last=2026-06-09T12:18:28+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
