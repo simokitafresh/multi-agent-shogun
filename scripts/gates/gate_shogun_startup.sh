@@ -1018,8 +1018,8 @@ answer_terms = (
     "自動化ターゲット", "実装証拠",
 )
 prompt_only_terms = ("Q6:", "洗脳8パターン", "1つ具体例で答えよ")
-empty_target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(なし|無し|特になし|未記入|N/?A|none|null)?\s*$", re.I)
-target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(.+)", re.I)
+empty_target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：=]\s*(なし|無し|特になし|未記入|N/?A|none|null)?\s*$", re.I)
+target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：=]\s*(.+)", re.I)
 weak_target_re = re.compile(r"(案を検討|検討する|検討中|予定|つもり|後で|あとで)")
 weak_target_negation_re = re.compile(r"(検討[・/、, ]*予定ではなく|検討ではなく|予定ではなく|つもりではなく|後でではなく|あとでではなく|登録完了済み|D0修正済み)")
 automation_action_re = re.compile(
