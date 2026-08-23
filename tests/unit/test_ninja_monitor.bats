@@ -910,6 +910,10 @@ SH
         chmod +x "$root/scripts/inbox_write.sh"
         cat > "$root/scripts/ninja_scope_commit.sh" <<SH
 #!/usr/bin/env bash
+if [ -e "$root/checkpoint.clean_on_fail" ]; then
+  git -C "$root" checkout -- queue/insights.yaml
+  exit 1
+fi
 if [ -e "$root/checkpoint.fail" ]; then exit 1; fi
 git -C "$root" add -- queue/insights.yaml
 git -C "$root" commit -qm checkpoint
@@ -953,17 +957,32 @@ YAML
         [ ! -s "$root/notifications.log" ]
         grep -q "REFLUX-AUTO-CHECKPOINT:.*result=clean" "$root/test.log"
 
+        cat > "$root/queue/insights.yaml" <<YAML
+insights:
+- id: INS-DIRTY-RACE
+  status: pending
+YAML
+        git -C "$root" add -- queue/insights.yaml
+        git -C "$root" commit -qm race-baseline
+        touch "$root/checkpoint.clean_on_fail"
+        printf "# concurrently checkpointed generation\n" >> "$root/queue/insights.yaml"
+        run_reflux 250
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 3 ]
+        [ ! -s "$root/notifications.log" ]
+        grep -q "result=clean_after_helper_failure" "$root/test.log"
+        rm -f "$root/checkpoint.clean_on_fail"
+
         touch "$root/checkpoint.fail"
         printf "# foreign generation blocked\\n" >> "$root/queue/insights.yaml"
         run_reflux 300
         [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 3 ]
         grep -q "target=queue/insights.yaml" "$root/notifications.log"
         grep -q "task_publication=0" "$root/test.log"
 
         run_reflux 400
         [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 2 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 3 ]
 
         rm -f "$root/checkpoint.fail"
         cat > "$root/clean-insights.yaml" <<YAML
@@ -973,7 +992,7 @@ insights:
 YAML
         cp "$root/clean-insights.yaml" "$root/queue/insights.yaml"
         run_reflux 500
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 3 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 4 ]
 
         printf unrelated > "$root/unrelated.txt"
         cat > "$root/queue/insights.yaml" <<YAML
@@ -982,10 +1001,10 @@ insights:
   status: pending
 YAML
         run_reflux 600
-        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 4 ]
+        [ "$(grep -c DEPLOY_CALLED "$root/deploy.log")" -eq 5 ]
         [ "$(wc -l < "$root/notifications.log")" -eq 1 ]
-        echo "REFLUX_DIRTY_GENERATIONS_OK deploys=4 notifications=1"
+        echo "REFLUX_DIRTY_GENERATIONS_OK deploys=5 notifications=1"
     '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"REFLUX_DIRTY_GENERATIONS_OK deploys=4 notifications=1"* ]]
+    [[ "$output" == *"REFLUX_DIRTY_GENERATIONS_OK deploys=5 notifications=1"* ]]
 }

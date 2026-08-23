@@ -5381,6 +5381,14 @@ _reflux_checkpoint_dirty_target() {
 
     if ! (cd "$SCRIPT_DIR" && bash "$helper" -m "chore(insights): checkpoint operational reflux state" -- "$target") \
         >> "$SCRIPT_DIR/logs/deploy_reflux_auto.log" 2>&1; then
+        # Another field-aware writer may have committed the same generation
+        # while this helper waited for the scope lock. A helper nonzero is not
+        # a dispatch failure when the target is already clean at the durable
+        # recheck boundary.
+        if ! _reflux_target_dirty_fingerprint "$target" >/dev/null; then
+            log "REFLUX-AUTO-CHECKPOINT: target=$target fingerprint=$fingerprint result=clean_after_helper_failure"
+            return 0
+        fi
         log "REFLUX-AUTO-CHECKPOINT-FAIL: target=$target fingerprint=$fingerprint"
         return 1
     fi
