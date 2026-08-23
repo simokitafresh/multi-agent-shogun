@@ -7,8 +7,15 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
     printf 'BLOCK: gist share: not inside a git worktree\n' >&2
     exit 1
 }
-writer="${GIST_VERIFIED_WRITE_CMD:-$repo_root/scripts/gist_verified_write.sh}"
-indexer="${GIST_INDEX_UPDATE_CMD:-$repo_root/scripts/gist_index_update.sh}"
+# helper解決: 対象repoに同名helperがあればそれを使い、無ければ本script自身のdir(正本)へfallback。
+# 2026-08-23実証: DM-signal repoからの共有でcwd相対解決がhelper不在で2連BLOCKした。
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+default_writer="$repo_root/scripts/gist_verified_write.sh"
+[ -x "$default_writer" ] || default_writer="$script_dir/gist_verified_write.sh"
+default_indexer="$repo_root/scripts/gist_index_update.sh"
+[ -x "$default_indexer" ] || default_indexer="$script_dir/gist_index_update.sh"
+writer="${GIST_VERIFIED_WRITE_CMD:-$default_writer}"
+indexer="${GIST_INDEX_UPDATE_CMD:-$default_indexer}"
 gh_cmd="${GH_CMD:-gh}"
 timeout_seconds="${GIST_TIMEOUT_SECONDS:-20}"
 metadata_install_cmd="${GIST_SHARE_METADATA_INSTALL_CMD:-mv}"
