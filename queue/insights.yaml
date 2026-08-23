@@ -2629,3 +2629,24 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-23T23:13:41+09:00"
+- id: INS-20260823-232351730-1194
+  ts: "2026-08-23T23:23:51+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bsfv494z2 task id tool use id toolu 01YX94ZpKDeLmqRo4e は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260824-015829414-4e7c
+  ts: "2026-08-24T01:58:29+09:00"
+  insight: "cmd_4380で忍者のstatus=revision_requested未更新が計4回(hayate3回+saizo1回)繰り返された。gate_report_format.shがBLOCKするが忍者が修正方法を学習していない。report_field_set.shの再提出時にstatus自動更新する仕組み、またはgate FIXメッセージの改善が必要"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260824-031619025-64be
+  ts: "2026-08-24T03:16:19+09:00"
+  insight: "cmd_4380 LG051連続BLOCK: saizo/hayateともに非test caller count証跡の書き方を学習できず同じアプローチを繰り返している(DIVERGENT v2)。gate FIXメッセージは明確だがGPT忍者が解釈できていない。対策=task YAMLにLG051証跡の具体例(rgコマンド+non-test caller count: N)を注入、またはreport_field_setにcausal_verification.evidenceテンプレートを追加"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
