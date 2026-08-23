@@ -3239,6 +3239,7 @@ publish_postclear_runtime_deltas() {
     local repo="$SCRIPT_DIR" upstream_ref remote push_ref remote_tip
     local before_head after_head temp_parent source_repo source_sha path
     local git_common_dir publish_lock publish_lock_fd
+    local commit_lock_path commit_lock_fd
     local fresh_upstream_sha working_blob upstream_blob
     local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
     local -a dirty_paths=() runtime_paths=() durable_paths=() source_shas=() lesson_paths=()
@@ -3406,6 +3407,13 @@ PY
         [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
     done
     git -C "$repo" fetch -q "$remote" "$push_ref" || return 1
+    # Network publication above remains under the runtime singleflight lock,
+    # but the shared root HEAD/index mutation below must join the same
+    # repository-wide commit ledger as ninja_scope_commit.  Keep this narrow:
+    # a network wait must not occupy the commit ledger used by other ninjas.
+    commit_lock_path="$(lock_path "$git_common_dir/ninja-scope-commit")"
+    exec {commit_lock_fd}>"$commit_lock_path" || return 1
+    flock -x "$commit_lock_fd" || return 1
     # The published blob is the authoritative composition (including remote
     # insight IDs).  Bring only owned runtime paths back before checkpointing;
     # unrelated local commits and dirty paths remain untouched.
@@ -3432,6 +3440,7 @@ PY
             return 1
         fi
     fi
+    exec {commit_lock_fd}>&-
     git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true
     rmdir -- "$temp_parent" 2>/dev/null || true
     echo "  runtime publish: OK (tracked runtime dirty ${#runtime_paths[@]} -> 0)"
