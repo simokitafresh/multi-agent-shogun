@@ -1221,6 +1221,23 @@ if actual != expected:
 PY
 }
 
+# A durable receipt proves that a source-only publication succeeded at the
+# time it was written.  It is reusable only while the current remote tip still
+# contains every source commit.  Without this second proof an exact receipt
+# can incorrectly suppress the publish/reconcile lane after the remote branch
+# was rewritten or otherwise moved to a non-ancestral tip.
+receipt_source_commits_are_remote_ancestors() {
+    local repo="$1" remote_tip="$2" source_sha
+    shift 2
+    [ "$#" -gt 0 ] || return 1
+    git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || return 1
+    for source_sha in "$@"; do
+        [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || return 1
+        git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip" \
+            || return 1
+    done
+}
+
 # A pre-receipt source-only publication may have been recorded by the old
 # trigger logger before the durable receipt was introduced. Evidence is usable
 # only when the logger captured the complete publication identity. A marker, a
@@ -2891,16 +2908,34 @@ push_task_repositories() {
             if [ "$receipt_expected" = true ] \
                 && source_publish_receipt_matches "$receipt" "$CMD_ID" \
                     "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}"; then
-                for task_file in "${eligible_task_files[@]}"; do
-                    [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                    mark_task_worktree_published "$task_file" "$remote_tip" || return 1
-                done
-                if [ "$legacy_receipt_migrated" = true ]; then
-                    echo "  git push: SKIP ($repo migrated legacy source-only publication evidence exact-match)"
-                else
-                    echo "  git push: SKIP ($repo durable source-only publication receipt exact-match)"
+                if receipt_source_commits_are_remote_ancestors "$repo" "$remote_tip" \
+                    "${source_commits[@]}"; then
+                    for task_file in "${eligible_task_files[@]}"; do
+                        [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
+                        mark_task_worktree_published "$task_file" "$remote_tip" || return 1
+                    done
+                    if [ "$legacy_receipt_migrated" = true ]; then
+                        echo "  git push: SKIP ($repo migrated legacy source-only publication evidence exact-match+ancestry)"
+                    else
+                        echo "  git push: SKIP ($repo durable source-only publication receipt exact-match+ancestry)"
+                    fi
+                    break
                 fi
-                break
+                if [ "$legacy_receipt_migrated" = true ]; then
+                    echo "  git push: migrated legacy source-only publication evidence exact-match but current remote ancestry is absent; continuing publication"
+                else
+                    echo "  git push: durable source-only publication receipt exact-match but current remote ancestry is absent; continuing publication"
+                fi
+                # The receipt may be the only proof that saw the prior remote
+                # tip.  Materialize the current tip before the existing
+                # ancestry/equivalence lane inspects its commit graph; an
+                # ls-remote SHA alone is not enough for cat-file/diff-tree.
+                if git -C "$repo" fetch -q "$remote" "$push_ref"; then
+                    refreshed_tip=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null || true)
+                    if [[ "$refreshed_tip" =~ ^[0-9a-f]{40}$ ]]; then
+                        remote_tip="$refreshed_tip"
+                    fi
+                fi
             fi
             # This proof is intentionally task-backed.  Archived/report-only
             # source contracts do not carry the deployment base and therefore
@@ -3119,6 +3154,30 @@ postclear_runtime_path_is_publishable() {
     return 1
 }
 
+# A writer may legitimately advance the shared HEAD while this publisher is
+# materializing its clean source snapshot.  Retry once when that advancement
+# is disjoint from the target runtime paths and the advancing paths are clean
+# at the new HEAD.  A changed target path is a real overlap and remains
+# fail-closed; repeated generation changes are also blocked by the retry cap.
+runtime_generation_change_is_clean_and_disjoint() {
+    local repo="$1" before_head="$2" after_head="$3" changed_path path
+    shift 3
+    [ "$#" -gt 0 ] || return 1
+    git -C "$repo" cat-file -e "${before_head}^{commit}" 2>/dev/null || return 1
+    git -C "$repo" cat-file -e "${after_head}^{commit}" 2>/dev/null || return 1
+
+    local -A target_paths=()
+    for path in "$@"; do
+        target_paths["$path"]=1
+    done
+    while IFS= read -r changed_path; do
+        [ -n "$changed_path" ] || continue
+        [ -z "${target_paths[$changed_path]+yes}" ] || return 1
+        git -C "$repo" diff --quiet "$after_head" -- "$changed_path" || return 1
+        git -C "$repo" diff --cached --quiet -- "$changed_path" || return 1
+    done < <(git -C "$repo" diff --name-only "$before_head" "$after_head")
+}
+
 capture_durable_writer_paths() {
     local mode="$1" snapshot="$2" manifest="$3" cmd_id="$4" generation="$5"
     python3 - "$mode" "$SCRIPT_DIR" "$snapshot" "$manifest" "$cmd_id" "$generation" <<'PY'
@@ -3312,7 +3371,18 @@ PY
 
     after_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
     if [ "$after_head" != "$before_head" ]; then
-        echo "  runtime publish: BLOCK (writer generation changed $before_head -> $after_head)" >&2
+        if [ "${CMD_COMPLETE_GATE_RUNTIME_PUBLISH_RETRY:-0}" != "1" ] \
+            && runtime_generation_change_is_clean_and_disjoint \
+                "$repo" "$before_head" "$after_head" "${runtime_paths[@]}"; then
+            echo "  runtime publish: writer generation changed without target overlap; retrying once ($before_head -> $after_head)"
+            git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || return 1
+            rmdir -- "$temp_parent" 2>/dev/null || true
+            exec {publish_lock_fd}>&-
+            CMD_COMPLETE_GATE_RUNTIME_PUBLISH_RETRY=1 \
+                publish_postclear_runtime_deltas "$phase"
+            return $?
+        fi
+        echo "  runtime publish: BLOCK (writer generation changed with overlap or retry exhausted $before_head -> $after_head)" >&2
         return 1
     fi
     # Checkpoint the exact snapshot locally before merging its equivalent
