@@ -2253,7 +2253,4 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: resolved
-  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
-  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-08-23T16:00:53+09:00"
+  status: pending
