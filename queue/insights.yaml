@@ -2515,7 +2515,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '3d4a3acdf3e08b00a60c2d76fca1524fa21d95e7a6f80379221dea6a91761d4d' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -2525,6 +2525,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次情報でfix_knownを再確認: logs/self_retro.jsonlのevent_id一致(1件・重複event_id 0)、review_notifyのSG7維持基準、対象cmdのgunshi_review_log.yamlでverdict PASS/operational_simulation PASSを確認。verify_commandもexit 0。"
+  action_artifact: "logs/self_retro.jsonl#3d4a3acdf3e08b00a60c2d76fca1524fa21d95e7a6f80379221dea6a91761d4d; logs/gunshi_review_log.yaml#cmd_karo_hotfix_commit_ledger_single_lock; scripts/cmd_complete_gate.sh#sg7_consume"
+  resolved_at: "2026-08-23T22:47:30+09:00"
 - id: INS-20260823-215454663-7fc2
   ts: "2026-08-23T21:54:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id broijwg6l task id tool use id toolu 01Wh6SeHJZEEkSFtYL は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -2565,3 +2568,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-23T22:13:48+09:00"
+- id: INS-20260823-225317061-814d
+  ts: "2026-08-23T22:53:17+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id btfc4huwo task id tool use id toolu 01XX2ynjvkfytrhTVh は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
