@@ -15776,3 +15776,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd本文が挙動不変またはbehavior-preservingを約束するdm-signal実装cmdは、既存operational_simulationのcommand/expected/actual/result全4項目が非空であることをcmd_complete_gateが確認し、空証跡をCLEARさせない。次回チェック: 対象/非対象/証跡非空の3境界をFAIL0/SKIP0で再実行し、precheck側の識別条件と完了gate側の識別条件を同期確認する。
+
+### L1635: runtime publishの共有ledger lockはroot mutation区間へ限定する
+- **日付**: 2026-08-23
+- **出典**: cmd_karo_hotfix_commit_ledger_single_lock
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality,git]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh]
+- **origin**: [[cmd_karo_hotfix_commit_ledger_single_lock]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- runtime publishの独自singleflightはnetwork/source worktree publicationを保護し、既存ninja-scope-commit common lockは共有HEAD/indexを変更する直前に取得し、checkout/commit/merge/read-tree/update-ref完了直後に解放する。network I/Oまで共通lockで囲むと忍者commitの待ち時間を不必要に延長する。
