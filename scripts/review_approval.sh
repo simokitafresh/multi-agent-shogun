@@ -602,6 +602,23 @@ case "$role:$result" in
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
     ;;
 esac
+# The canonical APPROVE entry owns SG7 publication.  Publish immediately after
+# the durable Gunshi approval record above.  The remaining report resolution,
+# manifest, and completion work can exceed the caller's timeout; none of that
+# work may be required for Karo to receive the LGTM notification.
+if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
+  && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" = review_bundle ]; then
+  sg7_bundle="$ROOT/queue/gates/$cmd_id/sg7_bundle.json"
+  [ -f "$sg7_bundle" ] || {
+    echo "BLOCK: canonical SG7 bundle missing before publication: $cmd_id" >&2
+    exit 1
+  }
+  python3 "$ROOT/scripts/review_bundle.py" notify \
+    --cmd "$cmd_id" --bundle "$sg7_bundle" >/dev/null || {
+      echo "BLOCK: canonical SG7 publication failed: $cmd_id $report_rel" >&2
+      exit 1
+    }
+fi
 if [ "$role" = karo ] && [ "$result" = RC ]; then
   # RC reopening is one lifecycle transaction and the canonical formal entry.
   # ninja_monitor uses this same
@@ -881,23 +898,6 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
   else
     echo "gunshi LGTM notice: SKIP (already notified for report lifecycle)"
   fi
-fi
-# The canonical APPROVE entry owns SG7 publication.  This keeps bundle
-# generation and formal Karo notification in the same immediate transaction;
-# review_bundle.batch may still retry notify, but its generation-bound marker
-# makes that compatibility call a no-op.
-if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
-  && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" = review_bundle ]; then
-  sg7_bundle="$ROOT/queue/gates/$cmd_id/sg7_bundle.json"
-  [ -f "$sg7_bundle" ] || {
-    echo "BLOCK: canonical SG7 bundle missing before publication: $cmd_id" >&2
-    exit 1
-  }
-  python3 "$ROOT/scripts/review_bundle.py" notify \
-    --cmd "$cmd_id" --bundle "$sg7_bundle" >/dev/null || {
-      echo "BLOCK: canonical SG7 publication failed: $cmd_id $report_rel" >&2
-      exit 1
-    }
 fi
 echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
