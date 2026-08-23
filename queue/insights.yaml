@@ -2744,3 +2744,27 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-24T07:37:54+09:00"
+- id: INS-20260824-080141831-ce07
+  ts: "2026-08-24T08:01:41+09:00"
+  insight: "[[CI RED残存修正 — test daemon maintenance lock bats の restart def]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=maintenance lock; score=25.8) / google_classroom(Google Classroom Dashboard; alias=context google classroom md と context saxo trade engine md の; score=8.6) / test_quality_framework(テスト品質統合フレームワーク; alias=terminal_test_result_contract; score=8.0)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T08:01:42+09:00"
+- id: INS-20260824-080143688-750a
+  ts: "2026-08-24T08:01:43+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4382_report_checks99.4%短縮_サブ計装は条件付き]] は既存aliasesに一致なし。類似概念TOP3: cdp_browser_capability(CDP(ブラウザ操作能力); alias=cmd_requires_cdp_production_check; score=3.5) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=3.5) / yaml_safe_write(YAML安全書込み; alias=script_path inbox_mark_read; score=3.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260824-080144071-f402
+  ts: "2026-08-24T08:01:44+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4383_サブ計装常時化と次位短縮]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=20.7) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=19.9) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=cmd_3786復旧手順; score=19.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
