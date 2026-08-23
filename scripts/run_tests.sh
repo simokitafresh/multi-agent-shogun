@@ -264,9 +264,7 @@ def collect(value, output):
 def is_test(path):
     name = os.path.basename(path)
     return (
-        path.startswith("tests/")
-        or "/tests/" in path
-        or path.endswith((".bats", ".spec.js", ".test.js"))
+        path.endswith((".bats", ".spec.js", ".test.js"))
         or (name.startswith("test_") and name.endswith(".py"))
     )
 
@@ -367,8 +365,7 @@ expand_task_directory_scope() {
 
 is_test_contract_path() {
     local path="$1" name="${1##*/}"
-    [[ "$path" == tests/* || "$path" == */tests/* \
-        || "$path" == *.bats || "$path" == *.spec.js \
+    [[ "$path" == *.bats || "$path" == *.spec.js \
         || "$path" == *.test.js || ( "$name" == test_*.py ) ]]
 }
 

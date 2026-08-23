@@ -8730,7 +8730,8 @@ run_review_quality_check() {
 
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
         task_files=("${MATCHING_TASK_FILES[@]}")
-    elif [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ]; then
+    elif declare -p MATCHING_TASK_FILES >/dev/null 2>&1 \
+        && [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ]; then
         # Parent-report-only completion has already snapshotted zero live task
         # files. The no-task fast path returned before this check, so an empty
         # snapshot here cannot hide a live implementer/reviewer pair. Avoid a
