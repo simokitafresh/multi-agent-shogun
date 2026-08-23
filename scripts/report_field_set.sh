@@ -79,7 +79,8 @@ if [ "${1:-}" = "--batch" ]; then
         RFS_PHASE_RECEIPT="$_rfs_phase_receipt" \
         RFS_BATCH_PAYLOAD="$_rfs_batch_payload" \
         python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
-import hashlib, os, pathlib, re, sys, tempfile, time, yaml
+import hashlib, os, pathlib, re, subprocess, sys, tempfile, time, yaml
+from typing import Any
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
 
@@ -209,6 +210,60 @@ if results:
         data["status"] = "completed"
 
 terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"}
+root = pathlib.Path(sys.argv[2]).resolve()
+task_root = pathlib.Path(os.environ.get("REPORT_FIELD_SET_TASK_ROOT", sys.argv[2])).resolve()
+
+def lesson_feedback_task_path(report: dict[str, Any]) -> pathlib.Path | None:
+    explicit = str(os.environ.get("RFS_TASK_FILE_PATH", "")).strip()
+    if explicit:
+        return pathlib.Path(explicit).resolve()
+    worker = str(report.get("worker_id") or "").strip()
+    if not worker:
+        return None
+    return task_root / "queue" / "tasks" / f"{worker}.yaml"
+
+def validate_lesson_feedback_set(report: dict[str, Any]) -> None:
+    task_path = lesson_feedback_task_path(report)
+    if task_path is None or not task_path.is_file():
+        return
+    try:
+        task_doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise SystemExit(f"BLOCK: lesson_feedback_set task read failed: {exc}")
+    task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else {}
+    # Older reports without an explicit lesson-set declaration retain their
+    # compatibility path.  An explicit empty list remains a contract and is
+    # checked by the shared SSOT (including the empty/empty PASS boundary).
+    if not isinstance(task, dict) or not (
+        "assigned_lesson_ids" in task or "related_lessons" in task
+    ):
+        return
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=path.parent,
+        prefix=f".{path.name}.lesson-feedback.", delete=False,
+    ) as staged:
+        staged.write(yaml_text(report, allow_unicode=True, sort_keys=False))
+        staged_report = pathlib.Path(staged.name)
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(root / "scripts" / "lib" / "report_gate_contract.py"),
+                "lesson-feedback-set",
+                str(task_path),
+                str(staged_report),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    except OSError as exc:
+        raise SystemExit(f"BLOCK: lesson_feedback_set invocation failed: {exc}")
+    finally:
+        staged_report.unlink(missing_ok=True)
+    if result.returncode != 0:
+        detail = (result.stdout.strip() or result.stderr.strip() or "unknown mismatch")
+        raise SystemExit(f"BLOCK: lesson_feedback_set: {detail}")
 
 def task_allows_empty_lessons(report, root):
     worker = str(report.get("worker_id") or "").strip()
@@ -246,11 +301,11 @@ opsim = data.get("operational_simulation")
 if isinstance(opsim, dict) and all(str(opsim.get(key) or "").strip() for key in ("command", "expected", "actual", "result")):
     data["test_results"] = dict(opsim)
 if terminal:
+    validate_lesson_feedback_set(data)
     required = ("worker_id", "parent_cmd", "ac_version_read", "binary_checks", "files_modified", "lessons_useful", "lesson_candidate")
-    root = pathlib.Path(os.environ.get("REPORT_FIELD_SET_TASK_ROOT", sys.argv[2])).resolve()
     missing = [key for key in required if data.get(key) in (None, "", [], {})
                and not (key == "lessons_useful" and data.get(key) == []
-                        and task_allows_empty_lessons(data, root))]
+                        and task_allows_empty_lessons(data, task_root))]
     if missing:
         raise SystemExit("BLOCK: terminal readiness missing: " + ",".join(missing))
     commit = str(data.get("commit_hash", "")).strip()
@@ -917,6 +972,56 @@ if missing or invalid:
 PY
 }
 
+# The lesson ID set is owned by report_gate_contract.py and is shared with
+# cmd_complete_gate.sh and the Gunshi precheck. Apply that same contract at
+# every direct terminal entry point before status bytes become visible.
+_validate_lesson_feedback_completion_contract() {
+    local task_file="${RFS_TASK_FILE_PATH:-}"
+    if [ -z "$task_file" ]; then
+        local worker_id task_root
+        worker_id="$(REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
+import os, yaml
+path = os.environ.get("REPORT_PATH", "")
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    print("")
+else:
+    print(str(data.get("worker_id") or "").strip())
+PY
+)"
+        task_root="${REPORT_FIELD_SET_TASK_ROOT:-$SCRIPT_DIR}"
+        [ -n "$worker_id" ] || return 0
+        task_file="$task_root/queue/tasks/${worker_id}.yaml"
+    fi
+    [ -f "$task_file" ] || return 0
+    [ -f "$REPORT_PATH" ] || return 0
+
+    local lesson_contract_state=0
+    python3 - "$task_file" <<'PY' || lesson_contract_state=$?
+import sys, yaml
+try:
+    raw = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(2)
+task = raw.get("task", raw) if isinstance(raw, dict) else {}
+if not isinstance(task, dict):
+    raise SystemExit(2)
+raise SystemExit(0 if "assigned_lesson_ids" in task or "related_lessons" in task else 1)
+PY
+    case "$lesson_contract_state" in
+        0) ;;
+        1) return 0 ;;
+        *)
+            echo "BLOCK: lesson_feedback_set task declaration could not be read: $task_file" >&2
+            return 1
+            ;;
+    esac
+
+    python3 "$SCRIPT_DIR/scripts/lib/report_gate_contract.py" \
+        lesson-feedback-set "$task_file" "$REPORT_PATH"
+}
+
 # --- GP-072: Pre-write field value validation (Level 4 BLOCK) ---
 # 書込み前にフィールド値の妥当性を検証。不正値はBLOCKして忍者に即フィードバック。
 # GP-072c2: per-item writes, dict→list conversion, verdict pre-conditions
@@ -1276,7 +1381,8 @@ if found is True:
                 status_val="${status_val%\'}"
                 status_val="${status_val#\'}"
                 status_val="$(echo "$status_val" | xargs)"
-                if [[ "$status_val" == "completed" || "$status_val" == "done" ]]; then
+                if [[ "$status_val" == "completed" || "$status_val" == "done" || "$status_val" == "failed" ]]; then
+                    _validate_lesson_feedback_completion_contract || return 1
                     _validate_variation_completion_contract || return 1
                     REPORT_PATH="$REPORT_PATH" python3 -c "
 import os
@@ -1963,6 +2069,10 @@ PY
     then
         AUTO_COMPLETE_STATUS=1
     fi
+fi
+
+if [ "$AUTO_COMPLETE_STATUS" -eq 1 ]; then
+    _validate_lesson_feedback_completion_contract || exit 1
 fi
 
 # Create file if not exists
