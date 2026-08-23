@@ -175,7 +175,7 @@ def compute_useful_rates(script_dir):
     return useful_rates, feedback_totals, useful_counts
 
 ZERO_USEFUL_DEPRECATE_MIN_SAMPLES = int(os.environ.get('ZERO_USEFUL_DEPRECATE_MIN_SAMPLES', '3'))
-ENABLE_ZERO_USEFUL_AUTO_DEPRECATE = os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '1') == '1'
+ENABLE_ZERO_USEFUL_AUTO_DEPRECATE = os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '0') == '1'
 
 def _deprecate_lessons_in_file(yaml_path, lesson_ids):
     """Add deprecated: true to matching lesson blocks without round-tripping YAML."""
