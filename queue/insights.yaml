@@ -2136,3 +2136,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260823-115919263-4882
+  ts: "2026-08-23T11:59:19+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_ga493_context_freshness_trigger; matched=context; current_pattern=; candidate_level=4; candidate=cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_ga493_context_freshness_trigger"
+  fix_known: false
+  status: pending
