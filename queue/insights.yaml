@@ -1736,7 +1736,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:ae7004e8a3cbda9a"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次gate実走で旧13組を再検分。未追従分は後続insight INS-20260824-054743688-232fへ継承され、旧対象の重複を解消
+  action_artifact: "primary=queue/insights.yaml:1733-1742;gate=scripts/gates/gate_skill_script_refs.sh:689-716 rc=2 REVIEW_REQUIRED;successor=queue/insights.yaml:2697-2705 INS-20260824-054743688-232f"
+  resolved_at: "2026-08-24T05:51:19+09:00"
 - id: INS-20260823-154234370-5014
   ts: "2026-08-23T15:42:34+09:00"
   insight: "LG051(non-test caller数証跡)でGPT忍者が構造的に突破不能: hayate 5回+hanzo 3回=8回連続DIVERGENT。原因候補: (1)タスクYAMLにLG051要件の具体例が注入されていない (2)gate FIX hintが抽象的すぎてGPTが具体アクションに変換できない (3)causal_verification.evidenceフィールドの書式がGPTのinstruction followingの限界を超えている。対策案: deploy_task.sh分割系cmdのタスクYAMLにLG051充足テンプレートを事前注入するか、gate側でdeploy_task分割cmdをLG051対象外にする"
