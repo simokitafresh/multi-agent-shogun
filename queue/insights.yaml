@@ -2163,3 +2163,20 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_4359"
   fix_known: false
   status: pending
+- id: INS-20260823-144132237-b464
+  ts: "2026-08-23T14:41:32+09:00"
+  insight: "semantic_index_update新概念候補: discussion:gistに共有して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T15:06:06+09:00"
+- id: INS-20260823-150607133-0481
+  ts: "2026-08-23T15:06:07+09:00"
+  insight: "semantic_index_update新概念候補: discussion:artifactも作成して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
