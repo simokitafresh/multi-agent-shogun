@@ -123,6 +123,57 @@ context_commit_closes_source_alert() {
         && git -C "$ROOT_DIR" merge-base --is-ancestor "$latest_hash" "$context_hash" 2>/dev/null
 }
 
+# GA-493: a revert (or a divergent branch with the same effective source
+# content) is still newer than the recorded source marker, but it does not
+# require a second knowledge edit.  Compare the registered trigger paths
+# against every recorded boundary before turning the checker snapshot into a
+# raw ALERT.  The boundary still needs to advance, so the caller routes the
+# equivalent result through the existing machine-readable doc-lane consumer.
+source_commit_is_equivalent_to_recorded_boundary() {
+    local rel_path="$1" alert_line="$2"
+    local file="$ROOT_DIR/$rel_path" repo="" latest_hash="" trigger="" marker=""
+    local trigger_item cited_dir cited_file
+    local -a pathspecs=()
+    local -a markers=()
+
+    [[ "$rel_path" == context/*.md && -f "$file" && -r "$file" ]] || return 1
+    [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
+    latest_hash="${BASH_REMATCH[1]}"
+    [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
+    repo="${BASH_REMATCH[1]}"
+    [[ -d "$repo" ]] || return 1
+    git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
+    [[ "$alert_line" =~ update_trigger=([^[:space:]]+) ]] || return 1
+    trigger="${BASH_REMATCH[1]}"
+
+    while IFS= read -r marker; do
+        [[ "$marker" =~ ^[0-9a-f]{7,40}$ ]] && markers+=("$marker")
+    done < <(head -n 10 "$file" | sed -nE 's/.*source_commit:([0-9a-f]{7,40}).*/\1/p')
+    ((${#markers[@]} > 0)) || return 1
+
+    IFS='|' read -r -a trigger_items <<< "$trigger"
+    for trigger_item in "${trigger_items[@]}"; do
+        [[ -n "$trigger_item" ]] || continue
+        if [[ "$trigger_item" == cited:* ]]; then
+            cited_dir="${trigger_item#cited:}"
+            while IFS= read -r cited_file; do
+                [[ -n "$cited_file" ]] && pathspecs+=("$cited_file")
+            done < <(grep -oE "\`${cited_dir}/[^\`[:space:]]+\`" "$file" 2>/dev/null | tr -d '`' | sort -u)
+        else
+            pathspecs+=("$trigger_item")
+        fi
+    done
+    ((${#pathspecs[@]} > 0)) || return 1
+
+    for marker in "${markers[@]}"; do
+        git -C "$repo" cat-file -e "${marker}^{commit}" 2>/dev/null || continue
+        if git -C "$repo" diff --quiet "$marker" "$latest_hash" -- "${pathspecs[@]}" 2>/dev/null; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 # GA-425: DM-Signal docs/research commits are already forced through
 # dm_signal_research_reflux_guard.sh before commit.  That guard records the
 # exact staged path/status/blob fingerprint in dm-signal-research.md, but the
@@ -739,6 +790,24 @@ for rel_path in "${target_rel_paths[@]}"; do
             || reflux_receipt_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}"; then
             context_hash="$(git -C "$ROOT_DIR" log -1 --format=%h -- "$rel_path" 2>/dev/null || true)"
             echo "OK: ${basename_file} (${days_ago}日前更新、context commit ${context_hash} が検出済みsource候補を包含)"
+            continue
+        elif source_commit_is_equivalent_to_recorded_boundary "$rel_path" "${source_alerts[$rel_path]}"; then
+            latest_hash=""
+            [[ "${source_alerts[$rel_path]}" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] \
+                && latest_hash="${BASH_REMATCH[1]}"
+            request_project="infra"
+            [[ "$rel_path" == context/dm-signal*.md ]] && request_project="dm-signal"
+            request_line="CONTEXT_UPDATE_REQUEST project=${request_project} context=${rel_path} source_commit=${latest_hash} parent_cmd=source_${latest_hash} reason=source_equivalent"
+            printf '%s\n' "$request_line"
+            # An equivalent source tree still has a new durable boundary.  Do
+            # not silently suppress it: route the exact setter input through
+            # the existing consumer so the next doc-lane action advances the
+            # marker and leaves a receipt.
+            if ! consume_context_update_request "$request_line"; then
+                HAS_BLOCK=1
+                continue
+            fi
+            echo "OK: ${basename_file} (source commitは登録boundaryと内容同値、boundary更新要求をdoc laneへ永続通知)"
             continue
         elif request_cmd="$(approved_report_requests_context_update "$rel_path" "${source_alerts[$rel_path]}")"; then
             latest_hash=""
