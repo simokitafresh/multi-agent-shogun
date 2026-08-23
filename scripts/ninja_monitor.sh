@@ -172,6 +172,24 @@ _task_done_report_unarchived() {
     return 1
 }
 
+_task_done_report_formally_reviewed() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local parent_cmd marker report_file source result
+    [ -f "$task_file" ] || return 1
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] || return 1
+    marker="$SCRIPT_DIR/queue/gates/$parent_cmd/review_gate.done"
+    [ -f "$marker" ] || return 1
+    source=$(awk -F': ' '$1=="source" {print $2; exit}' "$marker")
+    result=$(awk -F': ' '$1=="result" {print $2; exit}' "$marker")
+    [ "$source" = "two_phase_review" ] && [ "$result" = "LGTM" ] || return 1
+    for report_file in "$SCRIPT_DIR/queue/reports/${name}_report_${parent_cmd}"*.yaml; do
+        [ -f "$report_file" ] && [ ! -L "$report_file" ] && return 0
+    done
+    return 1
+}
+
 _ci_red_idle_count() {
     python3 - "$SCRIPT_DIR/queue/tasks" <<'PY'
 import glob, sys, yaml
@@ -5032,6 +5050,11 @@ _handle_auto_clear() {
     local ctx_now
     ctx_now=$(get_context_pct "$target" "$name")
     if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
+        if [[ "$_ac_task_status" =~ ^(done|completed|PASS)$ ]] \
+            && _task_done_report_formally_reviewed "$name"; then
+            log "AUTO-CLEAR-SKIP-FORMAL-REVIEW: $name status=$_ac_task_status CTX=0 report remains gate-owned"
+            return
+        fi
         if [ "$_ac_cli_type" = "codex" ]; then
             # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
             # respawn直後(60s以内)はCTX=0%が正常 → respawn無限ループ防止
@@ -9296,8 +9319,12 @@ write_karo_snapshot() {
                             task_status=$(yaml_field_get "$task_file" "status")
                         fi
                         if _task_done_report_unarchived "$name"; then
-                            log "IDLE-AVAILABILITY-BLOCK: ${name} task status=${task_status} has an unarchived terminal report"
-                            continue
+                            if _task_done_report_formally_reviewed "$name"; then
+                                log "IDLE-AVAILABILITY-RELEASE: ${name} task status=${task_status} has fingerprint-bound formal review"
+                            else
+                                log "IDLE-AVAILABILITY-BLOCK: ${name} task status=${task_status} has an unarchived terminal report"
+                                continue
+                            fi
                         fi
                         if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ] && [ "$task_status" != "failed" ]; then
                             idle_list="${idle_list}${name},"

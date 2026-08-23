@@ -1008,3 +1008,28 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"REFLUX_DIRTY_GENERATIONS_OK deploys=5 notifications=1"* ]]
 }
+
+# test_necessity: formally reviewed terminal reports keep gate ownership but do
+# not cause repeated Codex respawn or remove the worker from idle availability.
+@test "formally reviewed done task skips repeated CTX0 respawn" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" \
+            "$SCRIPT_DIR/queue/gates/cmd_reviewed" "$STATE_DIR"
+        printf "task:\n  status: done\n  parent_cmd: cmd_reviewed\n" > "$SCRIPT_DIR/queue/tasks/hayate.yaml"
+        printf "status: completed\nparent_cmd: cmd_reviewed\nverdict: PASS\n" > "$SCRIPT_DIR/queue/reports/hayate_report_cmd_reviewed.yaml"
+        printf "source: two_phase_review\nresult: LGTM\n" > "$SCRIPT_DIR/queue/gates/cmd_reviewed/review_gate.done"
+        PANE_TARGETS[hayate]=pane
+        tmux() { [ "$1" = display-message ] && printf "hayate\n"; }
+        cli_type() { printf "codex\n"; }
+        get_context_pct() { printf "0\n"; }
+        safe_send_clear() { printf "RESPAWN_CALLED\n"; return 0; }
+        log() { printf "%s\n" "$1"; }
+        _handle_auto_clear hayate 1000
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-CLEAR-SKIP-FORMAL-REVIEW"* ]]
+    [[ "$output" != *"RESPAWN_CALLED"* ]]
+}
