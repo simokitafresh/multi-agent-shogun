@@ -1711,7 +1711,7 @@ for pattern in (
         matched_report = True
         entries = report.get("cross_repo_commits") or []
         if not isinstance(entries, list):
-            continue
+            entries = []
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
@@ -1728,6 +1728,39 @@ for pattern in (
             seen.add(key)
             for value in (key[0], sha, str(len(paths)), *paths):
                 sys.stdout.buffer.write(value.encode("utf-8") + b"\0")
+        # A taskless parent report may be a platform-repository completion and
+        # therefore has no cross_repo_commits block. Its primary commit/path
+        # contract is still sufficient and must not be discarded as
+        # source-unavailable. The caller revalidates the commit/path union
+        # before publication, so this does not guess or widen scope.
+        primary_sha = str(report.get("commit_hash") or "").strip().lower()
+        raw_paths = report.get("files_modified") or []
+        primary_paths = []
+        if isinstance(raw_paths, list):
+            for item in raw_paths:
+                if isinstance(item, dict):
+                    value = item.get("path") or item.get("file") or ""
+                else:
+                    value = item
+                value = str(value or "").strip()
+                if value and value not in ("no-code-change", "no_code_change") and value not in primary_paths:
+                    primary_paths.append(value)
+        primary_repo = str(
+            report.get("repo_root")
+            or snapshot.get("repo_root")
+            or root
+        ).strip()
+        if primary_repo and not os.path.isabs(primary_repo):
+            primary_repo = os.path.join(root, primary_repo)
+        primary_repo = os.path.realpath(primary_repo) if primary_repo else ""
+        if (primary_repo and os.path.isdir(primary_repo)
+                and re.fullmatch(r"[0-9a-f]{40}", primary_sha)
+                and primary_paths):
+            key = (primary_repo, primary_sha, tuple(primary_paths))
+            if key not in seen:
+                seen.add(key)
+                for value in (key[0], primary_sha, str(len(primary_paths)), *primary_paths):
+                    sys.stdout.buffer.write(value.encode("utf-8") + b"\0")
     # Live reports are the canonical lifecycle slot.  Only consult the large
     # archive when no completed live report exists for this command; otherwise
     # a 10k-report archive scan turns every taskless completion into a minute-
