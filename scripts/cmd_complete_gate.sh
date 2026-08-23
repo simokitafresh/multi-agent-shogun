@@ -753,12 +753,32 @@ discover_terminal_reports_for_cmd() {
 import glob
 import os
 import pathlib
+import shutil
+import subprocess
 import yaml
 
 root = pathlib.Path(os.environ["REPORTS_ROOT"])
 cmd_id = os.environ["CMD_ID"]
 paths = []
 for directory in (root / "queue" / "reports", root / "queue" / "archive" / "reports"):
+    # The YAML parse remains the source of truth, but use the indexed text
+    # search only as a candidate prefilter.  The previous implementation
+    # parsed every historical report on every gate run; on the live queue this
+    # was a pure-processing cost of tens of seconds before the one matching
+    # report could be validated.  A missing/unavailable rg falls back to the
+    # original complete glob so the candidate prefilter never changes scope.
+    if shutil.which("rg"):
+        try:
+            result = subprocess.run(
+                ["rg", "-l", "--fixed-strings", "--glob", "*.yaml", cmd_id, str(directory)],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                check=False,
+            )
+            if result.returncode in (0, 1):
+                paths.extend(line for line in result.stdout.splitlines() if line)
+                continue
+        except OSError:
+            pass
     paths.extend(glob.glob(str(directory / "**" / "*.yaml"), recursive=True))
 seen = set()
 for raw_path in sorted(paths):
@@ -953,6 +973,21 @@ GATE_SUBPHASE_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_SUBPHASE_LOG_MAX_BYTES:-5242880
 GATE_SUBPHASE_LOG_ROTATION_CHECKED=false
 GATE_SUBPHASE_CURRENT=""
 GATE_SUBPHASE_START_US=""
+
+# Detailed timing is intentionally separate from the stable top-level
+# subphase log.  The latter is consumed as an aggregate phase contract, while
+# this log decomposes the two dominant phases into local work and external
+# waits without changing their boundaries or gate semantics.
+if [ "${CMD_COMPLETE_GATE_DETAIL_LOG:-}" = "disabled" ] || [ "${CMD_COMPLETE_GATE_DETAIL_LOG:-}" = "0" ]; then
+    GATE_DETAIL_LOG=""
+else
+    GATE_DETAIL_LOG="${CMD_COMPLETE_GATE_DETAIL_LOG:-$LOG_DIR/cmd_complete_gate_details.log}"
+fi
+GATE_DETAIL_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_DETAIL_LOG_MAX_BYTES:-5242880}"
+GATE_DETAIL_LOG_ROTATION_CHECKED=false
+GATE_DETAIL_CURRENT=""
+GATE_DETAIL_CLASS=""
+GATE_DETAIL_START_US=""
 gate_phase_now_us() {
     local raw="${EPOCHREALTIME:-}"
     if [ -n "$raw" ]; then
@@ -1039,6 +1074,57 @@ gate_subphase_tick() {
 }
 gate_subphase_finish() { gate_subphase_tick "terminal"; }
 gate_phase_finish() { gate_phase_tick "terminal"; gate_subphase_finish; }
+
+gate_detail_now_us() {
+    # Reuse the existing shell-level monotonic clock.  Spawning awk for every
+    # detail boundary would make the measurement itself a measurable part of
+    # the pure-processing bucket.
+    gate_phase_now_us
+}
+
+gate_detail_finish() {
+    local now_us elapsed_us sec ms
+    [ -n "$GATE_DETAIL_LOG" ] || return 0
+    [ -n "$GATE_DETAIL_CURRENT" ] || return 0
+    now_us=$(gate_detail_now_us)
+    elapsed_us=$((now_us - GATE_DETAIL_START_US))
+    [ "$elapsed_us" -ge 0 ] || elapsed_us=0
+    sec=$((elapsed_us / 1000000))
+    ms=$(((elapsed_us % 1000000) / 1000))
+    mkdir -p "$(dirname "$GATE_DETAIL_LOG")" 2>/dev/null || true
+    (
+        flock -x 9
+        if [ "$GATE_DETAIL_LOG_ROTATION_CHECKED" = false ]; then
+            case "$GATE_DETAIL_LOG_MAX_BYTES" in
+                ''|*[!0-9]*) GATE_DETAIL_LOG_MAX_BYTES=5242880 ;;
+            esac
+            if [ "$GATE_DETAIL_LOG_MAX_BYTES" -gt 0 ] && [ -f "$GATE_DETAIL_LOG" ]; then
+                local log_bytes
+                log_bytes=$(wc -c < "$GATE_DETAIL_LOG" 2>/dev/null || printf '0')
+                if [ "$log_bytes" -ge "$GATE_DETAIL_LOG_MAX_BYTES" ]; then
+                    mv -f "$GATE_DETAIL_LOG" "${GATE_DETAIL_LOG}.1" 2>/dev/null || true
+                fi
+            fi
+            GATE_DETAIL_LOG_ROTATION_CHECKED=true
+        fi
+        printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%s\t%d.%03d\n' \
+            -1 "$CMD_ID" "$GATE_DETAIL_CLASS" "$GATE_DETAIL_CURRENT" "$sec" "$ms" >> "$GATE_DETAIL_LOG"
+    ) 9>"${GATE_DETAIL_LOG}.lock"
+    GATE_DETAIL_CURRENT=""
+    GATE_DETAIL_CLASS=""
+    GATE_DETAIL_START_US=""
+}
+
+gate_detail_begin() {
+    local label="$1" class="$2"
+    [ -n "$GATE_DETAIL_LOG" ] || return 0
+    gate_detail_finish
+    GATE_DETAIL_CURRENT="$label"
+    GATE_DETAIL_CLASS="$class"
+    GATE_DETAIL_START_US=$(gate_detail_now_us)
+}
+
+gate_detail_finish
 gate_phase_tick "startup"
 if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ] \
    && [ ! -f "$SCRIPT_DIR/queue/reopened_cmds/${CMD_ID}.yaml" ]; then
@@ -3244,13 +3330,25 @@ converge_shared_execution_sources() {
     local repo="$1" upstream_ref remote push_ref remote_tip path tmp before_head merge_base
     local conflict_path temp_parent clean_repo merged_sha cleanup_rc
     local -a insight_source_shas=() conflict_paths=()
+    # Unit fixtures may source this function alone.  Keep those isolated
+    # probes behaviorally identical while the full gate receives telemetry.
+    if ! declare -F gate_detail_begin >/dev/null 2>&1; then
+        gate_detail_begin() { :; }
+        gate_detail_finish() { :; }
+    fi
     shift
     [ "$#" -gt 0 ] || return 0
     upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
     remote=${upstream_ref%%/*}
     push_ref="refs/heads/${upstream_ref#*/}"
-    git -C "$repo" fetch -q "$remote" "$push_ref" || return 1
+    gate_detail_begin "runtime_source_convergence.remote_fetch" external_wait
+    if ! git -C "$repo" fetch -q "$remote" "$push_ref"; then
+        gate_detail_finish
+        return 1
+    fi
     remote_tip=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null) || return 1
+    gate_detail_finish
+    gate_detail_begin "runtime_source_convergence.local_reconcile" pure_processing
     before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
     merge_base=$(git -C "$repo" merge-base "$before_head" "$remote_tip" 2>/dev/null) || return 1
 
@@ -3324,6 +3422,7 @@ converge_shared_execution_sources() {
     done
     [ -z "$(git -C "$repo" status --porcelain=v1 --untracked-files=no -- "$@")" ] || return 1
     git -C "$repo" merge-base --is-ancestor "$before_head" HEAD || return 1
+    gate_detail_finish
     echo "  shared convergence: OK (execution sources=$#; local history preserved)"
 }
 
@@ -3434,6 +3533,12 @@ publish_postclear_runtime_deltas() {
     local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
     local -a dirty_paths=() runtime_paths=() durable_paths=() source_shas=() lesson_paths=()
     local -A source_blob_by_path=()
+    # Unit fixtures may source this function alone.  Keep those isolated
+    # probes behaviorally identical while the full gate receives telemetry.
+    if ! declare -F gate_detail_begin >/dev/null 2>&1; then
+        gate_detail_begin() { :; }
+        gate_detail_finish() { :; }
+    fi
 
     # A tracked-runtime publication is a repository transaction.  Serialize
     # every generation on the shared git common-dir, then deliberately read
@@ -3444,7 +3549,12 @@ publish_postclear_runtime_deltas() {
     git_common_dir=$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
     publish_lock="$git_common_dir/shogun-tracked-runtime-publish.lock"
     exec {publish_lock_fd}>"$publish_lock" || return 1
-    flock -x "$publish_lock_fd" || return 1
+    gate_detail_begin "runtime_publish.tracked_runtime_lock_wait" external_wait
+    if ! flock -x "$publish_lock_fd"; then
+        gate_detail_finish
+        return 1
+    fi
+    gate_detail_finish
 
     if [ "$phase" = "postclear" ]; then
     mapfile -t durable_paths < <(python3 - "$durable_manifest" "$CMD_ID" \
@@ -3464,7 +3574,11 @@ PY
         return 1
     fi
 
-    before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
+    gate_detail_begin "runtime_publish.local_dirty_snapshot" pure_processing
+    before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || {
+        gate_detail_finish
+        return 1
+    }
     while IFS= read -r -d '' path; do
         dirty_paths+=("$path")
         case "$path" in
@@ -3508,17 +3622,25 @@ PY
         esac
     done < <(git -C "$repo" status --porcelain=v1 -z --untracked-files=no | python3 -c 'import sys; d=sys.stdin.buffer.read().split(b"\0"); [sys.stdout.buffer.write(x[3:]+b"\0") for x in d if len(x)>=4]')
 
+    gate_detail_finish
+
     if [ "${#runtime_paths[@]}" -eq 0 ]; then
         echo "  runtime publish: clean (tracked runtime dirty=0)"
         return 0
     fi
 
+    gate_detail_begin "runtime_publish.remote_tip_lookup" external_wait
     upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
     remote=${upstream_ref%%/*}
     push_ref="refs/heads/${upstream_ref#*/}"
     remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
-    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
+    if ! [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]]; then
+        gate_detail_finish
+        return 1
+    fi
+    gate_detail_finish
 
+    gate_detail_begin "runtime_publish.local_source_build" pure_processing
     temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-postclear-runtime.XXXXXX") || return 1
     source_repo="$temp_parent/source"
     if ! git -C "$repo" worktree add --detach "$source_repo" "$before_head" >/dev/null 2>&1; then
@@ -3559,6 +3681,7 @@ PY
         source_shas+=("$source_sha")
         source_blob_by_path["$path"]=$(git -C "$source_repo" rev-parse "${source_sha}:${path}") || return 1
     done
+    gate_detail_finish
 
     after_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
     if [ "$after_head" != "$before_head" ]; then
@@ -3588,22 +3711,36 @@ PY
     # commit reaches the existing stable-ID merge lane even when other runtime
     # fields are dirty in the same generation.  Refresh the tip between fields
     # so remote-only history is composed rather than replayed or discarded.
+    gate_detail_begin "runtime_publish.remote_source_push" external_wait
     for source_sha in "${source_shas[@]}"; do
         if ! push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "$source_sha"; then
+            gate_detail_finish
             echo "  runtime publish: BLOCK (source-only publish failed)" >&2
             return 1
         fi
         remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
-        [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
+        if ! [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]]; then
+            gate_detail_finish
+            return 1
+        fi
     done
-    git -C "$repo" fetch -q "$remote" "$push_ref" || return 1
+    if ! git -C "$repo" fetch -q "$remote" "$push_ref"; then
+        gate_detail_finish
+        return 1
+    fi
+    gate_detail_finish
     # Network publication above remains under the runtime singleflight lock,
     # but the shared root HEAD/index mutation below must join the same
     # repository-wide commit ledger as ninja_scope_commit.  Keep this narrow:
     # a network wait must not occupy the commit ledger used by other ninjas.
+    gate_detail_begin "runtime_publish.commit_lock_wait" external_wait
     commit_lock_path="$(lock_path "$git_common_dir/ninja-scope-commit")"
     exec {commit_lock_fd}>"$commit_lock_path" || return 1
-    flock -x "$commit_lock_fd" || return 1
+    if ! flock -x "$commit_lock_fd"; then
+        gate_detail_finish
+        return 1
+    fi
+    gate_detail_finish
     # A writer may have advanced HEAD after the pre-network checkpoint but
     # before this ledger admission.  Re-check under the shared commit lock so
     # checkout cannot overwrite a same-path generation that arrived in the
@@ -3635,6 +3772,7 @@ PY
     # 202608191445 AC1). Retry this required write across that window instead
     # of failing the whole publish on a momentary collision.
     local _idx_lock_try
+    gate_detail_begin "runtime_publish.index_lock_retry_wait" external_wait
     for _idx_lock_try in 1 2 3 4 5 6 7; do
         if git -C "$repo" checkout FETCH_HEAD -- "${runtime_paths[@]}"; then
             break
@@ -3642,6 +3780,8 @@ PY
         [ "$_idx_lock_try" -lt 7 ] || return 1
         sleep 1
     done
+    gate_detail_finish
+    gate_detail_begin "runtime_publish.shared_checkout_merge" pure_processing
     git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
     if ! git -C "$repo" merge --no-edit FETCH_HEAD >/dev/null 2>&1; then
         git -C "$repo" merge --abort >/dev/null 2>&1 || true
@@ -3652,6 +3792,7 @@ PY
             return 1
         fi
     fi
+    gate_detail_finish
     exec {commit_lock_fd}>&-
     git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true
     rmdir -- "$temp_parent" 2>/dev/null || true
@@ -13151,11 +13292,14 @@ if [ "$ALL_CLEAR" = true ] \
     gate_subphase_tick "source_publication"
     echo ""
     echo "Git push (pre-GATE CLEAR, report source only):"
+    gate_detail_begin "source_publication.push_task_repositories" external_wait
     if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then
+        gate_detail_finish
         gate_subphase_tick "source_publication_blocked"
         record_block_reason "autopush_source_only_failed"
         ALL_CLEAR=false
     else
+        gate_detail_finish
         gate_subphase_tick "runtime_publish"
         echo ""
         echo "Tracked runtime publish (pre-generation checkpoint):"
@@ -13163,12 +13307,14 @@ if [ "$ALL_CLEAR" = true ] \
             gate_subphase_tick "runtime_publish_blocked"
             record_block_reason "pregate_runtime_publish_failed"
             ALL_CLEAR=false
-        elif ! converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh; then
-            gate_subphase_tick "source_convergence_blocked"
-            record_block_reason "shared_execution_source_convergence_failed"
-            ALL_CLEAR=false
         else
-            gate_subphase_tick "post_source_checks"
+            if ! converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh; then
+                gate_subphase_tick "source_convergence_blocked"
+                record_block_reason "shared_execution_source_convergence_failed"
+                ALL_CLEAR=false
+            else
+                gate_subphase_tick "post_source_checks"
+            fi
         fi
     fi
 fi
@@ -13178,9 +13324,13 @@ fi
 if [ "$ALL_CLEAR" = true ]; then
     echo ""
     level_heading "[L4]" "Report commit main ancestry check:"
+    gate_detail_begin "post_source_checks.report_commit_main_ancestry" pure_processing
     if ! check_report_commit_main_ancestry; then
+        gate_detail_finish
         record_block_reason "report_commit_main_ancestry"
         ALL_CLEAR=false
+    else
+        gate_detail_finish
     fi
 fi
 
@@ -13192,31 +13342,40 @@ if [ "$ALL_CLEAR" = true ]; then
         append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcompletion_generation_missing_or_invalid' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID")"
         exit 1
     fi
+    gate_detail_begin "post_source_checks.capture_durable_writer_snapshot" pure_processing
     rm -f -- "$GATES_DIR/semantic_causal_audit.paths.json"
     capture_durable_writer_paths start \
         "$GATES_DIR/semantic_causal_audit.paths.before.json" \
         "$GATES_DIR/semantic_causal_audit.paths.json" \
         "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" || {
+        gate_detail_finish
         echo "GATE BLOCK: ${CMD_ID}:postclear_generation_snapshot_failed" >&2
         exit 1
     }
+    gate_detail_finish
     GATE_CLEAR_TS="$(date +%Y-%m-%dT%H:%M:%S)"
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     GATE_KARO_CTX_METRIC=$(build_karo_ctx_metric)
+    gate_detail_begin "post_source_checks.cdp_production_check" external_wait
     if ! run_cdp_production_check; then
+        gate_detail_finish
         echo "GATE BLOCK: ${CMD_ID}:cdp_production_check_failed"
         append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
         exit 1
     fi
+    gate_detail_finish
     # cmd_3862 RC: 観測イベントはCLEAR通知・完了後処理より先に同期永続化する。
     # 非同期失敗を握り潰すと観測経路バイパスが再発するため、失敗時は通知せずBLOCKする。
+    gate_detail_begin "post_source_checks.capture_rework_event" pure_processing
     if ! capture_completed_rework_event "$CMD_ID"; then
+        gate_detail_finish
         echo "GATE BLOCK: ${CMD_ID}:rework_event_capture_failed"
         append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\trework_event_capture_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
         exit 1
     fi
+    gate_detail_finish
     # The wrapper's durable worker waits for this generation-bound marker,
     # rather than for this gate process to finish. Everything above this point
     # is fail-closed; everything below remains in that same durable worker.
@@ -14034,10 +14193,13 @@ PYEOF
 
     echo ""
     echo "Durable post-CLEAR writer wait (terminal checkpoint):"
+    gate_detail_begin "post_source_checks.durable_writer_wait" external_wait
     if ! wait_for_postclear_durable_writers; then
+        gate_detail_finish
         echo "GATE BLOCK: ${CMD_ID}:postclear_durable_writer_wait_failed" >&2
         exit 1
     fi
+    gate_detail_finish
 
     echo ""
     echo "Tracked runtime publish (terminal checkpoint):"
