@@ -2724,7 +2724,10 @@ PY
 @test "cmd_complete_gate records phase timing for a real task and parent report" {
     local cmd_id=cmd_real_task_fixture
     local phase_log="$TEST_TMPDIR/real-task-phases.log"
+    local subphase_log="$TEST_PROJECT/logs/cmd_complete_gate_subphases.log"
     local metrics="$TEST_TMPDIR/real-task-metrics.log"
+    mkdir -p "$(dirname "$subphase_log")"
+    printf 'old-record\n' > "$subphase_log"
     local report="$TEST_PROJECT/queue/reports/sasuke_report_${cmd_id}.yaml"
 
     for gate_script in "$PROJECT_ROOT/scripts/gates/"*; do
@@ -2772,6 +2775,7 @@ binary_checks:
 EOF
 
     run env GATE_METRICS_LOG="$metrics" CMD_COMPLETE_GATE_PHASE_LOG="$phase_log" \
+        CMD_COMPLETE_GATE_SUBPHASE_LOG_MAX_BYTES=1 \
         REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
         bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$cmd_id"
     [ "$status" -ne 75 ]
@@ -2781,6 +2785,13 @@ EOF
     grep -Fq $'\t'"$cmd_id"$'\treport_preflight\t' "$phase_log"
     grep -Fq $'\t'"$cmd_id"$'\tgate_preflight\t' "$phase_log"
     grep -Fq $'\t'"$cmd_id"$'\tgate_evaluation\t' "$phase_log"
+    grep -Fq 'old-record' "${subphase_log}.1"
+    grep -Fq $'\t'"$cmd_id"$'\t' "$subphase_log"
+    awk -F '\t' '
+        NF != 4 {exit 1}
+        $1 !~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$/ {exit 1}
+        $4 !~ /^[0-9]+\.[0-9]{3}$/ {exit 1}
+    ' "$subphase_log"
 }
 
 # test_necessity: RC4 requires the dominant gate_evaluation interval to be

@@ -940,7 +940,13 @@ GATE_PHASE_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_PHASE_LOG_MAX_BYTES:-5242880}"
 GATE_PHASE_LOG_ROTATION_CHECKED=false
 GATE_PHASE_CURRENT=""
 GATE_PHASE_START_US=""
-GATE_SUBPHASE_LOG="${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}"
+if [ -z "${GATE_PHASE_LOG:-}" ] || [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}" = "disabled" ] || [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}" = "0" ]; then
+    GATE_SUBPHASE_LOG=""
+else
+    GATE_SUBPHASE_LOG="${CMD_COMPLETE_GATE_SUBPHASE_LOG:-$LOG_DIR/cmd_complete_gate_subphases.log}"
+fi
+GATE_SUBPHASE_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_SUBPHASE_LOG_MAX_BYTES:-5242880}"
+GATE_SUBPHASE_LOG_ROTATION_CHECKED=false
 GATE_SUBPHASE_CURRENT=""
 GATE_SUBPHASE_START_US=""
 gate_phase_now_us() {
@@ -998,10 +1004,31 @@ gate_subphase_tick() {
         [ "$elapsed_us" -ge 0 ] || elapsed_us=0
         sec=$((elapsed_us / 1000000))
         ms=$(((elapsed_us % 1000000) / 1000))
+        local subphase_record
+        subphase_record=$(printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d' \
+            -1 "$CMD_ID" "$GATE_SUBPHASE_CURRENT" "$sec" "$ms")
         mkdir -p "$(dirname "$GATE_SUBPHASE_LOG")" 2>/dev/null || true
-        printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d\n' \
-            -1 "$CMD_ID" "$GATE_SUBPHASE_CURRENT" "$sec" "$ms" \
-            >> "$GATE_SUBPHASE_LOG"
+        local rotate_log=false
+        if [ "$GATE_SUBPHASE_LOG_ROTATION_CHECKED" = false ]; then
+            rotate_log=true
+            GATE_SUBPHASE_LOG_ROTATION_CHECKED=true
+        fi
+        (
+            flock -x 9
+            if [ "$rotate_log" = true ]; then
+                case "$GATE_SUBPHASE_LOG_MAX_BYTES" in
+                    ''|*[!0-9]*) GATE_SUBPHASE_LOG_MAX_BYTES=5242880 ;;
+                esac
+                if [ "$GATE_SUBPHASE_LOG_MAX_BYTES" -gt 0 ] && [ -f "$GATE_SUBPHASE_LOG" ]; then
+                    local log_bytes
+                    log_bytes=$(wc -c < "$GATE_SUBPHASE_LOG" 2>/dev/null || printf '0')
+                    if [ "$log_bytes" -ge "$GATE_SUBPHASE_LOG_MAX_BYTES" ]; then
+                        mv -f "$GATE_SUBPHASE_LOG" "${GATE_SUBPHASE_LOG}.1" 2>/dev/null || true
+                    fi
+                fi
+            fi
+            printf '%s\n' "$subphase_record" >> "$GATE_SUBPHASE_LOG"
+        ) 9>"${GATE_SUBPHASE_LOG}.lock"
     fi
     GATE_SUBPHASE_CURRENT="$next_phase"
     GATE_SUBPHASE_START_US="$now_us"
@@ -7131,6 +7158,13 @@ check_gs_bench_gate_warn() {
 
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
         task_files=("${MATCHING_TASK_FILES[@]}")
+    elif [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-}" = "0" ]; then
+        # Parent-report-only completion already snapshotted zero live tasks.
+        # This check is task-owned (it inspects run_077 files from worker
+        # reports), so scanning every unrelated worker task here cannot add
+        # evidence and only repeats YAML/report discovery. Keep the check for
+        # live-task runs and preserve the parent-report gates separately.
+        task_files=()
     else
         task_files=("$TASKS_DIR"/*.yaml)
     fi
@@ -11197,7 +11231,24 @@ validate_report_format_file() {
     # 大半のtest scaffold(cmd_gate_scaffold.bash等)が持つ最小scripts/lib契約を壊さない。
     # shellcheck source=scripts/lib/gate_report_format_classify.sh
     source "$SCRIPT_DIR/scripts/lib/gate_report_format_classify.sh"
-    GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
+    # gate_report_format persists an exact content fingerprint after a PASS.
+    # Reuse is safe only when the current report bytes match that fingerprint;
+    # otherwise retain the full validator path. This removes repeated Python/
+    # git inspection for immutable reports without weakening any check.
+    local validated_fingerprint=""
+    local fingerprint_cache="${report_file}.validated_fingerprints"
+    if [ -f "$fingerprint_cache" ]; then
+        validated_fingerprint=$(sha256sum "$report_file" 2>/dev/null | awk '{print $1}')
+        if [ -z "$validated_fingerprint" ] || ! grep -qxF "$validated_fingerprint" "$fingerprint_cache" 2>/dev/null; then
+            validated_fingerprint=""
+        fi
+    fi
+    if [ -n "$validated_fingerprint" ]; then
+        GATE_OUTPUT=$(GATE_VALIDATED_FINGERPRINT="$validated_fingerprint" \
+            "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
+    else
+        GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
+    fi
     GATE_STATUS=$(gate_report_format_classify "$GATE_RC")
     # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
     # インフラ由来のsingle-flightタイムアウト(exit code 2)を品質FAILと機械的に区別する。

@@ -17,3 +17,20 @@ seconds with millisecond precision (for example `7.054`). The writer uses a
 per-log lock so concurrent gate runs cannot interleave records. When the log
 reaches `CMD_COMPLETE_GATE_PHASE_LOG_MAX_BYTES` (default 5 MiB), it is moved to
 the single retained sidecar `<log>.1` before the next record is appended.
+
+## gate_evaluation subphase log
+
+The dominant `gate_evaluation` interval is also decomposed into
+`logs/cmd_complete_gate_subphases.log` by default. Set
+`CMD_COMPLETE_GATE_SUBPHASE_LOG` to redirect it, or to `disabled`/`0` to
+disable subphase recording for an explicit behavior comparison. Records use
+the same four tab-separated fields as the major-phase log:
+
+```text
+timestamp<TAB>cmd_id<TAB>subphase_name<TAB>elapsed_seconds
+```
+
+The subphase log has the same 5 MiB default bound and one retained `<log>.1`
+generation (`CMD_COMPLETE_GATE_SUBPHASE_LOG_MAX_BYTES` overrides the bound).
+The writer is lock-protected, and logging failures remain non-blocking so gate
+判定・出力・終了コード are independent of telemetry.
