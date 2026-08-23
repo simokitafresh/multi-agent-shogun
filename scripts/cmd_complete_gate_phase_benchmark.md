@@ -98,3 +98,36 @@ gate_evaluation内の検査短縮とは分離される。
 `273/273 PASS`、`FAIL=0`、`SKIP=0`。ログ有効/無効の既存比較、report format、
 実task subphase形状、ローテーションを含む。fingerprint不一致時の完全検査は
 コード分岐で維持する。
+
+## cmd_4383: subphase default durability and self-grade fast path
+
+計測日時: 2026-08-24 07:04–07:06 JST
+対象: `cmd_complete_gate.sh` の同一 `cmd_4382` report commit
+(`dd41c1a1b431a8a299538c9ec9fcf1b27f59c8be`) と、既存の実task subphase
+ログ。検査条件は変更せず、self-grade の対象パス集合をアンカーcommitで先に照合した。
+
+### AC1: サブフェーズ計装の既定化
+
+`CMD_COMPLETE_GATE_SUBPHASE_LOG` 未指定時の出力先を
+`logs/cmd_complete_gate_subphases.log` に固定し、粗粒度の
+`CMD_COMPLETE_GATE_PHASE_LOG` を明示的に無効化しても独立して記録する構造へ変更した。
+サブフェーズログは既存フェーズログと同じ5 MiB上限・初回flockローテーション規律を
+維持する。既存の実task fixtureで、実行1回分の4列レコードとローテーションを確認した。
+
+### AC2: self-grade の同条件短縮
+
+変更前の `cmd_4382` 一次ログでは `self_grade_start=11.716s` だった。変更後に
+同一report commitのアンカー差分を3回測定した結果は `0.32s / 0.27s / 0.22s`
+（中央値 `0.27s`）。中央値比較で `11.716s → 0.27s`、`11.446s`短縮、短縮率
+`97.7%`。アンカーcommitで全 `files_modified` を覆えない場合は、従来どおり
+全履歴からcmd phase unionを収集するため、検査項目・対象範囲は削除していない。
+
+### AC3: 判定不変性
+
+サブ計装の明示無効化経路と既定有効経路を既存テストで比較し、gateの終了コード・出力を
+不変とした。アンカーcommitで不足が出るfixtureは従来のphase unionへフォールバックする。
+
+### AC4: 検証
+
+- `bash -n scripts/cmd_complete_gate.sh`: PASS
+- `bash scripts/run_tests.sh file tests/unit/test_cmd_complete_gate.bats`: `273/273 PASS`, `FAIL=0`, `SKIP=0`（receipt `run_tests_20260823T222251_4031591.json`、195.058s）

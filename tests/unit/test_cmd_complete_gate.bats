@@ -2695,6 +2695,7 @@ PY
     enabled_status="$status"
     enabled_output="$output"
     run env GATE_METRICS_LOG="$disabled_metrics" CMD_COMPLETE_GATE_PHASE_LOG=disabled \
+        CMD_COMPLETE_GATE_SUBPHASE_LOG=disabled \
         bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_phase_behavior_compare
     disabled_status="$status"
     disabled_output="$output"
@@ -2802,6 +2803,7 @@ import sys
 text = open(sys.argv[1], encoding="utf-8").read()
 required = [
     'GATE_SUBPHASE_LOG',
+    'if [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}" = "disabled" ]',
     'gate_subphase_tick "gate_checks"',
     'gate_subphase_tick "source_publication"',
     'gate_subphase_tick "runtime_publish"',
@@ -2809,6 +2811,7 @@ required = [
 ]
 for marker in required:
     assert marker in text, marker
+assert 'if [ -z "${GATE_PHASE_LOG:-}" ] || [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}"' not in text
 print('subphase_telemetry=1')
 PY
     [ "$status" -eq 0 ]

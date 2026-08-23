@@ -940,7 +940,11 @@ GATE_PHASE_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_PHASE_LOG_MAX_BYTES:-5242880}"
 GATE_PHASE_LOG_ROTATION_CHECKED=false
 GATE_PHASE_CURRENT=""
 GATE_PHASE_START_US=""
-if [ -z "${GATE_PHASE_LOG:-}" ] || [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}" = "disabled" ] || [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}" = "0" ]; then
+# Subphase telemetry is a separate durable boundary.  It must remain available
+# when a caller disables only the coarse phase log for an explicit comparison.
+# Keep an explicit subphase opt-out for tests/diagnostics, but never make the
+# subphase default depend on GATE_PHASE_LOG.
+if [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}" = "disabled" ] || [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}" = "0" ]; then
     GATE_SUBPHASE_LOG=""
 else
     GATE_SUBPHASE_LOG="${CMD_COMPLETE_GATE_SUBPHASE_LOG:-$LOG_DIR/cmd_complete_gate_subphases.log}"
@@ -8582,13 +8586,26 @@ PY
             continue
         fi
 
-        if ! commit_files=$(collect_cmd_phase_git_files "$commit_hash" "$CMD_ID"); then
+        # The report commit normally contains every reported path.  Check that
+        # cheap, narrow boundary first; the historical phase-union walk is only
+        # needed when a report intentionally spans earlier cmd_* phase commits.
+        # This preserves the exact git-show -w semantics while avoiding a full
+        # repository log traversal on the common path.
+        if ! commit_files=$(collect_git_show_w_files "$commit_hash"); then
             echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES git show -w failed (report commit ${commit_hash})"
             warned=true
             continue
         fi
 
         missing=$(comm -23 <(printf '%s\n' "$report_files") <(printf '%s\n' "$commit_files"))
+        if [ -n "$missing" ]; then
+            if ! commit_files=$(collect_cmd_phase_git_files "$commit_hash" "$CMD_ID"); then
+                echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES git phase union failed (report commit ${commit_hash})"
+                warned=true
+                continue
+            fi
+            missing=$(comm -23 <(printf '%s\n' "$report_files") <(printf '%s\n' "$commit_files"))
+        fi
         if [ -n "$missing" ]; then
             echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES files_modified not in report commit phase union (${commit_hash}):"
             printf '%s\n' "$missing" | sed 's/^/    - /'
