@@ -125,14 +125,18 @@ if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report|self_study|consultation)$ ]]; then
 fi
 
 # --- LGTM+BLOCK矛盾チェック(report) --- 今セッション3件連続事故の根治(L4貫通)
+# report_verdict=FAILの正当なFAIL報告ではgate_prediction=BLOCKでも矛盾ではない(GATE適用外)
 if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && echo "$ENTRY" | grep -Pq 'gate_prediction:\s*BLOCK(\s|$|\(|\[|/)'; then
-    echo "BLOCK: verdict=LGTMとgate_prediction=BLOCKの矛盾。BLOCKが予測される報告にLGTMを出すな。FAILに変更するか、BLOCK理由を解消してからLGTMせよ" >&2
-    exit 2
+    if ! echo "$ENTRY" | grep -Pq 'report_verdict:\s*FAIL'; then
+        echo "BLOCK: verdict=LGTMとgate_prediction=BLOCKの矛盾。BLOCKが予測される報告にLGTMを出すな。FAILに変更するか、BLOCK理由を解消してからLGTMせよ" >&2
+        exit 2
+    fi
 fi
 
 # --- LGTM bundle guard: sg7_bundle.json必須(lgtm_bundle_guard, cmd_4157) ---
 # LGTM記載とbundle生成を不可分にする。bundle未生成のままreview_logへLGTM記載を禁止する
-if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]]; then
+# report_verdict=FAILの正当なFAIL報告ではsg7_bundle不要(GATE適用外・registry未登録)
+if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && ! echo "$ENTRY" | grep -Pq 'report_verdict:\s*FAIL'; then
     _lbg_cmd_id=$(python3 -c "
 import sys, yaml
 entry = yaml.safe_load(sys.argv[1])
