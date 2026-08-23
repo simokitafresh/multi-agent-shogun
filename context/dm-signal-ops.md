@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-08-23 context_freshness reviewed source boundary -->
+<!-- source_commit:5a5556af reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=5a5556af -->
 <!-- source_commit:e7a6c59d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=e7a6c59d -->
 <!-- source_commit:45760ecf reason:GA-490/491 運用反映点の境界更新(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log 46a1f213..45760ecf reviewed。初回=33f3dc7a2、tree退行検出により再適用。coreと共有するsource変更は重複調査せず運用反映点のみ記録 -->
 
