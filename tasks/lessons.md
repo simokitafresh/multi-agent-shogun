@@ -15750,3 +15750,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - bash scripts/run_tests.sh task queue/tasks/kagemaru.yaml selected zero files because the task target is an external DM-Signal worktree; direct task-worktree pytest passed 1/1 with SKIP0. Future external-repo task runner contracts should map the external scope or emit a typed external_boundary result.
+
+### L1633: Source-equivalent revertは本文差分とboundary更新を分離して自動要求化する
+- **日付**: 2026-08-23
+- **出典**: cmd_karo_hotfix_ga493_context_freshness_trigger
+- **記録者**: hayate
+- **tags**: [infra,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_ga493_context_freshness_trigger]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- source pathに一致するrevertはcommit数だけでは本文反映要否を判定できない。次回はregistered trigger pathをsource markerとの実効tree差分で比較し、差分0でもsource boundaryを既存doc-lane consumerへ機械要求として渡すチェックを維持する。
