@@ -1563,8 +1563,8 @@ insights:
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
-  occurrence_count: 19
-  last_seen: "2026-08-23T11:32:41+09:00"
+  occurrence_count: 20
+  last_seen: "2026-08-23T20:08:01+09:00"
   verification:
     status: "passed"
     exit_code: 0
@@ -2422,5 +2422,19 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4369; matched=実行,限定,infra; current_pattern=PIT低相関selection最小実験 — Control分解つきharness実装と実験実行(研究層限定・本番無変更); candidate_level=4; candidate=numbers偽cold streak(7/10)。根因=adaptive gating windowがdraft限定。report(数値検算の主戦場)を除外していた; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4369"
+  fix_known: false
+  status: pending
+- id: INS-20260823-201009185-479e
+  ts: "2026-08-23T20:10:09+09:00"
+  insight: "review_bundle.py singleコマンドがWSL2 NTFS I/Oでtimeout(15s)。LG016同型。軍師のLGTM正規入口がhangするとsg7_bundle未生成→手動フォールバック必要。timeout保護または/tmp(ext4)での中間処理が必要"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260823-201104109-d45a
+  ts: "2026-08-23T20:11:04+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b96rp52z1 task id tool use id toolu 01RJV5wK979eZdHdKF は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
