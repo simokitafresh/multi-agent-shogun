@@ -2247,3 +2247,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260823-155813737-193c
+  ts: "2026-08-23T15:58:13+09:00"
+  insight: "semantic_index_update新概念候補: discussion:negative results two experiments mdの記事なんだが、すでに本番ではレジーム別の成績を出していたよな。相関も対ベンチマークはでて は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
