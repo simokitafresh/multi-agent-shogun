@@ -3414,6 +3414,28 @@ PY
     commit_lock_path="$(lock_path "$git_common_dir/ninja-scope-commit")"
     exec {commit_lock_fd}>"$commit_lock_path" || return 1
     flock -x "$commit_lock_fd" || return 1
+    # A writer may have advanced HEAD after the pre-network checkpoint but
+    # before this ledger admission.  Re-check under the shared commit lock so
+    # checkout cannot overwrite a same-path generation that arrived in the
+    # narrow gap above.  Reuse the existing disjoint-generation retry proof;
+    # overlapping paths remain fail-closed.
+    after_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
+    if [ "$after_head" != "$before_head" ]; then
+        if [ "${CMD_COMPLETE_GATE_RUNTIME_PUBLISH_RETRY:-0}" != "1" ] \
+            && runtime_generation_change_is_clean_and_disjoint \
+                "$repo" "$before_head" "$after_head" "${runtime_paths[@]}"; then
+            echo "  runtime publish: writer generation changed before shared mutation; retrying once ($before_head -> $after_head)"
+            git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || return 1
+            rmdir -- "$temp_parent" 2>/dev/null || true
+            exec {commit_lock_fd}>&-
+            exec {publish_lock_fd}>&-
+            CMD_COMPLETE_GATE_RUNTIME_PUBLISH_RETRY=1 \
+                publish_postclear_runtime_deltas "$phase"
+            return $?
+        fi
+        echo "  runtime publish: BLOCK (shared HEAD changed before mutation with overlap or retry exhausted $before_head -> $after_head)" >&2
+        return 1
+    fi
     # The published blob is the authoritative composition (including remote
     # insight IDs).  Bring only owned runtime paths back before checkpointing;
     # unrelated local commits and dirty paths remain untouched.
