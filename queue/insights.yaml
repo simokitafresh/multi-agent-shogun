@@ -1968,3 +1968,54 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-23T10:08:48+09:00"
+- id: INS-20260823-102127291-df7f
+  ts: "2026-08-23T10:21:27+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4372; matched=変更; current_pattern=HMM Regime実験 Phase 1 — Regimeに情報があるかのPIT観測(研究層限定・selection無変更・本番無変更); candidate_level=3; candidate=cmd_1975でpre-bash-combined.sh 347→12行(97%削減)をLGTM。忍者の'機能変更なし'を信頼しコード未確認。hook/gateの大規模削減は機能破壊の強いシグナル。自動検出で見落とし防止; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4372"
+  fix_known: false
+  status: pending
+- id: INS-20260823-102127462-6b61
+  ts: "2026-08-23T10:21:27+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4372; matched=本番; current_pattern=HMM Regime実験 Phase 1 — Regimeに情報があるかのPIT観測(研究層限定・selection無変更・本番無変更); candidate_level=4; candidate=adversarialが本番cmdのみ直近10件で連続0件。真の冷えであり偽陽性ではない; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4372"
+  fix_known: false
+  status: pending
+- id: INS-20260823-102127628-2f4e
+  ts: "2026-08-23T10:21:27+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿下問_HMM_Regime実験_20260823_0847]] は既存aliasesに一致なし。類似概念TOP3: investment_knowledge_base(投資知識辞書; alias=HMM; score=18.2) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=4.8) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_memo_20260811_0337; score=4.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T10:21:45+09:00"
+- id: INS-20260823-102127652-83e5
+  ts: "2026-08-23T10:21:27+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4372; matched=phase; current_pattern=HMM Regime実験 Phase 1 — Regimeに情報があるかのPIT観測(研究層限定・selection無変更・本番無変更); candidate_level=4; candidate=shogun早期exit→inbox未読警告なし→掲示板通知に気づかない→deepdive読了強制もない→復帰手順スキップ=Phase 4(意志依存); source=gunshi_review_log_cmd_2179_to_cmd_2231.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4372"
+  fix_known: false
+  status: pending
+- id: INS-20260823-102127988-fe27
+  ts: "2026-08-23T10:21:27+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[Phase1_Regime情報の存在検証]] は既存aliasesに一致なし。類似概念TOP3: report_quality_protocol(忍者報告品質プロトコル; alias=Phase1 FE削除; score=20.4) / semantic_causal_automation(セマンティック因果自動化; alias=semantic_map_generate; score=4.3) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_gunshi_startup; score=4.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T10:21:45+09:00"
+- id: INS-20260823-102131676-671c
+  ts: "2026-08-23T10:21:31+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4372起票]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd 3244起票で7回BLOCK; score=23.1) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=22.2) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=21.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-23T10:21:46+09:00"
