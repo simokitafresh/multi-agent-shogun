@@ -12161,8 +12161,10 @@ if [ "$HOW_IT_WORKS_CHECKED" = false ]; then
     echo "  (no implement tasks found for this cmd)"
 fi
 
+gate_subphase_tick "pre_review_checks"
+gate_subphase_tick "review_quality_start"
 run_review_quality_check
-gate_subphase_tick "review_checks"
+gate_subphase_tick "review_quality_end"
 
 # ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
 level_heading "[L3]" "Draft lesson check:"
