@@ -485,6 +485,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **記録者**: karo
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: ただしTask3ではタイミング交絡あり(修正前コードレビュー→修正後コード検証)
+- **retired**: true
+- **retired_at**: 2026-08-23
 - 3件の独立レビューが全て同じ偽陽性を報告。ただしTask3ではタイミング交絡あり(修正前コードレビュー→修正後コード検証)。純粋な見落としではない可能性
 
 ### L051: Sonnet 4.6はMUST/NEVER/ALWAYSをリテラルに従わず文脈判断でオーバーライドする。否定指示は肯定形+理由付き、絶対禁止は条件付きルーティング(IF X THEN Y)に変換すると遵守率向上。Pink Elephant研究で学術裏付け
@@ -517,6 +519,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **記録者**: karo
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-02-25
+- **retired**: true
+- **retired_at**: 2026-08-23
 - context追記部のflock -w 10失敗時はWARNのみで終了し教訓登録は成功扱いになるが反映漏れが静かに残る。syncマーカー更新も同じflock内のためflock失敗時はマーカーも未更新となる
 
 ### L055: report YAML構造混在に対するフォールバック必須
@@ -525,6 +529,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **記録者**: sasuke
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-02-25
+- **retired**: true
+- **retired_at**: 2026-08-23
 - report YAMLは扁平/ネスト2系統+ACフィールド名5種混在(ac_results/ac_status/ac_checklist/acceptance_criteria/acceptance_criteria_check)。自動パーサは優先順位付きフォールバック必須。単一キー前提は破綻する
 
 ### L056: タスクYAML上書き問題: auto_deploy時の全サブタスク永続化
@@ -533,6 +539,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **記録者**: hanzo
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: auto_deploy機能を活用するには全サブタスクのYAMLを_subtask_*.yaml形式で事前作成し永続化する必要がある
+- **retired**: true
+- **retired_at**: 2026-08-23
 - queue/tasks/*.yamlは忍者名ファイル=上書き式のため完了タスク情報が消失する。auto_deploy機能を活用するには全サブタスクのYAMLを_subtask_*.yaml形式で事前作成し永続化する必要がある。task_idによるdedup処理で重複を吸収
 
 ### L057: cmd_338
@@ -685,6 +693,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **tags**: [inconsistency, script-pattern, onboarding-risk]
 - **when**: SCRIPT_DIR設計パターンが2系統混在(リポルート基準 vs scripts/自身基準)で新規スクリプト作成時に
 - **how**: 2026-02-26
+- **retired**: true
+- **retired_at**: 2026-08-23
 - 30+ファイルはSCRIPT_DIR=リポジトリルートだが7ファイル(shout,cmd_halt,health_check等)はscripts/自身基準でBASE_DIRで親に戻る方式。リポルート基準への統一推奨
 
 ### L072: git-ignoredスクリプトがwhitelist漏れで現役使用されるリスク — clone後に動作不全
@@ -728,6 +738,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **because**: splitはファイル全体で分割するため行頭限定のデリミタを正しく扱えない
 - **when**: ファイル内容を特定の区切り文字で分割パースする時
 - **how**: content.split(delimiter)ではなくline-by-lineで処理せよ
+- **retired**: true
+- **retired_at**: 2026-08-23
 - IF ファイル内容を特定の区切り文字で分割パースする時 THEN content.split(delimiter)ではなくline-by-lineで処理せよ
 
 ### L076: deploy_task.sh旧Python -cブロックにL047違反が残存
