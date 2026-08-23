@@ -9,6 +9,8 @@ setup() {
     mkdir -p "$TEST_ROOT/queue/tasks" "$TEST_ROOT/logs" "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/scripts"
     cp "$PROJECT_ROOT/scripts/hooks/codex_skill_execution_guard.sh" "$TEST_ROOT/scripts/hooks/"
     cp "$PROJECT_ROOT/scripts/skill_execution_log.sh" "$TEST_ROOT/scripts/"
+    mkdir -p "$TEST_ROOT/.claude/hooks"
+    cp "$PROJECT_ROOT/.claude/hooks/pre-write-read-tracker.sh" "$TEST_ROOT/.claude/hooks/"
     cat > "$TEST_ROOT/scripts/hooks/three_layer_preflight.sh" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$PREFLIGHT_CALL_LOG"
@@ -21,6 +23,8 @@ SH
     export SHOGUN_AGENT_ID="tobisaru"
     export SHOGUN_TASK_FILE="$TEST_ROOT/queue/tasks/tobisaru.yaml"
     export SKILL_EXECUTION_LOG_FILE="$TEST_ROOT/logs/skill_execution_log.yaml"
+    export MOCK_AGENT_ID="tobisaru"
+    : > /tmp/claude_read_log_tobisaru.txt
 }
 
 teardown() {
@@ -111,4 +115,36 @@ run_guard() {
     run_guard <<< '{"tool_name":"Read","tool_input":{"file_path":"context/infrastructure.md"}}'
     [ "$status" -eq 0 ]
     grep -q '^verify Read context/infrastructure.md ' "$PREFLIGHT_CALL_LOG"
+}
+
+@test "task YAMLなしのkaro/shogun/gunshi/idleも証跡なしではBLOCK" {
+    for role in karo shogun gunshi idle; do
+        run env SHOGUN_AGENT_ID="$role" SHOGUN_TASK_FILE="$TEST_ROOT/queue/tasks/missing.yaml" PREFLIGHT_RESULT=1 \
+            bash "$TEST_ROOT/scripts/hooks/codex_skill_execution_guard.sh" <<< '{"tool_name":"web","tool_input":{"query":"probe"}}'
+        [ "$status" -eq 2 ]
+    done
+}
+
+@test "Skillも三層preflight後に判定され証跡なしではBLOCK" {
+    write_task 'task:
+  task_id: cmd_skill
+  status: in_progress'
+    run env PREFLIGHT_RESULT=1 bash "$TEST_ROOT/scripts/hooks/codex_skill_execution_guard.sh" <<< '{"tool_name":"Skill","tool_input":{"skill":"report-write"}}'
+    [ "$status" -eq 2 ]
+    [ ! -f "$SKILL_EXECUTION_LOG_FILE" ]
+}
+
+@test "証跡後はtask YAMLなしroleでもPASSし、Read後Write追跡もPASS" {
+    run env SHOGUN_AGENT_ID=karo SHOGUN_TASK_FILE="$TEST_ROOT/queue/tasks/missing.yaml" PREFLIGHT_RESULT=0 \
+        bash "$TEST_ROOT/scripts/hooks/codex_skill_execution_guard.sh" <<< '{"tool_name":"web","tool_input":{"query":"probe"}}'
+    [ "$status" -eq 0 ]
+
+    local target="$TEST_ROOT/context.md"
+    printf 'fixture\n' > "$target"
+    run env SHOGUN_REPO_ROOT="$TEST_ROOT" PREFLIGHT_RESULT=0 \
+        bash "$TEST_ROOT/.claude/hooks/pre-write-read-tracker.sh" <<< "{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"$target\"}}"
+    [ "$status" -eq 0 ]
+    run env SHOGUN_REPO_ROOT="$TEST_ROOT" PREFLIGHT_RESULT=0 \
+        bash "$TEST_ROOT/.claude/hooks/pre-write-read-tracker.sh" <<< "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$target\"}}"
+    [ "$status" -eq 0 ]
 }

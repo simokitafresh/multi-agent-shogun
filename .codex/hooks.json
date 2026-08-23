@@ -11,6 +11,11 @@
           },
           {
             "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-read-tracker.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-combined.sh",
             "timeout": 30
           },
