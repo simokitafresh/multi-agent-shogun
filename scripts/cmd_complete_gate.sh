@@ -12852,11 +12852,13 @@ check_safety_pattern_removal() {
         echo "  OK: no safety patterns removed"
     fi
 }
+gate_subphase_tick "safety_removal_start"
 check_safety_pattern_removal
 
 # ─── cmd_2273: 4新検証（scope drift / review staleness / partial completion / WTF） ───
+gate_subphase_tick "command_scope_start"
 check_command_files_modified_coverage
-gate_subphase_tick "integration_checks"
+gate_subphase_tick "handoff_start"
 
 # LS086: a design handoff table is a flow contract, not documentation.  Scan
 # only the approved changed-file scope; unrelated historical designs cannot
@@ -12868,10 +12870,15 @@ if ! bash "$SCRIPT_DIR/scripts/gates/gate_design_cmd_handoff.sh" "${_ls086_chang
     ALL_CLEAR=false
     record_block_reason "design_cmd_handoff_missing"
 fi
+gate_subphase_tick "scope_drift_start"
 check_scope_drift
+gate_subphase_tick "review_staleness_start"
 check_review_staleness
+gate_subphase_tick "partial_completion_start"
 check_partial_completion
+gate_subphase_tick "wtf_start"
 check_wtf_likelihood
+gate_subphase_tick "self_grade_start"
 
 # ─── Loop Engineering Phase 2-2: self-grade commit/file verification（WARN only） ───
 # Agent self-grade can nod along even when the actual commit does not match the report.
