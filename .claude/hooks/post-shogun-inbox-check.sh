@@ -305,6 +305,15 @@ fi
 if [ -n "$LORD_LAST" ]; then
     MSG="${MSG:+${MSG}\\n}★確認すべき事: ${LORD_LAST}"
 fi
+# [MEM:]事前リマインダ(2026-08-23根治): 三層preflight成功済みターンでは応答直前まで
+# [MEM:]必須を毎tool後に注入する。stop hookの事後BLOCK(1往復浪費)を事前注入で防ぐ。
+# 検出はstop_check_inbox.shのhas_successful_three_layer_preflightと同一のevidence正本を参照。
+_MEM_EVIDENCE_DIR="${THREE_LAYER_PREACTION_EVIDENCE_DIR:-$SCRIPT_DIR/logs/preaction_memory}"
+if ls "$_MEM_EVIDENCE_DIR"/evidence_shogun_*.json >/dev/null 2>&1; then
+    if grep -l '"status": *"success"' "$_MEM_EVIDENCE_DIR"/evidence_shogun_*.json >/dev/null 2>&1; then
+        MSG="${MSG:+${MSG}\\n}★[MEM:]必須: 本ターンは三層preflight成功済み。殿への応答に[MEM: memory_db/semantic/obsidian]引用タグ(不要時は[MEM: n/a — 理由])を必ず含めよ。タグ欠落はstop hookでBLOCKされ1往復を失う"
+    fi
+fi
 if [ -n "$EFFECT_REMIND" ]; then
     MSG="${MSG:+${MSG}\\n}${EFFECT_REMIND}"
 fi
