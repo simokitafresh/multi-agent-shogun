@@ -2525,9 +2525,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
-  resolved_reason: "一次情報でfix_knownを再確認: logs/self_retro.jsonlのevent_id一致(1件・重複event_id 0)、review_notifyのSG7維持基準、対象cmdのgunshi_review_log.yamlでverdict PASS/operational_simulation PASSを確認。verify_commandもexit 0。"
-  action_artifact: "logs/self_retro.jsonl#3d4a3acdf3e08b00a60c2d76fca1524fa21d95e7a6f80379221dea6a91761d4d; logs/gunshi_review_log.yaml#cmd_karo_hotfix_commit_ledger_single_lock; scripts/cmd_complete_gate.sh#sg7_consume"
-  resolved_at: "2026-08-23T22:47:30+09:00"
+  resolved_reason: "cmd_reflux_insight_202608232239_kagemaru_exact: 一次情報でfix_knownを再確認。logs/self_retro.jsonlのevent_id一致(1件・重複event_id 0)、review_notifyのSG7維持基準、対象cmdのgunshi_review_log.yamlでverdict PASS/operational_simulation PASS、verify_command exit 0を確認。"
+  action_artifact: "logs/self_retro.jsonl#3d4a3acdf3e08b00a60c2d76fca1524fa21d95e7a6f80379221dea6a91761d4d; logs/gunshi_review_log.yaml#cmd_karo_hotfix_commit_ledger_single_lock; scripts/cmd_complete_gate.sh#sg7_consume; task=cmd_reflux_insight_202608232239_kagemaru_exact"
+  resolved_at: "2026-08-23T23:06:03+09:00"
 - id: INS-20260823-215454663-7fc2
   ts: "2026-08-23T21:54:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id broijwg6l task id tool use id toolu 01Wh6SeHJZEEkSFtYL は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
