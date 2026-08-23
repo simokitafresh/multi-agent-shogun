@@ -975,6 +975,7 @@ source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/task_lifecycle.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 source "$SCRIPT_DIR/scripts/lib/autogen_paths.sh"
+gate_phase_tick "runtime_sources"
 
 if [ "${CMD_COMPLETE_GATE_REPORT_BLOB_PARITY_ONLY:-0}" = "1" ]; then
     report_commit_blob_parity_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
@@ -2385,7 +2386,7 @@ source_only_lessons_id_merge() (
     local repo="$1" clean_repo="$2" remote_tip="$3" source_sha source_base path
     local base_file source_file remote_file merged_file tmp_dir project_id config_backup
     shift 3
-    local -a source_shas=("$@") cache_paths=()
+    local -a source_shas=("$@") cache_paths=() sync_project_ids=()
     local -A source_paths=()
 
     [ "${#source_shas[@]}" -gt 0 ] || return 1
@@ -2397,14 +2398,55 @@ source_only_lessons_id_merge() (
         while IFS= read -r -d '' path; do source_paths["$path"]=1; done \
             < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
     done
+    # sync_lessons is a project operation, not a glob over every generated
+    # cache that happens to be present in the source commit.  Build the active
+    # project allowlist once from the project registry and require the mapped
+    # path to exist.  This excludes stale test residues such as
+    # dm-signal_ISOLATED_TEST while retaining real active projects.
+    if [ -f "$clean_repo/config/projects.yaml" ]; then
+        mapfile -t sync_project_ids < <(python3 - "$clean_repo/config/projects.yaml" "$clean_repo" <<'PY'
+import os, sys, yaml
+
+config_path, root = sys.argv[1:]
+try:
+    config = yaml.safe_load(open(config_path, encoding="utf-8")) or {}
+except Exception:
+    config = {}
+projects = config.get("projects", []) if isinstance(config, dict) else []
+for item in projects:
+    if not isinstance(item, dict):
+        continue
+    if str(item.get("status", "active")).strip().lower() != "active":
+        continue
+    project_id = str(item.get("id", "")).strip()
+    project_path = str(item.get("path", "")).strip()
+    if not project_id or not project_path:
+        continue
+    if not os.path.isabs(project_path):
+        project_path = os.path.join(root, project_path)
+    if os.path.isdir(project_path):
+        print(project_id)
+PY
+        )
+    fi
     for path in "${!source_paths[@]}"; do
         case "$path" in
-            projects/*/lessons.yaml) cache_paths+=("$path") ;;
+            projects/*/lessons.yaml)
+                project_id="${path#projects/}"
+                project_id="${project_id%%/*}"
+                if printf '%s\n' "${sync_project_ids[@]}" | grep -Fqx -- "$project_id"; then
+                    cache_paths+=("$path")
+                else
+                    echo "  lessons sync: skip inactive/unregistered/missing project=${project_id}"
+                fi
+                ;;
         esac
     done
     # A source-only SSOT commit from an older writer may omit the generated
     # index from its diff.  Infra is the repository's own SSOT/cache pair.
-    if [ "${#cache_paths[@]}" -eq 0 ] && [ -f "$clean_repo/projects/infra/lessons.yaml" ]; then
+    if [ "${#cache_paths[@]}" -eq 0 ] \
+        && printf '%s\n' "${sync_project_ids[@]}" | grep -Fqx -- infra \
+        && [ -f "$clean_repo/projects/infra/lessons.yaml" ]; then
         cache_paths+=(projects/infra/lessons.yaml)
     fi
 
@@ -3963,6 +4005,7 @@ if [ -e "${_report_cache_task_files[0]:-}" ]; then
     ' "${_report_cache_task_files[@]}" 2>/dev/null)
 fi
 unset _report_cache_task_files _report_cache_file _report_cache_name _report_cache_ninja
+gate_phase_tick "task_snapshot_start"
 
 LAST_GATE_NOTIFY_ROUTE=""
 CLEAR_NOTIFICATION_SENT=false
@@ -8201,8 +8244,26 @@ PY
 
 collect_report_files_modified() {
     local report_file="$1"
+    local cache_key="" cache_value=""
 
-    REPORT_FILE="$report_file" python3 - <<'PY'
+    # The same immutable report is inspected by command-scope, Vercel/CDP,
+    # CI, and self-grade checks. Reuse the parsed path list within a gate run;
+    # nanosecond mtime+size invalidates the entry if normalization rewrites the
+    # report between phases.
+    if [ -f "$report_file" ]; then
+        cache_key="$report_file|$(stat -c '%y:%s' -- "$report_file" 2>/dev/null || true)"
+        if [ -n "$cache_key" ]; then
+            if ! declare -p _REPORT_FILES_MODIFIED_CACHE >/dev/null 2>&1; then
+                declare -gA _REPORT_FILES_MODIFIED_CACHE=()
+            fi
+            if [[ "${_REPORT_FILES_MODIFIED_CACHE[$cache_key]+yes}" = yes ]]; then
+                printf '%s\n' "${_REPORT_FILES_MODIFIED_CACHE[$cache_key]}"
+                return 0
+            fi
+        fi
+    fi
+
+    cache_value=$(REPORT_FILE="$report_file" python3 - <<'PY'
 import os
 import yaml
 yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
@@ -8229,16 +8290,36 @@ for item in files:
     if value and value not in ("no-code-change", "no_code_change"):
         print(value)
 PY
+    )
+    if [ -n "$cache_key" ]; then
+        _REPORT_FILES_MODIFIED_CACHE["$cache_key"]="$cache_value"
+    fi
+    printf '%s\n' "$cache_value"
 }
 
 # cmd_karo_hotfix_gate_report_discovery_after_redeploy: 同一忍者への次task配備でtask YAMLが
 # 上書きされ(parent_cmdが変わり)MATCHING_TASK_FILESの対象外になっても、report自身のparent_cmd/
 # task_idの厳密一致でcmd Aのreportを発見できるようにする共通ヘルパー(cmd_3844型の偽BLOCK根治)。
+_DISCOVER_REPORTS_CACHE_KEY=""
+_DISCOVER_REPORTS_CACHE_VALUE=""
+_DISCOVER_REPORTS_CACHE_READY=0
 discover_reports_for_cmd() {
     local cmd_id="${1:-$CMD_ID}"
     local reports_dir="$SCRIPT_DIR/queue/reports"
+    local cache_key="${reports_dir}"$'\034'"${cmd_id}"
 
-    REPORTS_DIR="$reports_dir" CMD_ID="$cmd_id" python3 - <<'PY'
+    # A completion run snapshots task/report identity before the gate checks.
+    # Repeating the same YAML directory scan from every report-dependent check
+    # only respawns Python; the report files themselves are immutable for this
+    # boundary (normalize changes bytes, not identity/path). Cache empty scans
+    # too, so a missing report does not keep paying the same process cost.
+    if [ "${_DISCOVER_REPORTS_CACHE_READY:-0}" -eq 1 ] \
+        && [ "${_DISCOVER_REPORTS_CACHE_KEY:-}" = "$cache_key" ]; then
+        printf '%s\n' "${_DISCOVER_REPORTS_CACHE_VALUE:-}"
+        return 0
+    fi
+
+    _DISCOVER_REPORTS_CACHE_VALUE=$(REPORTS_DIR="$reports_dir" CMD_ID="$cmd_id" python3 - <<'PY'
 import glob
 import os
 import yaml
@@ -8260,6 +8341,10 @@ for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
     if parent_cmd == cmd_id or task_id == cmd_id:
         print(path)
 PY
+    )
+    _DISCOVER_REPORTS_CACHE_KEY="$cache_key"
+    _DISCOVER_REPORTS_CACHE_READY=1
+    printf '%s\n' "${_DISCOVER_REPORTS_CACHE_VALUE:-}"
 }
 
 collect_parent_cmd_report_files_modified() {
