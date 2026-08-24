@@ -23,7 +23,6 @@ patterns = [
     "queue/insights.yaml",
     "queue/inbox/*.yaml",
     "queue/tasks/*.yaml",
-    "queue/reports/*.yaml",
 ]
 
 paths = []
@@ -39,7 +38,6 @@ for pattern in patterns:
         seen.add(rel)
         paths.append(path)
 
-
 def load(path):
     # cmd_karo_hotfix_queue_yaml_atomicity_202607110113:
     # safe_load_retry()(scripts/lib/yaml_safe_read.py)がFileNotFoundErrorのみ
@@ -53,6 +51,29 @@ def load(path):
         return None, ("yaml_error", exc)
     except OSError as exc:
         return None, ("io_error", exc)
+
+
+# Reports are already format-checked before completion.  At startup only the
+# report named by a live task is operational; reparsing hundreds of historical
+# compatibility files on WSL 9p made this gate take minutes.
+for task_path in [path for path in paths if path.relative_to(root).as_posix().startswith("queue/tasks/")]:
+    document, err = load(task_path)
+    if err is not None or not isinstance(document, dict):
+        continue
+    task = document.get("task") if isinstance(document.get("task"), dict) else document
+    report_value = str(task.get("report_path") or "").strip()
+    if not report_value:
+        continue
+    report_path = Path(report_value)
+    if not report_path.is_absolute():
+        report_path = root / report_path
+    try:
+        rel = report_path.relative_to(root).as_posix()
+    except ValueError:
+        continue
+    if rel.startswith("queue/reports/") and rel.endswith(".yaml") and rel not in seen:
+        seen.add(rel)
+        paths.append(report_path)
 
 
 errors = []
