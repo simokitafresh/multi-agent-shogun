@@ -2931,3 +2931,57 @@ insights:
   source: "skill_script_refs:b4ffbbfb52e73ec6"
   fix_known: false
   status: pending
+- id: INS-20260824-095337671-3386
+  ts: "2026-08-24T09:53:37+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bpnass45t task id tool use id toolu 014asQbmnMz4sMhycw は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T10:29:29+09:00"
+- id: INS-20260824-102853252-c105
+  ts: "2026-08-24T10:28:53+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4386; matched=外部; current_pattern=cmd_complete_gate.sh速度改善第七弾 — 実測で確定した外部待ち上位(push実行とdurable_writer待ち)の並行化と根治; candidate_level=2; candidate=cmd_1955で影丸が13回連続BLOCK(draft_lessons:1)。忍者にはdraft教訓の査読権限がなく全リトライが無駄。GP-200(DIVERGENT)は忍者修正可能なBLOCKが前提であり外部依存BLOCKには効かない。cmd_complete_gate.sh L3158のBLOCKメッセージに「忍者は解消不可。家老に報告して待機」ガイダ; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4386"
+  fix_known: false
+  status: pending
+- id: INS-20260824-102853407-fe07
+  ts: "2026-08-24T10:28:53+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4386; matched=実行; current_pattern=cmd_complete_gate.sh速度改善第七弾 — 実測で確定した外部待ち上位(push実行とdurable_writer待ち)の並行化と根治; candidate_level=2; candidate=verdict_override WA 6件中5件がAC設計ミス。draftレビューStep 3で事前検出する観点が不在だった; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4386"
+  fix_known: false
+  status: pending
+- id: INS-20260824-102909556-2f55
+  ts: "2026-08-24T10:29:09+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿裁定_CI並行_20260824_0841]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=source 殿裁定 lord conversation; score=10.8) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=10.8) / db_price_data_range(DB価格データ範囲; alias=殿裁定 GSはネイティブ暦 本番と同一のDTB3暦 に統一; score=9.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T10:29:29+09:00"
+- id: INS-20260824-102909945-0970
+  ts: "2026-08-24T10:29:09+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4384_詳細計装で外部待ち支配確定]] は既存aliasesに一致なし。類似概念TOP3: unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_4376層別確定; score=20.8) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_4383_サブ計装常時化と次位短縮; score=20.5) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=cmd_3786復旧手順; score=19.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T10:29:29+09:00"
+- id: INS-20260824-102911791-9f4d
+  ts: "2026-08-24T10:29:11+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4386_push並行化とdurable_writer根治]] は既存aliasesに一致なし。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=completed cmd archive; score=15.6) / agent_formation_management(編成管理; alias=same_cmd_redeploy; score=15.2) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4098_境界fixture固定; score=14.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T10:29:30+09:00"
