@@ -1,2 +1,4 @@
-# session_alerts — generated: 2026-08-25T01:43:14+0900
-[DONE] 走行中cmd実測突合: busy 4名。capture-pane未確認で状況報告するな — 2026-08-25 01:47全6忍者pane一次capture: 全員プロンプト待ち(kagemaru CTX32%/saizo20%/kotaro26%はターン間の正常な待ち)。busy 4名は陣形図旧snapshot値。報告mtime・review_logで各taskがRC是正/レビュー往復の回転内であることを直前ターンで突合済み
+# session_alerts — generated: 2026-08-25T03:22:17+0900
+[DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな
+[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"

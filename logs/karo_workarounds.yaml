@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_render_live_transition_watcher_202608160054
-  timestamp: '2026-08-15T16:27:37Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_render_live_transition_watcher_202608160054'
 - cmd_id: cmd_karo_hotfix_dm_l2_c1_dependency_closure_202608160106
   timestamp: '2026-08-15T16:29:23Z'
   ninja: system
@@ -1324,3 +1311,16 @@
   lesson_reference: ''
   brainwash_check: '洗脳#2検証スキップ防止: RC correction_scope誤記録 1件→0件、report scope再承認 PASS 1件'
   resolved_by_cmd: ''
+- cmd_id: cmd_karo_hotfix_p2_gate_model_attribution
+  timestamp: '2026-08-24T18:33:22Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_p2_gate_model_attribution'
