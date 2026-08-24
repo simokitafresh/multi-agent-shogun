@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = Path(sys.argv[1]).read_text(encoding="utf-8")
-names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity""".split()
+names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head report_ci_push_state report_commit_main_ancestry_state""".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -1093,6 +1093,31 @@ EOF
     [[ "$output" == *"OK (files_modified covered by report commit phase union"* ]]
     [[ "$output" == *"OK (self-grade commit file coverage)"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+# test_necessity: the direct commit-file check owns the paths already present
+# in the report commit; the phase-union fallback must receive only the missing
+# paths so unrelated history cannot dominate the hot path.
+# regression_justification: the live cmd_4387 gate spent 276.025s in the
+# fallback after direct coverage had already proved one of the report paths.
+@test "phase-union fallback path-filters direct-covered report paths" {
+    source "$GATE_HELPERS_FILE"
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export CMD_ID="cmd_phase_filter_probe"
+    _init_self_grade_git_repo
+
+    printf 'missing\n' > "$TEST_PROJECT/scripts/missing.sh"
+    git -C "$TEST_PROJECT" add scripts/missing.sh
+    git -C "$TEST_PROJECT" commit -qm "cmd_phase_filter_probe: missing path"
+    printf 'unrelated\n' > "$TEST_PROJECT/docs-unrelated.txt"
+    git -C "$TEST_PROJECT" add docs-unrelated.txt
+    git -C "$TEST_PROJECT" commit -qm "cmd_phase_filter_probe: unrelated path"
+    anchor="$(git -C "$TEST_PROJECT" rev-parse HEAD)"
+
+    run collect_cmd_phase_git_files "$anchor" "$CMD_ID" "scripts/missing.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"scripts/missing.sh"* ]]
+    [[ "$output" != *"docs-unrelated.txt"* ]]
 }
 
 @test "self-grade commit/files verification keeps single phase behavior" {
@@ -6861,6 +6886,36 @@ run_report_blob_parity_state() {
     run_ci_push_state "$repo" "$report" "$task"
     [ "$status" -eq 0 ]
     [[ "$output" == PUSHED:* ]]
+}
+
+# test_necessity: the terminal ancestry result must be identical when its
+# reachable set is precomputed once for the repository instead of running a
+# separate merge-base traversal for every report.
+# regression_justification: cmd_4387 measured 33.624s in one resolve_state;
+# repeated PASS reports multiplied that pure-processing cost.
+@test "report main ancestry reuses a precomputed reachable snapshot" {
+    local repo="$BATS_TEST_TMPDIR/ancestry-snapshot"
+    local report="$BATS_TEST_TMPDIR/ancestry-snapshot-report.yaml"
+    local snapshot="$BATS_TEST_TMPDIR/ancestry-snapshot-reachable"
+    make_ci_push_repo "$repo"
+    commit="$(git -C "$repo" rev-parse HEAD)"
+    printf 'verdict: PASS\ncommit_hash: %s\n' "$commit" > "$report"
+    git -C "$repo" rev-list "$(git -C "$repo" rev-parse refs/remotes/origin/main)" > "$snapshot"
+
+    run bash -c 'source "$1"; report_commit_main_ancestry_state "$2" "$3" "" "$4"' \
+        _ "$GATE_HELPERS_FILE" "$report" "$repo" "$snapshot"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS: PUSHED: report commit $commit contained by "* ]]
+
+    printf 'not-reachable\n' >> "$repo/state"
+    git -C "$repo" add state
+    git -C "$repo" commit -qm "local only"
+    local local_commit="$(git -C "$repo" rev-parse HEAD)"
+    printf 'verdict: PASS\ncommit_hash: %s\n' "$local_commit" > "$report"
+    run bash -c 'source "$1"; report_commit_main_ancestry_state "$2" "$3" "" "$4"' \
+        _ "$GATE_HELPERS_FILE" "$report" "$repo" "$snapshot"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "WAIT: UNPUSHED: report commit $local_commit not contained by "* ]]
 }
 
 run_commit_repo_resolution() {
