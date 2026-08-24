@@ -84,8 +84,10 @@ def parse_aware(value, name):
 reviewed=parse_aware(reviewed_at, "reviewed_at")
 started=parse_aware(workflow_freshness_at, "workflow_result.started_at")
 # push通過+CI後追い方式(殿裁可 2026-07-25 / 軍師REQUEST_CHANGES反映)。
-# 判定は3状態のみ: (i)対応する評価がGREEN=PASS (ii)対応する評価がRED=BLOCK
-# (iii)このコードに対する評価が存在しない=WAIT(後追い確認。GATEを止めない)。
+# 判定は3状態のみ: (i)対応する評価がGREEN=PASS (ii)対象側の評価がRED=BLOCK
+# (iii)このコードに対するworkflow評価が未完了/非GREEN/不存在=WAIT
+# (後追い確認。GATEを止めない)。殿裁定(cmd_4384)によりCI workflow結果の
+# 確認待ちはGATE判定を止めず、既存WAIT経路へ集約する。
 # 「別commitの評価」「未完了run」「全job cancelled」はいずれも同一の意味であり、
 # 分岐を足さずこの1つの状態判定へ集約する。単に条件を削ると stale GREEN で
 # 未検証CLEAR、stale RED で誤帰属BLOCKになるため、削除ではなく状態化する。
@@ -132,8 +134,8 @@ if t["conclusion"] != "success":
     print("BLOCK: target_result is not GREEN")
     raise SystemExit(1)
 if w["conclusion"] != "success":
-    print("BLOCK: workflow_result is not GREEN")
-    raise SystemExit(1)
+    print("WAIT: ci_evaluation_external_pending=workflow_result_not_green — 後追いで確認せよ(GATEは止めない) head_sha=" + expected)
+    raise SystemExit(0)
 print("READY: target_result=GREEN workflow_result=GREEN fresh_after_review head_sha=" + expected)
 ' 
 }
@@ -157,6 +159,7 @@ classify_gate_record_category() {
         # 同義の旧表記(実測ログに残る文言)を同一カテゴリへ写像する。
         *ci_evaluation_absent=*|*head_sha_mismatch*|*run_pending:*|*run_predates_review*|\
         *target_no_verdict*|*workflow_no_verdict*|*workflow_all_jobs_cancelled*|\
+        *"workflow_result is not GREEN"*|*ci_evaluation_external_pending=*|\
         *"WAIT:"*|*"head SHA mismatch"*|*"predates SG7 review"*|*"pending status="*|\
         *"pending in_progress"*|*"pending queued"*|*cancelled*|*canceled*)
             printf 'WAIT\n' ;;
@@ -3206,12 +3209,7 @@ push_task_repositories() {
                 # tip.  Materialize the current tip before the existing
                 # ancestry/equivalence lane inspects its commit graph; an
                 # ls-remote SHA alone is not enough for cat-file/diff-tree.
-                if git -C "$repo" fetch -q "$remote" "$push_ref"; then
-                    refreshed_tip=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null || true)
-                    if [[ "$refreshed_tip" =~ ^[0-9a-f]{40}$ ]]; then
-                        remote_tip="$refreshed_tip"
-                    fi
-                fi
+                git -C "$repo" fetch -q "$remote" "$push_ref" || true
             fi
             # This proof is intentionally task-backed.  Archived/report-only
             # source contracts do not carry the deployment base and therefore
@@ -3342,11 +3340,13 @@ converge_shared_execution_sources() {
     remote=${upstream_ref%%/*}
     push_ref="refs/heads/${upstream_ref#*/}"
     gate_detail_begin "runtime_source_convergence.remote_fetch" external_wait
+    remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
     if ! git -C "$repo" fetch -q "$remote" "$push_ref"; then
         gate_detail_finish
         return 1
     fi
-    remote_tip=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null) || return 1
+    git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || return 1
     gate_detail_finish
     gate_detail_begin "runtime_source_convergence.local_reconcile" pure_processing
     before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
@@ -3601,12 +3601,16 @@ PY
                     }
                     remote=${upstream_ref%%/*}
                     push_ref="refs/heads/${upstream_ref#*/}"
+                    fresh_upstream_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+                    [[ "$fresh_upstream_sha" =~ ^[0-9a-f]{40}$ ]] || {
+                        echo "  runtime publish: BLOCK (nonruntime upstream unavailable path=$path)" >&2
+                        return 1
+                    }
                     git -C "$repo" fetch -q "$remote" "$push_ref" || {
                         echo "  runtime publish: BLOCK (nonruntime upstream fetch failed path=$path)" >&2
                         return 1
                     }
-                    fresh_upstream_sha=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null || true)
-                    [[ "$fresh_upstream_sha" =~ ^[0-9a-f]{40}$ ]] || {
+                    git -C "$repo" cat-file -e "${fresh_upstream_sha}^{commit}" 2>/dev/null || {
                         echo "  runtime publish: BLOCK (nonruntime upstream unavailable path=$path)" >&2
                         return 1
                     }
@@ -3652,6 +3656,7 @@ PY
             tasks/lessons.md|projects/*/lessons.yaml) lesson_paths+=("$path") ;;
         esac
     done
+    gate_detail_finish
     # The SSOT and its generated indexes form one publication unit.  A single
     # source generation lets the lessons ID merge compose remote/local edits
     # before regenerating caches, instead of publishing a stale cache commit
@@ -3774,7 +3779,7 @@ PY
     local _idx_lock_try
     gate_detail_begin "runtime_publish.index_lock_retry_wait" external_wait
     for _idx_lock_try in 1 2 3 4 5 6 7; do
-        if git -C "$repo" checkout FETCH_HEAD -- "${runtime_paths[@]}"; then
+        if git -C "$repo" checkout "$remote_tip" -- "${runtime_paths[@]}"; then
             break
         fi
         [ "$_idx_lock_try" -lt 7 ] || return 1
@@ -3783,7 +3788,7 @@ PY
     gate_detail_finish
     gate_detail_begin "runtime_publish.shared_checkout_merge" pure_processing
     git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
-    if ! git -C "$repo" merge --no-edit FETCH_HEAD >/dev/null 2>&1; then
+    if ! git -C "$repo" merge --no-edit "$remote_tip" >/dev/null 2>&1; then
         git -C "$repo" merge --abort >/dev/null 2>&1 || true
         if shared_path_merge_commit "$repo" "$remote_tip" "${runtime_paths[@]}"; then
             echo "  runtime publish: conflict fallback (target paths only; unrelated history preserved)"
@@ -5200,6 +5205,22 @@ record_finalize_phase_event() {
         [ "$?" -eq 4 ] && return 0
         return 3
     }
+}
+
+# cmd_4385: correlate the report/review/CLEAR timestamps after the durable
+# CLEAR line exists.  This is deliberately asynchronous and fail-open: the
+# telemetry is an observation lane, never a gate condition or a reason to
+# delay completion.  The correlator owns its append lock and line rotation.
+queue_completion_gap_metrics() {
+    local cmd_id="${1:-}"
+    local correlator="$SCRIPT_DIR/scripts/completion_gap_metrics.sh"
+    [ -n "$cmd_id" ] || return 0
+    [ -x "$correlator" ] || return 0
+    (
+        COMPLETION_GAP_ROOT="$SCRIPT_DIR" \
+            bash "$correlator" --cmd "$cmd_id" --append
+    ) >>"$LOG_DIR/completion_gap_metrics_async.log" 2>&1 &
+    echo "  completion gap metrics: queued (cmd=$cmd_id)"
 }
 
 # ─── CoDD registry自動追記（cmd_2510） ───
@@ -11018,6 +11039,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR - emergency override immediate"
     append_changelog "$CMD_ID"
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tOVERRIDE\temergency_override\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
+    queue_completion_gap_metrics "$CMD_ID"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     capture_completed_rework_event "$CMD_ID" || echo "  [WARN] rework event capture failed (non-blocking)"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
@@ -12931,9 +12953,12 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
 done
 
 if [ -n "$CI_PUSH_STATE_BLOCK" ]; then
-    echo "  [CRITICAL] ${CI_PUSH_STATE_BLOCK}"
-    record_block_reason "ci_push_state:${CI_PUSH_STATE_BLOCK}"
-    ALL_CLEAR=false
+    # A push-state confirmation gap is an external post-source observation,
+    # not a local gate failure.  Preserve the raw reason as WAIT and let the
+    # existing follow-up lane recheck it after publication; do not hold the
+    # current GATE decision on remote confirmation.
+    echo "  [WAIT] ${CI_PUSH_STATE_BLOCK} — push state will be confirmed asynchronously"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tWAIT\tci_push_state:%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$CI_PUSH_STATE_BLOCK")"
 elif [ "$CI_PUSH_DETECTED" = true ]; then
     ci_result="${CMD_COMPLETE_GATE_CI_RUN_JSON:-}"
     # Fail-closed when matching tasks span multiple distinct repositories.
@@ -13412,6 +13437,7 @@ PY
     source "$SCRIPT_DIR/scripts/lib/retro_pane_prompt.sh"
     retro_pane_prompt_async "$SCRIPT_DIR" shogun "gate_clear:$CMD_ID" cmd_complete_gate
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
+    queue_completion_gap_metrics "$CMD_ID"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &
     # gate_yaml_status: YAML status更新（WARNING only）
