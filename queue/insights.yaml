@@ -3306,18 +3306,71 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T00:00:14+09:00"
 - id: INS-20260824-235223413-e8ab
   ts: "2026-08-24T23:52:23+09:00"
   insight: "[[テスト・CI回転時間の全体計測第一弾 — CI runのstep別分解とローカル全量テストのファイル別分解で支配要因を確]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=テスト・CI回転時間の全体計測第一弾 — CI runのstep別分解とローカル全量テストのファイル別分解で支配要因を確定する"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T00:00:15+09:00"
 - id: INS-20260824-235225316-ec38
   ts: "2026-08-24T23:52:25+09:00"
   insight: "[[殿指示2026 08 24 23 38『他の場所に改善できることがないか]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示2026-08-24 23:38『他の場所に改善できることがないか。テストやスクリプトはどうなんだ』を受けた次のらせんの一周目。パイプライン隙間は百秒級以下へ収束済みのため、次の支配候補=CI往復時間とローカルテスト時間を、gap計測と同じ型(全体計測→分布確定→支配特定)で実測分解する。短縮の実装は本cmdに含めない(計測が先)"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T00:00:15+09:00"
+- id: INS-20260825-000016346-02b1
+  ts: "2026-08-25T00:00:16+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bk0785olj task id tool use id toolu 01WippsfBjtbv7cRrn は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T00:13:55+09:00"
+- id: INS-20260825-000142753-e934
+  ts: "2026-08-25T00:01:42+09:00"
+  insight: "将軍gate摩擦の次弾候補: cmd_save.sh preflightが単発cmdで120秒超(2026-08-24 cmd_4393実測、バックグラウンド行き)。gate_evaluation 86%減と同じ型でcmd_saveのフェーズ分解→支配段短縮を次のらせん候補へ。台帳tmp残骸(cmd_design_quality系44個+gunshi_review_log系7個)の後始末漏れも同時に根治対象"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260825-002355916-8ee1
+  ts: "2026-08-25T00:23:55+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bnyi7zley task id tool use id toolu 013fWzPNY13tfMhsWA は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T00:24:37+09:00"
+- id: INS-20260825-002418096-441f
+  ts: "2026-08-25T00:24:18+09:00"
+  insight: "[[忍者Track]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: provisional_kotaro(仮: Kotaro; alias=kotaro; score=5.0) / systems_knowledge_base(システム知識辞書; alias=garrytan gstack; score=4.5) / skill_routing(スキルルーティング; alias=karo_direct; score=4.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T00:24:37+09:00"
+- id: INS-20260825-002700367-91bd
+  ts: "2026-08-25T00:27:00+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bt7kxzzu9 task id tool use id toolu 0196jCjbaLNR21CET5 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
