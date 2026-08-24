@@ -7945,3 +7945,65 @@ PY
     [ "$output" = "rc=1" ]
     [ "$(cat "$root/tracked.txt")" = base ]
 }
+
+# test_necessity: completion telemetry must correlate all six durable event
+# boundaries, append idempotently, and expose the highest median gap for the
+# next optimization cycle.
+# regression_justification: the completion gate had stage totals but no
+# durable report→review→CLEAR sub-gap record, so finalize bottlenecks could
+# not be attributed to an actionable boundary.
+@test "completion gap metrics correlate events, rotate-safe append, and report the dominant gap" {
+    root="$BATS_TEST_TMPDIR/completion-gap"
+    mkdir -p "$root/queue/reports" "$root/queue/inbox" \
+        "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint" \
+        "$root/logs"
+    cat > "$root/queue/reports/ninja_report_cmd_gap.yaml" <<'EOF'
+parent_cmd: cmd_gap
+status: completed
+timestamp: "2026-08-24 10:00:00+09:00"
+EOF
+    cat > "$root/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+  - type: report_review
+    parent_cmd: cmd_gap
+    report_path: queue/reports/ninja_report_cmd_gap.yaml
+    timestamp: "2026-08-24T10:00:10+09:00"
+EOF
+    cat > "$root/queue/gates/cmd_gap/sg7_bundle.json" <<'EOF'
+{"review":{"cmd_id":"cmd_gap","reviewed_at":"2026-08-24T10:00:20+09:00"}}
+EOF
+    cat > "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint/gunshi.yaml" <<'EOF'
+timestamp: "2026-08-24T10:00:25+09:00"
+result: LGTM
+EOF
+    cat > "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint/karo.yaml" <<'EOF'
+timestamp: "2026-08-24T10:00:26+09:00"
+result: ACCEPT
+EOF
+    printf '2026-08-24T10:00:30\tcmd_gap\tstartup\t0.010\n' > "$root/logs/cmd_complete_gate_phases.log"
+
+    run env COMPLETION_GAP_ROOT="$root" COMPLETION_GAP_LOG="$root/logs/gaps.log" \
+        bash "$PROJECT_ROOT/scripts/completion_gap_metrics.sh" --cmd cmd_gap --append \
+        --write-report "$root/analysis.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"status": "complete"'* ]]
+    [[ "$output" == *'"report_done_to_review_request_sec": 10.0'* ]]
+    [[ "$output" == *'"karo_accept_to_gate_start_sec": 4.0'* ]]
+    [ "$(wc -l < "$root/logs/gaps.log")" -eq 1 ]
+    grep -q 'report_done_to_review_request_sec' "$root/analysis.md"
+
+    # Replaying the same terminal record must not duplicate the durable log.
+    run env COMPLETION_GAP_ROOT="$root" COMPLETION_GAP_LOG="$root/logs/gaps.log" \
+        bash "$PROJECT_ROOT/scripts/completion_gap_metrics.sh" --cmd cmd_gap --append
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$root/logs/gaps.log")" -eq 1 ]
+}
+
+# test_necessity: every normal and emergency CLEAR branch must queue the same
+# completion-gap recorder after the durable gate metric write.
+# regression_justification: adding only the normal branch would leave bypassed
+# completions unmeasured and silently bias the throughput distribution.
+@test "completion gap recorder is wired to both CLEAR branches" {
+    grep -q 'queue_completion_gap_metrics "\$CMD_ID"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    [ "$(grep -c 'queue_completion_gap_metrics "\$CMD_ID"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh")" -ge 2 ]
+}

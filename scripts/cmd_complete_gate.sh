@@ -5206,6 +5206,22 @@ record_finalize_phase_event() {
     }
 }
 
+# cmd_4385: correlate the report/review/CLEAR timestamps after the durable
+# CLEAR line exists.  This is deliberately asynchronous and fail-open: the
+# telemetry is an observation lane, never a gate condition or a reason to
+# delay completion.  The correlator owns its append lock and line rotation.
+queue_completion_gap_metrics() {
+    local cmd_id="${1:-}"
+    local correlator="$SCRIPT_DIR/scripts/completion_gap_metrics.sh"
+    [ -n "$cmd_id" ] || return 0
+    [ -x "$correlator" ] || return 0
+    (
+        COMPLETION_GAP_ROOT="$SCRIPT_DIR" \
+            bash "$correlator" --cmd "$cmd_id" --append
+    ) >>"$LOG_DIR/completion_gap_metrics_async.log" 2>&1 &
+    echo "  completion gap metrics: queued (cmd=$cmd_id)"
+}
+
 # ─── CoDD registry自動追記（cmd_2510） ───
 # 共有台帳の並行手編集を避けるため、CoDD改善cmdのCLEAR時にgate側で一元追記する。
 append_codd_registry_entry() {
@@ -11022,6 +11038,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR - emergency override immediate"
     append_changelog "$CMD_ID"
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tOVERRIDE\temergency_override\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
+    queue_completion_gap_metrics "$CMD_ID"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     capture_completed_rework_event "$CMD_ID" || echo "  [WARN] rework event capture failed (non-blocking)"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
@@ -13419,6 +13436,7 @@ PY
     source "$SCRIPT_DIR/scripts/lib/retro_pane_prompt.sh"
     retro_pane_prompt_async "$SCRIPT_DIR" shogun "gate_clear:$CMD_ID" cmd_complete_gate
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
+    queue_completion_gap_metrics "$CMD_ID"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &
     # gate_yaml_status: YAML status更新（WARNING only）
