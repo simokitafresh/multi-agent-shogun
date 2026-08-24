@@ -3729,7 +3729,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T07:39:49+09:00"
 - id: INS-20260825-072522694-9533
   ts: "2026-08-25T07:25:22+09:00"
   insight: "[[殿喝2026 08 25 06 30『らせん1周目2周目でまだ出来ることが残っていないか』への実装弾]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿喝2026-08-25 06:30『らせん1周目2周目でまだ出来ることが残っていないか』への実装弾。cmd_4399はcmd_save preflight本体の段別計装を実装し、preflight合計が数秒級で体感遅延の支配要因ではないことを実測確定した(dominant=checks_main、構成比44.84%)。体感の遅延はcmd_publish.s"
