@@ -143,7 +143,7 @@ import pathlib, sys
 text=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 start=text.index('publish_postclear_runtime_deltas()')
 fn=text[start:text.index('\n}', start)+2]
-tokens=('phase="${1:-postclear}"', '"$phase" != "pregate"', 'postclear_runtime_path_is_publishable "$path"', 'nonruntime dirty path=', 'concurrent writer path=', 'push_from_clean_worktree', 'source-only publish failed', 'local ${phase} checkpoint', 'merge --no-edit FETCH_HEAD')
+tokens=('phase="${1:-postclear}"', '"$phase" != "pregate"', 'postclear_runtime_path_is_publishable "$path"', 'nonruntime dirty path=', 'concurrent writer path=', 'push_from_clean_worktree', 'source-only publish failed', 'local ${phase} checkpoint', 'merge --no-edit "$remote_tip"')
 for token in tokens: assert token in fn, token
 print('variants=8 fp=0 fn=0 field_aware=1')
 PY
@@ -7422,7 +7422,7 @@ assert 'durable writer manifest invalid' in block
 assert 'grep -Fqx -- "$path"' in block
 assert 'nonruntime dirty path=' in block
 assert 'writer generation changed' in block
-assert 'merge --no-edit FETCH_HEAD' in block
+assert 'merge --no-edit "$remote_tip"' in block
 print('field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1')
 PY
     [ "$status" -eq 0 ]
@@ -7543,7 +7543,7 @@ start=text.index('publish_postclear_runtime_deltas()')
 block=text[start:text.index('\n}', start)+2]
 for token in ('source_shas+=("$source_sha")', 'for source_sha in "${source_shas[@]}"',
               'push_from_clean_worktree', 'remote_tip=$(git -C "$repo" ls-remote',
-              'checkout FETCH_HEAD -- "${runtime_paths[@]}"', 'source-only publish failed',
+              'checkout "$remote_tip" -- "${runtime_paths[@]}"', 'source-only publish failed',
               'concurrent writer path='):
     assert token in block, token
 assert block.index('flock -x') < block.index('source_shas+=("$source_sha")')
@@ -7820,7 +7820,7 @@ PY
     git -C "$root" commit -qm updated
     updated_sha="$(git -C "$root" rev-parse HEAD)"
     git -C "$root" reset -q --hard HEAD~1
-    printf '%s\t\tfixture\n' "$updated_sha" > "$root/.git/FETCH_HEAD"
+    remote_tip="$updated_sha"
     printf 'untouched\n' > "$root/unrelated_dirty.txt"
 
     # Simulate another process holding the required index.lock for 3s (well
@@ -7841,6 +7841,7 @@ PY
     run bash -c '
         set -uo pipefail
         repo="$1"
+        remote_tip="$3"
         runtime_paths=(tracked.txt)
         start=$(date +%s)
         source <(sed -n "/^    local _idx_lock_try\$/,/^    done\$/p" "$2") 2>/dev/null
@@ -7849,7 +7850,7 @@ PY
         tracked_content=$(cat "$repo/tracked.txt" 2>/dev/null || echo MISSING)
         dirty_content=$(cat "$repo/unrelated_dirty.txt" 2>/dev/null || echo MISSING)
         printf "rc=%s elapsed=%s tracked=%s dirty=%s\n" "$rc" "$elapsed" "$tracked_content" "$dirty_content"
-    ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$remote_tip"
     status_code="$status"
     out="$output"
     : > "$reader_stop"
@@ -7877,18 +7878,19 @@ PY
     git -C "$root" commit -qm updated
     updated_sha="$(git -C "$root" rev-parse HEAD)"
     git -C "$root" reset -q --hard HEAD~1
-    printf '%s\t\tfixture\n' "$updated_sha" > "$root/.git/FETCH_HEAD"
+    remote_tip="$updated_sha"
 
     : > "$root/.git/index.lock"
 
     run bash -c '
         set -uo pipefail
         repo="$1"
+        remote_tip="$3"
         runtime_paths=(tracked.txt)
         source <(sed -n "/^    local _idx_lock_try\$/,/^    done\$/p" "$2") 2>/dev/null
         rc=$?
         printf "rc=%s\n" "$rc"
-    ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$remote_tip"
     rm -f "$root/.git/index.lock"
     [ "$status" -eq 0 ]
     [ "$output" = "rc=1" ]
