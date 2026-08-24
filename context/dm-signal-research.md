@@ -67,17 +67,17 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 ## cmd_4331 FoF tie-break dry-run (2026-08-17)
 - 74 FoF(選択block有57/無17)を同一as-of月で6段キー乾式適用: scalar filter 36PFで837月変化(現行同率全採用792月)、全FoF 949月変化。段別解決: ②12M 4,511/③CAGR 668/④MaxDD 0/⑤現保有 7/⑥早い方 7、②skip 264。標準PF24=near-tie 0(ε相対1e-9の根拠)。top-N/tie-breakは各filter+GS fast pathへ分散(共通helperなし)。→ `docs/research/cmd_4331_fof_tiebreak_dryrun_20260817.md`(DM-Signal repo 6b3537fd) / ops §99 / 設計書 `docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md`
 ## cmd_4369 PIT低相関FoF selection最小実験 (2026-08-23)
-- 全FoF78体・monthly_returns 11,795行を同一PIT母集団で比較。36M/60Mともdecision 108月、future参照0、候補集合不整合0。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4369_low_correlation_experiment_report.md` / `outputs/analysis/cmd_4369_low_correlation_experiment.json`
+- 全FoF78体・monthly_returns 11,795行を同一PIT母集団で比較。36M/60Mともdecision 108月、future参照0、候補集合不整合0。→ `https://github.com/simokitafresh/DM-signal/commit/8cefd6e1b78d742897bbaa51230300fb03c55151`（`cmd_4369_low_correlation_experiment_report.md`）/ `outputs/analysis/cmd_4369_low_correlation_experiment.json`
 
 ## cmd_4372 HMM Regime Phase 1 (2026-08-23)
 - SPY日次log returnを観測、3状態Gaussian HMMのexpanding-fit + filtered state（smoothing不使用）でFoF全78体を分類。decision 173月、Quiet/Transition/Stress=126/23/24、future参照0。Regime間rank correlation最小0.680709でPASS_PHASE_1、Phase 2進行可。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4372_hmm_regime_phase1_report.md` / `outputs/analysis/cmd_4372_hmm_regime_phase1.json`
 
 ## cmd_4373 HMM Regime Phase 2 (2026-08-23)
-- Phase 1 filtered regime系列を再利用し、正本DBのreadonly export（FoF 78体・monthly_return_open 11,795行）でPIT prior 36M/60M eligibility + prior 12M Momentum top-4内の全horizon Regime×forward・sample対称化・Stress leave-one-month-outを再計測した。候補母集団一致(78/78)、future参照0、判定は `PASS_PHASE_2`（最小rank correlation=-0.563190511663018）。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4373_hmm_regime_phase2_report.md` / `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_4373_hmm_regime_phase2.json`
+- Phase 1 filtered regime系列を再利用し、正本DBのreadonly export（FoF 78体・monthly_return_open 11,795行）でPIT prior 36M/60M eligibility + prior 12M Momentum top-4内の全horizon Regime×forward・sample対称化・Stress leave-one-month-outを再計測した。候補母集団一致(78/78)、future参照0、判定は `PASS_PHASE_2`（最小rank correlation=-0.563190511663018）。→ `https://github.com/simokitafresh/DM-signal/commit/919e7aeb005d19d79fb418260e544e0ce0dce2db`（`cmd_4373_hmm_regime_phase2_report.md`）/ `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_4373_hmm_regime_phase2.json`
 
 ## cmd_4374 HMM Regime Phase 2b (2026-08-23)
 - 既存JSONの固定seed equal-n randomization 40件とStress LOO 72件を統計要約。h=6 Quiet-Stress=-0.563191は帰無min=-0.533082より外側だが、保守的両側p値相当=0.166667、h=6以外のhorizon方向も不一致のため `STOP_PHASE_2B`。selection変更・本番書込み・新規run起動なし。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4374_hmm_regime_phase2b_report.md`
 
 ## cmd_4376 FoF層別再分析 (2026-08-23)
-- FoF78体を`fof_component_weights`の参照先型再帰でnested depth 0/1/2/3=25/25/21/7、selection block有/無=57/21、構成PF数2/3/4/6=9/14/54/1へ分類。低相関E1−C1差はdepth 0/1でSharpe悪化傾向、depth 2は混在、depth 3はE1支持月0で判定不能。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4376_layer_stratified_reanalysis.md`
+- FoF78体を`fof_component_weights`の参照先型再帰でnested depth 0/1/2/3=25/25/21/7、selection block有/無=57/21、構成PF数2/3/4/6=9/14/54/1へ分類。低相関E1−C1差はdepth 0/1でSharpe悪化傾向、depth 2は混在、depth 3はE1支持月0で判定不能。→ `https://github.com/simokitafresh/DM-signal/commit/39b2827fcc71eb309694c7117c6556e733f5de8c`（`cmd_4376_layer_stratified_reanalysis.md`）
 - HMM Stress時pairwise相関(h=6)はnested depth 0/1/2/3=0.856/0.893/0.912/0.961、selection block有/無=0.868/0.915。高相関は単一層に限定されず、depth 3はN=7の記述統計に留める。standard PF24体は両実験母集団外。→ `/mnt/c/Python_app/DM-Signal/outputs/analysis/cmd_4376_layer_stratified_reanalysis.json`
