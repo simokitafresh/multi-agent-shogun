@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Malformed YAML in queue/tasks triggers ALERT exit 1 and transient ENOENT is retried exactly once; violation is BLOCK.
+# test_necessity: Live queue YAML is parsed fail-closed while terminal report symlinks are excluded; malformed live YAML and non-transient I/O errors remain BLOCK.
 # test_gate_queue_yaml_parse.bats
 # cmd_karo_hotfix_queue_yaml_atomicity_202607110113
 # Purpose: scripts/gates/gate_queue_yaml_parse.sh の挙動を検証する。
@@ -24,7 +24,7 @@ setup() {
     # mktemp -dの前に親dirの存在を保証する。
     mkdir -p "$PROJECT_ROOT/tmp"
     TEST_ROOT="$(mktemp -d "$PROJECT_ROOT/tmp/gate_qyp_test.XXXXXX")"
-    mkdir -p "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" "$TEST_ROOT/queue/inbox"
+    mkdir -p "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" "$TEST_ROOT/queue/inbox" "$TEST_ROOT/queue/archive/reports"
     cat > "$TEST_ROOT/queue/shogun_to_karo.yaml" <<'EOF'
 commands: []
 EOF
@@ -37,7 +37,11 @@ EOF
     cat > "$TEST_ROOT/queue/tasks/kagemaru.yaml" <<'EOF'
 task:
   status: idle
+  report_path: queue/reports/live.yaml
 EOF
+    printf 'report:\n  status: ready\n' > "$TEST_ROOT/queue/reports/live.yaml"
+    printf 'not: [valid\n' > "$TEST_ROOT/queue/archive/reports/completed.yaml"
+    ln -s ../archive/reports/completed.yaml "$TEST_ROOT/queue/reports/completed.yaml"
 }
 
 teardown() {
@@ -56,6 +60,13 @@ teardown() {
     [ "$status" -eq 1 ]
     [[ "$output" == *"ALERT: queue YAML parse error"* ]]
     [[ "$output" == *"queue/tasks/kagemaru.yaml"* ]]
+}
+
+@test "taskが指すlive reportのYAML破損はALERT・exit 1" {
+    printf 'report: [broken\n' > "$TEST_ROOT/queue/reports/live.yaml"
+    run env QUEUE_YAML_PARSE_ROOT="$TEST_ROOT" bash "$GATE_SCRIPT"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"queue/reports/live.yaml"* ]]
 }
 
 @test "一時的なFileNotFoundError(rename直後の瞬間的ENOENT想定)は1回のリトライで吸収されOKになる" {
