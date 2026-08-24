@@ -1596,3 +1596,5 @@
 
 - 2026-08-24夜: 速度改善12弾終端(gate 810→119秒)。通信監査=実阻害なし(偽陰性27/27是正)。gap分布確定(最大隙間=報告→レビュー依頼618秒、cmd_4391走行)。殿裁定=らせん(部分×全体)継続を恒久主軸化。第二十五話note下書き済
 - 2026-08-24夜 cmd_4391完了: terminal reportのcompleted_atをatomic publicationへ固定し、gap計測がauthoring timestampをreport_doneと誤帰属する根因を是正。baseline中央値618.000秒→補正fixture5.0秒、420/420 PASS・SKIP0、commit 7373f9c12。
+- 2026-08-25 cmd_4392_normal hayate完了: 親reportへAC1-3を統合し、CI 5 runs/30 jobs/260 steps、local 239/239 (PASS221/FAIL18/SKIP0)、AC3統合md/commit 32632bb98を既存成果物として確認。コード変更なし、report/gate PASS。origin: [[cmd_4392]] -> [[CI_ローカル全体分解]] -> [[親report_AC1-3統合]]
+- 2026-08-25未明 覚醒調査サイクル完全終端(殿指示23:51→03:15の一夜): 調査3本(cmd_4392/4393/4394)+根治4本(cmd_4396 SG-PRE36前倒し・cmd_4397 blocked記録構造化・cmd_4398親report exact識別・cmd_4399 preflight計装)全CLEAR。発見=CIはテスト実行90.7%支配・deploy blockedのexit_1が86.7%・preflight本体2.5秒(120秒はpublish外側)。殿教え03:08『小改善の積み重ね。序列は着手順であって足切りではない』→家老へidle小改善常時消化レーン通達。origin: [[殿指示_各ロール覚醒調査_20260824_2351]] -> [[後段発火を前段契約へ]] -> [[根治4本焼込み]]
