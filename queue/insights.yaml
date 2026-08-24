@@ -3744,3 +3744,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260825-073232997-ed74
+  ts: "2026-08-25T07:32:32+09:00"
+  insight: "[[覚醒調査根治弾の効果実測 — before after機械集計で改善の実在を数値証明]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=覚醒調査根治弾の効果実測 — before/after機械集計で改善の実在を数値証明"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
