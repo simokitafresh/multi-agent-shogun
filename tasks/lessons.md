@@ -15802,3 +15802,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cluster J移設時、mainが呼ぶcluster I補助関数10件とreport rehydrate helperが抽出先moduleから欠落し、実配備でcommand not foundになった。旧関数定義集合と全module集合の差分を分割後gateへ固定する。
+
+### L1637: gate_metrics model attribution owner fallback
+- **日付**: 2026-08-25
+- **出典**: cmd_karo_hotfix_p2_gate_model_attribution
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh]
+- **origin**: [[cmd_karo_hotfix_p2_gate_model_attribution]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次回チェックでは新規CLEARイベント後にscripts/model_analysis.sh --jsonを再実行し、known model行が増えunknown増分が0であることを数値確認する。assigned_to欠落taskでもtask filename ownerを解決するwriter契約を維持する。
