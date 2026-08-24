@@ -3209,12 +3209,7 @@ push_task_repositories() {
                 # tip.  Materialize the current tip before the existing
                 # ancestry/equivalence lane inspects its commit graph; an
                 # ls-remote SHA alone is not enough for cat-file/diff-tree.
-                if git -C "$repo" fetch -q "$remote" "$push_ref"; then
-                    refreshed_tip=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null || true)
-                    if [[ "$refreshed_tip" =~ ^[0-9a-f]{40}$ ]]; then
-                        remote_tip="$refreshed_tip"
-                    fi
-                fi
+                git -C "$repo" fetch -q "$remote" "$push_ref" || true
             fi
             # This proof is intentionally task-backed.  Archived/report-only
             # source contracts do not carry the deployment base and therefore
@@ -3345,11 +3340,13 @@ converge_shared_execution_sources() {
     remote=${upstream_ref%%/*}
     push_ref="refs/heads/${upstream_ref#*/}"
     gate_detail_begin "runtime_source_convergence.remote_fetch" external_wait
+    remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
     if ! git -C "$repo" fetch -q "$remote" "$push_ref"; then
         gate_detail_finish
         return 1
     fi
-    remote_tip=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null) || return 1
+    git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || return 1
     gate_detail_finish
     gate_detail_begin "runtime_source_convergence.local_reconcile" pure_processing
     before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
@@ -3604,12 +3601,16 @@ PY
                     }
                     remote=${upstream_ref%%/*}
                     push_ref="refs/heads/${upstream_ref#*/}"
+                    fresh_upstream_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+                    [[ "$fresh_upstream_sha" =~ ^[0-9a-f]{40}$ ]] || {
+                        echo "  runtime publish: BLOCK (nonruntime upstream unavailable path=$path)" >&2
+                        return 1
+                    }
                     git -C "$repo" fetch -q "$remote" "$push_ref" || {
                         echo "  runtime publish: BLOCK (nonruntime upstream fetch failed path=$path)" >&2
                         return 1
                     }
-                    fresh_upstream_sha=$(git -C "$repo" rev-parse FETCH_HEAD 2>/dev/null || true)
-                    [[ "$fresh_upstream_sha" =~ ^[0-9a-f]{40}$ ]] || {
+                    git -C "$repo" cat-file -e "${fresh_upstream_sha}^{commit}" 2>/dev/null || {
                         echo "  runtime publish: BLOCK (nonruntime upstream unavailable path=$path)" >&2
                         return 1
                     }
@@ -3778,7 +3779,7 @@ PY
     local _idx_lock_try
     gate_detail_begin "runtime_publish.index_lock_retry_wait" external_wait
     for _idx_lock_try in 1 2 3 4 5 6 7; do
-        if git -C "$repo" checkout FETCH_HEAD -- "${runtime_paths[@]}"; then
+        if git -C "$repo" checkout "$remote_tip" -- "${runtime_paths[@]}"; then
             break
         fi
         [ "$_idx_lock_try" -lt 7 ] || return 1
@@ -3787,7 +3788,7 @@ PY
     gate_detail_finish
     gate_detail_begin "runtime_publish.shared_checkout_merge" pure_processing
     git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
-    if ! git -C "$repo" merge --no-edit FETCH_HEAD >/dev/null 2>&1; then
+    if ! git -C "$repo" merge --no-edit "$remote_tip" >/dev/null 2>&1; then
         git -C "$repo" merge --abort >/dev/null 2>&1 || true
         if shared_path_merge_commit "$repo" "$remote_tip" "${runtime_paths[@]}"; then
             echo "  runtime publish: conflict fallback (target paths only; unrelated history preserved)"
