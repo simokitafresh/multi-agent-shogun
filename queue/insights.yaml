@@ -3706,3 +3706,10 @@ insights:
   source: "skill_script_refs:ed92cdca195c873a"
   fix_known: false
   status: pending
+- id: INS-20260825-061729790-e42b
+  ts: "2026-08-25T06:17:29+09:00"
+  insight: "semantic_index_update新概念候補: discussion:今日はらせん構造で何をどれくらい速くした？総括をしてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
