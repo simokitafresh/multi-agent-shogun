@@ -3287,3 +3287,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260824-233844272-61c8
+  ts: "2026-08-24T23:38:44+09:00"
+  insight: "semantic_index_update新概念候補: discussion:他の場所に改善できることがないか考えよう。例えばテストやスクリプトはどうなんだ？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
