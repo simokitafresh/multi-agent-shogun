@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 # test_necessity: cmd_save.sh実行時、主要内部フェーズ(checks_pre_session/session_state/checks_main)の
-# wall_msと非加算子区間checks_main.*がdefense_overhead_writer.sh経由で台帳へ出力される不変量と、
-# その計装がPASS/BLOCKの判定結果(exit code)を変化させない不変量を守るcontract test(cmd_4169)。
+# wall_msと非加算子区間checks_main.*がdefense_overhead_writer.sh経由で台帳へ出力される不変量、
+# preflightの段別ログが恒久ログへ同期追記される不変量、および計装がPASS/BLOCKの判定結果(exit code)
+# を変化させない不変量を守るcontract test(cmd_4169/cmd_4399)。
 
 setup_file() {
     export PROJECT_ROOT
@@ -28,6 +29,7 @@ setup() {
     export TEST_Q11_RESEARCH_DIR="$TEST_TMPDIR/docs/research"
     export TEST_INSIGHTS="$TEST_TMPDIR/insights.yaml"
     export TEST_LEDGER="$TEST_TMPDIR/defense_overhead.jsonl"
+    export TEST_PHASE_LOG="$TEST_TMPDIR/cmd_save_preflight_phases.log"
     mkdir -p "$TEST_ARCHIVE_DIR" "$TEST_Q11_RESEARCH_DIR" "$(dirname "$TEST_GUNSHI_LOG")" "$(dirname "$TEST_MEMORY_DB")"
     printf '%s\n' '[]' > "$TEST_INSIGHTS"
 }
@@ -60,7 +62,36 @@ run_cmd_save_instrumented() {
         CMD_SAVE_DISABLE_QUALITY_LOG=1 \
         MEMORY_DB_LIVE_INSERT="$TEST_TMPDIR/no_memory_db_live_insert.py" \
         DEFENSE_OVERHEAD_LEDGER="$TEST_LEDGER" \
+        CMD_SAVE_PHASE_LOG="$TEST_PHASE_LOG" \
         bash "$SAVE_SCRIPT" "$1"
+}
+
+run_cmd_save_preflight_instrumented() {
+    run env \
+        TMPDIR="$TEST_TMPDIR" \
+        CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
+        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_LOCK_FILE="$TEST_LOCK" \
+        CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_SHOGUN_LESSONS" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
+        CMD_SAVE_GUNSHI_REVIEW_LOG_FILE="$TEST_GUNSHI_LOG" \
+        CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
+        CMD_SAVE_MEMORY_DB_QUERY_SCRIPT="$TEST_TMPDIR/no_memory_db_query.sh" \
+        SHOGUN_MEMORY_DB="$TEST_MEMORY_DB" \
+        SHOGUN_MEMORY_DB_QUERY_DISABLE_CACHE=1 \
+        CMD_SAVE_SYNC_QUALITY_LOG=1 \
+        CMD_SAVE_DISABLE_QUALITY_LOG=1 \
+        MEMORY_DB_LIVE_INSERT="$TEST_TMPDIR/no_memory_db_live_insert.py" \
+        DEFENSE_OVERHEAD_LEDGER="$TEST_LEDGER" \
+        CMD_SAVE_PHASE_LOG="$TEST_PHASE_LOG" \
+        bash "$SAVE_SCRIPT" --preflight "$1"
 }
 
 wait_for_ledger_check_id() {
@@ -176,6 +207,70 @@ checkpoint_rows = [r for r in rows if r["source"] == "cmd_save"
                     and r["check_id"] in {"checks_pre_session", "session_state", "checks_main"}]
 assert checkpoint_rows, "no cmd_save checkpoint phase events recorded"
 assert all(r["verdict"] == "BLOCK" for r in checkpoint_rows), checkpoint_rows
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "AC2: preflightは段別wall_msを恒久ログへ同期追記し最長段を集計できる" {
+    # test_necessity: preflight 1回の段別実測を後続の短縮cmdが再利用する
+    # append-only boundaryへ固定する。JSONLの非同期到着だけでは実行直後の
+    # 集計が不安定になるため、専用ログの同期追記を契約化する。
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_phase_preflight:
+    id: cmd_phase_preflight
+    title: "verify — preflight phase log"
+    purpose: "preflightが段別実測を恒久ログへ記録することを確認する"
+    project: infra
+    depends_on: none
+    origin: "[[cmd_4399]] [[cmd_save_preflight_phase_log]]"
+    task_type: docs
+    command: |
+      1. preflightの段別実測を確認する
+    acceptance_criteria:
+      - id: AC1
+        description: "preflightの段別実測を記録する"
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "支配段を次cmdの短縮対象へ接続する"
+      q3_next_quality: "実測に基づく短縮で上がる"
+      q4_depth: "shallow"
+      q5_verified_source: "tests/unit/test_cmd_save_phase_instrumentation.bats fixture"
+      q6_not_hiding: "no — 計装ログへ全段を残す"
+      q7_definition_verified: "yes — 専用phase logの列をテストで固定する"
+      q8_why_what: "WHY: preflightの支配段が不明 → WHAT: 段別wall_msを恒久ログへ記録 → WHEN: preflight実行時 → WHERE: scripts/cmd_save.sh → WHO: cmd起票ゲート → HOW: 専用ログをPython集計する。複利: 正の複利"
+      q10_knowledge_boundary: "空間内。根拠: scripts/cmd_save.sh と本テスト"
+      q11_not_already_done: "既存JSONL計装は確認済み。preflight専用ログの同期追記を追加する"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "preflight phase logはtab区切り7列である"
+        source: "tests/unit/test_cmd_save_phase_instrumentation.bats"
+        trust: "verified"
+        verified_at: "2026-08-25"
+        detail: "専用ログをPythonで構文・集計確認"
+YAML
+
+    run_cmd_save_preflight_instrumented cmd_phase_preflight
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [ -s "$TEST_PHASE_LOG" ]
+
+    run python3 - "$TEST_PHASE_LOG" <<'PY'
+import sys
+rows=[]
+for line in open(sys.argv[1], encoding="utf-8"):
+    fields=line.rstrip("\n").split("\t")
+    assert len(fields) == 7, fields
+    timestamp, cmd_id, mode, phase, wall_ms, verdict, run_id = fields
+    assert cmd_id == "cmd_phase_preflight" and mode == "preflight", fields
+    assert verdict == "PASS" and int(wall_ms) >= 0, fields
+    rows.append((phase, int(wall_ms)))
+assert len(rows) >= 3, rows
+dominant, elapsed = max(rows, key=lambda item: item[1])
+total = sum(ms for _, ms in rows)
+share = elapsed / total if total else 0
+assert dominant and 0 <= share <= 1, (dominant, elapsed, total, share)
+print(f"dominant={dominant} elapsed_ms={elapsed} total_ms={total} share={share:.4f}")
 PY
     [ "$status" -eq 0 ]
 }

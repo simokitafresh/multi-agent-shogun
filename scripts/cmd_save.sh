@@ -138,6 +138,17 @@ declare -a CMD_SAVE_PHASE_EVENTS=()
 CMD_SAVE_PHASE_LAST_US=""
 CMD_SAVE_RUN_ID=""
 CMD_SAVE_CHECKS_MAIN_LAST_US=""
+# A preflight must leave a directly consumable, append-only phase trace.  The
+# existing defense_overhead ledger remains the detailed JSONL telemetry source;
+# this compact tabular log is the stable boundary for comparing one preflight
+# run and selecting the next shortening target.
+if [[ "${CMD_SAVE_PHASE_LOG:-}" == "disabled" || "${CMD_SAVE_PHASE_LOG:-}" == "0" ]]; then
+    CMD_SAVE_PHASE_LOG=""
+else
+    CMD_SAVE_PHASE_LOG="${CMD_SAVE_PHASE_LOG:-$PROJECT_DIR/logs/cmd_save_preflight_phases.log}"
+fi
+CMD_SAVE_PHASE_LOG_MAX_BYTES="${CMD_SAVE_PHASE_LOG_MAX_BYTES:-5242880}"
+CMD_SAVE_PHASE_LOG_ROTATION_CHECKED=false
 # 全体wall計測(2026-08-04 殿指示『計測可能にせよ』): フェーズ計装済み区間(合計≈12s/回)と
 # 実wall(実測≈150s/回)の差分≈9割が台帳の外にあった計測盲点を塞ぐ。save_total=script開始→EXITの全区間。
 CMD_SAVE_TOTAL_T0_US="${EPOCHREALTIME/./}"
@@ -165,6 +176,48 @@ cmd_save_checks_main_mark() {
         CMD_SAVE_PHASE_EVENTS+=("checks_main.${name}" "$wall_ms")
     fi
     CMD_SAVE_CHECKS_MAIN_LAST_US="$now_us"
+}
+
+cmd_save_phase_log_write() {
+    local verdict="$1" mode timestamp rotate_log=false
+    [ -n "${CMD_SAVE_PHASE_LOG:-}" ] || return 0
+    [ "${#CMD_SAVE_PHASE_EVENTS[@]}" -gt 0 ] || return 0
+
+    mode="save"
+    [[ "${CMD_SAVE_PREFLIGHT_ONLY:-0}" == "1" ]] && mode="preflight"
+    timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    mkdir -p "$(dirname "$CMD_SAVE_PHASE_LOG")" 2>/dev/null || return 0
+    if [ "$CMD_SAVE_PHASE_LOG_ROTATION_CHECKED" = false ]; then
+        rotate_log=true
+        CMD_SAVE_PHASE_LOG_ROTATION_CHECKED=true
+    fi
+
+    # One lock/append boundary keeps the phase set from being observed half
+    # written.  Rotation is bounded so repeated preflights cannot grow the
+    # operational log without limit.
+    (
+        flock -x 9
+        if [ "$rotate_log" = true ]; then
+            case "$CMD_SAVE_PHASE_LOG_MAX_BYTES" in
+                ''|*[!0-9]*) CMD_SAVE_PHASE_LOG_MAX_BYTES=5242880 ;;
+            esac
+            if [ "$CMD_SAVE_PHASE_LOG_MAX_BYTES" -gt 0 ] && [ -f "$CMD_SAVE_PHASE_LOG" ]; then
+                local log_bytes
+                log_bytes="$(wc -c < "$CMD_SAVE_PHASE_LOG" 2>/dev/null || printf '0')"
+                if [ "$log_bytes" -ge "$CMD_SAVE_PHASE_LOG_MAX_BYTES" ]; then
+                    mv -f -- "$CMD_SAVE_PHASE_LOG" "${CMD_SAVE_PHASE_LOG}.1" 2>/dev/null || true
+                fi
+            fi
+        fi
+        local i phase wall_ms
+        for ((i = 0; i < ${#CMD_SAVE_PHASE_EVENTS[@]}; i += 2)); do
+            phase="${CMD_SAVE_PHASE_EVENTS[$i]}"
+            wall_ms="${CMD_SAVE_PHASE_EVENTS[$((i + 1))]}"
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+                "$timestamp" "$CMD_ID" "$mode" "$phase" "$wall_ms" "$verdict" "$CMD_SAVE_RUN_ID" \
+                >> "$CMD_SAVE_PHASE_LOG"
+        done
+    ) 9>"${CMD_SAVE_PHASE_LOG}.lock"
 }
 
 # 非同期INFO表示(semantic_search/memory_db照会)は`&`で親フローをブロックしないため、
@@ -3431,6 +3484,7 @@ handle_cmd_save_exit() {
             _cs_ms="${CMD_SAVE_PHASE_EVENTS[$((_cs_i+1))]}"
             _cs_batch+=(cmd_save "$_cs_phase" "$_cs_ms" "$_cs_verdict" "${CMD_SAVE_RUN_ID:-cmd_unknown-$$}-${_cs_phase}")
         done
+        cmd_save_phase_log_write "$_cs_verdict"
         defense_overhead_write_batch_async "${_cs_batch[@]}" || true
     fi
 
