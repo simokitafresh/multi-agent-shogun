@@ -35,6 +35,11 @@ _archive_one() {
     local relpath="${path#$ROOT_DIR/}"
     local rel_archive="${archive_path#$ROOT_DIR/}"
 
+    if [[ "$relpath" == "queue/insights.yaml" ]]; then
+        echo "ALERT $relpath: lifecycle ledger requires status-aware reflux; generic count rotation forbidden" >&2
+        return 1
+    fi
+
     if [[ ! -f "$path" ]]; then
         echo "SKIP missing $relpath"
         return

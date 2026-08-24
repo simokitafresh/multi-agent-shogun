@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Duplicate CLEAR entries are deduplicated, rework upgrades monotonically, every writer shares one lock, and the latest fingerprint-bound formal report verdict is selected; violation can lose or stale completion quality records and is BLOCK.
+# test_necessity: Quality records retain their lock/monotonic contracts and generic rotation cannot evict status-bearing insight work; violation can lose completion quality or pending learning work and is BLOCK.
 # test_cmd_quality_log.bats — cmd_quality_log idempotency tests
 
 setup() {
@@ -104,6 +104,28 @@ EOF
     [[ "$output" == *"ALERT logs/cmd_design_quality.yaml"* ]]
     [ "$(grep -c '^- cmd_id:' "$TEST_TMPDIR/logs/cmd_design_quality.yaml")" -eq 3 ]
     [ ! -e "$TEST_TMPDIR/logs/archive/cmd_design_quality.yaml" ]
+}
+
+@test "generic rotation refuses the status-bearing insights ledger" {
+    mkdir -p "$TEST_TMPDIR/queue" "$TEST_TMPDIR/config"
+    cat > "$TEST_TMPDIR/config/yaml_auto_archive.tsv" <<'EOF'
+queue/insights.yaml	1	insights	^\s*-\s+id:	queue/archive/insights_archive.yaml
+EOF
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-pending
+  status: pending
+- id: INS-resolved
+  status: resolved
+EOF
+
+    run env SHOGUN_ROOT="$TEST_TMPDIR" \
+        YAML_AUTO_ARCHIVE_CONFIG="$TEST_TMPDIR/config/yaml_auto_archive.tsv" \
+        bash "$PROJECT_ROOT/scripts/yaml_auto_archive.sh"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"generic count rotation forbidden"* ]]
+    [ "$(grep -c '^- id:' "$TEST_TMPDIR/queue/insights.yaml")" -eq 2 ]
+    [ ! -e "$TEST_TMPDIR/queue/archive/insights_archive.yaml" ]
 }
 
 @test "cmd_save custom quality-log override cannot rotate repository operational log" {
