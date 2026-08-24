@@ -125,7 +125,10 @@ def report_candidates(cmd):
             continue
         if str(data.get("status") or "") not in {"completed", "done", "revision_requested"}:
             continue
-        timestamp = parse_time(data.get("timestamp") or data.get("completed_at") or data.get("done_at"))
+        # timestamp is the report authoring/deployment time. Terminal
+        # publication records completed_at atomically; prefer it so the
+        # report_done edge is not inflated by authoring or review revisions.
+        timestamp = parse_time(data.get("completed_at") or data.get("done_at") or data.get("timestamp"))
         if timestamp is not None:
             yield timestamp, path
 

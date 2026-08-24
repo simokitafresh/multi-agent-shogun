@@ -2351,6 +2351,7 @@ task_id: ${resolved_task_id}
 parent_cmd: ${resolved_parent_cmd}
 task_type: ${task_type}
 timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
+completed_at: ""  # terminal report publication time; report_field_set.sh fills this atomically
 status: pending
 ac_version_read: ${ac_version}
 task_contract_snapshot: ${_task_contract_snapshot}

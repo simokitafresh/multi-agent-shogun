@@ -79,7 +79,7 @@ if [ "${1:-}" = "--batch" ]; then
         RFS_PHASE_RECEIPT="$_rfs_phase_receipt" \
         RFS_BATCH_PAYLOAD="$_rfs_batch_payload" \
         python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
-import hashlib, os, pathlib, re, subprocess, sys, tempfile, time, yaml
+import datetime, hashlib, os, pathlib, re, subprocess, sys, tempfile, time, yaml
 from typing import Any
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
@@ -210,6 +210,12 @@ if results:
         data["status"] = "completed"
 
 terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"}
+# The authoring timestamp is created at deployment and can predate terminal
+# publication by multiple review rounds. Record the real terminal edge in the
+# same atomic replace as the report status so downstream gap telemetry uses the
+# completion event rather than deployment time.
+if terminal:
+    data["completed_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 root = pathlib.Path(sys.argv[2]).resolve()
 task_root = pathlib.Path(os.environ.get("REPORT_FIELD_SET_TASK_ROOT", sys.argv[2])).resolve()
 
