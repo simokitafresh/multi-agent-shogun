@@ -10,10 +10,10 @@ evaluate() {
     run env CMD_COMPLETE_GATE_CI_EVAL_ONLY=1 bash "$GATE" <<<"$1"
 }
 
-@test "target GREEN does not hide global workflow failure" {
+@test "target GREEN keeps global workflow failure in asynchronous WAIT" {
     evaluate '{"expected_head_sha":"abc","reviewed_at":"2026-07-19T08:42:17+09:00","target_result":{"conclusion":"success","head_sha":"abc","passed":8,"total":8},"workflow_result":{"conclusion":"failure","head_sha":"abc","created_at":"2026-07-19T08:43:00+09:00"}}'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"workflow_result is not GREEN"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_external_pending=workflow_result_not_green"* ]]
 }
 
 @test "target failure is fail-closed" {
@@ -72,10 +72,10 @@ evaluate() {
     [[ "$output" != *"is not GREEN"* ]]
 }
 
-@test "a single failing job keeps the red verdict even when others cancelled" {
+@test "a single failing job is followed asynchronously even when others cancelled" {
     evaluate '{"expected_head_sha":"abc","reviewed_at":"2026-07-19T08:42:17+09:00","target_result":{"conclusion":"success","head_sha":"abc"},"workflow_result":{"conclusion":"failure","head_sha":"abc","created_at":"2026-07-19T08:43:00+09:00","jobs_conclusions":["failure","cancelled"]}}'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"workflow_result is not GREEN"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_external_pending=workflow_result_not_green"* ]]
 }
 
 @test "missing invalid and unparseable freshness timestamps are fail-closed" {

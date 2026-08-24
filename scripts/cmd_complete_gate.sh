@@ -84,8 +84,10 @@ def parse_aware(value, name):
 reviewed=parse_aware(reviewed_at, "reviewed_at")
 started=parse_aware(workflow_freshness_at, "workflow_result.started_at")
 # push通過+CI後追い方式(殿裁可 2026-07-25 / 軍師REQUEST_CHANGES反映)。
-# 判定は3状態のみ: (i)対応する評価がGREEN=PASS (ii)対応する評価がRED=BLOCK
-# (iii)このコードに対する評価が存在しない=WAIT(後追い確認。GATEを止めない)。
+# 判定は3状態のみ: (i)対応する評価がGREEN=PASS (ii)対象側の評価がRED=BLOCK
+# (iii)このコードに対するworkflow評価が未完了/非GREEN/不存在=WAIT
+# (後追い確認。GATEを止めない)。殿裁定(cmd_4384)によりCI workflow結果の
+# 確認待ちはGATE判定を止めず、既存WAIT経路へ集約する。
 # 「別commitの評価」「未完了run」「全job cancelled」はいずれも同一の意味であり、
 # 分岐を足さずこの1つの状態判定へ集約する。単に条件を削ると stale GREEN で
 # 未検証CLEAR、stale RED で誤帰属BLOCKになるため、削除ではなく状態化する。
@@ -132,8 +134,8 @@ if t["conclusion"] != "success":
     print("BLOCK: target_result is not GREEN")
     raise SystemExit(1)
 if w["conclusion"] != "success":
-    print("BLOCK: workflow_result is not GREEN")
-    raise SystemExit(1)
+    print("WAIT: ci_evaluation_external_pending=workflow_result_not_green — 後追いで確認せよ(GATEは止めない) head_sha=" + expected)
+    raise SystemExit(0)
 print("READY: target_result=GREEN workflow_result=GREEN fresh_after_review head_sha=" + expected)
 ' 
 }
@@ -157,6 +159,7 @@ classify_gate_record_category() {
         # 同義の旧表記(実測ログに残る文言)を同一カテゴリへ写像する。
         *ci_evaluation_absent=*|*head_sha_mismatch*|*run_pending:*|*run_predates_review*|\
         *target_no_verdict*|*workflow_no_verdict*|*workflow_all_jobs_cancelled*|\
+        *"workflow_result is not GREEN"*|*ci_evaluation_external_pending=*|\
         *"WAIT:"*|*"head SHA mismatch"*|*"predates SG7 review"*|*"pending status="*|\
         *"pending in_progress"*|*"pending queued"*|*cancelled*|*canceled*)
             printf 'WAIT\n' ;;
@@ -3652,6 +3655,7 @@ PY
             tasks/lessons.md|projects/*/lessons.yaml) lesson_paths+=("$path") ;;
         esac
     done
+    gate_detail_finish
     # The SSOT and its generated indexes form one publication unit.  A single
     # source generation lets the lessons ID merge compose remote/local edits
     # before regenerating caches, instead of publishing a stale cache commit
@@ -12931,9 +12935,12 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
 done
 
 if [ -n "$CI_PUSH_STATE_BLOCK" ]; then
-    echo "  [CRITICAL] ${CI_PUSH_STATE_BLOCK}"
-    record_block_reason "ci_push_state:${CI_PUSH_STATE_BLOCK}"
-    ALL_CLEAR=false
+    # A push-state confirmation gap is an external post-source observation,
+    # not a local gate failure.  Preserve the raw reason as WAIT and let the
+    # existing follow-up lane recheck it after publication; do not hold the
+    # current GATE decision on remote confirmation.
+    echo "  [WAIT] ${CI_PUSH_STATE_BLOCK} — push state will be confirmed asynchronously"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tWAIT\tci_push_state:%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$CI_PUSH_STATE_BLOCK")"
 elif [ "$CI_PUSH_DETECTED" = true ]; then
     ci_result="${CMD_COMPLETE_GATE_CI_RUN_JSON:-}"
     # Fail-closed when matching tasks span multiple distinct repositories.

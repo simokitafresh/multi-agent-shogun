@@ -2818,6 +2818,57 @@ PY
     [ "$output" = "subphase_telemetry=1" ]
 }
 
+# test_necessity: AC1/AC2 require a durable distinction between local work and
+# external waits inside the two dominant completion-gate phases.  The detail
+# log is a permanent contract because aggregate phase timing alone cannot
+# identify a safe optimization target or prove that a wait was not a check
+# removal.
+@test "cmd_complete_gate detail telemetry separates pure work from external waits" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+required = [
+    'GATE_DETAIL_LOG',
+    'gate_detail_begin',
+    'gate_detail_finish',
+    'pure_processing',
+    'external_wait',
+    'runtime_publish.remote_source_push',
+    'runtime_publish.index_lock_retry_wait',
+    'post_source_checks.durable_writer_wait',
+    'post_source_checks.capture_durable_writer_snapshot',
+]
+for marker in required:
+    assert marker in text, marker
+classes = __import__('re').findall(r'gate_detail_begin "[^"]+" (\w+)', text)
+assert classes and set(classes) <= {'pure_processing', 'external_wait'}, classes
+print('detail_telemetry=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "detail_telemetry=1" ]
+}
+
+# test_necessity: the lord ruling requires remote push-state confirmation to
+# remain observable as WAIT without holding the current GATE decision.  This
+# permanent contract prevents a future refactor from reintroducing a blocking
+# assignment to ALL_CLEAR in that external-observation branch.
+@test "cmd_complete_gate keeps push-state confirmation in asynchronous WAIT" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index('if [ -n "$CI_PUSH_STATE_BLOCK" ]; then')
+end = text.index('elif [ "$CI_PUSH_DETECTED" = true ]; then', start)
+block = text[start:end]
+assert '[WAIT]' in block
+assert 'push state will be confirmed asynchronously' in block
+assert 'record_block_reason' not in block
+assert 'ALL_CLEAR=false' not in block
+print('ci_push_wait=1 gate_nonblocking=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "ci_push_wait=1 gate_nonblocking=1" ]
+}
+
 @test "cmd_complete real process blocks after normalize mutates approved report" {
     TEST_CMD_ID="cmd_fixture"
     local report="$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml"
