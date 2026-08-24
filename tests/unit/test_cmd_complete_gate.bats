@@ -8097,6 +8097,48 @@ EOF
     [ "$(wc -l < "$root/logs/completion_gap_metrics.log")" -eq 1 ]
 }
 
+# test_necessity: report_done must use the atomic terminal publication time,
+# not the older authoring timestamp, or report-to-review latency is overstated.
+# regression_justification: deployment-time report timestamps produced
+# multi-minute false gaps even when report_received immediately spawned the
+# fingerprint-bound review child.
+@test "completion gap prefers completed_at over report authoring timestamp" {
+    root="$BATS_TEST_TMPDIR/completion-gap-completed-at"
+    mkdir -p "$root/queue/reports" "$root/queue/inbox" \
+        "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint" \
+        "$root/logs"
+    cat > "$root/queue/reports/ninja_report_cmd_gap.yaml" <<'EOF'
+parent_cmd: cmd_gap
+status: completed
+timestamp: "2026-08-24T00:00:00+09:00"
+completed_at: "2026-08-24T10:00:05+09:00"
+EOF
+    cat > "$root/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+  - type: report_review
+    parent_cmd: cmd_gap
+    report_path: queue/reports/ninja_report_cmd_gap.yaml
+    timestamp: "2026-08-24T10:00:10+09:00"
+EOF
+    cat > "$root/queue/gates/cmd_gap/sg7_bundle.json" <<'EOF'
+{"review":{"cmd_id":"cmd_gap","reviewed_at":"2026-08-24T10:00:20+09:00"}}
+EOF
+    cat > "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint/gunshi.yaml" <<'EOF'
+timestamp: "2026-08-24T10:00:25+09:00"
+result: LGTM
+EOF
+    cat > "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint/karo.yaml" <<'EOF'
+timestamp: "2026-08-24T10:00:26+09:00"
+result: ACCEPT
+EOF
+    printf '2026-08-24T10:00:30\tcmd_gap\tstartup\t0.010\n' > "$root/logs/cmd_complete_gate_phases.log"
+
+    run env COMPLETION_GAP_ROOT="$root" COMPLETION_GAP_LOG="$root/logs/gaps.log" \
+        bash "$PROJECT_ROOT/scripts/completion_gap_metrics.sh" --cmd cmd_gap --append
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"report_done_to_review_request_sec": 5.0'* ]]
+}
+
 # test_necessity: every normal and emergency CLEAR branch must queue the same
 # completion-gap recorder after the durable gate metric write.
 # regression_justification: adding only the normal branch would leave bypassed

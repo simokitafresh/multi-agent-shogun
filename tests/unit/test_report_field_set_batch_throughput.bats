@@ -66,6 +66,23 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
   grep -q 'karo hanzo未達報告.*report=report.yaml parent_cmd=cmd_test task_failed hanzo notify_karo' "$RFS_EVENT_LOG"
 }
 
+@test "terminal batch records completion time separately from authoring timestamp" {
+  printf 'timestamp: 2026-08-24T00:00:00+09:00\n' >>"$REPORT"
+  run bash -c 'printf "status: completed\\nbinary_checks.AC1[0].result: yes\\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -eq 0 ]
+  run python3 - "$REPORT" <<'PY'
+import datetime as dt
+import sys
+import yaml
+data = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+completed = dt.datetime.fromisoformat(data['completed_at'].replace('Z', '+00:00'))
+assert data['status'] == 'completed'
+assert data['timestamp'].isoformat().startswith('2026-08-24T00:00:00')
+assert completed.tzinfo is not None
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "batch rejects scalar structural fields atomically" {
   for field in files_modified lessons_useful binary_checks; do
     cp "$REPORT" "$TMPDIR_CASE/scalar.yaml"
