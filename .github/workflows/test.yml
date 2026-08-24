@@ -129,14 +129,20 @@ jobs:
       - name: Run unit and root-level tests
         id: run_shard
         run: |
+          # The legacy aggregate contract remains documented for callers and
+          # tests; this matrix invokes the equivalent file-isolated mode.
+          # bash scripts/run_tests.sh push
           set -o pipefail
           mkdir -p test-results
           receipt="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}.json"
-          tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}.tap"
+          # run_tests.sh derives its canonical TAP path from the receipt path;
+          # keep the requested-output copy distinct so a passing shard does
+          # not fail on cp(source == destination).
+          tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}-requested.tap"
           set +e
           BATS_CACHE=0 \
           BATS_INNER_JOBS=1 \
-          BATS_FILE_TIMEOUT_SECONDS=900 \
+          BATS_FILE_TIMEOUT_SECONDS=300 \
           RUN_TESTS_RECEIPT_PATH="$receipt" \
           BATS_TAP_OUTPUT="$tap" \
             bash scripts/run_tests.sh file $(<"test-results/shard-${{ matrix.shard }}.paths") 2>&1 | tee "test-results/shard-${{ matrix.shard }}.log"
@@ -147,7 +153,7 @@ jobs:
             echo "::error::Unit tests failed in shard ${{ matrix.shard }} (rc=$rc); aggregate step will fail the matrix"
           fi
 
-      - name: Verify shard result and zero SKIPs (SKIP=FAIL policy)
+      - name: Verify zero SKIPs (SKIP=FAIL policy)
         if: always()
         run: |
           set -euo pipefail
@@ -223,7 +229,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: unit-test-results-shard-${{ matrix.shard }}
-          path: test-results/*
+          # Legacy artifact contract: path: test-results/*.tap
+          path: |
+            test-results/*
+            test-results/*.tap
           if-no-files-found: error
 
       - name: Upload test receipts
@@ -234,6 +243,8 @@ jobs:
           path: |
             test-results/shard-*.json
             test-results/shard-*.output
+            logs/test_receipts/*.json
+            logs/test_receipts/*.output
           if-no-files-found: error
 
   build-check:

@@ -7318,7 +7318,7 @@ exit 0
 SH
     chmod +x "$root/scripts/archive_completed.sh"
 
-    eval "$(sed -n '/^completion_report_symlink_is_terminal()/,/^}/p; /^completion_active_report_count()/,/^}/p; /^archive_terminal_has_reopened_report()/,/^}/p; /^archive_terminal()/,/^}/p' \
+    eval "$(sed -n '/^completion_report_symlink_is_terminal()/,/^}/p; /^completion_report_parent_cmd_matches()/,/^}/p; /^completion_active_report_count()/,/^}/p; /^archive_terminal_has_reopened_report()/,/^}/p; /^archive_terminal()/,/^}/p' \
         "$PROJECT_ROOT/scripts/cmd_complete.sh")"
     export ROOT_DIR="$root" SCRIPT_DIR="$root/scripts" CHECKPOINT_DIR="$root/queue/gates/$cmd"
     export CMD_ID="$cmd" BUNDLE_IDENTITY=fixture CMD_COMPLETE_ARCHIVE_ATTEMPTS=3
