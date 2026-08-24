@@ -3145,7 +3145,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T14:30:29+09:00"
 - id: INS-20260824-141757581-921c
   ts: "2026-08-24T14:17:57+09:00"
   insight: "cmd_complete NO_MATCH aliases候補: cmd_4377 hanzo lesson_candidate: 分割境界のsource-only定義比較はruntime補助関数まで含める cluster J移設時、mainが呼ぶcluster I補助関数10件とreport rehydrate helperが抽出先moduleから欠落し、実配備でcommand not foundになった。旧関数定義集合と全module集合の差分を分割後gateへ固定する。"
