@@ -3333,11 +3333,74 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T21:14:58+09:00"
 - id: INS-20260824-211139300-79cd
   ts: "2026-08-24T21:11:39+09:00"
   insight: "[[殿指示2026 08 23 21 58の継続弾]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示2026-08-23 21:58の継続弾。cmd_4387の計装拡張がself_grade遅経路の正体を本番実測で確定した: self_grade.phase_union_fallback=276.025秒(pure_processing)がself_grade 339秒の支配で、direct経路(commit_file_direct=0.871秒)が"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T21:14:58+09:00"
+- id: INS-20260824-211441404-34b5
+  ts: "2026-08-24T21:14:41+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4388; matched=fallback; current_pattern=cmd_complete_gate.sh速度改善第九弾 — 実測確定した純処理2種(self_grade fallback経路とancestry検査)の短縮; candidate_level=4; candidate=直近30報告有用率7.7%(tobisaru 0%)。target_filesなし教訓290件(56%)がtag_fallbackでタスク無関係に注入。負の複利(忍者が教訓を読まなくなる); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4388"
+  fix_known: false
   status: pending
+- id: INS-20260824-211441628-a951
+  ts: "2026-08-24T21:14:41+09:00"
+  insight: "[[殿下問2026 『更なる改良はできそうか』への実測回答の実装]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: dmsignal_fe_experience_deploy(DM-Signal体感主導デプロイ; alias=このサイクルを回すことでリアルな実運用下での改善ができるのではないか？; score=2.6) / causal_verification_l0_l7(因果確認L0-L7; alias=なぜ現在の実装がそうなっているか; score=2.4) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿原則2026 『重要なのは一つずつ即時修正すること; score=2.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T21:15:09+09:00"
+- id: INS-20260824-211442097-4275
+  ts: "2026-08-24T21:14:42+09:00"
+  insight: "[[殿指示2026 58の継続弾]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=14.3) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0852; score=3.5) / infrastructure_ops(インフラ運用基盤; alias=殿指示20260715_1724_gist実装開始; score=2.9)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T21:15:10+09:00"
+- id: INS-20260824-211459433-685c
+  ts: "2026-08-24T21:14:59+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿指示_complete_gate遅い_20260823_2158]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=18.0) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=14.9) / cmd_quality_logging(cmd設計品質ログ; alias=cmd-complete path; score=14.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T21:15:10+09:00"
+- id: INS-20260824-211459936-a895
+  ts: "2026-08-24T21:14:59+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4387_計装でfallback276秒とancestry92秒確定]] は既存aliasesに一致なし。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=cmd 2936でDIRECT経路を実装; score=21.0) / gate_bypass_prevention(ゲート迂回防止; alias=cmd 3244起票で7回BLOCK; score=20.8) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4098_境界fixture固定; score=20.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T21:15:10+09:00"
+- id: INS-20260824-211500423-d95d
+  ts: "2026-08-24T21:15:00+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4388_純処理2種の短縮]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd 3004完了処理完了; score=21.4) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_new未処理; score=20.7) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=20.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T21:15:11+09:00"
