@@ -3919,15 +3919,21 @@ PY
     # which made durable_writer_wait measure unrelated work.  The pending and
     # result markers are the contract-specific completion proof; do not add a
     # process-wide barrier after that proof.
-    gate_detail_begin "post_source_checks.durable_writer_wait.tracked_delta" pure_processing
+    if declare -F gate_detail_begin >/dev/null 2>&1; then
+        gate_detail_begin "post_source_checks.durable_writer_wait.tracked_delta" pure_processing
+    fi
     capture_durable_writer_paths finish \
         "$GATES_DIR/semantic_causal_audit.paths.before.json" "$path_manifest" \
         "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" || {
-        gate_detail_finish
+        if declare -F gate_detail_finish >/dev/null 2>&1; then
+            gate_detail_finish
+        fi
         echo "  durable writers: BLOCK (generation manifest finalize failed)" >&2
         return 1
     }
-    gate_detail_finish
+    if declare -F gate_detail_finish >/dev/null 2>&1; then
+        gate_detail_finish
+    fi
     python3 - "$path_manifest" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" <<'PY'
 import json, sys
 path, cmd_id, generation = sys.argv[1:]
