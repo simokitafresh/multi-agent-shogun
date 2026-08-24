@@ -64,6 +64,59 @@ printf "unread=%s\n" "$(grep -c "read: false" "$INBOX")"
     [[ "$output" == *"unread=2"* ]]
 }
 
+@test "単一未読task_assignedのwatcher nudgeはdelivery identityを保持する" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+tmp="$(mktemp -d)"
+trap "rm -rf \"$tmp\"" EXIT
+mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/root/queue/tasks" "$tmp/state"
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh; do
+  ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"
+done
+ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
+ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
+cat > "$tmp/root/queue/inbox/fixture.yaml" <<YAML
+messages:
+- id: msg_task_identity
+  type: task_assigned
+  read: false
+  content: task
+YAML
+cat > "$tmp/root/queue/tasks/fixture.yaml" <<YAML
+task:
+  status: assigned
+YAML
+export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
+source "$tmp/root/scripts/inbox_watcher.sh" fixture dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 1; }
+respawn_recovery_generation() { echo generation-1; }
+pane_input_line_has_text() { return 1; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+  case "$1" in
+    display-message)
+      case "${*: -1}" in
+        *agent_id*) echo fixture ;;
+        *pane_in_mode*) echo 0 ;;
+        *) echo active ;;
+      esac ;;
+    set-buffer) printf "%s\n" "$4" > "$tmp/nudge" ;;
+    *) : ;;
+  esac
+}
+send_wakeup 1 true fp-task high false false
+grep -q "delivery_msg=msg_task_identity" "$tmp/nudge"
+printf "delivery_identity=1\n"
+' 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"delivery_identity=1"* ]]
+}
+
 @test "CLI generation変更はstale claimを回収できる" {
     run grep -n 'stored_generation.*claim_generation' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
     [ "$status" -eq 0 ]

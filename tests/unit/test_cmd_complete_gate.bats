@@ -8023,6 +8023,12 @@ messages:
     parent_cmd: cmd_gap
     report_path: queue/reports/ninja_report_cmd_gap.yaml
     timestamp: "2026-08-24T10:00:10+09:00"
+  # A same-command re-request after SG7 start must not be attributed to the
+  # review that already started.
+  - type: report_review
+    parent_cmd: cmd_gap
+    report_path: queue/reports/ninja_report_cmd_gap.yaml
+    timestamp: "2026-08-24T10:00:40+09:00"
 EOF
     cat > "$root/queue/gates/cmd_gap/sg7_bundle.json" <<'EOF'
 {"review":{"cmd_id":"cmd_gap","reviewed_at":"2026-08-24T10:00:20+09:00"}}
@@ -8043,6 +8049,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *'"status": "complete"'* ]]
     [[ "$output" == *'"report_done_to_review_request_sec": 10.0'* ]]
+    [[ "$output" == *'"review_request_to_review_start_sec": 10.0'* ]]
     [[ "$output" == *'"karo_accept_to_gate_start_sec": 4.0'* ]]
     [ "$(wc -l < "$root/logs/gaps.log")" -eq 1 ]
     grep -q 'report_done_to_review_request_sec' "$root/analysis.md"
@@ -8052,6 +8059,45 @@ EOF
         bash "$PROJECT_ROOT/scripts/completion_gap_metrics.sh" --cmd cmd_gap --append
     [ "$status" -eq 0 ]
     [ "$(wc -l < "$root/logs/gaps.log")" -eq 1 ]
+
+    # A later re-aggregation for the same command supersedes the prior row
+    # instead of leaving a stale negative/invalid record beside the repair.
+    sed -i 's/10:00:20+09:00/10:00:50+09:00/' \
+        "$root/queue/gates/cmd_gap/sg7_bundle.json"
+    sed -i 's/10:00:25+09:00/10:00:55+09:00/' \
+        "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint/gunshi.yaml"
+    sed -i 's/10:00:26+09:00/10:00:56+09:00/' \
+        "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint/karo.yaml"
+    sed -i 's/10:00:30\tcmd_gap\tstartup/10:01:00\tcmd_gap\tstartup/' \
+        "$root/logs/cmd_complete_gate_phases.log"
+    run env COMPLETION_GAP_ROOT="$root" COMPLETION_GAP_LOG="$root/logs/gaps.log" \
+        bash "$PROJECT_ROOT/scripts/completion_gap_metrics.sh" --cmd cmd_gap --append
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$root/logs/gaps.log")" -eq 1 ]
+    ! grep -q '"invalid": \[[^]]' "$root/logs/gaps.log"
+}
+
+# test_necessity: the CLEAR dispatcher must invoke the bash-readable
+# correlator from the repository root even when checkout mode is 0644.
+# regression_justification: the previous root/scripts/scripts plus -x checks
+# silently suppressed every asynchronous telemetry append after CLEAR.
+@test "completion gap recorder dispatches readable correlator from repo root" {
+    root="$BATS_TEST_TMPDIR/completion-gap-dispatch"
+    mkdir -p "$root/scripts" "$root/logs"
+    cp "$PROJECT_ROOT/scripts/completion_gap_metrics.sh" "$root/scripts/completion_gap_metrics.sh"
+    chmod 0644 "$root/scripts/completion_gap_metrics.sh"
+
+    run bash -c '
+        set -u
+        SCRIPT_DIR="$1"
+        LOG_DIR="$SCRIPT_DIR/logs"
+        source <(sed -n "/^queue_completion_gap_metrics()/,/^}/p" "$2")
+        queue_completion_gap_metrics cmd_gap
+        wait
+    ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"completion gap metrics: queued (cmd=cmd_gap)"* ]]
+    [ "$(wc -l < "$root/logs/completion_gap_metrics.log")" -eq 1 ]
 }
 
 # test_necessity: every normal and emergency CLEAR branch must queue the same

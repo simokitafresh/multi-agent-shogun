@@ -429,6 +429,50 @@ except Exception:
 " 2>/dev/null
 }
 
+get_single_unread_task_message_id() {
+    awk '
+        function strip(value) {
+            gsub(/^[[:space:]\047"]+|[[:space:]\047"]+$/, "", value)
+            return value
+        }
+        function flush_message() {
+            if (in_message && read_state == "false" && type_value == "task_assigned" && id_value != "") {
+                task_count++
+                task_id_value = id_value
+            }
+        }
+        /^- / {
+            flush_message()
+            in_message = 1
+            id_value = ""
+            read_state = ""
+            type_value = ""
+            line = substr($0, 3)
+            key = line
+            sub(/:.*/, "", key)
+            value = line
+            sub(/^[^:]*:[[:space:]]*/, "", value)
+            if (key == "id") id_value = strip(value)
+            next
+        }
+        in_message && /^  [A-Za-z0-9_.-]+:/ {
+            line = substr($0, 3)
+            key = line
+            sub(/:.*/, "", key)
+            value = line
+            sub(/^[^:]*:[[:space:]]*/, "", value)
+            value = strip(value)
+            if (key == "id") id_value = value
+            else if (key == "read") read_state = value
+            else if (key == "type") type_value = value
+        }
+        END {
+            flush_message()
+            if (task_count == 1) print task_id_value
+        }
+    ' "$INBOX"
+}
+
 priority_deadline_sec() {
     local priority="${1:-normal}"
     local deadline
@@ -799,6 +843,7 @@ send_wakeup() {
     local priority="${4:-normal}"
     local resnapshot_before_send="${5:-false}"
     local batchable="${6:-false}"
+    local delivery_msg_id="${7:-}"
     ensure_current_pane_target || return 1
     if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
         echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (nudge: inbox${unread_count})" >&2
@@ -811,12 +856,16 @@ send_wakeup() {
     local effective_cli
     local allow_nonempty_input_line=0
     effective_cli=$(get_effective_cli_type)
+    if [ "$has_task_assigned" = "true" ] && [ -z "$delivery_msg_id" ]; then
+        delivery_msg_id=$(get_single_unread_task_message_id || true)
+    fi
 
     # Codex/non-claude ninja: task_assigned時のみ「前task無効+再読」ナッジを付与してSTALL防止
     # task_info等の補足メッセージでは付与しない（CTX浪費防止）
     # 家老/軍師にはtask YAMLが存在しないため付与しない（2026-04-22 Codex家老バグ修正）
     if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$has_task_assigned" == "true" ]]; then
         nudge="${nudge} — 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな"
+        [ -n "$delivery_msg_id" ] && nudge+=" delivery_msg=${delivery_msg_id}"
     fi
 
     # gate_sync手動廃止(2026-05-03): startup gate自動syncに委ねる。nudgeへのgate-sync指示は不要。
@@ -1074,6 +1123,8 @@ send_wakeup() {
             nudge="inbox${unread_count}"
             if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$live_has_task" == "true" ]]; then
                 nudge="${nudge} — 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな"
+                delivery_msg_id=$(get_single_unread_task_message_id || true)
+                [ -n "$delivery_msg_id" ] && nudge+=" delivery_msg=${delivery_msg_id}"
             fi
         fi
 
