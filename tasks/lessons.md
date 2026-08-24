@@ -15789,3 +15789,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - runtime publishの独自singleflightはnetwork/source worktree publicationを保護し、既存ninja-scope-commit common lockは共有HEAD/indexを変更する直前に取得し、checkout/commit/merge/read-tree/update-ref完了直後に解放する。network I/Oまで共通lockで囲むと忍者commitの待ち時間を不必要に延長する。
+
+### L1636: 分割境界のsource-only定義比較はruntime補助関数まで含める
+- **日付**: 2026-08-24
+- **出典**: cmd_4377
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/deploy_task/main.sh,scripts/deploy_task/gates.sh,scripts/deploy_task/report.sh,tests/unit/test_deploy_task_lifecycle.bats]
+- **origin**: [[cmd_4377]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cluster J移設時、mainが呼ぶcluster I補助関数10件とreport rehydrate helperが抽出先moduleから欠落し、実配備でcommand not foundになった。旧関数定義集合と全module集合の差分を分割後gateへ固定する。
