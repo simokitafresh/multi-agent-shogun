@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-24 -->
+<!-- last_updated: 2026-08-25 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,10 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_4168 | 台帳高速化レーン4本目(殿問い2026-07-25)。logs/defense_overhead.jsonl将軍実集計でgit_pre_commit:self_syncが第3支配項(全commitで毎回走る=複利大)。同期対象の変更有無をmtime/hash差分で先判定し、未変更時の同期処理をスキップする差分化で短縮する。同期の正しさ(変更時は必ず同期される)は不変 | infra | 07-25 | AC1(差分判定によるself_syncスキップ)は2026 |
-| cmd_4169 | 台帳高速化レーン5本目(殿問い2026-07-25)。cmd_save/cmd_publishの実行が長い実測(2026-07-24将軍のpublishでtimeout移行が複数回発生)があるのに、logs/defense_overhead.jsonlにはcmd_saveの内部フェーズ別記録がほぼ無く支配項が見えない。台帳方式の第一歩=計装。主要フェーズ(check群・semantic照会・memory_db照会・Session State等)のwall_msをsource:cmd_saveで台帳へ記録し、次の高速化cmdの標的を数値で確定させる。計装のみで判定ロジックは不変 | infra | 07-25 | AC1: scripts/cmd_save.shへdefen |
-| cmd_4170 | 家老インフラバグ報告2026-07-25(掲示板blt_20260725_130046): kagemaruがcmd_4165の報告作成中にtask YAMLがidle化・reflux配備で上書きされparent_cmd喪失。根因=deploy_task.shの配備保護regexがassigned・acknowledged・in_progressのみでstatus=doneを保護せず、done〜GATE CLEAR・archive完了までの窓で再配備上書きが可能な構造。配備側でこの窓を機械的に保護する | infra | 07-25 | deploy_task_guard_worker_assig |
-| cmd_4172 | 家老idle計測2026-07-25(掲示板blt_20260725_132505): 注入教訓のuseful率が悪化継続(前回計測から半減、直近feedbackでusefulは少数)。cmd_4152(選定基準是正+auto-deprecate)後も効果未出現。根因はLK-A07 v3既指摘の『project:infraの汎用教訓がtask対象ファイルと無関係でも注入される』選定構造。選定器(scripts/lib/deploy_task_related_lessons_fast.py)のtarget_path関連度の扱いを、実feedback(useful/NOT_USEFULの実績)を教師データに是正する | infra | 07-25 | logs/lesson_impact.tsv全feedbac |
 | cmd_4178 | 2026-07-27将軍復帰後、家老startup gateの先送りCRITICALエスカレーションが同一keyで世代連番のまま将軍inboxへ反復送信され続けた(集計は将軍が実測済み)。dedup機構(notifiedフラグ)は実在するが、同一セッション内でgateが複数回走る際にあるrunでalertが不在だと即resolvedへ落とし、次runのopen復帰で世代が増えて再送する遷移機の欠陥が真因。この構造をヒステリシス(再送抑止条件)で是正し、将軍ターンの浪費を根絶する | infra | 07-27 | startup escalationのopen→一時消失→o |
 | cmd_4181 | 殿下知2026-07-27 19:54『未調査や未確定部分の偵察にフォーカスして設計書を覚醒アップデート』。ホットスクリプト高速化設計書v1.0(docs/research/hot-script-speedup-asis-tobe-5w1h_20260727.md)は家老レビューBLOCK 6点(blt_195501)で計測境界の混在(begin/end混在・実行本体込み・親子二重計上・lock保持と待ちの混同)が確定した。家老の修正指示に従い、純オーバーヘッドのみの正しい母集団で標的序列を作り直す。調査のみで高速化実装は行わない | infra | 07-27 | 固定39,070行/cutoff 2026-07-27T11 |
 | cmd_4185 | 殿下知2026-07-27 22:00『未解決事項を解決しよう』。ホットスクリプト設計書v2.1(家老CLEAR済み)の未解決§3-1/§3-2を解決する。外れ値型check(medianほぼゼロ・maxが累積支配)は常時最適化が的外れになるため、高速化の前に発生条件の特定が必須と設計書が定めた。その偵察を実施する。調査のみで高速化実装なし | infra | 07-27 | current cohortを全数再集計し、5 checkの |

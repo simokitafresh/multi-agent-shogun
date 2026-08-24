@@ -1,3 +1,1 @@
-# session_alerts — generated: 2026-08-24T13:35:08+0900
-[DONE] 掲示板action_required未対応: 2件 — blt_20260824_045358(script_size)とblt_20260824_045352(lesson退役)をactioned化し、対処判断を掲示板へ3点セット付きで記録(msg_20260824_133637)。分割はgap分布確定後・退役は家老審査へ
-[DONE] 追体験自動化ターゲット実装証拠: 復帰時宣言(GATE待ちの可視化)はcmd_4385のcompletion_gap_metrics.sh(commit 80daf0ee7・本番実記録logs/completion_gap_metrics.logで稼働確認済み)として上位互換で実装済み。報告→CLEAR間の全隙間が常時実測される
+# session_alerts — generated: 2026-08-24T23:54:55+0900
