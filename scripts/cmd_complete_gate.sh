@@ -5371,7 +5371,11 @@ queue_completion_gap_metrics() {
     local cmd_id="${1:-}"
     local correlator="$SCRIPT_DIR/scripts/completion_gap_metrics.sh"
     [ -n "$cmd_id" ] || return 0
-    [ -x "$correlator" ] || return 0
+    # The correlator is intentionally invoked through bash below, so its
+    # executable bit is not part of the dispatch contract.  Require the
+    # regular script to be readable instead; otherwise every CLEAR silently
+    # loses telemetry when the repository checkout preserves mode 0644.
+    [ -r "$correlator" ] || return 0
     (
         COMPLETION_GAP_ROOT="$SCRIPT_DIR" \
             bash "$correlator" --cmd "$cmd_id" --append

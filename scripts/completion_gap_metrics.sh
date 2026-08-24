@@ -166,7 +166,7 @@ def inbox_messages(cmd):
                 yield timestamp, message, path
 
 
-def review_request(cmd):
+def review_request(cmd, before=None):
     values = []
     for timestamp, message, path in inbox_messages(cmd):
         kind = str(message.get("type") or "")
@@ -180,7 +180,14 @@ def review_request(cmd):
         report = str(message.get("report_path") or "")
         identity_match = parent == cmd or task in {cmd, f"{cmd}_full"} or f"_report_{cmd}" in report
         if identity_match:
-            values.append((timestamp, path, kind))
+            # A resend/re-request for the same command can arrive after the
+            # SG7 bundle was already created.  It is not the request that
+            # caused that review and would otherwise make the preceding gap
+            # negative.  Attribute the latest request at or before review
+            # start; when review has not started yet, retain legacy latest
+            # request selection for incomplete records.
+            if before is None or timestamp <= before:
+                values.append((timestamp, path, kind))
     return max(values, key=lambda value: value[0]) if values else (None, None, None)
 
 
@@ -258,8 +265,8 @@ def gap_seconds(left, right):
 
 def collect(cmd):
     report_ts, report_path = report_done(cmd)
-    request_ts, request_path, request_kind = review_request(cmd)
     review_ts, review_path = review_bundle(cmd)
+    request_ts, request_path, request_kind = review_request(cmd, review_ts)
     lgtm_ts, lgtm_path = approval_event(cmd, "gunshi", "LGTM")
     accept_ts, accept_path = approval_event(cmd, "karo", "ACCEPT")
     gate_ts, gate_path = gate_start(cmd, accept_ts)
@@ -328,20 +335,54 @@ def append(records):
     import fcntl
     with lock.open("a+") as handle:
         fcntl.flock(handle, fcntl.LOCK_EX)
-        existing = set()
+        existing = []
         if LOG.is_file():
             for line in LOG.read_text(encoding="utf-8", errors="replace").splitlines():
                 try:
                     old = json.loads(line)
-                    existing.add(fingerprint(old))
+                    if isinstance(old, dict):
+                        existing.append(("record", old))
+                    else:
+                        existing.append(("raw", line))
                 except ValueError:
-                    continue
-        with LOG.open("a", encoding="utf-8") as output:
-            for record in records:
-                if fingerprint(record) in existing:
-                    continue
-                output.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-                existing.add(fingerprint(record))
+                    existing.append(("raw", line))
+        replacements = {record.get("cmd_id"): record for record in records if record.get("cmd_id")}
+        if not replacements:
+            return
+        output_records = []
+        replaced = set()
+        for kind, value in existing:
+            if kind == "raw":
+                output_records.append(value)
+                continue
+            old = value
+            cmd = old.get("cmd_id")
+            if cmd not in replacements:
+                output_records.append(old)
+                continue
+            # A corrected re-aggregation supersedes every older row for the
+            # same command.  Keep one canonical row and make replay idempotent.
+            if cmd not in replaced:
+                output_records.append(replacements[cmd])
+                replaced.add(cmd)
+        for cmd, record in replacements.items():
+            if cmd not in replaced:
+                output_records.append(record)
+        import tempfile
+        fd, temporary = tempfile.mkstemp(prefix=f".{LOG.name}.", dir=LOG.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as output:
+                for record in output_records:
+                    if isinstance(record, str):
+                        output.write(record + "\n")
+                    else:
+                        output.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary, LOG)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
         rotate()
 
 
