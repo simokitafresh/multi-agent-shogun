@@ -1,0 +1,965 @@
+{
+  "source": "logs/cmd_4392_local-test-timing.json",
+  "source_cmd_id": "cmd_4392_recon2_retry",
+  "measured_at": "2026-08-25T02:16:31+09:00",
+  "scope": "tests/unit/*.bats",
+  "selected_files": 238,
+  "discovered_files": 238,
+  "record_count": 238,
+  "duplicate_count": 0,
+  "missing_count": 0,
+  "records": [
+    {
+      "path": "tests/unit/test_archive_completed_canceled_status.bats",
+      "duration_sec": 14.562
+    },
+    {
+      "path": "tests/unit/test_archive_completed_fail_close.bats",
+      "duration_sec": 38.469
+    },
+    {
+      "path": "tests/unit/test_archive_completed_queue_flag_retention.bats",
+      "duration_sec": 15.645
+    },
+    {
+      "path": "tests/unit/test_archive_completed_target_manifest.bats",
+      "duration_sec": 12.361
+    },
+    {
+      "path": "tests/unit/test_auto_deploy_next.bats",
+      "duration_sec": 278.097
+    },
+    {
+      "path": "tests/unit/test_backfill_review_gate_done.bats",
+      "duration_sec": 12.295
+    },
+    {
+      "path": "tests/unit/test_bulletin_write_notify_contract.bats",
+      "duration_sec": 20.307
+    },
+    {
+      "path": "tests/unit/test_campaign_lane_shard_item.bats",
+      "duration_sec": 158.534
+    },
+    {
+      "path": "tests/unit/test_cdp_evidence_status.bats",
+      "duration_sec": 21.506
+    },
+    {
+      "path": "tests/unit/test_cdp_session_contract.bats",
+      "duration_sec": 35.534
+    },
+    {
+      "path": "tests/unit/test_ci_clean_repro.bats",
+      "duration_sec": 15.381
+    },
+    {
+      "path": "tests/unit/test_cleanup_three_layer_tmp.bats",
+      "duration_sec": 17.298
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate.bats",
+      "duration_sec": 912.26
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_auto_lesson_write.bats",
+      "duration_sec": 7.844
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_ci_readiness.bats",
+      "duration_sec": 14.172
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_ci_result_type.bats",
+      "duration_sec": 16.026
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_context_freshness_block.bats",
+      "duration_sec": 11.186
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_convergence.bats",
+      "duration_sec": 8.055
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_gunshi_verdict_precheck.bats",
+      "duration_sec": 10.542
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_small_consolidated.bats",
+      "duration_sec": 11.769
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_subsystems.bats",
+      "duration_sec": 10.65
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_task_idle.bats",
+      "duration_sec": 61.94
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_warning_levels.bats",
+      "duration_sec": 18.16
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_insight_consumption.bats",
+      "duration_sec": 5.454
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_resume.bats",
+      "duration_sec": 145.345
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_wrapper.bats",
+      "duration_sec": 171.362
+    },
+    {
+      "path": "tests/unit/test_cmd_delegate_duplicate_guard.bats",
+      "duration_sec": 10.327
+    },
+    {
+      "path": "tests/unit/test_cmd_gate_scaffold_lib_mirror.bats",
+      "duration_sec": 30.409
+    },
+    {
+      "path": "tests/unit/test_cmd_publish_preflight.bats",
+      "duration_sec": 27.034
+    },
+    {
+      "path": "tests/unit/test_cmd_quality_log.bats",
+      "duration_sec": 24.459
+    },
+    {
+      "path": "tests/unit/test_cmd_reopen.bats",
+      "duration_sec": 17.769
+    },
+    {
+      "path": "tests/unit/test_cmd_save.bats",
+      "duration_sec": 17.353
+    },
+    {
+      "path": "tests/unit/test_cmd_save_block_aggregation.bats",
+      "duration_sec": 411.945
+    },
+    {
+      "path": "tests/unit/test_cmd_save_db_contract.bats",
+      "duration_sec": 12.602
+    },
+    {
+      "path": "tests/unit/test_cmd_save_memory_db_token_gate.bats",
+      "duration_sec": 51.925
+    },
+    {
+      "path": "tests/unit/test_cmd_save_phase_instrumentation.bats",
+      "duration_sec": 41.479
+    },
+    {
+      "path": "tests/unit/test_cmd_skeleton.bats",
+      "duration_sec": 330.954
+    },
+    {
+      "path": "tests/unit/test_codex_config_ssot.bats",
+      "duration_sec": 21.954
+    },
+    {
+      "path": "tests/unit/test_codex_skill_execution_guard.bats",
+      "duration_sec": 26.174
+    },
+    {
+      "path": "tests/unit/test_commit_queue.bats",
+      "duration_sec": 41.47
+    },
+    {
+      "path": "tests/unit/test_context_freshness_check.bats",
+      "duration_sec": 149.154
+    },
+    {
+      "path": "tests/unit/test_context_source_commit_set.bats",
+      "duration_sec": 48.691
+    },
+    {
+      "path": "tests/unit/test_daemon_maintenance_lock.bats",
+      "duration_sec": 22.288
+    },
+    {
+      "path": "tests/unit/test_daemon_supervisor.bats",
+      "duration_sec": 23.596
+    },
+    {
+      "path": "tests/unit/test_daemon_watchdog.bats",
+      "duration_sec": 29.03
+    },
+    {
+      "path": "tests/unit/test_defense_overhead_writer.bats",
+      "duration_sec": 64.861
+    },
+    {
+      "path": "tests/unit/test_deploy_task.bats",
+      "duration_sec": 240.117
+    },
+    {
+      "path": "tests/unit/test_deploy_task_ac_handling.bats",
+      "duration_sec": 147.914
+    },
+    {
+      "path": "tests/unit/test_deploy_task_checkpoint_barrier.bats",
+      "duration_sec": 16.268
+    },
+    {
+      "path": "tests/unit/test_deploy_task_ci_red_followup_guard.bats",
+      "duration_sec": 14.788
+    },
+    {
+      "path": "tests/unit/test_deploy_task_draft_review.bats",
+      "duration_sec": 27.653
+    },
+    {
+      "path": "tests/unit/test_deploy_task_lifecycle.bats",
+      "duration_sec": 180.552
+    },
+    {
+      "path": "tests/unit/test_deploy_task_nocode_commit_contract.bats",
+      "duration_sec": 112.416
+    },
+    {
+      "path": "tests/unit/test_deploy_task_owner_cache_fast.bats",
+      "duration_sec": 15.596
+    },
+    {
+      "path": "tests/unit/test_deploy_task_postcondition_isolation.bats",
+      "duration_sec": 5.671
+    },
+    {
+      "path": "tests/unit/test_deploy_task_pre_implementation_review.bats",
+      "duration_sec": 26.944
+    },
+    {
+      "path": "tests/unit/test_deploy_task_rc_peer_redeploy.bats",
+      "duration_sec": 19.176
+    },
+    {
+      "path": "tests/unit/test_deploy_task_reflux_guard.bats",
+      "duration_sec": 7.649
+    },
+    {
+      "path": "tests/unit/test_deploy_task_report_generation_cache.bats",
+      "duration_sec": 51.218
+    },
+    {
+      "path": "tests/unit/test_deploy_task_retro_hold.bats",
+      "duration_sec": 21.96
+    },
+    {
+      "path": "tests/unit/test_deploy_task_scout_gate.bats",
+      "duration_sec": 27.993
+    },
+    {
+      "path": "tests/unit/test_deploy_task_self_snapshot.bats",
+      "duration_sec": 14.136
+    },
+    {
+      "path": "tests/unit/test_deploy_task_semantic_context_cache.bats",
+      "duration_sec": 65.294
+    },
+    {
+      "path": "tests/unit/test_deploy_task_yaml_injection.bats",
+      "duration_sec": 180.562
+    },
+    {
+      "path": "tests/unit/test_disk_space_watch.bats",
+      "duration_sec": 13.205
+    },
+    {
+      "path": "tests/unit/test_dm_signal_cdp_adapters.bats",
+      "duration_sec": 59.387
+    },
+    {
+      "path": "tests/unit/test_dm_signal_research_reflux_guard.bats",
+      "duration_sec": 59.313
+    },
+    {
+      "path": "tests/unit/test_durable_state.bats",
+      "duration_sec": 64.456
+    },
+    {
+      "path": "tests/unit/test_escalation_decision_ledger.bats",
+      "duration_sec": 16.864
+    },
+    {
+      "path": "tests/unit/test_full_deploy_e2e_harness.bats",
+      "duration_sec": 20.628
+    },
+    {
+      "path": "tests/unit/test_gate_cmd_state.bats",
+      "duration_sec": 10.209
+    },
+    {
+      "path": "tests/unit/test_gate_codex_hooks_no_stop.bats",
+      "duration_sec": 11.513
+    },
+    {
+      "path": "tests/unit/test_gate_context_freshness.bats",
+      "duration_sec": 39.332
+    },
+    {
+      "path": "tests/unit/test_gate_context_freshness_active_context_owner.bats",
+      "duration_sec": 13.757
+    },
+    {
+      "path": "tests/unit/test_gate_dc_duplicate.bats",
+      "duration_sec": 11.095
+    },
+    {
+      "path": "tests/unit/test_gate_gunshi_accuracy.bats",
+      "duration_sec": 11.921
+    },
+    {
+      "path": "tests/unit/test_gate_gunshi_accuracy_verdict_norm.bats",
+      "duration_sec": 13.663
+    },
+    {
+      "path": "tests/unit/test_gate_gunshi_cs_checklist.bats",
+      "duration_sec": 32.811
+    },
+    {
+      "path": "tests/unit/test_gate_gunshi_report_precheck.bats",
+      "duration_sec": 368.094
+    },
+    {
+      "path": "tests/unit/test_gate_gunshi_report_precheck_cache.bats",
+      "duration_sec": 369.317
+    },
+    {
+      "path": "tests/unit/test_gate_gunshi_report_precheck_direct_hash.bats",
+      "duration_sec": 23.351
+    },
+    {
+      "path": "tests/unit/test_gate_gunshi_startup_missed_sg.bats",
+      "duration_sec": 21.16
+    },
+    {
+      "path": "tests/unit/test_gate_hook_quality_contract.bats",
+      "duration_sec": 9.21
+    },
+    {
+      "path": "tests/unit/test_gate_hot_path_no_sync_io.bats",
+      "duration_sec": 15.841
+    },
+    {
+      "path": "tests/unit/test_gate_karo_startup.bats",
+      "duration_sec": 16.834
+    },
+    {
+      "path": "tests/unit/test_gate_knowledge_freshness.bats",
+      "duration_sec": 7.27
+    },
+    {
+      "path": "tests/unit/test_gate_lesson_health_active_context_owner.bats",
+      "duration_sec": 35.899
+    },
+    {
+      "path": "tests/unit/test_gate_mcp_access.bats",
+      "duration_sec": 12.017
+    },
+    {
+      "path": "tests/unit/test_gate_p_average_freshness_dns_fallback.bats",
+      "duration_sec": 26.423
+    },
+    {
+      "path": "tests/unit/test_gate_queue_yaml_parse.bats",
+      "duration_sec": 16.788
+    },
+    {
+      "path": "tests/unit/test_gate_queue_yaml_reader_migration.bats",
+      "duration_sec": 15.783
+    },
+    {
+      "path": "tests/unit/test_gate_report_autofix.bats",
+      "duration_sec": 20.387
+    },
+    {
+      "path": "tests/unit/test_gate_report_format.bats",
+      "duration_sec": 28.45
+    },
+    {
+      "path": "tests/unit/test_gate_report_format_classify.bats",
+      "duration_sec": 13.149
+    },
+    {
+      "path": "tests/unit/test_gate_report_format_cmd_3630_env_info.bats",
+      "duration_sec": 12.411
+    },
+    {
+      "path": "tests/unit/test_gate_report_format_lg051_scope.bats",
+      "duration_sec": 25.711
+    },
+    {
+      "path": "tests/unit/test_gate_report_format_lu_warn.bats",
+      "duration_sec": 17.271
+    },
+    {
+      "path": "tests/unit/test_gate_report_format_pass_no_improvement.bats",
+      "duration_sec": 62.902
+    },
+    {
+      "path": "tests/unit/test_gate_report_format_singleflight.bats",
+      "duration_sec": 34.709
+    },
+    {
+      "path": "tests/unit/test_gate_set_e_short_circuit.bats",
+      "duration_sec": 12.882
+    },
+    {
+      "path": "tests/unit/test_gate_shogun_startup.bats",
+      "duration_sec": 36.749
+    },
+    {
+      "path": "tests/unit/test_gate_single_check_consolidated.bats",
+      "duration_sec": 23.187
+    },
+    {
+      "path": "tests/unit/test_gate_skill_script_refs.bats",
+      "duration_sec": 30.142
+    },
+    {
+      "path": "tests/unit/test_gate_small_consolidated.bats",
+      "duration_sec": 45.58
+    },
+    {
+      "path": "tests/unit/test_gate_test_health_ledger.bats",
+      "duration_sec": 44.994
+    },
+    {
+      "path": "tests/unit/test_gate_three_layer_health_cache_self_heal.bats",
+      "duration_sec": 25.166
+    },
+    {
+      "path": "tests/unit/test_gate_three_layer_health_capacity.bats",
+      "duration_sec": 25.101
+    },
+    {
+      "path": "tests/unit/test_gate_vercel_phase.bats",
+      "duration_sec": 16.128
+    },
+    {
+      "path": "tests/unit/test_gate_wa_data_quality.bats",
+      "duration_sec": 18.807
+    },
+    {
+      "path": "tests/unit/test_gate_yaml_field_set_block_sync.bats",
+      "duration_sec": 15.698
+    },
+    {
+      "path": "tests/unit/test_gist_index_update.bats",
+      "duration_sec": 18.742
+    },
+    {
+      "path": "tests/unit/test_gist_post_commit_sync.bats",
+      "duration_sec": 12.581
+    },
+    {
+      "path": "tests/unit/test_gist_share.bats",
+      "duration_sec": 19.034
+    },
+    {
+      "path": "tests/unit/test_gist_verified_write.bats",
+      "duration_sec": 16.623
+    },
+    {
+      "path": "tests/unit/test_git_pre_commit_affected.bats",
+      "duration_sec": 21.722
+    },
+    {
+      "path": "tests/unit/test_git_pre_commit_affected_deps.bats",
+      "duration_sec": 34.876
+    },
+    {
+      "path": "tests/unit/test_git_pre_commit_context_metadata.bats",
+      "duration_sec": 10.123
+    },
+    {
+      "path": "tests/unit/test_git_pre_commit_instruction_sync.bats",
+      "duration_sec": 13.659
+    },
+    {
+      "path": "tests/unit/test_git_pre_commit_self_sync.bats",
+      "duration_sec": 22.433
+    },
+    {
+      "path": "tests/unit/test_git_pre_commit_shell_syntax_cache.bats",
+      "duration_sec": 35.846
+    },
+    {
+      "path": "tests/unit/test_git_pre_commit_sourced_dep.bats",
+      "duration_sec": 10.925
+    },
+    {
+      "path": "tests/unit/test_guard14_dbcheck_overmatch.bats",
+      "duration_sec": 32.929
+    },
+    {
+      "path": "tests/unit/test_gunshi_deepdive_session_contract.bats",
+      "duration_sec": 17.736
+    },
+    {
+      "path": "tests/unit/test_gunshi_gate_reflux.bats",
+      "duration_sec": 12.354
+    },
+    {
+      "path": "tests/unit/test_heavy_job_admission.bats",
+      "duration_sec": 173.884
+    },
+    {
+      "path": "tests/unit/test_hidden_infra_bug_ready_lane.bats",
+      "duration_sec": 11.698
+    },
+    {
+      "path": "tests/unit/test_inbox_archive.bats",
+      "duration_sec": 18.726
+    },
+    {
+      "path": "tests/unit/test_inbox_drain.bats",
+      "duration_sec": 13.224
+    },
+    {
+      "path": "tests/unit/test_inbox_mark_read.bats",
+      "duration_sec": 30.011
+    },
+    {
+      "path": "tests/unit/test_inbox_prune.bats",
+      "duration_sec": 10.768
+    },
+    {
+      "path": "tests/unit/test_inbox_watcher_busy_queue_singleflight.bats",
+      "duration_sec": 13.126
+    },
+    {
+      "path": "tests/unit/test_inbox_watcher_codex_busy_claim.bats",
+      "duration_sec": 10.426
+    },
+    {
+      "path": "tests/unit/test_inbox_watcher_confirmation_guard.bats",
+      "duration_sec": 11.69
+    },
+    {
+      "path": "tests/unit/test_inbox_write.bats",
+      "duration_sec": 372.646
+    },
+    {
+      "path": "tests/unit/test_inbox_write_codex_delivery.bats",
+      "duration_sec": 20.242
+    },
+    {
+      "path": "tests/unit/test_insight_write.bats",
+      "duration_sec": 133.162
+    },
+    {
+      "path": "tests/unit/test_karo_snapshot_freshness.bats",
+      "duration_sec": 35.438
+    },
+    {
+      "path": "tests/unit/test_karo_workaround_validation.bats",
+      "duration_sec": 56.723
+    },
+    {
+      "path": "tests/unit/test_learning_ops_small_consolidated.bats",
+      "duration_sec": 51.913
+    },
+    {
+      "path": "tests/unit/test_lesson_impact_rotate.bats",
+      "duration_sec": 17.004
+    },
+    {
+      "path": "tests/unit/test_lesson_write.bats",
+      "duration_sec": 43.777
+    },
+    {
+      "path": "tests/unit/test_lg048_lg051_boundary.bats",
+      "duration_sec": 16.314
+    },
+    {
+      "path": "tests/unit/test_lgtm_bundle_guard.bats",
+      "duration_sec": 29.734
+    },
+    {
+      "path": "tests/unit/test_lock_path.bats",
+      "duration_sec": 136.74
+    },
+    {
+      "path": "tests/unit/test_loop_ledger_promotion.bats",
+      "duration_sec": 18.32
+    },
+    {
+      "path": "tests/unit/test_memory_db_fts5_preflight.bats",
+      "duration_sec": 19.728
+    },
+    {
+      "path": "tests/unit/test_memory_db_query_rowid_watermark.bats",
+      "duration_sec": 119.009
+    },
+    {
+      "path": "tests/unit/test_model_name_tag.bats",
+      "duration_sec": 13.616
+    },
+    {
+      "path": "tests/unit/test_ninja_done.bats",
+      "duration_sec": 17.161
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor.bats",
+      "duration_sec": 94.023
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_auto_commit_recovery.bats",
+      "duration_sec": 16.318
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_clear_blocked_notify.bats",
+      "duration_sec": 13.475
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_clear_guard.bats",
+      "duration_sec": 136.4
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_destructive.bats",
+      "duration_sec": 13.105
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_failed_respawn.bats",
+      "duration_sec": 27.098
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_hot_reload.bats",
+      "duration_sec": 33.488
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_karo_idle_cooldown.bats",
+      "duration_sec": 18.155
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_report_notify_alias.bats",
+      "duration_sec": 18.988
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_singleton.bats",
+      "duration_sec": 18.154
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_snapshot.bats",
+      "duration_sec": 19.982
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_stall.bats",
+      "duration_sec": 224.151
+    },
+    {
+      "path": "tests/unit/test_ninja_monitor_training_auto.bats",
+      "duration_sec": 57.748
+    },
+    {
+      "path": "tests/unit/test_ninja_scope_commit.bats",
+      "duration_sec": 278.773
+    },
+    {
+      "path": "tests/unit/test_ntfy_async_dispatch.bats",
+      "duration_sec": 18.712
+    },
+    {
+      "path": "tests/unit/test_ntfy_listener.bats",
+      "duration_sec": 25.118
+    },
+    {
+      "path": "tests/unit/test_parity_check.bats",
+      "duration_sec": 20.091
+    },
+    {
+      "path": "tests/unit/test_pending_decision_write.bats",
+      "duration_sec": 42.903
+    },
+    {
+      "path": "tests/unit/test_post_bash_cmd_save_guard.bats",
+      "duration_sec": 11.461
+    },
+    {
+      "path": "tests/unit/test_post_bash_commit_reminder.bats",
+      "duration_sec": 25.641
+    },
+    {
+      "path": "tests/unit/test_post_shogun_warning_state_contract.bats",
+      "duration_sec": 15.88
+    },
+    {
+      "path": "tests/unit/test_pre_bash_combined.bats",
+      "duration_sec": 65.267
+    },
+    {
+      "path": "tests/unit/test_pre_bash_destructive_approval.bats",
+      "duration_sec": 96.325
+    },
+    {
+      "path": "tests/unit/test_pre_bash_guard14.bats",
+      "duration_sec": 17.757
+    },
+    {
+      "path": "tests/unit/test_pre_bash_task_yaml_guard.bats",
+      "duration_sec": 25.537
+    },
+    {
+      "path": "tests/unit/test_pre_bash_test_fullrun_guard.bats",
+      "duration_sec": 22.636
+    },
+    {
+      "path": "tests/unit/test_pre_push_dirty_tree_guard.bats",
+      "duration_sec": 38.247
+    },
+    {
+      "path": "tests/unit/test_pre_push_guard.bats",
+      "duration_sec": 28.844
+    },
+    {
+      "path": "tests/unit/test_prompt_state_all_roles_memory.bats",
+      "duration_sec": 16.876
+    },
+    {
+      "path": "tests/unit/test_pytest_speed_task_generator.bats",
+      "duration_sec": 36.72
+    },
+    {
+      "path": "tests/unit/test_report_commit_identity.bats",
+      "duration_sec": 108.271
+    },
+    {
+      "path": "tests/unit/test_report_commit_nonoverlap_filter.bats",
+      "duration_sec": 44.711
+    },
+    {
+      "path": "tests/unit/test_report_field_set_archive_guard.bats",
+      "duration_sec": 11.105
+    },
+    {
+      "path": "tests/unit/test_report_field_set_batch.bats",
+      "duration_sec": 29.188
+    },
+    {
+      "path": "tests/unit/test_report_field_set_batch_throughput.bats",
+      "duration_sec": 222.751
+    },
+    {
+      "path": "tests/unit/test_report_field_set_bc_validation.bats",
+      "duration_sec": 18.268
+    },
+    {
+      "path": "tests/unit/test_report_field_set_completed_immutability.bats",
+      "duration_sec": 26.007
+    },
+    {
+      "path": "tests/unit/test_report_field_set_hook_canon.bats",
+      "duration_sec": 65.422
+    },
+    {
+      "path": "tests/unit/test_report_field_set_multiline.bats",
+      "duration_sec": 17.643
+    },
+    {
+      "path": "tests/unit/test_report_field_set_normalize_hook.bats",
+      "duration_sec": 40.98
+    },
+    {
+      "path": "tests/unit/test_report_field_set_terminal_readiness.bats",
+      "duration_sec": 16.844
+    },
+    {
+      "path": "tests/unit/test_report_field_set_validation.bats",
+      "duration_sec": 78.629
+    },
+    {
+      "path": "tests/unit/test_report_field_set_verdict_status.bats",
+      "duration_sec": 27.111
+    },
+    {
+      "path": "tests/unit/test_respawn_recovery.bats",
+      "duration_sec": 18.67
+    },
+    {
+      "path": "tests/unit/test_restart_watchers_handoff.bats",
+      "duration_sec": 14.329
+    },
+    {
+      "path": "tests/unit/test_retro_answer_type_parity.bats",
+      "duration_sec": 12.041
+    },
+    {
+      "path": "tests/unit/test_retro_pane_prompt.bats",
+      "duration_sec": 24.552
+    },
+    {
+      "path": "tests/unit/test_retro_pane_prompt_busy_shared.bats",
+      "duration_sec": 11.106
+    },
+    {
+      "path": "tests/unit/test_retro_verbatim_prompt_identity.bats",
+      "duration_sec": 19.893
+    },
+    {
+      "path": "tests/unit/test_retro_write.bats",
+      "duration_sec": 35.929
+    },
+    {
+      "path": "tests/unit/test_review_approval.bats",
+      "duration_sec": 270.445
+    },
+    {
+      "path": "tests/unit/test_review_approval_datetime_fingerprint.bats",
+      "duration_sec": 18.091
+    },
+    {
+      "path": "tests/unit/test_review_approval_fail_close_filter.bats",
+      "duration_sec": 132.15
+    },
+    {
+      "path": "tests/unit/test_review_approval_rc_revoke.bats",
+      "duration_sec": 129.195
+    },
+    {
+      "path": "tests/unit/test_review_approval_rc_task_status_atomic.bats",
+      "duration_sec": 135.7
+    },
+    {
+      "path": "tests/unit/test_review_bundle.bats",
+      "duration_sec": 11.062
+    },
+    {
+      "path": "tests/unit/test_review_gate_sg7_bridge.bats",
+      "duration_sec": 9.693
+    },
+    {
+      "path": "tests/unit/test_review_report_fingerprint_boundary.bats",
+      "duration_sec": 14.5
+    },
+    {
+      "path": "tests/unit/test_run_tests.bats",
+      "duration_sec": 263.413
+    },
+    {
+      "path": "tests/unit/test_run_tests_singleflight_tree_identity.bats",
+      "duration_sec": 50.928
+    },
+    {
+      "path": "tests/unit/test_run_with_receipt.bats",
+      "duration_sec": 24.814
+    },
+    {
+      "path": "tests/unit/test_safe_shared_main_ff.bats",
+      "duration_sec": 19.934
+    },
+    {
+      "path": "tests/unit/test_scope_path.bats",
+      "duration_sec": 13.236
+    },
+    {
+      "path": "tests/unit/test_scope_resolvers_contract.bats",
+      "duration_sec": 15.218
+    },
+    {
+      "path": "tests/unit/test_scratch_retention.bats",
+      "duration_sec": 11.914
+    },
+    {
+      "path": "tests/unit/test_semantic_index_update.bats",
+      "duration_sec": 194.756
+    },
+    {
+      "path": "tests/unit/test_send_wakeup.bats",
+      "duration_sec": 26.105
+    },
+    {
+      "path": "tests/unit/test_shogun_cli_switch_probe.bats",
+      "duration_sec": 15.335
+    },
+    {
+      "path": "tests/unit/test_shogun_lesson_ack.bats",
+      "duration_sec": 14.037
+    },
+    {
+      "path": "tests/unit/test_shogun_recovery_marker_selfheal.bats",
+      "duration_sec": 18.037
+    },
+    {
+      "path": "tests/unit/test_skill_dispatch_payload_contract.bats",
+      "duration_sec": 13.45
+    },
+    {
+      "path": "tests/unit/test_skill_execution_log.bats",
+      "duration_sec": 11.863
+    },
+    {
+      "path": "tests/unit/test_skill_feedback_loop.bats",
+      "duration_sec": 86.928
+    },
+    {
+      "path": "tests/unit/test_stop_check_inbox.bats",
+      "duration_sec": 49.94
+    },
+    {
+      "path": "tests/unit/test_stop_session_alerts.bats",
+      "duration_sec": 17.94
+    },
+    {
+      "path": "tests/unit/test_sync_git_hooks.bats",
+      "duration_sec": 76.243
+    },
+    {
+      "path": "tests/unit/test_task_worktree_lifecycle.bats",
+      "duration_sec": 75.131
+    },
+    {
+      "path": "tests/unit/test_test_hygiene_contract.bats",
+      "duration_sec": 32.241
+    },
+    {
+      "path": "tests/unit/test_test_result_guard_summary_scope.bats",
+      "duration_sec": 21.665
+    },
+    {
+      "path": "tests/unit/test_test_speed_stale_target_contract.bats",
+      "duration_sec": 12.181
+    },
+    {
+      "path": "tests/unit/test_test_speed_task_generator.bats",
+      "duration_sec": 40.683
+    },
+    {
+      "path": "tests/unit/test_three_layer_knowledge_chain.bats",
+      "duration_sec": 52.771
+    },
+    {
+      "path": "tests/unit/test_three_layer_preflight.bats",
+      "duration_sec": 287.006
+    },
+    {
+      "path": "tests/unit/test_throughput_obsidian_traversal_contract.bats",
+      "duration_sec": 19.658
+    },
+    {
+      "path": "tests/unit/test_time_contract_validator.bats",
+      "duration_sec": 31.411
+    },
+    {
+      "path": "tests/unit/test_watcher_log_series_kind.bats",
+      "duration_sec": 23.426
+    },
+    {
+      "path": "tests/unit/test_write_edit_combined_hooks.bats",
+      "duration_sec": 29.595
+    },
+    {
+      "path": "tests/unit/test_yaml_field_set.bats",
+      "duration_sec": 69.323
+    },
+    {
+      "path": "tests/unit/test_yaml_field_set_nested_list.bats",
+      "duration_sec": 10.874
+    }
+  ]
+}
