@@ -1595,3 +1595,4 @@
 - 2026-08-24: 速度改善シリーズ7弾完結(殿指示08-23 21:58)。cmd_complete_gate gate_evaluation 810→123秒(85%減)。計装4層常時化(phases/subphases/details/gap)。殿裁定=CI並行(08:41)+らせん構造(08:44)。push後追いレーン実証。次=gap分布→個別短縮弾
 
 - 2026-08-24夜: 速度改善12弾終端(gate 810→119秒)。通信監査=実阻害なし(偽陰性27/27是正)。gap分布確定(最大隙間=報告→レビュー依頼618秒、cmd_4391走行)。殿裁定=らせん(部分×全体)継続を恒久主軸化。第二十五話note下書き済
+- 2026-08-24夜 cmd_4391完了: terminal reportのcompleted_atをatomic publicationへ固定し、gap計測がauthoring timestampをreport_doneと誤帰属する根因を是正。baseline中央値618.000秒→補正fixture5.0秒、420/420 PASS・SKIP0、commit 7373f9c12。
