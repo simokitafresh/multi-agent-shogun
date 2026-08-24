@@ -13,9 +13,13 @@ concurrency:
 
 jobs:
   unit-tests:
-    name: Unit Tests (bats)
+    name: Unit Tests (bats shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
 
     steps:
       - name: Checkout code
@@ -44,39 +48,149 @@ jobs:
           cmp -s scripts/hooks/git-pre-commit.sh .git/hooks/pre-commit
           cmp -s .githooks/pre-push .git/hooks/pre-push
 
+      - name: Assign measured test files to shard
+        id: shard_assignment
+        run: |
+          set -euo pipefail
+          if [ ! -d tests/unit ]; then
+            echo "::error::tests/unit directory not found"
+            exit 1
+          fi
+          mkdir -p test-results
+          export SHARD_INDEX="${{ matrix.shard }}"
+          export SHARD_COUNT=8
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          shard = int(os.environ["SHARD_INDEX"])
+          shard_count = int(os.environ["SHARD_COUNT"])
+          timing_path = Path("logs/cmd_4392_local-test-timing.json")
+          timing_source = "live_ledger"
+          if not timing_path.is_file():
+              timing_path = Path("config/ci_unit_test_timing.json")
+              timing_source = "committed_snapshot"
+          if not timing_path.is_file():
+              raise SystemExit("timing ledger and committed timing snapshot are both missing")
+          timing_payload = json.loads(timing_path.read_text(encoding="utf-8"))
+          measurement = timing_payload.get("measurement", timing_payload)
+          print(f"SHARD_TIMING_SOURCE source={timing_source} path={timing_path}")
+          inventory = sorted(str(path) for path in Path("tests/unit").glob("*.bats"))
+          records = measurement.get("records", [])
+          measured = {}
+          duplicates = []
+          for record in records:
+              path = record.get("path")
+              if path in measured:
+                  duplicates.append(path)
+              measured[path] = float(record.get("duration_sec", 0.0))
+          ledger_paths = sorted(measured)
+          missing_from_ledger = sorted(set(inventory) - set(ledger_paths))
+          stale_ledger_paths = sorted(set(ledger_paths) - set(inventory))
+          if (measurement.get("selected_files", 0) < len(inventory)
+                  or measurement.get("discovered_files", 0) < len(inventory)
+                  or measurement.get("record_count", 0) < len(inventory)
+                  or measurement.get("duplicate_count") != 0
+                  or measurement.get("missing_count") != 0
+                  or duplicates or missing_from_ledger or stale_ledger_paths):
+              raise SystemExit(json.dumps({
+                  "inventory_count": len(inventory),
+                  "ledger_selected": measurement.get("selected_files"),
+                  "ledger_discovered": measurement.get("discovered_files"),
+                  "ledger_records": measurement.get("record_count"),
+                  "ledger_duplicate_count": measurement.get("duplicate_count"),
+                  "ledger_missing_count": measurement.get("missing_count"),
+                  "duplicate_paths": sorted(set(duplicates)),
+                  "missing_from_ledger": missing_from_ledger,
+                  "stale_ledger_paths": stale_ledger_paths,
+              }, sort_keys=True))
+
+          # Longest-processing-time first assignment keeps the measured shard
+          # totals close while retaining one deterministic, auditable mapping.
+          buckets = [(0.0, index, []) for index in range(shard_count)]
+          for path in sorted(inventory, key=lambda item: (-measured[item], item)):
+              total, index, paths = min(buckets, key=lambda item: (item[0], item[1]))
+              paths.append(path)
+              buckets[index] = (total + measured[path], index, paths)
+          total, _, paths = buckets[shard]
+          Path(f"test-results/shard-{shard}.paths").write_text(
+              "".join(f"{path}\n" for path in paths), encoding="utf-8"
+          )
+          print(f"SHARD_ASSIGNMENT shard={shard} files={len(paths)} measured_seconds={total:.3f}")
+          for bucket_total, bucket_index, bucket_paths in buckets:
+              print(f"SHARD_TOTAL shard={bucket_index} files={len(bucket_paths)} measured_seconds={bucket_total:.3f}")
+              print(f"SHARD_FILES shard={bucket_index} paths={','.join(bucket_paths)}")
+          assigned = [path for _, _, bucket_paths in buckets for path in bucket_paths]
+          if sorted(assigned) != inventory or len(assigned) != len(set(assigned)):
+              raise SystemExit("shard assignment invariant failed: inventory is not a partition")
+          PY
+
       - name: Run unit and root-level tests
+        id: run_shard
         run: |
           set -o pipefail
           mkdir -p test-results
-          if [ ! -d tests/unit ]; then
-            echo "::warning::tests/unit directory not found. Skipping unit tests."
-            exit 0
-          fi
-          # Each bats file owns mutable setup/teardown fixtures. Keep tests
-          # inside a file serial; run_tests.sh schedules independent files up
-          # to the detected CPU count, with eight as the hard ceiling.
+          receipt="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}.json"
+          tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}.tap"
+          set +e
           BATS_CACHE=0 \
           BATS_INNER_JOBS=1 \
-          BATS_FILE_TIMEOUT_SECONDS=300 \
-          BATS_TAP_OUTPUT=test-results/all.tap \
-            bash scripts/run_tests.sh push || {
-            echo "::error::Unit or root-level tests failed"
-            exit 1
-          }
+          BATS_FILE_TIMEOUT_SECONDS=900 \
+          RUN_TESTS_RECEIPT_PATH="$receipt" \
+          BATS_TAP_OUTPUT="$tap" \
+            bash scripts/run_tests.sh file $(<"test-results/shard-${{ matrix.shard }}.paths") 2>&1 | tee "test-results/shard-${{ matrix.shard }}.log"
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "$rc" > "test-results/shard-${{ matrix.shard }}.rc"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::Unit tests failed in shard ${{ matrix.shard }} (rc=$rc); aggregate step will fail the matrix"
+          fi
 
-      - name: Verify zero SKIPs (SKIP=FAIL policy)
+      - name: Verify shard result and zero SKIPs (SKIP=FAIL policy)
+        if: always()
         run: |
-          SKIP_COUNT=$(bash scripts/count_bats_skips.sh test-results/*.tap)
-          if [ "$SKIP_COUNT" -gt 0 ]; then
-            echo "::error::$SKIP_COUNT tests were SKIPPED. SKIP = FAIL policy (FR-054)."
+          set -euo pipefail
+          receipt="test-results/shard-${{ matrix.shard }}.json"
+          rc_file="test-results/shard-${{ matrix.shard }}.rc"
+          if [ ! -s "$receipt" ] || [ ! -s "$rc_file" ]; then
+            echo "::error::missing shard receipt or return code"
             exit 1
           fi
-          echo "All tests executed (0 skips)"
+          python3 - "$receipt" "$rc_file" <<'PY'
+          import json
+          import sys
+
+          receipt_path, rc_path = sys.argv[1:]
+          receipt = json.load(open(receipt_path, encoding="utf-8"))
+          rc = int(open(rc_path, encoding="utf-8").read().strip())
+          skip_count = int(receipt.get("skip_count", 0))
+          declared = int(receipt.get("declared_test_count", 0))
+          observed = int(receipt.get("observed_test_count", 0))
+          result = receipt.get("result")
+          print("SHARD_RESULT " + json.dumps({
+              "declared": declared,
+              "observed": observed,
+              "skip": skip_count,
+              "result": result,
+              "rc": rc,
+          }, sort_keys=True))
+          if rc != 0 or result != "PASS":
+              raise SystemExit(f"shard failed: rc={rc} result={result!r}")
+          if skip_count != 0:
+              raise SystemExit(f"SKIP=FAIL: shard reported {skip_count} skipped tests")
+          if declared != observed:
+              raise SystemExit(f"test count mismatch: declared={declared} observed={observed}")
+          PY
+          echo "All tests in shard ${{ matrix.shard }} executed (0 skips)"
 
       - name: Report bounded test failure evidence
         if: failure()
         run: |
-          receipt="$(find logs/test_receipts -maxdepth 1 -type f -name '*.json' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2-)"
+          receipt="$(find test-results -maxdepth 1 -type f -name 'shard-*.json' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2-)"
+          if [ -z "$receipt" ]; then
+            receipt="$(find logs/test_receipts -maxdepth 1 -type f -name '*.json' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2-)"
+          fi
           if [ -z "$receipt" ]; then
             echo "::error::No test receipt JSON found after unit-test failure"
             exit 1
@@ -108,18 +222,18 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: unit-test-results
-          path: test-results/*.tap
-          if-no-files-found: ignore
+          name: unit-test-results-shard-${{ matrix.shard }}
+          path: test-results/*
+          if-no-files-found: error
 
       - name: Upload test receipts
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: unit-test-receipts
+          name: unit-test-receipts-shard-${{ matrix.shard }}
           path: |
-            logs/test_receipts/*.json
-            logs/test_receipts/*.output
+            test-results/shard-*.json
+            test-results/shard-*.output
           if-no-files-found: error
 
   build-check:
