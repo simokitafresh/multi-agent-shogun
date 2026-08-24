@@ -13,6 +13,7 @@ import json
 import pathlib
 import re
 import shlex
+import subprocess
 import sys
 import yaml
 
@@ -21,6 +22,168 @@ if str(LIB_DIR) not in sys.path:
     sys.path.insert(0, str(LIB_DIR))
 from report_gate_contract import parent_contract_ac_version  # noqa: E402
 
+
+def _boundary_contract_findings(report, task, repo_root, files_modified):
+    """Return mechanically verifiable report/task/git boundary failures.
+
+    These checks deliberately use structured fields and committed git state.
+    The enforcement contract is kept in this engine; transient fixture tests
+    are not part of the production implementation diff.
+    Free-text review summaries are evidence for humans, not a second verdict
+    source.  The checks are the first-pass counterpart of the repeated FAIL
+    boundaries identified in GUNSHI-WASTE-01.
+    """
+    findings = []
+    report = report if isinstance(report, dict) else {}
+    task = task if isinstance(task, dict) else {}
+
+    def add(kind, detail):
+        findings.append(f'{kind}:{detail}')
+
+    def normalize(raw):
+        if isinstance(raw, bool):
+            return 'yes' if raw else 'no'
+        return str(raw or '').strip().lower()
+
+    def flatten(value):
+        if isinstance(value, dict):
+            return ' '.join(flatten(v) for v in value.values())
+        if isinstance(value, (list, tuple)):
+            return ' '.join(flatten(v) for v in value)
+        return str(value or '')
+
+    report_bc = report.get('binary_checks') or {}
+    all_checks = []
+    noncommit_checks = []
+    if isinstance(report_bc, dict):
+        for ac_key, checks in report_bc.items():
+            if not isinstance(checks, list):
+                continue
+            for item in checks:
+                if not isinstance(item, dict):
+                    continue
+                normalized = normalize(item.get('result'))
+                all_checks.append(normalized)
+                if str(ac_key).lower() != 'commit':
+                    noncommit_checks.append((str(ac_key), normalized))
+
+    status = normalize(report.get('status'))
+    verdict = str(report.get('verdict') or '').strip().upper()
+    terminal_statuses = {'completed', 'failed', 'revision_requested', 'done'}
+    if status in terminal_statuses:
+        expected_verdict = {
+            'completed': {'PASS', 'PASS_NO_IMPROVEMENT'},
+            'failed': {'FAIL'},
+            'revision_requested': {'FAIL'},
+            'done': {'PASS', 'PASS_NO_IMPROVEMENT'},
+        }[status]
+        if verdict not in expected_verdict:
+            add('terminal_publication', f'status={status}/verdict={verdict or "<empty>"}')
+        if status in {'completed', 'done'} and any(item == 'no' for item in all_checks):
+            add('terminal_publication', 'terminal_pass_with_binary_no')
+        gate_prediction = str(report.get('gate_prediction') or '').strip().upper()
+        if verdict in {'PASS', 'PASS_NO_IMPROVEMENT'} and gate_prediction == 'BLOCK':
+            add('terminal_publication', 'verdict_pass_with_gate_prediction_block')
+        gate_reason = str(report.get('gate_prediction_reason') or '').lower()
+        if verdict in {'PASS', 'PASS_NO_IMPROVEMENT'} and 'parent_ac_uncovered' in gate_reason:
+            add('terminal_publication', 'verdict_pass_with_parent_ac_uncovered')
+
+    evidence_mapping = report.get('ac_evidence_mapping')
+    if noncommit_checks and all(result == 'yes' for _, result in noncommit_checks):
+        missing = []
+        for ac_key, _ in noncommit_checks:
+            value = evidence_mapping.get(ac_key) if isinstance(evidence_mapping, dict) else None
+            if not flatten(value).strip():
+                missing.append(ac_key)
+        if missing:
+            add('report_evidence_mapping', 'missing=' + ','.join(dict.fromkeys(missing)))
+
+    report_contract = report.get('commit_contract') or {}
+    task_contract = task.get('commit_contract') or {}
+    if isinstance(report_contract, str):
+        try:
+            report_contract = json.loads(report_contract)
+        except (TypeError, json.JSONDecodeError):
+            report_contract = {}
+    if isinstance(task_contract, str):
+        try:
+            task_contract = json.loads(task_contract)
+        except (TypeError, json.JSONDecodeError):
+            task_contract = {}
+    commit_required = (
+        isinstance(report_contract, dict) and report_contract.get('required') is True
+    ) or (
+        isinstance(task_contract, dict) and task_contract.get('required') is True
+    )
+    commit_checks = report_bc.get('commit') if isinstance(report_bc, dict) else None
+    commit_yes = isinstance(commit_checks, list) and any(
+        isinstance(item, dict) and normalize(item.get('result')) == 'yes'
+        for item in commit_checks
+    )
+    if commit_required and commit_yes:
+        commit_hash = str(report.get('commit_hash') or '').strip()
+        if not re.fullmatch(r'[0-9a-fA-F]{40}', commit_hash):
+            add('commit_ci_alignment', 'commit_yes_without_40hex_commit_hash')
+        else:
+            repo = pathlib.Path(repo_root) if repo_root else None
+            commit_repo = repo
+            for entry in report.get('cross_repo_commits') or []:
+                if isinstance(entry, dict) and entry.get('commit_hash') == commit_hash:
+                    candidate = pathlib.Path(str(entry.get('repo') or ''))
+                    if candidate.is_dir():
+                        commit_repo = candidate
+                    break
+            commit_exists = False
+            if commit_repo and commit_repo.is_dir():
+                completed = subprocess.run(
+                    ['git', '-C', str(commit_repo), 'cat-file', '-e', f'{commit_hash}^{{commit}}'],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    check=False,
+                )
+                commit_exists = completed.returncode == 0
+            if not commit_exists:
+                add('commit_ci_alignment', 'commit_hash_not_present_in_git')
+            elif not report.get('cross_repo_commits'):
+                changed = set()
+                listed = subprocess.run(
+                    ['git', '-C', str(commit_repo), 'diff-tree', '--no-commit-id',
+                     '--name-only', '-r', commit_hash],
+                    capture_output=True, text=True, check=False,
+                )
+                if listed.returncode == 0:
+                    changed = {line.strip() for line in listed.stdout.splitlines() if line.strip()}
+                missing_paths = sorted(set(files_modified) - changed)
+                if missing_paths:
+                    add('commit_ci_alignment', 'commit_missing_report_paths=' + ','.join(missing_paths))
+
+    # CI WAIT is an explicit post-terminal follow-up state and is not a
+    # failure.  Only structured result/status/conclusion fields can trigger.
+    ci_fields = ('ci_readiness', 'ci_result', 'ci_status', 'workflow_result', 'workflow_status')
+    bad_ci = {'fail', 'failed', 'failure', 'red', 'blocked', 'block', 'cancelled', 'canceled', 'error'}
+    pass_terminal = verdict in {'PASS', 'PASS_NO_IMPROVEMENT'} or status in {'completed', 'done'}
+    for field in ci_fields if pass_terminal else ():
+        value = report.get(field)
+        values = []
+        if isinstance(value, dict):
+            for key in ('result', 'status', 'conclusion', 'state', 'overall', 'verdict'):
+                if key in value:
+                    values.append(normalize(value.get(key)))
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    for key in ('result', 'status', 'conclusion', 'state', 'overall', 'verdict'):
+                        if key in item:
+                            values.append(normalize(item.get(key)))
+                else:
+                    values.append(normalize(item))
+        elif value not in (None, ''):
+            values.append(normalize(value))
+        for ci_value in values:
+            if ci_value in bad_ci:
+                add('commit_ci_alignment', f'{field}={ci_value}')
+
+    return list(dict.fromkeys(findings))
+
 def main():
     parser = argparse.ArgumentParser(
         description='gate_gunshi_report_precheck engine: '
@@ -28,6 +191,8 @@ def main():
     )
     parser.add_argument('--report', required=True, help='Report YAML path')
     parser.add_argument('--tasks-dir', default='', help='queue/tasks directory path')
+    parser.add_argument('--repo-root', default='', help='repository root for committed-state checks')
+    parser.add_argument('--boundary-contract', action='store_true', help='enable SG-PRE36 boundary checks')
     args = parser.parse_args()
 
     result = {
@@ -50,6 +215,9 @@ def main():
         'NO_CODE_COMMIT_EXEMPT': '0',
         'VARIATION_CHECKS_REQUIRED': '0',
         'VARIATION_CHECKS_MSG': '  SKIP: 変形検査契約の対象外',
+        'BOUNDARY_CONTRACT_STATUS': 'SKIP',
+        'BOUNDARY_CONTRACT_FINDINGS': '',
+        'BOUNDARY_CONTRACT_COUNT': '0',
     }
 
     # ── 1. REPORT_PATH を1回読込 ──────────────────────────────────────────
@@ -89,6 +257,7 @@ def main():
 
     # ── 2. TASK_FILE を1回読込 → binary_checks 整合性確認 ────────────────
     task_file = ''
+    task = {}
     if worker_id and args.tasks_dir:
         task_file = os.path.join(args.tasks_dir, f'{worker_id}.yaml')
     result['TASK_FILE'] = task_file
@@ -716,6 +885,22 @@ def main():
     result['HAS_GOLDEN_REF'] = '1' if has_golden else '0'
     result['TARGET_PATH'] = target_path
 
+    # ── SG-PRE36: GUNSHI-WASTE-01 boundary contract ─────────────────────
+    # Run after report/task parsing and before the shell-only checks so the
+    # focused mode and the normal first precheck consume the same verdict.
+    boundary_enabled = bool(args.boundary_contract)
+    boundary_findings = _boundary_contract_findings(
+        report,
+        task,
+        args.repo_root or str(pathlib.Path(args.report).resolve().parents[1]),
+        fm_paths,
+    ) if boundary_enabled and task_file and os.path.exists(task_file) else []
+    result['BOUNDARY_CONTRACT_STATUS'] = 'FAIL' if boundary_findings else (
+        'PASS' if boundary_enabled and task_file and os.path.exists(task_file) else 'SKIP'
+    )
+    result['BOUNDARY_CONTRACT_FINDINGS'] = '; '.join(boundary_findings)
+    result['BOUNDARY_CONTRACT_COUNT'] = str(len(boundary_findings))
+
     # ── 4. GATE_PREDICTION自動計算 ───────────────────────────────────────
     # SG7 gate_predictionをエンジンが自動決定。軍師の判断を介在させない(Phase 4)
     gate_pred = 'CLEAR'
@@ -749,6 +934,11 @@ def main():
     if result.get('VARIATION_CHECKS_REQUIRED') == '1' and 'ERROR:' in result.get('VARIATION_CHECKS_MSG', ''):
         gate_pred = 'BLOCK'
         gate_pred_reasons.append('変形検査契約の未記入')
+    if result.get('BOUNDARY_CONTRACT_STATUS') == 'FAIL':
+        gate_pred = 'BLOCK'
+        gate_pred_reasons.append(
+            'GUNSHI-WASTE-01境界不備:' + result.get('BOUNDARY_CONTRACT_FINDINGS', '')
+        )
     result['GATE_PREDICTION'] = gate_pred
     result['GATE_PREDICTION_REASON'] = '; '.join(gate_pred_reasons) if gate_pred_reasons else 'all checks passed'
     result['GATE_PREDICTION_WITH_SHELL_FINDINGS'] = 'BLOCK'

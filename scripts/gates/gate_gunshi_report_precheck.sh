@@ -113,10 +113,64 @@ ERRORS=0
 # 出力: WORKER_ID / PARENT_CMD / IS_DM_SIGNAL / FILES_MODIFIED /
 #       BINARY_CHECKS_MSG / SAME_CMD_NINJAS / TASK_FILE
 _GUNSHI_PH_ENGINE_START_US="${EPOCHREALTIME/./}"; _GUNSHI_PH_ENGINE_START_US="${_GUNSHI_PH_ENGINE_START_US:0:16}"
+_GUNSHI_BOUNDARY_ARG=()
+if [ -z "${GUNSHI_PRECHECK_ONLY:-}" ] || [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE36" ]; then
+    _GUNSHI_BOUNDARY_ARG=(--boundary-contract)
+fi
 eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py" \
     --report "$REPORT_PATH" \
-    --tasks-dir "${GUNSHI_PRECHECK_TASKS_DIR:-$REPO_ROOT/queue/tasks}" 2>/dev/null)"
+    --tasks-dir "${GUNSHI_PRECHECK_TASKS_DIR:-$REPO_ROOT/queue/tasks}" \
+    --repo-root "$REPO_ROOT" \
+    "${_GUNSHI_BOUNDARY_ARG[@]}" 2>/dev/null)"
 _gunshi_phase_report engine "$_GUNSHI_PH_ENGINE_START_US" "$([ "${IS_DM_SIGNAL:-0}" = "1" ] && echo dm_signal || echo shogun)"
+
+# ─── SG-PRE36: GUNSHI-WASTE-01 boundary contract ────────────────────────
+# Contract fixtures remain transient; production enforcement is this gate and
+# its existing selected suite, so the final implementation diff stays code-only.
+# The engine owns the structured verdict; this shell wrapper owns the common
+# precheck output and the existing defense-overhead ledger write.
+_sg_pre36_boundary_contract() {
+    echo "■ SG-PRE36: terminal/commit-CI/evidence境界検査(GUNSHI-WASTE-01)"
+    local _status="${BOUNDARY_CONTRACT_STATUS:-SKIP}"
+    local _findings="${BOUNDARY_CONTRACT_FINDINGS:-}"
+    local _count="${BOUNDARY_CONTRACT_COUNT:-0}"
+    local _triggered=0 _ledger_verdict=PASS
+    if [ "$_status" = "FAIL" ]; then
+        _triggered=1
+        _ledger_verdict=FAIL
+        echo "  ERROR: 過去FAIL再発境界を検出(${_count}件): ${_findings}"
+    elif [ "$_status" = "PASS" ]; then
+        echo "  PASS: report/task/git境界の不整合なし"
+    else
+        echo "  SKIP: task YAML未解決"
+    fi
+
+    # One concrete run record is emitted for both PASS and FAIL.  The finding
+    # count/key fields make a FAIL fire auditable without changing the timing
+    # ledger schema or creating a second FP database.
+    local _metadata
+    _metadata="$(python3 - "$_triggered" "$_count" "$_findings" <<'PY'
+import json, sys
+triggered, count, findings = sys.argv[1:]
+print(json.dumps({
+    'boundary_contract': 'GUNSHI-WASTE-01',
+    'triggered': triggered,
+    'finding_count': count,
+    'finding_keys': findings,
+    'evidence_source': 'report-task-git',
+}, ensure_ascii=False, separators=(',', ':')))
+PY
+)"
+    defense_overhead_write \
+        gate_gunshi_report_precheck sg_pre36_boundary_contract 0 "$_ledger_verdict" \
+        "gunshi-sg-pre36-$$-${RANDOM}" "$_metadata" || true
+    [ "$_status" != "FAIL" ]
+}
+
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE36" ]; then
+    _sg_pre36_boundary_contract
+    exit $?
+fi
 
 # ─── 結果cache: report内容hash単位 (cmd_4167: full_precheck 555回×平均5.17秒の削減) ───
 # 同一reportの再precheckをcache返答にし、report(+関連task)の内容が変わった時のみ全量再検査する。
@@ -723,6 +777,15 @@ if [ -f "${TASK_FILE:-}" ]; then
     echo "${BINARY_CHECKS_MSG:-  SKIP}"
 else
     echo "  SKIP: task YAML not found: ${TASK_FILE:-}"
+fi
+
+# SG-PRE36 is intentionally in the first-pass body, immediately after the
+# shared report/task contract parse and before the remaining review reminders.
+echo ""
+if ! _sg_pre36_boundary_contract; then
+    ERRORS=$((ERRORS + ${BOUNDARY_CONTRACT_COUNT:-1}))
+    GATE_PREDICTION="BLOCK"
+    GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }GUNSHI-WASTE-01境界不備"
 fi
 
 # ─── SG-PRE33: enforcement層の変形検査契約 ───
