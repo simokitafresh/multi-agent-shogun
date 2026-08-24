@@ -15815,3 +15815,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 次回チェックでは新規CLEARイベント後にscripts/model_analysis.sh --jsonを再実行し、known model行が増えunknown増分が0であることを数値確認する。assigned_to欠落taskでもtask filename ownerを解決するwriter契約を維持する。
+
+### L1638: GA-496: 定義済みLevel5 detectorは最終判定callerまで接続する
+- **日付**: 2026-08-25
+- **出典**: cmd_karo_hotfix_ga496_context_freshness
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_context_freshness_block.bats,context/infrastructure.md]
+- **origin**: [[cmd_karo_hotfix_ga496_context_freshness]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- source freshness detectorが定義されていてもproduction callerが0件ならAlertはpost-CLEAR warningに留まり未反映のまま完了できる。次回はrgで定義数と非test caller数を二値確認し、caller非zeroかつnonzero結果がBLOCKへ伝播するcontract testを先に実行する。
