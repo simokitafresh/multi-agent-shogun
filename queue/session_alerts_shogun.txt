@@ -1,2 +1,2 @@
-# session_alerts — generated: 2026-08-25T01:02:37+0900
-[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな — 2026-08-25 01:06全6忍者pane一次capture実施: 全員プロンプト待ち(実busy 0)。busy 3名は陣形図の旧snapshot値で実態はidle。RC是正(tobisaru)含め全報告提出済み状態と整合
+# session_alerts — generated: 2026-08-25T01:43:14+0900
+[DONE] 走行中cmd実測突合: busy 4名。capture-pane未確認で状況報告するな — 2026-08-25 01:47全6忍者pane一次capture: 全員プロンプト待ち(kagemaru CTX32%/saizo20%/kotaro26%はターン間の正常な待ち)。busy 4名は陣形図旧snapshot値。報告mtime・review_logで各taskがRC是正/レビュー往復の回転内であることを直前ターンで突合済み

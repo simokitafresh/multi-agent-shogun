@@ -3383,7 +3383,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T01:26:08+09:00"
 - id: INS-20260825-010500981-cd3c
   ts: "2026-08-25T01:05:00+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4394; matched=block,理由; current_pattern=家老deploy blocked六割の内訳分解 — block理由別分布を確定し支配理由の前倒し根治候補を特定する; candidate_level=4; candidate=おしお殿#4「2回同じ失敗→仮説ごと疑え」。gate_fire_logから同一忍者×同一BLOCK理由の連続回数を計数。2回連続→仮説転換メッセージ表示+exit 1(強制BLOCK)。GP-198のgate_diagnose_check.shに統合実装; source=gunshi_gp_tracker.yaml"
@@ -3405,3 +3408,63 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_4394"
   fix_known: false
   status: pending
+- id: INS-20260825-012609355-a8d1
+  ts: "2026-08-25T01:26:09+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b0q9n3paa task id tool use id toolu 01Cu9mLcLSpeutDCch は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T01:28:29+09:00"
+- id: INS-20260825-012810406-8dc0
+  ts: "2026-08-25T01:28:10+09:00"
+  insight: "[[cmd 4395の後継 ac phase mixing累計昇格BLOCKによりcancel]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=review_two_phase_pending偽BLOCK; score=10.9) / agent_formation_management(編成管理; alias=cli_lookup launch_cmd override; score=10.5) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=10.4)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T01:28:30+09:00"
+- id: INS-20260825-020547128-0da0
+  ts: "2026-08-25T02:05:47+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b41k581lj task id tool use id toolu 012kCNouT4oGbc5fjQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T02:09:52+09:00"
+- id: INS-20260825-020925516-a345
+  ts: "2026-08-25T02:09:25+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4395_precheck前倒し集約]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=cmd 3294は探索前skipが原因; score=20.8) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=20.5) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_3659_LGTM撤回; score=20.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T02:09:53+09:00"
+- id: INS-20260825-020926589-0d9c
+  ts: "2026-08-25T02:09:26+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[ac_phase_mixing累計昇格]] は既存aliasesに一致なし。類似概念TOP3: report_quality_protocol(忍者報告品質プロトコル; alias=ac_version欠落; score=15.0) / gs_recalibration_plan(GS再キャリブレーション計画; alias=Phase TとPhase 0のcmd起票; score=14.7) / cdp_browser_capability(CDP(ブラウザ操作能力); alias=Phase 4以降の計画を確認しよう; score=13.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T02:09:53+09:00"
+- id: INS-20260825-020927708-9c00
+  ts: "2026-08-25T02:09:27+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4396_実装フェーズ分離再起票]] は既存aliasesに一致なし。類似概念TOP3: dm_fusion_app(DM-Fusionアプリ; alias=cmd_3586スコープ分離; score=21.2) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_4323偵察後実装; score=21.0) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_4376層別確定; score=20.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T02:09:54+09:00"
