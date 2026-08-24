@@ -180,6 +180,8 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-08-25: gate=gate_report_format result=FAIL executor=kagemaru reason=investigation_contract: investigation_outcome mapping is missing; LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
+- 2026-08-24: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: files_modified path is outside planned scope: docs/research/cmd_4388_cmd_complete_gate_phase-union-ancestry.md (file does not exist — possible path typo in file...
 - 2026-08-24: gate=cmd_complete_gate result=FAIL executor=sasuke reason=report_format:sasuke_report_cmd_karo_4380_full.yaml|ci_readiness:BLOCK: origin slug unresolvable from /tmp/cmd4380-full.TEckdE/project|ci_readiness:Traceback (most recent call l...
 - 2026-08-24: gate=cmd_complete_gate result=FAIL executor=sasuke reason=report_format:sasuke_report_cmd_karo_4380_full.yaml|ci_push_state:BLOCK: report commit invalid or unresolvable
 - 2026-08-23: gate=gate_report_format result=FAIL executor=saizo reason=operational_simulation.result: must be PASS or FAIL; LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
@@ -198,8 +200,6 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 - 2026-08-17: gate=gate_report_format result=FAIL executor=saizo reason=investigation_contract: primary_evidence requires at least 1 source+observation item(s); investigation_contract: remaining_unknowns must be a list
 - 2026-08-17: gate=gate_report_format result=FAIL executor=saizo reason=investigation_contract: investigation_outcome mapping is missing
 - 2026-08-17: gate=gate_report_format result=FAIL executor=kotaro reason=malformed report path rejected before git status
-- 2026-08-17: gate=gate_report_format result=FAIL executor=tobisaru reason=cross_repo_commits: cross_repo_commits[0].commit_hash is not a resolvable 40-hex commit; cross_repo_commits: files_modified path lacks cross-repo ownership: docs/semantic-index/...
-- 2026-08-17: gate=gate_report_format result=FAIL executor=hayate reason=LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須; LK-A14: 横展開/修正前パターンを扱う報告にはgrep/rg残存0件の一次証跡が必須
 
 過去のgate FAIL頻出パターン要約(生ログはlogs/gate_fire_log.yaml等の台帳が正本。ここには要約のみ保持):
 
