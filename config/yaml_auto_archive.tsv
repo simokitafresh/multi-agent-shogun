@@ -3,4 +3,3 @@
 logs/cmd_design_quality.yaml	200	entries	^\s*-\s+cmd_id:	logs/archive/cmd_design_quality.yaml
 logs/karo_workarounds.yaml	100	-	^\s*-\s+cmd_id:	logs/archive/karo_workarounds.yaml
 queue/bulletin_board.yaml	100	entries	^\s*-\s+id:	queue/archive/bulletin_board_archive.yaml
-queue/insights.yaml	100	insights	^\s*-\s+id:	queue/archive/insights_archive.yaml
