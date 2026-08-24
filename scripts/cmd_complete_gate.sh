@@ -341,6 +341,7 @@ report_ci_push_state() {
     local report_file="$1"
     local repo_dir="${2:-$SCRIPT_DIR}"
     local task_file="${3:-}"
+    local ancestry_snapshot_file="${4:-}"
     local expected_head report_commit report_kind
 
     expected_head=$(resolve_ci_expected_head "$repo_dir")
@@ -493,7 +494,17 @@ PY
     elif [ "$report_kind" != "commit" ]; then
         echo "BLOCK: report commit invalid or unresolvable${report_commit:+ ($report_commit)}"
     elif git -C "$repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
-        if git -C "$repo_dir" merge-base --is-ancestor "$report_commit" "$expected_head" 2>/dev/null; then
+        # check_report_commit_main_ancestry may provide a snapshot containing
+        # every commit reachable from expected_head. Reusing that one walk
+        # preserves the exact ancestor predicate while avoiding one expensive
+        # merge-base traversal per PASS report in the same repository.
+        if [ -n "$ancestry_snapshot_file" ] && [ -f "$ancestry_snapshot_file" ]; then
+            if grep -Fqx -- "$report_commit" "$ancestry_snapshot_file"; then
+                echo "PUSHED: report commit $report_commit contained by $expected_head"
+            else
+                echo "UNPUSHED: report commit $report_commit not contained by $expected_head"
+            fi
+        elif git -C "$repo_dir" merge-base --is-ancestor "$report_commit" "$expected_head" 2>/dev/null; then
             echo "PUSHED: report commit $report_commit contained by $expected_head"
         else
             echo "UNPUSHED: report commit $report_commit not contained by $expected_head"
@@ -543,12 +554,13 @@ report_commit_main_ancestry_state() {
     local report_file="$1"
     local repo_dir="${2:-$SCRIPT_DIR}"
     local task_file="${3:-}"
+    local ancestry_snapshot_file="${4:-}"
     local state
 
     if declare -F gate_detail_begin >/dev/null 2>&1; then
         gate_detail_begin "post_source_checks.report_commit_main_ancestry.resolve_state" pure_processing
     fi
-    state=$(report_ci_push_state "$report_file" "$repo_dir" "$task_file")
+    state=$(report_ci_push_state "$report_file" "$repo_dir" "$task_file" "$ancestry_snapshot_file")
     if declare -F gate_detail_finish >/dev/null 2>&1; then
         gate_detail_finish
     fi
@@ -820,6 +832,15 @@ check_report_commit_main_ancestry() {
     local report_file task_file task_repo report_verdict state
     local checked=false failed=false
     local -A seen_reports=()
+    local -A ancestry_snapshots=()
+    local ancestry_snapshot_dir="" ancestry_snapshot="" expected_head snapshot_path
+    local snapshot_index=0
+
+    # A single gate run observes one remote boundary per repository. Build
+    # that repository's reachable-commit set once and let each report query it
+    # with exact hash membership. If snapshot creation is unavailable, the
+    # original merge-base path remains the fail-closed fallback.
+    ancestry_snapshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/cmd-complete-ancestry.XXXXXX" 2>/dev/null || true)"
 
     check_one_report() {
         report_file="$1"
@@ -835,7 +856,26 @@ check_report_commit_main_ancestry() {
             *) return 0 ;;
         esac
         checked=true
-        if state=$(report_commit_main_ancestry_state "$report_file" "$task_repo" "$task_file"); then
+        ancestry_snapshot=""
+        if [ -n "$ancestry_snapshot_dir" ]; then
+            if [[ "${ancestry_snapshots[$task_repo]+yes}" != yes ]]; then
+                expected_head="$(resolve_ci_expected_head "$task_repo")"
+                if [ -n "$expected_head" ]; then
+                    snapshot_index=$((snapshot_index + 1))
+                    snapshot_path="$ancestry_snapshot_dir/reachable_${snapshot_index}"
+                    if git -C "$task_repo" rev-list "$expected_head" > "$snapshot_path" 2>/dev/null; then
+                        ancestry_snapshots["$task_repo"]="$snapshot_path"
+                    else
+                        rm -f -- "$snapshot_path"
+                        ancestry_snapshots["$task_repo"]=""
+                    fi
+                else
+                    ancestry_snapshots["$task_repo"]=""
+                fi
+            fi
+            ancestry_snapshot="${ancestry_snapshots[$task_repo]}"
+        fi
+        if state=$(report_commit_main_ancestry_state "$report_file" "$task_repo" "$task_file" "$ancestry_snapshot"); then
             printf '  %s: %s\n' "$report_file" "$state"
         else
             printf '  %s: %s\n' "$report_file" "$state"
@@ -862,6 +902,13 @@ check_report_commit_main_ancestry() {
 
     if [ "$checked" = false ]; then
         echo "  SKIP (no PASS reports requiring a commit ancestry check)"
+    fi
+    if [ -n "$ancestry_snapshot_dir" ]; then
+        while IFS= read -r snapshot_path; do
+            [ -n "$snapshot_path" ] || continue
+            rm -f -- "$snapshot_path"
+        done < <(find "$ancestry_snapshot_dir" -type f -maxdepth 1 -print 2>/dev/null)
+        rmdir -- "$ancestry_snapshot_dir" 2>/dev/null || true
     fi
     [ "$failed" = false ]
 }
@@ -8801,6 +8848,7 @@ PY
 collect_cmd_phase_git_files() {
     local anchor_hash="$1"
     local cmd_id="${2:-$CMD_ID}"
+    local requested_paths="${3:-}"
 
     # The report commit is authoritative even when its subject does not carry
     # the cmd id.  Older phase commits are included only on the anchor's
@@ -8809,7 +8857,7 @@ collect_cmd_phase_git_files() {
     # One NUL-safe log walk replaces the old log-then-one-git-show-per-phase
     # loop. The old loop made the slow self-grade path pay one process and
     # object walk for every matching phase commit.
-    SCRIPT_DIR="$SCRIPT_DIR" ANCHOR_HASH="$anchor_hash" CMD_ID="$cmd_id" python3 - <<'PY'
+    SCRIPT_DIR="$SCRIPT_DIR" ANCHOR_HASH="$anchor_hash" CMD_ID="$cmd_id" REQUESTED_PATHS="$requested_paths" python3 - <<'PY'
 import os
 import re
 import subprocess
@@ -8818,8 +8866,12 @@ root = os.environ["SCRIPT_DIR"]
 anchor = os.environ["ANCHOR_HASH"]
 cmd_id = os.environ["CMD_ID"]
 try:
+    command = ["git", "-C", root, "log", "--format=%H%x09%s%x00", "--name-only", "-z", anchor]
+    requested = [line for line in os.environ.get("REQUESTED_PATHS", "").splitlines() if line]
+    if requested:
+        command.extend(["--", *requested])
     raw = subprocess.check_output(
-        ["git", "-C", root, "log", "--format=%H%x09%s%x00", "--name-only", "-z", anchor],
+        command,
         stderr=subprocess.DEVNULL,
     )
 except (OSError, subprocess.CalledProcessError):
@@ -8903,7 +8955,7 @@ PY
             if declare -F gate_detail_begin >/dev/null 2>&1; then
                 gate_detail_begin "self_grade.phase_union_fallback" pure_processing
             fi
-            if ! commit_files=$(collect_cmd_phase_git_files "$commit_hash" "$CMD_ID"); then
+            if ! commit_files=$(collect_cmd_phase_git_files "$commit_hash" "$CMD_ID" "$missing"); then
                 if declare -F gate_detail_finish >/dev/null 2>&1; then
                     gate_detail_finish
                 fi
