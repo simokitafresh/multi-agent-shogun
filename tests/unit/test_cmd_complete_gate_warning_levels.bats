@@ -709,22 +709,29 @@ EOF
     grep -q "^karo|$TEST_CMD_ID gate_result: FAIL ninja=sasuke report=$(basename "$REPORT_FILE") reason=binary_checks_fail:AC1。再配備提案: FAIL報告を確認し、修正タスクを再配備せよ。|gate_fail|cmd_complete_gate$" "$INBOX_WRITE_LOG"
 }
 
-@test "cmd_complete_gate sends terminal clear notifications only after runtime publish succeeds" {
+@test "cmd_complete_gate queues post-CLEAR follow-up before terminal clear notifications" {
     run python3 - "$SRC_GATE_SCRIPT" <<'PY'
 import sys
 
 text = open(sys.argv[1], encoding="utf-8").read()
-publish = text.index('if ! publish_postclear_runtime_deltas; then')
-publish_block_exit = text.index('exit 1', publish)
+clear = text.index('    echo "GATE CLEAR: cmd完了許可"')
+queue_heading = text.index(
+    '    echo "Durable writer/runtime publication (post-CLEAR follow-up):"',
+    clear,
+)
+queue_call = text.index('    queue_postclear_publication_followup', queue_heading)
 terminal_notify = text.index(
     'send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"',
-    publish,
+    queue_call,
 )
 
-# A publish failure exits before notification; the success path reaches the
-# notification only after the publish checkpoint has returned successfully.
-assert publish < publish_block_exit < terminal_notify
-assert 'send_clear_notifications_once "$CMD_ID"' not in text[publish:publish_block_exit]
+# GATE CLEAR is durable before the post-CLEAR follow-up is queued, and the
+# terminal notification follows the queue proof without waiting for external
+# push/runtime completion.
+assert clear < queue_heading < queue_call < terminal_notify
+terminal_queue_section = text[queue_heading:terminal_notify]
+assert 'publish_postclear_runtime_deltas' not in terminal_queue_section
+assert text.count('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"') == 1
 PY
     [ "$status" -eq 0 ]
 }
