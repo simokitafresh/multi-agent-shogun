@@ -3129,7 +3129,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '879c5c6bebdfe9a3d959b94dace222b2d37621dcb0397afe8257af4d7e7b6e10' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "a5b5fc3fb9933bd24b3997f70e667d9db5cb381af693180409af86bec93cdff3"
@@ -3139,6 +3139,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "一次確認: self_retro event hash一致1件、event_id重複0件、completion_pipelineのordered checkpoints完了証跡あり。候補は既存の検証済み完了事象として解決。"
+  action_artifact: "logs/self_retro.jsonl#879c5c6bebdfe9a3d959b94dace222b2d37621dcb0397afe8257af4d7e7b6e10; context/semantic-map.md#provisional_insights"
+  resolved_at: "2026-08-24T14:49:16+09:00"
 - id: INS-20260824-140349145-cb02
   ts: "2026-08-24T14:03:49+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bsh682i9t task id tool use id toolu 01E5CUyRjLJAaC2jvb は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"

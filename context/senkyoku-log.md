@@ -1591,3 +1591,5 @@
 - 2026-08-24 03:16 `cmd_4380_full`完了: 実task gate phaseを5.187秒→2.460秒(52.6%)へ短縮、lesson SYNC対象を計測fixtureで9→7件へ限定。選択BATS 270/270 PASS・SKIP0、report gate PASS、task status=done。origin: [[cmd_4379_no_task経路のみ短縮_LS-A24計測代表性欠落]] -> [[cmd_4380_実task経路の支配要因根治]] -> [[complete_gate実task経路52.6pct短縮]]
 - 2026-08-24 03:19 `cmd_4380_full`最終RC訂正: 03:16のPASS記録を撤回。source publication前BLOCKでterminal未完、旧cmd_4379 no-task benchmarkをcmd_4380成果物へ昇格不可。AC1/AC2=NO、AC3/AC4=YES、270/270 PASS・SKIP0、report verdict=FAIL。origin: [[cmd_4380_source_publication前BLOCK]] -> [[PASS報告撤回]] -> [[AC1_AC2部分失敗]]
 - 2026-08-24 07:25 `cmd_karo_ci_fix_32665594208_normal`実装完了・全体未達: review task走査とtask-mode helper分類をcommit `6aef66c`/`4e5ee1d`で修正し、最新対象350件・task-mode31件はPASS/SKIP0。CI pushは2222件・SKIP0だがscope外daemon test #4がFAILのためtask_failed。origin: [[cmd_karo_ci_fix_32665594208]] -> [[task_snapshot_and_helper_scope_boundary]] -> [[scope外daemon_maintenance_FAIL]]
+
+- 2026-08-24: 速度改善シリーズ7弾完結(殿指示08-23 21:58)。cmd_complete_gate gate_evaluation 810→123秒(85%減)。計装4層常時化(phases/subphases/details/gap)。殿裁定=CI並行(08:41)+らせん構造(08:44)。push後追いレーン実証。次=gap分布→個別短縮弾
