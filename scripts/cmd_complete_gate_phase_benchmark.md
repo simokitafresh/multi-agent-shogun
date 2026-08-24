@@ -131,3 +131,36 @@ gate_evaluation内の検査短縮とは分離される。
 
 - `bash -n scripts/cmd_complete_gate.sh`: PASS
 - `bash scripts/run_tests.sh file tests/unit/test_cmd_complete_gate.bats`: `273/273 PASS`, `FAIL=0`, `SKIP=0`（receipt `run_tests_20260823T222251_4031591.json`、195.058s）
+
+## cmd_4384: post-source/runtime内部分解・純処理短縮・CI WAIT化
+
+計測日時: 2026-08-24 08:06–08:45 JST。既存本番実測`cmd_4383`を変更前基準とし、同一repo・同一cmd_idで変更後を再実測した。詳細計装は粗粒度`cmd_complete_gate_subphases.log`を変更せず、`CMD_COMPLETE_GATE_DETAIL_LOG`（既定=`logs/cmd_complete_gate_details.log`）へ`timestamp / cmd_id / class / label / seconds`を追記する。`class`は`pure_processing`または`external_wait`の二値である。
+
+### AC1: 主要処理群
+
+| 処理群 | class | 後追い方式 |
+|---|---|---|
+| `source_publication.push_task_repositories`、`runtime_publish.remote_source_push` / `remote_tip_lookup` / `remote_fetch` | `external_wait` | push実行自体はpublication契約、push-state確認とCI workflow確認はWAITとして後追い並行へ移行 |
+| `runtime_publish.tracked_runtime_lock_wait` / `commit_lock_wait` / `index_lock_retry_wait` | `external_wait` | lock/indexの待機は詳細ログへ記録。push-state・CIの確認結果はGATE判定を止めない |
+| `post_source_checks.cdp_production_check`、`post_source_checks.durable_writer_wait` | `external_wait` | 詳細ログへ記録し、CI/push結果確認系のGATE blockingから分離 |
+| `post_source_checks.report_commit_main_ancestry` / `capture_durable_writer_snapshot` / `capture_rework_event` / `runtime_source_convergence.local_reconcile` / `runtime_publish.local_source_build` | `pure_processing` | 検査項目を削除せず短縮対象 |
+
+CI workflowが非GREENでも`evaluate_ci_readiness_json`は`WAIT: ci_evaluation_external_pending=workflow_result_not_green`を返し、push-state確認欠損も`WAIT`台帳へ記録する。既存のtarget-side local failureは従来どおりBLOCKであり、CI結果の後追い化がローカル検査の削除へ波及しない。
+
+### AC2: 同条件before/after
+
+`discover_terminal_reports_for_cmd(cmd_4383)`の一次実測:
+
+| 条件 | wall seconds | 結果 |
+|---|---:|---|
+| 変更前（全YAMLをglobして全件PyYAML parse） | `>30.00` | timeout 30秒、`rc=124` |
+| 変更後（`rg -l --fixed-strings`候補抽出後、候補だけPyYAML parse） | `12.50` | `rc=0` |
+
+保守的短縮値は`>17.50s`、`>58.3%`。候補外YAMLの意味判定を削除せず、`rg`不在・検索失敗時は従来の全globへfallbackする。変更前の本番基準は`post_source_checks=646.535s`、pregate `runtime_publish=109.662s`。CI/pushの外部確認はWAIT後追いへ移し、移せない理由の記録は殿裁定により不要とした。
+
+### AC3/AC4: 判定不変性・検証
+
+- `bash -n scripts/cmd_complete_gate.sh`: PASS。
+- `BATS_CACHE=0 bash scripts/run_tests.sh file tests/unit/test_cmd_complete_gate.bats`: `275/275 PASS`、`FAIL=0`、`SKIP=0`。
+- `BATS_CACHE=0 bash scripts/run_tests.sh file tests/unit/test_cmd_complete_gate_ci_readiness.bats`: workflow failure WAIT、push-state WAITの契約を確認。
+- `BATS_CACHE=0 bash scripts/run_tests.sh file tests/unit/test_cmd_complete_gate_ci_result_type.bats`: workflow failure WAIT、target failure BLOCKの分離を確認。

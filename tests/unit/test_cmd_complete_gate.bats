@@ -2818,6 +2818,57 @@ PY
     [ "$output" = "subphase_telemetry=1" ]
 }
 
+# test_necessity: AC1/AC2 require a durable distinction between local work and
+# external waits inside the two dominant completion-gate phases.  The detail
+# log is a permanent contract because aggregate phase timing alone cannot
+# identify a safe optimization target or prove that a wait was not a check
+# removal.
+@test "cmd_complete_gate detail telemetry separates pure work from external waits" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+required = [
+    'GATE_DETAIL_LOG',
+    'gate_detail_begin',
+    'gate_detail_finish',
+    'pure_processing',
+    'external_wait',
+    'runtime_publish.remote_source_push',
+    'runtime_publish.index_lock_retry_wait',
+    'post_source_checks.durable_writer_wait',
+    'post_source_checks.capture_durable_writer_snapshot',
+]
+for marker in required:
+    assert marker in text, marker
+classes = __import__('re').findall(r'gate_detail_begin "[^"]+" (\w+)', text)
+assert classes and set(classes) <= {'pure_processing', 'external_wait'}, classes
+print('detail_telemetry=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "detail_telemetry=1" ]
+}
+
+# test_necessity: the lord ruling requires remote push-state confirmation to
+# remain observable as WAIT without holding the current GATE decision.  This
+# permanent contract prevents a future refactor from reintroducing a blocking
+# assignment to ALL_CLEAR in that external-observation branch.
+@test "cmd_complete_gate keeps push-state confirmation in asynchronous WAIT" {
+    run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index('if [ -n "$CI_PUSH_STATE_BLOCK" ]; then')
+end = text.index('elif [ "$CI_PUSH_DETECTED" = true ]; then', start)
+block = text[start:end]
+assert '[WAIT]' in block
+assert 'push state will be confirmed asynchronously' in block
+assert 'record_block_reason' not in block
+assert 'ALL_CLEAR=false' not in block
+print('ci_push_wait=1 gate_nonblocking=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "ci_push_wait=1 gate_nonblocking=1" ]
+}
+
 @test "cmd_complete real process blocks after normalize mutates approved report" {
     TEST_CMD_ID="cmd_fixture"
     local report="$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml"
@@ -7895,4 +7946,66 @@ PY
     [ "$status" -eq 0 ]
     [ "$output" = "rc=1" ]
     [ "$(cat "$root/tracked.txt")" = base ]
+}
+
+# test_necessity: completion telemetry must correlate all six durable event
+# boundaries, append idempotently, and expose the highest median gap for the
+# next optimization cycle.
+# regression_justification: the completion gate had stage totals but no
+# durable report→review→CLEAR sub-gap record, so finalize bottlenecks could
+# not be attributed to an actionable boundary.
+@test "completion gap metrics correlate events, rotate-safe append, and report the dominant gap" {
+    root="$BATS_TEST_TMPDIR/completion-gap"
+    mkdir -p "$root/queue/reports" "$root/queue/inbox" \
+        "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint" \
+        "$root/logs"
+    cat > "$root/queue/reports/ninja_report_cmd_gap.yaml" <<'EOF'
+parent_cmd: cmd_gap
+status: completed
+timestamp: "2026-08-24 10:00:00+09:00"
+EOF
+    cat > "$root/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+  - type: report_review
+    parent_cmd: cmd_gap
+    report_path: queue/reports/ninja_report_cmd_gap.yaml
+    timestamp: "2026-08-24T10:00:10+09:00"
+EOF
+    cat > "$root/queue/gates/cmd_gap/sg7_bundle.json" <<'EOF'
+{"review":{"cmd_id":"cmd_gap","reviewed_at":"2026-08-24T10:00:20+09:00"}}
+EOF
+    cat > "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint/gunshi.yaml" <<'EOF'
+timestamp: "2026-08-24T10:00:25+09:00"
+result: LGTM
+EOF
+    cat > "$root/queue/gates/cmd_gap/review_approvals/reports/fingerprint/karo.yaml" <<'EOF'
+timestamp: "2026-08-24T10:00:26+09:00"
+result: ACCEPT
+EOF
+    printf '2026-08-24T10:00:30\tcmd_gap\tstartup\t0.010\n' > "$root/logs/cmd_complete_gate_phases.log"
+
+    run env COMPLETION_GAP_ROOT="$root" COMPLETION_GAP_LOG="$root/logs/gaps.log" \
+        bash "$PROJECT_ROOT/scripts/completion_gap_metrics.sh" --cmd cmd_gap --append \
+        --write-report "$root/analysis.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"status": "complete"'* ]]
+    [[ "$output" == *'"report_done_to_review_request_sec": 10.0'* ]]
+    [[ "$output" == *'"karo_accept_to_gate_start_sec": 4.0'* ]]
+    [ "$(wc -l < "$root/logs/gaps.log")" -eq 1 ]
+    grep -q 'report_done_to_review_request_sec' "$root/analysis.md"
+
+    # Replaying the same terminal record must not duplicate the durable log.
+    run env COMPLETION_GAP_ROOT="$root" COMPLETION_GAP_LOG="$root/logs/gaps.log" \
+        bash "$PROJECT_ROOT/scripts/completion_gap_metrics.sh" --cmd cmd_gap --append
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$root/logs/gaps.log")" -eq 1 ]
+}
+
+# test_necessity: every normal and emergency CLEAR branch must queue the same
+# completion-gap recorder after the durable gate metric write.
+# regression_justification: adding only the normal branch would leave bypassed
+# completions unmeasured and silently bias the throughput distribution.
+@test "completion gap recorder is wired to both CLEAR branches" {
+    grep -q 'queue_completion_gap_metrics "\$CMD_ID"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    [ "$(grep -c 'queue_completion_gap_metrics "\$CMD_ID"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh")" -ge 2 ]
 }
