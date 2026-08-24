@@ -6831,19 +6831,30 @@ collect_gate_metrics_extra() {
             bloom_levels_csv="${bloom_levels_csv:+${bloom_levels_csv},}${bloom_level}"
         fi
 
-        # model収集: assigned_toのtmux @model_name を優先し、不可時はsettings.yamlへフォールバック
+        # model収集: assigned_toのtmux @model_nameを優先し、不可時は
+        # worker_id/task filenameで所有者を復元してsettings.yamlへフォールバック。
+        # 配備taskはassigned_toを持たない正本形式もあるため、filenameの所有者を
+        # 落とすとpane実態へ到達できず、全行がunknownになる(AC: P2 attribution)。
         local ninja_name
         ninja_name=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "assigned_to" "")
-        if [ -n "$ninja_name" ]; then
+        [ -n "$ninja_name" ] || ninja_name=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "worker_id" "")
+        [ -n "$ninja_name" ] || ninja_name=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_worker_id" "")
+        [ -n "$ninja_name" ] || ninja_name="$(basename "$task_file" .yaml)"
+
+        local owner
+        local -a owners=()
+        IFS=', ' read -r -a owners <<< "$ninja_name"
+        for owner in "${owners[@]}"; do
+            [ -n "$owner" ] || continue
             local model
-            model=$(resolve_agent_model_label "$ninja_name" 2>/dev/null || true)
+            model=$(resolve_agent_model_label "$owner" 2>/dev/null || true)
             model=$(encode_model_label_for_tsv "$model" 2>/dev/null || true)
             [ -z "$model" ] && model="unknown"
             if [[ "$_seen_models" != *"|$model|"* ]]; then
                 _seen_models="${_seen_models}|${model}|"
                 models_csv="${models_csv:+${models_csv},}${model}"
             fi
-        fi
+        done
     done
 
     [ -z "$task_types_csv" ] && task_types_csv="unknown"
