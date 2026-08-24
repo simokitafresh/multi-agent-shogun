@@ -3418,3 +3418,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260824-220019838-0800
+  ts: "2026-08-24T22:00:19+09:00"
+  insight: "semantic_index_update新概念候補: discussion:全体の流れはいいけど、将軍スタイルに拘りすぎずに読みやすくしよう。数字は10 5のようなスタイルがいい。一般的な単語は関門（Gate）など初回は英語の脚注がない は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
