@@ -555,6 +555,14 @@ report_commit_main_ancestry_state() {
             printf 'SKIP: %s\n' "$state"
             return 0
             ;;
+        UNPUSHED:*)
+            # Source publication is deliberately a post-CLEAR asynchronous
+            # lane.  The existing unpushed detector remains the source of
+            # truth for follow-up recovery; an absent remote tip must not hold
+            # the local gate decision hostage.
+            printf 'WAIT: %s\n' "$state"
+            return 0
+            ;;
         *)
             printf 'BLOCK: report commit main ancestry: %s\n' "$state"
             return 1
@@ -3856,10 +3864,12 @@ PY
         fi
         sleep 0.05
     done
-    wait || {
-        echo "  durable writers: BLOCK (post-CLEAR shell writer failed)" >&2
-        return 1
-    }
+    # The semantic worker is detached and publishes the generation-bound
+    # result above.  A bare `wait` here waits every unrelated background job
+    # inherited by this shell (lesson/index/notification workers included),
+    # which made durable_writer_wait measure unrelated work.  The pending and
+    # result markers are the contract-specific completion proof; do not add a
+    # process-wide barrier after that proof.
     capture_durable_writer_paths finish \
         "$GATES_DIR/semantic_causal_audit.paths.before.json" "$path_manifest" \
         "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" || {
@@ -3877,6 +3887,47 @@ if not isinstance(data.get("paths"), list):
 PY
     echo "  durable writers: drained (semantic generation=${SHOGUN_COMPLETION_GENERATION})"
 }
+
+# Post-CLEAR publication is intentionally independent from the gate decision.
+# Source push failures remain visible to the existing unpushed detector and the
+# durable/runtime lane records its own failure instead of rewriting CLEAR.
+queue_postclear_publication_followup() {
+    local followup_log="$GATES_DIR/postclear_publication.log"
+    local task_file_args=()
+    task_file_args=("${MATCHING_TASK_FILES[@]}")
+    (
+        local push_rc=0 writer_rc=0 runtime_rc=0
+        gate_detail_begin "postclear_followup.push_task_repositories" external_wait
+        if push_task_repositories "${task_file_args[@]}"; then
+            gate_detail_finish
+        else
+            push_rc=$?
+            gate_detail_finish
+            printf '%s\t%s\tWARN\tpostclear_source_push_failed\n' \
+                "$(date -Iseconds)" "$CMD_ID" >> "$followup_log"
+        fi
+        gate_detail_begin "post_source_checks.durable_writer_wait" external_wait
+        if wait_for_postclear_durable_writers; then
+            gate_detail_finish
+            if publish_postclear_runtime_deltas; then
+                :
+            else
+                runtime_rc=$?
+                printf '%s\t%s\tWARN\tpostclear_runtime_publish_failed\n' \
+                    "$(date -Iseconds)" "$CMD_ID" >> "$followup_log"
+            fi
+        else
+            writer_rc=$?
+            gate_detail_finish
+            printf '%s\t%s\tWARN\tpostclear_durable_writer_failed\n' \
+                "$(date -Iseconds)" "$CMD_ID" >> "$followup_log"
+        fi
+        printf '%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$CMD_ID" \
+            "$push_rc" "$writer_rc" "$runtime_rc" >> "$followup_log"
+    ) >> "$followup_log" 2>&1 &
+    echo "  post-CLEAR publication: queued (push/runtime/durable follow-up; log=$followup_log)"
+}
+export -f queue_postclear_publication_followup
 
 if [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]; then
     resolve_task_repo_dir "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
@@ -11138,10 +11189,10 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  SKIP (lesson_deprecation_scan.sh not found)"
     fi
 
-    # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
+    # ─── git push（GATE CLEAR後の非同期publication） ───
     echo ""
-    echo "Git push (post-GATE CLEAR - emergency override):"
-    push_task_repositories "${MATCHING_TASK_FILES[@]}"
+    echo "Git push (post-GATE CLEAR - emergency override): queued"
+    queue_postclear_publication_followup
 
     # ─── Gunshi gate_result reflux 2回目（GATE CLEAR後 最終ステップ, cmd_3370, emergency override） ───
     echo ""
@@ -13309,39 +13360,20 @@ else
 fi
 
 # ─── GATE CLEAR前のsource-only push ───
-# GATE CLEARを先に記録してからpushすると、push失敗がWARNへ縮退して
-# 「未公開のままCLEAR」という偽完了になる。remote先端へのsource-only pushと
-# remote包含検証を完了してから、下のterminal CLEAR分岐へ進める。
+# Push is a post-CLEAR external publication.  The report commit remains
+# locally validated here; remote containment is recorded as WAIT and the
+# follow-up worker below publishes it after the decision.  The existing
+# unpushed detector remains responsible for failures/retries.
 if [ "$ALL_CLEAR" = true ] \
    && [[ "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]]; then
     gate_subphase_tick "source_publication"
     echo ""
-    echo "Git push (pre-GATE CLEAR, report source only):"
-    gate_detail_begin "source_publication.push_task_repositories" external_wait
-    if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then
-        gate_detail_finish
-        gate_subphase_tick "source_publication_blocked"
-        record_block_reason "autopush_source_only_failed"
-        ALL_CLEAR=false
-    else
-        gate_detail_finish
-        gate_subphase_tick "runtime_publish"
-        echo ""
-        echo "Tracked runtime publish (pre-generation checkpoint):"
-        if ! publish_postclear_runtime_deltas pregate; then
-            gate_subphase_tick "runtime_publish_blocked"
-            record_block_reason "pregate_runtime_publish_failed"
-            ALL_CLEAR=false
-        else
-            if ! converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh; then
-                gate_subphase_tick "source_convergence_blocked"
-                record_block_reason "shared_execution_source_convergence_failed"
-                ALL_CLEAR=false
-            else
-                gate_subphase_tick "post_source_checks"
-            fi
-        fi
-    fi
+    echo "Git push (post-GATE CLEAR follow-up): queued"
+    echo "Tracked runtime publish (post-GATE CLEAR follow-up): queued"
+    echo "  source publication does not block the current gate decision"
+    gate_subphase_tick "source_publication_wait"
+    gate_subphase_tick "runtime_publish_wait"
+    gate_subphase_tick "post_source_checks"
 fi
 
 # The exact report commit is the immutable completion artifact. Later commits
@@ -14218,24 +14250,12 @@ PYEOF
     fi
 
     echo ""
-    echo "Durable post-CLEAR writer wait (terminal checkpoint):"
-    gate_detail_begin "post_source_checks.durable_writer_wait" external_wait
-    if ! wait_for_postclear_durable_writers; then
-        gate_detail_finish
-        echo "GATE BLOCK: ${CMD_ID}:postclear_durable_writer_wait_failed" >&2
-        exit 1
-    fi
-    gate_detail_finish
+    echo "Durable writer/runtime publication (post-CLEAR follow-up):"
+    queue_postclear_publication_followup
 
-    echo ""
-    echo "Tracked runtime publish (terminal checkpoint):"
-    if ! publish_postclear_runtime_deltas; then
-        echo "GATE BLOCK: ${CMD_ID}:postclear_runtime_publish_failed" >&2
-        exit 1
-    fi
-
-    # COMPLETE is published only after every synchronous postprocessor and its
-    # tracked runtime output reached origin/shared HEAD.
+    # COMPLETE is published after the gate decision.  Durable writer and
+    # tracked runtime publication continue in their own fail-visible worker;
+    # they must not hold the current decision on unrelated external waits.
     echo ""
     echo "Status completed (post-runtime-publish):"
     terminal_status_target="missing"
@@ -14294,7 +14314,7 @@ PYEOF
         && record_finalize_phase_event task_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
         || true) &
     echo "Task idle transition: queued (async)"
-    echo "Git push (post-GATE CLEAR): SKIP (completed before terminal CLEAR)"
+    echo "Git push (post-GATE CLEAR): queued (asynchronous follow-up)"
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"
 
     echo ""
