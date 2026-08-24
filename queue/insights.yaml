@@ -3291,3 +3291,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260824-193136062-a510
+  ts: "2026-08-24T19:31:36+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_4387 tobisaru lesson_candidate: receiptはfetch後ancestor再検証する remote tipのobject未取得で初回ancestor判定がfalseでも、fetch後にreceiptとancestorを再検証すれば二重pushを防げる"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
+- id: INS-20260824-193150993-cec4
+  ts: "2026-08-24T19:31:50+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4387; matched=lock; current_pattern=cmd_complete_gate.sh速度改善第八弾 — 変動要因3種(post_source_checks残余・self_grade逆行・後追いレーンlock競合)の実測分解と是正; candidate_level=4; candidate=おしお殿#4「2回同じ失敗→仮説ごと疑え」。gate_fire_logから同一忍者×同一BLOCK理由の連続回数を計数。2回連続→仮説転換メッセージ表示+exit 1(強制BLOCK)。GP-198のgate_diagnose_check.shに統合実装; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4387"
+  fix_known: false
+  status: pending
