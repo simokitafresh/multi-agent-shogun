@@ -1597,3 +1597,4 @@
 - 2026-08-24夜: 速度改善12弾終端(gate 810→119秒)。通信監査=実阻害なし(偽陰性27/27是正)。gap分布確定(最大隙間=報告→レビュー依頼618秒、cmd_4391走行)。殿裁定=らせん(部分×全体)継続を恒久主軸化。第二十五話note下書き済
 - 2026-08-24夜 cmd_4391完了: terminal reportのcompleted_atをatomic publicationへ固定し、gap計測がauthoring timestampをreport_doneと誤帰属する根因を是正。baseline中央値618.000秒→補正fixture5.0秒、420/420 PASS・SKIP0、commit 7373f9c12。
 - 2026-08-25 cmd_4392_normal hayate完了: 親reportへAC1-3を統合し、CI 5 runs/30 jobs/260 steps、local 239/239 (PASS221/FAIL18/SKIP0)、AC3統合md/commit 32632bb98を既存成果物として確認。コード変更なし、report/gate PASS。origin: [[cmd_4392]] -> [[CI_ローカル全体分解]] -> [[親report_AC1-3統合]]
+- 2026-08-25 cmd_4402計測: 根治弾の前後同幅を機械集計し、blocked 3→4・再試行3→1・解消中央値110→141秒、precheck FAIL 1→1、親report誤BLOCK 1→0を確定。全体改善は未確認として次回の理由別cohort計測へ還流。origin: [[cmd_4402_before_after数値証明]] -> [[根治4本効果計測0件]] -> [[理由別cohort再計測]]
