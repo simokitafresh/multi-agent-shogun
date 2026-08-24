@@ -3440,18 +3440,57 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T22:19:34+09:00"
 - id: INS-20260824-220910063-31cc
   ts: "2026-08-24T22:09:10+09:00"
   insight: "[[通信レーン是正第十一弾 — codex nudge到達検証の高失敗率の切り分けと根治 偽陰性なら検証修正・実不達なら配送]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=通信レーン是正第十一弾 — codex nudge到達検証の高失敗率の切り分けと根治(偽陰性なら検証修正・実不達なら配送根治)"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T22:19:34+09:00"
 - id: INS-20260824-220912015-db71
   ts: "2026-08-24T22:09:12+09:00"
   insight: "[[全体スループット計装第十弾 — completion gap telemetryの記録欠落と負値の是正で全体側の計測を回]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=全体スループット計装第十弾 — completion gap telemetryの記録欠落と負値の是正で全体側の計測を回す"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T22:19:35+09:00"
+- id: INS-20260824-221935569-4451
+  ts: "2026-08-24T22:19:35+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿裁定_らせん構造_20260824_0844]] は既存aliasesに一致なし。類似概念TOP3: known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=10.1) / semantic_dictionary_design(セマンティック辞書構想; alias=source 殿裁定 lord conversation; score=9.9) / db_price_data_range(DB価格データ範囲; alias=殿裁定 GSはネイティブ暦 本番と同一のDTB3暦 に統一; score=9.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T22:19:45+09:00"
+- id: INS-20260824-221936111-511f
+  ts: "2026-08-24T22:19:36+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[gap記録1件のまま増えず_負値-3846]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=gist_2232467c_P1a-2_共通maintenance_lock; score=2.6) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=2.6) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_ruling_20260810_2348; score=2.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T22:19:45+09:00"
+- id: INS-20260824-221936643-7a65
+  ts: "2026-08-24T22:19:36+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4389_計測器の根治]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_4385_全体隙間計装; score=21.5) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=20.5) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=cmd_3786復旧手順; score=20.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T22:19:46+09:00"
