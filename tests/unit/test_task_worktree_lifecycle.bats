@@ -207,7 +207,9 @@ assert target_paths == [
 ], target_paths
 PY
         export REPO_ROOT="$PROJECT_ROOT"
-        source <(sed -n "1,2143p" "$PROJECT_ROOT/scripts/run_tests.sh")
+        # Source the canonical function definitions structurally; fixed line
+        # slices break when run_tests.sh grows or refactors its dispatch code.
+        source "$PROJECT_ROOT/scripts/run_tests.sh"
         scope_rc=0
         scope=$(task_scope_paths "$TASK" | tr "\\0" "\\n") || scope_rc=$?
         [ "$scope_rc" -eq 0 ]
