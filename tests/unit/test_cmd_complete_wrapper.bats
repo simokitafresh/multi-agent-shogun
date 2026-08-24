@@ -696,6 +696,50 @@ SH
     grep -q 'cmd_complete_gate.sh|cmd_fixture' "$CMD_COMPLETE_TEST_LOG"
 }
 
+# test_necessity: archive_terminal must distinguish a parent report from a
+# suffix-named child report while both are present in queue/reports.
+# regression_justification: cmd_4393 was falsely BLOCKed because the parent
+# prefix glob counted completed child reports as active parent reports.
+@test "archive terminal counts only the exact parent report identity" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/exact-parent.log"
+    local parent="$FIXTURE/queue/reports/hanzo_report_cmd_fixture.yaml"
+    local child="$FIXTURE/queue/reports/saizo_report_cmd_fixture_recon2.yaml"
+    mkdir -p "$FIXTURE/queue/reports" "$FIXTURE/queue/archive/reports"
+    cat > "$parent" <<'YAML'
+parent_cmd: cmd_fixture
+status: completed
+YAML
+    cat > "$child" <<'YAML'
+parent_cmd: cmd_fixture_recon2
+status: completed
+YAML
+
+    local parent_hash
+    parent_hash="$(sha256sum "$parent" | awk '{print $1}')"
+    cat > "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" <<JSON
+{"review":{"cmd_id":"cmd_fixture","report_fingerprint":"$parent_hash"}}
+JSON
+    cat > "$FIXTURE/scripts/archive_completed.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+project="${ARCHIVE_COMPLETED_PROJECT_DIR:?}"
+printf 'archive_completed.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+archive="$project/queue/archive/reports/hanzo_report_cmd_fixture.yaml"
+mv "$project/queue/reports/hanzo_report_cmd_fixture.yaml" "$archive"
+ln -s "$archive" "$project/queue/reports/hanzo_report_cmd_fixture.yaml"
+touch "$project/queue/gates/cmd_fixture/archive.done"
+SH
+    chmod +x "$FIXTURE/scripts/archive_completed.sh"
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS archive_terminal marker=present active_reports=0"* ]]
+    [ -L "$parent" ]
+    [ -f "$child" ]
+    grep -q '^archive_completed.sh|3 cmd_fixture$' "$CMD_COMPLETE_TEST_LOG"
+}
+
 @test "archived command not-found continues with archive and gate CLEAR evidence" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/archived.log"
     mkdir -p "$FIXTURE/queue/archive/cmds" "$FIXTURE/logs"

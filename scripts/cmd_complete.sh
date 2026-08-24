@@ -114,6 +114,33 @@ completion_report_symlink_is_terminal() {
     [[ "$link_hash" == "$target_hash" && "$target_hash" == "$expected" ]]
 }
 
+completion_report_parent_cmd_matches() {
+    local report_file="$1" expected_cmd="$2"
+    python3 - "$report_file" "$expected_cmd" <<'PY'
+import sys
+
+import yaml
+
+path, expected = sys.argv[1:]
+try:
+    with open(path, encoding="utf-8") as fh:
+        report = yaml.safe_load(fh) or {}
+except Exception:
+    # An unreadable matching report is still active; archive_terminal must not
+    # silently treat an unresolved identity as completed.
+    raise SystemExit(0)
+
+if not isinstance(report, dict):
+    raise SystemExit(0)
+
+parent_cmd = report.get("parent_cmd")
+if parent_cmd is None:
+    # Legacy reports without identity metadata remain active fail-closed.
+    raise SystemExit(0)
+raise SystemExit(0 if str(parent_cmd) == expected else 1)
+PY
+}
+
 completion_active_report_count() {
     local report_file count=0
     while IFS= read -r -d '' report_file; do
@@ -123,7 +150,12 @@ completion_active_report_count() {
         count=$((count + 1))
     done < <(find "$ROOT_DIR/queue/reports" -maxdepth 1 \
         \( -type f -o -type l \) ! -name '.*' \
-        -name "*_report_${CMD_ID}*.yaml" -print0 2>/dev/null)
+        -name "*_report_${CMD_ID}.yaml" -print0 2>/dev/null \
+        | while IFS= read -r -d '' report_file; do
+            if completion_report_parent_cmd_matches "$report_file" "$CMD_ID"; then
+                printf '%s\0' "$report_file"
+            fi
+        done)
     printf '%s\n' "$count"
 }
 
