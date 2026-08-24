@@ -545,7 +545,13 @@ report_commit_main_ancestry_state() {
     local task_file="${3:-}"
     local state
 
+    if declare -F gate_detail_begin >/dev/null 2>&1; then
+        gate_detail_begin "post_source_checks.report_commit_main_ancestry.resolve_state" pure_processing
+    fi
     state=$(report_ci_push_state "$report_file" "$repo_dir" "$task_file")
+    if declare -F gate_detail_finish >/dev/null 2>&1; then
+        gate_detail_finish
+    fi
     case "$state" in
         PUSHED:*)
             printf 'PASS: %s\n' "$state"
@@ -3218,6 +3224,18 @@ push_task_repositories() {
                 # ancestry/equivalence lane inspects its commit graph; an
                 # ls-remote SHA alone is not enough for cat-file/diff-tree.
                 git -C "$repo" fetch -q "$remote" "$push_ref" || true
+                if [ "$receipt_expected" = true ] \
+                    && source_publish_receipt_matches "$receipt" "$CMD_ID" \
+                        "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}" \
+                    && receipt_source_commits_are_remote_ancestors "$repo" "$remote_tip" \
+                        "${source_commits[@]}"; then
+                    for task_file in "${eligible_task_files[@]}"; do
+                        [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
+                        mark_task_worktree_published "$task_file" "$remote_tip" || return 1
+                    done
+                    echo "  git push: SKIP ($repo durable source-only publication receipt exact-match+ancestry after fetch)"
+                    break
+                fi
             fi
             # This proof is intentionally task-backed.  Archived/report-only
             # source contracts do not carry the deployment base and therefore
@@ -3481,19 +3499,33 @@ capture_durable_writer_paths() {
 import hashlib, json, os, subprocess, sys, tempfile
 mode, repo, snapshot, manifest, cmd_id, generation = sys.argv[1:]
 
+def git_paths(*args):
+    raw = subprocess.check_output(
+        ["git", "-C", repo, *args], stderr=subprocess.DEVNULL
+    )
+    return {os.fsdecode(path) for path in raw.split(b"\0") if path}
+
 def tracked_state():
-    paths = subprocess.check_output(
-        ["git", "-C", repo, "ls-files", "-z"], stderr=subprocess.DEVNULL
-    ).decode("utf-8", "surrogateescape").split("\0")
+    # A full-repository content hash on both sides made this terminal proof
+    # scale with every tracked file (52s observed for one snapshot). Git's
+    # staged/unstaged name lists identify the only paths that can change while
+    # preserving deletion and pre-existing-dirty-file handling. HEAD is kept
+    # separately so a writer that commits a clean path is still detected.
+    paths = git_paths("diff", "--name-only", "-z")
+    paths.update(git_paths("diff", "--cached", "--name-only", "-z"))
     state = {}
-    for rel in filter(None, paths):
+    for rel in paths:
         path = os.path.join(repo, rel)
         if os.path.isfile(path):
             with open(path, "rb") as fh:
                 state[rel] = hashlib.sha256(fh.read()).hexdigest()
         else:
             state[rel] = None
-    return state
+    head = subprocess.check_output(
+        ["git", "-C", repo, "rev-parse", "HEAD"], stderr=subprocess.DEVNULL,
+        text=True,
+    ).strip()
+    return {"head": head, "tracked": state}
 
 def atomic_json(path, data):
     fd, tmp = tempfile.mkstemp(prefix=".durable-writer.", dir=os.path.dirname(path))
@@ -3514,11 +3546,21 @@ elif mode == "finish":
     if before.get("cmd_id") != cmd_id or before.get("completion_generation") != generation:
         raise SystemExit(1)
     after = tracked_state()
-    changed = sorted(p for p in set(before["tracked"]) | set(after)
-                     if before["tracked"].get(p) != after.get(p))
+    before_state = before.get("tracked")
+    after_state = after
+    if not isinstance(before_state, dict) or not isinstance(after_state, dict):
+        raise SystemExit(1)
+    changed = {
+        p for p in set(before_state.get("tracked", {})) | set(after_state.get("tracked", {}))
+        if before_state.get("tracked", {}).get(p) != after_state.get("tracked", {}).get(p)
+    }
+    if before_state.get("head") != after_state.get("head"):
+        changed.update(git_paths(
+            "diff", "--name-only", "-z", before_state["head"], after_state["head"]
+        ))
     atomic_json(manifest, {"version": 1, "cmd_id": cmd_id,
                            "completion_generation": generation,
-                           "paths": changed})
+                           "paths": sorted(changed)})
 else:
     raise SystemExit(2)
 PY
@@ -3548,12 +3590,12 @@ publish_postclear_runtime_deltas() {
         gate_detail_finish() { :; }
     fi
 
-    # A tracked-runtime publication is a repository transaction.  Serialize
-    # every generation on the shared git common-dir, then deliberately read
-    # the manifest, HEAD and dirty set only after admission.  A waiting writer
-    # therefore composes on the predecessor's latest checkpoint instead of
-    # treating that legitimate HEAD movement as a terminal conflict.  The
-    # subshell owns the fd so every fail-closed return releases the lock.
+    # A tracked-runtime publication admits each local generation on the shared
+    # git common-dir, then deliberately reads the manifest, HEAD and dirty set
+    # only after admission. A waiting writer therefore composes on the
+    # predecessor's latest checkpoint instead of treating that legitimate HEAD
+    # movement as a terminal conflict. The subshell owns the fd so every
+    # fail-closed return releases the lock.
     git_common_dir=$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
     publish_lock="$git_common_dir/shogun-tracked-runtime-publish.lock"
     exec {publish_lock_fd}>"$publish_lock" || return 1
@@ -3637,6 +3679,7 @@ PY
     gate_detail_finish
 
     if [ "${#runtime_paths[@]}" -eq 0 ]; then
+        exec {publish_lock_fd}>&-
         echo "  runtime publish: clean (tracked runtime dirty=0)"
         return 0
     fi
@@ -3720,6 +3763,12 @@ PY
             return 1
         }
     done
+    # The shared runtime lock protects local generation admission and source
+    # composition only. Network publication is independently guarded by the
+    # remote-tip/source-only contract and the narrow commit lock below; holding
+    # this lock across push/fetch serialized unrelated publishers for minutes.
+    exec {publish_lock_fd}>&-
+    echo "  runtime publish: local generation admitted; network lock released"
     # Publish one field at a time.  In particular, an insights-only source
     # commit reaches the existing stable-ID merge lane even when other runtime
     # fields are dirty in the same generation.  Refresh the tip between fields
@@ -3870,12 +3919,21 @@ PY
     # which made durable_writer_wait measure unrelated work.  The pending and
     # result markers are the contract-specific completion proof; do not add a
     # process-wide barrier after that proof.
+    if declare -F gate_detail_begin >/dev/null 2>&1; then
+        gate_detail_begin "post_source_checks.durable_writer_wait.tracked_delta" pure_processing
+    fi
     capture_durable_writer_paths finish \
         "$GATES_DIR/semantic_causal_audit.paths.before.json" "$path_manifest" \
         "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" || {
+        if declare -F gate_detail_finish >/dev/null 2>&1; then
+            gate_detail_finish
+        fi
         echo "  durable writers: BLOCK (generation manifest finalize failed)" >&2
         return 1
     }
+    if declare -F gate_detail_finish >/dev/null 2>&1; then
+        gate_detail_finish
+    fi
     python3 - "$path_manifest" "$CMD_ID" "$SHOGUN_COMPLETION_GENERATION" <<'PY'
 import json, sys
 path, cmd_id, generation = sys.argv[1:]
@@ -8743,23 +8801,44 @@ PY
 collect_cmd_phase_git_files() {
     local anchor_hash="$1"
     local cmd_id="${2:-$CMD_ID}"
-    local hash subject
-    local -A seen_hashes=()
 
     # The report commit is authoritative even when its subject does not carry
     # the cmd id.  Older phase commits are included only on the anchor's
     # ancestry and only with an exact "${cmd_id}:" subject prefix.  This keeps
     # unrelated HEAD/newer commits and cmd_99/cmd_999 prefix collisions out.
-    while IFS=$'\t' read -r hash subject; do
-        [ -n "$hash" ] || continue
-        if [ "$hash" = "$anchor_hash" ] || [[ "$subject" == "${cmd_id}:"* ]]; then
-            seen_hashes["$hash"]=1
-        fi
-    done < <(git -C "$SCRIPT_DIR" log --format=$'%H\t%s' "$anchor_hash" 2>/dev/null || true)
+    # One NUL-safe log walk replaces the old log-then-one-git-show-per-phase
+    # loop. The old loop made the slow self-grade path pay one process and
+    # object walk for every matching phase commit.
+    SCRIPT_DIR="$SCRIPT_DIR" ANCHOR_HASH="$anchor_hash" CMD_ID="$cmd_id" python3 - <<'PY'
+import os
+import re
+import subprocess
 
-    for hash in "${!seen_hashes[@]}"; do
-        collect_git_show_w_files "$hash"
-    done | awk 'NF && !seen[$0]++' | sort -u
+root = os.environ["SCRIPT_DIR"]
+anchor = os.environ["ANCHOR_HASH"]
+cmd_id = os.environ["CMD_ID"]
+try:
+    raw = subprocess.check_output(
+        ["git", "-C", root, "log", "--format=%H%x09%s%x00", "--name-only", "-z", anchor],
+        stderr=subprocess.DEVNULL,
+    )
+except (OSError, subprocess.CalledProcessError):
+    raise SystemExit(1)
+
+selected = False
+seen = set()
+for token in raw.split(b"\0"):
+    if len(token) >= 41 and token[40:41] == b"\t" and re.fullmatch(rb"[0-9a-f]{40}", token[:40]):
+        commit = token[:40].decode("ascii")
+        subject = token[41:].decode("utf-8", "surrogateescape")
+        selected = commit == anchor or subject.startswith(cmd_id + ":")
+        continue
+    if selected and token:
+        path = os.fsdecode(token)
+        if path not in seen:
+            seen.add(path)
+            print(path)
+PY
 }
 
 check_self_grade_commit_file_coverage() {
@@ -8804,18 +8883,36 @@ PY
         # needed when a report intentionally spans earlier cmd_* phase commits.
         # This preserves the exact git-show -w semantics while avoiding a full
         # repository log traversal on the common path.
+        if declare -F gate_detail_begin >/dev/null 2>&1; then
+            gate_detail_begin "self_grade.commit_file_direct" pure_processing
+        fi
         if ! commit_files=$(collect_git_show_w_files "$commit_hash"); then
+            if declare -F gate_detail_finish >/dev/null 2>&1; then
+                gate_detail_finish
+            fi
             echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES git show -w failed (report commit ${commit_hash})"
             warned=true
             continue
         fi
+        if declare -F gate_detail_finish >/dev/null 2>&1; then
+            gate_detail_finish
+        fi
 
         missing=$(comm -23 <(printf '%s\n' "$report_files") <(printf '%s\n' "$commit_files"))
         if [ -n "$missing" ]; then
+            if declare -F gate_detail_begin >/dev/null 2>&1; then
+                gate_detail_begin "self_grade.phase_union_fallback" pure_processing
+            fi
             if ! commit_files=$(collect_cmd_phase_git_files "$commit_hash" "$CMD_ID"); then
+                if declare -F gate_detail_finish >/dev/null 2>&1; then
+                    gate_detail_finish
+                fi
                 echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES git phase union failed (report commit ${commit_hash})"
                 warned=true
                 continue
+            fi
+            if declare -F gate_detail_finish >/dev/null 2>&1; then
+                gate_detail_finish
             fi
             missing=$(comm -23 <(printf '%s\n' "$report_files") <(printf '%s\n' "$commit_files"))
         fi
@@ -13401,6 +13498,7 @@ if [ "$ALL_CLEAR" = true ]; then
     fi
     gate_detail_begin "post_source_checks.capture_durable_writer_snapshot" pure_processing
     rm -f -- "$GATES_DIR/semantic_causal_audit.paths.json"
+    gate_detail_begin "post_source_checks.capture_durable_writer_snapshot.tracked_delta" pure_processing
     capture_durable_writer_paths start \
         "$GATES_DIR/semantic_causal_audit.paths.before.json" \
         "$GATES_DIR/semantic_causal_audit.paths.json" \
