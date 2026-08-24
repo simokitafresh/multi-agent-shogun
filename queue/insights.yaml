@@ -3230,3 +3230,41 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-24T23:02:24+09:00"
+- id: INS-20260824-232205754-ea7f
+  ts: "2026-08-24T23:22:05+09:00"
+  insight: "[[全体の流れはいいけど]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=全体の流れはいいけど、将軍スタイルに拘りすぎずに読みやすくしよう。数字は10.5のようなスタイルがいい。一般的な単語は関門（Gate）など初回は英語の脚注がないと読みづらいな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260824-232208907-4fc5
+  ts: "2026-08-24T23:22:08+09:00"
+  insight: "[[今の時点で更なる改良は出来そうかな？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今の時点で更なる改良は出来そうかな？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260824-232210156-ebcf
+  ts: "2026-08-24T23:22:10+09:00"
+  insight: "[[スループットの改善について数値を含むレポートをしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=スループットの改善について数値を含むレポートをしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260824-232211284-f9b1
+  ts: "2026-08-24T23:22:11+09:00"
+  insight: "[[殿指示2026 08 23 21 58『 shが異常に遅い』の完遂]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示2026-08-23 21:58『cmd_complete_gate.shが異常に遅い』の完遂。cmd_4379はno-task経路の短縮とフェーズ計装導入・work_sec計測バグ修正を達成したが、計測は隔離fixtureのtaskなし経路のみで、殿の体感の真因である実task経路(task・report・review依存走査・全PJ lesson"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260824-232214421-502a
+  ts: "2026-08-24T23:22:14+09:00"
+  insight: "[[今 クリアされても 今より強くてニューゲームができるようにせよ]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=lord query=今 クリアされても 今より強くてニューゲームができるようにせよ。らせんによる部分最適化と全体最適化の継続をしよう quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
+  priority: "medium"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T23:22:29+09:00"
