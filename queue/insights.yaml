@@ -3713,3 +3713,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-062526880-537f
+  ts: "2026-08-25T06:25:26+09:00"
+  insight: "[[今日はらせん構造で何をどれくらい速くした？総括をしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今日はらせん構造で何をどれくらい速くした？総括をしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
