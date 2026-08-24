@@ -111,28 +111,23 @@ EOF
     [ -z "$output" ]
 }
 
-# test_necessity: source-only publication must first drain tracked runtime
-# deltas, then converge the live execution source while preserving local-only
-# history and dirty source bytes.
-# regression_justification: converging first was blocked by legitimate runtime
-# dirty paths left after source-only publication.
-@test "pregate shared convergence is ordered and fail-closed" {
+# test_necessity: source-only publication must be queued after the gate
+# decision; remote waits must not re-enter the gate-evaluation critical path.
+@test "source publication is post-CLEAR and fail-visible" {
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import pathlib, sys
 text=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
-push=text.index('if ! push_task_repositories "${MATCHING_TASK_FILES[@]}"; then')
-pregate=text.index('publish_postclear_runtime_deltas pregate', push)
-converge=text.index('converge_shared_execution_sources "$SCRIPT_DIR" scripts/cmd_complete_gate.sh', pregate)
-snapshot=text.index('capture_durable_writer_paths start', converge)
-assert push < pregate < converge < snapshot
-start=text.index('converge_shared_execution_sources()')
-fn=text[start:text.index('\n}', start)+2]
-for token in ('diff --quiet', 'diff --cached --quiet', 'dirty source path=', 'merge --no-edit', 'merge --abort', 'merge-base --is-ancestor'):
-    assert token in fn
-print('ordering=1 dirty_preserved=1 local_history_preserved=1 fail_closed=1')
+queue=text.index('queue_postclear_publication_followup()')
+decision=text.index('echo "GATE CLEAR: cmd完了許可"')
+queued=text.index('queue_postclear_publication_followup', decision)
+complete=text.index('Status completed (post-runtime-publish):')
+assert queue < decision < queued < complete
+assert 'source publication does not block the current gate decision' in text
+assert 'postclear_source_push_failed' in text
+print('post_clear=1 gate_nonblocking=1 failure_visible=1')
 PY
     [ "$status" -eq 0 ]
-    [ "$output" = "ordering=1 dirty_preserved=1 local_history_preserved=1 fail_closed=1" ]
+    [ "$output" = "post_clear=1 gate_nonblocking=1 failure_visible=1" ]
 }
 
 # test_necessity: pregate publication reuses the field-aware source-only lane
@@ -2806,7 +2801,8 @@ required = [
     'if [ "${CMD_COMPLETE_GATE_SUBPHASE_LOG:-}" = "disabled" ]',
     'gate_subphase_tick "gate_checks"',
     'gate_subphase_tick "source_publication"',
-    'gate_subphase_tick "runtime_publish"',
+    'gate_subphase_tick "runtime_publish_wait"',
+    'gate_subphase_tick "source_publication_wait"',
     'gate_subphase_finish',
 ]
 for marker in required:
@@ -4699,9 +4695,9 @@ YAML
     [[ "$output" == *"git push: DRY_RUN ($repo)"* ]]
     [[ "$output" != *"git push: DRY_RUN ($PROJECT_ROOT)"* ]]
 
-    run grep -Fc 'push_task_repositories "${MATCHING_TASK_FILES[@]}"' "$SRC_GATE_SCRIPT"
+    run grep -Fc 'push_task_repositories "${task_file_args[@]}"' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
-    [ "$output" -eq 2 ]
+    [ "$output" -eq 1 ]
 }
 
 # cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730
@@ -6624,12 +6620,16 @@ BASH
 }
 
 # cmd_karo_hotfix_autopush_divergence_rootfix AC3
-# test_necessity: source-only push must run once before terminal CLEAR; a second
-# post-CLEAR call would duplicate the source commit or reintroduce CLEAR-first.
-@test "AC3: source-only push is before terminal CLEAR and helpers remain single-source" {
-    run grep -Fc 'push_task_repositories "${MATCHING_TASK_FILES[@]}"' "$SRC_GATE_SCRIPT"
+# test_necessity: source-only push must be invoked only by the post-CLEAR
+# follow-up; no synchronous call may reintroduce the old gate wait.
+@test "AC3: source-only push is post-CLEAR and helper remains single-source" {
+    run grep -Fc 'push_task_repositories "${task_file_args[@]}"' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
-    [ "$output" -eq 2 ]
+    [ "$output" -eq 1 ]
+
+    run sh -c 'grep -Fc '"'"'push_task_repositories "${MATCHING_TASK_FILES[@]}"'"'"' "$1" || true' _ "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 0 ]
 
     run grep -Fc 'push_overlap_blocking_paths()' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
@@ -7131,11 +7131,9 @@ run_commit_repo_resolution() {
     [[ "$output" == *"SKIP: report commit blob parity: normal_paths=0 mutable_skipped=1"* ]]
 }
 
-# test_necessity: terminal ancestry is fail-closed for a normal PASS report,
-# even when the commit is locally resolvable and files_modified is present.
-# regression_justification: the former CI-only check emitted UNPUSHED but did
-# not change ALL_CLEAR, allowing an unreachable report artifact to CLEAR.
-@test "terminal report ancestry blocks a local-only PASS commit" {
+# test_necessity: terminal ancestry records a local-only PASS commit as WAIT;
+# the post-CLEAR publication lane owns the remote follow-up.
+@test "terminal report ancestry waits for a local-only PASS commit" {
     local repo="$BATS_TEST_TMPDIR/report-ancestry-negative"
     local report="$BATS_TEST_TMPDIR/report-ancestry-negative.yaml"
     make_ci_push_repo "$repo"
@@ -7145,8 +7143,8 @@ run_commit_repo_resolution() {
         "$(git -C "$repo" rev-parse HEAD)" > "$report"
 
     run_report_main_ancestry_state "$repo" "$report"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"BLOCK: report commit main ancestry: UNPUSHED:"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
 }
 
 # test_necessity: a report whose commit belongs to an explicitly declared
@@ -7302,26 +7300,23 @@ PY
     [ "$output" = "clear_receipt_default=1 archive_receipt_guard=1 ordering=1" ]
 }
 
-# test_necessity: terminal completion must never precede publication of tracked
-# runtime writers that run after the ordinary pre-CLEAR source push.
-# regression_justification: cmd_karo_hotfix_postclear_runtime_publish observed
-# tracked runtime dirty remaining while the former post-CLEAR push was SKIP.
-@test "post-CLEAR runtime publish precedes COMPLETE and terminal exit" {
+# test_necessity: terminal completion must queue the tracked runtime writer
+# after CLEAR and must not wait on its external publication.
+@test "post-CLEAR runtime publish is queued without blocking COMPLETE" {
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import pathlib, sys
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 second_reflux = text.rindex('Gunshi gate_result reflux (post-GATE CLEAR 2nd run):')
-writer_wait = text.rindex('Durable post-CLEAR writer wait (terminal checkpoint):')
-publish = text.rindex('Tracked runtime publish (terminal checkpoint):')
+publish = text.rindex('Durable writer/runtime publication (post-CLEAR follow-up):')
 complete = text.rindex('Status completed (post-runtime-publish):')
 terminal = text.rindex('Async completion wait (pre-exit):')
-assert second_reflux < writer_wait < publish < complete < terminal
-assert 'if ! wait_for_postclear_durable_writers; then' in text[writer_wait:publish]
-assert 'if ! publish_postclear_runtime_deltas; then' in text[publish:complete]
-print('reflux_before_publish=1 publish_before_complete=1 fail_closed=1')
+assert second_reflux < publish < complete < terminal
+assert 'queue_postclear_publication_followup' in text[publish:complete]
+assert 'if ! wait_for_postclear_durable_writers; then' not in text[publish:complete]
+print('reflux_before_queue=1 queue_before_complete=1 nonblocking=1')
 PY
     [ "$status" -eq 0 ]
-    [ "$output" = "reflux_before_publish=1 publish_before_complete=1 fail_closed=1" ]
+    [ "$output" = "reflux_before_queue=1 queue_before_complete=1 nonblocking=1" ]
 }
 
 # test_necessity: terminal status publication must preserve the earlier
@@ -7393,12 +7388,12 @@ assert 'capture_durable_writer_paths finish' in block
 assert 'CMD_COMPLETE_DURABLE_WRITER_TIMEOUT:-600' in block
 assert '/proc/uptime' in block
 assert 'date +%s' not in block
-assert 'wait || {' in block
+assert 'wait || {' not in block
 assert 'return 1' in block
-print('generation_bound=1 path_manifest=1 bounded=1 fail_closed=1')
+print('generation_bound=1 path_manifest=1 bounded=1 no_global_wait=1')
 PY
     [ "$status" -eq 0 ]
-    [ "$output" = "generation_bound=1 path_manifest=1 bounded=1 fail_closed=1" ]
+    [ "$output" = "generation_bound=1 path_manifest=1 bounded=1 no_global_wait=1" ]
 }
 
 # test_necessity: the durable-writer timeout must use monotonic elapsed time so
@@ -7804,27 +7799,27 @@ PY
 }
 
 # test_necessity: one generation snapshot must cover all post-CLEAR writers,
-# and completion notifications must describe an already-published terminal fact.
+# and completion notifications must describe a terminal decision while the
+# publication worker remains independently observable.
 @test "post-CLEAR generation and notification bracket terminal work" {
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import sys
 text = open(sys.argv[1], encoding="utf-8").read()
 decision = text.index('if [ "$ALL_CLEAR" = true ]; then', text.index('if [ "$ALL_CLEAR" = true ]; then') + 1)
 snapshot = text.index('capture_durable_writer_paths start', decision)
-wait = text.index('if ! wait_for_postclear_durable_writers; then', snapshot)
-publish = text.index('if ! publish_postclear_runtime_deltas; then', wait)
-completed = text.index('echo "  status: completed"', publish)
+wait = text.index('queue_postclear_publication_followup', snapshot)
+completed = text.index('echo "  status: completed"', wait)
 notify = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', completed)
-assert snapshot < wait < publish < completed < notify
+assert snapshot < wait < completed < notify
 window = text[decision:notify]
 assert '"GATE CLEAR immediate"' not in window
 wait_fn = text[text.index('wait_for_postclear_durable_writers()'):decision]
-assert 'wait || {' in wait_fn
 assert 'capture_durable_writer_paths finish' in wait_fn
-print("generation_all_writers=1 notification_after_terminal=1")
+assert 'postclear_runtime_publish_failed' in wait_fn
+print("generation_all_writers=1 notification_after_terminal=1 followup_visible=1")
 PY
     [ "$status" -eq 0 ]
-    [ "$output" = "generation_all_writers=1 notification_after_terminal=1" ]
+    [ "$output" = "generation_all_writers=1 notification_after_terminal=1 followup_visible=1" ]
 }
 
 # test_necessity: read-only git invocations must never take the optional
