@@ -585,3 +585,25 @@ PYEOF
   fi
 
 ) 200>"$(lock_path "$INSIGHTS_FILE")"
+
+# Auto-commit: insights.yamlをdirtyのまま放置するとreflux dispatchの
+# dirty-guard(reflux dirty dispatch blocked)が発火し、小改善レーン全体が止まる。
+# 実証: 2026-08-25 03:28将軍のinsight_write→未commit→03:35のsaizo宛reflux弾BLOCK。
+# 書込み成功のたびにscope commitしてレーンを常時通す。repo既定パスのみ対象
+# (テストのINSIGHTS_FILE差替えは対象外)。commit失敗は本体成功を壊さない。
+if [[ "${INSIGHT_AUTO_COMMIT:-1}" == "1" && "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" ]]; then
+  if ! git -C "$SCRIPT_DIR" diff --quiet -- queue/insights.yaml 2>/dev/null; then
+    # index.lock競合(他忍者のcommit中)はfail-fast BLOCKされるため短いリトライで吸収
+    _iac_ok=0
+    for _iac_try in 1 2 3; do
+      if bash "$SCRIPT_DIR/scripts/ninja_scope_commit.sh" -m "insights: auto-commit (reflux dirty-guard防止)" -- queue/insights.yaml >/dev/null 2>&1; then
+        _iac_ok=1
+        break
+      fi
+      # dirtyが他プロセスにより解消済みなら成功扱い
+      git -C "$SCRIPT_DIR" diff --quiet -- queue/insights.yaml 2>/dev/null && { _iac_ok=1; break; }
+      sleep $(( _iac_try * 3 ))
+    done
+    [[ "$_iac_ok" == "1" ]] || echo "WARN: insights auto-commit failed after retries (reflux dirty-guardに注意)" >&2
+  fi
+fi
