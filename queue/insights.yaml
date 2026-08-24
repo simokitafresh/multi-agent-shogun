@@ -3377,3 +3377,31 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-25T00:52:10+09:00"
+- id: INS-20260825-010122651-b841
+  ts: "2026-08-25T01:01:22+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b84ubbgem task id tool use id toolu 01EDxUNjREUg8P1fze は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260825-010500981-cd3c
+  ts: "2026-08-25T01:05:00+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4394; matched=block,理由; current_pattern=家老deploy blocked六割の内訳分解 — block理由別分布を確定し支配理由の前倒し根治候補を特定する; candidate_level=4; candidate=おしお殿#4「2回同じ失敗→仮説ごと疑え」。gate_fire_logから同一忍者×同一BLOCK理由の連続回数を計数。2回連続→仮説転換メッセージ表示+exit 1(強制BLOCK)。GP-198のgate_diagnose_check.shに統合実装; source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4394"
+  fix_known: false
+  status: pending
+- id: INS-20260825-010501829-1d01
+  ts: "2026-08-25T01:05:01+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4394; matched=家老,block; current_pattern=家老deploy blocked六割の内訳分解 — block理由別分布を確定し支配理由の前倒し根治候補を特定する; candidate_level=4; candidate=将軍がACにpush記載(習慣)→忍者push不可→bc:no→gate BLOCK→家老WA。Check 22 WARN→将軍がpush削除→bc全yes→BLOCK消滅=正の複利; source=gunshi_review_log_cmd_2179_to_cmd_2231.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4394"
+  fix_known: false
+  status: pending
+- id: INS-20260825-010502795-e527
+  ts: "2026-08-25T01:05:02+09:00"
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_4394; matched=家老,deploy; current_pattern=家老deploy blocked六割の内訳分解 — block理由別分布を確定し支配理由の前倒し根治候補を特定する; candidate_level=4; candidate=直近30報告有用率7.7%(tobisaru 0%)。target_filesなし教訓290件(56%)がtag_fallbackでタスク無関係に注入。負の複利(忍者が教訓を読まなくなる); source=gunshi_gp_tracker.yaml"
+  priority: "medium"
+  source: "cmd_complete_gate:l6_horizontal:cmd_4394"
+  fix_known: false
+  status: pending
