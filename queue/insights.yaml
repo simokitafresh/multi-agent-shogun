@@ -3598,3 +3598,20 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-25T03:17:28+09:00"
+- id: INS-20260825-032817437-828b
+  ts: "2026-08-25T03:28:17+09:00"
+  insight: "karo_snapshotのRUNTIME:busyがCodex実態(idle/working)と乖離。ninja_monitorのRUNTIME判定をcapture-pane実測(Working表示/入力待ち)由来に改善すれば復帰時の誤読が構造的に消える(2026-08-25復帰時に実測: hayate=TASK:idleなのにRUNTIME:busy)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260825-033328419-db5c
+  ts: "2026-08-25T03:33:28+09:00"
+  insight: "semantic_index_update新概念候補: discussion:らせんを止めるな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T03:34:05+09:00"
