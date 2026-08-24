@@ -7548,9 +7548,10 @@ PY
     [[ "$output" == *"BLOCK (nonruntime dirty path=skills/ninja-commit/SKILL.md blob mismatch)"* ]]
 }
 
-# test_necessity: publishers for one shared repository must be admitted one at
-# a time and must derive generation/dirty state after admission; genuine byte,
-# path, push and merge conflicts remain fail-closed.
+# test_necessity: publishers for one shared repository must admit local
+# generation/dirty state one at a time; network publication may proceed after
+# admission, while genuine byte, path, push and merge conflicts remain
+# fail-closed.
 # regression_justification: a legitimate parallel publisher advanced HEAD
 # while terminal publication was preparing its snapshot, producing a false
 # postclear_runtime_publish_failed after GATE CLEAR.
@@ -7564,7 +7565,9 @@ lock = block.index('flock -x "$publish_lock_fd"')
 manifest = block.index('mapfile -t durable_paths')
 head = block.index('before_head=$(git -C "$repo" rev-parse HEAD')
 dirty = block.index('git -C "$repo" status --porcelain=v1')
-assert lock < manifest < head < dirty
+release = block.index('runtime publish: local generation admitted; network lock released')
+network = block.index('gate_detail_begin "runtime_publish.remote_source_push"')
+assert lock < manifest < head < dirty < release < network
 for guard in (
     'nonruntime dirty path=', 'concurrent writer path=',
     'source-only publish failed', 'shared HEAD/index convergence failed',
@@ -7572,10 +7575,10 @@ for guard in (
     assert guard in block, guard
 assert 'writer generation changed' in block
 assert 'git-common-dir' in block and 'shogun-tracked-runtime-publish.lock' in block
-print('parallel_writer=serialized generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4')
+print('parallel_writer=local_generation_serialized network_unlocked=1 generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4')
 PY
     [ "$status" -eq 0 ]
-    [ "$output" = "parallel_writer=serialized generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4" ]
+    [ "$output" = "parallel_writer=local_generation_serialized network_unlocked=1 generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4" ]
 }
 
 # test_necessity: a mixed runtime generation containing insights must split
