@@ -3308,3 +3308,10 @@ insights:
   source: "cmd_complete_gate:l6_horizontal:cmd_4387"
   fix_known: false
   status: pending
+- id: INS-20260824-203132578-5d48
+  ts: "2026-08-24T20:31:32+09:00"
+  insight: "BUG: runtime plain git mergeがqueue/insights.yamlを両親のID単位で合流せず、同一IDの非競合ブロックを重複させた。導入commit=6a7c7396a、3 IDが1→2。通常merge後もID uniquenessを検証し、queue/insights.yamlは常にfield-aware ID unionへ通す根治が必要。"
+  priority: "high"
+  source: "manual"
+  fix_known: false
+  status: pending
