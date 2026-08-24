@@ -3737,3 +3737,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260825-072932369-4ce8
+  ts: "2026-08-25T07:29:32+09:00"
+  insight: "[[殿喝2026 08 25 06 30『まだ出来ることが残っていないか』への第二弾]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿喝2026-08-25 06:30『まだ出来ることが残っていないか』への第二弾。覚醒調査(cmd_4393正本)が特定した無駄に対し根治cmd群(cmd_4396 SG-PRE36前倒し・cmd_4397 blocked記録構造化・cmd_4398 親report exact識別・insight auto-commit層)を実装したが、効果のbefore/"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
