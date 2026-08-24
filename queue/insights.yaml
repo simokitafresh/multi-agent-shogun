@@ -3712,11 +3712,21 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T06:27:56+09:00"
 - id: INS-20260825-062526880-537f
   ts: "2026-08-25T06:25:26+09:00"
   insight: "[[今日はらせん構造で何をどれくらい速くした？総括をしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今日はらせん構造で何をどれくらい速くした？総括をしてくれ"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260825-064723847-6b4f
+  ts: "2026-08-25T06:47:23+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bh8yke0rg task id tool use id toolu 01T2YzbtCnKXCnehe3 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
