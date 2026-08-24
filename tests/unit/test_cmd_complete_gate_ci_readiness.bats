@@ -24,10 +24,10 @@ block_message() {
     [[ "$output" == *"run_pending:in_progress"* ]]
 }
 
-@test "completed failure remains BLOCK and retains repair redeployment guidance" {
+@test "completed workflow failure is WAIT and does not block gate decision" {
     evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$REVIEWED\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"failure\",\"head_sha\":\"abc\",\"created_at\":\"$CREATED\"}}"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"workflow_result is not GREEN"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_external_pending=workflow_result_not_green"* ]]
 
     block_message "ci_readiness:$output"
     [ "$status" -eq 0 ]
@@ -144,8 +144,8 @@ mock_karo_review_boundary() {
     [[ "$output" == *"target_result=GREEN workflow_result=GREEN"* ]]
 
     evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$resolved\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"failure\",\"head_sha\":\"abc\",\"created_at\":\"2026-08-08T03:06:00Z\"}}"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"workflow_result is not GREEN"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_external_pending=workflow_result_not_green"* ]]
 }
 
 # ─── cmd_karo_impl_gate_metrics_record_split_20260725 (B20/B25) ───
@@ -177,16 +177,16 @@ raw_columns() {
     [ "$output" = "WAIT" ]
 }
 
-@test "terminalな失敗はBLOCKのまま記録される" {
+@test "workflow failure is WAITとして記録される" {
     classify "ci_readiness:BLOCK: workflow_result is not GREEN"
-    [ "$output" = "BLOCK" ]
+    [ "$output" = "WAIT" ]
     classify "missing_gates:lesson,review"
     [ "$output" = "BLOCK" ]
 }
 
-@test "複合理由はterminalが1件でも混ざればBLOCK(fail-closed)" {
+@test "CI WAIT理由はworkflow確認でBLOCKへ昇格しない" {
     classify "ci_readiness:WAIT: ci_evaluation_absent=[head_sha_mismatch]|ci_readiness:BLOCK: workflow_result is not GREEN"
-    [ "$output" = "BLOCK" ]
+    [ "$output" = "WAIT" ]
 }
 
 @test "参考情報はINFO、理由が空なら分類不能としてBLOCK(fail-closed)" {
