@@ -1,11 +1,11 @@
 agent: karo
-timestamp: "2026-08-24T16:49:37+09:00"
+timestamp: "2026-08-24T18:09:51+09:00"
 compact_trigger: lord_strong_new_game_directive_20260824_1333
-current_task: cmd_4387_full + cmd_reflux_insight_202608241633_saizo_exact
+current_task: cmd_4387_full
 session_id: karo_strong_new_game_20260824_1450
 status: ready_for_new_game_active_work
 recovery_pointer: docs/research/karo-strong-new-game-checkpoint-20260824-1445.md
 target_sha256: a12865e48c508fdd59369a51af5cbd8ead54c97d1863133570862a39ad309df3
-latest_review_message: CI_GREEN_32702169406_insights_rotation_rootfix_and_cmd_4387_draft_APPROVE
-next_action: Recovery完走→checkpoint hash照合→karo inbox ID処理→task YAML再読。tobisaru cmd_4387_fullとsaizo refluxを一次確認してレビュー継続。insights generic rotation禁止remote=8c3f0dc53、gate parse高速化remote=89769bcdd、両CI GREEN。
-session_summary: Role=karo。strong-new-game base checkpoint維持。active=tobisaru cmd_4387_full(in_progress)+saizo reflux(acknowledged/Working)、karo unread=0。queue YAML parse 44.24s→4.14s、remote 89769bcdd、CI 32699598385 GREEN。insights generic count rotationを設定除外+code guardで根治、339件/pending81/重複0へ復元、remote 8c3f0dc53、CI 32702169406 GREEN。
+latest_review_message: cmd_4387_RC_redeploy_assigned_20260824T180833_and_three_layer_PASS
+next_action: "Recovery完走→checkpoint hash照合→karo inbox ID処理→queue/tasks/tobisaru.yaml再読。cmd_4387_fullはformal RC後の再配備generation 18:08:33、AC4のtests/unit/test_cmd_complete_gate.bats FAIL0/SKIP0完走から再開。saizo refluxはCLEAR/COMPLETE済み。"
+session_summary: "Role=karo。strong-new-game base checkpoint維持。active=tobisaru cmd_4387_full assigned(formal RC retry, deployed_at 18:08:33)。saizo refluxはGATE CLEAR後cmd-complete COMPLETE。queue YAML parse 44.24s→4.14s(remote 89769bcdd, CI GREEN)。insights generic rotation根治(remote 8c3f0dc53, CI GREEN)、345件/pending84/removed0確認後lifecycle checkpoint。三層health stale_pending0/failed0 STATUS PASS、L3 alias到達済み。"
