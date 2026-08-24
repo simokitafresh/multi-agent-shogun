@@ -3754,3 +3754,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260825-082904520-88e4
+  ts: "2026-08-25T08:29:04+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_4402 kagemaru decision_candidate: 根治弾の全体改善を未宣言 blockedと解消中央値は悪化しprecheck FAIL全体は横ばい。親report誤BLOCKのみ再発0。次回は理由別自然cohortを追加蓄積して再計測する"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
