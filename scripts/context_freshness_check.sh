@@ -60,7 +60,11 @@ _ROOT_KEY="$(printf '%s' "$SCRIPT_DIR" | cksum | awk '{print $1}')"
 # cache identity can replay project A's commit list for project B and let an
 # unreflected source/context pair escape the completion-time BLOCK (GA-320).
 _PROJECT_OVERRIDE="${CFC_PROJECT_OVERRIDE:-}"
-_MODE_KEY="$(printf '%s|%s|%s|%s|%s|%s|%s' "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_ENTRIES_CSV" "$_PROJECT_OVERRIDE" "$(date +%Y-%m-%d)" | cksum | awk '{print $1}')"
+_MODE_KEY="$(printf '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s' \
+    "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_ENTRIES_CSV" \
+    "$_PROJECT_OVERRIDE" "$(date +%Y-%m-%d)" \
+    "${CFC_GIT_TIMEOUT:-10}" "${CFC_GIT_RETRY_TIMEOUT:-60}" \
+    "${CFC_HISTORY_REFRESH_SYNC:-0}" | cksum | awk '{print $1}')"
 _CACHE_FILE="/tmp/context_freshness_check_${_ROOT_KEY}_${_MODE_KEY}.cache"
 
 if [[ "$_CACHE_TTL" =~ ^[0-9]+$ ]] && [[ "$_CACHE_TTL" -gt 0 ]] && [[ -f "$_CACHE_FILE" ]]; then

@@ -648,7 +648,10 @@ warnings_output() {
         local path
         for path in \
             "$CHECK_SCRIPT" \
+            "$ROOT_DIR/scripts/gates/gate_context_freshness.sh" \
             "$ROOT_DIR/config/projects.yaml" \
+            "$ROOT_DIR/config/context_freshness_excludes.txt" \
+            "$ROOT_DIR/scripts/config/context_source_commits.tsv" \
             "$ROOT_DIR/context/cmd-chronicle.md" \
             "$ROOT_DIR/queue/archive/cmds"
         do
@@ -662,6 +665,51 @@ warnings_output() {
             sig_parts+=("$path_signature")
         done < <(find "$ROOT_DIR/context" -maxdepth 1 -type f -name '*.md' \
             -printf '%p:%T@:%s\n' 2>/dev/null | sort)
+        # A context cache is valid only for the same source-repository ref
+        # state. Context mtime alone cannot observe a new source commit, so
+        # include ref metadata for every configured project repository.
+        # Read git metadata directly: rev-parse would reintroduce synchronous
+        # 9p/git latency into the cache hot path.
+        source_repos=("$ROOT_DIR")
+        while IFS= read -r source_repo; do
+            [[ -n "$source_repo" && -d "$source_repo" ]] || continue
+            source_repos+=("$source_repo")
+        done < <(
+            sed -nE 's/^[[:space:]]+path:[[:space:]]*["'"'"']?([^"'"'"']+)["'"'"']?.*$/\1/p' \
+                "$ROOT_DIR/config/projects.yaml" \
+                "$ROOT_DIR"/projects/*.yaml 2>/dev/null | sort -u
+        )
+        for source_repo in "${source_repos[@]}"; do
+            [[ -d "$source_repo" ]] || continue
+            git_dir="$source_repo/.git"
+            if [[ -f "$git_dir" ]]; then
+                git_dir_marker="$(sed -nE 's/^gitdir:[[:space:]]*//p' "$git_dir" | head -n 1)"
+                if [[ -n "$git_dir_marker" ]]; then
+                    [[ "$git_dir_marker" = /* ]] || git_dir="$source_repo/$git_dir_marker"
+                    [[ "$git_dir_marker" = /* ]] && git_dir="$git_dir_marker"
+                fi
+            fi
+            git_dir="$(realpath -m "$git_dir" 2>/dev/null || printf '%s' "$git_dir")"
+            common_dir="$git_dir"
+            if [[ -f "$git_dir/commondir" ]]; then
+                common_marker="$(sed -n '1p' "$git_dir/commondir")"
+                [[ "$common_marker" = /* ]] || common_dir="$git_dir/$common_marker"
+                [[ "$common_marker" = /* ]] && common_dir="$common_marker"
+                common_dir="$(realpath -m "$common_dir" 2>/dev/null || printf '%s' "$common_dir")"
+            fi
+            for ref_path in HEAD packed-refs refs/remotes/origin/main refs/remotes/origin/master refs/heads/main refs/heads/master; do
+                if [[ -e "$git_dir/$ref_path" ]]; then
+                    sig_parts+=("source_ref=$source_repo:$ref_path:$(stat -c '%y:%s' "$git_dir/$ref_path" 2>/dev/null || printf 'unreadable')")
+                elif [[ -e "$common_dir/$ref_path" ]]; then
+                    sig_parts+=("source_ref=$source_repo:$ref_path:$(stat -c '%y:%s' "$common_dir/$ref_path" 2>/dev/null || printf 'unreadable')")
+                else
+                    sig_parts+=("source_ref=$source_repo:$ref_path:missing")
+                fi
+            done
+        done
+        sig_parts+=("dashboard_source_tip=${CFC_DASHBOARD_SOURCE_TIP:-}")
+        sig_parts+=("min_source_commits=${CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS:-1}")
+        sig_parts+=("checker_cache_ttl=${CFC_OUTPUT_CACHE_TTL:-}")
         sig_parts+=("git_timeout=${GIT_TIMEOUT}")
         local sig sig_hash
         sig="$(printf '%s|' "${sig_parts[@]}")"

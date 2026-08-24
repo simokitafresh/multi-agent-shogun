@@ -107,6 +107,49 @@ SH
   [[ "$output" != *"ALERT:"* ]]
 }
 
+# test_necessity: source-tip changes must invalidate the gate cache; otherwise
+# a prior OK can hide a newly detected source/context mismatch until TTL expiry.
+@test "source tip override invalidates cached freshness result" {
+  source_tip_marker="$BATS_TEST_TMPDIR/source-tip-marker"
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "${CFC_DASHBOARD_SOURCE_TIP:-}" >> "$SOURCE_TIP_MARKER"
+if [[ "${CFC_DASHBOARD_SOURCE_TIP:-}" == tip-bbbbbbb ]]; then
+  echo 'ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19 repo=/fixture root_fallback=yes owner=infra-platform update_trigger=root-fallback latest: bbbbbbb fixture'
+else
+  echo 'ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19 repo=/fixture root_fallback=yes owner=infra-platform update_trigger=root-fallback latest: aaaaaaa fixture'
+fi
+SH
+  chmod +x "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-source-tip" \
+    SOURCE_TIP_MARKER="$source_tip_marker" \
+    CONTEXT_FRESHNESS_GATE_CACHE_TTL=300 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    CFC_DASHBOARD_SOURCE_TIP=tip-aaaaaaa \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [ "$(sed -n '1p' "$source_tip_marker")" = "tip-aaaaaaa" ]
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-source-tip" \
+    SOURCE_TIP_MARKER="$source_tip_marker" \
+    CONTEXT_FRESHNESS_GATE_CACHE_TTL=300 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    CFC_DASHBOARD_SOURCE_TIP=tip-bbbbbbb \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [ "$(wc -l < "$source_tip_marker")" -eq 2 ]
+  [ "$(sed -n '2p' "$source_tip_marker")" = "tip-bbbbbbb" ]
+}
+
 # test_necessity: each unresolved raw ALERT must be durably routed once to the
 # Shogun doc lane, while retries with identical content remain deduplicated.
 @test "raw ALERT doc-lane notification deduplicates successful content and retries changes" {
