@@ -227,6 +227,83 @@ if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE33" ]; then
     exit $?
 fi
 
+# SG-PRE23 source boundary: context reference checks must consume the same
+# report commit/task-worktree generation as the reviewed implementation.
+resolve_review_source_context() {
+    local source_helper="$REPO_ROOT/scripts/lib/review_source_context.py"
+    # A report can be reviewed before the task-worktree commit is published
+    # into the shared checkout.  In that window the resolver itself must come
+    # from the same task worktree generation as the report source.
+    if [ ! -f "$source_helper" ] && [ -f "${TASK_FILE:-}" ]; then
+        local task_worktree_root
+        task_worktree_root="$(python3 - "$TASK_FILE" <<'PY'
+import sys
+import yaml
+
+doc = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = doc.get("task", doc)
+print(str(task.get("task_worktree_workdir") or task.get("task_worktree_path") or "").strip())
+PY
+        )"
+        if [ -n "$task_worktree_root" ] && [ -f "$task_worktree_root/scripts/lib/review_source_context.py" ]; then
+            source_helper="$task_worktree_root/scripts/lib/review_source_context.py"
+        fi
+    fi
+    [ -f "$source_helper" ] || {
+        echo "  ERROR: review source resolver missing: $source_helper"
+        return 1
+    }
+    local source_result
+    source_result="$(python3 "$source_helper" \
+        --report "$REPORT_PATH" \
+        --task "${TASK_FILE:-/nonexistent}" \
+        --repo-root "$REPO_ROOT" 2>/dev/null || true)"
+    eval "$source_result"
+    [ "${SOURCE_CONTEXT_STATUS:-BLOCK}" != "BLOCK" ] || {
+        echo "  ERROR: source context generation BLOCK: ${SOURCE_CONTEXT_REASON:-unknown}"
+        return 1
+    }
+    [ -n "${SOURCE_CONTEXT_ROOT:-}" ] || {
+        echo "  ERROR: source context root missing after generation resolution"
+        return 1
+    }
+    return 0
+}
+
+run_sg_pre23() {
+    local context_file source_context_root
+    if ! resolve_review_source_context; then
+        return 1
+    fi
+    source_context_root="${SOURCE_CONTEXT_ROOT:-$REPO_ROOT}"
+    echo "  source_context_status=${SOURCE_CONTEXT_STATUS:-unknown} generation=${SOURCE_CONTEXT_GENERATION:-unknown} root=${source_context_root}"
+    for context_file in "${_context_files[@]}"; do
+        if ! bash "$source_context_root/scripts/gates/gate_vercel_phase.sh" \
+            "$source_context_root/$context_file"; then
+            echo "  [CRITICAL] source gate_vercel_phase FAIL — source generation has broken refs"
+            return 1
+        fi
+    done
+    echo "  PASS: source generation context references are clear"
+}
+
+# Focused execution is used by tests and diagnostics; it retains the exact
+# source-generation contract without running unrelated review checks.
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE23" ]; then
+    echo ""
+    echo "■ SG-PRE23: source-generation context参照検査"
+    _context_files=()
+    while IFS= read -r _fm_line; do
+        case "$_fm_line" in context/*.md*) _context_files+=("$_fm_line");; esac
+    done < <(printf '%s\n' "${FILES_MODIFIED:-}" | tr ',' '\n' | sed 's/^[[:space:]]*//' | grep '^context/.*\.md' || true)
+    if [ "${#_context_files[@]}" -eq 0 ]; then
+        echo "  SKIP: context/*.md変更なし"
+        exit 0
+    fi
+    run_sg_pre23
+    exit $?
+fi
+
 # ─── SG-PRE31: N×M一致パターン意味検算BLOCK(LG048: きれいな数値一致は意味検算のサイン) ───
 # focused-mode(GUNSHI_PRECHECK_ONLY=SG-PRE31)から他チェックのERRORSに引きずられず単独判定できるよう、
 # SG-PRE1(gate_report_format.sh呼出し)より前に定義・早期exitする。
@@ -1362,10 +1439,10 @@ while IFS= read -r _fm_line; do
     case "$_fm_line" in context/*.md*) _context_files+=("$_fm_line");; esac
 done < <(echo "$FILES_MODIFIED" | tr ',' '\n' | sed 's/^[[:space:]]*//' | grep '^context/.*\.md' || true)
 if [ "${#_context_files[@]}" -gt 0 ] && [ -f "$REPO_ROOT/scripts/gates/gate_vercel_phase.sh" ]; then
-    if bash "$REPO_ROOT/scripts/gates/gate_vercel_phase.sh" "${_context_files[@]}" 2>/dev/null; then
-        echo "  PASS: context変更の参照先は全て実在"
+    if run_sg_pre23 2>/dev/null; then
+        echo "  PASS: source generation context変更の参照先は全て実在"
     else
-        echo "  [CRITICAL] gate_vercel_phase FAIL — context変更に参照切れあり"
+        echo "  [CRITICAL] source-generation gate_vercel_phase FAIL — context変更に参照切れあり"
         ERRORS=$((ERRORS + 1))
         GATE_PREDICTION="BLOCK"
         GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }vercel_phase:broken_refs"

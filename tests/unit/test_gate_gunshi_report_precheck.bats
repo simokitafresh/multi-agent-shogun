@@ -130,6 +130,114 @@ YAML
   [[ "$output" != *"ERROR: lessons_useful集合がtask契約と不一致 → GATE BLOCK確実: OK mode=subset"* ]]
 }
 
+make_source_context_fixture() {
+  local source="$1" mode="${2:-clear}" generation="${3:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
+  mkdir -p "$source/scripts/gates" "$source/context" "$source/docs/research" "$source/config" "$source/external/docs/research"
+  cp "$REPO_ROOT/scripts/gates/gate_vercel_phase.sh" "$source/scripts/gates/"
+  printf 'projects:\n  - id: external\n    path: %s\n' "$source/external" > "$source/config/projects.yaml"
+  local i
+  for i in $(seq 1 11); do
+    printf 'fixture %s\n' "$i" > "$source/external/docs/research/ref-$i.md"
+  done
+  if [ "$mode" = broken ]; then
+    printf '%s\n' 'See docs/research/does-not-exist.md' > "$source/context/owned.md"
+  else
+    : > "$source/context/owned.md"
+    for i in $(seq 1 11); do
+      printf 'See docs/research/ref-%s.md\n' "$i" >> "$source/context/owned.md"
+    done
+  fi
+  git -C "$source" init -q
+  git -C "$source" config user.email fixture@example.invalid
+  git -C "$source" config user.name fixture
+  git -C "$source" add .
+  git -C "$source" commit -qm "source context fixture"
+  printf '%s\n' "$generation"
+}
+
+write_source_task_and_report() {
+  local source="$1" generation="$2" marker="$3"
+  local source_sha
+  source_sha="$(git -C "$source" rev-parse HEAD)"
+  cat > "$marker" <<JSON
+{"version":1,"state":"active","generation":"$generation","task_id":"cmd_fixture_full","worktree":"$source"}
+JSON
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<YAML
+task:
+  task_id: cmd_fixture_full
+  parent_cmd: cmd_fixture
+  project: infra
+  task_worktree_required: "true"
+  task_worktree_path: $source
+  task_worktree_workdir: $source
+  task_worktree_generation: $generation
+  task_worktree_marker: $marker
+  task_worktree_status: active
+YAML
+  cat > "$TMP_DIR/report.yaml" <<YAML
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+commit_hash: $source_sha
+files_modified:
+  - {path: context/owned.md, change: source-generation fixture}
+YAML
+}
+
+# test_necessity: SG-PRE23 must measure context links from the reviewed source
+# generation. A clear shared checkout cannot hide a broken source worktree.
+@test "SG-PRE23 resolves source generation and rejects mixed shared/source results" {
+  local source="$TMP_DIR/source-clear" shared="$TMP_DIR/shared-broken"
+  local generation="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  mkdir -p "$shared/scripts/gates" "$shared/context" "$shared/docs/research" "$shared/config" "$shared/external/docs/research"
+  cp "$REPO_ROOT/scripts/gates/gate_vercel_phase.sh" "$shared/scripts/gates/"
+  printf 'projects:\n  - id: external\n    path: %s\n' "$shared/external" > "$shared/config/projects.yaml"
+  printf 'See docs/research/shared-clear.md\n' > "$shared/context/owned.md"
+  printf 'ok\n' > "$shared/external/docs/research/shared-clear.md"
+  run env VERCEL_PHASE_SKIP_CANDIDATE_SUGGESTIONS=1 bash "$shared/scripts/gates/gate_vercel_phase.sh" "$shared/context/owned.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"refs checked, all exist"* ]]
+
+  make_source_context_fixture "$source" clear "$generation" >/dev/null
+  marker="$TMP_DIR/source.marker"
+  write_source_task_and_report "$source" "$generation" "$marker"
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE23 \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    VERCEL_PHASE_SKIP_CANDIDATE_SUGGESTIONS=1 \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"source_context_status=SOURCE"* ]]
+  [[ "$output" == *"11 refs checked, all exist"* ]]
+  [[ "$output" == *"source generation context references are clear"* ]]
+
+  make_source_context_fixture "$source" broken "$generation" >/dev/null
+  write_source_task_and_report "$source" "$generation" "$marker"
+  run env VERCEL_PHASE_SKIP_CANDIDATE_SUGGESTIONS=1 bash "$source/scripts/gates/gate_vercel_phase.sh" "$source/context/owned.md"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"1 broken refs found"* ]]
+
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE23 \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    VERCEL_PHASE_SKIP_CANDIDATE_SUGGESTIONS=1 \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"source generation has broken refs"* ]]
+}
+
+# test_necessity: a task-worktree generation mismatch is an unresolved source
+# identity and must fail closed before any context reference result is used.
+@test "SG-PRE23 blocks unresolved task-worktree generation" {
+  local source="$TMP_DIR/source-mismatch" marker="$TMP_DIR/source-mismatch.marker"
+  local generation="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  make_source_context_fixture "$source" clear "$generation" >/dev/null
+  write_source_task_and_report "$source" "$generation" "$marker"
+  sed -i 's/task_worktree_generation: .*/task_worktree_generation: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc/' "$TMP_DIR/tasks/kagemaru.yaml"
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE23 \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"task_worktree_marker_generation_mismatch"* ]]
+}
+
 @test "shared contract blocks stale task ac_version before CLEAR prediction" {
   cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
 task:
