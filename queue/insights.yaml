@@ -2890,4 +2890,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-24T08:53:19+09:00"
+- id: INS-20260824-092249657-88f4
+  ts: "2026-08-24T09:22:49+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bti45ebt6 task id tool use id toolu 01CBBbkphbxW6UZatQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
