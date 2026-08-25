@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-25 context updated for cmd_4403 batch spiral -->
+<!-- last_updated: 2026-08-25 context_freshness reviewed source boundary -->
+<!-- source_commit:60537d6fb reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=60537d6fb -->
 <!-- source_commit:626640662 reason:context updated for cmd_4403 batch spiral evidence:doc_lane_request blt_20260825_200004_961db6 -->
 <!-- source_commit:1131863bc reason:context updated for ci green + receipt harness evidence:doc_lane_request blt_20260825_192810_979cd7 -->
 <!-- source_commit:464d5ddf7 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=464d5ddf7 -->
