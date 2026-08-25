@@ -4337,7 +4337,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T01:59:04+09:00"
 - id: INS-20260826-015602828-4819
   ts: "2026-08-26T01:56:02+09:00"
   insight: "[[将軍に返事を最速せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍に返事を最速せよ。送ったつもりで届いていない可能性も考慮城"
@@ -4364,5 +4367,12 @@ insights:
   insight: "[[殿のディスク回収指示 の残件]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿のディスク回収指示(2026-08-25)の残件。DM-signal/outputs/grid_search(実測42.54GB・上位92ディレクトリ・SQLite DB 120本)について、削除しても本番・研究正本・コードに影響しない候補を一次データで確定する。cmd_3868台帳(2026-07-13)は同一SHA重複のみを対象とし9件0.9GBで止ま"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260826-020217534-8bc5
+  ts: "2026-08-26T02:02:17+09:00"
+  insight: "tmux二重サーバ事故(2026-08-26 02:00発見): WSL再起動後、殿起動のtmuxサーバ826(socket消失で到達不能)と将軍shutsujin -sで作った86885が同一path /tmp/tmux-1000/default に二重listen(ss -xlp実測)。826側に将軍(自分)+ghost家老codex(01:54まで稼働・karo inboxを共有処理)+ghost軍師claude+ghost忍者6が生存し、inbox既読競合で『家老に届かない』症状。自動化ターゲット: shutsujin/reset_layout起動時にss -xlpで同一socket pathの複数tmuxサーバを検知しBLOCK+daemon_watchdogにghost tmux server ALERT"
+  priority: "medium"
+  source: "manual"
   fix_known: false
   status: pending
