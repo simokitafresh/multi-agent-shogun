@@ -101,6 +101,140 @@ check_tmux_health() {
     return 1
 }
 
+# Return the live Unix-socket inventory reported by the kernel.  The file
+# override keeps the parser independently testable without creating or
+# stopping a tmux server.
+daemon_watchdog_tmux_socket_snapshot() {
+    if [[ -n "${DAEMON_WATCHDOG_TMUX_SS_OUTPUT_FILE:-}" ]]; then
+        cat "$DAEMON_WATCHDOG_TMUX_SS_OUTPUT_FILE" 2>/dev/null || true
+        return 0
+    fi
+    command -v ss >/dev/null 2>&1 || return 0
+    ss -xlp 2>/dev/null || true
+}
+
+# Print one `socket|pid` record per tmux server.  Only rows with the kernel's
+# tmux server owner annotation are accepted; a generic process listing is not
+# evidence of a listening server.
+daemon_watchdog_tmux_server_records() {
+    daemon_watchdog_tmux_socket_snapshot | awk '
+        /users:\(\("tmux: server",pid=[0-9]+/ {
+            prefix = substr($0, 1, index($0, "users:") - 1)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", prefix)
+            n = split(prefix, fields, /[[:space:]]+/)
+            socket = ""
+            for (i = n; i >= 1; i--) {
+                if (fields[i] ~ /^\//) {
+                    socket = fields[i]
+                    break
+                }
+            }
+            if (match($0, /pid=[0-9]+/)) {
+                pid = substr($0, RSTART + 4, RLENGTH - 4)
+            } else {
+                pid = ""
+            }
+            if (socket != "" && pid != "") print socket "|" pid
+        }
+    ' | sort -t'|' -k1,1 -k2,2n
+}
+
+# Print `socket|pid` for every socket with more than one listening tmux
+# server.  A single server is intentionally silent.
+daemon_watchdog_tmux_duplicate_records() {
+    daemon_watchdog_tmux_server_records | awk -F'|' '
+        function flush_group() {
+            if (current != "" && count > 1) print current "|" pids
+        }
+        {
+            if ($1 != current) {
+                flush_group()
+                current = $1
+                count = 0
+                pids = ""
+            }
+            count++
+            pids = (pids == "" ? $2 : pids "," $2)
+        }
+        END { flush_group() }
+    '
+}
+
+# Return the owner of the currently reachable tmux server as `socket pid`.
+# Empty/malformed output is deliberately retained as unknown so a duplicate
+# cannot be silently classified as safe after a socket race.
+daemon_watchdog_tmux_current_owner() {
+    if [[ -n "${DAEMON_WATCHDOG_TMUX_OWNER_OUTPUT_FILE:-}" ]]; then
+        cat "$DAEMON_WATCHDOG_TMUX_OWNER_OUTPUT_FILE" 2>/dev/null || true
+        return 0
+    fi
+    tmux display-message -p '#{socket_path} #{pid}' 2>/dev/null || true
+}
+
+check_tmux_duplicate_servers() {
+    local duplicate_records owner_output owner_socket owner_pid
+    duplicate_records="$(daemon_watchdog_tmux_duplicate_records)"
+    local dedupe_file="${DAEMON_WATCHDOG_TMUX_DEDUPE_FILE:-${RESTART_STATE_DIR}/tmux_duplicate_servers.fingerprint}"
+
+    # A resolved event is allowed to notify again if it reappears later.
+    if [[ -z "$duplicate_records" ]]; then
+        unlink "$dedupe_file" 2>/dev/null || true
+        return 0
+    fi
+
+    owner_output="$(daemon_watchdog_tmux_current_owner)"
+    owner_socket="${owner_output%% *}"
+    owner_pid="${owner_output#* }"
+    owner_pid="${owner_pid#pid=}"
+    if [[ "$owner_socket" == "$owner_output" || ! "$owner_socket" =~ ^/ || ! "$owner_pid" =~ ^[0-9]+$ ]]; then
+        owner_socket=""
+        owner_pid=""
+    fi
+
+    local alert_parts="" record socket pids owner_for_socket old_pids pid
+    while IFS='|' read -r socket pids; do
+        [[ -n "$socket" && -n "$pids" ]] || continue
+        owner_for_socket="unknown"
+        old_pids="$pids"
+        if [[ -n "$owner_socket" && "$owner_socket" == "$socket" ]]; then
+            owner_for_socket="$owner_pid"
+            old_pids=""
+            IFS=',' read -ra _tmux_pids <<< "$pids"
+            for pid in "${_tmux_pids[@]}"; do
+                [[ "$pid" == "$owner_pid" ]] && continue
+                old_pids="${old_pids:+${old_pids},}${pid}"
+            done
+            [[ -n "$old_pids" ]] || old_pids="none"
+        fi
+        record="socket=${socket} owner=${owner_for_socket} old=${old_pids}"
+        alert_parts="${alert_parts:+${alert_parts}; }${record}"
+    done <<< "$duplicate_records"
+
+    [[ -n "$alert_parts" ]] || return 0
+    local fingerprint
+    fingerprint="$(printf '%s|owner_socket=%s|owner_pid=%s\n' "$duplicate_records" "$owner_socket" "$owner_pid" | sha256sum | awk '{print $1}')"
+    ensure_restart_state_dir
+    local lock_fd=""
+    exec {lock_fd}>"${dedupe_file}.lock"
+    flock "$lock_fd"
+    if [[ -f "$dedupe_file" ]] && [[ "$(cat "$dedupe_file" 2>/dev/null || true)" == "$fingerprint" ]]; then
+        log "TMUX-DUPLICATE-DEDUPE: ${alert_parts}"
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+        return 0
+    fi
+    local tmp_file="${dedupe_file}.tmp.$$"
+    printf '%s\n' "$fingerprint" > "$tmp_file" && mv "$tmp_file" "$dedupe_file"
+    flock -u "$lock_fd"
+    eval "exec ${lock_fd}>&-"
+
+    local message="TMUX-DUPLICATE-ALERT: ${alert_parts}"
+    log "$message"
+    notify "【watchdog/CRITICAL】${message}"
+    printf '%s\n' "$message"
+    return 0
+}
+
 RESTARTED=0
 RESTART_STATE_DIR="${RESTART_STATE_DIR:-/tmp/daemon_watchdog_state}"
 RESTART_THROTTLE_WINDOW=600  # 10 minutes
@@ -536,6 +670,7 @@ check_ntfy_listener
 check_inbox_watchers
 check_daemon_inventory
 check_tmux_health || true
+check_tmux_duplicate_servers
 
 # heartbeat更新: 外部から「watchdog自体が動いているか」を検証可能にする
 date +%s > "$HEARTBEAT_FILE"
