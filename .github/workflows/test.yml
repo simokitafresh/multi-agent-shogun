@@ -205,8 +205,6 @@ jobs:
             export SHOGUN_HEAVY_JOB_WAITER_MUTEX="$compatibility_root/waiters.lock"
             export RUN_TESTS_SINGLEFLIGHT_DIR="$compatibility_root/singleflight"
             export RUN_TESTS_RECEIPT_DIR="$compatibility_root/receipts"
-            export BATS_MAX_TEST_JOBS=1
-            export BATS_FILE_JOBS=1
             export BATS_INNER_JOBS=1
             export BATS_FILE_TIMEOUT_SECONDS=900
             export TEST_TIMING_LEDGER="$RUNNER_TEMP/compatibility-timing.tsv"

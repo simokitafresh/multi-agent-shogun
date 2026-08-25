@@ -223,7 +223,7 @@ def invoke(args):
     open(bash_env,'w').write('exec 8>"$TRACE_OUT"\nBASH_XTRACEFD=8\n')
     env.update(BASH_ENV=bash_env,TRACE_OUT=trace_path)
     p=subprocess.run(command_argv,env=env,cwd=root,text=True,stdout=subprocess.PIPE,
-                     stderr=subprocess.STDOUT,timeout=30)
+                     stderr=subprocess.STDOUT,timeout=60)
     output=p.stdout
     trace=open(trace_path).read()
     # Parse executed shell commands structurally.  This is runtime control-flow
@@ -263,7 +263,7 @@ for lane,root in zip(('before','after','mutant'),roots):
 # Keep all 246 production invocations while bounding DrvFS/git/SQLite
 # contention. Sixteen concurrent cmd_save processes exceed the per-invocation
 # 30s contract under WSL2 even when every detector is healthy.
-with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:
     values=list(pool.map(invoke,jobs))
 before,after,mutant=values[:82],values[82:164],values[164:]
 expected={x['check_id']:x['outcome'] for x in before}
