@@ -318,3 +318,4 @@ tests/unit/_tmp_*.bats
 !docs/semantic-index/
 # Generated from the tracked semantic sources; rebuilt locally on demand.
 docs/semantic-index/index.md
+backup/
