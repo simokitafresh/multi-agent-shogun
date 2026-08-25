@@ -97,6 +97,14 @@ if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report)$ ]]; then
     fi
 fi
 
+# --- step3_5_verified必須チェック(report) --- LG036 L4化 2026-08-25: 3セッション連続未記入根治
+if [ "$ENTRY_REVIEW_TYPE" = "report" ]; then
+    if [[ "$ENTRY" != *"step3_5_verified:"* ]]; then
+        echo "BLOCK: step3_5_verifiedが未記入(review_type=report)。command欄×files_modified名前照合の実施結果(true/false)を記入してから再実行せよ(LG036)" >&2
+        exit 2
+    fi
+fi
+
 # --- ambiguity_points必須チェック(draft) --- 冷え観点遡及 2026-06-26: ambiguity記録漏れ根治
 if [ "$ENTRY_REVIEW_TYPE" = "draft" ]; then
     if [[ "$ENTRY" != *"ambiguity_points:"* ]]; then
