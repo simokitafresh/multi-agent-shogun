@@ -3805,3 +3805,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-125927256-eece
+  ts: "2026-08-25T12:59:27+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_hotfix_cmd4400_stateful_shards tobisaru lesson_candidate: CI FAIL artifactはparallel-onlyとstandaloneを直列比較で分離する CI artifactのFAIL件数だけで全てをstatefulと仮定せず、同一manifestの直列run_tests実験でPASS/FAILを再分類し、compatibility shardへは欠落なく束ねる。"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
