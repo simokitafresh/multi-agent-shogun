@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 
 # test_necessity: archive_completed.sh must preserve the post-CLEAR bytes of
-# the tracked session alert runtime while restoring the published tree, so
+# the tracked defense-overhead runtime while restoring the published tree, so
 # terminal cleanup remains lossless and ordinary source dirt stays fail-closed.
 # regression_justification: the allowlist previously omitted this tracked
-# runtime path, causing a valid post-CLEAR alert update to block cleanup.
-# origin: [[cmd_karo_hotfix_ac4_runtime_preservation_20260826]] -> [[tracked-runtime-allowlist-gap]] -> [[session-alert-runtime-loss-or-cleanup-block]]
+# runtime path, causing a valid post-CLEAR telemetry update to block cleanup.
+# origin: [[cmd_karo_hotfix_ac4_runtime_preservation_20260826]] -> [[tracked-runtime-fixture-boundary]] -> [[runtime-loss-or-cleanup-block]]
 
 setup_fixture() {
     FIX="$BATS_TEST_TMPDIR/project-${BATS_TEST_NUMBER:-0}"
@@ -17,11 +17,11 @@ setup_fixture() {
     git -C "$FIX/shared" config user.email test@example.invalid
     git -C "$FIX/shared" config user.name fixture
     git -C "$FIX/shared" switch -c main -q
-    mkdir -p "$FIX/shared/queue/gates/$CMD" "$FIX/shared/src"
-    printf '# session alerts\n[TODO] baseline\n' > "$FIX/shared/queue/session_alerts_shogun.txt"
+    mkdir -p "$FIX/shared/queue/gates/$CMD" "$FIX/shared/src" "$FIX/shared/logs"
+    printf 'event=baseline\n' > "$FIX/shared/logs/defense_overhead.jsonl"
     printf 'BASE=1\n' > "$FIX/shared/src/app.py"
     printf '# Dashboard\n\n## 最新更新\n\n' > "$FIX/shared/dashboard.md"
-    git -C "$FIX/shared" add queue/session_alerts_shogun.txt src/app.py dashboard.md
+    git -C "$FIX/shared" add logs/defense_overhead.jsonl src/app.py dashboard.md
     git -C "$FIX/shared" commit -q -m base
     git -C "$FIX/shared" push -q -u origin main
     printf '# Dashboard\n\n## 最新更新\n\n' > "$FIX/dashboard.md"
@@ -66,13 +66,13 @@ run_cleanup() {
         bash "$BATS_TEST_DIRNAME/../../scripts/archive_completed.sh" 3 "$CMD"
 }
 
-@test "session alert runtime is preserved and cleanup is idempotent" {
+@test "tracked runtime is preserved and cleanup is idempotent" {
     setup_fixture
-    printf '# session alerts\n[TODO] runtime event\n' > "$FIX/task-wt/queue/session_alerts_shogun.txt"
+    printf 'event=runtime\n' > "$FIX/task-wt/logs/defense_overhead.jsonl"
     run_cleanup
     [ "$status" -eq 0 ]
     [ ! -e "$FIX/task-wt" ]
-    [ "$(cat "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/queue/session_alerts_shogun.txt")" = $'# session alerts\n[TODO] runtime event' ]
+    [ "$(cat "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/logs/defense_overhead.jsonl")" = 'event=runtime' ]
     python3 - "$FIX/queue/gates/$CMD/task_worktree.json" <<'PY'
 import json
 import sys
@@ -82,13 +82,13 @@ PY
 
     run_cleanup
     [ "$status" -eq 0 ]
-    [ "$(cat "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/queue/session_alerts_shogun.txt")" = $'# session alerts\n[TODO] runtime event' ]
+    [ "$(cat "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/logs/defense_overhead.jsonl")" = 'event=runtime' ]
     echo "runtime_bytes=preserved cleanup=1 idempotent=1"
 }
 
 @test "ordinary source dirt remains a cleanup BLOCK" {
     setup_fixture
-    printf '# session alerts\n[TODO] runtime event\n' > "$FIX/task-wt/queue/session_alerts_shogun.txt"
+    printf 'event=runtime\n' > "$FIX/task-wt/logs/defense_overhead.jsonl"
     printf 'UNCOMMITTED=1\n' > "$FIX/task-wt/src/app.py"
     run_cleanup
     [ "$status" -ne 0 ]
@@ -99,7 +99,7 @@ PY
 
 @test "completion generation mismatch remains a cleanup BLOCK" {
     setup_fixture
-    printf '# session alerts\n[TODO] runtime event\n' > "$FIX/task-wt/queue/session_alerts_shogun.txt"
+    printf 'event=runtime\n' > "$FIX/task-wt/logs/defense_overhead.jsonl"
     python3 - "$FIX/queue/gates/$CMD/gate_worker.clear.json" "$CMD" <<'PY'
 import json
 import sys
@@ -116,13 +116,13 @@ PY
     run_cleanup
     [ "$status" -ne 0 ]
     [ -d "$FIX/task-wt" ]
-    [ ! -e "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/queue/session_alerts_shogun.txt" ]
+    [ ! -e "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/logs/defense_overhead.jsonl" ]
     echo "generation_mismatch=blocked runtime_archive=0 worktree=retained"
 }
 
 @test "full completion publishes archive.done after runtime preservation" {
     setup_fixture
-    printf '# session alerts\n[TODO] runtime event\n' > "$FIX/task-wt/queue/session_alerts_shogun.txt"
+    printf 'event=runtime\n' > "$FIX/task-wt/logs/defense_overhead.jsonl"
     run env ARCHIVE_COMPLETED_PROJECT_DIR="$FIX" \
         ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 \
         SHOGUN_COMPLETION_GENERATION="$GEN" \
@@ -133,6 +133,6 @@ PY
     [ ! -e "$FIX/task-wt" ]
     [ -f "$FIX/queue/gates/$CMD/archive.done" ]
     [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["state"])' "$FIX/queue/gates/$CMD/task_worktree.json")" = cleaned ]
-    [ "$(cat "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/queue/session_alerts_shogun.txt")" = $'# session alerts\n[TODO] runtime event' ]
+    [ "$(cat "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/logs/defense_overhead.jsonl")" = 'event=runtime' ]
     echo "full_completion=1 archive_done=1 marker_cleaned=1 runtime_bytes=preserved"
 }
