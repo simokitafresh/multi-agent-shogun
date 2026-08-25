@@ -76,6 +76,12 @@ log_war() {
     echo -e "\033[1;31m【戦】\033[0m $1"
 }
 
+# log_warn: 非致命的な警告。log_war(戦)とは別物。2026-08-26まで未定義で
+# L1006/L1076の呼出しが "command not found" になっていた(殿検出)。
+log_warn() {
+    echo -e "\033[1;35m【警】\033[0m $1"
+}
+
 EXPECTED_WATCHER_COUNT="${EXPECTED_WATCHER_COUNT:-9}"
 
 inbox_watcher_process_count() {
