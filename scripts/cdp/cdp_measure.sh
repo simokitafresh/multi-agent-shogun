@@ -95,19 +95,9 @@ if [[ ! -f "$PERF_MEASURE" ]]; then
 fi
 echo "  OK: perf_measure.py exists"
 
-# 1b. Frontend healthz確認
-echo -n "  Frontend healthz: "
-HTTP_CODE=$(curl -sS -L -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 30 "$FRONTEND_HEALTH_URL" 2>/dev/null || true)
-if [[ "$HTTP_CODE" != "200" ]]; then
-    echo "FAIL (HTTP ${HTTP_CODE:-timeout})" >&2
-    echo "  → Frontend が起動していない or Render cold-start中。数分待って再実行せよ" >&2
-    exit 1
-fi
-echo "OK (HTTP 200)"
-
-# 1c. CDP認証 — shared receipt adapter（CDP哲学の共通基盤）
-#     認証も正本adapterへ集約し、inline Python + env-file読取による
-#     Guard14のDB接続誤分類と、requested/actual portの分岐を作らない。
+# 1b. CDP認証 — shared receipt adapter（fixture-onlyは外部preflight不要）
+#     hosted compatibilityでは外部Render/auto-opsが存在しないため、
+#     receipt発行までをfixture-onlyの最小契約として先に完了させる。
 CDP_PORT="${CDP_PORT:-9222}"
 CDP_REQUESTED_PORT="$CDP_PORT"
 CDP_RECEIPT="$(mktemp /tmp/cdp-measure-receipt.XXXXXX)"
@@ -120,6 +110,18 @@ if [[ "${CDP_CONSUMER_FIXTURE_ONLY:-0}" == "1" ]]; then
     echo "consumer=measurement receipt=$CDP_RECEIPT port=$CDP_PORT baseline=$BASELINE_PATH"
     exit 0
 fi
+
+# 1c. Frontend healthz確認
+echo -n "  Frontend healthz: "
+HTTP_CODE=$(curl -sS -L -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 30 "$FRONTEND_HEALTH_URL" 2>/dev/null || true)
+if [[ "$HTTP_CODE" != "200" ]]; then
+    echo "FAIL (HTTP ${HTTP_CODE:-timeout})" >&2
+    echo "  → Frontend が起動していない or Render cold-start中。数分待って再実行せよ" >&2
+    exit 1
+fi
+echo "OK (HTTP 200)"
+
+# 1d. CDP計測ロック
 LOCK_DIR="${SCRIPT_DIR}/queue/locks"
 mkdir -p "$LOCK_DIR"
 LOCK_FILE="${LOCK_DIR}/cdp_measure_port_${CDP_PORT}.lock"

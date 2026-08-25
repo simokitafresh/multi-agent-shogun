@@ -204,10 +204,6 @@ check_ref_record() {
     done
 
     if [ "$found" = false ]; then
-        if [ "$ANY_EXTERNAL_EXISTS" = false ]; then
-            TOTAL_REFS=$((TOTAL_REFS - 1))
-            return 0
-        fi
         BROKEN_REFS=$((BROKEN_REFS + 1))
         local _candidates=""
         _candidates="$(suggest_ref_candidates "$ref")"
