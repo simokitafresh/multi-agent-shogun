@@ -4145,7 +4145,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T21:40:19+09:00"
 - id: INS-20260825-212858678-d44e
   ts: "2026-08-25T21:28:58+09:00"
   insight: "F009(殿への操作押し返し禁止)とD005(sudo絶対禁止)の衝突: 特権必須操作(fstrim等)は将軍実行不可かつ依頼文言もBLOCKされ、正規経路が存在しない。特権操作の正規プロトコル(殿の!実行を情報提供として案内する例外定義)をF009 hookへ定義すべき。実例=2026-08-25 21:30 fstrim -av"
@@ -4159,7 +4162,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T21:40:19+09:00"
 - id: INS-20260825-213724810-16e2
   ts: "2026-08-25T21:37:24+09:00"
   insight: "[[stock data apiが順調に動作しているか]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=stock data apiが順調に動作しているか、renderを確認せよ"
@@ -4186,11 +4192,24 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T21:40:39+09:00"
 - id: INS-20260825-213906309-7be5
   ts: "2026-08-25T21:39:06+09:00"
   insight: "[[ディスクの話をしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ディスクの話をしよう。何がディスクを圧迫している？"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T21:40:40+09:00"
+- id: INS-20260825-214040360-1264
+  ts: "2026-08-25T21:40:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:gistに共有してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
