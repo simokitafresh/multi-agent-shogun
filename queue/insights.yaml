@@ -4098,3 +4098,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260825-202805615-d0b2
+  ts: "2026-08-25T20:28:05+09:00"
+  insight: "review_approval RC commit不変BLOCK: report-only RC(status復元等)で実装commitが不変の場合、review_approval.shがBLOCKする。家老のRC_REVOKEが必要。cmd_4401/cmd_4400で2回発生。パターン化。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
