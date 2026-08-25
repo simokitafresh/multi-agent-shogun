@@ -427,7 +427,13 @@ wait "$maintenance_pid"
         started=$(date +%s%3N)
         start_ninja_monitor_hot_reload_watch
         watcher_pid="$NINJA_MONITOR_HOT_RELOAD_WATCH_PID"
-        watcher_cmd=$(tr "\0" " " < "/proc/$watcher_pid/cmdline")
+        watcher_cmd=""
+        for _ in $(seq 1 100); do
+            [ -r "/proc/$watcher_pid/cmdline" ] && \
+                watcher_cmd=$(tr "\0" " " < "/proc/$watcher_pid/cmdline")
+            [[ "$watcher_cmd" == *"shogun-hot-reload-watch"* ]] && break
+            sleep 0.02
+        done
         [[ "$watcher_cmd" == *"shogun-hot-reload-watch"* ]]
         [[ "$watcher_cmd" != *"ninja_monitor.sh"* ]]
         sleep 0.1
