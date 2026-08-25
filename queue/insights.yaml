@@ -3862,3 +3862,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260825-152817438-43ae
+  ts: "2026-08-25T15:28:17+09:00"
+  insight: "[[進捗と現況と今後の方向性と目安をartifactにまとめてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗と現況と今後の方向性と目安をartifactにまとめてくれ。個別最適化と全体最適化のらせん構造の流れが停滞している"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
