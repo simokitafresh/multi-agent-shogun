@@ -89,36 +89,92 @@ inbox_watcher_process_count() {
         | awk '{print $2}' | sort -u | wc -l | tr -d ' '
 }
 
-stop_existing_inbox_watchers() {
+inspect_existing_inbox_watchers() {
     local remaining
 
-    # ninja_monitor.sh / daemon_watchdog.sh のwatcher自動再起動を抑止する。
-    # 両者は /tmp/restart_watchers.lock 保持中は再起動を控える契約のため、
-    # kill〜再起動完了までロックを保持しないと sleep 1 の間に復活し
-    # remaining=1 → set -e で本スクリプトが途中死する。
-    # fd 9 はスクリプト終了まで保持（exit時に自動解放）。
+    # 既存watcherは出陣スクリプトから停止せず、実数だけを記録する。
+    # 実際の停止は殿の操作境界で行い、共有監視プロセスを誤対象にしない。
     exec 9>/tmp/restart_watchers.lock
     flock -w 30 9 || log_war "restart_watchers.lock取得に30秒失敗（続行）"
-
-    pkill -TERM -f "[i]nbox_watcher\.sh" 2>/dev/null || true
-    pkill -TERM -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
-    sleep 1
-
     remaining="$(inbox_watcher_process_count)"
-    log_info "  ├─ SIGTERM後残存watcher: ${remaining}"
+    log_info "  ├─ 既存inbox_watcher実数: ${remaining}（停止操作なし）"
+}
 
-    if [ "$remaining" -gt 0 ]; then
-        pkill -KILL -f "[i]nbox_watcher\.sh" 2>/dev/null || true
-        pkill -KILL -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
-        sleep 1
-        remaining="$(inbox_watcher_process_count)"
-        log_info "  ├─ SIGKILL後残存watcher: ${remaining}"
-    fi
+# 同一socket pathのtmux serverを検知して一覧化する。停止は行わず、
+# 現socket所有者を保護したうえで重複時はfail-closedにする。
+inspect_duplicate_tmux_servers() {
+    local owner_info current_pid current_socket record socket pid queue_pid child_pid child_parent child_comm child_args
+    local -a records=() descendants=() pending=()
+    local -A socket_counts=() socket_pids=() seen=() descendant_seen=()
 
-    if [ "$remaining" -ne 0 ]; then
-        log_war "旧inbox_watcherが停止しきれていません (remaining=${remaining})"
+    command -v ss >/dev/null 2>&1 || {
+        log_war "tmux server検知に必要なssが見つからないため出陣を保留"
         return 1
+    }
+    owner_info="$(tmux display-message -p '#{pid}|#{socket_path}' 2>/dev/null || true)"
+    current_pid="${owner_info%%|*}"
+    current_socket="${owner_info#*|}"
+    if [[ "$owner_info" == "$current_pid" || ! "$current_pid" =~ ^[0-9]+$ || "$current_socket" != /* ]]; then
+        if [[ "${TMUX:-}" == *,*,* ]]; then
+            current_socket="${TMUX%%,*}"
+            current_pid="${TMUX#*,}"
+            current_pid="${current_pid%%,*}"
+        fi
     fi
+
+    mapfile -t records < <(
+        ss -xlpH 2>/dev/null | awk '
+            $1 == "u_str" && $5 ~ /^\// && $0 ~ /tmux: server/ {
+                socket=$5; rest=$0
+                while (match(rest, /pid=[0-9]+/)) {
+                    print socket "\t" substr(rest, RSTART + 4, RLENGTH - 4)
+                    rest=substr(rest, RSTART + RLENGTH)
+                }
+            }
+        '
+    )
+    for record in "${records[@]}"; do
+        socket="${record%%$'\t'*}"
+        pid="${record#*$'\t'}"
+        [[ "$socket" == /* && "$pid" =~ ^[0-9]+$ ]] || continue
+        [[ -n "${seen[$socket:$pid]:-}" ]] && continue
+        seen["$socket:$pid"]=1
+        socket_counts["$socket"]=$(( ${socket_counts[$socket]:-0} + 1 ))
+        socket_pids["$socket"]+=" ${pid}"
+    done
+
+    for socket in "${!socket_counts[@]}"; do
+        (( socket_counts[$socket] > 1 )) || continue
+        if [[ "$current_socket" != "$socket" || ! "$current_pid" =~ ^[0-9]+$ ]]; then
+            log_war "同一socket pathのtmux server複数検知だが現owner不明。停止せず出陣を保留: socket=${socket} servers=${socket_pids[$socket]}"
+            return 1
+        fi
+        log_war "同一socket pathのtmux server複数検知: socket=${socket}"
+        for pid in ${socket_pids[$socket]}; do
+            if [[ "$pid" == "$current_pid" ]]; then
+                log_info "  現socket所有者を保護: pid=${pid} socket=${socket}"
+                continue
+            fi
+            log_war "  旧tmux server一覧: pid=${pid} socket=${socket}"
+            pending=("$pid")
+            descendants=()
+            descendant_seen=( ["$pid"]=1 )
+            while ((${#pending[@]})); do
+                queue_pid="${pending[0]}"; pending=("${pending[@]:1}")
+                while read -r child_pid child_parent child_comm child_args; do
+                    [[ "$child_parent" == "$queue_pid" ]] || continue
+                    [[ -n "${descendant_seen[$child_pid]:-}" ]] && continue
+                    descendant_seen["$child_pid"]=1
+                    pending+=("$child_pid")
+                    descendants+=("$child_pid")
+                    log_war "    配下process一覧: pid=${child_pid} ppid=${child_parent} cmd=${child_comm} ${child_args}"
+                done < <(ps -eo pid=,ppid=,comm=,args= 2>/dev/null || true)
+            done
+        done
+        log_war "重複serverの実際の停止は殿の操作境界。自動処理を行わず出陣を保留"
+        return 1
+    done
+    return 0
 }
 
 verify_inbox_watcher_count() {
@@ -348,7 +404,12 @@ echo ""
 # STEP 1: 既存セッションクリーンアップ
 # ═══════════════════════════════════════════════════════════════════════════════
 log_info "🧹 既存の陣を撤収中..."
-tmux kill-session -t shogun 2>/dev/null && log_info "  └─ shogun陣、撤収完了" || log_info "  └─ shogun陣は存在せず"
+inspect_duplicate_tmux_servers
+if tmux has-session -t shogun 2>/dev/null; then
+    log_war "既存shogun陣を検知。停止は殿の操作境界へ委譲し、出陣を保留"
+    exit 1
+fi
+log_info "  └─ shogun陣は存在せず"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 1.5: 前回記録のバックアップ（--clean時のみ、内容がある場合）
@@ -739,7 +800,7 @@ for i in $(seq 0 $((AGENT_COUNT-1))); do
 done
 
 # ─── remain-on-exit (cmd_183) ───
-# CLIプロセスが死んでもペインを残す（OOM Kill等の原因調査用）
+# CLIプロセスが終了してもペインを残す（OOM等の原因調査用）
 tmux set-option -w -t "shogun:agents" remain-on-exit on 2>/dev/null
 
 # ─── pane-border-format: ペイン枠にagent_id・モデル名・タスクを常時表示 ───
@@ -1011,8 +1072,8 @@ NINJA_EOF
         [ -f "$SCRIPT_DIR/queue/inbox/${agent}.yaml" ] || echo "messages:" > "$SCRIPT_DIR/queue/inbox/${agent}.yaml"
     done
 
-    # 既存のwatcherと孤児inotifywaitをkillし、残存ゼロを強制確認
-    stop_existing_inbox_watchers
+    # 既存watcherの実数だけを確認し、停止は行わない
+    inspect_existing_inbox_watchers
 
     declare -a LAUNCHED_WATCHERS=()
 
@@ -1062,11 +1123,14 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 NTFY_TOPIC=$(grep 'ntfy_topic:' ./config/settings.yaml 2>/dev/null | awk '{print $2}' | tr -d '"')
 if [ -n "$NTFY_TOPIC" ]; then
-    pkill -f "ntfy_listener.sh" 2>/dev/null || true
     [ ! -f ./queue/ntfy_inbox.yaml ] && echo "inbox:" > ./queue/ntfy_inbox.yaml
-    nohup bash "$SCRIPT_DIR/scripts/ntfy_listener.sh" &>/dev/null &
-    disown
-    log_info "📱 ntfy入力リスナー起動 (topic: $NTFY_TOPIC)"
+    if pgrep -f "[n]tfy_listener.sh" >/dev/null 2>&1; then
+        log_info "📱 ntfy入力リスナー既存プロセスを継続 (topic: $NTFY_TOPIC)"
+    else
+        nohup bash "$SCRIPT_DIR/scripts/ntfy_listener.sh" &>/dev/null &
+        disown
+        log_info "📱 ntfy入力リスナー起動 (topic: $NTFY_TOPIC)"
+    fi
 
     # ntfyスモークテスト: 出陣時に通知が実際に送信できることを確認
     # curlの終了コードで判定（ネットワーク到達性 + ntfy.shの引数処理）
@@ -1088,21 +1152,27 @@ if [ -z "$GIST_ID" ]; then
     # settings.yamlになければデフォルト値
     GIST_ID="6eb495d917fb00ba4d4333c237a4ee0c"
 fi
-pkill -f "gist_sync.sh" 2>/dev/null || true
-nohup bash "$SCRIPT_DIR/scripts/gist_sync.sh" "$GIST_ID" \
-    &>> "$SCRIPT_DIR/logs/gist_sync.log" &
-disown
-log_info "📊 Gist同期ウォッチャー起動 (gist: $GIST_ID)"
+if pgrep -f "[g]ist_sync.sh" >/dev/null 2>&1; then
+    log_info "📊 Gist同期ウォッチャー既存プロセスを継続 (gist: $GIST_ID)"
+else
+    nohup bash "$SCRIPT_DIR/scripts/gist_sync.sh" "$GIST_ID" \
+        &>> "$SCRIPT_DIR/logs/gist_sync.log" &
+    disown
+    log_info "📊 Gist同期ウォッチャー起動 (gist: $GIST_ID)"
+fi
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 6.10: Usage statusbarデーモン起動（5h/7d利用率表示）
 # ═══════════════════════════════════════════════════════════════════════════════
 if [ -f "$SCRIPT_DIR/scripts/usage_statusbar_loop.sh" ]; then
-    pkill -f "usage_statusbar_loop.sh" 2>/dev/null || true
-    nohup bash "$SCRIPT_DIR/scripts/usage_statusbar_loop.sh" >> "$SCRIPT_DIR/logs/usage_statusbar_loop.log" 2>&1 &
-    disown
-    log_info "📊 Usage statusbarデーモン起動 (5h/7d)"
+    if pgrep -f "[u]sage_statusbar_loop.sh" >/dev/null 2>&1; then
+        log_info "📊 Usage statusbarデーモン既存プロセスを継続 (5h/7d)"
+    else
+        nohup bash "$SCRIPT_DIR/scripts/usage_statusbar_loop.sh" >> "$SCRIPT_DIR/logs/usage_statusbar_loop.log" 2>&1 &
+        disown
+        log_info "📊 Usage statusbarデーモン起動 (5h/7d)"
+    fi
 else
     log_info "⚠️ scripts/usage_statusbar_loop.sh が見つかりません（スキップ）"
 fi
@@ -1112,10 +1182,13 @@ echo ""
 # STEP 6.11: 忍者監視デーモン起動（コンテキスト%更新）
 # ═══════════════════════════════════════════════════════════════════════════════
 if [ -f "$SCRIPT_DIR/scripts/ninja_monitor.sh" ]; then
-    pkill -f "ninja_monitor.sh" 2>/dev/null || true
-    nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
-    disown
-    log_info "👁️ 忍者監視デーモン起動 (context%更新)"
+    if pgrep -f "[n]inja_monitor.sh" >/dev/null 2>&1; then
+        log_info "👁️ 忍者監視デーモン既存プロセスを継続 (context%更新)"
+    else
+        nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+        disown
+        log_info "👁️ 忍者監視デーモン起動 (context%更新)"
+    fi
 else
     log_info "⚠️ scripts/ninja_monitor.sh が見つかりません（スキップ）"
 fi
