@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -c 'import pytest; print("PYTEST_AVAILABLE=" + pytest.__version__)'
-          tmux new-session -d -s shogun -n agents
+          tmux new-session -d -s shogun -n agents -x 240 -y 80
           agents=(karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru shogun)
           for agent in "${agents[@]:1}"; do
             tmux split-window -d -t shogun:agents
