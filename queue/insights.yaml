@@ -3894,3 +3894,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-160129109-a9aa
+  ts: "2026-08-25T16:01:29+09:00"
+  insight: "[[最重量unitテスト群の単体短縮 — 配置換えでなくテスト自体を軽くする個別最適化本流]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=最重量unitテスト群の単体短縮 — 配置換えでなくテスト自体を軽くする個別最適化本流"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
