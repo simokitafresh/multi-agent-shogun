@@ -2125,6 +2125,29 @@ _STARTUP_TIMING_FINALIZED=1
 echo ""
 # Later checks may assign WARN/ALERT directly; disk danger is an overriding invariant.
 [ "${_disk_status:-}" = "BLOCK" ] && overall="BLOCK"
+
+# ── スキル参照実在チェック(CLAUDE.md/instructions/*.md の /skill参照 → skills/<name>/SKILL.md) ──
+# 2026-08-25 22:11 Q6自動化ターゲット: /reset-layout がskills削除(efc8e016e)後もCLAUDE.mdに残り
+# Unknown skillになった(deepdive why_chain Phase 9「参照パスと実体不一致」同型)。
+echo "■ スキル参照実在(CLAUDE.md/instructions)"
+_skill_ref_ignore=" clear model new compact help init config home mnt tmp dev proc usr etc opt var bin loop schedule run "
+_skill_missing=()
+for _f in CLAUDE.md instructions/shogun.md instructions/karo.md instructions/gunshi.md instructions/ashigaru.md; do
+    [ -f "$_f" ] || continue
+    while IFS= read -r _tok; do
+        _name="${_tok#/}"
+        case "$_skill_ref_ignore" in *" $_name "*) continue;; esac
+        [ -f "skills/$_name/SKILL.md" ] || _skill_missing+=("$_f:/$_name")
+    done < <(grep -oP '(?<![^ |(「`])/[a-z][a-z0-9-]+(?![A-Za-z0-9_/])' "$_f" | sort -u)
+done
+if [ ${#_skill_missing[@]} -eq 0 ]; then
+    echo "  OK: /skill参照は全て skills/<name>/SKILL.md 実在"
+else
+    echo "  ALERT: 幻スキル参照 ${#_skill_missing[@]}件(skills/<name>/SKILL.md不在): ${_skill_missing[*]}"
+    echo "    → 参照元を実在スキル/scriptへ差替えよ(CLAUDE.md=家老権限)。集計: grep -oE '/[a-z][a-z0-9-]+' <file> | sort -u"
+    alerts+=("幻スキル参照: ${#_skill_missing[@]}件")
+    if [ "$overall" != "BLOCK" ]; then overall="ALERT"; fi
+fi
 echo "=== 総合判定: $overall ==="
 if [ ${#alerts[@]} -gt 0 ]; then
     for a in "${alerts[@]}"; do
