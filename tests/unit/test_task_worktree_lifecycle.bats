@@ -4,7 +4,7 @@
 # remote-tip linked worktree while shared main and runtime state stay isolated.
 
 setup_fixture_repo() {
-    FIXTURE="$BATS_TEST_TMPDIR/repo"
+    FIXTURE="${1:-$BATS_TEST_TMPDIR/repo}"
     git init --bare -q "$FIXTURE/remote.git"
     git clone -q "$FIXTURE/remote.git" "$FIXTURE/shared"
     git -C "$FIXTURE/shared" config user.email test@example.invalid
@@ -22,6 +22,95 @@ setup_fixture_repo() {
         context/semantic-map.md docs/semantic-index/index.md .gitignore
     git -C "$FIXTURE/shared" commit -q -m base
     git -C "$FIXTURE/shared" push -q -u origin main
+}
+
+# test_necessity: archive cleanup must recover a publication that is durable in
+# the exact generation-bound source receipt even when the task marker still has
+# published_commit empty; mismatched identity or an unresolved tip must remain
+# fail-closed and retain the worktree.
+setup_receipt_recovery_fixture() {
+    local case_name="$1" receipt_mode="$2"
+    local generation="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    local receipt_generation="$generation" receipt_repo_mode="match" receipt_tip_mode="match"
+    FIXTURE="$BATS_TEST_TMPDIR/receipt-$case_name"
+    CMD="cmd_receipt_recovery_$case_name"
+    setup_fixture_repo "$FIXTURE"
+    git -C "$FIXTURE/shared" worktree add -q -b "task-$case_name" "$FIXTURE/task-wt" HEAD
+    printf 'RECOVERED=1\n' > "$FIXTURE/task-wt/src/app.py"
+    git -C "$FIXTURE/task-wt" add src/app.py
+    git -C "$FIXTURE/task-wt" commit -q -m "receipt recovery $case_name"
+    PUB="$(git -C "$FIXTURE/task-wt" rev-parse HEAD)"
+    git -C "$FIXTURE/task-wt" push -q origin HEAD:refs/heads/main
+    case "$receipt_mode" in
+        generation) receipt_generation="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" ;;
+        repo) receipt_repo_mode="mismatch" ;;
+        tip) receipt_tip_mode="unresolved" ;;
+        success) ;;
+        *) printf 'unknown receipt mode: %s\n' "$receipt_mode" >&2; return 1 ;;
+    esac
+    mkdir -p "$FIXTURE/queue/gates/$CMD"
+    python3 - "$FIXTURE/queue/gates/$CMD/task_worktree.json" "$FIXTURE/shared" "$FIXTURE/task-wt" "$CMD" "$PUB" <<'PY'
+import json
+import sys
+
+marker, repo, worktree, cmd, remote_tip = sys.argv[1:]
+json.dump({
+    "version": 1,
+    "parent_cmd": cmd,
+    "repo": repo,
+    "worktree": worktree,
+    "state": "active",
+    "published_commit": "",
+    "remote_tip": remote_tip,
+}, open(marker, "w"))
+PY
+    python3 - "$FIXTURE/queue/gates/$CMD/gate_worker.clear.json" "$CMD" "$generation" <<'PY'
+import json
+import sys
+
+path, cmd, generation = sys.argv[1:]
+json.dump({
+    "version": 1,
+    "state": "clear",
+    "cmd_id": cmd,
+    "completion_generation": generation,
+    "persisted_at_ns": 1,
+}, open(path, "w"))
+PY
+    local receipt_repo="$FIXTURE/shared" receipt_tip="$PUB"
+    [ "$receipt_repo_mode" = "match" ] || receipt_repo="$FIXTURE/other-repo"
+    [ "$receipt_tip_mode" = "match" ] || receipt_tip="deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+    python3 - "$FIXTURE/queue/gates/$CMD/source_only_publish.receipt.json" "$CMD" "$receipt_generation" "$receipt_repo" "$receipt_tip" "$PUB" <<'PY'
+import json
+import sys
+
+path, cmd, generation, repo, remote_tip, source_sha = sys.argv[1:]
+json.dump({
+    "version": 1,
+    "state": "published",
+    "cmd_id": cmd,
+    "completion_generation": generation,
+    "entries": [{
+        "cmd_id": cmd,
+        "completion_generation": generation,
+        "repo": repo,
+        "source_sha": source_sha,
+        "report_generation": "rpt-receipt-recovery",
+        "remote_tip": remote_tip,
+        "remote_contains_source_rc": 0,
+    }],
+}, open(path, "w"))
+PY
+    GEN="$generation"
+    WT="$FIXTURE/task-wt"
+}
+
+run_receipt_recovery_archive() {
+    run env ARCHIVE_COMPLETED_PROJECT_DIR="$FIXTURE" \
+        ARCHIVE_TASK_WORKTREE_CLEANUP_ONLY=1 \
+        ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 \
+        SHOGUN_COMPLETION_GENERATION="$GEN" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/archive_completed.sh" 3 "$CMD"
 }
 
 @test "remote-tip deploy exposes absolute edit target and rejects shared source" {
@@ -149,6 +238,43 @@ PY
     '
     [ "$status" -eq 0 ]
     [[ "$output" == *"publish_failure=1 rollback_orphan=0 marker_removed=1"* ]]
+}
+
+@test "archive recovers exact source publication receipt and rejects three mismatches" {
+    setup_receipt_recovery_fixture success success
+    run_receipt_recovery_archive
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"publication recovered from durable receipt"* ]]
+    [ ! -e "$WT" ]
+    python3 - "$FIXTURE/queue/gates/$CMD/task_worktree.json" "$PUB" <<'PY'
+import json
+import sys
+
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["state"] == "cleaned"
+assert data["published_commit"] == sys.argv[2]
+assert int(data["published_recovered_at_ns"]) > 0
+PY
+
+    false_positive=0
+    false_negative=0
+    for mode in generation repo tip; do
+        setup_receipt_recovery_fixture "$mode" "$mode"
+        run_receipt_recovery_archive
+        [ "$status" -ne 0 ] || false_positive=$((false_positive + 1))
+        [ -d "$WT" ] || false_negative=$((false_negative + 1))
+        published="$(python3 - "$FIXTURE/queue/gates/$CMD/task_worktree.json" <<'PY'
+import json
+import sys
+print(json.load(open(sys.argv[1], encoding="utf-8")).get("published_commit") or "")
+PY
+        )"
+        [ -z "$published" ] || false_positive=$((false_positive + 1))
+    done
+    printf 'receipt_recovery success=1 generation_mismatch=1 repo_mismatch=1 unresolved_tip=1 false_positive=%s false_negative=%s\n' \
+        "$false_positive" "$false_negative"
+    [ "$false_positive" -eq 0 ]
+    [ "$false_negative" -eq 0 ]
 }
 
 @test "multi-path remote-tip deploy preserves typed scope and resolves task selectors" {
