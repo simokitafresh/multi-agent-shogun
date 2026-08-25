@@ -9,6 +9,8 @@
 load '../helpers/cmd_gate_scaffold'
 
 setup_file() {
+    export CMD_GATE_PHASE_TIMING="$BATS_FILE_TMPDIR/cmd_gate_phase_timing.tsv"
+    printf 'setup_file_start\t%s\n' "$(date +%s%N)" > "$CMD_GATE_PHASE_TIMING"
     cmd_gate_setup_file
     export SRC_NORMALIZE_SCRIPT="$PROJECT_ROOT/scripts/lib/normalize_report.sh"
     [ -f "$SRC_NORMALIZE_SCRIPT" ] || return 1
@@ -54,6 +56,39 @@ EOF
     write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
     export CMD_GATE_MASTER_PROJECT="$TEST_PROJECT"
     export CMD_GATE_MASTER_TMPDIR="$TEST_TMPDIR"
+
+    # Source-publication tests exercise push_task_repositories itself. Build
+    # one immutable function-only runner once per file so each isolated
+    # fixture does not reparse the full completion gate and snapshot wrapper.
+    export PUSH_HELPERS_FILE="$BATS_FILE_TMPDIR/push_helpers.sh"
+    export PUSH_RUNNER="$BATS_FILE_TMPDIR/run_push_task.sh"
+    python3 - "$SRC_GATE_SCRIPT" > "$PUSH_HELPERS_FILE" <<'PY'
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+start = source.index("resolve_task_repo_dir()")
+end = source.index('\nif [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]', start)
+print(source[start:end], end="\n")
+PY
+    cat > "$PUSH_RUNNER" <<'BASH'
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR="$1"
+source "$2"
+if [ -f "$3" ] && [ -f "$4" ]; then
+    shift 2
+else
+    CMD_ID="$4"
+    export CMD_ID
+    task_file="$3"
+    push_task_repositories "$task_file"
+    exit $?
+fi
+push_task_repositories "$@"
+BASH
+    chmod +x "$PUSH_RUNNER"
+    printf 'setup_file_end\t%s\n' "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
 }
 
 # test_necessity: Vercel link validation must use the current command's
@@ -862,6 +897,7 @@ PY
 }
 
 setup() {
+    printf 'setup_start\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cmd_gate_ctx.XXXXXX")"
     export TEST_PROJECT="$TEST_TMPDIR/project"
@@ -882,6 +918,7 @@ setup() {
 
     ALL_CLEAR=true
     BLOCK_REASONS=()
+    printf 'setup_end\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
 
 }
 
@@ -3695,7 +3732,9 @@ EOF
 }
 
 teardown() {
+    printf 'teardown_start\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
     cmd_gate_teardown
+    printf 'teardown_end\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
 }
 
 teardown_file() {
@@ -4944,7 +4983,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_divergence_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_divergence_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"remote-tip source-only push"* ]]
     [[ "$output" == *"remote_contains_source_rc=0"* ]]
@@ -5025,7 +5064,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac1_fixed_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac1_fixed_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"git push: isolated clean snapshot ($base/repo remote-tip source-only push)"* ]]
     [[ "$output" == *$'\n    shared.txt'* ]]
@@ -5062,7 +5101,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_remote_tip_race_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_remote_tip_race_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"retry 1/2"* ]]
     [[ "$output" == *"remote tip refreshed"* ]]
@@ -5090,7 +5129,7 @@ EOF
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION="$generation" \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_positive_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_positive_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"remote_contains_source_rc=0"* ]]
     [ -s "$base/source-receipt.json" ]
@@ -5118,7 +5157,7 @@ PY
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION="$generation" \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_positive_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_positive_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"durable source-only publication receipt exact-match"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
@@ -5137,13 +5176,13 @@ PY
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_generation_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_generation_probe"
     [ "$status" -eq 0 ]
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_generation_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_generation_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"source commits already remote-contained"* || "$output" == *"source commits source-equivalent to remote tip"* ]]
     [[ "$output" != *"durable source-only publication receipt exact-match"* ]]
@@ -5163,7 +5202,7 @@ PY
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION="$generation" \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_source_mismatch_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_source_mismatch_probe"
     [ "$status" -eq 0 ]
 
     printf 'new source\n' >> "$base/repo/shared.txt"
@@ -5179,7 +5218,7 @@ PY
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION="$generation" \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_source_mismatch_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_source_mismatch_probe"
     [ "$status" -eq 0 ]
     [[ "$output" != *"durable source-only publication receipt exact-match"* ]]
     [[ "$output" == *"remote_contains_source_rc=0"* ]]
@@ -5205,14 +5244,14 @@ PY
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_corrupt_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_corrupt_probe"
     [ "$status" -eq 0 ]
     printf '{not-json\n' > "$base/source-receipt.json"
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_corrupt_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_corrupt_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"source commits already remote-contained"* || "$output" == *"source commits source-equivalent to remote tip"* ]]
     [[ "$output" != *"durable source-only publication receipt exact-match"* ]]
@@ -5232,7 +5271,7 @@ PY
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
         SHOGUN_COMPLETION_GENERATION=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_receipt_legacy_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_receipt_legacy_probe"
     [ "$status" -eq 0 ]
     [ ! -e "$base/source-receipt.json" ]
     [[ "$output" != *"durable source-only publication receipt exact-match"* ]]
@@ -5267,7 +5306,7 @@ PY
         CMD_COMPLETE_GATE_SOURCE_PUBLISH_LEGACY_EVIDENCE="$base/legacy-source-publish.jsonl" \
         SHOGUN_COMPLETION_GENERATION="$generation" \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" "$cmd_id"
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "$cmd_id"
     [ "$status" -eq 0 ]
     [[ "$output" == *"migrated legacy source-only publication evidence exact-match"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" 2>/dev/null || true)" -eq 0 ]
@@ -5387,7 +5426,7 @@ PY
     sed -i "s/if [ \"\\\\\$count\" -eq 0 ]; then/if [ \"\\\\\$count\" -le 1 ]; then/" "$base/bin/git"
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_MAX_RETRIES=1 \
         CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_remote_tip_bound_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_remote_tip_bound_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"retry 1/1"* ]]
     [[ "$output" == *"git push: BLOCK"* ]]
@@ -5403,7 +5442,7 @@ PY
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_clean_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_clean_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"git push: SKIP ($base/repo report source commits already remote-contained)"* ]]
     [ ! -s "$base/git_push_calls.log" ]
@@ -5449,7 +5488,7 @@ YAML
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_pni_base_tree_noop_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_pni_base_tree_noop_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS_NO_IMPROVEMENT source tree equals task base"* ]]
     [ ! -s "$base/git_push_calls.log" ]
@@ -5495,7 +5534,7 @@ YAML
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_pni_base_tree_verdict_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_pni_base_tree_verdict_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -5526,7 +5565,7 @@ YAML
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_source_equivalent_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_source_equivalent_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"report source commits source-equivalent to remote tip"* ]]
     [ ! -s "$base/git_push_calls.log" ]
@@ -5565,7 +5604,7 @@ YAML
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_worktree_publish_repo_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_worktree_publish_repo_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"$base/repo report source commits source-equivalent to remote tip"* ]]
     [[ "$output" != *"$base/task-wt upstream missing"* ]]
@@ -5595,7 +5634,7 @@ YAML
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_source_not_equivalent_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_source_not_equivalent_probe"
     [ "$status" -ne 0 ]
     [[ "$output" != *"source-equivalent to remote tip"* ]]
     [[ "$output" == *"git push: BLOCK"* ]]
@@ -5628,14 +5667,14 @@ YAML
 
     run env PATH="$match/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$match/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_delete_match_probe
+        bash "$PUSH_RUNNER" "$match" "$PUSH_HELPERS_FILE" "$match/task.yaml" "cmd_ac2_delete_match_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"source-equivalent to remote tip"* ]]
     [ ! -s "$match/git_push_calls.log" ]
 
     run env PATH="$mismatch/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$mismatch/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_delete_mismatch_probe
+        bash "$PUSH_RUNNER" "$mismatch" "$PUSH_HELPERS_FILE" "$mismatch/task.yaml" "cmd_ac2_delete_mismatch_probe"
     [ "$status" -eq 0 ]
     [[ "$output" != *"source-equivalent to remote tip"* ]]
     [ "$(grep -c . "$mismatch/git_push_calls.log")" -eq 1 ]
@@ -5697,7 +5736,7 @@ YAML
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_nonoverlap_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_nonoverlap_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
@@ -5712,7 +5751,7 @@ YAML
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_conflict_fallback_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_conflict_fallback_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"conflict fallback (source-only path snapshot)"* ]]
     [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
@@ -5736,7 +5775,7 @@ YAML
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_conflict_divergent_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_conflict_divergent_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK ($base/repo source-only push/verification failed)"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -5767,7 +5806,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_add_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_add_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"conflict fallback"* ]]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^\- id:')" -eq 3 ]
@@ -5828,7 +5867,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_source_generation_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_source_generation_probe"
     [ "$status" -eq 0 ]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *$'id: remote-new\n  value: remote'* ]]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *$'id: source-add\n  value: source'* ]]
@@ -5857,7 +5896,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_replace_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_replace_probe"
     [ "$status" -eq 0 ]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^\- id:')" -eq 2 ]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *$'id: target\n  value: source'* ]]
@@ -5886,7 +5925,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_noop_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_noop_probe"
     [ "$status" -eq 0 ]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^\- id:')" -eq 2 ]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c 'value: source')" -eq 1 ]
@@ -5912,7 +5951,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_divergent_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_divergent_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -5945,7 +5984,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_delete_safe_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_delete_safe_probe"
     [ "$status" -eq 0 ]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: delete-me"* ]]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: remote-only"* ]]
@@ -5970,7 +6009,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_delete_unsafe_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_delete_unsafe_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -6009,7 +6048,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_resolved_compaction_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_resolved_compaction_probe"
     [ "$status" -eq 0 ]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^- id:' || true)" -eq 0 ]
 }
@@ -6046,7 +6085,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_resolved_compaction_identity_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_resolved_compaction_identity_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -6074,7 +6113,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_duplicate_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_duplicate_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -6105,7 +6144,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_other_path_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_other_path_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -6139,7 +6178,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_mapping_add_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_mapping_add_probe"
     [ "$status" -eq 0 ]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == insights:* ]]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^- id:')" -eq 3 ]
@@ -6173,7 +6212,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_mapping_replace_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_mapping_replace_probe"
     [ "$status" -eq 0 ]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *$'id: target\n  value: source'* ]]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: remote-only"* ]]
@@ -6202,7 +6241,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_mapping_divergent_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_mapping_divergent_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -6236,7 +6275,7 @@ EOF
     _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_lifecycle_list_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_lifecycle_list_probe"
     [ "$status" -eq 0 ]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c 'status: resolved')" -eq 1 ]
 }
@@ -6270,7 +6309,7 @@ EOF
     _push_insights_merge_fixture "$base" "$base-base.yaml" "$base-source.yaml" "$base-remote.yaml"
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_lifecycle_mapping_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_lifecycle_mapping_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
 }
@@ -6298,7 +6337,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_mapping_invalid_root_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_mapping_invalid_root_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -6320,7 +6359,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_empty_first_id_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_empty_first_id_probe"
     [ "$status" -eq 0 ]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == $'insights:\n-'* ]]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^- id:')" -eq 1 ]
@@ -6341,7 +6380,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_empty_empty_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_empty_empty_probe"
     [ "$status" -eq 0 ]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml | grep -c '^- id:' || true)" -eq 0 ]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
@@ -6363,7 +6402,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_insights_empty_delete_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_insights_empty_delete_probe"
     [ "$status" -eq 0 ]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == "insights:"* ]]
     [[ "$(git --git-dir "$base/origin.git" show refs/heads/main:queue/insights.yaml)" == *"id: delete-me"* ]]
@@ -6408,7 +6447,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_cumulative_equivalence_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_cumulative_equivalence_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"conflict fallback"* ]]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:scripts/cmd_complete_gate.sh | grep -c '^remote-two-script$')" -eq 1 ]
@@ -6455,7 +6494,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_cumulative_missing_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_cumulative_missing_probe"
     [ "$status" -ne 0 ]
     [[ "$output" == *"git push: BLOCK"* ]]
     [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
@@ -6473,7 +6512,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_push_denied_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_push_denied_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"push_allowed=false"* ]]
     [[ "$output" == *"all task sources push_allowed=false"* ]]
@@ -6491,7 +6530,7 @@ EOF
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_push_allowed_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_push_allowed_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
@@ -6618,7 +6657,7 @@ BASH
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_autogen_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_autogen_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
@@ -6637,7 +6676,7 @@ BASH
 
     run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
         CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
-        bash "$SRC_GATE_SCRIPT" cmd_ac2_source_not_excluded_probe
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_source_not_excluded_probe"
     [ "$status" -eq 0 ]
     [[ "$output" == *"shared.txt"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
