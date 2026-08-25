@@ -3785,3 +3785,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-111719094-4569
+  ts: "2026-08-25T11:17:19+09:00"
+  insight: "cmd_4401検分所見: 隔離fixtureのpublish_total=3770ms vs 将軍実測のライブpublish約13分(06:31-06:44)の乖離が未説明。段別計装はfixture条件のみでライブ環境の支配要因(/mnt/c I/O競合・hook群・記憶DB書込み)を捕捉していない=LS-A24計測代表性の再現。次弾はライブpublish 1回のphase logを一次取得して突合すべき"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
