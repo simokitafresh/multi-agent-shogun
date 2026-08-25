@@ -260,7 +260,10 @@ def invoke(args):
 jobs=[]
 for lane,root in zip(('before','after','mutant'),roots):
     jobs += [(lane,root,c) for c in checks]
-with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:
+# Keep all 246 production invocations while bounding DrvFS/git/SQLite
+# contention. Sixteen concurrent cmd_save processes exceed the per-invocation
+# 30s contract under WSL2 even when every detector is healthy.
+with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
     values=list(pool.map(invoke,jobs))
 before,after,mutant=values[:82],values[82:164],values[164:]
 expected={x['check_id']:x['outcome'] for x in before}
