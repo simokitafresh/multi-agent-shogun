@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-08-25 context_freshness reviewed source boundary -->
+<!-- source_commit:cbc14955f reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=cbc14955f -->
 <!-- source_commit:760485841 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=760485841 -->
 <!-- source_commit:3b283e4b0 reason:context updated for cmd_4400 shard parallelization evidence:doc_lane_request blt_20260825_131907_154d6a -->
 <!-- source_commit:712934f22 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=712934f22 -->
