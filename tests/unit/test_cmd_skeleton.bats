@@ -142,7 +142,7 @@ PY
   python3 - "$ROOT/docs/research/cmd-save-check-inventory-v1.yaml" \
     "$TMPROOT/baseline" "$TMPROOT/current" "$TMPROOT/mutant" \
     "$TMPROOT/parity-receipt.json" <<'PY'
-import concurrent.futures,hashlib,json,os,subprocess,sys,yaml
+import concurrent.futures,hashlib,json,os,subprocess,sys,time,yaml
 inventory,*roots,receipt_path=sys.argv[1:]
 checks=yaml.safe_load(open(inventory))['checks']
 TARGET={
@@ -210,7 +210,10 @@ def invoke(args):
       CMD_SAVE_LAST_CMD_FILE=os.path.join(work,'last.txt'),
       CMD_SAVE_DISABLE_QUALITY_LOG='1', CMD_SAVE_SYNC_QUALITY_LOG='1',
       CMD_QUALITY_FAST_METADATA='0' if cid in (24,74) else '1', SHOGUN_MEMORY_DB=os.path.join(work,'memory.db'),
-      CMD_SAVE_SEMANTIC_SEARCH_SCRIPT=os.path.join(work,'no-semantic-search'))
+      CMD_SAVE_SEMANTIC_SEARCH_SCRIPT=os.path.join(work,'no-semantic-search'),
+      DEFENSE_OVERHEAD_LEDGER=os.path.join(work,'defense_overhead.jsonl'),
+      DEFENSE_OVERHEAD_INDEX=os.path.join(work,'defense_overhead.index.sqlite3'),
+      DEFENSE_OVERHEAD_ENABLED='1')
     script=os.path.join(root,'scripts/cmd_save.sh')
     command_argv=['bash','-x',script,'--preflight',lookup]
     trace_path=os.path.join(work,'xtrace.log')
@@ -226,6 +229,19 @@ def invoke(args):
                      stderr=subprocess.STDOUT,timeout=60)
     output=p.stdout
     trace=open(trace_path).read()
+    phase_ledger=os.path.join(work,'defense_overhead.jsonl')
+    phase_rows=[]
+    for _ in range(100):
+        try:
+            with open(phase_ledger) as fh:
+                phase_rows=[json.loads(raw) for raw in fh if raw.strip()]
+        except FileNotFoundError:
+            phase_rows=[]
+        if phase_rows:
+            break
+        time.sleep(0.01)
+    if not phase_rows:
+        raise AssertionError('cmd_save phase receipt missing: %s' % phase_ledger)
     # Parse executed shell commands structurally.  This is runtime control-flow
     # evidence from production, not regex/vocabulary matching against source or
     # output prose and not a function-existence probe.
@@ -248,7 +264,8 @@ def invoke(args):
     outcome={'target':target,'production_exit_code':p.returncode,
              'target_call_count':target_call_count,
              'target_judgment_observed':target_reached,
-             'mutation_observed':mutation_observed if cid==41 else False}
+             'mutation_observed':mutation_observed if cid==41 else False,
+             'phase_rows':phase_rows}
     return {'check_id':cid,'command':command_argv,'exit_code':p.returncode,
             'output_sha256':hashlib.sha256(output.encode()).hexdigest(),
             'trace_sha256':hashlib.sha256(trace.encode()).hexdigest(),'target':target,
@@ -266,9 +283,13 @@ for lane,root in zip(('before','after','mutant'),roots):
 with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:
     values=list(pool.map(invoke,jobs))
 before,after,mutant=values[:82],values[82:164],values[164:]
-expected={x['check_id']:x['outcome'] for x in before}
-actual={x['check_id']:x['outcome'] for x in after}
-mutant_actual={x['check_id']:x['outcome'] for x in mutant}
+def semantic_outcome(value):
+    outcome=dict(value['outcome'])
+    outcome.pop('phase_rows', None)
+    return outcome
+expected={x['check_id']:semantic_outcome(x) for x in before}
+actual={x['check_id']:semantic_outcome(x) for x in after}
+mutant_actual={x['check_id']:semantic_outcome(x) for x in mutant}
 diff=[i for i in expected if expected[i]!=actual[i]]
 fp=[i for i in expected if expected[i]!='PASS' and actual[i]=='PASS']
 fn=[i for i in expected if expected[i]=='PASS' and actual[i]!='PASS']
@@ -284,6 +305,33 @@ receipt={'before':before,'after':after,'mutant':mutant,
  'production_invocations':{'before':len(before),'after':len(after),'mutant':len(mutant),'total':len(values)},
  'decision_diff':len(diff),'fp':len(fp),'fn':len(fn),'mutation_diff':mutation_diff,
  'forbidden_shortcuts':shortcut_counts}
+def phase_profile(rows):
+    profile={}
+    for row in rows:
+        if row.get('source') != 'cmd_save':
+            continue
+        phase=row['check_id']
+        if phase in {'save_total', 'checks_main'}:
+            continue
+        item=profile.setdefault(phase, {'invocations':0,'total_ms':0})
+        item['invocations'] += 1
+        item['total_ms'] += int(row['wall_ms'])
+    for item in profile.values():
+        item['mean_ms']=round(item['total_ms']/item['invocations'], 3)
+    return profile
+phase_breakdown={}
+for lane,rows in (('before',before),('after',after),('mutant',mutant)):
+    phase_breakdown[lane]=phase_profile([r for x in rows for r in x['outcome']['phase_rows']])
+all_profile={}
+for lane in phase_breakdown.values():
+    for phase,item in lane.items():
+        dst=all_profile.setdefault(phase, {'invocations':0,'total_ms':0})
+        dst['invocations'] += item['invocations']; dst['total_ms'] += item['total_ms']
+for item in all_profile.values():
+    item['mean_ms']=round(item['total_ms']/item['invocations'], 3)
+dominant_phase=max(all_profile, key=lambda phase: all_profile[phase]['total_ms'])
+receipt['phase_breakdown']=phase_breakdown
+receipt['dominant_phase']={'name':dominant_phase,'profile':all_profile[dominant_phase]}
 open(receipt_path,'w').write(json.dumps(receipt,sort_keys=True)+'\n')
 assert (len(before),len(after),len(mutant),len(values))==(82,82,82,246)
 assert all(x['target_reached'] for x in before), [x['check_id'] for x in before if not x['target_reached']]
@@ -293,12 +341,14 @@ assert (len(diff),len(fp),len(fn))==(0,0,0)
 assert mutation_diff==[41], mutation_diff
 PY
   run python3 - "$TMPROOT/parity-receipt.json" "$ROOT/logs/test_receipts/cmd_4205_production_parity.json" <<'PY'
-import json,shutil,sys
+import json,os,shutil,sys
 r=json.load(open(sys.argv[1])); assert len(r['before'])==82 and len(r['after'])==82 and len(r['mutant'])==82
 assert (r['decision_diff'],r['fp'],r['fn'])==(0,0,0)
 assert r['mutation_diff']==[41]
 assert r['production_invocations']=={'before':82,'after':82,'mutant':82,'total':246}
 assert all(v==0 for v in r['forbidden_shortcuts'].values())
+assert r['dominant_phase']['name'].startswith(('checks_pre_session','session_state','checks_main'))
+os.makedirs(os.path.dirname(sys.argv[2]), exist_ok=True)
 shutil.copyfile(sys.argv[1],sys.argv[2])
 PY
   [ "$status" -eq 0 ]
