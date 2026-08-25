@@ -19,6 +19,7 @@ teardown() {
 @test "running gate uses immutable source across canonical self-update" {
     CMD_COMPLETE_GATE_SNAPSHOT_PROBE_READY="$TEST_TMPDIR/ready" \
     CMD_COMPLETE_GATE_SNAPSHOT_PROBE_RELEASE="$TEST_TMPDIR/release" \
+        timeout --signal=TERM --kill-after=5 60 \
         bash "$SCRIPT" cmd_probe >"$TEST_TMPDIR/output" 2>&1 &
     gate_pid=$!
 
@@ -46,6 +47,7 @@ teardown() {
     run bash -c '
         set -euo pipefail
         gate=$1; root=$2
+        source "$(dirname "$gate")/lib/lock_path.sh"
         remote=$root/remote.git; shared=$root/shared; publisher=$root/publisher
         git init -q --bare "$remote"
         git init -q -b main "$shared"
