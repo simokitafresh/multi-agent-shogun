@@ -1598,3 +1598,4 @@
 - 2026-08-24夜 cmd_4391完了: terminal reportのcompleted_atをatomic publicationへ固定し、gap計測がauthoring timestampをreport_doneと誤帰属する根因を是正。baseline中央値618.000秒→補正fixture5.0秒、420/420 PASS・SKIP0、commit 7373f9c12。
 - 2026-08-25 cmd_4392_normal hayate完了: 親reportへAC1-3を統合し、CI 5 runs/30 jobs/260 steps、local 239/239 (PASS221/FAIL18/SKIP0)、AC3統合md/commit 32632bb98を既存成果物として確認。コード変更なし、report/gate PASS。origin: [[cmd_4392]] -> [[CI_ローカル全体分解]] -> [[親report_AC1-3統合]]
 - 2026-08-25 cmd_4402計測: 根治弾の前後同幅を機械集計し、blocked 3→4・再試行3→1・解消中央値110→141秒、precheck FAIL 1→1、親report誤BLOCK 1→0を確定。全体改善は未確認として次回の理由別cohort計測へ還流。origin: [[cmd_4402_before_after数値証明]] -> [[根治4本効果計測0件]] -> [[理由別cohort再計測]]
+- 2026-08-25 cmd_4403: `test_cmd_complete_gate.bats`のsource-publication fixture共通runner化で912.260秒→298.532秒（613.728秒/67.3%減）、281/281 PASS・SKIP0。次候補10 fileを降順で成果物へ固定。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4403_source_publication共通runner]] -> [[単体テスト実行時間短縮]]
