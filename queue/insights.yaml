@@ -4050,4 +4050,35 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T20:02:42+09:00"
+- id: INS-20260825-200347646-327f
+  ts: "2026-08-25T20:03:47+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿の教え_個別最適化は単体高速化_20260825_1524]] は既存aliasesに一致なし。類似概念TOP3: gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=3.1) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_ruling_20260810_2145; score=2.7) / spiral_canon_sengoku25(らせん最適の正本型(第二十五話); alias=個別最適化と全体最適化; score=2.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260825-200355249-6f78
+  ts: "2026-08-25T20:03:55+09:00"
+  insight: "SKILL.md追従task[85941d769a0b106f]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:85941d769a0b106f"
+  fix_known: false
+  status: pending
+- id: INS-20260825-200412650-6081
+  ts: "2026-08-25T20:04:12+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[shard化は配置換えで単体不変]] は既存aliasesに一致なし。類似概念TOP3: cdp_browser_capability(CDP(ブラウザ操作能力); alias=HeadlessChrome不可; score=2.7) / destructive_operations(破壊的操作安全機構; alias=reset --hard; score=2.6) / partial_turnover_execution_method(Partial Turnover実験実行・完了証跡方法論; alias=read-only launcher再帰SQL不変; score=2.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260825-201720020-a894
+  ts: "2026-08-25T20:17:20+09:00"
+  insight: "semantic_index_update新概念候補: discussion:いますぐcronを回せ。検証無しで終わりにはしない は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
