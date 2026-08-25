@@ -46,6 +46,11 @@ BULLETIN_STATE_DIR="${CONTEXT_FRESHNESS_BULLETIN_STATE_DIR:-$ALERT_STATE_DIR/bul
 # timeoutし、内容が新鮮でも判定不能BLOCKになった。360秒は実測上限+10%余裕の
 # bounded budgetであり、consumerはsnapshot hitならgit subprocess 0件のまま。
 GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-360}"
+# History snapshots live on ext4 and are keyed by the resolved source
+# generation inside the checker. Keep the directory explicit at the gate
+# boundary so cache-disabled gate output does not accidentally disable the
+# bounded source-history snapshot or select a caller-specific path.
+HISTORY_CACHE_DIR="${CONTEXT_FRESHNESS_HISTORY_CACHE_DIR:-/tmp/cfc-history-v1}"
 
 HAS_ALERT=0
 HAS_BLOCK=0
@@ -740,13 +745,13 @@ warnings_output() {
         # its first run.  Rebuild a cache miss within this bounded gate budget so
         # a new source tip is checked now instead of emitting one false BLOCK and
         # only becoming usable on the next invocation (GA-301).
-        CFC_OUTPUT_CACHE_TTL=0 CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
+        CFC_OUTPUT_CACHE_TTL=0 CFC_HISTORY_CACHE_DIR="$HISTORY_CACHE_DIR" CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
             CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" \
             bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
         mv "$tmp_cache" "$cache_file"
         cat "$cache_file"
     else
-        CFC_OUTPUT_CACHE_TTL=0 CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
+        CFC_OUTPUT_CACHE_TTL=0 CFC_HISTORY_CACHE_DIR="$HISTORY_CACHE_DIR" CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
             CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" \
             bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
     fi

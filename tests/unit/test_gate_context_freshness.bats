@@ -736,3 +736,68 @@ MD
   [[ "$output" == *"BLOCK: infrastructure.md (source更新あり・参照リンク欠落)"* ]]
   [ "$(grep -o 'docs/research/truly-missing.md' <<< "$output" | wc -l)" -eq 1 ]
 }
+
+# test_necessity: divergent source frontiers must use one generation-bound,
+# ext4 snapshot producer and must not reuse a snapshot after the source tip
+# moves. A producer failure remains unknown/fail-closed rather than OK.
+@test "multi-boundary source history is generation-bound and singleflight cached" {
+  fixture="$BATS_TEST_TMPDIR/multi-boundary"
+  fake_bin="$BATS_TEST_TMPDIR/fake-bin"
+  fake_log="$BATS_TEST_TMPDIR/fake-git.log"
+  cache_dir="$BATS_TEST_TMPDIR/history-cache"
+  mkdir -p "$fixture"/{config,context,scripts/config,queue/archive/cmds,.git/refs/heads} "$fake_bin"
+  cp "$ROOT/scripts/context_freshness_check.sh" "$fixture/scripts/context_freshness_check.sh"
+  cat > "$fixture/config/projects.yaml" <<YAML
+projects:
+  - id: infra
+    path: $fixture
+YAML
+  : > "$fixture/config/context_freshness_excludes.txt"
+  cp "$ROOT/scripts/config/context_source_commits.tsv" "$fixture/scripts/config/context_source_commits.tsv"
+  cat > "$fixture/context/infrastructure.md" <<'MD'
+<!-- last_updated: 2026-08-10 source_commit:aaaaaaaa source_commit:bbbbbbbb -->
+MD
+  cat > "$fixture/queue/archive/cmds/20260825_cmd_fixture.yaml" <<'YAML'
+project: infra
+status: completed
+completed_at: 2026-08-25
+YAML
+  printf 'ref: refs/heads/main\n' > "$fixture/.git/HEAD"
+  printf '1111111111111111111111111111111111111111\n' > "$fixture/.git/refs/heads/main"
+  cat > "$fake_bin/git" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FAKE_GIT_LOG"
+if [[ "$*" == *"rev-parse"* ]]; then
+  printf '%s\n' 1111111111111111111111111111111111111111
+elif [[ "$*" == *"merge-base"* ]]; then
+  printf '%s\n%s\n' 1111111111111111111111111111111111111111 2222222222222222222222222222222222222222
+elif [[ "$*" == *" log "* ]]; then
+  printf '__CFC_G__\0deadbee\0fixture source\nscripts/fixture\n'
+fi
+SH
+  chmod +x "$fake_bin/git"
+
+  run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
+    bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  [ "$status" -eq 0 ]
+  [ "$(grep -c ' log ' "$fake_log")" -eq 1 ]
+  [ "$(find "$cache_dir" -name 'multi-*.json' -type f | wc -l)" -eq 1 ]
+
+  run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
+    bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  [ "$status" -eq 0 ]
+  [ "$(grep -c ' log ' "$fake_log")" -eq 1 ]
+
+  printf '2222222222222222222222222222222222222222\n' > "$fixture/.git/refs/heads/main"
+  run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
+    bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  [ "$status" -eq 0 ]
+  [ "$(grep -c ' log ' "$fake_log")" -eq 2 ]
+  [ "$(find "$cache_dir" -name 'multi-*.json' -type f | wc -l)" -eq 2 ]
+}

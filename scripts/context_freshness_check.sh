@@ -91,6 +91,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 import time
 
 root = sys.argv[1]
@@ -1152,31 +1153,182 @@ def _run_grouped_git_log(
         cmd.extend(["--", *pathspecs])
 
     # Divergent source markers need multiple revision exclusions. The shared
-    # snapshot refresh helper accepts one revision argument, so execute this
-    # exact multi-boundary query directly and keep the cache path unchanged
-    # for the common single-boundary case.
+    # snapshot refresh helper accepts one revision argument, so this path used
+    # to execute an uncached git log directly. That made every divergent
+    # context depend on synchronous 9p history I/O and caused the same source
+    # generation to fan out into five timeout/returncode BLOCKs (GA-498).
+    #
+    # Keep the exact multi-boundary semantics, but persist the result on ext4
+    # and serialize producers by source generation. The generation is the
+    # resolved positive tip, not the literal ref name, so a moved ref cannot
+    # reuse an older snapshot. A producer failure never writes a snapshot and
+    # therefore remains fail-closed.
     if len(revision_parts) > 1:
-        result = _run_git_with_bounded_retry(cmd, f"source_commit_count_since: {repo_path}")
-        if result is None:
+        cache_dir = os.environ.get("CFC_HISTORY_CACHE_DIR", "/tmp/cfc-history-v1")
+        try:
+            os.makedirs(cache_dir, mode=0o700, exist_ok=True)
+        except OSError:
             return None
-        commits: list[tuple[str, str, list[str]]] = []
-        current_hash = ""
-        current_subject = ""
-        changed_paths: list[str] = []
 
-        def flush_commit() -> None:
-            if current_subject.strip():
-                commits.append((current_hash, current_subject.strip(), list(changed_paths)))
+        def resolve_generation(repo: str, tip_ref: str) -> str:
+            """Read the positive tip from loose/packed refs without git."""
+            dotgit = os.path.join(repo, ".git")
+            try:
+                if os.path.isfile(dotgit):
+                    marker = open(dotgit, encoding="utf-8").read().strip()
+                    if not marker.startswith("gitdir:"):
+                        return ""
+                    gitdir = os.path.realpath(os.path.join(repo, marker[7:].strip()))
+                else:
+                    gitdir = os.path.realpath(dotgit)
+                common = gitdir
+                common_marker = os.path.join(gitdir, "commondir")
+                if os.path.isfile(common_marker):
+                    common = os.path.realpath(
+                        os.path.join(common, open(common_marker, encoding="utf-8").read().strip())
+                    )
+                ref = tip_ref or "HEAD"
+                if ref == "HEAD":
+                    head = open(os.path.join(gitdir, "HEAD"), encoding="utf-8").read().strip()
+                    if re.fullmatch(r"[0-9a-f]{40}", head):
+                        return head
+                    if not head.startswith("ref: "):
+                        return ""
+                    ref = head[5:]
+                elif not ref.startswith("refs/"):
+                    candidates = [
+                        f"refs/remotes/{ref}",
+                        f"refs/heads/{ref}",
+                        f"refs/tags/{ref}",
+                    ]
+                    ref = next(
+                        (item for item in candidates if os.path.isfile(os.path.join(common, item))),
+                        "",
+                    )
+                if not ref:
+                    return ""
+                loose = os.path.join(common, ref)
+                if os.path.isfile(loose):
+                    value = open(loose, encoding="ascii").read().strip()
+                    return value if re.fullmatch(r"[0-9a-f]{40}", value) else ""
+                packed = os.path.join(common, "packed-refs")
+                if os.path.isfile(packed):
+                    with open(packed, encoding="ascii", errors="ignore") as stream:
+                        for line in stream:
+                            fields = line.rstrip().split(" ", 1)
+                            if len(fields) == 2 and fields[1] == ref and re.fullmatch(r"[0-9a-f]{40}", fields[0]):
+                                return fields[0]
+            except OSError:
+                return ""
+            return ""
 
-        for line in result.stdout.splitlines():
-            if line.startswith("__CFC_G__\x00"):
-                flush_commit()
-                _marker, current_hash, current_subject = line.split("\x00", 2)
-                changed_paths = []
-            elif line.strip():
-                changed_paths.append(line.strip())
-        flush_commit()
-        return commits
+        generation = resolve_generation(repo_path, revision_parts[0])
+        if not generation:
+            return None
+        contract = json.dumps(
+            {
+                "repo": os.path.realpath(repo_path),
+                "generation": generation,
+                "revision": revision_parts,
+                "since": since_date.isoformat() if since_date else None,
+                "pathspecs": sorted(pathspecs),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        cache_key = hashlib.sha256(contract.encode()).hexdigest()
+        cache_path = os.path.join(cache_dir, f"multi-{cache_key}.json")
+        generation_lock_path = os.path.join(
+            cache_dir,
+            f"generation-{hashlib.sha256((os.path.realpath(repo_path) + ':' + generation).encode()).hexdigest()}.lock",
+        )
+
+        def parse_snapshot() -> list[tuple[str, str, list[str]]] | None:
+            try:
+                with open(cache_path, encoding="utf-8") as stream:
+                    payload = json.load(stream)
+                if (
+                    payload.get("schema") != "cfc-history-multi-v1"
+                    or payload.get("contract") != contract
+                    or payload.get("generation") != generation
+                    or not isinstance(payload.get("commits"), list)
+                ):
+                    return None
+                canonical = json.dumps(payload["commits"], sort_keys=True, separators=(",", ":"))
+                if payload.get("output_sha256") != hashlib.sha256(canonical.encode()).hexdigest():
+                    return None
+                parsed = [
+                    (str(item[0]), str(item[1]), [str(path) for path in item[2]])
+                    for item in payload["commits"]
+                    if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
+                ]
+                return parsed if len(parsed) == len(payload["commits"]) else None
+            except (OSError, ValueError, TypeError, KeyError):
+                return None
+
+        cached = parse_snapshot()
+        if cached is not None:
+            return cached
+
+        try:
+            lock_fd = os.open(generation_lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        except OSError:
+            return None
+        try:
+            cached = parse_snapshot()
+            if cached is not None:
+                return cached
+            result = _run_git_with_bounded_retry(cmd, f"source_commit_count_since: {repo_path}")
+            if result is None:
+                return None
+            commits: list[tuple[str, str, list[str]]] = []
+            current_hash = ""
+            current_subject = ""
+            changed_paths: list[str] = []
+
+            def flush_commit() -> None:
+                if current_subject.strip():
+                    commits.append((current_hash, current_subject.strip(), list(changed_paths)))
+
+            for line in result.stdout.splitlines():
+                if line.startswith("__CFC_G__\x00"):
+                    flush_commit()
+                    _marker, current_hash, current_subject = line.split("\x00", 2)
+                    changed_paths = []
+                elif line.strip():
+                    changed_paths.append(line.strip())
+            flush_commit()
+            serial = [[item[0], item[1], item[2]] for item in commits]
+            canonical = json.dumps(serial, sort_keys=True, separators=(",", ":"))
+            temp_fd, temp_path = tempfile.mkstemp(
+                prefix=os.path.basename(cache_path) + ".", suffix=".tmp", dir=cache_dir
+            )
+            try:
+                with os.fdopen(temp_fd, "w", encoding="utf-8") as stream:
+                    json.dump(
+                        {
+                            "schema": "cfc-history-multi-v1",
+                            "contract": contract,
+                            "generation": generation,
+                            "output_sha256": hashlib.sha256(canonical.encode()).hexdigest(),
+                            "commits": serial,
+                        },
+                        stream,
+                        sort_keys=True,
+                    )
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.replace(temp_path, cache_path)
+            finally:
+                try:
+                    os.unlink(temp_path)
+                except FileNotFoundError:
+                    pass
+            return commits
+        finally:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            os.close(lock_fd)
 
     # GA-286: dashboard rendering invokes this checker repeatedly, while a 9p
     # git log may consume the full 10s + 60s retry budget.  Persist only
