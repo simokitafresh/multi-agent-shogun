@@ -43,7 +43,6 @@ fi
 
 # shogun:main remain-on-exit on: CLIプロセス終了時にpane残存させwindow消滅を防止
 # 根因: remain-on-exit off(デフォルト)→CLI死→pane削除→window内pane 0→window消滅(2026-07-15事故)
-tmux set-option -w -t shogun:main remain-on-exit on 2>/dev/null || true
 
 # ═══════════════════════════════════════════════════════════════
 # 定数: lib キャッシュ source
@@ -264,6 +263,67 @@ log_ok()   { echo "[reset_layout] OK $1"; }
 log_warn() { echo "[reset_layout] WARN $1"; }
 log_err()  { echo "[reset_layout] ERROR $1"; }
 log_dry()  { echo "[DRY-RUN] $1"; }
+
+# WSL boot直後の /tmp 掃除完了前にtmuxへ接続するとsocketが消えてghost serverになる。
+# active/inactive は完了済み、unknown/空はsystemd非導入またはservice不在として無音通過。
+wait_for_tmpfiles_setup() {
+    local service="systemd-tmpfiles-setup.service"
+    local timeout="${TMPFILES_SETUP_TIMEOUT_SEC:-300}"
+    local interval="${TMPFILES_SETUP_POLL_INTERVAL_SEC:-1}"
+    local state elapsed started_at
+
+    command -v systemctl >/dev/null 2>&1 || return 0
+
+    state="$(systemctl is-active "$service" 2>/dev/null || true)"
+    case "$state" in
+        active|inactive|unknown|"") return 0 ;;
+        failed)
+            log_warn "${service} がfailedのためtmux操作を中断"
+            return 1
+            ;;
+        activating) ;;
+        *)
+            log_warn "${service} の状態が不明(${state})のためtmux操作を中断"
+            return 1
+            ;;
+    esac
+
+    [[ "$timeout" =~ ^[0-9]+$ ]] || timeout=300
+    [[ "$interval" =~ ^[0-9]+([.][0-9]+)?$ ]] || interval=1
+    log_warn "${service} がactivatingのため完了まで待機（上限${timeout}秒）"
+    started_at="$(date +%s)"
+    while :; do
+        state="$(systemctl is-active "$service" 2>/dev/null || true)"
+        case "$state" in
+            active|inactive|unknown)
+                elapsed=$(( $(date +%s) - started_at ))
+                log "${service} 完了確認（待機${elapsed}秒）"
+                return 0
+                ;;
+            failed)
+                log_warn "${service} がfailedになったためtmux操作を中断"
+                return 1
+                ;;
+            activating) ;;
+            *)
+                log_warn "${service} の状態が不明(${state})のためtmux操作を中断"
+                return 1
+                ;;
+        esac
+        elapsed=$(( $(date +%s) - started_at ))
+        if (( elapsed >= timeout )); then
+            log_warn "${service} の完了待ちがtimeout（${timeout}秒）のためtmux操作を中断"
+            return 1
+        fi
+        sleep "$interval"
+    done
+}
+
+if ! wait_for_tmpfiles_setup; then
+    exit 1
+fi
+
+tmux set-option -w -t shogun:main remain-on-exit on 2>/dev/null || true
 
 # 同一socket pathのtmux serverを検知して一覧化する。停止は行わず、
 # 現socket所有者を保護したうえで重複時はfail-closedにする。
