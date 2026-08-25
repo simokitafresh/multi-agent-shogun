@@ -3722,7 +3722,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T11:52:12+09:00"
 - id: INS-20260825-064723847-6b4f
   ts: "2026-08-25T06:47:23+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bh8yke0rg task id tool use id toolu 01T2YzbtCnKXCnehe3 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -3784,7 +3787,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T11:48:19+09:00"
 - id: INS-20260825-111719094-4569
   ts: "2026-08-25T11:17:19+09:00"
   insight: "cmd_4401検分所見: 隔離fixtureのpublish_total=3770ms vs 将軍実測のライブpublish約13分(06:31-06:44)の乖離が未説明。段別計装はfixture条件のみでライブ環境の支配要因(/mnt/c I/O競合・hook群・記憶DB書込み)を捕捉していない=LS-A24計測代表性の再現。次弾はライブpublish 1回のphase logを一次取得して突合すべき"
