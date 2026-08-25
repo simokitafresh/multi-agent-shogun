@@ -3,7 +3,7 @@
 # test_cmd_save_block_aggregation.bats — cmd_save.sh が複数BLOCK理由を1回で表示するか
 
 setup_file() {
-    export TEST_PHASE_TIMING="${BATS_TMPDIR:-/tmp}/cmd_save_phase_timing.tsv"
+    export TEST_PHASE_TIMING="/tmp/hayate_cmd_save_phase_timing.tsv"
     printf 'setup_file_start\t%s\n' "$(date +%s%N)" > "$TEST_PHASE_TIMING"
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
