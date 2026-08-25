@@ -194,9 +194,11 @@ jobs:
           tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}-requested.tap"
           if [ "${{ matrix.compatibility }}" = "true" ]; then
             # These 17 files share host-global fixtures. Keep the default
-            # runner environment and serialize file roots only in this lane;
+            # runner environment and use the legacy aggregate root contract;
             # the normal eight shards retain their existing parallelism.
             export BATS_FILE_JOBS=1
+            export BATS_SPLIT_FILES=0
+            export BATS_JOBS=1
             export BATS_INNER_JOBS=1
             export BATS_FILE_TIMEOUT_SECONDS=900
           else

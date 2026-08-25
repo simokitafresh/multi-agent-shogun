@@ -835,6 +835,15 @@ run_bats_files_parallel() {
 
     if [ "${BATS_SPLIT_FILES:-1}" != "1" ]; then
         env \
+            -u BATS_SPLIT_FILES \
+            -u BATS_FILE_JOBS \
+            -u BATS_JOBS \
+            -u BATS_INNER_JOBS \
+            -u BATS_HEAVY_INNER_JOBS \
+            -u BATS_ISOLATED_INNER_JOBS \
+            -u BATS_MAX_TEST_JOBS \
+            -u BATS_FILE_TIMEOUT_SECONDS \
+            -u RUN_TESTS_SUITE_TIMEOUT_SEC \
             -u RUN_TESTS_BATS_BIN \
             -u RUN_TESTS_RECEIPT_PATH \
             -u RUN_TESTS_RUN_ID \
