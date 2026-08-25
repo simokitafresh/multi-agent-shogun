@@ -88,14 +88,7 @@ echo ""
 # ─── Phase 1: Pre-flight check ───
 echo "■ Phase 1: Pre-flight check"
 
-# 1a. perf_measure.py存在確認
-if [[ ! -f "$PERF_MEASURE" ]]; then
-    echo "  FAIL: perf_measure.py not found: $PERF_MEASURE" >&2
-    exit 1
-fi
-echo "  OK: perf_measure.py exists"
-
-# 1b. CDP認証 — shared receipt adapter（fixture-onlyは外部preflight不要）
+# 1a. CDP認証 — shared receipt adapter（fixture-onlyは外部preflight不要）
 #     hosted compatibilityでは外部Render/auto-opsが存在しないため、
 #     receipt発行までをfixture-onlyの最小契約として先に完了させる。
 CDP_PORT="${CDP_PORT:-9222}"
@@ -110,6 +103,13 @@ if [[ "${CDP_CONSUMER_FIXTURE_ONLY:-0}" == "1" ]]; then
     echo "consumer=measurement receipt=$CDP_RECEIPT port=$CDP_PORT baseline=$BASELINE_PATH"
     exit 0
 fi
+
+# 1b. perf_measure.py存在確認
+if [[ ! -f "$PERF_MEASURE" ]]; then
+    echo "  FAIL: perf_measure.py not found: $PERF_MEASURE" >&2
+    exit 1
+fi
+echo "  OK: perf_measure.py exists"
 
 # 1c. Frontend healthz確認
 echo -n "  Frontend healthz: "
