@@ -3903,25 +3903,44 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T16:10:17+09:00"
 - id: INS-20260825-160454772-003d
   ts: "2026-08-25T16:04:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:sengoku spiral improvement mdを読み直せ。らせん構造について書いてある は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T16:10:29+09:00"
 - id: INS-20260825-160827013-8355
   ts: "2026-08-25T16:08:27+09:00"
   insight: "[[なぜGreen確定を待つんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=なぜGreen確定を待つんだ？"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T16:10:17+09:00"
 - id: INS-20260825-160913018-f2d8
   ts: "2026-08-25T16:09:13+09:00"
   insight: "[[殿の教え2026 08 25 15 24『個別最適化の基本は単体のスクリプトやテストの高速化』の実装弾 らせん三周目・個]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿の教え2026-08-25 15:24『個別最適化の基本は単体のスクリプトやテストの高速化』の実装弾(らせん三周目・個別軸)。shard並列化は配置換えであり単体テストの総計算量は不変。実測タイミング正本(logs/cmd_4392_local-test-timing.json、全ファイル網羅)の最重量上位テストファイル群について、検査を削らずテスト自体の"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T16:10:17+09:00"
+- id: INS-20260825-161815921-2bbe
+  ts: "2026-08-25T16:18:15+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿裁定_らせん正本は第二十五話型_20260825_1616]] は既存aliasesに一致なし。類似概念TOP3: db_price_data_range(DB価格データ範囲; alias=殿裁定 GSはネイティブ暦 本番と同一のDTB3暦 に統一; score=10.0) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=9.9) / semantic_dictionary_design(セマンティック辞書構想; alias=source 殿裁定 lord conversation; score=9.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
