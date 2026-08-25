@@ -4105,3 +4105,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260825-202942767-8e57
+  ts: "2026-08-25T20:29:42+09:00"
+  insight: "らせん逸脱3問を全レビューに適用(殿下知2026-08-25 16:38): ①計測器の名指し起点か ②修正後に計測を一段深くしたか ③計測器が本番に残るか。1つでもNOならRC。semantic概念=spiral_canon_sengoku25"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
