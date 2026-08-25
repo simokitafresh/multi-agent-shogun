@@ -4004,3 +4004,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-192231422-9e99
+  ts: "2026-08-25T19:22:31+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_ci_fix_32810257392_compatibility_isolation kagemaru lesson_candidate: Race contracts must hold partial records across the observation boundary A complete YAML append can be a valid additive generation and therefore be allowed after stabilization. To test an in-progress write, append an identity-incomplete rec"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
