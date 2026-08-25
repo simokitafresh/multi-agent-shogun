@@ -3918,3 +3918,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260825-160913018-f2d8
+  ts: "2026-08-25T16:09:13+09:00"
+  insight: "[[殿の教え2026 08 25 15 24『個別最適化の基本は単体のスクリプトやテストの高速化』の実装弾 らせん三周目・個]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿の教え2026-08-25 15:24『個別最適化の基本は単体のスクリプトやテストの高速化』の実装弾(らせん三周目・個別軸)。shard並列化は配置換えであり単体テストの総計算量は不変。実測タイミング正本(logs/cmd_4392_local-test-timing.json、全ファイル網羅)の最重量上位テストファイル群について、検査を削らずテスト自体の"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
