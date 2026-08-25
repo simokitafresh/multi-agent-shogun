@@ -2978,6 +2978,8 @@ cli_profile_get() {
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 # safe_send_clear呼び出し前にstatusをassignedに書き換え（background AUTO_DEPLOY完了をシミュレート）
 can_send_clear_with_report_gate() {
     sed -i "s/status: done/status: assigned/" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
@@ -3043,6 +3045,8 @@ cli_profile_get() {
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 can_send_clear_with_report_gate() { return 0; }
 CLEAR_CALLED=0
 safe_send_clear() { CLEAR_CALLED=1; return 0; }
