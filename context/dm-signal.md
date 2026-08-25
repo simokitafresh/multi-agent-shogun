@@ -452,5 +452,5 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - → [[cmd_absorb_refactor_after_20260506]] 吸収ルールリファクタリング後の実装(cmd_1080: シン忍法v2完成後)
 - → [[cmd_absorb_refactor_spec_20260506]] 吸収ルールリファクタリング仕様書(シン忍法v2 absorption設計)
 - → [[dm_signal_refactor_mission]] BE4分割リファクタ全工程完了(2026-06-13)。WP-0(契約18)+WP-1(FE/BE削除)+WP-2(EP11+ブロック4種+Kalman)+WP-3(AC1 price_ratio+AC2 4モジュール分割+AC3縮小版FE参照除去)。本番数値不変証明済み。→ `/mnt/c/Python_app/DM-signal/.agent/task-force/execution-log.md`
-- → [[cmd_4294_dm_signal_page_data_api_map]] FE全21 route→API→BE handler→table→L1/L2/L3/L5生成層の現物対応表・Mermaid依存図・既知表示欠け切り分け（2026-08-11）。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4294_dm-signal-page-data-api-map.md`
-- → [[cmd_4295_dm_signal_ssot_audit_map]] FE表示項目→API→BE生成元の項目台帳、重複生成候補、FE再計算分類（2026-08-12）。→ `/mnt/c/Python_app/DM-Signal/docs/research/cmd_4295_dm-signal-ssot-audit-map.md`
+- → [[cmd_4294_dm_signal_page_data_api_map]] FE全21 route→API→BE handler→table→L1/L2/L3/L5生成層の現物対応表・Mermaid依存図・既知表示欠け切り分け（2026-08-11）。→ `docs/research/cmd_4294_dm-signal-page-data-api-map.md`(DM-signal repoの原本はrollback 233c2303(2026-08-13)で本番treeから消えたため、git履歴からMAS側へ全文複製)
+- → [[cmd_4295_dm_signal_ssot_audit_map]] FE表示項目→API→BE生成元の項目台帳、重複生成候補、FE再計算分類（2026-08-12）。→ `docs/research/cmd_4295_dm-signal-ssot-audit-map.md`(DM-signal repoの原本はrollback 233c2303(2026-08-13)で本番treeから消えたため、git履歴からMAS側へ全文複製)
