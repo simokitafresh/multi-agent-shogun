@@ -15828,3 +15828,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - source freshness detectorが定義されていてもproduction callerが0件ならAlertはpost-CLEAR warningに留まり未反映のまま完了できる。次回はrgで定義数と非test caller数を二値確認し、caller非zeroかつnonzero結果がBLOCKへ伝播するcontract testを先に実行する。
+
+### L1639: CI FAIL artifactはparallel-onlyとstandaloneを直列比較で分離する
+- **日付**: 2026-08-25
+- **出典**: cmd_karo_hotfix_cmd4400_stateful_shards
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [.github/workflows/test.yml,scripts/cmd_complete_gate.sh,scripts/deploy_task.sh,scripts/lib/review_approval.sh,tests/unit/test_heavy_job_admission.bats]
+- **origin**: [[cmd_karo_hotfix_cmd4400_stateful_shards]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- CI artifactのFAIL件数だけで全てをstatefulと仮定せず、同一manifestの直列run_tests実験でPASS/FAILを再分類し、compatibility shardへは欠落なく束ねる。
