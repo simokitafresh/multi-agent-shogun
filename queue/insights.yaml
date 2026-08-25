@@ -3761,3 +3761,10 @@ insights:
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
   status: pending
+- id: INS-20260825-092845686-d1eb
+  ts: "2026-08-25T09:28:45+09:00"
+  insight: "[[cmd publish外側経路の段別計測と短縮 — preflight本体は軽くbody支配は外側にある]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=cmd publish外側経路の段別計測と短縮 — preflight本体は軽くbody支配は外側にある"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
