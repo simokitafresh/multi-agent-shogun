@@ -1,59 +1,41 @@
 # 戦局日誌 (Campaign Log)
 <!-- last_updated: 2026-08-03 karo_strong_new_game_dm_monthly_boundary -->
-
 ## 2026-08-23
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_4370_full (hayate) | deploy_task.sh cluster Gのcontext injection責務を既設moduleへ抽出 | `scripts/deploy_task/context_injection.sh` 1588行を関数本体不変で抽出、static parity 0差分、対象契約テスト135/135 PASS・SKIP0、commit `c6393b30d01f749c826de2238d311475f4ca9f47`、report gate PASS。task-modeの既存runner切出し不整合1件は外部境界として記録 | [[cmd_4370]] -> [[deploy_task分割設計書cluster G]] -> [[context_injection module]] |
-
 ## 2026-08-22
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_4368_research (hayate) | PF間低相関をFoF selectionへ利用する価値を、Track B独立で現物確認・設計レビュー | 相関production経路4箇所、selection/filter相関参照0件、DB readonlyでmonthly_returns 16532行/102PF、selection候補78/78、履歴106-185ヶ月、36M/60M充足78/78、metrics 204行/47名を確認。設計書commit `98edac7d78036483ee849f8b2970bdefa5898f18`、report gate PASS。runnerはtask worktreeと絶対target_pathのscope不整合でfail-closed BLOCK | [[cmd_4368_TrackB]] -> [[PF間return相関の用途分離]] -> [[PIT低相関selection最小実験]] |
-
 ## 2026-08-20
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_reflux_insight_202608200531_kotaro_exact | SKILL script参照hash変化の一次検分とinsight還流 | 11組を再検分し公開I/F不変を確認、gate PASS。対象insightをresolved化、inventory pending 20→19、zero_backlinks 6→6、promotions 0→0、commit `53aa2915b914b51bb882dc7bfff7b44456aa33d6`、report gate PASS | [[INS-20260818-193113793-ea16]] -> [[契約hash再検証]] -> [[SKILL参照追従の重複解消]] |
-
 ## 2026-08-14
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_karo_p3b_metrics_manifest_20260814_normal | P3b run summaryへmetrics_manifestを保存 | metric names=47、full=204行、partial=1PF×2行、入力月次系列SHA256非nullをfixture確認。対象pytest 7+21 passed、gate PASS、commit `211e574d3bebcdef018d1e779a5177207987ad78` | [[metrics生成結果のvoid化]] -> [[run summary manifest集約]] -> [[RecalculationStatus.summary監査証跡]] |
-
 ## 2026-08-05
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_shogun_commit_reservation_ledger_phase2_20260805 | 既存scope commit経路を予約台帳へ統合 | 旧owned-scope lockを除去し、commit_queue wrapper経由へ統合。結合8/8、affected receipt 41/41、FAIL0/SKIP0、commit `248ea8d5b13731e8c24ebc487e592d01fb40d0d0` | [[owned_scope_lock残存]] -> [[commit_queue全入口統合]] -> [[scope commit FIFO]] |
-
 ## 2026-08-03
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | 家老強ニュー化02:38 | DM-Signal月次境界設計レビューをclear越しに継続 | v3.7 SHA `2f266974...`へREVISE返答済み。FoF momentumは子PF cumulative_return依存と現物確定。残BLOCKER4件と再開順を `docs/research/karo-strong-new-game-checkpoint-20260803-0238.md` に固定 | [[殿指示_強くてニューゲーム_20260803]] -> [[月次境界仕様v3_7]] -> [[FoFシグナル遡及]] -> [[家老復帰正本]] |
-
 ## 2026-07-31
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | 将軍強ニュー化23:35 | cmd_4200本体CLEAR後の未完了laneをclear越しに保持 | 復帰正本を作成。postprocess冪等性・archive security固定generation・Codex MEM citation実送adapterを完遂前条件として固定 | [[殿指示_強くてニューゲーム_20260731]] -> [[cmd_4200]] -> [[strong_new_game_completion_contract]] |
 | cmd_4198 月末N日前モメンタム感度分析 | 殿指示「open to openで結果を見たい」DM2/DM6 N=0-7感度分析 | GATE CLEAR。DM2/DM6ともNシフトで実務的改善なし(最良delta_Sharpe+0.015、閾値0.1未満)。ギザギザ形状+PF間不一致+方向逆転14件。現行N=0が妥当 | [[殿指示_open_to_open_20260731]] -> [[GS既存コード活用]] -> [[N=0最適確認]] |
 | LS115登録+origin修正 | 設計書完璧化ループの教訓化 | 設計書v1.0→v1.6の6回レビュー(結果ゼロ)→殿指摘→LS115記録+origin因果リンク修正(gate再計測OK) | [[設計書v1_6回レビュー結果ゼロ]] -> [[殿指摘_起票したくなったら洗脳]] -> [[LS115記録]] |
-
 ## 2026-07-18
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | 将軍復帰+D0自走 | /clear後の起動完遂+startup BLOCK根因確認+D0改善 | deepdive追体験完了、Q6投稿(洗脳#4:LS-A11適用失敗)。inbox2件処理。actionable4件closed。lessons肥大化対処(55609→53903bytes、superseded_by11件物理削除)。startup BLOCK4件根因確認+wait_reason宣言。origin不備0件確認 | [[ラルフループ]] -> [[superseded_by物理削除]] -> [[lessons肥大化ALERT解消]] |
 | 将軍D0(2nd session) | LS094根治+強くてニューゲーム | hook dedup実装(b58658756)でLS094 Level4化。陣形図異常の同一セット再警告を抑制。殿裁定(品質速度同時向上)projects/infra.yaml反映。merge+push15件(f6a6450e4)。insights0件化。前セッション6h09m CTX支配の直接原因を環境に埋込み完了 | [[LS094]] -> [[hook_dedup不在が6h_CTX支配]] -> [[session-scope_dedup_Level4]] |
-
 ## 2026-07-17
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | 将軍復帰+deepdive追体験(2nd) | /clear後の起動手順完遂 | deepdive 2本全Phase追体験完了、Q6掲示板投稿(洗脳#6:出力=仕事)。LS091記録(CI check鎖違反→殿即却下)。insight12→0。殿裁定(品質合格スループット)infra.yaml反映。recovery所要28分をインフラバグとして家老報告 | [[ラルフループ]] -> [[LS-A11適用失敗]] -> [[LS091教訓化]] -> [[recovery速度=スループットバグ]] |
@@ -68,9 +50,7 @@
 | D0: escalation WARN hook | Q6自動化ターゲット実装 | post-shogun-inbox-check.shにtype:escalation+read:false検出WARN注入。awkバグ即修正。commit `79c60e0c6` | [[Q6洗脳#5]] -> [[escalation_handler_gap]] -> [[WARN_hook実装]] |
 | D0: LS090+bats Level5 | 教訓化+テスト回帰保証 | LS090登録+origin因果鎖+bats 4/4 PASS+enforcement Level5昇格。commits `c55c0dc4b`/`da62bfd2e`/`7ca082e28`/`65800384d` | [[WARN_hook]] -> [[LS090教訓]] -> [[bats_Level5]] |
 | D0: 三層貫通 | LS090を記憶DB+semantic+Obsidianに永続化 | Layer1=`knowledge:aa3a6f31`、Layer2=semantic alias自動登録済み、Layer3=origin[[リンク]] | [[LS090]] -> [[三層貫通]] -> [[強くてニューゲーム]] |
-
 ## 2026-07-16
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | reflux配備3段バグ修正 | promotion在庫189停滞の根因修正(殿「いまやろう」起点) | 第1段=delegated除外(`348d1df9c`)、第2段=estimated_minutes欠落(`2a09dc71c`)、第3段=purpose文gate+実装共起FP(`432d78e71`)。startup gate診断追加(`491e63af8`)。7日間停止→3障壁除去→自動配備復活 | [[promotion在庫188停滞]] -> [[delegated過剰判定]] -> [[estimated_minutes欠落]] -> [[QUALITY_CONTRACT_FP]] -> [[reflux完全復活]] |
@@ -81,9 +61,7 @@
 | cmd_3998配備 | gate_alerts閉鎖ライフサイクル偵察(275件中閉鎖率1.5%) | 家老配備待ち | [[軍師独立監査_gate品質6穴]] -> [[gate_alerts閉鎖率0%]] -> [[内訳偵察]] |
 | 洗脳#3 stop hook修正 | 殿指示「バグの根因を修正せよ」→ 許可求めフレーズ4種のBLOCK化 | `365b3d7f0` pushed。47/47 PASS。hookが自分の出力を即BLOCK=本番動作一次証拠 | [[将軍お許しフレーズすり抜け]] -> [[stop_hook_L166_L415パターン欠落]] -> [[4フレーズBLOCK追加]] |
 | 速度改善CoDD設計書群 | campaign-lane汎用化+3 preflight/deploy速度改善+AB同一run契約の設計書5件 | [[campaign-lane-general-skill-asis-tobe-5w1h_20260716]] controller実装済み/応用12件。[[deploy-task-pipeline-speed-codd-20260716]] 配備パイプライン。[[three-layer-preflight-speed-before-20260716]]→[[three-layer-preflight-speed-after-20260716]] batch_index_search一括化。[[test-speed-same-run-ab-contract-20260716]] baseline=best_so_far継承 | [[スループット第一原則]] -> [[速度攻略レーン基盤]] -> [[CoDD設計書5件]] |
-
 ## 2026-06-30
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | 強ニュー化(cmd_3779中間) | /clear後もpf_L3 GSを即再開できる復帰点を外部化 | `queue/compact_state/karo.yaml` と互換 `queue/compact_state_karo.yaml` を2026-07-08T21:47時点へ更新。半蔵cmd_3779_fullはrun id `cmd_3779_full_20260708_213122`、加速D full完了(Exit 0、4分58秒、RSS約10.8GB)、加速R full実行中、本番DB書込みなし。将軍申し送り(blt_20260708_214602_a6dbbb)を吸収し、CLEAR後=工程3バックアップ検証→工程4入替、変わり身第四弾は殿裁可確認と明記 | 殿「今クリアされても今より強くてニューゲーム」→古い7/7 compact_stateを放置せず現行cmdの一次情報・待機条件・復帰後最初の行動へ差替え |
@@ -99,16 +77,13 @@
 | cmd_3616 | Phase 5(FP率計測基盤+カタログ同期hook) | GATE CLEAR。gate_fire_logにcheck名カラム記録確認済み | FP率定量計測が可能に。カタログ陳腐化防止hook稼働 |
 | 回帰修正 | Phase 3リファクタによるテスト回帰2件(prev_cmd_gate+diagnosis_trigger_map) | 181/181 PASS。殿「検証せよ」「もう一度検証してみよう」で発見→修正 | 洗脳#8(完了急ぎ)を殿の検証指示で防止 |
 | LS075 | 裸数量語は累計昇格で4回cancel→新ID切替コスト30分 | 教訓登録。相対表現に統一+具体数値はassumptions claimのみ | cmd_3610-3613の4連続cancel実証 |
-
 ## 2026-06-29
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | 強ニュー化(session2) | insightキュー8件消化+DM-Fusion alias拡充+semantic-map再生成+先送り穴解消 | insight 8件resolved、SKILL.md WARN→軍師D0解消 | 殿「強くてニューゲームできるようにせよ」→Phase7自走で環境埋込み |
 | weekly-report | compare-returns API採用+8期間リターン+Deterioration Monitor+将軍短観(負けを正直に) | note.com下書き保存完了(n256c7b0a9587) | 殿「compare returnやminimonthに基づき内容アップデート」+「負けを隠すな」 |
 | note_draft.sh修正 | invisible reCAPTCHA対応(dispatch_click+quick_url待ち) | commit a519e6365。SKIP→PASSに改善 | 殿「ログインボタンを押せばいい」「120秒待ちは何だ」→根因=JS click reCAPTCHA阻止+invisible未対応 |
 | 三層記憶貫通 | reCAPTCHA知見+compare-returns+API auth空白+パスワード二重入力 | 記憶DB 5件+semantic alias追加+reference_cdp §3.1+SKILL.mdトラブルシュート7項目 | 殿「三層記憶とスキルにアップデートせよ」 |
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_3590-3598 | DM-Fusion UI改善(レスポンシブ/スワイプ/ドロップダウン/保存/共有/レイアウト) | 全GATE CLEAR。8cmd連続push | 殿UIスクショフィードバック→迅速対応 |
@@ -124,41 +99,31 @@
 | cmd_3607 | admin速度改善+フォルダ一括トグル | GATE CLEAR | location.reload()→optimistic update |
 | D0 14commit | チャート軸改善(横6分割/縦基準線/LIN nice-number/LOGマイルストーン)+Total Return倍率表示統一(126.2x)+凡例修正+背景統一+ドロップダウンコンパクト化+APIキャッシュ無効化+hide_portfolioフィルタ削除 | 全push済み | 殿の即時フィードバック→D0即修正の高速サイクル。CDP未確認が課題(洗脳#2) |
 | taste-skill参考 | UIデザイン参考OSSリンク三層貫通 | 記憶DB登録済み | https://github.com/Leonxlnx/taste-skill |
-
 ## 2026-06-26
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_karo_hotfix_lesson_health_useful_20260626173325 | 教訓健全度ALERT 3連続解消 | CLEAR。useful_rate 14.3%(1/7)→50.0%(1/2)、L862登録 | 根因=project固有deprecated同IDがinfra fallbackで復活し低useful分母を温存。presence判定をactive判定から分離 |
-
 ## 2026-06-21
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | startup BLOCK対処 | 教訓健全度ALERT 3連続+掲示板4件+SKILL.md WARN | 掲示板確認完了。教訓健全度=根因対処済み(NO_WHEN_PENALTY+19件D0タグ+家老v2 hotfix GATE CLEAR)。窓サイクル待ち | 根因=828教訓中199件when未設定→無関係注入。注入側+登録側の両面対処 |
 | idle自走分析 | Step 1-5(insights/WA/cmd品質/軍師log/パターン発見) | BLOCK TOP1=command_files_modified_mismatch(20件/50=40%、7ユニークcmd)。根因=忍者の変更不要判断をgateに伝達する手段不在 | cmd_3408(第1波FP修正)後の第2波FP。gate_metrics.log+コード確認で特定 |
 | cmd_3476 | command_files_modified_mismatch FP根絶 | delegated | BLOCK率40%削減見込み。偵察+修正一体cmd |
-
 ## 2026-06-20 (session 2)
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | D0 startup BLOCK解消 | 追体験自動化ターゲットWARN 3セッション連続+教訓健全度ALERT 3セッション連続 | ALERT→WARN(useful_rate 18.5→33.3%)。16教訓deprecated。Q6ラベル付き投稿 | Phase4実証=行動が変わっていなかった。一次データ(target_re L947)確認→根因到達 |
 | D0 掲示板+insights | 掲示板未確認14件+action_required17件+insights19件一括処理 | 全件confirmed/actioned/done | backlinks=0の5件もsemantic-index接続。NO_MATCH 7alias追加 |
 | cmd_3474 | WA記録brainwash_check必須化(家老CRITICALエスカレーション) | delegated | cmd_3473 cancel(q5累計)の再起票。98/100件未記入の構造的欠落 |
 | cmd_3475 | SKILL.md 7本script追従更新(3セッション先送り解消) | delegated | 9 WARN→0件目標。陳腐化=スキル不使用(LS-A17)の温床 |
-
 ## 2026-06-16
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_3396 | 教訓useful_rate改善(3セッション連続ALERT解消) | CLEAR | NEVER_USEFUL教訓8件タグ固有化。シミュ21.3%→23.0%。軍師RC→二重登録対応→LGTM |
 | cmd_3397 | hide_portfolio DBデフォルトTrue化(PI-027コード強制) | CLEAR | 殿裁定直結。models.py+migrations.py 2行変更。テスト12/12 PASS |
 | cmd_3401 | 覚醒設計書v3実装(Check19出口判定+session_alerts) | CLEAR | 殿指摘2件(品質先行/startup忘却防止)。偽陽性WARN構造解消。bats10/10 |
 | karo_direct | SKILL.md script参照WARN 6件修正 | CLEAR | 才蔵。6スキル更新。WARN6→0 |
-
 ## 2026-06-14
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | startup BLOCK | 掲示板18件+SKILL.md 3セッション+CI RED+教訓WARN | 全件対処/委託 | 掲示板確認済。SKILL.md gate PASS。CI RED→家老委託 |
@@ -182,14 +147,10 @@
 | 追体験 | deepdive 2本全Phase+Q1-Q6 | 完了 | Q6洗脳#5検出→軍師第三者検証OK |
 | idle自走 | adversarial冷え遡及16件+LG036遡及3件 | WARN解消 | §5.6 15→0件 |
 | 殿問い調査 | BLOCK非対称成長+意志依存7箇所+時間減衰 | 行動完了 | cmd_3369-3374+D0×3で全数実装 |
-
 > cmdの意図・結果・因果を時系列で記録する索引層。
 > 詳細は各報告YAML（パス記載）を参照。500行超で日付分割。
-
 ---
-
 ## 2026-05-21
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2940 | SKILL.md 3件script追従 | GATE CLEAR | 3セッション連続WARN解消。dream/karo-direct/recon-dual |
@@ -203,9 +164,7 @@
 | L7修行R5-R6 | 6忍者全員×2ラウンド | 全CLEAR | ヒット率77.8%→100%。DIRECT経路修正後R6で自動aliases成長確認 |
 | insights | 29件pending消化 | 0件 | 教訓ALERT重複+stress_testノイズ+修行由来を全resolve |
 | startup BLOCK | 3セッション連続4項目 | 全項目cmd投入+CLEAR | SKILL.md/スキル自動成長/gate偽陽性/教訓健全度 |
-
 ## 2026-05-20
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2897 | ac_phase_mixing FP率100%根絶 | 委任済み(疾風+才蔵) | deliveryキーワードからcommit除外。startup gate偽陽性率ALERTが根拠 |
@@ -223,9 +182,7 @@
 | Guard 3 | halt/clear停止検証BLOCK化 | 実装済み | 送信→CTX記録→次Bash時CTX検証→未低下ならBLOCK。迂回不可 |
 | §0.1問い7 | 指示即実行。聞き返すな | 追加済み | 殿の時間を奪う行為の根因対策 |
 | LK013 | STALL再配備前3点確認 | 登録済み | pane+nudge到達+遅延到達の全確認必須 |
-
 ## 2026-05-19
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2852 | deploy_task.sh sed特殊文字修正 | GATE CLEAR | LK010根因。inject関数のsed -i→awk統一 |
@@ -285,9 +242,7 @@
 | cmd_2895 | 強化 — テストファイル粒度gate(L6) | GATE CLEAR | 追加時に既存統合を促し再肥大化防止 |
 | cmd_2896 | 修正 — 修行CoDDをbrownfield限定 | GATE CLEAR | greenfield30分超→brownfield10-15分 |
 | session_summary | 16cmd全CLEAR+L6化4件+テスト整理+CoDD再起動 | 完了 | startup BLOCK全解消+参照率36→55%+因果辺自動還流+テスト196→130+修行brownfield化。殿裁定=L6は速くやれ/brownfield明記/テスト整理/殿指示>F001 |
-
 ## 2026-05-17
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2815 | startup gate Gate 13 ALERT推奨分岐 | GATE CLEAR | 3session連続BLOCK根因=一律/lesson-sort推奨→useful_rate/unsorted分岐 |
@@ -297,9 +252,7 @@
 | cmd_2819-2822 | 因果NW自動成長4件(cmd_save/PD/startup/deploy) | 全CLEAR | 入口(cmd/裁定)+出口(孤立検出/忍者注入) |
 | cmd_2823 | 全ロール環境埋込み(CLAUDE.md+instructions) | 委任中 | 使えないものは存在しないのと同じ(殿厳命) |
 | session_20260517 | 起動問題4cmd+因果NW5cmd+Obsidian vault化+記事分析 | 8CLEAR+1委任 | 記事パターンマッチ→殿指摘で前提崩壊→因果NW構想→Obsidian+junction+環境埋込み |
-
 ## 2026-05-16
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2793 | PHANTOM偽陽性修正(awk+grep) | GATE CLEAR | 家老自走分析→軍師RC(grep根因)→両方修正で0件 |
@@ -323,9 +276,7 @@
 | cmd_2811 | L6横展開 3PJ教訓70件when/how補完 | 委任中 | auto-ops57+gc11+db2=70件when/howゼロ。L6がdm-signal限定で停止していた |
 | session_20260516b | 自走: なぜなぜ7回×4本+Simple-OCR 3件+note記事 | 完了 | cmd_2809-2814(6cmd: 4CLEAR+1cancelled+1委任中)。SKILL.md事前強制化+L6横展開70件+UIデフォルト切替+患者名タイトル+clear_prep強化5穴+note記事gist |
 | session | なぜなぜ7回×4本→隠れバグ8件発見→10cmd全CLEAR | WA:0 | silent failure/偽陽性/gate検出漏れ/無限ループ。全て「見えない問題」を構造的に排除 |
-
 ## 2026-05-15
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2746-2748 | 家老要請3本(偵察/WA修復/教訓補完) | 全CLEAR | WA品質PASS化+教訓when/how 3%→99% |
@@ -336,9 +287,7 @@
 | (週報) | DM-Signal Weekly 2026-05-15 | 完了 | WTI+7%/S&P500 7週連続/鉄壁-青龍+27.84% |
 | (直接) | CoDD v1.10.0→v2.18.0+PATH+SKILL.md | 完了 | 全エージェントCoDD即利用可能 |
 | session | 19cmd+週報。自動成長ループ構造改革+CoDD全面展開 | 14 CLEAR | 三者がなぜなぜ7回を独立に回し全阻害パスを修正 |
-
 ## 2026-05-12
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2681 | 強化 — deploy_task.sh二重配備ガード(flock排他+完了報告検知) | GATE CLEAR | 二重配備3連続(cmd_2678-2680)の根因=重複ガードにレース条件+完了スキップ。L4事前阻止 |
@@ -362,9 +311,7 @@
 | cmd_2698 | 強化 — skill_auto_improve FIXヒントDB参照 | 配備中 | なぜなぜ7回根因。gate→スキル知識伝播経路確立。一発CLEAR率71.6%→向上予測 |
 | (軍師D0) | skill_auto_improve.sh concrete_prevention_steps強化+interval1日化 | 家老承認 | 6パターン追加+7日→1日。スキル自動成長サイクル加速 |
 | (軍師分析) | 成長ループ7段階全量追跡 | 阻害3箇所特定 | withheld86%/修行参照0%/lesson登録手動。全て修正cmd化→CLEAR |
-
 ## 2026-05-10〜11
-
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2667 | 修正 — auto_failure_lesson.shのdraft→confirmed化でdraft_lessons BLOCK根治 | GATE CLEAR | draft_lessons 24回BLOCKの根因=auto_failure_lesson.shが--status draftで書いていた。auto_draft_lesson.shと同じconfirmedに統一 |
@@ -378,22 +325,16 @@
 | cmd_2671 | L6化率母数修正(GP56件→防御仕組み) | 配備中 | cmd_2668のL6化率0/56の原因=GP提案のdefense_level集計でL6は別概念 |
 | cmd_2672 | 将軍教訓統合(32→22件) | 配備中 | 上限31件超過で3セッション連続BLOCK。LS023-032を既存クラスタに吸収 |
 | LS032 | 教訓: grep存在確認≠内容理解 | 記録済み | cmd_2669+gate_fail_top3で2連続既存実装見落とし。grepの出力内容を精読せよ |
-
 ## 2026-04-24
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2261 | 偵察 — L3_fof daily_loop 224sの内訳計測+高速化ターゲット特定 | GATE CLEAR。7カテゴリ分解(daily_loop 85.7s/dw_signals_flush 62.4s/MR 27.3s等)+施策7本 | cmd_2259+2260でMR生成240.6→1.5sに改善→残り224sのボトルネック特定が次課題→2名偵察で内訳+施策を特定 |
-
 ## 2026-04-20
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2181-2187 | 道具磨き — 7忍法run_077 CoDDメモリ+速度最適化(kasoku_diff横展開) | 全7本GATE CLEAR | OOM真因(RSS 8.5GB)+殿方針(1忍法1CMD完全直列)→横展開で全忍法を最適化コード統一→次ステップ=workers=2テスト |
 | (将軍自走) | cmd学習自動ループ穴塞ぎ3点 | 実装+検証済み | 殿指摘3段「成長が主軸/WARNスルー/穴はないか」→(1)禁止値拡張(初回起票等) (2)Check 3.6b=WARN時environment_change強制(全チェック後に配置) (3)非構造化BLOCK=構造化形式(type/file/pattern)+grep検証を必須化。加えてGate 13.8(偽陽性率計測)+resolution_hint(枝葉)。deepdive Phase 5「なぜの目的=自動化ターゲット特定」の環境埋込み |
-
 ## 2026-04-19
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2094 | 6システム知識辞書(ACE/Vercel/GSD/gstack/おしお殿/Claude Code) | GATE CLEAR。docs/research/systems-knowledge-base/systems/ に7エントリ+guide.md作成。GSD★54,610(+91%), gstack★75,800(×182) | 殿指示「投資知識辞書と同じで他システム知識辞書が欲しい」→金融ML知識辞書と同じ2層構造で新規作成 |
@@ -405,24 +346,17 @@
 | cmd_2100 | 落とし穴+相互参照の補完 | 稼働中 | 殿「深さが足りているか」「品質を高めよう」→金融ML辞書比較で欠如セクション特定 |
 | (将軍直接) | cmd_save.sh品質WARN→BLOCK昇格 | q5+AC数量の2件。bats 53テスト全PASS | 殿「WARNのままでなぜOKとした？」→なぜなぜ7回→品質WARN/形式WARN混在が根因→LS046登録 |
 | cmd_2073 | **クローズ判定** | 対象不適切のため完了扱い(19/20→**実質20/20**) | 3本(yaml-dump-guard/no-verify-guard/block_destructive)は全てpre-bash-combined.shに統合済みの休眠ファイル。本番ホットパスはcmd_2075-2079で全て改善済み。リトライ不要 |
-
 ## 2026-04-18
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_2043 | infra batch 11-A の再改善3本を締める | lesson_harvest `10.57s→3.55s`、post_recalculate `2.23s→2.15s`、model_switch `1.23s→0.34s` を確認。研究メモ `docs/research/cmd_2043_codd_infra_batch_11a_20260418.md` 追加、commit `194878e` | `/mnt/c` では report archive 自体の一括走査は維持しつつ、lessons 台帳側の full YAML load を `rg` 抽出へ替える方が効いた。DB 側は monthly/signals 集計を SQL に寄せると Python 側の保持コストを削れた |
-
 ## 2026-04-16
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1979 | `inbox_write.sh` の残存固定費削減 | GATE PASS。疾風。target/sender判定を filesystem fast-path 化し、件数カウントを軽量化。隔離 workspace 平均 `50ms→22ms`、live worktree 中央値 `40ms`。`test_inbox_write.bats` 22件 PASS | 共通経路で `agent_config.sh` を毎回 source する必要はなく、`queue/tasks` / `queue/inbox` の現物で多くの判定が足りた。fallback は維持しつつ初期化コストだけ削った |
 | cmd_1978 | Stop hook `stop-lint-gate.sh` の高速化 | GATE PASS。疾風。changed-files取得をGit plumbing化し lint を tool単位バッチ化。代表 mixed shell+python 条件で `0.82s→0.65s`、live worktree 中央値 `0.54s`。unit test 4件追加+既存hook harness PASS | WSL2では `git diff --name-only` 系が主因。`diff-index --cached` + `ls-files -m` へ置換し、shellcheck/ruff/biome の per-file 起動を廃止。500ms目標は代表条件で未達だが実運用 changed-set では近傍まで短縮 |
-
 ## 2026-03-28
-
 **🔥 焦点: fullrecalculate高速化** — OPT-1/2(trade_perf -159s)+OPT-A(db_write -137s)+OPT-6(monthly_gen -120s)=計4cmd進行中。軍師が先行分析でOPT-6設計完了。本番793s→推定~420s(47%削減)目標。研究全文: `docs/research/fullrecalculate-architecture-2026-03-28.md`
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1444 | 旧忍法15体を構成PFとする新Ward FoFを本番DB新規作成+既存123体完全不変証明 | GATE CLEAR。旧忍法-Ward(0012f956)登録成功。weights=k5クラスタ二段EW(0.05/0.0667/0.10)。fullrecalculate349s+冪等性PASS。月次リターン3ヶ月検算一致 | 半蔵単独(db_exclusive直列)。DC: fullrecalculate(portfolio_id=None)でWard FoFのsignals/monthly_returns=0件→個別recalculateでは正常。日次ETL影響要調査 |
@@ -455,15 +389,12 @@
 | cmd_1472 | L2 trade_perf N+1除去+バッチcommit | **GATE CLEAR** | 疾風完遂。load_business_days引数化(Phase 5b前1回load→全PF配布)+20PFバッチcommit。84テスト全PASS。軍師LGTM |
 | cmd_1473 | trade_perf fallback price_cache保持 | **GATE CLEAR** | 影丸完遂。del price_cache除去+calculate_monthly_returnにprice_cache引数追加。missing tickerのみmerge load。56テスト全PASS。軍師LGTM |
 | cmd_1474 | 第2サイクル計測(4新OPTデプロイ+fullrecalculate) | **verdict: FAIL** | 半蔵完遂。380.53s(baseline 637.80s, -40.3%)。L2 trade_perf 142→0s、L3 db_write 130→32s。**AC3 FAIL: ネステッドFoF 15体ゼロ信号**(signal 406,988 vs 453,663)。59→44体処理。cmd_1469/1470がスコープ変更→15体未処理=見かけ上速い可能性。assumption_invalidation=true |
-
 **軍師直接実装(殿指示)**: OPT-12 — gc.collect削減(59→5回)+fof_signals dead code除去+profiling改善。commit 00fd5257。
 **軍師根因特定+修正**: OPT-13 — cmd_1474 FAIL根因=cmd_1470 deferred flushでDB未commitのシグナル→nested FoF DB query空→15体スキップ。修正: signal_cache(OPT-6)からDB結果を自動補完。commit f3ff64a7。要再計測(380.53s+15体分加算)。
 **軍師OPT-14**: Standard PF signals flush cleanup_mode=True化(commit 79663eda)。cmd_1470半蔵LC実装。INSERT化。2-5s削減。
 **軍師OPT-15**: component_weights commit集約(commit 1e3401fd)。per-FoF 59回→10FoFごと6回。5-10s削減。Tier 1全項目完了+3件push。再計測推奨。
 | cmd_1475 | OPT-13修正検証(ネステッドFoF回帰修正確認) | **GATE CLEAR** | 疾風完遂。根因確認: cmd_1470 deferred flush→DB未commit→nested FoF query空。OPT-13 signal_cache補完で解消。261 FoFテストPASS。追加修正不要
-
 ## 2026-03-29
-
 | cmd_1476 | 偵察デフォルト品質に第5要件追加(依存関係・順序制約) | **GATE CLEAR** | 才蔵完遂。ashigaru.md+deploy_task.sh+テスト2件。CLAUDE.md記述不在→家老補完。DC解決 |
 | cmd_1477 | GP-124 fullrecalculate後signal整合性チェック | **GATE CLEAR** | 半蔵完遂。_check_signal_integrity()追加。zero-signal WARN+signal COUNT記録。テスト5件PASS。OPT-13(修正)+GP-124(検知)=二重防御完成 |
 | cmd_1478 | 第3サイクル計測(OPT-12/13/14/15全反映) | **GATE CLEAR** | 疾風完遂。**357.28s**(baseline 637.80s→-44%、pre-OPT 3566s→10.0x)。signal=453,663完全一致。zero-signal=0。L3 db_write 130→18s(-86%)。L3 unmeasured 74→3s(-96%)。trade_perf=0.00s(profiling未発火継続、真値推定~6s)。LC: Render再デプロイ直後のbackground task中断 |
@@ -479,14 +410,10 @@
 | cmd_1488 | Silent Fallback撲滅(4): SSOT定数化(SPY 6箇所+rebalance 6箇所) | **GATE CLEAR** | 疾風(SF-022 SPY)+飛猿(SF-026 rebalance)並列。SPY: constants.pyにDEFAULT_BENCHMARK_TICKER定義+6箇所統一+L305コメント。rebalance: utils/rebalance_trigger.py新規+6箇所ヘルパー統一+17テスト。KC: L168にスコープ外SPYパターンあり。LC: target_path services/jobs不一致。WA:なし |
 | cmd_1489 | Silent Fallback撲滅(5): MonthlyReturn耐障害性+一括push+本番検証 | **GATE CLEAR** | 半蔵完遂。SF-006: monthly_trade_calculator.py L274 logger.warning追加(最危険silent解消)。SF-004/005: 失敗PFカウント集計+サマリーログ追加。AC3: cmd_1484-1489一括push+Render deploy+fullrecalculate→**signal=453,663(baseline完全一致)、zero-signal=0、MR正常**。**HIGH 11/11完遂**。WA:なし |
 | cmd_1490 | UserPromptSubmit snapshot注入(将軍状態把握自動化) | **GATE CLEAR** | 半蔵完遂(3回目配備)。影丸AC1完了→idle化、疾風も報告空で失敗。原因: deploy_task.shがac_version同一時にAC未更新。WA:task_redeploy。prompt_state_inject.sh+settings.json登録+テスト。commit fc3a05d |
-
 | cmd_1491 | Silent Fallback Medium掃討(ログなし5件+偽データ2件+SSOT1件) | **GATE CLEAR** | 才蔵完遂。AC1: 5箇所logger.warning追加(recalc_statusは既実装で変更不要)。AC2: SF-014 return 0→None+main.pyハンドリング、OPT-E Cash→skip+continue。AC3: DTB3→DEFAULT_RISK_FREE_ASSET定数化。WA:なし |
 | cmd_1492 | SF-010失敗カウント+cmd_1491 push+Render deploy | **GATE CLEAR** | 小太郎完遂。recalculate_fast.py precompute失敗PFリスト蓄積+サマリーログ。4commit一括push。Render deploy live確認。fullrecalculate不要(logger/count追加のみ計算不変)。WA:なし |
-
 **Silent Fallback掃討結果(2026-03-29)**: cmd_1483偵察→HIGH 11件→cmd_1484-1489の6cmdで全修正+cmd_1491でMedium 8件修正。本番fullrecalculate検証済み(signal=453,663一致、zero-sig=0)。免疫系(PI-018+軍師§4+L508)で再発防止。連勝51に更新。
-
 **将軍直轄: CoDD→heartbeat構築+PI全昇華**（殿指示「サイクルを回せ」→「自走せよ」）
-
 | 成果 | 内容 | 因果 |
 |------|------|------|
 | gate_cycle_health.sh | heartbeat 4チェック+自動強制(nudge/ntfy)+zero-target表示。/loop 10m登録 | CoDDなぜなぜ→判断ギャップ→意志依存→自動化×強制。殿5回介入で完成 |
@@ -494,9 +421,7 @@
 | cmd_1496-1502 | 7件infra改善cmd(gate/hook/ninja_monitor/deploy_task/cmd_save/gunshi/test) | heartbeatでinsights 23→4に削減。CoDD気づきから即cmd化 |
 | cmd_1503-1507 | 5件DM-Signal+infra cmd(trade_perf偵察/Cash修正/5th cycle計測/L3偵察/context更新) | idle 5名→全員分起票。heartbeat→行動のサイクル |
 | insights 23→0 | 19件resolve(cmd対応)+4件dream resolve | insightsキュー完全消化 |
-
 **将軍直轄: 知識循環なぜなぜ→6件修正**（殿指示「サイクルを回そう」）
-
 | 修正 | 内容 | 因果 |
 |------|------|------|
 | Gate 15(進化検知) | gate_shogun_startup.shに新gate追加。context/に知識マップ未参照ファイルがあればフラグ | なぜなぜ5段: 進化は検知しない→孤立context→知識マップ断絶→循環不全。CLAUDE.md参照追加で0孤立達成 |
@@ -506,9 +431,7 @@
 | insights整理 | 9件resolved(解決済みパターン+Gate15で対処済み) | pending 18→9件に半減 |
 | gate_loop_health.sh時系列化 | insight生成を直近100件のみに制限(表示は全期間維持) | なぜなぜ: 解決済みパターン再起票→累積カウント→時系列原則違反→INSIGHT_WINDOW導入 |
 | cmd_1443 | Ward二段EW weight pipeline修正: weightsが計算されるが下流に伝わらないバグ4箇所+軍師発見1箇所=計5箇所修正 | GATE CLEAR。AC1(final_weights設定)+AC2(is_kalman_meta条件除去5箇所+carry-forward+test fixture修正)+AC3(fullrecalculate 58FoF×9509行完全一致)。後方互換確認済み | 疾風AC1+影丸AC2+半蔵AC3。軍師がline862の5箇所目発見(REQUEST_CHANGES)。AC2初回FAIL→PD-001(scope拡張)→将軍裁定→PASS。テストfixtureのweights=None修正(本番一致) |
-
 ## 2026-03-27
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1414 | Dream-skill基盤: SKILL.md配置+should_dream.shトリガー+統合テスト | GATE CLEAR。5Phase Memory Consolidation SKILL.md(232行)+should_dream.sh(24hゲート)+統合テスト全PASS。Dream実行でTS正規化43件(0%→100%)+gate/lesson候補各2件抽出 | 疾風AC1+影丸AC2+家老AC3。設計書完全準拠。MCP書込み制限下でPhase1-5完了確認 |
@@ -532,9 +455,7 @@
 | cmd_1440 | 汚染事故の教訓L499登録+PI-014追記 | GATE CLEAR。L499(データ出自検証必須)+PI-014(outputs/CSVはパリティ未検証=未検証)登録 | 小太郎完遂。commit 2cc464d。事故→教訓→PI=免疫系獲得。cmd_1439と並列完了 |
 | cmd_1442 | ネオ五神候補absolute偵察(GLD/USO/TIP+既存4absolute相関) | GATE CLEAR。全7銘柄StockData取得成功(203ヶ月共通期間)。GLD最有力(max|r|=0.343)、USO次点(0.378)、TIP不適(LQD冗長r=0.769) | 半蔵完遂。commit 3abdede9。五神5番目候補=GLD有力。Phase2(哲学設計)は別cmd |
 | cmd_1441 | 旧忍法+旧四神のWard+二段EW 2Dグリッド分析(本番DBデータ) | GATE CLEAR。旧忍法15体K*=4,LB*=24,Sharpe=2.01。旧四神12体K*=4,LB*=12,Sharpe=1.55,TwoStageEW優位率76.7%。合計27体K*=12,LB*=24,Sharpe=1.75 | 疾風完遂。R25(1.48)/R26(1.49)より高Sharpe。旧四神type混在(fof10+standard2)=制約との矛盾発見。ヒートマップ18枚+CSV3本+YAML3本 |
-
 ## 2026-03-26
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1413 | ネステッドFoF R7(逆ボラ)+R8(絶対モメンタム)+R9(VIX連続)+全7ルール横断比較 | GATE CLEAR。R2 CHAMPION堅持。R7がSharpe1.933+MaxDD-20.4%でR2超え=最有望補完候補。R8=R2と実質同一(フィルタ不発)。R9=CAGR壊滅54.9%。L497登録(compute_monthly_selections共通関数) | 疾風AC1+半蔵AC2+小太郎AC3。cmd_1412のR6_extルックアヘッド修正(lag-1)も含む |
@@ -545,9 +466,7 @@
 | cmd_1407 | セキュリティバグ修正2件: insight_write.sh入力サニタイズ+deploy_task.sh yaml.dump安全化 | GATE CLEAR。新規テスト14件+既存36件全PASS | 影丸。修行L2で発見された実バグ(LK015)の修正 |
 | cmd_1408 | 防御的コーディング4件: エラー握潰し修正+未使用関数接続+grep堅牢化+重複排除 | GATE CLEAR。テスト41件+新規5件全PASS | 才蔵。修行L2で発見された実バグの修正 |
 | cmd_1405 | E2Eテスト4件タイムアウト修正+CI緑化 | GATE CLEAR。根本原因=IFS=tab連続タブ圧縮→specials_b64空→clear_command未処理。E2E 18/18+UT 516/516全PASS | 半蔵。L297登録(IFS=tabプレースホルダ必須) |
-
 ## 2026-03-25
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1391 | CI RED修正(15テスト5ファイル) | GATE CLEAR。367テスト全PASS。CI 1件(ninja_monitor snapshot)のみCI環境固有で残存 | ←フォーク解除+set-default後の仕上げ。tobisaru(3ファイル)+kotaro(残り全件+push)+hanzo(fixture)+saizo(確認のみ)の4名分担 |
@@ -556,16 +475,12 @@
 | cmd_1398 | チェックリストStep 8a: シン四神v2 12体パリティ検証 | GATE CLEAR。全65PF ALL PASS(hs=100%,ret=100%)。FAIL/SKIP=0 | ←recalculate後の最終確認。12シン四神v2+53既存PFの完全一致を確認。疾風 |
 | cmd_1399 | チェックリストStep 8b: シン忍法v2 20体パリティ検証 | GATE CLEAR。PASS=2,FAIL=18(全L485初月パターン)。構造的FAIL=0 | ←recalculate後のFoF検証。18FAILは全て初月hs_cross既知パターン。影丸 |
 | GP-084(将軍直接) | lib Python→awk第2波: pane_lookup(bug+perf), cli_lookup(2箇所), karo_workaround_log, gate_karo_startup(3箇所), ralph_loop_metrics cache | pane_lookup: 258ms→30ms(-88%)+パス/キー不一致バグ修正。cli_lookup: 200ms/call→6ms(-97%), 8スクリプト伝播。gate_karo_startup: 306ms→183ms(-40%)+workaround Python障害修正。ralph_loop_metrics: 3.2s→0.32s(warm,-90%) | ←GP-078第1波(agent_config+startup gate)に続くlib Python全廃第2波。新発見: (1)pane_lookup 3重バグ(パス:logs→queue,キー:ninjas→agents,Python不要)で動的マッピング完全死亡 (2)karo_workarounds.yaml混在フォーマットでPython yaml.safe_load失敗→count常に0 |
-
 ## 2026-03-24
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1376 | oikaze tolerance=1e-12横展開修正(cmd_1374四つ目修正の水平展開) | GATE CLEAR。小太郎impl。軍師LGTM。WA:0。3箇所修正+28116パターン事前検証PASS。他run_077_*.pyに同パターンなし | ←cmd_1374で四つ目のtolerance根本原因特定→oikazeに同パターン残存を疾風DCで発見→横展開完了。DC: batch vs PE md5不一致残存(スクリプトPASS) |
 | cmd_1364 | cmd_save.shにq7_failure_prediction BLOCKチェック追加 | GATE CLEAR。才蔵impl。軍師LGTM。WA:0。autofix 5件自動防御 | 将軍のcmd設計に失敗予測を義務化。q5パターン踏襲で実装品質安定 |
-
 ## 2026-03-23
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1353 | ^VIX grid汚染修正+hs sorted比較修正→53/53完全一致 | GATE CLEAR。影丸。AC1:_build_cache_fastで^VIX除外+native日付系列cache追加。AC2:verify_all_portfolios.py L186 sorted比較。AC3:53/53 hs+ret完全一致。L488登録 | ←cmd_1352の2問題(^VIX汚染+hs順序差)を両方解決。numpy快速パス=本番完全一致を達成。GS本番パリティの最終マイルストーン |
@@ -585,9 +500,7 @@
 | cmd_1311 | GP-003正規表現修正(`_report_`→`_report[_.]`) | GATE CLEAR。影丸 | ←pre-write-report-deny.shが`_report.yaml`にマッチしない問題の修正 |
 | cmd_1304-1310 | infra各種修正(7cmd) | 全GATE CLEAR。連勝9達成 | ←将軍の深掘りサイクル成果群 |
 | cmd_1276 | Step 2 Phase A: 既存EqualWeight FoF 14体パリティ検証 | GATE CLEAR。14/14 PASS(全75ヶ月完全一致)。6忍者並列完了。workaround:hayate報告形式のみ | ←チェックリストPhase A完了。EqualWeight計算パスの正当性証明。Phase B承認待ち。AC1: DB17体とリスト14+3体完全突合 |
-
 ## 2026-03-22
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1274 | 汚染シンv2 33体本番DB削除(チェックリストStep 0) | GATE CLEAR。FoF21+standard12=33体DELETE成功。PF124→91。workaround:no。半蔵。連勝39 | ←本番登録前の清掃。FoF先→standard後の順序厳守。L483/L484登録(認証正本=.env) |
@@ -626,9 +539,7 @@
 | cmd_1235 | GS側パリティ検証ツール棚卸し | GATE CLEAR。15ファイル25+関数列挙。simulate_strategy_vectorizedはholding_signal不含。飛猿 | ←cmd_1233 REQ_CHANGES(前提崩壊)→事実確認でPhase2/3 cmd設計精度向上 |
 | cmd_1234 | 本番FoF/Nested FoF構成マッピング偵察 | GATE CLEAR。PF122(std63+fof59)。Nested FoF22(深度2)。シン四神=standard型。小太郎 | ←Phase2/3計画基礎データ。旧四神=fof型/シン四神=standard型の構造差発見 |
 | cmd_1233 | GS engine standard PFパリティ検証(Phase 1/3) | GATE BLOCK。AC2(hs)63/63 PASS。AC3(ret)57/63 PASS 6FAIL(精度)。半蔵 | ←PI-009/PI-007。holding_signalは100%正確。monthly_return 6PFは浮動小数点精度差(ロジックエラーなし) |
-
 ## 2026-03-21
-
 | cmd | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_1232 | cmd_quality_log.shにnotes引数追加+BLOCK理由記録 | GATE CLEAR。commit 68d8cb9。karo_workaround: yes(半蔵commit漏れ→疾風再配備)。軍師REQUEST_CHANGES的中 | ←cmd_1227(Gate 9)のBLOCK理由分析可能化。品質計測パイプ強化。LG003パターン8回目 |
@@ -650,36 +561,24 @@
 | cmd_1196 | GS実行時pipeline_config必須化(PI-009構造的保証) | GATE CLEAR。core+10本修正完了。L448: PI-009チェックはsimulate_strategy_vectorized経由のみ有効、各run_077の独自パスは迂回 | ←cmd_1194偵察(3パス判明)→後続cmd(PipelineEngine統合)必要 |
 | cmd_1197 | 報告YAML消失の根本原因偵察(infra) | GATE CLEAR。根本原因=deploy_task.sh L2608-2614実行順序バグ(テンプレート生成→preflight→archive即移動)。全環境再現の構造的バグ。L294登録 | ←cmd_1187(消失事象)←cmd_1192(gate側防御済)→後続cmd(修正実装)必要 |
 | cmd_1199 | PI-009対応。run_077全体のsimulate_patternをPipelineEngine経由に統合 | GATE CLEAR。v2対象7本PE統合+v2外3本revert。L455(to_timestamp bug)/L456(PE速度77倍)/L457(oikaze md5不一致) | ←cmd_1196(pipeline_config必須化)。影丸kawarimi AC2/AC3(DB接続検証)は別cmd化予定 |
-
 ## 2026-03-20
-
 ### Chain A: shutsujin HC事故 → 構造改革4件
-
 **起点**: cmd_1139でshutsujin_departure.shのハードコードレイアウト文字列がターミナルサイズ不一致で失敗 → set -e即死 → ペイン変数ゼロ → デーモン連鎖死。殿との対話で「事故を機に構造を根本から直せ」と4件の改革cmdが派生。
-
 **成果サマリー**: HC事故1件から動的レイアウト・教訓同期・将軍ルール・品質管理ユニットの4構造改革を完了。ラルフループの穴を4箇所同時に塞いだ。
-
 | cmd | 意図 | 結果 | 因果 | 報告 |
 |-----|------|------|------|------|
 | cmd_1141 | shutsujinの動的3列レイアウト構築（HC排除） | 3列動的レイアウト実装完了。settings.yaml+agent_config.sh+shutsujin連携。commit d36945e | ←cmd_1139(HC事故の直接修正) | `queue/reports/hanzo_report_cmd_1141.yaml` `queue/reports/tobisaru_report_cmd_1141.yaml` `queue/reports/saizo_report_cmd_1141.yaml` |
 | cmd_1142 | MCP教訓L-ShutsuinHardcodeをlessons.yamlに正式登録 | L265としてinfra lessons.yaml登録完了。忍者の知識基盤に到達 | ←cmd_1139(事故教訓の知識降下) | `queue/reports/hayate_report_cmd_1142.yaml` |
 | cmd_1143 | 将軍の殿への質問に推薦先行+WHYを構造的に強制 | shogun.mdに二値チェック2件追加（推薦先行+MCP教訓同期）。commit d941ccd | ←cmd_1139(殿との対話で判明した将軍の行動パターン改善) | — |
 | cmd_1144 | 家老+軍師を品質管理ユニット化、全cmd軍師レビュー必須化 | karo.md/gunshi.md/infrastructure.md 3ファイル編集。commit ffd29f0 | ←cmd_1139(殿指示: 家老が軍師を使い倒す体制) | `queue/reports/kagemaru_report_cmd_1144.yaml` |
-
 ### Chain B: 報告3層解像度の整備
-
 **起点**: 殿の指摘「どのような意図で何をやってどういう結果になったのかがわからない。コマンドの時系列も見えない」。Chain Aの改革と並行して報告体制自体を改善。
-
 **成果サマリー**: ntfy(低)・dashboard(中)・戦局日誌(高)の3層で殿の時間ゼロ把握を実現する仕組みを構築中。
-
 | cmd | 意図 | 結果 | 因果 | 報告 |
 |-----|------|------|------|------|
 | cmd_1145 | 報告3層解像度整備（戦局日誌新設+ntfy強化+フロー追加） | GATE CLEAR。senkyoku-log.md新設+CLAUDE.mdフロー追加+ntfy_cmd.sh強化(purpose/streak/軍師verdict)。commit 2729275 | ←cmd_1144(品質ユニット化の次段: 結果の可視化) / ←殿の直接指摘 | `queue/reports/hayate_report_cmd_1145.yaml` `queue/reports/kagemaru_report_cmd_1145.yaml` `queue/reports/hanzo_report_cmd_1145.yaml` `queue/reports/saizo_report_cmd_1145.yaml` |
-
 ### Chain C: 3層学習ループ構築 + インフラ強化
-
 **起点**: 殿の学習ループ原則「全作業に学習ループを回せ。計測だけでは品質管理。還流して初めて成長」。忍者・家老・軍師・将軍の全層で学習ループを閉じる。
-
 | cmd | 意図 | 結果 | 因果 | 報告 |
 |-----|------|------|------|------|
 | cmd_1146 | 軍師に学習ループ構築(GATEフィードバック+accuracy計測) | GATE CLEAR。gunshi.mdにフィードバック処理+レビューログ構造+accuracy計測。karo.mdにreview_feedback通知フロー追加。commit e96457c | ←学習ループ原則(軍師レビュー精度の自己改善) | `queue/reports/kotaro_report_cmd_1146.yaml` `queue/reports/tobisaru_report_cmd_1146.yaml` `queue/reports/saizo_report_cmd_1146.yaml` |
@@ -713,9 +612,7 @@
 | cmd_1183 | infrastructure.md軍師品質管理+gate強化の索引還流 | GATE CLEAR。影丸完遂。6cmd分索引追記。L286登録(570行>500行制限) | ←今セッション成果のcontext未反映防止 | `queue/reports/kagemaru_report_cmd_1183.yaml` |
 | cmd_1184 | report_field_set.sh YAML構造体破壊バグ修正(CRITICAL) | GATE CLEAR。疾風完遂。L46-55のjson.dumps→USE_PYTHON=1。L287登録 | ←多数のlessons_useful BLOCK根本原因。忍者は正しく書くがツールが壊す | `queue/reports/hayate_report_cmd_1184.yaml` |
 | cmd_1185 | ninja_monitor /clear判定バグの3層修正(field_get最浅マッチ+TIMEOUT自己無効化+sed精密化) | GATE CLEAR。疾風完遂(d3540ab)。field_get.sh awk最浅インデント+TIMEOUT→maybe_idle直接追加+sed 2sp固定。L288登録 | ←field_get.sh head-1がACのstatus:pendingをtask-levelと誤認→/clear永久スキップ。35+スクリプト利用の基盤修正 | `queue/reports/hayate_report_cmd_1185.yaml` |
-
 ## 2026-03-21
-
 | cmd | 意図 | 結果 | 因果 | 報告 |
 |-----|------|------|------|------|
 | cmd_1187 | gate_report_format.sh WARNING→BLOCKING昇格。忍者の報告品質を自動強制 | GATE CLEAR。影丸完遂(b3cdcfb)。inbox_write.sh type=report_received時FAIL→exit 1。scope外pre-action capture混入(軽微) | ←karo_workarounds 5件連続(報告フォーマット修正)の根本対策。意志依存→自動化×強制 | (報告YAML消失) |
@@ -736,9 +633,7 @@
 | cmd_1256 | lesson_candidate消失+PROPOSAL見落とし防止 | GATE CLEAR。影丸+半蔵完遂。cmd_complete_gate.shにLC WARN+gate_shogun_startup.shにPROPOSAL表示。workaround:yes(dict→list) | ←LC77%消失問題+軍師提案見落とし→gate/hookで自動化×強制 | 2報告 |
 | cmd_1251 | FoF GSパリティPoC(1体) | GATE CLEAR。疾風完遂。シン分身-激攻(2comp EqualWeight)全期間完全一致。hs1637/mr75。L476登録 | ←FoF GS独立計算確立→v2移行の信頼基盤 | `queue/reports/hayate_report_cmd_1251.yaml` |
 | cmd_1257 | ランブックv1→v2更新(61→33体) | GATE CLEAR。半蔵完遂(3572ab1)。v2設計書§11完全整合。PI参照追加 | ←cmd_1247偵察GAP-3→本番登録前提条件整備 | `queue/reports/hanzo_report_cmd_1257.yaml` |
-
 ## 2026-03-23
-
 | cmd | 意図 | 結果 | 因果 | 報告 |
 |-----|------|------|------|------|
 | cmd_1275 | GS混乱候補スクリプト7本削除(誤用防止) | GATE CLEAR。影丸完遂(74c071bf)。7本削除+正式8本健在+参照27件報告。DC:27件整理要否 | ←殿裁定:正式7忍法+狭義GS以外は削除→Step 2 FoF登録の誤用リスク排除 | `queue/reports/kagemaru_report_cmd_1275.yaml` |
@@ -746,31 +641,24 @@
 - **07:18 cmd_1320再配備**: 影丸STALL(settings.local.jsonパーミッション制限)→半蔵に再配備。target_pathをtest_result_guard.shに修正
 - **07:24 3cmd一斉配備**: cmd_1278(hayate GP-032)、cmd_1287(kagemaru GP-012)、cmd_1288(saizo GP-004)
 - **2026-03-23 07:45** cmd_1278/1287/1288/1320 4件一括GATE CLEAR。連勝21達成。cmd_1320でSTALL時の空報告テンプレート残存によるGATE BLOCK→手動archive→workaround 1件。cmd_1287は半蔵commit済みへの影丸重複配備。全軍idle、次cmd待ち
-
 - 2026-03-23 13:50 cmd_1336 GATE CLEAR: GP-031+033+034合体。autofix→format check順序race根絶+Fix9(verdict推定)+Fix10(no_lesson_reason fill)。WA: lessons_useful混在parse error
 - 2026-03-23 13:50 cmd_1337 GATE CLEAR: dashboard自動更新イベント駆動化(GATE CLEAR時+配備完了時)。WA: binary_checks散文string
 - 2026-03-23 13:50 cmd_1338 void: cmd_1336と同一内容(将軍が重複起票)。半蔵停止済み
-
 ## 2026-03-24
-
 - 2026-03-24 02:09 cmd_1356 GATE CLEAR: archive_completed.sh flock全8箇所を/tmp/mas-*.lock移行(WSL2 NTFS flock no-op根治)。chronicle欠落11件(cmd_1336-1343,1351-1353)手動復旧。半蔵実施。WA: なし
 - 2026-03-24 02:09 cmd_1354 archive完了: PI-010 implication原則ベース化+L488 summary完全版更新。半蔵実施。前セッションでGATE CLEAR済み
-
 - **cmd_1374** (2026-03-24): 四つ目GS serial/batch md5不一致の根本原因特定+修正。batch precomputed_picksのtolerance=1e-12が本番exact比較と不一致(2ULP差)。tolerance=0.0+float_format統一で500パターン4方式全一致。疾風完遂。→cmd_1372(四つ目3体GS)が unblock
 - **cmd_1372** (2026-03-24): シン忍法v2 Step 4 Phase G — シン四つ目3体作成(MultiViewMomentumFilter)。4686パターンGS正常終了。常勝(Calmar2.94)、激攻(CAGR72.9%)、鉄壁=常勝同一。半蔵完遂。**Step 4全7Phase完了 — シン忍法v2 21体GS完了**
 - **cmd_1378** (2026-03-24): oikaze フルGS再実行(NaN修正済み28116パターン)。新旧チャンピオン同一(差分ゼロ)。NaN修正はoikaze固有でGS結果影響なし。疾風完遂。WA: yes(double_deploy→cmd_1382で構造的根絶予定)
 - **cmd_1379** (2026-03-24): NaN→0.0横展開調査(kasoku_diff/bunshin/yotsume/nukimi/kawarimi/kasoku_ratio)。6スクリプト全て影響なし。oikazeのcomposite_momentum.add(fill_value=0.0)パターンが他に不在。影丸+半蔵完遂
 - **cmd_1380** (2026-03-24): GP-071 quality_fix_request race condition修正。inbox_write.shにテンプレート状態検出追加(FILL_THIS残存/verdict空→スキップ)。飛猿完遂。WA: no。連勝19(cmd_1363-1380)
-
 ### 2026-03-25 将軍自走最適化サイクル
 - **意図**: deepdive原則「自動化×強制」に基づく、殿指示による5秒未満スクリプト改良の連続実行
 - **成果**: 8スクリプト最適化(Python→awk/grep,git status -uno,archive titleキャッシュ), 3バグ修正(gate9a/9b/loop_health), 1autofix追加(Fix18)
 - **定量**: gate_startup 3.8→1.3s(-66%), cmd_save 4.8→1.3s(-73%), dashboard_auto 10.5→3.0s(-71%), agent_config 200→10ms(-95%/13スクリプト波及)。日次~23分節約
 - **根因**: WSL2 /mnt/cのPython起動コスト(200-300ms/回)とgit status全ファイルstat(5.7s)が主犯。awk/grepへの置換とキャッシュが定型解
 - cmd_1390: GATE CLEAR(05:30)。inbox_write WARN→BLOCK昇格。WA率根因対策。小太郎完遂。+自走改善L296/L297/L298タスク化→全忍者配備
-
 ### 2026-03-28 fullrecalculate最適化 + 知識循環分析
-
 **OPT Push & 本番検証**
 - **cmd_1454** (hanzo): OPT-A/OPT-6/perf_calc除去 3コミットpush成功。本番fullrecalculate 260s(旧564s→54%削減)。L2=155s, L3=62s。Ward FoF signals=0は既存問題
 - **cmd_1449** (kagemaru): perf_calc除去 作業中(CTX:65%)
@@ -1596,6 +1484,5 @@
 
 - 2026-08-24夜: 速度改善12弾終端(gate 810→119秒)。通信監査=実阻害なし(偽陰性27/27是正)。gap分布確定(最大隙間=報告→レビュー依頼618秒、cmd_4391走行)。殿裁定=らせん(部分×全体)継続を恒久主軸化。第二十五話note下書き済
 - 2026-08-24夜 cmd_4391完了: terminal reportのcompleted_atをatomic publicationへ固定し、gap計測がauthoring timestampをreport_doneと誤帰属する根因を是正。baseline中央値618.000秒→補正fixture5.0秒、420/420 PASS・SKIP0、commit 7373f9c12。
-- 2026-08-25 cmd_4392_normal hayate完了: 親reportへAC1-3を統合し、CI 5 runs/30 jobs/260 steps、local 239/239 (PASS221/FAIL18/SKIP0)、AC3統合md/commit 32632bb98を既存成果物として確認。コード変更なし、report/gate PASS。origin: [[cmd_4392]] -> [[CI_ローカル全体分解]] -> [[親report_AC1-3統合]]
+- 2026-08-25 cmd_4392_normal hayate→cmd_4403: cmd_4392は親reportへCI 5 runs/30 jobs/260 steps・local 239/239 (PASS221/FAIL18/SKIP0)を統合（AC3 md/commit 32632bb98、code変更なし、report/gate PASS）。cmd_4403は`test_cmd_complete_gate.bats`を912.260秒→298.532秒（613.728秒/67.3%減）、281/281 PASS・SKIP0へ短縮し、次候補10 fileを降順固定。詳細: `docs/research/cmd_4403_slowest_tests_speedup_20260825.md`。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4403_source_publication共通runner]] -> [[単体テスト実行時間短縮]]
 - 2026-08-25 cmd_4402計測: 根治弾の前後同幅を機械集計し、blocked 3→4・再試行3→1・解消中央値110→141秒、precheck FAIL 1→1、親report誤BLOCK 1→0を確定。全体改善は未確認として次回の理由別cohort計測へ還流。origin: [[cmd_4402_before_after数値証明]] -> [[根治4本効果計測0件]] -> [[理由別cohort再計測]]
-- 2026-08-25 cmd_4403: `test_cmd_complete_gate.bats`のsource-publication fixture共通runner化で912.260秒→298.532秒（613.728秒/67.3%減）、281/281 PASS・SKIP0。次候補10 fileを降順で成果物へ固定。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4403_source_publication共通runner]] -> [[単体テスト実行時間短縮]]
