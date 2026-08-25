@@ -404,7 +404,22 @@ def generate(args):
         review["karo_attention"] = args.fail_reason
     bundle = {"review": review}; validate(bundle, args.cmd, verdict)
     path = root / f"queue/gates/{args.cmd}/sg7_bundle.json"; atomic_json(path, bundle); relative = str(path.relative_to(root)); spec = review["cmd_spec_summary"]
-    print(relative); print(json.dumps(spec, ensure_ascii=False, sort_keys=True)); return 0
+    print(relative); print(json.dumps(spec, ensure_ascii=False, sort_keys=True))
+    # 2026-08-26: `generate` を単独CLIで叩いただけでは承認(gunshi LGTM)にならない。
+    # batch4/5r/6r/7r/8r で軍師が generate のみ実行→承認欠落→家老gate 5件BLOCKした実証。
+    # 直接CLI呼出し(single/batch経由でない)でAPPROVE時、LGTM承認が未記録なら fail-closed(rc=3)で
+    # 次に叩くべきコマンドを名指しする。bundle自体は書いてよい(承認の前提物であり、上書き冪等)。
+    if getattr(args, "direct_cli", False) and verdict == "APPROVE":
+        approval_check = f'''source "{root / 'scripts/lib/review_approval.sh'}"
+PROJECT_ROOT="{root}" review_two_phase_ready_gunshi "{args.cmd}" "{report}"
+'''
+        ready = subprocess.run(["bash", "-c", approval_check], cwd=root).returncode == 0
+        if not ready:
+            print(f"BLOCK: gunshi LGTM approval not recorded for {args.cmd} — bundle alone is not an approval. "
+                  f"NEXT: python3 scripts/review_bundle.py single --cmd {args.cmd} --verdict APPROVE --report {review['report']} "
+                  f"--review-entry <review_log entry yaml>  (the /review-bundle skill Step 1; direct review_approval.sh gunshi LGTM is rejected)", file=sys.stderr)
+            return 3
+    return 0
 
 def notify(args):
     started = time.monotonic()
@@ -648,7 +663,7 @@ def single(args):
 
 def build_parser():
     p = argparse.ArgumentParser(); p.add_argument("--root", default=str(Path(__file__).resolve().parents[1])); subs = p.add_subparsers(dest="action", required=True)
-    g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.add_argument("--allow-archived", action="store_true"); g.set_defaults(func=generate)
+    g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.add_argument("--allow-archived", action="store_true"); g.set_defaults(func=generate, direct_cli=True)
     n = subs.add_parser("notify"); n.add_argument("--cmd", required=True); n.add_argument("--bundle", required=True); n.set_defaults(func=notify)
     c = subs.add_parser("consume"); c.add_argument("--cmd", required=True); c.add_argument("--bundle", required=True); c.add_argument("--expect-verdict", choices=("APPROVE", "FAIL")); c.set_defaults(func=consume)
     b = subs.add_parser("batch"); b.add_argument("--manifest", required=True); b.add_argument("--max-workers", type=int, default=5); b.set_defaults(func=batch)
