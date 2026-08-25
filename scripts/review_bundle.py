@@ -51,6 +51,13 @@ def _receipt_generation_matches(root, report_path, report):
     day = re.sub(r"[^0-9]", "", timestamp[:10])
     if len(day) == 8:
         candidates.append(Path(root) / f"archive/inbox/karo_{day}.yaml")
+    # 2026-08-26: 報告timestampがUTC('...Z')だと日付が1日ずれ、JST日付で命名される
+    # archive/inbox/karo_YYYYMMDD.yaml と一致せず receipt を見失う(batch6r saizo実証:
+    # ts=2026-08-25T16:43:53Z → karo_20260825 を探すが receipt は karo_20260826 にあった)。
+    # 受領証は archive 全日付から探す(新しい順)。fingerprint/report_id/path の完全一致が要るので緩和ではない。
+    for archived in sorted((Path(root) / "archive/inbox").glob("karo_*.yaml"), reverse=True):
+        if archived not in candidates:
+            candidates.append(archived)
     for receipt_path in candidates:
         if not receipt_path.is_file():
             continue
