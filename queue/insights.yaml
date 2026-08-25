@@ -4291,3 +4291,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260826-004527947-2726
+  ts: "2026-08-26T00:45:27+09:00"
+  insight: "バッチらせん契約バグ: timing正本(並列負荷下)とlive before(直列単独)の不一致を『BLOCK』とした弾#8が短縮ゼロでFAIL-close。正本=選別順序のみ、live=基準値。教訓候補: benchmark契約は『何の値を基準にするか』を明記し、参照値との差分報告とBLOCK条件を分離せよ(LS-A24計測代表性の変種)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
