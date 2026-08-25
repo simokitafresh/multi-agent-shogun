@@ -4310,10 +4310,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T01:49:39+09:00"
 - id: INS-20260826-012951104-9c19
   ts: "2026-08-26T01:29:51+09:00"
   insight: "semantic_index_update新概念候補: discussion:shougunntosoudannseyo は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T01:49:39+09:00"
+- id: INS-20260826-013759162-9070
+  ts: "2026-08-26T01:37:59+09:00"
+  insight: "完了cmdのgit worktreeが回収されず22GB残存(DM-signal 16本+prune22件)。自動化ターゲット: cmd完了gate(archive_completed.sh)で当該cmdのworktreeをstatus --porcelain=0確認のうえgit worktree removeし、detached孤立commitはsafety/タグへ退避する構造型"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260826-015423541-a437
+  ts: "2026-08-26T01:54:23+09:00"
+  insight: "semantic_index_update新概念候補: discussion:将軍に返事を最速せよ。送ったつもりで届いていない可能性も考慮城 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
