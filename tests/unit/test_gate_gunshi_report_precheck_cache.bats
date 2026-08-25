@@ -43,7 +43,7 @@ teardown() {
   rmdir "$TMP_DIR"/cache "$TMP_DIR"/tasks "$TMP_DIR" 2>/dev/null || true
 }
 
-@test "re-precheck of an unchanged report returns the cached full-check result" {
+@test "unchanged reports are cached and edits invalidate the cached result" {
   rc1=0
   bash "$GATE" "$TMP_DIR/report.yaml" > "$TMP_DIR/out1.txt" 2> "$TMP_DIR/err1.txt" || rc1=$?
 
@@ -54,11 +54,7 @@ teardown() {
   diff "$TMP_DIR/out1.txt" "$TMP_DIR/out2.txt"
   grep -q "cache応答" "$TMP_DIR/err2.txt"
   ! grep -q "cache応答" "$TMP_DIR/err1.txt"
-}
 
-@test "editing the report invalidates the cache and forces a full recheck with a fresh result" {
-  rc1=0
-  bash "$GATE" "$TMP_DIR/report.yaml" > "$TMP_DIR/out1.txt" 2> "$TMP_DIR/err1.txt" || rc1=$?
   cache_entries_before=$(find "$GUNSHI_PRECHECK_CACHE_DIR" -type f | wc -l)
   [ "$cache_entries_before" -eq 1 ]
 
