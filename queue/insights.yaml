@@ -4352,3 +4352,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260826-015659360-8170
+  ts: "2026-08-26T01:56:59+09:00"
+  insight: "[[偵察 outputs grid search 42 5GBの削除候補台帳 — 正本・参照・再生成可能性の三条件で全92デ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=偵察: outputs/grid_search 42.5GBの削除候補台帳 — 正本・参照・再生成可能性の三条件で全92ディレクトリを判定"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
