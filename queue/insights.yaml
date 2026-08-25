@@ -3855,3 +3855,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-152708704-d2a0
+  ts: "2026-08-25T15:27:08+09:00"
+  insight: "[[三層preflight証 跡なし 無効 でBLOCKが頻発していないか？これはバグか確認せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=三層preflight証 跡なし/無効 でBLOCKが頻発していないか？これはバグか確認せよ。バグなら根治せよ。バグでないなら適切に行動できるように環境に埋め込もう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
