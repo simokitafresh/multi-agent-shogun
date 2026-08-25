@@ -4284,3 +4284,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260825-225549480-f3f6
+  ts: "2026-08-25T22:55:49+09:00"
+  insight: "[[Python app 87 1 GB]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Python_app 87.1 GB"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
