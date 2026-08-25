@@ -194,21 +194,13 @@ jobs:
           tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}-requested.tap"
           if [ "${{ matrix.compatibility }}" = "true" ]; then
             # These 17 files share process-wide fixtures, git/tmux state, or
-            # mutable deployment scaffolds. Keep their manifest order and
-            # admit exactly one file root at a time; no test is excluded.
+            # mutable deployment scaffolds. Keep file-level parallelism, but
+            # give each file root its own process-wide fixture namespace.
             compatibility_root="$RUNNER_TEMP/compatibility-${{ matrix.shard }}"
-            mkdir -p "$compatibility_root"/{tmp,state,waiters,singleflight,receipts}
-            export TMPDIR="$compatibility_root/tmp"
-            export SHOGUN_STATE_DIR="$compatibility_root/state"
-            export SHOGUN_HEAVY_JOB_LOCK_FILE="$compatibility_root/heavy.lock"
-            export SHOGUN_HEAVY_JOB_WAITER_DIR="$compatibility_root/waiters"
-            export SHOGUN_HEAVY_JOB_WAITER_MUTEX="$compatibility_root/waiters.lock"
-            export RUN_TESTS_SINGLEFLIGHT_DIR="$compatibility_root/singleflight"
-            export RUN_TESTS_RECEIPT_DIR="$compatibility_root/receipts"
+            mkdir -p "$compatibility_root"
+            export BATS_COMPATIBILITY_ROOT="$compatibility_root"
             export BATS_INNER_JOBS=1
             export BATS_FILE_TIMEOUT_SECONDS=900
-            export TEST_TIMING_LEDGER="$RUNNER_TEMP/compatibility-timing.tsv"
-            rm -f "$TEST_TIMING_LEDGER"
           else
             export BATS_INNER_JOBS=1
             export BATS_FILE_TIMEOUT_SECONDS=300
