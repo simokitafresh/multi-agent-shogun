@@ -4230,3 +4230,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-222550368-eac2
+  ts: "2026-08-25T22:25:50+09:00"
+  insight: "CDPプロファイル孤児化: cdp_session.py(mkdtemp p{port}-*)とcmd単位の隔離プロファイルが回収されずC:\\tmp/temp に19.6GB蓄積(88件)。自動化ターゲット: cdp-session-profiles配下でChrome未使用かつmtime>7日のディレクトリを日次cronで回収する構造型(削除ログ+温存名簿keep-list)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
