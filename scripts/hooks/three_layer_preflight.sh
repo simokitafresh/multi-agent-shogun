@@ -601,6 +601,44 @@ issue() {
         printf 'three_layer_preflight: empty prompt\n' >&2
         return 1
     fi
+    # A manual recovery issue is unnecessary after UserPromptSubmit already
+    # published a valid receipt.  Re-running it with a different free-form
+    # prompt used to invalidate that receipt before searching; if the retry
+    # then timed out, every following read was self-deadlocked.  Only the
+    # envelope-driven UserPromptSubmit path may advance prompt generation.
+    if [[ -n "$prompt_arg" ]]; then
+        local existing_generation_file="${evidence_file}.generation"
+        if (
+            flock -s 9
+            python3 - "$evidence_file" "$nonce_file" "$existing_generation_file" "$agent_id" "$pane_id" "${THREE_LAYER_PREACTION_MAX_AGE_SECONDS:-14400}" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+
+evidence_path, nonce_path, generation_path, agent_id, pane_id, max_age = sys.argv[1:]
+try:
+    data = json.load(open(evidence_path, encoding="utf-8"))
+    nonce = open(nonce_path, encoding="utf-8").read().strip()
+    generation = open(generation_path, encoding="utf-8").read().strip()
+    issued = datetime.fromisoformat(str(data["issued_at"]).replace("Z", "+00:00"))
+except Exception:
+    raise SystemExit(1)
+age = (datetime.now(timezone.utc) - issued).total_seconds()
+valid = (
+    data.get("agent_id") == agent_id
+    and data.get("pane_id") == pane_id
+    and data.get("nonce") == nonce
+    and data.get("generation") == generation
+    and data.get("status") == "success"
+    and all(str(data.get(key)) == "0" for key in ("memory_db", "semantic", "obsidian"))
+    and -5 <= age <= float(max_age)
+)
+raise SystemExit(0 if valid else 1)
+PY
+        ) 9>"$publish_lock"; then
+            printf '%s\n' "$evidence_file"
+            return 0
+        fi
+    fi
     generation_source="$(prompt_generation_from_payload "${payload:-}" 2>/dev/null || true)"
     generation_source="${generation_source:-prompt}"
     generation="$(printf '%s\n%s\n' "$generation_source" "$prompt" | sha256sum | awk '{print $1}')"

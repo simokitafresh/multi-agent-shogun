@@ -720,6 +720,21 @@ print("1")
 PY
     )" -eq 1 ]
 
+    # A manual recovery command after successful UserPromptSubmit must be a
+    # no-op. It cannot replace a valid envelope generation with free-form text.
+    local generation_before
+    generation_before="$(cat "$evidence_generation")"
+    run env MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/missing.db" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$issue_script" issue "manual recovery must not replace a valid receipt"
+    [ "$status" -eq 0 ]
+    [ "$(cat "$evidence_generation")" = "$generation_before" ]
+    run verify Read "$ROOT/context/infrastructure.md" ""
+    [ "$status" -eq 0 ]
+
     # A new generation is blocked while its bootstrap search is still running;
     # no old receipt is eligible during that interval.
     local probe_root="$TMP_EVIDENCE/unsearched_generation"
