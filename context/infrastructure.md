@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-25 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-25 context updated for cmd_4400 shard parallelization -->
+<!-- source_commit:3b283e4b0 reason:context updated for cmd_4400 shard parallelization evidence:doc_lane_request blt_20260825_131907_154d6a -->
 <!-- source_commit:712934f22 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=712934f22 -->
 <!-- source_commit:74161aece reason:context updated for cmd_4401 instrumentation evidence:doc_lane_request blt_20260825_114142_f45408 -->
 <!-- source_commit:75dd7ec83 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=75dd7ec83 -->
@@ -91,6 +92,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - 作業中忍者clear不変量: `safe_send_clear`は`assigned|acknowledged|in_progress`を既定BLOCKし、停止を計測したDEPLOY-STALLだけ明示許可する。即時clear指示を恒久設定変更へ一般化せず、task statusをidleへ改変して適格化しない。`clear_debounce`は再送抑制であり完了待ちではない。origin: [[殿指示_即時auto_clear_20260809]] -> [[safe_send_clear直呼びと恒久設定化の穴]] -> [[active_task_clear_fail_closed]]
 - cmd_4248現物走査: `gate_shogun_startup.sh` の機械検知は `gate_karo_startup`/idle自走/CI RED忍者修正/`ninja_monitor` へ移管候補、殿への回答・追体験・裁定・cmd起票判断は将軍固有、状態遷移のない要約表示は削除候補。移管順序は `session_alerts生成 → stop hook → 先送りBLOCK/dedup → escalation` を維持する（詳細: `docs/research/cmd_4248_shogun_gate_triage_20260809.md`）。
 - publish経路の段別計装（cmd_4401, 2026-08-25）: `scripts/cmd_publish.sh` に段別wall時間計装(preflight/save_gate/promotion/delegate)+missing defaults二重setterのbatch統合(-8.3%)。隔離fixture実測=publish_total 3770ms（timing正本: `scripts/cdp/cmd_4401_publish_timing.md`）。★ライブpublish実測約13分との乖離が未説明=LS-A24計測代表性。次弾=ライブ1回のphase log一次取得(INS-20260825-111719094)。origin: [[cmd_4399_preflight本体無罪確定]] -> [[cmd_4401_publish外側経路計装]]
+- CI shard並列化+状態依存compatibility shard（cmd_4400+stateful_shards hotfix, 2026-08-25）: `.github/workflows/test.yml` をunit単一job→8 shard並列(実測タイミングLPT割当・欠落0重複0)+状態依存testを除外せず依存順で束ねるcompatibility shard+run固有namespace隔離(3b283e4b0)。unitテストwall-clock 2885秒→最長shard 178秒(約94%減、GREEN確定待ち)。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4400_shard並列化]]
 
 ## プラットフォーム運用
 
