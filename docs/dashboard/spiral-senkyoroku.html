@@ -1,0 +1,131 @@
+<title>らせん戦況録</title>
+<style>
+  :root{
+    --bg:#f6f5f1; --ink:#23272e; --sub:#5c6470; --line:#d8d5cc;
+    --card:#ffffff; --accent:#39536e; --gold:#8a6d2f;
+    --good:#2e7d4f; --warn:#a66a1e; --bad:#b0433a; --badbg:#f7e9e7; --goodbg:#e7f2ec; --warnbg:#f6eddd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#171a20; --ink:#e8e6df; --sub:#9aa2ad; --line:#333a45;
+      --card:#1f242c; --accent:#7fa3c7; --gold:#c9a75c;
+      --good:#6dbd90; --warn:#d9a256; --bad:#e08a80; --badbg:#3a2523; --goodbg:#20312a; --warnbg:#352b1c;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#171a20; --ink:#e8e6df; --sub:#9aa2ad; --line:#333a45;
+    --card:#1f242c; --accent:#7fa3c7; --gold:#c9a75c;
+    --good:#6dbd90; --warn:#d9a256; --bad:#e08a80; --badbg:#3a2523; --goodbg:#20312a; --warnbg:#352b1c;
+  }
+  body{background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;line-height:1.75;margin:0;padding:2.2rem 1.2rem 4rem;}
+  main{max-width:46rem;margin:0 auto;}
+  h1,h2{font-family:"Hiragino Mincho ProN","Noto Serif JP","Yu Mincho",serif;text-wrap:balance;}
+  h1{font-size:1.9rem;margin:.2rem 0 .3rem;}
+  h2{font-size:1.25rem;border-bottom:1px solid var(--line);padding-bottom:.35rem;margin:2.4rem 0 1rem;color:var(--accent);}
+  .date{color:var(--sub);letter-spacing:.12em;font-size:.8rem;text-transform:uppercase;}
+  .lede{color:var(--sub);margin:.4rem 0 0;}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums;}
+  .tablewrap{overflow-x:auto;}
+  th,td{border-top:1px solid var(--line);padding:.5rem .6rem;text-align:left;vertical-align:top;}
+  th{color:var(--sub);font-weight:600;font-size:.8rem;letter-spacing:.06em;}
+  .pill{display:inline-block;border-radius:3px;padding:.05rem .5rem;font-size:.78rem;font-weight:600;white-space:nowrap;}
+  .done{background:var(--goodbg);color:var(--good);}
+  .run{background:var(--warnbg);color:var(--warn);}
+  .stuck{background:var(--badbg);color:var(--bad);}
+  .num{font-family:ui-monospace,monospace;font-size:.88em;}
+  .kpi{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0;}
+  .kpi div{background:var(--card);border:1px solid var(--line);padding:.7rem 1rem;flex:1 1 10rem;}
+  .kpi b{display:block;font-size:1.35rem;font-family:"Hiragino Mincho ProN","Noto Serif JP",serif;color:var(--gold);}
+  .kpi span{font-size:.78rem;color:var(--sub);}
+  .stag{border-left:3px solid var(--bad);background:var(--card);padding:.8rem 1rem;margin:1rem 0;}
+  .move{border-left:3px solid var(--accent);background:var(--card);padding:.8rem 1rem;margin: .8rem 0;}
+  .move b{color:var(--accent);}
+  .eta{color:var(--gold);font-weight:600;white-space:nowrap;}
+  ul{padding-left:1.3rem;margin:.4rem 0;}
+  li{margin:.25rem 0;}
+  .foot{color:var(--sub);font-size:.8rem;margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.8rem;}
+</style>
+<main>
+<p class="date">2026-08-26 02:45 JST 更新 · 将軍報告(前版 08-25 19:40)</p>
+<h1>らせん戦況録</h1>
+<p class="lede">個別最適化×全体最適化のらせん——夜間の回転実績(バッチ#2〜#8)、地図外で踏んだ構造バグ、次の一手。</p>
+
+<h2>19:40以降にらせんが生んだ数値</h2>
+<div class="kpi">
+  <div><b>8バッチ / 7 PASS</b><span>個別短縮バッチ#1〜#8を忍者並列で回転。各テストのlive before/after実測: 最大<b>67.3%</b>(#1)・57.0%(#7)・54.5%(#8)・54.3%(#4)・44.3%(#5)・15.4%(#2)・9.5%(#3)・7.0%(#6)</span></div>
+  <div><b>初回3件 BLOCK → 再試行3件 PASS</b><span>#5/#7/#8の初回はAC1(timing正本≠現物実測、差−44〜−50%)で<b>実装せず停止</b>。「計測器の名指しから始める」逸脱チェック①が機能した証拠</span></div>
+  <div><b>VHDX 517 → 182 GB</b><span>C:空き 20→362 GB(殿がWSL再起動+圧縮、22:07)。ディスク回収hotfixは閾値未満でFAIL=契約どおり。殿の一手で代替解決</span></div>
+</div>
+
+<h2>個別バッチらせん台帳(#1〜#8・全て一次実測)</h2>
+<div class="tablewrap"><table>
+<tr><th>弾</th><th>対象テスト</th><th>before → after</th><th>状態</th></tr>
+<tr><td>#1 半蔵</td><td>test_cmd_complete_gate.bats(最重量)</td><td class="num">912 → 298秒(−67.3%) 281/281</td><td><span class="pill done">GATE CLEAR 20:03</span></td></tr>
+<tr><td>#2 疾風</td><td>test_cmd_save_block_aggregation.bats fixture副作用隔離</td><td class="num">79.9 → 67.6秒(−15.4%) 13/13</td><td><span class="pill done">GATE CLEAR 21:03</span></td></tr>
+<tr><td>#3 影丸</td><td>test_inbox_write.bats tmpfs不変script配置</td><td class="num">87.5 → 72.6秒(−9.5%) 118/118</td><td><span class="pill stuck">AC2 BLOCK</span> 全体再計測1800秒timeout(rc=124)</td></tr>
+<tr><td>#4 疾風</td><td>test_gate_gunshi_report_precheck_cache.bats 重複full-precheck統合</td><td class="num">20.1 → 9.2秒(−54.3%) 2/2</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
+<tr><td>#5 半蔵(再)</td><td>test_gate_gunshi_report_precheck.bats test8をSG-PRE25 focused境界で早期終了</td><td class="num">87.6 → 48.8秒(−44.3%) 31/31</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
+<tr><td>#6 才蔵(再)</td><td>test_cmd_skeleton.bats 246回cmd_save呼出しへphase receipt(支配=checks_main.quality_gateを名指し)</td><td class="num">630 → 586秒(−7.0%)+計測器常設</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
+<tr><td>#7 小太郎(再)</td><td>test_three_layer_preflight.bats test54の20回起動を並列化</td><td class="num">142.7 → 61.3秒(−57.0%) 60/60</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
+<tr><td>#8 飛猿(再)</td><td>test_ninja_scope_commit.bats immutable base+local clone</td><td class="num">169.2 → 76.9秒(−54.5%) 79/79</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
+</table></div>
+<p>集計: 各バッチ報告YAMLの result.summary と gate_metrics.log(#4〜#8は review_two_phase_pending=GATE前)。1件=1バッチ1テストファイル。SKIP=0・FAIL=0を全弾で維持、検証削除ゼロ。</p>
+
+<h2>地図外で踏んだ構造バグ(夜間)——消さずに残す</h2>
+<div class="stag">
+<p><b>ghost陣(tmux二重サーバ)</b>——WSL再起動後、<span class="num">/init</span>直下で自動起動されたtmuxサーバ826が、将軍の出陣で作られた後発サーバにsocketを奪われ<b>到達不能のまま生存</b>。配下のghost家老(codex)が01:54までkaro inboxを共有処理し「家老にinboxが届かない」「影丸はどこで動いている」の見え方を作った。出陣の撤収は<span class="num">tmux kill-session</span>=socket所有者にしか届かず、<b>出陣を繰り返すほどghostが積む構造</b>。殿の手で消滅(02:40 <span class="num">ss -xlp</span>=1サーバ)。根治は家老hotfix AC1-4(検知+撤収 / watchdog ALERT / 起動元特定 / 幻スキル参照差替え)。</p>
+<ul>
+<li><b>log_warn未定義</b>(3/23から潜在): 出陣スクリプトの警告分岐でだけ落ちる。殿が出陣ログで発見→定義追加 <span class="num">b065d7fc7</span></li>
+<li><b>幻スキル参照</b>: skills削除済みの<span class="num">/reset-layout</span>がCLAUDE.mdに残存(deepdive Phase 9同型)。startup gateへ実在チェック新設 <span class="num">1136fefab</span>、初回実行で1件検出</li>
+<li><b>完了境界の乖離</b>: publication receipt欠落で<span class="num">archive_terminal</span>がBLOCK→cmd_4404のtaskがin_progress残置。物理idle(6/6)とtask状態(busy表示)が乖離。家老が完了境界で修復中</li>
+<li><b>cmd_4404</b>(殿直命): <span class="num">outputs/grid_search</span> 92/92ディレクトリを台帳化、削除候補19件=1.08 GB、削除0件。GATE CLEAR 02:34</li>
+</ul>
+</div>
+
+<h2>方向性と目安(02:45更新)</h2>
+<div class="move"><b>一手目(達成✅): CI GREEN+push拘束契約。</b>CI 1周48分→7分。この土台の上で夜間8バッチが回った。</div>
+<div class="move"><b>二手目(回転中): 個別バッチらせん。</b>#4〜#8の5報告をGATE終端して数値を確定→<b>次の10個を機械選別</b>(timing正本を各弾後に再計測してから選ぶ——初回3件BLOCKの教訓)。<span class="eta">GATE終端後に第2セット配備</span></div>
+<div class="move"><b>三手目(着火待ち): 履歴分岐統合。</b>origin/main 34 vs HEAD 163(source-publish laneがworktreeからoriginへ直接pushし、ローカルmainをff更新しない構造)。裁定済み: 隔離worktreeでmerge・rebase禁止・統合後publishでローカルmainをff更新する根治をAC3に含める。<span class="eta">家老の着手順=ghost AC1 → #7レビュー → 分岐統合</span></div>
+<div class="move"><b>四手目(常時): ライブpublish 13分の分解・#3の全体再計測timeout(1800秒)・#6のquality_gate支配phase短縮。</b><span class="eta">idle余力で常時消化</span></div>
+
+<h2>覚醒 — 逸脱チェック3問で夜間を検分する</h2>
+<div class="stag">
+<p><b>①計測器の名指しから始まったか</b>——始まった。#5/#7/#8の初回は「timing正本(数時間前の全体計測)」と「現物live実測」が−44〜−50%乖離し、忍者3名がAC1どおり<b>実装せず停止</b>した。前弾の短縮が後弾のbeforeを古くする——これはらせんが回っている証拠であり、<b>選別の計測器は各弾後に再計測が要る</b>という具体的な学びに変換した(次セット選別の条件へ)。</p>
+<p><b>②直した後に計測を一段深くしたか</b>——#6が典型。7%しか縮まなかった代わりに246回のcmd_save呼出しへphase receiptを常設し、支配=<span class="num">checks_main.quality_gate</span>を名指しした。次の一撃はそこへ入る。</p>
+<p><b>③計測器は本番に残るか</b>——#6のphase receipt・前版のreceipt harness・#1の分割は残る。一方、<b>夜間の地図外バグ3件(ghost陣・log_warn・幻参照)は全て「参照先と実体の不一致」</b>で、deepdive Phase 9と同型。将軍はkill依頼で閉じかけた(洗脳#3)が、根(/init直下の自動起動)まで掘って家老hotfixへ落とした。</p>
+<p><b>認めるべき歪み</b>: 報告PASS 5件がGATE前で滞留し、忍者6体が02:37時点で全員idle。家老が完了境界の修復を直列でやっている間、並列で配備できた。「各弾CLEAR後の次点自走配備」の契約化(前夜22:55に指摘済み)がまだ環境に埋まっていない——ここが次の全体最適化の的。</p>
+</div>
+
+<h2>らせんの現在地</h2>
+<p>個別最適化は<b>8弾回って7弾PASS</b>、重量上位から順に単体を削る回転が実証された。地図外の構造バグは夜間に4件露出し、3件を将軍D0+家老hotfixで即時是正。残る全体側の的は「GATE前滞留×idle」と「履歴分岐」の2つで、どちらも<b>回転を速くする構造</b>の話。らせんは止まっていない——止めかけたのは配備の直列化であり、それ自体が次の一周の材料になった。</p>
+
+<h2>前版(08-25 19:40)の記録——消さずに残す</h2>
+<div class="kpi">
+  <div><b>🟢 CI GREEN確定</b><span>run 32828851180・全14 job success(17:59)。unitテスト2885秒→最長shard 303秒=<b>89.5%減</b>。CI 1周48分→7分</span></div>
+  <div><b>912秒 → 298秒</b><span>個別最適化第一弾(cmd_4403): 最重量テスト67.3%短縮、281/281 PASS・検証削除ゼロ(半蔵)</span></div>
+  <div><b>9/9 receipt PASS</b><span>ローカル全shard再現harness常設(3523テスト・SKIP0)。push前提契約ci_push_receipt_contractとして恒久化</span></div>
+</div>
+<div class="tablewrap"><table>
+<tr><th>弾</th><th>中身</th><th>状態</th></tr>
+<tr><td>調査 cmd_4392-94</td><td>CI時間分解(90.7%=テスト実行)+ロール別無駄の統合正本</td><td><span class="pill done">完了</span></td></tr>
+<tr><td>根治 cmd_4396-99</td><td>SG-PRE36前倒し・blocked構造化・親report識別・preflight計装</td><td><span class="pill done">完了</span></td></tr>
+<tr><td>cmd_4402 効果実測</td><td>根治のbefore/after機械集計。再試行3→1改善 / <b>blocked 3→4・解消110→141秒は悪化</b>を正直に記録</td><td><span class="pill done">完了</span></td></tr>
+<tr><td>preflightデッドロック</td><td>殿検知→半蔵実装→将軍が栓抜き+自ら着地。STALL2.5時間の実害も解消</td><td><span class="pill done">完了</span></td></tr>
+<tr><td>cmd_4401 publish計装</td><td>段別計装+8.3%短縮。fixture 3.7秒 vs ライブ13分の乖離を明示</td><td><span class="pill done">完了</span></td></tr>
+<tr><td>cmd_4400 CI shard並列化</td><td>8 shard+compatibility shard。<b>GREEN確定(全14 job success・89.5%減)</b>+ローカルreceipt harness常設</td><td><span class="pill done">完了</span></td></tr>
+</table></div>
+<div class="stag">
+<p><b>停滞の正体はci_fixの直列モグラ叩きだった</b>——「1個直す→push→CI 6分待つ→次のFAILが露出」を計11 push。失敗shardが7→6→7→6と毎回移り、真犯人は<b>非hermetic fixtureと並列共有timing</b>(家老の原因1行)。終端の決め手=<b>push拘束契約</b>(固定SHAでローカル8 shard+compatibility全再現のreceipt FAIL0を添付した時のみpush可)。宣言直後のrunがGREEN(17:59)。失敗11 pushも記録に残す——「失敗を消すと次に同じ愚を犯す」(第二十五話)。</p>
+</div>
+<div class="tablewrap"><table>
+<tr><th>周</th><th>個別最適化(単体を速くする)</th><th>全体最適化(地図外の構造バグ是正)</th><th>評価</th></tr>
+<tr><td><b>一周目</b><br>調査</td><td>CI 4546秒を260 step全数分解し、支配=テスト実行2885秒(90.7%)と個別テストのロングテール分布を実測で確定</td><td>ロール別無駄の統合地図(deploy blocked 60%・レビューFAIL反復・LS078型「書込みあるが読み手なし」)を作成</td><td><span class="pill done">地図を作った。ここが土台</span></td></tr>
+<tr><td><b>二周目</b><br>実装</td><td><b>薄かった。</b>shard並列化はwall-clockの見かけを1/8にするが総計算量2885秒は不変——単体テストは1つも速くしていない</td><td>意図せず本流を突いた: 並列化が地図外の構造バグを次々露出(状態依存テスト・preflightデッドロック・commit guard孤児・公開worker遅延)し、5件を是正</td><td><span class="pill done">成果はあるが軸が並列化に歪んだ</span></td></tr>
+<tr><td><b>三周目</b><br>実装中</td><td>単体の重さ自体を削る: slowest tests上位の実測短縮→<b>本版の#1〜#8で実行</b>。次=ライブpublish 13分の段別分解</td><td>終端経路の/mnt/c I/O律速是正・blocked悪化(3→4)の真因掘り・<b>本版で露出したghost陣/完了境界乖離</b></td><td><span class="pill run">回転中</span></td></tr>
+</table></div>
+<div class="stag">
+<p><b>前版の覚醒(19:40)</b>: 二周目で将軍は「94%減」という見かけの数字に引かれ、<b>並列化=個別最適化と錯覚した</b>。並列化は配置換えであり単体を1秒も速くしていない。殿の定義(16:00)「個別最適化をひたすらに繰り返して単体の最適化をやり尽くしたら、全体の最適化、この繰り返しがらせん構造だ」——∴単体の短縮を尽きるまで反復することが全体へ上がる条件。本版の#1〜#8はその実行である。</p>
+</div>
+
+<p class="foot">一次情報源: ss -xlp / ps / capture-pane / バッチ報告YAML / gate_metrics.log / git rev-list / gh run実測。数値は全て集計コマンド付き(docs/research/cmd_4392・4393・4402ほか)。正本HTML=docs/dashboard/spiral-senkyoroku.html。</p>
+</main>
