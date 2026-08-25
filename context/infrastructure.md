@@ -1,5 +1,26 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-25 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-26 context updated for ghost tmux AC1 implementation -->
+<!-- source_commit:e06c2f9dc reason:context updated for ghost tmux AC1 implementation evidence:doc_lane_request blt_20260826_040416_c55741 -->
+<!-- source_commit:46d568a53 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=46d568a53 -->
+<!-- source_commit:a4930e9ce reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a4930e9ce -->
+<!-- source_commit:60537d6fb reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=60537d6fb -->
+<!-- source_commit:626640662 reason:context updated for cmd_4403 batch spiral evidence:doc_lane_request blt_20260825_200004_961db6 -->
+<!-- source_commit:1131863bc reason:context updated for ci green + receipt harness evidence:doc_lane_request blt_20260825_192810_979cd7 -->
+<!-- source_commit:464d5ddf7 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=464d5ddf7 -->
+<!-- source_commit:0225c9501 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=0225c9501 -->
+<!-- source_commit:3f1ad1f8b reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=3f1ad1f8b -->
+<!-- source_commit:076dc99cd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=076dc99cd -->
+<!-- source_commit:4e0287e1e reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4e0287e1e -->
+<!-- source_commit:8a5a9d9f3 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8a5a9d9f3 -->
+<!-- source_commit:26d7b5580 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=26d7b5580 -->
+<!-- source_commit:cbc14955f reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=cbc14955f -->
+<!-- source_commit:760485841 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=760485841 -->
+<!-- source_commit:3b283e4b0 reason:context updated for cmd_4400 shard parallelization evidence:doc_lane_request blt_20260825_131907_154d6a -->
+<!-- source_commit:712934f22 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=712934f22 -->
+<!-- source_commit:74161aece reason:context updated for cmd_4401 instrumentation evidence:doc_lane_request blt_20260825_114142_f45408 -->
+<!-- source_commit:75dd7ec83 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=75dd7ec83 -->
+<!-- source_commit:5c1c7fed3 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=5c1c7fed3 -->
+<!-- source_commit:9ceb1502d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=9ceb1502d -->
 <!-- source_commit:513513851 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=513513851 -->
 <!-- source_commit:d9121144b reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=d9121144b -->
 <!-- source_commit:dcae274d5 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=dcae274d5 -->
@@ -68,7 +89,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1637 -->
+<!-- last_synced_lesson: L1641 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -85,6 +106,9 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 見出し: deploy_task.sh --direct mode（cmd_1672） / /henseiスキル（cmd_1673） / Claude CLIモデル指定とコンテキスト（ci_fix_200k） / Codex multi-CLI統合(2026-05-11確立) / 直近24日間の主要裁定/実装（2026-05-01〜2026-05-24） / Claude Code バージョン固定と復帰 / 忍者個別弱点自動注入（cmd_1307） / gate強化（cmd_1178〜cmd_1180） / 知識サイクル現状（cmd_531/533/541/1111/1113/1117 反映） / 稼働中の仕組み / 現行メトリクス（2026-03-30時点） / 設計思想 / SessionStart hook — startup gate自動実行（cmd_2683） / 二重配備防止3層防御（cmd_2681/2682/2684） / 暗黒物質Phase 2: 高優先度60関数（cmd_2777） / ninja_monitor.sh: 状態管理・配備・監視・自動化（26件） / deploy_task.sh: 注入・ゲート・配備制御（20件） / inbox_write.sh: メッセージ管理・重複検出（9件） / cmd_save.sh: 品質ゲート補助（5件） / ninja_monitor.sh / inbox_watcher.sh / ntfy.sh / ログローテーション / field_deps.tsv
 - 作業中忍者clear不変量: `safe_send_clear`は`assigned|acknowledged|in_progress`を既定BLOCKし、停止を計測したDEPLOY-STALLだけ明示許可する。即時clear指示を恒久設定変更へ一般化せず、task statusをidleへ改変して適格化しない。`clear_debounce`は再送抑制であり完了待ちではない。origin: [[殿指示_即時auto_clear_20260809]] -> [[safe_send_clear直呼びと恒久設定化の穴]] -> [[active_task_clear_fail_closed]]
 - cmd_4248現物走査: `gate_shogun_startup.sh` の機械検知は `gate_karo_startup`/idle自走/CI RED忍者修正/`ninja_monitor` へ移管候補、殿への回答・追体験・裁定・cmd起票判断は将軍固有、状態遷移のない要約表示は削除候補。移管順序は `session_alerts生成 → stop hook → 先送りBLOCK/dedup → escalation` を維持する（詳細: `docs/research/cmd_4248_shogun_gate_triage_20260809.md`）。
+- publish経路の段別計装（cmd_4401, 2026-08-25）: `scripts/cmd_publish.sh` に段別wall時間計装(preflight/save_gate/promotion/delegate)+missing defaults二重setterのbatch統合(-8.3%)。隔離fixture実測=publish_total 3770ms（timing正本: `scripts/cdp/cmd_4401_publish_timing.md`）。★ライブpublish実測約13分との乖離が未説明=LS-A24計測代表性。次弾=ライブ1回のphase log一次取得(INS-20260825-111719094)。origin: [[cmd_4399_preflight本体無罪確定]] -> [[cmd_4401_publish外側経路計装]]
+- CI shard並列化+状態依存compatibility shard（cmd_4400+stateful_shards hotfix, 2026-08-25）: `.github/workflows/test.yml` をunit単一job→8 shard並列(実測タイミングLPT割当・欠落0重複0)+状態依存testを除外せず依存順で束ねるcompatibility shard+run固有namespace隔離(3b283e4b0)。unitテストwall-clock 2885秒→最長shard 303秒(compatibility)/通常最長183秒=約89.5%減。**GREEN確定済み**(run 32828851180、全14 job success、2026-08-25 17:59)。ローカル検証harness常設: 固定SHAで8 shard+compatibilityのreceipt FAIL0(9/9 PASS・計3523テスト・SKIP0)をpush前提とするci_push_receipt_contract。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4400_shard並列化]] -> [[CI_GREEN_20260825_1759]]
+- 個別テスト単体短縮バッチらせん（cmd_4403〜, 2026-08-25）: 殿裁定の型=忍者並列×バッチ計測選別(機械選別・個別before/after・バッチ境界で全体分布確認・ファイル排他・当面10個)。第1バッチ=最重量test_cmd_complete_gate.bats 912→298秒(67.3%減)・281/281 PASS・検証削除ゼロ(626640662、成果物正本=docs/research/cmd_4403_slowest_tests_speedup_20260825.md)。origin: [[殿の教え_個別最適化は単体高速化_20260825_1524]] -> [[cmd_4403_slowest_tests単体短縮]]
 
 ## プラットフォーム運用
 
@@ -107,7 +131,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1637 -->
+<!-- last_synced_lesson: L1641 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -240,11 +264,25 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1635: runtime publishの共有ledger lockはroot mutation区間へ限定する（cmd_karo_hotfix_commit_ledger_single_lock）
 - L1636: 分割境界のsource-only定義比較はruntime補助関数まで含める（cmd_4377）
 - L1637: gate_metrics model attribution owner fallback（cmd_karo_hotfix_p2_gate_model_attribution）
+- L1638: GA-496: 定義済みLevel5 detectorは最終判定callerまで接続する（cmd_karo_hotfix_ga496_context_freshness）
+- L1639: CI FAIL artifactはparallel-onlyとstandaloneを直列比較で分離する（cmd_karo_hotfix_cmd4400_stateful_shards）
+- L1640: Source boundary classification must remain explicit across ledger producer and gate post-processing（cmd_karo_hotfix_ga498_context_freshness_source_timeout）
+- L1641: Race contracts must hold partial records across the observation boundary（cmd_karo_ci_fix_32810257392_compatibility_isolation）
 
 ## 設計標準・テスト・因果
 
 結論: 詳細は `docs/research/infrastructure-design-standards.md` に保存。原文を省略せず移設済み。
 見出し: 軍師レビュー効果計測（cmd_1144導入） / ベースライン（導入前） / 導入後計測 / 判定基準（30cmd後） / PD裁定反映（cmd_354同期） / skill_gate_feedback.sh 最適化パターン（cmd_2589, 2026-05-06） / SKILL.md品質基準（7項目チェックリスト） / フロントマター必須フィールド / オプションフィールド / North Star / Diff-aware Testing 方針（GStack/GBrain #26） / 適用判断フロー / CI固有FAIL切り分け手順(ローカル未再現時) / WSL2固有の注意点 / 変更ファイルに関連するテスト特定方法 / 変更ファイルのテストを特定 / 制約（SKIP=FAILルール、Test Rules §1） / DB guard = 語彙一致ではなく操作意図×信頼境界で判定せよ（cmd_karo_hotfix_guard14_db_trust_boundary_202607120854） / 重量テストジョブのhost-wide admission契約（cmd_karo_hotfix_heavy_job_admission_202607121348） / 因果リンク
+
+## 2026-08-26 追加(source=b065d7fc7〜aa9a28e02・夜間ghost陣+承認欠落の根治)
+
+- **tmux二重サーバ(ghost陣)**: WSL再起動後、`/init`直下で自動起動されたtmuxサーバ(826)が、`shutsujin_departure.sh` の後発サーバにsocket(`/tmp/tmux-1000/default`)を奪われ**到達不能のまま生存**。配下ghost家老(codex)がkaro inboxを共有処理し「inboxが届かない/家老が止まっている/影丸の所在不明」の見え方を作った。撤収STEPは `tmux kill-session -t shogun` =socket所有者にしか届かず、**出陣を繰り返すほどghostが積む**。一次確認= `ss -xlp | grep tmux`(サーバPIDが2本=異常)。根治=家老hotfix `queue/handoff/karo_hotfix_ghost_tmux_20260826.md`(AC1 撤収工程の多重サーバ検知+撤収 / AC2 daemon_watchdog ALERT / AC3 826の起動元特定 / AC4 幻スキル参照差替え)。insight INS-20260826-020217534。**AC1実装済(影丸 `e06c2f9dc`, GATE CLEAR 03:57)**: `shutsujin_departure.sh`/`scripts/reset_layout.sh` の撤収工程が同一socket pathの全tmuxサーバを `ss` で列挙し、現owner以外の旧サーバと配下agentを一覧表示。**停止は自動化しない**(D006整合・停止プリミティブ全除去 rg exact=0): 重複検知時は **fail-closed rc=1 で出陣を止め**、停止操作は殿の操作境界に残す。検知0件時は無音。
+- `shutsujin_departure.sh`: `log_warn` が2026-03-23から未定義(`log_war`のみ)で、ntfyスモーク失敗/ntfy_inbox_archive失敗の分岐だけ `command not found` になっていた → `b065d7fc7` で定義追加。ntfyスモーク失敗自体はWSL起動直後の一過性。
+- `scripts/gates/gate_shogun_startup.sh` 「■ スキル参照実在」新設(`1136fefab`): CLAUDE.md/instructions/*.md の `/skill` 参照に対し `skills/<name>/SKILL.md` 実在をALERT(初回検出= `CLAUDE.md:/reset-layout`、skills削除efc8e016e後の幻参照。deepdive Phase 9「参照パスと実体不一致」同型)。
+- `scripts/review_bundle.py`(`2dd1d2a21`): `generate` を単独CLIで `--verdict APPROVE` 実行しただけでは承認(gunshi LGTM=`review_approvals/reports/<key>/gunshi.yaml`)にならない。batch4/5r/6r/7r/8rで軍師がgenerateのみ実行→承認欠落→家老gate5件が `review_two_phase_pending` でBLOCKした実証。以後、直接CLIのAPPROVEでLGTM未記録なら **rc=3 fail-closed+NEXT(`review_bundle.py single`)を名指し**。正規入口は `/review-bundle`(Step 1=`single`)。`review_approval.sh gunshi LGTM` 直接実行は構造的拒否(rc=2)。
+- `scripts/review_bundle.py`(`aa9a28e02`): 忍者taskがidle化した後の報告身元照合は家老inboxの受領receiptで行うが、報告timestampが**UTC(`...Z`)**だと探索日が**JST命名の `archive/inbox/karo_YYYYMMDD.yaml`** と1日ずれてreceiptを見失う(batch6r saizo実証: ts=08-25T16:43Z→karo_20260825を探すがreceiptはkaro_20260826)。receipt探索を全日付archive(新しい順)へ拡張。fingerprint/report_id/path完全一致は維持。
+- バッチらせん#2〜#8実績(一次実測・`docs/research/cmd_4403_slowest_tests_speedup_20260825.md`): #2 79.9→67.6s / #3 87.5→72.6s(AC2 timeout BLOCK) / #4 20.1→9.2s / #5r 87.6→48.8s / #6r 630→586s+phase receipt常設(支配=checks_main.quality_gate) / #7r 142.7→61.3s / #8r 169.2→76.9s。初回#5/#7/#8は**timing正本≠live実測(−44〜−50%)でAC1どおり実装せず停止**→次セット選別は各弾後に正本を再計測してから行う。
+- 報告timestampはJST(`+09:00`)で書け(UTC `Z` は上記の日付ずれの発生源)。恒久解はreport-writeテンプレのtimestamp生成側で統一する(未実装=次ターゲット)。
 
 ## 2026-08-15 追加ガード(source=253afbb2c以降)
 
