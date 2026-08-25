@@ -233,9 +233,10 @@ PY
 
 @test "三層成功証跡ありのWriteをPASS" {
     cat > "$EVIDENCE" <<'JSON'
-{"agent_id":"kagemaru","pane_id":"%test_2","prompt_hash":"new","nonce":"nonce_2","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}
+{"agent_id":"kagemaru","pane_id":"%test_2","prompt_hash":"new","generation":"generation_2","nonce":"nonce_2","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}
 JSON
     printf 'nonce_2\n' > "$EVIDENCE.current"
+    printf 'generation_2\n' > "$EVIDENCE.generation"
     run env THREE_LAYER_PREACTION_MAX_AGE_SECONDS=10000000000 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify Write "$ROOT/context/infrastructure.md" ""
     [ "$status" -eq 0 ]
@@ -243,9 +244,10 @@ JSON
 
 @test "一層欠落の証跡はBLOCK" {
     cat > "$EVIDENCE" <<'JSON'
-{"agent_id":"kagemaru","pane_id":"%test_3","prompt_hash":"new","nonce":"nonce_3","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"1","obsidian":"0","status":"failed"}
+{"agent_id":"kagemaru","pane_id":"%test_3","prompt_hash":"new","generation":"generation_3","nonce":"nonce_3","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"1","obsidian":"0","status":"failed"}
 JSON
     printf 'nonce_3\n' > "$EVIDENCE.current"
+    printf 'generation_3\n' > "$EVIDENCE.generation"
     run verify Edit "$ROOT/context/infrastructure.md" ""
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK:"* ]]
@@ -253,9 +255,10 @@ JSON
 
 @test "旧prompt証跡はBLOCK" {
     cat > "$EVIDENCE" <<'JSON'
-{"agent_id":"kagemaru","pane_id":"%test_4","prompt_hash":"old","nonce":"old_nonce","issued_at":"2026-07-10T14:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}
+{"agent_id":"kagemaru","pane_id":"%test_4","prompt_hash":"old","generation":"generation_4","nonce":"old_nonce","issued_at":"2026-07-10T14:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}
 JSON
     printf 'new_nonce\n' > "$EVIDENCE.current"
+    printf 'generation_4\n' > "$EVIDENCE.generation"
     run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify Write "$ROOT/context/infrastructure.md" ""
     [ "$status" -eq 1 ]
@@ -640,8 +643,9 @@ PY
 @test "5分超でもnonce一致ならPASS" {
     local issued
     issued="$(date -Iseconds -d '10 minutes ago')"
-    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"old","nonce":"ttl_nonce","issued_at":"%s","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}\n' "$AGENT" "$PANE" "$issued" > "$EVIDENCE"
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"old","generation":"ttl_generation","nonce":"ttl_nonce","issued_at":"%s","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}\n' "$AGENT" "$PANE" "$issued" > "$EVIDENCE"
     printf 'ttl_nonce\n' > "$EVIDENCE.current"
+    printf 'ttl_generation\n' > "$EVIDENCE.generation"
     run verify Write "$ROOT/context/infrastructure.md" ""
     [ "$status" -eq 0 ]
 }
@@ -649,8 +653,9 @@ PY
 @test "nonce不一致はfreshでも即BLOCK" {
     local issued
     issued="$(date -Iseconds)"
-    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"old","nonce":"evidence_nonce","issued_at":"%s","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}\n' "$AGENT" "$PANE" "$issued" > "$EVIDENCE"
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"old","generation":"nonce_generation","nonce":"evidence_nonce","issued_at":"%s","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}\n' "$AGENT" "$PANE" "$issued" > "$EVIDENCE"
     printf 'current_nonce\n' > "$EVIDENCE.current"
+    printf 'nonce_generation\n' > "$EVIDENCE.generation"
     run verify Edit "$ROOT/context/infrastructure.md" ""
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK:"* ]]
@@ -659,8 +664,9 @@ PY
 @test "4時間超の証跡はBLOCK" {
     local issued
     issued="$(date -Iseconds -d '5 hours ago')"
-    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"old","nonce":"expired_nonce","issued_at":"%s","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}\n' "$AGENT" "$PANE" "$issued" > "$EVIDENCE"
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"old","generation":"expired_generation","nonce":"expired_nonce","issued_at":"%s","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}\n' "$AGENT" "$PANE" "$issued" > "$EVIDENCE"
     printf 'expired_nonce\n' > "$EVIDENCE.current"
+    printf 'expired_generation\n' > "$EVIDENCE.generation"
     run verify Write "$ROOT/context/infrastructure.md" ""
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK:"* ]]
@@ -672,6 +678,95 @@ PY
     [ -s "$EVIDENCE" ]
     run verify Write "$ROOT/context/infrastructure.md" ""
     [ "$status" -eq 0 ]
+}
+
+# test_necessity: Prompt-generation receipts must remain valid for consecutive
+# same-turn actions while rejecting stale receipts after a new prompt generation.
+@test "AC2/AC3: generation束縛で同一promptの連続3 actionを通し新generationを拒否する" {
+    local payload='{"prompt":"fixture preflight line wal_live_event","turn_id":"turn-1","session_id":"session-1"}'
+    local next_payload='{"prompt":"fixture preflight line wal_live_event","turn_id":"turn-2","session_id":"session-1"}'
+    local issue_script="$ROOT/scripts/hooks/three_layer_preflight.sh"
+    local evidence_generation="$EVIDENCE.generation"
+
+    run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$issue_script" issue <<<"$payload"
+    [ "$status" -eq 0 ]
+    run python3 - "$EVIDENCE" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["status"] == "success"
+assert all(data[layer] == "0" for layer in ("memory_db", "semantic", "obsidian"))
+assert all(int(data[f"{layer}_count"]) > 0 for layer in ("memory", "semantic", "obsidian"))
+PY
+    [ "$status" -eq 0 ]
+
+    run verify Write "$ROOT/context/infrastructure.md" ""
+    [ "$status" -eq 0 ]
+    run verify Read "$ROOT/context/infrastructure.md" ""
+    [ "$status" -eq 0 ]
+    run verify Bash "" "bash scripts/inbox_mark_read.sh hanzo msg_contract"
+    [ "$status" -eq 0 ]
+    [ "$(python3 - "$EVIDENCE" "$evidence_generation" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+generation = open(sys.argv[2], encoding="utf-8").read().strip()
+assert data["generation"] == generation
+assert data["nonce"]
+print("1")
+PY
+    )" -eq 1 ]
+
+    # A new generation is blocked while its bootstrap search is still running;
+    # no old receipt is eligible during that interval.
+    local probe_root="$TMP_EVIDENCE/unsearched_generation"
+    local probe_evidence="$probe_root/evidence"
+    local probe_generation="$probe_evidence/evidence_probe__unsearched.json.generation"
+    local probe_pid
+    make_timeout_root "$probe_root"
+    mkdir -p "$probe_evidence"
+    env THREE_LAYER_PREACTION_EVIDENCE_DIR="$probe_evidence" \
+        THREE_LAYER_AGENT_ID=probe TMUX_PANE=%unsearched \
+        THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=2 THREE_LAYER_GLOBAL_BUDGET_MS=5000 \
+        bash "$probe_root/scripts/hooks/three_layer_preflight.sh" issue "new generation unsearched" >"$TMP_EVIDENCE/unsearched.out" 2>&1 &
+    probe_pid=$!
+    for _ in $(seq 1 100); do
+        [ -s "$probe_generation" ] && break
+        sleep 0.01
+    done
+    [ -s "$probe_generation" ]
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$probe_evidence" \
+        THREE_LAYER_AGENT_ID=probe TMUX_PANE=%unsearched \
+        bash "$probe_root/scripts/hooks/three_layer_preflight.sh" verify Write "$probe_root/context/probe.md" ""
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK:"* ]]
+    wait "$probe_pid" || true
+
+    # Same-generation retry failure must retain the prior valid receipt.
+    run env MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/missing.db" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$issue_script" issue <<<"$payload"
+    [ "$status" -ne 0 ]
+    run verify Write "$ROOT/context/infrastructure.md" ""
+    [ "$status" -eq 0 ]
+
+    # A new turn invalidates the old receipt before its search starts.
+    run env MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/missing.db" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$issue_script" issue <<<"$next_payload"
+    [ "$status" -ne 0 ]
+    run verify Bash "" "printf new-generation"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK:"* ]]
 }
 
 @test "stdinもprompt引数も無いissueはFAIL" {
@@ -711,9 +806,10 @@ PY
 }
 
 @test "break-glass: 三層検索スクリプト自体はevidence failedでも実行許可され続ける" {
-    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"2","status":"failed"}\n' \
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","generation":"failed_generation","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"2","status":"failed"}\n' \
         "$AGENT" "$PANE" > "$EVIDENCE"
     printf 'n\n' > "$EVIDENCE.current"
+    printf 'failed_generation\n' > "$EVIDENCE.generation"
     run verify Bash "" "bash scripts/memory_db_query.sh --search test"
     [ "$status" -eq 0 ]
     run verify Bash "" "bash scripts/semantic_search.sh test"
@@ -723,9 +819,10 @@ PY
 }
 
 @test "evidence statusがfailedの一般BashはBLOCK" {
-    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"2","status":"failed"}\n' \
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","generation":"failed_generation","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"2","status":"failed"}\n' \
         "$AGENT" "$PANE" > "$EVIDENCE"
     printf 'n\n' > "$EVIDENCE.current"
+    printf 'failed_generation\n' > "$EVIDENCE.generation"
     run verify Bash "" "touch repo-file"
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK:"* ]]
@@ -845,7 +942,7 @@ PY
     printf 'fixture\tdocs/fixture.md\n' > "$tmp_root/stale.tsv"
     : > "$tmp_root/docs/semantic-index/index.md"
     local evidence_dir="$TMP_EVIDENCE/stale_causal_evidence"
-    run env THREE_LAYER_BATCH_PRIMARY=0 THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.2 THREE_LAYER_GLOBAL_BUDGET_MS=900 THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="stale" TMUX_PANE="%stale" \
+    run env THREE_LAYER_BATCH_PRIMARY=0 THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=2 THREE_LAYER_GLOBAL_BUDGET_MS=10000 THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="stale" TMUX_PANE="%stale" \
         bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture"
     echo "$output" >&3
     [ "$status" -eq 0 ]
@@ -860,8 +957,9 @@ PY
 }
 
 @test "evidence失敗中は指定された復旧3経路以外をBLOCK" {
-    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"124","status":"failed"}\n' "$AGENT" "$PANE" > "$EVIDENCE"
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","generation":"failed_generation","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"124","status":"failed"}\n' "$AGENT" "$PANE" > "$EVIDENCE"
     printf 'n\n' > "$EVIDENCE.current"
+    printf 'failed_generation\n' > "$EVIDENCE.generation"
     run verify Bash "" "bash scripts/inbox_mark_read.sh hanzo msg_1"
     [ "$status" -eq 1 ]
     run verify Bash "" "bash scripts/inbox_write.sh karo notice feedback hanzo inspect"

@@ -479,6 +479,32 @@ prompt_from_payload() {
     fi
 }
 
+prompt_generation_from_payload() {
+    local payload="$1"
+    python3 - "$payload" <<'PY'
+import json
+import sys
+
+try:
+    payload = json.loads(sys.argv[1] or "{}")
+except (TypeError, json.JSONDecodeError):
+    payload = {}
+if not isinstance(payload, dict):
+    payload = {}
+
+# Codex envelopes have changed names across hook versions.  Preserve every
+# available identity component: if a newer envelope adds an event/turn id,
+# it must not silently reuse a receipt keyed only by the stable session id.
+parts = []
+for key in ("prompt_generation", "generation", "turn_id", "prompt_id", "event_id", "session_id"):
+    value = payload.get(key)
+    if isinstance(value, (str, int)) and str(value).strip():
+        parts.append(f"{key}={value}")
+if parts:
+    print("\x1f".join(parts))
+PY
+}
+
 is_ninja_agent() {
     case "$1" in
         hayate|kagemaru|hanzo|saizo|kotaro|tobisaru) return 0 ;;
@@ -547,7 +573,7 @@ else:
 
 issue() {
     local prompt_arg="${1:-}"
-    local payload prompt search_prompt prompt_hash issued_at tmp_file rg_cmd
+    local payload prompt search_prompt prompt_hash generation generation_source issued_at tmp_file rg_cmd
     local started_ms deadline_ms global_budget_ms="${THREE_LAYER_GLOBAL_BUDGET_MS:-2800}"
     started_ms="$(date +%s%3N)"
     local causal_cache="${THREE_LAYER_CAUSAL_INDEX_CACHE:-$ROOT/.cache/causal_index.tsv}" cold_cache=0
@@ -575,6 +601,9 @@ issue() {
         printf 'three_layer_preflight: empty prompt\n' >&2
         return 1
     fi
+    generation_source="$(prompt_generation_from_payload "${payload:-}" 2>/dev/null || true)"
+    generation_source="${generation_source:-prompt}"
+    generation="$(printf '%s\n%s\n' "$generation_source" "$prompt" | sha256sum | awk '{print $1}')"
     search_prompt="$prompt"
     if is_ninja_agent "$agent_id" && [[ "$prompt" =~ ^inbox[0-9]+$ ]]; then
         search_prompt="$(task_context_query "$agent_id")" || {
@@ -589,13 +618,28 @@ issue() {
     local nonce_tmp
     nonce_tmp="$(mktemp "$EVIDENCE_DIR/.nonce.XXXXXX")"
     printf '%s\n' "$nonce" >"$nonce_tmp"
-    # Publish this generation marker before searching.  A newer issue replaces
-    # it immediately, so an older slow search can never resurrect its proof.
-    # Evidence stays absent until the current generation completes successfully.
+    local generation_file="${evidence_file}.generation"
+    local pending_nonce_file="${nonce_file}.pending"
+    # A new prompt invalidates the old receipt before searching.  A retry for
+    # the same prompt keeps a still-valid receipt usable while it searches, so
+    # a transient retry failure cannot deadlock every following tool action.
+    # The pending nonce serializes same-generation retries and prevents a slow
+    # older retry from publishing over a newer one.
     (
         flock -x 9
-        rm -f "$evidence_file"
-        mv -f "$nonce_tmp" "$nonce_file"
+        current_generation="$(cat "$generation_file" 2>/dev/null || true)"
+        if [[ "$current_generation" != "$generation" ]]; then
+            rm -f "$evidence_file"
+            mv -f "$nonce_tmp" "$nonce_file"
+            printf '%s\n' "$generation" >"${generation_file}.tmp.$$"
+            mv -f "${generation_file}.tmp.$$" "$generation_file"
+        elif [[ ! -s "$evidence_file" || ! -s "$nonce_file" ]]; then
+            mv -f "$nonce_tmp" "$nonce_file"
+        else
+            rm -f "$nonce_tmp"
+        fi
+        printf '%s\n' "$nonce" >"${pending_nonce_file}.tmp.$$"
+        mv -f "${pending_nonce_file}.tmp.$$" "$pending_nonce_file"
     ) 9>"$publish_lock"
 
     # rg --fixed-strings cannot handle a pattern with an embedded newline: it
@@ -818,8 +862,8 @@ issue() {
 
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
     {
-        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_wall_ms":"%s","semantic_wall_ms":"%s","obsidian_wall_ms":"%s","total_wall_ms":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s","memory_top":"%s","semantic_top":"%s","obsidian_top":"%s","memory_total_hits":"%s","semantic_total_hits":"%s","obsidian_total_hits":"%s","semantic_layer":"%s","evidence_path":"%s"}\n' \
-            "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$nonce" "$issued_at" \
+        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","generation":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_wall_ms":"%s","semantic_wall_ms":"%s","obsidian_wall_ms":"%s","total_wall_ms":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s","memory_top":"%s","semantic_top":"%s","obsidian_top":"%s","memory_total_hits":"%s","semantic_total_hits":"%s","obsidian_total_hits":"%s","semantic_layer":"%s","evidence_path":"%s"}\n' \
+            "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$generation" "$nonce" "$issued_at" \
             "$memory_rc" "$semantic_rc" "$obsidian_rc" "$memory_count" "$semantic_count" "$obsidian_count" \
             "$memory_wall_ms" "$semantic_wall_ms" "$obsidian_wall_ms" "$(( $(date +%s%3N) - started_ms ))" \
             "$(json_escape "${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}")" "$(json_escape "$semantic_index")" "$(json_escape "$obsidian_source")" \
@@ -833,8 +877,11 @@ issue() {
     local publish_rc=0
     (
         flock -x 9
-        if [[ "$(cat "$nonce_file" 2>/dev/null || true)" == "$nonce" ]]; then
+        if [[ "$(cat "$generation_file" 2>/dev/null || true)" == "$generation" && "$(cat "$pending_nonce_file" 2>/dev/null || true)" == "$nonce" ]]; then
             mv -f "$tmp_file" "$evidence_file"
+            printf '%s\n' "$nonce" >"${nonce_file}.tmp.$$"
+            mv -f "${nonce_file}.tmp.$$" "$nonce_file"
+            rm -f "$pending_nonce_file"
         else
             rm -f "$tmp_file"
             exit 75
@@ -905,6 +952,7 @@ resolve_rg() {
 verify() {
     local tool_name="$1" target="${2:-}" command="${3:-}" parsed_status verify_rc=0
     mkdir -p "$EVIDENCE_DIR"
+    local generation_file="${evidence_file}.generation"
     if [[ "$tool_name" == "Bash" ]] && is_recovery_bash "$command"; then
         return 0
     fi
@@ -914,26 +962,29 @@ verify() {
     parsed_status="$(
       {
         flock -s 9
-        [[ -s "$evidence_file" && -s "$nonce_file" ]] || exit 4
-        python3 - "$evidence_file" "$nonce_file" "${THREE_LAYER_PREACTION_MAX_AGE_SECONDS:-14400}" <<'PY'
+        [[ -s "$evidence_file" && -s "$nonce_file" && -s "$generation_file" ]] || exit 4
+        python3 - "$evidence_file" "$nonce_file" "$generation_file" "${THREE_LAYER_PREACTION_MAX_AGE_SECONDS:-14400}" <<'PY'
 import json, sys
 from datetime import datetime, timezone
 try:
     data = json.load(open(sys.argv[1], encoding="utf-8"))
     nonce = open(sys.argv[2], encoding="utf-8").read().strip()
+    generation = open(sys.argv[3], encoding="utf-8").read().strip()
 except Exception:
     raise SystemExit(2)
-required = ("agent_id", "pane_id", "prompt_hash", "nonce", "issued_at", "memory_db", "semantic", "obsidian", "status")
+required = ("agent_id", "pane_id", "prompt_hash", "generation", "nonce", "issued_at", "memory_db", "semantic", "obsidian", "status")
 if any(not str(data.get(key, "")).strip() for key in required):
     raise SystemExit(2)
 if nonce != data.get("nonce"):
+    raise SystemExit(2)
+if generation != data.get("generation"):
     raise SystemExit(2)
 try:
     issued = datetime.fromisoformat(data["issued_at"].replace("Z", "+00:00"))
     age = (datetime.now(timezone.utc) - issued).total_seconds()
 except Exception:
     raise SystemExit(2)
-if age < -5 or age > float(sys.argv[3]):
+if age < -5 or age > float(sys.argv[4]):
     raise SystemExit(2)
 if data.get("status") != "success" or any(str(data.get(key)) != "0" for key in ("memory_db", "semantic", "obsidian")):
     raise SystemExit(3)
