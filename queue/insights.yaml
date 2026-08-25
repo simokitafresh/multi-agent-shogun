@@ -4212,4 +4212,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T22:08:08+09:00"
+- id: INS-20260825-221101766-df42
+  ts: "2026-08-25T22:11:01+09:00"
+  insight: "CLAUDE.md §Skillsの/reset-layoutはefc8e016eで削除済スキルを指す幻ポインタ(Unknown skill)。実体=bash scripts/reset_layout.sh。加えてtmuxセッション消失(WSL再起動)時は shutsujin_departure.sh -s → reset_layout.sh の2段で将軍二重起動を避けて再建する手順が未記載。CLAUDE.md/infrastructure.mdへ反映+スキル参照の実在チェックをgate化(deepdive Phase 9同型)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
