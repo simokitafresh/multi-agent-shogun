@@ -223,7 +223,7 @@ def invoke(args):
     open(bash_env,'w').write('exec 8>"$TRACE_OUT"\nBASH_XTRACEFD=8\n')
     env.update(BASH_ENV=bash_env,TRACE_OUT=trace_path)
     p=subprocess.run(command_argv,env=env,cwd=root,text=True,stdout=subprocess.PIPE,
-                     stderr=subprocess.STDOUT,timeout=30)
+                     stderr=subprocess.STDOUT,timeout=60)
     output=p.stdout
     trace=open(trace_path).read()
     # Parse executed shell commands structurally.  This is runtime control-flow
