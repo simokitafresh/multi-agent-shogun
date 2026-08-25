@@ -4167,3 +4167,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260825-213752912-c75c
+  ts: "2026-08-25T21:37:52+09:00"
+  insight: "[[いまの進捗をartifact更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いまの進捗をartifact更新せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
