@@ -4160,3 +4160,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-213724810-16e2
+  ts: "2026-08-25T21:37:24+09:00"
+  insight: "[[stock data apiが順調に動作しているか]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=stock data apiが順調に動作しているか、renderを確認せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
