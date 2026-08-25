@@ -4146,3 +4146,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-212858678-d44e
+  ts: "2026-08-25T21:28:58+09:00"
+  insight: "F009(殿への操作押し返し禁止)とD005(sudo絶対禁止)の衝突: 特権必須操作(fstrim等)は将軍実行不可かつ依頼文言もBLOCKされ、正規経路が存在しない。特権操作の正規プロトコル(殿の!実行を情報提供として案内する例外定義)をF009 hookへ定義すべき。実例=2026-08-25 21:30 fstrim -av"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
