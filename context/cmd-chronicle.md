@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-25 -->
+<!-- last_updated: 2026-08-26 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -246,3 +246,4 @@
 | cmd_4401 | 殿喝2026-08-25 06:30『らせん1周目2周目でまだ出来ることが残っていないか』への実装弾。cmd_4399はcmd_save preflight本体の段別計装を実装し、preflight合計が数秒級で体感遅延の支配要因ではないことを実測確定した(dominant=checks_main、構成比44.84%)。体感の遅延はcmd_publish.sh全体経路(save呼出し・pending昇格・delegate・inbox_write・hook群)の外側にあり、この外側経路は計装0件で内訳が見えない。外側経路を段別計測し、支配段を検査を削らず短縮する | infra | 08-25 | cmd_publish外側経路を段別計装し、missing |
 | cmd_4400 | cmd_4392統合正本(docs/research/cmd_4392_ci_test_time_decomposition_20260825.md §3 P0)の実装。CI全体4546秒のうちテスト実行4122秒(90.7%)・支配step『Run unit and root-level tests』2885秒。ローカル分解でロングテール分布(top8で26%)が確定しており、個別短縮より複数jobへのshard分割がwall-clock短縮に最も効く。tests/unit配下のbatsファイルをN個のCI jobへ分割し、CI 1 runのwall-clockを支配stepの1/N近くへ短縮する | infra | 08-25 | CI run 32834816418はhead 113186 |
 | cmd_4403 | 殿の教え2026-08-25 15:24『個別最適化の基本は単体のスクリプトやテストの高速化』の実装弾(らせん三周目・個別軸)。shard並列化は配置換えであり単体テストの総計算量は不変。実測タイミング正本(logs/cmd_4392_local-test-timing.json、全ファイル網羅)の最重量上位テストファイル群について、検査を削らずテスト自体の実行時間を短縮する(重複setupの共有化・不要sleepの排除・fixture構築の軽量化・子プロセス起動のbatch化等)。CI GREEN化レーン(compatibility修正)とは独立に並行実施 | infra | 08-25 | cmd_4403完了。test_cmd_complete_g |
+| cmd_4404 | 殿のディスク回収指示(2026-08-25)の残件。DM-signal/outputs/grid_search(実測42.54GB・上位92ディレクトリ・SQLite DB 120本)について、削除しても本番・研究正本・コードに影響しない候補を一次データで確定する。cmd_3868台帳(2026-07-13)は同一SHA重複のみを対象とし9件0.9GBで止まったため、今回は『参照なし・正本でない・再生成可能』の三条件で全ディレクトリを判定して候補を広げる。削除は本cmdの対象外(候補台帳の確定まで) | dm-signal | 08-26 | 一次実測でoutputs/grid_search直下92/9 |
