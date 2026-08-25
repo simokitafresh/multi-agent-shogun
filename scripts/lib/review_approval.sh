@@ -289,9 +289,15 @@ review_validate_cmd_id() { [[ "$1" =~ ^cmd_[A-Za-z0-9_]+$ || "$1" =~ ^campaign_l
 # completion resumes.  Both live and flat archive reports are accepted, while
 # duplicate basenames/report_ids, nested archives, and symlinks fail closed.
 review_resolve_reports() {
-    local cmd_id="$1" root
+    local cmd_id="$1" root fence
     root=$(realpath "${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}") || return 1
     review_validate_cmd_id "$cmd_id" || return 1
+    # A cross-file formal-RC transaction is not a stable report registry.
+    # Readers must fail closed until the writer either rolls back or removes
+    # the journal; otherwise completion can bind approvals to half-published
+    # task/report identities.
+    fence="$root/queue/gates/$cmd_id/review_approvals/.rc_identity_transaction"
+    [ ! -e "$fence" ] || return 1
     python3 - "$root" "$cmd_id" <<'PY'
 import hashlib, pathlib, re, sys, yaml
 root, cmd_id = pathlib.Path(sys.argv[1]).resolve(), sys.argv[2]

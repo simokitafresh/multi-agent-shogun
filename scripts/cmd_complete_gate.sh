@@ -3401,6 +3401,9 @@ converge_shared_execution_sources() {
     local repo="$1" upstream_ref remote push_ref remote_tip path tmp before_head merge_base
     local conflict_path temp_parent clean_repo merged_sha cleanup_rc
     local -a insight_source_shas=() conflict_paths=()
+    if ! declare -F lock_path >/dev/null 2>&1; then
+        lock_path() { printf '%s.lock\n' "$1"; }
+    fi
     # Unit fixtures may source this function alone.  Keep those isolated
     # probes behaviorally identical while the full gate receives telemetry.
     if ! declare -F gate_detail_begin >/dev/null 2>&1; then
@@ -3630,6 +3633,9 @@ publish_postclear_runtime_deltas() {
     local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
     local -a dirty_paths=() runtime_paths=() durable_paths=() source_shas=() lesson_paths=()
     local -A source_blob_by_path=()
+    if ! declare -F lock_path >/dev/null 2>&1; then
+        lock_path() { printf '%s.lock\n' "$1"; }
+    fi
     # Unit fixtures may source this function alone.  Keep those isolated
     # probes behaviorally identical while the full gate receives telemetry.
     if ! declare -F gate_detail_begin >/dev/null 2>&1; then

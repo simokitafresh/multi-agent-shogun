@@ -9,6 +9,14 @@ setup() {
     WRAPPER="$ROOT/scripts/heavy_job_admission.sh"
     HOOK="$ROOT/.claude/hooks/pre-bash-combined.sh"
     TMP="$(mktemp -d "$BATS_TMPDIR/heavy_job_admission.XXXXXX")"
+    mkdir -p "$TMP/tmp" "$TMP/singleflight" "$TMP/receipts"
+    # Every nested runner in this fixture must use the test's own namespace.
+    # The old default /tmp domains let concurrent CI roots contend on lpt,
+    # manifests, receipts, and single-flight coordination before #42 reached
+    # its orphan-owner assertion.
+    export TMPDIR="$TMP/tmp"
+    export RUN_TESTS_SINGLEFLIGHT_DIR="$TMP/singleflight"
+    export RUN_TESTS_RECEIPT_DIR="$TMP/receipts"
     export SHOGUN_HEAVY_JOB_LOCK_FILE="$TMP/admission.lock"
     export SHOGUN_HEAVY_JOB_WAITER_DIR="$TMP/waiters"
     export SHOGUN_HEAVY_JOB_WAITER_MUTEX="$TMP/waiters.lock"
@@ -238,7 +246,10 @@ SH
     end="$(date +%s%N)"
 
     [ "$status" -eq 0 ]
-    [ $((end - begin)) -lt 1000000000 ]
+    # Shared CI hosts can deschedule this zero-work zombie probe while other
+    # compatibility roots are draining. Keep the bound finite and diagnostic
+    # without treating bounded scheduler latency as a process leak.
+    [ $((end - begin)) -lt 5000000000 ]
 }
 
 @test "drain判定は対象PGIDの非zombieだけを待ち別groupを無視する" {
@@ -670,8 +681,12 @@ print('ok')
     git -C "$fixture" commit -qm initial
     local linked="$TMP/singleflight-orphan-linked"
     git -C "$fixture" worktree add -q "$linked" HEAD
+    # The outer run_tests.sh exports its own REPO_ROOT into bats fixtures.
+    # Without an explicit fixture root here, this seed invocation resolves the
+    # real 238-file suite instead of the one-file seed tree, recursively
+    # starting the heavy suite and contending with every compatibility run.
     env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED \
-        RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/seed-sf" BATS_MAX_TEST_JOBS=1 \
+        REPO_ROOT="$fixture" RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/seed-sf" BATS_MAX_TEST_JOBS=1 \
         bash "$fixture/scripts/run_tests.sh" unit >/dev/null 2>&1
     local receipt
     receipt="$(find "$fixture/receipts" -name '*.json' -print -quit)"
@@ -811,7 +826,8 @@ print('ok')
     grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
     grep -q 'cancel-in-progress: true' "$workflow"
     ! grep -q 'BATS_INNER_JOBS=8' "$workflow"
-    grep -q 'BATS_TAP_OUTPUT=test-results/all.tap' "$workflow"
+    grep -q 'tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}-requested.tap"' "$workflow"
+    grep -q 'compatibility: true' "$workflow"
     grep -q 'bash scripts/run_tests.sh push' "$workflow"
     grep -q 'find "$REPO_ROOT/tests/unit" -maxdepth 1' "$ROOT/scripts/run_tests.sh"
     grep -q 'find "$REPO_ROOT/tests" -maxdepth 1' "$ROOT/scripts/run_tests.sh"

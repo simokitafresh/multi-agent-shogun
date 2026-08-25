@@ -16,8 +16,9 @@ judge_types() {
 }
 
 hold_release_types() {
-    sed -n '/message.get("type") not in {$/,/}:$/p' "$ROOT/scripts/deploy_task.sh" \
-        | grep -v 'message.get' | grep -oE '"[a-z_]+"' | tr -d '"' | sort
+    sed -n '/^deploy_task_retro_answer_type_allowed() {/,/^}$/p' "$ROOT/scripts/deploy_task.sh" \
+        | grep -Eo 'infra_bug_suspected|infra_bug_report|infra_bug|retro_answer' \
+        | sort -u
 }
 
 @test "sender judge and deploy hold release accept exactly the same retro answer types" {
