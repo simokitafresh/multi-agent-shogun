@@ -199,9 +199,11 @@ jobs:
             compatibility_root="$RUNNER_TEMP/compatibility-${{ matrix.shard }}"
             mkdir -p "$compatibility_root"
             export BATS_COMPATIBILITY_ROOT="$compatibility_root"
+            export BATS_FILE_JOBS=1
             export BATS_INNER_JOBS=1
             export BATS_FILE_TIMEOUT_SECONDS=900
           else
+            export BATS_FILE_JOBS=32
             export BATS_INNER_JOBS=1
             export BATS_FILE_TIMEOUT_SECONDS=300
           fi

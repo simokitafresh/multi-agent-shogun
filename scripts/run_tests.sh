@@ -766,7 +766,7 @@ run_bats_files_parallel() {
         done
     fi
     local total="${#files[@]}"
-    local out_dir pid file failed file_inner_jobs file_weight active_weight running_pids
+    local out_dir pid file failed file_inner_jobs file_weight active_weight active_files running_pids
     local source_fp cache_key cache_path cached_count launched_count timing_path out manifest stats suite_started_ns
     local -a pids=()
     local -a all_pids=()
@@ -777,6 +777,11 @@ run_bats_files_parallel() {
     local -A pid_time=()
     local -A pid_rc=()
     suite_started_ns="$(date +%s%N)"
+
+    if ! [[ "$FILE_JOBS" =~ ^[1-9][0-9]*$ ]]; then
+        echo "BLOCK: BATS_FILE_JOBS must be a positive integer" >&2
+        return 2
+    fi
 
     # Each file is a separate bats-core root process.  Never let it inherit a
     # caller/previous bats root's transport namespace: bats uses BATS_* state
@@ -894,8 +899,10 @@ run_bats_files_parallel() {
     reap_finished() {
         local pid
         active_weight=0
+        active_files=0
         for pid in "${pids[@]}"; do
             active_weight=$((active_weight + pid_weight[$pid]))
+            active_files=$((active_files + 1))
         done
     }
 
@@ -979,7 +986,8 @@ run_bats_files_parallel() {
             if [ "${queued_inner[$idx]}" -eq 0 ]; then
                 queued_files[$idx]=""; pending_count=$((pending_count - 1)); continue
             fi
-            if [ $((active_weight + queued_weight[$idx])) -le "$MAX_TEST_JOBS" ]; then
+            if [ "$active_files" -lt "$FILE_JOBS" ] \
+                && [ $((active_weight + queued_weight[$idx])) -le "$MAX_TEST_JOBS" ]; then
                 selected="$idx"; break
             fi
         done
