@@ -4359,3 +4359,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260826-015730185-74ab
+  ts: "2026-08-26T01:57:30+09:00"
+  insight: "[[殿のディスク回収指示 の残件]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿のディスク回収指示(2026-08-25)の残件。DM-signal/outputs/grid_search(実測42.54GB・上位92ディレクトリ・SQLite DB 120本)について、削除しても本番・研究正本・コードに影響しない候補を一次データで確定する。cmd_3868台帳(2026-07-13)は同一SHA重複のみを対象とし9件0.9GBで止ま"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
