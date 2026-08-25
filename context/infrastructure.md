@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-26 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-26 context updated for ghost tmux AC1 implementation -->
+<!-- source_commit:e06c2f9dc reason:context updated for ghost tmux AC1 implementation evidence:doc_lane_request blt_20260826_040416_c55741 -->
 <!-- source_commit:46d568a53 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=46d568a53 -->
 <!-- source_commit:a4930e9ce reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a4930e9ce -->
 <!-- source_commit:60537d6fb reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=60537d6fb -->
@@ -275,7 +276,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 
 ## 2026-08-26 追加(source=b065d7fc7〜aa9a28e02・夜間ghost陣+承認欠落の根治)
 
-- **tmux二重サーバ(ghost陣)**: WSL再起動後、`/init`直下で自動起動されたtmuxサーバ(826)が、`shutsujin_departure.sh` の後発サーバにsocket(`/tmp/tmux-1000/default`)を奪われ**到達不能のまま生存**。配下ghost家老(codex)がkaro inboxを共有処理し「inboxが届かない/家老が止まっている/影丸の所在不明」の見え方を作った。撤収STEPは `tmux kill-session -t shogun` =socket所有者にしか届かず、**出陣を繰り返すほどghostが積む**。一次確認= `ss -xlp | grep tmux`(サーバPIDが2本=異常)。根治=家老hotfix `queue/handoff/karo_hotfix_ghost_tmux_20260826.md`(AC1 撤収工程の多重サーバ検知+撤収 / AC2 daemon_watchdog ALERT / AC3 826の起動元特定 / AC4 幻スキル参照差替え)。insight INS-20260826-020217534。
+- **tmux二重サーバ(ghost陣)**: WSL再起動後、`/init`直下で自動起動されたtmuxサーバ(826)が、`shutsujin_departure.sh` の後発サーバにsocket(`/tmp/tmux-1000/default`)を奪われ**到達不能のまま生存**。配下ghost家老(codex)がkaro inboxを共有処理し「inboxが届かない/家老が止まっている/影丸の所在不明」の見え方を作った。撤収STEPは `tmux kill-session -t shogun` =socket所有者にしか届かず、**出陣を繰り返すほどghostが積む**。一次確認= `ss -xlp | grep tmux`(サーバPIDが2本=異常)。根治=家老hotfix `queue/handoff/karo_hotfix_ghost_tmux_20260826.md`(AC1 撤収工程の多重サーバ検知+撤収 / AC2 daemon_watchdog ALERT / AC3 826の起動元特定 / AC4 幻スキル参照差替え)。insight INS-20260826-020217534。**AC1実装済(影丸 `e06c2f9dc`, GATE CLEAR 03:57)**: `shutsujin_departure.sh`/`scripts/reset_layout.sh` の撤収工程が同一socket pathの全tmuxサーバを `ss` で列挙し、現owner以外の旧サーバと配下agentを一覧表示。**停止は自動化しない**(D006整合・停止プリミティブ全除去 rg exact=0): 重複検知時は **fail-closed rc=1 で出陣を止め**、停止操作は殿の操作境界に残す。検知0件時は無音。
 - `shutsujin_departure.sh`: `log_warn` が2026-03-23から未定義(`log_war`のみ)で、ntfyスモーク失敗/ntfy_inbox_archive失敗の分岐だけ `command not found` になっていた → `b065d7fc7` で定義追加。ntfyスモーク失敗自体はWSL起動直後の一過性。
 - `scripts/gates/gate_shogun_startup.sh` 「■ スキル参照実在」新設(`1136fefab`): CLAUDE.md/instructions/*.md の `/skill` 参照に対し `skills/<name>/SKILL.md` 実在をALERT(初回検出= `CLAUDE.md:/reset-layout`、skills削除efc8e016e後の幻参照。deepdive Phase 9「参照パスと実体不一致」同型)。
 - `scripts/review_bundle.py`(`2dd1d2a21`): `generate` を単独CLIで `--verdict APPROVE` 実行しただけでは承認(gunshi LGTM=`review_approvals/reports/<key>/gunshi.yaml`)にならない。batch4/5r/6r/7r/8rで軍師がgenerateのみ実行→承認欠落→家老gate5件が `review_two_phase_pending` でBLOCKした実証。以後、直接CLIのAPPROVEでLGTM未記録なら **rc=3 fail-closed+NEXT(`review_bundle.py single`)を名指し**。正規入口は `/review-bundle`(Step 1=`single`)。`review_approval.sh gunshi LGTM` 直接実行は構造的拒否(rc=2)。
