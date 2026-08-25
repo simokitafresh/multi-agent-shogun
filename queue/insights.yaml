@@ -4389,3 +4389,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260826-021743175-e040
+  ts: "2026-08-26T02:17:43+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b7it0be8i task id tool use id toolu 015qdpSxEJLJ6H9LCj は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
