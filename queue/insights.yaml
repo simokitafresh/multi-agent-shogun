@@ -4128,7 +4128,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T21:00:12+09:00"
 - id: INS-20260825-205156372-c282
   ts: "2026-08-25T20:51:56+09:00"
   insight: "殿アイデア(2026-08-25 20:47-21:00 brainstorm): ①過去1Y/6M/3Mリターンのポイント制で保有選定、タイブレイク=過去3Yリターン ②過去1〜12ヶ月の12パターンのローリングリターン総量を特徴量として抽出 ③L0〜L3レイヤー毎の傾向分析が欲しい。研究cmd設計時は全パラメータ空間・全レイヤーで実施(縮小禁止)"
