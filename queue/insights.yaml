@@ -3951,3 +3951,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-161935559-1931
+  ts: "2026-08-25T16:19:35+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[らせん逸脱チェック3問]] は既存aliasesに一致なし。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=起動チェック; score=3.1) / production_parity(本番パリティ; alias=チェックリスト; score=2.9) / report_quality_protocol(忍者報告品質プロトコル; alias=AC二値チェック; score=2.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
