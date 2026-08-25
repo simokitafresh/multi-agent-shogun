@@ -62,6 +62,7 @@ jobs:
           agents=(karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru shogun)
           for agent in "${agents[@]:1}"; do
             tmux split-window -d -t shogun:agents
+            tmux select-layout -t shogun:agents tiled
           done
           mapfile -t panes < <(tmux list-panes -t shogun:agents -F '#{pane_id}')
           test "${#panes[@]}" -eq "${#agents[@]}"
