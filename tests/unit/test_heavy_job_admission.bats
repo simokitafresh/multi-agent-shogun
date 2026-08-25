@@ -683,7 +683,7 @@ print('ok')
     git -C "$fixture" worktree add -q "$linked" HEAD
     # The outer run_tests.sh exports its own REPO_ROOT into bats fixtures.
     # Without an explicit fixture root here, this seed invocation resolves the
-    # real 238-file suite instead of the one-file seed tree, recursively
+    # real 239-file suite instead of the one-file seed tree, recursively
     # starting the heavy suite and contending with every compatibility run.
     env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED \
         REPO_ROOT="$fixture" RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/seed-sf" BATS_MAX_TEST_JOBS=1 \

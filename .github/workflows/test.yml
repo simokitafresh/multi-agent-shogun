@@ -147,7 +147,7 @@ jobs:
           measurement = timing_payload.get("measurement", timing_payload)
           print(f"SHARD_TIMING_SOURCE source={timing_source} path={timing_path}")
           all_inventory = sorted(str(path) for path in Path("tests/unit").glob("*.bats"))
-          if len(all_inventory) != 238 or len(set(all_inventory)) != 238:
+          if len(all_inventory) != 239 or len(set(all_inventory)) != 239:
               raise SystemExit(f"unit inventory invariant failed: {len(all_inventory)} unique files")
           if len(compatibility_files) != 17 or len(set(compatibility_files)) != 17:
               raise SystemExit("compatibility inventory invariant failed: duplicate or missing entry")
@@ -155,7 +155,7 @@ jobs:
           if missing_compatibility:
               raise SystemExit(f"compatibility file missing from unit inventory: {missing_compatibility}")
           inventory = [path for path in all_inventory if path not in set(compatibility_files)]
-          if len(inventory) != 221:
+          if len(inventory) != 222:
               raise SystemExit(f"normal inventory invariant failed: {len(inventory)} files")
           records = measurement.get("records", [])
           measured = {}
@@ -194,7 +194,7 @@ jobs:
                   f"SHARD_COMPATIBILITY shard={shard_name} files={len(compatibility_files)} "
                   "order=manifest deterministic=1"
               )
-              print("SHARD_PARTITION total=238 compatibility=17 normal=221")
+              print("SHARD_PARTITION total=239 compatibility=17 normal=222")
               raise SystemExit(0)
 
           # Longest-processing-time first assignment keeps the measured shard
@@ -209,7 +209,7 @@ jobs:
               "".join(f"{path}\n" for path in paths), encoding="utf-8"
           )
           print(f"SHARD_ASSIGNMENT shard={shard} files={len(paths)} measured_seconds={total:.3f}")
-          print("SHARD_PARTITION total=238 compatibility=17 normal=221")
+          print("SHARD_PARTITION total=239 compatibility=17 normal=222")
           for bucket_total, bucket_index, bucket_paths in buckets:
               print(f"SHARD_TOTAL shard={bucket_index} files={len(bucket_paths)} measured_seconds={bucket_total:.3f}")
               print(f"SHARD_FILES shard={bucket_index} paths={','.join(bucket_paths)}")
