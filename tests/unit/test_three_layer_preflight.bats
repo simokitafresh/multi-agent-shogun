@@ -1048,11 +1048,23 @@ PY
     printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$2"\n' > "$tmp_root/scripts/lib/causal_index.sh"
     chmod +x "$tmp_root/scripts/lib/causal_index.sh"
 
+    # Keep 20 independent preflight processes and their per-process receipts,
+    # but overlap the immutable ext4 snapshot reads.  The old serial loop
+    # paid process startup and SQLite validation 20 times end-to-end.
     local successes=0 memory_124=0 i rc evidence
+    local -a pids=() results=()
+    for i in $(seq 1 20); do
+        env SHOGUN_MEMORY_DB_CACHE_PATH="$cache" THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="fts$i" TMUX_PANE="%fts$i" \
+            bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "三層 記憶 preflight fixture" >"$TMP_EVIDENCE/fts20-${i}.log" 2>&1 &
+        pids+=("$!")
+    done
     for i in $(seq 1 20); do
         rc=0
-        env SHOGUN_MEMORY_DB_CACHE_PATH="$cache" THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="fts$i" TMUX_PANE="%fts$i" \
-            bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "三層 記憶 preflight fixture" >/dev/null 2>&1 || rc=$?
+        wait "${pids[$((i - 1))]}" || rc=$?
+        results+=("$rc")
+    done
+    for i in $(seq 1 20); do
+        rc="${results[$((i - 1))]}"
         if [ "$rc" -eq 0 ]; then
             successes=$((successes + 1))
             evidence="$evidence_dir/evidence_fts${i}__fts${i}.json"
