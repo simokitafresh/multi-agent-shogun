@@ -606,7 +606,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - codd review|`review --feedback` / `verify` / `policy` / `audit` で品質確認を層で回す|`context/codd.md` §2, §5
 - codd measure|`measure` でCoDD健全性を0-100採点する|`context/codd.md` §2, §5
 - /shogun-teire|知識の棚卸し(8観点監査)|`skills/shogun-teire/SKILL.md`
-- /reset-layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`skills/reset-layout/SKILL.md`
+- reset_layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`bash scripts/reset_layout.sh`(旧/reset-layoutスキルはefc8e016eで削除・shogun-cli-switchへ吸収)
 - /pf-registration|本番PF登録(即パリティ強制)|`skills/pf-registration/SKILL.md`
 - /three-layer-penetrate|三層記憶貫通の標準手順(state=PASS≠貫通の構造防止)|`skills/three-layer-penetrate/SKILL.md`
 
