@@ -4229,7 +4229,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T22:38:12+09:00"
 - id: INS-20260825-222550368-eac2
   ts: "2026-08-25T22:25:50+09:00"
   insight: "CDPプロファイル孤児化: cdp_session.py(mkdtemp p{port}-*)とcmd単位の隔離プロファイルが回収されずC:\\tmp/temp に19.6GB蓄積(88件)。自動化ターゲット: cdp-session-profiles配下でChrome未使用かつmtime>7日のディレクトリを日次cronで回収する構造型(削除ログ+温存名簿keep-list)"
@@ -4257,6 +4260,16 @@ insights:
 - id: INS-20260825-223714072-7420
   ts: "2026-08-25T22:37:14+09:00"
   insight: "semantic_index_update新概念候補: discussion:Python app GB は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T22:38:12+09:00"
+- id: INS-20260825-223818847-2c63
+  ts: "2026-08-25T22:38:18+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id beyn780yx task id tool use id toolu 01Hn6Cposa9vQrh4fn は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
