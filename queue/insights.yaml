@@ -3756,7 +3756,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T14:58:10+09:00"
 - id: INS-20260825-082904520-88e4
   ts: "2026-08-25T08:29:04+09:00"
   insight: "cmd_complete NO_MATCH aliases候補: cmd_4402 kagemaru decision_candidate: 根治弾の全体改善を未宣言 blockedと解消中央値は悪化しprecheck FAIL全体は横ばい。親report誤BLOCKのみ再発0。次回は理由別自然cohortを追加蓄積して再計測する"
@@ -3831,10 +3834,23 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T14:58:21+09:00"
 - id: INS-20260825-144726462-a386
   ts: "2026-08-25T14:47:26+09:00"
   insight: "semantic_index_update新概念候補: discussion:進捗と現況と今後の方向性と目安をartifactにまとめてくれ。個別最適化と全体最適化のらせん構造の流れが停滞している は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T14:58:22+09:00"
+- id: INS-20260825-150130406-f6a7
+  ts: "2026-08-25T15:01:30+09:00"
+  insight: "[[GA 498のcodd md鮮度判定不能を]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=GA 496再レビューBLOCKの根治; score=14.2) / scope_integrity_lifecycle(スコープ鮮度ライフサイクル; alias=GA-295_context_stale; score=13.5) / yaml_safe_write(YAML安全書込み; alias=GA-239 stash guard; score=13.3)。既存概念aliasesへの自動昇格候補"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
