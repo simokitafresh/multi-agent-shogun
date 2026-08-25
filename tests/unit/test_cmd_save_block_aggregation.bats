@@ -3,6 +3,8 @@
 # test_cmd_save_block_aggregation.bats — cmd_save.sh が複数BLOCK理由を1回で表示するか
 
 setup_file() {
+    export TEST_PHASE_TIMING="${BATS_TMPDIR:-/tmp}/cmd_save_phase_timing.tsv"
+    printf 'setup_file_start\t%s\n' "$(date +%s%N)" > "$TEST_PHASE_TIMING"
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
@@ -26,12 +28,16 @@ setup() {
     export TEST_MEMORY_DB="$TEST_TMPDIR/data/memory.db"
     export TEST_Q11_RESEARCH_DIR="$TEST_TMPDIR/docs/research"
     export TEST_INSIGHTS="$TEST_TMPDIR/insights.yaml"
+    printf 'setup_start\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$TEST_PHASE_TIMING"
     mkdir -p "$TEST_ARCHIVE_DIR" "$TEST_Q11_RESEARCH_DIR" "$(dirname "$TEST_GUNSHI_LOG")"
     printf '%s\n' '[]' > "$TEST_INSIGHTS"
+    printf 'setup_end\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$TEST_PHASE_TIMING"
 }
 
 teardown() {
+    printf 'teardown_start\t%s\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" "$(du -sk "$TEST_TMPDIR" 2>/dev/null | awk '{print $1}')" >> "$TEST_PHASE_TIMING"
     rm -rf "$TEST_TMPDIR"
+    printf 'teardown_end\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$TEST_PHASE_TIMING"
 }
 
 run_cmd_save() {
@@ -53,12 +59,16 @@ run_cmd_save() {
         CMD_SAVE_DEBUG="${CMD_SAVE_DEBUG:-0}" \
         CMD_SAVE_SYNC_QUALITY_LOG=1 \
         CMD_SAVE_DISABLE_QUALITY_LOG=1 \
+        CMD_SAVE_DISABLE_FIRE_LOG=1 \
+        CMD_SAVE_PHASE_LOG=disabled \
+        CMD_SAVE_PERSISTENT_STDERR_LOG="$TEST_TMPDIR/cmd_save_stderr.log" \
         MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_multi_block
 }
 
 run_cmd_save_pass() {
+    local memory_insert="${MEMORY_DB_LIVE_INSERT_OVERRIDE:-$PROJECT_ROOT/scripts/memory_db_live_insert.py}"
     run env \
         CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
         CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
@@ -77,9 +87,16 @@ run_cmd_save_pass() {
         CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
         CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
         CMD_SAVE_SYNC_QUALITY_LOG=1 \
-        MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+        CMD_SAVE_DISABLE_FIRE_LOG=1 \
+        CMD_SAVE_PHASE_LOG=disabled \
+        CMD_SAVE_PERSISTENT_STDERR_LOG="$TEST_TMPDIR/cmd_save_stderr.log" \
+        MEMORY_DB_LIVE_INSERT="$memory_insert" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SAVE_SCRIPT" cmd_pass
+}
+
+run_cmd_save_pass_no_memory() {
+    MEMORY_DB_LIVE_INSERT_OVERRIDE=/dev/null run_cmd_save_pass
 }
 
 @test "AC path extraction preserves absolute slash after parentheses and quotes" {
@@ -413,7 +430,7 @@ commands:
         verified_at: "2026-07-20"
 YAML
 
-    run_cmd_save_pass
+    run_cmd_save_pass_no_memory
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
@@ -571,7 +588,7 @@ commands:
         detail: "target条件の回帰テストfixtureで検証する"
 YAML
 
-    CMD_SAVE_FORCE_LORD_CONVERSATION=1 run_cmd_save_pass
+    CMD_SAVE_FORCE_LORD_CONVERSATION=1 run_cmd_save_pass_no_memory
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
@@ -700,7 +717,7 @@ commands:
         verified_at: "2026-05-15"
 YAML
 
-    run_cmd_save_pass
+    run_cmd_save_pass_no_memory
     echo "$output" >&2
 
     [ "$status" -eq 0 ]
