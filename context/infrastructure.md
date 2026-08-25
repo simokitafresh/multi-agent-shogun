@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-25 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-25 context updated for ci green + receipt harness -->
+<!-- source_commit:1131863bc reason:context updated for ci green + receipt harness evidence:doc_lane_request blt_20260825_192810_979cd7 -->
 <!-- source_commit:464d5ddf7 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=464d5ddf7 -->
 <!-- source_commit:0225c9501 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=0225c9501 -->
 <!-- source_commit:3f1ad1f8b reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=3f1ad1f8b -->
@@ -83,7 +84,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1640 -->
+<!-- last_synced_lesson: L1641 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -101,7 +102,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - 作業中忍者clear不変量: `safe_send_clear`は`assigned|acknowledged|in_progress`を既定BLOCKし、停止を計測したDEPLOY-STALLだけ明示許可する。即時clear指示を恒久設定変更へ一般化せず、task statusをidleへ改変して適格化しない。`clear_debounce`は再送抑制であり完了待ちではない。origin: [[殿指示_即時auto_clear_20260809]] -> [[safe_send_clear直呼びと恒久設定化の穴]] -> [[active_task_clear_fail_closed]]
 - cmd_4248現物走査: `gate_shogun_startup.sh` の機械検知は `gate_karo_startup`/idle自走/CI RED忍者修正/`ninja_monitor` へ移管候補、殿への回答・追体験・裁定・cmd起票判断は将軍固有、状態遷移のない要約表示は削除候補。移管順序は `session_alerts生成 → stop hook → 先送りBLOCK/dedup → escalation` を維持する（詳細: `docs/research/cmd_4248_shogun_gate_triage_20260809.md`）。
 - publish経路の段別計装（cmd_4401, 2026-08-25）: `scripts/cmd_publish.sh` に段別wall時間計装(preflight/save_gate/promotion/delegate)+missing defaults二重setterのbatch統合(-8.3%)。隔離fixture実測=publish_total 3770ms（timing正本: `scripts/cdp/cmd_4401_publish_timing.md`）。★ライブpublish実測約13分との乖離が未説明=LS-A24計測代表性。次弾=ライブ1回のphase log一次取得(INS-20260825-111719094)。origin: [[cmd_4399_preflight本体無罪確定]] -> [[cmd_4401_publish外側経路計装]]
-- CI shard並列化+状態依存compatibility shard（cmd_4400+stateful_shards hotfix, 2026-08-25）: `.github/workflows/test.yml` をunit単一job→8 shard並列(実測タイミングLPT割当・欠落0重複0)+状態依存testを除外せず依存順で束ねるcompatibility shard+run固有namespace隔離(3b283e4b0)。unitテストwall-clock 2885秒→最長shard 178秒(約94%減、GREEN確定待ち)。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4400_shard並列化]]
+- CI shard並列化+状態依存compatibility shard（cmd_4400+stateful_shards hotfix, 2026-08-25）: `.github/workflows/test.yml` をunit単一job→8 shard並列(実測タイミングLPT割当・欠落0重複0)+状態依存testを除外せず依存順で束ねるcompatibility shard+run固有namespace隔離(3b283e4b0)。unitテストwall-clock 2885秒→最長shard 303秒(compatibility)/通常最長183秒=約89.5%減。**GREEN確定済み**(run 32828851180、全14 job success、2026-08-25 17:59)。ローカル検証harness常設: 固定SHAで8 shard+compatibilityのreceipt FAIL0(9/9 PASS・計3523テスト・SKIP0)をpush前提とするci_push_receipt_contract。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4400_shard並列化]] -> [[CI_GREEN_20260825_1759]]
 
 ## プラットフォーム運用
 
@@ -124,7 +125,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1640 -->
+<!-- last_synced_lesson: L1641 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -260,6 +261,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1638: GA-496: 定義済みLevel5 detectorは最終判定callerまで接続する（cmd_karo_hotfix_ga496_context_freshness）
 - L1639: CI FAIL artifactはparallel-onlyとstandaloneを直列比較で分離する（cmd_karo_hotfix_cmd4400_stateful_shards）
 - L1640: Source boundary classification must remain explicit across ledger producer and gate post-processing（cmd_karo_hotfix_ga498_context_freshness_source_timeout）
+- L1641: Race contracts must hold partial records across the observation boundary（cmd_karo_ci_fix_32810257392_compatibility_isolation）
 
 ## 設計標準・テスト・因果
 
