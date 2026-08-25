@@ -3974,3 +3974,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260825-182227166-d26a
+  ts: "2026-08-25T18:22:27+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[非hermetic_fixture並列timing]] は既存aliasesに一致なし。類似概念TOP3: context_freshness_retry_budget(context鮮度git再試行予算; alias=context freshness git timeout; score=6.7) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_enforcement_audit; score=5.8) / cmd_quality_logging(cmd設計品質ログ; alias=gunshi_verdict; score=5.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
