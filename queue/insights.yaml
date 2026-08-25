@@ -4174,3 +4174,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260825-213824895-ed3c
+  ts: "2026-08-25T21:38:24+09:00"
+  insight: "[[いますぐcronを回せ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いますぐcronを回せ。検証無しで終わりにはしない"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
