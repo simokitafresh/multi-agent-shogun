@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-25 context updated for ci green + receipt harness -->
+<!-- last_updated: 2026-08-25 context updated for cmd_4403 batch spiral -->
+<!-- source_commit:626640662 reason:context updated for cmd_4403 batch spiral evidence:doc_lane_request blt_20260825_200004_961db6 -->
 <!-- source_commit:1131863bc reason:context updated for ci green + receipt harness evidence:doc_lane_request blt_20260825_192810_979cd7 -->
 <!-- source_commit:464d5ddf7 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=464d5ddf7 -->
 <!-- source_commit:0225c9501 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=0225c9501 -->
@@ -103,6 +104,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - cmd_4248現物走査: `gate_shogun_startup.sh` の機械検知は `gate_karo_startup`/idle自走/CI RED忍者修正/`ninja_monitor` へ移管候補、殿への回答・追体験・裁定・cmd起票判断は将軍固有、状態遷移のない要約表示は削除候補。移管順序は `session_alerts生成 → stop hook → 先送りBLOCK/dedup → escalation` を維持する（詳細: `docs/research/cmd_4248_shogun_gate_triage_20260809.md`）。
 - publish経路の段別計装（cmd_4401, 2026-08-25）: `scripts/cmd_publish.sh` に段別wall時間計装(preflight/save_gate/promotion/delegate)+missing defaults二重setterのbatch統合(-8.3%)。隔離fixture実測=publish_total 3770ms（timing正本: `scripts/cdp/cmd_4401_publish_timing.md`）。★ライブpublish実測約13分との乖離が未説明=LS-A24計測代表性。次弾=ライブ1回のphase log一次取得(INS-20260825-111719094)。origin: [[cmd_4399_preflight本体無罪確定]] -> [[cmd_4401_publish外側経路計装]]
 - CI shard並列化+状態依存compatibility shard（cmd_4400+stateful_shards hotfix, 2026-08-25）: `.github/workflows/test.yml` をunit単一job→8 shard並列(実測タイミングLPT割当・欠落0重複0)+状態依存testを除外せず依存順で束ねるcompatibility shard+run固有namespace隔離(3b283e4b0)。unitテストwall-clock 2885秒→最長shard 303秒(compatibility)/通常最長183秒=約89.5%減。**GREEN確定済み**(run 32828851180、全14 job success、2026-08-25 17:59)。ローカル検証harness常設: 固定SHAで8 shard+compatibilityのreceipt FAIL0(9/9 PASS・計3523テスト・SKIP0)をpush前提とするci_push_receipt_contract。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4400_shard並列化]] -> [[CI_GREEN_20260825_1759]]
+- 個別テスト単体短縮バッチらせん（cmd_4403〜, 2026-08-25）: 殿裁定の型=忍者並列×バッチ計測選別(機械選別・個別before/after・バッチ境界で全体分布確認・ファイル排他・当面10個)。第1バッチ=最重量test_cmd_complete_gate.bats 912→298秒(67.3%減)・281/281 PASS・検証削除ゼロ(626640662、成果物正本=docs/research/cmd_4403_slowest_tests_speedup_20260825.md)。origin: [[殿の教え_個別最適化は単体高速化_20260825_1524]] -> [[cmd_4403_slowest_tests単体短縮]]
 
 ## プラットフォーム運用
 
