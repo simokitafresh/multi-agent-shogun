@@ -4345,3 +4345,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260826-015631178-5dcb
+  ts: "2026-08-26T01:56:31+09:00"
+  insight: "[[shougunntosoudannseyo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=shougunntosoudannseyo"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
