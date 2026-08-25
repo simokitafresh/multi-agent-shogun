@@ -1857,10 +1857,12 @@ cli_type() { echo "codex"; }
 cli_profile_get() {
     case "$2" in
         clear_cmd) echo "/new" ;;
-        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        launch_cmd) echo "/usr/bin/bash" ;;
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
 tmux() {
     if [ "$1" = "respawn-pane" ]; then
@@ -1910,10 +1912,12 @@ cli_type() { echo "codex"; }
 cli_profile_get() {
     case "$2" in
         clear_cmd) echo "/new" ;;
-        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        launch_cmd) echo "/usr/bin/bash" ;;
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
 tmux() {
     if [ "$1" = "respawn-pane" ]; then
@@ -2021,10 +2025,12 @@ cli_type() { echo "codex"; }
 cli_profile_get() {
     case "$2" in
         clear_cmd) echo "/new" ;;
-        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        launch_cmd) echo "/usr/bin/bash" ;;
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
 tmux() {
     if [ "$1" = "respawn-pane" ]; then
@@ -2087,10 +2093,12 @@ cli_type() { echo "codex"; }
 cli_profile_get() {
     case "$2" in
         clear_cmd) echo "/new" ;;
-        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        launch_cmd) echo "/usr/bin/bash" ;;
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
 tmux() {
     if [ "$1" = "respawn-pane" ]; then
@@ -2155,10 +2163,12 @@ cli_type() { echo "codex"; }
 cli_profile_get() {
     case "$2" in
         clear_cmd) echo "/new" ;;
-        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        launch_cmd) echo "/usr/bin/bash" ;;
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
 tmux() {
     if [ "$1" = "respawn-pane" ]; then
@@ -2333,10 +2343,12 @@ cli_type() { echo "codex"; }
 cli_profile_get() {
     case "$2" in
         clear_cmd) echo "/new" ;;
-        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        launch_cmd) echo "/usr/bin/bash" ;;
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
 tmux() {
     if [ "$1" = "respawn-pane" ]; then
@@ -2405,10 +2417,12 @@ cli_type() { echo "codex"; }
 cli_profile_get() {
     case "$2" in
         clear_cmd) echo "/new" ;;
-        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        launch_cmd) echo "/usr/bin/bash" ;;
         *) echo "" ;;
     esac
 }
+cli_launch_cmd() { echo "/usr/bin/bash"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
 tmux() {
     if [ "$1" = "respawn-pane" ]; then

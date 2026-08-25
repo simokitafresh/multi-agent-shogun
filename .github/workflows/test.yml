@@ -58,6 +58,9 @@ jobs:
         run: |
           set -euo pipefail
           python3 -c 'import pytest; print("PYTEST_AVAILABLE=" + pytest.__version__)'
+          mkdir -p "$HOME/bin"
+          printf '#!/usr/bin/env bash\nexit 0\n' > "$HOME/bin/claude"
+          chmod +x "$HOME/bin/claude"
           tmux new-session -d -s shogun -n agents -x 240 -y 80
           agents=(karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru shogun)
           for agent in "${agents[@]:1}"; do

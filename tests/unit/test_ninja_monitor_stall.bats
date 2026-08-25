@@ -443,6 +443,17 @@ wait "$maintenance_pid"
         test -d "/proc/$$"
         printf "successor=1 old_generation_alive=1 elapsed_ms=%s\n" "$elapsed"
     '
+    if [ "$status" -ne 0 ]; then
+        printf 'HOT_RELOAD_FAILURE_OUTPUT_BEGIN\n%s\nHOT_RELOAD_FAILURE_OUTPUT_END\n' "$output" >&3
+        log_path="$BATS_TEST_TMPDIR/hot-reload-watch/monitor.log"
+        if [ -f "$log_path" ]; then
+            printf 'HOT_RELOAD_FAILURE_LOG_BEGIN\n' >&3
+            cat "$log_path" >&3
+            printf 'HOT_RELOAD_FAILURE_LOG_END\n' >&3
+        else
+            printf 'HOT_RELOAD_FAILURE_LOG_MISSING path=%s\n' "$log_path" >&3
+        fi
+    fi
     [ "$status" -eq 0 ]
     [[ "$output" == successor=1\ old_generation_alive=1\ elapsed_ms=* ]]
 }
