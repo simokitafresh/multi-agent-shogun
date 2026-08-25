@@ -4166,17 +4166,30 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T21:39:15+09:00"
 - id: INS-20260825-213752912-c75c
   ts: "2026-08-25T21:37:52+09:00"
   insight: "[[いまの進捗をartifact更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いまの進捗をartifact更新せよ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-25T21:39:15+09:00"
 - id: INS-20260825-213824895-ed3c
   ts: "2026-08-25T21:38:24+09:00"
   insight: "[[いますぐcronを回せ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いますぐcronを回せ。検証無しで終わりにはしない"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260825-213906309-7be5
+  ts: "2026-08-25T21:39:06+09:00"
+  insight: "[[ディスクの話をしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ディスクの話をしよう。何がディスクを圧迫している？"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
