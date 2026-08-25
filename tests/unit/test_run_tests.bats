@@ -574,7 +574,7 @@ SH
 
   grep -Eq '(export )?BATS_INNER_JOBS=1' "$workflow"
   grep -Eq '(export )?BATS_FILE_TIMEOUT_SECONDS=300' "$workflow"
-  grep -Fq 'timeout-minutes: 30' "$workflow"
+  grep -Fq 'timeout-minutes: 12' "$workflow"
   grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
   grep -Fq 'cancel-in-progress: true' "$workflow"
   ! grep -Eq '(export )?BATS_INNER_JOBS=8' "$workflow"
