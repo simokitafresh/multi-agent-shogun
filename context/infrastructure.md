@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-26 context updated for ghost tmux AC2/AC3b + session_alerts runtime preservation -->
+<!-- last_updated: 2026-08-26 context_freshness reviewed source boundary -->
+<!-- source_commit:b7ad89d5c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b7ad89d5c -->
 <!-- source_commit:464c833c1 reason:context updated for ghost tmux AC2/AC3b + session_alerts runtime preservation evidence:doc_lane_request blt_20260826_062930_e5aabe -->
 <!-- source_commit:e06c2f9dc reason:context updated for ghost tmux AC1 implementation evidence:doc_lane_request blt_20260826_040416_c55741 -->
 <!-- source_commit:46d568a53 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=46d568a53 -->
