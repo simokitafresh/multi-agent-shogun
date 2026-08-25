@@ -794,28 +794,6 @@ run_bats_files_parallel() {
         local test_file="$1"
         local test_jobs="$2"
         local rc=0
-        local compatibility_root="${BATS_COMPATIBILITY_ROOT:-}"
-        local file_root=""
-        local -a compatibility_env=()
-        if [ -n "$compatibility_root" ]; then
-            # Compatibility files run concurrently, but their process-wide
-            # fixtures must never share the runner's default /tmp or state
-            # namespace. Keep one namespace per file so nested children in a
-            # file still share state while sibling files remain independent.
-            file_root="$(mktemp -d "$compatibility_root/${test_file##*/}.XXXXXX")" \
-                || return 125
-            mkdir -p "$file_root"/{tmp,state,waiters,singleflight,receipts}
-            compatibility_env=(
-                "TMPDIR=$file_root/tmp"
-                "SHOGUN_STATE_DIR=$file_root/state"
-                "SHOGUN_HEAVY_JOB_LOCK_FILE=$file_root/heavy.lock"
-                "SHOGUN_HEAVY_JOB_WAITER_DIR=$file_root/waiters"
-                "SHOGUN_HEAVY_JOB_WAITER_MUTEX=$file_root/waiters.lock"
-                "RUN_TESTS_SINGLEFLIGHT_DIR=$file_root/singleflight"
-                "RUN_TESTS_RECEIPT_DIR=$file_root/receipts"
-                "TEST_TIMING_LEDGER=$file_root/timing.tsv"
-            )
-        fi
         timeout --foreground --kill-after=10s "${BATS_FILE_TIMEOUT_SECONDS}s" env \
             -u BATS_ROOT_PID \
             -u BATS_RUN_TMPDIR \
@@ -842,7 +820,6 @@ run_bats_files_parallel() {
             -u SHOGUN_HEAVY_JOB_TOKEN \
             -u SHOGUN_HEAVY_JOB_OWNER_GENERATION \
             -u SHOGUN_HEAVY_JOB_OWNER_PID \
-            "${compatibility_env[@]}" \
             "${RUN_TESTS_BATS_BIN:-bats}" "$test_file" --jobs "$test_jobs" --timing 3>&- || rc=$?
         if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
             printf 'TIMEOUT: %s exceeded %ss (rc=%s)\n' \

@@ -193,12 +193,9 @@ jobs:
           # not fail on cp(source == destination).
           tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}-requested.tap"
           if [ "${{ matrix.compatibility }}" = "true" ]; then
-            # These 17 files share process-wide fixtures, git/tmux state, or
-            # mutable deployment scaffolds. Keep file-level parallelism, but
-            # give each file root its own process-wide fixture namespace.
-            compatibility_root="$RUNNER_TEMP/compatibility-${{ matrix.shard }}"
-            mkdir -p "$compatibility_root"
-            export BATS_COMPATIBILITY_ROOT="$compatibility_root"
+            # These 17 files share host-global fixtures. Keep the default
+            # runner environment and serialize file roots only in this lane;
+            # the normal eight shards retain their existing parallelism.
             export BATS_FILE_JOBS=1
             export BATS_INNER_JOBS=1
             export BATS_FILE_TIMEOUT_SECONDS=900
