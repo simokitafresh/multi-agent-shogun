@@ -1240,10 +1240,12 @@ if [ -f "${TASK_FILE:-}" ]; then
         _set_status=$(python3 "$REPO_ROOT/scripts/lib/report_gate_contract.py" \
             lesson-feedback-set "$TASK_FILE" "$REPORT_PATH" 2>/dev/null || true)
         if [ -n "${_set_status:-}" ] && [[ "$_set_status" != OK\ * ]]; then
-            # subset+extra-only(忍者が自発的に教訓を発見・使用)はWARN止まり。
-            # missing有り or strict modeはERROR(GATE BLOCK確実)。
+            # 2026-08-26訂正: subset+extra-onlyも正本gate(cmd_complete_gate.sh validate_lesson_feedback_set
+            # → record_block_reason lesson_feedback_set_mismatch)はBLOCKする(report_gate_contract.py:
+            # extra があれば mode に関係なく MISMATCH)。旧文言『WARN止まり』は誤り(kagemaru ghost AC1
+            # 報告 extra=L241 で軍師が偽陽性と誤読)。ERRORはSG-PRE11で計上済みのため二重加算しない。
             if echo "$_set_status" | grep -qP 'mode=subset.*missing=none.*extra=[^n]'; then
-                echo "  WARN: lessons_useful集合にtask契約外あり(自発使用): ${_set_status}"
+                echo "  ERROR(SG-PRE11で計上済): lessons_useful集合にtask契約外あり(自発使用) → 正本gateもBLOCK。extraを lessons_useful から外し lesson_candidate/自由記述へ移せ: ${_set_status}"
             else
                 echo "  ERROR: lessons_useful集合がtask契約と不一致 → GATE BLOCK確実: ${_set_status}"
                 ERRORS=$((ERRORS + 1))
