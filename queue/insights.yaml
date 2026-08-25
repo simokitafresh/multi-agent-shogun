@@ -4338,3 +4338,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260826-015602828-4819
+  ts: "2026-08-26T01:56:02+09:00"
+  insight: "[[将軍に返事を最速せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍に返事を最速せよ。送ったつもりで届いていない可能性も考慮城"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
