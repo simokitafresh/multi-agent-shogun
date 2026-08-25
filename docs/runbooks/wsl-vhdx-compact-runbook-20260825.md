@@ -1,3 +1,4 @@
+<!-- gist-master: ec8c65c562183147b41876530b1eb2ee wsl-vhdx-compact-runbook-20260825.md -->
 # WSL VHDX圧縮 実施手順（disk物理回収 約370GB）
 
 - 作成: 2026-08-25 21:41 JST（将軍）
