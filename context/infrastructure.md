@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-26 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-26 context updated for report scope SSOT + merge-commit ownership gate -->
+<!-- source_commit:7d9532b12 reason:context updated for report scope SSOT + merge-commit ownership gate evidence:doc_lane_request blt_20260826_101234_f3d396 -->
 <!-- source_commit:4dde551de reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4dde551de -->
 <!-- source_commit:b7ad89d5c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b7ad89d5c -->
 <!-- source_commit:464c833c1 reason:context updated for ghost tmux AC2/AC3b + session_alerts runtime preservation evidence:doc_lane_request blt_20260826_062930_e5aabe -->
@@ -287,6 +288,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - `scripts/review_bundle.py`(`2dd1d2a21`): `generate` を単独CLIで `--verdict APPROVE` 実行しただけでは承認(gunshi LGTM=`review_approvals/reports/<key>/gunshi.yaml`)にならない。batch4/5r/6r/7r/8rで軍師がgenerateのみ実行→承認欠落→家老gate5件が `review_two_phase_pending` でBLOCKした実証。以後、直接CLIのAPPROVEでLGTM未記録なら **rc=3 fail-closed+NEXT(`review_bundle.py single`)を名指し**。正規入口は `/review-bundle`(Step 1=`single`)。`review_approval.sh gunshi LGTM` 直接実行は構造的拒否(rc=2)。
 - `scripts/review_bundle.py`(`aa9a28e02`): 忍者taskがidle化した後の報告身元照合は家老inboxの受領receiptで行うが、報告timestampが**UTC(`...Z`)**だと探索日が**JST命名の `archive/inbox/karo_YYYYMMDD.yaml`** と1日ずれてreceiptを見失う(batch6r saizo実証: ts=08-25T16:43Z→karo_20260825を探すがreceiptはkaro_20260826)。receipt探索を全日付archive(新しい順)へ拡張。fingerprint/report_id/path完全一致は維持。
 - バッチらせん#2〜#8実績(一次実測・`docs/research/cmd_4403_slowest_tests_speedup_20260825.md`): #2 79.9→67.6s / #3 87.5→72.6s(AC2 timeout BLOCK) / #4 20.1→9.2s / #5r 87.6→48.8s / #6r 630→586s+phase receipt常設(支配=checks_main.quality_gate) / #7r 142.7→61.3s / #8r 169.2→76.9s。初回#5/#7/#8は**timing正本≠live実測(−44〜−50%)でAC1どおり実装せず停止**→次セット選別は各弾後に正本を再計測してから行う。
+- 報告scopeの正本=source-generation SSOT(飛猿 `7d9532b12`, `scripts/lib/review_source_context.py`+`gate_report_format.sh`): 報告の変更scopeはisolated worktreeの生成源で検証し、primary(共有main)のdirty混入を排除する。**merge commit注意(将軍 `64025b9d4`)**: 所有パス検査の `git diff-tree` に `-m --first-parent` が無いとmerge commit(親2+)は変更0件扱いになり、履歴分岐統合taskが構造的にFAILする(実証0→15 files)。全repo target(`target_path: <repo root>`)のtaskは知識/台帳の恒常dirty(lessons/insights/semantic-index等)が『未commit変更あり』BLOCKになるため、統合前にscope commitで退避する。
 - 報告timestampはJST(`+09:00`)で書け(UTC `Z` は上記の日付ずれの発生源)。恒久解はreport-writeテンプレのtimestamp生成側で統一する(未実装=次ターゲット)。
 
 ## 2026-08-15 追加ガード(source=253afbb2c以降)
