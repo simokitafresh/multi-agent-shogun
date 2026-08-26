@@ -1,0 +1,118 @@
+<title>将軍 全体状況マップ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f3f5f4;--panel:#ffffff;--ink:#1c1a17;--ink-2:#4a4f57;--ink-3:#7b8290;--line:#d9dde0;
+  --accent:#3b4d9c;--accent-soft:#e6e9f5;
+  --done:#2f7d4f;--done-soft:#e3f0e8;--run:#b8791a;--run-soft:#f8eed9;--todo:#6b7485;--todo-soft:#e9ebef;--bad:#b03a2e;--bad-soft:#f6e2df;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#15171a;--panel:#1e2125;--ink:#ecebe6;--ink-2:#b9bcc3;--ink-3:#858b95;--line:#33383f;
+  --accent:#9aa8e8;--accent-soft:#262c45;
+  --done:#6fc28f;--done-soft:#1e3327;--run:#e2a94d;--run-soft:#3a2e15;--todo:#9aa2b0;--todo-soft:#2a2e35;--bad:#e5786b;--bad-soft:#3c2220;
+}}
+:root[data-theme="dark"]{
+  --ground:#15171a;--panel:#1e2125;--ink:#ecebe6;--ink-2:#b9bcc3;--ink-3:#858b95;--line:#33383f;
+  --accent:#9aa8e8;--accent-soft:#262c45;
+  --done:#6fc28f;--done-soft:#1e3327;--run:#e2a94d;--run-soft:#3a2e15;--todo:#9aa2b0;--todo-soft:#2a2e35;--bad:#e5786b;--bad-soft:#3c2220;
+}
+body{background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans JP",system-ui,sans-serif;line-height:1.6;margin:0;padding:2rem 1.25rem 4rem}
+.wrap{max-width:68rem;margin:0 auto;display:grid;gap:1.5rem}
+header{display:grid;gap:.35rem}
+h1{font-family:"Shippori Mincho","Hiragino Mincho ProN",serif;font-weight:800;font-size:1.9rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.principle{color:var(--ink-2);font-size:.92rem;max-width:65ch}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.75rem}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:.4rem;padding:.8rem .95rem;display:grid;gap:.15rem}
+.tile .k{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.tile .v{font-family:"IBM Plex Mono",monospace;font-size:1.5rem;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .s{font-size:.78rem;color:var(--ink-2)}
+.v.done{color:var(--done)}.v.run{color:var(--run)}.v.todo{color:var(--todo)}.v.bad{color:var(--bad)}
+.live{background:var(--panel);border:1px solid var(--line);border-radius:.4rem;padding:.9rem 1rem;display:grid;gap:.5rem}
+.live h2{margin:0;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;font-family:"IBM Plex Mono",monospace;color:var(--ink-3);font-weight:500}
+.live ul{margin:0;padding:0;list-style:none;display:grid;gap:.3rem;font-size:.9rem}
+.live li{display:flex;gap:.6rem;flex-wrap:wrap;align-items:baseline}
+.mono{font-family:"IBM Plex Mono",monospace;font-size:.82rem;font-variant-numeric:tabular-nums}
+.chip{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;padding:.1rem .5rem;border-radius:.25rem;white-space:nowrap}
+.chip.done{background:var(--done-soft);color:var(--done)}.chip.run{background:var(--run-soft);color:var(--run)}.chip.todo{background:var(--todo-soft);color:var(--todo)}.chip.bad{background:var(--bad-soft);color:var(--bad)}
+section.group{display:grid;gap:.6rem}
+section.group h2{margin:0;font-family:"Shippori Mincho",serif;font-size:1.15rem;font-weight:600;display:flex;align-items:center;gap:.6rem}
+section.group h2 .n{font-family:"IBM Plex Mono",monospace;font-size:.85rem;color:var(--ink-3);font-weight:400}
+.rows{display:grid;gap:.5rem}
+.row{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--edge);border-radius:.35rem;padding:.7rem .9rem;display:grid;grid-template-columns:3.2rem 1fr;gap:.2rem .8rem;align-items:start}
+.row.done{--edge:var(--done)}.row.run{--edge:var(--run)}.row.todo{--edge:var(--todo)}
+.row .id{font-family:"IBM Plex Mono",monospace;font-size:.85rem;color:var(--ink-3);padding-top:.15rem}
+.row .t{font-weight:500}
+.row .d{grid-column:2;color:var(--ink-2);font-size:.85rem}
+.row .w{grid-column:2;font-size:.8rem;color:var(--accent)}
+.row .w::before{content:"★ ";}
+footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace}
+@media (max-width:40rem){.row{grid-template-columns:1fr}.row .d,.row .w{grid-column:1}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">shogun todo map · 2026-08-27 00:24 更新 · 正本 queue/shogun_todo_map.md</div>
+  <h1>将軍 全体状況マップ</h1>
+  <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
+</header>
+
+<div class="strip">
+  <div class="tile"><span class="k">済</span><span class="v done">29</span><span class="s">証跡付き</span></div>
+  <div class="tile"><span class="k">走行中</span><span class="v run">4</span><span class="s">担当あり</span></div>
+  <div class="tile"><span class="k">未着手</span><span class="v todo">3</span><span class="s">T12 / T17 / T26</span></div>
+  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">ccad05fcf 23:59 = 本日初GREEN</span></div>
+  <div class="tile"><span class="k">origin差分</span><span class="v run">+6</span><span class="s">将軍の根治commit(1本ずつpush待ち)</span></div>
+</div>
+
+<div class="live">
+  <h2>一次情報(00:24 capture / task YAML / gh / logs)</h2>
+  <ul>
+    <li><span class="chip done">殿下問 00:05「つまり」</span>3本を根治: ①config.toml破壊(BASH_REMATCH潰れ) ②inbox_watcher毎分死亡(実行ビット欠落・85回再起動) ③報告10本UN-GATED(自動レビュー依頼が送信者制限でBLOCK)。watchdog 00:10「All daemons running」</li>
+    <li><span class="chip run">家老</span>/clear後 CTX 20%。inbox を1通ずつ処理して idle に戻る型。複数項目の長文下知は先頭だけ実行=下知は「1通=1配備単位」へ</li>
+    <li><span class="chip todo">忍者</span>6名 <span class="mono">gpt-5.6-luna high</span>(全員)。疾風 in_progress、影丸 failed表示(報告はPASS)、他 idle</li>
+    <li><span class="chip done">軍師</span>CTX 45%。自動レビュー依頼が届く経路が復活(T34)</li>
+    <li><span class="chip done">本日の殿裁定</span>速度4則+マップ / らせん正本 / モデル明示しない・忍者luna high・家老sol medium / 作業中respawn禁止 / 1commitずつpush / inbox優先強制</li>
+  </ul>
+</div>
+
+<section class="group">
+  <h2>走行中 <span class="n">4</span></h2>
+  <div class="rows">
+    <div class="row run"><span class="id">T36</span><span class="t">将軍の根治commit 6本を1本ずつpush</span><span class="d">2df2ecdee(実行ビット) / c17a92d8e(レビュー依頼) / bc9f4a8c6・474aff0c2(cli_lookup) / 42f09d54b以降。家老レーンで oldest-first</span><span class="w">根治を origin/CI に乗せる</span></div>
+    <div class="row run"><span class="id">T25</span><span class="t">P1(AC厳格停止)の型変更: 固定基準値→自己計測</span><span class="d">飛猿 PASS報告→自動レビュー依頼が 00:12 に軍師へ到達(T34修正後の初例)→GATE待ち</span><span class="w">作業PASSがACでFAILになる損失を0に</span></div>
+    <div class="row run"><span class="id">T27</span><span class="t">影丸T21・飛猿T22の成果 commit 完遂</span><span class="d">T27-a 半蔵 d3b6dd11f(118/118)、T27-b 才蔵 GATE CLEAR。T27-a は AC文言で verdict FAIL(P1型)→家老判断</span><span class="w">完成済み成果の回収</span></div>
+    <div class="row run"><span class="id">T19</span><span class="t">教訓退役候補3件の現物確認</span><span class="d">影丸 AC3未達→家老の retire 判断待ち</span><span class="w">教訓注入トークン削減</span></div>
+  </div>
+</section>
+
+<section class="group">
+  <h2>未着手 <span class="n">3</span></h2>
+  <div class="rows">
+    <div class="row todo"><span class="id">T26</span><span class="t">P3(偵察の材料なし=FAIL 7件)の契約変更</span><span class="d">偵察タスクは finding付きPASS を正とする verdict 契約へ</span><span class="w">偵察の再配備往復を削減</span></div>
+    <div class="row todo"><span class="id">T17</span><span class="t">DOC_LANE_ALERT の境界更新</span><span class="d">push完了で実行可。T16 marker基準化は main 到達済</span><span class="w">偽ALERT消化コスト削減</span></div>
+    <div class="row todo"><span class="id">T12</span><span class="t">ライブ publish 13分の分解</span><span class="d">次回 cmd_publish 時に将軍が stdout を logs/ へ保存</span><span class="w">publish律速の短縮</span></div>
+  </div>
+</section>
+
+<section class="group">
+  <h2>済 <span class="n">29</span></h2>
+  <div class="rows">
+    <div class="row done"><span class="id">T33</span><span class="t">inbox_watcher 毎分死亡の根治</span><span class="d">restore/converge で scripts 10本が git mode 100644 化→AUTO-RESTART exec が Permission denied→12:00-00:08 に watchdog 再起動85回=nudge喪失。drvfs は chmod 無効ゆえ script_update.sh に bash フォールバック+index 100755(2df2ecdee)</span><span class="w">指示不達の物理層を根治</span></div>
+    <div class="row done"><span class="id">T34</span><span class="t">報告10本 UN-GATED の根治</span><span class="d">cmd_4357 の自動レビュー依頼(ninja_monitor→gunshi)が inbox_write 送信者制限で毎回BLOCK・stderr /dev/null で不可視。gunshi宛 review_draft 許可+stderr記録(c17a92d8e)。再送で軍師到達を確認</span><span class="w">報告→レビュー→GATE の自動回転復活</span></div>
+    <div class="row done"><span class="id">T35</span><span class="t">半蔵/飛猿 400 luna-high の根治</span><span class="d">ninja_monitor の trap が BASH_REMATCH を潰し model_name 全体が config.toml model に書かれ effort 空。cli_lookup をパラメータ展開へ+接尾辞自己修復(bc9f4a8c6/474aff0c2)。DEBUG trap 下で検証</span><span class="w">忍者停止0</span></div>
+    <div class="row done"><span class="id">T32</span><span class="t">CI GREEN 復帰</span><span class="d">239固定撤廃(影丸)+lgtm_bundle_guard 修正(小太郎)→ccad05fcf success 23:59。本日13:40以来の RED を閉じた</span><span class="w">らせん次弾が GREEN 上で回る</span></div>
+    <div class="row done"><span class="id">T02</span><span class="t">push 完了(origin == HEAD 22:40)</span><span class="d">7h30m 停滞の真因=まとめpush(affected 101本)×手動フル走査(99分)。1commitずつで57本を1時間で消化</span><span class="w">分岐の芽を毎回摘む</span></div>
+    <div class="row done"><span class="id">T31</span><span class="t">CI 239ハードコード撤廃</span><span class="d">inventory/ledger 集合一致(241/241)へ。影丸→1306551ed</span><span class="w">テスト追加で壊れる構造の根治</span></div>
+    <div class="row done"><span class="id">T30</span><span class="t">家老 inbox 優先の構造強制</span><span class="d">codex_inbox_priority_guard.sh: 将軍発task_assignedが180秒以上未読なら全tool BLOCK(42f09d54b)</span><span class="w">指示不達→方針乖離の再発0</span></div>
+    <div class="row done"><span class="id">T29</span><span class="t">push方式転換=1commitずつ</span><span class="d">56commit→101本 / 1commit→0本。手動canonical full廃止</span><span class="w">push律速の本丸</span></div>
+    <div class="row done"><span class="id">T28</span><span class="t">忍者=luna high・モデル明示しない・作業中respawn禁止</span><span class="d">settings.yaml launch_cmd 空、agent_respawn.sh に作業中ガード(e3712b4a9)</span><span class="w">モデル切替の継続+成果破棄0</span></div>
+    <div class="row done"><span class="id">T24</span><span class="t">commitだけFAIL の真因=Codex sandbox起動</span><span class="d">launch_cmd 上書きが bypass を継承せず bwrap 有効。7/7復旧</span><span class="w">実装PASSがcommitで捨てられる損失0</span></div>
+    <div class="row done"><span class="id">T20</span><span class="t">家老inbox滞留の真因(skill_hintゾンビ16件)</span><span class="d">cfd7b7d3e</span><span class="w">家老の再読コスト0</span></div>
+    <div class="row done"><span class="id">T15/T16/T18/T10/T23/T05</span><span class="t">fullrecalc収束 / 偽ALERT根治 / 計測器常設 / gate 912秒 top3 / monitor二重起動退役 / 文書境界更新</span><span class="d">各 GATE CLEAR・commit 済</span><span class="w">—</span></div>
+    <div class="row done"><span class="id">—</span><span class="t">T01/T03/T04/T06/T07/T09/T11/T13/T14/K01/K02</span><span class="d">ci_fix・家老inbox集約・軍師活用・境界・戦況録・session_alerts・裁定焼込み・snapshot根治・idle充当・起動profile不変量・gunshi_precheck timeout</span><span class="w">—</span></div>
+  </div>
+</section>
+
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新</footer>
+</div>

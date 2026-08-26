@@ -161,6 +161,13 @@ test_execution:
 - **reason**: 2026-08-26、将軍は履歴統合のgit整理に集中して第2セット配備・dm-signal文書更新・軍師活用を先送りし、並列化で得た−52%/−57%を短縮成果として報告した。殿『らせん構造を意識しているか？目的は速度向上だ』『並列化による速度向上はマシンパワーによるもので本質から乖離』『速度向上とはサボることではない。0.1%の向上を100億回』『速度改善自体に時間を掛ければ全体スループットは落ちる』『LLMは一つにフォーカスすると他を先送りする。全体状況マップがないからだ』。
 - origin: `[[殿裁定_速度の本質4則_20260826]] -> [[並列化は本質でない]] -> [[全体状況マップ]]`
 
+## 本日の裁定5則+家老の行動型（殿裁定 2026-08-26 20:48〜2026-08-27 00:20・将軍自身に適用）
+
+- **positive_rule**: (1)**push は first-parent 1 commit ずつ oldest-first**。まとめ push と手動 canonical full 走査は禁止(hook の affected 選択に任せる)。(2)**モデルは明示しない**: 忍者の launch_cmd にモデルを書かず `~/.codex/config.toml`(model=`gpt-5.6-luna`、effort は別キー)に従わせる。家老=sol medium・忍者=luna high。`config.toml` を手で編集するな(唯一の writer=`codex_config_apply_agent`)。モデルIDと effort を一語に混ぜた指示(「luna-high に従わせろ」)を出すな。(3)**作業中の respawn 禁止**: 成果を捨てて遅くなる。`agent_respawn.sh` が BLOCK する(構造型)。(4)**家老への下知は「1通=1配備単位+二値AC+完了報告先」**: 家老は inbox を1通ずつ処理して idle に戻る型で、複数項目の長文は先頭だけ実行し残りを追跡しない。pane 異常は inbox に来ないので家老は見ない→監視側(ninja_monitor)に検知させよ。(5)**自動化の失敗を /dev/null に捨てるな**。「つまり」の下問には全系統(inbox 滞留/UN-GATED 報告/daemon 再起動/CI)を一次計測してから答えよ。
+- **reason**: 2026-08-26、push が 15:10→22:40 の 7h30m 停滞(56 commit まとめ→affected 101本×手動フル走査 99分)。将軍の文言「config.toml の luna-high」が model 値に書かれ忍者が 400 停止。家老の長文下知は先頭項目で「処理完了」となり idle 忍者6名が放置された。inbox_watcher が実行ビット欠落で 12:00-00:08 に 85 回死亡、自動レビュー依頼が送信者制限で毎回 BLOCK(stderr 捨て)し報告 10 本が UN-GATED。全て一次計測で判明し、殿の「つまりはないか」がなければ見えなかった。
+- **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
+- origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
+
 ## 最小試行・最高速度の強制（殿下知 2026-08-15 18:58-19:00・将軍自身に適用）
 
 - **positive_rule**: 可逆な工程(revert pushで戻る本番検証を含む)を委任するとき、**小さく1層ずつ**(忍者1体・1タスク・実装→push→deploy→full→business parity→次層)で回し、**途中laneに儀式を課すな**: 層ごとのGATE/報告YAML/軍師レビュー・新規テスト/contract test/fixture作成・pytest全量。**一括実装は禁止**(ミスの手戻りが長い)。設計書の工程表にも儀式を書くな。委任前に三層記憶で殿裁定を引き、本文へ`[MEM: ...]`を添えよ。
