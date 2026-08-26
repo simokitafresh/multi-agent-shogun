@@ -788,17 +788,42 @@ for candidate in re.findall(r"(?<![0-9a-f])[0-9a-f]{7,40}(?![0-9a-f])", identity
 
 changed_files = set()
 for owned in owned_commits:
-    changed_files.update(run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", owned]).splitlines())
+    # 2026-08-26: merge commit(親2+)は -m --first-parent が無いと変更0件になり全dirtyがBLOCK化する(kotaro 42回再試行の真因)
+    changed_files.update(run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", "-m", "--first-parent", owned]).splitlines())
 if not changed_files:
     print("\n".join(raw_lines))
     raise SystemExit(0)
 
 kept = []
 suppressed = []
+broad_scope = os.environ.get("GATE_CC_BROAD_SCOPE", "") == "1"
+AUTO_LEDGER_PATHS = {"docs/semantic-index/index.md", "context/semantic-map.md", "tasks/lessons.md", "queue/insights.yaml", "logs/karo_workarounds.yaml"}
+AUTO_LEDGER_PREFIXES = ("projects/infra/lessons", "projects/dm-signal/lessons", "logs/")
+unrelated = []
 for line in raw_lines:
     path = parse_path(line)
-    if not path or path not in changed_files:
+    if not path:
         kept.append(line)
+        continue
+    # 2026-08-26: 他エージェントのhook/daemonが毎ターン書き換える自動台帳と、doc laneのheader marker
+    # (<!-- source_commit / last_updated -->)だけのdirtyは忍者の『未commit忘れ』ではない。
+    # kotaroの履歴分岐統合が42回BLOCKした真因(reflux/auto-commit/marker setterが並行してdirtyを作る)。
+    if path in AUTO_LEDGER_PATHS or any(path.startswith(prefix) for prefix in AUTO_LEDGER_PREFIXES):
+        unrelated.append(path)
+        continue
+    _dirty_lines = [l for l in (run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path])).splitlines() if l[:1] and l[:1] in "+-" and not l.startswith(("+++", "---"))]
+    if _dirty_lines and all(re.match(r"^[+-]<!-- (source_commit|last_updated)", l) for l in _dirty_lines):
+        unrelated.append(path)
+        continue
+    if path not in changed_files:
+        # 2026-08-26: target_pathがrepo root(broad scope)のtaskは、所有commitが一度も触れていない
+        # pathのdirtyを所有できない(reflux/auto-commit/marker setter等の他エージェントが並行して
+        # 作るdirty)。kotaroの履歴分岐統合が42回BLOCKした構造問題。broad scopeに限り
+        # 『所有commitに無いpath』はWARNで通し、狭いscopeでは従来どおりBLOCK(未commit忘れ検知)。
+        if broad_scope:
+            unrelated.append(path)
+        else:
+            kept.append(line)
         continue
     commit_ranges = []
     for owned in owned_commits:
@@ -819,6 +844,8 @@ for line in raw_lines:
 
 for path in suppressed:
     print(f"WARN(cmd_3264-AC2): {path} has uncommitted non-overlapping diff after report commit_hash; treating as concurrent unrelated change", file=sys.stderr)
+for path in unrelated:
+    print(f"WARN(cmd_3264-AC2): {path} dirty is auto-ledger/marker-only or untouched by owned commits under broad scope; treating as concurrent unrelated change", file=sys.stderr)
 print("\n".join(kept))
 PY
 }
@@ -1040,8 +1067,12 @@ except Exception:
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 _CC_UNCOMMITTED=$(filter_session_state_only_task_diffs "$REPO_ROOT" "$_CC_UNCOMMITTED" 2>/dev/null || printf '%s\n' "$_CC_UNCOMMITTED")
             fi
+            _CC_BROAD=0
+            for _ccp in "${_CC_PATHS[@]}"; do
+                case "$_ccp" in "."|"$REPO_ROOT"|"$REPO_ROOT/"|"/mnt/c/tools/multi-agent-shogun"|"/mnt/c/tools/multi-agent-shogun/") _CC_BROAD=1;; esac
+            done
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
-                _CC_UNCOMMITTED=$(filter_report_commit_nonoverlap_diffs "$REPO_ROOT" "$REPORT_PATH" "$_CC_UNCOMMITTED" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_UNCOMMITTED")
+                _CC_UNCOMMITTED=$(GATE_CC_BROAD_SCOPE="$_CC_BROAD" filter_report_commit_nonoverlap_diffs "$REPO_ROOT" "$REPORT_PATH" "$_CC_UNCOMMITTED" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_UNCOMMITTED")
             fi
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 echo ""
