@@ -79,6 +79,26 @@ EOF
     LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
 }
 
+install_cache_fingerprint_fixture() {
+    export PREPUSH_TEST_COUNTER="$BATS_TEST_TMPDIR/prepush-test-runs"
+    : > "$PREPUSH_TEST_COUNTER"
+    mkdir -p "$FAKE_REPO/tests/unit"
+    cat > "$FAKE_REPO/scripts/test_select.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s/tests/unit/selected.bats\n' "$PWD"
+EOF
+    cat > "$FAKE_REPO/scripts/run_tests.sh" <<'EOF'
+#!/usr/bin/env bash
+: "${PREPUSH_TEST_COUNTER:?}"
+printf 'run\n' >> "$PREPUSH_TEST_COUNTER"
+EOF
+    chmod +x "$FAKE_REPO/scripts/test_select.sh" "$FAKE_REPO/scripts/run_tests.sh"
+    printf '# selected contract\n' > "$FAKE_REPO/tests/unit/selected.bats"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "add cache fingerprint fixture"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+}
+
 latest_artifact_text() {
     find "$FAKE_REPO/logs/hook_artifacts" -name "*.log" -newer "$FAKE_REPO" -print0 2>/dev/null \
         | xargs -0 cat 2>/dev/null
@@ -332,4 +352,42 @@ EOF
     [[ "$artifact" == *"BLOCK(GA-PUSH1)"* ]]
     [[ "$artifact" == *$'\n  shared.txt'* ]]
     [[ "$artifact" != *$'\n  docs/semantic-index/index.md'* ]]
+}
+
+# cmd_karo_hotfix_t22_prepush_tree_cache_20260826
+# test_necessity: the serialized PASS cache must represent the committed
+# affected-test tree, so a non-target operational commit reuses PASS with zero
+# test reruns while a scripts/ blob change invalidates it and reruns once.
+# overlaps_existing: true
+# regression_justification: this suite already owns full pre-push hook fixtures;
+# extending it reuses that contract boundary without adding another fixture file.
+@test "PASS cache keys the affected-test tree: insights hit, scripts miss" {
+    install_cache_fingerprint_fixture
+
+    run run_prepush
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$PREPUSH_TEST_COUNTER")" -eq 1 ]
+    first_fingerprint="$(cat "$FAKE_REPO/logs/prepush_test_pass.sha")"
+    [[ "$first_fingerprint" =~ ^[0-9a-f]{64}$ ]]
+
+    mkdir -p "$FAKE_REPO/logs"
+    printf 'published insight\n' > "$FAKE_REPO/logs/insights.yaml"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "insights: auto-commit"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    run run_prepush
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$PREPUSH_TEST_COUNTER")" -eq 1 ]
+    [ "$(cat "$FAKE_REPO/logs/prepush_test_pass.sha")" = "$first_fingerprint" ]
+
+    printf '# relevant source change\n' > "$FAKE_REPO/scripts/cache_target.sh"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "change affected-test source"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    run run_prepush
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$PREPUSH_TEST_COUNTER")" -eq 2 ]
+    [ "$(cat "$FAKE_REPO/logs/prepush_test_pass.sha")" != "$first_fingerprint" ]
 }

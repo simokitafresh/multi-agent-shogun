@@ -82,6 +82,22 @@ _PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS="${PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS:
 _PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS="${PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS:-5}"
 _PREPUSH_LOCK_OWNED=0
 _PREPUSH_EXEC_ROOT=""
+_PREPUSH_CACHE_TO_PUBLISH=""
+
+# The affected-test lane is determined by executable sources, test contracts,
+# and hook implementations.  Operational publications (insights/context/docs)
+# advance HEAD without changing that lane, so HEAD itself is not a valid cache
+# identity.  Hash Git's committed tree/blob records for the same target roots;
+# this stays deterministic across worktrees and invalidates on any relevant
+# content, mode, addition, deletion, or rename.
+pre_push_test_tree_fingerprint() {
+    local commit="$1"
+    git -C "$REPO_ROOT" ls-tree -r --full-tree "$commit" -- \
+        scripts lib tests .githooks .claude/hooks 2>/dev/null \
+        | LC_ALL=C sort \
+        | sha256sum \
+        | awk '{print $1}'
+}
 
 for _arg in "$@"; do
     if [ "$_arg" = "--force" ] || [ "$_arg" = "-f" ]; then
@@ -264,10 +280,15 @@ for _ref_line in "${_PUSH_REFS[@]}"; do
     # 削除push (local sha = 0) はスキップ
     [ "$_local_sha" = "0000000000000000000000000000000000000000" ] && continue
     _PREPUSH_CACHE_HIT=0
+    _PREPUSH_TEST_FINGERPRINT="$(pre_push_test_tree_fingerprint "$_local_sha")"
+    if ! [[ "$_PREPUSH_TEST_FINGERPRINT" =~ ^[0-9a-f]{64}$ ]]; then
+        echo "[pre-push] BLOCK: cannot compute affected-test tree fingerprint for $_local_sha." >&2
+        exit 1
+    fi
     if [ -r "$_PREPUSH_PASS_CACHE" ] \
-            && [ "$(cat "$_PREPUSH_PASS_CACHE" 2>/dev/null)" = "$_local_sha" ]; then
+            && [ "$(cat "$_PREPUSH_PASS_CACHE" 2>/dev/null)" = "$_PREPUSH_TEST_FINGERPRINT" ]; then
         _PREPUSH_CACHE_HIT=1
-        echo "[pre-push] Reusing serialized PASS for $_local_sha." >&2
+        echo "[pre-push] Reusing serialized PASS for affected-test tree $_PREPUSH_TEST_FINGERPRINT." >&2
     fi
     if [ "$_remote_sha" = "0000000000000000000000000000000000000000" ]; then
         # 新規ブランチ: main との merge-base を使用
@@ -408,6 +429,7 @@ PY
     }
     git config --global --unset-all safe.directory "^${_PREPUSH_EXEC_ROOT}\$" 2>/dev/null || true
     _PREPUSH_EXEC_ROOT=""
+    _PREPUSH_CACHE_TO_PUBLISH="$_PREPUSH_TEST_FINGERPRINT"
 done
 
 # --- Full unit suite: CIに委任（殿裁定2026-07-16: CIとの二重チェックは構造的バグ） ---
@@ -421,6 +443,15 @@ if [ -x "$REPO_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh" ]; then
         echo "[pre-push] BLOCK: ontology violation detected. Fix hardcoded agent names before pushing." >&2
         exit 1
     fi
+fi
+
+# Publish only after every per-ref test and global check has passed.  The test
+# lane is serialized by fd 9, and atomic rename prevents readers from seeing a
+# partial fingerprint.
+if [ -n "$_PREPUSH_CACHE_TO_PUBLISH" ]; then
+    _cache_tmp="${_PREPUSH_PASS_CACHE}.$$"
+    printf '%s\n' "$_PREPUSH_CACHE_TO_PUBLISH" > "$_cache_tmp"
+    mv -f "$_cache_tmp" "$_PREPUSH_PASS_CACHE"
 fi
 
 exit 0
