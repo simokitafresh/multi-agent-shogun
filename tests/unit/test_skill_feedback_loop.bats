@@ -699,6 +699,16 @@ result:
   summary: dashboard update test
 EOF
     complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
+    python3 - "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml" <<'PY'
+import pathlib, sys, yaml
+p = pathlib.Path(sys.argv[1])
+d = yaml.safe_load(p.read_text()) or {}
+d["task_type"] = "recon2"
+d["commit_contract"] = {"required": False, "reason": "hook-state fixture has no production change"}
+d["files_modified"] = [{"path": "queue/reports/hayate_report_cmd_2473.yaml", "change": "fixture evidence only"}]
+d.setdefault("binary_checks", {})["commit"] = [{"check": "no-commit fixture contract", "result": "yes"}]
+p.write_text(yaml.safe_dump(d, sort_keys=False, allow_unicode=True))
+PY
     cat > "$TEST_REPO/queue/gates/cmd_2473/sg7_bundle.json" <<'EOF'
 {"review":{"cmd_id":"cmd_2473","report_fingerprint":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","verdict":"APPROVE","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":["fixture"],"project":"infra"},"dashboard_line":"- **cmd_2473**: 完了。bundle line is authoritative"}}
 EOF
@@ -1867,6 +1877,7 @@ setup_hook_failure_repo() {
     mkdir -p "$TEST_REPO/scripts/lib" "$TEST_REPO/queue/reports" "$TEST_REPO/queue/gates" "$TEST_REPO/queue/tasks"
     cp "$PROJECT_ROOT/scripts/review_bundle.py" "$TEST_REPO/scripts/review_bundle.py"
     cp "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_REPO/scripts/lib/review_approval.sh"
+    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_REPO/scripts/lib/report_commit_identity.py"
     cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_2473:
@@ -1887,6 +1898,16 @@ result:
   summary: hook failure state fixture
 EOF
     complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
+    python3 - "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml" <<'PY'
+import pathlib, sys, yaml
+p = pathlib.Path(sys.argv[1])
+d = yaml.safe_load(p.read_text()) or {}
+d["task_type"] = "recon2"
+d["commit_contract"] = {"required": False, "reason": "hook-state fixture has no production change"}
+d["files_modified"] = [{"path": "queue/reports/hayate_report_cmd_2473.yaml", "change": "fixture evidence only"}]
+d.setdefault("binary_checks", {})["commit"] = [{"check": "no-commit fixture contract", "result": "yes"}]
+p.write_text(yaml.safe_dump(d, sort_keys=False, allow_unicode=True))
+PY
     cat > "$TEST_REPO/queue/tasks/hayate.yaml" <<'EOF'
 task:
   task_id: cmd_2473
@@ -1899,8 +1920,30 @@ EOF
 }
 
 run_hook_failure_generate() {
-    run python3 "$TEST_REPO/scripts/review_bundle.py" --root "$TEST_REPO" generate \
-        --cmd cmd_2473 --verdict APPROVE --report queue/reports/hayate_report_cmd_2473.yaml
+    local root="$TEST_REPO" logical="queue/reports/hayate_report_cmd_2473.yaml"
+    run python3 "$root/scripts/review_bundle.py" --root "$root" generate \
+        --cmd cmd_2473 --verdict APPROVE --report "$logical"
+    local first_status="$status" first_output="$output"
+    if [ "$first_status" -eq 2 ]; then
+        status="$first_status"
+        output="$first_output"
+        return 0
+    fi
+    [ "$first_status" -eq 3 ] || {
+        status="$first_status"
+        output="$first_output"
+        return 1
+    }
+    source "$root/scripts/lib/review_approval.sh"
+    local key fingerprint approval_dir
+    key=$(PROJECT_ROOT="$root" review_report_key "$logical") || return 1
+    fingerprint=$(PROJECT_ROOT="$root" review_report_fingerprint "$root/$logical") || return 1
+    approval_dir="$root/queue/gates/cmd_2473/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    printf "role: gunshi\nresult: LGTM\nfingerprint: %s\nreport: %s\n" \
+        "$fingerprint" "$logical" > "$approval_dir/gunshi.yaml"
+    run python3 "$root/scripts/review_bundle.py" --root "$root" generate \
+        --cmd cmd_2473 --verdict APPROVE --report "$logical"
 }
 
 @test "review_bundle APPROVE passes hook failures carrying full four-step resolution evidence" {
