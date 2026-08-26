@@ -5466,3 +5466,88 @@ printf "alerts=2 same_generation=1 cooldown_suppressed=1\n"
     [ "$status" -eq 0 ]
     [[ "$output" == *"alerts=2 same_generation=1 cooldown_suppressed=1"* ]]
 }
+
+# test_necessity(cmd_karo_hotfix_auto_clear_blocked_by_gate_improvement_20260826):
+# gate improvement must not hold the monitor's main loop hostage, and a
+# generation handoff must preserve single-flight execution.
+# regression_justification: reproduces the synchronous trigger path that left
+# PID1258 waiting on gate_context_freshness for more than eight minutes.
+@test "gate improvement is bounded, asynchronous, and single-flight" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/gate-improvement-async"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        mkdir -p "$root/scripts" "$STATE_DIR" "$root/logs"
+        printf "#!/usr/bin/env bash\nprintf \"1\\n\" >> \"$root/calls\"\nsleep 2\n" > "$root/scripts/gate_improvement_trigger.sh"
+        chmod +x "$root/scripts/gate_improvement_trigger.sh"
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        LAST_GATE_IMPROVEMENT=0
+        GATE_IMPROVEMENT_INTERVAL=0
+        GATE_IMPROVEMENT_TIMEOUT=5
+        GATE_IMPROVEMENT_LOCK_FILE="$STATE_DIR/gate-improvement.lock"
+        GATE_IMPROVEMENT_STATE_FILE="$STATE_DIR/gate-improvement.last"
+        GATE_IMPROVEMENT_PID_FILE="$STATE_DIR/gate-improvement.pid"
+        GATE_IMPROVEMENT_GENERATION_FILE="$STATE_DIR/gate-improvement.generation"
+        NINJA_MONITOR_GENERATION=current-generation
+
+        started=$EPOCHREALTIME
+        check_gate_improvement
+        elapsed=$(awk -v a="$started" -v b="$EPOCHREALTIME" "BEGIN { printf \"%.3f\", b-a }")
+        awk -v elapsed="$elapsed" "BEGIN { exit !(elapsed < 0.5) }"
+        test -s "$GATE_IMPROVEMENT_PID_FILE"
+
+        # A second cycle while the first worker owns the lock must not spawn a
+        # second trigger daemon.
+        LAST_GATE_IMPROVEMENT=0
+        check_gate_improvement
+        test "$(wc -l < "$LOG" | tr -d " ")" -eq 2
+        grep -q "GATE-IMPROVEMENT-SKIP: worker already running" "$LOG"
+        worker_pid=$(cat "$GATE_IMPROVEMENT_PID_FILE")
+        wait "$worker_pid"
+        test "$(wc -l < "$root/calls" | tr -d " ")" -eq 1
+        test "$(grep -c '^SKIP:' "$LOG" || true)" -eq 0
+        printf '%s\n' "$elapsed" > "$root/elapsed"
+    '
+    [ "$status" -eq 0 ]
+    elapsed=$(cat "$BATS_TEST_TMPDIR/gate-improvement-async/elapsed")
+    awk -v elapsed="$elapsed" 'BEGIN { exit !(elapsed < 0.5) }'
+    printf "elapsed_ms=%s calls=1 duplicate_workers=0 skip=0\n" "$elapsed"
+}
+
+# test_necessity: stale trigger workers may complete after a hot reload, but
+# must not emit alerts or mutate the trigger's durable alert records.
+@test "gate improvement trigger fences stale owner generation" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        root="$BATS_TEST_TMPDIR/gate-improvement-handoff"
+        mkdir -p "$root/scripts/gates" "$root/logs/gate_state" "$root/bin"
+        for gate in gate_lesson_health.sh gate_cmd_state.sh gate_context_freshness.sh gate_p_average_freshness.sh; do
+            printf "#!/usr/bin/env bash\nprintf \"OK: gate\\n\"\n" > "$root/scripts/gates/$gate"
+            chmod +x "$root/scripts/gates/$gate"
+        done
+        printf "#!/usr/bin/env bash\nexit 0\n" > "$root/bin/gh"
+        chmod +x "$root/bin/gh"
+        owner_pid=$BASHPID
+        printf "%s current-generation %s\n" "$owner_pid" "$EPOCHSECONDS" > "$root/owner"
+        : > "$root/inbox.log"
+        : > "$root/ntfy.log"
+        printf "#!/usr/bin/env bash\nprintf \"%s\\n\" \"$*\" >> \"$root/inbox.log\"\n" > "$root/scripts/inbox_write.sh"
+        printf "#!/usr/bin/env bash\nprintf \"%s\\n\" \"$*\" >> \"$root/ntfy.log\"\n" > "$root/scripts/ntfy.sh"
+        chmod +x "$root/scripts/inbox_write.sh" "$root/scripts/ntfy.sh"
+        PATH="$root/bin:$PATH" GATE_IMPROVEMENT_ROOT="$root" \
+            GATE_IMPROVEMENT_OWNER_FILE="$root/owner" \
+            GATE_IMPROVEMENT_OWNER_PID="$owner_pid" \
+            GATE_IMPROVEMENT_OWNER_GENERATION=old-generation \
+            bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh" >/dev/null
+        test ! -s "$root/inbox.log"
+        test ! -s "$root/ntfy.log"
+        test ! -e "$root/logs/gate_alerts.yaml"
+        printf "stale_generation_alerts=0 durable_records=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "stale_generation_alerts=0 durable_records=0" ]
+}
