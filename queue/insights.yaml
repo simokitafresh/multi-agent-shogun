@@ -3863,7 +3863,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T20:12:02+09:00"
 - id: INS-20260826-193442661-977c
   ts: "2026-08-26T19:34:42+09:00"
   insight: "T21実例(19:31-19:34): 家老Codexが/clear直後にwatcher nudge『inbox8』を『Messages to be submitted after next tool call』でキューしたままidle表示。watcherは同一fingerprintをdedupし再送せず。約3分後に自己解消(unread 8→6)したが、この間は指示不達。配達判定をpane観測でなくread遷移にするT21の必要性を裏付け。将軍はEnter送出を準備したが状態変化を確認して送らなかった(送信前capture→判断の順序遵守)"
@@ -3877,25 +3880,44 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T20:12:03+09:00"
 - id: INS-20260826-200801863-ee4b
   ts: "2026-08-26T20:08:01+09:00"
   insight: "[[artifactの更新も頼む]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactの更新も頼む"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T20:11:44+09:00"
 - id: INS-20260826-200911731-004f
   ts: "2026-08-26T20:09:11+09:00"
   insight: "[[pushuはprepush→pushなのか？prepush長時間かかりすぎなのが気になるな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=pushuはprepush→pushなのか？prepush長時間かかりすぎなのが気になるな。なぜなのか説明してくれ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T20:11:45+09:00"
 - id: INS-20260826-201035710-f014
   ts: "2026-08-26T20:10:35+09:00"
   insight: "[[pushはしたのか？他を待つ必要はないぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=pushはしたのか？他を待つ必要はないぞ"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T20:11:46+09:00"
+- id: INS-20260826-201725331-4735
+  ts: "2026-08-26T20:17:25+09:00"
+  insight: "semantic_index_update新概念候補: discussion:同じcodexの家老にはできることが、なぜcodex忍者にはできないんだろう？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
