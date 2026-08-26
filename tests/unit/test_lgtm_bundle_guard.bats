@@ -25,6 +25,7 @@ _lgtm_entry_block_fixture() {
     cat <<YAML
 - cmd_id: $cmd_id
   review_type: report
+  step3_5_verified: true
   verdict: LGTM
   observations:
     - "事実1: テスト観察"
@@ -41,6 +42,7 @@ _lgtm_entry_pass_fixture() {
     cat <<YAML
 - cmd_id: $cmd_id
   review_type: report
+  step3_5_verified: true
   verdict: LGTM
   observations:
     - "事実1: テスト観察"
@@ -114,6 +116,7 @@ YAML
     fail_entry="$(cat <<YAML
 - cmd_id: $cmd_id
   review_type: report
+  step3_5_verified: true
   verdict: FAIL
   observations:
     - "事実1: テスト観察"
