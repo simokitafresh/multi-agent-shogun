@@ -65,7 +65,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_vercel_owned_context_scope"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で候補の発生元cmdと現行防御を照合した。発生元cmdの変更はb9c6b2bd4で確認し、候補の根因(SG-PRE12がproject-level draft教訓を未検出)はGP-237のa8c175135b実装済みで、現行gateにもSG-PRE12bのdraft件数検出とCLEARからWARNへの補正が残存する。新規コード修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-031732094-3776;source=git:b9c6b2bd4;existing_fix=logs/gunshi_gp_tracker.yaml:L696-L707;gate=scripts/gates/gate_gunshi_report_precheck.sh:L939-L953,L1476-L1482;engine=scripts/gates/gate_gunshi_report_precheck_engine.py:L738-L741;fix_commit=git:a8c175135b,517caec57;verification=gate_gunshi_report_precheck current report SG-PRE12b PASS(draft教訓なし)"
+  resolved_at: "2026-08-27T06:33:55+09:00"
 - id: INS-20260823-052253475-8002
   ts: "2026-08-23T05:22:53+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4370; matched=deploy_task; current_pattern=deploy_task.sh分割第七弾 — context injection module抽出(挙動不変); candidate_level=4; candidate=既存実装で既にカバー済み(L2261-2278: rate==0.0→完全除外、rate<0.30→decay 0.3倍)。LG033違反: 既存の仕組みを確認せず提案した; source=gunshi_gp_tracker.yaml"
