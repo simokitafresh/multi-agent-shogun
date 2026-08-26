@@ -621,6 +621,16 @@ codex_config_apply_agent() {
     [[ -z "$model_name" || "$model_name" != gpt-* ]] && return 0
 
     _CODEX_CFG_BACKUP_MODEL=$(grep -oP '^model\s*=\s*"\K[^"]+' "$cfg" || true)
+    # 自己修復(2026-08-26 23:42 殿指摘): config.toml の model に effort 接尾辞付きラベル
+    # (例 gpt-5.6-luna-high)が手で書かれると Codex が 400 "model is not supported" で全忍者停止する。
+    # model と effort は別キー。接尾辞付きなら model を剥がし effort へ移す(単一writerで構造的に防ぐ)。
+    if [[ "$_CODEX_CFG_BACKUP_MODEL" =~ ^(gpt-.*)-(low|medium|high|xhigh)$ ]]; then
+        sed -i "s|^model = \".*\"|model = \"${BASH_REMATCH[1]}\"|" "$cfg"
+        sed -i "s|^model_reasoning_effort = \".*\"|model_reasoning_effort = \"${BASH_REMATCH[2]}\"|" "$cfg"
+        echo "[cli_lookup] config.toml model '${_CODEX_CFG_BACKUP_MODEL}' → model=${BASH_REMATCH[1]} effort=${BASH_REMATCH[2]} (effort接尾辞を自己修復)" >&2
+        _CODEX_CFG_BACKUP_MODEL="${BASH_REMATCH[1]}"
+        _CODEX_CFG_CHANGED=true
+    fi
     _CODEX_CFG_BACKUP_EFFORT=$(grep -oP '^model_reasoning_effort\s*=\s*"\K[^"]+' "$cfg" || true)
     _CODEX_CFG_BACKUP_TIER=$(grep -oP '^service_tier\s*=\s*"\K[^"]+' "$cfg" || true)
 
