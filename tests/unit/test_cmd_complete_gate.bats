@@ -898,6 +898,10 @@ PY
 
 setup() {
     printf 'setup_start\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
+    # Most cases validate gate behavior, not the production telemetry writer.
+    # Disable its Python/SQLite/flock work by default; telemetry-specific cases
+    # can opt back in explicitly without weakening any gate assertion.
+    export DEFENSE_OVERHEAD_ENABLED=0
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cmd_gate_ctx.XXXXXX")"
     export TEST_PROJECT="$TEST_TMPDIR/project"
