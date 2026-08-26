@@ -1045,6 +1045,19 @@ def source_commit_summary_since(
     source_commits: tuple[str, ...] | None = None,
     max_details: int = 3,
 ) -> tuple[int, list[str]]:
+    # Registered context paths are governed by the exact source_commit
+    # boundary.  Keep this invariant at the counting boundary as well as at
+    # the callers: a future caller that omits the pre-resolved frontier must
+    # not silently fall back to the date-based scan that caused DOC_LANE_ALERT
+    # false positives.  Unregistered root-fallback contexts retain their
+    # legacy date window until they receive an explicit source boundary.
+    if is_registered_source_context(rel_path) and not source_commits:
+        source_commits, marker_error = source_commit_frontier(
+            project_id, rel_path, abs_path
+        )
+        if marker_error or not source_commits:
+            return -1, []
+
     repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     if not repo_path or not os.path.isdir(repo_path):
         return 0, []
