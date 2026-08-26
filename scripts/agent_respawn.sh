@@ -20,6 +20,28 @@ if [[ -z "$pane" ]]; then
     exit 1
 fi
 
+# 作業中ガード(殿裁定2026-08-26 20:53「作業中をrespawnしても速くならない。respawnしたら将軍の思考回路がバグ」):
+# 呼び手の目視判断に依存せず、(1)pane実態が作業中 (2)task YAMLが未終端 のどちらかなら拒否する。
+# 明示 RESPAWN_FORCE=1 のみ通す(死亡pane復旧など。理由をログに残す)。構造型=手を動かすと自然に守られる。
+respawn_task_file="$REPO_ROOT/queue/tasks/${agent_name}.yaml"
+respawn_task_status=""
+if [[ -f "$respawn_task_file" ]]; then
+    respawn_task_status=$(grep -m1 -E '^\s*status:\s*' "$respawn_task_file" 2>/dev/null \
+        | sed 's/.*status:[[:space:]]*//' | tr -d "\"'[:space:]" || true)
+fi
+respawn_pane_tail="$(tmux capture-pane -t "$pane" -p 2>/dev/null | tail -12 || true)"
+respawn_busy_reason=""
+case "$respawn_task_status" in
+    assigned|acknowledged|in_progress) respawn_busy_reason="task_status=${respawn_task_status}" ;;
+esac
+if printf '%s' "$respawn_pane_tail" | grep -qE 'esc to interrupt|Working \(|Running [0-9]+ PreToolUse|Waiting for background terminal'; then
+    respawn_busy_reason="${respawn_busy_reason:+${respawn_busy_reason},}pane_busy"
+fi
+if [[ -n "$respawn_busy_reason" && "${RESPAWN_FORCE:-0}" != "1" ]]; then
+    echo "[agent_respawn] BLOCK: ${agent_name} is working (${respawn_busy_reason}). respawn discards in-flight work and is slower, not faster. Wait for task end, or RESPAWN_FORCE=1 with a reason." >&2
+    exit 2
+fi
+
 # CLI種別を自動解決(cli_lookup.sh SSOT)
 cli=$(cli_type "$agent_name" 2>/dev/null || echo "claude")
 launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
