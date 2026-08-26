@@ -52,21 +52,21 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 07:36 更新(loop tick 9) · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 08:06 更新(loop tick 10) · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
 
 <div class="strip">
-  <div class="tile"><span class="k">済</span><span class="v done">44</span><span class="s">証跡付き</span></div>
-  <div class="tile"><span class="k">走行中</span><span class="v run">1</span><span class="s">T45 reflux 回転計測</span></div>
-  <div class="tile"><span class="k">未着手</span><span class="v todo">3</span><span class="s">T12 / T40 / T47</span></div>
-  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">run 33018749601 @ed70c88e2(小太郎 ci_fix: owner heartbeat 秒境界レース除去) success。最新 51d052925 走行中</span></div>
-  <div class="tile"><span class="k">reflux</span><span class="v run">5 / 空白</span><span class="s">5 CLEAR(pending 104→101)。07:00 以降 30分+ 配備なし=idle 計時リセット(T47)。孤児 0 · load 7</span></div>
+  <div class="tile"><span class="k">済</span><span class="v done">45</span><span class="s">証跡付き</span></div>
+  <div class="tile"><span class="k">走行中</span><span class="v run">2</span><span class="s">T45 reflux 回転計測 / T47 疾風 hotfix</span></div>
+  <div class="tile"><span class="k">未着手</span><span class="v todo">4</span><span class="s">T12 / T40 / T49 / T50</span></div>
+  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">run 33018749601 @ed70c88e2(小太郎 ci_fix: owner heartbeat 秒境界レース除去) success、51b33bd4a success。最新 945d3e032 in_progress(origin=HEAD 0 0)</span></div>
+  <div class="tile"><span class="k">reflux</span><span class="v run">5 / 空白</span><span class="s">5 CLEAR(pending 103)。07:50/07:57 配備2件が insights.yaml dirty で AUTO-BLOCK(T50)。T47 疾風 走行中。孤児 0</span></div>
 </div>
 
 <div class="live">
-  <h2>一次情報(07:36 capture / ps / gh / logs)</h2>
+  <h2>一次情報(08:04 capture / gh / logs / git)</h2>
   <ul>
     <li><span class="chip bad">孤児テスト増殖</span>test_heavy_job_admission.bats の singleflight-orphan が内側 run_tests.sh unit を生かしたまま終わり、古い半蔵worktree(seed未是正版)から全suiteを再帰起動→root 27・bats-exec-suite 32本・load 66・/tmp fixture lock 1359個・global flock競合。殿の kill 3回+<span class="mono">orphan_test_reap.sh --kill</span>(124本)で 0 に</li>
     <li><span class="chip done">環境埋込</span>Gate 10.07 長時間bats検知(3fa443c11) / <span class="mono">scripts/orphan_test_reap.sh</span>(ps 1回スナップショット・0.2秒・tmux配下除外) / <span class="mono">git worktree prune</span> 724→103(deploy 397秒→199秒)</li>
@@ -86,10 +86,13 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 </section>
 
 <section class="group">
-  <h2>未着手 <span class="n">3</span></h2>
+  <h2>未着手 <span class="n">4</span></h2>
   <div class="rows">
-    <div class="row todo"><span class="id">T47</span><span class="t">reflux 配備の空白(idle 計時リセット)</span><span class="d">5件目 DONE 07:00 の後、07:31 に idle tracking が再スタート→6名 idle でも 30-40分の空白。起点を task idle 時刻に固定する hotfix 候補(insight 登録済)</span><span class="w">気づき消化スループットを約2倍に</span></div>
-    <div class="row todo"><span class="id">T40</span><span class="t">insights 未処理 97件の消化</span><span class="d">本日追加: 孤児発生源7なぜ / Actions queue滞留 / worktree stale 自動prune / inbox未読の grep 誤検知(本文中の read: false)</span><span class="w">気づきの先送り0</span></div>
+    <div class="row run"><span class="id">T47</span><span class="t">reflux 配備の空白(idle 計時リセット)</span><span class="d">疾風 in_progress 28分(見積15)・pane Working・worktree で runner 境界切り分け中。07:31 の idle tracking 再スタートで 30-40分の空白→起点を task idle 時刻に固定</span><span class="w">気づき消化スループットを約2倍に</span></div>
+    <div class="row todo"><span class="id">T40</span><span class="t">insights 未処理 103件の消化</span><span class="d">08:04 pending 103</span></div>
+    <div class="row todo"><span class="id">T49</span><span class="t">ninja_monitor 偽BLOCK(実在しない hayate_report_cmd_alias.yaml)</span><span class="d">22:54/07:59 に2回。テンプレ内コメントの誤抽出疑い→抽出に実在チェック(INS-080518912)</span><span class="w">偽ログ消化コスト0</span></div>
+    <div class="row todo"><span class="id">T50</span><span class="t">reflux dirty-guard の毎周期再発</span><span class="d">daemon の insights.yaml resolved 書込み(08:03:54)が dirty を作り 07:50/07:57 配備が AUTO-BLOCK→auto-commit まで空白。書込み側で同時 commit か guard を status 差分許容へ</span><span class="w">配備空白の再発源を構造で断つ</span></div>
+    <div class="row done" style="display:none"><span class="t"><span class="d">本日追加: 孤児発生源7なぜ / Actions queue滞留 / worktree stale 自動prune / inbox未読の grep 誤検知(本文中の read: false)</span><span class="w">気づきの先送り0</span></div>
     <div class="row todo"><span class="id">T12</span><span class="t">ライブ publish 13分の分解</span><span class="d">次回 cmd_publish 時に将軍が stdout を logs/ へ保存</span><span class="w">publish律速の短縮</span></div>
   </div>
 </section>
@@ -121,5 +124,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 07:36(loop tick 9)</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 08:06(loop tick 10)</footer>
 </div>
