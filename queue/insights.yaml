@@ -3765,4 +3765,14 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T18:03:32+09:00"
+- id: INS-20260826-181504690-8bfa
+  ts: "2026-08-26T18:15:04+09:00"
+  insight: "Codex宛inbox nudgeの配達検証(maybe_verify_codex_delivery)が本日111/126=88%でFAILURE。Codex paneはnudge受領をpane上で確認できず、watcherは同一fingerprintをdedupし再nudgeしないため『届いたか不明のまま再通知もしない』状態。家老がtask_assignedを読まず(未読3件)に別作業を続けた15:10-17:03の2h停滞と整合。自動化ターゲット: Codex向けは配達検証をpane観測でなくinbox read遷移(mark_read)で判定し、N分未読ならwatcherがfingerprint dedupを解除して再nudge"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
