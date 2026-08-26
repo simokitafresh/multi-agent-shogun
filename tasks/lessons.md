@@ -15749,6 +15749,8 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **enforcement**: 未自動化
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-08-25
 - bash scripts/run_tests.sh task queue/tasks/kagemaru.yaml selected zero files because the task target is an external DM-Signal worktree; direct task-worktree pytest passed 1/1 with SKIP0. Future external-repo task runner contracts should map the external scope or emit a typed external_boundary result.
 
 ### L1633: Source-equivalent revertは本文差分とboundary更新を分離して自動要求化する
@@ -15828,3 +15830,94 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - source freshness detectorが定義されていてもproduction callerが0件ならAlertはpost-CLEAR warningに留まり未反映のまま完了できる。次回はrgで定義数と非test caller数を二値確認し、caller非zeroかつnonzero結果がBLOCKへ伝播するcontract testを先に実行する。
+
+### L1639: CI FAIL artifactはparallel-onlyとstandaloneを直列比較で分離する
+- **日付**: 2026-08-25
+- **出典**: cmd_karo_hotfix_cmd4400_stateful_shards
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [.github/workflows/test.yml,scripts/cmd_complete_gate.sh,scripts/deploy_task.sh,scripts/lib/review_approval.sh,tests/unit/test_heavy_job_admission.bats]
+- **origin**: [[cmd_karo_hotfix_cmd4400_stateful_shards]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- CI artifactのFAIL件数だけで全てをstatefulと仮定せず、同一manifestの直列run_tests実験でPASS/FAILを再分類し、compatibility shardへは欠落なく束ねる。
+
+### L1640: Source boundary classification must remain explicit across ledger producer and gate post-processing
+- **日付**: 2026-08-25
+- **出典**: cmd_karo_hotfix_ga498_context_freshness_source_timeout
+- **記録者**: kotaro
+- **tags**: [infra,gate,gate,git,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh,scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_ga498_context_freshness_source_timeout]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 発端: 9p source history timeoutとmerge/non-ancestor境界が同じ判定不能へ収束した。原因: rev-list date-pruneとmerge diff omission、およびbounded ledger後段の無制限git probeが判定経路を壊した。結果: generation-bound ledgerへboundary metadata/metadata-only merge rowを追加し、non-ancestorを正当no-op、unresolvedをfail-closedへ分離し、gate後段probeもGIT_TIMEOUTでbounded化した。次回check: fresh cacheでrows/boundaries/source-check BLOCK件数を同時計測する。
+
+### L1641: Race contracts must hold partial records across the observation boundary
+- **日付**: 2026-08-25
+- **出典**: cmd_karo_ci_fix_32810257392_compatibility_isolation
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_report_commit_nonoverlap_filter.bats]
+- **origin**: [[cmd_karo_ci_fix_32810257392_compatibility_isolation]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- A complete YAML append can be a valid additive generation and therefore be allowed after stabilization. To test an in-progress write, append an identity-incomplete record, hold it until the filter returns, then complete it after the BLOCK assertion.
+
+### L1642: FAIL_CLOSEはstale CLEARより先に判定しgeneration一致を要求する
+- **日付**: 2026-08-26
+- **出典**: cmd_karo_hotfix_fail_close_worktree_cleanup_20260826
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,review,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/archive_completed.sh,tests/unit/test_archive_completed.bats]
+- **origin**: [[cmd_karo_hotfix_fail_close_worktree_cleanup_20260826]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- FAIL reportをKaroが正式ACCEPTした終端では、古いgate_metrics CLEARをreview_gate.doneへbackfillしてはならない。現行report SHA-256とapproval generationの一致まで検証し、証拠が欠けた場合はworktree cleanupをBLOCKする。
+
+### L1643: 通知成功とdoc内容反映を同一のdurable receipt契約へ結ぶ
+- **日付**: 2026-08-26
+- **出典**: cmd_karo_hotfix_ga499_doc_lane_setter_20260826
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/context_source_commit_set.sh,scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_ga499_doc_lane_setter_20260826]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 発端: GA-499で通常ALERT/cmd_complete async警告が通知止まり。一次修正後もpersisted配送証跡を本文反映証跡として扱う穴がRCで発覚。結果: content_applied receiptにcurrent context hash・request digest・context・source commitを結合し、persisted対照はBLOCK、完全一致のみboundary更新する構造へ是正。
+
+### L1644: CI共有資源fixtureはprotected full-budget境界へ即時反映する
+- **日付**: 2026-08-26
+- **出典**: cmd_karo_ci_fix_admission_pending_20260826
+- **記録者**: hanzo
+- **tags**: [infra,testing,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh]
+- **origin**: [[cmd_karo_ci_fix_admission_pending_20260826]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- CI shardの複数root負荷でcache競合fixtureのcaller完了順序が揺れるため、共有資源を使う対象fixtureはprotected_filesとMAX_TEST_JOBS weightを同時に設定する。
+
+### L1645: 独立Batsセルはbounded parallel化し、空値軸は明示sentinelで結果集約する
+- **日付**: 2026-08-26
+- **出典**: cmd_karo_hotfix_cmd4403_batch2set_test_auto_deploy_next_r2_20260826
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_auto_deploy_next.bats]
+- **origin**: [[cmd_karo_hotfix_cmd4403_batch2set_test_auto_deploy_next_r2_20260826]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- R05の120セルは固有root/cmdで独立していたため8件ずつ並列化し、R05を88.037秒から21.149秒へ短縮できた。結果集約で空statusをTSV先頭空欄にするとBash readが列を左詰めするため、missing sentinelを用いて全軸を保持する。
