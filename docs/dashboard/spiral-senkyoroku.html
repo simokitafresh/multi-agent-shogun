@@ -46,11 +46,17 @@
   .foot{color:var(--sub);font-size:.8rem;margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.8rem;}
 </style>
 <main>
-<p class="date">2026-08-26 02:45 JST 更新 · 将軍報告(前版 08-25 19:40)</p>
+<p class="date">2026-08-26 10:25 JST 更新 · 将軍報告(前版 08-26 02:45 / 08-25 19:40)</p>
 <h1>らせん戦況録</h1>
-<p class="lede">個別最適化×全体最適化のらせん——夜間の回転実績(バッチ#2〜#8)、地図外で踏んだ構造バグ、次の一手。</p>
+<p class="lede">個別最適化×全体最適化のらせん——夜間〜朝の回転実績(バッチ#1〜#8 CLEAR・第2セット着火)、地図外で踏んだ構造バグ5件の根治、次の一手。</p>
 
-<h2>19:40以降にらせんが生んだ数値</h2>
+<h2>02:45以降(朝)にらせんが生んだ数値</h2>
+<div class="kpi">
+  <div><b>18 GATE CLEAR</b><span>02:45〜10:25の終端数(バッチ#4〜#8の5件+ghost根治5件+CI修正3件+worktree/runtime保全等)。滞留していた5件は将軍が真因2つを掘って全て解放</span></div>
+  <div><b>第2セット着火</b><span>才蔵の並列harness再計測(238/238・3527 PASS)で未攻略top10を機械選別→将軍がYAMLを作成し疾風/影丸/才蔵へ3弾配備(10:13 Working実測)</span></div>
+  <div><b>🟢 CI GREEN復帰</b><span>run 7d9532b12 success(10:0x)。inventory 238→239・runtime fixture・latency契約の3 RED を忍者ci_fixで順次解消</span></div>
+</div>
+<h2>19:40〜02:45(夜間)の数値</h2>
 <div class="kpi">
   <div><b>8バッチ / 7 PASS</b><span>個別短縮バッチ#1〜#8を忍者並列で回転。各テストのlive before/after実測: 最大<b>67.3%</b>(#1)・57.0%(#7)・54.5%(#8)・54.3%(#4)・44.3%(#5)・15.4%(#2)・9.5%(#3)・7.0%(#6)</span></div>
   <div><b>初回3件 BLOCK → 再試行3件 PASS</b><span>#5/#7/#8の初回はAC1(timing正本≠現物実測、差−44〜−50%)で<b>実装せず停止</b>。「計測器の名指しから始める」逸脱チェック①が機能した証拠</span></div>
@@ -63,13 +69,28 @@
 <tr><td>#1 半蔵</td><td>test_cmd_complete_gate.bats(最重量)</td><td class="num">912 → 298秒(−67.3%) 281/281</td><td><span class="pill done">GATE CLEAR 20:03</span></td></tr>
 <tr><td>#2 疾風</td><td>test_cmd_save_block_aggregation.bats fixture副作用隔離</td><td class="num">79.9 → 67.6秒(−15.4%) 13/13</td><td><span class="pill done">GATE CLEAR 21:03</span></td></tr>
 <tr><td>#3 影丸</td><td>test_inbox_write.bats tmpfs不変script配置</td><td class="num">87.5 → 72.6秒(−9.5%) 118/118</td><td><span class="pill stuck">AC2 BLOCK</span> 全体再計測1800秒timeout(rc=124)</td></tr>
-<tr><td>#4 疾風</td><td>test_gate_gunshi_report_precheck_cache.bats 重複full-precheck統合</td><td class="num">20.1 → 9.2秒(−54.3%) 2/2</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
-<tr><td>#5 半蔵(再)</td><td>test_gate_gunshi_report_precheck.bats test8をSG-PRE25 focused境界で早期終了</td><td class="num">87.6 → 48.8秒(−44.3%) 31/31</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
-<tr><td>#6 才蔵(再)</td><td>test_cmd_skeleton.bats 246回cmd_save呼出しへphase receipt(支配=checks_main.quality_gateを名指し)</td><td class="num">630 → 586秒(−7.0%)+計測器常設</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
-<tr><td>#7 小太郎(再)</td><td>test_three_layer_preflight.bats test54の20回起動を並列化</td><td class="num">142.7 → 61.3秒(−57.0%) 60/60</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
-<tr><td>#8 飛猿(再)</td><td>test_ninja_scope_commit.bats immutable base+local clone</td><td class="num">169.2 → 76.9秒(−54.5%) 79/79</td><td><span class="pill run">報告PASS・GATE待ち</span></td></tr>
+<tr><td>#4 疾風</td><td>test_gate_gunshi_report_precheck_cache.bats 重複full-precheck統合</td><td class="num">20.1 → 9.2秒(−54.3%) 2/2</td><td><span class="pill done">GATE CLEAR 02:58</span></td></tr>
+<tr><td>#5 半蔵(再)</td><td>test_gate_gunshi_report_precheck.bats test8をSG-PRE25 focused境界で早期終了</td><td class="num">87.6 → 48.8秒(−44.3%) 31/31</td><td><span class="pill done">GATE CLEAR 03:02</span></td></tr>
+<tr><td>#6 才蔵(再)</td><td>test_cmd_skeleton.bats 246回cmd_save呼出しへphase receipt(支配=checks_main.quality_gateを名指し)</td><td class="num">630 → 586秒(−7.0%)+計測器常設</td><td><span class="pill done">GATE CLEAR 03:20</span></td></tr>
+<tr><td>#7 小太郎(再)</td><td>test_three_layer_preflight.bats test54の20回起動を並列化</td><td class="num">142.7 → 61.3秒(−57.0%) 60/60</td><td><span class="pill done">GATE CLEAR 03:09</span></td></tr>
+<tr><td>#8 飛猿(再)</td><td>test_ninja_scope_commit.bats immutable base+local clone</td><td class="num">169.2 → 76.9秒(−54.5%) 79/79</td><td><span class="pill done">GATE CLEAR 03:12</span></td></tr>
 </table></div>
-<p>集計: 各バッチ報告YAMLの result.summary と gate_metrics.log(#4〜#8は review_two_phase_pending=GATE前)。1件=1バッチ1テストファイル。SKIP=0・FAIL=0を全弾で維持、検証削除ゼロ。</p>
+<h2>第2セット(才蔵 並列timing ledger 07:34・未攻略top10)</h2>
+<div class="tablewrap"><table>
+<tr><th>順</th><th>対象テスト</th><th>live wall</th><th>状態</th></tr>
+<tr><td>1</td><td>test_cmd_skeleton.bats(7 tests)</td><td class="num">253.6s</td><td>#6rでphase receipt常設済(支配=quality_gate)。次弾候補</td></tr>
+<tr><td>2</td><td>test_cmd_complete_gate.bats(281)</td><td class="num">200.3s</td><td>#1で912→298s済。残り支配段は次弾</td></tr>
+<tr><td>3</td><td>test_inbox_write.bats(118)</td><td class="num">123.3s</td><td>#3 AC2 timeout BLOCK→再配備候補</td></tr>
+<tr><td>4</td><td>test_deploy_task_ac_handling.bats(54)</td><td class="num">93.6s</td><td><span class="pill run">影丸 Working(10:13)</span></td></tr>
+<tr><td>5</td><td>test_run_tests.bats(66)</td><td class="num">91.6s</td><td><span class="pill run">才蔵 Working(10:13)</span></td></tr>
+<tr><td>6</td><td>test_deploy_task.bats(59)</td><td class="num">87.1s</td><td>次弾</td></tr>
+<tr><td>7</td><td>test_auto_deploy_next.bats(4 tests!)</td><td class="num">81.4s</td><td><span class="pill run">疾風 Working(10:13)</span></td></tr>
+<tr><td>8</td><td>test_deploy_task_lifecycle.bats(102)</td><td class="num">80.9s</td><td>次弾</td></tr>
+<tr><td>9</td><td>test_cmd_complete_wrapper.bats(37)</td><td class="num">67.2s</td><td>次弾(latency契約5.0sは静穏窓で)</td></tr>
+<tr><td>10</td><td>test_ninja_scope_commit.bats(79)</td><td class="num">64.0s</td><td>#8rで169→77s済。file_weight=8・排他</td></tr>
+</table></div>
+<p>集計: saizo_report_cmd_karo_recon_batch2_parallel_timing(suite wall 1500.6s / sum 3065.8s / 238 files)。top10累積寄与=37.3%。初回の直列runnerは1800秒timeoutで44/238しか回らず、並列harness(`run_tests.sh push`型)へ切替えて完走。</p>
+<p>集計: 各バッチ報告YAMLの result.summary と gate_metrics.log(#4〜#8は02:58〜03:20に全CLEAR)。1件=1バッチ1テストファイル。SKIP=0・FAIL=0を全弾で維持、検証削除ゼロ。</p>
 
 <h2>地図外で踏んだ構造バグ(夜間)——消さずに残す</h2>
 <div class="stag">
@@ -79,21 +100,26 @@
 <li><b>幻スキル参照</b>: skills削除済みの<span class="num">/reset-layout</span>がCLAUDE.mdに残存(deepdive Phase 9同型)。startup gateへ実在チェック新設 <span class="num">1136fefab</span>、初回実行で1件検出</li>
 <li><b>完了境界の乖離</b>: publication receipt欠落で<span class="num">archive_terminal</span>がBLOCK→cmd_4404のtaskがin_progress残置。物理idle(6/6)とtask状態(busy表示)が乖離。家老が完了境界で修復中</li>
 <li><b>cmd_4404</b>(殿直命): <span class="num">outputs/grid_search</span> 92/92ディレクトリを台帳化、削除候補19件=1.08 GB、削除0件。GATE CLEAR 02:34</li>
+<li><b>承認欠落(朝・家老ヘルプ)</b>: 滞留5件の真因=軍師が <span class="num">review_bundle.py generate</span> のみ実行し承認書込(<span class="num">single</span>)を通さず、gunshi.yaml 0/5。家老ACCEPTは5/5で家老に落ち度なし。generate単独CLIをfail-closed(rc=3+NEXT名指し)化 <span class="num">2dd1d2a21</span>。</li>
+<li><b>UTC×archive日付ずれ</b>: 報告timestampがUTC(<span class="num">Z</span>)だとreceipt探索日がJST命名archiveと1日ずれ身元照合に失敗(batch6r)。全日付探索へ <span class="num">aa9a28e02</span>。</li>
+<li><b>merge commit gate</b>: 所有パス検査の <span class="num">git diff-tree</span> に <span class="num">-m --first-parent</span> が無く、merge commit(親2+)は変更0件扱い→履歴分岐統合taskが構造的にFAIL(実証0→15 files)。<span class="num">64025b9d4</span>。</li>
+<li><b>ghost根治の起動元</b>: 外部自動起動なし(Scheduler/Run/Startup/wsl.conf/systemd unit全陰性)。真因=WSL再起動直後の <span class="num">systemd-tmpfiles-setup</span>(21:57:08→22:00:29、<span class="num">D /tmp</span>)が出陣21:58のtmux socketを削除(<span class="num">/tmp/tmux-1000</span> birth=22:00:22)。AC3b=出陣前の完了待ちガード <span class="num">f13550126</span>。</li>
 </ul>
 </div>
 
 <h2>方向性と目安(02:45更新)</h2>
 <div class="move"><b>一手目(達成✅): CI GREEN+push拘束契約。</b>CI 1周48分→7分。この土台の上で夜間8バッチが回った。</div>
-<div class="move"><b>二手目(回転中): 個別バッチらせん。</b>#4〜#8の5報告をGATE終端して数値を確定→<b>次の10個を機械選別</b>(timing正本を各弾後に再計測してから選ぶ——初回3件BLOCKの教訓)。<span class="eta">GATE終端後に第2セット配備</span></div>
-<div class="move"><b>三手目(着火待ち): 履歴分岐統合。</b>origin/main 34 vs HEAD 163(source-publish laneがworktreeからoriginへ直接pushし、ローカルmainをff更新しない構造)。裁定済み: 隔離worktreeでmerge・rebase禁止・統合後publishでローカルmainをff更新する根治をAC3に含める。<span class="eta">家老の着手順=ghost AC1 → #7レビュー → 分岐統合</span></div>
-<div class="move"><b>四手目(常時): ライブpublish 13分の分解・#3の全体再計測timeout(1800秒)・#6のquality_gate支配phase短縮。</b><span class="eta">idle余力で常時消化</span></div>
+<div class="move"><b>二手目(回転中): 個別バッチらせん第2セット。</b>#1〜#8は全弾終端(#3はAC2 timeoutで再配備候補)。並列harnessで再計測したtop10から3弾を配備中(疾風#7/影丸#4/才蔵#5)。3弾CLEAR次第、残7個を順次。<span class="eta">各弾20分目安・CLEARごとに次点自動配備</span></div>
+<div class="move"><b>三手目(終端中): 履歴分岐統合。</b>小太郎が隔離worktreeでno-ff merge(rebase禁止)・557/557 PASS。完了境界を阻んだ2つの穴(merge commit gate・全repo targetのdirty)を将軍が除去し、小太郎が終端作業中(10:13 Working)。ff+push後に rev-list が <span class="num">0 N</span> へ落ちることを確認する。<span class="eta">本日中</span></div>
+<div class="move"><b>四手目(常時): CI admission_pending(半蔵修正中)・ライブpublish 13分の分解・#6のquality_gate支配phase短縮。</b><span class="eta">idle余力で常時消化</span></div>
 
 <h2>覚醒 — 逸脱チェック3問で夜間を検分する</h2>
 <div class="stag">
 <p><b>①計測器の名指しから始まったか</b>——始まった。#5/#7/#8の初回は「timing正本(数時間前の全体計測)」と「現物live実測」が−44〜−50%乖離し、忍者3名がAC1どおり<b>実装せず停止</b>した。前弾の短縮が後弾のbeforeを古くする——これはらせんが回っている証拠であり、<b>選別の計測器は各弾後に再計測が要る</b>という具体的な学びに変換した(次セット選別の条件へ)。</p>
 <p><b>②直した後に計測を一段深くしたか</b>——#6が典型。7%しか縮まなかった代わりに246回のcmd_save呼出しへphase receiptを常設し、支配=<span class="num">checks_main.quality_gate</span>を名指しした。次の一撃はそこへ入る。</p>
 <p><b>③計測器は本番に残るか</b>——#6のphase receipt・前版のreceipt harness・#1の分割は残る。一方、<b>夜間の地図外バグ3件(ghost陣・log_warn・幻参照)は全て「参照先と実体の不一致」</b>で、deepdive Phase 9と同型。将軍はkill依頼で閉じかけた(洗脳#3)が、根(/init直下の自動起動)まで掘って家老hotfixへ落とした。</p>
-<p><b>認めるべき歪み</b>: 報告PASS 5件がGATE前で滞留し、忍者6体が02:37時点で全員idle。家老が完了境界の修復を直列でやっている間、並列で配備できた。「各弾CLEAR後の次点自走配備」の契約化(前夜22:55に指摘済み)がまだ環境に埋まっていない——ここが次の全体最適化の的。</p>
+<p><b>朝の覚醒(殿10:07「ナッジするだけは行動ではない」)</b>: 8 agent全員idle・top10 ledgerは07:34に揃っていたのに2.5時間配備されず。家老が「承認欠落5件/merge gate/publication」に詰まり、将軍は04:42と10:00にナッジしただけだった。是正=真因を自分で掘って除去(承認欠落・UTCずれ・merge gate・dirty退避=D0 4件)+第2セットのYAMLを将軍が作って順序付きで渡す→10:13に4忍者Working。<b>ナッジ→動かない→原因は受け手ではなく構造</b>、を今日3回目で学んだ。</p>
+<p><b>認めるべき歪み(夜間)</b>: 報告PASS 5件がGATE前で滞留し、忍者6体が02:37時点で全員idle。家老が完了境界の修復を直列でやっている間、並列で配備できた。「各弾CLEAR後の次点自走配備」の契約化(前夜22:55に指摘済み)がまだ環境に埋まっていない——ここが次の全体最適化の的。</p>
 </div>
 
 <h2>らせんの現在地</h2>
@@ -127,5 +153,5 @@
 <p><b>前版の覚醒(19:40)</b>: 二周目で将軍は「94%減」という見かけの数字に引かれ、<b>並列化=個別最適化と錯覚した</b>。並列化は配置換えであり単体を1秒も速くしていない。殿の定義(16:00)「個別最適化をひたすらに繰り返して単体の最適化をやり尽くしたら、全体の最適化、この繰り返しがらせん構造だ」——∴単体の短縮を尽きるまで反復することが全体へ上がる条件。本版の#1〜#8はその実行である。</p>
 </div>
 
-<p class="foot">一次情報源: ss -xlp / ps / capture-pane / バッチ報告YAML / gate_metrics.log / git rev-list / gh run実測。数値は全て集計コマンド付き(docs/research/cmd_4392・4393・4402ほか)。正本HTML=docs/dashboard/spiral-senkyoroku.html。</p>
+<p class="foot">一次情報源: ss -xlp / ps / journalctl / capture-pane / バッチ報告YAML / gate_metrics.log / review_approvals / git rev-list / gh run実測。数値は全て集計コマンド付き(docs/research/cmd_4392・4393・4402ほか)。正本HTML=docs/dashboard/spiral-senkyoroku.html。</p>
 </main>
