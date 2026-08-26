@@ -5,6 +5,9 @@
 #                 従来どおり成立させる不変量を守る。
 # regression_justification: 既存archive testsは退避可否を検証するが、無関係reportを
 #                           開かないI/O境界と世代/retentionとの合成を固定していない。
+# test_necessity: task worktree cleanupはCLEAR-bound no-code identityまたはexact-bytesに
+#                 結合したformal FAIL_CLOSEだけを受理し、dirty・HEAD不一致・非祖先・
+#                 commit必須taskを全てremove前にBLOCKする不変量を守る。
 # origin: [[cmd_karo_recon_cmd_complete_postclear_bottleneck_20260810]] -> [[cmd指定後の全report後段除外]] -> [[完了tail長時間滞留]]
 
 setup() {
@@ -35,6 +38,65 @@ run_archive() {
         DEFENSE_OVERHEAD_LEDGER="$FIX/logs/defense_overhead.jsonl" \
         QUEUE_FLAG_RETENTION_MODE=off \
         timeout 30 bash "$REPO_ROOT/scripts/archive_completed.sh" 3 "$CMD" 2>&1
+}
+
+write_worktree_marker() {
+    marker_tip="$1"
+    marker_task_id="${2:-${WT_CMD}_normal}"
+    printf '{"version":1,"state":"active","task_id":"%s","parent_cmd":"%s","repo":"%s","worktree":"%s","remote_tip":"%s","published_commit":"","generation":"%s","created_at_ns":1}\n' \
+        "$marker_task_id" "$WT_CMD" "$WT_REPO" "$WT_PATH" "$marker_tip" "$WT_MARKER_GEN" \
+        > "$FIX/queue/gates/$WT_CMD/task_worktree.json"
+}
+
+write_worktree_report() {
+    report_status="$1"
+    report_verdict="$2"
+    contract_required="$3"
+    report_task_type="$4"
+    report_task_id="${5:-${WT_CMD}_normal}"
+    printf 'worker_id: kotaro\ntask_id: %s\nparent_cmd: %s\ntask_type: %s\nstatus: %s\nverdict: %s\ncommit_contract:\n  required: %s\n  task_type: %s\n  planned_paths: []\n  repo_root: %s\n' \
+        "$report_task_id" "$WT_CMD" "$report_task_type" "$report_status" "$report_verdict" \
+        "$contract_required" "$report_task_type" "$WT_REPO" \
+        > "$FIX/queue/reports/kotaro_report_${WT_CMD}.yaml"
+    printf '{"reviews":[{"cmd":"%s","report":"queue/reports/kotaro_report_%s.yaml"}]}\n' \
+        "$WT_CMD" "$WT_CMD" > "$FIX/queue/gates/$WT_CMD/single_review_manifest.json"
+}
+
+setup_worktree_cleanup_fixture() {
+    WT_CMD="cmd_karo_archive_nocode_fixture"
+    WT_GEN="$(printf 'b%.0s' {1..64})"
+    WT_MARKER_GEN="$(printf 'c%.0s' {1..64})"
+    WT_REPO="$BATS_TEST_TMPDIR/source-repo"
+    WT_REMOTE="$BATS_TEST_TMPDIR/remote.git"
+    WT_PATH="$BATS_TEST_TMPDIR/linked-worktree"
+    mkdir -p "$FIX/queue/gates/$WT_CMD" "$FIX/queue/reports"
+    git init -q -b main "$WT_REPO"
+    git -C "$WT_REPO" config user.email fixture@example.com
+    git -C "$WT_REPO" config user.name fixture
+    printf 'base\n' > "$WT_REPO/source.txt"
+    git -C "$WT_REPO" add source.txt
+    git -C "$WT_REPO" commit -q -m base
+    WT_BASE="$(git -C "$WT_REPO" rev-parse HEAD)"
+    printf 'current\n' >> "$WT_REPO/source.txt"
+    git -C "$WT_REPO" commit -qam current
+    WT_CURRENT="$(git -C "$WT_REPO" rev-parse HEAD)"
+    WT_SIDE="$(printf 'side\n' | git -C "$WT_REPO" commit-tree "${WT_BASE}^{tree}" -p "$WT_BASE")"
+    git init -q --bare "$WT_REMOTE"
+    git -C "$WT_REPO" remote add origin "$WT_REMOTE"
+    git -C "$WT_REPO" push -q -u origin main
+    git -C "$WT_REPO" worktree add -q --detach "$WT_PATH" "$WT_BASE"
+    write_worktree_marker "$WT_BASE"
+    write_worktree_report completed PASS false recon
+    printf '{"version":1,"state":"clear","cmd_id":"%s","completion_generation":"%s","persisted_at_ns":1}\n' \
+        "$WT_CMD" "$WT_GEN" > "$FIX/queue/gates/$WT_CMD/gate_worker.clear.json"
+}
+
+run_worktree_cleanup() {
+    ARCHIVE_COMPLETED_PROJECT_DIR="$FIX" \
+        ARCHIVE_TASK_WORKTREE_CLEANUP_ONLY=1 \
+        ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 \
+        SHOGUN_COMPLETION_GENERATION="$WT_GEN" \
+        timeout 30 bash "$REPO_ROOT/scripts/archive_completed.sh" 3 "$WT_CMD" 2>&1
 }
 
 # A FIFO is an access detector: opening an unrelated report blocks forever.
@@ -112,4 +174,82 @@ run_archive() {
     [[ "$output" == *"SHOGUN_COMPLETION_GENERATION missing or invalid"* ]]
     [ "$(sha256sum "$target" "$FIX/queue/inbox/karo.yaml" "$FIX/dashboard.md")" = "$before" ]
     [ ! -e "$FIX/queue/gates/$CMD/archive.done" ]
+}
+
+@test "clean no-code worktree recovers its verified remote-ancestor base and cleans up" {
+    setup_worktree_cleanup_fixture
+
+    run run_worktree_cleanup
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"publication recovered from verified no-code base"* ]]
+    [ ! -d "$WT_PATH" ]
+    python3 - "$FIX/queue/gates/$WT_CMD/task_worktree.json" "$WT_BASE" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["state"] == "cleaned"
+assert data["published_commit"] == sys.argv[2]
+assert data["published_recovery_source"] == "verified_no_code_base"
+PY
+}
+
+@test "dirty no-code worktree remains fail-closed" {
+    setup_worktree_cleanup_fixture
+    printf 'dirty\n' > "$WT_PATH/dirty.txt"
+
+    run run_worktree_cleanup
+    echo "$output"
+    [ "$status" -ne 0 ]
+    [ -d "$WT_PATH" ]
+    [[ "$output" == *"published commit receipt missing, mismatched, or unresolved"* ]]
+}
+
+@test "no-code marker whose tip differs from worktree HEAD remains fail-closed" {
+    setup_worktree_cleanup_fixture
+    git -C "$WT_PATH" checkout -q --detach "$WT_CURRENT"
+
+    run run_worktree_cleanup
+    echo "$output"
+    [ "$status" -ne 0 ]
+    [ -d "$WT_PATH" ]
+}
+
+@test "clean no-code tip outside current remote ancestry remains fail-closed" {
+    setup_worktree_cleanup_fixture
+    git -C "$WT_PATH" checkout -q --detach "$WT_SIDE"
+    write_worktree_marker "$WT_SIDE"
+
+    run run_worktree_cleanup
+    echo "$output"
+    [ "$status" -ne 0 ]
+    [ -d "$WT_PATH" ]
+}
+
+@test "implementation-commit-required report cannot use no-code base recovery" {
+    setup_worktree_cleanup_fixture
+    write_worktree_report completed PASS true hotfix
+
+    run run_worktree_cleanup
+    echo "$output"
+    [ "$status" -ne 0 ]
+    [ -d "$WT_PATH" ]
+}
+
+@test "formal Karo fail-close cleans a clean worktree without fabricating CLEAR" {
+    setup_worktree_cleanup_fixture
+    rm "$FIX/queue/gates/$WT_CMD/gate_worker.clear.json"
+    write_worktree_report failed FAIL true hotfix
+    approval_dir="$FIX/queue/gates/$WT_CMD/review_approvals/reports/fixture"
+    mkdir -p "$approval_dir"
+    report_rel="queue/reports/kotaro_report_${WT_CMD}.yaml"
+    report_generation="$(sha256sum "$FIX/$report_rel" | awk '{print $1}')"
+    printf 'timestamp: now\nrole: karo\nresult: ACCEPT\ngeneration: %s\nreport: %s\n' \
+        "$report_generation" "$report_rel" > "$approval_dir/karo.yaml"
+
+    run run_worktree_cleanup
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cleanup without CLEAR fabrication"* ]]
+    [ ! -e "$FIX/queue/gates/$WT_CMD/gate_worker.clear.json" ]
+    [ ! -d "$WT_PATH" ]
 }
