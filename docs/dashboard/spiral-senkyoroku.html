@@ -46,10 +46,21 @@
   .foot{color:var(--sub);font-size:.8rem;margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.8rem;}
 </style>
 <main>
-<p class="date">2026-08-26 10:25 JST 更新 · 将軍報告(前版 08-26 02:45 / 08-25 19:40)</p>
+<p class="date">2026-08-26 14:10 JST 更新 · 将軍報告(前版 10:25 / 02:45 / 08-25 19:40)</p>
 <h1>らせん戦況録</h1>
 <p class="lede">個別最適化×全体最適化のらせん——夜間〜朝の回転実績(バッチ#1〜#8 CLEAR・第2セット着火)、地図外で踏んだ構造バグ5件の根治、次の一手。</p>
 
+<h2>殿裁定(13:24-13:57)— らせんの本質を正す</h2>
+<div class="stag">
+<p><b>①目的は速度向上。②並列化はマシンパワーであり本質ではない。③0.1%の向上を100億回。④改善はROI(改善工数+改善後作業 vs 未改善作業)で決める。⑤シングルタスクを高速に切替え、全体状況マップで優先順位なしに全部やる。</b></p>
+<p>再分類: <b>本質型</b>=影丸 ac_handling −71%(fixture lifecycle共有)/疾風 deploy_task −31.6%(10k行再sourceキャッシュ)/半蔵#1 −67%(分割)/影丸 lifecycle −15.4%(source共有)。<b>並列型(成果に数えない)</b>=疾風#7(120セル並列)/小太郎#7r(20起動並列)/疾風 wrapper r2(5variant並列)。以後の配備ACは「削る仕事量」と「速度へのつながり1行」を必須にし、並列化案は禁止。全体マップ=<span class="num">queue/shogun_todo_map.md</span>。</p>
+</div>
+<h2>10:25以降(昼)の数値</h2>
+<div class="kpi">
+  <div><b>履歴分岐統合 終端</b><span>rev-list <b>0 0</b>(12:33)。42回BLOCKの構造3重(merge commit=変更0件/insights fail-closedの波及/自動台帳dirty誤認)を将軍D0 3 commitで根治→小太郎1回でCLEAR→push</span></div>
+  <div><b>退行を検知・復旧</b><span>統合直後のmainから43 file(ghost根治AC1-3b・CI timing・run_tests admission等)が消えていた=converge merge 8bfa6d1b5がorigin側を破棄。3-way再マージで復元 5fa2c9e48→再統合→rev-list 0 2</span></div>
+  <div><b>第2セット 6弾終端</b><span>本質型3(−71.1/−31.6/−15.4%)+並列型2(数えない)+正直FAIL1(run_tests: 並列以外に安全案なし)。GATE CLEAR累計 28/本日</span></div>
+</div>
 <h2>02:45以降(朝)にらせんが生んだ数値</h2>
 <div class="kpi">
   <div><b>18 GATE CLEAR</b><span>02:45〜10:25の終端数(バッチ#4〜#8の5件+ghost根治5件+CI修正3件+worktree/runtime保全等)。滞留していた5件は将軍が真因2つを掘って全て解放</span></div>
@@ -78,15 +89,15 @@
 <h2>第2セット(才蔵 並列timing ledger 07:34・未攻略top10)</h2>
 <div class="tablewrap"><table>
 <tr><th>順</th><th>対象テスト</th><th>live wall</th><th>状態</th></tr>
-<tr><td>1</td><td>test_cmd_skeleton.bats(7 tests)</td><td class="num">253.6s</td><td>#6rでphase receipt常設済(支配=quality_gate)。次弾候補</td></tr>
+<tr><td>1</td><td>test_cmd_skeleton.bats(7 tests)</td><td class="num">253.6s</td><td><span class="pill run">影丸 走行中(支配=quality_gate)</span></td></tr>
 <tr><td>2</td><td>test_cmd_complete_gate.bats(281)</td><td class="num">200.3s</td><td>#1で912→298s済。残り支配段は次弾</td></tr>
-<tr><td>3</td><td>test_inbox_write.bats(118)</td><td class="num">123.3s</td><td>#3 AC2 timeout BLOCK→再配備候補</td></tr>
-<tr><td>4</td><td>test_deploy_task_ac_handling.bats(54)</td><td class="num">93.6s</td><td><span class="pill run">影丸 Working(10:13)</span></td></tr>
-<tr><td>5</td><td>test_run_tests.bats(66)</td><td class="num">91.6s</td><td><span class="pill run">才蔵 Working(10:13)</span></td></tr>
-<tr><td>6</td><td>test_deploy_task.bats(59)</td><td class="num">87.1s</td><td>次弾</td></tr>
-<tr><td>7</td><td>test_auto_deploy_next.bats(4 tests!)</td><td class="num">81.4s</td><td><span class="pill run">疾風 Working(10:13)</span></td></tr>
-<tr><td>8</td><td>test_deploy_task_lifecycle.bats(102)</td><td class="num">80.9s</td><td>次弾</td></tr>
-<tr><td>9</td><td>test_cmd_complete_wrapper.bats(37)</td><td class="num">67.2s</td><td>次弾(latency契約5.0sは静穏窓で)</td></tr>
+<tr><td>3</td><td>test_inbox_write.bats(118)</td><td class="num">123.3s</td><td><span class="pill done">r2 CLEAR(13:24)</span></td></tr>
+<tr><td>4</td><td>test_deploy_task_ac_handling.bats(54)</td><td class="num">93.6s</td><td><span class="pill done">CLEAR 257→74s(−71.1%) 本質型</span></td></tr>
+<tr><td>5</td><td>test_run_tests.bats(66)</td><td class="num">91.6s</td><td><span class="pill stuck">正直FAIL</span> 並列(INNER_JOBS)以外に安全案なし→終了</td></tr>
+<tr><td>6</td><td>test_deploy_task.bats(59)</td><td class="num">87.1s</td><td><span class="pill done">CLEAR 81→56s(−31.6%) 本質型</span></td></tr>
+<tr><td>7</td><td>test_auto_deploy_next.bats(4 tests!)</td><td class="num">81.4s</td><td><span class="pill run">CLEAR 128→61s だが並列型(120セル)=数えない</span></td></tr>
+<tr><td>8</td><td>test_deploy_task_lifecycle.bats(102)</td><td class="num">80.9s</td><td><span class="pill done">CLEAR 60→51s(−15.4%) 本質型</span></td></tr>
+<tr><td>9</td><td>test_cmd_complete_wrapper.bats(37)</td><td class="num">67.2s</td><td><span class="pill run">CLEAR 112→102s だが並列型(5variant)=数えない</span></td></tr>
 <tr><td>10</td><td>test_ninja_scope_commit.bats(79)</td><td class="num">64.0s</td><td>#8rで169→77s済。file_weight=8・排他</td></tr>
 </table></div>
 <p>集計: saizo_report_cmd_karo_recon_batch2_parallel_timing(suite wall 1500.6s / sum 3065.8s / 238 files)。top10累積寄与=37.3%。初回の直列runnerは1800秒timeoutで44/238しか回らず、並列harness(`run_tests.sh push`型)へ切替えて完走。</p>
