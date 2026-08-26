@@ -75,7 +75,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4370"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でcmd_4370の実装と後続索引を照合し、候補が既存防御で充足済みと確認。新規修正・decision_candidate不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-052253475-8002;source=git:c6393b30d01f749c826de2238d311475f4ca9f47;implementation=scripts/deploy_task/modifiers.sh:L36-L38,L139-L172,L1396-L1426;semantic=docs/semantic-index/index.md:L8047-L8049;context=context/senkyoku-log.md:L6;verification=existing USEFUL_RATE_THRESHOLD=0.40 and rate<threshold exclusion"
+  resolved_at: "2026-08-27T06:58:14+09:00"
 - id: INS-20260823-052307383-48f3
   ts: "2026-08-23T05:23:07+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[deploy_task分割設計書cluster G]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=deploy_task; score=41.4) / training_cycle_quality(忍者修行サイクル品質; alias=training_auto_deploy; score=17.1) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=deploy_fixture_case51; score=16.9)。概念定義とaliases追加を検討せよ"
