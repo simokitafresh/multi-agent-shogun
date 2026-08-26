@@ -3,9 +3,9 @@
   "source_cmd_id": "cmd_4392_recon2_retry",
   "measured_at": "2026-08-25T02:16:31+09:00",
   "scope": "tests/unit/*.bats",
-  "selected_files": 238,
-  "discovered_files": 238,
-  "record_count": 238,
+  "selected_files": 239,
+  "discovered_files": 239,
+  "record_count": 239,
   "duplicate_count": 0,
   "missing_count": 0,
   "records": [
@@ -88,6 +88,10 @@
     {
       "path": "tests/unit/test_cmd_complete_gate_small_consolidated.bats",
       "duration_sec": 11.769
+    },
+    {
+      "path": "tests/unit/test_cmd_complete_gate_source_publish.bats",
+      "duration_sec": 4.389
     },
     {
       "path": "tests/unit/test_cmd_complete_gate_subsystems.bats",
