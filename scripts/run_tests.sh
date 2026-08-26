@@ -922,6 +922,13 @@ run_bats_files_parallel() {
                 file_inner_jobs="${BATS_HEAVY_INNER_JOBS:-$INNER_JOBS}"
                 file_weight="$file_inner_jobs"
                 ;;
+            test_cmd_complete_gate.bats)
+                # This 281-case file owns isolated per-test fixtures. Serial
+                # execution exceeded the canonical pre-push 300s ceiling;
+                # four jobs preserve every assertion and complete in 201s.
+                file_inner_jobs="${BATS_CMD_COMPLETE_GATE_INNER_JOBS:-4}"
+                file_weight="$file_inner_jobs"
+                ;;
         esac
         case "$file_base" in
             test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_insight_write.bats|test_shogun_cli_switch_probe.bats|test_memory_db_query_rowid_watermark.bats)

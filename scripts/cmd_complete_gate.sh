@@ -3044,6 +3044,7 @@ push_from_clean_worktree() {
     local repo="$1" upstream_ref="$2" remote="$3" push_ref="$4" remote_tip="$5"
     shift 5
     local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha push_output fallback_used
+    local safe_directory_added
     local source_patch applied_patch
     local -a applied_shas=()
     fallback_used=0
@@ -3051,13 +3052,19 @@ push_from_clean_worktree() {
     temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-gate-push.XXXXXX") || return 1
     clean_repo="$temp_parent/repo"
 
-    # WSL2 can report a /tmp worktree as dubious ownership relative to /mnt/c.
-    # Register only this unique path and remove the registration after cleanup.
-    git config --global --add safe.directory "$clean_repo" 2>/dev/null || true
     if ! git -C "$repo" worktree add --detach "$clean_repo" "$remote_tip" >/dev/null 2>&1; then
-        git config --global --unset-all safe.directory "^${clean_repo}\$" 2>/dev/null || true
         rmdir "$temp_parent" 2>/dev/null || true
         return 1
+    fi
+    # Same-owner ext4 worktrees are already trusted. Avoid touching the shared
+    # global Git config on that hot path; concurrent publication tests and
+    # agents otherwise serialize on ~/.gitconfig.lock. Keep the existing WSL2
+    # compatibility as a fail-open fallback only when Git actually reports the
+    # freshly-created checkout as untrusted.
+    safe_directory_added=0
+    if ! git -C "$clean_repo" rev-parse --git-dir >/dev/null 2>&1; then
+        git config --global --add safe.directory "$clean_repo" 2>/dev/null || true
+        safe_directory_added=1
     fi
 
     rc=0
@@ -3163,7 +3170,9 @@ push_from_clean_worktree() {
             git -C "$repo" worktree remove --force "$clean_repo" >/dev/null 2>&1 || cleanup_rc=1
         [ ! -e "$clean_repo" ] || cleanup_rc=1
     fi
-    git config --global --unset-all safe.directory "^${clean_repo}\$" 2>/dev/null || true
+    if [ "$safe_directory_added" -eq 1 ]; then
+        git config --global --unset-all safe.directory "^${clean_repo}\$" 2>/dev/null || true
+    fi
     [ ! -d "$temp_parent" ] || rmdir "$temp_parent" 2>/dev/null || cleanup_rc=1
     [ "$cleanup_rc" -eq 0 ] || rc=1
     return "$rc"

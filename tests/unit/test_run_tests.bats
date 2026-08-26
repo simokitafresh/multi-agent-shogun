@@ -506,6 +506,33 @@ SH
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: the 281-case completion-gate contract must retain its measured
+# four-job scheduler override so canonical pre-push cannot regress above 240s.
+# regression_justification: serial execution reached rc124 at both 300s and
+# 240s, while the same 281 cases completed 281/281 with SKIP0 in 201.085s at 4 jobs.
+@test "completion gate contract receives four inner jobs without raising the host budget" {
+  printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/test_cmd_complete_gate.bats"
+  export BATS_ARGS_LOG="$TMPROOT/bats.args"
+  export BATS_SCHEDULER_TRACE="$TMPROOT/schedule.tsv"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >"$BATS_ARGS_LOG"
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    BATS_ARGS_LOG="$BATS_ARGS_LOG" BATS_SCHEDULER_TRACE="$BATS_SCHEDULER_TRACE" \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 BATS_MAX_TEST_JOBS=8 bash -c '
+      source "$1/scripts/run_tests.sh"
+      run_bats_files_parallel "$1/tests/unit/test_cmd_complete_gate.bats"
+  ' _ "$TMPROOT"
+
+  [ "$status" -eq 0 ]
+  grep -Fq -- '--jobs 4' "$BATS_ARGS_LOG"
+  awk -F '\t' '$1=="test_cmd_complete_gate.bats" {found=1; if ($2!=4 || $3!=0) bad=1} END {exit !(found && !bad)}' "$BATS_SCHEDULER_TRACE"
+}
+
 @test "timing-regressed shared-resource fixtures receive the full aggregate weight" {
   for name in test_hook_dispatchers test_statusline test_sqlite3_cli_removal test_small_workflow_consolidated test_skill_recommend_metrics test_insight_write test_shogun_cli_switch_probe; do
     printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/$name.bats"

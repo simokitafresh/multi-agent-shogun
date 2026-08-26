@@ -9,8 +9,6 @@
 load '../helpers/cmd_gate_scaffold'
 
 setup_file() {
-    export CMD_GATE_PHASE_TIMING="$BATS_FILE_TMPDIR/cmd_gate_phase_timing.tsv"
-    printf 'setup_file_start\t%s\n' "$(date +%s%N)" > "$CMD_GATE_PHASE_TIMING"
     cmd_gate_setup_file
     export SRC_NORMALIZE_SCRIPT="$PROJECT_ROOT/scripts/lib/normalize_report.sh"
     [ -f "$SRC_NORMALIZE_SCRIPT" ] || return 1
@@ -88,7 +86,6 @@ fi
 push_task_repositories "$@"
 BASH
     chmod +x "$PUSH_RUNNER"
-    printf 'setup_file_end\t%s\n' "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
 }
 
 # test_necessity: Vercel link validation must use the current command's
@@ -897,7 +894,10 @@ PY
 }
 
 setup() {
-    printf 'setup_start\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
+    # Most cases validate gate behavior, not the production telemetry writer.
+    # Disable its Python/SQLite/flock work by default; telemetry-specific cases
+    # can opt back in explicitly without weakening any gate assertion.
+    export DEFENSE_OVERHEAD_ENABLED=0
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cmd_gate_ctx.XXXXXX")"
     export TEST_PROJECT="$TEST_TMPDIR/project"
@@ -918,7 +918,6 @@ setup() {
 
     ALL_CLEAR=true
     BLOCK_REASONS=()
-    printf 'setup_end\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
 
 }
 
@@ -3732,9 +3731,7 @@ EOF
 }
 
 teardown() {
-    printf 'teardown_start\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
     cmd_gate_teardown
-    printf 'teardown_end\t%s\t%s\n' "$BATS_TEST_NUMBER" "$(date +%s%N)" >> "$CMD_GATE_PHASE_TIMING"
 }
 
 teardown_file() {
