@@ -831,7 +831,8 @@ for line in raw_lines:
         unrelated.append(path)
         continue
     _dirty_lines = [l for l in (run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path])).splitlines() if l[:1] and l[:1] in "+-" and not l.startswith(("+++", "---"))]
-    if _dirty_lines and all(re.match(r"^[+-]<!-- (source_commit|last_updated)", l) for l in _dirty_lines):
+    # marker行(source_commit/last_updated/last_synced_lesson)と教訓同期daemonの自動追記行(- Lnnnn:)のみのdirtyは自動生成
+    if _dirty_lines and all(re.match(r"^[+-](<!-- (source_commit|last_updated|last_synced_lesson)|- L\d+: )", l) for l in _dirty_lines):
         unrelated.append(path)
         continue
     if path not in changed_files:
