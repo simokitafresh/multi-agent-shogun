@@ -126,6 +126,7 @@ declare -gA _CTX_PROFILE_PATTERN_CACHE _CTX_PROFILE_MODE_CACHE 2>/dev/null || \
 STALL_THRESHOLD_MIN=${STALL_THRESHOLD_MIN:-10} # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知 (cmd_1105: 15→10分に短縮)
 KARO_PENDING_CMD_GRACE_SEC=${KARO_PENDING_CMD_GRACE_SEC:-30} # cmd_save→cmd_delegate正規フローの短いpending窓をcmd_pending重複通知しない猶予
 CI_RED_PARALLEL_THRESHOLD_SEC=${CI_RED_PARALLEL_THRESHOLD_SEC:-900}
+KARO_SNAPSHOT_STALE_THRESHOLD_SEC=${KARO_SNAPSHOT_STALE_THRESHOLD_SEC:-600} # snapshot生成時刻の契約上限（秒）
 
 # E1: CI RED中に遊休戦力と未配備cmdが共存する過剰直列化を、同一run世代で一度だけ検出する。
 _ci_red_run_details() {
@@ -9478,6 +9479,35 @@ write_karo_snapshot() {
                 idle_list="${idle_list%,}"
                 echo "idle|${idle_list:-none}"
             } > "$tmp_file"; then
+                # Generated時刻は毎回変わるため、比較対象からヘッダを除く。
+                # 内容と一次sourceが同一かつGenerated時刻が新鮮なら、不要なatomic
+                # replaceを抑える。stale/malformed headerは内容不変でも更新する。
+                local snapshot_body candidate_body generated_value generated_epoch now_epoch snapshot_age
+                candidate_body=$(sed '/^# Generated:/d' "$tmp_file")
+                if [ -f "$snapshot_file" ]; then
+                    snapshot_body=$(sed '/^# Generated:/d' "$snapshot_file")
+                    if [ "$snapshot_body" = "$candidate_body" ]; then
+                        generated_value=$(sed -n 's/^# Generated: //p' "$snapshot_file" | head -1)
+                        generated_epoch=$(date -d "$generated_value" +%s 2>/dev/null || true)
+                        now_epoch=$(date +%s)
+                        snapshot_age=""
+                        if [[ "$generated_epoch" =~ ^[0-9]+$ ]]; then
+                            snapshot_age=$((now_epoch - generated_epoch))
+                        fi
+                        if [[ "$snapshot_age" =~ ^[0-9]+$ ]] &&
+                            [ "$snapshot_age" -ge 0 ] &&
+                            [ "$snapshot_age" -le "$KARO_SNAPSHOT_STALE_THRESHOLD_SEC" ]; then
+                            rm -f "$tmp_file"
+                            log "SNAPSHOT-DIFF-SKIP: content_diff=0 source_diff=0 age_sec=${snapshot_age} threshold_sec=${KARO_SNAPSHOT_STALE_THRESHOLD_SEC}"
+                            return 0
+                        fi
+                        log "SNAPSHOT-STALE-REFRESH: content_diff=0 source_diff=0 age_sec=${snapshot_age:-unknown} threshold_sec=${KARO_SNAPSHOT_STALE_THRESHOLD_SEC}"
+                    else
+                        log "SNAPSHOT-DIFF-REFRESH: content_diff=1 source_diff=1"
+                    fi
+                else
+                    log "SNAPSHOT-INITIAL-REFRESH: snapshot_missing=1"
+                fi
                 mv "$tmp_file" "$snapshot_file"
             else
                 rm -f "$tmp_file"
