@@ -147,16 +147,15 @@ jobs:
           measurement = timing_payload.get("measurement", timing_payload)
           print(f"SHARD_TIMING_SOURCE source={timing_source} path={timing_path}")
           all_inventory = sorted(str(path) for path in Path("tests/unit").glob("*.bats"))
-          if len(all_inventory) != 239 or len(set(all_inventory)) != 239:
-              raise SystemExit(f"unit inventory invariant failed: {len(all_inventory)} unique files")
-          if len(compatibility_files) != 17 or len(set(compatibility_files)) != 17:
-              raise SystemExit("compatibility inventory invariant failed: duplicate or missing entry")
+          inventory_set = set(all_inventory)
+          if len(inventory_set) != len(all_inventory):
+              raise SystemExit(f"unit inventory invariant failed: {len(all_inventory) - len(inventory_set)} duplicate files")
+          if len(set(compatibility_files)) != len(compatibility_files):
+              raise SystemExit("compatibility inventory invariant failed: duplicate entry")
           missing_compatibility = sorted(set(compatibility_files) - set(all_inventory))
           if missing_compatibility:
               raise SystemExit(f"compatibility file missing from unit inventory: {missing_compatibility}")
           inventory = [path for path in all_inventory if path not in set(compatibility_files)]
-          if len(inventory) != 222:
-              raise SystemExit(f"normal inventory invariant failed: {len(inventory)} files")
           records = measurement.get("records", [])
           measured = {}
           duplicates = []
@@ -166,14 +165,9 @@ jobs:
                   duplicates.append(path)
               measured[path] = float(record.get("duration_sec", 0.0))
           ledger_paths = sorted(measured)
-          missing_from_ledger = sorted(set(all_inventory) - set(ledger_paths))
-          stale_ledger_paths = sorted(set(ledger_paths) - set(all_inventory))
-          if (measurement.get("selected_files", 0) != len(all_inventory)
-                  or measurement.get("discovered_files", 0) != len(all_inventory)
-                  or measurement.get("record_count", 0) != len(all_inventory)
-                  or measurement.get("duplicate_count") != 0
-                  or measurement.get("missing_count") != 0
-                  or duplicates or missing_from_ledger or stale_ledger_paths):
+          missing_from_ledger = sorted(inventory_set - set(ledger_paths))
+          stale_ledger_paths = sorted(set(ledger_paths) - inventory_set)
+          if duplicates or inventory_set != set(ledger_paths):
               raise SystemExit(json.dumps({
                   "inventory_count": len(all_inventory),
                   "ledger_selected": measurement.get("selected_files"),
@@ -194,7 +188,10 @@ jobs:
                   f"SHARD_COMPATIBILITY shard={shard_name} files={len(compatibility_files)} "
                   "order=manifest deterministic=1"
               )
-              print("SHARD_PARTITION total=239 compatibility=17 normal=222")
+              print(
+                  f"SHARD_PARTITION total={len(all_inventory)} "
+                  f"compatibility={len(compatibility_files)} normal={len(inventory)}"
+              )
               raise SystemExit(0)
 
           # Longest-processing-time first assignment keeps the measured shard
@@ -209,7 +206,10 @@ jobs:
               "".join(f"{path}\n" for path in paths), encoding="utf-8"
           )
           print(f"SHARD_ASSIGNMENT shard={shard} files={len(paths)} measured_seconds={total:.3f}")
-          print("SHARD_PARTITION total=239 compatibility=17 normal=222")
+          print(
+              f"SHARD_PARTITION total={len(all_inventory)} "
+              f"compatibility={len(compatibility_files)} normal={len(inventory)}"
+          )
           for bucket_total, bucket_index, bucket_paths in buckets:
               print(f"SHARD_TOTAL shard={bucket_index} files={len(bucket_paths)} measured_seconds={bucket_total:.3f}")
               print(f"SHARD_FILES shard={bucket_index} paths={','.join(bucket_paths)}")

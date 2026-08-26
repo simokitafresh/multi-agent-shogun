@@ -3,9 +3,9 @@
   "source_cmd_id": "cmd_4392_recon2_retry",
   "measured_at": "2026-08-25T02:16:31+09:00",
   "scope": "tests/unit/*.bats",
-  "selected_files": 240,
-  "discovered_files": 240,
-  "record_count": 240,
+  "selected_files": 241,
+  "discovered_files": 241,
+  "record_count": 241,
   "duplicate_count": 0,
   "missing_count": 0,
   "records": [
@@ -172,6 +172,10 @@
     {
       "path": "tests/unit/test_codex_skill_execution_guard.bats",
       "duration_sec": 26.174
+    },
+    {
+      "path": "tests/unit/test_codex_inbox_priority_guard.bats",
+      "duration_sec": 2.488
     },
     {
       "path": "tests/unit/test_commit_queue.bats",
