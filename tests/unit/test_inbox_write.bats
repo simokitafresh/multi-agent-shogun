@@ -2060,7 +2060,9 @@ exit 0
 EOF
     chmod +x "$TEST_TMPDIR/bin/tmux"
 
-    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
+        INBOX_CODEX_NUDGE_RETRIES=2 run bash "$TEST_INBOX_WRITE" \
+        "testninja" "タスクを読め" "task_assigned" "karo"
     [ "$status" -eq 0 ]
     [[ "$output" == *"verified after retry 2/2"* ]]
 
@@ -2071,12 +2073,13 @@ EOF
     grep -q "read: true" "$TEST_INBOX_FILE"
 }
 
-# test_necessity: an active event-driven watcher is the sole pane sender; the
-# writer must return without the verifier's retry wait while the detached
-# verifier observes delivery without racing the watcher with a direct retry.
-@test "task_assigned: active watcher detaches verification and suppresses direct codex nudge retries" {
+# test_necessity: Codex delivery is proven only by the exact target message ID
+# becoming read; while it remains unread the detached verifier must rearm the
+# watcher's fingerprint lease at bounded intervals without confusing a second
+# message that has identical content.
+@test "task_assigned: active watcher rearms until exact message read and ignores same-content other ID" {
     setup_basic_test_env
-    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin" "$TEST_TMPDIR/state"
 
     cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
 cli:
@@ -2086,9 +2089,20 @@ cli:
       type: codex
 YAML
     printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    cat > "$TEST_TMPDIR/queue/inbox/testninja.yaml" <<'YAML'
+messages:
+- content: 'タスクを読め'
+  from: 'gunshi'
+  id: 'msg_same_content_other'
+  read: false
+  timestamp: '2026-08-26T19:00:00'
+  type: 'task_supplement'
+YAML
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
-    export INBOX_MESSAGE_ID="msg_ci_initial_working"
+    export INBOX_MESSAGE_ID="msg_ci_exact_read"
+    export REARM_COUNT_FILE="$TEST_TMPDIR/rearm_count"
+    export TEST_INBOX_FILE="$TEST_TMPDIR/queue/inbox/testninja.yaml"
 
     cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
 #!/bin/bash
@@ -2103,10 +2117,30 @@ case "$1" in
 esac
 exit 0
 EOF
-    chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux"
+    cat > "$TEST_TMPDIR/bin/touch" <<'EOF'
+#!/bin/bash
+count=0
+[ -f "$REARM_COUNT_FILE" ] && count=$(cat "$REARM_COUNT_FILE")
+count=$((count + 1))
+echo "$count" > "$REARM_COUNT_FILE"
+python3 - "$TEST_INBOX_FILE" "$count" "$INBOX_MESSAGE_ID" <<'PY'
+import sys, yaml
+path, count, target = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+data = yaml.safe_load(open(path, encoding="utf-8")) or {"messages": []}
+chosen = "msg_same_content_other" if count == 1 else target
+for message in data.get("messages", []):
+    if message.get("id") == chosen:
+        message["read"] = True
+with open(path, "w", encoding="utf-8") as handle:
+    yaml.safe_dump(data, handle, allow_unicode=True, sort_keys=False)
+PY
+/usr/bin/touch "$@"
+EOF
+    chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux" "$TEST_TMPDIR/bin/touch"
 
-    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
-        INBOX_CODEX_NUDGE_RETRIES=1 run bash "$TEST_INBOX_WRITE" \
+    PATH="$TEST_TMPDIR/bin:$PATH" SHOGUN_STATE_DIR="$TEST_TMPDIR/state" \
+        INBOX_CODEX_VERIFY_WAIT_SEC=0 INBOX_CODEX_NUDGE_RETRIES=3 \
+        run bash "$TEST_INBOX_WRITE" \
         testninja "タスクを読め" task_assigned karo
     [ "$status" -eq 0 ]
     [[ "$output" == *"delivery verification queued asynchronously"* ]]
@@ -2117,17 +2151,29 @@ EOF
     [ -n "$verify_log" ]
     local attempt
     for attempt in $(seq 1 100); do
-        grep -q "delegated to active watcher" "$verify_log" 2>/dev/null && break
+        grep -q "ASYNC_VERIFY SUCCESS" "$verify_log" 2>/dev/null && break
         sleep 0.05
     done
-    grep -q "delegated to active watcher" "$verify_log"
+    grep -q "dedup rearmed 1/3" "$verify_log"
+    grep -q "dedup rearmed 2/3" "$verify_log"
+    grep -q "verified after retry 2/3" "$verify_log"
+    grep -q "ASYNC_VERIFY SUCCESS" "$verify_log"
+    [ "$(cat "$REARM_COUNT_FILE")" -eq 2 ]
+    python3 - "$TEST_INBOX_FILE" "$INBOX_MESSAGE_ID" <<'PY'
+import sys, yaml
+messages = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["messages"]
+by_id = {message["id"]: message["read"] for message in messages}
+assert by_id["msg_same_content_other"] is True
+assert by_id[sys.argv[2]] is True
+assert len(by_id) == 2
+print("renudge=2 exact_target_read=1 other_id_confusion=0 false_positive=0 false_negative=0")
+PY
     [ ! -f "$TMUX_LOG" ] || ! grep -q 'send-keys' "$TMUX_LOG"
 }
 
-# test_necessity: detached verification must treat a pane that becomes working
-# during the bounded wait as delivery success even when read/task state has not
-# transitioned yet; durable-only idle remains covered by the negative fixture.
-@test "task_assigned: async verifier observes pane working during bounded wait" {
+# test_necessity: pane prompt/working text is diagnostic only and must never
+# become delivery success while the exact message row remains unread.
+@test "task_assigned: async verifier rejects pane-only evidence without exact read" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
     cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
@@ -2169,11 +2215,12 @@ EOF
     [ -n "$verify_log" ]
     local attempt
     for attempt in $(seq 1 100); do
-        grep -q "ASYNC_VERIFY SUCCESS" "$verify_log" 2>/dev/null && break
+        grep -q "ASYNC_VERIFY FAILURE" "$verify_log" 2>/dev/null && break
         sleep 0.05
     done
-    grep -q "ASYNC_VERIFY SUCCESS" "$verify_log"
-    ! grep -q "ASYNC_VERIFY FAILURE" "$verify_log"
+    grep -q "ASYNC_VERIFY FAILURE" "$verify_log"
+    ! grep -q "ASYNC_VERIFY SUCCESS" "$verify_log"
+    grep -q "read: false" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
 }
 
 # test_necessity: inbox_write B5 telemetry must persist one parent total and
@@ -2429,7 +2476,9 @@ exit 0
 EOF
     chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux"
 
-    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "gunshi" "レビュー開始" "task_assigned" "karo"
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
+        INBOX_CODEX_NUDGE_RETRIES=2 run bash "$TEST_INBOX_WRITE" \
+        "gunshi" "レビュー開始" "task_assigned" "karo"
     [ "$status" -eq 0 ]
     [[ "$output" == *"verified after retry 1/2"* ]]
     [[ "$output" != *"remained unverified"* ]]
@@ -2438,7 +2487,7 @@ EOF
     grep -q "read: true" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 }
 
-@test "task_assigned: codex ninja delivery verification accepts initial working pane" {
+@test "task_assigned: codex ninja delivery verification rejects initial working pane without read" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
 
@@ -2459,6 +2508,10 @@ YAML
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
     export INBOX_MESSAGE_ID="msg_ci_initial_working"
 
+    cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
+#!/bin/bash
+exit 1
+EOF
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
 #!/bin/bash
 echo "$*" >> "$TMUX_LOG"
@@ -2473,16 +2526,18 @@ case "$1" in
 esac
 exit 0
 EOF
-    chmod +x "$TEST_TMPDIR/bin/tmux"
+    chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux"
 
-    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
+        INBOX_CODEX_NUDGE_RETRIES=0 run bash "$TEST_INBOX_WRITE" \
+        "testninja" "タスクを読め" "task_assigned" "karo"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"verified (prompt/working evidence) for testninja"* ]]
-    [[ "$output" != *"codex nudge retry"* ]]
-    [[ "$output" != *"remained unverified"* ]]
+    [[ "$output" == *"remained unverified for testninja after 0 retries"* ]]
+    [[ "$output" != *"delivery verified"* ]]
+    grep -q "read: false" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
 }
 
-@test "task_assigned: codex prompt visible during hook is delivery evidence without retry" {
+@test "task_assigned: codex prompt visible during hook is not delivery evidence without read" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
     cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
@@ -2496,6 +2551,10 @@ YAML
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
     export INBOX_MESSAGE_ID="msg_ci_hook_prompt"
+    cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
+#!/bin/bash
+exit 1
+EOF
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
 #!/bin/bash
 echo "$*" >> "$TMUX_LOG"
@@ -2508,16 +2567,18 @@ case "$1" in
 esac
 exit 0
 EOF
-    chmod +x "$TEST_TMPDIR/bin/tmux"
+    chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux"
 
-    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" testninja "タスクを読め" task_assigned karo
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
+        INBOX_CODEX_NUDGE_RETRIES=0 run bash "$TEST_INBOX_WRITE" \
+        testninja "タスクを読め" task_assigned karo
     [ "$status" -eq 0 ]
-    [[ "$output" == *"verified (prompt/working evidence)"* ]]
-    [[ "$output" != *"codex nudge retry"* ]]
+    [[ "$output" == *"remained unverified for testninja after 0 retries"* ]]
+    [[ "$output" != *"delivery verified"* ]]
     [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
 }
 
-@test "task_assigned: wrapped codex prompt and hollow hook bullet are delivery evidence without retry" {
+@test "task_assigned: wrapped codex prompt and hook bullet are not delivery evidence without read" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
     cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
@@ -2531,6 +2592,10 @@ YAML
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
     export INBOX_MESSAGE_ID="msg_ci_wrapped_prompt"
+    cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
+#!/bin/bash
+exit 1
+EOF
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
 #!/bin/bash
 echo "$*" >> "$TMUX_LOG"
@@ -2543,12 +2608,14 @@ case "$1" in
 esac
 exit 0
 EOF
-    chmod +x "$TEST_TMPDIR/bin/tmux"
+    chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux"
 
-    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" testninja "タスクを読め" task_assigned karo
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
+        INBOX_CODEX_NUDGE_RETRIES=0 run bash "$TEST_INBOX_WRITE" \
+        testninja "タスクを読め" task_assigned karo
     [ "$status" -eq 0 ]
-    [[ "$output" == *"verified (prompt/working evidence)"* ]]
-    [[ "$output" != *"codex nudge retry"* ]]
+    [[ "$output" == *"remained unverified for testninja after 0 retries"* ]]
+    [[ "$output" != *"delivery verified"* ]]
     [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
 }
 

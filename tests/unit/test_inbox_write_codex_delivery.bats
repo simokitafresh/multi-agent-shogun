@@ -15,14 +15,20 @@ cli:
     testninja:
       type: codex
 YAML
-    cat > "$ROOT/bin/pgrep" <<'SCRIPT'
+cat > "$ROOT/bin/pgrep" <<'SCRIPT'
 #!/usr/bin/env bash
+if [ "${FORCE_NO_WATCHER:-0}" = 1 ]; then
+    exit 1
+fi
 printf '123 bash /repo/scripts/inbox_watcher.sh testninja shogun:agents.3 codex\n'
 SCRIPT
     cat > "$ROOT/bin/tmux" <<'SCRIPT'
 #!/usr/bin/env bash
 if [ "$1" = list-panes ]; then
     printf 'shogun:agents.3 testninja\n'
+elif [ "$1" = send-keys ] && [ "${FORCE_NO_WATCHER:-0}" = 1 ]; then
+    sed -i "/id: '$INBOX_MESSAGE_ID'/,/type:/ s/read: false/read: true/" \
+        "$INBOX_WRITE_ROOT_OVERRIDE/queue/inbox/testninja.yaml"
 elif [ "$1" = capture-pane ]; then
     count=0
     [ -f "$CAPTURE_COUNT_FILE" ] && count=$(cat "$CAPTURE_COUNT_FILE")
@@ -31,6 +37,8 @@ elif [ "$1" = capture-pane ]; then
     if [ "${CAPTURE_MODE:-static}" = changed ] && [ "$count" -lt 2 ]; then
         printf '›\n'
     elif [ "${CAPTURE_MODE:-static}" = changed ]; then
+        sed -i "/id: '$PANE_DELIVERY_MSG'/,/type:/ s/read: false/read: true/" \
+            "$INBOX_WRITE_ROOT_OVERRIDE/queue/inbox/testninja.yaml"
         printf 'inbox2 — タスクYAML: /tmp/fixture/queue/tasks/testninja.yaml delivery_msg=%s\n' "$PANE_DELIVERY_MSG"
     else
         printf '• Working\n'
@@ -86,8 +94,8 @@ wait_for_log() {
     printf 'target_transition=1 wrong_id=1 success=0\n'
 }
 
-@test "post-send pane transition with exact message identity succeeds" {
-    export CAPTURE_MODE=changed PANE_DELIVERY_MSG="$EXPECTED_MSG_ID"
+@test "post-send pane transition with exact message identity and read transition succeeds" {
+    export CAPTURE_MODE=changed FORCE_NO_WATCHER=1 INBOX_CODEX_NUDGE_RETRIES=1 PANE_DELIVERY_MSG="$EXPECTED_MSG_ID"
     run bash "$BATS_TEST_DIRNAME/../../scripts/inbox_write.sh" \
         testninja 'delivery exact identity fixture' task_assigned karo notify
     [ "$status" -eq 0 ]
