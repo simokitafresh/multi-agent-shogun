@@ -566,6 +566,52 @@ YAML
     [[ "$output" == *"INSIGHT_CLAIM_OK concurrent_winners=1 restart_block=1 failure_release=1 resolved_block=1"* ]]
 }
 
+# test_necessity: pickerはreservation ledgerだけでなくactive/terminal task・reportも
+# 候補から除外し、先頭候補の状態に関係なく次のpending insightを選ぶ不変量を守る。
+@test "reflux insight picker skips reserved active and terminal candidates" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$STATE_DIR"
+        cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+insights:
+- id: INS-RESERVED
+  priority: high
+  status: pending
+- id: INS-ACTIVE
+  priority: medium
+  status: pending
+- id: INS-TERMINAL
+  priority: low
+  status: pending
+- id: INS-ELIGIBLE
+  priority: low
+  status: pending
+YAML
+        printf "2026-08-27T00:00:00+09:00\tINS-RESERVED\talpha\n" > "$STATE_DIR/insight_reservations.tsv"
+        cat > "$SCRIPT_DIR/queue/tasks/alpha.yaml" <<YAML
+task:
+  parent_cmd: cmd_reflux_insight_active
+  status: in_progress
+  purpose: process INS-ACTIVE
+YAML
+        cat > "$SCRIPT_DIR/queue/reports/terminal_report.yaml" <<YAML
+parent_cmd: cmd_reflux_insight_terminal
+status: completed
+result:
+  summary: INS-TERMINAL resolved
+YAML
+        REFLUX_INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
+        REFLUX_INSIGHT_RESERVATION_LEDGER="$STATE_DIR/insight_reservations.tsv"
+        export REFLUX_INSIGHTS_FILE REFLUX_INSIGHT_RESERVATION_LEDGER
+        test "$(_reflux_first_pending_insight_id)" = INS-ELIGIBLE
+        echo "INSIGHT_PICKER_OK reserved=1 active=1 terminal=1 selected=INS-ELIGIBLE"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INSIGHT_PICKER_OK reserved=1 active=1 terminal=1 selected=INS-ELIGIBLE"* ]]
+}
+
 # test_necessity: AUTO-DONEとdeployが同一agent lockで直列化され、旧parent/archive reportでtaskを書換えない不変量を守る。
 @test "AUTO-DONE deploy lock boundary is retryable and archive symlinks are inactive" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '

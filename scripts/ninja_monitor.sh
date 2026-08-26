@@ -5795,19 +5795,128 @@ PY
 _reflux_first_pending_insight_id() {
     local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
     local candidate ledger="${REFLUX_INSIGHT_RESERVATION_LEDGER:-$SCRIPT_DIR/logs/reflux_insight_reservations.tsv}"
-    local claimed_candidate=""
     [ -r "$insights_file" ] || return 1
-    while IFS= read -r candidate; do
-        [ -n "$candidate" ] || continue
-        if [ -r "$ledger" ] && awk -F '\t' -v id="$candidate" '$2 == id { found=1 } END { exit !found }' "$ledger"; then
-            [ -n "$claimed_candidate" ] || claimed_candidate="$candidate"
+    python3 - "$insights_file" "$SCRIPT_DIR" "$ledger" <<'PY'
+import pathlib
+import re
+import sys
+
+import yaml
+
+insights_path, root_text, ledger_text = sys.argv[1:]
+root = pathlib.Path(root_text).resolve()
+active_statuses = {"active", "assigned", "acknowledged", "in_progress"}
+terminal_statuses = {"completed", "done", "success", "failed"}
+priority = {"high": 3, "medium": 2, "low": 1}
+
+def read_yaml(path):
+    try:
+        value = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return {}
+    if isinstance(value, dict) and isinstance(value.get("task"), dict):
+        return value["task"]
+    return value if isinstance(value, dict) else {}
+
+try:
+    inventory_text = pathlib.Path(insights_path).read_text(encoding="utf-8")
+except (OSError, yaml.YAMLError):
+    raise SystemExit(1)
+try:
+    inventory = yaml.safe_load(inventory_text) or {}
+    rows = inventory.get("insights") if isinstance(inventory, dict) else []
+except yaml.YAMLError:
+    # Preserve legacy dirty-inventory behavior: valid entries before a
+    # malformed trailing fragment remain visible to the dirty checkpoint.
+    rows = []
+    current = None
+    for line in inventory_text.splitlines():
+        match = re.match(r"^-\s+id:\s*[\"']?([^\"']+?)[\"']?\s*$", line)
+        if match:
+            if current is not None:
+                rows.append(current)
+            current = {"id": match.group(1).strip()}
             continue
-        fi
-        printf '%s\n' "$candidate"
-        return 0
-    done < <(_reflux_insight_candidates "$insights_file")
-    [ -n "$claimed_candidate" ] && printf '%s\n' "$claimed_candidate"
-    [ -n "$claimed_candidate" ]
+        if current is None:
+            continue
+        field = re.match(r"^\s{2}(status|priority|fix_known):\s*[\"']?([^\"']+?)[\"']?\s*$", line)
+        if field:
+            value = field.group(2).strip()
+            current[field.group(1)] = True if value == "true" else False if value == "false" else value
+    if current is not None:
+        rows.append(current)
+if not isinstance(rows, list):
+    raise SystemExit(1)
+
+blocked = set()
+ledger_path = pathlib.Path(ledger_text)
+try:
+    blocked.update(
+        line.rstrip("\n").split("\t", 2)[1]
+        for line in ledger_path.read_text(encoding="utf-8").splitlines()
+        if len(line.split("\t", 2)) > 1 and line.split("\t", 2)[1]
+    )
+except OSError:
+    pass
+
+def contains_id(value, insight_id):
+    pattern = r"(?<![0-9A-Za-z_-])" + re.escape(insight_id) + r"(?![0-9A-Za-z_-])"
+    return re.search(pattern, value) is not None
+
+for task_path in sorted((root / "queue" / "tasks").glob("*.yaml")):
+    task = read_yaml(task_path)
+    status = str(task.get("status") or "").strip().lower()
+    if status in active_statuses:
+        text = repr(task)
+        for row in rows:
+            if isinstance(row, dict):
+                insight_id = str(row.get("id") or "").strip()
+                if insight_id and contains_id(text, insight_id):
+                    blocked.add(insight_id)
+
+report_dirs = (
+    root / "queue" / "reports",
+    root / "queue" / "archive" / "reports",
+    root / "archive" / "reports",
+)
+report_paths = []
+for report_dir in report_dirs:
+    if report_dir.is_dir():
+        report_paths.extend(report_dir.rglob("*.yaml"))
+for report_path in sorted(set(report_paths)):
+    report = read_yaml(report_path)
+    status = str(report.get("status") or "").strip().lower()
+    parent = str(report.get("parent_cmd") or "").strip()
+    if parent.startswith("cmd_reflux_insight_") and status in active_statuses | terminal_statuses:
+        text = repr(report)
+        for row in rows:
+            if isinstance(row, dict):
+                insight_id = str(row.get("id") or "").strip()
+                if insight_id and contains_id(text, insight_id):
+                    blocked.add(insight_id)
+
+fallback = None
+candidates = []
+for index, row in enumerate(rows):
+    if not isinstance(row, dict) or str(row.get("status") or "").strip().lower() != "pending":
+        continue
+    insight_id = str(row.get("id") or "").strip()
+    if not insight_id:
+        continue
+    fallback = fallback or insight_id
+    if insight_id in blocked:
+        continue
+    score = priority.get(str(row.get("priority") or "").strip().lower(), 2)
+    if row.get("fix_known") is True:
+        score += 10
+    candidates.append((-score, index, insight_id))
+if candidates:
+    print(sorted(candidates)[0][2])
+elif fallback:
+    # Keep a blocked pending ID as the compatibility signal for the caller's
+    # dirty-target guard; no reservation is granted until dispatch-time claim.
+    print(fallback)
+PY
 }
 
 # Atomically claim a stable insight ID at the reflux dispatch boundary.  A
