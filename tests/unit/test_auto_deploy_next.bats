@@ -1,16 +1,27 @@
 #!/usr/bin/env bats
 # test_necessity: pending/idle alone remain selectable across the complete status x actor-role x writer-mode x lifecycle product, with at most one executable owner.
 
+setup_file() {
+  seed="$BATS_FILE_TMPDIR/auto-deploy-seed"
+  mkdir -p "$seed/scripts/lib"
+  cp scripts/auto_deploy_next.sh "$seed/scripts/"
+  cp scripts/lib/durable_state.py scripts/lib/durable_state.sh scripts/lib/yaml_field_set.sh "$seed/scripts/lib/"
+  printf 'return 0\n' > "$seed/scripts/lib/agent_config.sh"
+  printf 'pane_lookup() { return 1; }\n' > "$seed/scripts/lib/pane_lookup.sh"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$seed/scripts/deploy_task.sh"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$seed/scripts/inbox_write.sh"
+  chmod +x "$seed/scripts/"*.sh
+}
+
+fixture_seed() {
+  printf '%s/auto-deploy-seed' "$BATS_FILE_TMPDIR"
+}
+
 make_case() {
   root="$1" cmd="$2"
-  mkdir -p "$root/scripts/lib" "$root/queue/tasks" "$root/queue/reports" "$root/logs"
-  cp scripts/auto_deploy_next.sh "$root/scripts/"
-  cp scripts/lib/durable_state.py scripts/lib/durable_state.sh scripts/lib/yaml_field_set.sh "$root/scripts/lib/"
-  printf 'return 0\n' > "$root/scripts/lib/agent_config.sh"
-  printf 'pane_lookup() { return 1; }\n' > "$root/scripts/lib/pane_lookup.sh"
-  printf '#!/usr/bin/env bash\nexit 0\n' > "$root/scripts/deploy_task.sh"
-  printf '#!/usr/bin/env bash\nexit 0\n' > "$root/scripts/inbox_write.sh"
-  chmod +x "$root/scripts/"*.sh
+  seed=$(fixture_seed)
+  mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/logs"
+  ln -s "$seed/scripts" "$root/scripts"
   cat > "$root/queue/tasks/saizo.yaml" <<'YAML'
 task:
   task_id: completed
@@ -32,84 +43,107 @@ YAML
 
 }
 
+run_r05_cell() {
+  local fixture_status="$1" actor_role="$2" writer_mode="$3" lifecycle="$4" total="$5" root cmd rc output_file publishes executable
+  root="$BATS_TEST_TMPDIR/product-${fixture_status:-missing}-${actor_role}-${writer_mode}-${lifecycle}-${total}"
+  cmd="cmd_fixture_${total}_${BASHPID}_${RANDOM}"
+  make_case "$root" "$cmd"
+  if [ "$actor_role" = source ]; then
+    sed -i 's/assigned_to: hayate/assigned_to: saizo/' "$root/queue/tasks/pending.yaml"
+  fi
+  if [ -n "$fixture_status" ]; then
+    sed -i "s/^  status: pending$/  status: $fixture_status/" "$root/queue/tasks/pending.yaml"
+  else
+    sed -i '/^  status: pending$/d' "$root/queue/tasks/pending.yaml"
+  fi
+
+  rc=0
+  output_file="$root/cell.output"
+  case "$lifecycle:$writer_mode" in
+    normal:single)
+      bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file" 2>&1 || rc=$?
+      ;;
+    normal:concurrent)
+      bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.1" 2>&1 & local p1=$!
+      bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.2" 2>&1 & local p2=$!
+      wait "$p1" || rc=$?
+      wait "$p2" || true
+      cat "$output_file.1" "$output_file.2" >"$output_file"
+      ;;
+    crash_before_publish:*)
+      AUTO_DEPLOY_OWNER_LEASE_TTL=0 AUTO_DEPLOY_FAILPOINT=after_intended_before_target \
+        bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file" 2>&1 || rc=$?
+      ;;
+    retry_after_crash:*)
+      AUTO_DEPLOY_OWNER_LEASE_TTL=0 AUTO_DEPLOY_FAILPOINT=after_intended_before_target \
+        bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.crash" 2>&1 || true
+      AUTO_DEPLOY_OWNER_LEASE_TTL=0 bash "$root/scripts/auto_deploy_next.sh" \
+        "$cmd" completed >"$output_file" 2>&1 || rc=$?
+      ;;
+  esac
+
+  # Count the public receipt only; log() mirrors the same text to stderr
+  # with an [AUTO_DEPLOY] prefix and is not a second publish.
+  publishes=$(rg -c '^AUTO_DEPLOY_OK:' "$output_file" || true)
+  publishes=${publishes:-0}
+  executable=$(rg -l '^  status: (assigned|acknowledged|in_progress)$' \
+    "$root/queue/tasks"/*.yaml 2>/dev/null | wc -l)
+  printf '%s\t%s\t%s\t%s\t%s\n' "${fixture_status:-missing}" "$lifecycle" "$rc" "$publishes" "$executable" > "$root/result"
+}
+
 @test "R05 selector satisfies the complete 120-cell status actor writer lifecycle product" {
   statuses=(pending idle assigned acknowledged in_progress transferred done failed unknown "")
   actor_roles=(source target)
   writer_modes=(single concurrent)
   lifecycles=(normal crash_before_publish retry_after_crash)
-  total=0 eligible=0 rejected=0 false_positive=0 false_negative=0
-  in_progress_reselected=0 owner_overflow=0 duplicate_publish=0
+  total=0
+  case_roots=()
 
+  # Every cell owns a unique fixture root and command id, so bounded batches
+  # preserve the complete product while removing serial process startup time.
+  batch_pids=()
   for fixture_status in "${statuses[@]}"; do
     for actor_role in "${actor_roles[@]}"; do
       for writer_mode in "${writer_modes[@]}"; do
         for lifecycle in "${lifecycles[@]}"; do
           total=$((total + 1))
-          root="$BATS_TEST_TMPDIR/product-${fixture_status:-missing}-${actor_role}-${writer_mode}-${lifecycle}"
-          cmd="cmd_fixture_${total}_${RANDOM}"
-          make_case "$root" "$cmd"
-          if [ "$actor_role" = source ]; then
-            sed -i 's/assigned_to: hayate/assigned_to: saizo/' "$root/queue/tasks/pending.yaml"
+          root="$BATS_TEST_TMPDIR/product-${fixture_status:-missing}-${actor_role}-${writer_mode}-${lifecycle}-${total}"
+          case_roots+=("$root")
+          run_r05_cell "$fixture_status" "$actor_role" "$writer_mode" "$lifecycle" "$total" &
+          batch_pids+=("$!")
+          if [ "${#batch_pids[@]}" -eq 8 ]; then
+            for pid in "${batch_pids[@]}"; do wait "$pid" || true; done
+            batch_pids=()
           fi
-          if [ -n "$fixture_status" ]; then
-            sed -i "s/^  status: pending$/  status: $fixture_status/" "$root/queue/tasks/pending.yaml"
-          else
-            sed -i '/^  status: pending$/d' "$root/queue/tasks/pending.yaml"
-          fi
-
-          rc=0
-          output_file="$root/cell.output"
-          case "$lifecycle:$writer_mode" in
-            normal:single)
-              bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file" 2>&1 || rc=$?
-              ;;
-            normal:concurrent)
-              bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.1" 2>&1 & p1=$!
-              bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.2" 2>&1 & p2=$!
-              wait "$p1" || rc=$?
-              wait "$p2" || true
-              cat "$output_file.1" "$output_file.2" >"$output_file"
-              ;;
-            crash_before_publish:*)
-              AUTO_DEPLOY_OWNER_LEASE_TTL=0 AUTO_DEPLOY_FAILPOINT=after_intended_before_target \
-                bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file" 2>&1 || rc=$?
-              ;;
-            retry_after_crash:*)
-              AUTO_DEPLOY_OWNER_LEASE_TTL=0 AUTO_DEPLOY_FAILPOINT=after_intended_before_target \
-                bash "$root/scripts/auto_deploy_next.sh" "$cmd" completed >"$output_file.crash" 2>&1 || true
-              AUTO_DEPLOY_OWNER_LEASE_TTL=0 bash "$root/scripts/auto_deploy_next.sh" \
-                "$cmd" completed >"$output_file" 2>&1 || rc=$?
-              ;;
-          esac
-
-          # Count the public receipt only; log() mirrors the same text to stderr
-          # with an [AUTO_DEPLOY] prefix and is not a second publish.
-          publishes=$(rg -c '^AUTO_DEPLOY_OK:' "$output_file" || true)
-          publishes=${publishes:-0}
-          [ "$publishes" -le 1 ] || duplicate_publish=$((duplicate_publish + 1))
-          executable=$(rg -l '^  status: (assigned|acknowledged|in_progress)$' \
-            "$root/queue/tasks"/*.yaml 2>/dev/null | wc -l)
-          [ "$executable" -le 1 ] || owner_overflow=$((owner_overflow + 1))
-
-          case "$fixture_status" in
-            pending|idle)
-              eligible=$((eligible + 1))
-              if [ "$lifecycle" = crash_before_publish ]; then
-                [ "$rc" -ne 0 ] || false_negative=$((false_negative + 1))
-              else
-                [ "$publishes" -eq 1 ] || false_negative=$((false_negative + 1))
-              fi
-              ;;
-            *)
-              rejected=$((rejected + 1))
-              [ "$publishes" -eq 0 ] || false_positive=$((false_positive + 1))
-              [ "$fixture_status" != in_progress ] || \
-                in_progress_reselected=$((in_progress_reselected + publishes))
-              ;;
-          esac
         done
       done
     done
+  done
+  for pid in "${batch_pids[@]}"; do wait "$pid" || true; done
+
+  eligible=0 rejected=0 false_positive=0 false_negative=0
+  in_progress_reselected=0 owner_overflow=0 duplicate_publish=0
+  for root in "${case_roots[@]}"; do
+    IFS=$'\t' read -r fixture_status lifecycle rc publishes executable < "$root/result"
+    publishes=${publishes:-0}
+    [ "$publishes" -le 1 ] || duplicate_publish=$((duplicate_publish + 1))
+    [ "$executable" -le 1 ] || owner_overflow=$((owner_overflow + 1))
+    case "$fixture_status" in
+      pending|idle)
+        eligible=$((eligible + 1))
+        if [ "$lifecycle" = crash_before_publish ]; then
+          [ "$rc" -ne 0 ] || false_negative=$((false_negative + 1))
+        else
+          [ "$publishes" -eq 1 ] || false_negative=$((false_negative + 1))
+        fi
+        ;;
+      *)
+        rejected=$((rejected + 1))
+        [ "$publishes" -eq 0 ] || false_positive=$((false_positive + 1))
+        [ "$fixture_status" != in_progress ] || \
+          in_progress_reselected=$((in_progress_reselected + publishes))
+        ;;
+    esac
   done
 
   echo "R05_RECEIPT total=$total eligible=$eligible rejected=$rejected in_progress_reselected=$in_progress_reselected false_positive=$false_positive false_negative=$false_negative owner_overflow=$owner_overflow duplicate_publish=$duplicate_publish" >&3
