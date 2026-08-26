@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 00:24 更新(artifact 20260827-0024)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 01:14 更新(/clear復帰)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -30,7 +30,7 @@
 - [x] T24(20:17 家老復旧: 7/7 bypass・bwrap 0。settings.yaml launch_cmd 4行修正=未commit・殿裁可待ち) Codex sandbox起動でcommitだけFAIL(P2 3件)の真因=settings.yaml per-agent launch_cmdのbypass欠落 ★実装PASSがcommitで捨てられる損失0に
 - [~] T25(21:38 家老へ配備下知 msg_213800-C) P1(AC厳格停止8件)の型変更: 基準値をACに固定せず忍者が同一環境でbefore→afterを自己計測、乖離は報告して進む(バッチらせん5条)→配備テンプレ+cmd_save gateへ ★作業PASSがACでFAILになる損失0に
 - [ ] T26 P3(偵察の材料なし=FAIL 7件): verdict契約を偵察タスクでは finding付きPASSに ★偵察の再配備往復削減
-- [~] T27(21:38 家老へ配備下知 msg_213800-A/B: 影丸T21・飛猿T22のworktree成果commit完遂) 失敗4task(半蔵ci_fix/飛猿T22/影丸T21/疾風T10)のworktree成果をcommitだけ再配備で完遂(家老下知済 msg_201620) ★push律速の半蔵ci_fixを最優先
+- [x] T27(01:26 GATE CLEAR t27a hotfix 858d2a82f origin反映済; 21:38 家老へ配備下知 msg_213800-A/B: 影丸T21・飛猿T22のworktree成果commit完遂) 失敗4task(半蔵ci_fix/飛猿T22/影丸T21/疾風T10)のworktree成果をcommitだけ再配備で完遂(家老下知済 msg_201620) ★push律速の半蔵ci_fixを最優先
 - [x] T28(e3712b4a9: settings.yaml 忍者launch_cmdモデル固定除去=luna-high継承、idle4名respawn済・小太郎/飛猿は終端後。agent_respawn.shに作業中ガード(BLOCK rc=2)を構造型で埋込・bats 11/11+9/9) 殿裁定20:48-20:54(モデル明示しない/作業中respawn禁止) ★モデル切替の継続+作業成果の破棄0
 - [x] K02(家老自立配備 GATE CLEAR 21:23) prepush_gate_gunshi_precheck_timeout(push set 3位368秒の上限対策) ★push harness母数の削減
 - [x] T29(22:40 完了: c5c19d73b 88本/214s→…→391db2305 3本/9s、計10単位、最大230s・最小9s。まとめ時=1222s FAIL往復) push方式転換=1commitずつoldest-first ★push律速の本丸
@@ -40,3 +40,7 @@
 - [x] T33(2df2ecdee: script_update.sh bashフォールバック+index 100755。drvfsはchmod無効) inbox_watcher毎分死亡の真因=scripts 10本の実行ビット欠落(restore/converge) ★nudge喪失(12:00-00:08 85回再起動)の根治
 - [x] T34(inbox_write: ninja_monitor→gunshi review_draft許可+stderr記録) 報告10本UN-GATEDの真因=自動レビュー依頼が送信者制限で毎回BLOCK・stderr不可視 ★報告→レビュー→GATEの自動回転復活
 - [x] T35(bc9f4a8c6/474aff0c2: cli_lookup BASH_REMATCH排除+接尾辞自己修復) 半蔵/飛猿 400 luna-high の真因=ninja_monitor trapがBASH_REMATCHを潰し model_name全体をconfig.tomlへ ★忍者停止0
+- [x] T36(家老 00:43-00:44 6本を1本ずつpush完了: 3815cc5b7/e0374eaa5/17f43ffd9/bc9f4a8c6/2df2ecdee/c17a92d8e) 根治commitのpush ★根治をorigin/CIへ\n- [x] T37(57b40cf9a: instructions/shogun.md 焼込み+senkyoku-log+todo_map+dashboard HTML初commit、記憶DB session_save_20260827_0035、MEMORY.md索引、feedback_karo_directive_pattern.md) 強くてニューゲーム保存(殿指示00:33) ★/clear後の復帰精度
+- [~] T38(02:47 半蔵ci_fix配備成功 wall 199s(負荷除去前374s→175s短縮)・acknowledged; 01:42 858d2a82f run 32987834940=failure: shard4 test_ninja_monitor.bats#3 review_requests=1不一致のみ・家老がci_fixを半蔵へ配備中; 01:12 家老へ1単位下知 msg_011238; 01:27 家老がrerun→858d2a82f run 32987834940 queued。57b40cf9a run=RED: inbox_write delivery検証系 9 test(shard2/4/7/compat)=T27a hotfixの対象領域→858d2a82f結果で判定) origin tip 858d2a82f のCI GREEN証跡: run未生成+queued 2本40分超+c17a92d8e cancelled(insight登録済) ★根治6本のGREEN証跡=らせん次弾の土台
+- [~] T39(02:48 orphan_test_reap.sh --kill(殿実行)で孤児0・stale0・bats0、load 66→19; 02:42 殿kill×3+orphan_test_reap.sh c940c47d5で孤児0件・load 66→25; 01:33 殿kill 4pid完了→新孤児2樹(test_heavy_job_admission singleflight-orphanが内側run_tests.sh unitを生かす自己増殖=真因特定・insight済・cmd起票へ); 01:18 kagemaru failed→idle 家老クローズ済; Gate 10.07 検知を実装・commit済。停止はD006ゆえ殿裁定待ち。発生源7なぜはinsight登録済→cmd化) 孤児bats(test_cmd_complete_gate.bats 137分・親/init・global flock保持・/tmp fixture lock 1359) ★家老commit helperのflock待ち0・/tmp蓄積0
+- [ ] T40 insights未処理97件の消化(idle時) ★気づきの先送り0
