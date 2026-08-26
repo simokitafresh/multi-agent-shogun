@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 06:06 更新(loop tick 6)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 06:36 更新(loop tick 7)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -48,4 +48,5 @@
 - [x] T42(04:55 CI GREEN run 33005872290 @f690ebdac; 04:33 疾風 ci_fix 完了 5269fa730→HEAD f690ebdac、家老レビュー/GATE/push待ち; 04:17 3run目 9e00859b1=真因確定: test_deploy_task_nocode_commit_contract.bats case9、deploy_task_function_timing_enable が scaffold setup で失敗=669afef44 の entry計測追加の副作用→疾風 ci_fix assigned) CI 06ad396ab run 33001522768 shard2 failure=『tests/unit directory not found』(checkout側の異常・テスト失敗ではない)→669afef44 push の次runで再判定、REDなら家老ci_fix ★GREEN証跡
 - [x] T43(04:06 d8ddc2279 commit済・push済; ただし配備0件の真因は別=T44) reflux dirty-guard: queue/insights.yaml が MM(将軍のinsight_write後の auto-commit 失敗)のまま→cmd_reflux の自動配備が毎回 BLOCK=idle忍者6名に仕事が流れない構造。commit で解除→次tickで reflux 配備再開を確認 ★遊休をなくす
 - [x] T44(05:38 実配備復活: cmd_reflux_insight_202608270538_hayate DEPLOY_RECEIPT success 25.3s=08-24 16:35以来初; 05:25 GATE CLEAR: 影丸 f956de3c7→5a9f583b9 picker除外拡張+回帰3種、配備再開は監視で確認; 05:05 影丸 in_progress・報告雛形のみ、SKIP継続中(04:47-05:01 同一ID); 04:37 影丸へ karo_hotfix 配備 assigned wall 63.7s; 04:38 家老へ下知) reflux insight 自動配備が 08-24 16:35 以来 0件: picker が INS-20260821-090811134-61a3(reserved/terminal)を毎周期先頭で引き SKIP、次候補へ進まない(ninja_monitor REFLUX-AUTO-SKIP 04:20/04:23)。insights_pending 102 が idle忍者へ流れない真因 ★遊休3日分の根治
-- [~] T45(06:06 観測開始) reflux 回転計測: 05:39 疾風→05:55 CLEAR、05:53 影丸→06:02 CLEAR(1件≈14分・同時1件)。insights pending 104 が CLEAR 後も減らない(resolved 352)→ archive 時に resolved へ遷移するか次tickで確認、減らなければ家老へ ★気づき消化の回転速度の可視化
+- [~] T45(06:36 4件目 才蔵 06:24→06:31 DONE、pending 104→102、1件≈14分・同時1件; 06:06 観測開始) reflux 回転計測: 05:39 疾風→05:55 CLEAR、05:53 影丸→06:02 CLEAR(1件≈14分・同時1件)。insights pending 104 が CLEAR 後も減らない(resolved 352)→ archive 時に resolved へ遷移するか次tickで確認、減らなければ家老へ ★気づき消化の回転速度の可視化
+- [~] T46(06:35 家老へ CI RED 診断下知) CI run 33014653183(75dc761e1 半蔵 reflux 成果) shard compatibility failure → 真因特定→ci_fix or rerun ★GREEN 証跡の維持
