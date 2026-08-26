@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 04:06 更新(loop tick 2)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 05:36 更新(loop tick 5)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -22,13 +22,13 @@
 
 - [x] T17(03:45 将軍doc lane: infrastructure.md §2026-08-27 に5点反映、境界06ddbc988、掲示板2件actioned) DOC_LANE_ALERT 2件(blt_123314/blt_101234 infrastructure.md境界)→T02 push後に context_source_commit_set.sh で境界更新しactioned_by記入 ★偽ALERT消化コスト削減
 - [x] T18(半蔵 GATE CLEAR 18:31: 関数別実時間の計測器常設=らせん第1手。次=計測結果で分割対象を名指し→T10へ合流) script_size_alert 14件(cmd_complete_gate 14804行/ninja_monitor 11856/deploy_task 11256…)→cmd_4403成果と合流する分割cmd(前復帰点の残弾) ★hook/gate読込時間の短縮
-- [~] T19(影丸 FAIL報告 17:42: AC3未達→家老判断待ち) lesson_deprecation候補3件(L1637×2/L1632)家老判断待ち→家老へ集約案内 ★教訓注入トークン削減
+- [x] T19(05:17 家老判定: L1637×2 retireしない(unknown増分0未確認)・L1632 retire適格だが canonical lessons.md に不在=SSOT不整合で見送り、report archive・failed残置0; 影丸 FAIL報告 17:42: AC3未達→家老判断待ち) lesson_deprecation候補3件(L1637×2/L1632)家老判断待ち→家老へ集約案内 ★教訓注入トークン削減
 - [x] T20(cfd7b7d3e: gate ARCHIVE_AUTO_HANDLED+archive_completedがhint既読化。ゾンビ16件掃除→家老未読19→1) 家老inbox滞留の真因調査(殿18:03)=完了済cmdのskill_hintゾンビ ★家老の再読コスト16KB×毎nudgeをゼロに
 - [~] T21(影丸 acknowledged。19:33に家老Codexのnudge queue停滞を実観測=裏付け) Codex宛nudge配達検証FAILURE 88%(insight登録済)→read遷移ベースの検証+未読N分で再nudge ★家老・忍者の指示受領遅延(2h停滞)の根治
 - [~] T22(飛猿 assigned) pre-push PASSキャッシュのキー変更(commit→tested-paths tree hash)+insight auto-commitバッチ化(本日43commit=HEAD churn) ★push 1回あたりの再走を0に
 - [~] T23(家老へ下知 20:04) ninja_monitor二重起動(非owner pid 1354798 19:04起動 / owner 2140401 19:48起動)の正規退役 ★snapshot/nudge競合の除去
 - [x] T24(20:17 家老復旧: 7/7 bypass・bwrap 0。settings.yaml launch_cmd 4行修正=未commit・殿裁可待ち) Codex sandbox起動でcommitだけFAIL(P2 3件)の真因=settings.yaml per-agent launch_cmdのbypass欠落 ★実装PASSがcommitで捨てられる損失0に
-- [~] T25(21:38 家老へ配備下知 msg_213800-C) P1(AC厳格停止8件)の型変更: 基準値をACに固定せず忍者が同一環境でbefore→afterを自己計測、乖離は報告して進む(バッチらせん5条)→配備テンプレ+cmd_save gateへ ★作業PASSがACでFAILになる損失0に
+- [x] T25(05:20 GATE CLEAR: review APPROVE、統合tip 77107a355 push; 21:38 家老へ配備下知 msg_213800-C) P1(AC厳格停止8件)の型変更: 基準値をACに固定せず忍者が同一環境でbefore→afterを自己計測、乖離は報告して進む(バッチらせん5条)→配備テンプレ+cmd_save gateへ ★作業PASSがACでFAILになる損失0に
 - [x] T26(03:38 cmd_4406 GATE CLEAR 06ddbc988: recon/scout/recon2 は commit/investigation 契約免除+finding必須、bats 8/8; cmd_4406 起票→publish 03:05; 偵察報告FAIL 616件・260報告、commit契約誤適用) P3(偵察の材料なし=FAIL 7件): verdict契約を偵察タスクでは finding付きPASSに ★偵察の再配備往復削減
 - [x] T27(01:26 GATE CLEAR t27a hotfix 858d2a82f origin反映済; 21:38 家老へ配備下知 msg_213800-A/B: 影丸T21・飛猿T22のworktree成果commit完遂) 失敗4task(半蔵ci_fix/飛猿T22/影丸T21/疾風T10)のworktree成果をcommitだけ再配備で完遂(家老下知済 msg_201620) ★push律速の半蔵ci_fixを最優先
 - [x] T28(e3712b4a9: settings.yaml 忍者launch_cmdモデル固定除去=luna-high継承、idle4名respawn済・小太郎/飛猿は終端後。agent_respawn.shに作業中ガード(BLOCK rc=2)を構造型で埋込・bats 11/11+9/9) 殿裁定20:48-20:54(モデル明示しない/作業中respawn禁止) ★モデル切替の継続+作業成果の破棄0
@@ -45,5 +45,6 @@
 - [x] T39(03:28 cmd_4405 GATE CLEAR 8c09923f8: run_tests.sh 子孫reap契約+fixture root固定、長時間bats 0→0; 02:48 orphan_test_reap.sh --kill(殿実行)で孤児0・stale0・bats0、load 66→19; 02:42 殿kill×3+orphan_test_reap.sh c940c47d5で孤児0件・load 66→25; 01:33 殿kill 4pid完了→新孤児2樹(test_heavy_job_admission singleflight-orphanが内側run_tests.sh unitを生かす自己増殖=真因特定・insight済・cmd起票へ); 01:18 kagemaru failed→idle 家老クローズ済; Gate 10.07 検知を実装・commit済。停止はD006ゆえ殿裁定待ち。発生源7なぜはinsight登録済→cmd化) 孤児bats(test_cmd_complete_gate.bats 137分・親/init・global flock保持・/tmp fixture lock 1359) ★家老commit helperのflock待ち0・/tmp蓄積0
 - [ ] T40 insights未処理97件の消化(idle時) ★気づきの先送り0
 - [x] T41(04:02 GATE CLEAR; 小太郎 karo_hotfix 669afef44: .git/worktrees stale metadata 周期prune+deploy前entry数ログ、695/695 PASS) worktree stale 自動prune ★deploy 397秒→の再発源を構造で断つ
-- [~] T42 CI 06ad396ab run 33001522768 shard2 failure=『tests/unit directory not found』(checkout側の異常・テスト失敗ではない)→669afef44 push の次runで再判定、REDなら家老ci_fix ★GREEN証跡
-- [~] T43(04:05 insights.yaml commit中) reflux dirty-guard: queue/insights.yaml が MM(将軍のinsight_write後の auto-commit 失敗)のまま→cmd_reflux の自動配備が毎回 BLOCK=idle忍者6名に仕事が流れない構造。commit で解除→次tickで reflux 配備再開を確認 ★遊休をなくす
+- [x] T42(04:55 CI GREEN run 33005872290 @f690ebdac; 04:33 疾風 ci_fix 完了 5269fa730→HEAD f690ebdac、家老レビュー/GATE/push待ち; 04:17 3run目 9e00859b1=真因確定: test_deploy_task_nocode_commit_contract.bats case9、deploy_task_function_timing_enable が scaffold setup で失敗=669afef44 の entry計測追加の副作用→疾風 ci_fix assigned) CI 06ad396ab run 33001522768 shard2 failure=『tests/unit directory not found』(checkout側の異常・テスト失敗ではない)→669afef44 push の次runで再判定、REDなら家老ci_fix ★GREEN証跡
+- [x] T43(04:06 d8ddc2279 commit済・push済; ただし配備0件の真因は別=T44) reflux dirty-guard: queue/insights.yaml が MM(将軍のinsight_write後の auto-commit 失敗)のまま→cmd_reflux の自動配備が毎回 BLOCK=idle忍者6名に仕事が流れない構造。commit で解除→次tickで reflux 配備再開を確認 ★遊休をなくす
+- [x] T44(05:38 実配備復活: cmd_reflux_insight_202608270538_hayate DEPLOY_RECEIPT success 25.3s=08-24 16:35以来初; 05:25 GATE CLEAR: 影丸 f956de3c7→5a9f583b9 picker除外拡張+回帰3種、配備再開は監視で確認; 05:05 影丸 in_progress・報告雛形のみ、SKIP継続中(04:47-05:01 同一ID); 04:37 影丸へ karo_hotfix 配備 assigned wall 63.7s; 04:38 家老へ下知) reflux insight 自動配備が 08-24 16:35 以来 0件: picker が INS-20260821-090811134-61a3(reserved/terminal)を毎周期先頭で引き SKIP、次候補へ進まない(ninja_monitor REFLUX-AUTO-SKIP 04:20/04:23)。insights_pending 102 が idle忍者へ流れない真因 ★遊休3日分の根治

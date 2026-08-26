@@ -52,38 +52,36 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 04:06 更新(loop tick 2) · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 05:36 更新(loop tick 5) · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
 
 <div class="strip">
-  <div class="tile"><span class="k">済</span><span class="v done">37</span><span class="s">証跡付き</span></div>
-  <div class="tile"><span class="k">走行中</span><span class="v run">4</span><span class="s">T42 CI / T43 reflux解除 / T25 / T19</span></div>
+  <div class="tile"><span class="k">済</span><span class="v done">42</span><span class="s">証跡付き</span></div>
+  <div class="tile"><span class="k">走行中</span><span class="v run">1</span><span class="s">T44 実配備の確認のみ</span></div>
   <div class="tile"><span class="k">未着手</span><span class="v todo">2</span><span class="s">T12 / T40</span></div>
-  <div class="tile"><span class="k">CI</span><span class="v run">走行中</span><span class="s">c93d61ac8 run 33003029532 in_progress(origin=HEAD 0/0)</span></div>
-  <div class="tile"><span class="k">孤児テスト</span><span class="v done">0</span><span class="s">03:58 dry-run 0 · load 11 · worktree自動prune稼働</span></div>
+  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">run 33010006224 @5a9f583b9(HEAD=origin) success</span></div>
+  <div class="tile"><span class="k">孤児テスト</span><span class="v done">0</span><span class="s">05:33 dry-run 0 · load 5 · 家老inbox 0 · FAIL残置 0</span></div>
 </div>
 
 <div class="live">
-  <h2>一次情報(04:06 capture / ps / gh / logs)</h2>
+  <h2>一次情報(05:36 capture / ps / gh / logs)</h2>
   <ul>
     <li><span class="chip bad">孤児テスト増殖</span>test_heavy_job_admission.bats の singleflight-orphan が内側 run_tests.sh unit を生かしたまま終わり、古い半蔵worktree(seed未是正版)から全suiteを再帰起動→root 27・bats-exec-suite 32本・load 66・/tmp fixture lock 1359個・global flock競合。殿の kill 3回+<span class="mono">orphan_test_reap.sh --kill</span>(124本)で 0 に</li>
     <li><span class="chip done">環境埋込</span>Gate 10.07 長時間bats検知(3fa443c11) / <span class="mono">scripts/orphan_test_reap.sh</span>(ps 1回スナップショット・0.2秒・tmux配下除外) / <span class="mono">git worktree prune</span> 724→103(deploy 397秒→199秒)</li>
     <li><span class="chip done">根治3点 GATE CLEAR</span>cmd_4405(疾風 8c09923f8: run_tests.sh 子孫reap契約+fixture root固定) / cmd_4406(才蔵 06ddbc988: 偵察報告は finding 必須・commit契約免除、監査 557 FAIL/240報告) / 小太郎 hotfix 669afef44(worktree stale 周期prune)。context/infrastructure.md §2026-08-27 へ反映(06ad396ab)</li>
-    <li><span class="chip done">CI GREEN 復帰</span>半蔵 ci_fix f88e36251 → run 32999064580 success @8c09923f8。直後の 06ad396ab run は shard2 で「tests/unit directory not found」(checkout側)=次runで再判定(T42)</li>
-    <li><span class="chip bad">遊休の構造原因</span>忍者6名 idle。queue/insights.yaml が MM(将軍 insight_write 後の auto-commit が reflux dirty-guard で失敗)のままだと cmd_reflux の自動配備が毎回 BLOCK → 102件の気づきが忍者へ流れない。04:05 将軍が commit(T43)、次tickで配備再開を確認</li>
+    <li><span class="chip done">CI GREEN(2度目)</span>半蔵 ci_fix f88e36251 → 8c09923f8 success。その後 shard2 で RED(真因=669afef44 の timing 計測が fixture で DEBUG trap を有効化、先行2 run の「tests/unit not found」は別の一時異常)→ 疾風 ci_fix 5269fa730 → run 33005872290 @f690ebdac success(04:55)</li>
+    <li><span class="chip done">遊休の真因を根治(T44)</span>reflux insight 自動配備が 08-24 16:35 以来 0件だった真因=picker が予約済み先頭 INS-20260821-090811134-61a3 で止まるバグ。影丸 hotfix f956de3c7(reserved/active/terminal 除外+回帰3種)→ GATE CLEAR 05:24 → ninja_monitor 再起動後 05:29 は同一ID SKIP が消え『REFLUX-AUTO-WAIT idle <600s』へ遷移(=候補選定が動いた)。600秒経過後の実配備 DEPLOY_RECEIPT を次tickで確認。副産物: DOC_LANE 偽ALERT 2件・lesson SSOT 不整合(L1632 cache有/canonical無)を insight 登録</li>
+    <li><span class="chip done">便回転の停滞解消</span>T25 飛猿報告(22:24 PASS)が 7時間 GATE 未実行→家老 ACCEPT→CLEAR 05:20(統合tip 77107a355)。T19 影丸偵察(FAIL残置 17:43〜)→finding ACCEPT、退役判定 L1637×2=保留・L1632=SSOT修復まで見送り、archive・failed残置 0</li>
     <li><span class="chip done">本日の殿裁定</span>速度4則+マップ / らせん正本 / モデル明示しない / 作業中respawn禁止 / 1commitずつpush / inbox優先強制 / <b>孤児は残すメリット無し=止める</b></li>
   </ul>
 </div>
 
 <section class="group">
-  <h2>走行中 <span class="n">4</span></h2>
+  <h2>走行中 <span class="n">1</span></h2>
   <div class="rows">
-    <div class="row run"><span class="id">T43</span><span class="t">reflux 自動配備の解除(insights.yaml dirty)</span><span class="d">insight_write 後の auto-commit が「reflux dirty-guardに注意」で毎回失敗→MM 状態が続き cmd_reflux dispatch が BLOCK。将軍が scope commit で確定→再開確認</span><span class="w">idle 6名へ気づき102件を流す</span></div>
-    <div class="row run"><span class="id">T42</span><span class="t">origin tip の CI 再判定</span><span class="d">06ad396ab run 33001522768 = shard2「tests/unit directory not found」(checkout異常・テスト失敗ではない)。669afef44 push の次 run で判定、RED なら家老 ci_fix</span><span class="w">GREEN 証跡の維持</span></div>
-    <div class="row run"><span class="id">T25</span><span class="t">P1(AC厳格停止)の型変更: 固定基準値→自己計測</span><span class="d">飛猿 PASS報告→軍師レビュー→GATE待ち(高負荷で回転が止まっていた区間あり)</span><span class="w">作業PASSがACでFAILになる損失を0に</span></div>
-    <div class="row run"><span class="id">T19</span><span class="t">教訓退役候補3件の現物確認</span><span class="d">影丸 AC3未達→家老の retire 判断待ち</span><span class="w">教訓注入トークン削減</span></div>
+    <div class="row run"><span class="id">T44</span><span class="t">reflux 実配備の確認</span><span class="d">hotfix 反映後の初周期(05:29)は WAIT(idle<600s)。600秒到達後に cmd_reflux_insight の DEPLOY_RECEIPT が出るかを 05:40 前後で確認。出なければ再調査</span><span class="w">idle 6名へ気づき102件を流す</span></div>
   </div>
 </section>
 
@@ -96,8 +94,11 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 </section>
 
 <section class="group">
-  <h2>済 <span class="n">37</span></h2>
+  <h2>済 <span class="n">42</span></h2>
   <div class="rows">
+    <div class="row done"><span class="id">T25/T19/T44</span><span class="t">便停止7hの解消 / 退役判定 / reflux picker 根治</span><span class="d">T25 CLEAR 05:20(77107a355) · T19 ACCEPT+archive(L1632 は SSOT 不整合で見送り) · T44 CLEAR 05:24(f956de3c7→5a9f583b9)</span><span class="w">家老レーンの滞留 0、idle 忍者へ気づきを流す土台</span></div>
+    <div class="row done"><span class="id">T42</span><span class="t">CI GREEN(疾風 ci_fix)</span><span class="d">shard2 case9 の真因=669afef44 副作用。5269fa730「isolate deploy fixture timing telemetry」→ run 33005872290 success @f690ebdac</span><span class="w">GREEN 証跡の維持</span></div>
+    <div class="row done"><span class="id">T43</span><span class="t">insights.yaml dirty(MM)の確定</span><span class="d">d8ddc2279(foreign staged 差分を index 同期で解消)。reflux dirty-guard 要因は消えたが配備 0 の真因は T44 の picker</span><span class="w">気づきの commit 詰まり 0</span></div>
     <div class="row done"><span class="id">T38/T39/T26/T17/T41</span><span class="t">CI GREEN 復帰 / 孤児テスト根治(検知+回収+発生側) / 偵察報告契約の分離 / infrastructure.md 反映 / worktree 自動prune</span><span class="d">run 32999064580 success · Gate 10.07(3fa443c11)+orphan_test_reap.sh+cmd_4405(8c09923f8) · cmd_4406(06ddbc988) · 06ad396ab · 669afef44</span><span class="w">flock競合・/tmp汚染・deploy遅延・偵察往復の根源を断つ</span></div>
     <div class="row done"><span class="id">T36/T37</span><span class="t">根治commit 6本を1本ずつpush / 強くてニューゲーム保存</span><span class="d">00:43-44 家老が oldest-first で push 完了。57b40cf9a=shogun.md 焼込み+todo_map+dashboard HTML 初commit。復帰点 session_save_20260827_0035 で 00:50 の /clear から復帰</span><span class="w">/clear後の復帰精度</span></div>
     <div class="row done"><span class="id">T27</span><span class="t">T27a hotfix GATE CLEAR</span><span class="d">858d2a82f(exact-read delivery dependency tests 整合) 01:20 CLEAR・origin 反映。CI の delivery 検証9件FAILを解消</span><span class="w">完成済み成果の回収</span></div>
@@ -117,5 +118,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 04:06(loop tick 2)</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 05:36(loop tick 5)</footer>
 </div>
