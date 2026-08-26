@@ -4614,6 +4614,12 @@ notify_karo_cmd_complete_skill_hint() {
     local flag_file
     flag_file="$(gate_clear_notify_flag_path karo "$cmd_id")"
 
+    # 自動archive(queued/sync/既存)を本gateが担った場合、hintの指示内容は機械が実行済み。
+    # 送ると家老inboxに完了済cmdのゾンビhintが永久残留する(2026-08-26実測16件/未読19件、最古10h47m)。
+    if [ "${ARCHIVE_AUTO_HANDLED:-0}" = "1" ]; then
+        echo "  karo /cmd-complete hint: SKIP (archive auto-handled by gate)"
+        return 0
+    fi
     if ! gate_clear_notify_claim karo "$cmd_id"; then
         echo "  karo /cmd-complete hint: SKIP (dedup — already in inbox)"
     elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" skill_hint cmd_complete_gate 2>/dev/null; then
@@ -14460,15 +14466,18 @@ PYEOF
             printf -v _archive_log_q '%q' "$_archive_worker_log"
             "$_archive_tmux_bin" run-shell -b "$_archive_cmd </dev/null >>$_archive_log_q 2>&1 || echo \"[WARN] archive worker rc=\$? (run-shell)\" >>$_archive_log_q"
             echo "  archive: queued (tmux server; log=$_archive_worker_log)"
+            ARCHIVE_AUTO_HANDLED=1
         else
             echo "  archive: tmux unavailable; synchronous fallback (log=$_archive_worker_log)"
             env ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
                 bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" \
                 </dev/null >>"$_archive_worker_log" 2>&1 \
                 || echo "  [INFO] archive: WARN (sync fallback failed)" >>"$_archive_worker_log"
+            ARCHIVE_AUTO_HANDLED=1
         fi
     else
         echo "  archive: already exists (skip)"
+        ARCHIVE_AUTO_HANDLED=1
     fi
     (set_matching_tasks_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
         && record_finalize_phase_event task_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \

@@ -2745,6 +2745,39 @@ if [ -n "$CMD_ID" ]; then
     touch "$TMP/archive.done"
     mv "$TMP/archive.done" "$PROJECT_DIR/queue/gates/${CMD_ID}/archive.done"
     echo "[archive_completed] gate flag: queue/gates/${CMD_ID}/archive.done"
+    # archiveした者がhintを消す(2026-08-26 殿指摘「家老inboxがたまりすぎ」):
+    # gateは自動archiveと同時に karo へ「/cmd-complete を実行せよ」skill_hint を送るが、
+    # hint既読化は cmd_complete.sh wrapper 側にしか無く、自動archive経路では永久に未読残留した
+    # (実測: 完了済cmdのゾンビhint 16件/未読19件、最古10h47m。watcherが毎回inbox19と再通知し家老が16KBを読み直す)。
+    # 対象cmdと内容が完全一致する未読 skill_hint のみ既読化し、無関係な未読は触らない。
+    _hint_inbox="$PROJECT_DIR/queue/inbox/karo.yaml"
+    if [ -f "$_hint_inbox" ]; then
+        while IFS= read -r _hint_id; do
+            [ -n "$_hint_id" ] || continue
+            bash "$PROJECT_DIR/scripts/inbox_mark_read.sh" karo "$_hint_id" >/dev/null 2>&1 \
+                && echo "[archive_completed] karo skill_hint cleared: $_hint_id" \
+                || echo "[archive_completed] WARN: karo skill_hint mark_read failed: $_hint_id" >&2
+        done < <(python3 - "$_hint_inbox" "$CMD_ID" <<'PY'
+import sys, yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+path, cmd_id = sys.argv[1:]
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+except Exception:
+    sys.exit(0)
+messages = data.get("messages", []) if isinstance(data, dict) else []
+expected = f"GATE CLEAR — {cmd_id} 完了。/cmd-complete スキルで完了処理を実行せよ。"
+for m in messages:
+    if not isinstance(m, dict) or m.get("type") != "skill_hint" or m.get("read") is not False:
+        continue
+    if str(m.get("content") or "").strip() != expected:
+        continue
+    if m.get("id"):
+        print(m["id"])
+PY
+)
+    fi
 fi
 
 echo "[archive_completed] done"
