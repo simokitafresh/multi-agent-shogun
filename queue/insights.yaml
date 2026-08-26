@@ -4353,4 +4353,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T07:33:34+09:00"
+- id: INS-20260827-073416406-7166
+  ts: "2026-08-27T07:34:16+09:00"
+  insight: "reflux 配備の空白(07:33観測): 5件目 DONE 07:00 の後、次配備が出ないまま 07:31 に kagemaru/hanzo/saizo の『idle tracking started』が再スタート=600秒 idle 計時が別イベント(家老 /clear・GATE CLEAR・snapshot 更新?)でリセットされ、6名 idle でも 30-40分の空白が生まれる。1件≈14分の消化ペースに対し空白が同程度=実効スループット半減。自動化ターゲット: idle 計時の起点を『task status が idle になった時刻(task YAML/gate_metrics)』に固定し、監視周期のリセットで巻き戻さない"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
