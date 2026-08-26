@@ -25,6 +25,92 @@ from cross_repo_commit_contract import (
 )
 
 
+# Reconnaissance reports describe observations; they do not produce a code
+# commit.  Keep this vocabulary in one place so every report contract uses the
+# same boundary (publication, review, and this terminal gate all use it).
+RECON_TASK_TYPES = frozenset(("recon", "scout", "recon2"))
+
+
+def _task_type(report=None, task=None):
+    """Resolve the effective task type from report/task contract data."""
+    # The live task is authoritative when available; report metadata is the
+    # fallback for standalone/archived report validation.
+    for node in (task, report):
+        if not isinstance(node, dict):
+            continue
+        contract = node.get("commit_contract")
+        if isinstance(contract, str):
+            try:
+                contract = json.loads(contract)
+            except (TypeError, ValueError):
+                contract = None
+        candidates = [
+            contract.get("task_type") if isinstance(contract, dict) else None,
+            node.get("task_type"),
+            node.get("type"),
+            node.get("scope_mode"),
+        ]
+        for candidate in candidates:
+            value = str(candidate or "").strip().lower()
+            if value:
+                return value
+    return ""
+
+
+def _is_recon_report(report, task=None):
+    return _task_type(report, task) in RECON_TASK_TYPES
+
+
+def _nonempty_finding_fields(value):
+    """Return the three required observation fields from a finding mapping."""
+    if not isinstance(value, dict):
+        return None
+
+    def first(keys):
+        for key in keys:
+            item = value.get(key)
+            if item not in (None, "", [], {}):
+                if isinstance(item, str) and not item.strip():
+                    continue
+                return item
+        return None
+
+    return (
+        first(("observation_target", "observed_target", "observation", "target", "subject", "観測対象")),
+        first(("result", "outcome", "conclusion", "finding", "結果")),
+        first(("evidence_path", "evidence", "path", "source", "根拠パス")),
+    )
+
+
+def _recon_finding_contract_issues(report):
+    """Require structured observation, result, and evidence for recon reports."""
+    value = report.get("finding")
+    if value is None:
+        value = report.get("findings")
+    if value in (None, "", [], {}):
+        return ["finding is required (observation_target, result, evidence_path)"]
+
+    entries = value if isinstance(value, list) else [value]
+    if not entries:
+        return ["finding is required (observation_target, result, evidence_path)"]
+    issues = []
+    for index, entry in enumerate(entries):
+        fields = _nonempty_finding_fields(entry)
+        if fields is None:
+            issues.append(f"finding[{index}] must be a mapping")
+            continue
+        missing = [
+            name for name, item in zip(
+                ("observation_target", "result", "evidence_path"), fields
+            ) if item is None
+        ]
+        if missing:
+            issues.append(
+                f"finding[{index}] missing non-empty field(s): {', '.join(missing)}"
+            )
+    return issues
+
+
 def _has_explicit_commit_scope(task):
     contract = task.get("commit_contract") if isinstance(task, dict) else None
     return any(task.get(key) for key in ("owned_paths", "planned_paths", "files_to_modify", "files_modified")) or (
@@ -259,7 +345,7 @@ def _resolved_commit_contract(report, task):
             return None, f"report commit_contract snapshot identity mismatch: {report_key}"
     if report_contract.get("required") is False:
         task_type = str(report_contract.get("task_type") or report.get("task_type") or "").strip()
-        if task_type not in {"recon", "scout"}:
+        if task_type not in RECON_TASK_TYPES:
             return None, "report commit_contract required=false is limited to no-code recon/scout"
     return report_contract, None
 
@@ -347,6 +433,8 @@ def _verified_revert_identity(commit_repo, identity, contract):
 
 
 def commit_contract_errors(report, task, root):
+    if _is_recon_report(report, task):
+        return []
     contract, contract_error = _resolved_commit_contract(report, task)
     if contract_error:
         return [contract_error]
@@ -1097,14 +1185,6 @@ def main(report_data=None) -> int:
         print("FAIL: report is empty or not a dict")
         return 1
 
-    for issue in _investigation_contract_issues(data):
-        errors.append("investigation_contract: " + issue)
-    if any(error.startswith("investigation_contract:") for error in errors):
-        hints.append(
-            "FIX (investigation_outcome): 発見件数ではなく探索完遂を報告せよ。"
-            "outcome/method_completed/primary_evidence/remaining_unknownsを構造記入する"
-        )
-
     required = [
         "worker_id",
         "parent_cmd",
@@ -1268,11 +1348,28 @@ def main(report_data=None) -> int:
     # this report.  Ninja task files are reused, so applying a later task's
     # variation requirement to an older report would be a false BLOCK.
     task_matches_report = str(task_data.get("parent_cmd") or "").strip() == parent_cmd_value
+    if not (task_matches_report and _is_recon_report(data, task_data)):
+        for _investigation_error in _investigation_contract_issues(data):
+            errors.append("investigation_contract: " + _investigation_error)
+        if any(error.startswith("investigation_contract:") for error in errors):
+            hints.append(
+                "FIX (investigation_outcome): 発見件数ではなく探索完遂を報告せよ。"
+                "outcome/method_completed/primary_evidence/remaining_unknownsを構造記入する"
+            )
     if task_matches_report:
-        for _commit_contract_error in commit_contract_errors(data, task_data, _PROJECT_ROOT):
-            errors.append("commit_contract: " + _commit_contract_error)
-        for _cross_repo_error in validate_cross_repo_commits(data):
-            errors.append("cross_repo_commits: " + _cross_repo_error)
+        if _is_recon_report(data, task_data):
+            for _finding_error in _recon_finding_contract_issues(data):
+                errors.append("finding: " + _finding_error)
+            if any(error.startswith("finding:") for error in errors):
+                hints.append(
+                    "FIX (finding): 偵察結果をmappingで記録せよ。"
+                    "観測対象・結果・根拠パスを全て空でない値にする"
+                )
+        else:
+            for _commit_contract_error in commit_contract_errors(data, task_data, _PROJECT_ROOT):
+                errors.append("commit_contract: " + _commit_contract_error)
+            for _cross_repo_error in validate_cross_repo_commits(data):
+                errors.append("cross_repo_commits: " + _cross_repo_error)
         variation_missing, variation_invalid = _variation_contract_issues(task_data, data)
         if variation_missing:
             errors.append(
@@ -1605,7 +1702,7 @@ def main(report_data=None) -> int:
     _fm = data.get("files_modified") or []
     _paths = [str(f.get("path") or "") for f in _fm if isinstance(f, dict)] if isinstance(_fm, list) else []
     _docs_data_prefixes = ("docs/", "context/", "logs/", "queue/", "projects/")
-    _no_code_recon = data.get("task_type") in ("recon", "scout") and not _paths
+    _no_code_recon = _is_recon_report(data, task_data) and not _paths
     _docs_data_only = _no_code_recon or (bool(_paths) and all(path.startswith(_docs_data_prefixes) for path in _paths))
     if not _docs_data_only:
         _opsim = data.get("operational_simulation")

@@ -59,6 +59,143 @@ print(mod._zero_tolerance_conflict_errors(report, task))
 PY
 }
 
+# test_necessity: reconnaissance reports are read-only findings and must not
+# inherit implementation commit contracts; implementation reports must retain
+# the required commit identity checks.
+# regression_justification: recon2 reports previously reached the shared gate
+# with implementation-only commit/investigation requirements and caused repeat
+# FAIL/revision rounds.
+@test "recon task types require finding evidence and skip commit contract" {
+    run python3 - "$MAIN" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+spec = importlib.util.spec_from_file_location("gate_main", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+finding = {
+    "observation_target": "gate report validator",
+    "result": "recon2 commit checks are not applicable",
+    "evidence_path": "scripts/gates/gate_report_format_main.py",
+}
+recon_report = {
+    "task_type": "recon2",
+    "finding": finding,
+    "commit_hash": "",
+}
+recon_task = {
+    "task_type": "recon2",
+    "commit_contract": {"required": True, "planned_paths": ["scripts"]},
+}
+assert module._is_recon_report(recon_report, recon_task)
+assert module._recon_finding_contract_issues(recon_report) == []
+assert module.commit_contract_errors(recon_report, recon_task, pathlib.Path(".")) == []
+assert module._recon_finding_contract_issues(
+    {"task_type": "scout", "finding": {"result": "known"}}
+)
+
+impl_report = {"task_type": "impl", "commit_hash": ""}
+impl_task = {
+    "task_type": "impl",
+    "commit_contract": {"required": True, "planned_paths": ["scripts"]},
+}
+errors = module.commit_contract_errors(impl_report, impl_task, pathlib.Path("."))
+assert "required commit_hash is missing or invalid" in errors, errors
+print("recon2 finding PASS; recon commit checks skipped; impl commit contract BLOCK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"recon2 finding PASS; recon commit checks skipped; impl commit contract BLOCK"* ]]
+}
+
+# test_necessity: exercise the real gate main with a task/report fixture so the
+# task-match boundary is covered, not only the individual helper functions.
+@test "recon fixture passes on finding while implementation fixture requires commit" {
+    run python3 - "$MAIN" <<'PY'
+import importlib.util
+import pathlib
+import sys
+import tempfile
+
+spec = importlib.util.spec_from_file_location("gate_main", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+def fixture(task_type, required, finding):
+    root = pathlib.Path(tempfile.mkdtemp(prefix="gate-report-contract-"))
+    (root / "queue/tasks").mkdir(parents=True)
+    (root / "queue/reports").mkdir()
+    (root / "queue/tasks/saizo.yaml").write_text(
+        """task:
+  parent_cmd: cmd_fixture
+  task_type: %s
+  commit_contract:
+    required: %s
+    task_type: %s
+    planned_paths: []
+  acceptance_criteria:
+  - id: AC1
+    checks:
+    - check: finding
+  related_lessons: []
+""" % (task_type, str(required).lower(), task_type), encoding="utf-8")
+    body = {
+        "worker_id": "saizo",
+        "task_id": "cmd_fixture_normal",
+        "parent_cmd": "cmd_fixture",
+        "task_type": task_type,
+        "ac_version_read": "fixture123",
+        "timestamp": "2026-08-27T03:12:00+09:00",
+        "status": "completed",
+        "result": {"summary": "fixture result"},
+        "binary_checks": {
+            "AC1": [{"check": "finding", "result": "yes"}],
+            "commit": [{
+                "check": (
+                    "git commitが完了したか"
+                    if required
+                    else "commit N/A証跡とコード変更・stage/commitを実行していないことを確認"
+                ),
+                "result": "yes",
+            }],
+        },
+        "files_modified": [],
+        "lesson_candidate": {"found": False, "no_lesson_reason": "fixture only"},
+        "lessons_useful": [],
+        "purpose_validation": {"cmd_purpose": "fixture", "fit": True, "purpose_gap": ""},
+        "assumption_invalidation": {"found": False, "affected_cmds": [], "detail": ""},
+        "verdict": "PASS",
+    }
+    if finding:
+        body["finding"] = {
+            "observation_target": "gate",
+            "result": "finding recorded",
+            "evidence_path": "scripts/gates/gate_report_format_main.py",
+        }
+    import yaml
+    report = root / "queue/reports/report.yaml"
+    report.write_text(yaml.safe_dump(body, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    return report
+
+recon = fixture("recon2", False, True)
+sys.argv = [sys.argv[0], str(recon)]
+recon_rc = module.main()
+print(f"recon_rc={recon_rc}")
+assert recon_rc == 0
+
+impl = fixture("impl", True, False)
+sys.argv = [sys.argv[0], str(impl)]
+impl_rc = module.main()
+print(f"impl_rc={impl_rc}")
+assert impl_rc == 1
+print("recon fixture PASS; implementation fixture commit contract FAIL")
+PY
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"recon fixture PASS; implementation fixture commit contract FAIL"* ]]
+}
+
 # test_necessity: ci_fix clean-repro is a typed terminal checkpoint rather than
 # a normal AC, so it must not create an intermediate binary check and must be
 # validated exactly at the completed-report boundary.
