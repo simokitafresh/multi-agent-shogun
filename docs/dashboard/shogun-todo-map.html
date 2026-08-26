@@ -52,54 +52,52 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 02:52 更新(/clear復帰後) · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 03:58 更新(30分loop) · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
 
 <div class="strip">
-  <div class="tile"><span class="k">済</span><span class="v done">32</span><span class="s">証跡付き</span></div>
-  <div class="tile"><span class="k">走行中</span><span class="v run">4</span><span class="s">半蔵 ci_fix / 疾風 cmd_4405 ほか</span></div>
-  <div class="tile"><span class="k">未着手</span><span class="v todo">4</span><span class="s">T12 / T17 / T26 / T40</span></div>
-  <div class="tile"><span class="k">CI</span><span class="v bad">RED</span><span class="s">858d2a82f shard4 test_ninja_monitor#3 → 半蔵 ci_fix 走行中</span></div>
-  <div class="tile"><span class="k">孤児テスト</span><span class="v done">0</span><span class="s">02:48 reap 124本回収 · load 66→19</span></div>
+  <div class="tile"><span class="k">済</span><span class="v done">37</span><span class="s">証跡付き</span></div>
+  <div class="tile"><span class="k">走行中</span><span class="v run">3</span><span class="s">T42 CI再判定 / T25 / T19</span></div>
+  <div class="tile"><span class="k">未着手</span><span class="v todo">2</span><span class="s">T12 / T40</span></div>
+  <div class="tile"><span class="k">CI</span><span class="v run">再判定</span><span class="s">8c09923f8 GREEN → 06ad396ab shard2 checkout異常(テスト失敗でない) → 669afef44 の次run</span></div>
+  <div class="tile"><span class="k">孤児テスト</span><span class="v done">0</span><span class="s">03:58 dry-run 0 · load 11 · worktree自動prune稼働</span></div>
 </div>
 
 <div class="live">
-  <h2>一次情報(02:52 capture / ps / gh / logs)</h2>
+  <h2>一次情報(03:58 capture / ps / gh / logs)</h2>
   <ul>
     <li><span class="chip bad">孤児テスト増殖</span>test_heavy_job_admission.bats の singleflight-orphan が内側 run_tests.sh unit を生かしたまま終わり、古い半蔵worktree(seed未是正版)から全suiteを再帰起動→root 27・bats-exec-suite 32本・load 66・/tmp fixture lock 1359個・global flock競合。殿の kill 3回+<span class="mono">orphan_test_reap.sh --kill</span>(124本)で 0 に</li>
     <li><span class="chip done">環境埋込</span>Gate 10.07 長時間bats検知(3fa443c11) / <span class="mono">scripts/orphan_test_reap.sh</span>(ps 1回スナップショット・0.2秒・tmux配下除外) / <span class="mono">git worktree prune</span> 724→103(deploy 397秒→199秒)</li>
-    <li><span class="chip run">根治cmd</span>cmd_4405(疾風 acknowledged): run_tests.sh の子孫reap契約+fixture起動の実suite再帰防止+回帰テスト</li>
-    <li><span class="chip bad">CI</span>57b40cf9a=delivery検証9件FAIL→858d2a82f(T27a hotfix)で解消、残 shard4 test_ninja_monitor.bats#3 のみ→半蔵 ci_fix acknowledged(02:47)。GitHub queue滞留(run未生成/queued 40分)は家老が exact-sha dispatch(ff0f95ad1)で突破</li>
-    <li><span class="chip todo">忍者</span>6名 <span class="mono">gpt-5.6-luna high</span>。半蔵 ci_fix・疾風 cmd_4405 走行、他 idle。家老 sol medium CTX 46%</li>
+    <li><span class="chip done">根治3点 GATE CLEAR</span>cmd_4405(疾風 8c09923f8: run_tests.sh 子孫reap契約+fixture root固定) / cmd_4406(才蔵 06ddbc988: 偵察報告は finding 必須・commit契約免除、監査 557 FAIL/240報告) / 小太郎 hotfix 669afef44(worktree stale 周期prune)。context/infrastructure.md §2026-08-27 へ反映(06ad396ab)</li>
+    <li><span class="chip done">CI GREEN 復帰</span>半蔵 ci_fix f88e36251 → run 32999064580 success @8c09923f8。直後の 06ad396ab run は shard2 で「tests/unit directory not found」(checkout側)=次runで再判定(T42)</li>
+    <li><span class="chip todo">忍者</span>6名 <span class="mono">gpt-5.6-luna high</span> 全員 idle(03:58)。家老 sol medium CTX 57%(小太郎報告のレビュー/pushを処理中)。FAIL残置 0、家老inbox 0</li>
     <li><span class="chip done">本日の殿裁定</span>速度4則+マップ / らせん正本 / モデル明示しない / 作業中respawn禁止 / 1commitずつpush / inbox優先強制 / <b>孤児は残すメリット無し=止める</b></li>
   </ul>
 </div>
 
 <section class="group">
-  <h2>走行中 <span class="n">4</span></h2>
+  <h2>走行中 <span class="n">3</span></h2>
   <div class="rows">
-    <div class="row run"><span class="id">T38</span><span class="t">origin tip の CI GREEN 証跡</span><span class="d">858d2a82f run 32987834940=failure(shard4 test_ninja_monitor.bats#3 review_requests=1不一致のみ)。半蔵 ci_fix 配備成功 02:47(deploy 199秒)→修正→push→GREEN待ち</span><span class="w">根治6本+hotfixのGREEN証跡=らせん次弾の土台</span></div>
-    <div class="row run"><span class="id">T39</span><span class="t">孤児テストプロセスの根治</span><span class="d">検知(Gate 10.07)・回収(orphan_test_reap.sh)は commit 済。発生側=cmd_4405 疾風走行中。02:48 孤児0・load 19</span><span class="w">flock競合・/tmp汚染・deploy timeout の根源を断つ</span></div>
+    <div class="row run"><span class="id">T42</span><span class="t">origin tip の CI 再判定</span><span class="d">06ad396ab run 33001522768 = shard2「tests/unit directory not found」(checkout異常・テスト失敗ではない)。669afef44 push の次 run で判定、RED なら家老 ci_fix</span><span class="w">GREEN 証跡の維持</span></div>
     <div class="row run"><span class="id">T25</span><span class="t">P1(AC厳格停止)の型変更: 固定基準値→自己計測</span><span class="d">飛猿 PASS報告→軍師レビュー→GATE待ち(高負荷で回転が止まっていた区間あり)</span><span class="w">作業PASSがACでFAILになる損失を0に</span></div>
     <div class="row run"><span class="id">T19</span><span class="t">教訓退役候補3件の現物確認</span><span class="d">影丸 AC3未達→家老の retire 判断待ち</span><span class="w">教訓注入トークン削減</span></div>
   </div>
 </section>
 
 <section class="group">
-  <h2>未着手 <span class="n">4</span></h2>
+  <h2>未着手 <span class="n">2</span></h2>
   <div class="rows">
-    <div class="row todo"><span class="id">T26</span><span class="t">P3(偵察の材料なし=FAIL 7件)の契約変更</span><span class="d">偵察タスクは finding付きPASS を正とする verdict 契約へ</span><span class="w">偵察の再配備往復を削減</span></div>
-    <div class="row todo"><span class="id">T17</span><span class="t">DOC_LANE_ALERT の境界更新</span><span class="d">push完了で実行可。T16 marker基準化は main 到達済</span><span class="w">偽ALERT消化コスト削減</span></div>
     <div class="row todo"><span class="id">T40</span><span class="t">insights 未処理 97件の消化</span><span class="d">本日追加: 孤児発生源7なぜ / Actions queue滞留 / worktree stale 自動prune / inbox未読の grep 誤検知(本文中の read: false)</span><span class="w">気づきの先送り0</span></div>
     <div class="row todo"><span class="id">T12</span><span class="t">ライブ publish 13分の分解</span><span class="d">次回 cmd_publish 時に将軍が stdout を logs/ へ保存</span><span class="w">publish律速の短縮</span></div>
   </div>
 </section>
 
 <section class="group">
-  <h2>済 <span class="n">32</span></h2>
+  <h2>済 <span class="n">37</span></h2>
   <div class="rows">
+    <div class="row done"><span class="id">T38/T39/T26/T17/T41</span><span class="t">CI GREEN 復帰 / 孤児テスト根治(検知+回収+発生側) / 偵察報告契約の分離 / infrastructure.md 反映 / worktree 自動prune</span><span class="d">run 32999064580 success · Gate 10.07(3fa443c11)+orphan_test_reap.sh+cmd_4405(8c09923f8) · cmd_4406(06ddbc988) · 06ad396ab · 669afef44</span><span class="w">flock競合・/tmp汚染・deploy遅延・偵察往復の根源を断つ</span></div>
     <div class="row done"><span class="id">T36/T37</span><span class="t">根治commit 6本を1本ずつpush / 強くてニューゲーム保存</span><span class="d">00:43-44 家老が oldest-first で push 完了。57b40cf9a=shogun.md 焼込み+todo_map+dashboard HTML 初commit。復帰点 session_save_20260827_0035 で 00:50 の /clear から復帰</span><span class="w">/clear後の復帰精度</span></div>
     <div class="row done"><span class="id">T27</span><span class="t">T27a hotfix GATE CLEAR</span><span class="d">858d2a82f(exact-read delivery dependency tests 整合) 01:20 CLEAR・origin 反映。CI の delivery 検証9件FAILを解消</span><span class="w">完成済み成果の回収</span></div>
     <div class="row done"><span class="id">T33</span><span class="t">inbox_watcher 毎分死亡の根治</span><span class="d">restore/converge で scripts 10本が git mode 100644 化→AUTO-RESTART exec が Permission denied→12:00-00:08 に watchdog 再起動85回=nudge喪失。drvfs は chmod 無効ゆえ script_update.sh に bash フォールバック+index 100755(2df2ecdee)</span><span class="w">指示不達の物理層を根治</span></div>
@@ -118,5 +116,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 02:52</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 03:58(30分loop稼働)</footer>
 </div>

@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 01:14 更新(/clear復帰)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 03:58 更新(30分loop開始)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -44,3 +44,6 @@
 - [x] T38(03:31 CI GREEN run 32999064580 @8c09923f8=半蔵ci_fix f88e36251+cmd_4405; 02:47 半蔵ci_fix配備成功 wall 199s(負荷除去前374s→175s短縮)・acknowledged; 01:42 858d2a82f run 32987834940=failure: shard4 test_ninja_monitor.bats#3 review_requests=1不一致のみ・家老がci_fixを半蔵へ配備中; 01:12 家老へ1単位下知 msg_011238; 01:27 家老がrerun→858d2a82f run 32987834940 queued。57b40cf9a run=RED: inbox_write delivery検証系 9 test(shard2/4/7/compat)=T27a hotfixの対象領域→858d2a82f結果で判定) origin tip 858d2a82f のCI GREEN証跡: run未生成+queued 2本40分超+c17a92d8e cancelled(insight登録済) ★根治6本のGREEN証跡=らせん次弾の土台
 - [x] T39(03:28 cmd_4405 GATE CLEAR 8c09923f8: run_tests.sh 子孫reap契約+fixture root固定、長時間bats 0→0; 02:48 orphan_test_reap.sh --kill(殿実行)で孤児0・stale0・bats0、load 66→19; 02:42 殿kill×3+orphan_test_reap.sh c940c47d5で孤児0件・load 66→25; 01:33 殿kill 4pid完了→新孤児2樹(test_heavy_job_admission singleflight-orphanが内側run_tests.sh unitを生かす自己増殖=真因特定・insight済・cmd起票へ); 01:18 kagemaru failed→idle 家老クローズ済; Gate 10.07 検知を実装・commit済。停止はD006ゆえ殿裁定待ち。発生源7なぜはinsight登録済→cmd化) 孤児bats(test_cmd_complete_gate.bats 137分・親/init・global flock保持・/tmp fixture lock 1359) ★家老commit helperのflock待ち0・/tmp蓄積0
 - [ ] T40 insights未処理97件の消化(idle時) ★気づきの先送り0
+- [x] T41(小太郎 karo_hotfix 03:5x 669afef44: .git/worktrees stale metadata 周期prune+deploy前entry数ログ、695/695 PASS) worktree stale 自動prune ★deploy 397秒→の再発源を構造で断つ
+- [~] T42 CI 06ad396ab run 33001522768 shard2 failure=『tests/unit directory not found』(checkout側の異常・テスト失敗ではない)→669afef44 push の次runで再判定、REDなら家老ci_fix ★GREEN証跡
+
