@@ -1493,3 +1493,4 @@
 
 ## 2026-08-26 17:05〜08-27 00:35(将軍セッション)
 - 意図: push 7h30m停滞と「つまり」の根治。結果: 1commitずつpushで57本/1h、CI GREEN(ccad05fcf)。因果: まとめpush×手動full走査→7h停滞 / 実行ビット欠落→watcher85回死亡→nudge喪失 / 送信者制限→自動レビュー依頼BLOCK→報告10本UN-GATED / BASH_REMATCH潰れ→config.toml破壊→忍者400停止。全て構造型で根治(cfd7b7d3e,e3712b4a9,42f09d54b,474aff0c2,bc9f4a8c6,2df2ecdee,c17a92d8e)。殿裁定6件を instructions/shogun.md へ焼込み。
+- 2026-08-27 00:50-07:41 将軍/clear復帰後: 孤児テスト増殖(root27/bats32/load66)を検知(Gate10.07)+回収(orphan_test_reap.sh)+発生側根治(cmd_4405 8c09923f8)の三点で根治、偵察契約分離(cmd_4406 06ddbc988)、worktree stale prune(669afef44)、reflux insight 自動配備3日停止の真因(picker 予約済み先頭ID)を影丸 hotfix f956de3c7 で根治し5件一周(pending 104→101)、便停止 T25(7h)/T19/FAIL残置を家老1通1単位で解消、CI RED→GREEN 3回(半蔵/疾風/小太郎 ci_fix)。将軍の穴=commit到達未確認の完了報告×3・DOC_LANE 失念×2 → instructions/shogun.md『復帰後の型4則』へ焼込み。復帰点=記憶DB session_save_20260827_0741

@@ -168,6 +168,13 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型4則（2026-08-27 00:50-07:41 実証・将軍自身に適用）
+
+- **positive_rule**: (1)**到達は現物で確認**: background の commit/publish は exit code でなく `git log --oneline -1 -- <path>` / `git status --short` で到達を確認してから「完了」と報告する(ninja_scope_commit は foreign staged 差分で rc=2 BLOCK し、index を `git add <path>` で同期して再実行する)。(2)**context/*.md は将軍 doc lane**: 家老へ配備すると DOC_LANE_ROUTING で BLOCK される。context 更新は将軍が書き、`context_source_commit_set.sh` で境界を進め、`bulletin_action.sh` で actioned 化する。境界だけ進めて本文を更新しないのは隠蔽。(3)**陣形図の report 行と gate_metrics を突合**: report=completed かつ gate_metrics に CLEAR 行が無い報告は便停止(T25 は 7 時間)。startup gate の便回転チェックが 0 でも report 行で再確認する。(4)**孤児プロセスは kill せず検知+報告**: D006 により将軍は kill しない。`scripts/gates/gate_shogun_startup.sh` Gate 10.07(30 分超 bats)で検知し、`bash scripts/orphan_test_reap.sh`(dry-run)で樹を列挙して殿へ `--kill` 一行を提示する。pgid 単位 kill では子孫が残るため樹全体を対象にする。
+- **reason**: 2026-08-27、tick3-5 の todo_map commit が3回連続 rc=2 BLOCK していたのに exit 0 を成功と誤認し「完了」と3回報告した(artifact は公開済みで正本は未 commit)。context/infrastructure.md と dm-signal-frontend.md の更新を家老へ配備して同日2回 DOC_LANE BLOCK。T25 飛猿報告は 22:24 PASS のまま 05:20 まで GATE 未実行で、便回転チェックは 0 を示していた。孤児 bats は 4pid を kill しても新 pgid の孫が再増殖し、樹全体の reap で初めて 0 になった。
+- **enforcement**: Gate 10.07(3fa443c11)/orphan_test_reap.sh(c940c47d5)/cmd_4405 子孫reap(8c09923f8)は構造型。(1)(2)(3)は将軍の型=未自動化。自動化ターゲット: ninja_scope_commit の BLOCK 時に index 同期の自動提案(INS-20260827-054313016)、inbox_write の将軍→家老 task_assigned 本文に context/*.md を含むとき DOC_LANE WARN(insight 登録済)、便回転チェックへ report=completed∧gate 未 CLEAR の突合追加。
+- origin: `[[殿指示_強くてニューゲーム_20260827_0741]] -> [[到達未確認の完了報告×3]] -> [[復帰後の型4則]]`
+
 ## 最小試行・最高速度の強制（殿下知 2026-08-15 18:58-19:00・将軍自身に適用）
 
 - **positive_rule**: 可逆な工程(revert pushで戻る本番検証を含む)を委任するとき、**小さく1層ずつ**(忍者1体・1タスク・実装→push→deploy→full→business parity→次層)で回し、**途中laneに儀式を課すな**: 層ごとのGATE/報告YAML/軍師レビュー・新規テスト/contract test/fixture作成・pytest全量。**一括実装は禁止**(ミスの手戻りが長い)。設計書の工程表にも儀式を書くな。委任前に三層記憶で殿裁定を引き、本文へ`[MEM: ...]`を添えよ。
