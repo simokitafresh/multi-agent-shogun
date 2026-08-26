@@ -69,3 +69,5 @@ BATS_CACHE=0 BATS_MAX_TEST_JOBS=1 bash scripts/run_tests.sh file tests/unit/test
 10. `tests/unit/test_run_tests.bats` — 263.413秒
 
 次バッチも降順で1 fileずつbefore/afterを取得し、各file後に239-file分布を再計測する。FAIL計測の対象は短縮実装と混ぜず、先にFAIL0/SKIP0の信頼境界を確定する。
+
+> **訂正(2026-08-26 00:35 将軍)**: 上記「各file後に239-file分布を再計測する」は殿裁定(2026-08-25 16:42、msg_164352)のバッチらせん5条「**バッチ境界**の全体確認」と不一致。正=個別弾はbefore/afterのみ、全体再計測は10個バッチ完了時に1回。弾ごとの全体直列再計測(BATS_MAX_TEST_JOBS=1)は1800秒timeoutで第3弾がfailed化した実証あり(blt_20260826_002957)。

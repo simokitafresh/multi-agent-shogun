@@ -1165,3 +1165,23 @@ lessons:
   created_at: '2026-08-18'
   enforcement: 'Level2: 軍師レビュー基準へconfidence分離を記録する'
   enforcement_level: 2
+- id: 'LG103'
+  title: 'yaml.dumpはフィールド順序を破壊しawkパーサの位置依存検出を壊す'
+  origin: '[[yaml_dump禁止]] -> [[awk位置依存パーサ]] -> [[step3_5_verified検出失敗]]'
+  detail: '運用YAMLへpython3 yaml.dumpでフィールドを一括追加すると全フィールドが再配置され、timestamp到達時に後続フィールドを検査するawkパーサがstep3_5_verifiedを検出できずBLOCKが残存した。運用YAMLはyaml.dump/yaml.safe_dumpで上書きせず、yaml_field_set.sh等の行単位更新を使い、位置依存パーサの挿入位置も検証する。'
+  source_cmd: 'gunshi_session_20260825_step3_5_backfill'
+  when: '運用YAMLのフィールド追加・修正時'
+  how: 'yaml.dump/yaml.safe_dumpを使わずyaml_field_set.sh等で行単位修正し、位置依存パーサの検出位置を検証する'
+  created_at: '2026-08-25'
+  enforcement: 'Level4: pre-bash-yaml-dump-guard.shで運用YAMLの直接dumpをBLOCKし、位置依存フィールドは正規setter経由に限定'
+  enforcement_level: 4
+- id: 'LG104'
+  title: 'D0検出のformat偽陽性をゲート名と語彙境界で分離する'
+  origin: '[[D0検出正規表現]] -> [[gate_report_format偽陽性]] -> [[d0_applied消火]]'
+  detail: 'gate_gunshi_cs_checklist.shのD0未実施検出で、formatという一般語がfindings_summary内のgate_report_formatというゲート名にマッチし偽陽性が発生した。minor defect検出はword boundary等の語彙境界またはgate名除外を用い、消火用d0_appliedだけで閉じず陽性・陰性fixtureで検証する。'
+  source_cmd: 'gunshi_session_20260825_d0_false_positive'
+  when: 'D0 BLOCK検出で偽陽性が発生した時'
+  how: 'minor検出regexにword boundaryを適用するかgate名を除外し、ゲート名を含む正常所見と実minor defectの陰性・陽性fixtureを実行する'
+  created_at: '2026-08-25'
+  enforcement: 'Level3: D0検出regex変更時にゲート名を含む正常fixtureと実minor defect fixtureを自動検証'
+  enforcement_level: 3
