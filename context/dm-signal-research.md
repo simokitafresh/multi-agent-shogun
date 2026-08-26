@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-22 GA-491 reviewed source boundary (shogun doc lane, re-apply of GA-490) -->
+<!-- last_updated: 2026-08-26 T05 shogun doc lane reviewed source boundary (2026-08-26) -->
+<!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
 <!-- source_commit:45760ecf reason:GA-490/491 research境界更新(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log b24d6b5f..45760ecf -- docs/research analysis outputs marketing-director = 14件。内容=cmd_4355/4356成果保存(07848c94)+note記事群(決定的tie-break一般論・投資家スクリーニング)+週報2026-08-18+reconcile merge revert。研究結論の変更なし、境界のみ更新。初回=877a73ef1、tree退行検出により再適用 -->
 <!-- dm_signal_research_reflux: fingerprint=4383100f3b182a5113a582998b52db1451b56f7a1097ef4115797f70d3e68827; mode=non-target; evidence_b64=Y21kXzQ0MDQgbGVkZ2VyIGlzIGEgc3RhbmRhbG9uZSByZXRlbnRpb24gYXJ0aWZhY3Q7IG5vIGNvbnRleHQgb3Igc2VtYW50aWMtaW5kZXggc3luY2hyb25pemF0aW9uIGlzIGluIHNjb3Bl -->
 <!-- dm_signal_research_reflux: fingerprint=02f9ba6266fc1d49d52b2011225c6b4e5bb17b305894a37e9476a891f3243beb; mode=synced; evidence_b64=Y21kXzQzNzYgbGF5ZXItc3RyYXRpZmllZCBjb25jbHVzaW9uIGlzIHJlZmxlY3RlZCBpbiBtdWx0aS1hZ2VudC1zaG9ndW4gY29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQ= -->

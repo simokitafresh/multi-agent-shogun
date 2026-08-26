@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-17 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-08-26 T05 shogun doc lane reviewed source boundary (2026-08-26) -->
+<!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
 <!-- source_commit:55b81b43 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=55b81b43 -->
 <!-- source_commit:62f0fba0 reason:cmd_karo_hotfix_ga471_context_freshness_202608170345 content reflection evidence:Monthly Trade pending display simplified; source frontend tests and component diff reviewed -->
 <!-- source_commit:c22362a9 reason:cmd_4298 reviewed source boundary evidence:SG7 LGTM and Karo ACCEPT; frontend scope one-file commit -->
