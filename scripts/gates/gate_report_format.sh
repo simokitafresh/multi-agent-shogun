@@ -952,6 +952,7 @@ if [[ "$_REPORT_REAL" == "$_REPO_REAL"/* ]] && [ "${GATE_SKIP_COMMIT_MISSING_CHE
     if [ -f "$_CC_TASK_FILE" ]; then
         _CC_CHECK=$(python3 -c "
 import os
+import pathlib
 import yaml, sys
 try:
     sys.path.insert(0, sys.argv[4])
@@ -981,6 +982,20 @@ try:
     tdata = yaml.safe_load(open(sys.argv[2], encoding='utf-8')) or {}
     task = tdata.get('task') or tdata
     repo_root = os.path.realpath(sys.argv[3])
+    required_raw = task.get('task_worktree_required')
+    required = required_raw is True or str(required_raw).strip().lower() in {
+        '1', 'true', 'yes', 'on'
+    }
+    if required:
+        sys.path.insert(0, os.path.join(sys.argv[4], 'scripts', 'lib'))
+        from review_source_context import resolve_source_root
+        try:
+            scope_root = str(resolve_source_root(task, rdata, pathlib.Path(repo_root)))
+        except Exception as exc:
+            print(f'__SOURCE_SCOPE_BLOCK__:{exc}')
+            raise SystemExit(0)
+    else:
+        scope_root = repo_root
 
     def add_path(paths, value):
         raw = str(value or '')
@@ -1019,13 +1034,26 @@ try:
         for owned in commit_owned_paths(task):
             add_path(paths, owned)
 
+    if required:
+        print(f'__SOURCE_ROOT__:{scope_root}')
     for p in paths:
         print(p)
-except Exception:
-    pass
+except Exception as exc:
+    print(f'__SOURCE_SCOPE_BLOCK__:scope_resolver_unavailable:{exc}')
 " "$REPORT_PATH" "$_CC_TASK_FILE" "$REPO_ROOT" "$_DEFAULT_REPO_ROOT" 2>/dev/null || true)
         if [ -n "${_CC_CHECK//[[:space:]]/}" ]; then
             mapfile -t _CC_PATHS <<< "$_CC_CHECK"
+            _CC_SCOPE_ROOT="$REPO_ROOT"
+            if [[ "${_CC_PATHS[0]:-}" == __SOURCE_SCOPE_BLOCK__:* ]]; then
+                _CC_SCOPE_REASON="${_CC_PATHS[0]#__SOURCE_SCOPE_BLOCK__:}"
+                echo "FAIL: task source scope validation failed: ${_CC_SCOPE_REASON}"
+                CONTAMINATION_BLOCK=1
+                RESULT="${RESULT}"$'\n'"FAIL: task source scope validation failed"
+                _CC_PATHS=()
+            elif [[ "${_CC_PATHS[0]:-}" == __SOURCE_ROOT__:* ]]; then
+                _CC_SCOPE_ROOT="${_CC_PATHS[0]#__SOURCE_ROOT__:}"
+                _CC_PATHS=("${_CC_PATHS[@]:1}")
+            fi
             if printf '%s\n' "${_CC_PATHS[@]}" | grep -qxF '__INVALID_REPORT_PATH__'; then
                 echo "FAIL: malformed report path rejected before git status"
                 CONTAMINATION_BLOCK=1
@@ -1035,13 +1063,13 @@ except Exception:
             # AC2: git status check for uncommitted target_path changes
             _CC_UNCOMMITTED=""
             if [ "${#_CC_PATHS[@]}" -gt 0 ]; then
-                _CC_UNCOMMITTED=$(cd "$REPO_ROOT" && git status --porcelain -- "${_CC_PATHS[@]}" 2>/dev/null || true)
+                _CC_UNCOMMITTED=$(cd "$_CC_SCOPE_ROOT" && git status --porcelain -- "${_CC_PATHS[@]}" 2>/dev/null || true)
             fi
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
-                _CC_UNCOMMITTED=$(filter_session_state_only_task_diffs "$REPO_ROOT" "$_CC_UNCOMMITTED" 2>/dev/null || printf '%s\n' "$_CC_UNCOMMITTED")
+                _CC_UNCOMMITTED=$(filter_session_state_only_task_diffs "$_CC_SCOPE_ROOT" "$_CC_UNCOMMITTED" 2>/dev/null || printf '%s\n' "$_CC_UNCOMMITTED")
             fi
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
-                _CC_UNCOMMITTED=$(filter_report_commit_nonoverlap_diffs "$REPO_ROOT" "$REPORT_PATH" "$_CC_UNCOMMITTED" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_UNCOMMITTED")
+                _CC_UNCOMMITTED=$(filter_report_commit_nonoverlap_diffs "$_CC_SCOPE_ROOT" "$REPORT_PATH" "$_CC_UNCOMMITTED" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_UNCOMMITTED")
             fi
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 echo ""
@@ -1060,8 +1088,8 @@ except Exception:
             # 誤ってWARNしていた。sha付きで巻込み候補を保持し、報告commit_hashのhunkと重複する
             # ものだけWARNへ残す(filter_autocommit_nonoverlap_hits)。
             # cache format v2: 1行目=HEAD, 2行目以降="<auto_commit_sha> <path>"（report非依存＝HEADのみでキー可）。
-            _CC_AC_CACHE="${GATE_AUTOCOMMIT_CACHE_FILE:-$REPO_ROOT/logs/.gate_autocommit_hunk_cache}"
-            _CC_CUR_HEAD=$(cd "$REPO_ROOT" && git rev-parse HEAD 2>/dev/null) || _CC_CUR_HEAD=""
+            _CC_AC_CACHE="${GATE_AUTOCOMMIT_CACHE_FILE:-$_CC_SCOPE_ROOT/logs/.gate_autocommit_hunk_cache}"
+            _CC_CUR_HEAD=$(cd "$_CC_SCOPE_ROOT" && git rev-parse HEAD 2>/dev/null) || _CC_CUR_HEAD=""
             _CC_AUTO_ENTRIES=""
             _CC_AC_HIT=0
             if [ -n "$_CC_CUR_HEAD" ] && [ -f "$_CC_AC_CACHE" ]; then
@@ -1072,7 +1100,7 @@ except Exception:
                 fi
             fi
             if [ "$_CC_AC_HIT" -eq 0 ]; then
-                _CC_AUTO_ENTRIES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format='@@AC_SHA@@%H' --name-only 2>/dev/null | awk '
+                _CC_AUTO_ENTRIES=$(cd "$_CC_SCOPE_ROOT" && git log --grep="auto-commit" -10 --format='@@AC_SHA@@%H' --name-only 2>/dev/null | awk '
                     /^@@AC_SHA@@/ { sha=$0; sub(/^@@AC_SHA@@/, "", sha); next }
                     NF { print sha" "$0 }
                 ' | sort -u || true)
@@ -1100,7 +1128,7 @@ except Exception:
                         BEGIN { n = split(hits, h, "\n"); for (i = 1; i <= n; i++) want[h[i]] = 1 }
                         { path = $0; sub(/^[^ ]+ /, "", path); if (path in want) print }
                     ')
-                    _CC_HITS=$(filter_autocommit_nonoverlap_hits "$REPO_ROOT" "$REPORT_PATH" "$_CC_HIT_ENTRIES" "$_CC_HITS" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_HITS")
+                    _CC_HITS=$(filter_autocommit_nonoverlap_hits "$_CC_SCOPE_ROOT" "$REPORT_PATH" "$_CC_HIT_ENTRIES" "$_CC_HITS" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_HITS")
                 fi
                 if [ -n "${_CC_HITS//[[:space:]]/}" ]; then
                     echo ""

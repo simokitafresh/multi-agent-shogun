@@ -23,6 +23,10 @@ import yaml
 GENERATION_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
+class SourceContextError(ValueError):
+    """Raised when an isolated task source cannot be verified fail-closed."""
+
+
 def emit(values: dict[str, str]) -> None:
     for key, value in values.items():
         print(f"{key}={shlex.quote(value)}")
@@ -53,8 +57,93 @@ def load_mapping(path: pathlib.Path) -> dict:
 
 def git(repo: pathlib.Path, *args: str) -> str:
     return subprocess.check_output(
-        ["git", "-C", str(repo), *args], stderr=subprocess.DEVNULL, text=True
+        ["git", "-C", str(repo), *args],
+        stderr=subprocess.DEVNULL,
+        text=True,
+        timeout=5,
     ).strip()
+
+
+def resolve_source_root(
+    task: dict, report: dict, repo_root: pathlib.Path
+) -> pathlib.Path:
+    """Return the one checkout that owns scope validation for this task.
+
+    Isolated tasks must prove the complete worktree contract before callers
+    inspect git state.  Shared/legacy tasks deliberately retain the historical
+    repository-root behavior.
+    """
+    required_raw = task.get("task_worktree_required")
+    required = required_raw is True or str(required_raw).strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    repo_root = repo_root.resolve()
+    if not required:
+        return repo_root
+
+    worktree_raw = str(
+        task.get("task_worktree_workdir") or task.get("task_worktree_path") or ""
+    ).strip()
+    if not worktree_raw:
+        raise SourceContextError("task_worktree_path_missing")
+    generation = str(task.get("task_worktree_generation") or "").strip().lower()
+    if not GENERATION_RE.fullmatch(generation):
+        raise SourceContextError("task_worktree_generation_missing_or_invalid")
+
+    worktree = pathlib.Path(worktree_raw).resolve()
+    if not worktree.is_dir():
+        raise SourceContextError("task_worktree_missing")
+    try:
+        if pathlib.Path(git(worktree, "rev-parse", "--show-toplevel")).resolve() != worktree:
+            raise SourceContextError("task_worktree_root_mismatch")
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        raise SourceContextError("task_worktree_not_git")
+
+    marker_raw = str(task.get("task_worktree_marker") or "").strip()
+    if not marker_raw:
+        raise SourceContextError("task_worktree_marker_missing")
+    marker = pathlib.Path(marker_raw)
+    try:
+        marker_data = json.loads(marker.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SourceContextError("task_worktree_marker_unreadable") from exc
+    if marker_data.get("generation") != generation:
+        raise SourceContextError("task_worktree_marker_generation_mismatch")
+    task_id = str(task.get("task_id") or "").strip()
+    if task_id and marker_data.get("task_id") != task_id:
+        raise SourceContextError("task_worktree_marker_task_id_mismatch")
+    if pathlib.Path(str(marker_data.get("worktree") or "")).resolve() != worktree:
+        raise SourceContextError("task_worktree_marker_path_mismatch")
+    if marker_data.get("state") not in {"active", "published"}:
+        raise SourceContextError("task_worktree_marker_not_active")
+    marker_repo = str(marker_data.get("repo") or "").strip()
+    if marker_repo and pathlib.Path(marker_repo).resolve() != repo_root:
+        raise SourceContextError("task_worktree_marker_repo_mismatch")
+
+    try:
+        dirty = git(worktree, "status", "--porcelain", "--untracked-files=all")
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        raise SourceContextError("task_worktree_status_failed") from exc
+    if dirty:
+        raise SourceContextError("task_worktree_dirty")
+
+    commit = str(report.get("commit_hash") or "").strip()
+    if not commit:
+        raise SourceContextError("report_commit_missing_for_task_worktree")
+    try:
+        resolved_commit = git(worktree, "rev-parse", f"{commit}^{{commit}}")
+        head = git(worktree, "rev-parse", "HEAD")
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        raise SourceContextError("report_commit_not_resolved_in_task_worktree") from exc
+    if resolved_commit != head:
+        raise SourceContextError("report_commit_task_worktree_head_mismatch")
+    published_commit = str(marker_data.get("published_commit") or "").strip()
+    if published_commit and published_commit != resolved_commit:
+        raise SourceContextError("task_worktree_marker_commit_mismatch")
+    return worktree
 
 
 def main() -> int:
@@ -90,11 +179,11 @@ def main() -> int:
         )
         return 0
 
-    required_raw = task.get("task_worktree_required")
-    required = required_raw is True or str(required_raw).strip().lower() in {"1", "true", "yes", "on"}
-    worktree_raw = str(task.get("task_worktree_workdir") or task.get("task_worktree_path") or "").strip()
-    generation = str(task.get("task_worktree_generation") or "").strip().lower()
-    if not required:
+    try:
+        source_root = resolve_source_root(task, report, repo_root)
+    except SourceContextError as exc:
+        return fail(str(exc))
+    if source_root == repo_root.resolve():
         # Legacy/recon reports have no isolated source generation.  Preserve
         # the historical shared-root behavior for those tasks.
         emit(
@@ -108,58 +197,17 @@ def main() -> int:
         )
         return 0
 
-    if not worktree_raw:
-        return fail("task_worktree_path_missing")
-    if not GENERATION_RE.fullmatch(generation):
-        return fail("task_worktree_generation_missing_or_invalid")
-    worktree = pathlib.Path(worktree_raw).resolve()
-    if not worktree.is_dir():
-        return fail("task_worktree_missing")
-    try:
-        if pathlib.Path(git(worktree, "rev-parse", "--show-toplevel")).resolve() != worktree:
-            return fail("task_worktree_root_mismatch")
-    except (OSError, subprocess.CalledProcessError):
-        return fail("task_worktree_not_git")
-
-    marker_raw = str(task.get("task_worktree_marker") or "").strip()
-    if not marker_raw:
-        return fail("task_worktree_marker_missing")
-    marker = pathlib.Path(marker_raw)
-    try:
-        marker_data = json.loads(marker.read_text(encoding="utf-8"))
-    except Exception:
-        return fail("task_worktree_marker_unreadable")
-    if marker_data.get("generation") != generation:
-        return fail("task_worktree_marker_generation_mismatch")
-    task_id = str(task.get("task_id") or "").strip()
-    if task_id and marker_data.get("task_id") != task_id:
-        return fail("task_worktree_marker_task_id_mismatch")
-    if pathlib.Path(str(marker_data.get("worktree") or "")).resolve() != worktree:
-        return fail("task_worktree_marker_path_mismatch")
-    if marker_data.get("state") not in {"active", "published"}:
-        return fail("task_worktree_marker_not_active")
-
-    commit = str(report.get("commit_hash") or "").strip()
-    if not commit:
-        return fail("report_commit_missing_for_task_worktree")
-    try:
-        resolved_commit = git(worktree, "rev-parse", f"{commit}^{{commit}}")
-        head = git(worktree, "rev-parse", "HEAD")
-    except (OSError, subprocess.CalledProcessError):
-        return fail("report_commit_not_resolved_in_task_worktree")
-    if resolved_commit != head:
-        return fail("report_commit_task_worktree_head_mismatch")
-
+    generation = str(task.get("task_worktree_generation") or "").strip().lower()
     for path in context_files:
-        if not (worktree / path).is_file():
+        if not (source_root / path).is_file():
             return fail(f"source_context_missing:{path}")
     emit(
         {
             "SOURCE_CONTEXT_STATUS": "SOURCE",
             "SOURCE_CONTEXT_REASON": "task_worktree_generation_verified",
-            "SOURCE_CONTEXT_ROOT": str(worktree),
+            "SOURCE_CONTEXT_ROOT": str(source_root),
             "SOURCE_CONTEXT_GENERATION": generation,
-            "SOURCE_CONTEXT_COMMIT": resolved_commit,
+            "SOURCE_CONTEXT_COMMIT": git(source_root, "rev-parse", "HEAD"),
         }
     )
     return 0
