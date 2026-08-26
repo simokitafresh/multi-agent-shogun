@@ -55,6 +55,13 @@ check_script_update() {
         if [[ "$singleton_fd" =~ ^[0-9]+$ ]]; then
             eval "exec ${singleton_fd}>&-" 2>/dev/null || true
         fi
-        exec "$SCRIPT_PATH" "$@"
+        # 実行ビット欠落(2026-08-26 restore/convergeで8本が100644化→全inbox_watcherが毎分死亡)でも
+        # 自己修復して再起動できるよう、非実行なら bash 経由で exec する。
+        if [[ -x "$SCRIPT_PATH" ]]; then
+            exec "$SCRIPT_PATH" "$@"
+        else
+            echo "[$(date)] [AUTO-RESTART] $SCRIPT_PATH is not executable; exec via bash (fix: chmod +x)" >&2
+            exec bash "$SCRIPT_PATH" "$@"
+        fi
     fi
 }
