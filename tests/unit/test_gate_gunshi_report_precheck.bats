@@ -6,6 +6,11 @@
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  # These contracts assert precheck decisions, not production timing-ledger
+  # delivery. Avoid spawning one DrvFS-backed telemetry writer per gate phase;
+  # under canonical pre-push load those unrelated writers made 31 completed
+  # cases miss the 300s file timeout during process drain.
+  export DEFENSE_OVERHEAD_ENABLED=0
   ENGINE="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py"
   TMP_DIR="$(mktemp -d)"
   mkdir -p "$TMP_DIR/tasks"
