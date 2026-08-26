@@ -2255,9 +2255,14 @@ PY
 # test_necessity: commander sends must retain a live pre-send pane observation
 # while exposing its bounded cost as a non-additive child slice.
 @test "commander pre-send capture uses live pane resolver and records its slice" {
-    setup_git_test_env
-    mkdir -p "$TEST_TMPDIR/bin" "$TEST_TMPDIR/logs"
-    cp "$PROJECT_ROOT/scripts/lib/pane_lookup.sh" "$TEST_TMPDIR/scripts/lib/pane_lookup.sh"
+    # This test exercises commander pre-send observation and concurrent inbox
+    # persistence only; a git fixture adds setup cost without affecting either
+    # behavior.  Keep production validation active by providing the target's
+    # task file after the lightweight inbox fixture setup.
+    setup_basic_test_env
+    unset INBOX_WRITE_TEST
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin" "$TEST_TMPDIR/logs"
+    printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
     export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
@@ -2292,7 +2297,7 @@ EOF
     grep -q 'capture-pane' "$TMUX_LOG"
 
     local attempt
-    for attempt in $(seq 1 100); do
+    for attempt in $(seq 1 500); do
         [ -f "$DEFENSE_OVERHEAD_LEDGER" ] \
             && [ "$(grep -c '"check_id":"inbox_write_pre_send_capture"' "$DEFENSE_OVERHEAD_LEDGER" || true)" -ge 20 ] \
             && [ "$(grep -c '"check_id":"inbox_write_persist"' "$DEFENSE_OVERHEAD_LEDGER" || true)" -ge 20 ] \

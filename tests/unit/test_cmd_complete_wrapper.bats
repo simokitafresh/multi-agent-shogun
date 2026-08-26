@@ -295,19 +295,34 @@ PY
 @test "five tail latency variants return from public caller below five seconds" {
     unset CMD_COMPLETE_SYNC_TAIL
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/five-variants.log"
-    local variant cmd start_ns elapsed_ms
-    for variant in sleep5 huge_archive endpoint_failure notification_throttle dashboard_contention; do
+    local variant cmd start_ns elapsed_ms rc
+    local -a variants=(sleep5 huge_archive endpoint_failure notification_throttle dashboard_contention)
+    local -a pids=()
+    for variant in "${variants[@]}"; do
         cmd="cmd_${variant}"
         mkdir -p "$FIXTURE/queue/gates/$cmd"
         sed "s/cmd_fixture/$cmd/" "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" > "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
-        start_ns="$(date +%s%N)"
-        run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
-            CMD_COMPLETE_TEST_VARIANT="$variant" bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd"
-        elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
-        [ "$status" -eq 0 ]
+        (
+            start_ns="$(date +%s%N)"
+            env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+                CMD_COMPLETE_TEST_VARIANT="$variant" bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd" \
+                >"$BATS_TEST_TMPDIR/$variant.output" 2>&1
+            rc=$?
+            elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
+            printf '%s\t%s\t%s\n' "$rc" "$elapsed_ms" "$variant" >"$BATS_TEST_TMPDIR/$variant.result"
+            exit "$rc"
+        ) &
+        pids+=("$!")
+    done
+    for pid in "${pids[@]}"; do
+        wait "$pid"
+    done
+    for variant in "${variants[@]}"; do
+        IFS=$'\t' read -r rc elapsed_ms _ <"$BATS_TEST_TMPDIR/$variant.result"
+        [ "$rc" -eq 0 ]
         echo "variant=$variant public_clear_ms=$elapsed_ms"
         [ "$elapsed_ms" -lt 5000 ]
-        [[ "$output" == *"QUEUED completion_tail"* ]]
+        grep -q "QUEUED completion_tail" "$BATS_TEST_TMPDIR/$variant.output"
     done
 }
 

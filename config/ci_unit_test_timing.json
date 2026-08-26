@@ -94,6 +94,10 @@
       "duration_sec": 11.769
     },
     {
+      "path": "tests/unit/test_cmd_complete_gate_source_publish.bats",
+      "duration_sec": 4.389
+    },
+    {
       "path": "tests/unit/test_cmd_complete_gate_subsystems.bats",
       "duration_sec": 10.65
     },
