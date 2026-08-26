@@ -19,11 +19,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+        include:
+          - {shard: 0, compatibility: false}
+          - {shard: 1, compatibility: false}
+          - {shard: 2, compatibility: false}
+          - {shard: 3, compatibility: false}
+          - {shard: 4, compatibility: false}
+          - {shard: 5, compatibility: false}
+          - {shard: 6, compatibility: false}
+          - {shard: 7, compatibility: false}
+          - {shard: compatibility, compatibility: true}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          # test_cmd_skeleton.bats exercises a historical baseline commit.
+          # A shallow checkout makes that explicit fixture unavailable.
+          fetch-depth: 0
 
       - name: Install bats-core
         run: |
@@ -38,7 +51,46 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-yaml parallel ripgrep
+          sudo apt-get install -y python3-pytest python3-yaml python3-websocket parallel ripgrep tmux
+
+      - name: Setup compatibility runtime fixtures
+        if: matrix.compatibility == true
+        run: |
+          set -euo pipefail
+          python3 -c 'import pytest; print("PYTEST_AVAILABLE=" + pytest.__version__)'
+          mkdir -p "$HOME/bin"
+          printf '#!/usr/bin/env bash\nif [ "${1:-}" = "--version" ]; then echo "2.1.87 (Claude Code)"; else exit 0; fi\n' > "$HOME/bin/claude"
+          chmod +x "$HOME/bin/claude"
+          sudo mkdir -p /home/simokitafresh/bin
+          sudo sh -c 'printf "#!/usr/bin/env bash\\nif [ \"\${1:-}\" = \"--version\" ]; then echo \"2.1.87 (Claude Code)\"; else exit 0; fi\\n" > /home/simokitafresh/bin/claude'
+          sudo chmod +x /home/simokitafresh/bin/claude
+          tmux new-session -d -s shogun -n agents -x 240 -y 80
+          agents=(karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru shogun)
+          for agent in "${agents[@]:1}"; do
+            tmux split-window -d -t shogun:agents
+            tmux select-layout -t shogun:agents tiled
+          done
+          mapfile -t panes < <(tmux list-panes -t shogun:agents -F '#{pane_id}')
+          test "${#panes[@]}" -eq "${#agents[@]}"
+          now="$(date +%s)"
+          for index in "${!agents[@]}"; do
+            pane="${panes[$index]}"
+            agent="${agents[$index]}"
+            group=codex
+            [ "$agent" = karo ] && group=karo
+            tmux set-option -p -t "$pane" @agent_id "$agent"
+            tmux set-option -p -t "$pane" @agent_cli codex
+            tmux set-option -p -t "$pane" @agent_state idle
+            tmux set-option -p -t "$pane" @model_name gpt-5.6-sol
+            tmux set-option -p -t "$pane" @agent_group "$group"
+            tmux set-option -p -t "$pane" @last_active "$now"
+            tmux set-option -p -t "$pane" @context_pct 0
+            tmux set-option -p -t "$pane" @current_task none
+            tmux set-option -p -t "$pane" @inbox_count 0
+          done
+          printf 'TMUX_PANE=%s\n' "${panes[0]}" >> "$GITHUB_ENV"
+          printf 'TMUX_WINDOW=shogun:agents\n' >> "$GITHUB_ENV"
+          tmux list-panes -t shogun:agents -F '#{pane_id} #{@agent_id} #{@agent_cli} #{@agent_state} #{@model_name}'
 
       - name: Install tracked git hooks
         run: |
@@ -57,15 +109,33 @@ jobs:
             exit 1
           fi
           mkdir -p test-results
-          export SHARD_INDEX="${{ matrix.shard }}"
-          export SHARD_COUNT=8
           python3 - <<'PY'
           import json
-          import os
           from pathlib import Path
 
-          shard = int(os.environ["SHARD_INDEX"])
-          shard_count = int(os.environ["SHARD_COUNT"])
+          shard_name = "${{ matrix.shard }}"
+          compatibility = "${{ matrix.compatibility }}" == "true"
+          shard = int(shard_name) if not compatibility else None
+          shard_count = 8
+          compatibility_files = [
+              "tests/unit/test_cdp_session_contract.bats",
+              "tests/unit/test_ninja_monitor_clear_guard.bats",
+              "tests/unit/test_deploy_task_semantic_context_cache.bats",
+              "tests/unit/test_respawn_recovery.bats",
+              "tests/unit/test_ninja_monitor_stall.bats",
+              "tests/unit/test_heavy_job_admission.bats",
+              "tests/unit/test_report_commit_identity.bats",
+              "tests/unit/test_gate_karo_startup.bats",
+              "tests/unit/test_shogun_cli_switch_probe.bats",
+              "tests/unit/test_cmd_skeleton.bats",
+              "tests/unit/test_review_approval_fail_close_filter.bats",
+              "tests/unit/test_dm_signal_cdp_adapters.bats",
+              "tests/unit/test_gate_vercel_phase.bats",
+              "tests/unit/test_retro_answer_type_parity.bats",
+              "tests/unit/test_send_wakeup.bats",
+              "tests/unit/test_deploy_task_self_snapshot.bats",
+              "tests/unit/test_cmd_complete_gate_convergence.bats",
+          ]
           timing_path = Path("logs/cmd_4392_local-test-timing.json")
           timing_source = "live_ledger"
           if not timing_path.is_file():
@@ -76,7 +146,17 @@ jobs:
           timing_payload = json.loads(timing_path.read_text(encoding="utf-8"))
           measurement = timing_payload.get("measurement", timing_payload)
           print(f"SHARD_TIMING_SOURCE source={timing_source} path={timing_path}")
-          inventory = sorted(str(path) for path in Path("tests/unit").glob("*.bats"))
+          all_inventory = sorted(str(path) for path in Path("tests/unit").glob("*.bats"))
+          if len(all_inventory) != 239 or len(set(all_inventory)) != 239:
+              raise SystemExit(f"unit inventory invariant failed: {len(all_inventory)} unique files")
+          if len(compatibility_files) != 17 or len(set(compatibility_files)) != 17:
+              raise SystemExit("compatibility inventory invariant failed: duplicate or missing entry")
+          missing_compatibility = sorted(set(compatibility_files) - set(all_inventory))
+          if missing_compatibility:
+              raise SystemExit(f"compatibility file missing from unit inventory: {missing_compatibility}")
+          inventory = [path for path in all_inventory if path not in set(compatibility_files)]
+          if len(inventory) != 222:
+              raise SystemExit(f"normal inventory invariant failed: {len(inventory)} files")
           records = measurement.get("records", [])
           measured = {}
           duplicates = []
@@ -86,16 +166,16 @@ jobs:
                   duplicates.append(path)
               measured[path] = float(record.get("duration_sec", 0.0))
           ledger_paths = sorted(measured)
-          missing_from_ledger = sorted(set(inventory) - set(ledger_paths))
-          stale_ledger_paths = sorted(set(ledger_paths) - set(inventory))
-          if (measurement.get("selected_files", 0) < len(inventory)
-                  or measurement.get("discovered_files", 0) < len(inventory)
-                  or measurement.get("record_count", 0) < len(inventory)
+          missing_from_ledger = sorted(set(all_inventory) - set(ledger_paths))
+          stale_ledger_paths = sorted(set(ledger_paths) - set(all_inventory))
+          if (measurement.get("selected_files", 0) != len(all_inventory)
+                  or measurement.get("discovered_files", 0) != len(all_inventory)
+                  or measurement.get("record_count", 0) != len(all_inventory)
                   or measurement.get("duplicate_count") != 0
                   or measurement.get("missing_count") != 0
                   or duplicates or missing_from_ledger or stale_ledger_paths):
               raise SystemExit(json.dumps({
-                  "inventory_count": len(inventory),
+                  "inventory_count": len(all_inventory),
                   "ledger_selected": measurement.get("selected_files"),
                   "ledger_discovered": measurement.get("discovered_files"),
                   "ledger_records": measurement.get("record_count"),
@@ -105,6 +185,17 @@ jobs:
                   "missing_from_ledger": missing_from_ledger,
                   "stale_ledger_paths": stale_ledger_paths,
               }, sort_keys=True))
+
+          if compatibility:
+              Path(f"test-results/shard-{shard_name}.paths").write_text(
+                  "".join(f"{path}\n" for path in compatibility_files), encoding="utf-8"
+              )
+              print(
+                  f"SHARD_COMPATIBILITY shard={shard_name} files={len(compatibility_files)} "
+                  "order=manifest deterministic=1"
+              )
+              print("SHARD_PARTITION total=239 compatibility=17 normal=222")
+              raise SystemExit(0)
 
           # Longest-processing-time first assignment keeps the measured shard
           # totals close while retaining one deterministic, auditable mapping.
@@ -118,6 +209,7 @@ jobs:
               "".join(f"{path}\n" for path in paths), encoding="utf-8"
           )
           print(f"SHARD_ASSIGNMENT shard={shard} files={len(paths)} measured_seconds={total:.3f}")
+          print("SHARD_PARTITION total=239 compatibility=17 normal=222")
           for bucket_total, bucket_index, bucket_paths in buckets:
               print(f"SHARD_TOTAL shard={bucket_index} files={len(bucket_paths)} measured_seconds={bucket_total:.3f}")
               print(f"SHARD_FILES shard={bucket_index} paths={','.join(bucket_paths)}")
@@ -139,13 +231,34 @@ jobs:
           # keep the requested-output copy distinct so a passing shard does
           # not fail on cp(source == destination).
           tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}-requested.tap"
+          if [ "${{ matrix.compatibility }}" = "true" ]; then
+            # These 17 files share host-global fixtures. Keep the default
+            # runner environment and use the legacy aggregate root contract;
+            # the normal eight shards retain their existing parallelism.
+            export BATS_FILE_JOBS=1
+            export BATS_SPLIT_FILES=0
+            export BATS_JOBS=1
+            export BATS_INNER_JOBS=1
+            export BATS_FILE_TIMEOUT_SECONDS=900
+          else
+            export BATS_FILE_JOBS=32
+            export BATS_INNER_JOBS=1
+            export BATS_FILE_TIMEOUT_SECONDS=300
+          fi
           set +e
-          BATS_CACHE=0 \
-          BATS_INNER_JOBS=1 \
-          BATS_FILE_TIMEOUT_SECONDS=300 \
-          RUN_TESTS_RECEIPT_PATH="$receipt" \
-          BATS_TAP_OUTPUT="$tap" \
-            bash scripts/run_tests.sh file $(<"test-results/shard-${{ matrix.shard }}.paths") 2>&1 | tee "test-results/shard-${{ matrix.shard }}.log"
+          if [ "${{ matrix.compatibility }}" = "true" ]; then
+            BATS_CACHE=0 \
+            RUN_TESTS_RECEIPT_PATH="$receipt" \
+            BATS_TAP_OUTPUT="$tap" \
+              bash scripts/run_tests.sh file $(<"test-results/shard-${{ matrix.shard }}.paths") 2>&1 | tee "test-results/shard-${{ matrix.shard }}.log"
+          else
+            BATS_CACHE=0 \
+            BATS_INNER_JOBS=1 \
+            BATS_FILE_TIMEOUT_SECONDS=300 \
+            RUN_TESTS_RECEIPT_PATH="$receipt" \
+            BATS_TAP_OUTPUT="$tap" \
+              bash scripts/run_tests.sh file $(<"test-results/shard-${{ matrix.shard }}.paths") 2>&1 | tee "test-results/shard-${{ matrix.shard }}.log"
+          fi
           rc=${PIPESTATUS[0]}
           set -e
           printf '%s\n' "$rc" > "test-results/shard-${{ matrix.shard }}.rc"

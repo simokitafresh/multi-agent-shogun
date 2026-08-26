@@ -135,9 +135,11 @@ except Exception:
 if not project_path or not os.path.isdir(project_path):
     raise SystemExit(0)
 
+scope_root = pathlib.Path(project_path).resolve()
+
 def git(*args):
     return subprocess.run(
-        ["git", "-C", project_path, *args], capture_output=True,
+        ["git", "-C", str(scope_root), *args], capture_output=True,
         text=True, timeout=5
     )
 
@@ -184,7 +186,7 @@ def path_in_planned_scope(planned_path, candidate_path):
     candidate = normalized_rel_path(candidate_path)
     if planned == candidate:
         return True
-    planned_fs_path = os.path.join(project_path, planned)
+    planned_fs_path = os.path.join(str(scope_root), planned)
     return os.path.isdir(planned_fs_path) and candidate.startswith(planned + "/")
 
 
@@ -220,10 +222,26 @@ if report_path and os.path.isfile(report_path):
     except Exception:
         report = None
 
+source_scope_error = ""
+if isinstance(report, dict):
+    required_raw = task.get("task_worktree_required")
+    required = required_raw is True or str(required_raw).strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+    if required:
+        try:
+            sys.path.insert(0, os.path.join(script_dir, "scripts", "lib"))
+            from review_source_context import resolve_source_root
+            scope_root = resolve_source_root(task, report, pathlib.Path(project_path))
+        except Exception as exc:
+            source_scope_error = f"source_scope_invalid:{exc}"
+
 if not scope_paths:
     issues = ["task_scope_missing_or_invalid"]
 elif not isinstance(report, dict):
     issues = ["report_missing_or_invalid"]
+elif source_scope_error:
+    issues = [source_scope_error]
 else:
     reported_paths = report_owned_paths(report.get("files_modified"))
     planned = set(scope_paths)
