@@ -2000,6 +2000,24 @@ else
     echo "  karo_snapshot.txt不在 — 判定不可"
 fi
 
+# --- Gate 10.07: 長時間bats(孤児テストプロセス)検知 ---
+# 2026-08-27 01:00: test_cmd_complete_gate.bats が親消失(/init直下)のまま2h07m走行し、global flockを握って家老のcommit helperを待たせ、
+# /tmp fixture lockを1359個蓄積していたが誰も検知しなかった(Q6自動化ターゲット)。CI全量が7分の今、1ファイル30分超は必ず異常。
+# 停止はD006(kill禁止)ゆえ行わない。検知して殿へ事実報告する。
+echo "■ 長時間bats検知(30分超=孤児疑い)"
+_bats_long=$(ps -eo pid=,ppid=,etimes=,args= 2>/dev/null | awk '$0 ~ /bats-exec-(suite|file)/ && $3 > 1800 {
+    f=""; for(i=5;i<=NF;i++){ if($i ~ /\.bats$/){f=$i} }
+    printf "pid=%s ppid=%s etime=%dm %s\n", $1, $2, int($3/60), f }' 2>/dev/null)
+if [ -n "$_bats_long" ]; then
+    _bats_long_n=$(printf '%s\n' "$_bats_long" | grep -c .)
+    echo "  WARN: 30分超のbatsプロセス ${_bats_long_n}件(集計: ps -eo pid,ppid,etimes,args | awk /bats-exec-(suite|file)/ && etimes>1800。1件=bats-exec-suite/fileプロセス1本)"
+    printf '%s\n' "$_bats_long" | sed 's/^/    /'
+    echo "  → 親がtmux paneでなければ孤児。global flock/\/tmp fixture蓄積の原因。D006により将軍はkillしない。殿へ事実報告し停止裁定を仰げ"
+    alerts+=("長時間bats ${_bats_long_n}件(30分超・孤児疑い) — 殿へ報告し停止裁定")
+else
+    echo "  OK: 30分超のbatsプロセスなし"
+fi
+
 # --- Gate 10.1: 便回転チェック(GATE CLEAR済み未回収在庫) ---
 # 2026-08-11: 便1時間ゼロを殿指摘まで検出できなかった事故の環境埋込み(Q6自動化ターゲット)。
 # 掲示板の「完了レビュー LGTM」status:open = 軍師LGTM済みだが家老ACCEPT/GATE未了の在庫。
