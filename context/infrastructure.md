@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-26 context_freshness reviewed source boundary (post-integration: 本日分は§2026-08-26に反映済) -->
+<!-- last_updated: 2026-08-27 2026-08-27 将軍doc lane: 孤児テスト根治5点を反映(DOC_LANE_ALERT blt_20260826_123314/101234 実消化) -->
+<!-- source_commit:06ddbc988 reason:2026-08-27 将軍doc lane: 孤児テスト根治5点を反映(DOC_LANE_ALERT blt_20260826_123314/101234 実消化) evidence:context/infrastructure.md §2026-08-27 追加; commits 3fa443c11 c940c47d5 8c09923f8 06ddbc988 -->
 <!-- source_commit:ed237d33a reason:context_freshness reviewed source boundary (post-integration: 本日分は§2026-08-26に反映済) evidence:context_freshness_check context=context/infrastructure.md commit=ed237d33a -->
 <!-- source_commit:f5c19317d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f5c19317d -->
 <!-- source_commit:ae9609fe8 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=ae9609fe8 -->
@@ -306,3 +307,14 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - `scripts/inbox_write.sh` speed_guard(将軍→家老委任に一括実装命令/層ごとGATE・報告YAML・レビュー/新規テスト・contract test・fixture・pytest全量があればBLOCK)+three_layer_guard(将軍→家老task_assignedに`[MEM:`引用なければBLOCK)。
 - `scripts/hooks/git-pre-commit.sh` に `tobe_no_line_numbers`(WARN)と `doc_no_changelog`(BLOCK: docs/research/*.md の見出し/行頭に変更履歴)。
 - 契約: 小さく1手・儀式なし・パイプライン(instructions/shogun.md・karo.md・generated同期)。
+
+## 2026-08-27 追加(source=57b40cf9a〜06ddbc988・孤児テスト増殖の根治+偵察報告契約の分離)
+
+- **孤児テスト増殖(00:50-02:48実測)**: `tests/unit/test_heavy_job_admission.bats` の singleflight-orphan ケースが内側 `run_tests.sh unit` を生かしたまま終了し、古い task worktree(seed 未是正版)から実 suite を再帰起動→root 27・bats-exec-suite 32本・load 66・`/tmp` fixture lock 1359個・global flock 競合(家老 commit helper 待ち・deploy 397秒 timeout・三層preflight timeout→将軍封鎖)。停止は D006 ゆえ殿が実行 → `docs/research` 相当の経緯は `queue/shogun_todo_map.md` T39
+- **検知**: `scripts/gates/gate_shogun_startup.sh` Gate 10.07 長時間bats検知(etimes>1800 の bats-exec-suite/file を WARN 列挙、3fa443c11)
+- **回収**: `scripts/orphan_test_reap.sh`(ps 1回スナップショットで親=/init のテスト樹を再帰展開、dry-run 既定、`--kill` は殿実行、`EXTRA_PATTERN` で古 worktree 由来も対象。pgid 単位 kill では `heavy_job_admission.sh` が新 pgid を切り子孫が残る)
+- **発生側根治(cmd_4405 8c09923f8)**: `scripts/run_tests.sh` に `trap run_tests_cleanup_children EXIT`(子孫回収)+fixture suite root 固定(fixture 起動が実 suite へ再帰しない)。回帰 bats あり
+- **偵察報告契約の分離(cmd_4406 06ddbc988)**: `scripts/gates/gate_report_format_main.py` で task_type recon/scout/recon2 は commit/investigation 契約を免除し finding(観測・結果・根拠パス)必須。監査=`scripts/gates/recon_report_contract_audit.md`(FAIL 557件/240報告の理由別内訳)。実装報告は従来契約維持
+- **deploy 遅延の隠れ要因**: `.git/worktrees` stale metadata(実体不在 624/724)で `git worktree add` が全走査→deploy 397秒。`git worktree prune` で 724→103(deploy 199秒)。自動化=小太郎 karo_hotfix(ninja_monitor 周期 prune+deploy 前件数ログ)で走行中
+- **GitHub Actions 補足**: queued 40分超・cancel-in-progress の想定と逆の cancel が発生。家老が exact-sha `workflow_dispatch`(ff0f95ad1)で突破。CI GREEN 復帰=run 32999064580 @8c09923f8
+
