@@ -4381,3 +4381,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-075843177-aa67
+  ts: "2026-08-27T07:58:43+09:00"
+  insight: "karo_snapshotのRUNTIME:busyが残像化(07:36生成で3名busy表示、07:55 capture-paneで全員prompt待ち)。RUNTIME判定をpane末尾行の実測(『Working』/『› Ask Codex』)へ置換し、snapshot生成時刻と判定時刻を同一にする"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
