@@ -305,7 +305,7 @@ def _resolve_declared_cross_repo_identity(report, identity):
                 path
                 for path in subprocess.run(
                     [
-                        "git", "-C", str(repo), "diff-tree", "--no-commit-id",
+                        "git", "-C", str(repo), "diff-tree", "--no-commit-id", "-m", "--first-parent",
                         "--name-only", "-r", "--root", identity,
                     ],
                     check=True,
@@ -384,7 +384,7 @@ def commit_contract_errors(report, task, root):
         return errors + [repo_error]
     try:
         subject = subprocess.run(["git", "-C", str(commit_repo), "show", "-s", "--format=%s", identity], check=True, capture_output=True, text=True, timeout=5).stdout.strip()
-        changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
+        changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", "-m", "--first-parent", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         fallback_repo = _resolve_declared_cross_repo_identity(report, identity)
         if fallback_repo is None:
@@ -392,7 +392,7 @@ def commit_contract_errors(report, task, root):
         commit_repo = fallback_repo
         try:
             subject = subprocess.run(["git", "-C", str(commit_repo), "show", "-s", "--format=%s", identity], check=True, capture_output=True, text=True, timeout=5).stdout.strip()
-            changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
+            changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", "-m", "--first-parent", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
         except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
             return errors + ["commit_hash does not resolve to a readable commit"]
     subject_identifies_task = _subject_identifies_cmd(
@@ -464,6 +464,9 @@ def commit_contract_errors(report, task, root):
     # OWNERSHIP_HISTORY_LOOKBACK 件以上の*別cmd*のcommitが割り込んだ場合、
     # 当該cmdのcommitはウィンドウ外へ押し出され再びBLOCKする(全件走査でしか
     # 救えない、本質的にはA8的な沈黙の窓が縮小しただけで消えてはいない)。
+    # 2026-08-26: merge commit(親2+)は diff-tree に -m --first-parent が無いと変更ファイル0件になり
+    # 所有パス検査が構造的にFAILする(履歴分岐統合 kotaro merge で実証: 0 files vs 15 files)。
+    # -m --first-parent は非merge commitでは無影響。
     OWNERSHIP_HISTORY_LOOKBACK = 10
     targets = modified_targets or allowed_targets
     pending_targets = [
@@ -499,7 +502,7 @@ def commit_contract_errors(report, task, root):
                 break
             try:
                 commit_files = subprocess.run(
-                    ["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", commit_hash],
+                    ["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", "-m", "--first-parent", commit_hash],
                     check=True, capture_output=True, text=True, timeout=5,
                 ).stdout.splitlines()
             except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
