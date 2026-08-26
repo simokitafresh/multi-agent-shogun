@@ -53,6 +53,17 @@ _hja_drain_metrics() {
     _hja_metrics_pids=()
 }
 
+_hja_leader_pid=""
+_hja_on_signal() {
+    trap - TERM INT EXIT
+    if [[ -n "$_hja_leader_pid" ]]; then
+        kill -TERM -- "-$_hja_leader_pid" 2>/dev/null || true
+        wait "$_hja_leader_pid" 2>/dev/null || true
+    fi
+    exit 128
+}
+trap _hja_on_signal TERM INT
+
 # v2: 2026-07-15、旧lockのFDがdurable背景workerへ継承され、そのworkerが
 # SHOGUN_HEAVY_JOB_LOCK_HELD=0で再入して自己デッドロックした。現在の旧inodeを
 # 自然timeoutへ隔離しつつ、修正済み契約を即時復旧するためlock世代も更新する。
@@ -331,8 +342,10 @@ ADMISSION_FD="$admission_fd" RUN_FD="${run_fd:-}" setsid bash -c '
     exec "$@"
 ' _ "$@" &
 leader_pid=$!
+_hja_leader_pid="$leader_pid"
 rc=0
 wait "$leader_pid" || rc=$?
+_hja_leader_pid=""
 if [[ "$_hja_metrics_enabled" == "1" ]]; then
     (
         eval "exec ${admission_fd}>&-"

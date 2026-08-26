@@ -688,6 +688,71 @@ SH
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: a directly invoked copied runner must execute only the
+# fixture-local suite even when the caller exports the control repository as
+# REPO_ROOT and keeps cwd there.
+@test "direct fixture runner pins suite discovery to its own script root" {
+  fixture="$TMPROOT/fixture-runner"
+  mkdir -p "$fixture/tests/unit" "$fixture/scripts" "$fixture/logs/receipts"
+  cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/run_with_receipt.sh" \
+    "$ROOT/scripts/heavy_job_admission.sh" "$ROOT/scripts/test_timing_ledger_write.sh" \
+    "$ROOT/scripts/test_suite_timing_ledger_write.sh" "$fixture/scripts/"
+  printf '@test "fixture-only" { true; }\n' >"$fixture/tests/unit/sample.bats"
+  git -C "$fixture" init -q
+  git -C "$fixture" config user.email test@example.com
+  git -C "$fixture" config user.name test
+  git -C "$fixture" add .
+  git -C "$fixture" commit -qm initial
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 fixture-only\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$TMPROOT/bats.args" \
+    RUN_TESTS_RECEIPT_DIR="$fixture/logs/receipts" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 bash -c 'cd "$1" && bash "$1/scripts/run_tests.sh" unit' _ "$fixture"
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$TMPROOT/bats.args")" -eq 1 ]
+  grep -Fxq "$fixture/tests/unit/sample.bats" "$TMPROOT/bats.args"
+  receipt="$(find "$fixture/logs/receipts" -name '*.json' -type f | head -1)"
+  [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["observed_test_count"])' "$receipt")" -eq 1 ]
+}
+
+# test_necessity: external TERM against run_tests.sh must drain a child bats
+# process and its descendant before the wrapper returns.
+@test "external TERM drains direct runner descendants" {
+  fixture="$TMPROOT/term-runner"
+  mkdir -p "$fixture/tests/unit" "$fixture/scripts" "$fixture/logs/receipts"
+  cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/run_with_receipt.sh" \
+    "$ROOT/scripts/heavy_job_admission.sh" "$ROOT/scripts/test_timing_ledger_write.sh" \
+    "$ROOT/scripts/test_suite_timing_ledger_write.sh" "$fixture/scripts/"
+  printf '@test "term" { true; }\n' >"$fixture/tests/unit/sample.bats"
+  git -C "$fixture" init -q
+  git -C "$fixture" config user.email test@example.com
+  git -C "$fixture" config user.name test
+  git -C "$fixture" add .
+  git -C "$fixture" commit -qm initial
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+(sleep 30) &
+printf '%s\n' "$!" >"$CHILD_PID_FILE"
+sleep 30
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run timeout --signal=TERM --kill-after=5 1 env PATH="$TMPROOT/bin:$PATH" \
+    CHILD_PID_FILE="$TMPROOT/term-child.pid" REPO_ROOT="$TMPROOT" BATS_CACHE=0 \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 RUN_TESTS_RECEIPT_DIR="$fixture/logs/receipts" \
+    bash "$fixture/scripts/run_tests.sh" file "$fixture/tests/unit/sample.bats"
+
+  [ "$status" -ne 0 ]
+  child_pid="$(cat "$TMPROOT/term-child.pid")"
+  ! ps -p "$child_pid" -o stat= | awk '$1 !~ /^Z/ { found=1 } END { exit found ? 0 : 1 }'
+}
+
 @test "affected mode uses the same file-isolated scheduler instead of direct bats jobs" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
   printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"

@@ -74,6 +74,18 @@ PY
     ! ps -e -o pgid=,stat= | awk -v pgid="$command_pgid" '$1 == pgid && $2 !~ /^Z/ { found=1 } END { exit !found }'
 }
 
+# test_necessity: a command that returns before its background descendant must
+# still leave zero live members in the receipt runner's dedicated session.
+@test "normal command exit reaps detached descendants before publishing receipt" {
+    child_pid_file="$BATS_TEST_TMPDIR/normal-child.pid"
+    run bash "$RUNNER" --receipt "$RECEIPT" -- bash -c \
+        "sleep 30 & echo \$! > '$child_pid_file'; exit 0"
+    [ "$status" -eq 0 ]
+    child_pid="$(cat "$child_pid_file")"
+    ! ps -p "$child_pid" -o stat= | awk '$1 !~ /^Z/ { found=1 } END { exit found ? 0 : 1 }'
+    [ "$(field result)" = PASS ]
+}
+
 @test "help embeds receipt usage and required fields" {
     run bash "$RUNNER" --help
     [ "$status" -eq 0 ]

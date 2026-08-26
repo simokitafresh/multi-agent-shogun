@@ -71,6 +71,7 @@ raw="$(mktemp "$receipt_dir/.run_receipt.raw.XXXXXX")"
 artifact_tmp="$(mktemp "$artifact_dir/.run_receipt.artifact.XXXXXX")"
 started_ms="$(date +%s%3N)"
 child_pid=""
+command_pgid=""
 signal_name=""
 progress="${receipt%.json}.progress.json"
 
@@ -139,8 +140,13 @@ on_signal() {
     # signal cannot leave grandchildren doing work after the receipt runner
     # has published its terminal state.  Scope TERM to that command group;
     # never signal the caller's/heavy admission's process group.
-    [[ -z "$child_pid" ]] || kill -TERM -- "-$child_pid" 2>/dev/null || true
-    wait "$child_pid" 2>/dev/null || true
+    if [[ -n "$child_pid" ]]; then
+        command_pgid="$child_pid"
+        kill -TERM -- "-$child_pid" 2>/dev/null || true
+        wait "$child_pid" 2>/dev/null || true
+        child_pid=""
+    fi
+    cleanup_command_group "$command_pgid"
     head -c "$max_bytes" "$raw" > "$artifact_tmp"
     write_receipt 128 false "$signal_name" "$@"
     rm -f "$raw"
@@ -149,6 +155,33 @@ on_signal() {
 trap 'on_signal TERM "$@"' TERM
 trap 'on_signal INT "$@"' INT
 trap 'rm -f "$raw" "$artifact_tmp"' EXIT
+
+cleanup_command_group() {
+    local pgid="$1" member_pid member_pgid member_stat snapshot
+    [[ "$pgid" =~ ^[1-9][0-9]*$ ]] || return 0
+    # COMMAND owns a dedicated session. A command can return while a
+    # background descendant still has that session's PGID, so normal exit
+    # needs the same bounded drain as signal exit.
+    snapshot="$(ps -e -o pid=,pgid=,stat= 2>/dev/null || true)"
+    while read -r member_pid member_pgid member_stat; do
+        [[ "$member_pgid" == "$pgid" && "$member_stat" != Z* ]] || continue
+        kill -TERM "$member_pid" 2>/dev/null || true
+    done <<< "$snapshot"
+    for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+        snapshot="$(ps -e -o pid=,pgid=,stat= 2>/dev/null || true)"
+        if ! awk -v pgid="$pgid" '$2 == pgid && $3 !~ /^Z/ { found=1 } END { exit found ? 0 : 1 }' <<< "$snapshot"; then
+            return 0
+        fi
+        sleep 0.05
+    done
+    # TERM is cooperative; a stubborn descendant must not survive the
+    # receipt boundary. Scope escalation to the same dedicated session.
+    snapshot="$(ps -e -o pid=,pgid=,stat= 2>/dev/null || true)"
+    while read -r member_pid member_pgid member_stat; do
+        [[ "$member_pgid" == "$pgid" && "$member_stat" != Z* ]] || continue
+        kill -KILL "$member_pid" 2>/dev/null || true
+    done <<< "$snapshot"
+}
 
 # Keep COMMAND and all of its descendants in a group owned by this invocation.
 # This makes signal cleanup complete without broadening the signal boundary to
@@ -170,6 +203,7 @@ if [[ "$live_progress" == true ]]; then
 fi
 wait "$child_pid"
 rc=$?
+command_pgid="$child_pid"
 child_pid=""
 if [[ "$live_progress" == true ]]; then
     current_lines="$(wc -l <"$raw" 2>/dev/null || printf 0)"
@@ -178,6 +212,7 @@ if [[ "$live_progress" == true ]]; then
     fi
     write_progress "$@"
 fi
+cleanup_command_group "$command_pgid"
 head -c "$max_bytes" "$raw" > "$artifact_tmp"
 if [[ "$summary_only" == true ]]; then
     printf 'RECEIPT_WRITTEN %s artifact=%s\n' "$receipt" "$artifact" >&2

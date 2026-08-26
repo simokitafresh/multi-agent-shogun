@@ -829,8 +829,8 @@ print('ok')
     grep -q 'tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}-requested.tap"' "$workflow"
     grep -q 'compatibility: true' "$workflow"
     grep -q 'bash scripts/run_tests.sh push' "$workflow"
-    grep -q 'find "$REPO_ROOT/tests/unit" -maxdepth 1' "$ROOT/scripts/run_tests.sh"
-    grep -q 'find "$REPO_ROOT/tests" -maxdepth 1' "$ROOT/scripts/run_tests.sh"
+    grep -q 'find "$RUN_TESTS_SUITE_ROOT/tests/unit" -maxdepth 1' "$ROOT/scripts/run_tests.sh"
+    grep -q 'find "$RUN_TESTS_SUITE_ROOT/tests" -maxdepth 1' "$ROOT/scripts/run_tests.sh"
     ! grep -q 'bats tests/unit/ .*--jobs 8' "$workflow"
 }
 

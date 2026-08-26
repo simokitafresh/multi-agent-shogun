@@ -19,7 +19,18 @@ set -euo pipefail
 # This file is intentionally sourceable so scheduler functions can be reused
 # by regression harnesses.  In that mode $0 belongs to the caller (often
 # `bash`), while BASH_SOURCE[0] remains this script's real path.
-REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+_run_tests_script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ "${BASH_SOURCE[0]:-$0}" == "$0" ]]; then
+    # A copied runner is a self-contained fixture. Do not let an enclosing
+    # runner's exported REPO_ROOT redirect it to the control repository when
+    # cwd/worktree happens to remain there. Source callers retain the
+    # explicit override used by function-level harnesses.
+    REPO_ROOT="${REPO_ROOT:-$_run_tests_script_root}"
+    RUN_TESTS_SUITE_ROOT="$_run_tests_script_root"
+else
+    REPO_ROOT="${REPO_ROOT:-$_run_tests_script_root}"
+    RUN_TESTS_SUITE_ROOT="$REPO_ROOT"
+fi
 JOBS="${BATS_JOBS:-8}"
 FILE_JOBS="${BATS_FILE_JOBS:-32}"
 INNER_JOBS="${BATS_INNER_JOBS:-1}"
@@ -49,11 +60,39 @@ fi
 BATS_CACHE="${BATS_CACHE:-1}"
 BATS_CACHE_DIR="${BATS_CACHE_DIR:-$REPO_ROOT/.cache/bats}"
 
+run_tests_tracked_child_pid=""
+run_tests_cleanup_children() {
+    local child_pid="$run_tests_tracked_child_pid"
+    [[ "$child_pid" =~ ^[1-9][0-9]*$ ]] || return 0
+    # The public runner tracks the receipt/admission wrapper itself. Those
+    # wrappers own dedicated process groups and perform descendant cleanup;
+    # signalling only this PID avoids touching the caller's process group.
+    kill -TERM "$child_pid" 2>/dev/null || true
+    for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+        if ! kill -0 "$child_pid" 2>/dev/null; then
+            return 0
+        fi
+        sleep 0.05
+    done
+    kill -KILL "$child_pid" 2>/dev/null || true
+}
+
+run_tests_on_signal() {
+    trap - TERM INT EXIT
+    run_tests_cleanup_children
+    exit 128
+}
+
+run_tests_install_cleanup_traps() {
+    trap 'run_tests_cleanup_children' EXIT
+    trap 'run_tests_on_signal' TERM INT
+}
+
 snapshot_test_tree() {
     local mode="$1" out="$2"
     case "$mode" in
-        all) find "$REPO_ROOT/tests/unit" "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print0 ;;
-        unit) find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print0 ;;
+        all) find "$RUN_TESTS_SUITE_ROOT/tests/unit" "$RUN_TESTS_SUITE_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print0 ;;
+        unit) find "$RUN_TESTS_SUITE_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print0 ;;
         *) return 1 ;;
     esac | sort -zu | xargs -0 sha256sum > "$out"
 }
@@ -77,7 +116,7 @@ verify_test_tree_snapshot() {
 # by age instead, on every mandated test run, rather than at creation time.
 sweep_stale_embedded_test_tmp() {
     local ttl_minutes="${BATS_EMBEDDED_TMP_TTL_MINUTES:-15}"
-    local dir="$REPO_ROOT/tests/unit"
+    local dir="$RUN_TESTS_SUITE_ROOT/tests/unit"
     [ -d "$dir" ] || return 0
     find "$dir" -maxdepth 1 -type f -name '_tmp_*.bats' -mmin +"$ttl_minutes" -delete 2>/dev/null || true
 }
@@ -653,7 +692,7 @@ bats_source_fingerprint() {
     # Captures committed+staged changes (~30x faster than sha256sum of 288 files).
     # Unstaged-only changes not captured; use BATS_CACHE=0 or set
     # BATS_SOURCE_FINGERPRINT manually when running against uncommitted edits.
-    git -C "$REPO_ROOT" ls-files --format='%(objectname)' \
+    git -C "$RUN_TESTS_SUITE_ROOT" ls-files --format='%(objectname)' \
         -- scripts lib tests/helpers ':!scripts/run_tests.sh' 2>/dev/null \
         | sha256sum | awk '{print $1}'
 }
@@ -670,7 +709,7 @@ bats_cache_key() {
 order_bats_files_lpt() {
     local source_fp="$1" commit_sha ledger
     shift
-    commit_sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || printf unknown)"
+    commit_sha="$(git -C "$RUN_TESTS_SUITE_ROOT" rev-parse HEAD 2>/dev/null || printf unknown)"
     ledger="${TEST_TIMING_LEDGER:-$REPO_ROOT/logs/test_timing_ledger.tsv}"
     if [ ! -s "$ledger" ]; then
         printf '%s\n' "$@"
@@ -1433,8 +1472,8 @@ selection_manifest_for_singleflight() {
     local mode="$1"
     shift
     case "$mode" in
-        all) find "$REPO_ROOT/tests/unit" "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print | sort -u ;;
-        unit) find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print | sort -u ;;
+        all) find "$RUN_TESTS_SUITE_ROOT/tests/unit" "$RUN_TESTS_SUITE_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print | sort -u ;;
+        unit) find "$RUN_TESTS_SUITE_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print | sort -u ;;
         file)
             [ "$#" -gt 0 ] || return 2
             realpath -- "$@" | sort -u
@@ -1808,9 +1847,14 @@ _run_tests_main() {
         # that inner identity across the admission re-exec; otherwise the
         # admitted process is mistaken for a second public invocation and
         # publishes a duplicate terminal receipt for the same run.
-        exec env SHOGUN_HEAVY_JOB_ADMISSION_METRICS=1 \
+        env SHOGUN_HEAVY_JOB_ADMISSION_METRICS=1 \
             bash "$(dirname "$_self")/heavy_job_admission.sh" -- \
-            bash "$_self" --receipt-inner "$@"
+            bash "$_self" --receipt-inner "$@" &
+        run_tests_tracked_child_pid=$!
+        _admission_rc=0
+        wait "$run_tests_tracked_child_pid" || _admission_rc=$?
+        run_tests_tracked_child_pid=""
+        return "$_admission_rc"
     fi
 
     if [[ "${RUN_TESTS_SINGLEFLIGHT_LEADER_PENDING:-0}" == "1" ]]; then
@@ -1849,8 +1893,8 @@ _run_tests_main() {
                 mapfile -t test_files < <(sed 's/^[^ ]*  //' "$RUN_TESTS_SNAPSHOT_MANIFEST")
             else
                 mapfile -t test_files < <(
-                    find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print
-                    find "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print
+                    find "$RUN_TESTS_SUITE_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print
+                    find "$RUN_TESTS_SUITE_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print
                 )
             fi
             run_bats_files_parallel "${test_files[@]}"
@@ -1862,7 +1906,7 @@ _run_tests_main() {
                 verify_test_tree_snapshot "$RUN_TESTS_SNAPSHOT_MANIFEST"
                 mapfile -t test_files < <(sed 's/^[^ ]*  //' "$RUN_TESTS_SNAPSHOT_MANIFEST")
             else
-                mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
+                mapfile -t test_files < <(find "$RUN_TESTS_SUITE_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
             fi
             run_bats_files_parallel "${test_files[@]}"
             [ -z "${RUN_TESTS_SNAPSHOT_MANIFEST:-}" ] || verify_test_tree_snapshot "$RUN_TESTS_SNAPSHOT_MANIFEST"
@@ -1923,7 +1967,7 @@ _run_tests_main() {
                 printf 'TEST_SELECTION result=fallback reason=selector_exit_%s target=unit\n' "$_selector_rc"
                 [ -z "$_selector_log" ] || rm -f "$_selector_log"
                 RUN_TESTS_MODE=unit
-                mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
+                mapfile -t test_files < <(find "$RUN_TESTS_SUITE_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
                 run_bats_files_parallel "${test_files[@]}"
                 exit $?
             fi
@@ -2235,6 +2279,7 @@ PY
 }
 
 if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
+    run_tests_install_cleanup_traps
     if [[ "${1:-}" == "receipt" ]]; then
         [ "$#" -eq 2 ] || { echo "Usage: bash scripts/run_tests.sh receipt <run-or-selection-identity>" >&2; exit 2; }
         recover_run_tests_terminal_receipt "$2"
@@ -2428,7 +2473,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         fi
         _tap="${_receipt%.json}.tap"
         _selected_paths="${_receipt%.json}.paths"
-        _source_root="$REPO_ROOT"
+        _source_root="$RUN_TESTS_SUITE_ROOT"
         if [[ "$_mode" == task ]]; then
             _source_root="$(task_scope_root "${2:-}")" \
                 || { echo "BLOCK: task source root could not be resolved" >&2; exit 2; }
@@ -2457,18 +2502,22 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             # test descendants must never inherit its FD and leak the lock.
             (
                 eval "exec ${_sf_fd}>&-"
-                BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
+                exec env BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                     --summary-only --live-progress --receipt "$_receipt" -- \
                     timeout --signal=TERM --kill-after=5 "$_suite_timeout" \
                     env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" RUN_TESTS_RUN_ID="$_run_id" RUN_TESTS_COMMIT_SHA="$_source_head" RUN_TESTS_SOURCE_FINGERPRINT="$_source_fp" RUN_TESTS_PENDING_FILE_BATCH="$_pending_file_batch" RUN_TESTS_PENDING_SUITE_BATCH="$_pending_suite_batch" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
-            )
+            ) &
+            run_tests_tracked_child_pid=$!
         else
             BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                 --summary-only --live-progress --receipt "$_receipt" -- \
                 timeout --signal=TERM --kill-after=5 "$_suite_timeout" \
-                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" RUN_TESTS_RUN_ID="$_run_id" RUN_TESTS_COMMIT_SHA="$_source_head" RUN_TESTS_SOURCE_FINGERPRINT="$_source_fp" RUN_TESTS_PENDING_FILE_BATCH="$_pending_file_batch" RUN_TESTS_PENDING_SUITE_BATCH="$_pending_suite_batch" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" RUN_TESTS_RUN_ID="$_run_id" RUN_TESTS_COMMIT_SHA="$_source_head" RUN_TESTS_SOURCE_FINGERPRINT="$_source_fp" RUN_TESTS_PENDING_FILE_BATCH="$_pending_file_batch" RUN_TESTS_PENDING_SUITE_BATCH="$_pending_suite_batch" bash "${BASH_SOURCE[0]}" --receipt-inner "$@" &
+            run_tests_tracked_child_pid=$!
         fi
-        _rc=$?
+        _rc=0
+        wait "$run_tests_tracked_child_pid" || _rc=$?
+        run_tests_tracked_child_pid=""
         set -e
         _output_sha256="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["output_sha256"])' "$_receipt")"
         # Timing rows are a terminal-success cohort.  A failed test run still
