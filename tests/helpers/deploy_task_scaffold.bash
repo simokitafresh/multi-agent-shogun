@@ -3,6 +3,11 @@
 # Usage: load '../helpers/deploy_task_scaffold' in test files.
 
 deploy_task_setup_file() {
+    # Unit fixtures validate deploy_task behavior, not production telemetry.
+    # Keep the async Python/SQLite/flock writer out of the canonical parallel
+    # test lane; telemetry-specific tests must opt in explicitly with =1.
+    export DEFENSE_OVERHEAD_ENABLED=0
+
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_DEPLOY_SCRIPT="$PROJECT_ROOT/scripts/deploy_task.sh"
