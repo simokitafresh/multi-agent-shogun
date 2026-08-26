@@ -506,6 +506,47 @@ raise SystemExit(0 if all(data.get(k) == v for k, v in expected.items()) else 1)
 PY
 }
 
+# Wait for each generation-bound terminal marker in one process.  Spawning a
+# fresh python3 (plus date) every 50ms made concurrent public observers contend
+# on DrvFS process startup and could push the nominally detached boundary past
+# five seconds.  Keep the same CLEAR-before-failure precedence while polling
+# inside one interpreter.
+wait_for_gate_worker_terminal() {
+    local clear_marker="$1" failure_marker="$2" timeout_seconds="$3"
+    python3 - "$clear_marker" "$failure_marker" "$CMD_ID" "$BUNDLE_IDENTITY" "$timeout_seconds" <<'PY'
+import json
+import sys
+import time
+
+clear_path, failure_path, cmd_id, generation, timeout_text = sys.argv[1:]
+expected = {
+    "version": 1,
+    "cmd_id": cmd_id,
+    "completion_generation": generation,
+}
+
+def matches(path, state):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return False
+    return isinstance(data, dict) and data.get("state") == state and all(
+        data.get(key) == value for key, value in expected.items()
+    )
+
+deadline = time.monotonic() + int(timeout_text)
+while True:
+    if matches(clear_path, "clear"):
+        raise SystemExit(0)
+    if matches(failure_path, "failed"):
+        raise SystemExit(1)
+    if time.monotonic() >= deadline:
+        raise SystemExit(2)
+    time.sleep(0.05)
+PY
+}
+
 # A busy single-flight observer can persist a failed marker before the worker
 # that owns the same generation publishes its terminal CLEAR.  Marker state is
 # generation-bound, so a newer valid CLEAR is the authoritative terminal fact;
@@ -580,7 +621,7 @@ launch_or_observe_durable_gate_worker() {
     local failure_marker="$CHECKPOINT_DIR/gate_worker.failed.json"
     local tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
     local launcher="" socket="" worker_cmd="" worker_log_q="" worker_target="" worker_scope=""
-    local deadline now
+    local wait_rc
     CMD_COMPLETE_RECOVERED_CLEAR=0
 
     if gate_worker_marker_matches "$failure_marker" failed; then
@@ -713,24 +754,20 @@ PY
         sleep "$CMD_COMPLETE_TEST_HOLD_AFTER_LOCK_RELEASE"
     fi
 
-    deadline=$(( $(date +%s) + ${CMD_COMPLETE_GATE_CLEAR_TIMEOUT:-3600} ))
-    while :; do
-        if gate_worker_marker_matches "$clear_marker" clear; then
-            printf '[cmd_complete] GATE CLEAR durable_worker_receipt_verified\n'
-            return 0
-        fi
-        if gate_worker_marker_matches "$failure_marker" failed; then
-            printf '[cmd_complete] FAILED durable gate worker before CLEAR marker=%s\n' "$failure_marker" >&2
-            return 1
-        fi
-        now=$(date +%s)
-        if (( now >= deadline )); then
-            printf '[cmd_complete] FAILED durable gate worker CLEAR marker timeout=%ss\n' \
-                "${CMD_COMPLETE_GATE_CLEAR_TIMEOUT:-3600}" >&2
-            return 1
-        fi
-        sleep 0.05
-    done
+    if wait_for_gate_worker_terminal "$clear_marker" "$failure_marker" \
+        "${CMD_COMPLETE_GATE_CLEAR_TIMEOUT:-3600}"; then
+        printf '[cmd_complete] GATE CLEAR durable_worker_receipt_verified\n'
+        return 0
+    else
+        wait_rc=$?
+    fi
+    if [[ "$wait_rc" -eq 1 ]]; then
+        printf '[cmd_complete] FAILED durable gate worker before CLEAR marker=%s\n' "$failure_marker" >&2
+    else
+        printf '[cmd_complete] FAILED durable gate worker CLEAR marker timeout=%ss\n' \
+            "${CMD_COMPLETE_GATE_CLEAR_TIMEOUT:-3600}" >&2
+    fi
+    return 1
 }
 
 if checkpoint_has sg7_consume; then
