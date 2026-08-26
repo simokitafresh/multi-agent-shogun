@@ -15,6 +15,21 @@
 #
 # cmd_102: 殿の哲学「人が従う」ではなく「仕組みが強制する」
 
+# Keep the deployment entrypoint's default task wake-up contract visible in
+# the legacy monolith as well as deploy_task/bootstrap.sh. Codex workers must
+# bind supplements to the current task identity before applying them.
+DEFAULT_MESSAGE="現task YAMLを正本として読み直して作業開始せよ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな。"
+
+# Canonical answer-family predicate for deployment-hold consumers. Keep this
+# at the entrypoint boundary so the monolith and its sourced modules share one
+# exact set when a retrospective answer releases a deployment hold.
+deploy_task_retro_answer_type_allowed() {
+    case "${1:-}" in
+        infra_bug_suspected|infra_bug_report|infra_bug|retro_answer) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 # A long-lived deployment must never continue parsing the mutable working-tree
 # file after delivery.  Bash reads large scripts incrementally, so an in-place
 # edit can otherwise splice a newer tail onto the already-running process.
@@ -11228,7 +11243,7 @@ source "$_dt_main_path"
 unset _dt_main_path
 
 if [[ "${DEPLOY_TASK_SELF_SNAPSHOT_TEST_ONLY:-0}" == "1" ]]; then
-    printf 'SELF_SNAPSHOT_OK\\n'
+    printf 'SELF_SNAPSHOT_OK\n'
     exit 0
 fi
 

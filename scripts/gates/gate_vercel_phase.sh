@@ -204,7 +204,8 @@ check_ref_record() {
     done
 
     if [ "$found" = false ]; then
-        if [ "$ANY_EXTERNAL_EXISTS" = false ]; then
+        if [ "$ANY_EXTERNAL_EXISTS" = false ] \
+            && [[ "$context_file" == "$SCRIPT_DIR/context/"* ]]; then
             TOTAL_REFS=$((TOTAL_REFS - 1))
             return 0
         fi

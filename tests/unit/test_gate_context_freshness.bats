@@ -107,6 +107,49 @@ SH
   [[ "$output" != *"ALERT:"* ]]
 }
 
+# test_necessity: source-tip changes must invalidate the gate cache; otherwise
+# a prior OK can hide a newly detected source/context mismatch until TTL expiry.
+@test "source tip override invalidates cached freshness result" {
+  source_tip_marker="$BATS_TEST_TMPDIR/source-tip-marker"
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "${CFC_DASHBOARD_SOURCE_TIP:-}" >> "$SOURCE_TIP_MARKER"
+if [[ "${CFC_DASHBOARD_SOURCE_TIP:-}" == tip-bbbbbbb ]]; then
+  echo 'ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19 repo=/fixture root_fallback=yes owner=infra-platform update_trigger=root-fallback latest: bbbbbbb fixture'
+else
+  echo 'ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19 repo=/fixture root_fallback=yes owner=infra-platform update_trigger=root-fallback latest: aaaaaaa fixture'
+fi
+SH
+  chmod +x "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-source-tip" \
+    SOURCE_TIP_MARKER="$source_tip_marker" \
+    CONTEXT_FRESHNESS_GATE_CACHE_TTL=300 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    CFC_DASHBOARD_SOURCE_TIP=tip-aaaaaaa \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [ "$(sed -n '1p' "$source_tip_marker")" = "tip-aaaaaaa" ]
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-source-tip" \
+    SOURCE_TIP_MARKER="$source_tip_marker" \
+    CONTEXT_FRESHNESS_GATE_CACHE_TTL=300 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    CFC_DASHBOARD_SOURCE_TIP=tip-bbbbbbb \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [ "$(wc -l < "$source_tip_marker")" -eq 2 ]
+  [ "$(sed -n '2p' "$source_tip_marker")" = "tip-bbbbbbb" ]
+}
+
 # test_necessity: each unresolved raw ALERT must be durably routed once to the
 # Shogun doc lane, while retries with identical content remain deduplicated.
 @test "raw ALERT doc-lane notification deduplicates successful content and retries changes" {
@@ -692,4 +735,185 @@ MD
   [ "$status" -eq 1 ]
   [[ "$output" == *"BLOCK: infrastructure.md (source更新あり・参照リンク欠落)"* ]]
   [ "$(grep -o 'docs/research/truly-missing.md' <<< "$output" | wc -l)" -eq 1 ]
+}
+
+# test_necessity: divergent source frontiers must use one generation-bound,
+# ext4 snapshot producer and must not reuse a snapshot after the source tip
+# moves. A producer failure remains unknown/fail-closed rather than OK.
+@test "multi-boundary source history is generation-bound and singleflight cached" {
+  fixture="$BATS_TEST_TMPDIR/multi-boundary"
+  fake_bin="$BATS_TEST_TMPDIR/fake-bin"
+  fake_log="$BATS_TEST_TMPDIR/fake-git.log"
+  cache_dir="$BATS_TEST_TMPDIR/history-cache"
+  mkdir -p "$fixture"/{config,context,scripts/config,queue/archive/cmds,.git/refs/heads} "$fake_bin"
+  cp "$ROOT/scripts/context_freshness_check.sh" "$fixture/scripts/context_freshness_check.sh"
+  cat > "$fixture/config/projects.yaml" <<YAML
+projects:
+  - id: infra
+    path: $fixture
+YAML
+  : > "$fixture/config/context_freshness_excludes.txt"
+  cp "$ROOT/scripts/config/context_source_commits.tsv" "$fixture/scripts/config/context_source_commits.tsv"
+  cat > "$fixture/context/infrastructure.md" <<'MD'
+<!-- last_updated: 2026-08-10 source_commit:aaaaaaaa source_commit:bbbbbbbb -->
+MD
+  cat > "$fixture/queue/archive/cmds/20260825_cmd_fixture.yaml" <<'YAML'
+project: infra
+status: completed
+completed_at: 2026-08-25
+YAML
+  printf 'ref: refs/heads/main\n' > "$fixture/.git/HEAD"
+  printf '1111111111111111111111111111111111111111\n' > "$fixture/.git/refs/heads/main"
+  cat > "$fake_bin/git" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FAKE_GIT_LOG"
+if [[ "$*" == *"rev-parse"* ]]; then
+  printf '%s\n' 1111111111111111111111111111111111111111
+elif [[ "$*" == *"merge-base"* ]]; then
+  printf '%s\n%s\n' 1111111111111111111111111111111111111111 2222222222222222222222222222222222222222
+elif [[ "$*" == *" log "* ]]; then
+  printf '__CFC_G__\0deadbee\0fixture source\nscripts/fixture\n'
+fi
+SH
+  chmod +x "$fake_bin/git"
+
+  run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
+    bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  [ "$status" -eq 0 ]
+  [ "$(grep -c ' log ' "$fake_log")" -eq 1 ]
+  [ "$(find "$cache_dir" -name 'multi-*.json' -type f | wc -l)" -eq 1 ]
+
+  run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
+    bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  [ "$status" -eq 0 ]
+  [ "$(grep -c ' log ' "$fake_log")" -eq 1 ]
+
+  printf '2222222222222222222222222222222222222222\n' > "$fixture/.git/refs/heads/main"
+  run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
+    bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  [ "$status" -eq 0 ]
+  [ "$(grep -c ' log ' "$fake_log")" -eq 2 ]
+  [ "$(find "$cache_dir" -name 'multi-*.json' -type f | wc -l)" -eq 2 ]
+}
+
+# test_necessity: reviewed source boundaries have four materially different
+# states.  The global ledger must preserve the distinction: an old boundary is
+# outside the materialized window, a merge boundary needs a metadata-only row,
+# a resolved non-ancestor is a valid no-op exclusion, and an unresolved marker
+# remains fail-closed instead of becoming an OK result.
+# regression_justification: GA-498's source-timeout fix previously collapsed
+# boundary resolution failures and valid non-ancestor boundaries into the same
+# producer result, making live timeout classification impossible to verify.
+make_global_history_fixture() {
+  global_fixture="$BATS_TEST_TMPDIR/global-history-${1}"
+  global_cache="$BATS_TEST_TMPDIR/global-history-cache-${1}"
+  mkdir -p "$global_fixture"/{config,context,scripts/config,queue/archive/cmds}
+  cp "$ROOT/scripts/context_freshness_check.sh" "$global_fixture/scripts/context_freshness_check.sh"
+  cp "$ROOT/scripts/config/context_source_commits.tsv" "$global_fixture/scripts/config/context_source_commits.tsv"
+  : > "$global_fixture/config/context_freshness_excludes.txt"
+  cat > "$global_fixture/config/projects.yaml" <<YAML
+projects:
+  - id: infra
+    path: $global_fixture
+    context_file: context/infrastructure.md
+    status: active
+YAML
+  cat > "$global_fixture/queue/archive/cmds/20260825_cmd_fixture.yaml" <<'YAML'
+project: infra
+status: completed
+completed_at: 2026-08-25
+YAML
+  printf '<!-- last_updated: 2026-08-10 -->\n' > "$global_fixture/context/infrastructure.md"
+  printf 'baseline\n' > "$global_fixture/scripts/source.py"
+  git -C "$global_fixture" init -q
+  git -C "$global_fixture" config user.email fixture@example.invalid
+  git -C "$global_fixture" config user.name fixture
+  git -C "$global_fixture" add .
+  git -C "$global_fixture" commit -qm 'fixture baseline'
+}
+
+run_global_history_fixture() {
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$global_fixture" \
+    CFC_GLOBAL_HISTORY_ENABLED=1 \
+    CFC_GLOBAL_HISTORY_CACHE_DIR="$global_cache" \
+    CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GLOBAL_HISTORY_BUILD_TIMEOUT=5 \
+    CFC_GIT_TIMEOUT=5 \
+    CFC_GIT_RETRY_TIMEOUT=5 \
+    bash "$global_fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+}
+
+@test "global ledger treats an ancestor boundary older than the scan window as resolved" {
+  make_global_history_fixture boundary-old
+  GIT_AUTHOR_DATE='2026-08-01T12:00:00Z' GIT_COMMITTER_DATE='2026-08-01T12:00:00Z' \
+    git -C "$global_fixture" commit --allow-empty -qm 'old reviewed source boundary'
+  old_boundary="$(git -C "$global_fixture" rev-parse HEAD)"
+  printf '<!-- last_updated: 2026-08-10 -->\n<!-- source_commit:%s reason:fixture evidence:fixture -->\n' "$old_boundary" > "$global_fixture/context/infrastructure.md"
+  git -C "$global_fixture" add context/infrastructure.md
+  git -C "$global_fixture" commit -qm 'record old reviewed boundary'
+
+  run_global_history_fixture
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"source commit check failed"* ]]
+  [[ "$output" != *"ALERT: context/infrastructure.md source commits"* ]]
+}
+
+@test "global ledger materializes a merge boundary even without a merge diff row" {
+  make_global_history_fixture within-merge
+  git -C "$global_fixture" checkout -qb topic
+  printf 'topic\n' > "$global_fixture/scripts/source.py"
+  git -C "$global_fixture" add scripts/source.py
+  git -C "$global_fixture" commit -qm 'topic source change'
+  git -C "$global_fixture" checkout -q -B main
+  printf 'main\n' > "$global_fixture/scripts/other.py"
+  git -C "$global_fixture" add scripts/other.py
+  git -C "$global_fixture" commit -qm 'main source change'
+  git -C "$global_fixture" merge --no-ff topic -qm 'merge reviewed source branch'
+  merge_boundary="$(git -C "$global_fixture" rev-parse HEAD)"
+  printf '<!-- last_updated: 2026-08-10 -->\n<!-- source_commit:%s reason:fixture evidence:fixture -->\n' "$merge_boundary" > "$global_fixture/context/infrastructure.md"
+  git -C "$global_fixture" add context/infrastructure.md
+  git -C "$global_fixture" commit -qm 'record merge reviewed boundary'
+
+  run_global_history_fixture
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"source commit check failed"* ]]
+  grep -R -q "$merge_boundary.*reviewed boundary" "$global_cache"
+}
+
+@test "global ledger accepts a resolved non-ancestor boundary as a no-op exclusion" {
+  make_global_history_fixture nonancestor
+  git -C "$global_fixture" checkout -qb reviewed
+  printf 'reviewed branch\n' > "$global_fixture/scripts/reviewed.py"
+  git -C "$global_fixture" add scripts/reviewed.py
+  git -C "$global_fixture" commit -qm 'divergent reviewed source boundary'
+  nonancestor_boundary="$(git -C "$global_fixture" rev-parse HEAD)"
+  git -C "$global_fixture" checkout -q -B main
+  printf '<!-- last_updated: 2026-08-10 -->\n<!-- source_commit:%s reason:fixture evidence:fixture -->\n' "$nonancestor_boundary" > "$global_fixture/context/infrastructure.md"
+  git -C "$global_fixture" add context/infrastructure.md
+  git -C "$global_fixture" commit -qm 'record divergent reviewed boundary'
+
+  run_global_history_fixture
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"source commit check failed"* ]]
+  [[ "$output" != *"ALERT: context/infrastructure.md source commits"* ]]
+}
+
+@test "global ledger keeps an unresolved boundary fail-closed" {
+  make_global_history_fixture unresolved
+  printf '<!-- last_updated: 2026-08-10 -->\n<!-- source_commit:deadbee reason:fixture evidence:fixture -->\n' > "$global_fixture/context/infrastructure.md"
+  git -C "$global_fixture" add context/infrastructure.md
+  git -C "$global_fixture" commit -qm 'record unresolved reviewed boundary'
+
+  run_global_history_fixture
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"source commit check failed"* ]]
+  [[ "$output" == *"timeout=5s/5s"* ]]
+  [[ "$output" != *"総合判定: OK"* ]]
 }

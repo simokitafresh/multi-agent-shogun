@@ -572,12 +572,12 @@ SH
 @test "CI pins file-internal jobs to one and leaves aggregate parallelism to run_tests" {
   workflow="$ROOT/.github/workflows/test.yml"
 
-  grep -Fq 'BATS_INNER_JOBS=1 \' "$workflow"
-  grep -Fq 'BATS_FILE_TIMEOUT_SECONDS=300 \' "$workflow"
+  grep -Eq '(export )?BATS_INNER_JOBS=1' "$workflow"
+  grep -Eq '(export )?BATS_FILE_TIMEOUT_SECONDS=300' "$workflow"
   grep -Fq 'timeout-minutes: 12' "$workflow"
   grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
   grep -Fq 'cancel-in-progress: true' "$workflow"
-  ! grep -Fq 'BATS_INNER_JOBS=8 \' "$workflow"
+  ! grep -Eq '(export )?BATS_INNER_JOBS=8' "$workflow"
   grep -Fq 'bash scripts/run_tests.sh push' "$workflow"
 }
 

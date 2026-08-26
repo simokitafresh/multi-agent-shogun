@@ -46,6 +46,19 @@ BULLETIN_STATE_DIR="${CONTEXT_FRESHNESS_BULLETIN_STATE_DIR:-$ALERT_STATE_DIR/bul
 # timeoutし、内容が新鮮でも判定不能BLOCKになった。360秒は実測上限+10%余裕の
 # bounded budgetであり、consumerはsnapshot hitならgit subprocess 0件のまま。
 GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-360}"
+# History snapshots live on ext4 and are keyed by the resolved source
+# generation inside the checker. Keep the directory explicit at the gate
+# boundary so cache-disabled gate output does not accidentally disable the
+# bounded source-history snapshot or select a caller-specific path.
+HISTORY_CACHE_DIR="${CONTEXT_FRESHNESS_HISTORY_CACHE_DIR:-/tmp/cfc-history-v1}"
+
+# Source-history classification also performs a small amount of post-check
+# ancestry/equivalence work.  Keep those git probes inside the same bounded
+# gate budget as the checker; otherwise a 9p stall in a valid source ALERT can
+# hang the gate after the bounded ledger has already completed.
+bounded_git() {
+    timeout --kill-after=1 "$GIT_TIMEOUT" git "$@"
+}
 
 HAS_ALERT=0
 HAS_BLOCK=0
@@ -113,14 +126,14 @@ context_commit_closes_source_alert() {
             | head -n 1
     )"
     [[ -n "$source_hash" ]] || return 1
-    git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
-    context_hash="$(git -C "$ROOT_DIR" log -1 --format=%H -- "$rel_path" 2>/dev/null || true)"
+    bounded_git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
+    context_hash="$(bounded_git -C "$ROOT_DIR" log -1 --format=%H -- "$rel_path" 2>/dev/null || true)"
     [[ "$context_hash" =~ ^[0-9a-f]{40}$ ]] || return 1
 
     # A context-writing commit is machine-checkable reflection evidence. Close
     # only candidates in its ancestry; newer/rewritten history remains stale.
-    git -C "$ROOT_DIR" merge-base --is-ancestor "$source_hash" "$context_hash" 2>/dev/null \
-        && git -C "$ROOT_DIR" merge-base --is-ancestor "$latest_hash" "$context_hash" 2>/dev/null
+    bounded_git -C "$ROOT_DIR" merge-base --is-ancestor "$source_hash" "$context_hash" 2>/dev/null \
+        && bounded_git -C "$ROOT_DIR" merge-base --is-ancestor "$latest_hash" "$context_hash" 2>/dev/null
 }
 
 # GA-493: a revert (or a divergent branch with the same effective source
@@ -142,7 +155,7 @@ source_commit_is_equivalent_to_recorded_boundary() {
     [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
     repo="${BASH_REMATCH[1]}"
     [[ -d "$repo" ]] || return 1
-    git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
+    bounded_git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
     [[ "$alert_line" =~ update_trigger=([^[:space:]]+) ]] || return 1
     trigger="${BASH_REMATCH[1]}"
 
@@ -166,8 +179,8 @@ source_commit_is_equivalent_to_recorded_boundary() {
     ((${#pathspecs[@]} > 0)) || return 1
 
     for marker in "${markers[@]}"; do
-        git -C "$repo" cat-file -e "${marker}^{commit}" 2>/dev/null || continue
-        if git -C "$repo" diff --quiet "$marker" "$latest_hash" -- "${pathspecs[@]}" 2>/dev/null; then
+        bounded_git -C "$repo" cat-file -e "${marker}^{commit}" 2>/dev/null || continue
+        if bounded_git -C "$repo" diff --quiet "$marker" "$latest_hash" -- "${pathspecs[@]}" 2>/dev/null; then
             return 0
         fi
     done
@@ -192,7 +205,7 @@ reflux_receipt_closes_source_alert() {
     [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
     repo="${BASH_REMATCH[1]}"
     [[ -d "$repo" ]] || return 1
-    git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
+    bounded_git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
 
     # Receipts accumulate because every scoped docs/research commit records its
     # own immutable fingerprint.  Checking only the first receipt makes every
@@ -648,7 +661,10 @@ warnings_output() {
         local path
         for path in \
             "$CHECK_SCRIPT" \
+            "$ROOT_DIR/scripts/gates/gate_context_freshness.sh" \
             "$ROOT_DIR/config/projects.yaml" \
+            "$ROOT_DIR/config/context_freshness_excludes.txt" \
+            "$ROOT_DIR/scripts/config/context_source_commits.tsv" \
             "$ROOT_DIR/context/cmd-chronicle.md" \
             "$ROOT_DIR/queue/archive/cmds"
         do
@@ -662,6 +678,51 @@ warnings_output() {
             sig_parts+=("$path_signature")
         done < <(find "$ROOT_DIR/context" -maxdepth 1 -type f -name '*.md' \
             -printf '%p:%T@:%s\n' 2>/dev/null | sort)
+        # A context cache is valid only for the same source-repository ref
+        # state. Context mtime alone cannot observe a new source commit, so
+        # include ref metadata for every configured project repository.
+        # Read git metadata directly: rev-parse would reintroduce synchronous
+        # 9p/git latency into the cache hot path.
+        source_repos=("$ROOT_DIR")
+        while IFS= read -r source_repo; do
+            [[ -n "$source_repo" && -d "$source_repo" ]] || continue
+            source_repos+=("$source_repo")
+        done < <(
+            sed -nE 's/^[[:space:]]+path:[[:space:]]*["'"'"']?([^"'"'"']+)["'"'"']?.*$/\1/p' \
+                "$ROOT_DIR/config/projects.yaml" \
+                "$ROOT_DIR"/projects/*.yaml 2>/dev/null | sort -u
+        )
+        for source_repo in "${source_repos[@]}"; do
+            [[ -d "$source_repo" ]] || continue
+            git_dir="$source_repo/.git"
+            if [[ -f "$git_dir" ]]; then
+                git_dir_marker="$(sed -nE 's/^gitdir:[[:space:]]*//p' "$git_dir" | head -n 1)"
+                if [[ -n "$git_dir_marker" ]]; then
+                    [[ "$git_dir_marker" = /* ]] || git_dir="$source_repo/$git_dir_marker"
+                    [[ "$git_dir_marker" = /* ]] && git_dir="$git_dir_marker"
+                fi
+            fi
+            git_dir="$(realpath -m "$git_dir" 2>/dev/null || printf '%s' "$git_dir")"
+            common_dir="$git_dir"
+            if [[ -f "$git_dir/commondir" ]]; then
+                common_marker="$(sed -n '1p' "$git_dir/commondir")"
+                [[ "$common_marker" = /* ]] || common_dir="$git_dir/$common_marker"
+                [[ "$common_marker" = /* ]] && common_dir="$common_marker"
+                common_dir="$(realpath -m "$common_dir" 2>/dev/null || printf '%s' "$common_dir")"
+            fi
+            for ref_path in HEAD packed-refs refs/remotes/origin/main refs/remotes/origin/master refs/heads/main refs/heads/master; do
+                if [[ -e "$git_dir/$ref_path" ]]; then
+                    sig_parts+=("source_ref=$source_repo:$ref_path:$(stat -c '%y:%s' "$git_dir/$ref_path" 2>/dev/null || printf 'unreadable')")
+                elif [[ -e "$common_dir/$ref_path" ]]; then
+                    sig_parts+=("source_ref=$source_repo:$ref_path:$(stat -c '%y:%s' "$common_dir/$ref_path" 2>/dev/null || printf 'unreadable')")
+                else
+                    sig_parts+=("source_ref=$source_repo:$ref_path:missing")
+                fi
+            done
+        done
+        sig_parts+=("dashboard_source_tip=${CFC_DASHBOARD_SOURCE_TIP:-}")
+        sig_parts+=("min_source_commits=${CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS:-1}")
+        sig_parts+=("checker_cache_ttl=${CFC_OUTPUT_CACHE_TTL:-}")
         sig_parts+=("git_timeout=${GIT_TIMEOUT}")
         local sig sig_hash
         sig="$(printf '%s|' "${sig_parts[@]}")"
@@ -692,13 +753,13 @@ warnings_output() {
         # its first run.  Rebuild a cache miss within this bounded gate budget so
         # a new source tip is checked now instead of emitting one false BLOCK and
         # only becoming usable on the next invocation (GA-301).
-        CFC_OUTPUT_CACHE_TTL=0 CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
+        CFC_OUTPUT_CACHE_TTL=0 CFC_GLOBAL_HISTORY_ENABLED=1 CFC_GLOBAL_HISTORY_BUILD_TIMEOUT="${CONTEXT_FRESHNESS_GLOBAL_HISTORY_BUILD_TIMEOUT:-120}" CFC_GLOBAL_HISTORY_CACHE_DIR="${CONTEXT_FRESHNESS_GLOBAL_HISTORY_CACHE_DIR:-/tmp/cfc-global-history-v1}" CFC_HISTORY_CACHE_DIR="$HISTORY_CACHE_DIR" CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
             CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" \
             bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
         mv "$tmp_cache" "$cache_file"
         cat "$cache_file"
     else
-        CFC_OUTPUT_CACHE_TTL=0 CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
+        CFC_OUTPUT_CACHE_TTL=0 CFC_GLOBAL_HISTORY_ENABLED=1 CFC_GLOBAL_HISTORY_BUILD_TIMEOUT="${CONTEXT_FRESHNESS_GLOBAL_HISTORY_BUILD_TIMEOUT:-120}" CFC_GLOBAL_HISTORY_CACHE_DIR="${CONTEXT_FRESHNESS_GLOBAL_HISTORY_CACHE_DIR:-/tmp/cfc-global-history-v1}" CFC_HISTORY_CACHE_DIR="$HISTORY_CACHE_DIR" CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
             CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" \
             bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
     fi
@@ -788,7 +849,7 @@ for rel_path in "${target_rel_paths[@]}"; do
     if [[ -n "${source_alerts[$rel_path]:-}" ]]; then
         if context_commit_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}" \
             || reflux_receipt_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}"; then
-            context_hash="$(git -C "$ROOT_DIR" log -1 --format=%h -- "$rel_path" 2>/dev/null || true)"
+            context_hash="$(bounded_git -C "$ROOT_DIR" log -1 --format=%h -- "$rel_path" 2>/dev/null || true)"
             echo "OK: ${basename_file} (${days_ago}日前更新、context commit ${context_hash} が検出済みsource候補を包含)"
             continue
         elif source_commit_is_equivalent_to_recorded_boundary "$rel_path" "${source_alerts[$rel_path]}"; then

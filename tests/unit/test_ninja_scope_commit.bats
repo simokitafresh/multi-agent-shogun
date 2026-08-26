@@ -1,15 +1,24 @@
 #!/usr/bin/env bats
 # test_necessity: ninja scope commitは他者stageを混入せず、指定scopeだけを原子的にcommitする。
 
+NINJA_SCOPE_BASE_REPO="$BATS_FILE_TMPDIR/ninja_scope_commit.base"
+
+setup_file() {
+    mkdir -p "$NINJA_SCOPE_BASE_REPO"
+    git -C "$NINJA_SCOPE_BASE_REPO" init -q
+    git -C "$NINJA_SCOPE_BASE_REPO" config user.email test@example.com
+    git -C "$NINJA_SCOPE_BASE_REPO" config user.name test
+    printf 'base\n' > "$NINJA_SCOPE_BASE_REPO/own.txt"
+    printf 'base\n' > "$NINJA_SCOPE_BASE_REPO/other.txt"
+    git -C "$NINJA_SCOPE_BASE_REPO" add own.txt other.txt
+    git -C "$NINJA_SCOPE_BASE_REPO" commit -qm initial
+}
+
 setup() {
     REPO="$(mktemp -d "$BATS_TMPDIR/ninja_scope_commit.XXXXXX")"
-    git -C "$REPO" init -q
+    git clone -q --local "$NINJA_SCOPE_BASE_REPO" "$REPO"
     git -C "$REPO" config user.email test@example.com
     git -C "$REPO" config user.name test
-    printf 'base\n' > "$REPO/own.txt"
-    printf 'base\n' > "$REPO/other.txt"
-    git -C "$REPO" add own.txt other.txt
-    git -C "$REPO" commit -qm initial
     HELPER="$BATS_TEST_DIRNAME/../../scripts/ninja_scope_commit.sh"
     # ninja_scope_commit.sh unconditionally sources scripts/lib/scope_path.sh
     # (SSOT for scope path normalization); every sandbox repo needs a copy.
@@ -61,6 +70,10 @@ PY
 
 teardown() {
     rm -rf "$REPO"
+}
+
+teardown_file() {
+    rm -rf "$NINJA_SCOPE_BASE_REPO"
 }
 
 @test "ninja task commit subject automatically identifies task_id" {

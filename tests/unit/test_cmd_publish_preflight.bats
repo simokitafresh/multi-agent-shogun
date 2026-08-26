@@ -87,3 +87,44 @@ assert_no_lesson_cap_block() {
     run grep -F '殿裁定2026-07-23 提案A' "$PUBLISH"
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: cmd_publishの外側経路を既存defense_overhead台帳へ恒久記録し、
+# 成功時の段別wall_msとpublish_totalが欠落しない不変量を守る。
+@test "AC1 contract: cmd_publish emits durable phase timing for the full publish path" {
+    local queue_file="$TEST_TMPDIR/shogun_to_karo.yaml"
+    local ledger="$TEST_TMPDIR/defense_overhead.jsonl"
+    local index="$TEST_TMPDIR/defense_overhead.sqlite3"
+    local save_stub="$TEST_TMPDIR/save_stub.sh"
+    local delegate_stub="$TEST_TMPDIR/delegate_stub.sh"
+    cat > "$queue_file" <<'YAML'
+cmd_publish_phase_probe:
+  status: draft
+  title: phase probe
+YAML
+    printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$save_stub"
+    printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$delegate_stub"
+
+    run env \
+        CMD_PUBLISH_QUEUE_FILE="$queue_file" \
+        CMD_PUBLISH_LAST_CMD_FILE="$TEST_TMPDIR/absent_last.txt" \
+        CMD_PUBLISH_CMD_SAVE_SCRIPT="$save_stub" \
+        CMD_PUBLISH_CMD_DELEGATE_SCRIPT="$delegate_stub" \
+        DEFENSE_OVERHEAD_LEDGER="$ledger" \
+        DEFENSE_OVERHEAD_INDEX="$index" \
+        bash "$PUBLISH" cmd_publish_phase_probe "probe"
+    [ "$status" -eq 0 ]
+    [ -s "$ledger" ]
+
+    run python3 - "$ledger" <<'PY'
+import json
+import sys
+
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
+ids = {row["check_id"] for row in rows if row.get("source") == "cmd_publish"}
+required = {"preflight", "save_gate", "promotion", "delegate", "publish_total"}
+assert required <= ids, (required, ids)
+assert all(row["wall_ms"] >= 0 for row in rows if row.get("source") == "cmd_publish")
+assert all(row["verdict"] == "PASS" for row in rows if row.get("source") == "cmd_publish")
+PY
+    [ "$status" -eq 0 ]
+}

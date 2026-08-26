@@ -209,9 +209,11 @@ PY
     done
     for i in 1 2 3; do
         eval "pid=\$pid_$i"
-        set +e
-        wait "$pid"; rc=$?
-        set -e
+        if wait "$pid"; then
+            rc=0
+        else
+            rc=$?
+        fi
         [ "$rc" -eq 2 ] || failures=$((failures + 1))
         [ -s "$TEST_TMPDIR/out.$i" ] || empty=$((empty + 1))
     done

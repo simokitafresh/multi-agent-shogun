@@ -1,4 +1,7 @@
 #!/usr/bin/env bats
+# test_necessity: tmux duplicate detection must alert only for multiple kernel-reported
+# servers on one socket, identify the reachable owner fail-closed, and deduplicate
+# unchanged alerts without issuing any process-stop operation.
 # test_necessity: only an actual restart_watchers owner may defer supervision;
 # an inherited lock held by another daemon must fail open to health checking.
 
@@ -8,7 +11,8 @@ setup() {
 }
 
 teardown() {
-    rm -f "$TEST_ROOT/lock"
+    rm -f "$TEST_ROOT/lock" "$TEST_ROOT/ss" "$TEST_ROOT/owner" \
+        "$TEST_ROOT/dedupe" "$TEST_ROOT/dedupe.lock"
     rmdir "$TEST_ROOT"
 }
 
@@ -86,4 +90,91 @@ teardown() {
     ' _ "$PROJECT_ROOT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"legacy_start=1 healthy_start=0 stale_start=1 replace_generation=1 parallel_winner=1"* ]]
+}
+
+@test "single tmux server remains silent" {
+    ss_fixture="$TEST_ROOT/ss"
+    owner_fixture="$TEST_ROOT/owner"
+    cat >"$ss_fixture" <<'EOF'
+u_str LISTEN 0 128 /tmp/tmux-1000/default 8700818 * 0 users:(("tmux: server",pid=3100416,fd=6))
+EOF
+    printf '%s\n' '/tmp/tmux-1000/default pid=3100416' >"$owner_fixture"
+    run bash -c '
+        export DAEMON_WATCHDOG_LIB_ONLY=1
+        export DAEMON_WATCHDOG_TMUX_SS_OUTPUT_FILE="$1"
+        export DAEMON_WATCHDOG_TMUX_OWNER_OUTPUT_FILE="$2"
+        export DAEMON_WATCHDOG_TMUX_DEDUPE_FILE="$3/dedupe"
+        source "$4/scripts/daemon_watchdog.sh"
+        notify() { printf "notify:%s\n" "$1"; }
+        check_tmux_duplicate_servers
+    ' _ "$ss_fixture" "$owner_fixture" "$TEST_ROOT" "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "duplicate tmux servers alert with current owner and old server" {
+    ss_fixture="$TEST_ROOT/ss"
+    owner_fixture="$TEST_ROOT/owner"
+    cat >"$ss_fixture" <<'EOF'
+u_str LISTEN 0 128 /tmp/tmux-1000/default 8700818 * 0 users:(("tmux: server",pid=826,fd=6))
+u_str LISTEN 0 128 /tmp/tmux-1000/default 8700819 * 0 users:(("tmux: server",pid=3100416,fd=7))
+EOF
+    printf '%s\n' '/tmp/tmux-1000/default pid=3100416' >"$owner_fixture"
+    run bash -c '
+        kills=0
+        kill() { kills=$((kills + 1)); }
+        export DAEMON_WATCHDOG_LIB_ONLY=1
+        export DAEMON_WATCHDOG_TMUX_SS_OUTPUT_FILE="$1"
+        export DAEMON_WATCHDOG_TMUX_OWNER_OUTPUT_FILE="$2"
+        export DAEMON_WATCHDOG_TMUX_DEDUPE_FILE="$3/dedupe"
+        source "$4/scripts/daemon_watchdog.sh"
+        notify() { printf "notify:%s\n" "$1"; }
+        check_tmux_duplicate_servers
+        test "$kills" -eq 0
+    ' _ "$ss_fixture" "$owner_fixture" "$TEST_ROOT" "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"notify:【watchdog/CRITICAL】TMUX-DUPLICATE-ALERT: socket=/tmp/tmux-1000/default owner=3100416 old=826"* ]]
+}
+
+@test "duplicate tmux servers fail closed when current owner is unknown" {
+    ss_fixture="$TEST_ROOT/ss"
+    owner_fixture="$TEST_ROOT/owner"
+    cat >"$ss_fixture" <<'EOF'
+u_str LISTEN 0 128 /tmp/tmux-1000/default 8700818 * 0 users:(("tmux: server",pid=826,fd=6))
+u_str LISTEN 0 128 /tmp/tmux-1000/default 8700819 * 0 users:(("tmux: server",pid=3100416,fd=7))
+EOF
+    : >"$owner_fixture"
+    run bash -c '
+        export DAEMON_WATCHDOG_LIB_ONLY=1
+        export DAEMON_WATCHDOG_TMUX_SS_OUTPUT_FILE="$1"
+        export DAEMON_WATCHDOG_TMUX_OWNER_OUTPUT_FILE="$2"
+        export DAEMON_WATCHDOG_TMUX_DEDUPE_FILE="$3/dedupe"
+        source "$4/scripts/daemon_watchdog.sh"
+        notify() { printf "notify:%s\n" "$1"; }
+        check_tmux_duplicate_servers
+    ' _ "$ss_fixture" "$owner_fixture" "$TEST_ROOT" "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"owner=unknown old=826,3100416"* ]]
+}
+
+@test "duplicate tmux alert is deduplicated until the event changes" {
+    ss_fixture="$TEST_ROOT/ss"
+    owner_fixture="$TEST_ROOT/owner"
+    cat >"$ss_fixture" <<'EOF'
+u_str LISTEN 0 128 /tmp/tmux-1000/default 8700818 * 0 users:(("tmux: server",pid=826,fd=6))
+u_str LISTEN 0 128 /tmp/tmux-1000/default 8700819 * 0 users:(("tmux: server",pid=3100416,fd=7))
+EOF
+    printf '%s\n' '/tmp/tmux-1000/default pid=3100416' >"$owner_fixture"
+    run bash -c '
+        export DAEMON_WATCHDOG_LIB_ONLY=1
+        export DAEMON_WATCHDOG_TMUX_SS_OUTPUT_FILE="$1"
+        export DAEMON_WATCHDOG_TMUX_OWNER_OUTPUT_FILE="$2"
+        export DAEMON_WATCHDOG_TMUX_DEDUPE_FILE="$3/dedupe"
+        source "$4/scripts/daemon_watchdog.sh"
+        notify() { printf "notify:%s\n" "$1"; }
+        check_tmux_duplicate_servers
+        check_tmux_duplicate_servers
+    ' _ "$ss_fixture" "$owner_fixture" "$TEST_ROOT" "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | grep -c '^notify:')" -eq 1 ]
 }

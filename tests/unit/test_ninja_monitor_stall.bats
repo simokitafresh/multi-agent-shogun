@@ -402,6 +402,7 @@ wait "$maintenance_pid"
         root="$BATS_TEST_TMPDIR/hot-reload-watch"
         STATE_DIR="$root/state"
         LOG="$root/monitor.log"
+        NINJA_MONITOR_OWNER_FILE="$STATE_DIR/ninja_monitor.owner"
         script_path="$root/ninja_monitor.sh"
         capture="$root/launch.capture"
         generation="generation-live"
@@ -426,7 +427,13 @@ wait "$maintenance_pid"
         started=$(date +%s%3N)
         start_ninja_monitor_hot_reload_watch
         watcher_pid="$NINJA_MONITOR_HOT_RELOAD_WATCH_PID"
-        watcher_cmd=$(tr "\0" " " < "/proc/$watcher_pid/cmdline")
+        watcher_cmd=""
+        for _ in $(seq 1 100); do
+            [ -r "/proc/$watcher_pid/cmdline" ] && \
+                watcher_cmd=$(tr "\0" " " < "/proc/$watcher_pid/cmdline")
+            [[ "$watcher_cmd" == *"shogun-hot-reload-watch"* ]] && break
+            sleep 0.02
+        done
         [[ "$watcher_cmd" == *"shogun-hot-reload-watch"* ]]
         [[ "$watcher_cmd" != *"ninja_monitor.sh"* ]]
         sleep 0.1
@@ -443,6 +450,17 @@ wait "$maintenance_pid"
         test -d "/proc/$$"
         printf "successor=1 old_generation_alive=1 elapsed_ms=%s\n" "$elapsed"
     '
+    if [ "$status" -ne 0 ]; then
+        printf 'HOT_RELOAD_FAILURE_OUTPUT_BEGIN\n%s\nHOT_RELOAD_FAILURE_OUTPUT_END\n' "$output" >&3
+        log_path="$BATS_TEST_TMPDIR/hot-reload-watch/monitor.log"
+        if [ -f "$log_path" ]; then
+            printf 'HOT_RELOAD_FAILURE_LOG_BEGIN\n' >&3
+            cat "$log_path" >&3
+            printf 'HOT_RELOAD_FAILURE_LOG_END\n' >&3
+        else
+            printf 'HOT_RELOAD_FAILURE_LOG_MISSING path=%s\n' "$log_path" >&3
+        fi
+    fi
     [ "$status" -eq 0 ]
     [[ "$output" == successor=1\ old_generation_alive=1\ elapsed_ms=* ]]
 }

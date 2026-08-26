@@ -44,6 +44,55 @@ CMD_PUBLISH_GIT_ROOT="${CMD_PUBLISH_GIT_ROOT:-$PROJECT_DIR}"
 
 source "$PROJECT_DIR/scripts/lib/yaml_field_set.sh"
 source "$PROJECT_DIR/scripts/lib/cmd_shared_preflight.sh"
+source "$PROJECT_DIR/scripts/lib/defense_overhead_writer.sh"
+
+CMD_PUBLISH_PHASE_EVENTS=()
+CMD_PUBLISH_PHASE_LAST_US=""
+CMD_PUBLISH_PHASE_NAME=""
+CMD_PUBLISH_RUN_ID=""
+CMD_PUBLISH_TOTAL_T0_US="${EPOCHREALTIME/./}"
+CMD_PUBLISH_TOTAL_T0_US="${CMD_PUBLISH_TOTAL_T0_US:0:16}"
+
+cmd_publish_phase_start() {
+    local next_name="${1:-}" now_us wall_ms
+    [[ "$next_name" =~ ^[A-Za-z0-9_.:-]+$ ]] || return 0
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    if [[ -n "${CMD_PUBLISH_PHASE_NAME:-}" && -n "${CMD_PUBLISH_PHASE_LAST_US:-}" ]]; then
+        wall_ms=$(( (now_us - CMD_PUBLISH_PHASE_LAST_US + 999) / 1000 ))
+        CMD_PUBLISH_PHASE_EVENTS+=("$CMD_PUBLISH_PHASE_NAME" "$wall_ms")
+    fi
+    CMD_PUBLISH_PHASE_NAME="$next_name"
+    CMD_PUBLISH_PHASE_LAST_US="$now_us"
+}
+
+cmd_publish_record_timing() {
+    local status=$? now_us total_ms verdict i phase wall_ms
+    trap - EXIT
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    if [[ -n "${CMD_PUBLISH_PHASE_NAME:-}" && -n "${CMD_PUBLISH_PHASE_LAST_US:-}" ]]; then
+        wall_ms=$(( (now_us - CMD_PUBLISH_PHASE_LAST_US + 999) / 1000 ))
+        CMD_PUBLISH_PHASE_EVENTS+=("$CMD_PUBLISH_PHASE_NAME" "$wall_ms")
+    fi
+    if (( status == 0 )); then verdict=PASS; else verdict=FAIL; fi
+    local -a batch=()
+    for (( i=0; i<${#CMD_PUBLISH_PHASE_EVENTS[@]}; i+=2 )); do
+        phase="${CMD_PUBLISH_PHASE_EVENTS[$i]}"
+        wall_ms="${CMD_PUBLISH_PHASE_EVENTS[$((i+1))]}"
+        batch+=(cmd_publish "$phase" "$wall_ms" "$verdict" "${CMD_PUBLISH_RUN_ID}-${phase}")
+    done
+    if [[ -n "${CMD_PUBLISH_TOTAL_T0_US:-}" ]]; then
+        total_ms=$(( (now_us - CMD_PUBLISH_TOTAL_T0_US + 999) / 1000 ))
+        batch+=(cmd_publish publish_total "$total_ms" "$verdict" "${CMD_PUBLISH_RUN_ID}-publish_total")
+    fi
+    defense_overhead_write_batch_async "${batch[@]}" || true
+    defense_overhead_drain_async || true
+    return "$status"
+}
+
+CMD_PUBLISH_RUN_ID="${CMD_ID}-$$-${CMD_PUBLISH_TOTAL_T0_US}"
+trap cmd_publish_record_timing EXIT
 
 count_cmd_save_blocks_for_cmd() {
     local target_cmd_id="${1:-}"
@@ -184,13 +233,19 @@ ensure_cmd_publish_default_fields() {
     ' "$SHOGUN_TO_KARO" 2>/dev/null || true)"
 
     local field
+    local -a missing_updates=()
     for field in $missing_fields; do
-        yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "$field" "none" || {
-            echo "ERROR: failed to set ${field}=none for $CMD_ID" >&2
+        missing_updates+=("${field}=none")
+    done
+    if [[ ${#missing_updates[@]} -gt 0 ]]; then
+        yaml_field_set_batch "$SHOGUN_TO_KARO" "$CMD_ID" "${missing_updates[@]}" || {
+            echo "ERROR: failed to set default fields for $CMD_ID" >&2
             return 1
         }
-        echo "OK: $CMD_ID ${field}未記入 → ${field}: none を自動挿入"
-    done
+        for field in $missing_fields; do
+            echo "OK: $CMD_ID ${field}未記入 → ${field}: none を自動挿入"
+        done
+    fi
 }
 
 run_cmd_save_with_block_summary() {
@@ -354,6 +409,7 @@ warn_if_q11_evidence_paths_changed() {
 
 # --- Step 1: cmd_save.sh gate検証 ---
 echo "=== [0/3] cmd_publish pre-flight: $CMD_ID ==="
+cmd_publish_phase_start "preflight"
 run_publish_preflight
 
 # --- Step 0.5: on_hold はcmd_save成功まで保持 ---
@@ -371,6 +427,7 @@ fi
 ensure_cmd_publish_default_fields
 
 echo "=== [1/3] cmd_save.sh gate検証: $CMD_ID ==="
+cmd_publish_phase_start "save_gate"
 if ! run_cmd_save_with_block_summary; then
     [ "$promoted_from_on_hold" = true ] && echo "KEEP: $CMD_ID status=on_hold"
     echo "BLOCK: cmd_save.sh failed for $CMD_ID. 修正してから再実行せよ。" >&2
@@ -392,6 +449,7 @@ fi
 
 # --- Step 2: draft → pending 昇格 ---
 echo "=== [2/3] pending昇格: $CMD_ID ==="
+cmd_publish_phase_start "promotion"
 # current_status は Step 0.5 (L368) で取得済み。再読み不要(Bug2修正: 28ms削減)
 
 if [ "$current_status" = "pending" ] || [ "$current_status" = "delegated" ]; then
@@ -409,5 +467,6 @@ fi
 
 # --- Step 3: cmd_delegate.sh 委任 ---
 echo "=== [3/3] cmd_delegate.sh 委任: $CMD_ID ==="
+cmd_publish_phase_start "delegate"
 warn_if_q11_evidence_paths_changed
 bash "$CMD_DELEGATE_SCRIPT" "$CMD_ID" "$MESSAGE"

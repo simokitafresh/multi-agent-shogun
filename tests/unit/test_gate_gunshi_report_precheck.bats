@@ -314,6 +314,7 @@ YAML
   cat > "$TMP_DIR/report.yaml" <<'YAML'
 worker_id: kagemaru
 parent_cmd: cmd_fixture
+command: tests/unit/not_target.bats
 files_modified:
   - {path: scripts/gates/gate_gunshi_report_precheck.sh, change: fixture}
 binary_checks:
@@ -325,6 +326,7 @@ YAML
     GUNSHI_BATCH_GIT_CACHE_TRACE_FILE="$trace" \
     GUNSHI_PRECHECK_CACHE_DIR="$TMP_DIR/full-cache-1" \
     GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    GUNSHI_PRECHECK_ONLY=SG-PRE25 \
     bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -ne 0 ]
   grep -q '^miss:parent_numstat$' "$trace"
@@ -334,6 +336,7 @@ YAML
     GUNSHI_BATCH_GIT_CACHE_TRACE_FILE="$trace" \
     GUNSHI_PRECHECK_CACHE_DIR="$TMP_DIR/full-cache-2" \
     GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    GUNSHI_PRECHECK_ONLY=SG-PRE25 \
     bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -ne 0 ]
   grep -q '^hit:parent_numstat$' "$trace"
@@ -344,6 +347,7 @@ YAML
     GUNSHI_BATCH_GIT_CACHE_TRACE_FILE="$trace" \
     GUNSHI_PRECHECK_CACHE_DIR="$TMP_DIR/full-cache-3" \
     GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    GUNSHI_PRECHECK_ONLY=SG-PRE25 \
     bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -ne 0 ]
   [ "$(grep -c '^miss:parent_numstat$' "$trace")" -ge 2 ]
