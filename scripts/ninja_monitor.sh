@@ -7926,12 +7926,13 @@ auto_request_report_review() {
     gate_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
     marker="$gate_dir/review_request.${report_base}.done"
     mkdir -p "$gate_dir"
+    mkdir -p "$SCRIPT_DIR/logs"
     exec {lock_fd}>"$gate_dir/review_request.lock"
     flock -n "$lock_fd" || { eval "exec ${lock_fd}>&-"; return 0; }
     if [ ! -f "$marker" ]; then
         if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
             "忍者報告の自動レビュー依頼。report=${report_base} parent_cmd=${parent_cmd}" \
-            review_draft ninja_monitor review_request >/dev/null 2>>"$LOG_DIR/report_review_auto_request.err"; then
+            review_draft ninja_monitor review_request >/dev/null 2>>"$SCRIPT_DIR/logs/report_review_auto_request.err"; then
             printf 'timestamp: %s\nreport: %s\nparent_cmd: %s\n' \
                 "$(date -Iseconds)" "$report_base" "$parent_cmd" > "$marker"
             log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd"
