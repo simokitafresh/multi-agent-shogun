@@ -143,13 +143,223 @@ preserve_task_worktree_tracked_runtime_artifacts() {
     fi
 }
 
+# A no-code task has no source-only publication receipt by design.  Recover
+# its deploy base only when the report contract, linked worktree, and current
+# remote ancestry all prove that the base itself is the published identity.
+recover_task_worktree_nocode_base_commit() {
+    local marker="$1" cmd_id="$2" repo="$3" identity worktree tip upstream current_tip
+    identity=$(python3 - "$PROJECT_DIR" "$marker" "$cmd_id" "$repo" <<'PY'
+import json
+import pathlib
+import re
+import sys
+import yaml
+
+project_dir, marker_path, expected_cmd, expected_repo = sys.argv[1:]
+project = pathlib.Path(project_dir).resolve()
+try:
+    marker = json.load(open(marker_path, encoding="utf-8"))
+except (OSError, TypeError, ValueError):
+    raise SystemExit(1)
+task_id = str(marker.get("task_id") or "")
+remote_tip = str(marker.get("remote_tip") or "")
+worktree = str(marker.get("worktree") or "")
+if (
+    marker.get("version") != 1
+    or marker.get("state") != "active"
+    or marker.get("parent_cmd") != expected_cmd
+    or marker.get("repo") != expected_repo
+    or str(marker.get("published_commit") or "")
+    or not task_id
+    or not worktree
+    or not re.fullmatch(r"[0-9a-f]{40}", remote_tip)
+):
+    raise SystemExit(1)
+
+manifest_path = project / "queue" / "gates" / expected_cmd / "single_review_manifest.json"
+try:
+    manifest = json.load(open(manifest_path, encoding="utf-8"))
+except (OSError, TypeError, ValueError):
+    raise SystemExit(1)
+reports = {
+    str(item.get("report") or "")
+    for item in manifest.get("reviews", [])
+    if isinstance(item, dict) and item.get("cmd") == expected_cmd
+}
+reports.discard("")
+if len(reports) != 1:
+    raise SystemExit(1)
+report_rel = reports.pop()
+logical = project / report_rel
+try:
+    resolved = logical.resolve(strict=True)
+except OSError:
+    raise SystemExit(1)
+allowed_roots = [
+    (project / "queue" / "reports").resolve(),
+    (project / "queue" / "archive" / "reports").resolve(),
+]
+if not any(resolved == root or root in resolved.parents for root in allowed_roots):
+    raise SystemExit(1)
+try:
+    report = yaml.safe_load(logical.read_text(encoding="utf-8")) or {}
+except (OSError, TypeError, ValueError, yaml.YAMLError):
+    raise SystemExit(1)
+contract = report.get("commit_contract")
+task_type = str(report.get("task_type") or "").strip().lower()
+no_code_types = {
+    "recon", "recon2", "scout", "verification", "verify", "readonly",
+    "read_only", "no-code", "no_code", "decision", "data_readonly",
+}
+if (
+    report.get("parent_cmd") != expected_cmd
+    or report.get("task_id") != task_id
+    or str(report.get("status") or "").lower() not in {"completed", "done"}
+    or str(report.get("verdict") or "").upper() != "PASS"
+    or not isinstance(contract, dict)
+    or contract.get("required") is not False
+    or task_type not in no_code_types
+):
+    raise SystemExit(1)
+print(f"{worktree}\t{remote_tip}")
+PY
+    ) || return 1
+    IFS=$'\t' read -r worktree tip <<< "$identity"
+    [ -d "$worktree" ] || return 1
+    [ -z "$(git -C "$worktree" status --porcelain 2>/dev/null)" ] || return 1
+    [ "$(git -C "$worktree" rev-parse HEAD 2>/dev/null)" = "$tip" ] || return 1
+    upstream=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
+    current_tip=$(git -C "$repo" rev-parse "$upstream" 2>/dev/null) || return 1
+    [[ "$current_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
+    git -C "$repo" merge-base --is-ancestor "$tip" "$current_tip" 2>/dev/null || return 1
+    python3 - "$marker" "$tip" <<'PY'
+import json
+import os
+import sys
+import tempfile
+import time
+
+marker, published_commit = sys.argv[1:]
+with open(marker, encoding="utf-8") as handle:
+    data = json.load(handle)
+if data.get("state") != "active" or str(data.get("published_commit") or ""):
+    raise SystemExit(1)
+data["published_commit"] = published_commit
+data["published_recovered_at_ns"] = time.time_ns()
+data["published_recovery_source"] = "verified_no_code_base"
+directory = os.path.dirname(marker)
+fd, temporary = tempfile.mkstemp(prefix=".task_worktree_nocode_recovered.", dir=directory)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump(data, handle, sort_keys=True)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, marker)
+except Exception:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
+PY
+    echo "[archive] task worktree publication recovered from verified no-code base: commit=$tip"
+}
+
+# A formal FAIL close never creates CLEAR.  Bind the Karo ACCEPT record to the
+# exact failed report bytes so cleanup cannot mistake an RC, stale report, or
+# fabricated free-form marker for terminal evidence.
+task_worktree_formal_fail_close_valid() {
+    local cmd_id="$1"
+    python3 - "$PROJECT_DIR" "$cmd_id" <<'PY'
+import glob
+import hashlib
+import pathlib
+import re
+import sys
+import yaml
+
+project_dir, expected_cmd = sys.argv[1:]
+project = pathlib.Path(project_dir).resolve()
+approval_glob = project / "queue" / "gates" / expected_cmd / "review_approvals" / "reports" / "*" / "karo.yaml"
+for approval_name in glob.glob(str(approval_glob)):
+    try:
+        approval = yaml.safe_load(pathlib.Path(approval_name).read_text(encoding="utf-8")) or {}
+    except (OSError, TypeError, ValueError, yaml.YAMLError):
+        continue
+    generation = str(approval.get("generation") or "")
+    report_rel = str(approval.get("report") or "")
+    if (
+        approval.get("role") != "karo"
+        or approval.get("result") != "ACCEPT"
+        or not re.fullmatch(r"[0-9a-f]{64}", generation)
+        or not report_rel
+    ):
+        continue
+    logical = project / report_rel
+    try:
+        resolved = logical.resolve(strict=True)
+        raw = logical.read_bytes()
+        report = yaml.safe_load(raw) or {}
+    except (OSError, TypeError, ValueError, yaml.YAMLError):
+        continue
+    allowed_roots = [
+        (project / "queue" / "reports").resolve(),
+        (project / "queue" / "archive" / "reports").resolve(),
+    ]
+    if not any(resolved == root or root in resolved.parents for root in allowed_roots):
+        continue
+    if hashlib.sha256(raw).hexdigest() != generation:
+        continue
+    if (
+        report.get("parent_cmd") == expected_cmd
+        and str(report.get("status") or "").lower() == "failed"
+        and str(report.get("verdict") or "").upper() == "FAIL"
+    ):
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+task_worktree_clear_receipt_valid() {
+    local cmd_id="$1"
+    python3 - "$PROJECT_DIR/queue/gates/$cmd_id/gate_worker.clear.json" "$cmd_id" "${SHOGUN_COMPLETION_GENERATION:-}" <<'PY'
+import json
+import re
+import sys
+
+path, expected_cmd, expected_generation = sys.argv[1:]
+try:
+    data = json.load(open(path, encoding="utf-8"))
+except (OSError, TypeError, ValueError):
+    raise SystemExit(1)
+if (
+    not isinstance(data, dict)
+    or data.get("version") != 1
+    or data.get("state") != "clear"
+    or data.get("cmd_id") != expected_cmd
+    or data.get("completion_generation") != expected_generation
+    or not re.fullmatch(r"[0-9a-f]{64}", str(data.get("completion_generation") or ""))
+):
+    raise SystemExit(1)
+try:
+    if int(data.get("persisted_at_ns")) <= 0:
+        raise SystemExit(1)
+except (TypeError, ValueError):
+    raise SystemExit(1)
+PY
+}
+
 # Recover a source-only publication that won the race with archive cleanup.
 # The durable receipt is accepted only for the exact command, completion
 # generation, repository, and verified remote tip; ambiguity remains BLOCK.
 recover_task_worktree_published_commit() {
     local marker="$1" cmd_id="$2" repo="$3" receipt tip
     receipt="$PROJECT_DIR/queue/gates/${cmd_id}/source_only_publish.receipt.json"
-    [ -f "$receipt" ] || return 1
+    if [ ! -f "$receipt" ]; then
+        recover_task_worktree_nocode_base_commit "$marker" "$cmd_id" "$repo"
+        return $?
+    fi
     tip=$(python3 - "$receipt" "$cmd_id" "${SHOGUN_COMPLETION_GENERATION:-}" "$repo" <<'PY'
 import json
 import re
@@ -234,12 +444,19 @@ if [ "${ARCHIVE_TASK_WORKTREE_CLEANUP_ONLY:-0}" = "1" ] && [ -n "$CMD_ID" ]; the
     IFS=$'\t' read -r _early_repo _early_worktree _early_state _early_published <<< "$_early_meta"
     if [ "$_early_state" != "cleaned" ]; then
         [ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" = "1" ] || { echo "[archive] BLOCK: CLEAR receipt required" >&2; exit 1; }
-        python3 -c 'import json,re,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="clear" and d.get("cmd_id")==sys.argv[2] and re.fullmatch(r"[0-9a-f]{64}",str(d.get("completion_generation") or "")) and (not sys.argv[3] or d.get("completion_generation")==sys.argv[3]) and int(d.get("persisted_at_ns"))>0' "$PROJECT_DIR/queue/gates/$CMD_ID/gate_worker.clear.json" "$CMD_ID" "${SHOGUN_COMPLETION_GENERATION:-}" || { echo "[archive] BLOCK: invalid CLEAR receipt" >&2; exit 1; }
-        if [ -z "$_early_published" ]; then
+        _early_fail_close=0
+        if ! task_worktree_clear_receipt_valid "$CMD_ID"; then
+            task_worktree_formal_fail_close_valid "$CMD_ID" || { echo "[archive] BLOCK: invalid CLEAR receipt and no formal FAIL_CLOSE evidence" >&2; exit 1; }
+            _early_fail_close=1
+            echo "[archive] FAIL_CLOSE: formal Karo ACCEPT + failed report; cleanup without CLEAR fabrication"
+        fi
+        if [ "$_early_fail_close" = "0" ] && [ -z "$_early_published" ]; then
             recover_task_worktree_published_commit "$_early_marker" "$CMD_ID" "$_early_repo" || { echo "[archive] BLOCK: published commit receipt missing, mismatched, or unresolved" >&2; exit 1; }
             _early_published=$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1],encoding="utf-8")).get("published_commit") or ""))' "$_early_marker")
         fi
-        [[ "$_early_published" =~ ^[0-9a-f]{40}$ ]] && git -C "$_early_repo" cat-file -e "${_early_published}^{commit}" 2>/dev/null || { echo "[archive] BLOCK: published commit missing or unresolved" >&2; exit 1; }
+        if [ "$_early_fail_close" = "0" ]; then
+            [[ "$_early_published" =~ ^[0-9a-f]{40}$ ]] && git -C "$_early_repo" cat-file -e "${_early_published}^{commit}" 2>/dev/null || { echo "[archive] BLOCK: published commit missing or unresolved" >&2; exit 1; }
+        fi
         preserve_task_worktree_tracked_runtime_artifacts "$_early_worktree" || exit 1
         [ -z "$(git -C "$_early_worktree" status --porcelain 2>/dev/null)" ] || { echo "[archive] BLOCK: task worktree dirty" >&2; exit 1; }
         preserve_task_worktree_ignored_artifacts "$_early_worktree" || exit 1
@@ -2462,18 +2679,29 @@ cleanup_task_worktree_marker() {
     [ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" = "1" ] || {
         echo "[archive] BLOCK: task worktree cleanup requires CLEAR receipt" >&2; return 1;
     }
+    local fail_close=0
+    if ! task_worktree_clear_receipt_valid "$CMD_ID"; then
+        task_worktree_formal_fail_close_valid "$CMD_ID" || {
+            echo "[archive] BLOCK: task worktree cleanup has neither valid CLEAR nor formal FAIL_CLOSE evidence" >&2
+            return 1
+        }
+        fail_close=1
+        echo "[archive] FAIL_CLOSE: formal Karo ACCEPT + failed report; cleanup without CLEAR fabrication"
+    fi
     local published_commit
     published_commit=$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1],encoding="utf-8")).get("published_commit") or ""))' "$marker")
-    if [ -z "$published_commit" ]; then
+    if [ "$fail_close" = "0" ] && [ -z "$published_commit" ]; then
         recover_task_worktree_published_commit "$marker" "$CMD_ID" "$repo" || {
             echo "[archive] BLOCK: published commit receipt missing, mismatched, or unresolved" >&2
             return 1
         }
         published_commit=$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1],encoding="utf-8")).get("published_commit") or ""))' "$marker")
     fi
-    [[ "$published_commit" =~ ^[0-9a-f]{40}$ ]] && git -C "$repo" cat-file -e "${published_commit}^{commit}" 2>/dev/null || {
-        echo "[archive] BLOCK: published commit receipt missing or unresolved" >&2; return 1;
-    }
+    if [ "$fail_close" = "0" ]; then
+        [[ "$published_commit" =~ ^[0-9a-f]{40}$ ]] && git -C "$repo" cat-file -e "${published_commit}^{commit}" 2>/dev/null || {
+            echo "[archive] BLOCK: published commit receipt missing or unresolved" >&2; return 1;
+        }
+    fi
     preserve_task_worktree_tracked_runtime_artifacts "$worktree" || return 1
     if [ -n "$(git -C "$worktree" status --porcelain 2>/dev/null)" ]; then
         echo "[archive] BLOCK: task worktree dirty; retaining path=$worktree" >&2; return 1
@@ -2494,35 +2722,12 @@ cleanup_task_worktree_marker() {
 if [ -n "$CMD_ID" ]; then
     mkdir -p "$PROJECT_DIR/queue/gates/${CMD_ID}"
     _clear_marker="$PROJECT_DIR/queue/gates/${CMD_ID}/gate_worker.clear.json"
-    if [ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" = "1" ] && ! python3 - "$_clear_marker" "$CMD_ID" "${SHOGUN_COMPLETION_GENERATION:-}" <<'PY'
-import json
-import re
-import sys
-
-path, expected_cmd, expected_generation = sys.argv[1:]
-try:
-    with open(path, encoding="utf-8") as fh:
-        data = json.load(fh)
-except (OSError, ValueError, TypeError):
-    raise SystemExit(1)
-if not isinstance(data, dict) or data.get("version") != 1 or data.get("state") != "clear":
-    raise SystemExit(1)
-if data.get("cmd_id") != expected_cmd:
-    raise SystemExit(1)
-generation = str(data.get("completion_generation") or "")
-if not re.fullmatch(r"[0-9a-f]{64}", generation):
-    raise SystemExit(1)
-if expected_generation and generation != expected_generation:
-    raise SystemExit(1)
-try:
-    if int(data.get("persisted_at_ns")) <= 0:
-        raise SystemExit(1)
-except (TypeError, ValueError):
-    raise SystemExit(1)
-PY
-    then
-        echo "[archive] BLOCK: durable gate CLEAR receipt missing or invalid for ${CMD_ID}" >&2
-        exit 1
+    if [ "${ARCHIVE_REQUIRE_CLEAR_RECEIPT:-0}" = "1" ] && ! task_worktree_clear_receipt_valid "$CMD_ID"; then
+        task_worktree_formal_fail_close_valid "$CMD_ID" || {
+            echo "[archive] BLOCK: durable gate CLEAR receipt missing or invalid for ${CMD_ID}" >&2
+            exit 1
+        }
+        echo "[archive] FAIL_CLOSE: durable formal evidence accepted without creating CLEAR for ${CMD_ID}"
     fi
     cleanup_task_worktree_marker || exit 1
     _archive_event_id="completion-finalize-archive-${CMD_ID}-${SHOGUN_COMPLETION_GENERATION}"
