@@ -3713,6 +3713,47 @@ check_research_baseline_warn() {
     fi
 }
 
+# T25: a fixed historical target is a reporting hint, not a stop condition.
+# Once a command starts declaring the measurement contract explicitly, all
+# three self-measurement fields become mandatory; an incomplete contract is a
+# real input defect and therefore BLOCKs. Legacy commands with fixed figures
+# but no contract remain WARN-only so cmd_save can be adopted incrementally.
+check_dynamic_measurement_contract() {
+    local search_text="${1:-${CMD_BLOCK_NC:-}}"
+    [[ -n "$search_text" ]] || return 0
+
+    if ! grep -Eqi '正本[^[:cntrl:]]{0,40}秒|件数厳密一致|±[0-9]+%|[0-9]+秒([[:space:]]*(以内|未満|固定))' <<< "$search_text"; then
+        return 0
+    fi
+
+    local explicit=0 missing=()
+    local field
+    for field in measurement_environment before after measurement_command; do
+        if grep -qE "^[[:space:]]*${field}:[[:space:]]*" <<< "$search_text"; then
+            explicit=1
+        fi
+    done
+
+    if [ "$explicit" -eq 0 ]; then
+        echo "WARNING(T25): 固定基準値だけのACは停止条件にしない。before/after/measurement_commandを同一環境で自己計測し、差異は報告して継続せよ" >&2
+        record_warn_reason "固定基準値のみのACはWARN。同一環境before/after自己計測へ変換せよ" "check=dynamic_measurement_fixed_baseline"
+        return 0
+    fi
+
+    for field in before after measurement_command; do
+        if ! grep -qE "^[[:space:]]*${field}:[[:space:]]*[^[:space:]]" <<< "$search_text"; then
+            missing+=("$field")
+        fi
+    done
+    if [ "${#missing[@]}" -gt 0 ]; then
+        local missing_text
+        missing_text=$(printf '%s, ' "${missing[@]}")
+        missing_text="${missing_text%, }"
+        echo "BLOCK(T25): 自己計測欄が欠落しています: ${missing_text}。before/after/measurement_commandを埋めよ" >&2
+        record_block_reason "T25 self-measurement fields missing: ${missing_text}" "check=dynamic_measurement_fields"
+    fi
+}
+
 check_q6_not_hiding_warn() {
     if ! cmd_block_has_field "quality_gate.q6_not_hiding"; then
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
@@ -4428,6 +4469,8 @@ QG_TEMPLATE
 
     # LG022 gate: 研究cmdにbaseline無し→WARN
     check_research_baseline_warn
+    # T25: fixed values warn; explicit but incomplete self-measurement blocks.
+    check_dynamic_measurement_contract "$CMD_BLOCK_NC"
 
     # q5_verified_source: 存在チェックはpreflight済み。以下は内容検証のみ
     # q5検証レベル分類（cmd_1692: code_readingのみはBLOCK）

@@ -8802,6 +8802,38 @@ fi
 source "$_dt_modifiers_path"
 unset _dt_modifiers_path
 
+# Active definition: the historical cluster-I body below is retained only for
+# static extraction compatibility, while the modular entrypoint needs this
+# contract available after all runtime modules have been sourced.
+inject_dynamic_measurement_contract() {
+    local task_file="$1"
+    local ninja_name="${2:-${NINJA_NAME:-ninja}}"
+    local before after measurement_command measurement_environment
+    local measurement_policy safety_boundary fixed_baseline_policy
+    local -a updates=()
+
+    [ -f "$task_file" ] || return 0
+    before=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "before" "" 2>/dev/null || true)
+    after=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "after" "" 2>/dev/null || true)
+    measurement_command=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "measurement_command" "" 2>/dev/null || true)
+    measurement_environment=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "measurement_environment" "" 2>/dev/null || true)
+    measurement_policy=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "measurement_policy" "" 2>/dev/null || true)
+    safety_boundary=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "safety_boundary" "" 2>/dev/null || true)
+    fixed_baseline_policy=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "fixed_baseline_policy" "" 2>/dev/null || true)
+
+    [ -n "$before" ] || updates+=("before=同一環境で変更前の実測値を記録し、環境fingerprintを添える")
+    [ -n "$after" ] || updates+=("after=同一環境で変更後の実測値を記録し、beforeと同じmeasurement_commandを使う")
+    [ -n "$measurement_command" ] || updates+=("measurement_command=bash scripts/run_tests.sh task queue/tasks/${ninja_name}.yaml")
+    [ -n "$measurement_environment" ] || updates+=("measurement_environment=beforeとafterは同一環境・同一入力・同一timeoutで実行")
+    [ -n "$measurement_policy" ] || updates+=("measurement_policy=before/afterの一次実測をreportへ記録し、固定値との差異は報告して継続")
+    [ -n "$fixed_baseline_policy" ] || updates+=("fixed_baseline_policy=固定基準値はWARNのみ。正本の固定秒数・件数厳密一致・±20%で停止しない")
+    [ -n "$safety_boundary" ] || updates+=("safety_boundary=自己計測欄欠落と安全底線違反は従来どおりBLOCK")
+
+    [ "${#updates[@]}" -gt 0 ] || return 0
+    yaml_field_set_batch "$task_file" "task" "${updates[@]}" || return 1
+    log "[MEASUREMENT_CONTRACT] same-environment before/after contract injected for ${ninja_name} (${#updates[@]} fields)"
+}
+
 
 if false; then
 # ─── preflight gate artifact生成（cmd_407: missing_gate BLOCK率削減） ───
@@ -10666,6 +10698,7 @@ deploy_task_apply_task_mutations() {
     inject_seam_contract "$task_file" || return 1
     inject_code_location_contract "$task_file" || return 1
     inject_scope_contract_fields "$task_file" || return 1
+    inject_dynamic_measurement_contract "$task_file" "$ninja_name" || return 1
 
     local task_id parent_cmd project _ac_task_id report_filename
     deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template" "$task_file" "$ninja_name" || return 1

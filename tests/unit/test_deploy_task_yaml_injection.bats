@@ -2954,6 +2954,35 @@ PY
   [[ "$output" == DEPLOY_BEHAVIOR_OK* ]]
 }
 
+# test_necessity: every deployed task must expose the same-environment
+# before/after/measurement_command contract so mutable snapshots cannot become
+# a hidden hard stop while self-measurement remains reviewable.
+@test "deploy injects same-environment dynamic measurement contract" {
+  local tmpdir="$BATS_TEST_TMPDIR/dynamic-measurement"
+  mkdir -p "$tmpdir"
+  cat > "$tmpdir/task.yaml" <<'YAML'
+task:
+  title: dynamic baseline contract fixture
+  acceptance_criteria:
+  - description: fixed baseline 300秒 and 件数厳密一致 and ±20%
+YAML
+
+  run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; NINJA_NAME=tobisaru; inject_dynamic_measurement_contract '$tmpdir/task.yaml' tobisaru"
+  [ "$status" -eq 0 ]
+  run python3 - "$tmpdir/task.yaml" <<'PY'
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {})['task']
+for field in ('before', 'after', 'measurement_command', 'measurement_environment',
+              'measurement_policy', 'fixed_baseline_policy', 'safety_boundary'):
+    assert str(task.get(field) or '').strip(), field
+assert '同一環境' in task['measurement_environment']
+assert 'run_tests.sh task queue/tasks/tobisaru.yaml' in task['measurement_command']
+print('DYNAMIC_MEASUREMENT_CONTRACT_OK')
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "DYNAMIC_MEASUREMENT_CONTRACT_OK" ]
+}
+
 # test_necessity: reflux workers need one injected absolute helper/scope and
 # producer contract so the gate can distinguish post-commit self-retro metadata
 # from a worker's own dirty edit.
