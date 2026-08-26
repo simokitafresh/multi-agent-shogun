@@ -6814,7 +6814,7 @@ _handle_reflux_auto_deploy() {
       backlink)
         if [ ! -f "$SCRIPT_DIR/docs/semantic-index/index.md" ] ||
            [ ! -f "$SCRIPT_DIR/context/semantic-map.md" ]; then
-            unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+            _reflux_idle_first_seen_clear "$name"
             log "REFLUX-AUTO-BLOCK: $name backlink SSOT/regenerated output pair unavailable for ${first_backlink} — no deploy"
             return 1
         fi
