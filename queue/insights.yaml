@@ -3622,3 +3622,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260826-123621768-f063
+  ts: "2026-08-26T12:36:21+09:00"
+  insight: "[[simokitafresh@2025LG17 ~$ kill 2524 2564 20018 21936 23875 2]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=simokitafresh@2025LG17:~$ kill 2524 2564 20018 21936 23875 25706 27024 29433 -bash: kill: (2524) - No such process -bash: kill: (2564) - No…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
