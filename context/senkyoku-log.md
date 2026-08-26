@@ -1490,3 +1490,6 @@
 - 2026-08-25 cmd_4392_normal hayate→cmd_4403: cmd_4392は親reportへCI 5 runs/30 jobs/260 steps・local 239/239 (PASS221/FAIL18/SKIP0)を統合（AC3 md/commit 32632bb98、code変更なし、report/gate PASS）。cmd_4403は`test_cmd_complete_gate.bats`を912.260秒→298.532秒（613.728秒/67.3%減）、281/281 PASS・SKIP0へ短縮し、次候補10 fileを降順固定。詳細: `docs/research/cmd_4403_slowest_tests_speedup_20260825.md`。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4403_source_publication共通runner]] -> [[単体テスト実行時間短縮]]
 - 2026-08-25 cmd_4402計測: 根治弾の前後同幅を機械集計し、blocked 3→4・再試行3→1・解消中央値110→141秒、precheck FAIL 1→1、親report誤BLOCK 1→0を確定。全体改善は未確認として次回の理由別cohort計測へ還流。origin: [[cmd_4402_before_after数値証明]] -> [[根治4本効果計測0件]] -> [[理由別cohort再計測]]
 - 2026-08-26 cmd_karo_recon2_t19_lesson_deprecation_20260826: lesson候補3件(L1637×2/L1632)を一次突合。L1637は直接caller 0・unknown attribution未解消で保留、dm-signal L1632は退役可候補だがinfra SSOT退役/dm-signal index現役の同期差異を検出し、AC3 BLOCK・task_failed。origin: [[cmd_karo_recon2_t19_lesson_deprecation_20260826]] -> [[L1637未自動化_L1632同期差異]] -> [[候補退役裁定保留]]
+
+## 2026-08-26 17:05〜08-27 00:35(将軍セッション)
+- 意図: push 7h30m停滞と「つまり」の根治。結果: 1commitずつpushで57本/1h、CI GREEN(ccad05fcf)。因果: まとめpush×手動full走査→7h停滞 / 実行ビット欠落→watcher85回死亡→nudge喪失 / 送信者制限→自動レビュー依頼BLOCK→報告10本UN-GATED / BASH_REMATCH潰れ→config.toml破壊→忍者400停止。全て構造型で根治(cfd7b7d3e,e3712b4a9,42f09d54b,474aff0c2,bc9f4a8c6,2df2ecdee,c17a92d8e)。殿裁定6件を instructions/shogun.md へ焼込み。

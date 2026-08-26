@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-26 -->
+<!-- last_updated: 2026-08-27 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,10 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_4178 | 2026-07-27将軍復帰後、家老startup gateの先送りCRITICALエスカレーションが同一keyで世代連番のまま将軍inboxへ反復送信され続けた(集計は将軍が実測済み)。dedup機構(notifiedフラグ)は実在するが、同一セッション内でgateが複数回走る際にあるrunでalertが不在だと即resolvedへ落とし、次runのopen復帰で世代が増えて再送する遷移機の欠陥が真因。この構造をヒステリシス(再送抑止条件)で是正し、将軍ターンの浪費を根絶する | infra | 07-27 | startup escalationのopen→一時消失→o |
-| cmd_4181 | 殿下知2026-07-27 19:54『未調査や未確定部分の偵察にフォーカスして設計書を覚醒アップデート』。ホットスクリプト高速化設計書v1.0(docs/research/hot-script-speedup-asis-tobe-5w1h_20260727.md)は家老レビューBLOCK 6点(blt_195501)で計測境界の混在(begin/end混在・実行本体込み・親子二重計上・lock保持と待ちの混同)が確定した。家老の修正指示に従い、純オーバーヘッドのみの正しい母集団で標的序列を作り直す。調査のみで高速化実装は行わない | infra | 07-27 | 固定39,070行/cutoff 2026-07-27T11 |
-| cmd_4185 | 殿下知2026-07-27 22:00『未解決事項を解決しよう』。ホットスクリプト設計書v2.1(家老CLEAR済み)の未解決§3-1/§3-2を解決する。外れ値型check(medianほぼゼロ・maxが累積支配)は常時最適化が的外れになるため、高速化の前に発生条件の特定が必須と設計書が定めた。その偵察を実施する。調査のみで高速化実装なし | infra | 07-27 | current cohortを全数再集計し、5 checkの |
-| cmd_4188 | 家老escalation(2026-07-27 22:49)の教訓enforcement欠落是正の第2弾。LG084(Codex CLIのbackground terminal残骸がbusy固定となりauto_clear膠着、半蔵で長時間待機loopの実例)のhow欄記載の防御を実装する: ninja_monitorのbackground compute判定を三値化し、実computeなしのstale残骸をrespawn経路へ進める | infra | 07-27 | background terminalを0=実compute |
 | cmd_4189 | 殿裁定2026-07-27 23:25(第一弾=設計書v2.3 §-1の3スクリプト12check固定)の先頭弾。hot-script設計書v2.3 §0序列1位のcmd_save:checks_main(恒常課税型・毎回発生)を、内部プロファイル→ボトルネック特定→実装最適化で削減する。真因4型(全量再parse・affected=0全処理・プロセス多段起動・lock持ち過ぎ)の照合から入る | infra | 07-28 | cmd_saveの不変cmd本文からacceptance_c |
 | cmd_4190 | 殿ntfy 2026-07-28 10:55のSIGNAL CHANGE ALERT(confirmed-month holding_signal changes count=3 dates=2026-07-27)の実体判定。将軍の一次確認でsignal_change_logの3件はFoF系PF(GSシン加速R-激攻・GSシン追い風-常勝・GSシン変わり身-激攻)のコンポーネント構成入替えで、changed_atは定期FoF再計算の実行時間帯と整合する。これが設計上正常な確定更新か、確定後の異常書換えかを現物で判定する。調査のみでコード・DB変更なし | dm-signal | 07-28 | FoF 3件はpending marker 0/3で正常な暫 |
 | cmd_4192 | gate_loop_health反復insight(INS-20260729-174159182ほか、operational_simulation MISSING発火が反復)の入口側是正。忍者がgate到達後に初めて欠落を知る構造を、テンプレート生成時点で必須4フィールドの記入枠が存在する構造へ変える。有効値の自動補完は禁止(insight条件) | infra | 07-29 | operational_simulation欠落報告をbat |
