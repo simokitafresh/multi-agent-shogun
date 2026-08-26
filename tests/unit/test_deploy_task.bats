@@ -10,11 +10,45 @@ setup_file() {
     deploy_task_setup_file
 }
 
+# The suite setup already sources deploy_task.sh once per Bats process. Keep
+# each cached-library call isolated while avoiding a second parse of the
+# 10k-line shell library in every small contract test.
+run_cached_deploy_task() {
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
+        SCRIPT_DIR="$TEST_PROJECT"
+        "$@"
+    )
+}
+
+run_cached_experiment_first_principle() {
+    run_cached_deploy_task inject_experiment_first_principle "$1"
+    run_cached_deploy_task inject_experiment_first_principle "$1"
+}
+
+run_cached_model_profile() {
+    local task="$1" ninja="$2" model="$3"
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
+        SCRIPT_DIR="$TEST_PROJECT"
+        cli_model_display() { echo "$model"; }
+        inject_model_injection_profile "$task" "$ninja"
+    )
+}
+
+run_cached_report_template() {
+    run_cached_deploy_task generate_report_template "$@"
+}
+
 # test_necessity: 全taskが殿の実験ファースト原文と一次確認の適用形をLevel5で受け取る不変量を守る。
 @test "all tasks receive experiment-first principle exactly once" {
     local task="$BATS_TEST_TMPDIR/experiment-first-task.yaml"
     printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
-    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; inject_experiment_first_principle "$2"; inject_experiment_first_principle "$2"' _ "$TEST_PROJECT" "$task"
+    run run_cached_experiment_first_principle "$task"
     [ "$status" -eq 0 ]
     run env TASK_FILE="$task" python3 - <<'PY'
 import os
@@ -34,7 +68,7 @@ PY
 @test "model profile injects task-owned validation contract" {
     local task="$BATS_TEST_TMPDIR/two-stage-task.yaml"
     printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
-    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; cli_model_display(){ echo "GPT"; }; inject_model_injection_profile "$2" saizo' _ "$TEST_PROJECT" "$task"
+    run run_cached_model_profile "$task" saizo GPT
     [ "$status" -eq 0 ]
     run grep -F '任務帰属検証契約:' "$task"
     [ "$status" -eq 0 ]
@@ -47,7 +81,7 @@ PY
     local task="$BATS_TEST_TMPDIR/two-stage-regression-task.yaml"
     for model in GPT Sonnet Opus; do
         printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
-        run bash -c 'export DEPLOY_TASK_LIB_ONLY=1 MODEL="$3"; source "$1/scripts/deploy_task.sh"; cli_model_display(){ echo "$MODEL"; }; inject_model_injection_profile "$2" kotaro' _ "$TEST_PROJECT" "$task" "$model"
+        run run_cached_model_profile "$task" kotaro "$model"
         [ "$status" -eq 0 ]
         [ "$(grep -Fc 'run_tests.sh task queue/tasks/kotaro.yaml' "$task")" -eq 1 ]
         [ "$(grep -Fc 'run_tests.sh unit全量' "$task")" -eq 1 ]
@@ -61,7 +95,7 @@ PY
 @test "model profile injects hook_failures.details mapping guidance for max intensity" {
     local task="$BATS_TEST_TMPDIR/hook-failures-mapping-task.yaml"
     printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
-    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; cli_model_display(){ echo "GPT"; }; inject_model_injection_profile "$2" saizo' _ "$TEST_PROJECT" "$task"
+    run run_cached_model_profile "$task" saizo GPT
     [ "$status" -eq 0 ]
     run grep -F 'extra_scaffold:' "$task"
     [ "$status" -eq 0 ]
@@ -80,7 +114,7 @@ PY
 @test "model profile omits hook_failures.details mapping guidance for non-max intensity" {
     local task="$BATS_TEST_TMPDIR/hook-failures-mapping-opus-task.yaml"
     printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
-    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; cli_model_display(){ echo "Opus"; }; inject_model_injection_profile "$2" saizo' _ "$TEST_PROJECT" "$task"
+    run run_cached_model_profile "$task" saizo Opus
     [ "$status" -eq 0 ]
     run grep -F 'extra_scaffold:' "$task"
     [ "$status" -eq 1 ]
@@ -104,7 +138,7 @@ task:
   - id: AC1
     description: check
 YAML
-    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; generate_report_template sasuke cmd_hook_failures_template_normal cmd_hook_failures_template infra "$2"' _ "$TEST_PROJECT" "$task"
+    run run_cached_report_template sasuke cmd_hook_failures_template_normal cmd_hook_failures_template infra "$task"
     [ "$status" -eq 0 ]
     local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_hook_failures_template.yaml"
     run grep -F 'hook_failures:' "$report"
