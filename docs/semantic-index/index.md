@@ -8030,6 +8030,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T01:28:24+09:00 偵察に関しては俺の差異化はいらないよ。やってくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T10:13:06+09:00 2026-08-26 10:20 履歴分岐統合(kotaro merge)の完了境界BLOCK真因=gate_report_format_main.py commit_contractが git diff-tree --no-commit- |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T10:51:18+09:00 kotaroがkotaro 42回目。未commit 3ファイルに増加（infrastructure. md追加）。reflux/auto-commitが別エージェントでdirtyを作 り続ける構造問題だ。軍師に家老に伝えるよう指示したが、 |
+| cmd | `cmd_karo_hotfix_cmd4403_batch2set_test_deploy_task_r2_20260826` |
+| cmd | `cmd_karo_hotfix_cmd4403_batch2set_test_deploy_task_lifecycle_r2_20260826` |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -15735,6 +15737,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T22:58:02.132152+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T01:18:30.599585+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T01:38:30.284915+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-26T02:48:20.170507+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
