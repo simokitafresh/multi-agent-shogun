@@ -11275,13 +11275,20 @@ _dt_function_timing_debug() {
     case "$fn" in
         _dt_function_timing_*) fn="${_DT_FUNCTION_TIMING_LAST_FN:-main}" ;;
     esac
-    if [[ "${_DT_FUNCTION_TIMING_LAST_US:-}" =~ ^[0-9]+$ ]] && [[ "$now" =~ ^[0-9]+$ ]]; then
-        delta=$((now - _DT_FUNCTION_TIMING_LAST_US))
-        [ "$delta" -ge 0 ] || delta=0
-        _DT_FUNCTION_TIMING_US["${_DT_FUNCTION_TIMING_LAST_FN:-main}"]=$((
-            ${_DT_FUNCTION_TIMING_US["${_DT_FUNCTION_TIMING_LAST_FN:-main}"]:-0} + delta
-        ))
-    fi
+    # DEBUG traps execute between a caller's `[[ value =~ regex ]]` and its
+    # subsequent BASH_REMATCH read.  A regex here would overwrite that global
+    # array and can crash `set -u` callers such as ctx_utils.sh.  Validate the
+    # decimal timestamps with shell patterns, which do not mutate BASH_REMATCH.
+    case "${_DT_FUNCTION_TIMING_LAST_US:-}:$now" in
+        *[!0-9:]*|:*|*:) ;;
+        *)
+            delta=$((now - _DT_FUNCTION_TIMING_LAST_US))
+            [ "$delta" -ge 0 ] || delta=0
+            _DT_FUNCTION_TIMING_US["${_DT_FUNCTION_TIMING_LAST_FN:-main}"]=$((
+                ${_DT_FUNCTION_TIMING_US["${_DT_FUNCTION_TIMING_LAST_FN:-main}"]:-0} + delta
+            ))
+            ;;
+    esac
     _DT_FUNCTION_TIMING_CALLS["$fn"]=$(( ${_DT_FUNCTION_TIMING_CALLS["$fn"]:-0} + 1 ))
     _DT_FUNCTION_TIMING_LAST_FN="$fn"
     _DT_FUNCTION_TIMING_LAST_US="$now"
