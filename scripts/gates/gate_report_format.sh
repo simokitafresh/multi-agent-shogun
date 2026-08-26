@@ -374,6 +374,7 @@ filter_report_commit_nonoverlap_diffs() {
     local repo="$1"
     local report_path="$2"
     local uncommitted_raw="$3"
+    local _INSIGHTS_KEEP=""
     # Shared operational log ownership is semantic, not positional. Delegate
     # this exact allowlisted path to the SSOT; retain the legacy range filter
     # below for every ordinary file and for fail-closed results.
@@ -625,11 +626,29 @@ PY
             # Semantic comparison is the only safe ownership proof for this
             # bounded queue.  Do not let positional hunks turn parse failure
             # or ambiguous identity into a false suppression.
-            printf '%s\n' "$uncommitted_raw"
-            return 0
+            # 2026-08-26修正: 従来はここで全dirty行を無濾過で返しており、insights.yamlの
+            # 曖昧さが『他の全pathのBLOCK』へ波及していた(kotaro履歴分岐統合 42回BLOCKの一因)。
+            # insights.yamlの行だけをfail-closedで保持し、残りは通常濾過へ進める。
+            # 報告commitがmerge commit(親2+)なら insights.yaml は忍者の所有物ではない(共有queueの
+            # 取込み)ためWARNで外す。
+            local _ins_commit _ins_parents
+            _ins_commit=$(python3 -c "import yaml,sys;print(str((yaml.safe_load(open(sys.argv[1])) or {}).get('commit_hash') or ''))" "$report_path" 2>/dev/null || true)
+            _ins_parents=$(git -C "$repo" rev-list --parents -n1 "$_ins_commit" 2>/dev/null | wc -w)
+            if [ "${_ins_parents:-0}" -gt 2 ]; then
+                echo "WARN(cmd_3264-AC2): queue/insights.yaml dirty under merge-commit report; shared bounded queue is not worker ownership" >&2
+                _INSIGHTS_KEEP=""
+            else
+                _INSIGHTS_KEEP=$(printf '%s\n' "$uncommitted_raw" | awk 'substr($0,4)=="queue/insights.yaml"')
+            fi
+            uncommitted_raw=$(printf '%s\n' "$uncommitted_raw" | awk 'substr($0,4)!="queue/insights.yaml"')
+            if [ -z "$uncommitted_raw" ]; then
+                [ -n "${_INSIGHTS_KEEP:-}" ] && printf '%s\n' "$_INSIGHTS_KEEP"
+                return 0
+            fi
         fi
     fi
-    REPO_ROOT="$repo" REPORT_PATH="$report_path" CC_UNCOMMITTED_RAW="$uncommitted_raw" python3 - <<'PY'
+    local _main_kept _main_rc
+    _main_kept=$(REPO_ROOT="$repo" REPORT_PATH="$report_path" CC_UNCOMMITTED_RAW="$uncommitted_raw" python3 - <<'PY'
 import os
 import difflib
 import re
@@ -798,7 +817,7 @@ kept = []
 suppressed = []
 broad_scope = os.environ.get("GATE_CC_BROAD_SCOPE", "") == "1"
 AUTO_LEDGER_PATHS = {"docs/semantic-index/index.md", "context/semantic-map.md", "tasks/lessons.md", "queue/insights.yaml", "logs/karo_workarounds.yaml"}
-AUTO_LEDGER_PREFIXES = ("projects/infra/lessons", "projects/dm-signal/lessons", "logs/")
+AUTO_LEDGER_PREFIXES = ("projects/infra/lessons", "projects/dm-signal/lessons", "logs/", "skills/")  # skills/*/SKILL.md は script_refs_checked_at スタンプをhookが自動更新
 unrelated = []
 for line in raw_lines:
     path = parse_path(line)
@@ -848,6 +867,11 @@ for path in unrelated:
     print(f"WARN(cmd_3264-AC2): {path} dirty is auto-ledger/marker-only or untouched by owned commits under broad scope; treating as concurrent unrelated change", file=sys.stderr)
 print("\n".join(kept))
 PY
+)
+    _main_rc=$?
+    [ -n "$_main_kept" ] && printf '%s\n' "$_main_kept"
+    [ -n "${_INSIGHTS_KEEP:-}" ] && printf '%s\n' "$_INSIGHTS_KEEP"
+    return $_main_rc
 }
 
 # Focused contract-test entry point.  It exercises the same shared-queue
