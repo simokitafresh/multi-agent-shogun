@@ -573,6 +573,10 @@ EOF
 
 setup_file() {
     deploy_task_setup_file
+    export DEPLOY_TASK_LIB_ONLY=1
+    export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+    export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
+    source "$DEPLOY_TASK_TEMPLATE_DIR/scripts/deploy_task.sh"
     export SRC_DEPLOY_MAIN="$PROJECT_ROOT/scripts/deploy_task/main.sh"
     export REAL_PROJECT_ROOT="$PROJECT_ROOT"
     [ -f "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" ] || return 1
@@ -628,7 +632,9 @@ run_direct_task_id_projection() {
     local cmd_id="$1"
     export DEPLOY_TASK_LIB_ONLY=1
     # shellcheck disable=SC1090
-    source "$TEST_PROJECT/scripts/deploy_task.sh"
+    if ! declare -F deploy_task_main >/dev/null 2>&1; then
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+    fi
     SCRIPT_DIR="$TEST_PROJECT"
     log() { :; }
     resolve_pane() { echo "test-pane"; }
