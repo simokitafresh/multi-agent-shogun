@@ -34,6 +34,12 @@ binary_checks:
       result: yes
 verdict: ""
 EOF
+    cat > "$TEST_TMPDIR/queue/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  related_lessons:
+    - id: L001
+YAML
 }
 
 _write_required_variation_task() {
@@ -41,6 +47,8 @@ _write_required_variation_task() {
 task:
   parent_cmd: cmd_test
   variation_checks_required: true
+  related_lessons:
+    - id: L001
 YAML
 }
 
@@ -70,9 +78,33 @@ PY
     [ "$output" = "completed" ]
 }
 
+# test_necessity: explicit task-root overrides must win while the default remains fixture-local.
 @test "verdict status自動完了は再帰呼び出しではなく同一処理内で行う" {
     run grep -F 'bash "$0" "$REPORT_PATH" status completed' "$RFS"
     [ "$status" -ne 0 ]
+
+    mkdir -p "$TEST_TMPDIR/explicit-root/queue/tasks"
+    cat > "$TEST_TMPDIR/explicit-root/queue/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  related_lessons:
+    - id: L999
+YAML
+    run env REPORT_FIELD_SET_TASK_ROOT="$TEST_TMPDIR/explicit-root" \
+        bash "$RFS" "$TEST_REPORT" verdict PASS
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"MISMATCH"*"extra=L001"* ]]
+
+    cat > "$TEST_TMPDIR/explicit-task.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  related_lessons:
+    - id: L998
+YAML
+    run env RFS_TASK_FILE_PATH="$TEST_TMPDIR/explicit-task.yaml" \
+        bash "$RFS" "$TEST_REPORT" verdict PASS
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"MISMATCH"*"extra=L001"* ]]
 
     run bash "$RFS" "$TEST_REPORT" verdict PASS
     [ "$status" -eq 0 ]

@@ -27,6 +27,14 @@ if [ "${1:-}" = "--batch" ]; then
     [[ "$_rfs_batch_self" != /* ]] && _rfs_batch_self="$PWD/$_rfs_batch_self"
     _rfs_batch_root="${_rfs_batch_self%/scripts/report_field_set.sh}"
     [[ "$_rfs_batch_report" = /* ]] || _rfs_batch_report="$PWD/$_rfs_batch_report"
+    _rfs_batch_task_root="${REPORT_FIELD_SET_TASK_ROOT:-}"
+    if [ -z "$_rfs_batch_task_root" ]; then
+        case "$_rfs_batch_report" in
+            */queue/reports/*)
+                _rfs_batch_task_root="${_rfs_batch_report%%/queue/reports/*}"
+                ;;
+        esac
+    fi
     _rfs_batch_lock="${_rfs_batch_report}.lock"
     _rfs_receipt_dir="${RFS_RECEIPT_DIR:-/dev/shm}"
     [ -d "$_rfs_receipt_dir" ] || _rfs_receipt_dir="${TMPDIR:-/tmp}"
@@ -78,7 +86,7 @@ if [ "${1:-}" = "--batch" ]; then
     _rfs_batch_output=$(RFS_BATCH_META_FILE="$_rfs_batch_meta_file" \
         RFS_PHASE_RECEIPT="$_rfs_phase_receipt" \
         RFS_BATCH_PAYLOAD="$_rfs_batch_payload" \
-        python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
+        python3 - "$_rfs_batch_report" "$_rfs_batch_root" "$_rfs_batch_task_root" <<'PY'
 import datetime, hashlib, os, pathlib, re, subprocess, sys, tempfile, time, yaml
 from typing import Any
 sys.path.insert(0, sys.argv[2])
@@ -217,14 +225,15 @@ terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"
 if terminal:
     data["completed_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 root = pathlib.Path(sys.argv[2]).resolve()
-task_root = pathlib.Path(os.environ.get("REPORT_FIELD_SET_TASK_ROOT", sys.argv[2])).resolve()
+task_root_arg = str(sys.argv[3]).strip()
+task_root = pathlib.Path(task_root_arg).resolve() if task_root_arg else None
 
 def lesson_feedback_task_path(report: dict[str, Any]) -> pathlib.Path | None:
     explicit = str(os.environ.get("RFS_TASK_FILE_PATH", "")).strip()
     if explicit:
         return pathlib.Path(explicit).resolve()
     worker = str(report.get("worker_id") or "").strip()
-    if not worker:
+    if not worker or task_root is None:
         return None
     return task_root / "queue" / "tasks" / f"{worker}.yaml"
 
@@ -272,6 +281,8 @@ def validate_lesson_feedback_set(report: dict[str, Any]) -> None:
         raise SystemExit(f"BLOCK: lesson_feedback_set: {detail}")
 
 def task_allows_empty_lessons(report, root):
+    if root is None:
+        return False
     worker = str(report.get("worker_id") or "").strip()
     if not worker:
         return False
@@ -420,7 +431,10 @@ PY
             if [ "$_rfs_batch_status" = "failed" ]; then
                 _rfs_event_type="task_failed"
                 _rfs_event_label="未達報告"
-                _rfs_task_file="${RFS_TASK_FILE_PATH:-$_rfs_batch_root/queue/tasks/${_rfs_batch_worker}.yaml}"
+                _rfs_task_file="${RFS_TASK_FILE_PATH:-}"
+                if [ -z "$_rfs_task_file" ] && [ -n "$_rfs_batch_task_root" ]; then
+                    _rfs_task_file="$_rfs_batch_task_root/queue/tasks/${_rfs_batch_worker}.yaml"
+                fi
                 [ -f "$_rfs_task_file" ] || { echo "BLOCK: failed report lacks worker task YAML" >&2; exit 1; }
                 bash "$_rfs_batch_root/scripts/lib/yaml_field_set.sh" "$_rfs_task_file" task status failed
             fi
@@ -996,7 +1010,19 @@ else:
     print(str(data.get("worker_id") or "").strip())
 PY
 )"
-        task_root="${REPORT_FIELD_SET_TASK_ROOT:-$SCRIPT_DIR}"
+        task_root="${REPORT_FIELD_SET_TASK_ROOT:-}"
+        if [ -z "$task_root" ]; then
+            case "$REPORT_PATH" in
+                */queue/reports/*)
+                    task_root="${REPORT_PATH%%/queue/reports/*}"
+                    ;;
+                *)
+                    # Reports outside queue/reports have no implicit task
+                    # contract; never couple an isolated fixture to live state.
+                    return 0
+                    ;;
+            esac
+        fi
         [ -n "$worker_id" ] || return 0
         task_file="$task_root/queue/tasks/${worker_id}.yaml"
     fi

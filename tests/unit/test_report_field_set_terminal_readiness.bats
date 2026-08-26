@@ -20,7 +20,9 @@ commit_hash: ''
 YAML
 }
 
+# test_necessity: a report outside queue/reports must not inherit a live worker task contract.
 @test "commit_hash does not terminalize report while lesson and memory feedback remain unwritten" {
+  [[ "$REPORT" != */queue/reports/* ]]
   run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash 0123456789abcdef0123456789abcdef01234567
   [ "$status" -eq 0 ]
   run python3 - "$REPORT" <<'PY'
