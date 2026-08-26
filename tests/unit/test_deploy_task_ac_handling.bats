@@ -10,20 +10,14 @@ load '../helpers/deploy_task_scaffold'
 
 setup_file() {
     deploy_task_setup_file
-}
 
-setup() {
-    deploy_task_scaffold "deploy_acv"
-    # shellcheck disable=SC1090
-    source "$TEST_PROJECT/scripts/lib/field_get.sh"
-
-    mkdir -p "$TEST_PROJECT/logs"
-    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+    # cmd_4403_r2: common fixture bytes are immutable across cases.  Keep
+    # them in the suite template; each test receives a fresh copy below.
+    mkdir -p "$DEPLOY_TASK_PROJECT_TEMPLATE/logs"
+    cat > "$DEPLOY_TASK_PROJECT_TEMPLATE/logs/lesson_impact.tsv" <<'EOF'
 timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
 EOF
-
-    # Default task for ac_version tests
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+    cat > "$DEPLOY_TASK_PROJECT_TEMPLATE/queue/tasks/sasuke.yaml" <<'EOF'
 task:
   title: "ac_version test"
   task_type: review
@@ -33,20 +27,50 @@ task:
     - ac3: third
 EOF
 
-    # Extra directories for ac_verify tests (use TEST_TMPDIR directly)
-    mkdir -p \
-        "$TEST_TMPDIR/queue/tasks" \
-        "$TEST_TMPDIR/queue/archive/cmds"
-
+    # shellcheck disable=SC1090
+    source "$SRC_FIELD_GET_SCRIPT"
     export LOG="/dev/null"
 
-    # log stub
     log() { echo "[DEPLOY] $1" >&2; }
     export -f log
 }
 
+setup() {
+    # Bats owns BATS_TEST_TMPDIR lifecycle.  Build only the isolated mutable
+    # project shell instead of copying the template tree and deleting it.
+    export TEST_TMPDIR="$BATS_TEST_TMPDIR"
+    export TEST_PROJECT="$TEST_TMPDIR/project"
+    export DEPLOY_LESSON_CACHE_DIR="$TEST_TMPDIR"
+    mkdir -p \
+        "$TEST_PROJECT/queue/tasks" \
+        "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/logs" \
+        "$TEST_PROJECT/projects" \
+        "$TEST_PROJECT/archive"
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/scripts" "$TEST_PROJECT/scripts"
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/lib" "$TEST_PROJECT/lib"
+    ln -s "$DEPLOY_TASK_TEMPLATE_DIR/config" "$TEST_PROJECT/config"
+    cp "$DEPLOY_TASK_PROJECT_TEMPLATE/dashboard.md" "$TEST_PROJECT/dashboard.md"
+    cp "$DEPLOY_TASK_PROJECT_TEMPLATE/logs/lesson_impact.tsv" "$TEST_PROJECT/logs/lesson_impact.tsv"
+    cp "$DEPLOY_TASK_PROJECT_TEMPLATE/queue/tasks/sasuke.yaml" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+
+    if ! declare -F parse_deploy_task_args >/dev/null 2>&1; then
+        export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+    fi
+
+    # Extra directories for ac_verify tests (use TEST_TMPDIR directly)
+    mkdir -p \
+        "$TEST_TMPDIR/queue/tasks" \
+        "$TEST_TMPDIR/queue/archive/cmds"
+}
+
 teardown() {
-    deploy_task_teardown
+    :
 }
 
 # cmd_round7_lane2_deploy_task_ac_20260730 AC2: 旧`eval "$(sed -n ...
