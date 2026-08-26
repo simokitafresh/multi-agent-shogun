@@ -3629,3 +3629,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260826-123644059-c16b
+  ts: "2026-08-26T12:36:44+09:00"
+  insight: "[[cmd completeは順次やろう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cmd- completeは順次やろう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
