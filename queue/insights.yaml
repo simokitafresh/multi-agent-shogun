@@ -4315,3 +4315,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-054313016-5ce8
+  ts: "2026-08-27T05:43:13+09:00"
+  insight: "ninja_scope_commit の『scope path has partial/foreign staged content』BLOCK(05:42): 将軍の todo_map commit が tick3-5 の3回連続で rc=2 失敗し、拙者は background 完了通知の exit code 0(シェルの rc)で成功と誤認、git log での到達確認を怠った。真因=前回の失敗で index に古い staged が残り、以後の commit が全て同じ BLOCK。自動化ターゲット: ninja_scope_commit.sh が同 BLOCK 時に『git add <path> で index を同期して再実行』を自動提案/自動実行(scope 内パスに限る)し、失敗を stdout 末尾に FAIL 明示"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
