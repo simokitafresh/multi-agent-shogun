@@ -4380,10 +4380,20 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T08:03:54+09:00"
 - id: INS-20260827-075843177-aa67
   ts: "2026-08-27T07:58:43+09:00"
   insight: "karo_snapshotのRUNTIME:busyが残像化(07:36生成で3名busy表示、07:55 capture-paneで全員prompt待ち)。RUNTIME判定をpane末尾行の実測(『Working』/『› Ask Codex』)へ置換し、snapshot生成時刻と判定時刻を同一にする"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260827-080518912-7207
+  ts: "2026-08-27T08:05:18+09:00"
+  insight: "ninja_monitor REPORT-REVIEW-AUTO-REQUEST-BLOCK が存在しない report=hayate_report_cmd_alias.yaml parent_cmd=cmd_alias を22:54/07:59に2回出力。テンプレ内コメント行の cmd_alias 文字列を report 名として誤抽出している疑い。抽出regexをファイル実在チェック付きにする"
   priority: "medium"
   source: "manual"
   fix_known: false
