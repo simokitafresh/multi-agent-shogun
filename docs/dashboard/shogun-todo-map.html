@@ -52,21 +52,21 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 07:06 更新(loop tick 8) · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 07:36 更新(loop tick 9) · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
 
 <div class="strip">
-  <div class="tile"><span class="k">済</span><span class="v done">43</span><span class="s">証跡付き</span></div>
-  <div class="tile"><span class="k">走行中</span><span class="v run">2</span><span class="s">T45 reflux 回転計測 / T46 CI RED 診断</span></div>
-  <div class="tile"><span class="k">未着手</span><span class="v todo">2</span><span class="s">T12 / T40</span></div>
-  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">run 33016263375 @d6ab785c5 success(75dc761e1 の failure は次 push で再現せず)。小太郎 ci_fix は GATE 待ち</span></div>
-  <div class="tile"><span class="k">reflux</span><span class="v done">5</span><span class="s">疾風/影丸/半蔵/才蔵/飛猿 が順に一周(4 CLEAR)。pending 104→101。孤児 0</span></div>
+  <div class="tile"><span class="k">済</span><span class="v done">44</span><span class="s">証跡付き</span></div>
+  <div class="tile"><span class="k">走行中</span><span class="v run">1</span><span class="s">T45 reflux 回転計測</span></div>
+  <div class="tile"><span class="k">未着手</span><span class="v todo">3</span><span class="s">T12 / T40 / T47</span></div>
+  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">run 33018749601 @ed70c88e2(小太郎 ci_fix: owner heartbeat 秒境界レース除去) success。最新 51d052925 走行中</span></div>
+  <div class="tile"><span class="k">reflux</span><span class="v run">5 / 空白</span><span class="s">5 CLEAR(pending 104→101)。07:00 以降 30分+ 配備なし=idle 計時リセット(T47)。孤児 0 · load 7</span></div>
 </div>
 
 <div class="live">
-  <h2>一次情報(07:06 capture / ps / gh / logs)</h2>
+  <h2>一次情報(07:36 capture / ps / gh / logs)</h2>
   <ul>
     <li><span class="chip bad">孤児テスト増殖</span>test_heavy_job_admission.bats の singleflight-orphan が内側 run_tests.sh unit を生かしたまま終わり、古い半蔵worktree(seed未是正版)から全suiteを再帰起動→root 27・bats-exec-suite 32本・load 66・/tmp fixture lock 1359個・global flock競合。殿の kill 3回+<span class="mono">orphan_test_reap.sh --kill</span>(124本)で 0 に</li>
     <li><span class="chip done">環境埋込</span>Gate 10.07 長時間bats検知(3fa443c11) / <span class="mono">scripts/orphan_test_reap.sh</span>(ps 1回スナップショット・0.2秒・tmux配下除外) / <span class="mono">git worktree prune</span> 724→103(deploy 397秒→199秒)</li>
@@ -79,24 +79,25 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 </div>
 
 <section class="group">
-  <h2>走行中 <span class="n">2</span></h2>
+  <h2>走行中 <span class="n">1</span></h2>
   <div class="rows">
-    <div class="row run"><span class="id">T46</span><span class="t">CI RED(75dc761e1)の後始末</span><span class="d">家老診断: shard compatibility の owner heartbeat テスト→小太郎 ci_fix 配備(64.7s)・報告済。次 push d6ab785c5 の run は success(再現せず=flaky 疑い)。ci_fix は GATE→push で flaky の根治として取り込む</span><span class="w">GREEN 証跡の維持+flaky 0</span></div>
     <div class="row run"><span class="id">T45</span><span class="t">reflux 回転の計測</span><span class="d">5件目まで一周(1件≈14分・同時1件)。pending 104→101=archive 時に resolved へ遷移する設計と確認。並列度の引き上げは deploy lock の設計意図を確認してから</span><span class="w">気づき消化の回転速度を数値で持つ</span></div>
   </div>
 </section>
 
 <section class="group">
-  <h2>未着手 <span class="n">2</span></h2>
+  <h2>未着手 <span class="n">3</span></h2>
   <div class="rows">
+    <div class="row todo"><span class="id">T47</span><span class="t">reflux 配備の空白(idle 計時リセット)</span><span class="d">5件目 DONE 07:00 の後、07:31 に idle tracking が再スタート→6名 idle でも 30-40分の空白。起点を task idle 時刻に固定する hotfix 候補(insight 登録済)</span><span class="w">気づき消化スループットを約2倍に</span></div>
     <div class="row todo"><span class="id">T40</span><span class="t">insights 未処理 97件の消化</span><span class="d">本日追加: 孤児発生源7なぜ / Actions queue滞留 / worktree stale 自動prune / inbox未読の grep 誤検知(本文中の read: false)</span><span class="w">気づきの先送り0</span></div>
     <div class="row todo"><span class="id">T12</span><span class="t">ライブ publish 13分の分解</span><span class="d">次回 cmd_publish 時に将軍が stdout を logs/ へ保存</span><span class="w">publish律速の短縮</span></div>
   </div>
 </section>
 
 <section class="group">
-  <h2>済 <span class="n">43</span></h2>
+  <h2>済 <span class="n">44</span></h2>
   <div class="rows">
+    <div class="row done"><span class="id">T46</span><span class="t">CI flaky(owner heartbeat)の根治</span><span class="d">75dc761e1 run failure→家老診断→小太郎 ci_fix ed70c88e2「秒境界レース除去」→ run 33018749601 success</span><span class="w">flaky 0=GREEN 証跡の信頼</span></div>
     <div class="row done"><span class="id">T44b</span><span class="t">reflux 自動配備の実証</span><span class="d">hotfix 後に疾風・影丸の2件が配備→報告→GATE CLEAR まで一周(05:39-06:02)。08-24 以来の停止を実配備で解消</span><span class="w">idle 忍者へ気づきが流れる</span></div>
     <div class="row done"><span class="id">T25/T19/T44</span><span class="t">便停止7hの解消 / 退役判定 / reflux picker 根治</span><span class="d">T25 CLEAR 05:20(77107a355) · T19 ACCEPT+archive(L1632 は SSOT 不整合で見送り) · T44 CLEAR 05:24(f956de3c7→5a9f583b9)</span><span class="w">家老レーンの滞留 0、idle 忍者へ気づきを流す土台</span></div>
     <div class="row done"><span class="id">T42</span><span class="t">CI GREEN(疾風 ci_fix)</span><span class="d">shard2 case9 の真因=669afef44 副作用。5269fa730「isolate deploy fixture timing telemetry」→ run 33005872290 success @f690ebdac</span><span class="w">GREEN 証跡の維持</span></div>
@@ -120,5 +121,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 07:06(loop tick 8)</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 07:36(loop tick 9)</footer>
 </div>
