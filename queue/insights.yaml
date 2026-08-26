@@ -15,7 +15,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4369"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存gate_report_format_main.pyのlessons_useful reason空BLOCK（L152）とreport_field_setのテンプレート注入を一次確認し、原因はautofix空スケルトンを完了済みと誤認する運用・生成境界と整理した。今回の対象は既存防御で検出可能で新規コード修正は不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-024136022-2909;context=context/infrastructure.md:report_quality_protocol;context=context/training-cycle.md:24-27,344-350;gate=scripts/gates/gate_report_format_main.py:1534-1536;semantic=semantic_search:report_quality_protocol;memory=memory_db:INS-20260823-024136022-2909;decision_candidate=autofix後にlessons_useful.reasonを必須実値で埋めるテンプレート運用を継続"
+  resolved_at: "2026-08-27T05:56:57+09:00"
 - id: INS-20260823-024136548-3102
   ts: "2026-08-23T02:41:36+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿下問_低相関selection価値_20260822_2155]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=session_save_20260811_0316; score=4.2) / multi_cli_event_commonization(multi-CLI hook/event共通化; alias=cross cli independent checkpoint 20260716; score=4.1) / growth_loop(学習ループ; alias=dm-monthly-trade-bug-asis-tobe-5w1h_20260802; score=4.1)。概念定義とaliases追加を検討せよ"
