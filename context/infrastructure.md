@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-26 context updated for report scope SSOT + merge-commit ownership gate -->
+<!-- last_updated: 2026-08-26 context_freshness reviewed source boundary -->
+<!-- source_commit:024dce221 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=024dce221 -->
 <!-- source_commit:7d9532b12 reason:context updated for report scope SSOT + merge-commit ownership gate evidence:doc_lane_request blt_20260826_101234_f3d396 -->
 <!-- source_commit:4dde551de reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4dde551de -->
 <!-- source_commit:b7ad89d5c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b7ad89d5c -->
