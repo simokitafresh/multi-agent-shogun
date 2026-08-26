@@ -676,7 +676,7 @@ acquire_singleton_lock() {
     flock -u "$lock_fd"
     eval "exec ${lock_fd}>&-"
     if [ "${NINJA_MONITOR_RELEASE_OWNER_ON_EXIT:-1}" = "1" ]; then
-        trap 'ninja_monitor_release_owner' EXIT
+        trap 'ninja_monitor_function_timing_finish; ninja_monitor_release_owner' EXIT
     fi
 }
 
@@ -704,6 +704,86 @@ ninja_monitor_release_owner() {
     if [ "$generation" = "${NINJA_MONITOR_GENERATION:-}" ]; then
         rm -f "$owner_file" "$pid_file" "$(ninja_monitor_owner_identity_file "$owner_file")"
     fi
+}
+
+# T18: collect every function's exclusive wall time automatically.  This is
+# intentionally additive and best-effort: counters are in memory and one
+# locked JSONL append happens only at process termination.
+ninja_monitor_function_timing_enable() {
+    case "${NINJA_MONITOR_FUNCTION_TIMING_LOG:-}" in
+        disabled|0) return 0 ;;
+    esac
+    NINJA_MONITOR_FUNCTION_TIMING_LOG="${NINJA_MONITOR_FUNCTION_TIMING_LOG:-$SCRIPT_DIR/logs/ninja_monitor_function_timing.jsonl}"
+    mkdir -p "$(dirname "$NINJA_MONITOR_FUNCTION_TIMING_LOG")" 2>/dev/null || return 0
+    declare -gA _NM_FUNCTION_TIMING_US=()
+    declare -gA _NM_FUNCTION_TIMING_CALLS=()
+    _NM_FUNCTION_TIMING_LAST_FN=main
+    _NM_FUNCTION_TIMING_LAST_US="${EPOCHREALTIME/./}"
+    _NM_FUNCTION_TIMING_LAST_US="${_NM_FUNCTION_TIMING_LAST_US:0:16}"
+    _NM_FUNCTION_TIMING_BUSY=0
+    _NM_FUNCTION_TIMING_FINISHED=0
+    _NM_FUNCTION_TIMING_ID="ninja-monitor-$$-${EPOCHREALTIME//./}"
+    _NM_FUNCTION_TIMING_SCRIPT=ninja_monitor.sh
+    _NM_FUNCTION_TIMING_PREV_DEBUG_TRAP="$(trap -p DEBUG 2>/dev/null || true)"
+    set -T
+    trap '_nm_function_timing_debug' DEBUG
+}
+
+_nm_function_timing_debug() {
+    [ "${_NM_FUNCTION_TIMING_BUSY:-0}" -eq 0 ] || return 0
+    _NM_FUNCTION_TIMING_BUSY=1
+    local raw now fn delta
+    raw="${EPOCHREALTIME/./}"
+    now="${raw:0:16}"
+    fn="${FUNCNAME[1]:-main}"
+    case "$fn" in
+        _nm_function_timing_*) fn="${_NM_FUNCTION_TIMING_LAST_FN:-main}" ;;
+    esac
+    if [[ "${_NM_FUNCTION_TIMING_LAST_US:-}" =~ ^[0-9]+$ ]] && [[ "$now" =~ ^[0-9]+$ ]]; then
+        delta=$((now - _NM_FUNCTION_TIMING_LAST_US))
+        [ "$delta" -ge 0 ] || delta=0
+        _NM_FUNCTION_TIMING_US["${_NM_FUNCTION_TIMING_LAST_FN:-main}"]=$((
+            ${_NM_FUNCTION_TIMING_US["${_NM_FUNCTION_TIMING_LAST_FN:-main}"]:-0} + delta
+        ))
+    fi
+    _NM_FUNCTION_TIMING_CALLS["$fn"]=$(( ${_NM_FUNCTION_TIMING_CALLS["$fn"]:-0} + 1 ))
+    _NM_FUNCTION_TIMING_LAST_FN="$fn"
+    _NM_FUNCTION_TIMING_LAST_US="$now"
+    _NM_FUNCTION_TIMING_BUSY=0
+    return 0
+}
+
+ninja_monitor_function_timing_finish() {
+    trap - DEBUG
+    set +T
+    [ -n "${NINJA_MONITOR_FUNCTION_TIMING_LOG:-}" ] || return 0
+    [ "${_NM_FUNCTION_TIMING_FINISHED:-0}" -eq 0 ] || return 0
+    _NM_FUNCTION_TIMING_FINISHED=1
+    local raw now delta fn rank line
+    raw="${EPOCHREALTIME/./}"
+    now="${raw:0:16}"
+    fn="${_NM_FUNCTION_TIMING_LAST_FN:-main}"
+    if [[ "${_NM_FUNCTION_TIMING_LAST_US:-}" =~ ^[0-9]+$ ]] && [[ "$now" =~ ^[0-9]+$ ]]; then
+        delta=$((now - _NM_FUNCTION_TIMING_LAST_US))
+        [ "$delta" -ge 0 ] || delta=0
+        _NM_FUNCTION_TIMING_US["$fn"]=$(( ${_NM_FUNCTION_TIMING_US["$fn"]:-0} + delta ))
+    fi
+    mkdir -p "$(dirname "$NINJA_MONITOR_FUNCTION_TIMING_LOG")" 2>/dev/null || return 0
+    {
+        flock -x 9 || exit 0
+        rank=0
+        while IFS=$'\t' read -r line fn; do
+            rank=$((rank + 1))
+            printf '{"schema":"function_timing.v1","execution_id":"%s","script":"%s","pid":%s,"rank":%s,"function":"%s","elapsed_us":%s,"calls":%s}\n' \
+                "${_NM_FUNCTION_TIMING_ID:-unknown}" "${_NM_FUNCTION_TIMING_SCRIPT:-ninja_monitor.sh}" "$$" "$rank" "$fn" "$line" "${_NM_FUNCTION_TIMING_CALLS["$fn"]:-0}"
+        done < <(for fn in "${!_NM_FUNCTION_TIMING_US[@]}"; do
+            printf '%s\t%s\n' "${_NM_FUNCTION_TIMING_US[$fn]}" "$fn"
+        done | sort -t $'\t' -k1,1nr -k2,2)
+    } 9>"${NINJA_MONITOR_FUNCTION_TIMING_LOG}.lock" >>"$NINJA_MONITOR_FUNCTION_TIMING_LOG" 2>/dev/null || true
+    if [ -n "${_NM_FUNCTION_TIMING_PREV_DEBUG_TRAP:-}" ]; then
+        eval "${_NM_FUNCTION_TIMING_PREV_DEBUG_TRAP}" 2>/dev/null || true
+    fi
+    return 0
 }
 
 ninja_monitor_owner_heartbeat() {
@@ -11360,12 +11440,16 @@ check_all_codex_bypass_flags() {
 }
 
 # ─── 初期ペイン探索 ───
+ninja_monitor_function_timing_enable
+
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
     if [ "${1:-}" = "--refresh-snapshot-task" ]; then
         refresh_karo_snapshot_task_assignment "${2:-}"
+        ninja_monitor_function_timing_finish
         exit $?
     fi
     # shellcheck disable=SC2317
+    ninja_monitor_function_timing_finish
     return 0 2>/dev/null || exit 0
 fi
 
@@ -11378,7 +11462,7 @@ if [ "${1:-}" = "--check-and-update-done-task" ]; then
     # caller pipe or lock descriptor.
     exec </dev/null >/dev/null 2>&1
     close_inherited_non_stdio_fds
-    trap 'close_inherited_non_stdio_fds' EXIT
+    trap 'ninja_monitor_function_timing_finish; close_inherited_non_stdio_fds' EXIT
     check_and_update_done_task "${2:-}"
     exit $?
 fi

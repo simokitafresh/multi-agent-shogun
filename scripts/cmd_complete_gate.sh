@@ -1010,6 +1010,90 @@ done
 LOG_DIR="$SCRIPT_DIR/logs"
 GATE_METRICS_LOG="${GATE_METRICS_LOG:-$LOG_DIR/gate_metrics.log}"
 
+# T18: record exclusive wall time for every function without choosing a
+# suspected hotspot in advance.  The DEBUG trap only updates in-memory
+# counters; one JSONL batch is appended at process exit, so a logging failure
+# cannot change the gate result or its existing phase telemetry.
+cmd_complete_gate_function_timing_enable() {
+    local raw now
+    case "${CMD_COMPLETE_GATE_FUNCTION_TIMING_LOG:-}" in
+        disabled|0) return 0 ;;
+    esac
+    CMD_COMPLETE_GATE_FUNCTION_TIMING_LOG="${CMD_COMPLETE_GATE_FUNCTION_TIMING_LOG:-$LOG_DIR/cmd_complete_gate_function_timing.jsonl}"
+    mkdir -p "$(dirname "$CMD_COMPLETE_GATE_FUNCTION_TIMING_LOG")" 2>/dev/null || return 0
+    declare -gA _CCG_FUNCTION_TIMING_US=()
+    declare -gA _CCG_FUNCTION_TIMING_CALLS=()
+    _CCG_FUNCTION_TIMING_LAST_FN=main
+    raw="${EPOCHREALTIME/./}"
+    _CCG_FUNCTION_TIMING_LAST_US="${raw:0:16}"
+    _CCG_FUNCTION_TIMING_BUSY=0
+    _CCG_FUNCTION_TIMING_ID="${CMD_ID:-cmd_unknown}-$$-${raw}"
+    _CCG_FUNCTION_TIMING_SCRIPT=cmd_complete_gate.sh
+    _CCG_FUNCTION_TIMING_PREV_DEBUG_TRAP="$(trap -p DEBUG 2>/dev/null || true)"
+    set -T
+    trap '_ccg_function_timing_debug' DEBUG
+    trap '_ccg_function_timing_finish' EXIT
+}
+
+_ccg_function_timing_debug() {
+    [ "${_CCG_FUNCTION_TIMING_BUSY:-0}" -eq 0 ] || return 0
+    _CCG_FUNCTION_TIMING_BUSY=1
+    local raw now fn delta
+    raw="${EPOCHREALTIME/./}"
+    now="${raw:0:16}"
+    fn="${FUNCNAME[1]:-main}"
+    case "$fn" in
+        _ccg_function_timing_*) fn="${_CCG_FUNCTION_TIMING_LAST_FN:-main}" ;;
+    esac
+    if [[ "${_CCG_FUNCTION_TIMING_LAST_US:-}" =~ ^[0-9]+$ ]] && [[ "$now" =~ ^[0-9]+$ ]]; then
+        delta=$((now - _CCG_FUNCTION_TIMING_LAST_US))
+        [ "$delta" -ge 0 ] || delta=0
+        _CCG_FUNCTION_TIMING_US["${_CCG_FUNCTION_TIMING_LAST_FN:-main}"]=$((
+            ${_CCG_FUNCTION_TIMING_US["${_CCG_FUNCTION_TIMING_LAST_FN:-main}"]:-0} + delta
+        ))
+    fi
+    _CCG_FUNCTION_TIMING_CALLS["$fn"]=$(( ${_CCG_FUNCTION_TIMING_CALLS["$fn"]:-0} + 1 ))
+    _CCG_FUNCTION_TIMING_LAST_FN="$fn"
+    _CCG_FUNCTION_TIMING_LAST_US="$now"
+    _CCG_FUNCTION_TIMING_BUSY=0
+    return 0
+}
+
+_ccg_function_timing_finish() {
+    trap - DEBUG
+    set +T
+    [ -n "${CMD_COMPLETE_GATE_FUNCTION_TIMING_LOG:-}" ] || return 0
+    [ "${_CCG_FUNCTION_TIMING_FINISHED:-0}" -eq 0 ] || return 0
+    _CCG_FUNCTION_TIMING_FINISHED=1
+    local raw now delta fn rank line
+    raw="${EPOCHREALTIME/./}"
+    now="${raw:0:16}"
+    fn="${_CCG_FUNCTION_TIMING_LAST_FN:-main}"
+    if [[ "${_CCG_FUNCTION_TIMING_LAST_US:-}" =~ ^[0-9]+$ ]] && [[ "$now" =~ ^[0-9]+$ ]]; then
+        delta=$((now - _CCG_FUNCTION_TIMING_LAST_US))
+        [ "$delta" -ge 0 ] || delta=0
+        _CCG_FUNCTION_TIMING_US["$fn"]=$(( ${_CCG_FUNCTION_TIMING_US["$fn"]:-0} + delta ))
+    fi
+    mkdir -p "$(dirname "$CMD_COMPLETE_GATE_FUNCTION_TIMING_LOG")" 2>/dev/null || return 0
+    {
+        flock -x 9 || exit 0
+        rank=0
+        while IFS=$'\t' read -r line fn; do
+            rank=$((rank + 1))
+            printf '{"schema":"function_timing.v1","execution_id":"%s","script":"%s","pid":%s,"rank":%s,"function":"%s","elapsed_us":%s,"calls":%s}\n' \
+                "${_CCG_FUNCTION_TIMING_ID:-unknown}" "${_CCG_FUNCTION_TIMING_SCRIPT:-cmd_complete_gate.sh}" "$$" "$rank" "$fn" "$line" "${_CCG_FUNCTION_TIMING_CALLS["$fn"]:-0}"
+        done < <(for fn in "${!_CCG_FUNCTION_TIMING_US[@]}"; do
+            printf '%s\t%s\n' "${_CCG_FUNCTION_TIMING_US[$fn]}" "$fn"
+        done | sort -t $'\t' -k1,1nr -k2,2)
+    } 9>"${CMD_COMPLETE_GATE_FUNCTION_TIMING_LOG}.lock" >>"$CMD_COMPLETE_GATE_FUNCTION_TIMING_LOG" 2>/dev/null || true
+    if [ -n "${_CCG_FUNCTION_TIMING_PREV_DEBUG_TRAP:-}" ]; then
+        eval "${_CCG_FUNCTION_TIMING_PREV_DEBUG_TRAP}" 2>/dev/null || true
+    fi
+    return 0
+}
+
+cmd_complete_gate_function_timing_enable
+
 # cmd_4379/cmd_4381: low-overhead wall-clock trace for major gate phases.
 # EPOCHREALTIME is used without spawning date/python on the measured path.
 # The durable default makes every real gate run observable. Set

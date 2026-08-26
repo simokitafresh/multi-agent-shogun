@@ -27,6 +27,10 @@ setup() {
     # not build a redundant cache copy for this already-isolated database.
     export SHOGUN_MEMORY_DB="${TEST_TMP}/data/test_memory.db"
     export SHOGUN_MEMORY_DB_SKIP_CACHE_SYNC=1
+    # The fixture queue is outside the real repository.  Production auto-commit
+    # retries cannot succeed here and would add 18 seconds to every write while
+    # contaminating command output with a warning.
+    export INSIGHT_AUTO_COMMIT=0
 }
 
 teardown() {
@@ -853,8 +857,8 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "AGGREGATE:${first_id}" ]
 
-    run bash "${TEST_TMP}/scripts/lib/yaml_field_set.sh" \
-        "$TEST_TMP/queue/insights.yaml" "$first_id" status resolved
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$first_id" \
+        "unit test resolution" "test=test_insight_write"
     [ "$status" -eq 0 ]
     local resolved_sha
     resolved_sha=$(sha256sum "$TEST_TMP/queue/insights.yaml" | awk '{print $1}')

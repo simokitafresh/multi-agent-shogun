@@ -11242,13 +11242,97 @@ fi
 source "$_dt_main_path"
 unset _dt_main_path
 
+# T18: measure every function reached by one deployment without selecting a
+# guessed hotspot.  The counters are best-effort and the final JSONL write is
+# locked; deployment semantics remain independent of telemetry availability.
+deploy_task_function_timing_enable() {
+    case "${DEPLOY_TASK_FUNCTION_TIMING_LOG:-}" in
+        disabled|0) return 0 ;;
+    esac
+    DEPLOY_TASK_FUNCTION_TIMING_LOG="${DEPLOY_TASK_FUNCTION_TIMING_LOG:-$SCRIPT_DIR/logs/deploy_task_function_timing.jsonl}"
+    mkdir -p "$(dirname "$DEPLOY_TASK_FUNCTION_TIMING_LOG")" 2>/dev/null || return 0
+    declare -gA _DT_FUNCTION_TIMING_US=()
+    declare -gA _DT_FUNCTION_TIMING_CALLS=()
+    _DT_FUNCTION_TIMING_LAST_FN=main
+    _DT_FUNCTION_TIMING_LAST_US="${EPOCHREALTIME/./}"
+    _DT_FUNCTION_TIMING_LAST_US="${_DT_FUNCTION_TIMING_LAST_US:0:16}"
+    _DT_FUNCTION_TIMING_BUSY=0
+    _DT_FUNCTION_TIMING_FINISHED=0
+    _DT_FUNCTION_TIMING_ID="deploy-task-$$-${EPOCHREALTIME//./}"
+    _DT_FUNCTION_TIMING_SCRIPT=deploy_task.sh
+    _DT_FUNCTION_TIMING_PREV_DEBUG_TRAP="$(trap -p DEBUG 2>/dev/null || true)"
+    set -T
+    trap '_dt_function_timing_debug' DEBUG
+}
+
+_dt_function_timing_debug() {
+    [ "${_DT_FUNCTION_TIMING_BUSY:-0}" -eq 0 ] || return 0
+    _DT_FUNCTION_TIMING_BUSY=1
+    local raw now fn delta
+    raw="${EPOCHREALTIME/./}"
+    now="${raw:0:16}"
+    fn="${FUNCNAME[1]:-main}"
+    case "$fn" in
+        _dt_function_timing_*) fn="${_DT_FUNCTION_TIMING_LAST_FN:-main}" ;;
+    esac
+    if [[ "${_DT_FUNCTION_TIMING_LAST_US:-}" =~ ^[0-9]+$ ]] && [[ "$now" =~ ^[0-9]+$ ]]; then
+        delta=$((now - _DT_FUNCTION_TIMING_LAST_US))
+        [ "$delta" -ge 0 ] || delta=0
+        _DT_FUNCTION_TIMING_US["${_DT_FUNCTION_TIMING_LAST_FN:-main}"]=$((
+            ${_DT_FUNCTION_TIMING_US["${_DT_FUNCTION_TIMING_LAST_FN:-main}"]:-0} + delta
+        ))
+    fi
+    _DT_FUNCTION_TIMING_CALLS["$fn"]=$(( ${_DT_FUNCTION_TIMING_CALLS["$fn"]:-0} + 1 ))
+    _DT_FUNCTION_TIMING_LAST_FN="$fn"
+    _DT_FUNCTION_TIMING_LAST_US="$now"
+    _DT_FUNCTION_TIMING_BUSY=0
+    return 0
+}
+
+deploy_task_function_timing_finish() {
+    trap - DEBUG
+    set +T
+    [ -n "${DEPLOY_TASK_FUNCTION_TIMING_LOG:-}" ] || return 0
+    [ "${_DT_FUNCTION_TIMING_FINISHED:-0}" -eq 0 ] || return 0
+    _DT_FUNCTION_TIMING_FINISHED=1
+    local raw now delta fn rank line
+    raw="${EPOCHREALTIME/./}"
+    now="${raw:0:16}"
+    fn="${_DT_FUNCTION_TIMING_LAST_FN:-main}"
+    if [[ "${_DT_FUNCTION_TIMING_LAST_US:-}" =~ ^[0-9]+$ ]] && [[ "$now" =~ ^[0-9]+$ ]]; then
+        delta=$((now - _DT_FUNCTION_TIMING_LAST_US))
+        [ "$delta" -ge 0 ] || delta=0
+        _DT_FUNCTION_TIMING_US["$fn"]=$(( ${_DT_FUNCTION_TIMING_US["$fn"]:-0} + delta ))
+    fi
+    mkdir -p "$(dirname "$DEPLOY_TASK_FUNCTION_TIMING_LOG")" 2>/dev/null || return 0
+    {
+        flock -x 9 || exit 0
+        rank=0
+        while IFS=$'\t' read -r line fn; do
+            rank=$((rank + 1))
+            printf '{"schema":"function_timing.v1","execution_id":"%s","script":"%s","pid":%s,"rank":%s,"function":"%s","elapsed_us":%s,"calls":%s}\n' \
+                "${_DT_FUNCTION_TIMING_ID:-unknown}" "${_DT_FUNCTION_TIMING_SCRIPT:-deploy_task.sh}" "$$" "$rank" "$fn" "$line" "${_DT_FUNCTION_TIMING_CALLS["$fn"]:-0}"
+        done < <(for fn in "${!_DT_FUNCTION_TIMING_US[@]}"; do
+            printf '%s\t%s\n' "${_DT_FUNCTION_TIMING_US[$fn]}" "$fn"
+        done | sort -t $'\t' -k1,1nr -k2,2)
+    } 9>"${DEPLOY_TASK_FUNCTION_TIMING_LOG}.lock" >>"$DEPLOY_TASK_FUNCTION_TIMING_LOG" 2>/dev/null || true
+    if [ -n "${_DT_FUNCTION_TIMING_PREV_DEBUG_TRAP:-}" ]; then
+        eval "${_DT_FUNCTION_TIMING_PREV_DEBUG_TRAP}" 2>/dev/null || true
+    fi
+    return 0
+}
+
+deploy_task_function_timing_enable
+
 if [[ "${DEPLOY_TASK_SELF_SNAPSHOT_TEST_ONLY:-0}" == "1" ]]; then
     printf 'SELF_SNAPSHOT_OK\n'
+    deploy_task_function_timing_finish
     exit 0
 fi
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
     deploy_task_main "$@"
+    deploy_task_function_timing_finish
 
     # cmd_1337: dashboard update remains a post-deployment side effect.
     # Source(lib-only)利用時は起動しない。
