@@ -158,3 +158,63 @@ SH
   [[ "$output" == *"causal-arg:explicit [[cmd_INPUT_ONLY]]"* ]]
   [[ "$output" != *"causal-arg:"*"cmd_RESULT_ONLY"* ]]
 }
+
+# test_necessity: fixed snapshot targets must be WARN-only, while an explicit
+# but incomplete self-measurement contract must BLOCK before cmd publication.
+@test "T25 fixed baseline warns and explicit measurement omissions block" {
+  awk '
+    /^check_dynamic_measurement_contract\(\)/ { emit=1 }
+    emit && /^check_q6_not_hiding_warn\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/dynamic_contract.sh"
+
+  local fixed_text=$'acceptance_criteria:\n  - description: 正本300秒・件数厳密一致・±20%'
+  run bash -c '
+    source "$1"
+    WARN_COUNT=0; BLOCK_COUNT=0
+    record_warn_reason() { WARN_COUNT=$((WARN_COUNT + 1)); }
+    record_block_reason() { BLOCK_COUNT=$((BLOCK_COUNT + 1)); }
+    check_dynamic_measurement_contract "$2"
+    printf "warn=%s block=%s\n" "$WARN_COUNT" "$BLOCK_COUNT"
+  ' _ "$BATS_TEST_TMPDIR/dynamic_contract.sh" "$fixed_text"
+  [ "$status" -eq 0 ]
+  [ "$output" = "WARNING(T25): 固定基準値だけのACは停止条件にしない。before/after/measurement_commandを同一環境で自己計測し、差異は報告して継続せよ
+warn=1 block=0" ]
+
+  local incomplete=$'measurement_environment: same\nbefore: 1\nacceptance_criteria:\n  - description: 正本300秒・件数厳密一致・±20%'
+  run bash -c '
+    source "$1"
+    WARN_COUNT=0; BLOCK_COUNT=0
+    record_warn_reason() { WARN_COUNT=$((WARN_COUNT + 1)); }
+    record_block_reason() { BLOCK_COUNT=$((BLOCK_COUNT + 1)); }
+    check_dynamic_measurement_contract "$2"
+    printf "warn=%s block=%s\n" "$WARN_COUNT" "$BLOCK_COUNT"
+  ' _ "$BATS_TEST_TMPDIR/dynamic_contract.sh" "$incomplete"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BLOCK(T25): 自己計測欄が欠落しています: after, measurement_command。before/after/measurement_commandを埋めよ"* ]]
+  [[ "$output" == *"warn=0 block=1"* ]]
+
+  local complete=$'measurement_environment: same\nbefore: 1\nafter: 2\nmeasurement_command: measure\nacceptance_criteria:\n  - description: 正本300秒・件数厳密一致・±20%'
+  run bash -c '
+    source "$1"
+    WARN_COUNT=0; BLOCK_COUNT=0
+    record_warn_reason() { WARN_COUNT=$((WARN_COUNT + 1)); }
+    record_block_reason() { BLOCK_COUNT=$((BLOCK_COUNT + 1)); }
+    check_dynamic_measurement_contract "$2"
+    printf "warn=%s block=%s\n" "$WARN_COUNT" "$BLOCK_COUNT"
+  ' _ "$BATS_TEST_TMPDIR/dynamic_contract.sh" "$complete"
+  [ "$status" -eq 0 ]
+  [ "$output" = "warn=0 block=0" ]
+
+  local neutral=$'acceptance_criteria:\n  - description: 同一環境の自己計測を実行する'
+  run bash -c '
+    source "$1"
+    WARN_COUNT=0; BLOCK_COUNT=0
+    record_warn_reason() { WARN_COUNT=$((WARN_COUNT + 1)); }
+    record_block_reason() { BLOCK_COUNT=$((BLOCK_COUNT + 1)); }
+    check_dynamic_measurement_contract "$2"
+    printf "warn=%s block=%s\n" "$WARN_COUNT" "$BLOCK_COUNT"
+  ' _ "$BATS_TEST_TMPDIR/dynamic_contract.sh" "$neutral"
+  [ "$status" -eq 0 ]
+  [ "$output" = "warn=0 block=0" ]
+}
