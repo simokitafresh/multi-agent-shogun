@@ -3776,3 +3776,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260826-182500329-d793
+  ts: "2026-08-26T18:25:00+09:00"
+  insight: "DM-signalローカルclone(/mnt/c/Python_app/DM-signal)がorigin/mainと履歴分岐: origin-only 138/local-only 9、同一subjectが別hash(例 cmd_4333 55b81b43 vs 5b4e27eb)=履歴書換え型。context_freshness_checkはorigin/main基準(L794)のためdoc laneはorigin tipを境界にすべき。ローカルHEAD基準の計数は偽値(252/261/200)を生む。自動化ターゲット: DOC_LANE_REQUESTの母数をorigin/main基準に固定し、ローカル分岐を別ALERTで出す"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
