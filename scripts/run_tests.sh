@@ -872,7 +872,7 @@ run_bats_files_parallel() {
     for file in "${files[@]}"; do
         file_base="${file##*/}"
         case "$file_base" in
-            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_insight_write.bats|test_shogun_cli_switch_probe.bats|test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats)
+            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_insight_write.bats|test_shogun_cli_switch_probe.bats|test_memory_db_query_rowid_watermark.bats|test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats)
                 protected_files+=("$file") ;;
             *) normal_files+=("$file") ;;
         esac
@@ -924,7 +924,7 @@ run_bats_files_parallel() {
                 ;;
         esac
         case "$file_base" in
-            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_insight_write.bats|test_shogun_cli_switch_probe.bats)
+            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_insight_write.bats|test_shogun_cli_switch_probe.bats|test_memory_db_query_rowid_watermark.bats)
                 file_inner_jobs="${BATS_ISOLATED_INNER_JOBS:-$INNER_JOBS}"
                 file_weight="$MAX_TEST_JOBS"
                 ;;
@@ -937,7 +937,7 @@ run_bats_files_parallel() {
         # one post-plan daemon timeout.  One such fixture therefore owns the
         # aggregate budget until it exits.
         case "$file_base" in
-            test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats)
+            test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats|test_memory_db_query_rowid_watermark.bats)
                 file_inner_jobs=1
                 file_weight="$MAX_TEST_JOBS"
                 ;;
@@ -2380,6 +2380,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                     || { echo "BLOCK: single-flight leader receipt invalid" >&2; exit 2; }
                 if [[ -n "$_sf_leader_tree_head" && "$_sf_tree_head" == "$_sf_leader_tree_head" \
                       && "$_sf_tree_dirty" == "$_sf_leader_tree_dirty" ]]; then
+                    printf 'SINGLE_FLIGHT_ADMISSION mode=%s selection_count=%s pending=0 admission=acquired\n' \
+                        "$_mode" "$(printf '%s\n' "$_sf_selection" | sed '/^$/d' | wc -l)" >&2
                     printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
                     emit_run_tests_terminal_receipt "$_receipt" joined=1
                     exit $?
@@ -2413,6 +2415,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             # not only after the terminal artifact is flushed.
             printf 'SINGLE_FLIGHT_LEADER mode=%s selection_count=%s admission=pending generation=%s receipt=%s\n' \
                 "$_mode" "$RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT" "$_sf_generation" "$_receipt" >&2
+            printf 'SINGLE_FLIGHT_ADMISSION mode=%s selection_count=%s pending=0 admission=acquired\n' \
+                "$_mode" "$RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT" >&2
             export RUN_TESTS_SINGLEFLIGHT_LEADER_PENDING=0
         fi
         _tap="${_receipt%.json}.tap"
