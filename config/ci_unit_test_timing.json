@@ -3,9 +3,9 @@
   "source_cmd_id": "cmd_4392_recon2_retry",
   "measured_at": "2026-08-25T02:16:31+09:00",
   "scope": "tests/unit/*.bats",
-  "selected_files": 239,
-  "discovered_files": 239,
-  "record_count": 239,
+  "selected_files": 240,
+  "discovered_files": 240,
+  "record_count": 240,
   "duplicate_count": 0,
   "missing_count": 0,
   "records": [
