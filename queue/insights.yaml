@@ -5,7 +5,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4369"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象を確認し、根因はcontext/dm-signal-ops.md:L607とsemantic indexに既知記録済みと判定。現行repo内にAC標準文言の実装証跡はなく、テンプレート修正は今回scope外のため、家老判断を要するdecision_candidateとして報告へ整理した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-024135821-e53f;context=context/dm-signal-ops.md:L607;context=context/dm-signal-research.md:L70-L71;semantic=docs/semantic-index/index.md:L9139;memory=memory_db_query+semantic_search;decision_candidate=cmd起票テンプレートのACを完了月(最終月除外)へ標準化"
+  resolved_at: "2026-08-27T05:45:21+09:00"
 - id: INS-20260823-024136022-2909
   ts: "2026-08-23T02:41:36+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4369; matched=変更,lessons; current_pattern=PIT低相関selection最小実験 — Control分解つきharness実装と実験実行(研究層限定・本番無変更); candidate_level=4; candidate=影丸lessons_useful reason空×10が本日3報告で繰り返し(FAIL率36%)。根因=autofixが空文字でスケルトン生成→忍者が埋まっていると誤認。FILL_THISに変更→既存gate L152がBLOCK。才蔵/小太郎は0%なので道具が壊れているのではなく忍者への指示不足。E2Eテスト: autofix→FILL_THIS 10件→; source=gunshi_gp_tracker.yaml"
