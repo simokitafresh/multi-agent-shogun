@@ -3789,4 +3789,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T18:30:01+09:00"
+- id: INS-20260826-183033302-182d
+  ts: "2026-08-26T18:30:33+09:00"
+  insight: "訂正(INS-182500): DM-signalローカル /mnt/c/Python_app/DM-signal のcheckoutは rb6-cleanup-20260814 ブランチで、main は別worktree(+ main)。『origin/main比138/9の履歴分岐』はブランチ違いの計測であり、mainは c627f887(cmd_4353)を含む。doc laneの母数(252/261)がどのref/worktreeを数えているかは context_freshness_check の repo解決(L794 origin/main候補)と実worktreeの突合で確定させる。自動化ターゲット: DOC_LANE_ALERTに計測ref(ブランチ/worktree/日付基準)を明記"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
