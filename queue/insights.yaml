@@ -171,7 +171,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4371"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: scripts/report_field_set.sh L1806-L1825 と tests/unit/test_report_field_set_validation.bats L82-L99 が数値キーdict({0:{id:X},1:{id:Y}})からlistへの内容不変変換を実装・検証。ID-keyed dictは同テストL88-L99で拒否され、単一dict/ID-keyed dictを誤変換しない。cmd_1921の既知WAは現行防御で解消済みのため、新規修正・decision_candidate不要。"
+  action_artifact: "primary=scripts/report_field_set.sh:1806-1825;regression=tests/unit/test_report_field_set_validation.bats:82-99;gate=tests/unit/test_gate_report_autofix.bats:86-122,580-614;design=docs/research/gunshi_idle_lu_dict_pattern_20260415.md:5-12"
+  resolved_at: "2026-08-27T08:58:00+09:00"
 - id: INS-20260823-075837850-eeb0
   ts: "2026-08-23T07:58:37+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4371; matched=deploy_task; current_pattern=deploy_task.sh分割第八弾 — modifiers module抽出(挙動不変); candidate_level=4; candidate=lessons_useful有効率27%。task-specific枠1→2倍増+有効率閾値引上げでunseful教訓のフロー削減→忍者の注入精度向上。殿承認済み; source=gunshi_gp_tracker.yaml"
@@ -4413,5 +4416,19 @@ insights:
   insight: "push 3本(e5c1ab2cb/a52c112ce/577731149)に家老pane wall 43m58s(08:07下知→08:51報告)。logs/hook_artifacts は失敗時のみで成功pushの pre-push 所要時間が残らない=律速が見えない。pre-push 成功時も affected本数と wall秒を logs/defense_overhead.jsonl へ記録し、1本≧300秒をWARN表示"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260827-085910663-c3ee
+  ts: "2026-08-27T08:59:10+09:00"
+  insight: "[[実際にどれくらい効率よくinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=実際にどれくらい効率よくinbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260827-085932286-45a7
+  ts: "2026-08-27T08:59:32+09:00"
+  insight: "[[マップのT12 T40 T47を着手しない理由を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=マップのT12,T40,T47を着手しない理由を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
