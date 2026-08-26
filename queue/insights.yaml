@@ -3846,11 +3846,21 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T19:27:20+09:00"
 - id: INS-20260826-192157343-85cc
   ts: "2026-08-26T19:21:57+09:00"
   insight: "pre-push律速の一次計測(2026-08-26 19:20): canonical push set=80files/1513cases 直列5959秒(99分)、top8で49%(test_cmd_complete_gate 912s>300s/file上限=構造矛盾)。prepush_test_pass.shaは07:50以降更新なし=本日PASS未到達。insight_write auto-commitが本日43回(17:45以降12回)でHEADが5-10分毎に動きPASSキャッシュ(同一commit限定)が再利用不能。自動化ターゲット: (1)PASSキャッシュのキーをcommitでなくtested-paths tree hashに変更 (2)insight auto-commitのバッチ化(N分に1回、reflux dirty-guardはinsights.yaml限定で除外) (3)T10で912s→計測器名指し→分割"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260826-193019800-d652
+  ts: "2026-08-26T19:30:19+09:00"
+  insight: "[[T10らせん第1手 — 常設function timingログのcmd complete gate一実行を選び]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gate自動pushがGA PUSH1成立済みのdirty overlapを毎回hook失敗と; score=8.8) / shogun_android_app(将軍Androidアプリ; alias=F001改訂 — 殿との会話ブロック基準で将軍直接実行とcmd委任を区別; score=8.1) / agent_formation_management(編成管理; alias=既存の広いdirty差分inbox1 — CMD受領済み; score=8.0)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
