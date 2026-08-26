@@ -7931,7 +7931,7 @@ auto_request_report_review() {
     if [ ! -f "$marker" ]; then
         if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
             "忍者報告の自動レビュー依頼。report=${report_base} parent_cmd=${parent_cmd}" \
-            review_draft ninja_monitor review_request >/dev/null 2>&1; then
+            review_draft ninja_monitor review_request >/dev/null 2>>"$LOG_DIR/report_review_auto_request.err"; then
             printf 'timestamp: %s\nreport: %s\nparent_cmd: %s\n' \
                 "$(date -Iseconds)" "$report_base" "$parent_cmd" > "$marker"
             log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd"

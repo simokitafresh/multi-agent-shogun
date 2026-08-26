@@ -1054,6 +1054,36 @@ inbox_watcher_active_for_target() {
     pgrep -af "[i]nbox_watcher\\.sh ${target} " >/dev/null 2>&1
 }
 
+rearm_codex_watcher_delivery() {
+    local target="$1"
+    local msg_id="$2"
+    local pane_target="$3"
+    local inbox_file="$SCRIPT_DIR/queue/inbox/${target}.yaml"
+    local state_dir="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
+    local state_lock="$state_dir/inbox_watcher_state_${target}.lock"
+    local pane_key="${pane_target//[:.]/_}"
+    local send_lock="$state_dir/tmux_sendkeys_${pane_key}.lock"
+    local token rc=0
+
+    [ -n "$pane_target" ] || return 1
+    mkdir -p "$state_dir"
+    (
+        flock -w 5 201 || exit 1
+        flock -w 5 200 || exit 1
+        inbox_message_marked_read "$inbox_file" "$msg_id" && exit 3
+        rm -f "$state_dir/inbox_watcher_fingerprint_${target}" \
+              "$state_dir/inbox_watcher_last_nudge_${target}"
+        for token in "$state_dir"/inbox_watcher_sent_"${target}"_*; do
+            [ -e "$token" ] || continue
+            rm -f -- "$token"
+        done
+        # Content is unchanged.  The mtime transition wakes the watcher's
+        # bounded fallback path after its sent-fingerprint lease is removed.
+        touch "$inbox_file"
+    ) 201>"$state_lock" 200>"$send_lock" || rc=$?
+    return "$rc"
+}
+
 capture_codex_delivery_snapshot() {
     local target="$1"
     local pane_target="$2"
@@ -1085,51 +1115,6 @@ verify_codex_task_delivery() {
     return 1
 }
 
-codex_pane_has_delivery_evidence() {
-    local target="$1"
-    local msg_id="$2"
-    local pane_snapshot="$3"
-
-    # Codex keeps the submitted prompt visible while UserPromptSubmit/PostToolUse
-    # hooks run.  Waiting only for the later generic "Working" badge causes the
-    # same already-arrived prompt to be submitted again.
-    # Join visual wraps before matching the submitted prompt.  Codex may also
-    # render hook activity with either the filled or hollow bullet.
-    local flattened
-    flattened=$(printf '%s\n' "$pane_snapshot" | tr '\n' ' ')
-    case "$flattened" in
-        *"queue/tasks/${target}.yaml"*) ;;
-        *) return 1 ;;
-    esac
-    # Fixed-string identity check avoids regex escaping ambiguity and prevents
-    # a same-target prompt carrying another message ID from passing.
-    case "$flattened" in
-        *"delivery_msg=${msg_id}"*) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-codex_delivery_evidence_observed() {
-    local target="$1"
-    local msg_id="$2"
-    local pane_target="$3"
-    local baseline_snapshot="${4:-}"
-
-    if verify_codex_task_delivery "$target" "$msg_id"; then
-        return 0
-    fi
-
-    [ -n "$pane_target" ] || return 1
-    local pane_snapshot
-    pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
-    # Generic Working/Hook text is only evidence when it is a new pane state
-    # observed after this message was persisted.  Reusing an unchanged pane
-    # snapshot caused pre-send work from another message to be a false PASS.
-    [ -n "$baseline_snapshot" ] || return 1
-    [ "$pane_snapshot" != "$baseline_snapshot" ] || return 1
-    codex_pane_has_delivery_evidence "$target" "$msg_id" "$pane_snapshot"
-}
-
 maybe_verify_codex_delivery() {
     local target="$1"
     local msg_id="$2"
@@ -1144,19 +1129,16 @@ maybe_verify_codex_delivery() {
     local inbox_file="$SCRIPT_DIR/queue/inbox/${target}.yaml"
     [ -f "$inbox_file" ] || return 2
 
-    local retries="${INBOX_CODEX_NUDGE_RETRIES:-2}"
+    local retries="${INBOX_CODEX_NUDGE_RETRIES:-${INBOX_RENUDGE_MAX_ATTEMPTS:-5}}"
     local wait_sec="${INBOX_CODEX_VERIFY_WAIT_SEC:-1}"
     local attempt=0
 
-    local pane_target pane_baseline=""
+    local pane_target
     pane_target=$(resolve_agent_pane_target "$target" || true)
-    if [ -n "$pane_target" ]; then
-        pane_baseline=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
-    fi
 
     while [ "$attempt" -le "$retries" ]; do
-        if codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target" "$pane_baseline"; then
-            echo "[inbox_write] codex delivery verified (prompt/working evidence) for ${target} (read/task/pane composite)" >&2
+        if verify_codex_task_delivery "$target" "$msg_id"; then
+            echo "[inbox_write] codex delivery verified by inbox read transition for ${target} (msg_id=${msg_id})" >&2
             capture_codex_delivery_snapshot "$target" "$pane_target"
             return 0
         fi
@@ -1165,12 +1147,14 @@ maybe_verify_codex_delivery() {
             local unread_count
             unread_count=$(inbox_unread_count "$inbox_file")
             if inbox_watcher_active_for_target "$target"; then
-                # Persistence already woke the event-driven watcher.  A direct
-                # retry here races that watcher and can submit the same inboxN
-                # twice even though only one durable message exists.
-                echo "[inbox_write] codex nudge retry ${attempt}/${retries} delegated to active watcher for ${target}" >&2
+                local rearm_rc=0
+                rearm_codex_watcher_delivery "$target" "$msg_id" "$pane_target" || rearm_rc=$?
+                case "$rearm_rc" in
+                    0) echo "[inbox_write] codex watcher dedup rearmed ${attempt}/${retries} for ${target} (msg_id=${msg_id})" >&2 ;;
+                    3) echo "[inbox_write] codex watcher rearm skipped: target message already read for ${target} (msg_id=${msg_id})" >&2 ;;
+                    *) echo "[inbox_write] codex watcher dedup rearm failed ${attempt}/${retries} for ${target} (msg_id=${msg_id})" >&2 ;;
+                esac
             elif [ -n "$pane_target" ] && [ "$unread_count" -gt 0 ] 2>/dev/null; then
-                pane_baseline=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
                 if send_codex_task_nudge "$target" "$pane_target" "$unread_count" "$msg_id"; then
                     echo "[inbox_write] codex nudge retry ${attempt}/${retries} sent to ${target}" >&2
                     capture_codex_delivery_snapshot "$target" "$pane_target"
@@ -1182,18 +1166,16 @@ maybe_verify_codex_delivery() {
             fi
         fi
 
-        # Preserve the one-second retry deadline, but do not impose it as a
-        # fixed cost after delivery has already become observable.  Most Codex
-        # acknowledgements land inside that window; differential checks let
-        # the verifier finish at the first evidence while keeping retry count,
-        # persistence, and message identity unchanged.
+        # Preserve the one-second retry deadline, but finish early only when
+        # the exact durable message row becomes read.  Pane/task observations
+        # are diagnostics and cannot satisfy delivery identity.
         local delivered=0 wait_tick
         if [ "$wait_sec" = "0" ]; then
-            codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target" "$pane_baseline" && delivered=1
+            verify_codex_task_delivery "$target" "$msg_id" && delivered=1
         else
             for wait_tick in 1 2 3 4 5; do
                 sleep 0.2
-                if codex_delivery_evidence_observed "$target" "$msg_id" "$pane_target" "$pane_baseline"; then
+                if verify_codex_task_delivery "$target" "$msg_id"; then
                     delivered=1
                     break
                 fi
@@ -2206,8 +2188,11 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
         exit 1
     fi
 
-    if [ "$FROM" = "ninja_monitor" ] && [ "$TARGET" != "karo" ] && [ "$TARGET" != "shogun" ]; then
-        echo "ERROR: ninja_monitor can send only to karo or shogun." >&2
+    # cmd_4357 の自動レビュー依頼(ninja_monitor→gunshi, type=review_draft)は正規経路。
+    # 2026-08-27 00:15 実証: この制限が自動依頼を毎回BLOCKし(stderrは捨てられ)、報告10本がUN-GATEDで滞留した。
+    if [ "$FROM" = "ninja_monitor" ] && [ "$TARGET" != "karo" ] && [ "$TARGET" != "shogun" ] \
+        && ! { [ "$TARGET" = "gunshi" ] && [ "$TYPE" = "review_draft" ]; }; then
+        echo "ERROR: ninja_monitor can send only to karo or shogun (except review_draft to gunshi)." >&2
         exit 1
     fi
 fi
