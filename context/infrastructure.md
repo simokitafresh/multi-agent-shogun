@@ -1,5 +1,11 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-26 context updated for ghost tmux AC1 implementation -->
+<!-- last_updated: 2026-08-26 context_freshness reviewed source boundary -->
+<!-- source_commit:ec3e50f4f reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=ec3e50f4f -->
+<!-- source_commit:024dce221 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=024dce221 -->
+<!-- source_commit:7d9532b12 reason:context updated for report scope SSOT + merge-commit ownership gate evidence:doc_lane_request blt_20260826_101234_f3d396 -->
+<!-- source_commit:4dde551de reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4dde551de -->
+<!-- source_commit:b7ad89d5c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b7ad89d5c -->
+<!-- source_commit:464c833c1 reason:context updated for ghost tmux AC2/AC3b + session_alerts runtime preservation evidence:doc_lane_request blt_20260826_062930_e5aabe -->
 <!-- source_commit:e06c2f9dc reason:context updated for ghost tmux AC1 implementation evidence:doc_lane_request blt_20260826_040416_c55741 -->
 <!-- source_commit:46d568a53 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=46d568a53 -->
 <!-- source_commit:a4930e9ce reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a4930e9ce -->
@@ -89,7 +95,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1641 -->
+<!-- last_synced_lesson: L1645 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -131,7 +137,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1641 -->
+<!-- last_synced_lesson: L1645 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -268,6 +274,10 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1639: CI FAIL artifactはparallel-onlyとstandaloneを直列比較で分離する（cmd_karo_hotfix_cmd4400_stateful_shards）
 - L1640: Source boundary classification must remain explicit across ledger producer and gate post-processing（cmd_karo_hotfix_ga498_context_freshness_source_timeout）
 - L1641: Race contracts must hold partial records across the observation boundary（cmd_karo_ci_fix_32810257392_compatibility_isolation）
+- L1642: FAIL_CLOSEはstale CLEARより先に判定しgeneration一致を要求する（cmd_karo_hotfix_fail_close_worktree_cleanup_20260826）
+- L1643: 通知成功とdoc内容反映を同一のdurable receipt契約へ結ぶ（cmd_karo_hotfix_ga499_doc_lane_setter_20260826）
+- L1644: CI共有資源fixtureはprotected full-budget境界へ即時反映する（cmd_karo_ci_fix_admission_pending_20260826）
+- L1645: 独立Batsセルはbounded parallel化し、空値軸は明示sentinelで結果集約する（cmd_karo_hotfix_cmd4403_batch2set_test_auto_deploy_next_r2_20260826）
 
 ## 設計標準・テスト・因果
 
@@ -276,12 +286,13 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 
 ## 2026-08-26 追加(source=b065d7fc7〜aa9a28e02・夜間ghost陣+承認欠落の根治)
 
-- **tmux二重サーバ(ghost陣)**: WSL再起動後、`/init`直下で自動起動されたtmuxサーバ(826)が、`shutsujin_departure.sh` の後発サーバにsocket(`/tmp/tmux-1000/default`)を奪われ**到達不能のまま生存**。配下ghost家老(codex)がkaro inboxを共有処理し「inboxが届かない/家老が止まっている/影丸の所在不明」の見え方を作った。撤収STEPは `tmux kill-session -t shogun` =socket所有者にしか届かず、**出陣を繰り返すほどghostが積む**。一次確認= `ss -xlp | grep tmux`(サーバPIDが2本=異常)。根治=家老hotfix `queue/handoff/karo_hotfix_ghost_tmux_20260826.md`(AC1 撤収工程の多重サーバ検知+撤収 / AC2 daemon_watchdog ALERT / AC3 826の起動元特定 / AC4 幻スキル参照差替え)。insight INS-20260826-020217534。**AC1実装済(影丸 `e06c2f9dc`, GATE CLEAR 03:57)**: `shutsujin_departure.sh`/`scripts/reset_layout.sh` の撤収工程が同一socket pathの全tmuxサーバを `ss` で列挙し、現owner以外の旧サーバと配下agentを一覧表示。**停止は自動化しない**(D006整合・停止プリミティブ全除去 rg exact=0): 重複検知時は **fail-closed rc=1 で出陣を止め**、停止操作は殿の操作境界に残す。検知0件時は無音。
+- **tmux二重サーバ(ghost陣)**: WSL再起動後、`/init`直下で自動起動されたtmuxサーバ(826)が、`shutsujin_departure.sh` の後発サーバにsocket(`/tmp/tmux-1000/default`)を奪われ**到達不能のまま生存**。配下ghost家老(codex)がkaro inboxを共有処理し「inboxが届かない/家老が止まっている/影丸の所在不明」の見え方を作った。撤収STEPは `tmux kill-session -t shogun` =socket所有者にしか届かず、**出陣を繰り返すほどghostが積む**。一次確認= `ss -xlp | grep tmux`(サーバPIDが2本=異常)。根治=家老hotfix `queue/handoff/karo_hotfix_ghost_tmux_20260826.md`(AC1 撤収工程の多重サーバ検知+撤収 / AC2 daemon_watchdog ALERT / AC3 826の起動元特定 / AC4 幻スキル参照差替え)。insight INS-20260826-020217534。**AC1実装済(影丸 `e06c2f9dc`, GATE CLEAR 03:57)**: `shutsujin_departure.sh`/`scripts/reset_layout.sh` の撤収工程が同一socket pathの全tmuxサーバを `ss` で列挙し、現owner以外の旧サーバと配下agentを一覧表示。**停止は自動化しない**(D006整合・停止プリミティブ全除去 rg exact=0): 重複検知時は **fail-closed rc=1 で出陣を止め**、停止操作は殿の操作境界に残す。検知0件時は無音。**AC2実装済(疾風 `46d2b8783`)**: `scripts/daemon_watchdog.sh` が同一socket pathのtmuxサーバ重複を検知し、owner照合+dedupe通知でALERT(fixture 9/9)。**AC3真因(将軍一次確認 05:05)**: 外部自動起動は存在せず(影丸偵察: Scheduler/Run/Startup/wsl.conf/systemd unit全て陰性)、WSL再起動直後の `systemd-tmpfiles-setup.service`(21:57:08→22:00:29、`tmp.conf: D /tmp`=boot時削除)が殿の出陣(21:58)で作られた `/tmp/tmux-1000/default` を削除→826到達不能→22:06の `shutsujin -s` が新サーバを作りghost化(物証: `/tmp/tmux-1000` birth=22:00:22、watchdog 22:01〜list-sessions failed)。`/init`が親なのはデーモン再親付けで起動者の証拠ではない。**AC3b実装済(飛猿 `f13550126`)**: 出陣/reset_layout前に tmpfiles-setup がactivating中なら完了を待つガード(fixture 14/14、非systemdは無音rc=0)。**関連(疾風 `464c833c1`)**: `archive_completed.sh` のtracked runtime allowlistへ `queue/session_alerts_shogun.txt` を追加(cmd完了archiveで将軍session_alertsが消えない)。
 - `shutsujin_departure.sh`: `log_warn` が2026-03-23から未定義(`log_war`のみ)で、ntfyスモーク失敗/ntfy_inbox_archive失敗の分岐だけ `command not found` になっていた → `b065d7fc7` で定義追加。ntfyスモーク失敗自体はWSL起動直後の一過性。
 - `scripts/gates/gate_shogun_startup.sh` 「■ スキル参照実在」新設(`1136fefab`): CLAUDE.md/instructions/*.md の `/skill` 参照に対し `skills/<name>/SKILL.md` 実在をALERT(初回検出= `CLAUDE.md:/reset-layout`、skills削除efc8e016e後の幻参照。deepdive Phase 9「参照パスと実体不一致」同型)。
 - `scripts/review_bundle.py`(`2dd1d2a21`): `generate` を単独CLIで `--verdict APPROVE` 実行しただけでは承認(gunshi LGTM=`review_approvals/reports/<key>/gunshi.yaml`)にならない。batch4/5r/6r/7r/8rで軍師がgenerateのみ実行→承認欠落→家老gate5件が `review_two_phase_pending` でBLOCKした実証。以後、直接CLIのAPPROVEでLGTM未記録なら **rc=3 fail-closed+NEXT(`review_bundle.py single`)を名指し**。正規入口は `/review-bundle`(Step 1=`single`)。`review_approval.sh gunshi LGTM` 直接実行は構造的拒否(rc=2)。
 - `scripts/review_bundle.py`(`aa9a28e02`): 忍者taskがidle化した後の報告身元照合は家老inboxの受領receiptで行うが、報告timestampが**UTC(`...Z`)**だと探索日が**JST命名の `archive/inbox/karo_YYYYMMDD.yaml`** と1日ずれてreceiptを見失う(batch6r saizo実証: ts=08-25T16:43Z→karo_20260825を探すがreceiptはkaro_20260826)。receipt探索を全日付archive(新しい順)へ拡張。fingerprint/report_id/path完全一致は維持。
 - バッチらせん#2〜#8実績(一次実測・`docs/research/cmd_4403_slowest_tests_speedup_20260825.md`): #2 79.9→67.6s / #3 87.5→72.6s(AC2 timeout BLOCK) / #4 20.1→9.2s / #5r 87.6→48.8s / #6r 630→586s+phase receipt常設(支配=checks_main.quality_gate) / #7r 142.7→61.3s / #8r 169.2→76.9s。初回#5/#7/#8は**timing正本≠live実測(−44〜−50%)でAC1どおり実装せず停止**→次セット選別は各弾後に正本を再計測してから行う。
+- 報告scopeの正本=source-generation SSOT(飛猿 `7d9532b12`, `scripts/lib/review_source_context.py`+`gate_report_format.sh`): 報告の変更scopeはisolated worktreeの生成源で検証し、primary(共有main)のdirty混入を排除する。**merge commit注意(将軍 `64025b9d4`)**: 所有パス検査の `git diff-tree` に `-m --first-parent` が無いとmerge commit(親2+)は変更0件扱いになり、履歴分岐統合taskが構造的にFAILする(実証0→15 files)。全repo target(`target_path: <repo root>`)のtaskは知識/台帳の恒常dirty(lessons/insights/semantic-index等)が『未commit変更あり』BLOCKになるため、統合前にscope commitで退避する。
 - 報告timestampはJST(`+09:00`)で書け(UTC `Z` は上記の日付ずれの発生源)。恒久解はreport-writeテンプレのtimestamp生成側で統一する(未実装=次ターゲット)。
 
 ## 2026-08-15 追加ガード(source=253afbb2c以降)
