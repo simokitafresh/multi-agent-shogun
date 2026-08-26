@@ -4404,4 +4404,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T08:33:45+09:00"
+- id: INS-20260827-085509569-7aa6
+  ts: "2026-08-27T08:55:09+09:00"
+  insight: "push 3本(e5c1ab2cb/a52c112ce/577731149)に家老pane wall 43m58s(08:07下知→08:51報告)。logs/hook_artifacts は失敗時のみで成功pushの pre-push 所要時間が残らない=律速が見えない。pre-push 成功時も affected本数と wall秒を logs/defense_overhead.jsonl へ記録し、1本≧300秒をWARN表示"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
