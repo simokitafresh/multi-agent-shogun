@@ -4308,3 +4308,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-051834659-48d8
+  ts: "2026-08-27T05:18:34+09:00"
+  insight: "lesson SSOT不整合(05:17 T19): L1632 は projects/dm-signal/lessons.yaml(cache)に1件あるが canonical /mnt/c/Python_app/DM-signal/tasks/lessons.md に0件。lesson_write.sh --retire が canonical 不在で ERROR し退役できない。原因候補=cache→canonical 同期(lesson SSOT relocate c562cbcbc 以降)の片方向欠落。自動化ターゲット: gate_lesson_health に cache⊆canonical の集合差チェック(差分ID列挙)を追加し、差分は canonical へ同期する修復コマンドを提示"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
