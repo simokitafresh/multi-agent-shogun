@@ -10133,7 +10133,7 @@ check_workaround_pattern() {
 }
 
 check_gate_improvement() {
-    local now
+    local now lock_file lock_fd timeout_sec worker_generation worker_pid
     now=$EPOCHSECONDS
 
     local elapsed=$((now - LAST_GATE_IMPROVEMENT))
@@ -10148,7 +10148,71 @@ check_gate_improvement() {
         return
     fi
 
-    bash "$gate_script" >> "$SCRIPT_DIR/logs/gate_improvement.log" 2>&1 || true
+    # The trigger runs several gates and can block on /mnt/c or an external
+    # service.  Keep the monitor's main loop free to perform terminal-task
+    # auto-clear while allowing exactly one trigger worker at a time.
+    timeout_sec="${GATE_IMPROVEMENT_TIMEOUT:-120}"
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+    lock_file="${GATE_IMPROVEMENT_LOCK_FILE:-$STATE_DIR/shogun_gate_improvement.lock}"
+    mkdir -p "$(dirname "$lock_file")" || {
+        log "GATE-IMPROVEMENT-BLOCK: cannot create worker lock directory"
+        return
+    }
+    exec {lock_fd}>"$lock_file" || {
+        log "GATE-IMPROVEMENT-BLOCK: cannot open worker lock"
+        return
+    }
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "GATE-IMPROVEMENT-SKIP: worker already running"
+        return
+    fi
+
+    worker_generation="${NINJA_MONITOR_GENERATION:-legacy}"
+    local state_file="${GATE_IMPROVEMENT_STATE_FILE:-$STATE_DIR/shogun_gate_improvement.last}"
+    local pid_file="${GATE_IMPROVEMENT_PID_FILE:-$STATE_DIR/shogun_gate_improvement.pid}"
+    local generation_file="${GATE_IMPROVEMENT_GENERATION_FILE:-$STATE_DIR/shogun_gate_improvement.generation}"
+    printf '%s\n' "$now" > "$state_file" 2>/dev/null || true
+    printf '%s\n' "$worker_generation" > "$generation_file" 2>/dev/null || true
+
+    (
+        # The monitor owns an EXIT trap for its lease.  Clear the inherited
+        # trap in this detached worker or a fast trigger completion could
+        # release the live monitor's owner record.
+        trap - EXIT
+        local rc=0
+        GATE_IMPROVEMENT_OWNER_FILE="${NINJA_MONITOR_OWNER_FILE:-$STATE_DIR/ninja_monitor.owner}" \
+            GATE_IMPROVEMENT_OWNER_PID="$$" \
+            GATE_IMPROVEMENT_OWNER_GENERATION="$worker_generation" \
+            timeout --signal=TERM --kill-after=2 "$timeout_sec" \
+            bash "$gate_script" >> "$SCRIPT_DIR/logs/gate_improvement.log" 2>&1 || rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            log "GATE-IMPROVEMENT-TIMEOUT: generation=$worker_generation timeout=${timeout_sec}s rc=$rc"
+        elif [ "$rc" -ne 0 ]; then
+            log "GATE-IMPROVEMENT-FAIL: generation=$worker_generation rc=$rc"
+        else
+            log "GATE-IMPROVEMENT-DONE: generation=$worker_generation"
+        fi
+
+        # Only the generation that published this worker may clear its
+        # diagnostic PID/generation record.  A hot-reload successor owns the
+        # next generation without signalling this worker; its lock handoff
+        # remains the single-flight boundary.
+        local current_generation current_pid
+        current_generation=$(cat "$generation_file" 2>/dev/null || true)
+        current_pid=$(cat "$pid_file" 2>/dev/null || true)
+        if [ "$current_generation" = "$worker_generation" ] && [ "$current_pid" = "$BASHPID" ]; then
+            rm -f "$pid_file" "$generation_file"
+        fi
+    ) &
+    worker_pid=$!
+    printf '%s\n' "$worker_pid" > "$pid_file" 2>/dev/null || true
+    log "GATE-IMPROVEMENT-START: generation=$worker_generation pid=$worker_pid timeout=${timeout_sec}s (background)"
+
+    # The child owns the lock after this point.  Closing the monitor's copy
+    # prevents a hot-reload/owner handoff from inheriting a permanent lock.
+    exec {lock_fd}>&-
 }
 
 check_throughput_scan() {

@@ -26,6 +26,22 @@ STATE_DIR="$SCRIPT_DIR/logs/gate_state"
 mkdir -p "$STATE_DIR"
 DEDUP_WINDOW_SECONDS="${GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS:-86400}"
 
+# A trigger started by an older monitor generation may finish after hot reload.
+# Check the owner lease at every side-effect boundary so ownership transfers by
+# generation handoff, without signalling or terminating the old worker.
+owner_generation_is_current() {
+    local owner_file="${GATE_IMPROVEMENT_OWNER_FILE:-}"
+    local expected_pid="${GATE_IMPROVEMENT_OWNER_PID:-}"
+    local expected_generation="${GATE_IMPROVEMENT_OWNER_GENERATION:-}"
+    local owner_pid="" owner_generation=""
+    [ -n "$owner_file" ] || return 0
+    [ -n "$expected_pid" ] && [ -n "$expected_generation" ] || return 1
+    IFS=' ' read -r owner_pid owner_generation _owner_heartbeat < "$owner_file" 2>/dev/null || return 1
+    [ "$owner_pid" = "$expected_pid" ] || return 1
+    [ "$owner_generation" = "$expected_generation" ] || return 1
+    [ -d "/proc/$owner_pid" ] || return 1
+}
+
 current_epoch() {
     if [[ "${GATE_IMPROVEMENT_NOW:-}" =~ ^[0-9]+$ ]]; then
         printf '%s\n' "$GATE_IMPROVEMENT_NOW"
@@ -199,6 +215,11 @@ send_alert() {
     local alert_lines="$2"
     local deduped_alert_lines
 
+    owner_generation_is_current || {
+        echo "HANDOFF: ${gate_name} — owner generation superseded; side effects skipped"
+        return 1
+    }
+
     if ! deduped_alert_lines="$(dedup_alert_lines_24h "$gate_name" "$alert_lines")"; then
         if [[ -n "$deduped_alert_lines" ]]; then
             printf '%s\n' "$deduped_alert_lines"
@@ -288,6 +309,7 @@ process_gate() {
     local extra_alert_pattern="${4:-}" # 追加ALERTとするgrepパターン (e.g., "WARN:")
     local output
     local exit_code=0
+    owner_generation_is_current || return 0
 
     output=$($gate_script 2>&1) || exit_code=$?
     evaluate_gate_result "$gate_name" "$output" "$exit_code" "$extra_alert_exit" "$extra_alert_pattern"
@@ -304,6 +326,7 @@ process_gate_cached() {
     local output_file="${cache_base}.out"
     local rc_file="${cache_base}.rc"
     local now cache_mtime cache_age output exit_code
+    owner_generation_is_current || return 0
 
     now=$(date +%s)
     cache_mtime=$(stat -c %Y "$output_file" 2>/dev/null || printf 0)
@@ -394,6 +417,11 @@ evaluate_gate_result() {
     local extra_alert_exit="${4:-}"    # 追加ALERTとするexit code (e.g., "2")
     local extra_alert_pattern="${5:-}" # 追加ALERTとするgrepパターン (e.g., "WARN:")
 
+    owner_generation_is_current || {
+        echo "HANDOFF: ${gate_name} — owner generation superseded; result ignored"
+        return 0
+    }
+
     # ALERT判定: exit_code=1 または出力に "ALERT:" を含む
     local is_alert=false
     if [ "$exit_code" -eq 1 ] || output_has_alert_prefix "$output"; then
@@ -435,6 +463,7 @@ check_ci_red() {
     local gate_name="ci_red"
     local output
     local exit_code=0
+    owner_generation_is_current || return 0
 
     # gh run list で最新runの結論を取得（originリポジトリを明示指定）
     output=$(gh run list --repo simokitafresh/multi-agent-shogun --limit 3 --json conclusion,name,headBranch \
@@ -447,6 +476,7 @@ evaluate_ci_red_result() {
     local output="$1"
     local exit_code="$2"
     local gate_name="ci_red"
+    owner_generation_is_current || return 0
 
     if [ "$exit_code" -ne 0 ]; then
         echo "SKIP: ci_red — gh run list failed: $output"
@@ -551,6 +581,7 @@ check_hook_failures() {
     local gate_name="hook_failure"
     local failures_file="$SCRIPT_DIR/logs/hook_failures.yaml"
     local state_file="${STATE_DIR}/gate_improvement_hook_last_count"
+    owner_generation_is_current || return 0
 
     if [ ! -f "$failures_file" ]; then
         echo "OK: ${gate_name} — no failures file"
