@@ -4301,3 +4301,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-045548522-f2b3
+  ts: "2026-08-27T04:55:48+09:00"
+  insight: "gate_context_freshness 偽ALERT 2件目(04:54, context/dm-signal-frontend.md): 『source commits 27件 since last_updated=2026-08-27, latest 7cd8867b』と報告するが、DM-signal origin/main=d87339a4 は境界と一致し d87339a4..origin/main の frontend commit は 0。7cd8867b(08-17)は境界の祖先。集計が last_updated 日付基準+HEAD(rb6-cleanup-20260814 ブランチ、origin/main+9)基準で、境界commit基準になっていない=T16(marker基準化)の未適用箇所。自動化ターゲット: gate_context_freshness の DOC_LANE_ALERT 生成前に『境界commit..origin/main の対象パス差分 0 件なら ALERT を出さない』guard"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
