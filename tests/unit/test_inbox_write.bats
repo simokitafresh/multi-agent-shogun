@@ -116,6 +116,45 @@ setup_file() {
     done
     cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$GIT_TEMPLATE_DIR/scripts/inbox_write.sh"
 
+    # inbox_write owns which timing events are emitted; the Python/SQLite
+    # ledger implementation has its own contract suite.  A flocked tmpfs
+    # writer keeps the concurrency semantics needed here without re-testing
+    # the external index for every emitted checkpoint.
+    cat > "$GIT_TEMPLATE_DIR/scripts/lib/defense_overhead_writer.sh" <<'MOCK'
+DEFENSE_OVERHEAD_ASYNC_PIDS=()
+defense_overhead_write() {
+    [ "${DEFENSE_OVERHEAD_ENABLED:-1}" = "1" ] || return 0
+    local source_name="$1" check_id="$2" wall_ms="$3" verdict="$4" event_id="$5"
+    local metadata="${6-}" ledger="${DEFENSE_OVERHEAD_LEDGER:-${DEFENSE_OVERHEAD_REPO_ROOT}/logs/defense_overhead.jsonl}"
+    local metadata_body fd
+    [ -n "$metadata" ] || metadata='{}'
+    metadata_body="${metadata#\{}"
+    metadata_body="${metadata_body%\}}"
+    mkdir -p "${ledger%/*}"
+    exec {fd}>>"${ledger}.lock"
+    flock "$fd"
+    if [ -n "$metadata_body" ]; then
+        printf '{"timestamp":"fixture","source":"%s","check_id":"%s","wall_ms":%s,"verdict":"%s","event_id":"%s",%s}\n' \
+            "$source_name" "$check_id" "$wall_ms" "$verdict" "$event_id" "$metadata_body" >> "$ledger"
+    else
+        printf '{"timestamp":"fixture","source":"%s","check_id":"%s","wall_ms":%s,"verdict":"%s","event_id":"%s"}\n' \
+            "$source_name" "$check_id" "$wall_ms" "$verdict" "$event_id" >> "$ledger"
+    fi
+    flock -u "$fd"
+    eval "exec ${fd}>&-"
+}
+defense_overhead_write_async() {
+    [ "${DEFENSE_OVERHEAD_ENABLED:-1}" = "1" ] || return 0
+    ( defense_overhead_write "$@" ) >/dev/null 2>&1 &
+    DEFENSE_OVERHEAD_ASYNC_PIDS+=("$!")
+}
+defense_overhead_drain_async() {
+    local pid
+    for pid in "${DEFENSE_OVERHEAD_ASYNC_PIDS[@]}"; do wait "$pid" || true; done
+    DEFENSE_OVERHEAD_ASYNC_PIDS=()
+}
+MOCK
+
     git -C "$GIT_TEMPLATE_DIR" init -q
     git -C "$GIT_TEMPLATE_DIR" config user.name "test"
     git -C "$GIT_TEMPLATE_DIR" config user.email "test@test.com"
@@ -193,7 +232,10 @@ init_test_env() {
     export TEST_TMPDIR="$BATS_TEST_TMPDIR/work"
     mkdir -p "$TEST_TMPDIR"
     export INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR"
-    export TEST_INBOX_WRITE="$PROJECT_ROOT/scripts/inbox_write.sh"
+    # setup_file snapshots the production script and its sourced libraries to
+    # tmpfs.  Execute that byte-for-byte fixture instead of reparsing the
+    # 3k-line script from DrvFS for every one of the 118 contract cases.
+    export TEST_INBOX_WRITE="$GIT_TEMPLATE_DIR/scripts/inbox_write.sh"
 }
 
 setup_basic_test_env() {
@@ -212,6 +254,11 @@ YAML
 
 setup() {
     init_test_env
+    # Timing telemetry is an independent production concern.  Keeping it on
+    # for every inbox contract case makes the suite serialize through Python,
+    # SQLite and ledger flock even when the case does not assert telemetry.
+    # Telemetry contract cases opt back in locally below.
+    export DEFENSE_OVERHEAD_ENABLED=0
 }
 
 # test_necessity: typed escalation delivery is fail-closed until the three
@@ -219,6 +266,7 @@ setup() {
 # prose remains deliverable after the cmd_4251 review clarification.
 @test "escalation requires self-trial receipt and records BLOCK/PASS telemetry" {
     setup_basic_test_env
+    export DEFENSE_OVERHEAD_ENABLED=1
     mkdir -p "$TEST_TMPDIR/logs"
     export DEFENSE_OVERHEAD_REPO_ROOT="$TEST_TMPDIR"
     export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
@@ -2132,6 +2180,7 @@ EOF
 # diagnostic persist/nudge/delivery slices without changing retry delivery.
 @test "task_assigned: B5 telemetry records persist nudge delivery verify and additive total" {
     setup_basic_test_env
+    export DEFENSE_OVERHEAD_ENABLED=1
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin" "$TEST_TMPDIR/logs"
 
     cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
@@ -2198,6 +2247,7 @@ PY
 # callers plus an invalid/unknown fallback.
 @test "B5 telemetry records caller classification without adding ledger rows" {
     setup_basic_test_env
+    export DEFENSE_OVERHEAD_ENABLED=1
     mkdir -p "$TEST_TMPDIR/logs"
     export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
 
@@ -2260,6 +2310,7 @@ PY
     # behavior.  Keep production validation active by providing the target's
     # task file after the lightweight inbox fixture setup.
     setup_basic_test_env
+    export DEFENSE_OVERHEAD_ENABLED=1
     unset INBOX_WRITE_TEST
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin" "$TEST_TMPDIR/logs"
     printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
