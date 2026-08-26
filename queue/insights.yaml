@@ -3885,3 +3885,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260826-200911731-004f
+  ts: "2026-08-26T20:09:11+09:00"
+  insight: "[[pushuはprepush→pushなのか？prepush長時間かかりすぎなのが気になるな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=pushuはprepush→pushなのか？prepush長時間かかりすぎなのが気になるな。なぜなのか説明してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
