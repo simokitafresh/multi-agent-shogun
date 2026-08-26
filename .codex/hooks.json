@@ -6,6 +6,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_inbox_priority_guard.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_skill_execution_guard.sh",
             "timeout": 10
           },
