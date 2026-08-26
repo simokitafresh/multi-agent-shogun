@@ -3950,4 +3950,91 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T21:04:02+09:00"
+- id: INS-20260826-212133777-84a3
+  ts: "2026-08-26T21:21:33+09:00"
+  insight: "[[pre push blocker根治 — test deploy task batsの全ケースを維持したまま300秒ti]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: agent_formation_management(編成管理; alias=deploy_task push_allowed; score=16.6) / provisional_test_speed_task_generator(仮: Test Speed Task Generator; alias=scripts test speed task generator.sh; score=12.1) / provisional_run_tests(仮: Run Tests; alias=run tests sh外部backend task — contract test未宣言時にscoped pathsか; score=12.1)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T21:33:17+09:00"
+- id: INS-20260826-212140553-64dc
+  ts: "2026-08-26T21:21:40+09:00"
+  insight: "SKILL.md追従task[7e3f0d71e0378b38]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:7e3f0d71e0378b38"
+  fix_known: false
   status: pending
+- id: INS-20260826-213354357-005d
+  ts: "2026-08-26T21:33:54+09:00"
+  insight: "[[同じcodexの家老にはできることが]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=同じcodexの家老にはできることが、なぜcodex忍者にはできないんだろう？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T21:48:53+09:00"
+- id: INS-20260826-214853688-60c3
+  ts: "2026-08-26T21:48:53+09:00"
+  insight: "semantic_index_update新概念候補: discussion:多分全部いっぺんにプッシュしようとしているのでは？一つずつ小さくプッシュしないことが大きな要因かもな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T21:53:19+09:00"
+- id: INS-20260826-215140151-531e
+  ts: "2026-08-26T21:51:40+09:00"
+  insight: "[[多分全部いっぺんにプッシュしようとしているのでは？一つずつ小さくプッシュしないことが大きな要因かもな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=多分全部いっぺんにプッシュしようとしているのでは？一つずつ小さくプッシュしないことが大きな要因かもな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T21:58:25+09:00"
+- id: INS-20260826-215825309-f8e1
+  ts: "2026-08-26T21:58:25+09:00"
+  insight: "semantic_index_update新概念候補: discussion:家老は方針に従って行動しているか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T22:13:38+09:00"
+- id: INS-20260826-220923211-ef4b
+  ts: "2026-08-26T22:09:23+09:00"
+  insight: "semantic_index_update新概念候補: discussion:artifactもアップデートして は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T22:13:39+09:00"
+- id: INS-20260826-223220033-55fe
+  ts: "2026-08-26T22:32:20+09:00"
+  insight: "CI RED真因(2026-08-26 22:35): .github/workflows/test.yml L150 が tests/unit の本数を『== 239』でハードコード。tree 240本(ledger 240)で『unit inventory invariant failed: 240 unique files』→shard割当段で落ち全shard receipt欠落。テスト追加のたびに壊れる構造。自動化ターゲット: 固定数を撤廃し inventory==ledger record集合+重複0 を不変量にする(家老へci_fix配備 msg_223206)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260826-224117211-5631
+  ts: "2026-08-26T22:41:17+09:00"
+  insight: "[[artifactもアップデートして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactもアップデートして"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-26T22:52:55+09:00"
