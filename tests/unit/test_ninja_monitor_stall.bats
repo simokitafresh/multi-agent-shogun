@@ -523,14 +523,26 @@ read -r owner generation previous < "$NINJA_MONITOR_OWNER_FILE"
 NINJA_MONITOR_OWNER_WATCH_OWNER_PID="$$"
 NINJA_MONITOR_OWNER_WATCH_PARENT_PID="$$"
 start_ninja_monitor_owner_heartbeat_watch
+wait_for_heartbeat() {
+  local deadline=$((SECONDS + 5))
+  local owner_after generation_after heartbeat_after
+  while (( SECONDS < deadline )); do
+    if read -r owner_after generation_after heartbeat_after < "$NINJA_MONITOR_OWNER_FILE" \
+      && test "$owner_after" = "$owner" \
+      && test "$generation_after" = "$generation" \
+      && test "$heartbeat_after" -gt "$previous"; then
+      previous="$heartbeat_after"
+      return 0
+    fi
+    sleep 0.1
+  done
+  printf "heartbeat timeout previous=%s owner=%s generation=%s\n" \
+    "$previous" "$owner" "$generation" >&2
+  return 1
+}
 for cycle in 1 2 3; do
-  sleep 1
-  read -r owner_after generation_after heartbeat_after < "$NINJA_MONITOR_OWNER_FILE"
-  test "$owner_after" = "$owner"
-  test "$generation_after" = "$generation"
-  test "$heartbeat_after" -gt "$previous"
+  wait_for_heartbeat
   test "$(cat "$STATE_DIR/ninja_monitor.pid")" = "$owner"
-  previous="$heartbeat_after"
 done
 printf "owner_pid=%s heartbeat_cycles=3 pid_match=1\n" "$owner"
 '
