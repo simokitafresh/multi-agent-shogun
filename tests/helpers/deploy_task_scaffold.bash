@@ -7,6 +7,10 @@ deploy_task_setup_file() {
     # Keep the async Python/SQLite/flock writer out of the canonical parallel
     # test lane; telemetry-specific tests must opt in explicitly with =1.
     export DEFENSE_OVERHEAD_ENABLED=0
+    # Function timing installs a DEBUG trap and is a production entry-point
+    # concern.  Disable it for sourced fixture libraries so Bats' setup/body
+    # execution remains independent of production telemetry state.
+    export DEPLOY_TASK_FUNCTION_TIMING_LOG=disabled
 
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"

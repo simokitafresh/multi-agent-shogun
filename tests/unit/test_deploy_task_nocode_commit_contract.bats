@@ -265,7 +265,7 @@ PY
 
   run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"investigation_contract:"* ]]
+  [[ "$output" == *"finding:"* ]]
 
   cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
