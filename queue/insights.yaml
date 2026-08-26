@@ -3864,3 +3864,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260826-193442661-977c
+  ts: "2026-08-26T19:34:42+09:00"
+  insight: "T21実例(19:31-19:34): 家老Codexが/clear直後にwatcher nudge『inbox8』を『Messages to be submitted after next tool call』でキューしたままidle表示。watcherは同一fingerprintをdedupし再送せず。約3分後に自己解消(unread 8→6)したが、この間は指示不達。配達判定をpane観測でなくread遷移にするT21の必要性を裏付け。将軍はEnter送出を準備したが状態変化を確認して送らなかった(送信前capture→判断の順序遵守)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
