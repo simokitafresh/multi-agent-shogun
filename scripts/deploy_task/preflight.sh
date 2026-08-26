@@ -106,6 +106,27 @@ record_deployed_at() {
     fi
 }
 
+# Report the administrative linked-worktree count without walking every
+# worktree's checkout. The count is emitted immediately before worktree add so
+# deploy latency can be compared with the metadata pressure it observed.
+deploy_task_worktree_metadata_entry_count() {
+    local repo="${1:-$SCRIPT_DIR}" admin_dir
+    admin_dir="$(git -C "$repo" rev-parse --git-path worktrees 2>/dev/null || true)"
+    case "$admin_dir" in
+        /*) ;;
+        *) admin_dir="$repo/$admin_dir" ;;
+    esac
+    [ -d "$admin_dir" ] || { printf '0\n'; return 0; }
+    find "$admin_dir" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null \
+        | awk 'NF {count++} END {print count+0}'
+}
+
+deploy_task_log_worktree_metadata_before_add() {
+    local repo="${1:-$SCRIPT_DIR}" entries
+    entries="$(deploy_task_worktree_metadata_entry_count "$repo")"
+    log "WORKTREE-METADATA-BEFORE-ADD repo=$repo entries=$entries"
+}
+
 # Source-changing tasks are edited and committed from a linked worktree rooted
 # at the live remote tip. The shared checkout remains available for queue and
 # runtime state, while this marker gives GATE/archive one cleanup identity.
@@ -157,6 +178,7 @@ deploy_task_prepare_remote_tip_worktree() {
     generation=$(printf '%s\0%s\0%s' "$task_id" "$remote_tip" "$(date +%s%N)" | sha256sum | awk '{print $1}')
     worktree_path="$worktree_root/${ninja_name}_${generation:0:16}"
     [ ! -e "$worktree_path" ] || { log "BLOCK: task worktree path already exists"; return 1; }
+    deploy_task_log_worktree_metadata_before_add "$repo"
     git -C "$repo" -c maintenance.auto=false worktree add --detach --no-checkout "$worktree_path" "$remote_tip" >/dev/null 2>&1 || { log "BLOCK: task worktree add failed"; return 1; }
     if ! git -C "$worktree_path" -c maintenance.auto=false checkout --detach "$remote_tip" >/dev/null 2>&1 \
         || ! git -C "$worktree_path" config maintenance.auto false; then
@@ -252,4 +274,3 @@ PY
     yaml_field_set_batch "$task_file" task \
         "target_path_worktree_blob_at_deploy=$blob" "progress_updated_at=$now"
 }
-

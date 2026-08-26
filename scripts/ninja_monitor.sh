@@ -10769,6 +10769,65 @@ cleanup_terminal_task_cdps() {
     done
 }
 
+# Count linked-worktree administrative entries without asking Git to walk the
+# worktree list. The admin directory is the authoritative metadata location;
+# each child directory represents one registered linked worktree.
+worktree_metadata_entry_count() {
+    local repo="${1:-$SCRIPT_DIR}" admin_dir
+    admin_dir="$(git -C "$repo" rev-parse --git-path worktrees 2>/dev/null || true)"
+    case "$admin_dir" in
+        /*) ;;
+        *) admin_dir="$repo/$admin_dir" ;;
+    esac
+    [ -d "$admin_dir" ] || { printf '0\n'; return 0; }
+    find "$admin_dir" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null \
+        | awk 'NF {count++} END {print count+0}'
+}
+
+worktree_metadata_missing_gitdir_count() {
+    local repo="${1:-$SCRIPT_DIR}" admin_dir entry marker target gitdir missing=0
+    admin_dir="$(git -C "$repo" rev-parse --git-path worktrees 2>/dev/null || true)"
+    case "$admin_dir" in
+        /*) ;;
+        *) admin_dir="$repo/$admin_dir" ;;
+    esac
+    [ -d "$admin_dir" ] || { printf '0\n'; return 0; }
+    while IFS= read -r -d '' entry; do
+        marker="$entry/gitdir"
+        if [ ! -f "$marker" ]; then
+            missing=$((missing + 1))
+            continue
+        fi
+        target="$(sed -n '1p' "$marker")"
+        case "$target" in
+            gitdir:*) target="${target#gitdir:}" ;;
+        esac
+        target="${target#${target%%[![:space:]]*}}"
+        case "$target" in
+            /*) gitdir="$target" ;;
+            *) gitdir="$entry/$target" ;;
+        esac
+        [ -e "$gitdir" ] || missing=$((missing + 1))
+    done < <(find "$admin_dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null)
+    printf '%s\n' "$missing"
+}
+
+run_worktree_metadata_cleanup() {
+    local repo="${WORKTREE_METADATA_REPO:-$SCRIPT_DIR}"
+    local entries_before missing_before entries_after missing_after pruned
+    [ -d "$repo" ] || return 0
+    entries_before="$(worktree_metadata_entry_count "$repo")"
+    missing_before="$(worktree_metadata_missing_gitdir_count "$repo")"
+    if [ "$missing_before" -gt 0 ]; then
+        git -C "$repo" worktree prune --expire now >/dev/null 2>&1 || true
+    fi
+    entries_after="$(worktree_metadata_entry_count "$repo")"
+    missing_after="$(worktree_metadata_missing_gitdir_count "$repo")"
+    pruned=$((entries_before - entries_after))
+    [ "$pruned" -ge 0 ] || pruned=0
+    log "WORKTREE-METADATA: repo=$repo entries_before=$entries_before missing_before=$missing_before pruned=$pruned entries_after=$entries_after missing_after=$missing_after"
+}
+
 # ═══ /tmp lock file定期cleanup ═══
 # lock_path.shが生成するshogun_lock_*.lock + auto_deploy_*.lockが蓄積(10000+件)
 # flockはfd操作のため古いファイルは安全に削除可能
@@ -10789,6 +10848,7 @@ run_lock_cleanup() {
     if [ "$count" -gt 0 ]; then
         log "LOCK-CLEANUP: Removed $count stale lock files from $cleanup_dir"
     fi
+    run_worktree_metadata_cleanup
     run_scratch_retention "$cleanup_dir"
     run_tmp_cache_retention "$cleanup_dir"
     LAST_LOCK_CLEANUP=$now

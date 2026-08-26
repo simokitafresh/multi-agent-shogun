@@ -1820,3 +1820,35 @@ EOF
     [ "$status" -eq 2 ]
     [[ "$output" == *"BLOCK: invalid blocked_parent_ninja"* ]]
 }
+
+# test_necessity: deploy preflight must expose the linked-worktree metadata
+# count immediately before worktree creation so metadata pressure is measurable.
+@test "worktree preflight logs metadata entry count before add" {
+    local repo="$BATS_TEST_TMPDIR/worktree-metadata-repo"
+    mkdir -p "$repo"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.invalid
+    git -C "$repo" config user.name test
+    printf 'base\n' > "$repo/README"
+    git -C "$repo" add README
+    git -C "$repo" commit -q -m base
+    git -C "$repo" worktree add -q "$BATS_TEST_TMPDIR/worktree-metadata-live" HEAD
+
+    run bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        SCRIPT_DIR="$1"
+        log() { printf "%s\n" "$1"; }
+        deploy_task_log_worktree_metadata_before_add "$2"
+    ' _ "$PROJECT_ROOT" "$repo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WORKTREE-METADATA-BEFORE-ADD repo=$repo entries=1"* ]]
+
+    local log_line add_line
+    log_line=$(rg -n 'deploy_task_log_worktree_metadata_before_add "\$repo"' \
+        "$PROJECT_ROOT/scripts/deploy_task/preflight.sh" | cut -d: -f1)
+    add_line=$(rg -n 'git -C "\$repo".*worktree add' \
+        "$PROJECT_ROOT/scripts/deploy_task/preflight.sh" | cut -d: -f1)
+    test "$log_line" -lt "$add_line"
+}

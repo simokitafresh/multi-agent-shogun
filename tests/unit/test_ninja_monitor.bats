@@ -1035,3 +1035,54 @@ YAML
     [[ "$output" == *"AUTO-CLEAR-SKIP-FORMAL-REVIEW"* ]]
     [[ "$output" != *"RESPAWN_CALLED"* ]]
 }
+
+# test_necessity: run_lock_cleanup must prune only linked-worktree metadata
+# whose gitdir target is absent, while retaining a live worktree entry.
+@test "run_lock_cleanup prunes stale linked-worktree metadata after one interval" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        TMP_ROOT="$BATS_TEST_TMPDIR/root"
+        REPO="$TMP_ROOT/repo"
+        SCRIPT_DIR="$TMP_ROOT/runtime"
+        STATE_DIR="$TMP_ROOT/state"
+        LOG="$TMP_ROOT/monitor.log"
+        mkdir -p "$TMP_ROOT" "$SCRIPT_DIR" "$STATE_DIR"
+        git init -q "$REPO"
+        git -C "$REPO" config user.email test@example.invalid
+        git -C "$REPO" config user.name test
+        printf "base\n" > "$REPO/README"
+        git -C "$REPO" add README
+        git -C "$REPO" commit -q -m base
+        git -C "$REPO" worktree add -q "$TMP_ROOT/live" HEAD
+        git -C "$REPO" worktree add -q "$TMP_ROOT/stale" HEAD
+        rm -rf "$TMP_ROOT/stale"
+
+        LOCK_CLEANUP_DIR="$TMP_ROOT/locks"
+        WORKTREE_METADATA_REPO="$REPO"
+        SCRATCH_RETENTION_REPO="$REPO"
+        SCRATCH_QUARANTINE_DIR="$TMP_ROOT/scratch-quarantine"
+        LOCK_CLEANUP_INTERVAL=3600
+        LAST_LOCK_CLEANUP=0
+        mkdir -p "$LOCK_CLEANUP_DIR"
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+
+        before=$(worktree_metadata_entry_count "$REPO")
+        missing_before=$(worktree_metadata_missing_gitdir_count "$REPO")
+        run_lock_cleanup
+        after=$(worktree_metadata_entry_count "$REPO")
+        missing_after=$(worktree_metadata_missing_gitdir_count "$REPO")
+        test "$before" -eq 2
+        test "$missing_before" -eq 1
+        test "$after" -eq 1
+        test "$missing_after" -eq 0
+        test -d "$TMP_ROOT/live"
+        grep -q "WORKTREE-METADATA: repo=$REPO entries_before=2 missing_before=1 pruned=1 entries_after=1 missing_after=0" "$LOG"
+        printf "worktree_entries=%s->%s missing_gitdir=%s->%s pruned=1\n" "$before" "$after" "$missing_before" "$missing_after"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"worktree_entries=2->1 missing_gitdir=1->0 pruned=1"* ]]
+}
