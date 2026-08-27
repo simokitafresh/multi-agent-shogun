@@ -5468,3 +5468,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-27T22:20:05+09:00"
+- id: INS-20260827-224132878-c25d
+  ts: "2026-08-27T22:41:32+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿下問_9p_D-state_20260827_1350]] は既存aliasesに一致なし。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_cmd_state; score=11.4) / growth_loop(学習ループ; alias=prompt_state_inject; score=11.0) / infrastructure_ops(インフラ運用基盤; alias=atomic wakeup state; score=10.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
