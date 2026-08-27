@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_done_requires_gate_clear_20260818
-  timestamp: '2026-08-18T01:38:19Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_done_requires_gate_clear_20260818'
-- cmd_id: cmd_karo_hotfix_rc_revoke_legacy_generation_20260818
-  timestamp: '2026-08-18T02:06:18Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_rc_revoke_legacy_generation_20260818'
 - cmd_id: cmd_karo_hotfix_ninja_monitor_hot_reload_generation_20260818
   timestamp: '2026-08-18T03:38:27Z'
   ninja: system
