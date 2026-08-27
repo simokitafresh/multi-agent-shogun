@@ -13,6 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+import yaml
 
 from scripts import review_bundle
 
@@ -399,6 +400,65 @@ def test_split_child_resolves_only_verified_longest_ancestor(tmp_path, mutation)
     else:
         with pytest.raises(ValueError):
             review_bundle.generate(args)
+
+
+@pytest.mark.parametrize("fixture", ["receipt_match", "receipt_fingerprint_mismatch", "task_not_replaced"])
+def test_split_child_receipt_is_the_only_superseded_task_escape(tmp_path, fixture):
+    """test_necessity: only an exact durable receipt may authorize a superseded split report."""
+    root = _root(tmp_path)
+    (root / "queue/archive/cmds").mkdir(parents=True)
+    cmd = "cmd_4410_ac3"
+    (root / "queue/archive/cmds/cmd_4410_done.yaml").write_text(
+        "commands:\n  cmd_4410:\n    acceptance_criteria:\n      AC1: {description: docs}\n"
+        "      AC2: {description: architecture}\n      AC3: {description: isolation}\n"
+        "    target_path: README.md\n    project: infra\n",
+        encoding="utf-8",
+    )
+    report = root / "queue/reports/tobisaru_report_cmd_4410_ac3.yaml"
+    report.write_text(
+        "worker_id: tobisaru\nparent_cmd: cmd_4410_ac3\ntask_id: cmd_4410_ac3_normal\n"
+        "report_id: rpt-4410-ac3\nreport_identity_version: 2\nac_version_read: ac-v1\n"
+        "status: completed\nverdict: PASS\nresult: {summary: measured}\n"
+        "task_contract_snapshot:\n  parent_cmd: cmd_4410_ac3\n  issued_cmd_id: cmd_4410_ac3\n"
+        "  task_id: cmd_4410_ac3_normal\n  ac_fingerprint: ac-v1\n  purpose: isolate\n"
+        "  acceptance_criteria: [{id: AC3}]\n  project: infra\n",
+        encoding="utf-8",
+    )
+    (root / "queue/inbox").mkdir(parents=True)
+    digest = hashlib.sha256(report.read_bytes()).hexdigest()
+    receipt_digest = digest if fixture == "receipt_match" else "0" * 64
+    receipt = {
+        "messages": [{
+            "type": "report_received", "report_id": "rpt-4410-ac3",
+            "report_identity_version": 2, "report_fingerprint": receipt_digest,
+            "report_path": "queue/reports/tobisaru_report_cmd_4410_ac3.yaml",
+            "task_id": "cmd_4410_ac3_normal", "parent_cmd": "cmd_4410_ac3",
+        }]
+    }
+    (root / "queue/inbox/karo.yaml").write_text(yaml.safe_dump(receipt), encoding="utf-8")
+
+    if fixture == "task_not_replaced":
+        task = {
+            "task_id": "cmd_4410_ac3_normal", "parent_cmd": cmd,
+            "issued_cmd_id": "cmd_wrong", "report_filename": "wrong.yaml",
+            "subtask_id": "ac3", "ac_version": "ac-v1", "report_id": "rpt-4410-ac3",
+        }
+    else:
+        task = {
+            "task_id": "cmd_next_normal", "parent_cmd": "cmd_next",
+            "issued_cmd_id": "cmd_next", "report_filename": "worker_report_cmd_next.yaml",
+            "ac_version": "ac-v2", "report_id": "rpt-next",
+        }
+    (root / "queue/tasks/tobisaru.yaml").write_text(yaml.safe_dump({"task": task}), encoding="utf-8")
+    report_data = review_bundle.load(report)
+
+    if fixture == "receipt_match":
+        command, source = review_bundle.find_command(root, cmd, report_data, report, requested_verdict="APPROVE")
+        assert source == root / "queue/archive/cmds/cmd_4410_done.yaml"
+        assert command["project"] == "infra"
+    else:
+        with pytest.raises(ValueError, match="identity mismatch|report-generation identity"):
+            review_bundle.find_command(root, cmd, report_data, report, requested_verdict="APPROVE")
 
 
 @pytest.mark.parametrize(

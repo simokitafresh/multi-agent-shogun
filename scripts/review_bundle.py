@@ -165,17 +165,25 @@ def _split_command(root, report, cmd_id, report_path):
     snapshot = report.get("task_contract_snapshot") if isinstance(report, dict) else None
     if not isinstance(snapshot, dict) or str(snapshot.get("issued_cmd_id") or "") != cmd_id:
         return None
+    # A worker can be leased to a later task before Karo reviews its immutable
+    # report.  In that case the durable receipt is the generation boundary: it
+    # binds report_id, identity version, fingerprint, logical report path,
+    # parent_cmd, and task_id to the report that was actually received.  Do not
+    # re-apply the live worker's issued_cmd_id/report_filename/subtask_id checks
+    # after that proof; those fields necessarily describe the later lease.
+    receipt_match = _receipt_generation_matches(root, report_path, report)
     _, task_path = _snapshot_command(root, report, cmd_id, report_path)
     task = load(task_path).get("task")
-    split_identities = {
-        "issued_cmd_id": (cmd_id, task.get("issued_cmd_id")),
-        "report_filename": (Path(report_path).name, task.get("report_filename")),
-    }
-    for key, (expected, actual) in split_identities.items():
-        if not expected or str(actual or "") != str(expected):
-            raise ValueError(f"immutable task/report identity mismatch: {key}")
-    if not str(task.get("subtask_id") or "").strip():
-        raise ValueError("split task subtask_id is missing")
+    if not receipt_match:
+        split_identities = {
+            "issued_cmd_id": (cmd_id, task.get("issued_cmd_id")),
+            "report_filename": (Path(report_path).name, task.get("report_filename")),
+        }
+        for key, (expected, actual) in split_identities.items():
+            if not expected or str(actual or "") != str(expected):
+                raise ValueError(f"immutable task/report identity mismatch: {key}")
+        if not str(task.get("subtask_id") or "").strip():
+            raise ValueError("split task subtask_id is missing")
     ancestor = None
     for cut in range(len(cmd_id), 3, -1):
         if cut < len(cmd_id) and cmd_id[cut] != "_":
