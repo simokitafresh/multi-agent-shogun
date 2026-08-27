@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_release_ninja_on_done_unarchived_20260818
-  timestamp: '2026-08-18T14:24:17Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_release_ninja_on_done_unarchived_20260818'
 - cmd_id: cmd_karo_hotfix_source_only_remote_new_id_202608190023
   timestamp: '2026-08-18T15:41:02Z'
   ninja: system
@@ -1308,3 +1295,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t104_context_freshness_marker_boundary_20260828'
+- cmd_id: cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828
+  timestamp: '2026-08-27T19:17:38Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828'
