@@ -1,5 +1,5 @@
 # Rebalancer Context
-<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_042404 source_equivalent 内容変更なし境界のみ -->
+<!-- last_updated: 2026-08-28 source_equivalent -->
 <!-- source_commit:e26ba8187794 reason:DOC_LANE_REQUEST blt_042404 source_equivalent 内容変更なし境界のみ evidence:git log --oneline -1 e26ba8187794; reason=source_equivalent -->
 <!-- source_commit:ea45534 reason:cmd_karo_rebalancer_guide_contrast_v19_20260805 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=ea45534 -->
 <!-- source_commit:f66e319 reason:cmd_karo_hotfix_rebalancer_ux_card_20260805 evidence:reviewed -->
