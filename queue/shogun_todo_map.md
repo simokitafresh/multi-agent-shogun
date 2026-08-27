@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 11:26 更新(inbox: T49 GATE CLEAR)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 11:33 更新(inbox: T10 GATE CLEAR)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -12,7 +12,7 @@
 - [x] T07(14:10公開 label 20260826-1410) artifact(らせん戦況録)更新(10:25以降: 第2セット5弾/統合終端/退行復旧/殿裁定3件) ★殿の状況把握コスト削減
 - [x] T08(10:53 GATE CLEAR: 飛猿 cmd_karo_hotfix_t08_converge_ours_r3(配備 09:44→CLEAR 69分)、converge 構造根治(AC3 ours採用); 10:33 飛猿 報告batch 再実行中、Working; 10:04 飛猿 in_progress(AUTOHEAL ack→progress)、background 3本; 09:44 飛猿へ karo_hotfix cmd_karo_hotfix_t08_converge_ours_r3 再配備 assigned・Working実測; 09:03 報告・commit痕跡なし=未再配備; 飛猿 r2: 14/14 PASS済・primary WIPをscope guardが検知→将軍がWIP退避commit 8de4a417a→再試行通知 14:55) converge構造根治(AC3: ours採用でtheirs破棄)を1名へ配備(家老へ指示済み、配備確認) ★退行の再発=最大の手戻り
 - [x] T09(TODO 0件) session_alerts_shogun.txt 未処理確認 ★stop hookの往復削減
-- [~] T10(11:05 小太郎 in_progress; 10:58 小太郎へ karo_hotfix cmd_karo_hotfix_t10_gate_core_speed 配備 assigned; 10:54 T08 終端=cmd_complete_gate.sh collision 解消→家老へ配備下知; 09:44 家老: T08 と cmd_complete_gate.sh が同一 target で collision→T08 終端直後に直列配備(構造依存); 09:03 疾風 failed 19:48 のまま未再配備; 疾風 failed 19:48: timing logに完走gate run 0件=材料未生成→次GATE CLEAR後に再配備を家老へ下知 20:04) 第2セット残: cmd_skeleton(影丸走行中)/cmd_complete_gate 200s/scope_commit/run_tests(並列型のみ→本質案なしなら終了) ★らせん本体
+- [x] T10(11:31 GATE CLEAR: 小太郎 cmd_karo_hotfix_t10_gate_core_speed(配備 10:58→CLEAR 33分)。数値は report 参照; 11:05 小太郎 in_progress; 10:58 小太郎へ karo_hotfix cmd_karo_hotfix_t10_gate_core_speed 配備 assigned; 10:54 T08 終端=cmd_complete_gate.sh collision 解消→家老へ配備下知; 09:44 家老: T08 と cmd_complete_gate.sh が同一 target で collision→T08 終端直後に直列配備(構造依存); 09:03 疾風 failed 19:48 のまま未再配備; 疾風 failed 19:48: timing logに完走gate run 0件=材料未生成→次GATE CLEAR後に再配備を家老へ下知 20:04) 第2セット残: cmd_skeleton(影丸走行中)/cmd_complete_gate 200s/scope_commit/run_tests(並列型のみ→本質案なしなら終了) ★らせん本体
 - [x] T11(LS登録+shogun.md焼込み d29f6b81c) 殿裁定4件(並列≠本質/0.1%×100億/シングルタスク切替+全体マップ)を将軍教訓+instructions/shogun.mdへ焼込み ★再発防止=同じ指摘を殿に2度させない
 - [x] T16(疾風 GATE CLEAR 18:30。以後のDOC_LANE_ALERT偽件数が止まるかを次の投稿で検証) context_freshness_checkの日付基準集計が統合後に偽ALERT(1752件)を出す→marker基準へ(insight登録済・次の空きへ) ★偽ALERT消化コストの削減
 - [ ] T12(cmd_4401計装はstdout出力のみで永続ログ無し→次回cmd_publish実行時に将軍がstdoutをlogs/へ保存して分解) ライブpublish 13分の分解(cmd_4401計装の実測回収) ★publish律速の短縮
