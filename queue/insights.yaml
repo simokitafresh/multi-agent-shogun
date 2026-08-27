@@ -5543,3 +5543,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-000724055-c905
+  ts: "2026-08-28T00:07:24+09:00"
+  insight: "[[何も変わらないが待機していればいいのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=何も変わらないが待機していればいいのか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
