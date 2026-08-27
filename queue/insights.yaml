@@ -281,7 +281,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4372"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で確認。cmd_4372は研究層限定・selection無変更・本番無変更で、後続cmd_4374の統計検定によりPhase 2b STOP、Phase 3(selection利用)へ進まない。adversarial冷え候補は現行instructions/gunshi.mdのAdaptive Gating/Adversarial Review規則へ反映済みで、同一候補GP-249もobsoleteのため追加実修正・decision_candidate不要。"
+  action_artifact: "cmd_4372 primary report=/mnt/c/Python_app/DM-Signal/docs/research/cmd_4372_hmm_regime_phase1_report.md; context/dm-signal-research.md:73-80; instructions/gunshi.md:274-307; logs/gunshi_gp_tracker.yaml:708-716"
+  resolved_at: "2026-08-27T15:59:15+09:00"
 - id: INS-20260823-102127628-2f4e
   ts: "2026-08-23T10:21:27+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿下問_HMM_Regime実験_20260823_0847]] は既存aliasesに一致なし。類似概念TOP3: investment_knowledge_base(投資知識辞書; alias=HMM; score=18.2) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=4.8) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_memo_20260811_0337; score=4.3)。概念定義とaliases追加を検討せよ"
