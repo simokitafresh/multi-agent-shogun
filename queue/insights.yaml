@@ -6205,3 +6205,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-080914368-3fd8
+  ts: "2026-08-28T08:09:14+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[shogun_commit_verdict.sh]] は既存aliasesに一致なし。類似概念TOP3: skill_routing(スキルルーティング; alias=commit; score=25.6) / cmd_quality_logging(cmd設計品質ログ; alias=gunshi_verdict; score=16.9) / shogun_android_app(将軍Androidアプリ; alias=com.shogun.android; score=15.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
