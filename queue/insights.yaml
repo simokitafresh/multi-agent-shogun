@@ -4610,3 +4610,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-123334194-3557
+  ts: "2026-08-27T12:33:34+09:00"
+  insight: "deepdive_replay.sh の receipt 書込みが末尾にあるため、呼び出し側が | head で出力を切ると SIGPIPE で receipt が残らず追体験が虚偽になる(07:56 Phase8/9)。receipt 書込みを本文出力の前(または trap EXIT)へ移し、head で切られても receipt が残る構造にする"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
