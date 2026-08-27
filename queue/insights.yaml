@@ -4920,3 +4920,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-163744221-c0e1
+  ts: "2026-08-27T16:37:44+09:00"
+  insight: "DOC_LANE_ALERT 偽発火の再発(16:34 dm-signal core 252/ops 261/frontend 27): 3ファイルとも source_commit marker=d87339a4=DM-signal origin/main tip なのに『since last_updated=2026-08-26』の日付基準で件数を出している。T16(疾風 08-26 18:30 CLEAR: marker基準へ)後も同数=marker が集計に使われていない(context_freshness_check.sh SOURCE_COMMIT_RE は読むが件数は last_updated 日付起点)。自動化ターゲット: 件数は最新 source_commit marker..tip の rev-list に統一し、marker=tip なら ALERT を出さない(回帰 bats: marker=tip で 0 件)。速度向上へのつながり: 偽ALERT 3本/日×確認コスト 0"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
