@@ -248,6 +248,7 @@ ZIP には `.git` が無い。ゲート群は git を前提にするため、B �
 ```bash
 cd ~/multi-agent-shogun
 bash first_setup.sh        # 依存・venv・Codex CLI・config・ディレクトリ・Memory MCP を冪等に確認/補完
+bash first_setup.sh --dry-run   # 副作用なしのプレビュー: Codex 認証手順(codex login --device-auth / codex login status)を表示し、/mnt/c(9p)配下なら ext4 配置を警告
 source ~/.bashrc           # PATH 反映
 ```
 

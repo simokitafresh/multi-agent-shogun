@@ -250,6 +250,7 @@ A ZIP has no `.git`; the gates assume git, so route B creates a minimal reposito
 ```bash
 cd ~/multi-agent-shogun
 bash first_setup.sh        # idempotently checks/installs deps, venv, Codex CLI, config, directories, Memory MCP
+bash first_setup.sh --dry-run   # side-effect-free preview: prints Codex auth steps (codex login --device-auth / codex login status) and warns if the repo sits under /mnt/c (9p) — use ext4
 source ~/.bashrc           # apply PATH
 ```
 
