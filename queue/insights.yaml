@@ -5557,3 +5557,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-000740189-02d8
+  ts: "2026-08-28T00:07:40+09:00"
+  insight: "[[現在の運用実績も古いね]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=現在の運用実績も古いね。まだまだMECEではないようだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
