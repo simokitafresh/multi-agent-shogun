@@ -35,8 +35,9 @@ else
     defense_overhead_write_async() { return 0; }
 fi
 PRE_PUSH_TOTAL_RECORDED=0
+PRE_PUSH_AFFECTED_COUNT=0
 pre_push_record_total() {
-    local rc="${1:-0}" now_us wall_ms verdict
+    local rc="${1:-0}" now_us wall_ms verdict metadata_json
     [ "${PRE_PUSH_TOTAL_RECORDED:-0}" -eq 0 ] || return 0
     PRE_PUSH_TOTAL_RECORDED=1
     now_us="${EPOCHREALTIME/./}"
@@ -44,8 +45,13 @@ pre_push_record_total() {
     wall_ms=$(( (now_us - PRE_PUSH_TOTAL_T0_US + 999) / 1000 ))
     verdict=PASS
     [ "$rc" -eq 0 ] || verdict=FAIL
+    metadata_json=$(printf '{"affected_count":%s}' "$PRE_PUSH_AFFECTED_COUNT")
     defense_overhead_write_async pre_push pre_push_total "$wall_ms" "$verdict" \
-        "pre-push-${BASHPID}-${PRE_PUSH_TOTAL_T0_US}" || true
+        "pre-push-${BASHPID}-${PRE_PUSH_TOTAL_T0_US}" "$metadata_json" || true
+    if [ "$wall_ms" -gt 300000 ]; then
+        printf '[pre-push] WARN: pre-push wall_ms=%s exceeded 300000ms (affected_count=%s)\n' \
+            "$wall_ms" "$PRE_PUSH_AFFECTED_COUNT"
+    fi
 }
 pre_push_total_on_exit() { local rc=$?; pre_push_record_total "$rc"; return "$rc"; }
 trap pre_push_total_on_exit EXIT
@@ -396,6 +402,10 @@ PY
     # test_select.sh で影響テストを選択 (stdout=テストファイルパス, stderr=WARNs→ターミナル表示)
     _selected_tests=$(cd "$_PREPUSH_EXEC_ROOT" && bash scripts/test_select.sh "${_changed_files[@]}") || true
     [ -n "$_selected_tests" ] && printf '%s\n' "$_selected_tests" > "$_SELECTED_TESTS_FILE"
+    if [ -n "$_selected_tests" ]; then
+        _selected_count=$(printf '%s\n' "$_selected_tests" | awk 'NF {count++} END {print count + 0}')
+        PRE_PUSH_AFFECTED_COUNT=$((PRE_PUSH_AFFECTED_COUNT + _selected_count))
+    fi
 
     if [ -n "$_selected_tests" ]; then
         echo "[pre-push] Running selected tests (timeout 60s)..." >&2
