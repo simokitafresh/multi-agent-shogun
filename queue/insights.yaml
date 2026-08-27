@@ -6117,3 +6117,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T07:30:25+09:00"
+- id: INS-20260828-073957689-46c3
+  ts: "2026-08-28T07:39:57+09:00"
+  insight: "CI RED 本日 4 run(33108071595/33113951908/33120834061/33122914110)中 3 run で『tests/unit directory not found』が shard 7→6→2 と移動。T85(73f6c7a83 keep unmeasured tests in shard inventory)後も新規 bats 追加のたびに再発=shard 割当の timing ledger×inventory 不一致で 1 shard が空集合になる構造。根治=inventory 全件を必ず割当(ledger は重み付けのみ)+割当 0 shard を明示 FAIL にする回帰 bats。origin=[[CI_RED_tests_unit_not_found_3of4_20260828]] -> [[shard割当_ledger×inventory不一致]] -> [[T120_r2_inventory全件割当]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
