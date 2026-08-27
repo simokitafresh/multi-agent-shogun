@@ -6010,3 +6010,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T06:36:32+09:00"
+- id: INS-20260828-070216655-7ca4
+  ts: "2026-08-28T07:02:16+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_hotfix_t100_runtime_lane_shared_main_only_20260828 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
