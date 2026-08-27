@@ -5488,3 +5488,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-27T22:41:58+09:00"
+- id: INS-20260827-225704772-a383
+  ts: "2026-08-27T22:57:04+09:00"
+  insight: "[[15030行のcmd complete gate shを対象に]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd-complete path; score=13.1) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=12.7) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun GATE CLEAR; score=12.3)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
