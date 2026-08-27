@@ -15934,3 +15934,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - atomic replaceを行う複数writerが固定lockとpath-derived lockに分岐すると、片方の追記が他方のreplaceで消える。全writerの既定lockを対象pathから同一導出し、fixtureでは同一アルゴリズムfallbackを使う。
+
+### L1652: 隔離tmux検証ではTMUX解除と全target変数化が必要
+- **日付**: 2026-08-27
+- **出典**: cmd_4407
+- **記録者**: tobisaru
+- **tags**: [infra,deploy,testing,process]
+- **subdomain**: infra
+- **target_files**: [docs/research/cmd_4407_clone_dependency_ledger_20260827.md]
+- **origin**: [[cmd_4407]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- SHOGUN_SESSIONとTMUX_TMPDIRだけを設定しても、TMUX継承または固定shogun targetが残ると本番server混入またはsetup-only rc=1になる。env -u TMUX、専用socket、一意sessionを使い、運用経路の全tmux targetがSHOGUN_SESSION由来であることを実行検証する。
