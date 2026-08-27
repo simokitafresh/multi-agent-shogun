@@ -40,6 +40,66 @@ log_step() {
     echo -e "\n${CYAN}${BOLD}━━━ $1 ━━━${NC}\n"
 }
 
+# Runtime dependencies are checked before any optional installer is invoked.
+# Existing files and user configuration are never overwritten: every setup
+# operation is guarded by an existence check and reports its result.
+record_dependency() {
+    local label="$1" result="$2"
+    RESULTS+=("依存: ${label} (${result})")
+}
+
+command_path_or_missing() {
+    local command_name="$1"
+    command -v "$command_name" 2>/dev/null || printf 'MISSING'
+}
+
+ensure_cron_line() {
+    local marker="$1" line="$2" cron_text
+    cron_text="$(crontab -l 2>/dev/null || true)"
+    if grep -Fq "$marker" <<< "$cron_text"; then
+        record_dependency "cron:${marker}" "既存"
+        return 0
+    fi
+    if ! command -v crontab >/dev/null 2>&1; then
+        log_warn "crontab が見つからないため ${marker} を登録できません"
+        HAS_ERROR=true
+        record_dependency "cron:${marker}" "不足"
+        return 1
+    fi
+    {
+        [ -n "$cron_text" ] && printf '%s\n' "$cron_text"
+        printf '%s\n' "$line"
+    } | crontab -
+    record_dependency "cron:${marker}" "登録"
+}
+
+ensure_required_file() {
+    local path="$1" initial="$2"
+    if [ -e "$path" ]; then
+        record_dependency "file:${path}" "既存"
+        return 0
+    fi
+    mkdir -p "$(dirname "$path")"
+    printf '%s\n' "$initial" > "$path"
+    record_dependency "file:${path}" "作成"
+}
+
+run_remote_installer() {
+    local url="$1" installer rc
+    installer="$(mktemp)"
+    if ! curl -fsSL "$url" -o "$installer"; then
+        log_error "インストーラー取得に失敗しました: $url"
+        return 1
+    fi
+    if bash "$installer"; then
+        rc=0
+    else
+        rc=$?
+    fi
+    rm -f "$installer"
+    return "$rc"
+}
+
 # スクリプトのディレクトリを取得
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -203,7 +263,7 @@ else
     else
         # nvm 自動インストール
         log_info "nvm をインストール中..."
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+        run_remote_installer "https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh"
         export NVM_DIR="$HOME/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     fi
@@ -324,7 +384,7 @@ fi
 if [ "$NEED_CLAUDE_INSTALL" = true ]; then
     log_info "ネイティブ版 Claude Code CLI をインストールします"
     log_info "Claude Code CLI をインストール中（ネイティブ版）..."
-    curl -fsSL https://claude.ai/install.sh | bash
+    run_remote_installer "https://claude.ai/install.sh"
 
     # PATHを更新（インストール直後は反映されていない可能性）
     export PATH="$HOME/.local/bin:$PATH"
@@ -364,6 +424,112 @@ if [ "$NEED_CLAUDE_INSTALL" = true ]; then
 fi
 
 # ============================================================
+# STEP 5.5: 実行時依存関係の確認・補完
+# ============================================================
+log_step "STEP 5.5: 実行時依存関係の確認"
+
+# These commands are called by the launcher, watchers, gates, and test
+# harness. Keep the list explicit so a fresh clone reports one dependency set.
+REQUIRED_COMMANDS=(bash python3 node npm tmux git jq rg gh inotifywait bats flock timeout setsid crontab curl)
+MISSING_COMMANDS=()
+for command_name in "${REQUIRED_COMMANDS[@]}"; do
+    command_path="$(command_path_or_missing "$command_name")"
+    if [ "$command_path" = MISSING ]; then
+        MISSING_COMMANDS+=("$command_name")
+        log_warn "必須コマンド不足: $command_name"
+        record_dependency "command:${command_name}" "不足"
+    else
+        log_info "確認: ${command_name} -> ${command_path}"
+        record_dependency "command:${command_name}" "${command_path}"
+    fi
+done
+
+# Package installation is attempted only when a dependency is absent.
+if [ "${#MISSING_COMMANDS[@]}" -gt 0 ] && command -v apt-get >/dev/null 2>&1; then
+    APT_PACKAGES=()
+    for command_name in "${MISSING_COMMANDS[@]}"; do
+        case "$command_name" in
+            python3) APT_PACKAGES+=(python3) ;;
+            tmux) APT_PACKAGES+=(tmux) ;;
+            jq) APT_PACKAGES+=(jq) ;;
+            rg) APT_PACKAGES+=(ripgrep) ;;
+            gh) APT_PACKAGES+=(gh) ;;
+            inotifywait) APT_PACKAGES+=(inotify-tools) ;;
+            bats) APT_PACKAGES+=(bats) ;;
+            flock|timeout|setsid) APT_PACKAGES+=(util-linux) ;;
+            crontab) APT_PACKAGES+=(cron) ;;
+            git) APT_PACKAGES+=(git) ;;
+            curl) APT_PACKAGES+=(curl) ;;
+        esac
+    done
+    if [ "${#APT_PACKAGES[@]}" -gt 0 ] && command -v sudo >/dev/null 2>&1; then
+        if sudo -n apt-get update -qq 2>/dev/null && sudo -n apt-get install -y "${APT_PACKAGES[@]}" >/dev/null 2>&1; then
+            log_success "不足パッケージを補完しました: ${APT_PACKAGES[*]}"
+        else
+            log_warn "パッケージ補完に失敗しました。手動導入が必要です: ${APT_PACKAGES[*]}"
+            HAS_ERROR=true
+        fi
+    else
+        log_warn "sudo/apt-get がないため不足依存を自動補完できません: ${MISSING_COMMANDS[*]}"
+        HAS_ERROR=true
+    fi
+fi
+
+# Python dependencies are isolated per clone and never installed globally.
+VENV_DIR="$SCRIPT_DIR/.venv"
+if [ -x "$VENV_DIR/bin/python3" ] && "$VENV_DIR/bin/python3" -c 'import yaml' >/dev/null 2>&1; then
+    record_dependency "python-venv:PyYAML" "既存"
+else
+    if python3 -m venv "$VENV_DIR" >/dev/null 2>&1 && "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt" -q >/dev/null 2>&1 && "$VENV_DIR/bin/python3" -c 'import yaml' >/dev/null 2>&1; then
+        record_dependency "python-venv:PyYAML" "作成"
+    else
+        log_warn "Python venv/PyYAMLを準備できませんでした"
+        HAS_ERROR=true
+        record_dependency "python-venv:PyYAML" "不足"
+    fi
+fi
+
+# Codex is a runtime dependency whenever config/settings.yaml enables Codex.
+if grep -qE '^\s*type:\s*codex\s*$' "$SCRIPT_DIR/config/settings.yaml" "$SCRIPT_DIR/config/cli_profiles.yaml" 2>/dev/null; then
+    if command -v codex >/dev/null 2>&1; then
+        record_dependency "codex-cli" "$(command -v codex)"
+    elif command -v npm >/dev/null 2>&1 && npm install -g @openai/codex >/dev/null 2>&1; then
+        record_dependency "codex-cli" "npm-installed"
+    else
+        log_warn "Codex CLIが見つかりません"
+        HAS_ERROR=true
+        record_dependency "codex-cli" "不足"
+    fi
+fi
+
+# An existing user's Codex settings are authoritative and are never replaced.
+CODEX_CONFIG="$HOME/.codex/config.toml"
+if [ ! -f "$CODEX_CONFIG" ]; then
+    mkdir -p "$(dirname "$CODEX_CONFIG")"
+    cat > "$CODEX_CONFIG" << 'EOF'
+model = "gpt-5.5"
+approval_policy = "never"
+sandbox_permissions = ["disk-full-read-access", "network-access"]
+model_reasoning_effort = "high"
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+EOF
+    record_dependency "file:${CODEX_CONFIG}" "作成"
+else
+    record_dependency "file:${CODEX_CONFIG}" "既存・非上書き"
+fi
+
+# The pinned Claude launcher is a policy boundary. Never silently replace it.
+CLAUDE_PIN="$HOME/bin/claude"
+if [ -x "$CLAUDE_PIN" ]; then
+    CLAUDE_PIN_VERSION="$($CLAUDE_PIN --version 2>/dev/null | head -1 || true)"
+    record_dependency "claude-pin:${CLAUDE_PIN}" "${CLAUDE_PIN_VERSION:-unknown}"
+else
+    log_warn "Claude pinが見つかりません: ${CLAUDE_PIN} (既存CLIを上書きしません)"
+    record_dependency "claude-pin:${CLAUDE_PIN}" "不足"
+fi
+
+# ============================================================
 # STEP 6: ディレクトリ構造作成
 # ============================================================
 log_step "STEP 6: ディレクトリ構造作成"
@@ -377,6 +543,7 @@ DIRECTORIES=(
     "status"
     "instructions"
     "logs"
+    "data"
     "demo_output"
     "skills"
     "memory"
@@ -540,6 +707,26 @@ log_info "inboxファイル (${INBOX_COUNT}名) を確認/作成しました"
 
 RESULTS+=("キューファイル: OK")
 
+# Runtime state is created only when absent. Existing queues and memory are
+# authoritative and are never overwritten by a repeat setup.
+ensure_required_file "$SCRIPT_DIR/queue/lord_conversation.jsonl" ""
+ensure_required_file "$SCRIPT_DIR/queue/pending_decisions.yaml" "decisions: []"
+ensure_required_file "$SCRIPT_DIR/queue/bulletin_board.yaml" "entries: []"
+ensure_required_file "$SCRIPT_DIR/queue/insights.yaml" "insights: []"
+
+MEMORY_DB="$SCRIPT_DIR/data/multi_agent_shogun_memory.db"
+if [ ! -f "$MEMORY_DB" ]; then
+    if bash "$SCRIPT_DIR/scripts/memory_db_init.sh" --db "$MEMORY_DB" --archive-dir "$SCRIPT_DIR/archive" >/dev/null 2>&1; then
+        record_dependency "file:${MEMORY_DB}" "初期化"
+    else
+        log_warn "記憶DBを初期化できませんでした: ${MEMORY_DB}"
+        HAS_ERROR=true
+        record_dependency "file:${MEMORY_DB}" "不足"
+    fi
+else
+    record_dependency "file:${MEMORY_DB}" "既存・非上書き"
+fi
+
 # ============================================================
 # STEP 9: スクリプト実行権限付与
 # ============================================================
@@ -557,6 +744,15 @@ for script in "${SCRIPTS[@]}"; do
         log_info "$script に実行権限を付与しました"
     fi
 done
+
+EXEC_BIT_MISSING=0
+while IFS= read -r script; do
+    if [ ! -x "$script" ]; then
+        chmod +x "$script"
+        EXEC_BIT_MISSING=$((EXEC_BIT_MISSING + 1))
+    fi
+done < <(find "$SCRIPT_DIR/scripts" -type f -name '*.sh' -print 2>/dev/null)
+record_dependency "scripts/*.sh実行ビット" "補完:${EXEC_BIT_MISSING}件"
 
 RESULTS+=("実行権限: OK")
 
@@ -681,6 +877,10 @@ EOF
 else
     log_info "WSL環境ではないため、メモリ最適化設定をスキップ"
 fi
+
+# Register runtime jobs once, preserving every unrelated user cron entry.
+ensure_cron_line "daemon_watchdog.sh" "* * * * * bash $SCRIPT_DIR/scripts/daemon_watchdog.sh >> $SCRIPT_DIR/logs/daemon_watchdog_cron.log 2>&1 # shogun-daemon-watchdog"
+ensure_cron_line "shogun-weekly-metrics-trend" "17 0 * * 1 cd \"$SCRIPT_DIR\" && \"$SCRIPT_DIR/scripts/weekly_metrics_trend.sh\" >/dev/null 2>&1 # shogun-weekly-metrics-trend"
 
 # ============================================================
 # STEP 11: Memory MCP セットアップ

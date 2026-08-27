@@ -21,6 +21,9 @@ cd "$SCRIPT_DIR"
 # 本スクリプトは端末からの対話入力(read)を行わない（read は全て <<< ヒアストリング）ので安全。
 [ -t 0 ] && exec </dev/null
 
+# セッション名は検証用cloneごとに分離できる。通常運用の既定値は従来どおり。
+SHOGUN_SESSION="${SHOGUN_SESSION:-shogun}"
+
 # エージェント構成の一元管理ライブラリ読み込み
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 
@@ -354,7 +357,11 @@ echo ""
 # STEP 1: 既存セッションクリーンアップ
 # ═══════════════════════════════════════════════════════════════════════════════
 log_info "🧹 既存の陣を撤収中..."
-tmux kill-session -t shogun 2>/dev/null && log_info "  └─ shogun陣、撤収完了" || log_info "  └─ shogun陣は存在せず"
+if [ "$SETUP_ONLY" = true ]; then
+    log_info "  └─ セットアップ検証のため既存セッション撤収をスキップ"
+else
+    tmux kill-session -t shogun 2>/dev/null && log_info "  └─ shogun陣、撤収完了" || log_info "  └─ shogun陣は存在せず"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 1.5: 前回記録のバックアップ（--clean時のみ、内容がある場合）
@@ -534,8 +541,8 @@ fi
 log_war "👑 将軍の本陣を構築中..."
 
 # shogun セッションがなければ作る — window 0 = main（将軍）
-if ! tmux has-session -t shogun 2>/dev/null; then
-    tmux new-session -d -s shogun -n main
+if ! tmux has-session -t "$SHOGUN_SESSION" 2>/dev/null; then
+    tmux new-session -d -s "$SHOGUN_SESSION" -n main
 fi
 
 # グローバル設定: 接続元端末サイズ差分を吸収
@@ -1066,6 +1073,9 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 6.8: ntfy入力リスナー起動
 # ═══════════════════════════════════════════════════════════════════════════════
+if [ "$SETUP_ONLY" = true ]; then
+    log_info "📦 セットアップのみ: 常駐デーモン起動をスキップ"
+else
 NTFY_TOPIC=$(grep 'ntfy_topic:' ./config/settings.yaml 2>/dev/null | awk '{print $2}' | tr -d '"')
 if [ -n "$NTFY_TOPIC" ]; then
     pkill -f "ntfy_listener.sh" 2>/dev/null || true
@@ -1126,6 +1136,7 @@ else
     log_info "⚠️ scripts/ninja_monitor.sh が見つかりません（スキップ）"
 fi
 echo ""
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 7: 環境確認・完了メッセージ

@@ -33,7 +33,7 @@ Run 9 AI coding agents in parallel through a Sengoku hierarchy: a **mixed Claude
 
 - Shogun + Karo on **`cli.default`** from `config/settings.yaml` (currently Claude Code)
 - Gunshi (military advisor) on **Claude Code / Opus 4.6**
-- Hayate and Saizo on **Codex / gpt-5.5**
+- Agent CLI types, models, and launch paths come from **`config/settings.yaml` / `config/cli_profiles.yaml`**
 - Kagemaru and Kotaro on **Claude Code / Sonnet 4.6**
 - Hanzo and Tobisaru on **Claude Code / Opus 4.6**
 
@@ -457,6 +457,29 @@ If you prefer to install dependencies manually:
 | Claude Code CLI | `curl -fsSL https://claude.ai/install.sh \| bash` | Official Anthropic CLI (native version recommended; npm version deprecated) |
 
 </details>
+
+---
+
+### Runtime dependency ledger
+
+`first_setup.sh` now checks the complete runtime surface used by the launcher, watchers, hooks, gates, and test harness. The machine-extracted inventory, commands, raw output, and clone verification record are maintained in [`docs/research/cmd_4407_clone_dependency_ledger_20260827.md`](docs/research/cmd_4407_clone_dependency_ledger_20260827.md).
+
+| Category | Required runtime | Setup behavior |
+|----------|------------------|----------------|
+| Commands | bash, git, python3, node, npm, tmux, jq, ripgrep (`rg`), `gh`, `inotifywait`, bats, flock, timeout, setsid, crontab, curl | Checked together; Debian/Ubuntu packages are attempted only for missing commands |
+| Python | `requirements.txt`, clone-local `.venv/bin/python3`, PyYAML | Creates the venv only when absent or broken; never installs globally |
+| CLIs | Codex CLI and Claude CLI; the pinned Claude launcher is `~/bin/claude` (2.1.87 policy) | Existing binaries and versions are reported, not silently replaced |
+| Configuration | `config/settings.yaml`, `config/cli_profiles.yaml`, `~/.codex/config.toml` | Existing settings are authoritative; a Codex config skeleton is created only when absent |
+| Runtime state | `data/multi_agent_shogun_memory.db`, `queue/lord_conversation.jsonl`, `queue/pending_decisions.yaml`, `queue/bulletin_board.yaml`, `queue/insights.yaml`, `logs/` | Missing files/directories are initialized; existing history is preserved |
+| Scheduled jobs | `daemon_watchdog.sh` every minute and `shogun-weekly-metrics-trend` weekly | Added only when the marker is absent; unrelated crontab entries are preserved |
+
+The live formation, agent names, models, CLI types, and launch paths come from `config/settings.yaml` and `config/cli_profiles.yaml`; README examples are explanatory and are not a second configuration source. For a clean clone, run `first_setup.sh`, then verify setup without launching agents:
+
+```bash
+TMUX_TMPDIR="$(mktemp -d)" ./shutsujin_departure.sh -s
+```
+
+This setup-only verification uses an isolated tmux socket and skips resident daemons. It must exit 0 and leave the source checkout's queues and user configuration untouched.
 
 ---
 
@@ -1032,15 +1055,15 @@ Model names are stored as `@model_name` and current task summaries as `@current_
 
 ## Skills
 
-No skills are included out of the box. Skills emerge organically during operation — you approve candidates from `dashboard.md` as they're discovered.
+Shared skills are included under `skills/`; user-specific skills may also live under `.claude/skills/` or `~/.codex/skills/`. `first_setup.sh` preserves existing skill directories and does not overwrite them.
 
 Invoke skills with `/skill-name`. Just tell the Shogun: "run /skill-name".
 
 ### Skill Philosophy
 
-**1. Skills are not committed to the repo**
+**1. Shared and user-specific skills are separate**
 
-Skills in `.claude/commands/` are excluded from version control by design:
+User-specific skills in `.claude/commands/` are excluded from version control by design:
 - Every user's workflow is different
 - Rather than imposing generic skills, each user grows their own skill set
 
@@ -1509,7 +1532,7 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 ## Current Highlights
 
-- **Mixed Claude + Codex formation** — live assignment comes from `config/settings.yaml`, not hard-coded README tables
+- **Config-driven mixed formation** — live assignment comes from `config/settings.yaml` and `config/cli_profiles.yaml`, not hard-coded README tables
 - **GATE-first operations** — `cmd_complete_gate.sh`, `gate_cmd_state.sh`, and `gate_lesson_health.sh` protect against false completion, stale delegation, and low-value lessons
 - **Knowledge operations** — the 7-layer knowledge map, `queue/karo_snapshot.txt`, `queue/pending_decisions.yaml`, and `context/cmd-chronicle.md` keep recovery and audits cheap
 - **Mobile surface** — ntfy push, the Android companion app, and Termux/mosh access let you run the army away from the desk
@@ -1522,7 +1545,7 @@ Issues and pull requests are welcome.
 
 - **Bug reports**: Open an issue with reproduction steps
 - **Feature ideas**: Open a discussion first
-- **Skills**: Skills are personal by design and not included in this repo
+- **Skills**: Shared skills live under `skills/`; personal skills remain outside the repository
 
 ## Credits
 
