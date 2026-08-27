@@ -162,6 +162,42 @@ PY
     [ "$output" = "post_clear=1 gate_nonblocking=1 failure_visible=1" ]
 }
 
+# test_necessity: report-format validation must work for executable and
+# non-executable shared gate scripts across fingerprint, normal, and retry paths.
+# regression_justification: mode644 gate_report_format.sh caused rc126
+# Permission denied in the report completion path; the three callers had no
+# shared regression contract before this fix.
+@test "report-format callers use bash for all three mode644 paths" {
+    local gate="$BATS_TEST_TMPDIR/gate_report_format.sh"
+    local report="$BATS_TEST_TMPDIR/report.yaml"
+    printf '%s\n' '#!/usr/bin/env bash' 'printf "PASS\\n"' 'exit 0' > "$gate"
+    chmod 644 "$gate"
+    printf '%s\n' 'report: fixture' > "$report"
+
+    run bash -c 'GATE_OUTPUT=$(GATE_VALIDATED_FINGERPRINT=fixture bash "$1" "$2" 2>&1); test "$GATE_OUTPUT" = PASS' _ "$gate" "$report"
+    [ "$status" -eq 0 ]
+
+    run bash -c 'GATE_OUTPUT=$(bash "$1" "$2" 2>&1); test "$GATE_OUTPUT" = PASS' _ "$gate" "$report"
+    [ "$status" -eq 0 ]
+
+    run bash -c 'GATE_STATUS=INFRA_TIMEOUT; if [ "$GATE_STATUS" = INFRA_TIMEOUT ]; then GATE_OUTPUT=$(bash "$1" "$2" 2>&1); fi; test "$GATE_OUTPUT" = PASS' _ "$gate" "$report"
+    [ "$status" -eq 0 ]
+
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+lines = [line for line in text.splitlines() if "gate_report_format.sh" in line and 'bash "$SCRIPT_DIR' in line]
+assert len(lines) == 3, lines
+assert all('bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh"' in line for line in lines)
+assert not any('GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh"' in line for line in text.splitlines())
+print("callers=3 mode644_paths=3 direct=0")
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "callers=3 mode644_paths=3 direct=0" ]
+}
+
 # test_necessity: pregate publication reuses the field-aware source-only lane
 # and rejects concurrent, unknown, conflicting, and failed publications.
 @test "pregate runtime convergence reuses field-aware contract" {
