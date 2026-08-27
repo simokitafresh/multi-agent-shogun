@@ -5564,3 +5564,17 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-000755185-c560
+  ts: "2026-08-28T00:07:55+09:00"
+  insight: "[[殿指示 23 12『READMEを覚醒してアップデート]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-08-27 23:12『READMEを覚醒してアップデート。誰もが他のPCにクローンして使えるように整合性をとろう』。cmd_4408 の ext4 移設(relocate e644881f5)で旧 /mnt/c/tools/... が /home/simokitafresh/multi-agent-shogun に機械置換され、ユーザー名"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260828-000757510-d7d6
+  ts: "2026-08-28T00:07:57+09:00"
+  insight: "[[一次情報もアップデートしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=一次情報もアップデートしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
