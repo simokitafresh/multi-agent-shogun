@@ -771,7 +771,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:0b0ccc7720776a61"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で全参照先の実在を確認したが、現行gate_skill_script_refsは39件をREVIEW_REQUIREDと判定し対象12組も鮮度追従が必要。今回のreflux scopeは本insightの整理のみでSKILL本文の横展開変更は行わず、追従更新をdecision candidateとして記録してresolveする。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-152810760-1a8c;gate=/tmp/cmd_reflux_insight_202608280136_tobisaru/skill_refs_gate.stdout;gate_rc=2;stale_pairs=39;missing_refs=0;decision_candidate=12組のSKILL.md script_refs_checked_at更新と実測再検証を別cmdで実施"
+  resolved_at: "2026-08-28T01:40:52+09:00"
 - id: INS-20260822-152818426-6aaf
   ts: "2026-08-22T15:28:18+09:00"
   insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_hotfix_ga491_terminal_blob_parity は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
