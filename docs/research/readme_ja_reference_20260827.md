@@ -117,3 +117,41 @@ docs/dashboard/             戦況 artifact の HTML 正本     android/   Andro
 - 本書は**参照原本**。現物(first_setup.sh/shutsujin_departure.sh/settings.yaml/scripts)と食い違う箇所は現物を正とし、差分を報告 YAML の finding に残す。
 - 数値は本書の日付のもの。README には「2026-08-27 時点」と日付を付けて書く。
 - 殿固有値(ntfy topic・gist URL・アカウント)は書かない。cmd_4409 完了後はユーザー固有パスも 0 件が前提。
+
+## 10. OSS 化に向けた危険点と改修点
+
+前提(殿の方針 2026-08-27 23:29): 個人使用が原則だが OSS にも対応する。今の multi-agent-shogun はそのまま、OSS 用に新リポジトリを将来作る。
+
+方針: **現リポジトリは殿の運用正本のまま触らず、OSS 版は「エクスポート」で作る**(履歴ごと公開しない=過去 16,555 commit の中の個人情報を追跡できない。歴史修正禁止の原則とも整合)。以下は将軍の一次確認(2026-08-27 23:29)に基づく棚卸し。
+
+### 10.1 危険点(公開してはいけないもの・一次確認値)
+
+| # | 危険 | 現物 | OSS 版での扱い |
+|---|---|---|---|
+| 1 | 殿との全対話・裁定・個人事情 | `queue/lord_conversation.jsonl`(408K、git 追跡外だが実体あり)、`data/multi_agent_shogun_memory.db`(1.23GB、記憶DB)、`memory/`、`logs/`(1.0GB) | **含めない**。OSS 版は空の DB を初期化する `first_setup` に |
+| 2 | クリニック・家族・メール等の個人情報 | git 追跡ファイルのうち `clinic/karasuyama/dm-signal` を含むもの 35 件(context/dm-signal*.md、skills/db-check・weekly/monthly-report-writer、docs/research 多数)、CLAUDE.md の `gws デフォルト=simokitafresh@gmail.com`、settings.yaml の `ntfy_topic: shogun-simokitafresh` | **除外または汎用化**。PJ 固有 context/skills は OSS 版から外す(PJ は `config/projects.yaml` で外付け) |
+| 3 | 外部プロジェクトの秘密 | `projects/`(git-ignored: PI/UUID/DB ルール)、DM-signal の Render サービス ID・DB 接続(`context/auto-ops.md`、`context/dm-signal-ops.md`) | 含めない。`.gitignore` は OSS 版で再設計 |
+| 4 | 認証情報・トークンの経路 | `~/.codex/auth.json`(全 Codex 共有)、gh auth、ntfy topic(推測されると通知を覗ける)、gist 一覧(`gist-index.md` に非公開 gist の ID) | README には「各自のアカウントで」とだけ書く。gist index は公開しない |
+| 5 | 破壊的権限で動く前提 | 全 CLI が `--dangerously-skip-permissions` / `--dangerously-bypass-approvals-and-sandbox` / `--dangerously-bypass-hook-trust` で起動(settings.yaml/cli_profiles.yaml) | README 冒頭に**明示的な警告**(専用マシン/VM 推奨、Tier1 禁止リスト D001-D009 は hook で強制していることを説明) |
+| 6 | tmux send-keys と自動 nudge | 他人のセッションに文字列が流れうる(T74 事故: 検証が本番 tmux を汚染) | 隔離条件(session 名・AGENTS_WINDOW_TARGET)を既定で安全側に。OSS 版では単一 session 固定 |
+| 7 | ユーザー固有パス・ユーザー名 | `/home/simokitafresh` 36 ファイル(cmd_4409 で除去中)、GitHub `simokitafresh/*` の URL(config/projects.yaml、README バッジ) | cmd_4409 完了が前提。URL は OSS 版のリポジトリへ |
+| 8 | Windows 固有・drvfs 前提 | `install.bat`、`/mnt/c` 前提の記述、`reset_layout`/`mntc_remount` 系 | 「Linux/WSL2 の ext4 上で動かす」を唯一の前提に(§6 の実測が根拠) |
+| 9 | 日本語固定・戦国用語 | CLAUDE.md『Always respond in japanese』、役名(将軍/家老/軍師/忍者)、殿裁定の引用が instructions に多数 | 用語集(§2)を README に置く。言語は `config/settings.yaml: language` で切替可能にする |
+| 10 | ライセンスと帰属 | MIT(LICENSE 実在)。fork 元 `yohey-w`、CoDD=おしお殿、Autoresearch 派生 | クレジット節を維持。第三者コード(CoDD 等)のライセンス確認 |
+
+### 10.2 改修点(OSS 版を作る前に現リポジトリ側で済ませるもの)
+
+1. **cmd_4409**: ユーザー固有絶対パス 0 件(進行中)。
+2. **cmd_4410**: README/README_ja を現物から書き直し、隔離 clone(git/ZIP)で再現(進行中)。
+3. **設定の分離**: `config/settings.yaml` を「公開してよい既定(`settings.example.yaml`)」と「ローカル上書き(`settings.local.yaml`、git-ignored)」に分け、`first_setup.sh` が対話で local を生成する。ntfy topic・gist・email・外部 PJ パスは local 側のみ。
+4. **PJ 固有物の外出し**: `context/dm-signal*.md`、`skills/{db-check,weekly-report-writer,monthly-report-writer,pf-registration,gs-bench-gate,x-research}`、`docs/research` の PJ 文書を「PJ パック」として `projects/<id>/` 配下(git-ignored)へ移せる構造に。CLAUDE.md の Current Project 節は生成物にする。
+5. **教訓・deepdive の匿名化**: `projects/infra/lessons_*.yaml`、`memory/deepdive_*.md`、`instructions/*.md` の殿発言引用は OSS 版では「原則+日付」だけ残し固有名詞を落とす(殿の対話の全文は残さない)。
+6. **危険権限の説明と選択肢**: `--dangerously-*` を使わない「安全モード」起動プロファイルを `cli_profiles.yaml` に 1 つ用意(hook が確認プロンプトを扱えるかは T78 の型で検証)。
+7. **エクスポート script**: `scripts/oss_export.sh`(新規・OSS 版作成時のみ)で「含めるパスの allowlist→固有名詞 grep 0 件→空 DB 初期化→新リポジトリへ 1 commit」を機械化。allowlist 外は出さない(fail-closed)。grep 対象語: ユーザー名、メール、ntfy topic、gist ID、Render ID、クリニック名、家族に関する語。
+8. **CI の秘密**: GitHub Actions の secrets 依存(gh token 等)を OSS 版では不要にし、fork でも GREEN になる workflow に。
+9. **Android アプリ**: SSH 鍵と接続先を持つため、OSS 版では「任意コンポーネント」として分離(別 README)。
+10. **記憶DB スキーマの初期化**: `context/memory-db-schema.md` から空 DB を作る初期化 script(現状は運用 DB をそのまま前提)。
+
+### 10.3 OSS 版で「そのまま公開できる」核
+
+鎖(§2)、三層学習ループ(§3)、三層記憶の仕組み(§4、DB は空)、mailbox/watcher、cmd 起票ゲート、deploy_task の worktree 隔離、報告契約、二段レビュー→GATE、ninja_monitor、multi-CLI の hook 分離、スキル機構、テスト方針(default-delete/選択実行/shard)、Tier1-3 安全弁、ext4 runbook。**個人・PJ 固有の"中身"を抜いても、仕組みは全て残る。**
