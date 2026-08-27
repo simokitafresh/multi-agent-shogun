@@ -722,6 +722,82 @@ grep -q PRESERVED "$LOG"; ! grep -q CLEAR "$LOG"; ! grep -q FAILED-RESPAWN-IMMED
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: terminal/none/failed task records must preserve or synthesize
+# a clear-counter identity so CTX-threshold clearing never stops on missing
+# command context.
+# regression_justification: the prior no-command early return skipped the clear
+# counter and produced repeated no-cmd diagnostics for idle panes.
+@test "clear context: idle none failed recover identity or continue with reason" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/monitor.log"
+mkdir -p "$T/queue/tasks" "$STATE_DIR"; : > "$LOG"
+log() { echo "$1" >> "$LOG"; }
+export NINJA_MONITOR_GENERATION="generation-context"
+
+for terminal_status in idle none failed; do
+  cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: $terminal_status
+  parent_cmd: cmd_old
+  task_id: idle
+  _ac_task_id: idle
+YAML
+  context=$(_task_parent_cmd_for_clear_count hayate AUTO-CLEAR)
+  [[ "$context" == unresolved:hayate ]]
+  if [ "$terminal_status" = failed ]; then
+    record_clear_attempt_or_force_idle hayate AUTO-CLEAR
+  fi
+done
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+  parent_cmd:
+  task_id: idle
+  _ac_task_id: idle
+  last_task_id: cmd_last_task
+  last_parent_cmd: cmd_last_parent
+  last_ac_task_id: cmd_last_ac
+YAML
+test "$(_task_parent_cmd_for_clear_count hayate AUTO-CLEAR)" = cmd_last_parent
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: none
+  parent_cmd:
+  task_id: idle
+  _ac_task_id: idle
+  report_path: queue/reports/last.yaml
+YAML
+mkdir -p "$T/queue/reports"
+cat > "$T/queue/reports/last.yaml" <<YAML
+parent_cmd: cmd_report_parent
+task_id: cmd_report_task
+YAML
+test "$(_task_parent_cmd_for_clear_count hayate AUTO-CLEAR)" = cmd_report_parent
+
+grep -q "CLEAR-COUNT-CONTEXT-UNRESOLVED: hayate identity unavailable reason=AUTO-CLEAR generation=generation-context" "$LOG"
+grep -q "CLEAR-COUNT-FAILED-BYPASS: hayate cmd=unresolved:hayate reason=AUTO-CLEAR generation=generation-context" "$LOG"
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+  parent_cmd: cmd_old
+  task_id: idle
+  _ac_task_id: idle
+YAML
+STATE_DIR="$T/state-final"; mkdir -p "$STATE_DIR"
+record_clear_attempt_or_force_idle hayate AUTO-CLEAR
+grep -q "CLEAR-COUNT: hayate cmd=unresolved:hayate count=1/3 reason=AUTO-CLEAR generation=generation-context" "$LOG"
+! grep -q "CLEAR-COUNT-SKIP\|has no cmd context" "$LOG"
+echo "PASS: idle none failed context recovery and reasoned clear continuation"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: idle none failed context recovery and reasoned clear continuation"* ]]
+}
+
 # verdict非空チェック: report存在+verdict空→return 1(clearブロック)
 @test "report_gate: verdict empty blocks clear" {
     run bash -lc '
@@ -2560,7 +2636,7 @@ echo "PASS: clear loop forced idle"
     [[ "$output" == *"PASS: clear loop forced idle"* ]]
 }
 
-@test "safe_send_clear does not count idle stale parent_cmd as clear loop" {
+@test "safe_send_clear continues with unresolved idle context and CTX clear" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -2616,17 +2692,19 @@ respawn_recovery_generation() { echo "123:456"; }
 respawn_recovery_notify() { return 0; }
 
 safe_send_clear "shogun:2.3" "hayate" "AUTO-CLEAR"
-safe_send_clear "shogun:2.3" "hayate" "AUTO-CLEAR"
+safe_send_clear "shogun:2.3" "hayate" "AUTO-CLEAR" || true
 
-test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 2
-test ! -f "$TMP_ROOT/messages.log"
-test ! -f "$STATE_DIR/shogun_clear_count_hayate.tsv"
-grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle has no valid cmd context" "$LOG"
+test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 1
+grep -q "karo|clear_loop_block|.*unresolved:hayate" "$TMP_ROOT/messages.log"
+grep -q "CLEAR-COUNT-CONTEXT-UNRESOLVED: hayate identity unavailable reason=AUTO-CLEAR" "$LOG"
+grep -q "CLEAR-LOOP-BLOCK: hayate cmd=unresolved:hayate count=2/1 forced_idle reason=AUTO-CLEAR" "$LOG"
+test -f "$STATE_DIR/shogun_clear_count_hayate.tsv"
+! grep -q "has no cmd context" "$LOG"
 
-echo "PASS: idle stale parent_cmd skipped"
+echo "PASS: unresolved idle context continued through CTX clear"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: idle stale parent_cmd skipped"* ]]
+    [[ "$output" == *"PASS: unresolved idle context continued through CTX clear"* ]]
 }
 
 @test "terminal task context uses current generation fields and rejects stale sentinels" {
@@ -2672,8 +2750,8 @@ task:
   task_id: idle
   _ac_task_id: idle
 YAML
-test "$(_task_parent_cmd_for_clear_count hayate)" = no_cmd
-grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle has no valid cmd context" "$LOG"
+test "$(_task_parent_cmd_for_clear_count hayate)" = unresolved:hayate
+grep -q "CLEAR-COUNT-CONTEXT-UNRESOLVED: hayate identity unavailable" "$LOG"
 
 cat > "$T/queue/tasks/hayate.yaml" <<YAML
 task:
@@ -2721,7 +2799,7 @@ YAML
 done
 actual=$(grep -c '^AUTO_CLEAR:hayate$' "$LOG")
 if [ "$actual" -ne 2 ]; then exit 1; fi
-if grep -q "CLEAR-COUNT-SKIP.*no valid cmd context" "$LOG"; then exit 1; fi
+if grep -q "has no cmd context" "$LOG"; then exit 1; fi
 grep -q "^AUTO_CLEAR:hayate$" "$LOG"
 echo "PASS: terminal AUTO-CLEAR fired"
 '
@@ -3681,9 +3759,9 @@ task:
   _ac_task_id: cmd_generation
 EOF
 record_clear_attempt_or_force_idle hayate AUTO-CLEAR cmd_generation
-grep -c "generation=generation-current" "$LOG" | grep -qx 3
-grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle has no valid cmd context generation=generation-current" "$LOG"
-grep -q "CLEAR-COUNT-SKIP: hayate has no cmd context, reason=AUTO-CLEAR generation=generation-current" "$LOG"
+grep -c "generation=generation-current" "$LOG" | grep -qx 4
+grep -q "CLEAR-COUNT-CONTEXT-UNRESOLVED: hayate identity unavailable reason=clear_counter generation=generation-current" "$LOG"
+grep -q "CLEAR-COUNT-CONTEXT-UNRESOLVED: hayate identity sentinel normalized reason=AUTO-CLEAR generation=generation-current" "$LOG"
 grep -q "CLEAR-COUNT: hayate cmd=cmd_generation count=1/" "$LOG"
     echo "generation_logs=4 current=4"
 '

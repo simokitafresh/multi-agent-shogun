@@ -1064,12 +1064,22 @@ _clear_loop_state_file() {
     printf '%s/shogun_clear_count_%s.tsv\n' "$STATE_DIR" "$agent_name"
 }
 
-_task_parent_cmd_for_clear_count() {
+_task_parent_cmd_context() {
     local agent_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
     local parent_cmd=""
     local task_id=""
     local ac_task_id=""
+    local last_task_id=""
+    local last_parent_cmd=""
+    local last_ac_task_id=""
+    local report_path=""
+    local report_filename=""
+    local report_ref=""
+    local report_file=""
+    local report_parent_cmd=""
+    local report_task_id=""
+    local candidate=""
     local context=""
     local task_status=""
 
@@ -1078,6 +1088,11 @@ _task_parent_cmd_for_clear_count() {
         parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "")
         task_id=$(yaml_field_get "$task_file" "task_id" "")
         ac_task_id=$(yaml_field_get "$task_file" "_ac_task_id" "")
+        last_task_id=$(yaml_field_get "$task_file" "last_task_id" "")
+        last_parent_cmd=$(yaml_field_get "$task_file" "last_parent_cmd" "")
+        last_ac_task_id=$(yaml_field_get "$task_file" "last_ac_task_id" "")
+        report_path=$(yaml_field_get "$task_file" "report_path" "")
+        report_filename=$(yaml_field_get "$task_file" "report_filename" "")
 
         # Active tasks keep the parent command as the counter identity.  A
         # terminal task may still be the current generation, however, and its
@@ -1088,9 +1103,12 @@ _task_parent_cmd_for_clear_count() {
         # context so an old command cannot revive the clear counter.
         case "$task_status" in
             assigned|acknowledged|in_progress|pending)
-                context="$parent_cmd"
-                [ -n "$context" ] || context="$task_id"
-                [ -n "$context" ] || context="$ac_task_id"
+                for candidate in "$parent_cmd" "$task_id" "$ac_task_id"; do
+                    if [[ "$candidate" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
+                        context="$candidate"
+                        break
+                    fi
+                done
                 ;;
             done|idle|failed|completed|PASS)
                 if [[ "$task_id" =~ ^cmd_[[:alnum:]_-]+$ ]] && \
@@ -1101,14 +1119,6 @@ _task_parent_cmd_for_clear_count() {
                     context="$task_id"
                 elif [[ "$ac_task_id" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
                     context="$ac_task_id"
-                elif [ -n "$task_id" ] || [ -n "$ac_task_id" ]; then
-                    # A present non-cmd/sentinel task identity means the
-                    # parent_cmd is stale and must not be reused.
-                    context=""
-                elif [[ "$parent_cmd" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
-                    # Legacy terminal records may have only parent_cmd; keep
-                    # that compatible form usable for failed-task recovery.
-                    context="$parent_cmd"
                 fi
                 ;;
             *)
@@ -1117,10 +1127,60 @@ _task_parent_cmd_for_clear_count() {
         esac
     fi
 
+    # Lifecycle transitions clear the live identity only after preserving the
+    # last command fields. Reuse them before treating a terminal record as
+    # unidentifiable, including status=none/empty records.
     if [ -z "$context" ]; then
-        log "CLEAR-COUNT-SKIP: $agent_name task_status=${task_status:-empty} has no valid cmd context generation=${NINJA_MONITOR_GENERATION:-legacy}"
-        printf '%s\n' "no_cmd"
-        return 0
+        for candidate in "$last_parent_cmd" "$last_task_id" "$last_ac_task_id"; do
+            if [[ "$candidate" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
+                context="$candidate"
+                break
+            fi
+        done
+    fi
+
+    # A completed report is a second durable identity source. Prefer the
+    # current report reference, then the lifecycle-preserved report reference.
+    if [ -z "$context" ]; then
+        for report_ref in "$report_path" "$report_filename" \
+                         "$(yaml_field_get "$task_file" "last_report_path" "")" \
+                         "$(yaml_field_get "$task_file" "last_report_filename" "")"; do
+            [ -n "$report_ref" ] || continue
+            if [[ "$report_ref" = /* ]]; then
+                report_file="$report_ref"
+            elif [ -f "$SCRIPT_DIR/$report_ref" ]; then
+                report_file="$SCRIPT_DIR/$report_ref"
+            else
+                report_file="$SCRIPT_DIR/queue/reports/$(basename "$report_ref")"
+            fi
+            [ -f "$report_file" ] || continue
+            report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd" "")
+            report_task_id=$(yaml_field_get "$report_file" "task_id" "")
+            if [[ "$report_parent_cmd" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
+                context="$report_parent_cmd"
+                break
+            fi
+            if [[ "$report_task_id" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
+                context="$report_task_id"
+                break
+            fi
+        done
+    fi
+
+    if [ -n "$context" ]; then
+        printf '%s\n' "$context"
+    fi
+    return 0
+}
+
+_task_parent_cmd_for_clear_count() {
+    local agent_name="$1"
+    local reason="${2:-clear_counter}"
+    local context
+    context="$(_task_parent_cmd_context "$agent_name")"
+    if [ -z "$context" ]; then
+        context="unresolved:${agent_name}"
+        log "CLEAR-COUNT-CONTEXT-UNRESOLVED: $agent_name identity unavailable reason=$reason generation=${NINJA_MONITOR_GENERATION:-legacy}"
     fi
     printf '%s\n' "$context"
 }
@@ -1133,10 +1193,10 @@ record_clear_attempt_or_force_idle() {
     local state_file count previous_cmd
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
 
-    [ -n "$cmd_id" ] || cmd_id=$(_task_parent_cmd_for_clear_count "$agent_name")
+    [ -n "$cmd_id" ] || cmd_id=$(_task_parent_cmd_for_clear_count "$agent_name" "$reason")
     if [ "$cmd_id" = "no_cmd" ]; then
-        log "CLEAR-COUNT-SKIP: $agent_name has no cmd context, reason=$reason generation=${NINJA_MONITOR_GENERATION:-legacy}"
-        return 0
+        cmd_id="unresolved:${agent_name}"
+        log "CLEAR-COUNT-CONTEXT-UNRESOLVED: $agent_name identity sentinel normalized reason=$reason generation=${NINJA_MONITOR_GENERATION:-legacy}"
     fi
     # Failed-task recovery already has generation-scoped notification and
     # respawn dedupe.  Keep that contract independent from the ordinary clear
