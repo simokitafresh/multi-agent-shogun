@@ -5536,3 +5536,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-000716715-7c37
+  ts: "2026-08-28T00:07:16+09:00"
+  insight: "[[いまのまとめを作ったうえで俺だけが使う現在のmulti agent shinbox1o]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いまのまとめを作ったうえで俺だけが使う現在のmulti-agent-shinbox1o"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
