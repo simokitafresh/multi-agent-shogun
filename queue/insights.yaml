@@ -4664,3 +4664,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-133711892-53c8
+  ts: "2026-08-27T13:37:11+09:00"
+  insight: "pre-push の prepush_test.lock に stale 検知がない: holder pid 931738 は死亡済なのに lock が残り、_PREPUSH_LOCK_WAIT_SECONDS=1200 まで全 push が待つ(13:24〜)。自動化ターゲット: .git/hooks/pre-push(正本 scripts/ 側)で holder pid の kill -0 を確認し死亡なら lock を回収して記録"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
