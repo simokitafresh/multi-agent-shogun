@@ -168,6 +168,15 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第四弾 5則（2026-08-27 22:02-08-28 03:57 ext4 cutover 後の一夜で実証・将軍自身に適用）
+
+1. **書いたら grep で存否を確認せよ。** README_ja の 4 ブロック書換えが後続の書込みで失われ、殿に『軍師が一切書かれていない』『運用実績が古い』と 3 度指摘された。書換え後は必ず `grep -c '<新語>' <file>` と陳腐化語 matrix（見出し×旧語）で 0/非 0 を機械確認する。Outline を 1 項目ずつ進め、「4 ブロック直した」を「全 27 見出しを見た」と言うな。
+2. **hotfix は修正世代の本番 log で対象行 0 を見るまで閉じるな。** auto clear 不動作は 1 次 hotfix の GATE CLEAR で閉じかけたが、本番 log で分岐漏れ 12 行を検出し 2 次 hotfix で 0 行に到達（3h04m）。CLEAR≠効果。
+3. **隔離検証の AC は『入力混入 0（marker 0＋metadata/cwd 差分 0）』で書け。** live 出力差分は並行作業で必ず出る=満たせない AC を起票した将軍の責（cmd_4410 AC3）。隔離 session に本番と同じ `@agent_id` を付けると hook capture が誤認する→接尾辞（`isolated_*`）。
+4. **家老の /clear 直後 10-20 分は便が止まる。** 起動ゲートの先送り CRITICAL が届いたら、done 在庫を順序付き 1 通で下知し、CLEAR 空白を計測（本日 2 回: 02:10・03:10）。停止中エージェントの session/プロセスは kill せず、@agent_id 改名・self-fence 退役などの可逆手段で誤認源だけを除く（D006）。
+5. **殿の問いは設計欠陥のシグナルとして読め。** 『何も変わらないが待機していればいいのか』= cutover script が進捗を出さない欠陥（T102）。『気のせいか事実か』= 計測器（defense_overhead.jsonl）で答える（hook 中央値 183→90ms）。『まだ MECE ではない』= 検査手段の欠如→機械 matrix を作る。
+- origin: `[[殿指示_強くてニューゲーム_20260828_0357]] -> [[README書換え喪失3度指摘]] -> [[auto_clear_2次hotfix_本番0行]] -> [[復帰後の型_第四弾]]`
+
 ## 復帰後の型・第三弾 4則（2026-08-27 14:55-19:08 WSL再起動からの復旧で実証・将軍自身に適用）
 
 - **positive_rule**: (1)**全軍ダウン後は陣形図を捨て、全 pane capture+`uptime`+ninja_monitor.log の該当時間帯を先に読む**。/tmp の task worktree は再起動で消えるので、in_progress/assigned の忍者は「記憶も作業樹も無い」前提で家老へ 1通1単位の再配備(既存成果=commit 済/複製済からの再開を AC に明記)。(2)**CLEAR 検分は report commit_hash の祖先化だけで済ませない**。主実装 commit と files_modified の最終 blob が origin/main にあるかを `merge-base --is-ancestor`/`diff-tree` で確認し、二次情報(報告文・忍者の「commit 済」)の往復で断定しない。(3)**本番資源を触る操作の検証 AC には隔離条件を書く**(別 socket/session 名・dry-run・本番名なら exit 2)。cmd_4407 の「クリーン clone で shutsujin 完走」が全 8 pane へ send-keys した。(4)**respawn(特に FORCE)の直後は task YAML の status/task_id を再確認する**。idle 化していれば再配備が要る。respawn 直後の 1 回 capture(model/effort 表示)で断定せず 2 回目 capture か monitor WARN で判定する。
