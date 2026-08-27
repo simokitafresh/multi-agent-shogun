@@ -4,6 +4,7 @@
 - 作成: 2026-08-27 17:45 JST(将軍)。殿指示 17:41「走行中のものが完了したら、新規に手を出さずに 9p 根治をやろう」「また全軍落ちる可能性があるから 9p に関するまとめを gist に共有。トラブルシューティングも事前に検討」
 - 正本: `docs/research/9p_root_fix_runbook_20260827.md`(本ファイル)。cmd_4408 成果物=`queue/reports/hayate_report_cmd_4408.yaml`(AC1-5 実測)+cutover/rollback script(元ツリー b487c998f、origin 到達済)
 - **改訂 20:50 JST(殿指示『覚醒してアップデート』)**: cmd_4408 GATE CLEAR(19:29)後の実態で全面更新。§2 は実測値へ、§3 は「cutover script の欠陥(最終 rsync がパス置換 commit を巻き戻す)」を発見し是正 hotfix を前提に組み替えた
+- **改訂 23:10 JST(殿指示『runbook もアップデート』)**: cutover 実行済(22:00:15)。§3 に実行結果(7)、§5 を残件 23:10 へ、§6 に効果(ext4 実測)と cutover 後に顕在化した副作用 4 件を追加。以後 §1 の 9p 数値は歴史値。
 - origin: `[[殿裁定_ext4移設やれ_20260827_1422]] -> [[9p_git_flock_RPC待ち_本日停滞3系統]] -> [[cmd_4408_ext4移設]] -> [[殿指示_走行完了後9p根治集中_20260827_1741]]`
 
 ## §1 何が起きているか(一次計測)
@@ -49,6 +50,8 @@
 5. **cutover 後の一次確認(将軍)**: まず `grep -rl /mnt/c/tools/multi-agent-shogun /home/simokitafresh/multi-agent-shogun --exclude-dir=logs --exclude-dir=archive --exclude-dir=research --exclude-dir=memory --exclude-dir=.git | wc -l` = 0(relocate が効いた証拠)。次に `git status` の wall(目標 <2s)、`ps -eo stat | grep -c ^D` = 0、`defense_overhead.jsonl` の pre_push wall、watcher/monitor の起動ログ、Android アプリの Project Path を `/home/simokitafresh/multi-agent-shogun` へ変更(殿の手作業 1 箇所)。
 6. **rollback(問題時)**: `bash scripts/migrate_to_ext4_rollback.sh` → crontab を旧行へ戻し印を外す → `cd /mnt/c/tools/multi-agent-shogun && ./shutsujin_departure.sh`。/mnt/c 側は cutover 中も無変更なので戻すだけ。
 
+7. **★実行結果(2026-08-27 21:52-22:03)**: 殿が 21:52 に 4 の 1 行を実行→最終 rsync は D-state で約 8 分(9p 読出し律速。**端末に進捗が出ない**ため殿から 21:56『何も変わらないが待機していればいいのか？』=script 側の設計欠陥、T91 で N 秒毎の進捗 1 行を追加予定)→22:00:15 印 `MIGRATED_TO_EXT4.txt`→殿が shutsujin→22:02 新将軍が `/home` 上で復帰。5 の一次確認は全て成立: 全 pane cwd `/home`、crontab 新 2/旧 0、`git status` 0.08s、D-state 0、watcher/monitor 稼働、CI 1f5dc2f78 GREEN、auto-memory ロード可、Codex trust `/home` 実在。旧パス残存は migrate script 3 本と `config/settings.yaml.bak.*`・`config/cli_events.yaml`(消費者 0)のみ。relocate 置換 47 ファイルは NEW_ROOT で未 commit だった→家老が 1 commit `e644881f5` で push(0 0)。rollback は不要だった。
+
 **タイミングの判断基準**: 全忍者 idle は cutover script が機械判定(exit 2)。殿が実行するのは「忍者が全員 idle と将軍が報告した直後」または翌朝の日次起動時。深夜 cron(ETL 4 本など)が走る時間帯は避け、cutover→shutsujin まで 5 分以内に連続実行する(その間 crontab は新パスを指すが tmux は旧、というねじれを短くする)。
 
 ## §4 事前トラブルシューティング(全軍ダウン時)
@@ -89,9 +92,43 @@
 5. `rev-list origin/main...HEAD` で分岐を測り家老へ converge+1 本ずつ push
 6. artifact/todo_map を md 正本から再生成して公開、30 分 loop を再設定(cron は session 限り)
 
-## §5 未決・残件(21:47)
+## §5 残件(23:10)
 
-- ~~T73 軍師 200K~~ → 殿指示 20:37『やれ』で完了: settings.yaml から `--model opus` 除去(23645a537)、respawn 後 pane『Opus 4.6 (1M context) with high effort』を 2 回 capture で確認。
-- ~~relocate hotfix(§3-2)~~ → 21:10 CLEAR、21:45 `--dry-run PASS`。**残=殿の 1 行のみ**(家老は 5f8aea006 を push 後 idle 待機)。
-- cutover 後: T87(ext4 上で publish/scope_commit/git status/push wall を再計測し真の律速を名指す)、T70(task worktree root を `/home` 側へ)、T83(script 肥大 14 件の分割)、T88(偵察 cmd_4367/4368 の report-only 完了処理)。凍結解除=cutover 完了時。
-- DM-signal(`/mnt/c/Python_app/DM-signal`)は 9p のまま=次の移設候補(同じ手順)。
+- ~~cutover~~ → 22:00 完了(§3-7)。~~T87~~ → 22:56 CLEAR(§6)。~~T83~~ → 22:57 CLEAR(分割設計書 `docs/design/cmd_complete_gate_split_design_20260827.md`)。~~T88~~ → 22:11/22:19 CLEAR。~~T93 ci_fix~~ → 23:03 CLEAR(shard7 quality-lock のパス依存、c6e823181)。
+- T70(影丸 done、GATE 待ち): `DEPLOY_TASK_WORKTREE_ROOT` 既定を `/home/simokitafresh/shogun-task-worktrees` へ。
+- T91(未): `config/cli_events.yaml` 旧パス 8 件・`~/.codex/config.toml` hooks.state 旧キー 7 件の掃除+起動 gate に旧パス残存 grep+cutover script の進捗出力。
+- origin 直接 push レーンと shared main の再分岐(rev-list 2 21、本日 5 回目)=家老 converge 1 回/h。構造根治は INS 登録済。
+- DM-signal(`/mnt/c/Python_app/DM-signal`)は 9p のまま=次の移設候補(同じ手順。DM-signal 側の `git` 遅延と偽 DOC_LANE_ALERT の一因)。
+
+## §6 効果と副作用(23:10、ext4 稼働 1h10m)
+
+### 6.1 効果(半蔵 T87、同一手順・同一計装で各 3 回。正本 `docs/research/ext4_speed_rebaseline_20260827.md`)
+
+| 指標 | 9p before(§1) | ext4 after | 削減 |
+|---|---|---|---|
+| publish_total | 3770ms | 227ms | −94% |
+| ninja_scope_commit git_commit / scope_sync | 9487 / 5846ms | 173 / 73ms | −98% / −99% |
+| git status | 60-120s | 84ms | −99.9% |
+| git push(実 push) | timeout 3 回/日 | 1.1s rc=0 | timeout 0 |
+| deploy_task 配備 wall | 199-397s | 18.8-43.8s(中央値 23.9s) | −89% |
+| D-state | バースト 9-13 | 0 | — |
+| cmd e2e(deploy→CLEAR) | 中央値 2416s(13:05) | 1850s(N=3) | −23%。内訳は work 96-895s / **finalize 247-965s**(報告整形→軍師→家老の人手往復)=fs 律速が消えた後の支配項 |
+
+残る律速: 実 push 1132ms(ネットワーク)/publish 外側 604ms(計装外)/finalize の人手直列。旧 T60(git_commit 本質短縮)・T12(publish 13 分分解)は 9p 上の値ゆえ前提消失で終了。
+
+### 6.2 cutover 後に顕在化した副作用(4.2 の想定との突合)
+
+| 事象 | 想定(4.2) | 実際 | 手当 |
+|---|---|---|---|
+| 旧ツリーの stale `_cmd_*_ready.yaml` が最終 rsync で `/home` に復活し `status: assigned` が再出現 | 未想定(§3-2 と同根: rsync が退避を巻き戻す) | 22:11 発生 | 将軍が再退避(`queue/archive/stale_ready_20260827/`)。一般則: **cutover 前の退避・置換は rsync の後段に置くか、rsync 後に再適用** |
+| CI shard7 `missing shard receipt` | 未想定 | e644881f5 で RED(quality-lock test がパス依存) | 小太郎 ci_fix c6e823181「path independent」→CLEAR 23:03 |
+| relocate 置換が NEW_ROOT で未 commit(dirty 47) | 4.2 行 8 で「置換は rsync の後段」と記述済 | 発生(commit 手順が script に無い) | 家老 1 commit e644881f5。script 側は relocate 後の commit を追加候補(T91) |
+| 旧パス残骸(`cli_events.yaml` 8 件、`~/.codex/config.toml` 7 件) | 4.2 行 1(rg 0) | grep 除外条件外に残存、稼働影響 0 | T91 で掃除+起動 gate |
+| auto-memory / crontab / Windows・Android パス | 想定通り | 問題なし(MEMORY.md ロード可、crontab 新 2/旧 0) | — |
+| 偽 DOC_LANE_ALERT(research.md 200 件・infrastructure.md 1839 件) | 未想定 | 日付起点計数が移設で再発 | 疾風 GA502 hotfix 23:04 配備 |
+
+### 6.3 一般則(次の移設=DM-signal に持ち越す)
+
+1. 最終 rsync の**後段**に「置換→commit→退避の再適用」を script 内で完結させる(人手で拾ったのは 3 件)。
+2. 長時間工程は端末へ進捗を出す(殿の待機判断を script が支える)。
+3. cutover 直後の一次確認は §3-5 の 7 点+`grep -c 'read: false'`+`ls queue/tasks/_*ready*`+CI の最初の run 結論まで。
