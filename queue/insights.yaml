@@ -1737,7 +1737,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4359"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でcmd_4359の候補とGP-178を照合し、dashboard-updateのSSoT二重管理は一本化済みで根因解消・追加実装修正不要と確認した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-042731301-d75b;source=logs/gunshi_gp_tracker.yaml:211-217;semantic=docs/semantic-index/index.md:8143-8144;decision_candidate=none"
+  resolved_at: "2026-08-28T06:54:57+09:00"
 - id: INS-20260822-042731482-54dd
   ts: "2026-08-22T04:27:31+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4359; matched=対応; current_pattern=script_size_alert対応 — 閾値超過スクリプトのリファクタ優先度台帳化と最大複雑度1本の分割設計; candidate_level=3; candidate=gate_result null 18件蓄積。findパターンが_done_/_completed_のみ→_delegated_(多数派)未捕捉。パターン追加で2130→2243件(+5.3%); source=gunshi_gp_tracker.yaml"
