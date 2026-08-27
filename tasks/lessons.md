@@ -15947,3 +15947,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - SHOGUN_SESSIONとTMUX_TMPDIRだけを設定しても、TMUX継承または固定shogun targetが残ると本番server混入またはsetup-only rc=1になる。env -u TMUX、専用socket、一意sessionを使い、運用経路の全tmux targetがSHOGUN_SESSION由来であることを実行検証する。
+
+### L1653: WSL再起動後のtask_worktree_path staleを正本で検知する
+- **日付**: 2026-08-27
+- **出典**: cmd_4408
+- **記録者**: hayate
+- **tags**: [infra,testing,process,git]
+- **subdomain**: infra
+- **target_files**: [scripts/migrate_to_ext4_cutover.sh,scripts/migrate_to_ext4_rollback.sh,tests/unit/test_migrate_to_ext4.bats]
+- **origin**: [[cmd_4408]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 正本taskに残るtask_worktree_pathが実在しないとninja_scope_commit helperはfail-closedする。再配備時はworktree存在とsource headを一次確認し、欠落時はtaskへ新pathを反映してからcommitする運用が必要。
