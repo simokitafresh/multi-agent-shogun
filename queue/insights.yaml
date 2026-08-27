@@ -1987,7 +1987,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4375"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象candidateを確認し、既存GP-225実装で解消済みと判定した。scripts/deploy_task.sh:5855-5860はASCII-CJK境界分割と全大文字アクロニム(2文字以上)のmin_len免除を実装し、CDP/OOM等3文字キーワードを保持する。過去GP-225解消commit 7ea579494と現行CDP lesson注入テスト54/54 PASS SKIP0も確認したため、追加修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-191956498-68eb;primary=scripts/deploy_task.sh:5855-5860;history=git:7ea579494;test=tests/unit/test_deploy_task_ac_handling.bats:2015-2055;receipt=logs/test_receipts/run_tests_20260827T231425_87039.json;context=docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:36-39;decision_candidate=none"
+  resolved_at: "2026-08-28T08:15:43+09:00"
 - id: INS-20260823-191956760-bfa8
   ts: "2026-08-23T19:19:56+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cluster H実戦検証PASS_cmd_4374配備]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=per-agent launch_cmd; score=13.6) / cmd_quality_logging(cmd設計品質ログ; alias=completed cmd archive; score=12.8) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=12.7)。概念定義とaliases追加を検討せよ"
