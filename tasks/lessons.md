@@ -15973,3 +15973,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - dispatcherがhelperを後段sourceする構成では、入口ファイルだけを検索せずsource chain全体の同名実装を列挙してから変更する。今回preflight helper見落とし後、RCでscope追加し両実装を一致させた。
+
+### L1655: 実行bit非依存のreport gate呼出し
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_report_gate_exec_mode_20260828
+- **記録者**: hayate
+- **tags**: [infra,inbox,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_hotfix_report_gate_exec_mode_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 実行bitを持たないmode644のgateを直接起動するとreport_receivedがrc126で停止する。共有shell scriptは実行bitを前提にせずbash経由で呼び、mode644 fixtureを回帰検証する。
