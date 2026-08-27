@@ -599,12 +599,12 @@ skill:
   save_path: "~/.claude/skills/"
 
   # ローカルスキル保存先（このプロジェクト専用）
-  local_path: "$SCRIPT_DIR/skills/"
+  local_path: skills/
 
 # ログ設定
 logging:
   level: info  # debug | info | warn | error
-  path: "$SCRIPT_DIR/logs/"
+  path: logs/
 EOF
     log_success "settings.yaml を作成しました"
 else
@@ -618,7 +618,7 @@ if [ ! -f "$SCRIPT_DIR/config/projects.yaml" ]; then
 projects:
   - id: sample_project
     name: "Sample Project"
-    path: "/path/to/your/project"
+    path: "."
     priority: high
     status: active
 

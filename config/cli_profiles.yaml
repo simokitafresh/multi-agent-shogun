@@ -14,45 +14,45 @@ defaults:
     shogun:
       type: claude
       model_name: claude-opus-4-6
-      launch_cmd: "/home/simokitafresh/bin/claude --dangerously-skip-permissions"
+      launch_cmd: "~/bin/claude --dangerously-skip-permissions"
     karo:
       type: codex
       model_name: gpt-5.6-sol-medium
-      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
+      launch_cmd: "${SHOGUN_CODEX_BIN:-codex} --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     gunshi:
       type: claude
       model_name: claude-opus-4-6
-      launch_cmd: "/home/simokitafresh/bin/claude --dangerously-skip-permissions"
+      launch_cmd: "~/bin/claude --dangerously-skip-permissions"
     hayate:
       type: codex
       model_name: gpt-5.6-sol-low
-      launch_cmd: "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
+      launch_cmd: "${SHOGUN_CODEX_BIN:-codex} --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     kagemaru:
       type: codex
       model_name: gpt-5.6-sol-low
-      launch_cmd: "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
+      launch_cmd: "${SHOGUN_CODEX_BIN:-codex} --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     hanzo:
       type: codex
       model_name: gpt-5.6-sol-low
-      launch_cmd: "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
+      launch_cmd: "${SHOGUN_CODEX_BIN:-codex} --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     saizo:
       type: codex
       model_name: gpt-5.6-sol-low
-      launch_cmd: "/home/simokitafresh/bin/claude --dangerously-skip-permissions"
+      launch_cmd: "${SHOGUN_CODEX_BIN:-codex} --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     kotaro:
       type: codex
       model_name: gpt-5.6-sol-low
-      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --model gpt-5.6-sol --effort low --dangerously-bypass-approvals-and-sandbox --no-alt-screen
+      launch_cmd: "${SHOGUN_CODEX_BIN:-codex} --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     tobisaru:
       type: codex
       model_name: gpt-5.6-sol-low
-      launch_cmd: "/home/simokitafresh/bin/claude --dangerously-skip-permissions"
+      launch_cmd: "${SHOGUN_CODEX_BIN:-codex} --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
 profiles:
   claude:
     # 表示名 (sync_pane_vars.sh → tmux @model_name)
     display_name: "Opus"
     # 起動コマンド (lib/cli_adapter.sh L137-138)
-    launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+    launch_cmd: "~/bin/claude --dangerously-skip-permissions"
     # CTXパース正規表現 (ninja_monitor.sh L181, L518)
     ctx_pattern: "CTX:[0-9]+%"
     # CTX解釈モード: "usage"=使用率(Claude), "remaining"=残量(Codex)
@@ -81,7 +81,7 @@ profiles:
     # 表示名 (sync_pane_vars.sh → tmux @model_name) — CLI type単位のフォールバック用
     display_name: "Codex"
     # 起動コマンド (lib/cli_adapter.sh L142)
-    launch_cmd: "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
+    launch_cmd: "${SHOGUN_CODEX_BIN:-codex} --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     # CTXパース正規表現 (ninja_monitor.sh get_context_pct)
     ctx_pattern: 'Context [0-9]+%'
     # CTX解釈モード: usage=使用率(Codex "Context 4% used" テキスト形式。旧バー形式は廃止)
