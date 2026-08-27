@@ -5080,11 +5080,17 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T18:23:07+09:00"
 - id: INS-20260827-182208899-61c0
   ts: "2026-08-27T18:22:08+09:00"
   insight: "[[cd tmp cmd4407 shared cfddu6 && export PS1 \\ \\033 1;31m\\ kar]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/cmd4407-shared.cfddu6\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1 — 現task YAMLを…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T18:23:07+09:00"
