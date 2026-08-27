@@ -68,15 +68,16 @@ Run 9 AI coding agents in parallel through a Sengoku hierarchy: a **mixed Claude
 
 ## Live State Sources
 
-| Source | What it tells you |
+| Metric | Value (measured 2026-08-27) |
 |---|---|
-| `config/settings.yaml` | Current CLI mix, per-agent models, shell, layout, and language |
-| `dashboard.md` | Latest completed cmds, pending issues, and current project focus |
-| `queue/karo_snapshot.txt` | Recoverable formation state after restart/compaction |
-| `context/infrastructure.md` | Current operational invariants, tmux topology, CLI behavior, and recovery rules |
-| `projects/infra.yaml` | Infra core knowledge and production invariants |
+| cmds issued | 4,410 |
+| GATE CLEAR | 49 today (`logs/gate_metrics.log`) |
+| git history | 16,555 commits since 2026-02-09 |
+| `git status` | 84 ms on ext4 (60–120 s on the old 9p mount) |
+| one deployment (`deploy_task`) | 23 s (199–397 s before the move) |
+| cmd end-to-end (deploy → GATE CLEAR), median | 31 min (4–16 min of it is human-side review round trips) |
 
-Live numbers change frequently; the files above are the source of truth.
+Sources: `logs/gate_metrics.log`, `logs/deploy_task.log`, `docs/research/ext4_speed_rebaseline_20260827.md`.
 
 ---
 
@@ -177,338 +178,76 @@ Skills grow organically from real work — not from a predefined template librar
 
 ## Quick Start
 
-### Windows (WSL2)
+> Derived from the actual `first_setup.sh` / `shutsujin_departure.sh` / `config/settings.yaml` as of 2026-08-27. Supported: **WSL2 (Ubuntu) or native Linux**. Put the repository on **ext4** (e.g. under `~/`). A Windows drive (`/mnt/c/...`) goes through the 9p filesystem, where `git status` takes 60–120 s — unusable (see "Speed").
 
-<table>
-<tr>
-<td width="60">
+### Step 1: Prerequisites
 
-**Step 1**
-
-</td>
-<td>
-
-📥 **Download the repository**
-
-[Download ZIP](https://github.com/simokitafresh/multi-agent-shogun/archive/refs/heads/main.zip) and extract to `C:\tools\multi-agent-shogun`
-
-*Or use git:* `git clone https://github.com/simokitafresh/multi-agent-shogun.git C:\tools\multi-agent-shogun`
-
-</td>
-</tr>
-<tr>
-<td>
-
-**Step 2**
-
-</td>
-<td>
-
-🖱️ **Run `install.bat`**
-
-Right-click → "Run as Administrator" (if WSL2 is not installed). Sets up WSL2 + Ubuntu automatically.
-
-</td>
-</tr>
-<tr>
-<td>
-
-**Step 3**
-
-</td>
-<td>
-
-🐧 **Open Ubuntu and run** (first time only)
-
-```bash
-cd /home/simokitafresh/multi-agent-shogun
-./first_setup.sh
-```
-
-</td>
-</tr>
-<tr>
-<td>
-
-**Step 4**
-
-</td>
-<td>
-
-✅ **Deploy!**
-
-```bash
-./shutsujin_departure.sh
-```
-
-</td>
-</tr>
-</table>
-
-#### First-time only: Authentication
-
-After `first_setup.sh`, authenticate Claude Code once:
-
-```bash
-# 1. Apply PATH changes
-source ~/.bashrc
-
-# 2. OAuth login + Bypass Permissions approval (one command)
-claude --dangerously-skip-permissions
-#    → Browser opens → Log in with Anthropic account → Return to CLI
-#    → "Bypass Permissions" prompt appears → Select "Yes, I accept" (↓ to option 2, Enter)
-#    → Type /exit to quit
-```
-
-This saves credentials to `~/.claude/` — you won't need to do it again.
-
-If your `config/settings.yaml` enables Codex agents, also ensure the Codex CLI is already usable in your environment before launch. Current infra expectations for Codex live in `context/infrastructure.md` (`~/.codex/config.toml`, 1M context settings, high reasoning effort).
-
-#### Daily startup
-
-Open an **Ubuntu terminal** (WSL) and run:
-
-```bash
-cd /home/simokitafresh/multi-agent-shogun
-./shutsujin_departure.sh
-```
-
-| Scenario | Command | What happens |
-|----------|---------|-------------|
-| **Continue from yesterday** | `./shutsujin_departure.sh` | Queues, dashboard, and reports are preserved. Command numbers continue |
-| **Fresh start** | `./shutsujin_departure.sh -c` | All task queues, reports, inbox, and dashboard reset to blank. Previous data auto-backed up to `logs/backup_YYYYMMDD_HHMMSS/` |
-
-After launch, connect to the session:
-
-```bash
-tmux attach-session -t shogun    # or alias: csm
-# Ctrl+A → 0  Shogun (give commands here)
-# Ctrl+A → 1  Workers (watch agents work)
-```
-
-### 📱 Mobile Access (Command from anywhere)
-
-Control your AI army from your phone in two ways:
-
-- **Terminal route**: Tailscale + Termux + `mosh` or `ssh`
-- **App route**: the Android companion in [`android/`](android/) using SSH/JSch plus ntfy push
-
-#### Option A: Termux + Tailscale + mosh
-
-1. Install the clients
-   - Android: Tailscale, Termux from F-Droid, optional ntfy app
-   - WSL/Ubuntu host: Tailscale, `openssh-server`, `mosh`
-2. Prepare the host
-   ```bash
-   sudo apt update
-   sudo apt install -y openssh-server mosh
-   sudo service ssh start
-   tailscale ip -4
-   whoami
-   tmux ls
-   ```
-3. Connect from Termux
-   ```sh
-   pkg update
-   pkg install openssh mosh
-   mosh youruser@your-tailscale-ip -- tmux attach -t shogun
-   ```
-4. Fallback when UDP is blocked
-   ```sh
-   ssh youruser@your-tailscale-ip -t 'tmux attach -t shogun'
-   ```
-5. Work inside tmux
-   - `Ctrl+A` then `0` opens the Shogun window
-   - `Ctrl+A` then `1` opens the agents window
-   - `Ctrl+A` then `d` detaches without stopping the agents
-
-#### Where to find the values
-
-| Value | Command on the host | Current example in this repo |
+| Tool | Purpose | Check |
 |---|---|---|
-| Tailscale IPv4 | `tailscale ip -4` | `100.75.173.26` |
-| SSH username | `whoami` | `simokitafresh` |
-| Project path | `pwd` | `/home/simokitafresh/multi-agent-shogun` |
-| tmux session name | `tmux ls` | `shogun` |
-| tmux prefix | `tmux show-options -gqv prefix` | `C-a` |
-| Android APK | [Download](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v5.0/app-debug.apk) | `app-debug.apk` |
+| git, tmux, jq, curl, flock, timeout, setsid, crontab | base | `first_setup.sh` checks and tries `apt` for missing ones |
+| node/npm (nvm recommended), python3 | Claude Code / Codex CLI, gates | same |
+| gh (GitHub CLI), inotify-tools, bats | CI checks, inbox watcher, tests | same |
 
-#### Why mosh
-
-- Handles mobile packet loss and IP changes better than plain SSH
-- Keeps the terminal usable while switching between Wi-Fi and cellular
-- Leaves the tmux session untouched, so the agents keep running even if the phone disconnects
-
-#### Troubleshooting
-
-| Problem | Check |
-|---|---|
-| `mosh` cannot connect | Confirm `mosh-server` exists on the host and UDP is not blocked |
-| SSH works but tmux does not attach | Run `tmux ls` and use the exact session name it prints |
-| The Android app opens but the wrong panes appear | Recheck the tmux session names and project path in [`android/README.md`](android/README.md) |
-| ntfy works but the Android app terminal does not | The app uses SSH/JSch, not mosh |
-| Termux packages are missing or outdated | Install Termux from F-Droid, not the deprecated Play Store build |
-
-#### Option B: Android companion app
-
-The repo now includes a mobile client in [`android/`](android/):
-
-- **Kotlin + Jetpack Compose + Material 3**
-- **4 tabs**: Shogun, Agents, Dashboard, Settings
-- **SSH/JSch** for live tmux control
-- **ntfy** for push notifications
-- **Download APK: [`app-debug.apk`](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v5.0/app-debug.apk)**
-
-See [`android/README.md`](android/README.md) for screen-by-screen setup.
-
----
-
-<details>
-<summary>🐧 <b>Linux / macOS</b> (click to expand)</summary>
-
-### First-time setup
+### Step 2: Get the code (git clone or ZIP)
 
 ```bash
-# 1. Clone
-git clone https://github.com/simokitafresh/multi-agent-shogun.git ~/multi-agent-shogun
-cd ~/multi-agent-shogun
+# A. git (normal)
+git clone https://github.com/<owner>/multi-agent-shogun.git ~/multi-agent-shogun
 
-# 2. Make scripts executable
-chmod +x *.sh
-
-# 3. Run first-time setup
-./first_setup.sh
+# B. ZIP (no GitHub access from the box)
+#   "Code → Download ZIP", extract on ext4, then inside the folder:
+git init && git add -A && git commit -m "import" && git remote add origin https://github.com/<owner>/multi-agent-shogun.git
 ```
 
-### Daily startup
+A ZIP has no `.git`; the gates assume git, so route B creates a minimal repository with the line above.
+
+### Step 3: First-time setup
 
 ```bash
 cd ~/multi-agent-shogun
+bash first_setup.sh        # idempotently checks/installs deps, venv, Codex CLI, config, directories, Memory MCP
+source ~/.bashrc           # apply PATH
+```
+
+- The only prompt is "install the native build? [Y/n]".
+- `config/settings.yaml` is generated **only if absent**; an existing one is kept. Set the ntfy topic, CLI and models by editing `config/settings.yaml` (there is no interactive wizard).
+- Duration depends on network and what needs installing.
+
+### Step 4: First-time authentication (once, with your own accounts)
+
+```bash
+# Claude Code (use the pinned binary ~/bin/claude)
+~/bin/claude --dangerously-skip-permissions
+#   → browser OAuth login → at "Bypass Permissions" choose "Yes, I accept" → /exit
+claude auth status            # expect loggedIn=True
+
+# Codex CLI (device-auth, completed on your phone; enable "device code authentication" on the account first)
+codex login --device-auth
+codex login status            # expect "Logged in using ChatGPT"
+```
+
+Each user (family members included) logs in with their own Anthropic / ChatGPT account. Credentials live in `~/.claude` and `~/.codex/auth.json`, never in the repository.
+
+### Step 5: Launch
+
+```bash
 ./shutsujin_departure.sh
 ```
 
-</details>
-
----
-
-<details>
-<summary>❓ <b>What is WSL2? Why is it needed?</b> (click to expand)</summary>
-
-### About WSL2
-
-**WSL2 (Windows Subsystem for Linux)** lets you run Linux inside Windows. This system uses `tmux` (a Linux tool) to manage multiple AI agents, so WSL2 is required on Windows.
-
-### If you don't have WSL2 yet
-
-No problem! Running `install.bat` will:
-1. Check if WSL2 is installed (auto-install if not)
-2. Check if Ubuntu is installed (auto-install if not)
-3. Guide you through next steps (running `first_setup.sh`)
-
-**Quick install command** (run PowerShell as Administrator):
-```powershell
-wsl --install
-```
-
-Then restart your computer and run `install.bat` again.
-
-</details>
-
----
-
-<details>
-<summary>📋 <b>Script Reference</b> (click to expand)</summary>
-
-| Script | Purpose | When to run |
-|--------|---------|-------------|
-| `install.bat` | Windows: WSL2 + Ubuntu setup | First time only |
-| `first_setup.sh` | Install tmux, Node.js, required CLIs, and Memory MCP config | First time only |
-| `shutsujin_departure.sh` | Create tmux sessions + launch the mixed CLI formation + load instructions + start ntfy listener | Daily |
-
-### What `install.bat` does automatically:
-- ✅ Checks if WSL2 is installed (guides you if not)
-- ✅ Checks if Ubuntu is installed (guides you if not)
-- ✅ Shows next steps (how to run `first_setup.sh`)
-
-### What `shutsujin_departure.sh` does:
-- ✅ Creates tmux session `shogun` with window `main` (Shogun) and window `agents` (Karo + Gunshi + 6 ninja)
-- ✅ Launches the current mixed formation from `config/settings.yaml`
-- ✅ Auto-loads the correct instruction surface for each CLI (`CLAUDE.md` or `AGENTS.md`)
-- ✅ Preserves state by default, or resets queue/dashboard state with `-c`
-- ✅ Starts inbox watchers and the ntfy listener
-
-**After running, all agents are ready to receive commands!**
-
-</details>
-
----
-
-<details>
-<summary>🔧 <b>Manual Requirements</b> (click to expand)</summary>
-
-If you prefer to install dependencies manually:
-
-| Requirement | Installation | Notes |
-|-------------|-------------|-------|
-| WSL2 + Ubuntu | `wsl --install` in PowerShell | Windows only |
-| Set Ubuntu as default | `wsl --set-default Ubuntu` | Required for scripts to work |
-| tmux | `sudo apt install tmux` | Terminal multiplexer |
-| Node.js v20+ | `nvm install 20` | Required for MCP servers |
-| Claude Code CLI | `curl -fsSL https://claude.ai/install.sh \| bash` | Official Anthropic CLI (native version recommended; npm version deprecated) |
-
-</details>
-
----
-
-### Runtime dependency ledger
-
-`first_setup.sh` now checks the complete runtime surface used by the launcher, watchers, hooks, gates, and test harness. The machine-extracted inventory, commands, raw output, and clone verification record are maintained in [`docs/research/cmd_4407_clone_dependency_ledger_20260827.md`](docs/research/cmd_4407_clone_dependency_ledger_20260827.md).
-
-| Category | Required runtime | Setup behavior |
-|----------|------------------|----------------|
-| Commands | bash, git, python3, node, npm, tmux, jq, ripgrep (`rg`), `gh`, `inotifywait`, bats, flock, timeout, setsid, crontab, curl | Checked together; Debian/Ubuntu packages are attempted only for missing commands |
-| Python | `requirements.txt`, clone-local `.venv/bin/python3`, PyYAML | Creates the venv only when absent or broken; never installs globally |
-| CLIs | Codex CLI and Claude CLI; the pinned Claude launcher is `~/bin/claude` (2.1.87 policy) | Existing binaries and versions are reported, not silently replaced |
-| Configuration | `config/settings.yaml`, `config/cli_profiles.yaml`, `~/.codex/config.toml` | Existing settings are authoritative; a Codex config skeleton is created only when absent |
-| Runtime state | `data/multi_agent_shogun_memory.db`, `queue/lord_conversation.jsonl`, `queue/pending_decisions.yaml`, `queue/bulletin_board.yaml`, `queue/insights.yaml`, `logs/` | Missing files/directories are initialized; existing history is preserved |
-| Scheduled jobs | `daemon_watchdog.sh` every minute and `shogun-weekly-metrics-trend` weekly | Added only when the marker is absent; unrelated crontab entries are preserved |
-
-The live formation, agent names, models, CLI types, and launch paths come from `config/settings.yaml` and `config/cli_profiles.yaml`; README examples are explanatory and are not a second configuration source. For a clean clone, run `first_setup.sh`, then verify setup without launching agents:
-
-Portability note: the audited checkout contains the absolute root `/home/simokitafresh/multi-agent-shogun` in 93 files under scripts, configuration, and hooks. Treat that root as a prerequisite until relocation is completed. To use another checkout root, replace only this exact literal in the repository, recount matches, and rerun setup:
+Creates tmux session `shogun` with windows **`main`** (Shogun) and **`agents`** (Karo, Gunshi, 6 Ninja = 8 panes) and starts the daemons (inbox watcher, ninja_monitor, ntfy). Window numbers are 0/1 or 1/2 depending on tmux `base-index`, so switch **by name**. CLI startup is verified for up to 30 s.
 
 ```bash
-OLD_ROOT=/home/simokitafresh/multi-agent-shogun
-NEW_ROOT=/path/to/multi-agent-shogun
-rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | xargs -r sed -i "s|$OLD_ROOT|$NEW_ROOT|g"
-test "$(rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | wc -l)" -eq 0
-bash first_setup.sh
+tmux attach -t shogun
+# Ctrl+A → w for the window list, or Ctrl+A → :select-window -t main / agents
 ```
 
-Do not replace user-home, project, or screenshot paths by this bulk operation; review those separately. The 93-file count is an audit baseline—recount after every upstream change.
+### Step 6: Your first command
 
-```bash
-TMUX_TMPDIR="$(mktemp -d)" ./shutsujin_departure.sh -s
-```
+Type an instruction in the Shogun pane (e.g. `read the readme and report the current state`). Shogun files a cmd and delegates to Karo; a Ninja works in an isolated task worktree and submits a report YAML; Gunshi reviews → Karo runs the GATE → CLEAR → ntfy notification.
 
-This setup-only verification uses an isolated tmux socket and skips resident daemons. It must exit 0 and leave the source checkout's queues and user configuration untouched.
+### 📱 Android app (optional)
 
----
-
-### After Setup
-
-Whichever option you chose, **9 AI agents** are automatically launched:
-
-| Agent | Role | Count |
-|-------|------|-------|
-| 🏯 Shogun | Supreme commander — receives your orders | 1 |
-| 📋 Karo | Manager — distributes tasks | 1 |
-| 🧠 Gunshi | Military advisor — strategic analysis | 1 |
-| ⚔️ Ninja | Workers — execute tasks in parallel | 6 |
-
-One tmux session is created with two windows:
-- `shogun:main` — connect here to give commands (Window 0)
-- `shogun:agents` — workers running in the background (Window 1, switch with `Ctrl+A → 1`)
+A companion app under `android/` drives tmux over SSH with voice input. Put your `whoami` / `pwd` values into the app settings. See `android/README.md`.
 
 ---
 
@@ -544,7 +283,37 @@ Meanwhile, the Karo distributes tasks to ninja workers for parallel execution.
 Open `dashboard.md` in your editor for a real-time status view:
 
 ```markdown
-## In Progress
+## 🔗 Chain, Three-Layer Learning Loop, Three-Layer Memory
+
+### The chain (one line of command)
+
+Lord → Shogun → Karo → Ninja. No branches, no bypasses. Shogun decides, Karo organizes, Ninja executes, Gunshi reviews. **The chain is both the path of orders and the return path of learning**: a Ninja's `lesson_candidate` flows through Karo into lessons → gates → test fixtures. Bypass the chain and both the order and the learning are lost (source: top of `CLAUDE.md`, `instructions/*.md`).
+
+### Three-layer learning loop
+
+Every piece of work runs "① execute → ② binary measurement → ③ feed knowledge back → stronger next cycle", at three scopes.
+
+| Layer | Scope | Implementation |
+|---|---|---|
+| Individual | inside one role | per-AC `binary_checks` (yes/no), self-check against 8 "brainwash" patterns, deepdive replay at startup (phase by phase, with receipts) |
+| Pair | Ninja+Karo / Karo+Gunshi | report YAML → Gunshi SG7 review → Karo GATE round trip, rework-rate metrics |
+| Whole | the entire chain | reflux (auto-deploying insights from `queue/insights.yaml` to idle Ninja), lesson retirement, daily before/after from `gate_metrics`, keeping CI green |
+
+`/clear` is "New Game+": conversation context drops to zero but the knowledge base (`CLAUDE.md`, `instructions/`, lessons, memory DB, runbooks) survives, so the next session starts stronger. Principle: "don't cut, make it fast" — keep the gates, keep the quality, and make them faster (sources: `context/growth-loop.md`, `docs/research/three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707.md`).
+
+### Three-layer memory
+
+| Layer | What | Entry point |
+|---|---|---|
+| Memory DB | SQLite `data/multi_agent_shogun_memory.db` (dialogue, rulings, knowledge, restore points `session_save_*`, FTS5) | `bash scripts/memory_db_query.sh --search "<term>"` / write with `scripts/memory_db_knowledge_write.sh` |
+| Semantic index | `context/semantic-map.md` + `docs/semantic-index/index.md` (concepts, aliases, discussions) | `bash scripts/semantic_search.sh "<query>"` |
+| Obsidian causal network | `[[links]]` and `origin: "[[trigger]] -> [[cause]] -> [[effect]]"` (required in lessons, reports, cmds) | `.cache/causal_index.tsv`, `/three-layer-penetrate` |
+
+Contract: search all three layers before acting (a hook injects the preflight automatically); every answer to the Lord carries a `[MEM: …]` citation tag (a stop hook blocks answers without one); new knowledge is written through to all three layers (sources: `context/memory-db-schema.md`, `docs/research/semantic_index_design.md`).
+
+---
+
+## In Progress## In Progress
 | Worker | Task | Status |
 |--------|------|--------|
 | Hanzo | Research React | Running |
@@ -582,284 +351,34 @@ Results appear in `dashboard.md` as they complete.
 
 ## Key Features
 
-### ⚡ 1. Parallel Execution
+As of 2026-08-27, from the actual code. Everything the old README (2026-02/03) described — "send-keys to instruct", "Claude only", "check results by hand" — has been replaced.
 
-One command spawns up to 8 parallel tasks:
+1. **Mailbox messaging** — `scripts/inbox_write.sh <to> "<msg>" <type> <from> <action>`: flock-guarded YAML persistence; `inbox_watcher.sh` (inotify) sends only a short `inboxN` nudge. Agents never call tmux send-keys. Nudges are suppressed while a CLI confirmation prompt is open, Codex delivery is verified, unread messages are re-nudged.
+2. **cmd filing gates** — `cmd_skeleton.sh` → `cmd_save.sh --preflight` → `cmd_save.sh` → `cmd_delegate.sh`. 82 check functions (quality questions q1–q12, binary ACs, path existence, test contracts, `environment_change`) BLOCK/WARN. A BLOCK is the entry of the growth loop: embed something in the environment so the next cmd is not blocked.
+3. **Deployment with isolation** — `deploy_task.sh` generates the task YAML, push-injects related lessons and concepts, and isolates the Ninja in a **task worktree** (on ext4, survives reboots). One deployment: 23 s.
+4. **Report contract** — `gate_report_format.sh` normalizes report YAMLs and derives the verdict (all `binary_checks` yes → PASS). Recon cmds require findings and are exempt from commits. `lesson_candidate` / `decision_candidate` / `origin` are structured.
+5. **Two-stage review → GATE** — Gunshi SG7 precheck/LGTM → Karo ACCEPT → `cmd_complete_gate.sh` (commit ancestry, blob parity, CI readiness, context freshness) → CLEAR → archive → Ninja idle. `gate_metrics.log` records e2e/deploy/work/finalize seconds.
+6. **Monitoring daemon** — `ninja_monitor.sh`: formation snapshot, STALL/ghost/UNACTIONED detection, context monitoring with auto `/clear`/respawn, reflux auto-deployment, WARN when a Codex pane's model/effort differs from settings. `daemon_watchdog` restarts watcher/monitor.
+7. **Multi-CLI** — Claude Code (`.claude/hooks/`, 23 hooks, pinned 2.1.87 = `~/bin/claude`) and Codex (`.codex/hooks.json`, exit 2 = BLOCK) with separate implementations per CLI and one shared outcome standard. `/shogun-cli-switch` changes CLI/model by respawning idle panes only. `config/settings.yaml` is the single source of truth for the formation.
+8. **41 skills** — `skills/*/SKILL.md` is canonical and shared by both CLIs; each description must declare TRIGGER / DO NOT TRIGGER.
+9. **CoDD** — Coherence-Driven Development (by Oshio): spec → design docs → generate → validate → measure. Bash refactors run through `/codd-refactor` (measure → design → implement → re-measure).
+10. **Tests** — 242 bats files. Selective execution via `run_tests.sh task|file|affected` is the rule (full suite 2,454 s vs seconds). CI runs shards with receipts, SKIP=FAIL, a timing ledger assigns shards. Orphan test detection and reaping. Default-delete policy: only contract tests survive.
+11. **Instruments always on** — `logs/defense_overhead.jsonl` (wall time of every hook), `gate_metrics.log`, pre-push ledger, deploy receipts, publish phase instrumentation. The spiral: name the instrument → fix → measure one level deeper → leave the instrument in production.
+12. **Three-layer memory + deepdive replay** — startup gates check memory health, unread inbox, pending rulings and deepdive receipts. Reading only conclusions leads back to the same mistake, so the full process is replayed phase by phase.
+13. **Lord-facing surfaces** — `dashboard.md` (read directly by the Lord), a battle-status artifact republished by Shogun every 30 min, ntfy phone notifications, the Android app, gist sharing (creating a new gist requires an explicit flag — no history rewriting).
+14. **Safety valves** — Tier 1 absolute bans (`rm -rf` family, `push --force`, `reset --hard`, `kill`, headless Chrome without a profile, …), Tier 2 stop-and-report, a hook that forbids YAML dump, direct DB connections blocked, no raw `git commit` by commanders (`ninja_scope_commit.sh`), no history rewriting.
+15. **External project management** — `config/projects.yaml` + `projects/{id}.yaml` (git-ignored core knowledge) + `context/{project}.md` (index layer) + `docs/research/*.md` (detail layer).
+16. **ext4 migration runbook** — `scripts/migrate_to_ext4_{relocate,cutover,rollback}.sh` and `docs/research/9p_root_fix_runbook_20260827.md`: how to move safely off a Windows drive onto ext4, plus the table of side effects observed after the move.
 
-```
-You: "Research 5 MCP servers"
-→ 5 ninja start researching simultaneously
-→ Results in minutes, not hours
-```
+### Speed (measured 2026-08-27, `docs/research/ext4_speed_rebaseline_20260827.md`)
 
-### 🔄 2. Non-Blocking Workflow
-
-The Shogun delegates instantly and returns control to you:
-
-```
-You: Command → Shogun: Delegates → You: Give next command immediately
-                                       ↓
-                       Workers: Execute in background
-                                       ↓
-                       Dashboard: Shows results
-```
-
-No waiting for long tasks to finish.
-
-### 🧠 3. Cross-Session Memory (Memory MCP)
-
-Your AI remembers your preferences:
-
-```
-Session 1: Tell it "I prefer simple approaches"
-            → Saved to Memory MCP
-
-Session 2: AI loads memory on startup
-            → Stops suggesting complex solutions
-```
-
-### 📡 4. Event-Driven (Zero Polling)
-
-Agents communicate through file-based mailbox (inbox_write.sh + inbox_watcher.sh). **No polling loops wasting API calls.**
-
-**Two-Layer Architecture (nudge-only delivery):**
-
-- **Layer 1: File Persistence**
-  - `inbox_write.sh` writes messages to `queue/inbox/{agent}.yaml` with flock (exclusive lock)
-  - Full message content stored in YAML — guaranteed persistence
-  - Multiple agents can write simultaneously (flock serializes writes)
-
-- **Layer 2: Nudge Delivery**
-  - `inbox_watcher.sh` detects file changes via `inotifywait` (kernel event, not polling)
-  - Watcher sends a short 1-line nudge via `send-keys` (timeout 5s) to wake the agent
-  - Agent reads its own inbox file and processes unread messages
-  - **No full message via send-keys** — only a wake-up signal
-
-- **Zero CPU**: Watcher blocks on `inotifywait` until file modification event (CPU 0% while idle)
-
-### 📸 5. Screenshot Integration
-
-VSCode's Claude Code extension lets you paste screenshots to explain issues. This CLI system provides the same capability:
-
-```yaml
-# Set your screenshot folder in config/settings.yaml
-screenshot:
-  path: "/mnt/c/Users/YourName/Pictures/Screenshots"
-```
-
-```
-# Just tell the Shogun:
-You: "Check the latest screenshot"
-You: "Look at the last 2 screenshots"
-→ AI instantly reads and analyzes your screen captures
-```
-
-**Windows tip:** Press `Win + Shift + S` to take screenshots. Set the save path in `settings.yaml` for seamless integration.
-
-Use cases:
-- Explain UI bugs visually
-- Show error messages
-- Compare before/after states
-
-### 📁 6. Context and Knowledge (7-Layer Architecture)
-
-This repo does not rely on one giant prompt. Durable knowledge is split into seven layers:
-
-| Layer | Location | Purpose |
+| Metric | 9p (/mnt/c) | ext4 (/home) |
 |---|---|---|
-| 1. System rules | `AGENTS.md`, `CLAUDE.md` | Global safety rules, recovery routing, and shared operating constraints |
-| 2. Role instructions | `instructions/generated/*.md` | Shogun, Karo, and Ninja procedures |
-| 3. Project core | `config/projects.yaml`, `projects/<id>.yaml` | Project metadata, paths, and core rules |
-| 4. Project lessons | `projects/<id>/lessons.yaml` | Reusable mistakes, fixes, and heuristics |
-| 5. Live ops YAML | `queue/`, `tasks/`, `reports/` | Active commands, inboxes, task state, and reports |
-| 6. Context index | `context/*.md`, `docs/research/*.md` | Vercel-style retrieval: summaries stay in `context/`, details live in `docs/research/` |
-| 7. Memory MCP | `memory/shogun_memory.jsonl` | Lord preferences and Shogun-only long-term memory |
-
-This design enables:
-- Any ninja can recover by reloading files instead of replaying the whole conversation
-- Knowledge survives agent swaps, `/clear`, and `/new`
-- Retrieval cost stays low because summaries point to deeper docs instead of duplicating them
-
-#### Vercel-style context
-
-`context/*.md` is the index layer. Deep investigations move into `docs/research/` and are linked back from the context file. Compression without a backlink is treated as data loss.
-
-#### Lesson cycle
-
-Lessons are not static notes. They are injected into tasks, referenced during work, scored after GATE, and auto-deprecated when they stop helping. That loop is what keeps the knowledge base from turning into prompt sludge.
-
-#### Recovery after `/clear` or `/new`
-
-Working context is disposable. Durable knowledge lives in the layers above, so an agent can recover by reloading rules, task YAML, and project context instead of replaying the full conversation.
-
-### 📱 7. Phone Notifications (ntfy)
-
-Two-way communication between your phone and the Shogun — no SSH, no Tailscale, no server needed.
-
-| Direction | How it works |
-|-----------|-------------|
-| **Phone → Shogun** | Send a message from the ntfy app → `ntfy_listener.sh` receives it via streaming → Shogun processes automatically |
-| **Karo → Phone (direct)** | When Karo updates `dashboard.md`, it sends push notifications directly via `scripts/ntfy.sh` — **Shogun is bypassed** (Shogun is for human interaction, not progress reporting) |
-
-```
-📱 You (from bed)          🏯 Shogun
-    │                          │
-    │  "Research React 19"     │
-    ├─────────────────────────►│
-    │    (ntfy message)        │  → Delegates to Karo → Ninja work
-    │                          │
-    │  "✅ cmd_042 complete"   │
-    │◄─────────────────────────┤
-    │    (push notification)   │
-```
-
-**Setup:**
-1. Add `ntfy_topic: "shogun-yourname"` to `config/settings.yaml`
-2. Install the [ntfy app](https://ntfy.sh) on your phone and subscribe to the same topic
-3. `shutsujin_departure.sh` automatically starts the listener — no extra steps
-
-**Notification examples:**
-
-| Event | Notification |
-|-------|-------------|
-| Command completed | `✅ cmd_042 complete — 5/5 subtasks done` |
-| Task failed | `❌ subtask_042c failed — API rate limit` |
-| Action required | `🚨 Action needed: approve skill candidate` |
-| Streak update | `🔥 3-day streak! 12/12 tasks today` |
-
-Free, no account required, no server to maintain. Uses [ntfy.sh](https://ntfy.sh) — an open-source push notification service.
-
-> **⚠️ Security:** Your topic name is your password. Anyone who knows it can read your notifications and send messages to your Shogun. Choose a hard-to-guess name and **never share it publicly** (e.g., in screenshots, blog posts, or GitHub commits).
-
-**Verify it works:**
-
-```bash
-# Send a test notification to your phone
-bash scripts/ntfy.sh "Test notification from Shogun 🏯"
-```
-
-If your phone receives the notification, you're all set. If not, check:
-- `config/settings.yaml` has `ntfy_topic` set (not empty, no extra quotes)
-- The ntfy app on your phone is subscribed to **the exact same topic name**
-- Your phone has internet access and ntfy notifications are enabled
-
-**Sending commands from your phone:**
-
-1. Open the ntfy app on your phone
-2. Tap your subscribed topic
-3. Type a message (e.g., `Research React 19 best practices`) and send
-4. `ntfy_listener.sh` receives it, writes to `queue/ntfy_inbox.yaml`, and wakes the Shogun
-5. The Shogun reads the message and processes it through the normal Karo → Ninja pipeline
-
-Any text you send becomes a command. Write it like you'd talk to the Shogun — no special syntax needed.
-
-**Manual listener start** (if not using `shutsujin_departure.sh`):
-
-```bash
-# Start the listener in the background
-nohup bash scripts/ntfy_listener.sh &>/dev/null &
-
-# Check if it's running
-pgrep -f ntfy_listener.sh
-
-# View listener logs (stderr output)
-bash scripts/ntfy_listener.sh  # Run in foreground to see logs
-```
-
-The listener automatically reconnects if the connection drops. `shutsujin_departure.sh` starts it automatically on deployment — you only need manual start if you skipped the deployment script.
-
-**Troubleshooting:**
-
-| Problem | Fix |
-|---------|-----|
-| No notifications on phone | Check topic name matches exactly in `settings.yaml` and ntfy app |
-| Listener not starting | Run `bash scripts/ntfy_listener.sh` in foreground to see errors |
-| Phone → Shogun not working | Verify listener is running: `pgrep -f ntfy_listener.sh` |
-| Messages not reaching Shogun | Check `queue/ntfy_inbox.yaml` — if message is there, Shogun may be busy |
-| "ntfy_topic not configured" error | Add `ntfy_topic: "your-topic"` to `config/settings.yaml` |
-| Duplicate notifications | Normal on reconnect — Shogun deduplicates by message ID |
-| Changed topic name but no notifications | The listener must be restarted: `pkill -f ntfy_listener.sh && nohup bash scripts/ntfy_listener.sh &>/dev/null &` |
-
-**Real-world notification screenshots:**
-
-<p align="center">
-  <img src="images/screenshots/ntfy_saytask_rename.jpg" alt="Bidirectional phone communication" width="300">
-  &nbsp;&nbsp;
-  <img src="images/screenshots/ntfy_cmd043_progress.jpg" alt="Progress notification" width="300">
-</p>
-<p align="center"><i>Left: Bidirectional phone ↔ Shogun communication · Right: Real-time progress report from ninja</i></p>
-
-<p align="center">
-  <img src="images/screenshots/ntfy_bloom_oc_test.jpg" alt="Command completion notification" width="300">
-  &nbsp;&nbsp;
-  <img src="images/screenshots/ntfy_persona_eval_complete.jpg" alt="8-agent parallel completion" width="300">
-</p>
-<p align="center"><i>Left: Command completion notification · Right: All 8 ninja completing in parallel</i></p>
-
-> *Note: Topic names shown in screenshots are examples. Use your own unique topic name.*
-
-#### SayTask Notifications
-
-Behavioral psychology-driven motivation through your notification feed:
-
-- **Streak tracking**: Consecutive completion days counted in `saytask/streaks.yaml` — maintaining streaks leverages loss aversion to sustain momentum
-- **Eat the Frog** 🐸: The hardest task of the day is marked as the "Frog." Completing it triggers a special celebration notification
-- **Daily progress**: `12/12 tasks today` — visual completion feedback reinforces the Arbeitslust effect (joy of work-in-progress)
-
-### 🖼️ 8. Pane Border Task Display
-
-Each tmux pane shows the agent's current task directly on its border:
-
-```
-┌ hanzo (Opus) VF requirements ────────┬ hayate (Opus) API research ─────────┐
-│                                      │                                     │
-│  Working on SayTask requirements     │  Researching REST API patterns      │
-│                                      │                                     │
-├ saizo (Opus) ────────────────────────┼ kagemaru (Opus) DB schema design ───┤
-│                                      │                                     │
-│  (idle — waiting for assignment)     │  Designing database schema          │
-│                                      │                                     │
-└──────────────────────────────────────┴─────────────────────────────────────┘
-```
-
-- **Working**: `hanzo (Opus) VF requirements` — agent name, model, and task summary
-- **Idle**: `hanzo (Opus)` — model name only, no task
-- Updated automatically by the Karo when assigning or completing tasks
-- Glance at all panes to instantly know who's doing what
-
-### 🔊 9. Shout Mode (Battle Cries)
-
-When a ninja completes a task, it shouts a personalized battle cry in the tmux pane — a visual reminder that your army is working hard.
-
-```
-┌ hanzo (Opus) ────────────────┬ saizo (Opus) ─────────────────┐
-│                               │                               │
-│  ⚔️ hanzo、先陣切った！       │  🔥 saizo、二番槍の意地！     │
-│  八刃一志！                   │  八刃一志！                   │
-│  ❯                            │  ❯                            │
-└───────────────────────────────┴───────────────────────────────┘
-```
-
-**How it works:**
-
-The Karo writes an `echo_message` field in each task YAML. After completing all work (report + inbox notification), the ninja runs `echo` as its **final action**. The message stays visible above the `❯` prompt.
-
-```yaml
-# In the task YAML (written by Karo)
-task:
-  task_id: subtask_001
-  description: "Create comparison table"
-  echo_message: "🔥 hanzo、先陣を切って参る！八刃一志！"
-```
-
-**Shout mode is the default.** To disable (saves API tokens on the echo call):
-
-```bash
-./shutsujin_departure.sh --silent    # No battle cries
-./shutsujin_departure.sh             # Default: shout mode (battle cries enabled)
-```
-
-Silent mode sets `DISPLAY_MODE=silent` as a tmux environment variable. The Karo checks this when writing task YAMLs and omits the `echo_message` field.
+| git status | 60–120 s | 84 ms |
+| cmd publish | 3,770 ms | 227 ms |
+| scope_commit git_commit / scope_sync | 9,487 / 5,846 ms | 173 / 73 ms |
+| one deployment | 199–397 s | 23 s |
+| median wall of one hook (all hooks) | 183 ms | 90 ms |
 
 ---
 
@@ -1323,7 +842,7 @@ tmux kill-session -t shogun
 Running `first_setup.sh` automatically adds these aliases to `~/.bashrc`:
 
 ```bash
-alias csst='cd /home/simokitafresh/multi-agent-shogun && ./shutsujin_departure.sh'
+alias csst='cd ~/multi-agent-shogun && ./shutsujin_departure.sh'
 alias csm='tmux attach-session -t shogun'  # Connect to session (Ctrl+A → 0/1 to switch windows)
 ```
 
