@@ -8,7 +8,9 @@ setup() {
   NEW_ROOT="$TMP_DIR/new"
   HOME_DIR="$TMP_DIR/home"
   mkdir -p "$OLD_ROOT/queue/tasks" "$NEW_ROOT/queue/tasks" \
-    "$HOME_DIR/.claude/projects/-mnt-c-tools-multi-agent-shogun"
+    "$HOME_DIR/.claude/projects/-mnt-c-tools-multi-agent-shogun" \
+    "$OLD_ROOT/scripts"
+  cp "$ROOT/scripts/migrate_to_ext4_relocate.sh" "$OLD_ROOT/scripts/"
   printf '%s\n' 'task:' '  status: idle' > "$OLD_ROOT/queue/tasks/ninja.yaml"
   printf 'old-cron %s\n' "$OLD_ROOT" > "$TMP_DIR/cron"
   mkdir -p "$TMP_DIR/bin"
@@ -40,9 +42,46 @@ teardown() {
     bash "$ROOT/scripts/migrate_to_ext4_cutover.sh" --dry-run
   [ "$status" -eq 0 ]
   [[ "$output" == *"DRY_RUN: preflight PASS"* ]]
+  [[ "$output" == *"DRY_RUN_RELOCATE: would run after final rsync"* ]]
   [ ! -e "$OLD_ROOT/MIGRATED_TO_EXT4.txt" ]
   [ ! -e "$NEW_ROOT/.migrate_to_ext4_crontab.backup" ]
   grep -Fqx "old-cron $OLD_ROOT" "$TEST_CRON_STATE"
+}
+
+@test "relocate replaces included references, preserves exclusions, and is idempotent" {
+  mkdir -p "$NEW_ROOT/config" "$NEW_ROOT/logs" "$NEW_ROOT/queue/archive" \
+    "$NEW_ROOT/docs/research" "$NEW_ROOT/memory"
+  printf 'active=%s\n' "$OLD_ROOT" > "$NEW_ROOT/config/runtime.env"
+  printf 'history=%s\n' "$OLD_ROOT" > "$NEW_ROOT/logs/history.log"
+  printf 'archive=%s\n' "$OLD_ROOT" > "$NEW_ROOT/queue/archive/old.yaml"
+  printf 'research=%s\n' "$OLD_ROOT" > "$NEW_ROOT/docs/research/old.md"
+  printf 'memory=%s\n' "$OLD_ROOT" > "$NEW_ROOT/memory/old.md"
+
+  run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" \
+    bash "$ROOT/scripts/migrate_to_ext4_relocate.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"changed_files=1 changed_occurrences=1 remaining=0"* ]]
+  grep -Fqx "active=$NEW_ROOT" "$NEW_ROOT/config/runtime.env"
+  grep -Fqx "history=$OLD_ROOT" "$NEW_ROOT/logs/history.log"
+  grep -Fqx "archive=$OLD_ROOT" "$NEW_ROOT/queue/archive/old.yaml"
+
+  run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" \
+    bash "$ROOT/scripts/migrate_to_ext4_relocate.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"changed_files=0 changed_occurrences=0 remaining=0"* ]]
+}
+
+@test "live cutover relocates the copied tree before declaring success" {
+  mkdir -p "$OLD_ROOT/config"
+  printf 'active=%s\n' "$OLD_ROOT" > "$OLD_ROOT/config/runtime.env"
+
+  run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" HOME="$HOME_DIR" \
+    bash "$ROOT/scripts/migrate_to_ext4_cutover.sh"
+  [ "$status" -eq 0 ]
+  grep -Fqx "active=$NEW_ROOT" "$NEW_ROOT/config/runtime.env"
+  ! grep -Fq "$OLD_ROOT" "$NEW_ROOT/config/runtime.env"
+  grep -Fqx "old-cron $NEW_ROOT" "$TEST_CRON_STATE"
+  [ -e "$OLD_ROOT/MIGRATED_TO_EXT4.txt" ]
 }
 
 @test "cutover blocks a non-idle task with exit 2" {

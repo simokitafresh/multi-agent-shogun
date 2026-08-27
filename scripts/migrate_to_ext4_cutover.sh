@@ -87,6 +87,8 @@ perform_cutover() {
   cron_contains_old_root "$cron_text" || blocked "crontab changed after preflight"
   printf '[cutover] final rsync: %s -> %s\n' "$OLD_ROOT" "$NEW_ROOT"
   rsync -a "$OLD_ROOT/" "$NEW_ROOT/"
+  printf '[cutover] relocate old-root references in NEW_ROOT: %s\n' "$NEW_ROOT"
+  OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" bash "$NEW_ROOT/scripts/migrate_to_ext4_relocate.sh"
   umask 077
   printf '%s\n' "$cron_text" > "$STATE_BACKUP"
   rewritten="${cron_text//"$OLD_ROOT"/$NEW_ROOT}"
@@ -116,6 +118,7 @@ perform_cutover() {
 preflight
 if "$DRY_RUN"; then
   printf '%s\n' 'DRY_RUN: preflight PASS; no rsync, crontab, auto-memory, marker, tmux restart, or agent launch performed'
+  printf '%s\n' "DRY_RUN_RELOCATE: would run after final rsync in $NEW_ROOT; no files changed"
   printf '%s\n' "DRY_RUN_NEXT: cd $NEW_ROOT && ./shutsujin_departure.sh"
   exit 0
 fi
