@@ -192,10 +192,10 @@ PY
         deploy_task_prepare_remote_tip_worktree "$TASK" kagemaru
         wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
         case "$wt" in
-            /home/simokitafresh/shogun-task-worktrees/*) ;;
+            "$HOME/shogun-task-worktrees"/*) ;;
             *) printf "unexpected_default_root=%s\n" "$wt" >&2; exit 1 ;;
         esac
-        test -d /home/simokitafresh/shogun-task-worktrees
+        test -d "$HOME/shogun-task-worktrees"
         test -d "$wt"
         deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
         test ! -e "$wt"

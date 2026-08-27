@@ -50,6 +50,8 @@
 make_pin_fixture() {
     fixture="$BATS_TEST_TMPDIR/pin-fixture"
     mkdir -p "$fixture/config" "$fixture/lib" "$fixture/scripts/lib" "$fixture/skills/shogun-cli-switch/scripts" "$fixture/bin"
+    printf '#!/usr/bin/env bash\nif [ "${1:-}" = "--version" ]; then echo "2.1.87 (Claude Code)"; else exit 0; fi\n' > "$fixture/bin/claude"
+    chmod +x "$fixture/bin/claude"
     cp "${BATS_TEST_DIRNAME}/../../skills/shogun-cli-switch/scripts/shogun_cli_switch.sh" \
         "$fixture/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh"
     printf 'profiles:\n  claude:\n    launch_cmd: pinned\n' >"$fixture/config/cli_profiles.yaml"
@@ -100,12 +102,12 @@ esac
 SH
     cat >"$fixture/bin/ps" <<'SH'
 #!/usr/bin/env bash
-printf "/home/simokitafresh/bin/claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]' --effort high\n"
+printf "%s --dangerously-skip-permissions --model 'claude-opus-4-6[1m]' --effort high\n" "${PINNED_BIN:-$HOME/bin/claude}"
 SH
     chmod +x "$fixture/bin/tmux" "$fixture/bin/ps"
     before="$(sha256sum "$fixture/config/settings.yaml" | awk '{print $1}')"
 
-    run env PATH="$fixture/bin:$PATH" bash "$fixture/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh" \
+    run env PATH="$fixture/bin:$PATH" PINNED_BIN="$fixture/bin/claude" bash "$fixture/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh" \
         pin-opus-4.6-1m --repo "$fixture" --agent gunshi
 
     [ "$status" -eq 0 ]
