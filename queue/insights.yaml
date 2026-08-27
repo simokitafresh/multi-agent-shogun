@@ -4756,3 +4756,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-143645993-59af
+  ts: "2026-08-27T14:36:45+09:00"
+  insight: "T63 根因の一次証拠: ~/.codex/config.toml は全 Codex agent 共有で、codex_config_apply_agent は launch 時の一時切替のみ。14:34 kagemaru が sol high(settings luna-high)で起動=家老向け apply(sol/medium)中に respawn が重なった競合。自動化ターゲット: agent 別 config(CODEX_HOME 分離 or profile)で共有 toml の一時切替を廃止し、起動後 capture で実態≠settings を WARN"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260827-143649827-34a6
+  ts: "2026-08-27T14:36:49+09:00"
+  insight: "[[今後他のPCに将軍システムをクローンずるときに問題が起きないようにしたい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今後他のPCに将軍システムをクローンずるときに問題が起きないようにしたい。readmeを読み込み整合性があるようにしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
