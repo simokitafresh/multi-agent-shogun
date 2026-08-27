@@ -850,6 +850,51 @@ run_global_history_fixture() {
     bash "$global_fixture/scripts/context_freshness_check.sh" --dashboard-warnings
 }
 
+# test_necessity: source freshness must use only the reviewed source_commit
+# boundary.  Moving last_updated across a date boundary must not change the
+# result: a marker at tip has zero candidates, while one source commit after
+# the marker has exactly one candidate.
+@test "source marker boundary is the only commit counting boundary" {
+  make_global_history_fixture marker-only
+
+  printf 'reviewed source boundary\n' > "$global_fixture/scripts/source.py"
+  git -C "$global_fixture" add scripts/source.py
+  git -C "$global_fixture" commit -qm 'reviewed source boundary'
+  boundary_tip="$(git -C "$global_fixture" rev-parse HEAD)"
+  printf '%s\n' \
+    '<!-- last_updated: 2020-01-01 -->' \
+    "<!-- source_commit:${boundary_tip} reason:fixture evidence:fixture -->" \
+    > "$global_fixture/context/infrastructure.md"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$global_fixture" \
+    CFC_GLOBAL_HISTORY_ENABLED=1 \
+    CFC_GLOBAL_HISTORY_CACHE_DIR="$global_cache" \
+    CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GLOBAL_HISTORY_BUILD_TIMEOUT=5 \
+    CFC_GIT_TIMEOUT=5 \
+    CFC_GIT_RETRY_TIMEOUT=5 \
+    bash "$global_fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"ALERT: context/infrastructure.md source commits"* ]]
+
+  printf 'unreviewed source after boundary\n' > "$global_fixture/scripts/source.py"
+  git -C "$global_fixture" add scripts/source.py
+  git -C "$global_fixture" commit -qm 'unreviewed source after boundary'
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$global_fixture" \
+    CFC_GLOBAL_HISTORY_ENABLED=1 \
+    CFC_GLOBAL_HISTORY_CACHE_DIR="$global_cache" \
+    CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_GLOBAL_HISTORY_BUILD_TIMEOUT=5 \
+    CFC_GIT_TIMEOUT=5 \
+    CFC_GIT_RETRY_TIMEOUT=5 \
+    bash "$global_fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ALERT: context/infrastructure.md source commits 1件"* ]]
+}
+
 @test "global ledger treats an ancestor boundary older than the scan window as resolved" {
   make_global_history_fixture boundary-old
   GIT_AUTHOR_DATE='2026-08-01T12:00:00Z' GIT_COMMITTER_DATE='2026-08-01T12:00:00Z' \
