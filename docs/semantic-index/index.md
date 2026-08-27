@@ -8168,6 +8168,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T22:41:30+09:00 2026-08-27 22:40 ext4 移設後の速度再基準(半蔵 T87、各3回計測): publish_total 3770→227ms平均(−94%)、ninja_scope_commit git_commit 9487→173ms |
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_clear_guard.bats`) |
+| causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_training_auto.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9735,9 +9737,9 @@ codd:
 | causal | `cmd_karo_ci_fix_33075312387_shard7_quality_lock_identity_20260827` files_modified: [[cmd_quality_logging]] |
 | cmd | `cmd_karo_ci_fix_33075312387_shard7_quality_lock_identity_20260827` (`tests/unit/test_cmd_quality_log.bats`) |
 | causal | `cmd_karo_hotfix_cmd_complete_report_gate_exec_20260828` files_modified: [[cmd_quality_logging]] |
-| causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 | causal | `cmd_karo_hotfix_t101_publish_outer_instrument_20260828` files_modified: [[cmd_quality_logging]] |
 | cmd | `cmd_karo_hotfix_t101_publish_outer_instrument_20260828` (`logs/cmd_publish_timing.log`, `scripts/cmd_publish.sh`, `tests/unit/test_cmd_publish.bats`) |
+| causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -9933,6 +9935,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_busy_not_block_202608190642` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_ci_fix_32987834940_ninja_monitor_review_request_20260827` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -10729,6 +10732,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T07:32:24+09:00 bm3aiyq8p toolu_011fdNu6d5rPJW2Kxv6sXMGP /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/13459098-3719-4178-90d4-8f76ad |
 | cmd | `cmd_karo_ci_fix_33014653183_owner_heartbeat_20260827` |
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -11018,6 +11022,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T01:49:25+09:00 止まっていないか？ |
 | causal | `cmd_karo_ci_fix_32987834940_ninja_monitor_review_request_20260827` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -14588,6 +14593,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T10:49:04.976794+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T11:58:21.313480+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T12:35:23.026080+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T16:32:02.301026+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -14701,6 +14707,7 @@ codd:
 | causal | `cmd_karo_ci_fix_32987834940_ninja_monitor_review_request_20260827` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_report_gate_exec_mode_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -16262,6 +16269,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_busy_not_block_202608190642` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_ci_fix_32987834940_ninja_monitor_review_request_20260827` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -16463,6 +16471,7 @@ codd:
 | causal | `cmd_4400` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_ci_fix_32987834940_ninja_monitor_review_request_20260827` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
