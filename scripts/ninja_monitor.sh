@@ -8028,23 +8028,85 @@ check_stall() {
 # after the atomic report replace but before inbox persistence (pane death,
 # dispatcher exit, or monitor respawn). inbox_write's structured fingerprint
 # transaction makes this safe on every cycle and repairs a missing review child.
+_report_is_pass_review_candidate() {
+    local report_full="$1" report_gate_output
+    [ -f "$report_full" ] || return 1
+
+    # A failed worker may later publish a corrected report.  Eligibility is
+    # bound to the report contents, never to the worker task status: only a
+    # completed PASS report whose every binary check is yes may reopen review.
+    python3 - "$report_full" <<'PY' >/dev/null 2>&1 || return 1
+import sys
+import yaml
+
+report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+if report.get("status") != "completed" or report.get("verdict") != "PASS":
+    raise SystemExit(1)
+checks = report.get("binary_checks")
+if not isinstance(checks, dict) or not checks:
+    raise SystemExit(1)
+for entries in checks.values():
+    if not isinstance(entries, list) or not entries:
+        raise SystemExit(1)
+    for entry in entries:
+        # PyYAML resolves the canonical unquoted `result: yes` form to True;
+        # accept that representation as well as a quoted string from older
+        # reports.  `no` resolves to False and is intentionally rejected.
+        if not isinstance(entry, dict) or (entry.get("result") is not True and entry.get("result") != "yes"):
+            raise SystemExit(1)
+PY
+
+    # Keep the format gate as the final SSOT for review eligibility.  The
+    # direct check above prevents a permissive/stubbed gate from admitting a
+    # report with missing binary checks in tests or degraded environments.
+    report_gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_full" 2>&1) || true
+    echo "$report_gate_output" | grep -q '^PASS'
+}
+
 auto_request_report_review() {
-    local report_full="$1" parent_cmd="$2" report_base gate_dir marker lock_fd
+    local report_full="$1" parent_cmd="$2" strict_failed_pass="${3:-0}"
+    local report_base gate_dir marker lock_fd fingerprint marker_fp
     report_base=${report_full##*/}
     [ -n "$parent_cmd" ] || return 1
+    if [ "$strict_failed_pass" = "1" ]; then
+        if ! _report_is_pass_review_candidate "$report_full"; then
+            log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=not_completed_pass_all_binary_yes"
+            return 1
+        fi
+        fingerprint=$(review_report_fingerprint "$report_full" 2>/dev/null || true)
+        [ -n "$fingerprint" ] || {
+            log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=fingerprint_unavailable"
+            return 1
+        }
+        if _pending_task_canonical_review_state "$parent_cmd" "$report_full" >/dev/null 2>&1; then
+            log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=reviewed_generation"
+            return 1
+        fi
+    fi
     gate_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
     marker="$gate_dir/review_request.${report_base}.done"
     mkdir -p "$gate_dir"
     mkdir -p "$SCRIPT_DIR/logs"
     exec {lock_fd}>"$gate_dir/review_request.lock"
     flock -n "$lock_fd" || { eval "exec ${lock_fd}>&-"; return 0; }
-    if [ ! -f "$marker" ]; then
+    marker_fp=""
+    if [ "$strict_failed_pass" = "1" ] && [ -f "$marker" ]; then
+        marker_fp=$(awk -F': ' '$1 == "fingerprint" {print $2; exit}' "$marker" 2>/dev/null || true)
+    fi
+    if { [ "$strict_failed_pass" = "1" ] && [ "$marker_fp" != "$fingerprint" ]; } ||
+       { [ "$strict_failed_pass" != "1" ] && [ ! -f "$marker" ]; }; then
         if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
             "忍者報告の自動レビュー依頼。report=${report_base} parent_cmd=${parent_cmd}" \
             review_draft ninja_monitor review_request >/dev/null 2>>"$SCRIPT_DIR/logs/report_review_auto_request.err"; then
-            printf 'timestamp: %s\nreport: %s\nparent_cmd: %s\n' \
-                "$(date -Iseconds)" "$report_base" "$parent_cmd" > "$marker"
-            log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd"
+            if [ "$strict_failed_pass" = "1" ]; then
+                printf 'timestamp: %s\nreport: %s\nparent_cmd: %s\nfingerprint: %s\n' \
+                    "$(date -Iseconds)" "$report_base" "$parent_cmd" "$fingerprint" > "$marker"
+                log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd fingerprint=$fingerprint"
+            else
+                printf 'timestamp: %s\nreport: %s\nparent_cmd: %s\n' \
+                    "$(date -Iseconds)" "$report_base" "$parent_cmd" > "$marker"
+                log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd"
+            fi
         else
             log "REPORT-REVIEW-AUTO-REQUEST-BLOCK: report=$report_base parent_cmd=$parent_cmd"
         fi
@@ -8060,9 +8122,9 @@ repair_terminal_report_outboxes() {
         [ -f "$task_file" ] || continue
         task_status=$(yaml_field_get "$task_file" status "" 2>/dev/null || true)
         # inbox_write publishes child review before the atomic done transition.
-        # Therefore only a still-active task can inhabit the crash window.
-        # Terminal/idle tasks are a steady state and must incur zero publishers.
-        case "$task_status" in assigned|acknowledged|in_progress) ;; *) continue ;; esac
+        # A failed task is also eligible when a corrected PASS report appears:
+        # its task status is not a report-generation verdict.
+        case "$task_status" in assigned|acknowledged|in_progress|failed) ;; *) continue ;; esac
         report_path=$(yaml_field_get "$task_file" report_path "" 2>/dev/null || true)
         [ -n "$report_path" ] || continue
         [[ "$report_path" = /* ]] && report_full="$report_path" || report_full="$SCRIPT_DIR/$report_path"
@@ -8072,10 +8134,17 @@ repair_terminal_report_outboxes() {
         [ -f "$report_full" ] || continue
         status=$(yaml_field_get "$report_full" status "" 2>/dev/null || true)
         case "$status" in completed|done) ;; *) continue ;; esac
+        parent_cmd=$(yaml_field_get "$report_full" parent_cmd "" 2>/dev/null || true)
+        if [ "$task_status" = "failed" ]; then
+            # Do not replay report_received for a failed generation.  The
+            # missing transition is specifically the review child; the
+            # fingerprint-bound marker makes this one request per PASS epoch.
+            auto_request_report_review "$report_full" "$parent_cmd" 1 || true
+            continue
+        fi
         if bash "${REPORT_OUTBOX_INBOX_WRITE_PATH:-$SCRIPT_DIR/scripts/inbox_write.sh}" karo \
             "${name}報告完了。report=${report_full##*/}" report_received "$name" notify_karo \
             >/dev/null 2>&1; then
-            parent_cmd=$(yaml_field_get "$report_full" parent_cmd "" 2>/dev/null || true)
             auto_request_report_review "$report_full" "$parent_cmd" || true
         else
             log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/}"

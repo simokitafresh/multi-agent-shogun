@@ -40,6 +40,92 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
+# test_necessity: a failed task may regain the review lane only for a newly
+# fingerprinted completed PASS report with all binary checks yes; incomplete,
+# failed, negative-check, and already-requested generations stay silent.
+@test "repair_terminal_report_outboxes: failed PASS report review eligibility is fingerprint-bound" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+ROOT="'"$BATS_TEST_TMPDIR"'/failed-pass-review"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/scripts/gates" "$ROOT/logs"
+cat > "$ROOT/scripts/gates/gate_report_format.sh" <<'SH'
+#!/usr/bin/env bash
+echo "PASS: fixture report format"
+SH
+cat > "$ROOT/scripts/inbox_write.sh" <<SH
+#!/usr/bin/env bash
+printf "%s|%s|%s|%s\\n" "\$1" "\$3" "\$4" "\$2" >> "$ROOT/review_requests.log"
+SH
+chmod +x "$ROOT/scripts/gates/gate_report_format.sh" "$ROOT/scripts/inbox_write.sh"
+
+review_report_fingerprint() {
+    sha256sum "$1" | while read -r digest _; do printf "%s\\n" "$digest"; done
+}
+log() { printf "%s\\n" "$1" >> "$ROOT/monitor.log"; }
+NINJA_NAMES=(saizo)
+
+run_case() {
+    local name="$1" status="$2" verdict="$3" binary="$4" reviewed="$5"
+    local report="$ROOT/queue/reports/saizo_report_cmd_${name}.yaml"
+    local parent="cmd_failed_pass_${name}"
+    cat > "$ROOT/queue/tasks/saizo.yaml" <<EOF
+task:
+  status: failed
+  parent_cmd: $parent
+  report_path: queue/reports/saizo_report_cmd_${name}.yaml
+EOF
+    cat > "$report" <<EOF
+worker_id: saizo
+task_id: ${parent}_full
+parent_cmd: $parent
+status: $status
+verdict: $verdict
+binary_checks:
+  AC1:
+    - check: fixture
+      result: "$binary"
+EOF
+    mkdir -p "$ROOT/queue/gates/$parent"
+    if [ "$reviewed" = "1" ]; then
+        key=$(review_report_key "queue/reports/$(basename "$report")")
+        mkdir -p "$ROOT/queue/gates/$parent/review_approvals/reports/$key"
+        cat > "$ROOT/queue/gates/$parent/review_approvals/reports/$key/gunshi.yaml" <<EOF
+result: LGTM
+fingerprint: $(review_report_fingerprint "$report")
+report: queue/reports/$(basename "$report")
+EOF
+    fi
+    SCRIPT_DIR="$ROOT"
+    STATE_DIR="$ROOT/state"
+    repair_terminal_report_outboxes
+}
+
+run_case positive completed PASS yes 0
+run_case positive completed PASS yes 0
+run_case old_fail completed FAIL no 0
+run_case incomplete pending PASS yes 0
+run_case binary_no completed PASS no 0
+run_case reviewed completed PASS yes 1
+
+count=$(grep -c "^gunshi|review_draft|ninja_monitor|" "$ROOT/review_requests.log" || true)
+test "$count" -eq 1
+grep -q "REPORT-REVIEW-AUTO-SKIP:.*old_fail.*not_completed_pass_all_binary_yes" "$ROOT/monitor.log"
+grep -q "REPORT-REVIEW-AUTO-SKIP:.*binary_no.*not_completed_pass_all_binary_yes" "$ROOT/monitor.log"
+grep -q "REPORT-REVIEW-AUTO-SKIP:.*reviewed.*reviewed_generation" "$ROOT/monitor.log"
+printf "positive=1 negatives=4 duplicate=0\\n"
+'
+    [ "$status" -eq 0 ]
+    if [ "$status" -ne 0 ]; then
+        printf "failed_pass_review_debug status=%s output=%s\\n" "$status" "$output"
+    fi
+    [ "$output" = "positive=1 negatives=4 duplicate=0" ]
+}
+
 # test_necessity: a completed report with durable Gunshi LGTM is terminal
 # evidence for its parent_cmd even after the worker lease points at a later cmd.
 @test "old reviewed parent cmd is not reported as undeployed after worker redeploy" {
