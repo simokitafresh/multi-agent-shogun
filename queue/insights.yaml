@@ -5013,7 +5013,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T17:41:59+09:00"
 - id: INS-20260827-174104166-e7f9
   ts: "2026-08-27T17:41:04+09:00"
   insight: "[[cd tmp tmp pVkgJWVlr0 clone && export PS1 \\ \\033 1;31m\\ karo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/tmp.pVkgJWVlr0/clone\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1"
@@ -5030,11 +5033,24 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T17:42:56+09:00"
 - id: INS-20260827-174140799-e9f8
   ts: "2026-08-27T17:41:40+09:00"
   insight: "[[cd tmp tmp pVkgJWVlr0 clone && export PS1 \\ \\033 1;31m\\ karo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/tmp.pVkgJWVlr0/clone\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T17:42:56+09:00"
+- id: INS-20260827-180750639-05ce
+  ts: "2026-08-27T18:07:50+09:00"
+  insight: "18:06 影丸/小太郎/飛猿(idle respawn 後の Codex v0.149.1)が『Update available 0.149.1→0.150.1: 1.Update now(npm install -g) / 2.Skip / 3.Skip until next version / Press enter』で停止し、カーソルは 1 にある。watcher の inboxN nudge は Enter を伴うため『Update now』を無承認で選ばせる実害リスク(CLI version 変更=殿承認事項)。自動化ターゲット: (a)codex 起動 launch_cmd に自動更新チェック無効(config.toml/環境変数 or  相当)を入れる (b)inbox_watcher の確認プロンプト検知語に『Press enter to continue』『Update available』を追加し nudge を抑止。速度向上へのつながり: idle pane の無言停止と誤更新による全軍 version 不一致を 0 に"
+  priority: "medium"
+  source: "manual"
   fix_known: false
   status: pending
