@@ -168,7 +168,7 @@ jobs:
           ledger_paths = sorted(measured)
           missing_from_ledger = sorted(inventory_set - set(ledger_paths))
           stale_ledger_paths = sorted(set(ledger_paths) - inventory_set)
-          if duplicates or inventory_set != set(ledger_paths):
+          if duplicates or stale_ledger_paths:
               raise SystemExit(json.dumps({
                   "inventory_count": len(all_inventory),
                   "ledger_selected": measurement.get("selected_files"),
@@ -180,6 +180,21 @@ jobs:
                   "missing_from_ledger": missing_from_ledger,
                   "stale_ledger_paths": stale_ledger_paths,
               }, sort_keys=True))
+
+          # A newly added test can legitimately precede the next full timing
+          # ledger refresh. Keep it in the executable inventory instead of
+          # dropping it or failing every matrix copy at shard assignment.
+          # Zero is an explicit deterministic estimate; the next complete
+          # timing-ledger run replaces it with a measured duration.
+          if missing_from_ledger:
+              print(
+                  "SHARD_UNMEASURED "
+                  f"count={len(missing_from_ledger)} "
+                  f"paths={','.join(missing_from_ledger)} "
+                  "assigned_with_zero_estimate=1"
+              )
+              for path in missing_from_ledger:
+                  measured[path] = 0.0
 
           if compatibility:
               Path(f"test-results/shard-{shard_name}.paths").write_text(
