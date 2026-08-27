@@ -290,6 +290,12 @@ YAML
     [[ "$deploy_source$watcher_source" != *"既存成果の再利用可否はinbox本文とRC指示に従え"* ]]
 }
 
+@test "T114: both watcher task-assigned nudge branches include current task_id" {
+    run bash -c "grep -F -c 'nudge=\"\${nudge} — task_id=\${task_id} 現task YAML' '$WATCHER_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+}
+
 # --- T-SW-001: self-watch active → skip nudge ---
 
 @test "T-SW-001: send_wakeup skips nudge when agent has active self-watch" {

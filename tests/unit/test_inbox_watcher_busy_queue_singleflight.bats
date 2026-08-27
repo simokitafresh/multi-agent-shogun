@@ -86,6 +86,7 @@ YAML
 cat > "$tmp/root/queue/tasks/fixture.yaml" <<YAML
 task:
   status: assigned
+  task_id: cmd_watcher_identity_001_normal
 YAML
 export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
 source "$tmp/root/scripts/inbox_watcher.sh" fixture dummy-pane
@@ -110,8 +111,9 @@ tmux() {
   esac
 }
 send_wakeup 1 true fp-task high false false
+grep -q "task_id=cmd_watcher_identity_001_normal" "$tmp/nudge"
 grep -q "delivery_msg=msg_task_identity" "$tmp/nudge"
-printf "delivery_identity=1\n"
+printf "delivery_identity=1 task_id=1\n"
 ' 2>&1
     [ "$status" -eq 0 ]
     [[ "$output" == *"delivery_identity=1"* ]]
