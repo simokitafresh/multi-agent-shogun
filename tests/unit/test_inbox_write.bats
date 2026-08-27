@@ -2044,6 +2044,8 @@ YAML
     cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
 task:
   status: assigned
+  task_id: cmd_nudge_identity_001_normal
+  parent_cmd: cmd_nudge_identity_001
 YAML
 
     export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
@@ -2082,9 +2084,52 @@ EOF
 
     grep -q "set-buffer -b nudge_testninja" "$TMUX_LOG"
     [ "$(cat "$TMUX_SEND_COUNT_FILE")" -eq 2 ]
+    grep -q "task_id=cmd_nudge_identity_001_normal" "$TMUX_LOG"
 
     # grep検証 (python3不要)
     grep -q "read: true" "$TEST_INBOX_FILE"
+}
+
+@test "task_assigned: codex retry nudge binds current task_id, not prose identity" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  task_id: cmd_nudge_identity_002_normal
+  parent_cmd: cmd_nudge_identity_002
+YAML
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export TEST_INBOX_FILE="$TEST_TMPDIR/queue/inbox/testninja.yaml"
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  send-keys)
+    if [[ "$*" == *" Enter"* ]]; then
+      sed -i 's/read: false/read: true/' "$TEST_INBOX_FILE"
+    fi
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
+        INBOX_CODEX_NUDGE_RETRIES=1 run bash "$TEST_INBOX_WRITE" \
+        testninja "report_id=rpt-prose task_id=cmd_wrong_prose" task_assigned karo
+    [ "$status" -eq 0 ]
+    grep -q "task_id=cmd_nudge_identity_002_normal" "$TMUX_LOG"
+    ! grep -q "task_id=cmd_wrong_prose" "$TMUX_LOG"
 }
 
 # test_necessity: Codex delivery is proven only by the exact target message ID

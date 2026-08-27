@@ -1031,7 +1031,12 @@ send_codex_task_nudge() {
     local pane_target="$2"
     local unread_count="$3"
     local msg_id="${4:-}"
-    local nudge="inbox${unread_count} — タスクYAML: ${SCRIPT_DIR}/queue/tasks/${target}.yaml を読んで作業開始せよ"
+    local task_file="$SCRIPT_DIR/queue/tasks/${target}.yaml"
+    local task_id=""
+    if [ -f "$task_file" ]; then
+        task_id=$(inbox_yaml_field_get "$task_file" "task_id" "")
+    fi
+    local nudge="inbox${unread_count} — task_id=${task_id} タスクYAML: ${SCRIPT_DIR}/queue/tasks/${target}.yaml を読んで作業開始せよ"
     [ -n "$msg_id" ] && nudge+=" delivery_msg=${msg_id}"
     local started_us="${EPOCHREALTIME/./}" rc=0
 

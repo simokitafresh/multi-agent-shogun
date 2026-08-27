@@ -473,6 +473,28 @@ get_single_unread_task_message_id() {
     ' "$INBOX"
 }
 
+# task_assigned wake-ups must identify the destination generation in the
+# visible nudge as well as in the durable inbox row.  Read only the current
+# destination task YAML; never infer identity from message prose.
+current_task_id_for_nudge() {
+    local task_file="${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml"
+    [ -f "$task_file" ] || return 1
+    awk '
+        /^[[:space:]]*task_id:/ && $0 !~ /_ac_task_id:/ {
+            value=$0
+            sub(/^[^:]*:[[:space:]]*/, "", value)
+            gsub(/["'"'"'[:space:]]/, "", value)
+            if (value != "") { print value; exit }
+        }
+        /^[[:space:]]*_ac_task_id:/ && fallback == "" {
+            fallback=$0
+            sub(/^[^:]*:[[:space:]]*/, "", fallback)
+            gsub(/["'"'"'[:space:]]/, "", fallback)
+        }
+        END { if (fallback != "") print fallback }
+    ' "$task_file"
+}
+
 priority_deadline_sec() {
     local priority="${1:-normal}"
     local deadline
@@ -850,6 +872,7 @@ send_wakeup() {
         return 0
     fi
     local nudge="inbox${unread_count}"
+    local task_id=""
     local now
     local last
     local elapsed
@@ -864,7 +887,8 @@ send_wakeup() {
     # task_info等の補足メッセージでは付与しない（CTX浪費防止）
     # 家老/軍師にはtask YAMLが存在しないため付与しない（2026-04-22 Codex家老バグ修正）
     if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$has_task_assigned" == "true" ]]; then
-        nudge="${nudge} — 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな"
+        task_id=$(current_task_id_for_nudge || true)
+        nudge="${nudge} — task_id=${task_id} 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな"
         [ -n "$delivery_msg_id" ] && nudge+=" delivery_msg=${delivery_msg_id}"
     fi
 
@@ -1122,7 +1146,8 @@ send_wakeup() {
             fi
             nudge="inbox${unread_count}"
             if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$live_has_task" == "true" ]]; then
-                nudge="${nudge} — 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな"
+                task_id=$(current_task_id_for_nudge || true)
+                nudge="${nudge} — task_id=${task_id} 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな"
                 delivery_msg_id=$(get_single_unread_task_message_id || true)
                 [ -n "$delivery_msg_id" ] && nudge+=" delivery_msg=${delivery_msg_id}"
             fi

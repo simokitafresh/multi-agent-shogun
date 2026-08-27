@@ -910,6 +910,18 @@ send_inbox_message() {
     local message="$2"
     local msg_type="$3"
     local from="${4:-ninja_monitor}"
+    if [ "$msg_type" = "task_assigned" ] && [[ "$to" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        local task_id task_file
+        task_file="$SCRIPT_DIR/queue/tasks/${to}.yaml"
+        task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
+        if [ -n "$task_id" ]; then
+            if [[ "$message" =~ ^task_id=[^[:space:]]+[[:space:]](.*)$ ]]; then
+                message="task_id=${task_id} ${BASH_REMATCH[1]}"
+            else
+                message="task_id=${task_id} ${message}"
+            fi
+        fi
+    fi
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$to" "$message" "$msg_type" "$from" >> "$LOG" 2>&1
 }
 

@@ -1330,6 +1330,7 @@ excluded = {
     "CLEAR_BLOCKED_TS", "CLEAR_BLOCKED_NOTIFIED",
     "GATE_STALL_LAST_NOTIFIED", "GATE_STALL_ACTIVE_CMDS",
 }
+
 missing = sorted(declared - pruned - excluded)
 if missing:
     print("MISSING_PRUNE_COVERAGE:" + ",".join(missing))
@@ -1344,4 +1345,37 @@ set -e
     [[ "$output" == *"MISSING_PRUNE_COVERAGE:"* ]]
     [[ "$output" == *"MISSING_PRUNE_COVERAGE:UNREGISTERED_PRUNE_LEAK"* ]]
     [[ "$output" == *"UNREGISTERED_PRUNE_LEAK"* ]]
+}
+
+@test "T114 monitor task_assigned caller prefixes current task_id" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -r \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts"
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  task_id: cmd_monitor_identity_001_normal
+  parent_cmd: cmd_monitor_identity_001
+  status: assigned
+YAML
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<SH
+#!/usr/bin/env bash
+printf "%s\\n" "\$*" > "$TMP_ROOT/inbox-call"
+SH
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+send_inbox_message hayate "タスクを読め" task_assigned ninja_monitor
+grep -q "hayate task_id=cmd_monitor_identity_001_normal タスクを読め task_assigned ninja_monitor" "$TMP_ROOT/inbox-call"
+echo "MONITOR_TASK_ID_PREFIX_OK"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MONITOR_TASK_ID_PREFIX_OK"* ]]
 }
