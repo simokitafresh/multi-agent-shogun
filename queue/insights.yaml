@@ -2016,8 +2016,11 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4359; matched=分割; current_pattern=script_size_alert対応 — 閾値超過スクリプトのリファクタ優先度台帳化と最大複雑度1本の分割設計; candidate_level=4; candidate=CDP/OOM等3文字アクロニムがmin_len>3フィルタで除外され教訓スコア0。CDP計測タスクにCDP教訓が注入されない根因; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4359"
-  fix_known: false
-  status: pending
+  fix_known: true
+  status: resolved
+  resolved_reason: "一次情報で、CDP/OOM等3文字アクロニムがmin_len>3で除外され教訓マッチに失敗する根因を現行実装へ照合した。scripts/deploy_task.sh L5855-L5862のGP-225実装はASCII↔CJK境界を分割し、2文字以上の全大文字ASCIIアクロニムをmin_len制限から免除する。導入commit 39e6e30ffと現行同ロジックを確認したため、追加実修正・decision_candidateは不要。"
+  action_artifact: "primary=scripts/deploy_task.sh:5607-5618,5855-5862;split_primary=scripts/deploy_task/modifiers.sh:361-369,609-616;history=39e6e30ff;related=37b75a96c;target=queue/insights.yaml:INS-20260822-042731677-2904"
+  resolved_at: "2026-08-28T08:25:37+09:00"
 - id: INS-20260822-042745977-363a
   ts: "2026-08-22T04:27:45+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[スクリプト肥大の負の複利]] は既存aliasesに一致なし。類似概念TOP3: gunshi_idle_script_speed_audit_20260620(スクリプト速度監査; alias=遅いスクリプト; score=3.8) / campaign_lane(台帳駆動攻略レーン; alias=ホットスクリプト; score=3.8) / creator_brainwashing_defense(創造主の洗脳防御; alias=スクリプトでやれ; score=3.6)。概念定義とaliases追加を検討せよ"
