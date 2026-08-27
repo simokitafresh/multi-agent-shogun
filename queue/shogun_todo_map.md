@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:43 更新(inbox: T22 クローズ)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:46 更新(inbox: T08 配備、T10/T49 直列待ち)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -10,9 +10,9 @@
 - [x] T05(将軍doc lane 0d60e350b: 4本の境界をorigin/main d87339a4へ。実未反映=core/ops 10・research 11・frontend 101でいずれも反映済/記事のみ。忍者配備はDOC_LANE_ROUTINGで正しくBLOCK=将軍の裁定失念) dm-signal文書更新: core(252 commits)/ops(261)/research(200)/frontend REQUEST(5b4e27eb) → 忍者4名へdoc lane配備YAML ★知識鮮度=次cmdの誤起票を減らす
 - [x] T06(check本体はtimeout。本日分は§2026-08-26へ反映済ゆえ境界をorigin/main tipへ更新) infrastructure.md『1745件』ALERTの正体(merge後のmarker解決)→境界更新 ★偽ALERTの消化コスト削減
 - [x] T07(14:10公開 label 20260826-1410) artifact(らせん戦況録)更新(10:25以降: 第2セット5弾/統合終端/退行復旧/殿裁定3件) ★殿の状況把握コスト削減
-- [ ] T08(09:03 報告・commit痕跡なし=未再配備; 飛猿 r2: 14/14 PASS済・primary WIPをscope guardが検知→将軍がWIP退避commit 8de4a417a→再試行通知 14:55) converge構造根治(AC3: ours採用でtheirs破棄)を1名へ配備(家老へ指示済み、配備確認) ★退行の再発=最大の手戻り
+- [~] T08(09:44 飛猿へ karo_hotfix cmd_karo_hotfix_t08_converge_ours_r3 再配備 assigned・Working実測; 09:03 報告・commit痕跡なし=未再配備; 飛猿 r2: 14/14 PASS済・primary WIPをscope guardが検知→将軍がWIP退避commit 8de4a417a→再試行通知 14:55) converge構造根治(AC3: ours採用でtheirs破棄)を1名へ配備(家老へ指示済み、配備確認) ★退行の再発=最大の手戻り
 - [x] T09(TODO 0件) session_alerts_shogun.txt 未処理確認 ★stop hookの往復削減
-- [ ] T10(09:03 疾風 failed 19:48 のまま未再配備; 疾風 failed 19:48: timing logに完走gate run 0件=材料未生成→次GATE CLEAR後に再配備を家老へ下知 20:04) 第2セット残: cmd_skeleton(影丸走行中)/cmd_complete_gate 200s/scope_commit/run_tests(並列型のみ→本質案なしなら終了) ★らせん本体
+- [ ] T10(09:44 家老: T08 と cmd_complete_gate.sh が同一 target で collision→T08 終端直後に直列配備(構造依存); 09:03 疾風 failed 19:48 のまま未再配備; 疾風 failed 19:48: timing logに完走gate run 0件=材料未生成→次GATE CLEAR後に再配備を家老へ下知 20:04) 第2セット残: cmd_skeleton(影丸走行中)/cmd_complete_gate 200s/scope_commit/run_tests(並列型のみ→本質案なしなら終了) ★らせん本体
 - [x] T11(LS登録+shogun.md焼込み d29f6b81c) 殿裁定4件(並列≠本質/0.1%×100億/シングルタスク切替+全体マップ)を将軍教訓+instructions/shogun.mdへ焼込み ★再発防止=同じ指摘を殿に2度させない
 - [x] T16(疾風 GATE CLEAR 18:30。以後のDOC_LANE_ALERT偽件数が止まるかを次の投稿で検証) context_freshness_checkの日付基準集計が統合後に偽ALERT(1752件)を出す→marker基準へ(insight登録済・次の空きへ) ★偽ALERT消化コストの削減
 - [ ] T12(cmd_4401計装はstdout出力のみで永続ログ無し→次回cmd_publish実行時に将軍がstdoutをlogs/へ保存して分解) ライブpublish 13分の分解(cmd_4401計装の実測回収) ★publish律速の短縮
@@ -53,7 +53,7 @@
 - [~] T47(09:34 家老判定「AC2 live未観測=FAIL」で GATE 保留、疾風 CTX0%=/clear済・task failed 残置→AC2 は T50 解消後の実配備1件で閉じる; 09:06 report result=PASS へ整った、task status=failed(08:44 STAGE1-TIMEOUT)で GATE 未実行→家老へ1単位下知 msg_090715; 09:03 AC1 PASS(idle起点を durable state へ固定)・AC2 live再配備未観測で BLOCK、報告 gate_report_format で整形中(task status=failed 表示は整形BLOCK由来); 08:51 疾風 Working 44分(見積15)・CTX30%・短命gitを回しつつ稼働中、report result 空; 08:05 疾風 in_progress 28分(見積15)・pane Working・worktree で runner 境界を切り分け中、report status=in_progress; 07:39 疾風へ karo_hotfix 配備 assigned; 07:36 insight登録) reflux 配備の空白: 07:00 DONE 後 07:31 に idle 計時が再スタート=6名 idle でも 30-40分の空白。idle 計時起点を task idle 時刻に固定する hotfix 候補(家老レーン) ★気づき消化スループット2倍
 
 - [x] T48(08:00 receipt 現物で16/16確認; 07:56 head -70 パイプで Phase8/9 の receipt が未記録のまま「完了」と報告=型4則(1)再発) /clear復帰(07:54 y)の追体験16Phase+Q6軍師検証(blt_075858 妥当)+origin 0 0(家老 4本 1本ずつ push) ★復帰精度=再開までの空白を最小に
-- [ ] T49(08:05 insight INS-080518912) ninja_monitor が実在しない hayate_report_cmd_alias.yaml を REPORT-REVIEW-AUTO-REQUEST-BLOCK(22:54/07:59)=テンプレ内コメントの誤抽出疑い→抽出に実在チェック ★偽BLOCKログの消化コスト0
+- [ ] T49(09:44 家老: T50 と ninja_monitor.sh が同一 target で collision→T50 終端直後に直列配備(構造依存); 08:05 insight INS-080518912) ninja_monitor が実在しない hayate_report_cmd_alias.yaml を REPORT-REVIEW-AUTO-REQUEST-BLOCK(22:54/07:59)=テンプレ内コメントの誤抽出疑い→抽出に実在チェック ★偽BLOCKログの消化コスト0
 - [~] T50(09:37 才蔵へ karo_hotfix cmd_karo_hotfix_t50_reflux_trusted_resolution 配備 assigned・Working実測; 09:28 再発2回(09:15 collision/09:22 dirty)、家老の commit は消火であり hotfix 配備は未; 08:04 実測) reflux dirty-guard: daemon の insights.yaml 書込み(resolved 遷移)が毎周期 dirty を作り配備が BLOCK→auto-commit まで空白。書込み側で同一トランザクション commit するか guard を insights.yaml の status 差分のみ許容へ ★配備空白の再発源を構造で断つ
 - [x] T48b(08:51 家老 e5c1ab2cb→a52c112ce→577731149 を1本ずつpush、0 0、CI 577731149 in_progress) tick10 commit の push ★origin=HEAD 維持
 - [~] T51(09:40 影丸へ karo_hotfix cmd_karo_hotfix_t51_prepush_success_telemetry 配備 assigned; INS-20260827-085509569-7aa6) 家老 push 3本に 43m58s。成功 pre-push の wall/affected が logs に残らず律速不明→defense_overhead.jsonl へ記録+300秒超WARN ★push律速の可視化=1commitずつ方式の次弾
