@@ -1,2 +1,2 @@
 # session_alerts — generated: 2026-08-27T22:04:55+0900
-[TODO] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[DONE] 追体験自動化ターゲット: 掲示板Q6(22:07)に記載=gate_shogun_startup.sh へ旧パス残存grep WARN+cutover script進捗出力(T91 hotfix、家老経由配備)
