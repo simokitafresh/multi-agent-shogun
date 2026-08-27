@@ -5124,3 +5124,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-27T19:07:01+09:00"
+- id: INS-20260827-192407360-6d7c
+  ts: "2026-08-27T19:24:07+09:00"
+  insight: "偽CLEAR第2例(T76 19:14 CLEAR): hotfix cmd_karo_hotfix_t76 の report commit 13c9c5bea が main/origin いずれにも不在(branch --contains 0件、親357316ff7も不在)のまま all_gates_passed。T63(bcfbc5e2d)と同型=worktree内commitをgateが到達済みと誤認。cmd_complete_gate の main祖先化終端検査/blob parity が hotfix normal 経路で発火しない疑い。将軍は cherry-pick 010cb6b20 で回収。自動化ターゲット: gate CLEAR前に report commit_hash の merge-base --is-ancestor <shared main> を経路無関係に強制"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
