@@ -4829,3 +4829,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-150555264-9329
+  ts: "2026-08-27T15:05:55+09:00"
+  insight: "cmd_karo_hotfix_t63_model_apply_agent_20260827: 報告形式PASSでも、commit実体とfiles_modifiedの一致をgit diff-treeで照合し、不一致ならGATE CLEAR/archivalを保留する。"
+  priority: "medium"
+  source: "karo"
+  fix_known: false
+  status: pending
