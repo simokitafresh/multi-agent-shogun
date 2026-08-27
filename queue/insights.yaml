@@ -5899,3 +5899,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-042756358-47ca
+  ts: "2026-08-28T04:27:56+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[起動gate_300秒ハング]] は既存aliasesに一致なし。類似概念TOP3: test_quality_framework(テスト品質統合フレームワーク; alias=test_gap; score=3.3) / simple_ocr(Simple OCR（画像OCR Webアプリ）; alias=two_stage; score=3.1) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_cmd_state; score=2.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
