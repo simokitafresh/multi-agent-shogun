@@ -1129,8 +1129,11 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4365; matched=report; current_pattern=deploy_task.sh分割第六弾 — report module抽出(挙動不変); candidate_level=4; candidate=FIX hint=答え注入(情報注入)→退化リスク(#3)。思考構造の強制=退化しない(#5)。diagnose_reason必須化で忍者に根本原因の言語化を強制。段階的導入(初回=警告のみ)。gate_report_format.sh FAIL後に1行呼出追加で有効化; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4365"
-  fix_known: false
-  status: pending
+  fix_known: true
+  status: resolved
+  resolved_reason: 一次情報で、cmd_4365候補の根因である報告FAIL後の答え注入による診断退化リスクを現行防御へ照合した。gate_report_format.shのFAIL分岐はgate_diagnose_check.shを呼び出し、初回は警告、再発時は診断必須として根本原因の言語化を強制する。導入commit 8596d8bcbと関連test_gate_diagnose_checkの履歴を確認したため、追加実修正・decision_candidateは不要。
+  action_artifact: "primary=scripts/gates/gate_report_format.sh:503-506;gate=scripts/gates/gate_diagnose_check.sh:1-14,300-360;history=8596d8bcb;tests=tests/unit/test_gate_diagnose_check.bats;context=context/codd.md:120-131,context/cmd-chronicle.md:210;target=queue/insights.yaml:INS-20260822-114317882-5fa0"
+  resolved_at: "2026-08-28T05:16:00+09:00"
 - id: INS-20260822-114317962-f2f3
   ts: "2026-08-22T11:43:17+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cluster E合流実証]] は既存aliasesに一致なし。類似概念TOP3: recalculate_pipeline(再計算パイプライン; alias=recalculate_fast; score=5.0) / investment_knowledge_base(投資知識辞書; alias=Structural Break Tests; score=5.0) / causal_traversal_pipeline(因果辺トラバース統合パイプライン(Obsidian×セマンティック); alias=causal_traversal; score=5.0)。概念定義とaliases追加を検討せよ"
