@@ -1108,6 +1108,9 @@ GATE_PHASE_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_PHASE_LOG_MAX_BYTES:-5242880}"
 GATE_PHASE_LOG_ROTATION_CHECKED=false
 GATE_PHASE_CURRENT=""
 GATE_PHASE_START_US=""
+if [ -n "$GATE_PHASE_LOG" ]; then
+    mkdir -p "$(dirname "$GATE_PHASE_LOG")" 2>/dev/null || true
+fi
 # Subphase telemetry is a separate durable boundary.  It must remain available
 # when a caller disables only the coarse phase log for an explicit comparison.
 # Keep an explicit subphase opt-out for tests/diagnostics, but never make the
@@ -1121,6 +1124,9 @@ GATE_SUBPHASE_LOG_MAX_BYTES="${CMD_COMPLETE_GATE_SUBPHASE_LOG_MAX_BYTES:-5242880
 GATE_SUBPHASE_LOG_ROTATION_CHECKED=false
 GATE_SUBPHASE_CURRENT=""
 GATE_SUBPHASE_START_US=""
+if [ -n "$GATE_SUBPHASE_LOG" ]; then
+    mkdir -p "$(dirname "$GATE_SUBPHASE_LOG")" 2>/dev/null || true
+fi
 
 # Detailed timing is intentionally separate from the stable top-level
 # subphase log.  The latter is consumed as an aggregate phase contract, while
@@ -1136,6 +1142,9 @@ GATE_DETAIL_LOG_ROTATION_CHECKED=false
 GATE_DETAIL_CURRENT=""
 GATE_DETAIL_CLASS=""
 GATE_DETAIL_START_US=""
+if [ -n "$GATE_DETAIL_LOG" ]; then
+    mkdir -p "$(dirname "$GATE_DETAIL_LOG")" 2>/dev/null || true
+fi
 gate_phase_now_us() {
     local raw="${EPOCHREALTIME:-}"
     if [ -n "$raw" ]; then
@@ -1156,7 +1165,6 @@ gate_phase_tick() {
         local phase_record
         phase_record=$(printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d' \
             -1 "$CMD_ID" "$GATE_PHASE_CURRENT" "$sec" "$ms")
-        mkdir -p "$(dirname "$GATE_PHASE_LOG")" 2>/dev/null || true
         local rotate_log=false
         if [ "$GATE_PHASE_LOG_ROTATION_CHECKED" = false ]; then
             rotate_log=true
@@ -1194,7 +1202,6 @@ gate_subphase_tick() {
         local subphase_record
         subphase_record=$(printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%d.%03d' \
             -1 "$CMD_ID" "$GATE_SUBPHASE_CURRENT" "$sec" "$ms")
-        mkdir -p "$(dirname "$GATE_SUBPHASE_LOG")" 2>/dev/null || true
         local rotate_log=false
         if [ "$GATE_SUBPHASE_LOG_ROTATION_CHECKED" = false ]; then
             rotate_log=true
@@ -1239,7 +1246,6 @@ gate_detail_finish() {
     [ "$elapsed_us" -ge 0 ] || elapsed_us=0
     sec=$((elapsed_us / 1000000))
     ms=$(((elapsed_us % 1000000) / 1000))
-    mkdir -p "$(dirname "$GATE_DETAIL_LOG")" 2>/dev/null || true
     (
         flock -x 9
         if [ "$GATE_DETAIL_LOG_ROTATION_CHECKED" = false ]; then
