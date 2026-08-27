@@ -4596,6 +4596,13 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-27T12:11:55+09:00"
+- id: INS-20260827-122902722-e032
+  ts: "2026-08-27T12:29:02+09:00"
+  insight: "冷え観点ambiguity 1/6件が本セッション未着手。レビュー連続到着でidle自走時間0。次セッションのidle最優先ステップとして維持すべき"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
 - id: INS-20260827-122827372-e4d0
   ts: "2026-08-27T12:28:27+09:00"
   insight: "review-bundle background taskでinbox_mark_readを&&で連結すると、手動既読化との競合でexit 2が頻発する。review_bundle.py singleの成功後にinbox_mark_readを分離実行するか、bundle内にmark_read機能を統合すべき"
