@@ -6191,3 +6191,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-080900466-13dc
+  ts: "2026-08-28T08:09:00+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_繰り返しミス根治_20260828_0805]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=25.6) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0852; score=20.8) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
