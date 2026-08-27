@@ -5954,3 +5954,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-062706432-2cb9
+  ts: "2026-08-28T06:27:06+09:00"
+  insight: "DOC_LANE_REQUEST source_equivalent が存在しない commit(context/rebalancer.md source_commit=e3c456584109、本 repo にも DM-signal にも不在)を出した(blt_062516)。05:53 の旧 commit 境界問題と同根=request 生成側が commit を検証していない。T108 自動化の契約に『source_commit は対象 repo で rev-parse 可能かつ origin/main 祖先であること』を追加。origin=[[DOC_LANE_REQUEST_不在commit_20260828]] -> [[request生成側の検証欠如]] -> [[T108_tip固定契約]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
