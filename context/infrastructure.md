@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-27 2026-08-27 将軍doc lane: 孤児テスト根治5点を反映(DOC_LANE_ALERT blt_20260826_123314/101234 実消化) -->
+<!-- last_updated: 2026-08-27 2026-08-27 将軍doc lane: ext4 移設(cutover/効果/副作用/T70/T83)を §2026-08-27 追加(DOC_LANE_ALERT blt_20260827_230132 実消化) -->
+<!-- source_commit:c6e8231816ab reason:2026-08-27 将軍doc lane: ext4 移設(cutover/効果/副作用/T70/T83)を §2026-08-27 追加(DOC_LANE_ALERT blt_20260827_230132 実消化) evidence:context/infrastructure.md §2026-08-27 追加(ext4); commits 5f8aea006 e644881f5 c6e823181 -->
 <!-- source_commit:06ddbc988 reason:2026-08-27 将軍doc lane: 孤児テスト根治5点を反映(DOC_LANE_ALERT blt_20260826_123314/101234 実消化) evidence:context/infrastructure.md §2026-08-27 追加; commits 3fa443c11 c940c47d5 8c09923f8 06ddbc988 -->
 <!-- source_commit:ed237d33a reason:context_freshness reviewed source boundary (post-integration: 本日分は§2026-08-26に反映済) evidence:context_freshness_check context=context/infrastructure.md commit=ed237d33a -->
 <!-- source_commit:f5c19317d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f5c19317d -->
@@ -323,3 +324,12 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **deploy 遅延の隠れ要因**: `.git/worktrees` stale metadata(実体不在 624/724)で `git worktree add` が全走査→deploy 397秒。`git worktree prune` で 724→103(deploy 199秒)。自動化=小太郎 karo_hotfix(ninja_monitor 周期 prune+deploy 前件数ログ)で走行中
 - **GitHub Actions 補足**: queued 40分超・cancel-in-progress の想定と逆の cancel が発生。家老が exact-sha `workflow_dispatch`(ff0f95ad1)で突破。CI GREEN 復帰=run 32999064580 @8c09923f8
 
+
+## 2026-08-27 追加(source=5f8aea006〜c6e823181・リポジトリ本体を 9p(/mnt/c)から ext4(/home)へ移設)
+
+- **正本パス変更(cutover 22:00:15)**: `/mnt/c/tools/multi-agent-shogun`(drvfs/9p)→ **`/home/simokitafresh/multi-agent-shogun`**(ext4)。旧ツリーは印 `MIGRATED_TO_EXT4.txt`(READ_ONLY=true、chmod は行わない marker 方式)。crontab・auto-memory 鍵ディレクトリ(`~/.claude/projects/-home-simokitafresh-multi-agent-shogun/`)・tmux 全 pane cwd は新パス。Windows からは `\\wsl$\Ubuntu\home\simokitafresh\multi-agent-shogun`、Android は Project Path を新パスへ。手順・欠陥2件(rsync が clone commit を巻き戻す/pane 判定が CLI 末尾形状で BLOCK)の正本 → `docs/research/9p_root_fix_runbook_20260827.md` §3/§4.2。script=`scripts/migrate_to_ext4_{relocate,cutover,rollback}.sh`(cmd_4408 b487c998f、hotfix f6348f9fa/5f8aea006、置換 commit e644881f5)
+- **根拠(殿下問 13:50)**: D-state p9_client_rpc 9 プロセス、`git status` 60-120s、push timeout 3回/日、compat bats TAP 0行/30分=9p RPC が git/flock/stat の律速。
+- **効果(半蔵 T87 実測、各3回)**: publish_total 3770→227ms(−94%)、ninja_scope_commit git_commit 9487→173ms(−98%)/scope_sync 5846→73ms、`git status` 84ms、実 push 1.1s、deploy_task 配備 wall 199-397s→22s。残る律速=実 push 1132ms/publish 外側 604ms → `docs/research/ext4_speed_rebaseline_20260827.md`。旧 T60/T12(9p 上の値)は前提消失で終了。
+- **移設で顕在化した副作用**: (1)旧ツリーの stale `_cmd_*_ready.yaml` が最終 rsync で復活(退避は rsync 後に再適用、T86/T90) (2)CI shard7 quality-lock test がパス依存で receipt 欠損 → 小太郎 ci_fix c6e823181「path independent」 (3)`config/cli_events.yaml` 旧パス 8 件(消費者 0)・`~/.codex/config.toml` hooks.state 旧キー 7 件(新 path trust :23 実在)=無害、掃除+起動 gate に旧パス残存 grep を追加予定(T91) (4)`/mnt/c/Python_app/DM-signal` は 9p のまま=次の移設候補(同手順)。
+- **task worktree の永続化(T70、影丸 hotfix)**: `deploy_task.sh` の `DEPLOY_TASK_WORKTREE_ROOT` 既定 `/tmp/shogun-task-worktrees` → `/home/simokitafresh/shogun-task-worktrees`(WSL 再起動で /tmp が消え 14:54 に未 commit 作業が消失した対策)。
+- **cmd_complete_gate.sh 分割設計(T83、才蔵抽出)**: 15,030 行→17 lib unit・契約 test 43 の所有表 → `docs/design/cmd_complete_gate_split_design_20260827.md`(実装は次 cmd、deploy_task 分割 J と同型)。
