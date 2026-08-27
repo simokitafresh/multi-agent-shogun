@@ -52,7 +52,7 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 12:46 更新(inbox: ci_fix PASS) · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 20260827-1305-rotation · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
@@ -60,7 +60,7 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 <div class="strip">
   <div class="tile"><span class="k">済</span><span class="v done">57</span><span class="s">md正本の [x] 実数</span></div>
   <div class="tile"><span class="k">走行中</span><span class="v run">5</span><span class="s">T40 / T45 / T51 / T56 / T58</span></div>
-  <div class="tile"><span class="k">未着手</span><span class="v todo">2</span><span class="s">T12 / T60</span></div>
+  <div class="tile"><span class="k">未着手</span><span class="v todo">3</span><span class="s">T12 / T60 / T63</span></div>
   <div class="tile"><span class="k">CI</span><span class="v bad">RED</span><span class="s">半蔵 ci_fix 993d78e1e PASS(110/110)→GATE・push・run GREEN 判定待ち。origin=HEAD 0 0</span></div>
   <div class="tile"><span class="k">reflux</span><span class="v run">8 / 回転</span><span class="s">pending 111。疾風 failed→idle 解放(12:42)=5/6枠。影丸は T51 GATE 後。T56 小太郎 in_progress</span></div>
 </div>
@@ -79,11 +79,12 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 </div>
 
 <div class="live">
-  <h2>回転 before/after(殿下問 08:58・概算・集計=grep -c on ninja_monitor.log / gate_metrics.log / 掲示板)</h2>
+  <h2>回転 before/after(殿下問 08:58 → 13:05 再計測・集計=gate_metrics.log / defense_overhead.jsonl / ninja_monitor.log / gh run list / 掲示板)</h2>
   <ul>
-    <li><span class="chip bad">before</span>push 1本: 08-26 56commitまとめ→affected 101本×手動走査=7h30m停滞(増分1単位でも 214-229秒) / reflux idle配備: 08-24〜26 で 0件/日×3日 / 報告→GATE: T25 飛猿 7時間・UN-GATED 10本 / watcher 再起動 85回(12:00-00:08)</li>
-    <li><span class="chip done">after(08-27)</span>push 1本: <span class="mono">5秒</span>(08:57 実測 3d368515b・1f0a3e83c)、origin=HEAD 0 0 を6回連続維持 / reflux: 6件配備・6件DONE、1件 8-13分 / 報告→GATE: CLEAR 17件・数分 / watcher 再起動 4回 / CI GREEN 6 run</li>
-    <li><span class="chip run">残る律速</span>家老 Codex への nudge 到達: 08:07 下知が delivery FAILURE(5回未確認)→家老が読んだのは inbox3 到着時。実push 15秒 / 家老ターン 44分 ≒ 0.6%。次弾=T21(read遷移ベース再nudge)だが影丸 report は FAIL 未クローズ→再配備が要る</li>
+    <li><span class="chip bad">before(08-26)</span>push 1本: 56commitまとめ→affected 101本×手動走査=<span class="mono">7h30m</span>停滞(増分1単位でも 214-229秒) / reflux idle配備: 08-24〜26 で <span class="mono">0件/日×3日</span> / 報告→GATE: T25 飛猿 <span class="mono">7時間</span>・UN-GATED 10本 / watcher 死亡 85回(12:00-00:08) / CI GREEN 1 run(23:59 本日初)</li>
+    <li><span class="chip done">after(08-27 00:00-13:05)</span>push: pre_push_total <span class="mono">n=36 PASS 35 / min 0.6s 中央値 2.0s max 102s / 300秒超 0</span>(集計=grep pre_push_total defense_overhead.jsonl)、家老 push 実測 5-25秒/本、origin=HEAD 0 0 を 12:45 まで維持 / GATE CLEAR <span class="mono">28件</span>(reflux 11・hotfix/ci 17。集計=grep -c "^2026-08-27.*CLEAR" gate_metrics.log)、e2e min 555s・中央値 2416s(40分)・max 27260s(T25 の finalize 7h 込み) / reflux: 1件 deploy 22-45s・work 268-1372s、CLEAR 11 / CI: 08-27 run 40件中 success 6・failure 12・cancelled 22(1commitずつ push で先行 run が cancel される=正常)</li>
+    <li><span class="chip run">残る律速(13:05)</span>(1)GATE CLEAR→archive→idle が自動でつながらず failed/done 残置が reflux 6枠を殺す: REFLUX-AUTO-BLOCK/SKIP <span class="mono">72回</span>(本日 grep -c)、T47 2h14m・T51 影丸 3h・T58 半蔵 CLEAR 後も in_progress (2)家老の束処理(UNACTIONED 7回、T56 小太郎 hotfix 走行中) (3)push の分岐: 13:00 origin 42ead9382 vs local 3本で fast-forward 拒否→家老が converge 中 (4)家老 /clear 後のモデル乖離 luna≠sol(T63) (5)finalize_sec が e2e の 20-60%(report 整形 BLOCK 往復)=次のらせん弾。watcher 死亡回数は daemon_watchdog.log の start/restart 混在で機械集計不能→計測器を分ける(未計測=網羅外)</li>
+  </ul>
   </ul>
 </div>
 
@@ -94,15 +95,16 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
     <div class="row run"><span class="id">T45</span><span class="t">reflux 回転計測: 05:39 疾風→05:55 CLEAR、05:53 影丸→06:02 CLEAR(1件≈14分・同時1件)。insights pending 104 が CLEAR 後も減らない(resolved 352)→ archive 時に resolved へ遷移するか次tickで確認、減らなければ家老へ</span><span class="d">12:42 疾風 failed→idle 解放(将軍再確認 status=idle)=reflux 枠 5/6 復帰、影丸は T51 GATE 後; 12:35 pending 111、12:23 半蔵 reflux deploy FAIL(non-blocking)、疾風/影丸 failed 残置 3h=2枠死→4回目再下知; 12:12 8件目 飛猿 GATE CLEAR(deploy 11:52→CLEAR 20分=本日最速); 12:04 8件目 飛猿 11:52→12:00 DONE(pending 108)、小太郎 idle 復帰、疾風/影丸 failed 残置継続→再下知; 11:33 pending 108・配備0継続=6枠中3枠が failed/done 残置で SKIP(疾風/影丸/小太郎)、才蔵/飛猿は idle 計時 465-473s→archive 下知 msg_1134xx; 11:05 pending 108、09:50 以降 配備0=疾風/影丸が task failed 残置で SKIP(10:39/10:52)、才蔵/飛猿は idle 計時中→疾風 archive を家老へ下知 msg_110540; 10:33 7件目 半蔵 GATE CLEAR 10:32(deploy 09:50→CLEAR 42分)、pending 107; 10:19 小太郎 0814 GATE CLEAR→idle=枠復帰(下知 msg_100601 の結果); 10:04 7件目 半蔵 09:50→10:01 DONE(dirty のまま配備は通った)、pending 106; 小太郎 done 未archive で枠外→家老へ1単位下知; 09:40 影丸 DEPLOY-FAIL(non-blocking); 09:34 pending 106、09:22 以降 配備0(dirty BLOCK)、09:32 疾風は task failed で SKIP; 09:28 小太郎 lock は done で解放、しかし 09:15 才蔵 reflux が「reserved path collision with tobisaru(idle/uncommitted)」で DEPLOY blocked、09:22 飛猿 dirty AUTO-BLOCK=T50 と同根、家老は auto-commit 3dd06eca6 で一時解消; 09:06 つまり: 小太郎 0814 が DEPLOY-DONE 08:25 後 report 空・task in_progress・pane CTX3% で target_path lock→08:59 影丸 REFLUX-AUTO-SKIP=全 reflux 停止→家老へ最優先下知 msg_090715; 08:51 小太郎 6件目 08:15→08:25 DONE(reflux継続)、pending 104、insights.yaml は再び dirty; 08:04 insights pending 103、07:50/07:57 影丸・半蔵の reflux 配備が REFLUX-AUTO-BLOCK(queue/insights.yaml dirty=daemon の resolved 書込み 08:03:54)→auto-commit 待ち=T43 の構造が毎周期再発; 07:03 5件目 飛猿 06:47→07:00 DONE、pending 104→101、4 CLEAR; 06:36 4件目 才蔵 06:24→06:31 DONE、pending 104→102、1件≈14分・同時1件; 06:06 観測開始</span><span class="w">気づき消化の回転速度の可視化</span></div>
     <div class="row run"><span class="id">T51</span><span class="t">家老 push 3本に 43m58s。成功 pre-push の wall/affected が logs に残らず律速不明→defense_overhead.jsonl へ記録+300秒超WARN</span><span class="d">12:04 家老が worktree HEAD=deac969d1 と report root を突合中(scrollback)、GATE 未; 10:34 report PASS 是正済/task failed で自動 review が出ず→家老へ review→GATE 下知 msg_103426; 10:18 家老: report 8回 FAIL の真因=report commit_hash に統合 merge deac969d1 を書いた取違え(task 成果 0c5d31eb2 が正)→影丸へ是正指示、GATE 待ち; 10:04 実装 0c5d31eb2→統合 merge 5622f3603 origin 到達、pre_push ledger 1行(wall 35186ms/affected 1/PASS)=計測器が本番に載った、影丸 report PASS 改訂中→GATE 待ち; 09:40 影丸へ karo_hotfix cmd_karo_hotfix_t51_prepush_success_telemetry 配備 assigned; INS-20260827-085509569-7aa6</span><span class="w">push律速の可視化=1commitずつ方式の次弾</span></div>
     <div class="row run"><span class="id">T56</span><span class="t">ninja_monitor に UNACTIONED 検知(将軍発 task_assigned read=true かつ task/掲示板の対応なし N分→家老再nudge+将軍WARN)</span><span class="d">12:35 小太郎 in_progress; 12:23 小太郎へ karo_hotfix cmd_karo_hotfix_t56_unactioned_guard 配備 assigned(専用回帰 test で ci_fix と非衝突); 12:19 T57 終端→ci_fix の直後に配備を下知; 11:38 家老: T57 と ninja_monitor.sh/test_ninja_monitor_stall.bats が同一 target→T57 終端直後に直列配備(構造依存); 11:34 家老へ karo_hotfix 配備下知(本日3回実証); 09:36 insight</span><span class="w">下知→配備の空白を構造で0に</span></div>
-    <div class="row run"><span class="id">T58</span><span class="t">別レーンの autopush が origin へ直接 push し CI RED。失敗 job を特定→家老 ci_fix 配備 or autopush レーン停止</span><span class="d">12:45 半蔵 ci_fix completed/PASS commit 993d78e1e: compatibility not ok 202/203 → 110/110 PASS/SKIP0、report gate PASS→GATE→push→CI GREEN 判定待ち; 12:35 半蔵 ci_fix in_progress、origin tip 233c0c4b8/02e5d6e64 は failure 継続; 12:20 半蔵へ ci_fix cmd_karo_ci_fix_33033735693_t50_datetime 配備 assigned(ci_run_id 33033735693); 12:19 T57 終端で collision 解消→ci_fix 配備を下知; 12:08 新規 ci_fix cmd_karo_ci_fix_33033735693_t50_datetime は T57 才蔵と test_ninja_monitor_stall.bats で collision→T57 終端直後に同 YAML で配備(直列: T57→ci_fix→T56); 12:04 半蔵の追加 AC は旧 T49 archive 済で適用不能→再配備要請(11:45)のまま idle=ci_fix 未配備、d7b19bf21 run も compatibility failure(shard4 apt 403 は解消)→新規 ci_fix 配備を下知 msg_1205xx; 11:44 run 33033735693: compatibility=not ok 202/203(datetime JSON TypeError 残存、T49 fix で未解消)+shard4=azure-cli noble apt 403(外部 repo 障害・receipt なし)→半蔵 T49/CI task へ追加配備・Working; 11:11 家老診断: 真因=compatibility test not ok 202/203(TypeError datetime JSON serialization)、T10 WIP 流出=no(blob 9c8966c0≠14bbcc2a)。才蔵 ci_fix は半蔵 T49 と test target collision→半蔵 T49 へ追加 AC として配備; 11:05 gh: origin tip 40476bead/938c1ee04「autopush: source-only path snapshot」(author test)の CI run 33032177039 = failure</span><span class="w">CI GREEN 維持</span></div>
+    <div class="row run"><span class="id">T58</span><span class="t">別レーンの autopush が origin へ直接 push し CI RED。失敗 job を特定→家老 ci_fix 配備 or autopush レーン停止</span><span class="d">12:58 /clear 復帰後: 12:52 GATE CLEAR(gate_metrics duration 1359s/e2e 1893s)だが 993d78e1e origin 未到達+hanzo task in_progress 残置→家老へ push(1commit oldest-first)+idle 化を1単位下知 msg_125702、13:07 に突合; 12:45 半蔵 ci_fix completed/PASS commit 993d78e1e: compatibility not ok 202/203 → 110/110 PASS/SKIP0、report gate PASS→GATE→push→CI GREEN 判定待ち; 12:35 半蔵 ci_fix in_progress、origin tip 233c0c4b8/02e5d6e64 は failure 継続; 12:20 半蔵へ ci_fix cmd_karo_ci_fix_33033735693_t50_datetime 配備 assigned(ci_run_id 33033735693); 12:19 T57 終端で collision 解消→ci_fix 配備を下知; 12:08 新規 ci_fix cmd_karo_ci_fix_33033735693_t50_datetime は T57 才蔵と test_ninja_monitor_stall.bats で collision→T57 終端直後に同 YAML で配備(直列: T57→ci_fix→T56); 12:04 半蔵の追加 AC は旧 T49 archive 済で適用不能→再配備要請(11:45)のまま idle=ci_fix 未配備、d7b19bf21 run も compatibility failure(shard4 apt 403 は解消)→新規 ci_fix 配備を下知 msg_1205xx; 11:44 run 33033735693: compatibility=not ok 202/203(datetime JSON TypeError 残存、T49 fix で未解消)+shard4=azure-cli noble apt 403(外部 repo 障害・receipt なし)→半蔵 T49/CI task へ追加配備・Working; 11:11 家老診断: 真因=compatibility test not ok 202/203(TypeError datetime JSON serialization)、T10 WIP 流出=no(blob 9c8966c0≠14bbcc2a)。才蔵 ci_fix は半蔵 T49 と test target collision→半蔵 T49 へ追加 AC として配備; 11:05 gh: origin tip 40476bead/938c1ee04「autopush: source-only path snapshot」(author test)の CI run 33032177039 = failure</span><span class="w">CI GREEN 維持</span></div>
   </div>
 </section>
 
 <section class="group">
-  <h2>未着手 <span class="n">2</span></h2>
+  <h2>未着手 <span class="n">3</span></h2>
   <div class="rows">
     <div class="row todo"><span class="id">T12</span><span class="t">ライブpublish 13分の分解(cmd_4401計装の実測回収)</span><span class="d">cmd_4401計装はstdout出力のみで永続ログ無し→次回cmd_publish実行時に将軍がstdoutをlogs/へ保存して分解</span><span class="w">publish律速の短縮</span></div>
     <div class="row todo"><span class="id">T60</span><span class="t">らせん次弾=ninja_scope_commit の git_commit/scope_sync 本質短縮(重複 index 同期・read_tree 1081ms の削減)</span><span class="d">11:33 T10 report: ninja_scope_commit git_commit 中央値 9487ms・scope_sync 5846ms・累積 196s/113s が本日の支配。gate 本体は 0.07s</span><span class="w">commit 1回あたり −5秒×日50回</span></div>
+    <div class="row todo"><span class="id">T63</span><span class="t">家老 clear 経路のモデル乖離を構造で0に(clear 経路にも apply_agent を通す or 実態≠settings で WARN)。作業中 respawn は禁止ゆえ次の家老 idle 時に hotfix 配備</span><span class="d">12:54 復帰直後の capture-pane で検出: 家老 /clear 後の実態=gpt-5.6-luna medium、settings.yaml=gpt-5.6-sol-medium。codex_config_apply_agent は respawn 経路(ninja_monitor L2420/L9960/L11715)のみで in-session /new 経路は config.toml 既定(luna)のまま。INS-20260827-125425547</span><span class="w">家老の判断品質(sol)を維持=手戻り0</span></div>
   </div>
 </section>
 
@@ -170,5 +172,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 12:46 更新(inbox: ci_fix PASS)</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 20260827-1305-rotation</footer>
 </div>
