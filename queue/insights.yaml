@@ -6124,3 +6124,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-074355934-a9c6
+  ts: "2026-08-28T07:43:55+09:00"
+  insight: "家老(Codex sol)が /clear 直後に『未読かつ現task_id一致』フィルタを自分の inbox へ適用し、将軍 task_assigned・軍師 LGTM 通知を『適用せず既読化』=本日 2 回(03:44/07:41)。規則は T114 忍者 nudge 専用。記憶DB の 03:44 自己記録を [MEM:] で引用して自己強化した(誤学習の反復)。根治=inbox_mark_read.sh で家老 self による将軍発 task_assigned/review 系の『未処理既読化』を BLOCK(bulletin_notify 等の情報 type は除外)+instructions/karo.md 復帰手順に『家老は task_id フィルタ対象外』を1行。origin=[[家老task_idフィルタ誤適用_20260828]] -> [[記憶DB自己記録の誤引用]] -> [[T122_家老inbox規則の構造化]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
