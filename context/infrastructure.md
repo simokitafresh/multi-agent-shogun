@@ -1,6 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_062515 approved_source_commit T109 first_setup 案内+dry-run を §2026-08-27 ext4 節へ反映 -->
-<!-- source_commit:991343278afc reason:DOC_LANE_REQUEST blt_062515 approved_source_commit T109 first_setup 案内+dry-run を §2026-08-27 ext4 節へ反映 evidence:git show --stat 991343278 = first_setup.sh +88/tests/unit/test_first_setup.bats +27; grep -c 'T109、才蔵 991343278' context/infrastructure.md = 1 -->
+<!-- last_updated: 2026-08-27 T70 影丸 hotfix(task worktree root→ext4) を §2026-08-27 へ反映(DOC_LANE_REQUEST blt_20260827_231110) -->
 <!-- source_commit:b5f586933959 reason:T70 影丸 hotfix(task worktree root→ext4) を §2026-08-27 へ反映(DOC_LANE_REQUEST blt_20260827_231110) evidence:context/infrastructure.md §2026-08-27 T70 行; commit b5f586933959 scripts/deploy_task.sh scripts/deploy_task/preflight.sh -->
 <!-- source_commit:c6e8231816ab reason:2026-08-27 将軍doc lane: ext4 移設(cutover/効果/副作用/T70/T83)を §2026-08-27 追加(DOC_LANE_ALERT blt_20260827_230132 実消化) evidence:context/infrastructure.md §2026-08-27 追加(ext4); commits 5f8aea006 e644881f5 c6e823181 -->
 <!-- source_commit:06ddbc988 reason:2026-08-27 将軍doc lane: 孤児テスト根治5点を反映(DOC_LANE_ALERT blt_20260826_123314/101234 実消化) evidence:context/infrastructure.md §2026-08-27 追加; commits 3fa443c11 c940c47d5 8c09923f8 06ddbc988 -->
@@ -102,7 +101,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1657 -->
+<!-- last_synced_lesson: L1658 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -144,7 +143,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1657 -->
+<!-- last_synced_lesson: L1658 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -297,6 +296,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1655: 実行bit非依存のreport gate呼出し（cmd_karo_hotfix_report_gate_exec_mode_20260828）
 - L1656: 全terminal report publisherへ提出前precheckを接続する（cmd_karo_hotfix_t99_report_precheck_20260828）
 - L1657: git-ignore正本を含むtask selectorはmarker-safe一時fixtureで分離検証する（cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828）
+- L1658: 開始nudgeは初回・再送・直送の全callerを同一task identityへ結ぶ（cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828）
 
 ## 設計標準・テスト・因果
 
@@ -339,4 +339,3 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **移設で顕在化した副作用**: (1)旧ツリーの stale `_cmd_*_ready.yaml` が最終 rsync で復活(退避は rsync 後に再適用、T86/T90) (2)CI shard7 quality-lock test がパス依存で receipt 欠損 → 小太郎 ci_fix c6e823181「path independent」 (3)`config/cli_events.yaml` 旧パス 8 件(消費者 0)・`~/.codex/config.toml` hooks.state 旧キー 7 件(新 path trust :23 実在)=無害、掃除+起動 gate に旧パス残存 grep を追加予定(T91) (4)`/mnt/c/Python_app/DM-signal` は 9p のまま=次の移設候補(同手順)。
 - **task worktree の永続化(T70、影丸 hotfix b5f586933)**: `scripts/deploy_task.sh` と `scripts/deploy_task/preflight.sh` の `DEPLOY_TASK_WORKTREE_ROOT` 既定 `/tmp/shogun-task-worktrees` → `/home/simokitafresh/shogun-task-worktrees`(env 明示時は尊重)。回帰=`tests/unit/test_task_worktree_lifecycle.bats`。理由: WSL 再起動で /tmp が消え 14:54 に task worktree 11 本が消失(未 commit 作業の再実装リスク)。
 - **cmd_complete_gate.sh 分割設計(T83、才蔵抽出)**: 15,030 行→17 lib unit・契約 test 43 の所有表 → `docs/design/cmd_complete_gate_split_design_20260827.md`(実装は次 cmd、deploy_task 分割 J と同型)。
-- **first_setup.sh の初回認証案内+安全 dry-run(T109、才蔵 991343278)**: `bash first_setup.sh --dry-run` は副作用なしで Codex 認証手順(`codex login --device-auth`/`codex login status`)を表示し、repo が `/mnt/c`(9p)配下なら ext4 配置を警告(runbook `docs/research/9p_root_fix_runbook_20260827.md`)。README/README_ja Quick Start に同行を追記(18ec6721f)。将軍の下知誤り(target を `scripts/first_setup.sh` と誤記→才蔵が前提差異で正しく停止→r2)=型4弾-1「書いたら grep」は下知本文の path にも適用

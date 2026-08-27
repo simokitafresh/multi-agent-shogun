@@ -3053,6 +3053,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T03:14:22+09:00 2026-08-28 03:14 忍者 auto clear 不動作(殿指摘 00:10『忍者 auto clear 未動作』、CLEAR-COUNT-SKIP: has no cmd context、初出 08-25 15:37、累計 5 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:08:18+09:00 Gate 10.1b 便回転チェック(task done∧gate_metrics CLEAR無し∧done_at 20分超)を gate_shogun_startup.sh へ追加(commit 8cb8346d1)。発端=04:05復帰 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:27:35+09:00 起動gate 旧ext4ルート残存チェック(917475b75 T102/T91)が repo 全体 rg+bash while 6223行連結で CPU 張り付き=起動 gate 300秒超ハング。将軍 D0 で生きた消費者ルート肯定列挙 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:30:41+09:00 T114 reflux 開始 nudge の task_id 欠落=根治。飛猿 hotfix r1+r2(structured identity+Codex 再送 nudge+monitor 直送+watcher 初回 nudge 2 経路 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -8200,6 +8201,8 @@ codd:
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_clear_guard.bats`) |
 | cmd | `cmd_karo_ci_fix_33113951908_gunshi_map_fixture_20260828` (`tests/unit/test_ninja_monitor_stall.bats`) |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` (`scripts/inbox_watcher.sh`, `scripts/inbox_write.sh`, `scripts/ninja_monitor.sh`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9969,6 +9972,7 @@ codd:
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -10769,6 +10773,7 @@ codd:
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -11061,6 +11066,7 @@ codd:
 | causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_ci_fix_33113951908_gunshi_map_fixture_20260828` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -12005,6 +12011,7 @@ codd:
 | causal | `cmd_karo_hotfix_commit_ledger_single_lock` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_4385` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_4400` files_modified: [[multi_cli_event_commonization]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[multi_cli_event_commonization]] |
 
 ## codex_goal_mode — Codex /goal 自律目標モード
 
@@ -14663,6 +14670,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T19:13:57.327449+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T19:21:46.188016+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T20:33:23.524560+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T21:15:14.443408+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -14778,6 +14786,7 @@ codd:
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -14979,6 +14988,7 @@ codd:
 | causal | `cmd_4408` origin: [[殿裁定_ext4移設やれ_20260827_1422]] -> [[9p_git_flock_RPC待ち_本日停滞3系統]] -> [[cmd_4408_ext4移設]] |
 | causal | `cmd_karo_hotfix_report_gate_exec_mode_20260828` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_hotfix_t99_report_precheck_20260828` files_modified: [[yaml_safe_write]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
 | causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
 | causal_chain | `[[cmd_4192]]` (L1450) |
@@ -15047,6 +15057,7 @@ codd:
 | causal | `cmd_karo_hotfix_watcher_busy_queue_singleflight_20260727` files_modified: [[inbox_watcher_process_model]] |
 | causal | `cmd_karo_fix_capture_verification_scope_20260804` files_modified: [[inbox_watcher_process_model]] |
 | causal | `cmd_karo_hotfix_gate_clear_wakeup_contract_20260809` files_modified: [[inbox_watcher_process_model]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[inbox_watcher_process_model]] |
 
 ## saxo_openapi_excel — Saxo Bank OpenAPI for Excel
 
@@ -16085,6 +16096,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T20:07:27.578780+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T20:45:47.956694+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T20:53:22.773792+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T21:26:48.550938+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -16348,6 +16360,7 @@ codd:
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -16552,6 +16565,7 @@ codd:
 | causal | `cmd_karo_hotfix_auto_clear_cmd_context_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 

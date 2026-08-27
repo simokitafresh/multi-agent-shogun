@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_gate_self_update_race_202608190202
-  timestamp: '2026-08-18T17:55:12Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_gate_self_update_race_202608190202'
 - cmd_id: cmd_karo_hotfix_rc_report_identity_rotation_202608190321
   timestamp: '2026-08-18T19:36:31Z'
   ninja: system
@@ -1310,3 +1297,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t109_first_setup_auth_guidance_20260828'
+- cmd_id: cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828
+  timestamp: '2026-08-27T21:36:07Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828'

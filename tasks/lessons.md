@@ -16012,3 +16012,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - canonical taskのplanned pathにgit-ignore正本が混在すると外部task engineがrc2になり得る。正本taskを改変せず、対象外pathだけを除いた一時copyでtracked実装を再走し、canonical正本は旧/新件数とYAML構文を別証跡で確認する。
+
+### L1658: 開始nudgeは初回・再送・直送の全callerを同一task identityへ結ぶ
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828
+- **記録者**: tobisaru
+- **tags**: [infra,ninja-monitor,deploy,monitor,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,scripts/inbox_write.sh,scripts/inbox_watcher.sh,tests/unit/test_ninja_monitor_training_auto.bats,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- structured inbox rowだけを正しても、初回nudgeを生成する別watcher経路がtask_idを欠くとACK-STALLが残る。caller chainを段階列挙し、全nudge生成分岐と本番proofを同じ完了契約へ結ぶ。
