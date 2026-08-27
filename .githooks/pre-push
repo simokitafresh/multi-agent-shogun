@@ -54,6 +54,7 @@ pre_push_record_total() {
     fi
 }
 pre_push_total_on_exit() { local rc=$?; pre_push_record_total "$rc"; return "$rc"; }
+# T51 contract: every terminal pre-push records wall_ms and affected_count once.
 trap pre_push_total_on_exit EXIT
 
 if [ -f "$REPO_ROOT/scripts/lib/autogen_paths.sh" ]; then
