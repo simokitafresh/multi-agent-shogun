@@ -76,3 +76,39 @@ _run_serialize_scenario() {
     _run_serialize_scenario "$shadow_root/scripts/ninja_monitor.sh"
     [ "$status" -ne 0 ]
 }
+
+# test_necessity: a content-identical snapshot whose Generated age exceeds the
+# 600-second freshness contract must be atomically regenerated on the next
+# publication, even when no source row changed.
+@test "stale content-identical snapshot is forcibly regenerated" {
+    run bash -c '
+set -euo pipefail
+ROOT="'"$ROOT"'"
+TMP="'"$BATS_TEST_TMPDIR"'/stale-refresh"
+mkdir -p "$TMP/queue/tasks" "$TMP/queue/inbox"
+printf "task:\n  task_id: task_x\n  status: idle\n  project: infra\n" > "$TMP/queue/tasks/saizo.yaml"
+printf "messages:\n" > "$TMP/queue/inbox/karo.yaml"
+OLD=$(date -d "20 minutes ago" +%Y-%m-%dT%H:%M:%S)
+NINJA_MONITOR_LIB_ONLY=1 SHOGUN_TEST_ROOT="$TMP" KARO_SNAPSHOT_STALE_THRESHOLD_SEC=600 bash -c '\''
+  source "'"$ROOT"'/scripts/ninja_monitor.sh"
+  SCRIPT_DIR="$SHOGUN_TEST_ROOT"
+  LOG="$SHOGUN_TEST_ROOT/monitor.log"
+  NINJA_NAMES=(saizo)
+  PANE_TARGETS=()
+  refresh_karo_snapshot_generation
+  sed -i "s/^# Generated:.*/# Generated: '"$OLD"'/" "$SHOGUN_TEST_ROOT/queue/karo_snapshot.txt"
+  refresh_karo_snapshot_generation
+'\''
+before=$OLD
+after=$(sed -n "s/^# Generated: //p" "$TMP/queue/karo_snapshot.txt")
+age=$(( $(date +%s) - $(date -d "$after" +%s) ))
+[ "$before" != "$after" ]
+[ "$age" -ge 0 ] && [ "$age" -le 600 ]
+grep -q "SNAPSHOT-STALE-REFRESH: content_diff=0 source_diff=0" "$TMP/monitor.log"
+printf "stale_refresh=1 age_sec=%s threshold_sec=600\n" "$age"
+'
+    if [ "$status" -ne 0 ]; then
+        printf '%s\n' "$output"
+        false
+    fi
+}

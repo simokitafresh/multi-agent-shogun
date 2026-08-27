@@ -129,3 +129,54 @@ assert "--refresh-snapshot-task" in guard
 PY
   [ "$status" -eq 0 ]
 }
+
+# test_necessity: every snapshot generation/publish failure must leave a
+# machine-readable cause and exit code in the monitor log instead of silently
+# returning through an ignored helper status.
+@test "snapshot generation and publish failures emit SNAPSHOT-GEN-FAIL with exit" {
+  run bash -c '
+set -u
+ROOT="'"$ROOT"'"
+TMP="'"$BATS_TEST_TMPDIR"'/snapshot-failures"
+mkdir -p "$TMP/queue/tasks" "$TMP/queue/inbox"
+printf "task:\n  task_id: task_x\n  status: idle\n  project: infra\n" > "$TMP/queue/tasks/saizo.yaml"
+printf "messages:\n" > "$TMP/queue/inbox/karo.yaml"
+
+NINJA_MONITOR_LIB_ONLY=1 SHOGUN_TEST_ROOT="$TMP" bash -c '\''
+  source "'"$ROOT"'/scripts/ninja_monitor.sh"
+  SCRIPT_DIR="$SHOGUN_TEST_ROOT"
+  LOG="$SHOGUN_TEST_ROOT/monitor.log"
+  NINJA_NAMES=(saizo)
+  PANE_TARGETS=()
+  mktemp() { return 23; }
+  if write_karo_snapshot; then exit 1; fi
+'\''
+grep -q "SNAPSHOT-GEN-FAIL phase=generate cause=mktemp exit=23" "$TMP/monitor.log"
+
+NINJA_MONITOR_LIB_ONLY=1 SHOGUN_TEST_ROOT="$TMP" bash -c '\''
+  source "'"$ROOT"'/scripts/ninja_monitor.sh"
+  SCRIPT_DIR="$SHOGUN_TEST_ROOT"
+  LOG="$SHOGUN_TEST_ROOT/monitor.log"
+  NINJA_NAMES=(saizo)
+  PANE_TARGETS=()
+  mv() { return 37; }
+  if write_karo_snapshot; then exit 1; fi
+'\''
+grep -q "SNAPSHOT-GEN-FAIL phase=publish cause=mv exit=37" "$TMP/monitor.log"
+printf "failure_logs=2/2 cause_exit=2/2\n"
+'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"failure_logs=2/2 cause_exit=2/2"* ]]
+}
+
+# test_necessity: poll-start publication must precede the first task-state
+# scan, preserving the freshness invariant when that scan blocks.
+@test "poll-start snapshot publication precedes task-state scan" {
+  run python3 - "$ROOT/scripts/ninja_monitor.sh" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+loop = text[text.index("while true; do"):text.index("sleep \"$POLL_INTERVAL\"")]
+assert loop.index("refresh_karo_snapshot_generation") < loop.index("monitor_task_state_fast_path")
+PY
+  [ "$status" -eq 0 ]
+}

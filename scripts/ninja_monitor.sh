@@ -9574,6 +9574,11 @@ stop_stale_inbox_watcher() {
 }
 
 # ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───
+_snapshot_generation_fail() {
+    local phase="$1" exit_code="$2" cause="$3"
+    log "SNAPSHOT-GEN-FAIL phase=${phase} cause=${cause} exit=${exit_code}"
+}
+
 write_karo_snapshot() {
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
     local lock_file="${KARO_SNAPSHOT_LOCK_FILE:-/tmp/karo_snapshot.lock}"
@@ -9585,14 +9590,24 @@ write_karo_snapshot() {
 
     # S04修正: サブシェル→ブレースグループ（fd継承によるロック漏洩を回避）
     {
-        if ! flock -x -w 5 200; then
-            log "ERROR: write_karo_snapshot flock failed"
+        if flock -x -w 5 200; then
+            :
         else
+            local flock_rc=$?
+            _snapshot_generation_fail lock "$flock_rc" flock
+            log "ERROR: write_karo_snapshot flock failed"
+            return "$flock_rc"
+        fi
+        {
             local tmp_file
-            tmp_file=$(mktemp "${snapshot_file}.tmp.XXXXXX") || {
+            if tmp_file=$(mktemp "${snapshot_file}.tmp.XXXXXX"); then
+                :
+            else
+                local mktemp_rc=$?
+                _snapshot_generation_fail generate "$mktemp_rc" mktemp
                 log "ERROR: write_karo_snapshot mktemp failed"
-                return 1
-            }
+                return "$mktemp_rc"
+            fi
             if {
                 echo "# 家老陣形図(karo_snapshot) — ninja_monitor.sh自動生成"
                 echo "# Generated: $timestamp"
@@ -9822,24 +9837,63 @@ write_karo_snapshot() {
                 else
                     log "SNAPSHOT-INITIAL-REFRESH: snapshot_missing=1"
                 fi
-                mv "$tmp_file" "$snapshot_file"
+                if mv "$tmp_file" "$snapshot_file"; then
+                    :
+                else
+                    local publish_rc=$?
+                    _snapshot_generation_fail publish "$publish_rc" mv
+                    rm -f "$tmp_file"
+                    return "$publish_rc"
+                fi
             else
+                local generation_rc=$?
                 rm -f "$tmp_file"
+                _snapshot_generation_fail generate "$generation_rc" body
                 log "ERROR: write_karo_snapshot temp write failed"
-                return 1
+                return "$generation_rc"
             fi
-        fi
+        }
     } 200>"$lock_file"
+}
+
+refresh_karo_snapshot_generation() {
+    # This deliberately omits state/model maintenance: it is the independent
+    # poll-start publication that must run before any potentially long check.
+    if write_karo_snapshot; then
+        return 0
+    else
+        local snapshot_rc=$?
+        _snapshot_generation_fail poll_start "$snapshot_rc" write_karo_snapshot
+        return "$snapshot_rc"
+    fi
 }
 
 refresh_karo_snapshot_fast_path() {
     # 陣形図は復帰用の生存情報。重い監視チェックより前に必ず一度発行する。
-    write_state_file
+    if write_state_file; then
+        :
+    else
+        local state_rc=$?
+        _snapshot_generation_fail state "$state_rc" write_state_file
+        return "$state_rc"
+    fi
     # @model_name整合性: 毎サイクル実行(旧REDISCOVER_EVERY=10分→20秒)。
     # CLI切替後の枠表示乖離を最大20秒に短縮。model_detect.shは軽量(ps+capture-pane)。
     # D0修正: 2026-07-24 殿指示。根因=10分間隔で古い値が残存しpane枠がCodex/GPT/Fable表示。
-    check_model_names
-    write_karo_snapshot
+    if check_model_names; then
+        :
+    else
+        local model_rc=$?
+        _snapshot_generation_fail model "$model_rc" check_model_names
+        return "$model_rc"
+    fi
+    if write_karo_snapshot; then
+        return 0
+    else
+        local snapshot_rc=$?
+        _snapshot_generation_fail fast_path "$snapshot_rc" write_karo_snapshot
+        return "$snapshot_rc"
+    fi
 }
 
 # Publish one task generation without waiting for the monitor's potentially
@@ -9847,11 +9901,21 @@ refresh_karo_snapshot_fast_path() {
 # only after their atomic task YAML publication; the task file remains SSOT.
 refresh_karo_snapshot_task_assignment() {
     local name="${1:-}"
-    [[ "$name" =~ ^[a-z][a-z0-9_]*$ ]] || return 2
+    if [[ "$name" =~ ^[a-z][a-z0-9_]*$ ]]; then
+        :
+    else
+        _snapshot_generation_fail task_assignment 2 invalid_name
+        return 2
+    fi
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
     local lock_file="${KARO_SNAPSHOT_LOCK_FILE:-/tmp/karo_snapshot.lock}"
-    [ -f "$task_file" ] || return 3
+    if [ -f "$task_file" ]; then
+        :
+    else
+        _snapshot_generation_fail task_assignment 3 task_missing
+        return 3
+    fi
 
     local task_id status project source_ts timestamp runtime_state
     IFS='|' read -r task_id status project < <(awk '
@@ -9872,9 +9936,21 @@ refresh_karo_snapshot_task_assignment() {
     esac
 
     {
-        flock -x -w 5 200 || return 4
+        if flock -x -w 5 200; then
+            :
+        else
+            local lock_rc=$?
+            _snapshot_generation_fail task_assignment "$lock_rc" flock
+            return "$lock_rc"
+        fi
         local tmp_file snapshot_source existing_line ctx_field model_field new_line
-        tmp_file=$(mktemp "${snapshot_file}.tmp.XXXXXX") || return 5
+        if tmp_file=$(mktemp "${snapshot_file}.tmp.XXXXXX"); then
+            :
+        else
+            local mktemp_rc=$?
+            _snapshot_generation_fail task_assignment "$mktemp_rc" mktemp
+            return "$mktemp_rc"
+        fi
         snapshot_source="$snapshot_file"
         [ -f "$snapshot_source" ] || snapshot_source=/dev/null
         existing_line=$(awk -F'|' -v n="$name" '$1=="ninja" && $2==n { print; exit }' "$snapshot_file" 2>/dev/null || true)
@@ -9883,7 +9959,7 @@ refresh_karo_snapshot_task_assignment() {
         ctx_field="${ctx_field:-CTX:?%}"
         model_field="${model_field:-M:?}"
         new_line="ninja|${name}|${task_id}|${status}|${project}|${ctx_field}|${model_field}|SRC:${source_ts}|TASK:${status}|RUNTIME:${runtime_state}"
-        awk -F'|' -v OFS='|' -v n="$name" -v generated="# Generated: $timestamp" \
+        if awk -F'|' -v OFS='|' -v n="$name" -v generated="# Generated: $timestamp" \
             -v replacement="$new_line" -v active="$status" '
             BEGIN { replaced=0 }
             /^# Generated:/ { print generated; next }
@@ -9896,10 +9972,21 @@ refresh_karo_snapshot_task_assignment() {
             }
             { print }
             END { if (!replaced) print replacement }
-        ' "$snapshot_source" > "$tmp_file" && mv "$tmp_file" "$snapshot_file" || {
+        ' "$snapshot_source" > "$tmp_file"; then
+            if mv "$tmp_file" "$snapshot_file"; then
+                :
+            else
+                local publish_rc=$?
+                _snapshot_generation_fail task_assignment "$publish_rc" mv
+                rm -f "$tmp_file"
+                return "$publish_rc"
+            fi
+        else
+            local generation_rc=$?
             rm -f "$tmp_file"
-            return 6
-        }
+            _snapshot_generation_fail task_assignment "$generation_rc" awk
+            return "$generation_rc"
+        fi
     } 200>"$lock_file"
 }
 
@@ -11858,6 +11945,11 @@ while true; do
 
     # 毎cycle確認（20秒以内）。重いdiscover_panesは従来どおり10分周期。
     reload_ninja_monitor_if_updated
+
+    # Publish the recovery snapshot before any potentially long task-state or
+    # maintenance check.  Its freshness contract must not depend on those
+    # checks reaching the later STEP 1a/1b refresh points.
+    refresh_karo_snapshot_generation
 
     # Primary task state is observed before pane waits and maintenance.
     monitor_task_state_fast_path
