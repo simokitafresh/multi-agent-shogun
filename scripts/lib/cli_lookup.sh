@@ -509,7 +509,7 @@ _cli_launch_read_profile() {
 # cli_launch_cmd <agent_name>
 # 起動コマンド文字列を返す
 # codex型エージェントかつmodel_nameがgpt-X.X-{effort}形式なら
-# -c model_reasoning_effort={effort} を自動追加する
+# -c model={model} と -c model_reasoning_effort={effort} を自動追加する
 #
 # 最適化: settings.yaml/cli_profiles.yamlをそれぞれ1回のみ読む
 # （旧実装: cli_profile_get×2 + _cli_lookup_settings_get = サブシェル~9個+ファイル読込5回）
