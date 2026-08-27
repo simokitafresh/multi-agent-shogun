@@ -86,10 +86,17 @@ check_context_line_limits() {
 
 load_external_repos() {
     # config/projects.yaml から当リポ以外の全プロジェクトパスを動的に読む
-    local path
+    local path resolved
     while IFS= read -r path; do
-        [[ -n "$path" && "$path" != "$SCRIPT_DIR" ]] || continue
-        EXTERNAL_REPO_PATHS+=("$path")
+        [[ -n "$path" ]] || continue
+        # A self-referential project entry is commonly written as ".".  Raw
+        # string comparison treated it as an external repository, making CI
+        # scan the current checkout as an external source and turning missing
+        # external references into an expensive candidate search.  Compare
+        # canonical paths so the external-repo set is portable across runners.
+        resolved="$(realpath -m -- "$path" 2>/dev/null || true)"
+        [[ -n "$resolved" && "$resolved" != "$SCRIPT_DIR" ]] || continue
+        EXTERNAL_REPO_PATHS+=("$resolved")
     done < <(
         grep -E '^ {4}path:' "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null | \
         sed 's/^[[:space:]]*path:[[:space:]]*//' | tr -d '"'
