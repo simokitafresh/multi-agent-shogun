@@ -6190,25 +6190,37 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T08:09:21+09:00"
 - id: INS-20260828-080900466-13dc
   ts: "2026-08-28T08:09:00+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_繰り返しミス根治_20260828_0805]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=25.6) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0852; score=20.8) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.8)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T08:09:21+09:00"
 - id: INS-20260828-080907223-a372
   ts: "2026-08-28T08:09:07+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[否定判定の早断定5回]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=改善の判断基準; score=2.5) / dmsignal_operations(DM-Signal運用; alias=僅差判定の反転; score=2.5) / dmsignal_fe_experience_deploy(DM-Signal体感主導デプロイ; alias=速度の体感判定は殿; score=2.1)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T08:09:22+09:00"
 - id: INS-20260828-080914368-3fd8
   ts: "2026-08-28T08:09:14+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[shogun_commit_verdict.sh]] は既存aliasesに一致なし。類似概念TOP3: skill_routing(スキルルーティング; alias=commit; score=25.6) / cmd_quality_logging(cmd設計品質ログ; alias=gunshi_verdict; score=16.9) / shogun_android_app(将軍Androidアプリ; alias=com.shogun.android; score=15.8)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T08:09:22+09:00"
