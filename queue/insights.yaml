@@ -4482,3 +4482,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-091505020-ef0f
+  ts: "2026-08-27T09:15:05+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[後着事実追記型訂正_20260827_0914]] は既存aliasesに一致なし。類似概念TOP3: gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=3.6) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=RB6_BLOCK_20260813_1704; score=3.2) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_準備先行_20260817_1936; score=3.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
