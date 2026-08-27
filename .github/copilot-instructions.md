@@ -293,7 +293,7 @@ Always include: 1) Agent role (shogun/karo/ninja) 2) Forbidden actions list 3) C
 ## cmd完了時の手順（家老・忍者共通）
 
 ```
-1. ダッシュボード更新: `/dashboard-update` スキルを実行（手動Edit禁止。スキルがプライマリYAMLから全セクションを自動生成する）
+1. （既定OFF・殿裁定2026-08-17）dashboard自動更新は行わない。必要時のみ手動で `/dashboard-update`
 2. 戦局日誌更新: context/senkyoku-log.mdにcmdの意図・結果・因果を1-2行で追記
 3. bash scripts/inbox_archive.sh {自分のid}（既読inboxメッセージを退避）
 4. ntfy送信（cmd完了報告）
@@ -606,7 +606,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - codd review|`review --feedback` / `verify` / `policy` / `audit` で品質確認を層で回す|`context/codd.md` §2, §5
 - codd measure|`measure` でCoDD健全性を0-100採点する|`context/codd.md` §2, §5
 - /shogun-teire|知識の棚卸し(8観点監査)|`skills/shogun-teire/SKILL.md`
-- /reset-layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`skills/reset-layout/SKILL.md`
+- reset_layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`bash scripts/reset_layout.sh`(旧/reset-layoutスキルはefc8e016eで削除・shogun-cli-switchへ吸収)
 - /pf-registration|本番PF登録(即パリティ強制)|`skills/pf-registration/SKILL.md`
 - /three-layer-penetrate|三層記憶貫通の標準手順(state=PASS≠貫通の構造防止)|`skills/three-layer-penetrate/SKILL.md`
 

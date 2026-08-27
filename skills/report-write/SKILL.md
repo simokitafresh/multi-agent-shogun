@@ -180,6 +180,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-08-27: gate=gate_report_format result=FAIL executor=tobisaru reason=files_modified: 3件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ; commit_contract: files_modified path is outside planned scope: ./requirements.txt
+- 2026-08-27: gate=gate_report_format result=FAIL executor=tobisaru reason=files_modified: 6件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ; commit_contract: files_modified path is outside planned scope: .gitignore; commit_contract: files_modified path is outsid...
+- 2026-08-27: gate=gate_report_format result=FAIL executor=hanzo reason=final_checkpoint: ci_fix clean repro evidence post harness must start before push
 - 2026-08-26: gate=gate_report_format result=FAIL executor=kotaro reason=files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ; LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
 - 2026-08-26: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: files_modified path is outside planned scope: queue/reports/hayate_report_cmd_karo_hotfix_...
 - 2026-08-26: gate=gate_report_format result=FAIL executor=kotaro reason=files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ; commit_contract: commit/task history does not contain owned/planned path: .github/workflows/test.yml; commit_contract: co...
@@ -197,9 +200,6 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 - 2026-08-24: gate=cmd_complete_gate result=FAIL executor=sasuke reason=report_format:sasuke_report_cmd_karo_4380_full.yaml|ci_readiness:BLOCK: origin slug unresolvable from /tmp/cmd4380-full.TEckdE/project|ci_readiness:Traceback (most recent call l...
 - 2026-08-24: gate=cmd_complete_gate result=FAIL executor=sasuke reason=report_format:sasuke_report_cmd_karo_4380_full.yaml|ci_push_state:BLOCK: report commit invalid or unresolvable
 - 2026-08-23: gate=gate_report_format result=FAIL executor=saizo reason=operational_simulation.result: must be PASS or FAIL; LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
-- 2026-08-23: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: files_modified path is outside planned scope: docs/research/cmd_4373_hmm_regime_phase2_report.md (file does not exist — possible path typo in files_modified); c...
-- 2026-08-23: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: files_modified path is outside planned scope: docs/research/cmd_4372_hmm_regime_phase1_report.md; cross_repo_commits: cross_repo_commits[0].commit_hash is not a...
-- 2026-08-22: gate=gate_report_format result=FAIL executor=hayate reason=knowledge_candidate.items[0].fact: empty
 
 過去のgate FAIL頻出パターン要約(生ログはlogs/gate_fire_log.yaml等の台帳が正本。ここには要約のみ保持):
 
