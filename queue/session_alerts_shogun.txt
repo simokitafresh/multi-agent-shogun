@@ -1,3 +1,4 @@
-# session_alerts — generated: 2026-08-27T14:54:35+0900
-[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな (15:01 capture-pane実施: 3名ともContext 0%起動プロンプト=WSL再起動によるghost。家老へ再配備下知済)
+# session_alerts — generated: 2026-08-27T19:14:38+0900
+[TODO] 掲示板action_required未対応: 2件
+[TODO] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
 [DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
