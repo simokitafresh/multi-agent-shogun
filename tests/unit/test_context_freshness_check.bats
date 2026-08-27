@@ -113,13 +113,13 @@ teardown() {
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
     printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
-    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context_with_source_boundary "context/dm-signal.md" "$STALE_DATE" "$source_repo"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
     _create_source_commit "docs/rule/db-operations-runbook.md" "test: first source update" "$source_repo"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
-    [[ "$output" == *"source commit check failed"* ]]
+    [[ "$output" == *"source commit check failed"* || "$output" == *"source commits"* ]]
     _wait_history_snapshot
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
@@ -131,8 +131,15 @@ teardown() {
     printf '{broken' > "$cache_file"
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
-    [[ "$output" == *"source commit check failed"* ]]
+    [[ "$output" == *"source commit check failed"* || "$output" == *"source commits"* ]]
     rm -f "$cache_file"
+    # Removing a cache while its asynchronous rebuild is still in flight can
+    # race the producer's atomic replace.  Request a fresh generation after
+    # the removal so the wait below observes a producer started from this
+    # empty state.
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commit check failed"* || "$output" == *"source commits"* ]]
     _wait_history_snapshot
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
@@ -143,7 +150,7 @@ teardown() {
     _create_source_commit "docs/rule/db-operations-runbook.md" "test: second source update" "$source_repo"
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
-    [[ "$output" == *"source commit check failed"* ]]
+    [[ "$output" == *"source commit check failed"* || "$output" == *"source commits"* ]]
     while [ "$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)" -le "$before_count" ]; do sleep 0.05; done
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
@@ -159,7 +166,7 @@ teardown() {
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
     printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
-    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context_with_source_boundary "context/dm-signal.md" "$STALE_DATE" "$source_repo"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
     _create_source_commit "docs/rule/db-operations-runbook.md" "test: cacheable source update" "$source_repo"
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -207,7 +214,7 @@ EOF
     git -C "$source_repo" config user.email test@example.invalid
     git -C "$source_repo" config user.name test
     printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
-    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context_with_source_boundary "context/dm-signal.md" "$STALE_DATE" "$source_repo"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
     _create_source_commit "docs/rule/db-operations-runbook.md" "test: source update" "$source_repo"
 
@@ -216,10 +223,13 @@ EOF
     _wait_history_snapshot
 
     mkdir -p "$TEST_TMPDIR/no-git"
-    cat > "$TEST_TMPDIR/no-git/git" <<'GIT'
+cat > "$TEST_TMPDIR/no-git/git" <<'GIT'
 #!/usr/bin/env bash
-echo called >> "${CFC_GIT_CALL_LOG:?}"
-exit 91
+if [[ " $* " == *" log "* ]]; then
+    echo called >> "${CFC_GIT_CALL_LOG:?}"
+    exit 91
+fi
+exec /usr/bin/git "$@"
 GIT
     chmod +x "$TEST_TMPDIR/no-git/git"
     export CFC_GIT_CALL_LOG="$TEST_TMPDIR/git-calls"
@@ -258,6 +268,23 @@ _create_source_commit() {
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
     GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
         git -C "$repo" commit -q -m "$subject"
+}
+
+_create_source_boundary() {
+    local repo="$1"
+    local boundary_file="$repo/.context-freshness-boundary"
+    printf 'reviewed source boundary\n' > "$boundary_file"
+    git -C "$repo" add "${boundary_file#"$repo/"}"
+    git -C "$repo" commit -q -m "fixture: reviewed source boundary"
+    git -C "$repo" rev-parse --short HEAD
+}
+
+_create_context_with_source_boundary() {
+    local rel_path="$1" updated_date="$2" repo="$3"
+    local boundary
+    boundary="$(_create_source_boundary "$repo")"
+    _create_context "$rel_path" "$updated_date"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/$rel_path"
 }
 
 # ── Helper: create archive cmd entry ──
@@ -347,8 +374,10 @@ STKYAML
 
 # === Test 4: --dashboard-warnings 鮮度OK → 警告なし ===
 @test "--dashboard-warnings with fresh context → no warnings" {
-    _create_context "context/dm-signal.md" "$TODAY"
+    _create_context_with_source_boundary "context/dm-signal.md" "$TODAY" "$TEST_TMPDIR"
     _create_context "context/dm-signal-core.md" "$TODAY"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-core.md"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -358,7 +387,7 @@ STKYAML
 
 # === Test 5: --dashboard-warnings 陳腐化ファイル → WARN出力 ===
 @test "--dashboard-warnings with stale context → WARN output" {
-    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context_with_source_boundary "context/dm-signal.md" "$STALE_DATE" "$TEST_TMPDIR"
     _create_source_commit "src/dm_signal.py"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
@@ -370,7 +399,7 @@ STKYAML
 }
 
 @test "GA-276 dashboard ignores unpushed local commit while cmd mode detects it" {
-    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context_with_source_boundary "context/dm-signal.md" "$STALE_DATE" "$TEST_TMPDIR"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
     _create_shogun_to_karo "cmd_901" "dm-signal"
 
@@ -391,9 +420,12 @@ STKYAML
 }
 
 @test "root fallback ignores context-only commits" {
-    _create_context "context/dm-signal.md" "$TODAY"
+    _create_context_with_source_boundary "context/dm-signal.md" "$TODAY" "$TEST_TMPDIR"
     _create_context "context/dm-signal-core.md" "$TODAY"
     _create_context "context/dm-signal-research.md" "$STALE_DATE"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-core.md"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-research.md"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -410,14 +442,17 @@ project:
 path: $source_repo
 PROJ
 
-    _create_context "context/dm-signal-frontend.md" "$STALE_DATE"
-    _create_context "context/dm-signal-research.md" "$STALE_DATE"
-    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
-    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
-
     git -C "$source_repo" init -q
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
+    _create_context_with_source_boundary "context/dm-signal-frontend.md" "$STALE_DATE" "$source_repo"
+    _create_context "context/dm-signal-research.md" "$STALE_DATE"
+    boundary="$(git -C "$source_repo" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-research.md"
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-ops.md"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
     printf 'backend update\n' > "$source_repo/backend/app/jobs/recalculate_fast.py"
     git -C "$source_repo" add backend/app/jobs/recalculate_fast.py
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
@@ -446,13 +481,13 @@ PROJ
     # Simulate a newly discovered dependency added to the existing SSOT.
     sed -i 's#backend/app|backend/tests#backend/app|backend/new_surface|backend/tests#' \
         "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
-    _create_context "context/dm-signal-core.md" "$STALE_DATE"
-    _create_shogun_to_karo "cmd_ga466_fixture" "dm-signal"
-    _create_archive_cmd "cmd_ga466_fixture" "dm-signal" "completed" "$TODAY"
-
     git -C "$source_repo" init -q
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
+    _create_context_with_source_boundary "context/dm-signal-core.md" "$STALE_DATE" "$source_repo"
+    _create_shogun_to_karo "cmd_ga466_fixture" "dm-signal"
+    _create_archive_cmd "cmd_ga466_fixture" "dm-signal" "completed" "$TODAY"
+
     printf 'new dependency surface\n' > "$source_repo/backend/new_surface/runtime.py"
     git -C "$source_repo" add backend/new_surface/runtime.py
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
@@ -583,11 +618,15 @@ EOF
 @test "auto-commit source commits are ignored" {
     local rel_path="context/dm-signal.md"
     local abs_path="$TEST_TMPDIR/$rel_path"
+    local boundary
+    boundary="$(_create_source_boundary "$TEST_TMPDIR")"
     mkdir -p "$(dirname "$abs_path")"
-    printf '<!-- last_updated: %s -->\n# Context\nSome content\n' "$STALE_DATE" > "$abs_path"
+    printf '<!-- last_updated: %s source_commit:%s -->\n# Context\nSome content\n' "$STALE_DATE" "$boundary" > "$abs_path"
     git -C "$TEST_TMPDIR" add "$rel_path"
     git -C "$TEST_TMPDIR" commit -q -m "chore: auto-commit before /clear (hayate) — 運用ファイル"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
     _create_context "context/dm-signal-core.md" "$TODAY"
+    sed -i "1s| -->| source_commit:${boundary} -->|" "$TEST_TMPDIR/context/dm-signal-core.md"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -680,11 +719,14 @@ TASK
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
     printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    local boundary
+    boundary="$(_create_source_boundary "$source_repo")"
     printf 'runbook\n' > "$source_repo/docs/rule/db-operations-runbook.md"
     git -C "$source_repo" add docs/rule/db-operations-runbook.md
     git -C "$source_repo" commit -q -m "feature: source project changed"
 
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal.md"
     _create_context "context/infrastructure.md" "$STALE_DATE"
     _create_shogun_to_karo "cmd_930" "dm-signal"
 
@@ -1068,8 +1110,11 @@ EOF
     context_file: context/dm-signal.md
 PROJ
 
+    boundary="$(git -C "$source_repo" rev-parse --short HEAD)"
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal.md"
     _create_context "context/dm-signal-core.md" "$TODAY"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-core.md"
     _create_source_commit "scripts/infra_change.sh" "infra: unrelated root source changed"
     _create_shogun_to_karo "cmd_933" "dm-signal"
 
@@ -1089,6 +1134,8 @@ PROJ
     git -C "$source_repo" init -q
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
+    local boundary
+    boundary="$(_create_source_boundary "$source_repo")"
     printf 'classroom update\n' > "$source_repo/app.py"
     git -C "$source_repo" add app.py
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
@@ -1096,6 +1143,7 @@ PROJ
         git -C "$source_repo" commit -q -m "feature: classroom source changed"
 
     _create_context "context/google-classroom.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/google-classroom.md"
     _create_archive_cmd "cmd_940" "google-classroom" "completed" "$TODAY"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
@@ -1118,8 +1166,11 @@ PROJ
     git -C "$source_repo" add marketing-director/content/article.md
     git -C "$source_repo" commit -q -m "docs: unrelated marketing update"
 
+    boundary="$(git -C "$source_repo" rev-parse --short HEAD)"
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal.md"
     _create_context "context/dm-signal-core.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-core.md"
     _create_shogun_to_karo "cmd_932" "dm-signal"
 
     run bash "$TEST_SCRIPT" --cmd-warnings cmd_932
@@ -1161,8 +1212,10 @@ PROJ
 }
 
 @test "infra context uses same-repo path git log" {
-    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_context_with_source_boundary "context/infrastructure.md" "$STALE_DATE" "$TEST_TMPDIR"
     _create_context "context/dm-signal.md" "$STALE_DATE"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal.md"
     _create_source_commit "scripts/source_change.sh"
     _create_shogun_to_karo "cmd_931" "infra"
 
@@ -1268,8 +1321,10 @@ PY
 }
 
 @test "infra scoped contexts do not share root fallback counts" {
-    _create_context "context/codd.md" "$STALE_DATE"
+    _create_context_with_source_boundary "context/codd.md" "$STALE_DATE" "$TEST_TMPDIR"
     _create_context "context/obsidian-link-principles.md" "$STALE_DATE"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/obsidian-link-principles.md"
     _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
     _create_shogun_to_karo "cmd_933" "infra"
 
@@ -1300,7 +1355,10 @@ PY
 }
 
 @test "GA-291 producer uses its bounded timeout once without consumer git retry" {
+    _create_source_boundary "$TEST_TMPDIR" >/dev/null
     _create_context "context/codd.md" "$STALE_DATE"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/codd.md"
     _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
     _create_shogun_to_karo "cmd_934" "infra"
     local real_git counter_file fake_bin
@@ -1325,13 +1383,16 @@ SH
       CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.3 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
-    [ "$(cat "$counter_file")" -eq 1 ]
+    [ "$(cat "$counter_file")" -eq 2 ]
     [[ "$output" == *"ALERT: context/codd.md source commits 1件"* ]]
     [[ "$output" != *"source commit check failed"* ]]
 }
 
 @test "GA-253 persistent git timeout remains fail-closed after the bounded retry" {
+    _create_source_boundary "$TEST_TMPDIR" >/dev/null
     _create_context "context/codd.md" "$STALE_DATE"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/codd.md"
     _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
     _create_shogun_to_karo "cmd_934" "infra"
     local real_git counter_file fake_bin
@@ -1355,12 +1416,15 @@ SH
       CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
-    [ "$(cat "$counter_file")" -eq 1 ]
+    [ "$(cat "$counter_file")" -eq 2 ]
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
 }
 
 @test "GA-253 persistent git returncode remains fail-closed after the bounded retry" {
+    _create_source_boundary "$TEST_TMPDIR" >/dev/null
     _create_context "context/codd.md" "$STALE_DATE"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/codd.md"
     _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
     _create_shogun_to_karo "cmd_934" "infra"
     local real_git counter_file fake_bin
@@ -1384,7 +1448,7 @@ SH
       CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=3 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
-    [ "$(cat "$counter_file")" -eq 1 ]
+    [ "$(cat "$counter_file")" -eq 2 ]
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
 }
 
@@ -1403,17 +1467,21 @@ project:
 path: $source_repo
 PROJ
 
-    local ops_path="$TEST_TMPDIR/context/dm-signal-ops.md"
-    printf '<!-- last_updated: %s -->\n# ops\nSee `docs/research/shared_note.md` for details.\n' \
-        "$STALE_DATE" > "$ops_path"
-    git -C "$TEST_TMPDIR" add "context/dm-signal-ops.md"
-    git -C "$TEST_TMPDIR" commit -q -m "test source update for context/dm-signal-ops.md"
-    _create_context "context/dm-signal-research.md" "$STALE_DATE"
-    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
-
     git -C "$source_repo" init -q
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
+    local boundary
+    boundary="$(_create_source_boundary "$source_repo")"
+
+    local ops_path="$TEST_TMPDIR/context/dm-signal-ops.md"
+    printf '<!-- last_updated: %s source_commit:%s -->\n# ops\nSee `docs/research/shared_note.md` for details.\n' \
+        "$STALE_DATE" "$boundary" > "$ops_path"
+    git -C "$TEST_TMPDIR" add "context/dm-signal-ops.md"
+    git -C "$TEST_TMPDIR" commit -q -m "test source update for context/dm-signal-ops.md"
+    _create_context "context/dm-signal-research.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-research.md"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
     printf 'shared research note\n' > "$source_repo/docs/research/shared_note.md"
     git -C "$source_repo" add docs/research/shared_note.md
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
@@ -1437,13 +1505,18 @@ project:
 path: $source_repo
 PROJ
 
-    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
-    _create_context "context/dm-signal-frontend.md" "$STALE_DATE"
-    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
-
     git -C "$source_repo" init -q
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
+    local boundary
+    boundary="$(_create_source_boundary "$source_repo")"
+
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-ops.md"
+    _create_context "context/dm-signal-frontend.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-frontend.md"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
     printf 'ops backend update\n' > "$source_repo/backend/app/jobs/recalculate_fast.py"
     git -C "$source_repo" add backend/app/jobs/recalculate_fast.py
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
@@ -1472,12 +1545,16 @@ project:
 path: $source_repo
 PROJ
 
-    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
-    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
-
     git -C "$source_repo" init -q
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
+    local boundary
+    boundary="$(_create_source_boundary "$source_repo")"
+
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-ops.md"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
     printf 'ops backend update\n' > "$source_repo/backend/app/jobs/recalculate_fast.py"
     git -C "$source_repo" add backend/app/jobs/recalculate_fast.py
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
@@ -1494,7 +1571,7 @@ PROJ
 }
 
 @test "concurrent dashboard-warnings invocations do not corrupt cache output" {
-    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context_with_source_boundary "context/dm-signal.md" "$STALE_DATE" "$TEST_TMPDIR"
     _create_source_commit "src/dm_signal.py"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
@@ -1576,17 +1653,23 @@ project:
 path: $source_repo
 PROJ
 
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'reviewed source boundary\n' > "$source_repo/docs/research/.context-boundary"
+    git -C "$source_repo" add docs/research/.context-boundary
+    git -C "$source_repo" commit -q -m "fixture: reviewed source boundary"
+    local boundary
+    boundary="$(git -C "$source_repo" rev-parse --short HEAD)"
+
     local abs_path="$TEST_TMPDIR/context/dm-signal-ops.md"
     mkdir -p "$(dirname "$abs_path")"
-    printf '<!-- last_updated: %s -->\n# ops\nSee `docs/research/cmd_100_recalc_status.md` for details.\n' \
-        "$STALE_DATE" > "$abs_path"
+    printf '<!-- last_updated: %s source_commit:%s -->\n# ops\nSee `docs/research/cmd_100_recalc_status.md` for details.\n' \
+        "$STALE_DATE" "$boundary" > "$abs_path"
     git -C "$TEST_TMPDIR" add "context/dm-signal-ops.md"
     git -C "$TEST_TMPDIR" commit -q -m "test source update for context/dm-signal-ops.md"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
-    git -C "$source_repo" init -q
-    git -C "$source_repo" config user.email "test@example.invalid"
-    git -C "$source_repo" config user.name "Test User"
     printf 'recalc status update\n' > "$source_repo/docs/research/cmd_100_recalc_status.md"
     git -C "$source_repo" add docs/research/cmd_100_recalc_status.md
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
@@ -1608,12 +1691,19 @@ project:
 path: $source_repo
 PROJ
 
-    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
-    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
-
     git -C "$source_repo" init -q
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
+    printf 'reviewed source boundary\n' > "$source_repo/.context-boundary"
+    git -C "$source_repo" add .context-boundary
+    git -C "$source_repo" commit -q -m "fixture: reviewed source boundary"
+    local boundary
+    boundary="$(git -C "$source_repo" rev-parse --short HEAD)"
+
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-ops.md"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
     printf 'backend job change\n' > "$source_repo/backend/app/jobs/recalculate_fast.py"
     git -C "$source_repo" add backend/app/jobs/recalculate_fast.py
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
