@@ -52,7 +52,7 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 20:50 cutover 欠陥 T89(relocate hotfix)・runbook 更新 · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 21:07 loop: T89 report PASS→review/GATE 待ち · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
@@ -96,7 +96,7 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 <section class="group">
   <h2>走行中 <span class="n">2</span></h2>
   <div class="rows">
-    <div class="row run"><span class="id">T89</span><span class="t">cutover 欠陥の是正</span><span class="d">20:48 ★cutover script 欠陥を将軍が現物確認: 最終 rsync -a OLD/ NEW/ が .git ごと同期し、/home clone にしか無いパス置換 commit 5f6fa7569(43ファイル)を dangling 化+旧内容へ巻き戻す→切替後も hook が /mnt/c を指す。家老へ relocate hotfix 1通 msg_204816(rsync 直後に冪等 relocate+rg 0+bats)。CLEAR 前に cutover を打たない。runbook §3-2/gist 更新済</span><span class="w">切替後の再手戻り 0</span></div>
+    <div class="row run"><span class="id">T89</span><span class="t">cutover 欠陥の是正</span><span class="d">21:07 疾風 report PASS(5efc1f0cb、13m53s)・task done→軍師 review→家老 GATE 待ち。CLEAR 後に家老 converge/push(rev-list 0 22)→--dry-run PASS→殿の1行; 20:48 ★cutover script 欠陥を将軍が現物確認: 最終 rsync -a OLD/ NEW/ が .git ごと同期し、/home clone にしか無いパス置換 commit 5f6fa7569(43ファイル)を dangling 化+旧内容へ巻き戻す→切替後も hook が /mnt/c を指す。家老へ relocate hotfix 1通 msg_204816(rsync 直後に冪等 relocate+rg 0+bats)。CLEAR 前に cutover を打たない。runbook §3-2/gist 更新済</span><span class="w">切替後の再手戻り 0</span></div>
     <div class="row run"><span class="id">T79</span><span class="t">殿裁定 17:41『走行完了後は新規に手を出さず 9p 根治』の凍結</span><span class="d">20:50 残=T89 relocate hotfix CLEAR(必須)+小太郎 idle 化+converge/push 0 0→--dry-run PASS→殿の1行; 20:47 CI GREEN 成立。残=小太郎 idle 化+converge/push 0 0(家老へ1通 20:47)→--dry-run PASS→殿の1行; 20:38 残=CI run(73f6c7a83)の結論+小太郎 task idle 化。origin 直接 push で local 11 先行(1 11)=cutover 前に converge 1回要; 20:17 cutover 前提=CI GREEN(小太郎修正 push)+小太郎 task idle 化+rev-list 0 0 の3点に収束。走行3件は全て CLEAR 済; 20:07 cutover --dry-run 残ブロック=kotaro in_progress(ci_fix)のみ。家老 pane 待機・stale _ready 退避済; 17:47 家老 blt_174711: 走行3件のみ継続、hotfix/direct 停止、reflux promotion+auto-deploy を可逆 marker で fail-closed(解除手順 queue/gates/reflux_auto_deploy.paused)。将軍確認: marker 実在、17:27 以降新規 reflux 配備 0</span><span class="w">cutover 前提=全員 idle</span></div>
   </div>
 </section>
@@ -203,5 +203,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 20:50 cutover 欠陥 T89(relocate hotfix)・runbook 更新</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 21:07 loop: T89 report PASS→review/GATE 待ち</footer>
 </div>
