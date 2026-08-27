@@ -11,7 +11,6 @@
 [![GitHub Stars](https://img.shields.io/github/stars/simokitafresh/multi-agent-shogun?style=social)](https://github.com/simokitafresh/multi-agent-shogun)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Formation](https://img.shields.io/badge/formation-config%2Fsettings.yaml-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
-[![GATE CLEAR](https://img.shields.io/badge/GATE%20CLEAR-465%2F467%20(99.6%25)-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
 [![Shell](https://img.shields.io/badge/Shell%2FBash-100%25-green)]()
 
 [English](README.md) | [日本語](README_ja.md)
@@ -69,15 +68,17 @@
 
 ## 現在の運用実績
 
-| 指標 | 現在値 |
-|---|---|
-| GATE CLEAR | 465 / 467 (99.6%) |
-| 連勝 | 295連勝（`cmd_357`〜`cmd_660`） |
-| 発令cmd数 | 665+ |
-| 教訓注入率 | 75.1% |
-| 教訓効果率 | 70.3% |
+| 指標 | 値（2026-08-27 実測） | 一次ソース |
+|---|---|---|
+| 発令 cmd 数 | 4,410（cmd_4409 / 4410 が本日起票） | `queue/shogun_to_karo.yaml` の採番 |
+| GATE CLEAR | 累計 412 件（BLOCK→再提出→CLEAR を含む）、本日 51 件 / BLOCK 14 件 | `logs/gate_metrics.log`（931 行） |
+| git 履歴 | 16,555 commit（2026-02-09 初 commit〜） | `git log` |
+| `git status` | 84ms（ext4。移設前の 9p では 60〜120 秒） | `docs/research/ext4_speed_rebaseline_20260827.md` |
+| 配備 1 件（deploy_task） | 23 秒（移設前 199〜397 秒） | `logs/deploy_task.log` |
+| cmd e2e（配備→GATE CLEAR）中央値 | 31 分（うち人手レビュー往復 4〜16 分） | `logs/gate_metrics.log` |
+| hook 1 回の中央値（全 hook） | 90ms（移設前 183ms、n=6,633 / 22,419） | `logs/defense_overhead.jsonl` |
+| 教訓 / スキル / テスト | lessons 3 系統（将軍・家老・軍師）+ PJ 別、skills 41、bats 242 ファイル | `projects/infra/`, `skills/`, `tests/unit/` |
 
-上記の数値は、このローカル環境の `dashboard.md` 戦況メトリクスに基づく。
 
 ---
 
@@ -108,20 +109,49 @@
 
 ## この fork の独自性
 
-| 機能 | このリポジトリでの意味 |
-|---|---|
-| **鎖 + 軍師** | 殿→将軍→家老→忍者の一本道に、レビュー専任の軍師を加えた 4 役。将軍は決め、家老は仕切り、軍師は検分し、忍者は遂げる |
-| **cmd 品質ゲート** | `cmd_skeleton.sh` → `cmd_save.sh`（82 check）→ `cmd_delegate.sh`。BLOCK は「次に BLOCK されないよう環境へ埋め込む」入口 |
-| **task worktree 隔離配備** | `deploy_task.sh` が教訓・関連概念を push 注入し、忍者ごとに ext4 上の worktree で隔離 |
-| **報告契約 + 二段レビュー + GATE** | 二値 `binary_checks` の報告 YAML → 軍師 SG7 → 家老 ACCEPT → `cmd_complete_gate.sh` → CI |
-| **三層学習ループ / reflux** | 教訓の注入・評価・淘汰、`queue/insights.yaml` の気づきを idle 忍者へ自動配備 |
-| **三層記憶** | 記憶DB（SQLite/FTS5）・セマンティック索引・Obsidian 因果ネットワーク。起動時 preflight と `[MEM:]` 引用契約 |
-| **Vercel スタイル context** | `context/*.md` は索引層、詳細は `docs/research/` に置きリンクで戻す |
-| **ninja_monitor / 陣形図** | `queue/karo_snapshot.txt` を機械生成。STALL / ghost / UNACTIONED 検知、CTX 監視と自動 /clear |
-| **multi-CLI** | Claude Code と Codex を CLI 固有の hook・gate で運用し、成果基準だけ共通化。`/shogun-cli-switch` で編成切替 |
-| **計測器の常設** | `defense_overhead.jsonl` / `gate_metrics.log` / deploy receipt / pre_push ledger。速度改善は before/after で証明 |
-| **ext4 移設 runbook** | Windows ドライブ（9p）から ext4 へ移すための relocate / cutover / rollback script と副作用の突合表 |
-| **Android コンパニオン** | `android/` に Kotlin + Jetpack Compose 製アプリ。SSH 制御・音声入力・ntfy 通知 |
+上流（`yohey-w/multi-agent-shogun`）は「tmux 上で複数の Claude Code を YAML で指揮する」骨格を提供した。この fork はそこに **品質ゲート・学習ループ・三層記憶・計測器・multi-CLI** を積み、2026-02 から 16,000 commit 超の実運用（自分自身の開発と外部プロジェクト）で鍛えた。5 本柱で示す。
+
+### 1. 指揮系統 — 鎖 + 軍師
+
+| 何が違う | 実装 | 根拠 |
+|---|---|---|
+| 4 役（将軍・家老・軍師・忍者）。**軍師**はレビュー専任で鎖の外に立つ | `instructions/{shogun,karo,gunshi,ashigaru}.md`、SG7 レビュープロトコル | 作る側（家老）と検分する側（軍師）を分けた結果、家老の「自分の配備を自分で通す」偏りが消えた |
+| 鎖は命令の道であり学びの還流路 | 報告 YAML の `lesson_candidate` → 家老 → 教訓 → gate / fixture | 鎖を迂回した実例: 2026-07-26 に BLOCK 回避で type を変えた家老の指示 9 通が自動既読化され 1 通も届かず 40 分停止 |
+| 将軍はコードを掘らない（F008） | 偵察 cmd で忍者に委任、将軍は起票と裁定 | 将軍の CTX を判断に温存し、深掘りは隔離された忍者が現物で行う |
+| 殿への操作押し返し禁止・可逆なら自走 | stop hook が他者依存フレーズを BLOCK、可逆行動は裁可待ちなし | 殿の時間を奪わない（殿裁定 2026-05-27 / 07-10） |
+
+### 2. 品質ゲート — 起票から CLEAR まで人手ゼロ
+
+| 段階 | 実装 | 二値性 |
+|---|---|---|
+| 起票 | `cmd_skeleton.sh` → `cmd_save.sh --preflight` → `cmd_save.sh` → `cmd_delegate.sh`。**82 check**（品質問答 q1-q12、AC の yes/no 化、パス実在、テスト契約、DB restore 契約、environment_change） | BLOCK は「次の cmd で BLOCK されない環境変更」を要求＝成長ループの入口 |
+| 配備 | `deploy_task.sh`: task YAML に教訓・関連概念を push 注入、**task worktree** で隔離、10 分契約（estimated_minutes） | 配備 receipt に wall 秒 |
+| 報告 | `gate_report_format.sh` が整形し verdict を導出。偵察は finding 必須・commit 免除 | `binary_checks` 全 yes → PASS |
+| レビュー | 軍師 SG7 precheck → LGTM / FAIL | review_log に判定と accuracy |
+| GATE | `cmd_complete_gate.sh`（commit 祖先・blob parity・CI readiness・context 鮮度）→ CLEAR → archive → idle | `gate_metrics.log` に e2e / deploy / work / finalize 秒 |
+| CI | bats 242 ファイルを shard 実行、SKIP=FAIL、timing ledger、receipt 必須。孤児テスト検知と回収 | GREEN でなければ push 保留 |
+
+### 3. 学習ループ — 失敗を環境へ埋め込む
+
+- **三層学習ループ**（個・対・全）: 二値計測 → 知見還流 → 次サイクル強化。原則「削るな、速くしろ」（gate を減らさず速くする）。
+- **reflux**: `queue/insights.yaml` の気づきを `ninja_monitor` が idle 忍者へ自動配備（600 秒計時、dirty-guard、fail-closed marker）。
+- **教訓のライフサイクル**: `lesson_candidate` → `lesson_write` → task へ push 注入 → 効果計測 → 淘汰（RETIRE）。ロール別 `projects/infra/lessons_{shogun,karo,gunshi}.yaml`。
+- **deepdive 追体験**: 殿との「なぜ」の全過程を `memory/deepdive_*.md` に全文で残し、起動時に Phase 単位で replay（receipt 記録）。結論だけ読むと同じ間違いに戻るため。
+- **洗脳チェック**: 早期終了・検証スキップ・他者依存・先送りなど 8 パターンを自己検査し、軍師が第三者検証。
+
+### 4. 記憶 — 三層記憶と /clear=強くてニューゲーム
+
+- 記憶DB（SQLite/FTS5、対話・裁定・knowledge・復帰点）／セマンティック索引（概念・alias）／Obsidian 因果ネットワーク（`[[リンク]]` と `origin`）。
+- hook が作業前に三層 preflight を注入し、殿への応答に `[MEM:]` 引用を強制。新知識は三層へ貫通。
+- `/clear` で CTX 0% に戻っても、知識基盤（CLAUDE.md・instructions・教訓・記憶DB・runbook）が残るので前より強く再開する。忍者は毎回 /clear（記憶の連続性なし）を前提に設計。
+
+### 5. 運用基盤 — 計測・multi-CLI・安全弁・可搬性
+
+- **計測器の常設**: `defense_overhead.jsonl`（全 hook の wall）、`gate_metrics.log`、deploy receipt、pre_push ledger、publish phase 計装。速度改善は必ず before/after（例: 9p→ext4 で git status 60〜120 秒→84ms、配備 199〜397 秒→23 秒）。
+- **multi-CLI**: Claude Code と Codex を CLI 固有の hook（`.claude/hooks/` 23 本、`.codex/hooks.json`）で運用し、成果基準だけ共通化。`/shogun-cli-switch` で作業中 pane に触れず編成切替。指示書は 4 CLI 向けに自動生成。
+- **安全弁**: Tier1 絶対禁止（D001-D009）、YAML dump 禁止、DB 直接接続 BLOCK、指揮官の直書き commit 禁止、歴史修正禁止（created_at は SSOT）。
+- **可搬性**: `first_setup.sh`（冪等）→ 初回認証 → `shutsujin_departure.sh`。ext4 移設 runbook と relocate / cutover / rollback script。
+- **殿インターフェース**: `dashboard.md`、戦況 artifact、ntfy、Android コンパニオン（Kotlin + Compose、SSH 制御・音声入力）、gist 共有。
 
 ---
 
@@ -188,322 +218,78 @@ CLAUDE.md / AGENTS.md / .github/copilot-instructions.md
 
 ## 🚀 クイックスタート
 
-### 🪟 Windowsユーザー（最も一般的）
+> 2026-08-27 時点の現物（`first_setup.sh` / `shutsujin_departure.sh` / `config/settings.yaml`）から書き起こした手順。対応環境は **WSL2(Ubuntu) または Native Linux**（`first_setup.sh` の環境判定はこの 2 つ。macOS は冒頭コメントに記載があるだけで未検証、対応外として扱う）。リポジトリは必ず **ext4 上（`~/` 配下など）** に置く。Windows ドライブ（`/mnt/c/...`）は 9p ファイルシステム経由で `git status` が 60〜120 秒かかり、実用にならない（実測は「主な特徴」の速度表）。
 
-<table>
-<tr>
-<td width="60">
+### Step 1: 前提ツール
 
-**Step 1**
-
-</td>
-<td>
-
-📥 **リポジトリをダウンロード**
-
-[ZIPダウンロード](https://github.com/simokitafresh/multi-agent-shogun/archive/refs/heads/main.zip) して `C:\tools\multi-agent-shogun` に展開
-
-*または git を使用:* `git clone https://github.com/simokitafresh/multi-agent-shogun.git C:\tools\multi-agent-shogun`
-
-</td>
-</tr>
-<tr>
-<td>
-
-**Step 2**
-
-</td>
-<td>
-
-🖱️ **`install.bat` を実行**
-
-右クリック→「管理者として実行」（WSL2が未インストールの場合）。WSL2 + Ubuntu をセットアップします。
-
-</td>
-</tr>
-<tr>
-<td>
-
-**Step 3**
-
-</td>
-<td>
-
-🐧 **Ubuntu を開いて以下を実行**（初回のみ）
-
-```bash
-cd /home/simokitafresh/multi-agent-shogun
-./first_setup.sh
-```
-
-</td>
-</tr>
-<tr>
-<td>
-
-**Step 4**
-
-</td>
-<td>
-
-✅ **出陣！**
-
-```bash
-./shutsujin_departure.sh
-```
-
-</td>
-</tr>
-</table>
-
-#### 🔑 初回のみ: 認証
-
-`first_setup.sh` 完了後、一度だけ以下を実行して認証：
-
-```bash
-# 1. PATHの反映
-source ~/.bashrc
-
-# 2. OAuthログイン + Bypass Permissions承認（1コマンドで完了）
-claude --dangerously-skip-permissions
-#    → ブラウザが開く → Anthropicアカウントでログイン → CLIに戻る
-#    → 「Bypass Permissions」の承認画面 → 「Yes, I accept」を選択（↓キーで2を選んでEnter）
-#    → /exit で退出
-```
-
-認証情報は `~/.claude/` に保存され、以降は不要。
-
-#### 📅 毎日の起動（初回セットアップ後）
-
-**Ubuntuターミナル**（WSL）を開いて実行：
-
-```bash
-cd /home/simokitafresh/multi-agent-shogun
-./shutsujin_departure.sh
-```
-
-### 📱 スマホからアクセス（どこからでも指揮）
-
-スマホからの操作経路は2本ある。
-
-- **ターミナル経路**: Tailscale + Termux + `mosh` / `ssh`
-- **アプリ経路**: [`android/`](android/) の Android コンパニオン + ntfy
-
-#### Option A: Termux + Tailscale + mosh
-
-1. クライアントを入れる
-   - Android: Tailscale、F-Droid版Termux、必要ならntfyアプリ
-   - WSL/Ubuntuホスト: Tailscale、`openssh-server`、`mosh`
-2. ホスト側を準備
-   ```bash
-   sudo apt update
-   sudo apt install -y openssh-server mosh
-   sudo service ssh start
-   tailscale ip -4
-   whoami
-   tmux ls
-   ```
-3. Termux から接続
-   ```sh
-   pkg update
-   pkg install openssh mosh
-   mosh あなたのユーザー名@あなたのTailscale IP -- tmux attach -t shogun
-   ```
-4. UDPが通らない時のフォールバック
-   ```sh
-   ssh あなたのユーザー名@あなたのTailscale IP -t 'tmux attach -t shogun'
-   ```
-5. tmux 内での基本操作
-   - `Ctrl+A` → `0`: 将軍ウィンドウ
-   - `Ctrl+A` → `1`: agentsウィンドウ
-   - `Ctrl+A` → `d`: detachしてもエージェントは継続
-
-#### 値の確認場所
-
-| 値 | ホスト側コマンド | このrepoの現在値例 |
+| ツール | 用途 | 確認 |
 |---|---|---|
-| Tailscale IPv4 | `tailscale ip -4` | `100.75.173.26` |
-| SSHユーザー名 | `whoami` | `simokitafresh` |
-| プロジェクトパス | `pwd` | `/home/simokitafresh/multi-agent-shogun` |
-| tmuxセッション名 | `tmux ls` | `shogun` |
-| tmuxプレフィックス | `tmux show-options -gqv prefix` | `C-a` |
-| Android APK | `ls android/release` | `multi-agent-shogun.apk` |
+| git, tmux, jq, curl, flock, timeout, setsid, crontab | 基盤 | `first_setup.sh` が確認し、不足分は apt で補完を試みる |
+| node/npm（nvm 推奨）, python3 | Claude Code / Codex CLI、ゲート群 | 同上 |
+| gh（GitHub CLI）, inotify-tools, bats | CI 確認、inbox 監視、テスト | 同上 |
 
-#### なぜ mosh なのか
+Windows の場合は先に WSL2 + Ubuntu を入れる（`install.bat` は WSL2/Ubuntu の有無を案内する補助 script）。以降は全て WSL2 の Ubuntu 側で行う。
 
-- モバイル回線のパケット欠損やIP変化に強い
-- Wi-Fi とセルラーの切替でも端末操作が固まりにくい
-- 切断しても tmux セッションは残るので、忍者たちはそのまま走り続ける
-
-#### トラブルシューティング
-
-| 問題 | 確認ポイント |
-|---|---|
-| `mosh` が繋がらない | ホスト側に `mosh-server` があるか、UDP が塞がれていないか |
-| SSHは繋がるが tmux に入れない | `tmux ls` で実際のセッション名を確認 |
-| Androidアプリで違うペインが開く | [`android/README.md`](android/README.md) の session name と project path を再確認 |
-| ntfy は動くのにアプリの端末が動かない | Android アプリは mosh ではなく SSH/JSch で接続する |
-| Termux のパッケージが古い/足りない | Play Store版ではなく F-Droid 版 Termux を使う |
-
-#### Option B: Android コンパニオンアプリ
-
-このrepoには [`android/`](android/) が同梱されている。
-
-- **Kotlin + Jetpack Compose + Material 3**
-- **4タブ構成**: Shogun / Agents / Dashboard / Settings
-- **SSH/JSch** で tmux をライブ操作
-- **ntfy** でプッシュ通知
-- **APKダウンロード: [`shogun-companion.apk`](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v4.2/shogun-companion.apk)**
-
-画面ごとの設定手順は [`android/README.md`](android/README.md) を参照。
-
----
-
-<details>
-<summary>🐧 <b>Linux / Mac ユーザー</b>（クリックで展開）</summary>
-
-### 初回セットアップ
+### Step 2: 取得（git clone または ZIP）
 
 ```bash
-# 1. リポジトリをクローン
-git clone https://github.com/simokitafresh/multi-agent-shogun.git ~/multi-agent-shogun
-cd ~/multi-agent-shogun
+# A. git（通常）
+git clone https://github.com/<owner>/multi-agent-shogun.git ~/multi-agent-shogun
 
-# 2. スクリプトに実行権限を付与
-chmod +x *.sh
-
-# 3. 初回セットアップを実行
-./first_setup.sh
+# B. ZIP（GitHub に入れない環境）
+#   GitHub の「Code → Download ZIP」を ext4 上に展開し、展開先で:
+git init && git add -A && git commit -m "import" && git remote add origin https://github.com/<owner>/multi-agent-shogun.git
 ```
 
-### 毎日の起動
+ZIP には `.git` が無い。ゲート群は git を前提にするため、B では上の 1 行で最小のリポジトリを作る。
+
+### Step 3: 初回セットアップ
 
 ```bash
 cd ~/multi-agent-shogun
+bash first_setup.sh        # 依存・venv・Codex CLI・config・ディレクトリ・Memory MCP を冪等に確認/補完
+source ~/.bashrc           # PATH 反映
+```
+
+- 対話は「ネイティブ版をインストールしますか? [Y/n]」の 1 問のみ。
+- `config/settings.yaml` は **無い場合だけ** 最小設定を生成し、既存は保持する。ntfy トピック・使用 CLI・モデルは `config/settings.yaml` を直接編集する（対話入力は無い）。
+- 所要時間はネットワークとインストール量に依存する。
+
+### Step 4: 初回認証（初回のみ・各自のアカウントで）
+
+```bash
+# Claude Code（pinned 版 ~/bin/claude を使う）
+~/bin/claude --dangerously-skip-permissions
+#   → ブラウザで OAuth ログイン → "Bypass Permissions" は「Yes, I accept」を選択 → /exit
+claude auth status            # loggedIn=True を確認
+
+# Codex CLI（スマホ完結の device-auth。アカウント側で「デバイスコード認証」を有効化しておく）
+codex login --device-auth
+codex login status            # "Logged in using ChatGPT" を確認
+```
+
+家族など別の利用者は、それぞれ自分の Anthropic / ChatGPT アカウントで入る。認証情報は `~/.claude` と `~/.codex/auth.json` に置かれ、リポジトリには入らない。
+
+### Step 5: 出陣
+
+```bash
 ./shutsujin_departure.sh
 ```
 
-</details>
-
----
-
-<details>
-<summary>❓ <b>WSL2とは？なぜ必要？</b>（クリックで展開）</summary>
-
-### WSL2について
-
-**WSL2（Windows Subsystem for Linux）** は、Windows内でLinuxを実行できる機能です。このシステムは `tmux`（Linuxツール）を使って複数のAIエージェントを管理するため、WindowsではWSL2が必要です。
-
-### WSL2がまだない場合
-
-問題ありません！`install.bat` を実行すると：
-1. WSL2がインストールされているかチェック（なければ自動インストール）
-2. Ubuntuがインストールされているかチェック（なければ自動インストール）
-3. 次のステップ（`first_setup.sh` の実行方法）を案内
-
-**クイックインストールコマンド**（PowerShellを管理者として実行）：
-```powershell
-wsl --install
-```
-
-その後、コンピュータを再起動して `install.bat` を再実行してください。
-
-</details>
-
----
-
-<details>
-<summary>📋 <b>スクリプトリファレンス</b>（クリックで展開）</summary>
-
-| スクリプト | 用途 | 実行タイミング |
-|-----------|------|---------------|
-| `install.bat` | Windows: WSL2 + Ubuntu のセットアップ | 初回のみ |
-| `first_setup.sh` | tmux、Node.js、必要CLI群のインストール + Memory MCP設定 | 初回のみ |
-| `shutsujin_departure.sh` | tmuxセッション作成 + 混成CLI編成の起動 + 指示書読み込み + ntfyリスナー起動 | 毎日 |
-
-### `install.bat` が自動で行うこと：
-- ✅ WSL2がインストールされているかチェック（未インストールなら案内）
-- ✅ Ubuntuがインストールされているかチェック（未インストールなら案内）
-- ✅ 次のステップ（`first_setup.sh` の実行方法）を案内
-
-### `shutsujin_departure.sh` が行うこと：
-- ✅ tmuxセッションを作成（`shogun:main` と `shogun:agents`）
-- ✅ `config/settings.yaml` の現行混成編成を起動
-- ✅ 各エージェントに指示書を自動読み込み
-- ✅ キューファイルをリセットして新しい状態に
-- ✅ ntfyリスナーを起動してスマホ通知を有効化（設定済みの場合）
-
-**実行後、全エージェントが即座にコマンドを受け付ける準備完了！**
-
-</details>
-
----
-
-<details>
-<summary>🔧 <b>必要環境（手動セットアップの場合）</b>（クリックで展開）</summary>
-
-依存関係を手動でインストールする場合：
-
-| 要件 | インストール方法 | 備考 |
-|------|-----------------|------|
-| WSL2 + Ubuntu | PowerShellで `wsl --install` | Windowsのみ |
-| Ubuntuをデフォルトに設定 | `wsl --set-default Ubuntu` | スクリプトの動作に必要 |
-| tmux | `sudo apt install tmux` | ターミナルマルチプレクサ |
-| Node.js v20+ | `nvm install 20` | MCPサーバーに必要 |
-| Claude Code CLI | `curl -fsSL https://claude.ai/install.sh \| bash` | Anthropic公式CLI（ネイティブ版を推奨。npm版は非推奨） |
-
-</details>
-
----
-
-### 実行時依存台帳
-
-`first_setup.sh` は、出陣・watcher・hook・gate・検証が実行時に要求する依存を一括確認します。機械抽出した集計コマンド、生出力、クローン検証手順は [`docs/research/cmd_4407_clone_dependency_ledger_20260827.md`](docs/research/cmd_4407_clone_dependency_ledger_20260827.md) に保存しています。
-
-| 区分 | 必須の実行時依存 | セットアップの動作 |
-|------|------------------|--------------------|
-| コマンド | bash、git、python3、node、npm、tmux、jq、ripgrep（`rg`）、`gh`、`inotifywait`、bats、flock、timeout、setsid、crontab、curl | 一括確認し、不足時だけDebian/Ubuntuパッケージ補完を試行 |
-| Python | `requirements.txt`、clone内 `.venv/bin/python3`、PyYAML | venvがない・壊れている時だけ作成し、グローバルへ導入しない |
-| CLI | Codex CLI、Claude CLI、Claude pin `~/bin/claude`（2.1.87方針） | 既存バイナリ・版を報告し、暗黙に置換しない |
-| 設定 | `config/settings.yaml`、`config/cli_profiles.yaml`、`~/.codex/config.toml` | 既存設定を正本として保持し、Codex設定雛形は欠落時だけ作成 |
-| 実行時データ | `data/multi_agent_shogun_memory.db`、`queue/lord_conversation.jsonl`、`queue/pending_decisions.yaml`、`queue/bulletin_board.yaml`、`queue/insights.yaml`、`logs/` | 欠落時だけ初期化し、既存履歴は保持 |
-| cron | 毎分の `daemon_watchdog.sh`、週次の `shogun-weekly-metrics-trend` | markerがない時だけ追加し、無関係なcron行は保持 |
-
-現行の編成・エージェント名・モデル・CLI種別・起動パスは `config/settings.yaml` と `config/cli_profiles.yaml` が正本です。READMEの例を第二の設定源にしません。クリーンcloneでは、まず `first_setup.sh` を実行し、エージェントを起動しない検証を次で行います：
-
-移設時の注意：監査済みcheckoutでは、絶対ルート `/home/simokitafresh/multi-agent-shogun` がscripts・設定・hook配下の93ファイルに存在します。移設完了まではこのルートを前提とします。別のcheckoutルートを使う場合は、リポジトリ内のこの文字列だけを置換し、残存数を再計数してからセットアップを再実行します：
+tmux セッション `shogun` に window **`main`**（将軍）と **`agents`**（家老・軍師・忍者 6 = 8 pane）を作り、inbox watcher・ninja_monitor・ntfy などのデーモンを起動する。window 番号は tmux の `base-index` 設定で 0/1 または 1/2 になるため、切替は **名前** で行う。CLI の起動確認は最大 30 秒。
 
 ```bash
-OLD_ROOT=/home/simokitafresh/multi-agent-shogun
-NEW_ROOT=/path/to/multi-agent-shogun
-rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | xargs -r sed -i "s|$OLD_ROOT|$NEW_ROOT|g"
-test "$(rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | wc -l)" -eq 0
-bash first_setup.sh
+tmux attach -t shogun
+# Ctrl+A → w でウィンドウ一覧、または Ctrl+A → :select-window -t main / agents
 ```
 
-この一括操作でユーザーHOME・プロジェクト・スクリーンショットのパスまで置換してはなりません。それらは個別に確認してください。93ファイルは監査時点の基準値なので、upstream変更後は必ず再計数します。
+### Step 6: 最初の 1 コマンド
 
-```bash
-TMUX_TMPDIR="$(mktemp -d)" ./shutsujin_departure.sh -s
-```
+将軍 pane に日本語で指示する（例: `readme を読んで現状を報告せよ`）。将軍が cmd を起票し家老へ委任、忍者が task worktree で作業して報告 YAML を提出、軍師レビュー→家老 GATE→CLEAR→ntfy 通知、の順に進む。
 
-このセットアップ専用検証はtmux socketを隔離し、常駐daemonを起動しません。exit 0で完走し、元のcheckoutのqueueとユーザー設定を変更しないことが条件です。
+### 📱 Android アプリ（任意）
 
----
-
-### ✅ セットアップ後の状態
-
-どちらのオプションでも、**9体のAIエージェント**が自動起動します：
-
-| エージェント | 役割 | 数 |
-|-------------|------|-----|
-| 🏯 将軍（Shogun） | 総大将 - あなたの命令を受ける | 1 |
-| 📋 家老（Karo） | 管理者 - タスクを分配 | 1 |
-| ⚔️ 忍者（Ninja） | ワーカー - 並列でタスク実行 | 6 |
-
-tmuxセッションが作成されます：
-- `shogun:main` - ここで将軍に命令する
-- `shogun:agents` - 家老と忍者がバックグラウンドで稼働
+SSH 経由で tmux を操作し音声入力できるコンパニオンアプリが `android/` にある。接続先は `whoami` / `pwd` の値をアプリの設定に入れる（Tailscale 経由なら `tailscale ip -4` の値）。詳細は `android/README_ja.md`。
 
 ---
 
@@ -597,265 +383,34 @@ JavaScript フレームワーク上位 5 つを調査して比較表を作成せ
 
 ## ✨ 主な特徴
 
-### ⚡ 1. 並列実行
+2026-08-27 時点の現物ベース。旧版（2026-02〜03）にあった「send-keys で指示」「Claude 単一」「手動で結果確認」は全て置き換わっている。
 
-1つの命令で最大8つの並列タスクを生成：
+1. **mailbox 通信** — `scripts/inbox_write.sh <to> "<msg>" <type> <from> <action>`。flock 付き YAML に永続化し、`inbox_watcher.sh`（inotify）が `inboxN` の短い nudge だけを送る。エージェントは tmux send-keys を呼ばない。確認プロンプト検知で nudge 抑止、Codex 配達検証、未読が続けば再 nudge。
+2. **cmd 起票ゲート** — `cmd_skeleton.sh` → `cmd_save.sh --preflight` → `cmd_save.sh` → `cmd_delegate.sh`。82 の check 関数（品質問答 q1-q12、AC の二値性、パス実在、テスト契約、environment_change）で BLOCK/WARN。BLOCK は「次の cmd で BLOCK されないよう環境へ埋め込む」成長ループの入口。
+3. **配備と隔離** — `deploy_task.sh` が task YAML を生成し、関連教訓と関連概念を push 注入、忍者を **task worktree**（ext4 上、再起動でも消えない）で隔離する。配備 23 秒。
+4. **報告契約** — `gate_report_format.sh` が報告 YAML を整形し verdict を導出（`binary_checks` 全 yes → PASS）。偵察 cmd は finding 必須・commit 免除。`lesson_candidate` / `decision_candidate` / `origin` を構造化。
+5. **二段レビュー → GATE** — 軍師 SG7 precheck/LGTM → 家老 ACCEPT → `cmd_complete_gate.sh`（commit 祖先・blob parity・CI readiness・context freshness）→ CLEAR → archive → 忍者 idle。`gate_metrics.log` に e2e/deploy/work/finalize 秒を記録。
+6. **監視デーモン** — `ninja_monitor.sh`: 陣形図生成、STALL/ghost/UNACTIONED 検知、CTX 監視と自動 /clear・respawn、reflux 自動配備、Codex の model/effort が設定と違えば WARN。`daemon_watchdog` が watcher/monitor を自動再起動。
+7. **multi-CLI** — Claude Code（`.claude/hooks/` 23 本、pinned 2.1.87 = `~/bin/claude`）と Codex（`.codex/hooks.json`、exit 2 = BLOCK）を CLI ごとに別実装で同じ成果基準へ。`/shogun-cli-switch` で CLI/model を idle pane だけ respawn して切替。編成の唯一の正は `config/settings.yaml`。
+8. **スキル 41 本** — `skills/*/SKILL.md` を正本に両 CLI で共用。description に TRIGGER / DO NOT TRIGGER 必須。
+9. **CoDD** — Coherence-Driven Development（おしお氏作）。spec → 設計書 → generate → validate → measure。bash script のリファクタは `/codd-refactor` で計測→設計→実装→再計測。
+10. **テスト** — bats 242 ファイル。`run_tests.sh task|file|affected` の選択実行が原則（全量 2,454 秒 vs 選択数秒）。CI は shard 実行+受領書、SKIP=FAIL、timing ledger で shard 割当。孤児テスト検知と回収。contract test だけ残す default-delete ポリシー。
+11. **計測器の常設** — `logs/defense_overhead.jsonl`（全 hook の wall）、`gate_metrics.log`、pre_push ledger、deploy receipt、publish phase 計装。「計測器を名指す → 直す → 一段深く計測する → 計測器は本番に残す」のらせん。
+12. **三層記憶 + deepdive 追体験** — 起動時に `gate_*_startup.sh` が Memory 健全度・未読・未決裁定・deepdive receipt を一括チェック。結論だけ読むと同じ間違いに戻るため、過程の全文を Phase 単位で追体験する。
+13. **殿インターフェース** — `dashboard.md`（殿が自分で見る）、戦況 artifact（将軍が 30 分ごとに再公開）、ntfy（スマホ通知）、Android アプリ、gist 共有（新規作成は明示フラグ必須 = 歴史修正防止）。
+14. **安全弁** — Tier1 絶対禁止（`rm -rf` 系、`push --force`、`reset --hard`、`kill`、プロファイル無しの headless Chrome ほか）、Tier2 停止報告、YAML dump 禁止 hook、DB 直接接続 BLOCK、指揮官の `git commit` 直書き禁止（`ninja_scope_commit.sh`）、歴史修正禁止。
+15. **外部プロジェクト管理** — `config/projects.yaml` + `projects/{id}.yaml`（git-ignored の核心知識）+ `context/{project}.md`（索引層）+ `docs/research/*.md`（詳細層）。
+16. **ext4 移設 runbook** — `scripts/migrate_to_ext4_{relocate,cutover,rollback}.sh` と `docs/research/9p_root_fix_runbook_20260827.md`。Windows ドライブから ext4 へ安全に移す手順と、移設後の副作用の突合表。
 
-```
-あなた: 「5つのMCPサーバを調査せよ」
-→ 5体の忍者が同時に調査開始
-→ 数時間ではなく数分で結果が出る
-```
+### 速度（2026-08-27 実測、`docs/research/ext4_speed_rebaseline_20260827.md`）
 
-### 🔄 2. ノンブロッキングワークフロー
-
-将軍は即座に委譲して、あなたに制御を返します：
-
-```
-あなた: 命令 → 将軍: 委譲 → あなた: 次の命令をすぐ出せる
-                                    ↓
-                    ワーカー: バックグラウンドで実行
-                                    ↓
-                    ダッシュボード: 結果を表示
-```
-
-長いタスクの完了を待つ必要はありません。
-
-### 🧠 3. セッション間記憶（Memory MCP）
-
-AIがあなたの好みを記憶します：
-
-```
-セッション1: 「シンプルな方法が好き」と伝える
-            → Memory MCPに保存
-
-セッション2: 起動時にAIがメモリを読み込む
-            → 複雑な方法を提案しなくなる
-```
-
-### 📡 4. イベント駆動（ポーリングなし）
-
-エージェントはファイルベースのメールボックス（inbox_write.sh + inbox_watcher.sh）で通信します。
-**ポーリングループでAPIコールを浪費しません。**
-
-**2層構造（nudge-only配信方式）:**
-
-- **Layer 1: ファイル永続化**
-  - `inbox_write.sh` がメッセージを `queue/inbox/{agent}.yaml` に flock（排他ロック）付きで書き込み
-  - メッセージ全文をYAMLに保存 — 永続化保証
-  - 複数エージェントが同時書き込み可能（flockが直列化）
-
-- **Layer 2: nudge配信**
-  - `inbox_watcher.sh` が `inotifywait`（カーネルイベント）でファイル変更を検知
-  - watcherが短い1行のnudge（起動シグナル）を `send-keys` で送信（timeout 5s）
-  - エージェント自身が自分のinboxファイルをReadして未読メッセージを処理
-  - **send-keysはメッセージ全文を送らない** — 起床通知のみ
-
-- **CPU使用率ゼロ**: watcherは`inotifywait`でファイル変更イベントまでブロック（待機中はCPU 0%）
-
-### 📸 5. スクリーンショット連携
-
-VSCode拡張のClaude Codeはスクショを貼り付けて事象を説明できます。このCLIシステムでも同等の機能を実現：
-
-```
-# config/settings.yaml でスクショフォルダを設定
-screenshot:
-  path: "/mnt/c/Users/あなたの名前/Pictures/Screenshots"
-
-# 将軍に伝えるだけ:
-あなた: 「最新のスクショを見ろ」
-あなた: 「スクショ2枚見ろ」
-→ AIが即座にスクリーンショットを読み取って分析
-```
-
-**💡 Windowsのコツ:** `Win + Shift + S` でスクショが撮れます。保存先を `settings.yaml` のパスに合わせると、シームレスに連携できます。
-
-こんな時に便利：
-- UIのバグを視覚的に説明
-- エラーメッセージを見せる
-- 変更前後の状態を比較
-
-### 📁 6. コンテキストと知識管理（知識7層）
-
-このrepoは巨大な1枚プロンプトに依存しない。耐久知識を7層に分けて保持する。
-
-| 層 | 保存場所 | 用途 |
+| 指標 | 9p(/mnt/c) | ext4(/home) |
 |---|---|---|
-| 1. System rules | `AGENTS.md`, `CLAUDE.md` | 全体の安全規則、復帰ルーティング、共通制約 |
-| 2. Role instructions | `instructions/generated/*.md` | 将軍・家老・忍者それぞれの手順 |
-| 3. Project core | `config/projects.yaml`, `projects/<id>.yaml` | プロジェクトのメタ情報、パス、核心ルール |
-| 4. Project lessons | `projects/<id>/lessons.yaml` | 再利用可能な失敗・修正・ヒューリスティクス |
-| 5. Live ops YAML | `queue/`, `tasks/`, `reports/` | cmd、inbox、タスク状態、報告 |
-| 6. Context index | `context/*.md`, `docs/research/*.md` | Vercelスタイル検索層。要約は `context/`、詳細は `docs/research/` |
-| 7. Memory MCP | `memory/shogun_memory.jsonl` | 殿の好みと将軍専用の長期記憶 |
-
-この設計により：
-- 忍者は会話全履歴を再生せず、必要ファイルだけ読めば復帰できる
-- `/clear` や `/new` を挟んでも知識が失われない
-- 要約と詳細を分けることで取得コストを抑えられる
-
-#### Vercelスタイル context
-
-`context/*.md` は索引層。深い調査は `docs/research/` に移し、`context/` 側からリンクで戻す。リンク先のない圧縮は削除と同義であり禁止。
-
-#### 教訓サイクル
-
-教訓は単なるメモではない。タスクへ注入し、作業中に参照し、GATE後に評価し、効かなくなったら自動退役する。これで知識ベースが肥大化しても腐らない。
-
-#### `/clear` / `/new` 後の復帰
-
-作業中コンテキストは捨ててもよい。耐久知識は上記の層に残るため、ルール・task YAML・project context を読み直せば復帰できる。
-
-### 📱 7. スマホ通知（ntfy）
-
-スマホと将軍の間で双方向通信 — SSH不要、Tailscale不要、サーバ不要。
-
-| 方向 | 仕組み |
-|------|--------|
-| **スマホ → 将軍** | ntfyアプリからメッセージを送信 → `ntfy_listener.sh` がストリーミングで受信 → 将軍が自動処理 |
-| **家老 → スマホ（直接）** | 家老が `dashboard.md` を更新する際、`scripts/ntfy.sh` 経由で直接プッシュ通知を送信 — **将軍を経由しない**（将軍は人間との対話用、進捗報告用ではない） |
-
-```
-📱 あなた（ベッドから）       🏯 将軍
-    │                          │
-    │  "React 19を調査せよ"    │
-    ├─────────────────────────►│
-    │    (ntfyメッセージ)      │  → 家老に委譲 → 忍者が作業
-    │                          │
-    │  "✅ cmd_042 完了"       │
-    │◄─────────────────────────┤
-    │    (プッシュ通知)        │
-```
-
-**セットアップ：**
-1. `config/settings.yaml` に `ntfy_topic: "shogun-yourname"` を追加
-2. スマホに [ntfyアプリ](https://ntfy.sh) をインストールし、同じトピックをサブスクライブ
-3. `shutsujin_departure.sh` がリスナーを自動起動 — 追加手順なし
-
-**通知の例：**
-
-| イベント | 通知内容 |
-|----------|----------|
-| コマンド完了 | `✅ cmd_042 complete — 5/5 subtasks done` |
-| タスク失敗 | `❌ subtask_042c failed — API rate limit` |
-| 対応要 | `🚨 Action needed: approve skill candidate` |
-| ストリーク更新 | `🔥 3-day streak! 12/12 tasks today` |
-
-無料、アカウント不要、サーバ管理不要。[ntfy.sh](https://ntfy.sh) — オープンソースのプッシュ通知サービスを利用。
-
-> **⚠️ セキュリティ注意:** トピック名がそのままパスワードです。知っている人は誰でも通知を読んだり、将軍にメッセージを送れてしまいます。推測されにくい名前を選び、**スクリーンショットやブログ、GitHubコミットなどで公開しないでください**。
-
-**動作確認:**
-
-```bash
-# テスト通知をスマホに送信
-bash scripts/ntfy.sh "将軍システムからのテスト通知 🏯"
-```
-
-スマホに通知が届けば設定完了です。届かない場合:
-- `config/settings.yaml` の `ntfy_topic` が設定されているか（空でないか、余分な引用符がないか）
-- スマホのntfyアプリで**完全に同じトピック名**を購読しているか
-- スマホがインターネットに接続されており、ntfyの通知が有効か
-
-**スマホから将軍に指示を送る方法:**
-
-1. スマホでntfyアプリを開く
-2. 購読しているトピックをタップ
-3. メッセージを入力（例: `React 19のベストプラクティスを調査して`）して送信
-4. `ntfy_listener.sh` が受信 → `queue/ntfy_inbox.yaml` に書き込み → 将軍を起こす
-5. 将軍がメッセージを読み、通常の家老→忍者パイプラインで処理
-
-送信したテキストがそのままコマンドになります。将軍に話しかけるように書けばOK — 特別な構文は不要です。
-
-**リスナーの手動起動**（`shutsujin_departure.sh` を使わない場合）:
-
-```bash
-# バックグラウンドでリスナーを起動
-nohup bash scripts/ntfy_listener.sh &>/dev/null &
-
-# 起動確認
-pgrep -f ntfy_listener.sh
-
-# ログを見ながら起動（フォアグラウンド）
-bash scripts/ntfy_listener.sh
-```
-
-リスナーは接続が切れても自動的に再接続します。`shutsujin_departure.sh` で出陣すれば自動起動されるため、手動起動は出陣スクリプトを使わない場合のみ必要です。
-
-**トラブルシューティング:**
-
-| 症状 | 対処 |
-|------|------|
-| スマホに通知が来ない | `settings.yaml` とntfyアプリのトピック名が完全に一致しているか確認 |
-| リスナーが起動しない | `bash scripts/ntfy_listener.sh` をフォアグラウンドで実行してエラーを確認 |
-| スマホ→将軍が動かない | リスナーが稼働中か確認: `pgrep -f ntfy_listener.sh` |
-| メッセージが将軍に届かない | `queue/ntfy_inbox.yaml` を確認 — メッセージがあれば将軍が処理中の可能性 |
-| "ntfy_topic not configured" エラー | `config/settings.yaml` に `ntfy_topic: "your-topic"` を追加 |
-| 通知が重複する | 再接続時の正常動作 — 将軍がメッセージIDで重複排除します |
-| トピック名を変更したのに通知が来ない | リスナーの再起動が必要: `pkill -f ntfy_listener.sh && nohup bash scripts/ntfy_listener.sh &>/dev/null &` |
-
-#### SayTask通知
-
-行動心理学に基づくモチベーション通知：
-
-- **ストリーク追跡**: `saytask/streaks.yaml` で連続完了日数をカウント — ストリーク維持が損失回避の心理を利用してモメンタムを持続
-- **Eat the Frog** 🐸: その日の最も難しいタスクを「カエル」としてマーク。完了すると特別な祝福通知が送信される
-- **日次進捗**: `12/12 tasks today` — 視覚的な完了フィードバックがArbeitslust効果（仕事の進捗による喜び）を強化
-
-### 🖼️ 8. ペインボーダータスク表示
-
-各tmuxペインのボーダーにエージェントの現在のタスクを表示：
-
-```
-┌ sasuke (Codex) VF requirements ─────┬ hayate (Codex) API research ────────┐
-│                                      │                                     │
-│  Working on SayTask requirements     │  Researching REST API patterns      │
-│                                      │                                     │
-├ kirimaru (Codex) ───────────────────┼ kagemaru (Opus) DB schema design ───┤
-│                                      │                                     │
-│  (idle — waiting for assignment)     │  Designing database schema          │
-│                                      │                                     │
-└──────────────────────────────────────┴─────────────────────────────────────┘
-```
-
-- **作業中**: `sasuke (Codex) VF requirements` — エージェント名、モデル、タスク概要
-- **待機中**: `sasuke (Codex)` — モデル名のみ、タスクなし
-- 家老がタスク割当・完了時に自動更新
-- 9ペインを一目見れば、誰が何をしているか即座にわかる
-
-### 🔊 9. シャウトモード（戦国エコー）
-
-忍者がタスクを完了すると、パーソナライズされた戦国風の叫びをtmuxペインに表示します — 部下が働いている実感を得られる。
-
-```
-┌ sasuke (Codex) ──────────────┬ kirimaru (Codex) ─────────────┐
-│                               │                               │
-│  ⚔️ sasuke、任を果たし待機！  │  🔥 kirimaru、二番槍の意地！  │
-│  八刃一志の志、胸に刻む！     │  八刃一志！共に城を落とせ！   │
-│  ❯                            │  ❯                            │
-└───────────────────────────────┴───────────────────────────────┘
-```
-
-**仕組み:**
-
-家老がタスクYAMLに `echo_message` フィールドを記述。忍者は全作業完了後（レポート + inbox通知の後）、**最後のアクション**として `echo` を実行。メッセージは `❯` プロンプト直上に残る。
-
-```yaml
-# タスクYAML（家老が記述）
-task:
-  task_id: subtask_001
-  description: "比較表を作成"
-  echo_message: "🔥 sasuke、先陣を切って参る！八刃一志！"
-```
-
-**シャウトモードがデフォルト。** 無効にする場合（echoのAPIトークン節約）:
-
-```bash
-./shutsujin_departure.sh --silent    # 戦国エコーなし
-./shutsujin_departure.sh             # デフォルト: シャウトモード（戦国エコー有効）
-```
-
-サイレントモードは `DISPLAY_MODE=silent` をtmux環境変数に設定。家老がタスクYAML作成時にこれを確認し、`echo_message` フィールドを省略する。
+| git status | 60〜120 秒 | 84ms |
+| cmd publish | 3,770ms | 227ms |
+| scope_commit git_commit / scope_sync | 9,487 / 5,846ms | 173 / 73ms |
+| 配備 1 件 | 199〜397 秒 | 23 秒 |
+| hook 1 回の中央値（全 hook） | 183ms | 90ms |
 
 ---
 
