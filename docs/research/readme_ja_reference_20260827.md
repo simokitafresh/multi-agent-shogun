@@ -155,3 +155,30 @@ docs/dashboard/             戦況 artifact の HTML 正本     android/   Andro
 ### 10.3 OSS 版で「そのまま公開できる」核
 
 鎖(§2)、三層学習ループ(§3)、三層記憶の仕組み(§4、DB は空)、mailbox/watcher、cmd 起票ゲート、deploy_task の worktree 隔離、報告契約、二段レビュー→GATE、ninja_monitor、multi-CLI の hook 分離、スキル機構、テスト方針(default-delete/選択実行/shard)、Tier1-3 安全弁、ext4 runbook。**個人・PJ 固有の"中身"を抜いても、仕組みは全て残る。**
+
+## 11. 個人版(現リポジトリ)の維持方針
+
+前提(殿 2026-08-27 23:34): 現在の multi-agent-shogun は殿だけが使う運用正本として維持し、OSS 版は §10 のエクスポート方式で別リポジトリに作る。二本立ての境界を先に固定する。
+
+### 11.1 個人版にだけ残すもの(OSS 版へ出さない)
+
+| 分類 | 実体 | 保護の仕組み(現状→追加) |
+|---|---|---|
+| 殿との対話・裁定 | `queue/lord_conversation.jsonl`、`data/multi_agent_shogun_memory.db`(1.23GB)、`memory/dialogue_*.md`、`memory/deepdive_*.md` | git 追跡外(DB/jsonl)+`.gitignore`。追加: `oss_export.sh` の allowlist 外=出ない(fail-closed) |
+| 外部 PJ の秘密 | `projects/`(PI/UUID/DB ルール)、`context/dm-signal*.md`・`context/auto-ops.md`、PJ 専用 skills 6 本 | `projects/` は git-ignored。追加: PJ パック化(§10.2-4)で context/skills も `projects/<id>/` へ移動可能に |
+| 殿固有の設定値 | `config/settings.yaml`(ntfy topic/gist/launch_cmd)、`config/projects.yaml`(PJ パスと repo URL)、`~/.codex/config.toml`、`~/bin/claude` pin | 追加: `settings.local.yaml`(git-ignored)へ分離(§10.2-3)。個人版は local を持つ側 |
+| クリニック・家族・メール | 追跡ファイル 35 件(context/skills/docs/research)、CLAUDE.md の gws 既定 | 個人版はそのまま。OSS 版は固有語 grep 0 件で機械排除 |
+| 運用実績 | `logs/`(1.0GB)、`queue/archive/`、`gate_metrics.log`、gist index | 個人版のみ。ローテーション対象(ディスク回収は既存の運用) |
+| Android アプリの接続先 | SSH 鍵・Project Path | 個人版のみ。OSS 版は任意コンポーネント(§10.2-9) |
+
+### 11.2 個人版の運用で変えないこと
+
+- 鎖・三層学習ループ・三層記憶・ゲート群はそのまま(OSS 版の核と同一=§10.3)。OSS 版で改善した仕組みは個人版へ**片方向**で取り込む(OSS→個人)。逆方向(個人→OSS)は `oss_export.sh` の再実行のみ。
+- 歴史修正禁止: 個人版の履歴・created_at・記憶DB ts は不変。OSS 版は履歴を持たない 1 commit 起点。
+- ext4(/home)運用と `first_setup.sh`→`shutsujin_departure.sh` の起動手順は両版共通(cmd_4409/4410 の成果を個人版で先に使う)。
+
+### 11.3 次の行動(将軍の判断・可逆)
+
+1. cmd_4409/4410 の CLEAR を待って README を個人版で先に動かす(隔離 2 経路の再現が証跡)。
+2. その後、§10.2-3(settings.example/local 分離)と §10.2-7(`oss_export.sh` の allowlist+固有語 grep+空 DB 初期化)を **設計のみ**の cmd として起票する(新リポジトリ作成は設計書の裁定後=外向き行為ゆえ別 cmd)。
+3. 個人版の固有語リスト(grep 対象)は `config/oss_export_denylist.txt`(git-ignored)として個人版側に置き、OSS 版には含めない。
