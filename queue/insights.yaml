@@ -5553,7 +5553,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:19:49+09:00"
 - id: INS-20260827-231407946-74c9
   ts: "2026-08-27T23:14:07+09:00"
   insight: "[[multi agent shogunのreadmeを覚醒してアップデートしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=multi-agent-shogunのreadmeを覚醒してアップデートしよう。誰もが他のPCにクローンして使えるように整合性をとろう"
@@ -5570,18 +5573,34 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:19:49+09:00"
 - id: INS-20260827-231423056-d7b3
   ts: "2026-08-27T23:14:23+09:00"
   insight: "[[9p root fix runbook 20260827 mdもアップデートしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=9p_root_fix_runbook_20260827.mdもアップデートしてくれ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:19:49+09:00"
 - id: INS-20260827-231429787-1b3e
   ts: "2026-08-27T23:14:29+09:00"
   insight: "[[一次情報もアップデートしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=一次情報もアップデートしてくれ"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:19:49+09:00"
+- id: INS-20260827-231949821-556a
+  ts: "2026-08-27T23:19:49+09:00"
+  insight: "semantic_index_update新概念候補: discussion:readmeは相当古い状態のままになっているはずだ。当時と今はまるで違うが、新しいPC環境に一発でcloneできて即時使えるようにしたい。 クイックスタートのア は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
