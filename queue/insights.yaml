@@ -6050,3 +6050,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T07:03:26+09:00"
+- id: INS-20260828-070934832-576f
+  ts: "2026-08-28T07:09:34+09:00"
+  insight: "postclear field-aware publish(runtime commit e8ed1e8f0 'local postclear checkpoint cmd_karo_hotfix_t114')が context/infrastructure.md を古い snapshot で書き戻し、将軍 doc lane の T109 行(700694ac5)を消した。将軍は境界だけ進めて本文欠落に気づかず(grep 0 で発見)。型4弾-1『書いたら grep』の原因側=runtime publish が context/*.md を field-aware と称して丸ごと上書きする。T100 で origin 直 push は止めたが shared main への上書き経路は残る。根治=field-aware publish の対象から context/*.md(将軍 doc lane 所有)を除外 or 3-way merge、回帰 bats『doc lane 行が postclear 後も残る』。origin=[[postclear_field_aware_publish]] -> [[context_md_上書きで doc lane 行消失]] -> [[T109行消失_20260828_0708]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
