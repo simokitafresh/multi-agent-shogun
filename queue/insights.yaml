@@ -1650,8 +1650,11 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210935_kagemaru; matched=yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210935_kagemaru"
-  fix_known: false
-  status: pending
+  fix_known: true
+  status: resolved
+  resolved_reason: 一次情報で、分割配備時に全ACを注入し担当外checkがnoとなるverdict失敗の根因を現行実装へ照合した。deploy_task.sh L2630-L2660および分割後deploy_task/report.sh L1257-L1287はac_assigned/assigned_acsを読み、担当ACフィルタをbinary_checks生成へ適用する。導入commit 8a29abb44、後方互換修正b3fa4abe1、関連ライフサイクル履歴を確認したため、追加実修正・decision_candidateは不要。
+  action_artifact: "primary=scripts/deploy_task.sh:2630-2660,2664-2669;split_primary=scripts/deploy_task/report.sh:1257-1287,1291-1297;history=8a29abb44,b3fa4abe1;tests=tests/unit/test_deploy_task_lifecycle.bats:1827-1862;context=context/dm-signal-ops.md:315;target=queue/insights.yaml:INS-20260821-095036102-8f0b"
+  resolved_at: "2026-08-28T06:22:00+09:00"
 - id: INS-20260821-112709121-e4bb
   ts: "2026-08-21T11:27:09+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b54ux9aev task id tool use id toolu 01KK7EShjMzqX7Fvah は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
