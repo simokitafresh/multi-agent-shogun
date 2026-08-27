@@ -175,6 +175,61 @@ PY
     [[ "$output" == *"absolute_target=1 shared_edit_block=1 scope_commit=1 ignored_preserved=2 tracked_preserved=3 cleanup_orphan=0"* ]]
 }
 
+# test_necessity: task worktrees must survive host restart by default on the
+# persistent ext4 home volume while preserving the explicit environment-root
+# compatibility contract for isolated callers and existing deployments.
+@test "task worktree default uses persistent home root and honors explicit root" {
+    setup_fixture_repo
+    task_default="$BATS_TEST_TMPDIR/task-default-root.yaml"
+    printf 'task:\n  task_id: task_default_root\n  parent_cmd: cmd_default_root\n  project: infra\n  target_path: src/app.py\n  status: assigned\n' > "$task_default"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task_default" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        unset DEPLOY_TASK_WORKTREE_ROOT
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" kagemaru
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        case "$wt" in
+            /home/simokitafresh/shogun-task-worktrees/*) ;;
+            *) printf "unexpected_default_root=%s\n" "$wt" >&2; exit 1 ;;
+        esac
+        test -d /home/simokitafresh/shogun-task-worktrees
+        test -d "$wt"
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+        test ! -e "$wt"
+        echo "default_root=home_ext4 created=1 cleanup=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"default_root=home_ext4 created=1 cleanup=1"* ]]
+
+    task_explicit="$BATS_TEST_TMPDIR/task-explicit-root.yaml"
+    explicit_root="$BATS_TEST_TMPDIR/explicit-tmp-root"
+    printf 'task:\n  task_id: task_explicit_root\n  parent_cmd: cmd_explicit_root\n  project: infra\n  target_path: src/app.py\n  status: assigned\n' > "$task_explicit"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task_explicit" \
+        DEPLOY_TASK_WORKTREE_ROOT="$explicit_root" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" kagemaru
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        case "$wt" in
+            "$DEPLOY_TASK_WORKTREE_ROOT"/*) ;;
+            *) printf "unexpected_explicit_root=%s\n" "$wt" >&2; exit 1 ;;
+        esac
+        test -d "$DEPLOY_TASK_WORKTREE_ROOT"
+        test -d "$wt"
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+        test ! -e "$wt"
+        echo "explicit_root=env_tmp created=1 cleanup=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"explicit_root=env_tmp created=1 cleanup=1"* ]]
+}
+
 @test "two sequential source tasks push remote tip with zero drift" {
     setup_fixture_repo
     task1="$BATS_TEST_TMPDIR/task1.yaml"; task2="$BATS_TEST_TMPDIR/task2.yaml"
