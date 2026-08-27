@@ -1700,7 +1700,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4358"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象candidateと既存防御を確認した。scripts/deploy_task.sh:5283,5387-5421,6634-6672にuseful_rate計測と0.40未満の注入候補除外が実装済みで、scripts/gates/gate_gunshi_cs_checklist.sh:1092-1105にLG033既存実装確認WARN、scripts/cmd_save.shのQ11にも既存代替確認がある。追加修正とdecision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-004505145-11f8;primary=scripts/deploy_task.sh:5283,5387-5421,6634-6672;guard=scripts/gates/gate_gunshi_cs_checklist.sh:1092-1105;guard=scripts/cmd_save.sh:Q11;related=queue/insights.yaml:INS-20260822-004505015-1eae;context=docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md:74-79;decision_candidate=none"
+  resolved_at: "2026-08-28T06:45:46+09:00"
 - id: INS-20260822-004505304-08de
   ts: "2026-08-22T00:45:05+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[教訓母数肥大]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=教訓; score=21.7) / skill_routing(スキルルーティング; alias=教訓整理; score=2.5) / lesson_lifecycle(教訓ライフサイクル管理; alias=教訓登録; score=2.5)。概念定義とaliases追加を検討せよ"
