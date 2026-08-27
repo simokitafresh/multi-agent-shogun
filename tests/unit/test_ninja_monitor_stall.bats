@@ -5671,7 +5671,7 @@ printf "alerts=2 same_generation=1 cooldown_suppressed=1\n"
 # test_necessity: the reflux dirty-target gate must accept only a trusted
 # pending-to-resolved transition carrying the complete canonical resolution
 # evidence, while rejecting pending additions and every mixed/arbitrary diff.
-# regression_justification: reproduces the T50 semantic_map_generate ->
+# regression_justification: reproduces the T50 trusted producer ->
 # insight_resolve lifecycle and prevents broad dirty-queue checkpointing from
 # turning new work or unrelated edits into an AUTO-DEPLOY.
 @test "reflux insight lifecycle validator accepts only complete trusted resolution" {
@@ -5693,7 +5693,7 @@ printf "alerts=2 same_generation=1 cooldown_suppressed=1\n"
             cat > "$fixture/queue/insights.yaml" <<"YAML"
 insights:
   - id: INS-T50
-    source: semantic_map_generate:new_file
+    source: semantic_index_update
     status: pending
     insight: candidate
 YAML
@@ -5714,12 +5714,12 @@ YAML
         cat > "$valid/queue/insights.yaml" <<"YAML"
 insights:
   - id: INS-T50
-    source: semantic_map_generate:new_file
+    source: semantic_index_update
     status: resolved
     insight: candidate
     resolved_reason: represented in semantic map
     action_artifact: context/semantic-map.md
-    resolved_at: '2026-08-27T09:00:00+09:00'
+    resolved_at: "2026-08-27T09:00:00+09:00"
 YAML
         valid_result=$(classify "$valid")
         test "$valid_result" = resolve
@@ -5729,7 +5729,7 @@ YAML
         cat > "$arbitrary/queue/insights.yaml" <<"YAML"
 insights:
   - id: INS-T50
-    source: semantic_map_generate:new_file
+    source: semantic_index_update
     status: pending
     insight: candidate
     owner: unexpected
@@ -5741,7 +5741,7 @@ YAML
         cat > "$pending_append/queue/insights.yaml" <<"YAML"
 insights:
   - id: INS-T50
-    source: semantic_map_generate:new_file
+    source: semantic_index_update
     status: pending
     insight: candidate
   - id: INS-T50-NEW
@@ -5756,12 +5756,12 @@ YAML
         cat > "$mixed/queue/insights.yaml" <<"YAML"
 insights:
   - id: INS-T50
-    source: semantic_map_generate:new_file
+    source: semantic_index_update
     status: resolved
     insight: candidate
     resolved_reason: represented in semantic map
     action_artifact: context/semantic-map.md
-    resolved_at: '2026-08-27T09:00:00+09:00'
+    resolved_at: "2026-08-27T09:00:00+09:00"
     owner: unexpected
 YAML
         if classify "$mixed" >/dev/null 2>&1; then exit 13; fi
@@ -5771,7 +5771,7 @@ YAML
         cat > "$missing/queue/insights.yaml" <<"YAML"
 insights:
   - id: INS-T50
-    source: semantic_map_generate:new_file
+    source: semantic_index_update
     status: resolved
     insight: candidate
     resolved_reason: represented in semantic map
@@ -5791,8 +5791,8 @@ YAML
 # test_necessity: one real reflux dispatch cycle must checkpoint a trusted
 # resolution generation and deploy the remaining pending insight exactly once,
 # with no AUTO-BLOCK for the dirty fingerprint.
-# regression_justification: covers the production caller path from
-# semantic_map_generate's producer source through insight_resolve's four-field
+# regression_justification: covers the production caller path from the
+# trusted producer source through insight_resolve's four-field
 # mutation into _handle_reflux_auto_deploy.
 @test "reflux auto deploy accepts trusted resolution generation and logs one deploy" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
@@ -5809,7 +5809,7 @@ YAML
         cat > "$root/queue/insights.yaml" <<"YAML"
 insights:
   - id: INS-T50-RESOLVED
-    source: semantic_map_generate:new_file
+    source: semantic_index_update
     status: pending
     insight: represented candidate
   - id: INS-T50-PENDING
@@ -5825,12 +5825,12 @@ YAML
         cat > "$root/queue/insights.yaml" <<"YAML"
 insights:
   - id: INS-T50-RESOLVED
-    source: semantic_map_generate:new_file
+    source: semantic_index_update
     status: resolved
     insight: represented candidate
     resolved_reason: already represented in semantic map
     action_artifact: context/semantic-map.md
-    resolved_at: '2026-08-27T09:00:00+09:00'
+    resolved_at: "2026-08-27T09:00:00+09:00"
   - id: INS-T50-PENDING
     source: semantic_index_update
     status: pending
