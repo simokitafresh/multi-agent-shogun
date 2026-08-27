@@ -5270,4 +5270,52 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:00:25+09:00"
+- id: INS-20260827-210900669-cffb
+  ts: "2026-08-27T21:09:00+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bc5vqkaua task id tool use id toolu 01Xeo9rYARMDyK2g7Y は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:11:13+09:00"
+- id: INS-20260827-212901807-b53a
+  ts: "2026-08-27T21:29:01+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_強くてニューゲーム_20260827_2125]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0852; score=45.0) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_強くてニューゲーム_20260730_1355; score=44.0) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260827-212929608-4406
+  ts: "2026-08-27T21:29:29+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[9p_root_fix_cutover]] は既存aliasesに一致なし。類似概念TOP3: yaml_safe_write(YAML安全書込み; alias=9p_git_flock_RPC待ち; score=13.8) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun d0 fix; score=13.0) / codd_methodology(CoDD整合性駆動開発; alias=codd fix PHENOMENON; score=12.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260827-212951010-ee8e
+  ts: "2026-08-27T21:29:51+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[relocate_after_final_rsync]] は既存aliasesに一致なし。類似概念TOP3: gs_ninpo_research(GS忍法研究; alias=context.final_weights; score=14.9) / skill_routing(スキルルーティング; alias=Session after commitでL5再生成を予約し; score=13.5) / infra_throughput_outcome_design(インフラスループット・アウトカム設計; alias=C4 lifecycle transaction; score=8.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260827-213020989-20c2
+  ts: "2026-08-27T21:30:20+09:00"
+  insight: "[[9P根治に向けて順調か？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=9P根治に向けて順調か？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260827-213129214-446c
+  ts: "2026-08-27T21:31:29+09:00"
+  insight: "[[cd tmp cmd4407 shared cfddu6 && export PS1 \\ \\033 1;31m\\ kar]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/cmd4407-shared.cfddu6\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1 — 現task YAMLを…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
   status: pending
