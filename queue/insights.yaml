@@ -5786,3 +5786,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-031436678-af52
+  ts: "2026-08-28T03:14:36+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[t110_no_cmd_branch_本番0行]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=NO_MATCH率; score=11.7) / operational_ontology(操作的オントロジー; alias=gate_no_hardcoded_ninja_list; score=11.1) / agent_formation_management(編成管理; alias=per-agent launch_cmd; score=11.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
