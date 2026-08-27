@@ -15921,3 +15921,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - R05の120セルは固有root/cmdで独立していたため8件ずつ並列化し、R05を88.037秒から21.149秒へ短縮できた。結果集約で空statusをTSV先頭空欄にするとBash readが列を左詰めするため、missing sentinelを用いて全軸を保持する。
+
+### L1651: 共有台帳writerは対象path由来の同一lockを使う
+- **日付**: 2026-08-27
+- **出典**: cmd_karo_hotfix_rework_capture_gap_20260827
+- **記録者**: saizo
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [scripts/karo_workaround_log.sh]
+- **origin**: [[cmd_karo_hotfix_rework_capture_gap_20260827]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- atomic replaceを行う複数writerが固定lockとpath-derived lockに分岐すると、片方の追記が他方のreplaceで消える。全writerの既定lockを対象pathから同一導出し、fixtureでは同一アルゴリズムfallbackを使う。

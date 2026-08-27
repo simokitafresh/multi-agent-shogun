@@ -1,2 +1,5 @@
-# session_alerts — generated: 2026-08-26T05:10:42+0900
-[DONE] 走行中cmd実測突合: capture-pane 05:15実測 hayate=ghost AC2(daemon_alert)作業ブロック完了直後/saizo=batch2 live timing(yaml_field_set実行中)/kotaro=履歴分岐merge(worktree準備中)。3名とも家老配備どおり稼働、snapshotと一致
+# session_alerts — generated: 2026-08-27T12:47:39+0900
+[DONE] 追体験自動化ターゲット(blt_125526: ninja_monitor karo clear経路へ codex_config_apply_agent、INS-125425547): WARN (自動化ターゲット未記入)
+[DONE] 走行中cmd実測突合(13:01 capture: hayate/hanzo/kotaro 全員プロンプト待ち=idle、snapshot busy は stale): busy 3名。capture-pane未確認で状況報告するな
+[DONE] failed task残置: kagemaru(T51: STAGE1-TIMEOUT後 report PASS 是正済、GATE 未→家老へ review→GATE→idle を push 下知の次に1単位下知) — 真因確認と再配備/クローズを確定せよ
+[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
