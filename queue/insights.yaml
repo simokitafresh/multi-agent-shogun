@@ -1827,7 +1827,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "decision_candidateへ整理: LG051具体例をdeploy_task task YAMLへ注入する案と、deploy_task分割cmdをgate対象外にする案は、適用範囲・検出品質・既存強制のトレードオフを家老判断へ委ねる。現行gateはnon-test caller countを強制し、具体例注入は未実装のため未解決課題として記録した。"
+  action_artifact: "queue/reports/tobisaru_report_cmd_reflux_insight_202608280757_tobisaru.yaml"
+  resolved_at: "2026-08-28T08:04:39+09:00"
 - id: INS-20260823-155813737-193c
   ts: "2026-08-23T15:58:13+09:00"
   insight: "semantic_index_update新概念候補: discussion:negative results two experiments mdの記事なんだが、すでに本番ではレジーム別の成績を出していたよな。相関も対ベンチマークはでて は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
