@@ -198,16 +198,18 @@ PY
     [ "$output" = "callers=3 mode644_paths=3 direct=0" ]
 }
 
-# test_necessity: pregate publication reuses the field-aware source-only lane
-# and rejects concurrent, unknown, conflicting, and failed publications.
+# test_necessity: pregate publication reuses the T100 shared-main field-aware
+# lane and rejects concurrent, unknown, conflicting, and failed publications.
 @test "pregate runtime convergence reuses field-aware contract" {
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import pathlib, sys
 text=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 start=text.index('publish_postclear_runtime_deltas()')
 fn=text[start:text.index('\n}', start)+2]
-tokens=('phase="${1:-postclear}"', '"$phase" != "pregate"', 'postclear_runtime_path_is_publishable "$path"', 'nonruntime dirty path=', 'concurrent writer path=', 'push_from_clean_worktree', 'source-only publish failed', 'local ${phase} checkpoint', 'merge --no-edit "$remote_tip"')
+tokens=('phase="${1:-postclear}"', '"$phase" != "pregate"', 'postclear_runtime_path_is_publishable "$path"', 'nonruntime dirty path=', 'concurrent writer path=', 'runtime publish: local generation admitted; origin publication deferred to Karo', 'local ${phase} field-aware checkpoint', 'runtime_shared_main_checkpoint')
 for token in tokens: assert token in fn, token
+assert 'push_from_clean_worktree' not in fn
+assert 'merge --no-edit "$remote_tip"' not in fn
 print('variants=8 fp=0 fn=0 field_aware=1')
 PY
     [ "$status" -eq 0 ]
@@ -2944,8 +2946,10 @@ required = [
     'gate_detail_finish',
     'pure_processing',
     'external_wait',
-    'runtime_publish.remote_source_push',
+    'runtime_publish.local_source_build',
+    'runtime_publish.commit_lock_wait',
     'runtime_publish.index_lock_retry_wait',
+    'runtime_publish.shared_main_field_aware_commit',
     'post_source_checks.durable_writer_wait',
     'post_source_checks.capture_durable_writer_snapshot',
 ]
@@ -7607,13 +7611,15 @@ text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 start = text.index('publish_postclear_runtime_deltas()')
 end = text.index('\n}', start) + 2
 block = text[start:end]
-assert 'push_from_clean_worktree' in block
+assert 'runtime publish: local generation admitted; origin publication deferred to Karo' in block
 assert 'postclear_runtime_path_is_publishable "$path"' in block
 assert 'durable writer manifest invalid' in block
 assert 'grep -Fqx -- "$path"' in block
 assert 'nonruntime dirty path=' in block
 assert 'writer generation changed' in block
-assert 'merge --no-edit "$remote_tip"' in block
+assert 'runtime_publish.shared_main_field_aware_commit' in block
+assert 'push_from_clean_worktree' not in block
+assert 'merge --no-edit "$remote_tip"' not in block
 print('field_aware=1 manifest_exact=1 nonruntime_block=1 shared_convergence=1')
 PY
     [ "$status" -eq 0 ]
@@ -7710,37 +7716,34 @@ lock = block.index('flock -x "$publish_lock_fd"')
 manifest = block.index('mapfile -t durable_paths')
 head = block.index('before_head=$(git -C "$repo" rev-parse HEAD')
 dirty = block.index('git -C "$repo" status --porcelain=v1')
-release = block.index('runtime publish: local generation admitted; network lock released')
-network = block.index('gate_detail_begin "runtime_publish.remote_source_push"')
-assert lock < manifest < head < dirty < release < network
-for guard in (
-    'nonruntime dirty path=', 'concurrent writer path=',
-    'source-only publish failed', 'shared HEAD/index convergence failed',
-):
+release = block.index('runtime publish: local generation admitted; origin publication deferred to Karo')
+assert lock < manifest < head < dirty < release < block.index('runtime_publish.commit_lock_wait')
+for guard in ('nonruntime dirty path=', 'concurrent writer path=', 'writer generation changed'):
     assert guard in block, guard
-assert 'writer generation changed' in block
 assert 'git-common-dir' in block and 'shogun-tracked-runtime-publish.lock' in block
+assert 'source-only publish failed' not in block
+assert 'shared HEAD/index convergence failed' not in block
 print('parallel_writer=local_generation_serialized network_unlocked=1 generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4')
 PY
     [ "$status" -eq 0 ]
     [ "$output" = "parallel_writer=local_generation_serialized network_unlocked=1 generation_reread=1 dirty_preserved=1 genuine_conflicts_block=4" ]
 }
 
-# test_necessity: a mixed runtime generation containing insights must split
-# publication per field so the stable-ID merge composes remote-only IDs before
-# the local checkpoint, while every genuine publication failure still blocks.
-@test "tracked runtime convergence routes mixed insights through ID merge" {
+# test_necessity: a mixed runtime generation is admitted to the shared-main
+# field-aware checkpoint without any direct origin publication.
+@test "tracked runtime publisher keeps mixed generation field-aware" {
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import pathlib, sys
 text=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
 start=text.index('publish_postclear_runtime_deltas()')
 block=text[start:text.index('\n}', start)+2]
-for token in ('source_shas+=("$source_sha")', 'for source_sha in "${source_shas[@]}"',
-              'push_from_clean_worktree', 'remote_tip=$(git -C "$repo" ls-remote',
-              'checkout "$remote_tip" -- "${runtime_paths[@]}"', 'source-only publish failed',
+for token in ('runtime publish: local generation admitted; origin publication deferred to Karo',
+              'runtime_publish.shared_main_field_aware_commit',
               'concurrent writer path='):
     assert token in block, token
-assert block.index('flock -x') < block.index('source_shas+=("$source_sha")')
+assert 'push_from_clean_worktree' not in block
+assert 'remote_tip=$(git -C "$repo" ls-remote' not in block
+assert 'source-only publish failed' not in block
 print('remote_commits=3 local_commits=7 publish_success=1 dirty_preserved=1 false_block=0 genuine_conflict_block=1')
 PY
     [ "$status" -eq 0 ]
@@ -8038,7 +8041,8 @@ PY
         remote_tip="$3"
         runtime_paths=(tracked.txt)
         start=$(date +%s)
-        source <(sed -n "/^    local _idx_lock_try\$/,/^    done\$/p" "$2") 2>/dev/null
+        source <(sed -n "/^checkout_runtime_paths_with_retry()/,/^}/p" "$2") 2>/dev/null
+        checkout_runtime_paths_with_retry "$repo" "$remote_tip" tracked.txt
         rc=$?
         elapsed=$(( $(date +%s) - start ))
         tracked_content=$(cat "$repo/tracked.txt" 2>/dev/null || echo MISSING)
@@ -8081,7 +8085,8 @@ PY
         repo="$1"
         remote_tip="$3"
         runtime_paths=(tracked.txt)
-        source <(sed -n "/^    local _idx_lock_try\$/,/^    done\$/p" "$2") 2>/dev/null
+        source <(sed -n "/^checkout_runtime_paths_with_retry()/,/^}/p" "$2") 2>/dev/null
+        checkout_runtime_paths_with_retry "$repo" "$remote_tip" tracked.txt
         rc=$?
         printf "rc=%s\n" "$rc"
     ' _ "$root" "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" "$remote_tip"

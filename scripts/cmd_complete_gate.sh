@@ -3671,7 +3671,18 @@ converge_shared_execution_sources() {
                 return 1
             }
         else
-            git -C "$repo" checkout "$before_head" -- "$path" >/dev/null 2>&1 || {
+            if declare -F checkout_runtime_paths_with_retry >/dev/null 2>&1; then
+                checkout_runtime_paths_with_retry "$repo" "$before_head" "$path" >/dev/null 2>&1
+            else
+                local _idx_lock_try
+                for _idx_lock_try in 1 2 3 4 5 6 7; do
+                    if git -C "$repo" checkout "$before_head" -- "$path" >/dev/null 2>&1; then
+                        break
+                    fi
+                    [ "$_idx_lock_try" -lt 7 ] || return 1
+                    sleep 1
+                done
+            fi || {
                 git -C "$repo" merge --abort >/dev/null 2>&1 || true
                 return 1
             }
@@ -3749,6 +3760,26 @@ runtime_generation_change_is_clean_and_disjoint() {
         git -C "$repo" diff --cached --quiet -- "$changed_path" || return 1
     done < <(git -C "$repo" diff --name-only "$before_head" "$after_head")
 }
+
+# Required checkout writes can still collide with a short-lived index.lock
+# even when read-only Git calls have optional locking disabled. Keep the
+# retry bounded and narrow: only declared runtime paths are checked out, so
+# unrelated dirty paths remain untouched.
+checkout_runtime_paths_with_retry() {
+    local repo="$1" checkout_ref="$2"
+    shift 2
+    [ "$#" -gt 0 ] || return 1
+    local -a runtime_paths=("$@")
+    local _idx_lock_try
+    for _idx_lock_try in 1 2 3 4 5 6 7; do
+        if git -C "$repo" checkout "$checkout_ref" -- "${runtime_paths[@]}" >/dev/null 2>&1; then
+            return 0
+        fi
+        [ "$_idx_lock_try" -lt 7 ] || return 1
+        sleep 1
+    done
+}
+export -f checkout_runtime_paths_with_retry
 
 capture_durable_writer_paths() {
     local mode="$1" snapshot="$2" manifest="$3" cmd_id="$4" generation="$5"
@@ -3838,7 +3869,7 @@ publish_postclear_runtime_deltas() {
     local commit_lock_path commit_lock_fd
     local fresh_upstream_sha working_blob upstream_blob
     local durable_manifest="$GATES_DIR/semantic_causal_audit.paths.json"
-    local -a dirty_paths=() runtime_paths=() durable_paths=() source_shas=() lesson_paths=()
+    local -a dirty_paths=() runtime_paths=() durable_paths=() lesson_paths=()
     local -A source_blob_by_path=()
     if ! declare -F lock_path >/dev/null 2>&1; then
         lock_path() { printf '%s.lock\n' "$1"; }
@@ -3969,7 +4000,6 @@ PY
         done
         git -C "$source_repo" commit -m "runtime: ${phase} field-aware lessons publish ${CMD_ID}" -- "${lesson_paths[@]}" >/dev/null 2>&1 || return 1
         source_sha=$(git -C "$source_repo" rev-parse HEAD) || return 1
-        source_shas+=("$source_sha")
         for path in "${lesson_paths[@]}"; do
             source_blob_by_path["$path"]=$(git -C "$source_repo" rev-parse "${source_sha}:${path}") || return 1
         done
@@ -3983,7 +4013,6 @@ PY
         git -C "$source_repo" add -- "$path" || return 1
         git -C "$source_repo" commit -m "runtime: ${phase} field-aware publish ${CMD_ID} ${path}" -- "$path" >/dev/null 2>&1 || return 1
         source_sha=$(git -C "$source_repo" rev-parse HEAD) || return 1
-        source_shas+=("$source_sha")
         source_blob_by_path["$path"]=$(git -C "$source_repo" rev-parse "${source_sha}:${path}") || return 1
     done
     gate_detail_finish
