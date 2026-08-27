@@ -4965,3 +4965,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-164207781-0719
+  ts: "2026-08-27T16:42:07+09:00"
+  insight: "[[9p 根治 — リポジトリ本体を mnt c drvfs 9p から ext4 home simokitafresh m]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=9p 根治 — リポジトリ本体を /mnt/c(drvfs 9p) から ext4(/home/simokitafresh/multi-agent-shogun) へ移設する準備・検証・切替スクリプト(可逆)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
