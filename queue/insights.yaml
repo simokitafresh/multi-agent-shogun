@@ -6157,18 +6157,27 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T07:52:15+09:00"
 - id: INS-20260828-075151352-4868
   ts: "2026-08-28T07:51:51+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[control_repoでのrev-parse]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=auto deploy blocked_by control; score=12.0) / yaml_safe_write(YAML安全書込み; alias=shogun_to_karo parse error; score=11.7) / semantic_dictionary_design(セマンティック辞書構想; alias=related_concepts; score=6.9)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T07:52:15+09:00"
 - id: INS-20260828-075206987-77b9
   ts: "2026-08-28T07:52:06+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[正準repo判定の原則]] は既存aliasesに一致なし。類似概念TOP3: provisional_review_approval(仮: Review Approval; alias=RC補正scope; score=3.6) / modern_web_guidance(Modern Web Guidance; alias=popover; score=3.3) / yaml_safe_write(YAML安全書込み; alias=report蘇生; score=2.9)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T07:52:15+09:00"
