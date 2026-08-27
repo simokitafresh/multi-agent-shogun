@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:10 更新(loop tick 12)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:12 更新(inbox処理後)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -24,7 +24,7 @@
 - [x] T18(半蔵 GATE CLEAR 18:31: 関数別実時間の計測器常設=らせん第1手。次=計測結果で分割対象を名指し→T10へ合流) script_size_alert 14件(cmd_complete_gate 14804行/ninja_monitor 11856/deploy_task 11256…)→cmd_4403成果と合流する分割cmd(前復帰点の残弾) ★hook/gate読込時間の短縮
 - [x] T19(05:17 家老判定: L1637×2 retireしない(unknown増分0未確認)・L1632 retire適格だが canonical lessons.md に不在=SSOT不整合で見送り、report archive・failed残置0; 影丸 FAIL報告 17:42: AC3未達→家老判断待ち) lesson_deprecation候補3件(L1637×2/L1632)家老判断待ち→家老へ集約案内 ★教訓注入トークン削減
 - [x] T20(cfd7b7d3e: gate ARCHIVE_AUTO_HANDLED+archive_completedがhint既読化。ゾンビ16件掃除→家老未読19→1) 家老inbox滞留の真因調査(殿18:03)=完了済cmdのskill_hintゾンビ ★家老の再読コスト16KB×毎nudgeをゼロに
-- [ ] T21(09:03 影丸 report result=FAIL・gate CLEAR 0=未クローズ、家老判断待ち; 影丸 acknowledged。19:33に家老Codexのnudge queue停滞を実観測=裏付け) Codex宛nudge配達検証FAILURE 88%(insight登録済)→read遷移ベースの検証+未読N分で再nudge ★家老・忍者の指示受領遅延(2h停滞)の根治
+- [~] T21(09:11 家老判断(a): 旧worktree差分2ファイル実在・所有test 294/296 PASS(FAIL2=planned外の旧pane契約)→依存contractを差分ACに足し半蔵へ再配備 assigned・Working実測; 09:03 影丸 report result=FAIL・gate CLEAR 0=未クローズ、家老判断待ち; 影丸 acknowledged。19:33に家老Codexのnudge queue停滞を実観測=裏付け) Codex宛nudge配達検証FAILURE 88%(insight登録済)→read遷移ベースの検証+未読N分で再nudge ★家老・忍者の指示受領遅延(2h停滞)の根治
 - [ ] T22(09:03 飛猿 08-26 13:49 failed(FAILED-PRESERVE)残置・worktree保全のまま=未クローズ; 飛猿 assigned) pre-push PASSキャッシュのキー変更(commit→tested-paths tree hash)+insight auto-commitバッチ化(本日43commit=HEAD churn) ★push 1回あたりの再走を0に
 - [x] T23(09:03 実測: ninja_monitor 921778 1owner+子shell2(152s)=二重起動なし; 家老へ下知 20:04) ninja_monitor二重起動(非owner pid 1354798 19:04起動 / owner 2140401 19:48起動)の正規退役 ★snapshot/nudge競合の除去
 - [x] T24(20:17 家老復旧: 7/7 bypass・bwrap 0。settings.yaml launch_cmd 4行修正=未commit・殿裁可待ち) Codex sandbox起動でcommitだけFAIL(P2 3件)の真因=settings.yaml per-agent launch_cmdのbypass欠落 ★実装PASSがcommitで捨てられる損失0に
@@ -58,6 +58,6 @@
 - [x] T48b(08:51 家老 e5c1ab2cb→a52c112ce→577731149 を1本ずつpush、0 0、CI 577731149 in_progress) tick10 commit の push ★origin=HEAD 維持
 - [ ] T51(INS-20260827-085509569-7aa6) 家老 push 3本に 43m58s。成功 pre-push の wall/affected が logs に残らず律速不明→defense_overhead.jsonl へ記録+300秒超WARN ★push律速の可視化=1commitずつ方式の次弾
 - [x] T52(09:03 機械突合: HTML未掲載5件(T08/T21/T22/T48/T48b)・走行中欄8→実2・済タイル46≠md39を是正) artifact抜け漏れ覚醒確認(殿指示09:00) ★二次情報(HTML)を正本(md)から機械生成し乖離0
-- [x] T48c(09:06 家老 95854d54f/26ddaed7e/56100e122/124d67e06 を各 5-6秒で push、0 0。下知 09:04:51→報告 09:06:50=家老ターン2分=nudge 到達時は速い) 覚醒是正 commit の push ★push律速=nudge到達の証明
+- [x] T48c(09:10 家老 065a29095 23秒/7d4a0989e 5秒 push、0 0; 09:06 家老 95854d54f/26ddaed7e/56100e122/124d67e06 を各 5-6秒で push、0 0。下知 09:04:51→報告 09:06:50=家老ターン2分=nudge 到達時は速い) 覚醒是正 commit の push ★push律速=nudge到達の証明
 - [x] T53(09:07 家老へ 1通=1単位 で8通: 小太郎lock解放/T47 GATE/T22/T10/T08/T50/T51/T49 msg_090715〜090720、全て read=true 到達) 殿指示09:06『利他の精神で家老に取り組むべき未着手をナッジせよ』 ★未着手の滞留0
 - [x] T54(09:10 scripts/todo_map_render.py 常設: md→HTML 機械生成+ID集合一致で exit 2) HTML手編集による乖離の根治(INS-090504976) ★artifact乖離0を構造で
