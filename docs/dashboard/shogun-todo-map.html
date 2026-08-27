@@ -52,21 +52,21 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 09:30 更新(inbox処理後: T21 GATE CLEAR) · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 09:36 更新(loop tick 13) · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
 
 <div class="strip">
-  <div class="tile"><span class="k">済</span><span class="v done">46</span><span class="s">md正本の [x] 実数</span></div>
+  <div class="tile"><span class="k">済</span><span class="v done">47</span><span class="s">md正本の [x] 実数</span></div>
   <div class="tile"><span class="k">走行中</span><span class="v run">3</span><span class="s">T40 / T45 / T47</span></div>
-  <div class="tile"><span class="k">未着手</span><span class="v todo">7</span><span class="s">T08 / T10 / T12 / T22 / T49 / T50 / T51</span></div>
-  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">e5c1ab2cb success、577731149/26ddaed7e 走行。origin=HEAD 0 0(家老 push 4本 各5-6秒 09:05-09:06)</span></div>
-  <div class="tile"><span class="k">reflux</span><span class="v run">6 / lock</span><span class="s">6件 DONE(pending 104)。小太郎 0814 が report 空のまま target_path lock→08:59 影丸 SKIP=停止中(家老へ最優先下知 09:07)。T47 疾風 report PASS・GATE 待ち</span></div>
+  <div class="tile"><span class="k">未着手</span><span class="v todo">8</span><span class="s">T08 / T10 / T12 / T22 / T49 / T50 / T51 / T56</span></div>
+  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">origin tip e7528e39f(T21 hotfix 統合 merge) in_progress。origin=HEAD 0 0</span></div>
+  <div class="tile"><span class="k">reflux</span><span class="v run">6 / 停止</span><span class="s">pending 106。09:15 collision/09:22 dirty で配備 BLOCK 継続=T50 hotfix 未配備(再下知 09:35)。T47 は AC2 live 待ち</span></div>
 </div>
 
 <div class="live">
-  <h2>一次情報(09:06 capture / ps / gh / logs / git)</h2>
+  <h2>一次情報(09:34 capture / gh / logs / git)</h2>
   <ul>
     <li><span class="chip bad">孤児テスト増殖</span>test_heavy_job_admission.bats の singleflight-orphan が内側 run_tests.sh unit を生かしたまま終わり、古い半蔵worktree(seed未是正版)から全suiteを再帰起動→root 27・bats-exec-suite 32本・load 66・/tmp fixture lock 1359個・global flock競合。殿の kill 3回+<span class="mono">orphan_test_reap.sh --kill</span>(124本)で 0 に</li>
     <li><span class="chip done">環境埋込</span>Gate 10.07 長時間bats検知(3fa443c11) / <span class="mono">scripts/orphan_test_reap.sh</span>(ps 1回スナップショット・0.2秒・tmux配下除外) / <span class="mono">git worktree prune</span> 724→103(deploy 397秒→199秒)</li>
@@ -91,13 +91,13 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   <h2>走行中 <span class="n">3</span></h2>
   <div class="rows">
     <div class="row run"><span class="id">T40</span><span class="t">insights未処理103件(08:04)の消化(idle時)</span><span class="d">09:10 reflux 自動配備で6件実回転(家老復帰点も同認識)、pending 104; 消化は reflux レーンに乗った</span><span class="w">気づきの先送り0</span></div>
-    <div class="row run"><span class="id">T45</span><span class="t">reflux 回転計測: 05:39 疾風→05:55 CLEAR、05:53 影丸→06:02 CLEAR(1件≈14分・同時1件)。insights pending 104 が CLEAR 後も減らない(resolved 352)→ archive 時に resolved へ遷移するか次tickで確認、減らなければ家老へ</span><span class="d">09:28 小太郎 lock は done で解放、しかし 09:15 才蔵 reflux が「reserved path collision with tobisaru(idle/uncommitted)」で DEPLOY blocked、09:22 飛猿 dirty AUTO-BLOCK=T50 と同根、家老は auto-commit 3dd06eca6 で一時解消; 09:06 つまり: 小太郎 0814 が DEPLOY-DONE 08:25 後 report 空・task in_progress・pane CTX3% で target_path lock→08:59 影丸 REFLUX-AUTO-SKIP=全 reflux 停止→家老へ最優先下知 msg_090715; 08:51 小太郎 6件目 08:15→08:25 DONE(reflux継続)、pending 104、insights.yaml は再び dirty; 08:04 insights pending 103、07:50/07:57 影丸・半蔵の reflux 配備が REFLUX-AUTO-BLOCK(queue/insights.yaml dirty=daemon の resolved 書込み 08:03:54)→auto-commit 待ち=T43 の構造が毎周期再発; 07:03 5件目 飛猿 06:47→07:00 DONE、pending 104→101、4 CLEAR; 06:36 4件目 才蔵 06:24→06:31 DONE、pending 104→102、1件≈14分・同時1件; 06:06 観測開始</span><span class="w">気づき消化の回転速度の可視化</span></div>
-    <div class="row run"><span class="id">T47</span><span class="t">reflux 配備の空白: 07:00 DONE 後 07:31 に idle 計時が再スタート=6名 idle でも 30-40分の空白。idle 計時起点を task idle 時刻に固定する hotfix 候補(家老レーン)</span><span class="d">09:06 report result=PASS へ整った、task status=failed(08:44 STAGE1-TIMEOUT)で GATE 未実行→家老へ1単位下知 msg_090715; 09:03 AC1 PASS(idle起点を durable state へ固定)・AC2 live再配備未観測で BLOCK、報告 gate_report_format で整形中(task status=failed 表示は整形BLOCK由来); 08:51 疾風 Working 44分(見積15)・CTX30%・短命gitを回しつつ稼働中、report result 空; 08:05 疾風 in_progress 28分(見積15)・pane Working・worktree で runner 境界を切り分け中、report status=in_progress; 07:39 疾風へ karo_hotfix 配備 assigned; 07:36 insight登録</span><span class="w">気づき消化スループット2倍</span></div>
+    <div class="row run"><span class="id">T45</span><span class="t">reflux 回転計測: 05:39 疾風→05:55 CLEAR、05:53 影丸→06:02 CLEAR(1件≈14分・同時1件)。insights pending 104 が CLEAR 後も減らない(resolved 352)→ archive 時に resolved へ遷移するか次tickで確認、減らなければ家老へ</span><span class="d">09:34 pending 106、09:22 以降 配備0(dirty BLOCK)、09:32 疾風は task failed で SKIP; 09:28 小太郎 lock は done で解放、しかし 09:15 才蔵 reflux が「reserved path collision with tobisaru(idle/uncommitted)」で DEPLOY blocked、09:22 飛猿 dirty AUTO-BLOCK=T50 と同根、家老は auto-commit 3dd06eca6 で一時解消; 09:06 つまり: 小太郎 0814 が DEPLOY-DONE 08:25 後 report 空・task in_progress・pane CTX3% で target_path lock→08:59 影丸 REFLUX-AUTO-SKIP=全 reflux 停止→家老へ最優先下知 msg_090715; 08:51 小太郎 6件目 08:15→08:25 DONE(reflux継続)、pending 104、insights.yaml は再び dirty; 08:04 insights pending 103、07:50/07:57 影丸・半蔵の reflux 配備が REFLUX-AUTO-BLOCK(queue/insights.yaml dirty=daemon の resolved 書込み 08:03:54)→auto-commit 待ち=T43 の構造が毎周期再発; 07:03 5件目 飛猿 06:47→07:00 DONE、pending 104→101、4 CLEAR; 06:36 4件目 才蔵 06:24→06:31 DONE、pending 104→102、1件≈14分・同時1件; 06:06 観測開始</span><span class="w">気づき消化の回転速度の可視化</span></div>
+    <div class="row run"><span class="id">T47</span><span class="t">reflux 配備の空白: 07:00 DONE 後 07:31 に idle 計時が再スタート=6名 idle でも 30-40分の空白。idle 計時起点を task idle 時刻に固定する hotfix 候補(家老レーン)</span><span class="d">09:34 家老判定「AC2 live未観測=FAIL」で GATE 保留、疾風 CTX0%=/clear済・task failed 残置→AC2 は T50 解消後の実配備1件で閉じる; 09:06 report result=PASS へ整った、task status=failed(08:44 STAGE1-TIMEOUT)で GATE 未実行→家老へ1単位下知 msg_090715; 09:03 AC1 PASS(idle起点を durable state へ固定)・AC2 live再配備未観測で BLOCK、報告 gate_report_format で整形中(task status=failed 表示は整形BLOCK由来); 08:51 疾風 Working 44分(見積15)・CTX30%・短命gitを回しつつ稼働中、report result 空; 08:05 疾風 in_progress 28分(見積15)・pane Working・worktree で runner 境界を切り分け中、report status=in_progress; 07:39 疾風へ karo_hotfix 配備 assigned; 07:36 insight登録</span><span class="w">気づき消化スループット2倍</span></div>
   </div>
 </section>
 
 <section class="group">
-  <h2>未着手 <span class="n">7</span></h2>
+  <h2>未着手 <span class="n">8</span></h2>
   <div class="rows">
     <div class="row todo"><span class="id">T08</span><span class="t">converge構造根治(AC3: ours採用でtheirs破棄)を1名へ配備(家老へ指示済み、配備確認)</span><span class="d">09:03 報告・commit痕跡なし=未再配備; 飛猿 r2: 14/14 PASS済・primary WIPをscope guardが検知→将軍がWIP退避commit 8de4a417a→再試行通知 14:55</span><span class="w">退行の再発=最大の手戻り</span></div>
     <div class="row todo"><span class="id">T10</span><span class="t">第2セット残: cmd_skeleton(影丸走行中)/cmd_complete_gate 200s/scope_commit/run_tests(並列型のみ→本質案なしなら終了)</span><span class="d">09:03 疾風 failed 19:48 のまま未再配備; 疾風 failed 19:48: timing logに完走gate run 0件=材料未生成→次GATE CLEAR後に再配備を家老へ下知 20:04</span><span class="w">らせん本体</span></div>
@@ -106,12 +106,14 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
     <div class="row todo"><span class="id">T49</span><span class="t">ninja_monitor が実在しない hayate_report_cmd_alias.yaml を REPORT-REVIEW-AUTO-REQUEST-BLOCK(22:54/07:59)=テンプレ内コメントの誤抽出疑い→抽出に実在チェック</span><span class="d">08:05 insight INS-080518912</span><span class="w">偽BLOCKログの消化コスト0</span></div>
     <div class="row todo"><span class="id">T50</span><span class="t">reflux dirty-guard: daemon の insights.yaml 書込み(resolved 遷移)が毎周期 dirty を作り配備が BLOCK→auto-commit まで空白。書込み側で同一トランザクション commit するか guard を insights.yaml の status 差分のみ許容へ</span><span class="d">09:28 再発2回(09:15 collision/09:22 dirty)、家老の commit は消火であり hotfix 配備は未; 08:04 実測</span><span class="w">配備空白の再発源を構造で断つ</span></div>
     <div class="row todo"><span class="id">T51</span><span class="t">家老 push 3本に 43m58s。成功 pre-push の wall/affected が logs に残らず律速不明→defense_overhead.jsonl へ記録+300秒超WARN</span><span class="d">INS-20260827-085509569-7aa6</span><span class="w">push律速の可視化=1commitずつ方式の次弾</span></div>
+    <div class="row todo"><span class="id">T56</span><span class="t">ninja_monitor に UNACTIONED 検知(将軍発 task_assigned read=true かつ task/掲示板の対応なし N分→家老再nudge+将軍WARN)</span><span class="d">09:36 insight</span><span class="w">下知→配備の空白を構造で0に</span></div>
   </div>
 </section>
 
 <section class="group">
-  <h2>済 <span class="n">46</span></h2>
+  <h2>済 <span class="n">47</span></h2>
   <div class="rows">
+    <div class="row done"><span class="id">T55</span><span class="t">家老の束処理欠落</span><span class="d">09:36 家老が 09:07 の8通を pending_work として先頭2件(T21/T50消火)のみ処理し T22/T10/T08/T51/T49 未配備=忍者6名 idle→6通を再下知 msg_0935xx、insight 登録</span><span class="w">未配備0=遊休0</span></div>
     <div class="row done"><span class="id">T54</span><span class="t">HTML手編集による乖離の根治(INS-090504976)</span><span class="d">09:10 scripts/todo_map_render.py 常設: md→HTML 機械生成+ID集合一致で exit 2</span><span class="w">artifact乖離0を構造で</span></div>
     <div class="row done"><span class="id">T53</span><span class="t">殿指示09:06『利他の精神で家老に取り組むべき未着手をナッジせよ』</span><span class="d">09:07 家老へ 1通=1単位 で8通: 小太郎lock解放/T47 GATE/T22/T10/T08/T50/T51/T49 msg_090715〜090720、全て read=true 到達</span><span class="w">未着手の滞留0</span></div>
     <div class="row done"><span class="id">T48c</span><span class="t">覚醒是正 commit の push</span><span class="d">09:10 家老 065a29095 23秒/7d4a0989e 5秒 push、0 0; 09:06 家老 95854d54f/26ddaed7e/56100e122/124d67e06 を各 5-6秒で push、0 0。下知 09:04:51→報告 09:06:50=家老ターン2分=nudge 到達時は速い</span><span class="w">push律速=nudge到達の証明</span></div>
@@ -162,5 +164,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 09:30 更新(inbox処理後: T21 GATE CLEAR)</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 09:36 更新(loop tick 13)</footer>
 </div>
