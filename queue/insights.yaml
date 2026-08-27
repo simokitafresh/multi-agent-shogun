@@ -5961,3 +5961,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-063058643-aa26
+  ts: "2026-08-28T06:30:58+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T114_ACK_STALL_task_id欠落]] は既存aliasesに一致なし。類似概念TOP3: inbox_processing_discipline(inbox処理規律; alias=duplicate_task_assigned; score=12.0) / yaml_safe_write(YAML安全書込み; alias=task yaml atomic handoff; score=11.2) / agent_formation_management(編成管理; alias=deploy_task; score=11.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
