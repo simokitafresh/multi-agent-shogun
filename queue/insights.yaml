@@ -6233,21 +6233,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T08:19:49+09:00"
 - id: INS-20260828-081927346-a1e6
   ts: "2026-08-28T08:19:27+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[inbox_watcher_nudge文_-fガード素通り]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=inbox_watcher; score=47.4) / daemon_supervision(デーモン監視と復旧; alias=inbox_watcher health check; score=22.3) / inbox_watcher_process_model(inbox_watcherプロセスモデル; alias=inbox_watcher重複; score=13.6)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T08:19:49+09:00"
 - id: INS-20260828-081933449-de81
   ts: "2026-08-28T08:19:33+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[karo_gunshi_shogun明示除外_9763378fa]] は既存aliasesに一致なし。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=zzz_gunshi_unreached_20260727; score=12.8) / semantic_dictionary_design(セマンティック辞書構想; alias=source gunshi reverify3; score=12.8) / provisional_gunshi_log_append(仮: Gunshi Log Append; alias=provisional_gunshi_log_append; score=12.6)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T08:19:49+09:00"
 - id: INS-20260828-081940903-29e3
   ts: "2026-08-28T08:19:40+09:00"
   insight: "[[将軍が犯したミスで繰り返しているものがないか調査して根治しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍が犯したミスで繰り返しているものがないか調査して根治しよう。D0でもいいし、マップでもいい"
