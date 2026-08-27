@@ -5554,3 +5554,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-231407946-74c9
+  ts: "2026-08-27T23:14:07+09:00"
+  insight: "[[multi agent shogunのreadmeを覚醒してアップデートしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=multi-agent-shogunのreadmeを覚醒してアップデートしよう。誰もが他のPCにクローンして使えるように整合性をとろう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
