@@ -6067,3 +6067,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-072553531-8324
+  ts: "2026-08-28T07:25:53+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_ci_fix_33120834061_inbox_delivery_cleanup_20260828 tobisaru lesson_candidate: 非同期fixtureは最終ログ行でなく子process終了と回収境界を待つ ASYNC_VERIFYの最終ログ出力は子process終了やtelemetry writer完了を意味しない。fixtureは対象root外へ非同期ログを隔離し、mockではない実process照合で終了を待ってからteardownする。"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
