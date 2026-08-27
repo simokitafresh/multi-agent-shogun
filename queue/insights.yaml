@@ -4936,14 +4936,20 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T16:47:56+09:00"
 - id: INS-20260827-164051409-5bb5
   ts: "2026-08-27T16:40:51+09:00"
   insight: "[[cd tmp tmp pVkgJWVlr0 clone && export PS1 \\ \\033 1;31m\\ karo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/tmp.pVkgJWVlr0/clone\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T16:47:57+09:00"
 - id: INS-20260827-164105953-81ba
   ts: "2026-08-27T16:41:05+09:00"
   insight: "[[30分loop 殿指示14 34「進捗を確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(task assigned/掲示板応答)…"
@@ -4960,18 +4966,27 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T16:47:57+09:00"
 - id: INS-20260827-164148375-df02
   ts: "2026-08-27T16:41:48+09:00"
   insight: "[[殿裁定2026 08 27 14 22『やれ』 将軍推薦 T66]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定2026-08-27 14:22『やれ』(将軍推薦 T66)。本日の停滞 3 系統の共通根が 9p: push timeout 3 回(外側 180s<lock 待ち 1200s)、git status 60-120s timeout、家老 merge-base D-state(p9_client_rpc 9 プロセス 13:38)、疾風 compat"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T16:47:57+09:00"
 - id: INS-20260827-164207781-0719
   ts: "2026-08-27T16:42:07+09:00"
   insight: "[[9p 根治 — リポジトリ本体を mnt c drvfs 9p から ext4 home simokitafresh m]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=9p 根治 — リポジトリ本体を /mnt/c(drvfs 9p) から ext4(/home/simokitafresh/multi-agent-shogun) へ移設する準備・検証・切替スクリプト(可逆)"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T16:47:57+09:00"
