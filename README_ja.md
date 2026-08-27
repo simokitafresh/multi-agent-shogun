@@ -4,13 +4,13 @@
 
 **AIコーディング軍団統率システム — Multi-CLI対応**
 
-*戦国軍制で10体のAIエージェントを並列運用 — **Claude Code / OpenAI Codex / GitHub Copilot / Kimi Code** をYAML・tmux・イベント駆動メールボックスで統率*
+*戦国軍制で9体のAIエージェントを並列運用 — **Claude Code / OpenAI Codex** をYAML・tmux・イベント駆動メールボックスで統率*
 
 **Talk Coding — Vibe Codingではなく、ターミナル・スマホ・Androidコンパニオンから指揮する**
 
 [![GitHub Stars](https://img.shields.io/github/stars/simokitafresh/multi-agent-shogun?style=social)](https://github.com/simokitafresh/multi-agent-shogun)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Formation](https://img.shields.io/badge/formation-Opus4%20%2B%20Codex4-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
+[![Formation](https://img.shields.io/badge/formation-config%2Fsettings.yaml-ff6600?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
 [![GATE CLEAR](https://img.shields.io/badge/GATE%20CLEAR-465%2F467%20(99.6%25)-2d7d46?style=flat-square)](https://github.com/simokitafresh/multi-agent-shogun)
 [![Shell](https://img.shields.io/badge/Shell%2FBash-100%25-green)]()
 
@@ -22,7 +22,7 @@
   <img src="assets/screenshots/tmux_shogun_9panes.png" alt="multi-agent-shogun: 9ペインが並列稼働" width="800">
 </p> -->
 
-<p align="center"><i>家老1体が Opus4 + Codex4 の忍者8体を統率 — 実際の稼働画面、モックデータなし</i></p>
+<p align="center"><i>家老1体が config/settings.yaml の現行混成編成を統率 — 実際の稼働画面、モックデータなし</i></p>
 
 ---
 
@@ -31,7 +31,7 @@
 **multi-agent-shogun** は、実運用向けのマルチエージェント開発基盤です。現行の生きた編成は以下です。
 
 - 将軍 + 家老: **Claude Code / Opus**
-- 佐助・霧丸・疾風・才蔵: **Codex / gpt-5.5**
+- エージェントのCLI・モデル・起動パス: **config/settings.yaml / config/cli_profiles.yaml** を正本とする
 - 影丸・半蔵・小太郎・飛猿: **Claude Code / Opus**
 
 **なぜ使うのか？**
@@ -451,15 +451,38 @@ wsl --install
 
 ---
 
+### 実行時依存台帳
+
+`first_setup.sh` は、出陣・watcher・hook・gate・検証が実行時に要求する依存を一括確認します。機械抽出した集計コマンド、生出力、クローン検証手順は [`docs/research/cmd_4407_clone_dependency_ledger_20260827.md`](docs/research/cmd_4407_clone_dependency_ledger_20260827.md) に保存しています。
+
+| 区分 | 必須の実行時依存 | セットアップの動作 |
+|------|------------------|--------------------|
+| コマンド | bash、git、python3、node、npm、tmux、jq、ripgrep（`rg`）、`gh`、`inotifywait`、bats、flock、timeout、setsid、crontab、curl | 一括確認し、不足時だけDebian/Ubuntuパッケージ補完を試行 |
+| Python | `requirements.txt`、clone内 `.venv/bin/python3`、PyYAML | venvがない・壊れている時だけ作成し、グローバルへ導入しない |
+| CLI | Codex CLI、Claude CLI、Claude pin `~/bin/claude`（2.1.87方針） | 既存バイナリ・版を報告し、暗黙に置換しない |
+| 設定 | `config/settings.yaml`、`config/cli_profiles.yaml`、`~/.codex/config.toml` | 既存設定を正本として保持し、Codex設定雛形は欠落時だけ作成 |
+| 実行時データ | `data/multi_agent_shogun_memory.db`、`queue/lord_conversation.jsonl`、`queue/pending_decisions.yaml`、`queue/bulletin_board.yaml`、`queue/insights.yaml`、`logs/` | 欠落時だけ初期化し、既存履歴は保持 |
+| cron | 毎分の `daemon_watchdog.sh`、週次の `shogun-weekly-metrics-trend` | markerがない時だけ追加し、無関係なcron行は保持 |
+
+現行の編成・エージェント名・モデル・CLI種別・起動パスは `config/settings.yaml` と `config/cli_profiles.yaml` が正本です。READMEの例を第二の設定源にしません。クリーンcloneでは、まず `first_setup.sh` を実行し、エージェントを起動しない検証を次で行います：
+
+```bash
+TMUX_TMPDIR="$(mktemp -d)" ./shutsujin_departure.sh -s
+```
+
+このセットアップ専用検証はtmux socketを隔離し、常駐daemonを起動しません。exit 0で完走し、元のcheckoutのqueueとユーザー設定を変更しないことが条件です。
+
+---
+
 ### ✅ セットアップ後の状態
 
-どちらのオプションでも、**10体のAIエージェント**が自動起動します：
+どちらのオプションでも、**9体のAIエージェント**が自動起動します：
 
 | エージェント | 役割 | 数 |
 |-------------|------|-----|
 | 🏯 将軍（Shogun） | 総大将 - あなたの命令を受ける | 1 |
 | 📋 家老（Karo） | 管理者 - タスクを分配 | 1 |
-| ⚔️ 忍者（Ninja） | ワーカー - 並列でタスク実行 | 8 |
+| ⚔️ 忍者（Ninja） | ワーカー - 並列でタスク実行 | 6 |
 
 tmuxセッションが作成されます：
 - `shogun:main` - ここで将軍に命令する
@@ -1001,16 +1024,15 @@ tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 
 ## 🛠️ スキル
 
-初期状態ではスキルはありません。
-運用中にダッシュボード（dashboard.md）の「スキル化候補」から承認して増やしていきます。
+共有スキルは `skills/` に含まれます。ユーザー固有スキルは `.claude/skills/` または `~/.codex/skills/` に置け、`first_setup.sh` は既存ディレクトリを上書きしません。
 
 スキルは `/スキル名` で呼び出し可能。将軍に「/スキル名 を実行」と伝えるだけ。
 
 ### スキルの思想
 
-**1. スキルはコミット対象外**
+**1. 共有スキルとユーザー固有スキルを分離**
 
-`.claude/commands/` 配下のスキルはリポジトリにコミットしない設計。理由：
+ユーザー固有の `.claude/commands/` 配下のスキルはリポジトリにコミットしない設計。理由：
 - 各ユーザの業務・ワークフローは異なる
 - 汎用的なスキルを押し付けるのではなく、ユーザが自分に必要なスキルを育てていく
 
@@ -1484,7 +1506,7 @@ tmux respawn-pane -t shogun:2.1 -k 'claude --model opus --dangerously-skip-permi
 
 ## 現在のハイライト
 
-- **Opus4 + Codex4 編成** — 2026-02-27 以降の現行編成。`config/settings.yaml` に基づく round-robin 配備
+- **設定駆動の混成編成** — `config/settings.yaml` と `config/cli_profiles.yaml` に基づく配備。READMEにモデルを固定記載しない
 - **GATE-first 運用** — `cmd_complete_gate.sh`、`gate_cmd_state.sh`、`gate_lesson_health.sh` が false completion、stale delegation、低価値教訓を防ぐ
 - **知識運用** — 知識7層、`queue/karo_snapshot.txt`、`queue/pending_decisions.yaml`、`context/cmd-chronicle.md` により復帰と監査を低コスト化
 - **モバイル面** — ntfy、Androidコンパニオン、Termux/mosh でデスクを離れても軍を動かせる
@@ -1497,7 +1519,7 @@ Issue、Pull Requestを歓迎します。
 
 - **バグ報告**: 再現手順を添えてIssueを作成してください
 - **機能アイデア**: まずDiscussionで提案してください
-- **スキル**: スキルは個人のワークフローに最適化されるものであり、このリポジトリには含めません
+- **スキル**: 共有スキルは `skills/`、個人スキルはリポジトリ外に分離します
 
 ## 🙏 クレジット
 
@@ -1513,7 +1535,7 @@ MIT License - 詳細は [LICENSE](LICENSE) を参照。
 
 <div align="center">
 
-**コマンド1つ。エージェント8体。連携コストゼロ。**
+**コマンド1つ。エージェント9体。連携コストゼロ。**
 
 ⭐ 役に立ったらスターをお願いします — 他の人にも見つけてもらえます。
 

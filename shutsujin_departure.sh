@@ -21,6 +21,9 @@ cd "$SCRIPT_DIR"
 # 本スクリプトは端末からの対話入力(read)を行わない（read は全て <<< ヒアストリング）ので安全。
 [ -t 0 ] && exec </dev/null
 
+# セッション名は検証用cloneごとに分離できる。通常運用の既定値は従来どおり。
+SHOGUN_SESSION="${SHOGUN_SESSION:-shogun}"
+
 # エージェント構成の一元管理ライブラリ読み込み
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 
@@ -354,7 +357,11 @@ echo ""
 # STEP 1: 既存セッションクリーンアップ
 # ═══════════════════════════════════════════════════════════════════════════════
 log_info "🧹 既存の陣を撤収中..."
-tmux kill-session -t shogun 2>/dev/null && log_info "  └─ shogun陣、撤収完了" || log_info "  └─ shogun陣は存在せず"
+if [ "$SETUP_ONLY" = true ]; then
+    log_info "  └─ セットアップ検証のため既存セッション撤収をスキップ"
+else
+    tmux kill-session -t shogun 2>/dev/null && log_info "  └─ shogun陣、撤収完了" || log_info "  └─ shogun陣は存在せず"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 1.5: 前回記録のバックアップ（--clean時のみ、内容がある場合）
@@ -534,8 +541,8 @@ fi
 log_war "👑 将軍の本陣を構築中..."
 
 # shogun セッションがなければ作る — window 0 = main（将軍）
-if ! tmux has-session -t shogun 2>/dev/null; then
-    tmux new-session -d -s shogun -n main
+if ! tmux has-session -t "$SHOGUN_SESSION" 2>/dev/null; then
+    tmux new-session -d -s "$SHOGUN_SESSION" -n main
 fi
 
 # グローバル設定: 接続元端末サイズ差分を吸収
@@ -569,8 +576,15 @@ done
 _deploy_count=${#_WIN2_AGENTS[@]}
 log_war "⚔️ 家老・忍者の陣を構築中（${_deploy_count}名配備）..."
 
-# shogun セッションに agents ウィンドウを追加
-if ! tmux new-window -t shogun -n "agents" 2>/dev/null; then
+# shogun セッションに agents ウィンドウを追加・再利用する。
+# 名前だけのtargetは再実行時に曖昧になるため、indexを固定して以後参照する。
+AGENTS_WINDOW_TARGET=""
+_existing_agents_window=$(tmux list-windows -t shogun -F '#{window_index} #{window_name}' 2>/dev/null | awk '$2 == "agents" { print $1; exit }')
+if [ -n "$_existing_agents_window" ]; then
+    AGENTS_WINDOW_TARGET="shogun:${_existing_agents_window}"
+elif _new_agents_window=$(tmux new-window -t shogun -n "agents" -P -F '#{session_name}:#{window_index}' 2>/dev/null); then
+    AGENTS_WINDOW_TARGET="$_new_agents_window"
+else
     echo ""
     echo "  ╔════════════════════════════════════════════════════════════╗"
     echo "  ║  [ERROR] Failed to create window 'agents'                ║"
@@ -618,29 +632,35 @@ done
 # 布陣図表示(STEP 7)用の列要素数
 _COL1_N=${#_COL1[@]}; _COL2_N=${#_COL2[@]}; _COL3_N=${#_COL3[@]}
 
-# 8ペイン作成（連続番号: PB〜PB+7）
-# Step 1: 上下2行に分割
-tmux split-window -v -t "shogun:agents.${PANE_BASE}"
+# 8ペイン作成（連続番号: PB〜PB+7）。setup-only再実行時に既存の
+# agents windowを再利用し、split/layoutを重ねてペイン数を増やさない。
+AGENTS_PANE_COUNT=$(tmux list-panes -t "$AGENTS_WINDOW_TARGET" -F '#{pane_index}' 2>/dev/null | wc -l | tr -d ' ')
+if [ "${AGENTS_PANE_COUNT:-0}" -lt "$_deploy_count" ]; then
+    # Step 1: 上下2行に分割
+    tmux split-window -v -t "${AGENTS_WINDOW_TARGET}.${PANE_BASE}"
 
-# Step 2: 上段を水平分割3回（PB, PB+2, PB+3, PB+4）
-_target=${PANE_BASE}
-for ((s=0; s<3; s++)); do
-    tmux split-window -h -t "shogun:agents.${_target}"
-    _target=$((PANE_BASE + 2 + s))
-done
+    # Step 2: 上段を水平分割3回（PB, PB+2, PB+3, PB+4）
+    _target=${PANE_BASE}
+    for ((s=0; s<3; s++)); do
+        tmux split-window -h -t "${AGENTS_WINDOW_TARGET}.${_target}"
+        _target=$((PANE_BASE + 2 + s))
+    done
 
-# Step 3: 下段を水平分割3回（PB+1, PB+5, PB+6, PB+7）
-_target=$((PANE_BASE + 1))
-for ((s=0; s<3; s++)); do
-    tmux split-window -h -t "shogun:agents.${_target}"
-    _target=$((PANE_BASE + 5 + s))
-done
+    # Step 3: 下段を水平分割3回（PB+1, PB+5, PB+6, PB+7）
+    _target=$((PANE_BASE + 1))
+    for ((s=0; s<3; s++)); do
+        tmux split-window -h -t "${AGENTS_WINDOW_TARGET}.${_target}"
+        _target=$((PANE_BASE + 5 + s))
+    done
 
-# select-layout で3列 2-3-3 に配置（動的LAYOUT_STRING）
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
-_layout=$(generate_layout_string "shogun:agents" "$PANE_BASE")
-tmux select-layout -t "shogun:agents" "$_layout"
+    # select-layout で3列 2-3-3に配置（動的LAYOUT_STRING）
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
+    _layout=$(generate_layout_string "$AGENTS_WINDOW_TARGET" "$PANE_BASE")
+    tmux select-layout -t "$AGENTS_WINDOW_TARGET" "$_layout"
+else
+    log_info "  └─ agents windowを再利用（既存${AGENTS_PANE_COUNT}ペイン）"
+fi
 
 # PANE_IDS: 連続番号（ペイン番号=エージェント順）
 PANE_IDS=()
@@ -733,25 +753,25 @@ done
 
 for i in $(seq 0 $((AGENT_COUNT-1))); do
     p=${PANE_IDS[$i]}
-    tmux select-pane -t "shogun:agents.${p}" -T "${PANE_TITLES[$i]}"
-    tmux set-option -p -t "shogun:agents.${p}" @agent_id "${AGENT_IDS[$i]}"
-    tmux set-option -p -t "shogun:agents.${p}" @model_name "${MODEL_NAMES[$i]}"
-    tmux set-option -p -t "shogun:agents.${p}" @current_task ""
-    tmux set-option -p -t "shogun:agents.${p}" @context_pct "--"
+    tmux select-pane -t "${AGENTS_WINDOW_TARGET}.${p}" -T "${PANE_TITLES[$i]}"
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_id "${AGENT_IDS[$i]}"
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @model_name "${MODEL_NAMES[$i]}"
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @current_task ""
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @context_pct "--"
     _bg_color=$(resolve_bg_color "${AGENT_IDS[$i]}" "${MODEL_NAMES[$i]}")
-    tmux select-pane -t "shogun:agents.${p}" -P "bg=${_bg_color}"
+    tmux select-pane -t "${AGENTS_WINDOW_TARGET}.${p}" -P "bg=${_bg_color}"
     PROMPT_STR=$(generate_prompt "${PANE_LABELS[$i]}" "${PANE_COLORS[$i]}" "$SHELL_SETTING")
-    tmux send-keys -t "shogun:agents.${p}" "cd \"$(pwd)\" && export PS1='${PROMPT_STR}' && clear" Enter
+    tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "cd \"$(pwd)\" && export PS1='${PROMPT_STR}' && clear" Enter
 done
 
 # ─── remain-on-exit (cmd_183) ───
 # CLIプロセスが死んでもペインを残す（OOM Kill等の原因調査用）
-tmux set-option -w -t "shogun:agents" remain-on-exit on 2>/dev/null
+tmux set-option -w -t "$AGENTS_WINDOW_TARGET" remain-on-exit on 2>/dev/null
 
 # ─── pane-border-format: ペイン枠にagent_id・モデル名・タスクを常時表示 ───
 # Color scheme: karo=#f9e2af(黄) gunshi=#94e2d5(水色) Opus=#cba6f7(紫) gpt-*=#a6e3a1(緑) else=#89b4fa(青)
-tmux set-option -t shogun:agents -w pane-border-status top
-tmux set-option -w -t "shogun:agents" pane-border-format \
+tmux set-option -t "$AGENTS_WINDOW_TARGET" -w pane-border-status top
+tmux set-option -w -t "$AGENTS_WINDOW_TARGET" pane-border-format \
   '#{?#{==:#{@agent_id},karo},#[fg=#f9e2af],#{?#{==:#{@agent_id},gunshi},#[fg=#94e2d5],#{?#{m:Opus*,#{@model_name}},#[fg=#cba6f7],#{?#{m:gpt-*,#{@model_name}},#[fg=#a6e3a1],#[fg=#89b4fa]}}}}#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]#{?#{!=:#{@inbox_count},},#[fg=#fab387]#{@inbox_count}#[default],} #{@current_task}' \
   2>/dev/null
 
@@ -785,7 +805,7 @@ done
 _verify_fail=0
 for i in $(seq 0 $((AGENT_COUNT-1))); do
     p=${PANE_IDS[$i]}
-    _actual_id=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_id 2>/dev/null)
+    _actual_id=$(tmux show-options -p -t "${AGENTS_WINDOW_TARGET}.${p}" -v @agent_id 2>/dev/null)
     if [ "$_actual_id" != "${AGENT_IDS[$i]}" ]; then
         echo "  ⚠️ VERIFY FAIL: pane ${p} expected @agent_id='${AGENT_IDS[$i]}' got '${_actual_id}'"
         _verify_fail=1
@@ -862,9 +882,9 @@ if [ "$SETUP_ONLY" = false ]; then
         _karo_cli_type=$(get_cli_type "karo")
         _karo_cmd=$(build_cli_command "karo")
     fi
-    tmux set-option -p -t "shogun:agents.${p}" @agent_cli "$_karo_cli_type"
-    tmux send-keys -t "shogun:agents.${p}" "$_karo_cmd"
-    tmux send-keys -t "shogun:agents.${p}" Enter
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_cli "$_karo_cli_type"
+    tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$_karo_cmd"
+    tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" Enter
     log_info "  └─ 家老（${_karo_cli_type}）、召喚完了"
 
     NINJA_PANE_COUNT=$((AGENT_COUNT - 1))
@@ -884,9 +904,9 @@ if [ "$SETUP_ONLY" = false ]; then
                     _ashi_cmd=$(build_cli_command "${ninja_name}")
                 fi
             fi
-            tmux set-option -p -t "shogun:agents.${p}" @agent_cli "$_ashi_cli_type"
-            tmux send-keys -t "shogun:agents.${p}" "$_ashi_cmd"
-            tmux send-keys -t "shogun:agents.${p}" Enter
+            tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_cli "$_ashi_cli_type"
+            tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$_ashi_cmd"
+            tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" Enter
         done
         log_info "  └─ 忍者・軍師1-${NINJA_PANE_COUNT}（決戦の陣）、召喚完了"
     else
@@ -900,9 +920,9 @@ if [ "$SETUP_ONLY" = false ]; then
                 _ashi_cli_type=$(get_cli_type "${ninja_name}")
                 _ashi_cmd=$(build_cli_command "${ninja_name}")
             fi
-            tmux set-option -p -t "shogun:agents.${p}" @agent_cli "$_ashi_cli_type"
-            tmux send-keys -t "shogun:agents.${p}" "$_ashi_cmd"
-            tmux send-keys -t "shogun:agents.${p}" Enter
+            tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_cli "$_ashi_cli_type"
+            tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$_ashi_cmd"
+            tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" Enter
         done
         log_info "  └─ 忍者・軍師1-${NINJA_PANE_COUNT}（平時の陣）、召喚完了"
     fi
@@ -1031,8 +1051,8 @@ NINJA_EOF
     LAUNCHED_WATCHERS+=("shogun")
 
     # 家老のwatcher
-    _karo_watcher_cli=$(tmux show-options -p -t "shogun:agents.${PANE_IDS[0]}" -v @agent_cli 2>/dev/null || echo "claude")
-    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.${PANE_IDS[0]}" "$_karo_watcher_cli" \
+    _karo_watcher_cli=$(tmux show-options -p -t "${AGENTS_WINDOW_TARGET}.${PANE_IDS[0]}" -v @agent_cli 2>/dev/null || echo "claude")
+    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "${AGENTS_WINDOW_TARGET}.${PANE_IDS[0]}" "$_karo_watcher_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" &
     disown
     LAUNCHED_WATCHERS+=("karo")
@@ -1041,8 +1061,8 @@ NINJA_EOF
     for i in $(seq 1 $NINJA_PANE_COUNT); do
         p=${PANE_IDS[$i]}
         ninja_name="${AGENT_IDS[$i]}"
-        _ashi_watcher_cli=$(tmux show-options -p -t "shogun:agents.${p}" -v @agent_cli 2>/dev/null || echo "claude")
-        nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${ninja_name}" "shogun:agents.${p}" "$_ashi_watcher_cli" \
+        _ashi_watcher_cli=$(tmux show-options -p -t "${AGENTS_WINDOW_TARGET}.${p}" -v @agent_cli 2>/dev/null || echo "claude")
+        nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${ninja_name}" "${AGENTS_WINDOW_TARGET}.${p}" "$_ashi_watcher_cli" \
             &>> "$SCRIPT_DIR/logs/inbox_watcher_${ninja_name}.log" &
         disown
         LAUNCHED_WATCHERS+=("${ninja_name}")
@@ -1066,6 +1086,9 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 6.8: ntfy入力リスナー起動
 # ═══════════════════════════════════════════════════════════════════════════════
+if [ "$SETUP_ONLY" = true ]; then
+    log_info "📦 セットアップのみ: 常駐デーモン起動をスキップ"
+else
 NTFY_TOPIC=$(grep 'ntfy_topic:' ./config/settings.yaml 2>/dev/null | awk '{print $2}' | tr -d '"')
 if [ -n "$NTFY_TOPIC" ]; then
     pkill -f "ntfy_listener.sh" 2>/dev/null || true
@@ -1126,6 +1149,7 @@ else
     log_info "⚠️ scripts/ninja_monitor.sh が見つかりません（スキップ）"
 fi
 echo ""
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 7: 環境確認・完了メッセージ
