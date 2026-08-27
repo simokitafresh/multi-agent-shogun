@@ -4576,3 +4576,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-27T11:00:11+09:00"
+- id: INS-20260827-114622978-c4f3
+  ts: "2026-08-27T11:46:22+09:00"
+  insight: "11:44-11:46 .git/index.lock が約2分残置し ninja_scope_commit が rc=2 BLOCK(保持 git プロセス無し、その後自然解放)。生成源(家老の隔離 merge/push か autopush レーン)の特定と、ninja_scope_commit で lock 保持 pid 無し+age>90s を stale 判定して短時間リトライする構造修正"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
