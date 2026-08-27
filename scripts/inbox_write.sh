@@ -1998,6 +1998,20 @@ if [ "$FROM" = "shogun" ] && [ "$TARGET" = "karo" ] && [ "$TYPE" = "task_assigne
     date +%s > /tmp/shogun_delegation_pending 2>/dev/null || true
 fi
 
+# 下知本文の path 実在 WARN(型4弾-1「書いたら grep」を下知本文へ拡張。2026-08-28 T109: 将軍が
+# scripts/first_setup.sh と書いたが実物は ./first_setup.sh で才蔵が前提差異停止=1往復の損失)。
+# 将軍発の指示系のみ、repo 相対の path 風トークン(scripts/… tests/… context/… docs/… config/… skills/…)を
+# 抽出し、存在しないものを stderr に列挙する。BLOCK しない(表示型 gate を積まない 07-21 裁定)。
+if [ "$FROM" = "shogun" ] && [ "$TYPE" = "task_assigned" ]; then
+    _missing_paths="$(printf '%s' "$CONTENT" | grep -oE '(scripts|tests|context|docs|config|skills|instructions|queue)/[A-Za-z0-9_./-]+' \
+        | sed 's/[.,、。)]*$//' | sort -u | while IFS= read -r _p; do
+            [ -e "$_p" ] || printf '%s ' "$_p"
+        done)"
+    if [ -n "$_missing_paths" ]; then
+        printf 'WARN: 下知本文に実在しない path: %s (型4弾-1: 書いたら grep。送信は続行)\n' "$_missing_paths" >&2
+    fi
+fi
+
 # 高速回転ガード(殿下知2026-08-15 18:58-19:00「冗長なテストは高速回転への重大なルール違反。
 # 最小限にシンプルで最高速度のtry&errorを強制しろ」「将軍が真因だった。将軍にもルールを強制せよ」):
 # 将軍→家老の委任本文(および本文中で参照する将軍scratchpadの詳細ファイル)に、途中laneへ
