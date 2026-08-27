@@ -4784,3 +4784,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-143914206-3267
+  ts: "2026-08-27T14:39:14+09:00"
+  insight: "[[回転 before afterを最新の状況にアップデートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=回転 before/afterを最新の状況にアップデートせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
