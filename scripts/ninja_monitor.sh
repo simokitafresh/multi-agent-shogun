@@ -5512,6 +5512,7 @@ trusted_sources = {
     "semantic_index_update",
     "gate_loop_health",
 }
+trusted_resolution_sources = trusted_sources | {"semantic_map_generate:new_file"}
 allowed_resolution_fields = {"status", "resolved_reason", "action_artifact", "resolved_at"}
 
 def load_index(path, required=True):
@@ -5539,11 +5540,25 @@ def load_index(path, required=True):
     return indexed
 
 def canonical(entry):
-    return json.dumps(entry, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    # PyYAML resolves unquoted ISO-8601 timestamps to datetime objects.  The
+    # lifecycle validator compares parsed entries, so canonicalization must
+    # remain total for valid YAML rather than turning a timestamp into an
+    # incidental TypeError before the trusted-diff checks run.
+    return json.dumps(
+        entry,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
 
 def is_trusted_source(entry):
     source = str(entry.get("source") or "")
     return source in trusted_sources or source.startswith("cmd_complete_gate:")
+
+def is_trusted_resolution_source(entry):
+    source = str(entry.get("source") or "")
+    return source in trusted_resolution_sources or source.startswith("cmd_complete_gate:")
 
 try:
     before = load_index(head_path)
@@ -5567,7 +5582,7 @@ try:
             key for key in set(old) | set(new)
             if old.get(key) != new.get(key)
         }
-        if not is_trusted_source(old) or not is_trusted_source(new):
+        if not is_trusted_resolution_source(old) or not is_trusted_resolution_source(new):
             raise ValueError("untrusted mutation")
         if old.get("source") != new.get("source"):
             raise ValueError("producer changed")
