@@ -1,5 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_050658 source_equivalent 内容変更なし境界のみ -->
+<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_054521 source_equivalent 内容変更なし境界のみ -->
+<!-- source_commit:1a5f51493b69 reason:DOC_LANE_REQUEST blt_054521 source_equivalent 内容変更なし境界のみ evidence:git -C /mnt/c/Python_app/DM-signal log --oneline -1 1a5f51493b69; reason=source_equivalent -->
 <!-- source_commit:40a1d740afed reason:DOC_LANE_REQUEST blt_050658 source_equivalent 内容変更なし境界のみ evidence:git -C /mnt/c/Python_app/DM-signal log --oneline -1 40a1d740afed; reason=source_equivalent -->
 <!-- source_commit:e805b0d9d5ff reason:DOC_LANE_REQUEST blt_044030 source_equivalent 内容変更なし境界のみ evidence:git -C /mnt/c/Python_app/DM-signal log --oneline -1 e805b0d9d5ff; reason=source_equivalent -->
 <!-- source_commit:5e9ea355d0ad reason:DOC_LANE_REQUEST blt_042403 source_equivalent 内容変更なし境界のみ evidence:git -C /mnt/c/Python_app/DM-signal log --oneline -1 5e9ea355d0ad; reason=source_equivalent -->
