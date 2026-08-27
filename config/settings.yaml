@@ -1,7 +1,7 @@
 language: ja
 shell: bash
 skill:
-  local_path: /home/simokitafresh/multi-agent-shogun/skills/
+  local_path: skills/
 cli:
   default: claude
   agents:
@@ -10,7 +10,7 @@ cli:
       model_name: fable-5-low
       role: shogun
       japanese_name: 将軍
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model claude-fable-5 --effort low
+      launch_cmd: ~/bin/claude --dangerously-skip-permissions --model claude-fable-5 --effort low
     karo:
       type: codex
       model_name: gpt-5.6-sol-medium
@@ -22,7 +22,7 @@ cli:
       type: claude
       model_name: claude-opus-4-6
       role: gunshi
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions --effort high
+      launch_cmd: ~/bin/claude --dangerously-skip-permissions --effort high
       japanese_name: 軍師
     hayate:
       type: codex
@@ -77,11 +77,11 @@ screenshot:
   retention_hours: 72
 logging:
   level: info
-  path: /home/simokitafresh/multi-agent-shogun/logs/
+  path: logs/
 layout:
   col1_width_pct: 36
   karo_height: 24
 type: claude
 model_name: sonnet-4-6-high
-launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions --effort high
+launch_cmd: ~/bin/claude --dangerously-skip-permissions --effort high
 service_tier: 
