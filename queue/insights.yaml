@@ -5529,3 +5529,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-000710952-28b2
+  ts: "2026-08-28T00:07:10+09:00"
+  insight: "[[simokitafresh@2025LG17 ~$ cd mnt c tools multi agent shogun ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=simokitafresh@2025LG17:~$ cd /mnt/c/tools/multi-agent-shogun && bash scripts/migrate_to_ext4_cutover.sh [cutover] final rsync: /mnt/c/tools…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
