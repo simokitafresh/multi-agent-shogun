@@ -4822,3 +4822,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-144756941-1a33
+  ts: "2026-08-27T14:47:56+09:00"
+  insight: "semantic_index_update新概念候補: discussion:cd tmp tmp pVkgJWVlr0 clone && export PS1 \\ \\ ;31m\\ karo\\ \\ 0m\\ \\ \\ ;32m\\ \\w\\ \\  は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
