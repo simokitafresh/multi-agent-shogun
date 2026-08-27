@@ -1,11 +1,11 @@
 agent: karo
-timestamp: "2026-08-27T09:14:00+09:00"
-compact_trigger: lord_strong_new_game_directive_20260827_0856
-current_task: active_hanzo_T21_T47_live_wait_and_pending_queue
-session_id: karo_strong_new_game_20260827_0858
-status: ready_for_new_game_with_active_tasks
-recovery_pointer: docs/research/karo-strong-new-game-checkpoint-20260827-0858.md
-target_sha256: 76b072e67d8dae9a2ee8cab2bd572aa8818921aa008fee347242b0ed43fd9fb6
-latest_review_message: kotaro_reflux_LGTM_fingerprint_191d27b8
-next_action: Recovery後inbox処理、kotaro review、次reflux観測でT47 AC2閉鎖、hanzo T21、T50 T51 T49、T22 T10 T08、T12 controlled publish
-session_summary: Role=karo。hanzo T21 acknowledged。kotaro reflux done/review待ち。hayate T47は実装PASSだがlive再配備未観測でFAIL。未配備T50 T51 T49 T22 T10 T08。semantic DB malformed要診断。Git保存時0/0。
+timestamp: "2026-08-27T21:26:03+09:00"
+compact_trigger: lord_strong_new_game_directive_20260827_2125
+current_task: cutover_final_convergence_then_dry_run
+session_id: karo_strong_new_game_20260827_2126
+status: ready_for_new_game_cutover_pending
+recovery_pointer: docs/research/karo-strong-new-game-checkpoint-20260827-2126.md
+target_sha256: a6ad47d421ff543c232e3c5e111df365d6586b094d22929a1189e06d8fdedc8b
+latest_review_message: relocate_hotfix_LGTM_CLEAR_fingerprint_3766f7d1
+next_action: Recovery後inbox→git再測定→owner dirty収束→converge 0/0→cutover dry-run→掲示板→殿の1行
+session_summary: Role=karo。全6task idle・inbox0・origin CI GREEN。9p relocate hotfix CLEAR。保存時git4/1+dirty10pathで実cutover未実行。次は0/0→dry-run→殿の1行。cutover後T88/T87/T83/T70。

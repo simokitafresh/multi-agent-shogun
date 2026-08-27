@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_rc_revoke_generation_20260818
-  timestamp: '2026-08-18T01:35:18Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_rc_revoke_generation_20260818'
 - cmd_id: cmd_karo_hotfix_done_requires_gate_clear_20260818
   timestamp: '2026-08-18T01:38:19Z'
   ninja: system
@@ -1308,3 +1295,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t71_snapshot_stale_refresh_20260827'
+- cmd_id: cmd_karo_hotfix_cutover_relocate_20260827
+  timestamp: '2026-08-27T12:10:43Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_cutover_relocate_20260827'
