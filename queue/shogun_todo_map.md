@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:38 更新(inbox: T50 配備)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:41 更新(inbox: T51 配備)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -56,7 +56,7 @@
 - [ ] T49(08:05 insight INS-080518912) ninja_monitor が実在しない hayate_report_cmd_alias.yaml を REPORT-REVIEW-AUTO-REQUEST-BLOCK(22:54/07:59)=テンプレ内コメントの誤抽出疑い→抽出に実在チェック ★偽BLOCKログの消化コスト0
 - [~] T50(09:37 才蔵へ karo_hotfix cmd_karo_hotfix_t50_reflux_trusted_resolution 配備 assigned・Working実測; 09:28 再発2回(09:15 collision/09:22 dirty)、家老の commit は消火であり hotfix 配備は未; 08:04 実測) reflux dirty-guard: daemon の insights.yaml 書込み(resolved 遷移)が毎周期 dirty を作り配備が BLOCK→auto-commit まで空白。書込み側で同一トランザクション commit するか guard を insights.yaml の status 差分のみ許容へ ★配備空白の再発源を構造で断つ
 - [x] T48b(08:51 家老 e5c1ab2cb→a52c112ce→577731149 を1本ずつpush、0 0、CI 577731149 in_progress) tick10 commit の push ★origin=HEAD 維持
-- [ ] T51(INS-20260827-085509569-7aa6) 家老 push 3本に 43m58s。成功 pre-push の wall/affected が logs に残らず律速不明→defense_overhead.jsonl へ記録+300秒超WARN ★push律速の可視化=1commitずつ方式の次弾
+- [~] T51(09:40 影丸へ karo_hotfix cmd_karo_hotfix_t51_prepush_success_telemetry 配備 assigned; INS-20260827-085509569-7aa6) 家老 push 3本に 43m58s。成功 pre-push の wall/affected が logs に残らず律速不明→defense_overhead.jsonl へ記録+300秒超WARN ★push律速の可視化=1commitずつ方式の次弾
 - [x] T52(09:03 機械突合: HTML未掲載5件(T08/T21/T22/T48/T48b)・走行中欄8→実2・済タイル46≠md39を是正) artifact抜け漏れ覚醒確認(殿指示09:00) ★二次情報(HTML)を正本(md)から機械生成し乖離0
 - [x] T48c(09:10 家老 065a29095 23秒/7d4a0989e 5秒 push、0 0; 09:06 家老 95854d54f/26ddaed7e/56100e122/124d67e06 を各 5-6秒で push、0 0。下知 09:04:51→報告 09:06:50=家老ターン2分=nudge 到達時は速い) 覚醒是正 commit の push ★push律速=nudge到達の証明
 - [x] T53(09:07 家老へ 1通=1単位 で8通: 小太郎lock解放/T47 GATE/T22/T10/T08/T50/T51/T49 msg_090715〜090720、全て read=true 到達) 殿指示09:06『利他の精神で家老に取り組むべき未着手をナッジせよ』 ★未着手の滞留0
