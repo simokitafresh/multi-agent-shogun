@@ -231,7 +231,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4337"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 既存bulletin_write.shの引数順序ミスBLOCK実装を一次確認し、追加修正不要と判定
+  action_artifact: "primary=scripts/bulletin_write.sh:371-409;semantic=context/semantic-map.md:93;test=bulletin_write guard rc=1"
+  resolved_at: "2026-08-27T13:29:30+09:00"
 - id: INS-20260823-085213990-0db0
   ts: "2026-08-23T08:52:13+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[設計書AsIs_v1.2_変わり身切り取り型]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=promotion v1 2は指示があるでも待機せよ; score=12.8) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示 v1 v3 3の16回場当たり修正で混乱; score=9.7) / growth_loop(学習ループ; alias=弾スループット全体のボトルネック改善 AsIs ToBe 5W1H v1 0 も同じ形式にアップデートしてくれ; score=6.8)。概念定義とaliases追加を検討せよ"
