@@ -476,6 +476,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T22:52:45.902756+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T22:43:44.425997+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T07:43:50+09:00 bql6mmvyq toolu_01Hn6doCTDkf1eDW96dEvtce /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb32a3ef-f388-4781-8e4e-0460d6 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T03:32:27.636771+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -1727,6 +1728,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T17:48:52+09:00 タスクマップartifact URL=https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 favicon🗺️。HTML正本=docs/dashboard/ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T18:03:12+09:00 家老にinboxがたまりすぎでは？家老がボトルネックになっているようだがインフラバグが潜んでいるのか、構造的な問題なのか調査して助けてやれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T18:21:31+09:00 並列でできることを放置して待機しているなら、覚醒して行動せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:51:21+09:00 では覚醒して行動せよ |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 | causal_chain | `[[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]` (L1397) |
 | causal_chain | `[[cmd_karo_hotfix_ga414_context_freshness_20260729]]` (L1454) |
@@ -3025,6 +3027,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T22:51:20+09:00 fixture body without a link |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T23:45:48+09:00 2026-08-26 23:42 殿指摘: 飛猿に 400 invalid_request 'gpt-5.6-luna-high model is not supported'。真因=~/.codex/config.toml model=" |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T08:58:49+09:00 回転before/after概算(殿下問2026-08-27 08:58): push 1本wall 7h30m停滞/214秒→5秒(08:57実測2本)、reflux配備 0件/日×3日→6件/日(1件8-13分)、報告→GATE 7h→ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T12:29:02+09:00 session_save_20260827_1227 将軍復帰点(session_save_20260827_0741 を上書き更新)。07:54 /clear 復帰(y)〜12:27、30分 loop(cron 3a5b86ad)稼働中。 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3311,6 +3314,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T22:55:51+09:00 2026-08-25 22:58 将軍idle自走§14: insight pending 101件(本日21件)/workaround直近10件は全てrework_auto_capture(手動WA 0)/軍師review LGTM連続。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T13:30:12+09:00 殿裁定 2026-08-26 13:26『並列化によっての速度向上はマシンパワーによるもので本質から乖離している。将軍・家老・軍師・忍者は理解して行動せよ』+13:24『らせん構造を意識しているか？今の目的は速度向上だ』。適用: 個別最適化 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T23:42:06+09:00 tobisaruに「{"type":"error","status":400,"error": {"type":"invalid_request_error","message":"The 'gpt- 5.6-luna-high' mode |
+| cmd | `cmd_karo_hotfix_rework_capture_gap_20260827` (`scripts/karo_workaround_log.sh`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -4920,6 +4924,7 @@ codd:
 | causal | `cmd_karo_impl_pd_duplicate_create_20260726` files_modified: [[infra_throughput_outcome_design]] |
 | causal | `cmd_karo_hotfix_lesson_impact_yaml_dump_20260727` files_modified: [[infra_throughput_outcome_design]] |
 | causal | `cmd_karo_hotfix_wa_reflux_placeholder_20260730` files_modified: [[infra_throughput_outcome_design]] |
+| causal | `cmd_karo_hotfix_rework_capture_gap_20260827` files_modified: [[infra_throughput_outcome_design]] |
 | causal_chain | `[[cmd_3644]]` (L927) |
 | causal_chain | `[[cmd_reflux_insight_202607072256_saizo]]` (L971) |
 | causal_chain | `[[cmd_3726]]` (L956) |
@@ -5621,6 +5626,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T08:33:26+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T09:00:59+09:00 artifactに抜け漏れがないか覚醒して確認して。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T09:05:51+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T12:35:19+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:16:09+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:34:08+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:44:17+09:00 artifactを覚醒して再確認してくれ。全体を確認して整合性が取れていないところがないかMECEに判断してアップデートしよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:46:33+09:00 状況が変わったのに、先送りや放置している物はないか？覚醒して確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T14:04:10+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -5668,7 +5679,6 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_30844464109_wrapper_run_tests]]` (L1544) |
 | causal_chain | `[[cmd_4250]]` (L1580) |
 | causal_chain | `[[cmd_karo_hotfix_p2_gate_model_attribution]]` (L1637) |
-| causal_chain | `[[cmd_karo_hotfix_t02_insight_prepush_blocker_20260826]]` (L1648) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -9418,6 +9428,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T08:18:16+09:00 b6cekj3ka toolu_0121xAPhxLUwrvneBTeHFt3B /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3bb49829-d2eb-40b9-a0e9-1b62ca |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T20:45:02+09:00 bu85yfzno toolu_01NXgLuutpNgKjdUkzoczWsC /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3bb49829-d2eb-40b9-a0e9-1b62ca |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T15:16:05+09:00 bid1jo308 toolu_01VdszFcfZ4C4N1wx5JKJAft /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/14788a97-9137-4db8-9c66-a7996f |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:44:35+09:00 bifrpztob toolu_01DShSakTWwbvc9scRovxkjm /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/13459098-3719-4178-90d4-8f76ad |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
@@ -12984,6 +12995,9 @@ codd:
 | cmd | `cmd_reflux_insight_202608270624_saizo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608270646_tobisaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608270646_tobisaru` (`queue/insights.yaml`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:39:49+09:00 b510raa2h toolu_01FyAGqiiJQkoAQ15FFMW7Bi /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb32a3ef-f388-4781-8e4e-0460d6 |
+| causal | `cmd_reflux_insight_202608271316_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608271316_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -15863,6 +15877,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T07:06:52+09:00 bqkgqmi4k toolu_01LU4cKinXiYuU4FvjPAtTfa /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb32a3ef-f388-4781-8e4e-0460d6 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T07:37:14+09:00 bfgm3giw6 toolu_01AGbxcs2r3Y8jUVvkY47KVR /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb32a3ef-f388-4781-8e4e-0460d6 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T00:03:01.446257+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T00:18:41.096160+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -15885,7 +15900,6 @@ codd:
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 | causal_chain | `[[cmd_karo_recon2_ninja_prerequisite_audit_20260814]]` (L1588) |
 | causal_chain | `[[cmd_karo_hotfix_inject_seam_contract_missing_202608190548]]` (L1612) |
-| discussion | `queue/lord_conversation.jsonl` 2026-08-27T00:18:41.096160+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
