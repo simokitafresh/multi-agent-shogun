@@ -28,38 +28,42 @@
 
 ## これは何？
 
-**multi-agent-shogun** は、実運用向けのマルチエージェント開発基盤です。現行の生きた編成は以下です。
+**multi-agent-shogun** は、1 人の人間（殿）が tmux 上の **9 体の CLI エージェント**（将軍 1・家老 1・軍師 1・忍者 6）を、YAML ファイルとファイル監視だけで指揮し、結果を二値で検証し、失敗を教訓・ゲート・テストへ還流させて自動成長させる戦国式のマルチエージェント基盤です。API ではなく各社の CLI（Claude Code / Codex CLI）をそのまま並べ、CLI ごとに固有の hook・gate を持つ multi-CLI 構成です。
 
-- 将軍 + 家老: **Claude Code / Opus**
-- エージェントのCLI・モデル・起動パス: **config/settings.yaml / config/cli_profiles.yaml** を正本とする
-- 影丸・半蔵・小太郎・飛猿: **Claude Code / Opus**
+### 陣形（2026-08-27、`config/settings.yaml` が唯一の正本）
 
-**なぜ使うのか？**
-- 1つの命令で**10体のエージェント**を起動し、すぐ制御が戻る
-- ワーカー間連携は **YAML + tmux**。APIオーケストレーション費用を増やさない
-- **GATEシステム**、**教訓サイクル**、**PDシステム**、**cmd年代記** を内蔵
-- **ntfy**、**Tailscale/Termux/mosh**、**Androidコンパニオン**で外出先から指揮可能
-- 待ち時間なし - タスクがバックグラウンドで実行中も次の命令を出せる
-- AIがセッションを跨いであなたの好みを記憶（将軍のMemory MCP）
-- ダッシュボードと `queue/karo_snapshot.txt` でリアルタイム進捗確認
+| 役割 | window / pane | CLI・モデル | 何をするか |
+|---|---|---|---|
+| **殿**（あなた） | 端末 | 人間 | 指示と裁定。将軍と対話し、dashboard / artifact を自分で見る |
+| **将軍** shogun | `main` | Claude Code（Fable 5） | 殿の指示を cmd（YAML）に起票し品質ゲートを通して家老へ委任。30 分ごとに一次確認・つまり解消・戦況 artifact 更新。コードの深掘り調査はせず偵察 cmd で委任 |
+| **家老** karo | `agents` pane 1 | Codex（gpt-5.6-sol） | cmd を task に分解し忍者へ配備。報告を受けて GATE を回し、converge / push（1 commit ずつ）。hotfix / ci_fix は将軍 cmd なしで自立配備 |
+| **軍師** gunshi | `agents` pane 2 | Claude Code（Opus 4.6, 1M） | cmd 草案と報告 YAML の一次レビュー（SG7 プロトコル）。LGTM → 家老 ACCEPT、FAIL → 差戻し。idle 時は分析を永続化し、将軍の自己検査（洗脳チェック）を第三者検証 |
+| **忍者 ×6** hayate / kagemaru / hanzo / saizo / kotaro / tobisaru | `agents` pane 3-8 | Codex（gpt-5.6-luna high） | task YAML の受入条件を最高品質で遂行。task worktree で隔離作業 → scope commit → 報告 YAML。記憶の連続性なし（毎回 /clear） |
 
 ```
-      あなた（上様）
-           │
-           ▼ 命令を出す
-    ┌─────────────┐
-    │   SHOGUN    │  ← 命令を受け取り、即座に委譲
-    └──────┬──────┘
-           │ YAMLファイル + tmux
-    ┌──────▼──────┐
-    │    KARO     │  ← タスクをワーカーに分配
-    └──────┬──────┘
-           │
-  ┌─┬─┬─┬─┴─┬─┬─┬─┐
-  │1│2│3│4│5│6│7│8│  ← 8体のワーカーが並列実行
-  └─┴─┴─┴─┴─┴─┴─┴─┘
-       NINJA
+        殿（あなた）
+          │ 日本語で指示
+          ▼
+   ┌──────────────┐        ┌──────────────┐
+   │   将軍 SHOGUN │──cmd──▶│   家老 KARO   │
+   │  起票・委任・  │        │ 分解・配備・   │
+   │  30分loop      │        │ GATE・push    │
+   └──────────────┘        └──────┬───────┘
+          ▲                        │ task YAML + inbox nudge
+          │ レビュー結果            ▼
+   ┌──────────────┐     ┌─┬─┬─┬─┬─┬─┐
+   │  軍師 GUNSHI  │◀────│1│2│3│4│5│6│  忍者 NINJA ×6（task worktree で隔離）
+   │  SG7 レビュー  │報告 └─┴─┴─┴─┴─┴─┘
+   └──────────────┘
+   鎖: 殿→将軍→家老→忍者（分岐なし）。同じ鎖を学びが逆向きに還流する（lesson_candidate→教訓→gate→test）
 ```
+
+**なぜ使うのか**
+- 1 つの指示で 9 体が動き、すぐ制御が戻る。報告→レビュー→GATE→通知まで人手ゼロ
+- エージェント間通信は **YAML + inotify**。API オーケストレーション費用を増やさない（定額 CLI サブスク）
+- **cmd 品質ゲート（82 check）・二段レビュー・GATE・reflux・教訓淘汰**を内蔵し、失敗が次回の環境に埋め込まれる
+- **三層記憶**（記憶DB / セマンティック索引 / Obsidian 因果）で `/clear` 後も前より強い状態で再開する
+- ntfy・Android アプリ・戦況 artifact で外出先から指揮できる
 
 ---
 
@@ -84,7 +88,7 @@
 | | Claude Code `Task` ツール | LangGraph | CrewAI | **multi-agent-shogun** |
 |---|---|---|---|---|
 | **アーキテクチャ** | 1プロセス内のサブエージェント | グラフベースの状態機械 | ロールベースエージェント | tmux経由の階層構造 |
-| **並列性** | 逐次実行（1つずつ） | 並列ノード（v0.2+） | 限定的 | **8体の独立エージェント** |
+| **並列性** | 逐次実行（1つずつ） | 並列ノード（v0.2+） | 限定的 | **6体の独立エージェント** |
 | **連携コスト** | TaskごとにAPIコール | API + インフラ（Postgres/Redis） | API + CrewAIプラットフォーム | **ゼロ**（YAML + tmux） |
 | **可観測性** | Claudeのログのみ | LangSmith連携 | OpenTelemetry | **ライブtmuxペイン** + ダッシュボード |
 | **スキル発見** | なし | なし | なし | **ボトムアップ自動提案** |
@@ -117,7 +121,7 @@
 
 ## なぜCLI（APIではなく）？
 
-多くのAIコーディングツールはトークン従量課金。8体のOpus級エージェントをAPI経由で動かすと**$100+/時間**。CLI定額サブスクはこれを逆転させる：
+多くのAIコーディングツールはトークン従量課金。9体のOpus級エージェントをAPI経由で動かすと**$100+/時間**。CLI定額サブスクはこれを逆転させる：
 
 | | API（従量課金） | CLI（定額制） |
 |---|---|---|
@@ -126,7 +130,7 @@
 | **使用時の心理** | 1トークンが気になる | 使い放題 |
 | **実験の余地** | 制約あり | 自由に投入 |
 
-**「AIを使い倒す」思想** — 定額CLIサブスクなら、8体の忍者を気兼ねなく投入できる。1時間稼働でも24時間稼働でもコストは同じ。「まあまあ」と「徹底的に」の二択で悩む必要がない — エージェントを増やせばいい。
+**「AIを使い倒す」思想** — 定額CLIサブスクなら、6体の忍者を気兼ねなく投入できる。1時間稼働でも24時間稼働でもコストは同じ。「まあまあ」と「徹底的に」の二択で悩む必要がない — エージェントを増やせばいい。
 
 ### Multi-CLI対応
 
@@ -537,8 +541,8 @@ JavaScriptフレームワーク上位5つを調査して比較表を作成せよ
 ## 進行中
 | ワーカー | タスク | 状態 |
 |----------|--------|------|
-| Sasuke | React調査 | 実行中 |
-| Kirimaru | Vue調査 | 実行中 |
+| Saizo | React調査 | 実行中 |
+| Kotaro | Vue調査 | 実行中 |
 | Hayate | Angular調査 | 完了 |
 ```
 
@@ -554,8 +558,8 @@ JavaScriptフレームワーク上位5つを調査して比較表を作成せよ
 
 | ワーカー | 割当内容 |
 |----------|----------|
-| Sasuke | Notion MCP調査 |
-| Kirimaru | GitHub MCP調査 |
+| Saizo | Notion MCP調査 |
+| Kotaro | GitHub MCP調査 |
 | Hayate | Playwright MCP調査 |
 | Kagemaru | Memory MCP調査 |
 | Hanzo | Sequential Thinking MCP調査 |
@@ -563,6 +567,36 @@ JavaScriptフレームワーク上位5つを調査して比較表を作成せよ
 5体の忍者が同時に調査開始。リアルタイムで作業を見ることができます。
 
 結果は完了次第 `dashboard.md` に表示されます。
+
+---
+
+## 🔗 鎖・三層学習ループ・三層記憶
+
+### 鎖（指揮の一本道）
+
+殿 → 将軍 → 家老 → 忍者。分岐なし、迂回なし。将軍は決め、家老は仕切り、忍者は遂げ、軍師はレビューする。**鎖は命令の道であると同時に学びの還流路**で、忍者の `lesson_candidate` が家老を経て教訓→ゲート→テスト fixture に入る。鎖を迂回すると指示が消え、同時に学びも消える（正本: `CLAUDE.md` 先頭、`instructions/*.md`）。
+
+### 三層学習ループ
+
+全ての作業に「①実行 → ②二値計測 → ③知見還流 → 次サイクル強化」を回す。スコープが三層ある。
+
+| 層 | スコープ | 実装 |
+|---|---|---|
+| 個 | ロール内 | AC ごとの `binary_checks`（yes/no）、洗脳 8 パターン自己検査、起動時の deepdive 追体験（Phase 単位 replay と receipt） |
+| 対 | 忍者+家老 / 家老+軍師 | 報告 YAML → 軍師 SG7 レビュー → 家老 GATE の往復、rework 率の計測 |
+| 全 | 鎖全体 | reflux（`queue/insights.yaml` の気づきを idle 忍者へ自動配備）、教訓の淘汰、`gate_metrics` の日次 before/after、CI GREEN 維持 |
+
+`/clear` は「強くてニューゲーム」。会話のコンテキストが 0 に戻っても、知識基盤（`CLAUDE.md`・`instructions/`・教訓・記憶DB・runbook）が残るので、次は前より強い状態で再開する。原則は「削るな、速くしろ」— ゲートを減らすのではなく、品質を保ったまま速くする（正本: `context/growth-loop.md`、`docs/research/three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707.md`）。
+
+### 三層記憶
+
+| 層 | 実体 | 入口 |
+|---|---|---|
+| 記憶DB | SQLite `data/multi_agent_shogun_memory.db`（対話・裁定・knowledge・復帰点 `session_save_*`、FTS5） | `bash scripts/memory_db_query.sh --search "<語>"` / 書込み `scripts/memory_db_knowledge_write.sh` |
+| セマンティック索引 | `context/semantic-map.md` + `docs/semantic-index/index.md`（概念・alias・discussion） | `bash scripts/semantic_search.sh "<query>"` |
+| Obsidian 因果ネットワーク | `[[リンク]]` と `origin: "[[発端]] -> [[原因]] -> [[結果]]"`（教訓・報告・cmd に必須） | `.cache/causal_index.tsv`、`/three-layer-penetrate` |
+
+契約: 作業の前に三層を検索する（hook が preflight を自動注入）。殿への応答には `[MEM: …]` の引用タグを付ける（欠落は stop hook が止める）。新しい知識は三層すべてへ貫通させる（正本: `context/memory-db-schema.md`、`docs/research/semantic_index_design.md`）。
 
 ---
 
@@ -924,53 +958,22 @@ SayTaskは個人の生産性を担当（キャプチャ → スケジュール �
 
 ## 🧠 モデル設定
 
-| エージェント | モデル | 思考モード | 理由 |
-|-------------|--------|----------|------|
-| 将軍 | Opus | **有効（high）** | 殿との戦略議論・リサーチ・方針設計に深い推論が必要 |
-| 家老 | Opus | 有効 | タスク分配には慎重な判断が必要 |
-| Sasuke, Kirimaru, Hayate, Saizo | Codex | 有効 | 実装速度とローカル実行に強い |
-| Kagemaru, Hanzo, Kotaro, Tobisaru | Opus | 有効 | 高曖昧度の調査・レビュー向け |
+編成の正本は `config/settings.yaml`（CLI・モデル・effort・launch_cmd）と `config/cli_profiles.yaml`。README の表は 2026-08-27 時点の値であり、切替は `/shogun-cli-switch`（idle pane だけ respawn し、作業中の pane は触らない）で行う。
 
-将軍は殿（人間）の参謀として、タスク中継だけでなく戦略議論・リサーチ分析・方針設計を行う。これらはBloom's Taxonomy の Level 4-6（分析・評価・創造）に該当し、Thinking有効が必須。中継のみに特化したい場合は `--shogun-no-thinking` オプションで無効化可能。
+| エージェント | CLI / モデル | effort | 理由 |
+|---|---|---|---|
+| 将軍 | Claude Code / Fable 5 | low（settings）| 殿との対話・cmd 起票・全体判断。深掘り調査はしない |
+| 家老 | Codex / gpt-5.6-sol | medium | 分解・配備・GATE の判断を速く回す |
+| 軍師 | Claude Code / Opus 4.6（1M context） | high | レビューは長文（cmd 全文+報告 YAML）を読むため 1M が要る |
+| 忍者 ×6 | Codex / gpt-5.6-luna | high | 実装・計測・偵察。モデル名は忍者 launch_cmd に固定せず settings から継承 |
 
-### 現行編成
+原則（殿裁定 2026-08-27）: モデルを cmd で名指ししない（配備は家老の判断）。作業中の pane は respawn しない。Codex は `~/.codex/config.toml` の trust とモデルを `codex_config_apply_agent` が respawn 経路で適用し、pane 表示が settings と違えば `ninja_monitor` が WARN を出す。
 
-| 部隊 | 現在のCLI / モデル | 備考 |
-|------|--------------------|------|
-| 将軍・家老 | Claude Code / Opus | 戦略・統制系 |
-| Sasuke, Kirimaru, Hayate, Saizo | Codex / gpt-5.5 | Codex隊 |
-| Kagemaru, Hanzo, Kotaro, Tobisaru | Claude Code / Opus | Opus隊 |
+### 混成の考え方
 
-現行ローテーションは 2026-02-27 から継続中。配備は CLI 特性とタスク適性で決まる。
-
-### Bloom's Taxonomy によるタスク分類
-
-タスクはBloom's Taxonomy（ブルームの分類法）に基づいて分類し、最適なモデルに割り当てます：
-
-| レベル | カテゴリ | 内容 | モデル |
-|--------|----------|------|--------|
-| L1 | 記憶 | 事実の想起、コピー、一覧化 | Codex |
-| L2 | 理解 | 説明、要約、言い換え | Codex |
-| L3 | 応用 | 手順の実行、既知パターンの実装 | Codex |
-| L4 | 分析 | 比較、調査、構造の分解 | Opus |
-| L5 | 評価 | 判断、批評、推奨 | Opus |
-| L6 | 創造 | 設計、構築、新しいソリューションの統合 | Opus |
-
-家老が各サブタスクにBloomレベルを付与し、適切なエージェント profile にルーティングします。定型的な repo 作業は Codex、曖昧性の高い推論やレビューは Opus を優先します。
-
-### タスク依存関係（blockedBy）
-
-タスクは `blockedBy` を使って他タスクへの依存を宣言できます：
-
-```yaml
-# queue/tasks/kirimaru.yaml
-task:
-  task_id: subtask_010b
-  blockedBy: ["subtask_010a"]  # sasukeのタスク完了を待つ
-  description: "subtask_010aで構築したAPIクライアントを統合"
-```
-
-ブロック元のタスクが完了すると、家老が自動的に依存タスクのブロックを解除し、空いている忍者に割り当てます。これにより待機時間が削減され、依存タスクの効率的なパイプライン処理が可能になります。
+- **Claude 主・Codex 従**（multi-CLI 大原則）: 評価基準（二値 AC・報告契約）だけを共通化し、hook・gate・起動方法は CLI ごとに別実装。協議不調時は Claude 側の契約を正とする。
+- **切替は編成単位**: 家老を Claude に、忍者を全員 Codex に、などの切替は `/shogun-cli-switch` の 1 コマンド。過去の編成履歴は `context/training-cycle.md`。
+- **上限・更新プロンプト**: Codex の利用上限や「Update available」プロンプトで pane が止まると watcher が nudge を抑止する。解除は可逆操作（選択肢を確認してから送出）。
 
 ---
 

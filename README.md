@@ -29,40 +29,42 @@ Run 9 AI coding agents in parallel through a Sengoku hierarchy: a **mixed Claude
 
 ## What is this?
 
-**multi-agent-shogun** is a multi-agent development platform for real work, not toy demos. The current default formation is defined in `config/settings.yaml`:
+**multi-agent-shogun** lets one human (the Lord) command **9 CLI agents** on tmux — 1 Shogun, 1 Karo, 1 Gunshi, 6 Ninja — using nothing but YAML files and file watchers, verify results with binary checks, and feed every failure back into lessons, gates and tests so the system grows by itself. It runs vendor CLIs as they are (Claude Code / Codex CLI) instead of APIs, with per-CLI hooks and gates (multi-CLI).
 
-- Shogun + Karo on **`cli.default`** from `config/settings.yaml` (currently Claude Code)
-- Gunshi (military advisor) on **Claude Code / Opus 4.6**
-- Agent CLI types, models, and launch paths come from **`config/settings.yaml` / `config/cli_profiles.yaml`**
-- Kagemaru and Kotaro on **Claude Code / Sonnet 4.6**
-- Hanzo and Tobisaru on **Claude Code / Opus 4.6**
+### Formation (2026-08-27; `config/settings.yaml` is the single source of truth)
 
-**Why use it?**
-- One command launches **9 agents** and returns control immediately
-- Workers coordinate through **YAML + tmux**, not expensive API orchestration
-- The repo includes a **GATE pipeline**, **lesson cycle**, **pending-decision system**, and **cmd chronicle**
-- Remote control is built in through **ntfy**, **Tailscale/Termux/mosh**, and the **Android companion app**
-- Zero wait time — give your next order while tasks run in the background
-- AI remembers your preferences across sessions (Memory MCP for Shogun)
-- Real-time progress on a dashboard and `queue/karo_snapshot.txt`
+| Role | window / pane | CLI · model | What it does |
+|---|---|---|---|
+| **Lord** (you) | terminal | human | Gives orders and rulings; talks to Shogun; reads dashboard / artifact directly |
+| **Shogun** | `main` | Claude Code (Fable 5) | Turns orders into cmds (YAML), passes the quality gates, delegates to Karo. Every 30 min: primary checks, unblocking, battle-status artifact. Never digs into code itself — files recon cmds |
+| **Karo** | `agents` pane 1 | Codex (gpt-5.6-sol) | Splits cmds into tasks and deploys Ninja. Receives reports, runs the GATE, converges and pushes one commit at a time. Deploys hotfix / ci_fix without a Shogun cmd |
+| **Gunshi** | `agents` pane 2 | Claude Code (Opus 4.6, 1M) | First-pass reviewer of cmd drafts and report YAMLs (SG7 protocol). LGTM → Karo ACCEPT, FAIL → sent back. Persists analyses when idle and independently verifies Shogun's self-checks |
+| **Ninja ×6** hayate / kagemaru / hanzo / saizo / kotaro / tobisaru | `agents` pane 3-8 | Codex (gpt-5.6-luna high) | Execute the task YAML's acceptance criteria at top quality, isolated in a task worktree → scoped commit → report YAML. No memory across tasks (/clear every time) |
 
 ```
-        You (上様 / The Lord)
-             │
-             ▼  Give orders
-      ┌─────────────┐
-      │   SHOGUN    │  ← Receives your command, delegates instantly
-      └──────┬──────┘
-             │  YAML + tmux
-      ┌──────▼──────┐
-      │    KARO     │  ← Distributes tasks to workers
-      └──────┬──────┘
-             │
-    ┌─┬─┬─┬─┴─┬─┬─┐
-    │1│2│3│4│5│6│G│  ← 6 ninja + 1 gunshi execute in parallel
-    └─┴─┴─┴─┴─┴─┴─┘
-      NINJA    GUNSHI
+        Lord (you)
+          │ orders in plain language
+          ▼
+   ┌──────────────┐        ┌──────────────┐
+   │    SHOGUN     │──cmd──▶│     KARO     │
+   │ file, delegate │        │ split, deploy │
+   │ 30-min loop    │        │ GATE, push    │
+   └──────────────┘        └──────┬───────┘
+          ▲                        │ task YAML + inbox nudge
+          │ review verdicts         ▼
+   ┌──────────────┐     ┌─┬─┬─┬─┬─┬─┐
+   │    GUNSHI     │◀────│1│2│3│4│5│6│  NINJA ×6 (isolated task worktrees)
+   │  SG7 review   │reports└─┴─┴─┴─┴─┴─┘
+   └──────────────┘
+   The chain: Lord → Shogun → Karo → Ninja (no branches). Learning flows back along the same chain (lesson_candidate → lesson → gate → test)
 ```
+
+**Why use it**
+- One order moves 9 agents and control returns immediately; report → review → GATE → notification needs no human hands
+- Agents talk through **YAML + inotify** — no API orchestration bill (flat-rate CLI subscriptions)
+- Built-in **cmd quality gates (82 checks), two-stage review, GATE, reflux and lesson retirement**: every failure gets embedded in the next environment
+- **Three-layer memory** (memory DB / semantic index / Obsidian causal links) so a `/clear` restarts stronger than before
+- ntfy, the Android app and the battle-status artifact let you command from anywhere
 
 ---
 
@@ -283,37 +285,7 @@ Meanwhile, the Karo distributes tasks to ninja workers for parallel execution.
 Open `dashboard.md` in your editor for a real-time status view:
 
 ```markdown
-## 🔗 Chain, Three-Layer Learning Loop, Three-Layer Memory
-
-### The chain (one line of command)
-
-Lord → Shogun → Karo → Ninja. No branches, no bypasses. Shogun decides, Karo organizes, Ninja executes, Gunshi reviews. **The chain is both the path of orders and the return path of learning**: a Ninja's `lesson_candidate` flows through Karo into lessons → gates → test fixtures. Bypass the chain and both the order and the learning are lost (source: top of `CLAUDE.md`, `instructions/*.md`).
-
-### Three-layer learning loop
-
-Every piece of work runs "① execute → ② binary measurement → ③ feed knowledge back → stronger next cycle", at three scopes.
-
-| Layer | Scope | Implementation |
-|---|---|---|
-| Individual | inside one role | per-AC `binary_checks` (yes/no), self-check against 8 "brainwash" patterns, deepdive replay at startup (phase by phase, with receipts) |
-| Pair | Ninja+Karo / Karo+Gunshi | report YAML → Gunshi SG7 review → Karo GATE round trip, rework-rate metrics |
-| Whole | the entire chain | reflux (auto-deploying insights from `queue/insights.yaml` to idle Ninja), lesson retirement, daily before/after from `gate_metrics`, keeping CI green |
-
-`/clear` is "New Game+": conversation context drops to zero but the knowledge base (`CLAUDE.md`, `instructions/`, lessons, memory DB, runbooks) survives, so the next session starts stronger. Principle: "don't cut, make it fast" — keep the gates, keep the quality, and make them faster (sources: `context/growth-loop.md`, `docs/research/three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707.md`).
-
-### Three-layer memory
-
-| Layer | What | Entry point |
-|---|---|---|
-| Memory DB | SQLite `data/multi_agent_shogun_memory.db` (dialogue, rulings, knowledge, restore points `session_save_*`, FTS5) | `bash scripts/memory_db_query.sh --search "<term>"` / write with `scripts/memory_db_knowledge_write.sh` |
-| Semantic index | `context/semantic-map.md` + `docs/semantic-index/index.md` (concepts, aliases, discussions) | `bash scripts/semantic_search.sh "<query>"` |
-| Obsidian causal network | `[[links]]` and `origin: "[[trigger]] -> [[cause]] -> [[effect]]"` (required in lessons, reports, cmds) | `.cache/causal_index.tsv`, `/three-layer-penetrate` |
-
-Contract: search all three layers before acting (a hook injects the preflight automatically); every answer to the Lord carries a `[MEM: …]` citation tag (a stop hook blocks answers without one); new knowledge is written through to all three layers (sources: `context/memory-db-schema.md`, `docs/research/semantic_index_design.md`).
-
----
-
-## In Progress## In Progress
+## In Progress
 | Worker | Task | Status |
 |--------|------|--------|
 | Hanzo | Research React | Running |
@@ -346,6 +318,36 @@ All 5 ninja research simultaneously. You can watch them work in real time:
 </p> -->
 
 Results appear in `dashboard.md` as they complete.
+
+---
+
+## 🔗 Chain, Three-Layer Learning Loop, Three-Layer Memory
+
+### The chain (one line of command)
+
+Lord → Shogun → Karo → Ninja. No branches, no bypasses. Shogun decides, Karo organizes, Ninja executes, Gunshi reviews. **The chain is both the path of orders and the return path of learning**: a Ninja's `lesson_candidate` flows through Karo into lessons → gates → test fixtures. Bypass the chain and both the order and the learning are lost (source: top of `CLAUDE.md`, `instructions/*.md`).
+
+### Three-layer learning loop
+
+Every piece of work runs "① execute → ② binary measurement → ③ feed knowledge back → stronger next cycle", at three scopes.
+
+| Layer | Scope | Implementation |
+|---|---|---|
+| Individual | inside one role | per-AC `binary_checks` (yes/no), self-check against 8 "brainwash" patterns, deepdive replay at startup (phase by phase, with receipts) |
+| Pair | Ninja+Karo / Karo+Gunshi | report YAML → Gunshi SG7 review → Karo GATE round trip, rework-rate metrics |
+| Whole | the entire chain | reflux (auto-deploying insights from `queue/insights.yaml` to idle Ninja), lesson retirement, daily before/after from `gate_metrics`, keeping CI green |
+
+`/clear` is "New Game+": conversation context drops to zero but the knowledge base (`CLAUDE.md`, `instructions/`, lessons, memory DB, runbooks) survives, so the next session starts stronger. Principle: "don't cut, make it fast" — keep the gates, keep the quality, and make them faster (sources: `context/growth-loop.md`, `docs/research/three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707.md`).
+
+### Three-layer memory
+
+| Layer | What | Entry point |
+|---|---|---|
+| Memory DB | SQLite `data/multi_agent_shogun_memory.db` (dialogue, rulings, knowledge, restore points `session_save_*`, FTS5) | `bash scripts/memory_db_query.sh --search "<term>"` / write with `scripts/memory_db_knowledge_write.sh` |
+| Semantic index | `context/semantic-map.md` + `docs/semantic-index/index.md` (concepts, aliases, discussions) | `bash scripts/semantic_search.sh "<query>"` |
+| Obsidian causal network | `[[links]]` and `origin: "[[trigger]] -> [[cause]] -> [[effect]]"` (required in lessons, reports, cmds) | `.cache/causal_index.tsv`, `/three-layer-penetrate` |
+
+Contract: search all three layers before acting (a hook injects the preflight automatically); every answer to the Lord carries a `[MEM: …]` citation tag (a stop hook blocks answers without one); new knowledge is written through to all three layers (sources: `context/memory-db-schema.md`, `docs/research/semantic_index_design.md`).
 
 ---
 
@@ -476,51 +478,22 @@ SayTask handles personal productivity (capture → schedule → remind). The cmd
 
 ## Model Settings
 
-`config/settings.yaml` is the source of truth for the current formation. Today it is a mixed Claude/Codex deployment:
+The formation is defined only by `config/settings.yaml` (CLI, model, effort, launch_cmd) and `config/cli_profiles.yaml`. The table shows the values as of 2026-08-27; switch with `/shogun-cli-switch` (respawns idle panes only, never a working one).
 
-| Agent | Model | Thinking | Rationale |
-|-------|-------|----------|-----------|
-| Shogun | `cli.default` (currently Claude Code) | **Enabled (high)** | Strategic discussions, research, and policy design require deep reasoning. Use `--shogun-no-thinking` to disable for relay-only mode |
-| Karo | `cli.default` (currently Claude Code) | Enabled | Task distribution requires careful judgment |
-| Gunshi | Opus 4.6 | Enabled | Strategic analysis and advisory |
-| Hayate, Saizo | gpt-5.5 (Codex) | Enabled | Fast implementation/research workers on the Codex side |
-| Kagemaru, Kotaro | Sonnet 4.6 | Enabled | Lower-cost Claude workers for parallel execution |
-| Hanzo, Tobisaru | Opus 4.6 | Enabled | Higher-capability Claude workers for heavier tasks |
+| Agent | CLI / model | effort | Why |
+|---|---|---|---|
+| Shogun | Claude Code / Fable 5 | low (settings) | dialogue with the Lord, cmd filing, overall judgement; no deep code digging |
+| Karo | Codex / gpt-5.6-sol | medium | fast splitting, deployment and GATE decisions |
+| Gunshi | Claude Code / Opus 4.6 (1M context) | high | reviews read long inputs (full cmd + report YAML), hence 1M |
+| Ninja ×6 | Codex / gpt-5.6-luna | high | implementation, measurement, recon; model is inherited from settings, never pinned in the ninja launch_cmd |
 
-The Shogun serves as the Lord's strategic advisor — not just a task relay. Strategic discussions, research analysis, and policy design are Bloom's Taxonomy Level 4–6 (analysis, evaluation, creation), requiring Thinking mode enabled. For relay-only use, disable with `--shogun-no-thinking`.
+Rules (Lord's rulings, 2026-08-27): never name a model inside a cmd (deployment is Karo's call); never respawn a working pane. For Codex, `codex_config_apply_agent` applies trust and model in `~/.codex/config.toml` on the respawn path, and `ninja_monitor` WARNs when the pane shows a model/effort different from settings.
 
-### Current Formation
+### How the mix works
 
-The default formation is no longer "all Opus." It is whatever `config/settings.yaml` declares at launch time, with optional overrides such as `./shutsujin_departure.sh -k` for battle mode.
-
-### Bloom's Taxonomy Task Classification
-
-Tasks are classified using Bloom's Taxonomy to optimize model assignment:
-
-| Level | Category | Description | Runtime assignment |
-|-------|----------|-------------|-------|
-| L1 | Remember | Recall facts, copy, list | Assigned from current formation |
-| L2 | Understand | Explain, summarize, paraphrase | Assigned from current formation |
-| L3 | Apply | Execute procedures, implement known patterns | Assigned from current formation |
-| L4 | Analyze | Compare, investigate, deconstruct | Assigned from current formation |
-| L5 | Evaluate | Judge, critique, recommend | Assigned from current formation |
-| L6 | Create | Design, build, synthesize new solutions | Assigned from current formation |
-
-The Karo assigns each subtask a Bloom level for classification, then maps it onto the current formation from `config/settings.yaml`.
-
-### Task Dependencies (blockedBy)
-
-Tasks can declare dependencies on other tasks using `blockedBy`:
-
-```yaml
-# queue/tasks/saizo.yaml
-task:
-  task_id: subtask_010b
-  blockedBy: ["subtask_010a"]  # Waits for hanzo's task to complete
-  description: "Integrate the API client built by subtask_010a"
-```
-
-When a blocking task completes, the Karo automatically unblocks dependent tasks and assigns them to available ninja. This prevents idle waiting and enables efficient pipelining of dependent work.
+- **Claude leads, Codex follows** (multi-CLI principle): only the outcome standard (binary ACs, report contract) is shared; hooks, gates and launch are implemented per CLI. On conflict the Claude-side contract wins.
+- **Switch by formation**: "Karo on Claude", "all Ninja on Codex" etc. are one `/shogun-cli-switch` command. Past formations: `context/training-cycle.md`.
+- **Usage limits and update prompts**: when a Codex pane stops on a usage limit or an "Update available" prompt, the watcher suppresses nudges; clearing it is a reversible, verified key sequence.
 
 ---
 
