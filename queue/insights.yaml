@@ -1746,8 +1746,11 @@ insights:
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4359; matched=対応; current_pattern=script_size_alert対応 — 閾値超過スクリプトのリファクタ優先度台帳化と最大複雑度1本の分割設計; candidate_level=3; candidate=gate_result null 18件蓄積。findパターンが_done_/_completed_のみ→_delegated_(多数派)未捕捉。パターン追加で2130→2243件(+5.3%); source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4359"
-  fix_known: false
-  status: pending
+  fix_known: true
+  status: resolved
+  resolved_reason: "一次情報で、gate_result: nullの検出漏れ原因だったarchive filename patternが現行gate_syncへ反映済みであることを確認した。scripts/gunshi_gate_sync.sh L62-L68は_done_/_completed_に加え_delegated_/_cancelled_/_halted_/_superseded_/_absorbed_/_shelved_を収集し、同一cmdのgate_resultを同期する。関連履歴d575e390d（_delegated_等の追加）、7df42c0ce（null 0件記録）、23edb564f（GATE CLEAR後再同期）を確認したため、追加実修正・decision_candidateは不要。"
+  action_artifact: "primary=scripts/gunshi_gate_sync.sh:56-81;history=d575e390d,7df42c0ce,23edb564f;tests=tests/unit/test_gunshi_gate_reflux.bats:22-39,111-132;context=docs/semantic-index/index.md:13040-13048;target=queue/insights.yaml:INS-20260822-042731482-54dd"
+  resolved_at: "2026-08-28T07:22:39+09:00"
 - id: INS-20260823-144132237-b464
   ts: "2026-08-23T14:41:32+09:00"
   insight: "semantic_index_update新概念候補: discussion:gistに共有して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
