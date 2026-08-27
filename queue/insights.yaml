@@ -5802,3 +5802,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T03:14:45+09:00"
+- id: INS-20260828-034439914-77f7
+  ts: "2026-08-28T03:44:39+09:00"
+  insight: "reflux 自動配備の開始指示が task_id なしで届くと、忍者は『task_id 不一致の補足は適用しない』契約に従って着手せず acknowledged のまま停滞する(影丸 03:19-03:45 実例、ACK-STALL 24 分)。deploy/monitor の開始 nudge は必ず task_assigned 型+task_id 付きで送る契約を deploy_task.sh/ninja_monitor の REFLUX-AUTO-DEPLOY 経路に埋め込む(bats: nudge 本文に task_id が含まれる)。origin=[[影丸ACK-STALL_20260828_0343]] -> [[開始nudgeにtask_idなし]] -> [[reflux配備nudgeのtask_id契約]]"
+  priority: "medium"
+  source: "shogun"
+  fix_known: false
+  status: pending
