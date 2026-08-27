@@ -4529,3 +4529,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-101757431-44cc
+  ts: "2026-08-27T10:17:57+09:00"
+  insight: "高頻度FAIL: commit_contract: commit subject does not identify task_id/parent_cmd (13回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
+  priority: "high"
+  source: "gate_loop_health"
+  fix_known: false
+  status: pending
