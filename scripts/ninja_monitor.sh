@@ -1064,7 +1064,7 @@ _clear_loop_state_file() {
     printf '%s/shogun_clear_count_%s.tsv\n' "$STATE_DIR" "$agent_name"
 }
 
-_task_parent_cmd_for_clear_count() {
+_task_parent_cmd_context() {
     local agent_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
     local parent_cmd=""
@@ -1117,12 +1117,47 @@ _task_parent_cmd_for_clear_count() {
         esac
     fi
 
+    if [ -n "$context" ]; then
+        printf '%s\n' "$context"
+    fi
+    return 0
+}
+
+_task_parent_cmd_for_clear_count() {
+    local agent_name="$1"
+    local context
+    context="$(_task_parent_cmd_context "$agent_name")"
     if [ -z "$context" ]; then
-        log "CLEAR-COUNT-SKIP: $agent_name task_status=${task_status:-empty} has no valid cmd context generation=${NINJA_MONITOR_GENERATION:-legacy}"
+        log "CLEAR-COUNT-SKIP: $agent_name task_status=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${agent_name}.yaml" "status" "" 2>/dev/null || true) has no valid cmd context generation=${NINJA_MONITOR_GENERATION:-legacy}"
         printf '%s\n' "no_cmd"
         return 0
     fi
     printf '%s\n' "$context"
+}
+
+# Stage 1 must reject terminal/idle task records whose command identity is
+# absent before they enter maybe_idle. Reuse the exact context precedence used
+# by the clear counter through a side-effect-free resolver.
+# Failed-task recovery remains eligible; its dedicated failed bypass and
+# generation-scoped respawn notification own that contract.
+ninja_monitor_task_has_valid_cmd_context() {
+    local agent_name="$1"
+    local context
+    context="$(_task_parent_cmd_context "$agent_name")"
+    [ -n "$context" ]
+}
+
+ninja_monitor_stage1_terminal_task_is_clear_eligible() {
+    local agent_name="$1"
+    local task_status="$2"
+    case "$task_status" in
+        done|completed|idle|PASS)
+            ninja_monitor_task_has_valid_cmd_context "$agent_name"
+            ;;
+        *)
+            return 0
+            ;;
+    esac
 }
 
 record_clear_attempt_or_force_idle() {
@@ -12072,6 +12107,11 @@ while true; do
             _s1_task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
             if [ -f "$_s1_task_file" ]; then
                 _s1_task_status=$(yaml_field_get "$_s1_task_file" "status")
+                if ! ninja_monitor_stage1_terminal_task_is_clear_eligible "$name" "$_s1_task_status"; then
+                    log "STAGE1-SKIP-NO-CMD: $name task_status=$_s1_task_status has no active cmd context generation=${NINJA_MONITOR_GENERATION:-legacy}"
+                    PREV_STATE[$name]="busy"
+                    continue
+                fi
                 if [ "$_s1_task_status" = "assigned" ] || [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ] || [ "$_s1_task_status" = "pending" ]; then
                     if auto_void_if_parent_cmd_completed "$name" "$target" "STAGE1"; then
                         PREV_STATE[$name]="idle"

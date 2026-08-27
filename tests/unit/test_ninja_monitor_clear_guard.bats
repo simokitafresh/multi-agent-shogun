@@ -722,6 +722,60 @@ grep -q PRESERVED "$LOG"; ! grep -q CLEAR "$LOG"; ! grep -q FAILED-RESPAWN-IMMED
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: Stage 1 must prevent terminal/idle task records without an
+# active command identity from entering the auto-clear path; this is the
+# upstream invariant that eliminates repeated no-command clear attempts.
+# regression_justification: the prior downstream-only guard emitted two
+# CLEAR-COUNT-SKIP lines per idle cycle and still attempted respawn.
+@test "stage1: terminal task without active cmd context is filtered upstream" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$T"; LOG="$T/monitor.log"
+mkdir -p "$T/queue/tasks"; : > "$LOG"
+log() { echo "$1" >> "$LOG"; }
+export NINJA_MONITOR_GENERATION="generation-stage1"
+
+for terminal_status in done idle completed PASS; do
+  cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: $terminal_status
+  parent_cmd: cmd_old
+  task_id: idle
+  _ac_task_id: idle
+YAML
+  if ninja_monitor_stage1_terminal_task_is_clear_eligible hayate "$terminal_status"; then
+    echo "FAIL: $terminal_status without cmd context entered clear eligibility"
+    exit 1
+  fi
+done
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_current
+  task_id: cmd_current_normal
+  _ac_task_id: cmd_current_normal
+YAML
+ninja_monitor_stage1_terminal_task_is_clear_eligible hayate done
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: failed
+  parent_cmd:
+  task_id: idle
+  _ac_task_id: idle
+YAML
+ninja_monitor_stage1_terminal_task_is_clear_eligible hayate failed
+
+! grep -q "CLEAR-COUNT-SKIP" "$LOG"
+echo "PASS: terminal no-cmd filtered before auto-clear; valid and failed paths preserved"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: terminal no-cmd filtered before auto-clear; valid and failed paths preserved"* ]]
+}
+
 # verdict非空チェック: report存在+verdict空→return 1(clearブロック)
 @test "report_gate: verdict empty blocks clear" {
     run bash -lc '
@@ -3685,8 +3739,8 @@ grep -c "generation=generation-current" "$LOG" | grep -qx 3
 grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle has no valid cmd context generation=generation-current" "$LOG"
 grep -q "CLEAR-COUNT-SKIP: hayate has no cmd context, reason=AUTO-CLEAR generation=generation-current" "$LOG"
 grep -q "CLEAR-COUNT: hayate cmd=cmd_generation count=1/" "$LOG"
-    echo "generation_logs=4 current=4"
+    echo "generation_logs=3 current=3"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"generation_logs=4 current=4"* ]]
+    [[ "$output" == *"generation_logs=3 current=3"* ]]
 }
