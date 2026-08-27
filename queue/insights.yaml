@@ -4545,4 +4545,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T10:31:26+09:00"
+- id: INS-20260827-103428082-b623
+  ts: "2026-08-27T10:34:28+09:00"
+  insight: "task status=failed(STAGE1-TIMEOUT 等)へ落ちた後に忍者が report を PASS へ是正しても、ninja_monitor の自動 review 依頼は task=failed を対象外にするため便が止まる(T47 08:44〜、T51 10:18〜、軍師 idle)。failed task でも report result=PASS かつ fingerprint 新規なら自動 review 依頼を出す(or failed→done へ自動復帰)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
