@@ -10469,6 +10469,14 @@ def is_probable_slash_enum(ref):
     first_component = clean_ref.split("/", 1)[0]
     return not (script_dir and os.path.isdir(os.path.join(script_dir, first_component)))
 
+def is_bare_temp_location(ref):
+    # A bare temporary root describes where an isolated clone/fixture runs;
+    # it is a directory boundary, never a repository file that can appear in
+    # files_modified.  Keep deeper absolute paths (for example
+    # /tmp/fixture/README) strict because those may be explicit artifacts.
+    clean_ref = ref.strip().strip("`'\".,:;()[]{}").rstrip("/")
+    return clean_ref in {"/tmp", "/var/tmp"}
+
 matches = list(pattern.finditer(command))
 seen = set()
 refs = []
@@ -10479,6 +10487,8 @@ for idx, match in enumerate(matches):
     if is_probable_product_token(ref):
         continue
     if is_probable_slash_enum(ref):
+        continue
+    if is_bare_temp_location(ref):
         continue
     seen.add(ref)
     if ref_matches_verified_dependency(ref):

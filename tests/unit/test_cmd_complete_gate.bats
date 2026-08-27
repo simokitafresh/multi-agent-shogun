@@ -1614,6 +1614,24 @@ EOF
     [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
+# test_necessity: isolated-clone commands routinely say "/tmp 配下" as an
+# execution location; that directory root must not be invented as a modified
+# repository file while genuine file references remain strict.
+# regression_justification: cmd_4407 reached all ACs and SG7 LGTM, then the
+# completion gate false-BLOCKed with COMMAND_SCOPE_MISSING missing=/tmp.
+@test "command/files_modified coverage ignores bare temp location roots" {
+    _write_command_coverage_fixture \
+        "一時ディレクトリ /tmp 配下で first_setup.sh を実行して検証する" \
+        "  - path: docs/research/cmd_999_clone.md
+    change: added"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"missing: /tmp"* ]]
+    [[ "$output" != *"command_files_modified_mismatch"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
 # test_necessity: RESEARCH commands may cite external product files as
 # investigation inputs while publishing only research artifacts; the gate
 # must skip that read-only coverage check, while a normal command with the
