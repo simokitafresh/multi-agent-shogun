@@ -3340,6 +3340,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T20:36:40+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(t |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T21:06:36+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(t |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T21:36:36+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(t |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T22:10:57+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T22:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -3526,6 +3528,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-24T15:08:58+09:00 b5544ds9r toolu_0194CtFEUAcEAnXkCDwnC7en /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3bb49829-d2eb-40b9-a0e9-1b62ca |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-24T15:17:29+09:00 2026-08-24 15:16 JST 家老強くてニューゲーム最終追補。checkpoint remote commit=47e03802366d20730d645db44f44ef3c0006bb72、CI run=3269568313 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T06:02:14+09:00 b0bx8hp4g toolu_011xVdh5X8HnU242PCAkqt9b /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/14788a97-9137-4db8-9c66-a7996f |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:07:23.098583+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 | causal_chain | `[[cmd_3720]]` (L958) |
 | causal_chain | `[[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]` (L967) |
@@ -5665,6 +5668,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T14:04:10+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T15:11:51+09:00 全体状況マップを確認して、利他の精神で全体の状況をコントロールせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T20:35:24+09:00 他に先送りや放置しているものがないか確認しよう。 |
+| cmd | `cmd_4367` Track A単独偵察 — PF間低相関のSelection・FoF構築利用価値の現物確認+設計レビュー報告書(実装禁止) |
+| causal | `cmd_4367` origin: [[殿下問_低相関selection価値_20260822_2155]] -> [[cmd_4366_task_id衝突canceled]] -> [[cmd_4367_TrackA分割起票]] |
+| cmd | `cmd_4368` Track B単独偵察 — PF間低相関のSelection・FoF構築利用価値の現物確認+設計レビュー報告書(実装禁止) |
+| causal | `cmd_4368` origin: [[殿下問_低相関selection価値_20260822_2155]] -> [[cmd_4366_task_id衝突canceled]] -> [[cmd_4368_TrackB分割起票]] |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -8141,6 +8148,7 @@ codd:
 | cmd | `cmd_karo_ci_fix_33003599661_deploy_fixture_timing_20260827` |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T07:42:04+09:00 session_save_20260827_0741 将軍復帰点(session_save_20260827_0035を上書き更新)。本日=00:50 /clear復帰(y)〜07:41、30分loop(cron 3a5b86ad)稼働中。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T19:09:00+09:00 session_save_20260827_1908 将軍復帰点(session_save_20260827_1227 を上書き更新)。14:55 /clear 復帰(y)〜19:08。主軸=WSL 再起動(14:54、9p stall→全 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T22:41:30+09:00 2026-08-27 22:40 ext4 移設後の速度再基準(半蔵 T87、各3回計測): publish_total 3770→227ms平均(−94%)、ninja_scope_commit git_commit 9487→173ms |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9703,6 +9711,8 @@ codd:
 | causal | `cmd_4386` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_4385` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_4407` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_ci_fix_33075312387_shard7_quality_lock_identity_20260827` files_modified: [[cmd_quality_logging]] |
+| cmd | `cmd_karo_ci_fix_33075312387_shard7_quality_lock_identity_20260827` (`tests/unit/test_cmd_quality_log.bats`) |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
@@ -15953,6 +15963,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T20:36:16+09:00 b6brp9iur toolu_01HcmWXVkCQkDbkLRrQfZFkx /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/0457a0cb-e539-4b83-8437-c6a8b1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T12:00:18.746552+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T12:30:32.753370+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T14:02:19.451431+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |

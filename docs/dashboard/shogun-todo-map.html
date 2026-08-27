@@ -52,7 +52,7 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 23:01 T83/T87 CLEAR・doc lane 2本執筆(T94)・T70 GATE待ち・T93 CI 走行中 · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 23:04 T93 ci_fix CLEAR・CI 結論待ち・converge 2 19 待ち・T70 GATE待ち · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
@@ -96,7 +96,7 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 <section class="group">
   <h2>走行中 <span class="n">2</span></h2>
   <div class="rows">
-    <div class="row run"><span class="id">T93</span><span class="t">CI RED(shard 7 receipt 欠損)</span><span class="d">22:57 小太郎へ ci_fix 配備 in_progress(cmd_karo_ci_fix_33075312387_shard7_quality_lock_identity=真因候補 quality_lock identity)。CI c6e823181 in_progress; 22:41 CI RED: run 33075312387(e644881f5)=shard 7「missing shard receipt or return code」(receipt 欠損、T85 同族)。家老へ 1 通 msg_224105: idle 忍者1名へ ci_fix(ci_run_id 付き)→GREEN。CI RED 中は auto-commit 6本(rev-list 0 6)の push 保留</span><span class="w">GREEN 上で次弾を回す</span></div>
+    <div class="row run"><span class="id">T93</span><span class="t">CI RED(shard 7 receipt 欠損)</span><span class="d">23:04 小太郎 ci_fix GATE CLEAR(将軍 inbox gate_clear 23:03:47)。残=CI GREEN 証跡(c6e823181/22c88e73c run 結論)+家老 converge(rev-list 2 19)→1本ずつ push; 22:57 小太郎へ ci_fix 配備 in_progress(cmd_karo_ci_fix_33075312387_shard7_quality_lock_identity=真因候補 quality_lock identity)。CI c6e823181 in_progress; 22:41 CI RED: run 33075312387(e644881f5)=shard 7「missing shard receipt or return code」(receipt 欠損、T85 同族)。家老へ 1 通 msg_224105: idle 忍者1名へ ci_fix(ci_run_id 付き)→GREEN。CI RED 中は auto-commit 6本(rev-list 0 6)の push 保留</span><span class="w">GREEN 上で次弾を回す</span></div>
     <div class="row run"><span class="id">T70</span><span class="t">task worktree の永続化</span><span class="d">22:57 影丸 task done(report 提出、GATE 待ち); 22:40 loop: 影丸へ配備 in_progress(deploy 22:26 wall 23.9s=ext4 上の初配備。9p 時代 199-397s); 22:10 家老へ 1 通 msg_221011_6345: idle 忍者1名へ karo_hotfix(既定 root を /home 側へ+bats+実配備証跡)。20:35 棚卸し=有効。現物: deploy_task.sh:8989 既定 /tmp/shogun-task-worktrees のまま、cmd_4408 は未変更。cutover 後の家老 hotfix 1本; 15:08 INS-20260827-150829 登録: deploy_task.sh:8989 worktree_root 既定 /tmp は再起動で消える。cmd_4408(ext4 移設)と同根ゆえ cmd_4408 の AC 完了後に DEPLOY_TASK_WORKTREE_ROOT 既定を /home 側へ=家老 hotfix 1 本</span><span class="w">再起動耐性=速度改善の成果を消さない</span></div>
   </div>
 </section>
@@ -208,5 +208,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 23:01 T83/T87 CLEAR・doc lane 2本執筆(T94)・T70 GATE待ち・T93 CI 走行中</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 23:04 T93 ci_fix CLEAR・CI 結論待ち・converge 2 19 待ち・T70 GATE待ち</footer>
 </div>
