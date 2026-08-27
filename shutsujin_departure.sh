@@ -632,29 +632,35 @@ done
 # 布陣図表示(STEP 7)用の列要素数
 _COL1_N=${#_COL1[@]}; _COL2_N=${#_COL2[@]}; _COL3_N=${#_COL3[@]}
 
-# 8ペイン作成（連続番号: PB〜PB+7）
-# Step 1: 上下2行に分割
-tmux split-window -v -t "${AGENTS_WINDOW_TARGET}.${PANE_BASE}"
+# 8ペイン作成（連続番号: PB〜PB+7）。setup-only再実行時に既存の
+# agents windowを再利用し、split/layoutを重ねてペイン数を増やさない。
+AGENTS_PANE_COUNT=$(tmux list-panes -t "$AGENTS_WINDOW_TARGET" -F '#{pane_index}' 2>/dev/null | wc -l | tr -d ' ')
+if [ "${AGENTS_PANE_COUNT:-0}" -lt "$_deploy_count" ]; then
+    # Step 1: 上下2行に分割
+    tmux split-window -v -t "${AGENTS_WINDOW_TARGET}.${PANE_BASE}"
 
-# Step 2: 上段を水平分割3回（PB, PB+2, PB+3, PB+4）
-_target=${PANE_BASE}
-for ((s=0; s<3; s++)); do
-    tmux split-window -h -t "${AGENTS_WINDOW_TARGET}.${_target}"
-    _target=$((PANE_BASE + 2 + s))
-done
+    # Step 2: 上段を水平分割3回（PB, PB+2, PB+3, PB+4）
+    _target=${PANE_BASE}
+    for ((s=0; s<3; s++)); do
+        tmux split-window -h -t "${AGENTS_WINDOW_TARGET}.${_target}"
+        _target=$((PANE_BASE + 2 + s))
+    done
 
-# Step 3: 下段を水平分割3回（PB+1, PB+5, PB+6, PB+7）
-_target=$((PANE_BASE + 1))
-for ((s=0; s<3; s++)); do
-    tmux split-window -h -t "${AGENTS_WINDOW_TARGET}.${_target}"
-    _target=$((PANE_BASE + 5 + s))
-done
+    # Step 3: 下段を水平分割3回（PB+1, PB+5, PB+6, PB+7）
+    _target=$((PANE_BASE + 1))
+    for ((s=0; s<3; s++)); do
+        tmux split-window -h -t "${AGENTS_WINDOW_TARGET}.${_target}"
+        _target=$((PANE_BASE + 5 + s))
+    done
 
-# select-layout で3列 2-3-3 に配置（動的LAYOUT_STRING）
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
-_layout=$(generate_layout_string "$AGENTS_WINDOW_TARGET" "$PANE_BASE")
-tmux select-layout -t "$AGENTS_WINDOW_TARGET" "$_layout"
+    # select-layout で3列 2-3-3に配置（動的LAYOUT_STRING）
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
+    _layout=$(generate_layout_string "$AGENTS_WINDOW_TARGET" "$PANE_BASE")
+    tmux select-layout -t "$AGENTS_WINDOW_TARGET" "$_layout"
+else
+    log_info "  └─ agents windowを再利用（既存${AGENTS_PANE_COUNT}ペイン）"
+fi
 
 # PANE_IDS: 連続番号（ペイン番号=エージェント順）
 PANE_IDS=()
