@@ -5061,3 +5061,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-181850562-c073
+  ts: "2026-08-27T18:18:50+09:00"
+  insight: "[[cd tmp cmd4407 shared cfddu6 && export PS1 \\ \\033 1;31m\\ kar]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/cmd4407-shared.cfddu6\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1 — 現task YAMLを…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
