@@ -4879,7 +4879,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T15:37:02+09:00"
 - id: INS-20260827-152337389-6685
   ts: "2026-08-27T15:23:37+09:00"
   insight: "15:22 将軍paneへ『cd /tmp/cmd4407-shared.cfddu6 && export PS1=…将軍… && clear』+『inbox1』が入力として流入(飛猿 cmd_4407 の shared clone セットアップ文字列+nudge)。14:47 AGENT-ID-FIX(kotaro pane の agent_id が tobisaru)と同根=respawn後の pane→agent_id 対応ずれで send-keys が誤配される疑い。自動化ターゲット: inbox_watcher/nudge 送出前に対象paneの @agent_id を再検証し不一致なら送出せず WARN。速度向上へのつながり: 誤配 nudge による作業混入/指示不達 0"
@@ -4892,5 +4895,12 @@ insights:
   insight: "15:22 cmd_4407(飛猿)の検証『クリーンcloneで shutsujin -s 完走』が本番 tmux session=shogun の全7paneへ send-keys(shutsujin_departure.sh:764 AGENTS_WINDOW_TARGET が live を指す)し、将軍/家老/軍師/忍者の composer に『cd /tmp/cmd4407-shared… && export PS1=… && clear』が流入。飛猿は別 session cmd4407_setup_352185 を作ったが window target が隔離されていない。根因=将軍起票ACに隔離条件なし(LS-A04(45)型: 本番を触る操作のACに停止点/隔離を書け)。自動化ターゲット: shutsujin/reset_layout の send-keys 先を TMUX socket/SESSION 変数から必ず導出し、対象 session が attached な本番 shogun のとき SHOGUN_ALLOW_LIVE_SENDKEYS=1 なしでは BLOCK。速度向上へのつながり: 全agentの作業混入/誤指示による手戻り 0"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260827-154150764-9c93
+  ts: "2026-08-27T15:41:50+09:00"
+  insight: "semantic_index_update新概念候補: discussion:走行中のものをしっかり最後まで家老にや達成させよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
