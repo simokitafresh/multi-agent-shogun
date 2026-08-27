@@ -4951,3 +4951,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-164126195-5c90
+  ts: "2026-08-27T16:41:26+09:00"
+  insight: "[[走行中のものをしっかり最後まで家老にや達成させよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=走行中のものをしっかり最後まで家老にや達成させよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
