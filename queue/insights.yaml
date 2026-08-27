@@ -181,7 +181,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4371"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: scripts/deploy_task.sh:5283のUSEFUL_RATE_THRESHOLD=0.40、L6524のMAX_INJECT既定3、L6695のMAX_UNIVERSAL=1、L6728のtask_specific_slots=MAX_INJECT-len(related)によりuniversal1枠+task-specific最大2枠を既に実装済み。git blameの実装commitは0c98bb580cであり、対象insightの提案を満たすため新規修正とdecision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-075837850-eeb0;primary=scripts/deploy_task.sh:5283,6524,6695,6728;provenance=git:0c98bb580c;semantic=context/semantic-map.md:105;decision_candidate=none"
+  resolved_at: "2026-08-27T10:04:02+09:00"
 - id: INS-20260823-075850966-4127
   ts: "2026-08-23T07:58:50+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cluster G実戦検証PASS_cmd_4337配備]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=per-agent launch_cmd; score=13.6) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=13.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_cmd_state; score=12.8)。概念定義とaliases追加を検討せよ"
