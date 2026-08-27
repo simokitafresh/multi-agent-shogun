@@ -85,96 +85,106 @@ Sources: `logs/gate_metrics.log`, `logs/deploy_task.log`, `docs/research/ext4_sp
 
 ## Why Shogun?
 
-Most multi-agent frameworks burn API tokens on coordination. Shogun doesn't.
+Most multi-agent frameworks burn API tokens on coordination. Shogun does not.
 
 | | Claude Code `Task` tool | LangGraph | CrewAI | **multi-agent-shogun** |
 |---|---|---|---|---|
-| **Architecture** | Subagents inside one process | Graph-based state machine | Role-based agents | Feudal hierarchy via tmux |
-| **Parallelism** | Sequential (one at a time) | Parallel nodes (v0.2+) | Limited | **6 ninja + 1 gunshi** |
-| **Coordination cost** | API calls per Task | API + infra (Postgres/Redis) | API + CrewAI platform | **Zero** (YAML + tmux) |
-| **Observability** | Claude logs only | LangSmith integration | OpenTelemetry | **Live tmux panes** + dashboard |
-| **Skill discovery** | None | None | None | **Bottom-up auto-proposal** |
-| **Setup** | Built into Claude Code | Heavy (infra required) | pip install | Shell scripts |
+| **Architecture** | sub-agents inside one process | graph state machine | role-based agents | 9-agent hierarchy on tmux (Shogun, Karo, Gunshi, 6 Ninja) |
+| **Parallelism** | sequential | parallel nodes (v0.2+) | limited | **6 Ninja running independently in task worktrees** |
+| **Coordination cost** | API call per Task | API + infra (Postgres/Redis) | API + CrewAI platform | **zero** (YAML + inotify, flat-rate CLIs) |
+| **Quality assurance** | none | none | none | **cmd quality gates (82 checks) → Gunshi review → Karo GATE → CI** |
+| **Learning** | none | none | none | **three-layer learning loop** (lessons → gates → tests, reflux auto-deploy) |
+| **Memory** | per session | external store | external store | **three-layer memory** (memory DB / semantic index / Obsidian causal links) |
+| **Observability** | Claude logs only | LangSmith | OpenTelemetry | **live tmux panes** + formation snapshot + battle-status artifact + ntfy |
+| **Setup** | built into Claude Code | heavy (infra) | pip install | one `first_setup.sh` (Linux/WSL2, ext4) |
 
-### What makes this different
+### What makes it different
 
-**Zero coordination overhead** — Agents talk through YAML files on disk. The only API calls are for actual work, not orchestration. Run 9 agents and pay only for 9 agents' work.
+**Zero coordination cost** — agents talk through YAML files on disk and inotify nudges. API calls go to real work, never to orchestration.
 
-**Full transparency** — Every agent runs in a visible tmux pane. Every instruction, report, and decision is a plain YAML file you can read, diff, and version-control. No black boxes.
+**Full transparency** — every agent runs in a visible tmux pane; every order, report, decision and gate result is plain YAML / log you can read, diff and version.
 
-**Battle-tested hierarchy** — The Shogun → Karo → Ninja chain of command prevents conflicts by design: clear ownership, dedicated files per agent, event-driven communication, no polling.
+**Battle-tested hierarchy** — the chain Lord → Shogun → Karo → Ninja plus a Gunshi standing beside it for review only. One file per role, event-driven messaging, binary acceptance criteria, and a growth loop that embeds failures into the environment. Hardened over 16,000+ commits since 2026-02 (numbers in "Live State Sources").
 
 ---
 
 ## What Makes This Fork Different
 
-| Capability | What it means in this repo |
+| Feature | What it means in this repo |
 |---|---|
-| **7-layer knowledge system** | System rules, role instructions, project core, project lessons, live YAML state, Vercel-style context indexes, and Memory MCP each have a distinct home |
-| **Vercel-style context** | `context/*.md` is an index layer; deep investigations move into `docs/research/` and are linked back instead of duplicated |
-| **Lesson cycle** | Lessons are injected into tasks, referenced during work, scored after GATE, and auto-deprecated when they stop helping |
-| **GATE system** | `cmd_complete_gate.sh`, `gate_cmd_state.sh`, and `gate_lesson_health.sh` block false-done reports and stale operational state |
-| **Karo snapshot** | `queue/karo_snapshot.txt` rebuilds real-time formation state after recovery or compaction |
-| **Pending decisions** | `queue/pending_decisions.yaml` tracks unresolved rulings that still need a human or Shogun decision |
-| **Cmd chronicle** | `context/cmd-chronicle.md` keeps the recent command history cheap to reload |
-| **Android companion** | `android/` ships a Kotlin + Jetpack Compose app for SSH control, dashboard viewing, and ntfy-driven mobile workflows |
+| **Chain + Gunshi** | Lord → Shogun → Karo → Ninja plus a review-only Gunshi: Shogun decides, Karo organizes, Gunshi inspects, Ninja executes |
+| **cmd quality gates** | `cmd_skeleton.sh` → `cmd_save.sh` (82 checks) → `cmd_delegate.sh`. A BLOCK is the entry point for embedding a fix into the environment |
+| **Isolated task-worktree deployment** | `deploy_task.sh` push-injects lessons and related concepts and isolates each Ninja in an ext4 worktree |
+| **Report contract + two-stage review + GATE** | binary `binary_checks` report YAML → Gunshi SG7 → Karo ACCEPT → `cmd_complete_gate.sh` → CI |
+| **Three-layer learning loop / reflux** | lesson injection, evaluation and retirement; insights in `queue/insights.yaml` auto-deployed to idle Ninja |
+| **Three-layer memory** | memory DB (SQLite/FTS5), semantic index, Obsidian causal network; startup preflight and the `[MEM:]` citation contract |
+| **Vercel-style context** | `context/*.md` is the index layer; details live in `docs/research/` and link back |
+| **ninja_monitor / formation snapshot** | `queue/karo_snapshot.txt` generated by machine; STALL / ghost / UNACTIONED detection, context monitoring with auto /clear |
+| **Multi-CLI** | Claude Code and Codex with per-CLI hooks and gates, one shared outcome standard; `/shogun-cli-switch` to change formation |
+| **Instruments always on** | `defense_overhead.jsonl` / `gate_metrics.log` / deploy receipts / pre-push ledger; every speed-up is proven before/after |
+| **ext4 migration runbook** | relocate / cutover / rollback scripts to move off a Windows drive (9p) onto ext4, plus the observed side-effect table |
+| **Android companion** | Kotlin + Jetpack Compose app under `android/`: SSH control, voice input, ntfy |
 
 ---
 
 ## Why CLI (Not API)?
 
-Most AI coding tools charge per token. Running 9 Opus-grade agents through the API costs **$100+/hour**. CLI subscriptions flip this:
+Most AI coding tools bill per token. Running 9 Opus-grade agents through the API costs **$100+/hour**. Flat-rate CLI subscriptions flip that.
 
-| | API (Per-Token) | CLI (Flat-Rate) |
+| | API (pay per token) | CLI (flat rate) |
 |---|---|---|
-| **9 agents × Opus** | ~$100+/hour | ~$200/month |
-| **Cost predictability** | Unpredictable spikes | Fixed monthly bill |
-| **Usage anxiety** | Every token counts | Unlimited |
-| **Experimentation budget** | Constrained | Deploy freely |
+| **9 agents × Opus-grade** | ~$100+/hour | fixed monthly (Claude + ChatGPT subscriptions) |
+| **Cost predictability** | unpredictable spikes | fixed |
+| **Mindset** | every token hurts | use it all |
+| **Room to experiment** | constrained | unlimited ("experiment first" is the rule) |
 
-**"Use AI recklessly"** — With flat-rate CLI subscriptions, deploy 9 agents without hesitation. The cost is the same whether they work 1 hour or 24 hours. No more choosing between "good enough" and "thorough" — just run more agents.
+**"Use AI to the fullest"** — with flat-rate CLIs you can throw 6 Ninja at anything; one hour or 24 hours costs the same, so "thorough" becomes the default. When a limit is hit, recover with `/usage` reset or a device-auth account switch (Codex).
 
-### CLI and Instruction Build System
+### Multi-CLI support
 
-The runtime now supports a **mixed CLI formation**. Claude agents autoload `CLAUDE.md`, Codex agents autoload `AGENTS.md`, and both are generated from the same shared instruction sources:
+No vendor lock-in. Instructions are **generated for 4 CLIs** from shared templates (`bash scripts/build_instructions.sh`); the production formation (2026-08-27) runs on two of them, Claude Code and Codex.
+
+| CLI | Strengths | Used in production as |
+|-----|------|-----------------|
+| **Claude Code** | proven tmux integration, Memory MCP, dedicated file tools (Read/Write/Edit/Glob/Grep), structural safety hooks | Shogun (Fable 5), Gunshi (Opus 4.6, 1M) |
+| **OpenAI Codex** | sandboxed execution, `.codex/hooks.json` (exit 2 = BLOCK), device-auth, `codex exec` headless | Karo (gpt-5.6-sol), 6 Ninja (gpt-5.6-luna) |
+| **GitHub Copilot** | GitHub MCP built in, specialized agents, `/delegate` | instructions generated (`.github/copilot-instructions.md`), not in the formation |
+| **Kimi Code** | free tier, multilingual | instructions generated, not in the formation |
 
 ```
 instructions/
-├── common/              # Shared rules (all CLIs)
-├── cli_specific/        # CLI-specific tool descriptions
-│   ├── claude_tools.md  # Claude Code tools & features
-│   └── copilot_tools.md # GitHub Copilot CLI tools & features
-└── roles/               # Role definitions (shogun, karo, ninja)
-    ↓ build
-CLAUDE.md / AGENTS.md / copilot-instructions.md  ← Generated per CLI
+├── common/              # shared rules (all CLIs)
+├── cli_specific/        # per-CLI tool notes (claude / codex / copilot / kimi)
+├── roles/               # role definitions (Shogun, Karo, Gunshi, Ninja)
+└── generated/           # build output ({cli}-{role}.md × 4 CLIs × 4 roles)
+    ↓ bash scripts/build_instructions.sh
+CLAUDE.md / AGENTS.md / .github/copilot-instructions.md
 ```
 
-One source of truth, zero sync drift. Change a rule once, then rebuild and both Claude/Codex instruction surfaces stay aligned.
+Principle (multi-CLI rule): only the outcome standard (binary ACs, report contract) is shared; hooks, gates and launch are implemented per CLI and never share one execution mechanism. Change a rule once in `instructions/roles/`.
 
 ---
 
 ## Bottom-Up Skill Discovery
 
-This is the feature no other framework has.
-
-As ninja execute tasks, they **automatically identify reusable patterns** and propose them as skill candidates. The Karo aggregates these proposals in `dashboard.md`, and you — the Lord — decide what gets promoted to a permanent skill.
+While working, Ninja **spot reusable patterns** and propose them as `skill_candidate` in their report YAML. Karo reviews; accepted skills become `skills/{name}/SKILL.md`, the single source shared by Claude Code and Codex and callable as `/{name}` (41 skills as of 2026-08-27).
 
 ```
 Ninja finishes a task
     ↓
-Notices: "I've done this pattern 3 times across different projects"
+notices: "I did the same thing in three projects"
     ↓
-Reports in YAML:  skill_candidate:
-                     found: true
-                     name: "api-endpoint-scaffold"
-                     reason: "Same REST scaffold pattern used in 3 projects"
+report YAML:  skill_candidate:
+                found: true
+                name: "api-endpoint-scaffold"
+                reason: "same REST scaffold pattern in 3 projects"
     ↓
-Appears in dashboard.md → You approve → Skill created in .claude/commands/
+Gunshi review → Karo creates skills/api-endpoint-scaffold/SKILL.md (description must declare TRIGGER / DO NOT TRIGGER)
     ↓
-Any agent can now invoke /api-endpoint-scaffold
+every agent can call /api-endpoint-scaffold; usage is measured by skill_execution_log
 ```
 
-Skills grow organically from real work — not from a predefined template library. Your skill set becomes a reflection of **your** workflow.
+`lesson_candidate` (lessons) and `decision_candidate` (items needing a ruling) travel the same path. Skills and lessons grow out of real work and are retired when unused.
 
 ---
 
@@ -255,69 +265,59 @@ A companion app under `android/` drives tmux over SSH with voice input. Put your
 
 ## How It Works
 
-### Step 1: Connect to the Shogun
+### Step 1: Attach to Shogun
 
-After running `shutsujin_departure.sh`, all agents automatically load their instructions and are ready.
-
-Open a new terminal and connect:
+After `./shutsujin_departure.sh`, every agent reads its instructions (`CLAUDE.md` / `AGENTS.md` + `instructions/generated/*.md`), passes its startup gates (three-layer memory health, unread inbox, deepdive replay) and waits.
 
 ```bash
-tmux attach-session -t shogun
+tmux attach -t shogun          # window main = Shogun, window agents = Karo, Gunshi, Ninja
 ```
 
-### Step 2: Give your first order
+### Step 2: Give the first order
 
-The Shogun is already initialized — just give a command:
+Just type in the Shogun pane.
 
 ```
-Research the top 5 JavaScript frameworks and create a comparison table
+Research the top 5 JavaScript frameworks and build a comparison table
 ```
 
-The Shogun will:
-1. Write the task to a YAML file
-2. Notify the Karo (manager)
-3. Return control to you immediately — no waiting!
+Shogun (1) searches the three memory layers, (2) files a cmd in `queue/shogun_to_karo.yaml` and passes the quality gates (82 checks), (3) delegates to Karo and returns control immediately. You never wait.
 
-Meanwhile, the Karo distributes tasks to ninja workers for parallel execution.
+### Step 3: The chain runs
 
-### Step 3: Check progress
-
-Open `dashboard.md` in your editor for a real-time status view:
-
-```markdown
-## In Progress
-| Worker | Task | Status |
-|--------|------|--------|
-| Hanzo | Research React | Running |
-| Saizo | Research Vue | Running |
-| Hayate | Research Angular | Completed |
+```
+Karo    splits the cmd into tasks → deploy_task.sh deploys Ninja (injects lessons/concepts, isolates in a task worktree)
+Ninja   satisfies the acceptance criteria → scoped commit → report YAML (binary_checks yes/no)
+Gunshi  reviews the report with SG7 → LGTM / FAIL
+Karo    ACCEPT → cmd_complete_gate.sh (commit ancestry, CI, context freshness) → GATE CLEAR → archive → Ninja idle
+Notify  ntfy "GATE CLEAR" to your phone; Shogun cross-checks bulletin/gate_metrics and updates the battle-status artifact
 ```
 
-### Detailed flow
+### Step 4: Watch progress
+
+- `queue/karo_snapshot.txt` — formation snapshot generated by `ninja_monitor` (who does what, context %, since when)
+- `dashboard.md` — the Lord's own view, maintained by Karo
+- `queue/bulletin_board.yaml` — Karo/Gunshi → Shogun reporting channel
+- `logs/gate_metrics.log` — e2e / deploy / work / finalize seconds per cmd
+- the battle-status artifact (claude.ai) — task map republished by Shogun every 30 min
+
+### Detailed flow (example)
 
 ```
 You: "Research the top 5 MCP servers and create a comparison table"
 ```
 
-The Shogun writes the task to `queue/shogun_to_karo.yaml` and wakes the Karo. Control returns to you immediately.
+Shogun files cmd_XXXX → Karo splits it:
 
-The Karo breaks the task into subtasks:
+| Ninja | Assignment |
+|------|----------|
+| Hayate | Playwright MCP |
+| Kagemaru | Memory MCP |
+| Hanzo | Sequential Thinking MCP |
+| Saizo | Notion MCP |
+| Kotaro | GitHub MCP |
 
-| Worker | Assignment |
-|--------|-----------|
-| Hanzo | Research Notion MCP |
-| Saizo | Research GitHub MCP |
-| Hayate | Research Playwright MCP |
-| Kagemaru | Research Memory MCP |
-| Kotaro | Research Sequential Thinking MCP |
-
-All 5 ninja research simultaneously. You can watch them work in real time:
-
-<!-- <p align="center">
-  <img src="assets/screenshots/tmux_shogun_working.png" alt="Ninja agents working in parallel" width="700">
-</p> -->
-
-Results appear in `dashboard.md` as they complete.
+Five Ninja start at once and you can watch them in tmux. Recon cmds require findings (observation, result, evidence path) and are exempt from commits. When the reports are in, Gunshi → Karo → GATE CLEAR → ntfy, and the comparison lives in the report YAMLs and `docs/research/`.
 
 ---
 
@@ -470,7 +470,7 @@ Shogun has two complementary task systems:
 | Eat the Frog 🐸 selection | ✅ | — |
 | Streak tracking | ✅ | ✅ |
 | AI-executed tasks (multi-step) | — | ✅ |
-| 8-agent parallel execution | — | ✅ |
+| 6-Ninja parallel execution | — | ✅ |
 
 SayTask handles personal productivity (capture → schedule → remind). The cmd pipeline handles complex work (research, code, multi-step tasks). Both share streak tracking — completing either type of task counts toward your daily streak.
 
@@ -517,7 +517,7 @@ These principles are documented in detail: **[docs/philosophy.md](docs/philosoph
 
 ## Design Philosophy
 
-### Why a hierarchy (Shogun → Karo → Ninja)?
+### Why a hierarchy (Lord → Shogun → Karo → Ninja, plus Gunshi)?
 
 1. **Instant response**: The Shogun delegates immediately, returning control to you
 2. **Parallel execution**: The Karo distributes to multiple ninja simultaneously
@@ -525,6 +525,9 @@ These principles are documented in detail: **[docs/philosophy.md](docs/philosoph
 4. **Scalability**: Adding more ninja doesn't break the structure
 5. **Fault isolation**: One ninja failing doesn't affect the others
 6. **Unified reporting**: Only the Shogun communicates with you, keeping information organized
+
+7. **Separated review (Gunshi)**: Karo deploys and runs the GATE; Gunshi reviews cmd drafts and reports. Splitting the builder from the inspector removes Karo's bias of "passing my own deployment". Gunshi stands outside the chain (Claude, 1M context) and also independently verifies Shogun's self-checks
+8. **The chain is also the return path**: a Ninja's lesson_candidate flows back Karo → lesson → gate → test. Bypass the chain and both the order and the learning vanish
 
 ### Why Mailbox System?
 
@@ -559,31 +562,23 @@ Model names are stored as `@model_name` and current task summaries as `@current_
 
 ## Skills
 
-Shared skills are included under `skills/`; user-specific skills may also live under `.claude/skills/` or `~/.codex/skills/`. `first_setup.sh` preserves existing skill directories and does not overwrite them.
+Shared skills live in `skills/{name}/SKILL.md`, the single source callable as `/{name}` from both Claude Code and Codex (41 as of 2026-08-27). User-specific skills go to `.claude/skills/` or `~/.codex/skills/` and are not committed.
 
-Invoke skills with `/skill-name`. Just tell the Shogun: "run /skill-name".
+### Skill philosophy
 
-### Skill Philosophy
+**1. One source, many CLIs** — `skills/` is canonical; per-CLI placement follows by symlink/generation (multi-CLI rule). Every description must declare TRIGGER / DO NOT TRIGGER and any role restriction (Shogun-only, Karo-only, Ninja-only) to prevent misfires. A direct order from the Lord overrides role restrictions.
 
-**1. Shared and user-specific skills are separate**
-
-User-specific skills in `.claude/commands/` are excluded from version control by design:
-- Every user's workflow is different
-- Rather than imposing generic skills, each user grows their own skill set
-
-**2. How skills are discovered**
+**2. How skills are acquired (bottom-up)**
 
 ```
-Ninja notices a pattern during work
+Ninja spots a pattern while working → skill_candidate in the report YAML
     ↓
-Appears in dashboard.md under "Skill Candidates"
+Gunshi review → Karo creates skills/{name}/SKILL.md
     ↓
-You (the Lord) review the proposal
-    ↓
-If approved, instruct the Karo to create the skill
+skill_execution_log measures usage → unused skills are retired
 ```
 
-Skills are user-driven. Automatic creation would lead to unmanageable bloat — only keep what you find genuinely useful.
+**3. Main skills by role** — Shogun: `/dream` (three-layer memory consolidation), `/lesson-sort`, `/shogun-teire`, `/shogun-clear-prep`, `/x-research`, `/weekly-report` · Karo: `/cmd-complete`, `/dashboard-update`, `/karo-direct`, `/recon-dual` · Gunshi: `/review-bundle`, `/gate-sync`, `/idle-persist` · Ninja: `/report-write`, `/ninja-commit`, `/verdict-check` · shared: `/shogun-cli-switch`, `/codd`, `/codd-refactor`, `/three-layer-penetrate`, `/db-check`
 
 ---
 
@@ -828,63 +823,62 @@ To apply aliases: run `source ~/.bashrc` or restart your terminal (PowerShell: `
 ## File Structure
 
 <details>
-<summary><b>Click to expand file structure</b></summary>
+<summary><b>Click to expand the file structure</b></summary>
 
 ```
 multi-agent-shogun/
 │
-│  ┌──────────────── Setup Scripts ────────────────────┐
-├── install.bat               # Windows: First-time setup
-├── first_setup.sh            # Ubuntu/Mac: First-time setup
-├── shutsujin_departure.sh    # Daily deployment (auto-loads instructions)
-│  └──────────────────────────────────────────────────┘
+├── first_setup.sh            # first-time setup (Linux/WSL2, idempotent)
+├── shutsujin_departure.sh    # daily launch (tmux 2 windows + 9 agents + daemons)
+├── install.bat               # Windows: WSL2/Ubuntu guidance (legacy helper)
 │
-├── instructions/             # Agent behavior definitions
-│   ├── shogun.md             # Shogun instructions
-│   ├── karo.md               # Karo instructions
-│   ├── ashigaru.md           # Ninja instructions
-│   └── cli_specific/         # CLI-specific tool descriptions
-│       ├── claude_tools.md   # Claude Code tools & features
-│       └── copilot_tools.md  # GitHub Copilot CLI tools & features
-│
-├── scripts/                  # Utility scripts
-│   ├── inbox_write.sh        # Write messages to agent inbox
-│   ├── inbox_watcher.sh      # Watch inbox changes via inotifywait
-│   ├── ntfy.sh               # Send push notifications to phone
-│   └── ntfy_listener.sh      # Stream incoming messages from phone
+├── CLAUDE.md / AGENTS.md     # permanent rules (Claude / Codex kept in sync, not unified)
+├── instructions/             # per-role rules
+│   ├── shogun.md karo.md gunshi.md ashigaru.md   # Shogun, Karo, Gunshi, Ninja
+│   ├── roles/ common/ cli_specific/             # sources (4 CLIs)
+│   └── generated/            # output of build_instructions.sh ({cli}-{role}.md)
 │
 ├── config/
-│   ├── settings.yaml         # Language, ntfy, and other settings
-│   └── projects.yaml         # Project registry
+│   ├── settings.yaml         # formation source of truth (CLI, model, effort, launch_cmd, ntfy)
+│   ├── cli_profiles.yaml     # per-CLI launch profiles
+│   └── projects.yaml         # external project registry
+├── projects/                 # project core knowledge (git-ignored, confidential)
 │
-├── projects/                 # Project details (excluded from git, contains confidential info)
-│   └── <project_id>.yaml    # Full info per project (clients, tasks, Notion links, etc.)
+├── queue/                    # communication & state (all YAML)
+│   ├── shogun_to_karo.yaml   # Shogun's cmds (draft → pending → delegated → completed)
+│   ├── tasks/{agent}.yaml    # tasks deployed by Karo
+│   ├── reports/              # Ninja report YAMLs (binary_checks / findings / lesson_candidate)
+│   ├── inbox/{agent}.yaml    # mailboxes (flock; watcher sends nudges)
+│   ├── bulletin_board.yaml   # Karo/Gunshi → Shogun reporting channel
+│   ├── insights.yaml         # insights (source of reflux)
+│   ├── pending_decisions.yaml# rulings awaiting the Lord
+│   ├── karo_snapshot.txt     # formation snapshot (generated by ninja_monitor)
+│   └── archive/              # completed cmds / reports
 │
-├── queue/                    # Communication files
-│   ├── shogun_to_karo.yaml   # Shogun → Karo commands
-│   ├── ntfy_inbox.yaml       # Incoming messages from phone (ntfy)
-│   ├── inbox/                # Per-agent inbox files
-│   │   ├── shogun.yaml       # Messages to Shogun
-│   │   ├── karo.yaml         # Messages to Karo
-│   │   └── {ninja_name}.yaml  # Messages to each ninja (hayate, kagemaru, hanzo, saizo, kotaro, tobisaru)
-│   ├── tasks/                # Per-worker task files
-│   └── reports/              # Worker reports
+├── scripts/ (243)            # filing, deployment, monitoring, gates, instruments
+│   ├── cmd_skeleton.sh cmd_save.sh cmd_delegate.sh   # cmd filing gates
+│   ├── deploy_task.sh + deploy_task/                  # deployment (task-worktree isolation)
+│   ├── inbox_write.sh inbox_watcher.sh inbox_mark_read.sh
+│   ├── ninja_monitor.sh daemon_watchdog.sh            # monitoring, auto /clear, reflux
+│   ├── cmd_complete_gate.sh gates/ (58)               # GATE and startup gates
+│   ├── ninja_scope_commit.sh run_tests.sh             # scoped commit / selective tests
+│   ├── memory_db_query.sh memory_db_knowledge_write.sh semantic_search.sh   # three-layer memory
+│   ├── migrate_to_ext4_{relocate,cutover,rollback}.sh # ext4 migration
+│   ├── ntfy.sh ntfy_listener.sh gist_share.sh         # Lord-facing surfaces
+│   └── lib/                  # shared libraries
+├── skills/ (41)              # skills shared by both CLIs ({name}/SKILL.md)
+├── .claude/hooks/ (23) .codex/hooks.json   # per-CLI hooks
 │
-├── saytask/                  # Behavioral psychology-driven motivation
-│   └── streaks.yaml          # Streak tracking and daily progress
-│
-├── templates/                # Report and context templates
-│   ├── integ_base.md         # Integration: base template
-│   ├── integ_fact.md         # Integration: fact-finding
-│   ├── integ_proposal.md     # Integration: proposal
-│   ├── integ_code.md         # Integration: code review
-│   ├── integ_analysis.md     # Integration: analysis
-│   └── context_template.md   # Universal 7-section project context
-│
-├── memory/                   # Memory MCP persistent storage
-├── dashboard.md              # Real-time status board
-├── CLAUDE.md                 # System instructions for Claude Code
-└── AGENTS.md                 # System instructions for Codex
+├── tests/unit/ (242 bats)    # contract tests (selective runs, sharded CI)
+├── context/                  # index layer (growth-loop / semantic-map / infrastructure / {project})
+├── docs/research/ (1000+)    # detail layer (runbooks, measurements, designs)
+├── docs/dashboard/           # HTML source of the battle-status artifact
+├── memory/                   # deepdive_*.md (replay originals), dialogue_*.md (research journals)
+├── data/multi_agent_shogun_memory.db   # memory DB (SQLite / FTS5)
+├── logs/                     # gate_metrics / defense_overhead / deploy_task …
+├── saytask/                  # SayTask (streaks.yaml)
+├── android/                  # Android companion app
+└── dashboard.md              # the Lord's own view (maintained by Karo)
 ```
 
 </details>
@@ -914,7 +908,7 @@ projects/<project_id>.yaml    # Full details for each project
 projects:
   - id: client_x
     name: "Client X Consulting"
-    path: "/mnt/c/Consulting/client_x"
+    path: "~/work/client_x"   # any path on ext4
     status: active
 
 # projects/client_x.yaml
@@ -935,6 +929,20 @@ This separation lets the Shogun System coordinate across multiple external proje
 ---
 
 ## Troubleshooting
+
+<details>
+<summary><b>Everything is slow — git status takes a minute?</b></summary>
+
+The repository is on a Windows drive (`/mnt/c/...`, 9p filesystem). Every `git`/`flock`/`stat` becomes an RPC; measured `git status` 60–120 s and D-state processes. Move the repository to ext4 (e.g. `~/multi-agent-shogun`) — the runbook and scripts are `docs/research/9p_root_fix_runbook_20260827.md` and `scripts/migrate_to_ext4_{relocate,cutover,rollback}.sh`. After the move `git status` is 84 ms.
+
+</details>
+
+<details>
+<summary><b>A Codex pane is stuck on "Update available" or a usage limit?</b></summary>
+
+The watcher suppresses nudges while a confirmation prompt is open, so the agent looks idle. Check the pane with `tmux capture-pane`, then clear the prompt with a verified key sequence (select the option first, confirm it in a second capture, then Enter). For usage limits use `/usage` reset or a device-auth account switch; `ninja_monitor` respawns idle panes afterwards.
+
+</details>
 
 <details>
 <summary><b>Using npm version of Claude Code CLI?</b></summary>
@@ -1036,10 +1044,11 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 ## Current Highlights
 
-- **Config-driven mixed formation** — live assignment comes from `config/settings.yaml` and `config/cli_profiles.yaml`, not hard-coded README tables
-- **GATE-first operations** — `cmd_complete_gate.sh`, `gate_cmd_state.sh`, and `gate_lesson_health.sh` protect against false completion, stale delegation, and low-value lessons
-- **Knowledge operations** — the 7-layer knowledge map, `queue/karo_snapshot.txt`, `queue/pending_decisions.yaml`, and `context/cmd-chronicle.md` keep recovery and audits cheap
-- **Mobile surface** — ntfy push, the Android companion app, and Termux/mosh access let you run the army away from the desk
+- **2026-08-27 — moved the repository from a Windows drive (9p) to ext4**: `git status` 60–120 s → 84 ms, one deployment 199–397 s → 23 s, cmd publish 3.8 s → 0.23 s, median hook wall 183 → 90 ms. Runbook: `docs/research/9p_root_fix_runbook_20260827.md`.
+- **Mixed formation on two CLIs**: Shogun (Claude Fable 5) and Gunshi (Claude Opus 4.6, 1M) with Karo and 6 Ninja on Codex gpt-5.6; `config/settings.yaml` is the only source of truth and `/shogun-cli-switch` changes it without touching working panes.
+- **Everything measured**: `defense_overhead.jsonl` (every hook), `gate_metrics.log` (e2e/deploy/work/finalize per cmd), deploy receipts, pre-push ledger. Today's remaining bottleneck after the move is human-side review round trips (finalize 250–960 s), not the filesystem.
+- **Three-layer memory in production**: memory DB (SQLite/FTS5), semantic index, Obsidian causal links; startup preflight and the `[MEM:]` citation contract enforced by hooks.
+- **Portability work in flight**: user-specific absolute paths removed from scripts/config (cmd_4409), README rewritten from the actual setup and verified by isolated clone/ZIP runs (cmd_4410).
 
 ---
 

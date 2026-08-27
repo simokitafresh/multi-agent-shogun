@@ -83,105 +83,106 @@
 
 ## なぜ Shogun なのか？
 
-多くのマルチエージェントフレームワークは、連携のためにAPIトークンを消費します。Shogunは違います。
+多くのマルチエージェントフレームワークは、連携のために API トークンを消費します。Shogun は違います。
 
 | | Claude Code `Task` ツール | LangGraph | CrewAI | **multi-agent-shogun** |
 |---|---|---|---|---|
-| **アーキテクチャ** | 1プロセス内のサブエージェント | グラフベースの状態機械 | ロールベースエージェント | tmux経由の階層構造 |
-| **並列性** | 逐次実行（1つずつ） | 並列ノード（v0.2+） | 限定的 | **6体の独立エージェント** |
-| **連携コスト** | TaskごとにAPIコール | API + インフラ（Postgres/Redis） | API + CrewAIプラットフォーム | **ゼロ**（YAML + tmux） |
-| **可観測性** | Claudeのログのみ | LangSmith連携 | OpenTelemetry | **ライブtmuxペイン** + ダッシュボード |
-| **スキル発見** | なし | なし | なし | **ボトムアップ自動提案** |
-| **セットアップ** | Claude Code内蔵 | 重い（インフラ必要） | pip install | シェルスクリプト |
+| **アーキテクチャ** | 1 プロセス内のサブエージェント | グラフベースの状態機械 | ロールベースエージェント | tmux 上の 9 体（将軍・家老・軍師・忍者 6）の階層構造 |
+| **並列性** | 逐次実行 | 並列ノード（v0.2+） | 限定的 | **忍者 6 体が task worktree で独立実行** |
+| **連携コスト** | Task ごとに API コール | API + インフラ（Postgres/Redis） | API + CrewAI プラットフォーム | **ゼロ**（YAML + inotify、定額 CLI） |
+| **品質保証** | なし | なし | なし | **cmd 品質ゲート 82 check → 軍師レビュー → 家老 GATE → CI** |
+| **学習** | なし | なし | なし | **三層学習ループ**（教訓→ゲート→テストへ還流、reflux 自動配備） |
+| **記憶** | セッション内 | 外部ストア | 外部ストア | **三層記憶**（記憶DB / セマンティック索引 / Obsidian 因果） |
+| **可観測性** | Claude のログのみ | LangSmith 連携 | OpenTelemetry | **ライブ tmux ペイン** + 陣形図 + 戦況 artifact + ntfy |
+| **セットアップ** | Claude Code 内蔵 | 重い（インフラ必要） | pip install | `first_setup.sh` 1 本（Linux/WSL2、ext4） |
 
 ### 他のフレームワークとの違い
 
-**連携コストゼロ** — エージェント間の通信はディスク上のYAMLファイル。APIコールは実際の作業にのみ使われ、オーケストレーションには使われません。8体のエージェントを動かしても、支払うのは8体分の作業コストだけです。
+**連携コストゼロ** — エージェント間の通信はディスク上の YAML ファイルと inotify の nudge。API コールは実際の作業にのみ使われ、オーケストレーションには使われない。
 
-**完全な透明性** — すべてのエージェントが見えるtmuxペインで動作。すべての指示・報告・判断がプレーンなYAMLファイルで、読んで、diffして、バージョン管理できます。ブラックボックスなし。
+**完全な透明性** — すべてのエージェントが見える tmux ペインで動作し、すべての指示・報告・判断・ゲート結果がプレーンな YAML / log。読んで、diff して、バージョン管理できる。
 
-**実戦で鍛えた階層構造** — 将軍→家老→忍者の指揮系統が設計レベルで衝突を防止：明確な責任分担、エージェントごとの専用ファイル、イベント駆動通信、ポーリングなし。
+**実戦で鍛えた階層構造** — 殿→将軍→家老→忍者の鎖と、鎖の脇に立つ軍師（レビュー専任）。役割ごとの専用ファイル、イベント駆動通信、二値の受入条件、そして失敗を環境に埋め込む成長ループ。2026-02 の初 commit から 16,000 commit 超の実運用で磨かれた（数値は「現在の運用実績」）。
 
 ---
 
 ## この fork の独自性
 
-| 機能 | このrepoでの意味 |
+| 機能 | このリポジトリでの意味 |
 |---|---|
-| **知識7層** | system rules、役割別指示、project core、project lessons、live YAML、Vercelスタイルcontext、Memory MCP を分離管理 |
-| **Vercelスタイル context** | `context/*.md` は索引層、深い調査は `docs/research/` に逃がしてリンクで戻す |
-| **教訓サイクル** | 教訓をタスクへ注入し、参照し、GATE後に評価し、効かないものは自動退役する |
-| **GATEシステム** | `cmd_complete_gate.sh`、`gate_cmd_state.sh`、`gate_lesson_health.sh` が false done や stale state を止める |
-| **karo_snapshot** | `queue/karo_snapshot.txt` で compact 復帰後も陣形図を即再構築できる |
-| **PDシステム** | `queue/pending_decisions.yaml` で未裁定事項を管理する |
-| **cmd年代記** | `context/cmd-chronicle.md` が直近cmdの履歴を低コストで保持する |
-| **Androidコンパニオン** | `android/` に Kotlin + Jetpack Compose 製アプリを同梱。SSH制御と ntfy 通知を1台に集約 |
+| **鎖 + 軍師** | 殿→将軍→家老→忍者の一本道に、レビュー専任の軍師を加えた 4 役。将軍は決め、家老は仕切り、軍師は検分し、忍者は遂げる |
+| **cmd 品質ゲート** | `cmd_skeleton.sh` → `cmd_save.sh`（82 check）→ `cmd_delegate.sh`。BLOCK は「次に BLOCK されないよう環境へ埋め込む」入口 |
+| **task worktree 隔離配備** | `deploy_task.sh` が教訓・関連概念を push 注入し、忍者ごとに ext4 上の worktree で隔離 |
+| **報告契約 + 二段レビュー + GATE** | 二値 `binary_checks` の報告 YAML → 軍師 SG7 → 家老 ACCEPT → `cmd_complete_gate.sh` → CI |
+| **三層学習ループ / reflux** | 教訓の注入・評価・淘汰、`queue/insights.yaml` の気づきを idle 忍者へ自動配備 |
+| **三層記憶** | 記憶DB（SQLite/FTS5）・セマンティック索引・Obsidian 因果ネットワーク。起動時 preflight と `[MEM:]` 引用契約 |
+| **Vercel スタイル context** | `context/*.md` は索引層、詳細は `docs/research/` に置きリンクで戻す |
+| **ninja_monitor / 陣形図** | `queue/karo_snapshot.txt` を機械生成。STALL / ghost / UNACTIONED 検知、CTX 監視と自動 /clear |
+| **multi-CLI** | Claude Code と Codex を CLI 固有の hook・gate で運用し、成果基準だけ共通化。`/shogun-cli-switch` で編成切替 |
+| **計測器の常設** | `defense_overhead.jsonl` / `gate_metrics.log` / deploy receipt / pre_push ledger。速度改善は before/after で証明 |
+| **ext4 移設 runbook** | Windows ドライブ（9p）から ext4 へ移すための relocate / cutover / rollback script と副作用の突合表 |
+| **Android コンパニオン** | `android/` に Kotlin + Jetpack Compose 製アプリ。SSH 制御・音声入力・ntfy 通知 |
 
 ---
 
 ## なぜCLI（APIではなく）？
 
-多くのAIコーディングツールはトークン従量課金。9体のOpus級エージェントをAPI経由で動かすと**$100+/時間**。CLI定額サブスクはこれを逆転させる：
+多くの AI コーディングツールはトークン従量課金です。9 体の Opus 級エージェントを API 経由で動かすと **$100+/時間**。CLI の定額サブスクはこれを逆転させます。
 
 | | API（従量課金） | CLI（定額制） |
 |---|---|---|
-| **8エージェント × Opus** | ~$100+/時間 | ~$200/月 |
+| **9 エージェント × Opus 級** | ~$100+/時間 | 月額固定（Claude + ChatGPT の 2 サブスク） |
 | **コスト予測性** | 予測不能なスパイク | 月額固定 |
-| **使用時の心理** | 1トークンが気になる | 使い放題 |
-| **実験の余地** | 制約あり | 自由に投入 |
+| **使用時の心理** | 1 トークンが気になる | 使い放題 |
+| **実験の余地** | 制約あり | 自由に投入（「実験ファースト」が原則） |
 
-**「AIを使い倒す」思想** — 定額CLIサブスクなら、6体の忍者を気兼ねなく投入できる。1時間稼働でも24時間稼働でもコストは同じ。「まあまあ」と「徹底的に」の二択で悩む必要がない — エージェントを増やせばいい。
+**「AI を使い倒す」思想** — 定額 CLI サブスクなら、6 体の忍者を気兼ねなく投入できる。1 時間稼働でも 24 時間稼働でもコストは同じ。「まあまあ」ではなく「徹底的に」が既定になる。上限に当たったときは `/usage` の reset か device-auth によるアカウント切替（Codex）で復帰する。
 
-### Multi-CLI対応
+### Multi-CLI 対応
 
-将軍システムは特定ベンダーに依存しない。4つのCLIツールに対応し、それぞれの強みを活かす：
+特定ベンダーに依存しない。指示書は共有テンプレートから **4 つの CLI 向けに自動生成**され（`bash scripts/build_instructions.sh`）、本番編成（2026-08-27）は Claude Code + Codex の 2 つで運用している。
 
-| CLI | 特徴 | デフォルトモデル |
+| CLI | 特徴 | 本番での使用 |
 |-----|------|-----------------|
-| **Claude Code** | tmux統合の実績、Memory MCP、専用ファイルツール（Read/Write/Edit/Glob/Grep） | Claude Opus 4.6 |
-| **OpenAI Codex** | サンドボックス実行、JSONL構造化出力、`codex exec` ヘッドレスモード | gpt-5.5 |
-| **GitHub Copilot** | GitHub MCP組込、4種の特化エージェント（Explore/Task/Plan/Code-review）、`/delegate` | Provider-managed |
-| **Kimi Code** | 無料プランあり、多言語サポート | Kimi k2 |
-
-統一ビルドシステムが共有テンプレートからCLI固有の指示書を自動生成：
+| **Claude Code** | tmux 統合の実績、Memory MCP、専用ファイルツール（Read/Write/Edit/Glob/Grep）、hook で構造型の安全弁 | 将軍（Fable 5）・軍師（Opus 4.6, 1M） |
+| **OpenAI Codex** | サンドボックス実行、`.codex/hooks.json`（exit 2 = BLOCK）、device-auth、`codex exec` ヘッドレス | 家老（gpt-5.6-sol）・忍者 6（gpt-5.6-luna） |
+| **GitHub Copilot** | GitHub MCP 組込、特化エージェント、`/delegate` | 指示書を生成済み（`.github/copilot-instructions.md`）、本番編成外 |
+| **Kimi Code** | 無料プランあり、多言語 | 指示書を生成済み、本番編成外 |
 
 ```
 instructions/
-├── common/              # 共通ルール（全CLI共通）
-├── cli_specific/        # CLI固有のツール説明
-│   ├── claude_tools.md  # Claude Code ツール・機能
-│   └── copilot_tools.md # GitHub Copilot CLI ツール・機能
-└── roles/               # ロール定義（将軍、家老、忍者）
-    ↓ ビルド
-CLAUDE.md / AGENTS.md / copilot-instructions.md  ← CLI別に生成
+├── common/              # 共通ルール（全 CLI 共通）
+├── cli_specific/        # CLI 固有のツール説明（claude / codex / copilot / kimi）
+├── roles/               # ロール定義（将軍・家老・軍師・忍者）
+└── generated/           # ビルド結果（{cli}-{role}.md × 4 CLI × 4 役）
+    ↓ bash scripts/build_instructions.sh
+CLAUDE.md / AGENTS.md / .github/copilot-instructions.md
 ```
 
-ルールの変更は1箇所。全CLIに反映。同期ズレなし。
+原則（multi-CLI 大原則）: 共通化するのは成果の評価基準（二値 AC・報告契約）だけ。hook・gate・起動方法は CLI ごとに別実装し、同じ実行機構を共用しない。ルールの変更は `instructions/roles/` の 1 箇所。
 
 ---
 
 ## ボトムアップスキル発見
 
-他のフレームワークにはない機能です。
-
-忍者がタスクを実行する中で、**再利用可能なパターンを自動的に発見**し、スキル候補として提案します。家老が提案を `dashboard.md` に集約し、殿（あなた）が正式なスキルに昇格させるか判断します。
+忍者はタスクを遂行する中で **再利用可能なパターンを発見** し、報告 YAML の `skill_candidate` として提案します。家老がレビューし、採用されたものは `skills/{name}/SKILL.md` に正本として置かれ、Claude Code / Codex の両 CLI から `/{name}` で呼べます（2026-08-27 時点で 41 本）。
 
 ```
 忍者がタスクを完了
     ↓
-気づき: 「このパターン、3つのプロジェクトで同じことをした」
+気づき: 「このパターン、3 つのプロジェクトで同じことをした」
     ↓
-YAMLで報告:  skill_candidate:
-                 found: true
-                 name: "api-endpoint-scaffold"
-                 reason: "3プロジェクトで同じRESTスキャフォールドパターンを使用"
+報告 YAML:  skill_candidate:
+              found: true
+              name: "api-endpoint-scaffold"
+              reason: "3 プロジェクトで同じ REST スキャフォールドパターンを使用"
     ↓
-dashboard.md に掲載 → 殿が承認 → .claude/commands/ にスキル作成
+軍師レビュー → 家老が skills/api-endpoint-scaffold/SKILL.md を作成（description に TRIGGER / DO NOT TRIGGER 必須）
     ↓
-全エージェントが /api-endpoint-scaffold を呼び出し可能に
+全エージェントが /api-endpoint-scaffold を呼び出し可能に。skill_execution_log で使用実績を計測
 ```
 
-スキルは実際の作業から有機的に成長します — 既製のテンプレートライブラリからではなく。スキルセットは**あなた自身**のワークフローの反映になります。
+同じ経路で `lesson_candidate`（教訓）と `decision_candidate`（裁定が要る事項）も上がります。スキルも教訓も実際の作業から有機的に増え、使われないものは淘汰されます。
 
 ---
 
@@ -510,63 +511,57 @@ tmuxセッションが作成されます：
 
 ### Step 1: 将軍に接続
 
-`shutsujin_departure.sh` 実行後、全エージェントが自動的に指示書を読み込み、作業準備完了となります。
-
-新しいターミナルを開いて将軍に接続：
+`./shutsujin_departure.sh` の後、全エージェントは自分の指示書（`CLAUDE.md` / `AGENTS.md` + `instructions/generated/*.md`）を読み、起動ゲート（三層記憶の健全性・未読 inbox・deepdive 追体験）を通って待機します。
 
 ```bash
-tmux attach-session -t shogun
+tmux attach -t shogun          # window main = 将軍、window agents = 家老・軍師・忍者
 ```
 
 ### Step 2: 最初の命令を出す
 
-将軍は既に初期化済み！そのまま命令を出せます：
+将軍 pane に日本語で書くだけです。
 
 ```
-JavaScriptフレームワーク上位5つを調査して比較表を作成せよ
+JavaScript フレームワーク上位 5 つを調査して比較表を作成せよ
 ```
 
-将軍は：
-1. タスクをYAMLファイルに書き込む
-2. 家老（管理者）に通知
-3. 即座にあなたに制御を返す（待つ必要なし！）
+将軍は (1) 三層記憶を検索し、(2) `queue/shogun_to_karo.yaml` に cmd を起票して品質ゲート（82 check）を通し、(3) 家老へ委任して即座に制御を返します。あなたは待ちません。
 
-その間、家老はタスクを忍者ワーカーに分配し、並列実行します。
-
-### Step 3: 進捗を確認
-
-エディタで `dashboard.md` を開いてリアルタイム状況を確認：
-
-```markdown
-## 進行中
-| ワーカー | タスク | 状態 |
-|----------|--------|------|
-| Saizo | React調査 | 実行中 |
-| Kotaro | Vue調査 | 実行中 |
-| Hayate | Angular調査 | 完了 |
-```
-
-### 詳細なフロー
+### Step 3: 鎖が回る
 
 ```
-あなた: 「トップ5のMCPサーバを調査して比較表を作成せよ」
+家老   cmd を task に分解 → deploy_task.sh で忍者へ配備（教訓・関連概念を注入、task worktree で隔離）
+忍者   受入条件を遂行 → scope commit → 報告 YAML（binary_checks は yes/no）
+軍師   報告を SG7 でレビュー → LGTM / FAIL
+家老   ACCEPT → cmd_complete_gate.sh（commit 祖先・CI・context 鮮度）→ GATE CLEAR → archive → 忍者 idle
+通知   ntfy でスマホへ「GATE CLEAR」。将軍は掲示板・gate_metrics で突合し、戦況 artifact を更新
 ```
 
-将軍がタスクを `queue/shogun_to_karo.yaml` に書き込み、家老を起動。あなたには即座に制御が戻ります。
+### Step 4: 進捗を確認
 
-家老がタスクをサブタスクに分解：
+- `queue/karo_snapshot.txt` — 陣形図（`ninja_monitor` が機械生成。誰が何を、CTX 何 %、いつから）
+- `dashboard.md` — 殿が自分で見る戦況（家老が更新）
+- `queue/bulletin_board.yaml` — 家老・軍師から将軍への報告チャネル
+- `logs/gate_metrics.log` — cmd ごとの e2e / deploy / work / finalize 秒
+- 戦況 artifact（claude.ai）— 将軍が 30 分ごとに再公開するタスクマップ
 
-| ワーカー | 割当内容 |
-|----------|----------|
-| Saizo | Notion MCP調査 |
-| Kotaro | GitHub MCP調査 |
-| Hayate | Playwright MCP調査 |
-| Kagemaru | Memory MCP調査 |
-| Hanzo | Sequential Thinking MCP調査 |
+### 詳細なフロー（例）
 
-5体の忍者が同時に調査開始。リアルタイムで作業を見ることができます。
+```
+あなた: 「トップ 5 の MCP サーバを調査して比較表を作成せよ」
+```
 
-結果は完了次第 `dashboard.md` に表示されます。
+将軍が cmd_XXXX を起票 → 家老がサブタスクへ分解:
+
+| 忍者 | 割当内容 |
+|------|----------|
+| Hayate | Playwright MCP 調査 |
+| Kagemaru | Memory MCP 調査 |
+| Hanzo | Sequential Thinking MCP 調査 |
+| Saizo | Notion MCP 調査 |
+| Kotaro | GitHub MCP 調査 |
+
+5 体が同時に調査を開始し、tmux でリアルタイムに見えます。偵察 cmd は finding（観測・結果・根拠パス）を必須にし、commit は免除。報告が揃うと軍師→家老→GATE CLEAR→ntfy の順に進み、比較表は報告 YAML と `docs/research/` に残ります。
 
 ---
 
@@ -950,7 +945,7 @@ A: AIがベストを尽くして分類・スケジュールする。後で修正
 | Eat the Frog 🐸 選定 | ✅ | — |
 | ストリーク追跡 | ✅ | ✅ |
 | AI実行タスク（複数ステップ） | — | ✅ |
-| 8エージェント並列実行 | — | ✅ |
+| 忍者 6 体の並列実行 | — | ✅ |
 
 SayTaskは個人の生産性を担当（キャプチャ → スケジュール → リマインド）。cmdパイプラインは複雑な作業を担当（リサーチ、コード、複数ステップのタスク）。両者はストリーク追跡を共有し、どちらのタスクを完了してもデイリーストリークにカウントされる。
 
@@ -997,7 +992,7 @@ SayTaskは個人の生産性を担当（キャプチャ → スケジュール �
 
 ## 🎯 設計思想
 
-### なぜ階層構造（将軍→家老→忍者）なのか
+### なぜ階層構造（殿→将軍→家老→忍者 + 軍師）なのか
 
 1. **即座の応答**: 将軍は即座に委譲し、あなたに制御を返す
 2. **並列実行**: 家老が複数の忍者に同時分配
@@ -1005,6 +1000,8 @@ SayTaskは個人の生産性を担当（キャプチャ → スケジュール �
 4. **スケーラビリティ**: 忍者を増やしても構造が崩れない
 5. **障害分離**: 1体の忍者が失敗しても他に影響しない
 6. **人間への報告一元化**: 将軍だけが人間とやり取りするため、情報が整理される
+7. **レビューの分離（軍師）**: 家老は配備と GATE、軍師は cmd 草案と報告のレビューに専念する。作る側と検分する側を分けることで、家老の「自分の配備を自分で通す」偏りを消す。軍師は鎖の外（Claude, 1M context）に立ち、将軍の自己検査も第三者検証する
+8. **鎖は還流路でもある**: 忍者の lesson_candidate が家老→教訓→gate→test へ戻る。鎖を迂回すると指示も学びも消える
 
 ### なぜメールボックスシステムなのか
 
@@ -1018,7 +1015,7 @@ SayTaskは個人の生産性を担当（キャプチャ → スケジュール �
 
 ### エージェント識別（@agent_id）
 
-各ペインに `@agent_id` というtmuxユーザーオプションを設定（例: `karo`, `sasuke`）。`pane_index` はペイン再配置でズレるが、`@agent_id` は `shutsujin_departure.sh` が起動時に固定設定するため変わらない。
+各ペインに `@agent_id` というtmuxユーザーオプションを設定（例: `karo`, `gunshi`, `hayate`）。`pane_index` はペイン再配置でズレるが、`@agent_id` は `shutsujin_departure.sh` が起動時に固定設定するため変わらない。
 
 エージェントの自己識別:
 ```bash
@@ -1039,31 +1036,23 @@ tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 
 ## 🛠️ スキル
 
-共有スキルは `skills/` に含まれます。ユーザー固有スキルは `.claude/skills/` または `~/.codex/skills/` に置け、`first_setup.sh` は既存ディレクトリを上書きしません。
-
-スキルは `/スキル名` で呼び出し可能。将軍に「/スキル名 を実行」と伝えるだけ。
+共有スキルは `skills/{name}/SKILL.md` を正本に、Claude Code / Codex の両 CLI から `/{name}` で呼べます（2026-08-27 時点で 41 本）。ユーザー固有スキルは `.claude/skills/` または `~/.codex/skills/` に置き、リポジトリにはコミットしません。
 
 ### スキルの思想
 
-**1. 共有スキルとユーザー固有スキルを分離**
+**1. 正本は 1 つ、CLI は複数** — `skills/` を正本とし、CLI ごとの配置は symlink/生成で追従する（multi-CLI 大原則）。description には TRIGGER / DO NOT TRIGGER / ロール制限（将軍専用・家老専用・忍者専用）を必ず書き、誤発火を防ぐ。殿の直接指示はロール制限に優先する。
 
-ユーザー固有の `.claude/commands/` 配下のスキルはリポジトリにコミットしない設計。理由：
-- 各ユーザの業務・ワークフローは異なる
-- 汎用的なスキルを押し付けるのではなく、ユーザが自分に必要なスキルを育てていく
-
-**2. スキル取得の手順**
+**2. 取得の手順（ボトムアップ）**
 
 ```
-忍者が作業中にパターンを発見
+忍者が作業中にパターンを発見 → 報告 YAML の skill_candidate
     ↓
-dashboard.md の「スキル化候補」に上がる
+軍師レビュー → 家老が skills/{name}/SKILL.md を作成
     ↓
-殿（あなた）が内容を確認
-    ↓
-承認すれば家老に指示してスキルを作成
+skill_execution_log で使用実績を計測 → 使われないものは淘汰
 ```
 
-スキルはユーザ主導で増やすもの。自動で増えると管理不能になるため、「これは便利」と判断したものだけを残す。
+**3. 主なスキル（役割別）** — 将軍: `/dream`（三層記憶整理）`/lesson-sort` `/shogun-teire` `/shogun-clear-prep` `/x-research` `/weekly-report`／家老: `/cmd-complete` `/dashboard-update` `/karo-direct` `/recon-dual`／軍師: `/review-bundle` `/gate-sync` `/idle-persist`／忍者: `/report-write` `/ninja-commit` `/verdict-check`／共通: `/shogun-cli-switch` `/codd` `/codd-refactor` `/three-layer-penetrate` `/db-check`
 
 ---
 
@@ -1120,15 +1109,16 @@ claude mcp list
 あなた: 「AIコーディングアシスタント上位5つを調査して比較せよ」
 
 実行される処理:
-1. 将軍が家老に委譲
-2. 家老が割り当て:
-   - Sasuke: GitHub Copilotを調査
-   - Kirimaru: Cursorを調査
+1. 将軍が cmd を起票（品質ゲート 82 check）→ 家老に委任
+2. 家老が task に分解して割り当て（task worktree で隔離）:
+   - Saizo: GitHub Copilotを調査
+   - Kotaro: Cursorを調査
    - Hayate: Claude Codeを調査
    - Kagemaru: Codeiumを調査
    - Hanzo: Amazon CodeWhispererを調査
 3. 5体の忍者が同時に調査
-4. 結果がdashboard.mdに集約
+4. 各忍者が報告 YAML（finding 必須）を提出 → 軍師レビュー → 家老 GATE CLEAR → ntfy 通知
+5. 比較表は報告 YAML と docs/research/ に残り、dashboard.md に要約
 ```
 
 ### 例2: PoC準備
@@ -1138,10 +1128,10 @@ claude mcp list
 
 実行される処理:
 1. 家老がMCP経由でNotionコンテンツを取得
-2. Kirimaru: 確認すべき項目をリスト化
+2. Kotaro: 確認すべき項目をリスト化
 3. Hayate: 技術的な実現可能性を調査
 4. Kagemaru: PoC計画書を作成
-5. 全結果がdashboard.mdに集約、会議の準備完了
+5. 報告 YAML → 軍師 → 家老 GATE → dashboard.md に要約、会議の準備完了
 ```
 
 ---
@@ -1311,57 +1301,57 @@ alias csm='tmux attach-session -t shogun'  # 家老・忍者ウィンドウの�
 ```
 multi-agent-shogun/
 │
-│  ┌─────────────────── セットアップスクリプト ───────────────────┐
-├── install.bat               # Windows: 初回セットアップ
-├── first_setup.sh            # Ubuntu/Mac: 初回セットアップ
-├── shutsujin_departure.sh    # 毎日の起動（指示書自動読み込み）
-│  └────────────────────────────────────────────────────────────┘
+├── first_setup.sh            # 初回セットアップ（Linux/WSL2、冪等）
+├── shutsujin_departure.sh    # 毎日の起動（tmux 2 window + 9 agent + daemon）
+├── install.bat               # Windows: WSL2/Ubuntu の案内（旧・補助）
 │
-├── instructions/             # エージェント指示書
-│   ├── shogun.md             # 将軍の指示書
-│   ├── karo.md               # 家老の指示書
-│   ├── ashigaru.md           # 忍者の指示書
-│   └── cli_specific/         # CLI固有のツール説明
-│       ├── claude_tools.md   # Claude Code ツール・機能
-│       └── copilot_tools.md  # GitHub Copilot CLI ツール・機能
-│
-├── scripts/                  # ユーティリティスクリプト
-│   ├── inbox_write.sh        # エージェントinboxへのメッセージ書き込み
-│   ├── inbox_watcher.sh      # inotifywaitでinbox変更を監視
-│   ├── ntfy.sh               # スマホにプッシュ通知を送信
-│   └── ntfy_listener.sh      # スマホからのメッセージをストリーミング受信
+├── CLAUDE.md / AGENTS.md     # 恒久ルール（Claude / Codex 同期・非一本化）
+├── instructions/             # 役割別ルール
+│   ├── shogun.md karo.md gunshi.md ashigaru.md   # 将軍・家老・軍師・忍者
+│   ├── roles/ common/ cli_specific/             # 生成元（4 CLI）
+│   └── generated/            # build_instructions.sh の出力（{cli}-{role}.md）
 │
 ├── config/
-│   ├── settings.yaml         # 言語、ntfy、その他の設定
-│   └── projects.yaml         # プロジェクト一覧
+│   ├── settings.yaml         # 編成の正本（CLI・モデル・effort・launch_cmd・ntfy）
+│   ├── cli_profiles.yaml     # CLI ごとの起動プロファイル
+│   └── projects.yaml         # 外部プロジェクト一覧
+├── projects/                 # プロジェクト核心知識（git 追跡外、機密含む）
 │
-├── projects/                 # プロジェクト詳細（git対象外、機密情報含む）
-│   └── <project_id>.yaml    # 各プロジェクトの全情報（クライアント、タスク、Notion連携等）
+├── queue/                    # 通信・状態（全て YAML）
+│   ├── shogun_to_karo.yaml   # 将軍の cmd（起票→pending→delegated→completed）
+│   ├── tasks/{agent}.yaml    # 家老が配備する task
+│   ├── reports/              # 忍者の報告 YAML（binary_checks / finding / lesson_candidate）
+│   ├── inbox/{agent}.yaml    # mailbox（flock、watcher が nudge）
+│   ├── bulletin_board.yaml   # 家老・軍師 → 将軍の報告チャネル
+│   ├── insights.yaml         # 気づき（reflux の元）
+│   ├── pending_decisions.yaml# 未裁定事項
+│   ├── karo_snapshot.txt     # 陣形図（ninja_monitor が生成）
+│   └── archive/              # 完了 cmd / report の退避
 │
-├── queue/                    # 通信ファイル
-│   ├── shogun_to_karo.yaml   # 将軍から家老へのコマンド
-│   ├── ntfy_inbox.yaml       # スマホからの受信メッセージ（ntfy）
-│   ├── inbox/                # エージェント別inboxファイル
-│   │   ├── shogun.yaml       # 将軍へのメッセージ
-│   │   ├── karo.yaml         # 家老へのメッセージ
-│   │   └── {ninja_name}.yaml  # 各忍者へのメッセージ (sasuke, kirimaru, hayate, kagemaru, hanzo, saizo, kotaro, tobisaru)
-│   ├── tasks/                # 各ワーカーのタスクファイル
-│   └── reports/              # ワーカーレポート
+├── scripts/ (243)            # 起票・配備・監視・ゲート・計測
+│   ├── cmd_skeleton.sh cmd_save.sh cmd_delegate.sh   # cmd 起票ゲート
+│   ├── deploy_task.sh + deploy_task/                  # 配備（task worktree 隔離）
+│   ├── inbox_write.sh inbox_watcher.sh inbox_mark_read.sh
+│   ├── ninja_monitor.sh daemon_watchdog.sh            # 監視・自動 /clear・reflux
+│   ├── cmd_complete_gate.sh gates/ (58)               # GATE と起動ゲート
+│   ├── ninja_scope_commit.sh run_tests.sh             # scope commit / 選択テスト
+│   ├── memory_db_query.sh memory_db_knowledge_write.sh semantic_search.sh   # 三層記憶
+│   ├── migrate_to_ext4_{relocate,cutover,rollback}.sh # ext4 移設
+│   ├── ntfy.sh ntfy_listener.sh gist_share.sh         # 殿インターフェース
+│   └── lib/                  # 共通ライブラリ
+├── skills/ (41)              # 両 CLI 共用スキル（{name}/SKILL.md）
+├── .claude/hooks/ (23) .codex/hooks.json   # CLI 固有 hook
 │
-├── saytask/                  # 行動心理学に基づくモチベーション管理
-│   └── streaks.yaml          # ストリーク追跡と日次進捗
-│
-├── templates/                # レポート・コンテキストテンプレート
-│   ├── integ_base.md         # 統合: ベーステンプレート
-│   ├── integ_fact.md         # 統合: ファクトファインディング
-│   ├── integ_proposal.md     # 統合: 提案書
-│   ├── integ_code.md         # 統合: コードレビュー
-│   ├── integ_analysis.md     # 統合: 分析
-│   └── context_template.md   # 汎用7セクション プロジェクトコンテキスト
-│
-├── memory/                   # Memory MCP保存場所
-├── dashboard.md              # リアルタイム状況一覧
-└── CLAUDE.md                 # システム指示書（自動読み込み）
+├── tests/unit/ (242 bats)    # 契約テスト（選択実行・shard CI）
+├── context/                  # 索引層（growth-loop / semantic-map / infrastructure / {project}）
+├── docs/research/ (1000+)    # 詳細層（runbook・計測・設計書）
+├── docs/dashboard/           # 戦況 artifact の HTML 正本
+├── memory/                   # deepdive_*.md（追体験原本）・dialogue_*.md（研究日誌）
+├── data/multi_agent_shogun_memory.db   # 記憶DB（SQLite / FTS5）
+├── logs/                     # gate_metrics / defense_overhead / deploy_task ほか
+├── saytask/                  # SayTask（streaks.yaml）
+├── android/                  # Android コンパニオンアプリ
+└── dashboard.md              # 殿が自分で見る戦況（家老が更新）
 ```
 
 </details>
@@ -1391,7 +1381,7 @@ projects/<project_id>.yaml    # 各プロジェクトの詳細情報
 projects:
   - id: my_client
     name: "クライアントXコンサルティング"
-    path: "/mnt/c/Consulting/client_x"
+    path: "~/work/client_x"   # ext4 上の任意パス
     status: active
 
 # projects/my_client.yaml
@@ -1412,6 +1402,20 @@ current_tasks:
 ---
 
 ## 🔧 トラブルシューティング
+
+<details>
+<summary><b>全体が遅い — git status に 1 分かかる？</b></summary>
+
+リポジトリが Windows ドライブ（`/mnt/c/...`、9p ファイルシステム）上にあります。`git` / `flock` / `stat` が全て RPC になり、実測で `git status` 60〜120 秒・D-state プロセスが出ます。ext4（例: `~/multi-agent-shogun`）へ移してください。手順と script は `docs/research/9p_root_fix_runbook_20260827.md` と `scripts/migrate_to_ext4_{relocate,cutover,rollback}.sh`。移設後の `git status` は 84ms です。
+
+</details>
+
+<details>
+<summary><b>Codex の pane が「Update available」や利用上限で止まっている？</b></summary>
+
+確認プロンプトが開いている間は watcher が nudge を抑止するため、エージェントが idle に見えます。`tmux capture-pane` で pane を確認し、選択肢を選んでから 2 回目の capture で確認し、Enter を送る（可逆な手順）で解除します。利用上限は `/usage` の reset か device-auth によるアカウント切替で復帰し、その後 `ninja_monitor` が idle pane を respawn します。
+
+</details>
 
 <details>
 <summary><b>npm版のClaude Code CLIを使っている？</b></summary>
@@ -1521,10 +1525,11 @@ tmux respawn-pane -t shogun:2.1 -k 'claude --model opus --dangerously-skip-permi
 
 ## 現在のハイライト
 
-- **設定駆動の混成編成** — `config/settings.yaml` と `config/cli_profiles.yaml` に基づく配備。READMEにモデルを固定記載しない
-- **GATE-first 運用** — `cmd_complete_gate.sh`、`gate_cmd_state.sh`、`gate_lesson_health.sh` が false completion、stale delegation、低価値教訓を防ぐ
-- **知識運用** — 知識7層、`queue/karo_snapshot.txt`、`queue/pending_decisions.yaml`、`context/cmd-chronicle.md` により復帰と監査を低コスト化
-- **モバイル面** — ntfy、Androidコンパニオン、Termux/mosh でデスクを離れても軍を動かせる
+- **2026-08-27 — リポジトリを Windows ドライブ（9p）から ext4 へ移設**: `git status` 60〜120 秒 → 84ms、配備 1 件 199〜397 秒 → 23 秒、cmd publish 3.8 秒 → 0.23 秒、hook 1 回の中央値 183 → 90ms。runbook: `docs/research/9p_root_fix_runbook_20260827.md`。
+- **2 つの CLI の混成編成**: 将軍（Claude Fable 5）・軍師（Claude Opus 4.6, 1M）と、家老・忍者 6 の Codex gpt-5.6。`config/settings.yaml` が唯一の正本で、`/shogun-cli-switch` は作業中の pane に触れず切り替える。
+- **全てを計測**: `defense_overhead.jsonl`（全 hook）、`gate_metrics.log`（cmd ごとの e2e/deploy/work/finalize）、deploy receipt、pre_push ledger。移設後に残る律速はファイルシステムではなく人手のレビュー往復（finalize 250〜960 秒）。
+- **三層記憶が本番稼働**: 記憶DB（SQLite/FTS5）・セマンティック索引・Obsidian 因果。起動時 preflight と `[MEM:]` 引用契約を hook が強制。
+- **可搬性の作業が進行中**: scripts/config からユーザー固有の絶対パスを除去（cmd_4409）、README を現物から書き直し隔離 clone / ZIP で再現検証（cmd_4410）。
 
 ---
 
