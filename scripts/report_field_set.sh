@@ -378,6 +378,27 @@ PY
     fi
     _rfs_phase atomic_replace "$_rfs_atomic_started"
     if [ "$_rfs_batch_rc" -eq 0 ]; then
+        # Terminal report bytes are durable at this point, but report_received
+        # must not be published until the exact task-worktree gate validates
+        # those bytes.  ninja_done already performs the same check for its
+        # direct path; keep the report_field_set terminal publisher fail-closed
+        # as well so a caller that skips ninja_done cannot bypass it.
+        # Tests inject RFS_INBOX_WRITE_PATH to isolate lifecycle publication;
+        # that explicit stub lane does not represent production delivery.
+        if [ "$_rfs_terminal_transition" -eq 1 ] && [ -z "${RFS_INBOX_WRITE_PATH:-}" ]; then
+            _rfs_precheck_started="$(_rfs_mono_ms)"
+            _rfs_precheck_rc=0
+            _rfs_precheck_output=$(GATE_SINGLEFLIGHT_OWNER=1 GATE_OWNER_PID="$$" \
+                GATE_PHASE_RECEIPT="$_rfs_phase_receipt" \
+                bash "$_rfs_batch_root/scripts/gates/gate_report_format.sh" \
+                "$_rfs_batch_report" 2>&1) || _rfs_precheck_rc=$?
+            _rfs_phase precheck "$_rfs_precheck_started"
+            if [ "$_rfs_precheck_rc" -ne 0 ]; then
+                echo "BLOCK: terminal report precheck failed; report_received was not published" >&2
+                printf '%s\n' "$_rfs_precheck_output" >&2
+                exit 1
+            fi
+        fi
         # 公開済みバイト列の識別子(status/worker_id/parent_cmd)は、書込みを行った
         # python processが既に保持している。side-channelから受け取り、同じ値を得る
         # ための3回のpython3+yaml.safe_load再読込を消す(実測 548ms/1043ms = 52.5%)。
@@ -541,7 +562,7 @@ PY
             _rfs_telemetry_args=()
             while IFS=$'\t' read -r _rfs_tp _rfs_tw _; do
                 case "$_rfs_tp" in
-                    singleflight_wait|atomic_replace|atomic_parse_validate_serialize|atomic_flush_file_fsync|atomic_replace_syscall|terminal_meta|inbox_write|publish) ;;
+                    singleflight_wait|atomic_replace|atomic_parse_validate_serialize|atomic_flush_file_fsync|atomic_replace_syscall|terminal_meta|precheck|inbox_write|publish) ;;
                     *) continue ;;
                 esac
                 _rfs_telemetry_args+=(report_publish "$_rfs_tp" "${_rfs_tw#wall_ms=}" "$_rfs_publish_verdict" \
