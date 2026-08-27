@@ -4724,7 +4724,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:40:38+09:00"
 - id: INS-20260827-142249804-9c39
   ts: "2026-08-27T14:22:49+09:00"
   insight: "semantic_index_update新概念候補: discussion:やれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -4741,21 +4744,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:40:22+09:00"
 - id: INS-20260827-143456327-b051
   ts: "2026-08-27T14:34:56+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[9p_git_flock_RPC待ち]] は既存aliasesに一致なし。類似概念TOP3: yaml_safe_write(YAML安全書込み; alias=flock; score=27.6) / infrastructure_ops(インフラ運用基盤; alias=flock; score=27.6) / context_freshness_retry_budget(context鮮度git再試行予算; alias=CFC_GIT_RETRY_TIMEOUT; score=13.2)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:40:23+09:00"
 - id: INS-20260827-143539379-c0be
   ts: "2026-08-27T14:35:39+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[cmd_4408_ext4移設]] は既存aliasesに一致なし。類似概念TOP3: ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4098_境界fixture固定; score=22.3) / infrastructure_ops(インフラ運用基盤; alias=WSL2_ext4移設; score=21.9) / gate_bypass_prevention(ゲート迂回防止; alias=delegate_cmd; score=21.5)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:40:23+09:00"
 - id: INS-20260827-143645993-59af
   ts: "2026-08-27T14:36:45+09:00"
   insight: "T63 根因の一次証拠: ~/.codex/config.toml は全 Codex agent 共有で、codex_config_apply_agent は launch 時の一時切替のみ。14:34 kagemaru が sol high(settings luna-high)で起動=家老向け apply(sol/medium)中に respawn が重なった競合。自動化ターゲット: agent 別 config(CODEX_HOME 分離 or profile)で共有 toml の一時切替を廃止し、起動後 capture で実態≠settings を WARN"
@@ -4769,25 +4781,37 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:42:47+09:00"
 - id: INS-20260827-143740566-c5bb
   ts: "2026-08-27T14:37:40+09:00"
   insight: "[[未着手の中で優先度の高いものは？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=未着手の中で優先度の高いものは？"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:42:47+09:00"
 - id: INS-20260827-143839349-341a
   ts: "2026-08-27T14:38:39+09:00"
   insight: "[[T40 T45はどうなっている？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T40,T45はどうなっている？"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:42:47+09:00"
 - id: INS-20260827-143914206-3267
   ts: "2026-08-27T14:39:14+09:00"
   insight: "[[回転 before afterを最新の状況にアップデートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=回転 before/afterを最新の状況にアップデートせよ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:42:48+09:00"
