@@ -113,6 +113,45 @@ source_commit_action() {
     fi
 }
 
+# Resolve the source repository from the context registry, never from the
+# checker-provided repo= field.  The latter is a diagnostic snapshot and was
+# able to make an unresolvable commit appear valid when it pointed at a
+# different repository/ref generation.
+canonical_source_repo_for_context() {
+    local rel_path="$1" project="infra" config="${CONTEXT_FRESHNESS_PROJECT_CONFIG:-$ROOT_DIR/config/projects.yaml}" result=""
+    [[ "$rel_path" == context/dm-signal*.md ]] && project="dm-signal"
+    [[ "$rel_path" == context/rebalancer.md ]] && project="rebalancer"
+    if [[ "$project" == infra ]]; then
+        printf '%s\n' "$CONTROL_ROOT"
+        return 0
+    fi
+    [[ -f "$config" && -r "$config" ]] || return 1
+    result="$(awk -v target="$project" '
+        function clean(value) {
+            gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/, "", value)
+            return value
+        }
+        /^[[:space:]]*-[[:space:]]+id:[[:space:]]*/ {
+            id=$0
+            sub(/.*id:[[:space:]]*/, "", id)
+            id=clean(id)
+            next
+        }
+        id == target && /^[[:space:]]+path:[[:space:]]*/ {
+            path=$0
+            sub(/.*path:[[:space:]]*/, "", path)
+            print clean(path)
+            exit 0
+        }
+    ' "$config")"
+    [[ -n "$result" ]] || return 1
+    if [[ "$result" != /* ]]; then
+        result="$(cd "${config%/*}" && realpath -m "$result")" || return 1
+    fi
+    [[ -d "$result" ]] || return 1
+    printf '%s\n' "$result"
+}
+
 context_commit_closes_source_alert() {
     local rel_path="$1"
     local alert_line="$2"
@@ -144,7 +183,7 @@ context_commit_closes_source_alert() {
 # boundary in this gate; invalid or missing source commits are WARN-only.
 source_commit_is_equivalent_to_recorded_boundary() {
     local rel_path="$1" alert_line="$2"
-    local file="$ROOT_DIR/$rel_path" repo="" latest_hash="" trigger="" marker="" source_tip="" source_equivalent_hint=""
+    local file="$ROOT_DIR/$rel_path" repo="" reported_repo="" latest_hash="" trigger="" marker="" source_tip="" source_equivalent_hint="" canonical_repo=""
     local trigger_item cited_dir cited_file
     local -a pathspecs=()
     local -a markers=()
@@ -153,7 +192,14 @@ source_commit_is_equivalent_to_recorded_boundary() {
     [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
     latest_hash="${BASH_REMATCH[1]}"
     [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
-    repo="${BASH_REMATCH[1]}"
+    reported_repo="${BASH_REMATCH[1]}"
+    canonical_repo="$(canonical_source_repo_for_context "$rel_path" 2>/dev/null || true)"
+    [[ -n "$canonical_repo" ]] || {
+        SOURCE_EQUIVALENT_REJECT_REASON="canonical source repository is unavailable"
+        [[ "$source_equivalent_hint" == 1 ]] && return 2
+        return 1
+    }
+    repo="$canonical_repo"
     [[ -d "$repo" ]] || return 1
     [[ "$alert_line" == *source_equivalent* ]] && source_equivalent_hint=1
     [[ "$alert_line" =~ update_trigger=([^[:space:]]+) ]] || return 1

@@ -447,7 +447,7 @@ YAML
     > "$FIXTURE_ROOT/context/dm-signal-core.md"
   cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
 #!/usr/bin/env bash
-printf '%s\\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=$repo root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: $latest_hash Revert source change'
+printf '%s\\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=/tmp/incorrect-reported-source root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: $latest_hash Revert source change'
 SH
   chmod +x "$FIXTURE_ROOT/scripts/check.sh"
   cat > "$bulletin_script" <<'SH'
@@ -521,7 +521,7 @@ YAML
     > "$FIXTURE_ROOT/context/dm-signal-core.md"
   cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
 #!/usr/bin/env bash
-printf '%s\\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=$repo root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: $latest_hash divergent revert source_equivalent=true'
+printf '%s\\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=/tmp/incorrect-reported-source root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: $latest_hash divergent revert source_equivalent=true'
 SH
   chmod +x "$FIXTURE_ROOT/scripts/check.sh"
   cat > "$bulletin_script" <<'SH'
@@ -584,7 +584,7 @@ YAML
     > "$FIXTURE_ROOT/context/dm-signal-core.md"
   cat > "$FIXTURE_ROOT/scripts/check.sh" <<'SH'
 #!/usr/bin/env bash
-printf '%s\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=__SOURCE_REPO__ root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: deadbeef missing source source_equivalent=true'
+printf '%s\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=__SOURCE_REPO__ root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: e3c456584109 missing source source_equivalent=true'
 SH
   sed -i "s#__SOURCE_REPO__#$repo#g" "$FIXTURE_ROOT/scripts/check.sh"
   chmod +x "$FIXTURE_ROOT/scripts/check.sh"
@@ -607,7 +607,7 @@ SH
     bash "$ROOT/scripts/gates/gate_context_freshness.sh"
 
   [ "$status" -eq 2 ]
-  [[ "$output" == *"source commit deadbeef is not resolvable"* ]]
+  [[ "$output" == *"source commit e3c456584109 is not resolvable"* ]]
   [[ "$output" != *"CONTEXT_UPDATE_REQUEST"* ]]
   [ ! -e "$bulletin_capture" ]
 }
