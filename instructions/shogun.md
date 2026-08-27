@@ -168,6 +168,13 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第三弾 4則（2026-08-27 14:55-19:08 WSL再起動からの復旧で実証・将軍自身に適用）
+
+- **positive_rule**: (1)**全軍ダウン後は陣形図を捨て、全 pane capture+`uptime`+ninja_monitor.log の該当時間帯を先に読む**。/tmp の task worktree は再起動で消えるので、in_progress/assigned の忍者は「記憶も作業樹も無い」前提で家老へ 1通1単位の再配備(既存成果=commit 済/複製済からの再開を AC に明記)。(2)**CLEAR 検分は report commit_hash の祖先化だけで済ませない**。主実装 commit と files_modified の最終 blob が origin/main にあるかを `merge-base --is-ancestor`/`diff-tree` で確認し、二次情報(報告文・忍者の「commit 済」)の往復で断定しない。(3)**本番資源を触る操作の検証 AC には隔離条件を書く**(別 socket/session 名・dry-run・本番名なら exit 2)。cmd_4407 の「クリーン clone で shutsujin 完走」が全 8 pane へ send-keys した。(4)**respawn(特に FORCE)の直後は task YAML の status/task_id を再確認する**。idle 化していれば再配備が要る。respawn 直後の 1 回 capture(model/effort 表示)で断定せず 2 回目 capture か monitor WARN で判定する。
+- **reason**: 2026-08-27 14:54 WSL 再起動→全 agent CLI-DEAD→/tmp worktree 全消失。T63 は主実装 bcfbc5e2d が dangling のまま追補 1 行で GATE CLEAR(偽 CLEAR)、将軍は 15:08→15:18→15:20 と 2 回ぶれてから merge-base で確定。cmd_4407 の検証が本番 tmux を汚染し家老が [URGENT-HARM] 対応。18:28 FORCE respawn で疾風/才蔵の task が idle 化し再配備 2 通が要った。T77 は respawn 直後 1 回の capture で「effort 欠落」と早合点し取消。
+- **enforcement**: 構造型=900a6e204(shutsujin isolated session)/T76 半蔵・T71 才蔵 hotfix(走行中)。将軍側 automated:false — 自動化ターゲット: agent_respawn.sh の respawn 前後 task 状態記録+idle 化時の redeploy_required 自動送出(INS 未登録)、cmd_complete_gate の files_modified blob 突合、shutsujin/reset_layout の attached 本番 session BLOCK(INS-20260827-152607)、Codex 更新プロンプト/利用上限の watcher 検知語追加(INS-20260827-180750)。runbook=`docs/research/9p_root_fix_runbook_20260827.md`(gist 407d5146)。
+- origin: `[[殿指示_強くてニューゲーム_20260827_1908]] -> [[WSL再起動_worktree消失_偽CLEAR_本番sendkeys_FORCE_respawn]] -> [[復帰後の型第三弾]]`
+
 ## 復帰後の型・第二弾 3則（2026-08-27 07:54-12:27 実証・将軍自身に適用）
 
 - **positive_rule**: (1)**receipt を書く script を `| head` で切るな**。deepdive_replay 等は受領証を末尾で書くため、head の SIGPIPE で receipt が消え「完了」が虚偽になる。到達は `logs/deepdive_replay/<id>.jsonl` の行数で確認してから報告する。(2)**家老への下知は送って終わりではない**。1通=1単位でも束(inboxN)で届くと家老は先頭数件で idle へ戻る(本日5回)。下知後10分で task assigned/掲示板応答を突合し、無ければ再下知。同一 target を触る hotfix は deploy が collision で BLOCK するため、配備順(T57→ci_fix→T56 のように)を将軍が先に設計して1通ずつ出す。(3)**GATE CLEAR で終わらせず task を idle へ戻せ**。failed/done 残置は自動 review と reflux 枠を殺す(T47 2h14m、reflux 6枠中3枠死)。下知の二値ACに「task status=idle」を含める。
