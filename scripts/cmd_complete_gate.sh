@@ -2958,7 +2958,7 @@ PY
 # runtime-history conflict (for example senkyoku-log) to remain outside the
 # convergence contract.
 shared_path_merge_commit() (
-    local repo="$1" remote_tip="$2" current_head tree temp_index ref path mode blob merge_commit
+    local repo="$1" remote_tip="$2" current_head tree temp_index ref path mode blob merge_commit remote_path
     shift 2
     [ "$#" -gt 0 ] || return 1
     current_head="$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)"
@@ -2979,6 +2979,19 @@ shared_path_merge_commit() (
         blob="$(git -C "$repo" rev-parse "$remote_tip:$path")"
         GIT_INDEX_FILE="$temp_index" git -C "$repo" update-index --add --cacheinfo "$mode,$blob,$path" || return 1
     done
+    # The fallback intentionally retains local bytes for unrelated paths, but
+    # remote-only additions still belong in the converged tree.  Add only
+    # paths absent from the local parent so a local unrelated edit cannot be
+    # silently replaced by this source-target fallback.
+    while IFS= read -r -d '' remote_path; do
+        if git -C "$repo" cat-file -e "$current_head:$remote_path" 2>/dev/null; then
+            continue
+        fi
+        mode="$(git -C "$repo" ls-tree "$remote_tip" -- "$remote_path" | awk 'NR==1 {print $1}')"
+        blob="$(git -C "$repo" rev-parse "$remote_tip:$remote_path" 2>/dev/null || true)"
+        [ -n "$mode" ] && [[ "$blob" =~ ^[0-9a-f]{40}$ ]] || return 1
+        GIT_INDEX_FILE="$temp_index" git -C "$repo" update-index --add --cacheinfo "$mode,$blob,$remote_path" || return 1
+    done < <(git -C "$repo" ls-tree -r --name-only -z "$remote_tip")
     tree="$(GIT_INDEX_FILE="$temp_index" git -C "$repo" write-tree 2>/dev/null || true)"
     [[ "$tree" =~ ^[0-9a-f]{40}$ ]] || return 1
     merge_commit="$(printf 'runtime: converge published execution source %s\n' "${CMD_ID:-unknown}" | git -C "$repo" commit-tree "$tree" -p "$current_head" -p "$remote_tip" 2>/dev/null || true)"
@@ -3486,14 +3499,16 @@ push_task_repositories() {
 }
 
 # Reconcile the live shared checkout with the just-published remote without
-# discarding its local-only history.  A clean path may be advanced by a small
-# local convergence commit; dirty/staged bytes are never overwritten.  The
-# subsequent ordinary merge preserves both histories and leaves the shared
-# index/worktree clean at the remote execution-source content.
+# discarding its local-only history.  The execution-source paths are the
+# caller's local result (ours), not a remote snapshot to be overwritten.  The
+# subsequent merge composes remote-only paths, then reapplies ours for every
+# declared execution source.  This makes the direction explicit and prevents
+# the history-convergence repair from losing the result it was asked to keep.
 converge_shared_execution_sources() {
-    local repo="$1" upstream_ref remote push_ref remote_tip path tmp before_head merge_base
-    local conflict_path temp_parent clean_repo merged_sha cleanup_rc
-    local -a insight_source_shas=() conflict_paths=()
+    local repo="$1" upstream_ref remote push_ref remote_tip path before_head merge_base
+    local merge_rc ours_blob remote_blob final_blob temp_parent clean_repo merged_sha cleanup_rc
+    local -a conflict_paths=() remote_only_paths=() insight_source_shas=()
+    local -A target_paths=() ours_blobs=()
     if ! declare -F lock_path >/dev/null 2>&1; then
         lock_path() { printf '%s.lock\n' "$1"; }
     fi
@@ -3505,6 +3520,28 @@ converge_shared_execution_sources() {
     fi
     shift
     [ "$#" -gt 0 ] || return 0
+    path_is_target() {
+        local candidate="$1" target
+        shift
+        for target in "$@"; do
+            [ "$target" = "$candidate" ] && return 0
+        done
+        return 1
+    }
+    for path in "$@"; do
+        target_paths["$path"]=1
+        if ! git -C "$repo" diff --quiet -- "$path" \
+           || ! git -C "$repo" diff --cached --quiet -- "$path"; then
+            echo "  shared convergence: BLOCK (dirty source path=$path)" >&2
+            return 1
+        fi
+    done
+    before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
+    for path in "$@"; do
+        ours_blob=$(git -C "$repo" rev-parse "$before_head:$path" 2>/dev/null || true)
+        [ -n "$ours_blob" ] || ours_blob=__ABSENT__
+        ours_blobs["$path"]="$ours_blob"
+    done
     upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
     remote=${upstream_ref%%/*}
     push_ref="refs/heads/${upstream_ref#*/}"
@@ -3517,28 +3554,29 @@ converge_shared_execution_sources() {
     fi
     git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || return 1
     gate_detail_finish
-    gate_detail_begin "runtime_source_convergence.local_reconcile" pure_processing
-    before_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) || return 1
     merge_base=$(git -C "$repo" merge-base "$before_head" "$remote_tip" 2>/dev/null) || return 1
-
     for path in "$@"; do
-        git -C "$repo" cat-file -e "${remote_tip}:${path}" 2>/dev/null || return 1
-        if ! git -C "$repo" diff --quiet -- "$path" || ! git -C "$repo" diff --cached --quiet -- "$path"; then
-            echo "  shared convergence: BLOCK (dirty source path=$path)" >&2
+        git -C "$repo" cat-file -e "${before_head}:${path}" 2>/dev/null || {
+            echo "  shared convergence: BLOCK (ours source path missing=$path)" >&2
             return 1
-        fi
-        tmp=$(mktemp "${TMPDIR:-/tmp}/shared-source.XXXXXX") || return 1
-        git -C "$repo" show "${remote_tip}:${path}" > "$tmp" || { unlink "$tmp"; return 1; }
-        if ! cmp -s "$tmp" "$repo/$path"; then
-            cp -- "$tmp" "$repo/$path" || { unlink "$tmp"; return 1; }
-            git -C "$repo" add -- "$path" || { unlink "$tmp"; return 1; }
-        fi
-        unlink "$tmp" || return 1
+        }
     done
-    if ! git -C "$repo" diff --cached --quiet -- "$@"; then
-        git -C "$repo" commit -m "runtime: converge published execution source ${CMD_ID}" -- "$@" >/dev/null 2>&1 || return 1
-    fi
-    if ! git -C "$repo" merge --no-edit "$remote_tip" >/dev/null 2>&1; then
+
+    # Capture the remote-only inventory before merging.  It is the explicit
+    # loss detector: every path absent from ours must still have the same blob
+    # in the resulting tree unless it is one of the intentionally ours-owned
+    # execution paths.
+    while IFS= read -r -d '' path; do
+        path_is_target "$path" "$@" && continue
+        if ! git -C "$repo" cat-file -e "${before_head}:${path}" 2>/dev/null; then
+            remote_only_paths+=("$path")
+        fi
+    done < <(git -C "$repo" ls-tree -r --name-only -z "$remote_tip")
+
+    gate_detail_begin "runtime_source_convergence.local_reconcile" pure_processing
+    merge_rc=0
+    git -C "$repo" merge --no-edit --no-ff "$remote_tip" >/dev/null 2>&1 || merge_rc=$?
+    if [ "$merge_rc" -ne 0 ]; then
         mapfile -t conflict_paths < <(git -C "$repo" diff --name-only --diff-filter=U)
         mapfile -t insight_source_shas < <(
             git -C "$repo" rev-list --reverse "${merge_base}..${before_head}" -- queue/insights.yaml
@@ -3559,7 +3597,7 @@ converge_shared_execution_sources() {
                && source_only_insights_id_merge "$repo" "$clean_repo" "$remote_tip" \
                     queue/insights.yaml "${insight_source_shas[@]}"; then
                 merged_sha=$(git -C "$clean_repo" rev-parse HEAD 2>/dev/null || true)
-                git -C "$clean_repo" show "${merged_sha}:queue/insights.yaml" \
+                git -C "$repo" show "${merged_sha}:queue/insights.yaml" \
                     > "$repo/queue/insights.yaml" || cleanup_rc=1
                 [ "$cleanup_rc" -ne 0 ] || git -C "$repo" add -- queue/insights.yaml || cleanup_rc=1
                 [ "$cleanup_rc" -ne 0 ] || git -C "$repo" commit --no-edit >/dev/null 2>&1 || cleanup_rc=1
@@ -3576,7 +3614,37 @@ converge_shared_execution_sources() {
                 return 1
             fi
             echo "  shared convergence: conflict fallback (insights stable-ID merge)"
+        elif [ "${#conflict_paths[@]}" -eq 0 ]; then
+            git -C "$repo" merge --abort >/dev/null 2>&1 || true
+            echo "  shared convergence: BLOCK (source merge failed without conflicts)" >&2
+            return 1
         else
+            local all_conflicts_owned=true
+            for path in "${conflict_paths[@]}"; do
+                if ! path_is_target "$path" "$@"; then
+                    all_conflicts_owned=false
+                    break
+                fi
+            done
+            if [ "$all_conflicts_owned" = true ]; then
+                echo "  shared convergence: conflicts=${#conflict_paths[@]} paths=${conflict_paths[*]} (ours selected)"
+                # The exact before_head blobs are reapplied below.
+                :
+            else
+            local target_remote_equal=true
+            for path in "$@"; do
+                remote_blob=$(git -C "$repo" rev-parse "${remote_tip}:$path" 2>/dev/null || true)
+                ours_blob="${ours_blobs["$path"]}"
+                if [ "$remote_blob" != "$ours_blob" ]; then
+                    target_remote_equal=false
+                    break
+                fi
+            done
+            if [ "$target_remote_equal" != true ]; then
+                git -C "$repo" merge --abort >/dev/null 2>&1 || true
+                echo "  shared convergence: BLOCK (unowned source conflict=${conflict_paths[*]})" >&2
+                return 1
+            fi
             git -C "$repo" merge --abort >/dev/null 2>&1 || true
             if shared_path_merge_commit "$repo" "$remote_tip" "$@"; then
                 echo "  shared convergence: conflict fallback (target paths only; unrelated history preserved)"
@@ -3584,15 +3652,55 @@ converge_shared_execution_sources() {
                 echo "  shared convergence: BLOCK (source history conflict)" >&2
                 return 1
             fi
+            fi
         fi
     fi
+
+    # Reapply the exact local blobs after the remote merge.  This handles both
+    # conflicted and cleanly-applied target paths and preserves their modes.
     for path in "$@"; do
-        [ "$(git -C "$repo" hash-object "$path")" = "$(git -C "$repo" rev-parse "${remote_tip}:${path}")" ] || return 1
+        if [ "${ours_blobs["$path"]}" = __ABSENT__ ]; then
+            git -C "$repo" rm -f --ignore-unmatch -- "$path" >/dev/null 2>&1 || {
+                git -C "$repo" merge --abort >/dev/null 2>&1 || true
+                return 1
+            }
+        else
+            git -C "$repo" checkout "$before_head" -- "$path" >/dev/null 2>&1 || {
+                git -C "$repo" merge --abort >/dev/null 2>&1 || true
+                return 1
+            }
+        fi
+        git -C "$repo" add -- "$path" || {
+            git -C "$repo" merge --abort >/dev/null 2>&1 || true
+            return 1
+        }
     done
+    if git -C "$repo" rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+        git -C "$repo" commit --no-edit >/dev/null 2>&1 || return 1
+    elif ! git -C "$repo" diff --cached --quiet -- "$@"; then
+        git -C "$repo" commit -m "runtime: converge published execution source ${CMD_ID}" -- "$@" >/dev/null 2>&1 || return 1
+    fi
+
+    for path in "$@"; do
+        final_blob=$(git -C "$repo" rev-parse "HEAD:$path" 2>/dev/null || true)
+        [ "$final_blob" = "${ours_blobs["$path"]}" ] || return 1
+    done
+    local remote_loss=0
+    for path in "${remote_only_paths[@]}"; do
+        remote_blob=$(git -C "$repo" rev-parse "${remote_tip}:$path" 2>/dev/null || true)
+        final_blob=$(git -C "$repo" rev-parse "HEAD:$path" 2>/dev/null || true)
+        if [ -z "$remote_blob" ] || [ "$remote_blob" != "$final_blob" ]; then
+            remote_loss=$((remote_loss + 1))
+        fi
+    done
+    if [ "$remote_loss" -ne 0 ]; then
+        echo "  shared convergence: BLOCK (remote-only path loss=$remote_loss)" >&2
+        return 1
+    fi
     [ -z "$(git -C "$repo" status --porcelain=v1 --untracked-files=no -- "$@")" ] || return 1
     git -C "$repo" merge-base --is-ancestor "$before_head" HEAD || return 1
     gate_detail_finish
-    echo "  shared convergence: OK (execution sources=$#; local history preserved)"
+    echo "  shared convergence: OK (execution sources=$#; ours=${#@}; remote-only=${#remote_only_paths[@]}; remote_loss=0; local history preserved)"
 }
 
 # Publish tracked runtime files written after the ordinary pre-CLEAR source
