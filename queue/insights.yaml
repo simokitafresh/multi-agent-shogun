@@ -4701,4 +4701,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T14:03:10+09:00"
+- id: INS-20260827-140445483-85ad
+  ts: "2026-08-27T14:04:45+09:00"
+  insight: "[[完了済みrework 11件の自動捕捉欠落を根本修正し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gate自動pushがGA PUSH1成立済みのdirty overlapを毎回hook失敗と; score=2.4) / provisional_kotaro(仮: Kotaro; alias=kotaroをrespwanして; score=2.3) / agent_formation_management(編成管理; alias=owner存在だけでは完了済みclean状態を誤って隠す; score=2.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
