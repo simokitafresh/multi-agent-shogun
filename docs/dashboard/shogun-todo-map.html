@@ -52,23 +52,25 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 23:04 T93 ci_fix CLEAR・CI 結論待ち・converge 2 19 待ち・T70 GATE待ち · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 23:08 回転 after2(ext4): deploy −89%・e2e −23%(finalize が支配)・CLEAR 2倍 · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
 
 <div class="strip">
-  <div class="tile"><span class="k">済</span><span class="v done">92</span><span class="s">md正本の [x] 実数</span></div>
+  <div class="tile"><span class="k">済</span><span class="v done">93</span><span class="s">md正本の [x] 実数</span></div>
   <div class="tile"><span class="k">走行中</span><span class="v run">2</span><span class="s">T93 / T70</span></div>
   <div class="tile"><span class="k">未着手</span><span class="v todo">2</span><span class="s">T92 / T91</span></div>
-  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">14:35 再分岐 5/13(runtime レーンが origin 直接 push)→家老 converge+1本ずつ push 中(T68)。origin tip CI は GREEN 継続</span></div>
-  <div class="tile"><span class="k">reflux</span><span class="v run">9 CLEAR</span><span class="s">pending 115(本日 +72/−53)。枠: 半蔵/疾風 idle、才蔵 T65/飛猿 reflux CLEAR 済、小太郎 T56 CLEAR 14:08、飛猿→cmd_4407 assigned、影丸 T51 FAIL_CLOSE→idle。failed 残置 0</span></div>
+  <div class="tile"><span class="k">CI</span><span class="v run">走行中</span><span class="s">ci_fix c6e823181(shard7 quality-lock パス依存=移設で顕在化)は origin 到達・GATE CLEAR 23:03。最新 push 319e7cdca の run が in_progress(1本ずつ push で先行 run は cancel=正常)。GREEN 確定は次 loop</span></div>
+  <div class="tile"><span class="k">reflux</span><span class="v todo">凍結中→解除</span><span class="s">T79 凍結(17:27〜)で reflux 自動配備 0 は設計通り。cutover 後は hotfix 3本+ci_fix を優先し reflux は未再開(pending 121)。全6忍者 idle 化後に 600s 計時で再開</span></div>
 </div>
 
 <div class="live">
-  <h2>一次情報(14:37 capture / gh / logs / git — 上5行=現在、以下=本日経緯)</h2>
+  <h2>一次情報(23:07 capture / gh / logs / git — 上6行=現在、以下=本日経緯)</h2>
   <ul>
-    <li><span class="chip run">14:37 現在</span>cmd_4408(ext4 移設)疾風 assigned 14:34 / cmd_4407 飛猿 Working(4d1c14453 到達) / T63 才蔵 acknowledged / 半蔵 reflux 14:24 配備(T47 の 600s 計時が機能) / origin 再分岐 5/13→T68 converge 下知。忍者: 走行 4・idle 2(影丸/小太郎)・failed 0</li>
+    <li><span class="chip run">23:07 現在</span><b>ext4 稼働 1h07m</b>。全pane capture: 家老 idle/軍師 idle/疾風 assigned(GA502 context_freshness trigger hotfix 23:04)/影丸 done(T70 GATE 待ち)/半蔵・才蔵・小太郎・飛猿 idle。rev-list 2 21(origin 直接 push レーンとの再分岐→家老 converge 待ち)。gate_metrics CLEAR 本日 49(22:00 以降 5)。D-state 0、watcher/monitor 稼働</li>
+    <li><span class="chip done">22:00</span><b>cutover 完了</b>(印 MIGRATED_TO_EXT4.txt 22:00:15、殿の 1 行→shutsujin)。将軍一次: 全pane cwd /home、crontab 新2/旧0、git status 0.08s、CI 1f5dc2f78 GREEN、auto-memory ロード可。relocate 置換 47 ファイル=e644881f5(家老 push、0 0)</li>
+    <li><span class="chip done">22:11-23:03</span>凍結解除後 5 CLEAR: cmd_4367/4368 report-only 終端(T88)、T87 ext4 再基準(半蔵)、T83 分割設計(才蔵)、T93 ci_fix(小太郎)。doc lane 2本+infrastructure.md §ext4 を将軍が執筆(b776d9f93/45dc3924a)</li>
     <li><span class="chip done">14:12</span><b>origin=HEAD 0 0</b>(13:22 timeout→13:41 GA-PUSH1(将軍 HTML)→13:53 index 同期→1本ずつ push 完走)。GATE 13:05 以降の停滞を解消: T64 14:04・T65 14:07・T56 14:08・飛猿 reflux 14:10 の 4 CLEAR(本日 32)。cmd_4407(クローン再現性)は 14:10 飛猿へ assigned。忍者: idle 2(半蔵/疾風)・走行 1(飛猿)・GATE 後 archive 待ち 2(小太郎/才蔵)・failed 0(影丸 T51 は 14:14 FAIL_CLOSE→idle)</li>
     <li><span class="chip run">9p 根治(T66)</span>殿裁定 14:22『やれ』→<b>cmd_4408</b> 委任 14:32: repo を ext4(/home/simokitafresh/multi-agent-shogun)へ複製→パス置換 93 ファイル+crontab→cutover/rollback script(--dry-run、idle 前提)→/mnt/c vs /home の wall 秒計測。実切替=全忍者 idle 時に殿の日次起動 1 行。根拠: 13:38 D-state p9_client_rpc 9、git status 60-120s、push timeout 3 回、compat bats TAP 0行/30分</li>
     <li><span class="chip run">モデル/effort 乖離(T63)</span>才蔵へ hotfix cmd_karo_hotfix_t63_model_apply_agent 配備 14:18(clear/respawn 全経路で codex_config_apply_agent+実態≠settings WARN)。根拠: 家老 luna medium(settings sol-medium)、小太郎 13:16 luna default</li>
@@ -84,11 +86,13 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 </div>
 
 <div class="live">
-  <h2>回転 before/after(殿下問 08:58 → 13:05 再計測・集計=gate_metrics.log / defense_overhead.jsonl / ninja_monitor.log / gh run list / 掲示板)</h2>
+  <h2>回転 before/after(殿下問 08:58 → 13:05 → <b>23:07 ext4 後</b>・集計=gate_metrics.log / deploy_task.log / ext4_speed_rebaseline raw / gh run list)</h2>
   <ul>
     <li><span class="chip bad">before(08-26)</span>push 1本: 56commitまとめ→affected 101本×手動走査=<span class="mono">7h30m</span>停滞(増分1単位でも 214-229秒) / reflux idle配備: 08-24〜26 で <span class="mono">0件/日×3日</span> / 報告→GATE: T25 飛猿 <span class="mono">7時間</span>・UN-GATED 10本 / watcher 死亡 85回(12:00-00:08) / CI GREEN 1 run(23:59 本日初)</li>
     <li><span class="chip done">after(08-27 00:00-13:05)</span>push: pre_push_total <span class="mono">n=36 PASS 35 / min 0.6s 中央値 2.0s max 102s / 300秒超 0</span>(集計=grep pre_push_total defense_overhead.jsonl)、家老 push 実測 5-25秒/本、origin=HEAD 0 0 を 12:45 まで維持 / GATE CLEAR <span class="mono">28件</span>(reflux 9・hotfix/ci 19=13:05 の「reflux 11」は hotfix 名混入の過大計数を 14:17 訂正。集計=grep -c "^2026-08-27.*CLEAR" gate_metrics.log)、e2e min 555s・中央値 2416s(40分)・max 27260s(T25 の finalize 7h 込み) / reflux: 1件 deploy 22-45s・work 268-1372s、CLEAR 11 / CI: 08-27 run 40件中 success 6・failure 12・cancelled 22(1commitずつ push で先行 run が cancel される=正常)</li>
     <li><span class="chip run">残る律速(13:05)</span>(1)GATE CLEAR→archive→idle が自動でつながらず failed/done 残置が reflux 6枠を殺す: REFLUX-AUTO-BLOCK/SKIP <span class="mono">72回</span>(本日 grep -c)、T47 2h14m・T51 影丸 3h・T58 半蔵 CLEAR 後も in_progress (2)家老の束処理(UNACTIONED 7回、T56 小太郎 hotfix 走行中) (3)push: converge 済(7484c320f)だが 13:22 外側 timeout 180s<lock 待ち 1200s、13:41 GA-PUSH1(将軍 HTML 重複)で 2 度停止→origin 未到達 +15 (4)家老 /clear 後のモデル乖離 luna≠sol(T63) (5)finalize_sec が e2e の 20-60%(report 整形 BLOCK 往復)=次のらせん弾。watcher 死亡回数は daemon_watchdog.log の start/restart 混在で機械集計不能→計測器を分ける(未計測=網羅外)</li>
+    <li><span class="chip done">after2(ext4 22:00-23:07, N=5 CLEAR)</span><b>粒度①コマンド</b>: git status 60-120s→<span class="mono">84ms</span>、publish 3770→<span class="mono">227ms</span>、scope git_commit 9487→<span class="mono">173ms</span>、scope_sync 5846→<span class="mono">73ms</span>、実push timeout 3回→<span class="mono">1.1s rc=0</span>(半蔵 T87 各3回)。<b>粒度②配備</b>: deploy_task wall <span class="mono">18.8/23.9/21.7/43.8/27.2s</span>(中央値 23.9s; 9p 時代 199-397s、−89%)。<b>粒度③cmd e2e</b>(deploy→CLEAR): T87 <span class="mono">1850s(31分)</span>/T83 <span class="mono">1885s</span>/T93 ci_fix <span class="mono">1225s(20分)</span>=中央値 <span class="mono">1850s</span> vs 13:05 の 2416s(−23%)。内訳: work 96-895s・<b>finalize 247-965s</b>(報告整形→軍師 review→家老 GATE=人手往復が今の支配項、fs 律速は消えた)。T88 の 2 件は finalize 43万秒(5日前の偵察を終端)=歴史値ゆえ除外。<b>粒度④push/CI</b>: 1本ずつ push は継続、先行 run cancel=正常。CI GREEN 確定は 319e7cdca run 待ち。<b>回転</b>: 22:00-23:07 の 67 分で CLEAR 5(4.5件/h)、13:05 時点は 28件/13h(2.2件/h)=<b>2倍</b>(母数小、忍者 idle 多数=下知が律速)</li>
+    <li><span class="chip run">残る律速(23:07)</span>(1)<b>finalize 250-960s</b>=報告整形 BLOCK 往復+軍師 review+家老 ACCEPT の直列(T83 は SG7 FAIL→修正版 LGTM で +15分) (2)publish 外側 604ms・実 push 1.1s(ネットワーク) (3)origin 直接 push レーンとの再分岐(2 21)=converge 1回/時 (4)忍者 idle 6→将軍下知が律速=reflux 自動配備の再開(T79 凍結解除済) (5)偽 DOC_LANE_ALERT(research.md/infrastructure.md 日付起点計数=GA502 疾風 hotfix 23:04 配備)</li>
   </ul>
   </ul>
 </div>
@@ -110,9 +114,10 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 </section>
 
 <section class="group">
-  <h2>済 <span class="n">92</span></h2>
+  <h2>済 <span class="n">93</span></h2>
   <div class="rows">
     <div class="row done"><span class="id">T68</span><span class="t">origin/shared main の再分岐根治</span><span class="d">15:42 家老 blt_154217: REV_LIST 0 0、origin tip=HEAD=49bd92f11、push wall 78325/15557/2463ms、CI queued→将軍 fetch 後 origin/main=49bd92f11 で一致確認(primary worktree 8cd140e07 は insights auto-commit 1本先行=次 converge で吸収); 15:37 rev-list 9 36、家老 pane 実測「source保持commit二本、oldest-first で一件ずつ push」=下知 msg_151922 を実行中。T63 回収 msg_152217 は read=true・cherry-pick 未(bcfbc5e2d NOT in HEAD)=T68 の後に直列; 15:05 再計測 rev-list 5 26: 14:36 の converge 下知 msg_143608 は家老の記憶ごと消失=未実行。T69 の 3 通が配備されてから再下知(束にしない); 14:35 rev-list 5 13: runtime レーン(postclear field-aware publish 4本+autopush lessons merge)が origin へ直接 push→shared main と再分岐(本日2回目)。家老へ converge(ours)+1本ずつ push 下知 msg_1436xx。構造: origin 直接 push レーンと shared main の二重化=毎回 converge が要る→INS 登録(runtime 側が shared main を先行 push するか converge を周期化)</span><span class="w">push の手戻り 0=将軍下知なしで 0 0 維持</span></div>
+    <div class="row done"><span class="id">T95</span><span class="t">回転計測の更新</span><span class="d">23:08 殿指示『回転 before/after をアップデート』『一次情報も』→ HTML の一次情報/回転/CI/reflux タイルを 23:07 実測で更新: after2(ext4)=deploy 中央値 23.9s(−89%)、cmd e2e 中央値 1850s(−23%、支配項は finalize=人手往復 250-960s)、CLEAR 4.5件/h(2倍)。残る律速 5 件を名指し</span><span class="w">律速の名指し=次弾の起票精度</span></div>
     <div class="row done"><span class="id">T94</span><span class="t">doc lane handoff 2本</span><span class="d">23:01 将軍 doc lane: T87/T83 の doc_lane_handoff 2本を執筆(忍者は docs 編集禁止=DOC_LANE_ROUTING)。docs/research/ext4_speed_rebaseline_20260827.md(before/after 表+残る律速3件)、docs/design/cmd_complete_gate_split_design_20260827.md(報告YAMLから機械生成: 17 unit 表/source 順15/契約test 43 所有)。commit は家老 converge 後に将軍 owner commit</span><span class="w">設計書=次弾実装 cmd の入力</span></div>
     <div class="row done"><span class="id">T90</span><span class="t">relocate 置換の commit</span><span class="d">22:09 家老 blt_220925: e644881f5 push 完了・rev-list 0 0(将軍 fetch 後 0 0 一致)・CI 33075312387 in_progress; 22:05 家老へ下知 msg_220539: cutover 最終 relocate の /mnt/c→/home 置換 47 ファイルを 1 commit『relocate: apply ext4 cutover path replacement』+push 1本+rev-list 0 0+CI 起動確認→idle</span><span class="w">旧パス残存 0 を main に固定</span></div>
     <div class="row done"><span class="id">T69</span><span class="t">WSL 再起動後の ghost task 3件の復旧</span><span class="d">15:18 家老 blt_151823: 疾風/飛猿とも新 worktree 実在・pane Working・acknowledged_at 再記録(疾風 15:16:03/飛猿 15:17:09)=ghost 復旧完了。★将軍の誤り撤回: 才蔵 T63 の実装は正本 commit bcfbc5e2d(2ファイル)+385a6cd8 に保存済みで消失していない(才蔵が照合、家老が GATE CLEAR 15:15)。/tmp worktree 消失は事実だが「未commit 実装消失」は誤推定=LS-A09(2)反証未探索の再発; 15:16 突合: 疾風 acknowledged 15:16:03(到達)、才蔵 Context 11% 作業中(task worktree 再作成は家老 deploy lock 取得済)、飛猿 inbox 未読1=nudge 到達待ち(pane 0%)。15:23 loop で再突合; 15:08 家老へ 1通1単位で3通: 疾風 cmd_4408 再配備 msg_150800 / 飛猿 cmd_4407 再配備 msg_150820 / 才蔵 T63 worktree消失の補足 msg_150828。15:18 に task assigned/acknowledged 再記録を突合し無ければ再下知; 15:05 一次確認: uptime 8分=WSL 再起動 14:54。14:47 ninja_monitor が全 agent を CLI-DEAD 判定→respawn 3/3 失敗(origin repo unavailable/Failed to list panes=9p stall)、14:54 SINGLETON-TAKEOVER で新 monitor。全 agent(将軍・家老・軍師・忍者6)が 14:54:48 起動=記憶消失。陣形図 14:46 の busy 3名は二次情報の残像、capture-pane は全員 Context 0% の起動プロンプト。task worktree /tmp/shogun-task-worktrees/* が全消失(疾風3・才蔵3・飛猿5 prunable)=才蔵 T63 の未commit 実装消失(家老 blt_150617 の不一致の真因)。INS-150558(monitor 再起動直後の ghost 即再nudge)/INS-150829(worktree_root を永続 ext4 へ)</span><span class="w">再起動 1 回あたりの作業消失=再実装の丸損を 0 に</span></div>
@@ -208,5 +213,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 23:04 T93 ci_fix CLEAR・CI 結論待ち・converge 2 19 待ち・T70 GATE待ち</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 23:08 回転 after2(ext4): deploy −89%・e2e −23%(finalize が支配)・CLEAR 2倍</footer>
 </div>
