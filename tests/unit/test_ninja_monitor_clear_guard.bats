@@ -3651,3 +3651,42 @@ fi
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: draft review excluded"* ]]
 }
+
+# test_necessity: every clear counter log must carry the monitor generation so
+# current-owner and stale-root events are distinguishable in production logs.
+# regression_justification: the owner takeover already recorded old/new
+# generations, but CLEAR-COUNT logs omitted generation and made stale events
+# indistinguishable from the current owner.
+@test "clear counter logs identify the monitor generation" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="'"$BATS_TEST_TMPDIR"'"; SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/monitor.log"
+mkdir -p "$T/queue/tasks" "$STATE_DIR"; touch "$LOG"
+export NINJA_MONITOR_GENERATION="generation-current"
+cat > "$T/queue/tasks/hayate.yaml" <<EOF
+task:
+  status: idle
+  task_id: idle
+  _ac_task_id: idle
+EOF
+_task_parent_cmd_for_clear_count hayate >/dev/null
+record_clear_attempt_or_force_idle hayate AUTO-CLEAR no_cmd
+cat > "$T/queue/tasks/hayate.yaml" <<EOF
+task:
+  status: done
+  parent_cmd: cmd_generation
+  task_id: cmd_generation
+  _ac_task_id: cmd_generation
+EOF
+record_clear_attempt_or_force_idle hayate AUTO-CLEAR cmd_generation
+grep -c "generation=generation-current" "$LOG" | grep -qx 3
+grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle has no valid cmd context generation=generation-current" "$LOG"
+grep -q "CLEAR-COUNT-SKIP: hayate has no cmd context, reason=AUTO-CLEAR generation=generation-current" "$LOG"
+grep -q "CLEAR-COUNT: hayate cmd=cmd_generation count=1/" "$LOG"
+    echo "generation_logs=4 current=4"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"generation_logs=4 current=4"* ]]
+}
