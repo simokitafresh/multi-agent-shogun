@@ -521,6 +521,15 @@ cli_launch_cmd() {
     local model_name="$_CLI_LAUNCH_MODEL"
     local service_tier="$_CLI_LAUNCH_SERVICE_TIER"
 
+    # Every launch command is a startup choke point.  Apply the Codex SSOT
+    # before returning the command so callers outside ninja_monitor (manual
+    # respawn, layout restore, and inbox recovery) cannot start with another
+    # agent's shared config.  The command also carries model explicitly below
+    # because reset_layout pre-builds all commands before spawning any pane.
+    if [[ "$_CLI_LAUNCH_TYPE" == "codex" ]]; then
+        codex_config_apply_agent "$agent" || return 1
+    fi
+
     # cli_profiles.yaml を1回のみ読み込み launch_cmd と launch_args を取得
     _cli_launch_read_profile "$_CLI_LAUNCH_TYPE"
     local base_cmd="$_CLI_LAUNCH_CMD"
@@ -534,13 +543,18 @@ cli_launch_cmd() {
     # model_nameからCLI引数を自動生成
     local extra_args=""
     if [[ "$model_name" == gpt-* ]]; then
-        # Codex: gpt-X.X-{effort} → -c model_reasoning_effort={effort}
+        # Codex: settings.yaml is model-effort; config.toml stores them as
+        # separate keys.  Keep both in the launch command so a command built
+        # earlier than another agent's config apply remains self-contained.
         local effort="${model_name##*-}"
+        local codex_model="$model_name"
         case "$effort" in
-            medium|low|high)
+            medium|low|high|xhigh)
+                codex_model="${model_name%-*}"
                 extra_args="-c model_reasoning_effort=${effort}"
                 ;;
         esac
+        extra_args="-c model=${codex_model}${extra_args:+ $extra_args}"
         # Codex: settings.yaml の service_tier フィールドで per-agent 上書き
         case "$service_tier" in
             fast|auto|default)
@@ -664,4 +678,46 @@ codex_config_apply_agent() {
         _CODEX_CFG_CHANGED=true
     fi
     return 0
+}
+
+# codex_expected_model_effort <agent_name>
+# settings.yaml の gpt-X.X-{effort} を capture 比較用の model|effort へ分解する。
+codex_expected_model_effort() {
+    local agent="$1" model_name suffix base
+    model_name=$(_cli_lookup_settings_get "$agent" "model_name" "")
+    [[ "$model_name" == gpt-* ]] || return 1
+    suffix="${model_name##*-}"
+    base="${model_name%-*}"
+    case "$suffix" in
+        low|medium|high|xhigh) printf '%s|%s\n' "$base" "$suffix" ;;
+        *) printf '%s|\n' "$model_name" ;;
+    esac
+}
+
+# codex_capture_model_effort <pane_target>
+# 起動後のcapture-paneに表示された最新のCodex model|effortを返す。
+# model行を優先し、バナーがスクロールアウトした場合だけfooterを使う。
+codex_capture_model_effort() {
+    local pane="$1" capture line fragment model effort
+    capture=$(tmux capture-pane -t "$pane" -p -J -S -100 2>/dev/null || true)
+    [[ -n "$capture" ]] || return 1
+
+    line=$(printf '%s\n' "$capture" | awk '/model:/ {value=$0} END {print value}')
+    if [[ -n "$line" ]]; then
+        fragment="${line#*model:}"
+        fragment="${fragment%%/model*}"
+    else
+        line=$(printf '%s\n' "$capture" | awk '/·[[:space:]]*(Context[[:space:]]+)?[0-9]+%[[:space:]]*(used|left)/ {value=$0} END {print value}')
+        [[ -n "$line" ]] || return 1
+        fragment="${line%%·*}"
+    fi
+
+    fragment=$(printf '%s' "$fragment" | sed -E 's/^[^A-Za-z0-9]+//; s/[[:space:]]+$//')
+    read -r model effort _ <<< "$fragment"
+    [[ "$model" == gpt-* && "$model" != loading ]] || return 1
+    case "$effort" in
+        low|medium|high|xhigh) ;;
+        *) effort="" ;;
+    esac
+    printf '%s|%s\n' "$model" "$effort"
 }

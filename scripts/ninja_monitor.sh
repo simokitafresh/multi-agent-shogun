@@ -2294,12 +2294,47 @@ _record_respawn_outcome() {
     log "RESPAWN-METRIC: agent=$agent_name success=$success attempts=$attempts retries=$((attempts - 1)) recovery_seconds=$elapsed cumulative_successes=$successes cumulative_total=$total success_rate_pct=$success_rate"
 }
 
+# settings.yaml のCodex model-effortと起動後captureを照合する。
+# capture未取得/解析不能も「一致」と扱わず、WARNとして可観測に残す。
+# 戻り値は常に0（乖離は起動復旧を巻き戻さず、家老が対処できる証跡にする）。
+_verify_codex_runtime_capture() {
+    local pane="$1" agent_name="$2" expected actual expected_model expected_effort actual_model actual_effort
+    [ "$(cli_type "$agent_name" 2>/dev/null || true)" = "codex" ] || return 0
+
+    expected=$(codex_expected_model_effort "$agent_name" 2>/dev/null || true)
+    if [ -z "$expected" ]; then
+        log "WARN: CODEX-MODEL-CAPTURE-VERIFY $agent_name settings_model_missing"
+        return 0
+    fi
+    IFS='|' read -r expected_model expected_effort <<< "$expected"
+
+    actual=$(codex_capture_model_effort "$pane" 2>/dev/null || true)
+    if [ -z "$actual" ]; then
+        log "WARN: CODEX-MODEL-CAPTURE-MISMATCH $agent_name expected_model=$expected_model expected_effort=${expected_effort:-unknown} actual_capture=unavailable"
+        return 0
+    fi
+    IFS='|' read -r actual_model actual_effort <<< "$actual"
+    if [ "$actual_model" != "$expected_model" ] || [ "$actual_effort" != "$expected_effort" ]; then
+        log "WARN: CODEX-MODEL-CAPTURE-MISMATCH $agent_name expected_model=$expected_model expected_effort=${expected_effort:-unknown} actual_model=$actual_model actual_effort=${actual_effort:-unknown}"
+    else
+        log "CODEX-MODEL-CAPTURE-MATCH $agent_name model=$actual_model effort=$actual_effort"
+    fi
+    return 0
+}
+
 _respawn_with_cli_verification() {
     local pane="$1" agent_name="$2" launch_command="$3" label="$4"
     local attempt backoff elapsed
     local started=$SECONDS
     for attempt in 1 2 3; do
         log "${label}-ATTEMPT: $agent_name attempt=${attempt}/3"
+        # Re-apply immediately before every retry; another agent may have
+        # changed the shared config between attempts.
+        if [ "$(cli_type "$agent_name" 2>/dev/null || true)" = "codex" ] && \
+                ! codex_config_apply_agent "$agent_name"; then
+            log "${label}-CONFIG-APPLY-FAIL: $agent_name retry=next_cycle"
+            return 1
+        fi
         # tmux respawn-paneはscrollbackを継承する。前セッションのプロンプトを
         # 新CLIの起動成功と誤認しないよう、各試行の前に残像を消す。
         tmux clear-history -t "$pane" 2>/dev/null || true
@@ -2307,6 +2342,7 @@ _respawn_with_cli_verification() {
                 respawn_recovery_ready "$pane"; then
             elapsed=$((SECONDS - started))
             _record_respawn_outcome "$agent_name" 1 "$attempt" "$elapsed" || true
+            _verify_codex_runtime_capture "$pane" "$agent_name"
             return 0
         fi
         log "${label}-VERIFY-FAIL: $agent_name attempt=${attempt}/3 cli_not_ready"
@@ -2417,8 +2453,11 @@ safe_send_clear() {
             local _launch_command
             _launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$_launch_cmd" 2>/dev/null || true)
             # per-agent config.toml切替(2層SSOT: settings.yaml→config.toml。SSOT実装=cli_lookup.sh)
-            codex_config_apply_agent "$agent_name" && \
-                [[ "$_CODEX_CFG_CHANGED" == true ]] && \
+            if ! codex_config_apply_agent "$agent_name"; then
+                log "CODEX-CONFIG-APPLY-FAIL: $agent_name retry=next_cycle"
+                return 1
+            fi
+            [[ "$_CODEX_CFG_CHANGED" == true ]] && \
                 log "CODEX-CFG-SWITCH: $agent_name applied"
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
             local _fsc_respawn_ok=1
@@ -2445,6 +2484,7 @@ safe_send_clear() {
             log "CTX-RESET: $agent_name @context_pct → 0% after CODEX-RESPAWN"
             # LS078根治: settings.yaml model_nameをそのまま@model_nameへ焼込み(バナーパース非経由)
             apply_model_name_tag "$agent_name" "$pane" || true
+            _verify_codex_runtime_capture "$pane" "$agent_name"
             rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
             return 0
         fi
@@ -9972,8 +10012,12 @@ check_ninja_cli_dead() {
         (
             log "CLI-DEAD: ${_name_bg} pane_dead=${_pane_dead_bg} → respawn-pane使用"
             # per-agent config.toml切替(SSOT: cli_lookup.sh)
-            codex_config_apply_agent "$_name_bg" 2>/dev/null && \
-                [[ "$_CODEX_CFG_CHANGED" == true ]] && \
+            if [ "$(cli_type "$_name_bg" 2>/dev/null || true)" = "codex" ] && \
+                    ! codex_config_apply_agent "$_name_bg" 2>/dev/null; then
+                log "CODEX-CONFIG-APPLY-FAIL(CLI-DEAD): $_name_bg retry=next_cycle"
+                exit 1
+            fi
+            [[ "$_CODEX_CFG_CHANGED" == true ]] && \
                 log "CODEX-CFG-SWITCH(CLI-DEAD): $_name_bg applied"
             # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
             local _launch_command
