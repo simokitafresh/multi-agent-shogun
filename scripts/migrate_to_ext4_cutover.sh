@@ -47,10 +47,16 @@ pane_for_agent() {
 }
 
 pane_is_input_waiting() {
-  local capture last
+  # Codex CLI: prompt line "› Ask Codex to do anything" followed by a status line;
+  # Claude CLI: "❯ " prompt followed by a "⏵⏵ bypass permissions" status line.
+  # Neither CLI leaves the prompt marker on the last non-empty line, so inspect the
+  # last 8 non-empty lines for a prompt marker and reject if any busy marker remains.
+  local capture tail8
   capture="$(tmux capture-pane -t "$1" -p -J -S -30 2>/dev/null)" || return 1
-  last="$(printf '%s\n' "$capture" | sed '/^[[:space:]]*$/d' | tail -1)"
-  [[ "$last" =~ (›|❯)[[:space:]]*$ ]] || [[ "$last" =~ ^[[:space:]]*\$[[:space:]]*$ ]]
+  tail8="$(printf '%s\n' "$capture" | sed '/^[[:space:]]*$/d' | tail -8)"
+  printf '%s\n' "$tail8" | grep -Eq 'esc to interrupt|Working \(|Do you want to proceed|Press enter to continue' && return 1
+  printf '%s\n' "$tail8" | grep -Eq '^[[:space:]]*(›|❯)' && return 0
+  printf '%s\n' "$tail8" | tail -1 | grep -Eq '^[[:space:]]*\$[[:space:]]*$'
 }
 
 management_panes_are_waiting() {

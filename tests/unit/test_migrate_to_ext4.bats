@@ -26,7 +26,7 @@ setup() {
     'set -e' \
     'case "$1" in' \
     '  list-panes) printf '\''shogun:2.1|karo\nshogun:2.2|gunshi\n'\'' ;;' \
-    '  capture-pane) printf '\''›\n'\'' ;;' \
+    '  capture-pane) printf '\''%s\n'\'' "${TEST_PANE_LINES:-›}" ;;' \
     'esac' > "$TMP_DIR/bin/tmux"
   chmod +x "$TMP_DIR/bin/tmux"
   export OLD_ROOT NEW_ROOT HOME="$HOME_DIR" TEST_CRON_STATE="$TMP_DIR/cron"
@@ -109,4 +109,24 @@ teardown() {
   run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" HOME="$HOME_DIR" \
     bash "$ROOT/scripts/migrate_to_ext4_rollback.sh" --dry-run
   [ "$status" -eq 0 ]
+}
+
+@test "cutover preflight accepts Codex and Claude idle prompts with trailing status lines" {
+  local codex=$'› Ask Codex to do anything\n\n  gpt-5.6-sol medium fast · Context 9% used'
+  run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" HOME="$HOME_DIR" TEST_PANE_LINES="$codex" \
+    bash "$ROOT/scripts/migrate_to_ext4_cutover.sh" --dry-run
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"DRY_RUN: preflight PASS"* ]]
+  local claude=$'❯ \n  CTX:23%\n  ⏵⏵ bypass permissions on (shift+tab to cycle)'
+  run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" HOME="$HOME_DIR" TEST_PANE_LINES="$claude" \
+    bash "$ROOT/scripts/migrate_to_ext4_cutover.sh" --dry-run
+  [ "$status" -eq 0 ]
+}
+
+@test "cutover preflight blocks a busy pane even when a prompt marker is visible" {
+  local busy=$'• Working (1m 20s • esc to interrupt)\n› Ask Codex to do anything\n  gpt-5.6-sol medium fast · Context 9% used'
+  run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" HOME="$HOME_DIR" TEST_PANE_LINES="$busy" \
+    bash "$ROOT/scripts/migrate_to_ext4_cutover.sh" --dry-run
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"pane_not_waiting:karo"* ]]
 }
