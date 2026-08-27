@@ -3319,6 +3319,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T15:36:35+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(t |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T16:06:38+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(t |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T16:39:43+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(t |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T17:06:39+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(t |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -13014,6 +13015,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608271550_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608271615_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608271615_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608271656_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608271656_saizo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -13211,6 +13214,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T05:19:44+09:00 bgz1inzkp toolu_017Wm5gJkfMed69JLLUmE6Nr /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/13459098-3719-4178-90d4-8f76ad |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T15:26:07+09:00 b6nfksxbz toolu_01NYKEintZwT46zMT2QYBYyG /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/448325f6-c09d-4b07-8345-9ed749 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T16:09:47+09:00 bk723vbr9 toolu_01CKam1HGfUEobqLSxzgMPpF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/448325f6-c09d-4b07-8345-9ed749 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T17:23:52+09:00 b34t4quv0 toolu_01JPviB4UPJA8XqPZEzxmGX1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/448325f6-c09d-4b07-8345-9ed749 |
 
 ## provisional_cmd_gate_scaffold — 仮: Cmd Gate Scaffold
 
@@ -14494,6 +14498,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-24T19:52:13.577239+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-24T20:50:54.787049+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T01:16:28.234410+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T07:47:23.172541+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
