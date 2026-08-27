@@ -34,7 +34,8 @@
 
 1. **走行 3 件は全て CLEAR 済**(cmd_4408 19:29 / T76 半蔵 19:14 / T71 才蔵 19:43)。以後の新規 cmd・karo_hotfix・reflux 自動配備は停止中(殿裁定 17:41、家老 blt_174711 で reflux は可逆 marker で fail-closed)。忍者 6/6 idle(小太郎は ci_fix task の failed 残置を家老が終端中)。
 2. **★cutover script の欠陥(20:48 将軍が現物確認、是正 hotfix を家老へ msg_204816)**: `migrate_to_ext4_cutover.sh:89` の最終 `rsync -a OLD/ NEW/` は `.git` も同期するため、/home clone の **パス置換 commit 5f6fa7569 は refs/heads/main が OLD の hash で上書きされ dangling になり、43 ファイル(`.claude/settings.json` 10 箇所等)も OLD 内容へ戻る**。そのまま切り替えると hook/gate/crontab の一部が `/mnt/c` を指したまま起動する。是正=最終 rsync の直後に冪等な relocate(旧→新パス置換+残存 rg 0 検証+NEW で 1 commit)を呼ぶ hotfix(`scripts/migrate_to_ext4_relocate.sh` 新設+bats)。**この hotfix の GATE CLEAR 前に cutover を打つな。**
-3. **cutover 前提の確認(将軍、hotfix CLEAR 後)**: `bash scripts/migrate_to_ext4_cutover.sh --dry-run` が `DRY_RUN: preflight PASS` を出す(=全 task idle・家老/軍師 pane 待機・marker なし・crontab 旧パス有)。加えて `rev-list origin/main...HEAD` 0 0、origin tip CI success、`git worktree list` prunable 0。20:00 の実測: 6 月の stale `_cmd_1782_ready.yaml`/`_cmd_wf_speedup_ready.yaml`(untracked)が idle 判定を塞いでいた→`queue/archive/stale_ready_20260827/` へ退避済。
+3. **★21:45 全前提成立=`--dry-run` が `DRY_RUN: preflight PASS`(将軍一次)。** relocate hotfix f6348f9fa は 21:10 CLEAR→家老 converge e8c603e91 で local 0 0。途中で第 2 の欠陥: `pane_is_input_waiting` が最終非空行に `›`/`❯` を要求→Codex(status 行が末尾)/Claude(`❯` の後 NBSP+`⏵⏵` 行)で**現編成では常に BLOCK**=将軍 D0 5f8aea006(末尾 8 行内の prompt marker+busy marker 拒否、bats 7/7)。一般則: 「入力待ち」判定は CLI ごとの末尾形状で壊れる=fixture に両 CLI の実プロンプトを置け。
+3'. **cutover 前提の確認(将軍、hotfix CLEAR 後)**: `bash scripts/migrate_to_ext4_cutover.sh --dry-run` が `DRY_RUN: preflight PASS` を出す(=全 task idle・家老/軍師 pane 待機・marker なし・crontab 旧パス有)。加えて `rev-list origin/main...HEAD` 0 0、origin tip CI success、`git worktree list` prunable 0。20:00 の実測: 6 月の stale `_cmd_1782_ready.yaml`/`_cmd_wf_speedup_ready.yaml`(untracked)が idle 判定を塞いでいた→`queue/archive/stale_ready_20260827/` へ退避済。
 4. **cutover(殿の 1 行、可逆)**:
    ```
    cd /mnt/c/tools/multi-agent-shogun && bash scripts/migrate_to_ext4_cutover.sh --dry-run   # 手順表示・副作用 0
@@ -88,9 +89,9 @@
 5. `rev-list origin/main...HEAD` で分岐を測り家老へ converge+1 本ずつ push
 6. artifact/todo_map を md 正本から再生成して公開、30 分 loop を再設定(cron は session 限り)
 
-## §5 未決・残件(20:50)
+## §5 未決・残件(21:47)
 
 - ~~T73 軍師 200K~~ → 殿指示 20:37『やれ』で完了: settings.yaml から `--model opus` 除去(23645a537)、respawn 後 pane『Opus 4.6 (1M context) with high effort』を 2 回 capture で確認。
-- **relocate hotfix(§3-2)**: 家老 msg_204816 で配備中。CLEAR→`--dry-run PASS`→殿の 1 行。
+- ~~relocate hotfix(§3-2)~~ → 21:10 CLEAR、21:45 `--dry-run PASS`。**残=殿の 1 行のみ**(家老は 5f8aea006 を push 後 idle 待機)。
 - cutover 後: T87(ext4 上で publish/scope_commit/git status/push wall を再計測し真の律速を名指す)、T70(task worktree root を `/home` 側へ)、T83(script 肥大 14 件の分割)、T88(偵察 cmd_4367/4368 の report-only 完了処理)。凍結解除=cutover 完了時。
 - DM-signal(`/mnt/c/Python_app/DM-signal`)は 9p のまま=次の移設候補(同じ手順)。
