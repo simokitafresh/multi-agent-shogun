@@ -1500,3 +1500,9 @@
 - 結果: hotfix 8本起票→7本 GATE CLEAR(T21 nudge再送/T50 dirty-guard/T08 converge/T47 idle起点/T49 偽BLOCK/T10 gate本質/T57 failed→自動review)。reflux 8件回転(1件 20-42分)。push 1本 5-16秒。CI は autopush レーンの datetime TypeError で RED(半蔵 ci_fix 配備中)。
 - 因果: 家老が束で届く下知の先頭だけ処理する型(5回)→T56 UNACTIONED 検知を配備。failed 残置が review と reflux 枠を殺す→T57。artifact 手編集の乖離→todo_map_render.py で md 正本から機械生成。head パイプで receipt 欠落→教訓化。
 - 2026-08-27 cmd_karo_hotfix_rework_capture_gap_20260827完了: 共有workaround台帳の固定lock/path-derived lock不一致でauto_captureが0/11となる根因を特定し、lock_path(LOG_FILE)へ統一。修正後cmd gate 281/281・validation/task 51/51 PASS、capture契約3/3、report gate PASS。origin: [[cmd_karo_hotfix_rework_capture_gap_20260827]] -> [[shared ledger lock divergence]] -> [[path-derived lock unified]]
+- 2026-08-27 cmd_4408_full完了: /mnt/c 9p停滞対策として/home ext4複製・旧絶対パス43ファイル103件置換・可逆cutover/rollbackを実装。代表testはsource→cloneで16.91→9.03秒、71.44→54.86秒、76.27→40.22秒、全FAIL0/SKIP0。origin: [[9p_git_flock_RPC待ち_本日停滞3系統]] -> [[cmd_4408_ext4移設]] -> [[ext4_clone_test_speedup]]
+
+## 2026-08-27 14:55-19:08（将軍 /clear 復帰 第3便・WSL再起動からの復旧）
+- 意図: 14:54 WSL 再起動(9p stall→全agent CLI-DEAD→/tmp worktree 全消失)からの復旧と、殿裁定 17:41『走行完了後は新規に手を出さず 9p 根治』への集中。
+- 結果: ghost 3件再配備(T69)、T63 偽CLEAR を merge-base で検出し cherry-pick 2360a18a7 で回収、cmd_4407 の本番 tmux 汚染(T74)を封じ込め+根因修正 900a6e204、軍師 composer 詰まり(T75)、偽 DOC_LANE_ALERT(T76→半蔵)、陣形図 stale(T71→才蔵)、Codex 更新プロンプト(T78 可逆解除)、Codex 利用上限→殿の新アカウント→全 agent respawn(T80)。cmd_4408 は AC1-3 着地・AC4 計測中。runbook=docs/research/9p_root_fix_runbook_20260827.md(gist 407d5146)。
+- 因果: 9p(drvfs)上の git/flock RPC 待ち→D-state→monitor が pane 列挙失敗→WSL 再起動→/tmp worktree 消失→dangling 主実装→偽CLEAR。根治=repo を ext4 へ(cutover は殿の1行)。型第三弾4則を instructions/shogun.md へ焼込み、LS 3件追加。
