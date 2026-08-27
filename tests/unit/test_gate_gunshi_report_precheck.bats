@@ -453,6 +453,17 @@ YAML
   [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
 }
 
+# test_necessity: completion reports may state that no unresolved assumptions
+# remain; this negative completion must not contradict all-yes binary checks.
+# regression_justification: cmd_reflux_insight_202608271656_saizo was approved
+# by Gunshi but SG-PRE9c blocked bundle generation on this exact wording.
+@test "LG043 ignores unresolved assumptions explicitly left at zero" {
+  run_engine "未解決前提は残していない"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+}
+
 @test "LG043 ignores a resolved historical state only with completion evidence" {
   run_engine "対象は未解決だったが既存原則に包含" "target status=resolved"
   [ "$status" -eq 0 ]
