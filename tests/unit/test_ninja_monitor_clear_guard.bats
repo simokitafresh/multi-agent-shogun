@@ -2584,6 +2584,8 @@ cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
 task:
   status: idle
   parent_cmd: cmd_completed
+  task_id: idle
+  _ac_task_id: idle
 YAML
 
 check_idle() { return 0; }
@@ -2597,6 +2599,7 @@ cli_profile_get() {
         *) echo "" ;;
     esac
 }
+
 cli_launch_cmd() { echo "/usr/bin/bash"; }
 codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TMP_ROOT/messages.log"; }
@@ -2618,12 +2621,112 @@ safe_send_clear "shogun:2.3" "hayate" "AUTO-CLEAR"
 test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 2
 test ! -f "$TMP_ROOT/messages.log"
 test ! -f "$STATE_DIR/shogun_clear_count_hayate.tsv"
-grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle is not active" "$LOG"
+grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle has no valid cmd context" "$LOG"
 
 echo "PASS: idle stale parent_cmd skipped"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: idle stale parent_cmd skipped"* ]]
+}
+
+@test "terminal task context uses current generation fields and rejects stale sentinels" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$T"; LOG="$T/log"
+mkdir -p "$T/queue/tasks"; : > "$LOG"
+log() { echo "$1" >> "$LOG"; }
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_current
+  task_id: cmd_current_normal
+  _ac_task_id: cmd_current_normal
+YAML
+test "$(_task_parent_cmd_for_clear_count hayate)" = cmd_current
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+  parent_cmd:
+  task_id: cmd_task_fallback_normal
+  _ac_task_id:
+YAML
+test "$(_task_parent_cmd_for_clear_count hayate)" = cmd_task_fallback_normal
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: failed
+  parent_cmd:
+  task_id:
+  _ac_task_id: cmd_ac_fallback_exact
+YAML
+test "$(_task_parent_cmd_for_clear_count hayate)" = cmd_ac_fallback_exact
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+  parent_cmd: cmd_stale
+  task_id: idle
+  _ac_task_id: idle
+YAML
+test "$(_task_parent_cmd_for_clear_count hayate)" = no_cmd
+grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle has no valid cmd context" "$LOG"
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_stale
+  task_id: cmd_new_generation_normal
+  _ac_task_id: cmd_new_generation_normal
+YAML
+test "$(_task_parent_cmd_for_clear_count hayate)" = cmd_new_generation_normal
+
+echo "PASS: terminal context precedence and stale boundary"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: terminal context precedence and stale boundary"* ]]
+}
+
+@test "done and idle terminal tasks trigger AUTO-CLEAR with cmd context" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$T"; LOG="$T/log"
+mkdir -p "$T/queue/tasks"; : > "$LOG"
+declare -A PANE_TARGETS LAST_CLEARED CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+PANE_TARGETS[hayate]=pane; LAST_CLEARED[hayate]=0
+log() { echo "$1" >> "$LOG"; }
+tmux() {
+  if [ "$1" = display-message ]; then echo hayate; fi
+  return 0
+}
+get_context_pct() { echo 80; }
+cli_type() { echo codex; }
+cli_profile_get() { case "$2" in clear_debounce) echo 0;; *) echo "";; esac; }
+can_send_clear_with_report_gate() { return 0; }
+safe_send_clear() { echo "AUTO_CLEAR:$2" >> "$LOG"; return 0; }
+for terminal_status in done idle; do
+  cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: $terminal_status
+  parent_cmd: cmd_terminal
+  task_id: cmd_terminal_normal
+  _ac_task_id: cmd_terminal_normal
+YAML
+  _handle_auto_clear hayate 10000
+done
+actual=$(grep -c '^AUTO_CLEAR:hayate$' "$LOG")
+if [ "$actual" -ne 2 ]; then exit 1; fi
+if grep -q "CLEAR-COUNT-SKIP.*no valid cmd context" "$LOG"; then exit 1; fi
+grep -q "^AUTO_CLEAR:hayate$" "$LOG"
+echo "PASS: terminal AUTO-CLEAR fired"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: terminal AUTO-CLEAR fired"* ]]
 }
 
 # --- cmd_3264: auto-commit in_progress ninja exclusion tests ---
