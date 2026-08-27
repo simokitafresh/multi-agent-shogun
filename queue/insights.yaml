@@ -5763,21 +5763,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:42:05+09:00"
 - id: INS-20260827-234100876-64b5
   ts: "2026-08-27T23:41:00+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[ext4_speed_rebaseline_20260827]] は既存aliasesに一致なし。類似概念TOP3: provisional_bash_speed_training(仮: Bash Speed Training; alias=bash_speed_training; score=16.9) / gunshi_idle_script_speed_audit_20260620(スクリプト速度監査; alias=script speed audit; score=15.5) / provisional_script_speed_training_ledger(仮: Script Speed Training Ledger; alias=script_speed_training_ledger; score=14.0)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:42:05+09:00"
 - id: INS-20260827-234106935-00f1
   ts: "2026-08-27T23:41:06+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[hook_overhead_before_after_20260827]] は既存aliasesに一致なし。類似概念TOP3: inbox_processing_discipline(inbox処理規律; alias=reply_before_mark_read; score=13.0) / semantic_dictionary_design(セマンティック辞書構想; alias=WARN_hook+test; score=12.6) / infrastructure_ops(インフラ運用基盤; alias=report-before-clear guard; score=12.2)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:42:05+09:00"
 - id: INS-20260827-234118302-f0e9
   ts: "2026-08-27T23:41:18+09:00"
   insight: "[[ext4にしたことも大きな違いだよな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ext4にしたことも大きな違いだよな"
@@ -5805,4 +5814,7 @@ insights:
   priority: "medium"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:42:06+09:00"
