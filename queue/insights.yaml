@@ -4432,3 +4432,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-085954334-5d9c
+  ts: "2026-08-27T08:59:54+09:00"
+  insight: "[[refluxってなんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=refluxってなんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
