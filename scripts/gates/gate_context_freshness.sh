@@ -30,6 +30,7 @@ source "$CONTROL_ROOT/scripts/lib/yaml_field_set.sh"
 CHECK_SCRIPT="${CONTEXT_FRESHNESS_CHECK_SCRIPT:-$ROOT_DIR/scripts/context_freshness_check.sh}"
 NTFY_SCRIPT="${CONTEXT_FRESHNESS_NTFY_SCRIPT:-$ROOT_DIR/scripts/ntfy.sh}"
 BULLETIN_SCRIPT="${CONTEXT_FRESHNESS_BULLETIN_SCRIPT:-$CONTROL_ROOT/scripts/bulletin_write.sh}"
+SOURCE_COMMIT_SET_SCRIPT="${CONTEXT_FRESHNESS_SOURCE_COMMIT_SET_SCRIPT:-$CONTROL_ROOT/scripts/context_source_commit_set.sh}"
 TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
 CACHE_TTL="${CONTEXT_FRESHNESS_GATE_CACHE_TTL:-300}"
 ALERT_DEBOUNCE_SECONDS="${CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS:-86400}"
@@ -136,15 +137,14 @@ context_commit_closes_source_alert() {
         && bounded_git -C "$ROOT_DIR" merge-base --is-ancestor "$latest_hash" "$context_hash" 2>/dev/null
 }
 
-# GA-493: a revert (or a divergent branch with the same effective source
+# GA-493/T108: a revert (or a divergent branch with the same effective source
 # content) is still newer than the recorded source marker, but it does not
 # require a second knowledge edit.  Compare the registered trigger paths
-# against every recorded boundary before turning the checker snapshot into a
-# raw ALERT.  The boundary still needs to advance, so the caller routes the
-# equivalent result through the existing machine-readable doc-lane consumer.
+# against every recorded boundary.  A valid equivalent commit advances the
+# boundary in this gate; invalid or missing source commits are WARN-only.
 source_commit_is_equivalent_to_recorded_boundary() {
     local rel_path="$1" alert_line="$2"
-    local file="$ROOT_DIR/$rel_path" repo="" latest_hash="" trigger="" marker=""
+    local file="$ROOT_DIR/$rel_path" repo="" latest_hash="" trigger="" marker="" source_tip="" source_equivalent_hint=""
     local trigger_item cited_dir cited_file
     local -a pathspecs=()
     local -a markers=()
@@ -155,7 +155,7 @@ source_commit_is_equivalent_to_recorded_boundary() {
     [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
     repo="${BASH_REMATCH[1]}"
     [[ -d "$repo" ]] || return 1
-    bounded_git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
+    [[ "$alert_line" == *source_equivalent* ]] && source_equivalent_hint=1
     [[ "$alert_line" =~ update_trigger=([^[:space:]]+) ]] || return 1
     trigger="${BASH_REMATCH[1]}"
 
@@ -178,6 +178,26 @@ source_commit_is_equivalent_to_recorded_boundary() {
     done
     ((${#pathspecs[@]} > 0)) || return 1
 
+    # Resolve and ancestry-check only after the trigger paths and an existing
+    # boundary establish that this alert is an equivalence candidate. Ordinary
+    # source alerts continue through the historical raw-ALERT path.
+    bounded_git -C "$repo" rev-parse --verify "${latest_hash}^{commit}" >/dev/null 2>&1 || {
+        SOURCE_EQUIVALENT_REJECT_REASON="source commit ${latest_hash} is not resolvable"
+        [[ "$source_equivalent_hint" == 1 ]] && return 2
+        return 1
+    }
+    source_tip="$(bounded_git -C "$repo" rev-parse --verify 'origin/main^{commit}' 2>/dev/null || true)"
+    [[ "$source_tip" =~ ^[0-9a-f]{40}$ ]] || {
+        SOURCE_EQUIVALENT_REJECT_REASON="origin/main is not resolvable"
+        [[ "$source_equivalent_hint" == 1 ]] && return 2
+        return 1
+    }
+    bounded_git -C "$repo" merge-base --is-ancestor "$latest_hash" "$source_tip" >/dev/null 2>&1 || {
+        SOURCE_EQUIVALENT_REJECT_REASON="source commit ${latest_hash} is not an origin/main ancestor"
+        [[ "$source_equivalent_hint" == 1 ]] && return 2
+        return 1
+    }
+
     for marker in "${markers[@]}"; do
         bounded_git -C "$repo" cat-file -e "${marker}^{commit}" 2>/dev/null || continue
         if bounded_git -C "$repo" diff --quiet "$marker" "$latest_hash" -- "${pathspecs[@]}" 2>/dev/null; then
@@ -185,6 +205,43 @@ source_commit_is_equivalent_to_recorded_boundary() {
         fi
     done
     return 1
+}
+
+# source_equivalent is a verified no-op in the source tree, so the boundary
+# itself can be advanced safely.  The gate owns this write; only a successful
+# setter is followed by one informational bulletin row.  No DOC_LANE_REQUEST
+# is emitted for this reason, avoiding a false task/notification loop.
+auto_close_source_equivalent() {
+    local rel_path="$1" alert_line="$2" latest_hash="" project="infra" reason="source_equivalent" evidence="" setter_output=""
+
+    [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
+    latest_hash="${BASH_REMATCH[1]}"
+    [[ "$rel_path" == context/dm-signal*.md ]] && project="dm-signal"
+    [[ -f "$SOURCE_COMMIT_SET_SCRIPT" && -r "$SOURCE_COMMIT_SET_SCRIPT" ]] || {
+        emit_actionable \
+            "BLOCK: ${rel_path} (source_equivalent setter unavailable)" \
+            "context_source_commit_set.shを復旧してから再実行せよ。"
+        return 1
+    }
+    evidence="gate_context_freshness context=${rel_path} source_commit=${latest_hash} reason=${reason}"
+    if ! setter_output="$(cd "$ROOT_DIR" && CONTEXT_SOURCE_COMMIT_TIP=origin/main bash "$SOURCE_COMMIT_SET_SCRIPT" \
+            "$rel_path" "$latest_hash" "$reason" "$evidence" 2>&1)"; then
+        emit_actionable \
+            "BLOCK: ${rel_path} (source_equivalent boundary update failed)" \
+            "project=${project} source_commit=${latest_hash} のsetter失敗を解消して再実行せよ: ${setter_output//$'\n'/; }"
+        return 1
+    fi
+    if ! BULLETIN_AUTOGEN=1 BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" \
+            gate_context_freshness \
+            "DOC_LANE_INFO: source_equivalent auto-closed context=${rel_path} source_commit=${latest_hash} project=${project}" \
+            false info >/dev/null 2>&1; then
+        emit_actionable \
+            "BLOCK: ${rel_path} (source_equivalent info bulletin failed)" \
+            "boundaryは更新済み。掲示板info行を永続化してから再実行せよ。"
+        return 1
+    fi
+    echo "OK: ${rel_path} (source_equivalent boundary auto-closed; bulletin info persisted)"
+    return 0
 }
 
 # GA-425: DM-Signal docs/research commits are already forced through
@@ -852,25 +909,29 @@ for rel_path in "${target_rel_paths[@]}"; do
             context_hash="$(bounded_git -C "$ROOT_DIR" log -1 --format=%h -- "$rel_path" 2>/dev/null || true)"
             echo "OK: ${basename_file} (${days_ago}日前更新、context commit ${context_hash} が検出済みsource候補を包含)"
             continue
-        elif source_commit_is_equivalent_to_recorded_boundary "$rel_path" "${source_alerts[$rel_path]}"; then
+        else
+            source_equivalent_rc=0
+            SOURCE_EQUIVALENT_REJECT_REASON=""
+            source_commit_is_equivalent_to_recorded_boundary "$rel_path" "${source_alerts[$rel_path]}" \
+                || source_equivalent_rc=$?
+            if [[ "$source_equivalent_rc" -eq 0 ]]; then
             latest_hash=""
             [[ "${source_alerts[$rel_path]}" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] \
                 && latest_hash="${BASH_REMATCH[1]}"
-            request_project="infra"
-            [[ "$rel_path" == context/dm-signal*.md ]] && request_project="dm-signal"
-            request_line="CONTEXT_UPDATE_REQUEST project=${request_project} context=${rel_path} source_commit=${latest_hash} parent_cmd=source_${latest_hash} reason=source_equivalent"
-            printf '%s\n' "$request_line"
-            # An equivalent source tree still has a new durable boundary.  Do
-            # not silently suppress it: route the exact setter input through
-            # the existing consumer so the next doc-lane action advances the
-            # marker and leaves a receipt.
-            if ! consume_context_update_request "$request_line"; then
+            if ! auto_close_source_equivalent "$rel_path" "${source_alerts[$rel_path]}"; then
                 HAS_BLOCK=1
                 continue
             fi
-            echo "OK: ${basename_file} (source commitは登録boundaryと内容同値、boundary更新要求をdoc laneへ永続通知)"
             continue
-        elif request_cmd="$(approved_report_requests_context_update "$rel_path" "${source_alerts[$rel_path]}")"; then
+            elif [[ "$source_equivalent_rc" -eq 2 ]]; then
+                emit_actionable \
+                    "WARN: ${basename_file} (source_equivalent boundary rejected: ${SOURCE_EQUIVALENT_REJECT_REASON})" \
+                    "source_equivalent requestは生成せず、対象repoのorigin/mainとcommit実在性を確認せよ。"
+                HAS_WARN=1
+                continue
+            fi
+        fi
+        if request_cmd="$(approved_report_requests_context_update "$rel_path" "${source_alerts[$rel_path]}")"; then
             latest_hash=""
             [[ "${source_alerts[$rel_path]}" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] \
                 && latest_hash="${BASH_REMATCH[1]}"
