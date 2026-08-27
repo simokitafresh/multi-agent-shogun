@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_source_only_remote_new_id_202608190023
-  timestamp: '2026-08-18T15:41:02Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_source_only_remote_new_id_202608190023'
 - cmd_id: cmd_karo_hotfix_pregate_shared_convergence_202608190118
   timestamp: '2026-08-18T16:36:10Z'
   ninja: system
@@ -1308,3 +1295,18 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828'
+- cmd_id: cmd_reflux_insight_202608280403_hayate
+  timestamp: '2026-08-27T20:30:41Z'
+  ninja: hayate
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+  category: report_yaml_format
+  root_signature: 'report_yaml_format::general'
+  detail: 'infra project path旧/mnt/cによりreport commitを旧repo解決しancestry BLOCK'
+  root_cause: 'task_worktree_pathをext4正本へyaml_field_setし同一GATE再実行'
+  lesson_required: true
+  lesson_disposition: 'new_lesson_required'
+  lesson_reference: ''
+  brainwash_check: '洗脳#2検証スキップ防止: report ancestry BLOCK 1件→PASS 1件、merge-base ancestor rc=0'
+  resolved_by_cmd: ''
