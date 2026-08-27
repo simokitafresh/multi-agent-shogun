@@ -21,7 +21,12 @@ SCRIPT_DIR="${_self%/*}"
 REPO_ROOT="${SCRIPT_DIR%/*}"
 unset _self
 LOG_FILE="${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
-LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-/tmp/karo_workarounds.lock}"
+# All writers of the shared ledger must derive the same lock from the target
+# path.  A fixed legacy lock here raced with cmd_complete_gate's path-derived
+# lock, allowing one atomic replace to erase the other's append.
+# shellcheck source=scripts/lib/lock_path.sh
+source "$REPO_ROOT/scripts/lib/lock_path.sh"
+LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-$(lock_path "$LOG_FILE")}"
 DISABLE_ALERTS="${KARO_WORKAROUND_DISABLE_ALERTS:-false}"
 BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
 # A workaround is the point where a reusable lesson is born.  Record that
