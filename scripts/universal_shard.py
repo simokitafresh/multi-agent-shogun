@@ -19,12 +19,15 @@ def plan(d):
  eligible=sorted([w for w in workers if w.get("idle") is True and caps.intersection(w.get("capabilities") or [])],key=lambda x:str(x["id"]))
  n=min(len(eligible),int(d.get("max_workers",len(eligible))))
  if n<2: raise ValueError("N<2: silent single-worker fallback is forbidden")
+ if len(items)<n: raise ValueError("zero-assignment shard forbidden: items fewer than workers")
  selected=next((combo for combo in itertools.combinations(eligible,n) if caps.issubset(set().union(*(set(w.get("capabilities") or []) for w in combo)))),None)
  if selected is None: raise ValueError("no eligible worker set covers all required capabilities")
  bins={str(w["id"]):{"worker":w,"weight":0.0,"items":[]} for w in selected}
  for item in sorted(items,key=lambda x:(-float(x.get("weight",0)),str(x["id"]))):
   weight=float(item.get("weight",0)); cap=item.get("capability")
-  if weight<=0 or not cap: raise ValueError(f"item {item.get('id')} requires positive weight and capability")
+  if weight<0 or not cap: raise ValueError(f"item {item.get('id')} requires non-negative weight and capability")
+  if weight==0 and item.get("measured",True) is not False:
+   raise ValueError(f"item {item.get('id')} zero weight must be marked unmeasured")
   choices=[b for b in bins.values() if cap in (b["worker"].get("capabilities") or [])]
   if not choices: raise ValueError(f"no eligible worker for capability {cap}")
   target=min(choices,key=lambda b:(b["weight"],str(b["worker"]["id"])))

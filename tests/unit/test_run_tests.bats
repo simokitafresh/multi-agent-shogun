@@ -608,6 +608,19 @@ SH
   grep -Fq 'bash scripts/run_tests.sh push' "$workflow"
 }
 
+# test_necessity: CI shard assignment must consume the shared inventory/ledger
+# planner so new zero-weight files are assigned exactly once and empty shards
+# fail closed instead of becoming false-success jobs.
+@test "CI shard assignment uses universal planner and rejects empty shards" {
+  workflow="$ROOT/.github/workflows/test.yml"
+
+  grep -Fq 'scripts/universal_shard.py' "$workflow"
+  grep -Fq 'SHARD_INVENTORY' "$workflow"
+  grep -Fq 'zero-assignment shard forbidden' "$workflow"
+  grep -Fq 'measured": path not in missing_from_ledger' "$workflow"
+  ! grep -Fq 'buckets = [(0.0, index, []) for index in range(shard_count)]' "$workflow"
+}
+
 @test "CI failure evidence is bounded and receipts are always uploaded" {
   workflow="$ROOT/.github/workflows/test.yml"
 
