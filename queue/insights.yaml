@@ -5829,7 +5829,10 @@ insights:
   priority: "medium"
   source: "shogun"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-08-28T06:36:24+09:00"
 - id: INS-20260828-035905460-eac7
   ts: "2026-08-28T03:59:05+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_強くてニューゲーム_20260828_0357]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0852; score=44.0) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_強くてニューゲーム_20260730_1355; score=44.0) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.4)。概念定義とaliases追加を検討せよ"
@@ -5997,4 +6000,7 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T06:36:32+09:00"
