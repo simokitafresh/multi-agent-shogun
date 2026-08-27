@@ -3944,17 +3944,6 @@ PY
         return 0
     fi
 
-    gate_detail_begin "runtime_publish.remote_tip_lookup" external_wait
-    upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
-    remote=${upstream_ref%%/*}
-    push_ref="refs/heads/${upstream_ref#*/}"
-    remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
-    if ! [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]]; then
-        gate_detail_finish
-        return 1
-    fi
-    gate_detail_finish
-
     gate_detail_begin "runtime_publish.local_source_build" pure_processing
     temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/shogun-postclear-runtime.XXXXXX") || return 1
     source_repo="$temp_parent/source"
@@ -4024,37 +4013,13 @@ PY
         }
     done
     # The shared runtime lock protects local generation admission and source
-    # composition only. Network publication is independently guarded by the
-    # remote-tip/source-only contract and the narrow commit lock below; holding
-    # this lock across push/fetch serialized unrelated publishers for minutes.
+    # composition only. Remote publication belongs to Karo's oldest-first
+    # shared-main lane; this runtime worker never writes the origin ref.
     exec {publish_lock_fd}>&-
-    echo "  runtime publish: local generation admitted; network lock released"
-    # Publish one field at a time.  In particular, an insights-only source
-    # commit reaches the existing stable-ID merge lane even when other runtime
-    # fields are dirty in the same generation.  Refresh the tip between fields
-    # so remote-only history is composed rather than replayed or discarded.
-    gate_detail_begin "runtime_publish.remote_source_push" external_wait
-    for source_sha in "${source_shas[@]}"; do
-        if ! push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "$source_sha"; then
-            gate_detail_finish
-            echo "  runtime publish: BLOCK (source-only publish failed)" >&2
-            return 1
-        fi
-        remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
-        if ! [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]]; then
-            gate_detail_finish
-            return 1
-        fi
-    done
-    if ! git -C "$repo" fetch -q "$remote" "$push_ref"; then
-        gate_detail_finish
-        return 1
-    fi
-    gate_detail_finish
-    # Network publication above remains under the runtime singleflight lock,
-    # but the shared root HEAD/index mutation below must join the same
-    # repository-wide commit ledger as ninja_scope_commit.  Keep this narrow:
-    # a network wait must not occupy the commit ledger used by other ninjas.
+    echo "  runtime publish: local generation admitted; origin publication deferred to Karo"
+    # The shared root HEAD/index mutation joins the same repository-wide commit
+    # ledger as ninja_scope_commit. Keep this narrow: Karo alone owns remote
+    # publication and will push this shared-main checkpoint oldest-first.
     gate_detail_begin "runtime_publish.commit_lock_wait" external_wait
     commit_lock_path="$(lock_path "$git_common_dir/ninja-scope-commit")"
     exec {commit_lock_fd}>"$commit_lock_path" || return 1
@@ -4085,9 +4050,10 @@ PY
         echo "  runtime publish: BLOCK (shared HEAD changed before mutation with overlap or retry exhausted $before_head -> $after_head)" >&2
         return 1
     fi
-    # The published blob is the authoritative composition (including remote
-    # insight IDs).  Bring only owned runtime paths back before checkpointing;
-    # unrelated local commits and dirty paths remain untouched.
+    # The local source snapshot was verified above. Commit only the owned
+    # runtime paths on shared main; unrelated local commits and dirty paths
+    # remain untouched. Remote-only history is reconciled by Karo's convergence
+    # lane before the oldest-first push.
     # A transient (non-optional) index.lock can still be held briefly by an
     # unrelated writer even with GIT_OPTIONAL_LOCKS=0 above; observed genuine
     # holders self-release within 5s (cmd_karo_hotfix_git_index_singleflight_
@@ -4096,28 +4062,26 @@ PY
     local _idx_lock_try
     gate_detail_begin "runtime_publish.index_lock_retry_wait" external_wait
     for _idx_lock_try in 1 2 3 4 5 6 7; do
-        if git -C "$repo" checkout "$remote_tip" -- "${runtime_paths[@]}"; then
+        if git -C "$repo" add -- "${runtime_paths[@]}"; then
             break
         fi
         [ "$_idx_lock_try" -lt 7 ] || return 1
         sleep 1
     done
     gate_detail_finish
-    gate_detail_begin "runtime_publish.shared_checkout_merge" pure_processing
-    git -C "$repo" commit -m "runtime: local ${phase} checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
-    if ! git -C "$repo" merge --no-edit "$remote_tip" >/dev/null 2>&1; then
-        git -C "$repo" merge --abort >/dev/null 2>&1 || true
-        if shared_path_merge_commit "$repo" "$remote_tip" "${runtime_paths[@]}"; then
-            echo "  runtime publish: conflict fallback (target paths only; unrelated history preserved)"
-        else
-            echo "  runtime publish: BLOCK (shared HEAD/index convergence failed)" >&2
-            return 1
-        fi
+    gate_detail_begin "runtime_publish.shared_main_field_aware_commit" pure_processing
+    if ! git -C "$repo" diff --cached --quiet -- "${runtime_paths[@]}"; then
+        git -C "$repo" commit -m "runtime: local ${phase} field-aware checkpoint ${CMD_ID}" -- "${runtime_paths[@]}" >/dev/null 2>&1 || return 1
     fi
     gate_detail_finish
     exec {commit_lock_fd}>&-
     git -C "$repo" worktree remove --force "$source_repo" >/dev/null 2>&1 || true
     rmdir -- "$temp_parent" 2>/dev/null || true
+    local rev_list_observation
+    rev_list_observation=$(git -C "$repo" rev-list --left-right --count origin/main...HEAD 2>/dev/null || printf 'unavailable')
+    printf '%s\t%s\truntime_shared_main_checkpoint\t%s\n' \
+        "$(date -Iseconds)" "$CMD_ID" "$rev_list_observation" >> "$GATES_DIR/postclear_publication.log"
+    echo "  runtime publish: rev-list origin/main...HEAD=${rev_list_observation} (Karo oldest-first observation point)"
     echo "  runtime publish: OK (tracked runtime dirty ${#runtime_paths[@]} -> 0)"
     )
 }

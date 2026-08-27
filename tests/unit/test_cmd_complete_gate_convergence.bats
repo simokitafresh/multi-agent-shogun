@@ -44,10 +44,10 @@ teardown() {
 # test_necessity: runtime dirty publication must finish before the shared gate
 # source merge, including overlap where equivalent content has a different SHA.
 @test "pregate runtime publication precedes shared source convergence" {
-    run bash -c '
+    run env GATE_PATH="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh" \
+        ROOT_PATH="$BATS_TEST_TMPDIR/runtime-convergence" bash -c '
         set -euo pipefail
-        gate=$1; root=$2
-        source "$(dirname "$gate")/lib/lock_path.sh"
+        gate=$GATE_PATH; root=$ROOT_PATH
         remote=$root/remote.git; shared=$root/shared; publisher=$root/publisher
         git init -q --bare "$remote"
         git init -q -b main "$shared"
@@ -60,37 +60,52 @@ teardown() {
         git -C "$shared" commit -qm initial
         git -C "$shared" remote add origin "$remote"
         git -C "$shared" push -qu -u origin main
+        remote_before=$(git --git-dir "$remote" rev-parse refs/heads/main)
         printf "runtime checkpoint\n" >> "$shared/context/infrastructure.md"
 
         source <(sed -n "/^postclear_runtime_path_is_publishable()/,/^}/p" "$gate")
         source <(sed -n "/^publish_postclear_runtime_deltas()/,/^}/p" "$gate")
         source <(sed -n "/^converge_shared_execution_sources()/,/^}/p" "$gate")
         push_from_clean_worktree() {
-            local repo=$1 remote_name=$3 source_sha=$6 remote_url
-            remote_url=$(git -C "$repo" remote get-url "$remote_name")
-            git clone -q --branch main "$remote_url" "$publisher"
-            git -C "$publisher" config user.name test
-            git -C "$publisher" config user.email test@example.invalid
-            git -C "$publisher" fetch -q "$repo" "$source_sha"
-            git -C "$publisher" cherry-pick FETCH_HEAD >/dev/null
-            GIT_COMMITTER_DATE="2030-01-01T00:00:00+00:00" git -C "$publisher" commit -q --amend --no-edit
-            printf "%s\n" "$source_sha" > "$root/source.sha"
-            git -C "$publisher" rev-parse HEAD > "$root/published.sha"
-            git -C "$publisher" push -q origin HEAD:main
+            printf "unexpected origin push\n" > "$root/origin-push-called"
+            return 99
         }
         SCRIPT_DIR=$shared GATES_DIR=$shared/queue/gates CMD_ID=cmd_fixture
         publish_postclear_runtime_deltas pregate
-        source_sha=$(cat "$root/source.sha"); published_sha=$(cat "$root/published.sha")
-        test "$source_sha" != "$published_sha"
-        test "$(git -C "$shared" rev-parse "$source_sha:context/infrastructure.md")" = \
-             "$(git -C "$shared" rev-parse "$published_sha:context/infrastructure.md")"
+        test ! -e "$root/origin-push-called"
+        shared_commit=$(git -C "$shared" rev-parse HEAD)
+        test "$(git -C "$shared" show "$shared_commit:context/infrastructure.md")" = $'"'"'before\nruntime checkpoint'"'"'
+        test "$(git --git-dir "$remote" rev-parse refs/heads/main)" = "$remote_before"
+        test "$(git -C "$shared" diff-tree --no-commit-id --name-only -r "$shared_commit^" "$shared_commit")" = "context/infrastructure.md"
         converge_shared_execution_sources "$shared" scripts/cmd_complete_gate.sh
         test -z "$(git -C "$shared" status --porcelain=v1 --untracked-files=no)"
         test "$(git -C "$shared" show HEAD:context/infrastructure.md)" = $'"'"'before\nruntime checkpoint'"'"'
-        printf "runtime_checkpoint_first=1 overlap_equivalence=1 differing_sha=1\n"
-    ' _ "$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh" "$BATS_TEST_TMPDIR/runtime-convergence"
+        test -n "$(grep -F 'runtime_shared_main_checkpoint' "$shared/queue/gates/postclear_publication.log")"
+        printf "runtime_checkpoint_first=1 shared_main_commit=1 origin_push_calls=0\n"
+    '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"runtime_checkpoint_first=1 overlap_equivalence=1 differing_sha=1" ]]
+    [[ "$output" == *"runtime_checkpoint_first=1 shared_main_commit=1 origin_push_calls=0" ]]
+}
+
+# test_necessity: runtime publication must never call the origin-writing helper;
+# Karo's oldest-first shared-main lane is the sole remote publication owner.
+@test "runtime publisher has no direct origin push caller" {
+    run python3 - "$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh" <<'PY'
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index("publish_postclear_runtime_deltas()")
+end = text.index("\n}\n\n# The semantic index/map writer", start) + 2
+block = text[start:end]
+assert "push_from_clean_worktree" not in block
+assert "git -C \"$clean_repo\" push" not in block
+assert "runtime_publish.shared_main_field_aware_commit" in block
+assert "runtime_shared_main_checkpoint" in block
+print("runtime_origin_push_callers=0 shared_main_field_aware_commit=1 rev_list_observation=1")
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "runtime_origin_push_callers=0 shared_main_field_aware_commit=1 rev_list_observation=1" ]
 }
 
 # test_necessity: repeated failed preflight archives for one logical task must
