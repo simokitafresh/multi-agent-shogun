@@ -5130,4 +5130,14 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
+  status: resolved
+  resolved_reason: "誤検出: origin/main 07fae4bd8(19:16:33)に同一blob到達済み(git diff origin/main 010cb6b20 -- tests/unit/test_context_freshness_check.bats = 空)。将軍が fetch 結果を確認せず(2>/dev/null)local 比較で偽CLEARと断定した。T76 CLEAR は正当。cherry-pick 010cb6b20 は同一内容ゆえ merge 無害"
+  action_artifact: "git diff origin/main 010cb6b20 -- tests/unit/test_context_freshness_check.bats"
+  resolved_at: "2026-08-27T19:28:37+09:00"
+- id: INS-20260827-193014656-87ea
+  ts: "2026-08-27T19:30:14+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[9p_git_flock_RPC待ち_本日停滞3系統]] は既存aliasesに一致なし。類似概念TOP3: yaml_safe_write(YAML安全書込み; alias=9p_git_flock_RPC待ち; score=72.7) / infrastructure_ops(インフラ運用基盤; alias=flock; score=20.0) / context_freshness_retry_budget(context鮮度git再試行予算; alias=CFC_GIT_RETRY_TIMEOUT; score=10.2)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
