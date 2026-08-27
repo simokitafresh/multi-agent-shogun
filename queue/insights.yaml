@@ -6158,3 +6158,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-075151352-4868
+  ts: "2026-08-28T07:51:51+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[control_repoでのrev-parse]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=auto deploy blocked_by control; score=12.0) / yaml_safe_write(YAML安全書込み; alias=shogun_to_karo parse error; score=11.7) / semantic_dictionary_design(セマンティック辞書構想; alias=related_concepts; score=6.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
