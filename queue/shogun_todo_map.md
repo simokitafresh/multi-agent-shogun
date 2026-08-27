@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 12:24 更新(inbox: T56 配備)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 12:33 更新(強くてニューゲーム保存)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -68,3 +68,4 @@
 - [x] T59(11:04 push 下知 msg_103607/105004 が read=true のまま未実行(rev-list 2 12)→再下知 msg_110407、家老 Working) 家老の push 未実行(T56 UNACTIONED 再現) ★origin=HEAD 維持
 - [ ] T60(11:33 T10 report: ninja_scope_commit git_commit 中央値 9487ms・scope_sync 5846ms・累積 196s/113s が本日の支配。gate 本体は 0.07s) らせん次弾=ninja_scope_commit の git_commit/scope_sync 本質短縮(重複 index 同期・read_tree 1081ms の削減) ★commit 1回あたり −5秒×日50回
 - [x] T61(12:04 本日 UNACTIONED 5回目: 11:34 archive 下知/11:44 追加AC が適用不能で半蔵から再配備要請→家老未処理。T56 構造修正は T57 終端後に直列) 家老の未処理再発の計数 ★T56 の必要性の実証データ
+- [x] T62(12:33 c33b17b5d: instructions/shogun.md『復帰後の型・第二弾 3則』+LS122(LS121吸収)+senkyoku-log、記憶DB session_save_20260827_1227、auto-memory feedback_recovery_pattern_20260827_second+MEMORY.md 索引) 強くてニューゲーム保存(殿指示12:27) ★/clear後の復帰精度=再開までの空白最小
