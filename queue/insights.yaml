@@ -5165,3 +5165,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-202941459-6327
+  ts: "2026-08-27T20:29:41+09:00"
+  insight: "[[進捗をわかりやすく説明してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗をわかりやすく説明してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
