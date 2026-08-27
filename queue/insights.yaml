@@ -5799,3 +5799,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-234152905-16c5
+  ts: "2026-08-27T23:41:52+09:00"
+  insight: "[[殿指示 23 12『READMEを覚醒してアップデート]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=cmds query=殿指示 2026-08-27 23:12『READMEを覚醒してアップデート。誰もが他のPCにクローンして使えるように整合性をとろう』。cmd_4408 の ext4 移設(relocate e644881f5)で旧 /mnt/c/tools/... が /home/simokitafresh/multi-agent-shogun に機械置換され、ユーザー名 quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
+  priority: "medium"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
