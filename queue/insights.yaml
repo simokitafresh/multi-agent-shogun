@@ -5575,3 +5575,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-231429787-1b3e
+  ts: "2026-08-27T23:14:29+09:00"
+  insight: "[[一次情報もアップデートしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=一次情報もアップデートしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
