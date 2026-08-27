@@ -25,7 +25,27 @@ LOG_FILE="${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 # path.  A fixed legacy lock here raced with cmd_complete_gate's path-derived
 # lock, allowing one atomic replace to erase the other's append.
 # shellcheck source=scripts/lib/lock_path.sh
-source "$REPO_ROOT/scripts/lib/lock_path.sh"
+if [[ -f "$REPO_ROOT/scripts/lib/lock_path.sh" ]]; then
+    source "$REPO_ROOT/scripts/lib/lock_path.sh"
+else
+    # Isolated validation fixtures may copy this writer without the shared
+    # library.  Keep the same derivation available without weakening the
+    # production lock boundary.
+    lock_path() {
+        local file_path="$1"
+        case "$file_path" in
+            /mnt/c/*|/mnt/d/*)
+                local hash=5381 i c
+                for (( i=0; i<${#file_path}; i++ )); do
+                    printf -v c '%d' "'${file_path:$i:1}"
+                    (( hash = hash * 33 + c ))
+                done
+                printf '/tmp/shogun_lock_%016x.lock' "$hash"
+                ;;
+            *) printf '%s.lock' "$file_path" ;;
+        esac
+    }
+fi
 LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-$(lock_path "$LOG_FILE")}"
 DISABLE_ALERTS="${KARO_WORKAROUND_DISABLE_ALERTS:-false}"
 BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
