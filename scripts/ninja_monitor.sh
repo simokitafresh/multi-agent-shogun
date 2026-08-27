@@ -1118,7 +1118,7 @@ _task_parent_cmd_for_clear_count() {
     fi
 
     if [ -z "$context" ]; then
-        log "CLEAR-COUNT-SKIP: $agent_name task_status=${task_status:-empty} has no valid cmd context"
+        log "CLEAR-COUNT-SKIP: $agent_name task_status=${task_status:-empty} has no valid cmd context generation=${NINJA_MONITOR_GENERATION:-legacy}"
         printf '%s\n' "no_cmd"
         return 0
     fi
@@ -1135,7 +1135,7 @@ record_clear_attempt_or_force_idle() {
 
     [ -n "$cmd_id" ] || cmd_id=$(_task_parent_cmd_for_clear_count "$agent_name")
     if [ "$cmd_id" = "no_cmd" ]; then
-        log "CLEAR-COUNT-SKIP: $agent_name has no cmd context, reason=$reason"
+        log "CLEAR-COUNT-SKIP: $agent_name has no cmd context, reason=$reason generation=${NINJA_MONITOR_GENERATION:-legacy}"
         return 0
     fi
     # Failed-task recovery already has generation-scoped notification and
@@ -1143,7 +1143,7 @@ record_clear_attempt_or_force_idle() {
     # loop counter so repeated recovery attempts are not converted into a
     # forced-idle block after the terminal context becomes available.
     if [ -f "$task_file" ] && [ "$(yaml_field_get "$task_file" "status" "")" = "failed" ]; then
-        log "CLEAR-COUNT-FAILED-BYPASS: $agent_name cmd=$cmd_id reason=$reason"
+        log "CLEAR-COUNT-FAILED-BYPASS: $agent_name cmd=$cmd_id reason=$reason generation=${NINJA_MONITOR_GENERATION:-legacy}"
         return 0
     fi
     max_clear=$(get_max_clear_per_cmd)
@@ -1159,7 +1159,7 @@ record_clear_attempt_or_force_idle() {
     printf '%s\t%s\n' "$cmd_id" "$count" > "$state_file"
 
     if [ "$count" -le "$max_clear" ]; then
-        log "CLEAR-COUNT: $agent_name cmd=$cmd_id count=${count}/${max_clear} reason=$reason"
+        log "CLEAR-COUNT: $agent_name cmd=$cmd_id count=${count}/${max_clear} reason=$reason generation=${NINJA_MONITOR_GENERATION:-legacy}"
         return 0
     fi
 
