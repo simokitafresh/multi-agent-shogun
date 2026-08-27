@@ -4519,3 +4519,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-093649354-8790
+  ts: "2026-08-27T09:36:49+09:00"
+  insight: "09:36 家老 inbox_watcher が2本並走(pid 2583354 09:33:15 起動 / 2597748 09:36:24 起動)。6通の task_assigned は delivery FAILURE(5回未確認)後、09:36 の再起動で『↳ inbox6』が受理され Working へ。二重 watcher の由来(watchdog再起動で旧が exit しない)と、再起動が nudge 受理の契機になっている因果を切り分ける"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
