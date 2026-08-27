@@ -4446,3 +4446,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-090040003-b80a
+  ts: "2026-08-27T09:00:40+09:00"
+  insight: "[[artifact watch lifecycle Stopped watching Artifact 将軍 全体状況マッ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifact-watch-lifecycle Stopped watching Artifact: \"将軍 全体状況マップ\" (connection lost)</sum…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
