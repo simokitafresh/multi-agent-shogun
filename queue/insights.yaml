@@ -531,7 +531,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4361"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既知修正を一次確認済み: scripts/deploy_task/modifiers.sh は USEFUL_RATE_THRESHOLD=0.40 を実装し、MAX_INJECT=3 と MAX_UNIVERSAL=1 によりuniversalが1件のときtask-specific 2枠を確保する。cmd_4361のstate/transaction抽出はcmd-chronicleとsemantic indexに登録済みで、新規コード修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-070317619-38ed;implementation=scripts/deploy_task/modifiers.sh:L37,L1278,L1448-L1482;source=context/cmd-chronicle.md:L208;semantic=docs/semantic-index/index.md:L8114-L8115;verification=rg and formula check"
+  resolved_at: "2026-08-28T00:12:09+09:00"
 - id: INS-20260822-070331645-5a94
   ts: "2026-08-22T07:03:31+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cluster A合流実証]] は既存aliasesに一致なし。類似概念TOP3: recalculate_pipeline(再計算パイプライン; alias=recalculate_fast; score=5.7) / investment_knowledge_base(投資知識辞書; alias=Structural Break Tests; score=5.7) / causal_traversal_pipeline(因果辺トラバース統合パイプライン(Obsidian×セマンティック); alias=causal_traversal; score=5.7)。概念定義とaliases追加を検討せよ"
@@ -5498,3 +5501,150 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-27T22:57:49+09:00"
+- id: INS-20260828-000333524-5d42
+  ts: "2026-08-28T00:03:33+09:00"
+  insight: "semantic_index_update新概念候補: discussion:現在の運用実績も古いね。まだまだMECEではないようだ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:04:24+09:00"
+- id: INS-20260828-000545727-d2d1
+  ts: "2026-08-28T00:05:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:Linux Mac ユーザーの項目も本当にこれでいいのか？現状と一致しているかな？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:08:48+09:00"
+- id: INS-20260828-000659659-a53d
+  ts: "2026-08-28T00:06:59+09:00"
+  insight: "[[9p root fix runbook 20260827 mdもアップデートしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=9p_root_fix_runbook_20260827.mdもアップデートしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:11+09:00"
+- id: INS-20260828-000705407-90d0
+  ts: "2026-08-28T00:07:05+09:00"
+  insight: "[[をさらに改良する工夫は思いついたか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=をさらに改良する工夫は思いついたか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:11+09:00"
+- id: INS-20260828-000710952-28b2
+  ts: "2026-08-28T00:07:10+09:00"
+  insight: "[[simokitafresh@2025LG17 ~$ cd mnt c tools multi agent shogun ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=simokitafresh@2025LG17:~$ cd /mnt/c/tools/multi-agent-shogun && bash scripts/migrate_to_ext4_cutover.sh [cutover] final rsync: /mnt/c/tools…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:08:26+09:00"
+- id: INS-20260828-000716715-7c37
+  ts: "2026-08-28T00:07:16+09:00"
+  insight: "[[いまのまとめを作ったうえで俺だけが使う現在のmulti agent shinbox1o]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いまのまとめを作ったうえで俺だけが使う現在のmulti-agent-shinbox1o"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:11+09:00"
+- id: INS-20260828-000724055-c905
+  ts: "2026-08-28T00:07:24+09:00"
+  insight: "[[何も変わらないが待機していればいいのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=何も変わらないが待機していればいいのか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:12+09:00"
+- id: INS-20260828-000732427-e284
+  ts: "2026-08-28T00:07:32+09:00"
+  insight: "[[ext4にしたことも大きな違いだよな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ext4にしたことも大きな違いだよな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:12+09:00"
+- id: INS-20260828-000740189-02d8
+  ts: "2026-08-28T00:07:40+09:00"
+  insight: "[[現在の運用実績も古いね]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=現在の運用実績も古いね。まだまだMECEではないようだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:12+09:00"
+- id: INS-20260828-000755185-c560
+  ts: "2026-08-28T00:07:55+09:00"
+  insight: "[[殿指示 23 12『READMEを覚醒してアップデート]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-08-27 23:12『READMEを覚醒してアップデート。誰もが他のPCにクローンして使えるように整合性をとろう』。cmd_4408 の ext4 移設(relocate e644881f5)で旧 /mnt/c/tools/... が /home/simokitafresh/multi-agent-shogun に機械置換され、ユーザー名"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:08:26+09:00"
+- id: INS-20260828-000757510-d7d6
+  ts: "2026-08-28T00:07:57+09:00"
+  insight: "[[一次情報もアップデートしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=一次情報もアップデートしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:12+09:00"
+- id: INS-20260828-000808146-e74f
+  ts: "2026-08-28T00:08:08+09:00"
+  insight: "[[クローン可搬性の根治 scripts config skills instructions からユーザー固有絶対パス h]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=クローン可搬性の根治: scripts/config/skills/instructions からユーザー固有絶対パス(/home/simokitafresh)を除去しリポジトリ相対解決へ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260828-000808256-f920
+  ts: "2026-08-28T00:08:08+09:00"
+  insight: "[[ext4化でLLMの応答が良くなった気がするが]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ext4化でLLMの応答が良くなった気がするが、気のせいか？事実か？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:12+09:00"
+- id: INS-20260828-000814726-b0f9
+  ts: "2026-08-28T00:08:14+09:00"
+  insight: "[[multi agent shogunのreadmeを覚醒してアップデートしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=multi-agent-shogunのreadmeを覚醒してアップデートしよう。誰もが他のPCにクローンして使えるように整合性をとろう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:08:26+09:00"
+- id: INS-20260828-001020006-6546
+  ts: "2026-08-28T00:10:20+09:00"
+  insight: "[[30分loop 殿指示14 34「進捗を確認し]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=lord query=30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HEAD/gh run list で一次確… quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
+  priority: "medium"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T00:10:32+09:00"
