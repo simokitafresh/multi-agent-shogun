@@ -5663,38 +5663,63 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:32:10+09:00"
 - id: INS-20260827-232725264-f41e
   ts: "2026-08-27T23:27:25+09:00"
   insight: "semantic_index_update新概念候補: discussion:ext4にしたことも大きな違いだよな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:32:11+09:00"
 - id: INS-20260827-232929604-c5e0
   ts: "2026-08-27T23:29:29+09:00"
   insight: "semantic_index_update新概念候補: discussion:原則的に個人使用だがOSSにも対応するにあたって危険な点や改修が必要な点もまとめておく必要があるな。いまのmulti agent shogunはそのままでOSS は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:32:11+09:00"
 - id: INS-20260827-233142015-133c
   ts: "2026-08-27T23:31:42+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_README覚醒_他PCクローン整合_20260827_2312]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_他PCクローン整合_20260827_1355; score=30.5) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260817_0000; score=14.9) / dm_fusion_app(DM-Fusionアプリ; alias=殿指示_admin設定+Xシェア_20260628; score=14.7)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:32:11+09:00"
 - id: INS-20260827-233149778-91e9
   ts: "2026-08-27T23:31:49+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[readme_ja_reference_20260827]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4284_AC1_reopened; score=5.3) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_memo_20260811_0337; score=5.3) / cmd_quality_logging(cmd設計品質ログ; alias=zzz_gunshi_unreached_20260727; score=5.2)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:32:11+09:00"
 - id: INS-20260827-233156433-343e
   ts: "2026-08-27T23:31:56+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[OSS化方針_エクスポート方式_20260827]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_家老サポート_20260827_0253; score=3.5) / gate_bypass_prevention(ゲート迂回防止; alias=shogun_Q6_20260716; score=2.9) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_memo_20260811_0337; score=2.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T23:32:11+09:00"
+- id: INS-20260827-233422540-89b8
+  ts: "2026-08-27T23:34:22+09:00"
+  insight: "semantic_index_update新概念候補: discussion:いまのまとめを作ったうえで俺だけが使う現在のmulti agent shinbox1o は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
