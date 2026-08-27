@@ -157,7 +157,7 @@ codd:
 |------|---|
 | id | strong_new_game_completion_contract |
 | label | 強くてニューゲーム完遂契約 |
-| aliases | 今クリアされても強くてニューゲーム, 今クリアされても今より強くてニューゲーム, 殿指示_今クリアされても強くてニューゲーム_20260810_0330, 殿指示_今クリアされても強くてニューゲーム_20260810_0818, 殿指示_強くてニューゲーム_20260813_1648, 殿指示_強くてニューゲーム_20260817_0000, RB6再採点復帰点20260813, RB6_post355_prices_oracle再採点, RB6_metrics残差980, RB6_BLOCK_20260813_1704, DM本番PITR_20260816, run397中断_run398自己復元, 月次リターン実装フェーズ高速回転, 通常実装33/33, 裁可限定2, 殿裁可_封印3件_20260810_0819, T-e1-e3三重防御完了, T-e4本番検証_cmd_4284, cmd_4284_remote_divergence, tree_level_merge_ad976db7, cmd_4284_AC1_reopened, single slow test 292.92s, review overlap rootfix, ボトルネック移動禁止, 完遂宣言後startup再実行, startup再起動検証, 配備品質契約射影, CI RED一担当原則, BLOCK CRITICAL 0を二値確認する, karo_clear_recovery_checkpoint, 家老強くてニューゲーム復帰点, 将軍強くてニューゲーム復帰点20260731, cmd_4200復帰点, hot-script第一弾復帰点, deploy_fixture_case51, memory_db_token_search_full_unit, run_tests親環境隔離, hot_script第一弾_12_of_12, 家老強くてニューゲーム復帰点更新, 表コンテナ内スクロール是正_cmd_4209, RB6_metrics最終判定v3, 殿指示_強くてニューゲーム_20260817_0852, 後着差分3_ID保持, tobisaru_review_pending, reflux_dirty_dispatch_blocked, 差分削除禁止, 家老強くてニューゲーム復帰点を新規固定, 殿指示_強くてニューゲーム_20260817_1507, 殿指示_今クリアされても今より強くてニューゲーム_20260827_0856, 家老強くてニューゲーム復帰点20260827, T12待機廃止, T40実回転, T47_idle起点固定hotfix |
+| aliases | 今クリアされても強くてニューゲーム, 今クリアされても今より強くてニューゲーム, 殿指示_今クリアされても強くてニューゲーム_20260810_0330, 殿指示_今クリアされても強くてニューゲーム_20260810_0818, 殿指示_強くてニューゲーム_20260813_1648, 殿指示_強くてニューゲーム_20260817_0000, RB6再採点復帰点20260813, RB6_post355_prices_oracle再採点, RB6_metrics残差980, RB6_BLOCK_20260813_1704, DM本番PITR_20260816, run397中断_run398自己復元, 月次リターン実装フェーズ高速回転, 通常実装33/33, 裁可限定2, 殿裁可_封印3件_20260810_0819, T-e1-e3三重防御完了, T-e4本番検証_cmd_4284, cmd_4284_remote_divergence, tree_level_merge_ad976db7, cmd_4284_AC1_reopened, single slow test 292.92s, review overlap rootfix, ボトルネック移動禁止, 完遂宣言後startup再実行, startup再起動検証, 配備品質契約射影, CI RED一担当原則, BLOCK CRITICAL 0を二値確認する, karo_clear_recovery_checkpoint, 家老強くてニューゲーム復帰点, 将軍強くてニューゲーム復帰点20260731, cmd_4200復帰点, hot-script第一弾復帰点, deploy_fixture_case51, memory_db_token_search_full_unit, run_tests親環境隔離, hot_script第一弾_12_of_12, 家老強くてニューゲーム復帰点更新, 表コンテナ内スクロール是正_cmd_4209, RB6_metrics最終判定v3, 殿指示_強くてニューゲーム_20260817_0852, 後着差分3_ID保持, tobisaru_review_pending, reflux_dirty_dispatch_blocked, 差分削除禁止, 家老強くてニューゲーム復帰点を新規固定, 殿指示_強くてニューゲーム_20260817_1507, 殿指示_今クリアされても今より強くてニューゲーム_20260827_0856, 家老強くてニューゲーム復帰点20260827, T12待機廃止, T40実回転, T47_idle起点固定hotfix, 後着事実追記型訂正_20260827_0914 |
 | related_concepts | deepdive_principles, gate_quality_framework, growth_loop, three_layer_memory_system, context_freshness_retry_budget, gist_master_three_step_rule |
 
 | 種別 | パス/参照 |
@@ -169,8 +169,9 @@ codd:
 | file | `docs/research/karo-strong-new-game-checkpoint-20260817-0005.md` — PITR復旧後run397中断→run398 4業務hash自己復元と共有HEAD分岐を固定した家老復帰正本 |
 | file | `docs/research/karo-strong-new-game-checkpoint-20260817-0858.md` — infra reflux完了成果、飛猿SG7待ち、後着3 insight保持、dirty dispatch BLOCKを固定した家老復帰正本 |
 | file | `docs/research/karo-strong-new-game-checkpoint-20260822-2117.md` — GA-491 doc 4/4・terminal gate 2/2 blob一致、insights 138 unique、active task 0、小太郎stale failed終端済みを固定した家老復帰正本。SHA256=`9011affd715649d92991d9afe4178518bbff964a3ff342eddb4f95b9435cad76` |
-| file | `docs/research/karo-strong-new-game-checkpoint-20260827-0858.md` — T12待機廃止、T40 reflux実回転、T47 idle起点固定hotfix、active 2、Git 0/0を固定した家老復帰正本。SHA256=`2655cb43eddc4633d7b708ccff38124190c0a1b5ea31f6408fbe08f1e2168109` |
+| file | `docs/research/karo-strong-new-game-checkpoint-20260827-0858.md` — T12待機廃止、T40 reflux実回転、T47 live検証BLOCK、T21半蔵RC、後着下知6件、Git 0/0を固定した家老復帰正本。SHA256=`76b072e67d8dae9a2ee8cab2bd572aa8818921aa008fee347242b0ed43fd9fb6` |
 | causal | [[殿指示_今クリアされても今より強くてニューゲーム_20260827_0856]] -> [[T40_reflux実回転]] -> [[T47_idle起点固定hotfix]] -> [[strong_new_game_completion_contract]] |
+| causal | [[殿指示_今クリアされても今より強くてニューゲーム_20260827_0856]] -> [[後着事実追記型訂正_20260827_0914]] -> [[strong_new_game_completion_contract]] |
 | memory | `knowledge:8e8c5b1e4814cbcb` — 2026-08-22 21:17 JST 家老強くてニューゲームcheckpoint pointer/hash/復帰順序 |
 | memory | `knowledge:1fce7ed2e0851e80` — 最終SHA256=`587053c8d5ccd37556b5628e2c0b6e27c778295c9e2c800f35d9684ece2b9dae`への追記型訂正。旧eventは履歴として保持 |
 | causal | [[殿指示_強くてニューゲーム_20260822_2113]] -> [[GA491_ancestry_without_blob_gap]] -> [[terminal_blob_parity_gate]] -> [[strong_new_game_completion_contract]] |
@@ -208,6 +209,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-24T15:13:21+09:00 2026-08-24 14:50 JST 家老強くてニューゲーム復帰点を確定。正本=docs/research/karo-strong-new-game-checkpoint-20260824-1445.md SHA256=a12865e4 |
 | causal | `cmd_4403` files_modified: [[strong_new_game_completion_contract]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T09:02:05+09:00 2026-08-27 08:58 JST 家老強くてニューゲーム復帰点を確定。checkpoint=docs/research/karo-strong-new-game-checkpoint-20260827-0858.md SHA256= |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T09:15:02+09:00 2026-08-27 09:14 JST 家老checkpoint追記型訂正。旧hash 2655cb43eddc4633d7b708ccff38124190c0a1b5ea31f6408fbe08f1e2168109は08:58時点の歴史 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T09:16:16+09:00 2026-08-27 09:15 JST 家老強くてニューゲーム復帰点の最終pointer/hash。checkpoint=docs/research/karo-strong-new-game-checkpoint-20260827-085 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T09:18:17+09:00 2026-08-27 09:17 JST 家老強くてニューゲーム最終確定。checkpoint=docs/research/karo-strong-new-game-checkpoint-20260827-0858.md、SHA256=76 |
 
 ## sg_pre31_semantic_validation — SG-PRE31意味検算
 
@@ -5616,6 +5620,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T08:03:26+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T08:33:26+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T09:00:59+09:00 artifactに抜け漏れがないか覚醒して確認して。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T09:05:51+09:00 進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ。 |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -15857,6 +15862,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T06:35:39+09:00 bgij919mj toolu_01VxqoNQ2UqeytHcMCuZKvV5 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb32a3ef-f388-4781-8e4e-0460d6 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T07:06:52+09:00 bqkgqmi4k toolu_01LU4cKinXiYuU4FvjPAtTfa /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb32a3ef-f388-4781-8e4e-0460d6 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T07:37:14+09:00 bfgm3giw6 toolu_01AGbxcs2r3Y8jUVvkY47KVR /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb32a3ef-f388-4781-8e4e-0460d6 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T00:03:01.446257+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |

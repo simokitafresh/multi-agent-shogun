@@ -5,6 +5,7 @@
 - role: `karo`
 - status: `ready_for_new_game_with_active_tasks`
 - finalized_at: `2026-08-27T08:58:42+09:00`
+- updated_at: `2026-08-27T09:14:00+09:00`（後着inbox、T47 FAIL、T21再配備、小太郎完了を追記。finalized_atは歴史として変更しない）
 - origin: `[[殿指示_今クリアされても今より強くてニューゲーム_20260827_0856]] -> [[T40_reflux実回転]] -> [[T47_idle起点固定hotfix]] -> [[strong_new_game_completion_contract]]`
 - 本ファイルは保存時点の復帰正本。数値・ペイン・Git・inboxは復帰後に一次再計測し、未来値として流用しない。
 
@@ -20,28 +21,34 @@
 ## 2. 保存時点の陣形
 
 - karo inbox unread: `0`
-- active task count: `2`
+- active/assigned task count: `1`（hanzo T21 acknowledged）
 - hayate:
   - task: `cmd_karo_hotfix_reflux_idle_anchor_20260827_normal`
-  - status: `in_progress`
+  - status: `failed`
   - report: `queue/reports/hayate_report_cmd_karo_hotfix_reflux_idle_anchor_20260827.yaml`
-  - report status/verdict: `pending / empty`
+  - report status/verdict: `failed / FAIL`
   - worktree: `/tmp/shogun-task-worktrees/hayate_204c6a76a6b02702`
-  - live evidence: `scripts/ninja_monitor.sh`を変更中。選択2 filesのrun_tests完走証跡あり、ペインはWorking。
+  - result: 実装commit=`a40800476ec6f6695a0e310aa33432c7e059d9fb`（前段`05d798238afd215798a7703e86820e6373fe21d0`）。AC1のdurable anchor回帰とtask selectorはPASS/SKIP0。AC2の修正後live再配備が未観測でBLOCK。次reflux実配備1件を一次観測してreview→GATEを閉じる。
 - kotaro:
   - task: `cmd_reflux_insight_202608270814_kotaro_exact`
-  - status: `in_progress`
+  - status: `done`
   - report: `queue/reports/kotaro_report_cmd_reflux_insight_202608270814_kotaro.yaml`
-  - report status/verdict: `pending / empty`
+  - report: `gate_report_format PASS`、commit=`2dff8b3cca8f393d2104d9f01f569f655249b445`、fingerprint=`191d27b82501f0255f5d08c9a6b80ce2371e0a79e950c1cb26e76f3ea66c80ee`。軍師LGTM受領、家老ACCEPT→GATE待ち。
   - draft review: 軍師`APPROVE`、task fingerprint=`36ce6ad7`
   - live evidence: 対象insight解消処理中。公式inventory snapshotが2分超の長時間経路で待機中。
 - kagemaru/hanzo/saizo/tobisaru: `idle`
+- hanzo:
+  - task: `cmd_karo_hotfix_t21_codex_delivery_read_transition_20260826_normal`
+  - status: `assigned`（09:09配備、capture-paneでnudge到達後Working確認）
+  - source artifact: `/tmp/shogun-task-worktrees/kagemaru_d795c554d7f22909`の保全差分2ファイル。
+  - differential AC: `tests/unit/test_inbox_write_codex_delivery.bats`の旧pane-success契約1件をexact message ID read遷移へ同期し、対象FAIL0/SKIP0で3ファイルcommit。
+- kagemaru/saizo/tobisaru: `idle`
 
 ## 3. タスクマップの正しい読み方
 
 - T12: 真に未着手。理由欄の「次回cmd_publish時にstdout保存」は硬い依存ではなく受動待機。復帰後はcontrolled publishを起こして13分の内訳を即計測する。待つな。
 - T40: マップは`[ ]`だが実態は着手済み。05:39〜07:00にrefluxを5件配備・完了。T45が回転計測、T47が空白根治を担う。表示鮮度不良を未着手理由に使わない。
-- T47: 疾風へ07:39配備済みで現在`in_progress`。idle起点をtask idle遷移時刻等へ固定し、監視再起動で600秒計時が巻き戻らないこと、次配備が600秒+1周期以内であることを検証中。
+- T47: 実装・回帰はPASS、修正後live再配備未観測で`failed/FAIL`。次reflux 1件を一次観測してAC2を閉じ、review→GATEへ進む。
 - タスクマップ正本: `queue/shogun_todo_map.md`、HTML: `docs/dashboard/shogun-todo-map.html`。
 
 ## 4. 今回強くなった点
@@ -59,8 +66,8 @@
 
 ## 5. Git / remote
 
-- HEAD: `1f0a3e83c54534c2050e11cc27827cd59af4163f`
-- origin/main: `1f0a3e83c54534c2050e11cc27827cd59af4163f`
+- HEAD: `1ffa1584502330e65e949358ca8abb1211667743`
+- origin/main: `1ffa1584502330e65e949358ca8abb1211667743`
 - relation: behind=`0` / ahead=`0`
 - 直近push実測: `3d368515b` 08:57:05→08:57:10=`5s`、`1f0a3e83c` 08:57:23→08:57:28=`5s`。
 - checkpoint追加後は新commitが増えるため、復帰時に必ず再計測する。
@@ -70,6 +77,16 @@
 - insights: total=`465`, pending=`104`, resolved=`361`, unique IDs=`465`。
 - pending decisions: `PD-104, PD-107, PD-110, PD-114, PD-135, PD-137`。
 - T40の在庫数は流入で増減する。pending数だけで未実行と判定せず、`REFLUX-AUTO-DEPLOY/DONE`ログと解消IDを数える。
+
+## 6.1 後着下知キュー（未配備を消すな）
+
+- T22: 飛猿pre-push cache/tree-hash成果worktreeを確認し、使えるならcommitだけ再配備、不可ならfailedクローズ。
+- T10: 本日GATE CLEAR timing logの完走run件数を数え、1件以上なら本質短縮をidle忍者へ再配備。
+- T08: converge ours採用/theirs破棄のr2成果を確認し、未実施ならidle忍者へ再配備。
+- T50: insights daemon書込み後のdirty-guard毎周期再発を同一transaction commitまたはstatus差分許容で根治。
+- T51: pre-push成功時も`logs/defense_overhead.jsonl`へwall/affectedを記録し、300秒超WARN。
+- T49: `hayate_report_cmd_alias.yaml`偽抽出へ実在チェックを追加。
+- infra critical: T21配備中に`semantic_index.py`が`sqlite3.DatabaseError: database disk image is malformed`。task配備はfail-open継続したが、記憶DB正本/キャッシュのどちらが破損したかを復帰後に一次診断し、迂回せず根治する。
 
 ## 7. 禁則
 
@@ -84,11 +101,12 @@
 ## 8. 復帰後の次行動
 
 1. inbox未読を先に処理。
-2. 疾風T47のtest/commit/reportを回収し、軍師LGTM→家老ACCEPT→`cmd-complete`まで終端。
-3. 小太郎reflux報告を回収し、同じレビュー/GATE経路で終端。
-4. T12をcontrolled publishで着手し、cmd_4401 stdoutを恒久ログへ保存して13分を分解する。
-5. T40はreflux回転を継続し、マップ表示を`[~]`へ是正する。
-6. origin差分は1commitずつpushし、各hash・開始/終了時刻・wall秒を記録する。
+2. 小太郎reflux報告を軍師review/GATEで閉じる。target占有は解放済みなので次周期`REFLUX-AUTO-DEPLOY` 1件を確認する。
+3. そのlive配備をT47 AC2証拠としてreview→GATEを閉じる。
+4. 半蔵T21差分RCをcommit/report/GATEまで閉じる。
+5. idle枠へT50/T51/T49を先に配備し、枠解放後T22/T10/T08を続ける。
+6. T12をcontrolled publishで着手し、cmd_4401 stdoutを恒久ログへ保存して13分を分解する。
+7. origin差分は1commitずつpushし、各hash・開始/終了時刻・wall秒を記録する。
 
 ## 9. 二値条件
 

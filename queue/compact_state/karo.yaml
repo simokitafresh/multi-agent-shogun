@@ -1,11 +1,11 @@
 agent: karo
-timestamp: "2026-08-27T08:58:42+09:00"
+timestamp: "2026-08-27T09:14:00+09:00"
 compact_trigger: lord_strong_new_game_directive_20260827_0856
-current_task: active_hayate_T47_and_kotaro_reflux
+current_task: active_hanzo_T21_T47_live_wait_and_pending_queue
 session_id: karo_strong_new_game_20260827_0858
 status: ready_for_new_game_with_active_tasks
 recovery_pointer: docs/research/karo-strong-new-game-checkpoint-20260827-0858.md
-target_sha256: 2655cb43eddc4633d7b708ccff38124190c0a1b5ea31f6408fbe08f1e2168109
-latest_review_message: kotaro_reflux_draft_APPROVE_fingerprint_36ce6ad7
-next_action: Recovery完走後checkpoint hash照合、inbox個別処理、hayate T47とkotaro reflux再開、T12 controlled publish着手
-session_summary: Role=karo。active 2。Git 0/0、inbox unread 0。T12待機廃止、T40実回転中、T47 in_progress。pushはoldest-firstで1本ずつ。
+target_sha256: 76b072e67d8dae9a2ee8cab2bd572aa8818921aa008fee347242b0ed43fd9fb6
+latest_review_message: kotaro_reflux_LGTM_fingerprint_191d27b8
+next_action: Recovery後inbox処理、kotaro review、次reflux観測でT47 AC2閉鎖、hanzo T21、T50 T51 T49、T22 T10 T08、T12 controlled publish
+session_summary: Role=karo。hanzo T21 acknowledged。kotaro reflux done/review待ち。hayate T47は実装PASSだがlive再配備未観測でFAIL。未配備T50 T51 T49 T22 T10 T08。semantic DB malformed要診断。Git保存時0/0。
