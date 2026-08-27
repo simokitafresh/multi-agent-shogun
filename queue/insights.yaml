@@ -451,7 +451,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_ga493_context_freshness_trigger"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: docs/research/gunshi_nazenaze_cdp_measurement_20260426.md §1はcmd_2271の2.5時間・scope外174行・認証不成立を記録し、§3-4はtarget_path=outputsでCDP教訓0件となった根因とGP-223/225/226の修正済みを明記。現行scripts/deploy_task.sh L6296-L6334はtarget_files実マッチを実装し、L6364-L6370/L6433-L6445/L6473-L6485は不一致を除外するため、対象候補は歴史的事象で追加修正・裁定候補不要と確認した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-115919263-4882;primary=docs/research/gunshi_nazenaze_cdp_measurement_20260426.md:L1-L75;code=scripts/deploy_task.sh:L6296-L6334,L6364-L6370,L6433-L6445,L6473-L6485;semantic=docs/semantic-index/index.md:L8766-L8767,L12396-L12397;memory=semantic_search query=CDP 教訓 target_path outputs 認証迂回;decision_candidate=none"
+  resolved_at: "2026-08-27T17:21:35+09:00"
 - id: INS-20260823-121115479-6d54
   ts: "2026-08-23T12:11:15+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[Phase1条件付き通過_疑義3点]] は既存aliasesに一致なし。類似概念TOP3: report_quality_protocol(忍者報告品質プロトコル; alias=Phase1 FE削除; score=3.0) / cmd_save_gate_catalog(cmd_save.sh設計思想カタログ; alias=Phase1カタログ; score=2.9) / agent_formation_management(編成管理; alias=push_allowed; score=2.7)。概念定義とaliases追加を検討せよ"
