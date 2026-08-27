@@ -5648,3 +5648,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T00:10:32+09:00"
+- id: INS-20260828-001645016-4136
+  ts: "2026-08-28T00:16:45+09:00"
+  insight: "cmd_4410 AC3 の文言欠陥: 『本番 pane の capture 差分 0』は並行作業中の忍者出力で必ず差分が出る=満たせない AC。意図は『本番への入力混入 0』(入力 marker 0・pane metadata/cwd 差分 0)。次回から隔離検証 AC は『入力 marker 0+metadata/cwd 差分 0』で書き、live 出力差分を判定に使わない。加えて隔離 session が本番と同じ @agent_id(shogun/karo/gunshi)を付けると hook の全pane capture と pane_lookup が誤認する→隔離 session は @agent_id に接尾辞(例 karo@ac3)を付けるか設定しない契約を deploy_task/隔離 harness に埋め込む。origin=[[cmd_4410_ac3_飛猿_live差分4/9]] -> [[AC文言_出力差分を判定に使った]] -> [[隔離検証AC標準文言+agent_id接尾辞]]"
+  priority: "medium"
+  source: "shogun"
+  fix_known: false
+  status: pending
