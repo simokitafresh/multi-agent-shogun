@@ -1071,7 +1071,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4364"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で候補の防御は既存実装済み。scripts/deploy_task/gates.sh:307-317（統合元scripts/deploy_task.sh:9392-9402）がshogun_to_karo.yamlのq4_depth=shallowを検出し、scout_exempt自動免除をPASSする。cmd_4364候補の根因は既知実装で封止済みのため追加実修正・decision_candidateは不要。"
+  action_artifact: "target=scripts/deploy_task/gates.sh:307-317;integrated=scripts/deploy_task.sh:9392-9402;source=docs/research/gunshi_idle_wa_timeseries_20260411.md:33-38;context=context/senkyoku-log.md:934;target=queue/insights.yaml:INS-20260822-103948455-75b4"
+  resolved_at: "2026-08-28T04:42:58+09:00"
 - id: INS-20260822-104002468-7de9
   ts: "2026-08-22T10:40:02+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cluster D合流実証]] は既存aliasesに一致なし。類似概念TOP3: campaign_lane(台帳駆動攻略レーン; alias=source round8 lane start; score=5.0) / skill_design_rules(Skill設計ルール; alias=skill outcome ledger; score=4.7) / semantic_dictionary_design(セマンティック辞書構想; alias=source lord conversation; score=4.7)。概念定義とaliases追加を検討せよ"
