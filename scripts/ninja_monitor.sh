@@ -5537,6 +5537,116 @@ _reflux_auto_state_file() {
     printf '%s_%s.last\n' "${REFLUX_AUTO_DEPLOY_STATE_PREFIX:-$STATE_DIR/shogun_reflux_auto_deploy}" "$name"
 }
 
+_reflux_auto_pause_marker_file() {
+    printf '%s\n' "${REFLUX_AUTO_DEPLOY_PAUSE_MARKER:-$SCRIPT_DIR/queue/gates/reflux_auto_deploy.paused}"
+}
+
+_reflux_auto_pause_scalar() {
+    local marker="$1" key="$2"
+    awk -v key="$key" '
+        $0 ~ "^[[:space:]]+" key ":" {
+            value=$0
+            sub("^[[:space:]]+" key ":[[:space:]]*", "", value)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            sub(/^\047/, "", value)
+            sub(/\047$/, "", value)
+            sub(/^\"/, "", value)
+            sub(/\"$/, "", value)
+            print value
+            exit
+        }
+    ' "$marker" 2>/dev/null || true
+}
+
+_reflux_auto_pause_restore_states() {
+    local prefix="${REFLUX_AUTO_DEPLOY_STATE_PREFIX:-$STATE_DIR/shogun_reflux_auto_deploy}"
+    local state_file backup value restored=0
+    local -a state_dirs=() backups=()
+    shopt -s nullglob
+    local state_files=("${prefix}"_*.last)
+    shopt -u nullglob
+    for state_file in "${state_files[@]}"; do
+        [ -d "$state_file" ] || continue
+        backup="${state_file}.pre_9p_freeze"
+        if [ ! -f "$backup" ]; then
+            log "REFLUX-AUTO-UNPAUSE-BLOCK: cooldown backup missing for ${state_file}"
+            return 1
+        fi
+        read -r value < "$backup" || {
+            log "REFLUX-AUTO-UNPAUSE-BLOCK: cooldown backup unreadable for ${state_file}"
+            return 1
+        }
+        [[ "$value" =~ ^[0-9]+$ ]] || {
+            log "REFLUX-AUTO-UNPAUSE-BLOCK: cooldown backup invalid for ${state_file}"
+            return 1
+        }
+        if find "$state_file" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+            log "REFLUX-AUTO-UNPAUSE-BLOCK: cooldown directory not empty for ${state_file}"
+            return 1
+        fi
+        state_dirs+=("$state_file")
+        backups+=("$backup")
+    done
+    for state_file in "${state_dirs[@]}"; do
+        if ! rmdir "$state_file" 2>/dev/null; then
+            log "REFLUX-AUTO-UNPAUSE-BLOCK: cooldown directory not empty for ${state_file}"
+            return 1
+        fi
+        backup="${backups[restored]}"
+        if ! mv -- "$backup" "$state_file"; then
+            log "REFLUX-AUTO-UNPAUSE-BLOCK: cooldown backup restore failed for ${state_file}"
+            return 1
+        fi
+        restored=$((restored + 1))
+    done
+    printf '%s\n' "$restored"
+}
+
+_reflux_auto_unpause_if_ready() {
+    local name="$1" now="$2" marker condition_file condition_cmd condition="" restored condition_file_path
+    marker=$(_reflux_auto_pause_marker_file)
+    [ -e "$marker" ] || return 1
+    [ -f "$marker" ] || {
+        log "REFLUX-AUTO-PAUSED: $name marker=$marker invalid=not_regular_file"
+        return 1
+    }
+
+    condition_file=$(_reflux_auto_pause_scalar "$marker" file_exists)
+    condition_cmd=$(_reflux_auto_pause_scalar "$marker" cmd_clear)
+    if [ -n "$condition_file" ]; then
+        if [[ "$condition_file" = /* ]]; then
+            condition_file_path="$condition_file"
+        else
+            condition_file_path="$SCRIPT_DIR/$condition_file"
+        fi
+        if [ -e "$condition_file_path" ]; then
+            condition="file_exists:$condition_file"
+        fi
+    fi
+    if [ -z "$condition" ] && [ -n "$condition_cmd" ] && _gate_worker_clear_receipt_valid "$condition_cmd"; then
+        condition="cmd_clear:$condition_cmd"
+    fi
+    if [ -z "$condition" ]; then
+        log "REFLUX-AUTO-PAUSED: $name marker=$marker condition_unmet=1"
+        return 1
+    fi
+
+    restored=$(_reflux_auto_pause_restore_states) || return 1
+    if ! rm -f -- "$marker"; then
+        log "REFLUX-AUTO-UNPAUSE-BLOCK: marker removal failed marker=$marker condition=$condition"
+        return 1
+    fi
+    log "REFLUX-AUTO-UNPAUSE: $name marker=$marker condition=$condition restored_state_files=$restored"
+    if [ -x "$SCRIPT_DIR/scripts/bulletin_write.sh" ] || [ -f "$SCRIPT_DIR/scripts/bulletin_write.sh" ]; then
+        BULLETIN_NOTIFY=shogun bash "$SCRIPT_DIR/scripts/bulletin_write.sh" ninja_monitor \
+            "REFLUX-AUTO-UNPAUSE: marker=$marker condition=$condition restored_state_files=$restored at=$now" false info \
+            >> "$LOG" 2>&1 || log "REFLUX-AUTO-UNPAUSE-WARN: bulletin_write failed marker=$marker"
+    else
+        log "REFLUX-AUTO-UNPAUSE-WARN: bulletin_write unavailable marker=$marker"
+    fi
+    return 0
+}
+
 # Return a stable status/content fingerprint only when the target path differs
 # from the committed worktree.  The reflux task's commit contract makes the
 # shared queue file its exclusive scope, so publishing a task for a foreign
@@ -6821,6 +6931,11 @@ _handle_reflux_auto_deploy() {
     local promotion_reserved=false insight_reserved=false active_owner dirty_fingerprint dirty_status dirty_kind
 
     [ -n "$name" ] || return 1
+
+    if [ -e "$(_reflux_auto_pause_marker_file)" ]; then
+        _reflux_auto_unpause_if_ready "$name" "$now" >/dev/null || true
+        return 1
+    fi
 
     if _training_pipeline_has_work; then
         unset "REFLUX_IDLE_FIRST_SEEN[$name]"

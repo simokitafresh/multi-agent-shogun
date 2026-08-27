@@ -5,6 +5,82 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 }
 
+# test_necessity: reflux global pause markerは解除条件未成立時に維持し、file_exists/cmd_clear成立時だけcooldown stateを復元・解除し、
+# marker無し時の従来経路へ影響を与えない不変量を守る。
+@test "reflux auto-deploy pause marker auto-unpauses on file or clear condition" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -r \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+REFLUX_AUTO_DEPLOY_PAUSE_MARKER="$TMP_ROOT/queue/gates/reflux_auto_deploy.paused"
+REFLUX_AUTO_DEPLOY_STATE_PREFIX="$TMP_ROOT/state/reflux_auto"
+mkdir -p "$TMP_ROOT/queue/gates" "$TMP_ROOT/scripts" "$STATE_DIR"
+cat > "$TMP_ROOT/scripts/bulletin_write.sh" <<SH
+#!/usr/bin/env bash
+printf "%s\\n" "\$*" >> "$TMP_ROOT/bulletins.log"
+SH
+chmod +x "$TMP_ROOT/scripts/bulletin_write.sh"
+_training_pipeline_has_work() { return 1; }
+
+# Condition unmet: keep marker and cooldown directory.
+cat > "$REFLUX_AUTO_DEPLOY_PAUSE_MARKER" <<YAML
+unpause_when:
+  file_exists: queue/gates/release.signal
+YAML
+mkdir -p "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_hayate.last
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+! _handle_reflux_auto_deploy hayate 100
+[ -f "$REFLUX_AUTO_DEPLOY_PAUSE_MARKER" ]
+[ -d "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_hayate.last ]
+grep -q "REFLUX-AUTO-PAUSED: hayate .*condition_unmet=1" "$LOG"
+
+# file_exists condition: restore numeric sibling backup, remove marker, post one bulletin.
+echo 77 > "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_hayate.last.pre_9p_freeze
+touch "$TMP_ROOT/queue/gates/release.signal"
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+! _handle_reflux_auto_deploy hayate 200
+[ ! -e "$REFLUX_AUTO_DEPLOY_PAUSE_MARKER" ]
+[ -f "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_hayate.last ]
+grep -qx '77' "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_hayate.last
+test "$(grep -c 'REFLUX-AUTO-UNPAUSE:' "$TMP_ROOT/bulletins.log")" -eq 1
+
+# cmd_clear condition: require the canonical clear receipt and restore another state file.
+cat > "$REFLUX_AUTO_DEPLOY_PAUSE_MARKER" <<YAML
+unpause_when:
+  cmd_clear: cmd_release
+YAML
+mkdir -p "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_kotaro.last
+echo 88 > "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_kotaro.last.pre_9p_freeze
+mkdir -p "$TMP_ROOT/queue/gates/cmd_release"
+python3 - "$TMP_ROOT/queue/gates/cmd_release/gate_worker.clear.json" <<PY
+import json,sys,time
+json.dump({"version": 1, "state": "clear", "cmd_id": "cmd_release", "completion_generation": "a" * 64, "persisted_at_ns": time.time_ns()}, open(sys.argv[1], "w"))
+PY
+REFLUX_IDLE_FIRST_SEEN[kotaro]=0
+! _handle_reflux_auto_deploy kotaro 300
+[ ! -e "$REFLUX_AUTO_DEPLOY_PAUSE_MARKER" ]
+[ -f "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_kotaro.last ]
+grep -qx '88' "$REFLUX_AUTO_DEPLOY_STATE_PREFIX"_kotaro.last
+test "$(grep -c 'REFLUX-AUTO-UNPAUSE:' "$TMP_ROOT/bulletins.log")" -eq 2
+
+# Marker absent: no unpause event is emitted; normal handler remains callable.
+REFLUX_IDLE_FIRST_SEEN[saizo]=0
+! _handle_reflux_auto_deploy saizo 400
+test "$(grep -c 'REFLUX-AUTO-UNPAUSE:' "$TMP_ROOT/bulletins.log")" -eq 2
+echo "REFLUX_AUTO_UNPAUSE_OK"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_AUTO_UNPAUSE_OK"* ]]
+}
+
 @test "training recent gate stats counts each report file once" {
     run bash -c '
 set -euo pipefail
