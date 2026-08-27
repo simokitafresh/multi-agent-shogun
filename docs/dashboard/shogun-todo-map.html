@@ -52,14 +52,14 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 19:33 cmd_4408 CLEAR · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 19:45 loop: CI RED rerun / T71 ACCEPT中 / converge · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
 
 <div class="strip">
   <div class="tile"><span class="k">済</span><span class="v done">75</span><span class="s">md正本の [x] 実数</span></div>
-  <div class="tile"><span class="k">走行中</span><span class="v run">5</span><span class="s">T81 / T40 / T45 / T79 / T71</span></div>
+  <div class="tile"><span class="k">走行中</span><span class="v run">7</span><span class="s">T85 / T86 / T81 / T40 / T45 / T79 / T71</span></div>
   <div class="tile"><span class="k">未着手</span><span class="v todo">6</span><span class="s">T83 / T84 / T12 / T60 / T73 / T70</span></div>
   <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">14:35 再分岐 5/13(runtime レーンが origin 直接 push)→家老 converge+1本ずつ push 中(T68)。origin tip CI は GREEN 継続</span></div>
   <div class="tile"><span class="k">reflux</span><span class="v run">9 CLEAR</span><span class="s">pending 115(本日 +72/−53)。枠: 半蔵/疾風 idle、才蔵 T65/飛猿 reflux CLEAR 済、小太郎 T56 CLEAR 14:08、飛猿→cmd_4407 assigned、影丸 T51 FAIL_CLOSE→idle。failed 残置 0</span></div>
@@ -94,9 +94,11 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 </div>
 
 <section class="group">
-  <h2>走行中 <span class="n">5</span></h2>
+  <h2>走行中 <span class="n">7</span></h2>
   <div class="rows">
-    <div class="row run"><span class="id">T81</span><span class="t">push 滞留の解消(家老レーン)</span><span class="d">19:28 家老 blt_192705: 384cc717 push が non-ff 拒否、origin 9/local 56 再分岐(runtime lane 直接 push=T68 構造の再発)。将軍→家老 msg_192815: rebase/force 禁止・converge_ours(T68型)→1本ずつ push、AC=0 0+CI GREEN; 19:24 家老へ1通 msg_192441: 未push 53(first-parent, 先頭 860ff1ede)を1 commitずつ oldest-first push、AC=rev-list 0+CI GREEN、報告=掲示板</span><span class="w">分岐の芽を摘む=LS-A14(3)</span></div>
+    <div class="row run"><span class="id">T85</span><span class="t">CI GREEN 証跡</span><span class="d">19:44 CI RED 2連続: 295af7088(cmd_4408 契約 commit)と a1b2b78d4(converge)の全 9 shard が『tests/unit directory not found』(checkout 側、tree には tests/unit 実在=T42 型)。将軍 gh run rerun 33063757198 --failed(19:43 queued)。3 run 目で判定→RED なら家老 ci_fix</span><span class="w">GREEN 上で cutover</span></div>
+    <div class="row run"><span class="id">T86</span><span class="t">T71 終端</span><span class="d">19:44 T71 才蔵 report PASS(f5f7261ff)・task done、軍師 LGTM→家老 ACCEPT 中(pane 実測)。GATE→archive→idle まで=cutover 前提の最後の1名</span><span class="w">全員 idle=cutover 条件</span></div>
+    <div class="row run"><span class="id">T81</span><span class="t">push 滞留の解消(家老レーン)</span><span class="d">19:44 家老 converge a1b2b78d4 で origin 到達(local 4 commit 含め IN_ORIGIN 確認)、rev-list 11 0=local が純祖先。ff-only は insights.yaml dirty(daemon resolve)で BLOCK→将軍が auto-commit 後に家老へ converge 再依頼; 19:28 家老 blt_192705: 384cc717 push が non-ff 拒否、origin 9/local 56 再分岐(runtime lane 直接 push=T68 構造の再発)。将軍→家老 msg_192815: rebase/force 禁止・converge_ours(T68型)→1本ずつ push、AC=0 0+CI GREEN; 19:24 家老へ1通 msg_192441: 未push 53(first-parent, 先頭 860ff1ede)を1 commitずつ oldest-first push、AC=rev-list 0+CI GREEN、報告=掲示板</span><span class="w">分岐の芽を摘む=LS-A14(3)</span></div>
     <div class="row run"><span class="id">T40</span><span class="t">insights未処理103件(08:04)の消化(idle時)</span><span class="d">14:17 殿下問: pending 115、本日 created 72/resolved 53=生産&gt;消化で減らない。最古 pending 08-19。対策は枠6が生きた状態の日次消化を再計測してから; 13:50 pending 115/resolved 381(python 集計); 09:10 reflux 自動配備で6件実回転(家老復帰点も同認識)、pending 104; 消化は reflux レーンに乗った</span><span class="w">気づきの先送り0</span></div>
     <div class="row run"><span class="id">T45</span><span class="t">reflux 回転計測: 05:39 疾風→05:55 CLEAR、05:53 影丸→06:02 CLEAR(1件≈14分・同時1件)。insights pending 104 が CLEAR 後も減らない(resolved 352)→ archive 時に resolved へ遷移するか次tickで確認、減らなければ家老へ</span><span class="d">14:37 T47 効果確認: 半蔵 idle 14:14→reflux 配備 14:24(10分=600s 計時通り)=idle 起点固定が本番で機能; 14:17 殿下問で再計数: 本日 reflux CLEAR=9件(05:55/06:02/06:20/06:43/07:25/10:15/10:30/12:11/14:06、awk gate_metrics CLEAR∧cmd_reflux)。13:05 の「11/12件」は hotfix 名の reflux を混入した過大計数=訂正。空白 07:25→10:15/12:11→14:06 は枠死+家老 ACCEPT 不発が支配。14:14 に3名 idle→14:24 頃の次配備を突合; 14:10 飛猿 cmd_reflux_insight_202608271316 GATE CLEAR(本日 reflux CLEAR 12件目); 12:42 疾風 failed→idle 解放(将軍再確認 status=idle)=reflux 枠 5/6 復帰、影丸は T51 GATE 後; 12:35 pending 111、12:23 半蔵 reflux deploy FAIL(non-blocking)、疾風/影丸 failed 残置 3h=2枠死→4回目再下知; 12:12 8件目 飛猿 GATE CLEAR(deploy 11:52→CLEAR 20分=本日最速); 12:04 8件目 飛猿 11:52→12:00 DONE(pending 108)、小太郎 idle 復帰、疾風/影丸 failed 残置継続→再下知; 11:33 pending 108・配備0継続=6枠中3枠が failed/done 残置で SKIP(疾風/影丸/小太郎)、才蔵/飛猿は idle 計時 465-473s→archive 下知 msg_1134xx; 11:05 pending 108、09:50 以降 配備0=疾風/影丸が task failed 残置で SKIP(10:39/10:52)、才蔵/飛猿は idle 計時中→疾風 archive を家老へ下知 msg_110540; 10:33 7件目 半蔵 GATE CLEAR 10:32(deploy 09:50→CLEAR 42分)、pending 107; 10:19 小太郎 0814 GATE CLEAR→idle=枠復帰(下知 msg_100601 の結果); 10:04 7件目 半蔵 09:50→10:01 DONE(dirty のまま配備は通った)、pending 106; 小太郎 done 未archive で枠外→家老へ1単位下知; 09:40 影丸 DEPLOY-FAIL(non-blocking); 09:34 pending 106、09:22 以降 配備0(dirty BLOCK)、09:32 疾風は task failed で SKIP; 09:28 小太郎 lock は done で解放、しかし 09:15 才蔵 reflux が「reserved path collision with tobisaru(idle/uncommitted)」で DEPLOY blocked、09:22 飛猿 dirty AUTO-BLOCK=T50 と同根、家老は auto-commit 3dd06eca6 で一時解消; 09:06 つまり: 小太郎 0814 が DEPLOY-DONE 08:25 後 report 空・task in_progress・pane CTX3% で target_path lock→08:59 影丸 REFLUX-AUTO-SKIP=全 reflux 停止→家老へ最優先下知 msg_090715; 08:51 小太郎 6件目 08:15→08:25 DONE(reflux継続)、pending 104、insights.yaml は再び dirty; 08:04 insights pending 103、07:50/07:57 影丸・半蔵の reflux 配備が REFLUX-AUTO-BLOCK(queue/insights.yaml dirty=daemon の resolved 書込み 08:03:54)→auto-commit 待ち=T43 の構造が毎周期再発; 07:03 5件目 飛猿 06:47→07:00 DONE、pending 104→101、4 CLEAR; 06:36 4件目 才蔵 06:24→06:31 DONE、pending 104→102、1件≈14分・同時1件; 06:06 観測開始</span><span class="w">気づき消化の回転速度の可視化</span></div>
     <div class="row run"><span class="id">T79</span><span class="t">殿裁定 17:41『走行完了後は新規に手を出さず 9p 根治』の凍結</span><span class="d">17:47 家老 blt_174711: 走行3件のみ継続、hotfix/direct 停止、reflux promotion+auto-deploy を可逆 marker で fail-closed(解除手順 queue/gates/reflux_auto_deploy.paused)。将軍確認: marker 実在、17:27 以降新規 reflux 配備 0</span><span class="w">cutover 前提=全員 idle</span></div>
@@ -198,5 +200,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 19:33 cmd_4408 CLEAR</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 19:45 loop: CI RED rerun / T71 ACCEPT中 / converge</footer>
 </div>

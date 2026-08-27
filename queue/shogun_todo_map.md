@@ -3,7 +3,9 @@
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T81(19:28 家老 blt_192705: 384cc717 push が non-ff 拒否、origin 9/local 56 再分岐(runtime lane 直接 push=T68 構造の再発)。将軍→家老 msg_192815: rebase/force 禁止・converge_ours(T68型)→1本ずつ push、AC=0 0+CI GREEN; 19:24 家老へ1通 msg_192441: 未push 53(first-parent, 先頭 860ff1ede)を1 commitずつ oldest-first push、AC=rev-list 0+CI GREEN、報告=掲示板) push 滞留の解消(家老レーン) ★分岐の芽を摘む=LS-A14(3)
+- [~] T85(19:44 CI RED 2連続: 295af7088(cmd_4408 契約 commit)と a1b2b78d4(converge)の全 9 shard が『tests/unit directory not found』(checkout 側、tree には tests/unit 実在=T42 型)。将軍 gh run rerun 33063757198 --failed(19:43 queued)。3 run 目で判定→RED なら家老 ci_fix) CI GREEN 証跡 ★GREEN 上で cutover
+- [~] T86(19:44 T71 才蔵 report PASS(f5f7261ff)・task done、軍師 LGTM→家老 ACCEPT 中(pane 実測)。GATE→archive→idle まで=cutover 前提の最後の1名) T71 終端 ★全員 idle=cutover 条件
+- [~] T81(19:44 家老 converge a1b2b78d4 で origin 到達(local 4 commit 含め IN_ORIGIN 確認)、rev-list 11 0=local が純祖先。ff-only は insights.yaml dirty(daemon resolve)で BLOCK→将軍が auto-commit 後に家老へ converge 再依頼; 19:28 家老 blt_192705: 384cc717 push が non-ff 拒否、origin 9/local 56 再分岐(runtime lane 直接 push=T68 構造の再発)。将軍→家老 msg_192815: rebase/force 禁止・converge_ours(T68型)→1本ずつ push、AC=0 0+CI GREEN; 19:24 家老へ1通 msg_192441: 未push 53(first-parent, 先頭 860ff1ede)を1 commitずつ oldest-first push、AC=rev-list 0+CI GREEN、報告=掲示板) push 滞留の解消(家老レーン) ★分岐の芽を摘む=LS-A14(3)
 - [x] T82(19:29 ★将軍の誤断定=撤回: origin/main 07fae4bd8(19:16:33)に同一内容到達済み、diff 0行。将軍が fetch の成否を確認せず(2>/dev/null)local 比較で『偽CLEAR第2例』と断定=LS-A09(19)再犯。INS-192407360 resolve、掲示板訂正済。cherry-pick 010cb6b20 は同一 blob ゆえ converge で無害; 19:24 INS 登録・cherry-pick) T76 到達判定の誤り ★誤断定の即撤回=手戻り最小
 - [ ] T83(19:23 blt_152242 script_size_alert 14件(cmd_complete_gate 15020行/ninja_monitor 12258/deploy_task 11380…)を actioned。T79 凍結中=cutover 後に分割cmd(deploy_task split 設計書の型)を起票) script 肥大リファクタ ★gate/hook 実行時間=回転の分母
 - [ ] T84(19:23 blt_152232 L1637 deprecation 候補(model_analysis.sh で構造防止済みの可能性)を actioned。凍結解除後に家老へ1通で --retire 判断を委任) 教訓淘汰 ★注入トークン削減
