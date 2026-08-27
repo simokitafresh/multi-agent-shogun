@@ -5578,3 +5578,17 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-000808146-e74f
+  ts: "2026-08-28T00:08:08+09:00"
+  insight: "[[クローン可搬性の根治 scripts config skills instructions からユーザー固有絶対パス h]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=クローン可搬性の根治: scripts/config/skills/instructions からユーザー固有絶対パス(/home/simokitafresh)を除去しリポジトリ相対解決へ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260828-000808256-f920
+  ts: "2026-08-28T00:08:08+09:00"
+  insight: "[[ext4化でLLMの応答が良くなった気がするが]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ext4化でLLMの応答が良くなった気がするが、気のせいか？事実か？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
