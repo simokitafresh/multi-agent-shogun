@@ -1499,3 +1499,4 @@
 - 意図: 復帰点 session_save_20260827_0741 から再開し、30分 loop で「進捗→つまり解消→artifact」を回す。殿下問『回転 before/after』『artifact 抜け漏れ覚醒確認』『利他で未着手をナッジ』。
 - 結果: hotfix 8本起票→7本 GATE CLEAR(T21 nudge再送/T50 dirty-guard/T08 converge/T47 idle起点/T49 偽BLOCK/T10 gate本質/T57 failed→自動review)。reflux 8件回転(1件 20-42分)。push 1本 5-16秒。CI は autopush レーンの datetime TypeError で RED(半蔵 ci_fix 配備中)。
 - 因果: 家老が束で届く下知の先頭だけ処理する型(5回)→T56 UNACTIONED 検知を配備。failed 残置が review と reflux 枠を殺す→T57。artifact 手編集の乖離→todo_map_render.py で md 正本から機械生成。head パイプで receipt 欠落→教訓化。
+- 2026-08-27 cmd_karo_hotfix_rework_capture_gap_20260827完了: 共有workaround台帳の固定lock/path-derived lock不一致でauto_captureが0/11となる根因を特定し、lock_path(LOG_FILE)へ統一。修正後cmd gate 281/281・validation/task 51/51 PASS、capture契約3/3、report gate PASS。origin: [[cmd_karo_hotfix_rework_capture_gap_20260827]] -> [[shared ledger lock divergence]] -> [[path-derived lock unified]]
