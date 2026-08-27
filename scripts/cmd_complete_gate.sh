@@ -11859,9 +11859,9 @@ validate_report_format_file() {
     fi
     if [ -n "$validated_fingerprint" ]; then
         GATE_OUTPUT=$(GATE_VALIDATED_FINGERPRINT="$validated_fingerprint" \
-            "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
+            bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
     else
-        GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
+        GATE_OUTPUT=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
     fi
     GATE_STATUS=$(gate_report_format_classify "$GATE_RC")
     # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
@@ -11872,7 +11872,7 @@ validate_report_format_file() {
     if [ "$GATE_STATUS" = "INFRA_TIMEOUT" ]; then
         echo "  [INFO] $(basename "$report_file"): single-flightタイムアウト(インフラ由来)。1回再試行"
         GATE_RC=0
-        GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
+        GATE_OUTPUT=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
         GATE_STATUS=$(gate_report_format_classify "$GATE_RC")
     fi
     if [ "$GATE_STATUS" = "QUALITY_FAIL" ]; then
