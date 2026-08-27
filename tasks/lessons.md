@@ -16025,3 +16025,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - structured inbox rowだけを正しても、初回nudgeを生成する別watcher経路がtask_idを欠くとACK-STALLが残る。caller chainを段階列挙し、全nudge生成分岐と本番proofを同じ完了契約へ結ぶ。
+
+### L1659: 非同期fixtureは最終ログ行でなく子process終了と回収境界を待つ
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_ci_fix_33120834061_inbox_delivery_cleanup_20260828
+- **記録者**: tobisaru
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_inbox_write_codex_delivery.bats]
+- **origin**: [[cmd_karo_ci_fix_33120834061_inbox_delivery_cleanup_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ASYNC_VERIFYの最終ログ出力は子process終了やtelemetry writer完了を意味しない。fixtureは対象root外へ非同期ログを隔離し、mockではない実process照合で終了を待ってからteardownする。
