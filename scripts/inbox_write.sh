@@ -2470,7 +2470,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                     source "$SCRIPT_DIR/scripts/lib/gate_report_format_classify.sh"
                     GATE_EXIT=0
                     GATE_RESULT=$(GATE_VALIDATED_FINGERPRINT="$_GATE_REUSE_FINGERPRINT" \
-                        "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1) || GATE_EXIT=$?
+                        bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1) || GATE_EXIT=$?
                     GATE_STATUS=$(gate_report_format_classify "$GATE_EXIT")
 
                     # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
@@ -2483,7 +2483,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                         echo "[report_format_gate] INFO: single-flightタイムアウト(インフラ由来)を検出。1回再試行する" >&2
                         GATE_EXIT=0
                         GATE_RESULT=$(GATE_VALIDATED_FINGERPRINT="$_GATE_REUSE_FINGERPRINT" \
-                            "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1) || GATE_EXIT=$?
+                            bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1) || GATE_EXIT=$?
                         GATE_STATUS=$(gate_report_format_classify "$GATE_EXIT")
                     fi
 

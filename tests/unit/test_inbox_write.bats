@@ -1398,6 +1398,20 @@ EOF
     { [ ! -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ] || ! grep -q "quality_monitor" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"; }
 }
 
+# test_necessity: gate_report_format.sh is intentionally mode644 in the
+# repository. report_received must invoke it through bash so a valid report
+# cannot be rejected by the filesystem execute bit.
+@test "report_received: mode644 gate succeeds through bash invocation" {
+    setup_git_test_env
+    chmod 644 "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Permission denied"* ]]
+    [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+    grep -q "report_received" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+}
+
 # test_necessity: when the transient lock contention does NOT clear within the single retry,
 # AC2 requires an explicit karo-facing infra notification (not a ninja fix-it demand, not a
 # gunshi quality notification) and the report file must remain on disk (not discarded).
