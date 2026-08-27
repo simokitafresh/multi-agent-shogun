@@ -5611,3 +5611,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-232222081-dc8c
+  ts: "2026-08-27T23:22:22+09:00"
+  insight: "[[殿指示 23 12『READMEを覚醒してアップデート]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-08-27 23:12『READMEを覚醒してアップデート。誰もが他のPCにクローンして使えるように整合性をとろう』。README.md 1578 行/README_ja.md 1554 行には ext4 移設で置換された '/home/simokitafresh/...' が 15/14 箇所、Quick Start に C:\\\\tool"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
