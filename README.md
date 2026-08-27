@@ -475,6 +475,18 @@ If you prefer to install dependencies manually:
 
 The live formation, agent names, models, CLI types, and launch paths come from `config/settings.yaml` and `config/cli_profiles.yaml`; README examples are explanatory and are not a second configuration source. For a clean clone, run `first_setup.sh`, then verify setup without launching agents:
 
+Portability note: the audited checkout contains the absolute root `/mnt/c/tools/multi-agent-shogun` in 93 files under scripts, configuration, and hooks. Treat that root as a prerequisite until relocation is completed. To use another checkout root, replace only this exact literal in the repository, recount matches, and rerun setup:
+
+```bash
+OLD_ROOT=/mnt/c/tools/multi-agent-shogun
+NEW_ROOT=/path/to/multi-agent-shogun
+rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | xargs -r sed -i "s|$OLD_ROOT|$NEW_ROOT|g"
+test "$(rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | wc -l)" -eq 0
+bash first_setup.sh
+```
+
+Do not replace user-home, project, or screenshot paths by this bulk operation; review those separately. The 93-file count is an audit baseline—recount after every upstream change.
+
 ```bash
 TMUX_TMPDIR="$(mktemp -d)" ./shutsujin_departure.sh -s
 ```

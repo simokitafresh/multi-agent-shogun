@@ -360,7 +360,7 @@ log_info "🧹 既存の陣を撤収中..."
 if [ "$SETUP_ONLY" = true ]; then
     log_info "  └─ セットアップ検証のため既存セッション撤収をスキップ"
 else
-    tmux kill-session -t shogun 2>/dev/null && log_info "  └─ shogun陣、撤収完了" || log_info "  └─ shogun陣は存在せず"
+    tmux kill-session -t "$SHOGUN_SESSION" 2>/dev/null && log_info "  └─ ${SHOGUN_SESSION}陣、撤収完了" || log_info "  └─ ${SHOGUN_SESSION}陣は存在せず"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -551,10 +551,10 @@ tmux set-option -g aggressive-resize on
 
 # 将軍ペインはウィンドウ名 "main" で指定（base-index 1 環境でも動く）
 SHOGUN_PROMPT=$(generate_prompt "将軍" "magenta" "$SHELL_SETTING")
-tmux send-keys -t shogun:main "cd \"$(pwd)\" && export PS1='${SHOGUN_PROMPT}' && clear" Enter
-tmux select-pane -t shogun:main -P 'bg=#002b36'  # 将軍の Solarized Dark
-tmux set-option -p -t shogun:main @agent_id "shogun"
-tmux set-option -p -t shogun:main @context_pct "--"
+tmux send-keys -t "${SHOGUN_SESSION}:main" "cd \"$(pwd)\" && export PS1='${SHOGUN_PROMPT}' && clear" Enter
+tmux select-pane -t "${SHOGUN_SESSION}:main" -P 'bg=#002b36'  # 将軍の Solarized Dark
+tmux set-option -p -t "${SHOGUN_SESSION}:main" @agent_id "shogun"
+tmux set-option -p -t "${SHOGUN_SESSION}:main" @context_pct "--"
 
 log_success "  └─ 将軍の本陣、構築完了"
 echo ""
@@ -579,10 +579,10 @@ log_war "⚔️ 家老・忍者の陣を構築中（${_deploy_count}名配備）
 # shogun セッションに agents ウィンドウを追加・再利用する。
 # 名前だけのtargetは再実行時に曖昧になるため、indexを固定して以後参照する。
 AGENTS_WINDOW_TARGET=""
-_existing_agents_window=$(tmux list-windows -t shogun -F '#{window_index} #{window_name}' 2>/dev/null | awk '$2 == "agents" { print $1; exit }')
+_existing_agents_window=$(tmux list-windows -t "$SHOGUN_SESSION" -F '#{window_index} #{window_name}' 2>/dev/null | awk '$2 == "agents" { print $1; exit }')
 if [ -n "$_existing_agents_window" ]; then
-    AGENTS_WINDOW_TARGET="shogun:${_existing_agents_window}"
-elif _new_agents_window=$(tmux new-window -t shogun -n "agents" -P -F '#{session_name}:#{window_index}' 2>/dev/null); then
+    AGENTS_WINDOW_TARGET="${SHOGUN_SESSION}:${_existing_agents_window}"
+elif _new_agents_window=$(tmux new-window -t "$SHOGUN_SESSION" -n "agents" -P -F '#{session_name}:#{window_index}' 2>/dev/null); then
     AGENTS_WINDOW_TARGET="$_new_agents_window"
 else
     echo ""
@@ -601,10 +601,10 @@ fi
 
 # DISPLAY_MODE: shout (default) or silent (--silent flag)
 if [ "$SILENT_MODE" = true ]; then
-    tmux set-environment -t shogun DISPLAY_MODE "silent"
+    tmux set-environment -t "$SHOGUN_SESSION" DISPLAY_MODE "silent"
     echo "  📢 表示モード: サイレント（echo表示なし）"
 else
-    tmux set-environment -t shogun DISPLAY_MODE "shout"
+    tmux set-environment -t "$SHOGUN_SESSION" DISPLAY_MODE "shout"
 fi
 
 # 3列 2-3-3 レイアウト作成（ペイン番号=エージェント順の連続番号）
@@ -776,20 +776,20 @@ tmux set-option -w -t "$AGENTS_WINDOW_TARGET" pane-border-format \
   2>/dev/null
 
 # ─── shogun window pane-border ───
-tmux set-option -w -t "shogun:main" pane-border-status top 2>/dev/null
-tmux set-option -w -t "shogun:main" pane-border-format \
+tmux set-option -w -t "${SHOGUN_SESSION}:main" pane-border-status top 2>/dev/null
+tmux set-option -w -t "${SHOGUN_SESSION}:main" pane-border-format \
   '#[fg=#cba6f7]#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[nobold] (#{@model_name}) #{@context_pct}#[default]' \
   2>/dev/null
 
 # ─── 将軍ペイン変数 ───
-_shogun_pane_idx=$(tmux list-panes -t "shogun:main" -F '#{pane_index}' 2>/dev/null | head -1)
-tmux set-option -p -t "shogun:main.${_shogun_pane_idx:-0}" @agent_id shogun 2>/dev/null
-tmux set-option -p -t "shogun:main.${_shogun_pane_idx:-0}" @model_name "Opus" 2>/dev/null
+_shogun_pane_idx=$(tmux list-panes -t "${SHOGUN_SESSION}:main" -F '#{pane_index}' 2>/dev/null | head -1)
+tmux set-option -p -t "${SHOGUN_SESSION}:main.${_shogun_pane_idx:-0}" @agent_id shogun 2>/dev/null
+tmux set-option -p -t "${SHOGUN_SESSION}:main.${_shogun_pane_idx:-0}" @model_name "Opus" 2>/dev/null
 
 # ─── status bar style: Catppuccin Mocha base ───
 tmux set-option -g status-style "bg=#1e1e2e,fg=#cdd6f4" 2>/dev/null
-tmux set-option -t shogun status-right-length 200
-tmux set-option -t shogun status-right "#[fg=#cdd6f4]%Y-%m-%d %H:%M"
+tmux set-option -t "$SHOGUN_SESSION" status-right-length 200
+tmux set-option -t "$SHOGUN_SESSION" status-right "#[fg=#cdd6f4]%Y-%m-%d %H:%M"
 
 # ─── Prefix+v: clipboard screenshot capture (cmd_551) ───
 tmux bind-key v run-shell "bash ${SCRIPT_DIR}/scripts/capture_clipboard_image.sh"
@@ -860,14 +860,14 @@ if [ "$SETUP_ONLY" = false ]; then
         _shogun_cli_type=$(get_cli_type "shogun")
         _shogun_cmd=$(build_cli_command "shogun")
     fi
-    tmux set-option -p -t "shogun:main" @agent_cli "$_shogun_cli_type"
+    tmux set-option -p -t "${SHOGUN_SESSION}:main" @agent_cli "$_shogun_cli_type"
     if [ "$SHOGUN_NO_THINKING" = true ] && [ "$_shogun_cli_type" = "claude" ]; then
-        tmux send-keys -t shogun:main "MAX_THINKING_TOKENS=0 $_shogun_cmd"
-        tmux send-keys -t shogun:main Enter
+        tmux send-keys -t "${SHOGUN_SESSION}:main" "MAX_THINKING_TOKENS=0 $_shogun_cmd"
+        tmux send-keys -t "${SHOGUN_SESSION}:main" Enter
         log_info "  └─ 将軍（${_shogun_cli_type} / thinking無効）、召喚完了"
     else
-        tmux send-keys -t shogun:main "$_shogun_cmd"
-        tmux send-keys -t shogun:main Enter
+        tmux send-keys -t "${SHOGUN_SESSION}:main" "$_shogun_cmd"
+        tmux send-keys -t "${SHOGUN_SESSION}:main" Enter
         log_info "  └─ 将軍（${_shogun_cli_type}）、召喚完了"
     fi
 
@@ -1009,7 +1009,7 @@ NINJA_EOF
 
     # 将軍の起動を確認（最大30秒待機）
     for i in {1..30}; do
-        if tmux capture-pane -t shogun:main -p | grep -Eq "bypass permissions|bypass approvals and sandbox"; then
+        if tmux capture-pane -t "${SHOGUN_SESSION}:main" -p | grep -Eq "bypass permissions|bypass approvals and sandbox"; then
             echo "  └─ 将軍CLIの起動確認完了（${i}秒）"
             break
         fi
@@ -1043,9 +1043,9 @@ NINJA_EOF
     declare -a LAUNCHED_WATCHERS=()
 
     # 将軍のwatcher（タイムアウト無効化）
-    _shogun_watcher_cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
+    _shogun_watcher_cli=$(tmux show-options -p -t "${SHOGUN_SESSION}:main" -v @agent_cli 2>/dev/null || echo "claude")
     nohup env ASW_PROCESS_TIMEOUT=0 \
-        bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_shogun_watcher_cli" \
+        bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "${SHOGUN_SESSION}:main" "$_shogun_watcher_cli" \
         &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" &
     disown
     LAUNCHED_WATCHERS+=("shogun")
@@ -1239,7 +1239,7 @@ if [ "$OPEN_TERMINAL" = true ]; then
 
     # Windows Terminal が利用可能か確認
     if command -v wt.exe &> /dev/null; then
-        wt.exe -w 0 new-tab wsl.exe -e bash -c "tmux attach-session -t shogun"
+        wt.exe -w 0 new-tab wsl.exe -e bash -c "tmux attach-session -t ${SHOGUN_SESSION}"
         log_success "  └─ ターミナルタブ展開完了"
     else
         log_info "  └─ wt.exe が見つかりません。手動でアタッチしてください。"

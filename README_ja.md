@@ -466,6 +466,18 @@ wsl --install
 
 現行の編成・エージェント名・モデル・CLI種別・起動パスは `config/settings.yaml` と `config/cli_profiles.yaml` が正本です。READMEの例を第二の設定源にしません。クリーンcloneでは、まず `first_setup.sh` を実行し、エージェントを起動しない検証を次で行います：
 
+移設時の注意：監査済みcheckoutでは、絶対ルート `/mnt/c/tools/multi-agent-shogun` がscripts・設定・hook配下の93ファイルに存在します。移設完了まではこのルートを前提とします。別のcheckoutルートを使う場合は、リポジトリ内のこの文字列だけを置換し、残存数を再計数してからセットアップを再実行します：
+
+```bash
+OLD_ROOT=/mnt/c/tools/multi-agent-shogun
+NEW_ROOT=/path/to/multi-agent-shogun
+rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | xargs -r sed -i "s|$OLD_ROOT|$NEW_ROOT|g"
+test "$(rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | wc -l)" -eq 0
+bash first_setup.sh
+```
+
+この一括操作でユーザーHOME・プロジェクト・スクリーンショットのパスまで置換してはなりません。それらは個別に確認してください。93ファイルは監査時点の基準値なので、upstream変更後は必ず再計数します。
+
 ```bash
 TMUX_TMPDIR="$(mktemp -d)" ./shutsujin_departure.sh -s
 ```
