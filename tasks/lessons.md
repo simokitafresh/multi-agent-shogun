@@ -15960,3 +15960,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 正本taskに残るtask_worktree_pathが実在しないとninja_scope_commit helperはfail-closedする。再配備時はworktree存在とsource headを一次確認し、欠落時はtaskへ新pathを反映してからcommitする運用が必要。
+
+### L1654: runtime source chainを含む既定値全数確認
+- **日付**: 2026-08-27
+- **出典**: cmd_karo_hotfix_t70_ext4_worktree_root_20260827
+- **記録者**: kagemaru
+- **tags**: [infra,deploy-task,frontend]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/deploy_task/preflight.sh,tests/unit/test_task_worktree_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_t70_ext4_worktree_root_20260827]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- dispatcherがhelperを後段sourceする構成では、入口ファイルだけを検索せずsource chain全体の同名実装を列挙してから変更する。今回preflight helper見落とし後、RCでscope追加し両実装を一致させた。
