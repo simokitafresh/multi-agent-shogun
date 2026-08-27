@@ -6101,3 +6101,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-073015131-2616
+  ts: "2026-08-28T07:30:15+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[将軍手回し0]] は既存aliasesに一致なし。類似概念TOP3: content_artifacts(記事・成果物索引; alias=将軍記事; score=2.5) / creator_brainwashing_defense(創造主の洗脳防御; alias=将軍に質問をしてみよ; score=2.3) / shogun_android_app(将軍Androidアプリ; alias=将軍アプリ; score=2.2)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
