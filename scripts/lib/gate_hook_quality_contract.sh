@@ -38,6 +38,21 @@ gate_hook_quality_contract_measurement_text() {
     '
 }
 
+# Keep the accepted FP vocabulary independent of grep's regex engine and the
+# runner locale. Quoted case patterns are literal substring checks; the only
+# glob metacharacters are the surrounding wildcards.
+gate_hook_quality_contract_has_measurement_vocabulary() {
+    local text="${1:-}"
+    case "$text" in
+        *"FP率"*|*"FP計"*|*"FP測"*|*"false_positive"*|*"false positive"*|\
+        *"false-positive"*|*"falsepositive"*|*"偽陽性"*|*"誤発報"*|\
+        *"誤BLOCK"*|*"誤遮断"*|*"detector_fp_rate"*|*"gate_fire_log"*|\
+        *"loop_ledger"*|*"cmd_design_quality"*)
+            return 0 ;;
+    esac
+    return 1
+}
+
 # Prints TSV: applicable\taction_conversion\tfp_measurement.
 # Optional second argument is a candidate-detector function receiving block_text.
 gate_hook_quality_contract_evaluate() {
@@ -54,7 +69,7 @@ gate_hook_quality_contract_evaluate() {
     fi
 
     measurement_text="$(gate_hook_quality_contract_measurement_text "$block_text")"
-    if ! printf '%s\n' "$measurement_text" | grep -qiE 'FP[率計測]|false[ _-]?positive|偽陽性|誤発報|誤BLOCK|誤遮断|detector_fp_rate|gate_fire_log|loop_ledger|cmd_design_quality'; then
+    if ! gate_hook_quality_contract_has_measurement_vocabulary "$measurement_text"; then
         measurement=missing
     fi
 

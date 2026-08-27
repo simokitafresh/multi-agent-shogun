@@ -6,7 +6,7 @@
     source "$1/scripts/lib/gate_hook_quality_contract.sh"
     for term in false_positive 偽陽性 誤発報 誤BLOCK 誤遮断; do
       printf -v block_text "gate追加\nquality_gate:\n  action_conversion: BLOCKを検出する\n  fp_measurement: %s" "$term"
-      result="$(gate_hook_quality_contract_evaluate "$block_text")"
+      result="$(LC_ALL=C gate_hook_quality_contract_evaluate "$block_text")"
       [[ "$result" == $'"'"'yes\tpass\tpass'"'"' ]] || {
         printf "term=%s result=%s\n" "$term" "$result" >&2
         exit 1
@@ -23,7 +23,7 @@
   run bash -c '
     source "$1/scripts/lib/gate_hook_quality_contract.sh"
     printf -v block_text "gate追加\nquality_gate:\n  action_conversion: BLOCKを検出する\n  fp_measurement: %s" "coverage=100%"
-    result="$(gate_hook_quality_contract_evaluate "$block_text")"
+    result="$(LC_ALL=C gate_hook_quality_contract_evaluate "$block_text")"
     [[ "$result" == $'"'"'yes\tpass\tmissing'"'"' ]]
     printf "negative_terms=1 missing=1\n"
   ' _ "$BATS_TEST_DIRNAME/../.."
