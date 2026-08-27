@@ -15986,3 +15986,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 実行bitを持たないmode644のgateを直接起動するとreport_receivedがrc126で停止する。共有shell scriptは実行bitを前提にせずbash経由で呼び、mode644 fixtureを回帰検証する。
+
+### L1656: 全terminal report publisherへ提出前precheckを接続する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_t99_report_precheck_20260828
+- **記録者**: hayate
+- **tags**: [infra,gate,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/report_field_set.sh]
+- **origin**: [[cmd_karo_hotfix_t99_report_precheck_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ninja_doneだけにprecheckがあってもreport_field_set terminal batch直行経路は品質gateを経ずにinbox_writeへ到達できる。正本publisherごとにtask worktreeのgateをatomic replace後・report_received前へ接続し、BLOCK時の配送0をfixtureで固定する。
