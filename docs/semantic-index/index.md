@@ -484,6 +484,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T03:32:27.636771+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T10:12:09.616497+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T18:59:47.087507+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T21:13:33.511875+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -13155,6 +13156,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608280511_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608280521_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608280521_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608280600_hanzo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608280600_hanzo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
