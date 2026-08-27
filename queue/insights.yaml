@@ -301,7 +301,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4372"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で確認。cmd_4372はHMM Regime Phase 1の研究層限定・selection無変更・本番無変更で、cmd_4374のPhase 2b統計検定によりSTOP確定しPhase 3(selection利用)へ進まない。候補が示す復帰手順の意志依存はAGENTS.mdの必須復帰手順とsemantic indexのdefense_hierarchy/inbox_processing_disciplineに既存記録済みであり、本taskのplanned_paths外に新規実修正は不要。
+  action_artifact: "target=queue/insights.yaml:298-304;primary=memory_db:insight:INS-20260823-102127652-83e5 and cmd_4372 final verdict;semantic=docs/semantic-index/index.md:12968-12970;rules=AGENTS.md:100-158;decision_candidate=不要(既存記録・別cmd改善対象)"
+  resolved_at: "2026-08-27T16:34:07+09:00"
 - id: INS-20260823-102127988-fe27
   ts: "2026-08-23T10:21:27+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[Phase1_Regime情報の存在検証]] は既存aliasesに一致なし。類似概念TOP3: report_quality_protocol(忍者報告品質プロトコル; alias=Phase1 FE削除; score=20.4) / semantic_causal_automation(セマンティック因果自動化; alias=semantic_map_generate; score=4.3) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_gunshi_startup; score=4.3)。概念定義とaliases追加を検討せよ"
