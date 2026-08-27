@@ -1,5 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-08-03 D0 route preflight formal review accepted after C-x preflight commit -->
+<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_042403 source_equivalent 内容変更なし境界のみ -->
+<!-- source_commit:5e9ea355d0ad reason:DOC_LANE_REQUEST blt_042403 source_equivalent 内容変更なし境界のみ evidence:git -C /mnt/c/Python_app/DM-signal log --oneline -1 5e9ea355d0ad; reason=source_equivalent -->
 <!-- last_synced_lesson: L1603 -->
 <!-- source_commit:d7cab63f3aaacf8392a98bf455035317c5d5e2d7 reason:D0 route preflight formal review accepted after C-x preflight commit evidence:D0 report d3d2567c; latest DM-Signal source d7cab63f; runner17/17; writes0 -->
 
