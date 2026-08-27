@@ -5581,3 +5581,212 @@ printf "alerts=2 same_generation=1 cooldown_suppressed=1\n"
     [ "$status" -eq 0 ]
     [ "$output" = "stale_generation_alerts=0 durable_records=0" ]
 }
+
+# test_necessity: the reflux dirty-target gate must accept only a trusted
+# pending-to-resolved transition carrying the complete canonical resolution
+# evidence, while rejecting pending additions and every mixed/arbitrary diff.
+# regression_justification: reproduces the T50 semantic_map_generate ->
+# insight_resolve lifecycle and prevents broad dirty-queue checkpointing from
+# turning new work or unrelated edits into an AUTO-DEPLOY.
+@test "reflux insight lifecycle validator accepts only complete trusted resolution" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/reflux-lifecycle-validator"
+        mkdir -p "$root"
+
+        init_fixture() {
+            local fixture="$1"
+            mkdir -p "$fixture/queue/archive"
+            git -C "$fixture" init -q
+            git -C "$fixture" config user.email test@example.invalid
+            git -C "$fixture" config user.name reflux-test
+            cat > "$fixture/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-T50
+    source: semantic_map_generate:new_file
+    status: pending
+    insight: candidate
+YAML
+            git -C "$fixture" add queue/insights.yaml
+            tree=$(git -C "$fixture" write-tree)
+            commit=$(printf "fixture\n" | git -C "$fixture" commit-tree "$tree")
+            git -C "$fixture" update-ref refs/heads/master "$commit"
+            git -C "$fixture" symbolic-ref HEAD refs/heads/master
+        }
+
+        classify() {
+            local fixture="$1"
+            SCRIPT_DIR="$fixture" _reflux_classify_insight_dirty queue/insights.yaml
+        }
+
+        valid="$root/valid"
+        init_fixture "$valid"
+        cat > "$valid/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-T50
+    source: semantic_map_generate:new_file
+    status: resolved
+    insight: candidate
+    resolved_reason: represented in semantic map
+    action_artifact: context/semantic-map.md
+    resolved_at: '2026-08-27T09:00:00+09:00'
+YAML
+        valid_result=$(classify "$valid")
+        test "$valid_result" = resolve
+
+        arbitrary="$root/arbitrary"
+        init_fixture "$arbitrary"
+        cat > "$arbitrary/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-T50
+    source: semantic_map_generate:new_file
+    status: pending
+    insight: candidate
+    owner: unexpected
+YAML
+        if classify "$arbitrary" >/dev/null 2>&1; then exit 11; fi
+
+        pending_append="$root/pending-append"
+        init_fixture "$pending_append"
+        cat > "$pending_append/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-T50
+    source: semantic_map_generate:new_file
+    status: pending
+    insight: candidate
+  - id: INS-T50-NEW
+    source: semantic_map_generate:new_file
+    status: pending
+    insight: new candidate
+YAML
+        if classify "$pending_append" >/dev/null 2>&1; then exit 12; fi
+
+        mixed="$root/mixed"
+        init_fixture "$mixed"
+        cat > "$mixed/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-T50
+    source: semantic_map_generate:new_file
+    status: resolved
+    insight: candidate
+    resolved_reason: represented in semantic map
+    action_artifact: context/semantic-map.md
+    resolved_at: '2026-08-27T09:00:00+09:00'
+    owner: unexpected
+YAML
+        if classify "$mixed" >/dev/null 2>&1; then exit 13; fi
+
+        missing="$root/missing"
+        init_fixture "$missing"
+        cat > "$missing/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-T50
+    source: semantic_map_generate:new_file
+    status: resolved
+    insight: candidate
+    resolved_reason: represented in semantic map
+    action_artifact: context/semantic-map.md
+YAML
+        if classify "$missing" >/dev/null 2>&1; then exit 14; fi
+
+        printf "valid=%s arbitrary=blocked pending_append=blocked mixed=blocked missing=blocked\n" "$valid_result"
+    '
+    if [ "$status" -ne 0 ]; then
+        printf 'reflux_validator_debug status=%s output=%s\n' "$status" "$output"
+    fi
+    [ "$status" -eq 0 ]
+    [ "$output" = "valid=resolve arbitrary=blocked pending_append=blocked mixed=blocked missing=blocked" ]
+}
+
+# test_necessity: one real reflux dispatch cycle must checkpoint a trusted
+# resolution generation and deploy the remaining pending insight exactly once,
+# with no AUTO-BLOCK for the dirty fingerprint.
+# regression_justification: covers the production caller path from
+# semantic_map_generate's producer source through insight_resolve's four-field
+# mutation into _handle_reflux_auto_deploy.
+@test "reflux auto deploy accepts trusted resolution generation and logs one deploy" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/reflux-auto-cycle"
+        mkdir -p "$root/queue/archive" "$root/queue/tasks" "$root/queue/reports" "$root/scripts" "$root/logs" "$root/state"
+        git -C "$root" init -q
+        git -C "$root" config user.email test@example.invalid
+        git -C "$root" config user.name reflux-test
+        cat > "$root/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-T50-RESOLVED
+    source: semantic_map_generate:new_file
+    status: pending
+    insight: represented candidate
+  - id: INS-T50-PENDING
+    source: semantic_index_update
+    status: pending
+    insight: remaining candidate
+YAML
+        git -C "$root" add queue/insights.yaml
+        tree=$(git -C "$root" write-tree)
+        commit=$(printf "fixture\n" | git -C "$root" commit-tree "$tree")
+        git -C "$root" update-ref refs/heads/master "$commit"
+        git -C "$root" symbolic-ref HEAD refs/heads/master
+        cat > "$root/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-T50-RESOLVED
+    source: semantic_map_generate:new_file
+    status: resolved
+    insight: represented candidate
+    resolved_reason: already represented in semantic map
+    action_artifact: context/semantic-map.md
+    resolved_at: '2026-08-27T09:00:00+09:00'
+  - id: INS-T50-PENDING
+    source: semantic_index_update
+    status: pending
+    insight: remaining candidate
+YAML
+        cat > "$root/scripts/deploy_task.sh" <<SH
+#!/usr/bin/env bash
+printf "%s\\n" "AUTO_DEPLOY_CALLED:\$*" >> "$root/deploy.log"
+SH
+        chmod +x "$root/scripts/deploy_task.sh"
+        cat > "$root/scripts/ninja_scope_commit.sh" <<SH
+#!/usr/bin/env bash
+set -euo pipefail
+git -C "$root" add -- queue/insights.yaml
+tree=\$(git -C "$root" write-tree)
+parent=\$(git -C "$root" rev-parse HEAD)
+next=\$(printf "checkpoint\\n" | git -C "$root" commit-tree "\$tree" -p "\$parent")
+git -C "$root" update-ref refs/heads/master "\$next"
+SH
+        chmod +x "$root/scripts/ninja_scope_commit.sh"
+
+        declare -gA REFLUX_IDLE_FIRST_SEEN
+        REFLUX_IDLE_FIRST_SEEN[hayate]=0
+        SCRIPT_DIR="$root"
+        STATE_DIR="$root/state"
+        LOG="$root/monitor.log"
+        REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1
+        REFLUX_AUTO_DEPLOY_COOLDOWN=1
+        REFLUX_AUTO_DEPLOY_STATE_PREFIX="$root/state/reflux_auto"
+        REFLUX_INSIGHT_RESERVATION_LEDGER="$root/state/reservations.tsv"
+        REFLUX_PROMOTION_PAUSE_MARKER="$root/state/promotion-paused"
+        _training_pipeline_has_work() { return 1; }
+        _reflux_zero_backlink_inventory() { printf "0\\t-\\tok\\n"; }
+        _reflux_promotion_inventory() { printf "0\\t-\\tok\\n"; }
+        log() { printf "%s\\n" "$1" >> "$LOG"; }
+
+        _handle_reflux_auto_deploy hayate 100
+        test "$(grep -c 'REFLUX-AUTO-BLOCK' "$LOG" || true)" -eq 0
+        test "$(grep -c 'REFLUX-AUTO-DEPLOY:.*kind=insight' "$LOG" || true)" -eq 1
+        test "$(grep -c '^AUTO_DEPLOY_CALLED:' "$root/deploy.log" || true)" -eq 1
+        printf "auto_block=0 auto_deploy=1 deploy_calls=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "auto_block=0 auto_deploy=1 deploy_calls=1" ]
+}
