@@ -173,7 +173,7 @@ deploy_task_prepare_remote_tip_worktree() {
     git -C "$repo" fetch -q --no-write-fetch-head "$remote" "$push_ref" || { log "BLOCK: remote-tip fetch failed"; return 1; }
     git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || { log "BLOCK: remote-tip object unavailable"; return 1; }
 
-    worktree_root="${DEPLOY_TASK_WORKTREE_ROOT:-/home/simokitafresh/shogun-task-worktrees}"
+    worktree_root="${DEPLOY_TASK_WORKTREE_ROOT:-$HOME/shogun-task-worktrees}"
     mkdir -p "$worktree_root"
     generation=$(printf '%s\0%s\0%s' "$task_id" "$remote_tip" "$(date +%s%N)" | sha256sum | awk '{print $1}')
     worktree_path="$worktree_root/${ninja_name}_${generation:0:16}"

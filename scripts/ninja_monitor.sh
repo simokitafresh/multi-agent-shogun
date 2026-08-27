@@ -85,7 +85,7 @@ source "$SCRIPT_DIR/scripts/lib/project_path.sh"
 # config/projects.yaml via project_path.sh; the service id matches the
 # existing cmd_complete_gate Render SSOT.  Credentials stay in the Render
 # CLI's existing authenticated profile and are never read by this monitor.
-DM_SIGNAL_RENDER_CLI="${DM_SIGNAL_RENDER_CLI:-/home/simokitafresh/.local/bin/render}"
+DM_SIGNAL_RENDER_CLI="${DM_SIGNAL_RENDER_CLI:-$(command -v render 2>/dev/null || true)}"
 DM_SIGNAL_RENDER_SERVICE_ID="${DM_SIGNAL_RENDER_SERVICE_ID:-srv-d4ja7q15pdvs739a4q1g}"
 DM_SIGNAL_RENDER_CHECK_INTERVAL_SEC="${DM_SIGNAL_RENDER_CHECK_INTERVAL_SEC:-60}"
 DM_SIGNAL_RENDER_STATE_FILE="${DM_SIGNAL_RENDER_STATE_FILE:-$STATE_DIR/ninja_monitor_dm_signal_render_live.tsv}"
