@@ -853,7 +853,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "同一source/task hash 0b0ccc7720776a61 の既存INS-20260822-152810760-1a8cが12組の参照先を一次検分済みで、対象は重複pending。追加実装は不要で、追従更新は既存resolved側のdecision candidateへ集約する。"
-  action_artifact: "target=queue/insights.yaml:INS-20260822-091834995-b333;duplicate=INS-20260822-152810760-1a8c;gate=/tmp/cmd_reflux_insight_202608280136_tobisaru/skill_refs_gate.stdout;gate_rc=2;stale_pairs=39;missing_refs=0;decision_candidate=既存resolved側の12組を別cmdで実測再検証"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-091834995-b333;duplicate=INS-20260822-152810760-1a8c;gate=/tmp/cmd_reflux_insight_202608280136_tobisaru/skill_refs_gate.stdout;gate_rc=2;stale_pairs=39;missing_refs=0;decision_candidate=既存resolved側の12組を別cmdで実測再検証;verification_task=cmd_reflux_insight_202608280218_hanzo_exact"
   resolved_at: "2026-08-28T02:24:47+09:00"
 - id: INS-20260818-235428053-8c2c
   ts: "2026-08-18T23:54:28+09:00"
