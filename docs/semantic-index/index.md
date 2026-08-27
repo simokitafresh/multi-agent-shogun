@@ -3056,6 +3056,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:30:41+09:00 T114 reflux 開始 nudge の task_id 欠落=根治。飛猿 hotfix r1+r2(structured identity+Codex 再送 nudge+monitor 直送+watcher 初回 nudge 2 経路 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T07:03:00+09:00 T100 runtime lane 再分岐根治=GATE CLEAR 07:01:53(半蔵 88969097a): runtime publish の origin 直 push を除去し shared main の field-awar |
 | cmd | `cmd_karo_hotfix_t108_doc_lane_source_equivalent_auto_close_20260828` (`scripts/gates/gate_context_freshness.sh`, `tests/unit/test_gate_context_freshness.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T07:30:00+09:00 T108 doc lane 自動化=GATE CLEAR 07:28:25(小太郎 c092febfc): DOC_LANE_REQUEST source_equivalent を gate_context_freshness.sh 内で  |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
