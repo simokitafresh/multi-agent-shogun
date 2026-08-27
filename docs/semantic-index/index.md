@@ -10484,6 +10484,7 @@ codd:
 | causal | `cmd_4396` origin: [[cmd_4395_precheck前倒し集約]] -> [[ac_phase_mixing累計昇格]] -> [[cmd_4396_実装フェーズ分離再起票]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T13:52:30+09:00 LLMは一つにフォーカスすると、他のことを先送りにしてしまう。シングルタスクを高速に切り替える。マルチタスク（並列）は能力や状態に依存する。心当たりがあるなら対応せよ |
 | causal | `cmd_4406` files_modified: [[report_quality_protocol]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T15:46:21+09:00 CMDはどうなった？ |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
