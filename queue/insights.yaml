@@ -5655,3 +5655,10 @@ insights:
   source: "shogun"
   fix_known: false
   status: pending
+- id: INS-20260828-001724426-69d3
+  ts: "2026-08-28T00:17:24+09:00"
+  insight: "ext4移設後にgate_report_format.sh Permission denied発生(才蔵quality_monitor)。chmod +xが必要な可能性。auto clear cmd_context問題と同じext4移設後遺症群"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
