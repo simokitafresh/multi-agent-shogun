@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:41 更新(inbox: T51 配備)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:43 更新(inbox: T22 クローズ)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -25,7 +25,7 @@
 - [x] T19(05:17 家老判定: L1637×2 retireしない(unknown増分0未確認)・L1632 retire適格だが canonical lessons.md に不在=SSOT不整合で見送り、report archive・failed残置0; 影丸 FAIL報告 17:42: AC3未達→家老判断待ち) lesson_deprecation候補3件(L1637×2/L1632)家老判断待ち→家老へ集約案内 ★教訓注入トークン削減
 - [x] T20(cfd7b7d3e: gate ARCHIVE_AUTO_HANDLED+archive_completedがhint既読化。ゾンビ16件掃除→家老未読19→1) 家老inbox滞留の真因調査(殿18:03)=完了済cmdのskill_hintゾンビ ★家老の再読コスト16KB×毎nudgeをゼロに
 - [x] T21(09:27 GATE CLEAR: 半蔵 hotfix cmd_karo_hotfix_t21_codex_delivery_read_transition(軍師LGTM→家老ACCEPT)、read遷移ベース再nudge=本日律速の根治が origin 前で待機; 09:11 家老判断(a): 旧worktree差分2ファイル実在・所有test 294/296 PASS(FAIL2=planned外の旧pane契約)→依存contractを差分ACに足し半蔵へ再配備 assigned・Working実測; 09:03 影丸 report result=FAIL・gate CLEAR 0=未クローズ、家老判断待ち; 影丸 acknowledged。19:33に家老Codexのnudge queue停滞を実観測=裏付け) Codex宛nudge配達検証FAILURE 88%(insight登録済)→read遷移ベースの検証+未読N分で再nudge ★家老・忍者の指示受領遅延(2h停滞)の根治
-- [ ] T22(09:03 飛猿 08-26 13:49 failed(FAILED-PRESERVE)残置・worktree保全のまま=未クローズ; 飛猿 assigned) pre-push PASSキャッシュのキー変更(commit→tested-paths tree hash)+insight auto-commitバッチ化(本日43commit=HEAD churn) ★push 1回あたりの再走を0に
+- [x] T22(09:42 家老判定: 成果 commit 00c887573 は現HEAD祖先(将軍再計測 ancestor=yes)・変更2ファイル・再配備は重複→failed クローズ相当; 09:03 飛猿 08-26 13:49 failed(FAILED-PRESERVE)残置・worktree保全のまま=未クローズ; 飛猿 assigned) pre-push PASSキャッシュのキー変更(commit→tested-paths tree hash)+insight auto-commitバッチ化(本日43commit=HEAD churn) ★push 1回あたりの再走を0に
 - [x] T23(09:03 実測: ninja_monitor 921778 1owner+子shell2(152s)=二重起動なし; 家老へ下知 20:04) ninja_monitor二重起動(非owner pid 1354798 19:04起動 / owner 2140401 19:48起動)の正規退役 ★snapshot/nudge競合の除去
 - [x] T24(20:17 家老復旧: 7/7 bypass・bwrap 0。settings.yaml launch_cmd 4行修正=未commit・殿裁可待ち) Codex sandbox起動でcommitだけFAIL(P2 3件)の真因=settings.yaml per-agent launch_cmdのbypass欠落 ★実装PASSがcommitで捨てられる損失0に
 - [x] T25(05:20 GATE CLEAR: review APPROVE、統合tip 77107a355 push; 21:38 家老へ配備下知 msg_213800-C) P1(AC厳格停止8件)の型変更: 基準値をACに固定せず忍者が同一環境でbefore→afterを自己計測、乖離は報告して進む(バッチらせん5条)→配備テンプレ+cmd_save gateへ ★作業PASSがACでFAILになる損失0に
