@@ -1,2 +1,3 @@
-# session_alerts — generated: 2026-08-26T05:10:42+0900
-[DONE] 走行中cmd実測突合: capture-pane 05:15実測 hayate=ghost AC2(daemon_alert)作業ブロック完了直後/saizo=batch2 live timing(yaml_field_set実行中)/kotaro=履歴分岐merge(worktree準備中)。3名とも家老配備どおり稼働、snapshotと一致
+# session_alerts — generated: 2026-08-27T14:54:35+0900
+[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな (15:01 capture-pane実施: 3名ともContext 0%起動プロンプト=WSL再起動によるghost。家老へ再配備下知済)
+[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"

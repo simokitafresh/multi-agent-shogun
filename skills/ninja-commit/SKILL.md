@@ -176,6 +176,7 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
+- 2026-08-27: gate=gate_report_format result=FAIL executor=saizo reason=commit_contract: commit owned/planned scope is missing
 - 2026-08-26: gate=gate_report_format result=FAIL executor=saizo reason=commit_hash: 'no-code-change' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
 - 2026-08-26: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: task/report commit_contract required mismatch
 - 2026-08-26: gate=gate_report_format result=FAIL executor=kagemaru reason=final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid; final_checkpoint: ci_fix clean repro evidence post harness must start before push
@@ -195,7 +196,6 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - 2026-08-17: gate=gate_report_format result=FAIL executor=hanzo reason=cross_repo_commits: primary commit_hash is absent from cross_repo_commits; cross_repo_commits: FIX hint: cross_repo_commitsのpathsが実際のcommit内容と不一致。以下を実行して正しいentriesを取得し、報告YAMLのcr...
 - 2026-08-15: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: commit owned/planned scope is missing; commit_contract: commit/task history does not conta...
 - 2026-08-15: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: commit/task history does not contain owned/planned path: scripts/config/context_source_commits.tsv; commit_contract: commit/task history does not contain owned/...
-- 2026-08-15: gate=gate_report_format result=FAIL executor=kagemaru reason=cross_repo_commits: cross_repo path appears in multiple entries: backend/tests/test_monthly_returns_signal_cache_preload.py; cross_repo_commits: FIX hint: cross_repo_commitsのpat...
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。binary_checks.resultはyes/noのみ、verdictはgate_report_format.sh自動導出、報告追記はhelper経由に限定する。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パスを検出し、個別dict変換する。ninja-commitのcommit_hash記録手順への影響なし。
