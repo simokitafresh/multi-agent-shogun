@@ -976,13 +976,14 @@ def commit_is_reflected_or_lesson_only(
 def _root_fallback_commit_count_since(
     updated_at: date, source_commits: tuple[str, ...] | None = None
 ) -> tuple[int, list[str]]:
+    # Every source-repository count is bounded by an explicit reviewed marker.
+    # A missing marker is unknown freshness; never resurrect the old
+    # last_updated/--since fallback that produced false positives.
+    if not source_commits:
+        return -1, []
     tip_ref = source_tip_ref(root)
-    revision: str | tuple[str, ...] = tip_ref
-    if source_commits:
-        revision = (tip_ref, *(f"^{commit}" for commit in source_commits))
-    commits = _run_grouped_git_log(
-        root, revision, None if source_commits else updated_at, []
-    )
+    revision: tuple[str, ...] = (tip_ref, *(f"^{commit}" for commit in source_commits))
+    commits = _run_grouped_git_log(root, revision, [])
     if commits is None:
         return -1, []
 
@@ -1056,13 +1057,12 @@ def source_commit_summary_since(
     source_commits: tuple[str, ...] | None = None,
     max_details: int = 3,
 ) -> tuple[int, list[str]]:
-    # Registered context paths are governed by the exact source_commit
-    # boundary.  Keep this invariant at the counting boundary as well as at
-    # the callers: a future caller that omits the pre-resolved frontier must
-    # not silently fall back to the date-based scan that caused DOC_LANE_ALERT
-    # false positives.  Unregistered root-fallback contexts retain their
-    # legacy date window until they receive an explicit source boundary.
-    if is_registered_source_context(rel_path) and not source_commits:
+    # Every context path is governed by an exact source_commit boundary. Keep
+    # this invariant at the counting boundary as well as at the callers: a
+    # future caller that omits the pre-resolved frontier must not silently
+    # fall back to the date-based scan that caused DOC_LANE_ALERT false
+    # positives.
+    if not source_commits:
         source_commits, marker_error = source_commit_frontier(
             project_id, rel_path, abs_path
         )
@@ -1083,9 +1083,7 @@ def source_commit_summary_since(
     cited_files = load_cited_paths(abs_path, cited_dirs) if cited_dirs else set()
 
     tip_ref = source_tip_ref(repo_path)
-    revision_args = [tip_ref]
-    if source_commits:
-        revision_args.extend(f"^{commit}" for commit in source_commits)
+    revision_args = [tip_ref, *(f"^{commit}" for commit in source_commits)]
     cmd = [
         "git",
         "-C",
@@ -1095,8 +1093,6 @@ def source_commit_summary_since(
         "--name-only",
     ]
     cmd.extend(revision_args)
-    if not source_commits:
-        cmd.append(f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
     if git_pathspecs:
         cmd.extend(["--", *git_pathspecs])
 
@@ -1147,7 +1143,6 @@ def source_commit_summary_since(
 def _run_grouped_git_log(
     repo_path: str,
     revision: str | tuple[str, ...] | None,
-    since_date: date | None,
     pathspecs: list[str],
 ) -> list[tuple[str, str, list[str]]] | None:
     """1回のgit logで(short_hash, subject, changed_paths)のコミット列を返す。
@@ -1166,8 +1161,6 @@ def _run_grouped_git_log(
         else ([revision] if revision else [])
     )
     cmd.extend(revision_parts)
-    if since_date is not None:
-        cmd.append(f"--since={(since_date + timedelta(days=1)).isoformat()} 00:00:00")
     if pathspecs:
         cmd.extend(["--", *pathspecs])
 
@@ -1249,7 +1242,6 @@ def _run_grouped_git_log(
                 "repo": os.path.realpath(repo_path),
                 "generation": generation,
                 "revision": revision_parts,
-                "since": since_date.isoformat() if since_date else None,
                 "pathspecs": sorted(pathspecs),
             },
             sort_keys=True,
@@ -1352,7 +1344,7 @@ def _run_grouped_git_log(
     # GA-286: dashboard rendering invokes this checker repeatedly, while a 9p
     # git log may consume the full 10s + 60s retry budget.  Persist only
     # successful history snapshots on ext4 (/tmp by default).  The key binds
-    # the repository, resolved revision boundary, date range and pathspecs, so
+    # the repository, resolved revision boundary and pathspecs, so
     # a new commit cannot reuse stale history.  Corrupt/missing snapshots are
     # cache misses; git failures remain fail-closed and are never cached.
     cache_dir = os.environ.get("CFC_HISTORY_CACHE_DIR", "/tmp/cfc-history-v1")
@@ -1438,7 +1430,6 @@ def _run_grouped_git_log(
         {
             "repo": os.path.realpath(repo_path),
             "revision": revision,
-            "since": since_date.isoformat() if since_date else None,
             "pathspecs": sorted(pathspecs),
         },
         sort_keys=True,
@@ -1478,7 +1469,6 @@ def _run_grouped_git_log(
         env.update({
             "CFC_REFRESH_REPO": os.path.realpath(repo_path),
             "CFC_REFRESH_REVISION": revision or "",
-            "CFC_REFRESH_SINCE": since_date.isoformat() if since_date else "",
             "CFC_REFRESH_PATHS": json.dumps(pathspecs),
             "CFC_REFRESH_CONTRACT_HASH": contract_hash,
             "CFC_REFRESH_SOURCE_TIP": boundary,
@@ -1520,17 +1510,17 @@ def _run_grouped_git_log(
 
 
 def _compute_direct_group(
-    key: tuple[str, tuple[str, ...] | None, date | None],
+    key: tuple[str, tuple[str, ...] | None],
     members: list[tuple[str, str, list[str], list[str], set[str]]],
 ) -> dict[tuple[str, str], tuple[int, list[str]]]:
-    """(repo_path, source_commit/updated_at)を共有するcontext file群を
+    """(repo_path, source_commit)を共有するcontext file群を
     git log 1回に集約し(GA-245: 9pマウント環境ではgit呼び出し回数がレイテンシに
     直結するため個別呼び出しをまとめる)、結果を各context fileのpathspec条件で
     Python側にて個別に絞り込む。member = (project_id, rel_path, plain_pathspecs,
     cited_dirs, cited_files)。plain/cited双方が空のmember(pathspec指定のない
     project直下context)は元のsource_commit_summary_sinceと同じくフィルタ無しで
     全コミットを対象にする。"""
-    repo_path, source_commits, since_date = key
+    repo_path, source_commits = key
     tip_ref = source_tip_ref(repo_path)
     revision: str | tuple[str, ...] = (
         (tip_ref, *(f"^{commit}" for commit in source_commits))
@@ -1549,7 +1539,9 @@ def _compute_direct_group(
             | {rel_path for project_id, rel_path, *_ in members if project_id == "infra"}
         )
 
-    commits = _run_grouped_git_log(repo_path, revision, since_date, union_pathspecs)
+    if not source_commits:
+        return {(project_id, rel_path): (-1, []) for project_id, rel_path, *_ in members}
+    commits = _run_grouped_git_log(repo_path, revision, union_pathspecs)
     if commits is None:
         return {(project_id, rel_path): (-1, []) for project_id, rel_path, *_ in members}
 
@@ -1592,7 +1584,7 @@ def batch_source_commit_summaries(
         return {}
     summaries: dict[tuple[str, str], tuple[int, list[str]]] = {}
 
-    def global_history_ledger(repo_path: str, earliest: date, boundary_markers: set[str]) -> tuple[list[tuple[str, int, str, list[str]]], dict[str, tuple[int, bool]]] | None:
+    def global_history_ledger(repo_path: str, boundary_markers: set[str]) -> tuple[list[tuple[str, int, str, list[str]]], dict[str, tuple[int, bool]]] | None:
         """Build/read one generation-bound all-path history ledger per repo."""
         cache_dir = os.environ.get("CFC_GLOBAL_HISTORY_CACHE_DIR", "/tmp/cfc-global-history-v1")
         build_timeout = float(os.environ.get("CFC_GLOBAL_HISTORY_BUILD_TIMEOUT", "120"))
@@ -1651,7 +1643,7 @@ def batch_source_commit_summaries(
                     boundary_meta[inspected[0]] = inspected[1]
             generation = hashlib.sha256((os.path.realpath(repo_path) + "\0" + head_marker + "\0" + tip_result.stdout.strip()).encode()).hexdigest()
             contract = json.dumps(
-                {"repo": os.path.realpath(repo_path), "generation": generation, "earliest": earliest.isoformat(), "boundaries": boundary_meta},
+                {"repo": os.path.realpath(repo_path), "generation": generation, "boundaries": boundary_meta},
                 sort_keys=True,
                 separators=(",", ":"),
             )
@@ -1694,8 +1686,7 @@ def batch_source_commit_summaries(
                 return cached
             try:
                 rev_result = subprocess.run(
-                    ["git", "-C", repo_path, "rev-list", "--since=" +
-                     f"{earliest.isoformat()} 00:00:00", "HEAD"],
+                    ["git", "-C", repo_path, "rev-list", "HEAD"],
                     check=False, capture_output=True, text=True, timeout=build_timeout,
                 )
             except (OSError, subprocess.TimeoutExpired):
@@ -1703,18 +1694,13 @@ def batch_source_commit_summaries(
             if rev_result.returncode != 0:
                 return None
             hashes = [line.strip() for line in rev_result.stdout.splitlines() if line.strip()]
-            # `rev-list --since` may prune a still-new ancestor when commit
-            # timestamps are non-monotonic across merged branches.  The
-            # producer has already resolved and ancestry-validated every
-            # recorded boundary, so force those exact commits into the ledger.
-            # This lets the consumer distinguish a real missing boundary from
-            # Git's date-walk pruning without falling back to per-context log
-            # probes on the slow source filesystem.
+            # The producer has already resolved and ancestry-validated every
+            # recorded boundary. Keep the exact boundary commits in the
+            # ledger even when a merge commit has no printable diff row.
             hashes = list(dict.fromkeys([
                 *hashes,
                 *(str(meta["sha"]) for meta in boundary_meta.values()
-                  if bool(meta["ancestor"]) and
-                  int(meta["epoch"]) >= int(earliest.strftime("%s"))),
+                  if bool(meta["ancestor"])),
             ]))
             if not hashes:
                 rows: list[list[object]] = []
@@ -1773,7 +1759,7 @@ def batch_source_commit_summaries(
                 # producer has verified both resolution and HEAD ancestry.
                 for meta in boundary_meta.values():
                     boundary_sha = str(meta["sha"])
-                    if bool(meta["ancestor"]) and int(meta["epoch"]) >= int(earliest.strftime("%s")):
+                    if bool(meta["ancestor"]):
                         rows_by_hash.setdefault(
                             boundary_sha,
                             [boundary_sha, int(meta["epoch"]), "[reviewed boundary]", []],
@@ -1806,7 +1792,7 @@ def batch_source_commit_summaries(
                 repo_infos.setdefault(repo_path, []).append(info)
         for repo_path, repo_members in repo_infos.items():
             boundary_markers = {marker for item in repo_members for marker in (item[4] or ())}
-            ledger_result = global_history_ledger(repo_path, min(item[3] for item in repo_members), boundary_markers)
+            ledger_result = global_history_ledger(repo_path, boundary_markers)
             ledger = ledger_result[0] if ledger_result is not None else None
             boundary_metadata = ledger_result[1] if ledger_result is not None else {}
             if ledger is None:
@@ -1820,14 +1806,11 @@ def batch_source_commit_summaries(
                 cited_files = load_cited_paths(abs_path, cited_dirs) if cited_dirs else set()
                 boundaries = {marker[-40:] for marker in (source_commits or ())}
                 found_boundaries = set()
-                earliest_epoch = int((min(item[3] for item in repo_members)).strftime("%s"))
                 for boundary in boundaries:
                     if boundary in boundary_metadata:
                         boundary_epoch, is_ancestor = boundary_metadata[boundary]
-                        # A resolved non-ancestor is a valid no-op exclusion;
-                        # an ancestor older than the ledger start is also
-                        # outside the materialized range by contract.
-                        if not is_ancestor or boundary_epoch < earliest_epoch:
+                        # A resolved non-ancestor is a valid no-op exclusion.
+                        if not is_ancestor:
                             found_boundaries.add(boundary)
                 count = 0; details: list[str] = []
                 for commit_hash, commit_epoch, subject, changed_paths in ledger:
@@ -1835,8 +1818,6 @@ def batch_source_commit_summaries(
                     matching_boundary = next((boundary for boundary in boundaries if commit_hash.startswith(boundary)), None)
                     if matching_boundary:
                         found_boundaries.add(matching_boundary); continue
-                    if not source_commits and commit_epoch < int((updated_at + timedelta(days=1)).strftime("%s")):
-                        continue
                     if plain_pathspecs or cited_dirs:
                         if not _commit_touches_relevant_path(changed_paths, plain_pathspecs, cited_dirs, cited_files):
                             continue
@@ -1861,16 +1842,16 @@ def batch_source_commit_summaries(
                     summaries[(project_id, rel_path)] = (count, details)
         return summaries
 
-    root_fallback_groups: dict[tuple[date, tuple[str, ...] | None], list[tuple[str, str]]] = {}
+    root_fallback_groups: dict[tuple[str, ...] | None, list[tuple[str, str]]] = {}
     direct_groups: dict[
-        tuple[str, tuple[str, ...] | None, date | None],
+        tuple[str, tuple[str, ...] | None],
         list[tuple[str, str, list[str], list[str], set[str]]],
     ] = {}
 
     for project_id, rel_path, abs_path, updated_at, source_commits in infos:
         repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
         if root_fallback:
-            root_fallback_groups.setdefault((updated_at, source_commits), []).append(
+            root_fallback_groups.setdefault(source_commits, []).append(
                 (project_id, rel_path)
             )
             continue
@@ -1882,7 +1863,7 @@ def batch_source_commit_summaries(
         ]
         plain_pathspecs = [p for p in pathspecs if not p.startswith(CITED_PATHSPEC_PREFIX)]
         cited_files = load_cited_paths(abs_path, cited_dirs) if cited_dirs else set()
-        key = (repo_path, source_commits, None if source_commits else updated_at)
+        key = (repo_path, source_commits)
         direct_groups.setdefault(key, []).append(
             (project_id, rel_path, plain_pathspecs, cited_dirs, cited_files)
         )
@@ -1893,8 +1874,8 @@ def batch_source_commit_summaries(
     max_workers = max(1, int(os.environ.get("CFC_GIT_MAX_WORKERS", "4")))
     with ThreadPoolExecutor(max_workers=min(max_workers, 16)) as executor:
         root_futures = {
-            executor.submit(_root_fallback_commit_count_since, updated_at, source_commits): keys
-            for (updated_at, source_commits), keys in root_fallback_groups.items()
+            executor.submit(_root_fallback_commit_count_since, None, source_commits): keys
+            for source_commits, keys in root_fallback_groups.items()
         }
         direct_futures = {
             executor.submit(_compute_direct_group, key, members): key
