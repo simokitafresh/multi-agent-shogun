@@ -61,12 +61,12 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   <div class="tile"><span class="k">済</span><span class="v done">45</span><span class="s">md正本の [x] 実数</span></div>
   <div class="tile"><span class="k">走行中</span><span class="v run">3</span><span class="s">T40 / T45 / T47</span></div>
   <div class="tile"><span class="k">未着手</span><span class="v todo">8</span><span class="s">T08 / T10 / T12 / T21 / T22 / T49 / T50 / T51</span></div>
-  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">run 33018749601 @ed70c88e2(小太郎 ci_fix: owner heartbeat 秒境界レース除去) success、51b33bd4a success。e5c1ab2cb success。最新 577731149 in_progress(origin=HEAD 0 0)</span></div>
-  <div class="tile"><span class="k">reflux</span><span class="v run">5 / 空白</span><span class="s">6件目 小太郎 08:15→08:25 DONE(pending 104)。08:05 才蔵は dirty で AUTO-BLOCK(T50)。T47 疾風 44分走行中。孤児 0</span></div>
+  <div class="tile"><span class="k">CI</span><span class="v done">GREEN</span><span class="s">e5c1ab2cb success、577731149/26ddaed7e 走行。origin=HEAD 0 0(家老 push 4本 各5-6秒 09:05-09:06)</span></div>
+  <div class="tile"><span class="k">reflux</span><span class="v run">6 / lock</span><span class="s">6件 DONE(pending 104)。小太郎 0814 が report 空のまま target_path lock→08:59 影丸 SKIP=停止中(家老へ最優先下知 09:07)。T47 疾風 report PASS・GATE 待ち</span></div>
 </div>
 
 <div class="live">
-  <h2>一次情報(08:51 capture / ps / gh / logs / git)</h2>
+  <h2>一次情報(09:06 capture / ps / gh / logs / git)</h2>
   <ul>
     <li><span class="chip bad">孤児テスト増殖</span>test_heavy_job_admission.bats の singleflight-orphan が内側 run_tests.sh unit を生かしたまま終わり、古い半蔵worktree(seed未是正版)から全suiteを再帰起動→root 27・bats-exec-suite 32本・load 66・/tmp fixture lock 1359個・global flock競合。殿の kill 3回+<span class="mono">orphan_test_reap.sh --kill</span>(124本)で 0 に</li>
     <li><span class="chip done">環境埋込</span>Gate 10.07 長時間bats検知(3fa443c11) / <span class="mono">scripts/orphan_test_reap.sh</span>(ps 1回スナップショット・0.2秒・tmux配下除外) / <span class="mono">git worktree prune</span> 724→103(deploy 397秒→199秒)</li>
