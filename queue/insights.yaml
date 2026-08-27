@@ -271,7 +271,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4372"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で対象のcmd_1975反省は現行SG-PRE13へ反映済み。現行hookは1699行で、SG-PRE13が実ファイル行数とgit numstatから50%超削減を検出しBLOCKするため追加実修正不要"
+  action_artifact: "scripts/gates/gate_gunshi_report_precheck.sh:956-1001; .claude/hooks/pre-bash-combined.sh:1-1699; docs/research/cmd_3807_gunshi_precheck_speedup.md"
+  resolved_at: "2026-08-27T14:30:39+09:00"
 - id: INS-20260823-102127462-6b61
   ts: "2026-08-23T10:21:27+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4372; matched=本番; current_pattern=HMM Regime実験 Phase 1 — Regimeに情報があるかのPIT観測(研究層限定・selection無変更・本番無変更); candidate_level=4; candidate=adversarialが本番cmdのみ直近10件で連続0件。真の冷えであり偽陽性ではない; source=gunshi_gp_tracker.yaml"
