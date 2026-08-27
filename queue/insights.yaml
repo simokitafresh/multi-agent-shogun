@@ -4777,3 +4777,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-143839349-341a
+  ts: "2026-08-27T14:38:39+09:00"
+  insight: "[[T40 T45はどうなっている？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T40,T45はどうなっている？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
