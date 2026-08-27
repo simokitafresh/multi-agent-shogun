@@ -40,6 +40,85 @@ log_step() {
     echo -e "\n${CYAN}${BOLD}━━━ $1 ━━━${NC}\n"
 }
 
+# --dry-run is intentionally side-effect free.  It is useful for first-time
+# setup review and CI preflight without invoking installers or touching the
+# user's home directory/configuration.
+DRY_RUN=false
+NONINTERACTIVE=false
+for setup_arg in "$@"; do
+    case "$setup_arg" in
+        --dry-run) DRY_RUN=true ;;
+        --non-interactive) NONINTERACTIVE=true ;;
+        *)
+            log_error "未知のオプションです: $setup_arg"
+            exit 2
+            ;;
+    esac
+done
+
+settings_value() {
+    local key="$1" file="$2"
+    [ -f "$file" ] || return 0
+    awk -F: -v wanted="$key" \
+        '$1 ~ "^[[:space:]]*" wanted "[[:space:]]*$" {
+            value=$0
+            sub(/^[^:]*:[[:space:]]*/, "", value)
+            sub(/[[:space:]]+#.*$/, "", value)
+            gsub(/^['"'"']|['"'"']$/, "", value)
+            print value
+            exit
+        }' "$file"
+}
+
+show_setup_guidance() {
+    local setup_root="${SCRIPT_DIR:-$(pwd)}"
+    local settings_file="$setup_root/config/settings.yaml"
+    local current_topic current_cli
+    current_topic="$(settings_value ntfy_topic "$settings_file")"
+    current_cli="$(settings_value default "$settings_file")"
+
+    echo ""
+    echo "  初回セットアップ案内（既存設定は変更しません）"
+    echo "  Codex認証: codex login --device-auth"
+    echo "  Codex状態確認: codex login status"
+    echo "  ntfy topic（現在値）: ${current_topic:-未設定}"
+    echo "  CLI（現在値）: ${current_cli:-未設定}"
+    if [[ "$setup_root" == "/mnt/c" || "$setup_root" == /mnt/c/* ]]; then
+        log_warn "/mnt/c配下は9p経由のためext4配置を推奨。詳細: docs/research/9p_root_fix_runbook_20260827.md"
+    else
+        echo "  /mnt/cへ配置する場合はext4を推奨（詳細: docs/research/9p_root_fix_runbook_20260827.md）"
+    fi
+}
+
+read_setup_preferences() {
+    local settings_file="$SCRIPT_DIR/config/settings.yaml"
+    local current_topic current_cli selected_topic selected_cli codex_ack
+    current_topic="$(settings_value ntfy_topic "$settings_file")"
+    current_cli="$(settings_value default "$settings_file")"
+    current_topic="${current_topic:-shogun-simokitafresh}"
+    current_cli="${current_cli:-claude}"
+
+    if [ "$NONINTERACTIVE" = true ] || [ ! -t 0 ]; then
+        log_info "対話設定: 非対話モードのため既存値を保持します（ntfy=${current_topic}, CLI=${current_cli}）"
+        return 0
+    fi
+
+    read -r -p "  Codex認証案内を確認しましたか? [y/N]: " codex_ack
+    read -r -p "  ntfy topic [${current_topic}]（空=保持）: " selected_topic
+    read -r -p "  CLI [${current_cli}] (claude/codex、空=保持): " selected_cli
+    selected_topic="${selected_topic:-$current_topic}"
+    selected_cli="${selected_cli:-$current_cli}"
+    case "$selected_cli" in
+        claude|codex) ;;
+        *)
+            log_warn "CLI選択が不正なため既存値を保持します: ${current_cli}"
+            selected_cli="$current_cli"
+            ;;
+    esac
+    log_info "今回の選択: ntfy=${selected_topic}, CLI=${selected_cli}, Codex案内確認=${codex_ack:-N}"
+    log_info "config/settings.yamlは既存値を正本として保持し、上書きしません"
+}
+
 # Runtime dependencies are checked before any optional installer is invoked.
 # Existing files and user configuration are never overwritten: every setup
 # operation is guarded by an existence check and reports its result.
@@ -103,6 +182,12 @@ run_remote_installer() {
 # スクリプトのディレクトリを取得
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+if [ "$DRY_RUN" = true ]; then
+    show_setup_guidance
+    echo "  dry-run: インストーラー、設定、cron、HOME配下を変更しません"
+    exit 0
+fi
 
 # 結果追跡用変数
 RESULTS=()
@@ -610,6 +695,9 @@ EOF
 else
     log_info "config/settings.yaml は既に存在します"
 fi
+
+show_setup_guidance
+read_setup_preferences
 
 # config/projects.yaml
 if [ ! -f "$SCRIPT_DIR/config/projects.yaml" ]; then
