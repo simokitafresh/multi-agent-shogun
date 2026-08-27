@@ -74,10 +74,10 @@ count_entries() {
     run bash -c '
         root="$1"
         source "$root/scripts/lib/lock_path.sh"
-        log="/home/simokitafresh/multi-agent-shogun/logs/cmd_design_quality.yaml"
+        log="$root/logs/cmd_design_quality.yaml"
         canonical="$(lock_path "$log")"
-        [[ "$canonical" == /tmp/shogun_lock_*.lock ]] &&
-        [ "$canonical" != "${log}.lock" ] &&
+        # The canonical lock may live beside the log on ext4 or under /tmp on DrvFs.
+        [[ "$canonical" == "${log}.lock" || "$canonical" == /tmp/shogun_lock_*.lock ]] &&
         grep -Fq '\''LOCK_FILE="$(lock_path "$LOG_FILE")"'\'' "$root/scripts/cmd_quality_log.sh" &&
         grep -Fq '\''exec 201>"$(lock_path "$fp")"'\'' "$root/scripts/yaml_auto_archive.sh" &&
         grep -Fq '\''200>"$(lock_path "$_GV_DQ_FILE")"'\'' "$root/scripts/cmd_complete_gate.sh"
