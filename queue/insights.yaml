@@ -4684,7 +4684,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T13:44:27+09:00"
 - id: INS-20260827-134118601-227c
   ts: "2026-08-27T13:41:18+09:00"
   insight: "訂正: INS-20260827-133711892 は誤検出。pre-push lock は flock(.git/hooks/pre-push L205-211)でカーネルが解放し、holder 死亡検知も実装済。真因=家老の外側 timeout 180s < hook の PREPUSH_LOCK_WAIT 1200s。自動化ターゲット: 家老の push 実行テンプレ(codex 側)から外側 timeout を外すか、hook の lock 待ち残秒を stderr に出して待ち理由を可視化"
