@@ -168,6 +168,14 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第二弾 3則（2026-08-27 07:54-12:27 実証・将軍自身に適用）
+
+- **positive_rule**: (1)**receipt を書く script を `| head` で切るな**。deepdive_replay 等は受領証を末尾で書くため、head の SIGPIPE で receipt が消え「完了」が虚偽になる。到達は `logs/deepdive_replay/<id>.jsonl` の行数で確認してから報告する。(2)**家老への下知は送って終わりではない**。1通=1単位でも束(inboxN)で届くと家老は先頭数件で idle へ戻る(本日5回)。下知後10分で task assigned/掲示板応答を突合し、無ければ再下知。同一 target を触る hotfix は deploy が collision で BLOCK するため、配備順(T57→ci_fix→T56 のように)を将軍が先に設計して1通ずつ出す。(3)**GATE CLEAR で終わらせず task を idle へ戻せ**。failed/done 残置は自動 review と reflux 枠を殺す(T47 2h14m、reflux 6枠中3枠死)。下知の二値ACに「task status=idle」を含める。
+- **artifact の型**: HTML を手で編集するな。`python3 scripts/todo_map_render.py "<label>"` で md 正本から生成し、ID集合一致(exit 0)を確認して公開する。Artifact ツールは live 版を read してから publish(未読は refused)。
+- **reason**: 2026-08-27、Phase8/9 receipt 欠落で「16/16 完了」と誤報→stop hook で捕捉。09:07 の8通連投で5通未配備→忍者6名 idle 26分。T47 は report PASS でも task failed のため便停止 2h14m。artifact は手編集で md と乖離(未掲載5件・走行8→実2)し殿の『抜け漏れ覚醒確認』で露見。
+- **enforcement**: 構造型=T57 failed→自動review 復帰(12:18 CLEAR)/T56 UNACTIONED 検知(小太郎 配備中)/T50 dirty-guard(10:43 CLEAR)/T47 idle 起点固定(10:58 CLEAR)/T49 偽BLOCK 抽出(11:23 CLEAR)/T51 pre-push telemetry(origin 到達)/todo_map_render.py(ID集合 gate)。教訓=lessons_shogun.yaml 本日3件。
+- origin: `[[殿指示_強くてニューゲーム_20260827_1227]] -> [[家老束処理5回]] -> [[復帰後の型第二弾]]`
+
 ## 復帰後の型4則（2026-08-27 00:50-07:41 実証・将軍自身に適用）
 
 - **positive_rule**: (1)**到達は現物で確認**: background の commit/publish は exit code でなく `git log --oneline -1 -- <path>` / `git status --short` で到達を確認してから「完了」と報告する(ninja_scope_commit は foreign staged 差分で rc=2 BLOCK し、index を `git add <path>` で同期して再実行する)。(2)**context/*.md は将軍 doc lane**: 家老へ配備すると DOC_LANE_ROUTING で BLOCK される。context 更新は将軍が書き、`context_source_commit_set.sh` で境界を進め、`bulletin_action.sh` で actioned 化する。境界だけ進めて本文を更新しないのは隠蔽。(3)**陣形図の report 行と gate_metrics を突合**: report=completed かつ gate_metrics に CLEAR 行が無い報告は便停止(T25 は 7 時間)。startup gate の便回転チェックが 0 でも report 行で再確認する。(4)**孤児プロセスは kill せず検知+報告**: D006 により将軍は kill しない。`scripts/gates/gate_shogun_startup.sh` Gate 10.07(30 分超 bats)で検知し、`bash scripts/orphan_test_reap.sh`(dry-run)で樹を列挙して殿へ `--kill` 一行を提示する。pgid 単位 kill では子孫が残るため樹全体を対象にする。

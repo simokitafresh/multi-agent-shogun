@@ -502,3 +502,12 @@ lessons:
   created_at: '2026-08-19'
   automated: true
   enforcement: 'Level5: cmd_4357 ninja_monitor自動review依頼+自動gate(85e65ca)+release_ninja hotfix(9f08253ab)。将軍側=automated:false 自動化ターゲット: 将軍→家老task_assigned後N分でtask YAML未配備なら将軍inboxへ自動WARN(post-shogun-inbox-check.sh拡張)'
+  superseded_by: '委任・受信・GATE CLEAR のどれも『完了』ではない — 下知後10分の証跡突合/failed残置の idle 復帰/receipt の現物確認(LS121吸収) (統合元 LS121(殿直接cmd 55分停滞: 委任後の一次確認と代行を即やれ)。第二実証 2026-08-27 07:54-12:27: (1)09:07 に1通=1単位で8通連投→家老は inboxN の束を『pending_work』として先頭2件だけ処理し5通未配備で idle、以後 push/archive/再配備要請の計5回が read=true のまま未実行。(2)T47 疾風は STAGE1-TIMEOUT で task=failed→report PASS に是正後も自動 review 不発で 2h14m 便停止、T51 も同型。failed/done 未 archive の忍者は REFLUX-AUTO-SKIP で 6枠中3枠が死んだ。(3)07:56 deepdive_replay.sh を | head で切り receipt 未記録のまま『16/16 完了』と報告(SIGPIPE で receipt 前に死ぬ)。共通真因=『送った/CLEAR した/実行した』を完了と等置し到達を現物で確認しない(復帰後の型4則(1)の再発)。修正=(a)下知後10分で task assigned/掲示板応答を突合し無ければ再下知、同一 target の hotfix は配備順を設計して1通ずつ (b)下知の二値ACに『task status=idle』を含め GATE 後に archive (c)receipt を書く script は head で切らず receipt 行数で到達確認)'
+- id: 'LS122'
+  title: '委任・受信・GATE CLEAR のどれも『完了』ではない — 下知後10分の証跡突合/failed残置の idle 復帰/receipt の現物確認(LS121吸収)'
+  origin: '[[殿指示_強くてニューゲーム_20260827_1227]] -> [[家老束処理5回_failed便停止_receipt欠落]] -> [[LS121統合]]'
+  detail: '統合元 LS121(殿直接cmd 55分停滞: 委任後の一次確認と代行を即やれ)。第二実証 2026-08-27 07:54-12:27: (1)09:07 に1通=1単位で8通連投→家老は inboxN の束を『pending_work』として先頭2件だけ処理し5通未配備で idle、以後 push/archive/再配備要請の計5回が read=true のまま未実行。(2)T47 疾風は STAGE1-TIMEOUT で task=failed→report PASS 是正後も自動 review 不発で 2h14m 便停止、T51 も同型。failed/done 未 archive は REFLUX-AUTO-SKIP で 6枠中3枠を殺した。(3)07:56 deepdive_replay.sh を | head で切り receipt 未記録のまま『16/16 完了』と報告(SIGPIPE)。共通真因=『送った/CLEAR した/実行した』を完了と等置し到達を現物で確認しない。修正=(a)下知後10分で task assigned/掲示板応答を突合し無ければ再下知、同一 target の hotfix は配備順を設計して1通ずつ (b)二値ACに『task status=idle』を含め GATE 後に archive (c)receipt を書く script は head で切らず receipt 行数で到達確認'
+  source_cmd: 'session_20260827_1227'
+  created_at: '2026-08-27'
+  automated: true
+  enforcement: '構造型: T57 failed→自動review(12:18 CLEAR)/T56 UNACTIONED 検知(12:23 配備)/todo_map_render.py(ID集合 gate)。将軍側 automated:false: deepdive_replay.sh の receipt を trap EXIT で先行'

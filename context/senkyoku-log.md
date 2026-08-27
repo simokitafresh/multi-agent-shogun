@@ -1494,3 +1494,8 @@
 ## 2026-08-26 17:05〜08-27 00:35(将軍セッション)
 - 意図: push 7h30m停滞と「つまり」の根治。結果: 1commitずつpushで57本/1h、CI GREEN(ccad05fcf)。因果: まとめpush×手動full走査→7h停滞 / 実行ビット欠落→watcher85回死亡→nudge喪失 / 送信者制限→自動レビュー依頼BLOCK→報告10本UN-GATED / BASH_REMATCH潰れ→config.toml破壊→忍者400停止。全て構造型で根治(cfd7b7d3e,e3712b4a9,42f09d54b,474aff0c2,bc9f4a8c6,2df2ecdee,c17a92d8e)。殿裁定6件を instructions/shogun.md へ焼込み。
 - 2026-08-27 00:50-07:41 将軍/clear復帰後: 孤児テスト増殖(root27/bats32/load66)を検知(Gate10.07)+回収(orphan_test_reap.sh)+発生側根治(cmd_4405 8c09923f8)の三点で根治、偵察契約分離(cmd_4406 06ddbc988)、worktree stale prune(669afef44)、reflux insight 自動配備3日停止の真因(picker 予約済み先頭ID)を影丸 hotfix f956de3c7 で根治し5件一周(pending 104→101)、便停止 T25(7h)/T19/FAIL残置を家老1通1単位で解消、CI RED→GREEN 3回(半蔵/疾風/小太郎 ci_fix)。将軍の穴=commit到達未確認の完了報告×3・DOC_LANE 失念×2 → instructions/shogun.md『復帰後の型4則』へ焼込み。復帰点=記憶DB session_save_20260827_0741
+
+## 2026-08-27 07:54-12:27（将軍 /clear 復帰 第2便）
+- 意図: 復帰点 session_save_20260827_0741 から再開し、30分 loop で「進捗→つまり解消→artifact」を回す。殿下問『回転 before/after』『artifact 抜け漏れ覚醒確認』『利他で未着手をナッジ』。
+- 結果: hotfix 8本起票→7本 GATE CLEAR(T21 nudge再送/T50 dirty-guard/T08 converge/T47 idle起点/T49 偽BLOCK/T10 gate本質/T57 failed→自動review)。reflux 8件回転(1件 20-42分)。push 1本 5-16秒。CI は autopush レーンの datetime TypeError で RED(半蔵 ci_fix 配備中)。
+- 因果: 家老が束で届く下知の先頭だけ処理する型(5回)→T56 UNACTIONED 検知を配備。failed 残置が review と reflux 枠を殺す→T57。artifact 手編集の乖離→todo_map_render.py で md 正本から機械生成。head パイプで receipt 欠落→教訓化。
