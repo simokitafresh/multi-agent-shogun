@@ -4821,14 +4821,20 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T15:12:14+09:00"
 - id: INS-20260827-144756941-1a33
   ts: "2026-08-27T14:47:56+09:00"
   insight: "semantic_index_update新概念候補: discussion:cd tmp tmp pVkgJWVlr0 clone && export PS1 \\ \\ ;31m\\ karo\\ \\ 0m\\ \\ \\ ;32m\\ \\w\\ \\  は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T15:12:15+09:00"
 - id: INS-20260827-150555264-9329
   ts: "2026-08-27T15:05:55+09:00"
   insight: "cmd_karo_hotfix_t63_model_apply_agent_20260827: 報告形式PASSでも、commit実体とfiles_modifiedの一致をgit diff-treeで照合し、不一致ならGATE CLEAR/archivalを保留する。"
@@ -4839,6 +4845,13 @@ insights:
 - id: INS-20260827-150829137-46e4
   ts: "2026-08-27T15:08:29+09:00"
   insight: "deploy_task.sh:8989 worktree_root 既定 /tmp/shogun-task-worktrees はWSL再起動で全消失(2026-08-27 14:54 実証: 疾風3・才蔵3・飛猿5 樹が prunable、才蔵T63未commit実装消失)。自動化ターゲット: DEPLOY_TASK_WORKTREE_ROOT 既定を永続ext4(/home/simokitafresh/shogun-task-worktrees)へ変更=cmd_4408(ext4移設)と同根。速度向上へのつながり: 再起動時の作業消失=再実装の丸損を0に"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260827-151220757-747e
+  ts: "2026-08-27T15:12:20+09:00"
+  insight: "SG-PRE3 commit検証がreport.commit_hash(最終commit)のみ照合し、2-commit構成で偽陽性WARNを出す。gate_gunshi_report_precheck.shのSG-PRE3をgit log --grep=task_id方式に改修し、同一task_idの全commitを対象にすべき"
   priority: "medium"
   source: "manual"
   fix_known: false
