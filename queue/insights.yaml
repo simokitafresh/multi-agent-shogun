@@ -5150,14 +5150,20 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T20:31:08+09:00"
 - id: INS-20260827-201735271-33aa
   ts: "2026-08-27T20:17:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactを最新にアップデートせよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T20:31:08+09:00"
 - id: INS-20260827-202924974-9c4c
   ts: "2026-08-27T20:29:24+09:00"
   insight: "[[artifactを最新にアップデートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactを最新にアップデートせよ"
@@ -5193,5 +5199,15 @@ insights:
   insight: "[[cd tmp cmd4407 shared cfddu6 && export PS1 \\ \\033 1;31m\\ kar]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/cmd4407-shared.cfddu6\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1 — 現task YAMLを…"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T20:32:14+09:00"
+- id: INS-20260827-203214765-885d
+  ts: "2026-08-27T20:32:14+09:00"
+  insight: "semantic_index_update新概念候補: discussion:いつpushするんだ？何待ちだ？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
