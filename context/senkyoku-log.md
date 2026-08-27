@@ -1506,3 +1506,4 @@
 - 意図: 14:54 WSL 再起動(9p stall→全agent CLI-DEAD→/tmp worktree 全消失)からの復旧と、殿裁定 17:41『走行完了後は新規に手を出さず 9p 根治』への集中。
 - 結果: ghost 3件再配備(T69)、T63 偽CLEAR を merge-base で検出し cherry-pick 2360a18a7 で回収、cmd_4407 の本番 tmux 汚染(T74)を封じ込め+根因修正 900a6e204、軍師 composer 詰まり(T75)、偽 DOC_LANE_ALERT(T76→半蔵)、陣形図 stale(T71→才蔵)、Codex 更新プロンプト(T78 可逆解除)、Codex 利用上限→殿の新アカウント→全 agent respawn(T80)。cmd_4408 は AC1-3 着地・AC4 計測中。runbook=docs/research/9p_root_fix_runbook_20260827.md(gist 407d5146)。
 - 因果: 9p(drvfs)上の git/flock RPC 待ち→D-state→monitor が pane 列挙失敗→WSL 再起動→/tmp worktree 消失→dangling 主実装→偽CLEAR。根治=repo を ext4 へ(cutover は殿の1行)。型第三弾4則を instructions/shogun.md へ焼込み、LS 3件追加。
+- 2026-08-27 19:23 `cmd_4408_full` RC是正: `verified_existing_dependency` に外部複製先 `/home` とAC記述上の擬似パス `/crontab/auto-memory` を実体変更なしとして明示し、報告GATEをPASSへ再公開。origin: [[cmd_4408_ext4移設]] -> [[command_files_modified_mismatch]] -> [[verified_existing_dependencyで実体境界を明示]]
