@@ -6074,3 +6074,10 @@ insights:
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
   status: pending
+- id: INS-20260828-072600506-8cac
+  ts: "2026-08-28T07:26:00+09:00"
+  insight: "[[CI shard7のtest inbox write codex delivery一時dir cleanup競合を修正し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: inbox_evidence_durability(inbox証跡耐久性; alias=inbox prune archive; score=9.5) / yaml_safe_write(YAML安全書込み; alias=script_path inbox_mark_read; score=9.4) / daemon_supervision(デーモン監視と復旧; alias=inbox_watcher health check; score=9.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
