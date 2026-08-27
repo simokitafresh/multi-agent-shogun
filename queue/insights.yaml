@@ -4508,4 +4508,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T09:33:57+09:00"
+- id: INS-20260827-093515643-c51d
+  ts: "2026-08-27T09:35:15+09:00"
+  insight: "家老は将軍発 task_assigned を8通(各1単位)受けても同一 inboxN で届くと『pending_work』として先頭2件だけ処理し残り5通を未配備のまま idle 化(09:07→09:33、忍者6名idle)。1通1単位でも束で届けば同じ。構造: ninja_monitor が『将軍発 task_assigned read=true かつ 対応 task assigned/掲示板報告なし N分』を UNACTIONED として家老へ再nudge+将軍へWARN"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
