@@ -11,14 +11,14 @@ PROBE_MODEL=""
 PROBE_EFFORT=""
 PROBE_TIER="default"
 CODEX_BIN="${CODEX_BIN:-codex}"
-OPUS46_1M_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]' --effort high"
+OPUS46_1M_CMD="${OPUS46_1M_CMD:-$HOME/bin/claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]' --effort high}"
 
-PINNED_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions"
-LATEST_CMD="/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions"
-PINNED_BIN="/home/simokitafresh/bin/claude"
-PINNED_BACKUP="/home/simokitafresh/.local/bin/claude.pinned"
-PINNED_STABLE="/home/simokitafresh/claude-2.1.87-stable"
-LATEST_BIN="/home/simokitafresh/.local/bin/claude"
+PINNED_CMD="${PINNED_CMD:-$HOME/bin/claude --dangerously-skip-permissions}"
+LATEST_CMD="${LATEST_CMD:-$HOME/.local/bin/claude --dangerously-skip-permissions}"
+PINNED_BIN="${PINNED_BIN:-$HOME/bin/claude}"
+PINNED_BACKUP="${PINNED_BACKUP:-$HOME/.local/bin/claude.pinned}"
+PINNED_STABLE="${PINNED_STABLE:-$HOME/claude-2.1.87-stable}"
+LATEST_BIN="${LATEST_BIN:-$HOME/.local/bin/claude}"
 
 usage() {
   cat <<'USAGE'
@@ -26,11 +26,11 @@ Usage: shogun_cli_switch.sh <status|pin-2.1.87|pin-opus-4.6-1m|unpin-latest|to-c
 
 Actions:
   status         Show current launch_cmd, available binaries, and active Claude scope
-  pin-2.1.87     Point launch_cmd at /home/simokitafresh/bin/claude and respawn Claude panes
+  pin-2.1.87     Point launch_cmd at $HOME/bin/claude and respawn Claude panes
   pin-opus-4.6-1m
                  Pin one agent to Claude Code 2.1.87 + Opus 4.6 high + 1M context,
                  including /model default and runtime verification
-  unpin-latest   Point launch_cmd at /home/simokitafresh/.local/bin/claude and respawn Claude panes
+  unpin-latest   Point launch_cmd at $HOME/.local/bin/claude and respawn Claude panes
   to-claude      Switch target agents to Claude CLI
   to-codex       Switch target agents to Codex CLI
   probe-codex    Probe a Codex model/effort in an ephemeral process; never respawn a worker pane
@@ -291,7 +291,7 @@ pin_opus46_1m() {
   # pane already proves the requested state.
   if [[ "$capture" == *"Claude Code v2.1.87"* &&
         "$capture" == *"Opus 4.6 (1M context) with high effort"* &&
-        "$process_args" == *"/home/simokitafresh/bin/claude"* &&
+        "$process_args" == *"$PINNED_BIN"* &&
         "$process_args" == *--model*claude-opus-4-6* &&
         "$process_args" == *"--effort high"* ]]; then
     log "PASS agent=$TARGET_AGENT version=2.1.87 model='Opus 4.6' context=1M effort=high confirmations=2/2 fast_path=already_correct"
@@ -321,7 +321,7 @@ pin_opus46_1m() {
 
   # If the live process is already the pinned Opus command, do not respawn.
   # Otherwise mark this as a CLI switch so SessionStart skips heavy Recovery.
-  if [[ "$process_args" != *"/home/simokitafresh/bin/claude"* ||
+  if [[ "$process_args" != *"$PINNED_BIN"* ||
         "$process_args" != *--model*claude-opus-4-6* ||
         "$process_args" != *"--effort high"* ]]; then
     tmux set-option -p -t "$pane" @agent_state idle >/dev/null 2>&1 || true
@@ -368,7 +368,7 @@ pin_opus46_1m() {
   }
 
   process_args=$(ps -o args= -g "$(tmux display-message -t "$pane" -p '#{pane_pid}')" 2>/dev/null || true)
-  [[ "$process_args" == *"/home/simokitafresh/bin/claude"* &&
+  [[ "$process_args" == *"$PINNED_BIN"* &&
         "$process_args" == *--model*claude-opus-4-6* &&
         "$process_args" == *"--effort high"* ]] || {
     echo "[ERROR] runtime process does not match pinned Opus 4.6 high command" >&2
