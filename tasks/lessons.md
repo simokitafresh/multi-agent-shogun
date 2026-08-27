@@ -15999,3 +15999,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - ninja_doneだけにprecheckがあってもreport_field_set terminal batch直行経路は品質gateを経ずにinbox_writeへ到達できる。正本publisherごとにtask worktreeのgateをatomic replace後・report_received前へ接続し、BLOCK時の配送0をfixtureで固定する。
+
+### L1657: git-ignore正本を含むtask selectorはmarker-safe一時fixtureで分離検証する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828
+- **記録者**: tobisaru
+- **tags**: [infra,testing,testing,yaml,git]
+- **subdomain**: infra
+- **target_files**: [scripts/migrate_to_ext4_cutover.sh,tests/unit/test_migrate_to_ext4.bats,scripts/gates/gate_shogun_startup.sh,tests/unit/test_gate_shogun_startup.bats]
+- **origin**: [[cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- canonical taskのplanned pathにgit-ignore正本が混在すると外部task engineがrc2になり得る。正本taskを改変せず、対象外pathだけを除いた一時copyでtracked実装を再走し、canonical正本は旧/新件数とYAML構文を別証跡で確認する。
