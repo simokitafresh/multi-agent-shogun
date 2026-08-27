@@ -355,22 +355,18 @@ show_promotion_reflux_state() {
 check_legacy_ext4_path_residuals() {
     local root="${1:-.}"
     local old_root="${2:-/mnt/c/tools/multi-agent-shogun}"
-    local candidate rel root_prefix matches=""
-    root_prefix="${root%/}/"
-    while IFS= read -r candidate; do
-        rel=${candidate#"$root_prefix"}
-        case "$rel" in
-            .git/*|.venv/*|logs/*|archive/*|docs/*|memory/*|*.bak|*/migrate_*|migrate_*)
-                continue
-                ;;
-        esac
-        if [ -n "$matches" ]; then
-            matches+=$'\n'
-        fi
-        matches+="$rel"
-    done < <(rg -l -I --hidden --no-ignore --fixed-strings \
-        --glob '!.git/**' --glob '!.venv/**' \
-        "$old_root" "$root" 2>/dev/null | sort -u || true)
+    local matches
+    # 2026-08-28 04:25 将軍: 旧実装は repo 全体を rg した後に bash while ループで 6223 行を
+    # 文字列連結し CPU 張り付き(起動 gate が 300 秒超ハング=07-21 裁定「遅い gate はバグ」)。
+    # 除外は rg の glob へ前倒しし、ループを廃止する(実測 0.8s)。証拠パス(logs/docs/memory/
+    # archive/data/.cache/queue/archive/reports/*.bak/migrate_*)は生きた消費者ではない。
+    matches=$(cd "$root" 2>/dev/null && rg -l -I --hidden --no-ignore --fixed-strings \
+        --glob '!.git/**' --glob '!.venv/**' --glob '!logs/**' --glob '!archive/**' \
+        --glob '!docs/**' --glob '!memory/**' --glob '!data/**' --glob '!.cache/**' \
+        --glob '!queue/archive/**' --glob '!queue/reports/**' --glob '!**/*.bak' \
+        --glob '!**/migrate_*' --glob '!**/*.log' --glob '!**/*.jsonl' --glob '!**/*.sqlite3' \
+        --glob '!**/node_modules/**' --glob '!.worktrees/**' --glob '!.ci_worktrees/**' --glob '!.codd/**' \
+        "$old_root" . 2>/dev/null | sed 's#^\./##' | sort -u) || true
     if [ -n "$matches" ]; then
         echo "  WARN: legacy ext4 old-root references remain: $old_root"
         printf '%s\n' "$matches" | sed 's/^/    /'
