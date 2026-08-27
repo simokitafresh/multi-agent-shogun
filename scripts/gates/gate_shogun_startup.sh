@@ -2043,6 +2043,43 @@ else
     echo "  bulletin_board.yaml不在 — 判定不可"
 fi
 
+# --- Gate 10.1b: 便回転チェック(task done ∧ gate_metrics CLEAR無し) ---
+# 2026-08-28 04:05: 復帰時に小太郎T104/影丸refluxが done のまま49分 CLEAR 0 だったが、
+# Gate 10.1(LGTM在庫)は0件を示した=二次情報(掲示板)のみでは便停止を見落とす。
+# 一次情報(task YAML status=done + logs/gate_metrics.log の CLEAR 行 + 報告YAML mtime)で突合する。
+# 軍師Q6第三者検証 blt_20260828_040601_9bcc72 で自動化ターゲット妥当と判定済み。
+echo "■ 便回転チェック(task done∧CLEAR無し)"
+_gm_log="$SCRIPT_DIR/logs/gate_metrics.log"
+_done_stall=0
+_done_lines=()
+for _tf in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
+    [ -f "$_tf" ] || continue
+    _tstat=$(grep -m1 -E '^\s*status:' "$_tf" | awk '{print $2}')
+    [ "$_tstat" = "done" ] || continue
+    _tid=$(grep -m1 -E '^\s*task_id:' "$_tf" | awk '{print $2}')
+    [ -n "$_tid" ] || continue
+    if [ -f "$_gm_log" ] && grep -qE "\b${_tid}(_[a-z]+)?\s+CLEAR\s" "$_gm_log" 2>/dev/null; then continue; fi
+    _ninja=$(basename "$_tf" .yaml)
+    # done 時刻: task YAML の done_at を優先(一次)。無ければ報告YAML mtime(家老の注記で更新されるため下限値)
+    _done_at=$(grep -m1 -E '^\s*done_at:' "$_tf" | sed -E 's/.*done_at:[[:space:]]*"?([^"]+)"?.*/\1/')
+    _age=0
+    if [ -n "$_done_at" ] && _de=$(date -d "$_done_at" +%s 2>/dev/null); then
+        _age=$(( ( $(date +%s) - _de ) / 60 ))
+    else
+        _rep=$(ls -t "$SCRIPT_DIR"/queue/reports/${_ninja}_report_*.yaml 2>/dev/null | head -1)
+        if [ -n "$_rep" ]; then _age=$(( ( $(date +%s) - $(stat -c %Y "$_rep") ) / 60 )); fi
+    fi
+    if [ "$_age" -ge 20 ]; then
+        _done_stall=$((_done_stall+1)); _done_lines+=("${_ninja}:${_tid}(${_age}分)")
+    fi
+done
+if [ "$_done_stall" -gt 0 ]; then
+    echo "  WARN: task done∧CLEAR無し ${_done_stall}件(20分超): ${_done_lines[*]} — 便停止の疑い。家老へ順序付き1通(型4弾-4)"
+    if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+else
+    echo "  OK: task done∧CLEAR無し(20分超) 0件"
+fi
+
 # --- Gate 10.2: 週次品質指標トレンド ---
 # cmd_4250: K/D block migrated to the Karo lane; no Shogun execution.
 # --- Gate 12: 三層学習ループ健全性 ---
