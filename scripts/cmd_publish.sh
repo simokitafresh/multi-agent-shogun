@@ -41,6 +41,7 @@ CMD_SAVE_SCRIPT="${CMD_PUBLISH_CMD_SAVE_SCRIPT:-$PROJECT_DIR/scripts/cmd_save.sh
 CMD_DELEGATE_SCRIPT="${CMD_PUBLISH_CMD_DELEGATE_SCRIPT:-$PROJECT_DIR/scripts/cmd_delegate.sh}"
 SHOGUN_LESSON_ACK_SCRIPT="${CMD_PUBLISH_SHOGUN_LESSON_ACK_SCRIPT:-$PROJECT_DIR/scripts/shogun_lesson_ack.sh}"
 CMD_PUBLISH_GIT_ROOT="${CMD_PUBLISH_GIT_ROOT:-$PROJECT_DIR}"
+CMD_PUBLISH_TIMING_LOG="${CMD_PUBLISH_TIMING_LOG_FILE:-$PROJECT_DIR/logs/cmd_publish_timing.log}"
 
 source "$PROJECT_DIR/scripts/lib/yaml_field_set.sh"
 source "$PROJECT_DIR/scripts/lib/cmd_shared_preflight.sh"
@@ -52,6 +53,78 @@ CMD_PUBLISH_PHASE_NAME=""
 CMD_PUBLISH_RUN_ID=""
 CMD_PUBLISH_TOTAL_T0_US="${EPOCHREALTIME/./}"
 CMD_PUBLISH_TOTAL_T0_US="${CMD_PUBLISH_TOTAL_T0_US:0:16}"
+CMD_PUBLISH_PROCESS_START_NS=""
+CMD_PUBLISH_PREFLIGHT_DONE_NS=""
+CMD_PUBLISH_PUBLISH_ENTRY_NS=""
+CMD_PUBLISH_EXIT_NS=""
+
+cmd_publish_monotonic_ns() {
+    python3 -c 'import time; print(time.monotonic_ns())'
+}
+
+cmd_publish_mark_outer_checkpoint() {
+    local checkpoint="${1:-}" now_ns
+    [[ "$checkpoint" =~ ^(process_start|preflight_done|publish_entry|exit)$ ]] || return 0
+    now_ns="$(cmd_publish_monotonic_ns)" || return 0
+    case "$checkpoint" in
+        process_start)  CMD_PUBLISH_PROCESS_START_NS="$now_ns" ;;
+        preflight_done) CMD_PUBLISH_PREFLIGHT_DONE_NS="$now_ns" ;;
+        publish_entry)  CMD_PUBLISH_PUBLISH_ENTRY_NS="$now_ns" ;;
+        exit)           CMD_PUBLISH_EXIT_NS="$now_ns" ;;
+    esac
+}
+
+cmd_publish_elapsed_ms() {
+    local start="${1:-}" end="${2:-}"
+    if [[ "$start" =~ ^[0-9]+$ && "$end" =~ ^[0-9]+$ && "$end" -ge "$start" ]]; then
+        echo $(( (end - start + 999999) / 1000000 ))
+    else
+        echo NA
+    fi
+}
+
+cmd_publish_record_outer_timing() {
+    local status="${1:-1}" log_file="$CMD_PUBLISH_TIMING_LOG" log_lock
+    local process_to_preflight preflight_to_entry entry_to_exit total_ms top_interval top_ms
+    local fd
+    [[ "$status" =~ ^[0-9]+$ ]] || status=1
+    [[ "$CMD_PUBLISH_EXIT_NS" =~ ^[0-9]+$ ]] || cmd_publish_mark_outer_checkpoint exit
+    process_to_preflight="$(cmd_publish_elapsed_ms "$CMD_PUBLISH_PROCESS_START_NS" "$CMD_PUBLISH_PREFLIGHT_DONE_NS")"
+    preflight_to_entry="$(cmd_publish_elapsed_ms "$CMD_PUBLISH_PREFLIGHT_DONE_NS" "$CMD_PUBLISH_PUBLISH_ENTRY_NS")"
+    entry_to_exit="$(cmd_publish_elapsed_ms "$CMD_PUBLISH_PUBLISH_ENTRY_NS" "$CMD_PUBLISH_EXIT_NS")"
+    total_ms="$(cmd_publish_elapsed_ms "$CMD_PUBLISH_PROCESS_START_NS" "$CMD_PUBLISH_EXIT_NS")"
+    top_interval=none
+    top_ms=0
+    for _interval_pair in \
+        "process_to_preflight:$process_to_preflight" \
+        "preflight_to_publish_entry:$preflight_to_entry" \
+        "publish_entry_to_exit:$entry_to_exit"; do
+        _interval_name="${_interval_pair%%:*}"
+        _interval_ms="${_interval_pair#*:}"
+        if [[ "$_interval_ms" =~ ^[0-9]+$ ]] && (( _interval_ms >= top_ms )); then
+            top_interval="$_interval_name"
+            top_ms="$_interval_ms"
+        fi
+    done
+    log_lock="${log_file}.lock"
+    mkdir -p "$(dirname "$log_file")" 2>/dev/null || return 0
+    exec {fd}>>"$log_lock" 2>/dev/null || return 0
+    flock -w 2 "$fd" 2>/dev/null || { eval "exec ${fd}>&-"; return 0; }
+    if [[ ! -s "$log_file" ]]; then
+        printf '%s\n' '# run_id status process_start_ns preflight_done_ns publish_entry_ns exit_ns process_to_preflight_ms preflight_to_publish_entry_ms publish_entry_to_exit_ms total_ms top_interval top_ms' >>"$log_file"
+    fi
+    printf '%s %s %s %s %s %s %s %s %s %s %s %s\n' \
+        "$CMD_PUBLISH_RUN_ID" \
+        "$([[ "$status" -eq 0 ]] && echo PASS || echo FAIL)" \
+        "${CMD_PUBLISH_PROCESS_START_NS:-NA}" \
+        "${CMD_PUBLISH_PREFLIGHT_DONE_NS:-NA}" \
+        "${CMD_PUBLISH_PUBLISH_ENTRY_NS:-NA}" \
+        "${CMD_PUBLISH_EXIT_NS:-NA}" \
+        "$process_to_preflight" "$preflight_to_entry" "$entry_to_exit" "$total_ms" "$top_interval" "$top_ms" \
+        >>"$log_file"
+    flock -u "$fd" 2>/dev/null || true
+    eval "exec ${fd}>&-"
+}
 
 cmd_publish_phase_start() {
     local next_name="${1:-}" now_us wall_ms
@@ -69,6 +142,8 @@ cmd_publish_phase_start() {
 cmd_publish_record_timing() {
     local status=$? now_us total_ms verdict i phase wall_ms
     trap - EXIT
+    cmd_publish_mark_outer_checkpoint exit
+    cmd_publish_record_outer_timing "$status"
     now_us="${EPOCHREALTIME/./}"
     now_us="${now_us:0:16}"
     if [[ -n "${CMD_PUBLISH_PHASE_NAME:-}" && -n "${CMD_PUBLISH_PHASE_LAST_US:-}" ]]; then
@@ -92,6 +167,7 @@ cmd_publish_record_timing() {
 }
 
 CMD_PUBLISH_RUN_ID="${CMD_ID}-$$-${CMD_PUBLISH_TOTAL_T0_US}"
+cmd_publish_mark_outer_checkpoint process_start
 trap cmd_publish_record_timing EXIT
 
 count_cmd_save_blocks_for_cmd() {
@@ -411,6 +487,7 @@ warn_if_q11_evidence_paths_changed() {
 echo "=== [0/3] cmd_publish pre-flight: $CMD_ID ==="
 cmd_publish_phase_start "preflight"
 run_publish_preflight
+cmd_publish_mark_outer_checkpoint preflight_done
 
 # --- Step 0.5: on_hold はcmd_save成功まで保持 ---
 promoted_from_on_hold=false
@@ -469,4 +546,5 @@ fi
 echo "=== [3/3] cmd_delegate.sh 委任: $CMD_ID ==="
 cmd_publish_phase_start "delegate"
 warn_if_q11_evidence_paths_changed
+cmd_publish_mark_outer_checkpoint publish_entry
 bash "$CMD_DELEGATE_SCRIPT" "$CMD_ID" "$MESSAGE"
