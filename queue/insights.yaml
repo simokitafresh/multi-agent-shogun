@@ -5938,3 +5938,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-055343134-dad4
+  ts: "2026-08-28T05:53:43+09:00"
+  insight: "本日の DOC_LANE_REQUEST source_equivalent 4 件(dm-signal.md)は source_commit が 06-12/07-06 の旧 commit(e805b0d9/40a1d740/5e9ea355/1a5f5149)で、順不同に境界を過去へ動かした結果 05:52 に DOC_LANE_ALERT 8 件(既反映)を誘発。source_equivalent request の source_commit は origin/main tip 以外を出さない(or 受け側で tip へ丸める)契約を T108 自動化に含める。origin=[[DOC_LANE_REQUEST_旧commit境界_20260828]] -> [[境界後退で偽ALERT]] -> [[T108_tip固定契約]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
