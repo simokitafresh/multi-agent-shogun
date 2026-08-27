@@ -67,3 +67,19 @@
 - [x] T104/T102+T91/影丸refluxの固定task_idと次手を記録。
 - [ ] checkpoint owner commitを作成しSHAを本節へ追記する。
 - [ ] compact_state、memory DB、semantic pointer、掲示板へ貫通する。
+
+## 7. 追記: 三便終端（2026-08-28 04:18 JST）
+
+- T104 `cmd_karo_hotfix_t104_context_freshness_marker_boundary_20260828`: GATE CLEAR=`04:09:54`、archive.done、task idle。raw ALERT総数=`6→4`、対象research/infrastructure=`2→0`、tests=`26/26 PASS, SKIP0`。
+- 影丸reflux `cmd_reflux_insight_202608280318_kagemaru`: GATE CLEAR=`04:13:55`、archive.done、task idle。
+- T102+T91 `cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828`: GATE CLEAR=`04:17:36`、archive.done、task idle。tracked commit=`917475b75bcec821dd4bc9da7d971ba3b42a81b4`、ignored正本`config/cli_events.yaml`は旧path=`0`・新path=`8`・YAML PASS。
+- 終端二値: 各cmd CLEAR=`1/1/1`、対象task `status: done|failed`=`0`、`origin/main...HEAD=0 0`。
+- 掲示板: T104+影丸=`blt_20260828_041520_5576f9`、T102+T91=`blt_20260828_041822_e4ac6c`。
+- 復帰後の次手: inbox未読を現task_id一致で処理し、Git/CI/monitorを一次再測定。上記3taskは完了済みとして再配備しない。
+- 三層pointer: memory DB=`knowledge:28c635f6615ee2bd`,`knowledge:76bc3813e3de8e09`、semantic-index=`discussion 03:59/04:01`、causal index=`karo_checkpoint_20260828_0359`到達1件。
+
+### 追記後の二値条件
+
+- [x] checkpoint owner commit `2620d8db8743e40b22b9f8a8b8ae1397c7525b19` をoriginへ到達済み。
+- [x] compact_state、memory DB、semantic pointer、causal index、掲示板へ貫通済み。
+- [x] 保存時点の進行3taskを全てCLEAR/archive/idleへ終端済み。
