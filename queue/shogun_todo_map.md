@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:36 更新(loop tick 13)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09:38 更新(inbox: T50 配備)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -54,7 +54,7 @@
 
 - [x] T48(08:00 receipt 現物で16/16確認; 07:56 head -70 パイプで Phase8/9 の receipt が未記録のまま「完了」と報告=型4則(1)再発) /clear復帰(07:54 y)の追体験16Phase+Q6軍師検証(blt_075858 妥当)+origin 0 0(家老 4本 1本ずつ push) ★復帰精度=再開までの空白を最小に
 - [ ] T49(08:05 insight INS-080518912) ninja_monitor が実在しない hayate_report_cmd_alias.yaml を REPORT-REVIEW-AUTO-REQUEST-BLOCK(22:54/07:59)=テンプレ内コメントの誤抽出疑い→抽出に実在チェック ★偽BLOCKログの消化コスト0
-- [ ] T50(09:28 再発2回(09:15 collision/09:22 dirty)、家老の commit は消火であり hotfix 配備は未; 08:04 実測) reflux dirty-guard: daemon の insights.yaml 書込み(resolved 遷移)が毎周期 dirty を作り配備が BLOCK→auto-commit まで空白。書込み側で同一トランザクション commit するか guard を insights.yaml の status 差分のみ許容へ ★配備空白の再発源を構造で断つ
+- [~] T50(09:37 才蔵へ karo_hotfix cmd_karo_hotfix_t50_reflux_trusted_resolution 配備 assigned・Working実測; 09:28 再発2回(09:15 collision/09:22 dirty)、家老の commit は消火であり hotfix 配備は未; 08:04 実測) reflux dirty-guard: daemon の insights.yaml 書込み(resolved 遷移)が毎周期 dirty を作り配備が BLOCK→auto-commit まで空白。書込み側で同一トランザクション commit するか guard を insights.yaml の status 差分のみ許容へ ★配備空白の再発源を構造で断つ
 - [x] T48b(08:51 家老 e5c1ab2cb→a52c112ce→577731149 を1本ずつpush、0 0、CI 577731149 in_progress) tick10 commit の push ★origin=HEAD 維持
 - [ ] T51(INS-20260827-085509569-7aa6) 家老 push 3本に 43m58s。成功 pre-push の wall/affected が logs に残らず律速不明→defense_overhead.jsonl へ記録+300秒超WARN ★push律速の可視化=1commitずつ方式の次弾
 - [x] T52(09:03 機械突合: HTML未掲載5件(T08/T21/T22/T48/T48b)・走行中欄8→実2・済タイル46≠md39を是正) artifact抜け漏れ覚醒確認(殿指示09:00) ★二次情報(HTML)を正本(md)から機械生成し乖離0
