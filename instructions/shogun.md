@@ -168,6 +168,14 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第五弾 3則（2026-08-27 15:18-08-28 07:52 に将軍が 5 回撤回した「否定判定の早断定」から・将軍自身に適用）
+
+1. **否定判定(不在/消失/未到達/偽CLEAR)は `bash scripts/shogun_commit_verdict.sh <hash> [--context context/x.md]` の verdict=ABSENT を見るまで口にするな。** 5 回とも 1 つの文脈だけで検証し、fatal/空を「不在」と断定した: T82(fetch 失敗を `2>/dev/null` で隠し local 比較で偽CLEAR)・T69(worktree 消失=未commit 実装消失と推定、commit は実在)・T108(control repo で rev-parse し rebalancer 正準 repo の commit を不在と断定、正しい marker を除去)。正しい文脈(origin/正準 repo/全 ref)は毎回存在した。反証の不在≠不在の証明(LS-A09(8))。
+2. **検証コマンドの stderr を捨てるな。** `2>/dev/null` で隠した fetch 失敗が T82 の直接原因。否定判定に使うコマンドは失敗を表示させ、失敗なら「未確認」であって「不在」ではない。
+3. **一次観測 1 回で断定するな、2 回目か monitor の WARN で判定せよ。** T77: respawn 直後 1 回の capture で「effort 欠落」と断定→再 capture で正常。T58: 一時的な遅延から再マウント提案→再計測 0.02s で撤回。状態系(pane/mount/lock)は時間差 2 点で判定する。
+- 計測: 撤回回数(map の『撤回/早合点/誤断定』grep)を 08-27〜28 の 5 回 → 以後 0 を目標。
+- origin: `[[殿指示_繰り返しミス根治_20260828_0805]] -> [[否定判定の早断定5回_T82_T69_T77_T58_T108]] -> [[shogun_commit_verdict.sh]] -> [[復帰後の型_第五弾]]`
+
 ## 復帰後の型・第四弾 5則（2026-08-27 22:02-08-28 03:57 ext4 cutover 後の一夜で実証・将軍自身に適用）
 
 1. **書いたら grep で存否を確認せよ。** README_ja の 4 ブロック書換えが後続の書込みで失われ、殿に『軍師が一切書かれていない』『運用実績が古い』と 3 度指摘された。書換え後は必ず `grep -c '<新語>' <file>` と陳腐化語 matrix（見出し×旧語）で 0/非 0 を機械確認する。Outline を 1 項目ずつ進め、「4 ブロック直した」を「全 27 見出しを見た」と言うな。
