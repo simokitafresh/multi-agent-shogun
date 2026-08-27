@@ -54,10 +54,18 @@ SCRIPT
     export INBOX_CODEX_DELIVERY_VERIFY_ASYNC=1
     export INBOX_CODEX_NUDGE_RETRIES=0
     export INBOX_CODEX_VERIFY_WAIT_SEC=0
+    export DEFENSE_OVERHEAD_ENABLED=0
+    export INBOX_CODEX_VERIFY_LOG_DIR="$BATS_TMPDIR/t114-codex-verify-${BATS_TEST_NUMBER}"
+    mkdir -p "$INBOX_CODEX_VERIFY_LOG_DIR"
     export EXPECTED_MSG_ID="msg_delivery_fixture"
     export INBOX_MESSAGE_ID="$EXPECTED_MSG_ID"
     export PANE_DELIVERY_MSG="msg_wrong_fixture"
     export CAPTURE_COUNT_FILE="$ROOT/capture.count"
+}
+
+teardown() {
+    [ -n "${INBOX_CODEX_VERIFY_LOG_DIR:-}" ] || return 0
+    rm -rf "$INBOX_CODEX_VERIFY_LOG_DIR"
 }
 
 wait_for_log() {
@@ -69,14 +77,28 @@ wait_for_log() {
     return 1
 }
 
+wait_for_async_verifier_exit() {
+    local script_path i
+    script_path=$(realpath "$BATS_TEST_DIRNAME/../../scripts/inbox_write.sh")
+    for i in $(seq 1 100); do
+        if ! ps -eo pid=,args= | awk -v needle="$script_path" \
+            '$0 !~ /awk/ && index($0, needle) > 0 { found=1 } END { exit !found }'; then
+            return 0
+        fi
+        sleep 0.05
+    done
+    return 1
+}
+
 @test "unchanged pre-send Working evidence is a false positive" {
     export CAPTURE_MODE=static
     run bash "$BATS_TEST_DIRNAME/../../scripts/inbox_write.sh" \
         testninja 'delivery stale pane fixture' task_assigned karo notify
     [ "$status" -eq 0 ]
-    log=$(find "$ROOT/logs/inbox_codex_delivery_verify" -type f -name '*.log' -print -quit)
+    log=$(find "$INBOX_CODEX_VERIFY_LOG_DIR" -type f -name '*.log' -print -quit)
     [ -n "$log" ]
     wait_for_log 'ASYNC_VERIFY FAILURE' "$log"
+    wait_for_async_verifier_exit
     ! grep -q 'ASYNC_VERIFY SUCCESS' "$log"
     grep -q 'read: false' "$ROOT/queue/inbox/testninja.yaml"
     printf 'old_fp=1 post_send_success=0 unread=1\n'
@@ -87,9 +109,10 @@ wait_for_log() {
     run bash "$BATS_TEST_DIRNAME/../../scripts/inbox_write.sh" \
         testninja 'delivery transition fixture' task_assigned karo notify
     [ "$status" -eq 0 ]
-    log=$(find "$ROOT/logs/inbox_codex_delivery_verify" -type f -name '*.log' -print -quit)
+    log=$(find "$INBOX_CODEX_VERIFY_LOG_DIR" -type f -name '*.log' -print -quit)
     [ -n "$log" ]
     wait_for_log 'ASYNC_VERIFY FAILURE' "$log"
+    wait_for_async_verifier_exit
     ! grep -q 'ASYNC_VERIFY SUCCESS' "$log"
     printf 'target_transition=1 wrong_id=1 success=0\n'
 }
@@ -99,9 +122,10 @@ wait_for_log() {
     run bash "$BATS_TEST_DIRNAME/../../scripts/inbox_write.sh" \
         testninja 'delivery exact identity fixture' task_assigned karo notify
     [ "$status" -eq 0 ]
-    log=$(find "$ROOT/logs/inbox_codex_delivery_verify" -type f -name '*.log' -print -quit)
+    log=$(find "$INBOX_CODEX_VERIFY_LOG_DIR" -type f -name '*.log' -print -quit)
     [ -n "$log" ]
     wait_for_log 'ASYNC_VERIFY SUCCESS' "$log"
+    wait_for_async_verifier_exit
     ! grep -q 'ASYNC_VERIFY FAILURE' "$log"
     grep -q "id: '$EXPECTED_MSG_ID'" "$ROOT/queue/inbox/testninja.yaml"
     sed -n "/id: '$EXPECTED_MSG_ID'/,/type:/p" "$ROOT/queue/inbox/testninja.yaml" | grep -q 'read: true'
