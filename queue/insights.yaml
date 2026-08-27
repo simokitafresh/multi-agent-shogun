@@ -6248,3 +6248,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-081940903-29e3
+  ts: "2026-08-28T08:19:40+09:00"
+  insight: "[[将軍が犯したミスで繰り返しているものがないか調査して根治しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍が犯したミスで繰り返しているものがないか調査して根治しよう。D0でもいいし、マップでもいい"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
