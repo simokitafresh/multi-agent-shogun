@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-27 T70 影丸 hotfix(task worktree root→ext4) を §2026-08-27 へ反映(DOC_LANE_REQUEST blt_20260827_231110) -->
+<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_070809 approved_source_commit T100 runtime lane 直 push 廃止を §2026-08-27 ext4 節へ反映 -->
+<!-- source_commit:88969097a185 reason:DOC_LANE_REQUEST blt_070809 approved_source_commit T100 runtime lane 直 push 廃止を §2026-08-27 ext4 節へ反映 evidence:git merge-base --is-ancestor 88969097a origin/main = yes; grep -c 'T100、半蔵 88969097a' context/infrastructure.md = 1 -->
 <!-- source_commit:b5f586933959 reason:T70 影丸 hotfix(task worktree root→ext4) を §2026-08-27 へ反映(DOC_LANE_REQUEST blt_20260827_231110) evidence:context/infrastructure.md §2026-08-27 T70 行; commit b5f586933959 scripts/deploy_task.sh scripts/deploy_task/preflight.sh -->
 <!-- source_commit:c6e8231816ab reason:2026-08-27 将軍doc lane: ext4 移設(cutover/効果/副作用/T70/T83)を §2026-08-27 追加(DOC_LANE_ALERT blt_20260827_230132 実消化) evidence:context/infrastructure.md §2026-08-27 追加(ext4); commits 5f8aea006 e644881f5 c6e823181 -->
 <!-- source_commit:06ddbc988 reason:2026-08-27 将軍doc lane: 孤児テスト根治5点を反映(DOC_LANE_ALERT blt_20260826_123314/101234 実消化) evidence:context/infrastructure.md §2026-08-27 追加; commits 3fa443c11 c940c47d5 8c09923f8 06ddbc988 -->
