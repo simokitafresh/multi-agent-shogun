@@ -16,14 +16,26 @@ def manifest(root, n=4):
 
 class UniversalShardTest(unittest.TestCase):
  def test_before_fixture_has_no_common_entry(self):
-  before=yaml.safe_load((ROOT/"tests/fixtures/universal_shard_before.yaml").read_text())
-  self.assertFalse(before["common_role_neutral_entrypoint"]); self.assertTrue(before["fixed_worker_count_dependency"])
+  with tempfile.TemporaryDirectory() as d:
+   x=manifest(pathlib.Path(d),2)
+   self.assertNotIn("role",x); self.assertNotIn("model",x)
+   self.assertEqual(M.plan(x)["worker_count"],2)
  def test_lpt_n_2_4_6_is_deterministic_exactly_once(self):
   with tempfile.TemporaryDirectory() as d:
    for n in (2,4,6):
     x=manifest(pathlib.Path(d),n); a=M.plan(x); b=M.plan(x)
     self.assertEqual(a,b); ids=[i["id"] for s in a["shards"] for i in s["items"]]
     self.assertEqual(len(ids),12); self.assertEqual(len(set(ids)),12)
+ def test_unmeasured_zero_weight_item_is_still_assigned_once(self):
+  with tempfile.TemporaryDirectory() as d:
+   x=manifest(pathlib.Path(d),2); x["items"][0]["weight"]=0; x["items"][0]["measured"]=False
+   out=M.plan(x); ids=[i["id"] for s in out["shards"] for i in s["items"]]
+   self.assertEqual(sorted(ids),sorted(i["id"] for i in x["items"])); self.assertEqual(len(ids),len(set(ids)))
+ def test_zero_assignment_shard_is_explicitly_rejected(self):
+  with tempfile.TemporaryDirectory() as d:
+   x=manifest(pathlib.Path(d),4); x["items"]=x["items"][:2]
+   with self.assertRaisesRegex(ValueError,"zero-assignment shard"):
+    M.plan(x)
  def test_n_less_than_two_blocks(self):
   with tempfile.TemporaryDirectory() as d:
    x=manifest(pathlib.Path(d),2); x["workers"][1]["idle"]=False

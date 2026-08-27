@@ -196,10 +196,18 @@ jobs:
               for path in missing_from_ledger:
                   measured[path] = 0.0
 
+          print(
+              f"SHARD_INVENTORY total={len(all_inventory)} compatibility={len(compatibility_files)} "
+              f"normal={len(inventory)} ledger_known={len(set(inventory) - set(missing_from_ledger))} "
+              f"unmeasured={len(missing_from_ledger)} duplicate={len(set(duplicates))} unassigned=0"
+          )
+
           if compatibility:
               Path(f"test-results/shard-{shard_name}.paths").write_text(
                   "".join(f"{path}\n" for path in compatibility_files), encoding="utf-8"
               )
+              if len(compatibility_files) == 0:
+                  raise SystemExit("zero-assignment shard forbidden: compatibility manifest is empty")
               print(
                   f"SHARD_COMPATIBILITY shard={shard_name} files={len(compatibility_files)} "
                   "order=manifest deterministic=1"
@@ -210,14 +218,34 @@ jobs:
               )
               raise SystemExit(0)
 
-          # Longest-processing-time first assignment keeps the measured shard
-          # totals close while retaining one deterministic, auditable mapping.
-          buckets = [(0.0, index, []) for index in range(shard_count)]
-          for path in sorted(inventory, key=lambda item: (-measured[item], item)):
-              total, index, paths = min(buckets, key=lambda item: (item[0], item[1]))
-              paths.append(path)
-              buckets[index] = (total + measured[path], index, paths)
-          total, _, paths = buckets[shard]
+          # Delegate deterministic LPT assignment and exactly-once checks to
+          # the shared role-neutral planner. Unknown ledger paths remain in
+          # the manifest with an explicit zero estimate and measured=false.
+          import importlib.util
+          spec = importlib.util.spec_from_file_location("universal_shard", "scripts/universal_shard.py")
+          planner = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(planner)
+          manifest = {
+              "max_workers": shard_count,
+              "command": "true",
+              "items": [
+                  {"id": path, "path": path, "weight": measured[path],
+                   "measured": path not in missing_from_ledger, "capability": "bats"}
+                  for path in inventory
+              ],
+              "workers": [
+                  {"id": f"shard-{index}", "idle": True,
+                   "capabilities": ["bats"], "adapter": {"backend": "github-actions"}}
+                  for index in range(shard_count)
+              ],
+          }
+          planned = planner.plan(manifest)
+          buckets = planned["shards"]
+          selected = next(bucket for bucket in buckets if bucket["worker"]["id"] == f"shard-{shard}")
+          paths = [item["path"] for item in selected["items"]]
+          if not paths:
+              raise SystemExit(f"zero-assignment shard forbidden: shard-{shard}")
+          total = selected["weight"]
           Path(f"test-results/shard-{shard}.paths").write_text(
               "".join(f"{path}\n" for path in paths), encoding="utf-8"
           )
@@ -226,10 +254,12 @@ jobs:
               f"SHARD_PARTITION total={len(all_inventory)} "
               f"compatibility={len(compatibility_files)} normal={len(inventory)}"
           )
-          for bucket_total, bucket_index, bucket_paths in buckets:
-              print(f"SHARD_TOTAL shard={bucket_index} files={len(bucket_paths)} measured_seconds={bucket_total:.3f}")
-              print(f"SHARD_FILES shard={bucket_index} paths={','.join(bucket_paths)}")
-          assigned = [path for _, _, bucket_paths in buckets for path in bucket_paths]
+          for bucket in buckets:
+              bucket_id = bucket["worker"]["id"]
+              bucket_paths = [item["path"] for item in bucket["items"]]
+              print(f"SHARD_TOTAL shard={bucket_id} files={len(bucket_paths)} measured_seconds={bucket['weight']:.3f}")
+              print(f"SHARD_FILES shard={bucket_id} paths={','.join(bucket_paths)}")
+          assigned = [item["path"] for bucket in buckets for item in bucket["items"]]
           if sorted(assigned) != inventory or len(assigned) != len(set(assigned)):
               raise SystemExit("shard assignment invariant failed: inventory is not a partition")
           PY
