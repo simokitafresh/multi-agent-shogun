@@ -5632,3 +5632,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-232241213-3af4
+  ts: "2026-08-27T23:22:41+09:00"
+  insight: "[[クローン可搬性の根治 scripts config skills instructions からユーザー固有絶対パス h]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=クローン可搬性の根治: scripts/config/skills/instructions からユーザー固有絶対パス(/home/simokitafresh)を除去しリポジトリ相対解決へ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
