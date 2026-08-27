@@ -441,7 +441,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存防御により解消済み。scripts/deploy_task/task_contract.sh:1563-1610のreport_lesson_ids_for_taskは明示assigned_lesson_idsを優先し、scripts/deploy_task/report.sh:1104-1138とscripts/lib/deploy_task_report_publication_fast.py:216-235が同じ評価集合からlessons_useful雛形を生成、scripts/lib/report_gate_contract.py:153-193が許可集合外(extra)IDを拒否する。現taskはrelated_lessons L351/L1586/L1545、報告雛形も同一3件で、契約検証はOK mode=subset allowed=3 reported=3。cmd_4372/cmd_4373型の再発防止は既存実装で満たすため追加修正・decision_candidate不要。"
+  action_artifact: "primary=queue/tasks/saizo.yaml;report=queue/reports/saizo_report_cmd_reflux_insight_202608271656_saizo.yaml;code=scripts/deploy_task/task_contract.sh:1563-1610,scripts/deploy_task/report.sh:1104-1138,scripts/lib/deploy_task_report_publication_fast.py:216-235,scripts/lib/report_gate_contract.py:153-193;check=python3 scripts/lib/report_gate_contract.py lesson-feedback-set queue/tasks/saizo.yaml queue/reports/saizo_report_cmd_reflux_insight_202608271656_saizo.yaml => OK mode=subset allowed=3 reported=3;semantic=docs/semantic-index/index.md:11384-11391;context=context/infrastructure.md:216"
+  resolved_at: "2026-08-27T17:04:44+09:00"
 - id: INS-20260823-115919263-4882
   ts: "2026-08-23T11:59:19+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_ga493_context_freshness_trigger; matched=context; current_pattern=; candidate_level=4; candidate=cmd_2271でCDP教訓0件注入(target_path=outputs/でヒットせず)→忍者が認証迂回を3回繰返し。殿指摘; source=gunshi_gp_tracker.yaml"
@@ -4996,4 +4999,7 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T17:07:05+09:00"
