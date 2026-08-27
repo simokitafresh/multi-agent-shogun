@@ -531,7 +531,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4361"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既知修正を一次確認済み: scripts/deploy_task/modifiers.sh は USEFUL_RATE_THRESHOLD=0.40 を実装し、MAX_INJECT=3 と MAX_UNIVERSAL=1 によりuniversalが1件のときtask-specific 2枠を確保する。cmd_4361のstate/transaction抽出はcmd-chronicleとsemantic indexに登録済みで、新規コード修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-070317619-38ed;implementation=scripts/deploy_task/modifiers.sh:L37,L1278,L1448-L1482;source=context/cmd-chronicle.md:L208;semantic=docs/semantic-index/index.md:L8114-L8115;verification=rg and formula check"
+  resolved_at: "2026-08-28T00:12:09+09:00"
 - id: INS-20260822-070331645-5a94
   ts: "2026-08-22T07:03:31+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cluster A合流実証]] は既存aliasesに一致なし。類似概念TOP3: recalculate_pipeline(再計算パイプライン; alias=recalculate_fast; score=5.7) / investment_knowledge_base(投資知識辞書; alias=Structural Break Tests; score=5.7) / causal_traversal_pipeline(因果辺トラバース統合パイプライン(Obsidian×セマンティック); alias=causal_traversal; score=5.7)。概念定義とaliases追加を検討せよ"
