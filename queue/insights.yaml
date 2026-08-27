@@ -4887,3 +4887,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260827-152607331-368a
+  ts: "2026-08-27T15:26:07+09:00"
+  insight: "15:22 cmd_4407(飛猿)の検証『クリーンcloneで shutsujin -s 完走』が本番 tmux session=shogun の全7paneへ send-keys(shutsujin_departure.sh:764 AGENTS_WINDOW_TARGET が live を指す)し、将軍/家老/軍師/忍者の composer に『cd /tmp/cmd4407-shared… && export PS1=… && clear』が流入。飛猿は別 session cmd4407_setup_352185 を作ったが window target が隔離されていない。根因=将軍起票ACに隔離条件なし(LS-A04(45)型: 本番を触る操作のACに停止点/隔離を書け)。自動化ターゲット: shutsujin/reset_layout の send-keys 先を TMUX socket/SESSION 変数から必ず導出し、対象 session が attached な本番 shogun のとき SHOGUN_ALLOW_LIVE_SENDKEYS=1 なしでは BLOCK。速度向上へのつながり: 全agentの作業混入/誤指示による手戻り 0"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
