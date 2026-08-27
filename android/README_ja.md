@@ -63,7 +63,7 @@
    - **ポート**: 22
    - **ユーザー**: SSHユーザー名
    - **鍵パス** または **パスワード**: 認証方式
-   - **プロジェクトパス**: サーバー側のmulti-agent-shogunパス（例: `/mnt/c/tools/multi-agent-shogun`）
+   - **プロジェクトパス**: サーバー側のmulti-agent-shogunパス（例: `/home/simokitafresh/multi-agent-shogun`）
    - **セッション名**: 将軍・エージェント用のtmuxセッション名
 3. **保存** → **将軍** タブに切替 → 自動接続
 

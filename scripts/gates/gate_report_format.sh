@@ -1094,7 +1094,7 @@ except Exception:
             fi
             _CC_BROAD=0
             for _ccp in "${_CC_PATHS[@]}"; do
-                case "$_ccp" in "."|"$REPO_ROOT"|"$REPO_ROOT/"|"/mnt/c/tools/multi-agent-shogun"|"/mnt/c/tools/multi-agent-shogun/") _CC_BROAD=1;; esac
+                case "$_ccp" in "."|"$REPO_ROOT"|"$REPO_ROOT/"|"/home/simokitafresh/multi-agent-shogun"|"/home/simokitafresh/multi-agent-shogun/") _CC_BROAD=1;; esac
             done
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 _CC_UNCOMMITTED=$(GATE_CC_BROAD_SCOPE="$_CC_BROAD" filter_report_commit_nonoverlap_diffs "$REPO_ROOT" "$REPORT_PATH" "$_CC_UNCOMMITTED" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_UNCOMMITTED")

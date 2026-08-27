@@ -1,3 +1,2 @@
-# session_alerts — generated: 2026-08-27T21:25:01+0900
+# session_alerts — generated: 2026-08-27T22:04:55+0900
 [TODO] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
-[DONE] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな

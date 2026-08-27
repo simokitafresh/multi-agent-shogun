@@ -185,9 +185,9 @@ LIMIT 50;
 Expected output example:
 
 ```text
-/mnt/c/tools/multi-agent-shogun/queue/lord_conversation.jsonl|conversation|27449
-/mnt/c/tools/multi-agent-shogun/queue/bulletin_board.yaml|bulletin|3230
-/mnt/c/tools/multi-agent-shogun/archive/completed/cmd_2965.yaml|cmd_archive|1
+/home/simokitafresh/multi-agent-shogun/queue/lord_conversation.jsonl|conversation|27449
+/home/simokitafresh/multi-agent-shogun/queue/bulletin_board.yaml|bulletin|3230
+/home/simokitafresh/multi-agent-shogun/archive/completed/cmd_2965.yaml|cmd_archive|1
 ```
 
 ## 8. Agent Activity Summary

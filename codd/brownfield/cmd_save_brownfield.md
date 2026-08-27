@@ -13,8 +13,8 @@ codd:
 
 ## Summary
 
-- extract_output: `/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/cmd_save/.codd/extract`
-- extract_input: `/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/cmd_save/.codd/extract/extracted.md`
+- extract_output: `/home/simokitafresh/multi-agent-shogun/codd/brownfield_targets/cmd_save/.codd/extract`
+- extract_input: `/home/simokitafresh/multi-agent-shogun/codd/brownfield_targets/cmd_save/.codd/extract/extracted.md`
 - requirements_path: `docs/requirements/cmd_2762_cmd_save_requirements.md`
 - lexicon_path: `discovery mode`
 - diff_findings: 0

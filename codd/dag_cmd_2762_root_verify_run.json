@@ -1,7 +1,7 @@
 {
   "version": "1",
   "built_at": "2026-05-15T04:12:31.618163+00:00",
-  "project_root": "/mnt/c/tools/multi-agent-shogun",
+  "project_root": "/home/simokitafresh/multi-agent-shogun",
   "nodes": [
     {
       "id": "codd/brownfield/cmd_save_brownfield.md",

@@ -227,7 +227,7 @@ dashboard.md に掲載 → 殿が承認 → .claude/commands/ にスキル作成
 🐧 **Ubuntu を開いて以下を実行**（初回のみ）
 
 ```bash
-cd /mnt/c/tools/multi-agent-shogun
+cd /home/simokitafresh/multi-agent-shogun
 ./first_setup.sh
 ```
 
@@ -273,7 +273,7 @@ claude --dangerously-skip-permissions
 **Ubuntuターミナル**（WSL）を開いて実行：
 
 ```bash
-cd /mnt/c/tools/multi-agent-shogun
+cd /home/simokitafresh/multi-agent-shogun
 ./shutsujin_departure.sh
 ```
 
@@ -319,7 +319,7 @@ cd /mnt/c/tools/multi-agent-shogun
 |---|---|---|
 | Tailscale IPv4 | `tailscale ip -4` | `100.75.173.26` |
 | SSHユーザー名 | `whoami` | `simokitafresh` |
-| プロジェクトパス | `pwd` | `/mnt/c/tools/multi-agent-shogun` |
+| プロジェクトパス | `pwd` | `/home/simokitafresh/multi-agent-shogun` |
 | tmuxセッション名 | `tmux ls` | `shogun` |
 | tmuxプレフィックス | `tmux show-options -gqv prefix` | `C-a` |
 | Android APK | `ls android/release` | `multi-agent-shogun.apk` |
@@ -466,10 +466,10 @@ wsl --install
 
 現行の編成・エージェント名・モデル・CLI種別・起動パスは `config/settings.yaml` と `config/cli_profiles.yaml` が正本です。READMEの例を第二の設定源にしません。クリーンcloneでは、まず `first_setup.sh` を実行し、エージェントを起動しない検証を次で行います：
 
-移設時の注意：監査済みcheckoutでは、絶対ルート `/mnt/c/tools/multi-agent-shogun` がscripts・設定・hook配下の93ファイルに存在します。移設完了まではこのルートを前提とします。別のcheckoutルートを使う場合は、リポジトリ内のこの文字列だけを置換し、残存数を再計数してからセットアップを再実行します：
+移設時の注意：監査済みcheckoutでは、絶対ルート `/home/simokitafresh/multi-agent-shogun` がscripts・設定・hook配下の93ファイルに存在します。移設完了まではこのルートを前提とします。別のcheckoutルートを使う場合は、リポジトリ内のこの文字列だけを置換し、残存数を再計数してからセットアップを再実行します：
 
 ```bash
-OLD_ROOT=/mnt/c/tools/multi-agent-shogun
+OLD_ROOT=/home/simokitafresh/multi-agent-shogun
 NEW_ROOT=/path/to/multi-agent-shogun
 rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | xargs -r sed -i "s|$OLD_ROOT|$NEW_ROOT|g"
 test "$(rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | wc -l)" -eq 0
@@ -1289,7 +1289,7 @@ tmux kill-session -t shogun
 `first_setup.sh` を実行すると、以下のエイリアスが `~/.bashrc` に自動追加されます：
 
 ```bash
-alias csst='cd /mnt/c/tools/multi-agent-shogun && ./shutsujin_departure.sh'
+alias csst='cd /home/simokitafresh/multi-agent-shogun && ./shutsujin_departure.sh'
 alias css='tmux attach-session -t shogun'      # 将軍ウィンドウの起動
 alias csm='tmux attach-session -t shogun'  # 家老・忍者ウィンドウの起動
 ```

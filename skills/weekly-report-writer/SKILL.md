@@ -79,7 +79,7 @@ Script refs verified: 2026-06-26 af9e4c7b3+cc2dae45c. `note_draft.sh` 直近変�
 command -v curl >/dev/null
 command -v jq >/dev/null
 test -f /mnt/c/Python_app/DM-signal/backend/.env
-test -f /mnt/c/tools/multi-agent-shogun/config/xai_api.env
+test -f /home/simokitafresh/multi-agent-shogun/config/xai_api.env
 ```
 
 ## 実行手順
@@ -90,7 +90,7 @@ test -f /mnt/c/tools/multi-agent-shogun/config/xai_api.env
 
 ```bash
 export DM_SIGNAL_ROOT=/mnt/c/Python_app/DM-signal
-export SHOGUN_ROOT=/mnt/c/tools/multi-agent-shogun
+export SHOGUN_ROOT=/home/simokitafresh/multi-agent-shogun
 export DM_SIGNAL_BASE_URL="${DM_SIGNAL_BASE_URL:-https://dm-signal-backend.onrender.com}"
 export REPORT_DATE="${REPORT_DATE:-$(TZ=Asia/Tokyo date +%F)}"
 export OUT_DIR="$DM_SIGNAL_ROOT/marketing-director/content/weekly_report"

@@ -13,8 +13,8 @@ codd:
 
 ## Summary
 
-- extract_output: `/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/ninja_monitor/.codd/extract`
-- extract_input: `/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/ninja_monitor/.codd/extract/extracted.md`
+- extract_output: `/home/simokitafresh/multi-agent-shogun/codd/brownfield_targets/ninja_monitor/.codd/extract`
+- extract_input: `/home/simokitafresh/multi-agent-shogun/codd/brownfield_targets/ninja_monitor/.codd/extract/extracted.md`
 - requirements_path: `skipped`
 - lexicon_path: `discovery mode`
 - diff_findings: 0

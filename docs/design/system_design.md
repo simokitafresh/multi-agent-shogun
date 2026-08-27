@@ -291,7 +291,7 @@ tests/
 
 - **inotify不使用**: NTFSマウントではinotifyが動作しないため、全I/O監視はstatコマンドによるポーリングに依拠する
 - **ファイルロック**: `flock` はNTFS上で動作する。state_ioの書込みは既存のflock方式を維持する
-- **パス形式**: `/mnt/c/tools/multi-agent-shogun/queue/` 等の長いパスを扱う。パス操作にWindowsスタイルのバックスラッシュは使用しない
+- **パス形式**: `/home/simokitafresh/multi-agent-shogun/queue/` 等の長いパスを扱う。パス操作にWindowsスタイルのバックスラッシュは使用しない
 
 ### 2.9 非機能要件
 

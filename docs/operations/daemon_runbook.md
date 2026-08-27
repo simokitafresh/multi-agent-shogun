@@ -80,7 +80,7 @@ ninja_monitor.sh (~500行: globals + source chain + main loop)
 
 ```bash
 # 1. プロジェクトルートに移動
-cd /mnt/c/tools/multi-agent-shogun
+cd /home/simokitafresh/multi-agent-shogun
 
 # 2. デーモン起動（バックグラウンド、nohup）
 nohup bash scripts/ninja_monitor.sh >> logs/ninja_monitor.log 2>&1 &

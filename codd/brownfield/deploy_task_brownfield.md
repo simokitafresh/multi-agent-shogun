@@ -13,8 +13,8 @@ codd:
 
 ## Summary
 
-- extract_output: `/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/deploy_task/.codd/extract`
-- extract_input: `/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/deploy_task/.codd/extract/extracted.md`
+- extract_output: `/home/simokitafresh/multi-agent-shogun/codd/brownfield_targets/deploy_task/.codd/extract`
+- extract_input: `/home/simokitafresh/multi-agent-shogun/codd/brownfield_targets/deploy_task/.codd/extract/extracted.md`
 - requirements_path: `skipped`
 - lexicon_path: `discovery mode`
 - diff_findings: 0
@@ -76,7 +76,7 @@ note: The 'Design documents' input field is '(none provided)'. For brownfield ta
 ```
 
 <!-- codd:finding
-{"details": {"available_tools": ["Gmail (create_draft, search_threads, etc.)", "Memory MCP (knowledge graph)"], "missing_tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Agent"], "working_directory": "/mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/deploy_task"}, "id": "no_file_tools_available", "kind": "tooling_constraint", "name": "File reading tools unavailable in this session", "question": "このセッションでRead/Glob/Bashツールを有効にするか、対象ファイルの内容をプロンプトに直接含めてください。", "rationale": "Without file system access, the deploy_task source code and any associated specs cannot be examined. The elicitation process is blocked.", "related_requirement_ids": [], "severity": "critical", "source": "greenfield"}
+{"details": {"available_tools": ["Gmail (create_draft, search_threads, etc.)", "Memory MCP (knowledge graph)"], "missing_tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Agent"], "working_directory": "/home/simokitafresh/multi-agent-shogun/codd/brownfield_targets/deploy_task"}, "id": "no_file_tools_available", "kind": "tooling_constraint", "name": "File reading tools unavailable in this session", "question": "このセッションでRead/Glob/Bashツールを有効にするか、対象ファイルの内容をプロンプトに直接含めてください。", "rationale": "Without file system access, the deploy_task source code and any associated specs cannot be examined. The elicitation process is blocked.", "related_requirement_ids": [], "severity": "critical", "source": "greenfield"}
 -->
 ## no_file_tools_available - File reading tools unavailable in this session
 
@@ -100,5 +100,5 @@ missing_tools:
 - Grep
 - Bash
 - Agent
-working_directory: /mnt/c/tools/multi-agent-shogun/codd/brownfield_targets/deploy_task
+working_directory: /home/simokitafresh/multi-agent-shogun/codd/brownfield_targets/deploy_task
 ```

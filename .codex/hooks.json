@@ -6,27 +6,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_inbox_priority_guard.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/codex_inbox_priority_guard.sh",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_skill_execution_guard.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/codex_skill_execution_guard.sh",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-read-tracker.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/.claude/hooks/pre-write-read-tracker.sh",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-combined.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/.claude/hooks/pre-bash-combined.sh",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-edit-combined.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/.claude/hooks/pre-write-edit-combined.sh",
             "timeout": 10
           }
         ]
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_session_start.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/codex_session_start.sh",
             "timeout": 60,
             "statusMessage": "Loading shogun session context"
           }
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_user_prompt_submit.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/codex_user_prompt_submit.sh",
             "timeout": 10,
             "statusMessage": "Loading memory context"
           }
@@ -63,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-bash-combined.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/.claude/hooks/post-bash-combined.sh",
             "timeout": 30
           }
         ]

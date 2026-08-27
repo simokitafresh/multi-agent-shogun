@@ -162,7 +162,7 @@ git stash
 ### 2. 家老報告
 
 ```bash
-bash /mnt/c/tools/multi-agent-shogun/scripts/inbox_write.sh karo \
+bash /home/simokitafresh/multi-agent-shogun/scripts/inbox_write.sh karo \
   "{ninja_name}、gs-bench-gate REGRESSION検出。{ninjutsu}: before={before_ms}ms/pat → after={after_ms}ms/pat (+{delta_pct}%)。変更をstashで退避済み。対処指示を待つ。" \
   report_received {ninja_name}
 ```

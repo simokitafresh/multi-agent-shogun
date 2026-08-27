@@ -4899,7 +4899,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **tags**: [gate, maintenance, performance, reporting, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
-- cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunでは同一スクリプトが148ms。WSL2のWindows FSオーバーヘッドがpython3プロセス起動コストを倍増させる。コスト削減はプロセス数削減で初めて実効性を持つ。
+- cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/home/simokitafresh/multi-agent-shogunでは同一スクリプトが148ms。WSL2のWindows FSオーバーヘッドがpython3プロセス起動コストを倍増させる。コスト削減はプロセス数削減で初めて実効性を持つ。
 
 ### L497: bash -lcによるPATHリセット: CI並列テストでMOCK_BIN無効化
 - **日付**: 2026-04-18
@@ -5158,7 +5158,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: kagemaru
 - **status**: confirmed
 - **tags**: [infra,gate]
-- **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh,scripts/cmd_save.sh]
+- **target_files**: [/home/simokitafresh/multi-agent-shogun/scripts/cmd_save.sh,scripts/cmd_save.sh]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-04-22
 - cmd_save.shのassumptionsパーサーが'行頭が非空白のみ終了'としていたため、CMD_BLOCKの全行インデント済み構造では兄弟キー(environment_change等)がassumptionエントリに混入。fix: assumptionsのインデント幅を記録し同幅以下の行で終了
@@ -5168,7 +5168,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **出典**: cmd_karo_ci_fix_ga158
 - **記録者**: karo
 - **tags**: [infra,gate]
-- **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh,scripts/cmd_save.sh]
+- **target_files**: [/home/simokitafresh/multi-agent-shogun/scripts/cmd_save.sh,scripts/cmd_save.sh]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-04-22
 - cmd_save.shのassumptionsパーサーが行頭非空白のみを終了条件にしていたため、インデント済みCMD_BLOCKでは兄弟キー(environment_change等)がassumptionエントリへ混入した。assumptions開始行のインデント幅を記録し、同幅以下の非空行でブロック離脱すること。
@@ -5188,7 +5188,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: tobisaru
 - **status**: confirmed
 - **tags**: [infra,yaml]
-- **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh,queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml]
+- **target_files**: [/home/simokitafresh/multi-agent-shogun/scripts/cmd_save.sh,queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 修正: インラインスカラー行がバックスラッシュで終わる場合flow_cont=1を設定し継続行を保護
 - yaml_field_set.sh AWKがprev_inline_scalarかつindent>field_indentの行をnextしてしまい継続行を消去する不具合。
@@ -7905,7 +7905,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **出典**: cmd_3278
 - **記録者**: karo
 - **tags**: [infra,context,review,bash]
-- **target_files**: [/mnt/c/tools/multi-agent-shogun/docs/research/,context/gunshi-nazenaze-synthesis.md,context/karo-operations.md,context/cdp-philosophy.md,context/memory-db-schema.md]
+- **target_files**: [/home/simokitafresh/multi-agent-shogun/docs/research/,context/gunshi-nazenaze-synthesis.md,context/karo-operations.md,context/cdp-philosophy.md,context/memory-db-schema.md]
 - **origin**: [[cmd_3278]]
 - **when**: 未設定
 - **how**: 未設定

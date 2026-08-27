@@ -52,7 +52,7 @@ ninja_monitor.sh の7モジュール分割（`scripts/lib/monitor/` 配下）に
 | `STALL_FIRST_SEEN[]` | associative array | dispatcher（`declare -A`） | stall_detection | stall_detection | stall初回検知タイムスタンプ。キー=忍者名 |
 | `STALL_NOTIFIED[]` | associative array | dispatcher（`declare -A`） | stall_detection | stall_detection | stall通知済みフラグ。二重通知防止 |
 | `STALL_COUNT[]` | associative array | dispatcher（`declare -A`） | stall_detection | idle_management | stall累積カウント。idle判定の入力 |
-| `STATE_DIR` | scalar | dispatcher（起動時） | dispatcher（初期化のみ） | state_io, health_checks | 状態ファイル格納ディレクトリパス（`/mnt/c/tools/multi-agent-shogun/queue/state/` 等） |
+| `STATE_DIR` | scalar | dispatcher（起動時） | dispatcher（初期化のみ） | state_io, health_checks | 状態ファイル格納ディレクトリパス（`/home/simokitafresh/multi-agent-shogun/queue/state/` 等） |
 | `SCRIPT_DIR` | scalar | dispatcher（起動時） | dispatcher（初期化のみ） | 全7モジュール | スクリプトルートパス。相対パス解決の基点 |
 | `LOG` | scalar | dispatcher（起動時） | dispatcher（初期化のみ） | health_checks | ログファイルパス |
 | `POLL_INTERVAL` | scalar (=20) | dispatcher（起動時） | dispatcher（初期化のみ） | dispatcher（主ループ sleep） | ポーリング間隔秒数 |

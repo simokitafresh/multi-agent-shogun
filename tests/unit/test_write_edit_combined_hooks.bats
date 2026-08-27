@@ -448,7 +448,7 @@ _mark_read_for_current_agent() {
 @test "Guard 17: config/projects.yaml projects path manual WriteをBLOCKする" {
     local projects_file="$TMP_DIR/config/projects.yaml"
     mkdir -p "$TMP_DIR/config"
-    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$projects_file"'","content":"projects:\n  - id: infra\n    path: /mnt/c/tools/multi-agent-shogun\n"}}'
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$projects_file"'","content":"projects:\n  - id: infra\n    path: /home/simokitafresh/multi-agent-shogun\n"}}'
     [ "$status" -eq 2 ]
     [[ "$output" == *'projects.yaml projects[].path変更は'* ]]
     [[ "$output" == *'手動Edit/Write禁止'* ]]

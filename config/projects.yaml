@@ -24,7 +24,7 @@ projects:
   - id: infra
     type: platform
     name: "Multi-Agent Infrastructure"
-    path: "/mnt/c/tools/multi-agent-shogun"
+    path: "/home/simokitafresh/multi-agent-shogun"
     context_file: "context/infrastructure.md"
     priority: medium
     status: active

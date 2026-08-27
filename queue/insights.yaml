@@ -5290,32 +5290,131 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:32:06+09:00"
 - id: INS-20260827-212929608-4406
   ts: "2026-08-27T21:29:29+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[9p_root_fix_cutover]] は既存aliasesに一致なし。類似概念TOP3: yaml_safe_write(YAML安全書込み; alias=9p_git_flock_RPC待ち; score=13.8) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun d0 fix; score=13.0) / codd_methodology(CoDD整合性駆動開発; alias=codd fix PHENOMENON; score=12.9)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:32:06+09:00"
 - id: INS-20260827-212951010-ee8e
   ts: "2026-08-27T21:29:51+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[relocate_after_final_rsync]] は既存aliasesに一致なし。類似概念TOP3: gs_ninpo_research(GS忍法研究; alias=context.final_weights; score=14.9) / skill_routing(スキルルーティング; alias=Session after commitでL5再生成を予約し; score=13.5) / infra_throughput_outcome_design(インフラスループット・アウトカム設計; alias=C4 lifecycle transaction; score=8.6)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:32:06+09:00"
 - id: INS-20260827-213020989-20c2
   ts: "2026-08-27T21:30:20+09:00"
   insight: "[[9P根治に向けて順調か？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=9P根治に向けて順調か？"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:35:26+09:00"
 - id: INS-20260827-213129214-446c
   ts: "2026-08-27T21:31:29+09:00"
   insight: "[[cd tmp cmd4407 shared cfddu6 && export PS1 \\ \\033 1;31m\\ kar]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/cmd4407-shared.cfddu6\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1 — 現task YAMLを…"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:35:26+09:00"
+- id: INS-20260827-214039279-98ec
+  ts: "2026-08-27T21:40:39+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[git_converged_0_0_20260827_2139]] は既存aliasesに一致なし。類似概念TOP3: destructive_operations(破壊的操作安全機構; alias=git clean; score=20.4) / semantic_dictionary_design(セマンティック辞書構想; alias=Git tree解決可能を型検証する; score=19.2) / context_freshness_retry_budget(context鮮度git再試行予算; alias=CFC_GIT_TIMEOUT; score=14.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:41:08+09:00"
+- id: INS-20260827-215233659-e904
+  ts: "2026-08-27T21:52:33+09:00"
+  insight: "semantic_index_update新概念候補: discussion:simokitafresh@2025LG17 ~$ cd mnt c tools multi agent shogun && bash scripts migr は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:55:51+09:00"
+- id: INS-20260827-215352238-8e2b
+  ts: "2026-08-27T21:53:52+09:00"
+  insight: "[[cd tmp tmp pVkgJWVlr0 clone && export PS1 \\ \\033 1;31m\\ karo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/tmp.pVkgJWVlr0/clone\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:56:43+09:00"
+- id: INS-20260827-215416742-371c
+  ts: "2026-08-27T21:54:16+09:00"
+  insight: "[[進捗をわかりやすく説明してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗をわかりやすく説明してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:56:44+09:00"
+- id: INS-20260827-215440820-df65
+  ts: "2026-08-27T21:54:40+09:00"
+  insight: "[[cd tmp cmd4407 shared cfddu6 && export PS1 \\ \\033 1;31m\\ kar]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/cmd4407-shared.cfddu6\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1 — 現task YAMLを…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:56:44+09:00"
+- id: INS-20260827-215503672-3c17
+  ts: "2026-08-27T21:55:03+09:00"
+  insight: "[[artifactを最新にアップデートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactを最新にアップデートせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T21:56:45+09:00"
+- id: INS-20260827-215645460-22c1
+  ts: "2026-08-27T21:56:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:何も変わらないが待機していればいいのか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-27T22:06:41+09:00"
+- id: INS-20260827-220603892-c8d8
+  ts: "2026-08-27T22:06:03+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/cmd_4402_konti_effect_measurement_20260825.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260827-220622476-45b8
+  ts: "2026-08-27T22:06:22+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `scripts/cdp/cmd_4401_publish_timing.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending

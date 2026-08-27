@@ -1,7 +1,7 @@
 language: ja
 shell: bash
 skill:
-  local_path: /mnt/c/tools/multi-agent-shogun/skills/
+  local_path: /home/simokitafresh/multi-agent-shogun/skills/
 cli:
   default: claude
   agents:
@@ -77,7 +77,7 @@ screenshot:
   retention_hours: 72
 logging:
   level: info
-  path: /mnt/c/tools/multi-agent-shogun/logs/
+  path: /home/simokitafresh/multi-agent-shogun/logs/
 layout:
   col1_width_pct: 36
   karo_height: 24

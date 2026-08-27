@@ -63,7 +63,7 @@ Or build from source:
    - **Port**: 22
    - **User**: Your SSH username
    - **Key Path** or **Password**: Authentication method
-   - **Project Path**: Server-side path to multi-agent-shogun (e.g., `/mnt/c/tools/multi-agent-shogun`)
+   - **Project Path**: Server-side path to multi-agent-shogun (e.g., `/home/simokitafresh/multi-agent-shogun`)
    - **Session Names**: tmux session names for Shogun and Agents
 3. Tap **Save** → switch to **Shogun** tab → auto-connects
 

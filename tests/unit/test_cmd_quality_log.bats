@@ -74,7 +74,7 @@ count_entries() {
     run bash -c '
         root="$1"
         source "$root/scripts/lib/lock_path.sh"
-        log="/mnt/c/tools/multi-agent-shogun/logs/cmd_design_quality.yaml"
+        log="/home/simokitafresh/multi-agent-shogun/logs/cmd_design_quality.yaml"
         canonical="$(lock_path "$log")"
         [[ "$canonical" == /tmp/shogun_lock_*.lock ]] &&
         [ "$canonical" != "${log}.lock" ] &&

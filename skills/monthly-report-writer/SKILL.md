@@ -71,7 +71,7 @@ allowed-tools:
 command -v curl >/dev/null
 command -v jq >/dev/null
 test -f /mnt/c/Python_app/DM-signal/backend/.env
-test -f /mnt/c/tools/multi-agent-shogun/config/xai_api.env
+test -f /home/simokitafresh/multi-agent-shogun/config/xai_api.env
 ```
 
 ## 実行手順
@@ -80,7 +80,7 @@ test -f /mnt/c/tools/multi-agent-shogun/config/xai_api.env
 
 ```bash
 export DM_SIGNAL_ROOT=/mnt/c/Python_app/DM-signal
-export SHOGUN_ROOT=/mnt/c/tools/multi-agent-shogun
+export SHOGUN_ROOT=/home/simokitafresh/multi-agent-shogun
 export DM_SIGNAL_BASE_URL="${DM_SIGNAL_BASE_URL:-https://dm-signal-backend.onrender.com}"
 
 # 発行月（デフォルト: 当月）。月初に発行し、先月を振り返る構成。

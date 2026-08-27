@@ -1748,7 +1748,7 @@ finish_phase 0
 begin_phase guard
 # GA-222と同じ理由(script冒頭コメント参照): 呼び出し時のcwdは対象repo
 # ($repo_root、DM-Signal等)になり得るため、"$repo_root/../multi-agent-shogun"の
-# 相対推測や"/mnt/c/tools/multi-agent-shogun"のWSL2固定パスはCI runner等の
+# 相対推測や"/home/simokitafresh/multi-agent-shogun"のWSL2固定パスはCI runner等の
 # 別環境で解決に失敗しguardが無言でno-opになる。このscript自身の設置場所
 # (NINJA_SCOPE_COMMIT_SCRIPT_DIR)は常にmulti-agent-shogun/scripts/を指すため
 # それを基準にguardを解決する。

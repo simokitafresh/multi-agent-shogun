@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/session_start_inject.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/session_start_inject.sh",
             "timeout": 60000
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/mnt/c/tools/multi-agent-shogun/.claude/hooks/pretool-dispatch.sh"
+            "command": "/home/simokitafresh/multi-agent-shogun/.claude/hooks/pretool-dispatch.sh"
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/mnt/c/tools/multi-agent-shogun/.claude/hooks/posttool-dispatch.sh"
+            "command": "/home/simokitafresh/multi-agent-shogun/.claude/hooks/posttool-dispatch.sh"
           }
         ]
       }
@@ -40,20 +40,20 @@
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/log_terminal_response.sh"
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/log_terminal_response.sh"
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/stop-lint-gate.sh"
+            "command": "bash /home/simokitafresh/multi-agent-shogun/.claude/hooks/stop-lint-gate.sh"
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/stop_session_alerts.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/stop_session_alerts.sh",
             "timeout": 10000
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/stop_check_inbox.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/stop_check_inbox.sh",
             "timeout": 60000
           }
         ]
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/session_end_clear_check.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/session_end_clear_check.sh",
             "timeout": 60000
           }
         ]
@@ -79,11 +79,11 @@
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/log_terminal_input.sh"
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/log_terminal_input.sh"
           },
           {
             "type": "command",
-            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/prompt_state_inject.sh",
+            "command": "bash /home/simokitafresh/multi-agent-shogun/scripts/hooks/prompt_state_inject.sh",
             "timeout": 10000
           }
         ]

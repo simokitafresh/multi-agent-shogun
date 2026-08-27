@@ -221,7 +221,7 @@ Right-click → "Run as Administrator" (if WSL2 is not installed). Sets up WSL2 
 🐧 **Open Ubuntu and run** (first time only)
 
 ```bash
-cd /mnt/c/tools/multi-agent-shogun
+cd /home/simokitafresh/multi-agent-shogun
 ./first_setup.sh
 ```
 
@@ -269,7 +269,7 @@ If your `config/settings.yaml` enables Codex agents, also ensure the Codex CLI i
 Open an **Ubuntu terminal** (WSL) and run:
 
 ```bash
-cd /mnt/c/tools/multi-agent-shogun
+cd /home/simokitafresh/multi-agent-shogun
 ./shutsujin_departure.sh
 ```
 
@@ -328,7 +328,7 @@ Control your AI army from your phone in two ways:
 |---|---|---|
 | Tailscale IPv4 | `tailscale ip -4` | `100.75.173.26` |
 | SSH username | `whoami` | `simokitafresh` |
-| Project path | `pwd` | `/mnt/c/tools/multi-agent-shogun` |
+| Project path | `pwd` | `/home/simokitafresh/multi-agent-shogun` |
 | tmux session name | `tmux ls` | `shogun` |
 | tmux prefix | `tmux show-options -gqv prefix` | `C-a` |
 | Android APK | [Download](https://github.com/simokitafresh/multi-agent-shogun/releases/download/v5.0/app-debug.apk) | `app-debug.apk` |
@@ -475,10 +475,10 @@ If you prefer to install dependencies manually:
 
 The live formation, agent names, models, CLI types, and launch paths come from `config/settings.yaml` and `config/cli_profiles.yaml`; README examples are explanatory and are not a second configuration source. For a clean clone, run `first_setup.sh`, then verify setup without launching agents:
 
-Portability note: the audited checkout contains the absolute root `/mnt/c/tools/multi-agent-shogun` in 93 files under scripts, configuration, and hooks. Treat that root as a prerequisite until relocation is completed. To use another checkout root, replace only this exact literal in the repository, recount matches, and rerun setup:
+Portability note: the audited checkout contains the absolute root `/home/simokitafresh/multi-agent-shogun` in 93 files under scripts, configuration, and hooks. Treat that root as a prerequisite until relocation is completed. To use another checkout root, replace only this exact literal in the repository, recount matches, and rerun setup:
 
 ```bash
-OLD_ROOT=/mnt/c/tools/multi-agent-shogun
+OLD_ROOT=/home/simokitafresh/multi-agent-shogun
 NEW_ROOT=/path/to/multi-agent-shogun
 rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | xargs -r sed -i "s|$OLD_ROOT|$NEW_ROOT|g"
 test "$(rg -l -F "$OLD_ROOT" --glob '!data/**' --glob '!queue/**' | wc -l)" -eq 0
@@ -1323,7 +1323,7 @@ tmux kill-session -t shogun
 Running `first_setup.sh` automatically adds these aliases to `~/.bashrc`:
 
 ```bash
-alias csst='cd /mnt/c/tools/multi-agent-shogun && ./shutsujin_departure.sh'
+alias csst='cd /home/simokitafresh/multi-agent-shogun && ./shutsujin_departure.sh'
 alias csm='tmux attach-session -t shogun'  # Connect to session (Ctrl+A → 0/1 to switch windows)
 ```
 

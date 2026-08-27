@@ -2,7 +2,7 @@
 codd:
   node_id: design:extract:system-context
   type: design
-  source: /mnt/c/tools/multi-agent-shogun
+  source: /home/simokitafresh/multi-agent-shogun
   confidence: 0.65
   last_extracted: '2026-05-19'
   version: '1.0'
