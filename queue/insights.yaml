@@ -5568,3 +5568,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-231423056-d7b3
+  ts: "2026-08-27T23:14:23+09:00"
+  insight: "[[9p root fix runbook 20260827 mdもアップデートしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=9p_root_fix_runbook_20260827.mdもアップデートしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
