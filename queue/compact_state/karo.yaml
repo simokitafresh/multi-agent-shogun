@@ -1,11 +1,11 @@
 agent: karo
-timestamp: "2026-08-24T21:23:11+09:00"
-compact_trigger: lord_strong_new_game_directive_20260824_1333
-current_task: none_idle_strong_new_game_ready
-session_id: karo_strong_new_game_20260824_1450
-status: ready_for_new_game
-recovery_pointer: docs/research/karo-strong-new-game-checkpoint-20260824-1445.md
-target_sha256: a12865e48c508fdd59369a51af5cbd8ead54c97d1863133570862a39ad309df3
-latest_review_message: cmd_4388_cmd_complete_COMPLETE_gate_evaluation_119_200s_self_grade_7_607s
-next_action: Recovery完走→checkpoint hash照合→karo inbox ID処理→task YAML再読。active task 0ならidle自走。cmd_4388でself_grade 339.080s→7.607s、gate_evaluation 119.200s。post_source_checks 93.666sは次の改善候補。
-session_summary: "Role=karo。ready_for_new_game。全6忍者idle、karo unread 0。cmd_4387/4388ともGATE CLEAR後cmd-complete COMPLETE。cmd_4388実測: self_grade 7.607s(旧339.080s)、gate_evaluation 119.200s、post_source_checks 93.666s。insights generic rotation禁止・ID重複修復済み。三層health PASS。"
+timestamp: "2026-08-27T08:58:42+09:00"
+compact_trigger: lord_strong_new_game_directive_20260827_0856
+current_task: active_hayate_T47_and_kotaro_reflux
+session_id: karo_strong_new_game_20260827_0858
+status: ready_for_new_game_with_active_tasks
+recovery_pointer: docs/research/karo-strong-new-game-checkpoint-20260827-0858.md
+target_sha256: 2655cb43eddc4633d7b708ccff38124190c0a1b5ea31f6408fbe08f1e2168109
+latest_review_message: kotaro_reflux_draft_APPROVE_fingerprint_36ce6ad7
+next_action: Recovery完走後checkpoint hash照合、inbox個別処理、hayate T47とkotaro reflux再開、T12 controlled publish着手
+session_summary: Role=karo。active 2。Git 0/0、inbox unread 0。T12待機廃止、T40実回転中、T47 in_progress。pushはoldest-firstで1本ずつ。
