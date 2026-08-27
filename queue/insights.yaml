@@ -4439,3 +4439,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-090018183-b2da
+  ts: "2026-08-27T09:00:18+09:00"
+  insight: "[[児bats 4プロセスを残すメリットとデメリットはなんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=児bats 4プロセスを残すメリットとデメリットはなんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
