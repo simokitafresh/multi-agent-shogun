@@ -15885,6 +15885,7 @@ codd:
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 | causal_chain | `[[cmd_karo_recon2_ninja_prerequisite_audit_20260814]]` (L1588) |
 | causal_chain | `[[cmd_karo_hotfix_inject_seam_contract_missing_202608190548]]` (L1612) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-27T00:18:41.096160+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
