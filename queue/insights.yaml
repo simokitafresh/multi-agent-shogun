@@ -4958,3 +4958,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-164148375-df02
+  ts: "2026-08-27T16:41:48+09:00"
+  insight: "[[殿裁定2026 08 27 14 22『やれ』 将軍推薦 T66]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定2026-08-27 14:22『やれ』(将軍推薦 T66)。本日の停滞 3 系統の共通根が 9p: push timeout 3 回(外側 180s<lock 待ち 1200s)、git status 60-120s timeout、家老 merge-base D-state(p9_client_rpc 9 プロセス 13:38)、疾風 compat"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
