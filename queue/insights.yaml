@@ -5435,3 +5435,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-221159525-86a9
+  ts: "2026-08-27T22:11:59+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4366_task_id衝突canceled]] は既存aliasesに一致なし。類似概念TOP3: inbox_processing_discipline(inbox処理規律; alias=duplicate_task_assigned; score=17.2) / task_modifier_injection(タスク修飾子注入; alias=inject_task_modifiers; score=16.9) / cmd_quality_logging(cmd設計品質ログ; alias=cmd_design_quality更新; score=16.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
