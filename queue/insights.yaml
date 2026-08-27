@@ -1150,7 +1150,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4365"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行deploy_task.shを確認した。空task files時のtarget_files設定あり教訓を除外するGP-218分岐がL6448-L6460に実在し、根因を解消済みである。修正履歴af8a2ebc7b436271c89f5017e12cb19ee4749f5bと、target_files不一致/一致の回帰を含むtests/unit/test_deploy_task_yaml_injection.bats 77/77 PASS SKIP0を確認した。追加実修正・decision_candidateは不要。"
+  action_artifact: "primary=scripts/deploy_task.sh:6448-6460;history=af8a2ebc7b436271c89f5017e12cb19ee4749f5b;test=tests/unit/test_deploy_task_yaml_injection.bats:2611-2680;context=context/infrastructure.md:L210-L211;semantic=semantic_search:_all_task_files_target_files"
+  resolved_at: "2026-08-28T05:27:31+09:00"
 - id: INS-20260822-114318316-7261
   ts: "2026-08-22T11:43:18+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cluster F report抽出]] は既存aliasesに一致なし。類似概念TOP3: hook_automation_framework(Hook自動化フレームワーク; alias=PreToolUse; score=6.7) / shin_shijin_design(四神設計; alias=portfolios count; score=6.4) / agent_formation_management(編成管理; alias=cli_profiles defaults; score=6.2)。概念定義とaliases追加を検討せよ"
