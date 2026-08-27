@@ -2874,8 +2874,12 @@ printf "%s\n" "$*" >> "$TMUX_LOG"
 case "$1" in
   display-message)
     case "$*" in
+      *pane_dead*) printf "0\n" ;;
+      *pane_current_command*) printf "bash\n" ;;
+      *pane_pid*) printf "4242\n" ;;
+      *@agent_id*) printf "gunshi\n" ;;
       *@lord_active*) printf "0\n" ;;
-      *) printf "1\n" ;;
+      *) printf "\n" ;;
     esac
     ;;
   respawn-pane) exit 0 ;;
@@ -2885,24 +2889,26 @@ chmod +x "$TMP_ROOT/bin/tmux"
 PATH="$TMP_ROOT/bin:$PATH"
 
 log() { echo "$1" >> "$LOG"; }
-build_cli_command() { printf "/home/simokitafresh/.local/share/codex/bin/codex --full-auto\n"; }
+ps() { printf "bash\n"; }
+build_cli_command() { printf "/home/simokitafresh/bin/claude --dangerously-skip-permissions\n"; }
 sleep() { :; }
 NINJA_NAMES=()
 unset PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
 declare -A PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
-PANE_TARGETS[gunshi]="shogun:agents.9"
+PANE_TARGETS[gunshi]="shogun:agents.2"
 CLI_DEAD_LOOP_WINDOW=300
 CLI_DEAD_LOOP_THRESHOLD=2
 
 check_ninja_cli_dead
 sleep 1
+wait
 
 cat "$TMUX_LOG"
 cat "$LOG"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"display-message -t shogun:agents.9"* ]]
-    [[ "$output" == *"CLI-DEAD: gunshi@shogun:agents.9"* ]]
+    [[ "$output" == *"display-message -t shogun:agents.2"* ]]
+    [[ "$output" == *"CLI-DEAD: gunshi@shogun:agents.2"* ]]
 }
 
 @test "check_ninja_cli_dead skips shell parent when Claude child is alive" {
