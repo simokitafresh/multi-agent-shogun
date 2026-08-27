@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_insight_new_id_lifecycle_merge_202608181908
-  timestamp: '2026-08-18T10:25:13Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_insight_new_id_lifecycle_merge_202608181908'
 - cmd_id: cmd_karo_hotfix_commit_runtime_dirty_202608181936
   timestamp: '2026-08-18T11:05:34Z'
   ninja: system
@@ -1308,3 +1295,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t103_reflux_marker_auto_unpause_20260828'
+- cmd_id: cmd_karo_hotfix_t99_report_precheck_20260828
+  timestamp: '2026-08-27T17:25:20Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t99_report_precheck_20260828'
