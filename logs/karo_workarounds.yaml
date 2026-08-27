@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_commit_runtime_dirty_202608181936
-  timestamp: '2026-08-18T11:05:34Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_commit_runtime_dirty_202608181936'
-- cmd_id: cmd_karo_hotfix_postclear_runtime_publish_202608182010
-  timestamp: '2026-08-18T11:27:07Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_postclear_runtime_publish_202608182010'
 - cmd_id: cmd_karo_hotfix_release_ninja_on_done_unarchived_20260818
   timestamp: '2026-08-18T14:24:17Z'
   ninja: system
@@ -1308,3 +1282,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t99_report_precheck_20260828'
+- cmd_id: cmd_karo_hotfix_t110_no_cmd_branch_20260828
+  timestamp: '2026-08-27T18:13:10Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t110_no_cmd_branch_20260828'
+- cmd_id: cmd_karo_hotfix_t104_context_freshness_marker_boundary_20260828
+  timestamp: '2026-08-27T19:09:56Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t104_context_freshness_marker_boundary_20260828'
