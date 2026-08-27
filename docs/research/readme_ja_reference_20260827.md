@@ -15,7 +15,7 @@
 
 | 旧 README が書いていたこと | 現在(2026-08-27) |
 |---|---|
-| 将軍→家老→足軽 8 名、Claude 単一 | 将軍→家老→**軍師**→忍者 6 名。**家老・忍者は Codex(gpt-5.6-sol/luna)、将軍・軍師は Claude(Opus 4.6 1M)**の混成。`config/settings.yaml` が編成の唯一の正で `/shogun-cli-switch` で切替 |
+| 将軍→家老→足軽 8 名、Claude 単一 | 将軍→家老→**軍師**→忍者 6 名。**家老・忍者は Codex(gpt-5.6-sol/luna)、将軍=Claude Fable 5、軍師=Claude Opus 4.6(1M)**の混成。`config/settings.yaml` が編成の唯一の正で `/shogun-cli-switch` で切替 |
 | send-keys で指示を流す | **mailbox(`queue/inbox/*.yaml`)+inotify watcher の nudge**。エージェントは send-keys を呼ばない。確認プロンプト検知・配達検証・未読 N 分の再 nudge まで機械化 |
 | 手動で結果を見る | **cmd_save 品質ゲート(82 check)→deploy_task(task worktree 隔離)→報告 YAML(二値 binary_checks)→軍師 SG7 レビュー→家老 GATE(cmd_complete_gate)→CI(bats 242 ファイル、shard 実行)**の全段が自動 |
 | 教訓は人が書く | **三層学習ループ**: lesson_candidate→lesson→gate/fixture。reflux(insight 自動配備)が idle 忍者へ気づきを流す |
@@ -28,10 +28,10 @@
 | 役割 | pane | CLI / model | 何をするか |
 |---|---|---|---|
 | 殿 | 端末 | 人間 | 指示・裁定。将軍と対話し、dashboard/artifact を自分で見る |
-| 将軍 shogun | window 1 | Claude Code (Opus 4.6, 1M) | 殿の指示を cmd(YAML)に起票、品質ゲートを通し家老へ委任。30 分 loop で一次確認・つまり解消・artifact 更新。コード深掘り調査は禁止(F008)=偵察 cmd で委任 |
-| 家老 karo | agents.1 | Codex (gpt-5.6-sol medium) | cmd を task に分解し忍者へ配備。報告を受け GATE を回し、converge/push(1 commit ずつ)。karo_hotfix/ci_fix は将軍 cmd なしで自立配備 |
-| 軍師 gunshi | agents.2 | Claude Code (Opus 4.6, 1M) | cmd draft と報告 YAML の一次レビュー(SG7 プロトコル)。LGTM→家老 ACCEPT、FAIL→差戻し。idle 時は分析を永続化 |
-| 忍者 ×6 hayate/kagemaru/hanzo/saizo/kotaro/tobisaru | agents.3-8 | Codex (gpt-5.6-luna high) | task YAML の AC を最高品質で遂行。task worktree で隔離作業→`ninja_scope_commit.sh`→報告 YAML。記憶の連続性なし(毎回 /clear) |
+| 将軍 shogun | window `main` | Claude Code (**Fable 5**, settings `fable-5-low`、pane 表示『Claude Fable 5』) | 殿の指示を cmd(YAML)に起票、品質ゲートを通し家老へ委任。30 分 loop で一次確認・つまり解消・artifact 更新。コード深掘り調査は禁止(F008)=偵察 cmd で委任 |
+| 家老 karo | window `agents` pane 1 | Codex (gpt-5.6-sol medium) | cmd を task に分解し忍者へ配備。報告を受け GATE を回し、converge/push(1 commit ずつ)。karo_hotfix/ci_fix は将軍 cmd なしで自立配備 |
+| 軍師 gunshi | `agents` pane 2 | Claude Code (Opus 4.6, 1M) | cmd draft と報告 YAML の一次レビュー(SG7 プロトコル)。LGTM→家老 ACCEPT、FAIL→差戻し。idle 時は分析を永続化 |
+| 忍者 ×6 hayate/kagemaru/hanzo/saizo/kotaro/tobisaru | `agents` pane 3-8 | Codex (gpt-5.6-luna high) | task YAML の AC を最高品質で遂行。task worktree で隔離作業→`ninja_scope_commit.sh`→報告 YAML。記憶の連続性なし(毎回 /clear) |
 
 鎖=殿→将軍→家老→忍者の一本道。分岐なし・迂回なし。**鎖は命令の道であると同時に学びの還流路**(忍者の lesson_candidate が家老を経て教訓・gate・fixture へ入る)。
 
@@ -89,11 +89,11 @@
 
 ## 7. Quick Start の骨子(cmd_4410 が現物突合で本文化。本節は要件)
 
-1. 前提: WSL2/Ubuntu(または Linux)、git、tmux、node/npm(nvm)、python3、jq、gh、`inotify-tools`、bats(テスト実行時)。Windows ドライブ(/mnt/c)には置かない(9p が律速、§6)。
+1. 前提: WSL2/Ubuntu または Native Linux(first_setup.sh L139-L145 の環境判定はこの 2 つのみ。Mac 表記は冒頭コメントのみで未検証)、git、tmux、node/npm(nvm)、python3、jq、gh、`inotify-tools`、bats(テスト実行時)。Windows ドライブ(/mnt/c)には置かない(9p が律速、§6。**強制チェックは無い**ので README で明記)。所要時間: first_setup は依存インストール次第で可変、shutsujin は CLI 起動最大 30 秒。
 2. 取得: `git clone https://github.com/simokitafresh/multi-agent-shogun.git ~/multi-agent-shogun`(任意パス)。**ZIP 展開でも可**(GitHub に入れない環境)。ZIP は `.git` が無いので、展開後に `git init && git remote add origin …`(cmd_4410 AC3 で実手順を確定)。
-3. `bash first_setup.sh`: 依存の冪等インストール、`config/settings.yaml` の対話設定(ntfy topic、gist、CLI 選択)。殿固有値は README に書かない。
-4. 初回認証(初回のみ): Claude Code=`~/bin/claude`(pinned 2.1.87)で OAuth ログイン+Bypass Permissions 承認→`/exit`。Codex=`codex login --device-auth`(スマホ完結、要「デバイスコード認証」有効化)。確認=`claude --version` / `codex --version` と最初の起動バナー。別ユーザー(家族含む)は自分のアカウントで入る。
-5. `./shutsujin_departure.sh`: tmux セッション `shogun`(window 1=将軍、window 2=agents 8 pane)と watcher/monitor を起動。`Ctrl+A → 0/1` で切替。
+3. `bash first_setup.sh`: 依存の冪等インストール(唯一の対話は STEP の『ネイティブ版をインストールしますか? [Y/n]』)。`config/settings.yaml` は**無い場合だけ最小設定を生成**し、既存は保持する(現物 L577-L612)。ntfy topic/gist/CLI 選択の対話入力は**現物に無い**=README には『settings.yaml を編集する』手順として書く(対話化は T109 の改修候補)。殿固有値は README に書かない。
+4. 初回認証(初回のみ): Claude Code=`~/bin/claude`(pinned 2.1.87)で OAuth ログイン+Bypass Permissions 承認→`/exit`(first_setup.sh L951-L979 がこの案内だけを出力)。Codex=`codex login --device-auth`(スマホ完結、要「デバイスコード認証」有効化)は **first_setup に案内が無い=README で手動手順として明記**(T109 で first_setup へ追加)。確認=`claude auth status`(loggedIn=True)/`codex login status`(『Logged in using ChatGPT』)。別ユーザー(家族含む)は自分のアカウントで入る。
+5. `./shutsujin_departure.sh`: tmux セッション `shogun` に window `main`(将軍)と `agents`(8 pane)を作り watcher/monitor を起動。window 番号は既定 0/1、`base-index 1` の環境(殿の現環境)では 1/2 なので README は**名前で書く**(shutsujin L552 も名前指定)。CLI 起動待ちは最大 30 秒。
 6. 最初の 1 コマンド: 将軍 pane に日本語で指示(例「readme を読んで現状を報告せよ」)。将軍が cmd を起票し家老へ委任、忍者の報告→GATE CLEAR→ntfy 通知。
 
 ## 8. ファイル構成(現行・主要のみ)
@@ -113,6 +113,8 @@ docs/dashboard/             戦況 artifact の HTML 正本     android/   Andro
 ```
 
 ## 9. 忍者(cmd_4410)への注記
+
+- 2026-08-27 23:40 才蔵 AC1 の finding 7 件(high 2: Codex 認証案内が first_setup に無い/将軍 model 表記)を本書へ反映済(§2・§7)。現物の欠落(first_setup の Codex 認証案内・ntfy/CLI 対話・Windows ドライブ配置の強制チェック)は README に手動手順として書き、改修は T109 へ。
 
 - 本書は**参照原本**。現物(first_setup.sh/shutsujin_departure.sh/settings.yaml/scripts)と食い違う箇所は現物を正とし、差分を報告 YAML の finding に残す。
 - 数値は本書の日付のもの。README には「2026-08-27 時点」と日付を付けて書く。
