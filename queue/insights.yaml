@@ -6241,3 +6241,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-081933449-de81
+  ts: "2026-08-28T08:19:33+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[karo_gunshi_shogun明示除外_9763378fa]] は既存aliasesに一致なし。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=zzz_gunshi_unreached_20260727; score=12.8) / semantic_dictionary_design(セマンティック辞書構想; alias=source gunshi reverify3; score=12.8) / provisional_gunshi_log_append(仮: Gunshi Log Append; alias=provisional_gunshi_log_append; score=12.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
