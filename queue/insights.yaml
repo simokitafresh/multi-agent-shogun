@@ -2047,7 +2047,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4360"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でGP-183と現行deploy_task.shのAC生成防御を照合し、cmd_1835研究output未commitに起因するverdict_override 2件はテンプレート側で既知修正済みと確認した。追加実装修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-050822912-f48e;primary=logs/gunshi_gp_tracker.yaml:257-263;implementation=scripts/deploy_task.sh:2832-2846;context=context/dm-signal-ops.md:494;decision_candidate=none"
+  resolved_at: "2026-08-28T08:35:51+09:00"
 - id: INS-20260822-050823275-360e
   ts: "2026-08-22T05:08:23+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[deploy_task.sh複雑度1位]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=deploy_task; score=61.3) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=deploy_fixture_case51; score=16.1) / training_cycle_quality(忍者修行サイクル品質; alias=training_auto_deploy; score=15.6)。概念定義とaliases追加を検討せよ"
