@@ -6026,18 +6026,27 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T07:03:26+09:00"
 - id: INS-20260828-070310339-833d
   ts: "2026-08-28T07:03:10+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T100_半蔵88969097a]] は既存aliasesに一致なし。類似概念TOP3: push_batch_operation(正規push batch運用; alias=push_batch_20260719; score=4.4) / creator_brainwashing_defense(創造主の洗脳防御; alias=commit 0a3f97a18; score=4.1) / semantic_dictionary_design(セマンティック辞書構想; alias=gist 0c98ab36; score=3.5)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T07:03:26+09:00"
 - id: INS-20260828-070316654-f194
   ts: "2026-08-28T07:03:16+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[converge作業0]] は既存aliasesに一致なし。類似概念TOP3: systems_knowledge_base(システム知識辞書; alias=Vercel Context Engineering; score=5.0) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun d0; score=5.0) / loop_engineering(Loop Engineering論文; alias=cognitive surrender; score=4.7)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T07:03:26+09:00"

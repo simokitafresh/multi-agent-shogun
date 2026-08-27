@@ -3054,6 +3054,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:08:18+09:00 Gate 10.1b 便回転チェック(task done∧gate_metrics CLEAR無し∧done_at 20分超)を gate_shogun_startup.sh へ追加(commit 8cb8346d1)。発端=04:05復帰 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:27:35+09:00 起動gate 旧ext4ルート残存チェック(917475b75 T102/T91)が repo 全体 rg+bash while 6223行連結で CPU 張り付き=起動 gate 300秒超ハング。将軍 D0 で生きた消費者ルート肯定列挙 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:30:41+09:00 T114 reflux 開始 nudge の task_id 欠落=根治。飛猿 hotfix r1+r2(structured identity+Codex 再送 nudge+monitor 直送+watcher 初回 nudge 2 経路 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T07:03:00+09:00 T100 runtime lane 再分岐根治=GATE CLEAR 07:01:53(半蔵 88969097a): runtime publish の origin 直 push を除去し shared main の field-awar |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -8857,6 +8858,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T08:55:39+09:00 続けて |
 | causal | `cmd_4407` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_cmd_complete_report_gate_exec_20260828` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_t100_runtime_lane_shared_main_only_20260828` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -9775,6 +9777,7 @@ codd:
 | causal | `cmd_karo_hotfix_t101_publish_outer_instrument_20260828` files_modified: [[cmd_quality_logging]] |
 | cmd | `cmd_karo_hotfix_t101_publish_outer_instrument_20260828` (`logs/cmd_publish_timing.log`, `scripts/cmd_publish.sh`, `tests/unit/test_cmd_publish.bats`) |
 | causal | `cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_hotfix_t100_runtime_lane_shared_main_only_20260828` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
