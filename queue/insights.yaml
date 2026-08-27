@@ -5772,3 +5772,10 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260828-031423834-a6d4
+  ts: "2026-08-28T03:14:23+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指摘_忍者auto_clear未動作_20260828_0010]] は既存aliasesに一致なし。類似概念TOP3: provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=dm-login-boundary-asis-tobe_20260817; score=4.1) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=3.9) / active_task_clear_fail_closed(作業中忍者clearの最下層防止; alias=作業中忍者をauto clearするな; score=3.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
