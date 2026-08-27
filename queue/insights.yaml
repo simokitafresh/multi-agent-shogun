@@ -4944,3 +4944,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260827-164105953-81ba
+  ts: "2026-08-27T16:41:05+09:00"
+  insight: "[[30分loop 殿指示14 34「進捗を確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane/陣形図/gate_metrics/rev-listで一次確認 (2)下知後10分の証跡突合(task assigned/掲示板応答)…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
