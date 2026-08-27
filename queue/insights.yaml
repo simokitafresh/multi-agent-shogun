@@ -4722,3 +4722,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-142249804-9c39
+  ts: "2026-08-27T14:22:49+09:00"
+  insight: "semantic_index_update新概念候補: discussion:やれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
