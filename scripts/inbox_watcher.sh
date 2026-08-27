@@ -886,7 +886,8 @@ send_wakeup() {
     # Codex/non-claude ninja: task_assigned時のみ「前task無効+再読」ナッジを付与してSTALL防止
     # task_info等の補足メッセージでは付与しない（CTX浪費防止）
     # 家老/軍師にはtask YAMLが存在しないため付与しない（2026-04-22 Codex家老バグ修正）
-    if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$has_task_assigned" == "true" ]]; then
+    # 家老/軍師/将軍は忍者 task 規則の対象外(2026-08-28 T122: queue/tasks/karo.yaml が実在するため -f ガードが素通りし、家老が将軍 task_assigned を「現task不一致」で既読化=本日 3 回)
+    [[ "$AGENT_ID" != "karo" && "$AGENT_ID" != "gunshi" && "$AGENT_ID" != "shogun" ]] && if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$has_task_assigned" == "true" ]]; then
         task_id=$(current_task_id_for_nudge || true)
         nudge="${nudge} — task_id=${task_id} 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな"
         [ -n "$delivery_msg_id" ] && nudge+=" delivery_msg=${delivery_msg_id}"
@@ -1145,7 +1146,8 @@ send_wakeup() {
                 [ "$current_fp" = "$live_fp" ] || fp_kind="task"
             fi
             nudge="inbox${unread_count}"
-            if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$live_has_task" == "true" ]]; then
+            # 家老/軍師/将軍は忍者 task 規則の対象外(T122、上と同じ)
+            [[ "$AGENT_ID" != "karo" && "$AGENT_ID" != "gunshi" && "$AGENT_ID" != "shogun" ]] && if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$live_has_task" == "true" ]]; then
                 task_id=$(current_task_id_for_nudge || true)
                 nudge="${nudge} — task_id=${task_id} 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな"
                 delivery_msg_id=$(get_single_unread_task_message_id || true)
