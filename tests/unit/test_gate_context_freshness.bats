@@ -401,7 +401,7 @@ SH
 # machine-readable doc-lane consumer instead of producing a false raw ALERT.
 # regression_justification: GA-493 counted a revert as an unreflected core/ops
 # change even though the effective backend/services tree was unchanged.
-@test "source-equivalent external commit becomes a durable boundary update request" {
+@test "source-equivalent external commit auto-closes boundary without request" {
   local repo="$BATS_TEST_TMPDIR/source-equivalent"
   local bulletin_capture="$BATS_TEST_TMPDIR/source-equivalent-bulletin"
   local bulletin_script="$BATS_TEST_TMPDIR/source-equivalent-bulletin.sh"
@@ -422,6 +422,24 @@ SH
   git -C "$repo" commit -qm 'Revert "source change"'
   local latest_hash
   latest_hash="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" update-ref refs/remotes/origin/main "$latest_hash"
+
+  mkdir -p "$FIXTURE_ROOT/scripts/config" "$FIXTURE_ROOT/scripts/lib" "$FIXTURE_ROOT/config"
+  cp "$ROOT/scripts/context_source_commit_set.sh" "$FIXTURE_ROOT/scripts/context_source_commit_set.sh"
+  cp "$ROOT/scripts/lib/project_path.sh" "$FIXTURE_ROOT/scripts/lib/project_path.sh"
+  cp "$ROOT/scripts/lib/repo_root.sh" "$FIXTURE_ROOT/scripts/lib/repo_root.sh"
+  cp "$ROOT/scripts/config/context_source_commits.tsv" "$FIXTURE_ROOT/scripts/config/context_source_commits.tsv"
+  cat > "$FIXTURE_ROOT/config/projects.yaml" <<YAML
+projects:
+  - id: dm-signal
+    path: $repo
+    status: active
+YAML
+  git -C "$FIXTURE_ROOT" init -q
+  git -C "$FIXTURE_ROOT" config user.email fixture@example.invalid
+  git -C "$FIXTURE_ROOT" config user.name fixture
+  git -C "$FIXTURE_ROOT" add .
+  git -C "$FIXTURE_ROOT" commit -qm fixture
 
   printf '%s\n' \
     '<!-- last_updated: 2026-08-22 -->' \
@@ -442,6 +460,7 @@ SH
     BULLETIN_CAPTURE="$bulletin_capture" \
     CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
     CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_SOURCE_COMMIT_SET_SCRIPT="$FIXTURE_ROOT/scripts/context_source_commit_set.sh" \
     CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
     CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/source-equivalent-state" \
     CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
@@ -449,12 +468,148 @@ SH
     CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
     CONTEXT_FRESHNESS_TODAY=2026-08-23 \
     bash "$ROOT/scripts/gates/gate_context_freshness.sh"
-
   [ "$status" -eq 0 ]
-  [[ "$output" == *"CONTEXT_UPDATE_REQUEST project=dm-signal context=context/dm-signal-core.md source_commit=${latest_hash} parent_cmd=source_${latest_hash} reason=source_equivalent"* ]]
-  [[ "$output" == *"source commitは登録boundaryと内容同値"* ]]
+  [[ "$output" == *"source_equivalent boundary auto-closed"* ]]
+  [[ "$output" != *"CONTEXT_UPDATE_REQUEST"* ]]
   [[ "$output" != *"ALERT: dm-signal-core.md (source commits"* ]]
-  [[ "$(cat "$bulletin_capture")" == *"DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=dm-signal context=context/dm-signal-core.md"* ]]
+  [[ "$(cat "$bulletin_capture")" == *"DOC_LANE_INFO: source_equivalent auto-closed context=context/dm-signal-core.md"* ]]
+  grep -q "source_commit:${latest_hash}" "$FIXTURE_ROOT/context/dm-signal-core.md"
+}
+
+@test "source-equivalent non-ancestor commit is warn-only" {
+  local repo="$BATS_TEST_TMPDIR/source-equivalent-nonancestor"
+  local bulletin_capture="$BATS_TEST_TMPDIR/source-equivalent-nonancestor-bulletin"
+  local bulletin_script="$BATS_TEST_TMPDIR/source-equivalent-nonancestor-bulletin.sh"
+  mkdir -p "$repo/backend/app/services" "$FIXTURE_ROOT/context" \
+    "$FIXTURE_ROOT/scripts/config" "$FIXTURE_ROOT/scripts/lib" "$FIXTURE_ROOT/config"
+  printf 'baseline\n' > "$repo/backend/app/services/runtime.py"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email fixture@example.invalid
+  git -C "$repo" config user.name fixture
+  git -C "$repo" add .
+  git -C "$repo" commit -qm 'source baseline'
+  local boundary_hash
+  boundary_hash="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -qb divergent
+  printf 'changed\n' > "$repo/backend/app/services/runtime.py"
+  git -C "$repo" add .
+  git -C "$repo" commit -qm 'divergent source change'
+  printf 'baseline\n' > "$repo/backend/app/services/runtime.py"
+  git -C "$repo" add .
+  git -C "$repo" commit -qm 'divergent revert'
+  local latest_hash
+  latest_hash="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" update-ref refs/remotes/origin/main "$boundary_hash"
+  cp "$ROOT/scripts/context_source_commit_set.sh" "$FIXTURE_ROOT/scripts/context_source_commit_set.sh"
+  cp "$ROOT/scripts/lib/project_path.sh" "$FIXTURE_ROOT/scripts/lib/project_path.sh"
+  cp "$ROOT/scripts/lib/repo_root.sh" "$FIXTURE_ROOT/scripts/lib/repo_root.sh"
+  cp "$ROOT/scripts/config/context_source_commits.tsv" "$FIXTURE_ROOT/scripts/config/context_source_commits.tsv"
+  cat > "$FIXTURE_ROOT/config/projects.yaml" <<YAML
+projects:
+  - id: dm-signal
+    path: $repo
+    status: active
+YAML
+  git -C "$FIXTURE_ROOT" init -q
+  git -C "$FIXTURE_ROOT" config user.email fixture@example.invalid
+  git -C "$FIXTURE_ROOT" config user.name fixture
+  git -C "$FIXTURE_ROOT" add .
+  git -C "$FIXTURE_ROOT" commit -qm fixture
+  printf '%s\n' \
+    '<!-- last_updated: 2026-08-22 -->' \
+    "<!-- source_commit:${boundary_hash} reason:fixture evidence:fixture -->" \
+    > "$FIXTURE_ROOT/context/dm-signal-core.md"
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
+#!/usr/bin/env bash
+printf '%s\\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=$repo root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: $latest_hash divergent revert source_equivalent=true'
+SH
+  chmod +x "$FIXTURE_ROOT/scripts/check.sh"
+  cat > "$bulletin_script" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$BULLETIN_CAPTURE"
+SH
+  chmod 644 "$bulletin_script"
+
+  run env \
+    BULLETIN_CAPTURE="$bulletin_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_SOURCE_COMMIT_SET_SCRIPT="$FIXTURE_ROOT/scripts/context_source_commit_set.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/source-equivalent-nonancestor-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/source-equivalent-nonancestor-alert-state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"source_equivalent boundary rejected"* ]]
+  [[ "$output" != *"CONTEXT_UPDATE_REQUEST"* ]]
+  [ ! -e "$bulletin_capture" ]
+}
+
+@test "source-equivalent missing commit is warn-only" {
+  local repo="$BATS_TEST_TMPDIR/source-equivalent-missing"
+  local bulletin_capture="$BATS_TEST_TMPDIR/source-equivalent-missing-bulletin"
+  local bulletin_script="$BATS_TEST_TMPDIR/source-equivalent-missing-bulletin.sh"
+  mkdir -p "$repo/backend/app/services" "$FIXTURE_ROOT/context" \
+    "$FIXTURE_ROOT/scripts/config" "$FIXTURE_ROOT/scripts/lib" "$FIXTURE_ROOT/config"
+  printf 'baseline\n' > "$repo/backend/app/services/runtime.py"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email fixture@example.invalid
+  git -C "$repo" config user.name fixture
+  git -C "$repo" add .
+  git -C "$repo" commit -qm 'source baseline'
+  local boundary_hash
+  boundary_hash="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" update-ref refs/remotes/origin/main "$boundary_hash"
+  cp "$ROOT/scripts/context_source_commit_set.sh" "$FIXTURE_ROOT/scripts/context_source_commit_set.sh"
+  cp "$ROOT/scripts/lib/project_path.sh" "$FIXTURE_ROOT/scripts/lib/project_path.sh"
+  cp "$ROOT/scripts/lib/repo_root.sh" "$FIXTURE_ROOT/scripts/lib/repo_root.sh"
+  cp "$ROOT/scripts/config/context_source_commits.tsv" "$FIXTURE_ROOT/scripts/config/context_source_commits.tsv"
+  cat > "$FIXTURE_ROOT/config/projects.yaml" <<YAML
+projects:
+  - id: dm-signal
+    path: $repo
+    status: active
+YAML
+  git -C "$FIXTURE_ROOT" init -q
+  git -C "$FIXTURE_ROOT" config user.email fixture@example.invalid
+  git -C "$FIXTURE_ROOT" config user.name fixture
+  git -C "$FIXTURE_ROOT" add .
+  git -C "$FIXTURE_ROOT" commit -qm fixture
+  printf '%s\n' \
+    '<!-- last_updated: 2026-08-22 -->' \
+    "<!-- source_commit:${boundary_hash} reason:fixture evidence:fixture -->" \
+    > "$FIXTURE_ROOT/context/dm-signal-core.md"
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=__SOURCE_REPO__ root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: deadbeef missing source source_equivalent=true'
+SH
+  sed -i "s#__SOURCE_REPO__#$repo#g" "$FIXTURE_ROOT/scripts/check.sh"
+  chmod +x "$FIXTURE_ROOT/scripts/check.sh"
+  cat > "$bulletin_script" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$BULLETIN_CAPTURE"
+SH
+  chmod 644 "$bulletin_script"
+
+  run env \
+    BULLETIN_CAPTURE="$bulletin_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_SOURCE_COMMIT_SET_SCRIPT="$FIXTURE_ROOT/scripts/context_source_commit_set.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TESTDIRNAME/source-equivalent-missing-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TESTDIRNAME/source-equivalent-missing-alert-state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"source commit deadbeef is not resolvable"* ]]
+  [[ "$output" != *"CONTEXT_UPDATE_REQUEST"* ]]
+  [ ! -e "$bulletin_capture" ]
 }
 
 @test "source boundary setter accepts the dashboard freshness tip on divergent HEAD" {
