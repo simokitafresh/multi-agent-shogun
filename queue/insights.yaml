@@ -5448,3 +5448,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-27T22:12:13+09:00"
+- id: INS-20260827-221958448-e3d8
+  ts: "2026-08-27T22:19:58+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4368_TrackB分割起票]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd 3244起票で7回BLOCK; score=21.4) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_3868正本0行RC; score=21.3) / dm_fusion_app(DM-Fusionアプリ; alias=cmd_3586スコープ分離; score=21.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
