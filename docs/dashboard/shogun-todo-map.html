@@ -52,7 +52,7 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">shogun todo map · 2026-08-27 20:35 殿指摘: 未着手の棚卸し(T84陳腐化/T12・T60→T87) · 正本 queue/shogun_todo_map.md</div>
+  <div class="eyebrow">shogun todo map · 2026-08-27 20:38 loop: ci_fix 73f6c7a83 origin到達・CI待ち · 正本 queue/shogun_todo_map.md</div>
   <h1>将軍 全体状況マップ</h1>
   <p class="principle">殿裁定 08-26 13:52-13:54: シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。各行に「速度向上へのつながり」を1行添え、つながらない行動は止める。</p>
 </header>
@@ -96,8 +96,8 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
 <section class="group">
   <h2>走行中 <span class="n">2</span></h2>
   <div class="rows">
-    <div class="row run"><span class="id">T85</span><span class="t">CI GREEN 証跡</span><span class="d">20:15 小太郎 真因特定: 新 test_migrate_to_ext4.bats が timing ledger 未登録(inventory 242 vs ledger 241)で shard 割当が壊れ『tests/unit not found』が表面化。修正 commit 1e9fba768(local)、report は AC1 前提不一致で FAIL→軍師レビュー中、task failed 残置=家老が閉じて push→GREEN 待ち; 20:07 小太郎 ci_fix in_progress(CTX21%): run_tests.sh task 経路で『task source root could not be resolved』BLOCK を切り分け中=CI の tests/unit 不在と同族(root 解決)の疑い。origin 558a6c4f2 も同エラーで RED(4 run 目); 19:52 rerun(10:42Z)も同一エラー=3 run 連続→checkout 異常ではない。将軍一次: tree に tests/unit 262 entries 実在・workflow 差分 0・GREEN a85effa5b との差分 22 ファイル。家老へ ci_fix 配備下知(idle 忍者1名、凍結対象外=9p根治の GREEN 証跡); 19:44 CI RED 2連続: 295af7088(cmd_4408 契約 commit)と a1b2b78d4(converge)の全 9 shard が『tests/unit directory not found』(checkout 側、tree には tests/unit 実在=T42 型)。将軍 gh run rerun 33063757198 --failed(19:43 queued)。3 run 目で判定→RED なら家老 ci_fix</span><span class="w">GREEN 上で cutover</span></div>
-    <div class="row run"><span class="id">T79</span><span class="t">殿裁定 17:41『走行完了後は新規に手を出さず 9p 根治』の凍結</span><span class="d">20:17 cutover 前提=CI GREEN(小太郎修正 push)+小太郎 task idle 化+rev-list 0 0 の3点に収束。走行3件は全て CLEAR 済; 20:07 cutover --dry-run 残ブロック=kotaro in_progress(ci_fix)のみ。家老 pane 待機・stale _ready 退避済; 17:47 家老 blt_174711: 走行3件のみ継続、hotfix/direct 停止、reflux promotion+auto-deploy を可逆 marker で fail-closed(解除手順 queue/gates/reflux_auto_deploy.paused)。将軍確認: marker 実在、17:27 以降新規 reflux 配備 0</span><span class="w">cutover 前提=全員 idle</span></div>
+    <div class="row run"><span class="id">T85</span><span class="t">CI GREEN 証跡</span><span class="d">20:38 修正が origin 到達: 73f6c7a83『keep unmeasured tests in shard inventory』(lane 書換、1e9fba768 相当)、CI run in_progress。小太郎 task は failed 残置(report FAIL=AC1 前提不一致)=家老が CI 結果待ちで閉じる予定。GREEN なら cutover 前提の CI 条件成立; 20:15 小太郎 真因特定: 新 test_migrate_to_ext4.bats が timing ledger 未登録(inventory 242 vs ledger 241)で shard 割当が壊れ『tests/unit not found』が表面化。修正 commit 1e9fba768(local)、report は AC1 前提不一致で FAIL→軍師レビュー中、task failed 残置=家老が閉じて push→GREEN 待ち; 20:07 小太郎 ci_fix in_progress(CTX21%): run_tests.sh task 経路で『task source root could not be resolved』BLOCK を切り分け中=CI の tests/unit 不在と同族(root 解決)の疑い。origin 558a6c4f2 も同エラーで RED(4 run 目); 19:52 rerun(10:42Z)も同一エラー=3 run 連続→checkout 異常ではない。将軍一次: tree に tests/unit 262 entries 実在・workflow 差分 0・GREEN a85effa5b との差分 22 ファイル。家老へ ci_fix 配備下知(idle 忍者1名、凍結対象外=9p根治の GREEN 証跡); 19:44 CI RED 2連続: 295af7088(cmd_4408 契約 commit)と a1b2b78d4(converge)の全 9 shard が『tests/unit directory not found』(checkout 側、tree には tests/unit 実在=T42 型)。将軍 gh run rerun 33063757198 --failed(19:43 queued)。3 run 目で判定→RED なら家老 ci_fix</span><span class="w">GREEN 上で cutover</span></div>
+    <div class="row run"><span class="id">T79</span><span class="t">殿裁定 17:41『走行完了後は新規に手を出さず 9p 根治』の凍結</span><span class="d">20:38 残=CI run(73f6c7a83)の結論+小太郎 task idle 化。origin 直接 push で local 11 先行(1 11)=cutover 前に converge 1回要; 20:17 cutover 前提=CI GREEN(小太郎修正 push)+小太郎 task idle 化+rev-list 0 0 の3点に収束。走行3件は全て CLEAR 済; 20:07 cutover --dry-run 残ブロック=kotaro in_progress(ci_fix)のみ。家老 pane 待機・stale _ready 退避済; 17:47 家老 blt_174711: 走行3件のみ継続、hotfix/direct 停止、reflux promotion+auto-deploy を可逆 marker で fail-closed(解除手順 queue/gates/reflux_auto_deploy.paused)。将軍確認: marker 実在、17:27 以降新規 reflux 配備 0</span><span class="w">cutover 前提=全員 idle</span></div>
   </div>
 </section>
 
@@ -201,5 +201,5 @@ footer{color:var(--ink-3);font-size:.78rem;font-family:"IBM Plex Mono",monospace
   </div>
 </section>
 
-<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 20:35 殿指摘: 未着手の棚卸し(T84陳腐化/T12・T60→T87)</footer>
+<footer>正本: queue/shogun_todo_map.md · HTML: docs/dashboard/shogun-todo-map.html · 各inbox処理後/30分毎に更新 · 2026-08-27 20:38 loop: ci_fix 73f6c7a83 origin到達・CI待ち</footer>
 </div>
