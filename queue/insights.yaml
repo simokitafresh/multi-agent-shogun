@@ -5014,3 +5014,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260827-174104166-e7f9
+  ts: "2026-08-27T17:41:04+09:00"
+  insight: "[[cd tmp tmp pVkgJWVlr0 clone && export PS1 \\ \\033 1;31m\\ karo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/tmp.pVkgJWVlr0/clone\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
