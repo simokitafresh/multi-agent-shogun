@@ -408,3 +408,29 @@ EOF
     [[ "$output" != *"意図的凍結中"* ]]
     [[ "$output" == *"reflux配備ログなし"* ]]
 }
+
+@test "T102 legacy old-root warning fires only outside evidence exclusions" {
+    warn_root="$TEST_ROOT/legacy-warn"
+    clean_root="$TEST_ROOT/legacy-clean"
+    mkdir -p "$warn_root/config" "$clean_root"/{logs,archive,docs,memory} \
+        "$clean_root/config" "$clean_root/.bak" "$clean_root/scripts"
+    printf 'path=/mnt/c/tools/multi-agent-shogun/scripts/live.sh\n' > "$warn_root/config/runtime.env"
+    for excluded in \
+        "$clean_root/logs/history.log" \
+        "$clean_root/archive/old.yaml" \
+        "$clean_root/docs/old.md" \
+        "$clean_root/memory/old.md" \
+        "$clean_root/.bak/settings.yaml.bak" \
+        "$clean_root/scripts/migrate_to_ext4_cutover.sh"; do
+        printf 'path=/mnt/c/tools/multi-agent-shogun\n' > "$excluded"
+    done
+
+    run bash -c 'SHOGUN_STARTUP_LIB_ONLY=1 source "$1/scripts/gates/gate_shogun_startup.sh"; check_legacy_ext4_path_residuals "$2"' _ "$PROJECT_ROOT" "$warn_root"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"WARN: legacy ext4 old-root references remain"* ]]
+    [[ "$output" == *"config/runtime.env"* ]]
+
+    run bash -c 'SHOGUN_STARTUP_LIB_ONLY=1 source "$1/scripts/gates/gate_shogun_startup.sh"; check_legacy_ext4_path_residuals "$2"' _ "$PROJECT_ROOT" "$clean_root"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: legacy ext4 old-root references clean"* ]]
+}

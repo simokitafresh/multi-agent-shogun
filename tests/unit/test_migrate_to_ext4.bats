@@ -10,7 +10,14 @@ setup() {
   mkdir -p "$OLD_ROOT/queue/tasks" "$NEW_ROOT/queue/tasks" \
     "$HOME_DIR/.claude/projects/-mnt-c-tools-multi-agent-shogun" \
     "$OLD_ROOT/scripts"
+  git -C "$NEW_ROOT" init -q
+  git -C "$NEW_ROOT" config user.name test
+  git -C "$NEW_ROOT" config user.email test@example.com
+  printf 'fixture\n' > "$NEW_ROOT/.fixture-base"
+  git -C "$NEW_ROOT" add .fixture-base
+  git -C "$NEW_ROOT" commit -qm initial
   cp "$ROOT/scripts/migrate_to_ext4_relocate.sh" "$OLD_ROOT/scripts/"
+  printf '%s\n' '#!/usr/bin/env bash' 'printf "SCOPE_COMMIT_CALLED\\n"' > "$OLD_ROOT/scripts/ninja_scope_commit.sh"
   printf '%s\n' 'task:' '  status: idle' > "$OLD_ROOT/queue/tasks/ninja.yaml"
   printf 'old-cron %s\n' "$OLD_ROOT" > "$TMP_DIR/cron"
   mkdir -p "$TMP_DIR/bin"
@@ -46,6 +53,9 @@ teardown() {
   [ ! -e "$OLD_ROOT/MIGRATED_TO_EXT4.txt" ]
   [ ! -e "$NEW_ROOT/.migrate_to_ext4_crontab.backup" ]
   grep -Fqx "old-cron $OLD_ROOT" "$TEST_CRON_STATE"
+  [[ "$output" == *"DRY_RUN_SCOPE_COMMIT: would run ninja_scope_commit.sh after relocate"* ]]
+  [[ "$output" == *"DRY_RUN_READY_REBACKUP: would move queue/*_ready.yaml"* ]]
+  [[ "$output" == *"DRY_RUN_PROGRESS: would emit one rsync progress line every"* ]]
 }
 
 @test "relocate replaces included references, preserves exclusions, and is idempotent" {
@@ -74,6 +84,7 @@ teardown() {
 @test "live cutover relocates the copied tree before declaring success" {
   mkdir -p "$OLD_ROOT/config"
   printf 'active=%s\n' "$OLD_ROOT" > "$OLD_ROOT/config/runtime.env"
+  printf 'stale\n' > "$OLD_ROOT/queue/_cmd_stale_ready.yaml"
 
   run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" HOME="$HOME_DIR" \
     bash "$ROOT/scripts/migrate_to_ext4_cutover.sh"
@@ -82,6 +93,28 @@ teardown() {
   ! grep -Fq "$OLD_ROOT" "$NEW_ROOT/config/runtime.env"
   grep -Fqx "old-cron $NEW_ROOT" "$TEST_CRON_STATE"
   [ -e "$OLD_ROOT/MIGRATED_TO_EXT4.txt" ]
+  ready_archive="$NEW_ROOT/queue/archive/stale_ready_$(date +%Y%m%d)/_cmd_stale_ready.yaml"
+  [ -e "$ready_archive" ]
+  [ ! -e "$NEW_ROOT/queue/_cmd_stale_ready.yaml" ]
+  [[ "$output" == *"ready rebackup: moved=1"* ]]
+}
+
+@test "live cutover runs relocate then scoped commit and emits progress" {
+  mkdir -p "$OLD_ROOT/config"
+  printf 'active=%s\n' "$OLD_ROOT" > "$OLD_ROOT/config/runtime.env"
+  mkdir -p "$NEW_ROOT/config"
+  printf 'base\n' > "$NEW_ROOT/config/runtime.env"
+  git -C "$NEW_ROOT" add config/runtime.env
+  git -C "$NEW_ROOT" commit -qm runtime-base
+
+  run env OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" HOME="$HOME_DIR" \
+    bash "$ROOT/scripts/migrate_to_ext4_cutover.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[cutover] final rsync:"* ]]
+  [[ "$output" == *"[cutover] relocate old-root references"* ]]
+  [[ "$output" == *"[cutover] scope commit:"* ]]
+  [[ "$output" == *"[cutover] progress: rsync complete"* ]]
+  ! grep -Fq "$OLD_ROOT" "$NEW_ROOT/config/runtime.env"
 }
 
 @test "cutover blocks a non-idle task with exit 2" {

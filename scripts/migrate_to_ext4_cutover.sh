@@ -8,6 +8,7 @@ NEW_ROOT="${NEW_ROOT:-/home/simokitafresh/multi-agent-shogun}"
 STATE_BACKUP="$NEW_ROOT/.migrate_to_ext4_crontab.backup"
 MARKER="$OLD_ROOT/MIGRATED_TO_EXT4.txt"
 DRY_RUN=false
+PROGRESS_INTERVAL_SEC="${CUTOVER_PROGRESS_INTERVAL_SEC:-10}"
 
 while (($#)); do
   case "$1" in
@@ -18,6 +19,11 @@ while (($#)); do
 done
 
 blocked() { printf 'CUTOVER_BLOCKED: %s\n' "$1" >&2; exit 2; }
+
+progress_interval() {
+  [[ "$PROGRESS_INTERVAL_SEC" =~ ^[1-9][0-9]*$ ]] || PROGRESS_INTERVAL_SEC=10
+  printf '%s\n' "$PROGRESS_INTERVAL_SEC"
+}
 
 task_statuses_are_idle() {
   local result
@@ -71,6 +77,62 @@ management_panes_are_waiting() {
   done
 }
 
+run_rsync_with_progress() {
+  local rsync_pid started elapsed interval
+  interval="$(progress_interval)"
+  started="$(date +%s)"
+  rsync -a "$OLD_ROOT/" "$NEW_ROOT/" &
+  rsync_pid=$!
+  while [[ -r "/proc/$rsync_pid/stat" ]]; do
+    [[ "$(awk '{print $3}' "/proc/$rsync_pid/stat" 2>/dev/null)" == "Z" ]] && break
+    sleep "$interval"
+    [[ -r "/proc/$rsync_pid/stat" ]] || break
+    [[ "$(awk '{print $3}' "/proc/$rsync_pid/stat" 2>/dev/null)" == "Z" ]] && break
+    elapsed=$(( $(date +%s) - started ))
+    printf '[cutover] progress: rsync active elapsed=%ss interval=%ss\n' "$elapsed" "$interval"
+  done
+  wait "$rsync_pid"
+  elapsed=$(( $(date +%s) - started ))
+  printf '[cutover] progress: rsync complete elapsed=%ss\n' "$elapsed"
+}
+
+commit_relocated_changes() {
+  local helper="$NEW_ROOT/scripts/ninja_scope_commit.sh"
+  local -a changed_paths=()
+  if [[ ! -f "$helper" ]]; then
+    printf '[cutover] scope commit skipped: helper unavailable at %s\n' "$helper"
+    return 0
+  fi
+  mapfile -t changed_paths < <(git -C "$NEW_ROOT" diff --name-only -- 2>/dev/null || true)
+  if [[ "${#changed_paths[@]}" -eq 0 ]]; then
+    printf '[cutover] scope commit skipped: relocate produced no tracked diff\n'
+    return 0
+  fi
+  printf '[cutover] scope commit: %s tracked path(s)\n' "${#changed_paths[@]}"
+  (cd "$NEW_ROOT" && bash "$helper" \
+    -m 'cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828: relocate old-root references' -- \
+    "${changed_paths[@]}")
+}
+
+rebackup_ready_files() {
+  local ready_dir="$NEW_ROOT/queue" archive_dir file moved=0
+  archive_dir="$NEW_ROOT/queue/archive/stale_ready_$(date +%Y%m%d)"
+  [[ -d "$ready_dir" ]] || return 0
+  shopt -s nullglob
+  local -a ready_files=("$ready_dir"/*_ready.yaml)
+  shopt -u nullglob
+  if [[ "${#ready_files[@]}" -eq 0 ]]; then
+    printf '[cutover] ready rebackup: none\n'
+    return 0
+  fi
+  mkdir -p "$archive_dir"
+  for file in "${ready_files[@]}"; do
+    mv -- "$file" "$archive_dir/"
+    moved=$((moved + 1))
+  done
+  printf '[cutover] ready rebackup: moved=%s archive=%s\n' "$moved" "$archive_dir"
+}
+
 cron_contains_old_root() {
   [[ "$1" == *"$OLD_ROOT"* ]]
 }
@@ -92,9 +154,11 @@ perform_cutover() {
   cron_text="$(crontab -l 2>/dev/null || true)"
   cron_contains_old_root "$cron_text" || blocked "crontab changed after preflight"
   printf '[cutover] final rsync: %s -> %s\n' "$OLD_ROOT" "$NEW_ROOT"
-  rsync -a "$OLD_ROOT/" "$NEW_ROOT/"
+  run_rsync_with_progress
   printf '[cutover] relocate old-root references in NEW_ROOT: %s\n' "$NEW_ROOT"
   OLD_ROOT="$OLD_ROOT" NEW_ROOT="$NEW_ROOT" bash "$NEW_ROOT/scripts/migrate_to_ext4_relocate.sh"
+  commit_relocated_changes
+  rebackup_ready_files
   umask 077
   printf '%s\n' "$cron_text" > "$STATE_BACKUP"
   rewritten="${cron_text//"$OLD_ROOT"/$NEW_ROOT}"
@@ -125,6 +189,9 @@ preflight
 if "$DRY_RUN"; then
   printf '%s\n' 'DRY_RUN: preflight PASS; no rsync, crontab, auto-memory, marker, tmux restart, or agent launch performed'
   printf '%s\n' "DRY_RUN_RELOCATE: would run after final rsync in $NEW_ROOT; no files changed"
+  printf '%s\n' "DRY_RUN_SCOPE_COMMIT: would run ninja_scope_commit.sh after relocate; no files changed"
+  printf '%s\n' "DRY_RUN_READY_REBACKUP: would move queue/*_ready.yaml to queue/archive/stale_ready_$(date +%Y%m%d); no files changed"
+  printf '%s\n' "DRY_RUN_PROGRESS: would emit one rsync progress line every $(progress_interval)s"
   printf '%s\n' "DRY_RUN_NEXT: cd $NEW_ROOT && ./shutsujin_departure.sh"
   exit 0
 fi

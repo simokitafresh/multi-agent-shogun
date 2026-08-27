@@ -348,6 +348,38 @@ show_promotion_reflux_state() {
         fi
 }
 
+# T102/T91: after the ext4 cutover, actionable runtime/config files must not
+# retain the old /mnt/c root. Historical logs, archived docs, memory dumps,
+# backup files, and migration helpers are evidence, not live consumers, so
+# they are deliberately excluded from this warning.
+check_legacy_ext4_path_residuals() {
+    local root="${1:-.}"
+    local old_root="${2:-/mnt/c/tools/multi-agent-shogun}"
+    local candidate rel root_prefix matches=""
+    root_prefix="${root%/}/"
+    while IFS= read -r candidate; do
+        rel=${candidate#"$root_prefix"}
+        case "$rel" in
+            .git/*|.venv/*|logs/*|archive/*|docs/*|memory/*|*.bak|*/migrate_*|migrate_*)
+                continue
+                ;;
+        esac
+        if [ -n "$matches" ]; then
+            matches+=$'\n'
+        fi
+        matches+="$rel"
+    done < <(rg -l -I --hidden --no-ignore --fixed-strings \
+        --glob '!.git/**' --glob '!.venv/**' \
+        "$old_root" "$root" 2>/dev/null | sort -u || true)
+    if [ -n "$matches" ]; then
+        echo "  WARN: legacy ext4 old-root references remain: $old_root"
+        printf '%s\n' "$matches" | sed 's/^/    /'
+        return 1
+    fi
+    echo "  OK: legacy ext4 old-root references clean (excluded evidence paths omitted)"
+    return 0
+}
+
 run_gate_shogun_startup() (
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-}"
 if [ -z "$SCRIPT_DIR" ]; then
@@ -2143,6 +2175,13 @@ _STARTUP_TIMING_FINALIZED=1
 echo ""
 # Later checks may assign WARN/ALERT directly; disk danger is an overriding invariant.
 [ "${_disk_status:-}" = "BLOCK" ] && overall="BLOCK"
+
+# ── 旧ext4ルート残存チェック(T102/T91) ──
+echo "■ 旧ext4ルート残存"
+if ! check_legacy_ext4_path_residuals "$SCRIPT_DIR"; then
+    alerts+=("旧ext4ルート残存: /mnt/c/tools/multi-agent-shogun")
+    if [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+fi
 
 # ── スキル参照実在チェック(CLAUDE.md/instructions/*.md の /skill参照 → skills/<name>/SKILL.md) ──
 # 2026-08-25 22:11 Q6自動化ターゲット: /reset-layout がskills削除(efc8e016e)後もCLAUDE.mdに残り
