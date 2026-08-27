@@ -1011,7 +1011,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4363"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で候補の根因と防御は既存実装済み。deploy_task/modifiers.sh:1372-1386のGP-221/3231がtarget_pathなしのtag fallbackを停止し、target_pathありも_lesson_matches_task_target_pathで関連教訓だけを注入する。追加修正・decision_candidateは不要。"
+  action_artifact: "target=scripts/deploy_task/modifiers.sh:1372-1386;source=docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md:22-76;context=projects/infra/lessons.yaml:L621"
+  resolved_at: "2026-08-28T02:47:28+09:00"
 - id: INS-20260822-092925586-72af
   ts: "2026-08-22T09:29:25+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cluster C合流実証]] は既存aliasesに一致なし。類似概念TOP3: recalculate_pipeline(再計算パイプライン; alias=recalculate_fast; score=5.0) / investment_knowledge_base(投資知識辞書; alias=Structural Break Tests; score=5.0) / causal_traversal_pipeline(因果辺トラバース統合パイプライン(Obsidian×セマンティック); alias=causal_traversal; score=5.0)。概念定義とaliases追加を検討せよ"
