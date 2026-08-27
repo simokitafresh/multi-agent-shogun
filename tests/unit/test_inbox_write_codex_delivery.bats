@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
-# test_necessity: Codex delivery success requires the unique message to become
-# read or a pane state transition observed after persistence; pre-send generic
-# Working evidence must never authorize ASYNC_VERIFY SUCCESS.
+# test_necessity: Codex delivery success requires the unique message row to
+# become read after persistence; pane state is diagnostic only and pre-send
+# generic Working evidence must never authorize ASYNC_VERIFY SUCCESS.
 
 setup() {
     ROOT="$BATS_TEST_TMPDIR/root"
@@ -103,5 +103,7 @@ wait_for_log() {
     [ -n "$log" ]
     wait_for_log 'ASYNC_VERIFY SUCCESS' "$log"
     ! grep -q 'ASYNC_VERIFY FAILURE' "$log"
-    printf 'old_fp=0 post_send_success=1 message_identity=1\n'
+    grep -q "id: '$EXPECTED_MSG_ID'" "$ROOT/queue/inbox/testninja.yaml"
+    sed -n "/id: '$EXPECTED_MSG_ID'/,/type:/p" "$ROOT/queue/inbox/testninja.yaml" | grep -q 'read: true'
+    printf 'old_fp=0 pane_only_success=0 target_read_transition=1 message_identity=1\n'
 }
