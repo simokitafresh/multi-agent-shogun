@@ -5007,3 +5007,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/mnt/c/tools/multi-agent-shogun/context/semantic-map.md;semantic_index=/mnt/c/tools/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-27T17:07:05+09:00"
+- id: INS-20260827-173725843-f4ff
+  ts: "2026-08-27T17:37:25+09:00"
+  insight: "[[queue karo snapshot txtの生成停止根因を修正し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=karo_snapshot stale; score=21.3) / yaml_safe_write(YAML安全書込み; alias=karo direct完了報告の正式LGTMがshogun to karo spec不在でSG7生成BLOCKする経路を; score=12.3) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_karo_startup; score=12.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
