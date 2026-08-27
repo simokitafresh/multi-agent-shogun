@@ -4538,7 +4538,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 既存gate_report_format_main.pyがcommit subjectのtask_id/parent_cmd欠落をFAIL化し、GP-107で推定auto-fixを禁止しているため新規実修正不要
+  action_artifact: scripts/gates/gate_report_format_main.py;tests/test_gate_report_format.bats;tests/unit/test_gate_report_autofix.bats
+  resolved_at: "2026-08-27T12:00:00+09:00"
 - id: INS-20260827-102756305-91b5
   ts: "2026-08-27T10:27:56+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bz8ie0zm5 task id tool use id toolu 017X7RdJdwcpr2n7jC は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
