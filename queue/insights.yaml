@@ -1170,7 +1170,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_doc_lane_stale_alert_revalidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で確認した。SG-PRE12bがtasks/lessons.mdのdraft教訓を検出しgate_predictionをWARNへ昇格する現行実装(GP-237)と一致し、対象source_cmdの根因は既知かつ追加実装不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-132623574-97ab;source=scripts/gates/gate_gunshi_report_precheck.sh:L939-L953,L1477-L1482;tracker=logs/gunshi_gp_tracker.yaml:GP-237;semantic=docs/semantic-index/index.md:11474;decision_candidate=none"
+  resolved_at: "2026-08-28T06:04:52+09:00"
 - id: INS-20260819-023507982-d776
   ts: "2026-08-19T02:35:07+09:00"
   insight: "[[至急再発しないように根治せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=至急再発しないように根治せよ。これは重要なバグだ。単にちゃんとgateclearして忍者を解放すればいいだけだけどな"
