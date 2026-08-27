@@ -1,4 +1,4 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 11:36 更新(loop tick 17)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 11:39 更新(inbox: T57 配備・T56 直列待ち)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
@@ -62,8 +62,8 @@
 - [x] T53(09:07 家老へ 1通=1単位 で8通: 小太郎lock解放/T47 GATE/T22/T10/T08/T50/T51/T49 msg_090715〜090720、全て read=true 到達) 殿指示09:06『利他の精神で家老に取り組むべき未着手をナッジせよ』 ★未着手の滞留0
 - [x] T54(09:10 scripts/todo_map_render.py 常設: md→HTML 機械生成+ID集合一致で exit 2) HTML手編集による乖離の根治(INS-090504976) ★artifact乖離0を構造で
 - [x] T55(09:36 家老が 09:07 の8通を pending_work として先頭2件(T21/T50消火)のみ処理し T22/T10/T08/T51/T49 未配備=忍者6名 idle→6通を再下知 msg_0935xx、insight 登録) 家老の束処理欠落 ★未配備0=遊休0
-- [~] T56(11:34 家老へ karo_hotfix 配備下知(本日3回実証); 09:36 insight) ninja_monitor に UNACTIONED 検知(将軍発 task_assigned read=true かつ task/掲示板の対応なし N分→家老再nudge+将軍WARN) ★下知→配備の空白を構造で0に
-- [~] T57(11:34 家老へ karo_hotfix 配備下知; 10:34 insight INS-103428082) task=failed(STAGE1-TIMEOUT)後に report が PASS へ是正されても自動 review 依頼が出ない→failed でも report PASS かつ新 fingerprint なら自動 review(or failed→done 復帰)。本日 T47/T51 で便停止 ★報告→GATE の空白0
+- [ ] T56(11:38 家老: T57 と ninja_monitor.sh/test_ninja_monitor_stall.bats が同一 target→T57 終端直後に直列配備(構造依存); 11:34 家老へ karo_hotfix 配備下知(本日3回実証); 09:36 insight) ninja_monitor に UNACTIONED 検知(将軍発 task_assigned read=true かつ task/掲示板の対応なし N分→家老再nudge+将軍WARN) ★下知→配備の空白を構造で0に
+- [~] T57(11:38 才蔵へ karo_hotfix cmd_karo_hotfix_t57_failed_pass_review_recovery 配備 assigned・Working; 11:34 家老へ karo_hotfix 配備下知; 10:34 insight INS-103428082) task=failed(STAGE1-TIMEOUT)後に report が PASS へ是正されても自動 review 依頼が出ない→failed でも report PASS かつ新 fingerprint なら自動 review(or failed→done 復帰)。本日 T47/T51 で便停止 ★報告→GATE の空白0
 - [~] T58(11:11 家老診断: 真因=compatibility test not ok 202/203(TypeError datetime JSON serialization)、T10 WIP 流出=no(blob 9c8966c0≠14bbcc2a)。才蔵 ci_fix は半蔵 T49 と test target collision→半蔵 T49 へ追加 AC として配備; 11:05 gh: origin tip 40476bead/938c1ee04「autopush: source-only path snapshot」(author test)の CI run 33032177039 = failure) 別レーンの autopush が origin へ直接 push し CI RED。失敗 job を特定→家老 ci_fix 配備 or autopush レーン停止 ★CI GREEN 維持
 - [x] T59(11:04 push 下知 msg_103607/105004 が read=true のまま未実行(rev-list 2 12)→再下知 msg_110407、家老 Working) 家老の push 未実行(T56 UNACTIONED 再現) ★origin=HEAD 維持
 - [ ] T60(11:33 T10 report: ninja_scope_commit git_commit 中央値 9487ms・scope_sync 5846ms・累積 196s/113s が本日の支配。gate 本体は 0.07s) らせん次弾=ninja_scope_commit の git_commit/scope_sync 本質短縮(重複 index 同期・read_tree 1081ms の削減) ★commit 1回あたり −5秒×日50回
