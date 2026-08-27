@@ -1068,24 +1068,61 @@ _task_parent_cmd_for_clear_count() {
     local agent_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
     local parent_cmd=""
+    local task_id=""
+    local ac_task_id=""
+    local context=""
     local task_status=""
 
     if [ -f "$task_file" ]; then
         task_status=$(yaml_field_get "$task_file" "status" "")
+        parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "")
+        task_id=$(yaml_field_get "$task_file" "task_id" "")
+        ac_task_id=$(yaml_field_get "$task_file" "_ac_task_id" "")
+
+        # Active tasks keep the parent command as the counter identity.  A
+        # terminal task may still be the current generation, however, and its
+        # parent_cmd is sometimes cleared by task lifecycle updates.  Prefer
+        # task_id/_ac_task_id in that case, while accepting a parent_cmd only
+        # when it agrees with the generation or no replacement field exists.
+        # Sentinel values (idle/null/none) explicitly invalidate stale parent
+        # context so an old command cannot revive the clear counter.
         case "$task_status" in
             assigned|acknowledged|in_progress|pending)
+                context="$parent_cmd"
+                [ -n "$context" ] || context="$task_id"
+                [ -n "$context" ] || context="$ac_task_id"
+                ;;
+            done|idle|failed|completed|PASS)
+                if [[ "$task_id" =~ ^cmd_[[:alnum:]_-]+$ ]] && \
+                   [[ "$parent_cmd" =~ ^cmd_[[:alnum:]_-]+$ ]] && \
+                   { [ "$task_id" = "$parent_cmd" ] || [[ "$task_id" == "${parent_cmd}_"* ]]; }; then
+                    context="$parent_cmd"
+                elif [[ "$task_id" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
+                    context="$task_id"
+                elif [[ "$ac_task_id" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
+                    context="$ac_task_id"
+                elif [ -n "$task_id" ] || [ -n "$ac_task_id" ]; then
+                    # A present non-cmd/sentinel task identity means the
+                    # parent_cmd is stale and must not be reused.
+                    context=""
+                elif [[ "$parent_cmd" =~ ^cmd_[[:alnum:]_-]+$ ]]; then
+                    # Legacy terminal records may have only parent_cmd; keep
+                    # that compatible form usable for failed-task recovery.
+                    context="$parent_cmd"
+                fi
                 ;;
             *)
-                log "CLEAR-COUNT-SKIP: $agent_name task_status=${task_status:-empty} is not active"
-                printf '%s\n' "no_cmd"
-                return 0
+                context=""
                 ;;
         esac
-        parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "")
-        [ -n "$parent_cmd" ] || parent_cmd=$(yaml_field_get "$task_file" "task_id" "")
-        [ -n "$parent_cmd" ] || parent_cmd=$(yaml_field_get "$task_file" "_ac_task_id" "")
     fi
-    printf '%s\n' "${parent_cmd:-no_cmd}"
+
+    if [ -z "$context" ]; then
+        log "CLEAR-COUNT-SKIP: $agent_name task_status=${task_status:-empty} has no valid cmd context"
+        printf '%s\n' "no_cmd"
+        return 0
+    fi
+    printf '%s\n' "$context"
 }
 
 record_clear_attempt_or_force_idle() {
@@ -1099,6 +1136,14 @@ record_clear_attempt_or_force_idle() {
     [ -n "$cmd_id" ] || cmd_id=$(_task_parent_cmd_for_clear_count "$agent_name")
     if [ "$cmd_id" = "no_cmd" ]; then
         log "CLEAR-COUNT-SKIP: $agent_name has no cmd context, reason=$reason"
+        return 0
+    fi
+    # Failed-task recovery already has generation-scoped notification and
+    # respawn dedupe.  Keep that contract independent from the ordinary clear
+    # loop counter so repeated recovery attempts are not converted into a
+    # forced-idle block after the terminal context becomes available.
+    if [ -f "$task_file" ] && [ "$(yaml_field_get "$task_file" "status" "")" = "failed" ]; then
+        log "CLEAR-COUNT-FAILED-BYPASS: $agent_name cmd=$cmd_id reason=$reason"
         return 0
     fi
     max_clear=$(get_max_clear_per_cmd)
