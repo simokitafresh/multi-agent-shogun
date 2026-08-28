@@ -7183,3 +7183,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T19:21:19+09:00"
+- id: INS-20260828-192321969-c408
+  ts: "2026-08-28T19:23:21+09:00"
+  insight: "[[T129やT137はまだ未完了なのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T129やT137はまだ未完了なのか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
