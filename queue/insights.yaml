@@ -7155,7 +7155,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で現行rendererに終端条件ガード未実装を確認。現行[~]7行は全て終端条件を含み実害未発火のため、コード修正は本task scope外としてdecision_candidateへ整理"
+  action_artifact: "queue/reports/tobisaru_report_cmd_reflux_insight_202608282337_tobisaru.yaml#decision_candidate; scripts/todo_map_render.py:L24-L56; queue/shogun_todo_map.md:[~]7行の終端条件実測"
+  resolved_at: "2026-08-29T00:35:15+09:00"
 - id: INS-20260828-184817093-aa6e
   ts: "2026-08-28T18:48:17+09:00"
   insight: "[[T145 T147 T146 T143 T142 T140 T137 T136 T129が未完了だとartifactでは]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T145 / T147 / T146 / T143 / T142 / T140 / T137 / T136 / T129が未完了だとartifactではなっている。現状と原本とartifactは整合性がとれている必要がある。修正してくれ"
