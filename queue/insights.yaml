@@ -7836,4 +7836,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T07:26:06+09:00"
+- id: INS-20260829-072713068-bdeb
+  ts: "2026-08-29T07:27:13+09:00"
+  insight: "[[report完了時に同一task・commitのrun tests receiptを自動参照しninja test re]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: provisional_test(仮: Test; alias=test; score=11.7) / test_quality_framework(テスト品質統合フレームワーク; alias=terminal_test_result_contract; score=10.7) / skill_design_rules(Skill設計ルール; alias=test source suppression; score=10.6)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
