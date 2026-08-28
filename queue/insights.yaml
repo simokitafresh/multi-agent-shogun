@@ -7147,3 +7147,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T18:52:54+09:00"
+- id: INS-20260828-190348991-a035
+  ts: "2026-08-28T19:03:48+09:00"
+  insight: "cmd_complete_gate sg7_bundle_missing_or_invalid: 軍師 bundle が未投稿の時点で GATE が走ると BLOCK(01:29 t101/02:11 saizo)。bundle 未投稿=review 待ちなので BLOCK でなく WAIT(review_pending)に分類し finalize 往復を減らす"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
