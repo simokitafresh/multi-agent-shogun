@@ -59,7 +59,37 @@ FAIL候補=0。将軍一次のT132 JSONL誤計測はPASS(5850行実在)に訂正
 
 | cmd_id | 終端条件 | 集計コマンド | 現在値 | 判定 |
 |--------|----------|-------------|--------|------|
-| 全31件 | INS-* status=resolved | python3 yaml.safe_load queue/insights.yaml | 31/31 resolved | PASS |
+| cmd_reflux_insight_202608280006_saizo | INS-38ed resolved+deploy_task/modifiers.sh実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280124_saizo | INS-d5de resolved+deploy_task/main.sh実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280136_tobisaru | INS-1a8c resolved+gate_skill_script_refs確認済み | yaml+resolved_reason | resolved | PASS |
+| cmd_reflux_insight_202608280218_hanzo | INS-b333 resolved(重複→既存INS-1a8c参照) | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280245_hayate | INS-0f9e resolved+modifiers.sh GP-221実在 | yaml+resolved_reason | resolved | PASS |
+| cmd_reflux_insight_202608280255_tobisaru | INS-4002 resolved+field_get修正済確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280318_kagemaru | INS-b582 resolved+deploy_task/gates.sh実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280403_hayate | INS-75b4 resolved+deploy_task/gates.sh実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280511_kagemaru | INS-5fa0 resolved+gate_report_format FAIL後防御確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280521_kotaro | INS-e7fa resolved+deploy_task.sh GP-218実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280600_hanzo | INS-97ab resolved+SG-PRE12b実装確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280615_kagemaru | INS-8f0b resolved+deploy_task.sh分割AC注入確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280626_kotaro | INS-1eae resolved+lesson_write.sh Jaccard実在 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280640_hayate | INS-11f8 resolved+deploy_task.sh useful判定実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280651_saizo | INS-d75b resolved+dashboard SSOT一本化確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280719_kagemaru | INS-54dd resolved+gunshi_gate_sync.sh実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280757_tobisaru | INS-5014 resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280812_hayate | INS-68eb resolved+deploy_task.sh実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280823_kagemaru | INS-2904 resolved+deploy_task.sh実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608280833_saizo | INS-f48e resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280858_kotaro | INS-7cac resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608280923_hayate | INS-fe95 resolved+insight_write.sh重複検出確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608281025_kagemaru | INS-97ae resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608281058_saizo | INS-b2ef resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608281112_tobisaru | INS-7ea0 resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608281136_hanzo | INS-47ed resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608281221_kotaro | INS-dbd2 resolved+run_tests.sh実在 | yaml+test -f | resolved+exists | PASS |
+| cmd_reflux_insight_202608281240_hayate | INS-1171 resolved+gate_skill_script_refs確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608281349_tobisaru | INS-1f2e resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608281419_saizo | INS-a933 resolved+既存確認 | yaml | resolved | PASS |
+| cmd_reflux_insight_202608281746_tobisaru | INS-7830 resolved+既存確認 | yaml | resolved | PASS |
 
 ### ci_fix 10件(終端条件=CI test PASS on origin/main)
 
