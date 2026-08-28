@@ -7884,3 +7884,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-29T08:18:25+09:00"
+- id: INS-20260829-084153146-8bd3
+  ts: "2026-08-29T08:41:53+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T173_database_cron_failfast]] は既存aliasesに一致なし。類似概念TOP3: project_database(Stock Database; alias=database; score=28.6) / self_improving_agent_local_optima(自己改善エージェント局所最適脱出; alias=proof_based_reflection; score=7.8) / lesson_lifecycle(教訓ライフサイクル管理; alias=lesson_candidate自動draft; score=6.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
