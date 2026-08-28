@@ -8962,6 +8962,7 @@ codd:
 | causal | `cmd_karo_hotfix_finalize_timezone_20260828` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_report_ancestry_repo_resolution_20260828` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_ci_readiness_empty_json_20260828` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_gate_completion_event_pairing_20260828` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -9898,6 +9899,7 @@ codd:
 | causal | `cmd_karo_hotfix_finalize_segments_20260828` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_finalize_timezone_20260828` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_report_ancestry_repo_resolution_20260828` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_hotfix_gate_completion_event_pairing_20260828` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
@@ -12686,6 +12688,7 @@ codd:
 | cmd | `cmd_karo_hotfix_report_ancestry_repo_resolution_20260828` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T19:06:18+09:00 b5guxonm3 toolu_01NyrDPPJ8smmodfNsutHTSs /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/16434314-f798-4484-b5e7 |
 | cmd | `cmd_karo_hotfix_ci_readiness_empty_json_20260828` (`tests/unit/test_cmd_complete_gate.bats`, `scripts/lib/cmd_complete_gate_ci.sh`) |
+| cmd | `cmd_karo_hotfix_gate_completion_event_pairing_20260828` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
 
@@ -14934,6 +14937,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T09:52:30.581691+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T10:13:08.471212+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T10:22:37.757198+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T11:06:49.204973+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
