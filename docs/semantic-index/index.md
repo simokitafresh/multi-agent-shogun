@@ -217,6 +217,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T21:40:38+09:00 2026-08-27 21:39 家老強くてニューゲーム復帰点追記。旧21:26履歴は不変。owner commit=f16ae75a7、統合push=5587f2134、git relation=0/0、bulletin=blt_2026 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T03:59:40+09:00 家老強くてニューゲーム復帰点20260828-0359 pointer docs/research/karo-strong-new-game-checkpoint-20260828-0359.md owner commit 2620d8db |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:01:42+09:00 家老強くてニューゲーム復帰点20260828-0359。pointer=docs/research/karo-strong-new-game-checkpoint-20260828-0359.md sha256=e79660d307ef5d |
+| causal | `cmd_reflux_insight_202608290048_saizo` files_modified: [[strong_new_game_completion_contract]] |
 
 ## sg_pre31_semantic_validation — SG-PRE31意味検算
 
@@ -496,6 +497,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T07:38:17.385312+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T11:49:18.072285+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:34:26.039373+00:00 git pre-commit semantic propagation for context/projects changes |
+| causal | `cmd_reflux_insight_202608290048_saizo` files_modified: [[cmd_chronicle]] |
+| cmd | `cmd_reflux_insight_202608290048_saizo` (`context/senkyoku-log.md`) |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3470,6 +3473,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T00:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T00:42:45+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T01:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T01:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T02:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -6741,6 +6746,7 @@ codd:
 | causal | `cmd_4383` files_modified: [[dm_signal_refactor_mission]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T19:49:47+09:00 裁可 |
 | causal | `cmd_4403` files_modified: [[dm_signal_refactor_mission]] |
+| causal | `cmd_reflux_insight_202608290048_saizo` files_modified: [[dm_signal_refactor_mission]] |
 
 ## file_rename — ファイルリネーム
 
@@ -7142,6 +7148,7 @@ codd:
 | causal | `cmd_4372` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_4373` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_4374` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[dmsignal_operations]] |
 | causal_chain | `[[cmd_4330]]` (L1598) |
 
 ## partial_turnover_execution_method — Partial Turnover実験実行・完了証跡方法論
@@ -12749,7 +12756,30 @@ codd:
 | causal | `cmd_reflux_backlink_202608201618_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_karo_hotfix_ga493_context_freshness_trigger` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_4373` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
+
+## provisional_2026-07 — 仮: 2026 07
+
+| 属性 | 値 |
+|------|---|
+| id | provisional_2026-07 |
+| label | 仮: 2026 07 |
+| aliases | 2026-07, archive/cmd-chronicle/2026-07.md, archive cmd chronicle 2026 07.md, provisional_2026-07 |
+| status | provisional |
+| auto_generated | true |
+| source_cmd | cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828 |
+| source_files | archive/cmd-chronicle/2026-07.md |
+| no_match_count | 3 |
+| created_at | 2026-08-28T16:39:06Z |
+| promotion_threshold | 5 |
+| related_concepts | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `archive/cmd-chronicle/2026-07.md` |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` -> [[provisional_2026-07]] (auto_generated) |
+| cmd | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` (`archive/cmd-chronicle/2026-07.md`, `context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_log_terminal_input — 仮: Log Terminal Input
 
@@ -13519,6 +13549,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608282226_hayate` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608282243_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608282243_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608282337_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608282337_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -15072,6 +15104,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:26:15.818605+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:21:48.888778+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:59:47.312033+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:35:30.562995+00:00 git pre-commit semantic propagation for context/projects changes |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[provisional_lessons]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:56:03.200783+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -15822,6 +15857,7 @@ codd:
 | causal | `cmd_karo_hotfix_vercel_owned_context_scope` files_modified: [[content_artifacts]] |
 | causal | `cmd_4383` files_modified: [[content_artifacts]] |
 | causal | `cmd_4403` files_modified: [[content_artifacts]] |
+| causal | `cmd_reflux_insight_202608290048_saizo` files_modified: [[content_artifacts]] |
 | causal_chain | `[[cmd_karo_hotfix_training_generation_dedup_202607102016]]` (L1027) |
 | causal_chain | `[[cmd_karo_hotfix_gate_commit_repo_root_20260727]]` (L1412) |
 
@@ -16520,6 +16556,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:31:01.867799+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:31:25.323552+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:00:52.446940+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:38:03.018398+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:38:37.260009+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
