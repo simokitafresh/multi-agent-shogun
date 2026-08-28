@@ -7010,7 +7010,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存修正と実証を確認し、対象現象は解決済みと判定。旧状態はdaemon PATHでcodex.js実行時にnode不在status127だったが、344617c08のnvm fallback、623eb9c48の選択元bin PATH保持、d0ce97a88/fce4c124c/01310ab8aの防御強化で根治済み。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-170139520-04c9;code=scripts/lib/respawn_recovery.sh:104-169;commits=344617c08,623eb9c48,d0ce97a88,fce4c124c,01310ab8a;report=queue/archive/reports/saizo_report_cmd_karo_hotfix_respawn_resolver_node_path_r2_20260828_20260828.yaml:33-40,116-120;live=FALLBACK0,CTX-RESET5,12m31s;tests=run_tests.sh file tests/unit/test_respawn_recovery.bats 18/18 PASS SKIP0"
+  resolved_at: "2026-08-28T20:07:48+09:00"
 - id: INS-20260828-170935676-8522
   ts: "2026-08-28T17:09:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bnyzj98fs task id tool use id toolu 01LhjpAZPSW2wgRJ6e は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
