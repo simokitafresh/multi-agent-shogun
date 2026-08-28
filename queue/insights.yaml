@@ -7124,3 +7124,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-184806411-8028
+  ts: "2026-08-28T18:48:06+09:00"
+  insight: "todo_map_render.py: [~] 行に『終端条件=』文字列が無ければ exit 2 で render を拒否(ID 集合一致 gate と同型の構造型)。殿指摘 18:46『9 件未完了表示』の再発防止。追加で loop 時に終端条件の現在値を機械抽出(gate_metrics/ninja_monitor.log の grep 式を行内に埋める)"
+  priority: "high"
+  source: "manual"
+  fix_known: false
+  status: pending
