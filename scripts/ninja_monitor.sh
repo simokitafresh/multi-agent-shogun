@@ -2138,6 +2138,7 @@ NINJA_MONITOR_LIFECYCLE_TIMEOUT=${NINJA_MONITOR_LIFECYCLE_TIMEOUT:-120}
 _ninja_monitor_run_lifecycle_background() {
     local key="$1"; shift
     local lock_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.lock" lock_fd worker_pid timeout_sec worker_script stderr_file stderr_text
+    local -a worker_argv=("$@")
     if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
         "$@"
         return $?
@@ -2161,20 +2162,20 @@ _ninja_monitor_run_lifecycle_background() {
             exit 0
         }
         if [ ! -f "$worker_script" ]; then
-            "$@"
+            "${worker_argv[@]}"
             exit $?
         fi
         if timeout --signal=TERM --kill-after=2 "$timeout_sec" \
             env SCRIPT_DIR="$SCRIPT_DIR" STATE_DIR="${STATE_DIR:-/tmp}" SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" LOG="$LOG" \
                 NINJA_MONITOR_LIFECYCLE_DEBUG=1 \
-            bash "$worker_script" --lifecycle-worker "$@" 2>"$stderr_file"; then
+            bash "$worker_script" --lifecycle-worker "${worker_argv[@]}" 2>"$stderr_file"; then
             :
         else
             local rc=$?
             stderr_text=""
             [ -f "$stderr_file" ] && stderr_text=$(<"$stderr_file")
             stderr_text=${stderr_text//$'\n'/\\n}
-            log "LIFECYCLE-BACKGROUND-FAIL-REASON: key=$key rc=$rc argv0=bash argc=$(($# + 2)) args=--lifecycle-worker $* bash_source=$worker_script bash=/bin/bash lib_only=${NINJA_MONITOR_LIB_ONLY:-} stderr=${stderr_text:-<empty>}"
+            log "LIFECYCLE-BACKGROUND-FAIL-REASON: key=$key rc=$rc argv0=bash argc=$((${#worker_argv[@]} + 2)) args=--lifecycle-worker ${worker_argv[*]} bash_source=$worker_script bash=/bin/bash lib_only=${NINJA_MONITOR_LIB_ONLY:-} stderr=${stderr_text:-<empty>}"
             if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
                 log "LIFECYCLE-BACKGROUND-TIMEOUT: key=$key timeout=${timeout_sec}s rc=$rc retry=next-cycle"
             else
@@ -13301,7 +13302,8 @@ while true; do
     # boundary, so keep it off the monitor cycle just like the other mechanical
     # lifecycle lanes.
     _ninja_monitor_phase_call lifecycle repair_terminal_report_outboxes \
-        _ninja_monitor_run_lifecycle_background repair_terminal_report_outboxes
+        _ninja_monitor_run_lifecycle_background repair_terminal_report_outboxes \
+        repair_terminal_report_outboxes
 
     # ═══ 停滞検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
