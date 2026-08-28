@@ -6532,7 +6532,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: existing commits c8b1ed2de and 566471a0c fix the reported absolute-path measurement discrepancy; current rg and grep verification are zero
-  action_artifact: "commits=c8b1ed2de,566471a0c;verification=rg_default:0;grep_recursive:0;rg_no_ignore_hidden:0"
+  action_artifact: "commits=c8b1ed2de,566471a0c;verification=rg_default:0;grep_recursive:0;rg_no_ignore_hidden:0;inventory=task_injected_start:117/10/0/127;live_start:118/10/0/128;live_after:116/10/0/126;promotion_pause_marker:active;concurrent_pending_churn:1"
   resolved_at: "2026-08-28T13:54:00+09:00"
 - id: INS-20260828-130057890-a933
   ts: "2026-08-28T13:00:57+09:00"
