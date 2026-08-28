@@ -6891,3 +6891,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-155454676-f0c0
+  ts: "2026-08-28T15:54:54+09:00"
+  insight: "才蔵 ACK-STALL(15:46-15:54)の真因=task_id 接尾辞不一致: task YAML は task_id=cmd_reflux_insight_202608281530_saizo_exact(issued_cmd_id は _exact なし)なのに、家老の report_format_fix(15:46:36)本文の task_id は cmd_reflux_insight_202608281530_saizo(接尾辞なし)→忍者の『現task_id一致の補足のみ適用』フィルタ(T114)が不一致と判定し既読化=RC 往復が止まる。T114 の構造 identity は deploy 初回 nudge だけを直し、RC/report_format_fix の task_id 生成が issued_cmd_id を使っている疑い。修正 1 unit: report_format_fix/task_supplement の task_id は task YAML の task_id(接尾辞込み)から取る+忍者フィルタは接尾辞を除いた base 一致も許容(どちらか一方で十分、両方なら二重)。効果計測=ACK-STALL(task_id 不一致既読化)0/日。origin: [[T114_reflux開始nudge_task_id欠落]] -> [[RC_task_id接尾辞不一致]] -> [[才蔵ACK-STALL_15:46]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
