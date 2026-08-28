@@ -7131,3 +7131,56 @@ YAML
     [ "$status" -eq 0 ]
     [ "$output" = "pass=1 fail=1 duplicate=0 task_unchanged=1 skip=0" ]
 }
+
+# test_necessity: thresholded proofs must wait for the declared observation
+# count, then emit exactly one aggregate result for an all-match or mixed batch.
+# regression_justification: protects min_matches from being silently ignored
+# while preserving the worker task-state boundary.
+@test "production proof evaluator waits for min_matches and rejects mixed batch" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/production-proof-min-matches"
+        mkdir -p "$root/queue/proofs" "$root/logs" "$root/state"
+        SCRIPT_DIR="$root"
+        STATE_DIR="$root/state"
+        LOG="$root/logs/ninja_monitor.log"
+
+        cat > "$root/queue/proofs/cmd_proof_threshold_pass.yaml" <<"YAML"
+cmd_id: cmd_proof_threshold_pass
+observation_window_seconds: 1
+min_matches: 3
+predicate: DEPLOY-PASS
+log_name: deploy.log
+YAML
+        cat > "$root/queue/proofs/cmd_proof_threshold_fail.yaml" <<"YAML"
+cmd_id: cmd_proof_threshold_fail
+observation_window_seconds: 1
+min_matches: 3
+predicate: DEPLOY-PASS
+log_name: deploy-mixed.log
+YAML
+        printf "DEPLOY-PASS\nDEPLOY-PASS\n" > "$root/logs/deploy.log"
+        printf "DEPLOY-PASS\nDEPLOY-PASS\n" > "$root/logs/deploy-mixed.log"
+        touch -d "2 seconds ago" "$root/queue/proofs"/*.yaml
+
+        check_production_proofs
+        test ! -e "$root/state/ninja_monitor_production_proof.tsv"
+        test ! -e "$root/logs/ninja_monitor.log"
+
+        printf "DEPLOY-PASS\n" >> "$root/logs/deploy.log"
+        printf "DEPLOY-FAIL\n" >> "$root/logs/deploy-mixed.log"
+        check_production_proofs
+        test "$(grep -c "PRODUCTION-PROOF cmd_proof_threshold_pass PASS" "$LOG")" -eq 1
+        test "$(grep -c "PRODUCTION-PROOF cmd_proof_threshold_fail FAIL reason=predicate_mismatch" "$LOG")" -eq 1
+        test "$(grep -c 'INFO.*production_proof=' "$root/logs/gate_metrics.log")" -eq 2
+        test "$(grep -c '^cmd_proof_threshold_pass' "$root/state/ninja_monitor_production_proof.tsv")" -eq 1
+        test "$(grep -c '^cmd_proof_threshold_fail' "$root/state/ninja_monitor_production_proof.tsv")" -eq 1
+        printf "under_threshold=0 pass=1 mixed_fail=1 duplicate=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "under_threshold=0 pass=1 mixed_fail=1 duplicate=0" ]
+}

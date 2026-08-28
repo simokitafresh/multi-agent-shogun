@@ -485,8 +485,8 @@ check_production_proofs() {
     local proof_dir="${NINJA_MONITOR_PROOF_DIR:-$SCRIPT_DIR/queue/proofs}"
     local state_file="${NINJA_MONITOR_PROOF_STATE_FILE:-$STATE_DIR/ninja_monitor_production_proof.tsv}"
     local metrics_file="${NINJA_MONITOR_PROOF_METRICS_FILE:-$SCRIPT_DIR/logs/gate_metrics.log}"
-    local proof_file proof_sha contract window log_name predicate published_at age log_file
-    local cmd_id result reason lock_fd metrics_lock_fd grep_rc
+    local proof_file proof_sha contract window log_name predicate min_matches published_at age log_file
+    local cmd_id result reason lock_fd metrics_lock_fd grep_rc match_count observation_count
 
     [ -d "$proof_dir" ] || return 0
     mkdir -p "${state_file%/*}" "${metrics_file%/*}" 2>/dev/null || return 0
@@ -523,6 +523,15 @@ if window < 0:
     raise SystemExit(1)
 log_name = str(value.get("log_name") or "ninja_monitor.log").strip()
 predicate = str(value.get("predicate") or "").strip()
+min_matches = value.get("min_matches", 0)
+if isinstance(min_matches, bool):
+    raise SystemExit(1)
+try:
+    min_matches = int(min_matches)
+except (TypeError, ValueError):
+    raise SystemExit(1)
+if min_matches < 0:
+    raise SystemExit(1)
 checks = value.get("checks")
 if isinstance(checks, list) and checks:
     for check in checks:
@@ -543,11 +552,11 @@ if isinstance(checks, list) and checks:
         predicate = str(checks[0].get("predicate") or "").strip()
     if log_name == "ninja_monitor.log" and checks[0].get("log_name"):
         log_name = str(checks[0]["log_name"]).strip()
-print("\t".join((cmd_id, str(window), log_name, predicate)))
+print("\t".join((cmd_id, str(window), log_name, predicate, str(min_matches))))
 PY
         ) || contract=""
 
-        IFS=$'\t' read -r cmd_id window log_name predicate <<< "$contract" || true
+        IFS=$'\t' read -r cmd_id window log_name predicate min_matches <<< "$contract" || true
         reason=""
         if [[ ! "$cmd_id" =~ ^[A-Za-z0-9_.-]+$ ]]; then
             cmd_id="$(basename "$proof_file" .yaml)"
@@ -559,6 +568,15 @@ PY
         if [[ ! "$window" =~ ^[0-9]+$ ]]; then
             reason="invalid_window"
             window=0
+        fi
+        if [[ -z "$min_matches" ]]; then
+            # A parser failure already carries the legacy invalid_proof
+            # reason; keep that reason instead of masking it with a new
+            # threshold-specific label.
+            min_matches=0
+        elif [[ ! "$min_matches" =~ ^[0-9]+$ ]]; then
+            reason="invalid_min_matches"
+            min_matches=0
         fi
         published_at=$(stat -c %Y "$proof_file" 2>/dev/null || true)
         if [[ ! "$published_at" =~ ^[0-9]+$ ]]; then
@@ -597,7 +615,33 @@ PY
             if [ -n "$log_file" ] && [ ! -f "$log_file" ]; then
                 reason="log_missing"
             elif [ -n "$log_file" ]; then
-                if grep -E -q -- "$predicate" "$log_file" 2>/dev/null; then
+                if [ "$min_matches" -gt 0 ]; then
+                    # A thresholded proof represents a bounded batch of log
+                    # observations.  Do not publish a result until the batch
+                    # reaches the contract threshold; once it does, every
+                    # non-empty observation must satisfy the predicate.
+                    grep_rc=0
+                    match_count=$(grep -E -c -- "$predicate" "$log_file" 2>/dev/null) || grep_rc=$?
+                    if [ "$grep_rc" -eq 2 ]; then
+                        reason="predicate_invalid"
+                    else
+                        observation_count=$(awk 'NF { count++ } END { print count + 0 }' "$log_file" 2>/dev/null || printf '0\n')
+                        if [ "$observation_count" -lt "$min_matches" ]; then
+                            # The observation window is complete, but the
+                            # required number of records has not arrived yet.
+                            # Leave the fingerprint unrecorded for the next
+                            # monitor cycle instead of emitting a false FAIL.
+                            flock -u "$lock_fd"
+                            eval "exec ${lock_fd}>&-"
+                            continue
+                        elif [ "$match_count" -ge "$min_matches" ] && [ "$match_count" -eq "$observation_count" ]; then
+                            result="PASS"
+                            reason="predicate_match"
+                        else
+                            reason="predicate_mismatch"
+                        fi
+                    fi
+                elif grep -E -q -- "$predicate" "$log_file" 2>/dev/null; then
                     result="PASS"
                     reason="predicate_match"
                 else
