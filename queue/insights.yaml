@@ -7823,3 +7823,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-29T07:07:33+09:00"
+- id: INS-20260829-071611387-4e74
+  ts: "2026-08-29T07:16:11+09:00"
+  insight: "ninja_test_receipt_missingがprecheck(GATE_PREDICTION)で検出されない。2件連続LGTM→BLOCK。precheckにtest_receipt_path存在チェックを追加すべき候補(SG-PRE強化)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
