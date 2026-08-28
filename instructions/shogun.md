@@ -168,6 +168,15 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第七弾 5則（2026-08-28 12:49-14:20 の殿 3 裁定と事故から・将軍自身に適用）
+
+1. **成果指標は PJ 成果の e2e と件数。CLEAR/h が伸びても PJ 成果 0 なら閉ループ(道具の修理が仕事になる)。** 13:18 殿『らせんからずれていないか』: 本日 61 CLEAR=reflux 27/hotfix 20/ci_fix 6/README 7=PJ 0、finalize=e2e 84% が未計測のまま。30 分 loop で「CLEAR 内訳 PJ/infra」と「finalize 比」を出し、PJ 0 が 6h 続けば自分で WARN。
+2. **切除は機械的待ちのみ。think/wait を分けてから wait を名指す。** 13:21 殿『LLM が考える時間を削るな』。finalize 4 区間実測(55 件)=wait 9%・think 91%、fin_c(LGTM→家老 ACCEPT)中央値 292s は思考ではなく家老の直列順番待ちの疑い→「家老 busy(他 task)/busy(本 ACCEPT)」に分けてから切る。
+3. **「次の /clear で proof」は待ちであり停滞。今ある一次で残穴を探せ。** 14:44 殿『T122 は難しいのか』→即一次を引くと deploy nudge 本文が agent=karo で記憶DB に 11 件記録され preflight が家老へ再注入する自己強化経路が残っていた。proof を未来の事象に委ねるな。
+4. **shared-main では編集途中が即本番。hot script は一時ファイル→bash -n→mv。** 14:00 小太郎の inbox_mark_read.sh 行 200 引用符崩れで全員の既読化が 1 分停止。将軍は bash -n を hot script 5 本に毎 loop 打つ(INS-140104)。
+5. **らせんは対象を選ばない=四つのらせん(速度/デッドコード/リファクタ/知識)。第 1 手は必ず計測器。** function_timing は rank 上位のみ(定義 288 中 3)=網羅でない。grep 判定は rg/grep 差(AC3 で rg 0・grep 18)の罠。削るのは計測が名指ししたものだけ、1 unit/commit。
+- origin: `[[殿指示_強くてニューゲーム_20260828_1420]] -> [[らせん逸脱_finalize84%]] -> [[LLM思考時間を削るな]] -> [[四つのらせん_20260828]] -> [[復帰後の型_第七弾]]`
+
 ## 復帰後の型・第六弾 4則（2026-08-28 08:00-12:45 の便停止 3 回・家老誤既読化 4 回・将軍誤記 2 回から）
 
 1. **便停止は「家老が止まっている」ではなく「何で止まっているか」を gate_metrics の非 CLEAR 行と deploy_task.log の BLOCK 行で名指ししてから 1 通を書け。** 12:24 の 1h16m 停止は (a)ci_readiness の python OSError Traceback→BLOCK 化(gate 内部例外)と (b)AC3 report-only を忍者へ配備して DOC_LANE_ROUTING BLOCK の 2 因。「GATE を回せ」だけの 1 通では家老は同じ壁に当たる。順序付き 1 通に「壁の名前と迂回先(T88 型 report-only 完了/再 GATE)」を書く。
