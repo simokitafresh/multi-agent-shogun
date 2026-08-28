@@ -7370,7 +7370,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T22:32:00+09:00"
 - id: INS-20260828-222947442-5f8f
   ts: "2026-08-28T22:29:47+09:00"
   insight: "構造バグ候補(殿下問 22:28): GATE BLOCK 49/日のうち report_commit_main_ancestry 25+review_two_phase_pending 10+throughput_segment_invalid 4=39(80%)は忍者の作業品質と無関係な『順序・到達待ち』を BLOCK で表現している=待ちを失敗に変換する構造(再 GATE 往復=家老の直列時間)。gate は『待ち』を WAIT 状態(自動再試行)で持ち BLOCK は契約違反のみに限定する"
