@@ -27,7 +27,7 @@
 | T131/T137 auto clear | CTX-RESET 出現・FALLBACK 0 | 8 件・18:25 以降 0 | PASS(r2 GATE は T145) |
 | T114 nudge task_id | ACK-STALL 0 | 計測式が STALL-DETECTED を数えていない=**UNVERIFIED**(13:12/15:55 に 2 件あり=T128/T138 で個別解消) | UNVERIFIED |
 | T122 記憶DB 自己強化 | 15:47 以降 agent=karo の nudge 行 0 | SQL 失敗=**UNVERIFIED** | UNVERIFIED |
-| T132 関数カバレッジ | JSONL に行が積まれる | ファイル実在・行数 0 の疑い=**FAIL 候補** | 要確認 |
+| T132 関数カバレッジ | JSONL に行が積まれる | logs/function_coverage/deploy_task.sh.jsonl 5850 行(18:49 更新)=将軍の `logs/function_coverage*.jsonl` glob がディレクトリを見落とした誤計測 | PASS |
 
 ## 層 D: 目的未達のまま CLEAR(unit 途中成果)
 - T129 unit1(cycle_latency): CLEAR 17:11 だが median≤60s 未達(75816ms)→residual 走行中
