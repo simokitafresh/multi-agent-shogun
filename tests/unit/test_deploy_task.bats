@@ -122,6 +122,83 @@ PY
     [ "$status" -eq 1 ]
 }
 
+# test_necessity: 配備前CTX判定はキャッシュ(@context_pct)でなく直前pane captureを正本にする不変量を守る。
+@test "ctx guard derives before value from pane capture" {
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        tmux() {
+            case "$1" in
+                show-options) printf "99\n" ;;
+                capture-pane) printf "OpenAI Codex Context 12%% used\n" ;;
+            esac
+        }
+        deploy_task_capture_ctx_pct pane sasuke
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "12" ]
+}
+
+# test_necessity: 閾値以下の配備はrespawnせず、receipt identity付きの二値telemetryを1行残す不変量を守る。
+@test "ctx guard records threshold-below without respawn" {
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        CTX_LOG="$2/ctx.log"
+        log() { printf "%s\n" "$1" >> "$CTX_LOG"; }
+        tmux() { [ "$1" = capture-pane ] && printf "Claude Code CTX:12%%\n"; }
+        deploy_task_respawn_agent() { printf "unexpected\n" >> "$CTX_LOG"; return 1; }
+        DEPLOY_TASK_CTX_RECEIPT_ID=receipt-below
+        deploy_task_guard_ctx_before_deploy pane sasuke
+        grep -q "CTX_GUARD receipt_id=receipt-below.*ctx_before=12.*ctx_after=12.*result=threshold_below" "$CTX_LOG"
+    ' _ "$TEST_PROJECT" "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: 高CTX配備は正規respawnとready確認を経てからのみ成功し、ctx_before/afterを同一receiptへ記録する不変量を守る。
+@test "ctx guard respawns high-ctx idle worker and confirms ready" {
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        CTX_LOG="$2/ctx.log"
+        log() { printf "%s\n" "$1" >> "$CTX_LOG"; }
+        CTX_CAPTURE="OpenAI Codex Context 35% used"
+        tmux() { [ "$1" = capture-pane ] && printf "%s\n" "$CTX_CAPTURE"; }
+        deploy_task_respawn_agent() {
+            printf "respawn:%s:%s\n" "$1" "$2" >> "$CTX_LOG"
+            CTX_CAPTURE="OpenAI Codex Context 0% used"
+        }
+        deploy_task_wait_respawn_ready() { return 0; }
+        DEPLOY_TASK_CTX_RECEIPT_ID=receipt-success
+        deploy_task_guard_ctx_before_deploy pane sasuke
+        grep -q "respawn:sasuke:deploy_ctx_guard_35pct" "$CTX_LOG"
+        grep -q "CTX_GUARD receipt_id=receipt-success.*ctx_before=35.*ctx_after=0.*result=respawn_success" "$CTX_LOG"
+    ' _ "$TEST_PROJECT" "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: respawn失敗/ready timeoutはtask/report/inbox公開前にBLOCKし、原因別telemetryを残す不変量を守る。
+@test "ctx guard blocks respawn failure and ready timeout" {
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        CTX_LOG="$2/ctx.log"
+        log() { printf "%s\n" "$1" >> "$CTX_LOG"; }
+        CTX_CAPTURE="Claude Code CTX:40%"
+        tmux() { [ "$1" = capture-pane ] && printf "%s\n" "$CTX_CAPTURE"; }
+        DEPLOY_TASK_CTX_RECEIPT_ID=receipt-failure
+        deploy_task_respawn_agent() { return 1; }
+        ! deploy_task_guard_ctx_before_deploy pane sasuke
+        grep -q "CTX_GUARD receipt_id=receipt-failure.*result=respawn_failed" "$CTX_LOG"
+        deploy_task_respawn_agent() { return 0; }
+        deploy_task_wait_respawn_ready() { return 1; }
+        DEPLOY_TASK_CTX_RECEIPT_ID=receipt-timeout
+        ! deploy_task_guard_ctx_before_deploy pane sasuke
+        grep -q "CTX_GUARD receipt_id=receipt-timeout.*result=ready_timeout" "$CTX_LOG"
+    ' _ "$TEST_PROJECT" "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+}
+
 # test_necessity: report template(hook_failures block)にmapping6キー(review_bundle.pyの実fail-closed契約。
 # post_verification_head込み)の記入例がコメントとして常設され、count>0発生時にGPT忍者以外(非max注入対象)も
 # 正しい形式を確認できる不変量を守る。
