@@ -34,17 +34,17 @@ def _report_identity(report, snapshot):
     }
 
 
-def _receipt_generation_matches(root, report_path, report):
-    """Verify a redeployed worker's report against its durable inbox receipt."""
+def _receipt_generation_identity(root, report_path, report):
+    """Return the exact durable receipt identity for a report, if present."""
     report_path = Path(report_path).resolve()
     try:
         report_ref = str(report_path.relative_to(Path(root).resolve()))
     except ValueError:
-        return False
+        return None
     report_id = str(report.get("report_id") or "").strip()
     version = str(report.get("report_identity_version") or "").strip()
     if not report_id or not version or not report_path.is_file():
-        return False
+        return None
     fingerprint = hashlib.sha256(report_path.read_bytes()).hexdigest()
     candidates = [Path(root) / "queue/inbox/karo.yaml"]
     timestamp = str(report.get("timestamp") or "")
@@ -69,6 +69,8 @@ def _receipt_generation_matches(root, report_path, report):
             if not isinstance(message, dict):
                 continue
             if (
+                message.get("type") == "report_received"
+                and
                 str(message.get("report_id") or "") == report_id
                 and str(message.get("report_identity_version") or "") == version
                 and str(message.get("report_fingerprint") or "") == fingerprint
@@ -76,8 +78,20 @@ def _receipt_generation_matches(root, report_path, report):
                 and str(message.get("parent_cmd") or "") == str(report.get("parent_cmd") or "")
                 and str(message.get("task_id") or "") == str(report.get("task_id") or "")
             ):
-                return True
-    return False
+                return {
+                    "report_id": report_id,
+                    "report_identity_version": version,
+                    "report_fingerprint": fingerprint,
+                    "report_path": report_ref,
+                    "task_id": str(report.get("task_id") or ""),
+                    "parent_cmd": str(report.get("parent_cmd") or ""),
+                }
+    return None
+
+
+def _receipt_generation_matches(root, report_path, report):
+    """Verify a redeployed worker's report against its durable inbox receipt."""
+    return _receipt_generation_identity(root, report_path, report) is not None
 
 
 def _snapshot_command(root, report, cmd_id, report_path=None):
@@ -642,6 +656,10 @@ def _singleflight_token(root, args, entry):
         "correction_scope": _correction_scope(getattr(args, "correction_scope", None)),
         "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest() if report_path.is_file() else "missing",
         "contract": contract,
+        # Only an exact durable report_received receipt is a new generation.
+        # Stale or mismatched receipts intentionally collapse to None so they
+        # cannot reopen a failure terminal by changing the token.
+        "report_receipt": _receipt_generation_identity(root, report_path, report),
         "approval_state": approval_state,
         "review_entry": entry,
     }
