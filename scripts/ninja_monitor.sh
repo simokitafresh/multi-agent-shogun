@@ -323,6 +323,7 @@ STARTUP_TIME="$EPOCHSECONDS"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 WATCHED_DEPS=(
     "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+    "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
     "$SCRIPT_DIR/scripts/lib/model_detect.sh"
     "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
     "$SCRIPT_DIR/scripts/lib/field_get.sh"
@@ -1210,8 +1211,9 @@ record_clear_attempt_or_force_idle() {
     local agent_name="$1"
     local reason="${2:-UNKNOWN}"
     local cmd_id="${3:-}"
+    local pane_target="${4:-${PANE_TARGETS[$agent_name]:-}}"
     local max_clear
-    local state_file count previous_cmd
+    local state_file count previous_cmd="" ctx_now="" ctx_threshold=""
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
 
     [ -n "$cmd_id" ] || cmd_id=$(_task_parent_cmd_for_clear_count "$agent_name" "$reason")
@@ -1244,11 +1246,20 @@ record_clear_attempt_or_force_idle() {
         return 0
     fi
 
-    if [ -f "$task_file" ]; then
-        task_lifecycle_set_idle "$task_file" "clear_loop_block" 2>/dev/null || true
+    ctx_threshold=$(_forced_idle_ctx_threshold)
+    ctx_now=""
+    if [ -n "$pane_target" ]; then
+        ctx_now=$(get_context_pct "$pane_target" "$agent_name" 2>/dev/null || true)
     fi
-    send_inbox_message karo "【CLEAR-LOOP-BLOCK】${agent_name} が同一cmd=${cmd_id}で /clear ${count}回。上限=${max_clear}超過のためtaskをidle化して空回りを停止。reason=${reason}" clear_loop_block
-    log "CLEAR-LOOP-BLOCK: $agent_name cmd=$cmd_id count=${count}/${max_clear} forced_idle reason=$reason"
+    if [[ "$ctx_now" =~ ^[0-9]+$ ]] && [ "$ctx_now" -le "$ctx_threshold" ]; then
+        if [ -f "$task_file" ]; then
+            task_lifecycle_set_idle "$task_file" "clear_loop_block" 2>/dev/null || true
+        fi
+        send_inbox_message karo "【CLEAR-LOOP-BLOCK】${agent_name} が同一cmd=${cmd_id}で /clear ${count}回。上限=${max_clear}超過、CTX=${ctx_now}%<=${ctx_threshold}%のためtaskをidle化。reason=${reason}" clear_loop_block
+        log "CLEAR-LOOP-BLOCK: $agent_name cmd=$cmd_id count=${count}/${max_clear} forced_idle reason=$reason ctx=${ctx_now}% threshold=${ctx_threshold}%"
+    else
+        log "CLEAR-LOOP-BLOCK-DEFERRED: $agent_name cmd=$cmd_id count=${count}/${max_clear} forced_idle skipped ctx=${ctx_now:-unknown}% threshold=${ctx_threshold}% reason=$reason"
+    fi
     return 1
 }
 
@@ -2448,9 +2459,52 @@ _verify_codex_runtime_capture() {
     return 0
 }
 
+# respawn-paneの終了コードだけでは、起動したCLIが即時終了した理由を
+# 判別できない。stderrとpaneの最終出力を短い一行へ正規化し、失敗を
+# durable logへ残す。特にnode不在(status 127)はexit codeだけでは原因が
+# 消えるため、CLI起動後のpane出力も一次証跡として読む。
+_respawn_failure_reason() {
+    local pane="$1" exit_code="$2" command_output="${3:-}"
+    local capture reason
+
+    reason=$(printf '%s\n' "$command_output" | tr '\r\n' '  ' | tr -s ' ' | cut -c1-180)
+    if [ -z "$reason" ]; then
+        capture=$(tmux capture-pane -t "$pane" -p -J -S -100 2>/dev/null || true)
+        reason=$(printf '%s\n' "$capture" \
+            | grep -Eio '(/usr/bin/env:.*|.*no such file.*|.*not found.*|.*status [0-9]+.*|.*failed.*|.*error.*)' \
+            | tail -1 \
+            | tr '\r\n' '  ' \
+            | tr -s ' ' \
+            | cut -c1-180 || true)
+        if [ -z "$reason" ]; then
+            reason=$(printf '%s\n' "$capture" | awk 'NF { line=$0 } END { print line }' \
+                | tr '\r\n' '  ' | tr -s ' ' | cut -c1-180)
+        fi
+    fi
+    [ -n "$reason" ] || reason="ready_check_failed"
+    printf 'exit_code=%s reason=%s\n' "${exit_code:-unknown}" "$reason"
+}
+
+# A generation handoff can legitimately return before the successor is ready.
+# Treat explicit successor ownership markers as semantic success so that the
+# handoff is not counted as a CLI failure and does not trigger a retry loop.
+_respawn_is_semantic_success() {
+    local pane="$1" command_output="${2:-}" capture combined
+    capture=$(tmux capture-pane -t "$pane" -p -J -S -100 2>/dev/null || true)
+    combined=$(printf '%s\n%s\n' "$command_output" "$capture")
+    printf '%s\n' "$combined" | grep -Eqi \
+        'successor_already_active=1|HOT-RELOAD: successor active|GENERATION-CHANGE|generation[[:space:]_-]+handoff|世代交代中'
+}
+
+_forced_idle_ctx_threshold() {
+    local threshold="${NINJA_MONITOR_FORCED_IDLE_CTX_THRESHOLD:-${NINJA_MONITOR_FORCED_IDLE_CTX_MAX:-20}}"
+    [[ "$threshold" =~ ^[0-9]+$ ]] || threshold=20
+    printf '%s\n' "$threshold"
+}
+
 _respawn_with_cli_verification() {
     local pane="$1" agent_name="$2" launch_command="$3" label="$4"
-    local attempt backoff elapsed
+    local attempt backoff elapsed respawn_output respawn_rc failure_reason
     local started=$SECONDS
     for attempt in 1 2 3; do
         log "${label}-ATTEMPT: $agent_name attempt=${attempt}/3"
@@ -2464,13 +2518,22 @@ _respawn_with_cli_verification() {
         # tmux respawn-paneはscrollbackを継承する。前セッションのプロンプトを
         # 新CLIの起動成功と誤認しないよう、各試行の前に残像を消す。
         tmux clear-history -t "$pane" 2>/dev/null || true
-        if tmux respawn-pane -k -t "$pane" "$launch_command" 2>/dev/null && \
-                respawn_recovery_ready "$pane"; then
+        respawn_rc=0
+        respawn_output=$(tmux respawn-pane -k -t "$pane" "$launch_command" 2>&1) || respawn_rc=$?
+        if [ "$respawn_rc" -eq 0 ] && respawn_recovery_ready "$pane"; then
             elapsed=$((SECONDS - started))
             _record_respawn_outcome "$agent_name" 1 "$attempt" "$elapsed" || true
             _verify_codex_runtime_capture "$pane" "$agent_name"
             return 0
         fi
+        if _respawn_is_semantic_success "$pane" "$respawn_output"; then
+            elapsed=$((SECONDS - started))
+            _record_respawn_outcome "$agent_name" 1 "$attempt" "$elapsed" || true
+            log "${label}-SEMANTIC-SUCCESS: $agent_name successor/generation handoff owns pane; failure count unchanged"
+            return 0
+        fi
+        failure_reason=$(_respawn_failure_reason "$pane" "$respawn_rc" "$respawn_output")
+        log "${label}-FAILURE: $agent_name $failure_reason"
         log "${label}-VERIFY-FAIL: $agent_name attempt=${attempt}/3 cli_not_ready"
         if [ "$attempt" -lt 3 ]; then
             if [ "$attempt" -eq 1 ]; then backoff="${RESPAWN_BACKOFF_FIRST_SEC:-5}"; else backoff="${RESPAWN_BACKOFF_SECOND_SEC:-15}"; fi
@@ -2528,7 +2591,7 @@ safe_send_clear() {
         return 1
     fi
 
-    if ! record_clear_attempt_or_force_idle "$agent_name" "$reason"; then
+    if ! record_clear_attempt_or_force_idle "$agent_name" "$reason" "" "$pane"; then
         return 1
     fi
 
@@ -2586,16 +2649,29 @@ safe_send_clear() {
             [[ "$_CODEX_CFG_CHANGED" == true ]] && \
                 log "CODEX-CFG-SWITCH: $agent_name applied"
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
-            local _fsc_respawn_ok=1
-            [ -n "$_launch_command" ] && tmux respawn-pane -k -t "$pane" "$_launch_command" 2>/dev/null || {
+            local _fsc_respawn_ok=1 _fsc_respawn_rc=0 _fsc_respawn_output _fsc_failure_reason
+            _fsc_respawn_output=""
+            if [ -z "$_launch_command" ]; then
                 _fsc_respawn_ok=0
-                log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
-            }
+                _fsc_respawn_rc=127
+            else
+                _fsc_respawn_output=$(tmux respawn-pane -k -t "$pane" "$_launch_command" 2>&1) || {
+                    _fsc_respawn_rc=$?
+                    _fsc_respawn_ok=0
+                }
+            fi
             if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_wait_ready "$pane"; then
                 _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
                 [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-codex || _fsc_respawn_ok=0
             else
-                _fsc_respawn_ok=0
+                if _respawn_is_semantic_success "$pane" "$_fsc_respawn_output"; then
+                    log "CODEX-RESPAWN-SEMANTIC-SUCCESS: $agent_name successor/generation handoff owns pane; failure count unchanged"
+                    _fsc_respawn_ok=1
+                else
+                    _fsc_respawn_ok=0
+                    _fsc_failure_reason=$(_respawn_failure_reason "$pane" "$_fsc_respawn_rc" "$_fsc_respawn_output")
+                    log "CODEX-RESPAWN-FAILURE: $agent_name $_fsc_failure_reason"
+                fi
             fi
             _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
             if [ "$_fsc_respawn_ok" -ne 1 ]; then
@@ -2630,17 +2706,31 @@ safe_send_clear() {
     local _launch_command
     _launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$_launch_cmd" 2>/dev/null || true)
     log "RESPAWN-PANE: $agent_name respawn-pane -k (CTX確実0%復帰), reason=$reason"
-    local _fsc_respawn_ok=1
-    [ -n "$_launch_command" ] && tmux respawn-pane -k -t "$pane" "$_launch_command" 2>/dev/null || {
+    local _fsc_respawn_ok=1 _fsc_respawn_rc=0 _fsc_respawn_output _fsc_failure_reason
+    _fsc_respawn_output=""
+    if [ -z "$_launch_command" ]; then
         _fsc_respawn_ok=0
-        log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
-        safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
-    }
+        _fsc_respawn_rc=127
+    else
+        _fsc_respawn_output=$(tmux respawn-pane -k -t "$pane" "$_launch_command" 2>&1) || {
+            _fsc_respawn_rc=$?
+            _fsc_respawn_ok=0
+        }
+    fi
     if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_wait_ready "$pane"; then
         _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
         [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-claude || _fsc_respawn_ok=0
     else
-        _fsc_respawn_ok=0
+        if _respawn_is_semantic_success "$pane" "$_fsc_respawn_output"; then
+            log "RESPAWN-SEMANTIC-SUCCESS: $agent_name successor/generation handoff owns pane; failure count unchanged"
+            _fsc_respawn_ok=1
+        else
+            _fsc_respawn_ok=0
+            _fsc_failure_reason=$(_respawn_failure_reason "$pane" "$_fsc_respawn_rc" "$_fsc_respawn_output")
+            log "RESPAWN-FAILURE: $agent_name $_fsc_failure_reason"
+            log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
+            safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
+        fi
     fi
     _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
     if [ "$_fsc_respawn_ok" -ne 1 ]; then
