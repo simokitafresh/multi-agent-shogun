@@ -8913,6 +8913,7 @@ codd:
 | causal | `cmd_4407` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_cmd_complete_report_gate_exec_20260828` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_t100_runtime_lane_shared_main_only_20260828` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_finalize_segments_20260828` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -9843,6 +9844,7 @@ codd:
 | cmd | `cmd_karo_hotfix_t101_publish_outer_instrument_20260828` (`logs/cmd_publish_timing.log`, `scripts/cmd_publish.sh`, `tests/unit/test_cmd_publish.bats`) |
 | causal | `cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_t100_runtime_lane_shared_main_only_20260828` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_hotfix_finalize_segments_20260828` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
