@@ -168,6 +168,15 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第九弾 5則（2026-08-28 16:39-19:20 の殿指摘『整合』『GATE CLEAR は家老の判断』から・将軍自身に適用）
+
+1. **map の行は「終端条件=<本番で見える数値/行>」を先頭に書き、[x]/[~] は現在値との突合で機械的に決めよ。CLEAR は途中成果。** 18:46 殿『T145…T129 が未完了だと artifact ではなっている。現状と原本と artifact は整合』→9 件中 6 件は終端達成済(T137=FALLBACK 0/CTX-RESET、T136=rev-list 0 0)を惰性で [~]、逆に T129 は unit1 CLEAR を完了扱いで median≤60s 未達を見落とし。引継ぎ unit があれば元行を [x] にし引継ぎ先 ID を書く(LS123 統合・INS-184806=render で『終端条件=』無しの [~] を exit 2)。
+2. **GATE CLEAR は家老の判断。検証は fix の AC から終端条件を引き、層 A(commit 到達)/B(CI GREEN)/C(本番 proof)/D(途中成果)で MECE に分けよ。** 18:48 殿『過去にクリアしたタスクも MECE に本当に完了か検証せよ』→82 件: A 82/82、B は origin RED で 78 件未確定、C は grep で 27 件(PASS 22/UNVERIFIED 5)、D 2 件。軍師は 3 回続けて層 A を『検証完了』と報告(LG105)。検証者に頼む時は例(t50=REFLUX-AUTO-BLOCK 本日 0)を 1 行添えよ。正本=`docs/research/gate_clear_mece_verification_20260828.md`。
+3. **daemon 文脈の再現は環境(PATH)だけでなく trap も含む。lib で BASH_REMATCH を使うな。** (d) resolver は手元・daemon PATH とも rc 0 なのに monitor 内で『line 28: invalid variable name』=function_timing DEBUG trap が BASH_REMATCH を潰す T35 同型。REASON 行を最初の commit にした(T144)から 1 cycle で真因が出た。hotfix の proof は『daemon PATH で respawn した pane が alive』まで(才蔵 pane を status 127 で殺して判明、agent_respawn.sh で即復元)。
+4. **修理が効いた瞬間に次の穴を見よ(らせん③)。** auto clear が 18:25 に復旧した直後、STAGE1 が『report completed』を終端と誤認して review/RC 中の才蔵 r2 を respawn(成果消失→retry)。終端は gate CLEAR 行 or LGTM+ACCEPT 両揃い(T147→影丸 residual へ統合)。
+5. **本番修正を長期 RC task に人質化するな。AC の serial_dependency は依存先の status/CTX を見てから書け。** (d) の AC3(ninja_monitor.sh 1 行)が T129 依存で unit 全体が 1h WAIT し、その間 respawn は FALLBACK 54/OK 0。分離 1 通で 3 分後に GATE へ動いた(INS-164735)。
+- origin: `[[殿指摘_整合_20260828_1846]] -> [[終端条件を行頭に]] -> [[GATE_CLEAR_MECE検証_20260828]] -> [[復帰後の型_第九弾]]`
+
 ## 復帰後の型・第八弾 5則（2026-08-28 14:30-16:36 の殿下問『穴はないか』と T137 から・将軍自身に適用）
 
 1. **hotfix の proof は機構固有の成功行で取れ。pane の 0% は別経路(forced_idle)でも出る。** 15:13 殿『auto clear が遅い』→ T131 の proof『疾風 21→0%』は forced_idle の 0% で、respawn は 13:53 以後 0/20 成功だった(LS124)。CLEAR 行と併せて `CTX-RESET`/`RESPAWN-OK` の存在と `FALLBACK` の 0 を対で見る。
