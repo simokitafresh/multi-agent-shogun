@@ -5583,7 +5583,7 @@ printf "bounded_done_check_rc=%s task_unchanged=1\n" "$rc"
         root="$BATS_TEST_TMPDIR/clear-loop-block"
         SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
         mkdir -p "$root/queue/tasks" "$root/queue/inbox" "$root/state"
-        printf "task:\\n  status: idle\\n" > "$root/queue/tasks/tobisaru.yaml"
+        printf "task:\\n  status: idle\\n  task_id: cmd_clear_loop_current\\n" > "$root/queue/tasks/tobisaru.yaml"
         printf "messages: []\\n" > "$root/queue/inbox/tobisaru.yaml"
         declare -A PANE_TARGETS
         PANE_TARGETS[tobisaru]=pane
@@ -5604,14 +5604,20 @@ printf "bounded_done_check_rc=%s task_unchanged=1\n" "$rc"
         test "$(grep -c "CLEAR-LOOP-BLOCK-GUARD: tobisaru" "$LOG")" -eq 10 || { cat "$LOG"; exit 1; }
         test "$(grep -c "CLEAR-LOOP-BLOCK" "$root/notifications.log")" -eq 1 || { cat "$root/notifications.log"; exit 1; }
 
-        printf "messages:\\n  - id: msg-input-change\\n    type: task_supplement\\n    read: false\\n" > "$root/queue/inbox/tobisaru.yaml"
+        printf "messages:\\n  - id: msg-unrelated\\n    type: task_assigned\\n    task_id: cmd_other_task\\n    read: false\\n    content: unrelated\\n" > "$root/queue/inbox/tobisaru.yaml"
+        record_clear_attempt_or_force_idle tobisaru AUTO-CLEAR || true
+        grep -q "CLEAR-LOOP-BLOCK-GUARD: tobisaru" "$LOG"
+        printf "messages:\\n  - id: msg-unrelated\\n    type: task_assigned\\n    task_id: cmd_other_task\\n    read: true\\n    content: unrelated\\n" > "$root/queue/inbox/tobisaru.yaml"
+        record_clear_attempt_or_force_idle tobisaru AUTO-CLEAR || true
+        test "$(grep -c "CLEAR-LOOP-BLOCK-GUARD: tobisaru" "$LOG")" -eq 12
+        printf "messages:\\n  - id: msg-input-change\\n    type: task_assigned\\n    task_id: cmd_clear_loop_current\\n    read: false\\n    content: substantive current-task supplement\\n" > "$root/queue/inbox/tobisaru.yaml"
         record_clear_attempt_or_force_idle tobisaru AUTO-CLEAR || true
         grep -q "CLEAR-LOOP-BLOCK-REOPEN: tobisaru" "$LOG"
         grep -q "CLEAR-COUNT: tobisaru cmd=unresolved:tobisaru count=1/3" "$LOG"
-        printf "block_once=1 repeated_guard=10 reopen_on_input_change=1\\n"
+        printf "block_once=1 unrelated_and_read_churn_guard=12 reopen_on_current_supplement=1\\n"
     '
     [ "$status" -eq 0 ]
-    [ "$output" = "block_once=1 repeated_guard=10 reopen_on_input_change=1" ]
+    [ "$output" = "block_once=1 unrelated_and_read_churn_guard=12 reopen_on_current_supplement=1" ]
 }
 
 # test_necessity: an old auto-void worker must self-fence after a successor
