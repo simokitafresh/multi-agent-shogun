@@ -2067,6 +2067,37 @@ _ninja_monitor_run_bounded_snapshot() {
     return 0
 }
 
+# Mechanical lifecycle checks run in one owner-fenced worker each.  Library
+# fixtures retain the synchronous path so their in-memory state assertions are
+# deterministic; the daemon path keeps the monitor cycle free of their I/O.
+_ninja_monitor_run_lifecycle_background() {
+    local key="$1"; shift
+    local lock_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.lock" lock_fd worker_pid
+    if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
+        "$@"
+        return $?
+    fi
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "LIFECYCLE-BACKGROUND-SKIP: key=$key worker_running=1"
+        return 0
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        ninja_monitor_business_owner_is_current || {
+            log "LIFECYCLE-BACKGROUND-FENCE: key=$key side_effects=0"
+            exit 0
+        }
+        "$@"
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "LIFECYCLE-BACKGROUND-START: key=$key pid=$worker_pid"
+    return 0
+}
+
 # cmd_karo_hotfix_completion_event_dedupe_20260723: durable report-gate cache.
 # REPORT_GATE_SENT suppresses only the
 # notification; this cache suppresses the repeated gate execution itself.
@@ -13032,7 +13063,7 @@ while true; do
 
     # ═══ 停滞検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
-        _ninja_monitor_phase_call lifecycle "check_stall:$name" check_stall "$name"
+        _ninja_monitor_phase_call lifecycle "check_stall:$name" _ninja_monitor_run_lifecycle_background "check_stall:$name" check_stall "$name"
     done
 
     # ═══ 両承認後のGATE終端なし検知 ═══
@@ -13049,7 +13080,7 @@ while true; do
     done
 
     # ═══ 未読放置検知+再nudge (cmd_188) ═══
-    _ninja_monitor_phase_call lifecycle inbox_renudge check_inbox_renudge
+    _ninja_monitor_phase_call lifecycle inbox_renudge _ninja_monitor_run_lifecycle_background inbox_renudge check_inbox_renudge
 
     # ═══ karo通知outbox flush (cmd_karo_hotfix_failed_report_clear_notify_gap AC3) ═══
     _ninja_monitor_phase_call lifecycle flush_karo_notify_outbox flush_karo_notify_outbox
@@ -13061,7 +13092,7 @@ while true; do
     _ninja_monitor_phase_call lifecycle undeployed_cmds check_undeployed_cmds
 
     # ═══ idle忍者×明示的次標的バックログALERT（3分継続、世代dedupe） ═══
-    _ninja_monitor_phase_call lifecycle idle_backlog_alert check_idle_backlog_alert
+    _ninja_monitor_phase_call lifecycle idle_backlog_alert _ninja_monitor_run_lifecycle_background idle_backlog_alert check_idle_backlog_alert
 
     # ═══ Pending cmd検知チェック（2分間隔） ═══
     if [ $((cycle % 6)) -eq 0 ]; then

@@ -5154,6 +5154,32 @@ PY
     [ "$output" = "elapsed_lt_500ms=1 duplicate=1 timeout=1" ]
 }
 
+# test_necessity: lifecycle mechanical checks must have one worker per lane;
+# the second trigger is suppressed while the first retains its side effect.
+@test "lifecycle background lane is single-flight and owner-fenced" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/lifecycle-background"
+        mkdir -p "$root/state"
+        STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        ninja_monitor_business_owner_is_current() { return 0; }
+        lifecycle_probe() { printf "called\\n" >> "$root/calls"; sleep 1; }
+        _ninja_monitor_run_lifecycle_background probe lifecycle_probe
+        _ninja_monitor_run_lifecycle_background probe lifecycle_probe
+        sleep 2
+        test "$(wc -l < "$root/calls" | tr -d " ")" -eq 1
+        grep -q "LIFECYCLE-BACKGROUND-START: key=probe" "$LOG"
+        grep -q "LIFECYCLE-BACKGROUND-SKIP: key=probe worker_running=1" "$LOG"
+        printf "side_effects=1 duplicate=0\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "side_effects=1 duplicate=0" ]
+}
+
 # test_necessity: a production auto-void report scan can block on the 9p
 # boundary.  It must run under a single-flight bounded worker so the observe
 # cycle continues while preserving the existing transaction for completion.
