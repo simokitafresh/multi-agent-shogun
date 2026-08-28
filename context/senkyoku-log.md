@@ -1532,3 +1532,7 @@
 - 意図: 便回転の消火から「本来の目的=PJ 成果の e2e 短縮」へ戻す。結果: finalize 84%→4 区間実測(wait 9%/think 91%/fin_c 292s)、auto clear 根治(T131)、四つのらせん貫通、型第七弾 5 則。因果: [[session_save_20260828_1420]] -> [[復帰後の型_第七弾]] -> [[四つのらせん_20260828]]
 
 - 2026-08-28 `cmd_karo_hotfix_deploy_ctx_guard_20260828_normal`完了: 配備直前のpane capture CTXを閾値20%で判定し、高CTX時はagent_respawn作業中ガード+ready handshake後のみ公開する入場ガードを実装。所有Bats 64/64 PASS・SKIP0、commit `b58ae80a40d2c63a9b9a887d33fad59bd75727a4`、report gate PASS。origin: [[auto-clear失敗鎖]] -> [[高CTX配備前ガード]] -> [[respawn+ready後のみ配備]]
+- 2026-08-28 `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828_normal`完了: auto_void候補走査・gate/throughput background・owner fence・全CLI semantic clear markerでcycle遅延とclear再発を抑止。live cycle 93801/68638/65418ms、snapshot 89/88s、task-owned 159/159 PASS SKIP0。origin: [[cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828_normal]] -> [[同期worker遅延と世代交代副作用]] -> [[cycle上限化とclear再実行抑止]]
+
+## 2026-08-28 14:30-16:36（将軍 /clear 復帰 第6便・auto clear 失敗鎖 T137）
+- 意図: 殿下問『auto clear が遅く CTX 残置忍者に配備』『穴はないか』を一次で掘り、鎖を 4 unit に分けて根治する。結果: 真因=monitor PATH に nvm 無し(respawn 0/20)+stderr 捨て+forced_idle 56+deploy CTX ガード 0。T131 proof の誤認を LS124 で訂正。(c) CLEAR 15:44、(d) GATE 中、(a)(b) T129 後。暫定手動 respawn 6 名 0%。他 CLEAR: T134 tz 穴/T135 DOC_LANE 反復/ga505/T122/T132/ci_fix。回転 CLEAR 75/16.5h=4.5件/h、finalize 中央値 1443s、PJ 0 継続。因果: [[session_save_20260828_1636]] -> [[復帰後の型_第八弾]] -> [[T137_auto_clear失敗鎖]]

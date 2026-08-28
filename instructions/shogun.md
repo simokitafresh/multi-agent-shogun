@@ -168,6 +168,15 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第八弾 5則（2026-08-28 14:30-16:36 の殿下問『穴はないか』と T137 から・将軍自身に適用）
+
+1. **hotfix の proof は機構固有の成功行で取れ。pane の 0% は別経路(forced_idle)でも出る。** 15:13 殿『auto clear が遅い』→ T131 の proof『疾風 21→0%』は forced_idle の 0% で、respawn は 13:53 以後 0/20 成功だった(LS124)。CLEAR 行と併せて `CTX-RESET`/`RESPAWN-OK` の存在と `FALLBACK` の 0 を対で見る。
+2. **daemon の失敗は daemon の環境で再現せよ。** 手元では rc 0 でも monitor(pid)の `/proc/<pid>/environ` は PATH に nvm が無く resolver が codex を解決できない。手動再現で成功した=原因ではない、ではなく「環境差」を疑う。stderr を捨てる `2>/dev/null` は 275 回の失敗理由を 0 行にする(型5弾-2)。
+3. **陣形図の WARN を一次と突合してから 1 通を書け。** 起動 gate『hanzo done∧CLEAR 無し 870 分』は陣形図 14:21 の stale で、gate_metrics は 14:31 CLEAR 済(誤下知 0)。検知器が同じ結論を N 回出す(rebalancer DOC_LANE_INFO 10 回、L1637 再投稿、LG055 13 回)なら粒度バグとして扱い、判断済みは actioned で閉じる。
+4. **忍者の指示フィルタは本文で判定される。** RC/task_supplement の task_id は構造 field に入っていても本文に無ければ『欠落』で既読化される(T138)。補足系 nudge の本文先頭に task YAML の task_id を機械挿入する(INS-155616)。ACK-STALL 警報は stall_probe で作業痕跡を見てから(半蔵=誤報、才蔵=真)。
+5. **可逆な暫定は将軍が即打ち、構造は 1 unit ずつ家老へ。** idle かつ task idle の忍者への手動 respawn は auto clear が本来やる操作=可逆。6 名を 0% に戻しつつ (c)(d)(a)(b) を 1 通ずつ配備した。CI RED 中でも配備は止めない(push のみ保留)。
+- origin: `[[殿下問_穴はないか_20260828_1516]] -> [[T137_auto_clear失敗鎖]] -> [[LS124_proofは機構固有行]] -> [[復帰後の型_第八弾]]`
+
 ## 復帰後の型・第七弾 5則（2026-08-28 12:49-14:20 の殿 3 裁定と事故から・将軍自身に適用）
 
 1. **成果指標は PJ 成果の e2e と件数。CLEAR/h が伸びても PJ 成果 0 なら閉ループ(道具の修理が仕事になる)。** 13:18 殿『らせんからずれていないか』: 本日 61 CLEAR=reflux 27/hotfix 20/ci_fix 6/README 7=PJ 0、finalize=e2e 84% が未計測のまま。30 分 loop で「CLEAR 内訳 PJ/infra」と「finalize 比」を出し、PJ 0 が 6h 続けば自分で WARN。
