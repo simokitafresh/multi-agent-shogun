@@ -160,7 +160,7 @@ MOCK
     git -C "$GIT_TEMPLATE_DIR" config user.email "test@test.com"
 
     cat > "$GIT_TEMPLATE_DIR/scripts/lib/agent_config.sh" << 'MOCK'
-get_ninja_names() { echo "testninja"; }
+get_ninja_names() { echo "testninja kotaro"; }
 get_allowed_targets() { echo "karo shogun testninja gunshi"; }
 get_commander_names() { echo "shogun karo gunshi"; }
 is_commander_role() { case " $(get_commander_names) " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -780,7 +780,7 @@ conn.execute("""CREATE TABLE events (id TEXT PRIMARY KEY, ts TEXT, event_type TE
 conn.execute("CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid')")
 conn.commit(); conn.close()
 EOF
-    local nudge='cmd_t122_nudge_001 現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い'
+    local nudge='現task YAMLを正本として読み直して作業開始せよ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな'
     run bash "$TEST_INBOX_WRITE" kotaro "$nudge" task_assigned karo notify
     [ "$status" -eq 0 ]
     python3 - <<EOF
@@ -789,7 +789,7 @@ conn = sqlite3.connect("$TEST_TMPDIR/data/multi_agent_shogun_memory.db")
 row = conn.execute("SELECT agent,target,detail FROM events").fetchone()
 assert row[0] == "kotaro", row
 assert row[1] == "kotaro", row
-assert "from: kotaro" in row[2], row
+assert "from: karo" in row[2], row
 conn.close()
 EOF
     grep -q "^  from: 'karo'" "$TEST_INBOX_DIR/kotaro.yaml"

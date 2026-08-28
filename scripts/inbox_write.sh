@@ -152,17 +152,22 @@ target_is_ninja() {
 
 deploy_nudge_target_is_ninja() {
     local agent="$1"
+    local config_root="${INBOX_WRITE_INSTALL_ROOT:-$SCRIPT_DIR}"
+    local ninja=""
     target_is_ninja "$agent" && return 0
 
     # inbox_write may execute from the small installed runtime root used by
     # the watcher.  That root owns inbox files but intentionally has neither
-    # queue/tasks nor agent_config.sh.  Preserve the role SSOT when available;
-    # this bounded fallback only prevents a known ninja deploy nudge from
-    # reverting to the sender when the runtime cannot load that SSOT.
-    case "$agent" in
-        hayate|kagemaru|hanzo|saizo|kotaro|tobisaru) return 0 ;;
-        *) return 1 ;;
-    esac
+    # queue/tasks nor agent_config.sh.  Preserve the role SSOT by resolving it
+    # from the immutable installation root rather than the runtime override.
+    if [ -f "$config_root/scripts/lib/agent_config.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$config_root/scripts/lib/agent_config.sh"
+        for ninja in $(get_ninja_names); do
+            [ "$ninja" = "$agent" ] && return 0
+        done
+    fi
+    return 1
 }
 
 ensure_agent_config_loaded() {
@@ -1349,6 +1354,7 @@ forward_gunshi_review_result_to_active_ninjas() {
 record_inbox_event_to_memory_db() {
     local live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
     local memory_event_agent="$FROM"
+    local memory_event_content="$CONTENT"
     if [ ! -f "$live_insert_script" ]; then
         live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
     fi
@@ -1362,8 +1368,11 @@ record_inbox_event_to_memory_db() {
     # untouched; only the memory event actor is rebound to the ninja that
     # received the rule.  Ordinary communication retains its sender identity.
     if [ "$TYPE" = "task_assigned" ] && deploy_nudge_target_is_ninja "$TARGET" \
-        && printf '%s' "$CONTENT" | grep -qF '現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い'; then
+        && printf '%s' "$CONTENT" | grep -qF 'inboxはread:falseかつ現task_id一致'; then
         memory_event_agent="$TARGET"
+        # Preserve the sender in detail while rebinding only the event actor.
+        memory_event_content="$CONTENT
+from: $FROM"
     fi
 
     python3 "$live_insert_script" inbox \
@@ -1371,7 +1380,7 @@ record_inbox_event_to_memory_db() {
         --ts "$TIMESTAMP" \
         --target-agent "$TARGET" \
         --from-agent "$memory_event_agent" \
-        --content "$CONTENT" \
+        --content "$memory_event_content" \
         --message-type "$TYPE" \
         --action "$ACTION" \
         --source-file "$INBOX" \
@@ -3174,8 +3183,11 @@ while [ $attempt -lt $max_attempts ]; do
         if [ "$TYPE" = "report_review" ] && [ "$TARGET" = "gunshi" ]; then
             _dr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_\w+' | head -1 || true)
             _dr_ninja_pattern="$(get_ninja_names 2>/dev/null | sed 's/ /|/g')"
-            _dr_ninja_pattern="${_dr_ninja_pattern:-hayate|kagemaru|hanzo|saizo|kotaro|tobisaru}"
-            _dr_ninja=$(echo "$CONTENT" | grep -oP "\b(${_dr_ninja_pattern})\b" | head -1 || true)
+            if [ -n "$_dr_ninja_pattern" ]; then
+                _dr_ninja=$(echo "$CONTENT" | grep -oP "\b(${_dr_ninja_pattern})\b" | head -1 || true)
+            else
+                _dr_ninja=""
+            fi
             if [ -n "$_dr_cmd_id" ] && [ -n "$_dr_ninja" ]; then
                 _dr_gates_dir="$SCRIPT_DIR/queue/gates/${_dr_cmd_id}"
                 mkdir -p "$_dr_gates_dir"
