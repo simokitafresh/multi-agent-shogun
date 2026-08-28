@@ -7244,3 +7244,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-204621818-d19d
+  ts: "2026-08-28T20:46:21+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b9b5bvefe task id tool use id toolu 013DoRmgajQYakp71D は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
