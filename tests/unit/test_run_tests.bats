@@ -1028,6 +1028,52 @@ YAML
   [ ! -e "$SELECT_ARGS_LOG" ]
 }
 
+# test_necessity: terminal task receipts must carry the task YAML identity for
+# report autolinking, while file-mode receipts must remain task-agnostic.
+@test "task receipt carries task_id and non-task receipt omits it" {
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/task-receipts" "$TMPROOT/file-receipts"
+  cat >"$TMPROOT/queue/tasks/owned.yaml" <<'YAML'
+task:
+  task_id: task-owned-receipt
+  test_path: tests/unit/owned.bats
+YAML
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '1..1\nok 1 owned\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/task-receipts" BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/owned.yaml"
+  [ "$status" -eq 0 ]
+  task_receipt="$(find "$TMPROOT/task-receipts" -name '*.json' -type f | head -1)"
+  [ -n "$task_receipt" ]
+  run python3 - "$task_receipt" <<'PY'
+import json, sys
+receipt = json.load(open(sys.argv[1], encoding='utf-8'))
+assert receipt['task_id'] == 'task-owned-receipt', receipt
+assert receipt['rc'] == 0, receipt
+PY
+  [ "$status" -eq 0 ]
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/file-receipts" \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/owned.bats"
+  [ "$status" -eq 0 ]
+  file_receipt="$(find "$TMPROOT/file-receipts" -name '*.json' -type f | head -1)"
+  [ -n "$file_receipt" ]
+  run python3 - "$file_receipt" <<'PY'
+import json, sys
+receipt = json.load(open(sys.argv[1], encoding='utf-8'))
+assert 'task_id' not in receipt, receipt
+assert receipt['rc'] == 0, receipt
+PY
+  [ "$status" -eq 0 ]
+}
+
 # test_necessity: task-mode selected paths must reach their suffix-owned engine
 # exactly once; missing and unowned suffixes must fail closed before execution.
 @test "task mode dispatches Python Bats and mixed paths once and rejects unknown or missing" {
