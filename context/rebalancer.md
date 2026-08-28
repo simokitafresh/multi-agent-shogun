@@ -1,6 +1,6 @@
 # Rebalancer Context
-<!-- last_updated: 2026-08-28 source_equivalent -->
-<!-- source_commit:f66e319923b5 reason:source_equivalent evidence:gate_context_freshness context=context/rebalancer.md source_commit=f66e319923b5 reason=source_equivalent -->
+<!-- last_updated: 2026-08-29 source_equivalent -->
+<!-- source_commit:ea45534ba9c6 reason:source_equivalent evidence:gate_context_freshness context=context/rebalancer.md source_commit=ea45534ba9c6 reason=source_equivalent -->
 
 <!-- source_commit:e3c456584109 reason:将軍誤断定の撤回: e3c456584109 は rebalancer 正準 repo(/mnt/c/Python_app/rebalancer)の cmd_4227 commit で origin/main 祖先。07:36 の marker 除去(a0b850188)は control repo で rev-parse した将軍の誤り evidence:git -C /mnt/c/Python_app/rebalancer cat-file -t e3c456584109 = commit; merge-base --is-ancestor origin/main = yes -->
 <!-- source_commit:e26ba8187794 reason:DOC_LANE_REQUEST blt_042404 source_equivalent 内容変更なし境界のみ evidence:git log --oneline -1 e26ba8187794; reason=source_equivalent -->
