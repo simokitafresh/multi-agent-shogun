@@ -7378,3 +7378,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-222959233-89be
+  ts: "2026-08-28T22:29:59+09:00"
+  insight: "構造バグ候補(殿下問 22:28): 本番 push/live 後でしか計測できない AC(1h 窓・CTX-RESET 行・FALLBACK 0 等、本日 map 20 行)を GATE 前の task AC に置くと、task が人質化(T129 依存 1h WAIT/T140)し RC 中の auto clear で成果消失(T152)する。設計=AC を『実装 AC(GATE 前・隔離で二値)』と『本番 proof(GATE 後・monitor が終端条件を自動計測して map 行を閉じる)』に分離し、proof は task ではなく監視器の責務にする"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
