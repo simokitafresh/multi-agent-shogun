@@ -803,6 +803,227 @@ EOF
     [[ "$output" == *"segment_status=BLOCK"* ]]
 }
 
+# test_necessity: finalize telemetry must bind Gunshi LGTM and Karo ACCEPT to
+# the same report generation, otherwise an RC-era delayed approval can create a
+# reversed interval from two otherwise valid role events.
+# regression_justification: role-wise max selection mixed a delayed old LGTM
+# with a newer generation's ACCEPT and emitted reversed_lgtm_to_karo_accept.
+@test "build_clear_throughput_metric pairs the latest terminal approval generation" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports" "$TEST_PROJECT/queue/inbox"
+    printf 'commands: {}\n' > "$YAML_FILE"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  issued_at: '2026-08-28T09:00:00'
+  deployed_at: '2026-08-28T09:00:00'
+  acknowledged_at: '2026-08-28T09:00:01'
+EOF
+    cat > "$TEST_PROJECT/queue/reports/old_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+completed_at: '2026-08-28T09:10:00'
+EOF
+    cat > "$TEST_PROJECT/queue/reports/new_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+completed_at: '2026-08-28T09:20:00'
+EOF
+    cat > "$TEST_PROJECT/queue/inbox/gunshi.yaml" <<EOF
+messages:
+  - type: report_review
+    parent_cmd: $TEST_CMD_ID
+    report_path: queue/reports/old_${TEST_CMD_ID}.yaml
+    timestamp: '2026-08-28T09:10:10'
+  - type: report_review
+    parent_cmd: $TEST_CMD_ID
+    report_path: queue/reports/new_${TEST_CMD_ID}.yaml
+    timestamp: '2026-08-28T09:20:10'
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/old" \
+        "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/new"
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/old/gunshi.yaml" <<'EOF'
+timestamp: '2026-08-28T09:30:00'
+result: LGTM
+fingerprint: old-fingerprint
+report: queue/reports/old_CMD_PLACEHOLDER.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/new/gunshi.yaml" <<EOF
+timestamp: '2026-08-28T09:22:00'
+result: LGTM
+fingerprint: new-fingerprint
+report: queue/reports/new_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/new/karo.yaml" <<EOF
+timestamp: '2026-08-28T09:23:00'
+result: ACCEPT
+fingerprint: new-fingerprint
+report: queue/reports/new_${TEST_CMD_ID}.yaml
+EOF
+    sed -i "s/CMD_PLACEHOLDER/${TEST_CMD_ID}/" \
+        "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/old/gunshi.yaml"
+
+    run build_clear_throughput_metric '2026-08-28T09:24:00'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fin_a=10 fin_b=110 fin_c=60 fin_d=60"* ]]
+    [[ "$output" == *"segment_invalid=none"* ]]
+    [[ "$output" == *"segment_status=PASS"* ]]
+    [[ "$output" == *"review_pair_status=paired"* ]]
+    [[ "$output" == *"review_pair_fingerprint=new-fingerprint"* ]]
+    [[ "$output" != *"reversed_lgtm_to_karo_accept"* ]]
+}
+
+# test_necessity: all six approval-order states must have deterministic
+# false-positive/false-negative behavior, including unmatched delays and
+# duplicate approvals; a partial pair must never be treated as terminal.
+# regression_justification: the previous independent role maxima had no
+# representation for an unresolved generation and could publish false timing.
+@test "build_clear_throughput_metric classifies six approval pairing states" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    local false_positive=0 false_negative=0 states=0
+
+    for state in single_pair rc_new_pair old_lgtm_delayed new_accept_delayed missing_accept duplicate_lgtm; do
+        local pair_cmd="cmd_pair_${state}"
+        local root="$TEST_PROJECT/queue/pairing-$state"
+        mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/queue/inbox" \
+            "$root/queue/gates/$pair_cmd/review_approvals/reports"
+        printf 'commands: {}\n' > "$root/queue/shogun_to_karo.yaml"
+        cat > "$root/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $pair_cmd
+  issued_at: '2026-08-28T09:00:00'
+  deployed_at: '2026-08-28T09:00:00'
+  acknowledged_at: '2026-08-28T09:00:01'
+EOF
+        cat > "$root/queue/reports/report_${pair_cmd}.yaml" <<EOF
+parent_cmd: $pair_cmd
+status: completed
+completed_at: '2026-08-28T09:10:00'
+EOF
+        cat > "$root/queue/inbox/gunshi.yaml" <<EOF
+messages:
+  - type: report_review
+    parent_cmd: $pair_cmd
+    report_path: queue/reports/report_${pair_cmd}.yaml
+    timestamp: '2026-08-28T09:10:10'
+EOF
+        local approvals="$root/queue/gates/$pair_cmd/review_approvals/reports"
+        case "$state" in
+            single_pair)
+                mkdir -p "$approvals/pair"
+                cat > "$approvals/pair/gunshi.yaml" <<EOF
+timestamp: '2026-08-28T09:10:20'
+result: LGTM
+fingerprint: fp-single
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                cat > "$approvals/pair/karo.yaml" <<EOF
+timestamp: '2026-08-28T09:10:20'
+result: ACCEPT
+fingerprint: fp-single
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                expected='review_pair_status=paired'
+                ;;
+            rc_new_pair)
+                for pair in old new; do mkdir -p "$approvals/$pair"; done
+                for role in gunshi karo; do
+                    printf "timestamp: '2026-08-28T09:1%s:00'\nresult: %s\nfingerprint: fp-old\nreport: queue/reports/report_%s.yaml\n" \
+                        "$([ "$role" = gunshi ] && echo 1 || echo 2)" "$([ "$role" = gunshi ] && echo LGTM || echo ACCEPT)" "$pair_cmd" > "$approvals/old/$role.yaml"
+                done
+                cat > "$approvals/new/gunshi.yaml" <<EOF
+timestamp: '2026-08-28T09:20:00'
+result: LGTM
+fingerprint: fp-new
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                cat > "$approvals/new/karo.yaml" <<EOF
+timestamp: '2026-08-28T09:21:00'
+result: ACCEPT
+fingerprint: fp-new
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                expected='review_pair_fingerprint=fp-new'
+                ;;
+            old_lgtm_delayed)
+                mkdir -p "$approvals/old" "$approvals/new"
+                printf "timestamp: '2026-08-28T09:30:00'\nresult: LGTM\nfingerprint: fp-old\nreport: queue/reports/report_%s.yaml\n" "$pair_cmd" > "$approvals/old/gunshi.yaml"
+                printf "timestamp: '2026-08-28T09:21:00'\nresult: ACCEPT\nfingerprint: fp-new\nreport: queue/reports/report_%s.yaml\n" "$pair_cmd" > "$approvals/new/karo.yaml"
+                expected='review_pair_reason=unresolved_review_pair'
+                ;;
+            new_accept_delayed)
+                mkdir -p "$approvals/pair"
+                cat > "$approvals/pair/gunshi.yaml" <<EOF
+timestamp: '2026-08-28T09:20:00'
+result: LGTM
+fingerprint: fp-delay
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                cat > "$approvals/pair/karo.yaml" <<EOF
+timestamp: '2026-08-28T09:30:00'
+result: ACCEPT
+fingerprint: fp-delay
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                expected='review_pair_status=paired'
+                ;;
+            missing_accept)
+                mkdir -p "$approvals/pair"
+                cat > "$approvals/pair/gunshi.yaml" <<EOF
+timestamp: '2026-08-28T09:20:00'
+result: LGTM
+fingerprint: fp-missing
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                expected='review_pair_reason=unresolved_review_pair'
+                ;;
+            duplicate_lgtm)
+                for pair in first second; do
+                    mkdir -p "$approvals/$pair"
+                    cat > "$approvals/$pair/gunshi.yaml" <<EOF
+timestamp: '2026-08-28T09:20:00'
+result: LGTM
+fingerprint: fp-duplicate
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                done
+                cat > "$approvals/first/karo.yaml" <<EOF
+timestamp: '2026-08-28T09:21:00'
+result: ACCEPT
+fingerprint: fp-duplicate
+report: queue/reports/report_${pair_cmd}.yaml
+EOF
+                expected='review_pair_reason=unresolved_review_pair'
+                ;;
+        esac
+        export CMD_ID="$pair_cmd"
+        export YAML_FILE="$root/queue/shogun_to_karo.yaml"
+        export MATCHING_TASK_FILES=("$root/queue/tasks/sasuke.yaml")
+        run build_clear_throughput_metric '2026-08-28T09:31:00'
+        [ "$status" -eq 0 ]
+        if [[ "$output" != *"$expected"* ]]; then
+            printf 'state=%s expected=%s output=%s\n' "$state" "$expected" "$output" >&3
+            false
+        fi
+        if [[ "$state" == single_pair || "$state" == rc_new_pair || "$state" == new_accept_delayed ]]; then
+            [[ "$output" == *"segment_status=PASS"* ]] || false_positive=$((false_positive + 1))
+        else
+            [[ "$output" == *"segment_status=BLOCK"* ]] || false_negative=$((false_negative + 1))
+        fi
+        states=$((states + 1))
+    done
+    printf 'states=%s/6 false_positive=%s false_negative=%s\n' "$states" "$false_positive" "$false_negative"
+    [ "$states" -eq 6 ]
+    [ "$false_positive" -eq 0 ]
+    [ "$false_negative" -eq 0 ]
+}
+
 @test "build_clear_duration_metric uses acknowledged_at and done_at for nested and flat task YAML" {
     source "$GATE_HELPERS_FILE"
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml" "$TEST_PROJECT/queue/tasks/hanzo.yaml")
