@@ -3,6 +3,7 @@
 <!-- last_updated: 2026-08-10 cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection -->
 <!-- source_commit:1dae80c86 reason:cmd_karo_hotfix_ga452_context_boundaries_202608100949 content-reflection evidence:source diff reviewed: skills/codd-refactor/SKILL.md external backend contract pytest/PYTHONPATH boundary -->
 <!-- source_commit:35d4b10fc reason:cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/codd.md commit=35d4b10fc -->
+<!-- source_commit:e432d398c reason:cmd_4409_ac3_doc_lane_2nd content-reflection evidence:skills/codd*/SKILL.md+shogun-cli-switch 固有絶対パス16行を$HOME へ(grep 再計測 16→0)、本ファイルの codd-venv 表記も $HOME 化 -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -16,8 +17,8 @@
 |------|------|
 | 作者 | おしお殿 (`@shio_shoppaize`) / Harness as Code |
 | GitHub | `https://github.com/yohey-w/codd-dev` |
-| ローカル実体 | `/home/simokitafresh/.codd-venv/bin/codd` |
-| 版数 | ローカルCLI=`2.19.0` (`/home/simokitafresh/.codd-venv/bin/codd --version`, 2026-06-06確認)。PATH未設定の非対話shellでは`codd`不可のためフルパスかPATH exportを使う |
+| ローカル実体 | `$HOME/.codd-venv/bin/codd` |
+| 版数 | ローカルCLI=`2.19.0` (`$HOME/.codd-venv/bin/codd --version`, 2026-06-06確認)。PATH未設定の非対話shellでは`codd`不可のためフルパスかPATH exportを使う |
 | 位置づけ | CoDDは「要件/制約 -> 設計 -> 実装 -> テスト」をDAGとして維持し、設計書腐敗を`elicit`/`dag verify`/`fix [PHENOMENON]`/auto-repairで抑えるHarness Engineering実装 |
 
 ## §2 コマンド体系
@@ -58,8 +59,8 @@
 
 | 試行 | 結果 | 判断 |
 |------|------|------|
-| `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | ローカル導入済み |
-| `codd` (PATH未設定shell) | `command not found` | 忍者/家老の非対話Bashではフルパスか`export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"`必須 |
+| `$HOME/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | ローカル導入済み |
+| `codd` (PATH未設定shell) | `command not found` | 忍者/家老の非対話Bashではフルパスか`export PATH="$HOME/.codd-venv/bin:$PATH"`必須 |
 | `codd --help` | `drift`, `fixup-drift`, `propagate-from`, `qc`, `require`, `restore`, `watch`を含む | §2の中核系統は維持。新コマンドは現物helpを一次確認してから使う |
 | `codd implement run --help` | `--language`, `--enable-typecheck-loop`, `--chunk-size`, `--timeout-per-chunk`, `--use-derived-steps`あり | v1.10の「bash implement非対応」は履歴扱い。v2.19では試行して、失敗時のみ手動へfallback |
 | `codd dag verify --help` | `--auto-repair` + `--apply`あり | dry-run提案と実書込を分ける。運用YAMLには適用しない |
@@ -69,7 +70,7 @@
 
 | 確認 | 結果 | 判断 |
 |------|------|------|
-| `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | §2/§5のv2.19.0前提は維持 |
+| `$HOME/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | §2/§5のv2.19.0前提は維持 |
 | `git log --since=2026-06-23 -- scripts/codd scripts/codd_ skills/codd skills/codd-refactor` | 対象差分なし | CoDDコマンド体系・スキル参照の更新不要 |
 | 通常`gate_context_freshness.sh` | 日数WARNのみ | 内容更新ではなく鮮度確認としてlast_updatedを更新 |
 
@@ -77,8 +78,8 @@
 
 | 確認 | 結果 | 判断 |
 |------|------|------|
-| `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | §1/§2/§5のローカルCLI前提は維持 |
-| `/home/simokitafresh/.codd-venv/bin/codd --help` | `drift`, `fixup-drift`, `propagate-from`, `qc`, `require`, `restore`, `watch`を含む | 2026-07-01記載の現行コマンド体系と矛盾なし |
+| `$HOME/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | §1/§2/§5のローカルCLI前提は維持 |
+| `$HOME/.codd-venv/bin/codd --help` | `drift`, `fixup-drift`, `propagate-from`, `qc`, `require`, `restore`, `watch`を含む | 2026-07-01記載の現行コマンド体系と矛盾なし |
 | `git log --since=2026-07-01 -- context/codd.md scripts/gates/gate_context_freshness.sh scripts/context_freshness_check.sh` | context本体更新はGA-154のみ。以後はcontext freshness gate品質/重複mapping修正 | CoDD本文へ追記すべき新仕様なし。今回GA-203は日数WARNの再確認 |
 
 ### 2026-07-18 GA-288 鮮度防御
@@ -170,7 +171,7 @@ GA-300再分類: `ff52b26b3` は `run_tests.sh` の参照鮮度再検分（境�
 - 軍師分析(索引): `context/gunshi-codd-analysis.md`
 - 軍師分析(全文): `docs/research/gunshi_codd_swebench_application_20260416.md`
 - リファクタ台帳: **PJごとに1つ。各PJリポ内に配置**
-  - infra: `/home/simokitafresh/multi-agent-shogun/docs/research/codd_refactor_registry.md`
+  - infra: `$HOME/multi-agent-shogun/docs/research/codd_refactor_registry.md`
   - dm-signal: `/mnt/c/Python_app/DM-signal/docs/research/codd_refactor_registry.md`
   - **対象スクリプトが属するリポの台帳に追記せよ。別リポの台帳に書くな**
 - **根源ルール: CoDDで改善したものは必ず台帳に載せる。** 対象がスクリプト/テスト/ドキュメントに関わらず例外なし(殿厳命2026-04-19, LS047)

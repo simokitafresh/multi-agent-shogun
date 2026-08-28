@@ -154,7 +154,7 @@ multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間�
 - `--model 'claude-opus-5[1m]'` = opus 5 1Mコンテキスト。明示指定必須
 - バナーで判別: 200K=`Opus 5 with low effort · Claude Max` / 1M=`Opus 5 (1M context) with low effort`
 - **Claude Max はサブスクプラン名であり1Mの証拠ではない**
-- launch_cmd例: `/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low`
+- launch_cmd例: `$HOME/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low`
 - v2.1.220のlatest CLI必須（pinned 2.1.87はopus 5未対応）
 
 **Codex CLI引数の実証結果(2026-07-20軍師実証)**:
@@ -285,7 +285,7 @@ tmux capture-pane -t shogun:2.1 -p | tail -2  # → gpt-5.5 medium fast 確認
 # 例6: 「karoをOpus 5 1M lowに」(2026-07-25実証)
 ~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-claude --agent karo --settings-only
 bash scripts/lib/yaml_field_set.sh config/settings.yaml karo model_name opus-5-1m-low
-bash scripts/lib/yaml_field_set.sh config/settings.yaml karo launch_cmd "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low"
+bash scripts/lib/yaml_field_set.sh config/settings.yaml karo launch_cmd "$HOME/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low"
 bash scripts/agent_respawn.sh karo
 sleep 8 && tmux capture-pane -t shogun:2.1 -p -S -60 | grep -i "opus\|context"  # → Opus 5 (1M context) 確認
 
@@ -396,8 +396,8 @@ print('手動でsettings.yaml の tobisaru.launch_cmd 行を削除')
 ### 最新版とピン留めは版、Opus 4.8 xhigh はmodel/effort（2026-07-01）
 
 - `pin-2.1.87` / `unpin-latest` が切り替えるのは **Claude Code の版** だけ。
-- `pin-2.1.87` = `/home/simokitafresh/bin/claude` = 固定版2.1.87。
-- `unpin-latest` = `/home/simokitafresh/.local/bin/claude` = 最新版追随。
+- `pin-2.1.87` = `$HOME/bin/claude` = 固定版2.1.87。
+- `unpin-latest` = `$HOME/.local/bin/claude` = 最新版追随。
 - `Opus 4.8 xhigh` は **起動時の `--model opus --effort xhigh` と `model_name` 表示** で決まる。`unpin-latest` だけでは `Opus 4.8 xhigh` にならない。
 
 **最新版 + Opus 4.8 xhigh を特定agentへ反映する正道**:
@@ -407,7 +407,7 @@ print('手動でsettings.yaml の tobisaru.launch_cmd 行を削除')
 
 # 2) model_name と per-agent launch_cmd を明示
 bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> model_name opus-4-8-xhigh
-bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> launch_cmd "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh"
+bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> launch_cmd "$HOME/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh"
 
 # 3) 正本値からidle paneをrespawn
 bash scripts/agent_respawn.sh <agent>
@@ -430,7 +430,7 @@ bash scripts/agent_respawn.sh <agent>
 # 1) settings.yaml更新
 bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> type claude
 bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> model_name opus-5-1m-low
-bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> launch_cmd "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low"
+bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> launch_cmd "$HOME/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low"
 
 # 2) respawn (agent_respawn.sh経由必須)
 bash scripts/agent_respawn.sh <agent>

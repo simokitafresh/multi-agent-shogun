@@ -87,8 +87,8 @@ Script refs verified: 2026-06-10. `cmd_complete_gate.sh` 呼び出し契約は `
 
 ## 前提
 
-- CoDD v2.18.0: `/home/simokitafresh/.codd-venv/bin/codd`
-- PATH設定: `export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"`
+- CoDD v2.18.0: `$HOME/.codd-venv/bin/codd`
+- PATH設定: `export PATH="$HOME/.codd-venv/bin:$PATH"`
 - 対象リポに`codd/codd.yaml`または`codd.yaml`が存在すること
 - `codd dag build`済み、またはこの手順内でbuildできること
 - 必要lexiconは対象リポにinstall済みであること。未確認なら`codd lexicon list --path .`で確認する
@@ -98,7 +98,7 @@ Script refs verified: 2026-06-10. `cmd_complete_gate.sh` 呼び出し契約は `
 1. 対象リポで依存確認する。
 
 ```bash
-export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"
+export PATH="$HOME/.codd-venv/bin:$PATH"
 codd --version
 codd fix --help
 codd dag verify --help

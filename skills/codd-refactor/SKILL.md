@@ -77,8 +77,8 @@ bashスクリプトのリファクタリングを、データ駆動で設計→�
 
 ```bash
 _fail=0
-export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"
-command -v codd >/dev/null 2>&1 || { echo "BLOCK: codd未インストール。export PATH=/home/simokitafresh/.codd-venv/bin:$PATH"; _fail=1; }
+export PATH="$HOME/.codd-venv/bin:$PATH"
+command -v codd >/dev/null 2>&1 || { echo "BLOCK: codd未インストール。export PATH=$HOME/.codd-venv/bin:$PATH"; _fail=1; }
 codd --version | grep -qE '^codd, version 2\.(18|19)\.' || { echo "BLOCK: codd v2.18.x以上が必要。pip install --upgrade codd-dev"; _fail=1; }
 command -v bats >/dev/null 2>&1 || { echo "BLOCK: bats未インストール。npm i -g bats"; _fail=1; }
 command -v parallel >/dev/null 2>&1 || { echo "BLOCK: parallel未インストール。apt install parallel"; _fail=1; }

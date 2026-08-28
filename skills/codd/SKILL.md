@@ -21,10 +21,10 @@ allowed-tools:
 
 ## 前提条件
 
-- CoDD v2.18.0: `/home/simokitafresh/.codd-venv/bin/codd`
-- PATH設定: `export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"`
-- ai_command: codd.yamlで定義（`/home/simokitafresh/bin/claude --print --model claude-opus-4-6 --tools ""`）
-- 確認: `/home/simokitafresh/.codd-venv/bin/codd --version` が `codd, version 2.18.0` を返すこと
+- CoDD v2.18.0: `$HOME/.codd-venv/bin/codd`
+- PATH設定: `export PATH="$HOME/.codd-venv/bin:$PATH"`
+- ai_command: codd.yamlで定義（`$HOME/bin/claude --print --model claude-opus-4-6 --tools ""`）
+- 確認: `$HOME/.codd-venv/bin/codd --version` が `codd, version 2.18.0` を返すこと
 - 非対話BashではPATH未設定で`codd`が見えない場合がある。フルパスかPATH exportを使う。
 
 ## 使い方
@@ -126,7 +126,7 @@ codd coverage report --format md
 ## codd.yaml設定例
 
 ```yaml
-ai_command: /home/simokitafresh/bin/claude --print --model claude-opus-4-6 --tools ""
+ai_command: $HOME/bin/claude --print --model claude-opus-4-6 --tools ""
 scan:
   source_dirs:
     - scripts/
