@@ -2069,6 +2069,34 @@ else
     echo "  SKIP: logs/ninja_monitor.log なし"
 fi
 
+# --- Gate 10.09: Codex 利用上限/警告 pane(INS-20260829-044158) ---
+# 2026-08-29 00:40 才蔵 pane の『weekly limit <25%』を将軍が事実報告だけで流し、04:40 に家老+忍者が
+# 週次上限で全停止(T174)。pane の文言は陣形図・inbox に出ない。起動時と loop で機械計数する。
+echo "■ Codex 利用上限/警告 pane"
+_cx_hit=(); _cx_warn=()
+# shellcheck source=scripts/lib/pane_lookup.sh
+[ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ] && source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+for _cx_a in karo hayate kagemaru hanzo saizo kotaro tobisaru; do
+    _cx_p="$(pane_lookup "$_cx_a" 2>/dev/null || true)"
+    [ -n "$_cx_p" ] || continue
+    _cx_txt="$(tmux capture-pane -t "$_cx_p" -p 2>/dev/null | tail -40 || true)"
+    if printf '%s' "$_cx_txt" | grep -qE "hit your usage limit|try again at [A-Z][a-z]{2} [0-9]"; then
+        _cx_hit+=("$_cx_a")
+    elif printf '%s' "$_cx_txt" | grep -qE "usage limit reset available|less than 25% of your weekly|weekly limit"; then
+        _cx_warn+=("$_cx_a")
+    fi
+done
+if [ "${#_cx_hit[@]}" -gt 0 ]; then
+    echo "  ALERT: 上限到達 ${#_cx_hit[@]} pane(${_cx_hit[*]})(集計: capture-pane tail -40 | grep 'hit your usage limit|try again at'。1件=pane 1)"
+    echo "  → 便停止。将軍は殿の明示指示なしに CLI 切替/reset 消費をしない。推薦=新アカウント device-auth(T80)/代替=/shogun-cli-switch で Claude へ"
+    alerts+=("Codex 上限到達 ${#_cx_hit[@]} pane(${_cx_hit[*]}) — 殿へ裁定要請済みか確認")
+elif [ "${#_cx_warn[@]}" -gt 0 ]; then
+    echo "  WARN: 上限警告 ${#_cx_warn[@]} pane(${_cx_warn[*]})=停止前兆(00:40→04:40 の 4h で全停止した実績)"
+    alerts+=("Codex 上限警告 ${#_cx_warn[@]} pane(${_cx_warn[*]}) — 先送りせず殿へ前もって報告")
+else
+    echo "  OK: 上限/警告 pane 0"
+fi
+
 # --- Gate 10.1: 便回転チェック(GATE CLEAR済み未回収在庫) ---
 # 2026-08-11: 便1時間ゼロを殿指摘まで検出できなかった事故の環境埋込み(Q6自動化ターゲット)。
 # 掲示板の「完了レビュー LGTM」status:open = 軍師LGTM済みだが家老ACCEPT/GATE未了の在庫。
