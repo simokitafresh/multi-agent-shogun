@@ -229,6 +229,9 @@ PY
     local base
     base=$(git -C "$repo_root" rev-parse HEAD)
     git -C "$repo_root" worktree add -q --detach "$BATS_TEST_TMPDIR/reuse-wt" "$base"
+    printf 'task commit\n' > "$BATS_TEST_TMPDIR/reuse-wt/README"
+    git -C "$BATS_TEST_TMPDIR/reuse-wt" add README
+    git -C "$BATS_TEST_TMPDIR/reuse-wt" -c user.email=test@example.invalid -c user.name=test commit -qm task-progress
     mkdir -p "$(dirname "$marker")"
     python3 - "$marker" "$repo_root" "$BATS_TEST_TMPDIR/reuse-wt" "$base" <<'PY'
 import json
