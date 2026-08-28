@@ -6540,7 +6540,10 @@ insights:
   priority: "high"
   source: "shogun"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象事象と現行実装を突合した結果、報告されたcycle内同期deployは既存commit cc3b1ad908e2e641e06d7a2aaebb1969c56bc480でbackground workerへ切替済み。新規コード修正は不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-130057890-a933;existing_fix=git:cc3b1ad908e2e641e06d7a2aaebb1969c56bc480;implementation=scripts/ninja_monitor.sh:_schedule_reflux_auto_deploy_background+handle_confirmed_idle;logs=logs/ninja_monitor.log:2026-08-28T14:12:53+09:00,14:12:54+09:00 REFLUX-AUTO-BACKGROUND-START;semantic=semantic_search:REFLUX-AUTO-DEPLOY background cycle latency;inventory_before=118/10/0/128;new_code=0"
+  resolved_at: "2026-08-28T14:25:00+09:00"
 - id: INS-20260828-130105672-8adf
   ts: "2026-08-28T13:01:05+09:00"
   insight: "instructions/generated/claude-*.md 4 本は build_instructions.sh の出力対象外(.build_cache に entry 無し・consumer grep 0)で ext4 relocate 時の path 置換だけ受けた残骸。cmd_4409 AC3 の grep 対象に入り 2 行残存(566471a0c で $SHOGUN_ROOT 化)。build 出力集合と tracked generated/ の差分を build 時に WARN し、非出力ファイルは retire 判定へ"
