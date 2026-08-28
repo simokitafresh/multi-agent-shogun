@@ -4644,6 +4644,8 @@ def parse_iso(raw):
     text = text.replace('\\"', '"').strip('"')
     text = text.replace("Z", "+00:00")
     try:
+        # Existing gate metrics intentionally compare local-clock strings
+        # field-wise; preserve that contract for legacy Z-suffixed fixtures.
         return datetime.fromisoformat(text).replace(tzinfo=None)
     except Exception:
         return None
@@ -4793,6 +4795,7 @@ else:
     })
     report_scan_mode = "legacy_full_scan"
 
+report_done_seen = False
 for path in report_paths:
         try:
             with open(path, encoding="utf-8") as f:
@@ -4803,23 +4806,159 @@ for path in report_paths:
             continue
         if str(report.get("status") or "").strip() not in {"completed", "done", "revision_requested"}:
             continue
+        report_done_seen = True
         # Reports may publish timestamp separately from lifecycle completion.
-        # Prefer the durable report timestamp, then preserve valid done markers.
+        # completed_at/done_at are the terminal publication boundary; timestamp
+        # is only the legacy fallback authoring time.
         ts = parse_iso(
-            report.get("timestamp")
+            report.get("completed_at")
             or report.get("done_at")
-            or report.get("completed_at")
+            or report.get("timestamp")
             or report.get("updated_at")
         )
         if ts is not None:
             report_done_values.append(ts)
+
+# The four finalize segments use the same durable sources as the completion
+# lifecycle.  Keep source presence separate from parsed timestamps so a
+# malformed event is BLOCKed as unresolved, while a genuinely absent legacy
+# event is retained as a reasoned ``na`` measurement.
+review_request_values = []
+review_request_seen = False
+for pattern in (
+    os.path.join(root_dir, "queue/inbox/*.yaml"),
+    os.path.join(root_dir, "queue/archive/inbox/*.yaml"),
+    os.path.join(root_dir, "archive/inbox/*.yaml"),
+):
+    for path in glob.glob(pattern):
+        try:
+            with open(path, encoding="utf-8") as f:
+                inbox = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        messages = inbox.get("messages", inbox.get("entries", inbox)) if isinstance(inbox, dict) else inbox
+        if not isinstance(messages, list):
+            continue
+        for message in messages:
+            if not isinstance(message, dict) or str(message.get("type") or "") not in {"report_review", "report_received"}:
+                continue
+            parent = str(message.get("parent_cmd") or "").strip()
+            task_id = str(message.get("task_id") or "").strip()
+            report_path = str(message.get("report_path") or "").strip()
+            identity_match = (
+                parent == cmd_id
+                or task_id in {cmd_id, f"{cmd_id}_full"}
+                or f"_report_{cmd_id}" in report_path
+            )
+            if not identity_match:
+                continue
+            review_request_seen = True
+            ts = parse_iso(message.get("timestamp"))
+            if ts is not None:
+                review_request_values.append(ts)
+
+approval_values = {"lgtm": [], "accept": []}
+approval_seen = {"lgtm": False, "accept": False}
+approval_root = os.path.join(root_dir, "queue/gates", cmd_id, "review_approvals")
+for role, result, key in (("gunshi", "LGTM", "lgtm"), ("karo", "ACCEPT", "accept")):
+    for path in glob.glob(os.path.join(approval_root, "reports", "**", f"{role}.yaml"), recursive=True):
+        try:
+            with open(path, encoding="utf-8") as f:
+                approval = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        if not isinstance(approval, dict) or str(approval.get("result") or "").upper() != result:
+            continue
+        approval_seen[key] = True
+        ts = parse_iso(approval.get("timestamp"))
+        if ts is not None:
+            approval_values[key].append(ts)
+
+report_done_event = max(report_done_values, default=None)
+lgtm_event = max(approval_values["lgtm"], default=None)
+accept_event = max(approval_values["accept"], default=None)
+if lgtm_event is not None:
+    eligible_requests = [ts for ts in review_request_values if ts <= lgtm_event]
+else:
+    eligible_requests = review_request_values
+review_request_event = max(eligible_requests, default=None)
+
+event_values = {
+    "report_done": report_done_event,
+    "review_request": review_request_event,
+    "lgtm": lgtm_event,
+    "karo_accept": accept_event,
+    "gate_clear": parse_iso(clear_ts_raw),
+    }
+event_seen = {
+    "report_done": report_done_seen,
+    "review_request": review_request_seen,
+    "lgtm": approval_seen["lgtm"],
+    "karo_accept": approval_seen["accept"],
+    "gate_clear": bool(str(clear_ts_raw or "").strip()),
+    }
+
+def event_reason(name):
+    return f"unresolved_{name}" if event_seen[name] else f"missing_{name}"
+
+def segment_value(name, left_name, left, right_name, right):
+    if left is None or right is None:
+        missing_reason = event_reason(left_name if left is None else right_name)
+        return f"na({missing_reason})", None, missing_reason, None
+    delta = int((right - left).total_seconds())
+    if delta < 0:
+        reason = f"reversed_{name}"
+        return f"na({reason})", None, None, reason
+    return str(delta), delta, None, None
+
+fin_a_text, fin_a, fin_a_missing, fin_a_invalid = segment_value(
+    "report_done_to_review_request", "report_done", report_done_event,
+    "review_request", review_request_event
+)
+fin_b_text, fin_b, fin_b_missing, fin_b_invalid = segment_value(
+    "review_request_to_lgtm", "review_request", review_request_event,
+    "lgtm", lgtm_event
+)
+fin_c_text, fin_c, fin_c_missing, fin_c_invalid = segment_value(
+    "lgtm_to_karo_accept", "lgtm", lgtm_event,
+    "karo_accept", accept_event
+)
+fin_d_text, fin_d, fin_d_missing, fin_d_invalid = segment_value(
+    "karo_accept_to_gate_clear", "karo_accept", accept_event,
+    "gate_clear", parse_iso(clear_ts_raw)
+)
+segment_missing = [v for v in (fin_a_missing, fin_b_missing, fin_c_missing, fin_d_missing) if v]
+segment_invalid = [v for v in (fin_a_invalid, fin_b_invalid, fin_c_invalid, fin_d_invalid) if v]
+segment_unresolved = [event_reason(name) for name, value in event_values.items() if value is None and event_seen[name]]
+segment_status = "BLOCK" if segment_invalid or segment_unresolved else ("NA" if segment_missing else "PASS")
+
+# Historical pane samples are not available for legacy rows.  Use the
+# lifecycle owner boundary as the conservative fallback, while consulting
+# the same RUNTIME/@agent_state vocabulary as ninja_monitor for live rows:
+# report delivery and gate execution are machine waits; Gunshi review and Karo
+# acceptance are LLM thinking intervals.  This accounting is additive, never
+# a license to shorten think_sec; optimization candidates are wait_sec only.
+def split_segment(value, think_phase):
+    if value is None:
+        return "na", "na"
+    return (str(value), "0") if think_phase else ("0", str(value))
+
+fin_a_think, fin_a_wait = split_segment(fin_a, False)
+fin_b_think, fin_b_wait = split_segment(fin_b, True)
+fin_c_think, fin_c_wait = split_segment(fin_c, True)
+fin_d_think, fin_d_wait = split_segment(fin_d, False)
+think_values = [v for v in (fin_a, fin_b, fin_c, fin_d) if v is not None]
+think_sec_total = (fin_b or 0) + (fin_c or 0) if all(v is not None for v in (fin_b, fin_c)) else None
+wait_sec_total = (fin_a or 0) + (fin_d or 0) if all(v is not None for v in (fin_a, fin_d)) else None
 
 issued_ts = min((v for v in issued_values if v is not None), default=None)
 if issue_ts is None:
     issue_ts = issued_ts
 deploy_ts = max((v for v in deploy_values if v is not None), default=None)
 ack_ts = min((v for v in ack_values if v is not None), default=None)
-done_ts = max((v for v in done_values + report_done_values if v is not None), default=None)
+done_ts = max(report_done_values, default=None) if report_done_values else max(
+    (v for v in done_values if v is not None), default=None
+)
 clear_ts = parse_iso(clear_ts_raw)
 
 effective_issue_ts = (
@@ -4840,6 +4979,13 @@ if current_attempt_deploy_ts is not None and (
 work_sec = sec(work_start_ts, done_ts)
 finalize_sec = sec(done_ts, clear_ts)
 e2e_sec = sec(effective_issue_ts, clear_ts)
+segment_total = None
+if all(value is not None for value in (fin_a, fin_b, fin_c, fin_d)):
+    segment_total = fin_a + fin_b + fin_c + fin_d
+    if finalize_sec is not None and abs(segment_total - finalize_sec) > max(1, abs(finalize_sec) * 0.05):
+        segment_invalid.append("segment_total_mismatch")
+if segment_invalid or segment_unresolved:
+    segment_status = "BLOCK"
 
 missing = []
 if effective_issue_ts is None:
@@ -4867,7 +5013,23 @@ print(
     f"work_sec={fmt(work_sec)} "
     f"finalize_sec={fmt(finalize_sec)} "
     f"e2e_sec={fmt(e2e_sec)} "
-    f"missing={missing_text}"
+    f"missing={missing_text} "
+    f"fin_a={fin_a_text} "
+    f"fin_b={fin_b_text} "
+    f"fin_c={fin_c_text} "
+    f"fin_d={fin_d_text} "
+    f"fin_a_think_sec={fin_a_think} fin_a_wait_sec={fin_a_wait} "
+    f"fin_b_think_sec={fin_b_think} fin_b_wait_sec={fin_b_wait} "
+    f"fin_c_think_sec={fin_c_think} fin_c_wait_sec={fin_c_wait} "
+    f"fin_d_think_sec={fin_d_think} fin_d_wait_sec={fin_d_wait} "
+    f"think_sec_total={fmt(think_sec_total)} wait_sec_total={fmt(wait_sec_total)} "
+    f"state_source=RUNTIME/@agent_state+lifecycle_boundary "
+    f"optimization_target=wait_sec_only llm_think_reduction=BLOCK "
+    f"segment_total={fmt(segment_total)} "
+    f"segment_missing={','.join(dict.fromkeys(segment_missing)) if segment_missing else 'none'} "
+    f"segment_unresolved={','.join(dict.fromkeys(segment_unresolved)) if segment_unresolved else 'none'} "
+    f"segment_invalid={','.join(dict.fromkeys(segment_invalid)) if segment_invalid else 'none'} "
+    f"segment_status={segment_status}"
 )
 PY
 }
@@ -13288,6 +13450,11 @@ if [ "$ALL_CLEAR" = true ]; then
     GATE_CLEAR_TS="$(date +%Y-%m-%dT%H:%M:%S)"
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
+    if [[ "$GATE_THROUGHPUT_METRIC" == *"segment_status=BLOCK"* ]]; then
+        echo "GATE BLOCK: ${CMD_ID}:throughput_segment_invalid"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tthroughput_segment_invalid\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "na" "na" "$GATE_FIRST_MODEL_METRIC")"
+        exit 1
+    fi
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     GATE_KARO_CTX_METRIC=$(build_karo_ctx_metric)
     gate_detail_begin "post_source_checks.cdp_production_check" external_wait
