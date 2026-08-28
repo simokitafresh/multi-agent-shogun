@@ -492,6 +492,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T03:48:16.770396+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:19:43.961017+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:21:55.354686+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T07:38:17.385312+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3079,6 +3080,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:22:03+09:00 session_save_20260828_1420_gunshi: 12:49復帰→14:21。レビュー15件(draft9全LGTM+report6=APPROVE4+RC2)。RC型2種=(1)SG-PRE9c偽陽性:assumpti |
 | cmd | `cmd_karo_hotfix_source_equivalent_dedupe_20260828` (`scripts/gates/gate_context_freshness.sh`, `tests/unit/test_gate_context_freshness.bats`) |
 | cmd | `cmd_karo_hotfix_ga505_source_equivalent_publication_lag` (`tests/unit/test_gate_improvement_trigger.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:36:45+09:00 session_save_20260828_1636_gunshi: 12:49復帰→16:36。レビュー合計30+件。LGTM/APPROVE: done_report_review/cycle_latency_draft/respawn |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3417,6 +3419,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:39:52+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:40:04+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:39:51+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -4688,6 +4692,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T12:46:03+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:20:17+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:15:06+09:00 やれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:35:46+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:36:14+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:46:02+09:00 session_save_20260828_1636_gunshi: レビュー統計=accuracy97.1%(1984/2044),直近WA0件,観点全10/10。RC型=Phase1-10全追体験完了,Q1-Q5回答済み,inbox処理 |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -8269,6 +8276,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:13:12+09:00 忍者がauto clearされるのが遅いせいでCTXがたまったままの忍者に家老が配備してしまう。今の問題点はなんだ？ |
 | causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_deploy_ctx_guard_20260828` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:36:58+09:00 session_save_20260828_1636 復帰点(将軍 /clear 復帰 第6便、08-28 14:30-16:36)。主軸=殿下問 15:13『auto clear が遅く CTX 残置忍者に配備される』→『穴はないか、実際 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:38:05+09:00 session_save_20260828_1636_karo: 走行=疾風(d) respawn resolver/Codex config SSOT、影丸T129 cycle median<=60 RC、CI RED run331513 |
+| cmd | `cmd_karo_hotfix_respawn_resolver_path_20260828` (`scripts/lib/respawn_recovery.sh`, `tests/unit/test_respawn_recovery.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -12617,6 +12627,28 @@ codd:
 | causal | `cmd_4373` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
+## provisional_test — 仮: Test
+
+| 属性 | 値 |
+|------|---|
+| id | provisional_test |
+| label | 仮: Test |
+| aliases | test, .github/workflows/test.yml, .github workflows test.yml, provisional_test |
+| status | provisional |
+| auto_generated | true |
+| source_cmd | cmd_karo_ci_fix_33147256383_compat_receipt |
+| source_files | .github/workflows/test.yml |
+| no_match_count | 3 |
+| created_at | 2026-08-28T07:07:35Z |
+| promotion_threshold | 5 |
+| related_concepts | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `.github/workflows/test.yml` |
+| causal | `cmd_karo_ci_fix_33147256383_compat_receipt` -> [[provisional_test]] (auto_generated) |
+| cmd | `cmd_karo_ci_fix_33147256383_compat_receipt` (`.github/workflows/test.yml`, `scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
+
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
 
 | 属性 | 値 |
@@ -13749,6 +13781,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-19T15:08:59+09:00 bqxykjw41 toolu_01DdtpyFWRHsHdP57q7RGcyb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/888bc7f7-f76d-4983-a4dd-8f3fbb |
 | lesson | `L1618` run_tests.sh taskモードはtask_worktree_pathがscripts/run_tests.shの実行ビットを保持していないとexternal_scope_no_mapped_testsで誤BLOCKする |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-22T23:24:11+09:00 saizoのrun_tests.sh task は絶対target path解決で rc=2 を再 現。既存のtest triage記録と一致。はバグではないのか？ |
+| causal | `cmd_karo_ci_fix_33147256383_compat_receipt` files_modified: [[provisional_run_tests]] |
 | causal_chain | `[[cmd_karo_hotfix_git_index_singleflight_202608191445]]` (L1618) |
 
 ## provisional_.gitignore — 仮: .Gitignore
@@ -14846,6 +14879,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:03:17.708943+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:14:17.115906+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:20:08.142047+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:51:16.819923+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T07:51:21.578780+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ

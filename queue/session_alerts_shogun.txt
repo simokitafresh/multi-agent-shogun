@@ -1,4 +1,4 @@
 # session_alerts — generated: 2026-08-28T16:39:40+0900
-[TODO] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
-[TODO] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな
+[DONE] 追体験自動化ターゲット: INS-20260828-164735814-904e(deploy_task serial_dependency 依存先 status/CTX WARN)を掲示板 blt_164722 に記入・軍師 blt_165116 で妥当判定
+[DONE] 走行中cmd実測突合: 16:45 capture-pane 全pane 実測(疾風 WAIT T129・影丸 77% RC・半蔵 compat bats pgrep)→T140 で下知済
 [DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
