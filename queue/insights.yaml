@@ -6943,3 +6943,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-161449053-c15a
+  ts: "2026-08-28T16:14:49+09:00"
+  insight: "semantic_index_update新概念候補: discussion:T137 T136 T129について説明してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
