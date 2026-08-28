@@ -6898,3 +6898,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-155616982-2ef4
+  ts: "2026-08-28T15:56:16+09:00"
+  insight: "INS-155454 訂正(家老一次 blt_155537): 才蔵 ACK-STALL の直接経路は接尾辞不一致ではなく、formal RC nudge(task_supplement msg_154601)の本文に task_id 文字列が無く、構造 field task_id=…_exact だけにあった。忍者は本文(LLM が読む文)で一致判定するため、構造 field に入っていても本文に無ければ『task_id 欠落』で既読化する。修正 1 unit: RC/task_supplement/report_format_fix の本文先頭に task_id=<task YAML の task_id> を機械挿入(inbox_write 側、type 別に共通)。効果計測=task_id 欠落既読化 0/日。origin: [[INS-155454]] -> [[RC_nudge本文にtask_id無し]] -> [[才蔵ACK-STALL_15:46]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
