@@ -6833,10 +6833,20 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T14:47:59+09:00"
 - id: INS-20260828-144741770-9ff4
   ts: "2026-08-28T14:47:41+09:00"
   insight: "[[finalize区間計測のtimezone混在をJSTへ正規化し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: report_quality_protocol(忍者報告品質プロトコル; alias=assumption_invalidation正規化; score=3.7) / provisional_lessons(仮: Lessons; alias=projects infra lessons.yaml; score=3.7) / investment_knowledge_base(投資知識辞書; alias=Wavelet Jump Classification; score=3.7)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260828-144800043-411a
+  ts: "2026-08-28T14:48:00+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_hotfix_function_coverage_20260828 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
