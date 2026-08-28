@@ -531,3 +531,11 @@ lessons:
   created_at: '2026-08-28'
   automated: true
   enforcement: 'automated:false — 自動化ターゲット: ninja_monitor が CODEX-RESPAWN 成功時に RESPAWN-OK 行を必ず出し、gate_shogun_startup に直近 N 時間の RESPAWN 試行 vs OK 比を表示(FALLBACK 率>20% で WARN)'
+- id: 'LS125'
+  title: '配備スキルの逃げ道と家老 ACCEPT 再試験 — 待ちを忍者/家老の作業に変換する構造は入口の validator と pane guard で構造型に塞ぐ'
+  origin: '未指定'
+  detail: '2026-08-29 00:49-00:50 殿裁定 2 件: (1)『1時間後に再確認を忍者に配備=配備スキルの品質バグ』。一次: deploy_task ten_min_contract の long-runtime exception が 08-28/29 に 16 回(45m×9/30m×5/90m×2)、半蔵 AC4『live後1時間 gate_metrics で証明』measured_runtime_sec=3600・影丸 AC『本番1時間観測 中央値』=観測窓が忍者 AC に入り 3600 秒の機械的待ちに人質化(CTX 消費・STAGE1 respawn 成果消失 T152・reflux 枠死)。将軍は T161 を『影丸 CLEAR 後予約』で先送りしていた(洗脳#5)。(2)『家老自身がテストして再検証は回転速度を落とすバグ』。一次: 家老 pane pid 3855596 配下で影丸 publish worktree の bats 走行(2 分超)、scrollback に run_tests 14 回(BATS_CACHE=0 再走 3・all 1)、karo-operations.md:157『再実走を家老が奪うな』は文章規則で不発(型十一弾-2)。(3)殿 00:55『バグは根治したか？環境に強制を埋め込まなければ再燃する』→将軍は下知 2 通(委任=洗脳#3)で止まっていた。修正=D0 62ea70daf: time_contract_validator が観測窓語(live後/本番N時間観測/N時間の証明/gate_metrics で証明)を long-runtime 理由と AC 本文から検出し BLOCK(本番 task で半蔵/影丸 BLOCK・疾風/才蔵 PASS)、pre-bash-combined に karo-retest guard(家老 pane の run_tests/bats を BLOCK、KARO_TEST_REASON=e2e|ci_diag のみ通す)、contract bats 2+3。型=待ちを人の作業に変換する箇所は『理由文』で通さず入口 validator+pane guard で構造型に塞ぐ'
+  source_cmd: 'session_20260829_0055'
+  created_at: '2026-08-29'
+  automated: true
+  enforcement: 'Level4: scripts/lib/time_contract_validator.py _observation_window_hits(BLOCK)+.claude/hooks/pre-bash-combined.sh karo-retest guard(BLOCK)。bats tests/unit/test_time_contract_validator.bats #7-8・test_pre_bash_combined.bats #23-25。本番 proof=適用後 24h の deploy log に long-runtime exception×観測理由 0 行・家老 pane run_tests 0 行(次弾: gate_shogun_startup で計数)'
