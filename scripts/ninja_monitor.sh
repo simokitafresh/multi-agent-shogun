@@ -1,4 +1,18 @@
 #!/bin/bash
+
+_ninja_monitor_debug_invocation() {
+    [ "${NINJA_MONITOR_LIFECYCLE_DEBUG:-0}" = "1" ] || return 0
+    local _nm_debug_arg
+    printf 'NINJA_MONITOR_DEBUG argv0=%q argc=%s bash_source=%q bash=%q lib_only=%q args=' \
+        "$0" "$#" "${BASH_SOURCE[0]}" "${BASH:-/bin/bash}" "${NINJA_MONITOR_LIB_ONLY:-}" >&2
+    for _nm_debug_arg in "$@"; do
+        printf ' %q' "$_nm_debug_arg" >&2
+    done
+    printf '\n' >&2
+}
+
+_ninja_monitor_debug_invocation "$@"
+
 # semantic-links: [[インフラ設計意図カタログ]], [[インフラ運用基盤]], [[デーモン監視と復旧]], [[忍者修行サイクル品質]], [[編成管理]]
 # doc-links: [[infrastructure.md]], [[infra-details]], [[training-cycle]], [[training-cycle.md]], [[ninja_monitor_requirements.md]], [[ninja_monitor_design.md]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]]
 # shellcheck disable=SC1091,SC2034,SC2129
@@ -192,6 +206,39 @@ _task_done_report_formally_reviewed() {
         [ -f "$report_file" ] && [ ! -L "$report_file" ] && return 0
     done
     return 1
+}
+
+# A done task with an active report is still owned by the review lane.  Keep
+# this predicate shared by both normal AUTO-CLEAR and direct safe_send_clear
+# callers so STAGE1's review-pending decision cannot be bypassed by the
+# ordinary idle/no-task path.
+_task_done_report_review_pending() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_status parent_cmd report_file report_path report_status
+    [ -f "$task_file" ] || return 1
+    task_status=$(yaml_field_get "$task_file" "status" "" 2>/dev/null || true)
+    [[ "$task_status" =~ ^(done|completed|PASS)$ ]] || return 1
+    _task_done_report_unarchived "$name" || return 1
+
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] || return 1
+    report_path=$(yaml_field_get "$task_file" "report_path" "" 2>/dev/null || true)
+    if [ -n "$report_path" ]; then
+        [[ "$report_path" = /* ]] && report_file="$report_path" || report_file="$SCRIPT_DIR/$report_path"
+    fi
+    if [ -z "${report_file:-}" ] || [ ! -f "$report_file" ]; then
+        for report_file in "$SCRIPT_DIR/queue/reports/${name}_report_${parent_cmd}"*.yaml; do
+            [ -f "$report_file" ] && [ ! -L "$report_file" ] && break
+        done
+    fi
+    [ -f "${report_file:-}" ] || return 1
+    report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
+    [[ "$report_status" =~ ^(completed|done|success)$ ]] || return 0
+    if _done_report_terminal_review_ready "$parent_cmd" "$report_file"; then
+        return 1
+    fi
+    return 0
 }
 
 _ci_red_idle_count() {
@@ -2090,7 +2137,7 @@ NINJA_MONITOR_LIFECYCLE_TIMEOUT=${NINJA_MONITOR_LIFECYCLE_TIMEOUT:-120}
 
 _ninja_monitor_run_lifecycle_background() {
     local key="$1"; shift
-    local lock_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.lock" lock_fd worker_pid timeout_sec worker_script
+    local lock_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.lock" lock_fd worker_pid timeout_sec worker_script stderr_file stderr_text
     if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
         "$@"
         return $?
@@ -2106,6 +2153,7 @@ _ninja_monitor_run_lifecycle_background() {
         log "LIFECYCLE-BACKGROUND-SKIP: key=$key worker_running=1"
         return 0
     fi
+    stderr_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.$$.$RANDOM.stderr"
     (
         exec </dev/null >>"$LOG" 2>&1
         ninja_monitor_business_owner_is_current || {
@@ -2118,16 +2166,22 @@ _ninja_monitor_run_lifecycle_background() {
         fi
         if timeout --signal=TERM --kill-after=2 "$timeout_sec" \
             env SCRIPT_DIR="$SCRIPT_DIR" STATE_DIR="${STATE_DIR:-/tmp}" SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" LOG="$LOG" \
-            bash "$worker_script" --lifecycle-worker "$@"; then
+                NINJA_MONITOR_LIFECYCLE_DEBUG=1 \
+            bash "$worker_script" --lifecycle-worker "$@" 2>"$stderr_file"; then
             :
         else
             local rc=$?
+            stderr_text=""
+            [ -f "$stderr_file" ] && stderr_text=$(<"$stderr_file")
+            stderr_text=${stderr_text//$'\n'/\\n}
+            log "LIFECYCLE-BACKGROUND-FAIL-REASON: key=$key rc=$rc argv0=bash argc=$(($# + 2)) args=--lifecycle-worker $* bash_source=$worker_script bash=/bin/bash lib_only=${NINJA_MONITOR_LIB_ONLY:-} stderr=${stderr_text:-<empty>}"
             if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
                 log "LIFECYCLE-BACKGROUND-TIMEOUT: key=$key timeout=${timeout_sec}s rc=$rc retry=next-cycle"
             else
                 log "LIFECYCLE-BACKGROUND-FAIL: key=$key rc=$rc retry=next-cycle"
             fi
         fi
+        rm -f "$stderr_file"
     ) &
     worker_pid=$!
     exec {lock_fd}>&-
@@ -2812,6 +2866,10 @@ safe_send_clear() {
         if [[ "$active_task_status" =~ ^(assigned|acknowledged|in_progress)$ ]] && \
            [ "$allow_active_task" != "true" ]; then
             log "CLEAR-BLOCKED-ACTIVE-TASK: $agent_name status=$active_task_status reason=$reason caller_must_explicitly_allow=false"
+            return 1
+        fi
+        if _task_done_report_review_pending "$agent_name"; then
+            log "CLEAR-BLOCKED-REVIEW-PENDING: $agent_name status=$active_task_status reason=$reason task/pane unchanged"
             return 1
         fi
     fi
@@ -5802,6 +5860,10 @@ _handle_auto_clear() {
         _ac_task_status=$(yaml_field_get "$_ac_task_file" "status")
         if [[ "$_ac_task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
             log "AUTO-CLEAR-SKIP: $name has active task (status=$_ac_task_status), deferring to DEPLOY-STALL"
+            return
+        fi
+        if _task_done_report_review_pending "$name"; then
+            log "AUTO-CLEAR-SKIP-REVIEW-PENDING: $name status=$_ac_task_status task/pane unchanged"
             return
         fi
     fi
