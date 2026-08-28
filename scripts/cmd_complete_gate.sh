@@ -5318,6 +5318,7 @@ except Exception as e:
 # 報告読取と archive 完了後にのみ実行し、次の配備で stale task を残さない。
 set_matching_tasks_idle() {
     local task_file ninja_name current_status verify_status current_parent_cmd
+    local terminal_proof_reason clear_marker
     local updated_count=0 skipped_count=0 warn_count=0
 
     echo ""
@@ -5345,6 +5346,117 @@ set_matching_tasks_idle() {
             continue
         fi
 
+        # A post-CLEAR worker can run after archive_completed has replaced the
+        # live report with an archive symlink.  In that window the task YAML
+        # may still be in_progress, so status alone cannot distinguish a
+        # stale active task from a task whose terminal side effects merely
+        # raced this worker.  Only the exact declared report identity,
+        # completed PASS report, and generation-bound CLEAR receipt authorize
+        # this exceptional in_progress -> idle transition.
+        if [ "$current_status" = "in_progress" ]; then
+            clear_marker="${CMD_COMPLETE_GATE_CLEAR_MARKER:-$SCRIPT_DIR/queue/gates/${CMD_ID}/gate_worker.clear.json}"
+            if terminal_proof_reason=$(python3 - "$task_file" "$SCRIPT_DIR" "$CMD_ID" "$clear_marker" "${SHOGUN_COMPLETION_GENERATION:-}" <<'PY'
+import json
+import os
+import pathlib
+import re
+import sys
+
+import yaml
+
+task_file, script_dir, expected_cmd, clear_marker, expected_generation = sys.argv[1:]
+
+def fail(reason):
+    print(reason)
+    raise SystemExit(1)
+
+try:
+    raw = yaml.safe_load(pathlib.Path(task_file).read_text(encoding="utf-8")) or {}
+except Exception:
+    fail("task_yaml_invalid")
+task = raw.get("task", raw) if isinstance(raw, dict) else {}
+if not isinstance(task, dict):
+    fail("task_mapping_missing")
+
+if str(task.get("parent_cmd") or "").strip() != expected_cmd:
+    fail("parent_cmd_mismatch")
+task_id = str(task.get("task_id") or task.get("_ac_task_id") or "").strip()
+if not task_id:
+    fail("task_id_missing")
+report_ref = str(task.get("report_path") or task.get("report_filename") or "").strip()
+if not report_ref:
+    fail("report_identity_missing")
+if os.path.isabs(report_ref):
+    report_path = pathlib.Path(report_ref)
+elif "/" in report_ref:
+    report_path = pathlib.Path(script_dir) / report_ref
+else:
+    report_path = pathlib.Path(script_dir) / "queue" / "reports" / report_ref
+try:
+    resolved_report = report_path.resolve(strict=True)
+except OSError:
+    fail("report_missing_or_dangling")
+allowed_roots = [
+    (pathlib.Path(script_dir) / "queue" / "reports").resolve(),
+    (pathlib.Path(script_dir) / "queue" / "archive" / "reports").resolve(),
+]
+if not any(resolved_report == root or root in resolved_report.parents for root in allowed_roots):
+    fail("report_path_outside_archive_roots")
+if not resolved_report.is_file():
+    fail("report_not_file")
+try:
+    report = yaml.safe_load(resolved_report.read_text(encoding="utf-8")) or {}
+except Exception:
+    fail("report_yaml_invalid")
+if not isinstance(report, dict):
+    fail("report_mapping_missing")
+if str(report.get("parent_cmd") or "").strip() != expected_cmd:
+    fail("report_parent_cmd_mismatch")
+if str(report.get("task_id") or "").strip() != task_id:
+    fail("report_task_id_mismatch")
+if str(report.get("status") or "").strip().lower() != "completed":
+    fail("report_not_completed")
+if str(report.get("verdict") or "").strip().upper() != "PASS":
+    fail("report_not_pass")
+for key in ("report_id", "report_identity_version"):
+    task_value = str(task.get(key) or "").strip()
+    report_value = str(report.get(key) or "").strip()
+    if not task_value or task_value != report_value:
+        fail(f"{key}_mismatch")
+declared_name = str(task.get("report_filename") or "").strip().strip("'\"")
+if declared_name and report_path.name != declared_name:
+    fail("report_filename_mismatch")
+
+if not re.fullmatch(r"[0-9a-f]{64}", expected_generation):
+    fail("completion_generation_missing_or_invalid")
+try:
+    clear = json.loads(pathlib.Path(clear_marker).read_text(encoding="utf-8"))
+except Exception:
+    fail("clear_receipt_missing_or_invalid")
+if (
+    not isinstance(clear, dict)
+    or clear.get("version") != 1
+    or clear.get("state") != "clear"
+    or clear.get("cmd_id") != expected_cmd
+    or clear.get("completion_generation") != expected_generation
+):
+    fail("clear_receipt_identity_mismatch")
+try:
+    if int(clear.get("persisted_at_ns")) <= 0:
+        fail("clear_receipt_timestamp_invalid")
+except (TypeError, ValueError):
+    fail("clear_receipt_timestamp_invalid")
+print("ok")
+PY
+); then
+                echo "  ${ninja_name}: in_progress terminal proof=${terminal_proof_reason}"
+            else
+                echo "  ${ninja_name}: skip (status=in_progress, terminal proof=${terminal_proof_reason:-invalid})"
+                skipped_count=$((skipped_count + 1))
+                continue
+            fi
+        fi
+
         # cmd_karo_speed_completion_pipeline_20260725: reassignment race guard.
         # MATCHING_TASK_FILES is a stale snapshot from gate-check-loop start; by
         # the time this post-CLEAR job runs, karo may already have redeployed
@@ -5359,7 +5471,7 @@ set_matching_tasks_idle() {
             continue
         fi
         case "$current_status" in
-            done|completed) ;;
+            done|completed|in_progress) ;;
             *)
                 echo "  ${ninja_name}: skip (status=${current_status:-unknown}, task in progress)"
                 skipped_count=$((skipped_count + 1))
