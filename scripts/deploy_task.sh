@@ -11413,6 +11413,32 @@ fi
 source "$_dt_main_path"
 unset _dt_main_path
 
+# Production observations are monitor-owned.  Install this adapter after all
+# modules are sourced (main.sh re-sources task_contract.sh) so real deployment
+# resolution always publishes proof and leaves only worker ACs in the task YAML.
+if declare -F resolve_cmd_to_task >/dev/null 2>&1 \
+    && ! declare -F deploy_task_original_resolve_cmd_to_task >/dev/null 2>&1; then
+    eval "$(declare -f resolve_cmd_to_task \
+        | sed '1s/^resolve_cmd_to_task /deploy_task_original_resolve_cmd_to_task /')"
+    resolve_cmd_to_task() {
+        local cmd_id="$1" ninja_name="$2" task_file source_path proof_module
+        deploy_task_original_resolve_cmd_to_task "$cmd_id" "$ninja_name" || return $?
+        task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+        source_path="$(resolve_cmd_source_path "$cmd_id" 2>/dev/null || true)"
+        [ -n "$source_path" ] || return 0
+        proof_module="$SCRIPT_DIR/scripts/lib/production_proof.py"
+        if [ ! -f "$proof_module" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+            proof_module="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/lib/production_proof.py"
+        fi
+        if [ ! -f "$proof_module" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+            proof_module="$PROJECT_ROOT/scripts/lib/production_proof.py"
+        fi
+        [ -f "$proof_module" ] || return 0
+        python3 "$proof_module" "$task_file" "$source_path" "$cmd_id" \
+            "$SCRIPT_DIR/queue/proofs"
+    }
+fi
+
 # Keep the legacy entrypoint as the single-file integration surface: the
 # extracted main module calls get_ctx_pct before it mutates task/report state.
 # Wrap that call after all modules are sourced so every real deployment passes
