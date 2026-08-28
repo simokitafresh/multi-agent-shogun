@@ -16142,3 +16142,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 実装存在だけではPD解消を証明できず、producerからconsumer/ledgerまで接続した後にpositive/negative fixtureと実データ観測を同じunitで再計測する必要がある。origin: [[PD-104]] -> [[未接続5件]] -> [[producer_to_consumer_contract]]
+
+### L1668: set -e下の任意ログ欠損は明示的に0件扱いする
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_ci_fix_33176429634_startup_owner_20260828
+- **記録者**: tobisaru
+- **tags**: [infra,gate,gate,monitor,grid_search]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_karo_ci_fix_33176429634_startup_owner_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- clean linked worktreeではlogs/ninja_monitor.logが存在せず、存在確認なしのawkがset -eでstartup gateをrc2終了させた。任意の観測ログを読むgateは、欠損時の意味を0件または判定不能へ明示分類し、コマンド失敗を未処理で伝播させない。
