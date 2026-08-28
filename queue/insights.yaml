@@ -6936,3 +6936,10 @@ insights:
   source: "gate_loop_health"
   fix_known: false
   status: pending
+- id: INS-20260828-160855577-bdec
+  ts: "2026-08-28T16:08:55+09:00"
+  insight: "LG055(integration cmd requires command/expected/actual/result)が本日 13 回発火、実体は影丸 T129 22 行/疾風 (d) 18 行=同一 report の precheck 往復。修正 1 unit: 報告テンプレ(report_path)の integration 欄へ command/expected/actual/result の記入例を埋め、gate_report_format --precheck の FAIL 文に該当行番号と例を出す。効果計測=LG055 発火/report を 13→≤2。origin: [[T99_precheck自動化]] -> [[LG055_precheck往復]] -> [[報告テンプレ記入例]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
