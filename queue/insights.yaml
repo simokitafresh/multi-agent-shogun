@@ -2737,8 +2737,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4379"
   fix_known: false
-  status: pending
-  resolved_reason: "一次情報確認: scripts/deploy_task.sh のremote-tip worktree既定rootは$HOME/shogun-task-worktrees(現物L8986相当、git blameで7d59be746/2026-08-28確認)へ移行済み。変更元b5f586933(2026-08-27)は旧/tmp経路をext4側へ移設し、tests/unit/test_task_worktree_lifecycle.bats 7/7 PASS・SKIP0でpersistent home rootを検証。現行実行環境のqueue/scripts/worktreeはいずれも同一ext4 dev=2096。追加修正・decision_candidate不要。"
+  status: resolved
+  resolved_reason: "一次情報確認: scripts/deploy_task.sh:9127 と scripts/deploy_task/preflight.sh:176 のremote-tip worktree既定rootは$HOME/shogun-task-worktreesへ移行済み。b5f586933(2026-08-27)は旧/tmp経路をext4側へ移設し、tests/unit/test_task_worktree_lifecycle.batsは7/7 PASS・SKIP0でpersistent home rootを検証。現行queue/scripts/worktreeは同一ext4 dev=2096。追加修正・decision_candidate不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-231323010-7d00;primary=scripts/deploy_task.sh:9127;sibling=scripts/deploy_task/preflight.sh:176;fix_commit=b5f586933;regression=tests/unit/test_task_worktree_lifecycle.bats:7/7 PASS SKIP0;runtime_stat=queue_and_scripts_dev_2096;inventory_before=insights_pending 129,zero_backlinks 11,promotions 0,total 140;inventory_churn=insights_pending increased during concurrent reflux;promotion_pause=queue/gates/reflux_promotion.paused"
+  resolved_at: "2026-08-29T07:11:09+09:00"
 - id: INS-20260823-231323213-fb08
   ts: "2026-08-23T23:13:23+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4379; matched=短縮; current_pattern=cmd_complete_gate.sh速度改善 — フェーズ別実測で支配的ボトルネックを特定し検査を削らず短縮; candidate_level=4; candidate=CDP計測4回実行10.5時間(殿の時間10時間浪費)。根因=pre-flight check不在+artifact競合+忍者判断依存。4 Phase自動化で28分/回に短縮; source=gunshi_gp_tracker.yaml"
