@@ -3076,6 +3076,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:21:50+09:00 殿裁定 2026-08-28 13:21『LLM が考える時間を削ってはならない。機械的な部分のみを高速化しないと、品質低下をもたらす』。適用: 速度改善の切除対象は機械的待ち(idle 空白・nudge 未達・monitor cycle・ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:21:57+09:00 [[session_save_20260828_1420_karo]] 家老checkpoint。走行四本: T129=commit d9b4bc44023b、tests151/151、live cycle初回788.215sで未達、新世代 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:22:03+09:00 session_save_20260828_1420_gunshi: 12:49復帰→14:21。レビュー15件(draft9全LGTM+report6=APPROVE4+RC2)。RC型2種=(1)SG-PRE9c偽陽性:assumpti |
+| cmd | `cmd_karo_hotfix_source_equivalent_dedupe_20260828` (`scripts/gates/gate_context_freshness.sh`, `tests/unit/test_gate_context_freshness.bats`) |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -8260,6 +8261,7 @@ codd:
 | cmd | `cmd_karo_hotfix_respawn_relative_launch_20260828` (`scripts/lib/respawn_recovery.sh`, `tests/unit/test_respawn_recovery.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:18:36+09:00 四つのらせん(殿下問 2026-08-28 14:14『同じらせんをデッドコードやリファクタにも応用できるか』→YES)。型は共通=①計測器を名指しから仕込む(本番に常設)②1 unit だけ切る③計測を一段深くする④計測器は残す。切る対象 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:21:01+09:00 session_save_20260828_1420 復帰点(将軍 /clear 復帰 第5便、08-28 12:49-14:20)。主軸=殿 3 裁定: (a)13:18『らせんからずれていないか。本来の目的を思い出そう』→一次: 本日  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:13:12+09:00 忍者がauto clearされるのが遅いせいでCTXがたまったままの忍者に家老が配備してしまう。今の問題点はなんだ？ |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -8915,9 +8917,9 @@ codd:
 | causal | `cmd_karo_hotfix_cmd_complete_report_gate_exec_20260828` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_t100_runtime_lane_shared_main_only_20260828` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_finalize_segments_20260828` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_finalize_timezone_20260828` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
-| causal | `cmd_karo_hotfix_finalize_timezone_20260828` files_modified: [[cdp_browser_capability]] |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -9134,6 +9136,7 @@ codd:
 | causal | `cmd_karo_hotfix_t108_doc_lane_source_equivalent_auto_close_20260828` files_modified: [[defense_hierarchy]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T09:06:44+09:00 タスクマップにタイムスタンプがあるといいな。いつマップに登録したか、いつ取り掛かったか、いつ解決したかの三点がタイムスタンプとしてデータとして記載されていれば進捗の抜け漏れ回転、速度などが把握しやすい |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:18:15+09:00 だいぶわかりやすいな。劇的に速度向上を果たしたが、より速くできるはずだ。個別最適化と全体最適をらせん構造で回し、スループット全体を高速化することから現在は徐々にずれてしまっていないか？本来やりたかった目的を思い出そう。 |
+| causal | `cmd_karo_hotfix_source_equivalent_dedupe_20260828` files_modified: [[defense_hierarchy]] |
 | causal_chain | `[[cmd_reflux_insight_202607072138_saizo]]` (L969) |
 | causal_chain | `[[cmd_karo_hotfix_ga219_context_freshness_202607110107]]` (L1030) |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_perf_20260727]]` (L1378) |
@@ -9847,8 +9850,8 @@ codd:
 | causal | `cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_t100_runtime_lane_shared_main_only_20260828` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_finalize_segments_20260828` files_modified: [[cmd_quality_logging]] |
-| causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 | causal | `cmd_karo_hotfix_finalize_timezone_20260828` files_modified: [[cmd_quality_logging]] |
+| causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -13968,6 +13971,7 @@ codd:
 | cmd | `cmd_karo_hotfix_lane_gist_compliance_202607161850` (`scripts/test_speed_task_generator.sh`, `scripts/deploy_task.sh`, `tests/unit/test_test_speed_task_generator.bats`) |
 | causal | `cmd_karo_hotfix_campaign_round_best_202607161904` files_modified: [[provisional_test_speed_task_generator]] |
 | cmd | `cmd_karo_hotfix_campaign_round_best_202607161904` (`scripts/test_speed_task_generator.sh`, `tests/unit/test_test_speed_task_generator.bats`) |
+| cmd | `cmd_karo_ci_fix_33145710597_idle_priority_contract` (`tests/unit/test_test_speed_task_generator.bats`) |
 
 ## provisional_saizo — 仮: Saizo
 
@@ -14828,6 +14832,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:23:02.114687+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:34:08.775146+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:48:21.358187+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:03:17.708943+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
