@@ -15,8 +15,54 @@ setup() {
     chmod +x "$TEMPLATE_ROOT/bin/gh"
 }
 
+create_source_repo() {
+    local repo="$1" state="$2" base_commit source_commit published_commit
+    mkdir -p "$repo"
+    git -C "$repo" init -q -b main
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf '%s\n' 'base' > "$repo/infrastructure.md"
+    git -C "$repo" add infrastructure.md
+    git -C "$repo" commit -q -m 'base'
+    base_commit="$(git -C "$repo" rev-parse HEAD)"
+
+    printf '%s\n' 'source' > "$repo/infrastructure.md"
+    git -C "$repo" add infrastructure.md
+    git -C "$repo" commit -q -m 'source publication candidate'
+    source_commit="$(git -C "$repo" rev-parse HEAD)"
+
+    case "$state" in
+        equivalent)
+            git -C "$repo" checkout -q -b published "$base_commit"
+            printf '%s\n' 'source' > "$repo/infrastructure.md"
+            git -C "$repo" add infrastructure.md
+            git -C "$repo" commit -q -m 'equivalent publication'
+            published_commit="$(git -C "$repo" rev-parse HEAD)"
+            ;;
+        pending)
+            published_commit="$base_commit"
+            ;;
+        mismatch)
+            git -C "$repo" checkout -q -b published "$base_commit"
+            printf '%s\n' 'different publication' > "$repo/infrastructure.md"
+            git -C "$repo" add infrastructure.md
+            git -C "$repo" commit -q -m 'mismatching publication'
+            published_commit="$(git -C "$repo" rev-parse HEAD)"
+            ;;
+        *)
+            printf 'unsupported source state: %s\n' "$state" >&2
+            return 1
+            ;;
+    esac
+
+    git -C "$repo" update-ref refs/heads/main "$source_commit"
+    git -C "$repo" update-ref refs/remotes/origin/main "$published_commit"
+    printf '%s\n' "$source_commit"
+}
+
 run_fixture() {
-    local name="$1" body="$2" rc="$3" root="$FIXTURE_ROOT/$name"
+    local name="$1" state="$2" rc="$3" root="$FIXTURE_ROOT/$name"
+    local source_repo="$root/source-repo" source_commit body
     mkdir -p "$root/scripts/gates" "$root/bin" "$root/tmp"
     cp "$TEMPLATE_ROOT/scripts/inbox_write.sh" "$root/scripts/inbox_write.sh"
     cp "$TEMPLATE_ROOT/scripts/ntfy.sh" "$root/scripts/ntfy.sh"
@@ -27,11 +73,20 @@ run_fixture() {
             > "$root/scripts/gates/$gate"
         chmod +x "$root/scripts/gates/$gate"
     done
+    if [[ "$state" == "normal" ]]; then
+        body='--- 総合判定: OK ---'
+    elif [[ "$state" == "unresolvable" ]]; then
+        source_commit='deadbeefdead'
+        body="WARN: infrastructure.md (source_equivalent boundary rejected: source commit $source_commit is not resolvable)"
+    else
+        source_commit="$(create_source_repo "$source_repo" "$state")"
+        body="WARN: infrastructure.md (source_equivalent boundary rejected: source commit $source_commit is not an origin/main ancestor)"
+    fi
     printf '%s\n' '#!/usr/bin/env bash' "printf '%s\\n' '$body'" "exit $rc" \
         > "$root/scripts/gates/gate_context_freshness.sh"
     chmod +x "$root/scripts/gates/gate_context_freshness.sh"
     run env PATH="$root/bin:$PATH" TMPDIR="$root/tmp" \
-        GATE_IMPROVEMENT_ROOT="$root" GATE_IMPROVEMENT_SOURCE_REPO="$PROJECT_ROOT" \
+        GATE_IMPROVEMENT_ROOT="$root" GATE_IMPROVEMENT_SOURCE_REPO="$source_repo" \
         GATE_IMPROVEMENT_NOW=1770000000 GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS=0 \
         bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
 }
@@ -42,25 +97,26 @@ run_fixture() {
 # can be published without source-commit ancestry; unknown and missing commits
 # must still wake the improvement lane instead of being silently suppressed.
 @test "GA-505 source-equivalent publication states keep WARN notifications fail-closed" {
-    run_fixture published_ancestor '--- 総合判定: OK ---' 0
+    run_fixture normal normal 0
     [ "$status" -eq 0 ]
     [[ "$output" != *"SENT: context_freshness"* ]]
 
-    run_fixture unpublished_local_main \
-        'WARN: infrastructure.md (source_equivalent boundary rejected: source commit 3f7035401 is not an origin/main ancestor)' 2
+    run_fixture equivalent equivalent 2
     [ "$status" -eq 0 ]
     [[ "$output" == *"source-equivalent publication already matches origin/main"* ]]
     [[ "$output" != *"SENT: context_freshness"* ]]
 
-    run_fixture unknown_commit \
-        'WARN: infrastructure.md (source_equivalent boundary rejected: source commit e3c456584109 is not resolvable)' 2
+    run_fixture pending pending 2
     [ "$status" -eq 0 ]
     [[ "$output" == *"SENT: context_freshness"* ]]
 
-    run_fixture missing_commit \
-        'WARN: infrastructure.md (source_equivalent boundary rejected: source commit deadbeefdead is not resolvable)' 2
+    run_fixture mismatch mismatch 2
     [ "$status" -eq 0 ]
     [[ "$output" == *"SENT: context_freshness"* ]]
 
-    printf '%s\n' 'fixtures=4 expected_notifications=2 observed_notifications=2 false_positive=0 false_negative=0'
+    run_fixture unresolvable unresolvable 2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: context_freshness"* ]]
+
+    printf '%s\n' 'fixtures=4 expected_notifications=3 observed_notifications=3 false_positive=0 false_negative=0'
 }
