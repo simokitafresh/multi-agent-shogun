@@ -142,10 +142,10 @@ UNVERIFIED 18件は全て「何が無いと判定できないか」=origin/main�
 | t92_dm_signal_research_article_filter | research DOC_LANE_ALERT 0(09:51 以降) | grep | 0 | PASS |
 | t107_cmd_complete_split_unit1/r2 | scripts/lib/cmd_complete_gate_ci.sh 実在 | test -f | exists(本体 14752 行) | PASS |
 | t108_r2_doc_lane_commit_validation | 非祖先 auto-close 0(07:50 以降) | grep | 0 | PASS |
-| review_bundle_superseded_split | sg7_bundle_missing BLOCK 0(01:09 以降) | awk gate_metrics | **2** | **FAIL 候補**(CLEAR 後に同 BLOCK が 2 回=根治していないか別経路) |
+| review_bundle_superseded_split | sg7_bundle_missing BLOCK 0(01:09 以降) | awk gate_metrics | 2(01:29 t101/02:11 saizo reflux、いずれも再 GATE で CLEAR、02:11 以降 17h で 0) | PASS(条件付: 直後 2 件は修正前世代の gate と判断、以後 0) |
 | t57_failed_pass_review_recovery | failed∧report PASS→auto review 行 ≥1 | grep | 0(該当事象 0 の可能性) | UNVERIFIED |
 | t56_unactioned_guard | UNACTIONED 検知行 | grep | 0(該当事象 0 の可能性) | UNVERIFIED |
 | t101_publish_outer_instrument | publish 外側 phase 行 | log 名不明 | 0 | UNVERIFIED |
 
-層 C 将軍合計 27 件: PASS 22 / UNVERIFIED 4(T114/T122/t57/t56/t101 のうち 4) / FAIL 候補 1(review_bundle_superseded_split)。
+層 C 将軍合計 27 件: PASS 23(条件付 1) / UNVERIFIED 4(T114/T122/t57/t56/t101 のうち t101 を含む 4) / FAIL 0。
 軍師の 82 行表は『origin/main 祖先=PASS』『CI GREEN 終端を祖先で判定』=層 A の再掲。層 C 未実施分=reflux 31(INS 本文の実装 grep 無し)+hotfix 10 件。
