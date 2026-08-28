@@ -2020,6 +2020,53 @@ _ninja_monitor_run_bounded_gate_stall() {
     return 0
 }
 
+NINJA_MONITOR_SNAPSHOT_TIMEOUT=${NINJA_MONITOR_SNAPSHOT_TIMEOUT:-120}
+
+_ninja_monitor_run_bounded_snapshot() {
+    local timeout_sec="${NINJA_MONITOR_SNAPSHOT_TIMEOUT:-120}" lock_file lock_fd worker_pid
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+
+    if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
+        refresh_karo_snapshot_fast_path
+        return $?
+    fi
+    [ -n "${_NM_SCRIPT_PATH:-}" ] || return 1
+    lock_file="${STATE_DIR:-/tmp}/snapshot_refresh.lock"
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "SNAPSHOT-REFRESH-BACKGROUND-SKIP: worker_running"
+        return 0
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        local rc=0
+        timeout --signal=TERM --kill-after=2 "$timeout_sec" \
+            env NINJA_MONITOR_LIB_ONLY=1 \
+                NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
+                NINJA_MONITOR_OWNER_FILE="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}" \
+                NINJA_MONITOR_OWNER_PID="$$" \
+                NINJA_MONITOR_GENERATION="${NINJA_MONITOR_GENERATION:-}" \
+                NINJA_MONITOR_WORKER_OWNER_GUARD=1 \
+                SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" \
+            bash -c 'source "$1"; ninja_monitor_worker_owner_is_current || exit 0; refresh_karo_snapshot_fast_path' \
+                _ "$_NM_SCRIPT_PATH" || rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            log "SNAPSHOT-REFRESH-TIMEOUT: timeout=${timeout_sec}s rc=$rc retry=next-cycle"
+        elif [ "$rc" -ne 0 ]; then
+            log "SNAPSHOT-REFRESH-BOUNDED-FAIL: rc=$rc retry=next-cycle"
+        else
+            log "SNAPSHOT-REFRESH-DONE: rc=0"
+        fi
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "SNAPSHOT-REFRESH-BACKGROUND-START: pid=$worker_pid timeout=${timeout_sec}s"
+    return 0
+}
+
 # cmd_karo_hotfix_completion_event_dedupe_20260723: durable report-gate cache.
 # REPORT_GATE_SENT suppresses only the
 # notification; this cache suppresses the repeated gate execution itself.
@@ -12927,7 +12974,7 @@ while true; do
 
     # ═══ STEP 1a: 家老陣形図の早期更新 ═══
     # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。
-    _ninja_monitor_observe_call early_snapshot refresh_karo_snapshot_fast_path || true
+    _ninja_monitor_observe_call early_snapshot _ninja_monitor_run_bounded_snapshot || true
     _ninja_monitor_cycle_phase_mark lifecycle
 
     _ninja_monitor_phase_call lifecycle process_checkpoint_manifests
@@ -13087,7 +13134,7 @@ while true; do
 
     # ═══ STEP 1b: 後段チェック反映後の最終snapshot更新 ═══
     _ninja_monitor_cycle_phase_mark publish
-    refresh_karo_snapshot_fast_path
+    _ninja_monitor_phase_call publish final_snapshot _ninja_monitor_run_bounded_snapshot
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_throughput_ready_events # durable throughput connector (ready event exactly once)
     check_shogun_idle_analysis_trigger  # 将軍idle時自己分析trigger (cmd_3549)
