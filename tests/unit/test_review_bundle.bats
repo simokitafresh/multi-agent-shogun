@@ -35,6 +35,7 @@ SH
 #!/bin/sh
 test "$REVIEW_APPROVAL_CANONICAL_ENTRY" = review_bundle
 grep -q 'cmd_id: cmd_one' "$TEST_ROOT/logs/gunshi_review_log.yaml"
+printf '%s\n' "$@" >"$TEST_ROOT/approval.args"
 echo approval >>"$TEST_CALLS"
 SH
   cat >"$root/scripts/lib/review_approval.sh" <<'SH'
@@ -86,6 +87,73 @@ YAML
   [ "$(grep -c '^approval$' "$TEST_CALLS")" -eq 1 ]
   [ "$(grep -c '^inbox$' "$TEST_CALLS")" -eq 1 ]
   [ "$(tr '\n' ' ' <"$TEST_CALLS")" = "precheck ledger approval notify inbox " ]
+  [ "$(wc -l <"$root/approval.args")" -eq 4 ]
+}
+
+@test "single report correction scope reaches canonical approval and stays typed" {
+  root="$BATS_TEST_TMPDIR/root"
+  mkdir -p "$root/scripts/gates" "$root/scripts/lib" "$root/queue/reports" \
+    "$root/queue/tasks" "$root/queue/gates" "$root/logs"
+  ln -s "$BATS_TEST_DIRNAME/../../scripts/review_bundle.py" "$root/scripts/review_bundle.py"
+  cat >"$root/scripts/gates/gate_gunshi_report_precheck.sh" <<'SH'
+#!/bin/sh
+exit 0
+SH
+  cat >"$root/scripts/gunshi_log_append.sh" <<'SH'
+#!/bin/sh
+cat >"$TEST_ROOT/logs/gunshi_review_log.yaml"
+SH
+  cat >"$root/scripts/review_approval.sh" <<'SH'
+#!/bin/sh
+printf '%s\n' "$@" >"$TEST_ROOT/approval.args"
+test "$REVIEW_APPROVAL_CANONICAL_ENTRY" = review_bundle
+SH
+  cat >"$root/scripts/lib/review_approval.sh" <<'SH'
+review_two_phase_ready_gunshi() { return 0; }
+SH
+  cat >"$root/scripts/inbox_write.sh" <<'SH'
+#!/bin/sh
+exit 0
+SH
+  chmod +x "$root/scripts/gates/gate_gunshi_report_precheck.sh" \
+    "$root/scripts/gunshi_log_append.sh" "$root/scripts/review_approval.sh" \
+    "$root/scripts/inbox_write.sh"
+  cat >"$root/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_report_scope:
+    acceptance_criteria: [one]
+    target_path: scripts/review_bundle.py
+    project: infra
+YAML
+  cat >"$root/queue/reports/worker_report_cmd_report_scope.yaml" <<'YAML'
+parent_cmd: cmd_report_scope
+report_id: rpt-report-scope
+status: completed
+verdict: PASS
+binary_checks: {AC1: [{result: yes}]}
+result: {summary: measured pass}
+YAML
+  cat >"$root/queue/tasks/worker.yaml" <<'YAML'
+task: {parent_cmd: cmd_report_scope, report_filename: worker_report_cmd_report_scope.yaml}
+YAML
+  cat >"$root/review-entry.yaml" <<'YAML'
+cmd_id: cmd_report_scope
+review_type: report
+YAML
+
+  run env TEST_ROOT="$root" python3 "$root/scripts/review_bundle.py" --root "$root" single \
+    --cmd cmd_report_scope --verdict APPROVE \
+    --report queue/reports/worker_report_cmd_report_scope.yaml \
+    --review-entry "$root/review-entry.yaml" --correction-scope report
+  [ "$status" -eq 0 ]
+  [ "$(sed -n '5p' "$root/approval.args")" = report ]
+  [ "$(wc -l <"$root/approval.args")" -eq 5 ]
+
+  run python3 "$root/scripts/review_bundle.py" --root "$root" single \
+    --cmd cmd_report_scope --verdict APPROVE \
+    --report queue/reports/worker_report_cmd_report_scope.yaml \
+    --review-entry "$root/review-entry.yaml" --correction-scope invalid
+  [ "$status" -ne 0 ]
 }
 
 @test "single accepts one matching mapping from a sequence and rejects ambiguity" {
