@@ -1524,3 +1524,6 @@
 
 ## 2026-08-28 07:54-12:45（将軍 /clear 復帰 第4便・便停止 3 回と家老誤既読化 4 回の根治）
 - 意図: ext4 後の便回転を止めていた構造(家老 task_id フィルタ誤適用/forced_idle の未 GATE 消失/gate 内部例外/AC3 の DOC_LANE 誤配備)を名指しして直す。結果: CLEAR 本日 57(便再開 12:28-12:36 に 8 連続、在庫 0)、CI RED 7 連続→GREEN(shard inventory 392e7ebd5+locale+shebang+build_cache の 4 ci_fix)、cmd_4409 AC1/AC2+cmd_4410 AC2 CLEAR、skills 絶対パス 5→0。因果: 将軍撤回 5 回の共通型=否定判定の早断定→shogun_commit_verdict.sh(469da38f5、patch-id 同値探索 c9db1ddad)/家老の誤規則は記憶DB 自己引用で残存→CLAUDE.md 焼込 89510dbaa/タスクマップに 3 タイムスタンプ(todo_map_timestamps.py)。未決=T105(Codex 更新チェック無効化)・T106(DM-signal ext4 複製済 49G・採用/削除は殿裁定)。型=instructions/shogun.md『復帰後の型・第六弾 4則』。origin: [[session_save_20260828_1246]] -> [[復帰後の型_第六弾]] -> [[便停止根治_20260828]]
+
+## 2026-08-28 14:14-14:20（四つのらせん・殿下問『同じらせんをデッドコードやリファクタにも応用できるか』）
+- 意図: らせん(計測器→1 unit→一段深く→計測器は残す)を速度以外へ横展開する。結果: (1)速度=finalize 区間分解で wait 9%・fin_c 292s を名指し (2)デッドコード=関数カバレッジ計測器 T132 下知 (3)リファクタ=T107 unit 分割を継続 (4)知識=RETIRE 141/reflux と同型。因果: [[四つのらせん_20260828]] -> [[らせん正本_第二十五話型]] -> [[デッドコードのらせん_T132]] -> [[finalize84%]]

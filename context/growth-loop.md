@@ -351,3 +351,5 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - [[gunshi_idle_deepdive_design_impl_phantom_20260516]] — 軍師idle: deepdive設計実装ファントム問題(2026-05-16)
 - [[gunshi_idle_brainwash_audit_memory_loop_20260602]] — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)
 - [[gunshi_idle_lg048_automate_sg_pre31_20260706]] — 軍師idle: LG048 SG-PRE31自動化+extract_command_files read_markers「から」欠落分析(2026-07-06)。cmd_3713/3714連続BLOCKの根因特定→D0部分修正(commit 39448c969)。残存問題=write_marker近接誤判定
+
+- → [[四つのらせん_20260828]] らせんの横展開(速度/デッドコード/リファクタ/知識)=2026-08-28 殿下問。計測器→1 unit→一段深く→計測器は残す

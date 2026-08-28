@@ -901,6 +901,7 @@ codd:
 | causal | `cmd_4385` files_modified: [[three_layer_memory_system]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T16:16:20+09:00 今後らせんで最適といったら第二十五話の型と同じスタイルで進められているかを何時でも確認し、誰もが即座に修正できるようにしよう。三層記憶に貫通させよ |
 | causal | `cmd_4400` files_modified: [[three_layer_memory_system]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:17:38+09:00 三つのらせん＋今のらせんの４つを三層記憶に貫通させておいて |
 | causal_chain | `[[cmd_karo_recon_memory_cache_mtime_freshness_20260726]]` (L1343) |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
@@ -3406,6 +3407,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T12:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -5755,6 +5757,7 @@ codd:
 | lesson | `L1657` git-ignore正本を含むtask selectorはmarker-safe一時fixtureで分離検証する |
 | lesson | `L1660` CI並列shardの語彙判定はgrep/localeから分離する |
 | lesson | `L1663` single wrapperはbatch itemの任意メタデータを明示伝播する |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:19:22+09:00 idle忍者に対するauto clearまでが長すぎないか？バグか？ |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -8248,6 +8251,7 @@ codd:
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_done_report_review_20260828` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | cmd | `cmd_karo_hotfix_respawn_relative_launch_20260828` (`scripts/lib/respawn_recovery.sh`, `tests/unit/test_respawn_recovery.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:18:36+09:00 四つのらせん(殿下問 2026-08-28 14:14『同じらせんをデッドコードやリファクタにも応用できるか』→YES)。型は共通=①計測器を名指しから仕込む(本番に常設)②1 unit だけ切る③計測を一段深くする④計測器は残す。切る対象 |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9485,6 +9489,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T03:59:26.940554+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:13:37+09:00 T128 / T98 / T122の進捗は？どこかでつまりが生じていないか確認し、解消せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:28:24.246243+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:04:22.017805+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -10657,6 +10662,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T23:49:51+09:00 readmeは改善したのか？軍師のことなどは一切書かれていない気がする |
 | causal | `cmd_karo_hotfix_t99_report_precheck_20260828` files_modified: [[report_quality_protocol]] |
 | cmd | `cmd_karo_hotfix_t99_report_precheck_20260828` (`scripts/report_field_set.sh`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:13:33+09:00 T122はどうなった？ |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -16734,11 +16740,12 @@ codd:
 |------|---|
 | id | spiral_canon_sengoku25 |
 | label | らせん最適の正本型(第二十五話) |
-| aliases | らせんで最適, らせん構造, らせんの型, 第二十五話の型, らせんは止めた瞬間にただの円になる, 個別最適化と全体最適化, 部分最適化と全体最適化, 計測器を仕込む, 計測器は本番に埋め込め, 一枚剥ぐと次の犯人, スループット改善の手順, らせんが停滞している, 推理なしで始まる状態 |
+| aliases | らせんで最適, らせん構造, らせんの型, 第二十五話の型, らせんは止めた瞬間にただの円になる, 個別最適化と全体最適化, 部分最適化と全体最適化, 計測器を仕込む, 計測器は本番に埋め込め, 一枚剥ぐと次の犯人, スループット改善の手順, らせんが停滞している, 推理なしで始まる状態, 四つのらせん, 4つのらせん, 三つのらせん, 速度のらせん, デッドコードのらせん, リファクタのらせん, 肥大分割のらせん, 知識のらせん, 同じらせんをデッドコードやリファクタにも応用できるか, らせんの応用, 関数カバレッジ計測器, 7日0呼出=退役候補, 1関数/commitで退役, 計測器の名指しから始めたか, 直した後に計測を一段深くしたか, 計測器は本番に残るか, 逸脱チェック3問, 切る対象が違うだけ |
 | related_concepts | growth_loop, cmd_chronicle, defense_hierarchy, semantic_causal_automation |
 
 | 種別 | パス/参照 |
 |------|----------|
+| memory | knowledge:2ec61457fa6d18bd — 四つのらせん(速度/デッドコード/リファクタ/知識)。型=計測器→1 unit→一段深く→計測器は残す。origin [[四つのらせん_20260828]] |
 | file | `/mnt/c/Python_app/DM-signal/marketing-director/content/articles/shogun/sengoku-25-spiral-improvement.md` — 正本記事(gist 0b2938de)。型の4手+逸脱チェックの原典 |
 | file | `context/growth-loop.md` — 成長ループ原理(らせんの上位原理) |
 | memory | `knowledge:26f1a597d26011e3` — 型の4手+逸脱チェック3問(殿裁定2026-08-25 16:16) |
