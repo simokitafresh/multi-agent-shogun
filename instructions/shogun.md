@@ -168,6 +168,13 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第六弾 4則（2026-08-28 08:00-12:45 の便停止 3 回・家老誤既読化 4 回・将軍誤記 2 回から）
+
+1. **便停止は「家老が止まっている」ではなく「何で止まっているか」を gate_metrics の非 CLEAR 行と deploy_task.log の BLOCK 行で名指ししてから 1 通を書け。** 12:24 の 1h16m 停止は (a)ci_readiness の python OSError Traceback→BLOCK 化(gate 内部例外)と (b)AC3 report-only を忍者へ配備して DOC_LANE_ROUTING BLOCK の 2 因。「GATE を回せ」だけの 1 通では家老は同じ壁に当たる。順序付き 1 通に「壁の名前と迂回先(T88 型 report-only 完了/再 GATE)」を書く。
+2. **家老の誤判断規則は watcher 文を直しても消えない。家老自身の記憶DB自己記録を引用して自己強化する(T122 4 回目)。** 修正先は CLAUDE.md/AGENTS.md の positive_rule+reason(89510dbaa)。本番 proof=修正後の家老 /clear 越しに「適用せず既読化」0 行。
+3. **GATE CLEAR は ToBe の証明ではない。cmd の目的(例: 固有絶対パス 0)を grep 1 本で再実行し、残存を将軍 doc lane で 0 にしてから閉じる(cmd_4409: skills 5 本残存→fb017daa6)。**
+4. **殿裁定待ちの task は「配備した時点で殿裁定前の実行」になり得る。裁定待ちを task に書くな、配備するな(T106: 才蔵が rsync 複製 49G を裁定前に実行)。**将軍が「未実施」と書く前に ls/git rev-parse で複製先を見よ(将軍誤記 09:42)。
+
 ## 復帰後の型・第五弾 3則（2026-08-27 15:18-08-28 07:52 に将軍が 5 回撤回した「否定判定の早断定」から・将軍自身に適用）
 
 1. **否定判定(不在/消失/未到達/偽CLEAR)は `bash scripts/shogun_commit_verdict.sh <hash> [--context context/x.md]` の verdict=ABSENT を見るまで口にするな。** 5 回とも 1 つの文脈だけで検証し、fatal/空を「不在」と断定した: T82(fetch 失敗を `2>/dev/null` で隠し local 比較で偽CLEAR)・T69(worktree 消失=未commit 実装消失と推定、commit は実在)・T108(control repo で rev-parse し rebalancer 正準 repo の commit を不在と断定、正しい marker を除去)。正しい文脈(origin/正準 repo/全 ref)は毎回存在した。反証の不在≠不在の証明(LS-A09(8))。
