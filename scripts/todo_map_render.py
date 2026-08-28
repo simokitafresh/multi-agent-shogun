@@ -24,7 +24,13 @@ def tsline(i):
 rows=[dict(st=m.group(1),id=m.group(2),ev=m.group(3),title=m.group(4),why=m.group(5))
       for m in re.finditer(r'^- \[(.)\] (T\d+[a-z]?|K\d+)\((.*?)\) (.*?) ★(.*)$',s,re.M)]
 cnt={k:sum(1 for r in rows if r['st']==k) for k in 'x~ '}
-def row(r,c): return f'    <div class="row {c}"><span class="id">{r["id"]}</span><span class="t">{html.escape(r["title"])}</span><span class="d">{html.escape(r["ev"])}</span><span class="w">{html.escape(r["why"])}</span>{tsline(r["id"])}</div>'
+def evhtml(ev):
+    # 経緯は '; ' 区切りで新しい順。先頭 3 段だけ表示し、残りは <details> に畳む(殿指摘 2026-08-28 20:36『縦長すぎる』)
+    segs=[x.strip() for x in ev.split('; ') if x.strip()]
+    head='; '.join(segs[:3]); rest=segs[3:]
+    if not rest: return html.escape(head)
+    return html.escape(head)+f'<details><summary>全経緯 +{len(rest)} 段</summary>'+html.escape('; '.join(rest))+'</details>'
+def row(r,c): return f'    <div class="row {c}"><span class="id">{r["id"]}</span><span class="t">{html.escape(r["title"][:160])}</span><span class="d">{evhtml(r["ev"])}</span><span class="w">{html.escape(r["why"])}</span>{tsline(r["id"])}</div>'
 def sec(name,c,st,rev=False):
     rs=[r for r in rows if r['st']==st]; rs=rs[::-1] if rev else rs
     body='\n'.join(row(r,c) for r in rs)
