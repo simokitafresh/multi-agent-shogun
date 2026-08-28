@@ -6886,6 +6886,7 @@ PY
 #!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR="$1"
+TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 repo="$2"
 task="$3"
 report="$4"
