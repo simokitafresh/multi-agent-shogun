@@ -7483,3 +7483,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T23:59:22+09:00"
+- id: INS-20260829-005119817-4177
+  ts: "2026-08-29T00:51:19+09:00"
+  insight: "deploy_task task_mutations の未計測区間: 08-28/29 n=26 で task_mutations avg 27.5s に対し TASK_MUTATION_PHASE 7 sub-phase 合計 avg 9.3s=未計測 avg 18s(直近 5 件 6.5-33.6s)。報告→配備の律速を名指すには残区間(entrance_gates 前後・report_publication 後の task_yaml_syntax/DEPLOYED_AT 等)を phase 化し unaccounted=0 にする(らせん③計測を一段深く)。unit C=karo_hotfix、T161 unit A 配備後に 1 通"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
