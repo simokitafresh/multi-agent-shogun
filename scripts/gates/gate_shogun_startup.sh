@@ -2045,6 +2045,30 @@ else
     echo "  OK: 30分超のbatsプロセスなし"
 fi
 
+# --- Gate 10.08: monitor lifecycle 失敗行(直近60分) ---
+# 2026-08-29 00:40 将軍Q6自動化ターゲット(LS124/型十弾-2): hotfix live 後の機構固有失敗行
+# (rc=64 / SNAPSHOT-HEARTBEAT-FAIL / LIFECYCLE-BACKGROUND-FAIL / STAGE1-* / FALLBACK)は pane や
+# 陣形図に出ず、将軍が手で awk を打つまで見えなかった(00:38 に 5 行/h を手動検出)。起動時に機械表示する。
+echo "■ monitor lifecycle 失敗行(直近60分)"
+_mon_log="$SCRIPT_DIR/logs/ninja_monitor.log"
+if [ -s "$_mon_log" ]; then
+    _mon_since=$(date -d '-60 min' '+%Y-%m-%d %H:%M' 2>/dev/null || date '+%Y-%m-%d %H:%M')
+    _mon_fail=$(awk -v t="[$_mon_since" 'substr($0,1,17) >= t' "$_mon_log" 2>/dev/null \
+        | grep -E 'rc=64|HEARTBEAT-FAIL|LIFECYCLE-BACKGROUND-FAIL|STAGE1-[A-Z-]*(FAIL|TIMEOUT)|FALLBACK' 2>/dev/null)
+    _mon_fail_n=$(printf '%s\n' "$_mon_fail" | grep -c . 2>/dev/null || echo 0)
+    if [ "${_mon_fail_n:-0}" -gt 0 ]; then
+        echo "  WARN: lifecycle 失敗行 ${_mon_fail_n}行/60分(集計: awk ts>=-60min logs/ninja_monitor.log | grep -E 'rc=64|HEARTBEAT-FAIL|LIFECYCLE-BACKGROUND-FAIL|STAGE1-*FAIL|FALLBACK'。1行=monitor cycle の失敗ログ1行)"
+        printf '%s\n' "$_mon_fail" | awk '{k=$0; sub(/^\[[^]]*\] */,"",k); sub(/ .*/,"",k); c[k]++} END{for(k in c) printf "    %s ×%d\n", k, c[k]}'
+        printf '%s\n' "$_mon_fail" | tail -2 | cut -c1-160 | sed 's/^/    /'
+        echo "  → 走行中 hotfix の対象なら task/掲示板で壁の名前を確認(型十弾-1)。誰も持っていなければ将軍が壁を名指しして 1 通"
+        alerts+=("monitor lifecycle 失敗行 ${_mon_fail_n}行/60分 — 壁の所有者を一次で確認")
+    else
+        echo "  OK: 直近60分の lifecycle 失敗行 0"
+    fi
+else
+    echo "  SKIP: logs/ninja_monitor.log なし"
+fi
+
 # --- Gate 10.1: 便回転チェック(GATE CLEAR済み未回収在庫) ---
 # 2026-08-11: 便1時間ゼロを殿指摘まで検出できなかった事故の環境埋込み(Q6自動化ターゲット)。
 # 掲示板の「完了レビュー LGTM」status:open = 軍師LGTM済みだが家老ACCEPT/GATE未了の在庫。
