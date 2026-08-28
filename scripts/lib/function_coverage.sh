@@ -110,6 +110,7 @@ _fc_json_record() {
 
 function_coverage_finish() {
     [ "${_FC_ENABLED:-0}" -eq 1 ] || return 0
+    local _fc_records="" _fc_fn _fc_record
     _FC_ENABLED=0
     if [ "${_FC_EXTERNAL_DEBUG:-0}" != 1 ]; then
         trap - DEBUG
@@ -119,12 +120,16 @@ function_coverage_finish() {
         fi
     fi
     [ -n "${_FC_LOG:-}" ] || return 0
+    # Build one buffer and perform one locked append.  A printf subprocess per
+    # function (plus sort) made the completion path dominate short deploys.
+    for _fc_fn in "${!_FC_DEFINED[@]}"; do
+        printf -v _fc_record '{"schema":"function_coverage.v1","observed_date":"%s","observed_at":"%s","execution_id":"%s","script":"%s","function":"%s","calls":%s,"defined":true}\n' \
+            "$_FC_DATE" "$_FC_OBSERVED_AT" "$_FC_EXECUTION_ID" "$_FC_SCRIPT" "$_fc_fn" "${_FC_CALLS["$_fc_fn"]:-0}"
+        _fc_records+="$_fc_record"
+    done
     {
         flock -x 9 || exit 0
-        local _fc_fn
-        for _fc_fn in "${!_FC_DEFINED[@]}"; do
-            _fc_json_record "$_fc_fn" "${_FC_CALLS["$_fc_fn"]:-0}"
-        done | sort -t '"' -k 12,12
+        printf '%s' "$_fc_records"
     } 9>"${_FC_LOG}.lock" >>"$_FC_LOG" 2>/dev/null || true
     unset FUNCTION_COVERAGE_ACTIVE
     return 0
