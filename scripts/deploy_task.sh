@@ -11492,10 +11492,19 @@ if [ "${DEPLOY_TASK_MUTATION_MEASUREMENTS_INSTALLED:-0}" != "1" ]; then
         # then` branch when re-evaluated. Keep those Python-backed functions
         # on their existing call path; their surrounding mutation boundary is
         # still measured by the other decorators.
-        declare -f "$_dt_mutation_measure_fn" | grep -q '<<' && continue
+        # Do not pipe declare -f into grep -q: with pipefail enabled, grep's
+        # early match closes the pipe and turns Bash's SIGPIPE into a failed
+        # declaration, which can leave the subsequent eval with truncated
+        # function text. Inspect the captured definition instead.
+        _dt_mutation_function_definition="$(declare -f "$_dt_mutation_measure_fn")"
+        if [[ "$_dt_mutation_function_definition" == *'<<'* ]]; then
+            unset _dt_mutation_function_definition
+            continue
+        fi
         declare -F "deploy_task_original_${_dt_mutation_measure_fn}" >/dev/null 2>&1 && continue
-        eval "$(declare -f "$_dt_mutation_measure_fn" \
-            | sed "1s/^${_dt_mutation_measure_fn} /deploy_task_original_${_dt_mutation_measure_fn} /")"
+        eval "$(sed "1s/^${_dt_mutation_measure_fn} /deploy_task_original_${_dt_mutation_measure_fn} /" \
+            <<< "$_dt_mutation_function_definition")"
+        unset _dt_mutation_function_definition
         eval "${_dt_mutation_measure_fn}() {
             if [ \"\${DEPLOY_TASK_PHASE:-}\" = task_mutations ]; then
                 deploy_task_mutation_phase ${_dt_mutation_measure_fn} deploy_task_original_${_dt_mutation_measure_fn} \"\$@\"
@@ -11505,6 +11514,25 @@ if [ "${DEPLOY_TASK_MUTATION_MEASUREMENTS_INSTALLED:-0}" != "1" ]; then
         }"
     done
     unset _dt_mutation_measure_fn _dt_mutation_measure_functions
+fi
+
+# deploy_task_prepare_remote_tip_worktree contains an embedded Python heredoc,
+# so the generic declaration-based decorator above intentionally leaves it
+# untouched. Keep it as one explicit top-level phase: its nested git, marker,
+# and task projection work must be attributable without re-evaluating the
+# heredoc through Bash's declare -f output.
+if declare -F deploy_task_prepare_remote_tip_worktree >/dev/null 2>&1 \
+    && ! declare -F deploy_task_original_prepare_remote_tip_worktree >/dev/null 2>&1; then
+    eval "$(declare -f deploy_task_prepare_remote_tip_worktree \
+        | sed '1s/^deploy_task_prepare_remote_tip_worktree /deploy_task_original_prepare_remote_tip_worktree /')"
+    deploy_task_prepare_remote_tip_worktree() {
+        if [ "${DEPLOY_TASK_PHASE:-}" = task_mutations ]; then
+            deploy_task_mutation_phase deploy_task_prepare_remote_tip_worktree \
+                deploy_task_original_prepare_remote_tip_worktree "$@"
+        else
+            deploy_task_original_prepare_remote_tip_worktree "$@"
+        fi
+    }
 fi
 
 # The extracted apply function contains heredocs, so it is wrapped separately
