@@ -7039,3 +7039,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-181240393-9ce4
+  ts: "2026-08-28T18:12:40+09:00"
+  insight: "daemon 文脈の再現は環境(PATH)だけでなく trap も含む: ninja_monitor の function_timing DEBUG trap が BASH_REMATCH を潰し respawn_recovery.sh L28 が invalid variable name(T35 同型再発)。lib で BASH_REMATCH を使うと monitor 内で壊れる→lib 契約 bats に『trap '' DEBUG 下で動く』を標準 fixture 化(gate: scripts/lib/*.sh の BASH_REMATCH を WARN)"
+  priority: "high"
+  source: "manual"
+  fix_known: false
+  status: pending
