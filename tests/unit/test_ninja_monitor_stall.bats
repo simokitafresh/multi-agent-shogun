@@ -5403,6 +5403,47 @@ SH
     [ "$output" = "periodic=1 singleflight=1 owner_fenced=1 max_gap_le_5s=1" ]
 }
 
+# test_necessity: the heartbeat must invoke the production entrypoint's
+# refresh-snapshot CLI contract, not a fixture worker that ignores arguments;
+# otherwise validator regressions become rc64 failures in production.
+@test "snapshot heartbeat production CLI dispatch completes" {
+    run bash -lc '
+        set -euo pipefail
+        PROJECT_ROOT="'"$PROJECT_ROOT"'"
+        root="'"$BATS_TEST_TMPDIR"'/snapshot-production-cli"
+        mkdir -p "$root/scripts" "$root/queue/tasks" "$root/queue/reports" "$root/state" "$root/logs" "$root/bin"
+        cp "$PROJECT_ROOT/scripts/ninja_monitor.sh" "$root/scripts/ninja_monitor.sh"
+        ln -s "$PROJECT_ROOT/scripts/lib" "$root/scripts/lib"
+        ln -s "$PROJECT_ROOT/lib" "$root/lib"
+        cat > "$root/bin/tmux" <<'TMUX'
+#!/usr/bin/env bash
+exit 1
+TMUX
+        chmod +x "$root/bin/tmux"
+        export PATH="$root/bin:$PATH"
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        export SHOGUN_STATE_DIR="$root/state"
+        export NINJA_MONITOR_LIVENESS_OVERRIDE_PID=$$
+        owner="$root/owner"
+        printf "%s production-generation %s\\n" "$$" "$EPOCHSECONDS" > "$owner"
+        export NINJA_MONITOR_OWNER_FILE="$owner"
+        bash "$root/scripts/ninja_monitor.sh" --refresh-snapshot
+        test -s "$root/queue/karo_snapshot.txt"
+        test -s "$root/queue/ninja_states.yaml"
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        export LOG="$root/logs/monitor.log" STATE_DIR="$root/state"
+        _ninja_monitor_snapshot_heartbeat_once "$root/scripts/ninja_monitor.sh" "$owner" production-generation "$$"
+        for _ in $(seq 1 100); do
+            grep -q "SNAPSHOT-HEARTBEAT-DONE: rc=0" "$LOG" && break
+            sleep 0.1
+        done
+        grep -q "SNAPSHOT-HEARTBEAT-DONE: rc=0" "$LOG"
+        printf "production_cli_rc=0 heartbeat_done=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "production_cli_rc=0 heartbeat_done=1" ]
+}
+
 # test_necessity: lifecycle mechanical checks must have one worker per lane;
 # the second trigger is suppressed while the first retains its side effect.
 @test "lifecycle background lane is single-flight and owner-fenced" {

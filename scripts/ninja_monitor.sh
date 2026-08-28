@@ -60,7 +60,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fi
 elif (( $# != 0 )) && ! {
     [[ "${1:-}" == "--check-and-update-done-task" && $# -eq 2 ]] ||
-        [[ "${1:-}" == "--lifecycle-worker" && $# -ge 2 ]]
+        [[ "${1:-}" == "--lifecycle-worker" && $# -ge 2 ]] ||
+        [[ "${1:-}" == "--refresh-snapshot" && $# -eq 1 && "${NINJA_MONITOR_LIB_ONLY:-0}" == "1" ]] ||
+        [[ "${1:-}" == "--refresh-snapshot-task" && $# -eq 2 && "${NINJA_MONITOR_LIB_ONLY:-0}" == "1" ]]
 }; then
     _ninja_monitor_usage
     exit 64
