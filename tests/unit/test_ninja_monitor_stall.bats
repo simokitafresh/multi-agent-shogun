@@ -5093,6 +5093,38 @@ PY
     [ "$output" = "background=1 duplicate=1 timeout=1" ]
 }
 
+# test_necessity: throughput scan is a long external lifecycle operation; it
+# must return the monitor immediately, dedupe concurrent workers, and retain a
+# retryable timeout outcome.
+@test "throughput scan production path is backgrounded and bounded" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/throughput-bounded"
+        mkdir -p "$root/state"
+        printf "ninja_monitor_worker_owner_is_current() { return 0; }\\n" > "$root/worker.sh"
+        printf "#!/usr/bin/env bash\\nsleep 5\\n" > "$root/throughput_scan.sh"
+        chmod +x "$root/throughput_scan.sh"
+        STATE_DIR="$root/state"; LOG="$root/monitor.log"; _NM_SCRIPT_PATH="$root/worker.sh"
+        THROUGHPUT_SCAN_SCRIPT="$root/throughput_scan.sh"; THROUGHPUT_SCAN_TIMEOUT=1
+        started=$EPOCHREALTIME
+        _ninja_monitor_run_bounded_throughput_scan
+        _ninja_monitor_run_bounded_throughput_scan
+        elapsed=$(awk -v a="$started" -v b="$EPOCHREALTIME" "BEGIN { printf \"%.3f\", b-a }")
+        awk -v elapsed="$elapsed" "BEGIN { exit !(elapsed < 0.5) }"
+        sleep 3
+        grep -q "THROUGHPUT-SCAN-BACKGROUND-START:" "$LOG"
+        grep -q "THROUGHPUT-SCAN-BACKGROUND-SKIP: worker_running" "$LOG"
+        grep -q "THROUGHPUT-SCAN-TIMEOUT: timeout=1s" "$LOG"
+        printf "elapsed_lt_500ms=1 duplicate=1 timeout=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "elapsed_lt_500ms=1 duplicate=1 timeout=1" ]
+}
+
 # test_necessity: a production auto-void report scan can block on the 9p
 # boundary.  It must run under a single-flight bounded worker so the observe
 # cycle continues while preserving the existing transaction for completion.
