@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_123333 approved_source_commit build_cache ci_fix を T107 行へ追記 -->
+<!-- last_updated: 2026-08-28 doc lane: 2026-08-28 節追記(T151/T157/T159/T160/T161/T162/T158/artifact)。a3e312e2a は origin 未到達ゆえ origin tip を境界、到達後に再設定 -->
+<!-- source_commit:a8055a18b03286a55414e90582ec96990e9ff9ab reason:doc lane: 2026-08-28 節追記(T151/T157/T159/T160/T161/T162/T158/artifact)。a3e312e2a は origin 未到達ゆえ origin tip を境界、到達後に再設定 evidence:grep -c '2026-08-28 追加' context/infrastructure.md=1; commit f6af51645 -->
 <!-- source_commit:0f843cab57d5 reason:DOC_LANE_REQUEST blt_123333 approved_source_commit build_cache ci_fix を T107 行へ追記 evidence:git merge-base --is-ancestor 0f843cab5 origin/main = yes; grep -c '0f843cab5 で cache 3 本を refresh' context/infrastructure.md = 1 -->
 <!-- source_commit:49e32bd31d44 reason:DOC_LANE_REQUEST blt_112753 approved_source_commit T107 第 1 弾+shebang ci_fix を §2026-08-27 ext4 節へ反映 evidence:git merge-base --is-ancestor 49e32bd31 origin/main = yes; grep -c 'T107、飛猿 c15453e33 + 半蔵 49e32bd31' context/infrastructure.md = 1 -->
 <!-- source_commit:c092febfceca reason:DOC_LANE_REQUEST blt_073452 approved_source_commit T108 source_equivalent 自動終端を §2026-08-27 ext4 節へ反映 evidence:git merge-base --is-ancestor c092febfc origin/main = yes; grep -c 'T108、小太郎 c092febfc' context/infrastructure.md = 1 -->
