@@ -6922,3 +6922,10 @@ insights:
   source: "gate_loop_health"
   fix_known: false
   status: pending
+- id: INS-20260828-160753815-f86b
+  ts: "2026-08-28T16:07:53+09:00"
+  insight: "テンプレート導線強化: operational_simulation: MISSING (command,expected,actual,result (13回発火) → report templateの警告/入力導線を強化せよ。有効値の自動補完は禁止"
+  priority: "high"
+  source: "gate_loop_health"
+  fix_known: false
+  status: pending
