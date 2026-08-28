@@ -3782,6 +3782,28 @@ check_production_measurement_source() {
     fi
 }
 
+# PD-114: keep the semantic/context mapping gate on a real production caller.
+# Callers opt in with RULE_DOC_SYNC_PATHS when a save path changes automation;
+# ordinary command saves retain their existing fast path.
+check_rule_doc_sync_contract() {
+    local changed_paths="${RULE_DOC_SYNC_PATHS:-}"
+    [[ -n "$changed_paths" ]] || return 0
+    local gate="${CMD_SAVE_RULE_DOC_GATE:-$PROJECT_DIR/scripts/gates/gate_rule_doc_sync.sh}"
+    [[ -x "$gate" ]] || {
+        echo "BLOCK(PD-114): rule-doc sync gate is missing: $gate" >&2
+        record_block_reason "PD-114 rule-doc gate missing" "check=rule_doc_sync"
+        return 0
+    }
+    local output path
+    # shellcheck disable=SC2086
+    if ! output="$(bash "$gate" $changed_paths 2>&1)"; then
+        echo "$output" >&2
+        record_block_reason "PD-114 semantic/context registry mismatch" "check=rule_doc_sync"
+    else
+        echo "$output" >&2
+    fi
+}
+
 check_q6_not_hiding_warn() {
     if ! cmd_block_has_field "quality_gate.q6_not_hiding"; then
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
@@ -4501,6 +4523,7 @@ QG_TEMPLATE
     check_dynamic_measurement_contract "$CMD_BLOCK_NC"
     # PD-104: production bottleneck claims require a durable production source.
     check_production_measurement_source "$CMD_BLOCK_NC"
+    check_rule_doc_sync_contract
 
     # q5_verified_source: 存在チェックはpreflight済み。以下は内容検証のみ
     # q5検証レベル分類（cmd_1692: code_readingのみはBLOCK）
