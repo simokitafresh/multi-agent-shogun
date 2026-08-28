@@ -6698,7 +6698,10 @@ insights:
   priority: "high"
   source: "shogun"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: duplicate of INS-20260828-140224163-7655; actionable atomic hot-script syntax contract remains pending there
+  action_artifact: "queue/insights.yaml#INS-20260828-140224163-7655"
+  resolved_at: "2026-08-28T17:06:00+09:00"
 - id: INS-20260828-140224163-7655
   ts: "2026-08-28T14:02:24+09:00"
   insight: "[URGENT-HARM再発防止] shared-main方式でhot script(inbox_mark_read.sh/inbox_write.sh/ninja_monitor.sh/cmd_complete_gate.sh等)を編集するtaskは、作業treeへ不正syntax世代を露出させない。一時fileでbash -n PASS後に原子置換する契約をdeploy_taskのnever_stop_for/engineering_preferencesへ自動注入し、syntax不正公開を事前BLOCKする。origin: [[cmd_karo_hotfix_t122_memory_self_reinforce_20260828]] -> [[shared_hot_script_WIP_syntax_error]] -> [[atomic_syntax_valid_publish]]"
