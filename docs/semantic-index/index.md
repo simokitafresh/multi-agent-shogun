@@ -3476,6 +3476,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T01:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T02:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T02:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T03:09:55+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T03:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -8373,6 +8375,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T01:25:54+09:00 配備スキルとは忍者への指示やACの構築や内容が我らのスタイルにフィットしているかも含まれる |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
+| cmd | `cmd_karo_hotfix_production_proof_monitor_unit_b_20260829` |
+| cmd | `cmd_karo_hotfix_deploy_task_unaccounted_measure_20260829` |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9989,7 +9993,7 @@ codd:
 |------|---|
 | id | task_modifier_injection |
 | label | タスク修飾子注入 |
-| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出, task context injection, バックアップ, DB変更前バックアップ指示, まずは現在のものをバックアップしよう, 汎用AC modifier汚染, yaml分割taskのassigned acs契約, AC modifierスコープ限定, split ac modifier scope, 文書専用task, documentation-only target, 文書記述は操作許可ではない, production gate誤注入 |
+| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出, task context injection, バックアップ, DB変更前バックアップ指示, まずは現在のものをバックアップしよう, 汎用AC modifier汚染, yaml分割taskのassigned acs契約, AC modifierスコープ限定, split ac modifier scope, 文書専用task, documentation-only target, 文書記述は操作許可ではない, production gate誤注入, production proofが単一grep一致だけでなく次N件すべての判定を計数できるようにする |
 | skills | なし |
 | related_concepts | agent_formation_management, semantic_dictionary_design, scope_integrity_lifecycle |
 
@@ -13559,6 +13563,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608290211_saizo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608290226_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608290226_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608290323_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608290323_saizo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
