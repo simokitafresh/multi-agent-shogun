@@ -7891,3 +7891,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-084211117-0fb3
+  ts: "2026-08-29T08:42:11+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[NTFY_TOPIC未設定_監視不達]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=ntfy_listener; score=14.7) / daemon_supervision(デーモン監視と復旧; alias=ntfy_listener常駐; score=14.4) / agent_formation_management(編成管理; alias=監視; score=7.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
