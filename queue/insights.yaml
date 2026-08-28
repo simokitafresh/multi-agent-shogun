@@ -6461,3 +6461,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T12:21:30+09:00"
+- id: INS-20260828-122443827-57d3
+  ts: "2026-08-28T12:24:43+09:00"
+  insight: "cmd_complete_gate の ci_readiness が 2026-08-28 11:27 に python(stdin script line 366) OSError Errno 5 Input/output error で Traceback→BLOCK、11:31 は『typed target_result/workflow_result required』BLOCK=gate 内部例外が忍者成果(影丸 reflux 1025)の GATE を 1h 以上止めた(便停止 T124 の一因)。ci_status_check.log:217。要調査: どの path への I/O か(/mnt/c 残存参照なら T91 型の旧パス、それ以外なら一時障害)。gate 例外は BLOCK 理由に stderr 全文を残し、例外時は WAIT で再試行する構造へ。origin=[[ci_readiness_OSError_20260828]] -> [[gate内部例外がBLOCK化]] -> [[便停止1h16m]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
