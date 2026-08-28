@@ -6535,3 +6535,10 @@ insights:
   source: "shogun"
   fix_known: false
   status: pending
+- id: INS-20260828-130105672-8adf
+  ts: "2026-08-28T13:01:05+09:00"
+  insight: "instructions/generated/claude-*.md 4 本は build_instructions.sh の出力対象外(.build_cache に entry 無し・consumer grep 0)で ext4 relocate 時の path 置換だけ受けた残骸。cmd_4409 AC3 の grep 対象に入り 2 行残存(566471a0c で $SHOGUN_ROOT 化)。build 出力集合と tracked generated/ の差分を build 時に WARN し、非出力ファイルは retire 判定へ"
+  priority: "medium"
+  source: "shogun"
+  fix_known: false
+  status: pending
