@@ -1,4 +1,2 @@
-# session_alerts — generated: 2026-08-28T16:39:40+0900
-[DONE] 追体験自動化ターゲット: INS-20260828-164735814-904e(deploy_task serial_dependency 依存先 status/CTX WARN)を掲示板 blt_164722 に記入・軍師 blt_165116 で妥当判定
-[DONE] 走行中cmd実測突合: 16:45 capture-pane 全pane 実測(疾風 WAIT T129・影丸 77% RC・半蔵 compat bats pgrep)→T140 で下知済
-[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
+# session_alerts — generated: 2026-08-28T18:51:36+0900
+[DONE] 走行中cmd実測突合: 18:56 全pane capture 実測(才蔵 r2 done・影丸 residual acknowledged・半蔵 ci_readinessJSON assigned)→T149/整合修正に反映

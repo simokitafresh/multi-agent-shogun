@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_skill_auto_improve_dirty_202608201637
-  timestamp: '2026-08-20T08:20:37Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_skill_auto_improve_dirty_202608201637'
-- cmd_id: cmd_karo_hotfix_pregate_converged_nonruntime_202608201659
-  timestamp: '2026-08-20T08:31:02Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_pregate_converged_nonruntime_202608201659'
 - cmd_id: cmd_karo_hotfix_affected_mixed_engine_202608201740
   timestamp: '2026-08-20T09:10:18Z'
   ninja: system
@@ -1310,3 +1284,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_report_ancestry_repo_resolution_20260828'
+- cmd_id: cmd_karo_hotfix_respawn_resolver_node_path_r2_20260828
+  timestamp: '2026-08-28T10:05:35Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_respawn_resolver_node_path_r2_20260828'
+- cmd_id: cmd_karo_hotfix_report_only_attestation_entry_20260828
+  timestamp: '2026-08-28T10:12:00Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_report_only_attestation_entry_20260828'
