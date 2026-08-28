@@ -70,12 +70,12 @@ log() { printf "%s\\n" "$1" >> "$ROOT/monitor.log"; }
 NINJA_NAMES=(saizo)
 
 run_case() {
-    local name="$1" status="$2" verdict="$3" binary="$4" reviewed="$5"
+    local name="$1" status="$2" verdict="$3" binary="$4" reviewed="$5" task_state="${6:-failed}"
     local report="$ROOT/queue/reports/saizo_report_cmd_${name}.yaml"
     local parent="cmd_failed_pass_${name}"
     cat > "$ROOT/queue/tasks/saizo.yaml" <<EOF
 task:
-  status: failed
+  status: $task_state
   parent_cmd: $parent
   report_path: queue/reports/saizo_report_cmd_${name}.yaml
 EOF
@@ -111,19 +111,24 @@ run_case old_fail completed FAIL no 0
 run_case incomplete pending PASS yes 0
 run_case binary_no completed PASS no 0
 run_case reviewed completed PASS yes 1
+run_case done_positive done PASS yes 0 done
+run_case done_reviewed done PASS yes 1 done
 
 count=$(grep -c "^gunshi|review_draft|ninja_monitor|" "$ROOT/review_requests.log" || true)
-test "$count" -eq 1
+test "$count" -eq 2
+test "$(grep -c "^gunshi|review_draft|ninja_monitor|.*cmd_failed_pass_positive" "$ROOT/review_requests.log" || true)" -eq 1
+test "$(grep -c "^gunshi|review_draft|ninja_monitor|.*cmd_failed_pass_done_positive" "$ROOT/review_requests.log" || true)" -eq 1
 grep -q "REPORT-REVIEW-AUTO-SKIP:.*old_fail.*not_completed_pass_all_binary_yes" "$ROOT/monitor.log"
 grep -q "REPORT-REVIEW-AUTO-SKIP:.*binary_no.*not_completed_pass_all_binary_yes" "$ROOT/monitor.log"
 grep -q "REPORT-REVIEW-AUTO-SKIP:.*reviewed.*reviewed_generation" "$ROOT/monitor.log"
-printf "positive=1 negatives=4 duplicate=0\\n"
+grep -q "REPORT-REVIEW-AUTO-SKIP:.*done_reviewed.*reviewed_generation" "$ROOT/monitor.log"
+printf "positive=2 negatives=4 duplicate=0 done=1 marker=1\\n"
 '
     [ "$status" -eq 0 ]
     if [ "$status" -ne 0 ]; then
         printf "failed_pass_review_debug status=%s output=%s\\n" "$status" "$output"
     fi
-    [ "$output" = "positive=1 negatives=4 duplicate=0" ]
+    [ "$output" = "positive=2 negatives=4 duplicate=0 done=1 marker=1" ]
 }
 
 # test_necessity: a completed report with durable Gunshi LGTM is terminal
