@@ -7599,3 +7599,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260829-012033587-dab2
+  ts: "2026-08-29T01:20:33+09:00"
+  insight: "[[バグは根治したか？環境に強制を埋め込まなければ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=バグは根治したか？環境に強制を埋め込まなければ、バグが再燃する。バグが再発しないように根治せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
