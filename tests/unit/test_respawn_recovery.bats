@@ -110,7 +110,7 @@ YAML
 
 @test "launch injects node PATH, active sender is karo, and unknown CTX is not ready" {
   repo="$BATS_TEST_DIRNAME/../.."
-  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "/bin/codex"' _ "$repo"
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "/bin/true"' _ "$repo"
   [ "$status" -eq 0 ]
   [[ "$output" == *'PATH="/bin:$PATH"'* ]]
 
@@ -146,9 +146,9 @@ SH
   printf '#!/usr/bin/env bash\n' > "$root/bin/fake-codex"
   chmod +x "$root/bin/fake-codex"
 
-  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "/bin/codex --flag"' _ "$repo"
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "/bin/true --flag"' _ "$repo"
   [ "$status" -eq 0 ]
-  [[ "$output" == *'exec /bin/codex --flag'* ]]
+  [[ "$output" == *'exec /bin/true --flag'* ]]
 
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; PATH="$2/bin:$PATH" respawn_recovery_launch_command "$1" "fake-codex --flag"' _ "$repo" "$root"
   [ "$status" -eq 0 ]
@@ -167,12 +167,52 @@ SH
   [[ "$output" == *"exec $root/bin/fake-codex --flag"* ]]
 }
 
+@test "Codex resolver falls back to one nvm executable and rejects invalid candidates" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  fixture_home="$root/home"
+  mkdir -p "$fixture_home/.nvm/versions/node/v20.20.0/bin" "$fixture_home/bin"
+  printf '#!/usr/bin/env bash\n' > "$fixture_home/.nvm/versions/node/v20.20.0/bin/codex"
+  chmod +x "$fixture_home/.nvm/versions/node/v20.20.0/bin/codex"
+
+  run env -u SHOGUN_CODEX_BIN HOME="$fixture_home" PATH=/usr/bin bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "${SHOGUN_CODEX_BIN:-codex} --flag"' _ "$repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $fixture_home/.nvm/versions/node/v20.20.0/bin/codex --flag"* ]]
+
+  printf '#!/usr/bin/env bash\n' > "$fixture_home/bin/explicit-codex"
+  chmod +x "$fixture_home/bin/explicit-codex"
+  run env HOME="$fixture_home" PATH=/usr/bin SHOGUN_CODEX_BIN="$fixture_home/bin/explicit-codex" bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "${SHOGUN_CODEX_BIN:-codex} --flag"' _ "$repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $fixture_home/bin/explicit-codex --flag"* ]]
+
+  run env HOME="$fixture_home" PATH=/usr/bin SHOGUN_CODEX_BIN="$fixture_home/bin/explicit-codex" bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "codex --flag"' _ "$repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $fixture_home/bin/explicit-codex --flag"* ]]
+
+  mkdir -p "$fixture_home/.nvm/versions/node/v22.0.0/bin"
+  printf '#!/usr/bin/env bash\n' > "$fixture_home/.nvm/versions/node/v22.0.0/bin/codex"
+  chmod +x "$fixture_home/.nvm/versions/node/v22.0.0/bin/codex"
+  run env -u SHOGUN_CODEX_BIN HOME="$fixture_home" PATH=/usr/bin bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "${SHOGUN_CODEX_BIN:-codex} --flag" 2>"$2/error-multiple"' _ "$repo" "$root"
+  [ "$status" -ne 0 ]
+  grep -q "multiple nvm executables" "$root/error-multiple"
+
+  chmod -x "$fixture_home/.nvm/versions/node/v22.0.0/bin/codex"
+  rm -f "$fixture_home/.nvm/versions/node/v20.20.0/bin/codex"
+  run env -u SHOGUN_CODEX_BIN HOME="$fixture_home" PATH=/usr/bin bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "${SHOGUN_CODEX_BIN:-codex} --flag" 2>"$2/error-not-executable"' _ "$repo" "$root"
+  [ "$status" -ne 0 ]
+  grep -q "nvm executable is not executable" "$root/error-not-executable"
+
+  rm -f "$fixture_home/.nvm/versions/node/v22.0.0/bin/codex"
+  run env -u SHOGUN_CODEX_BIN HOME="$fixture_home" PATH=/usr/bin bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "${SHOGUN_CODEX_BIN:-codex} --flag" 2>"$2/error-not-found"' _ "$repo" "$root"
+  [ "$status" -ne 0 ]
+  grep -q "nvm executable not found" "$root/error-not-found"
+}
+
 @test "unresolved and shell syntax launch inputs fail with stderr reasons" {
   repo="$BATS_TEST_DIRNAME/../.."
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "not-a-real-respawn-command --flag" 2>"$2/error-unresolved"' _ "$repo" "$root"
   [ "$status" -ne 0 ]
   [ -z "$output" ]
-  grep -q 'unresolved executable' "$root/error-unresolved"
+  grep -Eq 'unresolved executable|nvm executable not found' "$root/error-unresolved"
 
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" '\''/bin/codex;touch /tmp/respawn-recovery-injection'\'' 2>"$2/error-unsafe"' _ "$repo" "$root"
   [ "$status" -ne 0 ]
