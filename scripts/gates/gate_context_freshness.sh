@@ -113,6 +113,42 @@ source_commit_action() {
     fi
 }
 
+# T92: DM-Signal research contexts also receive the marketing article stream.
+# The source checker reports a compact latest-commit sample, so classify that
+# source commit against the canonical repository before treating the aggregate
+# alert as actionable.  Article-only commits are not research context changes;
+# non-ancestor commits are outside the deployed origin/main boundary.  Any
+# other commit (including non-article research) must continue through the raw
+# ALERT path.
+dm_signal_research_article_only_or_nonancestor() {
+    local rel_path="$1" alert_line="$2" repo="" latest_hash="" source_tip="" subject=""
+    local path
+    local -a changed_paths=()
+
+    [[ "$rel_path" == "context/dm-signal-research.md" ]] || return 1
+    [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
+    latest_hash="${BASH_REMATCH[1]}"
+    repo="$(canonical_source_repo_for_context "$rel_path" 2>/dev/null || true)"
+    [[ -n "$repo" && -d "$repo" ]] || return 1
+    bounded_git -C "$repo" cat-file -e "${latest_hash}^{commit}" 2>/dev/null || return 1
+    source_tip="$(bounded_git -C "$repo" rev-parse --verify 'refs/remotes/origin/main^{commit}' 2>/dev/null || true)"
+    [[ "$source_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
+
+    # The research context is bounded to the canonical deployed branch.
+    if ! bounded_git -C "$repo" merge-base --is-ancestor "$latest_hash" "$source_tip" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    subject="$(bounded_git -C "$repo" show -s --format=%s "$latest_hash" 2>/dev/null || true)"
+    [[ "$subject" == article:* ]] || return 1
+    mapfile -t changed_paths < <(bounded_git -C "$repo" diff-tree --root --no-commit-id --name-only -r "$latest_hash" 2>/dev/null)
+    ((${#changed_paths[@]} > 0)) || return 1
+    for path in "${changed_paths[@]}"; do
+        [[ "$path" == marketing-director/content/articles/* ]] || return 1
+    done
+    return 0
+}
+
 # Resolve the source repository from the context registry, never from the
 # checker-provided repo= field.  The latter is a diagnostic snapshot and was
 # able to make an unresolvable commit appear valid when it pointed at a
@@ -950,6 +986,10 @@ for rel_path in "${target_rel_paths[@]}"; do
     record_stale_template_candidate "$rel_path" "$days_ago" "$last_updated"
 
     if [[ -n "${source_alerts[$rel_path]:-}" ]]; then
+        if dm_signal_research_article_only_or_nonancestor "$rel_path" "${source_alerts[$rel_path]}"; then
+            echo "OK: ${basename_file} (DM-Signal article-only/non-ancestor source commit excluded from research freshness)"
+            continue
+        fi
         if context_commit_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}" \
             || reflux_receipt_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}"; then
             context_hash="$(bounded_git -C "$ROOT_DIR" log -1 --format=%h -- "$rel_path" 2>/dev/null || true)"
