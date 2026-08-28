@@ -4626,6 +4626,7 @@ import os
 import sys
 import glob
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import yaml
 yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
@@ -4642,11 +4643,17 @@ def parse_iso(raw):
     if not text or text.lower() in {"null", "none", "unknown"}:
         return None
     text = text.replace('\\"', '"').strip('"')
-    text = text.replace("Z", "+00:00")
+    if text.endswith(("Z", "z")):
+        text = text[:-1] + "+00:00"
     try:
-        # Existing gate metrics intentionally compare local-clock strings
-        # field-wise; preserve that contract for legacy Z-suffixed fixtures.
-        return datetime.fromisoformat(text).replace(tzinfo=None)
+        parsed = datetime.fromisoformat(text)
+        if parsed.tzinfo is None:
+            # Naive task/inbox timestamps are the established JST contract.
+            return parsed
+        # Normalize every aware event to the same JST wall-clock contract
+        # before dropping tzinfo; otherwise UTC-vs-JST data creates a 9-hour
+        # phantom interval while aware/naive subtraction is impossible.
+        return parsed.astimezone(ZoneInfo("Asia/Tokyo")).replace(tzinfo=None)
     except Exception:
         return None
 
@@ -4979,6 +4986,12 @@ if current_attempt_deploy_ts is not None and (
 work_sec = sec(work_start_ts, done_ts)
 finalize_sec = sec(done_ts, clear_ts)
 e2e_sec = sec(effective_issue_ts, clear_ts)
+if done_ts is not None and clear_ts is not None and clear_ts < done_ts:
+    segment_invalid.append("reversed_finalize")
+if effective_issue_ts is not None and clear_ts is not None and clear_ts < effective_issue_ts:
+    segment_invalid.append("reversed_e2e")
+if finalize_sec is not None and e2e_sec is not None and finalize_sec > e2e_sec:
+    segment_invalid.append("finalize_exceeds_e2e")
 segment_total = None
 if all(value is not None for value in (fin_a, fin_b, fin_c, fin_d)):
     segment_total = fin_a + fin_b + fin_c + fin_d
