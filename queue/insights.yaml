@@ -6706,3 +6706,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-141626444-ed63
+  ts: "2026-08-28T14:16:26+09:00"
+  insight: "DOC_LANE_INFO source_equivalent auto-closed(context/rebalancer.md)が本日 12:33/13:25/14:00/14:11/14:15 と高頻度で将軍 inbox へ bulletin_notify され、都度 1 ターンを消費。判断不要の info は将軍へ nudge せず掲示板 info のみ(BULLETIN_NOTIFY 空)にし、同一 context の auto-close は 1 日 1 行に集約する。機械的待ち/ノイズの切除"
+  priority: "medium"
+  source: "shogun"
+  fix_known: false
+  status: pending
