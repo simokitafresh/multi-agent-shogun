@@ -22,7 +22,8 @@ _run_serialize_scenario() {
         STATE_DIR="$BATS_TEST_TMPDIR/state"
         LOG="$BATS_TEST_TMPDIR/log"
         KARO_SNAPSHOT_LOCK_FILE="$BATS_TEST_TMPDIR/karo_snapshot.lock"
-        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$STATE_DIR"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$SCRIPT_DIR/logs" "$STATE_DIR"
+        printf "%s\tcmd_x\tCLEAR\tfixture\n" "$(date -Iseconds)" > "$SCRIPT_DIR/logs/gate_metrics.log"
         ln -s "$PROJECT_ROOT/scripts" "$SCRIPT_DIR/scripts"
         : >"$LOG"
         report_monitor_state() { printf "pass_terminal\n"; }

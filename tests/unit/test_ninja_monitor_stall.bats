@@ -5471,12 +5471,23 @@ printf "worker_dispatch_rc=%s\n" "$rc"
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
 ROOT="'"$BATS_TEST_TMPDIR"'/bounded-done-check"
-mkdir -p "$ROOT/state"
-TASK_ROOT="$PROJECT_ROOT/queue"
+mkdir -p "$ROOT/state" "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/logs" "$ROOT/scripts"
+# Run the production entrypoint from an isolated fixture root.  The source
+# monitor is copied verbatim; only its dependency directories are linked
+# read-only, so bounded CLI checks can never address the shared queue.
+cp "$PROJECT_ROOT/scripts/ninja_monitor.sh" "$ROOT/scripts/ninja_monitor.sh"
+ln -s "$PROJECT_ROOT/scripts/lib" "$ROOT/scripts/lib"
+ln -s "$PROJECT_ROOT/lib" "$ROOT/lib"
+TASK_ROOT="$ROOT/queue"
 TASK_FILE="$TASK_ROOT/tasks/kagemaru.yaml"
 REPORT_FILE="$TASK_ROOT/reports/kagemaru_report_cmd_bounded_done_check.yaml"
-mkdir -p "$TASK_ROOT/tasks" "$TASK_ROOT/reports"
-trap "mv \"$TASK_FILE\" \"$ROOT/task.saved\" 2>/dev/null || true; mv \"$REPORT_FILE\" \"$ROOT/report.saved\" 2>/dev/null || true" EXIT
+shared_queue_fingerprint() {
+    {
+        [ -d "$PROJECT_ROOT/queue/tasks" ] && find "$PROJECT_ROOT/queue/tasks" -maxdepth 1 -type f -print0
+        [ -d "$PROJECT_ROOT/queue/reports" ] && find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -print0
+    } | sort -z | xargs -0 -r sha256sum | sha256sum | cut -d " " -f1
+}
+shared_queue_before=$(shared_queue_fingerprint)
 cat > "$TASK_FILE" <<'EOF'
 task:
   status: in_progress
@@ -5497,17 +5508,19 @@ NINJA_MONITOR_OWNER_FILE="$ROOT/owner" \
 SHOGUN_STATE_DIR="$ROOT/state" \
 NINJA_MONITOR_BOUNDED_DONE_CHECK=1 \
 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
-    bash "$PROJECT_ROOT/scripts/ninja_monitor.sh" --check-and-update-done-task kagemaru
+    bash "$ROOT/scripts/ninja_monitor.sh" --check-and-update-done-task kagemaru
 rc=$?
 set -e
 owner_after=$(sha256sum "$TASK_FILE")
+shared_queue_after=$(shared_queue_fingerprint)
 test "$rc" -ne 0
 test "$rc" -ne 64
 test "$owner_before" = "$owner_after"
-printf "bounded_done_check_rc=%s task_unchanged=1\n" "$rc"
+test "$shared_queue_before" = "$shared_queue_after"
+printf "bounded_done_check_rc=%s task_unchanged=1 shared_queue_unchanged=1\n" "$rc"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == bounded_done_check_rc=1\ task_unchanged=1 ]]
+    [[ "$output" == bounded_done_check_rc=1\ task_unchanged=1\ shared_queue_unchanged=1 ]]
 }
 
 # test_necessity: a production auto-void report scan can block on the 9p

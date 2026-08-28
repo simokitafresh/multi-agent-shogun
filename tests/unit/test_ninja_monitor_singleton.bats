@@ -116,6 +116,7 @@ monitor_lib() {
     SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
     LOG="$BATS_TEST_TMPDIR/monitor.log"; REFLUX_PROMOTION_LEDGER="$BATS_TEST_TMPDIR/promotion.tsv"
     mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$STATE_DIR"
+    printf "%s\tcmd_reflux_promotion_probe\tCLEAR\tfixture\n" "$(date -Iseconds)" >"$SCRIPT_DIR/logs/gate_metrics.log"
     task="$SCRIPT_DIR/queue/tasks/alpha.yaml"; report="$BATS_TEST_TMPDIR/completed.yaml"
     printf "task:\n  parent_cmd: cmd_reflux_promotion_probe\n  task_id: task_probe\n  status: done\n" >"$task"
     printf "parent_cmd: cmd_reflux_promotion_probe\ntask_id: task_probe\nstatus: completed\nverdict: PASS\nresult:\n  summary: 昇格候補 L999\nbinary_checks: {}\n" >"$report"

@@ -686,7 +686,7 @@ YAML
         export NINJA_MONITOR_LIB_ONLY=1
         source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
         SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$BATS_TEST_TMPDIR/log"
-        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$SCRIPT_DIR/scripts/lib" "$STATE_DIR"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$SCRIPT_DIR/scripts/lib" "$SCRIPT_DIR/logs" "$STATE_DIR"
         cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
         git -C "$SCRIPT_DIR" init -q
         git -C "$SCRIPT_DIR" config user.email test@example.invalid
@@ -702,6 +702,7 @@ YAML
         yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
         make_fixture() {
             local name="$1" task_id="$2" report_name="$3"
+            printf "%s\tcmd_%s\tCLEAR\tfixture\n" "$(date -Iseconds)" "$name" >> "$SCRIPT_DIR/logs/gate_metrics.log"
             printf "task:\n  parent_cmd: cmd_%s\n  task_id: %s\n  report_id: rpt-%s\n  report_identity_version: 2\n  status: in_progress\n  target_path:\n    - scripts/a.sh\n  planned_paths:\n    - scripts/a.sh\n" "$name" "$task_id" "$name" > "$SCRIPT_DIR/queue/tasks/${name}.yaml"
             printf "parent_cmd: cmd_%s\ntask_id: %s\nreport_id: rpt-%s\nreport_identity_version: 2\nstatus: completed\ntimestamp: 2026-08-18T07:00:00+09:00\n" "$name" "$task_id" "$name" > "$SCRIPT_DIR/queue/reports/${report_name}.yaml"
         }
@@ -755,7 +756,7 @@ YAML
         export NINJA_MONITOR_LIB_ONLY=1
         source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
         SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$BATS_TEST_TMPDIR/log"
-        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/gates" "$SCRIPT_DIR/queue/locks" "$SCRIPT_DIR/scripts/lib" "$STATE_DIR"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/gates" "$SCRIPT_DIR/queue/locks" "$SCRIPT_DIR/scripts/lib" "$SCRIPT_DIR/logs" "$STATE_DIR"
         cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
         log() { printf "%s\n" "$1" >> "$LOG"; }
         send_inbox_message() { printf "%s|%s\n" "$1" "$3" >> "$BATS_TEST_TMPDIR/messages"; }
@@ -766,6 +767,7 @@ YAML
         yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
         make_fixture() {
             local name="$1" status="$2"
+            printf "%s\tcmd_%s\tCLEAR\tfixture\n" "$(date -Iseconds)" "$name" >> "$SCRIPT_DIR/logs/gate_metrics.log"
             printf "task:\n  parent_cmd: cmd_%s\n  task_id: task_%s\n  report_id: rpt-%s\n  report_identity_version: 2\n  status: %s\n" "$name" "$name" "$name" "$status" > "$SCRIPT_DIR/queue/tasks/${name}.yaml"
             printf "parent_cmd: cmd_%s\ntask_id: task_%s\nreport_id: rpt-%s\nreport_identity_version: 2\nstatus: completed\ntimestamp: 2026-08-18T09:00:00+09:00\n" "$name" "$name" "$name" > "$SCRIPT_DIR/queue/reports/${name}_report.yaml"
         }
