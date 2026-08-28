@@ -7804,3 +7804,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-070701907-d7af
+  ts: "2026-08-29T07:07:01+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[LS-A09(37)検知器の盲点継承]] は既存aliasesに一致なし。類似概念TOP3: shogun_android_app(将軍Androidアプリ; alias=respawn-pane -k scrollback継承; score=2.2) / provisional_2026-07(仮: 2026 07; alias=provisional_2026-07; score=2.2) / inbox_processing_discipline(inbox処理規律; alias=LS049; score=2.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
