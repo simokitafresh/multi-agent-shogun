@@ -13277,6 +13277,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608281112_tobisaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608281221_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608281221_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608281240_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608281240_hayate` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -14796,6 +14798,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T00:54:08.021552+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T01:16:21.535533+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T01:18:51.265864+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:23:02.114687+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
