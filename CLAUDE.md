@@ -537,7 +537,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED忍者修正(殿裁定2026-07-16)**|家老がCI RED検知→idle忍者に即修正配備。**家老D0修正禁止・将軍cmd不要**|`gh run view <run_id> --log-failed`→`/karo-direct`で`task_type: ci_fix`+`ci_run_id`付きタスクを忍者へ配備→家老がレビュー/push/GREEN確認。`gate_karo_startup.sh`が配備証跡なしをALERT強制|理由: 実装を忍者へ一元化し、家老は診断・分解・検証に専念する
 - **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/karo.md` §CI RED中の他作業
-- CLI起動|**手動起動は`/home/simokitafresh/bin/claude --effort high`**(絶対パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
+- CLI起動|**手動起動は`~/bin/claude --effort high`**(pinned 版の固定パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
 - **Codex multi-CLI統合**|hooks=`.codex/hooks.json`(Claude Code hookスクリプト共有)。skills=プロジェクト正本symlink。hook BLOCK=**exit 2**(exit 1はCLIクラッシュ)。doc制限=`project_doc_max_bytes=131072`|→ `context/infrastructure.md` §Codex multi-CLI統合
 - ローカル記憶DB|SQLite検索層=`data/multi_agent_shogun_memory.db`、schema=`context/memory-db-schema.md`、query集=`context/memory-db-queries.md`、runner=`scripts/memory_db_query.sh`|→ `context/infrastructure.md` §lord_conversation / 記憶DBデータフロー
 - 三層記憶|state管理/raw_content/矛盾候補/Obsidian昇格/想起制御|→ `context/memory-db-schema.md` + `context/infrastructure.md` §lord_conversation / 記憶DBデータフロー
