@@ -6639,3 +6639,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-132222080-82f0
+  ts: "2026-08-28T13:22:22+09:00"
+  insight: "[[LLMが考える時間を削ってはならない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=LLMが考える時間を削ってはならない。機械的な部分のみを高速化しないと、品質低下をもたらす"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
