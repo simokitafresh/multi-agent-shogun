@@ -1,18 +1,3 @@
-- cmd_id: cmd_reflux_insight_202608220548_hayate
-  timestamp: '2026-08-21T22:20:07Z'
-  ninja: hayate
-  workaround: true
-  event_kind: manual_wa
-  auto_captured: false
-  category: shared_yaml_concurrency
-  root_signature: 'shared_yaml_concurrency::schema_shape'
-  detail: '複数Gateのtracked runtime publishで解決済みinsight IDが段階的に欠落'
-  root_cause: 'immutable commit blobをID基準で差分復元し、全Gate終了後にgold unionと新規IDを統合してremote 109件・重複0・gold欠落0を検証'
-  lesson_required: true
-  lesson_disposition: 'new_lesson_required'
-  lesson_reference: ''
-  brainwash_check: '洗脳#6出力=仕事防止: remote insights total 100→109、gold_missing 8→0、duplicates 0→0'
-  resolved_by_cmd: ''
 - cmd_id: cmd_karo_hotfix_prepush_three_202608220752
   timestamp: '2026-08-21T23:15:58Z'
   ninja: system
@@ -1304,3 +1289,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_production_proof_extract_unit_a_20260829'
+- cmd_id: cmd_karo_hotfix_karo_test_rerun_guard_20260829
+  timestamp: '2026-08-28T17:48:28Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_karo_test_rerun_guard_20260829'

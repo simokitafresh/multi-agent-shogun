@@ -3475,6 +3475,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T01:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T01:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T02:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T02:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -12830,6 +12831,7 @@ codd:
 | cmd | `cmd_karo_hotfix_gate_completion_event_pairing_20260828` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | cmd | `cmd_karo_hotfix_inbox_priority_evidence_deadlock_20260828` (`scripts/hooks/codex_inbox_priority_guard.sh`, `tests/unit/test_codex_inbox_priority_guard.bats`) |
 | cmd | `cmd_karo_hotfix_postclear_inprogress_terminalization_20260829` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate_task_idle.bats`) |
+| cmd | `cmd_karo_hotfix_karo_test_rerun_guard_20260829` |
 
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
 
@@ -13551,6 +13553,10 @@ codd:
 | cmd | `cmd_reflux_insight_202608282243_kotaro` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608282337_tobisaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608282337_tobisaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608290200_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608290200_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608290211_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608290211_saizo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
