@@ -6990,3 +6990,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-170139520-04c9
+  ts: "2026-08-28T17:01:39+09:00"
+  insight: "respawn resolver(3da552c)は codex.js を解決するが node bin を PATH に入れず、daemon PATH(nvm 無し)では pane が status 127 で死ぬ。GATE CLEAR≠本番 proof(LS124 の第 2 例)。hotfix の AC に『daemon PATH で respawn した pane が alive』を含める+FALLBACK 時の tmux/pane stderr を log へ"
+  priority: "high"
+  source: "manual"
+  fix_known: false
+  status: pending
