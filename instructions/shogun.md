@@ -168,6 +168,15 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第十一弾 5則（2026-08-28 20:50-08-29 00:32 第9便: T159 argv/T160 WAIT/T163 家老自縛/task_id 6 回目/artifact スマホから・将軍自身に適用）
+
+1. **手動再現が 4 通り外れたら、daemon の「呼出形(argv)」まで写せ。REASON 行を最初の commit にすれば 1 cycle で真因が出る。** T159: 通常/daemon PATH/daemon env 22 変数/exported 関数の 4 通りで rc=0、REASON 計装(b8b9439a0)が『args=--lifecycle-worker <空> argc=2』を名指し→callsite 第 2 引数欠落=1 token(885c739b0)。型八弾-2『環境+trap』に argv を加える。revert 暫定は作者が同 target 編集中なら衝突するので出さない。
+2. **受け手の判断規則を文章で直しても /clear 越しに再発する。送り手の field を規則が発火しない形にせよ。** 家老 task_id フィルタ誤適用 6 回目(23:41): inbox_write が指揮官宛 task_assigned に空 task_id を付け、家老が『空=無視』と読む。CLAUDE.md:378・watcher 文・mark_read 証跡ガードでは止まらず(『適用しない』も証跡)。根治=inbox_write で karo/gunshi/shogun 宛の空 task_id を `commander_directive` に束縛(bats 121/121)。
+3. **shared root で履歴改変(cherry-pick/rebase/revert)をするな。hot hook に衝突 marker が載ると当人が自縛する。** T163: 家老の cherry-pick が codex_inbox_priority_guard.sh に `<<<<<<< HEAD` を 12 分 live 化→家老の全 tool 呼出しが hook syntax error→resolve command を組んだまま実行不能。将軍が theirs 採用で完了(可逆)、D012 を cherry-pick/rebase/revert/am へ拡張(prefilter 2 箇所+python、--continue/--abort 許可、bats 22/22)。prefilter の危険語リストに無い動詞は python 判定に届かない=最初の bats が FAIL して分かった。
+4. **待ちを BLOCK で表現する gate は品質負債。殿の疑問文は分析で返し、可逆なら即配備せよ。** 殿下問 22:28『報告ミスの手戻り/本番 push 後 AC は構造バグでは』→一次: 本日 BLOCK 49 中 39(80%)が ancestry/two_phase/segment の待ち。回答末尾の『殿の意に沿わねば申されよ』を hook が洗脳#3 で BLOCK→可逆ゆえ T160/T161 を即配備、殿裁定 22:31『バグは即時根治せよ』。本番 proof=1h37m 後に gate_metrics の `WAIT WAIT:report_commit_main_ancestry`×3→CLEAR 00:08(再 GATE 1 通なし)。
+5. **artifact は 40rem 幅で縦並び 0 を目視してから公開。横スクロール根絶の裏面=文字単位折返し禁止、grid 列は弄らず block へ落とす。** 殿指摘 2 回(22:56/23:22 スクショ): `table-layout:fixed`+`overflow-wrap:anywhere`+`.wrap-x{overflow-x:visible}`→表は自コンテナ横スクロール・本文 word-break:normal(1 弾)、`.row` の grid 列指定が残り 3.2rem 列に説明文が落ちる→48rem 以下 `.row{display:block !important}`(2 弾)。1 弾で「直した」と報告し 2 弾を殿に指摘させた=確認不足。
+- origin: `[[殿指示_強くてニューゲーム_20260829_0032]] -> [[T159_argv再現]] -> [[commander_directive]] -> [[T163_D012拡張]] -> [[T160_WAIT本番proof]] -> [[復帰後の型_第十一弾]]`
+
 ## 復帰後の型・第十弾 5則（2026-08-28 19:33-20:45 第8便: T151 入口ガード/T152 STAGE1/T149 停滞/T157 bats 本番汚染から・将軍自身に適用）
 
 1. **起動 WARN を見たら反射で 1 通を書かず、壁の所有者を一次で見よ。** 『疾風 done∧CLEAR 無し 119 分』は家老が既に壁を名指しして修理 unit(才蔵 pairing)を配備中=1 通は二重下知。逆に T151(825ceeaa7 で入口ガードの `!` が落ち lifecycle worker 全滅 rc=64 171 行)は誰も見ていない壁=将軍 D0 可逆修正(091981ab5、temp→bash -n→mv)。判定基準=壁の名前が task/掲示板に既にあるか。
