@@ -2198,7 +2198,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行deploy_task.sh L7893-L7897のtitle/purpose/command限定検出、recon-dual契約、resolve_cmdのtitle非投影を確認。前項INS-20260822-221345291-7ea0の根因確定版と一致する既知仕様で、候補対策は別decisionとして保持し本refluxでは追加実装しない。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-222204165-47ed;duplicate=INS-20260822-221345291-7ea0;source=scripts/deploy_task.sh:L7886-L7897;source=skills/recon-dual/SKILL.md:L95-L96;decision_candidate=cmd_skeleton_purpose_marker_and_cross_repo_path_warning"
+  resolved_at: "2026-08-28T11:38:48+09:00"
 - id: INS-20260822-223323648-3669
   ts: "2026-08-22T22:33:23+09:00"
   insight: "[[DM Signalにおいて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-Signalにおいて、候補PF同士の「低相関」をPortfolio Selection / FoF構築に利用する価値があるか検討してほしい。 背景として、低相関資産を組み合わせると、単純な期待リターンの上昇がなくてもPF全体のボラティリティを下げ、Volatility D…"
