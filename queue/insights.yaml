@@ -7624,3 +7624,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-29T01:23:39+09:00"
+- id: INS-20260829-013038502-142c
+  ts: "2026-08-29T01:30:38+09:00"
+  insight: "deploy 雛形: estimated_minutes>10 の task で split_decision(boundary_ac_ids/integration_tasks/review_round_trips)を AC id から機械生成して埋める。00:57 に家老が同一 TEN_MIN_CONTRACT BLOCK を 1 分で 3 連続(4 回目 PASS)=手埋め往復の粒度バグ(LS096)。一発 PASS 率の次弾"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
