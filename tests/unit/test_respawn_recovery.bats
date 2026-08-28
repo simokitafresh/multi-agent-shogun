@@ -241,6 +241,13 @@ SH
   [[ "$output" == *"PATH=\"$nvm_bin:\$PATH\""* ]]
   generated="$output"
 
+  run bash -n -c "$generated"
+  [ "$status" -eq 0 ]
+  run env -i PATH=/usr/bin:/bin HOME="$fixture_home" bash -c \
+    'export PATH="$1:$PATH"; command -v node' _ "$nvm_bin"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$nvm_bin/node" ]
+
   run env -i PATH=/usr/bin:/bin HOME="$fixture_home" \
     FAKE_NODE_MARKER="$root/fixed-node-marker" bash -c "$generated"
   [ "$status" -eq 0 ]

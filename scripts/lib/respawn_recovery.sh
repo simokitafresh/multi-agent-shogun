@@ -74,6 +74,7 @@ respawn_recovery_launch_command() {
         if [[ "$resolved" != /* ]]; then
             if [[ -n "$resolved" && -f "$resolved" && -x "$resolved" ]]; then
                 resolved_dir="${resolved%/*}"
+                resolved_dir=$(realpath -m -- "$resolved_dir" 2>/dev/null || true)
                 resolved=$(realpath -e -- "$resolved" 2>/dev/null || true)
             else
                 resolved=""
