@@ -1,6 +1,6 @@
 # 現況(将軍 loop 毎に 5 行以内で書き換える。artifact の「現況」節の正本)
-- 06:41 殿裁定『usage limit reset を使え』→影丸 pane で Full reset 消費(残 0)。家老へ再開順序 1 通。停止 2h01m。起動 gate 10.09 で上限 3 pane を機械検出=再発防止) ★Codex 週次上限で停止: 家老・疾風・半蔵=『try again at Sep 4th 1:26 AM』、影丸・才蔵・飛猿=『1 usage limit reset available』、小太郎 表示なし、軍師(Claude)無影響。家老 inbox 未読 6=便停止、疾風 T171 ACK 不能
-- 将軍は殿の明示指示なしに CLI 切替/reset 消費をしない。推薦=殿の新アカウント device-auth(T80 先例、全 Codex 一括)。代替=/shogun-cli-switch で家老+忍者を Claude へ
-- 停止前の到達: 本日 CLEAR 26(hotfix 14/reflux 9/ci_fix 2/他 1)・PJ 0、CI GREEN(1e43c7f0b)、rev-list 13 71、PRODUCTION-PROOF PASS 1
-- 殿裁定 00:49-01:25 の根治は全段 live(観測窓 BLOCK/家老再試験 BLOCK/型 3 検査/proof は monitor)。本番 proof: STYLE 0・karo-retest 0・rc=64 0
-- 再開後の順序: 家老 inbox 6 件(T171 ack→T173 PJ e2e→軍師 review 2→gate_clear_required)→疾風 T171
+- 06:45 殿裁定 06:38『usage limit reset を使え』→影丸 pane で Full reset 消費(残 0)→家老 Working 再開(未読 6→3)、疾風 T171 再起床、才蔵 T173(PJ e2e)assigned。Codex 停止 04:40-06:41=2h01m
+- CI GREEN(1e43c7f0b)、rev-list 31 71=家老 push lane 再開待ち。gate 30 分 CLEAR 0(停止帯)。本日 CLEAR 26・PJ 0・finalize 34%
+- 再発防止: 起動 gate 10.09(上限/警告 pane 計数、d2dd2bb4c)+Gate 10.08 粒度(0e651569e)。記憶DB に reset 手順(codex_usage_reset_procedure_20260829)
+- 殿裁定 00:49-01:25 の根治は全段 live+本番一周(PRODUCTION-PROOF PASS 04:07)。T167 切除で配備 unaccounted 11.2s→0.3-0.6s
+- 残: T171(worktree 準備 44s の切除)/T173(PJ e2e 1 件目)/T172(split_decision 雛形)/T163(事象待ち)
