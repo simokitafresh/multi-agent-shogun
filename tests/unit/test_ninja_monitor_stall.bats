@@ -5067,6 +5067,39 @@ PY
     [ "$output" = "background=1 duplicate=1 retry=1" ]
 }
 
+# test_necessity: synchronous report-gate waits must be moved outside the
+# monitor cycle while retaining one worker per agent and retrying failures.
+@test "active idle report gate runs outside cycle with single-flight retry" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$SCRIPT_DIR/state"; LOG="$SCRIPT_DIR/monitor.log"
+        mkdir -p "$SCRIPT_DIR" "$STATE_DIR"
+        : > "$SCRIPT_DIR/calls"
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        evaluate_active_idle_report_recovery() { printf "%s\n" "$4" >> "$SCRIPT_DIR/calls"; sleep 1; return 0; }
+        start=$(date +%s%N)
+        _evaluate_active_idle_report_recovery_background saizo task.yaml in_progress cmd_cycle 0 20
+        elapsed=$((($(date +%s%N) - start) / 1000000))
+        _evaluate_active_idle_report_recovery_background saizo task.yaml in_progress cmd_cycle 0 20
+        wait
+        test "$elapsed" -lt 500
+        test "$(wc -l < "$SCRIPT_DIR/calls")" -eq 1
+        evaluate_active_idle_report_recovery() { printf "%s\n" "$4" >> "$SCRIPT_DIR/calls"; return 1; }
+        _evaluate_active_idle_report_recovery_background saizo task.yaml in_progress cmd_retry 0 20
+        wait
+        _evaluate_active_idle_report_recovery_background saizo task.yaml in_progress cmd_retry 0 20
+        wait
+        test "$(wc -l < "$SCRIPT_DIR/calls")" -eq 3
+        grep -q "ACTIVE-IDLE-REPORT-EVAL-BACKGROUND-START" "$LOG"
+        echo "background=1 duplicate=1 retry=1"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "background=1 duplicate=1 retry=1" ]
+}
+
 @test "main loop: snapshot fast path runs before slow maintenance checks" {
     run bash -c '
 set -euo pipefail

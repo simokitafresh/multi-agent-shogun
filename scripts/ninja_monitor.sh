@@ -8325,7 +8325,7 @@ check_stall() {
     if [ -z "${STALL_FIRST_SEEN[$name]}" ]; then
         STALL_FIRST_SEEN[$name]=$now
         log "STALL-WATCH: $name has ${status} task $task_id and is idle (tracking started)"
-        evaluate_active_idle_report_recovery "$name" "$task_file" "$status" "$task_id" 0 "$STALL_THRESHOLD_MIN"
+        _evaluate_active_idle_report_recovery_background "$name" "$task_file" "$status" "$task_id" 0 "$STALL_THRESHOLD_MIN"
         return
     fi
 
@@ -8338,7 +8338,7 @@ check_stall() {
 
     local stall_key="${name}:${task_id}"
 
-    evaluate_active_idle_report_recovery "$name" "$task_file" "$status" "$task_id" "$elapsed_min" "$threshold"
+    _evaluate_active_idle_report_recovery_background "$name" "$task_file" "$status" "$task_id" "$elapsed_min" "$threshold"
 
     if [ "$elapsed_min" -ge "$threshold" ]; then
         local last_notified=${STALL_NOTIFIED[$stall_key]:-0}
@@ -8497,6 +8497,33 @@ repair_terminal_report_outboxes() {
             log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/}"
         fi
     done
+}
+
+# Report gate evaluation may call an external gate and wait on its shared
+# single-flight lock. Keep that wait out of the monitor cycle; the library-only
+# path stays synchronous so existing unit fixtures retain deterministic output.
+_evaluate_active_idle_report_recovery_background() {
+    if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
+        evaluate_active_idle_report_recovery "$@"
+        return $?
+    fi
+    local name="$1" task_id="$4" lock_file lock_fd worker_pid
+    lock_file="${STATE_DIR:-/tmp}/active_idle_report_${name}.lock"
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "ACTIVE-IDLE-REPORT-EVAL-BACKGROUND-SKIP: $name task=$task_id reason=worker_running"
+        return 0
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        evaluate_active_idle_report_recovery "$@"
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "ACTIVE-IDLE-REPORT-EVAL-BACKGROUND-START: $name task=$task_id pid=$worker_pid"
+    return 0
 }
 
 evaluate_active_idle_report_recovery() {
