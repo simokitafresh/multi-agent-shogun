@@ -1551,3 +1551,7 @@
 - 意図: 復帰直後に T157(影丸 task 消失)の検知器を startup gate へ埋め、報告在庫 4 件(19h/20h/6h50m)を機械抽出で回収し、殿下問『報告ミスの手戻り/本番 push 後 AC は構造バグでは』に一次(BLOCK 49 中 39=待ち)で答えて可逆配備、殿裁定『バグは即時根治せよ』『バグを覚醒して根治せよ』で T159/T162/T163 と家老 task_id 6 回目を根治する。
 - 結果: CLEAR 08-28 全日 104(reflux 46/hotfix 45/ci_fix 20/番号 7=PJ 0)。終端=T154(1,862→3)/T155(PD 6 件)/T157/T158(在庫 4/4)/T159/T162。T160 本番 proof=`WAIT WAIT:report_commit_main_ancestry`×3→CLEAR 00:08。T129 cycle 中央値 75.8→48.3s。T163 家老自縛 12 分→theirs 採用+D012 拡張 aab97637d。commander_directive 着地 63500db6f。artifact スマホ是正 2 弾(4195fd131/c59f17bb4)。CI RED 10-12 回目(ci_fix 2 unit CLEAR、push 中 rev-list 18 48)。
 - 因果: [[session_save_20260829_0032]] -> [[復帰後の型_第十一弾]] -> [[T159_argv再現]] -> [[commander_directive]] -> [[T163_D012拡張]] -> [[T160_WAIT本番proof]] -> [[artifact_スマホ縦並び]]
+
+## 2026-08-29 00:35-00:43（飛猿 reflux insight 還流）
+- 意図: INS-20260828-184806411-8028を一次確認し、現行renderer未実装ガードを別cmdのdecision candidateへ分離して台帳をresolve。結果: 在庫133/11/0/144→132/11/0/143、task identity付きcommit `3a0e6501e750872bf4f50a92494e27b05a6e9a6c`、report gate PASS。因果: [[INS-20260828-184806411-8028]] -> [[renderer終端条件ガード未実装]] -> [[別cmd実装修正候補]]
+- 2026-08-29 01:00 `cmd_reflux_insight_202608290048_saizo`完了: INS-20260828-204439475-8246をrun_tests queue-root guard既存実装と契約test 2/2 PASSでresolve。inventory 133/11/0/144→132/11/0/143、report gate PASS、task identity付き追補commit `bc2c3cf3faee1aa55d5e226336d662248080c052`。因果: [[INS-20260828-204439475-8246]] -> [[run_tests_queue_root_guard]] -> [[fixture本番queue汚染の再発防止]]
