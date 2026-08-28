@@ -7,7 +7,18 @@ evaluate_ci_readiness_json() {
     python3 -c '
 import json, sys
 from datetime import datetime, timezone
-d=json.load(sys.stdin)
+raw=sys.stdin.buffer.read()
+if not raw.strip():
+    print("WAIT: ci_evaluation_input_absent=empty")
+    raise SystemExit(0)
+try:
+    d=json.loads(raw)
+except (UnicodeDecodeError, json.JSONDecodeError):
+    print("WAIT: ci_evaluation_input_absent=malformed_json")
+    raise SystemExit(0)
+if not isinstance(d, dict):
+    print("WAIT: ci_evaluation_input_absent=non_object")
+    raise SystemExit(0)
 t=d.get("target_result")
 w=d.get("workflow_result")
 expected=str(d.get("expected_head_sha") or "")
