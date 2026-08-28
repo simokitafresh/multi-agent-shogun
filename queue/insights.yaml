@@ -2548,14 +2548,20 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4369"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でcmd_4369研究成果を再確認済み。PIT 108ヶ月・future参照0・36M/60M両armで低相関selection E1が一貫悪化し、本番実装見送りが確定。新規実修正やdecision_candidateは不要で、既存研究成果をもって解決とする。"
+  action_artifact: "docs/research/low_corr_selection_final_report_20260823.md;context/senkyoku-log.md:L1476-L1478;docs/semantic-index/index.md:L13420-L13422"
+  resolved_at: "2026-08-29T02:06:35+09:00"
 - id: INS-20260823-201009185-479e
   ts: "2026-08-23T20:10:09+09:00"
   insight: "review_bundle.py singleコマンドがWSL2 NTFS I/Oでtimeout(15s)。LG016同型。軍師のLGTM正規入口がhangするとsg7_bundle未生成→手動フォールバック必要。timeout保護または/tmp(ext4)での中間処理が必要"
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で歴史記録と現行挙動を照合。docs/research/gunshi_throughput_measurement_20260823.mdには2026-08-23の4/4件(100%)・通知未達3/4件の30秒計測が残る一方、現行scripts/review_bundle.pyには単件15秒timeoutまたは/tmp中間処理の実装はなく、ext4上の現行単件テスト34/34とBats 8/8は全て完了し再現しなかった。現時点の実修正は不要とし、WSL2/NTFS経路を再導入する場合のtimeout境界設計は将来のdecision_candidateとして報告へ整理。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-201009185-479e;historical=docs/research/gunshi_throughput_measurement_20260823.md;current=scripts/review_bundle.py;verification=PYTHONPATH=. pytest -q tests/unit/test_review_bundle.py (34 passed), bash scripts/run_tests.sh file tests/unit/test_review_bundle.bats (8/8, SKIP0), df -T . (ext4);decision_candidate=WSL2/NTFS経路再導入時のsingle timeout/tmp中間処理を別cmdで設計"
+  resolved_at: "2026-08-29T02:18:16+09:00"
 - id: INS-20260823-201104109-d45a
   ts: "2026-08-23T20:11:04+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b96rp52z1 task id tool use id toolu 01RJV5wK979eZdHdKF は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -2572,7 +2578,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で確認した結論は部分改善は実測済みだがgate全体の壁時間は未改善である。記憶DBの2026-08-24回答でreport_checks 39.65秒→0.163秒、final_checks 36.31秒→0.086秒等を確認し、gate_evaluationは437.3秒→809.8秒と悪化していた。semantic索引と既存throughput設計書へ接続済みで、新規実修正・decision_candidateは不要。"
+  action_artifact: "memory_db:events:2026-08-24T08:19:13+09:00;docs/research/gunshi_throughput_measurement_20260823.md;docs/research/throughput-first-asis-tobe-5w1h_20260708.md;docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T02:33:07+09:00"
 - id: INS-20260823-202831806-10c2
   ts: "2026-08-23T20:28:31+09:00"
   insight: "semantic_index_update新概念候補: discussion:今は何をしている？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
