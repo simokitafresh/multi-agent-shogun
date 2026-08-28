@@ -2558,7 +2558,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で歴史記録と現行挙動を照合。docs/research/gunshi_throughput_measurement_20260823.mdには2026-08-23の4/4件(100%)・通知未達3/4件の30秒計測が残る一方、現行scripts/review_bundle.pyには単件15秒timeoutまたは/tmp中間処理の実装はなく、ext4上の現行単件テスト34/34とBats 8/8は全て完了し再現しなかった。現時点の実修正は不要とし、WSL2/NTFS経路を再導入する場合のtimeout境界設計は将来のdecision_candidateとして報告へ整理。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-201009185-479e;historical=docs/research/gunshi_throughput_measurement_20260823.md;current=scripts/review_bundle.py;verification=PYTHONPATH=. pytest -q tests/unit/test_review_bundle.py (34 passed), bash scripts/run_tests.sh file tests/unit/test_review_bundle.bats (8/8, SKIP0), df -T . (ext4);decision_candidate=WSL2/NTFS経路再導入時のsingle timeout/tmp中間処理を別cmdで設計"
+  resolved_at: "2026-08-29T02:18:16+09:00"
 - id: INS-20260823-201104109-d45a
   ts: "2026-08-23T20:11:04+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b96rp52z1 task id tool use id toolu 01RJV5wK979eZdHdKF は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
