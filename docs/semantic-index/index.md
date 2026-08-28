@@ -8377,6 +8377,7 @@ codd:
 | cmd | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | cmd | `cmd_karo_hotfix_production_proof_monitor_unit_b_20260829` |
 | cmd | `cmd_karo_hotfix_deploy_task_unaccounted_measure_20260829` |
+| cmd | `cmd_karo_hotfix_deploy_task_worktree_phase_accounting_20260829` |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -15122,6 +15123,7 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[provisional_lessons]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:56:03.200783+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T17:50:56.401388+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T19:01:58.197772+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
