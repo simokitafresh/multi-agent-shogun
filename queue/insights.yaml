@@ -6874,3 +6874,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T15:03:19+09:00"
+- id: INS-20260828-151117258-0b1b
+  ts: "2026-08-28T15:11:17+09:00"
+  insight: "autopush lane(『autopush: source-only path snapshot』29f7281f0 15:10:09)が origin/main へ直 push し shared main と再分岐(rev-list 1 21)。T100(88969097a)は postclear publish の直 push のみ根治=autopush lane は残存。修正 1 unit: autopush も shared main へ commit のみ+push は家老 1 本ずつ経路へ一本化(T100 と同型)、回帰 bats『autopush 後に origin 左辺 0』。効果計測=24h の rev-list 左辺 0。origin: [[T100_再分岐根絶]] -> [[autopush_lane直push残存]] -> [[T136_再分岐1_21]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
