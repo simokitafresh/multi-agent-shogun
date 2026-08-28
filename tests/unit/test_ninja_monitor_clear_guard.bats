@@ -1435,7 +1435,7 @@ TMP_ROOT="$BATS_TEST_TMPDIR"
 
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/lib"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/lib" "$SCRIPT_DIR/logs"
 ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 touch "$LOG"
 
@@ -1508,9 +1508,10 @@ TMP_ROOT="$BATS_TEST_TMPDIR"
 
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/lib"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/lib" "$SCRIPT_DIR/logs"
 ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 touch "$LOG"
+printf "%s\tcmd_test_redeploy_real\tCLEAR\tfixture\n" "$(date -Iseconds)" > "$SCRIPT_DIR/logs/gate_metrics.log"
 
 cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
 #!/bin/bash
