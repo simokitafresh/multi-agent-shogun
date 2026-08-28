@@ -2485,6 +2485,12 @@ _respawn_failure_reason() {
     printf 'exit_code=%s reason=%s\n' "${exit_code:-unknown}" "$reason"
 }
 
+_respawn_compact_text() {
+    local value="${1:-}"
+    value=$(printf '%s\n' "$value" | tr '\r\n' '  ' | tr -s ' ' | cut -c1-180)
+    printf '%s\n' "${value:-none}"
+}
+
 # A generation handoff can legitimately return before the successor is ready.
 # Treat explicit successor ownership markers as semantic success so that the
 # handoff is not counted as a CLI failure and does not trigger a retry loop.
@@ -2639,8 +2645,15 @@ safe_send_clear() {
         local _launch_cmd
         _launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
         if [ -n "${_launch_cmd:-}" ]; then
-            local _launch_command
-            _launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$_launch_cmd" 2>/dev/null || true)
+            local _launch_command _resolver_rc=0 _resolver_stderr _resolver_error_file
+            _resolver_error_file="${STATE_DIR}/respawn_resolver_${agent_name}_${BASHPID}.stderr"
+            : >"$_resolver_error_file"
+            _launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$_launch_cmd" 2>"$_resolver_error_file") || _resolver_rc=$?
+            _resolver_stderr=$(_respawn_compact_text "$(<"$_resolver_error_file")")
+            unlink "$_resolver_error_file" 2>/dev/null || true
+            if [ "$_resolver_rc" -ne 0 ] || [ -z "$_launch_command" ]; then
+                log "CODEX-RESPAWN-REASON: $agent_name resolver_rc=$_resolver_rc resolver_stderr=$_resolver_stderr respawn_rc=not_run respawn_stderr=not_run"
+            fi
             # per-agent config.toml切替(2層SSOT: settings.yaml→config.toml。SSOT実装=cli_lookup.sh)
             if ! codex_config_apply_agent "$agent_name"; then
                 log "CODEX-CONFIG-APPLY-FAIL: $agent_name retry=next_cycle"
@@ -2670,6 +2683,8 @@ safe_send_clear() {
                 else
                     _fsc_respawn_ok=0
                     _fsc_failure_reason=$(_respawn_failure_reason "$pane" "$_fsc_respawn_rc" "$_fsc_respawn_output")
+                    log "CODEX-RESPAWN-REASON: $agent_name resolver_rc=$_resolver_rc resolver_stderr=$_resolver_stderr respawn_rc=$_fsc_respawn_rc respawn_stderr=$(_respawn_compact_text "$_fsc_failure_reason")"
+                    log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed; reason=$(_respawn_compact_text "$_fsc_failure_reason")"
                     log "CODEX-RESPAWN-FAILURE: $agent_name $_fsc_failure_reason"
                 fi
             fi

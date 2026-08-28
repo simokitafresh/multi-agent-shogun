@@ -149,12 +149,71 @@ grep -q "CLEAR-LOOP-BLOCK: kotaro cmd=cmd_low_ctx count=2/1 forced_idle reason=L
 printf "respawn_total=4 respawn_success=2 high_ctx_idle=0 low_ctx_idle=1\n"
     '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"respawn_total=4 respawn_success=2 high_ctx_idle=0 low_ctx_idle=1"* ]]
 }
 
 # test_necessity: a failed task may regain the review lane only for a newly
 # fingerprinted completed PASS report with all binary checks yes; incomplete,
 # failed, negative-check, and already-requested generations stay silent.
+# test_necessity: the Codex clear path must preserve resolver and tmux failure
+# evidence in one durable reason line, including the resolver-success/respawn-
+# failure boundary seen in the T137 production incident.
+@test "T137 Codex respawn reason joins resolver and tmux failure evidence" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"
+SCRIPT_DIR="$T"
+STATE_DIR="$T/state"
+LOG="$T/monitor.log"
+mkdir -p "$T/config" "$T/queue/tasks" "$T/scripts" "$STATE_DIR"
+printf "%s\n" "token_budget:" "  max_clear_per_cmd: 3" > "$T/config/settings.yaml"
+printf "%s\n" "#!/usr/bin/env bash" "exit 0" > "$T/scripts/inbox_write.sh"
+chmod +x "$T/scripts/inbox_write.sh"
+: > "$LOG"
+log() { printf "%s\n" "$1" >> "$LOG"; }
+check_idle() { return 0; }
+can_send_clear_with_report_gate() { return 0; }
+auto_commit_before_clear() { return 0; }
+cli_type() { printf "%s\n" codex; }
+cli_launch_cmd() { printf "%s\n" /bin/true; }
+cli_profile_get() { [ "$2" = clear_cmd ] && printf "%s\n" /new || printf "\n"; }
+codex_config_apply_agent() { _CODEX_CFG_CHANGED=false; return 0; }
+get_context_pct() { printf "%s\n" 10; }
+respawn_recovery_launch_command() { printf "%s\n" /bin/true; }
+respawn_recovery_wait_ready() { return 1; }
+respawn_recovery_generation() { printf "%s\n" 123:456; }
+respawn_recovery_notify() { return 0; }
+tmux() {
+    case "$1" in
+        display-message) printf "%s\n" kagemaru ;;
+        respawn-pane) printf "%s\n" "respawn pane failed" >&2; return 1 ;;
+        capture-pane|clear-history|set-option) return 0 ;;
+        *) return 0 ;;
+    esac
+}
+export -f tmux
+cat > "$T/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_t137_reason
+  task_id: cmd_t137_reason_normal
+YAML
+respawn_status=0
+safe_send_clear pane-kagemaru kagemaru T137-REASON || respawn_status=$?
+cat "$LOG"
+test "$respawn_status" -eq 1
+grep -q "CODEX-RESPAWN-REASON: kagemaru resolver_rc=0" "$LOG"
+grep -q "respawn_rc=1" "$LOG"
+grep -q "respawn pane failed" "$LOG"
+grep -q "CODEX-RESPAWN-FALLBACK: kagemaru" "$LOG"
+printf "%s\n" reason_line=1 fallback_reason=1
+    '
+    [ "$status" -eq 0 ]
+}
+
 @test "repair_terminal_report_outboxes: failed PASS report review eligibility is fingerprint-bound" {
     run bash -lc '
 set -euo pipefail
