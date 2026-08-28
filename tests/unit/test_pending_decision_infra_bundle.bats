@@ -118,6 +118,7 @@ PY
 }
 
 @test "PD-114 resolves semantic/context mapping and allows unrelated no-update changes" {
+  grep -q 'gate_rule_doc_sync.sh' "$ROOT/scripts/cmd_save.sh"
   run bash "$ROOT/scripts/gates/gate_rule_doc_sync.sh" scripts/cmd_save.sh
   [ "$status" -eq 0 ]
   [[ "$output" == *"MAP source=scripts/cmd_save.sh"* ]]
