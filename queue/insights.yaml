@@ -6599,3 +6599,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-132107166-f853
+  ts: "2026-08-28T13:21:07+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[らせん正本_第二十五話型]] は既存aliasesに一致なし。類似概念TOP3: spiral_canon_sengoku25(らせん最適の正本型(第二十五話); alias=第二十五話の型; score=4.6) / semantic_dictionary_design(セマンティック辞書構想; alias=らせん定義の補正; score=2.5) / known_unknowns_principle(無知の知; alias=同じように第九弾～第十二弾を確認せよ; score=1.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
