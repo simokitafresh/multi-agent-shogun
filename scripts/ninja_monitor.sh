@@ -44,7 +44,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
         _ninja_monitor_usage
         return 64
     fi
-elif (( $# != 0 )) && [[ "${1:-}" != "--check-and-update-done-task" || $# -ne 2 ]]; then
+elif (( $# != 0 )) && {
+    [[ "${1:-}" == "--check-and-update-done-task" && $# -eq 2 ]] ||
+        [[ "${1:-}" == "--lifecycle-worker" && $# -ge 2 ]]
+}; then
     _ninja_monitor_usage
     exit 64
 fi
@@ -2080,14 +2083,21 @@ _ninja_monitor_run_bounded_snapshot() {
 
 # Mechanical lifecycle checks run in one owner-fenced worker each.  Library
 # fixtures retain the synchronous path so their in-memory state assertions are
-# deterministic; the daemon path keeps the monitor cycle free of their I/O.
+# deterministic; the daemon path uses a bounded external worker so timeout
+# releases the lane for the next-cycle retry.
+NINJA_MONITOR_LIFECYCLE_TIMEOUT=${NINJA_MONITOR_LIFECYCLE_TIMEOUT:-120}
+
 _ninja_monitor_run_lifecycle_background() {
     local key="$1"; shift
-    local lock_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.lock" lock_fd worker_pid
+    local lock_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.lock" lock_fd worker_pid timeout_sec worker_script
     if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
         "$@"
         return $?
     fi
+    timeout_sec="$NINJA_MONITOR_LIFECYCLE_TIMEOUT"
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+    worker_script="${NINJA_MONITOR_LIFECYCLE_WORKER_SCRIPT:-$SCRIPT_DIR/scripts/ninja_monitor.sh}"
     mkdir -p "${lock_file%/*}" || return 1
     exec {lock_fd}>"$lock_file" || return 1
     if ! flock -n "$lock_fd"; then
@@ -2101,7 +2111,22 @@ _ninja_monitor_run_lifecycle_background() {
             log "LIFECYCLE-BACKGROUND-FENCE: key=$key side_effects=0"
             exit 0
         }
-        "$@"
+        if [ ! -f "$worker_script" ]; then
+            "$@"
+            exit $?
+        fi
+        if timeout --signal=TERM --kill-after=2 "$timeout_sec" \
+            env SCRIPT_DIR="$SCRIPT_DIR" STATE_DIR="${STATE_DIR:-/tmp}" SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" LOG="$LOG" \
+            bash "$worker_script" --lifecycle-worker "$@"; then
+            :
+        else
+            local rc=$?
+            if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+                log "LIFECYCLE-BACKGROUND-TIMEOUT: key=$key timeout=${timeout_sec}s rc=$rc retry=next-cycle"
+            else
+                log "LIFECYCLE-BACKGROUND-FAIL: key=$key rc=$rc retry=next-cycle"
+            fi
+        fi
     ) &
     worker_pid=$!
     exec {lock_fd}>&-
@@ -4861,6 +4886,28 @@ _check_done_report_gate() {
     return 1
 }
 
+# A completed report starts review; it is not itself terminal evidence.  The
+# only terminal boundaries accepted here are the durable completion-gate
+# metric or both fingerprint-bound formal approvals.  Keep this check beside
+# AUTO-DONE so the idle-pane STAGE1 path cannot clear a worker between report
+# publication and review completion.
+_done_report_terminal_review_ready() {
+    local parent_cmd="$1" report_file="$2"
+    local metrics_file="${SCRIPT_DIR}/logs/gate_metrics.log"
+    if [ -f "$metrics_file" ] && awk -F '\t' -v cmd="$parent_cmd" \
+        '$2 == cmd && $3 == "CLEAR" { found=1; exit } END { exit(found ? 0 : 1) }' \
+        "$metrics_file"; then
+        log "STAGE1-REVIEW-TERMINAL: parent_cmd=$parent_cmd source=gate_metrics"
+        return 0
+    fi
+    if PROJECT_ROOT="$SCRIPT_DIR" review_two_phase_ready "$parent_cmd" "$report_file"; then
+        log "STAGE1-REVIEW-TERMINAL: parent_cmd=$parent_cmd source=two_phase_approval"
+        return 0
+    fi
+    log "STAGE1-REVIEW-PENDING-SKIP: parent_cmd=$parent_cmd report=$(basename "$report_file") status=completed task/pane unchanged"
+    return 1
+}
+
 _gate_worker_clear_marker_path() {
     local parent_cmd="$1"
     printf '%s/queue/gates/%s/gate_worker.clear.json\n' "$SCRIPT_DIR" "$parent_cmd"
@@ -4988,6 +5035,22 @@ check_and_update_done_task() (
         return 1
     fi
 
+    # Read report status before any terminal transition.  A revision request
+    # is explicitly review-pending and must leave task/pane state unchanged.
+    local report_status
+    report_status=$(yaml_field_get "$report_file" "status")
+    case "$report_status" in
+        revision_requested|pending|in_progress)
+            log "STAGE1-REVIEW-PENDING-SKIP: parent_cmd=$task_parent_cmd report=$(basename "$report_file") status=$report_status task/pane unchanged"
+            return 1
+            ;;
+        done|completed|success)
+            if ! _done_report_terminal_review_ready "$task_parent_cmd" "$report_file"; then
+                return 1
+            fi
+            ;;
+    esac
+
     # Generation-bound report identities opt into the durable CLEAR boundary.
     # Legacy reports without report_id retain their pre-generation behavior;
     # current deployed tasks always carry report_id/report_identity_version.
@@ -5039,8 +5102,6 @@ check_and_update_done_task() (
     fi
 
     # 報告のstatus確認（done/completed/success を完了とみなす）
-    local report_status
-    report_status=$(yaml_field_get "$report_file" "status")
     local monitor_state
     monitor_state=$(report_monitor_state "$report_file" 2>/dev/null || printf 'report_pending')
     if [ "$monitor_state" = "awaiting_evidence" ]; then
@@ -12848,6 +12909,15 @@ if [ "${1:-}" = "--check-and-update-done-task" ]; then
     close_inherited_non_stdio_fds
     trap 'ninja_monitor_function_timing_finish; close_inherited_non_stdio_fds' EXIT
     check_and_update_done_task "${2:-}"
+    exit $?
+fi
+
+if [ "${1:-}" = "--lifecycle-worker" ]; then
+    shift
+    lifecycle_worker_function="${1:-}"
+    shift || true
+    declare -F "$lifecycle_worker_function" >/dev/null 2>&1 || exit 64
+    "$lifecycle_worker_function" "$@"
     exit $?
 fi
 

@@ -5378,6 +5378,7 @@ PY
         root="$BATS_TEST_TMPDIR/lifecycle-background"
         mkdir -p "$root/state"
         STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        NINJA_MONITOR_LIFECYCLE_WORKER_SCRIPT="$root/not-present"
         ninja_monitor_business_owner_is_current() { return 0; }
         lifecycle_probe() { printf "called\\n" >> "$root/calls"; sleep 1; }
         _ninja_monitor_run_lifecycle_background probe lifecycle_probe
@@ -5390,6 +5391,56 @@ PY
     '
     [ "$status" -eq 0 ]
     [ "$output" = "side_effects=1 duplicate=0" ]
+}
+
+# test_necessity: each mechanical lifecycle lane must cover normal completion,
+# duplicate suppression, timeout retry, and stale-generation fencing.
+@test "lifecycle background lane covers normal duplicate timeout and stale fixtures" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/lifecycle-fixtures"
+        mkdir -p "$root/state"
+        cat > "$root/worker.sh" <<"SH"
+#!/usr/bin/env bash
+state="${SHOGUN_STATE_DIR:-/tmp}"
+printf "%s\\n" "${2:-}" >> "$state/calls"
+case "${2:-}" in
+    normal) sleep 1 ;;
+    slow) sleep 5 ;;
+    stale) printf stale >> "$state/stale" ;;
+esac
+SH
+        chmod +x "$root/worker.sh"
+        STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        NINJA_MONITOR_LIFECYCLE_WORKER_SCRIPT="$root/worker.sh"
+        NINJA_MONITOR_LIFECYCLE_TIMEOUT=1
+        ninja_monitor_business_owner_is_current() { return 0; }
+
+        _ninja_monitor_run_lifecycle_background normal normal
+        _ninja_monitor_run_lifecycle_background normal normal
+        sleep 2
+        test "$(awk "/^normal$/ { count++ } END { print count + 0 }" "$root/state/calls")" -eq 1
+
+        _ninja_monitor_run_lifecycle_background slow slow
+        sleep 3
+        grep -q "LIFECYCLE-BACKGROUND-TIMEOUT: key=slow timeout=1s" "$LOG"
+        _ninja_monitor_run_lifecycle_background slow slow
+        sleep 3
+        test "$(awk "/^slow$/ { count++ } END { print count + 0 }" "$root/state/calls")" -eq 2
+
+        ninja_monitor_business_owner_is_current() { return 1; }
+        _ninja_monitor_run_lifecycle_background stale stale
+        sleep 1
+        test ! -e "$root/state/stale"
+        grep -q "LIFECYCLE-BACKGROUND-FENCE: key=stale side_effects=0" "$LOG"
+        printf "normal=1 duplicate=0 timeout_retry=1 stale_side_effects=0\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "normal=1 duplicate=0 timeout_retry=1 stale_side_effects=0" ]
 }
 
 # test_necessity: a production auto-void report scan can block on the 9p
@@ -5881,6 +5932,79 @@ printf "snapshot_idle=archived,idle pipeline=%s blocked=1 archived=0\n" "$pipeli
     [[ "$output" == *"snapshot_idle=archived,idle pipeline=3|1|0 blocked=1 archived=0"* ]]
 }
 
+@test "check_and_update_done_task: completed report waits for terminal review boundary" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/review-boundary"
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/gates" "$SCRIPT_DIR/logs" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/scripts/lib"
+ln -s "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$SCRIPT_DIR/scripts/lib/report_commit_identity.py"
+ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+refresh_karo_snapshot_task_assignment() { :; }
+_reflux_promotion_record_completion_detached() { :; }
+log() { printf "%s\\n" "$1" >> "$LOG"; }
+
+run_case() {
+    local name="$1" report_status="$2" boundary="$3"
+    local parent="cmd_stage1_${name}"
+    local report="$SCRIPT_DIR/queue/reports/kagemaru_report_${parent}.yaml"
+    rm -f "$SCRIPT_DIR/queue/reports"/*.yaml "$SCRIPT_DIR/logs/gate_metrics.log"
+    rm -rf "$SCRIPT_DIR/queue/gates"/*
+    printf "task:\\n  parent_cmd: %s\\n  task_id: task_%s\\n  status: in_progress\\n" "$parent" "$name" > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+    printf "parent_cmd: %s\\ntask_id: task_%s\\nstatus: %s\\nverdict: PASS\\ncommit_hash: 47cc08b12ba4ac4b243a8cf0fb8081b40296105c\\n" "$parent" "$name" "$report_status" > "$report"
+    case "$boundary" in
+        gate)
+            printf "2026-08-28T18:00:00Z\\t%s\\tCLEAR\\tfixture\\n" "$parent" > "$SCRIPT_DIR/logs/gate_metrics.log"
+            ;;
+        gunshi|both)
+            local key fp approval_dir
+            key=$(review_report_key "queue/reports/$(basename "$report")")
+            fp=$(review_report_fingerprint "$report")
+            approval_dir="$SCRIPT_DIR/queue/gates/$parent/review_approvals/reports/$key"
+            mkdir -p "$approval_dir"
+            printf "result: LGTM\\nfingerprint: %s\\n" "$fp" > "$approval_dir/gunshi.yaml"
+            if [ "$boundary" = both ]; then
+                printf "result: ACCEPT\\nfingerprint: %s\\n" "$fp" > "$approval_dir/karo.yaml"
+            fi
+            ;;
+    esac
+    check_and_update_done_task kagemaru || true
+    printf "%s=%s\\n" "$name" "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" status)"
+}
+
+run_case unreviewed completed none
+run_case lgtm_only completed gunshi
+run_case both_approvals completed both
+run_case gate_clear completed gate
+run_case revision revision_requested none
+
+pending_count=$(awk "/STAGE1-REVIEW-PENDING-SKIP/ { count++ } END { print count + 0 }" "$LOG")
+terminal_count=$(awk "/STAGE1-REVIEW-TERMINAL/ { count++ } END { print count + 0 }" "$LOG")
+test "$pending_count" -eq 3
+test "$terminal_count" -eq 2
+grep -Fq "parent_cmd=cmd_stage1_unreviewed report=kagemaru_report_cmd_stage1_unreviewed.yaml status=completed task/pane unchanged" "$LOG"
+grep -Fq "parent_cmd=cmd_stage1_lgtm_only report=kagemaru_report_cmd_stage1_lgtm_only.yaml status=completed task/pane unchanged" "$LOG"
+grep -Fq "parent_cmd=cmd_stage1_revision report=kagemaru_report_cmd_stage1_revision.yaml status=revision_requested task/pane unchanged" "$LOG"
+printf "pending=3 terminal=2 duplicate=0\\n"
+'
+    if [ "$status" -ne 0 ]; then
+        printf '%s\n' "$output"
+    fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"unreviewed=in_progress"* ]]
+    [[ "$output" == *"lgtm_only=in_progress"* ]]
+    [[ "$output" == *"both_approvals=done"* ]]
+    [[ "$output" == *"gate_clear=done"* ]]
+    [[ "$output" == *"revision=in_progress"* ]]
+    [[ "$output" == *"pending=3 terminal=2 duplicate=0"* ]]
+}
+
 @test "check_and_update_done_task: flat task YAML uses yaml_field_set root fallback for completed_at" {
     run bash -c '
 set -euo pipefail
@@ -5910,7 +6034,8 @@ EOF
 
 log() { echo "$1" >> "$LOG"; }
 
-check_and_update_done_task kagemaru
+    printf "2026-08-28T18:00:00Z\\tcmd_flat_done\\tCLEAR\\tfixture\\n" > "$SCRIPT_DIR/logs/gate_metrics.log"
+    check_and_update_done_task kagemaru
 
 grep -q "^status: done$" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
 grep -q "^completed_at:" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
