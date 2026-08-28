@@ -72,6 +72,17 @@ teardown() { rm -rf "$TMPD"; }
     grep -q 'read: true' "$evidence_root/queue/inbox/karo.yaml"
 }
 
+# test_necessity: every shell connector is a bypass boundary. An allowed
+# evidence writer followed by arbitrary work must remain blocked as a whole.
+@test "evidence writer plus arbitrary command is blocked for every connector" {
+    local connector command
+    for connector in ';' '&&' '||' '|'; do
+        command="bash scripts/bulletin_write.sh karo evidence $connector bash scripts/run_tests.sh unit"
+        run bash -c "echo '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"$command\"}}' | SHOGUN_AGENT_ID=karo SHOGUN_INBOX_FILE='$INBOX' bash '$GUARD'"
+        [ "$status" -eq 2 ]
+    done
+}
+
 # test_necessity: this fixture preserves the original two-sided deadlock
 # evidence: the inbox marker rejects an unprocessed assignment, while the
 # former priority guard rejected both durable evidence writers. The count is

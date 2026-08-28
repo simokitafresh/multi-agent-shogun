@@ -37,15 +37,15 @@ tool_name="$(jq -r '.tool_name // .tool // .name // empty' <<<"$payload" 2>/dev/
 command="$(jq -r '.tool_input.command // .tool_input.cmd // .input.command // .input.cmd // empty' <<<"$payload" 2>/dev/null || true)"
 tool_target="$(jq -r '.tool_input.file_path // .tool_input.filePath // .tool_input.path // .input.file_path // .input.path // empty' <<<"$payload" 2>/dev/null || true)"
 
-# shell command の引数ではなく、実行位置にある script token だけを判定する。
-# これにより `echo inbox_write.sh shogun` のような本文だけの偽装は許可しない。
-command_runs_script() {
-    local wanted_script="$1" wanted_arg="${2:-}"
-    python3 - "$command" "$wanted_script" "$wanted_arg" <<'PY'
+# shell command の引数ではなく、全command segmentの実行位置にある
+# script tokenだけを判定する。これにより許可scriptの後へ任意commandを
+# 連結する迂回と、`echo inbox_write.sh shogun` の本文だけの偽装を許可しない。
+command_is_allowed_evidence() {
+    python3 - "$command" <<'PY'
 import shlex
 import sys
 
-command, wanted_script, wanted_arg = sys.argv[1:]
+command = sys.argv[1]
 try:
     lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|")
     lexer.whitespace_split = True
@@ -65,18 +65,25 @@ for token in tokens + [";"]:
     else:
         segment.append(token)
 
-for words in segments:
+def segment_is_allowed(words):
     for index, token in enumerate(words):
-        if token.rsplit("/", 1)[-1] != wanted_script:
+        script = token.rsplit("/", 1)[-1]
+        if script not in {"bulletin_write.sh", "inbox_write.sh"}:
             continue
         # Direct invocation or an interpreter invocation (including env/timeout
         # prefixes) is a script execution. A content argument is not.
         if index != 0 and words[index - 1] not in shells:
             continue
-        if wanted_arg and (index + 1 >= len(words) or words[index + 1] != wanted_arg):
-            continue
-        raise SystemExit(0)
-raise SystemExit(1)
+        if script == "inbox_write.sh":
+            if index + 1 >= len(words) or words[index + 1] != "shogun":
+                continue
+        return True
+    return False
+
+# An evidence command may consist of several chained evidence operations, but
+# every segment must itself be an allowed evidence operation. One arbitrary
+# segment makes the complete pre-tool command unsafe.
+raise SystemExit(0 if segments and all(segment_is_allowed(words) for words in segments) else 1)
 PY
 }
 
@@ -87,7 +94,7 @@ if [[ "$command" == *"inbox_mark_read.sh"* || "$command" == *"queue/inbox/${agen
 fi
 
 # inbox_mark_read の証跡検査を先に満たす、将軍向けの正規証跡経路だけを通す。
-if command_runs_script "bulletin_write.sh" || command_runs_script "inbox_write.sh" "shogun"; then
+if command_is_allowed_evidence; then
     exit 0
 fi
 
