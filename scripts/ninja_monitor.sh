@@ -8319,15 +8319,15 @@ _report_is_pass_review_candidate() {
     local report_full="$1" report_gate_output
     [ -f "$report_full" ] || return 1
 
-    # A failed worker may later publish a corrected report.  Eligibility is
-    # bound to the report contents, never to the worker task status: only a
-    # completed PASS report whose every binary check is yes may reopen review.
+    # A failed or done worker may later publish a corrected report. Eligibility
+    # is bound to the report contents, never to the worker task status: only a
+    # terminal PASS report whose every binary check is yes may reopen review.
     python3 - "$report_full" <<'PY' >/dev/null 2>&1 || return 1
 import sys
 import yaml
 
 report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-if report.get("status") != "completed" or report.get("verdict") != "PASS":
+if report.get("status") not in {"completed", "done"} or report.get("verdict") != "PASS":
     raise SystemExit(1)
 checks = report.get("binary_checks")
 if not isinstance(checks, dict) or not checks:
@@ -8411,7 +8411,7 @@ repair_terminal_report_outboxes() {
         # inbox_write publishes child review before the atomic done transition.
         # A failed task is also eligible when a corrected PASS report appears:
         # its task status is not a report-generation verdict.
-        case "$task_status" in assigned|acknowledged|in_progress|failed) ;; *) continue ;; esac
+        case "$task_status" in assigned|acknowledged|in_progress|done|failed) ;; *) continue ;; esac
         report_path=$(yaml_field_get "$task_file" report_path "" 2>/dev/null || true)
         [ -n "$report_path" ] || continue
         [[ "$report_path" = /* ]] && report_full="$report_path" || report_full="$SCRIPT_DIR/$report_path"
@@ -8422,9 +8422,9 @@ repair_terminal_report_outboxes() {
         status=$(yaml_field_get "$report_full" status "" 2>/dev/null || true)
         case "$status" in completed|done) ;; *) continue ;; esac
         parent_cmd=$(yaml_field_get "$report_full" parent_cmd "" 2>/dev/null || true)
-        if [ "$task_status" = "failed" ]; then
-            # Do not replay report_received for a failed generation.  The
-            # missing transition is specifically the review child; the
+        if [ "$task_status" = "failed" ] || [ "$task_status" = "done" ]; then
+            # Do not replay report_received for a failed or done generation.
+            # The missing transition is specifically the review child; the
             # fingerprint-bound marker makes this one request per PASS epoch.
             auto_request_report_review "$report_full" "$parent_cmd" 1 || true
             continue
