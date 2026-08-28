@@ -6936,7 +6936,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行報告templateのoperational_simulation 4枠生成導線と既存cmd_4192の入口側是正を照合し、対象は既存修正済みと確認。追加実装・decision_candidate不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-160753815-f86b;primary=queue/reports/tobisaru_report_cmd_reflux_insight_202608281930_tobisaru.yaml:L167-L171;primary=docs/obsidian-promoted/operational_simulation-missing-cmd_save-cmd_4192-2026-07-29t19-13-54.md:L33-L45,L64-L65;primary=context/cmd-chronicle.md:L62;semantic=docs/semantic-index/index.md:L6599-L6600;causal=.cache/causal_index.tsv:L5400,L8181;memory=memory_db_query.sh --search operational_simulation MISSING returned cmd_save:cmd_4192 entries;decision_candidate=none"
+  resolved_at: "2026-08-28T19:36:16+09:00"
 - id: INS-20260828-160800960-f30d
   ts: "2026-08-28T16:08:00+09:00"
   insight: "高頻度FAIL: integration cmd requires command/expected/actual/result — LG055) (13回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
