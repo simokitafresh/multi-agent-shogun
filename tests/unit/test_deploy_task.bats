@@ -213,6 +213,60 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: 同一taskの未publish active worktreeを再利用し、remote lookup/fetchと
+# checkoutを再実行せず、既存の安全なidentity境界を満たした場合だけ高速経路へ進む不変量を守る。
+@test "active unpublished task worktree is reused after identity validation" {
+    local repo_root="$BATS_TEST_TMPDIR/reuse-repo"
+    local task="$BATS_TEST_TMPDIR/reuse-task.yaml"
+    local marker="$BATS_TEST_TMPDIR/reuse-marker.json"
+    mkdir -p "$repo_root"
+    git init -q "$repo_root"
+    git -C "$repo_root" config user.email test@example.invalid
+    git -C "$repo_root" config user.name test
+    printf 'base\n' > "$repo_root/README"
+    git -C "$repo_root" add README
+    git -C "$repo_root" -c user.email=test@example.invalid -c user.name=test commit -qm base
+    local base
+    base=$(git -C "$repo_root" rev-parse HEAD)
+    git -C "$repo_root" worktree add -q --detach "$BATS_TEST_TMPDIR/reuse-wt" "$base"
+    mkdir -p "$(dirname "$marker")"
+    python3 - "$marker" "$repo_root" "$BATS_TEST_TMPDIR/reuse-wt" "$base" <<'PY'
+import json
+import sys
+
+path, repo, worktree, base = sys.argv[1:]
+json.dump({
+    "version": 1,
+    "state": "active",
+    "task_id": "task_reuse",
+    "parent_cmd": "cmd_reuse",
+    "repo": repo,
+    "worktree": worktree,
+    "remote_tip": base,
+    "published_commit": "",
+}, open(path, "w", encoding="utf-8"))
+PY
+    printf 'task:\n  task_id: task_reuse\n  parent_cmd: cmd_reuse\n  task_worktree_required: true\n  task_worktree_status: active\n  task_worktree_path: %s\n  task_worktree_repo: %s\n  task_worktree_marker: %s\n  task_worktree_base: %s\n' \
+        "$BATS_TEST_TMPDIR/reuse-wt" "$repo_root" "$marker" "$base" > "$task"
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1"; }
+        deploy_task_original_prepare_remote_tip_worktree() {
+            printf "unexpected-original-path\n"
+            return 99
+        }
+        DEPLOY_TASK_PHASE=task_mutations
+        deploy_task_prepare_remote_tip_worktree "$2" hayate
+    ' _ "$PROJECT_ROOT" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TASK_WORKTREE_REUSED: ninja=hayate task=task_reuse"* ]]
+    [[ "$output" == *"TASK_MUTATION_PHASE phase=deploy_task_prepare_remote_tip_worktree"* ]]
+    [[ "$output" != *"unexpected-original-path"* ]]
+}
+
 # test_necessity: 高CTX配備は正規respawnとready確認を経てからのみ成功し、ctx_before/afterを同一receiptへ記録する不変量を守る。
 @test "ctx guard respawns high-ctx idle worker and confirms ready" {
     run bash -c '
