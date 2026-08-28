@@ -708,6 +708,7 @@ YAML
         }
         find_matching_report_file() { printf "%s/queue/reports/%s_report.yaml\n" "$SCRIPT_DIR" "$1"; }
         run_report_gate_deduped() { printf "PASS\n"; return 0; }
+        review_two_phase_ready() { return 0; }
 
         make_fixture dirty dirty_task dirty_report
         printf "dirty\n" > "$SCRIPT_DIR/scripts/a.sh"
@@ -764,6 +765,7 @@ YAML
         refresh_karo_snapshot_task_assignment() { return 0; }
         report_monitor_state() { printf "pass_terminal\n"; }
         run_report_gate_deduped() { printf "PASS\n"; return 0; }
+        review_two_phase_ready() { return 0; }
         yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
         make_fixture() {
             local name="$1" status="$2"
