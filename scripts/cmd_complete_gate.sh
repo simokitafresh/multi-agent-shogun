@@ -13274,6 +13274,243 @@ if [ "$TEST_SKIP_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── 忍者テストreceipt検証（家老再走ではなく忍者実行証跡を正本化） ───
+# run_tests.sh already emits an atomic JSON receipt.  Completion must consume
+# that receipt rather than asking Karo to execute the same tests again.  The
+# path may be carried explicitly by the caller (NINJA_TEST_RECEIPT[_<NINJA>]),
+# by the task/report, or discovered from a receipt directory using the task's
+# owned test paths and deployment timestamp.  Discovery is deliberately
+# conservative: an unrelated or pre-deployment receipt is never eligible.
+resolve_ninja_test_receipt_path() {
+    local task_file="$1" report_file="$2" ninja_name="$3"
+    local env_suffix env_key explicit path task_count=0
+
+    env_suffix="${ninja_name^^}"
+    env_suffix="${env_suffix//[^A-Z0-9_]/_}"
+    env_key="NINJA_TEST_RECEIPT_${env_suffix}"
+    explicit="${!env_key:-}"
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        task_count=${#MATCHING_TASK_FILES[@]}
+    fi
+    if [ -z "$explicit" ] && [ "$task_count" -eq 1 ]; then
+        explicit="${NINJA_TEST_RECEIPT:-${NINJA_TEST_RECEIPT_PATH:-}}"
+    fi
+    if [ -n "$explicit" ]; then
+        printf '%s\n' "$explicit"
+        return 0
+    fi
+
+    path=$(python3 - "$task_file" "$report_file" <<'PY'
+import os
+import sys
+import yaml
+
+task_path, report_path = sys.argv[1:]
+
+def load(path):
+    if not path or not os.path.isfile(path):
+        return {}
+    try:
+        value = yaml.safe_load(open(path, encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+def task_mapping(value):
+    nested = value.get("task") if isinstance(value, dict) else None
+    return nested if isinstance(nested, dict) else value
+
+def nested_path(mapping):
+    if not isinstance(mapping, dict):
+        return ""
+    for key in ("test_receipt_path", "receipt_path"):
+        value = mapping.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    for container_key in ("test_receipt", "test_results", "test_execution"):
+        container = mapping.get(container_key)
+        if not isinstance(container, dict):
+            continue
+        for key in ("path", "receipt_path", "receipt"):
+            value = container.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    return ""
+
+for candidate in (task_mapping(load(task_path)), load(report_path)):
+    value = nested_path(candidate)
+    if value:
+        print(value)
+        raise SystemExit(0)
+
+# No explicit path is a normal case for the existing runner contract.  Select
+# only a recent receipt that covers at least one test path owned by this task.
+task = task_mapping(load(task_path))
+owned = []
+def collect(value):
+    if isinstance(value, str) and value.strip():
+        owned.append(value.strip())
+    elif isinstance(value, dict):
+        collect(value.get("path"))
+    elif isinstance(value, list):
+        for item in value:
+            collect(item)
+for key in ("target_path", "test_path", "test_paths", "planned_paths", "files_to_modify", "owned_paths"):
+    collect(task.get(key))
+contract = task.get("commit_contract")
+if isinstance(contract, dict):
+    collect(contract.get("planned_paths"))
+owned = [p.replace("\\", "/").lstrip("./") for p in owned if ".bats" in p or p.endswith(".py")]
+if not owned:
+    raise SystemExit(1)
+
+roots = []
+for value in (
+    os.environ.get("RUN_TESTS_RECEIPT_DIR"),
+    os.path.join(os.environ.get("SCRIPT_DIR", ""), "logs", "test_receipts"),
+):
+    if value and os.path.isdir(value) and os.path.realpath(value) not in roots:
+        roots.append(os.path.realpath(value))
+for key in ("task_worktree_workdir", "task_worktree_path"):
+    value = task.get(key)
+    if isinstance(value, str) and value.strip():
+        candidate = os.path.join(value.strip(), "logs", "test_receipts")
+        if os.path.isdir(candidate) and os.path.realpath(candidate) not in roots:
+            roots.append(os.path.realpath(candidate))
+
+try:
+    deployed = str(task.get("deployed_at") or task.get("issued_at") or "")
+    from datetime import datetime, timezone
+    deployed_at = datetime.fromisoformat(deployed.replace("Z", "+00:00")).timestamp()
+except (TypeError, ValueError, OverflowError):
+    deployed_at = float("-inf")
+
+import glob
+import json
+candidates = []
+for root in roots:
+    for candidate in glob.glob(os.path.join(root, "*.json")):
+        try:
+            if os.path.getmtime(candidate) < deployed_at:
+                continue
+            data = json.load(open(candidate, encoding="utf-8"))
+            paths = data.get("test_paths") or []
+            if not isinstance(paths, list):
+                continue
+            normalized = [str(p).replace("\\", "/") for p in paths]
+            if not any(any(p == owned_path or p.endswith("/" + owned_path) for p in normalized)
+                       for owned_path in owned):
+                continue
+            candidates.append((os.path.getmtime(candidate), candidate))
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            continue
+if candidates:
+    print(max(candidates)[1])
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+    ) || true
+    [ -n "$path" ] || return 1
+    printf '%s\n' "$path"
+}
+
+validate_ninja_test_receipt() {
+    local receipt="$1"
+    python3 - "$receipt" <<'PY'
+import hashlib
+import json
+import os
+import re
+import sys
+
+path = sys.argv[1]
+try:
+    if not os.path.isfile(path):
+        raise ValueError("receipt_missing")
+    data = json.load(open(path, encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("receipt_mapping")
+    artifact = data.get("artifact")
+    if not isinstance(artifact, str) or not artifact.strip():
+        raise ValueError("artifact_missing")
+    if not os.path.isabs(artifact):
+        artifact = os.path.join(os.path.dirname(os.path.realpath(path)), artifact)
+    if not os.path.isfile(artifact):
+        raise ValueError("artifact_missing")
+    expected_sha = str(data.get("output_sha256") or data.get("sha256") or "").strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_sha):
+        raise ValueError("sha_missing_or_invalid")
+    actual_sha = hashlib.sha256(open(artifact, "rb").read()).hexdigest()
+    if actual_sha != expected_sha:
+        raise ValueError("artifact_sha_mismatch")
+    if data.get("complete") is not True:
+        raise ValueError("incomplete")
+    if data.get("result") != "PASS":
+        raise ValueError("result_not_PASS")
+    if data.get("rc") != 0:
+        raise ValueError("rc_not_zero")
+    skip = data.get("skip_count", data.get("skips"))
+    if isinstance(skip, bool) or not isinstance(skip, int) or skip != 0:
+        raise ValueError("skip_count_not_zero")
+    manifest = data.get("run_manifest")
+    scope = manifest.get("scope_identity") if isinstance(manifest, dict) else None
+    if isinstance(scope, dict):
+        failures = scope.get("failed_files")
+        fail_count = scope.get("failed_file_count")
+        if failures != [] or isinstance(fail_count, bool) or fail_count != 0:
+            raise ValueError("failed_files_not_zero")
+    else:
+        fail_count = data.get("fail_count", data.get("failures"))
+        if isinstance(fail_count, bool) or not isinstance(fail_count, int) or fail_count != 0:
+            raise ValueError("fail_count_not_zero")
+    declared = data.get("declared_test_count")
+    observed = data.get("observed_test_count")
+    if declared is not None and observed is not None and declared != observed:
+        raise ValueError("test_count_mismatch")
+except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
+    print(f"NINJA_TEST_RECEIPT_FAIL path={path} reason={exc}", file=sys.stderr)
+    raise SystemExit(1)
+print(f"NINJA_TEST_RECEIPT_PASS path={path} sha256={expected_sha} fail=0 skip=0")
+PY
+}
+
+check_ninja_test_receipts() {
+    local task_file ninja_name report_file receipt receipt_output task_type
+    local checked=false
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        ninja_name=$(basename "$task_file" .yaml)
+        task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
+        case "${task_type,,}" in
+            hotfix|impl|implementation|ci_fix|full) ;;
+            *) continue ;;
+        esac
+        report_file=$(resolve_report_file "$ninja_name")
+        [ -f "$report_file" ] || continue
+        checked=true
+        receipt=$(resolve_ninja_test_receipt_path "$task_file" "$report_file" "$ninja_name" 2>/dev/null || true)
+        if [ -z "$receipt" ]; then
+            echo "  [CRITICAL] ${ninja_name}: 忍者test receipt missing (家老再走は要求しない)"
+            record_block_reason "${ninja_name}:ninja_test_receipt_missing"
+            ALL_CLEAR=false
+            continue
+        fi
+        receipt_output=$(validate_ninja_test_receipt "$receipt" 2>&1) || {
+            echo "  [CRITICAL] ${ninja_name}: ${receipt_output}"
+            record_block_reason "${ninja_name}:ninja_test_receipt_invalid"
+            ALL_CLEAR=false
+            continue
+        }
+        echo "  ${ninja_name}: ${receipt_output}"
+    done
+    if [ "$checked" = false ]; then
+        echo "  (no reports found for this cmd)"
+    fi
+}
+
+level_heading "[L3]" "Ninja test receipt check (Karo rerun prohibited):"
+check_ninja_test_receipts
+
 # ─── Vercel Phaseリンク整合チェック（cmd固有context変更時のみ、BLOCK対象） ───
 # The submitted report files_modified is the narrowest ownership boundary.
 # Do not derive this scope from HEAD: unrelated context changes in an
