@@ -2727,7 +2727,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4379"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で提案済みの教訓注入枠分離・有効率閾値は現行実装済み。新規コード修正およびdecision_candidateは不要と判定した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-231322800-3f0b;primary=scripts/deploy_task.sh:5419,6660,6831,6864-6867;head=b9c0c36c7d5272a4c325a32b519bcb3afef33bdb;semantic=docs/semantic-index/index.md:1733-1734;context=context/cmd-chronicle.md:219;verification=git show HEAD and rg primary checks"
+  resolved_at: "2026-08-29T04:12:46+09:00"
 - id: INS-20260823-231323010-7d00
   ts: "2026-08-23T23:13:23+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4379; matched=フェーズ; current_pattern=cmd_complete_gate.sh速度改善 — フェーズ別実測で支配的ボトルネックを特定し検査を削らず短縮; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
