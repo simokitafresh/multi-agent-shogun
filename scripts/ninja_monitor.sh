@@ -4738,10 +4738,34 @@ check_and_update_done_task() (
     esac
 )
 
+_schedule_done_task_check_background() {
+    local name="$1" lock_file lock_fd worker_pid
+    if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
+        _ninja_monitor_run_bounded_done_check "$name" >/dev/null 2>&1 || true
+        return 0
+    fi
+    lock_file="${STATE_DIR:-/tmp}/done_task_check_${name}.lock"
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "AUTO-DONE-BACKGROUND-SKIP: $name reason=worker_running"
+        return 0
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        _ninja_monitor_run_bounded_done_check "$name" || true
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "AUTO-DONE-BACKGROUND-START: $name pid=$worker_pid"
+    return 0
+}
+
 monitor_task_state_fast_path() {
     local name
     for name in "${NINJA_NAMES[@]}"; do
-        _ninja_monitor_run_bounded_done_check "$name" >/dev/null 2>&1 || true
+        _schedule_done_task_check_background "$name" || true
     done
 }
 
