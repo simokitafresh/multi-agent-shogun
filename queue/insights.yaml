@@ -7053,3 +7053,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-182134053-9b1a
+  ts: "2026-08-28T18:21:34+09:00"
+  insight: "[[忍者がauto clearされるのが遅いせいでCTXがたまったままの忍者に家老が配備してしまう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者がauto clearされるのが遅いせいでCTXがたまったままの忍者に家老が配備してしまう。今の問題点はなんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
