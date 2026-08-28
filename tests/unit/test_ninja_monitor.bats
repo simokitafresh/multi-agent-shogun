@@ -5,6 +5,41 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: the primary done-check loop must not serialize a slow report
+# gate into the monitor cycle, while its per-agent single-flight lease remains
+# retryable after a failed worker.
+@test "done-check fast path is backgrounded and retryable" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$SCRIPT_DIR/state"; LOG="$SCRIPT_DIR/monitor.log"
+        mkdir -p "$SCRIPT_DIR" "$STATE_DIR"
+        : > "$SCRIPT_DIR/calls"
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        NINJA_NAMES=(saizo)
+        _ninja_monitor_run_bounded_done_check() { printf "%s\n" "$1" >> "$SCRIPT_DIR/calls"; sleep 1; return 0; }
+        start=$(date +%s%N)
+        monitor_task_state_fast_path
+        elapsed=$((($(date +%s%N) - start) / 1000000))
+        monitor_task_state_fast_path
+        wait
+        test "$elapsed" -lt 500
+        test "$(wc -l < "$SCRIPT_DIR/calls")" -eq 1
+        _ninja_monitor_run_bounded_done_check() { printf "%s\n" "$1" >> "$SCRIPT_DIR/calls"; return 1; }
+        monitor_task_state_fast_path
+        wait
+        monitor_task_state_fast_path
+        wait
+        test "$(wc -l < "$SCRIPT_DIR/calls")" -eq 3
+        grep -q "AUTO-DONE-BACKGROUND-START: saizo" "$LOG"
+        echo "background=1 duplicate=1 retry=1"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "background=1 duplicate=1 retry=1" ]
+}
+
 # test_necessity: 両承認後のreview_gate.doneは遅延なしでcmd_complete_gateを一度だけ実行し、
 # 併走monitorはflockで二重実行しない不変量を守る。
 @test "GATE-STALL executes completion gate immediately" {
