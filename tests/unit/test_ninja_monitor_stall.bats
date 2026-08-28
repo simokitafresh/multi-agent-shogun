@@ -5231,6 +5231,25 @@ SH
     [ "$output" = "normal=1 duplicate=0 timeout_retry=1 stale_side_effects=0" ]
 }
 
+# test_necessity: the bounded daemon worker must reach its requested lifecycle
+# function; rejecting the worker-mode argument at startup turns every lane into
+# an rc=64 retry loop and leaves the parent cycle exposed to synchronous work.
+@test "lifecycle worker dispatch accepts the bounded worker mode" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+set +e
+bash "$PROJECT_ROOT/scripts/ninja_monitor.sh" --lifecycle-worker ninja_monitor_function_timing_finish
+rc=$?
+set -e
+test "$rc" -eq 0
+printf "worker_dispatch_rc=%s\n" "$rc"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "worker_dispatch_rc=0" ]
+}
+
 # test_necessity: a production auto-void report scan can block on the 9p
 # boundary.  It must run under a single-flight bounded worker so the observe
 # cycle continues while preserving the existing transaction for completion.

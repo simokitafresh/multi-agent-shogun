@@ -44,7 +44,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
         _ninja_monitor_usage
         return 64
     fi
-elif (( $# != 0 )) && {
+elif (( $# != 0 )) && ! {
     [[ "${1:-}" == "--check-and-update-done-task" && $# -eq 2 ]] ||
         [[ "${1:-}" == "--lifecycle-worker" && $# -ge 2 ]]
 }; then
