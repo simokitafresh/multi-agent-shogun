@@ -16038,3 +16038,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - ASYNC_VERIFYの最終ログ出力は子process終了やtelemetry writer完了を意味しない。fixtureは対象root外へ非同期ログを隔離し、mockではない実process照合で終了を待ってからteardownする。
+
+### L1660: CI並列shardの語彙判定はgrep/localeから分離する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_ci_fix_33122914110_shard_inventory_ledger_r2_20260828
+- **記録者**: hanzo
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/gate_hook_quality_contract.sh,tests/unit/test_gate_hook_quality_contract.bats]
+- **origin**: [[cmd_karo_ci_fix_33122914110_shard_inventory_ledger_r2_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task単独では通過する語彙fixtureがCIの並列shardで失敗した。grep regexとlocaleに依存する日本語語彙判定を固定文字列caseへ置換し、task単独2/2とCI同一31ファイル385/385で再確認する。
