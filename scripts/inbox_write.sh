@@ -317,6 +317,16 @@ inbox_task_assignment_identity_fields() {
 
     # Explicit empty fields are the no-task contract.  The receiver must not
     # treat an unbound assignment as belonging to its current task.
+    # Commander inboxes (karo/gunshi/shogun) have no task lifecycle, so an empty
+    # task_id here is the *normal* shape of a directive — yet Codex karo read
+    # the empty field as "not my task" and skipped shogun directives 6 times on
+    # 2026-08-28 (T122, 23:41 6th). Bind a non-empty directive marker instead so
+    # the ninja-only "empty task_id => ignore" rule can never match a commander.
+    case "$target" in
+        karo|gunshi|shogun)
+            [ -n "$task_id" ] || task_id="commander_directive"
+            ;;
+    esac
     printf '%s\n' "$task_id" "$parent_cmd"
 }
 
