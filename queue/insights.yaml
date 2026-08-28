@@ -6421,4 +6421,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T10:40:04+09:00"
+- id: INS-20260828-104226307-40f3
+  ts: "2026-08-28T10:42:26+09:00"
+  insight: "家老の task_id フィルタ誤適用が inbox_watcher 修正(9763378fa)後も 10:31 に再発(4 回目、軍師 LGTM と CLEAR-LOOP-BLOCK を既読化)=規則の出所は watcher 文でなく家老自身の判断(記憶DB 自己記録の引用)。CLAUDE.md/AGENTS.md へ positive_rule を焼込(89510dbaa)。さらに構造型: inbox_mark_read.sh が karo/gunshi self による task_assigned/report_review_result/clear_loop_block の既読化を『対応証跡(task/report/gate_metrics の更新)なし』なら BLOCK する。origin=[[家老task_idフィルタ誤適用_20260828]] -> [[再発4回目_1031]] -> [[mark_read対応証跡ガード]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
