@@ -11,6 +11,7 @@ setup() {
     export SCRIPT_DIR="$TEST_PROJECT"
     export TASKS_DIR="$TEST_PROJECT/queue/tasks"
     export CMD_ID="$TEST_CMD_ID"
+    unset CMD_COMPLETE_GATE_CLEAR_MARKER SHOGUN_COMPLETION_GENERATION
 
     source "$TEST_PROJECT/scripts/lib/field_get.sh"
     source "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
@@ -65,6 +66,105 @@ task:
   task_id: ${ninja_name}_task
   status: $status
 EOF
+}
+
+write_in_progress_terminal_fixture() {
+    local ninja_name="${1:-hayate}"
+    local report_name="${ninja_name}_report_${TEST_CMD_ID}.yaml"
+    mkdir -p "$TEST_PROJECT/queue/archive/reports"
+    cat > "$TEST_PROJECT/queue/tasks/${ninja_name}.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  assigned_to: $ninja_name
+  task_id: ${ninja_name}_terminal_task
+  report_id: rpt-${ninja_name}-terminal
+  report_identity_version: 2
+  report_filename: $report_name
+  report_path: queue/reports/$report_name
+  status: in_progress
+EOF
+    cat > "$TEST_PROJECT/queue/archive/reports/$report_name" <<EOF
+report_id: rpt-${ninja_name}-terminal
+report_identity_version: 2
+task_id: ${ninja_name}_terminal_task
+parent_cmd: $TEST_CMD_ID
+status: completed
+verdict: PASS
+EOF
+    rm -f "$TEST_PROJECT/queue/reports/$report_name"
+    ln -s "$TEST_PROJECT/queue/archive/reports/$report_name" \
+        "$TEST_PROJECT/queue/reports/$report_name"
+}
+
+write_clear_receipt() {
+    local generation="${1:-$(printf 'a%.0s' {1..64})}"
+    export SHOGUN_COMPLETION_GENERATION="$generation"
+    mkdir -p "$TEST_PROJECT/queue/gates/$TEST_CMD_ID"
+    python3 - "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/gate_worker.clear.json" "$TEST_CMD_ID" "$generation" <<'PY'
+import json
+import sys
+
+path, cmd_id, generation = sys.argv[1:]
+json.dump({
+    "version": 1,
+    "state": "clear",
+    "cmd_id": cmd_id,
+    "completion_generation": generation,
+    "persisted_at_ns": 1,
+}, open(path, "w", encoding="utf-8"))
+PY
+}
+
+@test "AC1 reproduces archived symlink with in_progress task left behind when terminal proof is absent" {
+    write_in_progress_terminal_fixture
+    MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
+
+    run set_matching_tasks_idle
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hayate: skip (status=in_progress, terminal proof=completion_generation_missing_or_invalid)"* ]]
+    [[ "$output" == *"summary: updated=0 skipped=1 warn=0"* ]]
+    run grep -n "^  status: in_progress$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: post-GATE CLEAR task lifecycle must accept an active task
+# only when the archived report and generation-bound CLEAR receipt prove the
+# exact task/report identity; otherwise a stale active task must remain active.
+@test "AC2 terminalizes exact in_progress task and rejects incomplete or mismatched evidence" {
+    write_in_progress_terminal_fixture
+    write_clear_receipt
+    MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
+
+    run set_matching_tasks_idle
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hayate: in_progress terminal proof=ok"* ]]
+    [[ "$output" == *"hayate: in_progress → idle"* ]]
+    run grep -n "^  status: idle$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
+    [ "$status" -eq 0 ]
+
+    for evidence_case in incomplete_report mismatched_generation clear_missing; do
+        write_in_progress_terminal_fixture
+        case "$evidence_case" in
+            incomplete_report)
+                sed -i 's/status: completed/status: pending/' \
+                    "$TEST_PROJECT/queue/archive/reports/hayate_report_${TEST_CMD_ID}.yaml"
+                write_clear_receipt
+                ;;
+            mismatched_generation)
+                write_clear_receipt
+                export SHOGUN_COMPLETION_GENERATION="$(printf 'b%.0s' {1..64})"
+                ;;
+            clear_missing)
+                unset SHOGUN_COMPLETION_GENERATION
+                ;;
+        esac
+        MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
+        run set_matching_tasks_idle
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"summary: updated=0 skipped=1 warn=0"* ]]
+        run grep -n "^  status: in_progress$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
+        [ "$status" -eq 0 ]
+    done
 }
 
 @test "set_matching_tasks_idle transitions matching nested task YAMLs to idle" {
