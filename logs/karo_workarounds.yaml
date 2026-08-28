@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_report_commit_main_ancestry_202608220515
-  timestamp: '2026-08-21T20:44:23Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_report_commit_main_ancestry_202608220515'
 - cmd_id: cmd_4361
   timestamp: '2026-08-21T22:20:07Z'
   ninja: hanzo
@@ -1306,3 +1293,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828'
+- cmd_id: cmd_karo_hotfix_postclear_active_terminalization_20260829
+  timestamp: '2026-08-28T16:55:24Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_postclear_active_terminalization_20260829'
