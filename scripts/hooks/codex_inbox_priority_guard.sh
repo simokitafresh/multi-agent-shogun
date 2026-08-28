@@ -7,7 +7,8 @@
 # を未読のまま「fixed HEAD full runだけで判定」と手動フル走査を継続 / 22:08 inbox10。
 # 真因=Codexはtool実行中はnudgeを受け取れず、届いた後に「読むか」が受け手の裁量に残る。
 # 対処=裁量を消す: 将軍発の未読 task_assigned/cmd_new が INBOX_PRIORITY_MAX_AGE_SEC(既定180秒)以上残る間、
-# inboxを読む/既読化する操作以外の全toolをBLOCK(exit 2)する。読めば自然に通る(構造型)。
+# inboxを読む/既読化する操作と、既読化に必要な将軍向け処理証跡の作成以外の全toolをBLOCK(exit 2)する。
+# 証跡作成まで塞ぐと inbox_mark_read の証跡検査と相互待ちになるため、許可経路はここで限定する。
 set -uo pipefail
 
 _self="${BASH_SOURCE[0]}"
@@ -36,9 +37,57 @@ tool_name="$(jq -r '.tool_name // .tool // .name // empty' <<<"$payload" 2>/dev/
 command="$(jq -r '.tool_input.command // .tool_input.cmd // .input.command // .input.cmd // empty' <<<"$payload" 2>/dev/null || true)"
 tool_target="$(jq -r '.tool_input.file_path // .tool_input.filePath // .tool_input.path // .input.file_path // .input.path // empty' <<<"$payload" 2>/dev/null || true)"
 
+# shell command の引数ではなく、実行位置にある script token だけを判定する。
+# これにより `echo inbox_write.sh shogun` のような本文だけの偽装は許可しない。
+command_runs_script() {
+    local wanted_script="$1" wanted_arg="${2:-}"
+    python3 - "$command" "$wanted_script" "$wanted_arg" <<'PY'
+import shlex
+import sys
+
+command, wanted_script, wanted_arg = sys.argv[1:]
+try:
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|")
+    lexer.whitespace_split = True
+    tokens = list(lexer)
+except ValueError:
+    raise SystemExit(1)
+
+shells = {"bash", "sh", "zsh", "ksh", "dash"}
+separators = {";", "&", "|", "&&", "||"}
+segment = []
+segments = []
+for token in tokens + [";"]:
+    if token in separators:
+        if segment:
+            segments.append(segment)
+        segment = []
+    else:
+        segment.append(token)
+
+for words in segments:
+    for index, token in enumerate(words):
+        if token.rsplit("/", 1)[-1] != wanted_script:
+            continue
+        # Direct invocation or an interpreter invocation (including env/timeout
+        # prefixes) is a script execution. A content argument is not.
+        if index != 0 and words[index - 1] not in shells:
+            continue
+        if wanted_arg and (index + 1 >= len(words) or words[index + 1] != wanted_arg):
+            continue
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 # inboxを読む/既読化する操作は常に通す(これが出口)。
 if [[ "$command" == *"inbox_mark_read.sh"* || "$command" == *"queue/inbox/${agent}.yaml"* \
       || "$tool_target" == *"queue/inbox/${agent}.yaml"* || "$command" == *"inbox_archive.sh"* ]]; then
+    exit 0
+fi
+
+# inbox_mark_read の証跡検査を先に満たす、将軍向けの正規証跡経路だけを通す。
+if command_runs_script "bulletin_write.sh" || command_runs_script "inbox_write.sh" "shogun"; then
     exit 0
 fi
 
