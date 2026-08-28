@@ -7131,3 +7131,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-184817093-aa6e
+  ts: "2026-08-28T18:48:17+09:00"
+  insight: "[[T145 T147 T146 T143 T142 T140 T137 T136 T129が未完了だとartifactでは]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T145 / T147 / T146 / T143 / T142 / T140 / T137 / T136 / T129が未完了だとartifactではなっている。現状と原本とartifactは整合性がとれている必要がある。修正してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
