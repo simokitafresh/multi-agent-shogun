@@ -6926,7 +6926,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で gate_report_format_main.py L443-L454 の40桁commit_hash必須BLOCK、gate_loop_health.sh L278-L285 のGP-107既知意図的BLOCK、既存GP-107実装とsemantic/causal記録を照合した。値を推定するauto-fixや新規修正は不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260828-160747595-7830;primary=scripts/gates/gate_report_format_main.py:L443-L454;primary=scripts/gates/gate_loop_health.sh:L278-L285;history=git blame 0521aef05a,2e8c03c072;semantic=context/semantic-map.md:L82;causal=.cache/causal_index.tsv:L1993-L1996;memory=memory_db preflight match INS-20260828-160747595-7830;decision_candidate=none"
+  resolved_at: "2026-08-28T17:53:10+09:00"
 - id: INS-20260828-160753815-f86b
   ts: "2026-08-28T16:07:53+09:00"
   insight: "テンプレート導線強化: operational_simulation: MISSING (command,expected,actual,result (13回発火) → report templateの警告/入力導線を強化せよ。有効値の自動補完は禁止"
