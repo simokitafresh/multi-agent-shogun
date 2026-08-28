@@ -6528,3 +6528,10 @@ insights:
   source: "shogun"
   fix_known: false
   status: pending
+- id: INS-20260828-130057890-a933
+  ts: "2026-08-28T13:00:57+09:00"
+  insight: "ninja_monitor 1 cycle が REFLUX-AUTO-DEPLOY(疾風 12:40:20→12:45:52、5m32s)で塞がり、小太郎 report 12:28 の REPORT-FORMAT-PASS が 12:46:10 まで 18 分遅延(便停止 30 分の主因の 1 つ)。reflux 配備を cycle 内同期実行から background(既存 start_build_job 型)へ切替え、cycle 上限を計測(logs per-minute 12:34→12:40→12:45 の空白)で 0 にする。速度向上へのつながり: 報告→GATE のレイテンシ上限が cycle 長で決まる"
+  priority: "high"
+  source: "shogun"
+  fix_known: false
+  status: pending
