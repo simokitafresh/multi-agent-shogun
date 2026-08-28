@@ -2077,7 +2077,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:a382f82fc53df689"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で gate_skill_script_refs.sh を再実走しRC=2(REVIEW_REQUIRED)を確認。対象10組を含む参照先82件/30件は全て実在、SKILL鮮度・例示パス・副作用実走マーカーも全てOKで、追加のSKILL本文修正は不要。RC=2はFOLLOWUP_ACTIVE=31の既存insight→reflux集約判定であり、今回のreflux scopeは対象insightの整理とする。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;followup_active=31;followup_covers_review_required=yes;refs=82;referenced=30;missing_refs=0;stale_refs=0;missing_example_paths=0;missing_side_effect_markers=0;target=INS-20260822-052327461-7cac;report=queue/reports/kotaro_report_cmd_reflux_insight_202608280858_kotaro.yaml"
+  resolved_at: "2026-08-28T09:03:24+09:00"
 - id: INS-20260822-055645818-8da5
   ts: "2026-08-22T05:56:45+09:00"
   insight: "[[codexを違うアカウントでログインしたいんだがどうすればいい？いま家老はsimokitafresh@gmail com]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=codexを違うアカウントでログインしたいんだがどうすればいい？いま家老はsimokitafresh@gmail.comだがKarasuyama3387@gmail.comでログインをし直したい"
