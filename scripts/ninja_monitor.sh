@@ -5481,8 +5481,46 @@ _auto_clear_guard_fingerprint() {
     local inbox_file="$SCRIPT_DIR/queue/inbox/${1}.yaml" pane_generation task_fp inbox_fp
     pane_generation=$(respawn_recovery_generation "$target" 2>/dev/null || true)
     [ -n "$pane_generation" ] || return 1
-    task_fp=$(stat -c '%Y:%s' "$task_file" 2>/dev/null || printf 'missing')
-    inbox_fp=$(stat -c '%Y:%s' "$inbox_file" 2>/dev/null || printf 'missing')
+    IFS=$'\t' read -r task_fp inbox_fp < <(python3 - "$task_file" "$inbox_file" <<'PY'
+import hashlib
+import json
+import sys
+
+import yaml
+
+task_path, inbox_path = sys.argv[1:]
+try:
+    task_doc = yaml.safe_load(open(task_path, encoding="utf-8")) or {}
+except (OSError, UnicodeError, yaml.YAMLError):
+    task_doc = {}
+task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else {}
+if not isinstance(task, dict):
+    task = {}
+task_id = task.get("task_id") or task.get("_ac_task_id") or task.get("last_task_id") or ""
+parent_cmd = task.get("parent_cmd") or task.get("last_parent_cmd") or ""
+deployed_at = task.get("deployed_at") or ""
+ac_version = task.get("ac_version") or ""
+task_identity = [str(task_id), str(parent_cmd), str(deployed_at), str(ac_version)]
+task_hash = hashlib.sha256(json.dumps(task_identity, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+
+actionable_types = {"low", "info", "gate_clear", "heartbeat", "status_update", "retro_answer"}
+try:
+    inbox_doc = yaml.safe_load(open(inbox_path, encoding="utf-8")) or {}
+except (OSError, UnicodeError, yaml.YAMLError):
+    inbox_doc = {}
+messages = inbox_doc.get("messages", []) if isinstance(inbox_doc, dict) else []
+ids = sorted(
+    str(message.get("id"))
+    for message in messages
+    if isinstance(message, dict)
+    and message.get("read") is False
+    and str(message.get("type") or "") not in actionable_types
+    and message.get("id")
+)
+inbox_hash = hashlib.sha256(json.dumps(ids, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+print(f"{task_hash}\t{inbox_hash}")
+PY
+    ) || return 1
     printf '%s\t%s\t%s\n' "$pane_generation" "$task_fp" "$inbox_fp"
 }
 

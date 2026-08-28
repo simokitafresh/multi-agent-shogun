@@ -5159,7 +5159,7 @@ PY
         test "$(grep -c "CLEAR-LOOP-BLOCK-GUARD: tobisaru" "$LOG")" -eq 10 || { cat "$LOG"; exit 1; }
         test "$(grep -c "CLEAR-LOOP-BLOCK" "$root/notifications.log")" -eq 1 || { cat "$root/notifications.log"; exit 1; }
 
-        printf "changed: 1\\n" >> "$root/queue/inbox/tobisaru.yaml"
+        printf "messages:\\n  - id: msg-input-change\\n    type: task_supplement\\n    read: false\\n" > "$root/queue/inbox/tobisaru.yaml"
         record_clear_attempt_or_force_idle tobisaru AUTO-CLEAR || true
         grep -q "CLEAR-LOOP-BLOCK-REOPEN: tobisaru" "$LOG"
         grep -q "CLEAR-COUNT: tobisaru cmd=unresolved:tobisaru count=1/3" "$LOG"
@@ -5257,7 +5257,7 @@ PY
         test "$CLEAR_COUNT" -eq 1
 
         # Input generation change reopens, while a separate fresh pane stays clean.
-        printf "changed: 1\\n" >> "$root/queue/inbox/hayate.yaml"
+        printf "messages:\\n  - id: msg-input-change\\n    type: task_supplement\\n    read: false\\n" > "$root/queue/inbox/hayate.yaml"
         _handle_auto_clear hayate 30001
         test "$CLEAR_COUNT" -eq 2
         _handle_auto_clear saizo 30002
