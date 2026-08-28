@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_073452 approved_source_commit T108 source_equivalent 自動終端を §2026-08-27 ext4 節へ反映 -->
+<!-- last_updated: 2026-08-28 DOC_LANE_REQUEST blt_112753 approved_source_commit T107 第 1 弾+shebang ci_fix を §2026-08-27 ext4 節へ反映 -->
+<!-- source_commit:49e32bd31d44 reason:DOC_LANE_REQUEST blt_112753 approved_source_commit T107 第 1 弾+shebang ci_fix を §2026-08-27 ext4 節へ反映 evidence:git merge-base --is-ancestor 49e32bd31 origin/main = yes; grep -c 'T107、飛猿 c15453e33 + 半蔵 49e32bd31' context/infrastructure.md = 1 -->
 <!-- source_commit:c092febfceca reason:DOC_LANE_REQUEST blt_073452 approved_source_commit T108 source_equivalent 自動終端を §2026-08-27 ext4 節へ反映 evidence:git merge-base --is-ancestor c092febfc origin/main = yes; grep -c 'T108、小太郎 c092febfc' context/infrastructure.md = 1 -->
 <!-- source_commit:88969097a185 reason:DOC_LANE_REQUEST blt_070809 approved_source_commit T100 runtime lane 直 push 廃止を §2026-08-27 ext4 節へ反映 evidence:git merge-base --is-ancestor 88969097a origin/main = yes; grep -c 'T100、半蔵 88969097a' context/infrastructure.md = 1 -->
 <!-- source_commit:b5f586933959 reason:T70 影丸 hotfix(task worktree root→ext4) を §2026-08-27 へ反映(DOC_LANE_REQUEST blt_20260827_231110) evidence:context/infrastructure.md §2026-08-27 T70 行; commit b5f586933959 scripts/deploy_task.sh scripts/deploy_task/preflight.sh -->
