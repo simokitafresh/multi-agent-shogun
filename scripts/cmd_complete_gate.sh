@@ -5348,12 +5348,13 @@ set_matching_tasks_idle() {
 
         # A post-CLEAR worker can run after archive_completed has replaced the
         # live report with an archive symlink.  In that window the task YAML
-        # may still be in_progress, so status alone cannot distinguish a
-        # stale active task from a task whose terminal side effects merely
-        # raced this worker.  Only the exact declared report identity,
-        # completed PASS report, and generation-bound CLEAR receipt authorize
-        # this exceptional in_progress -> idle transition.
-        if [ "$current_status" = "in_progress" ]; then
+        # may still be assigned, acknowledged, or in_progress, so status alone
+        # cannot distinguish a stale active task from a task whose terminal
+        # side effects merely raced this worker.  Only the exact declared
+        # report identity, completed PASS report, and generation-bound CLEAR
+        # receipt authorize these exceptional active -> idle transitions.
+        case "$current_status" in
+            assigned|acknowledged|in_progress)
             clear_marker="${CMD_COMPLETE_GATE_CLEAR_MARKER:-$SCRIPT_DIR/queue/gates/${CMD_ID}/gate_worker.clear.json}"
             if terminal_proof_reason=$(python3 - "$task_file" "$SCRIPT_DIR" "$CMD_ID" "$clear_marker" "${SHOGUN_COMPLETION_GENERATION:-}" <<'PY'
 import json
@@ -5449,13 +5450,14 @@ except (TypeError, ValueError):
 print("ok")
 PY
 ); then
-                echo "  ${ninja_name}: in_progress terminal proof=${terminal_proof_reason}"
+                echo "  ${ninja_name}: ${current_status} terminal proof=${terminal_proof_reason}"
             else
-                echo "  ${ninja_name}: skip (status=in_progress, terminal proof=${terminal_proof_reason:-invalid})"
+                echo "  ${ninja_name}: skip (status=${current_status}, terminal proof=${terminal_proof_reason:-invalid})"
                 skipped_count=$((skipped_count + 1))
                 continue
             fi
-        fi
+            ;;
+        esac
 
         # cmd_karo_speed_completion_pipeline_20260725: reassignment race guard.
         # MATCHING_TASK_FILES is a stale snapshot from gate-check-loop start; by
@@ -5471,7 +5473,7 @@ PY
             continue
         fi
         case "$current_status" in
-            done|completed|in_progress) ;;
+            done|completed|assigned|acknowledged|in_progress) ;;
             *)
                 echo "  ${ninja_name}: skip (status=${current_status:-unknown}, task in progress)"
                 skipped_count=$((skipped_count + 1))
