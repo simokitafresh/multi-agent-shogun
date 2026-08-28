@@ -1,3 +1,3 @@
 # session_alerts — generated: 2026-08-28T12:49:48+0900
-[TODO] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
-[TODO] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
+[DONE] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな (13:06 疾風 pane capture 済)
+[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
