@@ -5485,6 +5485,49 @@ SH
     [ "$output" = "elapsed_lt_1000ms=1 calls=1 background=1" ]
 }
 
+# test_necessity: terminal report outbox reconciliation must not hold the
+# monitor cycle while it scans all ninja task/report pairs; the same bounded
+# owner-fenced lane contract must cover this crash-window repair.
+@test "terminal report outbox repair runs outside the monitor cycle" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/report-outbox-repair"
+        mkdir -p "$root/state"
+        STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        ninja_monitor_business_owner_is_current() { return 0; }
+        cat > "$root/worker.sh" <<SH
+#!/usr/bin/env bash
+printf "called\\n" >> "$root/calls"
+sleep 2
+SH
+        chmod +x "$root/worker.sh"
+        NINJA_MONITOR_LIFECYCLE_WORKER_SCRIPT="$root/worker.sh"
+        start_ms="${EPOCHREALTIME//./}"
+        start_ms="${start_ms:0:13}"
+        _ninja_monitor_phase_call lifecycle repair_terminal_report_outboxes \
+            _ninja_monitor_run_lifecycle_background repair_terminal_report_outboxes
+        end_ms="${EPOCHREALTIME//./}"
+        end_ms="${end_ms:0:13}"
+        elapsed_ms=$((end_ms - start_ms))
+        test "$elapsed_ms" -lt 1000
+        sleep 3
+        test "$(wc -l < "$root/calls" | tr -d " ")" -eq 1
+        grep -q "LIFECYCLE-BACKGROUND-START: key=repair_terminal_report_outboxes" "$LOG"
+        awk "
+            /_ninja_monitor_phase_call lifecycle repair_terminal_report_outboxes/ { found=1; next }
+            found && /_ninja_monitor_run_lifecycle_background repair_terminal_report_outboxes/ { ok=1; exit }
+            END { exit(ok ? 0 : 1) }
+        " "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        printf "elapsed_lt_1000ms=1 calls=1 background=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "elapsed_lt_1000ms=1 calls=1 background=1" ]
+}
+
 # test_necessity: the bounded daemon worker must reach its requested lifecycle
 # function; rejecting the worker-mode argument at startup turns every lane into
 # an rc=64 retry loop and leaves the parent cycle exposed to synchronous work.
