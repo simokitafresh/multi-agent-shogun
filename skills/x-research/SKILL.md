@@ -33,7 +33,7 @@ xAI Grok APIのx_search機能を使い、X(旧Twitter)のリアルタイム検�
 2. 以下のコマンドでスクリプトを実行:
 
 ```bash
-python3 /home/simokitafresh/multi-agent-shogun/scripts/x_research.py \
+python3 "$SHOGUN_ROOT/scripts/x_research.py" \
   --topic "<topic>" \
   --locale <ja|global> \
   --audience <engineer|investor|general>

@@ -68,7 +68,7 @@ credential fileは0600、SQLはstdin、nonceは再利用不可。launcher外接�
 
 ### 実行場所と文字コード
 
-launcher readonly_query: リポジトリroot(`/home/simokitafresh/multi-agent-shogun`)から実行。SQLはstdin、結果はタプル形式で標準出力。
+launcher readonly_query: リポジトリroot(`$SHOGUN_ROOT`=`git rev-parse --show-toplevel`)から実行。SQLはstdin、結果はタプル形式で標準出力。
 
 方式B:
 ```bash
