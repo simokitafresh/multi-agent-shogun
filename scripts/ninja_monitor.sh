@@ -4249,43 +4249,75 @@ find_completed_parent_cmd_report_for_other_ninja() {
     local name="$1"
     local parent_cmd="$2"
     local task_id="${3:-}"
-    local dir report_file report_parent_cmd report_status report_worker base
-    local report_task_id
+    local candidate_hint="${4:-}"
+    local timeout_sec="${NINJA_MONITOR_AUTO_VOID_LOOKUP_TIMEOUT:-10}"
 
     [ -n "$parent_cmd" ] || return 1
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=10
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=10
 
-    for dir in "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/archive/reports"; do
-        [ -d "$dir" ] || continue
-        for report_file in "$dir"/*_report_*.yaml "$dir"/*_report.yaml; do
-            [ -f "$report_file" ] || continue
-            base=$(basename "$report_file")
-            case "$base" in
-                "${name}_report_"*.yaml|"${name}_report.yaml") continue ;;
-            esac
+    # First narrow the 11k-report corpus by the immutable parent_cmd text.
+    # Python parses only those candidates in one process; the old path started
+    # four yaml_field_get subprocesses for every report.
+    timeout --signal=TERM --kill-after=2 "$timeout_sec" python3 - \
+        "$name" "$parent_cmd" "$task_id" "$candidate_hint" \
+        "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/archive/reports" <<'PY'
+import os
+import subprocess
+import sys
 
-            report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd")
-            [ "$report_parent_cmd" = "$parent_cmd" ] || continue
+import yaml
 
-            report_task_id=$(yaml_field_get "$report_file" "task_id")
-            if [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ]; then
-                continue
-            fi
+name, parent_cmd, task_id, candidate_hint, *roots = sys.argv[1:]
 
-            report_status=$(yaml_field_get "$report_file" "status")
-            case "$report_status" in
-                done|completed|success) ;;
-                *) continue ;;
-            esac
+def field(document, key):
+    if not isinstance(document, dict):
+        return ""
+    for container in (document, document.get("report"), document.get("task")):
+        if isinstance(container, dict) and key in container:
+            value = container[key]
+            return "" if value is None else str(value).strip()
+    return ""
 
-            report_worker=$(yaml_field_get "$report_file" "worker_id")
-            [ "$report_worker" = "$name" ] && continue
+if candidate_hint:
+    candidates = [candidate_hint]
+else:
+    try:
+        result = subprocess.run(
+            ["rg", "-l", "-F", "--glob", "*_report_*.yaml", "--glob", "*_report.yaml",
+             "--", parent_cmd, *roots],
+            capture_output=True, text=True, check=False,
+        )
+    except OSError:
+        raise SystemExit(1)
+    candidates = result.stdout.splitlines()
 
-            echo "$report_file"
-            return 0
-        done
-    done
+for report_file in candidates:
+    report_file = report_file.strip()
+    if not report_file or not os.path.isfile(report_file):
+        continue
+    base = os.path.basename(report_file)
+    if base.startswith(f"{name}_report_") or base == f"{name}_report.yaml":
+        continue
+    try:
+        with open(report_file, encoding="utf-8") as handle:
+            document = yaml.safe_load(handle) or {}
+    except (OSError, UnicodeError, yaml.YAMLError):
+        continue
+    if field(document, "parent_cmd") != parent_cmd:
+        continue
+    report_task_id = field(document, "task_id")
+    if task_id and report_task_id and task_id != report_task_id:
+        continue
+    if field(document, "status") not in {"done", "completed", "success"}:
+        continue
+    if field(document, "worker_id") == name:
+        continue
+    print(report_file)
+    raise SystemExit(0)
 
-    return 1
+raise SystemExit(1)
+PY
 }
 
 auto_void_if_parent_cmd_completed() {
@@ -4297,7 +4329,7 @@ auto_void_if_parent_cmd_completed() {
     [ -f "$task_file" ] || return 1
 
     local task_status parent_cmd task_id completed_report completed_base
-    IFS='|' read -r task_status parent_cmd task_id < <(awk '
+    IFS='|' read -r task_status parent_cmd task_id < <(_ninja_monitor_observe_call "auto_void:task_metadata:$name" awk '
         BEGIN { s=""; pc=""; ti=""; sti=""; ai="" }
         /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
         /^[ \t]*subtask_id:/ && sti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); sti=v }
@@ -4312,7 +4344,7 @@ auto_void_if_parent_cmd_completed() {
     esac
     [ -n "$parent_cmd" ] || return 1
 
-    completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd" "$task_id") || return 1
+    completed_report=$(_ninja_monitor_observe_call "auto_void:report_lookup:$name" find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd" "$task_id") || return 1
     completed_base=$(basename "$completed_report")
 
     local lock_file="${STATE_DIR:-/tmp}/task_${name}.lock"
@@ -4322,16 +4354,16 @@ auto_void_if_parent_cmd_completed() {
         flock -x -w 5 200 || { log "ERROR: Failed to acquire lock for $name auto-void"; exit 1; }
 
         local current_status current_parent_cmd still_completed_report
-        current_status=$(yaml_field_get "$task_file" "status")
+        current_status=$(_ninja_monitor_observe_call "auto_void:locked_status:$name" yaml_field_get "$task_file" "status")
         case "$current_status" in
             assigned|acknowledged|in_progress|pending) ;;
             *) log "AUTO-VOID-SKIP: $name status changed to ${current_status:-empty}"; exit 1 ;;
         esac
-        current_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+        current_parent_cmd=$(_ninja_monitor_observe_call "auto_void:locked_parent:$name" yaml_field_get "$task_file" "parent_cmd")
         [ "$current_parent_cmd" = "$parent_cmd" ] || { log "AUTO-VOID-SKIP: $name parent_cmd changed to ${current_parent_cmd:-empty}"; exit 1; }
-        still_completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd" "$task_id") || { log "AUTO-VOID-SKIP: completed report disappeared for $name parent_cmd=$parent_cmd task_id=$task_id"; exit 1; }
+        still_completed_report=$(_ninja_monitor_observe_call "auto_void:locked_report_recheck:$name" find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd" "$task_id" "$completed_report") || { log "AUTO-VOID-SKIP: completed report disappeared for $name parent_cmd=$parent_cmd task_id=$task_id"; exit 1; }
 
-        if ! task_lifecycle_set_idle "$task_file" "auto_void_parent_cmd_completed"; then
+        if ! _ninja_monitor_observe_call "auto_void:task_idle:$name" task_lifecycle_set_idle "$task_file" "auto_void_parent_cmd_completed"; then
             log "ERROR: task_lifecycle_set_idle failed for ${name} auto-void transition"
             exit 1
         fi
@@ -4341,18 +4373,18 @@ auto_void_if_parent_cmd_completed() {
             /^[[:space:]]+task_id:[[:space:]]*/ { next }
             { print }
         ' "$task_file" > "${task_file}.tmp.$$" && mv "${task_file}.tmp.$$" "$task_file"
-        yaml_field_set "$task_file" "task" "voided_at" "$voided_at" 2>/dev/null || true
-        yaml_field_set "$task_file" "task" "void_reason" "parent_cmd_completed_by_$(basename "$still_completed_report")" 2>/dev/null || true
+        _ninja_monitor_observe_call "auto_void:voided_at:$name" yaml_field_set "$task_file" "task" "voided_at" "$voided_at" 2>/dev/null || true
+        _ninja_monitor_observe_call "auto_void:void_reason:$name" yaml_field_set "$task_file" "task" "void_reason" "parent_cmd_completed_by_$(basename "$still_completed_report")" 2>/dev/null || true
     ) 200>"$lock_file" || return 1
 
     if [ -n "$target" ]; then
-        tmux set-option -p -t "$target" @current_task "" 2>/dev/null || true
+        _ninja_monitor_observe_call "auto_void:tmux_clear:$name" tmux set-option -p -t "$target" @current_task "" 2>/dev/null || true
     fi
     if [ -n "$target" ]; then
-        safe_send_clear "$target" "$name" "AUTO-VOID(${trigger})" || log "AUTO-VOID-CLEAR-FAILED: $name parent_cmd=$parent_cmd"
+        _ninja_monitor_observe_call "auto_void:send_clear:$name" safe_send_clear "$target" "$name" "AUTO-VOID(${trigger})" || log "AUTO-VOID-CLEAR-FAILED: $name parent_cmd=$parent_cmd"
     fi
 
-    send_inbox_message karo "【AUTO-VOID】${name}の後発task ${task_id:-unknown} をvoid。parent_cmd=${parent_cmd} は ${completed_base} で完了済み。taskをidle化し/clear送信。" auto_void
+    _ninja_monitor_observe_call "auto_void:notify_karo:$name" send_inbox_message karo "【AUTO-VOID】${name}の後発task ${task_id:-unknown} をvoid。parent_cmd=${parent_cmd} は ${completed_base} で完了済み。taskをidle化し/clear送信。" auto_void
     log "AUTO-VOID: $name task=${task_id:-unknown} parent_cmd=$parent_cmd completed_report=$completed_base"
     return 0
 }
@@ -11794,6 +11826,7 @@ close_inherited_non_stdio_fds() {
 }
 
 NINJA_MONITOR_DONE_CHECK_TIMEOUT=${NINJA_MONITOR_DONE_CHECK_TIMEOUT:-15}
+NINJA_MONITOR_AUTO_VOID_TIMEOUT=${NINJA_MONITOR_AUTO_VOID_TIMEOUT:-15}
 
 _ninja_monitor_run_bounded_done_check() {
     local name="$1"
@@ -11820,6 +11853,58 @@ _ninja_monitor_run_bounded_done_check() {
         log "AUTO-DONE-BOUNDED-FAIL: $name rc=$rc retry=next-cycle"
     fi
     return "$rc"
+}
+
+# AUTO-VOID scans every other ninja's report directory and may cross the
+# /mnt/c 9p boundary repeatedly.  Run the side-effecting transaction in an
+# isolated library-mode worker so the observe cycle remains bounded.  A
+# the worker retains the existing lock-protected mutation path when it
+# completes; a timed-out worker leaves the authoritative task/report state
+# untouched from the monitor's point of view and the next cycle retries.
+_ninja_monitor_run_bounded_auto_void() {
+    local name="$1" target="$2" trigger="${3:-AUTO-VOID}"
+    local timeout_sec="${NINJA_MONITOR_AUTO_VOID_TIMEOUT:-15}"
+    local lock_file lock_fd worker_pid
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=15
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=15
+
+    # Unit fixtures override functions after sourcing the library.  Preserve
+    # that direct path so existing auto-void contract tests remain exact.
+    if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
+        auto_void_if_parent_cmd_completed "$name" "$target" "$trigger"
+        return $?
+    fi
+
+    [ -n "${_NM_SCRIPT_PATH:-}" ] || return 1
+    lock_file="${STATE_DIR:-/tmp}/auto_void_${name}.lock"
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "AUTO-VOID-BACKGROUND-SKIP: $name reason=worker_running"
+        return 1
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        timeout --signal=TERM --kill-after=2 "$timeout_sec" \
+            env NINJA_MONITOR_LIB_ONLY=1 \
+                NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
+                NINJA_MONITOR_OBSERVE_TRACE_LOG="${NINJA_MONITOR_OBSERVE_TRACE_LOG:-${STATE_DIR:-/tmp}/ninja_monitor_observe.jsonl}" \
+                SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" \
+                _NINJA_MONITOR_AUTO_VOID_WORKER=1 \
+            bash -c 'source "$1"; auto_void_if_parent_cmd_completed "$2" "$3" "$4"' \
+                _ "$_NM_SCRIPT_PATH" "$name" "$target" "$trigger"
+        local rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            log "AUTO-VOID-TIMEOUT: $name timeout=${timeout_sec}s rc=$rc retry=next-cycle"
+        elif [ "$rc" -ne 0 ]; then
+            log "AUTO-VOID-BOUNDED-FAIL: $name rc=$rc retry=next-cycle"
+        fi
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "AUTO-VOID-BACKGROUND-START: $name pid=$worker_pid timeout=${timeout_sec}s"
+    return 1
 }
 
 reload_ninja_monitor_if_updated() {
@@ -12351,7 +12436,7 @@ while true; do
             if [ -f "$_s1_task_file" ]; then
                     _s1_task_status=$(_ninja_monitor_observe_call "stage1_task_status:$name" yaml_field_get "$_s1_task_file" "status")
                 if [ "$_s1_task_status" = "assigned" ] || [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ] || [ "$_s1_task_status" = "pending" ]; then
-                    if _ninja_monitor_observe_call "stage1_auto_void:$name" auto_void_if_parent_cmd_completed "$name" "$target" "STAGE1"; then
+                    if _ninja_monitor_observe_call "stage1_auto_void:$name" _ninja_monitor_run_bounded_auto_void "$name" "$target" "STAGE1"; then
                         PREV_STATE[$name]="idle"
                         continue
                     fi
