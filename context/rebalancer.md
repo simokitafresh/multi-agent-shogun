@@ -1,5 +1,6 @@
 # Rebalancer Context
 <!-- last_updated: 2026-08-28 source_equivalent -->
+<!-- source_commit:b75b555129a7 reason:source_equivalent evidence:gate_context_freshness context=context/rebalancer.md source_commit=b75b555129a7 reason=source_equivalent -->
 <!-- source_commit:9ef55fb620f8 reason:source_equivalent evidence:gate_context_freshness context=context/rebalancer.md source_commit=9ef55fb620f8 reason=source_equivalent -->
 <!-- source_commit:ea45534ba9c6 reason:source_equivalent evidence:gate_context_freshness context=context/rebalancer.md source_commit=ea45534ba9c6 reason=source_equivalent -->
 <!-- source_commit:f66e319923b5 reason:source_equivalent evidence:gate_context_freshness context=context/rebalancer.md source_commit=f66e319923b5 reason=source_equivalent -->
