@@ -90,6 +90,16 @@ _review() {
     REVIEW_APPROVAL_ROOT="$FAKE_ROOT" bash "$PROJECT_ROOT/scripts/review_approval.sh" "$@"
 }
 
+_seed_gunshi_lgtm() {
+    local cmd_id="$1" report="$2" key fingerprint approval_dir
+    key="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$FAKE_ROOT" "$report")"
+    fingerprint="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_fingerprint "$2"' _ "$FAKE_ROOT" "$report")"
+    approval_dir="$FAKE_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    printf 'timestamp: 2026-07-27T00:11:00+09:00\nrole: gunshi\nresult: LGTM\nfingerprint: %s\nreport: queue/reports/%s\n' \
+        "$fingerprint" "$(basename "$report")" > "$approval_dir/gunshi.yaml"
+}
+
 # test_necessity: a truthful failed report may lack a commit precisely because
 # implementation failed; Karo RC must bind that one exception to exact report
 # bytes and the current worker task, while every PASS/identity boundary remains
@@ -256,6 +266,8 @@ _review() {
     local before_status before_reviewed
     before_status="$(awk '/^  status:/{print; exit}' "$tf")"
     before_reviewed="$(awk '/^  reviewed:/{print; exit}' "$tf")"
+
+    _seed_gunshi_lgtm "$cmd_id" "$report"
 
     run _review "$cmd_id" karo ACCEPT "$report"
     echo "$output" >&3

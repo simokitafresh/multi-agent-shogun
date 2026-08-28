@@ -221,9 +221,83 @@ YAML
 
 fail_close_review() {
     REVIEW_APPROVAL_ROOT="$FAIL_CLOSE_ROOT" \
+    REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
     REVIEW_APPROVAL_NO_TRIGGER=1 \
     REVIEW_APPROVAL_NO_NOTIFY=1 \
     bash "$FAIL_CLOSE_ROOT/scripts/review_approval.sh" "$@"
+}
+
+seed_fail_close_gunshi_lgtm() {
+    local cmd_id="$1" report="$2" key fingerprint approval_dir
+    key="$(PROJECT_ROOT="$FAIL_CLOSE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$FAIL_CLOSE_ROOT" "$report")"
+    fingerprint="$(PROJECT_ROOT="$FAIL_CLOSE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_fingerprint "$2"' _ "$FAIL_CLOSE_ROOT" "$report")"
+    approval_dir="$FAIL_CLOSE_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    printf 'timestamp: 2026-08-11T00:11:00+09:00\nrole: gunshi\nresult: LGTM\nfingerprint: %s\nreport: queue/reports/%s\n' \
+        "$fingerprint" "$(basename "$report")" > "$approval_dir/gunshi.yaml"
+}
+
+setup_pair_fixture() {
+    export PAIR_ROOT="$BATS_TEST_TMPDIR/pair-root"
+    mkdir -p "$PAIR_ROOT/queue/reports" "$PAIR_ROOT/queue/archive/reports" \
+        "$PAIR_ROOT/queue/tasks" "$PAIR_ROOT/queue/gates" "$PAIR_ROOT/logs" "$PAIR_ROOT/scripts"
+    ln -s "$BATS_TEST_DIRNAME/../../scripts/review_approval.sh" "$PAIR_ROOT/scripts/review_approval.sh"
+    ln -s "$BATS_TEST_DIRNAME/../../scripts/lib" "$PAIR_ROOT/scripts/lib"
+    for script in report_field_set.sh report_unique_identity.py inbox_write.sh; do
+        ln -s "$BATS_TEST_DIRNAME/../../scripts/$script" "$PAIR_ROOT/scripts/$script"
+    done
+}
+
+make_pair_report() {
+    local worker="$1" cmd_id="$2"
+    local report="$PAIR_ROOT/queue/reports/${worker}_report_${cmd_id}.yaml"
+    cat > "$report" <<YAML
+worker_id: ${worker}
+task_id: ${cmd_id}_normal
+report_id: rpt-22222222-2222-4222-8222-222222222222
+report_identity_version: 2
+parent_cmd: ${cmd_id}
+task_type: hotfix
+status: completed
+verdict: PASS
+commit_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+result:
+  summary: initial report fingerprint
+binary_checks:
+  commit:
+    - check: implementation commit exists
+      result: yes
+files_modified:
+  - path: scripts/review_approval.sh
+YAML
+    printf '%s\n' "$report"
+}
+
+make_pair_task() {
+    local worker="$1" cmd_id="$2"
+    cat > "$PAIR_ROOT/queue/tasks/${worker}.yaml" <<YAML
+task:
+  task_id: ${cmd_id}_normal
+  parent_cmd: ${cmd_id}
+  issued_cmd_id: ${cmd_id}
+  report_filename: ${worker}_report_${cmd_id}.yaml
+  task_type: hotfix
+  status: done
+  reviewed: true
+  review_result: ACCEPT
+  deployed_at: "2026-08-28T00:00:00+09:00"
+  acknowledged_at: "2026-08-28T00:01:00+09:00"
+  completed_at: "2026-08-28T00:10:00+09:00"
+  done_at: "2026-08-28T00:10:00+09:00"
+YAML
+}
+
+pair_review() {
+    REVIEW_APPROVAL_ROOT="$PAIR_ROOT" \
+    REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+    REVIEW_APPROVAL_NO_TRIGGER=1 \
+    REVIEW_APPROVAL_NO_NOTIFY=1 \
+    bash "$PAIR_ROOT/scripts/review_approval.sh" "$@"
 }
 
 # test_necessity: a failed report formally accepted by Karo after a report-only
@@ -266,6 +340,55 @@ fail_close_review() {
     run fail_close_review "$cmd_id" karo ACCEPT "$report"
     [ "$status" -ne 0 ]
     [[ "$output" == *"requires current Gunshi LGTM"* ]]
+}
+
+# test_necessity: Karo ACCEPT is only terminal when the exact report
+# fingerprint already has a canonical Gunshi LGTM, and repeated approvals for
+# one generation retain the first approval boundary timestamp.
+# regression_justification: Karo could be recorded before Gunshi, and a retry
+# of the same Gunshi decision moved the boundary used by reversed-pair
+# telemetry; an RC generation must still receive a fresh boundary.
+@test "review approval pairing is fail-closed and timestamp-idempotent" {
+    setup_pair_fixture
+    local cmd_id=cmd_karo_review_pair_idempotency worker=pairworker
+    make_pair_task "$worker" "$cmd_id"
+    local report
+    report="$(make_pair_report "$worker" "$cmd_id")"
+
+    run pair_review "$cmd_id" karo ACCEPT "$report"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"requires current Gunshi LGTM"* ]]
+    local key approval_dir first second third
+    key="$(PROJECT_ROOT="$PAIR_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$PAIR_ROOT" "$report")"
+    approval_dir="$PAIR_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    [ ! -f "$approval_dir/karo.yaml" ]
+
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    echo "$output" >&3
+    [ "$status" -eq 0 ]
+    first="$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")"
+    sleep 1
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    second="$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")"
+    [ "$second" = "$first" ]
+
+    bash "$PAIR_ROOT/scripts/report_field_set.sh" "$report" status revision_requested
+    bash "$PAIR_ROOT/scripts/report_field_set.sh" "$report" result.summary "new report fingerprint"
+    bash "$PAIR_ROOT/scripts/report_field_set.sh" "$report" status completed
+    sleep 1
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    third="$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")"
+    [ "$third" != "$first" ]
+
+    run pair_review "$cmd_id" karo RC "$report"
+    [ "$status" -eq 0 ]
+    bash "$PAIR_ROOT/scripts/report_field_set.sh" "$report" commit_hash bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    bash "$PAIR_ROOT/scripts/report_field_set.sh" "$report" status completed
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    [ "$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")" != "$third" ]
 }
 
 setup_rc_revoke_generation_fixture() {
@@ -346,6 +469,14 @@ REPORT
     grep -q '^  summary: generation two$' "$RC_REVOKE_REPORT"
     grep -q '^  status: done$' "$RC_REVOKE_ROOT/queue/tasks/worker.yaml"
     [ "$(find "$RC_REVOKE_ROOT/queue/gates/cmd_karo_rc_revoke_generation" -name last_rc_snapshot_dir -type f | wc -l)" -eq 0 ]
+
+    local key fingerprint approval_dir
+    key="$(PROJECT_ROOT="$RC_REVOKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$RC_REVOKE_ROOT" "$RC_REVOKE_REPORT")"
+    fingerprint="$(PROJECT_ROOT="$RC_REVOKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_fingerprint "$2"' _ "$RC_REVOKE_ROOT" "$RC_REVOKE_REPORT")"
+    approval_dir="$RC_REVOKE_ROOT/queue/gates/cmd_karo_rc_revoke_generation/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    printf 'timestamp: 2026-08-18T00:11:00+09:00\nrole: gunshi\nresult: LGTM\nfingerprint: %s\nreport: queue/reports/%s\n' \
+      "$fingerprint" "$(basename "$RC_REVOKE_REPORT")" > "$approval_dir/gunshi.yaml"
 
     run bash "$RC_REVOKE_ROOT/scripts/review_approval.sh" \
       cmd_karo_rc_revoke_generation karo ACCEPT "$RC_REVOKE_REPORT"
@@ -514,6 +645,7 @@ legacy_rc_snapshot_paths() {
     run fail_close_review "$cmd_id" karo RC "$report"
     [ "$status" -eq 0 ]
     sed -i 's/^status: revision_requested/status: completed/' "$report"
+    seed_fail_close_gunshi_lgtm "$cmd_id" "$report"
 
     run fail_close_review "$cmd_id" karo ACCEPT "$report"
     [ "$status" -ne 0 ]
