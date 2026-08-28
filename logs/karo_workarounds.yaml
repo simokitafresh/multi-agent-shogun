@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_ac_column_contract_preflight_202608201424
-  timestamp: '2026-08-20T05:58:20Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_ac_column_contract_preflight_202608201424'
-- cmd_id: cmd_karo_hotfix_ga486_bulletin_readability_202608201431
-  timestamp: '2026-08-20T06:10:25Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_ga486_bulletin_readability_202608201431'
 - cmd_id: cmd_karo_hotfix_skill_auto_improve_dirty_202608201637
   timestamp: '2026-08-20T08:20:37Z'
   ninja: system
@@ -1310,3 +1284,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828'
+- cmd_id: cmd_karo_hotfix_t137_auto_clear_semantic_failure_20260828
+  timestamp: '2026-08-28T09:11:15Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t137_auto_clear_semantic_failure_20260828'
+- cmd_id: cmd_karo_hotfix_report_ancestry_repo_resolution_20260828
+  timestamp: '2026-08-28T09:37:16Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_report_ancestry_repo_resolution_20260828'

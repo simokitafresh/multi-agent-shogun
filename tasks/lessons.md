@@ -16116,3 +16116,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - compatibility shardはテスト件数を実行してもinner runnerがreceiptを公開しない異常経路で、後段が欠落だけを見て原因を失う。outer runnerがinner_rc・選択件数を含むartifactとschema-valid FAIL receiptをatomic公開すれば、通常FAILとinfra欠落を機械的に分離できる。
+
+### L1666: source-equivalent回帰fixtureは実repo履歴から分離する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_ci_fix_33156085995_ga505_source_equivalent_20260828
+- **記録者**: kagemaru
+- **tags**: [infra,testing,git]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_gate_improvement_trigger.bats]
+- **origin**: [[cmd_karo_ci_fix_33156085995_ga505_source_equivalent_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 固定hashを実repoのorigin/mainへ照合する回帰fixtureは、後続mergeで前提が変わりCI再現性を失う。fixture内にlocal mainとorigin mainの非祖先同値refsを生成し、状態行列を自己完結させる。
