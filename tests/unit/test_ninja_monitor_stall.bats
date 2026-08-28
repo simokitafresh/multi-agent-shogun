@@ -5046,21 +5046,25 @@ PY
         cycle=7
         _ninja_monitor_observe_call first_call true
         _ninja_monitor_observe_call second_call bash -c "sleep 0.02"
+        _ninja_monitor_phase_call lifecycle lifecycle_call true
         python3 - "$NINJA_MONITOR_OBSERVE_TRACE_LOG" <<"PY"
 import json, sys
 rows=[json.loads(line) for line in open(sys.argv[1], encoding="utf-8")]
 assert [(row["call"], row["event"]) for row in rows] == [
     ("first_call", "begin"), ("first_call", "end"),
     ("second_call", "begin"), ("second_call", "end"),
+    ("lifecycle_call", "begin"), ("lifecycle_call", "end"),
 ]
 assert rows[1]["elapsed_ms"] >= 0
 assert rows[3]["elapsed_ms"] >= 0
+assert rows[4]["phase"] == "lifecycle"
+assert rows[5]["phase"] == "lifecycle"
 assert all(row["cycle"] == 7 for row in rows)
 PY
-        printf "begin=2 end=2 elapsed=2\\n"
+        printf "begin=3 end=3 elapsed=3\\n"
     '
     [ "$status" -eq 0 ]
-    [ "$output" = "begin=2 end=2 elapsed=2" ]
+    [ "$output" = "begin=3 end=3 elapsed=3" ]
 }
 
 # test_necessity: a production auto-void report scan can block on the 9p
