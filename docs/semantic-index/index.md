@@ -375,6 +375,7 @@ codd:
 | causal | `cmd_4371` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_4373` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
+| cmd | `cmd_karo_hotfix_t92_dm_signal_research_article_filter_20260828` |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
@@ -3384,6 +3385,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T08:08:59+09:00 将軍の繰り返しミス根治(殿指示 2026-08-28 08:05): 08-27〜28 の将軍撤回 5 回(T82/T69/T77/T58/T108)は全て『否定判定の早断定』=1 文脈(local/control repo/1 回 cap |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T08:10:59+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T08:39:49+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T09:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -9608,7 +9610,7 @@ codd:
 |------|---|
 | id | cmd_quality_logging |
 | label | cmd設計品質ログ |
-| aliases | cmd品質ログ, cmd_quality_log, cmd_design_quality, 設計クオリティ記録, karo_rework, gunshi_verdict, ninja_blockers, supplementary_cmds, BLOCK率, CLEAR率, ac_count, FP率計算は累計昇格BLOCKを候補に含める, FP率計算は累計昇格BLOCKもFP候補に含める, archive_completed, cmd_publish, cmd完了処理, cmd_design_quality更新, gunshi_verdict還流, cmd_quality_log記録, archive_completed連携, completed cmd archive, cmd chronicle sync, cmd_save WARN記録, BLOCK履歴表示, WARN累計昇格, cmd_design_quality集計, CMDのルールは守っているか, CMDルール確認, cmd-complete path, cmd_complete_gate path, cmd完了処理スキル, archive済みcmd, active queue not found, gate_yaml_status archive, status completed archive, cmd_complete_skill_static_test, BLOCK時は同期設計のため非対称, 通常経路の正本だけを読む集計はdirect経路を0へ潰す, zzz_gunshi_unreached_20260727, cmd complete gate自動pushがGA PUSH1成立済みのdirty overlapを毎回hook失敗と, cmd complete gateがcommand本文中の裸語session alertsをファイル参照と誤認して正しい, cmd complete gateのtiming計測が全report YAMLを毎回parseするボトルネックを |
+| aliases | cmd品質ログ, cmd_quality_log, cmd_design_quality, 設計クオリティ記録, karo_rework, gunshi_verdict, ninja_blockers, supplementary_cmds, BLOCK率, CLEAR率, ac_count, FP率計算は累計昇格BLOCKを候補に含める, FP率計算は累計昇格BLOCKもFP候補に含める, archive_completed, cmd_publish, cmd完了処理, cmd_design_quality更新, gunshi_verdict還流, cmd_quality_log記録, archive_completed連携, completed cmd archive, cmd chronicle sync, cmd_save WARN記録, BLOCK履歴表示, WARN累計昇格, cmd_design_quality集計, CMDのルールは守っているか, CMDルール確認, cmd-complete path, cmd_complete_gate path, cmd完了処理スキル, archive済みcmd, active queue not found, gate_yaml_status archive, status completed archive, cmd_complete_skill_static_test, BLOCK時は同期設計のため非対称, 通常経路の正本だけを読む集計はdirect経路を0へ潰す, zzz_gunshi_unreached_20260727, cmd complete gate自動pushがGA PUSH1成立済みのdirty overlapを毎回hook失敗と, cmd complete gateがcommand本文中の裸語session alertsをファイル参照と誤認して正しい, cmd complete gateのtiming計測が全report YAMLを毎回parseするボトルネックを, cmd complete gate分割設計17 unitのうち依存0でsource順最初の1 unitだけをlibへ移動 |
 | skills | cmd-complete |
 | related_concepts | codd_methodology, semantic_dictionary_design, gate_quality_framework, test_quality_framework |
 
@@ -14740,6 +14742,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T22:29:02.176873+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T22:46:23.897963+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T23:10:14.346807+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T00:29:35.202612+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ

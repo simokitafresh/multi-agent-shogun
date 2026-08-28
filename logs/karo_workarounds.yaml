@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_gate_terminal_order_202608190612
-  timestamp: '2026-08-18T21:37:04Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_gate_terminal_order_202608190612'
 - cmd_id: cmd_karo_hotfix_monitor_cleanup_coverage_202608190615
   timestamp: '2026-08-18T21:45:29Z'
   ninja: system
@@ -1310,3 +1297,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t108_r2_doc_lane_commit_validation_20260828'
+- cmd_id: cmd_karo_hotfix_t92_dm_signal_research_article_filter_20260828
+  timestamp: '2026-08-28T00:48:30Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t92_dm_signal_research_article_filter_20260828'
