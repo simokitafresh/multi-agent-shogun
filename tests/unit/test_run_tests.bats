@@ -604,6 +604,8 @@ SH
   grep -Fq 'timeout-minutes: 12' "$workflow"
   grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
   grep -Fq 'cancel-in-progress: true' "$workflow"
+  grep -Fq '0.1.0 (Codex)' "$workflow"
+  grep -Fq 'GITHUB_PATH' "$workflow"
   ! grep -Eq '(export )?BATS_INNER_JOBS=8' "$workflow"
   grep -Fq 'bash scripts/run_tests.sh push' "$workflow"
 }
@@ -2237,6 +2239,37 @@ PY
     [[ "$output" != *"unbound variable"* ]]
     [[ "$output" != *"TEST_RECEIPT_PASS"* ]]
   done
+}
+
+# test_necessity: an inner runner that exits before publishing its receipt must
+# still produce an atomic, reasoned FAIL receipt so CI can distinguish runner
+# infrastructure failure from an ordinary test failure.
+# regression_justification: the compatibility shard previously reached its
+# terminal verification boundary with no durable inner receipt in this exit path.
+@test "missing inner receipt publishes a reasoned fail receipt" {
+  cat >"$TMPROOT/scripts/run_with_receipt.sh" <<'SH'
+#!/usr/bin/env bash
+exit 23
+SH
+  chmod +x "$TMPROOT/scripts/run_with_receipt.sh"
+  receipt_dir="$TMPROOT/logs/missing-receipt"
+  run env REPO_ROOT="$TMPROOT" RUN_TESTS_RECEIPT_DIR="$receipt_dir" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats"
+  [ "$status" -eq 23 ]
+  receipt="$(find "$receipt_dir" -name '*.json' -type f | head -1)"
+  [ -n "$receipt" ]
+  artifact="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["artifact"])' "$receipt")"
+  [ -s "$artifact" ]
+  grep -Fq 'terminal receipt missing after inner runner exit' "$artifact"
+  python3 - "$receipt" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["complete"] is True
+assert data["result"] == "FAIL"
+assert data["rc"] == 23
+assert data["skip_count"] == 0
+PY
 }
 
 # test_necessity: truncated tool output must be recoverable from selection or run identity without rerunning tests.
