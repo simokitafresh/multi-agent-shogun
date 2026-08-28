@@ -919,7 +919,8 @@ _ninja_monitor_refresh_owner_lease() {
     eval "exec ${lock_fd}>&-"
 }
 
-if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
+if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ] \
+    && [ "${NINJA_MONITOR_BOUNDED_DONE_CHECK:-0}" != "1" ]; then
     acquire_singleton_lock
     # Reconcile only after the current generation owns the lease.  Running
     # this before acquire allowed a stale owner transaction to abort startup

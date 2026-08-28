@@ -5250,6 +5250,54 @@ printf "worker_dispatch_rc=%s\n" "$rc"
     [ "$output" = "worker_dispatch_rc=0" ]
 }
 
+# test_necessity: bounded done-check must execute its task-scoped review
+# predicate even while the long-lived monitor owner is healthy; otherwise a
+# healthy-owner singleton exit falsely reports completion and hides pending
+# review state.
+@test "bounded done-check bypasses healthy singleton and returns review pending" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+ROOT="'"$BATS_TEST_TMPDIR"'/bounded-done-check"
+mkdir -p "$ROOT/state"
+TASK_ROOT="$PROJECT_ROOT/queue"
+TASK_FILE="$TASK_ROOT/tasks/kagemaru.yaml"
+REPORT_FILE="$TASK_ROOT/reports/kagemaru_report_cmd_bounded_done_check.yaml"
+mkdir -p "$TASK_ROOT/tasks" "$TASK_ROOT/reports"
+trap "mv \"$TASK_FILE\" \"$ROOT/task.saved\" 2>/dev/null || true; mv \"$REPORT_FILE\" \"$ROOT/report.saved\" 2>/dev/null || true" EXIT
+cat > "$TASK_FILE" <<'EOF'
+task:
+  status: in_progress
+  task_id: cmd_bounded_done_check_full
+  parent_cmd: cmd_bounded_done_check
+EOF
+cat > "$REPORT_FILE" <<'EOF'
+worker_id: kagemaru
+task_id: cmd_bounded_done_check_full
+parent_cmd: cmd_bounded_done_check
+status: revision_requested
+verdict: FAIL
+EOF
+owner_before=$(sha256sum "$TASK_FILE")
+printf "%s healthy-generation %s\n" "$$" "$EPOCHSECONDS" > "$ROOT/owner"
+set +e
+NINJA_MONITOR_OWNER_FILE="$ROOT/owner" \
+SHOGUN_STATE_DIR="$ROOT/state" \
+NINJA_MONITOR_BOUNDED_DONE_CHECK=1 \
+NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
+    bash "$PROJECT_ROOT/scripts/ninja_monitor.sh" --check-and-update-done-task kagemaru
+rc=$?
+set -e
+owner_after=$(sha256sum "$TASK_FILE")
+test "$rc" -ne 0
+test "$rc" -ne 64
+test "$owner_before" = "$owner_after"
+printf "bounded_done_check_rc=%s task_unchanged=1\n" "$rc"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == bounded_done_check_rc=1\ task_unchanged=1 ]]
+}
+
 # test_necessity: a production auto-void report scan can block on the 9p
 # boundary.  It must run under a single-flight bounded worker so the observe
 # cycle continues while preserving the existing transaction for completion.
