@@ -2,6 +2,7 @@
 # Persist exactly one recovery nudge for an active task after verified respawn.
 respawn_recovery_launch_command() {
     local root="$1" launch="$2" executable args candidate resolved node_path
+    local resolved_dir=""
     local variable_name variable_default variable_value
     [ -n "$launch" ] || {
         printf '%s\n' 'respawn_recovery_launch_command: empty launch command' >&2
@@ -64,6 +65,7 @@ respawn_recovery_launch_command() {
     fi
     if [[ "$candidate" = /* ]]; then
         resolved="$candidate"
+        resolved_dir="${candidate%/*}"
     else
         # command -v is deliberately used for PATH/relative lookup.  A shell
         # builtin/function or unresolved name is rejected unless it yields a
@@ -71,6 +73,7 @@ respawn_recovery_launch_command() {
         resolved=$(command -v "$candidate" 2>/dev/null || true)
         if [[ "$resolved" != /* ]]; then
             if [[ -n "$resolved" && -f "$resolved" && -x "$resolved" ]]; then
+                resolved_dir="${resolved%/*}"
                 resolved=$(realpath -e -- "$resolved" 2>/dev/null || true)
             else
                 resolved=""
@@ -78,6 +81,7 @@ respawn_recovery_launch_command() {
         elif [[ ! -f "$resolved" || ! -x "$resolved" ]]; then
             resolved=""
         else
+            resolved_dir="${resolved%/*}"
             resolved=$(realpath -e -- "$resolved" 2>/dev/null || true)
         fi
     fi
@@ -110,6 +114,7 @@ respawn_recovery_launch_command() {
                 printf 'respawn_recovery_launch_command: nvm executable is not executable: %s\n' "$nvm_path" >&2
                 return 1
             }
+            resolved_dir="${nvm_path%/*}"
             resolved=$(realpath -e -- "$nvm_path" 2>/dev/null || true)
         else
             printf 'respawn_recovery_launch_command: nvm executable not found: %s\n' "$candidate" >&2
@@ -130,7 +135,11 @@ respawn_recovery_launch_command() {
         return 1
     }
 
-    node_path="${RESPAWN_RECOVERY_NODE_PATH:-${resolved%/*}}"
+    # realpath resolves the nvm `codex` shim to package/bin/codex.js. Keep the
+    # directory from which the executable was selected so its sibling `node`
+    # remains available to the /usr/bin/env node shebang.
+    node_path="${RESPAWN_RECOVERY_NODE_PATH:-$resolved_dir}"
+    [ -n "$node_path" ] || node_path="${resolved%/*}"
     [ -d "$node_path" ] || {
         printf 'respawn_recovery_launch_command: node path is not a directory: %s\n' "$node_path" >&2
         return 1

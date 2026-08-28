@@ -207,6 +207,46 @@ SH
   grep -q "nvm executable not found" "$root/error-not-found"
 }
 
+@test "nvm Codex shim keeps sibling node on PATH after canonicalizing codex.js" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  fixture_home="$root/home"
+  nvm_bin="$fixture_home/.nvm/versions/node/v20.20.0/bin"
+  package_bin="$fixture_home/.nvm/versions/node/v20.20.0/lib/node_modules/@openai/codex/bin"
+  mkdir -p "$nvm_bin" "$package_bin"
+
+  cat > "$nvm_bin/node" <<'SH'
+#!/usr/bin/env bash
+printf 'fake-node:%s\n' "$*" > "$FAKE_NODE_MARKER"
+SH
+  chmod +x "$nvm_bin/node"
+  cat > "$package_bin/codex.js" <<'SH'
+#!/usr/bin/env node
+SH
+  chmod +x "$package_bin/codex.js"
+  ln -s ../lib/node_modules/@openai/codex/bin/codex.js "$nvm_bin/codex"
+
+  # Before the fix, realpath(codex) selected package/bin as PATH and node was
+  # absent. Preserve this measured status-127 failure as the AC1 baseline.
+  baseline_status=0
+  env -i PATH="$package_bin:/usr/bin:/bin" HOME="$fixture_home" \
+    FAKE_NODE_MARKER="$root/baseline-node-marker" bash -c '"$1"' _ \
+    "$package_bin/codex.js" 2>"$root/baseline-error" || baseline_status=$?
+  [ "$baseline_status" -eq 127 ]
+  [ ! -e "$root/baseline-node-marker" ]
+
+  run env -u SHOGUN_CODEX_BIN HOME="$fixture_home" PATH=/usr/bin \
+    bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "${SHOGUN_CODEX_BIN:-codex} --flag"' _ "$repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $package_bin/codex.js --flag"* ]]
+  [[ "$output" == *"PATH=\"$nvm_bin:\$PATH\""* ]]
+  generated="$output"
+
+  run env -i PATH=/usr/bin:/bin HOME="$fixture_home" \
+    FAKE_NODE_MARKER="$root/fixed-node-marker" bash -c "$generated"
+  [ "$status" -eq 0 ]
+  grep -q '^fake-node:' "$root/fixed-node-marker"
+}
+
 @test "unresolved and shell syntax launch inputs fail with stderr reasons" {
   repo="$BATS_TEST_DIRNAME/../.."
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "not-a-real-respawn-command --flag" 2>"$2/error-unresolved"' _ "$repo" "$root"
