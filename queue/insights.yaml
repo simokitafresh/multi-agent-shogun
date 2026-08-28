@@ -7301,3 +7301,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-213148288-f4a3
+  ts: "2026-08-28T21:31:48+09:00"
+  insight: "[[同一fingerprintのGunshi LGTM再永続化がKaro ACCEPT後の時刻へ上書きされ]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: external_project_registry(外部プロジェクト登録; alias=context freshness check shがconfig projects yamlのpathを読まずroot; score=4.4) / semantic_dictionary_design(セマンティック辞書構想; alias=source gunshi multilink probe; score=4.3) / semantic_causal_automation(セマンティック因果自動化; alias=掲示板action required の semantic map generate new file INSIGHT; score=4.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
