@@ -3084,6 +3084,9 @@ codd:
 | lesson | `L1666` source-equivalent回帰fixtureは実repo履歴から分離する |
 | cmd | `cmd_karo_ci_fix_33156085995_ga505_source_equivalent_20260828` (`tests/unit/test_gate_improvement_trigger.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T18:48:07+09:00 GATE CLEARは家老の判断だからな、ちゃんと検証する必要がある。過去にクリアしたタスクもMECEに本当に完了しているのか検証せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T19:21:37+09:00 session_save_20260828_1912_gunshi: 第7便(16:38-19:12)。レビューLGTM 10件(compat_ssot/respawn_resolver/cycle_latency/reflux_kotar |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T19:22:16+09:00 session_save_20260828_1912_gunshi: 第7便(16:38-19:12)。LGTM10件+FAIL2件+draftAPPROVE6件。GATE sync7CLEAR+3BLOCK。Q6第三者検証。MECE82件 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T19:22:28+09:00 session_save_20260828_1920 復帰点(将軍 /clear 復帰 第7便、08-28 16:39-19:20)。主軸=(1)T137 auto clear 失敗鎖の終端: 真因 3 段 nvm 無し→node bin  |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -4704,6 +4707,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:35:46+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:36:14+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:46:02+09:00 session_save_20260828_1636_gunshi: レビュー統計=accuracy97.1%(1984/2044),直近WA0件,観点全10/10。RC型=Phase1-10全追体験完了,Q1-Q5回答済み,inbox処理 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T19:20:59+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T19:21:08+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -8953,6 +8958,7 @@ codd:
 | causal | `cmd_karo_hotfix_finalize_segments_20260828` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_finalize_timezone_20260828` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_report_ancestry_repo_resolution_20260828` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_ci_readiness_empty_json_20260828` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -12675,6 +12681,7 @@ codd:
 | cmd | `cmd_karo_ci_fix_33147256383_compat_receipt` (`.github/workflows/test.yml`, `scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
 | cmd | `cmd_karo_hotfix_report_ancestry_repo_resolution_20260828` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T19:06:18+09:00 b5guxonm3 toolu_01NyrDPPJ8smmodfNsutHTSs /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/16434314-f798-4484-b5e7 |
+| cmd | `cmd_karo_hotfix_ci_readiness_empty_json_20260828` (`tests/unit/test_cmd_complete_gate.bats`, `scripts/lib/cmd_complete_gate_ci.sh`) |
 
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
 
@@ -14915,6 +14922,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T07:51:21.578780+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T09:39:24.632492+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T09:52:30.581691+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T10:13:08.471212+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
