@@ -1085,6 +1085,29 @@ _clear_loop_state_file() {
     printf '%s/shogun_clear_count_%s.tsv\n' "$STATE_DIR" "$agent_name"
 }
 
+_clear_loop_block_marker_file() {
+    local agent_name="$1"
+    printf '%s/shogun_clear_block_%s.tsv\n' "$STATE_DIR" "$agent_name"
+}
+
+_clear_loop_input_hash() {
+    local path="$1"
+    if [ -f "$path" ]; then
+        sha256sum "$path" 2>/dev/null | awk '{print $1}'
+    else
+        printf 'missing\n'
+    fi
+}
+
+_clear_loop_pane_generation() {
+    local agent_name="$1" target="${PANE_TARGETS[$1]:-}"
+    if [ -n "$target" ]; then
+        respawn_recovery_generation "$target" 2>/dev/null || printf 'pane:%s\n' "$target"
+    else
+        printf 'pane:missing\n'
+    fi
+}
+
 _task_parent_cmd_context() {
     local agent_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
@@ -1211,8 +1234,10 @@ record_clear_attempt_or_force_idle() {
     local reason="${2:-UNKNOWN}"
     local cmd_id="${3:-}"
     local max_clear
-    local state_file count previous_cmd
+    local state_file="" count=0 previous_cmd=""
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+    local marker_file marker_agent marker_generation marker_task_hash marker_inbox_hash marker_cmd
+    local pane_generation task_hash inbox_hash inbox_file
 
     [ -n "$cmd_id" ] || cmd_id=$(_task_parent_cmd_for_clear_count "$agent_name" "$reason")
     if [ "$cmd_id" = "no_cmd" ]; then
@@ -1229,6 +1254,28 @@ record_clear_attempt_or_force_idle() {
     fi
     max_clear=$(get_max_clear_per_cmd)
     state_file=$(_clear_loop_state_file "$agent_name")
+    marker_file=$(_clear_loop_block_marker_file "$agent_name")
+    inbox_file="$SCRIPT_DIR/queue/inbox/${agent_name}.yaml"
+    pane_generation=$(_clear_loop_pane_generation "$agent_name")
+    task_hash=$(_clear_loop_input_hash "$task_file")
+    inbox_hash=$(_clear_loop_input_hash "$inbox_file")
+
+    # A block is terminal for this stable agent/input generation.  Do not let
+    # the next poll increment the same counter and emit another block; only a
+    # task or inbox generation change reopens the bounded clear budget.
+    if [ -f "$marker_file" ]; then
+        IFS=$'\t' read -r marker_agent marker_generation marker_task_hash marker_inbox_hash marker_cmd < "$marker_file" || true
+        if [ "$marker_agent" = "$agent_name" ] \
+            && [ "$marker_task_hash" = "$task_hash" ] \
+            && [ "$marker_inbox_hash" = "$inbox_hash" ]; then
+            log "CLEAR-LOOP-BLOCK-GUARD: $agent_name cmd=$cmd_id generation=${marker_generation:-missing} task_inbox_unchanged=1 clear=0"
+            return 1
+        fi
+        # New task/inbox generation: start a fresh bounded clear budget.
+        printf '%s\t0\n' "$cmd_id" > "$state_file"
+        : > "$marker_file"
+        log "CLEAR-LOOP-BLOCK-REOPEN: $agent_name old_cmd=${marker_cmd:-unknown} new_cmd=$cmd_id task_inbox_changed=1"
+    fi
 
     if [ -f "$state_file" ]; then
         IFS=$'\t' read -r previous_cmd count < "$state_file" || true
@@ -1247,6 +1294,8 @@ record_clear_attempt_or_force_idle() {
     if [ -f "$task_file" ]; then
         task_lifecycle_set_idle "$task_file" "clear_loop_block" 2>/dev/null || true
     fi
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+        "$agent_name" "$pane_generation" "$task_hash" "$inbox_hash" "$cmd_id" > "$marker_file"
     send_inbox_message karo "【CLEAR-LOOP-BLOCK】${agent_name} が同一cmd=${cmd_id}で /clear ${count}回。上限=${max_clear}超過のためtaskをidle化して空回りを停止。reason=${reason}" clear_loop_block
     log "CLEAR-LOOP-BLOCK: $agent_name cmd=$cmd_id count=${count}/${max_clear} forced_idle reason=$reason"
     return 1
@@ -5321,6 +5370,31 @@ _handle_idle_notify() {
     fi
 }
 
+# Codex CTX0 guard is generation-aware: a fresh pane is already clean, while
+# a changed task/inbox generation is a new clear request.  Keep this durable
+# across monitor cycles so debounce expiry cannot recreate a clear loop.
+_auto_clear_guard_file() {
+    printf '%s/auto_clear_guard_%s.tsv\n' "${STATE_DIR:-/tmp}" "$1"
+}
+
+_auto_clear_guard_fingerprint() {
+    local name="$1" target="$2" task_file="$SCRIPT_DIR/queue/tasks/${1}.yaml"
+    local inbox_file="$SCRIPT_DIR/queue/inbox/${1}.yaml" pane_generation task_fp inbox_fp
+    pane_generation=$(respawn_recovery_generation "$target" 2>/dev/null || true)
+    [ -n "$pane_generation" ] || return 1
+    task_fp=$(stat -c '%Y:%s' "$task_file" 2>/dev/null || printf 'missing')
+    inbox_fp=$(stat -c '%Y:%s' "$inbox_file" 2>/dev/null || printf 'missing')
+    printf '%s\t%s\t%s\n' "$pane_generation" "$task_fp" "$inbox_fp"
+}
+
+_auto_clear_guard_write() {
+    local name="$1" pane_generation="$2" task_fp="$3" inbox_fp="$4" state="${5:-cleared}" guard_file
+    [ -n "$pane_generation" ] || return 0
+    guard_file=$(_auto_clear_guard_file "$name")
+    mkdir -p "${guard_file%/*}" 2>/dev/null || return 1
+    printf '%s\t%s\t%s\t%s\n' "$pane_generation" "$task_fp" "$inbox_fp" "$state" > "$guard_file"
+}
+
 # idle時自動/clear（毎サイクル判定）
 _handle_auto_clear() {
     local name="$1"
@@ -5350,8 +5424,13 @@ _handle_auto_clear() {
     # CTX=0%なら既にクリア済み → スキップ（無駄な再clearループ防止）
     # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
     # ただしrespawn直後(60s以内)はCTX=0%が正常 → respawn無限ループ防止
-    local ctx_now
+    local ctx_now _ac_pane_generation="" _ac_task_fp="" _ac_inbox_fp="" _ac_guard_file=""
     ctx_now=$(get_context_pct "$target" "$name")
+    if [ "$_ac_cli_type" = "codex" ]; then
+        IFS=$'\t' read -r _ac_pane_generation _ac_task_fp _ac_inbox_fp < <(
+            _auto_clear_guard_fingerprint "$name" "$target"
+        ) || true
+    fi
     if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
         if [[ "$_ac_task_status" =~ ^(done|completed|PASS)$ ]] \
             && _task_done_report_formally_reviewed "$name"; then
@@ -5359,6 +5438,29 @@ _handle_auto_clear() {
             return
         fi
         if [ "$_ac_cli_type" = "codex" ]; then
+            # A real pane generation is the primary fresh-CTX0 evidence.  If
+            # its task/inbox inputs are unchanged, the pane is already clean;
+            # record the observation even when no prior clear exists.
+            if [ -n "$_ac_pane_generation" ]; then
+                _ac_guard_file=$(_auto_clear_guard_file "$name")
+                local _ac_guard_generation="" _ac_guard_task_fp="" _ac_guard_inbox_fp="" _ac_guard_state=""
+                if [ -f "$_ac_guard_file" ]; then
+                    IFS=$'\t' read -r _ac_guard_generation _ac_guard_task_fp _ac_guard_inbox_fp _ac_guard_state < "$_ac_guard_file" || true
+                fi
+                if [ "$_ac_guard_generation" = "$_ac_pane_generation" ] \
+                    && [ "$_ac_guard_task_fp" = "$_ac_task_fp" ] \
+                    && [ "$_ac_guard_inbox_fp" = "$_ac_inbox_fp" ]; then
+                    if [ "$_ac_guard_state" = "cleared" ] || [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
+                        log "CODEX-CTX0-FRESH-SKIP: $name generation=$_ac_pane_generation task_inbox_unchanged=1 state=${_ac_guard_state:-observed}"
+                        return
+                    fi
+                fi
+                if [ -z "$_ac_guard_generation" ]; then
+                    _auto_clear_guard_write "$name" "$_ac_pane_generation" "$_ac_task_fp" "$_ac_inbox_fp" observed || true
+                    log "CODEX-CTX0-FRESH-SKIP: $name generation=$_ac_pane_generation first_observation=1"
+                    return
+                fi
+            fi
             # GP-222: Codex CLIではCTX=0は「未検出」の可能性があるためスキップしない
             # respawn直後(60s以内)はCTX=0%が正常 → respawn無限ループ防止
             local _codex_last_clear="${LAST_CLEARED[$name]:-0}"
@@ -5379,6 +5481,24 @@ _handle_auto_clear() {
                 # 15サイクル=300秒(5分)ごとにログ出力
                 log "CLEAR-SKIP: $name CTX=${ctx_now}%, already clean (continuous: ${skip_count})"
             fi
+            return
+        fi
+    fi
+
+    # A successful clear also makes a non-zero CTX pane terminal for this
+    # unchanged generation.  Without this check debounce expiry can issue a
+    # second clear even though the first one already completed.
+    if [ "$_ac_cli_type" = "codex" ] && [ -n "$_ac_pane_generation" ]; then
+        _ac_guard_file=$(_auto_clear_guard_file "$name")
+        local _ac_cleared_generation="" _ac_cleared_task_fp="" _ac_cleared_inbox_fp="" _ac_cleared_state=""
+        if [ -f "$_ac_guard_file" ]; then
+            IFS=$'\t' read -r _ac_cleared_generation _ac_cleared_task_fp _ac_cleared_inbox_fp _ac_cleared_state < "$_ac_guard_file" || true
+        fi
+        if [ "$_ac_cleared_state" = "cleared" ] \
+            && [ "$_ac_cleared_generation" = "$_ac_pane_generation" ] \
+            && [ "$_ac_cleared_task_fp" = "$_ac_task_fp" ] \
+            && [ "$_ac_cleared_inbox_fp" = "$_ac_inbox_fp" ]; then
+            log "CODEX-CLEAR-GUARD: $name generation=$_ac_pane_generation task_inbox_unchanged=1 clear=0"
             return
         fi
     fi
@@ -5428,6 +5548,7 @@ _handle_auto_clear() {
         fi
         if safe_send_clear "$target" "$name" "AUTO-CLEAR"; then
             LAST_CLEARED[$name]=$now
+            _auto_clear_guard_write "$name" "$_ac_pane_generation" "$_ac_task_fp" "$_ac_inbox_fp" || true
             # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）
             tmux set-option -p -t "$target" @current_task "" 2>/dev/null
             # cmd_583: /new後にpost_clear_cmd(e.g. /fast)を送信するためpendingセット

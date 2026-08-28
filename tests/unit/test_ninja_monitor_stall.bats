@@ -5096,6 +5096,112 @@ PY
     [ "$output" = "elapsed_lt_500ms=1 timeout=1 singleflight=1" ]
 }
 
+# test_necessity: CLEAR-LOOP-BLOCK must be monotonic for an unresolved agent
+# generation.  Repeated polls cannot emit count=5+ blocks; a task/inbox
+# generation change is the only reopening event.
+@test "clear loop block marker suppresses repeated unresolved retries" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/clear-loop-block"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        mkdir -p "$root/queue/tasks" "$root/queue/inbox" "$root/state"
+        printf "task:\\n  status: idle\\n" > "$root/queue/tasks/tobisaru.yaml"
+        printf "messages: []\\n" > "$root/queue/inbox/tobisaru.yaml"
+        declare -A PANE_TARGETS
+        PANE_TARGETS[tobisaru]=pane
+        get_max_clear_per_cmd() { printf "3\\n"; }
+        _task_parent_cmd_for_clear_count() { printf "unresolved:tobisaru\\n"; }
+        respawn_recovery_generation() { printf "pane:stable-generation\\n"; }
+        task_lifecycle_set_idle() { return 0; }
+        log() { printf "%s\\n" "$1" >> "$LOG"; }
+        send_inbox_message() { printf "%s\\n" "$*" >> "$root/notifications.log"; }
+
+        for i in 1 2 3 4; do
+            record_clear_attempt_or_force_idle tobisaru AUTO-CLEAR || true
+        done
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+            record_clear_attempt_or_force_idle tobisaru AUTO-CLEAR || true
+        done
+        test "$(grep -c "CLEAR-LOOP-BLOCK: tobisaru" "$LOG")" -eq 1 || { cat "$LOG"; cat "$root/notifications.log"; exit 1; }
+        test "$(grep -c "CLEAR-LOOP-BLOCK-GUARD: tobisaru" "$LOG")" -eq 10 || { cat "$LOG"; exit 1; }
+        test "$(grep -c "CLEAR-LOOP-BLOCK" "$root/notifications.log")" -eq 1 || { cat "$root/notifications.log"; exit 1; }
+
+        printf "changed: 1\\n" >> "$root/queue/inbox/tobisaru.yaml"
+        record_clear_attempt_or_force_idle tobisaru AUTO-CLEAR || true
+        grep -q "CLEAR-LOOP-BLOCK-REOPEN: tobisaru" "$LOG"
+        grep -q "CLEAR-COUNT: tobisaru cmd=unresolved:tobisaru count=1/3" "$LOG"
+        printf "block_once=1 repeated_guard=10 reopen_on_input_change=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "block_once=1 repeated_guard=10 reopen_on_input_change=1" ]
+}
+
+# test_necessity: a fresh Codex CTX0 pane is already clean, and the same pane
+# generation must not be cleared again after debounce expiry; changed task or
+# inbox input reopens exactly that generation.
+@test "fresh codex CTX0 clear guard reopens only on input generation change" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/clear-ctx0-generation"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        mkdir -p "$root/queue/tasks" "$root/queue/inbox" "$root/state"
+        printf "task:\\n  status: idle\\n" > "$root/queue/tasks/hayate.yaml"
+        printf "messages: []\\n" > "$root/queue/inbox/hayate.yaml"
+        printf "task:\\n  status: idle\\n" > "$root/queue/tasks/saizo.yaml"
+        printf "messages: []\\n" > "$root/queue/inbox/saizo.yaml"
+        printf "task:\\n  status: done\\n" > "$root/queue/tasks/kagemaru.yaml"
+        printf "messages: []\\n" > "$root/queue/inbox/kagemaru.yaml"
+        declare -A PANE_TARGETS LAST_CLEARED CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+        PANE_TARGETS[hayate]=pane-hayate; PANE_TARGETS[saizo]=pane-saizo; PANE_TARGETS[kagemaru]=pane-kagemaru
+        get_context_pct() { printf "%s\\n" "$CTX_NOW"; }
+        cli_type() { printf "codex\\n"; }
+        respawn_recovery_generation() { printf "pane:%s\\n" "$1"; }
+        tmux() { [ "$1" = display-message ] && printf "%s\\n" "$2"; return 0; }
+        cli_profile_get() { [ "$2" = clear_debounce ] && printf "0\\n" || printf "\\n"; }
+        can_send_clear_with_report_gate() { return 0; }
+        safe_send_clear() { CLEAR_COUNT=$((CLEAR_COUNT + 1)); return 0; }
+        log() { printf "%s\\n" "$1" >> "$LOG"; }
+        CLEAR_COUNT=0; CTX_NOW=0
+
+        # Fresh CTX0 with no marker: no clear.  Dirty idle then clears once.
+        _handle_auto_clear hayate 10000
+        for i in 1 2 3 4 5 6 7 8 9 10; do _handle_auto_clear hayate $((10000 + i)); done
+        test "$CLEAR_COUNT" -eq 0
+        CTX_NOW=80
+        _handle_auto_clear hayate 10001
+        test "$CLEAR_COUNT" -eq 1
+        CTX_NOW=0
+        _handle_auto_clear hayate 11801
+        test "$CLEAR_COUNT" -eq 1
+        _handle_auto_clear hayate 30000
+        test "$CLEAR_COUNT" -eq 1
+
+        # Input generation change reopens, while a separate fresh pane stays clean.
+        printf "changed: 1\\n" >> "$root/queue/inbox/hayate.yaml"
+        _handle_auto_clear hayate 30001
+        test "$CLEAR_COUNT" -eq 2
+        _handle_auto_clear saizo 30002
+        test "$CLEAR_COUNT" -eq 2
+
+        # A regular done task that already cleared must also stay terminal for
+        # ten later polls; identity must not depend on an unresolved cmd id.
+        CTX_NOW=80
+        _handle_auto_clear kagemaru 40000
+        test "$CLEAR_COUNT" -eq 3
+        for i in 1 2 3 4 5 6 7 8 9 10; do _handle_auto_clear kagemaru $((40000 + i)); done
+        test "$CLEAR_COUNT" -eq 3
+        printf "fresh_ctx0=0 dirty_once=1 debounce30m_additional=0 input_change_reopen=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "fresh_ctx0=0 dirty_once=1 debounce30m_additional=0 input_change_reopen=1" ]
+}
+
 # test_necessity: process-substitution children inherit the monitor's EXIT
 # trap while collecting timing rows.  Only the owner shell may finish timing
 # and release the owner lease; otherwise the child can recursively spawn the
