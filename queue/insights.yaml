@@ -7790,3 +7790,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260829-070055750-4e3d
+  ts: "2026-08-29T07:00:55+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bza1xda7w task id tool use id toolu 016w8r8g3TDgwrxaNf は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
