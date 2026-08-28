@@ -6661,7 +6661,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T13:40:08+09:00"
 - id: INS-20260828-133055655-bef0
   ts: "2026-08-28T13:30:55+09:00"
   insight: "auto clear 不動作の真因: respawn_recovery_launch_command(scripts/lib/respawn_recovery.sh:7)が launch_cmd 先頭語の絶対パスを要求し、cmd_4409 AC2 で launch_cmd が ${SHOGUN_CODEX_BIN:-codex}(相対)になった後は常に空→ninja_monitor が respawn を実行せず FALLBACK/VERIFY-FAIL を毎 cycle 記録(08-28 216 件)。可搬性(相対化)と復旧経路(絶対要求)の契約不一致。自動化ターゲット: cmd_4409 型の可搬化 cmd の AC に『launch_cmd 消費者(respawn_recovery/agent_respawn/shutsujin)が同じ launch_cmd で起動できる』を含める"
