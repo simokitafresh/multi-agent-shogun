@@ -1333,17 +1333,29 @@ forward_gunshi_review_result_to_active_ninjas() {
 
 record_inbox_event_to_memory_db() {
     local live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
+    local memory_event_agent="$FROM"
     if [ ! -f "$live_insert_script" ]; then
         live_insert_script="$SCRIPT_DIR/scripts/memory_db_live_insert.py"
     fi
 
     [ -f "$live_insert_script" ] || return 0
 
+    # A Codex deploy nudge contains a receiver-only task-safety rule.  It is
+    # not a karo-authored piece of knowledge: storing it with agent=karo
+    # makes the sender recall its own instruction on a later preflight and
+    # re-injects the rule (T122).  Keep the durable inbox row's `from` field
+    # untouched; only the memory event actor is rebound to the ninja that
+    # received the rule.  Ordinary communication retains its sender identity.
+    if [ "$TYPE" = "task_assigned" ] && target_is_ninja "$TARGET" \
+        && printf '%s' "$CONTENT" | grep -qF '現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い'; then
+        memory_event_agent="$TARGET"
+    fi
+
     python3 "$live_insert_script" inbox \
         --message-id "$MSG_ID" \
         --ts "$TIMESTAMP" \
         --target-agent "$TARGET" \
-        --from-agent "$FROM" \
+        --from-agent "$memory_event_agent" \
         --content "$CONTENT" \
         --message-type "$TYPE" \
         --action "$ACTION" \

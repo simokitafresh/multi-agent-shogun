@@ -103,6 +103,69 @@ for entry in data.get('entries', []):
     [ "$(_get_read_status testagent msg_003)" = "true" ]
 }
 
+# test_necessity: an unprocessed shogun task_assigned must stay unread in the
+# commander inbox; otherwise the command can be lost without a durable trace.
+@test "karo self task_assigned without processing evidence is blocked" {
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    printf 'task:\n  status: idle\n' > "$TEST_ROOT/queue/tasks/karo.yaml"
+    cat > "$TEST_ROOT/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- id: msg_shogun_001
+  from: shogun
+  timestamp: '2026-08-28T14:00:00'
+  type: task_assigned
+  content: 'cmd_t122_guard_001 process this task'
+  read: false
+YAML
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_001
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"without task YAML, bulletin, or reply-inbox processing evidence"* ]]
+    grep -q 'read: false' "$TEST_ROOT/queue/inbox/karo.yaml"
+}
+
+# test_necessity: an updated matching Karo task YAML is an accepted processing
+# trace, while the normal explicit-ID/flock path remains the same.
+@test "karo self task_assigned with matching task YAML evidence is allowed" {
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    cat > "$TEST_ROOT/queue/tasks/karo.yaml" <<'YAML'
+task:
+  task_id: cmd_t122_guard_002_normal
+  status: in_progress
+YAML
+    cat > "$TEST_ROOT/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- id: msg_shogun_002
+  from: shogun
+  timestamp: '2026-08-28T14:00:00'
+  type: task_assigned
+  content: 'cmd_t122_guard_002_normal process this task'
+  read: false
+YAML
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_002
+    [ "$status" -eq 0 ]
+    [ "$(_get_read_status karo msg_shogun_002)" = "true" ]
+}
+
+# test_necessity: bulletin processing is an alternate durable trace accepted
+# by the commander guard without changing ninja/normal acknowledgement.
+@test "karo self task_assigned with bulletin evidence is allowed" {
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    printf 'task:\n  status: idle\n' > "$TEST_ROOT/queue/tasks/karo.yaml"
+    cat > "$TEST_ROOT/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- id: msg_shogun_003
+  from: shogun
+  timestamp: '2026-08-28T14:00:00'
+  type: task_assigned
+  content: 'cmd_t122_guard_003 process this task'
+  read: false
+YAML
+    printf 'entries:\n- id: bulletin_t122_003\n  content: cmd_t122_guard_003\n' > "$TEST_ROOT/queue/bulletin_board.yaml"
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_003
+    [ "$status" -eq 0 ]
+    [ "$(_get_read_status karo msg_shogun_003)" = "true" ]
+}
+
 @test "msg_id omission blocks when unread messages exist" {
     _create_inbox testagent
 

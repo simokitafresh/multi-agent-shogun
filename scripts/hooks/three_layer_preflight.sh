@@ -89,13 +89,13 @@ is_git_checkout() {
 }
 
 memory_timeout_fallback() {
-    local query="$1" timeout_seconds="${2:-${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}}" result_file="${3:-/dev/null}"
+    local query="$1" timeout_seconds="${2:-${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}}" result_file="${3:-/dev/null}" target_agent="${4:-}"
     local db_path="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
     local memory_lines="${THREE_LAYER_INJECT_MEMORY_LINES:-5}"
-    timeout "${timeout_seconds}s" python3 - "$db_path" "$query" "$memory_lines" <<'PY' >"$result_file" 2>/dev/null
+    timeout "${timeout_seconds}s" python3 - "$db_path" "$query" "$memory_lines" "$target_agent" <<'PY' >"$result_file" 2>/dev/null
 import base64, datetime, pathlib, re, sqlite3, sys
 
-db_path, query, memory_lines = sys.argv[1:]
+db_path, query, memory_lines, target_agent = sys.argv[1:]
 memory_lines = max(1, int(memory_lines))
 aliases = {"quality_throughput": ["品質合格スループット", "growth_loop"], "growth_loop": ["品質合格スループット", "quality_throughput"], "品質合格スループット": ["quality_throughput", "growth_loop"]}
 candidates = [query.strip()]
@@ -105,14 +105,21 @@ candidates.extend(re.findall(r"[A-Za-z_]{4,}|[一-龥ぁ-んァ-ヶ]{4,}", query
 count, used, ts, top_b64, total = 0, "-", "", "", 0
 with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.5) as conn:
     conn.execute("PRAGMA busy_timeout=500")
+    visibility = ""
+    if target_agent in {"karo", "gunshi", "shogun"}:
+        visibility = " AND (e.target = '' OR e.target IS NULL OR e.target = ? OR e.event_type = 'document')"
     for needle in dict.fromkeys(c[:200] for c in candidates if c.strip()):
         phrase = '"' + needle.replace('"', '""') + '"'
+        row_params = (phrase, target_agent, memory_lines) if visibility else (phrase, memory_lines)
         rows = conn.execute(
             "SELECT e.ts, e.summary FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
-            "WHERE events_fts MATCH ? ORDER BY e.ts DESC LIMIT ?", (phrase, memory_lines)).fetchall()
+            "WHERE events_fts MATCH ?" + visibility + " ORDER BY e.ts DESC LIMIT ?", row_params).fetchall()
         if rows:
             count, ts, used = 1, str(rows[0][0]), needle
-            total_row = conn.execute("SELECT COUNT(*) FROM events_fts WHERE events_fts MATCH ?", (phrase,)).fetchone()
+            total_params = (phrase, target_agent) if visibility else (phrase,)
+            total_row = conn.execute(
+                "SELECT COUNT(*) FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
+                "WHERE events_fts MATCH ?" + visibility, total_params).fetchone()
             total = int(total_row[0]) if total_row else len(rows)
             lines = [f"{r[0]} | {(r[1] or '').strip()[:200]}" for r in rows]
             top_b64 = base64.b64encode("\n".join(lines).encode()).decode()
@@ -261,7 +268,7 @@ sync_semantic_cache() {
 }
 
 batch_index_search() {
-    local query="$1" timeout_seconds="$2" result_file="$3"
+    local query="$1" timeout_seconds="$2" result_file="$3" target_agent="${4:-}"
     local source_db="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
     local read_db="$source_db"
     local cache_path
@@ -280,10 +287,10 @@ batch_index_search() {
     semantic_cache_path="$(resolve_semantic_cache_path "$semantic_index")"
     sync_semantic_cache "$semantic_index" "$semantic_cache_path" 2>/dev/null && semantic_read_path="$semantic_cache_path"
     local memory_lines="${THREE_LAYER_INJECT_MEMORY_LINES:-5}" semantic_lines="${THREE_LAYER_INJECT_SEMANTIC_LINES:-1}"
-    timeout "${timeout_seconds}s" python3 - "$read_db" "$semantic_read_path" "$query" "$use_immutable" "$memory_lines" "$semantic_lines" <<'PY' >"$result_file"
+    timeout "${timeout_seconds}s" python3 - "$read_db" "$semantic_read_path" "$query" "$use_immutable" "$memory_lines" "$semantic_lines" "$target_agent" <<'PY' >"$result_file"
 import base64, datetime, pathlib, re, sqlite3, sys, time
 
-db_path, semantic_path, query, use_immutable, memory_lines, semantic_lines = sys.argv[1:]
+db_path, semantic_path, query, use_immutable, memory_lines, semantic_lines, target_agent = sys.argv[1:]
 memory_lines = max(1, int(memory_lines))
 semantic_lines = max(1, int(semantic_lines))
 aliases = {
@@ -307,18 +314,27 @@ memory_total = semantic_total = 0
 memory_started = time.monotonic()
 try:
     immutable = "&immutable=1" if use_immutable == "1" else ""
+    visibility = ""
+    if target_agent in {"karo", "gunshi", "shogun"}:
+        visibility = " AND (e.target = '' OR e.target IS NULL OR e.target = ? OR e.event_type = 'document')"
     with sqlite3.connect(f"file:{db_path}?mode=ro{immutable}", uri=True, timeout=0.5) as conn:
         conn.execute("PRAGMA busy_timeout=500")
         for needle in candidates:
             phrase = '"' + needle.replace('"', '""') + '"'
+            row_params = (phrase, target_agent, memory_lines) if visibility else (phrase, memory_lines)
             rows = conn.execute(
                 "SELECT e.ts, e.summary FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
-                "WHERE events_fts MATCH ? ORDER BY e.ts DESC LIMIT ?",
-                (phrase, memory_lines),
+                "WHERE events_fts MATCH ?" + visibility + " ORDER BY e.ts DESC LIMIT ?",
+                row_params,
             ).fetchall()
             if rows:
                 memory_count, memory_ts, memory_query = 1, str(rows[0][0]), needle
-                total_row = conn.execute("SELECT COUNT(*) FROM events_fts WHERE events_fts MATCH ?", (phrase,)).fetchone()
+                total_params = (phrase, target_agent) if visibility else (phrase,)
+                total_row = conn.execute(
+                    "SELECT COUNT(*) FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
+                    "WHERE events_fts MATCH ?" + visibility,
+                    total_params,
+                ).fetchone()
                 memory_total = int(total_row[0]) if total_row else len(rows)
                 lines = [f"{ts} | {(summary or '').strip()[:200]}" for ts, summary in rows]
                 memory_top_b64 = base64.b64encode("\n".join(lines).encode()).decode()
@@ -711,6 +727,10 @@ PY
     local memory_top_b64="" semantic_top_b64="" obsidian_top_b64=""
     local memory_total_hits=0 semantic_total_hits=0 obsidian_total_hits=0
     local memory_timed_out=0 semantic_timed_out=0 obsidian_timed_out=0
+    local recall_target=""
+    case "$agent_id" in
+        karo|gunshi|shogun) recall_target="$agent_id" ;;
+    esac
 
     local primary_timeout="${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS:-2.2}" obsidian_timeout
     [[ "$memory_cache_cold" == 1 && -z "${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS+x}" ]] && primary_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-3.5}"
@@ -718,13 +738,21 @@ PY
     [[ "$cold_cache" == 1 ]] && obsidian_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-3.5}"
     if is_git_checkout && [[ "${THREE_LAYER_BATCH_PRIMARY:-1}" == 1 ]]; then
         batch_result="$(mktemp "$EVIDENCE_DIR/.batch-result.XXXXXX")"
-        ( batch_index_search "$search_prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 ) &
+        ( batch_index_search "$search_prompt" "$primary_timeout" "$batch_result" "$recall_target" >/dev/null 2>&1 ) &
         batch_pid=$!
     else
-        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --search "$search_prompt" >/dev/null 2>&1 ) &
+        if [[ -n "$recall_target" ]]; then
+            ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --target "$recall_target" --search "$search_prompt" >/dev/null 2>&1 ) &
+        else
+            ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --search "$search_prompt" >/dev/null 2>&1 ) &
+        fi
         memory_pid=$!
         semantic_raw_output="$EVIDENCE_DIR/.semantic-raw.$$"
-        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$search_prompt" >"$semantic_raw_output" 2>/dev/null ) &
+        if [[ -n "$recall_target" ]]; then
+            ( SEMANTIC_MEMORY_DB_TARGET="$recall_target" timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$search_prompt" >"$semantic_raw_output" 2>/dev/null ) &
+        else
+            ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$search_prompt" >"$semantic_raw_output" 2>/dev/null ) &
+        fi
         semantic_pid=$!
     fi
     # Root cause fix: rg fs-walk on 9P (/mnt/c) times out under IO saturation
@@ -762,7 +790,7 @@ PY
             if rebuild_memory_cache_sync "$source_db" "$memory_cache" "$boot_id" "$failed_cache_generation"; then
                 batch_result="$(mktemp "$EVIDENCE_DIR/.batch-retry.XXXXXX")"
                 local retry_rc=0
-                batch_index_search "$search_prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 || retry_rc=$?
+                batch_index_search "$search_prompt" "$primary_timeout" "$batch_result" "$recall_target" >/dev/null 2>&1 || retry_rc=$?
                 if [[ -s "$batch_result" ]]; then
                     IFS=$'\t' read -r memory_rc semantic_rc memory_count semantic_count memory_query semantic_query memory_ts semantic_ts memory_wall_ms semantic_wall_ms memory_top_b64 semantic_top_b64 memory_total_hits semantic_total_hits <"$batch_result"
                 else
@@ -834,7 +862,7 @@ PY
     local fallback_memory_result="" fallback_semantic_result="" fallback_obsidian_result=""
     if (( remaining_ms > 0 )); then
         fallback_seconds="$(awk -v ms="$remaining_ms" 'BEGIN { printf "%.3f", ms / 1000 }')"
-        [[ "$memory_rc" == 124 ]] && { fallback_memory_result="$(mktemp "$EVIDENCE_DIR/.memory-fallback.XXXXXX")"; memory_timeout_fallback "$search_prompt" "$fallback_seconds" "$fallback_memory_result" & fallback_memory_pid=$!; }
+        [[ "$memory_rc" == 124 ]] && { fallback_memory_result="$(mktemp "$EVIDENCE_DIR/.memory-fallback.XXXXXX")"; memory_timeout_fallback "$search_prompt" "$fallback_seconds" "$fallback_memory_result" "$recall_target" & fallback_memory_pid=$!; }
         [[ "$semantic_rc" == 124 ]] && { fallback_semantic_result="$(mktemp "$EVIDENCE_DIR/.semantic-fallback.XXXXXX")"; text_index_timeout_fallback "$search_prompt" "$fallback_seconds" "$fallback_semantic_result" "$semantic_index" & fallback_semantic_pid=$!; }
         [[ "$obsidian_rc" == 124 ]] && { fallback_obsidian_result="$(mktemp "$EVIDENCE_DIR/.obsidian-fallback.XXXXXX")"; text_index_timeout_fallback "$obsidian_query" "$fallback_seconds" "$fallback_obsidian_result" "$ROOT/context/semantic-map.md" "$ROOT/docs" & fallback_obsidian_pid=$!; }
         if [[ -n "$fallback_memory_pid" ]]; then wait "$fallback_memory_pid" && memory_rc=0 || memory_rc=$?; [[ -s "$fallback_memory_result" ]] && IFS=$'\t' read -r memory_count memory_query _memory_source memory_ts memory_top_b64 memory_total_hits <"$fallback_memory_result"; rm -f "$fallback_memory_result"; fi

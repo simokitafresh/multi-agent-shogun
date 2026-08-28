@@ -187,6 +187,131 @@ PY
     [ -n "$MSG_ID" ] || return 0
 }
 
+# A commander inbox is not governed by the ninja-only task_id filter.  In
+# particular, a shogun task_assigned row must remain visible until Karo has
+# left a durable processing trace.  Check the trace while holding the same
+# inbox lock as the mark-read rewrite so a concurrent writer cannot make an
+# unprocessed command appear handled (T122).
+karo_task_assignment_rows() {
+    local inbox_file="$1" id_file="$2"
+    awk -v id_file="$id_file" '
+        function trim(value) {
+            gsub(/^[ \t'\''"]+/, "", value)
+            gsub(/[ \t'\''"]+$/, "", value)
+            return value
+        }
+        function reset_record() {
+            delete record
+            record_count=0
+            record_id=""
+            record_from=""
+            record_type=""
+            record_read=""
+            raw_record=""
+        }
+        function flush_record(    i,line,value) {
+            if (record_count == 0) return
+            for (i=1; i<=record_count; i++) {
+                line=record[i]
+                if (line ~ /^- id:/) {
+                    value=line
+                    sub(/^- id:[[:space:]]*/, "", value)
+                    record_id=trim(value)
+                } else if (line ~ /^  id:/) {
+                    value=line
+                    sub(/^  id:[[:space:]]*/, "", value)
+                    record_id=trim(value)
+                } else if (line ~ /^  from:/) {
+                    value=line; sub(/^  from:[[:space:]]*/, "", value); record_from=trim(value)
+                } else if (line ~ /^  type:/) {
+                    value=line; sub(/^  type:[[:space:]]*/, "", value); record_type=trim(value)
+                } else if (line ~ /^  read:/) {
+                    value=line; sub(/^  read:[[:space:]]*/, "", value); record_read=trim(value)
+                }
+            }
+            if ((record_id in wanted) && record_from == "shogun" && record_type == "task_assigned" && record_read == "false") {
+                gsub(/[[:space:]]+/, " ", raw_record)
+                gsub(/\t/, " ", raw_record)
+                print record_id "\t" raw_record
+            }
+            reset_record()
+        }
+        BEGIN {
+            while ((getline wanted_id < id_file) > 0) if (wanted_id != "") wanted[wanted_id]=1
+            close(id_file)
+            reset_record()
+        }
+        /^- / {
+            flush_record()
+            record[++record_count]=$0
+            raw_record=$0
+            next
+        }
+        {
+            if (record_count > 0) {
+                record[++record_count]=$0
+                raw_record=raw_record " " $0
+            }
+        }
+        END { flush_record() }
+    ' "$inbox_file"
+}
+
+karo_task_assignment_has_evidence() {
+    local message_id="$1" raw_record="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/karo.yaml"
+    local evidence_file cmd_id cmd_ids
+
+    # A task YAML update is valid only when it names the assigned command and
+    # has left Karo in a non-idle lifecycle state.  The pre-existing idle task
+    # file therefore cannot accidentally authorize acknowledgement.
+    cmd_ids="$(printf '%s' "$raw_record" | grep -oE 'cmd_[A-Za-z0-9_]+' | sort -u || true)"
+    if [ -f "$task_file" ] && [ -n "$cmd_ids" ] \
+        && grep -qE '^  status:[[:space:]]*(acknowledged|in_progress|done|failed)[[:space:]]*$' "$task_file"; then
+        while IFS= read -r cmd_id; do
+            [ -n "$cmd_id" ] || continue
+            if grep -qF "$cmd_id" "$task_file"; then
+                return 0
+            fi
+        done <<< "$cmd_ids"
+    fi
+
+    # Karo's commander completion is normally recorded on the bulletin board;
+    # a direct reply in the shogun inbox is also an accepted durable trace.
+    for evidence_file in \
+        "$SCRIPT_DIR/queue/bulletin_board.yaml" \
+        "$SCRIPT_DIR/queue/inbox/shogun.yaml"; do
+        [ -f "$evidence_file" ] || continue
+        if grep -qF "$message_id" "$evidence_file"; then
+            return 0
+        fi
+        while IFS= read -r cmd_id; do
+            [ -n "$cmd_id" ] || continue
+            if grep -qF "$cmd_id" "$evidence_file"; then
+                return 0
+            fi
+        done <<< "$cmd_ids"
+    done
+    return 1
+}
+
+karo_guard_unprocessed_shogun_assignments() {
+    [ "$AGENT_ID" = "karo" ] || return 0
+    local rows_file="/tmp/.imr_karo_task_rows_$$"
+    karo_task_assignment_rows "$INBOX" "$ID_LIST_FILE" > "$rows_file"
+    local message_id raw_record
+    while IFS=$'\t' read -r message_id raw_record; do
+        [ -n "$message_id" ] || continue
+        if ! karo_task_assignment_has_evidence "$message_id" "$raw_record"; then
+            rm -f "$rows_file"
+            echo "BLOCK: Karo cannot mark shogun task_assigned msg_id=$message_id read without task YAML, bulletin, or reply-inbox processing evidence" >&2
+            return 2
+        fi
+    done < "$rows_file"
+    rm -f "$rows_file"
+    return 0
+}
+
 if [ "$AUTO_INFO_MODE" = true ]; then
     auto_digest_info_messages || exit $?
     [ -n "$MSG_ID" ] || { echo "[inbox_mark_read] auto-info eligible=0"; exit 0; }
@@ -309,6 +434,8 @@ while [ $attempt -lt $max_attempts ]; do
     printf '%s\n' "${MSG_IDS[@]}" | awk 'NF && !seen[$0]++' > "$ID_LIST_FILE"
     if (
         flock -w 5 200 || exit 1
+
+        karo_guard_unprocessed_shogun_assignments || exit 2
 
         # Fast early exit: no unread messages in file
         if ! grep -q "^  read:[[:space:]]*false[[:space:]]*$" "$INBOX" 2>/dev/null; then
