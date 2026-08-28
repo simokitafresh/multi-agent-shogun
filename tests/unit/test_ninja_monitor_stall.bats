@@ -40,6 +40,118 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
+# test_necessity: respawn exit code and pane stderr are the observable failure
+# contract, while successor handoff is a semantic success and must not inflate
+# the failure denominator.  The forced-idle invariant is that only low-CTX
+# panes may be moved to idle after the clear-loop limit.
+# regression_justification: T137 reproduced node-missing respawn as a generic
+# failure and forced-idle at high CTX; this fixture preserves both boundaries.
+@test "T137 respawn failure reasons and CTX-gated forced idle are classified" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+T="$BATS_TEST_TMPDIR"
+SCRIPT_DIR="$T"
+STATE_DIR="$T/state"
+LOG="$T/monitor.log"
+RESPAWN_METRICS_FILE="$T/respawn.metrics"
+RESPAWN_BACKOFF_FIRST_SEC=0
+RESPAWN_BACKOFF_SECOND_SEC=0
+mkdir -p "$T/config" "$T/queue/tasks" "$T/queue/reports" "$STATE_DIR"
+mkdir -p "$T/scripts"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$T/scripts/inbox_write.sh"
+chmod +x "$T/scripts/inbox_write.sh"
+cat > "$T/config/settings.yaml" <<YAML
+token_budget:
+  max_clear_per_cmd: 1
+YAML
+: > "$LOG"
+
+log() { printf "%s\n" "$1" >> "$LOG"; }
+declare -gA PANE_TARGETS
+PANE_TARGETS[hayate]=pane-hayate
+PANE_TARGETS[kotaro]=pane-kotaro
+CTX_VALUE=0
+get_context_pct() { printf "%s\n" "$CTX_VALUE"; }
+RESPAWN_CASE=success
+tmux() {
+    case "$1" in
+        respawn-pane)
+            case "$RESPAWN_CASE" in
+                shell_failure) printf "%s\n" "shell failed" >&2; return 126 ;;
+                *) return 0 ;;
+            esac
+            ;;
+        capture-pane)
+            case "$RESPAWN_CASE" in
+                node_missing) printf "%s\n" "/usr/bin/env: node: No such file or directory" ;;
+                successor_active) printf "%s\n" "HOT-RELOAD: successor active generation handoff" ;;
+                *) return 0 ;;
+            esac
+            ;;
+        *) return 0 ;;
+    esac
+}
+export -f tmux
+respawn_recovery_ready() { [ "$RESPAWN_CASE" = success ]; }
+
+RESPAWN_CASE=success
+_respawn_with_cli_verification pane-hayate hayate /bin/true TEST-SUCCESS
+RESPAWN_CASE=shell_failure
+if _respawn_with_cli_verification pane-hayate hayate /bin/true TEST-SHELL; then exit 1; fi
+RESPAWN_CASE=node_missing
+if _respawn_with_cli_verification pane-hayate hayate /bin/true TEST-NODE; then exit 1; fi
+RESPAWN_CASE=successor_active
+_respawn_with_cli_verification pane-hayate hayate /bin/true TEST-SUCCESSOR
+
+test "$(cat "$RESPAWN_METRICS_FILE")" = "4 2"
+grep -q "TEST-SHELL-FAILURE: hayate exit_code=126 reason=shell failed" "$LOG"
+grep -q "TEST-NODE-FAILURE: hayate exit_code=0 reason=/usr/bin/env: node: No such file or directory" "$LOG"
+grep -q "TEST-SUCCESSOR-SEMANTIC-SUCCESS: hayate successor/generation handoff owns pane; failure count unchanged" "$LOG"
+
+cat > "$T/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_high_ctx
+YAML
+CTX_VALUE=80
+record_clear_attempt_or_force_idle hayate HIGH-CTX cmd_high_ctx pane-hayate || true
+if record_clear_attempt_or_force_idle hayate HIGH-CTX cmd_high_ctx pane-hayate; then exit 1; fi
+test "$(yaml_field_get "$T/queue/tasks/hayate.yaml" status)" = done
+grep -q "CLEAR-LOOP-BLOCK-DEFERRED: hayate cmd=cmd_high_ctx.*ctx=80% threshold=20%" "$LOG"
+
+cat > "$T/queue/tasks/saizo.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_unknown_ctx
+YAML
+PANE_TARGETS[saizo]=pane-saizo
+CTX_VALUE=unknown
+record_clear_attempt_or_force_idle saizo UNKNOWN-CTX cmd_unknown_ctx pane-saizo || true
+if record_clear_attempt_or_force_idle saizo UNKNOWN-CTX cmd_unknown_ctx pane-saizo; then exit 1; fi
+test "$(yaml_field_get "$T/queue/tasks/saizo.yaml" status)" = done
+grep -q "CLEAR-LOOP-BLOCK-DEFERRED: saizo cmd=cmd_unknown_ctx.*ctx=unknown% threshold=20%" "$LOG"
+
+cat > "$T/queue/tasks/kotaro.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_low_ctx
+YAML
+CTX_VALUE=10
+record_clear_attempt_or_force_idle kotaro LOW-CTX cmd_low_ctx pane-kotaro || true
+if record_clear_attempt_or_force_idle kotaro LOW-CTX cmd_low_ctx pane-kotaro; then exit 1; fi
+test "$(yaml_field_get "$T/queue/tasks/kotaro.yaml" status)" = idle
+grep -q "CLEAR-LOOP-BLOCK: kotaro cmd=cmd_low_ctx count=2/1 forced_idle reason=LOW-CTX ctx=10% threshold=20%" "$LOG"
+printf "respawn_total=4 respawn_success=2 high_ctx_idle=0 low_ctx_idle=1\n"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"respawn_total=4 respawn_success=2 high_ctx_idle=0 low_ctx_idle=1"* ]]
+}
+
 # test_necessity: a failed task may regain the review lane only for a newly
 # fingerprinted completed PASS report with all binary checks yes; incomplete,
 # failed, negative-check, and already-requested generations stay silent.
@@ -554,6 +666,47 @@ wait "$maintenance_pid"
     fi
     [ "$status" -eq 0 ]
     [[ "$output" == successor=1\ old_generation_alive=1\ elapsed_ms=* ]]
+}
+
+# test_necessity: changes to a sourced recovery library must restart the
+# monitor, and the successor must source that same library generation.
+# regression_justification: respawn_recovery.sh was absent from WATCHED_DEPS;
+# updating it left the old monitor PID running with stale recovery behavior.
+@test "hot-reload watches respawn recovery library and successor sources it" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -lc '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/respawn-recovery-dep"
+        mkdir -p "$root/scripts/lib" "$root/state"
+        cp "$PROJECT_ROOT/scripts/lib/respawn_recovery.sh" "$root/scripts/lib/respawn_recovery.sh"
+        script_path="$root/ninja_monitor.sh"
+        printf "%s\n" "#!/usr/bin/env bash" "source \"\$RESPAWN_RECOVERY_FIXTURE_LIB\"" "printf \"successor_generation=%s lib_loaded=%s\\n\" \"\$NINJA_MONITOR_GENERATION\" \"\$(declare -F respawn_recovery_launch_command >/dev/null && printf yes)\"" > "$script_path"
+        chmod +x "$script_path"
+
+        SCRIPT_PATH="$script_path"
+        SCRIPT_HASH="$(stat --printf="%Y" "$script_path")"
+        STARTUP_TIME=0
+        MIN_UPTIME=0
+        WATCHED_DEPS=("$root/scripts/lib/respawn_recovery.sh")
+        DEPS_HASH="$(compute_deps_hash)"
+        NINJA_MONITOR_GENERATION="successor-generation"
+        RESPAWN_RECOVERY_FIXTURE_LIB="$root/scripts/lib/respawn_recovery.sh"
+        export SCRIPT_PATH SCRIPT_HASH STARTUP_TIME MIN_UPTIME WATCHED_DEPS DEPS_HASH
+        export NINJA_MONITOR_GENERATION RESPAWN_RECOVERY_FIXTURE_LIB
+        log() { printf "%s\n" "$1"; }
+        dep_mtime="$(stat --printf="%Y" "$root/scripts/lib/respawn_recovery.sh")"
+        touch -d "@$((dep_mtime + 1))" "$root/scripts/lib/respawn_recovery.sh"
+
+        output="$(check_script_update)"
+        [[ "$output" == *"AUTO-RESTART: Change detected (deps)"* ]]
+        [[ "$output" == *"successor_generation=successor-generation lib_loaded=yes"* ]]
+        printf "dependency_change=1 successor_source=1\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "dependency_change=1 successor_source=1" ]
 }
 
 # test_necessity: owner/pid is one generation-fenced lease; three consecutive
