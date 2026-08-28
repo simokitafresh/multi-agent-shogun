@@ -7578,3 +7578,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-011922325-ad29
+  ts: "2026-08-29T01:19:22+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[パッチ型render_履歴腐敗]] は既存aliasesに一致なし。類似概念TOP3: cdp_browser_capability(CDP(ブラウザ操作能力); alias=note_draft; score=2.9) / lesson_lifecycle(教訓ライフサイクル管理; alias=related_lessons; score=2.8) / dmsignal_operations(DM-Signal運用; alias=Render運用; score=2.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
