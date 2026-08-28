@@ -7451,3 +7451,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T23:24:27+09:00"
+- id: INS-20260828-234415770-9d0c
+  ts: "2026-08-28T23:44:15+09:00"
+  insight: "[[Codex inbox優先ガードと処理証跡ガードの相互待ちを解消し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: multi_cli_event_commonization(multi-CLI hook/event共通化; alias=Codex SessionStart; score=19.8) / codex_goal_mode(Codex /goal 自律目標モード; alias=Codex goal; score=19.2) / infra_design_intent(インフラ設計意図カタログ; alias=codex delivery unverified; score=13.8)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
