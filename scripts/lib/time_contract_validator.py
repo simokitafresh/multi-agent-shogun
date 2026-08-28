@@ -63,7 +63,58 @@ def _nonnegative_int(value: object) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
 
+# 殿裁定 2026-08-29 01:25『配備スキル=忍者への指示や AC の構築・内容が我らのスタイルにフィットしているかも含まれる』
+# 今日の家老 task 3 本で AC 二値性 4/6 行欠落・速度へのつながり 3/3 欠落を実測。家老の判断でなく入口で強制する。
+# 対象=task YAML(task_type を持つ entry)のみ。偵察系(recon/scout/recon2)は AC の二値・報告禁止を免除(finding が成果)。
+STYLE_SPEED_LINK_ERROR = (
+    "task YAML requires speed_link (1 line: which mechanical wait this unit removes, e.g. "
+    "'speed_link: fin_c の bats 再走 2-5 分/件を 0') — 殿裁定 2026-08-26 速度4則(3)"
+)
+STYLE_BINARY_AC_ERROR = "acceptance_criteria must be binary (each description carries a verifiable token such as 0件/=/以下/以上/PASS/FAIL0/一致/実在/BLOCK): "
+STYLE_REPORT_ONLY_AC_ERROR = "acceptance_criteria must not end at reporting/measuring only (『報告する/再測定する/差異を報告』は成果ではない=洗脳#6); write the binary outcome the report must show: "
+_BINARY_TOKEN_RE = re.compile(
+    r"(0\s*(件|行|本|回|個)|[0-9]+\s*(件|行|本|回|個|秒|ms|分|%)\s*(以下|以上|未満|超)?|=|一致|不一致|同一|実在|存在|PASS|FAIL\s*0|FAIL0|SKIP\s*0|SKIP0|BLOCK|CLEAR|idle|0\s*で|ゼロ|全件|100%|≤|≥|<|>)",
+    re.IGNORECASE,
+)
+_REPORT_ONLY_RE = re.compile(r"(報告する|報告せよ|再測定し|計測し|差異を報告|を記録する|一覧化する|洗い出す|調査する)\s*$")
+_RECON_TYPES = {"recon", "scout", "recon2", "investigation", "survey"}
+# 自動生成 lane(reflux=exact / ci_fix)は speed_link を持たない(機械起票)。人(家老)が起票する型だけ必須。
+_SPEED_LINK_TYPES = {"hotfix", "karo_hotfix", "impl", "implement", "full", "normal", "fix", "enhance", "refactor"}
+
+
+def _style_hits(entry: dict) -> list[str]:
+    if "task_type" not in entry:
+        return []
+    task_type = str(entry.get("task_type") or "").strip().lower()
+    hits: list[str] = []
+    speed = str(entry.get("speed_link") or "").strip()
+    if task_type in _SPEED_LINK_TYPES and (not speed or speed.lower() in NULLISH_REASONS):
+        hits.append(STYLE_SPEED_LINK_ERROR)
+    if task_type in _RECON_TYPES:
+        return hits
+    acs = entry.get("acceptance_criteria")
+    items: list[tuple[str, str]] = []
+    if isinstance(acs, list):
+        for item in acs:
+            if isinstance(item, dict):
+                items.append((str(item.get("id") or "AC?"), str(item.get("description") or "")))
+            elif isinstance(item, str):
+                items.append(("AC?", item))
+    elif isinstance(acs, dict):
+        items = [(str(k), str(v)) for k, v in acs.items()]
+    non_binary = [label for label, text in items if text and not _BINARY_TOKEN_RE.search(text)]
+    if non_binary:
+        hits.append(STYLE_BINARY_AC_ERROR + ", ".join(non_binary))
+    report_only = [label for label, text in items if text and _REPORT_ONLY_RE.search(text.strip()) and not re.search(r"(0\s*(件|行)|PASS|FAIL\s*0|一致|=)", text)]
+    if report_only:
+        hits.append(STYLE_REPORT_ONLY_AC_ERROR + ", ".join(report_only))
+    return hits
+
+
 def validate(entry: dict, *, allow_missing_estimated: bool = False) -> str:
+    style = _style_hits(entry)
+    if style:
+        raise ValueError("STYLE: " + " | ".join(style))
     estimated = entry.get("estimated_minutes")
     if allow_missing_estimated and estimated in (None, ""):
         return "PASS estimated_minutes=not_declared"

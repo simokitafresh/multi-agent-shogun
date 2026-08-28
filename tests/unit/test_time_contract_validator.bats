@@ -125,3 +125,21 @@ valid_split() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"long-runtime exception"* ]]
 }
+
+# test_necessity: 家老起票 task(hotfix)は speed_link 1 行と二値 AC を欠くと入口で BLOCK され、家老の判断に依らず我らの型が強制される(殿裁定 2026-08-29 01:25)。
+@test "style: hotfix task は speed_link 欠落で BLOCK" {
+    { printf '%s\n' "task:" "    task_type: hotfix" "    estimated_minutes: 10" "    acceptance_criteria:" "      - {id: AC1, description: guard の BLOCK 行が 0 件}"; } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -ne 0 ]; [[ "$output" == *"speed_link"* ]]
+}
+@test "style: 二値トークンの無い AC と報告のみ AC は BLOCK" {
+    { printf '%s\n' "task:" "    task_type: hotfix" "    speed_link: fin_c の再走 2 分/件を切る" "    estimated_minutes: 10" "    acceptance_criteria:" "      - {id: AC1, description: 現状を一次再測定し差異を報告する}" "      - {id: AC2, description: 動作を改善する}"; } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -ne 0 ]; [[ "$output" == *"binary"* ]]; [[ "$output" == *"AC2"* ]]; [[ "$output" == *"reporting"* ]]; [[ "$output" == *"AC1"* ]]
+}
+@test "style: 型どおりの hotfix と自動 lane(exact/ci_fix) は PASS" {
+    { printf '%s\n' "task:" "    task_type: hotfix" "    speed_link: deploy 1 件の未計測 18s を名指す" "    estimated_minutes: 10" "    acceptance_criteria:" "      - {id: AC1, description: TASK_MUTATION_PHASE 合計と wall の差が 1000ms 以下}"; } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"; [ "$status" -eq 0 ]
+    { printf '%s\n' "task:" "    task_type: exact" "    estimated_minutes: 10" "    acceptance_criteria:" "      - {id: AC1, description: insight を適用し bats FAIL0}"; } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"; [ "$status" -eq 0 ]
+}
