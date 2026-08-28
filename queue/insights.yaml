@@ -7592,3 +7592,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-012009567-e412
+  ts: "2026-08-29T01:20:09+09:00"
+  insight: "[[artifactのレスポンシブデザインが崩れている]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactのレスポンシブデザインが崩れている。直そう。内容が冗長になっている。覚醒して再構築せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
