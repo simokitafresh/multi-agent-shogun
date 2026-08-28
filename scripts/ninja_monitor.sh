@@ -478,6 +478,176 @@ log() {
     printf '[%(%Y-%m-%d %H:%M:%S)T] %s\n' -1 "$1" >> "$LOG"
 }
 
+# Production observations are monitor-owned. Deployment publishes one JSON
+# (also valid YAML) contract per command; this cycle check evaluates it after
+# the declared window and never reads or mutates worker task state.
+check_production_proofs() {
+    local proof_dir="${NINJA_MONITOR_PROOF_DIR:-$SCRIPT_DIR/queue/proofs}"
+    local state_file="${NINJA_MONITOR_PROOF_STATE_FILE:-$STATE_DIR/ninja_monitor_production_proof.tsv}"
+    local metrics_file="${NINJA_MONITOR_PROOF_METRICS_FILE:-$SCRIPT_DIR/logs/gate_metrics.log}"
+    local proof_file proof_sha contract window log_name predicate published_at age log_file
+    local cmd_id result reason lock_fd metrics_lock_fd grep_rc
+
+    [ -d "$proof_dir" ] || return 0
+    mkdir -p "${state_file%/*}" "${metrics_file%/*}" 2>/dev/null || return 0
+
+    for proof_file in "$proof_dir"/*.yaml; do
+        [ -f "$proof_file" ] || continue
+        proof_sha=$(sha256sum "$proof_file" 2>/dev/null | awk '{print $1}')
+        [[ "$proof_sha" =~ ^[0-9a-f]{64}$ ]] || continue
+
+        # Parsing is bounded to the proof file and rejects malformed data
+        # before it can produce a misleading PASS.
+        contract=$(python3 - "$proof_file" <<'PY'
+import sys
+import yaml
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as handle:
+        value = yaml.safe_load(handle)
+except (OSError, yaml.YAMLError):
+    raise SystemExit(1)
+if not isinstance(value, dict):
+    raise SystemExit(1)
+cmd_id = str(value.get("cmd_id") or "").strip()
+if not cmd_id:
+    raise SystemExit(1)
+window = value.get("observation_window_seconds", 0)
+if isinstance(window, bool):
+    raise SystemExit(1)
+try:
+    window = int(window)
+except (TypeError, ValueError):
+    raise SystemExit(1)
+if window < 0:
+    raise SystemExit(1)
+log_name = str(value.get("log_name") or "ninja_monitor.log").strip()
+predicate = str(value.get("predicate") or "").strip()
+checks = value.get("checks")
+if isinstance(checks, list) and checks:
+    for check in checks:
+        if not isinstance(check, dict):
+            raise SystemExit(1)
+        check_window = check.get("observation_window_seconds", window)
+        try:
+            check_window = int(check_window)
+        except (TypeError, ValueError):
+            raise SystemExit(1)
+        if check_window < 0:
+            raise SystemExit(1)
+        if not str(check.get("predicate") or "").strip():
+            raise SystemExit(1)
+        if not str(check.get("log_name") or "").strip():
+            raise SystemExit(1)
+    if not predicate:
+        predicate = str(checks[0].get("predicate") or "").strip()
+    if log_name == "ninja_monitor.log" and checks[0].get("log_name"):
+        log_name = str(checks[0]["log_name"]).strip()
+print("\t".join((cmd_id, str(window), log_name, predicate)))
+PY
+        ) || contract=""
+
+        IFS=$'\t' read -r cmd_id window log_name predicate <<< "$contract" || true
+        reason=""
+        if [[ ! "$cmd_id" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+            cmd_id="$(basename "$proof_file" .yaml)"
+            reason="invalid_proof"
+            window=0
+            log_name=""
+            predicate=""
+        fi
+        if [[ ! "$window" =~ ^[0-9]+$ ]]; then
+            reason="invalid_window"
+            window=0
+        fi
+        published_at=$(stat -c %Y "$proof_file" 2>/dev/null || true)
+        if [[ ! "$published_at" =~ ^[0-9]+$ ]]; then
+            reason="invalid_proof_time"
+            published_at=0
+        fi
+        age=$((EPOCHSECONDS - published_at))
+        (( age >= window )) || continue
+
+        exec {lock_fd}>"${state_file}.lock" || continue
+        if ! flock -n "$lock_fd"; then
+            eval "exec ${lock_fd}>&-"
+            continue
+        fi
+        if awk -F '\t' -v cmd="$cmd_id" -v fingerprint="$proof_sha" \
+            '$1 == cmd && $2 == fingerprint { found=1; exit } END { exit(found ? 0 : 1) }' \
+            "$state_file" 2>/dev/null; then
+            flock -u "$lock_fd"
+            eval "exec ${lock_fd}>&-"
+            continue
+        fi
+
+        result="FAIL"
+        reason="${reason:-invalid_proof}"
+        if [ -n "$log_name" ] && [ -n "$predicate" ]; then
+            if [[ "$log_name" = /* ]]; then
+                log_file="$log_name"
+            elif [[ "$log_name" == *..* ]]; then
+                log_file=""
+                reason="unsafe_log_path"
+            elif [[ "$log_name" == */* ]]; then
+                log_file="$SCRIPT_DIR/$log_name"
+            else
+                log_file="$SCRIPT_DIR/logs/$log_name"
+            fi
+            if [ -n "$log_file" ] && [ ! -f "$log_file" ]; then
+                reason="log_missing"
+            elif [ -n "$log_file" ]; then
+                if grep -E -q -- "$predicate" "$log_file" 2>/dev/null; then
+                    result="PASS"
+                    reason="predicate_match"
+                else
+                    grep_rc=0
+                    grep -E -q -- "$predicate" "$log_file" 2>/dev/null || grep_rc=$?
+                    if [ "$grep_rc" -eq 2 ]; then
+                        reason="predicate_invalid"
+                    else
+                        reason="predicate_mismatch"
+                    fi
+                fi
+            fi
+        fi
+
+        if [ "$result" = "FAIL" ]; then
+            log "PRODUCTION-PROOF $cmd_id FAIL reason=$reason" || {
+                flock -u "$lock_fd"
+                eval "exec ${lock_fd}>&-"
+                continue
+            }
+        else
+            log "PRODUCTION-PROOF $cmd_id PASS" || {
+                flock -u "$lock_fd"
+                eval "exec ${lock_fd}>&-"
+                continue
+            }
+        fi
+        exec {metrics_lock_fd}>"${metrics_file}.lock" || {
+            flock -u "$lock_fd"
+            eval "exec ${lock_fd}>&-"
+            continue
+        }
+        if flock -x -w 5 "$metrics_lock_fd"; then
+            printf '%s\t%s\tINFO\tproduction_proof=%s reason=%s\n' \
+                "$(date -Iseconds)" "$cmd_id" "$result" "$reason" >> "$metrics_file"
+            flock -u "$metrics_lock_fd"
+            eval "exec ${metrics_lock_fd}>&-"
+        else
+            eval "exec ${metrics_lock_fd}>&-"
+            flock -u "$lock_fd"
+            eval "exec ${lock_fd}>&-"
+            continue
+        fi
+        printf '%s\t%s\t%s\t%s\n' "$cmd_id" "$proof_sha" "$result" "$EPOCHSECONDS" >> "$state_file"
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+    done
+    return 0
+}
+
 check_disk_space_watch() {
     local measurement status available_kb warn_gb danger_gb mount_path free_gb message now
     local state_file="${DISK_WATCH_STATE_FILE:-$STATE_DIR/shogun_disk_space_watch.last}"
@@ -13500,6 +13670,9 @@ while true; do
 
     # ═══ CI赤検知チェック（5分間隔 cmd_715） ═══
     _ninja_monitor_phase_call lifecycle disk_space_watch check_disk_space_watch
+
+    # ═══ 本番proof評価（観測窓満了後、task YAML非接触） ═══
+    _ninja_monitor_phase_call lifecycle production_proofs check_production_proofs
 
     if [ $((cycle % 15)) -eq 0 ]; then
         _ninja_monitor_phase_call lifecycle ci_status_check bash "$SCRIPT_DIR/scripts/ci_status_check.sh" 2>>"$SCRIPT_DIR/logs/ci_status_check.log" || true
