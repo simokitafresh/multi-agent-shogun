@@ -2508,7 +2508,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_reserved_path_source_identity"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象を確認。現行 scripts/deploy_task.sh:381-553 の reset_stale_fields は _STALE_RESET_DONE=1 を設定するが、最終段階での実行済み強制検査は rg 結果0件。既存の source identity 実装は commit 4e5ceace2 で確認したが、候補の追加防御は未実装。今回のscopeは queue/insights.yaml のみのためコード修正は行わず、deploy_task 最終段階で _STALE_RESET_DONE=1 を必須検査するcmd起票を decision_candidate として整理した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-013520112-64a9;primary=scripts/deploy_task.sh:381-553,11380-11393;rg=_STALE_RESET_DONE occurrences=1 assignment/0 enforcement;source_commit=4e5ceace2ba9fa9e6f3cee81fd80a89fafa18066;semantic=docs/semantic-index/index.md:8285-8286,10057;memory=events query reserved_path_source_identity;decision_candidate=deploy_task final-stage STALE_RESET_DONE fail-closed check"
+  resolved_at: "2026-08-29T01:14:07+09:00"
 - id: INS-20260823-014836994-3325
   ts: "2026-08-23T01:48:36+09:00"
   insight: "[[自然言語regexによるlane判定を削除し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: saxo_openapi_excel(Saxo Bank OpenAPI for Excel; alias=Excel Trading; score=2.9) / gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTの根因を調査し; score=2.9) / dmsignal_operations(DM-Signal運用; alias=DM Signalの実precommit経路からruff自動fixを除去し; score=2.9)。既存概念aliasesへの自動昇格候補"
