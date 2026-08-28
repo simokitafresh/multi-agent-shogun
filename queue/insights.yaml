@@ -7060,3 +7060,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-182143729-6fd1
+  ts: "2026-08-28T18:21:43+09:00"
+  insight: "[[T137 T136 T129について説明してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T137 / T136 / T129について説明してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
