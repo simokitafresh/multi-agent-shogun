@@ -6827,3 +6827,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-144652633-720d
+  ts: "2026-08-28T14:46:52+09:00"
+  insight: "[[artifact auto react Auto replied to comment thread on Artifa]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifact-auto-react Auto-replied to comment thread on Artifact: \"将軍 全体状況マップ\" …"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
