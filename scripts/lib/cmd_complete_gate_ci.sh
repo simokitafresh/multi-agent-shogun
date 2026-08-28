@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # C6-02: Keep the result of the command's target checks distinct from the
 # repository-wide workflow result.  This small pure evaluator is also exposed
 # to fixtures so the fail-closed truth table cannot drift with gh output.
