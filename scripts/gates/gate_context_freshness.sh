@@ -313,7 +313,19 @@ auto_close_source_equivalent() {
             "project=${project} source_commit=${latest_hash} のsetter失敗を解消して再実行せよ: ${setter_output//$'\n'/; }"
         return 1
     fi
-    if ! BULLETIN_AUTOGEN=1 BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" \
+    local compact_output
+    if ! compact_output="$(compact_source_equivalent_markers "$rel_path" "$latest_hash" 2>&1)"; then
+        emit_actionable \
+            "BLOCK: ${rel_path} (source_equivalent marker compaction failed)" \
+            "source_equivalent markerを最新1行へcompactできないため、context markerのlockと形式を確認せよ: ${compact_output//$'\n'/; }"
+        return 1
+    fi
+    printf '%s\n' "$compact_output"
+    # Keep the bulletin row as the durable record, but source_equivalent is an
+    # informational self-close and must not wake any agent.  bulletin_write's
+    # empty default is all recipients, so pair the empty selector with its
+    # explicit no-op writer for this one non-actionable row.
+    if ! BULLETIN_AUTOGEN=1 BULLETIN_NOTIFY= BULLETIN_INBOX_WRITE=/bin/true bash "$BULLETIN_SCRIPT" \
             gate_context_freshness \
             "DOC_LANE_INFO: source_equivalent auto-closed context=${rel_path} source_commit=${latest_hash} project=${project}" \
             false info >/dev/null 2>&1; then
@@ -324,6 +336,46 @@ auto_close_source_equivalent() {
     fi
     echo "OK: ${rel_path} (source_equivalent boundary auto-closed; bulletin info persisted)"
     return 0
+}
+
+# source_equivalent updates are boundary bookkeeping, not new context content.
+# The shared setter intentionally preserves independent source_commit reasons,
+# but repeated equivalent boundaries must collapse to one current marker or the
+# context header grows on every gate cycle.  Compact only markers whose reason
+# is exactly source_equivalent; all other source history remains untouched.
+compact_source_equivalent_markers() {
+    local rel_path="$1" latest_hash="$2" file="$ROOT_DIR/$1"
+    [[ -f "$file" && -r "$file" ]] || return 1
+    [[ "$latest_hash" =~ ^[0-9a-f]{7,40}$ ]] || return 1
+    exec 9>"${file}.source_commit.lock"
+    flock -w 5 9 || return 1
+    SOURCE_EQUIVALENT_FILE="$file" SOURCE_EQUIVALENT_LATEST="$latest_hash" python3 - <<'PY'
+import os
+import re
+import tempfile
+
+path = os.environ["SOURCE_EQUIVALENT_FILE"]
+latest = os.environ["SOURCE_EQUIVALENT_LATEST"]
+lines = open(path, encoding="utf-8").readlines()
+pattern = re.compile(r"^<!--\s*source_commit:([0-9a-f]{7,40})[^\n]*reason:source_equivalent[^\n]*-->\s*\n?$")
+indices = [i for i, line in enumerate(lines) if pattern.match(line)]
+latest_indices = [i for i in indices if latest == pattern.match(lines[i]).group(1)]
+if not latest_indices:
+    raise SystemExit(f"latest source_equivalent marker missing: {latest}")
+keep = latest_indices[-1]
+updated = [line for i, line in enumerate(lines) if i not in indices or i == keep]
+fd, tmp = tempfile.mkstemp(prefix=".source-equivalent-compact.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.writelines(updated)
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+print(f"SOURCE_EQUIVALENT_COMPACT before={len(indices)} after=1 latest={latest}")
+PY
 }
 
 # GA-425: DM-Signal docs/research commits are already forced through

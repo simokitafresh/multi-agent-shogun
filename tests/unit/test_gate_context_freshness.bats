@@ -441,10 +441,12 @@ YAML
   git -C "$FIXTURE_ROOT" add .
   git -C "$FIXTURE_ROOT" commit -qm fixture
 
-  printf '%s\n' \
-    '<!-- last_updated: 2026-08-22 -->' \
-    "<!-- source_commit:${boundary_hash} reason:fixture evidence:fixture -->" \
-    > "$FIXTURE_ROOT/context/dm-signal-core.md"
+  {
+    printf '%s\n' '<!-- last_updated: 2026-08-22 -->'
+    for _marker in {1..21}; do
+      printf '%s\n' "<!-- source_commit:${boundary_hash} reason:source_equivalent evidence=fixture -->"
+    done
+  } > "$FIXTURE_ROOT/context/dm-signal-core.md"
   cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
 #!/usr/bin/env bash
 printf '%s\\n' 'ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-08-22 repo=/tmp/incorrect-reported-source root_fallback=no owner=dm-signal-core update_trigger=backend/app/services latest: $latest_hash Revert source change'
@@ -452,7 +454,7 @@ SH
   chmod +x "$FIXTURE_ROOT/scripts/check.sh"
   cat > "$bulletin_script" <<'SH'
 #!/usr/bin/env bash
-printf '%s\n' "$*" >> "$BULLETIN_CAPTURE"
+printf '%s|notify=%s\n' "$*" "${BULLETIN_NOTIFY:-}" >> "$BULLETIN_CAPTURE"
 SH
   chmod 644 "$bulletin_script"
 
@@ -470,10 +472,31 @@ SH
     bash "$ROOT/scripts/gates/gate_context_freshness.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"source_equivalent boundary auto-closed"* ]]
+  [[ "$output" == *"SOURCE_EQUIVALENT_COMPACT before=22 after=1"* ]]
   [[ "$output" != *"CONTEXT_UPDATE_REQUEST"* ]]
   [[ "$output" != *"ALERT: dm-signal-core.md (source commits"* ]]
   [[ "$(cat "$bulletin_capture")" == *"DOC_LANE_INFO: source_equivalent auto-closed context=context/dm-signal-core.md"* ]]
+  [[ "$(cat "$bulletin_capture")" != *"|shogun|"* ]]
+  [ "$(grep -c 'reason:source_equivalent' "$FIXTURE_ROOT/context/dm-signal-core.md")" -eq 1 ]
   grep -q "source_commit:${latest_hash}" "$FIXTURE_ROOT/context/dm-signal-core.md"
+
+  run env \
+    BULLETIN_CAPTURE="$bulletin_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_SOURCE_COMMIT_SET_SCRIPT="$FIXTURE_ROOT/scripts/context_source_commit_set.sh" \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT="$bulletin_script" \
+    CONTEXT_FRESHNESS_BULLETIN_STATE_DIR="$BATS_TEST_TMPDIR/source-equivalent-state" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/source-equivalent-alert-state-2" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-08-23 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SOURCE_EQUIVALENT_COMPACT before=1 after=1"* ]]
+  [ "$(grep -c 'reason:source_equivalent' "$FIXTURE_ROOT/context/dm-signal-core.md")" -eq 1 ]
+  [ "$(wc -l < "$bulletin_capture")" -eq 2 ]
+  [[ "$(cat "$bulletin_capture")" != *"|shogun|"* ]]
 }
 
 @test "source-equivalent non-ancestor commit is warn-only" {
