@@ -6705,11 +6705,21 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T14:17:58+09:00"
 - id: INS-20260828-141626444-ed63
   ts: "2026-08-28T14:16:26+09:00"
   insight: "DOC_LANE_INFO source_equivalent auto-closed(context/rebalancer.md)が本日 12:33/13:25/14:00/14:11/14:15 と高頻度で将軍 inbox へ bulletin_notify され、都度 1 ターンを消費。判断不要の info は将軍へ nudge せず掲示板 info のみ(BULLETIN_NOTIFY 空)にし、同一 context の auto-close は 1 日 1 行に集約する。機械的待ち/ノイズの切除"
   priority: "medium"
   source: "shogun"
+  fix_known: false
+  status: pending
+- id: INS-20260828-141838896-76f6
+  ts: "2026-08-28T14:18:38+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[四つのらせん_20260828]] は既存aliasesに一致なし。類似概念TOP3: spiral_canon_sengoku25(らせん最適の正本型(第二十五話); alias=らせんの型; score=3.3) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=2.8) / semantic_dictionary_design(セマンティック辞書構想; alias=らせん定義の補正; score=2.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
