@@ -341,6 +341,93 @@ def test_single_review_failure_reopens_only_after_approval_state_change(tmp_path
     assert len(calls) == 2
 
 
+@pytest.mark.parametrize("receipt_kind", ["matching", "stale", "mismatch"])
+def test_single_review_failure_token_only_changes_for_late_matching_receipt(
+    tmp_path, monkeypatch, receipt_kind
+):
+    """test_necessity: only a new exact report receipt may reopen a failed review terminal."""
+    root = _root(tmp_path)
+    cmd = "cmd_singleflight_receipt"
+    report = root / "queue/reports/worker_report_cmd_singleflight_receipt.yaml"
+    report.write_text(
+        "worker_id: worker\n"
+        "task_id: cmd_singleflight_receipt_normal\n"
+        "report_id: rpt-singleflight-receipt\n"
+        "report_identity_version: 2\n"
+        "parent_cmd: cmd_singleflight_receipt\n",
+        encoding="utf-8",
+    )
+    (root / "queue/tasks/worker.yaml").write_text(
+        "task:\n"
+        "  task_id: cmd_singleflight_receipt_normal\n"
+        "  parent_cmd: cmd_singleflight_receipt\n",
+        encoding="utf-8",
+    )
+    entry = root / "review-entry.yaml"
+    entry.write_text("cmd_id: cmd_singleflight_receipt\nreview_type: report\n", encoding="utf-8")
+    args = SimpleNamespace(
+        root=str(root), cmd=cmd, report=str(report), verdict="APPROVE",
+        review_entry=str(entry), fail_reason=None,
+    )
+    calls = []
+    token_before_receipt = review_bundle._singleflight_token(root, args, {
+        "cmd_id": cmd, "review_type": "report"
+    })
+
+    def failing_batch(namespace):
+        calls.append(namespace.manifest)
+        raise ValueError("measured review failure")
+
+    monkeypatch.setattr(review_bundle, "batch", failing_batch)
+    with pytest.raises(ValueError, match="measured review failure"):
+        review_bundle.single(args)
+
+    digest = hashlib.sha256(report.read_bytes()).hexdigest()
+    receipt = {
+        "messages": [{
+            "type": "report_received",
+            "report_id": "rpt-singleflight-receipt",
+            "report_identity_version": 2,
+            "report_fingerprint": digest if receipt_kind == "matching" else "0" * 64,
+            "report_path": "queue/reports/worker_report_cmd_singleflight_receipt.yaml",
+            "task_id": "cmd_singleflight_receipt_normal",
+            "parent_cmd": "cmd_singleflight_receipt",
+        }]
+    }
+    if receipt_kind == "mismatch":
+        receipt["messages"][0]["task_id"] = "cmd_other_normal"
+    (root / "queue/inbox").mkdir(parents=True, exist_ok=True)
+    (root / "queue/inbox/karo.yaml").write_text(yaml.safe_dump(receipt), encoding="utf-8")
+
+    if receipt_kind == "matching":
+        token_after_receipt = review_bundle._singleflight_token(root, args, {
+            "cmd_id": cmd, "review_type": "report"
+        })
+        assert token_after_receipt != token_before_receipt
+        payload = review_bundle._receipt_generation_identity(root, report, review_bundle.load(report))
+        assert payload == {
+            "report_id": "rpt-singleflight-receipt",
+            "report_identity_version": "2",
+            "report_fingerprint": digest,
+            "report_path": "queue/reports/worker_report_cmd_singleflight_receipt.yaml",
+            "task_id": "cmd_singleflight_receipt_normal",
+            "parent_cmd": "cmd_singleflight_receipt",
+        }
+        with pytest.raises(ValueError, match="measured review failure"):
+            review_bundle.single(args)
+        assert len(calls) == 2
+        with pytest.raises(ValueError, match="singleflight terminal failure"):
+            review_bundle.single(args)
+        assert len(calls) == 2
+    else:
+        assert review_bundle._singleflight_token(root, args, {
+            "cmd_id": cmd, "review_type": "report"
+        }) == token_before_receipt
+        with pytest.raises(ValueError, match="singleflight terminal failure"):
+            review_bundle.single(args)
+        assert len(calls) == 1
+
+
 def test_specless_failed_report_generates_fail_bundle_from_snapshot(tmp_path):
     root = _root(tmp_path); cmd = "cmd_karo_probe"
     report = root / f"queue/reports/worker_report_{cmd}.yaml"
