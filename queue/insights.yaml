@@ -2598,14 +2598,20 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_karo_hotfix_report_write_lesson_set_contract"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行実装で既に根治済み。archive_cmds()はscripts/archive_completed.sh L1180-L1240でQUEUE_FILEの読込・分類・更新を同一flock内に包含し、flock外は退避ファイル生成に限定される。"
+  action_artifact: "scripts/archive_completed.sh:L1180-L1240;commit=29d15d42d32dc79aabaa775fae2a21b19ad9f1fe;tests/unit/test_archive_completed.bats=4/4 PASS,FAIL0,SKIP0"
+  resolved_at: "2026-08-29T03:11:43+09:00"
 - id: INS-20260823-204028112-99ed
   ts: "2026-08-23T20:40:28+09:00"
   insight: "SKILL.md追従task[a71cb95fa3fb90d7]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:a71cb95fa3fb90d7"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で gate_skill_script_refs を SKILL_REF_DIRS=skills で実走し、対象15組の参照先実在とSKILL追従を確認。全体はrc=2 REVIEW_REQUIREDだが、唯一のWARNは対象外のarchive_completed参照であり、対象15組に固有の未追従はない。FOLLOWUP_ACTIVE=31かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesの既存運用で追加修正とdecision_candidateは不要。"
+  action_artifact: "primary=queue/insights.yaml:2605-2611;gate=/tmp/saizo_skill_refs_20260829.out;rc=2;scanned=40 SKILL.md;script_refs=82;referenced=30;target_pairs=15;missing=0;target_warn=0;followup_active=31;followup_covers_review_required=yes;verified_at=2026-08-29T03:29:00+09:00"
+  resolved_at: "2026-08-29T03:29:01+09:00"
 - id: INS-20260823-204433621-7946
   ts: "2026-08-23T20:44:33+09:00"
   insight: "[[利他の精神で調査して将軍に報告せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で調査して将軍に報告せよ。利他の精神とはD0で可能な限り自分自身で改善するところから始めよう"
