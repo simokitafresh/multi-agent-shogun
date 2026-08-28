@@ -117,6 +117,47 @@ PY
     [[ "$output" == *"inbox1"* ]]
 }
 
+# test_necessity: management preflight recall must exclude directed ninja
+# deploy events while retaining a universal event for the same query.
+@test "管理職preflightは忍者宛deploy memoryをrecallしない" {
+    python3 - "$MEMORY_DB_QUERY_DB" <<'PY'
+import sqlite3, sys
+db = sys.argv[1]
+with sqlite3.connect(db) as conn:
+    rows = [
+        ('visibility:ninja', '2026-08-28T10:00:00+09:00', 'kotaro', 'kotaro', 'directed deploy marker'),
+        ('visibility:universal', '2026-08-28T10:01:00+09:00', '', 'universal', 'universal deploy marker'),
+    ]
+    for event_id, ts, target, direction, summary in rows:
+        cur = conn.execute(
+            "INSERT INTO events (id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,importance) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (event_id, ts, 'inbox', 'karo', target, direction, summary, summary, 'fixture', '', '[]', 'fixture', 'normal'),
+        )
+        conn.execute("INSERT INTO events_fts(rowid,summary,detail) VALUES (?,?,?)", (cur.lastrowid, summary, summary))
+    conn.commit()
+PY
+    printf '%s\n' 'universal deploy marker' >> "$THREE_LAYER_SEMANTIC_FIXTURE"
+    printf '%s\t%s\n' 'universal deploy marker' "$THREE_LAYER_SEMANTIC_FIXTURE" >> "$THREE_LAYER_CAUSAL_FIXTURE"
+    local evidence_dir="$TMP_EVIDENCE/visibility"
+    run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AGENT_ID=karo TMUX_PANE="%visibility_${BATS_TEST_NUMBER}" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "universal deploy marker"
+    [ "$status" -eq 0 ]
+    run python3 - "$evidence_dir/evidence_karo__visibility_${BATS_TEST_NUMBER}.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding='utf-8'))
+assert int(data['memory_count']) == 1, data
+assert int(data['memory_total_hits']) == 1, data
+assert 'universal deploy marker' in data['memory_top'], data
+assert 'directed deploy marker' not in data['memory_top'], data
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "有効なSQLite DBでも全層NO_MATCHはfail-closed" {
     run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "definitely-absent-memory-query"
