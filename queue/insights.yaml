@@ -6752,11 +6752,24 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T14:22:37+09:00"
 - id: INS-20260828-142224867-a712
   ts: "2026-08-28T14:22:24+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[根治まで停止禁止]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=実装は殿合図まで禁止; score=3.1) / dm_signal_refactor_mission(DM-Signalリファクタ任務; alias=レビュー通過まで着手禁止; score=2.7) / no_auto_extinguish(自動消火禁止; alias=消火禁止; score=2.2)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T14:22:37+09:00"
+- id: INS-20260828-142239966-f80c
+  ts: "2026-08-28T14:22:39+09:00"
+  insight: "[[忍者のauto clearが動作していないようにみえる]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者のauto clearが動作していないようにみえる。これはどこで詰まっているんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
