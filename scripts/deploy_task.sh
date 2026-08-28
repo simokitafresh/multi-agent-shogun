@@ -20,6 +20,138 @@
 # bind supplements to the current task identity before applying them.
 DEFAULT_MESSAGE="現task YAMLを正本として読み直して作業開始せよ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い、read:trueまたは別taskのRC/補足は参照しても適用するな。"
 
+# CTX guard contract: deployment admission is based on the pane capture taken
+# immediately before any task/report/inbox mutation.  The tmux @context_pct
+# option is only a cache and must not decide whether a worker is respawned.
+deploy_task_ctx_threshold() {
+    local threshold="${DEPLOY_TASK_CTX_THRESHOLD:-20}"
+    [[ "$threshold" =~ ^[0-9]+$ ]] || threshold=20
+    [ "$threshold" -le 100 ] 2>/dev/null || threshold=20
+    printf '%s\n' "$threshold"
+}
+
+deploy_task_capture_ctx_pct() {
+    local pane_target="$1" agent_name="${2:-}" output="" ctx_pattern="" ctx_mode=""
+    local ctx_pct="" match="" remaining=""
+
+    output="$(tmux capture-pane -t "$pane_target" -p -J -S -30 2>/dev/null || true)"
+
+    # Use the configured profile pattern against the capture first.  This is
+    # the same source used by the monitor, but deliberately skips the cached
+    # tmux option so a stale writer cannot hide a high-CTX pane.
+    if [ -n "$agent_name" ] && declare -F cli_profile_get >/dev/null 2>&1; then
+        ctx_pattern="$(cli_profile_get "$agent_name" ctx_pattern 2>/dev/null || true)"
+        ctx_mode="$(cli_profile_get "$agent_name" ctx_mode 2>/dev/null || true)"
+        if [ -n "$ctx_pattern" ]; then
+            match="$(printf '%s\n' "$output" | grep -oE "$ctx_pattern" | tail -1 || true)"
+            ctx_pct="$(printf '%s\n' "$match" | grep -oE '[0-9]+' | tail -1 || true)"
+            if [ "$ctx_mode" = "remaining" ] && [[ "$ctx_pct" =~ ^[0-9]+$ ]]; then
+                ctx_pct=$((100 - ctx_pct))
+            fi
+        fi
+    fi
+
+    # Compatibility patterns cover Codex/Claude banners in fixtures and old
+    # panes whose profile entry is absent.  Capture remains the primary source.
+    if ! [[ "$ctx_pct" =~ ^[0-9]+$ ]]; then
+        if [[ "$output" =~ CTX:[[:space:]]*([0-9]+)% ]]; then
+            ctx_pct="${BASH_REMATCH[1]}"
+        elif [[ "$output" =~ Context[[:space:]]+([0-9]+)%[[:space:]]+used ]]; then
+            ctx_pct="${BASH_REMATCH[1]}"
+        elif [[ "$output" =~ Context:[[:space:]]*([0-9]+)% ]]; then
+            ctx_pct="${BASH_REMATCH[1]}"
+        elif [[ "$output" =~ ([0-9]+)%[[:space:]]+context[[:space:]]+left ]]; then
+            remaining="${BASH_REMATCH[1]}"
+            ctx_pct=$((100 - remaining))
+        fi
+    fi
+
+    # Existing unit fixtures override get_ctx_pct.  Retain that test seam only
+    # when the capture contains no parseable value; production still falls
+    # back conservatively to the shared parser's safe default.
+    if ! [[ "$ctx_pct" =~ ^[0-9]+$ ]] && declare -F deploy_task_original_get_ctx_pct >/dev/null 2>&1; then
+        ctx_pct="$(deploy_task_original_get_ctx_pct "$pane_target" "$agent_name" 2>/dev/null || true)"
+    elif ! [[ "$ctx_pct" =~ ^[0-9]+$ ]] && declare -F get_ctx_pct >/dev/null 2>&1; then
+        ctx_pct="$(get_ctx_pct "$pane_target" "$agent_name" 2>/dev/null || true)"
+    fi
+    [[ "$ctx_pct" =~ ^[0-9]+$ ]] || ctx_pct=100
+    [ "$ctx_pct" -le 100 ] 2>/dev/null || ctx_pct=100
+    DEPLOY_TASK_CTX_PCT="$ctx_pct"
+    printf '%s\n' "$ctx_pct"
+}
+
+deploy_task_respawn_agent() {
+    local agent_name="$1" reason="${2:-deploy_ctx_guard}"
+    bash "$SCRIPT_DIR/scripts/agent_respawn.sh" "$agent_name" "$reason"
+}
+
+deploy_task_wait_respawn_ready() {
+    local pane_target="$1" helper="$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
+    if ! declare -F respawn_recovery_wait_ready >/dev/null 2>&1 && [ -f "$helper" ]; then
+        # shellcheck source=/dev/null
+        source "$helper"
+    fi
+    if declare -F respawn_recovery_wait_ready >/dev/null 2>&1; then
+        respawn_recovery_wait_ready "$pane_target"
+        return $?
+    fi
+
+    # Minimal fallback for isolated fixtures.  Production uses the shared
+    # generation-aware handshake above; this fallback remains bounded and
+    # requires a live pane plus a CLI prompt/banner.
+    local attempts="${DEPLOY_TASK_READY_ATTEMPTS:-10}" delay="${DEPLOY_TASK_READY_DELAY_SECONDS:-1}" attempt capture
+    [[ "$attempts" =~ ^[1-9][0-9]*$ ]] || attempts=10
+    for ((attempt = 1; attempt <= attempts; attempt++)); do
+        capture="$(tmux capture-pane -t "$pane_target" -p -J -S -100 2>/dev/null || true)"
+        if [ "$(tmux display-message -t "$pane_target" -p '#{pane_dead}' 2>/dev/null || echo 1)" = 0 ] \
+            && printf '%s\n' "$capture" | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›'; then
+            return 0
+        fi
+        [ "$attempt" -lt "$attempts" ] && sleep "$delay"
+    done
+    return 1
+}
+
+deploy_task_log_ctx_guard_result() {
+    local receipt="$1" agent_name="$2" ctx_before="$3" ctx_after="$4" threshold="$5" result="$6"
+    log "CTX_GUARD receipt_id=${receipt} ninja=${agent_name} ctx_before=${ctx_before} ctx_after=${ctx_after} threshold=${threshold} result=${result}"
+}
+
+deploy_task_guard_ctx_before_deploy() {
+    local pane_target="$1" agent_name="$2" threshold ctx_before ctx_after result receipt
+    threshold="$(deploy_task_ctx_threshold)"
+    ctx_before="$(deploy_task_capture_ctx_pct "$pane_target" "$agent_name")"
+    receipt="${DEPLOY_TASK_CTX_RECEIPT_ID:-${CMD_ID:-legacy}:${agent_name}:unknown}"
+
+    if [ "$ctx_before" -le "$threshold" ] 2>/dev/null; then
+        DEPLOY_TASK_CTX_PCT="$ctx_before"
+        deploy_task_log_ctx_guard_result "$receipt" "$agent_name" "$ctx_before" "$ctx_before" "$threshold" "threshold_below"
+        return 0
+    fi
+
+    log "${agent_name}: CTX=${ctx_before}% exceeds threshold=${threshold}%; invoking agent_respawn.sh before publication"
+    if ! deploy_task_respawn_agent "$agent_name" "deploy_ctx_guard_${ctx_before}pct"; then
+        deploy_task_log_ctx_guard_result "$receipt" "$agent_name" "$ctx_before" "unknown" "$threshold" "respawn_failed"
+        echo "BLOCK: ${agent_name} CTX=${ctx_before}% exceeds ${threshold}% and respawn failed; no task/report/inbox publication." >&2
+        return 1
+    fi
+    if ! deploy_task_wait_respawn_ready "$pane_target"; then
+        deploy_task_log_ctx_guard_result "$receipt" "$agent_name" "$ctx_before" "unknown" "$threshold" "ready_timeout"
+        echo "BLOCK: ${agent_name} respawn completed but ready confirmation timed out; no task/report/inbox publication." >&2
+        return 1
+    fi
+
+    ctx_after="$(deploy_task_capture_ctx_pct "$pane_target" "$agent_name")"
+    if [ "$ctx_after" -gt "$threshold" ] 2>/dev/null; then
+        deploy_task_log_ctx_guard_result "$receipt" "$agent_name" "$ctx_before" "$ctx_after" "$threshold" "ready_ctx_above_threshold"
+        echo "BLOCK: ${agent_name} ready確認後もCTX=${ctx_after}% exceeds ${threshold}%; no task/report/inbox publication." >&2
+        return 1
+    fi
+    DEPLOY_TASK_CTX_PCT="$ctx_after"
+    deploy_task_log_ctx_guard_result "$receipt" "$agent_name" "$ctx_before" "$ctx_after" "$threshold" "respawn_success"
+    return 0
+}
+
 # Canonical answer-family predicate for deployment-hold consumers. Keep this
 # at the entrypoint boundary so the monolith and its sourced modules share one
 # exact set when a retrospective answer releases a deployment hold.
@@ -11274,6 +11406,30 @@ if [ ! -f "$_dt_main_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
 fi
 source "$_dt_main_path"
 unset _dt_main_path
+
+# Keep the legacy entrypoint as the single-file integration surface: the
+# extracted main module calls get_ctx_pct before it mutates task/report state.
+# Wrap that call after all modules are sourced so every real deployment passes
+# through the capture-based admission guard while existing fixture overrides
+# of get_ctx_pct remain valid.
+if declare -F get_ctx_pct >/dev/null 2>&1; then
+    if declare -F parse_deploy_task_args >/dev/null 2>&1; then
+        eval "$(declare -f parse_deploy_task_args | sed '1s/^parse_deploy_task_args /deploy_task_original_parse_deploy_task_args /')"
+        parse_deploy_task_args() {
+            deploy_task_original_parse_deploy_task_args "$@" || return $?
+            DEPLOY_TASK_CTX_RECEIPT_ID="${CMD_ID:-legacy}:${NINJA_NAME:-unknown}:$(date '+%Y%m%dT%H%M%S'):${BASHPID}"
+            if [ -n "${CMD_ID:-}" ]; then
+                DEPLOY_TASK_ISSUE_ATTEMPT_ID="$DEPLOY_TASK_CTX_RECEIPT_ID"
+            fi
+        }
+    fi
+    eval "$(declare -f get_ctx_pct | sed '1s/^get_ctx_pct /deploy_task_original_get_ctx_pct /')"
+    get_ctx_pct() {
+        local pane_target="$1" agent_name="${2:-}"
+        deploy_task_guard_ctx_before_deploy "$pane_target" "$agent_name" || return 2
+        printf '%s\n' "${DEPLOY_TASK_CTX_PCT:-100}"
+    }
+fi
 
 # T18: measure every function reached by one deployment without selecting a
 # guessed hotspot.  The counters are best-effort and the final JSONL write is
