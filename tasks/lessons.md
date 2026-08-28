@@ -16103,3 +16103,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - DEBUGイベント毎に別shell関数やsubprocessを呼ぶと短いproduction entrypointで計測固定費が支配した。既存trapへ一行counterをinlineし、完了時に単一bufferをflock appendすると、同じ計測境界を保ったまま固定20秒の実測overheadを1.40%へ下げられる。
+
+### L1665: inner runner receipt欠落は原因付きterminal FAIL evidenceへ変換する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_ci_fix_33147256383_compat_receipt
+- **記録者**: hanzo
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [.github/workflows/test.yml,scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_ci_fix_33147256383_compat_receipt]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- compatibility shardはテスト件数を実行してもinner runnerがreceiptを公開しない異常経路で、後段が欠落だけを見て原因を失う。outer runnerがinner_rc・選択件数を含むartifactとschema-valid FAIL receiptをatomic公開すれば、通常FAILとinfra欠落を機械的に分離できる。
