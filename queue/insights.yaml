@@ -2648,7 +2648,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で4事象を再確認した。(1)a9419ef02でFAIL報告のLGTM経路を開通。(2)gunshi_throughput_measurement_20260823.mdでreview_bundle timeout 4/4・通知未達3/4を記録し、cmd_4378とテストで通知先行を固定。(3)three_layer_all_action_guardは3件の完了記録(67/67 PASSまで)があり、(4)watcherは親1本+inotifywait/MTIME子の正常構造とsemantic概念に登録済み。追加実装・decision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:2645-2651;primary=git:a9419ef02;primary=docs/research/gunshi_throughput_measurement_20260823.md:3-25;fix=git:2b6920d4d57d37ce688f489541ca894fae01c68a;regression=tests/unit/test_review_bundle.bats:1-8;guard=docs/research/senkyoku-log-archive-2026-03_05.md:1003-1005;concept=docs/semantic-index/index.md:14102-14104,15495-15505;inventory_before=logs/ninja_monitor.log:3951 (130/11/0/141);no_new_code=existing fixes cover all four observations"
+  resolved_at: "2026-08-29T03:42:21+09:00"
 - id: INS-20260823-215107291-f099
   ts: "2026-08-23T21:51:07+09:00"
   insight: "self-retro dominant cause=review_notify; candidate=reduce dominant review phase while preserving SG7 validation; criterion=delivery succeeds and duplicate event count is 0"
