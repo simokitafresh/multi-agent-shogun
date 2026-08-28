@@ -486,6 +486,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T10:12:09.616497+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T18:59:47.087507+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T21:13:33.511875+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T02:09:02.176985+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3391,6 +3392,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T08:39:49+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T09:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T10:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T10:39:51+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T11:10:01+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T11:39:52+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T12:21:28+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -9562,6 +9567,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T15:16:05+09:00 bid1jo308 toolu_01VdszFcfZ4C4N1wx5JKJAft /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/14788a97-9137-4db8-9c66-a7996f |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T13:44:35+09:00 bifrpztob toolu_01DShSakTWwbvc9scRovxkjm /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/13459098-3719-4178-90d4-8f76ad |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T14:42:18+09:00 ba26qrabm toolu_01PjTsS47v87DGehqkjWCoj7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cb32a3ef-f388-4781-8e4e-0460d6 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T11:49:10+09:00 bv3pkjhqd toolu_01H1u7JhRVTy1fLxtkYxzgRV /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/16434314-f798-4484-b5e7 |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
@@ -13236,6 +13242,12 @@ codd:
 | cmd | `cmd_reflux_insight_202608280833_saizo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608280757_tobisaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608280757_tobisaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608280858_kotaro` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608280858_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608280923_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608280923_hayate` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608281025_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608281025_kagemaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -14754,6 +14766,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T00:49:45.274829+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T00:54:08.021552+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T01:16:21.535533+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T01:18:51.265864+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -16184,6 +16197,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T22:09:26.586590+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T22:35:21.795302+00:00 git pre-commit semantic propagation for context/projects changes |
 | cmd | `cmd_karo_hotfix_t108_r2_doc_lane_commit_validation_20260828` |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T02:28:40.599300+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T02:29:08.474094+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
