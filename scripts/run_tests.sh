@@ -1907,6 +1907,17 @@ os.replace(tmp,path)
 PY
 }
 
+persist_task_receipt_path() {
+    local mode="$1" task_file="$2" receipt="$3"
+    [[ "$mode" == task ]] || return 0
+    [ -n "$task_file" ] && [ -f "$task_file" ] \
+        || { printf 'BLOCK: task receipt path requires a task YAML\n' >&2; return 2; }
+    local yaml_setter="${REPO_ROOT:-.}/scripts/lib/yaml_field_set.sh"
+    [ -f "$yaml_setter" ] \
+        || { printf 'BLOCK: task receipt path setter is unavailable: %s\n' "$yaml_setter" >&2; return 2; }
+    bash "$yaml_setter" "$task_file" task test_receipt_path "$receipt"
+}
+
 probe_persistent_p9_rpc() {
     local probe_timeout="${SHOGUN_DRVFS_P9_PROBE_TIMEOUT:-2}" first second
     [[ "$probe_timeout" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid p9 probe timeout" >&2; return 2; }
@@ -2722,6 +2733,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         fi
         verify_run_tests_receipt "$_receipt" >/dev/null \
             || { printf 'TEST_RECEIPT_FAIL path=%s rc=%s\n' "$_receipt" "$_rc" >&2; exit 1; }
+        persist_task_receipt_path "$_mode" "${2:-}" "$_receipt" \
+            || { printf 'TEST_RECEIPT_TASK_PATH_FAIL task=%s receipt=%s\n' "${2:-}" "$_receipt" >&2; exit 2; }
         if [ -n "$_requested_tap" ]; then
             mkdir -p "$(dirname "$_requested_tap")"
             _tap_source="$_tap"
