@@ -107,10 +107,52 @@ source_commit_action() {
         latest_hash="${BASH_REMATCH[1]}"
     fi
     if [[ -n "$latest_hash" ]]; then
+        local evidence=""
+        evidence="$(source_commit_evidence "$alert_line" "$latest_hash" 2>/dev/null || true)"
         printf '%s' "一次差分を照合後、bash scripts/context_source_commit_set.sh ${rel_path} ${latest_hash} '<reason>' '<evidence>' で検出済み境界を記録せよ。last_updatedだけの更新は禁止。"
+        [[ -n "$evidence" ]] && printf ' source_evidence: %s' "$evidence"
     else
         printf '%s' "${rel_path} をソースPJの最新commitと照合し、必要なら内容とsource_commitをscripts/context_source_commit_set.shで更新せよ。last_updatedだけの更新は禁止。"
     fi
+}
+
+# L847/L848: a source hash without its subject and changed paths forces the
+# next owner to repeat the same repository investigation.  Resolve the exact
+# source commit at alert time and pass compact primary evidence with the
+# action.  Failure to enrich an otherwise valid alert is non-fatal: the
+# existing source-boundary action remains available and still requires a
+# primary check before updating the marker.
+source_commit_evidence() {
+    local alert_line="$1"
+    local latest_hash="$2"
+    local repo=""
+    local subject=""
+    local paths=""
+    local path
+    local -a changed_paths=()
+
+    [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
+    repo="${BASH_REMATCH[1]}"
+    [[ -d "$repo" ]] || return 1
+    subject="$(bounded_git -C "$repo" show -s --format=%s "$latest_hash" 2>/dev/null || true)"
+    [[ -n "$subject" ]] || return 1
+    mapfile -t changed_paths < <(bounded_git -C "$repo" diff-tree --root --no-commit-id --name-only -r "$latest_hash" 2>/dev/null)
+    ((${#changed_paths[@]} > 0)) || return 1
+    for path in "${changed_paths[@]}"; do
+        [[ -n "$path" ]] || continue
+        if [[ -n "$paths" ]]; then
+            paths+=","
+        fi
+        paths+="$path"
+    done
+    [[ -n "$paths" ]] || return 1
+
+    # Keep the evidence one line and shell-argument safe for the generated
+    # action.  Paths are comma-separated; spaces in subjects are represented
+    # as underscores because the surrounding action is machine-readable text.
+    subject="${subject//$'\n'/ }"
+    subject="${subject//[[:space:]]/_}"
+    printf 'source_commit=%s source_subject=%s source_paths=%s' "$latest_hash" "$subject" "$paths"
 }
 
 # T92: DM-Signal research contexts also receive the marketing article stream.
