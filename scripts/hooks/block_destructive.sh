@@ -12,6 +12,7 @@ IFS= read -r -d '' payload || true
 # Fast-path: skip if no dangerous keywords at all
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \
+   "$payload" != *'git revert'* && \
    "$payload" != *'git checkout'* && "$payload" != *'git restore'* && "$payload" != *'git clean'* && \
    "$payload" != *'mkfs'* && "$payload" != *'fdisk'* && "$payload" != *'mount'* && "$payload" != *'umount'* && \
    "$payload" != *'dd '* && "$payload" != *'chrome'* && "$payload" != *'chromium'* && \
@@ -137,6 +138,9 @@ def check_git(tokens):
 
     sub = tokens[1]
     args = tokens[2:]
+
+    if sub == "revert":
+        return "PD-110: direct git revert is forbidden (use scripts/revert_with_receipt.sh)"
 
     if sub == "push":
         if "--force-with-lease" not in args and ("--force" in args or "-f" in args):

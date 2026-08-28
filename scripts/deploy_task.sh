@@ -8941,7 +8941,7 @@ inject_dynamic_measurement_contract() {
     local task_file="$1"
     local ninja_name="${2:-${NINJA_NAME:-ninja}}"
     local before after measurement_command measurement_environment
-    local measurement_policy safety_boundary fixed_baseline_policy
+    local measurement_policy safety_boundary fixed_baseline_policy measurement_source
     local -a updates=()
 
     [ -f "$task_file" ] || return 0
@@ -8952,6 +8952,7 @@ inject_dynamic_measurement_contract() {
     measurement_policy=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "measurement_policy" "" 2>/dev/null || true)
     safety_boundary=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "safety_boundary" "" 2>/dev/null || true)
     fixed_baseline_policy=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "fixed_baseline_policy" "" 2>/dev/null || true)
+    measurement_source=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "measurement_source" "" 2>/dev/null || true)
 
     [ -n "$before" ] || updates+=("before=同一環境で変更前の実測値を記録し、環境fingerprintを添える")
     [ -n "$after" ] || updates+=("after=同一環境で変更後の実測値を記録し、beforeと同じmeasurement_commandを使う")
@@ -8959,6 +8960,7 @@ inject_dynamic_measurement_contract() {
     [ -n "$measurement_environment" ] || updates+=("measurement_environment=beforeとafterは同一環境・同一入力・同一timeoutで実行")
     [ -n "$measurement_policy" ] || updates+=("measurement_policy=before/afterの一次実測をreportへ記録し、固定値との差異は報告して継続")
     [ -n "$fixed_baseline_policy" ] || updates+=("fixed_baseline_policy=固定基準値はWARNのみ。正本の固定秒数・件数厳密一致・±20%で停止しない")
+    [ -n "$measurement_source" ] || updates+=("measurement_source=production claims require Render/live measurement receipt or explicit local-only comparison")
     [ -n "$safety_boundary" ] || updates+=("safety_boundary=自己計測欄欠落と安全底線違反は従来どおりBLOCK")
 
     [ "${#updates[@]}" -gt 0 ] || return 0

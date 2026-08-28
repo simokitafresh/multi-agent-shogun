@@ -11,6 +11,7 @@ ROOT="${DETECTOR_FP_ROOT:-${self%/scripts/detector_fp_rate.sh}}"
 GATE_FIRE_LOG="${DETECTOR_FP_GATE_FIRE_LOG:-$ROOT/logs/gate_fire_log.yaml}"
 CMD_QUALITY_LOG="${DETECTOR_FP_CMD_QUALITY_LOG:-$ROOT/logs/cmd_design_quality.yaml}"
 GATE_ALERTS_LOG="${DETECTOR_FP_GATE_ALERTS_LOG:-$ROOT/logs/gate_alerts.yaml}"
+LOOP_LEDGER_LOG="${DETECTOR_FP_LOOP_LEDGER_LOG:-$ROOT/logs/loop_ledger.yaml}"
 OUT_FILE="${DETECTOR_FP_OUT:-$ROOT/logs/detector_fp_rate.yaml}"
 NOW="${DETECTOR_FP_NOW:-$(date -Iseconds)}"
 
@@ -27,7 +28,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-python3 - "$GATE_FIRE_LOG" "$CMD_QUALITY_LOG" "$GATE_ALERTS_LOG" "$OUT_FILE" "$NOW" <<'PY'
+python3 - "$GATE_FIRE_LOG" "$CMD_QUALITY_LOG" "$GATE_ALERTS_LOG" "$LOOP_LEDGER_LOG" "$OUT_FILE" "$NOW" <<'PY'
 import collections
 import datetime as dt
 import os
@@ -42,7 +43,7 @@ except Exception as exc:
     print(f"PyYAML required: {exc}", file=sys.stderr)
     sys.exit(2)
 
-gate_fire_path, quality_path, alerts_path, out_path, now = sys.argv[1:6]
+gate_fire_path, quality_path, alerts_path, loop_ledger_path, out_path, now = sys.argv[1:7]
 root_dir = Path(quality_path).parent.parent
 archive_cmd_dir = root_dir / "queue" / "archive" / "cmds"
 queue_file = root_dir / "queue" / "shogun_to_karo.yaml"
@@ -56,6 +57,62 @@ def load_yaml(path):
         return yaml.safe_load(p.read_text(encoding="utf-8", errors="replace"))
     except Exception:
         return None
+
+
+def loop_ledger_events(path):
+    """Read explicit detector observations from the loop ledger.
+
+    The ledger is the durable producer for memory/loop observations.  Older
+    snapshots do not have detector observations and are deliberately ignored;
+    absence must not be turned into a synthetic zero-rate claim.
+    """
+    data = load_yaml(path) or {}
+    snapshots = data.get("snapshots") or []
+    if not isinstance(snapshots, list):
+        return []
+    events = []
+    for snapshot in snapshots:
+        if not isinstance(snapshot, dict):
+            continue
+        ts = snapshot.get("generated_at") or snapshot.get("timestamp")
+        for channel in ("memory", "loop_ledger"):
+            section = snapshot.get(channel)
+            if not isinstance(section, dict):
+                continue
+            observations = section.get("detector_observations") or section.get("detector_events")
+            if isinstance(observations, list):
+                for item in observations:
+                    if not isinstance(item, dict) or not item.get("detector"):
+                        continue
+                    result = str(item.get("result") or item.get("outcome") or "UNKNOWN").upper()
+                    fp = bool(item.get("false_positive")) or result in {"FALSE_POSITIVE", "FP"}
+                    events.append({
+                        "ts": item.get("ts") or ts,
+                        "detector": f"loop_ledger:{channel}:{item['detector']}",
+                        "cmd_id": item.get("cmd_id") or f"loop_ledger:{channel}",
+                        # A labelled observation is still a detector firing;
+                        # keep it in the WARN-like measurement domain while
+                        # preserving its true/false classification separately.
+                        "result": "WARN",
+                        "reason": item.get("reason") or "loop ledger detector observation",
+                        "source": "loop_ledger",
+                        "outcome": "false_positive" if fp else str(item.get("classification") or "unknown").lower(),
+                    })
+            summary = section.get("detector_fp_rate") or section.get("fp_measurement")
+            if isinstance(summary, dict) and summary.get("detector"):
+                fires = int(summary.get("fires") or 0)
+                false_positive = int(summary.get("false_positive") or summary.get("false_positives") or 0)
+                for index in range(max(0, fires)):
+                    events.append({
+                        "ts": ts,
+                        "detector": f"loop_ledger:{channel}:{summary['detector']}",
+                        "cmd_id": f"loop_ledger:{channel}",
+                        "result": "WARN",
+                        "reason": "loop ledger fp summary",
+                        "source": "loop_ledger",
+                        "outcome": "false_positive" if index < false_positive else "unknown",
+                    })
+    return events
 
 
 def parse_fire_log(path):
@@ -359,6 +416,7 @@ events = (
     cmd_save_events() + escalation_events() + today_history_events()
     + gunshi_cs_events() + skill_script_ref_events() + daemon_watchdog_heartbeat_events()
     + script_speed_record_real_events() + lgtm_bundle_guard_events()
+    + loop_ledger_events(loop_ledger_path)
 )
 events.sort(key=lambda x: parse_ts(x.get("ts")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc))
 
@@ -382,11 +440,19 @@ for cmd_id, cmd_events in by_cmd.items():
             continue
         if e.get("detector") == "cmd_save:cmd_text_deferral_language" and not deferral_language_still_matches(cmd_id):
             continue
-        event_key = (e.get("detector"), e.get("result"))
+        event_key = (
+            (e.get("detector"), e.get("result"), e.get("outcome"))
+            if e.get("source") == "loop_ledger"
+            else (e.get("detector"), e.get("result"))
+        )
         if event_key in emitted:
             continue
         emitted.add(event_key)
         outcome = "unknown"
+        if e.get("source") == "loop_ledger" and e.get("outcome") in {
+            "false_positive", "true_positive", "unknown"
+        }:
+            outcome = e["outcome"]
         if e.get("result") == "BLOCK" and any(x.get("result") in {"PASS", "CLEAR"} for x in cmd_events if x is not e):
             outcome = "true_positive"
         elif any(x.get("result") == "PASS" for x in cmd_events if x is not e):
@@ -421,6 +487,7 @@ out = {
         "gate_fire_log": str(gate_fire_path),
         "cmd_design_quality": str(quality_path),
         "gate_alerts": str(alerts_path),
+        "loop_ledger": str(loop_ledger_path),
     },
     "detectors": detectors,
     "events": rows[-200:],

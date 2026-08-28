@@ -32,6 +32,28 @@ SOURCE_EVENT_ID="$(jq -r '.source_event_id // .event_id // .prompt_id // .turn_i
 ACTIVE_AGENT_ID="$AGENT_ID"
 MINIMAL_PAYLOAD=0
 
+# UserPromptSubmit is also used as the transport for agent/task notifications.
+# Those messages are system traffic, not Lord input.  Classify them at the
+# producer so every consumer (conversation, memory, and lesson harvesting)
+# sees the same source label instead of maintaining its own exclusion filter.
+is_task_notification_payload() {
+    local prompt="${1:-}" payload_json="${2:-}"
+    [[ "$prompt" =~ ^[[:space:]]*\<task-notification([[:space:]>]|$) ]] && return 0
+    jq -e '
+      (.notification_type // .event_type // .message_type // .source // "")
+      | strings | ascii_downcase
+      | test("task[-_]notification|agent[-_]message|system[-_]notification")
+    ' >/dev/null 2>&1 <<<"$payload_json"
+}
+
+INPUT_SOURCE="terminal"
+INPUT_AGENT="lord"
+INPUT_TARGET="$AGENT_ID"
+if is_task_notification_payload "$INPUT" "$PAYLOAD"; then
+    INPUT_SOURCE="task-notification"
+    INPUT_AGENT="system"
+fi
+
 # Codex runs UserPromptSubmit inside the CLI process which received the input.
 # The attached UI client's selected pane is unrelated (and may point at a
 # different agent), so the hook execution pane is the minimal payload SSOT.
@@ -81,7 +103,7 @@ export LORD_CONVERSATION_SOURCE_EVENT_ID
 LORD_CONVERSATION_SOURCE_EVENT_ID="$SOURCE_EVENT_ID"
 export LORD_CONVERSATION_CONSUMED_LEDGER="$SCRIPT_DIR/queue/lord_conversation_consumed.tsv"
 
-append_lord_conversation "$INPUT" "inbound" "lord" "terminal" "$AGENT_ID"
+append_lord_conversation "$INPUT" "inbound" "$INPUT_AGENT" "$INPUT_SOURCE" "$INPUT_TARGET"
 
 # セマンティクスインデックス候補化。会話記録そのものは上で完了済みのため、失敗しても入力処理は止めない。
 # 最適化: python3起動コスト(~89ms)をjq -cnで回避。バックグラウンド実行でフック応答を即時化。
