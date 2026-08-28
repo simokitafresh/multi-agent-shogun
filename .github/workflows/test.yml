@@ -62,9 +62,14 @@ jobs:
           mkdir -p "$HOME/bin"
           printf '#!/usr/bin/env bash\nif [ "${1:-}" = "--version" ]; then echo "2.1.87 (Claude Code)"; else exit 0; fi\n' > "$HOME/bin/claude"
           chmod +x "$HOME/bin/claude"
+          printf '#!/usr/bin/env bash\nif [ "${1:-}" = "--version" ]; then echo "0.1.0 (Codex)"; else exit 0; fi\n' > "$HOME/bin/codex"
+          chmod +x "$HOME/bin/codex"
           sudo mkdir -p /home/simokitafresh/bin
           sudo sh -c 'printf "#!/usr/bin/env bash\\nif [ \"\${1:-}\" = \"--version\" ]; then echo \"2.1.87 (Claude Code)\"; else exit 0; fi\\n" > /home/simokitafresh/bin/claude'
           sudo chmod +x /home/simokitafresh/bin/claude
+          sudo sh -c 'printf "#!/usr/bin/env bash\\nif [ \"\${1:-}\" = \"--version\" ]; then echo \"0.1.0 (Codex)\"; else exit 0; fi\\n" > /home/simokitafresh/bin/codex'
+          sudo chmod +x /home/simokitafresh/bin/codex
+          printf '%s/bin\n' "$HOME" >> "$GITHUB_PATH"
           tmux new-session -d -s shogun -n agents -x 240 -y 80
           agents=(karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru shogun)
           for agent in "${agents[@]:1}"; do
@@ -307,7 +312,10 @@ jobs:
           fi
           rc=${PIPESTATUS[0]}
           set -e
-          printf '%s\n' "$rc" > "test-results/shard-${{ matrix.shard }}.rc"
+          rc_file="test-results/shard-${{ matrix.shard }}.rc"
+          rc_tmp="$(mktemp "${rc_file}.tmp.XXXXXX")"
+          printf '%s\n' "$rc" > "$rc_tmp"
+          mv "$rc_tmp" "$rc_file"
           if [ "$rc" -ne 0 ]; then
             echo "::error::Unit tests failed in shard ${{ matrix.shard }} (rc=$rc); aggregate step will fail the matrix"
           fi

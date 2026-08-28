@@ -1445,6 +1445,90 @@ raise SystemExit(rc)
 PY
 }
 
+write_run_tests_missing_receipt() {
+    local receipt="$1"
+    local inner_rc="$2"
+    local selected_paths="$3"
+    local source_head="$4"
+    local run_id="$5"
+    local source_fingerprint="$6"
+    python3 - "$receipt" "$inner_rc" "$selected_paths" "$source_head" "$run_id" "$source_fingerprint" <<'PY'
+import hashlib
+import json
+import os
+import sys
+import tempfile
+
+receipt, inner_rc, selected_paths, source_head, run_id, source_fingerprint = sys.argv[1:]
+try:
+    inner_rc = int(inner_rc)
+except ValueError:
+    inner_rc = 2
+failure_rc = inner_rc if inner_rc != 0 else 2
+try:
+    selected = [line.strip() for line in open(selected_paths, encoding="utf-8") if line.strip()]
+except OSError:
+    selected = []
+artifact = os.path.splitext(receipt)[0] + ".output"
+directory = os.path.dirname(receipt) or "."
+os.makedirs(directory, exist_ok=True)
+reason = (
+    "terminal receipt missing after inner runner exit; "
+    f"inner_rc={inner_rc}; selected_file_count={len(selected)}"
+)
+fd, artifact_tmp = tempfile.mkstemp(prefix=".missing-receipt.", dir=directory, text=True)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.write(reason + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(artifact_tmp, artifact)
+finally:
+    if os.path.exists(artifact_tmp):
+        os.unlink(artifact_tmp)
+artifact_sha = hashlib.sha256(open(artifact, "rb").read()).hexdigest()
+receipt_data = {
+    "version": 3,
+    "complete": True,
+    "result": "FAIL",
+    "rc": failure_rc,
+    "duration_ms": 0,
+    "output_sha256": artifact_sha,
+    "declared_test_count": 0,
+    "observed_test_count": 0,
+    "skip_count": 0,
+    "artifact": artifact,
+    "signal": None,
+    "command": ["inner-receipt-missing", f"inner_rc={inner_rc}"],
+    "source_head": source_head,
+    "test_paths": [],
+    "run_id": run_id,
+    "commit_sha": source_head,
+    "source_fingerprint": source_fingerprint,
+    "run_manifest": {
+        "cache": {"directory": "", "enabled": False},
+        "commit_sha": source_head,
+        "selector_input_fingerprint": hashlib.sha256(("missing-receipt:" + run_id).encode()).hexdigest(),
+        "selected_paths_fingerprint": hashlib.sha256("\n".join(selected).encode()).hexdigest(),
+        "estimated_cost": {"direct_files": len(selected), "transitive_files": 0, "selection_reason": "receipt_missing_fallback", "suite_timeout_sec": 0},
+        "scope_identity": {"mode": "file", "selected_file_count": 0, "discovered_file_count": None, "started_file_count": 0, "executed_file_count": 0, "cached_file_count": 0, "failed_files": [], "failed_file_count": 0, "complete": True, "full_scope": False, "full_scope_claimable": False},
+    },
+}
+fd, receipt_tmp = tempfile.mkstemp(prefix=".missing-receipt.", dir=directory, text=True)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        json.dump(receipt_data, stream, ensure_ascii=False, sort_keys=True)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(receipt_tmp, receipt)
+finally:
+    if os.path.exists(receipt_tmp):
+        os.unlink(receipt_tmp)
+print(f"TEST_RECEIPT_FALLBACK path={receipt} rc={failure_rc} reason=inner_receipt_missing", file=sys.stderr)
+PY
+}
+
 recover_run_tests_terminal_receipt() {
     local identity="$1" receipt=""
     if [ -f "$identity" ]; then
@@ -2519,6 +2603,10 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         wait "$run_tests_tracked_child_pid" || _rc=$?
         run_tests_tracked_child_pid=""
         set -e
+        if [ ! -s "$_receipt" ]; then
+            write_run_tests_missing_receipt "$_receipt" "$_rc" "$_selected_paths" \
+                "$_source_head" "$_run_id" "$_source_fp"
+        fi
         _output_sha256="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["output_sha256"])' "$_receipt")"
         # Timing rows are a terminal-success cohort.  A failed test run still
         # publishes its receipt, but must never make either timing ledger
