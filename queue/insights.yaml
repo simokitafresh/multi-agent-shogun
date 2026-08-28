@@ -7258,6 +7258,7 @@ insights:
   resolved_reason: "一次確認: scripts/run_tests.sh の run_tests_queue_root_guard がfixture実行時に本番queue解決をrc=2で拒否し、隔離rootのみ許可する。契約テスト tests/unit/test_run_tests_queue_root_guard.bats 2/2 PASS、追加コード修正不要。"
   action_artifact: "target=queue/insights.yaml:INS-20260828-204439475-8246;primary=scripts/run_tests.sh:L136-L178,L1957,L2425;regression=tests/unit/test_run_tests_queue_root_guard.bats:2/2 PASS via bash scripts/run_tests.sh file;history=git:4ed034eb9,3f5745dad;causal=[[INS-20260828-204439475-8246]] -> [[run_tests_queue_root_guard]] -> [[fixture本番queue汚染の再発防止]]"
   resolved_at: "2026-08-29T00:54:48+09:00"
+  last_seen: "2026-08-29T00:59:21+09:00"
 - id: INS-20260828-204621818-d19d
   ts: "2026-08-28T20:46:21+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b9b5bvefe task id tool use id toolu 013DoRmgajQYakp71D は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
