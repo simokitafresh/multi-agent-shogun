@@ -6471,3 +6471,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-122840897-b02b
+  ts: "2026-08-28T12:28:40+09:00"
+  insight: "[[CI RED修正 — Build Instructions Checkでgenerated build cache 3フ]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: agent_formation_management(編成管理; alias=build_instructions; score=13.5) / infrastructure_ops(インフラ運用基盤; alias=CI RED残存修正 — test daemon maintenance lock bats の restart def; score=12.3) / local_memory_db(ローカル記憶DB; alias=stale cache rowid delta; score=9.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
