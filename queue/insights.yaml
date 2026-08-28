@@ -2488,7 +2488,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:ae7004e8a3cbda9a"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報でSKILL.md×変更scriptの13組を再検分し、gate_skill_script_refs.sh fresh runはrc=2(REVIEW_REQUIRED)だが参照先欠落0件・SKILL鮮度遅延0件・例示パス欠落0件・副作用例示マーカー欠落0件。rc=2は既存のactive follow-up 31組によるレビュー要求であり、対象13組の契約不整合や新規修正必要性は確認されなかったため、既存insight→reflux経路で被覆済みとしてresolveした。
+  action_artifact: "target=queue/insights.yaml:INS-20260823-005548933-1171;gate=bash SKILL_REF_DISABLE_CACHE=1 scripts/gates/gate_skill_script_refs.sh /home/simokitafresh/multi-agent-shogun (rc=2, missing=0, stale=0, example_path_missing=0, side_effect_marker_missing=0, active_followup_pairs=31);memory=bash scripts/memory_db_query.sh --search INS-20260823-005548933-1171 (exact event found);semantic=bash scripts/semantic_search.sh \"SKILL.md script refs gate_skill_script_refs ae7004e8a3cbda9a\" (concept ranking found)"
+  resolved_at: "2026-08-28T13:14:51+09:00"
 - id: INS-20260823-005556536-889b
   ts: "2026-08-23T00:55:56+09:00"
   insight: "[[RC時のtarget path上書きを削除し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTの根因を調査し; score=3.7) / codd_methodology(CoDD整合性駆動開発; alias=codd propagate; score=3.7) / semantic_dictionary_design(セマンティック辞書構想; alias=concept_auto_growth; score=3.6)。既存概念aliasesへの自動昇格候補"
@@ -6552,3 +6555,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T13:10:04+09:00"
+- id: INS-20260828-131457349-f7de
+  ts: "2026-08-28T13:14:57+09:00"
+  insight: "semantic_index_update新概念候補: discussion:今一つどれほど早くなったかがわかりづらい。表形式でbefore after after ext4を表示してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
