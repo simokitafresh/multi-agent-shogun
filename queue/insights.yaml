@@ -7022,3 +7022,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T17:11:51+09:00"
+- id: INS-20260828-171408367-8773
+  ts: "2026-08-28T17:14:08+09:00"
+  insight: "kotaro reflux insightタスクでDIVERGENT 3回(insights.yaml auto-commit巻き込み+commit subject不一致)。reflux配備時のinsights.yaml排他がscope commit境界で破れるパターン。deploy_task.shのreflux配備でinsights.yamlをscope外として明示除外するか、auto-commitのtarget_path巻き込み検知をgate強化する余地あり"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
