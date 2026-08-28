@@ -4,13 +4,15 @@
 @test "FP measurement accepts all five vocabulary families" {
   run bash -c '
     source "$1/scripts/lib/gate_hook_quality_contract.sh"
-    for term in false_positive 偽陽性 誤発報 誤BLOCK 誤遮断; do
+    for repetition in $(seq 1 10); do
+      for term in false_positive 偽陽性 誤発報 誤BLOCK 誤遮断; do
       printf -v block_text "gate追加\nquality_gate:\n  action_conversion: BLOCKを検出する\n  fp_measurement: %s" "$term"
       result="$(LC_ALL=C gate_hook_quality_contract_evaluate "$block_text")"
       [[ "$result" == $'"'"'yes\tpass\tpass'"'"' ]] || {
-        printf "term=%s result=%s\n" "$term" "$result" >&2
+        printf "repetition=%s term=%s actual=%s\n" "$repetition" "$term" "$result" >&2
         exit 1
       }
+      done
     done
     printf "positive_terms=5 measurement_pass=5\n"
   ' _ "$BATS_TEST_DIRNAME/../.."
