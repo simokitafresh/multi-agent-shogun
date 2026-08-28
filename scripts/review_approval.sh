@@ -263,6 +263,22 @@ canonical_generation=$(sha256sum "$report" | awk '{print $1}')
 [[ "$canonical_generation" =~ ^[0-9a-f]{64}$ ]] || { echo "BLOCK: canonical report generation unavailable: $report" >&2; exit 1; }
 report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_logical")
 dir="$base/reports/$report_key"; mkdir -p "$dir"
+# A Karo ACCEPT is terminal only when the canonical Gunshi LGTM for this exact
+# report generation already exists.  Previously the normal ACCEPT path relied
+# on review_all_reports_ready() later in the asynchronous completion flow; that
+# let Karo publish an ACCEPT first, after which a delayed LGTM created a
+# reversed_lgtm_to_karo_accept interval.  Fail before any Karo marker is
+# written, and keep the failed-report close exception below intact.
+if [ "$role:$result" = karo:ACCEPT ] && [ "$fail_close" != 1 ]; then
+  gunshi_result=$(review_approval_value "$dir/gunshi.yaml" result 2>/dev/null || true)
+  gunshi_fp=$(review_approval_value "$dir/gunshi.yaml" fingerprint 2>/dev/null || true)
+  gunshi_report=$(review_approval_value "$dir/gunshi.yaml" report 2>/dev/null || true)
+  if [ "$gunshi_result" != LGTM ] || [ "$gunshi_fp" != "$fingerprint" ] \
+    || { [ -n "$gunshi_report" ] && [ "$gunshi_report" != "$report_rel" ]; }; then
+    echo "BLOCK: Karo ACCEPT requires current Gunshi LGTM before ACCEPT: $report_rel" >&2
+    exit 1
+  fi
+fi
 # An RC means the reviewed implementation was not acceptable.  Re-submitting
 # the same implementation commit merely by toggling report lifecycle fields
 # recreates the handoff without changing the artifact.  Persist the rejected
@@ -577,7 +593,24 @@ review_approval_cleanup_on_exit() {
   return "$rc"
 }
 trap review_approval_cleanup_on_exit EXIT
-printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" > "$tmp"
+# Gunshi approval writes are idempotent per report/fingerprint.  A retry of the
+# same LGTM must retain the first durable boundary timestamp; otherwise a
+# delayed Gunshi retry moves the measured LGTM edge and can recreate the
+# reversed interval this task fixes.  Karo ACCEPT deliberately receives a new
+# timestamp on each valid retry so a previously invalid Karo-first record can
+# be recovered after the matching LGTM exists.  A changed fingerprint
+# (including an RC generation) naturally receives a fresh timestamp.
+approval_timestamp="$(date -Iseconds)"
+existing_result=$(review_approval_value "$dir/$role.yaml" result 2>/dev/null || true)
+existing_fp=$(review_approval_value "$dir/$role.yaml" fingerprint 2>/dev/null || true)
+existing_report=$(review_approval_value "$dir/$role.yaml" report 2>/dev/null || true)
+existing_timestamp=$(review_approval_value "$dir/$role.yaml" timestamp 2>/dev/null || true)
+if [ "$role" = gunshi ] && [ "$existing_result" = "$result" ] && [ "$existing_fp" = "$fingerprint" ] \
+  && [ -n "$existing_timestamp" ] \
+  && { [ -z "$existing_report" ] || [ "$existing_report" = "$report_rel" ]; }; then
+  approval_timestamp="$existing_timestamp"
+fi
+printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n' "$approval_timestamp" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 # The durable approval record is complete.  Do not keep the report approval
 # lock across SG7 publication or any completion work: canonical LGTM used to

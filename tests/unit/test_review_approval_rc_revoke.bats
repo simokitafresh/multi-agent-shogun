@@ -66,6 +66,16 @@ _review() {
     REVIEW_APPROVAL_ROOT="$FAKE_ROOT" bash "$PROJECT_ROOT/scripts/review_approval.sh" "$@"
 }
 
+_seed_gunshi_lgtm() {
+    local cmd_id="$1" report="$2" key fingerprint approval_dir
+    key="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$FAKE_ROOT" "$report")"
+    fingerprint="$(PROJECT_ROOT="$FAKE_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_fingerprint "$2"' _ "$FAKE_ROOT" "$report")"
+    approval_dir="$FAKE_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    printf 'timestamp: 2026-07-27T00:11:00+09:00\nrole: gunshi\nresult: LGTM\nfingerprint: %s\nreport: queue/reports/%s\n' \
+        "$fingerprint" "$(basename "$report")" > "$approval_dir/gunshi.yaml"
+}
+
 # ---------------------------------------------------------------------------
 # fixture (1): erroneous RC -> RC_REVOKE -> Gunshi LGTM passes again
 # ---------------------------------------------------------------------------
@@ -107,6 +117,7 @@ _review() {
     # the "implementation commit unchanged since Karo RC" gate that would
     # otherwise fire (see fixture 4) is cleared because the RC was revoked.
     # No forced content edit was required to get past the erroneous RC.
+    _seed_gunshi_lgtm "$cmd_id" "$report"
     run _review "$cmd_id" karo ACCEPT "$report"
     echo "$output" >&3
     [ "$status" -eq 0 ]
@@ -182,6 +193,8 @@ d = yaml.safe_load(open(p, encoding="utf-8")) or {}
 d["status"] = "completed"
 yaml.dump(d, open(p, "w", encoding="utf-8"), allow_unicode=True, default_flow_style=False)
 PY
+
+    _seed_gunshi_lgtm "$cmd_id" "$report"
 
     run _review "$cmd_id" karo ACCEPT "$report"
     echo "$output" >&3
