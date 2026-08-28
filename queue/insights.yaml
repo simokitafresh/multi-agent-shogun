@@ -6685,3 +6685,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T13:54:41+09:00"
+- id: INS-20260828-140104437-c2a1
+  ts: "2026-08-28T14:01:04+09:00"
+  insight: "shared-main 方式では忍者の編集途中(未 commit)が即本番: 13:59 小太郎 T122 hotfix の scripts/inbox_mark_read.sh 行 200 引用符崩れで bash -n FAIL→全エージェントの既読化が数分間失敗。hot script(inbox_mark_read/inbox_write/ninja_monitor/cmd_complete_gate/deploy_task)は一時ファイル編集→bash -n→mv の原子置換を deploy テンプレで強制し、pre-bash hook で hot script の bash -n FAIL を検知したら掲示板 WARN。自動化ターゲット: deploy_task.sh の engineering_preferences に原子置換規則、ninja_monitor cycle に hot script bash -n 監視"
+  priority: "high"
+  source: "shogun"
+  fix_known: false
+  status: pending
