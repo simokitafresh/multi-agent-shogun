@@ -6857,3 +6857,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T14:48:13+09:00"
+- id: INS-20260828-145102596-154d
+  ts: "2026-08-28T14:51:02+09:00"
+  insight: "gate_context_freshness の source_equivalent auto-close が context/rebalancer.md へ marker 行を毎回 append し(本日 10 回: 11:27〜14:50、掲示板 10 件・将軍 inbox nudge 9 件)、同一結論を反復通知=LS096 粒度バグ。原因: (a)auto-close が既存 marker を replace せず追記→rebalancer.md が runtime postclear checkpoint 毎に dirty/commit 対象になる (b)T108『source_equivalent は将軍通知なし』の契約に反し bulletin_notify が将軍 inbox へ届く。修正 1 unit: marker は最新 1 行へ置換+source_equivalent info は BULLETIN_NOTIFY 空(将軍 nudge 0)+回帰 bats。効果計測=次 3h の rebalancer DOC_LANE_INFO 件数と将軍 inbox nudge 0。origin: [[T108_doc_lane自動化]] -> [[source_equivalent_marker_append]] -> [[LS096_同一結論反復]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
