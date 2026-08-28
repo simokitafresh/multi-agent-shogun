@@ -1,13 +1,93 @@
 #!/usr/bin/env bash
 # Persist exactly one recovery nudge for an active task after verified respawn.
 respawn_recovery_launch_command() {
-    local root="$1" launch="$2" executable node_path
-    [ -n "$launch" ] || return 1
-    read -r executable _ <<< "$launch"
-    [[ "$executable" = /* ]] || return 1
-    node_path="${RESPAWN_RECOVERY_NODE_PATH:-${executable%/*}}"
-    [ -d "$node_path" ] || return 1
-    printf 'export PATH="%s:$PATH"; cd "%s" && exec %s\n' "$node_path" "$root" "$launch"
+    local root="$1" launch="$2" executable args candidate resolved node_path
+    local variable_name variable_default variable_value
+    [ -n "$launch" ] || {
+        printf '%s\n' 'respawn_recovery_launch_command: empty launch command' >&2
+        return 1
+    }
+    [[ "$launch" != *$'\n'* && "$launch" != *$'\r'* ]] || {
+        printf '%s\n' 'respawn_recovery_launch_command: newline in launch command' >&2
+        return 1
+    }
+
+    # Only the first whitespace-delimited word is resolved.  Do not eval the
+    # command: the SSOT uses ${NAME:-default}, while launch arguments must be
+    # inert data because the result is later passed to tmux as a shell string.
+    read -r executable args <<< "$launch"
+    [ -n "$executable" ] || {
+        printf '%s\n' 'respawn_recovery_launch_command: executable is missing' >&2
+        return 1
+    }
+
+    if [[ "$executable" =~ ^\$\{([A-Za-z_][A-Za-z0-9_]*):-(.*)\}$ ]]; then
+        variable_name="${BASH_REMATCH[1]}"
+        variable_default="${BASH_REMATCH[2]}"
+        variable_value="${!variable_name-}"
+        candidate="${variable_value:-$variable_default}"
+    else
+        candidate="$executable"
+    fi
+
+    # Tilde expansion is explicit (rather than eval) so the existing Claude
+    # ~/bin/claude contract remains valid.
+    local tilde_char home_prefix
+    printf -v tilde_char '\176'
+    home_prefix="${tilde_char}/"
+    if [ "$candidate" = "~" ]; then
+        candidate="$HOME"
+    elif [[ "$candidate" == "$home_prefix"* ]]; then
+        candidate="$HOME/${candidate#"$home_prefix"}"
+    fi
+
+    if [[ "$candidate" = /* ]]; then
+        resolved="$candidate"
+    else
+        # command -v is deliberately used for PATH/relative lookup.  A shell
+        # builtin/function or unresolved name is rejected unless it yields a
+        # real absolute executable path.
+        resolved=$(command -v "$candidate" 2>/dev/null || true)
+        if [[ "$resolved" != /* ]]; then
+            if [[ -n "$resolved" && -x "$resolved" ]]; then
+                resolved=$(realpath -e -- "$resolved" 2>/dev/null || true)
+            else
+                resolved=""
+            fi
+        fi
+    fi
+    [[ "$resolved" = /* ]] || {
+        printf 'respawn_recovery_launch_command: unresolved executable: %s\n' "$candidate" >&2
+        return 1
+    }
+
+    # Reject shell syntax in arguments and in variable-derived executables.
+    # Normal CLI flags/path characters remain supported; quotes, expansions,
+    # redirects, separators and globbing cannot reach tmux.
+    [[ ! "$candidate" =~ [^[:alnum:]_./:=+@%~+-] ]] || {
+        printf 'respawn_recovery_launch_command: unsafe executable: %s\n' "$candidate" >&2
+        return 1
+    }
+    [[ ! "$args" =~ [^[:alnum:]_./:=+@%~[:space:]-] ]] || {
+        printf 'respawn_recovery_launch_command: unsafe launch arguments: %s\n' "$args" >&2
+        return 1
+    }
+
+    node_path="${RESPAWN_RECOVERY_NODE_PATH:-${resolved%/*}}"
+    [ -d "$node_path" ] || {
+        printf 'respawn_recovery_launch_command: node path is not a directory: %s\n' "$node_path" >&2
+        return 1
+    }
+
+    local quoted_node quoted_root quoted_executable
+    printf -v quoted_node '%q' "$node_path"
+    printf -v quoted_root '%q' "$root"
+    printf -v quoted_executable '%q' "$resolved"
+    # shellcheck disable=SC2016
+    # $PATH must remain literal in the generated command.
+    printf 'export PATH="%s:$PATH"; cd %s && exec %s' "$quoted_node" "$quoted_root" "$quoted_executable"
+    [ -z "$args" ] || printf ' %s' "$args"
+    printf '\n'
 }
 
 respawn_recovery_ready() {

@@ -140,6 +140,57 @@ SH
   [ "$status" -eq 0 ]
 }
 
+@test "launch resolves absolute, PATH, and variable default executables" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  mkdir -p "$root/bin"
+  printf '#!/usr/bin/env bash\n' > "$root/bin/fake-codex"
+  chmod +x "$root/bin/fake-codex"
+
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "/bin/codex --flag"' _ "$repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'exec /bin/codex --flag'* ]]
+
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; PATH="$2/bin:$PATH" respawn_recovery_launch_command "$1" "fake-codex --flag"' _ "$repo" "$root"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $root/bin/fake-codex --flag"* ]]
+
+  run bash -c 'cd "$2"; source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$2" "bin/fake-codex --flag"' _ "$repo" "$root"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $root/bin/fake-codex --flag"* ]]
+
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; PATH="$2/bin:$PATH"; unset SHOGUN_CODEX_BIN; respawn_recovery_launch_command "$1" '\''${SHOGUN_CODEX_BIN:-fake-codex} --flag'\''' _ "$repo" "$root"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $root/bin/fake-codex --flag"* ]]
+
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; export SHOGUN_CODEX_BIN="$2/bin/fake-codex"; respawn_recovery_launch_command "$1" '\''${SHOGUN_CODEX_BIN:-missing} --flag'\''' _ "$repo" "$root"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $root/bin/fake-codex --flag"* ]]
+}
+
+@test "unresolved and shell syntax launch inputs fail with stderr reasons" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "not-a-real-respawn-command --flag" 2>"$2/error-unresolved"' _ "$repo" "$root"
+  [ "$status" -ne 0 ]
+  [ -z "$output" ]
+  grep -q 'unresolved executable' "$root/error-unresolved"
+
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" '\''/bin/codex;touch /tmp/respawn-recovery-injection'\'' 2>"$2/error-unsafe"' _ "$repo" "$root"
+  [ "$status" -ne 0 ]
+  [ -z "$output" ]
+  grep -q 'unsafe executable' "$root/error-unsafe"
+}
+
+@test "current Codex SSOT launch command resolves to a nonempty command" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  source "$repo/scripts/lib/cli_lookup.sh"
+  launch=$(cli_launch_cmd saizo)
+  [ -n "$launch" ]
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "$2"' _ "$repo" "$launch"
+  [ "$status" -eq 0 ]
+  [ -n "$output" ]
+  [[ "$output" == *'exec /'* ]]
+}
+
 @test "post-clear verification has no independent CTX parser or unknown success" {
   repo="$BATS_TEST_DIRNAME/../.."
   run grep -n 'post_ctx\|CTX:${post_ctx}\|post_ctx.*"?"' "$repo/scripts/inbox_watcher.sh"
