@@ -7264,6 +7264,66 @@ EOF
     return 1
 }
 
+# Keep the cycle's observation/notification path responsive while the
+# inventory scan and deploy flow run under the existing per-agent lease.
+_schedule_reflux_auto_deploy_background() {
+    local name="$1" now="$2" task_file="$SCRIPT_DIR/queue/tasks/${1}.yaml"
+    local task_status last_file last elapsed cooldown lock_file lock_fd worker_pid
+
+    if _training_pipeline_has_work; then
+        unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+        log "REFLUX-AUTO-SKIP: $name production pipeline has pending work"
+        return 1
+    fi
+    if [ -f "$task_file" ]; then
+        task_status=$(yaml_field_get "$task_file" "status")
+        case "$task_status" in
+            assigned|acknowledged|in_progress|pending|failed|done|PASS)
+                unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+                log "REFLUX-AUTO-SKIP: $name task status=${task_status} (RUNTIME=idleでもGATE CLEAR/archive未完了の可能性。上書き対象外)"
+                return 1
+                ;;
+        esac
+    fi
+    if [ -z "${REFLUX_IDLE_FIRST_SEEN[$name]:-}" ]; then
+        REFLUX_IDLE_FIRST_SEEN[$name]=$now
+        log "REFLUX-AUTO-WATCH: $name idle tracking started"
+        return 1
+    fi
+    elapsed=$((now - REFLUX_IDLE_FIRST_SEEN[$name]))
+    if [ "$elapsed" -lt "${REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD:-600}" ]; then
+        log "REFLUX-AUTO-WAIT: $name idle ${elapsed}s < ${REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD:-600}s"
+        return 1
+    fi
+
+    last_file=$(_reflux_auto_state_file "$name")
+    last=0
+    [ -f "$last_file" ] && read -r last < "$last_file" || true
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    cooldown="${REFLUX_AUTO_DEPLOY_COOLDOWN:-3600}"
+    if [ $((now - last)) -lt "$cooldown" ]; then
+        log "REFLUX-AUTO-COOLDOWN: $name $((now - last))s < ${cooldown}s"
+        return 1
+    fi
+
+    lock_file="${REFLUX_AUTO_DEPLOY_LOCK_DIR:-$STATE_DIR}/reflux_auto_${name}.lock"
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "REFLUX-AUTO-BACKGROUND-SKIP: $name worker already running"
+        return 1
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        _handle_reflux_auto_deploy "$name" "$now"
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "REFLUX-AUTO-BACKGROUND-START: $name pid=$worker_pid"
+    return 0
+}
+
 _training_auto_state_file() {
     local name="$1"
     printf '%s_%s.last\n' "$TRAINING_AUTO_DEPLOY_STATE_PREFIX" "$name"
@@ -7629,7 +7689,7 @@ handle_confirmed_idle() {
     _handle_idle_notify "$name" "$now"
     _record_training_effect "$name"  # 修行完了時にbefore/after FAIL率を比較記録 (cmd_2767)
     _trigger_training_completion_check "$name"  # 修行完了判定→SKILL.md自動更新 (cmd_3230: Phase3)
-    if _handle_reflux_auto_deploy "$name" "$now"; then return; fi
+    if _schedule_reflux_auto_deploy_background "$name" "$now"; then return; fi
     # 殿裁定(2026-07-15): 本体script面攻略をBats深掘りより優先する。
     if _handle_speed_training_auto_deploy "$name" "$now"; then return; fi
     if _handle_test_speed_auto_deploy "$name"; then return; fi
@@ -12034,6 +12094,55 @@ check_all_codex_bypass_flags() {
 }
 
 # ─── 初期ペイン探索 ───
+# Cycle telemetry is intentionally append-only and independent of the heavy
+# maintenance logs. It measures elapsed wall time plus named sections so a
+# slow cycle identifies the phase that held the monitor loop.
+_ninja_monitor_cycle_clock_ms() {
+    local _nm_cycle_epoch_us="${EPOCHREALTIME/./}"
+    printf '%s\n' "$((_nm_cycle_epoch_us / 1000))"
+}
+
+_ninja_monitor_cycle_phase_mark() {
+    local _nm_phase="$1" _nm_now _nm_delta
+    _nm_now=$(_ninja_monitor_cycle_clock_ms)
+    _nm_delta=$((_nm_now - NINJA_MONITOR_CYCLE_PHASE_LAST_MS))
+    [ "$_nm_delta" -ge 0 ] || _nm_delta=0
+    NINJA_MONITOR_CYCLE_PHASE_MS[$NINJA_MONITOR_CYCLE_PHASE]=$((
+        ${NINJA_MONITOR_CYCLE_PHASE_MS[$NINJA_MONITOR_CYCLE_PHASE]:-0} + _nm_delta
+    ))
+    NINJA_MONITOR_CYCLE_PHASE="$_nm_phase"
+    NINJA_MONITOR_CYCLE_PHASE_LAST_MS="$_nm_now"
+}
+
+_ninja_monitor_cycle_record() {
+    local _nm_end _nm_wall _nm_phase _nm_max_phase _nm_max_ms=0 _nm_json _nm_file _nm_lock _nm_phase_ms
+    _nm_end=$(_ninja_monitor_cycle_clock_ms)
+    _ninja_monitor_cycle_phase_mark "cycle_end"
+    _nm_wall=$((_nm_end - NINJA_MONITOR_CYCLE_START_MS))
+    [ "$_nm_wall" -ge 0 ] || _nm_wall=0
+    _nm_file="${NINJA_MONITOR_CYCLE_LOG:-$SCRIPT_DIR/logs/ninja_monitor_cycle.jsonl}"
+    _nm_lock="${_nm_file}.lock"
+    mkdir -p "${_nm_file%/*}" || return 1
+    _nm_json=''
+    for _nm_phase in observe snapshot lifecycle maintenance publish cycle_end; do
+        _nm_phase_ms="${NINJA_MONITOR_CYCLE_PHASE_MS[$_nm_phase]:-0}"
+        [ "$_nm_phase_ms" -gt "$_nm_max_ms" ] && {
+            _nm_max_ms="$_nm_phase_ms"
+            _nm_max_phase="$_nm_phase"
+        }
+        [ -n "$_nm_json" ] && _nm_json+=','
+        _nm_json+="\"$_nm_phase\":$_nm_phase_ms"
+    done
+    {
+        flock -x -w 5 200 || return 1
+        printf '{"schema":"ninja_monitor_cycle.v1","timestamp":"%s","cycle":%s,"wall_ms":%s,"phases_ms":{%s}}\n' \
+            "$(date -Iseconds)" "$cycle" "$_nm_wall" "$_nm_json" >> "$_nm_file"
+    } 200>"$_nm_lock"
+    if [ "$_nm_wall" -gt 120000 ]; then
+        log "CYCLE-SLOW: cycle=$cycle wall_sec=$((_nm_wall / 1000)) phase=$_nm_max_phase phase_sec=$((_nm_max_ms / 1000))"
+    fi
+}
+
 ninja_monitor_function_timing_enable
 
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
@@ -12081,6 +12190,10 @@ start_ninja_monitor_hot_reload_watch
 
 while true; do
     cycle=$((cycle + 1))
+    NINJA_MONITOR_CYCLE_START_MS=$(_ninja_monitor_cycle_clock_ms)
+    NINJA_MONITOR_CYCLE_PHASE_LAST_MS="$NINJA_MONITOR_CYCLE_START_MS"
+    NINJA_MONITOR_CYCLE_PHASE=observe
+    declare -A NINJA_MONITOR_CYCLE_PHASE_MS=()
 
     # A stale generation is never killed.  The owner record is atomically
     # replaced by its successor and the old loop self-fences at this checkpoint.
@@ -12317,6 +12430,7 @@ while true; do
     # ═══ STEP 1a: 家老陣形図の早期更新 ═══
     # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。
     refresh_karo_snapshot_fast_path
+    _ninja_monitor_cycle_phase_mark lifecycle
 
     process_checkpoint_manifests
 
@@ -12434,6 +12548,7 @@ while true; do
     check_lesson_deprecation_candidates
 
     # ═══ 三層記憶tmp cleanup + dry-run候補抽出（60分間隔） ═══
+    _ninja_monitor_cycle_phase_mark maintenance
     check_three_layer_maintenance
 
     # ═══ obsidian candidate自動昇格（日次 cmd_3240） ═══
@@ -12473,6 +12588,7 @@ while true; do
     check_auto_archive
 
     # ═══ STEP 1b: 後段チェック反映後の最終snapshot更新 ═══
+    _ninja_monitor_cycle_phase_mark publish
     refresh_karo_snapshot_fast_path
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_throughput_ready_events # durable throughput connector (ready event exactly once)
@@ -12529,6 +12645,8 @@ while true; do
 
     # ═══ Self-restart check ═══
     check_script_update
+
+    _ninja_monitor_cycle_record
 
     sleep "$POLL_INTERVAL"
 done

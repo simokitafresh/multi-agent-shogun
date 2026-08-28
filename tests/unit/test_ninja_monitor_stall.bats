@@ -497,7 +497,7 @@ wait "$maintenance_pid"
         script_path="$root/ninja_monitor.sh"
         capture="$root/launch.capture"
         generation="generation-live"
-        mkdir -p "$STATE_DIR"
+        mkdir -p "$SCRIPT_DIR" "$STATE_DIR"
         printf "#!/bin/bash\n" > "$script_path"
         start_mtime=$(stat -c %Y "$script_path")
         printf "%s %s %s\n" "$$" "$generation" "$EPOCHSECONDS" > "$STATE_DIR/ninja_monitor.owner"
@@ -4989,6 +4989,82 @@ grep "^ninja|kagemaru|none|idle|none|CTX:" "$snapshot"
 grep "^idle|saizo,kagemaru$" "$snapshot"
 '
     [ "$status" -eq 0 ]
+}
+
+# test_necessity: cycle wall/phase telemetry must retain normal and slow
+# boundaries, and a slow cycle must name the measured phase for fail-closed
+# diagnosis without blocking the next observation cycle.
+@test "cycle telemetry records normal and slow phase boundaries" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; LOG="$SCRIPT_DIR/monitor.log"
+        NINJA_MONITOR_CYCLE_LOG="$SCRIPT_DIR/logs/ninja_monitor_cycle.jsonl"
+        mkdir -p "$SCRIPT_DIR/logs"
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        cycle=1; declare -A NINJA_MONITOR_CYCLE_PHASE_MS
+        NINJA_MONITOR_CYCLE_PHASE=observe
+        NINJA_MONITOR_CYCLE_START_MS=$(_ninja_monitor_cycle_clock_ms)
+        NINJA_MONITOR_CYCLE_PHASE_LAST_MS="$NINJA_MONITOR_CYCLE_START_MS"
+        _ninja_monitor_cycle_phase_mark snapshot
+        _ninja_monitor_cycle_record
+        cycle=2; declare -A NINJA_MONITOR_CYCLE_PHASE_MS
+        NINJA_MONITOR_CYCLE_PHASE=observe
+        slow_start=$(_ninja_monitor_cycle_clock_ms)
+        NINJA_MONITOR_CYCLE_START_MS=$((slow_start - 121000))
+        NINJA_MONITOR_CYCLE_PHASE_LAST_MS="$NINJA_MONITOR_CYCLE_START_MS"
+        _ninja_monitor_cycle_record
+        python3 - "$NINJA_MONITOR_CYCLE_LOG" <<"PY"
+import json, sys
+rows=[json.loads(line) for line in open(sys.argv[1], encoding="utf-8")]
+assert len(rows) == 2
+assert rows[0]["wall_ms"] < 120000
+assert rows[1]["wall_ms"] > 120000
+assert set(rows[0]["phases_ms"]) == {"observe", "snapshot", "lifecycle", "maintenance", "publish", "cycle_end"}
+PY
+        test "$(grep -c "CYCLE-SLOW: cycle=2" "$LOG")" -eq 1
+        grep -q "phase=observe phase_sec=" "$LOG"
+        echo "normal=1 slow=1 phase=observe"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "normal=1 slow=1 phase=observe" ]
+}
+
+# test_necessity: reflux scheduling must keep inventory/deploy work outside
+# the monitor cycle, suppress duplicate workers with a lease, and retry a
+# failed worker on a later cycle.
+@test "reflux auto deploy is backgrounded, deduped, and retryable" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$SCRIPT_DIR/state"; LOG="$SCRIPT_DIR/monitor.log"
+        mkdir -p "$SCRIPT_DIR" "$STATE_DIR"
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        _training_pipeline_has_work() { return 1; }
+        REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=0
+        REFLUX_AUTO_DEPLOY_COOLDOWN=3600
+        REFLUX_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/reflux"
+        REFLUX_IDLE_FIRST_SEEN[saizo]=100
+        calls="$SCRIPT_DIR/calls"
+        : > "$calls"
+        _handle_reflux_auto_deploy() { printf "%s\n" "$1" >> "$calls"; sleep 1; return 0; }
+        _schedule_reflux_auto_deploy_background saizo 4000
+        _schedule_reflux_auto_deploy_background saizo 4001 || true
+        wait
+        test "$(wc -l < "$calls")" -eq 1
+        grep -q "REFLUX-AUTO-BACKGROUND-START: saizo" "$LOG"
+        _handle_reflux_auto_deploy() { printf "%s\n" "$1" >> "$calls"; return 1; }
+        _schedule_reflux_auto_deploy_background saizo 8000
+        wait
+        _schedule_reflux_auto_deploy_background saizo 8001
+        wait
+        test "$(wc -l < "$calls")" -eq 3
+        echo "background=1 duplicate=1 retry=1"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "background=1 duplicate=1 retry=1" ]
 }
 
 @test "main loop: snapshot fast path runs before slow maintenance checks" {
