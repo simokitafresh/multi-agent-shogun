@@ -7540,4 +7540,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T01:00:12+09:00"
+- id: INS-20260829-010016447-3ddb
+  ts: "2026-08-29T01:00:16+09:00"
+  insight: "本番 proof 計数(LS125): gate_shogun_startup に (a)deploy_task.log の『long-runtime exception』行のうち観測窓語を含む件数/24h (b)家老 pane scrollback の run_tests 呼出し件数/1h を表示し、どちらも 0 でなければ WARN。62ea70daf の構造型 BLOCK が効いている証拠を起動時に機械表示する"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
