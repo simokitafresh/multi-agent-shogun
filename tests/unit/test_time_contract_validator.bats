@@ -92,3 +92,36 @@ valid_split() {
     [[ "$output" == *"ten_min_contract: PASS natural-boundary exception"* ]]
     [[ "$output" != *"PROJECT_DIR"* ]]
 }
+
+# test_necessity: 観測窓(live後N時間の本番観測/証明)を long-runtime 例外の理由にした task は BLOCK され、忍者が 3600 秒級の機械的待ちに人質化されない(殿裁定 2026-08-29 00:49)。
+@test "long-runtime例外: 観測窓を理由にするAC/理由はBLOCKされる" {
+    {
+        printf '%s\n' "task:"
+        printf '%s\n' "    estimated_minutes: 60"
+        printf '%s\n' "    acceptance_criteria:"
+        printf '%s\n' "      - {id: AC1, description: live後1時間のgate_metricsでBLOCK行0を証明する}"
+        printf '%s\n' "    execution_env:"
+        printf '%s\n' "      long_runtime_reason: live1h証明を統合するため"
+        printf '%s\n' "      measured_runtime_sec: 3600"
+    } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"observation window"* ]]
+    [[ "$output" == *"AC1"* ]]
+}
+
+# test_necessity: 実装理由(観測窓でない)の long-runtime 例外は従来どおり PASS し、判定の反転が起きない。
+@test "long-runtime例外: 実装理由はPASSのまま" {
+    {
+        printf '%s\n' "task:"
+        printf '%s\n' "    estimated_minutes: 30"
+        printf '%s\n' "    acceptance_criteria:"
+        printf '%s\n' "      - {id: AC1, description: fixture 17本のbats契約を追加しFAIL0}"
+        printf '%s\n' "    execution_env:"
+        printf '%s\n' "      long_runtime_reason: compat fixture 17本のbats実行に25分かかるため"
+        printf '%s\n' "      measured_runtime_sec: 1500"
+    } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"long-runtime exception"* ]]
+}

@@ -256,3 +256,23 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"D012"* ]]
 }
+
+# test_necessity: 家老 pane からの run_tests/bats 再試験は BLOCK され(殿裁定 2026-08-29 00:50)、忍者の同一 command と KARO_TEST_REASON 付きは通る。
+@test "karo-retest guard: 家老の run_tests.sh は BLOCK される" {
+    payload="$(python3 -c 'import json; print(json.dumps({"tool_name":"Bash","tool_input":{"command":"BATS_CACHE=0 bash scripts/run_tests.sh file tests/unit/test_x.bats"}}))')"
+    run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" TMUX_AGENT_ID=karo bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"karo-retest"* ]]
+}
+
+@test "karo-retest guard: KARO_TEST_REASON=e2e 付きは通る" {
+    payload="$(python3 -c 'import json; print(json.dumps({"tool_name":"Bash","tool_input":{"command":"KARO_TEST_REASON=e2e bash scripts/run_tests.sh file tests/unit/test_x.bats"}}))')"
+    run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" TMUX_AGENT_ID=karo bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK"
+    [[ "$output" != *"karo-retest"* ]]
+}
+
+@test "karo-retest guard: 忍者の run_tests.sh は通る" {
+    payload="$(python3 -c 'import json; print(json.dumps({"tool_name":"Bash","tool_input":{"command":"bash scripts/run_tests.sh file tests/unit/test_x.bats"}}))')"
+    run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" TMUX_AGENT_ID=hanzo bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK"
+    [[ "$output" != *"karo-retest"* ]]
+}
