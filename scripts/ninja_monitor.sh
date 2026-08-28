@@ -13277,7 +13277,7 @@ while true; do
 
     # ═══ 軍師LGTM後の家老未通知検知（2分間隔 cmd_karo_hotfix_completion_notify_gap） ═══
     if [ $((cycle % 6)) -eq 0 ]; then
-        _ninja_monitor_phase_call lifecycle completion_notify_gap check_karo_completion_notify_gap
+        _ninja_monitor_phase_call lifecycle completion_notify_gap _ninja_monitor_run_lifecycle_background completion_notify_gap check_karo_completion_notify_gap
     fi
 
     # ═══ CI赤検知チェック（5分間隔 cmd_715） ═══
