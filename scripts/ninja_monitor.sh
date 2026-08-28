@@ -2011,6 +2011,11 @@ check_gate_stall() {
         fi
         if gate_output=$(bash "$SCRIPT_DIR/scripts/cmd_complete_gate.sh" "$cmd" 2>&1); then
             log "GATE-AUTO-CLEAR: ${cmd} elapsed=${elapsed_min}min"
+        elif printf '%s\n' "$gate_output" | grep -Fq 'GATE WAIT:'; then
+            # External waits are retryable state, not terminal BLOCK. Keep the
+            # review marker eligible so the next monitor cycle re-runs the
+            # completion gate after ancestry/review/metric evidence changes.
+            log "GATE-AUTO-WAIT: ${cmd} elapsed=${elapsed_min}min retry next cycle"
         elif printf '%s\n' "$gate_output" | grep -Fq \
             'cmd_complete_gate busy; terminal CLEAR/BLOCK is not established (CMD_ID lock)'; then
             # cmd_complete_gate owns a second, CMD_ID-scoped lock.  Contention

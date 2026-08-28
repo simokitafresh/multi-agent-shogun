@@ -5982,6 +5982,31 @@ printf "bounded_done_check_rc=%s task_unchanged=1 shared_queue_unchanged=1\n" "$
     [ "$output" = "background=1 duplicate=1 retry=1" ]
 }
 
+# test_necessity: monitor must retry a completion gate that reports external
+# WAIT without sending a terminal gate_block notification to Karo.
+# regression_justification: the monitor previously treated every nonzero gate
+# result except lock contention as BLOCK, undoing the gate's WAIT contract.
+@test "completion gate WAIT stays eligible for monitor retry" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+python3 - "$PROJECT_ROOT/scripts/ninja_monitor.sh" <<'"'"'PY'"'"'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+wait = text.index("grep -Fq '\''GATE WAIT:'\''")
+busy = text.index("cmd_complete_gate busy; terminal CLEAR/BLOCK is not established", wait)
+block = text.index("GATE-AUTO-BLOCK", busy)
+assert wait < busy < block
+assert "GATE-AUTO-WAIT" in text[wait:block]
+PY
+echo "wait_retry=1 block_notification=0"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "wait_retry=1 block_notification=0" ]
+}
+
 @test "main loop: snapshot fast path runs before slow maintenance checks" {
     run bash -c '
 set -euo pipefail

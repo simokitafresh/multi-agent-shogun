@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state report_commit_main_ancestry_state check_report_commit_main_ancestry""".split()
+names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state report_commit_main_ancestry_state check_report_commit_main_ancestry""".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -3160,7 +3160,7 @@ for marker in [
 PY
 }
 
-@test "cmd_complete_gate early-exit BLOCK rows use printf and freshness is post-CLEAR" {
+@test "cmd_complete_gate early-exit metrics use printf and freshness is post-CLEAR" {
     # test_necessity: cmd_karo_hotfix_gate_metrics_literal_tab_20260725 found
     # 4 early-exit BLOCK append_line_locked calls interpolating "\t" inside a
     # plain double-quoted string (bash never expands \t there), producing a
@@ -3173,7 +3173,6 @@ script = open(sys.argv[1], encoding='utf-8').read()
 reasons = [
     'parent_cmd_contract',
     'sg7_bundle_missing_or_invalid',
-    'review_two_phase_pending',
     'review_fingerprint_changed_after_normalize',
 ]
 for reason in reasons:
@@ -3189,6 +3188,11 @@ assert 'check_context_freshness_own_commit "$CMD_ID"' not in script
 assert 'check_context_update "$CMD_ID"' not in script
 assert '--cmd-warnings "$CMD_ID"' in script
 assert 'BULLETIN_NOTIFY=shogun' in script
+assert 'record_wait_reason "WAIT:review_two_phase_pending"' in script
+assert 'GATE WAIT: review_two_phase_pending' in script
+assert 'record_wait_reason "WAIT:throughput_segment_invalid"' in script
+assert 'GATE WAIT: ${CMD_ID}:throughput_segment_invalid' in script
+assert 'GATE BLOCK: ${CMD_ID}:throughput_segment_invalid' not in script
 PY
 }
 
@@ -8804,4 +8808,49 @@ EOF
 @test "completion gap recorder is wired to both CLEAR branches" {
     grep -q 'queue_completion_gap_metrics "\$CMD_ID"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     [ "$(grep -c 'queue_completion_gap_metrics "\$CMD_ID"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh")" -ge 2 ]
+}
+
+# test_necessity: external ancestry/review/throughput evidence is retryable
+# state and must remain distinct from terminal contract violations in the
+# durable gate ledger.
+# regression_justification: cmd_complete_gate previously recorded all three
+# wait states as BLOCK, causing monitor retries to become repair notifications.
+@test "external gate waits are deduplicated and classified as WAIT" {
+    source "$GATE_HELPERS_FILE"
+    WAIT_REASONS=()
+    record_wait_reason "WAIT:report_commit_main_ancestry"
+    record_wait_reason "WAIT:report_commit_main_ancestry"
+    record_wait_reason "WAIT:review_two_phase_pending"
+    record_wait_reason "WAIT:throughput_segment_invalid"
+
+    [ "${#WAIT_REASONS[@]}" -eq 3 ]
+    joined="$(IFS='|'; echo "${WAIT_REASONS[*]}")"
+    run env CMD_COMPLETE_GATE_CLASSIFY_ONLY=1 CMD_COMPLETE_GATE_CLASSIFY_REASON="$joined" bash "$SRC_GATE_SCRIPT" cmd_wait_classify
+    [ "$status" -eq 0 ]
+    [ "$output" = "WAIT" ]
+
+    run env CMD_COMPLETE_GATE_CLASSIFY_ONLY=1 CMD_COMPLETE_GATE_CLASSIFY_REASON="${joined}|report_format:missing" bash "$SRC_GATE_SCRIPT" cmd_wait_classify
+    [ "$status" -eq 0 ]
+    [ "$output" = "BLOCK" ]
+}
+
+# test_necessity: an unpushed PASS report must prevent terminal CLEAR while
+# preserving the existing report_main_ancestry_state direct contract.
+# regression_justification: the helper returned WAIT text with rc=0 and the
+# caller ignored it, allowing an unpublished completion to be finalized.
+@test "report ancestry WAIT propagates to the completion decision" {
+    local repo="$BATS_TEST_TMPDIR/ancestry-wait-propagation"
+    local report="$BATS_TEST_TMPDIR/ancestry-wait-propagation.yaml"
+    make_ci_push_repo "$repo"
+    echo local-only >> "$repo/state"
+    git -C "$repo" commit -qam "local-only"
+    local commit
+    commit="$(git -C "$repo" rev-parse HEAD)"
+    printf 'verdict: PASS\ncommit_hash: %s\n' "$commit" > "$report"
+
+    run bash -c 'source "$1"; source "$5"; SCRIPT_DIR="$3"; CMD_ID=cmd_report_ancestry_wait; MATCHING_TASK_FILES=(); CMD_COMPLETE_GATE_CI_REPORT="$2"; check_report_commit_main_ancestry; printf "wait=%s\\n" "$REPORT_COMMIT_MAIN_ANCESTRY_WAIT"' \
+        _ "$GATE_HELPERS_FILE" "$report" "$repo" unused "$SRC_FIELD_GET_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+    [[ "$output" == *"wait=true"* ]]
 }
