@@ -3754,6 +3754,34 @@ check_dynamic_measurement_contract() {
     fi
 }
 
+# PD-104: a production bottleneck claim is only actionable when its source is
+# a production observation.  Local timing is useful for comparison, but it
+# cannot establish a production bottleneck and must not satisfy this contract.
+check_production_measurement_source() {
+    local search_text="${1:-${CMD_BLOCK_NC:-}}"
+    grep -Eqi '本番[^[:cntrl:]]{0,40}(ボトルネック|性能|律速|実測)|production[^[:cntrl:]]{0,40}(bottleneck|performance)|bottleneck' <<< "$search_text" || return 0
+
+    local source=""
+    source="$(awk -F: '/^[[:space:]]*measurement_source:/ {sub(/^[[:space:]]*/, "", $2); print $2; exit}' <<< "$search_text")"
+    source="${source#\"}"; source="${source%\"}"
+    source="${source#\'}"; source="${source%\'}"
+    if [[ -z "${source//[[:space:]]/}" ]]; then
+        echo "BLOCK(PD-104): production bottleneck claim requires measurement_source with production evidence" >&2
+        record_block_reason "PD-104 measurement_source missing for production bottleneck claim" "check=production_measurement_source"
+        return 0
+    fi
+    if grep -Eqi '^[[:space:]]*(local|localhost|fixture|synthetic|ローカルのみ|手元のみ)[[:space:]]*$' <<< "$source"; then
+        echo "BLOCK(PD-104): local-only measurement_source cannot prove a production bottleneck" >&2
+        record_block_reason "PD-104 local-only measurement_source" "check=production_measurement_source"
+        return 0
+    fi
+    if ! grep -Eqi 'render|production|prod|live|本番' <<< "$source" ||
+       ! grep -Eqi 'receipt|evidence|証跡|実測|log|run|sha|timestamp' <<< "$source"; then
+        echo "BLOCK(PD-104): measurement_source must identify production and its durable measurement evidence" >&2
+        record_block_reason "PD-104 measurement_source lacks production/evidence markers" "check=production_measurement_source"
+    fi
+}
+
 check_q6_not_hiding_warn() {
     if ! cmd_block_has_field "quality_gate.q6_not_hiding"; then
         echo "WARNING: q6_not_hiding未記入。「この変更は根源的問題を隠さないか？表面的対処で改革動機を殺さないか？」" >&2
@@ -4471,6 +4499,8 @@ QG_TEMPLATE
     check_research_baseline_warn
     # T25: fixed values warn; explicit but incomplete self-measurement blocks.
     check_dynamic_measurement_contract "$CMD_BLOCK_NC"
+    # PD-104: production bottleneck claims require a durable production source.
+    check_production_measurement_source "$CMD_BLOCK_NC"
 
     # q5_verified_source: 存在チェックはpreflight済み。以下は内容検証のみ
     # q5検証レベル分類（cmd_1692: code_readingのみはBLOCK）
