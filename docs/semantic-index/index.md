@@ -13896,6 +13896,8 @@ codd:
 | lesson | `L1618` run_tests.sh taskモードはtask_worktree_pathがscripts/run_tests.shの実行ビットを保持していないとexternal_scope_no_mapped_testsで誤BLOCKする |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-22T23:24:11+09:00 saizoのrun_tests.sh task は絶対target path解決で rc=2 を再 現。既存のtest triage記録と一致。はバグではないのか？ |
 | causal | `cmd_karo_ci_fix_33147256383_compat_receipt` files_modified: [[provisional_run_tests]] |
+| causal | `cmd_karo_hotfix_run_tests_queue_root_guard_20260828` files_modified: [[provisional_run_tests]] |
+| cmd | `cmd_karo_hotfix_run_tests_queue_root_guard_20260828` (`tests/unit/test_run_tests_queue_root_guard.bats`, `scripts/run_tests.sh`) |
 | causal_chain | `[[cmd_karo_hotfix_git_index_singleflight_202608191445]]` (L1618) |
 
 ## provisional_.gitignore — 仮: .Gitignore
@@ -15004,6 +15006,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T10:13:08.471212+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T10:22:37.757198+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T11:06:49.204973+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:22:17.170816+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
