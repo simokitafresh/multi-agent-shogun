@@ -7750,3 +7750,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-064749082-4b88
+  ts: "2026-08-29T06:47:49+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[配備スキル品質バグ_構造型根治_62ea70daf]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=配備; score=5.3) / semantic_dictionary_design(セマンティック辞書構想; alias=karo_probe_reached_20260727; score=2.7) / cmd_quality_logging(cmd設計品質ログ; alias=zzz_gunshi_unreached_20260727; score=2.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
