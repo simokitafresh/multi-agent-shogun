@@ -6385,3 +6385,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T09:52:53+09:00"
+- id: INS-20260828-095434532-9448
+  ts: "2026-08-28T09:54:34+09:00"
+  insight: "T107 unit1 GATE CLEAR 09:52:37 が dangling commit(4bfd65d91、refs 0)で通過=T63 型の再発。report_commit_main_ancestry BLOCK が飛猿 reflux 0757 では発火したのに本件で素通り=判定基準が task worktree branch を含む可能性。根治=cmd_complete_gate の ancestry 判定を shared main(HEAD of primary worktree)固定+CLEAR 後に将軍 inbox の gate_clear 通知へ verdict(refs)を同梱。検出は scripts/shogun_commit_verdict.sh(T123)が初回で捉えた=D0 の本番 proof。origin=[[T107_dangling_CLEAR_20260828]] -> [[ancestry判定のworktree基準疑い]] -> [[shogun_commit_verdict_初検出]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
