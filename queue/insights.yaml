@@ -6591,17 +6591,33 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T13:21:16+09:00"
 - id: INS-20260828-132100384-2588
   ts: "2026-08-28T13:21:00+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[finalize84%]] は既存aliasesに一致なし。類似概念TOP3: silent_fallback_quality(Silent Fallback品質; alias=fail-open; score=4.6) / file_rename(ファイルリネーム; alias=file-rename; score=4.6) / infra_throughput_outcome_design(インフラスループット・アウトカム設計; alias=C4 lifecycle transaction; score=4.4)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T13:21:16+09:00"
 - id: INS-20260828-132107166-f853
   ts: "2026-08-28T13:21:07+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[らせん正本_第二十五話型]] は既存aliasesに一致なし。類似概念TOP3: spiral_canon_sengoku25(らせん最適の正本型(第二十五話); alias=第二十五話の型; score=4.6) / semantic_dictionary_design(セマンティック辞書構想; alias=らせん定義の補正; score=2.5) / known_unknowns_principle(無知の知; alias=同じように第九弾～第十二弾を確認せよ; score=1.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T13:21:16+09:00"
+- id: INS-20260828-132116573-0461
+  ts: "2026-08-28T13:21:16+09:00"
+  insight: "semantic_index_update新概念候補: discussion:LLMが考える時間を削ってはならない。機械的な部分のみを高速化しないと、品質低下をもたらす は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
