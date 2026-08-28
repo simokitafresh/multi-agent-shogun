@@ -2747,7 +2747,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4379"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報確認: memory_dbに対象ID原文あり。semantic/因果索引(.cache/causal_index.tsv)とdocs/semantic-index/index.mdがcmd_4379およびCDP計測pre-flightとartifact競合を既存記録。context/cdp-philosophy.md:L37-L58とdocs/research/cdp-skill-flow-inventory-20260802.md:L86-L88にpreflight→cmd_id別artifact分離→計測→baseline比較の4 Phase実装を確認し、新規修正・decision_candidate不要と判定。"
+  action_artifact: "target=queue/insights.yaml:INS-20260823-231323213-fb08;memory=memory_db exact ID;semantic=.cache/causal_index.tsv;semantic_index=docs/semantic-index/index.md:L1733-L1734;context=context/cdp-philosophy.md:L37-L58;context=docs/research/cdp-skill-flow-inventory-20260802.md:L86-L88;existing_implementation=cdp_measure.sh 4 Phase;decision_candidate=none;inventory_before=insights_pending 130,zero_backlinks 11,promotions 0,total 141"
+  resolved_at: "2026-08-29T07:39:44+09:00"
 - id: INS-20260823-231323387-0366
   ts: "2026-08-23T23:13:23+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_complete_gate遅い_20260823_2158]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=18.0) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=14.9) / cmd_quality_logging(cmd設計品質ログ; alias=cmd-complete path; score=14.9)。概念定義とaliases追加を検討せよ"
