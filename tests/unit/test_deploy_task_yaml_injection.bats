@@ -3015,3 +3015,45 @@ PY
   [ "$status" -eq 0 ]
   [ "$output" = "REFLUX_CONTRACT_OK" ]
 }
+
+# test_necessity: observation ACs must be removed from the worker contract and
+# published as one stable, monitor-owned proof artifact with an atomic replace.
+@test "deployment extracts observation ACs into queue proofs" {
+  local tmpdir="$BATS_TEST_TMPDIR/production-proof"
+  mkdir -p "$tmpdir/scripts/lib" "$tmpdir/queue/tasks"
+  cp "$PROJECT_ROOT/scripts/lib/production_proof.py" "$tmpdir/scripts/lib/"
+  cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_proof_fixture:
+    estimated_minutes: 10
+    acceptance_criteria:
+    - id: AC1
+      description: implementation remains deterministic
+    - id: AC2
+      description: 'live後1時間の本番観測。判定式: median < 10。ログ名: monitor.log'
+YAML
+  cat > "$tmpdir/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  estimated_minutes: 10
+  acceptance_criteria:
+  - id: OLD
+    description: stale AC
+YAML
+
+  run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; resolve_cmd_to_task cmd_proof_fixture hayate"
+  [ "$status" -eq 0 ]
+  run python3 - "$tmpdir/queue/tasks/hayate.yaml" "$tmpdir/queue/proofs/cmd_proof_fixture.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+proof = yaml.safe_load(open(sys.argv[2], encoding='utf-8'))
+assert [item['id'] for item in task['acceptance_criteria']] == ['AC1']
+assert proof['cmd_id'] == 'cmd_proof_fixture'
+assert proof['observation_window_seconds'] == 3600
+assert proof['predicate'] == 'median < 10'
+assert proof['log_name'] == 'monitor.log'
+assert [item['id'] for item in proof['checks']] == ['AC2']
+print('PRODUCTION_PROOF_EXTRACTION_OK')
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "PRODUCTION_PROOF_EXTRACTION_OK" ]
+}

@@ -7065,3 +7065,69 @@ SH
     [ "$status" -eq 0 ]
     [ "$output" = "auto_block=0 auto_deploy=1 deploy_calls=1" ]
 }
+
+# test_necessity: monitor-owned production proofs must evaluate one passing and
+# one failing fixture exactly once after the observation window, while the
+# worker task YAML remains byte-identical and no proof is skipped.
+# regression_justification: T161 moved live observation out of worker ACs;
+# this contract protects the cycle evaluator and its task-state boundary.
+@test "production proof evaluator records pass/fail once without task mutation" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/production-proof-evaluator"
+        mkdir -p "$root/queue/proofs" "$root/queue/tasks" "$root/logs" "$root/state"
+        SCRIPT_DIR="$root"
+        STATE_DIR="$root/state"
+        LOG="$root/logs/ninja_monitor.log"
+
+        printf "DEPLOY-PASS\\n" > "$root/logs/deploy.log"
+        cat > "$root/queue/proofs/cmd_proof_pass.yaml" <<"YAML"
+cmd_id: cmd_proof_pass
+observation_window_seconds: 1
+predicate: DEPLOY-PASS
+log_name: deploy.log
+checks:
+  - id: PROOF1
+    observation_window_seconds: 1
+    predicate: DEPLOY-PASS
+    log_name: deploy.log
+YAML
+        cat > "$root/queue/proofs/cmd_proof_fail.yaml" <<"YAML"
+cmd_id: cmd_proof_fail
+observation_window_seconds: 1
+predicate: DEPLOY-MISSING
+log_name: deploy.log
+checks:
+  - id: PROOF1
+    observation_window_seconds: 1
+    predicate: DEPLOY-MISSING
+    log_name: deploy.log
+YAML
+        touch -d "2 seconds ago" "$root/queue/proofs/cmd_proof_pass.yaml" \
+            "$root/queue/proofs/cmd_proof_fail.yaml"
+        cat > "$root/queue/tasks/worker.yaml" <<"YAML"
+task:
+  status: in_progress
+  task_id: worker-generation
+YAML
+
+        before=$(sha256sum "$root/queue/tasks/worker.yaml")
+        check_production_proofs
+        check_production_proofs
+        after=$(sha256sum "$root/queue/tasks/worker.yaml")
+
+        test "$before" = "$after"
+        test "$(grep -c "PRODUCTION-PROOF cmd_proof_pass PASS" "$LOG")" -eq 1
+        test "$(grep -c "PRODUCTION-PROOF cmd_proof_fail FAIL reason=predicate_mismatch" "$LOG")" -eq 1
+        test "$(grep -c 'INFO.*production_proof=' "$root/logs/gate_metrics.log")" -eq 2
+        test "$(grep '^cmd_proof_pass' "$root/state/ninja_monitor_production_proof.tsv" | cut -f3)" = PASS
+        test "$(grep '^cmd_proof_fail' "$root/state/ninja_monitor_production_proof.tsv" | cut -f3)" = FAIL
+        printf "pass=1 fail=1 duplicate=0 task_unchanged=1 skip=0\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "pass=1 fail=1 duplicate=0 task_unchanged=1 skip=0" ]
+}
