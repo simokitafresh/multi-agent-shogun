@@ -1,8 +1,10 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 13:16 更新(T98/T128 [x]・T129 monitor cycle 空白)(殿指示14:34: 進捗確認・つまり解消)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 13:22 更新(T130 らせん復帰・finalize 84% 計測器下知)(殿指示14:34: 進捗確認・つまり解消)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
+- [~] T130(13:20 殿指摘『らせんからずれていないか』→一次: 本日 61 CLEAR=PJ 成果 0(reflux 27/hotfix 20/ci_fix 6/README 7)、e2e の finalize 比 84%(196,186/232,975s)。家老へ karo_hotfix 1 通 msg_132010(finalize を 4 区間 review依頼/LGTM/ACCEPT/GATE に分解する計測器+本日 54 件遡及集計)。次=支配区間の切除→PJ cmd 1 本で e2e 証明→将軍儀式の自動化。LS 登録+記憶DB) らせんへの復帰=finalize 84% の名指し ★支配項の切除=e2e −50% の唯一の道
+- [x] T129b(13:20 影丸 T127 hotfix done(report 提出、GATE 待ち)。T129 の monitor hotfix は T127 CLEAR 後に配備) T127 done 確認 ★同一 target 直列
 - [~] T129(13:16 ninja_monitor cycle 空白: 12:59:43→13:06:35(7 分)・陣形図 Generated 12:55:56 のまま 18 分 stale(T71 型再発)。cycle 内で python3 insights.yaml 集計(REFLUX-AUTO-INVENTORY)が 56s+、REFLUX-AUTO-DEPLOY 同期実行 5m32s(12:40)。INS-130057 登録済。ninja_monitor.sh は影丸 T127 hotfix と同一 target=collision ゆえ T127 CLEAR 直後に karo_hotfix 1 本(cycle 内の重い集計/配備を background 化+cycle 上限計測)) monitor cycle 空白の根治 ★報告→GATE・陣形図鮮度の上限=cycle 長
 - [x] T128(13:14 解消: 家老が task_id 明示再送(13:11:21)→疾風 in_progress 遷移(家老 blt_131345、将軍 task YAML 実測)。CTX 87→9%=旧文脈は消えた; 13:12 疾風 ACK-STALL 30 分(12:40 acknowledged・report 空・pane は旧 CI 文脈『task_id 不一致』で入力待ち、CTX 87%)=T114 型再発+旧文脈混入。家老へ順序付き 1 通 msg_1312xx(task_id 明示再送→10 分で未着手なら idle+respawn)。疾風が queue/insights.yaml を占有し影丸 reflux も SKIP) 疾風 ACK-STALL の解消 ★ACK→着手の空白 0
 - [x] T127(12:58 小太郎 cmd_reflux_insight_202608281221_kotaro GATE CLEAR 12:58:49・task idle(下知 msg_125651 12:56→2 分)。壁=report_received が karo inbox 0 件+task done は repair_terminal_report_outboxes 対象外→自動 review 不発、monitor cycle が REFLUX-AUTO-DEPLOY 5m32s で塞がり REPORT-FORMAT-PASS 18 分遅延。hotfix 下知 msg_130022(done∧marker 無しも auto_request_report_review)) 小太郎 1221 便停止の解消+構造 hotfix ★報告→GATE レイテンシ=cycle 長で上限、cycle 空白 0 へ
