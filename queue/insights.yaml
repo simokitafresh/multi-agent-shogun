@@ -7154,3 +7154,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-190605105-fce5
+  ts: "2026-08-28T19:06:05+09:00"
+  insight: "[[T129 residual — mechanical lifecycle lanesを独立検証し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: infra_throughput_outcome_design(インフラスループット・アウトカム設計; alias=C4 lifecycle transaction; score=9.9) / production_parity(本番パリティ; alias=pending_confirmed_lifecycle; score=9.3) / partial_turnover_execution_method(Partial Turnover実験実行・完了証跡方法論; alias=ログイン導線AsIs棚卸し read only — 認証切替・データ層・HTTPキャッシュの現物契約; score=8.5)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
