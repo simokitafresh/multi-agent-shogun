@@ -149,3 +149,18 @@ UNVERIFIED 18件は全て「何が無いと判定できないか」=origin/main�
 
 層 C 将軍合計 27 件: PASS 23(条件付 1) / UNVERIFIED 4(T114/T122/t57/t56/t101 のうち t101 を含む 4) / FAIL 0。
 軍師の 82 行表は『origin/main 祖先=PASS』『CI GREEN 終端を祖先で判定』=層 A の再掲。層 C 未実施分=reflux 31(INS 本文の実装 grep 無し)+hotfix 10 件。
+
+## 争点 1 件の決着(19:08): review_bundle_superseded_split
+- 軍師 blt_190212『CLEAR 後に sg7_bundle_missing BLOCK 2 件=根治不完全=FAIL』/将軍『条件付 PASS』の不一致を fix の AC で決着。
+- fix の AC(archive report): 『split child の task が次世代へ差替済みでも immutable report receipt が完全一致する場合だけ bundle を saved』=対象は split child(cmd_4410_ac3)の receipt 不一致 BLOCK。
+- 終端条件=cmd_4410_ac3 の GATE が sg7 で通る → gate_metrics: cmd_4410_ac3 CLEAR 12:49(T98)=**PASS**。
+- 01:29 t101 hotfix/02:11 saizo reflux の sg7_bundle_missing は split child でない別根(gate 実行時に bundle 未投稿の順序 race、数分後の再 GATE で CLEAR)。fix の対象外=FAIL に数えない。別根として INS へ(gate が bundle 未投稿を BLOCK でなく WAIT にする)。
+- 軍師の FAIL は将軍の一次候補を fix の AC と突合せず採用した=検証は『何を直した fix か』から終端条件を引くこと(LG 候補、家老へ)。
+
+## 総括(19:08 時点、82 件)
+| 層 | 結果 |
+|---|---|
+| A 成果 commit 到達 | 82/82(直接 66・patch-id 同値 10・未 push 4・no-code 4) |
+| B CI GREEN | 未確定 78(origin RED、T146 走行) |
+| C 本番 proof | 将軍 27 件: PASS 23・UNVERIFIED 4・FAIL 0。軍師 reflux 31 件『status=resolved+参照 script 実在』=INS 本文の実装 grep ではなく層 A 相当(受理保留)。未検証 hotfix 10 |
+| D 途中成果 CLEAR | 2(T129 unit1/T137(d))=引継ぎ unit 走行中 |
