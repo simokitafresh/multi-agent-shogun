@@ -3077,6 +3077,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:21:57+09:00 [[session_save_20260828_1420_karo]] 家老checkpoint。走行四本: T129=commit d9b4bc44023b、tests151/151、live cycle初回788.215sで未達、新世代 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:22:03+09:00 session_save_20260828_1420_gunshi: 12:49復帰→14:21。レビュー15件(draft9全LGTM+report6=APPROVE4+RC2)。RC型2種=(1)SG-PRE9c偽陽性:assumpti |
 | cmd | `cmd_karo_hotfix_source_equivalent_dedupe_20260828` (`scripts/gates/gate_context_freshness.sh`, `tests/unit/test_gate_context_freshness.bats`) |
+| cmd | `cmd_karo_hotfix_ga505_source_equivalent_publication_lag` (`tests/unit/test_gate_improvement_trigger.bats`) |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3414,6 +3415,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:39:52+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:40:04+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -4684,6 +4686,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T12:45:51+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T12:46:03+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:20:17+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:15:06+09:00 やれ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -5766,6 +5769,7 @@ codd:
 | lesson | `L1660` CI並列shardの語彙判定はgrep/localeから分離する |
 | lesson | `L1663` single wrapperはbatch itemの任意メタデータを明示伝播する |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:19:22+09:00 idle忍者に対するauto clearまでが長すぎないか？バグか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:16:18+09:00 穴はないか？実際のコードや事象を覚醒して確認せよ |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -14065,6 +14069,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202608201630_saizo` |
 | cmd | `cmd_reflux_backlink_202608201856_saizo` |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T18:26:28+09:00 saizoもrespawanするしかないのでは？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:16:58+09:00 いまもhayateとsaizoがauto clearされずに放置されているな |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_b7_b19_20260727]]` (L1376) |
 
 ## provisional_tobisaru — 仮: Tobisaru
@@ -14834,6 +14839,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:48:21.358187+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:03:17.708943+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:14:17.115906+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:20:08.142047+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
