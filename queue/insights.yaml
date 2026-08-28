@@ -6521,3 +6521,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-28T12:50:52+09:00"
+- id: INS-20260828-130052785-1f2e
+  ts: "2026-08-28T13:00:52+09:00"
+  insight: "AC binary_check の計測器差: cmd_4409 AC3『rg -c /home/simokitafresh instructions skills CLAUDE.md AGENTS.md =0』は rg で 0 でも grep -r で 16 行(skills 4 本)+2 行(generated/claude-karo.md)残存(12:53 実測)。rg は既定で .gitignore/隠し/リンク扱いにより skills/*/SKILL.md の一部を読み飛ばす。ToBe 検証 grep は AC 起票時に『grep -r』固定か、rg --no-ignore -L --hidden を明記せよ。自動化ターゲット: cmd_save で binary_check に rg が現れたら --no-ignore 等の網羅オプション有無を WARN"
+  priority: "high"
+  source: "shogun"
+  fix_known: false
+  status: pending
