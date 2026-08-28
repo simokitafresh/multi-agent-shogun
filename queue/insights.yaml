@@ -7321,3 +7321,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-221334030-e33a
+  ts: "2026-08-28T22:13:34+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[未接続5件]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=結果 未反映15→1件 残1は正常進行中; score=1.7) / recalculate_pipeline(再計算パイプライン; alias=psycopg2直接接続; score=1.5) / known_unknowns_principle(無知の知; alias=未確認; score=1.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
