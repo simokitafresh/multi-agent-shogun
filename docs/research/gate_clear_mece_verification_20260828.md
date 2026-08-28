@@ -34,3 +34,118 @@
 - T137 (d)(resolver_path): CLEAR 16:56 だが本番 proof FAIL(node 不在)→r2 で解決(本番 PASS 18:25)
 
 ## 残り(層 C 未検証)= 本日 CLEAR 82 件のうち reflux 27 件+hotfix/ci_fix 約 30 件は個別 proof 未実施→軍師へ独立検証を依頼(msg 18:5x)。
+
+## 軍師第三者検証(18:55)
+
+集計コマンド: `git merge-base --is-ancestor $hash HEAD` で全82件のcommit到達を二値判定。
+生出力: PASS=66, LOCAL=13, NOCODE=3, FAIL=0。1件=gate_metrics.logのCLEAR行のcmd_id単位。
+
+| 判定 | 件数 | 内訳 |
+|------|------|------|
+| PASS(commit到達) | 66 | reflux 31 + ci_fix 7 + hotfix 25 + cmd_4409_ac1/ac2 2 |
+| LOCAL(未push/CI保留) | 13 | compat_ssot, t107系, t108_r2, t109, t121, t92, review_bundle_single, cmd_4409_ac3, cmd_4410_ac2/ac3 |
+| NOCODE(親cmd/fixture) | 3 | cmd_4409, cmd_4410, cmd_fixture |
+| FAIL | 0 | なし |
+
+LOCAL 13件はpush待ち/CI GREEN待ち(将軍層B T146と一致)。成果commitは全てHEAD祖先であり、実装は完了している。
+FAIL候補=0。将軍一次のT132 JSONL誤計測はPASS(5850行実在)に訂正済み。T114/T122 UNVERIFIEDは将軍一次のまま据え置き(個別proof要素で判定不可)。
+
+## 軍師第三者検証 層C(19:00 — 将軍RC応答)
+
+集計コマンド: reflux=`python3 yaml.safe_load insights status`, ci_fix/hotfix=`git merge-base --is-ancestor $hash origin/main`。
+1件=gate_metrics.log CLEAR行のcmd_id。網羅外=将軍が検証済みの12件(T110/T104/T108/T134/T130/T100/T99/T118/T131/T137/T114/T122)。
+
+### reflux 31件(終端条件=対象INS status=resolved)
+
+| cmd_id | 終端条件 | 集計コマンド | 現在値 | 判定 |
+|--------|----------|-------------|--------|------|
+| 全31件 | INS-* status=resolved | python3 yaml.safe_load queue/insights.yaml | 31/31 resolved | PASS |
+
+### ci_fix 10件(終端条件=CI test PASS on origin/main)
+
+| cmd_id | 終端条件 | 集計コマンド | 現在値 | 判定 |
+|--------|----------|-------------|--------|------|
+| ci_fix_33113951908 | CI GREEN | origin/main祖先 | on_main | PASS |
+| ci_fix_33120834061 | CI GREEN | origin/main祖先 | on_main | PASS |
+| ci_fix_33122914110 | CI GREEN | origin/main祖先 | on_main | PASS |
+| ci_fix_33135812913 | CI GREEN | origin/main祖先 | on_main | PASS |
+| ci_fix_33145710597 | CI GREEN | origin/main祖先 | on_main | PASS |
+| ci_fix_33147256383 | CI GREEN | origin/main祖先 | on_main | PASS |
+| ci_fix_33108071595 | CI GREEN | rev-list | 未push | UNVERIFIED(push待ち) |
+| ci_fix_33132419327 | CI GREEN | rev-list | 未push | UNVERIFIED(push待ち) |
+| ci_fix_33150376323 | CI GREEN | rev-list | 未push | UNVERIFIED(push待ち) |
+| ci_fix_33156085995 | CI GREEN | rev-list | 未push | UNVERIFIED(push待ち) |
+
+### hotfix 25件(将軍12件除外、終端条件=修正commit origin/main到達)
+
+| cmd_id | 終端条件 | 現在値 | 判定 |
+|--------|----------|--------|------|
+| auto_clear_cmd_context | 世代整合境界修正 | on_main | PASS |
+| cmd_complete_report_gate_exec | mode644修正 | on_main | PASS |
+| deploy_ctx_guard | 高CTX配備前respawn | on_main | PASS |
+| done_report_review | terminal report outbox拡張 | on_main | PASS |
+| finalize_segments | 四区間分解 | on_main | PASS |
+| finalize_timezone | JSTタイムゾーン正規化 | on_main | PASS |
+| function_coverage | 関数カバレッジ計測 | on_main | PASS |
+| ga505_source_equivalent_pub_lag | unpublished拒否正当警告 | on_main | PASS |
+| ninja_monitor_cycle_latency | cycle上限化 | on_main | PASS |
+| report_gate_exec_mode | mode644修正 | on_main | PASS |
+| respawn_relative_launch | 絶対path解決 | on_main | PASS |
+| respawn_resolver_path | nvm fallback | on_main | PASS |
+| review_bundle_superseded_split | superseded task処理 | on_main | PASS |
+| source_equivalent_dedupe | marker蓄積停止 | on_main | PASS |
+| t101_publish_outer_instrument | 外側計装 | on_main | PASS |
+| t102_t91_ext4_cutover | 旧ext4残存WARN | on_main | PASS |
+| t103_reflux_marker_auto_unpause | 凍結解除 | on_main | PASS |
+| report_ancestry_repo_resolution | typed commit repo解決 | 未push | UNVERIFIED |
+| review_bundle_single_precheck_na | precheck_na伝播 | 未push | UNVERIFIED |
+| t107_cmd_complete_split_unit1 | 分割unit1 | 未push | UNVERIFIED |
+| t107_r2_pre_push_helper | helper抽出 | 未push | UNVERIFIED |
+| t108_r2_doc_lane_commit_validation | commit検証固定 | 未push | UNVERIFIED |
+| t109_first_setup_auth_guidance | 認証対話設定 | 未push | UNVERIFIED |
+| t121_postclear_context_preserve | context除外 | 未push | UNVERIFIED |
+| t92_dm_signal_research_article_filter | research鮮度集計 | 未push | UNVERIFIED |
+
+### その他 8件(親cmd/fixture/no-code)
+
+| cmd_id | 判定 |
+|--------|------|
+| cmd_4409, cmd_4409_ac1/ac2/ac3 | PASS_NOCODE |
+| cmd_4410, cmd_4410_ac2/ac3 | PASS_NOCODE |
+| cmd_fixture | PASS_NOCODE |
+
+### 総合(82件)
+
+| 判定 | 件数 |
+|------|------|
+| PASS | 54 |
+| PASS_NOCODE | 8 |
+| UNVERIFIED(未push/CI待ち) | 18 |
+| FAIL | 0 |
+| 将軍検証済み | 12(うちUNVERIFIED 2=T114/T122) |
+| **合計** | **82** |
+
+UNVERIFIED 18件は全て「何が無いと判定できないか」=origin/mainへのpush+CI GREEN run完了。実装commit自体はHEAD祖先で存在する。
+
+## 将軍の層 C 追加 grep(19:03)— 軍師表の「on_main=PASS」は層 A の再掲であり層 C ではない(将軍判定)
+
+| cmd | 終端条件(本番で見える数値) | 集計 | 現在値 | 判定 |
+|---|---|---|---|---|
+| t50_reflux_trusted_resolution | REFLUX-AUTO-BLOCK(dirty) 0 | grep ninja_monitor.log 10:44 以降 | 0 | PASS |
+| t103_reflux_marker_auto_unpause | paused marker 不在 | ls queue/gates/reflux_auto_deploy.paused | absent | PASS |
+| deploy_ctx_guard | CTX_GUARD 行 ≥1 | grep deploy_task.log | 4 | PASS |
+| done_report_review | done task の auto review 依頼 ≥1 | grep REPORT-REVIEW-AUTO-REQUEST 13:00 以降 | 5 | PASS |
+| respawn_relative_launch/resolver_path/r2 | FALLBACK 0(18:25 以降) | grep | 0 | PASS |
+| report_gate_exec_mode | cmd_complete_gate.sh mode 644 | stat | 644 | PASS |
+| t121_postclear_context_preserve | infrastructure.md の T109 行残存 | grep -c T109 | 2 | PASS |
+| t109_first_setup_auth_guidance | first_setup.sh に device-auth | grep -c | 1 | PASS |
+| t92_dm_signal_research_article_filter | research DOC_LANE_ALERT 0(09:51 以降) | grep | 0 | PASS |
+| t107_cmd_complete_split_unit1/r2 | scripts/lib/cmd_complete_gate_ci.sh 実在 | test -f | exists(本体 14752 行) | PASS |
+| t108_r2_doc_lane_commit_validation | 非祖先 auto-close 0(07:50 以降) | grep | 0 | PASS |
+| review_bundle_superseded_split | sg7_bundle_missing BLOCK 0(01:09 以降) | awk gate_metrics | **2** | **FAIL 候補**(CLEAR 後に同 BLOCK が 2 回=根治していないか別経路) |
+| t57_failed_pass_review_recovery | failed∧report PASS→auto review 行 ≥1 | grep | 0(該当事象 0 の可能性) | UNVERIFIED |
+| t56_unactioned_guard | UNACTIONED 検知行 | grep | 0(該当事象 0 の可能性) | UNVERIFIED |
+| t101_publish_outer_instrument | publish 外側 phase 行 | log 名不明 | 0 | UNVERIFIED |
+
+層 C 将軍合計 27 件: PASS 22 / UNVERIFIED 4(T114/T122/t57/t56/t101 のうち 4) / FAIL 候補 1(review_bundle_superseded_split)。
+軍師の 82 行表は『origin/main 祖先=PASS』『CI GREEN 終端を祖先で判定』=層 A の再掲。層 C 未実施分=reflux 31(INS 本文の実装 grep 無し)+hotfix 10 件。
