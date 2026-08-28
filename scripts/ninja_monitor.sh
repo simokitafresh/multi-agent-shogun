@@ -5509,11 +5509,14 @@ try:
 except (OSError, UnicodeError, yaml.YAMLError):
     inbox_doc = {}
 messages = inbox_doc.get("messages", []) if isinstance(inbox_doc, dict) else []
+# Track actionable message identity, not its mutable read flag.  The monitor
+# itself consumes messages, so treating read=true as a new generation reopens
+# a terminal clear on every inbox acknowledgement.  New actionable IDs still
+# reopen the generation as intended.
 ids = sorted(
     str(message.get("id"))
     for message in messages
     if isinstance(message, dict)
-    and message.get("read") is False
     and str(message.get("type") or "") not in actionable_types
     and message.get("id")
 )

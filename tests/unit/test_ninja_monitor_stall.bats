@@ -5292,6 +5292,9 @@ PY
         printf "messages:\\n  - id: msg-input-change\\n    type: task_supplement\\n    read: false\\n" > "$root/queue/inbox/hayate.yaml"
         _handle_auto_clear hayate 30001
         test "$CLEAR_COUNT" -eq 2
+        printf "messages:\\n  - id: msg-input-change\\n    type: task_supplement\\n    read: true\\n" > "$root/queue/inbox/hayate.yaml"
+        _handle_auto_clear hayate 30002
+        test "$CLEAR_COUNT" -eq 2
         _handle_auto_clear saizo 30002
         test "$CLEAR_COUNT" -eq 2
 
