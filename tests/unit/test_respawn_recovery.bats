@@ -267,6 +267,17 @@ SH
   grep -q 'unsafe executable' "$root/error-unsafe"
 }
 
+@test "empty and invalid variable tokens fail closed before indirect lookup" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  for launch in '${:-codex} --flag' '${9INVALID:-codex} --flag' '${bad-name:-codex} --flag'; do
+    error="$root/error-$(printf '%s' "$launch" | cksum | cut -d' ' -f1)"
+    run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "$2" 2>"$3"' _ "$repo" "$launch" "$error"
+    [ "$status" -ne 0 ]
+    [ -z "$output" ]
+    grep -Eq 'unsafe executable|invalid variable name|unresolved executable' "$error"
+  done
+}
+
 @test "current Codex SSOT launch command resolves to a nonempty command" {
   repo="$BATS_TEST_DIRNAME/../.."
   source "$repo/scripts/lib/cli_lookup.sh"

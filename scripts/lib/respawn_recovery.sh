@@ -25,7 +25,18 @@ respawn_recovery_launch_command() {
     if [[ "$executable" =~ ^\$\{([A-Za-z_][A-Za-z0-9_]*):-(.*)\}$ ]]; then
         variable_name="${BASH_REMATCH[1]}"
         variable_default="${BASH_REMATCH[2]}"
-        variable_value="${!variable_name-}"
+        # Validate the captured name before indirect expansion. The caller
+        # controls launch text, and an invalid name must become a resolver
+        # failure rather than a shell "invalid variable name" diagnostic.
+        [[ "$variable_name" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || {
+            printf 'respawn_recovery_launch_command: invalid variable name: %s\n' "$variable_name" >&2
+            return 1
+        }
+        if [[ -v "$variable_name" ]]; then
+            variable_value="${!variable_name}"
+        else
+            variable_value=""
+        fi
         candidate="${variable_value:-$variable_default}"
     else
         candidate="$executable"
