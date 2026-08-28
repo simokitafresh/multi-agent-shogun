@@ -12429,8 +12429,8 @@ _ninja_monitor_observe_trace() {
     mkdir -p "${_nm_file%/*}" 2>/dev/null || return 0
     {
         flock -x -w 1 9 || return 0
-        printf '{"schema":"ninja_monitor_observe.v1","timestamp_epoch":%s,"cycle":%s,"phase":"observe","event":"%s","call":"%s","elapsed_ms":%s,"rc":%s}\n' \
-            "$EPOCHSECONDS" "${cycle:-0}" "$_nm_event" "$_nm_call" "$_nm_elapsed_ms" "$_nm_rc"
+        printf '{"schema":"ninja_monitor_observe.v1","timestamp_epoch":%s,"cycle":%s,"phase":"%s","event":"%s","call":"%s","elapsed_ms":%s,"rc":%s}\n' \
+            "$EPOCHSECONDS" "${cycle:-0}" "${NINJA_MONITOR_TRACE_PHASE:-observe}" "$_nm_event" "$_nm_call" "$_nm_elapsed_ms" "$_nm_rc"
     } 9>"$_nm_lock" >>"$_nm_file" 2>/dev/null || true
 }
 
@@ -12449,6 +12449,11 @@ _ninja_monitor_observe_call() {
     _nm_end=$(_ninja_monitor_observe_clock_ms)
     _ninja_monitor_observe_trace end "$_nm_call" "$((_nm_end - _nm_start))" "$_nm_rc"
     return "$_nm_rc"
+}
+
+_ninja_monitor_phase_call() {
+    local _nm_phase="$1"; shift
+    NINJA_MONITOR_TRACE_PHASE="$_nm_phase" _ninja_monitor_observe_call "$@"
 }
 
 _ninja_monitor_cycle_record() {
@@ -12769,7 +12774,7 @@ while true; do
     _ninja_monitor_observe_call early_snapshot refresh_karo_snapshot_fast_path || true
     _ninja_monitor_cycle_phase_mark lifecycle
 
-    process_checkpoint_manifests
+    _ninja_monitor_phase_call lifecycle process_checkpoint_manifests
 
     # Failed/BLOCK retro prompts are delivered only after the pane is idle and
     # before another task is assigned. Successful delivery moves the event to
@@ -12787,7 +12792,7 @@ while true; do
         exec {_retro_lock_fd}>"$SCRIPT_DIR/queue/locks/deploy_ninja_${_retro_ninja}.lock"
         flock -n "$_retro_lock_fd" || { eval "exec ${_retro_lock_fd}>&-"; continue; }
         source "$SCRIPT_DIR/scripts/lib/retro_pane_prompt.sh"
-        if _retro_reconcile_reason=$(retro_pane_prompt_reconcile_pending "$SCRIPT_DIR" "$_retro_event" "$_retro_ninja" "$_retro_event_id"); then
+        if _retro_reconcile_reason=$(_ninja_monitor_phase_call lifecycle "retro_reconcile:$_retro_ninja" retro_pane_prompt_reconcile_pending "$SCRIPT_DIR" "$_retro_event" "$_retro_ninja" "$_retro_event_id"); then
             log "RETRO-TERMINAL-RECONCILED: ninja=$_retro_ninja event=$_retro_event_id reason=$_retro_reconcile_reason"
             flock -u "$_retro_lock_fd" || true
             eval "exec ${_retro_lock_fd}>&-"
@@ -12806,8 +12811,8 @@ while true; do
         fi
         if [ -z "$_retro_pane" ] || ! check_idle "$_retro_pane" "$_retro_ninja"; then eval "exec ${_retro_lock_fd}>&-"; continue; fi
         if RETRO_PANE_TARGET="$_retro_pane" RETRO_PANE_IDLE_CHECK=true \
-            retro_pane_prompt_deliver "$SCRIPT_DIR" "$_retro_ninja" "$_retro_event_id" "$_retro_from"; then
-            bash "$SCRIPT_DIR/scripts/retro_write.sh" mark-delivered \
+            _ninja_monitor_phase_call lifecycle "retro_deliver:$_retro_ninja" retro_pane_prompt_deliver "$SCRIPT_DIR" "$_retro_ninja" "$_retro_event_id" "$_retro_from"; then
+            _ninja_monitor_phase_call lifecycle retro_write bash "$SCRIPT_DIR/scripts/retro_write.sh" mark-delivered \
                 "$_retro_ninja" "$_retro_event_id" "$(date -Iseconds)" >> "$LOG" 2>&1
             mkdir -p "$SCRIPT_DIR/queue/retro/verbatim_awaiting_answer"
             mv "$_retro_event" "$SCRIPT_DIR/queue/retro/verbatim_awaiting_answer/${_retro_event##*/}"
@@ -12820,69 +12825,69 @@ while true; do
     done
 
     # terminal publish crash-window repair; bounded to one current report per ninja
-    repair_terminal_report_outboxes
+    _ninja_monitor_phase_call lifecycle repair_terminal_report_outboxes repair_terminal_report_outboxes
 
     # ═══ 停滞検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
-        check_stall "$name"
+        _ninja_monitor_phase_call lifecycle "check_stall:$name" check_stall "$name"
     done
 
     # ═══ 両承認後のGATE終端なし検知 ═══
-    check_gate_stall
+    _ninja_monitor_phase_call lifecycle check_gate_stall check_gate_stall
 
     # ═══ report done + status未idle 検知 ═══
-    check_report_done_idle_mismatch
+    _ninja_monitor_phase_call lifecycle report_done_idle_mismatch check_report_done_idle_mismatch
 
     # ═══ 破壊コマンド検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
         target="${PANE_TARGETS[$name]}"
         [ -z "$target" ] && continue
-        check_destructive_commands "$name" "$target"
+        _ninja_monitor_phase_call lifecycle "destructive_commands:$name" check_destructive_commands "$name" "$target"
     done
 
     # ═══ 未読放置検知+再nudge (cmd_188) ═══
-    check_inbox_renudge
+    _ninja_monitor_phase_call lifecycle inbox_renudge check_inbox_renudge
 
     # ═══ karo通知outbox flush (cmd_karo_hotfix_failed_report_clear_notify_gap AC3) ═══
-    flush_karo_notify_outbox
+    _ninja_monitor_phase_call lifecycle flush_karo_notify_outbox flush_karo_notify_outbox
 
     # ═══ Stale cmd検知チェック ═══
-    check_stale_cmds
+    _ninja_monitor_phase_call lifecycle stale_cmds check_stale_cmds
 
     # ═══ 未配備cmd常時監視（pending+delegated_at 10分超） ═══
-    check_undeployed_cmds
+    _ninja_monitor_phase_call lifecycle undeployed_cmds check_undeployed_cmds
 
     # ═══ idle忍者×明示的次標的バックログALERT（3分継続、世代dedupe） ═══
-    check_idle_backlog_alert
+    _ninja_monitor_phase_call lifecycle idle_backlog_alert check_idle_backlog_alert
 
     # ═══ Pending cmd検知チェック（2分間隔） ═══
     if [ $((cycle % 6)) -eq 0 ]; then
-        check_karo_pending
+        _ninja_monitor_phase_call lifecycle karo_pending check_karo_pending
     fi
 
     # ═══ 軍師LGTM後の家老未通知検知（2分間隔 cmd_karo_hotfix_completion_notify_gap） ═══
     if [ $((cycle % 6)) -eq 0 ]; then
-        check_karo_completion_notify_gap
+        _ninja_monitor_phase_call lifecycle completion_notify_gap check_karo_completion_notify_gap
     fi
 
     # ═══ CI赤検知チェック（5分間隔 cmd_715） ═══
-    check_disk_space_watch
+    _ninja_monitor_phase_call lifecycle disk_space_watch check_disk_space_watch
 
     if [ $((cycle % 15)) -eq 0 ]; then
-        bash "$SCRIPT_DIR/scripts/ci_status_check.sh" 2>>"$SCRIPT_DIR/logs/ci_status_check.log" || true
+        _ninja_monitor_phase_call lifecycle ci_status_check bash "$SCRIPT_DIR/scripts/ci_status_check.sh" 2>>"$SCRIPT_DIR/logs/ci_status_check.log" || true
     fi
 
     # ═══ gate_improvement定期チェック（5分間隔 cmd_1114） ═══
-    check_gate_improvement
+    _ninja_monitor_phase_call lifecycle gate_improvement check_gate_improvement
 
     # ═══ throughput_scan定期チェック（5分間隔 cmd_3766） ═══
-    check_throughput_scan
+    _ninja_monitor_phase_call lifecycle throughput_scan check_throughput_scan
 
     # ═══ skill_auto_improve定期チェック（週1回 cmd_2605） ═══
-    check_skill_auto_improve
+    _ninja_monitor_phase_call lifecycle skill_auto_improve check_skill_auto_improve
 
     # ═══ effectiveness低下教訓deprecate候補の日次抽出（cmd_2757） ═══
-    check_lesson_deprecation_candidates
+    _ninja_monitor_phase_call lifecycle lesson_deprecation check_lesson_deprecation_candidates
 
     # ═══ 三層記憶tmp cleanup + dry-run候補抽出（60分間隔） ═══
     _ninja_monitor_cycle_phase_mark maintenance
