@@ -7497,3 +7497,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-005351159-c7c7
+  ts: "2026-08-29T00:53:51+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[long_runtime_exception_人質化]] は既存aliasesに一致なし。類似概念TOP3: dm_fusion_app(DM-Fusionアプリ; alias=Node.js runtime Fusion; score=12.4) / hook_automation_framework(Hook自動化フレームワーク; alias=runtime hook incident ID gate; score=11.8) / semantic_dictionary_design(セマンティック辞書構想; alias=runtime source chainを含む既定値全数確認; score=11.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
