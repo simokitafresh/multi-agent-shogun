@@ -643,6 +643,11 @@ def single(args):
         raise ValueError("single review_entry must be a non-empty YAML mapping")
     item = {"cmd": args.cmd, "report": args.report, "verdict": args.verdict,
             "review_entry": entry}
+    precheck_na = entry.get("precheck_na")
+    if precheck_na is not None:
+        if not isinstance(precheck_na, dict):
+            raise ValueError("single review_entry precheck_na must be a mapping")
+        item["precheck_na"] = precheck_na
     if args.fail_reason:
         item["fail_reason"] = args.fail_reason
     root = Path(args.root).resolve()

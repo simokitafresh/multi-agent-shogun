@@ -788,6 +788,73 @@ SH
   [[ "$output" == *"ALERT: dm-signal-research.md"* ]]
 }
 
+# test_necessity: article-only commits on the canonical origin/main branch are
+# excluded from dm-signal-research freshness, while a non-article research
+# commit remains actionable. This protects the article false-positive boundary
+# without hiding genuine research changes.
+@test "DM-Signal research excludes article-only commits but keeps research commits" {
+  project_root="$BATS_TEST_TMPDIR/dm-signal-article-filter"
+  mkdir -p "$project_root/marketing-director/content/articles/shogun" \
+    "$project_root/docs/research" "$FIXTURE_ROOT/config"
+  git -C "$project_root" init -q
+  git -C "$project_root" config user.email fixture@example.com
+  git -C "$project_root" config user.name fixture
+  printf 'baseline\n' > "$project_root/README.md"
+  git -C "$project_root" add README.md
+  git -C "$project_root" commit -qm 'baseline'
+  printf 'article\n' > "$project_root/marketing-director/content/articles/shogun/article.md"
+  git -C "$project_root" add marketing-director/content/articles/shogun/article.md
+  git -C "$project_root" commit -qm 'article: fixture article update'
+  article_hash="$(git -C "$project_root" rev-parse HEAD)"
+  git -C "$project_root" update-ref refs/remotes/origin/main "$article_hash"
+
+  printf '<!-- last_updated: 2026-07-19 cmd_fixture -->\n' \
+    > "$FIXTURE_ROOT/context/dm-signal-research.md"
+  cat > "$FIXTURE_ROOT/config/projects.yaml" <<YAML
+projects:
+  - id: dm-signal
+    path: $project_root
+    status: active
+YAML
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
+#!/usr/bin/env bash
+echo 'ALERT: context/dm-signal-research.md source commits 1件 since last_updated=2026-07-19 repo=$project_root latest: $article_hash article: fixture article update'
+SH
+  chmod +x "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/article-filter-state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"article-only/non-ancestor source commit excluded"* ]]
+  [[ "$output" != *"ALERT: dm-signal-research.md"* ]]
+
+  printf 'research\n' > "$project_root/docs/research/result.md"
+  git -C "$project_root" add docs/research/result.md
+  git -C "$project_root" commit -qm 'research: fixture result'
+  research_hash="$(git -C "$project_root" rev-parse HEAD)"
+  git -C "$project_root" update-ref refs/remotes/origin/main "$research_hash"
+  sed -i "s/$article_hash/$research_hash/; s/article: fixture article update/research: fixture result/" "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_BULLETIN_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/research-filter-state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"ALERT: dm-signal-research.md"* ]]
+}
+
 # test_necessity: an exact approved source commit must become a context update
 # request without weakening the ALERT boundary for the next unreviewed commit.
 @test "approved DM-Signal report automatically requests core context update while an unreviewed commit still alerts" {

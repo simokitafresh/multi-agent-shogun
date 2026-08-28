@@ -158,7 +158,8 @@ classify() {
 
 raw_columns() {
     local helper="$BATS_TEST_TMPDIR/raw.sh"
-    sed -n '/^format_ci_raw_columns()/,/^}/p' "$GATE" > "$helper"
+    sed -n '/^format_ci_raw_columns()/,/^}/p' \
+        "$BATS_TEST_DIRNAME/../../scripts/lib/cmd_complete_gate_ci.sh" > "$helper"
     run bash -c "source '$helper'; format_ci_raw_columns \"\$1\" \"\$2\"" _ "$1" "$2"
 }
 

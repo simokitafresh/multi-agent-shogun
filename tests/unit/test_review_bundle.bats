@@ -121,6 +121,75 @@ PY
   [ "$status" -ne 0 ]
 }
 
+# test_necessity: T106 review entries with valid N/A precheck evidence must
+# reach the batch precheck unchanged; malformed values must remain fail-closed.
+# regression_justification: the single path previously omitted precheck_na,
+# turning a valid N/A review into an unnecessary report precheck execution.
+@test "single propagates mapping precheck_na and preserves batch validation" {
+  run python3 - <<'PY'
+import argparse
+import tempfile
+from pathlib import Path
+from scripts import review_bundle
+
+def args(root, entry):
+    return argparse.Namespace(root=str(root), cmd="cmd_na", report="r.yaml",
+                              verdict="APPROVE", review_entry=str(entry),
+                              fail_reason=None)
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    valid_entry = root / "valid.yaml"
+    valid_entry.write_text(
+        "cmd_id: cmd_na\n"
+        "precheck_na: {reason: not applicable, evidence: T106 fixture}\n",
+        encoding="utf-8",
+    )
+    captured = {}
+    old_batch = review_bundle.batch
+    review_bundle.batch = lambda call: captured.update(review_bundle.load(call.manifest)) or 0
+    try:
+        assert review_bundle.single(args(root, valid_entry)) == 0
+    finally:
+        review_bundle.batch = old_batch
+    item = captured["reviews"][0]
+    assert item["precheck_na"] == {
+        "reason": "not applicable", "evidence": "T106 fixture"
+    }
+
+    invalid_entry = root / "invalid.yaml"
+    invalid_entry.write_text(
+        "cmd_id: cmd_na\nprecheck_na: [wrong]\n", encoding="utf-8"
+    )
+    try:
+        review_bundle.single(args(root, invalid_entry))
+    except ValueError as exc:
+        assert "precheck_na must be a mapping" in str(exc)
+    else:
+        raise AssertionError("non-mapping precheck_na must be rejected")
+
+    calls = []
+    old_run = review_bundle.subprocess.run
+    try:
+        review_bundle.subprocess.run = lambda *call, **kwargs: calls.append(call) or type(
+            "Proc", (), {"stdout": "PASS\n", "returncode": 0}
+        )()
+        assert review_bundle._batch_precheck(
+            root, {"cmd": "cmd_na", "report": "r.yaml", "verdict": "APPROVE"}
+        )["status"] == "PASS"
+    finally:
+        review_bundle.subprocess.run = old_run
+    assert len(calls) == 1, calls
+
+    assert review_bundle._batch_precheck(
+        root,
+        {"cmd": "cmd_na", "report": "r.yaml", "verdict": "APPROVE",
+         "precheck_na": {"reason": "not applicable", "evidence": "T106 fixture"}},
+    )["status"] == "N/A"
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "direct Gunshi LGTM is structurally rejected before report processing" {
   run bash "$BATS_TEST_DIRNAME/../../scripts/review_approval.sh" cmd_direct gunshi LGTM nowhere.yaml
   [ "$status" -eq 2 ]
