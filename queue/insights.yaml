@@ -7105,7 +7105,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証で既存実装へ収束。gate_report_format_main.py L848-L864/L1373-L1386 と gate_gunshi_report_precheck_engine.py L150-L181 は variation_checks_required=true の案件だけ5セル全てを yes/no 必須化し、現taskは false。tests/unit/test_report_field_set_verdict_status.bats は空欄BLOCKとyes/no許可を含む7/7 PASS。追加修正・PD起票は不要。"
+  action_artifact: "scripts/gates/gate_report_format_main.py:L848-L864,L1373-L1386; scripts/gates/gate_gunshi_report_precheck_engine.py:L150-L181; tests/unit/test_report_field_set_verdict_status.bats:7/7 PASS"
+  resolved_at: "2026-08-28T22:34:31+09:00"
 - id: INS-20260828-183709767-c944
   ts: "2026-08-28T18:37:09+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b62ebys6l task id tool use id toolu 01VnHeUaw1wkdErR12 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
