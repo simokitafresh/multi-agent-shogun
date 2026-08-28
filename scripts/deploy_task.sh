@@ -11413,6 +11413,163 @@ fi
 source "$_dt_main_path"
 unset _dt_main_path
 
+# T171: task_mutations used to expose only the seven explicitly wrapped
+# injectors.  The remaining injector/publication calls still contributed to
+# the outer wall phase without a TASK_MUTATION_PHASE row, making the historical
+# 57.8--65.0% gap impossible to attribute.  Install the measurement adapter
+# after the extracted modules are sourced so both the split runtime and the
+# legacy single-file test fixture use the same final function definitions.
+if declare -F deploy_task_mutation_phase >/dev/null 2>&1 \
+    && ! declare -F deploy_task_original_mutation_phase >/dev/null 2>&1; then
+    eval "$(declare -f deploy_task_mutation_phase \
+        | sed '1s/^deploy_task_mutation_phase /deploy_task_original_mutation_phase /')"
+    DEPLOY_TASK_MUTATION_SUM_MS=0
+    DEPLOY_TASK_MUTATION_MAX_MS=0
+    DEPLOY_TASK_MUTATION_MAX_NAME=none
+    DEPLOY_TASK_MUTATION_PHASE_DEPTH=0
+
+    deploy_task_mutation_phase() {
+        local phase="$1"
+        shift
+        local started_us finished_us wall_ms rc report_scans_before report_scans_after depth
+        started_us="${EPOCHREALTIME/./}"
+        started_us="${started_us:0:16}"
+        report_scans_before="${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
+        depth="${DEPLOY_TASK_MUTATION_PHASE_DEPTH:-0}"
+        DEPLOY_TASK_MUTATION_PHASE_DEPTH=$((depth + 1))
+        rc=0
+        "$@" || rc=$?
+        DEPLOY_TASK_MUTATION_PHASE_DEPTH="$depth"
+        finished_us="${EPOCHREALTIME/./}"
+        finished_us="${finished_us:0:16}"
+        wall_ms=$(((finished_us - started_us + 999) / 1000))
+        report_scans_after="${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
+        if [ "${DEPLOY_TASK_PHASE:-}" = "task_mutations" ] && [ "$depth" -eq 0 ]; then
+            DEPLOY_TASK_MUTATION_SUM_MS=$((DEPLOY_TASK_MUTATION_SUM_MS + wall_ms))
+            # The outer apply row is an accounting envelope, not a candidate
+            # sub-phase. Keep the largest real child phase actionable.
+            if [ "$phase" != "task_mutations_apply" ] \
+                && [ "$wall_ms" -gt "${DEPLOY_TASK_MUTATION_MAX_MS:-0}" ]; then
+                DEPLOY_TASK_MUTATION_MAX_MS="$wall_ms"
+                DEPLOY_TASK_MUTATION_MAX_NAME="$phase"
+            fi
+        fi
+        log "TASK_MUTATION_PHASE phase=${phase} wall_ms=${wall_ms} rc=${rc} subprocesses=0 report_scans=$((report_scans_after - report_scans_before))"
+        return "$rc"
+    }
+fi
+
+# Decorate every top-level call made while deploy_task_apply_task_mutations is
+# running.  Calls already wrapped by the existing seven phase receipts are
+# deliberately excluded; nested phases remain visible but are not double
+# counted in the aggregate.  The list is data-driven so missing fixture-only
+# functions are skipped without changing isolated unit-test behavior.
+if [ "${DEPLOY_TASK_MUTATION_MEASUREMENTS_INSTALLED:-0}" != "1" ]; then
+    DEPLOY_TASK_MUTATION_MEASUREMENTS_INSTALLED=1
+    _dt_mutation_measure_functions=(
+        inject_task_id infer_ac_assigned_from_chunk_task_id inject_ac_assigned_from_stk
+        inject_session_state_hints inject_codd_failure_history inject_engineering_preferences
+        inject_skill_hint inject_workaround_pattern_lessons inject_standard_skills
+        inject_model_injection_profile inject_causal_links inject_causal_verification_template
+        inject_dm_signal_pf_operation_guardrails inject_dm_signal_golden_baseline_contract
+        inject_dm_signal_canary_rotation_contract inject_context_hints inject_reflux_commit_contract
+        inject_production_invariants inject_checklist_constraints inject_growth_loop_defense
+        inject_experiment_first_principle inject_readonly_refs inject_ac_version verify_ac_consistency
+        inject_direct_training_template deploy_task_postcondition_prepare
+        deploy_task_queue_lesson_scores postcondition_lesson_inject inject_reports_to_read
+        register_blocked_parent_continuation inject_context_files inject_credential_files
+        inject_target_path_check inject_context_update inject_push_allowed
+        inject_independent_recon_contract inject_role_reminder inject_report_template
+        deploy_task_normalize_report_metadata inject_bloom_level inject_execution_controls
+        inject_ninja_weak_points check_context_freshness deploy_task_guard_task_yaml_syntax
+        deploy_task_test_necessity_precheck inject_parent_contract inject_done_redeploy_hints
+        deploy_task_prepare_remote_tip_worktree record_deployed_at
+        record_target_worktree_blob_at_deploy
+    )
+    for _dt_mutation_measure_fn in "${_dt_mutation_measure_functions[@]}"; do
+        declare -F "$_dt_mutation_measure_fn" >/dev/null 2>&1 || continue
+        # Bash's declare -f printer drops the body of an `if ! ... <<HEREDOC;
+        # then` branch when re-evaluated. Keep those Python-backed functions
+        # on their existing call path; their surrounding mutation boundary is
+        # still measured by the other decorators.
+        declare -f "$_dt_mutation_measure_fn" | grep -q '<<' && continue
+        declare -F "deploy_task_original_${_dt_mutation_measure_fn}" >/dev/null 2>&1 && continue
+        eval "$(declare -f "$_dt_mutation_measure_fn" \
+            | sed "1s/^${_dt_mutation_measure_fn} /deploy_task_original_${_dt_mutation_measure_fn} /")"
+        eval "${_dt_mutation_measure_fn}() {
+            if [ \"\${DEPLOY_TASK_PHASE:-}\" = task_mutations ]; then
+                deploy_task_mutation_phase ${_dt_mutation_measure_fn} deploy_task_original_${_dt_mutation_measure_fn} \"\$@\"
+            else
+                deploy_task_original_${_dt_mutation_measure_fn} \"\$@\"
+            fi
+        }"
+    done
+    unset _dt_mutation_measure_fn _dt_mutation_measure_functions
+fi
+
+# The extracted apply function contains heredocs, so it is wrapped separately
+# (its declaration has no heredoc) as the accounting envelope for every
+# mutation performed inside it. Existing child phase rows remain nested and
+# actionable, while the envelope closes the historical unmeasured gap.
+if declare -F deploy_task_apply_task_mutations >/dev/null 2>&1 \
+    && ! declare -F deploy_task_original_apply_task_mutations >/dev/null 2>&1; then
+    eval "$(declare -f deploy_task_apply_task_mutations \
+        | sed '1s/^deploy_task_apply_task_mutations /deploy_task_original_apply_task_mutations /')"
+    deploy_task_apply_task_mutations() {
+        if [ "${DEPLOY_TASK_PHASE:-}" = task_mutations ]; then
+            deploy_task_mutation_phase task_mutations_apply \
+                deploy_task_original_apply_task_mutations "$@"
+        else
+            deploy_task_original_apply_task_mutations "$@"
+        fi
+    }
+fi
+
+# Extend the existing wall checkpoint with a bounded mutation-accounting
+# result.  This leaves the legacy DEPLOY_WALL_EVENT rows intact while making
+# the residual explicit and exposing the largest measured sub-phase for the
+# next optimization unit.
+if declare -F deploy_task_wall_phase_checkpoint >/dev/null 2>&1 \
+    && ! declare -F deploy_task_original_wall_phase_checkpoint >/dev/null 2>&1; then
+    eval "$(declare -f deploy_task_wall_phase_checkpoint \
+        | sed '1s/^deploy_task_wall_phase_checkpoint /deploy_task_original_wall_phase_checkpoint /')"
+    deploy_task_wall_phase_checkpoint() {
+        local phase="$1" previous_us now_us wall_ms unaccounted_ms
+        previous_us="${DEPLOY_TASK_WALL_PHASE_LAST_US:-}"
+        if [ "$phase" = "preflight" ]; then
+            DEPLOY_TASK_MUTATION_SUM_MS=0
+            DEPLOY_TASK_MUTATION_MAX_MS=0
+            DEPLOY_TASK_MUTATION_MAX_NAME=none
+        fi
+        deploy_task_original_wall_phase_checkpoint "$phase"
+        if [ "$phase" = "task_mutations" ] && [ -n "$previous_us" ] \
+            && [ -n "${DEPLOY_TASK_STARTED_US:-}" ]; then
+            now_us="${DEPLOY_TASK_WALL_PHASE_LAST_US:-}"
+            wall_ms=$(((now_us - previous_us + 999) / 1000))
+            unaccounted_ms=$((wall_ms - ${DEPLOY_TASK_MUTATION_SUM_MS:-0}))
+            [ "$unaccounted_ms" -ge 0 ] || unaccounted_ms=0
+            DEPLOY_TASK_MUTATION_WALL_MS="$wall_ms"
+            DEPLOY_TASK_MUTATION_UNACCOUNTED_MS="$unaccounted_ms"
+            log "TASK_MUTATION_ACCOUNTING wall_ms=${wall_ms} accounted_ms=${DEPLOY_TASK_MUTATION_SUM_MS:-0} unaccounted_ms=${unaccounted_ms} max_sub_phase=${DEPLOY_TASK_MUTATION_MAX_NAME:-none} max_sub_phase_ms=${DEPLOY_TASK_MUTATION_MAX_MS:-0}"
+        fi
+    }
+fi
+
+# transaction.sh owns the legacy receipt formatter. Decorate the final log
+# sink instead of duplicating exit-cleanup semantics: this keeps one
+# DEPLOY_RECEIPT row and appends the mutation accounting fields to that row.
+if declare -F log >/dev/null 2>&1 && ! declare -F deploy_task_original_log >/dev/null 2>&1; then
+    eval "$(declare -f log | sed '1s/^log /deploy_task_original_log /')"
+    log() {
+        local message="${1:-}"
+        if [[ "$message" == DEPLOY_RECEIPT\ * ]] \
+            && [[ "$message" != *"unaccounted_ms="* ]]; then
+            message="${message} unaccounted_ms=${DEPLOY_TASK_MUTATION_UNACCOUNTED_MS:-0} max_sub_phase=${DEPLOY_TASK_MUTATION_MAX_NAME:-none} max_sub_phase_ms=${DEPLOY_TASK_MUTATION_MAX_MS:-0}"
+        fi
+        deploy_task_original_log "$message"
+    }
+fi
+
 # Production observations are monitor-owned.  Install this adapter after all
 # modules are sourced (main.sh re-sources task_contract.sh) so real deployment
 # resolution always publishes proof and leaves only worker ACs in the task YAML.
