@@ -12174,6 +12174,39 @@ _ninja_monitor_cycle_phase_mark() {
     NINJA_MONITOR_CYCLE_PHASE_LAST_MS="$_nm_now"
 }
 
+# Observe-phase diagnosis is intentionally kept on the ext4 state root.  A
+# trace written below SCRIPT_DIR would reproduce the /mnt/c 9p stall that it
+# is meant to identify.  The wrapper preserves the caller's shell state and
+# records the last begin even when the wrapped call never returns.
+_ninja_monitor_observe_trace() {
+    local _nm_event="$1" _nm_call="$2" _nm_elapsed_ms="${3:-0}" _nm_rc="${4:-0}"
+    local _nm_file="${NINJA_MONITOR_OBSERVE_TRACE_LOG:-${STATE_DIR:-/tmp}/ninja_monitor_observe.jsonl}"
+    local _nm_lock="${_nm_file}.lock"
+    mkdir -p "${_nm_file%/*}" 2>/dev/null || return 0
+    {
+        flock -x -w 1 9 || return 0
+        printf '{"schema":"ninja_monitor_observe.v1","timestamp_epoch":%s,"cycle":%s,"phase":"observe","event":"%s","call":"%s","elapsed_ms":%s,"rc":%s}\n' \
+            "$EPOCHSECONDS" "${cycle:-0}" "$_nm_event" "$_nm_call" "$_nm_elapsed_ms" "$_nm_rc"
+    } 9>"$_nm_lock" >>"$_nm_file" 2>/dev/null || true
+}
+
+_ninja_monitor_observe_clock_ms() {
+    local _nm_epoch_us="${EPOCHREALTIME/./}"
+    printf '%s\n' "$((_nm_epoch_us / 1000))"
+}
+
+_ninja_monitor_observe_call() {
+    local _nm_call="$1"; shift
+    local _nm_start _nm_end _nm_rc
+    _nm_start=$(_ninja_monitor_observe_clock_ms)
+    _ninja_monitor_observe_trace begin "$_nm_call" 0 0
+    "$@"
+    _nm_rc=$?
+    _nm_end=$(_ninja_monitor_observe_clock_ms)
+    _ninja_monitor_observe_trace end "$_nm_call" "$((_nm_end - _nm_start))" "$_nm_rc"
+    return "$_nm_rc"
+}
+
 _ninja_monitor_cycle_record() {
     local _nm_end _nm_wall _nm_phase _nm_max_phase _nm_max_ms=0 _nm_json _nm_file _nm_lock _nm_phase_ms
     _nm_end=$(_ninja_monitor_cycle_clock_ms)
@@ -12257,42 +12290,42 @@ while true; do
 
     # A stale generation is never killed.  The owner record is atomically
     # replaced by its successor and the old loop self-fences at this checkpoint.
-    if ! ninja_monitor_owner_heartbeat; then
+    if ! _ninja_monitor_observe_call owner_heartbeat ninja_monitor_owner_heartbeat; then
         exit 0
     fi
 
     # 毎cycle確認（20秒以内）。重いdiscover_panesは従来どおり10分周期。
-    reload_ninja_monitor_if_updated
+    _ninja_monitor_observe_call reload_if_updated reload_ninja_monitor_if_updated || true
 
     # Primary task state is observed before pane waits and maintenance.
-    monitor_task_state_fast_path
+    _ninja_monitor_observe_call task_state_fast_path monitor_task_state_fast_path || true
 
     # Convert the DM-Signal origin/main -> Render Live transition into a
     # durable Karo wake-up event without waiting for a human nudge.
-    check_dm_signal_render_live_transition
+    _ninja_monitor_observe_call dm_signal_render_live check_dm_signal_render_live_transition || true
 
     # GP-239: 復旧失敗はmarkerを残さず次cycleで再試行する。
-    check_all_codex_bypass_flags
+    _ninja_monitor_observe_call codex_bypass check_all_codex_bypass_flags || true
 
     # 定期的にペイン再探索（ペイン構成変更に対応）
     if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
-        discover_panes
+        _ninja_monitor_observe_call rediscover_panes discover_panes || true
 
         # Inbox pruning (cmd_106) — 10分間隔で既読メッセージを自動削除
-        bash "$SCRIPT_DIR/scripts/inbox_prune.sh" 2>>"$SCRIPT_DIR/logs/inbox_prune.log" || true
+        _ninja_monitor_observe_call inbox_prune bash "$SCRIPT_DIR/scripts/inbox_prune.sh" 2>>"$SCRIPT_DIR/logs/inbox_prune.log" || true
 
         # shogun_to_karo.yaml肥大化監視 (cmd_369 AC3)
-        check_yaml_size
+        _ninja_monitor_observe_call yaml_size check_yaml_size || true
 
         # ログローテーション (cmd_802) — 10分間隔で全ログを検査
-        rotate_all_logs "$SCRIPT_DIR/logs" 10000
+        _ninja_monitor_observe_call rotate_logs rotate_all_logs "$SCRIPT_DIR/logs" 10000 || true
     fi
 
     # ═══ ペイン生存チェック (cmd_183) ═══
-    check_pane_survival
+    _ninja_monitor_observe_call pane_survival check_pane_survival || true
 
     # ═══ 全エージェントCLI死亡検知 (L821: 原理1行で全員カバー。各論パッチ禁止) ═══
-    check_ninja_cli_dead
+    _ninja_monitor_observe_call ninja_cli_dead check_ninja_cli_dead || true
 
     # 案B: バッチ通知用配列を初期化
     NEWLY_IDLE=()
@@ -12304,7 +12337,7 @@ while true; do
         target="${PANE_TARGETS[$name]}"
         [ -z "$target" ] && continue
 
-        check_idle "$target" "$name"
+        _ninja_monitor_observe_call "phase1_check_idle:$name" check_idle "$target" "$name"
         result=$?
 
         if [ $result -eq 2 ]; then
@@ -12316,9 +12349,9 @@ while true; do
             # ═══ Stage 1: task YAML確認（三段階/clear） ═══
             _s1_task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
             if [ -f "$_s1_task_file" ]; then
-                _s1_task_status=$(yaml_field_get "$_s1_task_file" "status")
+                    _s1_task_status=$(_ninja_monitor_observe_call "stage1_task_status:$name" yaml_field_get "$_s1_task_file" "status")
                 if [ "$_s1_task_status" = "assigned" ] || [ "$_s1_task_status" = "acknowledged" ] || [ "$_s1_task_status" = "in_progress" ] || [ "$_s1_task_status" = "pending" ]; then
-                    if auto_void_if_parent_cmd_completed "$name" "$target" "STAGE1"; then
+                    if _ninja_monitor_observe_call "stage1_auto_void:$name" auto_void_if_parent_cmd_completed "$name" "$target" "STAGE1"; then
                         PREV_STATE[$name]="idle"
                         continue
                     fi
@@ -12333,7 +12366,7 @@ while true; do
                         # 根因: fast_pathのAUTO-DONEとSTAGE1の間で報告提出→GATE CLEAR
                         # が発生するとSTAGE1が古いin_progressでcontinueし、clearが
                         # 次サイクルまで最大20秒+遅延する(実測14分の遅延事例あり)。
-                        if _ninja_monitor_run_bounded_done_check "$name" 2>/dev/null; then
+                        if _ninja_monitor_observe_call "stage1_done_check:$name" _ninja_monitor_run_bounded_done_check "$name" 2>/dev/null; then
                             log "STAGE1-IN-PROGRESS-RESOLVED: $name was in_progress but report completed, proceeding to clear"
                             _s1_task_status="done"
                         else
@@ -12343,13 +12376,13 @@ while true; do
                         fi
                     fi
                     # cmd_1156 AC2: pre-start task timeout safety valve
-                    _s1_task_mtime=$(stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
+                    _s1_task_mtime=$(_ninja_monitor_observe_call "stage1_task_stat:$name" stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
                     _s1_now=$EPOCHSECONDS
                     _s1_age=$(( _s1_now - _s1_task_mtime ))
                     _s1_threshold=900  # 15 minutes default
                     if [ "$_s1_age" -ge "$_s1_threshold" ]; then
                         # cmd_1292 AC1: report存在チェック — active taskでreport未提出なら/clear禁止
-                        _s1_report_file=$(resolve_expected_report_file "$name")
+                        _s1_report_file=$(_ninja_monitor_observe_call "stage1_report_lookup:$name" resolve_expected_report_file "$name")
                         _s1_report_found=false
                         _s1_report_path=""
                         if [[ "$_s1_report_file" = /* ]]; then
@@ -12363,7 +12396,7 @@ while true; do
                                 _s1_report_path="$SCRIPT_DIR/queue/reports/${_s1_report_file}"
                             fi
                             if [ "$_s1_report_found" = false ]; then
-                                _s1_report_path=$(compgen -G "$SCRIPT_DIR/queue/archive/reports/${_s1_report_file}" | head -1 || true)
+                                _s1_report_path=$(_ninja_monitor_observe_call "stage1_archive_report_lookup:$name" bash -c 'compgen -G "$1" | head -1' _ "$SCRIPT_DIR/queue/archive/reports/${_s1_report_file}" || true)
                                 [ -n "$_s1_report_path" ] && _s1_report_found=true
                             fi
                         fi
@@ -12372,7 +12405,7 @@ while true; do
                             PREV_STATE[$name]="busy"
                             continue
                         fi
-                        if ! report_file_has_verdict "$name" "$_s1_report_path" "STAGE1-TIMEOUT"; then
+                        if ! _ninja_monitor_observe_call "stage1_report_verdict:$name" report_file_has_verdict "$name" "$_s1_report_path" "STAGE1-TIMEOUT"; then
                             log "STAGE1-VERDICT-EMPTY: $name task_status=$_s1_task_status stale for ${_s1_age}s but report verdict empty (${_s1_report_file}), /clear禁止"
                             PREV_STATE[$name]="busy"
                             continue
@@ -12399,7 +12432,7 @@ while true; do
             _s1_inbox_file="$SCRIPT_DIR/queue/inbox/${name}.yaml"
             _s1_unread_count=0
             if [ -f "$_s1_inbox_file" ]; then
-                count_unread_messages_cached "$_s1_inbox_file" _s1_unread_count
+                            _ninja_monitor_observe_call "stage1_unread_count:$name" count_unread_messages_cached "$_s1_inbox_file" _s1_unread_count
                 [[ ! "$_s1_unread_count" =~ ^[0-9]+$ ]] && _s1_unread_count=0
             fi
             if [ "$_s1_unread_count" -gt 0 ]; then
@@ -12409,7 +12442,7 @@ while true; do
             fi
             # Guard 2: task YAML鮮度チェック — 2分以内に更新 = 配備直後の可能性
             if [ -f "$_s1_task_file" ]; then
-                _s1_mtime=$(stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
+                _s1_mtime=$(_ninja_monitor_observe_call "stage1_freshness_stat:$name" stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
                 _s1_now=$EPOCHSECONDS
                 _s1_age=$((_s1_now - _s1_mtime))
                 if [ "$_s1_age" -lt 120 ]; then
@@ -12424,13 +12457,13 @@ while true; do
             maybe_idle+=("$name")
         else
             # 確実にBUSY
-            handle_busy "$name"
+            _ninja_monitor_observe_call "busy_after_phase1:$name" handle_busy "$name" || true
         fi
     done
 
     # ═══ Phase 2: 確認チェック（maybe-idle忍者のみ） ═══
     if [ ${#maybe_idle[@]} -gt 0 ]; then
-        sleep "$CONFIRM_WAIT"
+        _ninja_monitor_observe_call confirm_wait sleep "$CONFIRM_WAIT" || true
 
         # Phase 2a: Claude Code忍者を即チェック（5秒待機で十分）
         codex_idle=()
@@ -12441,35 +12474,35 @@ while true; do
             fi
 
             target="${PANE_TARGETS[$name]}"
-            check_idle "$target" "$name"
+            _ninja_monitor_observe_call "phase2_check_idle:$name" check_idle "$target" "$name"
             result=$?
 
             if [ $result -eq 0 ]; then
-                handle_confirmed_idle "$name"
+                _ninja_monitor_observe_call "confirmed_idle:$name" handle_confirmed_idle "$name" || true
             else
                 log "FALSE_POSITIVE: $name was idle briefly, now busy (API call gap)"
-                handle_busy "$name"
+                _ninja_monitor_observe_call "busy_after_phase2:$name" handle_busy "$name" || true
             fi
         done
 
         # Phase 2b: Codex忍者は追加待機後にチェック（APIコール間隔が長い）
         if [ ${#codex_idle[@]} -gt 0 ]; then
             codex_confirm_wait=""
-            codex_confirm_wait=$(cli_profile_get "${codex_idle[0]}" "confirm_wait")
+            codex_confirm_wait=$(_ninja_monitor_observe_call codex_confirm_wait cli_profile_get "${codex_idle[0]}" "confirm_wait")
             codex_confirm_wait="${codex_confirm_wait:-$CONFIRM_WAIT}"
             extra_wait=$((codex_confirm_wait - CONFIRM_WAIT))
-            sleep "${extra_wait:-0}"
+            _ninja_monitor_observe_call codex_extra_wait sleep "${extra_wait:-0}" || true
 
             for name in "${codex_idle[@]}"; do
                 target="${PANE_TARGETS[$name]}"
-                check_idle "$target" "$name"
+                _ninja_monitor_observe_call "phase2_codex_check_idle:$name" check_idle "$target" "$name"
                 result=$?
 
                 if [ $result -eq 0 ]; then
-                    handle_confirmed_idle "$name"
+                    _ninja_monitor_observe_call "confirmed_codex_idle:$name" handle_confirmed_idle "$name" || true
                 else
                     log "FALSE_POSITIVE: $name was idle briefly, now busy (API call gap)"
-                    handle_busy "$name"
+                    _ninja_monitor_observe_call "busy_after_codex_phase2:$name" handle_busy "$name" || true
                 fi
             done
         fi
@@ -12478,18 +12511,18 @@ while true; do
     # 案B: Phase 2完了後、バッチ通知を送信（pending cmdがある場合のみ）
     if [ ${#NEWLY_IDLE[@]} -gt 0 ]; then
         if grep -q "status: pending" "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null; then
-            notify_idle_batch "${NEWLY_IDLE[@]}"
+            _ninja_monitor_observe_call notify_idle_batch notify_idle_batch "${NEWLY_IDLE[@]}" || true
         else
             log "SKIP idle notification: no pending cmds (${#NEWLY_IDLE[@]} idle: ${NEWLY_IDLE[*]})"
         fi
     fi
 
     # ═══ CDP Chrome cleanup（task done/failed終端時、owner限定） ═══
-    cleanup_terminal_task_cdps
+    _ninja_monitor_observe_call cleanup_terminal_cdps cleanup_terminal_task_cdps || true
 
     # ═══ STEP 1a: 家老陣形図の早期更新 ═══
     # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。
-    refresh_karo_snapshot_fast_path
+    _ninja_monitor_observe_call early_snapshot refresh_karo_snapshot_fast_path || true
     _ninja_monitor_cycle_phase_mark lifecycle
 
     process_checkpoint_manifests
