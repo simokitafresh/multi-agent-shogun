@@ -87,13 +87,16 @@ if [ "${1:-}" = "--batch" ]; then
         RFS_PHASE_RECEIPT="$_rfs_phase_receipt" \
         RFS_BATCH_PAYLOAD="$_rfs_batch_payload" \
         python3 - "$_rfs_batch_report" "$_rfs_batch_root" "$_rfs_batch_task_root" <<'PY'
-import datetime, hashlib, os, pathlib, re, subprocess, sys, tempfile, time, yaml
+import datetime, hashlib, json, os, pathlib, re, subprocess, sys, tempfile, time, yaml
 from typing import Any
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
 
 path = pathlib.Path(sys.argv[1])
 phase_receipt = os.environ.get("RFS_PHASE_RECEIPT")
+root = pathlib.Path(sys.argv[2]).resolve()
+task_root_arg = str(sys.argv[3]).strip()
+task_root = pathlib.Path(task_root_arg).resolve() if task_root_arg else None
 
 def record_phase(name, started_ns):
     if not phase_receipt:
@@ -176,6 +179,167 @@ def canonicalize_hook_result(key, value):
         value = _HOOK_POST_RESULT_CANON.get(value, value)
     return value
 
+def _receipt_task_path(task_root, report):
+    explicit = str(os.environ.get("RFS_TASK_FILE_PATH", "")).strip()
+    if explicit:
+        return pathlib.Path(explicit).resolve()
+    worker = str(report.get("worker_id") or "").strip()
+    if not worker or task_root is None:
+        return None
+    return task_root / "queue" / "tasks" / f"{worker}.yaml"
+
+def _receipt_task_mapping(path):
+    if path is None or not path.is_file():
+        return {}
+    try:
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return {}
+    if not isinstance(loaded, dict):
+        return {}
+    task = loaded.get("task")
+    return task if isinstance(task, dict) else loaded
+
+def _receipt_paths(value, result):
+    if isinstance(value, str) and value.strip():
+        result.append(value.strip())
+    elif isinstance(value, dict):
+        _receipt_paths(value.get("path"), result)
+    elif isinstance(value, list):
+        for item in value:
+            _receipt_paths(item, result)
+
+def _receipt_normalize_path(value):
+    value = str(value or "").replace("\\", "/").strip()
+    marker = "/tests/"
+    if marker in value:
+        value = value[value.index("tests/"):]
+    while value.startswith("./"):
+        value = value[2:]
+    return value
+
+def _receipt_owned_test_paths(task):
+    owned = []
+    for key in ("target_path", "test_path", "test_paths", "planned_paths",
+                "files_to_modify", "owned_paths"):
+        _receipt_paths(task.get(key), owned)
+    contract = task.get("commit_contract")
+    if isinstance(contract, dict):
+        _receipt_paths(contract.get("planned_paths"), owned)
+    return {
+        _receipt_normalize_path(path)
+        for path in owned
+        if ".bats" in _receipt_normalize_path(path)
+        or _receipt_normalize_path(path).endswith(".py")
+    }
+
+def _receipt_candidate_roots(task_root, task):
+    roots = []
+    explicit_dir = str(os.environ.get("RUN_TESTS_RECEIPT_DIR", "")).strip()
+    for value in (explicit_dir,
+                  str(task_root / "logs" / "test_receipts") if task_root else "",
+                  str(os.environ.get("RFS_SCRIPT_ROOT", "")) + "/logs/test_receipts"):
+        if value:
+            path = pathlib.Path(value).resolve()
+            if path.is_dir() and path not in roots:
+                roots.append(path)
+    for key in ("task_worktree_workdir", "task_worktree_path"):
+        value = str(task.get(key) or "").strip()
+        if value:
+            path = pathlib.Path(value) / "logs" / "test_receipts"
+            if path.is_dir() and path.resolve() not in roots:
+                roots.append(path.resolve())
+    return roots
+
+def _receipt_is_valid(path):
+    try:
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(receipt, dict):
+            return None
+        if receipt.get("complete") is not True or receipt.get("result") != "PASS":
+            return None
+        if receipt.get("rc") != 0 or receipt.get("skip_count") != 0:
+            return None
+        paths = receipt.get("test_paths")
+        if not isinstance(paths, list) or not all(isinstance(item, str) and item for item in paths):
+            return None
+        artifact = receipt.get("artifact")
+        expected_sha = str(receipt.get("output_sha256") or receipt.get("sha256") or "").lower()
+        if not isinstance(artifact, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha):
+            return None
+        artifact_path = pathlib.Path(artifact)
+        if not artifact_path.is_absolute():
+            artifact_path = path.parent / artifact_path
+        if not artifact_path.is_file():
+            return None
+        if hashlib.sha256(artifact_path.read_bytes()).hexdigest() != expected_sha:
+            return None
+        declared = receipt.get("declared_test_count")
+        observed = receipt.get("observed_test_count")
+        if declared is not None and observed is not None and declared != observed:
+            return None
+        return receipt
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return None
+
+def _autolink_terminal_test_receipt(data, task_root):
+    task_path = _receipt_task_path(task_root, data)
+    task = _receipt_task_mapping(task_path)
+    # Minimal fixture reports used by the legacy scalar/batch tests have no
+    # task identity.  Real deployed tasks always carry task_id; do not make
+    # those compatibility fixtures claim a receipt they cannot own.
+    task_id = str(task.get("task_id") or "").strip()
+    if not task_id:
+        return
+    report_task_id = str(data.get("task_id") or task_id).strip()
+    if report_task_id != task_id:
+        raise SystemExit("BLOCK: terminal test receipt task_id mismatch")
+    commit = str(data.get("commit_hash") or "").strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise SystemExit("BLOCK: terminal test receipt commit identity missing")
+    owned = _receipt_owned_test_paths(task)
+    explicit = str(os.environ.get("RUN_TESTS_RECEIPT_PATH", "")).strip()
+    candidates = []
+    paths = [pathlib.Path(explicit).resolve()] if explicit else []
+    if not paths:
+        for root in _receipt_candidate_roots(task_root, task):
+            paths.extend(sorted(root.glob("*.json")))
+    seen = set()
+    stale = False
+    for path in paths:
+        path = path.resolve()
+        if path in seen or not path.is_file():
+            continue
+        seen.add(path)
+        receipt = _receipt_is_valid(path)
+        if receipt is None:
+            continue
+        receipt_ids = {
+            str(receipt.get(key) or "").strip()
+            for key in ("task_id", "subtask_id")
+            if str(receipt.get(key) or "").strip()
+        }
+        if receipt_ids and task_id not in receipt_ids:
+            continue
+        receipt_paths = {_receipt_normalize_path(item) for item in receipt["test_paths"]}
+        if not receipt_ids and (not owned or not any(
+                candidate == owned_path or candidate.endswith("/" + owned_path)
+                for candidate in receipt_paths for owned_path in owned)):
+            continue
+        receipt_commit = str(receipt.get("commit_sha") or receipt.get("source_head") or "").strip().lower()
+        if receipt_commit != commit:
+            stale = True
+            continue
+        candidates.append(path)
+    if len(candidates) == 1:
+        data["test_receipt_path"] = str(candidates[0])
+        return
+    if len(candidates) > 1:
+        raise SystemExit("BLOCK: terminal test receipt candidates are ambiguous (multiple same-task same-commit receipts)")
+    if stale:
+        raise SystemExit("BLOCK: terminal test receipt candidates are stale for report commit")
+    raise SystemExit("BLOCK: terminal test receipt is missing for task and commit")
+
 try:
     for key, value in updates.items():
         if not isinstance(key, str) or not key.strip():
@@ -218,16 +382,15 @@ if results:
         data["status"] = "completed"
 
 terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"}
+if str(data.get("status", "")).strip() in {"completed", "done"}:
+    _autolink_terminal_test_receipt(data, task_root)
+
 # The authoring timestamp is created at deployment and can predate terminal
 # publication by multiple review rounds. Record the real terminal edge in the
 # same atomic replace as the report status so downstream gap telemetry uses the
 # completion event rather than deployment time.
 if terminal:
     data["completed_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
-root = pathlib.Path(sys.argv[2]).resolve()
-task_root_arg = str(sys.argv[3]).strip()
-task_root = pathlib.Path(task_root_arg).resolve() if task_root_arg else None
-
 def lesson_feedback_task_path(report: dict[str, Any]) -> pathlib.Path | None:
     explicit = str(os.environ.get("RFS_TASK_FILE_PATH", "")).strip()
     if explicit:
