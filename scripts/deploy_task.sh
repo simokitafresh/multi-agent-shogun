@@ -11516,6 +11516,92 @@ if [ "${DEPLOY_TASK_MUTATION_MEASUREMENTS_INSTALLED:-0}" != "1" ]; then
     unset _dt_mutation_measure_fn _dt_mutation_measure_functions
 fi
 
+# A retry of the same task can arrive after the worktree has already been
+# published into the task YAML.  Reusing that still-active, unpublished
+# worktree avoids repeating the remote lookup/fetch and full checkout.  Every
+# identity check is local and fail-closed; any uncertainty falls through to
+# the original creator, preserving the existing safety boundary.
+deploy_task_reuse_existing_remote_tip_worktree() {
+    local task_file="$1" ninja_name="$2"
+    local required status task_id parent_cmd worktree repo marker base marker_match worktree_top repo_common worktree_common repo_common_path worktree_common_path
+    required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
+    status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_status" "" 2>/dev/null || true)
+    [ "$required" = "true" ] && [ "$status" = "active" ] || return 1
+
+    task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "" 2>/dev/null || true)
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    worktree=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_path" "" 2>/dev/null || true)
+    repo=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_repo" "" 2>/dev/null || true)
+    marker=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_marker" "" 2>/dev/null || true)
+    base=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_base" "" 2>/dev/null || true)
+    [ -n "$task_id" ] && [ -n "$parent_cmd" ] && [ -n "$worktree" ] \
+        && [ -n "$repo" ] && [ -n "$marker" ] && [ -n "$base" ] || return 1
+    [ -d "$worktree" ] && [ -f "$marker" ] || return 1
+
+    marker_match=$(python3 - "$marker" "$task_id" "$parent_cmd" "$repo" "$worktree" "$base" <<'PY'
+import json
+import os
+import sys
+
+path, task_id, parent_cmd, repo, worktree, base = sys.argv[1:]
+try:
+    with open(path, encoding="utf-8") as handle:
+        marker = json.load(handle)
+except (OSError, ValueError):
+    print("no")
+    raise SystemExit(0)
+
+expected = {
+    "state": "active",
+    "task_id": task_id,
+    "parent_cmd": parent_cmd,
+    "repo": os.path.realpath(repo),
+    "worktree": os.path.realpath(worktree),
+    "remote_tip": base,
+    "published_commit": "",
+}
+actual = {
+    "state": marker.get("state"),
+    "task_id": marker.get("task_id"),
+    "parent_cmd": marker.get("parent_cmd"),
+    "repo": os.path.realpath(str(marker.get("repo") or "")),
+    "worktree": os.path.realpath(str(marker.get("worktree") or "")),
+    "remote_tip": marker.get("remote_tip"),
+    "published_commit": marker.get("published_commit", ""),
+}
+print("match" if actual == expected else "no")
+PY
+    )
+    [ "$marker_match" = "match" ] || return 1
+
+    worktree_top=$(git -C "$worktree" rev-parse --show-toplevel 2>/dev/null || true)
+    [ "$(realpath -m -- "$worktree_top" 2>/dev/null || true)" = "$(realpath -m -- "$worktree" 2>/dev/null || true)" ] || return 1
+    git -C "$worktree" merge-base --is-ancestor "$base" HEAD 2>/dev/null || return 1
+    repo_common=$(git -C "$repo" rev-parse --git-common-dir 2>/dev/null || true)
+    worktree_common=$(git -C "$worktree" rev-parse --git-common-dir 2>/dev/null || true)
+    if [[ "$repo_common" = /* ]]; then
+        repo_common_path="$repo_common"
+    else
+        repo_common_path="$repo/$repo_common"
+    fi
+    if [[ "$worktree_common" = /* ]]; then
+        worktree_common_path="$worktree_common"
+    else
+        worktree_common_path="$worktree/$worktree_common"
+    fi
+    [ "$(realpath -m -- "$repo_common_path" 2>/dev/null || true)" = \
+        "$(realpath -m -- "$worktree_common_path" 2>/dev/null || true)" ] || return 1
+    log "TASK_WORKTREE_REUSED: ninja=$ninja_name task=$task_id base=$base path=$worktree"
+    return 0
+}
+
+deploy_task_prepare_remote_tip_worktree_dispatch() {
+    if deploy_task_reuse_existing_remote_tip_worktree "$@"; then
+        return 0
+    fi
+    deploy_task_original_prepare_remote_tip_worktree "$@"
+}
+
 # deploy_task_prepare_remote_tip_worktree contains an embedded Python heredoc,
 # so the generic declaration-based decorator above intentionally leaves it
 # untouched. Keep it as one explicit top-level phase: its nested git, marker,
@@ -11528,9 +11614,9 @@ if declare -F deploy_task_prepare_remote_tip_worktree >/dev/null 2>&1 \
     deploy_task_prepare_remote_tip_worktree() {
         if [ "${DEPLOY_TASK_PHASE:-}" = task_mutations ]; then
             deploy_task_mutation_phase deploy_task_prepare_remote_tip_worktree \
-                deploy_task_original_prepare_remote_tip_worktree "$@"
+                deploy_task_prepare_remote_tip_worktree_dispatch "$@"
         else
-            deploy_task_original_prepare_remote_tip_worktree "$@"
+            deploy_task_prepare_remote_tip_worktree_dispatch "$@"
         fi
     }
 fi
