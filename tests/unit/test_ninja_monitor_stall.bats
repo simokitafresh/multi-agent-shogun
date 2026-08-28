@@ -5031,6 +5031,50 @@ PY
     [ "$output" = "normal=1 slow=1 phase=observe" ]
 }
 
+# test_necessity: process-substitution children inherit the monitor's EXIT
+# trap while collecting timing rows.  Only the owner shell may finish timing
+# and release the owner lease; otherwise the child can recursively spawn the
+# collector and keep the cycle's telemetry pipe open.
+@test "function timing process substitutions exit without duplicate cleanup" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="$BATS_TEST_TMPDIR/function-timing-owner"
+        mkdir -p "$root/logs"
+        NINJA_MONITOR_FUNCTION_TIMING_LOG="$root/logs/function_timing.jsonl"
+        NINJA_MONITOR_CYCLE_LOG="$root/logs/ninja_monitor_cycle.jsonl"
+        ninja_monitor_function_timing_enable
+        trap "ninja_monitor_exit_cleanup" EXIT
+
+        while IFS= read -r marker; do
+            test "$marker" = child_done
+        done < <(ninja_monitor_function_timing_finish; printf "child_done\\n")
+
+        # The process-substitution child must not write a timing row or run
+        # owner cleanup before the parent explicitly finishes.
+        test ! -s "$NINJA_MONITOR_FUNCTION_TIMING_LOG"
+        cycle=1
+        declare -A NINJA_MONITOR_CYCLE_PHASE_MS=()
+        NINJA_MONITOR_CYCLE_START_MS=$(_ninja_monitor_cycle_clock_ms)
+        NINJA_MONITOR_CYCLE_PHASE_LAST_MS="$NINJA_MONITOR_CYCLE_START_MS"
+        NINJA_MONITOR_CYCLE_PHASE=observe
+        _ninja_monitor_cycle_record
+        cycle=2
+        declare -A NINJA_MONITOR_CYCLE_PHASE_MS=()
+        NINJA_MONITOR_CYCLE_START_MS=$(_ninja_monitor_cycle_clock_ms)
+        NINJA_MONITOR_CYCLE_PHASE_LAST_MS="$NINJA_MONITOR_CYCLE_START_MS"
+        NINJA_MONITOR_CYCLE_PHASE=observe
+        _ninja_monitor_cycle_record
+        test "$(wc -l < "$root/logs/ninja_monitor_cycle.jsonl" | tr -d " ")" -eq 2
+        printf "child_cleanup=0 cycle_records=2\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "child_cleanup=0 cycle_records=2" ]
+}
+
 # test_necessity: reflux scheduling must keep inventory/deploy work outside
 # the monitor cycle, suppress duplicate workers with a lease, and retry a
 # failed worker on a later cycle.
