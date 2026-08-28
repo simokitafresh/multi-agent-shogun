@@ -676,7 +676,7 @@ acquire_singleton_lock() {
     flock -u "$lock_fd"
     eval "exec ${lock_fd}>&-"
     if [ "${NINJA_MONITOR_RELEASE_OWNER_ON_EXIT:-1}" = "1" ]; then
-        trap 'ninja_monitor_function_timing_finish; ninja_monitor_release_owner' EXIT
+        trap 'ninja_monitor_exit_cleanup' EXIT
     fi
 }
 
@@ -695,6 +695,7 @@ ninja_monitor_publish_owner_pid() {
 }
 
 ninja_monitor_release_owner() {
+    [ "${BASHPID:-$$}" = "${_NM_FUNCTION_TIMING_OWNER_BASHPID:-${BASHPID:-$$}}" ] || return 0
     local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}"
     local pid_file="${STATE_DIR}/ninja_monitor.pid"
     local pid="" generation="" heartbeat=""
@@ -710,6 +711,7 @@ ninja_monitor_release_owner() {
 # intentionally additive and best-effort: counters are in memory and one
 # locked JSONL append happens only at process termination.
 ninja_monitor_function_timing_enable() {
+    _NM_FUNCTION_TIMING_OWNER_BASHPID="${BASHPID:-$$}"
     case "${NINJA_MONITOR_FUNCTION_TIMING_LOG:-}" in
         disabled|0) return 0 ;;
     esac
@@ -754,6 +756,7 @@ _nm_function_timing_debug() {
 }
 
 ninja_monitor_function_timing_finish() {
+    [ "${BASHPID:-$$}" = "${_NM_FUNCTION_TIMING_OWNER_BASHPID:-${BASHPID:-$$}}" ] || return 0
     trap - DEBUG
     set +T
     [ -n "${NINJA_MONITOR_FUNCTION_TIMING_LOG:-}" ] || return 0
@@ -784,6 +787,12 @@ ninja_monitor_function_timing_finish() {
         eval "${_NM_FUNCTION_TIMING_PREV_DEBUG_TRAP}" 2>/dev/null || true
     fi
     return 0
+}
+
+ninja_monitor_exit_cleanup() {
+    [ "${BASHPID:-$$}" = "${_NM_FUNCTION_TIMING_OWNER_BASHPID:-${BASHPID:-$$}}" ] || return 0
+    ninja_monitor_function_timing_finish
+    ninja_monitor_release_owner
 }
 
 ninja_monitor_owner_heartbeat() {
