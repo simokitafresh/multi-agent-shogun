@@ -7155,7 +7155,12 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で現行rendererに終端条件ガード未実装を確認。現行[~]7行は全て終端条件を含み実害未発火のため、コード修正は本task scope外としてdecision_candidateへ整理"
+  action_artifact: "queue/reports/tobisaru_report_cmd_reflux_insight_202608282337_tobisaru.yaml#decision_candidate; scripts/todo_map_render.py:L24-L56; queue/shogun_todo_map.md:[~]7行の終端条件実測"
+  resolved_at: "2026-08-29T00:35:15+09:00"
+  occurrence_count: 1
+  last_seen: "2026-08-29T00:42:04+09:00"
 - id: INS-20260828-184817093-aa6e
   ts: "2026-08-28T18:48:17+09:00"
   insight: "[[T145 T147 T146 T143 T142 T140 T137 T136 T129が未完了だとartifactでは]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T145 / T147 / T146 / T143 / T142 / T140 / T137 / T136 / T129が未完了だとartifactではなっている。現状と原本とartifactは整合性がとれている必要がある。修正してくれ"
@@ -7249,7 +7254,11 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: scripts/run_tests.sh の run_tests_queue_root_guard がfixture実行時に本番queue解決をrc=2で拒否し、隔離rootのみ許可する。契約テスト tests/unit/test_run_tests_queue_root_guard.bats 2/2 PASS、追加コード修正不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-204439475-8246;primary=scripts/run_tests.sh:L136-L178,L1957,L2425;regression=tests/unit/test_run_tests_queue_root_guard.bats:2/2 PASS via bash scripts/run_tests.sh file;history=git:4ed034eb9,3f5745dad;causal=[[INS-20260828-204439475-8246]] -> [[run_tests_queue_root_guard]] -> [[fixture本番queue汚染の再発防止]]"
+  resolved_at: "2026-08-29T00:54:48+09:00"
+  last_seen: "2026-08-29T00:59:21+09:00"
 - id: INS-20260828-204621818-d19d
   ts: "2026-08-28T20:46:21+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b9b5bvefe task id tool use id toolu 013DoRmgajQYakp71D は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
