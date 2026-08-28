@@ -1,59 +1,3 @@
-- cmd_id: cmd_karo_hotfix_cli_switch_settings_publish_202608212352
-  timestamp: '2026-08-21T15:37:50Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_cli_switch_settings_publish_202608212352'
-- cmd_id: cmd_reflux_insight_202608220111_hayate
-  timestamp: '2026-08-21T16:27:47Z'
-  ninja: hayate
-  workaround: true
-  event_kind: manual_wa
-  auto_captured: false
-  category: shared_yaml_concurrency
-  root_signature: 'shared_yaml_concurrency::schema_shape'
-  detail: '共有queue/insights.yamlから対象外4IDがsource commitで欠落したため復元'
-  root_cause: 'restore_insights_from_corrupt.shをID raw block fragmentへ適用しbefore96→after100、added4、removed0、duplicates0をresult.jsonで確認'
-  lesson_required: true
-  lesson_disposition: 'new_lesson_required'
-  lesson_reference: ''
-  brainwash_check: '洗脳#2検証スキップ防止: 欠落ID 4→0、保持ID 96→100、removed 0件、duplicate 0件'
-  resolved_by_cmd: ''
-- cmd_id: cmd_reflux_insight_202608220212_hayate
-  timestamp: '2026-08-21T17:24:22Z'
-  ninja: hayate
-  workaround: true
-  event_kind: manual_wa
-  auto_captured: false
-  category: shared_yaml_concurrency
-  root_signature: 'shared_yaml_concurrency::general'
-  detail: '共有insight source commitが対象外4IDを落とし対象解決メタデータも未反映だったためID単位統合'
-  root_cause: 'restore writerで4ID復元後、yaml_field_setで対象3メタデータを追加しscope commit ff58d784cを作成'
-  lesson_required: true
-  lesson_disposition: 'new_lesson_required'
-  lesson_reference: ''
-  brainwash_check: '洗脳#2検証スキップ防止: 欠落ID 4→0、resolved metadata 0→3項目、scope commit 0→1件、duplicate 0件'
-  resolved_by_cmd: ''
-- cmd_id: cmd_karo_hotfix_reflux_insight_claim_lease_202608220502
-  timestamp: '2026-08-21T20:23:12Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_reflux_insight_claim_lease_202608220502'
 - cmd_id: cmd_karo_hotfix_report_commit_main_ancestry_202608220515
   timestamp: '2026-08-21T20:44:23Z'
   ninja: system
@@ -1310,3 +1254,55 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_stale_reports_archive_20260828'
+- cmd_id: cmd_karo_hotfix_inbox_priority_evidence_deadlock_20260828
+  timestamp: '2026-08-28T15:08:17Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_inbox_priority_evidence_deadlock_20260828'
+- cmd_id: cmd_karo_hotfix_gate_wait_state_20260828
+  timestamp: '2026-08-28T16:02:34Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_gate_wait_state_20260828'
+- cmd_id: cmd_karo_hotfix_postclear_inprogress_terminalization_20260829
+  timestamp: '2026-08-28T16:29:34Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_postclear_inprogress_terminalization_20260829'
+- cmd_id: cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828
+  timestamp: '2026-08-28T16:34:09Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828'

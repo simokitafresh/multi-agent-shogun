@@ -1,3 +1,4 @@
-# session_alerts — generated: 2026-08-28T22:43:32+0900
-[DONE] 追体験自動化ターゲット — 掲示板 blt_205633 Q6 回答に記載済: scripts/gates/gate_shogun_startup.sh『本番 queue 汚染』節 実装 c54380824+faae86e02、初回実行で 12 行 ALERT 検出(軍師検証 blt_205916 妥当)
-[DONE] 走行中cmd実測突合 — 22:44 全pane capture 済(家老75% Working/影丸48%/半蔵20%/才蔵29%)
+# session_alerts — generated: 2026-08-29T00:40:07+0900
+[DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[DONE] 走行中cmd実測突合: busy 4名。capture-pane未確認で状況報告するな
+[DONE] monitor lifecycle 失敗行 6行/60分 — 壁の所有者を一次で確認
