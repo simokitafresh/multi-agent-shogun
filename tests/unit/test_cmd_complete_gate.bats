@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head report_ci_push_state report_commit_main_ancestry_state""".split()
+names = """record_block_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state report_commit_main_ancestry_state check_report_commit_main_ancestry""".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -7072,9 +7072,17 @@ run_ci_push_state() {
 run_report_main_ancestry_state() {
     local repo="$1" report="$2" task="${3:-}"
     run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        COMMIT_REPO_RESOLVER_MAIN="$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" \
         CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" \
         CMD_COMPLETE_GATE_CI_REPORT="$report" \
         CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT"
+}
+
+run_report_main_ancestry_check() {
+    local repo="$1" report="$2" task="$3"
+    run env COMMIT_REPO_RESOLVER_MAIN="$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" \
+        bash -c 'source "$1"; source "$2"; SCRIPT_DIR="$3"; CMD_ID=cmd_report_ancestry_probe; CMD_COMPLETE_GATE_CI_REPO_DIR="$4"; CMD_COMPLETE_GATE_CI_REPORT="$5"; CMD_COMPLETE_GATE_TASK_FILE="$6"; check_report_commit_main_ancestry' \
+        _ "$GATE_HELPERS_FILE" "$PROJECT_ROOT/scripts/lib/field_get.sh" "$PROJECT_ROOT" "$repo" "$report" "$task"
 }
 
 run_report_blob_parity_state() {
@@ -7530,6 +7538,53 @@ run_commit_repo_resolution() {
     run_report_main_ancestry_state "$project_repo" "$report"
     [ "$status" -eq 0 ]
     [[ "$output" == "PASS: PUSHED:"* ]]
+}
+
+# test_necessity: terminal ancestry must resolve the typed commit repository
+# before using the remote boundary, even when task.project.path is stale or
+# points at a different valid repository.
+# regression_justification: cmd_karo_hotfix_report_ancestry_repo_resolution_20260828
+# observed the final ancestry stage still consuming the project repository
+# after the CI stage had resolved commit_contract.repo_root.
+@test "terminal report ancestry resolves typed commit repo before stale project path" {
+    local project_repo="$BATS_TEST_TMPDIR/report-ancestry-stale-project"
+    local commit_repo="$BATS_TEST_TMPDIR/report-ancestry-typed-source"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-typed.yaml"
+    local task="$BATS_TEST_TMPDIR/report-ancestry-typed-task.yaml"
+    make_ci_push_repo "$project_repo"
+    make_ci_push_repo "$commit_repo"
+    echo typed-source >> "$commit_repo/state"
+    git -C "$commit_repo" commit -qam "typed source commit"
+    local source_sha
+    source_sha="$(git -C "$commit_repo" rev-parse HEAD)"
+    git -C "$commit_repo" update-ref refs/remotes/origin/main "$source_sha"
+    printf 'verdict: PASS\ncommit_hash: %s\ncommit_contract: {required: true, repo_root: %s}\n' \
+        "$source_sha" "$commit_repo" > "$report"
+    printf 'task:\n  project: infra\n  commit_contract: {required: true, repo_root: %s}\n' \
+        "$commit_repo" > "$task"
+
+    run_report_main_ancestry_check "$project_repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: PUSHED:"* ]]
+}
+
+# test_necessity: invalid typed repository contracts must remain fail-closed
+# at the terminal ancestry boundary rather than falling back to project.path.
+@test "terminal report ancestry blocks invalid typed commit repo" {
+    local project_repo="$BATS_TEST_TMPDIR/report-ancestry-invalid-project"
+    local invalid_repo="$BATS_TEST_TMPDIR/report-ancestry-invalid-source"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-invalid.yaml"
+    local task="$BATS_TEST_TMPDIR/report-ancestry-invalid-task.yaml"
+    make_ci_push_repo "$project_repo"
+    mkdir -p "$invalid_repo"
+    printf 'verdict: PASS\ncommit_hash: %s\n' \
+        "$(git -C "$project_repo" rev-parse HEAD)" > "$report"
+    printf 'task:\n  project: infra\n  commit_contract: {required: true, repo_root: %s}\n' \
+        "$invalid_repo" > "$task"
+
+    run_report_main_ancestry_state "$project_repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: explicit commit repository is unreadable"* ]]
 }
 
 # test_necessity: readonly/no-code reports retain their sentinel contract and
