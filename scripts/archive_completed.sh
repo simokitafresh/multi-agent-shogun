@@ -143,11 +143,12 @@ preserve_task_worktree_tracked_runtime_artifacts() {
     fi
 }
 
-# A no-code task has no source-only publication receipt by design.  Recover
-# its deploy base only when the report contract, linked worktree, and current
-# remote ancestry all prove that the base itself is the published identity.
+# Recover a missing source-only publication receipt only when the terminal
+# report, linked worktree, and current remote ancestry prove one exact commit.
+# No-code tasks retain their older base-identity contract because they have no
+# report commit to publish.
 recover_task_worktree_nocode_base_commit() {
-    local marker="$1" cmd_id="$2" repo="$3" identity worktree tip upstream current_tip
+    local marker="$1" cmd_id="$2" repo="$3" identity worktree marker_base tip recovery_source upstream current_tip
     identity=$(python3 - "$PROJECT_DIR" "$marker" "$cmd_id" "$repo" <<'PY'
 import json
 import pathlib
@@ -207,6 +208,7 @@ except (OSError, TypeError, ValueError, yaml.YAMLError):
     raise SystemExit(1)
 contract = report.get("commit_contract")
 task_type = str(report.get("task_type") or "").strip().lower()
+report_commit = str(report.get("commit_hash") or "").strip()
 no_code_types = {
     "recon", "recon2", "scout", "verification", "verify", "readonly",
     "read_only", "no-code", "no_code", "decision", "data_readonly",
@@ -217,38 +219,58 @@ if (
     or str(report.get("status") or "").lower() not in {"completed", "done"}
     or str(report.get("verdict") or "").upper() != "PASS"
     or not isinstance(contract, dict)
-    or contract.get("required") is not False
-    or task_type not in no_code_types
 ):
     raise SystemExit(1)
-print(f"{worktree}\t{remote_tip}")
+if task_type in no_code_types:
+    if contract.get("required") is not False:
+        raise SystemExit(1)
+    # Preserve the established no-code contract: its marker base is the
+    # published identity and commit_hash is intentionally absent/sentinel.
+    tip = remote_tip
+    recovery_source = "verified_no_code_base"
+else:
+    if contract.get("required") is not True:
+        raise SystemExit(1)
+    # Source-changing tasks must recover the exact commit attested by the
+    # terminal report.  A valid marker base alone is insufficient: it could
+    # identify the pre-edit remote tip while the worktree contains a different
+    # local commit.
+    if not re.fullmatch(r"[0-9a-f]{40}", report_commit):
+        raise SystemExit(1)
+    tip = report_commit
+    recovery_source = "verified_report_commit"
+print(f"{worktree}\t{remote_tip}\t{tip}\t{recovery_source}")
 PY
     ) || return 1
-    IFS=$'\t' read -r worktree tip <<< "$identity"
+    IFS=$'\t' read -r worktree marker_base tip recovery_source <<< "$identity"
     [ -d "$worktree" ] || return 1
     [ -z "$(git -C "$worktree" status --porcelain 2>/dev/null)" ] || return 1
+    [[ "$marker_base" =~ ^[0-9a-f]{40}$ && "$tip" =~ ^[0-9a-f]{40}$ ]] || return 1
+    git -C "$repo" cat-file -e "${marker_base}^{commit}" 2>/dev/null || return 1
+    git -C "$repo" cat-file -e "${tip}^{commit}" 2>/dev/null || return 1
     [ "$(git -C "$worktree" rev-parse HEAD 2>/dev/null)" = "$tip" ] || return 1
+    git -C "$repo" merge-base --is-ancestor "$marker_base" "$tip" 2>/dev/null || return 1
     upstream=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
     current_tip=$(git -C "$repo" rev-parse "$upstream" 2>/dev/null) || return 1
     [[ "$current_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
     git -C "$repo" merge-base --is-ancestor "$tip" "$current_tip" 2>/dev/null || return 1
-    python3 - "$marker" "$tip" <<'PY'
+    python3 - "$marker" "$tip" "$recovery_source" <<'PY'
 import json
 import os
 import sys
 import tempfile
 import time
 
-marker, published_commit = sys.argv[1:]
+marker, published_commit, recovery_source = sys.argv[1:]
 with open(marker, encoding="utf-8") as handle:
     data = json.load(handle)
 if data.get("state") != "active" or str(data.get("published_commit") or ""):
     raise SystemExit(1)
 data["published_commit"] = published_commit
 data["published_recovered_at_ns"] = time.time_ns()
-data["published_recovery_source"] = "verified_no_code_base"
+data["published_recovery_source"] = recovery_source
 directory = os.path.dirname(marker)
-fd, temporary = tempfile.mkstemp(prefix=".task_worktree_nocode_recovered.", dir=directory)
+fd, temporary = tempfile.mkstemp(prefix=".task_worktree_recovered.", dir=directory)
 try:
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         json.dump(data, handle, sort_keys=True)
@@ -263,7 +285,11 @@ except Exception:
         pass
     raise
 PY
-    echo "[archive] task worktree publication recovered from verified no-code base: commit=$tip"
+    if [ "$recovery_source" = "verified_no_code_base" ]; then
+        echo "[archive] task worktree publication recovered from verified no-code base: commit=$tip"
+    else
+        echo "[archive] task worktree publication recovered from $recovery_source: commit=$tip"
+    fi
 }
 
 # A formal FAIL close never creates CLEAR.  Bind the Karo ACCEPT record to the
