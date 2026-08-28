@@ -7961,3 +7961,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260829-085530244-0133
+  ts: "2026-08-29T08:55:30+09:00"
+  insight: "production proof artifact(queue/proofs/)の存在確認がprecheckに無い。AC2でproof外部化=yesだがartifact 0件を見落としてLGTM。precheck SG強化候補: bc=yesかつproduction_proof要件があるcmdのproof artifact実在確認"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
