@@ -5316,6 +5316,81 @@ SH
     [ "$output" = "elapsed_lt_1000ms=1 calls=1 background=1" ]
 }
 
+# test_necessity: a completed report awaiting formal review must remain in the
+# review lane even when the normal idle/no-task clear path runs after STAGE1.
+@test "review-pending done task blocks normal auto-clear and direct clear" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/review-pending-clear"
+        mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/queue/gates" "$root/state"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        cat > "$root/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: done
+  parent_cmd: cmd_review_pending
+  report_path: queue/reports/kagemaru_report_cmd_review_pending.yaml
+EOF
+        cat > "$root/queue/reports/kagemaru_report_cmd_review_pending.yaml" <<EOF
+worker_id: kagemaru
+task_id: cmd_review_pending_normal
+parent_cmd: cmd_review_pending
+status: completed
+verdict: PASS
+EOF
+        NINJA_NAMES=(kagemaru)
+        declare -A PANE_TARGETS LAST_CLEARED CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+        PANE_TARGETS[kagemaru]=pane-kagemaru
+        tmux() { [ "$1" = display-message ] && printf "kagemaru\\n"; return 0; }
+        get_context_pct() { printf "80\\n"; }
+        cli_type() { printf "codex\\n"; }
+        respawn_recovery_generation() { printf "pane-generation\\n"; }
+        cli_profile_get() { [ "$2" = clear_debounce ] && printf "0\\n" || printf "\\n"; }
+        _auto_clear_guard_fingerprint() { printf "\\t\\t\\n"; }
+        check_idle() { return 0; }
+        review_two_phase_ready() { return 1; }
+        log() { printf "%s\\n" "$1" >> "$LOG"; }
+        CLEAR_COUNT=0
+        safe_send_clear_original() { CLEAR_COUNT=$((CLEAR_COUNT + 1)); return 0; }
+
+        _done_report_terminal_review_ready cmd_review_pending \
+            "$root/queue/reports/kagemaru_report_cmd_review_pending.yaml" || true
+        _handle_auto_clear kagemaru 10000
+        test "$CLEAR_COUNT" -eq 0
+        safe_send_clear pane-kagemaru kagemaru AUTO-CLEAR || true
+        test "$CLEAR_COUNT" -eq 0
+        test "$(grep -c "STAGE1-REVIEW-PENDING-SKIP: parent_cmd=cmd_review_pending" "$LOG")" -ge 1
+        grep -q "AUTO-CLEAR-SKIP-REVIEW-PENDING: kagemaru status=done" "$LOG"
+        grep -q "CLEAR-BLOCKED-REVIEW-PENDING: kagemaru status=done" "$LOG"
+        printf "stage1_skip=1 auto_clear=0 direct_clear=0 ctx_reset=0\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "stage1_skip=1 auto_clear=0 direct_clear=0 ctx_reset=0" ]
+}
+
+# test_necessity: a bounded lifecycle worker failure must preserve enough
+# invocation context to distinguish argument validation from function failure.
+@test "lifecycle worker failure records invocation diagnostics" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        set +e
+        output=$(NINJA_MONITOR_LIFECYCLE_DEBUG=1 bash "$PROJECT_ROOT/scripts/ninja_monitor.sh" --lifecycle-worker 2>&1)
+        rc=$?
+        set -e
+        test "$rc" -eq 64
+        grep -q "NINJA_MONITOR_DEBUG argv0=" <<< "$output"
+        grep -q "argc=1" <<< "$output"
+        grep -q "bash_source=" <<< "$output"
+        grep -q "lib_only=" <<< "$output"
+        grep -q "Usage: bash scripts/ninja_monitor.sh" <<< "$output"
+        printf "rc64=1 argv0=1 argc=1 bash_source=1 lib_only=1 stderr=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "rc64=1 argv0=1 argc=1 bash_source=1 lib_only=1 stderr=1" ]
+}
+
 # test_necessity: the bounded daemon worker must reach its requested lifecycle
 # function; rejecting the worker-mode argument at startup turns every lane into
 # an rc=64 retry loop and leaves the parent cycle exposed to synchronous work.
