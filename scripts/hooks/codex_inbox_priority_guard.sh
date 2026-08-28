@@ -37,53 +37,108 @@ tool_name="$(jq -r '.tool_name // .tool // .name // empty' <<<"$payload" 2>/dev/
 command="$(jq -r '.tool_input.command // .tool_input.cmd // .input.command // .input.cmd // empty' <<<"$payload" 2>/dev/null || true)"
 tool_target="$(jq -r '.tool_input.file_path // .tool_input.filePath // .tool_input.path // .input.file_path // .input.path // empty' <<<"$payload" 2>/dev/null || true)"
 
-# shell command の引数ではなく、全command segmentの実行位置にある
-# script tokenだけを判定する。これにより許可scriptの後へ任意commandを
-# 連結する迂回と、`echo inbox_write.sh shogun` の本文だけの偽装を許可しない。
+# shell command の引数ではなく、単一commandの実行位置にある script token
+# だけを判定する。これにより許可scriptの後へ任意commandを連結する迂回と、
+# shell substitution/process substitution/redirection/newline、本文だけの偽装を許可しない。
 command_is_allowed_evidence() {
     python3 - "$command" <<'PY'
 import shlex
 import sys
+import re
 
 command = sys.argv[1]
+
+def has_shell_syntax(value):
+    """Reject active shell syntax while preserving quoted argument text."""
+    state = "normal"
+    index = 0
+    while index < len(value):
+        char = value[index]
+        if state == "single":
+            if char == "'":
+                state = "normal"
+            index += 1
+            continue
+        if state == "double":
+            if char == "\\":
+                index += 2
+                continue
+            if char == '"':
+                state = "normal"
+                index += 1
+                continue
+            # $() and backticks execute even inside double quotes.
+            if char == "`" or (char == "$" and value[index:index + 2] == "$("):
+                return True
+            index += 1
+            continue
+        if char == "'":
+            state = "single"
+            index += 1
+            continue
+        if char == '"':
+            state = "double"
+            index += 1
+            continue
+        if char == "\\":
+            # An escaped metacharacter is literal; a trailing escape/newline is
+            # still rejected as an incomplete shell construct.
+            if index + 1 >= len(value) or value[index + 1] == "\n":
+                return True
+            index += 2
+            continue
+        if char == "\n" or char in ";|&<>()":
+            return True
+        if char == "`" or (char == "$" and value[index:index + 2] == "$("):
+            return True
+        index += 1
+    return state != "normal"
+
+if has_shell_syntax(command):
+    raise SystemExit(1)
+
 try:
-    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|")
+    lexer = shlex.shlex(command, posix=True)
     lexer.whitespace_split = True
-    tokens = list(lexer)
+    words = list(lexer)
 except ValueError:
     raise SystemExit(1)
 
 shells = {"bash", "sh", "zsh", "ksh", "dash"}
-separators = {";", "&", "|", "&&", "||"}
-segment = []
-segments = []
-for token in tokens + [";"]:
-    if token in separators:
-        if segment:
-            segments.append(segment)
-        segment = []
+assignment = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
+
+def allowed_invocation(argv):
+    """Recognize only the supported single writer invocation shape."""
+    index = 0
+    while index < len(argv) and assignment.match(argv[index]):
+        index += 1
+    # Common production wrappers may prefix the interpreter, but only their
+    # option/value words are accepted. An arbitrary executable is not a prefix.
+    if index < len(argv) and argv[index] == "env":
+        index += 1
+        while index < len(argv) and (assignment.match(argv[index]) or argv[index].startswith("-")):
+            index += 1
+    if index < len(argv) and argv[index] == "timeout":
+        index += 1
+        while index < len(argv) and (argv[index].replace(".", "", 1).isdigit() or argv[index].startswith("-")):
+            index += 1
+    if index >= len(argv):
+        return False
+    script = argv[index].rsplit("/", 1)[-1]
+    if script in {"bulletin_write.sh", "inbox_write.sh"}:
+        script_index = index
+    elif argv[index] in shells and index + 1 < len(argv):
+        script_index = index + 1
+        script = argv[script_index].rsplit("/", 1)[-1]
     else:
-        segment.append(token)
+        return False
+    if script not in {"bulletin_write.sh", "inbox_write.sh"}:
+        return False
+    if script == "inbox_write.sh":
+        return script_index + 1 < len(argv) and argv[script_index + 1] == "shogun"
+    return True
 
-def segment_is_allowed(words):
-    for index, token in enumerate(words):
-        script = token.rsplit("/", 1)[-1]
-        if script not in {"bulletin_write.sh", "inbox_write.sh"}:
-            continue
-        # Direct invocation or an interpreter invocation (including env/timeout
-        # prefixes) is a script execution. A content argument is not.
-        if index != 0 and words[index - 1] not in shells:
-            continue
-        if script == "inbox_write.sh":
-            if index + 1 >= len(words) or words[index + 1] != "shogun":
-                continue
-        return True
-    return False
-
-# An evidence command may consist of several chained evidence operations, but
-# every segment must itself be an allowed evidence operation. One arbitrary
-# segment makes the complete pre-tool command unsafe.
-raise SystemExit(0 if segments and all(segment_is_allowed(words) for words in segments) else 1)
+raise SystemExit(0 if allowed_invocation(words) else 1)
 PY
 }
 

@@ -34,6 +34,13 @@ EOF
 
 teardown() { rm -rf "$TMPD"; }
 
+run_guard() {
+    local command="$1"
+    local payload
+    payload="$(jq -cn --arg command "$command" '{tool_name:"Bash",tool_input:{command:$command}}')"
+    run bash -c 'printf "%s\n" "$1" | env SHOGUN_AGENT_ID=karo SHOGUN_INBOX_FILE="$2" bash "$3"' _ "$payload" "$INBOX" "$GUARD"
+}
+
 @test "stale unread shogun task_assigned blocks non-inbox tools with exit 2" {
     run bash -c "echo '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"bash scripts/run_tests.sh push\"}}' | SHOGUN_AGENT_ID=karo SHOGUN_INBOX_FILE='$INBOX' bash '$GUARD'"
     [ "$status" -eq 2 ]
@@ -81,6 +88,32 @@ teardown() { rm -rf "$TMPD"; }
         run bash -c "echo '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"$command\"}}' | SHOGUN_AGENT_ID=karo SHOGUN_INBOX_FILE='$INBOX' bash '$GUARD'"
         [ "$status" -eq 2 ]
     done
+}
+
+# test_necessity: shell substitutions and syntax are executable boundaries even
+# when they appear in one textual command. Quoted argument punctuation remains
+# valid evidence content and must not be rejected.
+@test "shell syntax is fail-closed while quoted evidence symbols stay safe" {
+    local command
+    local -a hostile=(
+        'bash scripts/bulletin_write.sh karo evidence $(printf bypass)'
+        'bash scripts/bulletin_write.sh karo evidence `printf bypass`'
+        'bash scripts/bulletin_write.sh karo evidence <(printf bypass)'
+        $'bash scripts/bulletin_write.sh karo evidence\nbash scripts/run_tests.sh unit'
+        'bash scripts/bulletin_write.sh karo evidence; bash scripts/run_tests.sh unit'
+        'bash scripts/bulletin_write.sh karo evidence && bash scripts/run_tests.sh unit'
+        'bash scripts/bulletin_write.sh karo evidence || bash scripts/run_tests.sh unit'
+        'bash scripts/bulletin_write.sh karo evidence | bash scripts/run_tests.sh unit'
+        'bash scripts/bulletin_write.sh karo evidence > /tmp/inbox-priority-out'
+        'echo ignored bash scripts/bulletin_write.sh karo evidence'
+    )
+    for command in "${hostile[@]}"; do
+        run_guard "$command"
+        [ "$status" -eq 2 ]
+    done
+
+    run_guard "bash scripts/bulletin_write.sh karo 'safe ; && || | \$() \`quoted\` < >'"
+    [ "$status" -eq 0 ]
 }
 
 # test_necessity: this fixture preserves the original two-sided deadlock
