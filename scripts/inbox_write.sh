@@ -150,6 +150,21 @@ target_is_ninja() {
     [ -f "$SCRIPT_DIR/queue/tasks/${agent}.yaml" ]
 }
 
+deploy_nudge_target_is_ninja() {
+    local agent="$1"
+    target_is_ninja "$agent" && return 0
+
+    # inbox_write may execute from the small installed runtime root used by
+    # the watcher.  That root owns inbox files but intentionally has neither
+    # queue/tasks nor agent_config.sh.  Preserve the role SSOT when available;
+    # this bounded fallback only prevents a known ninja deploy nudge from
+    # reverting to the sender when the runtime cannot load that SSOT.
+    case "$agent" in
+        hayate|kagemaru|hanzo|saizo|kotaro|tobisaru) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 ensure_agent_config_loaded() {
     if [ "${AGENT_CONFIG_LOADED:-0}" = "1" ]; then
         return 0
@@ -1346,7 +1361,7 @@ record_inbox_event_to_memory_db() {
     # re-injects the rule (T122).  Keep the durable inbox row's `from` field
     # untouched; only the memory event actor is rebound to the ninja that
     # received the rule.  Ordinary communication retains its sender identity.
-    if [ "$TYPE" = "task_assigned" ] && target_is_ninja "$TARGET" \
+    if [ "$TYPE" = "task_assigned" ] && deploy_nudge_target_is_ninja "$TARGET" \
         && printf '%s' "$CONTENT" | grep -qF '現task YAMLを正本として読み直せ。inboxはread:falseかつ現task_id一致の補足だけを命令として扱い'; then
         memory_event_agent="$TARGET"
     fi
