@@ -155,6 +155,31 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: task_mutationsの全体wallと計装済みsub-phaseを同一receiptへ
+# 突合し、未帰属時間と最大sub-phaseを次の高速化判断へ渡す不変量を守る。
+@test "mutation accounting emits one receipt with residual and max subphase" {
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        LOG="$2/mutation-accounting.log"
+        now=${EPOCHREALTIME/./}
+        now=${now:0:16}
+        DEPLOY_TASK_STARTED_US="$now"
+        DEPLOY_TASK_WALL_PHASE_LAST_US="$now"
+        DEPLOY_TASK_PHASE=task_mutations
+        deploy_task_mutation_phase probe bash -c ":"
+        deploy_task_wall_phase_checkpoint task_mutations
+        log "DEPLOY_RECEIPT result=success"
+        [ "$(grep -c "DEPLOY_RECEIPT " "$LOG")" -eq 1 ]
+        receipt=$(grep "DEPLOY_RECEIPT " "$LOG")
+        [[ "$receipt" == *"unaccounted_ms="* ]]
+        [[ "$receipt" == *"max_sub_phase=probe"* ]]
+        [[ "$receipt" == *"max_sub_phase_ms="* ]]
+    ' _ "$PROJECT_ROOT" "$BATS_TEST_TMPDIR"
+    [ "$status" -eq 0 ]
+}
+
 # test_necessity: 高CTX配備は正規respawnとready確認を経てからのみ成功し、ctx_before/afterを同一receiptへ記録する不変量を守る。
 @test "ctx guard respawns high-ctx idle worker and confirms ready" {
     run bash -c '
