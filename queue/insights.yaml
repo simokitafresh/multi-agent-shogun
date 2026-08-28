@@ -6325,3 +6325,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-093751598-fa69
+  ts: "2026-08-28T09:37:51+09:00"
+  insight: "家老が『rg -l cmd_4409 queue』=0 件を根拠に『正規 report 0 件・CLEAR 捏造不可』と将軍へ報告(blt_093631)。実態は queue/reports に 3 report 実在(ls で確認)。rg は .gitignore 配下を既定で無視する=検索文脈の違いを『不在』と断定した否定判定の早断定(将軍 T123 と同型、家老版)。根治=家老 recovery/報告契約に『不在判定は ls/find/rg --no-ignore の 2 経路で確認』+shogun_commit_verdict.sh の report 版(report_verdict: queue/reports+archive+/tmp task 契約を総当たり)。origin=[[家老_rg_ignore_不在断定_20260828]] -> [[否定判定の早断定_家老版]] -> [[report_verdict_総当たり]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
