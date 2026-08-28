@@ -16090,3 +16090,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - batch側が既にprecheck_naを正しく検証していても、single wrapperがentryからitemへ値をコピーしないと有効なN/A証跡が通常precheckへ落ちる。single/batch境界で任意メタデータの伝播を契約テストする。
+
+### L1664: DEBUG計測器は既存trapへ一行counterをinlineする
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_function_coverage_20260828
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/lib/function_coverage.sh]
+- **origin**: [[cmd_karo_hotfix_function_coverage_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- DEBUGイベント毎に別shell関数やsubprocessを呼ぶと短いproduction entrypointで計測固定費が支配した。既存trapへ一行counterをinlineし、完了時に単一bufferをflock appendすると、同じ計測境界を保ったまま固定20秒の実測overheadを1.40%へ下げられる。
