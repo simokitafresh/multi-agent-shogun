@@ -3739,6 +3739,10 @@ if [ ! -f "$_dt_report_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
 fi
 source "$_dt_report_path"
 unset _dt_report_path
+# The report publication lock is acquired before report generation.  Fresh
+# checkouts and isolated task worktrees intentionally omit ignored queue
+# subdirectories, so create the lock parent before the first publication.
+mkdir -p "$SCRIPT_DIR/queue/reports"
 rehydrate_task_commit_contract_from_report() {
     local task_file="$1"
     local report_file="$2"
