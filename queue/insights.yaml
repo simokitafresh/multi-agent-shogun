@@ -2800,7 +2800,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "一次確認: cmd_4380のRC反復事象に対する現行report lifecycleをコードと実テストで再検証。report_field_setのverdict成功時status自動遷移とreview_approvalのRC時revision_requestedを確認し、既存防御で解消済みと判定した。"
-  action_artifact: "tests/unit/test_report_field_set_verdict_status.bats (7/7 PASS, SKIP0); tests/unit/test_review_approval_rc_task_status_atomic.bats (7/7 PASS, SKIP0); scripts/report_field_set.sh + scripts/review_approval.sh"
+  action_artifact: tests/unit/test_report_field_set_verdict_status.bats (7/7 PASS, SKIP0); tests/unit/test_review_approval_rc_task_status_atomic.bats (7/7 PASS, SKIP0); scripts/report_field_set.sh + scripts/review_approval.sh; receipts=/home/simokitafresh/multi-agent-shogun/logs/test_receipts/run_tests_20260828T235139_1508142.json,/home/simokitafresh/multi-agent-shogun/logs/test_receipts/run_tests_20260828T235145_1509552.json,/home/simokitafresh/multi-agent-shogun/logs/test_receipts/run_tests_20260828T235213_1508141.json
   resolved_at: "2026-08-29T08:43:10+09:00"
 - id: INS-20260824-031619025-64be
   ts: "2026-08-24T03:16:19+09:00"
