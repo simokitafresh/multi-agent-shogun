@@ -2548,7 +2548,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4369"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でcmd_4369研究成果を再確認済み。PIT 108ヶ月・future参照0・36M/60M両armで低相関selection E1が一貫悪化し、本番実装見送りが確定。新規実修正やdecision_candidateは不要で、既存研究成果をもって解決とする。"
+  action_artifact: "docs/research/low_corr_selection_final_report_20260823.md;context/senkyoku-log.md:L1476-L1478;docs/semantic-index/index.md:L13420-L13422"
+  resolved_at: "2026-08-29T02:06:35+09:00"
 - id: INS-20260823-201009185-479e
   ts: "2026-08-23T20:10:09+09:00"
   insight: "review_bundle.py singleコマンドがWSL2 NTFS I/Oでtimeout(15s)。LG016同型。軍師のLGTM正規入口がhangするとsg7_bundle未生成→手動フォールバック必要。timeout保護または/tmp(ext4)での中間処理が必要"
