@@ -137,3 +137,70 @@ _setup_split_history() {
     # 阻害commitの直前(= cmd_delta)がそのまま境界になる
     [ "$output" = "$(git -C "$W/wc" rev-parse HEAD~1)" ]
 }
+
+# test_necessity: pre-push may skip affected tests only for a terminal Ninja
+# receipt whose source head and scripts/tests tree are proven identical to the
+# push target.  A fingerprint-only cache would permit stale or failed reuse.
+@test "pre-push reuses only a terminal receipt with matching tree identity" {
+    hook="$PROJECT_ROOT/.githooks/pre-push"
+    function_body="$(awk '
+        /^pre_push_test_tree_fingerprint\(\)/ {capture=1}
+        /^pre_push_receipt_source_fingerprint\(\)/ {capture=1}
+        /^pre_push_receipt_matches\(\)/ {capture=1}
+        capture {print}
+        capture && /^}$/ {capture=0}
+    ' "$hook")"
+    run env FUNCTION_BODY="$function_body" WORK="$W/wc" bash -c '
+        set -e
+        REPO_ROOT="$WORK"
+        eval "$FUNCTION_BODY"
+        head="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+        old_head="$(git -C "$REPO_ROOT" rev-parse HEAD~1)"
+        tree="$(pre_push_test_tree_fingerprint "$head")"
+        old_tree="$(pre_push_test_tree_fingerprint "$old_head")"
+        source_fp="$(pre_push_receipt_source_fingerprint "$head")"
+        artifact="$REPO_ROOT/receipt.output"
+        printf "terminal PASS\n" >"$artifact"
+        output_sha="$(sha256sum "$artifact" | awk "{print \$1}")"
+        receipt="$REPO_ROOT/receipt.json"
+        write_receipt() {
+            python3 - "$receipt" "$artifact" "$output_sha" "$1" "$2" "$3" "$4" "$5" "$6" "$7" <<"PY"
+import json, sys
+path, artifact, output_sha, complete, result, rc, skip, source_head, source_fp, tree = sys.argv[1:]
+json.dump({
+    "version": 3, "complete": complete == "true", "result": result,
+    "rc": int(rc), "duration_ms": 1, "output_sha256": output_sha,
+    "declared_test_count": 67, "observed_test_count": 67, "skip_count": int(skip),
+    "artifact": artifact, "signal": None, "command": ["bats"],
+    "source_head": source_head, "test_paths": ["tests/unit/test_pre_push_guard.bats"],
+    "source_fingerprint": source_fp, "tree_fingerprint": tree,
+}, open(path, "w", encoding="utf-8"))
+PY
+        }
+        pass=0
+        reject=0
+        write_receipt true PASS 0 0 "$head" "$source_fp" "$tree"
+        pre_push_receipt_matches "$receipt" "$head" "$tree" && pass=$((pass + 1))
+        write_receipt true PASS 0 0 "$old_head" "$source_fp" "$old_tree"
+        pre_push_receipt_matches "$receipt" "$head" "$tree" || reject=$((reject + 1))
+        write_receipt true PASS 0 0 "$head" "$source_fp" "$(printf wrong | sha256sum | awk "{print \$1}")"
+        pre_push_receipt_matches "$receipt" "$head" "$tree" || reject=$((reject + 1))
+        write_receipt true FAIL 1 0 "$head" "$source_fp" "$tree"
+        pre_push_receipt_matches "$receipt" "$head" "$tree" || reject=$((reject + 1))
+        write_receipt true PASS 0 1 "$head" "$source_fp" "$tree"
+        pre_push_receipt_matches "$receipt" "$head" "$tree" || reject=$((reject + 1))
+        printf "reuse=%s reject=%s false_reuse=%s\n" "$pass" "$reject" "$((4 - reject))"
+        [[ "$pass" -eq 1 && "$reject" -eq 4 ]]
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"reuse=1 reject=4 false_reuse=0"* ]]
+}
+
+@test "pre-push no longer trusts the legacy fingerprint-only cache" {
+    hook="$PROJECT_ROOT/.githooks/pre-push"
+    run rg -n 'PREPUSH_PASS_CACHE|PREPUSH_CACHE_TO_PUBLISH|pre_push_find_reusable_receipt|pre_push_receipt_matches' "$hook"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"PREPUSH_PASS_CACHE"* ]]
+    [[ "$output" != *"PREPUSH_CACHE_TO_PUBLISH"* ]]
+    [ "$(printf '%s\n' "$output" | rg -c 'pre_push_find_reusable_receipt|pre_push_receipt_matches')" -ge 2 ]
+}

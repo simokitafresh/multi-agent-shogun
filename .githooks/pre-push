@@ -81,7 +81,6 @@ _CHANGED_FILES_FILE="/tmp/_hook_changed_files_prepush_$$"
 _SELECTED_TESTS_FILE="/tmp/_hook_selected_tests_prepush_$$"
 _BATS_OUTPUT_FILE="/tmp/_hook_bats_output_prepush_$$"
 _PREPUSH_LOCK_FILE="$REPO_ROOT/logs/prepush_test.lock"
-_PREPUSH_PASS_CACHE="$REPO_ROOT/logs/prepush_test_pass.sha"
 _PREPUSH_LOCK_META="$REPO_ROOT/logs/prepush_test.lock.holder"
 _PREPUSH_LOCK_WAIT_SECONDS="${PREPUSH_LOCK_WAIT_SECONDS:-1200}"
 _PREPUSH_CROSS_GENERATION_WAIT_SECONDS="${PREPUSH_CROSS_GENERATION_WAIT_SECONDS:-1200}"
@@ -89,7 +88,6 @@ _PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS="${PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS:
 _PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS="${PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS:-5}"
 _PREPUSH_LOCK_OWNED=0
 _PREPUSH_EXEC_ROOT=""
-_PREPUSH_CACHE_TO_PUBLISH=""
 
 # The affected-test lane is determined by executable sources, test contracts,
 # and hook implementations.  Operational publications (insights/context/docs)
@@ -104,6 +102,134 @@ pre_push_test_tree_fingerprint() {
         | LC_ALL=C sort \
         | sha256sum \
         | awk '{print $1}'
+}
+
+# run_tests.sh calls this value source_fingerprint.  It is the canonical
+# scripts/lib/tests-helper tree identity emitted in a Ninja terminal receipt.
+# Keep the calculation commit-based so a linked worktree's index or dirty
+# files cannot make a receipt appear fresh for a different push target.
+pre_push_receipt_source_fingerprint() {
+    local commit="$1"
+    git -C "$REPO_ROOT" ls-tree -r --full-tree "$commit" -- \
+        scripts lib tests/helpers 2>/dev/null \
+        | awk '$4 != "scripts/run_tests.sh" {print $3}' \
+        | sha256sum \
+        | awk '{print $1}'
+}
+
+# Validate one explicit Ninja run_tests receipt against the push target.
+# Reuse is fail-closed: missing/corrupt/non-terminal receipts, stale source
+# heads, and any scripts/tests tree drift all fall through to the normal
+# affected-test lane.  A receipt is evidence, never a bare cache key.
+pre_push_receipt_matches() {
+    local receipt="$1" push_sha="$2" expected_tree="$3"
+    local receipt_fields source_head receipt_fp receipt_fp_kind
+    [ -f "$receipt" ] || return 1
+
+    receipt_fields="$(python3 - "$receipt" <<'PY'
+import hashlib
+import json
+import os
+import re
+import sys
+
+path = sys.argv[1]
+try:
+    data = json.load(open(path, encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("receipt_mapping")
+    source_head = data.get("source_head")
+    if not isinstance(source_head, str) or not re.fullmatch(r"[0-9a-f]{40}", source_head):
+        raise ValueError("source_head")
+    if data.get("complete") is not True:
+        raise ValueError("incomplete")
+    if data.get("result") != "PASS":
+        raise ValueError("result_not_PASS")
+    if data.get("rc") != 0:
+        raise ValueError("rc_not_zero")
+    skip_count = data.get("skip_count")
+    if isinstance(skip_count, bool) or not isinstance(skip_count, int) or skip_count != 0:
+        raise ValueError("skip_count_not_zero")
+    artifact = data.get("artifact")
+    output_sha = data.get("output_sha256")
+    if not isinstance(artifact, str) or not artifact.strip():
+        raise ValueError("artifact_missing")
+    if not os.path.isabs(artifact):
+        artifact = os.path.join(os.path.dirname(os.path.realpath(path)), artifact)
+    if not os.path.isfile(artifact):
+        raise ValueError("artifact_missing")
+    if not isinstance(output_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", output_sha):
+        raise ValueError("artifact_sha_missing")
+    if hashlib.sha256(open(artifact, "rb").read()).hexdigest() != output_sha:
+        raise ValueError("artifact_sha_mismatch")
+    declared = data.get("declared_test_count")
+    observed = data.get("observed_test_count")
+    if declared is not None and observed is not None and declared != observed:
+        raise ValueError("test_count_mismatch")
+    manifest = data.get("run_manifest")
+    scope = manifest.get("scope_identity") if isinstance(manifest, dict) else None
+    if isinstance(scope, dict):
+        if scope.get("failed_files") != [] or scope.get("failed_file_count") != 0:
+            raise ValueError("failed_files_not_zero")
+    tree_fp = data.get("tree_fingerprint")
+    source_fp = data.get("source_fingerprint")
+    if isinstance(tree_fp, str) and re.fullmatch(r"[0-9a-f]{64}", tree_fp):
+        print(f"{source_head}\t{tree_fp}\ttree")
+    elif isinstance(source_fp, str) and re.fullmatch(r"[0-9a-f]{64}", source_fp):
+        print(f"{source_head}\t{source_fp}\tsource")
+    else:
+        raise ValueError("tree_fingerprint_missing")
+except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as exc:
+    print(f"RECEIPT_REUSE_REJECT reason={exc}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+)" || return 1
+
+    IFS=$'\t' read -r source_head receipt_fp receipt_fp_kind <<< "$receipt_fields"
+    git -C "$REPO_ROOT" cat-file -e "${source_head}^{commit}" 2>/dev/null || return 1
+    git -C "$REPO_ROOT" merge-base --is-ancestor "$source_head" "$push_sha" 2>/dev/null || return 1
+
+    # tree_fingerprint is the broad hook identity when a newer producer emits
+    # it.  Existing run_tests receipts carry source_fingerprint; pair that
+    # canonical identity with the no-code-drift check below so tests/unit and
+    # hook changes cannot be hidden by its narrower historical scope.
+    if [ "$receipt_fp_kind" = "tree" ]; then
+        [ "$receipt_fp" = "$expected_tree" ] || return 1
+    else
+        local expected_source
+        expected_source="$(pre_push_receipt_source_fingerprint "$push_sha")"
+        [ "$receipt_fp" = "$expected_source" ] || return 1
+        git -C "$REPO_ROOT" diff --quiet "$source_head" "$push_sha" -- \
+            scripts lib tests .githooks .claude/hooks 2>/dev/null || return 1
+    fi
+    return 0
+}
+
+# Prefer an explicitly supplied receipt, otherwise inspect only the local
+# worktree's receipt directory from newest to oldest.  Invalid candidates are
+# ignored; no candidate ever suppresses tests unless pre_push_receipt_matches
+# proves all five reuse conditions.
+pre_push_find_reusable_receipt() {
+    local push_sha="$1" expected_tree="$2" candidate receipt_dir
+    if [ -n "${NINJA_TEST_RECEIPT:-${NINJA_TEST_RECEIPT_PATH:-}}" ]; then
+        candidate="${NINJA_TEST_RECEIPT:-${NINJA_TEST_RECEIPT_PATH:-}}"
+        if pre_push_receipt_matches "$candidate" "$push_sha" "$expected_tree"; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+        return 1
+    fi
+    receipt_dir="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}"
+    [ -d "$receipt_dir" ] || return 1
+    while IFS= read -r candidate; do
+        if pre_push_receipt_matches "$candidate" "$push_sha" "$expected_tree"; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done < <(find "$receipt_dir" -maxdepth 1 -type f -name '*.json' -printf '%T@ %p\n' 2>/dev/null \
+        | sort -nr \
+        | cut -d' ' -f2-)
+    return 1
 }
 
 for _arg in "$@"; do
@@ -292,10 +418,9 @@ for _ref_line in "${_PUSH_REFS[@]}"; do
         echo "[pre-push] BLOCK: cannot compute affected-test tree fingerprint for $_local_sha." >&2
         exit 1
     fi
-    if [ -r "$_PREPUSH_PASS_CACHE" ] \
-            && [ "$(cat "$_PREPUSH_PASS_CACHE" 2>/dev/null)" = "$_PREPUSH_TEST_FINGERPRINT" ]; then
+    if _PREPUSH_REUSABLE_RECEIPT="$(pre_push_find_reusable_receipt "$_local_sha" "$_PREPUSH_TEST_FINGERPRINT")"; then
         _PREPUSH_CACHE_HIT=1
-        echo "[pre-push] Reusing serialized PASS for affected-test tree $_PREPUSH_TEST_FINGERPRINT." >&2
+        echo "[pre-push] Reusing terminal Ninja PASS receipt: $_PREPUSH_REUSABLE_RECEIPT (tree=$_PREPUSH_TEST_FINGERPRINT)." >&2
     fi
     if [ "$_remote_sha" = "0000000000000000000000000000000000000000" ]; then
         # 新規ブランチ: main との merge-base を使用
@@ -440,7 +565,6 @@ PY
     }
     git config --global --unset-all safe.directory "^${_PREPUSH_EXEC_ROOT}\$" 2>/dev/null || true
     _PREPUSH_EXEC_ROOT=""
-    _PREPUSH_CACHE_TO_PUBLISH="$_PREPUSH_TEST_FINGERPRINT"
 done
 
 # --- Full unit suite: CIに委任（殿裁定2026-07-16: CIとの二重チェックは構造的バグ） ---
@@ -454,15 +578,6 @@ if [ -x "$REPO_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh" ]; then
         echo "[pre-push] BLOCK: ontology violation detected. Fix hardcoded agent names before pushing." >&2
         exit 1
     fi
-fi
-
-# Publish only after every per-ref test and global check has passed.  The test
-# lane is serialized by fd 9, and atomic rename prevents readers from seeing a
-# partial fingerprint.
-if [ -n "$_PREPUSH_CACHE_TO_PUBLISH" ]; then
-    _cache_tmp="${_PREPUSH_PASS_CACHE}.$$"
-    printf '%s\n' "$_PREPUSH_CACHE_TO_PUBLISH" > "$_cache_tmp"
-    mv -f "$_cache_tmp" "$_PREPUSH_PASS_CACHE"
 fi
 
 exit 0
