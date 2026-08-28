@@ -6678,7 +6678,10 @@ insights:
   priority: "high"
   source: "shogun"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "根因を一次確認し、相対codex launch_cmdを解決する実修正がcommit 3da552cc889ce39d64658a374a1492b88ad1dbdeで公開済み。対象経路の検証済みのためresolve"
+  action_artifact: "commit=3da552cc889ce39d64658a374a1492b88ad1dbde; source=scripts/lib/respawn_recovery.sh; tests=tests/unit/test_respawn_recovery.bats"
+  resolved_at: "2026-08-28T15:34:41+09:00"
 - id: INS-20260828-134404942-492a
   ts: "2026-08-28T13:44:04+09:00"
   insight: "semantic_index_update新概念候補: discussion:T122は難しいのか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
