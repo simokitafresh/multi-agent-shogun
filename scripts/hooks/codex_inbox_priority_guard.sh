@@ -7,7 +7,8 @@
 # を未読のまま「fixed HEAD full runだけで判定」と手動フル走査を継続 / 22:08 inbox10。
 # 真因=Codexはtool実行中はnudgeを受け取れず、届いた後に「読むか」が受け手の裁量に残る。
 # 対処=裁量を消す: 将軍発の未読 task_assigned/cmd_new が INBOX_PRIORITY_MAX_AGE_SEC(既定180秒)以上残る間、
-# inboxを読む/既読化する操作以外の全toolをBLOCK(exit 2)する。読めば自然に通る(構造型)。
+# inboxを読む/既読化する操作と、既読化に必要な将軍向け処理証跡の作成以外の全toolをBLOCK(exit 2)する。
+# 証跡作成まで塞ぐと inbox_mark_read の証跡検査と相互待ちになるため、許可経路はここで限定する。
 set -uo pipefail
 
 _self="${BASH_SOURCE[0]}"
@@ -36,9 +37,119 @@ tool_name="$(jq -r '.tool_name // .tool // .name // empty' <<<"$payload" 2>/dev/
 command="$(jq -r '.tool_input.command // .tool_input.cmd // .input.command // .input.cmd // empty' <<<"$payload" 2>/dev/null || true)"
 tool_target="$(jq -r '.tool_input.file_path // .tool_input.filePath // .tool_input.path // .input.file_path // .input.path // empty' <<<"$payload" 2>/dev/null || true)"
 
+# shell command の引数ではなく、単一commandの実行位置にある script token
+# だけを判定する。これにより許可scriptの後へ任意commandを連結する迂回と、
+# shell substitution/process substitution/redirection/newline、本文だけの偽装を許可しない。
+command_is_allowed_evidence() {
+    python3 - "$command" <<'PY'
+import shlex
+import sys
+import re
+
+command = sys.argv[1]
+
+def has_shell_syntax(value):
+    """Reject active shell syntax while preserving quoted argument text."""
+    state = "normal"
+    index = 0
+    while index < len(value):
+        char = value[index]
+        if state == "single":
+            if char == "'":
+                state = "normal"
+            index += 1
+            continue
+        if state == "double":
+            if char == "\\":
+                index += 2
+                continue
+            if char == '"':
+                state = "normal"
+                index += 1
+                continue
+            # $() and backticks execute even inside double quotes.
+            if char == "`" or (char == "$" and value[index:index + 2] == "$("):
+                return True
+            index += 1
+            continue
+        if char == "'":
+            state = "single"
+            index += 1
+            continue
+        if char == '"':
+            state = "double"
+            index += 1
+            continue
+        if char == "\\":
+            # An escaped metacharacter is literal; a trailing escape/newline is
+            # still rejected as an incomplete shell construct.
+            if index + 1 >= len(value) or value[index + 1] == "\n":
+                return True
+            index += 2
+            continue
+        if char == "\n" or char in ";|&<>()":
+            return True
+        if char == "`" or (char == "$" and value[index:index + 2] == "$("):
+            return True
+        index += 1
+    return state != "normal"
+
+if has_shell_syntax(command):
+    raise SystemExit(1)
+
+try:
+    lexer = shlex.shlex(command, posix=True)
+    lexer.whitespace_split = True
+    words = list(lexer)
+except ValueError:
+    raise SystemExit(1)
+
+shells = {"bash", "sh", "zsh", "ksh", "dash"}
+assignment = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
+
+def allowed_invocation(argv):
+    """Recognize only the supported single writer invocation shape."""
+    index = 0
+    while index < len(argv) and assignment.match(argv[index]):
+        index += 1
+    # Common production wrappers may prefix the interpreter, but only their
+    # option/value words are accepted. An arbitrary executable is not a prefix.
+    if index < len(argv) and argv[index] == "env":
+        index += 1
+        while index < len(argv) and (assignment.match(argv[index]) or argv[index].startswith("-")):
+            index += 1
+    if index < len(argv) and argv[index] == "timeout":
+        index += 1
+        while index < len(argv) and (argv[index].replace(".", "", 1).isdigit() or argv[index].startswith("-")):
+            index += 1
+    if index >= len(argv):
+        return False
+    script = argv[index].rsplit("/", 1)[-1]
+    if script in {"bulletin_write.sh", "inbox_write.sh"}:
+        script_index = index
+    elif argv[index] in shells and index + 1 < len(argv):
+        script_index = index + 1
+        script = argv[script_index].rsplit("/", 1)[-1]
+    else:
+        return False
+    if script not in {"bulletin_write.sh", "inbox_write.sh"}:
+        return False
+    if script == "inbox_write.sh":
+        return script_index + 1 < len(argv) and argv[script_index + 1] == "shogun"
+    return True
+
+raise SystemExit(0 if allowed_invocation(words) else 1)
+PY
+}
+
 # inboxを読む/既読化する操作は常に通す(これが出口)。
 if [[ "$command" == *"inbox_mark_read.sh"* || "$command" == *"queue/inbox/${agent}.yaml"* \
       || "$tool_target" == *"queue/inbox/${agent}.yaml"* || "$command" == *"inbox_archive.sh"* ]]; then
+    exit 0
+fi
+
+# inbox_mark_read の証跡検査を先に満たす、将軍向けの正規証跡経路だけを通す。
+if command_is_allowed_evidence; then
     exit 0
 fi
 
