@@ -5063,6 +5063,39 @@ PY
     [ "$output" = "begin=2 end=2 elapsed=2" ]
 }
 
+# test_necessity: a production auto-void report scan can block on the 9p
+# boundary.  It must run under a single-flight bounded worker so the observe
+# cycle continues while preserving the existing transaction for completion.
+@test "auto void production scan is backgrounded and bounded" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/auto-void-bounded"
+        mkdir -p "$root/state"
+        printf "auto_void_if_parent_cmd_completed() { sleep 5; }\\n" > "$root/worker.sh"
+        SCRIPT_DIR="$root"
+        STATE_DIR="$root/state"
+        LOG="$root/monitor.log"
+        _NM_SCRIPT_PATH="$root/worker.sh"
+        NINJA_MONITOR_AUTO_VOID_TIMEOUT=1
+        started=$EPOCHREALTIME
+        _ninja_monitor_run_bounded_auto_void kagemaru shogun:2.4 STAGE1 || true
+        _ninja_monitor_run_bounded_auto_void kagemaru shogun:2.4 STAGE1 || true
+        elapsed=$(awk -v a="$started" -v b="$EPOCHREALTIME" "BEGIN { printf \"%.3f\", b-a }")
+        awk -v elapsed="$elapsed" "BEGIN { exit !(elapsed < 0.5) }"
+        sleep 3
+        grep -q "AUTO-VOID-BACKGROUND-START: kagemaru" "$LOG"
+        grep -q "AUTO-VOID-BACKGROUND-SKIP: kagemaru reason=worker_running" "$LOG"
+        grep -q "AUTO-VOID-TIMEOUT: kagemaru timeout=1s" "$LOG"
+        printf "elapsed_lt_500ms=1 timeout=1 singleflight=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "elapsed_lt_500ms=1 timeout=1 singleflight=1" ]
+}
+
 # test_necessity: process-substitution children inherit the monitor's EXIT
 # trap while collecting timing rows.  Only the owner shell may finish timing
 # and release the owner lease; otherwise the child can recursively spawn the
