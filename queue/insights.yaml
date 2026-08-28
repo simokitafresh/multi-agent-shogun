@@ -6335,3 +6335,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-094420377-413d
+  ts: "2026-08-28T09:44:20+09:00"
+  insight: "semantic_index_update新概念候補: discussion:裁定待ちに関して推奨と内容の説明をしてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
