@@ -7934,3 +7934,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260829-084852786-28a4
+  ts: "2026-08-29T08:48:52+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[EODHD_TIINGO_token欠落]] は既存aliasesに一致なし。類似概念TOP3: systems_knowledge_base(システム知識辞書; alias=Get Shit Done; score=6.2) / causal_verification_l0_l7(因果確認L0-L7; alias=design intent check; score=5.7) / hook_automation_framework(Hook自動化フレームワーク; alias=gate_hooks_no_runtime_incident_ids; score=5.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
