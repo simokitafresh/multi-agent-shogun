@@ -7830,3 +7830,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260829-071722497-f88b
+  ts: "2026-08-29T07:17:22+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bogybztj5 task id tool use id toolu 01Y8Azf3EvZXR43A8E は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
