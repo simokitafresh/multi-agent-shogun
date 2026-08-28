@@ -1339,7 +1339,11 @@ try:
     if d.get('version') == 3:
         required.update({'drvfs_p9_client_rpc','run_manifest','run_id','commit_sha','source_fingerprint'})
     elif 'drvfs_p9_client_rpc' in d: required.add('drvfs_p9_client_rpc')
-    if set(d) != required or d.get('version') not in (2,3): raise ValueError('schema')
+    if (not required <= set(d) or set(d) - required - {'task_id'}
+            or d.get('version') not in (2,3)):
+        raise ValueError('schema')
+    if 'task_id' in d and (not isinstance(d['task_id'], str) or not d['task_id'].strip()):
+        raise ValueError('task_id')
     if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
     if d['version'] == 3 and (
         not d['run_id'] or not re.fullmatch(r'[0-9a-f]{40}', d['commit_sha'])
@@ -1404,7 +1408,11 @@ try:
     if d.get('version') == 3:
         required.update({'drvfs_p9_client_rpc','run_manifest','run_id','commit_sha','source_fingerprint'})
     elif 'drvfs_p9_client_rpc' in d: required.add('drvfs_p9_client_rpc')
-    if set(d) != required or d.get('version') not in (2,3): raise ValueError('schema')
+    if (not required <= set(d) or set(d) - required - {'task_id'}
+            or d.get('version') not in (2,3)):
+        raise ValueError('schema')
+    if 'task_id' in d and (not isinstance(d['task_id'], str) or not d['task_id'].strip()):
+        raise ValueError('task_id')
     if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
     if d['version'] == 3 and (
         not d['run_id'] or not re.fullmatch(r'[0-9a-f]{40}', d['commit_sha'])
@@ -1703,9 +1711,9 @@ PY
 
 publish_run_tests_metadata() {
     python3 - "$1" "$2" "$3" "$4" "${5:-}" "${6:-${REPO_ROOT:-.}}" \
-        "${7:-}" "${8:-}" "${9:-}" <<'PY'
+        "${7:-}" "${8:-}" "${9:-}" "${10:-}" <<'PY'
 import glob, hashlib, json, os, re, sys, tempfile
-path, head, paths_file, selector_input_fp, run_mode, repo_root, run_id, commit_sha, source_fp=sys.argv[1:10]
+path, head, paths_file, selector_input_fp, run_mode, repo_root, run_id, commit_sha, source_fp, task_file=sys.argv[1:11]
 d=json.load(open(path, encoding='utf-8'))
 paths=[]
 if os.path.isfile(paths_file):
@@ -1716,6 +1724,19 @@ commit_sha=commit_sha or head
 source_fp=source_fp or hashlib.sha256(selected_blob).hexdigest()
 cache={'enabled': os.environ.get('BATS_CACHE','1') != '0',
        'directory': os.environ.get('BATS_CACHE_DIR','')}
+# Task ownership is part of the terminal receipt only for the task runner.
+# Keep file/all/unit receipts task-agnostic so a caller cannot accidentally
+# inherit an unrelated task identity from its environment or parent process.
+task_id=''
+if run_mode == 'task' and task_file:
+    try:
+        import yaml
+        task_document=yaml.safe_load(open(task_file, encoding='utf-8')) or {}
+        task=task_document.get('task', task_document)
+        if isinstance(task, dict):
+            task_id=str(task.get('task_id') or task.get('subtask_id') or '').strip()
+    except (OSError, TypeError, ValueError, yaml.YAMLError):
+        task_id=''
 # Scope identity (cmd_karo_impl_receipt_scope_identity_20260726): selected_files
 # alone cannot refute a "full suite" claim, because nothing in the receipt says
 # how many files a full suite has. RUN_TESTS_SELECTED_PATHS_FILE is removed right
@@ -1759,6 +1780,8 @@ d.update(version=3, source_head=head, test_paths=paths, run_id=run_id,
                            'direct_files': 0,
                            'transitive_files': 0,
                        }})
+if task_id:
+    d['task_id']=task_id
 artifact=d.get('artifact', '')
 p9={'persistent': False, 'probe_timeout_sec': None, 'pids': []}
 try:
@@ -1882,6 +1905,17 @@ with os.fdopen(fd,'w',encoding='utf-8') as fh:
     json.dump(d,fh,sort_keys=True); fh.write('\n'); fh.flush(); os.fsync(fh.fileno())
 os.replace(tmp,path)
 PY
+}
+
+persist_task_receipt_path() {
+    local mode="$1" task_file="$2" receipt="$3"
+    [[ "$mode" == task ]] || return 0
+    [ -n "$task_file" ] && [ -f "$task_file" ] \
+        || { printf 'BLOCK: task receipt path requires a task YAML\n' >&2; return 2; }
+    local yaml_setter="${REPO_ROOT:-.}/scripts/lib/yaml_field_set.sh"
+    [ -f "$yaml_setter" ] \
+        || { printf 'BLOCK: task receipt path setter is unavailable: %s\n' "$yaml_setter" >&2; return 2; }
+    bash "$yaml_setter" "$task_file" task test_receipt_path "$receipt"
 }
 
 probe_persistent_p9_rpc() {
@@ -2677,7 +2711,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 "$_pending_file_batch" "$_pending_suite_batch" "$_output_sha256"
         fi
         publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths" \
-          "$_selector_input_fp" "$_mode" "$REPO_ROOT" "$_run_id" "$_source_head" "$_source_fp"
+          "$_selector_input_fp" "$_mode" "$REPO_ROOT" "$_run_id" "$_source_head" "$_source_fp" "${2:-}"
         rm -f "$_pending_file_batch" "$_pending_suite_batch"
         rm -f "$_selected_paths"
         # This branch runs under nounset.  A truncated/missing receipt must
@@ -2699,6 +2733,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         fi
         verify_run_tests_receipt "$_receipt" >/dev/null \
             || { printf 'TEST_RECEIPT_FAIL path=%s rc=%s\n' "$_receipt" "$_rc" >&2; exit 1; }
+        persist_task_receipt_path "$_mode" "${2:-}" "$_receipt" \
+            || { printf 'TEST_RECEIPT_TASK_PATH_FAIL task=%s receipt=%s\n' "${2:-}" "$_receipt" >&2; exit 2; }
         if [ -n "$_requested_tap" ]; then
             mkdir -p "$(dirname "$_requested_tap")"
             _tap_source="$_tap"
