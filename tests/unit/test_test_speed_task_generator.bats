@@ -472,8 +472,8 @@ YAML
 
 @test "idle priority is reflux then script speed then test speed then legacy" {
   body=$(sed -n '/handle_confirmed_idle()/,/^}/p' "$ROOT/scripts/ninja_monitor.sh")
-  order=$(printf '%s\n' "$body" | grep -E '_handle_(reflux|test_speed|speed_training|training)_auto_deploy' | sed -E 's/.*_handle_([^ ]+) .*/\1/' | tr '\n' ' ')
-  [ "$order" = "reflux_auto_deploy speed_training_auto_deploy test_speed_auto_deploy training_auto_deploy " ]
+  order=$(printf '%s\n' "$body" | grep -oE '_schedule_reflux_auto_deploy_background|_handle_(speed_training|test_speed|training)_auto_deploy' | tr '\n' ' ')
+  [ "$order" = "_schedule_reflux_auto_deploy_background _handle_speed_training_auto_deploy _handle_test_speed_auto_deploy _handle_training_auto_deploy " ]
 }
 
 @test "test speed auto-deploy only replaces an explicitly idle task" {
