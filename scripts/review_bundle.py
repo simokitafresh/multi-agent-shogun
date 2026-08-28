@@ -147,6 +147,16 @@ def _snapshot_command(root, report, cmd_id, report_path=None):
 #   cmd_reflux_promotion_ ninja_monitor's promotion reflux auto-deployment
 SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_", "cmd_shogun_")
 _APPROVE_REPORT_STATES = {("completed", "PASS"), ("completed", "PASS_NO_IMPROVEMENT")}
+_CORRECTION_SCOPES = ("auto", "implementation", "report")
+
+
+def _correction_scope(value):
+    """Validate the typed correction lane used by the canonical single entry."""
+    scope = "auto" if value is None else str(value).strip().lower()
+    if scope not in _CORRECTION_SCOPES:
+        choices = "|".join(_CORRECTION_SCOPES)
+        raise ValueError(f"correction_scope must be one of {choices}: {scope}")
+    return scope
 
 
 def _saved_command(root, cmd_id):
@@ -555,6 +565,7 @@ def batch(args):
         if not isinstance(item, dict) or not required.issubset(item): raise ValueError("each review requires cmd/report/verdict/review_entry")
         if str(item["verdict"]).upper() not in {"APPROVE", "FAIL"}: raise ValueError("batch verdict must be APPROVE or FAIL")
         if not isinstance(item["review_entry"], dict): raise ValueError("review_entry must be a mapping")
+        item["correction_scope"] = _correction_scope(item.get("correction_scope"))
     cmds = [str(x["cmd"]) for x in items]; reports = [str(x["report"]) for x in items]
     if len(set(cmds)) != len(cmds) or len(set(reports)) != len(reports): raise ValueError("batch cmd/report values must be unique")
 
@@ -571,7 +582,13 @@ def batch(args):
         item, path = pair; verdict = str(item["verdict"]).upper()
         if verdict == "APPROVE":
             approval_env = os.environ.copy(); approval_env["REVIEW_APPROVAL_CANONICAL_ENTRY"] = "review_bundle"
-            subprocess.run(["bash", str(root / "scripts/review_approval.sh"), str(item["cmd"]), "gunshi", "LGTM", str(item["report"])], cwd=root, env=approval_env, check=True)
+            approval_args = ["bash", str(root / "scripts/review_approval.sh"), str(item["cmd"]), "gunshi", "LGTM", str(item["report"])]
+            # Report-only attestation is the only explicit override from the
+            # canonical single entry.  auto/implementation retain the legacy
+            # approval default, including its implementation-commit guard.
+            if item["correction_scope"] == "report":
+                approval_args.append("report")
+            subprocess.run(approval_args, cwd=root, env=approval_env, check=True)
             notify(argparse.Namespace(root=str(root), cmd=str(item["cmd"]), bundle=str(path)))
         else:
             message = f"{item['cmd']} review FAIL. report: {item['report']} reason: {item.get('fail_reason') or 'quality evidence mismatch'}"
@@ -622,6 +639,7 @@ def _singleflight_token(root, args, entry):
     payload = {
         "cmd": str(args.cmd),
         "report": str(report_path),
+        "correction_scope": _correction_scope(getattr(args, "correction_scope", None)),
         "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest() if report_path.is_file() else "missing",
         "contract": contract,
         "approval_state": approval_state,
@@ -641,8 +659,9 @@ def single(args):
         entry = matches[0]
     if not isinstance(entry, dict) or not entry:
         raise ValueError("single review_entry must be a non-empty YAML mapping")
+    correction_scope = _correction_scope(getattr(args, "correction_scope", None))
     item = {"cmd": args.cmd, "report": args.report, "verdict": args.verdict,
-            "review_entry": entry}
+            "correction_scope": correction_scope, "review_entry": entry}
     precheck_na = entry.get("precheck_na")
     if precheck_na is not None:
         if not isinstance(precheck_na, dict):
@@ -687,7 +706,7 @@ def build_parser():
     n = subs.add_parser("notify"); n.add_argument("--cmd", required=True); n.add_argument("--bundle", required=True); n.set_defaults(func=notify)
     c = subs.add_parser("consume"); c.add_argument("--cmd", required=True); c.add_argument("--bundle", required=True); c.add_argument("--expect-verdict", choices=("APPROVE", "FAIL")); c.set_defaults(func=consume)
     b = subs.add_parser("batch"); b.add_argument("--manifest", required=True); b.add_argument("--max-workers", type=int, default=5); b.set_defaults(func=batch)
-    s = subs.add_parser("single"); s.add_argument("--cmd", required=True); s.add_argument("--report", required=True); s.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); s.add_argument("--review-entry", required=True); s.add_argument("--fail-reason"); s.set_defaults(func=single)
+    s = subs.add_parser("single"); s.add_argument("--cmd", required=True); s.add_argument("--report", required=True); s.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); s.add_argument("--review-entry", required=True); s.add_argument("--fail-reason"); s.add_argument("--correction-scope", choices=_CORRECTION_SCOPES, default="auto"); s.set_defaults(func=single)
     return p
 
 def main():
