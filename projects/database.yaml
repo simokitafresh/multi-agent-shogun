@@ -55,7 +55,7 @@ data_sources:
 deploy:
   hosting: "Render (Starter plan, $7/月)"
   web: "Python runtime + gunicorn 2workers + uvicorn"
-  cron: "JST 08:00(一次取得)+17:00(確定取得+入力確定検証)の2回。全期間再取得"
+  cron: "JST 08:30(一次取得、Render crn-d2vqn6buibrs73dla6vg: 30 23 UTC)+17:00(確定取得+入力確定検証、confirmed: 0 8 UTC)の2回。全期間再取得"
   price_sources:
     primary: "EODHD EOD+Intraday All World Extended($29.99/mo, 殿裁定2026-07-05)"
     verifier: "Tiingo(無料)"
@@ -66,8 +66,10 @@ deploy:
   cache: "Redis(TTL 4h) + In-memory fallback(max 1500)"
   docker: "python:3.12-slim (entrypoint.sh: migration→gunicorn)"
   note: "cron側Dockerfile.cronが不在 — render.yaml記載と実態不一致"
-
+  required_env: "[\"NTFY_TOPIC\",\"EODHD_API_TOKEN\",\"TIINGO_API_TOKEN\",\"FRED_API_KEY\"]"
 # ── API概要(21エンドポイント) ──
+  production_invariant: cron起動前にNTFY_TOPIC/EODHD_API_TOKEN/TIINGO_API_TOKEN/FRED_API_KEYの4件を必須検証し、1件でも欠落なら理由を1行出してfail-fastする。価格検証source=skippedは0件でなければ後段更新へ進まない
+  decision_candidate: render.yaml schedule=0 23 UTCとRender実サービスcrn-d2vqn6buibrs73dla6vg=30 23 UTCが不一致。database repo側で実scheduleへ同期する修正候補
 api_endpoints:
   health: "GET /, /healthz, /v1/health"
   symbols: "GET /v1/symbols"

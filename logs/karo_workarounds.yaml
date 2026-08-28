@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_lsa04_behavior_invariant_full_parity
-  timestamp: '2026-08-23T07:05:36Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_lsa04_behavior_invariant_full_parity'
-- cmd_id: cmd_karo_hotfix_report_write_lesson_set_contract
-  timestamp: '2026-08-23T11:40:10Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_report_write_lesson_set_contract'
 - cmd_id: cmd_karo_hotfix_gate_publication_single_truth
   timestamp: '2026-08-23T12:25:22Z'
   ninja: system
@@ -1302,3 +1276,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_run_tests_receipt_task_identity_20260829'
+- cmd_id: cmd_karo_hotfix_deploy_worktree_prepare_opt_20260829
+  timestamp: '2026-08-28T23:45:05Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_deploy_worktree_prepare_opt_20260829'
+- cmd_id: cmd_karo_hotfix_review_singleflight_receipt_token_20260829
+  timestamp: '2026-08-28T23:49:29Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_review_singleflight_receipt_token_20260829'
