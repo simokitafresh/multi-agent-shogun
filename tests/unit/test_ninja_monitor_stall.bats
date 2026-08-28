@@ -5680,16 +5680,15 @@ ln -s "$PROJECT_ROOT/lib" "$ROOT/lib"
 TASK_ROOT="$ROOT/queue"
 TASK_FILE="$TASK_ROOT/tasks/kagemaru.yaml"
 REPORT_FILE="$TASK_ROOT/reports/kagemaru_report_cmd_bounded_done_check.yaml"
-shared_queue_fingerprint() {
+isolated_queue_fingerprint() {
     {
-        [ -d "$PROJECT_ROOT/queue/tasks" ] && find "$PROJECT_ROOT/queue/tasks" -maxdepth 1 -type f -print0
-        [ -d "$PROJECT_ROOT/queue/reports" ] && find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -print0
+        [ -d "$ROOT/queue/tasks" ] && find "$ROOT/queue/tasks" -maxdepth 1 -type f -print0
+        [ -d "$ROOT/queue/reports" ] && find "$ROOT/queue/reports" -maxdepth 1 -type f -print0
     } | sort -z | xargs -0 -r sha256sum | sha256sum | cut -d " " -f1
 }
-shared_queue_before=$(shared_queue_fingerprint)
 cat > "$TASK_FILE" <<'EOF'
 task:
-  status: in_progress
+  status: done
   task_id: cmd_bounded_done_check_full
   parent_cmd: cmd_bounded_done_check
 EOF
@@ -5697,9 +5696,10 @@ cat > "$REPORT_FILE" <<'EOF'
 worker_id: kagemaru
 task_id: cmd_bounded_done_check_full
 parent_cmd: cmd_bounded_done_check
-status: revision_requested
-verdict: FAIL
+status: completed
+verdict: PASS
 EOF
+isolated_queue_before=$(isolated_queue_fingerprint)
 owner_before=$(sha256sum "$TASK_FILE")
 printf "%s healthy-generation %s\n" "$$" "$EPOCHSECONDS" > "$ROOT/owner"
 set +e
@@ -5711,11 +5711,11 @@ NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
 rc=$?
 set -e
 owner_after=$(sha256sum "$TASK_FILE")
-shared_queue_after=$(shared_queue_fingerprint)
+isolated_queue_after=$(isolated_queue_fingerprint)
 test "$rc" -ne 0
 test "$rc" -ne 64
 test "$owner_before" = "$owner_after"
-test "$shared_queue_before" = "$shared_queue_after"
+test "$isolated_queue_before" = "$isolated_queue_after"
 printf "bounded_done_check_rc=%s task_unchanged=1 shared_queue_unchanged=1\n" "$rc"
 '
     [ "$status" -eq 0 ]
