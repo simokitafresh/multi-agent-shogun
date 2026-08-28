@@ -6569,3 +6569,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-131838971-dce3
+  ts: "2026-08-28T13:18:38+09:00"
+  insight: "[[T128 T98 T122の進捗は？どこかでつまりが生じていないか確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T128 / T98 / T122の進捗は？どこかでつまりが生じていないか確認し、解消せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
