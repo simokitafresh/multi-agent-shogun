@@ -4719,6 +4719,24 @@ def fmt(value):
     return str(value) if value is not None else "na"
 
 
+def report_identity(raw):
+    """Return the canonical logical report path used by review approvals."""
+    text = str(raw or "").strip().strip("'").strip('"').replace("\\", "/")
+    if not text:
+        return None
+    marker = "/queue/reports/"
+    if marker in text:
+        return "queue/reports/" + text.split(marker, 1)[1]
+    archive_marker = "/queue/archive/reports/"
+    if archive_marker in text:
+        return "queue/reports/" + text.split(archive_marker, 1)[1]
+    if text.startswith("queue/reports/"):
+        return text
+    if text.startswith("queue/archive/reports/"):
+        return "queue/reports/" + text.split("queue/archive/reports/", 1)[1]
+    return text
+
+
 issue_ts = None
 try:
     with open(yaml_file, encoding="utf-8") as f:
@@ -4874,7 +4892,7 @@ for path in report_paths:
             or report.get("updated_at")
         )
         if ts is not None:
-            report_done_values.append(ts)
+            report_done_values.append((report_identity(path), ts))
 
 # The four finalize segments use the same durable sources as the completion
 # lifecycle.  Keep source presence separate from parsed timestamps so a
@@ -4912,11 +4930,15 @@ for pattern in (
             review_request_seen = True
             ts = parse_iso(message.get("timestamp"))
             if ts is not None:
-                review_request_values.append(ts)
+                review_request_values.append((report_identity(report_path), ts))
 
-approval_values = {"lgtm": [], "accept": []}
+# Approvals are stored below a report-path key, but that key is stable across
+# report revisions.  The approval fingerprint is therefore the generation
+# boundary: never take an independent role-wise max, because an old LGTM and a
+# newer ACCEPT can otherwise manufacture a reversed interval.
 approval_seen = {"lgtm": False, "accept": False}
 approval_root = os.path.join(root_dir, "queue/gates", cmd_id, "review_approvals")
+approval_groups = {}
 for role, result, key in (("gunshi", "LGTM", "lgtm"), ("karo", "ACCEPT", "accept")):
     for path in glob.glob(os.path.join(approval_root, "reports", "**", f"{role}.yaml"), recursive=True):
         try:
@@ -4928,16 +4950,79 @@ for role, result, key in (("gunshi", "LGTM", "lgtm"), ("karo", "ACCEPT", "accept
             continue
         approval_seen[key] = True
         ts = parse_iso(approval.get("timestamp"))
-        if ts is not None:
-            approval_values[key].append(ts)
+        approval_dir = os.path.dirname(path)
+        dir_identity = os.path.relpath(approval_dir, os.path.join(approval_root, "reports")).replace(os.sep, "/")
+        fingerprint = str(approval.get("fingerprint") or "").strip()
+        if not fingerprint:
+            # Legacy approvals predate the fingerprint field.  Keep their
+            # compatibility boundary narrow: both roles must be in the same
+            # approval directory, and such a pair is never mixed with a
+            # fingerprinted generation.
+            fingerprint = f"legacy:{dir_identity}"
+        approval_report = report_identity(approval.get("report"))
+        group_identity = approval_report or f"directory:{dir_identity}"
+        group = approval_groups.setdefault((group_identity, fingerprint), {"report": approval_report, "roles": {}})
+        group["roles"].setdefault(key, []).append(ts)
 
-report_done_event = max(report_done_values, default=None)
-lgtm_event = max(approval_values["lgtm"], default=None)
-accept_event = max(approval_values["accept"], default=None)
-if lgtm_event is not None:
-    eligible_requests = [ts for ts in review_request_values if ts <= lgtm_event]
+paired = []
+for (group_identity, fingerprint), group in approval_groups.items():
+    lgtm_values = group["roles"].get("lgtm", [])
+    accept_values = group["roles"].get("accept", [])
+    if len(lgtm_values) != 1 or len(accept_values) != 1:
+        continue
+    lgtm_ts, accept_ts = lgtm_values[0], accept_values[0]
+    if lgtm_ts is None or accept_ts is None:
+        continue
+    paired.append({
+        "identity": group["report"],
+        "group_identity": group_identity,
+        "fingerprint": fingerprint,
+        "lgtm": lgtm_ts,
+        "accept": accept_ts,
+        "terminal": max(lgtm_ts, accept_ts),
+    })
+
+selected_pair = max(paired, key=lambda item: item["terminal"]) if paired else None
+if selected_pair is not None:
+    review_pair_status = "paired"
+    review_pair_reason = "none"
+    review_pair_identity = selected_pair["identity"] or selected_pair["group_identity"]
+    review_pair_fingerprint = selected_pair["fingerprint"]
+    lgtm_event = selected_pair["lgtm"]
+    accept_event = selected_pair["accept"]
 else:
-    eligible_requests = review_request_values
+    review_pair_status = "missing" if not approval_groups else "unresolved"
+    review_pair_reason = "missing_review_pair" if review_pair_status == "missing" else "unresolved_review_pair"
+    review_pair_identity = "none"
+    review_pair_fingerprint = "none"
+    lgtm_event = None
+    accept_event = None
+
+
+def select_identity_events(events, identity):
+    if identity is not None:
+        matching = [ts for event_identity, ts in events if event_identity == identity]
+        if matching:
+            return matching
+    # Legacy fixtures and pre-fingerprint approvals have no report field.  Do
+    # not guess across generations: only use the fallback when the event set
+    # names one logical report identity (or no identity at all).
+    identities = {event_identity for event_identity, _ in events if event_identity is not None}
+    if identity is None and len(identities) <= 1:
+        return [ts for _, ts in events]
+    return []
+
+
+selected_identity = selected_pair["identity"] if selected_pair else None
+selected_report_done_values = select_identity_events(report_done_values, selected_identity)
+selected_review_request_values = select_identity_events(review_request_values, selected_identity)
+all_report_done_values = [ts for _, ts in report_done_values]
+
+report_done_event = max(selected_report_done_values, default=None)
+if lgtm_event is not None:
+    eligible_requests = [ts for ts in selected_review_request_values if ts <= lgtm_event]
+else:
+    eligible_requests = selected_review_request_values
 review_request_event = max(eligible_requests, default=None)
 
 event_values = {
@@ -4986,7 +5071,11 @@ fin_d_text, fin_d, fin_d_missing, fin_d_invalid = segment_value(
 )
 segment_missing = [v for v in (fin_a_missing, fin_b_missing, fin_c_missing, fin_d_missing) if v]
 segment_invalid = [v for v in (fin_a_invalid, fin_b_invalid, fin_c_invalid, fin_d_invalid) if v]
-segment_unresolved = [event_reason(name) for name, value in event_values.items() if value is None and event_seen[name]]
+segment_unresolved = []
+if review_pair_reason != "none":
+    segment_unresolved.append(review_pair_reason)
+else:
+    segment_unresolved = [event_reason(name) for name, value in event_values.items() if value is None and event_seen[name]]
 segment_status = "BLOCK" if segment_invalid or segment_unresolved else ("NA" if segment_missing else "PASS")
 
 # Historical pane samples are not available for legacy rows.  Use the
@@ -5013,8 +5102,10 @@ if issue_ts is None:
     issue_ts = issued_ts
 deploy_ts = max((v for v in deploy_values if v is not None), default=None)
 ack_ts = min((v for v in ack_values if v is not None), default=None)
-done_ts = max(report_done_values, default=None) if report_done_values else max(
-    (v for v in done_values if v is not None), default=None
+done_ts = (
+    report_done_event
+    if selected_pair is not None and report_done_event is not None
+    else max(all_report_done_values + [v for v in done_values if v is not None], default=None)
 )
 clear_ts = parse_iso(clear_ts_raw)
 
@@ -5092,7 +5183,11 @@ print(
     f"segment_missing={','.join(dict.fromkeys(segment_missing)) if segment_missing else 'none'} "
     f"segment_unresolved={','.join(dict.fromkeys(segment_unresolved)) if segment_unresolved else 'none'} "
     f"segment_invalid={','.join(dict.fromkeys(segment_invalid)) if segment_invalid else 'none'} "
-    f"segment_status={segment_status}"
+    f"segment_status={segment_status} "
+    f"review_pair_status={review_pair_status} "
+    f"review_pair_reason={review_pair_reason} "
+    f"review_pair_identity={review_pair_identity} "
+    f"review_pair_fingerprint={review_pair_fingerprint}"
 )
 PY
 }
