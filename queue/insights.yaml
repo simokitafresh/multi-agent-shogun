@@ -7029,3 +7029,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-174306350-1a99
+  ts: "2026-08-28T17:43:06+09:00"
+  insight: "cmd_complete_gate throughput_segment_invalid: fin_c=na(reversed_lgtm_to_karo_accept) で ci_fix を BLOCK(17:38 疾風 shard1)。家老 ACCEPT が軍師 LGTM より先の順序異常を計測器が BLOCK にしている=計測不能は BLOCK でなく segment=na で通す(T134 の finalize>e2e BLOCK とは別: 順序逆転は便を止める理由にならない)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
