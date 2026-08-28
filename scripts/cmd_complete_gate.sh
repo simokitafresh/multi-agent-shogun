@@ -54,7 +54,35 @@ report_commit_main_ancestry_state() {
     local repo_dir="${2:-$SCRIPT_DIR}"
     local task_file="${3:-}"
     local ancestry_snapshot_file="${4:-}"
-    local state
+    local state resolved_repo report_commit
+
+    report_commit="$(REPORT_FILE="$report_file" python3 - <<'PY'
+import os
+import yaml
+try:
+    report = yaml.safe_load(open(os.environ["REPORT_FILE"], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    report = {}
+print(str(report.get("commit_hash") or "").strip())
+PY
+)"
+
+    # The commit contract is the source of truth for the repository that owns
+    # this report. Resolve it before consuming either the remote boundary or a
+    # reachable-commit snapshot so a stale task.project path cannot create a
+    # false ancestry result.
+    if [ -n "$task_file" ] && [ -f "$task_file" ] \
+        && [ -n "$report_commit" ] && [ "$report_commit" != "no-code-change" ]; then
+        resolved_repo="$(resolve_report_commit_repo "$report_file" "$task_file" "$repo_dir")" || {
+            printf 'BLOCK: report commit main ancestry: repository resolution failed\n'
+            return 1
+        }
+        [[ "$resolved_repo" != BLOCK:* ]] || {
+            printf 'BLOCK: report commit main ancestry: %s\n' "$resolved_repo"
+            return 1
+        }
+        repo_dir="$resolved_repo"
+    fi
 
     if declare -F gate_detail_begin >/dev/null 2>&1; then
         gate_detail_begin "post_source_checks.report_commit_main_ancestry.resolve_state" pure_processing
@@ -328,7 +356,7 @@ PY
 }
 
 check_report_commit_main_ancestry() {
-    local report_file task_file task_repo report_verdict state
+    local report_file task_file task_repo report_verdict state resolved_repo report_commit
     local checked=false failed=false
     local -A seen_reports=()
     local -A ancestry_snapshots=()
@@ -355,6 +383,28 @@ check_report_commit_main_ancestry() {
             *) return 0 ;;
         esac
         checked=true
+        # Resolve the typed commit repository before creating the per-repo
+        # ancestry snapshot. The task repository may be only the business
+        # project (or a stale project.path), while commit_contract.repo_root
+        # identifies the canonical publication repository.
+        report_commit="$(FIELD_GET_NO_LOG=1 field_get "$report_file" commit_hash "")"
+        if [ -z "$task_file" ] || [ ! -f "$task_file" ] \
+            || [ -z "$report_commit" ] || [ "$report_commit" = "no-code-change" ]; then
+            resolved_repo="$task_repo"
+        else
+            resolved_repo="$(resolve_report_commit_repo "$report_file" "$task_file" "$task_repo")"
+        fi
+        if [ -z "$resolved_repo" ]; then
+            printf '  %s: BLOCK: report commit main ancestry: repository resolution failed\n' "$report_file"
+            failed=true
+            return 0
+        fi
+        if [[ "$resolved_repo" = BLOCK:* ]]; then
+            printf '  %s: BLOCK: report commit main ancestry: %s\n' "$report_file" "$resolved_repo"
+            failed=true
+            return 0
+        fi
+        task_repo="$resolved_repo"
         ancestry_snapshot=""
         if [ -n "$ancestry_snapshot_dir" ]; then
             if [[ "${ancestry_snapshots[$task_repo]+yes}" != yes ]]; then
