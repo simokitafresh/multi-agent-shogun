@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-29 doc lane: T162/T163/commander_directive 追記。4e6a22d33 は origin 未到達ゆえ origin tip -->
+<!-- last_updated: 2026-08-29 doc lane: 2026-08-29 節追記(T166/T168/T170/745e 終端化/Gate 10.08/T169)。745e4f896 は origin 未到達ゆえ origin tip を境界 -->
+<!-- source_commit:153f09891 reason:doc lane: 2026-08-29 節追記(T166/T168/T170/745e 終端化/Gate 10.08/T169)。745e4f896 は origin 未到達ゆえ origin tip を境界 evidence:grep -c '2026-08-29 追加' context/infrastructure.md=1; commit b8d026080 -->
 <!-- source_commit:cb596942bf700498910382174f53f7752b425578 reason:doc lane: T162/T163/commander_directive 追記。4e6a22d33 は origin 未到達ゆえ origin tip evidence:grep -c 'T163 根治' context/infrastructure.md=1 -->
 <!-- source_commit:a8055a18b03286a55414e90582ec96990e9ff9ab reason:doc lane: 2026-08-28 節追記(T151/T157/T159/T160/T161/T162/T158/artifact)。a3e312e2a は origin 未到達ゆえ origin tip を境界、到達後に再設定 evidence:grep -c '2026-08-28 追加' context/infrastructure.md=1; commit f6af51645 -->
 <!-- source_commit:0f843cab57d5 reason:DOC_LANE_REQUEST blt_123333 approved_source_commit build_cache ci_fix を T107 行へ追記 evidence:git merge-base --is-ancestor 0f843cab5 origin/main = yes; grep -c '0f843cab5 で cache 3 本を refresh' context/infrastructure.md = 1 -->
