@@ -325,7 +325,7 @@ auto_close_source_equivalent() {
     # informational self-close and must not wake any agent.  bulletin_write's
     # empty default is all recipients, so pair the empty selector with its
     # explicit no-op writer for this one non-actionable row.
-    if ! BULLETIN_AUTOGEN=1 BULLETIN_NOTIFY= BULLETIN_INBOX_WRITE=/bin/true bash "$BULLETIN_SCRIPT" \
+    if ! BULLETIN_AUTOGEN=1 BULLETIN_NOTIFY='' BULLETIN_INBOX_WRITE=/bin/true bash "$BULLETIN_SCRIPT" \
             gate_context_freshness \
             "DOC_LANE_INFO: source_equivalent auto-closed context=${rel_path} source_commit=${latest_hash} project=${project}" \
             false info >/dev/null 2>&1; then
