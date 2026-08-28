@@ -2221,7 +2221,8 @@ fi
 # 検知=fixture 由来 id が本番 queue に 0 件 + 直近 2h の『task file missing』0 行(型十弾-5)。
 echo "■ 本番 queue 汚染(fixture 由来)"
 _fx_pat='cmd_bounded_done_check|cmd_fixture_'
-_fx_hits=$( { ls queue/reports queue/tasks 2>/dev/null; } | grep -cE "$_fx_pat" )
+_fx_hits=$( { ls queue/reports queue/tasks 2>/dev/null; } | grep -cE "$_fx_pat" || true )
+_fx_hits=${_fx_hits:-0}
 _fx_missing=$(awk -v since="$(date -d '2 hours ago' '+%Y-%m-%d %H:%M:%S')" -F'[][]' '$2 >= since && /task file missing/ {c++} END{print c+0}' logs/ninja_monitor.log 2>/dev/null)
 if [ "${_fx_hits:-0}" -eq 0 ] && [ "${_fx_missing:-0}" -eq 0 ]; then
     echo "  OK: 本番 queue に fixture 由来 report/task 0 件、直近2h『task file missing』0 行"
