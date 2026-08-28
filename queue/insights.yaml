@@ -7412,3 +7412,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260828-225943532-973d
+  ts: "2026-08-28T22:59:43+09:00"
+  insight: "[[artifactがスマホで見ると文字が縦並びで読めないね]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactがスマホで見ると文字が縦並びで読めないね"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
