@@ -362,6 +362,7 @@ check_report_commit_main_ancestry() {
     local -A ancestry_snapshots=()
     local ancestry_snapshot_dir="" ancestry_snapshot="" expected_head snapshot_path
     local snapshot_index=0
+    REPORT_COMMIT_MAIN_ANCESTRY_WAIT=false
 
     # A single gate run observes one remote boundary per repository. Build
     # that repository's reachable-commit set once and let each report query it
@@ -426,6 +427,9 @@ check_report_commit_main_ancestry() {
         fi
         if state=$(report_commit_main_ancestry_state "$report_file" "$task_repo" "$task_file" "$ancestry_snapshot"); then
             printf '  %s: %s\n' "$report_file" "$state"
+            if [[ "$state" == WAIT:* ]]; then
+                REPORT_COMMIT_MAIN_ANCESTRY_WAIT=true
+            fi
         else
             printf '  %s: %s\n' "$report_file" "$state"
             failed=true
@@ -8524,6 +8528,21 @@ record_block_reason() {
     fi
 }
 
+# External evaluation is retryable state, not a terminal defect. Keep the
+# reason separate from BLOCK_REASONS so the final ledger row and monitor
+# retry lane preserve the distinction.
+WAIT_REASONS=()
+REVIEW_WAIT_PENDING=false
+record_wait_reason() {
+    local reason="$1"
+    [ -n "$reason" ] || return 0
+    local existing
+    for existing in "${WAIT_REASONS[@]}"; do
+        [ "$existing" = "$reason" ] && return 0
+    done
+    WAIT_REASONS+=("$reason")
+}
+
 # LS-A04: A dm-signal implementation whose command explicitly promises
 # behavior preservation must carry the existing operational_simulation
 # evidence before completion.  Keep this as one completion condition and
@@ -10983,30 +11002,35 @@ if [ "$HAS_IMPLEMENT" = "true" ]; then
     mapfile -t _two_phase_reports < <(PROJECT_ROOT="$SCRIPT_DIR" review_resolve_reports "$CMD_ID")
     if ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
         && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
-        echo "GATE BLOCK: review_two_phase_pending (every report requires matching gunshi LGTM + karo ACCEPT)"
-        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "review_two_phase_pending")"
-        exit 1
-    fi
-    # karo_direct起源cmd(CMD_ID=cmd_karo_*)はSG7バンドルをスキップしたため
-    # SHOGUN_COMPLETION_GENERATIONが未設定のまま。review_two_phase確認済み
-    # report群のfingerprintを束ねたhashをgeneration代替として採用する
-    # (cmd_karo_hotfix_karo_direct_gate_bypass_20260807)。
-    if [[ "$CMD_ID" == cmd_karo_* ]] && [ -z "${SHOGUN_COMPLETION_GENERATION:-}" ]; then
-        _karo_direct_generation=$(PROJECT_ROOT="$SCRIPT_DIR" review_manifest_fingerprint "${_two_phase_reports[@]}") || _karo_direct_generation=""
-        if [[ ! "$_karo_direct_generation" =~ ^[0-9a-f]{64}$ ]]; then
-            echo "GATE BLOCK: ${CMD_ID}:karo_direct_completion_generation_invalid"
-            append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "karo_direct_completion_generation_invalid")"
-            exit 1
+        # Review is an external approval that can arrive after this gate
+        # invocation. It must remain retryable and must not inflate terminal
+        # BLOCK metrics or trigger repair work.
+        echo "GATE WAIT: review_two_phase_pending (every report requires matching gunshi LGTM + karo ACCEPT)"
+        record_wait_reason "WAIT:review_two_phase_pending"
+        REVIEW_WAIT_PENDING=true
+        ALL_CLEAR=false
+    else
+        # karo_direct起源cmd(CMD_ID=cmd_karo_*)はSG7バンドルをスキップしたため
+        # SHOGUN_COMPLETION_GENERATIONが未設定のまま。review_two_phase確認済み
+        # report群のfingerprintを束ねたhashをgeneration代替として採用する
+        # (cmd_karo_hotfix_karo_direct_gate_bypass_20260807)。
+        if [[ "$CMD_ID" == cmd_karo_* ]] && [ -z "${SHOGUN_COMPLETION_GENERATION:-}" ]; then
+            _karo_direct_generation=$(PROJECT_ROOT="$SCRIPT_DIR" review_manifest_fingerprint "${_two_phase_reports[@]}") || _karo_direct_generation=""
+            if [[ ! "$_karo_direct_generation" =~ ^[0-9a-f]{64}$ ]]; then
+                echo "GATE BLOCK: ${CMD_ID}:karo_direct_completion_generation_invalid"
+                append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "karo_direct_completion_generation_invalid")"
+                exit 1
+            fi
+            export SHOGUN_COMPLETION_GENERATION="$_karo_direct_generation"
         fi
-        export SHOGUN_COMPLETION_GENERATION="$_karo_direct_generation"
-    fi
-    if [[ "$CMD_ID" == cmd_karo_* ]]; then
-        _karo_reviewed_at=$(resolve_karo_reviewed_at "$CMD_ID" "$SCRIPT_DIR" "${_two_phase_reports[@]}" 2>&1) || {
-            echo "GATE BLOCK: ${CMD_ID}:karo_reviewed_at_invalid: ${_karo_reviewed_at}"
-            append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "karo_reviewed_at_invalid")"
-            exit 1
-        }
-        export SG7_REVIEWED_AT="$_karo_reviewed_at"
+        if [[ "$CMD_ID" == cmd_karo_* ]]; then
+            _karo_reviewed_at=$(resolve_karo_reviewed_at "$CMD_ID" "$SCRIPT_DIR" "${_two_phase_reports[@]}" 2>&1) || {
+                echo "GATE BLOCK: ${CMD_ID}:karo_reviewed_at_invalid: ${_karo_reviewed_at}"
+                append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "karo_reviewed_at_invalid")"
+                exit 1
+            }
+            export SG7_REVIEWED_AT="$_karo_reviewed_at"
+        fi
     fi
 fi
 
@@ -11052,7 +11076,7 @@ echo ""
 
 # Normalization must not mutate an already-approved artifact. Recheck the
 # exact final bytes before any later gate can CLEAR.
-if [ "$HAS_IMPLEMENT" = "true" ] \
+if [ "$HAS_IMPLEMENT" = "true" ] && [ "$REVIEW_WAIT_PENDING" != true ] \
     && ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
     && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
     echo "GATE BLOCK: review_fingerprint_changed_after_normalize"
@@ -11413,6 +11437,7 @@ fi
 MISSING_GATES=()
 BLOCK_REASONS=()
 ALL_CLEAR=true
+[ "${#WAIT_REASONS[@]}" -eq 0 ] || ALL_CLEAR=false
 
 if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$CMD_ID" && has_parent_cmd_report "$CMD_ID"; then
     level_heading "[L1]" "No-task parent report validation:"
@@ -13580,6 +13605,11 @@ if [ "$ALL_CLEAR" = true ]; then
         gate_detail_finish
         record_block_reason "report_commit_main_ancestry"
         ALL_CLEAR=false
+    elif [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" = true ]; then
+        gate_detail_finish
+        echo "GATE WAIT: report_commit_main_ancestry (report commit is not yet contained by canonical main)"
+        record_wait_reason "WAIT:report_commit_main_ancestry"
+        ALL_CLEAR=false
     else
         gate_detail_finish
     fi
@@ -13609,10 +13639,10 @@ if [ "$ALL_CLEAR" = true ]; then
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
     if [[ "$GATE_THROUGHPUT_METRIC" == *"segment_status=BLOCK"* ]]; then
-        echo "GATE BLOCK: ${CMD_ID}:throughput_segment_invalid"
-        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tthroughput_segment_invalid\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "na" "na" "$GATE_FIRST_MODEL_METRIC")"
-        exit 1
-    fi
+        echo "GATE WAIT: ${CMD_ID}:throughput_segment_invalid (measurement inputs are not yet consistent)"
+        record_wait_reason "WAIT:throughput_segment_invalid"
+        ALL_CLEAR=false
+    else
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     GATE_KARO_CTX_METRIC=$(build_karo_ctx_metric)
     gate_detail_begin "post_source_checks.cdp_production_check" external_wait
@@ -14527,12 +14557,18 @@ PYEOF
 
     gate_phase_finish
     exit 0
+    fi
 else
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
     if [ ${#BLOCK_REASONS[@]} -gt 0 ]; then
         block_reason=$(IFS='|'; echo "${BLOCK_REASONS[*]}")
+        if [ ${#WAIT_REASONS[@]} -gt 0 ]; then
+            block_reason+="|$(IFS='|'; echo "${WAIT_REASONS[*]}")"
+        fi
     elif [ -n "$missing_list" ]; then
         block_reason="missing_gates:${missing_list}"
+    elif [ ${#WAIT_REASONS[@]} -gt 0 ]; then
+        block_reason=$(IFS='|'; echo "${WAIT_REASONS[*]}")
     else
         # ALL_CLEAR=false だがBLOCK_REASONS/MISSING_GATES両方空: 各gate個別結果を収集
         _gate_details=()
@@ -14551,6 +14587,11 @@ else
     _gate_record_category=$(classify_gate_record_reasons "$block_reason")
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$_gate_record_category" "$block_reason" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC" "$(format_ci_raw_columns "${ci_run_id:-}" "${ci_run_conclusion:-}")")"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
+    if [ "$_gate_record_category" = WAIT ]; then
+        echo "GATE WAIT: 待機理由=${block_reason} (解消後にmonitorが再GATEする)"
+        gate_phase_finish
+        exit 1
+    fi
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     echo ""
     echo "Karo gate_block notification (GATE BLOCK):"
