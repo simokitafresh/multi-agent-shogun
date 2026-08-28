@@ -70,6 +70,7 @@ EOF
 
 write_in_progress_terminal_fixture() {
     local ninja_name="${1:-hayate}"
+    local status="${2:-in_progress}"
     local report_name="${ninja_name}_report_${TEST_CMD_ID}.yaml"
     mkdir -p "$TEST_PROJECT/queue/archive/reports"
     cat > "$TEST_PROJECT/queue/tasks/${ninja_name}.yaml" <<EOF
@@ -81,7 +82,7 @@ task:
   report_identity_version: 2
   report_filename: $report_name
   report_path: queue/reports/$report_name
-  status: in_progress
+  status: $status
 EOF
     cat > "$TEST_PROJECT/queue/archive/reports/$report_name" <<EOF
 report_id: rpt-${ninja_name}-terminal
@@ -115,35 +116,38 @@ json.dump({
 PY
 }
 
-@test "AC1 reproduces archived symlink with in_progress task left behind when terminal proof is absent" {
-    write_in_progress_terminal_fixture
+# test_necessity: GATE CLEAR後にassigned taskが端末証明なしで残置される回帰を
+# 固定し、証明不足のactive taskをidle化しない不変量を守る。
+@test "AC1 reproduces archived symlink with assigned task left behind when terminal proof is absent" {
+    write_in_progress_terminal_fixture hayate assigned
     MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
 
     run set_matching_tasks_idle
     [ "$status" -eq 0 ]
-    [[ "$output" == *"hayate: skip (status=in_progress, terminal proof=completion_generation_missing_or_invalid)"* ]]
+    [[ "$output" == *"hayate: skip (status=assigned, terminal proof=completion_generation_missing_or_invalid)"* ]]
     [[ "$output" == *"summary: updated=0 skipped=1 warn=0"* ]]
-    run grep -n "^  status: in_progress$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
+    run grep -n "^  status: assigned$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
     [ "$status" -eq 0 ]
 }
 
 # test_necessity: post-GATE CLEAR task lifecycle must accept an active task
 # only when the archived report and generation-bound CLEAR receipt prove the
 # exact task/report identity; otherwise a stale active task must remain active.
-@test "AC2 terminalizes exact in_progress task and rejects incomplete or mismatched evidence" {
-    write_in_progress_terminal_fixture
-    write_clear_receipt
-    MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
+@test "AC2 terminalizes exact active task states and rejects incomplete or mismatched evidence" {
+    for task_status in assigned acknowledged in_progress done completed; do
+        write_in_progress_terminal_fixture hayate "$task_status"
+        write_clear_receipt
+        MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
 
-    run set_matching_tasks_idle
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"hayate: in_progress terminal proof=ok"* ]]
-    [[ "$output" == *"hayate: in_progress → idle"* ]]
-    run grep -n "^  status: idle$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
-    [ "$status" -eq 0 ]
+        run set_matching_tasks_idle
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"hayate: ${task_status} → idle"* ]]
+        run grep -n "^  status: idle$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
+        [ "$status" -eq 0 ]
+    done
 
     for evidence_case in incomplete_report mismatched_generation clear_missing; do
-        write_in_progress_terminal_fixture
+        write_in_progress_terminal_fixture hayate acknowledged
         case "$evidence_case" in
             incomplete_report)
                 sed -i 's/status: completed/status: pending/' \
@@ -162,7 +166,7 @@ PY
         run set_matching_tasks_idle
         [ "$status" -eq 0 ]
         [[ "$output" == *"summary: updated=0 skipped=1 warn=0"* ]]
-        run grep -n "^  status: in_progress$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
+        run grep -n "^  status: acknowledged$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
         [ "$status" -eq 0 ]
     done
 }
@@ -198,7 +202,7 @@ PY
 
     run set_matching_tasks_idle
     [ "$status" -eq 0 ]
-    [[ "$output" == *"hayate: skip (status=acknowledged, task in progress)"* ]]
+    [[ "$output" == *"hayate: skip (status=acknowledged, terminal proof=report_identity_missing)"* ]]
     [[ "$output" == *"summary: updated=0 skipped=1 warn=0"* ]]
 
     run grep -n "^  status: acknowledged$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
