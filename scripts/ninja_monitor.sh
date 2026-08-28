@@ -5480,7 +5480,10 @@ _auto_clear_guard_fingerprint() {
     local name="$1" target="$2" task_file="$SCRIPT_DIR/queue/tasks/${1}.yaml"
     local inbox_file="$SCRIPT_DIR/queue/inbox/${1}.yaml" pane_generation task_fp inbox_fp
     pane_generation=$(respawn_recovery_generation "$target" 2>/dev/null || true)
-    [ -n "$pane_generation" ] || return 1
+    if [ -z "$pane_generation" ]; then
+        [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ] && return 1
+        pane_generation="pane:${target:-missing}"
+    fi
     IFS=$'\t' read -r task_fp inbox_fp < <(python3 - "$task_file" "$inbox_file" <<'PY'
 import hashlib
 import json
@@ -5566,11 +5569,9 @@ _handle_auto_clear() {
     # ただしrespawn直後(60s以内)はCTX=0%が正常 → respawn無限ループ防止
     local ctx_now _ac_pane_generation="" _ac_task_fp="" _ac_inbox_fp="" _ac_guard_file=""
     ctx_now=$(get_context_pct "$target" "$name")
-    if [ "$_ac_cli_type" = "codex" ]; then
-        IFS=$'\t' read -r _ac_pane_generation _ac_task_fp _ac_inbox_fp < <(
-            _auto_clear_guard_fingerprint "$name" "$target"
-        ) || true
-    fi
+    IFS=$'\t' read -r _ac_pane_generation _ac_task_fp _ac_inbox_fp < <(
+        _auto_clear_guard_fingerprint "$name" "$target"
+    ) || true
     if [ "${ctx_now:-0}" -le 0 ] 2>/dev/null; then
         if [[ "$_ac_task_status" =~ ^(done|completed|PASS)$ ]] \
             && _task_done_report_formally_reviewed "$name"; then
@@ -5628,7 +5629,7 @@ _handle_auto_clear() {
     # A successful clear also makes a non-zero CTX pane terminal for this
     # unchanged generation.  Without this check debounce expiry can issue a
     # second clear even though the first one already completed.
-    if [ "$_ac_cli_type" = "codex" ] && [ -n "$_ac_pane_generation" ]; then
+    if [ -n "$_ac_pane_generation" ]; then
         _ac_guard_file=$(_auto_clear_guard_file "$name")
         local _ac_cleared_generation="" _ac_cleared_task_fp="" _ac_cleared_inbox_fp="" _ac_cleared_state=""
         if [ -f "$_ac_guard_file" ]; then
@@ -5638,7 +5639,7 @@ _handle_auto_clear() {
             && [ "$_ac_cleared_generation" = "$_ac_pane_generation" ] \
             && [ "$_ac_cleared_task_fp" = "$_ac_task_fp" ] \
             && [ "$_ac_cleared_inbox_fp" = "$_ac_inbox_fp" ]; then
-            log "CODEX-CLEAR-GUARD: $name generation=$_ac_pane_generation task_inbox_unchanged=1 clear=0"
+            log "CLEAR-GUARD: $name generation=$_ac_pane_generation task_inbox_unchanged=1 clear=0"
             return
         fi
     fi
