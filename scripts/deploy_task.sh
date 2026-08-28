@@ -11301,6 +11301,20 @@ deploy_task_function_timing_enable() {
 _dt_function_timing_debug() {
     [ "${_DT_FUNCTION_TIMING_BUSY:-0}" -eq 0 ] || return 0
     _DT_FUNCTION_TIMING_BUSY=1
+    # Inline the coverage counter on the existing DEBUG-trap path.  Calling a
+    # second shell function for every command made telemetry dominate normal
+    # deployment wall time; one associative-array increment is the contract.
+    if [ "${_FC_ENABLED:-0}" -eq 1 ]; then
+        _DT_FC_COMMAND="${BASH_COMMAND:-}"
+        _DT_FC_COMMAND=${_DT_FC_COMMAND#"${_DT_FC_COMMAND%%[!$' \t']*}"}
+        _DT_FC_COMMAND=${_DT_FC_COMMAND%%[ $'\t']*}
+        _DT_FC_COMMAND=${_DT_FC_COMMAND##*/}
+        if [ -n "$_DT_FC_COMMAND" ] \
+            && [ "${_FC_DEFINED["$_DT_FC_COMMAND"]+present}" = present ] \
+            && [ "${FUNCNAME[1]:-}" != "$_DT_FC_COMMAND" ]; then
+            _FC_CALLS["$_DT_FC_COMMAND"]=$(( ${_FC_CALLS["$_DT_FC_COMMAND"]:-0} + 1 ))
+        fi
+    fi
     local raw now fn delta
     raw="${EPOCHREALTIME/./}"
     now="${raw:0:16}"
@@ -11364,14 +11378,35 @@ deploy_task_function_timing_finish() {
 
 deploy_task_function_timing_enable
 
+# Function coverage reuses the existing DEBUG trap's event boundary.  This
+# keeps the hot path to one associative-array increment while preserving the
+# timing telemetry and its compatibility surface.
+_dt_function_coverage_path="$SCRIPT_DIR/scripts/lib/function_coverage.sh"
+if [ ! -f "$_dt_function_coverage_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
+    _dt_function_coverage_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/lib/function_coverage.sh"
+fi
+if [ -f "$_dt_function_coverage_path" ]; then
+    source "$_dt_function_coverage_path"
+    if [ "${DEPLOY_TASK_FUNCTION_COVERAGE:-1}" != "0" ]; then
+        FUNCTION_COVERAGE_EXTERNAL_DEBUG=1 function_coverage_enable \
+            deploy_task.sh "${DEPLOY_TASK_FUNCTION_COVERAGE_LOG:-$SCRIPT_DIR/logs/function_coverage/deploy_task.sh.jsonl}"
+    fi
+fi
+
 if [[ "${DEPLOY_TASK_SELF_SNAPSHOT_TEST_ONLY:-0}" == "1" ]]; then
     printf 'SELF_SNAPSHOT_OK\n'
+    if declare -F function_coverage_finish >/dev/null 2>&1; then
+        function_coverage_finish 2>/dev/null || true
+    fi
     deploy_task_function_timing_finish
     exit 0
 fi
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
     deploy_task_main "$@"
+    if declare -F function_coverage_finish >/dev/null 2>&1; then
+        function_coverage_finish 2>/dev/null || true
+    fi
     deploy_task_function_timing_finish
 
     # cmd_1337: dashboard update remains a post-deployment side effect.
