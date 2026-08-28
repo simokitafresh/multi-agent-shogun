@@ -6787,3 +6787,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-142308123-a6e9
+  ts: "2026-08-28T14:23:08+09:00"
+  insight: "[[idle忍者に対するauto clearまでが長すぎないか？バグか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=idle忍者に対するauto clearまでが長すぎないか？バグか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
