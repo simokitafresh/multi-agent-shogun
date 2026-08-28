@@ -375,6 +375,7 @@ codd:
 | causal | `cmd_4371` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_4373` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | cmd | `cmd_karo_hotfix_t92_dm_signal_research_article_filter_20260828` |
+| causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
@@ -8266,6 +8267,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:18:36+09:00 四つのらせん(殿下問 2026-08-28 14:14『同じらせんをデッドコードやリファクタにも応用できるか』→YES)。型は共通=①計測器を名指しから仕込む(本番に常設)②1 unit だけ切る③計測を一段深くする④計測器は残す。切る対象 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:21:01+09:00 session_save_20260828_1420 復帰点(将軍 /clear 復帰 第5便、08-28 12:49-14:20)。主軸=殿 3 裁定: (a)13:18『らせんからずれていないか。本来の目的を思い出そう』→一次: 本日  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:13:12+09:00 忍者がauto clearされるのが遅いせいでCTXがたまったままの忍者に家老が配備してしまう。今の問題点はなんだ？ |
+| causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_deploy_ctx_guard_20260828` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9507,6 +9510,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:13:37+09:00 T128 / T98 / T122の進捗は？どこかでつまりが生じていないか確認し、解消せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:28:24.246243+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:04:22.017805+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T06:41:52.801644+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -9948,6 +9952,7 @@ codd:
 | causal | `cmd_karo_hotfix_reserved_path_source_identity` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_4370` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_4371` files_modified: [[task_modifier_injection]] |
+| causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -12311,6 +12316,7 @@ codd:
 | causal | `cmd_karo_hotfix_commit_ledger_single_lock` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_4385` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_4400` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -14957,6 +14963,7 @@ codd:
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_t122_memory_self_reinforce_20260828` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -15044,6 +15051,7 @@ codd:
 | causal | `cmd_karo_hotfix_reserved_path_source_identity` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_4370` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_4371` files_modified: [[scope_integrity_lifecycle]] |
+| causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
@@ -15159,6 +15167,7 @@ codd:
 | causal | `cmd_karo_hotfix_report_gate_exec_mode_20260828` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_hotfix_t99_report_precheck_20260828` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[yaml_safe_write]] |
+| causal | `cmd_karo_hotfix_t122_memory_self_reinforce_20260828` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
 | causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
 | causal_chain | `[[cmd_4192]]` (L1450) |

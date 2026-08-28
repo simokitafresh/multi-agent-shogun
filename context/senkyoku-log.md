@@ -1530,3 +1530,5 @@
 
 ## 2026-08-28 12:49-14:20（将軍 /clear 復帰 第5便・らせんへの復帰）
 - 意図: 便回転の消火から「本来の目的=PJ 成果の e2e 短縮」へ戻す。結果: finalize 84%→4 区間実測(wait 9%/think 91%/fin_c 292s)、auto clear 根治(T131)、四つのらせん貫通、型第七弾 5 則。因果: [[session_save_20260828_1420]] -> [[復帰後の型_第七弾]] -> [[四つのらせん_20260828]]
+
+- 2026-08-28 `cmd_karo_hotfix_deploy_ctx_guard_20260828_normal`完了: 配備直前のpane capture CTXを閾値20%で判定し、高CTX時はagent_respawn作業中ガード+ready handshake後のみ公開する入場ガードを実装。所有Bats 64/64 PASS・SKIP0、commit `b58ae80a40d2c63a9b9a887d33fad59bd75727a4`、report gate PASS。origin: [[auto-clear失敗鎖]] -> [[高CTX配備前ガード]] -> [[respawn+ready後のみ配備]]
