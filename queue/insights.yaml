@@ -7757,3 +7757,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-064851672-a7e9
+  ts: "2026-08-29T06:48:51+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T174_Codex上限停止]] は既存aliasesに一致なし。類似概念TOP3: multi_cli_event_commonization(multi-CLI hook/event共通化; alias=Codex Stop禁止; score=4.1) / agent_formation_management(編成管理; alias=model_detect; score=3.8) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4408_ext4移設; score=3.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
