@@ -2608,7 +2608,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:a71cb95fa3fb90d7"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で gate_skill_script_refs を SKILL_REF_DIRS=skills で実走し、対象15組の参照先実在とSKILL追従を確認。全体はrc=2 REVIEW_REQUIREDだが、唯一のWARNは対象外のarchive_completed参照であり、対象15組に固有の未追従はない。FOLLOWUP_ACTIVE=31かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesの既存運用で追加修正とdecision_candidateは不要。"
+  action_artifact: "primary=queue/insights.yaml:2605-2611;gate=/tmp/saizo_skill_refs_20260829.out;rc=2;scanned=40 SKILL.md;script_refs=82;referenced=30;target_pairs=15;missing=0;target_warn=0;followup_active=31;followup_covers_review_required=yes;verified_at=2026-08-29T03:29:00+09:00"
+  resolved_at: "2026-08-29T03:29:01+09:00"
 - id: INS-20260823-204433621-7946
   ts: "2026-08-23T20:44:33+09:00"
   insight: "[[利他の精神で調査して将軍に報告せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で調査して将軍に報告せよ。利他の精神とはD0で可能な限り自分自身で改善するところから始めよう"
