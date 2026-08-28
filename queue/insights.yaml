@@ -2178,7 +2178,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:0b0ccc7720776a61"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で同一source/task hash 0b0ccc7720776a61を既存INS-20260822-152810760-1a8cと照合した。現行gate_skill_script_refsは参照先実在・鮮度OKだがREVIEW_REQUIRED(rc=2)であり、既存resolved側に12組の追従更新decision candidateが集約済みのため、追加実装不要としてresolveした。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-220414584-b2ef;duplicate=INS-20260822-152810760-1a8c;gate=scripts/gates/gate_skill_script_refs.sh;gate_rc=2;stale_pairs=31;missing_refs=0;decision_candidate=既存resolved側へ集約"
+  resolved_at: "2026-08-28T11:00:49+09:00"
 - id: INS-20260822-221345291-7ea0
   ts: "2026-08-22T22:13:45+09:00"
   insight: "recon-dual契約の記載位置制約: skillはtitle/purpose/command内の『独立2系統・相互参照禁止・independent recon』のみ検出し、独立field(recon_dual_contract等)は検出対象外(cmd_4366で2連BLOCK実証2026-08-22)。固定baseはhash実値をpurposeへ書く。候補対策: cmd_skeleton.shのrecon系雛形にpurpose契約文言テンプレを追加するか、deploy側で独立fieldも検出する"
