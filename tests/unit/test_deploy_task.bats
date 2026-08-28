@@ -180,6 +180,39 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: heredocを含むworktree準備処理もtask_mutationsの最上位phaseとして
+# DEPLOY_RECEIPTの帰属時間・最大phaseへ必ず反映する不変量を守る。
+@test "heredoc worktree preparation is an accounted mutation phase" {
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        LOG="$2/worktree-accounting.log"
+        deploy_task_original_log() { printf "%s\\n" "$1" >> "$LOG"; }
+        deploy_task_original_prepare_remote_tip_worktree() { sleep 0.01; }
+        now=${EPOCHREALTIME/./}
+        now=${now:0:16}
+        DEPLOY_TASK_STARTED_US="$now"
+        DEPLOY_TASK_WALL_PHASE_LAST_US="$now"
+        DEPLOY_TASK_PHASE=task_mutations
+        deploy_task_prepare_remote_tip_worktree ignored ignored
+        deploy_task_wall_phase_checkpoint task_mutations
+        log "DEPLOY_RECEIPT result=success"
+        [ "$(grep -c "DEPLOY_RECEIPT " "$LOG")" -eq 1 ]
+        receipt=$(grep "DEPLOY_RECEIPT " "$LOG")
+        [[ "$receipt" == *"unaccounted_ms="* ]]
+        [[ "$receipt" == *"max_sub_phase=deploy_task_prepare_remote_tip_worktree"* ]]
+        [[ "$receipt" == *"max_sub_phase_ms="* ]]
+        unaccounted_ms=${receipt##*unaccounted_ms=}
+        unaccounted_ms=${unaccounted_ms%% *}
+        [ "$unaccounted_ms" -lt 1000 ]
+        phase_ms=$(sed -n "s/.*phase=deploy_task_prepare_remote_tip_worktree wall_ms=\\([0-9][0-9]*\\).*/\\1/p" "$LOG")
+        receipt_ms=${receipt##*max_sub_phase_ms=}
+        [ "$phase_ms" -eq "$receipt_ms" ]
+    ' _ "$PROJECT_ROOT" "$BATS_TEST_TMPDIR"
+    [ "$status" -eq 0 ]
+}
+
 # test_necessity: 高CTX配備は正規respawnとready確認を経てからのみ成功し、ctx_before/afterを同一receiptへ記録する不変量を守る。
 @test "ctx guard respawns high-ctx idle worker and confirms ready" {
     run bash -c '
