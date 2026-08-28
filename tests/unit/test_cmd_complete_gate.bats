@@ -591,6 +591,114 @@ EOF
     [[ "$output" == *"work_sec=360 finalize_sec=120 e2e_sec=600 missing=none"* ]]
 }
 
+# test_necessity: finalize must expose the four durable report/review boundary
+# intervals and their sum must reconcile with finalize_sec.
+# regression_justification: aggregate finalize_sec hid whether report/review,
+# approval, or gate latency was the dominant completion interval.
+@test "build_clear_throughput_metric records four finalize segments" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint"
+    printf 'commands: {}\n' > "$YAML_FILE"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  issued_at: '2026-07-08T09:00:00'
+  deployed_at: '2026-07-08T09:01:00'
+  acknowledged_at: '2026-07-08T09:02:00'
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+timestamp: '2026-07-08T09:00:00'
+completed_at: '2026-07-08T09:10:00'
+EOF
+    cat > "$TEST_PROJECT/queue/inbox/gunshi.yaml" <<EOF
+messages:
+  - type: report_review
+    parent_cmd: $TEST_CMD_ID
+    report_path: queue/reports/sasuke_report_${TEST_CMD_ID}.yaml
+    timestamp: '2026-07-08T09:10:10'
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint/gunshi.yaml" <<'EOF'
+timestamp: '2026-07-08T09:10:40'
+result: LGTM
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint/karo.yaml" <<'EOF'
+timestamp: '2026-07-08T09:11:10'
+result: ACCEPT
+EOF
+
+    run build_clear_throughput_metric '2026-07-08T09:11:40'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"finalize_sec=100"* ]]
+    [[ "$output" == *"fin_a=10 fin_b=30 fin_c=30 fin_d=30"* ]]
+    [[ "$output" == *"fin_a_think_sec=0 fin_a_wait_sec=10"* ]]
+    [[ "$output" == *"fin_b_think_sec=30 fin_b_wait_sec=0"* ]]
+    [[ "$output" == *"fin_c_think_sec=30 fin_c_wait_sec=0"* ]]
+    [[ "$output" == *"fin_d_think_sec=0 fin_d_wait_sec=30"* ]]
+    [[ "$output" == *"think_sec_total=60 wait_sec_total=40"* ]]
+    [[ "$output" == *"optimization_target=wait_sec_only llm_think_reduction=BLOCK"* ]]
+    [[ "$output" == *"segment_total=100"* ]]
+    [[ "$output" == *"segment_status=PASS"* ]]
+}
+
+# test_necessity: malformed and reversed lifecycle events must be visible and
+# fail closed, while an absent legacy event remains a reasoned na measurement.
+# regression_justification: silently treating unresolved or negative intervals
+# as zero made timing data appear valid and could publish a false CLEAR.
+@test "build_clear_throughput_metric blocks unresolved and reversed segments" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint"
+    printf 'commands: {}\n' > "$YAML_FILE"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+timestamp: '2026-07-08T09:10:00'
+EOF
+    cat > "$TEST_PROJECT/queue/inbox/gunshi.yaml" <<EOF
+messages:
+  - type: report_review
+    parent_cmd: $TEST_CMD_ID
+    timestamp: 'not-a-timestamp'
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint/gunshi.yaml" <<'EOF'
+timestamp: '2026-07-08T09:10:40'
+result: LGTM
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint/karo.yaml" <<'EOF'
+timestamp: '2026-07-08T09:11:10'
+result: ACCEPT
+EOF
+
+    run build_clear_throughput_metric '2026-07-08T09:11:40'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fin_a=na(unresolved_review_request)"* ]]
+    [[ "$output" == *"segment_unresolved=unresolved_review_request"* ]]
+    [[ "$output" == *"segment_status=BLOCK"* ]]
+
+    sed -i "s/not-a-timestamp/2026-07-08T09:09:00/" \
+        "$TEST_PROJECT/queue/inbox/gunshi.yaml"
+    run build_clear_throughput_metric '2026-07-08T09:11:40'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fin_a=na(reversed_report_done_to_review_request)"* ]]
+    [[ "$output" == *"segment_invalid=reversed_report_done_to_review_request"* ]]
+    [[ "$output" == *"segment_status=BLOCK"* ]]
+}
+
 @test "build_clear_duration_metric uses acknowledged_at and done_at for nested and flat task YAML" {
     source "$GATE_HELPERS_FILE"
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml" "$TEST_PROJECT/queue/tasks/hanzo.yaml")
