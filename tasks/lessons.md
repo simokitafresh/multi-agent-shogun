@@ -16051,3 +16051,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - task単独では通過する語彙fixtureがCIの並列shardで失敗した。grep regexとlocaleに依存する日本語語彙判定を固定文字列caseへ置換し、task単独2/2とCI同一31ファイル385/385で再確認する。
+
+### L1661: shell unit抽出時はowner testの関数抽出元もmodule正本へ同期する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_t107_cmd_complete_split_unit1_20260828
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,testing,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/lib/cmd_complete_gate_ci.sh,tests/unit/test_cmd_complete_gate_ci_readiness.bats]
+- **origin**: [[cmd_karo_hotfix_t107_cmd_complete_split_unit1_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- entrypointから関数をsed抽出するowner testは、unitをlibへ移動すると空fixtureになり得る。抽出対象のmoduleを正本として直接参照し、entrypointの薄いsource接続とは分離して守る。
