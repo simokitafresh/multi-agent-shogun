@@ -278,6 +278,25 @@ SH
   done
 }
 
+@test "Codex default resolution survives a DEBUG trap that overwrites BASH_REMATCH" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  fixture_home="$root/debug-home"
+  nvm_bin="$fixture_home/.nvm/versions/node/v20.20.0/bin"
+  mkdir -p "$nvm_bin"
+  printf '#!/usr/bin/env bash\n' > "$nvm_bin/codex"
+  chmod +x "$nvm_bin/codex"
+
+  run env -u SHOGUN_CODEX_BIN HOME="$fixture_home" PATH=/usr/bin bash -c '
+    trap '\''BASH_REMATCH=(debug-trap-overwrite)'\'' DEBUG
+    source "$1/scripts/lib/respawn_recovery.sh"
+    respawn_recovery_launch_command "$1" "${SHOGUN_CODEX_BIN:-codex} --flag"
+  ' _ "$repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"exec $nvm_bin/codex --flag"* ]]
+  [[ "$output" == *"PATH=\"$nvm_bin:\$PATH\""* ]]
+  ! grep -q 'BASH_REMATCH' "$repo/scripts/lib/respawn_recovery.sh"
+}
+
 @test "current Codex SSOT launch command resolves to a nonempty command" {
   repo="$BATS_TEST_DIRNAME/../.."
   source "$repo/scripts/lib/cli_lookup.sh"
