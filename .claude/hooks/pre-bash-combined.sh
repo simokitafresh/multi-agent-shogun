@@ -1260,6 +1260,7 @@ fi
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git merge'* && "$payload" != *'git reset'* && \
+   "$payload" != *'git cherry-pick'* && "$payload" != *'git rebase'* && "$payload" != *'git revert'* && "$payload" != *'git am '* && \
    "$payload" != *'git checkout'* && "$payload" != *'git restore'* && "$payload" != *'git clean'* && \
    "$payload" != *'mkfs'* && "$payload" != *'fdisk'* && "$payload" != *'mount'* && "$payload" != *'umount'* && \
    "$payload" != *'dd '* && "$payload" != *'chrome'* && "$payload" != *'chromium'* && \
@@ -1276,6 +1277,7 @@ needs_destructive_python() {
     # shellcheck disable=SC2221,SC2222  # FP: independent glob patterns in same case arm
     case "$cmd" in
         *"rm "*|*"sudo"*|*"su "*|*"kill"*|*"git push"*|*"git merge"*|*"git reset"*|*"git checkout"*|*"git restore"*|*"git clean"*|*"tmux kill"*) return 0 ;;
+        *"git cherry-pick"*|*"git rebase"*|*"git revert"*|*"git am "*) return 0 ;;
         *"mkfs"*|*"fdisk"*|*"mount"*|*"umount"*) return 0 ;;
     esac
     if [[ "$cmd" == *'curl'* || "$cmd" == *'wget'* ]]; then
@@ -1540,6 +1542,19 @@ def check_git(tokens):
             "D012: direct git merge in the shared project worktree is forbidden; "
             "use bash scripts/safe_shared_main_ff.sh <target> so ref/index/worktree "
             "convergence is verified"
+        )
+    # 2026-08-28 23:45 T163: a karo cherry-pick in the shared worktree left
+    # '<<<<<<< HEAD' inside scripts/hooks/codex_inbox_priority_guard.sh for 12
+    # minutes; the live hook then failed on every karo tool call (self-deadlock).
+    # Any history-rewriting op that can leave conflict markers in hot scripts
+    # must run in an isolated worktree, never in the shared root.
+    if sub in ("cherry-pick", "rebase", "revert", "am") and cwd == project_root:
+        if "--continue" in args or "--abort" in args or "--skip" in args or "--quit" in args:
+            return ""
+        return (
+            "D012: direct git " + sub + " in the shared project worktree is forbidden "
+            "(conflict markers land in live hooks/scripts); run it in an isolated "
+            "worktree (git worktree add) and converge with bash scripts/safe_shared_main_ff.sh"
         )
     if sub == "reset" and "--hard" in args:
         return "D004: git reset --hard is forbidden"

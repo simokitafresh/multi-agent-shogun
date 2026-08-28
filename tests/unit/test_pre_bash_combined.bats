@@ -237,3 +237,22 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"D012"* ]]
 }
+
+# T163 (2026-08-28): cherry-pick in the shared worktree left conflict markers in a
+# live hook for 12 minutes and self-deadlocked karo.  History-rewriting ops must
+# run in an isolated worktree; --continue/--abort stay allowed so an in-flight op
+# can always be finished.
+@test "D012: git cherry-pick/rebase/revert in shared worktree are blocked, --continue allowed" {
+    run_hook "git cherry-pick 43fc68078"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"D012"* ]]
+    [[ "$output" == *"cherry-pick"* ]]
+
+    run_hook "git rebase origin/main"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"D012"* ]]
+
+    run_hook "git cherry-pick --continue"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"D012"* ]]
+}
