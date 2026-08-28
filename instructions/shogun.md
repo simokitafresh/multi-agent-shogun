@@ -168,6 +168,15 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第十弾 5則（2026-08-28 19:33-20:45 第8便: T151 入口ガード/T152 STAGE1/T149 停滞/T157 bats 本番汚染から・将軍自身に適用）
+
+1. **起動 WARN を見たら反射で 1 通を書かず、壁の所有者を一次で見よ。** 『疾風 done∧CLEAR 無し 119 分』は家老が既に壁を名指しして修理 unit(才蔵 pairing)を配備中=1 通は二重下知。逆に T151(825ceeaa7 で入口ガードの `!` が落ち lifecycle worker 全滅 rc=64 171 行)は誰も見ていない壁=将軍 D0 可逆修正(091981ab5、temp→bash -n→mv)。判定基準=壁の名前が task/掲示板に既にあるか。
+2. **shared main へ live 化した hotfix は 1 cycle 後に機構固有の失敗行を数えよ。** 19:27 monitor 再起動→19:26:21 から rc=64 が毎 cycle、AUTO-DONE/check_stall 全滅=疾風・小太郎・飛猿の archive 便停止。pane や陣形図は正常に見える。数える行=rc=64/STAGE1-*/FALLBACK/BOUNDED-FAIL。入口ガードは契約 bats で守る(T151→影丸 residual へ統合)。
+3. **STAGE1 誤終端は修正者本人にも発火する(T152)。** 修正を積んだ task が RC 中なら、下知に『最初の commit=終端条件修正+bats を shared main へ先行、統合は 2 手目』と順序を書く。20:00 影丸 residual が report completed→idle→respawn で成果文脈消失(2 例目)、家老 RC 再発行 1 分、02a115e28 先行で 20:15 以降 0 行。
+4. **『進捗は？』で停滞に気づくな、loop で気づけ。** T149 は 19:13→20:32 の 1h18m 停滞=走行 3 件の突合に回り将軍自身が持つ unit(軍師への次依頼)を出さなかった(洗脳#5)。放置総点検の型=startup gate 再実行+map open 行の最終時刻+PD pending の作成日(6 件 51 日)+queue/reports の mtime+7d(1,862 本)+task status+bulletin action_required+git dirty の由来。母集団は手書き表でなく gate_metrics から機械抽出(54 件)。
+5. **忍者の bats を本番 root で走らせると本番 queue が消える(T157)。** 半蔵 ci_fix が `REPO_ROOT="$PWD"` で bats を走らせ、20:41 fixture report(cmd_bounded_done_check)が本番 queue/reports に現れ 20:43 影丸の task YAML が消失(便欠落 3 例目)。cmd_4407 の本番 send-keys(型3弾-3)の bats 版。検証 AC に『fixture root=mktemp、本番 queue/ 書込み 0 を before/after で証明』を書き、run_tests.sh に本番 root での queue/ 書込み拒否を入れる。artifact は経緯 3 段+details、横スクロール 0、before/after は最新列を毎便更新(殿指示 20:36)。
+- origin: `[[殿指示_強くてニューゲーム_20260828_2043]] -> [[T151_入口ガード反転]] -> [[T152_STAGE1誤終端2例目]] -> [[T157_bats本番汚染]] -> [[復帰後の型_第十弾]]`
+
 ## 復帰後の型・第九弾 5則（2026-08-28 16:39-19:20 の殿指摘『整合』『GATE CLEAR は家老の判断』から・将軍自身に適用）
 
 1. **map の行は「終端条件=<本番で見える数値/行>」を先頭に書き、[x]/[~] は現在値との突合で機械的に決めよ。CLEAR は途中成果。** 18:46 殿『T145…T129 が未完了だと artifact ではなっている。現状と原本と artifact は整合』→9 件中 6 件は終端達成済(T137=FALLBACK 0/CTX-RESET、T136=rev-list 0 0)を惰性で [~]、逆に T129 は unit1 CLEAR を完了扱いで median≤60s 未達を見落とし。引継ぎ unit があれば元行を [x] にし引継ぎ先 ID を書く(LS123 統合・INS-184806=render で『終端条件=』無しの [~] を exit 2)。
