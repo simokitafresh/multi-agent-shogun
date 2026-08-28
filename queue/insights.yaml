@@ -6946,7 +6946,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行report templateのoperational_simulation 4枠事前生成とgate_report_formatのLG055必須検査を確認し、cmd_4192既存修正済みと判定。追加実装・decision_candidate不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-160800960-f30d;primary=scripts/deploy_task.sh:L2212-L2223;primary=scripts/gates/gate_report_format_main.py:L1700-L1722;primary=git:72fc07d15,70366da81;primary=docs/semantic-index/index.md:L6600-L6602;primary=context/cmd-chronicle.md:L62;decision_candidate=none"
+  resolved_at: "2026-08-28T19:49:20+09:00"
 - id: INS-20260828-160855577-bdec
   ts: "2026-08-28T16:08:55+09:00"
   insight: "LG055(integration cmd requires command/expected/actual/result)が本日 13 回発火、実体は影丸 T129 22 行/疾風 (d) 18 行=同一 report の precheck 往復。修正 1 unit: 報告テンプレ(report_path)の integration 欄へ command/expected/actual/result の記入例を埋め、gate_report_format --precheck の FAIL 文に該当行番号と例を出す。効果計測=LG055 発火/report を 13→≤2。origin: [[T99_precheck自動化]] -> [[LG055_precheck往復]] -> [[報告テンプレ記入例]]"
