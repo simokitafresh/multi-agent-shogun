@@ -1,2 +1,3 @@
-# session_alerts — generated: 2026-08-28T19:36:22+0900
-[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな (19:34 capture 実施: 影丸 waiting 1h窓・才蔵 bats 実行中・飛猿 working)
+# session_alerts — generated: 2026-08-28T21:25:49+0900
+[DONE] 走行中cmd実測突合: busy 4名 — 21:34 全pane capture 済(上記)
+[DONE] 本番 queue 汚染: 12行=20:43-20:50 影丸消失の既知事象(20:51復元済、2h窓で表示継続)。終端③ run_tests拒否は msg_213015 で家老へ下知済

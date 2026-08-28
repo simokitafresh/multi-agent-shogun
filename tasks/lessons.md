@@ -16129,3 +16129,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 固定hashを実repoのorigin/mainへ照合する回帰fixtureは、後続mergeで前提が変わりCI再現性を失う。fixture内にlocal mainとorigin mainの非祖先同値refsを生成し、状態行列を自己完結させる。
+
+### L1667: producer接続とFP観測は同一contractで検証する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+- **記録者**: kotaro
+- **tags**: [infra,cmd-quality,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_save.sh,scripts/deploy_task.sh,scripts/detector_fp_rate.sh,scripts/gates/gate_revert_contract.sh,scripts/gates/gate_rule_doc_sync.sh]
+- **origin**: [[cmd_karo_hotfix_pending_decision_infra_bundle_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 実装存在だけではPD解消を証明できず、producerからconsumer/ledgerまで接続した後にpositive/negative fixtureと実データ観測を同じunitで再計測する必要がある。origin: [[PD-104]] -> [[未接続5件]] -> [[producer_to_consumer_contract]]
