@@ -869,6 +869,20 @@ ninja_monitor_business_owner_is_current() {
         "${NINJA_MONITOR_GENERATION:-}" "$$"
 }
 
+# Detached workers inherit the parent monitor's functions but run in
+# library-mode, where the normal business-owner bypass is intentional for
+# fixtures.  Production workers opt into this explicit generation fence so a
+# hot-reload successor makes the old worker self-fence before any mutation.
+ninja_monitor_worker_owner_is_current() {
+    [ "${NINJA_MONITOR_WORKER_OWNER_GUARD:-0}" = "1" ] || return 0
+    [ -n "${NINJA_MONITOR_OWNER_PID:-}" ] || return 1
+    [ -n "${NINJA_MONITOR_OWNER_FILE:-}" ] || return 1
+    _ninja_monitor_owner_record_matches \
+        "$NINJA_MONITOR_OWNER_FILE" \
+        "${NINJA_MONITOR_GENERATION:-}" \
+        "$NINJA_MONITOR_OWNER_PID"
+}
+
 _ninja_monitor_refresh_owner_lease() {
     local owner_file="$1"
     local pid_file="$2"
@@ -4375,6 +4389,10 @@ auto_void_if_parent_cmd_completed() {
     local trigger="${3:-AUTO-VOID}"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
 
+    if ! ninja_monitor_worker_owner_is_current; then
+        log "AUTO-VOID-WORKER-FENCE: $name generation=${NINJA_MONITOR_GENERATION:-missing} side_effects=0"
+        return 1
+    fi
     [ -f "$task_file" ] || return 1
 
     local task_status parent_cmd task_id completed_report completed_base
@@ -4412,6 +4430,10 @@ auto_void_if_parent_cmd_completed() {
         [ "$current_parent_cmd" = "$parent_cmd" ] || { log "AUTO-VOID-SKIP: $name parent_cmd changed to ${current_parent_cmd:-empty}"; exit 1; }
         still_completed_report=$(_ninja_monitor_observe_call "auto_void:locked_report_recheck:$name" find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd" "$task_id" "$completed_report") || { log "AUTO-VOID-SKIP: completed report disappeared for $name parent_cmd=$parent_cmd task_id=$task_id"; exit 1; }
 
+        if ! ninja_monitor_worker_owner_is_current; then
+            log "AUTO-VOID-WORKER-FENCE: $name before_task_idle side_effects=0"
+            exit 1
+        fi
         if ! _ninja_monitor_observe_call "auto_void:task_idle:$name" task_lifecycle_set_idle "$task_file" "auto_void_parent_cmd_completed"; then
             log "ERROR: task_lifecycle_set_idle failed for ${name} auto-void transition"
             exit 1
@@ -4427,12 +4449,24 @@ auto_void_if_parent_cmd_completed() {
     ) 200>"$lock_file" || return 1
 
     if [ -n "$target" ]; then
+        ninja_monitor_worker_owner_is_current || {
+            log "AUTO-VOID-WORKER-FENCE: $name before_tmux_clear side_effects=0"
+            return 1
+        }
         _ninja_monitor_observe_call "auto_void:tmux_clear:$name" tmux set-option -p -t "$target" @current_task "" 2>/dev/null || true
     fi
     if [ -n "$target" ]; then
+        ninja_monitor_worker_owner_is_current || {
+            log "AUTO-VOID-WORKER-FENCE: $name before_send_clear side_effects=0"
+            return 1
+        }
         _ninja_monitor_observe_call "auto_void:send_clear:$name" safe_send_clear "$target" "$name" "AUTO-VOID(${trigger})" || log "AUTO-VOID-CLEAR-FAILED: $name parent_cmd=$parent_cmd"
     fi
 
+    ninja_monitor_worker_owner_is_current || {
+        log "AUTO-VOID-WORKER-FENCE: $name before_notify side_effects=0"
+        return 1
+    }
     _ninja_monitor_observe_call "auto_void:notify_karo:$name" send_inbox_message karo "【AUTO-VOID】${name}の後発task ${task_id:-unknown} をvoid。parent_cmd=${parent_cmd} は ${completed_base} で完了済み。taskをidle化し/clear送信。" auto_void
     log "AUTO-VOID: $name task=${task_id:-unknown} parent_cmd=$parent_cmd completed_report=$completed_base"
     return 0
@@ -12011,6 +12045,10 @@ _ninja_monitor_run_bounded_auto_void() {
             env NINJA_MONITOR_LIB_ONLY=1 \
                 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
                 NINJA_MONITOR_OBSERVE_TRACE_LOG="${NINJA_MONITOR_OBSERVE_TRACE_LOG:-${STATE_DIR:-/tmp}/ninja_monitor_observe.jsonl}" \
+                NINJA_MONITOR_OWNER_FILE="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}" \
+                NINJA_MONITOR_OWNER_PID="$$" \
+                NINJA_MONITOR_GENERATION="${NINJA_MONITOR_GENERATION:-}" \
+                NINJA_MONITOR_WORKER_OWNER_GUARD=1 \
                 SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" \
                 _NINJA_MONITOR_AUTO_VOID_WORKER=1 \
             bash -c 'source "$1"; auto_void_if_parent_cmd_completed "$2" "$3" "$4"' \

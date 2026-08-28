@@ -5139,6 +5139,50 @@ PY
     [ "$output" = "block_once=1 repeated_guard=10 reopen_on_input_change=1" ]
 }
 
+# test_necessity: an old auto-void worker must self-fence after a successor
+# publishes the owner generation, before task mutation, pane clear, or Karo
+# notification.  The current generation may perform each side effect once.
+@test "stale auto void worker self fences before side effects" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/auto-void-generation"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/state"
+        printf "task:\\n  task_id: new-task\\n  parent_cmd: cmd-parent\\n  status: in_progress\\n" > "$root/queue/tasks/saizo.yaml"
+        printf "worker_id: hayate\\nstatus: completed\\n" > "$root/queue/reports/hayate_report_cmd-parent.yaml"
+        printf "%s current-generation 1\\n" "$BASHPID" > "$root/state/owner"
+        NINJA_MONITOR_OWNER_FILE="$root/state/owner"
+        NINJA_MONITOR_OWNER_PID="$BASHPID"
+        NINJA_MONITOR_LIVENESS_OVERRIDE_PID="$BASHPID"
+        NINJA_MONITOR_WORKER_OWNER_GUARD=1
+        NINJA_MONITOR_GENERATION=current-generation
+        PANE_TARGETS[saizo]=pane-saizo
+        find_completed_parent_cmd_report_for_other_ninja() { printf "%s\\n" "$root/queue/reports/hayate_report_cmd-parent.yaml"; }
+        yaml_field_get() { case "$2" in status) printf "in_progress\\n";; parent_cmd) printf "cmd-parent\\n";; esac; }
+        yaml_field_set() { return 0; }
+        task_lifecycle_set_idle() { printf "%s|task_idle\\n" "$NINJA_MONITOR_GENERATION" >> "$root/effects"; return 0; }
+        safe_send_clear() { printf "%s|send_clear\\n" "$NINJA_MONITOR_GENERATION" >> "$root/effects"; return 0; }
+        send_inbox_message() { printf "%s|notify\\n" "$NINJA_MONITOR_GENERATION" >> "$root/effects"; return 0; }
+        tmux() { return 0; }
+        log() { printf "%s\\n" "$1" >> "$LOG"; }
+
+        (NINJA_MONITOR_GENERATION=old-generation auto_void_if_parent_cmd_completed saizo pane-saizo STAGE1 || true) & old_pid=$!
+        (NINJA_MONITOR_GENERATION=current-generation auto_void_if_parent_cmd_completed saizo pane-saizo STAGE1 || true) & new_pid=$!
+        wait "$old_pid"; wait "$new_pid"
+        test "$(grep -c "^current-generation|task_idle$" "$root/effects")" -eq 1
+        test "$(grep -c "^current-generation|send_clear$" "$root/effects")" -eq 1
+        test "$(grep -c "^current-generation|notify$" "$root/effects")" -eq 1
+        test "$(grep -c "^old-generation|" "$root/effects" || true)" -eq 0
+        grep -q "AUTO-VOID-WORKER-FENCE: saizo generation=old-generation side_effects=0" "$LOG"
+        printf "new_side_effects=3 stale_side_effects=0\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "new_side_effects=3 stale_side_effects=0" ]
+}
+
 # test_necessity: a fresh Codex CTX0 pane is already clean, and the same pane
 # generation must not be cleared again after debounce expiry; changed task or
 # inbox input reopens exactly that generation.
