@@ -7254,7 +7254,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: scripts/run_tests.sh の run_tests_queue_root_guard がfixture実行時に本番queue解決をrc=2で拒否し、隔離rootのみ許可する。契約テスト tests/unit/test_run_tests_queue_root_guard.bats 2/2 PASS、追加コード修正不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-204439475-8246;primary=scripts/run_tests.sh:L136-L178,L1957,L2425;regression=tests/unit/test_run_tests_queue_root_guard.bats:2/2 PASS via bash scripts/run_tests.sh file;history=git:4ed034eb9,3f5745dad;causal=[[INS-20260828-204439475-8246]] -> [[run_tests_queue_root_guard]] -> [[fixture本番queue汚染の再発防止]]"
+  resolved_at: "2026-08-29T00:54:48+09:00"
 - id: INS-20260828-204621818-d19d
   ts: "2026-08-28T20:46:21+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b9b5bvefe task id tool use id toolu 013DoRmgajQYakp71D は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -7496,24 +7499,43 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T00:54:33+09:00"
 - id: INS-20260829-005351159-c7c7
   ts: "2026-08-29T00:53:51+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[long_runtime_exception_人質化]] は既存aliasesに一致なし。類似概念TOP3: dm_fusion_app(DM-Fusionアプリ; alias=Node.js runtime Fusion; score=12.4) / hook_automation_framework(Hook自動化フレームワーク; alias=runtime hook incident ID gate; score=11.8) / semantic_dictionary_design(セマンティック辞書構想; alias=runtime source chainを含む既定値全数確認; score=11.8)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T00:54:33+09:00"
 - id: INS-20260829-005402676-e67f
   ts: "2026-08-29T00:54:02+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[家老ACCEPT再試験]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=session save karo 家老checkpoint; score=3.9) / codd_methodology(CoDD整合性駆動開発; alias=codd update; score=3.8) / creator_brainwashing_defense(創造主の洗脳防御; alias=家老 Terra high; score=3.6)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T00:54:34+09:00"
 - id: INS-20260829-005414324-10ad
   ts: "2026-08-29T00:54:14+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T166_T168]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=DM本番PITR_20260816; score=3.6) / skill_routing(スキルルーティング; alias=status 126; score=3.3) / agent_formation_management(編成管理; alias=status 126; score=3.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T00:54:34+09:00"
+- id: INS-20260829-005533520-2b7f
+  ts: "2026-08-29T00:55:33+09:00"
+  insight: "semantic_index_update新概念候補: discussion:バグは根治したか？環境に強制を埋め込まなければ、バグが再燃する。バグが再発しないように根治せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
