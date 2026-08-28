@@ -3405,6 +3405,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T12:21:28+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T12:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -8246,6 +8247,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T09:03:00+09:00 マップに準じて作業は進めているか教えてほしい。特に理由なく作業が延期されていたり、進捗の把握に実態の誤りがないか一度MECEに検証しよう |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_done_report_review_20260828` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
+| cmd | `cmd_karo_hotfix_respawn_relative_launch_20260828` (`scripts/lib/respawn_recovery.sh`, `tests/unit/test_respawn_recovery.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9482,6 +9484,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T03:34:57.945166+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T03:59:26.940554+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:13:37+09:00 T128 / T98 / T122の進捗は？どこかでつまりが生じていないか確認し、解消せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:28:24.246243+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
