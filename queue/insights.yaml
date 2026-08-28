@@ -7927,3 +7927,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-29T08:43:45+09:00"
+- id: INS-20260829-084828099-380f
+  ts: "2026-08-29T08:48:28+09:00"
+  insight: "Guard14(DB直接接続禁止)が Render API への curl(GET events/deploys、POST deploys)を『connection:untrusted』で BLOCK(08:43-08:45、同一形の env-vars PUT/events GET は 08:39-08:41 に通過)=偽陽性/累計昇格の疑い。backend/.env を source しない形(RENDER_API_KEY は .bashrc 由来)では通過。判定語彙を現物で確認し、api.render.com への HTTPS を DB 接続と区別せよ"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
