@@ -7948,3 +7948,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-084919793-8b22
+  ts: "2026-08-29T08:49:19+09:00"
+  insight: "[[T178 T177 T176 T173 T171 T163について表形式で進捗と内容を説明してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T178 / T177 / T176 / T173 / T171 / T163について表形式で進捗と内容を説明してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
