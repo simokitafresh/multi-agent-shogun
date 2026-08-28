@@ -2188,7 +2188,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象insightと現行契約を照合。deploy_task.sh L7893-L7897はtitle/purpose/commandだけを検出し、recon-dual SKILL L96も同じ契約を要求しているため、独立field単独が未検出という現象は既知仕様と一致。独立fieldも検出対象へ広げる変更は今回のscope外で、別cmd/decision_candidateへ整理する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260822-221345291-7ea0;source=scripts/deploy_task.sh:L7883-L7897;source=skills/recon-dual/SKILL.md:L95-L96;source=context/cmd-chronicle.md:L211;decision_candidate=independent_field_detection_extension"
+  resolved_at: "2026-08-28T11:17:10+09:00"
 - id: INS-20260822-222204165-47ed
   ts: "2026-08-22T22:22:04+09:00"
   insight: "recon契約注入の記載位置(根因確定版・INS-20260822-221345291-7ea0を上書き): inject_independent_recon_contractの検出はfield_get第1行のみ、かつresolve_cmdはtitleをtaskへ投影しない。∴確実な唯一の位置=purpose文字列の先頭に『independent recon 2系統・相互参照禁止 — 』を置く(cmd_4366で3往復実証2026-08-22)。加えてdm-signal projectのcmdのAC参照pathは忍者worktree(DM-signal固定base)から見えるDM-signal repo内pathのみ有効、multi-agent-shogun側docs/researchは不可視。候補対策: cmd_skeleton.shにrecon雛形(purpose先頭marker入り)を追加+cmd_saveでproject≠infraのAC内multi-agent-shogunローカルpath参照をWARN"
