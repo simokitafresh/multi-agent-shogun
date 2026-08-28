@@ -7391,3 +7391,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260828-224249596-8d75
+  ts: "2026-08-28T22:42:49+09:00"
+  insight: "T157 残穴: 21:57:52 に本番 queue/reports へ fixture 由来 0byte lock(hayate_report_cmd_fixture_related_lessons*.yaml.report-unit.lock)が再出現(root_guard a2bd411ea 22:09 より前の bats 実行)。report-unit.lock の writer が REPO_ROOT ではなく本番 queue を解決している経路あり=root_guard の本番 proof で lock ファイルも 0 を含めること(次 bats 実行後に ls queue/reports | grep fixture_ 0)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
