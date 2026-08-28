@@ -3421,6 +3421,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:40:04+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:39:51+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T17:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -8279,6 +8280,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:36:58+09:00 session_save_20260828_1636 復帰点(将軍 /clear 復帰 第6便、08-28 14:30-16:36)。主軸=殿下問 15:13『auto clear が遅く CTX 残置忍者に配備される』→『穴はないか、実際 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:38:05+09:00 session_save_20260828_1636_karo: 走行=疾風(d) respawn resolver/Codex config SSOT、影丸T129 cycle median<=60 RC、CI RED run331513 |
 | cmd | `cmd_karo_hotfix_respawn_resolver_path_20260828` (`scripts/lib/respawn_recovery.sh`, `tests/unit/test_respawn_recovery.bats`) |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -10070,6 +10073,7 @@ codd:
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -10874,6 +10878,7 @@ codd:
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -11169,6 +11174,7 @@ codd:
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[infrastructure_ops]] |
 | lesson | `L1664` DEBUG計測器は既存trapへ一行counterをinlineする |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -14999,6 +15005,7 @@ codd:
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_t122_memory_self_reinforce_20260828` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -16584,6 +16591,7 @@ codd:
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -16790,6 +16798,7 @@ codd:
 | causal | `cmd_karo_hotfix_t110_no_cmd_branch_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_cycle_latency_20260828` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
