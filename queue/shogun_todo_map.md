@@ -1,8 +1,9 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 13:00 更新(T126 AC3 ToBe 0・T127 小太郎 CLEAR+hotfix 下知)(殿指示14:34: 進捗確認・つまり解消)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 13:12 更新(T128 疾風 ACK-STALL・T127 hotfix 影丸 in_progress)(殿指示14:34: 進捗確認・つまり解消)
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
+- [~] T128(13:12 疾風 ACK-STALL 30 分(12:40 acknowledged・report 空・pane は旧 CI 文脈『task_id 不一致』で入力待ち、CTX 87%)=T114 型再発+旧文脈混入。家老へ順序付き 1 通 msg_1312xx(task_id 明示再送→10 分で未着手なら idle+respawn)。疾風が queue/insights.yaml を占有し影丸 reflux も SKIP。★ACK→着手の空白 0)
 - [x] T127(12:58 小太郎 cmd_reflux_insight_202608281221_kotaro GATE CLEAR 12:58:49・task idle(下知 msg_125651 12:56→2 分)。壁=report_received が karo inbox 0 件+task done は repair_terminal_report_outboxes 対象外→自動 review 不発、monitor cycle が REFLUX-AUTO-DEPLOY 5m32s で塞がり REPORT-FORMAT-PASS 18 分遅延。hotfix 下知 msg_130022(done∧marker 無しも auto_request_report_review)。★報告→GATE レイテンシ=cycle 長で上限、cycle 空白 0 へ)
 - [x] T126(13:00 cmd_4409 AC3 ToBe 再検証(型6弾-3): AC3 binary_check を grep -r で再計測=16 行(skills 4 本)+2 行(generated/claude-karo.md)残存→c8b1ed2de/566471a0c で 0、origin 到達 rev-list 0 0。rg は 0 を返した=計測器差(INS 登録)。★クローン可搬性=OSS 化の前提)
 - [x] T89(21:12 GATE CLEAR(gate_metrics 21:10:40)。実装 f6348f9fa(relocate.sh 117行+cutover 呼出+bats)は origin/main 到達(report hash 5efc1f0cb は lane 書換=同名 commit で確認)。★local HEAD には未到達(rev-list 3 23)=cutover は /mnt/c の HEAD から走るため家老 converge が必須。疾風 idle; 21:07 疾風 report PASS(5efc1f0cb、13m53s)・task done→軍師 review→家老 GATE 待ち。CLEAR 後に家老 converge/push(rev-list 0 22)→--dry-run PASS→殿の1行; 20:48 ★cutover script 欠陥を将軍が現物確認: 最終 rsync -a OLD/ NEW/ が .git ごと同期し、/home clone にしか無いパス置換 commit 5f6fa7569(43ファイル)を dangling 化+旧内容へ巻き戻す→切替後も hook が /mnt/c を指す。家老へ relocate hotfix 1通 msg_204816(rsync 直後に冪等 relocate+rg 0+bats)。CLEAR 前に cutover を打たない。runbook §3-2/gist 更新済) cutover 欠陥の是正 ★切替後の再手戻り 0
