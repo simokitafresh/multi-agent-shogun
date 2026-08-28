@@ -7125,7 +7125,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既知修正済み: HEAD祖先の825ceeaa7がreport completed単独終端を禁止しGATE CLEARまたはLGTM+ACCEPT両揃いを要求、専用回帰テスト135/135 PASSで検証済み"
+  action_artifact: "scripts/ninja_monitor.sh@825ceeaa7;tests/unit/test_ninja_monitor_stall.bats:completed-report-review-boundary;logs/test_receipts/run_tests_20260828T134851_2011841.json"
+  resolved_at: "2026-08-28T23:01:57+09:00"
 - id: INS-20260828-184523629-1534
   ts: "2026-08-28T18:45:23+09:00"
   insight: "semantic_index_update新概念候補: discussion:T129やT137はまだ未完了なのか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -7404,14 +7407,20 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T23:02:22+09:00"
 - id: INS-20260828-225835905-d631
   ts: "2026-08-28T22:58:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bj0m6l6w1 task id tool use id toolu 01McLVhzE6U9rAX1j6 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T23:02:22+09:00"
 - id: INS-20260828-225943532-973d
   ts: "2026-08-28T22:59:43+09:00"
   insight: "[[artifactがスマホで見ると文字が縦並びで読めないね]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactがスマホで見ると文字が縦並びで読めないね"
