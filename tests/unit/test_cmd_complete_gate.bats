@@ -374,7 +374,7 @@ commands:
 EOF
     cat > "$TEST_PROJECT/logs/cmd_design_quality.yaml" <<EOF
 - cmd_id: "$TEST_CMD_ID"
-  timestamp: "2026-07-08T09:00:00Z"
+  timestamp: "2026-07-08T00:00:00Z"
   source: cmd_save_warn
 EOF
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -645,6 +645,110 @@ EOF
     [[ "$output" == *"optimization_target=wait_sec_only llm_think_reduction=BLOCK"* ]]
     [[ "$output" == *"segment_total=100"* ]]
     [[ "$output" == *"segment_status=PASS"* ]]
+}
+
+# test_necessity: UTC/Z/offset-aware lifecycle events must normalize to the
+# established JST wall-clock contract before interval arithmetic.
+# regression_justification: dropping timezone metadata turned a real 482-second
+# report-to-review interval into a false nine-hour gap and polluted finalize telemetry.
+@test "build_clear_throughput_metric normalizes UTC and offset timestamps to JST" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint"
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    delegated_at: '2026-08-27T23:59:00Z'
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  issued_at: '2026-08-27T23:59:00Z'
+  deployed_at: '2026-08-28T00:00:00+00:00'
+  acknowledged_at: '2026-08-28T09:00:30+09:00'
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+timestamp: '2026-08-27T15:00:00Z'
+completed_at: '2026-08-28T00:00:00Z'
+EOF
+    cat > "$TEST_PROJECT/queue/inbox/gunshi.yaml" <<EOF
+messages:
+  - type: report_review
+    parent_cmd: $TEST_CMD_ID
+    timestamp: '2026-08-28T09:08:02+09:00'
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint/gunshi.yaml" <<'EOF'
+timestamp: '2026-08-28T00:08:32Z'
+result: LGTM
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint/karo.yaml" <<'EOF'
+timestamp: '2026-08-28T09:09:02+09:00'
+result: ACCEPT
+EOF
+
+    run build_clear_throughput_metric '2026-08-28T00:09:32Z'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fin_a=482"* ]]
+    [[ "$output" == *"finalize_sec=572 e2e_sec=632"* ]]
+    [[ "$output" == *"segment_total=572"* ]]
+    [[ "$output" == *"segment_status=PASS"* ]]
+}
+
+# test_necessity: finalize duration must remain within end-to-end duration so
+# aggregate telemetry cannot publish an impossible lifecycle interval.
+# regression_justification: finalize_sec could exceed e2e_sec without a
+# segment-invalid marker, allowing inconsistent timing data through CLEAR.
+@test "build_clear_throughput_metric blocks finalize longer than e2e" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint"
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    delegated_at: '2026-07-08T09:01:00'
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  issued_at: '2026-07-08T09:01:00'
+  deployed_at: '2026-07-08T09:01:00'
+  acknowledged_at: '2026-07-08T09:01:05'
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+completed_at: '2026-07-08T09:00:00'
+EOF
+    cat > "$TEST_PROJECT/queue/inbox/gunshi.yaml" <<EOF
+messages:
+  - type: report_review
+    parent_cmd: $TEST_CMD_ID
+    timestamp: '2026-07-08T09:00:10'
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint/gunshi.yaml" <<'EOF'
+timestamp: '2026-07-08T09:00:20'
+result: LGTM
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_approvals/reports/fingerprint/karo.yaml" <<'EOF'
+timestamp: '2026-07-08T09:00:30'
+result: ACCEPT
+EOF
+
+    run build_clear_throughput_metric '2026-07-08T09:02:00'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"finalize_sec=120 e2e_sec=60"* ]]
+    [[ "$output" == *"segment_invalid=finalize_exceeds_e2e"* ]]
+    [[ "$output" == *"segment_status=BLOCK"* ]]
 }
 
 # test_necessity: malformed and reversed lifecycle events must be visible and
