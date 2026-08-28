@@ -13234,8 +13234,12 @@ while true; do
         eval "exec ${_retro_lock_fd}>&-"
     done
 
-    # terminal publish crash-window repair; bounded to one current report per ninja
-    _ninja_monitor_phase_call lifecycle repair_terminal_report_outboxes repair_terminal_report_outboxes
+    # terminal publish crash-window repair; bounded to one current report per ninja.
+    # The reconciliation scans every ninja's task/report and may cross the 9p
+    # boundary, so keep it off the monitor cycle just like the other mechanical
+    # lifecycle lanes.
+    _ninja_monitor_phase_call lifecycle repair_terminal_report_outboxes \
+        _ninja_monitor_run_lifecycle_background repair_terminal_report_outboxes
 
     # ═══ 停滞検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
