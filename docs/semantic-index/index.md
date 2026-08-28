@@ -3412,6 +3412,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T13:39:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:09:50+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:39:52+09:00 30分loop(殿指示14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/main...HE |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -8916,6 +8917,7 @@ codd:
 | causal | `cmd_karo_hotfix_finalize_segments_20260828` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
+| causal | `cmd_karo_hotfix_finalize_timezone_20260828` files_modified: [[cdp_browser_capability]] |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -9846,6 +9848,7 @@ codd:
 | causal | `cmd_karo_hotfix_t100_runtime_lane_shared_main_only_20260828` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_finalize_segments_20260828` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
+| causal | `cmd_karo_hotfix_finalize_timezone_20260828` files_modified: [[cmd_quality_logging]] |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -10902,7 +10905,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, 家老が止まっていないか, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう, snapshot古い, dashboard古い表示残り, snapshot更新遅延, snapshot監視詰まり, karo_snapshot stale, snapshot fast path, atomic snapshot publish, early snapshot refresh, write_karo_snapshot atomic, デーモンは万全か？スクリプトで全デーモンを再起動させよ, ほかにインフラバグはないか, デーモンはすべて順調か？スクリプトで再起動せよ, CI redがないか確認して, スクリプトでデーモンをすべて再起動せよ, agentのwindowが壊れているな, 謎のpaneが作成され配置とサイズがバラバラだ, 原因と今後起こさないような対策をしよう, agentのwindowが壊れているな。謎のpaneが作成され配置とサイズがバラバラだ。原因と今後起こさないような対策をしよう, 無主ペイン, 孤児pane, orphan pane, auto-update pane spawn, CI greenを待つ必要が無いルールもあったはずだ, 止まっていないか？, デーモンをスクリプトですべて再起動せよ, デーモンの調査ファイルを作成してgistで共有してほしい, gist_2232467c, デーモン棚卸し, daemon棚卸し, 殿指示20260715_1724_gist実装開始, gist_2232467c_P1a-2_共通maintenance_lock, gist_2232467c_P2_respawn検証, gist_2232467c_P3_計測弾, gist_2232467c_P4_管理層整理, maintenance lock, 共通maintenance lock, respawn成否検証, daemon計測弾, entry point一本化, ci greenを待たずに概算でe2eをやらせよう, CI greenは以前は家老はもっと素早く一度で対応出来ていた, CI greenになったか？, CI green待ちが長いな, デーモンは順調か？, 自動ackは永続化成功をcommit pointにする, 再試行対象をlock失敗へ限定する二値checkを追加すべき, WSL2_ext4移設, 非同期子プロセスは親のlock FDを明示的に閉じる, 三層自動昇格はデーモンに委任, archive mainをatomic renameする, inbox_confirmation_contract, 台帳に乗っていないスクリプトやデーモン, インフラバグか？デーモンの問題か？, 第八弾重量テストの高速化 daemon maintenance lockを1件担当し, デーモンをスクリプトで再起動せよ, git common dir flockで直列化し, CI RED残存修正 — test daemon maintenance lock bats の restart def, デーモンが止まってないか？スクリプトで再起動せよ, queue karo snapshot txtの生成停止根因を修正し, inbox_watcher_nudge文_-fガード素通り |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, 家老が止まっていないか, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう, snapshot古い, dashboard古い表示残り, snapshot更新遅延, snapshot監視詰まり, karo_snapshot stale, snapshot fast path, atomic snapshot publish, early snapshot refresh, write_karo_snapshot atomic, デーモンは万全か？スクリプトで全デーモンを再起動させよ, ほかにインフラバグはないか, デーモンはすべて順調か？スクリプトで再起動せよ, CI redがないか確認して, スクリプトでデーモンをすべて再起動せよ, agentのwindowが壊れているな, 謎のpaneが作成され配置とサイズがバラバラだ, 原因と今後起こさないような対策をしよう, agentのwindowが壊れているな。謎のpaneが作成され配置とサイズがバラバラだ。原因と今後起こさないような対策をしよう, 無主ペイン, 孤児pane, orphan pane, auto-update pane spawn, CI greenを待つ必要が無いルールもあったはずだ, 止まっていないか？, デーモンをスクリプトですべて再起動せよ, デーモンの調査ファイルを作成してgistで共有してほしい, gist_2232467c, デーモン棚卸し, daemon棚卸し, 殿指示20260715_1724_gist実装開始, gist_2232467c_P1a-2_共通maintenance_lock, gist_2232467c_P2_respawn検証, gist_2232467c_P3_計測弾, gist_2232467c_P4_管理層整理, maintenance lock, 共通maintenance lock, respawn成否検証, daemon計測弾, entry point一本化, ci greenを待たずに概算でe2eをやらせよう, CI greenは以前は家老はもっと素早く一度で対応出来ていた, CI greenになったか？, CI green待ちが長いな, デーモンは順調か？, 自動ackは永続化成功をcommit pointにする, 再試行対象をlock失敗へ限定する二値checkを追加すべき, WSL2_ext4移設, 非同期子プロセスは親のlock FDを明示的に閉じる, 三層自動昇格はデーモンに委任, archive mainをatomic renameする, inbox_confirmation_contract, 台帳に乗っていないスクリプトやデーモン, インフラバグか？デーモンの問題か？, 第八弾重量テストの高速化 daemon maintenance lockを1件担当し, デーモンをスクリプトで再起動せよ, git common dir flockで直列化し, CI RED残存修正 — test daemon maintenance lock bats の restart def, デーモンが止まってないか？スクリプトで再起動せよ, queue karo snapshot txtの生成停止根因を修正し, inbox_watcher_nudge文_-fガード素通り, 完了時に単一bufferをflock appendすると |
 | skills | shogun-cli-switch |
 | related_concepts | daemon_supervision, agent_formation_management, yaml_safe_write, verify_dont_imagine, shogun_android_app, infra_design_intent, infra_throughput_outcome_design, active_task_clear_fail_closed, karo_strong_new_game_20260818_0650 |
 
@@ -11143,12 +11146,14 @@ codd:
 | causal | `cmd_karo_ci_fix_33113951908_gunshi_map_fixture_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_done_report_review_20260828` files_modified: [[infrastructure_ops]] |
+| lesson | `L1664` DEBUG計測器は既存trapへ一行counterをinlineする |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
 | causal_chain | `[[cmd_karo_hotfix_heavy_admission_lock_release_20260729]]` (L1443) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801]]` (L1504) |
 | causal_chain | `[[cmd_karo_hotfix_safe_shared_convergence_202608191137]]` (L1615) |
+| causal_chain | `[[cmd_karo_hotfix_function_coverage_20260828]]` (L1664) |
 
 ## context_freshness_retry_budget — context鮮度git再試行予算
 
@@ -14822,6 +14827,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T01:18:51.265864+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T04:23:02.114687+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:34:08.775146+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T05:48:21.358187+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
