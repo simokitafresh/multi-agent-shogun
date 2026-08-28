@@ -5125,6 +5125,35 @@ PY
     [ "$output" = "elapsed_lt_500ms=1 duplicate=1 timeout=1" ]
 }
 
+# test_necessity: snapshot refresh is mechanical and can hold the lifecycle
+# phase; it must be single-flight, bounded, and decoupled from the cycle wall.
+@test "snapshot refresh production path is backgrounded and bounded" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/snapshot-bounded"
+        mkdir -p "$root/state"
+        printf "ninja_monitor_worker_owner_is_current() { return 0; }\\nrefresh_karo_snapshot_fast_path() { sleep 5; }\\n" > "$root/worker.sh"
+        STATE_DIR="$root/state"; LOG="$root/monitor.log"; _NM_SCRIPT_PATH="$root/worker.sh"
+        NINJA_MONITOR_SNAPSHOT_TIMEOUT=1
+        started=$EPOCHREALTIME
+        _ninja_monitor_run_bounded_snapshot
+        _ninja_monitor_run_bounded_snapshot
+        elapsed=$(awk -v a="$started" -v b="$EPOCHREALTIME" "BEGIN { printf \"%.3f\", b-a }")
+        awk -v elapsed="$elapsed" "BEGIN { exit !(elapsed < 0.5) }"
+        sleep 3
+        grep -q "SNAPSHOT-REFRESH-BACKGROUND-START:" "$LOG"
+        grep -q "SNAPSHOT-REFRESH-BACKGROUND-SKIP: worker_running" "$LOG"
+        grep -q "SNAPSHOT-REFRESH-TIMEOUT: timeout=1s" "$LOG"
+        printf "elapsed_lt_500ms=1 duplicate=1 timeout=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "elapsed_lt_500ms=1 duplicate=1 timeout=1" ]
+}
+
 # test_necessity: a production auto-void report scan can block on the 9p
 # boundary.  It must run under a single-flight bounded worker so the observe
 # cycle continues while preserving the existing transaction for completion.
@@ -5434,7 +5463,7 @@ from pathlib import Path
 
 text = Path(sys.argv[1]).read_text()
 main = text[text.index("while true; do"):]
-fast = main.index("refresh_karo_snapshot_fast_path")
+fast = main.index("early_snapshot _ninja_monitor_run_bounded_snapshot")
 slow = main.index("check_gate_improvement")
 assert fast < slow, (fast, slow)
 PY
