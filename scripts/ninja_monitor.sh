@@ -12748,16 +12748,27 @@ _ninja_monitor_run_bounded_done_check() {
     fi
 
     [ -n "${_NM_SCRIPT_PATH:-}" ] || return 1
+    # rc=1 is the check_and_update_done_task no-op contract (no report /
+    # review pending / not applicable).  The nested check logs its own
+    # STAGE1-*-SKIP reason, so rc=1 must not be counted as a failure:
+    # 2026-08-29 it produced 630 AUTO-DONE-BOUNDED-FAIL lines/day with zero
+    # information (LS096 granularity bug).  rc>=2 is a real failure and keeps
+    # its stderr tail instead of discarding it (型5弾-2).
+    local stderr_file
+    stderr_file="$(mktemp "${STATE_DIR:-/tmp}/auto_done_stderr.XXXXXX" 2>/dev/null || mktemp)"
     timeout --signal=TERM --kill-after=2 "$timeout_sec" \
         env NINJA_MONITOR_BOUNDED_DONE_CHECK=1 \
         bash "$_NM_SCRIPT_PATH" --check-and-update-done-task "$name" \
-        </dev/null >/dev/null 2>&1
+        </dev/null >/dev/null 2>"$stderr_file"
     local rc=$?
     if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
         log "AUTO-DONE-TIMEOUT: $name timeout=${timeout_sec}s rc=$rc retry=next-cycle"
-    elif [ "$rc" -ne 0 ]; then
-        log "AUTO-DONE-BOUNDED-FAIL: $name rc=$rc retry=next-cycle"
+    elif [ "$rc" -ge 2 ]; then
+        local stderr_tail
+        stderr_tail="$(tail -n 1 "$stderr_file" 2>/dev/null | tr -d '\r' | cut -c1-200)"
+        log "AUTO-DONE-BOUNDED-FAIL: $name rc=$rc stderr=${stderr_tail:-<empty>} retry=next-cycle"
     fi
+    rm -f "$stderr_file"
     return "$rc"
 }
 
@@ -12807,7 +12818,9 @@ _ninja_monitor_run_bounded_auto_void() {
         local rc=$?
         if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
             log "AUTO-VOID-TIMEOUT: $name timeout=${timeout_sec}s rc=$rc retry=next-cycle"
-        elif [ "$rc" -ne 0 ]; then
+        elif [ "$rc" -ge 2 ]; then
+            # rc=1 = auto_void_if_parent_cmd_completed no-op contract (parent
+            # cmd not completed / no report).  Only rc>=2 is a failure.
             log "AUTO-VOID-BOUNDED-FAIL: $name rc=$rc retry=next-cycle"
         fi
     ) &

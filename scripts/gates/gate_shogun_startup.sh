@@ -2053,12 +2053,17 @@ echo "■ monitor lifecycle 失敗行(直近60分)"
 _mon_log="$SCRIPT_DIR/logs/ninja_monitor.log"
 if [ -s "$_mon_log" ]; then
     _mon_since=$(date -d '-60 min' '+%Y-%m-%d %H:%M' 2>/dev/null || date '+%Y-%m-%d %H:%M')
+    # 2026-08-29 07:03 将軍 D0: (a)set -e 下で失敗行 0 件のとき grep の exit 1 が代入を落とし gate 自体が
+    # 途中終了(startup_gate_exit=1)→以降の Gate 10.09(Codex 上限)が一度も走らなかった。`|| true` で健全時に落ちない。
+    # (b)固定語彙(rc=64/HEARTBEAT/STAGE1)は 05:09 以降の新語 AUTO-DONE-BOUNDED-FAIL 630 行を数えなかった
+    # (検知器の出力は検知器の盲点を継承する LS-A09(37))。`-FAIL:`/`-TIMEOUT:`/rc>=2 の正規表現に広げ、
+    # no-op 契約の rc=1 行(BOUNDED-FAIL rc=1、ninja_monitor 側でも同刻に抑止済)だけ除外する。
     _mon_fail=$(awk -v t="[$_mon_since" 'substr($0,1,17) >= t' "$_mon_log" 2>/dev/null \
-        | grep -E 'rc=64|HEARTBEAT-FAIL|LIFECYCLE-BACKGROUND-FAIL|STAGE1-[A-Z-]*(FAIL|TIMEOUT)|CODEX-RESPAWN-FALLBACK|RESPAWN-FALLBACK' 2>/dev/null \
-        | grep -vE 'REPORT-PENDING-BLOCK|REVIEW-PENDING-SKIP' 2>/dev/null)
+        | grep -E 'rc=64|rc=([2-9]|[1-9][0-9]+)( |$)|[A-Z0-9-]+-(FAIL|TIMEOUT):|STAGE1-[A-Z-]*(FAIL|TIMEOUT)|CODEX-RESPAWN-FALLBACK|RESPAWN-FALLBACK' 2>/dev/null \
+        | grep -vE 'REPORT-PENDING-BLOCK|REVIEW-PENDING-SKIP|BOUNDED-FAIL: [a-z]+ rc=1( |$)' 2>/dev/null || true)
     _mon_fail_n=$(printf '%s\n' "$_mon_fail" | grep -c . 2>/dev/null || echo 0)
     if [ "${_mon_fail_n:-0}" -gt 0 ]; then
-        echo "  WARN: lifecycle 失敗行 ${_mon_fail_n}行/60分(集計: awk ts>=-60min logs/ninja_monitor.log | grep -E 'rc=64|HEARTBEAT-FAIL|LIFECYCLE-BACKGROUND-FAIL|STAGE1-*FAIL|RESPAWN-FALLBACK' -v 'REPORT-PENDING-BLOCK'。1行=daemon 機構の失敗ログ1行、忍者側の pending は除外 INS-054212)"
+        echo "  WARN: lifecycle 失敗行 ${_mon_fail_n}行/60分(集計: awk ts>=-60min logs/ninja_monitor.log | grep -E 'rc=64|rc>=2|*-FAIL:|*-TIMEOUT:|RESPAWN-FALLBACK' -v 'REPORT-PENDING-BLOCK|REVIEW-PENDING-SKIP|BOUNDED-FAIL rc=1'。1行=daemon 機構の失敗ログ1行、忍者側の pending と no-op 契約 rc=1 は除外 INS-054212)"
         printf '%s\n' "$_mon_fail" | awk '{k=$0; sub(/^\[[^]]*\] */,"",k); sub(/ .*/,"",k); c[k]++} END{for(k in c) printf "    %s ×%d\n", k, c[k]}'
         printf '%s\n' "$_mon_fail" | tail -2 | cut -c1-160 | sed 's/^/    /'
         echo "  → 走行中 hotfix の対象なら task/掲示板で壁の名前を確認(型十弾-1)。誰も持っていなければ将軍が壁を名指しして 1 通"

@@ -5796,6 +5796,35 @@ printf "bounded_done_check_rc=%s task_unchanged=1 shared_queue_unchanged=1\n" "$
     [ "$output" = "elapsed_lt_500ms=1 timeout=1 singleflight=1" ]
 }
 
+# test_necessity: the bounded done-check worker must treat rc=1 as the no-op
+# contract (no report / review pending) and never log it as a failure; rc>=2
+# must be logged with the worker's stderr tail.  Invariant: BOUNDED-FAIL line
+# count stays 0 across no-op cycles (2026-08-29: 630 rc=1 lines/day with zero
+# information hid real failures and discarded stderr).
+@test "bounded done-check logs failure only for rc>=2 and keeps stderr tail" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/done-check-rc"
+        mkdir -p "$root/state"
+        printf "%s\n" "#!/usr/bin/env bash" "case \"\$2\" in noop) exit 1;; broken) echo boom-reason >&2; exit 2;; esac" > "$root/worker.sh"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"; : > "$LOG"
+        _NM_SCRIPT_PATH="$root/worker.sh"
+        rc_noop=0; _ninja_monitor_run_bounded_done_check noop || rc_noop=$?
+        rc_bad=0; _ninja_monitor_run_bounded_done_check broken || rc_bad=$?
+        fail_lines=$(grep -c "AUTO-DONE-BOUNDED-FAIL" "$LOG" || true)
+        grep -q "AUTO-DONE-BOUNDED-FAIL: broken rc=2 stderr=boom-reason" "$LOG"
+        ! grep -q "AUTO-DONE-BOUNDED-FAIL: noop" "$LOG"
+        [ -z "$(ls "$root/state" 2>/dev/null)" ]
+        printf "rc_noop=%s rc_bad=%s fail_lines=%s stderr_kept=1 tmp_cleaned=1\n" "$rc_noop" "$rc_bad" "$fail_lines"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "rc_noop=1 rc_bad=2 fail_lines=1 stderr_kept=1 tmp_cleaned=1" ]
+}
+
 # test_necessity: CLEAR-LOOP-BLOCK must be monotonic for an unresolved agent
 # generation.  Repeated polls cannot emit count=5+ blocks; a task/inbox
 # generation change is the only reopening event.
