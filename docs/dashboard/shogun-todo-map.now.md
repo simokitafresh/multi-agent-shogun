@@ -1,6 +1,6 @@
 # 現況(将軍 loop 毎に 5 行以内で書き換える。artifact の「現況」節の正本)
-- 04:12 CI GREEN 連続(c638f84a5、575c97929 走行中)。rev-list 13 69=家老 push lane。本日 CLEAR 25(hotfix 14/reflux 8/ci_fix 2/他 1)・PJ 成果 0・finalize 比 33%
-- 殿裁定 00:49 の根治が本番で一周: queue/proofs→monitor『PRODUCTION-PROOF … PASS』04:07(T167 3 配備連続 unaccounted<1000)。忍者の観測待ち 0
-- T167 切除効果: 配備 unaccounted 11218→382/625/468/290ms。次の犯人=prepare_remote_tip_worktree(44-46s 配備で最大)→T171 配備
-- 在庫: 飛猿 reflux 0335(24 分)→GATE(同 1 通)。idle 4。monitor 失敗行 0・karo-retest 0・STYLE BLOCK 0
-- 残課題: PJ 成果 0 が 3 日目(道具の修理のみ)。次の主軸=dm-signal の e2e 1 件
+- 04:42 ★Codex 週次上限で停止: 家老・疾風・半蔵=『try again at Sep 4th 1:26 AM』、影丸・才蔵・飛猿=『1 usage limit reset available』、小太郎 表示なし、軍師(Claude)無影響。家老 inbox 未読 6=便停止、疾風 T171 ACK 不能
+- 将軍は殿の明示指示なしに CLI 切替/reset 消費をしない。推薦=殿の新アカウント device-auth(T80 先例、全 Codex 一括)。代替=/shogun-cli-switch で家老+忍者を Claude へ
+- 停止前の到達: 本日 CLEAR 26(hotfix 14/reflux 9/ci_fix 2/他 1)・PJ 0、CI GREEN(1e43c7f0b)、rev-list 13 71、PRODUCTION-PROOF PASS 1
+- 殿裁定 00:49-01:25 の根治は全段 live(観測窓 BLOCK/家老再試験 BLOCK/型 3 検査/proof は monitor)。本番 proof: STYLE 0・karo-retest 0・rc=64 0
+- 再開後の順序: 家老 inbox 6 件(T171 ack→T173 PJ e2e→軍師 review 2→gate_clear_required)→疾風 T171
