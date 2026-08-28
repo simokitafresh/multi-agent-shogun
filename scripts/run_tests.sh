@@ -20,12 +20,19 @@ set -euo pipefail
 # by regression harnesses.  In that mode $0 belongs to the caller (often
 # `bash`), while BASH_SOURCE[0] remains this script's real path.
 _run_tests_script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_run_tests_supplied_repo_root="${REPO_ROOT:-}"
 if [[ "${BASH_SOURCE[0]:-$0}" == "$0" ]]; then
     # A copied runner is a self-contained fixture. Do not let an enclosing
     # runner's exported REPO_ROOT redirect it to the control repository when
     # cwd/worktree happens to remain there. Source callers retain the
     # explicit override used by function-level harnesses.
-    REPO_ROOT="${REPO_ROOT:-$_run_tests_script_root}"
+    if [[ -n "$_run_tests_supplied_repo_root" ]] \
+        && [[ "$(realpath -m -- "$_run_tests_supplied_repo_root")" != "$(realpath -m -- "$_run_tests_script_root")" ]]; then
+        RUN_TESTS_PRODUCTION_ROOT="${RUN_TESTS_PRODUCTION_ROOT:-$_run_tests_supplied_repo_root}"
+        REPO_ROOT="$_run_tests_script_root"
+    else
+        REPO_ROOT="${REPO_ROOT:-$_run_tests_script_root}"
+    fi
     RUN_TESTS_SUITE_ROOT="$_run_tests_script_root"
 else
     REPO_ROOT="${REPO_ROOT:-$_run_tests_script_root}"
@@ -119,6 +126,55 @@ sweep_stale_embedded_test_tmp() {
     local dir="$RUN_TESTS_SUITE_ROOT/tests/unit"
     [ -d "$dir" ] || return 0
     find "$dir" -maxdepth 1 -type f -name '_tmp_*.bats' -mmin +"$ttl_minutes" -delete 2>/dev/null || true
+}
+
+# A copied runner is commonly launched from a bats fixture while the parent
+# test exports its own REPO_ROOT.  In that shape the fixture's test code can
+# still resolve "$REPO_ROOT/queue" to the control repository and mutate live
+# task/report files.  Resolve the effective and declared production roots
+# independently before the receipt directory or any test process is created.
+run_tests_queue_root_guard() {
+    if [[ "${RUN_TESTS_QUEUE_ROOT_GUARD_CHECKED:-0}" == "1" ]]; then
+        return 0
+    fi
+
+    local script_root repo_root fixture_root production_queue resolved_queue
+    local writable_matching_paths=0 path resolved_path
+    script_root="$(realpath -m -- "$_run_tests_script_root")"
+    repo_root="$(realpath -m -- "$REPO_ROOT")"
+    fixture_root="$(realpath -m -- "${RUN_TESTS_FIXTURE_ROOT:-$_run_tests_script_root}")"
+    production_queue="$(realpath -m -- "${RUN_TESTS_PRODUCTION_QUEUE_ROOT:-${RUN_TESTS_PRODUCTION_ROOT:-$REPO_ROOT}/queue}")"
+    resolved_queue="$(realpath -m -- "${RUN_TESTS_QUEUE_ROOT:-$REPO_ROOT/queue}")"
+
+    # Count the writable paths that resolve exactly to the production queue.
+    # The count is deliberately emitted as primary evidence: a matching root
+    # is dangerous only when a caller can write through it.
+    for path in "$REPO_ROOT/queue" "${RUN_TESTS_QUEUE_ROOT:-}"; do
+        [ -n "$path" ] || continue
+        [ -e "$path" ] || continue
+        [ -w "$path" ] || continue
+        resolved_path="$(realpath -m -- "$path")"
+        if [[ "$resolved_path" == "$production_queue" ]]; then
+            writable_matching_paths=$((writable_matching_paths + 1))
+        fi
+    done
+    printf 'RUN_TESTS_QUEUE_ROOT_PROBE fixture_root=%s resolved_queue_root=%s production_queue_root=%s writable_matching_paths=%s\n' \
+        "$fixture_root" "$resolved_queue" "$production_queue" "$writable_matching_paths"
+
+    # A normal invocation has one root (script == REPO_ROOT) and is allowed to
+    # operate on its own queue.  A copied runner with an externally supplied
+    # REPO_ROOT is fixture execution and must never address that root's queue.
+    local fixture_execution=0
+    if [[ -n "${RUN_TESTS_FIXTURE_ROOT:-}" || "$script_root" != "$repo_root" \
+        || ( -n "${RUN_TESTS_QUEUE_ROOT:-}" \
+            && "$resolved_queue" != "$(realpath -m -- "$fixture_root/queue")" ) ]]; then
+        fixture_execution=1
+    fi
+    if [[ "$fixture_execution" == "1" && "$resolved_queue" == "$production_queue" ]]; then
+        printf 'BLOCK: run_tests fixture queue root resolves to production queue; use an isolated mktemp root\n' >&2
+        return 2
+    fi
+    export RUN_TESTS_QUEUE_ROOT_GUARD_CHECKED=1
 }
 
 # Resolve the files owned by one deployed task.  A shared worktree contains
@@ -1898,6 +1954,8 @@ cleanup_frontend_ext4_fallback() {
 # 衝突し"unknown test name"でスイート全体を破壊する問題を、nested batsを起動しない
 # 経路(関数直接呼出し)で回避するために必要な構造。
 _run_tests_main() {
+    run_tests_queue_root_guard
+
     # cmd_karo_hotfix_heavy_job_admission_202607121348: 全量/unit/affectedモードは
     # host-wide flock semaphore(scripts/heavy_job_admission.sh)経由で自分自身を
     # self-reexecし、同時に1本だけが動くようhost全体で強制する(内部の並列bats実行も
@@ -2364,6 +2422,7 @@ PY
 
 if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
     run_tests_install_cleanup_traps
+    run_tests_queue_root_guard || exit $?
     if [[ "${1:-}" == "receipt" ]]; then
         [ "$#" -eq 2 ] || { echo "Usage: bash scripts/run_tests.sh receipt <run-or-selection-identity>" >&2; exit 2; }
         recover_run_tests_terminal_receipt "$2"
