@@ -16064,3 +16064,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - entrypointから関数をsed抽出するowner testは、unitをlibへ移動すると空fixtureになり得る。抽出対象のmoduleを正本として直接参照し、entrypointの薄いsource接続とは分離して守る。
+
+### L1662: unit分割時はowner testの抽出源もcanonical moduleへ同期する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_t107_r2_pre_push_helper_20260828
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/lib/cmd_complete_gate_ci.sh,tests/unit/test_cmd_complete_gate.bats,tests/unit/test_cmd_complete_gate_ci_readiness.bats]
+- **origin**: [[cmd_karo_hotfix_t107_r2_pre_push_helper_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- entrypointからCI readiness unitをlibへ移管すると、通常sourceは動いてもsed/regexでentrypointだけを抽出するowner testがhelper欠落でsetup failureになる。実装moduleを重複wrapperへ戻さず、owner testの抽出源をentrypoint+正本libへ同期し、pre/postの実行件数を固定する。
