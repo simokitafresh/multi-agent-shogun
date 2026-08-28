@@ -1164,12 +1164,70 @@ _clear_loop_block_marker_file() {
     printf '%s/shogun_clear_block_%s.tsv\n' "$STATE_DIR" "$agent_name"
 }
 
-_clear_loop_input_hash() {
+_clear_loop_task_identity_hash() {
     local path="$1"
     if [ -f "$path" ]; then
-        sha256sum "$path" 2>/dev/null | awk '{print $1}'
+        python3 - "$path" <<'PY' | sha256sum | awk '{print $1}'
+import json
+import sys
+
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    raw = yaml.safe_load(handle) or {}
+task = raw.get("task", raw) if isinstance(raw, dict) else {}
+identity = {
+    key: str(task.get(key) or "").strip()
+    for key in ("task_id", "parent_cmd", "subtask_id")
+}
+print(json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+PY
     else
-        printf 'missing\n'
+        printf 'missing\n' | sha256sum | awk '{print $1}'
+    fi
+}
+
+_clear_loop_relevant_inbox_hash() {
+    local inbox_path="$1"
+    local task_path="$2"
+    local task_id=""
+    if [ -f "$task_path" ]; then
+        task_id=$(yaml_field_get "$task_path" "task_id" "")
+    fi
+    if [ -f "$inbox_path" ] && [ -n "$task_id" ]; then
+        python3 - "$inbox_path" "$task_id" <<'PY' | sha256sum | awk '{print $1}'
+import json
+import sys
+
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    raw = yaml.safe_load(handle) or {}
+messages = raw.get("messages", []) if isinstance(raw, dict) else []
+if not isinstance(messages, list):
+    messages = []
+task_id = sys.argv[2]
+relevant = []
+for message in messages:
+    if not isinstance(message, dict):
+        continue
+    if str(message.get("type") or "").strip() not in {
+        "task_assigned", "task_supplement", "report_revision", "correction"
+    }:
+        continue
+    if str(message.get("task_id") or "").strip() != task_id:
+        continue
+    content = str(message.get("content") or "").strip()
+    if not content:
+        continue
+    relevant.append({
+        key: str(message.get(key) or "").strip()
+        for key in ("id", "task_id", "parent_cmd", "type", "action", "content")
+    })
+print(json.dumps(sorted(relevant, key=lambda item: (item["id"], item["content"])), ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+PY
+    else
+        printf 'missing-or-no-task-id\n' | sha256sum | awk '{print $1}'
     fi
 }
 
@@ -1332,8 +1390,8 @@ record_clear_attempt_or_force_idle() {
     marker_file=$(_clear_loop_block_marker_file "$agent_name")
     inbox_file="$SCRIPT_DIR/queue/inbox/${agent_name}.yaml"
     pane_generation=$(_clear_loop_pane_generation "$agent_name")
-    task_hash=$(_clear_loop_input_hash "$task_file")
-    inbox_hash=$(_clear_loop_input_hash "$inbox_file")
+    task_hash=$(_clear_loop_task_identity_hash "$task_file")
+    inbox_hash=$(_clear_loop_relevant_inbox_hash "$inbox_file" "$task_file")
 
     # A block is terminal for this stable agent/input generation.  Do not let
     # the next poll increment the same counter and emit another block; only a
