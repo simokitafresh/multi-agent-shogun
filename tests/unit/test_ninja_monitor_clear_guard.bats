@@ -1539,6 +1539,7 @@ verdict: PASS
 INNEREOF
 
 log() { echo "$1" >> "$LOG"; }
+review_two_phase_ready() { return 0; }
 
 cadt_result=0
 check_and_update_done_task kagemaru || cadt_result=$?
@@ -2045,16 +2046,20 @@ messages:
   timestamp: "$now"
   type: report_received
 YAML
-safe_send_clear "shogun:2.3" "hayate" "DONE-WITH-REPORT"
+REVIEW_BLOCKED=0
+safe_send_clear "shogun:2.3" "hayate" "DONE-WITH-REPORT" || REVIEW_BLOCKED=$?
 rm -f "$SCRIPT_DIR/queue/tasks/hayate.yaml"
-safe_send_clear "shogun:2.3" "hayate" "EMPTY-TEST"
+EMPTY_BLOCKED=0
+safe_send_clear "shogun:2.3" "hayate" "EMPTY-TEST" || EMPTY_BLOCKED=$?
 
-test "$(grep -c "CODEX-RESPAWN: hayate respawn-pane" "$LOG")" -eq 2
-test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 2
+test "$(grep -c "CODEX-RESPAWN: hayate respawn-pane" "$LOG")" -eq 1
+test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 1
 test "$DONE_BLOCKED" -eq 1
 test "$INVALID_BLOCKED" -eq 1
+test "$REVIEW_BLOCKED" -eq 1
 grep -q "REPORT-MISSING-BLOCK: hayate done but no report" "$LOG"
 grep -q "VERDICT-INVALID-BLOCK: hayate report verdict invalid" "$LOG"
+grep -q "CLEAR-BLOCKED-REVIEW-PENDING: hayate status=done" "$LOG"
 if grep -q "SEND:/new" "$LOG"; then
     cat "$LOG"
     exit 1

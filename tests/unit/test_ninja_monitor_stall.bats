@@ -5366,6 +5366,43 @@ PY
     [ "$output" = "elapsed_lt_500ms=1 duplicate=1 timeout=1" ]
 }
 
+# test_necessity: snapshot publication must be scheduled by an owner-fenced
+# periodic heartbeat, not by completion of the main monitor cycle; a slow
+# worker is single-flight and the interval remains bounded.
+@test "snapshot heartbeat is periodic owner-fenced and single-flight" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/snapshot-heartbeat"
+        mkdir -p "$root/state"
+        STATE_DIR="$root/state"; LOG="$root/monitor.log"
+        NINJA_MONITOR_SNAPSHOT_HEARTBEAT_INTERVAL=1
+        NINJA_MONITOR_SNAPSHOT_TIMEOUT=5
+        NINJA_MONITOR_LIVENESS_OVERRIDE_PID=$$
+        cat > "$root/worker.sh" <<SH
+#!/usr/bin/env bash
+date +%s >> "$root/calls"
+sleep 2
+SH
+        chmod +x "$root/worker.sh"
+        owner="$root/state/owner"
+        printf "%s %s %s\\n" "$$" heartbeat-generation "$EPOCHSECONDS" > "$owner"
+        (sleep 4) & parent_pid=$!
+        _ninja_monitor_snapshot_heartbeat_watch "$root/worker.sh" "$owner" heartbeat-generation "$$" "$parent_pid"
+        wait "$parent_pid"
+        count=$(awk "END { print NR + 0 }" "$root/calls")
+        test "$count" -ge 2
+        grep -q "SNAPSHOT-HEARTBEAT-SKIP: worker_running=1" "$LOG"
+        max_gap=$(awk "NR == 1 { prev=\$1; next } { gap=\$1-prev; if (gap > max) max=gap; prev=\$1 } END { print max + 0 }" "$root/calls")
+        test "$max_gap" -le 5
+        printf "periodic=1 singleflight=1 owner_fenced=1 max_gap_le_5s=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "periodic=1 singleflight=1 owner_fenced=1 max_gap_le_5s=1" ]
+}
+
 # test_necessity: lifecycle mechanical checks must have one worker per lane;
 # the second trigger is suppressed while the first retains its side effect.
 @test "lifecycle background lane is single-flight and owner-fenced" {
@@ -6018,10 +6055,12 @@ import sys
 from pathlib import Path
 
 text = Path(sys.argv[1]).read_text()
+startup = text[:text.index("while true; do")]
 main = text[text.index("while true; do"):]
-fast = main.index("early_snapshot _ninja_monitor_run_bounded_snapshot")
-slow = main.index("check_gate_improvement")
-assert fast < slow, (fast, slow)
+assert "start_ninja_monitor_snapshot_heartbeat_watch" in startup
+assert "_ninja_monitor_snapshot_heartbeat_watch" in text
+assert "early_snapshot _ninja_monitor_run_bounded_snapshot" not in main
+assert "final_snapshot _ninja_monitor_run_bounded_snapshot" not in main
 PY
 '
     [ "$status" -eq 0 ]
