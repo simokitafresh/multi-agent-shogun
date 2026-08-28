@@ -6929,3 +6929,10 @@ insights:
   source: "gate_loop_health"
   fix_known: false
   status: pending
+- id: INS-20260828-160800960-f30d
+  ts: "2026-08-28T16:08:00+09:00"
+  insight: "高頻度FAIL: integration cmd requires command/expected/actual/result — LG055) (13回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
+  priority: "high"
+  source: "gate_loop_health"
+  fix_known: false
+  status: pending
