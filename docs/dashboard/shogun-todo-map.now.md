@@ -1,6 +1,6 @@
 # 現況(将軍 loop 毎に 5 行以内で書き換える。artifact の「現況」節の正本)
-- 02:11 報告在庫 0(小太郎 0105 CLEAR 02:05、疾風 T166 unit A CLEAR 02:09)。idle 5 名→T161 unit B/T167/T168 残 unit を 1 通ずつ配備中。CI GREEN 連続、rev-list 27 46(家老 push 継続)
-- 構造型根治 3 件 live: 観測窓 AC の例外 BLOCK・家老 bats 再試験 BLOCK(62ea70daf)・配備入口の型 3 検査(a0e85bfe8)。本番 proof: STYLE BLOCK 0(家老が speed_link を初回から記入)・karo-retest 0・rc=64 0
-- 本日 CLEAR 13(hotfix 8/reflux 3/ci_fix 1/他 1)・PJ 成果 0。finalize 比 28%(00:44 の 50%→)
-- 家老 01:39 /clear(80%→12%)の空白で reflux 在庫が最大 1h03m(飛猿 2337)。家老 /clear 直後の便停止(型4弾-4)は残課題
-- artifact 生成器は md 正本から全文生成(e0d3c565b)。gate 直近 60 分: CLEAR 10/WAIT 25/BLOCK 1
+- 02:41 gate 02:09 以降 30 分 CLEAR 0=done 在庫 4(影丸 reflux 0200 29 分/才蔵 0211/小太郎 0226/半蔵 T168 LGTM 済)。家老 pane idle+nudge 未消化の疑い→順序付き 1 通 msg_0241xx
+- CI 274be2a72 GREEN、rev-list 30 46(push 停滞 30 分=同根)。走行: 疾風 T161 unit B(monitor 評価器)/飛猿 T167(deploy 未計測 18s)
+- 構造型根治 live 3 件の本番 proof: STYLE BLOCK 0・karo-retest 0・rc=64 0・観測窓 long-runtime 0
+- 本日 CLEAR 13(hotfix 8/reflux 3/ci_fix 1/他 1)・PJ 成果 0。finalize 比 28%
+- 家老の直列(ACCEPT/push)が今の律速。fin_c の切除=T168(半蔵)が GATE 待ち
