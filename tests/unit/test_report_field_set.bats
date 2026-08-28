@@ -13,11 +13,12 @@ setup() {
     mkdir -p "$RECEIPTS" "${TASK%/*}"
     printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$INBOX"
     chmod +x "$INBOX"
-    cat > "$TASK" <<'YAML'
+    cat > "$TASK" <<YAML
 task:
   task_id: task_receipt_fixture
   status: in_progress
   related_lessons: []
+  test_receipt_path: $RECEIPTS/unique.json
   planned_paths:
     - scripts/report_field_set.sh
     - tests/unit/test_report_field_set.bats
@@ -73,7 +74,7 @@ PY
 
 publish_terminal() {
     env REPORT_FIELD_SET_TASK_ROOT="$BATS_TEST_TMPDIR" \
-        RFS_TASK_FILE_PATH="$TASK" RUN_TESTS_RECEIPT_DIR="$RECEIPTS" \
+        RFS_TASK_FILE_PATH="$TASK" \
         RFS_DISABLE_FAST_RECONCILER=1 RFS_INBOX_WRITE_PATH="$INBOX" \
         bash "$REPO_ROOT/scripts/report_field_set.sh" --batch "$REPORT" <<'YAML'
 status: completed
@@ -97,24 +98,45 @@ PY
     [ "$status" -eq 0 ]
 }
 
-@test "missing, stale, and multiple receipt candidates fail closed" {
-    for case in missing stale multiple; do
+@test "explicit task receipt path ignores unrelated candidates" {
+    write_receipt unique aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa task_receipt_fixture
+    write_receipt extra aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa task_receipt_fixture
+    run publish_terminal
+    [ "$status" -eq 0 ]
+    run python3 - "$REPORT" "$RECEIPTS/unique.json" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert data["status"] == "completed"
+assert data["test_receipt_path"] == sys.argv[2]
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "missing, stale, mismatched, and corrupt explicit receipts fail closed" {
+    for case in missing stale mismatched corrupt; do
         setup
         case "$case" in
             stale)
+                sed -i "s|unique.json|stale.json|" "$TASK"
                 write_receipt stale bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb task_receipt_fixture
                 ;;
-            multiple)
-                write_receipt first aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa task_receipt_fixture
-                write_receipt second aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa task_receipt_fixture
+            mismatched)
+                sed -i "s|unique.json|mismatched.json|" "$TASK"
+                write_receipt mismatched aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa other_task
+                ;;
+            corrupt)
+                sed -i "s|unique.json|corrupt.json|" "$TASK"
+                write_receipt corrupt aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa task_receipt_fixture
+                printf 'tampered\n' >> "$RECEIPTS/corrupt.output"
                 ;;
         esac
         run publish_terminal
         [ "$status" -ne 0 ]
         case "$case" in
-            missing) [[ "$output" == *"receipt is missing"* ]] ;;
+            missing) [[ "$output" == *"missing or invalid"* ]] ;;
             stale) [[ "$output" == *"stale"* ]] ;;
-            multiple) [[ "$output" == *"ambiguous"* ]] ;;
+            mismatched) [[ "$output" == *"task_id mismatch"* ]] ;;
+            corrupt) [[ "$output" == *"missing or invalid"* ]] ;;
         esac
         run python3 - "$REPORT" <<'PY'
 import sys, yaml

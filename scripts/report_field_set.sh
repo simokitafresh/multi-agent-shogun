@@ -233,24 +233,6 @@ def _receipt_owned_test_paths(task):
         or _receipt_normalize_path(path).endswith(".py")
     }
 
-def _receipt_candidate_roots(task_root, task):
-    roots = []
-    explicit_dir = str(os.environ.get("RUN_TESTS_RECEIPT_DIR", "")).strip()
-    for value in (explicit_dir,
-                  str(task_root / "logs" / "test_receipts") if task_root else "",
-                  str(os.environ.get("RFS_SCRIPT_ROOT", "")) + "/logs/test_receipts"):
-        if value:
-            path = pathlib.Path(value).resolve()
-            if path.is_dir() and path not in roots:
-                roots.append(path)
-    for key in ("task_worktree_workdir", "task_worktree_path"):
-        value = str(task.get(key) or "").strip()
-        if value:
-            path = pathlib.Path(value) / "logs" / "test_receipts"
-            if path.is_dir() and path.resolve() not in roots:
-                roots.append(path.resolve())
-    return roots
-
 def _receipt_is_valid(path):
     try:
         receipt = json.loads(path.read_text(encoding="utf-8"))
@@ -298,47 +280,47 @@ def _autolink_terminal_test_receipt(data, task_root):
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise SystemExit("BLOCK: terminal test receipt commit identity missing")
     owned = _receipt_owned_test_paths(task)
-    explicit = str(os.environ.get("RUN_TESTS_RECEIPT_PATH", "")).strip()
-    candidates = []
-    paths = [pathlib.Path(explicit).resolve()] if explicit else []
-    if not paths:
-        for root in _receipt_candidate_roots(task_root, task):
-            paths.extend(sorted(root.glob("*.json")))
-    seen = set()
-    stale = False
-    for path in paths:
-        path = path.resolve()
-        if path in seen or not path.is_file():
-            continue
-        seen.add(path)
-        receipt = _receipt_is_valid(path)
-        if receipt is None:
-            continue
-        receipt_ids = {
-            str(receipt.get(key) or "").strip()
-            for key in ("task_id", "subtask_id")
-            if str(receipt.get(key) or "").strip()
-        }
-        if receipt_ids and task_id not in receipt_ids:
-            continue
-        receipt_paths = {_receipt_normalize_path(item) for item in receipt["test_paths"]}
-        if not receipt_ids and (not owned or not any(
-                candidate == owned_path or candidate.endswith("/" + owned_path)
-                for candidate in receipt_paths for owned_path in owned)):
-            continue
-        receipt_commit = str(receipt.get("commit_sha") or receipt.get("source_head") or "").strip().lower()
-        if receipt_commit != commit:
-            stale = True
-            continue
-        candidates.append(path)
-    if len(candidates) == 1:
-        data["test_receipt_path"] = str(candidates[0])
-        return
-    if len(candidates) > 1:
-        raise SystemExit("BLOCK: terminal test receipt candidates are ambiguous (multiple same-task same-commit receipts)")
-    if stale:
-        raise SystemExit("BLOCK: terminal test receipt candidates are stale for report commit")
-    raise SystemExit("BLOCK: terminal test receipt is missing for task and commit")
+    # A terminal report must carry one explicit receipt identity. Directory
+    # discovery used to walk every JSON under several roots while holding the
+    # report lock; on the shared tree that was 8998 files and could starve a
+    # concurrent writer. Prefer the task's path because it is the execution
+    # contract, then retain explicit report/environment paths for older callers.
+    explicit = ""
+    for value in (
+        task.get("test_receipt_path"),
+        data.get("test_receipt_path"),
+        os.environ.get("RUN_TESTS_RECEIPT_PATH"),
+    ):
+        value = str(value or "").strip()
+        if value:
+            explicit = value
+            break
+    if not explicit:
+        raise SystemExit("BLOCK: terminal test receipt path is missing for task and commit")
+
+    path = pathlib.Path(explicit).expanduser()
+    if not path.is_absolute():
+        path = (task_path.parent if task_path is not None else root) / path
+    path = path.resolve()
+    receipt = _receipt_is_valid(path)
+    if receipt is None:
+        raise SystemExit("BLOCK: terminal test receipt is missing or invalid for explicit path")
+    receipt_ids = {
+        str(receipt.get(key) or "").strip()
+        for key in ("task_id", "subtask_id")
+        if str(receipt.get(key) or "").strip()
+    }
+    if receipt_ids and task_id not in receipt_ids:
+        raise SystemExit("BLOCK: terminal test receipt task_id mismatch")
+    receipt_paths = {_receipt_normalize_path(item) for item in receipt["test_paths"]}
+    if not receipt_ids and (not owned or not any(
+            candidate == owned_path or candidate.endswith("/" + owned_path)
+            for candidate in receipt_paths for owned_path in owned)):
+        raise SystemExit("BLOCK: terminal test receipt test path is not owned by task")
+    receipt_commit = str(receipt.get("commit_sha") or receipt.get("source_head") or "").strip().lower()
+    if receipt_commit != commit:
+        raise SystemExit("BLOCK: terminal test receipt is stale for report commit")
+    data["test_receipt_path"] = str(path)
 
 try:
     for key, value in updates.items():
