@@ -4990,6 +4990,77 @@ PY
     [ -z "$output" ]
 }
 
+# test_necessity: An empty or malformed CI payload is a transient missing
+# evaluation, so it must become a typed WAIT result without exposing a parser
+# traceback to gate_metrics or the completion gate.
+# regression_justification: evaluate_ci_readiness_json previously called
+# json.load directly; an empty payload raised JSONDecodeError and became a
+# false terminal ci_readiness BLOCK.
+@test "CI readiness input boundary turns empty malformed and non-object JSON into WAIT" {
+    local ci_lib="$PROJECT_ROOT/scripts/lib/cmd_complete_gate_ci.sh"
+    local stdout_file="$TEST_TMPDIR/ci-input.stdout"
+    local stderr_file="$TEST_TMPDIR/ci-input.stderr"
+    local payload expected
+
+    for payload in "" "not-json" "[]"; do
+        : > "$stdout_file"
+        : > "$stderr_file"
+        run bash -c 'source "$1"; printf "%s" "$2" | evaluate_ci_readiness_json >"$3" 2>"$4"' \
+            _ "$ci_lib" "$payload" "$stdout_file" "$stderr_file"
+        [ "$status" -eq 0 ]
+        case "$payload" in
+            "") expected="WAIT: ci_evaluation_input_absent=empty" ;;
+            not-json) expected="WAIT: ci_evaluation_input_absent=malformed_json" ;;
+            "[]") expected="WAIT: ci_evaluation_input_absent=non_object" ;;
+        esac
+        [ "$(<"$stdout_file")" = "$expected" ]
+        [ ! -s "$stderr_file" ]
+        ! grep -q "Traceback" "$stderr_file"
+    done
+}
+
+# test_necessity: The five-state CI readiness truth table must preserve the
+# existing pending/success/failure decisions while adding safe input waits;
+# every state must emit zero stderr and the expected terminal classification.
+# regression_justification: The parser-boundary fix must not turn an explicit
+# pending, successful, or failed evaluation into the wrong gate outcome.
+@test "CI readiness truth table has zero false positives and false negatives" {
+    local ci_lib="$PROJECT_ROOT/scripts/lib/cmd_complete_gate_ci.sh"
+    local stdout_file="$TEST_TMPDIR/ci-matrix.stdout"
+    local stderr_file="$TEST_TMPDIR/ci-matrix.stderr"
+    local sha="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    local payload expected rc
+
+    declare -a payloads=(
+        ""
+        "not-json"
+        "{\"expected_head_sha\":\"$sha\",\"reviewed_at\":\"2026-08-28T00:00:00Z\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"$sha\"},\"workflow_result\":{\"status\":\"in_progress\",\"conclusion\":\"\",\"head_sha\":\"$sha\",\"started_at\":\"2026-08-28T00:01:00Z\"}}"
+        "{\"expected_head_sha\":\"$sha\",\"reviewed_at\":\"2026-08-28T00:00:00Z\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"$sha\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"success\",\"head_sha\":\"$sha\",\"started_at\":\"2026-08-28T00:01:00Z\"}}"
+        "{\"expected_head_sha\":\"$sha\",\"reviewed_at\":\"2026-08-28T00:00:00Z\",\"target_result\":{\"conclusion\":\"failure\",\"head_sha\":\"$sha\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"success\",\"head_sha\":\"$sha\",\"started_at\":\"2026-08-28T00:01:00Z\"}}"
+    )
+    declare -a expected_outputs=(
+        "WAIT: ci_evaluation_input_absent=empty"
+        "WAIT: ci_evaluation_input_absent=malformed_json"
+        "WAIT: ci_evaluation_absent=[run_pending:in_progress,workflow_no_verdict] — 後追いで確認せよ(GATEは止めない) head_sha=$sha"
+        "READY: target_result=GREEN workflow_result=GREEN fresh_after_review head_sha=$sha"
+        "BLOCK: target_result is not GREEN"
+    )
+    declare -a expected_rcs=(0 0 0 0 1)
+
+    for i in "${!payloads[@]}"; do
+        payload="${payloads[$i]}"
+        : > "$stdout_file"
+        : > "$stderr_file"
+        run bash -c 'source "$1"; printf "%s" "$2" | evaluate_ci_readiness_json >"$3" 2>"$4"' \
+            _ "$ci_lib" "$payload" "$stdout_file" "$stderr_file"
+        rc="$status"
+        [ "$rc" -eq "${expected_rcs[$i]}" ]
+        [ "$(<"$stdout_file")" = "${expected_outputs[$i]}" ]
+        [ ! -s "$stderr_file" ]
+        ! grep -q "Traceback" "$stderr_file"
+    done
+}
+
 @test "task repository resolution uses external target_path git root" {
     local repo="$BATS_TEST_TMPDIR/external-task-repo"
     local task="$BATS_TEST_TMPDIR/external-task.yaml"
