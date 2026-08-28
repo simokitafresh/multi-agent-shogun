@@ -215,7 +215,7 @@ _task_done_report_formally_reviewed() {
 _task_done_report_review_pending() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-    local task_status parent_cmd report_file report_path report_status
+    local task_status parent_cmd report_file report_path report_status report_verdict
     [ -f "$task_file" ] || return 1
     task_status=$(yaml_field_get "$task_file" "status" "" 2>/dev/null || true)
     [[ "$task_status" =~ ^(done|completed|PASS)$ ]] || return 1
@@ -235,7 +235,13 @@ _task_done_report_review_pending() {
     [ -f "${report_file:-}" ] || return 1
     report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
     [[ "$report_status" =~ ^(completed|done|success)$ ]] || return 0
-    if _done_report_terminal_review_ready "$parent_cmd" "$report_file"; then
+    report_verdict=$(yaml_field_get "$report_file" "verdict" "" 2>/dev/null || true)
+    [[ "$report_verdict" =~ ^(PASS|PASS_NO_IMPROVEMENT)$ ]] || return 1
+    if _task_done_report_formally_reviewed "$name"; then
+        return 1
+    fi
+    if [ -f "$SCRIPT_DIR/scripts/lib/report_commit_identity.py" ] && \
+       _done_report_terminal_review_ready "$parent_cmd" "$report_file"; then
         return 1
     fi
     return 0
@@ -4848,14 +4854,16 @@ _check_done_report_gate() {
 # publication and review completion.
 _done_report_terminal_review_ready() {
     local parent_cmd="$1" report_file="$2"
-    local metrics_file="${SCRIPT_DIR}/logs/gate_metrics.log"
+    local metrics_file="${SCRIPT_DIR}/logs/gate_metrics.log" review_code_root
     if [ -f "$metrics_file" ] && awk -F '\t' -v cmd="$parent_cmd" \
         '$2 == cmd && $3 == "CLEAR" { found=1; exit } END { exit(found ? 0 : 1) }' \
         "$metrics_file"; then
         log "STAGE1-REVIEW-TERMINAL: parent_cmd=$parent_cmd source=gate_metrics"
         return 0
     fi
-    if PROJECT_ROOT="$SCRIPT_DIR" review_two_phase_ready "$parent_cmd" "$report_file"; then
+    review_code_root="${NINJA_MONITOR_SOURCE_ROOT:-${_NM_SELF%/scripts/ninja_monitor.sh}}"
+    if PYTHONPATH="$review_code_root/scripts/lib${PYTHONPATH:+:$PYTHONPATH}" \
+        PROJECT_ROOT="$SCRIPT_DIR" review_two_phase_ready "$parent_cmd" "$report_file"; then
         log "STAGE1-REVIEW-TERMINAL: parent_cmd=$parent_cmd source=two_phase_approval"
         return 0
     fi
@@ -12543,6 +12551,76 @@ start_ninja_monitor_owner_heartbeat_watch() {
     disown "$NINJA_MONITOR_OWNER_HEARTBEAT_WATCH_PID" 2>/dev/null || true
 }
 
+# Snapshot publication is independent of the main cycle. A busy observe or
+# maintenance phase must not stretch the snapshot interval beyond its bound.
+NINJA_MONITOR_SNAPSHOT_HEARTBEAT_INTERVAL=${NINJA_MONITOR_SNAPSHOT_HEARTBEAT_INTERVAL:-90}
+
+_ninja_monitor_snapshot_heartbeat_once() {
+    local script_path="$1" owner_file="$2" generation="$3" owner_pid="$4"
+    local lock_file="${STATE_DIR}/snapshot_refresh_heartbeat.lock" lock_fd worker_pid timeout_sec
+    timeout_sec="${NINJA_MONITOR_SNAPSHOT_TIMEOUT:-120}"
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "SNAPSHOT-HEARTBEAT-SKIP: worker_running=1"
+        return 0
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        timeout --signal=TERM --kill-after=2 "$timeout_sec" \
+            env NINJA_MONITOR_LIB_ONLY=1 \
+                NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
+                NINJA_MONITOR_OWNER_FILE="$owner_file" \
+                NINJA_MONITOR_OWNER_PID="$owner_pid" \
+                NINJA_MONITOR_GENERATION="$generation" \
+                NINJA_MONITOR_WORKER_OWNER_GUARD=1 \
+                SHOGUN_STATE_DIR="$STATE_DIR" \
+            bash "$script_path" --refresh-snapshot
+        local rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            log "SNAPSHOT-HEARTBEAT-TIMEOUT: timeout=${timeout_sec}s rc=$rc retry=next-interval"
+        elif [ "$rc" -ne 0 ]; then
+            log "SNAPSHOT-HEARTBEAT-FAIL: rc=$rc retry=next-interval"
+        else
+            log "SNAPSHOT-HEARTBEAT-DONE: rc=0"
+        fi
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "SNAPSHOT-HEARTBEAT-START: pid=$worker_pid interval=${NINJA_MONITOR_SNAPSHOT_HEARTBEAT_INTERVAL}s"
+    return 0
+}
+
+_ninja_monitor_snapshot_heartbeat_watch() {
+    local script_path="$1" owner_file="$2" generation="$3" owner_pid="$4" parent_pid="$5"
+    local interval="${NINJA_MONITOR_SNAPSHOT_HEARTBEAT_INTERVAL:-90}" next_run=0 now
+    [[ "$interval" =~ ^[0-9]+$ ]] || interval=90
+    [ "$interval" -gt 0 ] 2>/dev/null || interval=90
+    close_inherited_non_stdio_fds
+    while [ -d "/proc/$parent_pid" ]; do
+        _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$owner_pid" || return 0
+        now=$EPOCHSECONDS
+        if [ "$now" -ge "$next_run" ]; then
+            _ninja_monitor_snapshot_heartbeat_once "$script_path" "$owner_file" "$generation" "$owner_pid" || true
+            next_run=$((now + interval))
+        fi
+        sleep 1
+    done
+}
+
+start_ninja_monitor_snapshot_heartbeat_watch() {
+    export -f log close_inherited_non_stdio_fds ninja_monitor_read_owner_record \
+        _ninja_monitor_pid_is_live _ninja_monitor_owner_record_matches \
+        _ninja_monitor_snapshot_heartbeat_once _ninja_monitor_snapshot_heartbeat_watch
+    export LOG STATE_DIR NINJA_MONITOR_OWNER_FILE NINJA_MONITOR_GENERATION \
+        NINJA_MONITOR_SNAPSHOT_HEARTBEAT_INTERVAL NINJA_MONITOR_SNAPSHOT_TIMEOUT
+    nohup bash -c '_ninja_monitor_snapshot_heartbeat_watch "$1" "$2" "$3" "$4" "$5"' \
+        shogun-snapshot-heartbeat-watch "$1" "$2" "$3" "$4" "$5" >>"$LOG" 2>&1 &
+}
+
 # Existing monitor idle edge is the single trigger; no new daemon/poll loop.
 # A trusted writer publishes one CLI argument per line and atomic rename claims it.
 check_throughput_ready_events() {
@@ -12847,6 +12925,12 @@ _ninja_monitor_cycle_record() {
 ninja_monitor_function_timing_enable
 
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
+    if [ "${1:-}" = "--refresh-snapshot" ]; then
+        ninja_monitor_worker_owner_is_current || exit 0
+        refresh_karo_snapshot_fast_path
+        ninja_monitor_function_timing_finish
+        exit $?
+    fi
     if [ "${1:-}" = "--refresh-snapshot-task" ]; then
         refresh_karo_snapshot_task_assignment "${2:-}"
         ninja_monitor_function_timing_finish
@@ -12896,6 +12980,8 @@ prev_idle=""
 prev_gate_sig=""
 _NM_SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 _NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
+start_ninja_monitor_snapshot_heartbeat_watch \
+    "$_NM_SCRIPT_PATH" "$NINJA_MONITOR_OWNER_FILE" "$NINJA_MONITOR_GENERATION" "$$" "$$"
 start_ninja_monitor_hot_reload_watch
 
 while true; do
@@ -13137,9 +13223,8 @@ while true; do
     # ═══ CDP Chrome cleanup（task done/failed終端時、owner限定） ═══
     _ninja_monitor_observe_call cleanup_terminal_cdps cleanup_terminal_task_cdps || true
 
-    # ═══ STEP 1a: 家老陣形図の早期更新 ═══
-    # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。
-    _ninja_monitor_observe_call early_snapshot _ninja_monitor_run_bounded_snapshot || true
+    # Snapshot publication runs in the owner-fenced periodic heartbeat watch,
+    # independent of this cycle's observe/maintenance latency.
     _ninja_monitor_cycle_phase_mark lifecycle
 
     _ninja_monitor_phase_call lifecycle process_checkpoint_manifests
@@ -13302,9 +13387,7 @@ while true; do
     # ═══ archive自動退避 (cmd_279) ═══
     check_auto_archive
 
-    # ═══ STEP 1b: 後段チェック反映後の最終snapshot更新 ═══
     _ninja_monitor_cycle_phase_mark publish
-    _ninja_monitor_phase_call publish final_snapshot _ninja_monitor_run_bounded_snapshot
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_throughput_ready_events # durable throughput connector (ready event exactly once)
     check_shogun_idle_analysis_trigger  # 将軍idle時自己分析trigger (cmd_3549)
