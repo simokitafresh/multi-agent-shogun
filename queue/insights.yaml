@@ -2368,7 +2368,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行 scripts/run_tests.sh を確認し、cross-repo task scope path は宣言済み外部repo配下ならWARNで除外、未承認外部/traversalはValueErrorでBLOCKする修正済み実装を確認。run_tests.sh回帰70件をRC=0/SKIP=0で実走し、対象境界テスト(external source paths warn-and-exclude while unapproved traversal blocks)もPASSしたため、追加実修正は不要としてresolveする。"
+  action_artifact: "fixed_by=195cf41ea;scripts/run_tests.sh=external_scope_warn_exclude_and_unapproved_traversal_block;tests/unit/test_run_tests.bats=70_pass_0_skip;target=INS-20260822-232817996-dbd2;report=queue/reports/kotaro_report_cmd_reflux_insight_202608281221_kotaro.yaml"
+  resolved_at: "2026-08-28T12:26:40+09:00"
 - id: INS-20260822-233007636-b68e
   ts: "2026-08-22T23:30:07+09:00"
   insight: "semantic_index_update新概念候補: discussion:複数のルートやブロックが根因だな。同じ事は同じやり方でやるようにしよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
