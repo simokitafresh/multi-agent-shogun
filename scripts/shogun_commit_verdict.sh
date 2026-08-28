@@ -73,7 +73,26 @@ for repo in "${repos[@]}"; do
             anc_origin="no"; git -C "$repo" merge-base --is-ancestor "$commit" origin/main 2>/dev/null && anc_origin="yes"
         fi
         refs="$(git -C "$repo" for-each-ref --format='%(refname:short)' --contains "$commit" 2>/dev/null | head -5 | paste -sd, -)"
-        [[ -n "$refs" ]] || refs="(no ref contains it = dangling/unreachable: 消失ではなく未接続)"
+        if [[ -z "$refs" ]]; then
+            # T82 型: lane 書換で hash が変わっても内容(patch-id)が同じ commit が HEAD/origin/main に居るかを探す
+            pid="$(git -C "$repo" show "$commit" 2>/dev/null | git patch-id --stable 2>/dev/null | cut -d' ' -f1)"
+            eq=""
+            if [[ -n "$pid" ]]; then
+                for ref in origin/main HEAD; do
+                    git -C "$repo" rev-parse --verify -q "$ref" >/dev/null 2>&1 || continue
+                    while read -r c; do
+                        cp="$(git -C "$repo" show "$c" 2>/dev/null | git patch-id --stable 2>/dev/null | cut -d' ' -f1)"
+                        if [[ "$cp" == "$pid" ]]; then eq="$c@$ref"; break; fi
+                    done < <(git -C "$repo" rev-list --max-count=300 "$ref" 2>/dev/null)
+                    [[ -n "$eq" ]] && break
+                done
+            fi
+            if [[ -n "$eq" ]]; then
+                refs="(no ref contains it) EQUIVALENT patch-id → ${eq}  # lane 書換で hash 違い・内容同一=到達済(T82 型)"
+            else
+                refs="(no ref contains it = dangling/unreachable: 消失ではなく未接続)"
+            fi
+        fi
         subj="$(git -C "$repo" log -1 --format='%h %ci %s' "$commit" 2>/dev/null | cut -c1-90)"
         printf 'repo=%s\tfetch=%s\tobject=commit\tancestor_HEAD=%s\tancestor_origin/main=%s\trefs=%s\n\t%s\n' \
             "$repo" "$fetch_state" "$anc_head" "$anc_origin" "$refs" "$subj"
