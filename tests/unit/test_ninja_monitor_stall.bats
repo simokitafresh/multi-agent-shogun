@@ -5289,7 +5289,7 @@ SH
         ninja_monitor_business_owner_is_current() { return 0; }
         cat > "$root/worker.sh" <<SH
 #!/usr/bin/env bash
-printf "called\\n" >> "$root/calls"
+printf "argc=%s arg1=%s arg2=%s\\n" "\$#" "\${1:-}" "\${2:-}" >> "$root/calls"
 sleep 2
 SH
         chmod +x "$root/worker.sh"
@@ -5297,13 +5297,15 @@ SH
         start_ms="${EPOCHREALTIME//./}"
         start_ms="${start_ms:0:13}"
         _ninja_monitor_phase_call lifecycle repair_terminal_report_outboxes \
-            _ninja_monitor_run_lifecycle_background repair_terminal_report_outboxes
+            _ninja_monitor_run_lifecycle_background repair_terminal_report_outboxes \
+            repair_terminal_report_outboxes
         end_ms="${EPOCHREALTIME//./}"
         end_ms="${end_ms:0:13}"
         elapsed_ms=$((end_ms - start_ms))
         test "$elapsed_ms" -lt 1000
         sleep 3
         test "$(wc -l < "$root/calls" | tr -d " ")" -eq 1
+        grep -q "argc=2 arg1=--lifecycle-worker arg2=repair_terminal_report_outboxes" "$root/calls"
         grep -q "LIFECYCLE-BACKGROUND-START: key=repair_terminal_report_outboxes" "$LOG"
         awk "
             /_ninja_monitor_phase_call lifecycle repair_terminal_report_outboxes/ { found=1; next }
