@@ -20,11 +20,13 @@ setup() {
   unset TEST_TIMING_LEDGER TEST_SUITE_TIMING_LEDGER
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPROOT="$(mktemp -d)"
-  mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
   cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/test_timing_ledger_write.sh" \
     "$ROOT/scripts/test_suite_timing_ledger_write.sh" "$ROOT/scripts/universal_shard.py" \
     "$ROOT/scripts/universal_shard_adapters.py" "$ROOT/scripts/run_with_receipt.sh" \
     "$ROOT/scripts/heavy_job_admission.sh" "$TMPROOT/scripts/"
+  cp "$ROOT/scripts/lib/yaml_field_set.sh" "$TMPROOT/scripts/lib/"
+  cp "$ROOT/scripts/report_field_set.sh" "$TMPROOT/scripts/"
   printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/sample.bats"
   printf '@test "root sample" { true; }\n' >"$TMPROOT/tests/root_sample.bats"
   cat >"$TMPROOT/bin/bats" <<'SH'
