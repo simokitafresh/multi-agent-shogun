@@ -1050,6 +1050,13 @@ SH
   [ "$status" -eq 0 ]
   task_receipt="$(find "$TMPROOT/task-receipts" -name '*.json' -type f | head -1)"
   [ -n "$task_receipt" ]
+  recorded_task_receipt="$(python3 - "$TMPROOT/queue/tasks/owned.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+print(task.get('test_receipt_path', ''))
+PY
+)"
+  [ "$recorded_task_receipt" = "$(realpath "$task_receipt")" ]
   run python3 - "$task_receipt" <<'PY'
 import json, sys
 receipt = json.load(open(sys.argv[1], encoding='utf-8'))
@@ -1065,6 +1072,13 @@ PY
   [ "$status" -eq 0 ]
   file_receipt="$(find "$TMPROOT/file-receipts" -name '*.json' -type f | head -1)"
   [ -n "$file_receipt" ]
+  recorded_after_file="$(python3 - "$TMPROOT/queue/tasks/owned.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+print(task.get('test_receipt_path', ''))
+PY
+)"
+  [ "$recorded_after_file" = "$(realpath "$task_receipt")" ]
   run python3 - "$file_receipt" <<'PY'
 import json, sys
 receipt = json.load(open(sys.argv[1], encoding='utf-8'))
