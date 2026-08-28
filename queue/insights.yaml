@@ -7631,3 +7631,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260829-014646686-d165
+  ts: "2026-08-29T01:46:46+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_reflux_insight_202608282337_tobisaru tobisaru decision_candidate: todo_map_renderの[~]行終端条件ガード実装 scripts/todo_map_render.pyのrenderer入口に[~]行の終端条件=必須検査と欠落時exit 2を追加し、loop時に現在値を機械抽出する実装修正を別cmdで起票する。現行mapは検証時点の[~]7行で欠落0件。"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
