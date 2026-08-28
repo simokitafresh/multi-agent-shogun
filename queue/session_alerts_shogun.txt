@@ -1,4 +1,3 @@
-# session_alerts — generated: 2026-08-29T00:40:07+0900
-[DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
-[DONE] 走行中cmd実測突合: busy 4名。capture-pane未確認で状況報告するな
-[DONE] monitor lifecycle 失敗行 6行/60分 — 壁の所有者を一次で確認
+# session_alerts — generated: 2026-08-29T07:10:39+0900
+[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな
+[DONE] monitor lifecycle 失敗行 14行/60分 — 壁の所有者を一次で確認
