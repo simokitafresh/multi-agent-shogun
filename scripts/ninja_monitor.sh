@@ -11104,13 +11104,62 @@ check_throughput_scan() {
     fi
     LAST_THROUGHPUT_SCAN=$now
 
-    scan_script="$SCRIPT_DIR/scripts/throughput_scan.sh"
+    scan_script="${THROUGHPUT_SCAN_SCRIPT:-$SCRIPT_DIR/scripts/throughput_scan.sh}"
     if [ ! -x "$scan_script" ]; then
         log "THROUGHPUT-SCAN: throughput_scan.sh not executable, skip"
         return
     fi
 
     bash "$scan_script" >> "$SCRIPT_DIR/logs/throughput_scan.log" 2>&1 || true
+}
+
+THROUGHPUT_SCAN_TIMEOUT=${THROUGHPUT_SCAN_TIMEOUT:-120}
+
+_ninja_monitor_run_bounded_throughput_scan() {
+    local timeout_sec="${THROUGHPUT_SCAN_TIMEOUT:-120}" lock_file lock_fd worker_pid scan_script
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+
+    if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
+        check_throughput_scan
+        return $?
+    fi
+    [ -n "${_NM_SCRIPT_PATH:-}" ] || return 1
+    scan_script="${THROUGHPUT_SCAN_SCRIPT:-$SCRIPT_DIR/scripts/throughput_scan.sh}"
+    [ -x "$scan_script" ] || return 0
+    lock_file="${STATE_DIR:-/tmp}/throughput_scan.lock"
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "THROUGHPUT-SCAN-BACKGROUND-SKIP: worker_running"
+        return 0
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        local rc=0
+        timeout --signal=TERM --kill-after=2 "$timeout_sec" \
+            env NINJA_MONITOR_LIB_ONLY=1 \
+                NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
+                NINJA_MONITOR_OWNER_FILE="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}" \
+                NINJA_MONITOR_OWNER_PID="$$" \
+                NINJA_MONITOR_GENERATION="${NINJA_MONITOR_GENERATION:-}" \
+                NINJA_MONITOR_WORKER_OWNER_GUARD=1 \
+                SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" \
+            bash -c 'source "$1"; ninja_monitor_worker_owner_is_current || exit 0; exec bash "$2"' \
+                _ "$_NM_SCRIPT_PATH" "$scan_script" || rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            log "THROUGHPUT-SCAN-TIMEOUT: timeout=${timeout_sec}s rc=$rc retry=next-cycle"
+        elif [ "$rc" -ne 0 ]; then
+            log "THROUGHPUT-SCAN-BOUNDED-FAIL: rc=$rc retry=next-cycle"
+        else
+            log "THROUGHPUT-SCAN-DONE: rc=0"
+        fi
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "THROUGHPUT-SCAN-BACKGROUND-START: pid=$worker_pid timeout=${timeout_sec}s"
+    return 0
 }
 
 check_skill_auto_improve() {
@@ -12984,7 +13033,7 @@ while true; do
     _ninja_monitor_phase_call lifecycle gate_improvement check_gate_improvement
 
     # ═══ throughput_scan定期チェック（5分間隔 cmd_3766） ═══
-    _ninja_monitor_phase_call lifecycle throughput_scan check_throughput_scan
+    _ninja_monitor_phase_call lifecycle throughput_scan _ninja_monitor_run_bounded_throughput_scan
 
     # ═══ skill_auto_improve定期チェック（週1回 cmd_2605） ═══
     _ninja_monitor_phase_call lifecycle skill_auto_improve check_skill_auto_improve
