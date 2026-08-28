@@ -375,6 +375,8 @@ When you receive `inboxN` (e.g. `inbox3`):
    **Edit toolでのinbox既読化は禁止** — flock未使用のためLost Update(メッセージ消失)が発生する
 5. Resume normal workflow
 
+- **positive_rule(家老・軍師)**: **「未読かつ現task_id一致の補足だけを命令として扱う」フィルタは忍者専用(reflux 開始 nudge、T114)。家老・軍師は自分宛の未読を type に従い全て処理せよ**(`task_assigned`/`report_review_result`/`clear_loop_block`/`review_draft`/`report_received` 等)。task_id の有無で「適用せず既読化」するな。
+- **reason**: 2026-08-28 に家老が /clear 直後の recovery で忍者規則を自分の inbox へ誤適用し、03:44/07:41/08:17/10:31 の 4 回、将軍 ci_fix 下知・軍師 LGTM・CLEAR-LOOP-BLOCK 通知を「task_id 欠落ゆえ適用せず既読化」=便停止(T122)。記憶DB の自己記録を [MEM:] 引用して自己強化した。inbox_watcher の nudge 文は 9763378fa で修正済だが、家老自身の判断規則にも埋め込む。
 - **positive_rule**: **指示・命令を `low` / `info` / `gate_clear` / `heartbeat` / `status_update` / `retro_answer` のtypeで送るな。** watcherはこの6typeを「判断不要の情報通知」とみなし**自動既読化して `logs/inbox_info_digest.jsonl` へ退避する。受け手のターンを起こさない**(`scripts/inbox_mark_read.sh:112` の `allowed` 集合)。指示は `task_assigned` 等の起床するtypeで送れ。
 - **reason**: 2026-07-26、家老が `report_received` のBLOCKを回避して `status_update` へ切り替え、以後の忍者宛指示(才蔵5通・影丸2通・飛猿1通・半蔵1通)が全てdigestへ退避され**1件も届かなかった**。家老は40分を「指示の書き方が悪い」と誤診し3度書き直した。∴**一度のBLOCK回避が、以後の全指示を無効化した。** これは「正規フローが通らない=調査対象、迂回するな」(deepdive causal_tracing Phase 6)の実例であり、**BLOCKされた時に別typeへ逃げるのはgate迂回の変形**である。
 
