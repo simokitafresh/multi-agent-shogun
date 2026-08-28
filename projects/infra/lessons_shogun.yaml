@@ -425,6 +425,7 @@ lessons:
   created_at: '2026-07-27'
   automated: true
   enforcement: 'Level4(2026-07-27昇格): scripts/cmd_save.sh L3656+L7267のawk抽出を["\x27]?に拡張し、シングルクォート/ダブルクォート/無引用符の3形式全てを同一に剥がすよう構造修正。禁止ルールの周知ではなく、そもそも失敗しない実装へ変更。実測: 3形式ともparse結果が同一("type=gate; file=...; pattern=...")であることをawk単体実行で確認済み(kagemaru検証)'
+  superseded_by: 'LS110 (environment_change の quote 規則は Level4 根治済(awk 3 形式同一)の歴史則。LS110(起票時の数値/識別子/quote 隔離規則)に吸収し枠を空ける)'
 - id: 'LS113'
   title: '起票target_pathに絶対directoryを書くな'
   origin: '[[cmd_4176]]'
@@ -521,3 +522,11 @@ lessons:
   created_at: '2026-08-27'
   automated: true
   enforcement: '構造型: 900a6e204(isolated session)。将軍側 automated:false — 自動化ターゲット: agent_respawn.sh の respawn 前後 task 状態記録+idle 化で redeploy_required 自動送出 / cmd_complete_gate の files_modified blob 突合 / shutsujin・reset_layout の attached 本番 session BLOCK(INS-20260827-152607) / watcher の Codex 更新・上限プロンプト検知(INS-20260827-180750)'
+- id: 'LS124'
+  title: 'hotfix の本番 proof は機構固有の成功行(CTX-RESET/RESPAWN-OK)で取れ — pane の 0% 表示は別経路(forced_idle)でも出る'
+  origin: '未指定'
+  detail: '2026-08-28 13:53 T131(respawn resolver の相対 launch_cmd 修正)を将軍は『疾風 idle 21%→0%』の pane capture で proof PASS と閉じた。15:13 殿『auto clear が遅く CTX 残置忍者に配備される』→一次で 13:53 以後 CODEX-RESPAWN 0/20 成功、CTX-RESET 行は本日 0。13:56 の 0% は CLEAR-LOOP-BLOCK forced_idle(3 失敗後の idle 化)であり respawn ではなかった。真因=monitor プロセス(pid 1626960)の PATH に nvm が無く resolver が unresolved executable: codex で空→FALLBACK。stderr は 2>/dev/null で捨てられ 275 回失敗して理由 0 行。将軍が同コマンドを nvm 入り PATH で打つと rc 0=手動再現では常に成功し気づけない(daemon の環境は手元と違う)。修正=(1)proof は機構固有の成功行と失敗行 0 を対で見る。表示(pane %)は結果の集合で経路を証明しない (2)daemon 由来の失敗は /proc/<pid>/environ の PATH で再現する (3)検証コマンドの stderr を捨てるな(型5弾-2)。型4弾-2『本番 log で対象行 0 まで』の裏面=成功行の存在も見よ。origin: [[T131_auto_clear根治]] -> [[proof=pane0%誤認]] -> [[respawn_0of20_monitor_PATH_nvm]] -> [[T137]]'
+  source_cmd: 'T137'
+  created_at: '2026-08-28'
+  automated: true
+  enforcement: 'automated:false — 自動化ターゲット: ninja_monitor が CODEX-RESPAWN 成功時に RESPAWN-OK 行を必ず出し、gate_shogun_startup に直近 N 時間の RESPAWN 試行 vs OK 比を表示(FALLBACK 率>20% で WARN)'
