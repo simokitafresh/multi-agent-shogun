@@ -2489,7 +2489,7 @@ insights:
   source: "skill_script_refs:ae7004e8a3cbda9a"
   fix_known: false
   status: resolved
-  resolved_reason: 一次情報でSKILL.md×変更scriptの13組を再検分し、gate_skill_script_refs.sh fresh runはrc=2(REVIEW_REQUIRED)だが参照先欠落0件・SKILL鮮度遅延0件・例示パス欠落0件・副作用例示マーカー欠落0件。rc=2は既存のactive follow-up 31組によるレビュー要求であり、対象13組の契約不整合や新規修正必要性は確認されなかったため、既存insight→reflux経路で被覆済みとしてresolveした。
+  resolved_reason: 一次情報でSKILL.md×変更scriptの13組を再検分し、gate_skill_script_refs.sh fresh runはrc=2(REVIEW_REQUIRED)だが参照先欠落0件・SKILL鮮度遅延0件・例示パス欠落0件・副作用例示マーカー欠落0件。rc=2は既存のactive follow-up 31組によるレビュー要求であり、対象13組の契約不整合や新規修正必要性は確認されなかったため、既存insight→reflux経路で被覆済みとしてresolveした。初回commitの同時更新混入を検知したため、今回の再公開は対象entryの解決メタデータだけに限定する。
   action_artifact: "target=queue/insights.yaml:INS-20260823-005548933-1171;gate=bash SKILL_REF_DISABLE_CACHE=1 scripts/gates/gate_skill_script_refs.sh /home/simokitafresh/multi-agent-shogun (rc=2, missing=0, stale=0, example_path_missing=0, side_effect_marker_missing=0, active_followup_pairs=31);memory=bash scripts/memory_db_query.sh --search INS-20260823-005548933-1171 (exact event found);semantic=bash scripts/semantic_search.sh \"SKILL.md script refs gate_skill_script_refs ae7004e8a3cbda9a\" (concept ranking found)"
   resolved_at: "2026-08-28T13:14:51+09:00"
 - id: INS-20260823-005556536-889b
@@ -6561,7 +6561,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T13:19:00+09:00"
 - id: INS-20260828-131832147-f6dc
   ts: "2026-08-28T13:18:32+09:00"
   insight: "[[artifact auto react Auto replied to 3 comment threads on Art]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifact-auto-react Auto-replied to 3 comment threads on Artifact: \"将軍 全体状況マップ\"</summar…"
