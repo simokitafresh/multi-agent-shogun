@@ -358,6 +358,45 @@ output_has_alert_prefix() {
     return 1
 }
 
+# GA-505: source-only publication can carry the same changed-path blobs to
+# origin/main without preserving the local source commit as an ancestor.  That
+# provenance lag is not a knowledge-freshness defect, so do not wake the
+# improvement lane when equivalence is proven.  Unknown/missing commits and
+# divergent blobs remain actionable; inability to prove equivalence never
+# suppresses a WARN.
+source_equivalent_publication_lag_is_non_actionable() {
+    local gate_name="$1"
+    local alert_lines="$2"
+    local first_line source_hash repo local_main origin_main path
+    local -a lines=() changed_paths=()
+
+    [[ "$gate_name" == "context_freshness" ]] || return 1
+    mapfile -t lines <<< "$alert_lines"
+    ((${#lines[@]} >= 1 && ${#lines[@]} <= 2)) || return 1
+    first_line="${lines[0]}"
+    [[ "$first_line" =~ source_equivalent[[:space:]]+boundary[[:space:]]+rejected:[[:space:]]+source[[:space:]]+commit[[:space:]]+([0-9a-f]{7,40})[[:space:]]+is[[:space:]]+not[[:space:]]+an[[:space:]]+origin/main[[:space:]]+ancestor ]] || return 1
+    source_hash="${BASH_REMATCH[1]}"
+    if ((${#lines[@]} == 2)); then
+        [[ "${lines[1]}" == action:* ]] || return 1
+    fi
+
+    repo="${GATE_IMPROVEMENT_SOURCE_REPO:-$SCRIPT_DIR}"
+    [[ -d "$repo/.git" || -f "$repo/.git" ]] || return 1
+    git -C "$repo" cat-file -e "${source_hash}^{commit}" 2>/dev/null || return 1
+    local_main="$(git -C "$repo" rev-parse --verify refs/heads/main 2>/dev/null || true)"
+    origin_main="$(git -C "$repo" rev-parse --verify refs/remotes/origin/main 2>/dev/null || true)"
+    [[ "$local_main" =~ ^[0-9a-f]{40}$ && "$origin_main" =~ ^[0-9a-f]{40}$ ]] || return 1
+    git -C "$repo" merge-base --is-ancestor "$source_hash" "$local_main" 2>/dev/null || return 1
+    git -C "$repo" merge-base --is-ancestor "$source_hash" "$origin_main" 2>/dev/null && return 1
+    mapfile -t changed_paths < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r "$source_hash" 2>/dev/null)
+    ((${#changed_paths[@]} > 0)) || return 1
+    for path in "${changed_paths[@]}"; do
+        [[ -n "$path" ]] || continue
+        git -C "$repo" diff --quiet "$source_hash" "$origin_main" -- "$path" 2>/dev/null || return 1
+    done
+    return 0
+}
+
 extract_alert_lines() {
     local output="$1"
     local extra_alert_pattern="${2:-}"
@@ -445,6 +484,11 @@ evaluate_gate_result() {
             local output_snippet
             output_snippet=$(printf '%s\n' "$output" | awk 'NF {print; exit}' | tr '\n' ' ' | cut -c 1-240)
             alert_lines="exit_code=$exit_code; output_snippet=${output_snippet:-empty}"
+        fi
+
+        if source_equivalent_publication_lag_is_non_actionable "$gate_name" "$alert_lines"; then
+            echo "OK: ${gate_name} — source-equivalent publication already matches origin/main; improvement trigger suppressed"
+            return 0
         fi
 
         send_alert "$gate_name" "$alert_lines" || true
