@@ -5067,6 +5067,32 @@ PY
     [ "$output" = "begin=3 end=3 elapsed=3" ]
 }
 
+# test_necessity: a completion-gate stall must not hold the lifecycle phase;
+# one timeout-bounded worker is allowed and duplicate workers are suppressed.
+@test "gate stall production path is backgrounded and bounded" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/gate-stall-bounded"
+        mkdir -p "$root/state"
+        printf "check_gate_stall() { sleep 5; }\\n" > "$root/worker.sh"
+        STATE_DIR="$root/state"; LOG="$root/monitor.log"; _NM_SCRIPT_PATH="$root/worker.sh"
+        GATE_STALL_TIMEOUT=1
+        _ninja_monitor_run_bounded_gate_stall
+        _ninja_monitor_run_bounded_gate_stall
+        sleep 3
+        grep -q "GATE-STALL-BACKGROUND-START:" "$LOG"
+        grep -q "GATE-STALL-BACKGROUND-SKIP: worker_running" "$LOG"
+        grep -q "GATE-STALL-TIMEOUT: timeout=1s" "$LOG"
+        printf "background=1 duplicate=1 timeout=1\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "background=1 duplicate=1 timeout=1" ]
+}
+
 # test_necessity: a production auto-void report scan can block on the 9p
 # boundary.  It must run under a single-flight bounded worker so the observe
 # cycle continues while preserving the existing transaction for completion.

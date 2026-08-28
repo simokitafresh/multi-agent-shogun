@@ -1904,10 +1904,15 @@ PY
 }
 
 check_gate_stall() {
-    ninja_monitor_business_owner_is_current || {
+    if [ "${NINJA_MONITOR_WORKER_OWNER_GUARD:-0}" = "1" ]; then
+        ninja_monitor_worker_owner_is_current || {
+            log "SINGLETON-FENCE-SKIP: check_gate_stall stale worker generation"
+            return 0
+        }
+    elif ! ninja_monitor_business_owner_is_current; then
         log "SINGLETON-FENCE-SKIP: check_gate_stall stale generation"
         return 0
-    }
+    fi
     local now=$EPOCHSECONDS marker cmd marker_epoch elapsed_sec elapsed_min gate_dir
     local gate_lock_fd gate_output block_message
     _gate_stall_refresh_active_cmds
@@ -1936,6 +1941,12 @@ check_gate_stall() {
             eval "exec ${gate_lock_fd}>&-"
             continue
         fi
+        if ! ninja_monitor_worker_owner_is_current; then
+            log "GATE-AUTO-FENCE: ${cmd} successor active before gate side_effects=0"
+            flock -u "$gate_lock_fd" || true
+            eval "exec ${gate_lock_fd}>&-"
+            continue
+        fi
         if gate_output=$(bash "$SCRIPT_DIR/scripts/cmd_complete_gate.sh" "$cmd" 2>&1); then
             log "GATE-AUTO-CLEAR: ${cmd} elapsed=${elapsed_min}min"
         elif printf '%s\n' "$gate_output" | grep -Fq \
@@ -1947,12 +1958,66 @@ check_gate_stall() {
             log "GATE-AUTO-LOCKED: ${cmd} cmd_complete_gate CMD_ID lock is active; retry next cycle"
         else
             block_message="【GATE-AUTO-BLOCK】${cmd} 両承認後の自動cmd_complete_gateがBLOCK。理由: $(printf '%s\n' "$gate_output" | tail -n 3 | tr '\n' ' ')"
-            send_inbox_message karo "$block_message" gate_block || true
+            if ninja_monitor_worker_owner_is_current; then
+                send_inbox_message karo "$block_message" gate_block || true
+            else
+                log "GATE-AUTO-FENCE: ${cmd} successor active before notify side_effects=0"
+            fi
             log "GATE-AUTO-BLOCK: ${cmd} elapsed=${elapsed_min}min"
         fi
         flock -u "$gate_lock_fd" || true
         eval "exec ${gate_lock_fd}>&-"
     done < <(find "$SCRIPT_DIR/queue/gates" -mindepth 2 -maxdepth 2 -type f -name review_gate.done -print 2>/dev/null)
+}
+
+GATE_STALL_TIMEOUT=${GATE_STALL_TIMEOUT:-120}
+
+# gate stall can block on a completion-gate subprocess while the monitor is
+# trying to publish its next snapshot. Keep exactly one generation-fenced
+# worker and return the observe loop immediately; the worker retains the
+# existing gate lock and retry semantics.
+_ninja_monitor_run_bounded_gate_stall() {
+    local timeout_sec="${GATE_STALL_TIMEOUT:-120}" lock_file lock_fd worker_pid
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+
+    if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
+        check_gate_stall
+        return $?
+    fi
+    [ -n "${_NM_SCRIPT_PATH:-}" ] || return 1
+    lock_file="${STATE_DIR:-/tmp}/gate_stall.lock"
+    mkdir -p "${lock_file%/*}" || return 1
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "GATE-STALL-BACKGROUND-SKIP: worker_running"
+        return 0
+    fi
+    (
+        exec </dev/null >>"$LOG" 2>&1
+        local rc=0
+        timeout --signal=TERM --kill-after=2 "$timeout_sec" \
+            env NINJA_MONITOR_LIB_ONLY=1 \
+                NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
+                NINJA_MONITOR_OWNER_FILE="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}" \
+                NINJA_MONITOR_OWNER_PID="$$" \
+                NINJA_MONITOR_GENERATION="${NINJA_MONITOR_GENERATION:-}" \
+                NINJA_MONITOR_WORKER_OWNER_GUARD=1 \
+                SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" \
+            bash -c 'source "$1"; check_gate_stall' _ "$_NM_SCRIPT_PATH" || rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            log "GATE-STALL-TIMEOUT: timeout=${timeout_sec}s rc=$rc retry=next-cycle"
+        elif [ "$rc" -ne 0 ]; then
+            log "GATE-STALL-BOUNDED-FAIL: rc=$rc retry=next-cycle"
+        else
+            log "GATE-STALL-DONE: rc=0"
+        fi
+    ) &
+    worker_pid=$!
+    exec {lock_fd}>&-
+    log "GATE-STALL-BACKGROUND-START: pid=$worker_pid timeout=${timeout_sec}s"
+    return 0
 }
 
 # cmd_karo_hotfix_completion_event_dedupe_20260723: durable report-gate cache.
@@ -12833,7 +12898,7 @@ while true; do
     done
 
     # ═══ 両承認後のGATE終端なし検知 ═══
-    _ninja_monitor_phase_call lifecycle check_gate_stall check_gate_stall
+    _ninja_monitor_phase_call lifecycle gate_stall _ninja_monitor_run_bounded_gate_stall
 
     # ═══ report done + status未idle 検知 ═══
     _ninja_monitor_phase_call lifecycle report_done_idle_mismatch check_report_done_idle_mismatch
