@@ -522,6 +522,7 @@ lessons:
   created_at: '2026-08-27'
   automated: true
   enforcement: '構造型: 900a6e204(isolated session)。将軍側 automated:false — 自動化ターゲット: agent_respawn.sh の respawn 前後 task 状態記録+idle 化で redeploy_required 自動送出 / cmd_complete_gate の files_modified blob 突合 / shutsujin・reset_layout の attached 本番 session BLOCK(INS-20260827-152607) / watcher の Codex 更新・上限プロンプト検知(INS-20260827-180750)'
+  superseded_by: '委任・受信・CLEAR・unit 連鎖のどれも完了ではない — 完了は行頭の終端条件(本番の数値/行)で機械判定せよ(LS123 吸収+第四実証) (統合元 LS123(到達は現物で確認)。第四実証 2026-08-28 18:46 殿『T145/T147/T146/T143/T142/T140/T137/T136/T129 が未完了だと artifact ではなっている。現状と原本と artifact は整合性がとれている必要がある』。一次で再判定すると 9 件中 6 件(T136/T137/T140/T142/T143/T147)は終端条件を満たしていた: T137 は本番 FALLBACK 0/CTX-RESET 5 で目的達成、T136 は 17:40 rev-list 0 0、T142/T143/T147 は引継ぎ unit が走行中。原因=各行に終端条件が無く『次 unit が走る間は [~]』と惰性で残した(unit 連鎖を 1 行に積む型の副作用)。逆に T129 は unit1 CLEAR を完了扱いにし目的 median≤60s 未達を見落としかけた(18:45 殿の問いで訂正)。正=行を開く時に『終端条件=<本番で見える数値/行>』を先頭に書き、loop 毎に現在値と突合して [x]/[~] を機械的に決める。引継ぎ先 unit があれば元行を [x] にし引継ぎ先 ID を書く。CLEAR は途中成果、終端は目的の数値)'
 - id: 'LS124'
   title: 'hotfix の本番 proof は機構固有の成功行(CTX-RESET/RESPAWN-OK)で取れ — pane の 0% 表示は別経路(forced_idle)でも出る'
   origin: '未指定'
