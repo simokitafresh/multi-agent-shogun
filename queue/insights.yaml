@@ -6355,4 +6355,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-28T09:48:56+09:00"
+- id: INS-20260828-094900121-1c29
+  ts: "2026-08-28T09:49:00+09:00"
+  insight: "[[裁定待ちに関して推奨と内容の説明をしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=裁定待ちに関して推奨と内容の説明をしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
   status: pending
