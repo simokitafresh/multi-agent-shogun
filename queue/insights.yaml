@@ -6780,3 +6780,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260828-142258650-2497
+  ts: "2026-08-28T14:22:58+09:00"
+  insight: "[[おなじらせんをデッドコードやリファクタリング何かにも応用できるのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=おなじらせんをデッドコードやリファクタリング何かにも応用できるのか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
