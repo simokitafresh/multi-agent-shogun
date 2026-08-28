@@ -16077,3 +16077,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - entrypointからCI readiness unitをlibへ移管すると、通常sourceは動いてもsed/regexでentrypointだけを抽出するowner testがhelper欠落でsetup failureになる。実装moduleを重複wrapperへ戻さず、owner testの抽出源をentrypoint+正本libへ同期し、pre/postの実行件数を固定する。
+
+### L1663: single wrapperはbatch itemの任意メタデータを明示伝播する
+- **日付**: 2026-08-28
+- **出典**: cmd_karo_hotfix_review_bundle_single_precheck_na_20260828
+- **記録者**: tobisaru
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/review_bundle.py,tests/unit/test_review_bundle.bats]
+- **origin**: [[cmd_karo_hotfix_review_bundle_single_precheck_na_20260828]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- batch側が既にprecheck_naを正しく検証していても、single wrapperがentryからitemへ値をコピーしないと有効なN/A証跡が通常precheckへ落ちる。single/batch境界で任意メタデータの伝播を契約テストする。
