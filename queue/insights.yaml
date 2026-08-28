@@ -7058,6 +7058,7 @@ insights:
   resolved_reason: "既知修正済み: commit 01310ab8a が respawn_recovery.sh の変数抽出から BASH_REMATCH 依存を除去し、DEBUG trap 回帰を防止"
   action_artifact: "commit 01310ab8af26cf248543a81dd902c8b78fd79cb7; bash scripts/run_tests.sh file tests/unit/test_respawn_recovery.bats (18/18 PASS, SKIP0)"
   resolved_at: "2026-08-28T20:34:40+09:00"
+  last_seen: "2026-08-28T20:39:28+09:00"
 - id: INS-20260828-182039696-01f8
   ts: "2026-08-28T18:20:39+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactも更新せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
