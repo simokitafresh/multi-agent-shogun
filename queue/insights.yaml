@@ -4014,6 +4014,7 @@ insights:
   resolved_reason: "一次情報で現行scripts/inbox_write.shのverify_codex_task_deliveryとmaybe_verify_codex_deliveryを確認。対象msg_idのread遷移のみを配達成功とし、pane/task表示を証拠にせず、未読時はCodex watcherのdedup状態を再武装して再nudgeする実装が現存する。tests/unit/test_inbox_write.batsの同一内容別ID誤認0・pane-only成功0・真未達警告契約と、T21実装commit f5fd3538761c0b0c2fc11b823e4db5f86a548868のGATE CLEAR記録で既知修正済みと確認した。"
   action_artifact: "target=queue/insights.yaml:INS-20260826-181504690-8bfa;code=scripts/inbox_write.sh:1137-1233;tests=tests/unit/test_inbox_write.bats:2060-2308,2525-2747;commit=f5fd3538761c0b0c2fc11b823e4db5f86a548868;memory=memory_db_query:INS-20260826-181504690-8bfa;semantic=semantic_search:Codex inbox nudge delivery read transition;decision_candidate=none"
   resolved_at: "2026-08-29T16:41:31+09:00"
+  last_seen: "2026-08-29T16:49:02+09:00"
 - id: INS-20260826-182500329-d793
   ts: "2026-08-26T18:25:00+09:00"
   insight: "DM-signalローカルclone(/mnt/c/Python_app/DM-signal)がorigin/mainと履歴分岐: origin-only 138/local-only 9、同一subjectが別hash(例 cmd_4333 55b81b43 vs 5b4e27eb)=履歴書換え型。context_freshness_checkはorigin/main基準(L794)のためdoc laneはorigin tipを境界にすべき。ローカルHEAD基準の計数は偽値(252/261/200)を生む。自動化ターゲット: DOC_LANE_REQUESTの母数をorigin/main基準に固定し、ローカル分岐を別ALERTで出す"
@@ -7872,4 +7873,7 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T16:46:40+09:00"
