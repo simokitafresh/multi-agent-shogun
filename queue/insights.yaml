@@ -4805,7 +4805,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存防御を再確認し、新規修正不要と判定。委任後の将軍側警告は .claude/hooks/post-shogun-inbox-check.sh:L278-L300 の marker+120秒後capture、家老側の未配備再通知は scripts/ninja_monitor.sh の check_undeployed_cmds と check_idle_backlog_alert:L4886-L4997（3分閾値・pending_work・世代dedupe）で実装済み。queue/shogun_todo_map.md:L141 のT56 GATE CLEAR記録も現行実装と整合するため、対象を既存防御へ解決した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-093515643-c51d;primary=.claude/hooks/post-shogun-inbox-check.sh:L278-L300,scripts/ninja_monitor.sh:check_undeployed_cmds+L4886-L4997;deployment_record=queue/shogun_todo_map.md:L141;memory=memory_db_query+semantic_search;obsidian=.cache/causal_index.tsv:target-id-not-found"
+  resolved_at: "2026-08-30T03:34:32+09:00"
 - id: INS-20260827-093649354-8790
   ts: "2026-08-27T09:36:49+09:00"
   insight: "09:36 家老 inbox_watcher が2本並走(pid 2583354 09:33:15 起動 / 2597748 09:36:24 起動)。6通の task_assigned は delivery FAILURE(5回未確認)後、09:36 の再起動で『↳ inbox6』が受理され Working へ。二重 watcher の由来(watchdog再起動で旧が exit しない)と、再起動が nudge 受理の契機になっている因果を切り分ける"
