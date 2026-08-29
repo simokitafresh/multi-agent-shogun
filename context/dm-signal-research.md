@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-29 T189 outputs 整理 追補(DOC_LANE_REQUEST blt_184928) -->
+<!-- last_updated: 2026-08-29 T188 DM-signal push 退避(DOC_LANE_REQUEST blt_210228) -->
+<!-- source_commit:2854041dce67 reason:T188 DM-signal push 退避(DOC_LANE_REQUEST blt_210228) evidence:git -C /mnt/c/Python_app/DM-signal show --stat 2854041dce67 -->
 <!-- source_commit:da3470694ad7 reason:T189 outputs 整理 追補(DOC_LANE_REQUEST blt_184928) evidence:git -C /mnt/c/Python_app/DM-signal show --stat da3470694ad7 -->
 <!-- source_commit:dbfe34dd935b reason:T189 outputs 整理(cmd_karo_t189_outputs_cleanup_20260829、殿裁定 16:51/16:53/16:56) evidence:git -C /mnt/c/Python_app/DM-signal show --stat dbfe34dd935b -->
 <!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
@@ -90,3 +91,6 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 - 保持集合(本番 33 体=シン四神 12+シン忍法 v2 21 の GS 根拠): `outputs/grid_search/shin_shijin_l1`(cmd_1018, 872M)・`shin_ninpo_v2_12body`(cmd_1080, 2.7G)・`cmd_3495〜3505`(秘奥義, 1.4G)・`cmd_3774/3779`(full, 4.4G)・`cmd_3798_phase_b_l1`・`ema_experiment_phase0_v2_l1`・git tracked 24M・cmd_3871 KEEP 10 件。要確認 2 件(okugi_shin_ninpo_20body 2.0G/20260427 52M)は据置。
 - 除去: 138 対象 30,841,072,791B を realpath guard 付き直列除去、残存 0、`grid_search` 43G→14G、保持集合差分 0・tracked 削除 0・本番 DB 件数差 0。manifest=DM-signal `outputs/t189_cleanup_manifest_20260829.tsv`(commit dbfe34dd)。判定表の正本 → `docs/research/grid-search-outputs-cleanup-inventory-20260807.md` §最終判定。
 - 効果: T106 ext4 cutover の複製対象が 62G→約 31G。origin: `[[殿裁定_作成に使ったものは残す_20260829_1653]] -> [[T189_outputs整理]] -> [[T106_DM-signal_ext4移設]]`
+
+## T188 DM-signal の GitHub 復元性 (2026-08-29)
+- 殿下問 16:37『PC 故障時に GitHub/zip で即時移行できるか』→疾風 `cmd_karo_hotfix_dm_signal_backup_push`(CLEAR 18:51): 未 push 4 commit を merge+通常 push(origin/rb6-cleanup-20260814=2854041d、origin..HEAD 0/0)、origin に同名 ref の無い local branch は force なしで `backup/<branch>` 新 ref へ退避、GitHub 100MiB 超 blob 付き 1 本のみ名指しで対象外、非 ff 131 本は origin に同名 ref 既存=退避不要。secrets(.env 系 4 本)は cmd_4411 の暗号化 Drive 退避(`context/infrastructure.md` §オフサイト退避)。origin: `[[殿下問_PC故障時の即時移行_20260829_1637]] -> [[T188_DM-signal_push退避]] -> [[T106_DM-signal_ext4移設]]`
