@@ -4368,7 +4368,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:40d0bfa49fef218b"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でgate_skill_script_refs.shを実走しrc=2(REVIEW_REQUIRED)を確認したが、参照先実在・SKILL鮮度・例示静的パス・副作用実走markerの4検査は全てOKで、FOLLOWUP_ACTIVE=31かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesがレビュー要求を被覆しているため、追加実装修正とdecision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-001051477-7110;gate=scripts/gates/gate_skill_script_refs.sh;gate_rc=2;result=REVIEW_REQUIRED;scanned=41_SKILL.md;script_refs=82;referenced=30;deduped=31;followup_active=31;followup_covers_review_required=yes;checks=missing_refs0/stale_refs0/example_paths_missing0/side_effect_marker_missing0;memory=scripts/memory_db_query.sh --search INS-20260827-001051477-7110;semantic=context/semantic-map.md;semantic_index=docs/semantic-index/index.md;decision_candidate=none;inventory_before=insights_pending:93/zero_backlinks:11/promotions:0/total:104"
+  resolved_at: "2026-08-29T22:05:41+09:00"
 - id: INS-20260827-002522758-4489
   ts: "2026-08-27T00:25:22+09:00"
   insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_ci_fix_32977736637_skill_feedback_loop_20260826 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
