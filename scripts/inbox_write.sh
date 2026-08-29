@@ -317,6 +317,15 @@ inbox_task_assignment_identity_fields() {
 
     # Explicit empty fields are the no-task contract.  The receiver must not
     # treat an unbound assignment as belonging to its current task.
+    # Commander targets (karo/gunshi/shogun) have no ninja task binding; an
+    # unbound task_assigned to them is a directive, never "not my task".
+    # Bind it to the fixed token so the receiver's task_id filter cannot
+    # drop it (2026-08-28 T159/型十一弾-2, 8th recurrence 2026-08-29 14:09).
+    case "$target" in
+        karo|gunshi|shogun)
+            [ -n "$task_id" ] || task_id="commander_directive"
+            ;;
+    esac
     printf '%s\n' "$task_id" "$parent_cmd"
 }
 

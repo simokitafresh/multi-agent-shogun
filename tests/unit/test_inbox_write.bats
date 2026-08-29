@@ -3271,3 +3271,16 @@ _autoread_env() {
     [[ "$output" == *"ninja -> karo only"* ]]
     [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
 }
+
+@test "commander target task_assigned binds empty task_id to commander_directive" {
+    # test_necessity: commander(karo/gunshi/shogun) 宛 task_assigned の task_id が空のままだと受け手の task_id フィルタが指示を『適用せず既読化』する(2026-08-28/29 に 8 回再発)。空を固定トークンへ束縛する不変量。
+    local tmp; tmp=$(mktemp -d)
+    mkdir -p "$tmp/queue/tasks"
+    printf 'task_id: ""\nparent_cmd: ""\n' > "$tmp/queue/tasks/karo.yaml"
+    printf 'task_id: "cmd_x_normal"\nparent_cmd: "cmd_x"\n' > "$tmp/queue/tasks/hayate.yaml"
+    run bash -c "SCRIPT_DIR='$tmp'; ensure_field_get_loaded() { :; }; source <(sed -n '/^inbox_yaml_field_get()/,/^}/p;/^inbox_task_assignment_identity_fields()/,/^}/p' '$PROJECT_ROOT/scripts/inbox_write.sh'); inbox_task_assignment_identity_fields karo | head -1; inbox_task_assignment_identity_fields hayate | head -1"
+    rm -rf "$tmp"
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "commander_directive" ]
+    [ "${lines[1]}" = "cmd_x_normal" ]
+}
