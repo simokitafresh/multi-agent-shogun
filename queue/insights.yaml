@@ -4605,7 +4605,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: 現行 scripts/ninja_scope_commit.sh:1729-1731 は partial/foreign staged content 差分を fail-closed BLOCK し --patch を案内する。対象insightの自動git add提案/自動再実行は現行実装に未反映であり、planned scope外のため別実装cmdへdecision_candidateとして整理した。"
+  action_artifact: "decision_candidate:別実装cmdでscope内git add同期・再実行提案の安全境界とFAIL明示を設計; evidence=scripts/ninja_scope_commit.sh:1595-1601,1707-1733; report=queue/reports/tobisaru_report_cmd_reflux_insight_202608300101_tobisaru.yaml"
+  resolved_at: "2026-08-30T01:06:21+09:00"
 - id: INS-20260827-071916759-18bd
   ts: "2026-08-27T07:19:16+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b685pp5xa task id tool use id toolu 017PW2eK4GzhppHfhf は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
