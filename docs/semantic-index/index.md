@@ -3513,6 +3513,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T13:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T14:19:15+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T14:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T15:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T15:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -8429,6 +8431,8 @@ codd:
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:08:41+09:00 session_save_20260829_1207 復帰点(将軍 /clear 復帰 第11便、08-29 06:50-12:07)。主軸=(1)復帰直後の一次で monitor 粒度バグ(BOUNDED-FAIL rc=1 819 行) |
+| causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_idle_load_unit5_20260829` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9704,6 +9708,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T04:13:14.670999+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T14:06:48+09:00 T178 / T177の進捗はどうだ？つまりがあれば覚醒して将軍がヘルプせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T05:59:19.741082+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T06:03:31.422664+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -10263,6 +10268,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -11076,6 +11082,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -11377,6 +11384,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -13694,6 +13702,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608291406_hayate` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608291423_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291423_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291511_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291511_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -13906,6 +13916,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T22:20:34+09:00 b3oa8fi9h toolu_01NeV5186corHSu2fxZaBL3i /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4156-a66d |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T22:20:41+09:00 b3hkwhj79 toolu_01Ago1hYMMWRai9VojiR7GAy /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4156-a66d |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T22:43:51+09:00 bnfmzf9z4 toolu_01Uuu5xR748c7WQXeZQEfY65 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4156-a66d |
+| causal | `cmd_karo_hotfix_review_bundle_cmd_id_unit1_20260829` files_modified: [[provisional_review_bundle]] |
+| cmd | `cmd_karo_hotfix_review_bundle_cmd_id_unit1_20260829` (`scripts/review_bundle.py`, `tests/unit/test_review_bundle.bats`) |
 
 ## provisional_cmd_gate_scaffold — 仮: Cmd Gate Scaffold
 
@@ -15392,6 +15404,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -15722,6 +15735,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-10T00:36:53.666520+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-10T09:52:14+09:00 database側に欠損はなかったのか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-10T00:58:03.913267+00:00 git pre-commit semantic propagation for context/projects changes |
+| cmd | `cmd_karo_hotfix_database_render_env_t185_20260829` |
 
 ## project_milk — M!LK
 
@@ -16992,6 +17006,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -17204,6 +17219,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
