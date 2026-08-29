@@ -366,6 +366,154 @@ check_ci_red_parallelization_guard() {
     exec {ci_red_lock_fd}>&-
 }
 
+# T190: publish the oldest first-parent commit after CI has returned GREEN.
+# This is deliberately a post-CLEAR lane: it never bypasses the pre-push hook,
+# never force-pushes, and advances one commit per monitor cycle.  A successful
+# publication then re-runs only commands whose latest gate result is the
+# ancestry WAIT, allowing the existing gate to produce the terminal evidence.
+push_lane_log() {
+    local message="$1" log_file="${PUSH_LANE_LOG:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane.log}"
+    mkdir -p "${log_file%/*}" 2>/dev/null || return 0
+    {
+        flock -x 9 || exit 0
+        printf '[%(%Y-%m-%dT%H:%M:%S%z)T] %s\n' -1 "$message"
+    } 9>"${log_file}.lock" >>"$log_file" 2>/dev/null || true
+}
+
+push_lane_waiting_ancestry_cmds() {
+    local metrics_file="${PUSH_LANE_GATE_METRICS:-$SCRIPT_DIR/logs/gate_metrics.log}"
+    [ -f "$metrics_file" ] || return 0
+    awk -F '\t' '
+        $2 ~ /^cmd_/ {
+            latest[$2] = ($3 == "WAIT" && $4 == "WAIT:report_commit_main_ancestry") ? "ANCESTRY_WAIT" : $3
+        }
+        END {
+            for (cmd in latest) if (latest[cmd] == "ANCESTRY_WAIT") print cmd
+        }
+    ' "$metrics_file" | LC_ALL=C sort
+}
+
+push_lane_regate_waiting_cmds() {
+    local repo="${1:-$SCRIPT_DIR}" cmd gate_rc gate_log
+    gate_log="${PUSH_LANE_GATE_LOG:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane_gate.log}"
+    while IFS= read -r cmd; do
+        [[ "$cmd" =~ ^cmd_[A-Za-z0-9_.-]+$ ]] || continue
+        if timeout --signal=TERM --kill-after=2 "${PUSH_LANE_GATE_TIMEOUT_SEC:-120}" \
+            bash "$repo/scripts/cmd_complete_gate.sh" "$cmd" >>"$gate_log" 2>&1; then
+            gate_rc=0
+        else
+            gate_rc=$?
+        fi
+        if [ "$gate_rc" -eq 124 ] || [ "$gate_rc" -eq 137 ]; then
+            push_lane_log "REGATE-TIMEOUT cmd=$cmd rc=$gate_rc"
+        elif [ "$gate_rc" -eq 0 ]; then
+            push_lane_log "REGATE-DONE cmd=$cmd rc=0"
+        else
+            push_lane_log "REGATE-FAIL cmd=$cmd rc=$gate_rc"
+        fi
+    done < <(push_lane_waiting_ancestry_cmds)
+}
+
+push_lane_pre_push_hook_ready() {
+    local repo="${1:-$SCRIPT_DIR}" hooks_dir hook
+    hooks_dir=$(git -C "$repo" rev-parse --git-path hooks 2>/dev/null) || return 1
+    [[ "$hooks_dir" = /* ]] || hooks_dir="$repo/$hooks_dir"
+    hook="$hooks_dir/pre-push"
+    [ -f "$hook" ] && [ -x "$hook" ]
+}
+
+push_lane_publish_one() {
+    local repo="$1" remote_name="$2" sha="$3"
+    # Keep this command literal and force-free: the repository hook remains
+    # the final dirty-path/test safety boundary for every automatic publish.
+    git -C "$repo" push "$remote_name" "$sha:refs/heads/main"
+}
+
+check_push_lane() {
+    local ci_status="${1:-${CI_STATUS_CACHE:-UNKNOWN}}"
+    local repo="${PUSH_LANE_REPO:-$SCRIPT_DIR}" remote_name="${PUSH_LANE_REMOTE_NAME:-origin}"
+    local remote_ref="${PUSH_LANE_REMOTE_REF:-origin/main}" count oldest commit_epoch now age min_age
+    local branch lock_file lock_fd push_rc
+    local push_output
+
+    [[ "${PUSH_LANE_ENABLED:-1}" == "1" ]] || return 0
+    count=$(git -C "$repo" rev-list --count "$remote_ref..HEAD" 2>/dev/null || true)
+    [[ "$count" =~ ^[0-9]+$ ]] || {
+        push_lane_log "BLOCK reason=unresolvable_remote_ref remote=$remote_ref"
+        return 0
+    }
+    if [ "$count" -eq 0 ]; then
+        push_lane_log "NOOP unpushed=0 push=0"
+        return 0
+    fi
+
+    # RED and UNKNOWN are both fail-closed.  In particular, a RED run must
+    # leave the push count at zero even when the local branch is old enough.
+    if [[ "$ci_status" != GREEN ]]; then
+        push_lane_log "WAIT ci=$ci_status unpushed=$count push=0"
+        return 0
+    fi
+
+    branch=$(git -C "$repo" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+    if [ "$branch" != "main" ]; then
+        push_lane_log "BLOCK reason=branch_not_main branch=${branch:-detached} push=0"
+        return 0
+    fi
+    push_lane_pre_push_hook_ready "$repo" || {
+        push_lane_log "BLOCK reason=pre_push_hook_missing_or_not_executable push=0"
+        return 0
+    }
+    oldest=$(git -C "$repo" rev-list --first-parent --reverse "$remote_ref..HEAD" 2>/dev/null | sed -n '1p')
+    [[ "$oldest" =~ ^[0-9a-f]{40}$ ]] || {
+        push_lane_log "BLOCK reason=oldest_first_parent_unresolved push=0"
+        return 0
+    }
+    commit_epoch=$(git -C "$repo" show -s --format=%ct "$oldest" 2>/dev/null || true)
+    [[ "$commit_epoch" =~ ^[0-9]+$ ]] || {
+        push_lane_log "BLOCK reason=oldest_commit_timestamp_unresolved sha=$oldest push=0"
+        return 0
+    }
+    min_age="${PUSH_LANE_MIN_AGE_SEC:-600}"
+    [[ "$min_age" =~ ^[0-9]+$ ]] || min_age=600
+    now="${EPOCHSECONDS:-$(date +%s)}"
+    age=$((now - commit_epoch))
+    if [ "$age" -lt "$min_age" ]; then
+        push_lane_log "WAIT ci=GREEN unpushed=$count oldest=$oldest age=${age}s threshold=${min_age}s push=0"
+        return 0
+    fi
+    git -C "$repo" merge-base --is-ancestor "$remote_ref" "$oldest" 2>/dev/null || {
+        push_lane_log "BLOCK reason=remote_tip_not_ancestor oldest=$oldest push=0"
+        return 0
+    }
+
+    lock_file="${PUSH_LANE_LOCK_FILE:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane.lock}"
+    mkdir -p "${lock_file%/*}" 2>/dev/null || return 0
+    exec {lock_fd}>"$lock_file" || return 0
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        push_lane_log "WAIT reason=push_lane_lock_busy push=0"
+        return 0
+    fi
+
+    # An automatic publish failure is an observable BLOCK, not a shell-level
+    # abort.  Keep the rc, write evidence, and release the single-flight lock
+    # even when callers enable `set -e` around the monitor function.
+    if push_output=$(push_lane_publish_one "$repo" "$remote_name" "$oldest" 2>&1); then
+        push_rc=0
+    else
+        push_rc=$?
+    fi
+    if [ "$push_rc" -eq 0 ]; then
+        push_lane_log "PASS ci=GREEN unpushed_before=$count sha=$oldest age=${age}s force=0 hook=1 commits=1"
+        push_lane_regate_waiting_cmds "$repo"
+    else
+        push_lane_log "BLOCK reason=push_failed rc=$push_rc sha=$oldest force=0 hook=1 output=${push_output//$'\n'/\\n}"
+    fi
+    flock -u "$lock_fd"
+    exec {lock_fd}>&-
+    return "$push_rc"
+}
+
 # --- lib-only mode: skip daemon initialization (tmux/settings依存) ---
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
 
@@ -467,6 +615,10 @@ CI_STATUS_CHECK_INTERVAL=300    # CI statusキャッシュ有効期間（秒）�
 UNPUSHED_COUNT_CACHE=0          # unpushed commits数キャッシュ — git rev-list毎サイクル実行削減
 UNPUSHED_COUNT_CHECK_LAST=0     # unpushedキャッシュ最終更新時刻（epoch秒）
 UNPUSHED_COUNT_CHECK_INTERVAL=120  # unpushedキャッシュ有効期間（秒）— 2分(git起動コスト削減)
+PUSH_LANE_MIN_AGE_SEC=${PUSH_LANE_MIN_AGE_SEC:-600} # oldest first-parent commitがpush対象になる最低経過時間
+PUSH_LANE_GATE_TIMEOUT_SEC=${PUSH_LANE_GATE_TIMEOUT_SEC:-120} # push後WAIT ancestry再GATEの上限
+PUSH_LANE_LOG=${PUSH_LANE_LOG:-$SCRIPT_DIR/logs/ninja_monitor_push_lane.log}
+PUSH_LANE_LOCK_FILE=${PUSH_LANE_LOCK_FILE:-$STATE_DIR/ninja_monitor_push_lane.lock}
 CONTEXT_WARN_SIG_CACHE="missing"   # context_freshness_check.sh --dashboard-warningsキャッシュ値（毎サイクル→300s間隔に削減）
 CONTEXT_WARN_SIG_CHECK_LAST=0      # context_warn_sigキャッシュ最終更新時刻（epoch秒）
 CONTEXT_WARN_SIG_CHECK_INTERVAL=300  # context_warn_sigキャッシュ有効期間（秒）— 5分（CI_STATUS_CACHEと同様）
@@ -14122,6 +14274,11 @@ while true; do
     fi
     current_ci_status="$CI_STATUS_CACHE"
     check_ci_red_parallelization_guard "$current_ci_status" "$_ci_check_now"
+    # T190: CI GREEN + aged local first-parent commits enter the guarded
+    # one-commit push lane. The worker receives the observed CI value because
+    # lifecycle workers start with a fresh lib-only cache.
+    _ninja_monitor_phase_call lifecycle push_lane \
+        _ninja_monitor_run_lifecycle_background push_lane check_push_lane "$current_ci_status"
     # unpushed count: 2分間隔キャッシュ（git rev-list毎サイクル実行→WSL2 git起動コスト削減）
     _unpushed_now=$EPOCHSECONDS
     if (( _unpushed_now - UNPUSHED_COUNT_CHECK_LAST >= UNPUSHED_COUNT_CHECK_INTERVAL )); then
