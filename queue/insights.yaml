@@ -7776,3 +7776,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-160547489-8045
+  ts: "2026-08-29T16:05:47+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[commander_directive_未着地_D0_1d4d1f271]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=source lord directive causal; score=10.8) / commander_role_ssot_analysis(Commanderロール SSOT分析; alias=commander role; score=10.6) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun d0 fix; score=10.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
