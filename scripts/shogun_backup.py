@@ -280,12 +280,71 @@ def safe_extract(archive_path: Path, destination: Path) -> None:
             relative = PurePosixPath(member.name)
             if relative.is_absolute() or ".." in relative.parts:
                 fail(f"unsafe archive member: {member.name}")
-            if member.issym() or member.islnk():
-                fail(f"link archive member is not allowed: {member.name}")
-            target = (destination / Path(*relative.parts)).resolve()
-            if destination_resolved != target and destination_resolved not in target.parents:
+            target = destination / Path(*relative.parts)
+            target_absolute = target.absolute()
+            if destination_resolved != target_absolute and destination_resolved not in target_absolute.parents:
                 fail(f"archive member escapes destination: {member.name}")
-        archive.extractall(destination)
+            if member.islnk():
+                fail(f"hardlink archive member is not allowed: {member.name}")
+            if member.issym():
+                link_name = PurePosixPath(member.linkname)
+                if link_name.is_absolute():
+                    # Historical worktrees used either of these two absolute
+                    # repo roots.  Rewrite only those known roots to a
+                    # relative link in the isolated destination.
+                    known_roots = (
+                        "/mnt/c/tools/multi-agent-shogun",
+                        "/home/simokitafresh/multi-agent-shogun",
+                    )
+                    matching_root = next((root for root in known_roots if str(link_name).startswith(root + "/")), None)
+                    if matching_root is None:
+                        fail(f"external absolute symlink is not allowed: {member.name}")
+                    mapped = destination / str(link_name)[len(matching_root) + 1 :]
+                    link_value = os.path.relpath(mapped, (destination / Path(*relative.parts)).parent)
+                else:
+                    mapped = Path(os.path.abspath(str(destination / Path(*relative.parts).parent / Path(*link_name.parts))))
+                    if destination_resolved != mapped and destination_resolved not in mapped.parents:
+                        fail(f"symlink escapes destination: {member.name}")
+                    link_value = member.linkname
+                if not link_value:
+                    fail(f"empty symlink target: {member.name}")
+                continue
+        for member in members:
+            relative = PurePosixPath(member.name)
+            target_path = destination / Path(*relative.parts)
+            if member.isdir():
+                if target_path.exists() and not target_path.is_dir():
+                    fail(f"archive directory conflicts with file: {member.name}")
+                target_path.mkdir(parents=True, exist_ok=True)
+                continue
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            if target_path.is_symlink() or target_path.is_file():
+                target_path.unlink()
+            elif target_path.exists():
+                fail(f"archive file conflicts with directory: {member.name}")
+            if member.issym():
+                link_name = PurePosixPath(member.linkname)
+                if link_name.is_absolute():
+                    known_roots = (
+                        "/mnt/c/tools/multi-agent-shogun",
+                        "/home/simokitafresh/multi-agent-shogun",
+                    )
+                    matching_root = next((root for root in known_roots if str(link_name).startswith(root + "/")), None)
+                    if matching_root is None:
+                        fail(f"external absolute symlink is not allowed: {member.name}")
+                    mapped = destination / str(link_name)[len(matching_root) + 1 :]
+                    link_value = os.path.relpath(mapped, target_path.parent)
+                else:
+                    link_value = member.linkname
+                os.symlink(link_value, target_path)
+                continue
+            if not member.isfile():
+                fail(f"unsupported archive member: {member.name}")
+            source = archive.extractfile(member)
+            if source is None:
+                fail(f"archive member has no readable data: {member.name}")
+            with source, target_path.open("wb") as output:
+                shutil.copyfileobj(source, output, length=1024 * 1024)
 
 
 def build_artifacts(stage: Path, *, root: Path, dm_root: Path, key: Path, backup_id: str) -> tuple[list[dict[str, Any]], int]:
