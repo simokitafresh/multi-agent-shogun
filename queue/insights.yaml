@@ -4415,7 +4415,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存防御へ解消済み: Gate 10.07が長時間bats孤児を検知し、orphan_test_reap.shが親消失テスト木を再帰列挙し、cmd_4405がrunner子孫回収を実装済み"
+  action_artifact: "Gate10.07=3fa443c11;orphan_test_reap=4c43d9918;cmd_4405=8c09923f8;context/infrastructure.md"
+  resolved_at: "2026-08-29T22:17:19+09:00"
 - id: INS-20260827-011105676-5450
   ts: "2026-08-27T01:11:05+09:00"
   insight: "GitHub Actions queue滞留: 2026-08-27 00:27-01:10 JST、3815cc5b7/2df2ecdee runがqueued 40分超、c17a92d8e runはcancelled(全job)、858d2a82f pushにrun未生成(commit status pending)。concurrency cancel-in-progressの想定(新→旧cancel)と逆。GitHub側障害かworkflow設定かを切り分け、origin tipのGREEN証跡を得る手段(rerun/workflow_dispatch)を家老レーンの完了処理へ"
