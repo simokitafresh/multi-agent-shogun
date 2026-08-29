@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-29 cmd_karo_hotfix_lifecycle_worker_singleton_unit4(DOC_LANE_REQUEST blt_212507) -->
+<!-- last_updated: 2026-08-30 cmd_karo_hotfix_backup_cron_gws_path(origin 到達後) -->
+<!-- source_commit:08ce18ac79a8 reason:cmd_karo_hotfix_backup_cron_gws_path(origin 到達後) evidence:git show --stat 08ce18ac79a8 -->
 <!-- source_commit:788139722e44 reason:cmd_karo_hotfix_lifecycle_worker_singleton_unit4(DOC_LANE_REQUEST blt_212507) evidence:git show --stat 788139722e44 -->
 <!-- source_commit:32612a1f1480 reason:cmd_karo_hotfix_command_scope_directory_prefix(DOC_LANE_REQUEST blt_210808) evidence:git show --stat 32612a1f1480 -->
 <!-- source_commit:bb409ad39caf reason:cmd_4411 オフサイト退避+隔離復元(DOC_LANE_REQUEST blt_182710、origin 到達後) evidence:git show --stat bb409ad39caf -->
