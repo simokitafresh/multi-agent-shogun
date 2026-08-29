@@ -91,6 +91,67 @@ EOF
 #!/usr/bin/env bash
 : "${PREPUSH_TEST_COUNTER:?}"
 printf 'run\n' >> "$PREPUSH_TEST_COUNTER"
+receipt_dir="${RUN_TESTS_RECEIPT_DIR:?}"
+mkdir -p "$receipt_dir"
+source_head="$(git rev-parse HEAD)"
+tree_fingerprint="$(git ls-tree -r --full-tree "$source_head" -- \
+    scripts lib tests .githooks .claude/hooks 2>/dev/null \
+    | LC_ALL=C sort | sha256sum | awk '{print $1}')"
+source_fingerprint="$(git ls-tree -r --full-tree "$source_head" -- \
+    scripts lib tests/helpers 2>/dev/null \
+    | awk '$4 != "scripts/run_tests.sh" {print $3}' \
+    | sha256sum | awk '{print $1}')"
+receipt="$receipt_dir/run_${source_head}.json"
+artifact="${receipt%.json}.output"
+printf '1..1\nok 1 selected\n' > "$artifact"
+output_sha256="$(sha256sum "$artifact" | awk '{print $1}')"
+python3 - "$receipt" "$artifact" "$output_sha256" "$source_head" \
+    "$source_fingerprint" "$tree_fingerprint" <<'PY'
+import json
+import sys
+
+receipt, artifact, output_sha256, source_head, source_fingerprint, tree_fingerprint = sys.argv[1:]
+json.dump({
+    "version": 3,
+    "complete": True,
+    "result": "PASS",
+    "rc": 0,
+    "duration_ms": 1,
+    "output_sha256": output_sha256,
+    "declared_test_count": 1,
+    "observed_test_count": 1,
+    "skip_count": 0,
+    "artifact": artifact,
+    "signal": None,
+    "command": ["bash", "scripts/run_tests.sh", "affected"],
+    "source_head": source_head,
+    "test_paths": ["tests/unit/selected.bats"],
+    "run_id": source_head,
+    "commit_sha": source_head,
+    "source_fingerprint": source_fingerprint,
+    "tree_fingerprint": tree_fingerprint,
+    "run_manifest": {
+        "cache": {"directory": "", "enabled": False},
+        "commit_sha": source_head,
+        "selector_input_fingerprint": source_fingerprint,
+        "selected_paths_fingerprint": source_fingerprint,
+        "estimated_cost": {"selected_files": 1, "suite_timeout_sec": 60},
+        "scope_identity": {
+            "mode": "affected",
+            "selected_file_count": 1,
+            "discovered_file_count": None,
+            "started_file_count": 1,
+            "executed_file_count": 1,
+            "cached_file_count": 0,
+            "failed_files": [],
+            "failed_file_count": 0,
+            "complete": True,
+            "full_scope": False,
+            "full_scope_claimable": False,
+        },
+    },
+}, open(receipt, "w", encoding="utf-8"))
+PY
 EOF
     chmod +x "$FAKE_REPO/scripts/test_select.sh" "$FAKE_REPO/scripts/run_tests.sh"
     printf '# selected contract\n' > "$FAKE_REPO/tests/unit/selected.bats"
@@ -355,20 +416,39 @@ EOF
 }
 
 # cmd_karo_hotfix_t22_prepush_tree_cache_20260826
-# test_necessity: the serialized PASS cache must represent the committed
+# test_necessity: the terminal Ninja PASS receipt must represent the committed
 # affected-test tree, so a non-target operational commit reuses PASS with zero
 # test reruns while a scripts/ blob change invalidates it and reruns once.
 # overlaps_existing: true
 # regression_justification: this suite already owns full pre-push hook fixtures;
 # extending it reuses that contract boundary without adding another fixture file.
-@test "PASS cache keys the affected-test tree: insights hit, scripts miss" {
+@test "terminal receipt keys the affected-test tree: insights hit, scripts miss" {
     install_cache_fingerprint_fixture
 
     run run_prepush
     [ "$status" -eq 0 ]
     [ "$(wc -l < "$PREPUSH_TEST_COUNTER")" -eq 1 ]
-    first_fingerprint="$(cat "$FAKE_REPO/logs/prepush_test_pass.sha")"
+    first_receipt="$FAKE_REPO/logs/test_receipts/run_${LOCAL_SHA}.json"
+    [ -f "$first_receipt" ]
+    first_fingerprint="$(python3 - "$first_receipt" <<'PY'
+import json
+import sys
+print(json.load(open(sys.argv[1], encoding="utf-8"))["tree_fingerprint"])
+PY
+)"
     [[ "$first_fingerprint" =~ ^[0-9a-f]{64}$ ]]
+    [ "$(python3 - "$first_receipt" <<'PY'
+import json
+import sys
+receipt = json.load(open(sys.argv[1], encoding="utf-8"))
+assert receipt["source_head"] == receipt["commit_sha"]
+assert receipt["complete"] is True
+assert receipt["result"] == "PASS"
+assert receipt["rc"] == 0
+assert receipt["skip_count"] == 0
+print("terminal")
+PY
+)" = terminal ]
 
     mkdir -p "$FAKE_REPO/logs"
     printf 'published insight\n' > "$FAKE_REPO/logs/insights.yaml"
@@ -379,7 +459,13 @@ EOF
     run run_prepush
     [ "$status" -eq 0 ]
     [ "$(wc -l < "$PREPUSH_TEST_COUNTER")" -eq 1 ]
-    [ "$(cat "$FAKE_REPO/logs/prepush_test_pass.sha")" = "$first_fingerprint" ]
+    [ "$(find "$FAKE_REPO/logs/test_receipts" -maxdepth 1 -type f -name '*.json' -print | awk 'NF {n++} END {print n + 0}')" -eq 1 ]
+    [ "$(python3 - "$first_receipt" <<'PY'
+import json
+import sys
+print(json.load(open(sys.argv[1], encoding="utf-8"))["tree_fingerprint"])
+PY
+)" = "$first_fingerprint" ]
 
     printf '# relevant source change\n' > "$FAKE_REPO/scripts/cache_target.sh"
     git -C "$FAKE_REPO" add -A
@@ -389,5 +475,15 @@ EOF
     run run_prepush
     [ "$status" -eq 0 ]
     [ "$(wc -l < "$PREPUSH_TEST_COUNTER")" -eq 2 ]
-    [ "$(cat "$FAKE_REPO/logs/prepush_test_pass.sha")" != "$first_fingerprint" ]
+    second_receipt="$FAKE_REPO/logs/test_receipts/run_${LOCAL_SHA}.json"
+    [ -f "$second_receipt" ]
+    [ "$(find "$FAKE_REPO/logs/test_receipts" -maxdepth 1 -type f -name '*.json' -print | awk 'NF {n++} END {print n + 0}')" -eq 2 ]
+    second_fingerprint="$(python3 - "$second_receipt" <<'PY'
+import json
+import sys
+print(json.load(open(sys.argv[1], encoding="utf-8"))["tree_fingerprint"])
+PY
+)"
+    [[ "$second_fingerprint" =~ ^[0-9a-f]{64}$ ]]
+    [ "$second_fingerprint" != "$first_fingerprint" ]
 }
