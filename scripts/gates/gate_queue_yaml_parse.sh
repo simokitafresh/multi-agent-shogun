@@ -61,6 +61,8 @@ for task_path in [path for path in paths if path.relative_to(root).as_posix().st
     if err is not None or not isinstance(document, dict):
         continue
     task = document.get("task") if isinstance(document.get("task"), dict) else document
+    if str(task.get("status") or "").strip().lower() == "idle":
+        continue
     report_value = str(task.get("report_path") or "").strip()
     if not report_value:
         continue
@@ -74,7 +76,6 @@ for task_path in [path for path in paths if path.relative_to(root).as_posix().st
     if rel.startswith("queue/reports/") and rel.endswith(".yaml") and rel not in seen:
         seen.add(rel)
         paths.append(report_path)
-
 
 errors = []
 for path in sorted(paths):

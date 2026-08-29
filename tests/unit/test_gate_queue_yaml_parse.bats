@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Live queue YAML is parsed fail-closed while terminal report symlinks are excluded; malformed live YAML and non-transient I/O errors remain BLOCK.
+# test_necessity: Idle task placeholders are excluded from live report parsing; active malformed/missing reports and non-transient I/O errors remain BLOCK.
 # test_gate_queue_yaml_parse.bats
 # cmd_karo_hotfix_queue_yaml_atomicity_202607110113
 # Purpose: scripts/gates/gate_queue_yaml_parse.sh の挙動を検証する。
@@ -24,7 +24,7 @@ setup() {
     # mktemp -dの前に親dirの存在を保証する。
     mkdir -p "$PROJECT_ROOT/tmp"
     TEST_ROOT="$(mktemp -d "$PROJECT_ROOT/tmp/gate_qyp_test.XXXXXX")"
-    mkdir -p "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" "$TEST_ROOT/queue/inbox" "$TEST_ROOT/queue/archive/reports"
+    mkdir -p "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" "$TEST_ROOT/queue/inbox"
     cat > "$TEST_ROOT/queue/shogun_to_karo.yaml" <<'EOF'
 commands: []
 EOF
@@ -40,8 +40,6 @@ task:
   report_path: queue/reports/live.yaml
 EOF
     printf 'report:\n  status: ready\n' > "$TEST_ROOT/queue/reports/live.yaml"
-    printf 'not: [valid\n' > "$TEST_ROOT/queue/archive/reports/completed.yaml"
-    ln -s ../archive/reports/completed.yaml "$TEST_ROOT/queue/reports/completed.yaml"
 }
 
 teardown() {
@@ -63,26 +61,46 @@ teardown() {
 }
 
 @test "taskが指すlive reportのYAML破損はALERT・exit 1" {
+    printf 'task:\n  status: acknowledged\n  report_path: queue/reports/live.yaml\n' > "$TEST_ROOT/queue/tasks/kagemaru.yaml"
     printf 'report: [broken\n' > "$TEST_ROOT/queue/reports/live.yaml"
     run env QUEUE_YAML_PARSE_ROOT="$TEST_ROOT" bash "$GATE_SCRIPT"
     [ "$status" -eq 1 ]
     [[ "$output" == *"queue/reports/live.yaml"* ]]
 }
 
-@test "一時的なFileNotFoundError(rename直後の瞬間的ENOENT想定)は1回のリトライで吸収されOKになる" {
-    # kagemaru.yamlを削除した直後にバックグラウンドで即座に復元し、
-    # yaml_field_set.shのmv(atomic rename)がWSL2 drvfs越しで一瞬destinationを
-    # 消す挙動(実測済み)を模擬する。ゲートのリトライ(0.05s待機)が吸収するはず。
-    local target="$TEST_ROOT/queue/tasks/kagemaru.yaml"
-    (
-        rm -f "$target"
-        sleep 0.01
-        printf 'task:\n  status: idle\n' > "$target"
-    ) &
+@test "idle taskのplaceholder report_path欠落はparse集合へ追加せずOKになる" {
+    printf 'task:\n  task_id: idle\n  status: idle\n  report_path: queue/reports/placeholder.yaml\n' > "$TEST_ROOT/queue/tasks/sasuke.yaml"
+    rm -f "$TEST_ROOT/queue/reports/placeholder.yaml"
     run env QUEUE_YAML_PARSE_ROOT="$TEST_ROOT" bash "$GATE_SCRIPT"
-    wait
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: queue YAML parse clean"* ]]
+}
+
+@test "一時的なFileNotFoundError(rename直後の瞬間的ENOENT)は20回反復で吸収されOKになる" {
+    # yaml_field_set.shのmv(atomic rename)がWSL2 drvfs越しで一瞬destinationを
+    # 消す挙動(実測済み)を20回模擬する。ゲートの有界リトライが毎回吸収するはず。
+    local target="$TEST_ROOT/queue/tasks/kagemaru.yaml"
+    local i
+    for i in $(seq 1 20); do
+        printf 'task:\n  status: idle\n' > "$target"
+        (
+            rm -f "$target"
+            sleep 0.01
+            printf 'task:\n  status: idle\n' > "$target"
+        ) &
+        run env QUEUE_YAML_PARSE_ROOT="$TEST_ROOT" bash "$GATE_SCRIPT"
+        wait
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"OK: queue YAML parse clean"* ]]
+    done
+}
+
+@test "active taskの欠落reportはALERT・exit 1を維持する" {
+    printf 'task:\n  status: acknowledged\n  report_path: queue/reports/missing.yaml\n' > "$TEST_ROOT/queue/tasks/kagemaru.yaml"
+    rm -f "$TEST_ROOT/queue/reports/missing.yaml"
+    run env QUEUE_YAML_PARSE_ROOT="$TEST_ROOT" bash "$GATE_SCRIPT"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"queue/reports/missing.yaml"* ]]
 }
 
 @test "FileNotFoundError以外のOSError(ディレクトリをファイルとしてopen)はリトライで握りつぶされずALERT・exit 1" {
