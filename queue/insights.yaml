@@ -7636,3 +7636,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-29T12:09:32+09:00"
+- id: INS-20260829-124121409-b3a9
+  ts: "2026-08-29T12:41:21+09:00"
+  insight: "[[T178 T177 T176 T163の進捗を覚醒して確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T178 / T177 / T176 / T163の進捗を覚醒して確認し、終了まで家老を導け"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
