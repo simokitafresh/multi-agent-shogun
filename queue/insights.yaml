@@ -2808,7 +2808,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: LG051の現行gateは明示FIX(rgコマンド+non-test caller count:N)を出し、境界テスト6/6 PASS・details経路4/4 PASSで検知契約は有効。ただし現行GPT注入と生成reportはLG051具体例を自動注入しておらず、反復BLOCK防止のtask/report注入は未実装。必要な改善をdecision_candidateへ整理した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260824-031619025-64be;gate=scripts/gates/gate_report_format_main.py:L1792-L1801;tests=tests/unit/test_gate_report_format_lg051_scope.bats:6/6 PASS SKIP0,tests/unit/test_lg048_lg051_boundary.bats:4/4 PASS SKIP0;injection=scripts/deploy_task/context_injection.sh:L467-L477 lacks LG051 example;decision_candidate=inject rg command plus non-test caller count:N into GPT task/report contract"
+  resolved_at: "2026-08-29T09:02:42+09:00"
 - id: INS-20260824-054737158-9351
   ts: "2026-08-24T05:47:37+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4381; matched=実行; current_pattern=cmd_complete_gate.sh速度改善第三弾 — 本番実行の常時フェーズ記録化でgateが自分自身を計測する構造へ; candidate_level=4; candidate=LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし); source=gunshi_gp_tracker.yaml"
@@ -7960,7 +7963,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T09:10:19+09:00"
 - id: INS-20260829-085530244-0133
   ts: "2026-08-29T08:55:30+09:00"
   insight: "production proof artifact(queue/proofs/)の存在確認がprecheckに無い。AC2でproof外部化=yesだがartifact 0件を見落としてLGTM。precheck SG強化候補: bc=yesかつproduction_proof要件があるcmdのproof artifact実在確認"
