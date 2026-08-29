@@ -3370,6 +3370,7 @@ insights:
   resolved_reason: "一次情報で現行実行経路を確認。scripts/deploy_task.sh:5991-5996 のGP-225修正によりASCII↔CJK境界分割と全大文字略語(2文字以上)免除が実装済みで、対象根因は解消済み。追加実装修正は不要。"
   action_artifact: "target=queue/insights.yaml:INS-20260824-141800812-24e5;code=scripts/deploy_task.sh:5991-5996;commit=39e6e30ffbb52af41fbaa562cc33234a6bb5ae75;unit=tests/unit/test_deploy_task_ac_handling.bats:2015-2050;simulation=CDP計測→CDP,計測;OOM→oom,recovery;context=docs/research/gunshi_idle_infra_health_20260425.md:32-38;semantic=docs/semantic-index/index.md+context/semantic-map.md"
   resolved_at: "2026-08-29T13:33:34+09:00"
+  last_seen: "2026-08-29T13:40:30+09:00"
 - id: INS-20260824-141802275-7094
   ts: "2026-08-24T14:18:02+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4377; matched=最終; current_pattern=deploy_task.sh分割最終弾J — orchestrationをmain moduleへ抽出し本体を薄wrapper化; candidate_level=2; candidate=cmd_1855のverdict_override根因。AC『全期間月次リターン差』が進行中月を含み、GS作成日vs本番更新日の差異で常にFAIL。AC標準文言を『完了月(最終月除外)』に変更。cmd起票テンプレート修正が必要→家老担当; source=gunshi_gp_tracker.yaml"
