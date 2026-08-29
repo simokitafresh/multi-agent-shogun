@@ -6774,6 +6774,7 @@ codd:
 | cmd | `cmd_4315` provenance工程P6 — 検証クエリをdb-checkスキルへ定型化する (`skills/db-check/SKILL.md`) |
 | causal | `cmd_karo_hotfix_skill_auto_improve_dirty_202608201637` files_modified: [[skill_design_rules]] |
 | cmd | `cmd_karo_hotfix_skill_auto_improve_dirty_202608201637` (`skills/ninja-commit/SKILL.md`) |
+| causal | `cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830` files_modified: [[skill_design_rules]] |
 | causal_chain | `[[cmd_karo_hotfix_skill_script_refs_202607022043]]` (L940) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
 
@@ -9772,6 +9773,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:15:54.213478+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:36:39.031910+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:40:53.667060+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T22:41:42.311089+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -11460,6 +11462,7 @@ codd:
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_timeout_floor_20260830` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -13011,7 +13014,10 @@ codd:
 | cmd | `cmd_karo_hotfix_command_scope_directory_prefix_20260829` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | cmd | `cmd_karo_ci_fix_33253680471_commander_identity` (`tests/unit/test_inbox_write.bats`) |
 | cmd | `cmd_karo_hotfix_commander_inbox_identity_all_directives_20260829` (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
+| lesson | `L1672` task runnerの外部worktree dispatchは実行境界を明示する |
+| cmd | `cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830` (`scripts/lib/tmux_live_send_guard.sh`, `scripts/reset_layout.sh`, `tests/unit/test_reset_layout.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
+| causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
 
@@ -16925,6 +16931,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:29:29.966720+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:41:14.464507+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T19:11:56.681040+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T22:44:12.898052+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T22:50:29.819790+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |

@@ -16194,3 +16194,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 複数行を返すidentity関数へhead -1をpipeすると、set -euo pipefail環境でproducerがSIGPIPEとなり後続のstructured identityが欠落する。複数行契約はmapfileで全量受けてから必要要素を選ぶ。
+
+### L1672: task runnerの外部worktree dispatchは実行境界を明示する
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830
+- **記録者**: hanzo
+- **tags**: [infra,testing,frontend,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/tmux_live_send_guard.sh,scripts/reset_layout.sh,tests/unit/test_reset_layout.bats]
+- **origin**: [[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 依存runner修正後も外部task worktreeではrunner modeとRUN_TESTS_ACTIVE継承がdispatch条件に影響する。task runnerの外部child起動はaggregate状態を持ち込まず、対象test engineを実走してrc=0・FAIL=0・SKIP=0をreceiptへ固定するチェックを次回追加すべきである。
