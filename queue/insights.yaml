@@ -7964,3 +7964,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-29T17:01:01+09:00"
+- id: INS-20260829-171017698-fda5
+  ts: "2026-08-29T17:10:17+09:00"
+  insight: "[[T189 briefの保持集合を不変に保ち]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=commit 1be8bee8f; score=3.2) / investment_knowledge_base(投資知識辞書; alias=L1 Trend Filter; score=2.7) / destructive_operations(破壊的操作安全機構; alias=Tier1; score=2.6)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
