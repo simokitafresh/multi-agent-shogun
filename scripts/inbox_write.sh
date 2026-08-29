@@ -523,7 +523,7 @@ notify_karo_duplicate_deploy_block() {
     INBOX_WRITE_DUP_BLOCK_NOTIFY=0 \
         bash "$SELF_SCRIPT_PATH" \
             karo \
-            "[duplicate_deploy_gate] BLOCKED: parent_cmd=${parent_cmd} target=${target} duplicates=${duplicate_summary}" \
+            "task_id=commander_directive subject_task_id=${target} parent_cmd=${parent_cmd} [duplicate_deploy_gate] BLOCKED: parent_cmd=${parent_cmd} target=${target} duplicates=${duplicate_summary}" \
             deploy_blocked \
             inbox_write >/dev/null 2>&1 || true
 }
@@ -1008,10 +1008,7 @@ PY
 # reintroducing taskless mail.  Never recover a cmd_id from free-form prose.
 inbox_karo_message_requires_identity() {
     case "$1" in
-        pending_work|review_draft_result|gate_clear_required)
-            return 0
-            ;;
-        wake_up|task_assigned|task_new|task_supplement|task_cancel|cmd_new|uncommitted_block|deploy_blocked|review_draft|review_result|review_feedback|report_review|review_report|accept_report|run_cmd_complete|report_review_result|report_revision|workaround_feedback|review_hint|analysis_result|investigation_result|gunshi_lesson_candidate|decomposition_feedback|verify_request|verify_result|clear_command|model_switch|recovery|report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed|info|low|heartbeat|status_update|retro_answer|retro_result|infra_bug_suspected|infra_bug_report|infra_bug|gate_clear|bulletin_notify|escalation|gate_block|gate_fail|gate_alert|idle_notice|report_notification_missing|report_missing|report_format_fix|clear_loop_block|disk_space_alert|stall_alert|stale_cmd|cmd_pending|destructive_warn|ninja_idle|auto_void|cmd_absorbed|halt|skill_hint|lesson_registration_reminder|infra_anomaly|lesson_health|quality_monitor|karo_idle_cycle|gate_improvement|gate_alert|gate_clear)
+        low|info|gate_clear|heartbeat|status_update|retro_answer|bulletin_notify|task_new|task_assigned|report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed|review_report|accept_report|run_cmd_complete|report_review|report_review_result|report_revision|retro_result|infra_bug_suspected|infra_bug_report|infra_bug|investigation_result)
             return 1
             ;;
         *)
@@ -2994,11 +2991,15 @@ STRUCTURED_REPORT_FINGERPRINT=""
 STRUCTURED_REVISION_FINGERPRINT=""
 case "$TYPE" in
     task_assigned)
-        # Bind assignment identity from the destination task only.  In
-        # particular, never copy report_id/task_id from sender prose or a
-        # report notification into this deployment event.
-        mapfile -t _assignment_values < <(inbox_task_assignment_identity_fields "$TARGET")
-        _identity_fields=(task_id "${_assignment_values[0]:-}" parent_cmd "${_assignment_values[1]:-}")
+        if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE"; then
+            _identity_fields=(task_id "$COMMANDER_DIRECTIVE_TASK_ID" subject_task_id "$COMMANDER_DIRECTIVE_SUBJECT_TASK_ID" parent_cmd "$COMMANDER_DIRECTIVE_PARENT_CMD")
+        else
+            # Bind assignment identity from the destination task only.  In
+            # particular, never copy report_id/task_id from sender prose or a
+            # report notification into this deployment event.
+            mapfile -t _assignment_values < <(inbox_task_assignment_identity_fields "$TARGET")
+            _identity_fields=(task_id "${_assignment_values[0]:-}" parent_cmd "${_assignment_values[1]:-}")
+        fi
         ;;
     report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
         if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
