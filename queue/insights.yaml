@@ -5170,7 +5170,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行実装・永続ext4 root・回帰契約を照合。deploy_task.sh:8989とpreflight.sh:176の既定値は/home/simokitafresh/shogun-task-worktreesへ移行済みで、明示DEPLOY_TASK_WORKTREE_ROOTは維持される。b5f586933959の回帰テスト7/7 PASS・SKIP0により対象提案を充足し、新規修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-150829137-46e4;primary=scripts/deploy_task.sh:8989 and scripts/deploy_task/preflight.sh:176;fix_commit=git:b5f586933959465d42cc482d3bab9e55bedcd159;design=docs/research/9p_root_fix_runbook_20260827.md:78;context=context/infrastructure.md:368;regression=tests/unit/test_task_worktree_lifecycle.bats:181-241;verification=repo_fstype=ext2/ext3,worktree_root=/home/simokitafresh/shogun-task-worktrees present,tests=7/7 PASS SKIP0;decision_candidate=none"
+  resolved_at: "2026-08-30T06:25:31+09:00"
 - id: INS-20260827-151220757-747e
   ts: "2026-08-27T15:12:20+09:00"
   insight: "SG-PRE3 commit検証がreport.commit_hash(最終commit)のみ照合し、2-commit構成で偽陽性WARNを出す。gate_gunshi_report_precheck.shのSG-PRE3をgit log --grep=task_id方式に改修し、同一task_idの全commitを対象にすべき"
