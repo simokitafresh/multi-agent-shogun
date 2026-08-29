@@ -8409,6 +8409,8 @@ codd:
 | cmd | `cmd_karo_hotfix_deploy_worktree_prepare_opt_20260829` |
 | cmd | `cmd_karo_hotfix_monitor_reflux_inventory_speed_v2_20260829` |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:34:54+09:00 2026-08-29 10:40 T180 範囲拡大: push lane の git merge -s ours(家老認定 blt_101531)で内容が戻された commit を機械列挙(08-29 00:00 以降 non-merge |
+| causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -10233,6 +10235,7 @@ codd:
 | causal | `cmd_karo_hotfix_t137_auto_clear_semantic_failure_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -11042,6 +11045,7 @@ codd:
 | causal | `cmd_karo_hotfix_t137_auto_clear_semantic_failure_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -11342,6 +11346,7 @@ codd:
 | causal | `cmd_karo_ci_fix_33167035334_autodone_contract_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -15322,6 +15327,7 @@ codd:
 | causal | `cmd_karo_hotfix_t137_auto_clear_semantic_failure_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -16921,6 +16927,7 @@ codd:
 | causal | `cmd_karo_hotfix_t137_auto_clear_semantic_failure_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -17132,6 +17139,7 @@ codd:
 | causal | `cmd_karo_ci_fix_33167035334_autodone_contract_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
