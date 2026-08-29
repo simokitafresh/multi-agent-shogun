@@ -4918,7 +4918,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で未解消を確認。現行 scripts/deepdive_replay.sh の L31-L39 は本文・自問を stdout に出し、receipt追記は L40-L50 の後段である。set -euo pipefail 下で呼出側が | head によりstdoutを早期closeするとSIGPIPEで後段が実行されず、receipt欠落により追体験証跡が虚偽化しうる。本taskのplanned_pathsはqueue/insights.yamlのみのためコード変更は行わず、別実装cmdが必要なdecision_candidateとして整理した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-123334194-3557;confirmed=scripts/deepdive_replay.sh:L31-L50;current_state=receipt_after_stdout;candidate=receipt_write_before_stdout_or_trap_EXIT;decision_candidate=separate implementation cmd;tests=deepdive_replay pipeline/head SIGPIPE regression coverage review"
+  resolved_at: "2026-08-30T04:50:02+09:00"
 - id: INS-20260827-124941303-a263
   ts: "2026-08-27T12:49:41+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bz2pkd50e task id tool use id toolu 01DfsHBg65588Uh8LR は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
