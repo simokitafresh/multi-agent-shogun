@@ -4425,7 +4425,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で旧事象を再確認。失敗run 32987834940(SHA 858d2a82f)に対しexact-SHA workflow_dispatchの成功run 32999064580(SHA 8c09923f8)で全job success・SKIP検査successを確認し、既存の家老レーン突破とcontext記録で解消済み。コード修正・追加decision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260827-011105676-5450;github=run32987834940(failure,SHA858d2a82f),run32999064580(success,SHA8c09923f8);workflow=.github/workflows/test.yml:L4-L13;context=context/infrastructure.md:L355;memory=memory_db_query+semantic_search"
+  resolved_at: "2026-08-29T22:45:00+09:00"
 - id: INS-20260827-011808804-3b04
   ts: "2026-08-27T01:18:08+09:00"
   insight: "semantic_index_update新概念候補: discussion:児bats 4プロセスを残すメリットとデメリットはなんだ？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
