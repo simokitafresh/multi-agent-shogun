@@ -13625,9 +13625,11 @@ codd:
 | cmd | `cmd_reflux_insight_202608290855_kotaro` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608290944_hanzo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608290944_hanzo` (`queue/insights.yaml`) |
-| causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 | causal | `cmd_reflux_insight_202608291000_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291000_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291030_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291030_kagemaru` (`queue/insights.yaml`) |
+| causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
 
