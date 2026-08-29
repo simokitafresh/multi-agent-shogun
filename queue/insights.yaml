@@ -4969,7 +4969,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で対象insightと根因修正を照合し、既存実装で解決済みと判定。commit 2360a18a70433905e98bfabb4dbb48853f1ac3e2 がsettings.yaml由来のCodex model/effortをconfig.tomlへ適用し、respawn/clear各経路で再適用、起動後captureで期待値との差異をWARN記録するため、新規修正・decision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260827-131907962-311a;fix_commit=git:2360a18a70433905e98bfabb4dbb48853f1ac3e2;implementation=scripts/lib/cli_lookup.sh:L619-L679;scripts/ninja_monitor.sh:L3286-L3309,L3369-L3381,L3511-L3557;runtime=tmux shogun:2.7 and shogun:2.5 capture both gpt-5.6-luna high;expected=codex_expected_model_effort both gpt-5.6-luna|high"
+  resolved_at: "2026-08-30T05:11:51+09:00"
 - id: INS-20260827-133711892-53c8
   ts: "2026-08-27T13:37:11+09:00"
   insight: "pre-push の prepush_test.lock に stale 検知がない: holder pid 931738 は死亡済なのに lock が残り、_PREPUSH_LOCK_WAIT_SECONDS=1200 まで全 push が待つ(13:24〜)。自動化ターゲット: .git/hooks/pre-push(正本 scripts/ 側)で holder pid の kill -0 を確認し死亡なら lock を回収して記録"
