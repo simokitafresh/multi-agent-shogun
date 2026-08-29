@@ -378,6 +378,7 @@ codd:
 | cmd | `cmd_karo_hotfix_t92_dm_signal_research_article_filter_20260828` |
 | causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[dm_signal_pf_restore_guardrails]] |
+| cmd | `cmd_karo_hotfix_dm_signal_backup_push_20260829` (`queue/reports/hayate_report_cmd_karo_hotfix_dm_signal_backup_push_20260829.yaml`) |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
@@ -3523,6 +3524,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:46:23+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:10:28+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T20:55:53+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -3714,6 +3719,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T23:22:16+09:00 初回のみ: 認証も抜かりなく現在に合わせてやってくれ。今のclaude codeとcodex CLIをスムーズにログインできるようにしたい。場合により娘にも使わせる可能性があるからだ |
 | lesson | `L1656` 全terminal report publisherへ提出前precheckを接続する |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T03:58:24.163354+00:00 git pre-commit semantic propagation for context/projects changes |
+| cmd | `cmd_karo_hotfix_queue_yaml_parse_race_20260829` (`scripts/gates/gate_queue_yaml_parse.sh`, `tests/unit/test_gate_queue_yaml_parse.bats`) |
 | causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 | causal_chain | `[[cmd_3720]]` (L958) |
 | causal_chain | `[[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]` (L967) |
@@ -8448,6 +8454,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:25:27+09:00 b1v9ezcxj toolu_01HkLXGEL16nAigMJiuQAU4m /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:26:25+09:00 shogun_d0_detector_dedupe_20260829_1626: ninja_monitor.sh の script_size_alert/lesson_deprecation_candidates 検知器が同一候補集合を毎 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:00:35+09:00 bgedte5jy toolu_014xU3jkda8FJddBP6asKqV3 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
+| causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9118,6 +9126,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T06:36:34+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T06:44:53+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:54:04+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T20:56:18+09:00 続けて |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -10285,6 +10294,7 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -11099,6 +11109,7 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -11401,6 +11412,7 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -11836,6 +11848,7 @@ codd:
 | cmd | `cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829` (`scripts/gates/gate_context_freshness.sh`, `tests/unit/test_gate_context_freshness.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:54:22+09:00 session_save_20260829_1250 復帰点(将軍、第11便の追補 12:07-12:50)。差分=(1)殿指示 12:41『T178/T177/T176/T163 の進捗を覚醒して確認し、終了まで家老を導け』=この 4 件 |
 | cmd | `cmd_karo_hotfix_context_freshness_shared_root_unit4_20260829` (`scripts/gates/gate_context_freshness.sh`) |
+| causal | `cmd_karo_hotfix_queue_yaml_parse_race_20260829` files_modified: [[gate_quality_framework]] |
 | causal_chain | `[[cmd_3658]]` (L936) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
@@ -13728,6 +13741,12 @@ codd:
 | cmd | `cmd_reflux_insight_202608291546_kotaro` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608291614_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291614_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291635_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291635_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291722_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291722_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291817_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291817_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -15430,6 +15449,7 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -16760,6 +16780,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:00:52.446940+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:38:03.018398+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T16:38:37.260009+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:52:16.072394+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T09:17:27.242838+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T09:49:59.170648+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T11:58:10.826288+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -17032,6 +17056,7 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -17245,6 +17270,7 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
