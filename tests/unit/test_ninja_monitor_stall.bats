@@ -51,7 +51,8 @@ export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
 NINJA_MONITOR_LIB_ONLY=1 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 ROOT="'"$BATS_TEST_TMPDIR"'/review-pending-state"
-mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/logs" "$ROOT/state"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/logs" "$ROOT/state" "$ROOT/scripts/lib"
+ln -s "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$ROOT/scripts/lib/report_commit_identity.py"
 SCRIPT_DIR="$ROOT"; STATE_DIR="$ROOT/state"; LOG="$ROOT/monitor.log"; NINJA_NAMES=(hayate)
 cat > "$ROOT/queue/tasks/hayate.yaml" <<'YAML'
 task:
@@ -71,7 +72,7 @@ report_id: rpt-state
 report_identity_version: 2
 status: completed
 verdict: PASS
-commit_hash: 0000000000000000000000000000000000000000
+commit_hash: "0000000000000000000000000000000000000000"
 YAML
 printf "messages: []\n" > "$ROOT/queue/inbox/gunshi.yaml"
 printf "messages: []\n" > "$ROOT/queue/inbox/karo.yaml"
@@ -112,14 +113,21 @@ cat > "$ROOT/logs/gunshi_review_log.yaml" <<EOF
 - cmd_id: cmd_state
   verdict: LGTM
   report: queue/reports/hayate_report_cmd_state.yaml
-  report_fingerprint: $raw_fp
+EOF
+"$DRIVER"
+test "$(count_calls)" -eq 2
+
+norm_fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$report" 2>/dev/null || true)
+[ -n "$norm_fp" ] || norm_fp="$raw_fp"
+key=$(review_report_key queue/reports/hayate_report_cmd_state.yaml)
+mkdir -p "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key"
+cat > "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key/gunshi.yaml" <<EOF
+result: LGTM
+fingerprint: $norm_fp
+report: queue/reports/hayate_report_cmd_state.yaml
 EOF
 "$DRIVER"
 test "$(count_calls)" -eq 3
-
-norm_fp="$raw_fp"
-key=$(review_report_key queue/reports/hayate_report_cmd_state.yaml)
-mkdir -p "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key"
 cat > "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key/karo.yaml" <<EOF
 result: ACCEPT
 fingerprint: $norm_fp
@@ -161,6 +169,60 @@ printf "states=A,A,B,C terminal=0 ledger_lines=4 independent_process_duplicate=0
 '
     [ "$status" -eq 0 ]
     [ "$output" = "states=A,A,B,C terminal=0 ledger_lines=4 independent_process_duplicate=0" ]
+}
+
+# test_necessity: formal Gunshi LGTM is lifecycle evidence only when the
+# report-keyed approval binds the current normalized/raw fingerprint and the
+# exact report path; stale or mismatched approvals must remain in state A.
+@test "review-pending formal LGTM rejects stale fingerprint and report mismatch" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+NINJA_MONITOR_LIB_ONLY=1 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+ROOT="'"$BATS_TEST_TMPDIR"'/review-pending-formal-identity"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates/cmd_identity/review_approvals/reports" "$ROOT/logs" "$ROOT/state" "$ROOT/scripts/lib"
+ln -s "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$ROOT/scripts/lib/report_commit_identity.py"
+SCRIPT_DIR="$ROOT"; STATE_DIR="$ROOT/state"; LOG="$ROOT/monitor.log"
+cat > "$ROOT/queue/tasks/kagemaru.yaml" <<'YAML'
+task:
+  status: done
+  task_id: cmd_identity_normal
+  parent_cmd: cmd_identity
+  task_type: hotfix
+  report_path: queue/reports/kagemaru_report_cmd_identity.yaml
+YAML
+cat > "$ROOT/queue/reports/kagemaru_report_cmd_identity.yaml" <<'YAML'
+worker_id: kagemaru
+task_id: cmd_identity_normal
+parent_cmd: cmd_identity
+task_type: hotfix
+status: completed
+verdict: PASS
+commit_hash: "0000000000000000000000000000000000000000"
+YAML
+report="$ROOT/queue/reports/kagemaru_report_cmd_identity.yaml"
+report_rel=queue/reports/kagemaru_report_cmd_identity.yaml
+key=$(review_report_key "$report_rel")
+approval_dir="$ROOT/queue/gates/cmd_identity/review_approvals/reports/$key"
+mkdir -p "$approval_dir"
+norm_fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$report" 2>/dev/null || true)
+[ -n "$norm_fp" ] || norm_fp=$(sha256sum "$report" | awk "{print \$1}")
+stale_fp=$(printf "a%.0s" {1..64})
+write_approval() {
+    printf "result: LGTM\\nfingerprint: %s\\nreport: %s\\n" "$1" "$2" > "$approval_dir/gunshi.yaml"
+}
+write_approval "$stale_fp" "$report_rel"
+stale_state=$(_review_pending_report_identity kagemaru | cut -f1)
+write_approval "$norm_fp" queue/reports/other.yaml
+mismatch_state=$(_review_pending_report_identity kagemaru | cut -f1)
+write_approval "$norm_fp" "$report_rel"
+exact_state=$(_review_pending_report_identity kagemaru | cut -f1)
+printf "stale=%s mismatch=%s exact=%s\\n" "$stale_state" "$mismatch_state" "$exact_state"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "stale=A mismatch=A exact=B" ]
 }
 
 # test_necessity: respawn exit code and pane stderr are the observable failure
