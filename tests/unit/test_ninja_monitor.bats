@@ -647,8 +647,9 @@ YAML
     [[ "$output" == *"INSIGHT_PICKER_OK reserved=1 active=1 terminal=1 selected=INS-ELIGIBLE"* ]]
 }
 
-# test_necessity: AUTO-DONEとdeployが同一agent lockで直列化され、旧parent/archive reportでtaskを書換えない不変量を守る。
-@test "AUTO-DONE deploy lock boundary is retryable and archive symlinks are inactive" {
+# test_necessity: AUTO-DONEとdeployが同一agent lockで直列化され、archive symlinkは
+# CLEAR receiptとarchive.doneおよび全report identity一致後だけexactly-onceでidle化する不変量を守る。
+@test "AUTO-DONE deploy lock boundary is retryable and archive symlinks require terminal evidence" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
         SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$BATS_TEST_TMPDIR/log"
@@ -658,8 +659,8 @@ YAML
         run_report_gate_deduped() { printf "PASS\n"; return 0; }
         yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
         task="$SCRIPT_DIR/queue/tasks/alpha.yaml"; report="$SCRIPT_DIR/queue/reports/alpha_report_cmd_new.yaml"
-        printf "task:\n  parent_cmd: cmd_new\n  task_id: task_new\n  status: in_progress\n" >"$task"
-        printf "parent_cmd: cmd_new\ntask_id: task_new\nstatus: completed\ntimestamp: 2026-07-19T12:00:39+09:00\n" >"$report"
+        printf "task:\n  parent_cmd: cmd_new\n  task_id: task_new\n  report_id: rpt_new\n  report_identity_version: 2\n  status: in_progress\n" >"$task"
+        printf "parent_cmd: cmd_new\ntask_id: task_new\nreport_id: rpt_new\nreport_identity_version: 2\nstatus: completed\ntimestamp: 2026-07-19T12:00:39+09:00\n" >"$report"
         python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":\"cmd_new\",\"completion_generation\":\"a\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" "$SCRIPT_DIR/queue/gates/cmd_new/gate_worker.clear.json"
         find_matching_report_file() { printf "%s\n" "$report"; }
         flock "$SCRIPT_DIR/queue/locks/deploy_ninja_alpha.lock" -c "sleep 1" & holder=$!; sleep 0.1
@@ -669,12 +670,41 @@ YAML
         bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task status in_progress
         bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task parent_cmd cmd_changed
         check_and_update_done_task alpha && exit 92 || true; grep -q "status: in_progress" "$task"
-        archive="$BATS_TEST_TMPDIR/archive.yaml"; cp "$report" "$archive"; ln -s "$archive" "$SCRIPT_DIR/queue/reports/archive-link.yaml"
+        archive="$SCRIPT_DIR/queue/archive/reports/archive.yaml"; mkdir -p "${archive%/*}"; cp "$report" "$archive"; ln -s "$archive" "$SCRIPT_DIR/queue/reports/archive-link.yaml"
         report="$SCRIPT_DIR/queue/reports/archive-link.yaml"; bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task parent_cmd cmd_new
         check_and_update_done_task alpha && exit 93 || true; grep -q "status: in_progress" "$task"
+        archive_incomplete_idle=0
+        [ "$(yaml_field_get "$task" status)" = idle ] && archive_incomplete_idle=1
+        : >"$SCRIPT_DIR/queue/gates/cmd_new/archive.done"
+        clear_marker="$SCRIPT_DIR/queue/gates/cmd_new/gate_worker.clear.json"
+        mv "$clear_marker" "$clear_marker.saved"
+        check_and_update_done_task alpha && exit 94 || true
+        missing_receipt_idle=0
+        [ "$(yaml_field_get "$task" status)" = idle ] && missing_receipt_idle=1
+        mv "$clear_marker.saved" "$clear_marker"
+        mkdir -p "$SCRIPT_DIR/queue/gates/cmd_changed"
+        python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":\"cmd_changed\",\"completion_generation\":\"b\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" "$SCRIPT_DIR/queue/gates/cmd_changed/gate_worker.clear.json"
+        : >"$SCRIPT_DIR/queue/gates/cmd_changed/archive.done"
+        bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task parent_cmd cmd_changed
+        check_and_update_done_task alpha && exit 95 || true
+        parent_mismatch_idle=0
+        [ "$(yaml_field_get "$task" status)" = idle ] && parent_mismatch_idle=1
+        bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task parent_cmd cmd_new
+        check_and_update_done_task alpha
+        [ "$(yaml_field_get "$task" status)" = idle ]
+        idle_transitions=$(grep -c AUTO-IDLE-ARCHIVE-SYMLINK "$LOG")
+        check_and_update_done_task alpha || true
+        [ "$(yaml_field_get "$task" status)" = idle ]
+        [ "$(grep -c AUTO-IDLE-ARCHIVE-SYMLINK "$LOG")" -eq "$idle_transitions" ]
         python3 -c "import yaml; yaml.safe_load(open(\"$task\"))"
         [ "$(grep -c AUTO-DONE-SKIP-DEPLOY-LOCK-BUSY "$LOG")" -eq 1 ]
-        [ "$(grep -c AUTO-DONE-SKIP-ARCHIVE-SYMLINK "$LOG")" -eq 1 ]
+        [ "$(grep -c AUTO-DONE-SKIP-ARCHIVE-SYMLINK "$LOG")" -eq 3 ]
+        [ "$idle_transitions" -eq 1 ]
+        printf "archive_incomplete_idle=%s missing_receipt_idle=%s parent_mismatch_idle=%s terminal_idle=%s false_positive=0 false_negative=0\n" \
+            "$archive_incomplete_idle" "$missing_receipt_idle" "$parent_mismatch_idle" "$idle_transitions"
+        [ "$archive_incomplete_idle" -eq 0 ]
+        [ "$missing_receipt_idle" -eq 0 ]
+        [ "$parent_mismatch_idle" -eq 0 ]
     '
     [ "$status" -eq 0 ]
 }

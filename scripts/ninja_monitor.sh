@@ -5353,8 +5353,60 @@ check_and_update_done_task() (
     # 新形式({ninja}_report_{cmd}.yaml)優先で一致報告を探索。旧形式も許容。
     report_file=$(find_matching_report_file "$name") || return 1
     if [ -L "$report_file" ]; then
-        log "AUTO-DONE-SKIP-ARCHIVE-SYMLINK: $name report=$(basename "$report_file")"
-        return 1
+        # archive_completed.sh leaves a compatibility symlink at the former
+        # live report path.  It is normally inert: only the archived report
+        # itself, matching task identity, and both durable terminal markers
+        # may release the exact task to idle.  Do not feed the symlink through
+        # the ordinary live-report completion path.
+        local archived_report_file archive_root archive_marker
+        local archived_parent_cmd archived_task_id archived_report_id
+        local archived_report_version task_report_id task_report_version
+        archived_report_file=$(readlink -f -- "$report_file" 2>/dev/null || true)
+        archive_root=$(readlink -f -- "$SCRIPT_DIR/queue/archive/reports" 2>/dev/null || true)
+        archive_marker="$SCRIPT_DIR/queue/gates/$task_parent_cmd/archive.done"
+        if [ -z "$archived_report_file" ] || [ ! -f "$archived_report_file" ] || \
+           [ -z "$archive_root" ] || [[ "$archived_report_file" != "$archive_root"/* ]]; then
+            log "AUTO-DONE-SKIP-ARCHIVE-SYMLINK: $name report=$(basename "$report_file") reason=target_not_archived"
+            return 1
+        fi
+        archived_parent_cmd=$(yaml_field_get "$archived_report_file" "parent_cmd" "" 2>/dev/null || true)
+        archived_task_id=$(yaml_field_get "$archived_report_file" "task_id" "" 2>/dev/null || true)
+        archived_report_id=$(yaml_field_get "$archived_report_file" "report_id" "" 2>/dev/null || true)
+        archived_report_version=$(yaml_field_get "$archived_report_file" "report_identity_version" "" 2>/dev/null || true)
+        task_report_id=$(yaml_field_get "$task_file" "report_id" "" 2>/dev/null || true)
+        task_report_version=$(yaml_field_get "$task_file" "report_identity_version" "" 2>/dev/null || true)
+        if [ "$archived_parent_cmd" != "$task_parent_cmd" ] || \
+           [ -z "$task_id" ] || [ "$archived_task_id" != "$task_id" ] || \
+           [ -z "$task_report_id" ] || [ "$archived_report_id" != "$task_report_id" ] || \
+           { [ -n "$task_report_version" ] && [ "$archived_report_version" != "$task_report_version" ]; } || \
+           [ ! -f "$archive_marker" ] || ! _gate_worker_clear_receipt_valid "$task_parent_cmd"; then
+            log "AUTO-DONE-SKIP-ARCHIVE-SYMLINK: $name report=$(basename "$report_file") reason=identity_or_terminal_evidence_mismatch"
+            return 1
+        fi
+        if [ "$(report_monitor_state "$archived_report_file" 2>/dev/null || true)" != "pass_terminal" ]; then
+            log "AUTO-DONE-SKIP-ARCHIVE-SYMLINK: $name report=$(basename "$report_file") reason=archived_report_not_terminal_pass"
+            return 1
+        fi
+        case "$task_status" in
+            assigned|acknowledged|in_progress|done|completed) ;;
+            *)
+                log "AUTO-DONE-SKIP-ARCHIVE-SYMLINK: $name report=$(basename "$report_file") reason=task_status_${task_status:-missing}"
+                return 1
+                ;;
+        esac
+        if ! task_lifecycle_set_idle "$task_file" "archive_symlink_terminal"; then
+            log "AUTO-DONE-BLOCK-ARCHIVE-SYMLINK-IDLE: $name report=$(basename "$report_file") reason=task_lifecycle_failed"
+            return 1
+        fi
+        if [ "$(yaml_field_get "$task_file" "status" "" 2>/dev/null || true)" != "idle" ]; then
+            log "AUTO-DONE-BLOCK-ARCHIVE-SYMLINK-IDLE: $name report=$(basename "$report_file") reason=status_verification_failed"
+            return 1
+        fi
+        log "AUTO-IDLE-ARCHIVE-SYMLINK: $name task=$(basename "$task_file") report=$(basename "$report_file") parent_cmd=$task_parent_cmd"
+        _reflux_promotion_record_completion_detached "$archived_report_file" || \
+            log "REFLUX-LEDGER-BLOCK: failed to detach archived report $(basename "$archived_report_file")"
+        refresh_karo_snapshot_task_assignment "$name"
+        return 0
     fi
 
     # 報告のparent_cmdを取得
