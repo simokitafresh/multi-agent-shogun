@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_three_layer_preflight_receipt_deadlock
-  timestamp: '2026-08-25T02:04:29Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_three_layer_preflight_receipt_deadlock'
 - cmd_id: cmd_karo_hotfix_cmd4400_stateful_shards
   timestamp: '2026-08-25T03:58:56Z'
   ninja: system
@@ -1300,3 +1287,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_context_freshness_shared_root_unit4_20260829'
+- cmd_id: cmd_karo_hotfix_idle_load_unit5_20260829
+  timestamp: '2026-08-29T06:02:34Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_idle_load_unit5_20260829'
