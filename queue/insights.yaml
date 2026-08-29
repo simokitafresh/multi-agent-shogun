@@ -4098,7 +4098,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報でT22のaffected-test tree fingerprint/receipt再利用照合、T10のtest_cmd_complete_gate短縮、insight_writeのper-write auto-commitを確認。提案(1)(3)は実装済み、提案(2)はdirty-guard再発を防ぐ既存設計を維持し追加変更なし。
+  action_artifact: ".githooks/pre-push:95-126; scripts/run_tests.sh:742-760; scripts/insight_write.sh:589-607; context/infrastructure.md:128; docs/research/cmd_4392_ci_test_time_decomposition_20260825.md:20-29; decision=per-write auto-commit retained"
+  resolved_at: "2026-08-29T18:22:04+09:00"
 - id: INS-20260826-193019800-d652
   ts: "2026-08-26T19:30:19+09:00"
   insight: "[[T10らせん第1手 — 常設function timingログのcmd complete gate一実行を選び]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gate自動pushがGA PUSH1成立済みのdirty overlapを毎回hook失敗と; score=8.8) / shogun_android_app(将軍Androidアプリ; alias=F001改訂 — 殿との会話ブロック基準で将軍直接実行とcmd委任を区別; score=8.1) / agent_formation_management(編成管理; alias=既存の広いdirty差分inbox1 — CMD受領済み; score=8.0)。既存概念aliasesへの自動昇格候補"
