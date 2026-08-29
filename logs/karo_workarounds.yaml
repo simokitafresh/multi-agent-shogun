@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_three_layer_all_action_guard
-  timestamp: '2026-08-23T13:13:20Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_three_layer_all_action_guard'
-- cmd_id: cmd_karo_hotfix_commit_ledger_single_lock
-  timestamp: '2026-08-23T13:48:38Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_commit_ledger_single_lock'
 - cmd_id: cmd_4394
   timestamp: '2026-08-24T16:05:21Z'
   ninja: tobisaru
@@ -1302,3 +1276,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_monitor_reflux_inventory_speed_v2_20260829'
+- cmd_id: cmd_karo_hotfix_hook_failure_utf8_boundary_20260829
+  timestamp: '2026-08-29T01:14:38Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_hook_failure_utf8_boundary_20260829'
+- cmd_id: cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829
+  timestamp: '2026-08-29T01:25:41Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829'

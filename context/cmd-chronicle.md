@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-28 -->
+<!-- last_updated: 2026-08-29 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,8 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_4192 | gate_loop_health反復insight(INS-20260729-174159182ほか、operational_simulation MISSING発火が反復)の入口側是正。忍者がgate到達後に初めて欠落を知る構造を、テンプレート生成時点で必須4フィールドの記入枠が存在する構造へ変える。有効値の自動補完は禁止(insight条件) | infra | 07-29 | operational_simulation欠落報告をbat |
-| cmd_4193 | 家老escalation 2026-07-29 20:24(generation=14)『スキル静的品質WARN: gate_skill_script_refs.sh』の構造是正。gateの契約変更検知は正しく発火しているが、解消(SKILL.md追従検分)に所有者がなく家老startupで14世代滞留した。検知から追従taskの自動起票への接続を実装し、人手滞留の構造を断つ | infra | 07-29 | WARN検知から既存insight→reflux自動配備経路 |
 | cmd_4194 | 家老escalation 2026-07-29 23:37『レビュー品質スケール: WARN率が閾値超で1セッション連続、家老で対処不能』への根本対応。将軍一次確認で、母集団に設計書レビュー専用cmd(delta review/independent review等、RC/FAILが正常機能の出力)と報告テンプレート不備由来FAILが混入しており、実装品質の劣化と区別されずWARN率を押し上げていることを確認した。検知器が健全な敵対レビューを品質劣化として数える粒度バグ(LS096同型)を是正する | infra | 07-30 | レビュー専用cmdを実装品質WARN率の母集団から分離。分離 |
 | cmd_round7_lane1_inbox_write_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)+将軍下知03:11。正本v1.6 §-2.4弾台帳の序列首位テストファイルを、検査を削らずに高速化する。本blockは家老--yaml直接配備(03:16稼働中)の正規登録であり、review_approval/cmd_complete_gateの終端契約を成立させる | infra | 07-30 | test_inbox_write.batsの最大寄与fixt |
 | cmd_round7_lane3_heavy_job_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列3位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | — |

@@ -16155,3 +16155,29 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - clean linked worktreeではlogs/ninja_monitor.logが存在せず、存在確認なしのawkがset -eでstartup gateをrc2終了させた。任意の観測ログを読むgateは、欠損時の意味を0件または判定不能へ明示分類し、コマンド失敗を未処理で伝播させない。
+
+### L1669: Failure detailのbyte capはUTF-8境界安全decodeを必須とする
+- **日付**: 2026-08-29
+- **出典**: cmd_karo_hotfix_hook_failure_utf8_boundary_20260829
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_hook_failure_utf8.bats]
+- **origin**: [[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- head -cでstderrを固定byte数に切ると日本語やemojiの途中で不正UTF-8を生成し、後段YAML parseを壊す。bounded byte prefixをUTF-8 decode errors=ignoreで安全化し、多言語境界fixtureをcontract testへ固定する。
+
+### L1670: 9p履歴証跡はsubject/pathを単一git showへ統合する
+- **日付**: 2026-08-29
+- **出典**: cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829
+- **記録者**: hayate
+- **tags**: [infra,gate,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- source commitのsubjectとchanged pathsを別git履歴走査で取得するとraw ALERTごとに9p I/Oを重複する。git show --format=%s --name-onlyの単一bounded呼出しとcapture contract testで証跡を維持しながら走査回数を半減できる。
