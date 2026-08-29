@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-29 -->
+<!-- last_updated: 2026-08-30 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -59,19 +59,6 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 �し、古 |
-| cmd_4194 | 家老escalation 2026-07-29 23:37『レビュー品質スケール: WARN率が閾値超で1セッション連続、家老で対処不能』への根本対応。将軍一次確認で、母集団に設計書レビュー専用cmd(delta review/independent review等、RC/FAILが正常機能の出力)と報告テンプレート不備由来FAILが混入しており、実装品質の劣化と区別されずWARN率を押し上げていることを確認した。検知器が健全な敵対レビューを品質劣化として数える粒度バグ(LS096同型)を是正する | infra | 07-30 | レビュー専用cmdを実装品質WARN率の母集団から分離。分離 |
-| cmd_round7_lane1_inbox_write_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)+将軍下知03:11。正本v1.6 §-2.4弾台帳の序列首位テストファイルを、検査を削らずに高速化する。本blockは家老--yaml直接配備(03:16稼働中)の正規登録であり、review_approval/cmd_complete_gateの終端契約を成立させる | infra | 07-30 | test_inbox_write.batsの最大寄与fixt |
-| cmd_round7_lane3_heavy_job_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列3位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | — |
-| cmd_round7_lane5_cmd_complete_gate_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列5位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録(才蔵は実装完了済み・全PASS・軍師内容レビューOK、本blockで終端契約を成立させる) | infra | 07-30 | — |
-| cmd_round7_lane6_report_batch_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列6位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | — |
-| cmd_round7_lane7_run_tests_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列7位テストファイル(runner自己テスト)の高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | test_run_tests.bats 53-test ba |
-| cmd_round7_lane2_deploy_task_ac_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列2位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | test_deploy_task_ac_handling.b |
-| cmd_round7_lane4_deploy_task_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列4位テストファイルの高速化(検査不変)。同一subject系のためlane2(CLEAR 04:27)後の直列起票=計画どおりの次波 | infra | 07-30 | test_deploy_task.batsの独立report |
-| cmd_round7_lane8_deploy_task_lifecycle_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列8位テストファイルの高速化(検査不変)。同一subject系のためlane4(CLEAR 04:42)後の直列起票=計画どおりの次波 | infra | 07-30 | fixture setupをprebuilt templat |
-| cmd_round7_lane9_campaign_shard_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列9位テストファイルの高速化(検査不変)。#8 CLEAR(05:00)を受けた最終波の起票(別ファイル並列) | infra | 07-30 | setupの各test git cloneをCOWコピーへ置 |
-| cmd_round7_lane10_ninja_monitor_stall_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列10位テストファイルの高速化(検査不変)。#8 CLEAR(05:00)を受けた最終波の起票(#9と別ファイル並列) | infra | 07-30 | test_ninja_monitor_stall.bats( |
-| cmd_round7_checkpoint_final_gen4_20260730 | 第三世代checkpointはtest7根治を確認(rc:0)しつつlgtm_bundle_guardの実行bit契約不一致で正直FAIL_CLOSE。小太郎hotfixがGATE CLEAR(blt_20260730_091531、mode 100644のまま50反復pass50/fail0生貼付)し起票条件達成。新固定SHAで第四世代success checkpointを実行し第七弾の総短縮効果を確定する | infra | 07-30 | 第四世代fixed-SHA checkpointは184/1 |
-| cmd_4195 | 殿ntfy 2026-07-30 10:52『confirmed-month holding_signal changes: count=3 portfolios=3 dates=2026-07-29』。同一署名のALERTがdates=07-27/07-28/07-29と3日連続発火。07-28のcmd_4190は当日分を『FoF3件=台帳ガード(signal_decision_ledger)の安全側補正・pending marker 0/3・DB変更0件』と正常判定済みだが、毎日同じ補正が再発しているなら、signalsとledgerの乖離が日次で再生成される構造根因があり、ALERTは情報価値ゼロの反復になっている。反復の実体と根因を確定する | dm-signal | 07-30 | 07-27/28/29は同一3PF・同一旧→新値が9/9反復 |
 | cmd_4199 | 殿指示2026-07-31「執行日だけの感度分析。シグナルはN=0固定。変更するのは翌月の執行日だけ」。設計書v1.5(docs/research/execution-delay-sensitivity-asis-tobe-5w1h_20260731.md)に基づき、新規凍結snapshotでcmd_4198再計測+E=0-7の執行遅延感度分析を実行し、デュアルモメンタム戦略の執行タイミングに対するロバストネスを確認する | dm-signal | 07-31 | AC1-5完了: 凍結DB SHA前後一致、producti |
 
 ## 2026-08
