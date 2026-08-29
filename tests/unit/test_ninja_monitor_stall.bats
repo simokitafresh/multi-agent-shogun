@@ -6887,6 +6887,59 @@ printf "alerts=2 same_generation=1 cooldown_suppressed=1\n"
     [ "$output" = "stale_generation_alerts=0 durable_records=0" ]
 }
 
+# test_necessity: reflux inventory discovery must preserve arbitrary report
+# filenames and active/terminal owner exclusion while avoiding YAML parsing for
+# reports that cannot mention a pending insight.
+@test "reflux insight inventory prefilters unrelated report text" {
+    local test_root="$BATS_TEST_TMPDIR"
+    run bash -lc '
+        set -euo pipefail
+        PROJECT_ROOT="'"$PROJECT_ROOT"'"
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+
+        root="'"$test_root"'/reflux-inventory-prefilter"
+        mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/logs"
+        cat > "$root/queue/insights.yaml" <<"YAML"
+insights:
+  - id: INS-ACTIVE
+    priority: high
+    status: pending
+  - id: INS-ELIGIBLE
+    priority: low
+    status: pending
+YAML
+        cat > "$root/queue/tasks/active.yaml" <<"YAML"
+task:
+  parent_cmd: cmd_active
+  status: in_progress
+  purpose: process INS-ACTIVE
+YAML
+        # The arbitrary filename is intentional: report paths are not SSOT.
+        cat > "$root/queue/reports/arbitrary-terminal.yaml" <<"YAML"
+parent_cmd: cmd_reflux_insight_terminal
+status: completed
+result:
+  summary: INS-ACTIVE resolved
+YAML
+        cat > "$root/queue/reports/unrelated.yaml" <<"YAML"
+parent_cmd: cmd_other
+status: completed
+result:
+  summary: INS-ELIGIBLE is unrelated text
+YAML
+
+        SCRIPT_DIR="$root"
+        snapshot=$(_reflux_insight_inventory_snapshot "$root/queue/insights.yaml")
+        expected=$(printf "2\\tINS-ELIGIBLE")
+        test "$snapshot" = "$expected"
+        printf "pending=2 selected=INS-ELIGIBLE arbitrary_terminal=excluded unrelated=ignored\n"
+    ' _ dummy dummy
+    [ "$status" -eq 0 ]
+    [ "$output" = "pending=2 selected=INS-ELIGIBLE arbitrary_terminal=excluded unrelated=ignored" ]
+}
+
 # test_necessity: the reflux dirty-target gate must accept only a trusted
 # pending-to-resolved transition carrying the complete canonical resolution
 # evidence, while rejecting pending additions and every mixed/arbitrary diff.
