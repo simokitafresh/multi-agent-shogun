@@ -549,12 +549,23 @@ def install_cron(args: argparse.Namespace) -> dict[str, Any]:
     existing = existing_process.stdout
     lines = [line for line in existing.splitlines() if MARKER not in line]
     script = root / "scripts" / "shogun_backup.py"
+    # cron starts with a deliberately small PATH, so resolve the CLI while
+    # installing and carry the absolute path into the scheduled environment.
+    # Keep gws_path() as the runtime SSOT: SHOGUN_GWS_BIN still wins over PATH.
+    configured_gws = Path(gws_path()).expanduser()
+    if not configured_gws.is_absolute():
+        resolved_gws = shutil.which(str(configured_gws))
+        if not resolved_gws:
+            fail(f"gws CLI path is not absolute and cannot be resolved: {configured_gws}")
+        configured_gws = Path(resolved_gws)
+    gws_bin = str(configured_gws.resolve())
     command = " ".join(
         [
             "cd",
             shlex_quote(str(root)),
             "&&",
             "/usr/bin/flock -n /tmp/shogun-drive-backup.lock",
+            f"SHOGUN_GWS_BIN={shlex_quote(gws_bin)}",
             "python3",
             shlex_quote(str(script)),
             "--backup",
