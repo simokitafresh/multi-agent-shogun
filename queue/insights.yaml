@@ -5160,7 +5160,10 @@ insights:
   priority: "medium"
   source: "karo"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行実装と契約テストを照合。gate_report_format.shのowned commit git diff-tree照合とcmd_complete_gate.shのSELF_GRADE_COMMIT_FILES不一致検出が報告形式PASS後のcommit/files_modified乖離を保留するため、追加修正不要として解消。"
+  action_artifact: "primary=queue/insights.yaml:5157-5163;gate=scripts/gates/gate_report_format.sh:798-811,743-761;completion=scripts/cmd_complete_gate.sh:9087-9145;tests=tests/unit/test_cmd_complete_gate.bats:1602-1720,1983-2045;history=2360a18a7,43f46b074,da252a8bf;task_tests=logs/test_receipts/run_tests_20260829T211357_5451.json:rc0_skip0_selected0"
+  resolved_at: "2026-08-30T06:15:52+09:00"
 - id: INS-20260827-150829137-46e4
   ts: "2026-08-27T15:08:29+09:00"
   insight: "deploy_task.sh:8989 worktree_root 既定 /tmp/shogun-task-worktrees はWSL再起動で全消失(2026-08-27 14:54 実証: 疾風3・才蔵3・飛猿5 樹が prunable、才蔵T63未commit実装消失)。自動化ターゲット: DEPLOY_TASK_WORKTREE_ROOT 既定を永続ext4(/home/simokitafresh/shogun-task-worktrees)へ変更=cmd_4408(ext4移設)と同根。速度向上へのつながり: 再起動時の作業消失=再実装の丸損を0に"
