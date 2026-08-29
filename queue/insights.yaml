@@ -7704,3 +7704,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260829-142205571-a8cd
+  ts: "2026-08-29T14:22:05+09:00"
+  insight: "[[T178 T177の進捗はどうだ？つまりがあれば覚醒して将軍がヘルプせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T178 / T177の進捗はどうだ？つまりがあれば覚醒して将軍がヘルプせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
