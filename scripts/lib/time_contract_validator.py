@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import re
 import sys
 
 import yaml
@@ -129,7 +130,47 @@ def validate(entry: dict, *, allow_missing_estimated: bool = False) -> str:
             "estimated_minutes>15 requires execution_env mapping with concrete "
             "long_runtime_reason and positive measured_runtime_sec"
         )
+    observed = _observation_window_hits(entry, reason)
+    if observed:
+        raise ValueError(OBSERVATION_WINDOW_ERROR + " hits=" + ", ".join(observed))
     return f"PASS long-runtime exception estimated_minutes={estimated:g} measured_runtime_sec={runtime:g}"
+
+
+# 殿裁定 2026-08-29 00:49『1時間後に再確認を忍者に配備するのは配備スキルの品質バグ』:
+# 観測窓(live 後 N 時間の本番観測/証明)を long-runtime 例外の理由にすると忍者が
+# 3600 秒級の機械的待ちに人質化する(08-28/29 に 16 回)。観測は monitor の責務
+# (production_proof)であり忍者 AC にも long_runtime_reason にも置けない。
+OBSERVATION_WINDOW_ERROR = (
+    "long-runtime exception cannot be justified by an observation window: "
+    "move production observation/proof out of ninja acceptance_criteria into "
+    "production_proof (monitor-owned); ninja tasks must not wait for live windows"
+)
+_OBSERVATION_WINDOW_RE = re.compile(
+    r"(live\s*後|本番(で|の|を)?\s*(\d+\s*(h|時間|分|min)))"
+    r"|((\d+\s*(h|時間|min|分)|1h|3600\s*(s|秒)?)\s*(の)?\s*(観測|窓|計測|待|proof|証明|監視))"
+    r"|観測窓|観測し|観測する|live\s*\d+\s*(h|時間|s|秒|分)"
+    r"|(gate_metrics|ninja_monitor\.log|monitor).{0,30}(で|から).{0,20}(証明|proof)",
+    re.IGNORECASE,
+)
+
+
+def _observation_window_hits(entry: dict, reason: str) -> list[str]:
+    texts: list[tuple[str, str]] = [("long_runtime_reason", reason)]
+    acceptance_criteria = entry.get("acceptance_criteria")
+    if isinstance(acceptance_criteria, list):
+        for item in acceptance_criteria:
+            if isinstance(item, dict):
+                texts.append((str(item.get("id") or "AC?"), str(item.get("description") or "")))
+            elif isinstance(item, str):
+                texts.append(("AC?", item))
+    elif isinstance(acceptance_criteria, dict):
+        for key, value in acceptance_criteria.items():
+            texts.append((str(key), str(value)))
+    hits: list[str] = []
+    for label, text in texts:
+        if text and _OBSERVATION_WINDOW_RE.search(text):
+            hits.append(label)
+    return hits
 
 
 def main() -> int:

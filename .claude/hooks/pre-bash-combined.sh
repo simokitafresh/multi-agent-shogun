@@ -870,6 +870,20 @@ PY
     fi
     unset _bats_direct_path
 
+    # 殿裁定 2026-08-29 00:50『家老自身がテストして再検証は回転速度を落とすバグ』:
+    # 家老 pane からの run_tests.sh / bats 実行は ACCEPT の再試験(08-28/29 に 14 回、BATS_CACHE=0 再走 3 回)
+    # =fin_c の機械的待ち。判定材料は忍者の test receipt+軍師 LGTM+gate の receipt 検査。
+    # E2E/CI 診断だけ KARO_TEST_REASON=e2e|ci_diag を command 内で明示して通す(構造型: 文章規則 karo-operations.md:157 は不発だった)。
+    _karo_test_agent="${TMUX_AGENT_ID:-}"
+    if [[ -z "$_karo_test_agent" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+        _karo_test_agent="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    if [[ "$_karo_test_agent" == "karo" && "$command" =~ (scripts/run_tests\.sh|bats-exec-|[[:space:]]bats[[:space:]]) \
+       && ! "$command" =~ KARO_TEST_REASON=(e2e|ci_diag) ]]; then
+        emit_deny "BLOCK(karo-retest): 家老の bats/run_tests 再試験は回転を落とす(殿裁定 2026-08-29 00:50)。ACCEPT は忍者の test receipt(logs/test_receipts、報告 YAML の receipt path/sha)+軍師 LGTM で判定せよ。E2E/CI 診断のみ KARO_TEST_REASON=e2e または ci_diag を command 先頭に付けて実行可。"
+    fi
+    unset _karo_test_agent
+
     # The wrapper-aware direct-bats classifier is the single owner of bats
     # executable classification. Keep this call at the Guard 5.1 boundary so
     # Claude and Codex both share the same implementation, and fail closed if
