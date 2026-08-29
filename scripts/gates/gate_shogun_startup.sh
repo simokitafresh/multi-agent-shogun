@@ -2080,9 +2080,11 @@ fi
 # 週次上限で全停止(T174)。pane の文言は陣形図・inbox に出ない。起動時と loop で機械計数する。
 echo "■ Codex 利用上限/警告 pane"
 _cx_hit=(); _cx_warn=()
+# shellcheck source=scripts/lib/agent_config.sh
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 # shellcheck source=scripts/lib/pane_lookup.sh
 [ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ] && source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
-for _cx_a in karo hayate kagemaru hanzo saizo kotaro tobisaru; do
+for _cx_a in karo $(get_ninja_names); do
     _cx_p="$(pane_lookup "$_cx_a" 2>/dev/null || true)"
     [ -n "$_cx_p" ] || continue
     _cx_txt="$(tmux capture-pane -t "$_cx_p" -p 2>/dev/null | tail -40 || true)"
