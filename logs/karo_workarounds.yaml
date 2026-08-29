@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_cmd4403_batch6_retry_cmd_skeleton_phase_breakdown_20260826
-  timestamp: '2026-08-25T18:20:31Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_cmd4403_batch6_retry_cmd_skeleton_phase_breakdown_20260826'
 - cmd_id: cmd_karo_hotfix_ghost_tmux_ac1_20260826
   timestamp: '2026-08-25T18:57:55Z'
   ninja: system
@@ -1300,3 +1287,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_lifecycle_worker_singleton_unit4_20260829'
+- cmd_id: cmd_karo_hotfix_commander_inbox_identity_all_directives_20260829
+  timestamp: '2026-08-29T16:08:59Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_commander_inbox_identity_all_directives_20260829'
