@@ -7470,3 +7470,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-101500191-5815
+  ts: "2026-08-29T10:15:00+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[push_lane_merge_内容消失_20260829_0941]] は既存aliasesに一致なし。類似概念TOP3: push_batch_operation(正規push batch運用; alias=push_batch_20260719; score=12.8) / campaign_lane(台帳駆動攻略レーン; alias=source campaign lane v6; score=12.8) / provisional_pre-push(仮: Pre Push; alias=provisional_pre-push; score=12.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
