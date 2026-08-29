@@ -154,18 +154,30 @@ def upload(path: Path, *, folder_id: str, name: str, kind: str, backup_id: str) 
 
 
 def download(file_id: str, destination: Path) -> None:
-    run(
-        [
-            gws_path(),
-            "drive",
-            "files",
-            "get",
-            "--params",
-            json.dumps({"fileId": file_id, "alt": "media"}),
-            "--output",
-            str(destination),
-        ]
-    )
+    command = [
+        gws_path(),
+        "drive",
+        "files",
+        "get",
+        "--params",
+        json.dumps({"fileId": file_id, "alt": "media"}),
+        "--output",
+        str(destination),
+    ]
+    try:
+        completed = subprocess.run(command, check=True, capture_output=True)
+    except FileNotFoundError:
+        fail(f"required command is unavailable: {command[0]}")
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or exc.stdout or b"").decode(errors="replace").strip()
+        fail(f"command failed ({exc.returncode}): {command[0]} {detail[-500:]}")
+    # gws writes binary media to --output, but application/json media is
+    # rendered on stdout while leaving an empty output placeholder.  Support
+    # both forms so the manifest remains verifiable and portable.
+    if destination.stat().st_size == 0 and completed.stdout:
+        destination.write_bytes(completed.stdout)
+    if destination.stat().st_size == 0:
+        fail(f"Drive download was empty: {destination.name}")
 
 
 def require_external_key(path: Path, *, root: Path, dm_root: Path) -> Path:
@@ -529,4 +541,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
