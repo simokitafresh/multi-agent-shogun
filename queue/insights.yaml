@@ -3200,7 +3200,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4385"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象を確認。cmd_2286のAC5混入は既知のstale AC contaminationで、現行SG-PRE17がreport AC IDsとcmd原本AC IDsをcomm -23で照合し余剰ACをWARN検出するため、今回のinsightは既存防御へ吸収して解決する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260824-132747084-0795;primary=docs/research/gunshi_idle_stale_ac_analysis_20260426.md:L5-L36;guard=scripts/gates/gate_gunshi_report_precheck.sh:L1085-L1104(SG-PRE17);semantic=bash scripts/semantic_search.sh \"stale AC contamination AC ID照合 cmd_2286\";decision_candidate=none"
+  resolved_at: "2026-08-29T11:58:18+09:00"
 - id: INS-20260824-132747242-074a
   ts: "2026-08-24T13:27:47+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4385; matched=clear,既存; current_pattern=全体スループット計装 — cmd完了パイプラインのfinalize内訳(報告からCLEARまでの隙間)を既存記録の突合で常時記録化; candidate_level=4; candidate=cmd_2112 GATE CLEAR通知30回重複(13:29-13:42)。bulletin_write.shにdedup未実装が根因。30×3(inbox通知)=90メッセージnoiseでCTX消費。10回繰り返し→900件=負の複利; source=gunshi_gp_tracker.yaml"
