@@ -3220,7 +3220,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4385"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で対象根因を再確認。現行 gate_report_autofix_main.py L343-L345 は lessons_useful 欠落時のスケルトン生成を撤去して gate_report_format へ委譲し、gate_report_format_main.py L1531-L1536 は reason 欠落・空値をBLOCKする。report_field_set.sh L1254-L1280 も lessons_useful のlist/entry型を検証するため、既存防御で吸収済み。追加実装修正・decision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260824-132747416-237e;primary=scripts/gates/gate_report_autofix_main.py:L343-L345;primary=scripts/gates/gate_report_format_main.py:L1531-L1536;primary=scripts/report_field_set.sh:L1254-L1280;memory=bash scripts/memory_db_query.sh --search \"影丸 lessons_useful reason 空 autofix FILL_THIS\";semantic=context/semantic-map.md:82(report_quality_protocol),90(gate_quality_framework);inventory_before=insights_pending:111,zero_backlinks:11,promotions:0,total:122;inventory_after=insights_pending:110,zero_backlinks:11,promotions:0,total:121;promotion_pause=queue/gates/reflux_promotion.paused;decision_candidate=none"
+  resolved_at: "2026-08-29T12:26:33+0900"
 - id: INS-20260824-132751501-3258
   ts: "2026-08-24T13:27:51+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿裁定_らせん構造_20260824_0844]] は既存aliasesに一致なし。類似概念TOP3: known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=10.1) / semantic_dictionary_design(セマンティック辞書構想; alias=source 殿裁定 lord conversation; score=9.9) / db_price_data_range(DB価格データ範囲; alias=殿裁定 GSはネイティブ暦 本番と同一のDTB3暦 に統一; score=9.6)。概念定義とaliases追加を検討せよ"
