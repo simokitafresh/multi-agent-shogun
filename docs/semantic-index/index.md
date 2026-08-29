@@ -9677,6 +9677,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:28:55.806145+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:45:07.051703+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T00:42:40.969398+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T02:35:34.272578+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -13634,6 +13635,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608291000_saizo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608291030_kagemaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291030_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291121_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291121_hayate` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
