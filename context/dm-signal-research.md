@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-29 T189 outputs 整理(cmd_karo_t189_outputs_cleanup_20260829、殿裁定 16:51/16:53/16:56) -->
+<!-- last_updated: 2026-08-29 T189 outputs 整理 追補(DOC_LANE_REQUEST blt_184928) -->
+<!-- source_commit:da3470694ad7 reason:T189 outputs 整理 追補(DOC_LANE_REQUEST blt_184928) evidence:git -C /mnt/c/Python_app/DM-signal show --stat da3470694ad7 -->
 <!-- source_commit:dbfe34dd935b reason:T189 outputs 整理(cmd_karo_t189_outputs_cleanup_20260829、殿裁定 16:51/16:53/16:56) evidence:git -C /mnt/c/Python_app/DM-signal show --stat dbfe34dd935b -->
 <!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
 <!-- source_commit:45760ecf reason:GA-490/491 research境界更新(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log b24d6b5f..45760ecf -- docs/research analysis outputs marketing-director = 14件。内容=cmd_4355/4356成果保存(07848c94)+note記事群(決定的tie-break一般論・投資家スクリーニング)+週報2026-08-18+reconcile merge revert。研究結論の変更なし、境界のみ更新。初回=877a73ef1、tree退行検出により再適用 -->
