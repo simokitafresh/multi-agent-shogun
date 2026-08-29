@@ -1513,6 +1513,26 @@ check_doc_no_changelog() {
     return $rc
 }
 
+# Keep the failure detail bounded without cutting through a UTF-8 codepoint.
+# `head -c` counts bytes and can leave an incomplete multibyte sequence in the
+# YAML log.  Decode the bounded byte prefix with invalid tails/bytes ignored;
+# the emitted text is therefore always valid UTF-8 and never exceeds the byte
+# cap before YAML indentation is added.
+_bounded_utf8_summary() {
+    local source_file="$1"
+    local byte_cap="${2:-200}"
+    python3 - "$source_file" "$byte_cap" <<'PY'
+from pathlib import Path
+import sys
+
+source, cap_text = sys.argv[1:]
+cap = int(cap_text)
+bounded = Path(source).read_bytes()[:cap]
+summary = bounded.decode("utf-8", errors="ignore").replace("\n", " ")
+sys.stdout.buffer.write(summary.encode("utf-8"))
+PY
+}
+
 # --- Failure recording trap (cmd_1117) ---
 # shellcheck disable=SC2317  # Called indirectly via trap EXIT below
 _record_hook_failure() {
@@ -1521,7 +1541,7 @@ _record_hook_failure() {
         (
             ninja_name=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")
             stderr_summary=""
-            [ -s "$_STDERR_FILE" ] && stderr_summary=$(head -c 200 "$_STDERR_FILE" 2>/dev/null | tr '\n' ' ')
+            [ -s "$_STDERR_FILE" ] && stderr_summary=$(_bounded_utf8_summary "$_STDERR_FILE" 200)
             printf -v _hook_failure_ts '%(%Y-%m-%dT%H:%M:%S%z)T' -1
             if [[ "$_hook_failure_ts" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
                 _hook_failure_ts="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
