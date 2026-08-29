@@ -40,6 +40,129 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
+# test_necessity: review-pending A/B/C is a durable state machine. Each state
+# has one owner/action, terminal evidence produces no wake-up, and a reload
+# cannot duplicate a task_id+fingerprint+state generation.
+@test "review-pending A B C routes structured nudges and survives hot reload" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+NINJA_MONITOR_LIB_ONLY=1 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+ROOT="'"$BATS_TEST_TMPDIR"'/review-pending-state"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/logs" "$ROOT/state"
+SCRIPT_DIR="$ROOT"; STATE_DIR="$ROOT/state"; LOG="$ROOT/monitor.log"; NINJA_NAMES=(hayate)
+cat > "$ROOT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  task_id: cmd_state_normal
+  parent_cmd: cmd_state
+  task_type: hotfix
+  report_id: rpt-state
+  report_path: queue/reports/hayate_report_cmd_state.yaml
+YAML
+cat > "$ROOT/queue/reports/hayate_report_cmd_state.yaml" <<'YAML'
+worker_id: hayate
+task_id: cmd_state_normal
+parent_cmd: cmd_state
+task_type: hotfix
+report_id: rpt-state
+report_identity_version: 2
+status: completed
+verdict: PASS
+commit_hash: 0000000000000000000000000000000000000000
+YAML
+printf "messages: []\n" > "$ROOT/queue/inbox/gunshi.yaml"
+printf "messages: []\n" > "$ROOT/queue/inbox/karo.yaml"
+CALLS="$ROOT/calls.tsv"
+MESSAGES="$ROOT/messages.log"
+DRIVER="$ROOT/review_pending_driver.sh"
+cat > "$DRIVER" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+PROJECT_ROOT="$PROJECT_ROOT"
+export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+source "\$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$ROOT"; STATE_DIR="$ROOT/state"; LOG="$ROOT/monitor.log"; NINJA_NAMES=(hayate)
+send_inbox_message() { printf "%s\\t%s\\t%s\\n" "\$1" "\$3" "\$5" >> "$CALLS"; printf "%s\\n" "\$2" >> "$MESSAGES"; }
+log() { printf "%s\\n" "\$1" >> "$ROOT/monitor.log"; }
+check_review_pending_nudges
+EOF
+chmod +x "$DRIVER"
+count_calls() { awk "END {print NR+0}" "$CALLS" 2>/dev/null || echo 0; }
+
+# Independent processes model a hot-reload successor sharing the durable ledger.
+"$DRIVER"
+test "$(count_calls)" -eq 1
+"$DRIVER"
+test "$(count_calls)" -eq 1
+
+report="$ROOT/queue/reports/hayate_report_cmd_state.yaml"
+sed -i "s/^status: completed\$/status: revision_requested/" "$report"
+"$DRIVER"
+test "$(count_calls)" -eq 1
+sed -i "s/^status: revision_requested\$/status: completed/" "$report"
+printf "revision_marker: refreshed\\n" >> "$report"
+"$DRIVER"
+test "$(count_calls)" -eq 2
+raw_fp=$(sha256sum "$report" | awk "{print \$1}")
+cat > "$ROOT/logs/gunshi_review_log.yaml" <<EOF
+- cmd_id: cmd_state
+  verdict: LGTM
+  report: queue/reports/hayate_report_cmd_state.yaml
+  report_fingerprint: $raw_fp
+EOF
+"$DRIVER"
+test "$(count_calls)" -eq 3
+
+norm_fp="$raw_fp"
+key=$(review_report_key queue/reports/hayate_report_cmd_state.yaml)
+mkdir -p "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key"
+cat > "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key/karo.yaml" <<EOF
+result: ACCEPT
+fingerprint: $norm_fp
+report: queue/reports/hayate_report_cmd_state.yaml
+EOF
+"$DRIVER"
+test "$(count_calls)" -eq 4
+python3 - "$MESSAGES" <<'PY'
+import sys
+rows = [line.split() for line in open(sys.argv[1], encoding="utf-8")]
+assert len(rows) == 4
+for state, row in zip(("A", "A", "B", "C"), rows):
+    fields = dict(token.split("=", 1) for token in row)
+    assert fields["review_pending_state"] == state
+    assert fields["task_id"] == "commander_directive"
+    assert fields["subject_task_id"] == "cmd_state_normal"
+    assert fields["parent_cmd"] == "cmd_state"
+    assert len(fields["report_fingerprint"]) == 64
+    assert fields["report"].startswith("queue/reports/")
+PY
+python3 - "$CALLS" <<'PY'
+import sys
+rows = [line.rstrip("\n").split("\t") for line in open(sys.argv[1], encoding="utf-8")]
+assert rows == [
+    ["gunshi", "review_report", "review_report"],
+    ["gunshi", "review_report", "review_report"],
+    ["karo", "accept_report", "accept_report"],
+    ["karo", "run_cmd_complete", "run_cmd_complete"],
+]
+PY
+
+printf "2026-08-29T15:00:00\\tcmd_state\\tCLEAR\\tgate_done\\n" > "$ROOT/logs/gate_metrics.log"
+printf "result: LGTM\\n" > "$ROOT/queue/gates/cmd_state/review_gate.done"
+check_review_pending_nudges
+test "$(count_calls)" -eq 4
+ledger="$ROOT/queue/gates/review_pending_nudge.tsv"
+test "$(wc -l < "$ledger")" -eq 4
+printf "states=A,A,B,C terminal=0 ledger_lines=4 independent_process_duplicate=0\\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "states=A,A,B,C terminal=0 ledger_lines=4 independent_process_duplicate=0" ]
+}
+
 # test_necessity: respawn exit code and pane stderr are the observable failure
 # contract, while successor handoff is a semantic success and must not inflate
 # the failure denominator.  The forced-idle invariant is that only low-CTX

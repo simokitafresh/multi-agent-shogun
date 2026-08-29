@@ -1207,6 +1207,7 @@ send_inbox_message() {
     local message="$2"
     local msg_type="$3"
     local from="${4:-ninja_monitor}"
+    local action="${5:-}"
     if [ "$msg_type" = "task_assigned" ] && [[ "$to" =~ ^[A-Za-z0-9_-]+$ ]]; then
         local task_id task_file
         task_file="$SCRIPT_DIR/queue/tasks/${to}.yaml"
@@ -1219,7 +1220,11 @@ send_inbox_message() {
             fi
         fi
     fi
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$to" "$message" "$msg_type" "$from" >> "$LOG" 2>&1
+    if [ -n "$action" ]; then
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$to" "$message" "$msg_type" "$from" "$action" >> "$LOG" 2>&1
+    else
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$to" "$message" "$msg_type" "$from" >> "$LOG" 2>&1
+    fi
 }
 
 # Convert a DM-Signal origin/main == Render Live transition into one durable
@@ -4379,6 +4384,161 @@ _notify_failed_respawn_result() {
         notify_karo_durable failed_task_respawn_failed "$agent_name" \
             "【自動検知】${agent_name}のrespawnが失敗した。pane状態を確認し手動対応せよ。"
     fi
+}
+
+# Review-pending reports have three actionable hand-off states.  This lane is
+# deliberately independent from review_gate.done: that marker is a historical
+# review artifact and is not a terminal completion boundary.
+_review_pending_report_identity() {
+    local name="$1" task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_status parent_cmd task_id task_type report_path report_file
+    local report_status verdict report_rel raw_fp normalized_fp
+    [ -f "$task_file" ] || return 1
+    task_status=$(yaml_field_get "$task_file" status "" 2>/dev/null || true)
+    [[ "$task_status" =~ ^(done|completed|PASS)$ ]] || return 1
+    _task_done_report_unarchived "$name" || return 1
+
+    parent_cmd=$(yaml_field_get "$task_file" parent_cmd "" 2>/dev/null || true)
+    task_id=$(yaml_field_get "$task_file" task_id "" 2>/dev/null || true)
+    task_type=$(yaml_field_get "$task_file" task_type "" 2>/dev/null || true)
+    [[ "$task_type" != "scout" && "$task_type" != "recon" && "$task_type" != "recon2" ]] || return 1
+    [ -n "$parent_cmd" ] && [ -n "$task_id" ] || return 1
+    [ ! -f "$SCRIPT_DIR/queue/gates/$parent_cmd/archive.done" ] || return 1
+    compgen -G "$SCRIPT_DIR/queue/archive/cmds/${parent_cmd}_completed_"* >/dev/null 2>&1 && return 1
+
+    report_path=$(yaml_field_get "$task_file" report_path "" 2>/dev/null || true)
+    if [ -z "$report_path" ]; then
+        report_path=$(yaml_field_get "$task_file" report_filename "" 2>/dev/null || true)
+        [ -z "$report_path" ] || report_path="queue/reports/$report_path"
+    fi
+    if [[ "$report_path" = /* ]]; then
+        report_file="$report_path"
+        report_rel="${report_path#"$SCRIPT_DIR"/}"
+    else
+        report_file="$SCRIPT_DIR/$report_path"
+        report_rel="$report_path"
+    fi
+    if [ ! -f "$report_file" ] || [ -L "$report_file" ]; then
+        report_file=""
+        for report_file in "$SCRIPT_DIR/queue/reports/${name}_report_${parent_cmd}"*.yaml; do
+            [ -f "$report_file" ] && [ ! -L "$report_file" ] && break
+        done
+        [ -f "$report_file" ] || return 1
+        report_rel="queue/reports/${report_file##*/}"
+    fi
+
+    report_status=$(yaml_field_get "$report_file" status "" 2>/dev/null || true)
+    [[ "$report_status" =~ ^(completed|done|success)$ ]] || return 1
+    verdict=$(yaml_field_get "$report_file" verdict "" 2>/dev/null || true)
+    [[ "$verdict" =~ ^(PASS|PASS_NO_IMPROVEMENT)$ ]] || return 1
+    raw_fp=$(sha256sum "$report_file" 2>/dev/null | awk '{print $1}')
+    [[ "$raw_fp" =~ ^[0-9a-f]{64}$ ]] || return 1
+
+    local gunshi_lgtm=1
+    if ! python3 - "$SCRIPT_DIR/logs/gunshi_review_log.yaml" "$parent_cmd" "$report_rel" "$raw_fp" <<'PY'
+import os, sys, yaml
+path, cmd, report, fingerprint = sys.argv[1:]
+try:
+    entries = yaml.safe_load(open(path, encoding="utf-8")) or []
+except (OSError, yaml.YAMLError):
+    entries = []
+if isinstance(entries, dict):
+    entries = entries.get("reviews", entries.get("entries", []))
+for item in entries if isinstance(entries, list) else []:
+    if not isinstance(item, dict):
+        continue
+    if str(item.get("cmd_id") or item.get("parent_cmd") or "") != cmd:
+        continue
+    if str(item.get("verdict") or "").upper() not in {"LGTM", "APPROVE"}:
+        continue
+    if str(item.get("report_fingerprint") or item.get("fingerprint") or "") != fingerprint:
+        continue
+    stored_report = str(item.get("report") or item.get("report_path") or "")
+    if stored_report and stored_report != report and stored_report != os.path.basename(report):
+        continue
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+    then
+        gunshi_lgtm=0
+    fi
+
+    normalized_fp=$(PROJECT_ROOT="$SCRIPT_DIR" review_report_fingerprint "$report_file" 2>/dev/null || true)
+    local karo_accept=0 approval_dir key stored_fp stored_report stored_result
+    if [ -z "$normalized_fp" ]; then
+        normalized_fp="$raw_fp"
+    fi
+    if command -v review_report_key >/dev/null 2>&1; then
+        key=$(review_report_key "$report_rel" 2>/dev/null || true)
+        approval_dir="$SCRIPT_DIR/queue/gates/$parent_cmd/review_approvals/reports/$key"
+        stored_fp=$(review_approval_value "$approval_dir/karo.yaml" fingerprint 2>/dev/null || true)
+        stored_report=$(review_approval_value "$approval_dir/karo.yaml" report 2>/dev/null || true)
+        stored_result=$(review_approval_value "$approval_dir/karo.yaml" result 2>/dev/null || true)
+        if [ "$stored_result" = "ACCEPT" ] && { [ "$stored_fp" = "$normalized_fp" ] || [ "$stored_fp" = "$raw_fp" ]; } \
+           && { [ "$stored_report" = "$report_rel" ] || [ "$stored_report" = "${report_rel##*/}" ]; }; then
+            karo_accept=1
+        fi
+    fi
+
+    local gate_terminal=0 latest_gate
+    latest_gate=$(awk -F '\t' -v cmd="$parent_cmd" '$2 == cmd { latest=$3 } END { print latest }' \
+        "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || true)
+    case "$latest_gate" in CLEAR|BLOCK) gate_terminal=1 ;; esac
+    if [ "$gate_terminal" -eq 1 ]; then
+        printf 'terminal\t%s\t%s\t%s\t%s\t%s\n' "$task_id" "$parent_cmd" "$raw_fp" "$report_rel" "$report_file"
+    elif [ "$gunshi_lgtm" -eq 0 ]; then
+        printf 'A\t%s\t%s\t%s\t%s\t%s\treview_report\tgunshi\treview_report\n' \
+            "$task_id" "$parent_cmd" "$raw_fp" "$report_rel" "$report_file"
+    elif [ "$karo_accept" -eq 0 ]; then
+        printf 'B\t%s\t%s\t%s\t%s\t%s\taccept_report\tkaro\taccept_report\n' \
+            "$task_id" "$parent_cmd" "$raw_fp" "$report_rel" "$report_file"
+    else
+        printf 'C\t%s\t%s\t%s\t%s\t%s\trun_cmd_complete\tkaro\trun_cmd_complete\n' \
+            "$task_id" "$parent_cmd" "$raw_fp" "$report_rel" "$report_file"
+    fi
+}
+
+_review_pending_nudge_ledger_file() {
+    printf '%s\n' "${REVIEW_PENDING_NUDGE_LEDGER:-$SCRIPT_DIR/queue/gates/review_pending_nudge.tsv}"
+}
+
+_review_pending_nudge_once() {
+    local state="$1" subject_task_id="$2" parent_cmd="$3" fingerprint="$4" report_rel="$5"
+    local report_file="$6" action="$7" target="$8" ledger lock tmp key
+    ledger=$(_review_pending_nudge_ledger_file)
+    lock="${ledger}.lock"
+    key="$subject_task_id|$fingerprint|$state"
+    mkdir -p "${ledger%/*}" 2>/dev/null || return 1
+    exec {review_pending_fd}>"$lock"
+    flock -w 5 "$review_pending_fd" || { eval "exec ${review_pending_fd}>&-"; return 1; }
+    if [ -f "$ledger" ] && awk -F '\t' -v key="$key" '$1 == key { found=1; exit } END { exit(found ? 0 : 1) }' "$ledger"; then
+        log "REVIEW-PENDING-NUDGE-DEDUPE: state=$state subject_task_id=$subject_task_id fingerprint=$fingerprint"
+        flock -u "$review_pending_fd"; eval "exec ${review_pending_fd}>&-"
+        return 0
+    fi
+    local content="review_pending_state=$state task_id=commander_directive subject_task_id=$subject_task_id parent_cmd=$parent_cmd report_fingerprint=$fingerprint report=$report_rel"
+    if ! send_inbox_message "$target" "$content" "$action" ninja_monitor "$action"; then
+        log "REVIEW-PENDING-NUDGE-RETRY: state=$state subject_task_id=$subject_task_id delivery=failed"
+        flock -u "$review_pending_fd"; eval "exec ${review_pending_fd}>&-"
+        return 1
+    fi
+    tmp="${ledger}.tmp.$$.$RANDOM"
+    if [ -f "$ledger" ]; then cp -- "$ledger" "$tmp" || { rm -f -- "$tmp"; flock -u "$review_pending_fd"; eval "exec ${review_pending_fd}>&-"; return 1; }; else : > "$tmp" || { flock -u "$review_pending_fd"; eval "exec ${review_pending_fd}>&-"; return 1; }; fi
+    printf '%s\t%s\t%s\t%s\t%s\n' "$key" "$target" "$action" "$parent_cmd" "$report_rel" >> "$tmp" || { rm -f -- "$tmp"; flock -u "$review_pending_fd"; eval "exec ${review_pending_fd}>&-"; return 1; }
+    mv -f -- "$tmp" "$ledger" || { rm -f -- "$tmp"; flock -u "$review_pending_fd"; eval "exec ${review_pending_fd}>&-"; return 1; }
+    log "REVIEW-PENDING-NUDGE: state=$state target=$target action=$action task_id=commander_directive subject_task_id=$subject_task_id parent_cmd=$parent_cmd fingerprint=$fingerprint"
+    flock -u "$review_pending_fd"; eval "exec ${review_pending_fd}>&-"
+}
+
+check_review_pending_nudges() {
+    local name line state task_id parent_cmd fingerprint report_rel report_file action target identity
+    for name in "${NINJA_NAMES[@]}"; do
+        identity=$(_review_pending_report_identity "$name" 2>/dev/null || true)
+        [ -n "$identity" ] || continue
+        IFS=$'\t' read -r state task_id parent_cmd fingerprint report_rel report_file action target _unused <<< "$identity"
+        [ "$state" = terminal ] && continue
+        _review_pending_nudge_once "$state" "$task_id" "$parent_cmd" "$fingerprint" "$report_rel" "$report_file" "$action" "$target" || true
+    done
 }
 
 # ─── pending_work通知のdurable世代dedupe (cmd_karo_hotfix_pending_work_generation_dedupe_202607121023) ───
@@ -10255,6 +10415,11 @@ check_inbox_renudge() {
     local all_agents=("shogun" "karo" "gunshi" "${NINJA_NAMES[@]}")
     local now
     now=$EPOCHSECONDS
+
+    # Review-pending is a report lifecycle lane, not an unread-count lane.
+    # Run it before the generic inbox state machine so an already-read review
+    # request cannot hide the next required hand-off.
+    check_review_pending_nudges
 
     for name in "${all_agents[@]}"; do
         local inbox_file="$SCRIPT_DIR/queue/inbox/${name}.yaml"
