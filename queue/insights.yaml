@@ -8204,11 +8204,17 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T03:22:45+09:00"
 - id: INS-20260830-032210597-bee7
   ts: "2026-08-30T03:22:10+09:00"
   insight: "[[Drive日次退避cronが最小PATHでgwsを発見できず初回本番FAILした環境差を]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTのdm signal ops mdを一次情報で照合し; score=4.0) / loop_engineering(Loop Engineering論文; alias=discovery handoff verification persistence scheduling; score=3.9) / investment_knowledge_base(投資知識辞書; alias=Adaptive Kalman with Markov Switching; score=3.9)。既存概念aliasesへの自動昇格候補"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T03:22:45+09:00"
