@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_ghost_tmux_ac3b_boot_race_20260826
-  timestamp: '2026-08-25T21:05:17Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_ghost_tmux_ac3b_boot_race_20260826'
 - cmd_id: cmd_karo_hotfix_ac4_runtime_preservation_20260826
   timestamp: '2026-08-25T21:14:08Z'
   ninja: system
@@ -1300,3 +1287,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t190_push_lane_timeout_floor_20260830'
+- cmd_id: cmd_karo_hotfix_run_tests_test_necessity_selector_20260830
+  timestamp: '2026-08-29T22:41:21Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_run_tests_test_necessity_selector_20260830'
