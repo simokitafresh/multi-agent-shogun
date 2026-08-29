@@ -3619,7 +3619,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4394"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象候補を確認。元事象とGP-215実装はlogs/archive/gunshi_review_log_cmd_2179_to_cmd_2231.yaml L1482-L1492に記録され、現物のscripts/cmd_save.sh L7710-L7723 Check 22とscripts/deploy_task.sh L4196-L4230 push_allowed接続も現存するため、既存防御で解消済み。新規修正・decision_candidate不要。"
+  action_artifact: "primary=logs/archive/gunshi_review_log_cmd_2179_to_cmd_2231.yaml:L1482-L1492;scripts/cmd_save.sh:L7710-L7723;scripts/deploy_task.sh:L4196-L4230;semantic_search=semantic_dictionary_design;new_fix=none"
+  resolved_at: "2026-08-29T15:16:24+09:00"
 - id: INS-20260825-010502795-e527
   ts: "2026-08-25T01:05:02+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4394; matched=家老,deploy; current_pattern=家老deploy blocked六割の内訳分解 — block理由別分布を確定し支配理由の前倒し根治候補を特定する; candidate_level=4; candidate=直近30報告有用率7.7%(tobisaru 0%)。target_filesなし教訓290件(56%)がtag_fallbackでタスク無関係に注入。負の複利(忍者が教訓を読まなくなる); source=gunshi_gp_tracker.yaml"
