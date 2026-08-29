@@ -8092,3 +8092,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-29T21:40:11+09:00"
+- id: INS-20260829-214923725-4b2f
+  ts: "2026-08-29T21:49:23+09:00"
+  insight: "cmd_reflux_insight_202608292131_saizoのLGTM済みにも関わらずreview_pending nudgeが21:41〜21:49の8分間で6回以上再送。GATE CLEAR遅延中。unit4のformal LGTM統一(59b7889b)後もこのcmdのnudgeが止まらない。根因: review_pending状態判定がformal approvalを正しく検出していない可能性(unit3修正対象の残存パターン)"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
