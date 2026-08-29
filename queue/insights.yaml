@@ -3280,7 +3280,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4378"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でcmd_4378の完了記録と既存防御を照合し、gate_result nullのdelegated archive検出漏れは解消済みと確認した。scripts/gunshi_gate_sync.shの現行分類と回帰テスト9件PASSにより追加コード修正・decision_candidateは不要。"
+  action_artifact: "primary=queue/archive/cmds/cmd_4378_done_20260824.yaml;current=scripts/gunshi_gate_sync.sh:56-81;history=d575e390d;tests=bash scripts/run_tests.sh file tests/unit/test_gunshi_gate_reflux.bats (9/9 PASS, skip=0);target=queue/insights.yaml:INS-20260824-134205630-8f46"
+  resolved_at: "2026-08-29T12:45:00+09:00"
 - id: INS-20260824-134205890-5ab2
   ts: "2026-08-24T13:42:05+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4378; matched=通知; current_pattern=review_bundle実行timeoutでLGTM通知が未達になる経路の根治; candidate_level=4; candidate=GP-032(YAML parse prevention)のファイル不在判明。post-write-edit-combined.sh Guard1にYAML構文検証を追加。忍者がEdit直後にparse errorを検出→自力修正可能→家老workaround削減。GP-032をpartialに降格; source=gunshi_gp_tracker.yaml"
