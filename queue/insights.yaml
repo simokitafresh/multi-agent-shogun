@@ -3210,7 +3210,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4385"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で対象の根因を確認。現行 scripts/bulletin_write.sh の GP-210 が同一投稿者かつ同一内容の掲示板重複を flock 下で検出し既存IDを返すため、cmd_2112 の観測は既存防御へ吸収済み。追加実装修正・decision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260824-132747242-074a;primary=scripts/bulletin_write.sh:477-525;fix_commit=f5b5381fc67878838e4d37b19329da7364c19177;semantic=context/semantic-map.md:93;inventory_before=insights_pending:112,zero_backlinks:11,promotions:0,total:123;inventory_after=insights_pending:111,zero_backlinks:11,promotions:0,total:122;promotion_pause=queue/gates/reflux_promotion.paused;decision_candidate=none"
+  resolved_at: "2026-08-29T12:18:00+09:00"
 - id: INS-20260824-132747416-237e
   ts: "2026-08-24T13:27:47+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4385; matched=報告,既存; current_pattern=全体スループット計装 — cmd完了パイプラインのfinalize内訳(報告からCLEARまでの隙間)を既存記録の突合で常時記録化; candidate_level=4; candidate=影丸lessons_useful reason空×10が本日3報告で繰り返し(FAIL率36%)。根因=autofixが空文字でスケルトン生成→忍者が埋まっていると誤認。FILL_THISに変更→既存gate L152がBLOCK。才蔵/小太郎は0%なので道具が壊れているのではなく忍者への指示不足。E2Eテスト: autofix→FILL_THIS 10件→; source=gunshi_gp_tracker.yaml"
