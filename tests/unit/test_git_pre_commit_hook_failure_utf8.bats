@@ -58,6 +58,7 @@ PY
   [ "$cases" -eq 12 ]
   [ "$false_positive" -eq 0 ]
   [ "$false_negative" -eq 0 ]
+  echo "MULTILINGUAL_BOUNDARY cases=$cases false_positive=$false_positive false_negative=$false_negative"
 }
 
 @test "failure record remains UTF-8 and YAML after multilingual boundary inputs" {
