@@ -8182,3 +8182,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T01:41:30+09:00"
+- id: INS-20260830-021514235-160d
+  ts: "2026-08-30T02:15:14+09:00"
+  insight: "kotaro cmd_reflux_insight_202608300158_kotaro のreport_review通知が家老から5回以上重複送信されている。LGTM bundle(sg7_bundle.json)は生成済みだが家老側で受信認識されていない可能性。watcher/inbox配信経路の調査候補。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
