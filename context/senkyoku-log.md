@@ -1569,3 +1569,4 @@
 - 意図: 家老が将軍指示を 10 回未適用にする真因。結果: commander_directive 束縛が未 commit(D0 1d4d1f271)+受け手の自己記録再注入(45f31a6dc)。殿の疑問文 14:32 を家老が裁定化→撤回せず、三者合意 nudge 三状態→T184(unit1 CLEAR、unit2 走行)。
 - 意図: 殿の Render cron 失敗通知と『根治か？再発ゼロか？』。結果: 既知失敗、fail-fast は構造型・env は状態のみ→T185 IaC 化 CLEAR 16:01(残=明日 08:30 run)。
 - origin: `[[殿指示_強くてニューゲーム_20260829_1604]] -> [[commander_directive_未着地_D0_1d4d1f271]] -> [[preflight_自己記録除外_45f31a6dc]] -> [[T183_prepush_deadlock]] -> [[T185_Render_env_IaC]] -> [[復帰後の型_第十四弾]]`
+- (第13便 16:17-16:26 復帰直後) 意図: 起動 gate の action_required 2 件を利他で解消。結果: 8 日連続同一集合/確定 0 件の再投稿=LS096 粒度バグ→D0 2ef3cbd11(指紋 dedupe+審査推奨除外、bats 143/143)。T187。
