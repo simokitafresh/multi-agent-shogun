@@ -4390,7 +4390,8 @@ _notify_failed_respawn_result() {
 # deliberately independent from review_gate.done: that marker is a historical
 # review artifact and is not a terminal completion boundary.
 _review_pending_report_identity() {
-    local name="$1" task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     local task_status parent_cmd task_id task_type report_path report_file
     local report_status verdict report_rel raw_fp normalized_fp
     [ -f "$task_file" ] || return 1
@@ -4434,43 +4435,28 @@ _review_pending_report_identity() {
     raw_fp=$(sha256sum "$report_file" 2>/dev/null | awk '{print $1}')
     [[ "$raw_fp" =~ ^[0-9a-f]{64}$ ]] || return 1
 
-    local gunshi_lgtm=1
-    if ! python3 - "$SCRIPT_DIR/logs/gunshi_review_log.yaml" "$parent_cmd" "$report_rel" "$raw_fp" <<'PY'
-import os, sys, yaml
-path, cmd, report, fingerprint = sys.argv[1:]
-try:
-    entries = yaml.safe_load(open(path, encoding="utf-8")) or []
-except (OSError, yaml.YAMLError):
-    entries = []
-if isinstance(entries, dict):
-    entries = entries.get("reviews", entries.get("entries", []))
-for item in entries if isinstance(entries, list) else []:
-    if not isinstance(item, dict):
-        continue
-    if str(item.get("cmd_id") or item.get("parent_cmd") or "") != cmd:
-        continue
-    if str(item.get("verdict") or "").upper() not in {"LGTM", "APPROVE"}:
-        continue
-    if str(item.get("report_fingerprint") or item.get("fingerprint") or "") != fingerprint:
-        continue
-    stored_report = str(item.get("report") or item.get("report_path") or "")
-    if stored_report and stored_report != report and stored_report != os.path.basename(report):
-        continue
-    raise SystemExit(0)
-raise SystemExit(1)
-PY
-    then
-        gunshi_lgtm=0
-    fi
-
     normalized_fp=$(PROJECT_ROOT="$SCRIPT_DIR" review_report_fingerprint "$report_file" 2>/dev/null || true)
-    local karo_accept=0 approval_dir key stored_fp stored_report stored_result
+    local gunshi_lgtm=0 karo_accept=0 approval_dir key
+    local stored_fp stored_report stored_result
     if [ -z "$normalized_fp" ]; then
         normalized_fp="$raw_fp"
     fi
     if command -v review_report_key >/dev/null 2>&1; then
         key=$(review_report_key "$report_rel" 2>/dev/null || true)
         approval_dir="$SCRIPT_DIR/queue/gates/$parent_cmd/review_approvals/reports/$key"
+
+        # gunshi_review_log.yaml is an audit trail only. A cmd_id without a
+        # fingerprint cannot prove formal LGTM for this report generation.
+        # Lifecycle state must come from the exact report-keyed approval.
+        stored_fp=$(review_approval_value "$approval_dir/gunshi.yaml" fingerprint 2>/dev/null || true)
+        stored_report=$(review_approval_value "$approval_dir/gunshi.yaml" report 2>/dev/null || true)
+        stored_result=$(review_approval_value "$approval_dir/gunshi.yaml" result 2>/dev/null || true)
+        if [ "$stored_result" = "LGTM" ] \
+           && { [ "$stored_fp" = "$normalized_fp" ] || [ "$stored_fp" = "$raw_fp" ]; } \
+           && { [ "$stored_report" = "$report_rel" ] || [ "$stored_report" = "${report_rel##*/}" ]; }; then
+            gunshi_lgtm=1
+        fi
+
         stored_fp=$(review_approval_value "$approval_dir/karo.yaml" fingerprint 2>/dev/null || true)
         stored_report=$(review_approval_value "$approval_dir/karo.yaml" report 2>/dev/null || true)
         stored_result=$(review_approval_value "$approval_dir/karo.yaml" result 2>/dev/null || true)
