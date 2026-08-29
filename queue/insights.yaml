@@ -3127,6 +3127,7 @@ insights:
   action_artifact: "scripts/cmd_complete_gate.sh:12886-12894; bash -n scripts/cmd_complete_gate.sh => rc=0; queue/insights.yaml:INS-20260824-102853252-c105"
   resolved_at: "2026-08-29T11:26:29+09:00"
   last_seen: "2026-08-29T11:34:26+09:00"
+  occurrence_count: 1
 - id: INS-20260824-102853407-fe07
   ts: "2026-08-24T10:28:53+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4386; matched=実行; current_pattern=cmd_complete_gate.sh速度改善第七弾 — 実測で確定した外部待ち上位(push実行とdurable_writer待ち)の並行化と根治; candidate_level=2; candidate=verdict_override WA 6件中5件がAC設計ミス。draftレビューStep 3で事前検出する観点が不在だった; source=gunshi_gp_tracker.yaml"
