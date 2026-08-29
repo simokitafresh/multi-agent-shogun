@@ -387,7 +387,6 @@ for candidate in external_candidates:
 values = []
 declared_values = []
 collect(task.get("test_path"), declared_values)
-collect(task.get("test_necessity"), declared_values)
 planned_values = []
 collect(task.get("planned_paths"), planned_values)
 declared_values.extend(path for path in planned_values if is_test(path))
