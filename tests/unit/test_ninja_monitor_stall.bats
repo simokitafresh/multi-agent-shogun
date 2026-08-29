@@ -5943,6 +5943,74 @@ printf "worker_dispatch_rc=%s\n" "$rc"
     [ "$output" = "worker_dispatch_rc=0" ]
 }
 
+# test_necessity: the production lifecycle-worker entrypoint must reach its
+# requested handler while the long-lived daemon owns a healthy singleton lease.
+# regression_justification: this exact healthy-owner boundary previously
+# exited before review-pending nudges, leaving both durable evidence and the
+# required hand-off absent.
+@test "lifecycle worker bypasses healthy daemon singleton and preserves generation" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+ROOT="'"$BATS_TEST_TMPDIR"'/lifecycle-worker-singleton"
+mkdir -p "$ROOT/scripts" "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/logs" "$ROOT/state"
+cp "$PROJECT_ROOT/scripts/ninja_monitor.sh" "$ROOT/scripts/ninja_monitor.sh"
+ln -s "$PROJECT_ROOT/scripts/lib" "$ROOT/scripts/lib"
+ln -s "$PROJECT_ROOT/lib" "$ROOT/lib"
+ln -s "$PROJECT_ROOT/scripts/inbox_write.sh" "$ROOT/scripts/inbox_write.sh"
+cat > "$ROOT/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  status: done
+  task_id: cmd_lifecycle_worker_full
+  parent_cmd: cmd_lifecycle_worker
+  task_type: hotfix
+  report_path: queue/reports/hanzo_report_cmd_lifecycle_worker.yaml
+YAML
+cat > "$ROOT/queue/reports/hanzo_report_cmd_lifecycle_worker.yaml" <<'YAML'
+worker_id: hanzo
+task_id: cmd_lifecycle_worker_full
+parent_cmd: cmd_lifecycle_worker
+status: completed
+verdict: PASS
+commit_hash: "0000000000000000000000000000000000000000"
+YAML
+printf "messages: []\n" > "$ROOT/queue/inbox/gunshi.yaml"
+printf "messages: []\n" > "$ROOT/queue/inbox/karo.yaml"
+report="$ROOT/queue/reports/hanzo_report_cmd_lifecycle_worker.yaml"
+source "$PROJECT_ROOT/scripts/lib/review_approval.sh"
+raw_fp=$(sha256sum "$report" | awk "{print \$1}")
+norm_fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$report" 2>/dev/null || true)
+[ -n "$norm_fp" ] || norm_fp="$raw_fp"
+key=$(review_report_key queue/reports/hanzo_report_cmd_lifecycle_worker.yaml)
+mkdir -p "$ROOT/queue/gates/cmd_lifecycle_worker/review_approvals/reports/$key"
+cat > "$ROOT/queue/gates/cmd_lifecycle_worker/review_approvals/reports/$key/gunshi.yaml" <<EOF
+result: LGTM
+fingerprint: $norm_fp
+report: queue/reports/hanzo_report_cmd_lifecycle_worker.yaml
+EOF
+printf "%s healthy-generation %s\n" "$$" "$EPOCHSECONDS" > "$ROOT/owner"
+owner_before=$(sha256sum "$ROOT/owner")
+run_worker() {
+    NINJA_MONITOR_OWNER_FILE="$ROOT/owner" \
+    SHOGUN_STATE_DIR="$ROOT/state" \
+    REVIEW_PENDING_NUDGE_LEDGER="$ROOT/queue/gates/review_pending_nudge.tsv" \
+    NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled \
+        bash "$ROOT/scripts/ninja_monitor.sh" --lifecycle-worker check_review_pending_nudges
+}
+run_worker
+run_worker
+owner_after=$(sha256sum "$ROOT/owner")
+test "$owner_before" = "$owner_after"
+test "$(wc -l < "$ROOT/queue/gates/review_pending_nudge.tsv")" -eq 1
+test "$(grep -c "review_pending_state=B" "$ROOT/queue/inbox/karo.yaml")" -eq 1
+gunshi_nudge_count=$(grep -c "review_pending_state=" "$ROOT/queue/inbox/gunshi.yaml" || true)
+test "$gunshi_nudge_count" -eq 0
+printf "worker_runs=2 handler_reached=1 state=B target=karo ledger=1 nudge=1 duplicate=0 owner_generation_preserved=1\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "worker_runs=2 handler_reached=1 state=B target=karo ledger=1 nudge=1 duplicate=0 owner_generation_preserved=1" ]
+}
+
 # test_necessity: bounded done-check must execute its task-scoped review
 # predicate even while the long-lived monitor owner is healthy; otherwise a
 # healthy-owner singleton exit falsely reports completion and hides pending

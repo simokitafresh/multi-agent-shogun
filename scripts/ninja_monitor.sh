@@ -13,6 +13,15 @@ _ninja_monitor_debug_invocation() {
 
 _ninja_monitor_debug_invocation "$@"
 
+# Bounded lifecycle workers are short-lived handlers launched by the healthy
+# daemon owner.  They must load the same dependencies and runtime configuration
+# as the daemon, but cannot compete for the daemon's singleton lease or run its
+# startup reconciliation before dispatching their requested handler.
+_NINJA_MONITOR_LIFECYCLE_WORKER=0
+if [ "${1:-}" = "--lifecycle-worker" ]; then
+    _NINJA_MONITOR_LIFECYCLE_WORKER=1
+fi
+
 # semantic-links: [[インフラ設計意図カタログ]], [[インフラ運用基盤]], [[デーモン監視と復旧]], [[忍者修行サイクル品質]], [[編成管理]]
 # doc-links: [[infrastructure.md]], [[infra-details]], [[training-cycle]], [[training-cycle.md]], [[ninja_monitor_requirements.md]], [[ninja_monitor_design.md]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]]
 # shellcheck disable=SC1091,SC2034,SC2129
@@ -1190,7 +1199,8 @@ _ninja_monitor_refresh_owner_lease() {
 }
 
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ] \
-    && [ "${NINJA_MONITOR_BOUNDED_DONE_CHECK:-0}" != "1" ]; then
+    && [ "${NINJA_MONITOR_BOUNDED_DONE_CHECK:-0}" != "1" ] \
+    && [ "${_NINJA_MONITOR_LIFECYCLE_WORKER:-0}" != "1" ]; then
     acquire_singleton_lock
     # Reconcile only after the current generation owns the lease.  Running
     # this before acquire allowed a stale owner transaction to abort startup
