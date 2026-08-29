@@ -2010,6 +2010,47 @@ EOF
     [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
+# test_necessity: a directory command reference must cover only files below
+# that directory, while a similarly prefixed sibling directory remains out of
+# scope and must still BLOCK.
+# regression_justification: cmd_4411 cited docs/research but reported the
+# descendant runbook path, causing a false command_files_modified mismatch.
+@test "command/files_modified coverage uses directory boundaries" {
+    local descendant_pass=0 similar_prefix_block=0
+
+    _write_command_coverage_fixture \
+        "docs/research を修正" \
+        "  - path: docs/research/cmd_4411_offsite_restore_runbook_20260829.md
+    change: modified" \
+        "docs/research"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+    descendant_pass=$((descendant_pass + 1))
+
+    _write_command_coverage_fixture \
+        "docs/research を修正" \
+        "  - path: docs/research2/cmd_4411_offsite_restore_runbook_20260829.md
+    change: modified" \
+        "docs/research"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: docs/research"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+    similar_prefix_block=$((similar_prefix_block + 1))
+
+    [ "$descendant_pass" -eq 1 ]
+    [ "$similar_prefix_block" -eq 1 ]
+    printf 'directory_descendant=%s/1 similar_prefix_block=%s/1 boundary_false_positive=0\n' \
+        "$descendant_pass" "$similar_prefix_block" >&3
+}
+
 @test "command/files_modified coverage ignores cmd_4250 bareword session_alerts false positive" {
     # test_necessity: command_refs must contain only explicit paths; a common
     # noun that happens to resemble a file stem must not BLOCK completion.
