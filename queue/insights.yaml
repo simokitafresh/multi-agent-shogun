@@ -2815,7 +2815,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4381"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: 対象候補が指摘したLG025(WF並列禁止)は現行pre_bash_combined_guardで自動強制済みであり、候補記載のautomated:false(Level 2文書のみ)は陳腐化しているため解消と判定した。"
+  action_artifact: "target=scripts/lib/pre_bash_combined_guard.sh:L649-L650;probe=pre_bash_combined_eval_command(\"python3 scripts/wf_runner.py\", \"$PWD\") rc=1 deny LG025;test=bats tests/unit/test_pre_bash_combined.bats 21/21 PASS SKIP0;source=INS-20260824-054737158-9351"
+  resolved_at: "2026-08-29T09:49:39+09:00"
 - id: INS-20260824-054737367-8418
   ts: "2026-08-24T05:47:37+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4381; matched=構造; current_pattern=cmd_complete_gate.sh速度改善第三弾 — 本番実行の常時フェーズ記録化でgateが自分自身を計測する構造へ; candidate_level=4; candidate=cmd_2225/2226で将軍がACにcommit+push記載→忍者push不可→bc:no→gate BLOCK→家老WA。殿指摘(2026-04-22)。Check 22でACのpush検出→WARN。2回目BLOCK昇格; source=gunshi_gp_tracker.yaml"
