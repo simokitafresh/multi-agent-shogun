@@ -4535,7 +4535,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行実装を確認した結果、inbox_write.shは将軍発task_assigned本文の実在path WARNのみ実装し、DOC_LANE_ROUTINGまたはcontext/*.md所有判定は未実装。既存のcontext/infrastructure.mdとinstructions/shogun.mdはcontextを将軍doc laneと定義しており、候補は未解消。今回のplanned_pathsはqueue/insights.yamlのみのためコード変更は行わず、別実装cmdが必要なdecision_candidateとして解決する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-034423701-27f6;primary=scripts/inbox_write.sh:L2125-L2137(path-WARNのみ);primary=scripts/deploy_task.sh:L9897(DOC_LANE_ROUTING最終ゲート);primary=instructions/shogun.md:L284-L286(contextは将軍doc lane・自動化ターゲット明記);decision_candidate=別実装cmdで将軍→家老task_assigned本文のcontext/*.md検出時DOC_LANE_WARNを追加し誤配備を送信前可視化;inventory_before=insights_pending:89/zero_backlinks:11/promotions:0/total:100"
+  resolved_at: "2026-08-29T23:40:51+09:00"
 - id: INS-20260827-034426448-c583
   ts: "2026-08-27T03:44:26+09:00"
   insight: "[[覚醒して家老をサポートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=覚醒して家老をサポートせよ"
