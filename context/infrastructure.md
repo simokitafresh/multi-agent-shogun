@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-29 cmd_karo_hotfix_command_scope_directory_prefix(DOC_LANE_REQUEST blt_210808) -->
+<!-- last_updated: 2026-08-29 cmd_karo_hotfix_lifecycle_worker_singleton_unit4(DOC_LANE_REQUEST blt_212507) -->
+<!-- source_commit:788139722e44 reason:cmd_karo_hotfix_lifecycle_worker_singleton_unit4(DOC_LANE_REQUEST blt_212507) evidence:git show --stat 788139722e44 -->
 <!-- source_commit:32612a1f1480 reason:cmd_karo_hotfix_command_scope_directory_prefix(DOC_LANE_REQUEST blt_210808) evidence:git show --stat 32612a1f1480 -->
 <!-- source_commit:bb409ad39caf reason:cmd_4411 オフサイト退避+隔離復元(DOC_LANE_REQUEST blt_182710、origin 到達後) evidence:git show --stat bb409ad39caf -->
 <!-- source_commit:a8055a18b03286a55414e90582ec96990e9ff9ab reason:doc lane: 2026-08-28 節追記(T151/T157/T159/T160/T161/T162/T158/artifact)。a3e312e2a は origin 未到達ゆえ origin tip を境界、到達後に再設定 evidence:grep -c '2026-08-28 追加' context/infrastructure.md=1; commit f6af51645 -->
@@ -130,6 +131,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - 個別テスト単体短縮バッチらせん（cmd_4403〜, 2026-08-25）: 殿裁定の型=忍者並列×バッチ計測選別(機械選別・個別before/after・バッチ境界で全体分布確認・ファイル排他・当面10個)。第1バッチ=最重量test_cmd_complete_gate.bats 912→298秒(67.3%減)・281/281 PASS・検証削除ゼロ(626640662、成果物正本=docs/research/cmd_4403_slowest_tests_speedup_20260825.md)。origin: [[殿の教え_個別最適化は単体高速化_20260825_1524]] -> [[cmd_4403_slowest_tests単体短縮]]
 - **オフサイト退避+隔離復元(cmd_4411, 2026-08-29)**: 殿下問 16:37『PC 故障時に GitHub/zip で即時移行できる方法は確立されているか』→git 外の状態(記憶DB gzip・projects・queue・logs/gate_metrics.log、DM-signal env 系は対称暗号化)を `python3 scripts/shogun_backup.py` で Drive `shogun-offsite-backups`(id 1EOqd51NF4ZplAJrJrhhLQWXoPGCnumgI)へ退避(鍵=`~/.config/shogun/backup.key` mode 600、Drive へ送らない)、Drive 一覧 6 件・再 download sha256 5/5 一致。隔離復元(mktemp clone→`first_setup.sh --dry-run`→展開→記憶DB `integrity_check=ok`→bats 2/2 FAIL0 SKIP0)を実走証明。cron `0 3 * * *`(marker `# shogun-drive-backup`、flock)。復元 runbook → `docs/research/cmd_4411_offsite_restore_runbook_20260829.md`。DM-signal 側は疾風 push unit(origin..HEAD 0/0、backup/<branch> 新 ref)で GitHub 復元可。outputs は本番 PF 作成根拠のみ保持(T189、`context/dm-signal-research.md`)。
 - **cmd_complete_gate の command/files_modified 照合をディレクトリ境界対応(才蔵 32612a1f1, 2026-08-29)**: cmd_4411 が 18:32 に `command_files_modified_mismatch` で BLOCK(command 欄の `scripts` 等ディレクトリ指定と files_modified の個別 path が不一致扱い)→`scripts/cmd_complete_gate.sh` に directory-boundary coverage 2 行+bats 41 行。修正前 297/298(回帰 1 FAIL)→修正後 477/477 SKIP 0。
+- **review-pending nudge 三状態の unit4=lifecycle worker singleton 早期終了の除外(半蔵 788139722, 2026-08-29)**: T184 三者合意(A/B/C 状態+durable ledger)の実装後、lifecycle worker の singleton 早期終了で『formal LGTM 済(状態 B)』の家老宛 nudge が 0 回だった→除外して 1 回だけ送信、再実行重複 0(ledger/nudge 0→1、bats +18 行)。unit1〜4 の全体像 → T184(`queue/shogun_todo_map.md`)。
 
 ## プラットフォーム運用
 
