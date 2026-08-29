@@ -1028,6 +1028,48 @@ YAML
   [ ! -e "$SELECT_ARGS_LOG" ]
 }
 
+# test_necessity: test_necessity is an explanatory contract, not a test path;
+# natural-language descriptions must not fail task selection, while an
+# explicit test_path must remain a direct execution request.
+@test "task test_necessity description is excluded while explicit test_path remains selected" {
+  mkdir -p "$TMPROOT/queue/tasks"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+
+  cat >"$TMPROOT/queue/tasks/natural-language.yaml" <<'YAML'
+task:
+  task_id: natural-language-contract
+  target_path: scripts/run_tests.sh
+  test_necessity: "select the owned contract test only; do not treat this explanation as a filesystem path"
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/natural-language.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=task files=1"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=0 transitive=0 source=dependency_map"* ]]
+  [[ "$output" == *"TEST_SELECTION result=selected reason=task_scope_no_mapped_tests files=0"* ]]
+  [[ "$output" != *"explicit test path has no supported engine"* ]]
+
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  cat >"$TMPROOT/queue/tasks/explicit-path.yaml" <<'YAML'
+task:
+  task_id: explicit-path-contract
+  target_path: scripts/run_tests.sh
+  test_path: tests/unit/owned.bats
+  test_necessity: "the explicit path above is the persistent contract test"
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/explicit-path.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
+  [[ "$output" == *"TEST_SELECTION result=selected reason=task_scope files=1"* ]]
+}
+
 # test_necessity: terminal task receipts must carry the task YAML identity for
 # report autolinking, while file-mode receipts must remain task-agnostic.
 @test "task receipt carries task_id and non-task receipt omits it" {
