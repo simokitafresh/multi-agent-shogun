@@ -7747,3 +7747,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-152438857-f3a4
+  ts: "2026-08-29T15:24:38+09:00"
+  insight: "semantic_index_update新概念候補: discussion:根治しているのか？再発リスクはゼロか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
