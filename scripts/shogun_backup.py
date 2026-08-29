@@ -174,9 +174,9 @@ def download(file_id: str, destination: Path) -> None:
     # gws writes binary media to --output, but application/json media is
     # rendered on stdout while leaving an empty output placeholder.  Support
     # both forms so the manifest remains verifiable and portable.
-    if destination.stat().st_size == 0 and completed.stdout:
+    if (not destination.exists() or destination.stat().st_size == 0) and completed.stdout:
         destination.write_bytes(completed.stdout)
-    if destination.stat().st_size == 0:
+    if not destination.exists() or destination.stat().st_size == 0:
         fail(f"Drive download was empty: {destination.name}")
 
 
