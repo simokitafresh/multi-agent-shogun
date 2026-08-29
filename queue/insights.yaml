@@ -3270,7 +3270,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4378"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存修正と既存防御により解消済み。cmd_1975のhook誤削減は3257b77e1で復元され、SG-PRE13がhook/gateの50%超削減を検出してレビューCLEARを防止する。cmd_4378のLGTM未達はafd8ac69bでdurable LGTM直後通知へ順序変更済み。追加コード修正・decision_candidate不要。"
+  action_artifact: "primary=git show 3c5234f7a^..3257b77e1 -- .claude/hooks/pre-bash-combined.sh; current=.claude/hooks/pre-bash-combined.sh:1728 lines; guard=scripts/gates/gate_gunshi_report_precheck.sh:956-995 SG-PRE13; notification=scripts/review_approval.sh:638-653; fix=afd8ac69b; semantic=docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T12:34:08+09:00"
 - id: INS-20260824-134205630-8f46
   ts: "2026-08-24T13:42:05+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4378; matched=実行; current_pattern=review_bundle実行timeoutでLGTM通知が未達になる経路の根治; candidate_level=3; candidate=gate_result null 18件蓄積。findパターンが_done_/_completed_のみ→_delegated_(多数派)未捕捉。パターン追加で2130→2243件(+5.3%); source=gunshi_gp_tracker.yaml"
