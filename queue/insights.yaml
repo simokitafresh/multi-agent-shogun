@@ -3417,7 +3417,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4391"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行経路を照合。scripts/cmd_complete_gate.sh:14349-14358(CLEAR)と14962-14971(BLOCK)にGP-209の同一cmd+同一result inbox dedupが実装済みで、候補のreview_feedback重複送信防御は充足。cmd_4391はdocs/semantic-index/index.md:10875-10876に既登録。追加コード修正とdecision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260824-230157392-6d2f;existing_defense=scripts/cmd_complete_gate.sh:14349-14358,14962-14971(GP-209);semantic=docs/semantic-index/index.md:10875-10876(cmd_4391);decision_candidate=none;additional_code_change=none"
+  resolved_at: "2026-08-29T13:57:31+09:00"
 - id: INS-20260824-230215120-b5bd
   ts: "2026-08-24T23:02:15+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4389_gap分布確定_report_done_to_review_request中央値618秒]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=tobisaru_review_pending; score=9.5) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=9.4) / gate_quality_framework(ゲート品質統合フレームワーク; alias=review_quality_population_mixing; score=9.3)。概念定義とaliases追加を検討せよ"
