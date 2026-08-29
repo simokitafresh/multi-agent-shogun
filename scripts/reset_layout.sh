@@ -14,6 +14,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
+# すべてのCLI入力送出は、実tmuxのsocket/session/targetを解決する共通guardを
+# 直前に通す。attachedな本番shogunは明示許可なしでfail-closedにする。
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/tmux_live_send_guard.sh"
+
 # ═══════════════════════════════════════════════════════════════
 # オプション解析
 # ═══════════════════════════════════════════════════════════════
@@ -446,6 +451,7 @@ if [[ -n "$TARGET_AGENT" ]]; then
     # cd + PS1
     prompt_color="${PROMPT_COLORS[$target_idx]:-yellow}"
     prompt_str=$(_generate_prompt "${TARGET_AGENT}" "$prompt_color")
+    tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${target_pane}"
     tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${target_pane}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
     sleep 0.5
 
@@ -466,6 +472,7 @@ if [[ -n "$TARGET_AGENT" ]]; then
 
     # CLI起動
     cli_cmd="${_MB_CLI_CMD[$TARGET_AGENT]}"
+    tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${target_pane}"
     tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${target_pane}" "$cli_cmd" Enter
 
     log_ok "${TARGET_AGENT} respawn完了 (pane=${target_pane}, cli=${cli_t}, model=${model_display})"
@@ -670,11 +677,13 @@ for ((i=0; i<=LAST_IDX; i++)); do
 
             # cd + PS1設定
             prompt_str=$(_generate_prompt "${agent_id}" "${PROMPT_COLORS[$i]}")
+            tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${p}"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
             sleep 0.5
 
             # CLI起動（mega batch pre-built command — settings.yaml+cli_profiles.yaml準拠）
             cli_cmd="${_MB_CLI_CMD[$agent_id]}"
+            tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${p}"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$cli_cmd" Enter
 
             log "  respawn: agents.${p} (${agent_id})"
@@ -717,10 +726,12 @@ for ((i=0; i<=LAST_IDX; i++)); do
         else
             # cd + PS1設定
             prompt_str=$(_generate_prompt "${agent_id}" "${PROMPT_COLORS[$i]}")
+            tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${p}"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
             sleep 0.5
 
             # CLI起動
+            tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${p}"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$cli_cmd" Enter
 
             log "  CLI起動: agents.${p} (${agent_id})"
