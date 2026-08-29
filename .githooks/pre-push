@@ -80,8 +80,11 @@ _HOOK_SHA256="$(sha256sum "$0" 2>/dev/null | awk '{print $1}')"
 _CHANGED_FILES_FILE="/tmp/_hook_changed_files_prepush_$$"
 _SELECTED_TESTS_FILE="/tmp/_hook_selected_tests_prepush_$$"
 _BATS_OUTPUT_FILE="/tmp/_hook_bats_output_prepush_$$"
-_PREPUSH_LOCK_FILE="$REPO_ROOT/logs/prepush_test.lock"
-_PREPUSH_LOCK_META="$REPO_ROOT/logs/prepush_test.lock.holder"
+# v2 isolates the materialized-receipt scanner from locks held forever by the
+# pre-v2 early-return pipe deadlock.  New hooks still serialize with each other;
+# only the broken generation is fenced out.
+_PREPUSH_LOCK_FILE="$REPO_ROOT/logs/prepush_test.v2.lock"
+_PREPUSH_LOCK_META="$REPO_ROOT/logs/prepush_test.v2.lock.holder"
 _PREPUSH_LOCK_WAIT_SECONDS="${PREPUSH_LOCK_WAIT_SECONDS:-1200}"
 _PREPUSH_CROSS_GENERATION_WAIT_SECONDS="${PREPUSH_CROSS_GENERATION_WAIT_SECONDS:-1200}"
 _PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS="${PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS:-60}"
