@@ -4989,7 +4989,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で現行正本がext2/ext3(ext4系)上、書込みprobe 0.00s、p9_client_rpc D-state 0、gate_shogun_startup.shに対象probe未実装であることを確認。9p症状はcmd_4408のext4移設で本リポジトリについて解消済み。/mnt/c/Python_app/DM-signalは別repoとして残存するため、同様のprobe/remount案は別実装cmdのdecision_candidateへ分離。
+  action_artifact: "target=queue/insights.yaml:INS-20260827-133859674-4c64;primary=stat -f -c '%T %m' . -> ext2/ext3 /home/simokitafresh/multi-agent-shogun;write_probe=0.00s;runtime=ps p9_client_rpc D-state 0;gate_probe=rg gate_shogun_startup.sh 9p|p9_client_rpc|latency|remount|drvfs -> 0 matches;context=context/infrastructure.md:L364-L367;runbook=docs/research/9p_root_fix_runbook_20260827.md:L9-L21,L56-L64;implementation=cmd_4408 ext4移設;decision_candidate=/mnt/c/Python_app/DM-signal separate-repo 9p probe/remount follow-up;inventory_before=71/11/0/82"
+  resolved_at: "2026-08-30T05:36:00+09:00"
 - id: INS-20260827-134017573-bf15
   ts: "2026-08-27T13:40:17+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id be9tkyrom task id tool use id toolu 01VqVpwH39hSKvzqmB は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
