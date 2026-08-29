@@ -1559,3 +1559,4 @@
 - 意図: T180 本番退行=push lane の `git merge -s ours` が祖先 commit の内容を捨てた(9 単位 18 ファイル、殿裁定 00:49 の根治や D012 拡張も消失)。結果: 将軍 4 本+家老 21045aa00 を git apply で再適用・着地(rev-list 0 0)、飛猿 guard 3598e3d5b(ours 相当 merge BLOCK+復旧監査 18/18)。
 - 殿裁定 10:26『一回終わりを作ろう。速度向上は走行分完了で指示待ち、バグ根治は継続』→速度 lane 凍結(新規配備 0)、根治 lane 継続。本日 CLEAR 52(hotfix 28/exact 18/ci_fix 3)、PJ 1、finalize 29%、CI GREEN。
 - origin: `[[殿指示_強くてニューゲーム_20260829_1207]] -> [[T176_monitor_rc契約_gate自壊]] -> [[T179_Render_env欠落]] -> [[T180_merge_s_ours_退行]] -> [[殿裁定_一回終わり_20260829_1026]] -> [[復帰後の型_第十三弾]] -> [[session_save_20260829_1207]]`
+- 12:41 殿指示『T178/T177/T176/T163 を覚醒確認し終了まで家老を導け』→T163(D012 本番発火 rc=2)・T176(BOUNDED-FAIL 0 行 2.5h、gate rc=0)は終端 [x]。T178/T177 は凍結解除: 残る壁=gate_context_freshness shared root 単発 133.7s と idle 時 load 7-10→家老 unit4(影丸 12:46 配備)/unit5 直列。追補=[[session_save_20260829_1250]]
