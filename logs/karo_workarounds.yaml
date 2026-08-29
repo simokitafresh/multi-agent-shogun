@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_p2_gate_model_attribution
-  timestamp: '2026-08-24T18:33:22Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_p2_gate_model_attribution'
 - cmd_id: cmd_karo_hotfix_ga496_review_source_context
   timestamp: '2026-08-24T19:45:09Z'
   ninja: system
@@ -1300,3 +1287,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_prebash_preflight_fixture_20260829'
+- cmd_id: cmd_karo_hotfix_shared_merge_hunk_presence_20260829
+  timestamp: '2026-08-29T02:08:45Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_shared_merge_hunk_presence_20260829'
