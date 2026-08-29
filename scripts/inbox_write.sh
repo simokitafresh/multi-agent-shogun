@@ -1001,6 +1001,41 @@ print("\n".join(values[key] for key in required))
 PY
 }
 
+# Karo-directed control-plane notifications require their own management
+# identity.  These notifications ask Karo to decide or act, so a missing
+# task_id can be mistaken for stale/unrelated mail.  Identity must be an
+# explicit envelope; never recover a cmd_id from free-form prose.
+inbox_is_commander_directive_type() {
+    case "$1" in
+        pending_work|review_draft_result|gate_clear_required) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+inbox_commander_directive_identity() {
+    local content="$1"
+    INBOX_DIRECTIVE_CONTENT="$content" python3 - <<'PY'
+import os, re
+
+content = os.environ.get("INBOX_DIRECTIVE_CONTENT", "")
+values = {}
+for token in content.split():
+    if "=" not in token:
+        continue
+    key, value = token.split("=", 1)
+    if key in {"task_id", "subject_task_id", "parent_cmd"}:
+        values[key] = value
+
+if values.get("task_id") != "commander_directive":
+    raise SystemExit(1)
+if not re.fullmatch(r"[A-Za-z0-9_.:-]+", values.get("subject_task_id", "")):
+    raise SystemExit(1)
+if not re.fullmatch(r"cmd_[A-Za-z0-9_.:-]+", values.get("parent_cmd", "")):
+    raise SystemExit(1)
+print("\n".join(values[key] for key in ("task_id", "subject_task_id", "parent_cmd")))
+PY
+}
+
 inbox_validate_investigation_result() {
     local target="$1" from_agent="$2" content="$3"
     local field value
@@ -2202,6 +2237,21 @@ if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ] && printf '%s'
 fi
 ACTION="${5:-}"
 
+COMMANDER_DIRECTIVE_TASK_ID=""
+COMMANDER_DIRECTIVE_SUBJECT_TASK_ID=""
+COMMANDER_DIRECTIVE_PARENT_CMD=""
+if [ "$TARGET" = "karo" ] && inbox_is_commander_directive_type "$TYPE"; then
+    _commander_directive_identity=$(inbox_commander_directive_identity "$CONTENT" 2>/dev/null || true)
+    if [ -z "$_commander_directive_identity" ]; then
+        echo "BLOCK: ${TYPE} to karo requires explicit task_id=commander_directive subject_task_id=<task> parent_cmd=<cmd> identity envelope" >&2
+        exit 2
+    fi
+    mapfile -t _commander_directive_values <<< "$_commander_directive_identity"
+    COMMANDER_DIRECTIVE_TASK_ID="${_commander_directive_values[0]:-}"
+    COMMANDER_DIRECTIVE_SUBJECT_TASK_ID="${_commander_directive_values[1]:-}"
+    COMMANDER_DIRECTIVE_PARENT_CMD="${_commander_directive_values[2]:-}"
+fi
+
 REVIEW_PENDING_NUDGE_TASK_ID=""
 REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID=""
 REVIEW_PENDING_NUDGE_PARENT_CMD=""
@@ -2975,6 +3025,9 @@ case "$TYPE" in
         ;;
     review_report|accept_report|run_cmd_complete)
         _identity_fields=(task_id "$REVIEW_PENDING_NUDGE_TASK_ID" subject_task_id "$REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID" parent_cmd "$REVIEW_PENDING_NUDGE_PARENT_CMD" report_fingerprint "$REVIEW_PENDING_NUDGE_FINGERPRINT" report "$REVIEW_PENDING_NUDGE_REPORT" review_pending_state "$REVIEW_PENDING_NUDGE_STATE")
+        ;;
+    pending_work|review_draft_result|gate_clear_required)
+        _identity_fields=(task_id "$COMMANDER_DIRECTIVE_TASK_ID" subject_task_id "$COMMANDER_DIRECTIVE_SUBJECT_TASK_ID" parent_cmd "$COMMANDER_DIRECTIVE_PARENT_CMD")
         ;;
     report_review|report_review_result|report_revision)
         _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")

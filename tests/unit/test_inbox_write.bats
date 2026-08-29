@@ -3285,6 +3285,42 @@ _autoread_env() {
     [ "${lines[1]}" = "cmd_x_normal" ]
 }
 
+# test_necessity: 家老宛の判断要求3型は固定管理task_idと対象task/cmdを
+# 保存し、identityを欠く新規送信は保存前に拒否する。
+@test "karo directive types persist structured identity and reject missing identity" {
+    setup_basic_test_env
+    local type content
+    for type in pending_work review_draft_result gate_clear_required; do
+        content="task_id=commander_directive subject_task_id=cmd_${type}_normal parent_cmd=cmd_${type} directive"
+        run _run_inbox_write karo "$content" "$type" ninja_monitor notify_karo
+        [ "$status" -eq 0 ]
+    done
+
+    run python3 - "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+wanted = {"pending_work", "review_draft_result", "gate_clear_required"}
+actual = {m.get("type") for m in messages if m.get("type") in wanted}
+assert actual == wanted, messages
+for message in messages:
+    if message.get("type") in wanted:
+        assert message.get("task_id") == "commander_directive", message
+        assert message.get("subject_task_id", "").startswith("cmd_"), message
+        assert message.get("parent_cmd", "").startswith("cmd_"), message
+print("directive_identity=3/3 missing=0")
+PY
+    [ "$status" -eq 0 ]
+
+    for type in pending_work review_draft_result gate_clear_required; do
+        run _run_inbox_write karo "${type} missing identity" "$type" ninja_monitor notify_karo
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"requires explicit task_id=commander_directive"* ]]
+    done
+    [ "$(grep -c '^  type: '\''pending_work'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+    [ "$(grep -c '^  type: '\''review_draft_result'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+    [ "$(grep -c '^  type: '\''gate_clear_required'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+}
+
 # test_necessity: review-pending notifications persist the management
 # task_id separately from the subject task and a consumed event can wake again.
 @test "review-pending nudge persists structured identity and retries after read" {
