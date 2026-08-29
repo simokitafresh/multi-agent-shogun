@@ -5093,6 +5093,7 @@ insights:
   resolved_reason: 一次情報で対象を再確認。現行コードはcli_lookup.shで起動引数へmodel/effort/service_tierを明示し、ninja_monitor.shの2360a18a7実装が起動後captureとsettingsの乖離をWARNするため、T63の実行時モデル乖離は既存防御で解消済み。共有config.tomlをcodex_config_apply_agentが一時書換えする残余は確認したが、agent別CODEX_HOME/profile化は本対象scope外の別設計候補として報告へ整理した。
   action_artifact: "target=queue/insights.yaml:INS-20260827-143645993-59af;memory=memory_db exact ID;semantic=semantic_search exact ID;primary=queue/insights.yaml:5086-5092;primary=~/.codex/config.toml:model=gpt-5.6-luna,effort=high,tier=default;runtime=capture-pane shogun:2.1 sol medium + shogun:2.3-2.8 luna high;argv=pstree confirms -c model/-c model_reasoning_effort/-c service_tier per pane;implementation=scripts/lib/cli_lookup.sh:543-560,619-681;scripts/ninja_monitor.sh:3283-3309;fix_commit=2360a18a70433905e98bfabb4dbb48853f1ac3e2;decision_candidate=agent別CODEX_HOME/profileで共有config.toml一時書換えを廃止する専用設計cmd"
   resolved_at: "2026-08-30T05:56:28+09:00"
+  last_seen: "2026-08-30T06:02:10+09:00"
 - id: INS-20260827-143649827-34a6
   ts: "2026-08-27T14:36:49+09:00"
   insight: "[[今後他のPCに将軍システムをクローンずるときに問題が起きないようにしたい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今後他のPCに将軍システムをクローンずるときに問題が起きないようにしたい。readmeを読み込み整合性があるようにしよう"
