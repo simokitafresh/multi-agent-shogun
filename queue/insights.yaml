@@ -2825,7 +2825,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4381"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: cmd_save.sh Check 22 がAC内push要求をWARNし、deploy_task.sh inject_push_allowed が肯定形push要求のみを task へ明示付与する現行防御を確認。cmd_2225/2226のpush禁止由来BLOCKは既存実装で解消済みで、追加修正・decision_candidateは不要。"
+  action_artifact: "target=scripts/cmd_save.sh:L7710-L7723,scripts/deploy_task.sh:L4196-L4230;test=tests/unit/test_deploy_task_ac_handling.bats:148-170;source=INS-20260824-054737367-8418"
+  resolved_at: "2026-08-29T10:04:38+09:00"
 - id: INS-20260824-054737632-942e
   ts: "2026-08-24T05:47:37+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4381; matched=archive; current_pattern=cmd_complete_gate.sh速度改善第三弾 — 本番実行の常時フェーズ記録化でgateが自分自身を計測する構造へ; candidate_level=4; candidate=tobisaru cmd_karo_ci_fix_skipで実証。GATE CLEAR→archive移動→忍者BLOCK修正中にファイル消失→再作成が必要に。symlinkで元パス参照を保護; source=gunshi_gp_tracker.yaml"
