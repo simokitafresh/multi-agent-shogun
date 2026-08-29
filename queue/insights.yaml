@@ -3290,7 +3290,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4378"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存防御を確認。post-write-edit-combined.sh:64-79のGuard 1が対象report YAMLをyaml.safe_loadし、parse error時に即時ERROR通知する。posttool-dispatch.sh:68-72がWrite/Edit後に同hookを接続しているため、GP-032の不足はGP-197実装済みの既存防御で吸収され、追加修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260824-134205890-5ab2;primary=.claude/hooks/post-write-edit-combined.sh:64-79;dispatch=.claude/hooks/posttool-dispatch.sh:68-72;history=4f219754a5290d524e0ee8eafed0d640a32887e0;inventory_before=insights_pending:108,zero_backlinks:11,promotions:0,total:119;decision_candidate=none"
+  resolved_at: "2026-08-29T13:00:58+09:00"
 - id: INS-20260824-134223207-ffa7
   ts: "2026-08-24T13:42:23+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿下知_覚醒せよ_20260823]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=覚醒せよ; score=33.5) / gist_master_three_step_rule(gist正本3点セット規律; alias=殿下知_gist正本覚醒更新_20260802; score=22.3) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿裁可_封印3件_20260810_0819; score=3.5)。概念定義とaliases追加を検討せよ"
