@@ -1,18 +1,3 @@
-- cmd_id: cmd_4394
-  timestamp: '2026-08-24T16:05:21Z'
-  ninja: tobisaru
-  workaround: true
-  event_kind: manual_wa
-  auto_captured: false
-  category: report_yaml_format
-  root_signature: 'report_yaml_format::schema_shape'
-  detail: 'report-only RCで末尾report引数を欠落しimplementation scopeとして記録、正しい不変commitが承認BLOCK'
-  root_cause: 'review_approval.shを末尾report付きで再RCし、status_detailへ実装commit不変が意図どおりと追記して再審査'
-  lesson_required: true
-  lesson_disposition: 'new_lesson_required'
-  lesson_reference: ''
-  brainwash_check: '洗脳#2検証スキップ防止: RC correction_scope誤記録 1件→0件、report scope再承認 PASS 1件'
-  resolved_by_cmd: 'cmd_reflux_insight_202608280006_saizo'
 - cmd_id: cmd_karo_hotfix_p2_gate_model_attribution
   timestamp: '2026-08-24T18:33:22Z'
   ninja: system
@@ -1302,3 +1287,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829'
+- cmd_id: cmd_karo_hotfix_prebash_preflight_fixture_20260829
+  timestamp: '2026-08-29T02:07:29Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_prebash_preflight_fixture_20260829'

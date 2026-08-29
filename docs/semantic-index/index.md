@@ -3500,6 +3500,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T09:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | lesson | `L1670` 9p履歴証跡はsubject/pathを単一git showへ統合する |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -8406,6 +8407,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:05:53+09:00 2026-08-29 07:03 将軍 D0(第11便 復帰直後): ninja_monitor.sh の bounded worker(_ninja_monitor_run_bounded_done_check/_run_bounded_ |
 | cmd | `cmd_karo_hotfix_deploy_worktree_prepare_opt_20260829` |
 | cmd | `cmd_karo_hotfix_monitor_reflux_inventory_speed_v2_20260829` |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:34:54+09:00 2026-08-29 10:40 T180 範囲拡大: push lane の git merge -s ours(家老認定 blt_101531)で内容が戻された commit を機械列挙(08-29 00:00 以降 non-merge |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -12179,6 +12181,7 @@ codd:
 | causal | `cmd_karo_hotfix_remote_tip_task_worktree_20260818` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_karo_hotfix_inbox_priority_evidence_deadlock_20260828` files_modified: [[hook_automation_framework]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:36:29+09:00 bfoohc0w3 toolu_01Xr8ZAbBJU59eTyn6BxBHVv /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
 | causal_chain | `[[cmd_3728]]` (L965) |
 | causal_chain | `[[cmd_karo_ci_fix_ga218_hook_suite_202607101912]]` (L1029) |
 
@@ -12880,6 +12883,7 @@ codd:
 | cmd | `cmd_karo_hotfix_karo_test_rerun_guard_20260829` |
 | cmd | `cmd_karo_hotfix_run_tests_receipt_task_identity_20260829` |
 | lesson | `L1669` Failure detailのbyte capはUTF-8境界安全decodeを必須とする |
+| cmd | `cmd_karo_hotfix_prebash_preflight_fixture_20260829` (`tests/unit/test_pre_bash_combined.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
@@ -15188,6 +15192,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T23:50:24.364612+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T00:36:17.891637+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T01:14:06.832004+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T01:30:26.401374+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
