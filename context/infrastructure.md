@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-29 cmd_4411 オフサイト退避+隔離復元(DOC_LANE_REQUEST blt_182710、origin 到達後) -->
+<!-- last_updated: 2026-08-29 cmd_karo_hotfix_command_scope_directory_prefix(DOC_LANE_REQUEST blt_210808) -->
+<!-- source_commit:32612a1f1480 reason:cmd_karo_hotfix_command_scope_directory_prefix(DOC_LANE_REQUEST blt_210808) evidence:git show --stat 32612a1f1480 -->
 <!-- source_commit:bb409ad39caf reason:cmd_4411 オフサイト退避+隔離復元(DOC_LANE_REQUEST blt_182710、origin 到達後) evidence:git show --stat bb409ad39caf -->
 <!-- source_commit:a8055a18b03286a55414e90582ec96990e9ff9ab reason:doc lane: 2026-08-28 節追記(T151/T157/T159/T160/T161/T162/T158/artifact)。a3e312e2a は origin 未到達ゆえ origin tip を境界、到達後に再設定 evidence:grep -c '2026-08-28 追加' context/infrastructure.md=1; commit f6af51645 -->
 <!-- source_commit:0f843cab57d5 reason:DOC_LANE_REQUEST blt_123333 approved_source_commit build_cache ci_fix を T107 行へ追記 evidence:git merge-base --is-ancestor 0f843cab5 origin/main = yes; grep -c '0f843cab5 で cache 3 本を refresh' context/infrastructure.md = 1 -->
@@ -128,6 +129,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - CI shard並列化+状態依存compatibility shard（cmd_4400+stateful_shards hotfix, 2026-08-25）: `.github/workflows/test.yml` をunit単一job→8 shard並列(実測タイミングLPT割当・欠落0重複0)+状態依存testを除外せず依存順で束ねるcompatibility shard+run固有namespace隔離(3b283e4b0)。unitテストwall-clock 2885秒→最長shard 303秒(compatibility)/通常最長183秒=約89.5%減。**GREEN確定済み**(run 32828851180、全14 job success、2026-08-25 17:59)。ローカル検証harness常設: 固定SHAで8 shard+compatibilityのreceipt FAIL0(9/9 PASS・計3523テスト・SKIP0)をpush前提とするci_push_receipt_contract。origin: [[cmd_4392_CI分解_テスト実行90.7%支配]] -> [[cmd_4400_shard並列化]] -> [[CI_GREEN_20260825_1759]]
 - 個別テスト単体短縮バッチらせん（cmd_4403〜, 2026-08-25）: 殿裁定の型=忍者並列×バッチ計測選別(機械選別・個別before/after・バッチ境界で全体分布確認・ファイル排他・当面10個)。第1バッチ=最重量test_cmd_complete_gate.bats 912→298秒(67.3%減)・281/281 PASS・検証削除ゼロ(626640662、成果物正本=docs/research/cmd_4403_slowest_tests_speedup_20260825.md)。origin: [[殿の教え_個別最適化は単体高速化_20260825_1524]] -> [[cmd_4403_slowest_tests単体短縮]]
 - **オフサイト退避+隔離復元(cmd_4411, 2026-08-29)**: 殿下問 16:37『PC 故障時に GitHub/zip で即時移行できる方法は確立されているか』→git 外の状態(記憶DB gzip・projects・queue・logs/gate_metrics.log、DM-signal env 系は対称暗号化)を `python3 scripts/shogun_backup.py` で Drive `shogun-offsite-backups`(id 1EOqd51NF4ZplAJrJrhhLQWXoPGCnumgI)へ退避(鍵=`~/.config/shogun/backup.key` mode 600、Drive へ送らない)、Drive 一覧 6 件・再 download sha256 5/5 一致。隔離復元(mktemp clone→`first_setup.sh --dry-run`→展開→記憶DB `integrity_check=ok`→bats 2/2 FAIL0 SKIP0)を実走証明。cron `0 3 * * *`(marker `# shogun-drive-backup`、flock)。復元 runbook → `docs/research/cmd_4411_offsite_restore_runbook_20260829.md`。DM-signal 側は疾風 push unit(origin..HEAD 0/0、backup/<branch> 新 ref)で GitHub 復元可。outputs は本番 PF 作成根拠のみ保持(T189、`context/dm-signal-research.md`)。
+- **cmd_complete_gate の command/files_modified 照合をディレクトリ境界対応(才蔵 32612a1f1, 2026-08-29)**: cmd_4411 が 18:32 に `command_files_modified_mismatch` で BLOCK(command 欄の `scripts` 等ディレクトリ指定と files_modified の個別 path が不一致扱い)→`scripts/cmd_complete_gate.sh` に directory-boundary coverage 2 行+bats 41 行。修正前 297/298(回帰 1 FAIL)→修正後 477/477 SKIP 0。
 
 ## プラットフォーム運用
 
