@@ -4595,7 +4595,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報再確認(2026-08-30): projects/dm-signal/lessons.yaml cacheにL1632は存在せず、canonical /mnt/c/Python_app/DM-signal/tasks/lessons.mdにもL1632は存在しない。gate_lesson_health.sh dm-signalはSSOT conflict markersなし、when/how/origin各100%、未合流0件(total=1258,synced=L1603)を返したため、本insightは現行状態で解消済みの陳腐化検知と判定し、新規実装修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-051834659-48d8;cache=projects/dm-signal/lessons.yaml:L1632 absent;canonical=/mnt/c/Python_app/DM-signal/tasks/lessons.md:L1632 absent;gate=bash scripts/gates/gate_lesson_health.sh dm-signal (conflict=0, when/how/origin=100%, unsynced=0);memory=bash scripts/memory_db_query.sh --search INS-20260827-051834659-48d8;semantic=bash scripts/semantic_search.sh lesson SSOT cache canonical;obsidian=rg -n INS-20260827-051834659-48d8 .cache/causal_index.tsv (0);decision_candidate=none"
+  resolved_at: "2026-08-30T00:57:21+09:00"
 - id: INS-20260827-054313016-5ce8
   ts: "2026-08-27T05:43:13+09:00"
   insight: "ninja_scope_commit の『scope path has partial/foreign staged content』BLOCK(05:42): 将軍の todo_map commit が tick3-5 の3回連続で rc=2 失敗し、拙者は background 完了通知の exit code 0(シェルの rc)で成功と誤認、git log での到達確認を怠った。真因=前回の失敗で index に古い staged が残り、以後の commit が全て同じ BLOCK。自動化ターゲット: ninja_scope_commit.sh が同 BLOCK 時に『git add <path> で index を同期して再実行』を自動提案/自動実行(scope 内パスに限る)し、失敗を stdout 末尾に FAIL 明示"
