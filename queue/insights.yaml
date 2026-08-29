@@ -2835,7 +2835,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4381"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: scripts/archive_completed.sh:L1967-L1974 のmv後ln -sfによるGP-230互換symlink残置を現行実装で確認。元の実装コミットab6585bdの設計意図と一致し、archive後の元パス参照消失は既知防御済み。追加実修正・decision_candidateは不要。"
+  action_artifact: "target=scripts/archive_completed.sh:L1967-L1974;source_commit=ab6585bded0ca4d53f0b4f8b0c0f8747aa5fdb55;source=INS-20260824-054737632-942e"
+  resolved_at: "2026-08-29T10:33:38+09:00"
 - id: INS-20260824-054738610-3342
   ts: "2026-08-24T05:47:38+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4380_fixture再現困難でFAIL_CLOSE]] は既存aliasesに一致なし。類似概念TOP3: ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4098_境界fixture固定; score=16.5) / agent_formation_management(編成管理; alias=same_cmd_redeploy; score=15.5) / cmd_quality_logging(cmd設計品質ログ; alias=completed cmd archive; score=15.4)。概念定義とaliases追加を検討せよ"
