@@ -5975,6 +5975,19 @@ verdict: PASS
 commit_hash: "0000000000000000000000000000000000000000"
 YAML
 printf "messages: []\n" > "$ROOT/queue/inbox/gunshi.yaml"
+printf "messages: []\n" > "$ROOT/queue/inbox/karo.yaml"
+report="$ROOT/queue/reports/hanzo_report_cmd_lifecycle_worker.yaml"
+source "$PROJECT_ROOT/scripts/lib/review_approval.sh"
+raw_fp=$(sha256sum "$report" | awk "{print \$1}")
+norm_fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$report" 2>/dev/null || true)
+[ -n "$norm_fp" ] || norm_fp="$raw_fp"
+key=$(review_report_key queue/reports/hanzo_report_cmd_lifecycle_worker.yaml)
+mkdir -p "$ROOT/queue/gates/cmd_lifecycle_worker/review_approvals/reports/$key"
+cat > "$ROOT/queue/gates/cmd_lifecycle_worker/review_approvals/reports/$key/gunshi.yaml" <<EOF
+result: LGTM
+fingerprint: $norm_fp
+report: queue/reports/hanzo_report_cmd_lifecycle_worker.yaml
+EOF
 printf "%s healthy-generation %s\n" "$$" "$EPOCHSECONDS" > "$ROOT/owner"
 owner_before=$(sha256sum "$ROOT/owner")
 run_worker() {
@@ -5989,11 +6002,13 @@ run_worker
 owner_after=$(sha256sum "$ROOT/owner")
 test "$owner_before" = "$owner_after"
 test "$(wc -l < "$ROOT/queue/gates/review_pending_nudge.tsv")" -eq 1
-test "$(grep -c "review_pending_state=A" "$ROOT/queue/inbox/gunshi.yaml")" -eq 1
-printf "worker_runs=2 handler_reached=1 ledger=1 nudge=1 duplicate=0 owner_generation_preserved=1\n"
+test "$(grep -c "review_pending_state=B" "$ROOT/queue/inbox/karo.yaml")" -eq 1
+gunshi_nudge_count=$(grep -c "review_pending_state=" "$ROOT/queue/inbox/gunshi.yaml" || true)
+test "$gunshi_nudge_count" -eq 0
+printf "worker_runs=2 handler_reached=1 state=B target=karo ledger=1 nudge=1 duplicate=0 owner_generation_preserved=1\n"
 '
     [ "$status" -eq 0 ]
-    [ "$output" = "worker_runs=2 handler_reached=1 ledger=1 nudge=1 duplicate=0 owner_generation_preserved=1" ]
+    [ "$output" = "worker_runs=2 handler_reached=1 state=B target=karo ledger=1 nudge=1 duplicate=0 owner_generation_preserved=1" ]
 }
 
 # test_necessity: bounded done-check must execute its task-scoped review
