@@ -7601,3 +7601,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-120907296-5057
+  ts: "2026-08-29T12:09:07+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T179_Render_env欠落]] は既存aliasesに一致なし。類似概念TOP3: dm_fusion_app(DM-Fusionアプリ; alias=Render Node service; score=14.8) / dmsignal_operations(DM-Signal運用; alias=Render CLI; score=14.3) / dmsignal_fe_experience_deploy(DM-Signal体感主導デプロイ; alias=Render live後CDP検分; score=14.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
