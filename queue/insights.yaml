@@ -7469,21 +7469,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T10:16:14+09:00"
 - id: INS-20260829-101500191-5815
   ts: "2026-08-29T10:15:00+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[push_lane_merge_内容消失_20260829_0941]] は既存aliasesに一致なし。類似概念TOP3: push_batch_operation(正規push batch運用; alias=push_batch_20260719; score=12.8) / campaign_lane(台帳駆動攻略レーン; alias=source campaign lane v6; score=12.8) / provisional_pre-push(仮: Pre Push; alias=provisional_pre-push; score=12.5)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T10:16:14+09:00"
 - id: INS-20260829-101514352-ffbc
   ts: "2026-08-29T10:15:14+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T180]] は既存aliasesに一致なし。類似概念TOP3: silent_fallback_quality(Silent Fallback品質; alias=PI-018; score=4.3) / db_price_data_range(DB価格データ範囲; alias=TQQQ 2010年; score=4.3) / gate_quality_framework(ゲート品質統合フレームワーク; alias=10秒; score=4.0)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T10:16:14+09:00"
 - id: INS-20260829-101537052-9b12
   ts: "2026-08-29T10:15:37+09:00"
   insight: "[[T178 T177 T176 T173 T171 T163について表形式で進捗と内容を説明してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T178 / T177 / T176 / T173 / T171 / T163について表形式で進捗と内容を説明してくれ"
