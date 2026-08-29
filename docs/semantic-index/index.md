@@ -499,6 +499,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T15:34:26.039373+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal | `cmd_reflux_insight_202608290048_saizo` files_modified: [[cmd_chronicle]] |
 | cmd | `cmd_reflux_insight_202608290048_saizo` (`context/senkyoku-log.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T03:09:32.824290+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -4785,6 +4786,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T00:32:03+09:00 今 クリアされても 今より強くてニューゲームができるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T06:41:36+09:00 今クリアされても強くてニューゲーム出来るようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T06:45:39+09:00 今クリアされても強くてニューゲーム出来るようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:07:21+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:07:28+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -8412,6 +8415,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:34:54+09:00 2026-08-29 10:40 T180 範囲拡大: push lane の git merge -s ours(家老認定 blt_101531)で内容が戻された commit を機械列挙(08-29 00:00 以降 non-merge |
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:08:41+09:00 session_save_20260829_1207 復帰点(将軍 /clear 復帰 第11便、08-29 06:50-12:07)。主軸=(1)復帰直後の一次で monitor 粒度バグ(BOUNDED-FAIL rc=1 819 行) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9680,6 +9684,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T00:42:40.969398+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T02:35:34.272578+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T02:41:08.417311+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T03:05:33.246283+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -10867,6 +10872,7 @@ codd:
 | cmd | `cmd_karo_hotfix_t99_report_precheck_20260828` (`scripts/report_field_set.sh`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:13:33+09:00 T122はどうなった？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T06:51:27+09:00 session_save_20260829_0645_gunshi: 軍師復帰点(第10便06:45)。走行系統: review_draft 2件(database_cron_verification_ntfy/ga508_context_ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:07:56+09:00 session_save_20260829_1207_gunshi: 軍師復帰点(第11便 06:45-12:07)。本セッション実績: draft APPROVE 12件(database_cron/ga508_context/reflu |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -13643,6 +13649,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608291038_kotaro` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608291153_kagemaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291153_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291142_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291142_saizo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
