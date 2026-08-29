@@ -4455,7 +4455,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で現行防御と回帰契約を確認済み。scripts/ninja_monitor.sh の run_lock_cleanup 内 run_worktree_metadata_cleanup が gitdir 実体不在を検出して git worktree prune --expire now を実行し、scripts/deploy_task/preflight.sh は worktree add 前の metadata 件数を記録する。契約テスト2件(各1/1、SKIP 0)で stale entry のみ除去と live entry 保持、および add 前計測を確認したため、追加実修正・decision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260827-020805059-47f8;primary=scripts/ninja_monitor.sh:12596-12649,scripts/deploy_task/preflight.sh:116-130;implementation_commit=669afef4457339eeed65240e74b9a68ff93995fc;tests=tests/unit/test_ninja_monitor.bats:test_necessity_stale_linked_worktree,tests/unit/test_deploy_task.bats:test_necessity_metadata_before_add;inventory_before=90/11/0/101;decision_candidate=none"
+  resolved_at: "2026-08-29T23:32:32+09:00"
 - id: INS-20260827-022011123-5d57
   ts: "2026-08-27T02:20:11+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bsi6178r1 task id tool use id toolu 01QX7UNkuurqK4vdqc は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
