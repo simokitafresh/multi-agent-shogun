@@ -3547,6 +3547,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T04:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T04:40:00+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T05:10:35+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T05:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T06:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T06:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -13846,6 +13849,24 @@ codd:
 | cmd | `cmd_reflux_insight_202608300456_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608300507_hanzo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608300507_hanzo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300518_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300518_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300531_kotaro` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300531_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300540_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300540_tobisaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300550_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300550_hayate` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300609_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300609_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300621_hanzo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300621_hanzo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300633_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300633_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300643_kotaro` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300643_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300653_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300653_hayate` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
