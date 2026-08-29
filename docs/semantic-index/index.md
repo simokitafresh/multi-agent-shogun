@@ -501,6 +501,7 @@ codd:
 | cmd | `cmd_reflux_insight_202608290048_saizo` (`context/senkyoku-log.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T03:09:32.824290+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T03:54:46.867360+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:14:26.654206+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3124,6 +3125,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:16:45+09:00 bfurxmuzd toolu_01DexvvaTPy7CZkNyd1nSs4x /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4156-a66d |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:48:28+09:00 2026-08-29 08:47 T179 終端: database PJ の Render web(srv-d2psuqbe5dus73bedm2g)に EODHD_API_TOKEN/TIINGO_API_TOKEN が無く価格照合が全 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:14:47+09:00 2026-08-29 10:15 本番退行(T180): 09:41 の push lane merge(5d36bbfa7『Merge commit 547442a47 into HEAD』/cfd8ca028)以後、将軍 D0 comm |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:05:23+09:00 session_save_20260829_1604 復帰点(将軍 第12便 /clear 復帰 12:56-16:04)。主軸=(1)殿指示 12:41 の 4 件全終端: T163(D012 本番発火)/T176(BOUNDED-FAI |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:05:36+09:00 session_save_20260829_1604_gunshi 軍師第12便(12:57-16:04): レビュー処理=reflux insight 3波15件+hotfix 3件(context_freshness 140→29s/i |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:17:04+09:00 session_save_20260829_1604_karo: 12:55以降。T178 Unit4 shared-root context freshness 140.23→29.56秒、live DONE3/TIMEOUT0、Unit |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3515,6 +3519,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T14:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T15:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T15:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -4801,6 +4806,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:07:28+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:50:45+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:50:55+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:04:34+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:04:41+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -13706,6 +13713,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608291511_tobisaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608291521_kagemaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291521_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291536_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291536_hayate` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
