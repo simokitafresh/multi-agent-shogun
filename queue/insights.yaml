@@ -4338,7 +4338,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:905905c97a45c6bd"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証でgate_skill_script_refs.shを実走しrc=2(REVIEW_REQUIRED)を確認したが、対象31組は参照先実在・SKILL鮮度・例示静的パス・副作用実走マーカーの4検査が全てOKで、FOLLOWUP_ACTIVE=31がレビュー要求を被覆しているため、追加実装修正・decision_candidateは不要。対象insightのみ解決する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-000317938-2b96;gate=scripts/gates/gate_skill_script_refs.sh;gate_rc=2;result=REVIEW_REQUIRED;scanned=41_SKILL.md;script_refs=82;referenced=30;deduped=31;followup_active=31;followup_covers_review_required=yes;checks=missing_refs0/stale_refs0/example_paths_missing0/side_effect_markers_missing0;inventory_before=insights_pending:93/zero_backlinks:11/promotions:0/total:104;decision_candidate=none"
+  resolved_at: "2026-08-29T21:46:39+09:00"
 - id: INS-20260827-000837531-375b
   ts: "2026-08-27T00:08:37+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[=~]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=~/.local/bin/claude 最新版; score=7.6) / dmsignal_operations(DM-Signal運用; alias=years=0; score=1.2) / causal_traversal_pipeline(因果辺トラバース統合パイプライン(Obsidian×セマンティック); alias=修行=リンク構築; score=1.1)。概念定義とaliases追加を検討せよ"
