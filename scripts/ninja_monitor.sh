@@ -7067,9 +7067,11 @@ active_statuses = {"active", "assigned", "acknowledged", "in_progress"}
 terminal_statuses = {"completed", "done", "success", "failed"}
 priority = {"high": 3, "medium": 2, "low": 1}
 
-def read_yaml(path):
+def read_yaml(path, text=None):
     try:
-        value = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if text is None:
+            text = path.read_text(encoding="utf-8")
+        value = yaml.safe_load(text) or {}
     except (OSError, yaml.YAMLError):
         return {}
     if isinstance(value, dict) and isinstance(value.get("task"), dict):
@@ -7158,12 +7160,37 @@ report_dirs = (
     root / "queue" / "archive" / "reports",
     root / "archive" / "reports",
 )
+# Report filenames are not authoritative (fixtures and hand-written reports may
+# use arbitrary names), so retain content-based discovery.  Reading raw text is
+# materially cheaper than starting a YAML parse for every historical report;
+# only reports that can satisfy both top-level predicates below need the full
+# parser.  This keeps the arbitrary-name compatibility path while removing the
+# 60s+ idle-worker stall caused by parsing the whole archive on every ninja.
+report_parent_pattern = re.compile(
+    r"(?m)^\s*(?:parent_cmd|['\"]parent_cmd['\"])\s*:\s*['\"]?cmd_reflux_insight_"
+)
+report_status_pattern = re.compile(
+    r"(?m)^\s*(?:status|['\"]status['\"])\s*:\s*['\"]?"
+    r"(?:active|assigned|acknowledged|in_progress|completed|done|success|failed)\b"
+)
 report_paths = []
 for report_dir in report_dirs:
     if report_dir.is_dir():
         report_paths.extend(report_dir.rglob("*.yaml"))
 for report_path in sorted(set(report_paths)):
-    report = read_yaml(report_path)
+    try:
+        report_text = report_path.read_text(encoding="utf-8")
+    except OSError:
+        continue
+    if not report_parent_pattern.search(report_text) or not report_status_pattern.search(report_text):
+        continue
+    # The parsed report only matters when it can mention a currently pending
+    # ID.  Keep the raw prefilter before YAML parsing so terminal historical
+    # reports still preserve the exact parsed-representation semantics while
+    # the common no-match path avoids hundreds of needless parses.
+    if candidate_pattern is None or not candidate_pattern.search(report_text):
+        continue
+    report = read_yaml(report_path, report_text)
     status = str(report.get("status") or "").strip().lower()
     parent = str(report.get("parent_cmd") or "").strip()
     if parent.startswith("cmd_reflux_insight_") and status in active_statuses | terminal_statuses:
