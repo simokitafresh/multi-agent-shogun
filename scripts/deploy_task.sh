@@ -11576,7 +11576,7 @@ PY
 
     worktree_top=$(git -C "$worktree" rev-parse --show-toplevel 2>/dev/null || true)
     [ "$(realpath -m -- "$worktree_top" 2>/dev/null || true)" = "$(realpath -m -- "$worktree" 2>/dev/null || true)" ] || return 1
-    git -C "$worktree" merge-base --is-ancestor "$base" HEAD 2>/dev/null || return 1
+    [ "$(git -C "$worktree" rev-parse HEAD 2>/dev/null || true)" = "$base" ] || return 1
     repo_common=$(git -C "$repo" rev-parse --git-common-dir 2>/dev/null || true)
     worktree_common=$(git -C "$worktree" rev-parse --git-common-dir 2>/dev/null || true)
     if [[ "$repo_common" = /* ]]; then
