@@ -5200,7 +5200,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で、現HEADのscripts/ninja_monitor.shにpoll開始時の独立snapshot発行、生成/lock/publish失敗のSNAPSHOT-GEN-FAIL記録、Generated経過600秒超時のSNAPSHOT-STALE-REFRESHが実装済み。現物queue/karo_snapshot.txtは2026-08-30T06:47:30生成・実測age=36秒で契約内、対象テスト2/2 PASS・SKIP0のため、当時のpending懸念は解消済み。"
+  action_artifact: "scripts/ninja_monitor.sh:11359-11624, tests/unit/test_karo_snapshot_freshness.bats (run_tests.sh file: 2/2 PASS SKIP0), queue/karo_snapshot.txt (Generated age=36s <= 600s), commit cd7862937ffb41f10b99d0103825eb0d40c4031b"
+  resolved_at: "2026-08-30T06:48:22+09:00"
 - id: INS-20260827-152223258-1d74
   ts: "2026-08-27T15:22:23+09:00"
   insight: "semantic_index_update新概念候補: discussion:cd tmp cmd4407 shared cfddu6 && export PS1 \\ \\ ;35m\\ 将軍\\ \\ 0m\\ \\ \\ ;32m\\ \\w\\ \\ 0 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
