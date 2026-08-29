@@ -3102,7 +3102,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:b4ffbbfb52e73ec6"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認済み: gate_skill_script_refs.shを実走しrc=2(REVIEW_REQUIRED)を確認。ただし参照先実在・SKILL更新日鮮度・例示パス・副作用実走マーカーの4項目は全てOKで、FOLLOWUP_ACTIVE=31がレビュー要求を被覆している。対象20組は追加のSKILL本文修正・decision_candidate不要のため、対象insightのみresolveする。"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;gate_rc=2;result=REVIEW_REQUIRED;followup_active=31;followup_covers_review_required=yes;checks=missing0/stale0/example_path_missing0/side_effect_marker_missing0;inventory_before=insights_pending116/zero_backlinks11/promotions0/total127;verified_at=2026-08-29T10:43:47+09:00"
+  resolved_at: "2026-08-29T10:43:47+09:00"
 - id: INS-20260824-095337671-3386
   ts: "2026-08-24T09:53:37+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bpnass45t task id tool use id toolu 014asQbmnMz4sMhycw は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
