@@ -4979,7 +4979,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で現行実装を再確認した結果、stale holder PIDのkill -0検査は実装済みだが、死亡時はBLOCK終了でlock回収・再取得・回収記録を行わず、insightの自動回収要件は未解消。今回のplanned_pathsはqueue/insights.yamlのみのためコード修正は行わず、stale holder回収・再取得・durable記録・回帰検証を別実装cmdのdecision_candidateとして整理し、対象insightをresolved化。
+  action_artifact: "target=queue/insights.yaml:INS-20260827-133711892-53c8;confirmed=.githooks/pre-push:L364-L395 equals .git/hooks/pre-push;current_check=.githooks/pre-push:L370-L374 kill -0 then BLOCK;lock=logs/prepush_test.v3.lock;decision_candidate=stale holder death path recovery plus reacquire and durable record in separate implementation cmd;inventory_before=72/11/881/964;scope=queue/insights.yaml only;code_change=none"
+  resolved_at: "2026-08-30T05:25:37+09:00"
 - id: INS-20260827-133859674-4c64
   ts: "2026-08-27T13:38:59+09:00"
   insight: "/mnt/c 9p I/O 停滞で compat bats(疾風 ci_fix 17ファイル)が 15分 TAP 0行、receipt writer python3 が D-state p9_client_rpc、git status 60-120s timeout、家老 merge-base D-state。前例 07-05/08-19 の drvfs 再マウントと同型。自動化ターゲット: gate_shogun_startup に /mnt/c 書込み latency probe(閾値 2s)と D-state p9_client_rpc プロセス数を表示、超過時は remount 手順を提示"
