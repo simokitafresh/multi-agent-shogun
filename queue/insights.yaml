@@ -4815,10 +4815,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
-  resolved_reason: "一次情報で対象事象が現行でも未解消と確認した。2026-08-30 03:44-03:46のpsでhayate watcherが親PID=843759と子PID=2580988の2本で3秒以上併存し、既存singletonだけでは重複常駐を封止できていない。原因候補は、watcher親子関係を除外するscripts/daemon_supervisor.sh:L83-L101と、同一プロセス系統でsingleton FDを継承し得るscripts/inbox_watcher.sh:L1451-L1456の起動経路である。現時点で新規コード修正はplanned_paths外のため、decision_candidateとして家老へ引き継ぐ。"
-  action_artifact: "target=queue/insights.yaml:INS-20260827-093649354-8790;primary=ps/pstree 2026-08-30 03:44-03:46 parent=843759 child=2580988;implementation=scripts/inbox_watcher.sh:L1451-L1456,scripts/daemon_supervisor.sh:L83-L101;semantic=docs/semantic-index/index.md:L11222-L11227,context/semantic-map.md:L132;delivery=logs/inbox_watcher_hayate.log:L1746-L1750 (historical 1s success);decision_candidate=watcher self-restart/daemon restart must enforce singleton across inherited parent-child launch and distinguish transient child from sustained duplicate; no code change in this task"
-  resolved_at: null
+  status: resolved
+  resolved_reason: "一次情報をdaemon_supervisorの論理判定で再検証した。raw pgrep/psの親子2行はwatcher内部のinotifywait・sleepを管理する一時サブシェルを含むが、scripts/daemon_supervisor.sh:L83-L101のds_inbox_watcher_pidsはwatcherを親に持つ子を除外し、hayateの論理workerはcount=1(PID=843759)である。scripts/inbox_watcher.sh:L1451-L1456のagent singleton、logs/inbox_watcher_hayate.log:L1772-L1783のdelivery=1s/10s成功も確認した。対象は既存防御で解消済みの誤検知としてresolveし、新規修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-093649354-8790;logical_primary=ds_inbox_watcher_pids hayate count=1 pid=843759;raw_context=ps/pstree parent-child includes inotifywait/sleep subshell;implementation=scripts/daemon_supervisor.sh:L83-L101,scripts/inbox_watcher.sh:L1451-L1456;semantic=docs/semantic-index/index.md:L11222-L11227,context/semantic-map.md:L132;delivery=logs/inbox_watcher_hayate.log:L1772-L1783;decision_candidate=none"
+  resolved_at: "2026-08-30T03:58:00+09:00"
   last_seen: "2026-08-30T03:50:00+09:00"
 - id: INS-20260827-101757431-44cc
   ts: "2026-08-27T10:17:57+09:00"
