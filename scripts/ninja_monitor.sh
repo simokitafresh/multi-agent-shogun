@@ -415,24 +415,52 @@ print(latest)
 PY
 }
 
+push_lane_latest_push_wall_ms() {
+    local log_file="${PUSH_LANE_LOG:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane.log}"
+    [ -f "$log_file" ] || return 1
+    python3 - "$log_file" <<'PY'
+import re
+import sys
+
+latest = None
+pattern = re.compile(r"(?:^|\s)push_wall_ms=([0-9]+)(?:\s|$)")
+try:
+    with open(sys.argv[1], encoding="utf-8") as stream:
+        for line in stream:
+            match = pattern.search(line)
+            if match:
+                latest = int(match.group(1))
+except OSError:
+    raise SystemExit(1)
+
+if latest is None:
+    raise SystemExit(1)
+print(latest)
+PY
+}
+
 push_lane_timeout_sec() {
-    local measured_ms margin_sec fallback_sec timeout_sec
+    local measured_ms push_ms factor min_sec fallback_sec timeout_sec
+    min_sec="${PUSH_LANE_TIMEOUT_MIN_SEC:-60}"
+    [[ "$min_sec" =~ ^[0-9]+$ ]] || min_sec=60
+    factor="${PUSH_LANE_TIMEOUT_FACTOR:-3}"
+    [[ "$factor" =~ ^[0-9]+$ ]] && [ "$factor" -gt 0 ] || factor=3
+    fallback_sec="${PUSH_LANE_TIMEOUT_FALLBACK_SEC:-60}"
+    [[ "$fallback_sec" =~ ^[0-9]+$ ]] && [ "$fallback_sec" -gt 0 ] || fallback_sec=60
     if [[ "${PUSH_LANE_TIMEOUT_SEC:-}" =~ ^[0-9]+$ ]] && [ "$PUSH_LANE_TIMEOUT_SEC" -gt 0 ]; then
-        printf '%s\n' "$PUSH_LANE_TIMEOUT_SEC"
+        timeout_sec="$PUSH_LANE_TIMEOUT_SEC"
+        [ "$timeout_sec" -ge "$min_sec" ] || timeout_sec="$min_sec"
+        printf '%s\n' "$timeout_sec"
         return 0
     fi
-    margin_sec="${PUSH_LANE_TIMEOUT_MARGIN_SEC:-5}"
-    [[ "$margin_sec" =~ ^[0-9]+$ ]] || margin_sec=5
-    fallback_sec="${PUSH_LANE_TIMEOUT_FALLBACK_SEC:-30}"
-    [[ "$fallback_sec" =~ ^[0-9]+$ ]] && [ "$fallback_sec" -gt 0 ] || fallback_sec=30
     measured_ms=$(push_lane_latest_prepush_wall_ms 2>/dev/null || true)
-    if [[ "$measured_ms" =~ ^[0-9]+$ ]]; then
-        timeout_sec=$(( (measured_ms + 999) / 1000 + margin_sec ))
-        [ "$timeout_sec" -gt 0 ] || timeout_sec="$fallback_sec"
-        printf '%s\n' "$timeout_sec"
-    else
-        printf '%s\n' "$fallback_sec"
-    fi
+    push_ms=$(push_lane_latest_push_wall_ms 2>/dev/null || true)
+    [[ "$measured_ms" =~ ^[0-9]+$ ]] || measured_ms=0
+    [[ "$push_ms" =~ ^[0-9]+$ ]] || push_ms=0
+    timeout_sec=$(( (factor * measured_ms + push_ms + 999) / 1000 ))
+    [ "$timeout_sec" -gt 0 ] || timeout_sec="$fallback_sec"
+    [ "$timeout_sec" -ge "$min_sec" ] || timeout_sec="$min_sec"
+    printf '%s\n' "$timeout_sec"
 }
 
 push_lane_waiting_ancestry_cmds() {
@@ -488,7 +516,7 @@ check_push_lane() {
     local ci_status="${1:-${CI_STATUS_CACHE:-UNKNOWN}}"
     local repo="${PUSH_LANE_REPO:-$SCRIPT_DIR}" remote_name="${PUSH_LANE_REMOTE_NAME:-origin}"
     local remote_ref="${PUSH_LANE_REMOTE_REF:-origin/main}" count oldest commit_epoch now age min_age
-    local branch lock_file lock_fd push_rc
+    local branch lock_file lock_fd push_rc push_started_us push_finished_us push_wall_ms
     local push_output
 
     [[ "${PUSH_LANE_ENABLED:-1}" == "1" ]] || return 0
@@ -553,16 +581,22 @@ check_push_lane() {
     # An automatic publish failure is an observable BLOCK, not a shell-level
     # abort.  Keep the rc, write evidence, and release the single-flight lock
     # even when callers enable `set -e` around the monitor function.
+    push_started_us="${EPOCHREALTIME/./}"
+    push_started_us="${push_started_us:0:16}"
     if push_output=$(push_lane_publish_one "$repo" "$remote_name" "$oldest" 2>&1); then
         push_rc=0
     else
         push_rc=$?
     fi
+    push_finished_us="${EPOCHREALTIME/./}"
+    push_finished_us="${push_finished_us:0:16}"
+    push_wall_ms=$(( (push_finished_us - push_started_us + 999) / 1000 ))
+    [ "$push_wall_ms" -ge 0 ] 2>/dev/null || push_wall_ms=0
     if [ "$push_rc" -eq 0 ]; then
-        push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$oldest age=${age}s force=0 hook=1 commits=1"
+        push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$oldest age=${age}s force=0 hook=1 commits=1 push_wall_ms=$push_wall_ms"
         push_lane_regate_waiting_cmds "$repo"
     else
-        push_lane_log "BLOCK reason=push_failed rc=$push_rc sha=$oldest force=0 hook=1 output=${push_output//$'\n'/\\n}"
+        push_lane_log "BLOCK reason=push_failed rc=$push_rc sha=$oldest force=0 hook=1 push_wall_ms=$push_wall_ms output=${push_output//$'\n'/\\n}"
     fi
     flock -u "$lock_fd"
     exec {lock_fd}>&-
@@ -673,8 +707,9 @@ UNPUSHED_COUNT_CHECK_INTERVAL=120  # unpushedキャッシュ有効期間（秒�
 PUSH_LANE_MIN_AGE_SEC=${PUSH_LANE_MIN_AGE_SEC:-600} # oldest first-parent commitがpush対象になる最低経過時間
 PUSH_LANE_GATE_TIMEOUT_SEC=${PUSH_LANE_GATE_TIMEOUT_SEC:-120} # push後WAIT ancestry再GATEの上限
 PUSH_LANE_PREPUSH_METRICS=${PUSH_LANE_PREPUSH_METRICS:-$SCRIPT_DIR/logs/defense_overhead.jsonl}
-PUSH_LANE_TIMEOUT_MARGIN_SEC=${PUSH_LANE_TIMEOUT_MARGIN_SEC:-5}
-PUSH_LANE_TIMEOUT_FALLBACK_SEC=${PUSH_LANE_TIMEOUT_FALLBACK_SEC:-30}
+PUSH_LANE_TIMEOUT_MIN_SEC=${PUSH_LANE_TIMEOUT_MIN_SEC:-60}
+PUSH_LANE_TIMEOUT_FACTOR=${PUSH_LANE_TIMEOUT_FACTOR:-3}
+PUSH_LANE_TIMEOUT_FALLBACK_SEC=${PUSH_LANE_TIMEOUT_FALLBACK_SEC:-60}
 PUSH_LANE_LOG=${PUSH_LANE_LOG:-$SCRIPT_DIR/logs/ninja_monitor_push_lane.log}
 PUSH_LANE_LOCK_FILE=${PUSH_LANE_LOCK_FILE:-$STATE_DIR/ninja_monitor_push_lane.lock}
 CONTEXT_WARN_SIG_CACHE="missing"   # context_freshness_check.sh --dashboard-warningsキャッシュ値（毎サイクル→300s間隔に削減）
