@@ -9318,6 +9318,7 @@ codd:
 | causal | `cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829` files_modified: [[defense_hierarchy]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:26:27+09:00 バグの修正は必須だが、一回終わりを作ろう。速度向上は今取り掛かっているタスクたちを全て完了させたら一旦俺の指示を待て。バグの根治は俺の指示を待たずに継続せよ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:27:32+09:00 殿裁定 2026-08-29 10:26『バグの修正は必須だが、一回終わりを作ろう。速度向上は今取り掛かっているタスクたちを全て完了させたら一旦俺の指示を待て。バグの根治は俺の指示を待たずに継続せよ』。適用: 速度向上 lane(T178  |
+| causal | `cmd_karo_hotfix_context_freshness_shared_root_unit4_20260829` files_modified: [[defense_hierarchy]] |
 | causal_chain | `[[cmd_reflux_insight_202607072138_saizo]]` (L969) |
 | causal_chain | `[[cmd_karo_hotfix_ga219_context_freshness_202607110107]]` (L1030) |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_perf_20260727]]` (L1378) |
@@ -11803,6 +11804,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:00:06+09:00 bec6nu8fv toolu_013zLouYSYr6WwWUfwWgeEVx /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4156-a66d |
 | cmd | `cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829` (`scripts/gates/gate_context_freshness.sh`, `tests/unit/test_gate_context_freshness.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:54:22+09:00 session_save_20260829_1250 復帰点(将軍、第11便の追補 12:07-12:50)。差分=(1)殿指示 12:41『T178/T177/T176/T163 の進捗を覚醒して確認し、終了まで家老を導け』=この 4 件 |
+| cmd | `cmd_karo_hotfix_context_freshness_shared_root_unit4_20260829` (`scripts/gates/gate_context_freshness.sh`) |
 | causal_chain | `[[cmd_3658]]` (L936) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
