@@ -380,6 +380,61 @@ push_lane_log() {
     } 9>"${log_file}.lock" >>"$log_file" 2>/dev/null || true
 }
 
+# The push lane shares the pre-push hook's measured wall time instead of
+# inheriting the generic 120-second lifecycle ceiling.  A missing or malformed
+# telemetry row is intentionally bounded by a small fallback; it must never
+# turn into an unbounded retry or a silent timeout.
+push_lane_latest_prepush_wall_ms() {
+    local metrics_file="${PUSH_LANE_PREPUSH_METRICS:-$SCRIPT_DIR/logs/defense_overhead.jsonl}"
+    [ -f "$metrics_file" ] || return 1
+    python3 - "$metrics_file" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+latest = None
+try:
+    with open(path, encoding="utf-8") as stream:
+        for line in stream:
+            try:
+                row = json.loads(line)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                continue
+            if row.get("source") != "pre_push" or row.get("check_id") != "pre_push_total":
+                continue
+            wall_ms = row.get("wall_ms")
+            if isinstance(wall_ms, bool) or not isinstance(wall_ms, int) or wall_ms < 0:
+                continue
+            latest = wall_ms
+except OSError:
+    raise SystemExit(1)
+
+if latest is None:
+    raise SystemExit(1)
+print(latest)
+PY
+}
+
+push_lane_timeout_sec() {
+    local measured_ms margin_sec fallback_sec timeout_sec
+    if [[ "${PUSH_LANE_TIMEOUT_SEC:-}" =~ ^[0-9]+$ ]] && [ "$PUSH_LANE_TIMEOUT_SEC" -gt 0 ]; then
+        printf '%s\n' "$PUSH_LANE_TIMEOUT_SEC"
+        return 0
+    fi
+    margin_sec="${PUSH_LANE_TIMEOUT_MARGIN_SEC:-5}"
+    [[ "$margin_sec" =~ ^[0-9]+$ ]] || margin_sec=5
+    fallback_sec="${PUSH_LANE_TIMEOUT_FALLBACK_SEC:-30}"
+    [[ "$fallback_sec" =~ ^[0-9]+$ ]] && [ "$fallback_sec" -gt 0 ] || fallback_sec=30
+    measured_ms=$(push_lane_latest_prepush_wall_ms 2>/dev/null || true)
+    if [[ "$measured_ms" =~ ^[0-9]+$ ]]; then
+        timeout_sec=$(( (measured_ms + 999) / 1000 + margin_sec ))
+        [ "$timeout_sec" -gt 0 ] || timeout_sec="$fallback_sec"
+        printf '%s\n' "$timeout_sec"
+    else
+        printf '%s\n' "$fallback_sec"
+    fi
+}
+
 push_lane_waiting_ancestry_cmds() {
     local metrics_file="${PUSH_LANE_GATE_METRICS:-$SCRIPT_DIR/logs/gate_metrics.log}"
     [ -f "$metrics_file" ] || return 0
@@ -405,7 +460,7 @@ push_lane_regate_waiting_cmds() {
             gate_rc=$?
         fi
         if [ "$gate_rc" -eq 124 ] || [ "$gate_rc" -eq 137 ]; then
-            push_lane_log "REGATE-TIMEOUT cmd=$cmd rc=$gate_rc"
+            push_lane_log "TIMEOUT phase=regate command=cmd_complete_gate.sh cmd=$cmd rc=$gate_rc"
         elif [ "$gate_rc" -eq 0 ]; then
             push_lane_log "REGATE-DONE cmd=$cmd rc=0"
         else
@@ -504,7 +559,7 @@ check_push_lane() {
         push_rc=$?
     fi
     if [ "$push_rc" -eq 0 ]; then
-        push_lane_log "PASS ci=GREEN unpushed_before=$count sha=$oldest age=${age}s force=0 hook=1 commits=1"
+        push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$oldest age=${age}s force=0 hook=1 commits=1"
         push_lane_regate_waiting_cmds "$repo"
     else
         push_lane_log "BLOCK reason=push_failed rc=$push_rc sha=$oldest force=0 hook=1 output=${push_output//$'\n'/\\n}"
@@ -617,6 +672,9 @@ UNPUSHED_COUNT_CHECK_LAST=0     # unpushedキャッシュ最終更新時刻（ep
 UNPUSHED_COUNT_CHECK_INTERVAL=120  # unpushedキャッシュ有効期間（秒）— 2分(git起動コスト削減)
 PUSH_LANE_MIN_AGE_SEC=${PUSH_LANE_MIN_AGE_SEC:-600} # oldest first-parent commitがpush対象になる最低経過時間
 PUSH_LANE_GATE_TIMEOUT_SEC=${PUSH_LANE_GATE_TIMEOUT_SEC:-120} # push後WAIT ancestry再GATEの上限
+PUSH_LANE_PREPUSH_METRICS=${PUSH_LANE_PREPUSH_METRICS:-$SCRIPT_DIR/logs/defense_overhead.jsonl}
+PUSH_LANE_TIMEOUT_MARGIN_SEC=${PUSH_LANE_TIMEOUT_MARGIN_SEC:-5}
+PUSH_LANE_TIMEOUT_FALLBACK_SEC=${PUSH_LANE_TIMEOUT_FALLBACK_SEC:-30}
 PUSH_LANE_LOG=${PUSH_LANE_LOG:-$SCRIPT_DIR/logs/ninja_monitor_push_lane.log}
 PUSH_LANE_LOCK_FILE=${PUSH_LANE_LOCK_FILE:-$STATE_DIR/ninja_monitor_push_lane.lock}
 CONTEXT_WARN_SIG_CACHE="missing"   # context_freshness_check.sh --dashboard-warningsキャッシュ値（毎サイクル→300s間隔に削減）
@@ -2589,15 +2647,22 @@ NINJA_MONITOR_LIFECYCLE_TIMEOUT=${NINJA_MONITOR_LIFECYCLE_TIMEOUT:-120}
 
 _ninja_monitor_run_lifecycle_background() {
     local key="$1"; shift
-    local lock_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.lock" lock_fd worker_pid timeout_sec worker_script stderr_file stderr_text
+    local lock_file="${STATE_DIR:-/tmp}/lifecycle_${key//[^A-Za-z0-9_.-]/_}.lock" lock_fd worker_pid timeout_sec worker_script stderr_file stderr_text prepush_wall_ms worker_command
     local -a worker_argv=("$@")
     if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
         "$@"
         return $?
     fi
-    timeout_sec="$NINJA_MONITOR_LIFECYCLE_TIMEOUT"
-    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
-    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+    if [ "$key" = "push_lane" ]; then
+        timeout_sec="$(push_lane_timeout_sec)"
+        prepush_wall_ms="$(push_lane_latest_prepush_wall_ms 2>/dev/null || printf '%s' missing)"
+    else
+        timeout_sec="$NINJA_MONITOR_LIFECYCLE_TIMEOUT"
+        [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
+        [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+        prepush_wall_ms=na
+    fi
+    worker_command="${worker_argv[*]}"
     worker_script="${NINJA_MONITOR_LIFECYCLE_WORKER_SCRIPT:-$SCRIPT_DIR/scripts/ninja_monitor.sh}"
     mkdir -p "${lock_file%/*}" || return 1
     exec {lock_fd}>"$lock_file" || return 1
@@ -2619,7 +2684,14 @@ _ninja_monitor_run_lifecycle_background() {
         fi
         if timeout --signal=TERM --kill-after=2 "$timeout_sec" \
             env SCRIPT_DIR="$SCRIPT_DIR" STATE_DIR="${STATE_DIR:-/tmp}" SHOGUN_STATE_DIR="${STATE_DIR:-/tmp}" LOG="$LOG" \
-                NINJA_MONITOR_LIFECYCLE_DEBUG=1 \
+                PUSH_LANE_LOG="${PUSH_LANE_LOG:-$SCRIPT_DIR/logs/ninja_monitor_push_lane.log}" \
+                PUSH_LANE_LOCK_FILE="${PUSH_LANE_LOCK_FILE:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane.lock}" \
+                PUSH_LANE_GATE_METRICS="${PUSH_LANE_GATE_METRICS:-$SCRIPT_DIR/logs/gate_metrics.log}" \
+                PUSH_LANE_GATE_LOG="${PUSH_LANE_GATE_LOG:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane_gate.log}" \
+                PUSH_LANE_MIN_AGE_SEC="${PUSH_LANE_MIN_AGE_SEC:-600}" \
+                PUSH_LANE_PREPUSH_METRICS="${PUSH_LANE_PREPUSH_METRICS:-$SCRIPT_DIR/logs/defense_overhead.jsonl}" \
+                PUSH_LANE_TIMEOUT_SEC="$timeout_sec" \
+            NINJA_MONITOR_LIFECYCLE_DEBUG=1 \
             bash "$worker_script" --lifecycle-worker "${worker_argv[@]}" 2>"$stderr_file"; then
             :
         else
@@ -2629,7 +2701,10 @@ _ninja_monitor_run_lifecycle_background() {
             stderr_text=${stderr_text//$'\n'/\\n}
             log "LIFECYCLE-BACKGROUND-FAIL-REASON: key=$key rc=$rc argv0=bash argc=$((${#worker_argv[@]} + 2)) args=--lifecycle-worker ${worker_argv[*]} bash_source=$worker_script bash=/bin/bash lib_only=${NINJA_MONITOR_LIB_ONLY:-} stderr=${stderr_text:-<empty>}"
             if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
-                log "LIFECYCLE-BACKGROUND-TIMEOUT: key=$key timeout=${timeout_sec}s rc=$rc retry=next-cycle"
+                log "LIFECYCLE-BACKGROUND-TIMEOUT: key=$key timeout=${timeout_sec}s rc=$rc command=${worker_command// /_} pre_push_wall_ms=$prepush_wall_ms retry=next-cycle"
+                if [ "$key" = "push_lane" ]; then
+                    push_lane_log "TIMEOUT phase=worker command=${worker_command// /_} rc=$rc timeout=${timeout_sec}s pre_push_wall_ms=$prepush_wall_ms"
+                fi
             else
                 log "LIFECYCLE-BACKGROUND-FAIL: key=$key rc=$rc retry=next-cycle"
             fi
@@ -2638,7 +2713,7 @@ _ninja_monitor_run_lifecycle_background() {
     ) &
     worker_pid=$!
     exec {lock_fd}>&-
-    log "LIFECYCLE-BACKGROUND-START: key=$key pid=$worker_pid"
+    log "LIFECYCLE-BACKGROUND-START: key=$key pid=$worker_pid timeout=${timeout_sec}s pre_push_wall_ms=$prepush_wall_ms"
     return 0
 }
 
