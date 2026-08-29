@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-26 T05 shogun doc lane reviewed source boundary (2026-08-26) -->
+<!-- last_updated: 2026-08-29 T189 outputs 整理(cmd_karo_t189_outputs_cleanup_20260829、殿裁定 16:51/16:53/16:56) -->
+<!-- source_commit:dbfe34dd935b reason:T189 outputs 整理(cmd_karo_t189_outputs_cleanup_20260829、殿裁定 16:51/16:53/16:56) evidence:git -C /mnt/c/Python_app/DM-signal show --stat dbfe34dd935b -->
 <!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
 <!-- source_commit:45760ecf reason:GA-490/491 research境界更新(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log b24d6b5f..45760ecf -- docs/research analysis outputs marketing-director = 14件。内容=cmd_4355/4356成果保存(07848c94)+note記事群(決定的tie-break一般論・投資家スクリーニング)+週報2026-08-18+reconcile merge revert。研究結論の変更なし、境界のみ更新。初回=877a73ef1、tree退行検出により再適用 -->
 <!-- dm_signal_research_reflux: fingerprint=4383100f3b182a5113a582998b52db1451b56f7a1097ef4115797f70d3e68827; mode=non-target; evidence_b64=Y21kXzQ0MDQgbGVkZ2VyIGlzIGEgc3RhbmRhbG9uZSByZXRlbnRpb24gYXJ0aWZhY3Q7IG5vIGNvbnRleHQgb3Igc2VtYW50aWMtaW5kZXggc3luY2hyb25pemF0aW9uIGlzIGluIHNjb3Bl -->
@@ -82,3 +83,9 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 ## cmd_4376 FoF層別再分析 (2026-08-23)
 - FoF78体を`fof_component_weights`の参照先型再帰でnested depth 0/1/2/3=25/25/21/7、selection block有/無=57/21、構成PF数2/3/4/6=9/14/54/1へ分類。低相関E1−C1差はdepth 0/1でSharpe悪化傾向、depth 2は混在、depth 3はE1支持月0で判定不能。→ `https://github.com/simokitafresh/DM-signal/commit/39b2827fcc71eb309694c7117c6556e733f5de8c`（`cmd_4376_layer_stratified_reanalysis.md`）
 - HMM Stress時pairwise相関(h=6)はnested depth 0/1/2/3=0.856/0.893/0.912/0.961、selection block有/無=0.868/0.915。高相関は単一層に限定されず、depth 3はN=7の記述統計に留める。standard PF24体は両実験母集団外。→ `/mnt/c/Python_app/DM-Signal/outputs/analysis/cmd_4376_layer_stratified_reanalysis.json`
+
+## T189 outputs 整理 — 本番 PF 作成根拠の保持と 30.8GB 除去 (2026-08-29)
+- 殿裁定 16:51/16:53/16:56『outputs は本番使用中以外不要。ただし本番 PF を作成するために使ったものは残す。消せ』。本番コード(backend/app)は outputs/ を読まない(recalculate_fast.py の source-identity 除外のみ)。
+- 保持集合(本番 33 体=シン四神 12+シン忍法 v2 21 の GS 根拠): `outputs/grid_search/shin_shijin_l1`(cmd_1018, 872M)・`shin_ninpo_v2_12body`(cmd_1080, 2.7G)・`cmd_3495〜3505`(秘奥義, 1.4G)・`cmd_3774/3779`(full, 4.4G)・`cmd_3798_phase_b_l1`・`ema_experiment_phase0_v2_l1`・git tracked 24M・cmd_3871 KEEP 10 件。要確認 2 件(okugi_shin_ninpo_20body 2.0G/20260427 52M)は据置。
+- 除去: 138 対象 30,841,072,791B を realpath guard 付き直列除去、残存 0、`grid_search` 43G→14G、保持集合差分 0・tracked 削除 0・本番 DB 件数差 0。manifest=DM-signal `outputs/t189_cleanup_manifest_20260829.tsv`(commit dbfe34dd)。判定表の正本 → `docs/research/grid-search-outputs-cleanup-inventory-20260807.md` §最終判定。
+- 効果: T106 ext4 cutover の複製対象が 62G→約 31G。origin: `[[殿裁定_作成に使ったものは残す_20260829_1653]] -> [[T189_outputs整理]] -> [[T106_DM-signal_ext4移設]]`
