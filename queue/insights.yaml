@@ -3134,7 +3134,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4386"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象候補を再確認。verdict_override WA 6件中5件のAC設計ミスに対し、instructions/gunshi.md:431-434のRuntime Simulation/AC実行可能性チェックとcontext/karo-operations.md:51のdraft配備前4条件二値シミュレーションが現行正本に存在し、実現可能性・成果物追跡可能性・時点依存値・推奨混入を配備前に検出するため、追加実修正およびdecision_candidateは不要。"
+  action_artifact: "primary=instructions/gunshi.md:431-434;primary=context/karo-operations.md:51;primary=scripts/cmd_save.sh:5358-5388;semantic=docs/semantic-index/index.md;causal=.cache/causal_index.tsv:7445-7447;target=queue/insights.yaml:INS-20260824-102853407-fe07"
+  resolved_at: "2026-08-29T11:47:44+09:00"
 - id: INS-20260824-102909556-2f55
   ts: "2026-08-24T10:29:09+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿裁定_CI並行_20260824_0841]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=source 殿裁定 lord conversation; score=10.8) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=10.8) / db_price_data_range(DB価格データ範囲; alias=殿裁定 GSはネイティブ暦 本番と同一のDTB3暦 に統一; score=9.6)。概念定義とaliases追加を検討せよ"
