@@ -9716,6 +9716,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T14:06:48+09:00 T178 / T177の進捗はどうだ？つまりがあれば覚醒して将軍がヘルプせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T05:59:19.741082+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T06:03:31.422664+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:18:14.407387+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -13715,6 +13716,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608291521_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608291536_hayate` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291536_hayate` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291546_kotaro` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291546_kotaro` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
