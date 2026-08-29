@@ -3541,6 +3541,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T01:10:19+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T01:41:08+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T02:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T02:40:38+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -9756,6 +9757,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:18:14.407387+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:15:39.684162+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:15:54.213478+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:36:39.031910+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -13811,6 +13813,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608300120_hayate` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608300218_tobisaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608300218_tobisaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608300237_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608300237_hayate` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
