@@ -3319,6 +3319,33 @@ PY
     [ "$(grep -c '^  type: '\''pending_work'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
     [ "$(grep -c '^  type: '\''review_draft_result'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
     [ "$(grep -c '^  type: '\''gate_clear_required'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+
+    run _run_inbox_write karo "future_action missing identity" future_action ninja_monitor notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires explicit task_id=commander_directive"* ]]
+    run _run_inbox_write karo "task_id=commander_directive subject_task_id=cmd_future_normal parent_cmd=cmd_future future_action" future_action ninja_monitor notify_karo
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+future = [m for m in messages if m.get("type") == "future_action"]
+assert len(future) == 1 and future[0].get("task_id") == "commander_directive", future
+assert future[0].get("subject_task_id") == "cmd_future_normal"
+assert future[0].get("parent_cmd") == "cmd_future"
+print("unknown_with_identity=1 unknown_missing_saved=0")
+PY
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "informational message" info ninja_monitor notify_karo
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+info = [m for m in messages if m.get("type") == "info"]
+assert len(info) == 1
+assert "task_id" not in info[0] and "subject_task_id" not in info[0]
+print("information_false_positive_block=0")
+PY
+    [ "$status" -eq 0 ]
 }
 
 # test_necessity: review-pending notifications persist the management

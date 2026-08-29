@@ -1002,13 +1002,21 @@ PY
 }
 
 # Karo-directed control-plane notifications require their own management
-# identity.  These notifications ask Karo to decide or act, so a missing
-# task_id can be mistaken for stale/unrelated mail.  Identity must be an
-# explicit envelope; never recover a cmd_id from free-form prose.
-inbox_is_commander_directive_type() {
+# identity.  Information-only types are an explicit closed set.  Every other
+# type, including a future/unknown type, is treated as an action request and
+# must carry an explicit envelope; this prevents a new producer from silently
+# reintroducing taskless mail.  Never recover a cmd_id from free-form prose.
+inbox_karo_message_requires_identity() {
     case "$1" in
-        pending_work|review_draft_result|gate_clear_required) return 0 ;;
-        *) return 1 ;;
+        pending_work|review_draft_result|gate_clear_required)
+            return 0
+            ;;
+        wake_up|task_assigned|task_new|task_supplement|task_cancel|cmd_new|uncommitted_block|deploy_blocked|review_draft|review_result|review_feedback|report_review|review_report|accept_report|run_cmd_complete|report_review_result|report_revision|workaround_feedback|review_hint|analysis_result|investigation_result|gunshi_lesson_candidate|decomposition_feedback|verify_request|verify_result|clear_command|model_switch|recovery|report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed|info|low|heartbeat|status_update|retro_answer|retro_result|infra_bug_suspected|infra_bug_report|infra_bug|gate_clear|bulletin_notify|escalation|gate_block|gate_fail|gate_alert|idle_notice|report_notification_missing|report_missing|report_format_fix|clear_loop_block|disk_space_alert|stall_alert|stale_cmd|cmd_pending|destructive_warn|ninja_idle|auto_void|cmd_absorbed|halt|skill_hint|lesson_registration_reminder|infra_anomaly|lesson_health|quality_monitor|karo_idle_cycle|gate_improvement|gate_alert|gate_clear)
+            return 1
+            ;;
+        *)
+            return 0
+            ;;
     esac
 }
 
@@ -2240,7 +2248,7 @@ ACTION="${5:-}"
 COMMANDER_DIRECTIVE_TASK_ID=""
 COMMANDER_DIRECTIVE_SUBJECT_TASK_ID=""
 COMMANDER_DIRECTIVE_PARENT_CMD=""
-if [ "$TARGET" = "karo" ] && inbox_is_commander_directive_type "$TYPE"; then
+if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE"; then
     _commander_directive_identity=$(inbox_commander_directive_identity "$CONTENT" 2>/dev/null || true)
     if [ -z "$_commander_directive_identity" ]; then
         echo "BLOCK: ${TYPE} to karo requires explicit task_id=commander_directive subject_task_id=<task> parent_cmd=<cmd> identity envelope" >&2
@@ -3026,9 +3034,6 @@ case "$TYPE" in
     review_report|accept_report|run_cmd_complete)
         _identity_fields=(task_id "$REVIEW_PENDING_NUDGE_TASK_ID" subject_task_id "$REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID" parent_cmd "$REVIEW_PENDING_NUDGE_PARENT_CMD" report_fingerprint "$REVIEW_PENDING_NUDGE_FINGERPRINT" report "$REVIEW_PENDING_NUDGE_REPORT" review_pending_state "$REVIEW_PENDING_NUDGE_STATE")
         ;;
-    pending_work|review_draft_result|gate_clear_required)
-        _identity_fields=(task_id "$COMMANDER_DIRECTIVE_TASK_ID" subject_task_id "$COMMANDER_DIRECTIVE_SUBJECT_TASK_ID" parent_cmd "$COMMANDER_DIRECTIVE_PARENT_CMD")
-        ;;
     report_review|report_review_result|report_revision)
         _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
         if [ -z "$_structured_candidate" ] && [ "$TYPE" = "report_revision" ] && [ -f "$SCRIPT_DIR/queue/tasks/${TARGET}.yaml" ]; then
@@ -3044,6 +3049,11 @@ case "$TYPE" in
             STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
             STRUCTURED_REVISION_FINGERPRINT=$(inbox_report_revision_fingerprint "$TYPE" "$ACTION" "$CONTENT")
             _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" revision_request_fingerprint "$STRUCTURED_REVISION_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+        fi
+        ;;
+    *)
+        if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE"; then
+            _identity_fields=(task_id "$COMMANDER_DIRECTIVE_TASK_ID" subject_task_id "$COMMANDER_DIRECTIVE_SUBJECT_TASK_ID" parent_cmd "$COMMANDER_DIRECTIVE_PARENT_CMD")
         fi
         ;;
 esac
