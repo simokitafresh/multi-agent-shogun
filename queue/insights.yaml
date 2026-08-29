@@ -8041,3 +8041,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260829-213519410-c9d9
+  ts: "2026-08-29T21:35:19+09:00"
+  insight: "[[We recently detected a cron job failure for Stockdata API da]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=We recently detected a cron job failure for Stockdata-API-daily-update: Exited with status 1 This means the most recent cron job run failed…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
