@@ -4020,8 +4020,11 @@ insights:
   insight: "DM-signalローカルclone(/mnt/c/Python_app/DM-signal)がorigin/mainと履歴分岐: origin-only 138/local-only 9、同一subjectが別hash(例 cmd_4333 55b81b43 vs 5b4e27eb)=履歴書換え型。context_freshness_checkはorigin/main基準(L794)のためdoc laneはorigin tipを境界にすべき。ローカルHEAD基準の計数は偽値(252/261/200)を生む。自動化ターゲット: DOC_LANE_REQUESTの母数をorigin/main基準に固定し、ローカル分岐を別ALERTで出す"
   priority: "medium"
   source: "manual"
-  fix_known: false
-  status: pending
+  fix_known: true
+  status: resolved
+  resolved_reason: 一次情報で対象方針を再検証。scripts/context_freshness_check.sh L794-L795 は dashboard 時に origin/main を境界として選択し、gate_context_freshness.sh L207-L215/L330-L340 も dm-signal の canonical repo と origin/main 祖先性を検証する。rb6-cleanup-20260814 の origin/main...HEAD は現時点 138/13 だが、canonical-main worktree は別の main 枝であり 25/0、したがって元insightの 138/9 は枝・時点依存の観測で、doc lane境界の誤りではない。後続訂正 INS-20260826-183033302-182d が計測ref明記を別論点として保持するため、本IDは重複実装なしで解決。
+  action_artifact: "target=queue/insights.yaml:INS-20260826-182500329-d793;source=scripts/context_freshness_check.sh:L794-L795;gate=scripts/gates/gate_context_freshness.sh:L207-L215,L330-L340;context=context/dm-signal-core.md:2,context/dm-signal-ops.md:2,context/dm-signal-research.md:2;worktrees=git -C /mnt/c/Python_app/DM-signal worktree list --porcelain;measurements=rb6 origin/main...HEAD 138/13, canonical-main origin/main...HEAD 25/0;tests=logs/test_receipts/run_tests_20260829T082649_72957.json:66/66 PASS SKIP0;followup=INS-20260826-183033302-182d"
+  resolved_at: "2026-08-29T17:28:00+09:00"
 - id: INS-20260826-182745297-bbea
   ts: "2026-08-26T18:27:45+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactを更新してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
