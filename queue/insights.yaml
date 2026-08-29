@@ -8027,3 +8027,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-213449011-2ab9
+  ts: "2026-08-29T21:34:49+09:00"
+  insight: "[[multi agent shogunではext4化しても別PCにインスト―ルする方法を確立したはずだが正しいか？DM s]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=multi-agent shogunではext4化しても別PCにインスト―ルする方法を確立したはずだが正しいか？DM-signalでext4化を進めたときに、もしもメインPCが壊れたときに即時githubやzipdownladで新環境に移行する方法は確立する必要があるな。考慮さ…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
