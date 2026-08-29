@@ -7701,6 +7701,8 @@ YAML
         check_push_lane GREEN
         test "$(cat "$root/publish.log")" = "published=$oldest_sha"
         test "$(cat "$root/regate.log")" = "regated=$root"
+        test "$(grep -c "PUSH ci=GREEN" "$PUSH_LANE_LOG")" -eq 1
+        grep -Eq "PUSH ci=GREEN .*push_wall_ms=[0-9]+" "$PUSH_LANE_LOG"
         grep -q "PUSH ci=GREEN unpushed_before=2 sha=$oldest_sha.*force=0 hook=1 commits=1" "$PUSH_LANE_LOG"
         printf "fixture=green unpushed_before=2 published=1 regated=1 force=0 skip=0\n"
     '
