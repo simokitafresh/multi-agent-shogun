@@ -558,7 +558,10 @@ def install_cron(args: argparse.Namespace) -> dict[str, Any]:
         if not resolved_gws:
             fail(f"gws CLI path is not absolute and cannot be resolved: {configured_gws}")
         configured_gws = Path(resolved_gws)
-    gws_bin = str(configured_gws.resolve())
+    # Preserve the executable spelling (including a stable symlink such as
+    # ~/.nvm/.../bin/gws); cron needs that absolute launcher path, not the
+    # implementation target behind it.
+    gws_bin = str(configured_gws.absolute())
     command = " ".join(
         [
             "cd",
