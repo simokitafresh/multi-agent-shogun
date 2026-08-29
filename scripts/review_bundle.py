@@ -667,16 +667,27 @@ def _singleflight_token(root, args, entry):
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def single(args):
-    """Run one review notification as a durable single-flight transaction."""
-    entry = load(args.review_entry)
+def _single_review_entry(entry, cmd_id):
+    """Select a list entry exactly, or bind an unambiguous mapping to cmd_id."""
     if isinstance(entry, list):
-        matches = [item for item in entry if isinstance(item, dict) and str(item.get("cmd_id") or "") == args.cmd]
+        matches = [item for item in entry if isinstance(item, dict) and str(item.get("cmd_id") or "") == cmd_id]
         if len(matches) != 1:
-            raise ValueError(f"single review_entry sequence requires exactly one cmd_id={args.cmd} mapping (found {len(matches)})")
-        entry = matches[0]
+            raise ValueError(f"single review_entry sequence requires exactly one cmd_id={cmd_id} mapping (found {len(matches)})")
+        return matches[0]
     if not isinstance(entry, dict) or not entry:
         raise ValueError("single review_entry must be a non-empty YAML mapping")
+    bound = dict(entry)
+    existing = str(bound.get("cmd_id") or "").strip()
+    if existing and existing != cmd_id:
+        raise ValueError(f"single review_entry cmd_id mismatch: expected={cmd_id} actual={existing}")
+    if not existing:
+        bound["cmd_id"] = cmd_id
+    return bound
+
+
+def single(args):
+    """Run one review notification as a durable single-flight transaction."""
+    entry = _single_review_entry(load(args.review_entry), args.cmd)
     correction_scope = _correction_scope(getattr(args, "correction_scope", None))
     item = {"cmd": args.cmd, "report": args.report, "verdict": args.verdict,
             "correction_scope": correction_scope, "review_entry": entry}

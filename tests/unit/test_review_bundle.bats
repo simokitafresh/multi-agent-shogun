@@ -189,6 +189,72 @@ PY
   [ "$status" -ne 0 ]
 }
 
+# test_necessity: every canonical single review ledger entry must carry the
+# requested cmd_id even when the supplied mapping omitted it.
+# regression_justification: the production path previously forwarded 3/3
+# mapping fixtures without cmd_id, making review state attribution ambiguous.
+@test "single binds missing mapping cmd_id and blocks mismatches before persistence" {
+  root="$BATS_TEST_TMPDIR/root"
+  mkdir -p "$root/queue/gates"
+  for i in 0 1 2; do
+    cat >"$root/entry-$i.yaml" <<YAML
+review_type: report
+verdict: LGTM
+reviewed_at: 2026-08-29T15:00:0${i}+09:00
+YAML
+  done
+  run python3 - "$root" <<'PY'
+import argparse
+import sys
+from pathlib import Path
+from scripts import review_bundle
+
+root = Path(sys.argv[1])
+captured = []
+old_batch = review_bundle.batch
+try:
+    def fake_batch(args):
+        captured.append(review_bundle.load(args.manifest)["reviews"][0]["review_entry"])
+        return 0
+    review_bundle.batch = fake_batch
+    for i in range(3):
+        args = argparse.Namespace(
+            root=str(root), cmd=f"cmd_fixture_{i}", report="missing.yaml",
+            verdict="APPROVE", review_entry=str(root / f"entry-{i}.yaml"),
+            fail_reason=None,
+        )
+        assert review_bundle.single(args) == 0
+finally:
+    review_bundle.batch = old_batch
+
+assert len(captured) == 3
+assert [entry["cmd_id"] for entry in captured] == [
+    "cmd_fixture_0", "cmd_fixture_1", "cmd_fixture_2"
+]
+assert [entry["reviewed_at"] for entry in captured] == [
+    "2026-08-29T15:00:00+09:00",
+    "2026-08-29T15:00:01+09:00",
+    "2026-08-29T15:00:02+09:00",
+]
+
+mismatch = root / "mismatch.yaml"
+mismatch.write_text("cmd_id: cmd_other\nreview_type: report\n", encoding="utf-8")
+args = argparse.Namespace(
+    root=str(root), cmd="cmd_expected", report="missing.yaml",
+    verdict="APPROVE", review_entry=str(mismatch), fail_reason=None,
+)
+before = len(captured)
+try:
+    review_bundle.single(args)
+except ValueError as exc:
+    assert "cmd_id mismatch" in str(exc)
+else:
+    raise AssertionError("mismatched mapping cmd_id must be rejected")
+assert len(captured) == before, "mismatch must block before batch persistence"
+PY
+  [ "$status" -eq 0 ]
+}
+
 # test_necessity: T106 review entries with valid N/A precheck evidence must
 # reach the batch precheck unchanged; malformed values must remain fail-closed.
 # regression_justification: the single path previously omitted precheck_na,
