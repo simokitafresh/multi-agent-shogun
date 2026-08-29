@@ -1275,3 +1275,39 @@ EOF
     run verify --tool Read --target "$ROOT/README.md"
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: a commander's own "processing evidence ... 未適用" self-record must never
+# be recalled into its own prompt (T122 self-reinforcement, 10th recurrence 2026-08-29 14:20).
+@test "管理職preflightは自分の『未適用』自己記録をrecallしない" {
+    python3 - "$MEMORY_DB_QUERY_DB" <<'PY'
+import sqlite3, sys
+db = sys.argv[1]
+with sqlite3.connect(db) as conn:
+    rows = [
+        ('selfreinforce:karo', '2026-08-29T14:20:00+09:00', 'karo', '', 'processing evidence for msg_x: task_id空のため未適用 selfmarker'),
+        ('selfreinforce:universal', '2026-08-29T14:21:00+09:00', 'shogun', '', 'universal selfmarker rule'),
+    ]
+    for event_id, ts, agent, target, summary in rows:
+        cur = conn.execute(
+            "INSERT INTO events (id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,importance) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (event_id, ts, 'knowledge', agent, target, 'universal', summary, summary, 'fixture', '', '[]', 'fixture', 'normal'),
+        )
+        conn.execute("INSERT INTO events_fts(rowid,summary,detail) VALUES (?,?,?)", (cur.lastrowid, summary, summary))
+    conn.commit()
+PY
+    printf '%s\n' 'selfmarker' >> "$THREE_LAYER_SEMANTIC_FIXTURE"
+    printf '%s\t%s\n' 'selfmarker' "$THREE_LAYER_SEMANTIC_FIXTURE" >> "$THREE_LAYER_CAUSAL_FIXTURE"
+    local evidence_dir="$TMP_EVIDENCE/selfreinforce"
+    run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AGENT_ID=karo TMUX_PANE="%selfreinforce_${BATS_TEST_NUMBER}" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "selfmarker"
+    [ "$status" -eq 0 ]
+    run grep -c "未適用" "$evidence_dir/evidence_karo__selfreinforce_${BATS_TEST_NUMBER}.json"
+    [ "$output" = "0" ]
+    run grep -c "universal selfmarker rule" "$evidence_dir/evidence_karo__selfreinforce_${BATS_TEST_NUMBER}.json"
+    [ "$output" != "0" ]
+}

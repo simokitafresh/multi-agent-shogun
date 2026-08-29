@@ -107,16 +107,20 @@ with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.5) as conn:
     conn.execute("PRAGMA busy_timeout=500")
     visibility = ""
     if target_agent in {"karo", "gunshi", "shogun"}:
-        visibility = " AND (e.target = '' OR e.target IS NULL OR e.target = ? OR e.event_type = 'document')"
+        # Commander self-reinforcement guard (2026-08-29 T122 10th recurrence): a commander's
+        # own "processing evidence ... 未適用" records must never be recalled back into its
+        # own prompt, or the wrong rule strengthens itself across /clear.
+        visibility = (" AND (e.target = '' OR e.target IS NULL OR e.target = ? OR e.event_type = 'document')"
+                      " AND NOT (e.agent = ? AND (e.summary LIKE '%未適用%' OR e.detail LIKE '%未適用%' OR e.summary LIKE '%processing evidence%'))")
     for needle in dict.fromkeys(c[:200] for c in candidates if c.strip()):
         phrase = '"' + needle.replace('"', '""') + '"'
-        row_params = (phrase, target_agent, memory_lines) if visibility else (phrase, memory_lines)
+        row_params = (phrase, target_agent, target_agent, memory_lines) if visibility else (phrase, memory_lines)
         rows = conn.execute(
             "SELECT e.ts, e.summary FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
             "WHERE events_fts MATCH ?" + visibility + " ORDER BY e.ts DESC LIMIT ?", row_params).fetchall()
         if rows:
             count, ts, used = 1, str(rows[0][0]), needle
-            total_params = (phrase, target_agent) if visibility else (phrase,)
+            total_params = (phrase, target_agent, target_agent) if visibility else (phrase,)
             total_row = conn.execute(
                 "SELECT COUNT(*) FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
                 "WHERE events_fts MATCH ?" + visibility, total_params).fetchone()
@@ -316,12 +320,16 @@ try:
     immutable = "&immutable=1" if use_immutable == "1" else ""
     visibility = ""
     if target_agent in {"karo", "gunshi", "shogun"}:
-        visibility = " AND (e.target = '' OR e.target IS NULL OR e.target = ? OR e.event_type = 'document')"
+        # Commander self-reinforcement guard (2026-08-29 T122 10th recurrence): a commander's
+        # own "processing evidence ... 未適用" records must never be recalled back into its
+        # own prompt, or the wrong rule strengthens itself across /clear.
+        visibility = (" AND (e.target = '' OR e.target IS NULL OR e.target = ? OR e.event_type = 'document')"
+                      " AND NOT (e.agent = ? AND (e.summary LIKE '%未適用%' OR e.detail LIKE '%未適用%' OR e.summary LIKE '%processing evidence%'))")
     with sqlite3.connect(f"file:{db_path}?mode=ro{immutable}", uri=True, timeout=0.5) as conn:
         conn.execute("PRAGMA busy_timeout=500")
         for needle in candidates:
             phrase = '"' + needle.replace('"', '""') + '"'
-            row_params = (phrase, target_agent, memory_lines) if visibility else (phrase, memory_lines)
+            row_params = (phrase, target_agent, target_agent, memory_lines) if visibility else (phrase, memory_lines)
             rows = conn.execute(
                 "SELECT e.ts, e.summary FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
                 "WHERE events_fts MATCH ?" + visibility + " ORDER BY e.ts DESC LIMIT ?",
@@ -329,7 +337,7 @@ try:
             ).fetchall()
             if rows:
                 memory_count, memory_ts, memory_query = 1, str(rows[0][0]), needle
-                total_params = (phrase, target_agent) if visibility else (phrase,)
+                total_params = (phrase, target_agent, target_agent) if visibility else (phrase,)
                 total_row = conn.execute(
                     "SELECT COUNT(*) FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
                     "WHERE events_fts MATCH ?" + visibility,
