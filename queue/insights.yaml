@@ -4765,7 +4765,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "根因修正済み: todo_map_render.py が queue/shogun_todo_map.md を正本としてHTMLを全文生成し、生成後にmdとHTMLのID集合不一致をexit 2で検出する。現行一次検証はID 193/193・欠落0・余計0、状態済188/走行中2/未着手3一致。"
+  action_artifact: "scripts/todo_map_render.py;queue/shogun_todo_map.md;docs/dashboard/shogun-todo-map.html;検証: md/html ID集合193/193・欠落0・余計0・一次在庫before=81/11/881/973"
+  resolved_at: "2026-08-30T02:53:00+09:00"
 - id: INS-20260827-091505020-ef0f
   ts: "2026-08-27T09:15:05+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[後着事実追記型訂正_20260827_0914]] は既存aliasesに一致なし。類似概念TOP3: gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=3.6) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=RB6_BLOCK_20260813_1704; score=3.2) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_準備先行_20260817_1936; score=3.1)。概念定義とaliases追加を検討せよ"
