@@ -2761,7 +2761,7 @@ printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
 EOF
     chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
     export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
-    printf 'parent_cmd: cmd_karo_auto_review_gate\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
+    printf 'task_id: cmd_karo_auto_review_gate_normal\nparent_cmd: cmd_karo_auto_review_gate\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
 
     cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
 timestamp: 2026-04-21T13:00:00
@@ -2827,7 +2827,7 @@ EOF
     ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
     ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
     ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
-    printf 'parent_cmd: cmd_guard\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    printf 'task_id: cmd_guard_normal\nparent_cmd: cmd_guard\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
     REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_guard gunshi LGTM "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
     local content
     local -a contents=(
@@ -2838,7 +2838,7 @@ EOF
     )
 
     for content in "${contents[@]}"; do
-        run _run_inbox_write karo "$content" report_review_result gunshi
+        run _run_inbox_write karo "$content task_id=commander_directive subject_task_id=cmd_guard_normal parent_cmd=cmd_guard" report_review_result gunshi
         [ "$status" -eq 0 ]
         [[ "$output" != *"contradictory report_review_result"* ]]
     done
@@ -2879,7 +2879,7 @@ YAML
     [ "$status" -eq 0 ]
     run _run_inbox_write testninja "通常レビュー" report_review karo
     [ "$status" -eq 0 ]
-    run _run_inbox_write karo "非忍者宛revision" report_revision gunshi
+    run _run_inbox_write karo "非忍者宛revision task_id=commander_directive subject_task_id=cmd_revision_normal parent_cmd=cmd_revision" report_revision gunshi
     [ "$status" -eq 0 ]
 }
 
@@ -2911,8 +2911,11 @@ source: deploy_preflight
 note: placeholder
 EOF
 
-    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: FAIL。" report_review_result gunshi
-    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: FAIL。task_id=commander_directive subject_task_id=cmd_karo_auto_review_gate_normal parent_cmd=cmd_karo_auto_review_gate" report_review_result gunshi
+    # report_review_result without a resolvable report is now rejected by the
+    # post-case dedicated identity boundary before any review side effect.
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"dedicated identity resolved no non-empty task_id"* ]]
     [[ "$output" != *"review_gate.done updated"* ]]
     [[ "$output" != *"cmd_complete_gate.sh started in background"* ]]
 
@@ -3245,6 +3248,11 @@ _autoread_env() {
     run _run_inbox_write karo "$body" investigation_result testninja reply_required
     [ "$status" -eq 0 ]
     grep -q "type: 'investigation_result'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  task_id: 'cmd_probe'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  check_id: 'gate_1'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  occurred_at: '2026-08-01T21:00:00+09:00'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  evidence: 'logs/probe.log'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  impact: 'delay_2m'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
     grep -q "read: false" "$TEST_TMPDIR/queue/inbox/karo.yaml"
     grep -q '^  status: in_progress$' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
     [ ! -e "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
@@ -3269,6 +3277,24 @@ _autoread_env() {
     run _run_inbox_write gunshi "$good" investigation_result testninja reply_required
     [ "$status" -eq 2 ]
     [[ "$output" == *"ninja -> karo only"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+# test_necessity: dedicated report/review producers must not persist a
+# taskless row when report resolution or the report's own task_id is missing.
+@test "dedicated report identity rejects missing path and empty task_id" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+
+    run _run_inbox_write karo "review without report" report_review ninja_monitor notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"dedicated identity resolved no non-empty task_id"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+
+    printf 'parent_cmd: cmd_empty_identity\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ready\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_empty_identity.yaml"
+    run _run_inbox_write karo "report: queue/reports/ninja_report_cmd_empty_identity.yaml" report_review ninja_monitor notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"dedicated identity resolved no non-empty task_id"* ]]
     [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
 }
 

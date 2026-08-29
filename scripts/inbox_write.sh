@@ -3085,7 +3085,26 @@ case "$TYPE" in
             STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
             STRUCTURED_REVISION_FINGERPRINT=$(inbox_report_revision_fingerprint "$TYPE" "$ACTION" "$CONTENT")
             _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" revision_request_fingerprint "$STRUCTURED_REVISION_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+        else
+            # A review message without a resolvable report may still carry an
+            # explicit commander envelope. Keep that identity structured;
+            # otherwise the post-case validator below rejects the taskless
+            # message before it can enter the mailbox.
+            _fallback_identity=$(inbox_commander_directive_identity "$CONTENT" 2>/dev/null || true)
+            if [ -n "$_fallback_identity" ]; then
+                mapfile -t _fallback_values <<< "$_fallback_identity"
+                _identity_fields=(task_id "${_fallback_values[0]:-}" subject_task_id "${_fallback_values[1]:-}" parent_cmd "${_fallback_values[2]:-}")
+            fi
         fi
+        ;;
+    investigation_result)
+        # This lane has its own evidence contract rather than a commander
+        # envelope. Preserve every validated identity field structurally so
+        # consumers never need to parse the free-form content again.
+        for _investigation_field in task_id check_id occurred_at evidence impact; do
+            _investigation_value=$(printf '%s\n' "$CONTENT" | sed -n "s/.*${_investigation_field}=\\([^[:space:]]\\+\\).*/\\1/p" | head -1)
+            _identity_fields+=("$_investigation_field" "$_investigation_value")
+        done
         ;;
     *)
         if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE"; then
@@ -3093,6 +3112,27 @@ case "$TYPE" in
         fi
         ;;
 esac
+
+# Dedicated generators must not silently fall back to a taskless durable row
+# when their case branch could not resolve a report/task identity. Validate
+# the constructed structure after all case handling and before persistence.
+if [ "$TARGET" = "karo" ]; then
+    case "$TYPE" in
+        review_report|accept_report|run_cmd_complete|report_review|report_review_result|report_revision)
+            _dedicated_task_id=""
+            for ((_identity_i=0; _identity_i<${#_identity_fields[@]}; _identity_i+=2)); do
+                if [ "${_identity_fields[_identity_i]}" = "task_id" ]; then
+                    _dedicated_task_id="${_identity_fields[_identity_i+1]:-}"
+                    break
+                fi
+            done
+            if [ -z "$_dedicated_task_id" ]; then
+                echo "BLOCK: ${TYPE} dedicated identity resolved no non-empty task_id; report/task identity is required before persistence" >&2
+                exit 2
+            fi
+            ;;
+    esac
+fi
 
 # Duplicate-notification suppression, decided on structure alone.
 # Order of structural sources, strongest first:
