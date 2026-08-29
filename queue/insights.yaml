@@ -4218,7 +4218,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:7e3f0d71e0378b38"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "gate_skill_script_refs rc=2 REVIEW_REQUIREDだがFOLLOWUP_ACTIVE=31かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yes。実在・鮮度・例示path・実走markerの4検査は全てOKで対象個別FAILなし。三層記憶・semantic index・context既存記録と整合し追加実修正およびdecision_candidate不要"
+  action_artifact: "scripts/gates/gate_skill_script_refs.sh;docs/semantic-index/index.md;context/semantic-map.md;context/senkyoku-log.md"
+  resolved_at: "2026-08-29T21:15:28+09:00"
 - id: INS-20260826-213354357-005d
   ts: "2026-08-26T21:33:54+09:00"
   insight: "[[同じcodexの家老にはできることが]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=同じcodexの家老にはできることが、なぜcodex忍者にはできないんだろう？"
