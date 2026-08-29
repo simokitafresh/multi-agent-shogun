@@ -7843,3 +7843,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-162702588-96a1
+  ts: "2026-08-29T16:27:02+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T187_検知器指紋dedupe_2ef3cbd11]] は既存aliasesに一致なし。類似概念TOP3: push_batch_operation(正規push batch運用; alias=push_batch_20260719; score=3.6) / semantic_dictionary_design(セマンティック辞書構想; alias=source commit ab302df7b inbox; score=3.6) / project_database(Stock Database; alias=database_cron_run_successful_20260829; score=3.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
