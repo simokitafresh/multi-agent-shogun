@@ -7594,3 +7594,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-120856193-11cf
+  ts: "2026-08-29T12:08:56+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T180_merge_s_ours_退行]] は既存aliasesに一致なし。類似概念TOP3: self_improving_agent_local_optima(自己改善エージェント局所最適脱出; alias=System Aware Merge; score=10.5) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=tree_level_merge_ad976db7; score=9.7) / provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=dm-login-boundary-asis-tobe_20260817; score=4.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
