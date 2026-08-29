@@ -7707,3 +7707,47 @@ YAML
     [ "$status" -eq 0 ]
     [ "$output" = "fixture=green unpushed_before=2 published=1 regated=1 force=0 skip=0" ]
 }
+
+# test_necessity: a publish failure must return its non-zero status while
+# recording one BLOCK and releasing the single-flight lock for a retry.
+@test "T190 push lane records failed publish and releases lock under set-e" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-failure"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_MIN_AGE_SEC=600
+        oldest_sha=abcdefabcdefabcdefabcdefabcdefabcdefabcd
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "1\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n" "$oldest_sha" ;;
+                *"show -s --format=%ct"*) printf "100\n" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"merge-base --is-ancestor"*) return 0 ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_publish_one() { printf "publish_attempt=1\n" >> "$root/publish.log"; return 73; }
+        if check_push_lane GREEN; then
+            exit 1
+        else
+            rc=$?
+        fi
+        test "$rc" -eq 73
+        test "$(cat "$root/publish.log")" = "publish_attempt=1"
+        test "$(grep -c "BLOCK reason=push_failed rc=73" "$PUSH_LANE_LOG")" -eq 1
+        exec {probe_fd}>"$PUSH_LANE_LOCK_FILE"
+        flock -n "$probe_fd"
+        flock -u "$probe_fd"
+        exec {probe_fd}>&-
+        printf "fixture=publish_failure return=73 push=0 block=1 lock_reacquired=1 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "fixture=publish_failure return=73 push=0 block=1 lock_reacquired=1 skip=0" ]
+}

@@ -495,8 +495,14 @@ check_push_lane() {
         return 0
     fi
 
-    push_output=$(push_lane_publish_one "$repo" "$remote_name" "$oldest" 2>&1)
-    push_rc=$?
+    # An automatic publish failure is an observable BLOCK, not a shell-level
+    # abort.  Keep the rc, write evidence, and release the single-flight lock
+    # even when callers enable `set -e` around the monitor function.
+    if push_output=$(push_lane_publish_one "$repo" "$remote_name" "$oldest" 2>&1); then
+        push_rc=0
+    else
+        push_rc=$?
+    fi
     if [ "$push_rc" -eq 0 ]; then
         push_lane_log "PASS ci=GREEN unpushed_before=$count sha=$oldest age=${age}s force=0 hook=1 commits=1"
         push_lane_regate_waiting_cmds "$repo"
@@ -505,7 +511,7 @@ check_push_lane() {
     fi
     flock -u "$lock_fd"
     exec {lock_fd}>&-
-    return 0
+    return "$push_rc"
 }
 
 # --- lib-only mode: skip daemon initialization (tmux/settings依存) ---
