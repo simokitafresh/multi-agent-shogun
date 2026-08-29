@@ -61,6 +61,45 @@ elif ! git -C "$ROOT" merge-base --is-ancestor "$old_head" "$target_head"; then
     }
 fi
 
+# An ours merge (or an equivalent hand-built tree) can make target commits
+# ancestors while retaining only the first-parent tree. Enumerate only merge
+# commits newly reachable from target (old_head..target_head); comparing every
+# historical hunk made the hot path slow and confused intentional later edits
+# with this exact tree-level invariant.
+verify_target_merge_trees() {
+    local merge first_parent second_parent merge_tree first_tree changed_paths
+    local -a new_merges=()
+    mapfile -t new_merges < <(
+        git -C "$ROOT" rev-list --merges "$old_head..$target_head"
+    )
+    local ours_equivalent=0 nonempty_parent_diffs=0
+    for merge in "${new_merges[@]}"; do
+        [[ -n "$merge" ]] || continue
+        read -r first_parent second_parent < <(
+            git -C "$ROOT" show -s --format='%P' "$merge"
+        )
+        [[ -n "$first_parent" && -n "$second_parent" ]] || continue
+        merge_tree="$(git -C "$ROOT" rev-parse "$merge^{tree}")"
+        first_tree="$(git -C "$ROOT" rev-parse "$first_parent^{tree}")"
+        [[ "$merge_tree" == "$first_tree" ]] || continue
+        changed_paths="$(git -C "$ROOT" diff --name-only "$first_parent" "$second_parent" | awk 'NF{n++} END{print n+0}')"
+        [[ "$changed_paths" -gt 0 ]] || continue
+        ours_equivalent=$((ours_equivalent + 1))
+        nonempty_parent_diffs=$((nonempty_parent_diffs + changed_paths))
+        echo "BLOCK: target introduces ours-equivalent merge with non-empty second-parent tree diff" >&2
+        echo "  merge=$merge first_parent=$first_parent second_parent=$second_parent changed_paths=$changed_paths" >&2
+    done
+    printf 'SAFE_SHARED_MAIN_FF_MERGE_CHECK target_new_merges=%s ours_equivalent=%s parent_diff_paths=%s result=%s\n' \
+        "${#new_merges[@]}" "$ours_equivalent" "$nonempty_parent_diffs" \
+        "$([[ "$ours_equivalent" -eq 0 ]] && echo PASS || echo BLOCK)"
+    if [[ "$ours_equivalent" -ne 0 ]]; then
+        return 2
+    fi
+    return 0
+}
+
+verify_target_merge_trees
+
 git -C "$ROOT" diff-tree --no-commit-id --name-only -r "$old_head" "$prospective_tree" | sort -u > "$changed_file"
 {
     git -C "$ROOT" diff --name-only
