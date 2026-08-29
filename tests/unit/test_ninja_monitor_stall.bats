@@ -2529,6 +2529,61 @@ cat "$SCRIPT_SIZE_TREND_LOG"
     [[ "$output" == *"timestamp"$'\t'"file"$'\t'"lines"$'\t'"functions"* ]]
 }
 
+@test "script_size and lesson_deprecation skip repost when candidate set is unchanged (LS096 granularity)" {
+    # test_necessity: 同一候補集合(同じ14本/同じL1637)を毎日 action_required で再投稿しない。集合が変わった時だけ投稿し、審査推奨(材料提示のみ)節は候補に数えない
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+export SCRIPT_DIR
+LOG="$TMP_ROOT/monitor.log"
+STATE_DIR="$TMP_ROOT/state"
+TEST_BULLETIN="$TMP_ROOT/bulletin.log"
+export TEST_BULLETIN
+LESSON_DEPRECATION_STATE_FILE="$STATE_DIR/lesson_deprecation.last"
+LESSON_DEPRECATION_LOG="$TMP_ROOT/logs/lesson_deprecation_candidates.log"
+LESSON_DEPRECATION_INTERVAL=0
+SCRIPT_SIZE_CHECK_STATE_FILE="$STATE_DIR/script_size.last"
+SCRIPT_SIZE_TREND_LOG="$TMP_ROOT/logs/script_size_trend.log"
+SCRIPT_SIZE_CHECK_INTERVAL=0
+SCRIPT_SIZE_LINE_THRESHOLD=3
+SCRIPT_SIZE_COMPLEXITY_THRESHOLD=50
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/scripts/bulletin_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "POST action=%s\n" "${4:-}" >> "$TEST_BULLETIN"
+EOF
+printf "#!/usr/bin/env bash\nbig_func() {\n  if true; then\n    echo ok\n  fi\n}\n" > "$SCRIPT_DIR/scripts/big_script.sh"
+cat > "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "METRICS: total_lessons=2615 active_lessons=2615 deprecated_lessons=0\n\n=== 確定candidate（自動） ===\n  (なし)\n\n=== 審査推奨（材料提示のみ） ===\n  [infra] L1637: \"x\"\n"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/"*.sh
+log() { echo "$1" >> "$LOG"; }
+
+check_lesson_deprecation_candidates            # 審査推奨のみ → 0件
+check_script_size_thresholds                   # 1st → post
+check_script_size_thresholds                   # same set → skip
+printf "#!/usr/bin/env bash\nf(){\n if true; then\n  echo\n fi\n}\n" > "$SCRIPT_DIR/scripts/big2.sh"
+check_script_size_thresholds                   # set changed → post
+
+cat "$LOG"
+echo "posts=$(grep -c POST "$TEST_BULLETIN")"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LESSON-DEPRECATION: no candidates"* ]]
+    [[ "$output" == *"SCRIPT-SIZE: 1 over-threshold scripts unchanged since last post"* ]]
+    [[ "$output" == *"SCRIPT-SIZE: posted 2 refactor request candidates"* ]]
+    [[ "$output" == *"posts=2"* ]]
+}
+
 @test "check_lesson_and_loop_health detect alerts after here-string grep conversion" {
     run bash -lc '
 set -euo pipefail

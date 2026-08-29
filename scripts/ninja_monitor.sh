@@ -11938,8 +11938,22 @@ check_lesson_deprecation_candidates() {
         log "LESSON-DEPRECATION-METRICS: ${metrics#METRICS: }"
     fi
 
-    candidate_count=$(printf '%s\n' "$output" | awk '/^[[:space:]]+\[[^]]+\] L[0-9]+:/ {count++} END {print count+0}')
-    if [ "$candidate_count" -gt 0 ] 2>/dev/null; then
+    # 審査推奨（材料提示のみ）節は裁定材料であり action_required ではない(2026-08-29 D0: L1637 が 6 日連続で将軍裁定を要求=LS096 粒度バグ)
+    candidate_lines=$(printf '%s\n' "$output" | awk '
+        /^=== / { skip = ($0 ~ /材料提示のみ/) ? 1 : 0; next }
+        skip { next }
+        /^[[:space:]]+\[[^]]+\] L[0-9]+:/ { print }
+    ')
+    candidate_count=$(printf '%s\n' "$candidate_lines" | awk 'NF {c++} END {print c+0}')
+    candidate_fp=$(printf '%s\n' "$candidate_lines" | awk 'NF' | sort | sha256sum | awk '{print $1}')
+    local last_fp=""
+    if [ -f "${LESSON_DEPRECATION_STATE_FILE}.fp" ]; then
+        read -r last_fp < "${LESSON_DEPRECATION_STATE_FILE}.fp" || last_fp=""
+    fi
+    if [ "$candidate_count" -gt 0 ] 2>/dev/null && [ "$candidate_fp" = "$last_fp" ]; then
+        log "LESSON-DEPRECATION: ${candidate_count} candidates unchanged since last post (fp=${candidate_fp:0:12}), bulletin skipped"
+    elif [ "$candidate_count" -gt 0 ] 2>/dev/null; then
+        printf '%s\n' "$candidate_fp" > "${LESSON_DEPRECATION_STATE_FILE}.fp" 2>/dev/null || true
         bulletin_content=$(
             {
                 printf 'lesson_deprecation_candidates: effectiveness閾値未満の教訓候補 %s件。承認後は lesson_write.sh <project> --retire <lesson_id> で状態更新されたし。log=%s\n' "$candidate_count" "$LESSON_DEPRECATION_LOG"
@@ -12147,7 +12161,16 @@ check_script_size_thresholds() {
     )
     alert_count=$(printf '%s\n' "$alerts" | awk 'NF {c++} END {print c+0}')
 
-    if [ "$alert_count" -gt 0 ] 2>/dev/null; then
+    # 同一ファイル集合の再投稿抑止(2026-08-29 D0: 同じ 14 本を 8 日連続で action_required 投稿=LS096 粒度バグ)。集合が変わった時だけ将軍へ
+    local alert_fp last_alert_fp=""
+    alert_fp=$(printf '%s\n' "$alerts" | awk 'BEGIN{FS="\t"} NF {print $1}' | sort | sha256sum | awk '{print $1}')
+    if [ -f "${SCRIPT_SIZE_CHECK_STATE_FILE}.fp" ]; then
+        read -r last_alert_fp < "${SCRIPT_SIZE_CHECK_STATE_FILE}.fp" || last_alert_fp=""
+    fi
+    if [ "$alert_count" -gt 0 ] 2>/dev/null && [ "$alert_fp" = "$last_alert_fp" ]; then
+        log "SCRIPT-SIZE: ${alert_count} over-threshold scripts unchanged since last post (fp=${alert_fp:0:12}), bulletin skipped"
+    elif [ "$alert_count" -gt 0 ] 2>/dev/null; then
+        printf '%s\n' "$alert_fp" > "${SCRIPT_SIZE_CHECK_STATE_FILE}.fp" 2>/dev/null || true
         printf '%s\n' "$alerts" | while IFS=$'\t' read -r file lines funcs branches complexity; do
             [ -n "$file" ] || continue
             log "SCRIPT-SIZE-ALERT: ${file} lines=${lines}/${SCRIPT_SIZE_LINE_THRESHOLD} complexity=${complexity}/${SCRIPT_SIZE_COMPLEXITY_THRESHOLD} functions=${funcs} branches=${branches}"
