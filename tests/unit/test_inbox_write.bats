@@ -3278,7 +3278,7 @@ _autoread_env() {
     mkdir -p "$tmp/queue/tasks"
     printf 'task_id: ""\nparent_cmd: ""\n' > "$tmp/queue/tasks/karo.yaml"
     printf 'task_id: "cmd_x_normal"\nparent_cmd: "cmd_x"\n' > "$tmp/queue/tasks/hayate.yaml"
-    run bash -c "SCRIPT_DIR='$tmp'; ensure_field_get_loaded() { :; }; source <(sed -n '/^inbox_yaml_field_get()/,/^}/p;/^inbox_task_assignment_identity_fields()/,/^}/p' '$PROJECT_ROOT/scripts/inbox_write.sh'); inbox_task_assignment_identity_fields karo | head -1; inbox_task_assignment_identity_fields hayate | head -1"
+    run bash -c "set -euo pipefail; SCRIPT_DIR='$tmp'; ensure_field_get_loaded() { :; }; source <(sed -n '/^inbox_yaml_field_get()/,/^}/p;/^inbox_task_assignment_identity_fields()/,/^}/p' '$PROJECT_ROOT/scripts/inbox_write.sh'); mapfile -t karo_fields < <(inbox_task_assignment_identity_fields karo); mapfile -t hayate_fields < <(inbox_task_assignment_identity_fields hayate); printf '%s\\n' \"\${karo_fields[0]}\" \"\${hayate_fields[0]}\""
     rm -rf "$tmp"
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "commander_directive" ]
