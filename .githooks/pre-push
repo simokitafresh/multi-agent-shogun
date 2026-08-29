@@ -83,8 +83,8 @@ _BATS_OUTPUT_FILE="/tmp/_hook_bats_output_prepush_$$"
 # v2 isolates the materialized-receipt scanner from locks held forever by the
 # pre-v2 early-return pipe deadlock.  New hooks still serialize with each other;
 # only the broken generation is fenced out.
-_PREPUSH_LOCK_FILE="$REPO_ROOT/logs/prepush_test.v2.lock"
-_PREPUSH_LOCK_META="$REPO_ROOT/logs/prepush_test.v2.lock.holder"
+_PREPUSH_LOCK_FILE="$REPO_ROOT/logs/prepush_test.v3.lock"
+_PREPUSH_LOCK_META="$REPO_ROOT/logs/prepush_test.v3.lock.holder"
 _PREPUSH_LOCK_WAIT_SECONDS="${PREPUSH_LOCK_WAIT_SECONDS:-1200}"
 _PREPUSH_CROSS_GENERATION_WAIT_SECONDS="${PREPUSH_CROSS_GENERATION_WAIT_SECONDS:-1200}"
 _PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS="${PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS:-60}"
@@ -213,8 +213,9 @@ PY
 # ignored; no candidate ever suppresses tests unless pre_push_receipt_matches
 # proves all five reuse conditions.
 pre_push_find_reusable_receipt() {
-    local push_sha="$1" expected_tree="$2" candidate receipt_dir
+    local push_sha="$1" expected_tree="$2" candidate receipt_dir expected_source
     local -a candidates=()
+    expected_source="$(pre_push_receipt_source_fingerprint "$push_sha")"
     if [ -n "${NINJA_TEST_RECEIPT:-${NINJA_TEST_RECEIPT_PATH:-}}" ]; then
         candidate="${NINJA_TEST_RECEIPT:-${NINJA_TEST_RECEIPT_PATH:-}}"
         if pre_push_receipt_matches "$candidate" "$push_sha" "$expected_tree"; then
@@ -225,14 +226,35 @@ pre_push_find_reusable_receipt() {
     fi
     receipt_dir="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}"
     [ -d "$receipt_dir" ] || return 1
-    # Materialize the producer completely before inspecting candidates.  A
-    # successful match returns early; doing that from a process-substitution
-    # consumer leaves inherited pipe readers open and can deadlock sort/cut in
-    # pipe_write during pre-push.
-    mapfile -t candidates < <(
-        find "$receipt_dir" -maxdepth 1 -type f -name '*.json' -printf '%T@ %p\n' 2>/dev/null \
-            | sort -nr \
-            | cut -d' ' -f2-
+    # Scan every receipt in one Python process and pass only fingerprint
+    # matches to the expensive artifact/ancestry verifier.  The old loop
+    # started Python plus Git for each of 9k+ historical receipts.
+    mapfile -t candidates < <(python3 - "$receipt_dir" "$expected_tree" "$expected_source" <<'PY'
+import glob
+import json
+import os
+import re
+import sys
+
+receipt_dir, expected_tree, expected_source = sys.argv[1:]
+paths = glob.glob(os.path.join(receipt_dir, "*.json"))
+paths.sort(key=lambda path: os.path.getmtime(path), reverse=True)
+for path in paths:
+    try:
+        data = json.load(open(path, encoding="utf-8"))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        continue
+    if not isinstance(data, dict):
+        continue
+    tree_fp = data.get("tree_fingerprint")
+    source_fp = data.get("source_fingerprint")
+    if isinstance(tree_fp, str) and re.fullmatch(r"[0-9a-f]{64}", tree_fp):
+        matched = tree_fp == expected_tree
+    else:
+        matched = isinstance(source_fp, str) and source_fp == expected_source
+    if matched:
+        print(path)
+PY
     )
     for candidate in "${candidates[@]}"; do
         if pre_push_receipt_matches "$candidate" "$push_sha" "$expected_tree"; then
