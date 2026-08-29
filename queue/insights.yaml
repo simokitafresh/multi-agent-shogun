@@ -7713,4 +7713,14 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T14:33:10+09:00"
+- id: INS-20260829-143310957-a519
+  ts: "2026-08-29T14:33:10+09:00"
+  insight: "semantic_index_update新概念候補: discussion:生成nudgeにtask idがない問題は実観測済みで、 Unit5ではnudgeを命令扱いせず正規LGTMを待っている。はバグではないか？命令扱いしないメリッ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
